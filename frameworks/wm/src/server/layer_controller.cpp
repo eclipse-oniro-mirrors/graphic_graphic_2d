@@ -178,12 +178,12 @@ void LayerController::ChangeWindowTop(uint32_t id)
     }
 
     std::list<uint32_t> sameTypeWinList;
-    sameTypeWinList.push_back(id);
     for (auto it = m_windowList.begin(); it != m_windowList.end(); it++) {
         if (it->windowType == topwininfo->windowType && it->windowId != id) {
             sameTypeWinList.push_back(it->windowId);
         }
     }
+    sameTypeWinList.push_back(id);
     const int renderSize = sameTypeWinList.size();
 
     auto renderOrder = std::make_unique<t_ilm_surface[]>(renderSize);
