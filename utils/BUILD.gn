@@ -17,7 +17,7 @@ import("//build/ohos.gni")
 config("buffer_handle_public_config") {
   include_dirs = [
     "include",
-    "//drivers/peripheral/display/interfaces/include",
+    "//drivers/peripheral/base",
   ]
 }
 
