@@ -29,9 +29,10 @@ public:
     static void DestroyLayer(uint32_t layerId);
     int32_t Init();
     sptr<Surface> GetSurface();
-    int32_t DisplayRectChange(uint32_t layerId, IRect rect);
     int32_t ZorderChange(uint32_t layerId, uint32_t zorder);
     int32_t TransformChange(uint32_t layerId, TransformType type);
+    void Move(int32_t x, int32_t y);
+    void SetSubWindowSize(int32_t width, int32_t height);
 
 private:
     uint32_t layerId_;

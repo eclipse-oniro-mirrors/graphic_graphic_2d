@@ -294,7 +294,7 @@ bool LayerController::initScreen()
     } else {
         WMLOG_I("Debug: ilm_getScreenIDs - %{public}s. number of screens = %{public}u",
                 ILM_ERROR_STRING(callResult), numberOfScreens);
-        for (uint i = 0; i < numberOfScreens; i++) {
+        for (unsigned int i = 0; i < numberOfScreens; i++) {
             WMLOG_I("Debug: Screen ID[%{public}u] = %{public}d", i, screenIds[i]);
         }
         m_screenId = 0;

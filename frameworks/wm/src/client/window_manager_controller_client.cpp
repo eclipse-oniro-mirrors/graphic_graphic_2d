@@ -1421,6 +1421,7 @@ void GetSubInnerWindowInfo(InnerWindowInfo &info, const WLContextStruct wlContex
     info.pos_x = config.pos_x;
     info.pos_y = config.pos_y;
     info.voLayerId = -1U;
+    info.windowInfoChangeCb = nullptr;
 }
 
 bool CreateVideoSubWindow(InnerWindowInfo &newSubInfo, struct wl_shm &shm)

@@ -262,18 +262,18 @@ std::unique_ptr<SubWindow> WindowManager::CreateSubWindow(int32_t parentid, Wind
         auto producer = windowInfo->surface->GetProducer();
         sptr<Surface> surface = Surface::CreateSurfaceAsProducer(producer);
         ret_win = std::make_unique<SubWindow>(windowInfo->windowid, surface);
-        BufferRequestConfig requestConfig = {
-            .width = config->width,
-            .height = config->height,
-            .strideAlignment = 8,
-            .format = config->format,
-            .usage = HBM_USE_CPU_READ | HBM_USE_CPU_WRITE | HBM_USE_MEM_DMA,
-            .timeout = 0,
-        };
-        ret_win->SetRequestConfig(requestConfig);
     } else {
         ret_win = std::make_unique<VideoWindow>(*windowInfo);
     }
+    BufferRequestConfig requestConfig = {
+        .width = config->width,
+        .height = config->height,
+        .strideAlignment = 8,
+        .format = config->format,
+        .usage = HBM_USE_CPU_READ | HBM_USE_CPU_WRITE | HBM_USE_MEM_DMA,
+        .timeout = 0,
+    };
+    ret_win->SetRequestConfig(requestConfig);
     WMLOG_I("WindowManager::CreateSubWindow widow ID  %{public}d success", id);
     return ret_win;
 }
@@ -532,6 +532,8 @@ void SubWindow::SetSubWindowSize(int32_t width, int32_t height)
 {
     WMLOG_I("Window::SetSubWindowSize start");
     LayerControllerClient::GetInstance()->ReSize(m_windowid, width, height);
+    config_.width = width;
+    config_.height = height;
     WMLOG_I("Window::SetSubWindowSize end");
 }
 }
