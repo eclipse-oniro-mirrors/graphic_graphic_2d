@@ -45,6 +45,7 @@ namespace {
             BLOGFE("new video display manager fail");
         }
         Init();
+        Move(winInfo.pos_x, winInfo.pos_y);
         VIDEO_WINDOW_EXIT();
     }
 
@@ -103,19 +104,61 @@ namespace {
         return surface;
     }
 
-    int32_t VideoWindow::DisplayRectChange(uint32_t layerId, IRect rect)
+    void VideoWindow::Move(int32_t x, int32_t y)
     {
         VIDEO_WINDOW_ENTER();
+        int maxHeight = LayerControllerClient::GetInstance()->GetMaxHeight();
+        constexpr float BAR_WIDTH_PERCENT = 0.07;
+        IRect rect = {};
         if (display == nullptr) {
             BLOGFE("display layer is not create");
-            return DISPLAY_FAILURE;
+            return;
         }
-        int32_t ret = display->SetRect(layerId, rect);
+
+        int32_t ret = display->GetRect(layerId_, rect);
         if (ret != DISPLAY_SUCCESS) {
-            BLOGFW("set rect fail, ret:%d", ret);
+            BLOGFW("get rect fail, ret:%{public}d", ret);
+            return;
         }
+
+        BLOGFI("get layer: x=%{public}d, y=%{public}d, w=%{public}d, h=%{public}d", rect.x, rect.y, rect.w, rect.h);
+        rect.x = x;
+        rect.y = y + maxHeight * BAR_WIDTH_PERCENT; // status bar
+        BLOGFI("set layer: x=%{public}d, y=%{public}d, w=%{public}d, h=%{public}d", rect.x, rect.y, rect.w, rect.h);
+        ret = display->SetRect(layerId_, rect);
+        if (ret != DISPLAY_SUCCESS) {
+            BLOGFW("set rect fail, ret:%{public}d", ret);
+            return;
+        }
+        SubWindow::Move(x, y);
         VIDEO_WINDOW_EXIT();
-        return ret;
+    }
+
+    void VideoWindow::SetSubWindowSize(int32_t width, int32_t height)
+    {
+        VIDEO_WINDOW_ENTER();
+        IRect rect = {};
+        if (display == nullptr) {
+            BLOGFE("display layer is not create");
+            return;
+        }
+
+        int32_t ret = display->GetRect(layerId_, rect);
+        if (ret != DISPLAY_SUCCESS) {
+            BLOGFW("get rect fail, ret:%d", ret);
+            return;
+        }
+        BLOGFI("get layer: x=%{public}d, y=%{public}d, w=%{public}d, h=%{public}d", rect.x, rect.y, rect.w, rect.h);
+        rect.w = width;
+        rect.h = height;
+        BLOGFI("set layer: x=%{public}d, y=%{public}d, w=%{public}d, h=%{public}d", rect.x, rect.y, rect.w, rect.h);
+        ret = display->SetRect(layerId_, rect);
+        if (ret != DISPLAY_SUCCESS) {
+            BLOGFW("set rect fail, ret:%{public}d", ret);
+            return;
+        }
+        SubWindow::SetSubWindowSize(width, height);
+        VIDEO_WINDOW_EXIT();
     }
 
     int32_t VideoWindow::ZorderChange(uint32_t layerId, uint32_t zorder)
@@ -127,7 +170,7 @@ namespace {
         }
         int32_t ret = display->SetZorder(layerId, zorder);
         if (ret != DISPLAY_SUCCESS) {
-            BLOGFW("set zorder fail, ret:%d", ret);
+            BLOGFW("set zorder fail, ret:%{public}d", ret);
         }
         VIDEO_WINDOW_EXIT();
         return ret;
@@ -142,7 +185,7 @@ namespace {
         }
         int32_t ret = display->SetTransformMode(layerId, type);
         if (ret != DISPLAY_SUCCESS) {
-            BLOGFW("set transform mode fail, ret:%d", ret);
+            BLOGFW("set transform mode fail, ret:%{public}d", ret);
         }
         VIDEO_WINDOW_EXIT();
         return ret;
