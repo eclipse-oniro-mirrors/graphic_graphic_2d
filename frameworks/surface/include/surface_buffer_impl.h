@@ -16,6 +16,7 @@
 #ifndef FRAMEWORKS_SURFACE_INCLUDE_SURFACE_BUFFER_IMPL_H
 #define FRAMEWORKS_SURFACE_INCLUDE_SURFACE_BUFFER_IMPL_H
 
+#include <any>
 #include <map>
 
 #include <surface_buffer.h>
@@ -36,8 +37,7 @@ typedef struct {
 } SurfaceBufferData;
 
 typedef struct {
-    void* value;
-    uint32_t size;
+    std::any value;
     ExtraDataType type;
 } ExtraData;
 
