@@ -15,6 +15,8 @@
 
 #include "buffer_queue_producer.h"
 
+#include <set>
+
 #include "buffer_extra_data_impl.h"
 #include "buffer_log.h"
 #include "buffer_manager.h"
@@ -181,12 +183,36 @@ int BufferQueueProducer::CleanCacheInner(MessageParcel& arguments, MessageParcel
 SurfaceError BufferQueueProducer::RequestBuffer(int32_t& sequence, sptr<SurfaceBuffer>& buffer,
     int32_t& fence, BufferRequestConfig& config, std::vector<int32_t>& deletingBuffers)
 {
+    static std::map<int32_t, wptr<SurfaceBufferImpl>> cache;
+    static std::map<pid_t, std::set<int32_t>> sendeds;
     if (bufferQueue_ == nullptr) {
         return SURFACE_ERROR_NULLPTR;
     }
     sptr<SurfaceBufferImpl> bufferImpl = SurfaceBufferImpl::FromBase(buffer);
     BufferQueue::RequestBufferReturnValue retval = {.buffer = bufferImpl};
     auto sret = bufferQueue_->RequestBuffer(config, retval);
+    /* The first remote call from a different process returns a non-null pointer,
+     * and all others return null Pointers.
+     * A local call always returns a non-null pointer. */
+    if (sret == SURFACE_ERROR_OK) { // success
+        if (retval.buffer != nullptr) { // add to cache
+            cache[retval.sequence] = retval.buffer;
+        } else { // not first
+            if (GetCallingPid() == getpid()) { // local calling
+                retval.buffer = cache[retval.sequence].promote();
+            } else { // remote calling, first isn't nullptr
+                auto& sended = sendeds[GetCallingPid()];
+                if (sended.find(retval.sequence) == sended.end()) {
+                    retval.buffer = cache[retval.sequence].promote();
+                    sended.insert(retval.sequence);
+                }
+            }
+        }
+    }
+    for (const auto &buffer : deletingBuffers) {
+        cache.erase(buffer);
+        sendeds[GetCallingPid()].erase(buffer);
+    }
 
     sequence = retval.sequence;
     buffer = retval.buffer;
