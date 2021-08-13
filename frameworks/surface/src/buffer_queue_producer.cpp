@@ -35,16 +35,16 @@ BufferQueueProducer::BufferQueueProducer(sptr<BufferQueue>& bufferQueue)
     }
     BLOGNI("ctor");
 
-    memberFuncMap_[BUFFER_PRODUCER_REQUEST_BUFFER] = &BufferQueueProducer::RequestBufferInner;
-    memberFuncMap_[BUFFER_PRODUCER_CANCEL_BUFFER] = &BufferQueueProducer::CancelBufferInner;
-    memberFuncMap_[BUFFER_PRODUCER_FLUSH_BUFFER] = &BufferQueueProducer::FlushBufferInner;
-    memberFuncMap_[BUFFER_PRODUCER_GET_QUEUE_SIZE] = &BufferQueueProducer::GetQueueSizeInner;
-    memberFuncMap_[BUFFER_PRODUCER_SET_QUEUE_SIZE] = &BufferQueueProducer::SetQueueSizeInner;
-    memberFuncMap_[BUFFER_PRODUCER_GET_NAME] = &BufferQueueProducer::GetNameInner;
-    memberFuncMap_[BUFFER_PRODUCER_GET_DEFAULT_WIDTH] = &BufferQueueProducer::GetDefaultWidthInner;
-    memberFuncMap_[BUFFER_PRODUCER_GET_DEFAULT_HEIGHT] = &BufferQueueProducer::GetDefaultHeightInner;
-    memberFuncMap_[BUFFER_PRODUCER_GET_DEFAULT_USAGE] = &BufferQueueProducer::GetDefaultUsageInner;
-    memberFuncMap_[BUFFER_PRODUCER_CLEAN_CACHE] = &BufferQueueProducer::CleanCacheInner;
+    memberFuncMap_[BUFFER_PRODUCER_REQUEST_BUFFER] = &BufferQueueProducer::RequestBufferRemote;
+    memberFuncMap_[BUFFER_PRODUCER_CANCEL_BUFFER] = &BufferQueueProducer::CancelBufferRemote;
+    memberFuncMap_[BUFFER_PRODUCER_FLUSH_BUFFER] = &BufferQueueProducer::FlushBufferRemote;
+    memberFuncMap_[BUFFER_PRODUCER_GET_QUEUE_SIZE] = &BufferQueueProducer::GetQueueSizeRemote;
+    memberFuncMap_[BUFFER_PRODUCER_SET_QUEUE_SIZE] = &BufferQueueProducer::SetQueueSizeRemote;
+    memberFuncMap_[BUFFER_PRODUCER_GET_NAME] = &BufferQueueProducer::GetNameRemote;
+    memberFuncMap_[BUFFER_PRODUCER_GET_DEFAULT_WIDTH] = &BufferQueueProducer::GetDefaultWidthRemote;
+    memberFuncMap_[BUFFER_PRODUCER_GET_DEFAULT_HEIGHT] = &BufferQueueProducer::GetDefaultHeightRemote;
+    memberFuncMap_[BUFFER_PRODUCER_GET_DEFAULT_USAGE] = &BufferQueueProducer::GetDefaultUsageRemote;
+    memberFuncMap_[BUFFER_PRODUCER_CLEAN_CACHE] = &BufferQueueProducer::CleanCacheRemote;
 }
 
 BufferQueueProducer::~BufferQueueProducer()
@@ -77,7 +77,7 @@ int BufferQueueProducer::OnRemoteRequest(uint32_t code, MessageParcel& arguments
     return ret;
 }
 
-int BufferQueueProducer::RequestBufferInner(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
+int32_t BufferQueueProducer::RequestBufferRemote(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
 {
     int32_t sequence = -1;
     sptr<SurfaceBuffer> buffer = nullptr;
@@ -100,7 +100,7 @@ int BufferQueueProducer::RequestBufferInner(MessageParcel& arguments, MessagePar
     return 0;
 }
 
-int BufferQueueProducer::CancelBufferInner(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
+int BufferQueueProducer::CancelBufferRemote(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
 {
     int32_t sequence;
     BufferExtraDataImpl bedataimpl;
@@ -113,7 +113,7 @@ int BufferQueueProducer::CancelBufferInner(MessageParcel& arguments, MessageParc
     return 0;
 }
 
-int BufferQueueProducer::FlushBufferInner(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
+int BufferQueueProducer::FlushBufferRemote(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
 {
     int32_t fence;
     int32_t sequence;
@@ -131,13 +131,13 @@ int BufferQueueProducer::FlushBufferInner(MessageParcel& arguments, MessageParce
     return 0;
 }
 
-int BufferQueueProducer::GetQueueSizeInner(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
+int BufferQueueProducer::GetQueueSizeRemote(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
 {
     reply.WriteInt32(GetQueueSize());
     return 0;
 }
 
-int BufferQueueProducer::SetQueueSizeInner(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
+int BufferQueueProducer::SetQueueSizeRemote(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
 {
     int32_t queueSize = arguments.ReadInt32();
     SurfaceError retval = SetQueueSize(queueSize);
@@ -145,7 +145,7 @@ int BufferQueueProducer::SetQueueSizeInner(MessageParcel& arguments, MessageParc
     return 0;
 }
 
-int BufferQueueProducer::GetNameInner(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
+int BufferQueueProducer::GetNameRemote(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
 {
     std::string name;
     auto sret = bufferQueue_->GetName(name);
@@ -156,25 +156,25 @@ int BufferQueueProducer::GetNameInner(MessageParcel& arguments, MessageParcel& r
     return 0;
 }
 
-int BufferQueueProducer::GetDefaultWidthInner(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
+int BufferQueueProducer::GetDefaultWidthRemote(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
 {
     reply.WriteInt32(GetDefaultWidth());
     return 0;
 }
 
-int BufferQueueProducer::GetDefaultHeightInner(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
+int BufferQueueProducer::GetDefaultHeightRemote(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
 {
     reply.WriteInt32(GetDefaultHeight());
     return 0;
 }
 
-int BufferQueueProducer::GetDefaultUsageInner(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
+int BufferQueueProducer::GetDefaultUsageRemote(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
 {
     reply.WriteUint32(GetDefaultUsage());
     return 0;
 }
 
-int BufferQueueProducer::CleanCacheInner(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
+int BufferQueueProducer::CleanCacheRemote(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
 {
     reply.WriteInt32(CleanCache());
     return 0;
