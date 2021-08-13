@@ -186,35 +186,39 @@ SurfaceError BufferQueueProducer::RequestBuffer(const BufferRequestConfig& confi
         return SURFACE_ERROR_NULLPTR;
     }
 
+    auto callingPid = GetCallingPid();
+    auto& sended = sendeds[callingPid];
     auto sret = bufferQueue_->RequestBuffer(config, bedata, retval);
-    /* The first remote call from a different process returns a non-null pointer,
-     * and all others return null Pointers.
-     * A local call always returns a non-null pointer. */
-    if (sret == SURFACE_ERROR_OK) { // success
-        if (retval.buffer != nullptr) { // add to cache
+    if (sret == SURFACE_ERROR_OK) {
+        if (retval.buffer != nullptr) {
             cache[retval.sequence] = retval.buffer;
-            BLOGND("add cache");
-        } else { // not first
-            if (GetCallingPid() == getpid()) { // local calling
+            sended.insert(retval.sequence);
+            BLOGND("[%{public}d] add cache", callingPid);
+        } else {
+            // for BufferQueue not first
+            if (GetCallingPid() == getpid()) {
+                // A local call always returns a non-null pointer
                 retval.buffer = cache[retval.sequence].promote();
-                BLOGND("get cache by local");
-            } else { // remote calling, first isn't nullptr
-                auto& sended = sendeds[GetCallingPid()];
+                BLOGND("[%{public}d] get cache by local", callingPid);
+            } else {
+                // The first remote call from a different process returns a non-null pointer
                 if (sended.find(retval.sequence) == sended.end()) {
                     retval.buffer = cache[retval.sequence].promote();
-                    BLOGND("get cache by remote");
                     sended.insert(retval.sequence);
+                    BLOGND("[%{public}d] get cache by remote", callingPid);
                 } else {
-                    BLOGND("nullptr by remote");
+                    // and all others return null pointers
+                    BLOGND("[%{public}d] nullptr by remote", callingPid);
                 }
             }
         }
     } else {
         BLOGNI("BufferQueue::RequestBuffer failed with %{public}s", SurfaceErrorStr(sret).c_str());
     }
+
     for (const auto &buffer : retval.deletingBuffers) {
         cache.erase(buffer);
-        sendeds[GetCallingPid()].erase(buffer);
+        sended.erase(buffer);
     }
     return sret;
 }
