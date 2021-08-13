@@ -105,8 +105,8 @@ int BufferQueueProducer::CancelBufferRemote(MessageParcel& arguments, MessagePar
     sequence = arguments.ReadInt32();
     bedataimpl.ReadFromParcel(arguments);
 
-    SurfaceError retval = CancelBuffer(sequence, bedataimpl);
-    reply.WriteInt32(retval);
+    SurfaceError sret = CancelBuffer(sequence, bedataimpl);
+    reply.WriteInt32(sret);
     return 0;
 }
 
@@ -122,9 +122,9 @@ int BufferQueueProducer::FlushBufferRemote(MessageParcel& arguments, MessageParc
     ReadFence(arguments, fence);
     ReadFlushConfig(arguments, config);
 
-    SurfaceError retval = FlushBuffer(sequence, bedataimpl, fence, config);
+    SurfaceError sret = FlushBuffer(sequence, bedataimpl, fence, config);
 
-    reply.WriteInt32(retval);
+    reply.WriteInt32(sret);
     return 0;
 }
 
@@ -137,8 +137,8 @@ int BufferQueueProducer::GetQueueSizeRemote(MessageParcel& arguments, MessagePar
 int BufferQueueProducer::SetQueueSizeRemote(MessageParcel& arguments, MessageParcel& reply, MessageOption& option)
 {
     int32_t queueSize = arguments.ReadInt32();
-    SurfaceError retval = SetQueueSize(queueSize);
-    reply.WriteInt32(retval);
+    SurfaceError sret = SetQueueSize(queueSize);
+    reply.WriteInt32(sret);
     return 0;
 }
 
@@ -193,17 +193,24 @@ SurfaceError BufferQueueProducer::RequestBuffer(const BufferRequestConfig& confi
     if (sret == SURFACE_ERROR_OK) { // success
         if (retval.buffer != nullptr) { // add to cache
             cache[retval.sequence] = retval.buffer;
+            BLOGND("add cache");
         } else { // not first
             if (GetCallingPid() == getpid()) { // local calling
                 retval.buffer = cache[retval.sequence].promote();
+                BLOGND("get cache by local");
             } else { // remote calling, first isn't nullptr
                 auto& sended = sendeds[GetCallingPid()];
                 if (sended.find(retval.sequence) == sended.end()) {
                     retval.buffer = cache[retval.sequence].promote();
+                    BLOGND("get cache by remote");
                     sended.insert(retval.sequence);
+                } else {
+                    BLOGND("nullptr by remote");
                 }
             }
         }
+    } else {
+        BLOGNI("BufferQueue::RequestBuffer failed with %{public}s", SurfaceErrorStr(sret).c_str());
     }
     for (const auto &buffer : retval.deletingBuffers) {
         cache.erase(buffer);

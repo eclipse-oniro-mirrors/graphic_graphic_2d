@@ -197,7 +197,7 @@ SurfaceError ProducerSurface::SetUserData(const std::string& key, const std::str
     return SURFACE_ERROR_OK;
 }
 
-std::string  ProducerSurface::GetUserData(const std::string& key) 
+std::string ProducerSurface::GetUserData(const std::string &key)
 {
     if (userData_.find(key) != userData_.end()) {
         return userData_[key];
