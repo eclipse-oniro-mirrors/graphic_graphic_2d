@@ -21,7 +21,7 @@
 
 namespace OHOS {
 namespace {
-constexpr HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0, "SurfaceBufferImpl" };
+constexpr HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0, "BufferExtraDataImpl" };
 constexpr int32_t BUFFER_EXTRA_DATA_MAGIC = 0x4567;
 } // namespace
 
@@ -29,10 +29,12 @@ SurfaceError BufferExtraDataImpl::ReadFromParcel(MessageParcel &parcel)
 {
     int32_t magic;
     if (parcel.ReadInt32(magic) == false || magic != BUFFER_EXTRA_DATA_MAGIC) {
+        BLOGW("read failed, magic is error");
         return SURFACE_ERROR_ERROR;
     }
 
     int32_t size = parcel.ReadInt32();
+    BLOGD("read %{public}d", size);
     for (int32_t i = 0; i < size; i++) {
         auto key = parcel.ReadString();
         auto type = static_cast<ExtraDataType>(parcel.ReadInt32());
@@ -59,6 +61,7 @@ SurfaceError BufferExtraDataImpl::WriteToParcel(MessageParcel &parcel)
 {
     parcel.WriteInt32(BUFFER_EXTRA_DATA_MAGIC);
     parcel.WriteInt32(datas.size());
+    BLOGD("write %{public}d", datas.size());
     for (const auto &[key, data] : datas) {
         parcel.WriteString(key);
         parcel.WriteInt32(static_cast<int32_t>(data.type));
