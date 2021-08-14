@@ -93,6 +93,7 @@ struct WmsController {
     uint32_t windowIdFlags;
     struct wl_client *pWlClient;
     struct wl_list wlListLink;
+    struct wl_list wlListLinkRes;
     struct WmsContext *pWmsCtx;
     struct ScreenshotFrameListener stListener;
 };
@@ -101,6 +102,21 @@ static struct WmsContext g_wmsCtx = {0};
 
 static ScreenInfoChangeListener g_screenInfoChangeListener = NULL;
 static SeatInfoChangeListener g_seatInfoChangeListener = NULL;
+
+static void SendGlobalWindowStatus(const struct WmsController *pController, uint32_t window_id, uint32_t status)
+{
+    LOGD("start.");
+    struct WmsContext *pWmsCtx = pController->pWmsCtx;
+    struct WmsController *pControllerTemp;
+    pid_t pid;
+
+    wl_client_get_credentials(pController->pWlClient, &pid, NULL, NULL);
+
+    wl_list_for_each(pControllerTemp, &pWmsCtx->wlListGlobalEventResource, wlListLinkRes) {
+        wms_send_global_window_status(pControllerTemp->pWlResource, pid, window_id, status);
+    }
+    LOGD("end.");
+}
 
 void SetSeatListener(const SeatInfoChangeListener listener)
 {
@@ -375,6 +391,8 @@ static void SurfaceDestroy(const struct WindowSurface *surface)
 
     wms_send_window_status(surface->controller->pWlResource,
         WMS_WINDOW_STATUS_DESTROYED, surface->surfaceId, 0, 0, 0, 0);
+
+    SendGlobalWindowStatus(surface->controller, surface->surfaceId, WMS_WINDOW_STATUS_DESTROYED);
 
     free(surface);
 
@@ -1014,6 +1032,7 @@ static void CreateWindow(struct WmsController *pWmsController,
 
     wms_send_window_status(pWlResource, WMS_WINDOW_STATUS_CREATED, windowId,
                            pWindow->x, pWindow->y, pWindow->width, pWindow->height);
+    SendGlobalWindowStatus(pWmsController, windowId, WMS_WINDOW_STATUS_CREATED);
 }
 
 static void ControllerCreateWindow(const struct wl_client *pWlClient,
@@ -1283,6 +1302,44 @@ static void ControllerScreenshot(const struct wl_client *pClient,
     LOGD("end.");
 }
 
+static void AddGlobalWindowStatus(const struct WmsController *pController)
+{
+    LOGD("start.");
+    struct WmsContext *pWmsCtx = pController->pWmsCtx;
+    struct WmsController *pControllerTemp;
+    bool found = false;
+
+    wl_list_for_each(pControllerTemp, &pWmsCtx->wlListGlobalEventResource, wlListLinkRes) {
+        if (pControllerTemp == pController) {
+            LOGE("GlobalWindowStatus is already set.");
+            found = true;
+        }
+    }
+
+    if (!found) {
+        wl_list_insert(&pWmsCtx->wlListGlobalEventResource, &pController->wlListLinkRes);
+    }
+
+    LOGD("end.");
+}
+
+static void ControllerSetGlobalWindowStatus(const struct wl_client* pClient,
+    const struct wl_resource* pResource, int32_t status)
+{
+    LOGD("start. status = %{public}d.", status);
+    struct WmsController *pWmsController = wl_resource_get_user_data(pResource);
+    struct WmsContext *pWmsCtx = pWmsController->pWmsCtx;
+
+    if (status == 0) {
+        wl_list_remove(&pWmsController->wlListLinkRes);
+    } else {
+        AddGlobalWindowStatus(pWmsController);
+    }
+
+    wms_send_reply_error(pResource, WMS_ERROR_OK);
+    LOGD("end.");
+}
+
 // wms controller interface implementation
 static const struct wms_interface g_controllerImplementation = {
     ControllerCreateWindow,
@@ -1295,6 +1352,7 @@ static const struct wms_interface g_controllerImplementation = {
     ControllerSetWindowType,
     ControllerSetDisplayMode,
     ControllerCommitChanges,
+    ControllerSetGlobalWindowStatus,
     ControllerScreenshot,
     ControllerWindowshot,
 };
@@ -1307,6 +1365,11 @@ static void UnbindWmsController(const struct wl_resource *pResource)
     struct WindowSurface *pWindowSurface = NULL;
     struct WindowSurface *pNext = NULL;
 
+    struct WmsController *pControllerTemp = NULL;
+    struct WmsController *pControllerNext = NULL;
+
+    wl_list_remove(&pController->wlListLinkRes);
+
     wl_list_for_each_safe(pWindowSurface, pNext, &pWmsCtx->wlListWindow, link) {
         if (pWindowSurface->controller == pController) {
             SurfaceDestroy(pWindowSurface);
@@ -1314,7 +1377,6 @@ static void UnbindWmsController(const struct wl_resource *pResource)
     }
 
     wl_list_remove(&pController->wlListLink);
-
     wl_list_remove(&pController->stListener.frameListener.link);
     wl_list_remove(&pController->stListener.outputDestroyed.link);
 
@@ -1350,6 +1412,7 @@ static void BindWmsController(struct wl_client *pClient,
     pController->pWlClient = pClient;
     pController->id = id;
 
+    wl_list_init(&pController->wlListLinkRes);
     wl_list_insert(&pCtx->wlListController, &pController->wlListLink);
     wl_list_init(&pController->stListener.frameListener.link);
     wl_list_init(&pController->stListener.outputDestroyed.link);
@@ -1528,6 +1591,7 @@ static int WmsContextInit(struct WmsContext *ctx, struct weston_compositor *comp
     wl_list_init(&ctx->wlListWindow);
     wl_list_init(&ctx->wlListScreen);
     wl_list_init(&ctx->wlListSeat);
+    wl_list_init(&ctx->wlListGlobalEventResource);
 
     ctx->pCompositor = compositor;
     ctx->pLayoutInterface = ivi_layout_get_api_for_wms(compositor);

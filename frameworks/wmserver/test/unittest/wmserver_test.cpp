@@ -26,6 +26,21 @@
 
 namespace OHOS {
 namespace {
+
+static void GlobalWindowStatus(void *data, struct wms *wms, uint32_t pid, uint32_t window_id, uint32_t status)
+{
+    LOG("GlobalWindowStatus pid: %d", pid);
+    LOG("GlobalWindowStatus window_id: %d", window_id);
+    LOG("GlobalWindowStatus status: %d", status);
+    WMServerTest::gloadWindowStatus.pid = pid;
+    WMServerTest::gloadWindowStatus.wid = window_id;
+    WMServerTest::gloadWindowStatus.status = status;
+    {
+        std::unique_lock<std::mutex> lck(WMServerTest::syncMutexGlobalWinInfoCb);
+        WMServerTest::replyGlobalWinInfoCbFlag = true;
+        WMServerTest::globalWinInfoCbVariable.notify_all();
+    }
+}
 static void WindowShotError(void *data, struct wms *wms, uint32_t error, uint32_t window_id)
 {
     LOG("WindowShotError error: %d", error);
@@ -238,7 +253,8 @@ void RegistryGlobal(void *data, struct wl_registry *registry,
             ScreenShotDone,
             ScreenShotError,
             WindowShotDone,
-            WindowShotError
+            WindowShotError,
+            GlobalWindowStatus
         };
         wms_add_listener(ctx->wms, &wmsListener, ctx);
         wl_display_flush(ctx->display);
@@ -1646,6 +1662,108 @@ HWTEST_F(WMServerTest, WindowShot002, testing::ext::TestSize.Level0)
     ASSERT_NE(shotInfo.status, WMS_ERROR_OK)
         << "CaseDescription: 2. check it (status != WMS_ERROR_OK)";
     ASSERT_EQ(shotInfo.id, 0) << "CaseDescription: 2. check it (id == 0)";
+}
+
+/*
+ * Feature: wms_config_global_window_status by normal arguments
+ * Function: WMSServer
+ * SubFunction: wms_config_global_window_status
+ * FunctionPoints: wms_config_global_window_status normal arguments
+ * EnvConditions: display, compositor, wms init success.
+ * CaseDescription: 1. GlobalWindowStatus by normal arguments
+ *                  2. check result
+ *
+ */
+HWTEST_F(WMServerTest, ConfigGlobalWindowStatus001, testing::ext::TestSize.Level0)
+{
+    // WMSServer init success.
+    ASSERT_NE(ctx.display, nullptr) << "EnvConditions: wl_display init success..";
+    ASSERT_NE(ctx.compositor, nullptr) << "EnvConditions: wl_compositor init success..";
+    ASSERT_NE(ctx.wms, nullptr) << "EnvConditions: wms init success..";
+
+    // 1. GlobalWindowStatus by normal arguments
+    {
+        std::unique_lock<std::mutex> lck(syncMutex);
+        replyFlag = false;
+        wms_config_global_window_status(ctx.wms, 1);
+        wl_display_flush(ctx.display);
+        syncVariable.wait(lck, [&](){ return replyFlag; });
+    }
+
+    // 2. request reply status check it
+    ASSERT_EQ(replyStatus, WMS_ERROR_OK)
+        << "CaseDescription: 2. check it (status = WMS_ERROR_OK)";
+
+    // 3. create WlSurface
+    struct wl_surface* wlSurface = wl_compositor_create_surface(ctx.compositor);
+    ASSERT_NE(wlSurface, nullptr) << "CaseDescription: 3. create WlSurface (wlSurface != nullptr)";
+
+    {
+        std::unique_lock<std::mutex> lck(syncMutexGlobalWinInfoCb);
+        replyGlobalWinInfoCbFlag = false;
+    }
+
+    // 4. Create a Window (WMS_WINDOW_TYPE_NORMAL)
+    {
+        std::unique_lock<std::mutex> lck(syncMutex);
+        replyFlag = false;
+        wms_create_window(ctx.wms, wlSurface, 0, WMS_WINDOW_TYPE_NORMAL);
+        wl_display_flush(ctx.display);
+        syncVariable.wait(lck, [&](){ return replyFlag; });
+    }
+
+    // 5. window status check
+    ASSERT_EQ(windowStatus.status, WMS_WINDOW_STATUS_CREATED)
+        << "CaseDescription: 5. check it (status == WMS_WINDOW_STATUS_CREATED)";
+    ASSERT_GT(windowStatus.wid, 0) << "CaseDescription: 5. check it (wid > 0)";
+    ASSERT_GE(windowStatus.x, 0) << "CaseDescription: 5. check it (x >= 0)";
+    ASSERT_GE(windowStatus.y, 0) << "CaseDescription: 5. check it (y >= 0)";
+    ASSERT_GT(windowStatus.width, 0u) << "CaseDescription: 5. check it (width > 0)";
+    ASSERT_GT(windowStatus.height, 0u) << "CaseDescription: 5. check it (height > 0)";
+
+    // 6. global window status check
+    {
+        std::unique_lock<std::mutex> lck(syncMutexGlobalWinInfoCb);
+        globalWinInfoCbVariable.wait(lck, [&](){ return replyGlobalWinInfoCbFlag; });
+    }
+    ASSERT_EQ(gloadWindowStatus.status, WMS_WINDOW_STATUS_CREATED)
+        << "CaseDescription: 6. check it (status == WMS_WINDOW_STATUS_CREATED)";
+    ASSERT_EQ(gloadWindowStatus.wid, windowStatus.wid)
+        << "CaseDescription: 6. check it (gloadWindowStatus.wid = windowStatus.wid)";
+    ASSERT_EQ(gloadWindowStatus.pid, getpid());
+
+    {
+        std::unique_lock<std::mutex> lck(syncMutexGlobalWinInfoCb);
+        replyGlobalWinInfoCbFlag = false;
+    }
+
+    // 7. Destroy Window by normal arguments
+    {
+        std::unique_lock<std::mutex> lck(syncMutex);
+        replyFlag = false;
+        wms_destroy_window(ctx.wms, windowStatus.wid);
+        wl_display_flush(ctx.display);
+        syncVariable.wait(lck, [&](){ return replyFlag; });
+    }
+
+    // 8. check it
+    ASSERT_EQ(replyStatus, WMS_ERROR_OK)
+        << "CaseDescription: 8. check it (replyStatus == WMS_ERROR_OK)";
+    ASSERT_EQ(windowStatus.status, WMS_WINDOW_STATUS_DESTROYED)
+        << "CaseDescription: 8. check it (status == WMS_WINDOW_STATUS_DESTROYED)";
+    ASSERT_GT(windowStatus.wid, 0) << "CaseDescription: 8. check it (wid > 0)";
+
+    // 9. global window status check
+    {
+        std::unique_lock<std::mutex> lck(syncMutexGlobalWinInfoCb);
+        globalWinInfoCbVariable.wait(lck, [&](){ return replyGlobalWinInfoCbFlag; });
+    }
+    ASSERT_EQ(gloadWindowStatus.status, WMS_WINDOW_STATUS_DESTROYED)
+        << "CaseDescription: 9. check it (status == WMS_WINDOW_STATUS_DESTROYED)";
+    ASSERT_EQ(gloadWindowStatus.wid, windowStatus.wid)
+        << "CaseDescription: 9. check it (gloadWindowStatus.wid = windowStatus.wid)";
+    ASSERT_EQ(gloadWindowStatus.pid, getpid());
+
 }
 } // namespace
 } // namespace OHOS
