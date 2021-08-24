@@ -338,6 +338,68 @@ HWTEST_F(WindowImplTest, Create09, Function | SmallTest | Level1)
 }
 
 /*
+ * Function: Create
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. Create Window not default prop
+ *                  2. check type
+ *                  3. check visibility
+ *                  4. check xywh
+ *                  5. check dest_width, dest_height
+ *                  6. check id
+ */
+HWTEST_F(WindowImplTest, Create10, Function | SmallTest | Level2)
+{
+    PART("CaseDescription") {
+        WMError wret;
+        sptr<Window> window = nullptr;
+
+        STEP("1. Create Window not default prop") {
+            sptr<WindowOption> wo = WindowOption::Get();
+            wret = wo->SetWindowType(WINDOW_TYPE_ALARM_SCREEN);
+            STEP_ASSERT_EQ(wret, WM_OK);
+            wret = wo->SetWindowMode(WINDOW_MODE_TOP);
+            STEP_ASSERT_EQ(wret, WM_OK);
+            wret = wo->SetX(1);
+            STEP_ASSERT_EQ(wret, WM_OK);
+            wret = wo->SetY(1);
+            STEP_ASSERT_EQ(wret, WM_OK);
+            wret = wo->SetWidth(1);
+            STEP_ASSERT_EQ(wret, WM_OK);
+            wret = wo->SetHeight(1);
+            STEP_ASSERT_EQ(wret, WM_OK);
+
+            sptr<MockIWindowManagerService> wms = new MockIWindowManagerService();
+            wret = WindowImpl::Create(window, wo, wms);
+            STEP_ASSERT_NE(window, nullptr);
+            STEP_ASSERT_EQ(wret, WM_OK);
+        }
+
+        sptr<WindowImpl> wi = static_cast<WindowImpl *>(window.GetRefPtr());
+        STEP("2. check type") {
+            STEP_ASSERT_EQ(wi->attr.GetType(), WINDOW_TYPE_ALARM_SCREEN);
+        }
+        STEP("3. check visibility") {
+            STEP_ASSERT_EQ(wi->attr.GetVisibility(), true);
+        }
+        STEP("4. check xywh") {
+            STEP_ASSERT_EQ(wi->attr.GetX(), 1);
+            STEP_ASSERT_EQ(wi->attr.GetY(), 1);
+            STEP_ASSERT_EQ(wi->attr.GetWidth(), 1u);
+            STEP_ASSERT_EQ(wi->attr.GetHeight(), 1u);
+        }
+        STEP("5. check dest_width, dest_height") {
+            STEP_ASSERT_EQ(wi->attr.GetDestWidth(), 1u);
+            STEP_ASSERT_EQ(wi->attr.GetDestHeight(), 1u);
+        }
+        STEP("6. check id") {
+            STEP_ASSERT_GE(wi->attr.GetID(), 0);
+        }
+    }
+}
+
+/*
  * Function: GetSurface
  * Type: Function
  * Rank: Basic(1)
