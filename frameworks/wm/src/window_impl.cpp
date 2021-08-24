@@ -190,30 +190,24 @@ sptr<Promise<WMError>> WindowImpl::Show()
 {
     WMLOGFI("(%{public}d)", attr.GetID());
     CHECK_DESTROY(new Promise<WMError>(WM_ERROR_DESTROYED_OBJECT));
-    if (attr.SetVisibility(true)) {
-        return wms->Show(attr.GetID());
-    }
-    return new Promise<WMError>(WM_OK);
+    attr.SetVisibility(true);
+    return wms->Show(attr.GetID());
 }
 
 sptr<Promise<WMError>> WindowImpl::Hide()
 {
     WMLOGFI("(%{public}d)", attr.GetID());
     CHECK_DESTROY(new Promise<WMError>(WM_ERROR_DESTROYED_OBJECT));
-    if (attr.SetVisibility(false)) {
-        return wms->Hide(attr.GetID());
-    }
-    return new Promise<WMError>(WM_OK);
+    attr.SetVisibility(false);
+    return wms->Hide(attr.GetID());
 }
 
 sptr<Promise<WMError>> WindowImpl::Move(int32_t x, int32_t y)
 {
     WMLOGFI("(%{public}d) x: %{public}d, y: %{public}d", attr.GetID(), x, y);
     CHECK_DESTROY(new Promise<WMError>(WM_ERROR_DESTROYED_OBJECT));
-    if (attr.SetXY(x, y)) {
-        return wms->Move(attr.GetID(), attr.GetX(), attr.GetY());
-    }
-    return new Promise<WMError>(WM_OK);
+    attr.SetXY(x, y);
+    return wms->Move(attr.GetID(), attr.GetX(), attr.GetY());
 }
 
 sptr<Promise<WMError>> WindowImpl::SwitchTop()
@@ -232,10 +226,8 @@ sptr<Promise<WMError>> WindowImpl::SetWindowType(WindowType type)
         return new Promise<WMError>(WM_ERROR_INVALID_PARAM);
     }
 
-    if (attr.SetType(type)) {
-        return wms->SetWindowType(attr.GetID(), type);
-    }
-    return new Promise<WMError>(WM_OK);
+    attr.SetType(type);
+    return wms->SetWindowType(attr.GetID(), type);
 }
 
 sptr<Promise<WMError>> WindowImpl::SetWindowMode(WindowMode mode)
@@ -259,10 +251,8 @@ sptr<Promise<WMError>> WindowImpl::Resize(uint32_t width, uint32_t height)
         return new Promise<WMError>(WM_ERROR_INVALID_PARAM);
     }
 
-    if (attr.SetWidthHeight(width, height)) {
-        return wms->Resize(attr.GetID(), width, height);
-    }
-    return new Promise<WMError>(WM_OK);
+    attr.SetWidthHeight(width, height);
+    return wms->Resize(attr.GetID(), width, height);
 }
 
 sptr<Promise<WMError>> WindowImpl::ScaleTo(uint32_t width, uint32_t height)
@@ -273,10 +263,8 @@ sptr<Promise<WMError>> WindowImpl::ScaleTo(uint32_t width, uint32_t height)
         return new Promise<WMError>(WM_ERROR_INVALID_PARAM);
     }
 
-    if (attr.SetDestWidthHeight(width, height)) {
-        return wms->ScaleTo(attr.GetID(), width, height);
-    }
-    return new Promise<WMError>(WM_OK);
+    attr.SetDestWidthHeight(width, height);
+    return wms->ScaleTo(attr.GetID(), width, height);
 }
 
 WMError WindowImpl::Rotate(WindowRotateType type)
