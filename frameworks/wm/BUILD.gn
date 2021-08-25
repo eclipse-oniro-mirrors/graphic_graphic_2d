@@ -300,6 +300,7 @@ ohos_executable("wmtest") {
     "src/test/native_test_2.cpp",
     "src/test/native_test_20.cpp",
     "src/test/native_test_23.cpp",
+    "src/test/native_test_24.cpp",
     "src/test/native_test_3.cpp",
     "src/test/native_test_4.cpp",
     "src/test/native_test_5.cpp",
