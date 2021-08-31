@@ -40,7 +40,7 @@ ohos_executable("bootanimation") {
   deps = [
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//foundation/graphic/standard:libvsync_client",
-    "//foundation/graphic/standard:libwms_client",
+    "//foundation/graphic/standard:libwmclient",
     "//third_party/zlib:libz",
   ]
 
