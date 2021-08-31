@@ -195,6 +195,10 @@ void WindowManagerServiceClientImpl::InterruptDispatchThread()
 WMError WindowManagerServiceClientImpl::Init()
 {
     WMLOGFI("init");
+    if (wmservice != nullptr) {
+        return WM_OK;
+    }
+
     if (display == nullptr) {
         display = wl_display_connect(nullptr);
         if (display == nullptr) {
@@ -240,6 +244,9 @@ WMError WindowManagerServiceClientImpl::Init()
 WMError WindowManagerServiceClientImpl::Deinit()
 {
     WMLOGFI("deinit");
+    if (display == nullptr) {
+        return WM_OK;
+    }
     StopDispatchThread();
     wms_destroy(wms);
     wms = nullptr;
@@ -254,5 +261,10 @@ WMError WindowManagerServiceClientImpl::Deinit()
 sptr<IWindowManagerService> WindowManagerServiceClientImpl::GetService() const
 {
     return wmservice;
+}
+
+WindowManagerServiceClientImpl::~WindowManagerServiceClientImpl()
+{
+    Deinit();
 }
 }

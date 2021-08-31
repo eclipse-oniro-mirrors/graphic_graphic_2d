@@ -162,7 +162,6 @@ void WindowManagerImpl::Deinit()
 
     if (wmservice != nullptr) {
         wmservice = nullptr;
-        wmsc->Deinit();
         wmsc = nullptr;
     }
 
