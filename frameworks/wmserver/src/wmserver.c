@@ -103,7 +103,7 @@ static struct WmsContext g_wmsCtx = {0};
 static ScreenInfoChangeListener g_screenInfoChangeListener = NULL;
 static SeatInfoChangeListener g_seatInfoChangeListener = NULL;
 
-static void SendGlobalWindowStatus(const struct WmsController *pController, uint32_t window_id, uint32_t status)
+static void SendGlobalWindowStatus(const struct WmsController *pController, uint32_t windowId, uint32_t status)
 {
     LOGD("start.");
     struct WmsContext *pWmsCtx = pController->pWmsCtx;
@@ -113,7 +113,7 @@ static void SendGlobalWindowStatus(const struct WmsController *pController, uint
     wl_client_get_credentials(pController->pWlClient, &pid, NULL, NULL);
 
     wl_list_for_each(pControllerTemp, &pWmsCtx->wlListGlobalEventResource, wlListLinkRes) {
-        wms_send_global_window_status(pControllerTemp->pWlResource, pid, window_id, status);
+        wms_send_global_window_status(pControllerTemp->pWlResource, pid, windowId, status);
     }
     LOGD("end.");
 }
@@ -190,8 +190,7 @@ static struct WindowSurface *GetWindowSurface(const struct weston_surface *surfa
     return windowSurface;
 }
 
-static void SetSourceRectangle(
-    const struct WindowSurface *windowSurface,
+static void SetSourceRectangle(const struct WindowSurface *windowSurface,
     int32_t x, int32_t y, int32_t width, int32_t height)
 {
     struct ivi_layout_interface_for_wms *layoutInterface = windowSurface->controller->pWmsCtx->pLayoutInterface;
@@ -833,7 +832,7 @@ static void PointerSetFocus(const struct WmsSeat *seat)
 
     struct weston_surface *forcedSurface = forcedWindow->surface;
     LOGI("weston_pointer_set_focus0.");
-    if ((forcedSurface != NULL) && !wl_list_empty(&forcedSurface->views)) {
+    if (forcedSurface != NULL && !wl_list_empty(&forcedSurface->views)) {
         LOGI("weston_pointer_set_focus1.");
         struct weston_view *view = wl_container_of(forcedSurface->views.next, view, surface_link);
         wl_fixed_t sx, sy;
@@ -1323,8 +1322,8 @@ static void AddGlobalWindowStatus(const struct WmsController *pController)
     LOGD("end.");
 }
 
-static void ControllerSetGlobalWindowStatus(const struct wl_client* pClient,
-    const struct wl_resource* pResource, int32_t status)
+static void ControllerSetGlobalWindowStatus(const struct wl_client *pClient,
+    const struct wl_resource *pResource, int32_t status)
 {
     LOGD("start. status = %{public}d.", status);
     struct WmsController *pWmsController = wl_resource_get_user_data(pResource);

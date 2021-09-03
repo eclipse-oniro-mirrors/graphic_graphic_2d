@@ -63,7 +63,6 @@ struct WMSGlobalWindowStatus {
     int32_t wid;
     uint32_t status;
 };
-}
 
 namespace OHOS {
 class WMServerTest : public testing::Test {

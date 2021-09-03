@@ -66,7 +66,7 @@ VsyncError VsyncClient::InitService()
         if (remoteObject == nullptr) {
             VLOG_FAILURE_RET(VSYNC_ERROR_SERVICE_NOT_FOUND);
         }
-        
+
         sptr<IRemoteObject::DeathRecipient> deathRecipient = new VsyncManagerDeathRecipient();
         if (remoteObject->IsProxyObject() == true && remoteObject->AddDeathRecipient(deathRecipient) == false) {
             VLOGW("Failed to add death recipient");

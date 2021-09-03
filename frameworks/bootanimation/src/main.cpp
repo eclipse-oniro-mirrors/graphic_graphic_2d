@@ -131,7 +131,7 @@ void Main::Draw()
     } while (false);
 }
 
-void Main::Sync(int64_t time, void *data)
+void Main::Sync(int64_t, void *data)
 {
     Draw();
     struct FrameCallback cb = {
@@ -186,7 +186,7 @@ void Main::Init(int32_t width, int32_t height)
     PostTask(std::bind(exit, 0), exitTime);
 }
 
-void Main::OnWindowCreate(int32_t pid, int32_t wid)
+void Main::OnWindowCreate(int32_t pid, int32_t)
 {
     std::stringstream ss;
     ss << "/proc/" << pid << "/cmdline";
@@ -199,7 +199,7 @@ void Main::OnWindowCreate(int32_t pid, int32_t wid)
             bool have = false;
             have = have || strstr(cmdline, systemui) == cmdline;
             have = have || strstr(cmdline, launcher) == cmdline;
-            if (have == true) {
+            if (have) {
                 LOG("exiting");
                 exit(0);
             }
@@ -207,7 +207,7 @@ void Main::OnWindowCreate(int32_t pid, int32_t wid)
     }
 }
 
-void Main::OnWindowDestroy(int32_t pid, int32_t wid)
+void Main::OnWindowDestroy(int32_t, int32_t)
 {
 }
 

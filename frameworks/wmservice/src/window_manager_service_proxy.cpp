@@ -210,7 +210,7 @@ sptr<Promise<WMError>> WindowManagerServiceProxy::OnWindowListChange(IWindowChan
     sptr<PromiseWMError> promise = new PromiseWMError();
     globalWindowChangeListener = listener;
     promiseQueue.push(promise);
-    wms_config_global_window_status(wms, listener == nullptr ? 0 : 1);
+    wms_config_global_window_status(wms, (listener == nullptr) ? 0 : 1);
     wl_display_flush(display);
     return promise;
 }
