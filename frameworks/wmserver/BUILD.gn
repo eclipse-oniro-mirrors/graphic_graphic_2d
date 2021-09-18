@@ -61,7 +61,7 @@ ohos_shared_library("wmserver") {
 
   deps = [
     "src/wmlayout_scss_parser:libwmlayout_scss_parser",
-    "//drivers/peripheral/display/hal:hdi_display_device", # hdi device
+    "//drivers/peripheral/display/hal:hdi_display_device",  # hdi device
     "//third_party/libinput:libinput-third",
     "//third_party/wayland_standard:wayland_core_protocol",
     "//third_party/weston:drm-backend",

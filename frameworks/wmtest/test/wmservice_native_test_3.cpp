@@ -55,6 +55,8 @@ public:
 
     void Run(int32_t argc, const char **argv) override
     {
+        (void)argc;
+        (void)argv;
         auto wmsc = WindowManagerServiceClient::GetInstance();
         auto wret = wmsc->Init();
         if (wret != WM_OK) {

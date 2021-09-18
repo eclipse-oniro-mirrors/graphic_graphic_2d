@@ -81,7 +81,7 @@ public:
         }
 
         for (const auto &display : displays) {
-            auto wret = wms->SetDisplayPower(display.id, POWER_STATUS_OFF)->Await();
+            wret = wms->SetDisplayPower(display.id, POWER_STATUS_OFF)->Await();
             if (wret != WM_OK) {
                 std::cerr << "WindowManagerService::SetDisplayPower ON failed with "
                     << WMErrorStr(wret) << std::endl;

@@ -547,8 +547,8 @@ static void ControllerSetDisplayPower(const struct wl_client *client,
 }
 
 static void ControllerGetDisplayBacklight(const struct wl_client *client,
-                                      const struct wl_resource *resource,
-                                      int32_t displayId)
+                                          const struct wl_resource *resource,
+                                          int32_t displayId)
 {
     struct WmsContext *ctx = GetWmsInstance();
     if (ctx->deviceFuncs == NULL) {
@@ -565,8 +565,8 @@ static void ControllerGetDisplayBacklight(const struct wl_client *client,
 }
 
 static void ControllerSetDisplayBacklight(const struct wl_client *client,
-                                      const struct wl_resource *resource,
-                                      int32_t displayId, uint32_t level)
+                                          const struct wl_resource *resource,
+                                          int32_t displayId, uint32_t level)
 {
     struct WmsContext *ctx = GetWmsInstance();
     if (ctx->deviceFuncs == NULL) {
@@ -581,8 +581,8 @@ static void ControllerSetDisplayBacklight(const struct wl_client *client,
     wms_send_reply_error(resource, WMS_ERROR_OK);
 }
 
-static void ControllerCommitChanges(const struct wl_client* client,
-                                    const struct wl_resource* resource)
+static void ControllerCommitChanges(const struct wl_client *client,
+                                    const struct wl_resource *resource)
 {
     LOGD("start.");
     struct WmsController *controller = wl_resource_get_user_data(resource);
@@ -1010,8 +1010,8 @@ static bool FocusUpdate(const struct WindowSurface *surface)
     return true;
 }
 
-static void ControllerSetStatusBarVisibility(const struct wl_client* client,
-                                             const struct wl_resource* resource,
+static void ControllerSetStatusBarVisibility(const struct wl_client *client,
+                                             const struct wl_resource *resource,
                                              uint32_t visibility)
 {
     LOGD("start. visibility=%{public}d", visibility);
@@ -1038,10 +1038,11 @@ static void ControllerSetStatusBarVisibility(const struct wl_client* client,
     LOGD("end.");
 }
 
-static void ControllerSetNavigationBarVisibility(const struct wl_client* client,
-                                                 const struct wl_resource* resource,
+static void ControllerSetNavigationBarVisibility(const struct wl_client *client,
+                                                 const struct wl_resource *resource,
                                                  uint32_t visibility)
 {
+    (void)client;
     LOGD("start. visibility=%{public}d", visibility);
     struct WmsController *controller = wl_resource_get_user_data(resource);
     struct WmsContext *ctx = controller->pWmsCtx;
@@ -1066,8 +1067,9 @@ static void ControllerSetNavigationBarVisibility(const struct wl_client* client,
     LOGD("end.");
 }
 
-static void ControllerSetWindowTop(const struct wl_client* client,
-    const struct wl_resource* resource, uint32_t windowId)
+static void ControllerSetWindowTop(const struct wl_client *client,
+                                   const struct wl_resource *resource,
+                                   uint32_t windowId)
 {
     LOGD("start. windowId=%{public}d", windowId);
     struct WmsController *controller = wl_resource_get_user_data(resource);
@@ -1490,8 +1492,9 @@ static void AddGlobalWindowStatus(const struct WmsController *pController)
     LOGD("end.");
 }
 
-static void ControllerConfigGlobalWindowStatus(const struct wl_client* pClient,
-    const struct wl_resource* pResource, int32_t status)
+static void ControllerConfigGlobalWindowStatus(const struct wl_client *pClient,
+                                               const struct wl_resource *pResource,
+                                               int32_t status)
 {
     LOGD("start. status = %{public}d.", status);
     struct WmsController *pWmsController = wl_resource_get_user_data(pResource);
