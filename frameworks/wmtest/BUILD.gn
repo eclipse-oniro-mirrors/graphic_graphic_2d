@@ -55,6 +55,7 @@ ohos_executable("wmtest") {
     "test/wmclient_native_test_26.cpp",
     "test/wmclient_native_test_27.cpp",
     "test/wmclient_native_test_28.cpp",
+    "test/wmclient_native_test_32.cpp",
     "test/wmclient_native_test_4.cpp",
     "test/wmclient_native_test_5.cpp",
     "test/wmclient_native_test_6.cpp",
@@ -75,10 +76,12 @@ ohos_executable("wmtest") {
   configs = [ ":wmtest_config" ]
 
   deps = [
+    "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
     "//foundation/distributedschedule/samgr/interfaces/innerkits/samgr_proxy:samgr_proxy",
     "//foundation/graphic/standard:libvsync_client",
     "//foundation/graphic/standard:libwmclient",
     "//foundation/graphic/standard:libwmservice",
+    "//foundation/multimodalinput/input/frameworks/proxy:libmmi-client",
     "//third_party/zlib:libz",
   ]
 
