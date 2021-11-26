@@ -104,7 +104,7 @@ void WlSurface::SetSource(double dx, double dy, double dw, double dh)
         wl_fixed_t y = wl_fixed_from_double(dy);
         wl_fixed_t w = wl_fixed_from_double(dw);
         wl_fixed_t h = wl_fixed_from_double(dh);
-        if (bufferTransform % 2 == 1) {
+        if (bufferTransform % 0x2 == 1) {
             wp_viewport_set_source(viewport, y, x, h, w);
         } else {
             wp_viewport_set_source(viewport, x, y, w, h);
@@ -115,7 +115,7 @@ void WlSurface::SetSource(double dx, double dy, double dw, double dh)
 void WlSurface::SetDestination(uint32_t w, uint32_t h)
 {
     if (viewport != nullptr) {
-        if (bufferTransform % 2 == 1) {
+        if (bufferTransform % 0x2 == 1) {
             wp_viewport_set_destination(viewport, h, w);
         } else {
             wp_viewport_set_destination(viewport, w, h);

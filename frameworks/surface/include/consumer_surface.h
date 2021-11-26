@@ -64,7 +64,6 @@ public:
 
     SurfaceError GetName(std::string &name) override;
 
-
     SurfaceError SetDefaultWidthAndHeight(int32_t width, int32_t height) override;
     int32_t GetDefaultWidth() override;
     int32_t GetDefaultHeight() override;

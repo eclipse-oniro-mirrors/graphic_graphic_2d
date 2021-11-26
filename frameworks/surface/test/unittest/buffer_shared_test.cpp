@@ -24,7 +24,8 @@ using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS {
-void BufferSharedTest::SetUpTestCase() {
+void BufferSharedTest::SetUpTestCase()
+{
     GTEST_LOG_(INFO) << getpid() << std::endl;
     surface = Surface::CreateSurfaceAsConsumer("shared", true);
     sptr<IBufferConsumerListener> listener = new BufferConsumerListener();
@@ -35,7 +36,8 @@ void BufferSharedTest::SetUpTestCase() {
     producerSurface2 = Surface::CreateSurfaceAsProducer(producer2);
 }
 
-void BufferSharedTest::TearDownTestCase() {
+void BufferSharedTest::TearDownTestCase()
+{
 }
 
 namespace {
@@ -49,7 +51,8 @@ namespace {
 *                  3. check the addr of buffer1 EQ buffer2
 * */
 
-HWTEST_F(BufferSharedTest, RequestBuffer, testing::ext::TestSize.Level0) {
+HWTEST_F(BufferSharedTest, RequestBuffer, testing::ext::TestSize.Level0)
+{
     PART("REQUEST BUFFER TWO TIMES") {
         SurfaceError ret1, ret2;
         STEP("1: request buffer") {
@@ -85,7 +88,8 @@ HWTEST_F(BufferSharedTest, RequestBuffer, testing::ext::TestSize.Level0) {
 *                  2. check ret1 is SURFACE_ERROR_INVALID_PARAM
 * */
 
-HWTEST_F(BufferSharedTest, RequestBufferDiff, testing::ext::TestSize.Level0) {
+HWTEST_F(BufferSharedTest, RequestBufferDiff, testing::ext::TestSize.Level0)
+{
     PART("REQUEST BUFFER with different requestconfig") {
         SurfaceError ret1;
         sptr<SurfaceBuffer> bufferDiff = nullptr;
@@ -113,7 +117,8 @@ HWTEST_F(BufferSharedTest, RequestBufferDiff, testing::ext::TestSize.Level0) {
 * CaseDescription: 1. call FlushBuffer with buffer=buffer1, buffer2
 *                  2. check ret1 and ret2 is SURFACE_ERROR_OK
 * */
-HWTEST_F(BufferSharedTest, FlushBuffer, testing::ext::TestSize.Level0) {
+HWTEST_F(BufferSharedTest, FlushBuffer, testing::ext::TestSize.Level0)
+{
     PART("FlushBuffer") {
         SurfaceError ret1, ret2;
         STEP("1: FlushBuffer two times") {
@@ -135,7 +140,8 @@ HWTEST_F(BufferSharedTest, FlushBuffer, testing::ext::TestSize.Level0) {
 * CaseDescription: 1. call AcquireBuffer with buffer=sbuffer1, sbuffer2
 *                  2. check ret1 and ret2 are WM_ERROR_NULLPTR
 * */
-HWTEST_F(BufferSharedTest, AquiredBuffer, testing::ext::TestSize.Level0) {
+HWTEST_F(BufferSharedTest, AquiredBuffer, testing::ext::TestSize.Level0)
+{
     PART("AquiredBuffer") {
         SurfaceError ret1, ret2;
         STEP("1: AcquireBuffer two times") {
@@ -165,7 +171,8 @@ HWTEST_F(BufferSharedTest, AquiredBuffer, testing::ext::TestSize.Level0) {
 *                  3. call cancelBuffer with buffer=buffer2
 *                  4. check ret2 is SURFACE_ERROR_INVALID_OPERATING
 * */
-HWTEST_F(BufferSharedTest, CancelBuffer, testing::ext::TestSize.Level0) {
+HWTEST_F(BufferSharedTest, CancelBuffer, testing::ext::TestSize.Level0)
+{
     PART("CancelBuffer") {
         SurfaceError ret1, ret2;
         STEP("1: Cancel buffer1") {
@@ -190,7 +197,8 @@ HWTEST_F(BufferSharedTest, CancelBuffer, testing::ext::TestSize.Level0) {
 * CaseDescription: 1. releaseBuffer two times
 *                  2. check ret1 is SURFACE_ERROR_INVALID_OPERATING, check ret1 is SURFACE_ERROR_OK
 * */
-HWTEST_F(BufferSharedTest, ReleaseBuffer, testing::ext::TestSize.Level0) {
+HWTEST_F(BufferSharedTest, ReleaseBuffer, testing::ext::TestSize.Level0)
+{
     PART("ReleaseBuffer") {
         SurfaceError ret1, ret2;
         STEP("1: releaseBuffer two times") {

@@ -23,9 +23,15 @@
 #include <EGL/eglext.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
-#include <gbm.h>
 #include <refbase.h>
 #include "surface_type.h"
+
+// gbm.h
+extern "C" {
+    struct gbm_device;
+    struct gbm_device *gbm_create_device(int32_t fd);
+    void gbm_device_destroy(struct gbm_device *);
+}
 
 using EglCreateImageFunc = PFNEGLCREATEIMAGEKHRPROC;
 using EglDestroyImageFunc = PFNEGLDESTROYIMAGEKHRPROC;

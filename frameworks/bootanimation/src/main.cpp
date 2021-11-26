@@ -136,8 +136,9 @@ void Main::Draw()
     } while (false);
 }
 
-void Main::Sync(int64_t, void *data)
+void Main::Sync(int64_t time, void *data)
 {
+    (void)time;
     Draw();
     struct FrameCallback cb = {
         .frequency_ = freq,
@@ -191,8 +192,9 @@ void Main::Init(int32_t width, int32_t height)
     PostTask(std::bind(exit, 0), exitTime);
 }
 
-void Main::OnWindowCreate(int32_t pid, int32_t)
+void Main::OnWindowCreate(int32_t pid, int32_t wid)
 {
+    (void)wid;
     std::stringstream ss;
     ss << "/proc/" << pid << "/cmdline";
     std::ifstream ifs(ss.str(), std::ios::in);
@@ -212,8 +214,10 @@ void Main::OnWindowCreate(int32_t pid, int32_t)
     }
 }
 
-void Main::OnWindowDestroy(int32_t, int32_t)
+void Main::OnWindowDestroy(int32_t pid, int32_t wid)
 {
+    (void)pid;
+    (void)wid;
 }
 
 int main(int argc, const char *argv[])

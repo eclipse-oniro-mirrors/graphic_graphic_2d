@@ -193,7 +193,8 @@ int BufferQueueProducer::CleanCacheRemote(MessageParcel &arguments, MessageParce
     return 0;
 }
 
-int32_t BufferQueueProducer::RegisterReleaseListenerRemote(MessageParcel &arguments, MessageParcel &reply, MessageOption &option)
+int32_t BufferQueueProducer::RegisterReleaseListenerRemote(MessageParcel &arguments,
+    MessageParcel &reply, MessageOption &option)
 {
     assert(!"not support remote");
     return 0;

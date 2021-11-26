@@ -31,8 +31,6 @@ config("surface_public_config") {
   include_dirs = [
     "//foundation/graphic/standard/interfaces/innerkits/surface",
     "//foundation/graphic/standard/interfaces/innerkits/common",
-    "//third_party/weston/include",
-    "//device/rockchip/hardware/gpu/include",
   ]
 
   if (ace_enable_gpu) {

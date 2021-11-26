@@ -186,9 +186,7 @@ SurfaceError ProducerSurface::DetachBuffer(sptr<SurfaceBuffer>& buffer)
     if (buffer == nullptr) {
         return SURFACE_ERROR_NULLPTR;
     }
-    SurfaceError ret;
-    ret = GetProducer()->DetachBuffer(buffer);
-    return ret;
+    return GetProducer()->DetachBuffer(buffer);
 }
 
 uint32_t     ProducerSurface::GetQueueSize()

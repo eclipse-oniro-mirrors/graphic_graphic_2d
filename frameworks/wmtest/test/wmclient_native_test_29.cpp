@@ -102,9 +102,11 @@ public:
 
     void AfterRun()
     {
-        rotateType = static_cast<enum WindowRotateType>((static_cast<int32_t>(rotateType) + 1) % 4);
+        constexpr int32_t rotateTypeMax = 4;
+        int32_t next = (static_cast<int32_t>(rotateType) + 1) % rotateTypeMax;
+        rotateType = static_cast<enum WindowRotateType>(next);
         window->Rotate(rotateType);
-        if (rotateType % 2 == 0) {
+        if (rotateType % 0x2 == 0) {
             window->Resize(maxWidth, maxHeight);
         } else {
             window->Resize(maxHeight, maxWidth);
@@ -120,6 +122,6 @@ private:
     BufferRequestConfig config = {};
     uint32_t maxWidth = 0;
     uint32_t maxHeight = 0;
-    enum WindowRotateType rotateType = WINDOW_ROTATE_TYPE_NORMAL;
+    WindowRotateType rotateType = WINDOW_ROTATE_TYPE_NORMAL;
 } g_autoload;
 } // namespace

@@ -112,26 +112,28 @@ public:
         }
 
         sret = bq1->DetachBuffer(sbuffer);
-        if (sret != SURFACE_ERROR_OK){
+        if (sret != SURFACE_ERROR_OK) {
             printf("Detach buffer failed!\n");
             return;
         }
+
         if (sbuffer == nullptr) {
             printf("sbuffer is null\n");
         }
+
         do {
             sret = bq2->AttachBuffer(sbuffer);
         } while (sret != SURFACE_ERROR_OK);
+
         if (sret != SURFACE_ERROR_OK) {
             if (sret == SURFACE_ERROR_NO_BUFFER) {
                 printf("No Buffer!, %d\n", __LINE__);
                 bq1->AttachBuffer(sbuffer);
-                bq1->ReleaseBuffer(sbuffer,-1);
-                return;
+                bq1->ReleaseBuffer(sbuffer, -1);
             } else {
                 printf("Attach buffer failed!\n");
-                return;
             }
+            return;
         }
 
         BufferFlushConfig fconfig = {
@@ -158,7 +160,11 @@ private:
         }
         window->SwitchTop();
         bq2 = window->GetSurface();
-        bq2->RegisterReleaseListener([this](sptr<SurfaceBuffer> rbuffer){this->OnReleaseBuffer(rbuffer);return SURFACE_ERROR_OK;});
+        auto func = [this](sptr<SurfaceBuffer> &buffer) {
+            OnReleaseBuffer(buffer);
+            return SURFACE_ERROR_OK;
+        };
+        bq2->RegisterReleaseListener(func);
         if (bq2 == nullptr) {
             printf("%s bq2 == nullptr\n", __func__);
             ExitTest();

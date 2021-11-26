@@ -47,6 +47,9 @@ private:
     virtual ~SubwindowNormalImpl() = default;
 
     virtual void OnBufferAvailable() override;
+    void SendBufferToServer(sptr<WlBuffer> &wbuffer,
+                            sptr<SurfaceBuffer> &sbuffer,
+                            int32_t fence, Rect &damage);
 
     static WMError CheckAndNew(sptr<SubwindowNormalImpl> &si,
                                const sptr<Window> &window,

@@ -19,8 +19,9 @@
 #include "hilog/log.h"
 
 namespace OHOS {
+static inline ::OHOS::HiviewDFX::HiLogLabel TEST_HEADER_HILOG_LABEL = { LOG_CORE, 0, "TEST" };
 #define WMT_CPRINTF(color, func, fmt, ...) \
-    func ({ LOG_CORE, 0, "TEST" }, "\033[" #color "m" "<%{public}d>" fmt "\033[0m", __LINE__, ##__VA_ARGS__)
+    func (TEST_HEADER_HILOG_LABEL, "\033[" #color "m" "<%{public}d>" fmt "\033[0m", __LINE__, ##__VA_ARGS__)
 #define WMTLOGI(color, fmt, ...) \
     WMT_CPRINTF(color, HiviewDFX::HiLog::Info, "%{public}s: " fmt, __func__, ##__VA_ARGS__)
 

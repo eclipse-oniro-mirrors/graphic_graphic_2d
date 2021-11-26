@@ -20,12 +20,12 @@
 
 void GraphicBytrace::BytraceBegin(const std::string &proc)
 {
-    StartTrace(BYTRACE_TAG_GRAPHIC_AGP, proc.c_str());
+    StartTrace(BYTRACE_TAG_GRAPHIC_AGP, proc);
 }
 
 void GraphicBytrace::BytraceEnd(const std::string &proc)
 {
-    FinishTrace(BYTRACE_TAG_GRAPHIC_AGP, proc.c_str());
+    FinishTrace(BYTRACE_TAG_GRAPHIC_AGP);
 }
 
 ScopedBytrace::ScopedBytrace(const std::string &proc) : proc_(proc)

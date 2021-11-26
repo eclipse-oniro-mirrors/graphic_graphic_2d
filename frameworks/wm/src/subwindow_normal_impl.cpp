@@ -231,10 +231,10 @@ void SubwindowNormalImpl::OnBufferAvailable()
         return;
     }
 
-    sptr<SurfaceBuffer> sbuffer;
-    int32_t flushFence;
-    int64_t timestamp;
-    Rect damage;
+    sptr<SurfaceBuffer> sbuffer = nullptr;
+    int32_t flushFence = -1;
+    int64_t timestamp = 0;
+    Rect damage = {};
     SurfaceError ret = csurface->AcquireBuffer(sbuffer, flushFence, timestamp, damage);
     if (ret != SURFACE_ERROR_OK) {
         WMLOGFE("AcquireBuffer failed");
@@ -260,11 +260,18 @@ void SubwindowNormalImpl::OnBufferAvailable()
         bc->AddWlBuffer(wbuffer, csurface, sbuffer);
     }
 
+    SendBufferToServer(wbuffer, sbuffer, flushFence, damage);
+    WMLOGFI("(subwindow normal) OnBufferAvailable exit");
+}
+
+void SubwindowNormalImpl::SendBufferToServer(sptr<WlBuffer> &wbuffer,
+    sptr<SurfaceBuffer> &sbuffer, int32_t fence, Rect &damage)
+{
     if (wbuffer) {
         auto br = wlSurface->GetBufferRelease();
         wbuffer->SetBufferRelease(br);
         wlSurface->Attach(wbuffer, 0, 0);
-        wlSurface->SetAcquireFence(flushFence);
+        wlSurface->SetAcquireFence(fence);
         wlSurface->Damage(damage.x, damage.y, damage.w, damage.h);
         wlSurface->SetSource(0, 0, sbuffer->GetWidth(), sbuffer->GetHeight());
         wlSurface->SetDestination(attr.GetWidth(), attr.GetHeight());
@@ -273,6 +280,5 @@ void SubwindowNormalImpl::OnBufferAvailable()
         wlSurface->Commit();
         SingletonContainer::Get<WlDisplay>()->Flush();
     }
-    WMLOGFI("(subwindow normal) OnBufferAvailable exit");
 }
 } // namespace OHOS
