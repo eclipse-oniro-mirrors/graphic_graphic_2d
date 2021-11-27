@@ -239,10 +239,10 @@ static void SetDestinationRectangle(struct WindowSurface *windowSurface,
     const struct ivi_layout_surface_properties *prop = layoutInterface->get_properties_of_surface(layoutSurface);
     if (windowSurface->firstCommit == 1) {
         layoutInterface->surface_set_transition(layoutSurface,
-                IVI_LAYOUT_TRANSITION_VIEW_DEFAULT, TIMER_INTERVAL_MS); // ms
+            IVI_LAYOUT_TRANSITION_VIEW_DEFAULT, TIMER_INTERVAL_MS); // ms
     } else {
         layoutInterface->surface_set_transition(layoutSurface,
-                IVI_LAYOUT_TRANSITION_NONE, TIMER_INTERVAL_MS); // ms
+            IVI_LAYOUT_TRANSITION_NONE, TIMER_INTERVAL_MS); // ms
         windowSurface->firstCommit = 1;
     }
 

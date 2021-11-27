@@ -506,12 +506,13 @@ void GraphicDumperServer::SaveLog(std::any server)
     logBlock->length = serverPtr->logBuf_.size[index];
     uint32_t offset = 0;
     for (const auto& str : *serverPtr->logBuf_.vec[index]) {
-        int ret = memcpy_s(logBlock->data + offset, serverPtr->logBuf_.size[index] - offset,
-        str.c_str(), (str.size() + 1));
+        int ret = memcpy_s(logBlock->data + offset,
+                           serverPtr->logBuf_.size[index] - offset,
+                           str.c_str(), str.size() + 1);
         if (ret < 0) {
-        return ;
+            return;
         }
-        offset += (str.size() + 1);
+        offset += str.size() + 1;
     }
     std::lock_guard<std::mutex> lock(serverPtr->logBlockVectorMutex_);
     if ((serverPtr->logBlockSize_ + serverPtr->logBuf_.size[index]) > LOG_BLOCK_SIZE_MAX) {

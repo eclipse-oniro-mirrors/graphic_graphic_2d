@@ -82,7 +82,7 @@ public:
 
         dumper = GraphicDumperHelper::GetInstance();
         configListener = dumper->AddConfigChangeListener(tagInfo + ".info",
-                std::bind(&DumperTest1::OnConfigChange, this, std::placeholders::_1, std::placeholders::_2));
+            std::bind(&DumperTest1::OnConfigChange, this, std::placeholders::_1, std::placeholders::_2));
         dumpListener = dumper->AddDumpListener(tagInfo + ".info", std::bind(&DumperTest1::OnDump, this));
 
         AfterRun();
