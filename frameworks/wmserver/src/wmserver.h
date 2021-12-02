@@ -44,7 +44,6 @@ struct WmsContext {
     struct wl_listener wlListenerOutputDestroyed;
     struct wl_listener wlListenerSeatCreated;
     uint32_t displayMode;
-    struct WmsScreen *pMainScreen;
 #ifdef USE_IVI_INPUT_FOCUS
     const struct ivi_input_interface_for_wms *pInputInterface;
 #endif
@@ -64,7 +63,6 @@ struct WmsScreen {
     struct wl_list wlListLink;
     struct WmsContext *pWmsCtx;
     uint32_t screenId;
-    uint32_t screenType;
     struct weston_output *westonOutput;
 };
 

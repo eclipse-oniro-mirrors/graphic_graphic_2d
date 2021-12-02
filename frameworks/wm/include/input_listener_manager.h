@@ -68,13 +68,6 @@ private:
     void *window;
 };
 
-struct Seat {
-        struct wl_seat *seat;
-        struct wl_pointer *pointer;
-        struct wl_keyboard *keyboard;
-        struct wl_touch *touch;
-};
-
 using InputListeners = std::vector<sptr<InputListener>>;
 
 class InputListenerManager : public RefBase {
@@ -102,13 +95,16 @@ private:
     static inline SingletonDelegator<InputListenerManager> delegator;
 
     static void OnAppear(const GetServiceFunc get, const std::string &iname, uint32_t ver);
-    static inline std::vector<Seat> seats;
-    static uint32_t FindSeatNum(struct wl_seat *seat);
+    static inline struct wl_seat *seat = nullptr;
 
-    static inline void SeatHandleCapabilities(void *, struct wl_seat *, uint32_t caps);
-    static inline void RegisterPointerListener(uint32_t caps, struct wl_seat *seat);
-    static inline void RegisterKeyboardListener(uint32_t caps, struct wl_seat *seat);
-    static inline void RegisterTouchListener(uint32_t caps, struct wl_seat *seat);
+    static void SeatHandleCapabilities(void *, struct wl_seat *, uint32_t caps);
+    static void RegisterPointerListener(uint32_t caps);
+    static void RegisterKeyboardListener(uint32_t caps);
+    static void RegisterTouchListener(uint32_t caps);
+
+    static inline struct wl_pointer *pointer = nullptr;
+    static inline struct wl_keyboard *keyboard = nullptr;
+    static inline struct wl_touch *touch = nullptr;
 };
 } // namespace OHOS
 

@@ -48,10 +48,9 @@ void OnReply(void *, struct wms *, uint32_t a)
 }
 
 void OnDisplayChange(void *, struct wms *,
-    uint32_t a, const char *b, uint32_t c, int32_t d, int32_t e, uint32_t f)
+    uint32_t a, const char *b, uint32_t c, int32_t d, int32_t e)
 {
-    WindowManagerServiceProxy::OnDisplayChange(a, b, static_cast<wms_screen_status>(c), d, e,
-                                                    static_cast<wms_screen_type>(f));
+    WindowManagerServiceProxy::OnDisplayChange(a, b, static_cast<wms_screen_status>(c), d, e);
 }
 
 void OnDisplayPower(void *, struct wms *, uint32_t a, int32_t b)
