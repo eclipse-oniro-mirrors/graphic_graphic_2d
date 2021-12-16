@@ -191,6 +191,7 @@ void EGLNativeTestDraw::FlushDraw(GLContext *ctx, sptr<EglSurface> &eglsurf, uin
     constexpr uint64_t iterationMs = 5000000000;
     GLfloat offset = (GetNowTime() % iterationMs) / static_cast<double>(iterationMs) - 0.5;
 
+    glUseProgram(ctx->program);
     glViewport(0, 0, width, height);
 
     glUniform1f(ctx->offsetUniform, offset);
