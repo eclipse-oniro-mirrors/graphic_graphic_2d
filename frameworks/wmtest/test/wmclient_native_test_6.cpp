@@ -65,7 +65,7 @@ void WMClientNativeTest6::AfterRun()
         return;
     }
 
-    subcsurface = Surface::CreateSurfaceAsConsumer();
+    subcsurf = Surface::CreateSurfaceAsConsumer();
     constexpr uint32_t x = 100;
     constexpr uint32_t y = 200;
     constexpr uint32_t w = 300;
@@ -75,7 +75,7 @@ void WMClientNativeTest6::AfterRun()
     option->SetY(y);
     option->SetWidth(w);
     option->SetHeight(h);
-    option->SetConsumerSurface(subcsurface);
+    option->SetConsumerSurface(subcsurf);
 
     auto wret = WindowManager::GetInstance()->CreateSubwindow(subwindow, window, option);
     if (subwindow == nullptr) {
@@ -84,6 +84,6 @@ void WMClientNativeTest6::AfterRun()
         return;
     }
 
-    auto surface = subwindow->GetSurface();
-    subwindowSync = NativeTestSync::CreateSync(NativeTestDraw::RainbowDraw, surface);
+    auto surf = subwindow->GetSurface();
+    subwindowSync = NativeTestSync::CreateSync(NativeTestDraw::RainbowDraw, surf);
 }

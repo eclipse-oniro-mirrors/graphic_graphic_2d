@@ -67,14 +67,14 @@ GSError SubwindowOptionImpl::SetHeight(uint32_t h)
     return GSERROR_OK;
 }
 
-GSError SubwindowOptionImpl::SetConsumerSurface(const sptr<Surface> &surface)
+GSError SubwindowOptionImpl::SetConsumerSurface(const sptr<Surface> &surf)
 {
-    if (surface != nullptr && !(surface->IsConsumer() == true)) {
-        WMLOGFE("surface is invalid, should be consumer");
+    if (surf != nullptr && !(surf->IsConsumer() == true)) {
+        WMLOGFE("surf is invalid, should be consumer");
         return GSERROR_INVALID_ARGUMENTS;
     }
 
-    consumerSurface = surface;
+    consumerSurface = surf;
     return GSERROR_OK;
 }
 

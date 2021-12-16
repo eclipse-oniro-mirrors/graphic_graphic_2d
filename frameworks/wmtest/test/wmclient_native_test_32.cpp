@@ -53,11 +53,11 @@ public:
         }
 
         mainWindow->SwitchTop();
-        auto surface = mainWindow->GetSurface();
+        auto surf = mainWindow->GetSurface();
         auto draw = std::bind(&WMClientNativeTest32Ability::Draw, this,
             ::std::placeholders::_1, ::std::placeholders::_2,
             ::std::placeholders::_3, ::std::placeholders::_4);
-        mainSync = NativeTestSync::CreateSync(draw, surface);
+        mainSync = NativeTestSync::CreateSync(draw, surf);
 
         ListenWindowKeyEvent(mainWindow->GetID());
     }
@@ -132,7 +132,7 @@ public:
         onPIPModeChange = func;
     }
 
-    virtual bool OnKey(const KeyEvent &event) override
+    bool OnKey(const KeyEvent &event) override
     {
         if (event.IsKeyDown() ==  true && event.GetKeyCode() == OHOS::KeyEventEnum::KEY_BACK) {
             return OnKeyPublic(event);
@@ -140,7 +140,7 @@ public:
         return false;
     }
 
-    virtual bool OnTouch(const TouchEvent &event) override
+    bool OnTouch(const TouchEvent &event) override
     {
         int index = event.GetIndex();
         if (event.GetAction() == OHOS::TouchEnum::POINT_MOVE) {
@@ -235,13 +235,13 @@ public:
         }
     }
 
-    virtual bool OnTouchPublic(const TouchEvent &event) override
+    bool OnTouchPublic(const TouchEvent &event) override
     {
         ExitPIPMode();
         return true;
     }
 
-    virtual bool OnKeyPublic(const KeyEvent &event) override
+    bool OnKeyPublic(const KeyEvent &event) override
     {
         drawptr = NativeTestDraw::ColorDraw;
         EnterPIPMode();

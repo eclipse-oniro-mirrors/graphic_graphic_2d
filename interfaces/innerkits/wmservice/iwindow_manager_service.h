@@ -65,9 +65,15 @@ public:
     virtual sptr<PromiseWMError> CreateVirtualDisplay(int32_t x, int32_t y, int32_t width, int32_t height) = 0;
     virtual sptr<PromiseWMError> DestroyVirtualDisplay(uint32_t did) = 0;
 
-    virtual GSError StartRotationAnimation(uint32_t did, int32_t degree) = 0;
+    virtual GSError StartRotationAnimation(uint32_t did, int32_t degree)
+    {
+        return GSERROR_NOT_SUPPORT;
+    }
 
-    virtual sptr<PromiseWMError> SetSplitMode(SplitMode mode, int32_t x = 0, int32_t y = 0) = 0;
+    virtual sptr<PromiseWMError> SetSplitMode(SplitMode mode, int32_t x = 0, int32_t y = 0)
+    {
+        return nullptr;
+    }
 };
 } // namespace OHOS
 

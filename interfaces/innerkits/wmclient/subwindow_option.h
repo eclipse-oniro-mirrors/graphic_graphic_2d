@@ -31,7 +31,7 @@ public:
     virtual GSError SetY(int32_t y) = 0;
     virtual GSError SetWidth(uint32_t w) = 0;
     virtual GSError SetHeight(uint32_t h) = 0;
-    virtual GSError SetConsumerSurface(const sptr<Surface> &surface) = 0;
+    virtual GSError SetConsumerSurface(const sptr<Surface> &surf) = 0;
 
     virtual SubwindowType GetWindowType() const = 0;
     virtual int32_t GetX() const = 0;

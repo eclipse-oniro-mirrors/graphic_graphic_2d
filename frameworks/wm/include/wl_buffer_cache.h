@@ -33,15 +33,15 @@ public:
     MOCKABLE void Init();
     MOCKABLE void Deinit();
 
-    MOCKABLE sptr<WlBuffer> GetWlBuffer(const sptr<Surface> &csurface,
+    MOCKABLE sptr<WlBuffer> GetWlBuffer(const sptr<Surface> &csurf,
                                         const sptr<SurfaceBuffer> &buffer);
 
     MOCKABLE GSError AddWlBuffer(const sptr<WlBuffer> &wbuffer,
-                                 const sptr<Surface> &csurface,
+                                 const sptr<Surface> &csurf,
                                  const sptr<SurfaceBuffer> &sbuffer);
 
     MOCKABLE bool GetSurfaceBuffer(const struct wl_buffer *wbuffer,
-                                   sptr<Surface> &surface,
+                                   sptr<Surface> &surf,
                                    sptr<SurfaceBuffer> &sbuffer);
 
 private:
@@ -54,7 +54,7 @@ private:
 
     struct BufferCache {
         sptr<WlBuffer> wbuffer;
-        wptr<Surface> csurface;
+        wptr<Surface> csurf;
         wptr<SurfaceBuffer> sbuffer;
     };
     std::vector<WlBufferCache::BufferCache> cache;

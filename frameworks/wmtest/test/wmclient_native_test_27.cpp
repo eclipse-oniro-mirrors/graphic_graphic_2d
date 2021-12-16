@@ -69,8 +69,8 @@ public:
         }
 
         staticWindow->SwitchTop();
-        auto surface = staticWindow->GetSurface();
-        staticWindowSync = NativeTestSync::CreateSync(NativeTestDraw::FlushDraw, surface);
+        auto surf = staticWindow->GetSurface();
+        staticWindowSync = NativeTestSync::CreateSync(NativeTestDraw::FlushDraw, surf);
 
         freeWindow = NativeTestFactory::CreateWindow(WINDOW_TYPE_NORMAL);
         if (freeWindow == nullptr) {
@@ -80,17 +80,17 @@ public:
 
         freeWindow->SwitchTop();
         freeWindow->SetWindowMode(WINDOW_MODE_FREE);
-        surface = freeWindow->GetSurface();
+        surf = freeWindow->GetSurface();
         auto onSizeChange = [this](uint32_t w, uint32_t h) {
             config.width = w;
             config.height = h;
         };
-        config.width = surface->GetDefaultWidth();
-        config.height = surface->GetDefaultHeight();
+        config.width = surf->GetDefaultWidth();
+        config.height = surf->GetDefaultHeight();
         config.strideAlignment = 0x8,
         config.format = PIXEL_FMT_RGBA_8888;
-        config.usage = surface->GetDefaultUsage();
-        freeWindowSync = NativeTestSync::CreateSync(NativeTestDraw::RainbowDraw, surface, &config);
+        config.usage = surf->GetDefaultUsage();
+        freeWindowSync = NativeTestSync::CreateSync(NativeTestDraw::RainbowDraw, surf, &config);
 
         freeWindow->OnSizeChange(onSizeChange);
         constexpr int32_t width = 300;

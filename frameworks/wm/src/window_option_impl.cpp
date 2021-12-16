@@ -55,14 +55,14 @@ GSError WindowOptionImpl::SetDisplay(int32_t did)
     return GSERROR_OK;
 }
 
-GSError WindowOptionImpl::SetConsumerSurface(const sptr<Surface> &surface)
+GSError WindowOptionImpl::SetConsumerSurface(const sptr<Surface> &surf)
 {
-    if (surface != nullptr && !(surface->IsConsumer() == true)) {
-        WMLOGFE("surface is invalid, should be consumer");
+    if (surf != nullptr && !(surf->IsConsumer() == true)) {
+        WMLOGFE("surf is invalid, should be consumer");
         return GSERROR_INVALID_ARGUMENTS;
     }
 
-    consumerSurface = surface;
+    consumerSurface = surf;
     return GSERROR_OK;
 }
 

@@ -29,7 +29,7 @@
 
 namespace OHOS {
 sptr<Window> NativeTestFactory::CreateWindow(WindowType type,
-                                             sptr<Surface> csurface,
+                                             sptr<Surface> csurf,
                                              std::optional<uint32_t> did)
 {
     auto wm = WindowManager::GetInstance();
@@ -44,7 +44,7 @@ sptr<Window> NativeTestFactory::CreateWindow(WindowType type,
 
     sptr<Window> window;
     option->SetWindowType(type);
-    option->SetConsumerSurface(csurface);
+    option->SetConsumerSurface(csurf);
     option->SetDisplay(did.value_or(defaultDisplayID));
     wm->CreateWindow(window, option);
     if (window == nullptr) {
@@ -55,12 +55,12 @@ sptr<Window> NativeTestFactory::CreateWindow(WindowType type,
     return window;
 }
 
-sptr<NativeTestSync> NativeTestSync::CreateSync(DrawFunc drawFunc, sptr<Surface> &psurface, void *data)
+sptr<NativeTestSync> NativeTestSync::CreateSync(DrawFunc drawFunc, sptr<Surface> &psurf, void *data)
 {
-    if (drawFunc != nullptr && psurface != nullptr) {
+    if (drawFunc != nullptr && psurf != nullptr) {
         sptr<NativeTestSync> nts = new NativeTestSync();
         nts->draw = drawFunc;
-        nts->surface = psurface;
+        nts->surf = psurf;
         RequestSync(std::bind(&NativeTestSync::Sync, nts, SYNC_FUNC_ARG), data);
         return nts;
     }
@@ -70,35 +70,35 @@ sptr<NativeTestSync> NativeTestSync::CreateSync(DrawFunc drawFunc, sptr<Surface>
 void NativeTestSync::Sync(int64_t, void *data)
 {
     ScopedBytrace trace(__func__);
-    if (surface == nullptr) {
-        printf("NativeTestSync surface is nullptr\n");
+    if (surf == nullptr) {
+        printf("NativeTestSync surf is nullptr\n");
         return;
     }
 
     sptr<SurfaceBuffer> buffer;
     BufferRequestConfig rconfig = {
-        .width = surface->GetDefaultWidth(),
-        .height = surface->GetDefaultHeight(),
+        .width = surf->GetDefaultWidth(),
+        .height = surf->GetDefaultHeight(),
         .strideAlignment = 0x8,
         .format = PIXEL_FMT_RGBA_8888,
-        .usage = surface->GetDefaultUsage(),
+        .usage = surf->GetDefaultUsage(),
         .timeout = 0,
     };
     if (data != nullptr) {
         rconfig = *reinterpret_cast<BufferRequestConfig *>(data);
     }
 
-    GSError ret = surface->RequestBufferNoFence(buffer, rconfig);
+    GSError ret = surf->RequestBufferNoFence(buffer, rconfig);
     if (ret == GSERROR_NO_BUFFER) {
         RequestSync(std::bind(&NativeTestSync::Sync, this, SYNC_FUNC_ARG), data);
         return;
     } else if (ret != GSERROR_OK || buffer == nullptr) {
-        printf("NativeTestSync surface request buffer failed\n");
+        printf("NativeTestSync surf request buffer failed\n");
         return;
     }
 
     if (buffer->GetVirAddr() == nullptr) {
-        surface->CancelBuffer(buffer);
+        surf->CancelBuffer(buffer);
         RequestSync(std::bind(&NativeTestSync::Sync, this, SYNC_FUNC_ARG), data);
         return;
     }
@@ -112,17 +112,17 @@ void NativeTestSync::Sync(int64_t, void *data)
             .h = rconfig.height,
         },
     };
-    surface->FlushBuffer(buffer, -1, fconfig);
+    surf->FlushBuffer(buffer, -1, fconfig);
 
     RequestSync(std::bind(&NativeTestSync::Sync, this, SYNC_FUNC_ARG), data);
 }
 
-sptr<NativeTestDrawer> NativeTestDrawer::CreateDrawer(DrawFunc drawFunc, sptr<Surface> &psurface, void *data)
+sptr<NativeTestDrawer> NativeTestDrawer::CreateDrawer(DrawFunc drawFunc, sptr<Surface> &psurf, void *data)
 {
-    if (drawFunc != nullptr && psurface != nullptr) {
+    if (drawFunc != nullptr && psurf != nullptr) {
         sptr<NativeTestDrawer> ntd = new NativeTestDrawer();
         ntd->draw = drawFunc;
-        ntd->surface = psurface;
+        ntd->surf = psurf;
         ntd->data = data;
         return ntd;
     }
@@ -145,8 +145,8 @@ void NativeTestDrawer::DrawOnce()
 void NativeTestDrawer::Sync(int64_t, void *)
 {
     ScopedBytrace trace(__func__);
-    if (surface == nullptr) {
-        printf("NativeTestDrawer surface is nullptr\n");
+    if (surf == nullptr) {
+        printf("NativeTestDrawer surf is nullptr\n");
         return;
     }
 
@@ -154,28 +154,28 @@ void NativeTestDrawer::Sync(int64_t, void *)
 
     sptr<SurfaceBuffer> buffer;
     BufferRequestConfig rconfig = {
-        .width = surface->GetDefaultWidth(),
-        .height = surface->GetDefaultHeight(),
+        .width = surf->GetDefaultWidth(),
+        .height = surf->GetDefaultHeight(),
         .strideAlignment = 0x8,
         .format = PIXEL_FMT_RGBA_8888,
-        .usage = surface->GetDefaultUsage(),
+        .usage = surf->GetDefaultUsage(),
         .timeout = 0,
     };
     if (data != nullptr) {
         rconfig = *reinterpret_cast<BufferRequestConfig *>(data);
     }
 
-    GSError ret = surface->RequestBufferNoFence(buffer, rconfig);
+    GSError ret = surf->RequestBufferNoFence(buffer, rconfig);
     if (ret == GSERROR_NO_BUFFER) {
         DrawOnce();
         return;
     } else if (ret != GSERROR_OK || buffer == nullptr) {
-        printf("NativeTestDrawer surface request buffer failed\n");
+        printf("NativeTestDrawer surf request buffer failed\n");
         return;
     }
 
     if (buffer->GetVirAddr() == nullptr) {
-        surface->CancelBuffer(buffer);
+        surf->CancelBuffer(buffer);
         RequestSync(std::bind(&NativeTestDrawer::Sync, this, SYNC_FUNC_ARG), data);
         return;
     }
@@ -189,7 +189,7 @@ void NativeTestDrawer::Sync(int64_t, void *)
             .h = rconfig.height,
         },
     };
-    surface->FlushBuffer(buffer, -1, fconfig);
+    surf->FlushBuffer(buffer, -1, fconfig);
 }
 
 void NativeTestDraw::FlushDraw(uint32_t *addr, uint32_t width, uint32_t height, uint32_t count)

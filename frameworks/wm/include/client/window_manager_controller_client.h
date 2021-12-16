@@ -37,14 +37,14 @@
 namespace OHOS {
 struct InnerWindowInfo {
     sptr<WlSurface> wlSurface;
-    sptr<WlSubsurface> wlSubsurface;
+    sptr<WlSubsurface> wlSubsurf;
     sptr<WlBuffer> wlBuffer;
     WindowConfig windowconfig;
     uint32_t windowid;
     uint32_t layerid;
     uint32_t parentid;
     uint32_t voLayerId;
-    sptr<Surface> surface;
+    sptr<Surface> surf;
     sptr<IBufferConsumerListener> listener;
     std::list<uint32_t> childIDList;
     bool subwidow;
@@ -69,7 +69,7 @@ public:
 
     InnerWindowInfo *CreateWindow(int32_t id, WindowConfig &config);
     InnerWindowInfo *CreateSubWindow(int32_t subid, int32_t parentid, WindowConfig &config);
-    void CreateWlBuffer(sptr<Surface>& surface, uint32_t id);
+    void CreateWlBuffer(sptr<Surface>& surf, uint32_t id);
     void DestroyWindow(int32_t id);
     void Move(int32_t id, int32_t x, int32_t y);
     void Show(int32_t id);
@@ -112,7 +112,7 @@ private:
 
 class SurfaceListener : public IBufferConsumerListener {
 public:
-    SurfaceListener(sptr<Surface>& surface, uint32_t windowid);
+    SurfaceListener(sptr<Surface>& surf, uint32_t windowid);
     virtual ~SurfaceListener();
 
     virtual void OnBufferAvailable() override;

@@ -78,7 +78,7 @@ struct WmsContext *GetWmsInstance(void);
 struct WindowSurface {
     struct WmsController *controller;
     struct ivi_layout_surface *layoutSurface;
-    struct weston_surface *surface;
+    struct weston_surface *surf;
     struct wl_listener surfaceDestroyListener;
     struct wl_listener propertyChangedListener;
 

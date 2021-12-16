@@ -28,7 +28,7 @@ public:
     MOCK_METHOD1(SetY, GSError(int32_t y));
     MOCK_METHOD1(SetWidth, GSError(uint32_t w));
     MOCK_METHOD1(SetHeight, GSError(uint32_t h));
-    MOCK_METHOD1(SetConsumerSurface, GSError(const sptr<Surface> &surface));
+    MOCK_METHOD1(SetConsumerSurface, GSError(const sptr<Surface> &surf));
     MOCK_CONST_METHOD0(GetWindowType, SubwindowType());
     MOCK_CONST_METHOD0(GetX, int32_t());
     MOCK_CONST_METHOD0(GetY, int32_t());

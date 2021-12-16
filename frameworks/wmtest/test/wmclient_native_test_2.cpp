@@ -127,15 +127,15 @@ public:
         };
         window->OnSizeChange(onSizeChange);
 
-        auto surface = window->GetSurface();
-        config.width = surface->GetDefaultWidth();
-        config.height = surface->GetDefaultHeight();
+        auto surf = window->GetSurface();
+        config.width = surf->GetDefaultWidth();
+        config.height = surf->GetDefaultHeight();
         config.strideAlignment = 0x8;
         config.format = PIXEL_FMT_RGBA_8888;
-        config.usage = surface->GetDefaultUsage();
+        config.usage = surf->GetDefaultUsage();
 
         window->SwitchTop();
-        windowSync = NativeTestSync::CreateSync(NativeTestDraw::FlushDraw, surface, &config);
+        windowSync = NativeTestSync::CreateSync(NativeTestDraw::FlushDraw, surf, &config);
     }
 
 private:

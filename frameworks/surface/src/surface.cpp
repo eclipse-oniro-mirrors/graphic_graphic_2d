@@ -28,13 +28,13 @@ constexpr HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0, "Surface" };
 
 sptr<Surface> Surface::CreateSurfaceAsConsumer(std::string name, bool isShared)
 {
-    sptr<ConsumerSurface> surface = new ConsumerSurface(name, isShared);
-    GSError ret = surface->Init();
+    sptr<ConsumerSurface> surf = new ConsumerSurface(name, isShared);
+    GSError ret = surf->Init();
     if (ret != GSERROR_OK) {
-        BLOGE("Failure, Reason: consumer surface init failed");
+        BLOGE("Failure, Reason: consumer surf init failed");
         return nullptr;
     }
-    return surface;
+    return surf;
 }
 
 sptr<Surface> Surface::CreateSurfaceAsProducer(sptr<IBufferProducer>& producer)
@@ -44,12 +44,12 @@ sptr<Surface> Surface::CreateSurfaceAsProducer(sptr<IBufferProducer>& producer)
         return nullptr;
     }
 
-    sptr<ProducerSurface> surface = new ProducerSurface(producer);
-    GSError ret = surface->Init();
+    sptr<ProducerSurface> surf = new ProducerSurface(producer);
+    GSError ret = surf->Init();
     if (ret != GSERROR_OK) {
-        BLOGE("Failure, Reason: producer surface init failed");
+        BLOGE("Failure, Reason: producer surf init failed");
         return nullptr;
     }
-    return surface;
+    return surf;
 }
 } // namespace OHOS

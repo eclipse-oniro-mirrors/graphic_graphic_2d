@@ -161,10 +161,10 @@ foundation/graphic/standard/
 #### 注册
 ```cpp
 // 拿到一个消费型Surface
-sptr<Surface> surface = Surface::CreateSurfaceAsConsumer();
+sptr<Surface> surf = Surface::CreateSurfaceAsConsumer();
 
 // 拿出里面的生产者对象
-sptr<IBufferProducer> producer = surface->GetProducer();
+sptr<IBufferProducer> producer = surf->GetProducer();
 
 // 注册服务
 auto sm = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -179,7 +179,7 @@ sptr<IRemoteObject> robj = sm->GetSystemAbility(IPC_SA_ID);
 
 // 构造Surface
 sptr<IBufferProducer> bp = iface_cast<IBufferProducer>(robj);
-sptr<Surface> surface = Surface::CreateSurfaceAsProducer(bp);
+sptr<Surface> surf = Surface::CreateSurfaceAsProducer(bp);
 ```
 
 ### 匿名服务-传递一个生产型Surface
@@ -188,10 +188,10 @@ sptr<Surface> surface = Surface::CreateSurfaceAsProducer(bp);
 #### 发送
 ```cpp
 // 拿到一个消费型Surface
-sptr<Surface> surface = CreateSurfaceAsConsumer();
+sptr<Surface> surf = CreateSurfaceAsConsumer();
 
 // 拿出里面的生产者对象
-sptr<IRemoteObject> producer = surface->GetProducer();
+sptr<IRemoteObject> producer = surf->GetProducer();
 
 // 返回给客户端
 parcel.WriteRemoteObject(producer);
@@ -204,7 +204,7 @@ sptr<IRemoteObject> remoteObject = parcel.ReadRemoteObject();
 
 // 构造Surface
 sptr<IBufferProducer> bp = iface_cast<IBufferProducer>(robj);
-sptr<Surface> surface = Surface::CreateSurfaceAsProducer(bp);
+sptr<Surface> surf = Surface::CreateSurfaceAsProducer(bp);
 ```
 
 ### 生产一个SurfaceBuffer
@@ -223,7 +223,7 @@ BufferRequestConfig requestConfig = {
 sptr<SurfaceBuffer> buffer;
 int32_t releaseFence;
 
-GSError ret = surface->RequestBuffer(buffer, releaseFence, requestConfig);
+GSError ret = surf->RequestBuffer(buffer, releaseFence, requestConfig);
 if (ret != GSERROR_OK) {
     // failed
 }
@@ -238,7 +238,7 @@ BufferFlushConfig flushConfig = {
     .timestamp = 0 // 给消费者看的时间，0为使用当前时间
 };
 
-ret = surface->FlushBuffer(buffer, -1, flushConfig);
+ret = surf->FlushBuffer(buffer, -1, flushConfig);
 if (ret != GSERROR_OK) {
     // failed
 }
@@ -254,14 +254,14 @@ public:
         sptr<SurfaceBuffer> buffer;
         int32_t flushFence;
 
-        GSError ret = surface->AcquireBuffer(buffer, flushFence, timestamp, damage);
+        GSError ret = surf->AcquireBuffer(buffer, flushFence, timestamp, damage);
         if (ret != GSERROR_OK) {
             // failed
         }
 
         // ...
 
-        ret = surface->ReleaseBuffer(buffer, -1);
+        ret = surf->ReleaseBuffer(buffer, -1);
         if (ret != GSERROR_OK) {
             // failed
         }
@@ -269,7 +269,7 @@ public:
 };
 
 sptr<IBufferConsumerListener> listener = new TestConsumerListener();
-GSError ret = surface->RegisterConsumerListener(listener);
+GSError ret = surf->RegisterConsumerListener(listener);
 if (ret != GSERROR_OK) {
     // failed
 }

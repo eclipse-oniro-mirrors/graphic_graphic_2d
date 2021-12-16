@@ -107,7 +107,8 @@ GSError WaylandService::Start()
         return GSERROR_API_FAILED;
     }
 
-    g_appear = std::bind(&WaylandService::Appear, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    g_appear = std::bind(&WaylandService::Appear,
+        this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     g_remove = std::bind(&WaylandService::Remove, this, std::placeholders::_1);
     return GSERROR_OK;
 }

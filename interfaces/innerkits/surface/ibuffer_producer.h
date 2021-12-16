@@ -58,7 +58,7 @@ public:
 
     virtual GSError RegisterReleaseListener(OnReleaseFunc func) = 0;
 
-    DECLARE_INTERFACE_DESCRIPTOR(u"surface.IBufferProducer");
+    DECLARE_INTERFACE_DESCRIPTOR(u"surf.IBufferProducer");
 
 protected:
     enum {

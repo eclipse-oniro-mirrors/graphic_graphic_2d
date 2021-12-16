@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
+#include <iostream>
 #include <securec.h>
 #include <sys/time.h>
 
@@ -28,12 +29,12 @@
 
 namespace OHOS {
 sptr<EGLNativeTestSync> EGLNativeTestSync::CreateSync(EGLDrawFunc drawFunc,
-    sptr<EglSurface> &peglsurface, uint32_t width, uint32_t height, void *data)
+    sptr<EglSurface> &peglsurf, uint32_t width, uint32_t height, void *data)
 {
-    if (drawFunc != nullptr && peglsurface != nullptr) {
+    if (drawFunc != nullptr && peglsurf != nullptr) {
         sptr<EGLNativeTestSync> nts = new EGLNativeTestSync();
         nts->draw = drawFunc;
-        nts->eglsurface = peglsurface;
+        nts->eglsurf = peglsurf;
         nts->width_ = width;
         nts->height_ = height;
         RequestSync(std::bind(&EGLNativeTestSync::Sync, nts, SYNC_FUNC_ARG), data);
@@ -50,11 +51,11 @@ void EGLNativeTestSync::Sync(int64_t, void *data)
     }
 
     if (sret == GSERROR_OK) {
-        draw(&glCtx, eglsurface, width_, height_);
+        draw(&glCtx, eglsurf, width_, height_);
         count++;
     }
 
-    sret = eglsurface->SwapBuffers();
+    sret = eglsurf->SwapBuffers();
 
     RequestSync(std::bind(&EGLNativeTestSync::Sync, this, SYNC_FUNC_ARG), data);
 }
@@ -94,8 +95,13 @@ static GLuint CreateShader(const char *source, GLenum shaderType)
         char log[maxLogLength];
         GLsizei len;
         glGetShaderInfoLog(shader, maxLogLength, &len, log);
-        fprintf(stderr, "Error: compiling %s: %.*s\n",
-            shaderType == GL_VERTEX_SHADER ? "vertex" : "fragment", len, log);
+        std::cerr << "Error: compiling ";
+        if (shaderType == GL_VERTEX_SHADER) {
+            std::cerr << "vertex";
+        } else {
+            std::cerr << "fragment";
+        }
+        std::cerr << ": " << log << std::endl;
         return 0;
     }
 
@@ -117,7 +123,7 @@ static GLuint CreateAndLinkProgram(GLuint vert, GLuint frag)
         char log[maxLogLength];
         GLsizei len;
         glGetProgramInfoLog(program, maxLogLength, &len, log);
-        fprintf(stderr, "Error: linking:\n%.*s\n", len, log);
+        std::cerr << "Error: linking:\n" << log << std::endl;
         return 0;
     }
 
@@ -131,12 +137,12 @@ bool EGLNativeTestSync::GLContextInit()
         return bInit;
     }
 
-    if (eglsurface == nullptr) {
-        printf("GLContextInit eglsurface is nullptr\n");
+    if (eglsurf == nullptr) {
+        printf("GLContextInit eglsurf is nullptr\n");
         return bInit;
     }
 
-    if (eglsurface->InitContext() != GSERROR_OK) {
+    if (eglsurf->InitContext() != GSERROR_OK) {
         printf("GLContextInit InitContext failed\n");
         return bInit;
     }
@@ -164,7 +170,7 @@ bool EGLNativeTestSync::GLContextInit()
     return bInit;
 }
 
-void EGLNativeTestDraw::FlushDraw(GLContext *ctx, sptr<EglSurface> &eglsurface, uint32_t width, uint32_t height)
+void EGLNativeTestDraw::FlushDraw(GLContext *ctx, sptr<EglSurface> &eglsurf, uint32_t width, uint32_t height)
 {
     /* Complete a movement iteration in 5000 ms. */
     static const GLfloat verts[][0x2] = {

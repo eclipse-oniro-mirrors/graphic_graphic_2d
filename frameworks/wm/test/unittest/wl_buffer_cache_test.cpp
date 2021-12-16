@@ -50,10 +50,10 @@ namespace {
  * EnvConditions: WindowManager init success.
  * CaseDescription: 1. check size
  *                  2. add buffer
- *                      a. get consumer surface
+ *                      a. get consumer surf
  *                      b. get producer
- *                      c. get producer surface
- *                      d. get surface buffer
+ *                      c. get producer surf
+ *                      d. get surf buffer
  *                      e. get dma buffer
  *                      f. AddWlBuffer
  */
@@ -69,10 +69,10 @@ HWTEST_F(WlBufferCacheTest, Add, testing::ext::TestSize.Level0)
         << "1. check size (cache.size() == 0)";
 
     // 2. add buffer
-    // 2.a. get consumer surface
+    // 2.a. get consumer surf
     csurface1 = Surface::CreateSurfaceAsConsumer();
     ASSERT_NE(csurface1, nullptr) << "CaseDescription: "
-        << "2.a. get consumer surface (csurface1 != nullptr)";
+        << "2.a. get consumer surf (csurface1 != nullptr)";
 
     csurface1->RegisterConsumerListener(this);
 
@@ -81,12 +81,12 @@ HWTEST_F(WlBufferCacheTest, Add, testing::ext::TestSize.Level0)
     ASSERT_NE(producer, nullptr) << "CaseDescription: "
         << "2.b. get producer (producer != nullptr)";
 
-    // 2.c. get producer surface
-    auto psurface = Surface::CreateSurfaceAsProducer(producer);
-    ASSERT_NE(psurface, nullptr) << "CaseDescription: "
-        << "2.c. get producer surface (psurface != nullptr)";
+    // 2.c. get producer surf
+    auto psurf = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurf, nullptr) << "CaseDescription: "
+        << "2.c. get producer surf (psurf != nullptr)";
 
-    // 2.d. get surface buffer
+    // 2.d. get surf buffer
     BufferRequestConfig config = {
         .width = 0x100,  // any value just small
         .height = 0x100, // any value just small
@@ -94,9 +94,9 @@ HWTEST_F(WlBufferCacheTest, Add, testing::ext::TestSize.Level0)
         .format = PIXEL_FMT_RGBA_8888,
         .usage = HBM_USE_CPU_READ | HBM_USE_CPU_WRITE | HBM_USE_MEM_DMA,
     };
-    auto sret = psurface->RequestBufferNoFence(sbuffer1, config);
+    auto sret = psurf->RequestBufferNoFence(sbuffer1, config);
     ASSERT_EQ(sret, GSERROR_OK) << "CaseDescription: "
-        << "2.d. get surface buffer (sret == GSERROR_OK)";
+        << "2.d. get surf buffer (sret == GSERROR_OK)";
 
     // 2.e. get dma buffer
     dmabuf = WlDMABufferFactory::GetInstance()->Create(sbuffer1->GetBufferHandle());

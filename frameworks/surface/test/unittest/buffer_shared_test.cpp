@@ -27,12 +27,12 @@ namespace OHOS {
 void BufferSharedTest::SetUpTestCase()
 {
     GTEST_LOG_(INFO) << getpid() << std::endl;
-    surface = Surface::CreateSurfaceAsConsumer("shared", true);
+    surf = Surface::CreateSurfaceAsConsumer("shared", true);
     sptr<IBufferConsumerListener> listener = new BufferConsumerListener();
-    surface->RegisterConsumerListener(listener);
-    auto producer1 = surface->GetProducer();
+    surf->RegisterConsumerListener(listener);
+    auto producer1 = surf->GetProducer();
     producerSurface1 = Surface::CreateSurfaceAsProducer(producer1);
-    auto producer2 = surface->GetProducer();
+    auto producer2 = surf->GetProducer();
     producerSurface2 = Surface::CreateSurfaceAsProducer(producer2);
 }
 
@@ -149,8 +149,8 @@ HWTEST_F(BufferSharedTest, AquiredBuffer, testing::ext::TestSize.Level0)
             Rect damage = {};
             int32_t fence = -1;
 
-            ret1 = surface->AcquireBuffer(sbuffer1, fence, timestamp, damage);
-            ret2 = surface->AcquireBuffer(sbuffer2, fence, timestamp, damage);
+            ret1 = surf->AcquireBuffer(sbuffer1, fence, timestamp, damage);
+            ret2 = surf->AcquireBuffer(sbuffer2, fence, timestamp, damage);
         }
         STEP("2: check ret1 ret2") {
             STEP_ASSERT_EQ(ret1, GSERROR_OK);
@@ -202,8 +202,8 @@ HWTEST_F(BufferSharedTest, ReleaseBuffer, testing::ext::TestSize.Level0)
     PART("ReleaseBuffer") {
         GSError ret1, ret2;
         STEP("1: releaseBuffer two times") {
-            ret1 = surface->ReleaseBuffer(sbuffer1, -1);
-            ret2 = surface->ReleaseBuffer(sbuffer2, -1);
+            ret1 = surf->ReleaseBuffer(sbuffer1, -1);
+            ret2 = surf->ReleaseBuffer(sbuffer2, -1);
         }
         STEP("2: check ret1, ret2") {
             STEP_ASSERT_EQ(ret1, GSERROR_OK);

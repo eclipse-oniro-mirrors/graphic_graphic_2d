@@ -20,11 +20,11 @@
 namespace OHOS {
 void WlDMABufferFactoryTest::SetUp()
 {
-    if (csurface == nullptr) {
-        csurface = Surface::CreateSurfaceAsConsumer();
-        csurface->RegisterConsumerListener(this);
-        auto producer = csurface->GetProducer();
-        psurface = Surface::CreateSurfaceAsProducer(producer);
+    if (csurf == nullptr) {
+        csurf = Surface::CreateSurfaceAsConsumer();
+        csurf->RegisterConsumerListener(this);
+        auto producer = csurf->GetProducer();
+        psurf = Surface::CreateSurfaceAsProducer(producer);
         BufferRequestConfig config = {
             .width = 0x100,  // any value just small
             .height = 0x100, // any value just small
@@ -32,7 +32,7 @@ void WlDMABufferFactoryTest::SetUp()
             .format = PIXEL_FMT_RGBA_8888,
             .usage = HBM_USE_CPU_READ | HBM_USE_CPU_WRITE | HBM_USE_MEM_DMA,
         };
-        psurface->RequestBufferNoFence(sbuffer, config);
+        psurf->RequestBufferNoFence(sbuffer, config);
     }
 }
 

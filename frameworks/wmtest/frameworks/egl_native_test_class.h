@@ -36,18 +36,18 @@ using GLContext = struct {
 };
 
 using EGLDrawFunc = std::function<void(GLContext *,
-    sptr<EglSurface> &psurface, uint32_t width, uint32_t height)>;
+    sptr<EglSurface> &psurf, uint32_t width, uint32_t height)>;
 
 class EGLNativeTestSync : public RefBase {
 public:
     static sptr<EGLNativeTestSync> CreateSync(EGLDrawFunc drawFunc,
-        sptr<EglSurface> &psurface, uint32_t width, uint32_t height, void *data = nullptr);
+        sptr<EglSurface> &psurf, uint32_t width, uint32_t height, void *data = nullptr);
 
 private:
     void Sync(int64_t, void *data);
     bool GLContextInit();
 
-    sptr<EglSurface> eglsurface = nullptr;
+    sptr<EglSurface> eglsurf = nullptr;
     EGLDrawFunc draw = nullptr;
     GLContext glCtx;
     bool bInit = false;
@@ -59,7 +59,7 @@ private:
 
 class EGLNativeTestDraw {
 public:
-    static void FlushDraw(GLContext *ctx, sptr<EglSurface> &eglsurface, uint32_t width, uint32_t height);
+    static void FlushDraw(GLContext *ctx, sptr<EglSurface> &eglsurf, uint32_t width, uint32_t height);
 };
 } // namespace OHOS
 

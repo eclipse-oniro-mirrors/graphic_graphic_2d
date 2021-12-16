@@ -61,8 +61,8 @@ public:
     }
 
     // 0 for success
-    int32_t GetNextData(void *addr);
-    int32_t GetNowData(void *addr);
+    int32_t GetNextData(uint32_t *addr);
+    int32_t GetNowData(uint32_t *addr);
 
 private:
     int32_t ReadFile(const std::string &file, std::unique_ptr<uint8_t[]> &ptr);

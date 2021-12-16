@@ -154,7 +154,7 @@ GSError BufferQueue::CheckFlushConfig(const BufferFlushConfig &config)
 }
 
 GSError BufferQueue::RequestBuffer(const BufferRequestConfig &config, BufferExtraData &bedata,
-                                        struct IBufferProducer::RequestBufferReturnValue &retval)
+    struct IBufferProducer::RequestBufferReturnValue &retval)
 {
     ScopedBytrace func(__func__);
     if (listener_ == nullptr && listenerClazz_ == nullptr) {
@@ -195,7 +195,7 @@ GSError BufferQueue::RequestBuffer(const BufferRequestConfig &config, BufferExtr
 }
 
 GSError BufferQueue::ReuseBuffer(const BufferRequestConfig &config, BufferExtraData &bedata,
-                                      struct IBufferProducer::RequestBufferReturnValue &retval)
+    struct IBufferProducer::RequestBufferReturnValue &retval)
 {
     ScopedBytrace func(__func__);
     sptr<SurfaceBufferImpl> bufferImpl = SurfaceBufferImpl::FromBase(retval.buffer);
@@ -265,7 +265,7 @@ GSError BufferQueue::CancelBuffer(int32_t sequence, const BufferExtraData &bedat
 }
 
 GSError BufferQueue::FlushBuffer(int32_t sequence, const BufferExtraData &bedata,
-                                      int32_t fence, const BufferFlushConfig &config)
+    int32_t fence, const BufferFlushConfig &config)
 {
     ScopedBytrace func(__func__);
     // check param
@@ -343,7 +343,7 @@ void BufferQueue::DumpToFile(int32_t sequence)
 }
 
 GSError BufferQueue::DoFlushBuffer(int32_t sequence, const BufferExtraData &bedata,
-                                        int32_t fence, const BufferFlushConfig &config)
+    int32_t fence, const BufferFlushConfig &config)
 {
     ScopedBytrace func(__func__);
     std::lock_guard<std::mutex> lockGuard(mutex_);
@@ -380,7 +380,7 @@ GSError BufferQueue::DoFlushBuffer(int32_t sequence, const BufferExtraData &beda
 }
 
 GSError BufferQueue::AcquireBuffer(sptr<SurfaceBufferImpl> &buffer,
-                                        int32_t &fence, int64_t &timestamp, Rect &damage)
+    int32_t &fence, int64_t &timestamp, Rect &damage)
 {
     ScopedBytrace func(__func__);
     // dequeue from dirty list

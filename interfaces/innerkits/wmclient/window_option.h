@@ -29,7 +29,7 @@ public:
     virtual GSError SetWindowType(WindowType type) = 0;
     virtual GSError SetWindowMode(WindowMode mode) = 0;
     virtual GSError SetDisplay(int32_t did) = 0;
-    virtual GSError SetConsumerSurface(const sptr<Surface> &surface) = 0;
+    virtual GSError SetConsumerSurface(const sptr<Surface> &surf) = 0;
     virtual GSError SetX(int32_t x) = 0;
     virtual GSError SetY(int32_t y) = 0;
     virtual GSError SetWidth(uint32_t width) = 0;

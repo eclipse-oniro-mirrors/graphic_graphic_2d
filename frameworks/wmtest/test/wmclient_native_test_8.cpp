@@ -70,8 +70,8 @@ public:
         }
 
         window->SwitchTop();
-        auto surface = window->GetSurface();
-        windowSync = NativeTestSync::CreateSync(NativeTestDraw::ColorDraw, surface);
+        auto surf = window->GetSurface();
+        windowSync = NativeTestSync::CreateSync(NativeTestDraw::ColorDraw, surf);
     }
 
 private:

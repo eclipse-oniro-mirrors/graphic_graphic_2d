@@ -412,13 +412,13 @@ HWTEST_F(WindowImplTest, Create10, Function | SmallTest | Level2)
 HWTEST_F(WindowImplTest, GetSurface01, Function | SmallTest | Level1)
 {
     PART("CaseDescription") {
-        sptr<Surface> surface = nullptr;
+        sptr<Surface> surf = nullptr;
         STEP("1. NormalWindow call GetSurface") {
-            surface = normalWindow->GetSurface();
+            surf = normalWindow->GetSurface();
         }
 
         STEP("2. check sret is not nullptr") {
-            STEP_ASSERT_NE(surface, nullptr);
+            STEP_ASSERT_NE(surf, nullptr);
         }
     }
 }
@@ -434,13 +434,13 @@ HWTEST_F(WindowImplTest, GetSurface01, Function | SmallTest | Level1)
 HWTEST_F(WindowImplTest, GetSurface02, Function | SmallTest | Level2)
 {
     PART("CaseDescription") {
-        sptr<Surface> surface = nullptr;
+        sptr<Surface> surf = nullptr;
         STEP("1. DestroyedWindow call GetSurface") {
-            surface = destroyedWindow->GetSurface();
+            surf = destroyedWindow->GetSurface();
         }
 
         STEP("2. check sret is nullptr") {
-            STEP_ASSERT_EQ(surface, nullptr);
+            STEP_ASSERT_EQ(surf, nullptr);
         }
     }
 }

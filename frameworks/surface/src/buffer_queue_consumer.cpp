@@ -37,7 +37,7 @@ BufferQueueConsumer::~BufferQueueConsumer()
 }
 
 GSError BufferQueueConsumer::AcquireBuffer(sptr<SurfaceBufferImpl>& buffer, int32_t &fence,
-                                                int64_t &timestamp, Rect &damage)
+    int64_t &timestamp, Rect &damage)
 {
     if (bufferQueue_ == nullptr) {
         return GSERROR_INVALID_ARGUMENTS;

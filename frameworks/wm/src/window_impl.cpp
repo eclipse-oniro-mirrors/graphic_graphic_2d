@@ -108,30 +108,30 @@ GSError WindowImpl::CreateConsumerSurface(sptr<WindowImpl> &wi,
                                           const sptr<WindowOption> &option)
 {
     const auto &sc = SingletonContainer::Get<StaticCall>();
-    auto csurface = option->GetConsumerSurface();
-    if (csurface != nullptr) {
-        wi->csurface = csurface;
+    auto csurf = option->GetConsumerSurface();
+    if (csurf != nullptr) {
+        wi->csurf = csurf;
         WMLOGFI("use Option Surface");
     } else {
-        wi->csurface = sc->SurfaceCreateSurfaceAsConsumer("Window");
+        wi->csurf = sc->SurfaceCreateSurfaceAsConsumer("Window");
         WMLOGFI("use Create Surface");
     }
 
-    if (wi->csurface == nullptr) {
+    if (wi->csurf == nullptr) {
         WMLOGFE("SurfaceCreateSurfaceAsConsumer return nullptr");
         return GSERROR_API_FAILED;
     }
 
-    wi->csurface->RegisterConsumerListener(wi.GetRefPtr());
-    auto producer = wi->csurface->GetProducer();
-    wi->psurface = sc->SurfaceCreateSurfaceAsProducer(producer);
-    if (wi->psurface == nullptr) {
+    wi->csurf->RegisterConsumerListener(wi.GetRefPtr());
+    auto producer = wi->csurf->GetProducer();
+    wi->psurf = sc->SurfaceCreateSurfaceAsProducer(producer);
+    if (wi->psurf == nullptr) {
         WMLOGFE("SurfaceCreateSurfaceAsProducer return nullptr");
         return GSERROR_API_FAILED;
     }
 
-    wi->csurface->SetDefaultWidthAndHeight(wi->attr.GetWidth(), wi->attr.GetHeight());
-    wi->csurface->SetDefaultUsage(HBM_USE_CPU_READ | HBM_USE_CPU_WRITE | HBM_USE_MEM_DMA);
+    wi->csurf->SetDefaultWidthAndHeight(wi->attr.GetWidth(), wi->attr.GetHeight());
+    wi->csurf->SetDefaultUsage(HBM_USE_CPU_READ | HBM_USE_CPU_WRITE | HBM_USE_MEM_DMA);
     return GSERROR_OK;
 }
 
@@ -184,13 +184,13 @@ sptr<WlSurface> WindowImpl::GetWlSurface() const
 sptr<Surface> WindowImpl::GetSurface() const
 {
     CHECK_DESTROY_CONST(nullptr);
-    return psurface;
+    return psurf;
 }
 
 sptr<IBufferProducer> WindowImpl::GetProducer() const
 {
     CHECK_DESTROY_CONST(nullptr);
-    return csurface->GetProducer();
+    return csurf->GetProducer();
 }
 
 int32_t WindowImpl::GetID() const
@@ -372,8 +372,8 @@ GSError WindowImpl::Destroy()
         wret = promise->Await();
         wms = nullptr;
         wlSurface = nullptr;
-        csurface = nullptr;
-        psurface = nullptr;
+        csurf = nullptr;
+        psurf = nullptr;
     }
     return wret;
 }
@@ -425,11 +425,11 @@ namespace {
 void BufferRelease(struct wl_buffer *wbuffer, int32_t fence)
 {
     WMLOGFI("BufferRelease");
-    sptr<Surface> surface = nullptr;
+    sptr<Surface> surf = nullptr;
     sptr<SurfaceBuffer> sbuffer = nullptr;
-    if (SingletonContainer::Get<WlBufferCache>()->GetSurfaceBuffer(wbuffer, surface, sbuffer)) {
-        if (surface != nullptr && sbuffer != nullptr) {
-            surface->ReleaseBuffer(sbuffer, fence);
+    if (SingletonContainer::Get<WlBufferCache>()->GetSurfaceBuffer(wbuffer, surf, sbuffer)) {
+        if (surf != nullptr && sbuffer != nullptr) {
+            surf->ReleaseBuffer(sbuffer, fence);
         }
     }
 }
@@ -444,20 +444,20 @@ void WindowImpl::OnBufferAvailable()
     int32_t flushFence;
     int64_t timestamp;
     Rect damage;
-    auto sret = csurface->AcquireBuffer(sbuffer, flushFence, timestamp, damage);
+    auto sret = csurf->AcquireBuffer(sbuffer, flushFence, timestamp, damage);
     if (sret != GSERROR_OK) {
         WMLOGFE("AcquireBuffer failed");
         return;
     }
 
     auto bc = SingletonContainer::Get<WlBufferCache>();
-    auto wbuffer = bc->GetWlBuffer(csurface, sbuffer);
+    auto wbuffer = bc->GetWlBuffer(csurf, sbuffer);
     if (wbuffer == nullptr) {
         auto dmaBufferFactory = SingletonContainer::Get<WlDMABufferFactory>();
         auto dmaWlBuffer = dmaBufferFactory->Create(sbuffer->GetBufferHandle());
         if (dmaWlBuffer == nullptr) {
             WMLOGFE("Create DMA Buffer Failed");
-            sret = csurface->ReleaseBuffer(sbuffer, -1);
+            sret = csurf->ReleaseBuffer(sbuffer, -1);
             if (sret != GSERROR_OK) {
                 WMLOGFW("ReleaseBuffer failed");
             }
@@ -466,7 +466,7 @@ void WindowImpl::OnBufferAvailable()
         dmaWlBuffer->OnRelease(BufferRelease);
 
         wbuffer = dmaWlBuffer;
-        bc->AddWlBuffer(wbuffer, csurface, sbuffer);
+        bc->AddWlBuffer(wbuffer, csurf, sbuffer);
     }
 
     if (wbuffer) {
@@ -485,8 +485,8 @@ void WindowImpl::OnBufferAvailable()
 
 WindowImpl::~WindowImpl()
 {
-    if (csurface != nullptr) {
-        csurface->UnregisterConsumerListener();
+    if (csurf != nullptr) {
+        csurf->UnregisterConsumerListener();
     }
 }
 } // namespace OHOS

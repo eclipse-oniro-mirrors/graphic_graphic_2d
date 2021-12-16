@@ -229,17 +229,17 @@ void AnimationServer::SplitWindowUpdate()
 {
     ScopedBytrace trace(__func__);
     sptr<SurfaceBuffer> buffer;
-    auto surface = splitWindow->GetSurface();
+    auto surf = splitWindow->GetSurface();
     BufferRequestConfig rconfig = {
-        .width = surface->GetDefaultWidth(),
-        .height = surface->GetDefaultHeight(),
+        .width = surf->GetDefaultWidth(),
+        .height = surf->GetDefaultHeight(),
         .strideAlignment = 0x8,
         .format = PIXEL_FMT_RGBA_8888,
-        .usage = surface->GetDefaultUsage(),
+        .usage = surf->GetDefaultUsage(),
         .timeout = 0,
     };
 
-    GSError ret = surface->RequestBufferNoFence(buffer, rconfig);
+    GSError ret = surf->RequestBufferNoFence(buffer, rconfig);
     if (ret == GSERROR_NO_BUFFER) {
         return;
     } else if (ret != GSERROR_OK || buffer == nullptr) {
@@ -248,7 +248,7 @@ void AnimationServer::SplitWindowUpdate()
 
     auto addr = buffer->GetVirAddr();
     if (addr == nullptr) {
-        surface->CancelBuffer(buffer);
+        surf->CancelBuffer(buffer);
         return;
     }
 
@@ -262,7 +262,7 @@ void AnimationServer::SplitWindowUpdate()
             .h = rconfig.height,
         },
     };
-    surface->FlushBuffer(buffer, -1, fconfig);
+    surf->FlushBuffer(buffer, -1, fconfig);
 }
 
 void AnimationServer::SplitWindowDraw(uint32_t *vaddr, uint32_t width, uint32_t height, uint32_t count)

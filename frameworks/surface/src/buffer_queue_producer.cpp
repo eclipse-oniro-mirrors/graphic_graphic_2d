@@ -201,7 +201,7 @@ int32_t BufferQueueProducer::RegisterReleaseListenerRemote(MessageParcel &argume
 }
 
 GSError BufferQueueProducer::RequestBuffer(const BufferRequestConfig &config, BufferExtraData &bedata,
-                                                RequestBufferReturnValue &retval)
+                                           RequestBufferReturnValue &retval)
 {
     static std::map<int32_t, wptr<SurfaceBuffer>> cache;
     static std::map<pid_t, std::set<int32_t>> sendeds;
@@ -251,7 +251,7 @@ GSError BufferQueueProducer::CancelBuffer(int32_t sequence, BufferExtraData &bed
 }
 
 GSError BufferQueueProducer::FlushBuffer(int32_t sequence, BufferExtraData &bedata,
-                                              int32_t fence, BufferFlushConfig &config)
+                                         int32_t fence, BufferFlushConfig &config)
 {
     if (bufferQueue_ == nullptr) {
         return GSERROR_INVALID_ARGUMENTS;

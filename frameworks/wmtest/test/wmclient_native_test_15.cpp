@@ -70,8 +70,8 @@ public:
         }
 
         window->SwitchTop();
-        auto surface = window->GetSurface();
-        windowSync = NativeTestSync::CreateSync(NativeTestDraw::FlushDraw, surface);
+        auto surf = window->GetSurface();
+        windowSync = NativeTestSync::CreateSync(NativeTestDraw::FlushDraw, surf);
         std::vector<struct WMDisplayInfo> displays;
         WindowManager::GetInstance()->GetDisplays(displays);
         if (displays.size() <= 0) {
@@ -105,8 +105,8 @@ public:
             return;
         }
 
-        surface = subwindow->GetSurface();
-        subwindowSync = NativeTestSync::CreateSync(NativeTestDraw::FlushDraw, surface);
+        surf = subwindow->GetSurface();
+        subwindowSync = NativeTestSync::CreateSync(NativeTestDraw::FlushDraw, surf);
 
         AfterRunWindow();
         AfterRunSubwindow();

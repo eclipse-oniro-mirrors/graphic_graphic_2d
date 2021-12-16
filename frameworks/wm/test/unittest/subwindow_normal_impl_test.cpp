@@ -360,7 +360,7 @@ HWTEST_F(SubwindowNormalImplTest, GetSurface01, Function | SmallTest | Level2)
     }
 
     sptr<Subwindow> subwindow = nullptr;
-    sptr<Surface> surface = nullptr;
+    sptr<Surface> surf = nullptr;
 
     PART("CaseDescription") {
         STEP("1. Create (all normal)") {
@@ -369,11 +369,11 @@ HWTEST_F(SubwindowNormalImplTest, GetSurface01, Function | SmallTest | Level2)
         }
 
         STEP("2. GetSurface") {
-            surface = subwindow->GetSurface();
+            surf = subwindow->GetSurface();
         }
 
         STEP("3. check return normal") {
-            STEP_ASSERT_NE(surface, nullptr);
+            STEP_ASSERT_NE(surf, nullptr);
         }
     }
 }
@@ -397,7 +397,7 @@ HWTEST_F(SubwindowNormalImplTest, GetSurface02, Function | SmallTest | Level2)
     }
 
     sptr<Subwindow> subwindow = nullptr;
-    sptr<Surface> surface = nullptr;
+    sptr<Surface> surf = nullptr;
 
     PART("CaseDescription") {
         STEP("1. Create (all normal)") {
@@ -410,11 +410,11 @@ HWTEST_F(SubwindowNormalImplTest, GetSurface02, Function | SmallTest | Level2)
         }
 
         STEP("3. GetSurface") {
-            surface = subwindow->GetSurface();
+            surf = subwindow->GetSurface();
         }
 
         STEP("4. check return nullptr") {
-            STEP_ASSERT_EQ(surface, nullptr);
+            STEP_ASSERT_EQ(surf, nullptr);
         }
     }
 }

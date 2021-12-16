@@ -68,13 +68,13 @@ public:
             config.height = h;
         };
         subwindow->OnSizeChange(onSizeChange);
-        auto subpsurface = subwindow->GetSurface();
-        config.width = subpsurface->GetDefaultWidth();
-        config.height = subpsurface->GetDefaultHeight();
+        auto subpsurf = subwindow->GetSurface();
+        config.width = subpsurf->GetDefaultWidth();
+        config.height = subpsurf->GetDefaultHeight();
         config.strideAlignment = 0x8;
         config.format = PIXEL_FMT_RGBA_8888;
-        config.usage = subpsurface->GetDefaultUsage();
-        subwindowSync = NativeTestSync::CreateSync(NativeTestDraw::RainbowDraw, subpsurface, &config);
+        config.usage = subpsurf->GetDefaultUsage();
+        subwindowSync = NativeTestSync::CreateSync(NativeTestDraw::RainbowDraw, subpsurf, &config);
 
         std::vector<struct WMDisplayInfo> displays;
         WindowManager::GetInstance()->GetDisplays(displays);

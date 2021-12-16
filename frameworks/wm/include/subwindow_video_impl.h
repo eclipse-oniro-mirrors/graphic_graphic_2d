@@ -63,9 +63,9 @@ private:
 
     // functional member
     sptr<VideoDisplayManager> display = nullptr;
-    sptr<Surface> csurface = nullptr;
-    sptr<Surface> psurface = nullptr;
-    sptr<WlSubsurface> wlSubsurface = nullptr;
+    sptr<Surface> csurf = nullptr;
+    sptr<Surface> psurf = nullptr;
+    sptr<WlSubsurface> wlSubsurf = nullptr;
     sptr<WlSurface> wlSurface = nullptr;
     sptr<WlBuffer> wlBuffer = nullptr;
     BeforeFrameSubmitFunc onBeforeFrameSubmitFunc = nullptr;

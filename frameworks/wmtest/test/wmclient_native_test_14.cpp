@@ -95,14 +95,14 @@ private:
         }
 
         window->SwitchTop();
-        auto surface = window->GetSurface();
-        if (surface == nullptr) {
-            printf("%s surface == nullptr\n", __func__);
+        auto surf = window->GetSurface();
+        if (surf == nullptr) {
+            printf("%s surf == nullptr\n", __func__);
             ExitTest();
             return;
         }
 
-        auto producer = surface->GetProducer();
+        auto producer = surf->GetProducer();
         if (producer == nullptr) {
             printf("%s producer == nullptr\n", __func__);
             ExitTest();

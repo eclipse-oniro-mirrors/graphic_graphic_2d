@@ -81,23 +81,23 @@ int32_t Main::DoDraw(uint8_t *addr, uint32_t width, uint32_t height, uint32_t co
 
 void Main::Draw()
 {
-    sptr<Surface> surface = window->GetSurface();
-    if (surface == nullptr) {
-        LOG("surface is nullptr");
+    sptr<Surface> surf = window->GetSurface();
+    if (surf == nullptr) {
+        LOG("surf is nullptr");
         return;
     }
 
     do {
         sptr<SurfaceBuffer> buffer;
         BufferRequestConfig config = {
-            .width = surface->GetDefaultWidth(),
-            .height = surface->GetDefaultHeight(),
+            .width = surf->GetDefaultWidth(),
+            .height = surf->GetDefaultHeight(),
             .strideAlignment = 0x8,
             .format = PIXEL_FMT_RGBA_8888,
-            .usage = surface->GetDefaultUsage(),
+            .usage = surf->GetDefaultUsage(),
         };
 
-        GSError ret = surface->RequestBufferNoFence(buffer, config);
+        GSError ret = surf->RequestBufferNoFence(buffer, config);
         if (ret == GSERROR_NO_BUFFER) {
             break;
         }
@@ -129,7 +129,7 @@ void Main::Draw()
                 .h = buffer->GetHeight(),
             },
         };
-        ret = surface->FlushBuffer(buffer, -1, flushConfig);
+        ret = surf->FlushBuffer(buffer, -1, flushConfig);
 
         LOG("Sync %{public}d %{public}s", count, GSErrorStr(ret).c_str());
         count++;

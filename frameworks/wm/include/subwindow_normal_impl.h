@@ -67,9 +67,9 @@ private:
     WindowAttribute attr;
 
     // functional member
-    sptr<Surface> csurface = nullptr;
-    sptr<Surface> psurface = nullptr;
-    sptr<WlSubsurface> wlSubsurface = nullptr;
+    sptr<Surface> csurf = nullptr;
+    sptr<Surface> psurf = nullptr;
+    sptr<WlSubsurface> wlSubsurf = nullptr;
     sptr<WlSurface> wlSurface = nullptr;
     BeforeFrameSubmitFunc onBeforeFrameSubmitFunc = nullptr;
 };

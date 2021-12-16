@@ -101,12 +101,12 @@ public:
         window->ScaleTo(winWidth, winHeight);
 
         window->SwitchTop();
-        auto surface = window->GetSurface();
+        auto surf = window->GetSurface();
         windowSync = NativeTestSync::CreateSync(std::bind(&WMClientNativeTest3::Draw, this,
-            std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), surface);
+            std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), surf);
     }
 
-    void Draw(void *vaddr, uint32_t width, uint32_t height, uint32_t count)
+    void Draw(uint32_t *vaddr, uint32_t width, uint32_t height, uint32_t count)
     {
         uint32_t rotationNumber = vsyncRate * 8;
         if (count % rotationNumber == (rotationNumber - 0x2)) {

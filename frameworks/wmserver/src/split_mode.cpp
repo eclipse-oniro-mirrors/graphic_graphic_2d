@@ -49,7 +49,7 @@ void GetSplitModeShowArea(int32_t &x, int32_t &y, int32_t &width, int32_t &heigh
     height = layout.h;
 }
 
-void ChangeSplitMode(struct WindowSurface *ws, enum SplitStatus status)
+void ChangeSplitMode(struct WindowSurface *ws, SplitStatus status)
 {
     ScopedBytrace trace(__func__);
     wms_send_split_mode_change(ws->controller->pWlResource, status);

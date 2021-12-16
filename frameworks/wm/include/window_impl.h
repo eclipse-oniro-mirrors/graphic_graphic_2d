@@ -95,8 +95,8 @@ private:
     // functional member
     sptr<IWindowManagerService> wms = nullptr;
     sptr<WlSurface> wlSurface = nullptr;
-    sptr<Surface> csurface = nullptr;
-    sptr<Surface> psurface = nullptr;
+    sptr<Surface> csurf = nullptr;
+    sptr<Surface> psurf = nullptr;
 
     BeforeFrameSubmitFunc onBeforeFrameSubmitFunc = nullptr;
 };

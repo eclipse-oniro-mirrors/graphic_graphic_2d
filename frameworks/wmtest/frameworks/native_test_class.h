@@ -27,7 +27,7 @@ namespace OHOS {
 class NativeTestFactory {
 public:
     static sptr<Window> CreateWindow(WindowType type,
-                                     sptr<Surface> csurface = nullptr,
+                                     sptr<Surface> csurf = nullptr,
                                      std::optional<uint32_t> did = std::nullopt);
     static inline int32_t defaultDisplayID = 0;
 };
@@ -35,19 +35,19 @@ public:
 using DrawFunc = std::function<void(uint32_t *, uint32_t, uint32_t, uint32_t)>;
 class NativeTestSync : public RefBase {
 public:
-    static sptr<NativeTestSync> CreateSync(DrawFunc drawFunc, sptr<Surface> &psurface, void *data = nullptr);
+    static sptr<NativeTestSync> CreateSync(DrawFunc drawFunc, sptr<Surface> &psurf, void *data = nullptr);
 
 private:
     void Sync(int64_t, void *data);
 
-    sptr<Surface> surface = nullptr;
+    sptr<Surface> surf = nullptr;
     DrawFunc draw = nullptr;
     uint32_t count = 0;
 };
 
 class NativeTestDrawer : public RefBase {
 public:
-    static sptr<NativeTestDrawer> CreateDrawer(DrawFunc drawFunc, sptr<Surface> &psurface, void *data = nullptr);
+    static sptr<NativeTestDrawer> CreateDrawer(DrawFunc drawFunc, sptr<Surface> &psurf, void *data = nullptr);
 
     void SetDrawFunc(DrawFunc draw);
 
@@ -56,7 +56,7 @@ public:
 private:
     void Sync(int64_t, void *);
 
-    sptr<Surface> surface = nullptr;
+    sptr<Surface> surf = nullptr;
     DrawFunc draw = nullptr;
     uint32_t count = 0;
     bool isDrawing = false;
@@ -65,13 +65,13 @@ private:
 
 class NativeTestDraw {
 public:
-    static void FlushDraw(uint32_t *vaddr, uint32_t width, uint32_t height, uint32_t count);
-    static void ColorDraw(uint32_t *vaddr, uint32_t width, uint32_t height, uint32_t count);
-    static void BlackDraw(uint32_t *vaddr, uint32_t width, uint32_t height, uint32_t count);
-    static void RainbowDraw(uint32_t *vaddr, uint32_t width, uint32_t height, uint32_t count);
+    static void FlushDraw(uint32_t *addr, uint32_t width, uint32_t height, uint32_t count);
+    static void ColorDraw(uint32_t *addr, uint32_t width, uint32_t height, uint32_t count);
+    static void BlackDraw(uint32_t *addr, uint32_t width, uint32_t height, uint32_t count);
+    static void RainbowDraw(uint32_t *addr, uint32_t width, uint32_t height, uint32_t count);
     static inline constexpr int32_t RainbowDrawFramerate = 100;
-    static void BoxDraw(uint32_t *vaddr, uint32_t width, uint32_t height, uint32_t count);
-    static void PureColorDraw(uint32_t *vaddr, uint32_t width, uint32_t height, uint32_t count, uint32_t *color);
+    static void BoxDraw(uint32_t *addr, uint32_t width, uint32_t height, uint32_t count);
+    static void PureColorDraw(uint32_t *addr, uint32_t width, uint32_t height, uint32_t count, uint32_t *color);
 };
 } // namespace OHOS
 

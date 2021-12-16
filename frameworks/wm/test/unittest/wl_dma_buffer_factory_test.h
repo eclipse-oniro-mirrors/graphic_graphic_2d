@@ -33,8 +33,8 @@ public:
 
 private:
     static inline GSError initRet = GSERROR_NOT_INIT;
-    static inline sptr<Surface> csurface = nullptr;
-    static inline sptr<Surface> psurface = nullptr;
+    static inline sptr<Surface> csurf = nullptr;
+    static inline sptr<Surface> psurf = nullptr;
     static inline sptr<SurfaceBuffer> sbuffer = nullptr;
 };
 }

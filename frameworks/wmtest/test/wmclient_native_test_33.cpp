@@ -114,8 +114,8 @@ public:
         }
 
         window->SwitchTop();
-        auto surface = window->GetSurface();
-        windowSync = NativeTestSync::CreateSync(NativeTestDraw::FlushDraw, surface);
+        auto surf = window->GetSurface();
+        windowSync = NativeTestSync::CreateSync(NativeTestDraw::FlushDraw, surf);
     }
 
 private:

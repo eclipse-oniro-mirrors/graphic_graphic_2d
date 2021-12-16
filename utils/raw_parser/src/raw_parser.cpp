@@ -81,7 +81,7 @@ int32_t RawParser::Parse(const std::string &file)
     return 0;
 }
 
-int32_t RawParser::GetNextData(void* addr)
+int32_t RawParser::GetNextData(uint32_t *addr)
 {
     uint32_t count = (lastID + 1) % infos.size();
     if (count >= infos.size()) {
@@ -102,14 +102,14 @@ int32_t RawParser::GetNextData(void* addr)
 
     lastID = count;
     if (length > 0 && memcpy_s(lastData.get() + offset, GetSize() - offset,
-            uncompressed.get(), length) != EOK) {
+                               uncompressed.get(), length) != EOK) {
         return -1;
     }
 
     return GetNowData(addr);
 }
 
-int32_t RawParser::GetNowData(void* addr)
+int32_t RawParser::GetNowData(uint32_t *addr)
 {
     if (memcpy_s(addr, GetSize(), lastData.get(), GetSize()) != EOK) {
         return -1;

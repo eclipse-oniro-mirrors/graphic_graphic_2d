@@ -27,7 +27,7 @@ public:
     virtual GSError SetWindowType(WindowType t) override;
     virtual GSError SetWindowMode(WindowMode mode) override;
     virtual GSError SetDisplay(int32_t did) override;
-    virtual GSError SetConsumerSurface(const sptr<Surface> &surface) override;
+    virtual GSError SetConsumerSurface(const sptr<Surface> &surf) override;
     virtual GSError SetX(int32_t x) override;
     virtual GSError SetY(int32_t y) override;
     virtual GSError SetWidth(uint32_t width) override;

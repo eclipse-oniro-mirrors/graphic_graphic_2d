@@ -120,8 +120,8 @@ HWTEST_F(WindowOptionImplTest, InvalidSet, testing::ext::TestSize.Level0)
         << "3. set invalid display, check (woi.SetDisplay() == GSERROR_INVALID_ARGUMENTS)";
 
     // 4. set invalid consumerSurface, check
-    auto csurface = Surface::CreateSurfaceAsConsumer();
-    auto producer = csurface->GetProducer();
+    auto csurf = Surface::CreateSurfaceAsConsumer();
+    auto producer = csurf->GetProducer();
     auto invalidConsumerSurface = Surface::CreateSurfaceAsProducer(producer);
     ASSERT_EQ(woi.SetConsumerSurface(invalidConsumerSurface), GSERROR_INVALID_ARGUMENTS) << "CaseDescription: "
         << "4. set invalid consumerSurface, check (woi.SetConsumerSurface() == GSERROR_INVALID_ARGUMENTS)";

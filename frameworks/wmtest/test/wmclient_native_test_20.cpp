@@ -103,7 +103,6 @@ public:
             GSLOG7SO(INFO) << "onSizeChange " << w << "x" << h;
             config.width = w;
             config.height = h;
-            window->Resize(w, h);
             PostTask(std::bind(&NativeTestDrawer::DrawOnce, windowDrawer));
         };
         window->OnSizeChange(onSizeChange);
@@ -111,17 +110,17 @@ public:
         window->OnSplitStatusChange(func);
         ListenWindowInputEvent(window->GetID());
 
-        auto surface = window->GetSurface();
-        config.width = surface->GetDefaultWidth();
-        config.height = surface->GetDefaultHeight();
+        auto surf = window->GetSurface();
+        config.width = surf->GetDefaultWidth();
+        config.height = surf->GetDefaultHeight();
         config.strideAlignment = 0x8;
         config.format = PIXEL_FMT_RGBA_8888;
-        config.usage = surface->GetDefaultUsage();
+        config.usage = surf->GetDefaultUsage();
 
         window->SwitchTop();
         auto draw = std::bind(&WMClientNativeTest20Sub0::Draw, this,
             std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-        windowDrawer = NativeTestDrawer::CreateDrawer(draw, surface, &config);
+        windowDrawer = NativeTestDrawer::CreateDrawer(draw, surf, &config);
         windowDrawer->DrawOnce();
     }
 
@@ -215,11 +214,11 @@ public:
             return;
         }
 
-        auto surface = window->GetSurface();
+        auto surf = window->GetSurface();
         window->SwitchTop();
         auto draw = std::bind(&WMClientNativeTest20Sub1::Draw, this,
             std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-        windowDrawer = NativeTestDrawer::CreateDrawer(draw, surface);
+        windowDrawer = NativeTestDrawer::CreateDrawer(draw, surf);
         windowDrawer->DrawOnce();
         for (auto &icon : icons) {
             icon.rect.x *= window->GetWidth();

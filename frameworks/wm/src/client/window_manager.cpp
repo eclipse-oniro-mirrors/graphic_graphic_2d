@@ -33,11 +33,11 @@ namespace {
 sptr<IWindowManagerService> g_windowManagerService = nullptr;
 }
 
-WindowBase::WindowBase(int32_t windowid, sptr<Surface>& surface)
+WindowBase::WindowBase(int32_t windowid, sptr<Surface>& surf)
 {
     WMLOG_I("DEBUG WindowBase");
     m_windowid = windowid;
-    surface_ = surface;
+    surface_ = surf;
     BufferRequestConfig config = {
         .width = 0,
         .height = 0,
@@ -190,9 +190,9 @@ std::unique_ptr<Window> WindowManager::CreateWindow(WindowConfig *config)
     windowInfo->wlSurface = wlSurface;
     windowInfo->wlSurface->SetUserData(&windowInfo->windowid);
 
-    auto producer = windowInfo->surface->GetProducer();
-    sptr<Surface> surface = Surface::CreateSurfaceAsProducer(producer);
-    std::unique_ptr<Window> ret_win = std::make_unique<Window>(windowInfo->windowid, surface);
+    auto producer = windowInfo->surf->GetProducer();
+    sptr<Surface> surf = Surface::CreateSurfaceAsProducer(producer);
+    std::unique_ptr<Window> ret_win = std::make_unique<Window>(windowInfo->windowid, surf);
 
     BufferRequestConfig requestConfig = {
         .width = wminfo.width,
@@ -241,9 +241,9 @@ std::unique_ptr<SubWindow> WindowManager::CreateSubWindow(int32_t parentid, Wind
 
     std::unique_ptr<SubWindow> ret_win;
     if (config->type != WINDOW_TYPE_VIDEO || windowInfo->voLayerId == -1U) {
-        auto producer = windowInfo->surface->GetProducer();
-        sptr<Surface> surface = Surface::CreateSurfaceAsProducer(producer);
-        ret_win = std::make_unique<SubWindow>(windowInfo->windowid, surface);
+        auto producer = windowInfo->surf->GetProducer();
+        sptr<Surface> surf = Surface::CreateSurfaceAsProducer(producer);
+        ret_win = std::make_unique<SubWindow>(windowInfo->windowid, surf);
     } else {
         ret_win = std::make_unique<VideoWindow>(*windowInfo);
     }
@@ -358,7 +358,7 @@ void WindowManager::DestroyWindow(int32_t windowId)
     WMLOG_I("WindowsManager::DestroyWindow end");
 }
 
-Window::Window(int32_t windowid, sptr<Surface>& surface) : WindowBase(windowid, surface)
+Window::Window(int32_t windowid, sptr<Surface>& surf) : WindowBase(windowid, surf)
 {
     WMLOG_I("DEBUG Window");
 }
@@ -440,7 +440,7 @@ void Window::RegistOnWindowCreateCb(void(* cb)(uint32_t pid))
     LayerControllerClient::GetInstance()->RegistOnWindowCreateCb(m_windowid, cb);
 }
 
-SubWindow::SubWindow(int32_t windowid, sptr<Surface>& surface) : WindowBase(windowid, surface)
+SubWindow::SubWindow(int32_t windowid, sptr<Surface>& surf) : WindowBase(windowid, surf)
 {
     WMLOG_I("DEBUG SubWindow");
 }

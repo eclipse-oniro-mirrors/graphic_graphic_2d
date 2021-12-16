@@ -65,19 +65,19 @@ sptr<IBufferProducer> ConsumerSurface::GetProducer() const
 }
 
 GSError ConsumerSurface::RequestBuffer(sptr<SurfaceBuffer>& buffer,
-                                            int32_t &fence, BufferRequestConfig &config)
+                                       int32_t &fence, BufferRequestConfig &config)
 {
     return GSERROR_NOT_SUPPORT;
 }
 
 GSError ConsumerSurface::RequestBufferNoFence(sptr<SurfaceBuffer>& buffer,
-                                                   BufferRequestConfig &config)
+                                              BufferRequestConfig &config)
 {
     return GSERROR_NOT_SUPPORT;
 }
 
 GSError ConsumerSurface::RequestBufferWithFence(sptr<SurfaceBuffer>& buffer,
-                                                     int32_t &fence, BufferRequestConfig &config)
+                                                int32_t &fence, BufferRequestConfig &config)
 {
     return GSERROR_NOT_SUPPORT;
 }
@@ -88,19 +88,19 @@ GSError ConsumerSurface::CancelBuffer(sptr<SurfaceBuffer>& buffer)
 }
 
 GSError ConsumerSurface::FlushBuffer(sptr<SurfaceBuffer>& buffer,
-                                          int32_t fence, BufferFlushConfig &config)
+                                     int32_t fence, BufferFlushConfig &config)
 {
     return GSERROR_NOT_SUPPORT;
 }
 
 GSError ConsumerSurface::FlushBufferNoFence(sptr<SurfaceBuffer>& buffer,
-                                                 BufferFlushConfig &config)
+                                            BufferFlushConfig &config)
 {
     return GSERROR_NOT_SUPPORT;
 }
 
 GSError ConsumerSurface::AcquireBuffer(sptr<SurfaceBuffer>& buffer, int32_t &fence,
-                                            int64_t &timestamp, Rect &damage)
+                                       int64_t &timestamp, Rect &damage)
 {
     sptr<SurfaceBufferImpl> bufferImpl = SurfaceBufferImpl::FromBase(buffer);
     GSError ret = consumer_->AcquireBuffer(bufferImpl, fence, timestamp, damage);
