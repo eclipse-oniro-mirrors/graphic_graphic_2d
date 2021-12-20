@@ -16,18 +16,17 @@
 #ifndef FRAMEWORKS_ANIMATION_SERVER_SERVER_INCLUDE_ROTATION_ANIMATION_H
 #define FRAMEWORKS_ANIMATION_SERVER_SERVER_INCLUDE_ROTATION_ANIMATION_H
 
-#include <egl_surface.h>
+#include <memory>
 
-#include "shader.h"
-#include "texture.h"
+#include <graphic_common.h>
+#include <shader.h>
+#include <texture.h>
+
+#include "array.h"
 
 namespace OHOS {
-struct Array {
-    std::unique_ptr<uint8_t[]> ptr;
-};
-
 struct RotationAnimationParam {
-    std::shared_ptr<Array> data;
+    std::shared_ptr<struct Array> data;
     int32_t width; // data width
     int32_t height; // data height
     int64_t startTime; // ms

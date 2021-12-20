@@ -28,28 +28,11 @@
 #include <window_manager_service_client.h>
 
 #include "animation_service_stub.h"
+#include "animation_module.h"
 #include "cursor_module.h"
-#include "rotation_animation.h"
-
-#ifdef ACE_ENABLE_GPU
-#include <egl_surface.h>
-#endif
 
 namespace OHOS {
-using PromiseGSError = Promise<GSError>;
-
-struct Animation {
-    int32_t degree;
-    sptr<PromiseGSError> retval;
-};
-
-struct AnimationScreenshotInfo {
-    struct WMImageInfo wmimage;
-    std::shared_ptr<Array> ptr;
-};
-using PromiseAnimationScreenshotInfo = Promise<struct AnimationScreenshotInfo>;
-
-class AnimationServer : public IScreenShotCallback, public AnimationServiceStub {
+class AnimationServer : public AnimationServiceStub {
 public:
     GSError Init();
 
@@ -59,29 +42,17 @@ public:
     GSError CreateLaunchPage(const std::string &filename) override;
     GSError CancelLaunchPage() override;
 
-    void OnScreenShot(const struct WMImageInfo &info) override;
     void OnSplitStatusChange(SplitStatus status);
     bool OnTouch(const TouchEvent &event);
 
 private:
-    void StartAnimation(struct Animation &animation);
-    void AnimationSync(int64_t time, void *data);
-
     void SplitWindowUpdate();
     void SplitWindowDraw(uint32_t *vaddr, uint32_t width, uint32_t height, uint32_t count);
 
     void LaunchPageWindowUpdate();
 
     std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
-    sptr<VsyncHelper> vhelper = nullptr;
-    sptr<Window> window = nullptr;
-#ifdef ACE_ENABLE_GPU
-    sptr<EglRenderSurface> eglSurface = nullptr;
-
-    std::atomic<bool> isAnimationRunning = false;
-    sptr<PromiseAnimationScreenshotInfo> screenshotPromise = nullptr;
-    std::unique_ptr<RotationAnimation> ranimation = nullptr;
-#endif
+    AnimationModule animationModule;
 
     sptr<Window> splitWindow = nullptr;
     bool haveMiddleLine = false;

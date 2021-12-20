@@ -173,6 +173,7 @@ ohos_shared_library("libwmclient") {
   deps = [
     "//developtools/bytrace_standard/interfaces/innerkits/native:bytrace_core",
     "//foundation/graphic/standard:libfence",
+    "//foundation/graphic/standard:libgraphic_dumper_client",
     "//foundation/graphic/standard:libwmservice",
     "//foundation/graphic/standard/frameworks/wmserver:wms_protocol",
     "//foundation/graphic/standard/utils:libgraphic_utils",

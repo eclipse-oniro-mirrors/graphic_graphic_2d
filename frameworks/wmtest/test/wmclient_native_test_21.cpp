@@ -240,7 +240,7 @@ public:
         glActiveTexture(GL_TEXTURE0 + 0);
         glBindTexture(GL_TEXTURE_2D, eglData->GetTexture());
         shader->SetUniform1i("u_texture", 0);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 0x4);
         glFinish();
         return -1;
     }

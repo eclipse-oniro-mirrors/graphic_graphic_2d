@@ -84,7 +84,8 @@ public:
     int32_t IPCServerStart();
     int32_t IPCServerStop();
     GSError IPCClientConnectServer(int32_t said);
-    GSError IPCClientSendMessage(int32_t sequence, const std::string &message, const sptr<IRemoteObject> &robj = nullptr);
+    GSError IPCClientSendMessage(int32_t sequence,
+        const std::string &message, const sptr<IRemoteObject> &robj = nullptr);
     virtual void IPCClientOnMessage(int32_t sequence, const std::string &message, const sptr<IRemoteObject> &robj);
 
     // thread pool

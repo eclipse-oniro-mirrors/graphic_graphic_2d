@@ -56,11 +56,18 @@
 ## 目录
 ```
 foundation/graphic/standard/
+├── figures                 # Markdown引用的图片目录
 ├── frameworks              # 框架代码目录
+│   ├── animation_server    # AnimationServer代码
 │   ├── bootanimation       # 开机动画目录
+│   ├── dumper              # graphic dumper代码
+│   ├── fence               # fence代码
 │   ├── surface             # Surface代码
 │   ├── vsync               # Vsync代码
-│   └── wm                  # WindowManager代码
+│   ├── wm                  # WindowManager代码
+│   ├── wmserver            # libwmserver代码
+│   ├── wmservice           # WindowManagerService代码
+│   └── wmtest              # wmtest代码，可以视为demo
 ├── interfaces              # 对外接口存放目录
 │   ├── innerkits           # native接口存放目录
 │   └── kits                # js/napi接口存放目录
@@ -73,9 +80,10 @@ foundation/graphic/standard/
 
 ## 编译构建
 可以依赖的接口有:
-- graphic_standard:libwms_client
 - graphic_standard:libsurface
 - graphic_standard:libvsync_client
+- graphic_standard:libwmclient
+- graphic_standard:libwmservice
 
 ## 接口说明
 

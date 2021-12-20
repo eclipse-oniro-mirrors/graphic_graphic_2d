@@ -63,7 +63,6 @@ namespace {
  * EnvConditions: WindowManager init success.
  * CaseDescription: 1. Create ($2=nullptr)
  *                  2. check return GSERROR_INVALID_ARGUMENTS
- *                  3. check $1 is nullptr
  */
 HWTEST_F(SubwindowNormalImplTest, Create01, Reliability | SmallTest | Level4)
 {
@@ -86,10 +85,6 @@ HWTEST_F(SubwindowNormalImplTest, Create01, Reliability | SmallTest | Level4)
         STEP("2. check return GSERROR_INVALID_ARGUMENTS") {
             STEP_ASSERT_EQ(wret, GSERROR_INVALID_ARGUMENTS);
         }
-
-        STEP("3. check $1 is nullptr") {
-            STEP_ASSERT_EQ(subwindow, nullptr);
-        }
     }
 }
 
@@ -100,7 +95,6 @@ HWTEST_F(SubwindowNormalImplTest, Create01, Reliability | SmallTest | Level4)
  * EnvConditions: WindowManager init success.
  * CaseDescription: 1. Create ($3=nullptr)
  *                  2. check return GSERROR_INVALID_ARGUMENTS
- *                  3. check $1 is nullptr
  */
 HWTEST_F(SubwindowNormalImplTest, Create02, Reliability | SmallTest | Level4)
 {
@@ -122,10 +116,6 @@ HWTEST_F(SubwindowNormalImplTest, Create02, Reliability | SmallTest | Level4)
 
         STEP("2. check return GSERROR_INVALID_ARGUMENTS") {
             STEP_ASSERT_EQ(wret, GSERROR_INVALID_ARGUMENTS);
-        }
-
-        STEP("3. check $1 is nullptr") {
-            STEP_ASSERT_EQ(subwindow, nullptr);
         }
     }
 }
@@ -552,107 +542,6 @@ HWTEST_F(SubwindowNormalImplTest, Resize02, Function | SmallTest | Level2)
         STEP("4. check return GSERROR_DESTROYED_OBJECT") {
             STEP_ASSERT_EQ(resizeRet, GSERROR_DESTROYED_OBJECT);
         }
-    }
-}
-
-void AlwaysMoveThreadFunc(const sptr<Promise<sptr<SubwindowNormalImpl>>> &subwindowPromise,
-                          const sptr<Promise<GSError>> &wmerrorPromise,
-                          const bool &running, bool &waiting)
-{
-    while (running) {
-        while (waiting) {
-            sleep(0);
-        }
-        waiting = true;
-        if (running == false) {
-            break;
-        }
-
-        auto subwindow = subwindowPromise->Await();
-        auto wret = subwindow->Move(0, 0);
-        if (wmerrorPromise != nullptr) {
-            wmerrorPromise->Resolve(wret);
-        }
-        while (wret == GSERROR_OK) {
-            static int32_t i = 0;
-            constexpr int32_t mod = 2;
-            wret = subwindow->Move(i % mod, i % mod);
-            i++;
-        }
-        if (wmerrorPromise != nullptr) {
-            wmerrorPromise->Resolve(wret);
-        }
-    }
-}
-
-/*
- * Function: Destroy
- * Type: Reliability
- * Rank: Rare(4)
- * EnvConditions: WindowManager init success.
- * CaseDescription: 1. Create (all normal)
- *                  2. SetSchedule
- *                  3. Move (in thread)
- *                  4. Destroy
- *                  5. loop 1e6
- */
-HWTEST_F(SubwindowNormalImplTest, Destory, Function | SmallTest | Level2)
-{
-    PART("EnvConditions") {
-        STEP("WindowManager init success.") {
-            STEP_ASSERT_EQ(initRet, GSERROR_OK);
-        }
-    }
-
-    PART("CaseDescription") {
-        sptr<Promise<sptr<SubwindowNormalImpl>>> subwindowPromise = nullptr;
-        sptr<Promise<GSError>> wmerrorPromise = nullptr;
-        bool running = true;
-        bool waiting = true;
-
-        auto alwaysMoveThreadFunc = std::bind(std::cref(AlwaysMoveThreadFunc),
-            std::cref(subwindowPromise), std::cref(wmerrorPromise),
-            std::cref(running), std::ref(waiting));
-        std::unique_ptr<std::thread> thread = std::make_unique<std::thread>(alwaysMoveThreadFunc);
-
-        constexpr int32_t concurrentCount = 10000;
-        constexpr int32_t concurrentPercent = concurrentCount / 100;
-        for (int32_t i = 0; i < concurrentCount; i++) {
-            sptr<SubwindowNormalImpl> subwindow = nullptr;
-
-            STEP("1. Create (all normal)") {
-                subwindow = new SubwindowNormalImpl();
-                auto wret = subwindow->Init(window, subwindowOption);
-                STEP_ASSERT_EQ(wret, GSERROR_OK);
-            }
-
-            STEP("2. SetSchedule") {
-                Tester::Get().SetSchedule();
-            }
-
-            STEP("3. Move (in thread)") {
-                subwindowPromise = new Promise<sptr<SubwindowNormalImpl>>(subwindow);
-                waiting = false;
-                wmerrorPromise = new Promise<GSError>();
-                auto wret = wmerrorPromise->Await();
-                STEP_ASSERT_EQ(wret, GSERROR_OK);
-            }
-
-            STEP("4. Destroy") {
-                wmerrorPromise = new Promise<GSError>();
-                subwindow->Destroy();
-                auto wret = wmerrorPromise->Await();
-                STEP_ASSERT_EQ(wret, GSERROR_DESTROYED_OBJECT);
-            }
-
-            if (i % concurrentPercent == 0) {
-                GTEST_LOG_(INFO) << "running: " << i << "/" << concurrentCount;
-            }
-        }
-
-        running = false;
-        waiting = false;
-        thread->join();
     }
 }
 } // namespace

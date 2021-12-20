@@ -20,6 +20,7 @@ group("default") {
     ":default.scss",
     ":graphic.rc",
     "frameworks/animation_server:animation_server",
+    "frameworks/animation_server:cursor.raw",
     "frameworks/bootanimation:bootanimation",
     "frameworks/bootanimation:bootanimation-480x960.raw",
     "frameworks/dumper:gdumper",
@@ -36,10 +37,10 @@ group("test") {
   testonly = true
 
   public_deps = [
+    "frameworks/fence:test",
     "frameworks/surface:test",
     "frameworks/vsync:test",
     "frameworks/wm:test",
-    "frameworks/fence:test",
     "frameworks/wmtest:wmtest",
   ]
 }

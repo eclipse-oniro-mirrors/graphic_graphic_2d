@@ -28,7 +28,7 @@ public:
     DECLARE_INTERFACE_DESCRIPTOR(u"inative_test_ipc");
 
 protected:
-    enum {
+    enum InativeTestIpcEnum {
         INATIVE_TEST_IPC_SEND_MESSAGE = 0,
         INATIVE_TEST_IPC_REGISTER = 1,
         INATIVE_TEST_IPC_ON_MESSAGE = 2,

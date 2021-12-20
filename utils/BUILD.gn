@@ -11,6 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//build/ohos.gni")
+import("//foundation/graphic/standard/graphic_config.gni")
+
 group("buffer_handle") {
   public_deps = [ "buffer_handle:buffer_handle" ]
 }
@@ -69,7 +72,7 @@ ohos_shared_library("libgraphic_utils") {
     "matrix:matrix",
     "option_parser:option_parser",
     "promise:promise",
-    "raw_parser:raw_parser",
+    "raw_maker:raw_maker",
     "raw_parser:raw_parser",
     "scoped_bytrace:scoped_bytrace",
     "semaphore:semaphore",

@@ -56,6 +56,11 @@ GSError WindowImpl::CheckAndNew(sptr<WindowImpl> &wi,
         return GSERROR_INVALID_ARGUMENTS;
     }
 
+    if (option == nullptr) {
+        WMLOGFE("WindowOption is nullptr");
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+
     wi = TESTER_NEW(WindowImpl);
     if (wi == nullptr) {
         WMLOGFE("new WindowImpl failed");

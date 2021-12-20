@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//foundation/graphic/standard/graphic_config.gni")
 
 ## Build gl_utils.a {{{
 config("gl_utils_config") {
@@ -22,6 +23,10 @@ config("gl_utils_config") {
     "-Werror",
     "-g3",
   ]
+
+  if (!ace_enable_gpu) {
+    cflags += [ "-Wno-unused-private-field" ]
+  }
 }
 
 config("gl_utils_public_config") {
@@ -29,10 +34,19 @@ config("gl_utils_public_config") {
 }
 
 ohos_static_library("gl_utils") {
-  sources = [
-    "src/shader.cpp",
-    "src/texture.cpp",
-  ]
+  sources = []
+
+  if (ace_enable_gpu) {
+    sources += [
+      "src/shader.cpp",
+      "src/texture.cpp",
+    ]
+  } else {
+    sources += [
+      "src/mock/shader.cpp",
+      "src/mock/texture.cpp",
+    ]
+  }
 
   configs = [ ":gl_utils_config" ]
 

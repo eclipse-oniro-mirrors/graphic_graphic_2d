@@ -23,7 +23,7 @@
 namespace OHOS {
 class NativeTestIpcProxy : public IRemoteProxy<INativeTestIpc> {
 public:
-    NativeTestIpcProxy(const sptr<IRemoteObject>& impl);
+    explicit NativeTestIpcProxy(const sptr<IRemoteObject>& impl);
     virtual ~NativeTestIpcProxy() = default;
 
     virtual GSError SendMessage(int32_t sequence, const std::string &message, const sptr<IRemoteObject> &robj) override;

@@ -78,6 +78,10 @@ config("animation_server_config") {
     "-Werror",
     "-g3",
   ]
+
+  if (!ace_enable_gpu) {
+    cflags += [ "-Wno-unused-private-field" ]
+  }
 }
 
 ohos_executable("animation_server") {
@@ -91,7 +95,15 @@ ohos_executable("animation_server") {
   ]
 
   if (ace_enable_gpu) {
-    sources += [ "server/src/rotation_animation.cpp" ]
+    sources += [
+      "server/src/animation_module.cpp",
+      "server/src/rotation_animation.cpp",
+    ]
+  } else {
+    sources += [
+      "server/src/mock/animation_module.cpp",
+      "server/src/mock/rotation_animation.cpp",
+    ]
   }
 
   configs = [ ":animation_server_config" ]

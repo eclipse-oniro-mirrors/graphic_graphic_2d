@@ -207,9 +207,9 @@ HWTEST_F(WindowImplTest, Create05, Reliability | SmallTest | Level4)
  * Type: Reliability
  * Rank: Normal(3)
  * EnvConditions: N/A
- * CaseDescription: 1. Mock WindowManagerServer, CreateWindow return Promise(-1)
+ * CaseDescription: 1. Mock WindowManagerServer, CreateWindow return Promise(NO_MEM)
  *                  2. call WindowImpl::Create
- *                  3. check wret is -1
+ *                  3. check wret is NO_MEM
  */
 HWTEST_F(WindowImplTest, Create06, Reliability | SmallTest | Level3)
 {
@@ -217,10 +217,9 @@ HWTEST_F(WindowImplTest, Create06, Reliability | SmallTest | Level3)
         using Mocker = SingletonMocker<WindowManagerServer, MockWindowManagerServer>;
         std::unique_ptr<Mocker> m = nullptr;
 
-        constexpr GSError anyError = static_cast<GSError>(-1);
-        STEP("1. Mock WindowManagerServer, CreateWindow return Promise(-1)") {
+        STEP("1. Mock WindowManagerServer, CreateWindow return Promise(NO_MEM)") {
             m = std::make_unique<Mocker>();
-            struct WMSWindowInfo info = { .wret = anyError };
+            struct WMSWindowInfo info = { .wret = GSERROR_NO_MEM };
             EXPECT_CALL(*m->Mock(), CreateWindow(_, _, _))
                 .Times(1).WillRepeatedly(Return(new Promise<struct WMSWindowInfo>(info)));
         }
@@ -233,8 +232,8 @@ HWTEST_F(WindowImplTest, Create06, Reliability | SmallTest | Level3)
             STEP_ASSERT_EQ(window, nullptr);
         }
 
-        STEP("3. check wret is -1") {
-            STEP_ASSERT_EQ(wret, anyError);
+        STEP("3. check wret is NO_MEM") {
+            STEP_ASSERT_EQ(wret, GSERROR_NO_MEM);
         }
     }
 }

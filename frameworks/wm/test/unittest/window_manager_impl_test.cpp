@@ -469,7 +469,7 @@ HWTEST_F(WindowManagerImplTest, CreateSubwindow02, Reliability | SmallTest | Lev
  * Rank: Important(2)
  * EnvConditions: N/A
  * CaseDescription: 1. mock SubwindowOption
- *                  2. GetWindowType return -1, -1
+ *                  2. GetWindowType return -1
  *                  3. call CreateSubwindow
  *                  4. check wret is GSERROR_NOT_SUPPORT
  */
@@ -483,9 +483,9 @@ HWTEST_F(WindowManagerImplTest, CreateSubwindow03, Reliability | SmallTest | Lev
             mockSubwindowOption = new MockSubwindowOption();
         }
 
-        STEP("2. GetWindowType return -1, -1") {
+        STEP("2. GetWindowType return -1") {
             EXPECT_CALL(*mockSubwindowOption, GetWindowType())
-                .Times(2)
+                .Times(1)
                 .WillRepeatedly(Return(static_cast<SubwindowType>(-1)));
         }
 

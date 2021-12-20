@@ -17,6 +17,7 @@
 
 #include <chrono>
 
+#include <GLES2/gl2.h>
 #include <gslogger.h>
 
 namespace OHOS {
