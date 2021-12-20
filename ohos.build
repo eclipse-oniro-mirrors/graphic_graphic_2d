@@ -17,10 +17,7 @@
         "//foundation/graphic/standard:default"
       ],
       "test_list": [
-        "//foundation/graphic/standard/frameworks/surface:test",
-        "//foundation/graphic/standard/frameworks/vsync:test",
-        "//foundation/graphic/standard/frameworks/wm:test",
-        "//foundation/graphic/standard/frameworks/fence:test"
+        "//foundation/graphic/standard:test"
       ]
     }
   }

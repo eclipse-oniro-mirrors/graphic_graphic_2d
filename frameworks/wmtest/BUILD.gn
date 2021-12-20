@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/ohos.gni")
+import("//build/test.gni")
 import("//foundation/graphic/standard/graphic_config.gni")
 
 ## Build wmtest {{{
@@ -27,8 +27,9 @@ config("wmtest_config") {
   ]
 }
 
-ohos_executable("wmtest") {
-  install_enable = false
+ohos_systemtest("wmtest") {
+  test_type = "nativetest"
+  module_out_path = "graphic_standard/wmtest"
 
   sources = [
     "frameworks/inative_test.cpp",

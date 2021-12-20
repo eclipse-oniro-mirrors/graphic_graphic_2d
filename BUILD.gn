@@ -29,6 +29,17 @@ group("default") {
     "frameworks/wmserver:screen-info-test",
     "frameworks/wmserver:wmserver",
     "frameworks/wmservice:wmservice_test",
+  ]
+}
+
+group("test") {
+  testonly = true
+
+  public_deps = [
+    "frameworks/surface:test",
+    "frameworks/vsync:test",
+    "frameworks/wm:test",
+    "frameworks/fence:test",
     "frameworks/wmtest:wmtest",
   ]
 }
