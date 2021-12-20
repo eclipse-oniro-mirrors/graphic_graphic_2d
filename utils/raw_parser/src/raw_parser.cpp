@@ -17,6 +17,7 @@
 
 #include <cstdio>
 #include <fstream>
+#include <gslogger.h>
 #include <mutex>
 #include <securec.h>
 #include <sstream>
@@ -24,6 +25,10 @@
 #include <zlib.h>
 
 namespace OHOS {
+namespace {
+DEFINE_HILOG_LABEL("RawParser");
+} // namespace
+
 struct MagicInfo {
     char magic[8];
     uint32_t width;
@@ -42,11 +47,13 @@ int32_t RawParser::Parse(const std::string &file)
 {
     int32_t ret = ReadFile(file, compressed);
     if (ret) {
+        GSLOG2HI(ERROR) << "ReadFile failed with" << ret;
         return ret;
     }
 
     auto minfo = reinterpret_cast<struct MagicInfo*>(&compressed[0]);
     if (strncmp(minfo->magic, "RAW.diff", 0x8) != 0) {
+        GSLOG2HI(ERROR) << "magic header mistake";
         return -1;
     }
 
@@ -57,7 +64,9 @@ int32_t RawParser::Parse(const std::string &file)
     struct HeaderInfo *info = reinterpret_cast<struct HeaderInfo *>(&compressed[magicHeaderLength]);
     uint32_t ipos = reinterpret_cast<uint8_t *>(info) - reinterpret_cast<uint8_t *>(minfo);
     while (ipos < clength) {
+        GSLOG2HI(DEBUG) << info->type << ", " << info->offset << ", " << info->length << ", " << info->clen;
         if (info->clen < 0) {
+            GSLOG2HI(ERROR) << "clen < 0";
             return -1;
         }
 
@@ -75,6 +84,7 @@ int32_t RawParser::Parse(const std::string &file)
     }
 
     if (infos.empty()) {
+        GSLOG2HI(ERROR) << "infos is empty";
         return -1;
     }
 
@@ -85,24 +95,28 @@ int32_t RawParser::GetNextData(uint32_t *addr)
 {
     uint32_t count = (lastID + 1) % infos.size();
     if (count >= infos.size()) {
+        GSLOG2HI(ERROR) << "count overflow";
         return -1;
     }
 
     auto offset = infos[count].offset;
     auto length = infos[count].length;
     if (length == 0) {
+        GSLOG2HI(ERROR) << "length == 0";
         return 0;
     }
 
     uncompressed = std::make_unique<uint8_t[]>(length);
     int32_t ret = Uncompress(uncompressed, length, infos[count].mem, infos[count].clen);
     if (ret) {
+        GSLOG2HI(ERROR) << "uncompress failed";
         return -1;
     }
 
     lastID = count;
     if (length > 0 && memcpy_s(lastData.get() + offset, GetSize() - offset,
                                uncompressed.get(), length) != EOK) {
+        GSLOG2HI(ERROR) << "memcpy failed";
         return -1;
     }
 
@@ -112,6 +126,7 @@ int32_t RawParser::GetNextData(uint32_t *addr)
 int32_t RawParser::GetNowData(uint32_t *addr)
 {
     if (memcpy_s(addr, GetSize(), lastData.get(), GetSize()) != EOK) {
+        GSLOG2HI(ERROR) << "memcpy failed";
         return -1;
     }
     return 0;
@@ -121,6 +136,7 @@ int32_t RawParser::ReadFile(const std::string &file, std::unique_ptr<uint8_t[]> 
 {
     std::ifstream ifs(file, std::ifstream::in | std::ifstream::binary);
     if (!ifs.good()) {
+        GSLOG2HI(ERROR) << "read file failed";
         return 1;
     }
 
@@ -137,6 +153,9 @@ int32_t RawParser::Uncompress(std::unique_ptr<uint8_t[]> &dst, uint32_t dstlen, 
 {
     unsigned long ulength = dstlen;
     auto ret = uncompress(dst.get(), &ulength, cmem, clen);
+    if (ret) {
+        GSLOG2HI(ERROR) << "uncompress failed";
+    }
     return ret;
 }
 } // namespace OHOS
