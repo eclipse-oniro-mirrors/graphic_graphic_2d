@@ -22,6 +22,7 @@
 #include <display_type.h>
 #include <gslogger.h>
 #include <option_parser.h>
+#include <raw_maker.h>
 #include <securec.h>
 #include <window_manager.h>
 #include <zlib.h>
@@ -69,65 +70,58 @@ public:
             return;
         }
 
-        Run2();
-    }
-
-    void Run2()
-    {
-        windowManager->ListenNextScreenShot(0, this);
-        totalTime -= stride - 16;
-        if (totalTime < 0) {
-            GSLOG2SO(INFO) << "ScreenCapture Complete";
-            ExitTest();
-        } else {
-            // PostTask(std::bind(&WMClientNativeTest23::Run2, this), stride);
-            PostTask(std::bind(&WMClientNativeTest23::Run2, this));
-        }
-    }
-
-    int32_t Compress(std::unique_ptr<uint8_t[]> &src, unsigned long &ul, const uint8_t *data, uint32_t size) const
-    {
-        auto ret = compress(src.get(), &ul, data, size);
-        if (ret) {
-            GSLOG2SE(ERROR) << "compress failed with " << ret;
-        }
-
-        return ret;
-    }
-
-    void WriteInt(std::ofstream &ofs, int32_t integer)
-    {
-        ofs.write(reinterpret_cast<const char *>(&integer), sizeof(integer));
+        GSLOG2SO(INFO) << totalTime;
+        PostTask(std::bind(&WindowManager::ListenNextScreenShot, windowManager, 0, this));
     }
 
     void OnScreenShot(const struct WMImageInfo &info) override
     {
-        auto ptr = static_cast<const uint8_t *>(info.data);
-        auto compressed = std::make_unique<uint8_t[]>(compressBound(info.size));
-        unsigned long ulength = info.size;
-
-        if (Compress(compressed, ulength, ptr, info.size) != Z_OK) {
-            printf("compress failed\n");
-            ExitTest();
-            return;
+#if 1
+        GSLOG2SO(INFO) << "OnScreenShot";
+        maker.SetFilename(captureFilepath);
+        maker.SetWidth(info.width);
+        maker.SetHeight(info.height);
+        maker.SetHeaderType(RAW_HEADER_TYPE_COMPRESSED);
+        auto ret = maker.WriteNextData(reinterpret_cast<const uint8_t *>(info.data));
+        if (ret) {
+            GSLOG2SE(ERROR) << "RawMaker WriteNextData failed with " << ret;
         }
-
+#else
         static bool first = true;
         if (first) {
             first = false;
-            std::ofstream rawDataFile(captureFilepath, std::ofstream::binary | std::ofstream::out);
+            std::ofstream rawDataFile(captureFilepath, std::ofstream::binary);
             rawDataFile.write("RAW.diff", 0x8);
             WriteInt(rawDataFile, info.width);
             WriteInt(rawDataFile, info.height);
-            GSLOG2SO(INFO) << "generate capture at /data/screen_capture.raw";
+            GSLOG2SO(INFO) << "generate capture at " << captureFilepath;
         }
 
         std::ofstream rawDataFile(captureFilepath, std::ofstream::binary | std::ofstream::app);
+#if 1
+        GSLOG2SO(INFO) << "OnScreenShot compressing";
+        auto ptr = static_cast<const uint8_t *>(info.data);
+        auto compressed = std::make_unique<uint8_t[]>(compressBound(info.size));
+        unsigned long ulength = info.size;
+        if (Compress(compressed, ulength, ptr, info.size) != Z_OK) {
+            ExitTest();
+            return;
+        }
+        GSLOG2SO(INFO) << "OnScreenShot compressed";
+
         WriteInt(rawDataFile, 0x2); // header_type
         WriteInt(rawDataFile, 0); // offset
         WriteInt(rawDataFile, info.size); // total length
         WriteInt(rawDataFile, ulength); // ulength
         rawDataFile.write(reinterpret_cast<const char *>(compressed.get()), ulength);
+#else
+        unsigned long ulength = info.size;
+        WriteInt(rawDataFile, 1); // header_type
+        WriteInt(rawDataFile, 0); // offset
+        WriteInt(rawDataFile, info.size); // total length
+        WriteInt(rawDataFile, ulength); // ulength
+        rawDataFile.write(reinterpret_cast<const char *>(info.data), ulength);
+#endif
 
         // for SIGBUS ADRALN
         if (ulength % 0x4 != 0) {
@@ -136,11 +130,39 @@ public:
                 rawDataFile.write(nosence, 1);
             }
         }
+#endif
+
+        GSLOG2SO(INFO) << "OnScreenShot writed";
+        totalTime -= stride;
+        GSLOG2SO(INFO) << totalTime;
+        if (totalTime < 0) {
+            GSLOG2SO(INFO) << "ScreenCapture Complete";
+            ExitTest();
+        } else {
+            PostTask(std::bind(&WindowManager::ListenNextScreenShot, windowManager, 0, this));
+        }
+    }
+
+    void WriteInt(std::ofstream &ofs, int32_t integer)
+    {
+        ofs.write(reinterpret_cast<const char *>(&integer), sizeof(integer));
+    }
+
+    int32_t Compress(const std::unique_ptr<uint8_t[]> &c,
+        unsigned long &ul, const uint8_t* &p, uint32_t size) const
+    {
+        auto ret = compress(c.get(), &ul, p, size);
+        if (ret) {
+            GSLOG2SE(ERROR) << "compress failed with " << ret;
+        }
+
+        return ret;
     }
 
 private:
     int32_t totalTime = 3000;
     int32_t stride = 200;
     static constexpr const char *captureFilepath = "/data/screen_capture.raw";
+    RawMaker maker;
 } g_autoload;
 } // namespace

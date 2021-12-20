@@ -108,6 +108,7 @@ ohos_executable("wmtest") {
     "//foundation/graphic/standard/utils:gl_utils",
     "//foundation/graphic/standard/utils:libgslogger",
     "//foundation/graphic/standard/utils:option_parser",
+    "//foundation/graphic/standard/utils:raw_maker",
     "//foundation/graphic/standard/utils:raw_parser",
     "//foundation/graphic/standard/utils:scoped_bytrace",
     "//foundation/multimodalinput/input/frameworks/proxy:libmmi-client",

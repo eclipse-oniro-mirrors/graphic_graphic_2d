@@ -21,18 +21,32 @@
 #include <vector>
 
 namespace OHOS {
-enum {
-    ZLIBINFO_TYPE_NONE,
-    ZLIBINFO_TYPE_RAW,
-    ZLIBINFO_TYPE_COMPRESSED,
+enum RawHeaderType {
+    RAW_HEADER_TYPE_NONE,
+    RAW_HEADER_TYPE_RAW,
+    RAW_HEADER_TYPE_COMPRESSED,
 };
 
-struct ZlibInfo {
-    uint32_t type;
+struct RawFrameInfoPtr {
+    enum RawHeaderType type;
     uint32_t offset;
     uint32_t length;
     uint32_t clen;
     uint8_t *mem;
+};
+
+struct RawHeaderInfo {
+    char magic[8];
+    uint32_t width;
+    uint32_t height;
+};
+
+struct RawFrameInfo {
+    enum RawHeaderType type;
+    uint32_t offset;
+    uint32_t length;
+    uint32_t clen;
+    uint8_t mem[0];
 };
 
 class RawParser {
@@ -73,7 +87,7 @@ private:
     std::unique_ptr<uint8_t[]> compressed = nullptr;
     uint32_t clength = 0;
 
-    std::vector<struct ZlibInfo> infos;
+    std::vector<struct RawFrameInfoPtr> infos;
     std::unique_ptr<uint8_t[]> uncompressed = nullptr;
 
     int32_t lastID = -1;

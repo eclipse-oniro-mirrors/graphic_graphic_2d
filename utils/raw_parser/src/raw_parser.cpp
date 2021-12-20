@@ -29,20 +29,6 @@ namespace {
 DEFINE_HILOG_LABEL("RawParser");
 } // namespace
 
-struct MagicInfo {
-    char magic[8];
-    uint32_t width;
-    uint32_t height;
-};
-
-struct HeaderInfo {
-    uint32_t type;
-    uint32_t offset;
-    uint32_t length;
-    uint32_t clen;
-    uint8_t mem[0];
-};
-
 int32_t RawParser::Parse(const std::string &file)
 {
     int32_t ret = ReadFile(file, compressed);
@@ -51,7 +37,7 @@ int32_t RawParser::Parse(const std::string &file)
         return ret;
     }
 
-    auto minfo = reinterpret_cast<struct MagicInfo*>(&compressed[0]);
+    auto minfo = reinterpret_cast<struct RawHeaderInfo*>(&compressed[0]);
     if (strncmp(minfo->magic, "RAW.diff", 0x8) != 0) {
         GSLOG2HI(ERROR) << "magic header mistake";
         return -1;
@@ -61,7 +47,7 @@ int32_t RawParser::Parse(const std::string &file)
     height = minfo->height;
     lastData = std::make_unique<uint8_t[]>(GetSize());
 
-    struct HeaderInfo *info = reinterpret_cast<struct HeaderInfo *>(&compressed[magicHeaderLength]);
+    struct RawFrameInfo *info = reinterpret_cast<struct RawFrameInfo *>(&compressed[magicHeaderLength]);
     uint32_t ipos = reinterpret_cast<uint8_t *>(info) - reinterpret_cast<uint8_t *>(minfo);
     while (ipos < clength) {
         GSLOG2HI(DEBUG) << info->type << ", " << info->offset << ", " << info->length << ", " << info->clen;
@@ -70,7 +56,7 @@ int32_t RawParser::Parse(const std::string &file)
             return -1;
         }
 
-        struct ZlibInfo zi = { info->type, info->offset, info->length, info->clen, info->mem };
+        struct RawFrameInfoPtr zi = { info->type, info->offset, info->length, info->clen, info->mem };
         infos.push_back(zi);
 
         // for BUS_ADRALN
@@ -79,7 +65,7 @@ int32_t RawParser::Parse(const std::string &file)
         if (align) {
             align = memalign - align;
         }
-        info = reinterpret_cast<struct HeaderInfo *>(info->mem + info->clen + align);
+        info = reinterpret_cast<struct RawFrameInfo *>(info->mem + info->clen + align);
         ipos = reinterpret_cast<uint8_t *>(info) - reinterpret_cast<uint8_t *>(minfo);
     }
 
@@ -94,23 +80,31 @@ int32_t RawParser::Parse(const std::string &file)
 int32_t RawParser::GetNextData(uint32_t *addr)
 {
     uint32_t count = (lastID + 1) % infos.size();
-    if (count >= infos.size()) {
-        GSLOG2HI(ERROR) << "count overflow";
-        return -1;
+    auto type = infos[count].type;
+    if (type == RAW_HEADER_TYPE_NONE) {
+        lastID = count;
+        return GetNowData(addr);
     }
 
     auto offset = infos[count].offset;
     auto length = infos[count].length;
-    if (length == 0) {
-        GSLOG2HI(ERROR) << "length == 0";
-        return 0;
-    }
+    auto clen = infos[count].clen;
+    if (type == RAW_HEADER_TYPE_COMPRESSED) {
+        if (length == 0) {
+            GSLOG2HI(INFO) << "length == 0";
+            lastID = count;
+            return GetNowData(addr);
+        }
 
-    uncompressed = std::make_unique<uint8_t[]>(length);
-    int32_t ret = Uncompress(uncompressed, length, infos[count].mem, infos[count].clen);
-    if (ret) {
-        GSLOG2HI(ERROR) << "uncompress failed";
-        return -1;
+        uncompressed = std::make_unique<uint8_t[]>(length);
+        int32_t ret = Uncompress(uncompressed, length, infos[count].mem, clen);
+        if (ret) {
+            GSLOG2HI(ERROR) << "uncompress failed";
+            return -1;
+        }
+    } else if (type == RAW_HEADER_TYPE_RAW) {
+        uncompressed = std::make_unique<uint8_t[]>(length);
+        memcpy_s(uncompressed.get(), length, infos[count].mem, clen);
     }
 
     lastID = count;
