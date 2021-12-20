@@ -146,10 +146,10 @@ GSError VsyncClient::Init(bool restart)
 GSError VsyncClient::InitListener()
 {
     while (listener_ == nullptr) {
-        listener_ = new VsyncCallback();
         auto vret = GSERROR_OK;
         {
             std::lock_guard<std::mutex> lock(serviceMutex_);
+            listener_ = new VsyncCallback();
             vret = StaticCall::GetInstance()->ListenVsync(service_, listener_);
             if (vret == GSERROR_BINDER) {
                 service_ = nullptr;
