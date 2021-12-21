@@ -57,6 +57,10 @@ namespace OHOS {
     macro(WINDOW_TYPE_SPLIT_LINE), \
     macro(WINDOW_TYPE_LAUNCH_PAGE), \
     macro(WINDOW_TYPE_CURSOR), \
+    macro(WINDOW_TYPE_APPLICATION_BASE), \
+    macro(WINDOW_TYPE_APPLICATION_FIRST), \
+    macro(WINDOW_TYPE_APPLICATION_NORMAL), \
+    macro(WINDOW_TYPE_TOP), \
     macro(WINDOW_TYPE_MAX),
 
 #define DEFINE_ENUM_WINDOW_TYPE(id) id

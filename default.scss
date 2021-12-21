@@ -282,3 +282,40 @@
     width: 1%;
     height: 1%;
 }
+
+#WINDOW_TYPE_APPLICATION_BASE {
+    z-index: 1;
+    position: relative;
+    horizon-align: middle;
+    vertical-align: middle;
+    width: 100%;
+    height: 100%;
+}
+
+#WINDOW_TYPE_APPLICATION_FIRST {
+    z-index: 2;
+    position: relative;
+    horizon-align: middle;
+    vertical-align: middle;
+    width: 100%;
+    height: 100%;
+}
+
+#WINDOW_TYPE_APPLICATION_NORMAL {
+    z-index: 3;
+    position: relative;
+    horizon-align: middle;
+    vertical-align: middle;
+    width: 100%;
+    height: 100%;
+}
+
+//This Window is Toppest
+#WINDOW_TYPE_TOP {
+    z-index: 9999;
+    position: fixed;
+    horizon-align: middle;
+    vertical-align: middle;
+    width: 100%;
+    height: 100%;
+}
