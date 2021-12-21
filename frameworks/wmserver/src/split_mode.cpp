@@ -67,6 +67,7 @@ void ChangeWindowSize(struct WindowSurface *ws, int32_t w, int32_t h)
 {
     ScopedBytrace trace(__func__);
     wms_send_window_size_change(ws->controller->pWlResource, w, h);
+    SetWindowSize(ws, w, h);
     LOG_INFO("%d resize to %dx%d", ws->surfaceId, w, h);
 }
 
@@ -355,14 +356,18 @@ bool To4Confirm()
 
     int32_t defX = 0, defY = 0, defWidth = 0, defHeight = 0;
     GetSplitModeShowArea(defX, defY, defWidth, defHeight);
-    int32_t y = 0;
+    int32_t y1 = 0, y2 = 0;
     if (win2->y <= defY + defHeight / 0x2) {
-        y = defHeight - (defHeight * (1 - lineHeight) / 0x2);
+        y1 = defHeight - (defHeight * (1 - lineHeight) / 0x2);
+    } else {
+        y2 = defHeight - (defHeight * (1 - lineHeight) / 0x2);
     }
 
     win1->isSplited = true;
-    ChangeWindowPosition(win1, defX, defY + y);
-    ChangeWindowSize(win1, win2->width, win2->height);
+    ChangeWindowPosition(win1, defX, defY + y1);
+    ChangeWindowSize(win1, defWidth, defHeight * (1 - lineHeight) / 0x2);
+    ChangeWindowPosition(win2, defX, defY + y2);
+    ChangeWindowSize(win2, defWidth, defHeight * (1 - lineHeight) / 0x2);
 
     ChangeSplitMode(win1, SPLIT_STATUS_CLEAR);
     ChangeSplitMode(win2, SPLIT_STATUS_CLEAR);
