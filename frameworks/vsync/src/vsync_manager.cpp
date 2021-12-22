@@ -131,6 +131,7 @@ void VsyncManager::Callback(int64_t timestamp)
         ScopedBytrace bytrace("callback 1");
         std::lock_guard<std::mutex> lock(callbacksMutex_);
         calling = callbacks_;
+        callbacks_.clear();
     }
 
     {
@@ -145,7 +146,7 @@ void VsyncManager::Callback(int64_t timestamp)
     {
         ScopedBytrace bytrace("callback 3");
         std::lock_guard<std::mutex> lock(callbacksMutex_);
-        callbacks_ = okcbs;
+        callbacks_.insert(callbacks_.begin(), okcbs.begin(), okcbs.end());
     }
 }
 } // namespace Vsync
