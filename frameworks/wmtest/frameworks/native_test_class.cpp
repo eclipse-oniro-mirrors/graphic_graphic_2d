@@ -102,13 +102,13 @@ void NativeTestSync::Sync(int64_t, void *data)
         return;
     }
 
-    draw(reinterpret_cast<uint32_t *>(buffer->GetVirAddr()), rconfig.width, rconfig.height, count);
+    draw(reinterpret_cast<uint32_t *>(buffer->GetVirAddr()), buffer->GetWidth(), buffer->GetHeight(), count);
     count++;
 
     BufferFlushConfig fconfig = {
         .damage = {
-            .w = rconfig.width,
-            .h = rconfig.height,
+            .w = buffer->GetWidth(),
+            .h = buffer->GetHeight(),
         },
     };
     surf->FlushBuffer(buffer, -1, fconfig);
@@ -179,13 +179,13 @@ void NativeTestDrawer::Sync(int64_t, void *)
         return;
     }
 
-    draw(reinterpret_cast<uint32_t *>(buffer->GetVirAddr()), rconfig.width, rconfig.height, count);
+    draw(reinterpret_cast<uint32_t *>(buffer->GetVirAddr()), buffer->GetWidth(), buffer->GetHeight(), count);
     count++;
 
     BufferFlushConfig fconfig = {
         .damage = {
-            .w = rconfig.width,
-            .h = rconfig.height,
+            .w = buffer->GetWidth(),
+            .h = buffer->GetHeight(),
         },
     };
     surf->FlushBuffer(buffer, -1, fconfig);
