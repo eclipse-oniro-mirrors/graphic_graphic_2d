@@ -34,6 +34,7 @@ using namespace OHOS;
 int32_t g_x = 0;
 int32_t g_y = 0;
 bool g_reinit = false;
+int32_t g_3selectAlign = 0;
 
 constexpr double lineHeight = 0.1;
 constexpr double lineHeightHalf = lineHeight / 2;
@@ -299,7 +300,7 @@ bool To2Single3()
     return To2Single(ws);
 }
 
-bool To3Select()
+bool To3Select2()
 {
     auto ws = GetSplitedWindow();
     int32_t defX = 0, defY = 0, defWidth = 0, defHeight = 0;
@@ -314,12 +315,17 @@ bool To3Select()
     int32_t height = defHeight * (1 - lineHeight) / 0x2;
     if (g_y > defY + defHeight / 0x2) {
         // select bottom, ws move to top
+        g_3selectAlign = 0;
         LOG_INFO("Select bottom");
         // vectical-align: top
         ChangeWindowPosition(ws, defX, defY);
         ChangeWindowSize(ws, defWidth, height);
+        auto ctx = GetWmsInstance();
+        ctx->pLayoutInterface->surface_change_top(ws->layoutSurface);
+        ctx->pLayoutInterface->commit_changes();
     } else {
         // select bottom, ws move to bottom
+        g_3selectAlign = 1;
         LOG_INFO("Select top");
         // vectical-align: bottom
         ChangeWindowPosition(ws, defX, defY + defHeight - height);
@@ -327,6 +333,43 @@ bool To3Select()
     }
 
     ChangeSplitMode(ws, SPLIT_STATUS_VAGUE);
+    return true;
+}
+
+bool To3Select3()
+{
+    auto ws = GetSplitedWindow();
+    int32_t defX = 0, defY = 0, defWidth = 0, defHeight = 0;
+    GetSplitModeShowArea(defX, defY, defWidth, defHeight);
+
+    LOG_INFO("Select g_y: %d %p", g_y, ws);
+    if (ws == nullptr) {
+        LOG_ERROR("ws is nullptr");
+        return false;
+    }
+
+    int32_t height = defHeight * (1 - lineHeight) / 0x2;
+    if (g_y > defY + defHeight / 0x2 && g_3selectAlign != 0) {
+        // select bottom, ws move to top
+        g_3selectAlign = 0;
+        LOG_INFO("Select bottom!");
+        // vectical-align: top
+        ChangeWindowPosition(ws, defX, defY);
+        ChangeWindowSize(ws, defWidth, height);
+    } else if (g_y <= defY + defHeight / 0x2 && g_3selectAlign != 1) {
+        // select bottom, ws move to bottom
+        g_3selectAlign = 1;
+        LOG_INFO("Select top!");
+        // vectical-align: bottom
+        ChangeWindowPosition(ws, defX, defY + defHeight - height);
+        ChangeWindowSize(ws, defWidth, height);
+    } else {
+        return true;
+    }
+
+    auto ctx = GetWmsInstance();
+    ctx->pLayoutInterface->surface_change_top(ws->layoutSurface);
+    ctx->pLayoutInterface->commit_changes();
     return true;
 }
 
@@ -503,7 +546,7 @@ bool(* stateMachine[SPLIT_MODE_MAX][SPLIT_MODE_MAX])() = {
     { Ignore,       To0Null,      To0Null,      nullptr,      nullptr,      nullptr,      nullptr,      To0Null      },
     { To1Unenable,  Ignore,       nullptr,      nullptr,      nullptr,      nullptr,      nullptr,      nullptr      },
     { To2Single0,   nullptr,      Ignore,       To2Single3,   nullptr,      nullptr,      nullptr,      nullptr      },
-    { nullptr,      nullptr,      To3Select,    To3Select,    nullptr,      nullptr,      nullptr,      nullptr      },
+    { nullptr,      nullptr,      To3Select2,   To3Select3,   nullptr,      nullptr,      nullptr,      nullptr      },
     { nullptr,      nullptr,      To4Confirm,   To4Confirm,   nullptr,      nullptr,      nullptr,      nullptr      },
     { nullptr,      nullptr,      nullptr,      nullptr,      To5TouchDown, nullptr,      nullptr,      To5TouchDown },
     { nullptr,      nullptr,      nullptr,      nullptr,      nullptr,      To6TouchMove, To6TouchMove, nullptr      },
