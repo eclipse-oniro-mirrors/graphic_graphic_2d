@@ -16,6 +16,7 @@
 #include "window_impl.h"
 
 #include <display_type.h>
+#include <scoped_bytrace.h>
 
 #include "singleton_delegator.h"
 #include "static_call.h"
@@ -375,6 +376,9 @@ GSError WindowImpl::Destroy()
         isDestroyed = true;
         auto promise = wms->DestroyWindow(attr.GetID());
         wret = promise->Await();
+        if (csurf != nullptr) {
+            csurf->UnregisterConsumerListener();
+        }
         wms = nullptr;
         wlSurface = nullptr;
         csurf = nullptr;
@@ -489,10 +493,11 @@ GSError WindowImpl::OnKey(OnKeyFunc cb)
     return GSERROR_OK;
 }
 
-namespace {
-void BufferRelease(struct wl_buffer *wbuffer, int32_t fence)
+void WindowImpl::OnWlBufferRelease(struct wl_buffer *wbuffer, int32_t fence)
 {
+    ScopedBytrace bytrace("OnWlBufferRelease");
     WMLOGFI("BufferRelease");
+    CHECK_DESTROY();
     sptr<Surface> surf = nullptr;
     sptr<SurfaceBuffer> sbuffer = nullptr;
     if (SingletonContainer::Get<WlBufferCache>()->GetSurfaceBuffer(wbuffer, surf, sbuffer)) {
@@ -501,7 +506,6 @@ void BufferRelease(struct wl_buffer *wbuffer, int32_t fence)
         }
     }
 }
-} // namespace
 
 void WindowImpl::OnBufferAvailable()
 {
@@ -531,7 +535,7 @@ void WindowImpl::OnBufferAvailable()
             }
             return;
         }
-        dmaWlBuffer->OnRelease(BufferRelease);
+        dmaWlBuffer->OnRelease(this);
 
         wbuffer = dmaWlBuffer;
         bc->AddWlBuffer(wbuffer, csurf, sbuffer);
@@ -553,8 +557,6 @@ void WindowImpl::OnBufferAvailable()
 
 WindowImpl::~WindowImpl()
 {
-    if (csurf != nullptr) {
-        csurf->UnregisterConsumerListener();
-    }
+    Destroy();
 }
 } // namespace OHOS

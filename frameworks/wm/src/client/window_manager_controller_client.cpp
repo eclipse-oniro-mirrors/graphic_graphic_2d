@@ -99,7 +99,7 @@ void LayerControllerClient::ChangeWindowType(int32_t id, WindowType type)
     wms->SetWindowType(id, type);
 }
 
-void BufferRelease(struct wl_buffer *wbuffer, int32_t fence)
+void LayerControllerClient::OnWlBufferRelease(struct wl_buffer *wbuffer, int32_t fence)
 {
     sptr<Surface> surf = nullptr;
     sptr<SurfaceBuffer> sbuffer = nullptr;
@@ -143,7 +143,7 @@ void LayerControllerClient::CreateWlBuffer(sptr<Surface>& surf, uint32_t windowI
             }
             return;
         }
-        dmaWlBuffer->OnRelease(BufferRelease);
+        dmaWlBuffer->OnRelease(this);
 
         wbuffer = dmaWlBuffer;
         bc->AddWlBuffer(wbuffer, surf, buffer);

@@ -16,6 +16,7 @@
 #include "subwindow_normal_impl.h"
 
 #include <display_type.h>
+#include <scoped_bytrace.h>
 
 #include "static_call.h"
 #include "tester.h"
@@ -173,10 +174,21 @@ void SubwindowNormalImpl::OnSizeChange(WindowSizeChangeFunc func)
     attr.OnSizeChange(func);
 }
 
-namespace {
-void BufferRelease(struct wl_buffer *wbuffer, int32_t fence)
+SubwindowNormalImpl::~SubwindowNormalImpl()
 {
+    Destroy();
+}
+
+void SubwindowNormalImpl::OnWlBufferRelease(struct wl_buffer *wbuffer, int32_t fence)
+{
+    ScopedBytrace bytrace("OnWlBufferRelease");
     WMLOGFI("(subwindow normal) BufferRelease");
+    std::lock_guard<std::mutex> lock(publicMutex);
+    if (isDestroy) {
+        WMLOGFI("object destroyed");
+        return;
+    }
+
     sptr<Surface> surf = nullptr;
     sptr<SurfaceBuffer> sbuffer = nullptr;
     if (SingletonContainer::Get<WlBufferCache>()->GetSurfaceBuffer(wbuffer, surf, sbuffer)) {
@@ -185,20 +197,21 @@ void BufferRelease(struct wl_buffer *wbuffer, int32_t fence)
         }
     }
 }
-} // namespace
 
 void SubwindowNormalImpl::OnBufferAvailable()
 {
     WMLOGFI("(subwindow normal) OnBufferAvailable enter");
-    std::lock_guard<std::mutex> lock(publicMutex);
-    if (isDestroy == true) {
-        WMLOGFI("object destroyed");
-        return;
-    }
+    {
+        std::lock_guard<std::mutex> lock(publicMutex);
+        if (isDestroy == true) {
+            WMLOGFI("object destroyed");
+            return;
+        }
 
-    if (csurf == nullptr || wlSurface == nullptr) {
-        WMLOGFE("csurf or wlSurface is nullptr");
-        return;
+        if (csurf == nullptr || wlSurface == nullptr) {
+            WMLOGFE("csurf or wlSurface is nullptr");
+            return;
+        }
     }
 
     sptr<SurfaceBuffer> sbuffer = nullptr;
@@ -224,7 +237,7 @@ void SubwindowNormalImpl::OnBufferAvailable()
             }
             return;
         }
-        dmaWlBuffer->OnRelease(BufferRelease);
+        dmaWlBuffer->OnRelease(this);
 
         wbuffer = dmaWlBuffer;
         bc->AddWlBuffer(wbuffer, csurf, sbuffer);

@@ -27,7 +27,7 @@
 #include "window_option_impl.h"
 
 namespace OHOS {
-class WindowImpl : public Window, public IBufferConsumerListenerClazz {
+class WindowImpl : public Window, public IBufferConsumerListenerClazz, public IWlBufferReleaseClazz {
 public:
     static GSError Create(sptr<Window> &window,
                           const sptr<WindowOption> &option,
@@ -82,6 +82,7 @@ private:
     WindowImpl() = default;
     virtual ~WindowImpl() override;
 
+    virtual void OnWlBufferRelease(struct wl_buffer *buffer, int32_t fence) override;
     virtual void OnBufferAvailable() override;
 
     static GSError CheckAndNew(sptr<WindowImpl> &wi,

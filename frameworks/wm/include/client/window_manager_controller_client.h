@@ -61,7 +61,7 @@ struct InnerWindowInfo {
     }
 };
 
-class LayerControllerClient : public RefBase {
+class LayerControllerClient : public RefBase, public IWlBufferReleaseClazz {
 public:
     static sptr<LayerControllerClient> GetInstance();
 
@@ -99,6 +99,7 @@ private:
     static inline sptr<LayerControllerClient> instance = nullptr;
     LayerControllerClient();
     virtual ~LayerControllerClient();
+    virtual void OnWlBufferRelease(struct wl_buffer *wbuffer, int32_t fence) override;
 
     sptr<IWindowManagerService> wms = nullptr;
     bool isInit = false;

@@ -26,7 +26,7 @@
 #include "window_manager_impl.h"
 
 namespace OHOS {
-class SubwindowNormalImpl : public Subwindow, public IBufferConsumerListenerClazz {
+class SubwindowNormalImpl : public Subwindow, public IBufferConsumerListenerClazz, public IWlBufferReleaseClazz {
 public:
     GSError Init(const sptr<Window> &window, const sptr<SubwindowOption> &option);
 
@@ -40,7 +40,9 @@ public:
     virtual void OnSizeChange(WindowSizeChangeFunc func) override;
 
 protected:
+    virtual ~SubwindowNormalImpl() override;
     virtual void OnBufferAvailable() override;
+    virtual void OnWlBufferRelease(struct wl_buffer *wbuffer, int32_t fence) override;
     void SendBufferToServer(sptr<WlBuffer> &wbuffer,
                             sptr<SurfaceBuffer> &sbuffer,
                             int32_t fence, Rect &damage);

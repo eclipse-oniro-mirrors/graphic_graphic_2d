@@ -55,21 +55,6 @@ GSError SubwindowOffscreenImpl::CreateConsumerSurface(const sptr<SubwindowOption
     return GSERROR_OK;
 }
 
-namespace {
-void BufferRelease(struct wl_buffer *wbuffer, int32_t fence)
-{
-    GSLOG2HI(INFO) << "(subwindow offscreen) " << "enter";
-    sptr<Surface> surf = nullptr;
-    sptr<SurfaceBuffer> sbuffer = nullptr;
-    if (SingletonContainer::Get<WlBufferCache>()->GetSurfaceBuffer(wbuffer, surf, sbuffer)) {
-        if (surf != nullptr && sbuffer != nullptr) {
-            surf->ReleaseBuffer(sbuffer, fence);
-        }
-    }
-    GSLOG2HI(INFO) << "(subwindow offscreen) " << "exit";
-}
-} // namespace
-
 void SubwindowOffscreenImpl::OnBufferAvailable()
 {
     GSLOG2HI(INFO) << "(subwindow offscreen) " << "enter";
@@ -107,7 +92,7 @@ void SubwindowOffscreenImpl::OnBufferAvailable()
             }
             return;
         }
-        dmaWlBuffer->OnRelease(BufferRelease);
+        dmaWlBuffer->OnRelease(this);
 
         wbuffer = dmaWlBuffer;
         bc->AddWlBuffer(wbuffer, csurf, sbuffer);
