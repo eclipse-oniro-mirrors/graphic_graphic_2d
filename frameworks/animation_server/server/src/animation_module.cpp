@@ -29,6 +29,8 @@ DEFINE_HILOG_LABEL("AnimationModule");
 
 GSError AnimationModule::Init()
 {
+    handler = AppExecFwk::EventHandler::Current();
+    vhelper = VsyncHelper::Current();
     auto wm = WindowManager::GetInstance();
     auto option = WindowOption::Get();
     option->SetWindowType(WINDOW_TYPE_ANIMATION);
