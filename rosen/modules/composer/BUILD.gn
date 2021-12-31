@@ -1,0 +1,79 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//foundation/graphic/standard/graphic_config.gni")
+
+## Build libcomposer.so
+
+config("composer_config") {
+  visibility = [ ":*" ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-g3",
+  ]
+}
+
+config("composer_public_config") {
+  include_dirs = [
+    "//foundation/graphic/standard/rosen/include/common",
+    "//drivers/peripheral/display/interfaces/include",
+    "//foundation/graphic/standard/interfaces/innerkits/vsync_module",
+    "//foundation/graphic/standard/interfaces/innerkits/common",
+    "//foundation/graphic/standard/rosen/modules/composer/hdi_backend/include",
+    "//foundation/graphic/standard/rosen/modules/composer/vsync/include",
+  ]
+}
+
+ohos_shared_library("libcomposer") {
+  sources = [
+    "hdi_backend/src/hdi_backend.cpp",
+    "hdi_backend/src/hdi_device.cpp",
+    "hdi_backend/src/hdi_framebuffer_surface.cpp",
+    "hdi_backend/src/hdi_layer.cpp",
+    "hdi_backend/src/hdi_output.cpp",
+    "hdi_backend/src/hdi_screen.cpp",
+    "vsync/src/soft_vsync.cpp",
+    "vsync/src/vsync.cpp",
+  ]
+
+  include_dirs = []
+
+  configs = [ ":composer_config" ]
+
+  public_configs = [
+    ":composer_public_config",
+    "//utils/native/base:utils_config",
+  ]
+
+  deps = [
+    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
+    "//drivers/peripheral/display/hal:hdi_display",
+    "//foundation/graphic/standard:libsurface",
+    "//foundation/graphic/standard/frameworks/vsync:libvsync_module",
+  ]
+
+  public_deps = [
+    "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
+    "//foundation/graphic/standard/utils:buffer_handle",
+    "//foundation/graphic/standard/utils:semaphore",
+    "//foundation/graphic/standard/utils:sync_fence",
+    "//utils/native/base:utils",
+  ]
+
+  part_name = "graphic_standard"
+  subsystem_name = "graphic"
+}
+## Build libcomposer.so

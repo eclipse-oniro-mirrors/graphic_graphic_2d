@@ -91,6 +91,7 @@ public:
     int32_t GetDefaultHeight();
     GSError SetDefaultUsage(uint32_t usage);
     uint32_t GetDefaultUsage();
+    uint64_t GetUniqueId() const;
 
     GSError CleanCache();
 
@@ -121,6 +122,7 @@ private:
     sptr<IBufferConsumerListener> listener_ = nullptr;
     IBufferConsumerListenerClazz *listenerClazz_ = nullptr;
     std::mutex mutex_;
+	const uint64_t uniqueId_;
     sptr<BufferManager> bufferManager_ = nullptr;
     OnReleaseFunc onBufferRelease = nullptr;
     bool isShared_ = false;
