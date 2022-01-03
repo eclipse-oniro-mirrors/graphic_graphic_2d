@@ -18,6 +18,8 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <memory>
+#include <unistd.h>
 #include <sys/time.h>
 #include <unistd.h>
 
@@ -30,10 +32,17 @@
 namespace OHOS {
 namespace {
 constexpr HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0, "BufferQueue" };
+constexpr uint32_t UNIQUE_ID_OFFSET = 32;
 }
 
+static uint64_t GetUniqueIdImpl()
+{
+    static std::atomic<uint32_t> counter { 0 };
+    static uint64_t id = static_cast<uint64_t>(::getpid()) << UNIQUE_ID_OFFSET;
+    return id | counter++;
+}
 BufferQueue::BufferQueue(const std::string &name, bool isShared)
-    : name_(name), isShared_(isShared)
+    : name_(name), uniqueId_(GetUniqueIdImpl()), isShared_(isShared)
 {
     BLOGNI("ctor");
     bufferManager_ = BufferManager::GetInstance();
@@ -735,5 +744,10 @@ GSError BufferQueue::CleanCache()
 {
     DeleteBuffers(queueSize_);
     return GSERROR_OK;
+}
+
+uint64_t BufferQueue::GetUniqueId() const
+{
+    return uniqueId_;
 }
 }; // namespace OHOS

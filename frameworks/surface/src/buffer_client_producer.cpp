@@ -202,6 +202,15 @@ uint32_t BufferClientProducer::GetDefaultUsage()
     return reply.ReadUint32();
 }
 
+uint64_t BufferClientProducer::GetUniqueId()
+{
+    DEFINE_MESSAGE_VARIABLES(arguments, reply, option, BLOGE);
+
+    SEND_REQUEST(BUFFER_PRODUCER_GET_UNIQUE_ID, arguments, reply, option);
+
+    return reply.ReadUint64();
+}
+
 GSError BufferClientProducer::CleanCache()
 {
     DEFINE_MESSAGE_VARIABLES(arguments, reply, option, BLOGE);

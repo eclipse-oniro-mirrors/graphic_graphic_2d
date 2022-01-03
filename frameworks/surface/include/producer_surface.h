@@ -78,6 +78,7 @@ public:
     GSError RegisterConsumerListener(IBufferConsumerListenerClazz *listener) override;
     GSError RegisterReleaseListener(OnReleaseFunc func) override;
     GSError UnregisterConsumerListener() override;
+    uint64_t GetUniqueId() const override;
 
     GSError CleanCache() override;
 

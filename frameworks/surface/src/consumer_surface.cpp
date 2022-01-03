@@ -215,4 +215,9 @@ GSError ConsumerSurface::CleanCache()
 {
     return producer_->CleanCache();
 }
+
+uint64_t ConsumerSurface::GetUniqueId() const
+{
+    return producer_->GetUniqueId();
+}
 } // namespace OHOS

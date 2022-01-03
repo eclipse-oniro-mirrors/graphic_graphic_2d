@@ -47,6 +47,7 @@ BufferQueueProducer::BufferQueueProducer(sptr<BufferQueue>& bufferQueue)
     memberFuncMap_[BUFFER_PRODUCER_GET_DEFAULT_WIDTH] = &BufferQueueProducer::GetDefaultWidthRemote;
     memberFuncMap_[BUFFER_PRODUCER_GET_DEFAULT_HEIGHT] = &BufferQueueProducer::GetDefaultHeightRemote;
     memberFuncMap_[BUFFER_PRODUCER_GET_DEFAULT_USAGE] = &BufferQueueProducer::GetDefaultUsageRemote;
+    memberFuncMap_[BUFFER_PRODUCER_GET_UNIQUE_ID] = &BufferQueueProducer::GetUniqueIdRemote;
     memberFuncMap_[BUFFER_PRODUCER_CLEAN_CACHE] = &BufferQueueProducer::CleanCacheRemote;
     memberFuncMap_[BUFFER_PRODUCER_REGISTER_RELEASE_LISTENER] = &BufferQueueProducer::RegisterReleaseListenerRemote;
 }
@@ -187,6 +188,12 @@ int BufferQueueProducer::GetDefaultUsageRemote(MessageParcel &arguments, Message
     return 0;
 }
 
+int BufferQueueProducer::GetUniqueIdRemote(MessageParcel &arguments, MessageParcel &reply, MessageOption &option)
+{
+    reply.WriteUint64(GetUniqueId());
+    return 0;
+}
+
 int BufferQueueProducer::CleanCacheRemote(MessageParcel &arguments, MessageParcel &reply, MessageOption &option)
 {
     reply.WriteInt32(CleanCache());
@@ -323,6 +330,14 @@ uint32_t BufferQueueProducer::GetDefaultUsage()
         return 0;
     }
     return bufferQueue_->GetDefaultUsage();
+}
+
+uint64_t BufferQueueProducer::GetUniqueId()
+{
+    if (bufferQueue_ == nullptr) {
+        return 0;
+    }
+    return bufferQueue_->GetUniqueId();
 }
 
 GSError BufferQueueProducer::CleanCache()

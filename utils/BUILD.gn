@@ -62,6 +62,10 @@ group("raw_maker") {
   public_deps = [ "raw_maker:raw_maker" ]
 }
 
+group("sync_fence") {
+  public_deps = [ "sync_fence:sync_fence" ]
+}
+
 ## Build libgraphic_utils.so {{{
 ohos_shared_library("libgraphic_utils") {
   public_deps = [
