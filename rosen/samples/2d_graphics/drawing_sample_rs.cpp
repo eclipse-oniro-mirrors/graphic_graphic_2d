@@ -502,14 +502,18 @@ int main()
     RSDisplayNodeConfig config;
     RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
     for (size_t i = 0; i < testFuncVec.size(); i++) {
+        auto transactionProxy = RSTransactionProxy::GetInstance();
+        if (transactionProxy == nullptr) {
+            continue;
+        }
         sleep(2);
         displayNode->AddChild(surfaceNode, -1);
         surfaceNode->SetBounds(0, 0, 2560, 1600);
-        RSTransactionProxy::GetInstance().FlushImplicitTransaction();
+        transactionProxy->FlushImplicitTransaction();
         DrawSurface(surfaceNode, 2560, 1600, i);
         sleep(4);
         displayNode->RemoveChild(surfaceNode);
-        RSTransactionProxy::GetInstance().FlushImplicitTransaction();
+        transactionProxy->FlushImplicitTransaction();
     }
     return 0;
 }
