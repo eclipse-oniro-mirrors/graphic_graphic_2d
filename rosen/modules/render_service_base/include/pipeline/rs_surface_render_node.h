@@ -36,6 +36,7 @@ public:
     void SetConsumer(const sptr<Surface>& consumer);
     void SetBuffer(const sptr<SurfaceBuffer>& buffer);
     void SetFence(const int32_t fence);
+    void SetDamageRegion(const Rect& damage);
     void IncreaseAvailableBuffer();
     int32_t ReduceAvailableBuffer();
 
@@ -57,6 +58,11 @@ public:
     int32_t GetPreFence() const
     {
         return preFence_;
+    }
+
+    const Rect& GetDamageRegion() const
+    {
+        return damageRect_;
     }
 
     const sptr<Surface>& GetConsumer() const
@@ -102,6 +108,7 @@ private:
     sptr<SurfaceBuffer> preBuffer_;
     int32_t fence_ = -1;
     int32_t preFence_ = -1;
+    Rect damageRect_;
 };
 } // namespace Rosen
 } // namespace OHOS
