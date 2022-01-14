@@ -94,7 +94,6 @@ ohos_executable("drawing_sample_rs") {
     "//foundation/graphic/standard/rosen/modules/render_service_client:librender_service_client",
     "//foundation/multimedia/image_standard/interfaces/innerkits:image_native",
     "//foundation/windowmanager/wm:libwm",
-    "//foundation/windowmanager/wm:libwmutil",
     "//third_party/zlib:libz",
   ]
 
