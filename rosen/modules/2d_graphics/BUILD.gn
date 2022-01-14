@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//foundation/graphic/standard/graphic_config.gni")
 
 ## Build 2d_graphics.so
 ohos_shared_library("2d_graphics") {
@@ -47,30 +48,33 @@ ohos_shared_library("2d_graphics") {
     "src/utils/camera3d.cpp",
     "src/utils/matrix.cpp",
   ]
-
-  # sources += [
-  #   "src/render_context/render_context.cpp",
-  # ]
+  if (ace_enable_gpu) {
+    sources += [ "src/render_context/render_context.cpp" ]
+  }
 
   include_dirs = [
     "include",
     "src",
     "src/engine_adapter",
     "//foundation/graphic/standard/interfaces/innerkits/surface",
-
-    # "//foundation/graphic/standard/prebuilts/librarys/gpu/include",
     "//foundation/multimedia/image_standard/interfaces/innerkits/include",
   ]
+  if (ace_enable_gpu) {
+    include_dirs +=
+        [ "//foundation/graphic/standard/prebuilts/librarys/gpu/include" ]
+  }
 
   defines = [ "USE_ACE_SKIA" ]
 
   deps = [
     "//foundation/ace/ace_engine/build/external_config/flutter/skia:ace_skia_ohos",
     "//foundation/multimedia/image_standard/interfaces/innerkits:image_native",
-
-    # "//foundation/graphic/standard/prebuilts/librarys/gpu:gpu_libs",
     "//utils/native/base:utils",
   ]
+
+  if (ace_enable_gpu) {
+    deps += [ "//foundation/graphic/standard/prebuilts/librarys/gpu:gpu_libs" ]
+  }
 
   public_deps = [
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",

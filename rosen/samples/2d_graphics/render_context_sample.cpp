@@ -13,146 +13,381 @@
  * limitations under the License.
  */
 
+#include "render_context_sample.h"
+
+#include "window.h"
 #include <securec.h>
-#include <sstream>
-#include <unistd.h>
-#include <iostream>
-#include <cinttypes>
-#include <cstdio>
-#include <cstdlib>
-#include <fstream>
-#include <memory>
-
+#include <sync_fence.h>
 #include <vsync_helper.h>
-#include <display_type.h>
-#include <surface.h>
-#include "hdi_backend.h"
-#include "hdi_layer.h"
-#include "hdi_layer_info.h"
-#include "hdi_output.h"
-#include "hdi_screen.h"
-#include <window.h>
-
-#include <EGL/egl.h>
-#include <EGL/eglext.h>
-
-#include <GLES3/gl32.h>
-#include <egl_surface.h>
-
-#include <platform/ohos/backend/rs_surface_ohos_gl.h>
-#include <platform/ohos/backend/rs_surface_frame_ohos_gl.h>
-#include <render_context/render_context.h>
+#include <iostream>
 
 using namespace OHOS;
 using namespace OHOS::Rosen;
 
-namespace {
-#define LOG(fmt, ...) ::OHOS::HiviewDFX::HiLog::Info(             \
-    ::OHOS::HiviewDFX::HiLogLabel {LOG_CORE, 0, "RenderContextSample"}, \
-    "%{public}s: " fmt, __func__, ##__VA_ARGS__)
+void RenderContextSample::Run()
+{
+    std::cout << "start to HdiBackend::GetInstance" << std::endl;
+    backend_ = OHOS::Rosen::HdiBackend::GetInstance();
+    if (backend_ == nullptr) {
+        std::cout << "HdiBackend::GetInstance fail" << std::endl;
+        return;
+    }
+
+    backend_->RegScreenHotplug(RenderContextSample::OnScreenPlug, this);
+    while (1) {
+        if (output_ != nullptr) {
+            break;
+        }
+    }
+
+    if (!initDeviceFinished_) {
+        if (deviceConnected_) {
+            CreatePhysicalScreen();
+        }
+        initDeviceFinished_ = true;
+    }
+    std::cout << "Init screen succeed" << std::endl;
+
+    backend_->RegPrepareComplete(RenderContextSample::OnPrepareCompleted, this);
+
+    sleep(1);
+
+    auto runner = OHOS::AppExecFwk::EventRunner::Create(false);
+    auto handler = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    handler->PostTask(std::bind(&RenderContextSample::Init, this));
+    runner->Run();
 }
 
-class RenderContextSample : public IBufferConsumerListenerClazz {
-public:
-    void Init(int32_t width, int32_t height, HdiBackend* backend);
-    void DoDrawData(void *image, int width, int height);
-    void Draw();
-    void Sync(int64_t, void *data);
-    void CreatePhysicalScreen(std::shared_ptr<HdiOutput> &output);
-    void DoPrepareCompleted(OHOS::sptr<Surface> &surface, const struct PrepareCompleteParam &param);
-    virtual void OnBufferAvailable() override;
+void RenderContextSample::OnScreenPlug(std::shared_ptr<HdiOutput> &output, bool connected, void* data)
+{
+    std::cout << "enter OnScreenPlug, connected is " << connected << std::endl;
+    auto* thisPtr = static_cast<RenderContextSample *>(data);
+    thisPtr->OnHotPlugEvent(output, connected);
+}
 
-    bool FillLayer(std::shared_ptr<HdiLayerInfo> &showLayer, OHOS::sptr<Surface> &pSurface,
-        OHOS::sptr<Surface> &cSurface, uint32_t zorder, IRect &dstRect);
+void RenderContextSample::OnPrepareCompleted(sptr<Surface> &surface, const struct PrepareCompleteParam &param, void* data)
+{
+    if (!param.needFlushFramebuffer) {
+        return;
+    }
 
-    void DrawSurface();
+    if (data == nullptr) {
+        return;
+    }
 
-    int32_t freq = 30;
-    int width = 0;
-    int height = 0;
+    std::cout << "OnPrepareCompleted param.layer size is " << (int)param.layers.size() << std::endl;
+    auto* thisPtr = static_cast<RenderContextSample *>(data);
+    thisPtr->DoPrepareCompleted(surface, param);
+}
 
-    int display_w = 480;
-    int display_h = 960;
+void RenderContextSample::InitEGL()
+{
+    renderContext = new RenderContext();
+    renderContext->InitializeEglContext();
+}
 
-private:
-    uint32_t currentModeIndex = 0;
-    std::vector<DisplayModeInfo> displayModeInfos;
-    OHOS::sptr<Surface> pSurface = nullptr;
-    OHOS::sptr<Surface> cSurface = nullptr;
-    OHOS::sptr<Surface> pSurface_GL = nullptr;
-    OHOS::sptr<Surface> cSurface_GL = nullptr;
-    std::unique_ptr<HdiScreen> screen = nullptr;
-    std::shared_ptr<HdiOutput> output = nullptr;
-    std::vector<std::shared_ptr<HdiOutput>> outputs;
-    HdiBackend* backend = nullptr;
-    OHOS::sptr<SurfaceBuffer> fbBuffer = nullptr;
-    bool ready = false;
-    sptr<EglRenderSurface> eglSurface_ = nullptr;
+void RenderContextSample::Init()
+{
+    backGroundWidth = 2560;
+    backGroundHeight = 1600;
 
-    RSSurfaceOhosGl *rSSurfaceOhosGl_ = nullptr;
+    drawingWidth = 1200;
+    drawingHeight = 800;
 
-};
+    CreateBackGroundSurface();
+
+    CreateDrawingSurface();
+
+    InitEGL();
+
+    Sync(0, nullptr);
+}
+
+void RenderContextSample::Sync(int64_t, void *data)
+{
+    struct OHOS::FrameCallback cb = {
+        .frequency_ = freq_,
+        .timestamp_ = 0,
+        .userdata_ = data,
+        .callback_ = std::bind(&RenderContextSample::Sync, this, SYNC_FUNC_ARG),
+    };
+
+    OHOS::VsyncError ret = OHOS::VsyncHelper::Current()->RequestFrameCallback(cb);
+    if (ret) {
+        std::cout << "RequestFrameCallback inner " <<  ret << std::endl;
+    }
+
+    if (!ready_) {
+        return;
+    }
+
+    Draw();
+}
+
+void RenderContextSample::CreateBackGroundSurface()
+{
+    backGroundCSurface = Surface::CreateSurfaceAsConsumer();
+    backGroundCSurface->SetDefaultWidthAndHeight(backGroundWidth, backGroundHeight);
+    backGroundCSurface->SetDefaultUsage(HBM_USE_CPU_READ | HBM_USE_CPU_WRITE | HBM_USE_MEM_DMA);
+
+    sptr<IBufferProducer> producer = backGroundCSurface->GetProducer();
+    backGroundPSurface= Surface::CreateSurfaceAsProducer(producer);
+    backGroundCSurface->RegisterConsumerListener(this);
+
+    prevBufferMap_[backGroundCSurface->GetUniqueId()] = nullptr;
+    prevFenceMap_[backGroundCSurface->GetUniqueId()] = -1;
+}
+
+void RenderContextSample::CreateDrawingSurface()
+{
+    drawingCSurface = Surface::CreateSurfaceAsConsumer();
+    drawingCSurface->SetDefaultWidthAndHeight(backGroundWidth, backGroundHeight);
+    drawingCSurface->SetDefaultUsage(HBM_USE_CPU_READ | HBM_USE_CPU_WRITE | HBM_USE_MEM_DMA);
+
+    sptr<IBufferProducer> producer = drawingCSurface->GetProducer();
+    drawingPSurface= Surface::CreateSurfaceAsProducer(producer);
+    drawingCSurface->RegisterConsumerListener(this);
+
+    prevBufferMap_[drawingCSurface->GetUniqueId()] = nullptr;
+    prevFenceMap_[drawingCSurface->GetUniqueId()] = -1;
+}
 
 void RenderContextSample::OnBufferAvailable()
 {
 }
 
+SurfaceError RenderContextSample::ProduceBackGroundBuffer(uint32_t width, uint32_t height)
+{
+    OHOS::sptr<SurfaceBuffer> buffer;
+    int32_t releaseFence = -1;
+    BufferRequestConfig config = {
+        .width = width,
+        .height = height,
+        .strideAlignment = 0x8,
+        .format = PIXEL_FMT_RGBA_8888,
+        .usage = backGroundPSurface->GetDefaultUsage(),
+    };
+
+    SurfaceError ret = backGroundPSurface->RequestBuffer(buffer, releaseFence, config);
+    if (ret != 0) {
+        std::cout << "RequestBuffer failed:" << SurfaceErrorStr(ret).c_str() << std::endl;
+        return ret;
+    }
+
+    sptr<SyncFence> tempFence = new SyncFence(releaseFence);
+    tempFence->Wait(100);
+
+    if (buffer == nullptr) {
+        std::cout << "buffer is nullptr" << std::endl;
+        return SURFACE_ERROR_NULLPTR;
+    }
+
+    void* addr = static_cast<uint8_t *>(buffer->GetVirAddr());
+    static uint32_t value = 0xffffffff;
+
+    uint32_t *pixel = static_cast<uint32_t*>(addr);
+
+    for (uint32_t x = 0; x < width; x++) {
+        for (uint32_t y = 0;  y < height; y++) {
+            *pixel++ = value;
+        }
+    }
+
+    BufferFlushConfig flushConfig = {
+        .damage = {
+            .w = width,
+            .h = height,
+        },
+    };
+
+    int32_t acquireFence = -1;
+    ret = backGroundPSurface->FlushBuffer(buffer, acquireFence, flushConfig);
+
+    std::cout << "Sync: " << SurfaceErrorStr(ret).c_str() << std::endl;
+    return SURFACE_ERROR_OK;
+}
+
+SurfaceError RenderContextSample::ProduceDrawingBuffer(uint32_t width, uint32_t height)
+{
+    std::cout << "ProduceDrawingBuffer start" << std::endl;
+
+    if (nwindow == nullptr) {
+        nwindow = CreateNativeWindowFromSurface(&drawingPSurface);
+        eglSurface = renderContext->CreateEGLSurface((EGLNativeWindowType)nwindow);
+    }
+
+    NativeWindowHandleOpt(nwindow, SET_BUFFER_GEOMETRY, width, height);
+
+    renderContext->MakeCurrent(eglSurface);
+
+    SkCanvas* canvas = renderContext->AcquireCanvas(width, height);
+
+    canvas->clear(SkColorSetARGB(0x20, 0x20, 0x20, 0xFF));
+    SkPaint paint;
+    paint.setColor(SK_ColorRED);
+    paint.setAntiAlias(true);
+    canvas->drawCircle(128, 128, 90, paint);
+    paint.setColor(SK_ColorGREEN);
+    canvas->drawCircle(86, 86, 20, paint);
+    canvas->drawCircle(160, 76, 20, paint);
+    canvas->drawCircle(140, 150, 35, paint);
+
+    renderContext->RenderFrame();
+    renderContext->SwapBuffers(eglSurface);
+
+    std::cout << "ProduceDrawingBuffer end" << std::endl;
+
+    return SURFACE_ERROR_OK;
+}
+
+bool RenderContextSample::DrawBackgroundLayer(std::shared_ptr<HdiLayerInfo> &layer)
+{
+    int32_t zorder = 0;
+    IRect dstRect;
+
+    dstRect.x = 0;  // Absolute coordinates, with offset
+    dstRect.y = 0;
+    dstRect.w = 2560;
+    dstRect.h = 1600;
+
+    if (!FillBackGroundLayer(layer, zorder, dstRect)) {
+        return false;
+    }
+    return true;
+}
+
+bool RenderContextSample::DrawDrawingLayer(std::shared_ptr<HdiLayerInfo> &layer)
+{
+    int32_t zorder = 1;
+    IRect dstRect;
+
+    dstRect.x = 0;  // Absolute coordinates, with offset
+    dstRect.y = 0;
+
+    dstRect.w = 1200;
+    dstRect.h = 800;
+
+    if (!FillDrawingLayer(layer, 0, zorder, dstRect)) {
+        return false;
+    }
+    return true;
+}
+
 void RenderContextSample::Draw()
 {
+    static int32_t count = 0;
+    std::shared_ptr<HdiLayerInfo> backgroundLayer = HdiLayerInfo::CreateHdiLayerInfo();
+    std::shared_ptr<HdiLayerInfo> drawingLayer = HdiLayerInfo::CreateHdiLayerInfo();
     do {
-        static int count = 0;
-
-        if (count >= 2000) {
-            count = 0;
+        std::cout << "+++++++ draw count " << count << std::endl;
+        if (!DrawBackgroundLayer(backgroundLayer)) {
+            std::cout << "DrawBackgroundLayer failed!" << std::endl;
+            return;
         }
 
-        std::vector<LayerInfoPtr> layerVec;
-        std::shared_ptr<HdiLayerInfo> showLayer = HdiLayerInfo::CreateHdiLayerInfo();
-        std::shared_ptr<HdiLayerInfo> showLayer1 = HdiLayerInfo::CreateHdiLayerInfo();
-
-        int32_t zorder = 0;
-        IRect dstRect;
-        dstRect.x = 0;  // Absolute coordinates, with offset
-        dstRect.y = 0;
-        dstRect.w = width;
-        dstRect.h = height;
-
-        if (!FillLayer(showLayer1, pSurface, cSurface, zorder, dstRect)) {
-            continue;
+        if (!DrawDrawingLayer(drawingLayer)) {
+            std::cout << "DrawDrawingLayer failed!" << std::endl;
+            return;
         }
-        layerVec.emplace_back(showLayer1);
 
-        output->SetLayerInfo(layerVec);
-        backend->Repaint(outputs);
+        std::vector<LayerInfoPtr> layers;
+        layers.push_back(backgroundLayer);
+        layers.push_back(drawingLayer);
+
+        output_->SetLayerInfo(layers);
+
+        IRect damageRect;
+        damageRect.x = 0;
+        damageRect.y = 0;
+        damageRect.w = display_w;
+        damageRect.h = display_h;
+        output_->SetOutputDamage(1, damageRect);
+
+        backend_->Repaint(outputs_);
+        std::cout << "------ draw count " << count << std::endl;
         count++;
     } while (false);
 }
 
-bool RenderContextSample::FillLayer(std::shared_ptr<HdiLayerInfo> &showLayer, OHOS::sptr<Surface> &pSurface,
-        OHOS::sptr<Surface> &cSurface, uint32_t zorder, IRect &dstRect)
+bool RenderContextSample::FillDrawingLayer(std::shared_ptr<HdiLayerInfo> &showLayer, uint32_t index,
+    uint32_t zorder, IRect &dstRect)
 {
-    DrawSurface();
+    if (ProduceDrawingBuffer(drawingWidth, drawingHeight) != SURFACE_ERROR_OK) {
+        std::cout << "FillDrawingLayer produce cBuffer failed" << std::endl;
+        return false;
+    }
 
     OHOS::sptr<SurfaceBuffer> cbuffer = nullptr;
-    int32_t fence;
+    int32_t fence = -1;
     int64_t timestamp;
     Rect damage;
-    SurfaceError ret = cSurface->AcquireBuffer(cbuffer, fence, timestamp, damage);
+    SurfaceError ret = drawingCSurface->AcquireBuffer(cbuffer, fence, timestamp, damage);
     if (ret != SURFACE_ERROR_OK) {
-        LOG("Acquire cBuffer failed");
+        std::cout << "Acquire cBuffer failed: " << ret << std::endl;
         return false;
     }
 
     IRect srcRect;
     srcRect.x = 0;
     srcRect.y = 0;
-    srcRect.w = width;
-    srcRect.h = height;
+    srcRect.w = drawingWidth;
+    srcRect.h = drawingHeight;
 
     LayerAlpha alpha = { .enPixelAlpha = true };
 
-    showLayer->SetSurface(cSurface);
-    showLayer->SetBuffer(cbuffer, fence, nullptr, -1);
+    showLayer->SetSurface(drawingCSurface);
+    showLayer->SetBuffer(cbuffer, fence, prevBufferMap_[drawingCSurface->GetUniqueId()],
+        prevFenceMap_[drawingCSurface->GetUniqueId()]);
+    showLayer->SetZorder(zorder);
+    showLayer->SetAlpha(alpha);
+    showLayer->SetTransform(TransformType::ROTATE_NONE);
+    if (index == 0) {
+        // COMPOSITION_CLIENT
+        showLayer->SetCompositionType(CompositionType::COMPOSITION_DEVICE);
+    } else {
+        showLayer->SetCompositionType(CompositionType::COMPOSITION_DEVICE);
+    }
+    showLayer->SetVisibleRegion(1, srcRect);
+    showLayer->SetDirtyRegion(srcRect);
+    showLayer->SetLayerSize(dstRect);
+    showLayer->SetBlendType(BlendType::BLEND_SRC);
+    showLayer->SetCropRect(srcRect);
+    showLayer->SetPreMulti(false);
+
+    prevBufferMap_[drawingCSurface->GetUniqueId()] = cbuffer;
+    prevFenceMap_[drawingCSurface->GetUniqueId()] = fence;
+
+    return true;
+}
+
+bool RenderContextSample::FillBackGroundLayer(std::shared_ptr<HdiLayerInfo> &showLayer, uint32_t zorder, IRect &dstRect)
+{
+    if (ProduceBackGroundBuffer(dstRect.w, dstRect.h) != SURFACE_ERROR_OK) {
+        std::cout << "Produce background cBuffer failed" << std::endl;
+        return false;
+    }
+
+    OHOS::sptr<SurfaceBuffer> cbuffer = nullptr;
+    int32_t fence = -1;
+    int64_t timestamp;
+    Rect damage;
+    SurfaceError ret = backGroundCSurface->AcquireBuffer(cbuffer, fence, timestamp, damage);
+    if (ret != SURFACE_ERROR_OK) {
+        std::cout << "Acquire cBuffer failed" << std::endl;
+        return false;
+    }
+
+    IRect srcRect;
+    srcRect.x = 0;
+    srcRect.y = 0;
+    srcRect.w = dstRect.w;
+    srcRect.h = dstRect.h;
+
+    LayerAlpha alpha = { .enPixelAlpha = true };
+
+    showLayer->SetSurface(backGroundCSurface);
+    showLayer->SetBuffer(cbuffer, fence, prevBufferMap_[backGroundCSurface->GetUniqueId()],
+        prevFenceMap_[backGroundCSurface->GetUniqueId()]);
     showLayer->SetZorder(zorder);
     showLayer->SetAlpha(alpha);
     showLayer->SetTransform(TransformType::ROTATE_NONE);
@@ -164,170 +399,110 @@ bool RenderContextSample::FillLayer(std::shared_ptr<HdiLayerInfo> &showLayer, OH
     showLayer->SetCropRect(srcRect);
     showLayer->SetPreMulti(false);
 
+    prevBufferMap_[backGroundCSurface->GetUniqueId()] = cbuffer;
+    prevFenceMap_[backGroundCSurface->GetUniqueId()] = fence;
+
+    std::cout << "FillBackGroundLayer finished" << std::endl;
     return true;
 }
 
-void RenderContextSample::Sync(int64_t, void *data)
+void RenderContextSample::CreatePhysicalScreen()
 {
-    struct OHOS::FrameCallback cb = {
-        .frequency_ = freq,
-        .timestamp_ = 0,
-        .userdata_ = data,
-        .callback_ = std::bind(&RenderContextSample::Sync, this, SYNC_FUNC_ARG),
+    screen_ = HdiScreen::CreateHdiScreen(output_->GetScreenId());
+    screen_->Init();
+    screen_->GetScreenSuppportedModes(displayModeInfos_);
+    outputs_.push_back(output_);
+    size_t supportModeNum = displayModeInfos_.size();
+    if (supportModeNum > 0) {
+        screen_->GetScreenMode(currentModeIndex_);
+        for (size_t i = 0; i < supportModeNum; i++) {
+            if (displayModeInfos_[i].id == static_cast<int32_t>(currentModeIndex_)) {
+                this->freq_ = displayModeInfos_[i].freshRate;
+                this->display_w = displayModeInfos_[i].width;
+                this->display_h = displayModeInfos_[i].height;
+            }
+        }
+        screen_->SetScreenPowerStatus(DispPowerStatus::POWER_STATUS_ON);
+        screen_->SetScreenMode(currentModeIndex_);
+
+        DispPowerStatus powerState;
+        screen_->SetScreenPowerStatus(DispPowerStatus::POWER_STATUS_ON);
+        screen_->GetScreenPowerStatus(powerState);
+    }
+
+    DisplayCapability info;
+    screen_->GetScreenCapability(info);
+
+    ready_ = true;
+}
+
+void RenderContextSample::OnHotPlugEvent(std::shared_ptr<HdiOutput> &output, bool connected)
+{
+    /*
+     * Currently, IPC communication cannot be nested. Therefore, Vblank registration can be
+     * initiated only after the initialization of the device is complete.
+     */
+    output_ = output;
+    deviceConnected_ = connected;
+
+    if (!initDeviceFinished_) {
+        std::cout << "Init the device has not finished yet" << std::endl;
+        return;
+    }
+
+    std::cout << "Callback HotPlugEvent, connected is " << connected << std::endl;
+
+    if (connected) {
+        CreatePhysicalScreen();
+    }
+ }
+
+void RenderContextSample::DoPrepareCompleted(sptr<Surface> &surface, const struct PrepareCompleteParam &param)
+{
+    BufferRequestConfig requestConfig = {
+        .width = display_w,  // need display width
+        .height = display_h, // need display height
+        .strideAlignment = 0x8,
+        .format = PIXEL_FMT_BGRA_8888,
+        .usage = HBM_USE_CPU_READ | HBM_USE_CPU_WRITE | HBM_USE_MEM_DMA | HBM_USE_MEM_FB,
+        .timeout = 0,
     };
 
-    OHOS::VsyncError ret = OHOS::VsyncHelper::Current()->RequestFrameCallback(cb);
-    if (ret) {
-        LOG("RequestFrameCallback inner %{public}d\n", ret);
-    }
-
-    if (!ready) {
-        return;
-    }
-    Draw();
-}
-
-void RenderContextSample::DrawSurface()
-{
-    std::cout << "DrawSurface" << std::endl;
-    RenderContextFactory::GetInstance().CreateEngine()->InitializeEglContext();
-
-    auto width = 400;
-    auto height = 400;
-
-    auto frame = rSSurfaceOhosGl_->RequestFrame(width, height);
-    auto canvas = frame->GetCanvas();
-    if (canvas == nullptr) {
-        std::cout << "canvas is null" << std::endl;
+    if (surface == nullptr) {
+        std::cout << "surface is null" << std::endl;
         return;
     }
 
-    SkPaint paint;
-    paint.setAntiAlias(true);
-    paint.setColor(SK_ColorRED);
-    canvas->drawCircle(128, 128, 90, paint);
-    paint.setColor(SK_ColorWHITE);
-    canvas->drawCircle(86, 86, 20, paint);
-    canvas->drawCircle(160, 76, 20, paint);
-    canvas->drawCircle(140, 150, 35, paint);
+    int32_t releaseFence = -1;
+    sptr<SurfaceBuffer> fbBuffer = nullptr;
+    SurfaceError ret1 = surface->RequestBuffer(fbBuffer, releaseFence, requestConfig);
+    if (ret1 != 0) {
+        std::cout << "RequestBuffer failed " << SurfaceErrorStr(ret1).c_str() << std::endl;
+        return;
+    }
 
-    //framePtr->SetDamageRegion(0, 0, width, height);
-    rSSurfaceOhosGl_->FlushFrame(frame);
-}
+    sptr<SyncFence> tempFence = new SyncFence(releaseFence);
+    tempFence->Wait(100);
 
-void RenderContextSample::Init(int32_t width, int32_t height, HdiBackend* backend)
-{
-    this->backend = backend;
 
-    cSurface = Surface::CreateSurfaceAsConsumer();
-    cSurface->SetDefaultWidthAndHeight(width, height);
-    cSurface->SetDefaultUsage(HBM_USE_CPU_READ | HBM_USE_CPU_WRITE | HBM_USE_MEM_DMA);
+    auto addr = static_cast<uint8_t *>(fbBuffer->GetVirAddr());
+    int32_t ret2 = memset_s(addr, fbBuffer->GetSize(), 0, fbBuffer->GetSize());
+    if (ret2 != 0) {
+        std::cout << "memset_s failed" << std::endl;
+    }
 
-    OHOS::sptr<IBufferProducer> producer = cSurface->GetProducer();
-    pSurface = Surface::CreateSurfaceAsProducer(producer);
-    cSurface->RegisterConsumerListener(this);
-
-    rSSurfaceOhosGl_ = new RSSurfaceOhosGl(pSurface);
-
-    Sync(0, nullptr);
-}
-
-void RenderContextSample::CreatePhysicalScreen(std::shared_ptr<HdiOutput> &output)
-{
-    screen = HdiScreen::CreateHdiScreen(output->GetScreenId());
-    screen->Init();
-    screen->GetScreenSuppportedModes(displayModeInfos);
-    this->output = output;
-    outputs.push_back(output);
-    int supportModeNum = displayModeInfos.size();
-    if (supportModeNum > 0) {
-        screen->GetScreenMode(currentModeIndex);
-        LOG("currentModeIndex:%{public}d", currentModeIndex);
-        for (int i = 0; i < supportModeNum; i++) {
-            LOG("modes(%{public}d) %{public}dx%{public}d freq:%{public}d", displayModeInfos[i].id, displayModeInfos[i].width,
-                displayModeInfos[i].height, displayModeInfos[i].freshRate);
-            if (displayModeInfos[i].id == static_cast<int32_t>(currentModeIndex)) {
-                this->freq = 60;
-                this->display_w = displayModeInfos[i].width;
-                this->display_h = displayModeInfos[i].height;
-                break;
-            }
+    BufferFlushConfig flushConfig = {
+        .damage = {
+            .w = display_w,
+            .h = display_h,
         }
-        screen->SetScreenPowerStatus(DispPowerStatus::POWER_STATUS_ON);
+    };
+
+    /*
+     * if use GPU produce data, flush with gpu fence
+     */
+    ret2 = surface->FlushBuffer(fbBuffer, -1, flushConfig);
+    if (ret2 != 0) {
+        std::cout << "DoPrepareCompleted FlushBuffer failed"<< std::endl;
     }
-    ready = true;
-}
-
-void RenderContextSample::DoPrepareCompleted(OHOS::sptr<Surface> &surface, const struct PrepareCompleteParam &param)
-{
-    std::cout << "DoPrepareCompleted start" << std::endl;
-    if (param.needFlushFramebuffer) {
-        BufferRequestConfig requestConfig = {
-            .width = display_w,  // need display width
-            .height = display_h, // need display height
-            .strideAlignment = 0x8,
-            .format = PIXEL_FMT_BGRA_8888,
-            .usage = HBM_USE_CPU_READ | HBM_USE_CPU_WRITE | HBM_USE_MEM_DMA,
-            .timeout = 0,
-        };
-        BufferFlushConfig flushConfig = {
-            .damage = {
-                .w = display_w,
-                .h = display_h,
-            }
-        };
-
-        int fenced = -1;
-        surface->RequestBuffer(fbBuffer, fenced, requestConfig);
-
-        LOG("enter DoPrepareCompleted, param.layers %{public}d, fb size:%{public}d", (int)param.layers.size(), fbBuffer->GetSize());
-
-        if (fbBuffer->GetVirAddr() == nullptr) {
-            LOG("get virAddr failed, virAddr is nullptr");
-            return;
-        }
-        auto addr = static_cast<uint8_t *>(fbBuffer->GetVirAddr());
-        memset_s(addr, fbBuffer->GetSize(), 0, fbBuffer->GetSize());
-
-        surface->FlushBuffer(fbBuffer, -1, flushConfig);
-    }
-}
-
-static void OnScreenPlug(std::shared_ptr<HdiOutput> &output, bool connected, void* data)
-{
-    LOG("enter OnScreenPlug, connected is %d", connected);
-    auto* thisPtr = static_cast<RenderContextSample *>(data);
-    if (connected) {
-        thisPtr->CreatePhysicalScreen(output);
-    }
-}
-
-static void OnPrepareCompleted(OHOS::sptr<Surface> &surface, const struct PrepareCompleteParam &param, void* data)
-{
-    LOG("enter OnPrepareCompleted");
-    auto* thisPtr = static_cast<RenderContextSample *>(data);
-    thisPtr->DoPrepareCompleted(surface, param);
-}
-
-int main(int argc, const char *argv[])
-{
-    RenderContextSample m;
-    LOG("start to HdiBackend::GetInstance");
-    HdiBackend* backend = OHOS::Rosen::HdiBackend::GetInstance();
-    if (backend == nullptr) {
-        LOG("HdiBackend::GetInstance fail");
-        return -1;
-    }
-
-    backend->RegScreenHotplug(OnScreenPlug, &m);
-    backend->RegPrepareComplete(OnPrepareCompleted, &m);
-
-    m.width = 400;
-    m.height = 400;
-
-    auto runner = OHOS::AppExecFwk::EventRunner::Create(false);
-    auto handler = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
-    handler->PostTask(std::bind(&RenderContextSample::Init, &m, m.width, m.height, backend));
-    runner->Run();
-    return 0;
 }
