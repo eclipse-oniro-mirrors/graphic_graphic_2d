@@ -76,8 +76,8 @@ ohos_executable("surface_capture_demo") {
   subsystem_name = "graphic"
 }
 
-ohos_executable("virtual_display_demo") {
-  sources = [ "virtual_display_test.cpp" ]
+ohos_executable("mirror_display_demo") {
+  sources = [ "mirror_display_test.cpp" ]
 
   deps = [
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
