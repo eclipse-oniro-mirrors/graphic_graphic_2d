@@ -57,8 +57,9 @@ constexpr int MILLI_SECS_PER_SECOND = 1000;
 constexpr int MICRO_SECS_PER_MILLISECOND = 1000;
 constexpr int MICRO_SECS_PER_SECOND = MICRO_SECS_PER_MILLISECOND * MILLI_SECS_PER_SECOND;
 constexpr uint8_t BIT_DEPTH_VALUE = 8;
+constexpr int SETW_VALUE = 2;
+constexpr char SETFILL_VALUE = '0';
 constexpr int SLEEP_TIME = 20;
-constexpr int MAX_BACKLIGHT = 100;
 
 RenderContext* renderContext = nullptr;
 
@@ -135,19 +136,20 @@ std::string FormattedTimeStamp()
 
     ::tm* localTime = ::localtime(&seconds);
 
-    ss << std::setw(4) << (localTime->tm_year + 1900) << "-"
-       << std::setfill('0') << std::setw(2) << (localTime->tm_mon + 1) << "-"
-       << std::setfill('0') << std::setw(2) << localTime->tm_mday << "_"
-       << std::setfill('0') << std::setw(2) << localTime->tm_hour << "-"
-       << std::setfill('0') << std::setw(2) << localTime->tm_min << "-"
-       << std::setfill('0') << std::setw(2) << localTime->tm_sec << ".";
+    ss << std::setw(4) << (localTime->tm_year + 1900) << "-" // 4: parameters of the stew function, 1900: time base
+       << std::setfill(SETFILL_VALUE) << std::setw(SETW_VALUE) << (localTime->tm_mon + 1) << "-"
+       << std::setfill(SETFILL_VALUE) << std::setw(SETW_VALUE) << localTime->tm_mday << "_"
+       << std::setfill(SETFILL_VALUE) << std::setw(SETW_VALUE) << localTime->tm_hour << "-"
+       << std::setfill(SETFILL_VALUE) << std::setw(SETW_VALUE) << localTime->tm_min << "-"
+       << std::setfill(SETFILL_VALUE) << std::setw(SETW_VALUE) << localTime->tm_sec << ".";
     auto micros = microsecondsSinceEpoch % MICRO_SECS_PER_SECOND;
-    ss << std::setfill('0') << std::setw(6) << micros;
+    ss << std::setfill(SETFILL_VALUE) << std::setw(6) << micros; // 6: parameters of the stew function
     return ss.str();
 }
 
 #ifdef ACE_ENABLE_GL
-RenderContext* GetRenderContext() {
+RenderContext* GetRenderContext()
+{
     if (renderContext != nullptr) {
         return renderContext;
     }
@@ -159,9 +161,13 @@ RenderContext* GetRenderContext() {
 #endif // ACE_ENABLE_GL
 } // namespace detail
 
-std::unique_ptr<RSSurfaceFrame> framePtr;
+static std::unique_ptr<RSSurfaceFrame> framePtr;
+constexpr int SKSCALAR_X = 0;
+constexpr int SKSCALAR_Y = 0;
+constexpr int SKSCALAR_W = 1400;
+constexpr int SKSCALAR_H = 1200;
 
-void DrawSurface(
+static void DrawSurface(
     SkRect surfaceGeometry, uint32_t color, SkRect shapeGeometry, std::shared_ptr<RSSurfaceNode> surfaceNode)
 {
     auto x = surfaceGeometry.x();
@@ -185,7 +191,7 @@ void DrawSurface(
     SkPaint paint;
     paint.setAntiAlias(true);
     paint.setStyle(SkPaint::kFill_Style);
-    paint.setStrokeWidth(20);
+    paint.setStrokeWidth(20);  // 20: SkScalar Width
     paint.setStrokeJoin(SkPaint::kRound_Join);
     paint.setColor(color);
 
@@ -195,147 +201,56 @@ void DrawSurface(
     rsSurface->FlushFrame(framPtr1);
 }
 
+static void DrawSurfaceToCapture(std::shared_ptr<RSSurfaceNode> surfaceNode)
+{
+    SkRect surfaceGeometry = SkRect::MakeXYWH(100, 100, 256, 256);
+    SkRect shapeGeometry = SkRect::MakeXYWH(40, 60, 100, 120);
+    auto x = surfaceGeometry.x();
+    auto y = surfaceGeometry.y();
+    auto width = surfaceGeometry.width();
+    auto height = surfaceGeometry.height();
+    surfaceNode->SetBounds(x, y, width, height);
+    std::shared_ptr<RSSurface> rsSurface = RSSurfaceExtractor::ExtractRSSurface(surfaceNode);
+    if (rsSurface == nullptr) {
+        std::cout<< "***SurfaceCaptureTest*** DrawSurfaceToCapture: rsSurface == nullptr" <<std::endl;
+        return;
+    }
+    auto frame = rsSurface->RequestFrame(width, height);
+    framePtr = std::move(frame);
+
+    auto canvas = framePtr->GetCanvas();
+    if (canvas == nullptr) {
+        std::cout<< "***SurfaceCaptureTest*** DrawSurfaceToCapture: canvas == nullptr" << std::endl;
+        return;
+    }
+    SkPaint paint;
+    paint.setAntiAlias(true);
+    paint.setStyle(SkPaint::kFill_Style);
+    paint.setStrokeWidth(20); // 20: SkSCalar Width
+    paint.setStrokeJoin(SkPaint::kRound_Join);
+    paint.setColor(0xffff0000);
+    SkPath path;
+    path.cubicTo(20, 20, 50, 160, 120, 160); // 20 50 160 120: SkScalar parameter
+    SkPaint pathPaint;
+    pathPaint.setAntiAlias(true);
+    pathPaint.setStyle(SkPaint::kFill_Style);
+    pathPaint.setStrokeWidth(5); // 5: SKSCalar Width
+    pathPaint.setStrokeJoin(SkPaint::kRound_Join);
+    pathPaint.setColor(0xffFFD700);
+    canvas->drawRect(shapeGeometry, paint);
+    canvas->drawPath(path, pathPaint);
+    framePtr->SetDamageRegion(0, 0, width, height);
+    auto framePtr1 = std::move(framePtr);
+    rsSurface->FlushFrame(framePtr1);
+}
+
 std::shared_ptr<RSSurfaceNode> CreateSurface()
 {
     RSSurfaceNodeConfig config;
     return RSSurfaceNode::Create(config);
 }
 
-// Toy DMS.
 using DisplayId = ScreenId;
-class MyDMS {
-private:
-    struct Display {
-        DisplayId id;
-        RSScreenModeInfo activeMode;
-    };
-    std::unordered_map<DisplayId, Display> displays_;
-    mutable std::recursive_mutex mutex_;
-    RSInterfaces& rsInterface_;
-    DisplayId defaultDisplayId_;
-
-    void Init()
-    {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        rsInterface_.SetScreenChangeCallback([this](ScreenId id, ScreenEvent event) {
-            switch (event) {
-                case ScreenEvent::CONNECTED: {
-                    this->OnDisplayConnected(id);
-                    break;
-                }
-                case ScreenEvent::DISCONNECTED: {
-                    this->OnDisplayDisConnected(id);
-                    break;
-                }
-                default:
-                    break;
-            }
-        });
-
-        defaultDisplayId_ = rsInterface_.GetDefaultScreenId();
-        displays_[defaultDisplayId_] =
-            Display { defaultDisplayId_, rsInterface_.GetScreenActiveMode(defaultDisplayId_) };
-
-        auto supportModes = rsInterface_.GetScreenSupportedModes(defaultDisplayId_);
-        std::cout << "supportModes size: " << supportModes.size() << std::endl;
-        for (const auto &mode : supportModes) {
-            std::cout << "ModeId: " << mode.GetScreenModeId() << ":\n";
-            std::cout << "Width: " << mode.GetScreenWidth() << ", Height: " << mode.GetScreenHeight();
-            std::cout << ", FreshRate: " << mode.GetScreenFreshRate() << "Hz.\n";
-            std::cout << "---------------------------------------" << std::endl;
-        }
-
-        auto capabilities = rsInterface_.GetScreenCapability(defaultDisplayId_);
-        std::cout << "capabilities:\n " << "name: " << capabilities.GetName() << "\n";
-        std::cout << "type: " << capabilities.GetType() << "\n";
-        std::cout << "phyWidth: " << capabilities.GetPhyWidth() << "\n";
-        std::cout << "phyHeight: " << capabilities.GetPhyHeight() << "\n";
-        std::cout << "supportLayers: " << capabilities.GetSupportLayers() << "\n";
-        std::cout << "virtualDispCount: " << capabilities.GetVirtualDispCount() << "\n";
-        std::cout << "---------------------------------------" << std::endl;
-    }
-
-public:
-    MyDMS() : rsInterface_(RSInterfaces::GetInstance())
-    {
-        Init();
-    }
-    ~MyDMS() noexcept = default;
-
-    DisplayId GetDefaultDisplayId()
-    {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        return defaultDisplayId_;
-    }
-
-    DisplayId CreateVirtualDisplay(
-        const std::string &name,
-        uint32_t width,
-        uint32_t height,
-        sptr<Surface> surface,
-        ScreenId mirrorId,
-        int flags)
-    {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        auto displayId = rsInterface_.CreateVirtualScreen(name, width, height, surface, mirrorId, flags);
-        displays_[displayId] = Display {displayId, {}};
-        return displayId;
-    }
-
-    int32_t GetDisplayBacklight(DisplayId id)
-    {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        if (displays_.count(id) == 0) {
-            cout << "MyDMS: No display " << id << "!" << endl;
-            return -1;
-        }
-        return rsInterface_.GetScreenBacklight(id);
-    }
-
-    void SetDisplayBacklight(DisplayId id, uint32_t level)
-    {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        if (displays_.count(id) == 0) {
-            cout << "MyDMS: No display " << id << "!" << endl;
-            return;
-        }
-        return rsInterface_.SetScreenBacklight(id, level);
-    }
-
-    std::optional<RSScreenModeInfo> GetDisplayActiveMode(DisplayId id) const
-    {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        if (displays_.count(id) == 0) {
-            cout << "MyDMS: No display " << id << "!" << endl;
-            return {};
-        }
-        return displays_.at(id).activeMode;
-    }
-
-    void OnDisplayConnected(ScreenId id)
-    {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        displays_[id] = Display { id, rsInterface_.GetScreenActiveMode(id) };
-        std::cout << "MyDMS: Display " << id << " connected." << endl;
-    }
-
-    void OnDisplayDisConnected(ScreenId id)
-    {
-        std::lock_guard<std::recursive_mutex> lock(mutex_);
-        if (displays_.count(id) == 0) {
-            std::cout << "MyDMS: No display " << id << "!" << std::endl;
-        } else {
-            std::cout << "MyDMS: Display " << id << " disconnected." << endl;
-            displays_.erase(id);
-            if (id == defaultDisplayId_) {
-                defaultDisplayId_ = rsInterface_.GetDefaultScreenId();
-                std::cout << "MyDMS: DefaultDisplayId changed, new DefaultDisplayId is" << defaultDisplayId_ << "."
-                          << endl;
-            }
-        }
-    }
-};
-MyDMS g_dms;
 
 class ImageReader {
 public:
@@ -375,7 +290,7 @@ public:
 private:
     class BufferListener : public IBufferConsumerListener {
     public:
-        BufferListener(ImageReader &imgReader) : imgReader_(imgReader)
+        explicit BufferListener(ImageReader &imgReader) : imgReader_(imgReader)
         {
         }
         ~BufferListener() noexcept override = default;
@@ -419,7 +334,7 @@ private:
 
         bool ret = WriteToPng(dumpFileName, param);
         if (ret) {
-            std::cout << "ImageReader::Dumpbuffer(): dump" << dumpFileName << std::endl;
+            std::cout << "ImageReader::Dumpbuffer(): " << dumpFileName << std::endl;
         }
     }
 
@@ -461,40 +376,49 @@ private:
 
 int main()
 {
-    auto transactionProxy = RSTransactionProxy::GetInstance();
-    if (transactionProxy == nullptr) {
-        return -1;
-    }
+    ScreenId id = RSInterfaces::GetInstance().GetDefaultScreenId();
+    cout << "RS default screen id is " << id << ".\n";
 
-    DisplayId id = g_dms.GetDefaultDisplayId();
-    std::cout << "level =" << g_dms.GetDisplayBacklight(id) << std::endl;
-    int lightValue = 0;
-    g_dms.SetDisplayBacklight(id, lightValue);
-    std::cout << "after set to 0, level =" << g_dms.GetDisplayBacklight(id) << std::endl;
-    lightValue = detail::MAX_BACKLIGHT;
-    g_dms.SetDisplayBacklight(id, lightValue);
-    std::cout << "after set to 100, level =" << g_dms.GetDisplayBacklight(id) << std::endl;
+    auto surfaceLauncher = CreateSurface();
+    auto surfaceNode = CreateSurface();
+    DrawSurface(SkRect::MakeXYWH(SKSCALAR_X, SKSCALAR_Y, SKSCALAR_W, SKSCALAR_H), 0xFFF0FFF0,
+        SkRect::MakeXYWH(SKSCALAR_X, SKSCALAR_Y, SKSCALAR_W, SKSCALAR_H), surfaceLauncher);
+    DrawSurfaceToCapture(surfaceNode);
+    RSDisplayNodeConfig config;
+    config.screenId = id;
+    RSDisplayNode::SharedPtr sourceDisplayNode = RSDisplayNode::Create(config);
+    sourceDisplayNode->AddChild(surfaceLauncher, -1);
+    sourceDisplayNode->AddChild(surfaceNode, -1);
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
 
+    RSScreenModeInfo modeInfo = RSInterfaces::GetInstance().GetScreenActiveMode(id);
+    cout << "height=" << modeInfo.GetScreenHeight() << ", width=" << modeInfo.GetScreenWidth() << endl;
     ImageReader imgReader;
     if (!imgReader.Init()) {
         cout << "ImgReader init failed!" << endl;
     }
-    DisplayId virtualDisplayId = g_dms.CreateVirtualDisplay(
-        "virtualDisplay", 480, 300, imgReader.GetSurface(), INVALID_SCREEN_ID, -1);
+    DisplayId virtualDisplayId = RSInterfaces::GetInstance().CreateVirtualScreen("virtualDisplay",
+        modeInfo.GetScreenWidth(), modeInfo.GetScreenHeight(), imgReader.GetSurface(), INVALID_SCREEN_ID, -1);
     cout << "VirtualScreenId: " << virtualDisplayId << endl;
-    cout << "-------------------------------------------------------" << endl;
+    cout << "------------------------------------------------------------------" << endl;
+    RSDisplayNodeConfig mirrorConfig {virtualDisplayId, true, sourceDisplayNode->GetId()};
+    RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(mirrorConfig);
+    sleep(1);
+    
+    DrawSurface(SkRect::MakeXYWH(SKSCALAR_X, SKSCALAR_Y, SKSCALAR_W, SKSCALAR_H), 0xFFF0FFF0,
+        SkRect::MakeXYWH(SKSCALAR_X, SKSCALAR_Y, SKSCALAR_W, SKSCALAR_H), surfaceLauncher);
+    DrawSurfaceToCapture(surfaceNode);
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    sleep(detail::SLEEP_TIME);
 
-    RSDisplayNodeConfig config {virtualDisplayId};
-    RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
-    auto surfaceNode = CreateSurface();
-    DrawSurface(SkRect::MakeXYWH(0, 0, 200, 200), 0xffa10f1b, SkRect::MakeXYWH(0, 0, 200, 200), surfaceNode);
-    displayNode->AddChild(surfaceNode, -1);
-    transactionProxy->FlushImplicitTransaction();
-    while (1) {
-        sleep(detail::SLEEP_TIME);
-        DrawSurface(SkRect::MakeXYWH(0, 0, 200, 200), 0xffa10f1b, SkRect::MakeXYWH(0, 0, 200, 200), surfaceNode);
-        transactionProxy->FlushImplicitTransaction();
-    }
+    DrawSurface(SkRect::MakeXYWH(SKSCALAR_X, SKSCALAR_Y, SKSCALAR_W, SKSCALAR_H), 0xFFF0FFF0,
+        SkRect::MakeXYWH(SKSCALAR_X, SKSCALAR_Y, SKSCALAR_W, SKSCALAR_H), surfaceLauncher);
+    DrawSurfaceToCapture(surfaceNode);
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    sleep(detail::SLEEP_TIME);
 
+    sourceDisplayNode->ClearChildren();
+    sourceDisplayNode->RemoveFromTree();
+    
     return 0;
 }
