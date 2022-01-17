@@ -77,6 +77,7 @@ bool RSProcessor::ConsumeAndUpdateBuffer(RSSurfaceRenderNode& node, SpecialTask&
         task();
         node.SetBuffer(buffer);
         node.SetFence(fence);
+        node.SetDamageRegion(damage);
         if (node.ReduceAvailableBuffer() >= 1) {
             if (auto mainThread = RSMainThread::Instance()) {
                 mainThread->RequestNextVSync();
@@ -85,8 +86,8 @@ bool RSProcessor::ConsumeAndUpdateBuffer(RSSurfaceRenderNode& node, SpecialTask&
     } else {
         node.SetBuffer(node.GetBuffer());
         node.SetFence(node.GetFence());
+        node.SetDamageRegion(node.GetDamageRegion());
     }
-
     return true;
 }
 
