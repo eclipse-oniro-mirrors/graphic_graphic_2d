@@ -66,7 +66,6 @@ pid_t SurfaceIPCTest::ChildProcessMain()
         return pid;
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));  // wait 50ms
     int64_t data;
     read(pipeFd[0], &data, sizeof(data));
 
@@ -132,7 +131,7 @@ HWTEST_F(SurfaceIPCTest, BufferIPC001, Function | MediumTest | Level2)
     EXPECT_EQ(data, OHOS::GSERROR_OK);
 
     sptr<SurfaceBuffer> buffer = nullptr;
-    int32_t fence;
+    int32_t fence = -1;
     int64_t timestamp;
     Rect damage;
     auto sret = csurf->AcquireBuffer(buffer, fence, timestamp, damage);

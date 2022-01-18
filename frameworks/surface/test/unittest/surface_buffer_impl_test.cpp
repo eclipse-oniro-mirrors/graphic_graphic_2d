@@ -223,7 +223,7 @@ HWTEST_F(SurfaceBufferImplTest, State002, Function | MediumTest | Level2)
     ASSERT_EQ(ret, OHOS::GSERROR_OK);
 
     ASSERT_EQ(buffer->GetVirAddr(), nullptr);
-    ASSERT_EQ(buffer->GetFileDescriptor(), -1);
+    ASSERT_NE(buffer->GetFileDescriptor(), -1);
     ASSERT_NE(buffer->GetSize(), 0u);
     ASSERT_NE(buffer->GetBufferHandle(), nullptr);
 

@@ -26,7 +26,7 @@
         "//foundation/graphic/standard/interfaces/kits/napi/graphic/webgl:libwebglnapi"
       ],
       "test_list": [
-        "//foundation/graphic/standard:test"
+        "//foundation/graphic/standard:graphic_standard_test"
       ]
     }
   }
