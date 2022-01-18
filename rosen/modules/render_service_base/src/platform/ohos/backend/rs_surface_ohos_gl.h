@@ -22,7 +22,7 @@
 #include "platform/ohos/rs_surface_ohos.h"
 #include "render_context/render_context.h"
 #include "rs_surface_frame_ohos_gl.h"
-
+#include "window.h"
 
 namespace OHOS {
 namespace Rosen {
