@@ -61,10 +61,6 @@ ohos_shared_library("2d_graphics") {
     "//foundation/graphic/standard/interfaces/innerkits/surface",
     "//foundation/multimedia/image_standard/interfaces/innerkits/include",
   ]
-  if (ace_enable_gpu) {
-    include_dirs +=
-        [ "//foundation/graphic/standard/prebuilts/librarys/gpu/include" ]
-  }
 
   defines = [ "USE_ACE_SKIA" ]
 
@@ -75,7 +71,7 @@ ohos_shared_library("2d_graphics") {
   ]
 
   if (ace_enable_gpu) {
-    deps += [ "//foundation/graphic/standard/prebuilts/librarys/gpu:gpu_libs" ]
+    public_deps += [ "//foundation/graphic/standard:libgl" ]
   }
 
   public_deps = [
@@ -132,13 +128,11 @@ ohos_shared_library("2d_graphics_canvaskit0310") {
     "src/engine_adapter",
     "//foundation/graphic/standard/interfaces/innerkits/surface",
 
-    # "//foundation/graphic/standard/prebuilts/librarys/gpu/include",
     "//foundation/multimedia/image_standard/interfaces/innerkits/include",
   ]
 
   deps = [
     # "//third_party/skia_canvaskit0310:skia",
-    # "//foundation/graphic/standard/prebuilts/librarys/gpu:gpu_libs",
     "//foundation/multimedia/image_standard/interfaces/innerkits:image_native",
     "//utils/native/base:utils",
   ]
