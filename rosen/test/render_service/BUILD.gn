@@ -15,6 +15,7 @@ group("test") {
   testonly = true
 
   deps = [
+    "render_service/unittest/pipeline:unittest",
     "render_service_client/unittest/transaction:unittest",
     "render_service_client/unittest/ui:unittest",
   ]

@@ -17,12 +17,14 @@ import("//foundation/ace/ace_engine/ace_config.gni")
 module_output_path = "graphic/rosen_engine/render_service_client/ui"
 
 ##############################  RSRenderServiceClientTest  ##################################
-ohos_unittest("RSRenderServiceClientTest") {
+ohos_unittest("RSRenderServiceClientUITest") {
   module_out_path = module_output_path
 
   sources = [
     "rs_display_node_test.cpp",
-    "rs_node_test.cpp",
+    "rs_root_node_test.cpp",
+    "rs_surface_extractor_test.cpp",
+    "rs_surface_node_test.cpp",
     "rs_texture_node_test.cpp",
     "rs_ui_director_test.cpp",
   ]
@@ -54,5 +56,5 @@ config("ui_test") {
 group("unittest") {
   testonly = true
 
-  deps = [ ":RSRenderServiceClientTest" ]
+  deps = [ ":RSRenderServiceClientUITest" ]
 }

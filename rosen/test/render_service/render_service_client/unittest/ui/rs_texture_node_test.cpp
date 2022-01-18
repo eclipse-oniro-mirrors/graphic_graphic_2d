@@ -42,7 +42,7 @@ void RSTextureNodeTest::TearDown() {}
  */
 HWTEST_F(RSTextureNodeTest, Create001, TestSize.Level1)
 {
-    RSTextureNode::SharedPtr textureNode = RSTextureNode::Create();
+    RSNode::SharedPtr textureNode = RSTextureNode::Create();
     ASSERT_TRUE(textureNode != nullptr);
 }
 } // namespace OHOS::Rosen
