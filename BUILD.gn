@@ -33,7 +33,7 @@ group("default") {
   ]
 }
 
-group("test") {
+group("graphic_standard_test") {
   testonly = true
 
   public_deps = [

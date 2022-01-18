@@ -258,7 +258,7 @@ HWTEST_F(NativeWindowTest, RequestBuffer002, Function | MediumTest | Level2)
 HWTEST_F(NativeWindowTest, RequestBuffer003, Function | MediumTest | Level2)
 {
     int fenceFd = -1;
-    ASSERT_EQ(NativeWindowRequestBuffer(nativeWindow, &nativeWindowBuffer, &fenceFd), OHOS::GSERROR_OK);
+    ASSERT_EQ(NativeWindowRequestBuffer(nativeWindow, &nativeWindowBuffer, &fenceFd), OHOS::GSERROR_NO_BUFFER);
 }
 
 /*

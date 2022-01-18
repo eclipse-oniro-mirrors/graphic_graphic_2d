@@ -67,7 +67,6 @@ pid_t SurfaceRevertIPCTest::ChildProcessMain()
         return pid;
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));  // wait 50ms
     GTEST_LOG_(INFO) << getpid();
     auto csurf = Surface::CreateSurfaceAsConsumer("test");
     csurf->RegisterConsumerListener(this);
