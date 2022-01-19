@@ -14,6 +14,7 @@
  */
 
 #include "gtest/gtest.h"
+#include "transaction/rs_interfaces.h"
 #include "ui/rs_display_node.h"
 
 using namespace testing;
@@ -33,6 +34,30 @@ void RSDisplayNodeTest::TearDownTestCase() {}
 void RSDisplayNodeTest::SetUp() {}
 void RSDisplayNodeTest::TearDown() {}
 
+class TestSurfaceCapture : public SurfaceCaptureCallback {
+public:
+    TestSurfaceCapture()
+    {
+        showNode_ = nullptr;
+    }
+    explicit TestSurfaceCapture(std::shared_ptr<RSSurfaceNode> surfaceNode)
+    {
+        showNode_ = surfaceNode;
+    }
+    ~TestSurfaceCapture() override {}
+    void OnSurfaceCapture(std::shared_ptr<Media::PixelMap> pixelmap) override
+    {
+        //testSuccess = pipeTestUtils::DrawPixelmap(showNode_, pixelmap);
+    }
+    bool IsTestSuccess()
+    {
+        return testSuccess;
+    }
+private:
+    bool testSuccess = true;
+    std::shared_ptr<RSSurfaceNode> showNode_;
+}; // class TestSurfaceCapture
+
 /**
  * @tc.name: Create001
  * @tc.desc:
@@ -46,7 +71,41 @@ HWTEST_F(RSDisplayNodeTest, Create001, TestSize.Level1)
     * @tc.steps: step1. create RSDisplayNode
     */
     RSDisplayNodeConfig c;
-    RSDisplayNode::SharedPtr rootNode = RSDisplayNode::Create(c);
-    ASSERT_TRUE(rootNode != nullptr);
+    RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(c);
+    ASSERT_TRUE(displayNode != nullptr);
+}
+
+/**
+ * @tc.name: GetType001
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:AR000GGR40
+ * @tc.author:
+ */
+HWTEST_F(RSDisplayNodeTest, GetType001, TestSize.Level1)
+{
+    RSDisplayNodeConfig c;
+    RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(c);
+    ASSERT_TRUE(displayNode != nullptr);
+    ASSERT_TRUE(displayNode->GetType() == RSUINodeType::DISPLAY_NODE);
+}
+
+/**
+ * @tc.name: TakeSurfaceCapture001
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:AR000GGR40
+ * @tc.author:
+ */
+HWTEST_F(RSDisplayNodeTest, TakeSurfaceCapture001, TestSize.Level1)
+{
+    /**
+    * @tc.steps: step1. create RSDisplayNode
+    */
+    RSDisplayNodeConfig c;
+    RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(c);
+    ASSERT_TRUE(displayNode != nullptr);
+    auto surfaceCaptureMock = std::make_shared<TestSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSurfaceCapture(displayNode, surfaceCaptureMock);
 }
 } // namespace OHOS::Rosen

@@ -16,7 +16,10 @@
 #include "gtest/gtest.h"
 #include "pipeline/rs_render_result.h"
 #include "surface.h"
+#include "ui/rs_canvas_node.h"
 #include "ui/rs_node.h"
+#include "ui/rs_surface_node.h"
+#include "ui/rs_root_node.h"
 #include "ui/rs_ui_director.h"
 using namespace testing;
 using namespace testing::ext;
@@ -46,29 +49,29 @@ void RSUIDirectorTest::SetUp() {}
 void RSUIDirectorTest::TearDown() {}
 
 /**
- * @tc.name: SetSurfaceSize001
+ * @tc.name: SetSurfaceNodeSize001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:AR000GGR40
  * @tc.author:
  */
-HWTEST_F(RSUIDirectorTest, SetSurfaceSize001, TestSize.Level1)
+HWTEST_F(RSUIDirectorTest, SetSurfaceNodeSize001, TestSize.Level1)
 {
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
-    director->SetSurfaceSize(g_normalInt_1, g_normalInt_2);
+    director->SetSurfaceNodeSize(g_normalInt_1, g_normalInt_2);
 }
 
 /**
- * @tc.name: SetSurfaceSize004
+ * @tc.name: SetSurfaceNodeSize002
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:AR000GGR40
  * @tc.author:
  */
-HWTEST_F(RSUIDirectorTest, SetSurfaceSize002, TestSize.Level1)
+HWTEST_F(RSUIDirectorTest, SetSurfaceNodeSize002, TestSize.Level1)
 {
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
-    director->SetSurfaceSize(std::numeric_limits<int>::max(), std::numeric_limits<int>::min());
+    director->SetSurfaceNodeSize(std::numeric_limits<int>::max(), std::numeric_limits<int>::min());
 }
 
 /**
@@ -111,17 +114,31 @@ HWTEST_F(RSUIDirectorTest, SetTimeStamp003, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetPlatformSurface002
+ * @tc.name: SetRSSurfaceNode001
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:AR000GGR40
  * @tc.author:
  */
-HWTEST_F(RSUIDirectorTest, SetPlatformSurface002, TestSize.Level1)
+HWTEST_F(RSUIDirectorTest, SetRSSurfaceNode001, TestSize.Level1)
 {
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
-    auto surfaceTemp = OHOS::Surface::CreateSurfaceAsConsumer();
-    director->SetPlatformSurface(surfaceTemp);
+    RSSurfaceNodeConfig c;
+    auto surfaceNode = RSSurfaceNode::Create(c);
+    director->SetRSSurfaceNode(surfaceNode);
+}
+
+/**
+ * @tc.name: SetRSSurfaceNode002
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:AR000GGR40
+ * @tc.author:
+ */
+HWTEST_F(RSUIDirectorTest, SetRSSurfaceNode002 , TestSize.Level1)
+{
+    std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
+    director->SetRSSurfaceNode(nullptr);
 }
 
 /**
@@ -176,7 +193,7 @@ HWTEST_F(RSUIDirectorTest, UIDirectorSetRoot001, TestSize.Level1)
      * @tc.steps: step1. set parentSize, childSize and alignment
      */
     std::shared_ptr<RSUIDirector> director = RSUIDirector::Create();
-    RSNode::SharedPtr testNode = RSNode::Create();
+    RSNode::SharedPtr testNode = RSCanvasNode::Create();
     director->SetRoot(testNode->GetId());
 }
 
@@ -192,10 +209,10 @@ HWTEST_F(RSUIDirectorTest, UIDirectorTotal001, TestSize.Level1)
     /**
      * @tc.steps: step1. set parentSize, childSize and alignment
      */
-    RSNode::SharedPtr rootNode = RSNode::Create();
-    RSNode::SharedPtr child1 = RSNode::Create();
-    RSNode::SharedPtr child2 = RSNode::Create();
-    RSNode::SharedPtr child3 = RSNode::Create();
+    RSNode::SharedPtr rootNode = RSRootNode::Create();
+    RSNode::SharedPtr child1 = RSCanvasNode::Create();
+    RSNode::SharedPtr child2 = RSCanvasNode::Create();
+    RSNode::SharedPtr child3 = RSCanvasNode::Create();
     rootNode->AddChild(child1, -1);
     rootNode->AddChild(child2, 0);
     child1->AddChild(child3, 1);
@@ -204,14 +221,15 @@ HWTEST_F(RSUIDirectorTest, UIDirectorTotal001, TestSize.Level1)
 
     director->Init();
 
-    director->SetSurfaceSize(800, 600);
+    director->SetSurfaceNodeSize(800, 600);
 
     director->SetRoot(rootNode->GetId());
 
     director->SetTimeStamp(345);
-    director->SetPlatformSurface(nullptr);
-    auto surfaceTemp = OHOS::Surface::CreateSurfaceAsConsumer();
-    director->SetPlatformSurface(surfaceTemp);
+    director->SetRSSurfaceNode(nullptr);
+    RSSurfaceNodeConfig c;
+    auto surfaceNode = RSSurfaceNode::Create(c);
+    director->SetRSSurfaceNode(surfaceNode);
 
     director->SetUITaskRunner([&](const auto& uiTaskRunner) {});
     director->SendMessages();

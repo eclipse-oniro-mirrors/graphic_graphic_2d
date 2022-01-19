@@ -42,15 +42,138 @@ void RSSurfaceNodeTest::TearDown() {}
  */
 HWTEST_F(RSSurfaceNodeTest, Create001, TestSize.Level1)
 {
-    /**
-     * @tc.steps: step1. create RSNode and add child
-     */
     RSSurfaceNodeConfig c;
 
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     ASSERT_TRUE(surfaceNode != nullptr);
 
-    std::shared_ptr<RSSurface> surface = surfaceNode->GetSurface();
+    auto surface = surfaceNode->GetSurface();
     ASSERT_TRUE(surface != nullptr);
+}
+
+/**
+ * @tc.name: Marshalling001
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:AR000GGR40
+ * @tc.author:
+ */
+HWTEST_F(RSSurfaceNodeTest, Marshalling001, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_TRUE(surfaceNode != nullptr);
+
+    Parcel parcel;
+    surfaceNode->Marshalling(parcel);
+}
+
+/**
+ * @tc.name: Marshalling002
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:AR000GGR40
+ * @tc.author:
+ */
+HWTEST_F(RSSurfaceNodeTest, Marshalling002, TestSize.Level1)
+{
+    Parcel parcel;
+    auto surfaceNode = RSSurfaceNode::Unmarshalling(parcel);
+    EXPECT_TRUE(surfaceNode == nullptr);
+}
+
+/**
+ * @tc.name: Marshalling003
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:AR000GGR40
+ * @tc.author:
+ */
+HWTEST_F(RSSurfaceNodeTest, Marshalling003, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_TRUE(surfaceNode != nullptr);
+
+    Parcel parcel;
+    surfaceNode->Marshalling(parcel);
+    RSSurfaceNode::Unmarshalling(parcel);
+}
+
+/**
+ * @tc.name: Marshalling004
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:AR000GGR40
+ * @tc.author:
+ */
+HWTEST_F(RSSurfaceNodeTest, Marshalling004, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_TRUE(surfaceNode != nullptr);
+
+    Parcel parcel;
+    surfaceNode->Marshalling(parcel);
+    RSSurfaceNode::Unmarshalling(parcel);
+    RSSurfaceNode::Unmarshalling(parcel);
+}
+
+/**
+ * @tc.name: Marshalling005
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:AR000GGR40
+ * @tc.author:
+ */
+HWTEST_F(RSSurfaceNodeTest, Marshalling005, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+
+    RSSurfaceNode::SharedPtr surfaceNode1 = RSSurfaceNode::Create(c);
+    ASSERT_TRUE(surfaceNode1 != nullptr);
+    RSSurfaceNode::SharedPtr surfaceNode2 = RSSurfaceNode::Create(c);
+    ASSERT_TRUE(surfaceNode2 != nullptr);
+
+    Parcel parcel;
+    surfaceNode1->Marshalling(parcel);
+    surfaceNode2->Marshalling(parcel);
+    RSSurfaceNode::Unmarshalling(parcel);
+}
+
+/**
+ * @tc.name: GetSurface001
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:AR000GGR40
+ * @tc.author:
+ */
+HWTEST_F(RSSurfaceNodeTest, GetSurface001, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_TRUE(surfaceNode != nullptr);
+
+    surfaceNode->GetSurface();
+}
+
+/**
+ * @tc.name: GetType001
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:AR000GGR40
+ * @tc.author:
+ */
+HWTEST_F(RSSurfaceNodeTest, GetType001, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_TRUE(surfaceNode != nullptr);
+    ASSERT_TRUE(surfaceNode->GetType() == RSUINodeType::SURFACE_NODE);
 }
 } // namespace OHOS::Rosen
