@@ -28,7 +28,7 @@ ohos_shared_library("window") {
   deps = [
     "../common:graphic_napi_common",
     "//foundation/aafwk/standard/frameworks/kits/ability/native:abilitykit_native",
-    "//foundation/appexecfwk/standard/kits:appkit_native",
+    "//foundation/aafwk/standard/frameworks/kits/appkit:appkit_native",
     "//foundation/graphic/standard:libwmclient",
     "//foundation/graphic/standard:libwmservice",
   ]
