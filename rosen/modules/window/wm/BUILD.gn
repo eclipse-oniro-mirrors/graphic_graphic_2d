@@ -99,7 +99,7 @@ ohos_shared_library("libwm") {
   ]
 
   external_deps = [
-    "aafwk_standard:ability_context_native",
+    "ability_runtime:ability_context_native",
     "ipc:ipc_core",
   ]
 
