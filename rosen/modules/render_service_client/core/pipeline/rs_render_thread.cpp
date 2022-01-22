@@ -15,17 +15,17 @@
 
 #include "pipeline/rs_render_thread.h"
 
+#include "pipeline/rs_render_node_map.h"
 #include "pipeline/rs_root_render_node.h"
-
+#include "platform/common/rs_log.h"
+#include "rs_trace.h"
+#include "ui/rs_ui_director.h"
 #ifdef ROSEN_OHOS
 #include <sys/prctl.h>
 #include <unistd.h>
 
+#include "platform/ohos/rs_render_service_connect_hub.h"
 #endif
-#include "pipeline/rs_render_node_map.h"
-#include "platform/common/rs_log.h"
-#include "rs_trace.h"
-#include "ui/rs_ui_director.h"
 #ifdef USE_FLUTTER_TEXTURE
 #include "pipeline/rs_texture_render_node.h"
 #endif
@@ -79,6 +79,13 @@ RSRenderThread::RSRenderThread()
         }
         ROSEN_TRACE_END(BYTRACE_TAG_GRAPHIC_AGP);
     };
+
+#ifdef ROSEN_OHOS
+    RSRenderServiceConnectHub::SetOnConnectCallback([this](sptr<RSIRenderServiceConnection>& conn) {
+        sptr<IApplicationRenderThread> renderThreadSptr = sptr<RSRenderThread>(this);
+        conn->RegisterApplicationRenderThread(getpid(), renderThreadSptr);
+    });
+#endif
 }
 
 RSRenderThread::~RSRenderThread()
@@ -268,6 +275,13 @@ void RSRenderThread::SendCommands()
 {
     ROSEN_TRACE_BEGIN(BYTRACE_TAG_GRAPHIC_AGP, "RSRenderThread::SendCommands");
     RSUIDirector::RecvMessages();
+    ROSEN_TRACE_END(BYTRACE_TAG_GRAPHIC_AGP);
+}
+
+void RSRenderThread::OnTransaction(std::shared_ptr<RSTransactionData> transactionData)
+{
+    ROSEN_TRACE_BEGIN(BYTRACE_TAG_GRAPHIC_AGP, "RSRenderThread::OnTransaction");
+    RSUIDirector::RecvMessages(transactionData);
     ROSEN_TRACE_END(BYTRACE_TAG_GRAPHIC_AGP);
 }
 

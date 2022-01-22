@@ -68,6 +68,9 @@ void RSRenderServiceConnection::CleanAll(bool toDelete) noexcept
             screenManager_->RemoveScreenChangeCallback(screenChangeCallback_);
             screenChangeCallback_ = nullptr;
         }
+        if (remotePid_ != 0) {
+            mainThread_->UnregisterApplicationRenderThread(remotePid_);
+        }
     }).wait();
 
     {
@@ -231,6 +234,15 @@ void RSRenderServiceConnection::TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCap
         std::unique_ptr<Media::PixelMap> pixelmap = task.Run();
         callback->OnSurfaceCapture(id, pixelmap.get());
         ROSEN_TRACE_END(BYTRACE_TAG_GRAPHIC_AGP);
+    };
+    mainThread_->PostTask(captureTask);
+}
+
+void RSRenderServiceConnection::RegisterApplicationRenderThread(uint32_t pid, sptr<IApplicationRenderThread> app)
+{
+    remotePid_ = pid;
+    auto captureTask = [=]() -> void {
+        mainThread_->RegisterApplicationRenderThread(pid, app);
     };
     mainThread_->PostTask(captureTask);
 }

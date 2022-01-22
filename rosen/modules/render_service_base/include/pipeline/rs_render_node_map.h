@@ -23,7 +23,6 @@
 
 namespace OHOS {
 namespace Rosen {
-class RSContext;
 class RSRenderNode;
 
 class RSRenderNodeMap final {
@@ -54,6 +53,7 @@ private:
     std::unordered_map<NodeId, std::shared_ptr<RSBaseRenderNode>> renderNodeMap_;
 
     friend class RSContext;
+    friend class RSMainThread;
     friend class RSRenderThread;
 };
 

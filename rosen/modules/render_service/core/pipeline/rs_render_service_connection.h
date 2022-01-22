@@ -69,6 +69,8 @@ private:
 
     void TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCaptureCallback> callback) override;
 
+    void RegisterApplicationRenderThread(uint32_t pid, sptr<IApplicationRenderThread> app) override;
+
     RSScreenModeInfo GetScreenActiveMode(ScreenId id) override;
 
     std::vector<RSScreenModeInfo> GetScreenSupportedModes(ScreenId id) override;
@@ -106,6 +108,7 @@ private:
     // save all virtual screenIds created by this connection.
     std::unordered_set<ScreenId> virtualScreenIds_;
     sptr<RSIScreenChangeCallback> screenChangeCallback_;
+    uint32_t remotePid_ = 0;
 };
 } // Rosen
 } // OHOS

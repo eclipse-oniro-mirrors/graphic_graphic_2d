@@ -23,7 +23,7 @@
 #include <refbase.h>
 #include <surface.h>
 
-#include "ipc_callbacks/application_render_thread.h"
+#include "ipc_callbacks/iapplication_render_thread.h"
 #include "ipc_callbacks/screen_change_callback.h"
 #include "ipc_callbacks/surface_capture_callback.h"
 #include "platform/drawing/rs_surface.h"
