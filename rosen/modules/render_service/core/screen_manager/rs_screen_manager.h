@@ -21,6 +21,7 @@
 #include <mutex>
 #include <queue>
 #include <unordered_map>
+#include <vector>
 
 #include <hdi_backend.h>
 #include <hilog/log.h>
@@ -110,6 +111,16 @@ public:
     virtual int32_t GetScreenBacklight(ScreenId id) = 0;
 
     virtual void SetScreenBacklight(ScreenId id, uint32_t level) = 0;
+
+    virtual int32_t GetScreenSupportedColorModes(ScreenId id, std::vector<ScreenColorSpaceMode>& mode) const = 0;
+
+    virtual int32_t GetScreenColorMode(ScreenId id, ScreenColorSpaceMode& mode) const = 0;
+
+    virtual int32_t SetScreenColorMode(ScreenId id, int32_t modeIdx) = 0;
+
+    virtual int32_t SetScreenGammaMode(ScreenId id, ScreenGammaMode mode) = 0;
+
+    virtual int32_t GetScreenGammaMode(ScreenId id, ScreenGammaMode& mode) const = 0;
 };
 
 sptr<RSScreenManager> CreateOrGetScreenManager();
@@ -183,6 +194,15 @@ public:
 
     void SetScreenBacklight(ScreenId id, uint32_t level) override;
 
+    virtual int32_t GetScreenSupportedColorModes(ScreenId id, std::vector<ScreenColorSpaceMode>& mode) const override;
+
+    virtual int32_t GetScreenColorMode(ScreenId id, ScreenColorSpaceMode& mode) const override;
+
+    virtual int32_t SetScreenColorMode(ScreenId id, int32_t modeIdx) override;
+
+    virtual int32_t SetScreenGammaMode(ScreenId id, ScreenGammaMode mode) override;
+
+    virtual int32_t GetScreenGammaMode(ScreenId id, ScreenGammaMode& mode) const override;
 private:
     RSScreenManager();
     ~RSScreenManager() noexcept override;
@@ -206,6 +226,12 @@ private:
     void RemoveVirtualScreenLocked(ScreenId id);
     ScreenId GenerateVirtualScreenIdLocked();
     void ReuseVirtualScreenIdLocked(ScreenId id);
+
+    int32_t GetScreenSupportedColorModesLocked(ScreenId id, std::vector<ScreenColorSpaceMode>& mode) const;
+    int32_t GetScreenColorModeLocked(ScreenId id, ScreenColorSpaceMode& mode) const;
+    int32_t SetScreenColorModeLocked(ScreenId id, int32_t modeIdx);
+    int32_t SetScreenGammaModeLocked(ScreenId id, ScreenGammaMode mode);
+    int32_t GetScreenGammaModeLocked(ScreenId id, ScreenGammaMode& mode) const;
 
     mutable std::mutex mutex_;
     HdiBackend *composer_ = nullptr;

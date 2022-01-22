@@ -31,6 +31,10 @@ constexpr ScreenId INVALID_SCREEN_ID = ~(static_cast<ScreenId>(0));
 
 constexpr int32_t INVALID_BACKLIGHT_VALUE = -1;
 
+constexpr int32_t SUCCESS = 0;
+
+constexpr int32_t SCREEN_NOT_FOUND = 1;
+
 inline constexpr ScreenId ToScreenId(ScreenPhysicalId physicalId)
 {
     return static_cast<ScreenId>(physicalId);
@@ -71,6 +75,31 @@ typedef enum : uint32_t {
     DISP_INTF_BUTT,
     DISP_INVALID,
 }ScreenInterfaceType;
+
+typedef enum : uint32_t {
+    NATIVE = 0,
+    STANDARD_BT601_625,
+    STANDARD_BT601_625_UNADJUSTED,
+    STANDARD_BT601_525,
+    STANDARD_BT601_525_UNADJUSTED,
+    STANDARD_BT709,
+    DCI_P3,
+    SRGB,
+    ADOBE_RGB,
+    DISPLAY_P3,
+    BT2020,
+    BT2100_PQ,
+    BT2100_HLG,
+    DISPLAY_BT2020,
+} ScreenColorSpaceMode;
+
+typedef enum : uint32_t {
+    COLORIMETRIC = 0,
+    ENHANCE,
+    TONE_MAP_COLORIMETRIC,
+    TONE_MAP_ENHANCE,
+} ScreenGammaMode;
+
 // get the underlying type of an enum value.
 template<typename EnumType>
 inline constexpr typename std::underlying_type<EnumType>::type ECast(EnumType t)
