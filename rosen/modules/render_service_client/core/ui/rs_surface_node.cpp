@@ -82,13 +82,13 @@ void RSSurfaceNode::SetBoundsSize(float width, float height)
 void RSSurfaceNode::SetBoundsWidth(float width)
 {
     RSNode::SetBoundsWidth(width);
-    UpdateSurfaceDefaultSize(width, GetBoundsHeight());
+    UpdateSurfaceDefaultSize(width, GetStagingProperties().GetBoundsHeight());
 }
 
 void RSSurfaceNode::SetBoundsHeight(float height)
 {
     RSNode::SetBoundsHeight(height);
-    UpdateSurfaceDefaultSize(GetBoundsWidth(), height);
+    UpdateSurfaceDefaultSize(GetStagingProperties().GetBoundsWidth(), height);
 }
 
 void RSSurfaceNode::UpdateSurfaceDefaultSize(float width, float height)
