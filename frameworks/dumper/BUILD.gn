@@ -17,10 +17,7 @@ import("//build/ohos.gni")
 config("graphic_dumper_client_config") {
   visibility = [ ":*" ]
 
-  include_dirs = [
-    "include",
-    "//utils/system/safwk/native/include",
-  ]
+  include_dirs = [ "include" ]
 
   cflags = [
     "-Wall",
@@ -30,11 +27,7 @@ config("graphic_dumper_client_config") {
 }
 
 config("graphic_dumper_client_public_config") {
-  include_dirs = [
-    "//foundation/graphic/standard/interfaces/innerkits/dumper",
-    "//foundation/graphic/standard/interfaces/innerkits/common",
-    "//utils/native/base/include",
-  ]
+  include_dirs = [ "common" ]
 }
 
 ohos_shared_library("libgraphic_dumper_client") {
@@ -49,15 +42,14 @@ ohos_shared_library("libgraphic_dumper_client") {
 
   public_configs = [ ":graphic_dumper_client_public_config" ]
 
-  deps = [
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
-    "//foundation/distributedschedule/samgr/interfaces/innerkits/samgr_proxy:samgr_proxy",
-    "//foundation/graphic/standard/utils:libgraphic_utils",
+  deps = [ "//foundation/graphic/standard/utils:libgraphic_utils" ]
+
+  external_deps = [
+    "hilog_native:libhilog",
+    "ipc:ipc_core",
+    "samgr_standard:samgr_proxy",
+    "utils_base:utils",
   ]
-
-  external_deps = [ "ipc:ipc_core" ]
-
-  public_deps = [ "//utils/native/base:utils" ]
 
   part_name = "graphic_standard"
   subsystem_name = "graphic"
@@ -69,10 +61,7 @@ ohos_shared_library("libgraphic_dumper_client") {
 config("graphic_dumper_server_config") {
   visibility = [ ":*" ]
 
-  include_dirs = [
-    "include",
-    "//utils/system/safwk/native/include",
-  ]
+  include_dirs = [ "include" ]
 
   cflags = [
     "-Wall",
@@ -105,14 +94,15 @@ ohos_executable("graphic_dumper_server") {
   ]
 
   deps = [
+    "//foundation/graphic/standard/utils:libgraphic_utils",
     "//third_party/zlib:libz",
-    "//utils/native/base:utils",
   ]
 
   external_deps = [
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "samgr_standard:samgr_proxy",
+    "utils_base:utils",
   ]
 
   part_name = "graphic_standard"
@@ -125,10 +115,7 @@ ohos_executable("graphic_dumper_server") {
 config("gdumper_config") {
   visibility = [ ":*" ]
 
-  include_dirs = [
-    "include",
-    "//utils/system/safwk/native/include",
-  ]
+  include_dirs = [ "include" ]
 
   cflags = [
     "-Wall",
@@ -164,13 +151,13 @@ ohos_executable("gdumper") {
   deps = [
     "//foundation/graphic/standard/utils:libgraphic_utils",
     "//third_party/zlib:libz",
-    "//utils/native/base:utils",
   ]
 
   external_deps = [
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "samgr_standard:samgr_proxy",
+    "utils_base:utils",
   ]
 
   part_name = "graphic_standard"

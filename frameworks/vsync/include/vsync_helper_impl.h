@@ -22,10 +22,10 @@
 #include <mutex>
 #include <queue>
 
-#include <graphic_dumper_helper.h>
 #include <refbase.h>
 #include <vsync_helper.h>
 
+#include "graphic_dumper_helper.h"
 #include "ivsync_manager.h"
 #include "vsync_callback_stub.h"
 

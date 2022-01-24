@@ -22,10 +22,9 @@
 #include <map>
 #include <memory>
 
-#include <graphic_dumper_helper.h>
-
 #include "ipc/graphic_dumper_service_proxy.h"
 #include "ipc/graphic_dumper_client_listener_stub.h"
+#include "graphic_dumper_helper.h"
 
 namespace OHOS {
 namespace {

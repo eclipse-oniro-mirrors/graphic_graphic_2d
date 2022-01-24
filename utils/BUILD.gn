@@ -67,7 +67,13 @@ group("sync_fence") {
 }
 
 ## Build libgraphic_utils.so {{{
+config("libgraphic_utils_public_config") {
+  include_dirs = [ "//foundation/graphic/standard/interfaces/innerkits/common" ]
+}
+
 ohos_shared_library("libgraphic_utils") {
+  public_configs = [ ":libgraphic_utils_public_config" ]
+
   public_deps = [
     "buffer_handle:buffer_handle",
     "cpudraw:cpudraw",

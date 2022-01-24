@@ -28,10 +28,8 @@ config("surface_config") {
 }
 
 config("surface_public_config") {
-  include_dirs = [
-    "//foundation/graphic/standard/interfaces/innerkits/surface",
-    "//foundation/graphic/standard/interfaces/innerkits/common",
-  ]
+  include_dirs =
+      [ "//foundation/graphic/standard/interfaces/innerkits/surface" ]
 
   if (ace_enable_gpu) {
     defines = [ "ACE_ENABLE_GPU" ]
@@ -82,7 +80,6 @@ ohos_shared_library("surface") {
   deps = [
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//foundation/distributedschedule/samgr/interfaces/innerkits/samgr_proxy:samgr_proxy",
-    "//foundation/graphic/standard/utils:libgraphic_utils",
   ]
 
   public_deps = [
@@ -90,6 +87,7 @@ ohos_shared_library("surface") {
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
     "//foundation/graphic/standard:libgl",
     "//foundation/graphic/standard/utils:buffer_handle",
+    "//foundation/graphic/standard/utils:libgraphic_utils",
     "//utils/native/base:utils",
   ]
 

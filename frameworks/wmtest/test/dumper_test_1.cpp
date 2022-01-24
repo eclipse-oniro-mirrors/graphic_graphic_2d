@@ -19,9 +19,9 @@
 #include <string>
 #include <unistd.h>
 
-#include <graphic_dumper_helper.h>
 #include <option_parser.h>
 
+#include "graphic_dumper_helper.h"
 #include "inative_test.h"
 #include "native_test_class.h"
 #include "util.h"

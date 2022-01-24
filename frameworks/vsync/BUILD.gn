@@ -32,7 +32,6 @@ config("libvsync_client_config") {
 config("libvsync_client_public_config") {
   include_dirs = [
     "//foundation/graphic/standard/interfaces/innerkits/vsync",
-    "//foundation/graphic/standard/interfaces/innerkits/common",
     "//utils/native/base/include",
   ]
 }

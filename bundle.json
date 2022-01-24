@@ -1,19 +1,34 @@
 {
-    "name": "@openharmony/graphic_standard",
-    "version": "3.1.0",
+    "name": "@ohos/graphic_standard",
     "description": "graphic_standard",
-    "repository": "",
+    "version": "3.1",
     "license": "Apache License 2.0",
+    "publishAs": "code-segment",
+    "segment": {
+      "destPath": "foundation/graphic/standard"
+    },
+    "dirs": {},
+    "scripts": {},
     "component": {
       "name": "graphic_standard",
       "subsystem": "graphic",
       "adapted_system_type": [ "standard" ],
-      "rom": {},
-      "ram": {},
+      "rom": "10000KB",
+      "ram": "10000KB",
       "deps": {
         "components": [
+          "libhilog",
+          "ipc_core",
+          "samgr_proxy",
+          "utils",
+          "libeventhandler",
+          "image_native",
+          "hdi_display_device",
+          "bytrace_core"
         ],
         "third_party": [
+          "libz",
+          "libdrm"
         ]
       },
       "build": {
@@ -58,6 +73,38 @@
                 "window.h"
               ],
               "header_base": "//foundation/graphic/standard/interfaces/innerkits/surface"
+            }
+          },
+          {
+            "type": "so",
+            "name": "//foundation/graphic/standard/frameworks/vsync:libvsync_client",
+            "header": {
+              "header_files": [
+                "vsync_helper.h"
+              ],
+              "header_base": "//foundation/graphic/standard/interfaces/innerkits/vsync"
+            }
+          },
+          {
+            "type": "so",
+            "name": "//foundation/graphic/standard/frameworks/vsync:libvsync_module",
+            "header": {
+              "header_files": [
+                "vsync_module.h",
+                "vsync_module_c.h"
+              ],
+              "header_base": "//foundation/graphic/standard/interfaces/innerkits/vsync_module"
+            }
+          },
+          {
+            "type": "so",
+            "name": "//foundation/graphic/standard/utils:libgraphic_utils",
+            "header": {
+              "header_files": [
+                "graphic_common.h",
+                "graphic_common_c.h"
+              ],
+              "header_base": "//foundation/graphic/standard/interfaces/innerkits/common"
             }
           },
           {
