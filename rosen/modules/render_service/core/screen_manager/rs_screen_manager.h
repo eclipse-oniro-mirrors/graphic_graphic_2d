@@ -194,15 +194,15 @@ public:
 
     void SetScreenBacklight(ScreenId id, uint32_t level) override;
 
-    virtual int32_t GetScreenSupportedColorModes(ScreenId id, std::vector<ScreenColorSpaceMode>& mode) const override;
+    int32_t GetScreenSupportedColorModes(ScreenId id, std::vector<ScreenColorSpaceMode>& mode) const override;
 
-    virtual int32_t GetScreenColorMode(ScreenId id, ScreenColorSpaceMode& mode) const override;
+    int32_t GetScreenColorMode(ScreenId id, ScreenColorSpaceMode& mode) const override;
 
-    virtual int32_t SetScreenColorMode(ScreenId id, int32_t modeIdx) override;
+    int32_t SetScreenColorMode(ScreenId id, int32_t modeIdx) override;
 
-    virtual int32_t SetScreenGammaMode(ScreenId id, ScreenGammaMode mode) override;
+    int32_t SetScreenGammaMode(ScreenId id, ScreenGammaMode mode) override;
 
-    virtual int32_t GetScreenGammaMode(ScreenId id, ScreenGammaMode& mode) const override;
+    int32_t GetScreenGammaMode(ScreenId id, ScreenGammaMode& mode) const override;
 private:
     RSScreenManager();
     ~RSScreenManager() noexcept override;
