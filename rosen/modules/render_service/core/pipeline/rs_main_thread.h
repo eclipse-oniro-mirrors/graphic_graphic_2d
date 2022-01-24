@@ -83,7 +83,7 @@ public:
         return mainThreadId_;
     }
     void RegisterApplicationRenderThread(uint32_t pid, sptr<IApplicationRenderThread> app);
-    void UnregisterApplicationRenderThread(uint32_t pid);
+    void UnregisterApplicationRenderThread(sptr<IApplicationRenderThread> app);
 
 private:
     RSMainThread();

@@ -174,9 +174,10 @@ void RSMainThread::RegisterApplicationRenderThread(uint32_t pid, sptr<IApplicati
 {
     applicationRenderThreadMap_.emplace(pid, app);
 }
-void RSMainThread::UnregisterApplicationRenderThread(uint32_t pid)
+
+void RSMainThread::UnregisterApplicationRenderThread(sptr<IApplicationRenderThread> app)
 {
-    applicationRenderThreadMap_.erase(pid);
+    std::__libcpp_erase_if_container(applicationRenderThreadMap_, [&app](auto& iter) { return iter.second == app; });
 }
 } // namespace Rosen
 } // namespace OHOS

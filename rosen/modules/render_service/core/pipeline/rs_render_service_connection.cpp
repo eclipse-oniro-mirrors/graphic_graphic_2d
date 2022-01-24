@@ -36,7 +36,8 @@ RSRenderServiceConnection::RSRenderServiceConnection(
       mainThread_(mainThread),
       screenManager_(screenManager),
       token_(token),
-      connDeathRecipient_(new RSConnectionDeathRecipient(this))
+      connDeathRecipient_(new RSConnectionDeathRecipient(this)),
+      ApplicationDeathRecipient_(new RSApplicationRenderThreadDeathRecipient(this))
 {
     if (!token_->AddDeathRecipient(connDeathRecipient_)) {
         ROSEN_LOGW("RSRenderServiceConnection: Failed to set death recipient.");
@@ -68,9 +69,6 @@ void RSRenderServiceConnection::CleanAll(bool toDelete) noexcept
             screenManager_->RemoveScreenChangeCallback(screenChangeCallback_);
             screenChangeCallback_ = nullptr;
         }
-        if (remotePid_ != 0) {
-            mainThread_->UnregisterApplicationRenderThread(remotePid_);
-        }
     }).wait();
 
     {
@@ -95,8 +93,7 @@ RSRenderServiceConnection::RSConnectionDeathRecipient::RSConnectionDeathRecipien
 {
 }
 
-void RSRenderServiceConnection::RSConnectionDeathRecipient::OnRemoteDied(
-    const wptr<IRemoteObject> &token)
+void RSRenderServiceConnection::RSConnectionDeathRecipient::OnRemoteDied(const wptr<IRemoteObject>& token)
 {
     auto tokenSptr = token.promote();
     if (tokenSptr == nullptr) {
@@ -117,6 +114,29 @@ void RSRenderServiceConnection::RSConnectionDeathRecipient::OnRemoteDied(
 
     ROSEN_LOGI("RSConnectionDeathRecipient::OnRemoteDied: do the clean work.");
     rsConn->CleanAll(true);
+}
+
+RSRenderServiceConnection::RSApplicationRenderThreadDeathRecipient::RSApplicationRenderThreadDeathRecipient(
+    wptr<RSRenderServiceConnection> conn) : conn_(conn)
+{}
+
+void RSRenderServiceConnection::RSApplicationRenderThreadDeathRecipient::OnRemoteDied(const wptr<IRemoteObject>& token)
+{
+    auto tokenSptr = token.promote();
+    if (tokenSptr == nullptr) {
+        ROSEN_LOGW("RSApplicationRenderThreadDeathRecipient::OnRemoteDied: can't promote remote object.");
+        return;
+    }
+
+    auto rsConn = conn_.promote();
+    if (rsConn == nullptr) {
+        ROSEN_LOGW("RSApplicationRenderThreadDeathRecipient::OnRemoteDied: RSRenderServiceConnection was dead, do nothing.");
+        return;
+    }
+
+    ROSEN_LOGI("RSApplicationRenderThreadDeathRecipient::OnRemoteDied: Unregister.");
+    auto app = iface_cast<IApplicationRenderThread>(tokenSptr);
+    rsConn->UnregisterApplicationRenderThread(app);
 }
 
 void RSRenderServiceConnection::CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData)
@@ -240,9 +260,18 @@ void RSRenderServiceConnection::TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCap
 
 void RSRenderServiceConnection::RegisterApplicationRenderThread(uint32_t pid, sptr<IApplicationRenderThread> app)
 {
-    remotePid_ = pid;
     auto captureTask = [=]() -> void {
         mainThread_->RegisterApplicationRenderThread(pid, app);
+    };
+    mainThread_->PostTask(captureTask);
+
+    app->AsObject()->AddDeathRecipient(ApplicationDeathRecipient_);
+}
+
+void RSRenderServiceConnection::UnregisterApplicationRenderThread(sptr<IApplicationRenderThread> app)
+{
+    auto captureTask = [=]() -> void {
+        mainThread_->UnregisterApplicationRenderThread(app);
     };
     mainThread_->PostTask(captureTask);
 }
