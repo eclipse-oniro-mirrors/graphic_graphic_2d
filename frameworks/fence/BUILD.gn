@@ -25,10 +25,7 @@ config("fence_config") {
 }
 
 config("fence_public_config") {
-  include_dirs = [
-    "//utils/native/base/include",
-    "//foundation/graphic/standard/interfaces/innerkits/fence",
-  ]
+  include_dirs = [ "include" ]
 }
 
 ohos_shared_library("libfence") {
@@ -38,9 +35,10 @@ ohos_shared_library("libfence") {
 
   public_configs = [ ":fence_public_config" ]
 
-  deps = [ "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog" ]
-
-  public_deps = [ "//utils/native/base:utils" ]
+  external_deps = [
+    "hilog_native:libhilog",
+    "utils_base:utils",
+  ]
 
   part_name = "graphic_standard"
   subsystem_name = "graphic"

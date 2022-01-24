@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include <graphic_dumper_helper.h>
+#include "graphic_dumper_helper.h"
 
 #include <cstdarg>
 

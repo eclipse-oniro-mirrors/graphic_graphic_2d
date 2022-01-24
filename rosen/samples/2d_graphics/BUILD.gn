@@ -126,6 +126,7 @@ ohos_executable("drawing_sample_canvaskit0310") {
     "//foundation/graphic/standard:libvsync_client",
     "//foundation/graphic/standard/rosen/modules/2d_graphics:2d_graphics_canvaskit0310",
     "//foundation/graphic/standard/rosen/modules/composer:libcomposer",
+    "//foundation/graphic/standard/utils:libgraphic_utils",
     "//foundation/graphic/standard/utils:sync_fence",
   ]
 

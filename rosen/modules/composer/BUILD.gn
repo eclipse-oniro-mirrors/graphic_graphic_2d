@@ -62,6 +62,7 @@ ohos_shared_library("libcomposer") {
     "//drivers/peripheral/display/hal:hdi_display_device",
     "//foundation/graphic/standard:libsurface",
     "//foundation/graphic/standard/frameworks/vsync:libvsync_module",
+    "//foundation/graphic/standard/utils:libgraphic_utils",
   ]
 
   public_deps = [
