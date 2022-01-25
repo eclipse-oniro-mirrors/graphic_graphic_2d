@@ -61,6 +61,7 @@ RSRenderThread::RSRenderThread()
                 if (hasRunningAnimation_) {
                     RSRenderThread::Instance().RequestNextVSync();
                 }
+                ROSEN_TRACE_END(BYTRACE_TAG_GRAPHIC_AGP);
                 return;
             }
             prevTimestamp_ = timestamp_;
@@ -69,6 +70,7 @@ RSRenderThread::RSRenderThread()
             }
         }
 
+        ROSEN_LOGD("RSRenderThread DrawFrame(%llu) in %s", prevTimestamp_, renderContext_ ? "GPU" : "CPU");
         Animate(prevTimestamp_);
         Render();
         RS_ASYNC_TRACE_BEGIN("waiting GPU running", 1111); // 1111 means async trace code for gpu

@@ -105,8 +105,8 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     std::shared_ptr<RSSurface> rsSurface = nullptr;
     NodeId surfaceId = node.GetRSSurfaceNodeId();
     auto ptr = RSNodeMap::Instance().GetNode<RSSurfaceNode>(surfaceId);
-    if (ptr == nullptr) {
-        ROSEN_LOGE("No RSSurfaceNode found");
+    if (ptr == nullptr || node.GetSurfaceWidth() <= 0 || node.GetSurfaceHeight() <= 0) {
+        ROSEN_LOGE("No valid RSSurfaceNode");
         return;
     }
     rsSurface = RSSurfaceExtractor::ExtractRSSurface(ptr);

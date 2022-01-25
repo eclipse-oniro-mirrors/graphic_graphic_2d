@@ -16,7 +16,7 @@
 #include "ui/rs_base_node.h"
 
 #include <algorithm>
-#include <string>
+#include <sstream>
 
 #include "command/rs_base_node_command.h"
 #include "pipeline/rs_node_map.h"
@@ -151,31 +151,19 @@ RSBaseNode::SharedPtr RSBaseNode::GetParent()
     return RSNodeMap::Instance().GetNode(parent_);
 }
 
-void RSBaseNode::DumpTree(std::string& out)
+std::string RSBaseNode::DumpNode(int depth) const
 {
-    out += "id: " + std::to_string(GetId()) + "\n";
-    auto p = RSNodeMap::Instance().GetNode(parent_);
-    if (p != nullptr) {
-        out += "parent: " + std::to_string(p->GetId()) + "\n";
-    } else {
-        out += "parent: null\n";
+    std::stringstream ss;
+    auto it = RSUINodeTypeStrs.find(GetType());
+    if (it == RSUINodeTypeStrs.end()) {
+        return "";
     }
-
-    for (unsigned i = 0; i < children_.size(); ++i) {
-        auto c = RSNodeMap::Instance().GetNode(children_[i]);
-        if (c != nullptr) {
-            out += "child[" + std::to_string(i) + "]: " + std::to_string(c->GetId()) + "\n";
-        } else {
-            out += "child[" + std::to_string(i) + "]: null\n";
-        }
-    }
-
+    ss << it->second << "[" << std::to_string(id_) << "] child[";
     for (auto child : children_) {
-        auto c = RSNodeMap::Instance().GetNode(child);
-        if (c != nullptr) {
-            c->DumpTree(out);
-        }
+        ss << std::to_string(child) << " ";
     }
+    ss << "]";
+    return ss.str();
 }
 
 template<typename T>
