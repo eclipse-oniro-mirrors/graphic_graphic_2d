@@ -45,6 +45,7 @@ public:
     static inline constexpr RSUINodeType Type = RSUINodeType::RS_NODE;
 
     virtual ~RSNode();
+    std::string DumpNode(int depth) const override;
 
     static std::vector<std::shared_ptr<RSAnimation>> Animate(const RSAnimationTimingProtocol& timingProtocol,
         const RSAnimationTimingCurve& timingCurve, const PropertyCallback& callback,

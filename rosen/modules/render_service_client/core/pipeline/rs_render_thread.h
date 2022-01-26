@@ -111,7 +111,7 @@ private:
 
     RSContext context_;
 
-    RenderContext* renderContext_;
+    RenderContext* renderContext_ = nullptr;
 };
 } // namespace Rosen
 } // namespace OHOS

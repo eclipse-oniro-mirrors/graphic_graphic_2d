@@ -16,6 +16,7 @@
 #include "property/rs_properties.h"
 
 #include <algorithm>
+#include <securec.h>
 
 #include "command/rs_node_command.h"
 #include "platform/common/rs_log.h"
@@ -909,6 +910,16 @@ void RSProperties::ResetBounds()
     if (!hasBounds_) {
         boundsGeo_->SetRect(0.f, 0.f, 0.f, 0.f);
     }
+}
+
+std::string RSProperties::Dump() const
+{
+    char buffer[UINT8_MAX];
+    if (sprintf_s(buffer, UINT8_MAX, "Bounds[%.2f %.2f %.2f %.2f] bgcolor[#%08X]",
+        GetBoundsPositionX(), GetBoundsPositionY(), GetBoundsWidth(), GetBoundsHeight(), GetBackgroundColor().AsArgbInt()) != -1) {
+        return std::string(buffer);
+    }
+    return "";
 }
 } // namespace Rosen
 } // namespace OHOS

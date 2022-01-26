@@ -56,11 +56,13 @@ void RSUIDirector::Init()
 
 void RSUIDirector::GoForeground()
 {
+    ROSEN_LOGI("RSUIDirector::GoForeground");
     RSRenderThread::Instance().SetBackgroundStatus(false);
 }
 
 void RSUIDirector::GoBackground()
 {
+    ROSEN_LOGI("RSUIDirector::GoBackground");
     RSRenderThread::Instance().SetBackgroundStatus(true);
 }
 

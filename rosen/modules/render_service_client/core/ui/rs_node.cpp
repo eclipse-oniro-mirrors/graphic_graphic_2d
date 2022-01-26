@@ -16,6 +16,7 @@
 #include "ui/rs_node.h"
 
 #include <algorithm>
+#include <sstream>
 #include <string>
 
 #include "animation/rs_animation.h"
@@ -681,6 +682,17 @@ void RSNode::AnimationFinish(long long animationId)
 void RSNode::SetPaintOrder(bool drawContentLast)
 {
     drawContentLast_ = drawContentLast;
+}
+
+std::string RSNode::DumpNode(int depth) const
+{
+    std::stringstream ss;
+    ss << RSBaseNode::DumpNode(depth);
+    if (!animations_.empty()) {
+        ss << " animation:" << std::to_string(animations_.size());
+    }
+    ss << " " << stagingProperties_.Dump();
+    return ss.str();
 }
 
 } // namespace Rosen

@@ -176,6 +176,7 @@ public:
     void SetVisible(bool visible);
     bool GetVisible() const;
     bool SetId(NodeId id);
+    std::string Dump() const;
 
     const std::shared_ptr<RSObjGeometry>& GetBoundsGeometry() const;
     const std::shared_ptr<RSObjGeometry>& GetFrameGeometry() const;

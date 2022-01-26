@@ -62,7 +62,7 @@ public:
     {
         return (IsInstanceOf<T>()) ? std::static_pointer_cast<T>(shared_from_this()) : nullptr;
     }
-
+    virtual std::string DumpNode(int depth) const;
 protected:
     RSBaseNode(bool isRenderServiceNode);
     RSBaseNode(const RSBaseNode&) = delete;
@@ -78,8 +78,6 @@ protected:
     {
         id_ = id;
     }
-
-    void DumpTree(std::string& out);
 
     bool IsRenderServiceNode() const
     {
