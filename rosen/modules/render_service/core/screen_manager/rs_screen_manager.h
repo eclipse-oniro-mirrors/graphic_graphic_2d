@@ -112,15 +112,15 @@ public:
 
     virtual void SetScreenBacklight(ScreenId id, uint32_t level) = 0;
 
-    virtual int32_t GetScreenSupportedColorModes(ScreenId id, std::vector<ScreenColorSpaceMode>& mode) const = 0;
+    virtual int32_t GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode) const = 0;
 
-    virtual int32_t GetScreenColorMode(ScreenId id, ScreenColorSpaceMode& mode) const = 0;
+    virtual int32_t GetScreenColorGamut(ScreenId id, ScreenColorGamut& mode) const = 0;
 
-    virtual int32_t SetScreenColorMode(ScreenId id, int32_t modeIdx) = 0;
+    virtual int32_t SetScreenColorGamut(ScreenId id, int32_t modeIdx) = 0;
 
-    virtual int32_t SetScreenGammaMode(ScreenId id, ScreenGammaMode mode) = 0;
+    virtual int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode) = 0;
 
-    virtual int32_t GetScreenGammaMode(ScreenId id, ScreenGammaMode& mode) const = 0;
+    virtual int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode) const = 0;
 };
 
 sptr<RSScreenManager> CreateOrGetScreenManager();
@@ -194,15 +194,15 @@ public:
 
     void SetScreenBacklight(ScreenId id, uint32_t level) override;
 
-    int32_t GetScreenSupportedColorModes(ScreenId id, std::vector<ScreenColorSpaceMode>& mode) const override;
+    int32_t GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode) const override;
 
-    int32_t GetScreenColorMode(ScreenId id, ScreenColorSpaceMode& mode) const override;
+    int32_t GetScreenColorGamut(ScreenId id, ScreenColorGamut& mode) const override;
 
-    int32_t SetScreenColorMode(ScreenId id, int32_t modeIdx) override;
+    int32_t SetScreenColorGamut(ScreenId id, int32_t modeIdx) override;
 
-    int32_t SetScreenGammaMode(ScreenId id, ScreenGammaMode mode) override;
+    int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode) override;
 
-    int32_t GetScreenGammaMode(ScreenId id, ScreenGammaMode& mode) const override;
+    int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode) const override;
 private:
     RSScreenManager();
     ~RSScreenManager() noexcept override;
@@ -227,11 +227,11 @@ private:
     ScreenId GenerateVirtualScreenIdLocked();
     void ReuseVirtualScreenIdLocked(ScreenId id);
 
-    int32_t GetScreenSupportedColorModesLocked(ScreenId id, std::vector<ScreenColorSpaceMode>& mode) const;
-    int32_t GetScreenColorModeLocked(ScreenId id, ScreenColorSpaceMode& mode) const;
-    int32_t SetScreenColorModeLocked(ScreenId id, int32_t modeIdx);
-    int32_t SetScreenGammaModeLocked(ScreenId id, ScreenGammaMode mode);
-    int32_t GetScreenGammaModeLocked(ScreenId id, ScreenGammaMode& mode) const;
+    int32_t GetScreenSupportedColorGamutsLocked(ScreenId id, std::vector<ScreenColorGamut>& mode) const;
+    int32_t GetScreenColorGamutLocked(ScreenId id, ScreenColorGamut& mode) const;
+    int32_t SetScreenColorGamutLocked(ScreenId id, int32_t modeIdx);
+    int32_t SetScreenGamutMapLocked(ScreenId id, ScreenGamutMap mode);
+    int32_t GetScreenGamutMapLocked(ScreenId id, ScreenGamutMap& mode) const;
 
     mutable std::mutex mutex_;
     HdiBackend *composer_ = nullptr;

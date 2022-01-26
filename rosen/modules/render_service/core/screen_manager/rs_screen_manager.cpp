@@ -554,7 +554,7 @@ void RSScreenManager::SurfaceDump(std::string& dumpString)
     }
 }
 
-int32_t RSScreenManager::GetScreenSupportedColorModesLocked(ScreenId id, std::vector<ScreenColorSpaceMode>& mode) const
+int32_t RSScreenManager::GetScreenSupportedColorGamutsLocked(ScreenId id, std::vector<ScreenColorGamut>& mode) const
 {
     if (screens_.count(id) == 0) {
         HiLog::Error(LOG_LABEL, "%{public}s: There is no screen for id %{public}" PRIu64 ".\n", __func__, id);
@@ -562,33 +562,23 @@ int32_t RSScreenManager::GetScreenSupportedColorModesLocked(ScreenId id, std::ve
     }
     // Stub, waiting for HDI interfaces
     mode.clear();
-    mode.push_back(ScreenColorSpaceMode::SRGB);
-    mode.push_back(ScreenColorSpaceMode::NATIVE);
+    mode.push_back(ScreenColorGamut::COLOR_GAMUT_SRGB);
+    mode.push_back(ScreenColorGamut::COLOR_GAMUT_NATIVE);
     return SUCCESS;
 }
 
-int32_t RSScreenManager::GetScreenColorModeLocked(ScreenId id, ScreenColorSpaceMode& mode) const
+int32_t RSScreenManager::GetScreenColorGamutLocked(ScreenId id, ScreenColorGamut& mode) const
 {
     if (screens_.count(id) == 0) {
         HiLog::Error(LOG_LABEL, "%{public}s: There is no screen for id %{public}" PRIu64 ".\n", __func__, id);
         return SCREEN_NOT_FOUND;
     }
     // Stub, waiting for HDI interfaces
-    mode = ScreenColorSpaceMode::SRGB;
+    mode = ScreenColorGamut::COLOR_GAMUT_SRGB;
     return SUCCESS;
 }
 
-int32_t RSScreenManager::SetScreenColorModeLocked(ScreenId id, int32_t modeIdx)
-{
-    if (screens_.count(id) == 0) {
-        HiLog::Error(LOG_LABEL, "%{public}s: There is no screen for id %{public}" PRIu64 ".\n", __func__, id);
-        return SCREEN_NOT_FOUND;
-    }
-    // Stub, waiting for HDI interfaces
-    return SUCCESS;
-}
-
-int32_t RSScreenManager::SetScreenGammaModeLocked(ScreenId id, ScreenGammaMode mode)
+int32_t RSScreenManager::SetScreenColorGamutLocked(ScreenId id, int32_t modeIdx)
 {
     if (screens_.count(id) == 0) {
         HiLog::Error(LOG_LABEL, "%{public}s: There is no screen for id %{public}" PRIu64 ".\n", __func__, id);
@@ -598,7 +588,7 @@ int32_t RSScreenManager::SetScreenGammaModeLocked(ScreenId id, ScreenGammaMode m
     return SUCCESS;
 }
 
-int32_t RSScreenManager::GetScreenGammaModeLocked(ScreenId id, ScreenGammaMode &mode) const
+int32_t RSScreenManager::SetScreenGamutMapLocked(ScreenId id, ScreenGamutMap mode)
 {
     if (screens_.count(id) == 0) {
         HiLog::Error(LOG_LABEL, "%{public}s: There is no screen for id %{public}" PRIu64 ".\n", __func__, id);
@@ -608,34 +598,44 @@ int32_t RSScreenManager::GetScreenGammaModeLocked(ScreenId id, ScreenGammaMode &
     return SUCCESS;
 }
 
-int32_t RSScreenManager::GetScreenSupportedColorModes(ScreenId id, std::vector<ScreenColorSpaceMode>& mode) const
+int32_t RSScreenManager::GetScreenGamutMapLocked(ScreenId id, ScreenGamutMap &mode) const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    return GetScreenSupportedColorModesLocked(id, mode);
+    if (screens_.count(id) == 0) {
+        HiLog::Error(LOG_LABEL, "%{public}s: There is no screen for id %{public}" PRIu64 ".\n", __func__, id);
+        return SCREEN_NOT_FOUND;
+    }
+    // Stub, waiting for HDI interfaces
+    return SUCCESS;
 }
 
-int32_t RSScreenManager::GetScreenColorMode(ScreenId id, ScreenColorSpaceMode &mode) const
+int32_t RSScreenManager::GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode) const
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    return GetScreenColorModeLocked(id, mode);
+    return GetScreenSupportedColorGamutsLocked(id, mode);
 }
 
-int32_t RSScreenManager::SetScreenColorMode(ScreenId id, int32_t modeIdx)
+int32_t RSScreenManager::GetScreenColorGamut(ScreenId id, ScreenColorGamut &mode) const
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    return SetScreenColorModeLocked(id, modeIdx);
+    return GetScreenColorGamutLocked(id, mode);
 }
 
-int32_t RSScreenManager::SetScreenGammaMode(ScreenId id, ScreenGammaMode mode)
+int32_t RSScreenManager::SetScreenColorGamut(ScreenId id, int32_t modeIdx)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    return SetScreenGammaModeLocked(id, mode);
+    return SetScreenColorGamutLocked(id, modeIdx);
 }
 
-int32_t RSScreenManager::GetScreenGammaMode(ScreenId id, ScreenGammaMode &mode) const
+int32_t RSScreenManager::SetScreenGamutMap(ScreenId id, ScreenGamutMap mode)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    return GetScreenGammaModeLocked(id, mode);
+    return SetScreenGamutMapLocked(id, mode);
+}
+
+int32_t RSScreenManager::GetScreenGamutMap(ScreenId id, ScreenGamutMap &mode) const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return GetScreenGamutMapLocked(id, mode);
 }
 
 } // namespace impl

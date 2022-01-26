@@ -77,28 +77,26 @@ typedef enum : uint32_t {
 }ScreenInterfaceType;
 
 typedef enum : uint32_t {
-    NATIVE = 0,
-    STANDARD_BT601_625,
-    STANDARD_BT601_625_UNADJUSTED,
-    STANDARD_BT601_525,
-    STANDARD_BT601_525_UNADJUSTED,
-    STANDARD_BT709,
-    DCI_P3,
-    SRGB,
-    ADOBE_RGB,
-    DISPLAY_P3,
-    BT2020,
-    BT2100_PQ,
-    BT2100_HLG,
-    DISPLAY_BT2020,
-} ScreenColorSpaceMode;
+    COLOR_GAMUT_INVALID = -1,
+    COLOR_GAMUT_NATIVE = 0,
+    COLOR_GAMUT_STANDARD_BT601 = 1,
+    COLOR_GAMUT_STANDARD_BT709 = 2,
+    COLOR_GAMUT_DCI_P3 = 3,
+    COLOR_GAMUT_SRGB = 4,
+    COLOR_GAMUT_ADOBE_RGB = 5,
+    COLOR_GAMUT_DISPLAY_P3 = 6,
+    COLOR_GAMUT_BT2020 = 7,
+    COLOR_GAMUT_BT2100_PQ = 8,
+    COLOR_GAMUT_BT2100_HLG = 9,
+    COLOR_GAMUT_DISPLAY_BT2020 = 10,
+} ScreenColorGamut;
 
 typedef enum : uint32_t {
-    COLORIMETRIC = 0,
-    ENHANCE,
-    TONE_MAP_COLORIMETRIC,
-    TONE_MAP_ENHANCE,
-} ScreenGammaMode;
+    GAMUT_MAP_CONSTANT = 0,
+    GAMUT_MAP_EXTENSION = 1,
+    GAMUT_MAP_HDR_CONSTANT = 2,
+    GAMUT_MAP_HDR_EXTENSION = 3,
+} ScreenGamutMap;
 
 // get the underlying type of an enum value.
 template<typename EnumType>
