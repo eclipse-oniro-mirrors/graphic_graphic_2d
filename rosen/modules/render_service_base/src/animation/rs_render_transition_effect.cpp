@@ -25,6 +25,16 @@
 namespace OHOS {
 namespace Rosen {
 #ifdef ROSEN_OHOS
+namespace {
+enum RSTransitionEffectType : uint16_t {
+    FADE = 1,
+    SCALE,
+    TRANSLATE,
+    ROTATE,
+    UNDEFINED,
+};
+}
+
 RSRenderTransitionEffect* RSRenderTransitionEffect::Unmarshalling(Parcel& parcel)
 {
     uint16_t transitionType;

@@ -31,13 +31,6 @@ enum class RotationMode {
     ROTATE_AUTO_REVERSE
 };
 
-enum RSTransitionEffectType : uint16_t {
-    FADE = 1,
-    SCALE,
-    TRANSLATE,
-    ROTATE,
-    UNDEFINED,
-};
 } // namespace Rosen
 } // namespace OHOS
 

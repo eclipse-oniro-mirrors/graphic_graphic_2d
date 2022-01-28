@@ -22,13 +22,14 @@
 
 namespace OHOS {
 namespace Rosen {
-RSRenderTransition::RSRenderTransition(AnimationId id, const RSTransitionEffect& effect, RSTransitionType type)
+RSRenderTransition::RSRenderTransition(
+    AnimationId id, const std::shared_ptr<const RSTransitionEffect>& effect, bool appearing)
     : RSRenderAnimation(id)
 {
-    if (type == RSTransitionType::APPEARING) {
-        effects_ = effect.GetTransitionInEffect();
-    } else if (type == RSTransitionType::DISAPPEARING) {
-        effects_ = effect.GetTransitionOutEffect();
+    if (appearing) {
+        effects_ = effect->GetTransitionInEffects();
+    } else {
+        effects_ = effect->GetTransitionOutEffects();
     }
 }
 

@@ -26,7 +26,7 @@ class RSTransitionEffect;
 
 class RSRenderTransition : public RSRenderAnimation {
 public:
-    RSRenderTransition(AnimationId id, const RSTransitionEffect& effect, RSTransitionType type);
+    RSRenderTransition(AnimationId id, const std::shared_ptr<const RSTransitionEffect>& effect, bool appearing);
     void SetInterpolator(const std::shared_ptr<RSInterpolator>& interpolator)
     {
         interpolator_ = interpolator;

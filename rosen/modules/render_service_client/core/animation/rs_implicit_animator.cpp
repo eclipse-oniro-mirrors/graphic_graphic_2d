@@ -186,7 +186,7 @@ void RSImplicitAnimator::EndImplicitPathAnimation()
     PopImplicitParam();
 }
 
-void RSImplicitAnimator::BeginImplicitTransition(const RSTransitionEffect& effect)
+void RSImplicitAnimator::BeginImplicitTransition(const std::shared_ptr<const RSTransitionEffect>& effect)
 {
     if (globalImplicitParams_.empty()) {
         ROSEN_LOGE("Failed to begin implicit transition, need to open implicit transition firstly!");
@@ -238,7 +238,7 @@ void RSImplicitAnimator::ProcessPostCreateAnimation(const RSNode& target, const 
     }
 }
 
-std::shared_ptr<RSAnimation> RSImplicitAnimator::CreateImplicitTransition(RSNode& target, RSTransitionType type)
+std::shared_ptr<RSAnimation> RSImplicitAnimator::CreateImplicitTransition(RSNode& target, bool appearing)
 {
     if (globalImplicitParams_.empty() || implicitAnimations_.empty() || keyframeAnimations_.empty()) {
         ROSEN_LOGE("Failed to create implicit transition, need to open implicit transition firstly!");
@@ -249,7 +249,7 @@ std::shared_ptr<RSAnimation> RSImplicitAnimator::CreateImplicitTransition(RSNode
     switch (params->GetType()) {
         case ImplicitAnimationParamType::TRANSITION: {
             auto transitionImplicitParam = std::static_pointer_cast<RSImplicitTransitionParam>(params);
-            transition = transitionImplicitParam->CreateAnimation(type);
+            transition = transitionImplicitParam->CreateAnimation(appearing);
             break;
         }
         default:

@@ -22,7 +22,9 @@
 
 namespace OHOS {
 namespace Rosen {
-RSTransition::RSTransition(const RSTransitionEffect& effect, RSTransitionType type) : type_(type), effect_(effect) {}
+RSTransition::RSTransition(const std::shared_ptr<const RSTransitionEffect>& effect, bool appearing)
+    : appearing_(appearing), effect_(effect)
+{}
 
 void RSTransition::OnStart()
 {
@@ -30,7 +32,7 @@ void RSTransition::OnStart()
     if (target == nullptr) {
         return;
     }
-    auto transition = std::make_shared<RSRenderTransition>(GetId(), effect_, type_);
+    auto transition = std::make_shared<RSRenderTransition>(GetId(), effect_, appearing_);
     if (transition == nullptr) {
         return;
     }
@@ -40,7 +42,7 @@ void RSTransition::OnStart()
     transition->SetRepeatCount(GetRepeatCount());
     transition->SetAutoReverse(GetAutoReverse());
     transition->SetSpeed(GetSpeed());
-    transition->SetDirection(type_ == RSTransitionType::DISAPPEARING);
+    transition->SetDirection(!appearing_);
     transition->SetFillMode(GetFillMode());
     transition->SetInterpolator(interpolator);
     std::unique_ptr<RSCommand> command =

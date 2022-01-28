@@ -80,15 +80,15 @@ std::shared_ptr<RSAnimation> RSImplicitPathAnimationParam::CreateAnimation(
 }
 
 RSImplicitTransitionParam::RSImplicitTransitionParam(const RSAnimationTimingProtocol& timingProtocol,
-    const RSAnimationTimingCurve& timingCurve, const RSTransitionEffect& effect)
+    const RSAnimationTimingCurve& timingCurve, const std::shared_ptr<const RSTransitionEffect>& effect)
     : RSImplicitAnimationParam(timingProtocol), timingCurve_(timingCurve), effect_(effect)
 {
     animationType_ = ImplicitAnimationParamType::TRANSITION;
 }
 
-std::shared_ptr<RSAnimation> RSImplicitTransitionParam::CreateAnimation(RSTransitionType type)
+std::shared_ptr<RSAnimation> RSImplicitTransitionParam::CreateAnimation(bool appearing)
 {
-    auto transition = std::make_shared<RSTransition>(effect_, type);
+    auto transition = std::make_shared<RSTransition>(effect_, appearing);
     transition->SetTimingCurve(timingCurve_);
     ApplyTimingProtocol(transition);
     return transition;

@@ -57,7 +57,7 @@ public:
         float fraction, const RSAnimationTimingCurve& timingCurve, const PropertyCallback& callback);
     static void AddKeyFrame(float fraction, const PropertyCallback& callback);
 
-    void NotifyTransition(const RSTransitionEffect& effect, RSTransitionType type);
+    void NotifyTransition(const std::shared_ptr<const RSTransitionEffect>& effect, bool appearing);
 
     void AddAnimation(const std::shared_ptr<RSAnimation>& animation);
     void RemoveAllAnimations();
@@ -158,6 +158,11 @@ public:
     void SetVisible(bool visible);
     void SetPaintOrder(bool drawContentLast);
 
+    void SetTransitionEffect(const std::shared_ptr<RSTransitionEffect>& effect)
+    {
+        transitionEffect_ = effect;
+    }
+
     RSUINodeType GetType() const override
     {
         return RSUINodeType::RS_NODE;
@@ -191,6 +196,8 @@ private:
     std::map<AnimationId, std::shared_ptr<RSAnimation>> animations_;
     std::map<RSAnimatableProperty, int> animatingPropertyNum_;
     std::shared_ptr<RSMotionPathOption> motionPathOption_;
+
+    std::shared_ptr<const RSTransitionEffect> transitionEffect_ = RSTransitionEffect::OPACITY;
 
     RSProperties stagingProperties_;
 

@@ -26,10 +26,10 @@ namespace Rosen {
 
 class RS_EXPORT RSTransition : public RSAnimation {
 public:
-    RSTransition(const RSTransitionEffect& effect, RSTransitionType type);
+    RSTransition(const std::shared_ptr<const RSTransitionEffect>& effect, bool appearing);
     virtual ~RSTransition() = default;
 
-    void SetTransitionEffect(const RSTransitionEffect& effect)
+    void SetTransitionEffect(const std::shared_ptr<const RSTransitionEffect>& effect)
     {
         effect_ = effect;
     }
@@ -43,8 +43,8 @@ protected:
     void OnStart() override;
 
 private:
-    RSTransitionType type_;
-    RSTransitionEffect effect_;
+    bool appearing_;
+    std::shared_ptr<const RSTransitionEffect> effect_;
     RSAnimationTimingCurve timingCurve_ { RSAnimationTimingCurve::DEFAULT };
 };
 } // namespace Rosen

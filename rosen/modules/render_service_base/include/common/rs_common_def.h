@@ -62,8 +62,6 @@ enum class RSRenderNodeType {
     TEXTURE_NODE = 0x22211,
 };
 
-enum class RSTransitionType { ALL, APPEARING, DISAPPEARING };
-
 struct RSSurfaceRenderNodeConfig {
     NodeId id = 0;
     std::string name = "SurfaceNode";

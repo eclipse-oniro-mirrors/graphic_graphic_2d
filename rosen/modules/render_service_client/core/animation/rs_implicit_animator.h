@@ -35,7 +35,7 @@ public:
     std::vector<std::shared_ptr<RSAnimation>> CloseImplicitAnimation();
     void BeginImplicitKeyFrameAnimation(float fraction, const RSAnimationTimingCurve& timingCurve);
     void BeginImplicitKeyFrameAnimation(float fraction);
-    void BeginImplicitTransition(const RSTransitionEffect& effect);
+    void BeginImplicitTransition(const std::shared_ptr<const RSTransitionEffect>& effect);
     void EndImplicitTransition();
     void EndImplicitKeyFrameAnimation();
     bool NeedImplicitAnimaton();
@@ -44,7 +44,7 @@ public:
     std::shared_ptr<RSAnimation> CreateImplicitAnimation(
         RSNode& target, const RSAnimatableProperty& property, const T& startValue, const T& endValue);
 
-    std::shared_ptr<RSAnimation> CreateImplicitTransition(RSNode& target, RSTransitionType type);
+    std::shared_ptr<RSAnimation> CreateImplicitTransition(RSNode& target, bool appearing);
 
 private:
     RSImplicitAnimator() = default;

@@ -28,44 +28,35 @@ namespace OHOS {
 namespace Rosen {
 class RSRenderTransitionEffect;
 
-class RS_EXPORT RSTransitionEffect final {
+class RS_EXPORT RSTransitionEffect final : public std::enable_shared_from_this<RSTransitionEffect> {
 public:
-    static const RSTransitionEffect OPACITY;
+    static const std::shared_ptr<const RSTransitionEffect> OPACITY;
 
-    static const RSTransitionEffect SCALE;
+    static const std::shared_ptr<const RSTransitionEffect> SCALE;
 
-    static const RSTransitionEffect EMPTY;
+    static const std::shared_ptr<const RSTransitionEffect> EMPTY;
 
-    static RSTransitionEffect Create();
+    static std::shared_ptr<RSTransitionEffect> Create();
 
-    static RSTransitionEffect Asymmetric(
-        const RSTransitionEffect& transitionIn, const RSTransitionEffect& transitionOut);
+    static std::shared_ptr<RSTransitionEffect> Asymmetric(const std::shared_ptr<RSTransitionEffect>& transitionIn,
+        const std::shared_ptr<RSTransitionEffect>& transitionOut);
 
-    RSTransitionEffect& Opacity(float opacity = 0.0f);
-
-    RSTransitionEffect& Scale(Vector3f scale, Vector2f pivot = { 0.5f, 0.5f });
-
-    RSTransitionEffect& Translate(Vector3f translate);
-
-    RSTransitionEffect& Rotate(Vector4f axisAngle, Vector2f pivot = { 0.5f, 0.5f });
-
-    bool Empty() const;
-
-    int GetSize() const
-    {
-        return transitionIn_.size();
-    }
+    std::shared_ptr<RSTransitionEffect> Opacity(float opacity = 0.0f);
+    std::shared_ptr<RSTransitionEffect> Scale(const Vector3f& scale, const Vector2f& pivot = { 0.5f, 0.5f });
+    std::shared_ptr<RSTransitionEffect> Translate(const Vector3f& translate);
+    std::shared_ptr<RSTransitionEffect> Rotate(const Vector4f& axisAngle, const Vector2f& pivot = { 0.5f, 0.5f });
 
 private:
     RSTransitionEffect() = default;
 
-    RSTransitionEffect(const RSTransitionEffect& transitionIn, const RSTransitionEffect& transitionOut);
+    RSTransitionEffect(const std::shared_ptr<RSTransitionEffect>& transitionIn,
+        const std::shared_ptr<RSTransitionEffect>& transitionOut);
 
-    const std::vector<std::shared_ptr<RSRenderTransitionEffect>>& GetTransitionInEffect() const;
-    const std::vector<std::shared_ptr<RSRenderTransitionEffect>>& GetTransitionOutEffect() const;
+    const std::vector<std::shared_ptr<RSRenderTransitionEffect>>& GetTransitionInEffects() const;
+    const std::vector<std::shared_ptr<RSRenderTransitionEffect>>& GetTransitionOutEffects() const;
 
-    std::vector<std::shared_ptr<RSRenderTransitionEffect>> transitionIn_;
-    std::vector<std::shared_ptr<RSRenderTransitionEffect>> transitionOut_;
+    std::vector<std::shared_ptr<RSRenderTransitionEffect>> transitionInEffects_;
+    std::vector<std::shared_ptr<RSRenderTransitionEffect>> transitionOutEffects_;
 
     friend class RSRenderTransition;
 };
