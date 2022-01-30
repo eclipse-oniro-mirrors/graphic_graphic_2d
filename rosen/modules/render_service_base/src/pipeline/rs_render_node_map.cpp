@@ -54,6 +54,10 @@ const std::shared_ptr<RSBaseRenderNode> RSRenderNodeMap::GetRenderNode(NodeId id
 
 const std::shared_ptr<RSRenderNode> RSRenderNodeMap::GetAnimationFallbackNode() const
 {
+    auto itr = renderNodeMap_.find(0);
+    if (itr == renderNodeMap_.end()) {
+        return nullptr;
+    }
     return std::static_pointer_cast<RSRenderNode>(renderNodeMap_.at(0));
 }
 

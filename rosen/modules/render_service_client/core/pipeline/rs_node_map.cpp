@@ -72,6 +72,10 @@ const std::shared_ptr<RSBaseNode> RSNodeMap::GetNode<RSBaseNode>(NodeId id) cons
 
 const std::shared_ptr<RSNode> RSNodeMap::GetAnimationFallbackNode() const
 {
+    auto itr = nodeMap_.find(0);
+    if (itr == nodeMap_.end()) {
+        return nullptr;
+    }
     return std::static_pointer_cast<RSNode>(nodeMap_.at(0));
 }
 
