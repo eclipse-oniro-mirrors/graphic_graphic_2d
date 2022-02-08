@@ -24,7 +24,6 @@
 #include "platform/common/rs_log.h"
 #include "rs_render_service_connect_hub.h"
 #include "rs_surface_ohos.h"
-#include "screen_manager/screen_types.h"
 
 namespace OHOS {
 namespace Rosen {

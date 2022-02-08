@@ -16,7 +16,6 @@
 #include "rs_render_service_connection_stub.h"
 
 #include "command/rs_command_factory.h"
-#include "screen_manager/screen_types.h"
 
 namespace OHOS {
 namespace Rosen {

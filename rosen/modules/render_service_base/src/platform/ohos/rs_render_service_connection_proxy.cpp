@@ -18,8 +18,6 @@
 #include <message_option.h>
 #include <message_parcel.h>
 #include "platform/common/rs_log.h"
-#include "screen_manager/screen_types.h"
-#include "stdint.h"
 
 namespace OHOS {
 namespace Rosen {
