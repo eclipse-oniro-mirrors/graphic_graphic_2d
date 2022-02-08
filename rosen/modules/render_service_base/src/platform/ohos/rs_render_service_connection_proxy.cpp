@@ -552,6 +552,5 @@ int32_t RSRenderServiceConnectionProxy::GetScreenGamutMap(ScreenId id, ScreenGam
     }
     return result;
 }
-
 } // namespace Rosen
 } // namespace OHOS
