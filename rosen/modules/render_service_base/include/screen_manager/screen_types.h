@@ -97,6 +97,10 @@ typedef enum : uint32_t {
 typedef enum : uint32_t {
     SUCCESS = 0,
     SCREEN_NOT_FOUND,
+    SURFACE_NOT_UNIQUE,
+    RENDER_SERVICE_NULL,
+    INVALID_AUGMENTS,
+    WRITE_PARCEL_ERR,
 } StatusCode;
 
 // get the underlying type of an enum value.
