@@ -97,6 +97,7 @@ typedef enum : uint32_t {
 typedef enum : uint32_t {
     SUCCESS = 0,
     SCREEN_NOT_FOUND,
+    RS_CONNECTION_ERROR,
     SURFACE_NOT_UNIQUE,
     RENDER_SERVICE_NULL,
     INVALID_AUGMENTS,

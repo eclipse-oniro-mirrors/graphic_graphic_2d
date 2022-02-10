@@ -324,5 +324,50 @@ bool RSRenderServiceClient::RegisterBufferAvailableListener(NodeId id, const Buf
     bufferAvailableCbMap_.emplace(id, bufferAvailableCb);
     return true;
 }
+
+int32_t RSRenderServiceClient::GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+    return renderService->GetScreenSupportedColorGamuts(id, mode);
+}
+
+int32_t RSRenderServiceClient::GetScreenColorGamut(ScreenId id, ScreenColorGamut& mode)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+    return renderService->GetScreenColorGamut(id, mode);
+}
+
+int32_t RSRenderServiceClient::SetScreenColorGamut(ScreenId id, int32_t modeIdx)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+    return renderService->SetScreenColorGamut(id, modeIdx);
+}
+
+int32_t RSRenderServiceClient::SetScreenGamutMap(ScreenId id, ScreenGamutMap mode)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+    return renderService->SetScreenGamutMap(id, mode);
+}
+
+int32_t RSRenderServiceClient::GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+    return renderService->GetScreenGamutMap(id, mode);
+}
 } // namespace Rosen
 } // namespace OHOS
