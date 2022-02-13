@@ -420,7 +420,7 @@ int32_t HdiDevice::SetLayerColorDataSpace(uint32_t screenId, uint32_t layerId, C
     return DISPLAY_SUCCESS;
 }
 
-int32_t HdiDevice::GetlayerColorDataSpace(uint32_t screenId, uint32_t layerId, ColorDataSpace &colorSpace)
+int32_t HdiDevice::GetLayerColorDataSpace(uint32_t screenId, uint32_t layerId, ColorDataSpace &colorSpace)
 {
     colorSpace = ColorDataSpace::BT709_SRGB_FULL;
     return DISPLAY_SUCCESS;

@@ -79,7 +79,7 @@ public:
     virtual int32_t SetLayerPreMulti(uint32_t screenId, uint32_t layerId, bool isPreMulti) = 0;
     virtual int32_t SetLayerColorTransform(uint32_t screenId, uint32_t layerId, const float *matrix) = 0;
     virtual int32_t SetLayerColorDataSpace(uint32_t screenId, uint32_t layerId, ColorDataSpace colorSpace) = 0;
-    virtual int32_t GetlayerColorDataSpace(uint32_t screenId, uint32_t layerId, ColorDataSpace &colorSpace) = 0;
+    virtual int32_t GetLayerColorDataSpace(uint32_t screenId, uint32_t layerId, ColorDataSpace &colorSpace) = 0;
     virtual int32_t SetLayerMetaData(uint32_t screenId, uint32_t layerId, const std::vector<HDRMetaData> &metaData) = 0;
     virtual int32_t SetLayerMetaDataSet(uint32_t screenId, uint32_t layerId, HDRMetadataKey key,
                                         const std::vector<uint8_t> &metaData) = 0;
@@ -149,7 +149,7 @@ public:
     int32_t SetLayerPreMulti(uint32_t screenId, uint32_t layerId, bool isPreMulti) override;
     int32_t SetLayerColorTransform(uint32_t screenId, uint32_t layerId, const float *matrix) override;
     int32_t SetLayerColorDataSpace(uint32_t screenId, uint32_t layerId, ColorDataSpace colorSpace) override;
-    int32_t GetlayerColorDataSpace(uint32_t screenId, uint32_t layerId, ColorDataSpace &colorSpace) override;
+    int32_t GetLayerColorDataSpace(uint32_t screenId, uint32_t layerId, ColorDataSpace &colorSpace) override;
     int32_t SetLayerMetaData(uint32_t screenId, uint32_t layerId, const std::vector<HDRMetaData> &metaData) override;
     int32_t SetLayerMetaDataSet(uint32_t screenId, uint32_t layerId, HDRMetadataKey key,
                                 const std::vector<uint8_t> &metaData) override;

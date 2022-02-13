@@ -46,6 +46,13 @@ void HdiScreenTest::SetUpTestCase()
     EXPECT_CALL(*mockDevice_, SetScreenPowerStatus(_, _)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*mockDevice_, GetScreenBacklight(_, _)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*mockDevice_, SetScreenBacklight(_, _)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockDevice_, GetScreenSupportedColorGamuts(_, _)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockDevice_, SetScreenColorGamut(_, _)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockDevice_, GetScreenColorGamut(_, _)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockDevice_, SetScreenGamutMap(_, _)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockDevice_, GetScreenGamutMap(_, _)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockDevice_, GetHDRCapabilityInfos(_, _)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockDevice_, GetSupportedMetaDataKey(_, _)).WillRepeatedly(testing::Return(0));
 
     hdiScreen_->SetHdiDevice(mockDevice_);
 }
@@ -183,6 +190,112 @@ HWTEST_F(HdiScreenTest, SetScreenBacklight001, Function | MediumTest| Level3)
 {
     uint32_t level = 0;
     ASSERT_EQ(HdiScreenTest::hdiScreen_->SetScreenBacklight(level), 0);
+}
+
+/*
+* Function: GetScreenSupportedColorGamuts001
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call GetScreenSupportedColorGamuts
+*                  2. check ret
+ */
+HWTEST_F(HdiScreenTest, GetScreenSupportedColorGamuts001, Function | MediumTest | Level2)
+{
+    ColorGamut colorGamut = ColorGamut::COLOR_GAMUT_DCI_P3;
+    std::vector<ColorGamut> gamuts = { colorGamut };
+    ASSERT_EQ(HdiScreenTest::hdiScreen_->GetScreenSupportedColorGamuts(gamuts), 0);
+}
+
+/*
+* Function: SetScreenColorGamut001
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetScreenColorGamut
+*                  2. check ret
+ */
+HWTEST_F(HdiScreenTest, SetScreenColorGamut001, Function | MediumTest | Level2)
+{
+    ColorGamut colorGamut = ColorGamut::COLOR_GAMUT_DCI_P3;
+    ASSERT_EQ(HdiScreenTest::hdiScreen_->SetScreenColorGamut(colorGamut), 0);
+}
+
+/*
+* Function: GetScreenColorGamut001
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call GetScreenColorGamut
+*                  2. check ret
+ */
+HWTEST_F(HdiScreenTest, GetScreenColorGamut001, Function | MediumTest | Level2)
+{
+    ColorGamut colorGamut = ColorGamut::COLOR_GAMUT_DCI_P3;
+    ASSERT_EQ(HdiScreenTest::hdiScreen_->GetScreenColorGamut(colorGamut), 0);
+}
+
+/*
+* Function: SetScreenGamutMap001
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetScreenGamutMap
+*                  2. check ret
+ */
+HWTEST_F(HdiScreenTest, SetScreenGamutMap001, Function | MediumTest | Level2)
+{
+    GamutMap gamutMap = GamutMap::GAMUT_MAP_CONSTANT;
+    ASSERT_EQ(HdiScreenTest::hdiScreen_->SetScreenGamutMap(gamutMap), 0);
+}
+
+/*
+* Function: GetScreenGamutMap001
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call GetScreenGamutMap
+*                  2. check ret
+ */
+HWTEST_F(HdiScreenTest, GetScreenGamutMap001, Function | MediumTest | Level2)
+{
+    GamutMap gamutMap = GamutMap::GAMUT_MAP_CONSTANT;
+    ASSERT_EQ(HdiScreenTest::hdiScreen_->GetScreenGamutMap(gamutMap), 0);
+}
+
+/*
+* Function: GetHDRCapabilityInfos001
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call GetHDRCapabilityInfos
+*                  2. check ret
+ */
+HWTEST_F(HdiScreenTest, GetHDRCapabilityInfos001, Function | MediumTest | Level2)
+{
+    HDRCapability capaility = {
+        .formatCount = 0,
+        .formats = nullptr,
+        .maxLum = 0,
+        .maxAverageLum = 0,
+        .minLum = 0,
+    };
+    ASSERT_EQ(HdiScreenTest::hdiScreen_->GetHDRCapabilityInfos(capaility), 0);
+}
+
+/*
+* Function: GetSupportedMetaDataKey001
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call GetSupportedMetaDataKey
+*                  2. check ret
+ */
+HWTEST_F(HdiScreenTest, GetSupportedMetaDataKey001, Function | MediumTest | Level2)
+{
+    HDRMetadataKey key = HDRMetadataKey::MATAKEY_RED_PRIMARY_X;
+    std::vector<HDRMetadataKey> keys = { key };
+    ASSERT_EQ(HdiScreenTest::hdiScreen_->GetSupportedMetaDataKey(keys), 0);
 }
 } // namespace
 } // namespace Rosen
