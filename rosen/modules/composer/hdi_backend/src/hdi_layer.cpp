@@ -165,14 +165,14 @@ int32_t HdiLayer::SetLayerColorDataSpace(ColorDataSpace colorSpace) const
     return device->SetLayerColorDataSpace(screenId_, layerId_, colorSpace);
 }
 
-int32_t HdiLayer::GetlayerColorDataSpace(ColorDataSpace &colorSpace) const
+int32_t HdiLayer::GetLayerColorDataSpace(ColorDataSpace &colorSpace) const
 {
     HdiDevice *device = HdiDevice::GetInstance();
     if (device == nullptr) {
         return DISPLAY_NULL_PTR;
     }
 
-    return device->GetlayerColorDataSpace(screenId_, layerId_, colorSpace);
+    return device->GetLayerColorDataSpace(screenId_, layerId_, colorSpace);
 }
 
 int32_t HdiLayer::SetLayerMetaData(const std::vector<HDRMetaData> &metaData) const

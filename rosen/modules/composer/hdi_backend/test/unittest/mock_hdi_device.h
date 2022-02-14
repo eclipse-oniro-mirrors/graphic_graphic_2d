@@ -72,7 +72,7 @@ public:
     MOCK_METHOD3(SetLayerPreMulti, int32_t(uint32_t, uint32_t, bool));
     MOCK_METHOD3(SetLayerColorTransform, int32_t(uint32_t, uint32_t, const float*));
     MOCK_METHOD3(SetLayerColorDataSpace, int32_t(uint32_t, uint32_t, ColorDataSpace));
-    MOCK_METHOD3(GetlayerColorDataSpace, int32_t(uint32_t, uint32_t, ColorDataSpace&));
+    MOCK_METHOD3(GetLayerColorDataSpace, int32_t(uint32_t, uint32_t, ColorDataSpace&));
     MOCK_METHOD3(SetLayerMetaData, int32_t(uint32_t, uint32_t, const std::vector<HDRMetaData>&));
     MOCK_METHOD4(SetLayerMetaDataSet, int32_t(uint32_t, uint32_t, HDRMetadataKey, const std::vector<uint8_t>&));
     /* set & get device layer info end */
