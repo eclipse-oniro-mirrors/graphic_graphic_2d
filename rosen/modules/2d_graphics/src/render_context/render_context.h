@@ -26,6 +26,7 @@
 #include "include/gpu/GrBackendSurface.h"
 #include "include/gpu/GrContext.h"
 #include "include/gpu/gl/GrGLInterface.h"
+#include "surface_type.h"
 
 #define GLES_VERSION 2
 namespace OHOS {
@@ -47,6 +48,7 @@ public:
     bool SetUpGrContext();
 
     EGLSurface CreateEGLSurface(EGLNativeWindowType eglNativeWindow);
+    EGLSurface CreateEGLSurface(EGLNativeWindowType eglNativeWindow, SurfaceColorGamut colorGamut);
     void MakeCurrent(EGLSurface surface) const;
     void SwapBuffers(EGLSurface surface) const;
     void RenderFrame();
@@ -70,7 +72,8 @@ public:
 private:
     sk_sp<GrContext> grContext_;
     sk_sp<SkSurface> skSurface_;
-
+    sk_sp<SkColorSpace> skColorSpace_;
+    
     EGLNativeWindowType nativeWindow_;
 
     EGLDisplay eglDisplay_;

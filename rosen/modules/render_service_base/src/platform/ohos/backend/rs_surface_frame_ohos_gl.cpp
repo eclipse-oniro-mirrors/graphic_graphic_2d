@@ -24,7 +24,12 @@ namespace OHOS {
 namespace Rosen {
 
 RSSurfaceFrameOhosGl::RSSurfaceFrameOhosGl(int32_t width, int32_t height)
-    : width_(width), height_(height)
+    : width_(width), height_(height), colorSpace_(SurfaceColorGamut::COLOR_GAMUT_SRGB)
+{
+}
+
+RSSurfaceFrameOhosGl::RSSurfaceFrameOhosGl(int32_t width, int32_t height, SurfaceColorGamut colorSpace)
+    : width_(width), height_(height), colorSpace_(colorSpace)
 {
 }
 
@@ -35,7 +40,7 @@ void RSSurfaceFrameOhosGl::SetDamageRegion(int32_t left, int32_t top, int32_t wi
 
 SkCanvas* RSSurfaceFrameOhosGl::GetCanvas()
 {
-    return renderContext_->AcquireCanvas(width_, height_);
+    return renderContext_->AcquireCanvas(width_, height_, colorSpace_);
 }
 
 int32_t RSSurfaceFrameOhosGl::GetReleaseFence() const
@@ -47,5 +52,11 @@ void RSSurfaceFrameOhosGl::SetReleaseFence(const int32_t& fence)
 {
     releaseFence_ = fence;
 }
+
+void RSSurfaceFrameOhosGl::SetColorSpace(SurfaceColorGamut colorSpace)
+{
+    colorSpace_ = colorSpace;
+}
+
 } // namespace Rosen
 } // namespace OHOS

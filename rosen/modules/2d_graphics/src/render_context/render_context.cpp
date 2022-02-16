@@ -80,6 +80,7 @@ static EGLDisplay GetPlatformEglDisplay(EGLenum platform, void* native_display, 
 RenderContext::RenderContext()
     : grContext_(nullptr),
       skSurface_(nullptr),
+      skColorSpace_(nullptr),
       nativeWindow_(nullptr),
       eglDisplay_(EGL_NO_DISPLAY),
       eglContext_(EGL_NO_CONTEXT),
@@ -165,7 +166,7 @@ void RenderContext::SwapBuffers(EGLSurface surface) const
     }
 }
 
-EGLSurface RenderContext::CreateEGLSurface(EGLNativeWindowType eglNativeWindow)
+EGLSurface RenderContext::CreateEGLSurface(EGLNativeWindowType eglNativeWindow， SurfaceColorGamut colorGamut)
 {
     if (!IsEglContextReady()) {
         LOGE("EGL context has not initialized");
@@ -176,6 +177,22 @@ EGLSurface RenderContext::CreateEGLSurface(EGLNativeWindowType eglNativeWindow)
     eglMakeCurrent(eglDisplay_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 
     EGLint winAttribs[] = { EGL_GL_COLORSPACE_KHR, EGL_GL_COLORSPACE_SRGB_KHR, EGL_NONE };
+    switch(colorGamut){
+        case COLOR_GAMUT_SRGB:
+            winAttribs[1] = EGL_GL_COLORSPACE_SRGB_KHR;
+            break;
+        case COLOR_GAMUT_DISPLAY_P3:
+            winAttribs[1] = EGL_GL_COLORSPACE_DISPLAY_P3_EXT;
+            break;
+        case COLOR_GAMUT_ADOBE_RGB:
+            winAttribs[1] = EGL_GL_COLORSPACE_SCRGB_EXT;
+            break;
+        case COLOR_GAMUT_BT2020:
+            winAttribs[1] = EGL_GL_COLORSPACE_BT2020_LINEAR_EXT;
+            break;
+        default:
+            break;
+    }
     EGLSurface surface = eglCreateWindowSurface(eglDisplay_, config_, nativeWindow_, winAttribs);
     if (surface == EGL_NO_SURFACE) {
         LOGW("Failed to create eglsurface!!! %{public}x", eglGetError());
@@ -186,6 +203,11 @@ EGLSurface RenderContext::CreateEGLSurface(EGLNativeWindowType eglNativeWindow)
 
     eglSurface_ = surface;
     return surface;
+}
+
+EGLSurface RenderContext::CreateEGLSurface(EGLNativeWindowType eglNativeWindow)
+{
+    return CreateEGLSurface(eglNativeWindow, SurfaceColorGamut::COLOR_GAMUT_SRGB);
 }
 
 bool RenderContext::SetUpGrContext()
@@ -216,7 +238,7 @@ bool RenderContext::SetUpGrContext()
     return true;
 }
 
-SkCanvas* RenderContext::AcquireCanvas(int width, int height)
+SkCanvas* RenderContext::AcquireCanvas(int width, int height， SurfaceColorGamut colorGamut)
 {
     if (!SetUpGrContext()) {
         LOGE("GrContext is not ready!!!");
@@ -232,8 +254,25 @@ SkCanvas* RenderContext::AcquireCanvas(int width, int height)
     GrBackendRenderTarget backendRenderTarget(width, height, 0, 8, framebufferInfo);
     SkSurfaceProps surfaceProps = SkSurfaceProps::kLegacyFontHost_InitType;
 
+    switch(colorGamut){
+        case COLOR_GAMUT_SRGB:
+            skColorSpace_ = SkColorSpace::MakeSRGB();
+            break;
+        case COLOR_GAMUT_DISPLAY_P3:
+            skColorSpace_ = SkColorSpace::MakeRGB(SkNamedTransferFn::kSRGB, SkNamedGamut::kDisplayP3);
+            break;
+        case COLOR_GAMUT_ADOBE_RGB:
+            skColorSpace_ = SkColorSpace::MakeRGB(SkNamedTransferFn::kSRGB, SkNamedGamut::kAdobeRGB);
+            break;
+        case COLOR_GAMUT_BT2020:
+            skColorSpace_ = SkColorSpace::MakeRGB(SkNamedTransferFn::kSRGB, SkNamedGamut::kRec2020);
+            break;
+        default:
+            break;
+    }
+
     skSurface_ = SkSurface::MakeFromBackendRenderTarget(
-        GetGrContext(), backendRenderTarget, kBottomLeft_GrSurfaceOrigin, colorType, nullptr, &surfaceProps);
+        GetGrContext(), backendRenderTarget, kBottomLeft_GrSurfaceOrigin, colorType, skColorSpace_, &surfaceProps);
     if (skSurface_ == nullptr) {
         LOGW("skSurface is nullptr");
         return nullptr;
@@ -241,6 +280,11 @@ SkCanvas* RenderContext::AcquireCanvas(int width, int height)
 
     LOGE("CreateCanvas successfully!!! (%{public}p)", skSurface_->getCanvas());
     return skSurface_->getCanvas();
+}
+
+SkCanvas* RenderContext::AcquireCanvas(int width, int height)
+{
+    return AcquireCanvas(width, height, SurfaceColorGamut::COLOR_GAMUT_NATIVE);
 }
 
 void RenderContext::RenderFrame()
