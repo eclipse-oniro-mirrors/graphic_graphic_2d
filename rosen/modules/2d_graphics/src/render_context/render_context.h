@@ -26,8 +26,7 @@
 #include "include/gpu/GrBackendSurface.h"
 #include "include/gpu/GrContext.h"
 #include "include/gpu/gl/GrGLInterface.h"
-
-#include <surface_type.h>
+#include "surface_type.h"
 
 #define GLES_VERSION 2
 namespace OHOS {

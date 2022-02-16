@@ -177,7 +177,7 @@ EGLSurface RenderContext::CreateEGLSurface(EGLNativeWindowType eglNativeWindowï¼
     eglMakeCurrent(eglDisplay_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 
     EGLint winAttribs[] = { EGL_GL_COLORSPACE_KHR, EGL_GL_COLORSPACE_SRGB_KHR, EGL_NONE };
-    switch (colorGamut){
+    switch (colorGamut) {
         case COLOR_GAMUT_SRGB:
             winAttribs[1] = EGL_GL_COLORSPACE_SRGB_KHR;
             break;
@@ -254,7 +254,7 @@ SkCanvas* RenderContext::AcquireCanvas(int width, int heightï¼Œ SurfaceColorGamu
     GrBackendRenderTarget backendRenderTarget(width, height, 0, 8, framebufferInfo);
     SkSurfaceProps surfaceProps = SkSurfaceProps::kLegacyFontHost_InitType;
 
-    switch (colorGamut){
+    switch (colorGamut) {
         case COLOR_GAMUT_SRGB:
             skColorSpace_ = SkColorSpace::MakeSRGB();
             break;
