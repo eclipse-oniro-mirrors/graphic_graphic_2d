@@ -89,6 +89,5 @@ void RSSurfaceOhosGl::SetColorSpace(SurfaceColorGamut colorSpace)
 {
     colorSpace_ = colorSpace;
 }
-
 } // namespace Rosen
 } // namespace OHOS

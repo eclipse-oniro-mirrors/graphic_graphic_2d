@@ -19,7 +19,7 @@
 #include <memory>
 
 #include "rs_surface_frame.h"
-#include "surface_type.h"
+#include <surface_type.h>
 
 namespace OHOS {
 namespace Rosen {

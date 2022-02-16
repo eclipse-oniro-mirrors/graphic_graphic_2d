@@ -36,6 +36,5 @@ SurfaceColorGamut RSSurfaceOhos::GetColorSpace()
 {
     return colorSpace_;
 }
-
 } // namespace Rosen
 } // namespace OHOS
