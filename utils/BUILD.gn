@@ -14,6 +14,15 @@
 import("//build/ohos.gni")
 import("//foundation/graphic/standard/graphic_config.gni")
 
+group("color_manager_unit_test") {
+  testonly = true
+  deps = [ "//foundation/graphic/standard/utils/color_manager/test:unittest" ]
+}
+
+group("color_manager") {
+  public_deps = [ "color_manager:color_manager" ]
+}
+
 group("buffer_handle") {
   public_deps = [ "buffer_handle:buffer_handle" ]
 }
@@ -68,10 +77,6 @@ group("raw_maker") {
 
 group("sync_fence") {
   public_deps = [ "sync_fence:sync_fence" ]
-}
-
-group("color_manager") {
-  public_deps = [ "color_manager:color_manager" ]
 }
 
 ## Build libgraphic_utils.so {{{
