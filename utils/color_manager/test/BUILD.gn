@@ -23,7 +23,7 @@ group("unittest") {
 ## Build RSInterfacesTest
 ohos_unittest("ColorManagerTest") {
   module_out_path = module_out_path
-  sources = [ "color_test.cpp" ]
+  sources = [ "color_manager_test.cpp" ]
   deps = [ ":color_manager_test" ]
 }
 
