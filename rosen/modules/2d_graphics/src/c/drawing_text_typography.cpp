@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
+#include "c/drawing_text_typography.h"
 
 #include "c/drawing_text_convertor.h"
-#include "c/drawing_text_typography.h"
 #include "rosen_text/ui/font_collection.h"
 #include "rosen_text/ui/typography.h"
 #include "rosen_text/ui/typography_create.h"
@@ -37,7 +37,7 @@ void OH_Drawing_DestroyTypographyStyle(OH_Drawing_TypographyStyle* style)
 void OH_Drawing_SetTypographyTextDirection(OH_Drawing_TypographyStyle* style, int direction)
 {
     rosen::TextDirection textDirection;
-    switch(direction) {
+    switch (direction) {
         case TEXT_DIRECTION_RTL: {
             textDirection = rosen::TextDirection::RTL;
             break;
@@ -57,7 +57,7 @@ void OH_Drawing_SetTypographyTextDirection(OH_Drawing_TypographyStyle* style, in
 void OH_Drawing_SetTypographyTextAlign(OH_Drawing_TypographyStyle* style, int align)
 {
     rosen::TextAlign textAlign;
-    switch(align) {
+    switch (align) {
         case TEXT_ALIGN_LEFT: {
             textAlign = rosen::TextAlign::LEFT;
             break;
@@ -217,7 +217,8 @@ void OH_Drawing_SetTextStyleFontHeight(OH_Drawing_TextStyle* style, double fontH
     ConvertToOriginalText(style)->height_ = fontHeight;
 }
 
-void OH_Drawing_SetTextStyleFontFamilies(OH_Drawing_TextStyle* style, int fontFamiliesNumber, const char* fontFamilies[])
+void OH_Drawing_SetTextStyleFontFamilies(OH_Drawing_TextStyle* style,
+    int fontFamiliesNumber, const char* fontFamilies[])
 {
     std::vector<std::string> rosenFontFamilies;
     for (int i = 0; i < fontFamiliesNumber; i++) {

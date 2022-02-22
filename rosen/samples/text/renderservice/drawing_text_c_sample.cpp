@@ -68,17 +68,19 @@ void DoDraw(uint8_t *addr, uint32_t width, uint32_t height, size_t index)
 
     OH_Drawing_Canvas* cCanvas = OH_Drawing_CanvasCreate();
     OH_Drawing_CanvasBind(cCanvas, cBitmap);
-    OH_Drawing_CanvasClear(cCanvas,OH_Drawing_ColorSetArgb(0xFF, 0xFF, 0xFF, 0xFF));
+    OH_Drawing_CanvasClear(cCanvas, OH_Drawing_ColorSetArgb(0xFF, 0xFF, 0xFF, 0xFF));
 
     OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
     OH_Drawing_SetTypographyTextDirection(typoStyle, TEXT_DIRECTION_LTR);
     OH_Drawing_SetTypographyTextAlign(typoStyle, TEXT_ALIGN_LEFT);
 
-    OH_Drawing_TypographyCreate* handler = OH_Drawing_CreateTypographyHandler(typoStyle, OH_Drawing_CreateFontCollection());
+    OH_Drawing_TypographyCreate* handler = OH_Drawing_CreateTypographyHandler(typoStyle,
+        OH_Drawing_CreateFontCollection());
 
     OH_Drawing_TextStyle* txtStyle = OH_Drawing_CreateTextStyle();
     OH_Drawing_SetTextStyleColor(txtStyle, OH_Drawing_ColorSetArgb(0xFF, 0x00, 0x00, 0x00));
-    OH_Drawing_SetTextStyleFontSize(txtStyle, 80);
+    double fontSize = 30;
+    OH_Drawing_SetTextStyleFontSize(txtStyle, fontSize);
     OH_Drawing_SetTextStyleFontWeight(txtStyle, FONT_WEIGHT_400);
     OH_Drawing_SetTextStyleBaseLine(txtStyle, TEXT_BASELINE_ALPHABETIC);
     OH_Drawing_SetTextStyleFontHeight(txtStyle, 1);
@@ -168,14 +170,15 @@ int main()
     auto surfaceNode = CreateSurface();
     RSDisplayNodeConfig config;
     RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
-    for (size_t i = 0; i < 5; i++) {
-        sleep(2);
+    int testNumber = 5;
+    for (size_t i = 0; i < testNumber; i++) {
+        int restTime = 4;
+        sleep(restTime);
         displayNode->AddChild(surfaceNode, -1);
         surfaceNode->SetBounds(0, 0, WIDTH, HEIGHT);
         RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
         DrawSurface(surfaceNode, WIDTH, HEIGHT, i);
-        // sleep 8s
-        sleep(4);
+        sleep(restTime);
         displayNode->RemoveChild(surfaceNode);
         RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     }

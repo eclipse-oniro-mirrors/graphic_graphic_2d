@@ -218,7 +218,8 @@ void OH_Drawing_SetTextStyleFontHeight(OH_Drawing_TextStyle*, double /* fontHeig
  * @param int number of font families
  * @param char* fontFamilies name
  */
-void OH_Drawing_SetTextStyleFontFamilies(OH_Drawing_TextStyle*, int /* fontFamiliesNumber */, const char* fontFamilies[]);
+void OH_Drawing_SetTextStyleFontFamilies(OH_Drawing_TextStyle*,
+    int /* fontFamiliesNumber */, const char* fontFamilies[]);
 
 /**
  * @brief set typography font style.
@@ -244,7 +245,8 @@ void OH_Drawing_SetTextStyleLocale(OH_Drawing_TextStyle*, const char*);
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
  * @return a pointer to created OH_Drawing_TypographyCreate
  */
-OH_Drawing_TypographyCreate* OH_Drawing_CreateTypographyHandler(OH_Drawing_TypographyStyle*, OH_Drawing_FontCollection*);
+OH_Drawing_TypographyCreate* OH_Drawing_CreateTypographyHandler(OH_Drawing_TypographyStyle*,
+    OH_Drawing_FontCollection*);
 
 /**
  * @brief Release the memory storing the OH_Drawing_TypographyCreate object.
@@ -314,7 +316,8 @@ void OH_Drawing_TypographyLayout(OH_Drawing_Typography*, double /* maxWidth */);
  * @param double position X
  * @param double position Y
  */
-void OH_Drawing_TypographyPaint(OH_Drawing_Typography*, OH_Drawing_Canvas*, double /* potisionX */, double /* potisionY */);
+void OH_Drawing_TypographyPaint(OH_Drawing_Typography*, OH_Drawing_Canvas*,
+    double /* potisionX */, double /* potisionY */);
 
 #ifdef __cplusplus
 }
