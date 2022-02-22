@@ -18,7 +18,7 @@ import("//third_party/wayland_standard/wayland_protocol.gni")
 ohos_executable("rendertest") {
   install_enable = true
 
-  sources = [ "main.cpp" ]
+  sources = [ "drawing_text_c_sample.cpp" ]
 
   include_dirs = [
     "//foundation/graphic/standard/rosen/modules/2d_graphics/include",
