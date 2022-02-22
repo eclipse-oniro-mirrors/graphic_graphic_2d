@@ -22,7 +22,7 @@
 #include "c/drawing_pen.h"
 #include "c/drawing_text_declaration.h"
 #include "c/drawing_types.h"
-#include "c/drawing_typography.h"
+#include "c/drawing_text_typography.h"
 
 #include <cinttypes>
 #include <cstdio>
