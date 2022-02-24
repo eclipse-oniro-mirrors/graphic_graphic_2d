@@ -172,9 +172,11 @@ Matrix3x3 ComputeXYZ(const ColorSpacePrimaries& primaries)
     float GYGy = GY / primaries.gY;
     float BYBy = BY / primaries.bY;
 
-    return {{{RYRy * primaries.rX, RY, RYRy * (1 - primaries.rX - primaries.rY)},
-        {GYGy * primaries.gX, GY, GYGy * (1 - primaries.gX - primaries.gY)},
-        {BYBy * primaries.bX, BY, BYBy * (1 - primaries.bX - primaries.bY)}}};
+    return {{{RYRy * primaries.rX, GYGy * primaries.gX, BYBy * primaries.bX},
+        {RY, GY, BY},
+        {RYRy * (1 - primaries.rX - primaries.rY),
+        GYGy * (1 - primaries.gX - primaries.gY),
+        BYBy * (1 - primaries.bX - primaries.bY)}}};
 }
 
 static bool IsFinite(float x)
