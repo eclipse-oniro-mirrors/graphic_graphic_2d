@@ -48,7 +48,7 @@ Color::Color(float r, float g, float b, float a)
     : r(r), g(g), b(b), a(a) {}
 
 Color::Color(float r, float g, float b, float a, const ColorSpaceName name)
-    : r(r), g(g), b(b), a(a), colorSpaceName(name) {}
+    : r(r), g(g), b(b), a(a), srcName(name) {}
 
 Color::Color(int color)
     : r(Red((int64_t)color<<32)),
@@ -61,7 +61,7 @@ Color::Color(int64_t color)
       g(Green(color)),
       b(Blue(color)),
       a(Alpha(color)),
-      colorSpaceName(Name(color)) {}
+      srcName(Name(color)) {}
 
 int64_t Color::PackValue() const
 {
@@ -70,7 +70,7 @@ int64_t Color::PackValue() const
                     ((int64_t)(r * 255.0f + 0.5f) << 48) |
                     ((int64_t)(g * 255.0f + 0.5f) << 40) |
                     ((int64_t)(b * 255.0f + 0.5f) << 32) |
-                    ((int32_t)colorSpaceName);
+                    ((int32_t)srcName);
     return argbn;
 }
 
@@ -85,7 +85,13 @@ Color Color::Convert(ColorSpaceConvertor &convertor) const
 
 Color Color::Convert(const ColorSpace &dst) const
 {
-    ColorSpaceConvertor convertor(ColorSpace(colorSpaceName), dst, GamutMappingMode::GAMUT_MAP_CONSTANT);
+    ColorSpaceConvertor convertor(ColorSpace(srcName), dst, GamutMappingMode::GAMUT_MAP_CONSTANT);
+    return Convert(convertor);
+}
+
+Color Color::Convert(const ColorSpaceName dstName) const
+{
+    ColorSpaceConvertor convertor(ColorSpace(srcName), ColorSpace(dstName), GamutMappingMode::GAMUT_MAP_CONSTANT);
     return Convert(convertor);
 }
 }
