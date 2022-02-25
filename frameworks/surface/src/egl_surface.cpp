@@ -21,7 +21,6 @@
 #include "producer_egl_surface.h"
 
 namespace OHOS {
-namespace {
 sptr<EglSurface> EglSurface::CreateEglSurfaceAsProducer(sptr<IBufferProducer>& producer)
 {
     if (producer == nullptr) {
