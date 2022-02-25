@@ -20,7 +20,6 @@
 #include "buffer_queue_producer.h"
 #include "egl_data_impl.h"
 #include "egl_manager.h"
-
 namespace OHOS {
 EglConsumerSurface::EglConsumerSurface(const std::string &name, bool isShared)
     : ConsumerSurface(name, isShared)
