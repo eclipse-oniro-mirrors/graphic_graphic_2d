@@ -122,13 +122,13 @@ GSError BufferQueue::PopFromDirtyList(sptr<SurfaceBufferImpl> &buffer)
 
 GSError BufferQueue::CheckRequestConfig(const BufferRequestConfig &config)
 {
-    if (config.width <= 0 || config.width > SURFACE_MAX_WIDTH) {
-        BLOGN_INVALID("config.width (0, %{public}d], now is %{public}d", SURFACE_MAX_WIDTH, config.width);
+    if (config.width <= 0) {
+        BLOGN_INVALID("config.width is greater than 0, now is %{public}d", config.width);
         return GSERROR_INVALID_ARGUMENTS;
     }
 
-    if (config.height <= 0 || config.height > SURFACE_MAX_HEIGHT) {
-        BLOGN_INVALID("config.height (0, %{public}d], now is %{public}d", SURFACE_MAX_HEIGHT, config.height);
+    if (config.height <= 0) {
+        BLOGN_INVALID("config.height is greater than 0, now is %{public}d", config.height);
         return GSERROR_INVALID_ARGUMENTS;
     }
 
@@ -732,13 +732,13 @@ GSError BufferQueue::RegisterReleaseListener(OnReleaseFunc func)
 
 GSError BufferQueue::SetDefaultWidthAndHeight(int32_t width, int32_t height)
 {
-    if (width <= 0 || width > SURFACE_MAX_WIDTH) {
-        BLOGN_INVALID("defaultWidth (0, %{public}d], now is %{public}d", SURFACE_MAX_WIDTH, width);
+    if (width <= 0) {
+        BLOGN_INVALID("defaultWidth is greater than 0, now is %{public}d", width);
         return GSERROR_INVALID_ARGUMENTS;
     }
 
-    if (height <= 0 || height > SURFACE_MAX_HEIGHT) {
-        BLOGN_INVALID("defaultHeight (0, %{public}d], now is %{public}d", SURFACE_MAX_HEIGHT, height);
+    if (height <= 0) {
+        BLOGN_INVALID("defaultHeight is greater than 0, now is %{public}d", height);
         return GSERROR_INVALID_ARGUMENTS;
     }
 
