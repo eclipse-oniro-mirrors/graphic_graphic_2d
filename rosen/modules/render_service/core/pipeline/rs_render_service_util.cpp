@@ -540,6 +540,23 @@ void RsRenderServiceUtil::ComposeSurface(std::shared_ptr<HdiLayerInfo> layer, sp
     layers.emplace_back(layer);
 }
 
+void RsRenderServiceUtil::ComposeSurface(std::shared_ptr<HdiLayerInfo> layer, sptr<Surface> consumerSurface,
+    std::vector<LayerInfoPtr>& layers, ComposeInfo info, RSDisplayRenderNode* node)
+{
+    layer->SetSurface(consumerSurface);
+    layer->SetBuffer(info.buffer, info.fence, info.preBuffer, info.preFence);
+    layer->SetZorder(info.zOrder);
+    layer->SetAlpha(info.alpha);
+    layer->SetLayerSize(info.dstRect);
+    layer->SetLayerAdditionalInfo(node);
+    layer->SetCompositionType(CompositionType::COMPOSITION_DEVICE);
+    layer->SetVisibleRegion(1, info.visibleRect);
+    layer->SetDirtyRegion(info.srcRect);
+    layer->SetBlendType(info.blendType);
+    layer->SetCropRect(info.srcRect);
+    layers.emplace_back(layer);
+}
+
 bool RsRenderServiceUtil::IsNeedClient(RSSurfaceRenderNode* node)
 {
     if (enableClient) {

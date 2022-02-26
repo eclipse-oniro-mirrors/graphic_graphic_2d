@@ -112,5 +112,43 @@ bool RSProcessor::ConsumeAndUpdateBuffer(RSSurfaceRenderNode& node, SpecialTask&
     }
     return true;
 }
+
+bool RSProcessor::ConsumeAndUpdateBuffer(RSDisplayRenderNode& node, SpecialTask& task, sptr<SurfaceBuffer>& buffer)
+{
+    if (node.GetAvailableBufferCount() == 0 && !node.GetBuffer()) {
+        ROSEN_LOGI("RsDebug RSProcessor::ProcessSurface unified have no Available Buffer and"\
+    "Node have no buffer node id:%llu", node.GetId());
+        return false;
+    }
+    auto& surfaceConsumer = node.GetConsumer();
+    if (!surfaceConsumer) {
+        ROSEN_LOGI("RSProcessor::ProcessSurface unified output is nullptr");
+        return false;
+    }
+    if (node.GetAvailableBufferCount() >= 1) {
+        int32_t fence = -1;
+        int64_t timestamp = 0;
+        Rect damage;
+        auto sret = surfaceConsumer->AcquireBuffer(buffer, fence, timestamp, damage);
+        if (!buffer || sret != OHOS::SURFACE_ERROR_OK) {
+            ROSEN_LOGE("RSProcessor::ProcessSurface: unified AcquireBuffer failed!");
+            return false;
+        }
+        task();
+        node.SetBuffer(buffer);
+        node.SetFence(fence);
+        node.SetDamageRegion(damage);
+        if (node.ReduceAvailableBuffer() >= 1) {
+            if (auto mainThread = RSMainThread::Instance()) {
+                mainThread->RequestNextVSync();
+            }
+        }
+    } else {
+        node.SetBuffer(node.GetBuffer());
+        node.SetFence(node.GetFence());
+        node.SetDamageRegion(node.GetDamageRegion());
+    }
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS

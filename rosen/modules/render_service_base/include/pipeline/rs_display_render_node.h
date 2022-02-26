@@ -16,8 +16,11 @@
 #define RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_DISPLAY_RENDER_NODE_H
 
 #include <memory>
+#include <surface.h>
+#include <ibuffer_consumer_listener.h>
 
 #include "pipeline/rs_base_render_node.h"
+#include "platform/drawing/rs_surface.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -79,6 +82,16 @@ public:
     void SetSecurityDisplay(bool isSecurityDisplay);
     bool GetSecurityDisplay() const;
 
+    bool CreateSurface(sptr<IBufferConsumerListener> listener);
+    void SetDamageRegion(const Rect& damage);
+    void SetGlobalZOrder(float globalZOrder);
+    float GetGlobalZOrder() const;
+    void SetConsumer(const sptr<Surface>& consumer);
+    void SetBuffer(const sptr<SurfaceBuffer>& buffer);
+    void SetFence(const int32_t fence);
+    void IncreaseAvailableBuffer();
+    int32_t ReduceAvailableBuffer();
+
     WeakPtr GetMirrorSource() const
     {
         return mirrorSource_;
@@ -87,6 +100,46 @@ public:
     bool HasTransition(bool) const override
     {
         return false;
+    }
+
+    const sptr<Surface>& GetConsumer() const
+    {
+        return consumer_;
+    }
+
+    sptr<SurfaceBuffer>& GetBuffer()
+    {
+        return buffer_;
+    }
+
+    int32_t GetFence() const
+    {
+        return fence_;
+    }
+
+    sptr<SurfaceBuffer>& GetPreBuffer()
+    {
+        return preBuffer_;
+    }
+
+    int32_t GetPreFence() const
+    {
+        return preFence_;
+    }
+
+    int32_t GetAvailableBufferCount() const
+    {
+        return bufferAvailableCount_;
+    }
+
+    std::shared_ptr<RSSurface> GetRSSurface() const
+    {
+        return surface_;
+    }
+
+    const Rect& GetDamageRegion() const
+    {
+        return damageRect_;
     }
 
 private:
@@ -98,6 +151,16 @@ private:
     bool isMirroredDisplay_ = false;
     bool isSecurityDisplay_ = false;
     WeakPtr mirrorSource_;
+
+    Rect damageRect_;
+    float globalZOrder_ = 0.0f;
+    std::shared_ptr<RSSurface> surface_;
+    sptr<Surface> consumer_;
+    std::atomic<int> bufferAvailableCount_ = 0;
+    sptr<SurfaceBuffer> buffer_;
+    sptr<SurfaceBuffer> preBuffer_;
+    int32_t fence_ = -1;
+    int32_t preFence_ = -1;
 };
 } // namespace Rosen
 } // namespace OHOS

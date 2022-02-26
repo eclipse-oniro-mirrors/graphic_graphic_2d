@@ -224,6 +224,61 @@ void RSHardwareProcessor::ProcessSurface(RSSurfaceRenderNode &node)
     }
 }
 
+void RSHardwareProcessor::ProcessSurface(RSDisplayRenderNode& node)
+{
+    ROSEN_LOGI("RsDebug RSHardwareProcessor::ProcessSurface displayNode id:%llu available buffer:%d", node.GetId(),
+        node.GetAvailableBufferCount());
+    if (!output_) {
+        ROSEN_LOGE("RSHardwareProcessor::ProcessSurface output is nullptr");
+        return;
+    }
+    OHOS::sptr<SurfaceBuffer> cbuffer;
+    RSProcessor::SpecialTask task = [] () -> void{};
+    bool ret = ConsumeAndUpdateBuffer(node, task, cbuffer);
+    if (!ret) {
+        ROSEN_LOGE("RsDebug RSHardwareProcessor::ProcessSurface consume buffer fail");
+        return;
+    }
+    ComposeInfo info = {
+        .srcRect = {
+            .x = 0,
+            .y = 0,
+            .w = node.GetBuffer()->GetSurfaceBufferWidth(),
+            .h = node.GetBuffer()->GetSurfaceBufferHeight(),
+        },
+        .dstRect = {
+            .x = 0,
+            .y = 0,
+            .w = static_cast<int32_t>(currScreenInfo_.width),
+            .h = static_cast<int32_t>(currScreenInfo_.height),
+        },
+        .visibleRect = {
+            .x = 0,
+            .y = 0,
+            .w = static_cast<int32_t>(currScreenInfo_.width),
+            .h = static_cast<int32_t>(currScreenInfo_.height),
+        },
+        .zOrder = static_cast<int32_t>(node.GetGlobalZOrder()),
+        .alpha = {
+            .enGlobalAlpha = false,
+        },
+        .buffer = node.GetBuffer(),
+        .fence = node.GetFence(),
+        .preBuffer = node.GetPreBuffer(),
+        .preFence = node.GetPreFence(),
+        .blendType = BLEND_NONE,
+    };
+    std::shared_ptr<HdiLayerInfo> layer = HdiLayerInfo::CreateHdiLayerInfo();
+    ROSEN_LOGE("RsDebug RSHardwareProcessor::ProcessSurface displayNode id:%llu dst [%d %d %d %d]"\
+        "SrcRect [%d %d] rawbuffer [%d %d] surfaceBuffer [%d %d] buffaddr:%p, globalZOrder:%d, blendType = %d",
+        node.GetId(),
+        info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h, info.srcRect.w, info.srcRect.h,
+        node.GetBuffer()->GetWidth(), node.GetBuffer()->GetHeight(), node.GetBuffer()->GetSurfaceBufferWidth(),
+        node.GetBuffer()->GetSurfaceBufferHeight(), node.GetBuffer().GetRefPtr(),
+        info.zOrder, info.blendType);
+    RsRenderServiceUtil::ComposeSurface(layer, node.GetConsumer(), layers_, info, &node);
+}
+
 void RSHardwareProcessor::CalculateInfoWithVideo(ComposeInfo& info, RSSurfaceRenderNode& node)
 {
     const Vector4f& rect = node.GetClipRegion();
