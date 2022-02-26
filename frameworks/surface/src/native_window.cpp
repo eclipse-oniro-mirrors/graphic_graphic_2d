@@ -121,8 +121,8 @@ int32_t NativeWindowFlushBuffer(struct NativeWindow *window, struct NativeWindow
     if ((region.rectNumber != 0) && (region.rects != nullptr)) {
         config.damage.x = region.rects->x;
         config.damage.y = region.rects->y;
-        config.damage.w = region.rects->w;
-        config.damage.h = region.rects->h;
+        config.damage.w = static_cast<int32_t>(region.rects->w);
+        config.damage.h = static_cast<int32_t>(region.rects->h);
         config.timestamp = 0;
     }  else {
         config.damage.x = 0;

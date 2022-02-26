@@ -626,10 +626,10 @@ GSError BufferQueue::AttachBuffer(sptr<SurfaceBufferImpl> &buffer)
     };
 
     int32_t sequence = buffer->GetSeqNum();
-    int32_t usedSize = GetUsedSize();
-    int32_t queueSize = GetQueueSize();
+    int32_t usedSize = static_cast<int32_t>(GetUsedSize());
+    int32_t queueSize = static_cast<int32_t>(GetQueueSize());
     if (usedSize >= queueSize) {
-        int32_t freeSize = dirtyList_.size() + freeList_.size();
+        int32_t freeSize = static_cast<int32_t>(dirtyList_.size() + freeList_.size());
         if (freeSize >= usedSize - queueSize + 1) {
             DeleteBuffers(usedSize - queueSize + 1);
             bufferQueueCache_[sequence] = ele;

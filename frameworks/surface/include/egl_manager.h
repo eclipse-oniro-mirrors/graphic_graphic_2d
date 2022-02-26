@@ -74,8 +74,8 @@ private:
     int drmFd_ = -1;
     void *device_ = nullptr;
 
-    EGLDisplay display_;
-    EGLContext context_;
+    EGLDisplay display_ = EGL_NO_DISPLAY;
+    EGLContext context_ = EGL_NO_CONTEXT;
 
     std::map<uint32_t, EGLContext> sharedContextCache;
 
