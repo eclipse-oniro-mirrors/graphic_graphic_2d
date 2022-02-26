@@ -73,16 +73,6 @@ AutoLoadService INativeTest::GetAutoLoadService() const
     return AutoLoadService::Null;
 }
 
-bool INativeTest::OnKey(const KeyEvent &event)
-{
-    return false;
-}
-
-bool INativeTest::OnTouch(const TouchEvent &event)
-{
-    return false;
-}
-
 void INativeTest::GetToken()
 {
     if (token == nullptr) {

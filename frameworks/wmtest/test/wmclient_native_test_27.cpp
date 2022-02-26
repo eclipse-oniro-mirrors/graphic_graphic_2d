@@ -112,9 +112,5 @@ private:
     sptr<Window> freeWindow = nullptr;
     sptr<NativeTestSync> freeWindowSync = nullptr;
     BufferRequestConfig config = {};
-    double downX = 0;
-    double downY = 0;
-    double backupX = 0;
-    double backupY = 0;
 } g_autoload;
 } // namespace

@@ -31,7 +31,6 @@ namespace {
 class WMClientNativeTest32Ability : public INativeTest {
 public:
     virtual void Draw(uint32_t *vaddr, uint32_t width, uint32_t height, uint32_t count) = 0;
-    virtual bool OnTouchPublic(const TouchEvent &event) = 0;
 
     void Run(int32_t argc, const char **argv) override;
 
@@ -41,12 +40,6 @@ protected:
 private:
     sptr<NativeTestSync> windowSync = nullptr;
     BufferRequestConfig rconfig = {};
-
-    bool isClick = true;
-    double downX = 0;
-    double downY = 0;
-    double backupX = 0;
-    double backupY = 0;
 };
 
 class WMClientNativeTest32 : public WMClientNativeTest32Ability {
@@ -93,26 +86,6 @@ public:
         } else {
             drawptr = NativeTestDraw::FlushDraw;
         }
-    }
-
-    bool OnKey(const KeyEvent &event) override
-    {
-        if (window->GetPIPMode()) {
-            return false;
-        }
-
-        if (event.IsKeyDown() == true && event.GetKeyCode() == OHOS::KeyEventEnum::KEY_BACK) {
-            int32_t x = window->GetWidth() / 0x4, y = window->GetHeight() / 0x4;
-            int32_t w = window->GetWidth() / 0x2, h = window->GetHeight() / 0x2;
-            window->EnterPIPMode(x, y, w, h);
-        }
-        return true;
-    }
-
-    bool OnTouchPublic(const TouchEvent &event) override
-    {
-        window->ExitPIPMode();
-        return true;
     }
 
 private:
