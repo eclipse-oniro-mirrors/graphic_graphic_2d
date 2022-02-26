@@ -134,30 +134,7 @@ public:
 
         NativeTestDraw::RainbowDraw(vaddr, width, height, count);
     }
-#if 0
-    bool OnKey(const KeyEvent &event) override
-    {
-        GSLOG7SO(DEBUG) << "[" << event.GetKeyCode() << "]";
-        if (event.IsKeyDown() ==  true && event.GetKeyCode() == KeyEventEnum::KEY_BACK) {
-            ExitTest();
-            return false;
-        }
-        return true;
-    }
 
-    bool OnTouch(const TouchEvent &event) override
-    {
-        if (event.GetAction() == TouchEnum::PRIMARY_POINT_DOWN) {
-            window->SwitchTop();
-        }
-
-        GSLOG7SO(DEBUG) << "[" << event.GetAction() << "]"
-            << "(" << event.GetPointerPosition(event.GetIndex()).GetX()
-            << ", " << event.GetPointerPosition(event.GetIndex()).GetY()
-            << ")";
-        return false;
-    }
-#endif
     void OnSplitStatusChange(SplitStatus status)
     {
         ScopedBytrace trace(__func__);
@@ -255,41 +232,6 @@ public:
             draw.DrawRect(icon.rect);
         }
     }
-#if 0
-    bool OnKey(const KeyEvent &event) override
-    {
-        GSLOG7SO(DEBUG) << "[" << event.GetKeyCode() << "]";
-        if (event.IsKeyDown() ==  true && event.GetKeyCode() == KeyEventEnum::KEY_BACK) {
-            ExitTest();
-            return false;
-        }
-        return true;
-    }
-
-    bool OnTouch(const TouchEvent &event) override
-    {
-        ScopedBytrace trace(__func__);
-        if (event.GetAction() == TouchEnum::PRIMARY_POINT_DOWN) {
-            window->SwitchTop();
-        }
-
-        int32_t x = event.GetPointerPosition(event.GetIndex()).GetX();
-        int32_t y = event.GetPointerPosition(event.GetIndex()).GetY();
-        if (event.GetAction() == TouchEnum::PRIMARY_POINT_DOWN) {
-            return OnTouchDown(x, y);
-        }
-
-        if (event.GetAction() == TouchEnum::POINT_MOVE) {
-            return OnTouchMove(x, y);
-        }
-
-        if (event.GetAction() == TouchEnum::PRIMARY_POINT_UP) {
-            return OnTouchUp(x, y);
-        }
-
-        return true;
-    }
-#endif
 
     bool OnTouchDown(int32_t x, int32_t y)
     {

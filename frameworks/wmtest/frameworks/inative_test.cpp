@@ -24,9 +24,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
-
-#include "inative_test_key_event_handler.h"
-#include "inative_test_touch_event_handler.h"
 #include "util.h"
 
 namespace OHOS {
@@ -100,20 +97,12 @@ void INativeTest::GetToken()
 int32_t INativeTest::ListenWindowKeyEvent(int32_t windowID)
 {
     GetToken();
-#if 0
-    keyHandlerMap[windowID] = new INativeTestKeyEventHandler(this);
-    return MMIEventHdl.RegisterStandardizedEventHandle(token, windowID, keyHandlerMap[windowID]);
-#endif
     return -1;
 }
 
 int32_t INativeTest::ListenWindowTouchEvent(int32_t windowID)
 {
     GetToken();
-#if 0
-    touchHandlerMap[windowID] = new INativeTestTouchEventHandler(this);
-    return MMIEventHdl.RegisterStandardizedEventHandle(token, windowID, touchHandlerMap[windowID]);
-#endif
     return -1;
 }
 

@@ -34,9 +34,6 @@ public:
     virtual bool OnTouchPublic(const TouchEvent &event) = 0;
 
     void Run(int32_t argc, const char **argv) override;
-#if 0
-    bool OnTouch(const TouchEvent &event) override;
-#endif
 
 protected:
     sptr<Window> window = nullptr;
@@ -149,38 +146,4 @@ void WMClientNativeTest32Ability::Run(int32_t argc, const char **argv)
     window->OnSizeChange(onSizeChange);
     ListenWindowInputEvent(window->GetID());
 }
-
-#if 0
-bool WMClientNativeTest32Ability::OnTouch(const TouchEvent &event)
-{
-    if (event.GetAction() == TouchEnum::PRIMARY_POINT_DOWN) {
-        window->SwitchTop();
-    }
-
-    if (!window->GetPIPMode()) {
-        return false;
-    }
-
-    int x = event.GetPointerPosition(event.GetIndex()).GetX();
-    int y = event.GetPointerPosition(event.GetIndex()).GetY();
-    if (event.GetAction() == OHOS::TouchEnum::PRIMARY_POINT_DOWN) {
-        // down
-        isClick = true;
-        downX = x;
-        downY = y;
-        backupX = window->GetX();
-        backupY = window->GetY();
-    } else if (event.GetAction() == OHOS::TouchEnum::POINT_MOVE) {
-        // move
-        isClick = false;
-        window->Move(backupX + x - downX, backupY + y - downY);
-    } else if (event.GetAction() == OHOS::TouchEnum::PRIMARY_POINT_UP) {
-        // up
-        if (isClick) {
-            return OnTouchPublic(event);
-        }
-    }
-    return false;
-}
-#endif
 } // namespace

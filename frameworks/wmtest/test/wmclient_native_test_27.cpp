@@ -98,28 +98,6 @@ public:
         freeWindow->Resize(width, height);
         ListenWindowTouchEvent(freeWindow->GetID());
     }
-#if 0
-    bool OnTouch(const TouchEvent &event) override
-    {
-        int32_t x = event.GetPointerPosition(event.GetIndex()).GetX();
-        int32_t y = event.GetPointerPosition(event.GetIndex()).GetY();
-        if (event.GetAction() == TouchEnum::PRIMARY_POINT_DOWN) {
-            downX = x;
-            downY = y;
-            backupX = freeWindow->GetX();
-            backupY = freeWindow->GetY();
-            return false;
-        }
-
-        if (event.GetAction() == TouchEnum::POINT_MOVE) {
-            freeWindow->Move(backupX + x - downX, backupY + y - downY)
-                ->Then(std::bind(&WMClientNativeTest27::OnMoveReturn, this, std::placeholders::_1));
-            return false;
-        }
-
-        return true;
-    }
-#endif
 
     void OnMoveReturn(const GSError &err)
     {

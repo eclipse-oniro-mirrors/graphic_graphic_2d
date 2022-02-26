@@ -28,9 +28,6 @@
 
 #include "animation_service_stub.h"
 #include "animation_module.h"
-#if 0
-#include "cursor_module.h"
-#endif
 
 namespace OHOS {
 class AnimationServer : public AnimationServiceStub {
@@ -44,9 +41,6 @@ public:
     GSError CancelLaunchPage() override;
 
     void OnSplitStatusChange(SplitStatus status);
-#if 0
-    bool OnTouch(const TouchEvent &event);
-#endif
 
 private:
     void SplitWindowUpdate();
@@ -66,27 +60,7 @@ private:
     int32_t downY = 0;
     sptr<Window> launchPageWindow = nullptr;
     RawParser resource;
-#if 0
-    class TouchEventHandler : public MMI::TouchEventHandler {
-    public:
-        explicit TouchEventHandler(AnimationServer *server) : server_(server)
-        {
-        }
-
-        virtual bool OnTouch(const TouchEvent &event) override
-        {
-            return server_->OnTouch(event);
-        }
-
-    private:
-        AnimationServer *server_ = nullptr;
-    };
-    sptr<TouchEventHandler> thandler = nullptr;
-#endif
     sptr<IRemoteObject> token = new IPCObjectStub(u"animation_server");
-    #if 0
-    CursorModule cursorModule;
-    #endif
 };
 } // namespace OHOS
 
