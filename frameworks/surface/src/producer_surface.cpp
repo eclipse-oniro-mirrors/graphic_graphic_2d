@@ -101,7 +101,8 @@ GSError ProducerSurface::RequestBuffer(sptr<SurfaceBuffer>& buffer,
     }
 
     for (auto it = retval.deletingBuffers.begin(); it != retval.deletingBuffers.end(); it++) {
-        if (IsRemote() && bufferProducerCache_[*it]->GetVirAddr() != nullptr) {
+        if (IsRemote() && bufferProducerCache_.find(*it) != bufferProducerCache_.end() &&
+                bufferProducerCache_[*it]->GetVirAddr() != nullptr) {
             BufferManager::GetInstance()->Unmap(bufferProducerCache_[*it]);
         }
         bufferProducerCache_.erase(*it);
