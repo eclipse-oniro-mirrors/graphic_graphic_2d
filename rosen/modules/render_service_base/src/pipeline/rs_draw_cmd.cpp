@@ -18,8 +18,6 @@
 #include "platform/common/rs_log.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "securec.h"
-#include <cstddef>
-#include <type_traits>
 namespace OHOS {
 namespace Rosen {
 RectOpItem::RectOpItem(SkRect rect, const SkPaint& paint) : OpItemWithPaint(sizeof(RectOpItem)), rect_(rect)
