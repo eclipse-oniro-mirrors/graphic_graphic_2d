@@ -81,6 +81,7 @@ int DrawCmdList::GetHeight() const
     return height_;
 }
 
+#ifdef ROSEN_OHOS
 bool DrawCmdList::Marshalling(Parcel& parcel) const
 {
     bool success = true;
@@ -162,6 +163,7 @@ DrawCmdList* DrawCmdList::Unmarshalling(Parcel& parcel)
     }
     return drawCmdList;
 }
+#endif
 
 } // namespace Rosen
 } // namespace OHOS
