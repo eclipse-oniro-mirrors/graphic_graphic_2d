@@ -87,10 +87,10 @@ bool DrawCmdList::Marshalling(Parcel& parcel) const
     success &= RSMarshallingHelper::Marshalling(parcel, width_);
     success &= RSMarshallingHelper::Marshalling(parcel, height_);
     success &= RSMarshallingHelper::Marshalling(parcel, GetSize());
-    ROSEN_LOGE("unirender: DrawCmdList::Marshalling start, sussess = %d", success);
+    ROSEN_LOGI("unirender: DrawCmdList::Marshalling start, sussess = %d", success);
     for (const auto& item : ops_) {
         auto type = item->GetType();
-        bool result = false;
+        bool funcDefine = false;
         switch (type) {
             case RSOpType::TEXTBLOBOPITEM :
             case RSOpType::SAVEALPHAOPITEM :
@@ -98,16 +98,16 @@ bool DrawCmdList::Marshalling(Parcel& parcel) const
             case RSOpType::SAVEOPITEM :
             case RSOpType::RESTOREOPITEM :
             case RSOpType::MULTIPLYALPHAOPITEM :
-                ROSEN_LOGE("unirender: opItem Marshalling, optype = %d", type);
-                result = item->Marshalling(parcel);
-                success &= result;
-                ROSEN_LOGE("unirender: opItem Marshalling end, optype = %d, sussess = %d", type, result);
+                funcDefine = true;
                 break;
             default :
-                ROSEN_LOGE("unirender: opItem no Marshalling, optype = %d", type);
+                funcDefine = false;
         }
+        bool result = item->Marshalling(parcel);
+        success &= result;
+        ROSEN_LOGI("unirender: opItem Marshalling, result = %d, optype = %d, funcDefine = %d", result, type, funcDefine);
     }
-    ROSEN_LOGE("unirender: DrawCmdList::Marshalling end, sussess = %d", success);
+    ROSEN_LOGI("unirender: DrawCmdList::Marshalling end, sussess = %d", success);
     return success;
 }
 
