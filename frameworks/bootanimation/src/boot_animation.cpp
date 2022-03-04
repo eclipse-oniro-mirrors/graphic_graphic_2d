@@ -209,7 +209,7 @@ void BootAnimation::PlaySound()
 {
     LOG("PlaySound start");
     if (soundPlayer_ == nullptr) {
-	soundPlayer_ = Media::PlayerFactory::CreatePlayer();
+        soundPlayer_ = Media::PlayerFactory::CreatePlayer();
     }
     std::string uri = BOOT_SOUND_URI;
     soundPlayer_->SetSource(uri);
