@@ -28,6 +28,7 @@ RSRenderServiceConnectionProxy::RSRenderServiceConnectionProxy(const sptr<IRemot
 
 void RSRenderServiceConnectionProxy::CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData)
 {
+    ROSEN_LOGE("unirender: RSRenderServiceConnectionProxy::CommitTransaction start");
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
