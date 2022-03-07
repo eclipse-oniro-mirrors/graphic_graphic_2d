@@ -70,7 +70,10 @@ bool RSProcessor::ConsumeAndUpdateBuffer(RSSurfaceRenderNode& node, SpecialTask&
         Rect damage;
         auto sret = surfaceConsumer->AcquireBuffer(buffer, fence, timestamp, damage);
         if (!buffer || sret != OHOS::SURFACE_ERROR_OK) {
-            ROSEN_LOGE("RSProcessor::ProcessSurface: AcquireBuffer failed!");
+            ROSEN_LOGE("RSProcessor::ProcessSurface: AcquireBuffer failed! sret: %{public}d", sret);
+            if (sret == OHOS::GSERROR_NO_BUFFER) {
+                node.ReduceAvailableBuffer();
+            }
             return false;
         }
         task();

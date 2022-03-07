@@ -32,14 +32,7 @@ ProducerSurface::ProducerSurface(sptr<IBufferProducer>& producer)
 ProducerSurface::~ProducerSurface()
 {
     BLOGND("dtor");
-    if (IsRemote()) {
-        for (auto it = bufferProducerCache_.begin(); it != bufferProducerCache_.end(); it++) {
-            if (it->second != nullptr && it->second->GetVirAddr() != nullptr) {
-                BufferManager::GetInstance()->Unmap(it->second);
-            }
-        }
-    }
-
+    CleanCache();
     producer_ = nullptr;
 }
 
@@ -250,6 +243,13 @@ bool ProducerSurface::IsRemote()
 
 GSError ProducerSurface::CleanCache()
 {
+    if (IsRemote()) {
+        for (auto it = bufferProducerCache_.begin(); it != bufferProducerCache_.end(); it++) {
+            if (it->second != nullptr && it->second->GetVirAddr() != nullptr) {
+                BufferManager::GetInstance()->Unmap(it->second);
+            }
+        }
+    }
     return producer_->CleanCache();
 }
 

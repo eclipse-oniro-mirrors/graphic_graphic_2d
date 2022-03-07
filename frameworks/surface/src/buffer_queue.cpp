@@ -769,7 +769,14 @@ uint32_t BufferQueue::GetDefaultUsage()
 
 GSError BufferQueue::CleanCache()
 {
-    DeleteBuffers(queueSize_);
+    auto it = bufferQueueCache_.begin();
+    while (it != bufferQueueCache_.end()) {
+        bufferQueueCache_.erase(it++);
+    }
+    freeList_.clear();
+    dirtyList_.clear();
+    deletingList_.clear();
+    waitReqCon_.notify_all();
     return GSERROR_OK;
 }
 
