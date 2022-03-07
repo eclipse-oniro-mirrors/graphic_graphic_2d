@@ -203,7 +203,7 @@ void RSUnifiedRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         delete canvas_;
         canvas_ = nullptr;
 
-        node.SetGlobalZOrder(globalZOrder_++);
+        node.SetGlobalZOrder(uniZOrder_);
         processor_->ProcessSurface(node);
     } else {
         OHOS::sptr<SurfaceBuffer> buffer;
@@ -261,7 +261,7 @@ void RSUnifiedRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
                 (void)surfaceConsumer->ReleaseBuffer(node.GetBuffer(), -1);
             }
             ROSEN_LOGI("cqx RSUnifiedRenderVisitor::ProcessSurfaceRenderNode ConsumeAndUpdateBuffer end");
-
+            uniZOrder_ = globalZOrder_++;
             canvas_->save();
             canvas_->setMatrix(geoPtr->GetAbsMatrix());
             ProcessBaseRenderNode(node);
