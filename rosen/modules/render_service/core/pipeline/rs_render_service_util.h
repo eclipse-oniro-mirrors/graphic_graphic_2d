@@ -45,6 +45,15 @@ struct BufferDrawParameters {
     SkRect dstRect;
 };
 
+struct BufferDrawParam {
+    sptr<OHOS::SurfaceBuffer> buffer;
+    SkMatrix matrix;
+    SkRect srcRect;
+    SkRect dstRect;
+    SkRect clipRect;
+    SkPaint paint;
+};
+
 struct ComposeInfo {
     IRect srcRect;
     IRect dstRect;
@@ -60,6 +69,7 @@ struct ComposeInfo {
 
 class RsRenderServiceUtil {
 public:
+    using CanvasPostProcess = std::function<void(SkCanvas&, BufferDrawParam&)>;
     static void ComposeSurface(std::shared_ptr<HdiLayerInfo> layer, sptr<Surface> consumerSurface,
         std::vector<LayerInfoPtr>& layers, ComposeInfo info, RSSurfaceRenderNode* node = nullptr);
     static SkMatrix GetCanvasTransform(ScreenRotation screenRotation, ScreenInfo screenInfo);
@@ -67,10 +77,16 @@ public:
         bool isDrawnOnDisplay = true, float scaleX = 1.0f, float scaleY = 1.0f);
     static void DrawLayer(SkCanvas& canvas, const LayerInfoPtr& layer, const SkMatrix& layerTransform,
         ColorGamut dstGamut, bool isDrawnOnDisplay = true);
+    static void DrawBuffer(SkCanvas& canvas, const sptr<OHOS::SurfaceBuffer>& buffer,
+        RSSurfaceRenderNode& node, ColorGamut dstGamut, bool isDrawnOnDisplay = true);
+    static void DrawBuffer(SkCanvas& canvas, BufferDrawParam& bufferDrawParam, CanvasPostProcess process = nullptr);
+    static BufferDrawParam CreateBufferDrawParam(RSSurfaceRenderNode& node);
+    static void DealAnimation(SkCanvas& canvas, RSSurfaceRenderNode& node, BufferDrawParam& params);
+
 private:
     static void Draw(SkCanvas& canvas, BufferDrawParameters& params, RSSurfaceRenderNode& node);
-    static void DealAnimation(SkCanvas& canvas, SkPaint& paint, RSSurfaceRenderNode& node);
     static bool IsNeedClient(RSSurfaceRenderNode* node);
+    static bool CreateBitmap(sptr<OHOS::SurfaceBuffer> buffer, SkBitmap& bitmap);
 };
 } // Rosen
 } // OHOS

@@ -19,6 +19,7 @@
 #include "display_type.h"
 #include "pipeline/rs_main_thread.h"
 #include "platform/common/rs_log.h"
+#include "rs_render_service_util.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -326,9 +327,17 @@ void RSHardwareProcessor::Redraw(sptr<Surface>& surface, const struct PrepareCom
         ROSEN_LOGD("RsDebug RSHardwareProcessor::Redraw layer composition Type:%d, [%d %d %d %d]",
             layerInfo->GetCompositionType(), layerInfo->GetLayerSize().x, layerInfo->GetLayerSize().y,
             layerInfo->GetLayerSize().w, layerInfo->GetLayerSize().h);
-
-        RsRenderServiceUtil::DrawLayer(*canvas, layerInfo, GetLayerTransform(canvasTransform, layerInfo),
-            static_cast<ColorGamut>(currScreenInfo_.colorGamut));
+        RSSurfaceRenderNode *node = static_cast<RSSurfaceRenderNode *>(layerInfo->GetLayerAdditionalInfo());
+        if (node == nullptr) {
+            ROSEN_LOGE("RSHardwareProcessor::DrawBuffer surfaceNode is nullptr!");
+            continue;
+        }
+        auto params = RsRenderServiceUtil::CreateBufferDrawParam(*node);
+        RsRenderServiceUtil::DrawBuffer(*canvas, params, [this, node, &canvasTransform, &layerInfo](SkCanvas& canvas,
+            BufferDrawParam& params) -> void {
+            RsRenderServiceUtil::DealAnimation(canvas, *node, params);
+            canvas.setMatrix(GetLayerTransform(canvasTransform, layerInfo));
+        });
     }
     BufferFlushConfig flushConfig = {
         .damage = {

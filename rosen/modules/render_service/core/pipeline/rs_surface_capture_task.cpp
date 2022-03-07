@@ -14,6 +14,9 @@
  */
 
 #include "pipeline/rs_surface_capture_task.h"
+#include "include/core/SkCanvas.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkRect.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_display_render_node.h"
@@ -21,6 +24,7 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 #include "platform/drawing/rs_surface.h"
+#include "rs_render_service_util.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "screen_manager/rs_screen_mode_info.h"
 #include <memory>
@@ -163,7 +167,26 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode(RSS
         }
         existingChild->Process(shared_from_this());
     }
-    RsRenderServiceUtil::DrawBuffer(canvas_.get(), node.GetBuffer(), node, isDisplayNode_, scaleX_, scaleY_);
+
+    auto param = RsRenderServiceUtil::CreateBufferDrawParam(node);
+    if (!isDisplayNode_) {
+        param.matrix = SkMatrix::I();
+        param.clipRect.offsetTo(0, 0);
+        param.dstRect = SkRect::MakeXYWH(0, 0, node.GetRenderProperties().GetBoundsWidth() * scaleX_,
+            node.GetRenderProperties().GetBoundsHeight() * scaleY_);
+        RsRenderServiceUtil::DrawBuffer(*canvas_, param);
+    } else {
+        param.clipRect = SkRect::MakeXYWH(floor(param.clipRect.left() * scaleX_),
+            floor(param.clipRect.top() * scaleY_), ceil(param.clipRect.width() * scaleX_),
+            ceil(param.clipRect.height() * scaleY_));
+        param.dstRect = SkRect::MakeXYWH(0, 0, node.GetRenderProperties().GetBoundsWidth() * scaleX_,
+            node.GetRenderProperties().GetBoundsHeight() * scaleY_);
+        RsRenderServiceUtil::DrawBuffer(*canvas_, param, [this](SkCanvas& canvas, BufferDrawParam& params) -> void {
+            canvas.translate(floor(params.dstRect.left() * scaleX_ - params.dstRect.left()),
+                floor(params.dstRect.top() * scaleY_ - params.dstRect.top()));
+            canvas.scale(scaleX_, scaleY_);
+        });
+    }
 }
 }
 }
