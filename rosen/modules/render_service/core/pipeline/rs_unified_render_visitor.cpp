@@ -88,7 +88,7 @@ void RSUnifiedRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         PrepareBaseRenderNode(node);
         dirtyFlag_ = dirtyFlag;
     }
-    isUniRender_ = false;
+//    isUniRender_ = false;
 }
 
 void RSUnifiedRenderVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
@@ -154,10 +154,10 @@ void RSUnifiedRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         std::shared_ptr<RSBaseRenderNode> nodePtr = node.shared_from_this();
         auto displayNodePtr = nodePtr->ReinterpretCastTo<RSDisplayRenderNode>();
         if (!displayNodePtr) {
-            ROSEN_LOGE("RSDisplayRenderNode::ProcessDisplayRenderNode ReinterpretCastTo fail");
+            ROSEN_LOGE("RSUnifiedRenderVisitor::ProcessDisplayRenderNode ReinterpretCastTo fail");
             return;
         }
-        sptr<IBufferConsumerListener> listener = new RSRenderServiceListenerImpl(displayNodePtr);
+        sptr<IBufferConsumerListener> listener = new RSRenderServiceListenerImpl(displayNodePtr, processor_);
         if (!node.CreateSurface(listener)) {
             ROSEN_LOGE("RSUnifiedRenderVisitor::ProcessDisplayRenderNode CreateSurface failed");
             return;
@@ -269,7 +269,7 @@ void RSUnifiedRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         node.SetGlobalZOrder(globalZOrder_++);
         processor_->ProcessSurface(node);
     }
-    isUniRender_ = false;
+//    isUniRender_ = false;
 }
 
 void RSUnifiedRenderVisitor::ProcessRootRenderNode(RSRootRenderNode& node)

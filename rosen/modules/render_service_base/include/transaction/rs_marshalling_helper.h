@@ -152,9 +152,9 @@ public:
     static bool Unmarshalling(Parcel& parcel, std::vector<T>& val);
 private:
     static void ReleaseMemory(void* data, int* fd, size_t size);
-    inline static uint32_t count = 0;
+    inline static std::atomic<uint32_t> shmemCount = 0;
     static constexpr size_t MAX_DATA_SIZE = 128 * 1024 * 1024; // 128M
-    static constexpr size_t MIN_DATA_SIZE = 32 * 1024;         // 32k
+    static constexpr size_t MIN_DATA_SIZE = 8 * 1024;         // 8k
 };
 
 } // namespace Rosen

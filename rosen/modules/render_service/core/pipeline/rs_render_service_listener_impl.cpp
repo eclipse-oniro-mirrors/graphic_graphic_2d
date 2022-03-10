@@ -22,8 +22,9 @@ namespace OHOS {
 namespace Rosen {
 RSRenderServiceListenerImpl::~RSRenderServiceListenerImpl() {}
 
-RSRenderServiceListenerImpl::RSRenderServiceListenerImpl(std::weak_ptr<RSDisplayRenderNode> displayRenderNode)
-    : displayRenderNode_(displayRenderNode) {}
+RSRenderServiceListenerImpl::RSRenderServiceListenerImpl(std::weak_ptr<RSDisplayRenderNode> displayRenderNode,
+    std::shared_ptr<RSProcessor> processor)
+    : displayRenderNode_(displayRenderNode), processor_(processor) {}
 
 void RSRenderServiceListenerImpl::OnBufferAvailable()
 {
@@ -61,8 +62,11 @@ void RSRenderServiceListenerImpl::OnBufferAvailable()
         });
     } else {
         node->IncreaseAvailableBuffer();
+        if (processor_ != nullptr) {
+            processor_->ProcessSurface(*node);
+            processor_->PostProcess();
+        }
     }
-    RSMainThread::Instance()->RequestNextVSync();
 }
 }
 }

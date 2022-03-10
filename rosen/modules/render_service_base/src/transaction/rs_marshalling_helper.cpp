@@ -564,11 +564,11 @@ void RSMarshallingHelper::ReleaseMemory(void* data, int* fd, size_t size)
 bool RSMarshallingHelper::WriteToParcel(Parcel &parcel, const void* data, size_t size)
 {
     if (data == nullptr) {
-        ROSEN_LOGE("RSShmemParcelable::WriteToParcel data is nullptr");
+        ROSEN_LOGE("RSMarshallingHelper::WriteToParcel data is nullptr");
         return false;
     }
     if (data == nullptr || size > MAX_DATA_SIZE) {
-        ROSEN_LOGE("RSShmemParcelable::WriteToParcel data exceed MAX_DATA_SIZE");
+        ROSEN_LOGE("RSMarshallingHelper::WriteToParcel data exceed MAX_DATA_SIZE");
         return false;
     }
 
@@ -579,36 +579,36 @@ bool RSMarshallingHelper::WriteToParcel(Parcel &parcel, const void* data, size_t
         return parcel.WriteUnpadBuffer(data, size);
     }
     static pid_t pid_ = getpid();
-    uint64_t id = ((uint64_t)pid_ << 32) | count++;
+    uint64_t id = ((uint64_t)pid_ << 32) | shmemCount++;
     std::string name = "Parcel RS" + std::to_string(id);
     int fd = AshmemCreate(name.c_str(), size);
-    ROSEN_LOGE("RSShmemParcelable::WriteToParcel fd:%d", fd);
+    ROSEN_LOGE("RSMarshallingHelper::WriteToParcel fd:%d", fd);
     if (fd < 0) {
         return false;
     }
 
     int result = AshmemSetProt(fd, PROT_READ | PROT_WRITE);
     if (result < 0) {
-        ROSEN_LOGE("RSShmemParcelable::WriteToParcel result:%d", result);
+        ROSEN_LOGE("RSMarshallingHelper::WriteToParcel result:%d", result);
         return false;
     }
     void *ptr = ::mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (ptr == MAP_FAILED) {
-        ROSEN_LOGE("RSShmemParcelable::WriteToParcel MAP_FAILED");
+        ROSEN_LOGE("RSMarshallingHelper::WriteToParcel MAP_FAILED");
         return false;
     }
 
     if (!(static_cast<MessageParcel*>(&parcel)->WriteFileDescriptor(fd))) {
         ::munmap(ptr, size);
-        ROSEN_LOGE("RSShmemParcelable::WriteToParcel WriteFileDescriptor error");
+        ROSEN_LOGE("RSMarshallingHelper::WriteToParcel WriteFileDescriptor error");
         return false;
     }
     if (memcpy_s(ptr, size, data, size) != EOK) {
         ::munmap(ptr, size);
-        ROSEN_LOGE("RSShmemParcelable::WriteToParcel memcpy_s failed");
+        ROSEN_LOGE("RSMarshallingHelper::WriteToParcel memcpy_s failed");
         return false;
     }
-    ROSEN_LOGI("RSShmemParcelable::WriteToParcel success");
+    ROSEN_LOGI("RSMarshallingHelper::WriteToParcel success");
     return true;
 }
 
@@ -616,7 +616,7 @@ const void* RSMarshallingHelper::ReadFromParcel(Parcel& parcel, size_t size)
 {
     int32_t bufferSize = parcel.ReadInt32();
     if (static_cast<unsigned int>(bufferSize) != size) {
-        ROSEN_LOGE("RSShmemParcelable::ReadFromParcel size mismatch");
+        ROSEN_LOGE("RSMarshallingHelper::ReadFromParcel size mismatch");
         return nullptr;
     }
 
@@ -626,31 +626,31 @@ const void* RSMarshallingHelper::ReadFromParcel(Parcel& parcel, size_t size)
 
     int fd = static_cast<MessageParcel*>(&parcel)->ReadFileDescriptor();
     if (fd < 0) {
-        ROSEN_LOGE("RSShmemParcelable::ReadFromParcel fd < 0");
+        ROSEN_LOGE("RSMarshallingHelper::ReadFromParcel fd < 0");
         return nullptr;
     }
     int ashmemSize = AshmemGetSize(fd);
     if (ashmemSize < 0 || size_t(ashmemSize) < size) {
         // do not close fd here. fd will be closed in FileDescriptor, ::close(fd)
-        ROSEN_LOGE("RSShmemParcelable::ReadFromParcel ashmemSize < size");
+        ROSEN_LOGE("RSMarshallingHelper::ReadFromParcel ashmemSize < size");
         return nullptr;
     }
 
     void *ptr = ::mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0);
     if (ptr == MAP_FAILED) {
         // do not close fd here. fd will be closed in FileDescriptor, ::close(fd)
-        ROSEN_LOGE("RSShmemParcelable::ReadFromParcel MAP_FAILED");
+        ROSEN_LOGE("RSMarshallingHelper::ReadFromParcel MAP_FAILED");
         return nullptr;
     }
     uint8_t *base = static_cast<uint8_t *>(malloc(size));
     if (base == nullptr) {
-        ROSEN_LOGE("RSShmemParcelable::ReadFromParcel malloc(size) failed");
+        ROSEN_LOGE("RSMarshallingHelper::ReadFromParcel malloc(size) failed");
         return nullptr;
     }
     if (memcpy_s(base, size, ptr, size) != 0) {
         free(base);
         base = nullptr;
-        ROSEN_LOGE("RSShmemParcelable::ReadFromParcel memcpy_s failed");
+        ROSEN_LOGE("RSMarshallingHelper::ReadFromParcel memcpy_s failed");
         return nullptr;
     }
     ReleaseMemory(ptr, &fd, size);

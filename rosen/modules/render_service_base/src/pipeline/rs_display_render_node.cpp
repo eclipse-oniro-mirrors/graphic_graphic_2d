@@ -140,9 +140,9 @@ bool RSDisplayRenderNode::CreateSurface(sptr<IBufferConsumerListener> listener)
 {
     if (consumer_ != nullptr && surface_ != nullptr) {
         ROSEN_LOGI("RSDisplayRenderNode::CreateSurface already created, return");
-        return true;
+        return consumer_->RegisterConsumerListener(listener) == SURFACE_ERROR_OK;
     }
-    consumer_ = Surface::CreateSurfaceAsConsumer("Display Node");
+    consumer_ = Surface::CreateSurfaceAsConsumer("DisplayNode");
     if (consumer_ == nullptr) {
         ROSEN_LOGE("RSDisplayRenderNode::CreateSurface get consumer surface fail");
         return false;
