@@ -49,6 +49,7 @@ class RSCommand {
 public:
     virtual ~RSCommand() noexcept = default;
     virtual void Process(RSContext& context) = 0;
+    virtual std::string PrintType() const { return "RSCommand"; }
 };
 
 class RSSyncTask : public RSCommand {

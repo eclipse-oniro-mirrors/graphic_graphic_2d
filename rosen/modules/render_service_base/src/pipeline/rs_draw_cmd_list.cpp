@@ -138,16 +138,21 @@ bool DrawCmdList::Marshalling(Parcel& parcel) const
     success &= RSMarshallingHelper::Marshalling(parcel, width_);
     success &= RSMarshallingHelper::Marshalling(parcel, height_);
     success &= RSMarshallingHelper::Marshalling(parcel, GetSize());
-    ROSEN_LOGE("unirender: DrawCmdList::Marshalling start, size = %d", GetSize());
+    ROSEN_LOGD("unirender: DrawCmdList::Marshalling start, size = %d", GetSize());
     for (const auto& item : ops_) {
         auto type = item->GetType();
         success &= RSMarshallingHelper::Marshalling(parcel, type);
         bool result = item->Marshalling(parcel);
         success &= result;
-        ROSEN_LOGE("unirender: opItem Marshalling, optype = %d, result = %d, funcDefine = %d",
-                   type, result, GetOpUnmarshallingFunc(type) != nullptr);
+        if (result) {
+            ROSEN_LOGD("unirender: opItem Marshalling, result = %d, optype = %d, funcDefine = %d",
+                    result, type, GetOpUnmarshallingFunc(type) != nullptr);
+        } else {
+            ROSEN_LOGD("unirender: opItem Marshalling, result fail = %d, optype = %d, funcDefine = %d",
+                    result, type, GetOpUnmarshallingFunc(type) != nullptr);
+        }
     }
-    ROSEN_LOGE("unirender: DrawCmdList::Marshalling end, sussess = %d", success);
+    ROSEN_LOGD("unirender: DrawCmdList::Marshalling end, sussess = %d", success);
     return success;
 }
 
