@@ -222,10 +222,10 @@ void RSHardwareProcessor::CalculateInfoWithVideo(ComposeInfo& info, RSSurfaceRen
         .h = resDstRect.height_,
     };
     IRect originSrcRect = info.srcRect;
-    info.srcRect.x = resDstRect.IsEmpty() ? 0 : (resDstRect.left_ - originDstRect.left_) / originDstRect.width_ *
-        originSrcRect.w;
-    info.srcRect.y = resDstRect.IsEmpty() ? 0 : (resDstRect.top_ - originDstRect.top_) / originDstRect.height_ *
-        originSrcRect.h;
+    info.srcRect.x = resDstRect.IsEmpty() ? 0 : std::ceil((resDstRect.left_ - originDstRect.left_) *
+        originSrcRect.w / originDstRect.width_);
+    info.srcRect.y = resDstRect.IsEmpty() ? 0 : std::ceil((resDstRect.top_ - originDstRect.top_) *
+        originSrcRect.h / originDstRect.height_);
     info.srcRect.w = originDstRect.IsEmpty() ? 0 : originSrcRect.w * resDstRect.width_ / originDstRect.width_;
     info.srcRect.h = originDstRect.IsEmpty() ? 0 : originSrcRect.h * resDstRect.height_ / originDstRect.height_;
 }
