@@ -250,8 +250,8 @@ void RSHardwareProcessor::CalculateInfoWithAnimation(
     float paddingX = (1 - animationInfo.scale.x_) * animationInfo.pivot.x_;
     float paddingY = (1 - animationInfo.scale.y_) * animationInfo.pivot.y_;
     info.dstRect = {
-        .x = info.dstRect.x + animationInfo.translate.x_ + paddingX,
-        .y = info.dstRect.y + animationInfo.translate.y_ + paddingY,
+        .x = (info.dstRect.x + animationInfo.translate.x_) * animationInfo.scale.x_ + paddingX,
+        .y = (info.dstRect.y + animationInfo.translate.y_) * animationInfo.scale.x_ + paddingY,
         .w = info.dstRect.w * animationInfo.scale.x_,
         .h = info.dstRect.h * animationInfo.scale.y_,
     };
