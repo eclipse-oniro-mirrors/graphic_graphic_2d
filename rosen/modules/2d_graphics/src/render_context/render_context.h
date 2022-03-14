@@ -38,7 +38,7 @@ public:
     void CreateCanvas(int width, int height);
     SkCanvas* AcquireCanvas(int width, int height);
 
-    void SetColorSpace(SurfaceColorGamut colorSpace);
+    void SetColorSpace(ColorGamut colorSpace);
     void InitializeEglContext();
 
     GrContext* GetGrContext() const
@@ -80,7 +80,7 @@ private:
     EGLContext eglContext_;
     EGLSurface eglSurface_;
     EGLConfig config_;
-    SurfaceColorGamut colorSpace_ = SurfaceColorGamut::COLOR_GAMUT_SRGB;
+    ColorGamut colorSpace_ = ColorGamut::COLOR_GAMUT_SRGB;
 };
 
 class RenderContextFactory {

@@ -152,10 +152,10 @@ GSError BufferQueue::CheckRequestConfig(const BufferRequestConfig &config)
         return GSERROR_INVALID_ARGUMENTS;
     }
 
-    if (config.colorGamut <= SurfaceColorGamut::COLOR_GAMUT_INVALID ||
-        config.colorGamut > SurfaceColorGamut::COLOR_GAMUT_DISPLAY_BT2020 + 1) {
+    if (config.colorGamut <= ColorGamut::COLOR_GAMUT_INVALID ||
+        config.colorGamut > ColorGamut::COLOR_GAMUT_DISPLAY_BT2020 + 1) {
         BLOGN_INVALID("config.colorGamut [0, %{public}d], now is %{public}d",
-            static_cast<uint32_t>(SurfaceColorGamut::COLOR_GAMUT_DISPLAY_BT2020),
+            static_cast<uint32_t>(ColorGamut::COLOR_GAMUT_DISPLAY_BT2020),
             static_cast<uint32_t>(config.colorGamut));
         return GSERROR_INVALID_ARGUMENTS;
     }

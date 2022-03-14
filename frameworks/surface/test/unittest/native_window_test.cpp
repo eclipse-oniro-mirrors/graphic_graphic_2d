@@ -205,7 +205,7 @@ HWTEST_F(NativeWindowTest, HandleOpt005, Function | MediumTest | Level2)
 HWTEST_F(NativeWindowTest, HandleOpt006, Function | MediumTest | Level2)
 {
     int code = SET_COLOR_GAMUT;
-    int32_t colorGamut = static_cast<int32_t>(SurfaceColorGamut::COLOR_GAMUT_DCI_P3);
+    int32_t colorGamut = static_cast<int32_t>(ColorGamut::COLOR_GAMUT_DCI_P3);
     ASSERT_EQ(NativeWindowHandleOpt(nativeWindow, code, colorGamut), OHOS::GSERROR_OK);
 
     code = GET_COLOR_GAMUT;

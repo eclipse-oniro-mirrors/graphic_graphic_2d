@@ -23,6 +23,8 @@ config("render_service_client_config") {
     "//foundation/graphic/standard/interfaces/innerkits/common",
     "//foundation/graphic/standard/interfaces/innerkits/surface",
     "//foundation/graphic/standard/interfaces/innerkits/composer",
+    "//drivers/peripheral/display/interfaces/include",
+    "//drivers/peripheral/base",
   ]
 }
 

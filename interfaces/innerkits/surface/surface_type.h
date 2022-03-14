@@ -20,6 +20,7 @@
 #include <string>
 
 #include <graphic_common.h>
+#include <display_type.h>
 
 namespace OHOS {
 #define SURFACE_MAX_USER_DATA_COUNT 1000
@@ -37,21 +38,6 @@ using Rect = struct Rect {
     int32_t h;
 };
 
-typedef enum {
-    COLOR_GAMUT_INVALID = -1,
-    COLOR_GAMUT_NATIVE = 0,
-    COLOR_GAMUT_SATNDARD_BT601 = 1,
-    COLOR_GAMUT_STANDARD_BT709 = 2,
-    COLOR_GAMUT_DCI_P3 = 3,
-    COLOR_GAMUT_SRGB = 4,
-    COLOR_GAMUT_ADOBE_RGB = 5,
-    COLOR_GAMUT_DISPLAY_P3 = 6,
-    COLOR_GAMUT_BT2020 = 7,
-    COLOR_GAMUT_BT2100_PQ = 8,
-    COLOR_GAMUT_BT2100_HLG = 9,
-    COLOR_GAMUT_DISPLAY_BT2020 = 10,
-} SurfaceColorGamut;
-
 using BufferRequestConfig = struct BufferRequestConfig {
     int32_t width;
     int32_t height;
@@ -59,7 +45,7 @@ using BufferRequestConfig = struct BufferRequestConfig {
     int32_t format; // PixelFormat
     int32_t usage;
     int32_t timeout;
-    SurfaceColorGamut colorGamut = SurfaceColorGamut::COLOR_GAMUT_SRGB;
+    ColorGamut colorGamut = ColorGamut::COLOR_GAMUT_SRGB;
     bool operator ==(const struct BufferRequestConfig &config) const
     {
         return width == config.width &&

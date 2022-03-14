@@ -55,7 +55,7 @@ void ReadRequestConfig(MessageParcel &parcel, BufferRequestConfig &config)
     config.format = parcel.ReadInt32();
     config.usage = parcel.ReadInt32();
     config.timeout = parcel.ReadInt32();
-    config.colorGamut = static_cast<SurfaceColorGamut>(parcel.ReadInt32());
+    config.colorGamut = static_cast<ColorGamut>(parcel.ReadInt32());
 }
 
 void WriteRequestConfig(MessageParcel &parcel, BufferRequestConfig const & config)
