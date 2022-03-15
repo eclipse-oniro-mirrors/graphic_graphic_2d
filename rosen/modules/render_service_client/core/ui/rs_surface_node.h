@@ -51,7 +51,7 @@ public:
     void SetBoundsSize(float width, float height) override;
     void SetBoundsWidth(float width) override;
     void SetBoundsHeight(float height) override;
-    void SetColorSpace(SurfaceColorGamut colorSpace);
+    void SetColorSpace(ColorGamut colorSpace);
 
     bool Marshalling(Parcel& parcel) const override;
     static RSSurfaceNode* Unmarshalling(Parcel& parcel);
@@ -60,7 +60,7 @@ public:
     {
         return RSUINodeType::SURFACE_NODE;
     }
-    SurfaceColorGamut GetColorSpace()
+    ColorGamut GetColorSpace()
     {
         return colorSpace_;
     }
@@ -77,7 +77,7 @@ private:
     void UpdateSurfaceDefaultSize(float width, float height);
     std::shared_ptr<RSSurface> surface_;
     std::string name_;
-    SurfaceColorGamut colorSpace_ = SurfaceColorGamut::COLOR_GAMUT_SRGB;
+    ColorGamut colorSpace_ = ColorGamut::COLOR_GAMUT_SRGB;
 
     friend class RSUIDirector;
     friend class RSAnimation;

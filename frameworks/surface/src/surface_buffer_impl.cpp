@@ -92,15 +92,26 @@ int32_t SurfaceBufferImpl::GetSurfaceBufferWidth() const
     return surfaceBufferWidth_;
 }
 
-GSError SurfaceBufferImpl::SetSurfaceBufferColorGamut(SurfaceColorGamut colorGamut)
+GSError SurfaceBufferImpl::SetSurfaceBufferColorGamut(ColorGamut colorGamut)
 {
     surfaceBufferColorGamut_ = colorGamut;
     return GSERROR_OK;
 }
 
-SurfaceColorGamut SurfaceBufferImpl::GetSurfaceBufferColorGamut() const
+ColorGamut SurfaceBufferImpl::GetSurfaceBufferColorGamut() const
 {
     return surfaceBufferColorGamut_;
+}
+
+GSError SurfaceBufferImpl::SetSurfaceBufferTransform(TransformType transform)
+{
+    transform_ = transform;
+    return GSERROR_OK;
+}
+
+TransformType SurfaceBufferImpl::GetSurfaceBufferTransform() const
+{
+    return transform_;
 }
 
 int32_t SurfaceBufferImpl::GetWidth() const

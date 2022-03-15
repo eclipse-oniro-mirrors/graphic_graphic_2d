@@ -199,7 +199,7 @@ void RSHardwareProcessor::ProcessSurface(RSSurfaceRenderNode &node)
         node.GetBuffer()->GetSurfaceBufferHeight(), node.GetBuffer().GetRefPtr(),
         node.GetRenderProperties().GetPositionZ(), info.zOrder, info.blendType);
     RsRenderServiceUtil::ComposeSurface(layer, node.GetConsumer(), layers_, info, &node);
-    if (info.buffer->GetSurfaceBufferColorGamut() != static_cast<SurfaceColorGamut>(currScreenInfo_.colorGamut)) {
+    if (info.buffer->GetSurfaceBufferColorGamut() != static_cast<ColorGamut>(currScreenInfo_.colorGamut)) {
         layer->SetCompositionType(CompositionType::COMPOSITION_CLIENT);
     }
 }

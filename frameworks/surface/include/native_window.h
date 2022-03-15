@@ -22,16 +22,6 @@
 #include <surface.h>
 #include <surface_buffer.h>
 
-struct NativeBufferRequestConfig {
-    int32_t width;
-    int32_t height;
-    int32_t stride; // strideAlignment
-    int32_t format; // PixelFormat
-    int32_t usage;
-    int32_t timeout;
-    OHOS::SurfaceColorGamut colorGamut = OHOS::SurfaceColorGamut::COLOR_GAMUT_SRGB;  // ColorGamut
-};
-
 struct NativeWindowMagic : public OHOS::RefBase
 {
     NativeWindowMagic(NativeObjectMagic m) : magic(m) {}
@@ -42,7 +32,7 @@ struct NativeWindowMagic : public OHOS::RefBase
 struct NativeWindow : public NativeWindowMagic {
     NativeWindow();
     ~NativeWindow();
-    NativeBufferRequestConfig config = {0};
+    OHOS::BufferRequestConfig config = {0};
     OHOS::sptr<OHOS::Surface> surface;
 };
 

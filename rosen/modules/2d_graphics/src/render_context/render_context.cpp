@@ -197,7 +197,7 @@ EGLSurface RenderContext::CreateEGLSurface(EGLNativeWindowType eglNativeWindow)
     return surface;
 }
 
-void RenderContext::SetColorSpace(SurfaceColorGamut colorSpace)
+void RenderContext::SetColorSpace(ColorGamut colorSpace)
 {
     colorSpace_ = colorSpace;
 }

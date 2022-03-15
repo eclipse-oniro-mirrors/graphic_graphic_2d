@@ -33,10 +33,12 @@ public:
     virtual int32_t GetStride() const = 0;
     virtual int32_t GetSurfaceBufferWidth() const = 0;
     virtual int32_t GetSurfaceBufferHeight() const = 0;
-    virtual SurfaceColorGamut GetSurfaceBufferColorGamut() const = 0;
+    virtual ColorGamut GetSurfaceBufferColorGamut() const = 0;
+    virtual TransformType GetSurfaceBufferTransform() const = 0;
     virtual GSError SetSurfaceBufferWidth(int32_t width) = 0;
     virtual GSError SetSurfaceBufferHeight(int32_t height) = 0;
-    virtual GSError SetSurfaceBufferColorGamut(SurfaceColorGamut colorGamut) = 0;
+    virtual GSError SetSurfaceBufferColorGamut(ColorGamut colorGamut) = 0;
+    virtual GSError SetSurfaceBufferTransform(TransformType transform) = 0;
     virtual int32_t GetFormat() const = 0;
     virtual int64_t GetUsage() const = 0;
     virtual uint64_t GetPhyAddr() const = 0;

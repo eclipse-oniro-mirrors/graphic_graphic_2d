@@ -37,12 +37,12 @@ public:
 
     virtual RenderContext* GetRenderContext() override;
     virtual void SetRenderContext(RenderContext* context) override;
-    virtual void SetColorSpace(SurfaceColorGamut colorSpace) override;
-    virtual SurfaceColorGamut GetColorSpace() override;
+    virtual void SetColorSpace(ColorGamut colorSpace) override;
+    virtual ColorGamut GetColorSpace() override;
 protected:
     sptr<Surface> producer_;
     RenderContext* context_ = nullptr;
-    SurfaceColorGamut colorSpace_ = SurfaceColorGamut::COLOR_GAMUT_SRGB;
+    ColorGamut colorSpace_ = ColorGamut::COLOR_GAMUT_SRGB;
 };
 
 } // namespace Rosen

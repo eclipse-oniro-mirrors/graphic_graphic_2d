@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -105,7 +106,7 @@ void RSSurfaceNode::UpdateSurfaceDefaultSize(float width, float height)
     }
 }
 
-void RSSurfaceNode::SetColorSpace(SurfaceColorGamut colorSpace)
+void RSSurfaceNode::SetColorSpace(ColorGamut colorSpace)
 {
     colorSpace_ = colorSpace;
 }
