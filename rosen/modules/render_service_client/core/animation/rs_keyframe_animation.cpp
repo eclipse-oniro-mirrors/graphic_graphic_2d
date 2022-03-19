@@ -101,7 +101,7 @@ void RSKeyframeAnimation<Quaternion>::OnStart()
 template<>
 void RSKeyframeAnimation<std::shared_ptr<RSFilter>>::OnStart()
 {
-    // START_KEYFRAME_ANIMATION(RSAnimationCreateKeyframeFilter, std::shared_ptr<RSFilter>);
+    START_KEYFRAME_ANIMATION(RSAnimationCreateKeyframeFilter, std::shared_ptr<RSFilter>);
 }
 } // namespace Rosen
 } // namespace OHOS

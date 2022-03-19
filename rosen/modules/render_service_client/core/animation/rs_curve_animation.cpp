@@ -99,7 +99,7 @@ void RSCurveAnimation<Quaternion>::OnStart()
 template<>
 void RSCurveAnimation<std::shared_ptr<RSFilter>>::OnStart()
 {
-    // START_CURVE_ANIMATION(RSAnimationCreateCurveFilter, std::shared_ptr<RSFilter>);
+    START_CURVE_ANIMATION(RSAnimationCreateCurveFilter, std::shared_ptr<RSFilter>);
 }
 } // namespace Rosen
 } // namespace OHOS
