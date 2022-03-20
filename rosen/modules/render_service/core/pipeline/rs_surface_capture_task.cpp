@@ -161,12 +161,45 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessDisplayRenderNode(RSD
     node.ResetSortedChildren();
 }
 
+static void AdjustSurfaceTransform(BufferDrawParam &param, TransformType surfaceTransform)
+{
+    switch (surfaceTransform) {
+        case TransformType::ROTATE_90: {
+            param.matrix.postRotate(-90);
+            param.matrix.postTranslate(0, param.dstRect.height());
+            param.dstRect.setWH(param.dstRect.height(), param.dstRect.width());
+            break;
+        }
+        case TransformType::ROTATE_180: {
+            param.matrix.postRotate(-180);
+            param.matrix.postTranslate(param.dstRect.width(), param.dstRect.height());
+            param.dstRect.setWH(param.dstRect.height(), param.dstRect.width());
+            break;
+        }
+        case TransformType::ROTATE_270: {
+            param.matrix.postRotate(-270);
+            param.matrix.postTranslate(param.dstRect.width(), 0);
+            param.dstRect.setWH(param.dstRect.height(), param.dstRect.width());
+            break;
+        }
+        default: {
+            break;
+        }
+    }
+}
+
 void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode &node)
 {
     if (node.GetBuffer() == nullptr) {
         ROSEN_LOGD("RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode: node Buffer is nullptr!");
         return;
     }
+    sptr<Surface> surface = node.GetConsumer();
+    if (surface == nullptr) {
+        return;
+    }
+    const auto surfaceTransform = surface->GetTransform();
+
     for (auto child : node.GetSortedChildren()) {
         child->Process(shared_from_this());
     }
@@ -180,11 +213,10 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode(RSS
         }
         auto existedParent = node.GetParent().lock();
         if (existedParent && existedParent->IsInstanceOf<RSSurfaceRenderNode>()) {
-            auto matrix = node.GetMatrix();
-            param.matrix = matrix;
+            param.matrix = node.GetMatrix();
             auto parentRect = std::static_pointer_cast<RSSurfaceRenderNode>(existedParent)->GetDstRect();
             //Changes the clip area from absolute to relative to the parent window and deal with clip area with scale
-            //Based on the origin of the parent window. 
+            //Based on the origin of the parent window.
             param.clipRect.offsetTo(param.clipRect.left() - parentRect.left_, param.clipRect.top() - parentRect.top_);
             SkMatrix scaleMatrix = SkMatrix::I();
             scaleMatrix.preScale(scaleX_, scaleY_, 0, 0);
@@ -193,9 +225,10 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode(RSS
             param.dstRect = SkRect::MakeXYWH(
                 node.GetRenderProperties().GetBoundsPositionX(), node.GetRenderProperties().GetBoundsPositionY(),
                 node.GetRenderProperties().GetBoundsWidth(), node.GetRenderProperties().GetBoundsHeight());
+            param.matrix.postTranslate(-param.matrix.getTranslateX() * scaleX_, -param.matrix.getTranslateY() * scaleY_);
+            AdjustSurfaceTransform(param, surfaceTransform);
             RsRenderServiceUtil::DrawBuffer(*canvas_, param,
-                [this, &matrix](SkCanvas& canvas, BufferDrawParam& params) -> void {
-                    canvas.translate(-matrix.getTranslateX() * scaleX_, -matrix.getTranslateY() * scaleY_);
+                [this](SkCanvas& canvas, BufferDrawParam& params) -> void {
                     canvas.scale(scaleX_, scaleY_);
                 });
         } else {
@@ -203,6 +236,7 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode(RSS
             param.clipRect.offsetTo(0, 0);
             param.dstRect = SkRect::MakeXYWH(0, 0, node.GetRenderProperties().GetBoundsWidth(),
                 node.GetRenderProperties().GetBoundsHeight());
+            AdjustSurfaceTransform(param, surfaceTransform);
             RsRenderServiceUtil::DrawBuffer(*canvas_, param, [this](SkCanvas& canvas, BufferDrawParam& params) -> void {
                     canvas.scale(scaleX_, scaleY_);
                 });
@@ -213,6 +247,9 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode(RSS
             ceil(param.clipRect.height() * scaleY_));
         param.dstRect = SkRect::MakeXYWH(0, 0, node.GetRenderProperties().GetBoundsWidth() * scaleX_,
             node.GetRenderProperties().GetBoundsHeight() * scaleY_);
+        if (surfaceTransform == TransformType::ROTATE_90 || surfaceTransform == TransformType::ROTATE_270) {
+            param.dstRect.setWH(param.dstRect.height(), param.dstRect.width());
+        }
         RsRenderServiceUtil::DrawBuffer(*canvas_, param, [this](SkCanvas& canvas, BufferDrawParam& params) -> void {
             canvas.translate(floor(params.dstRect.left() * scaleX_ - params.dstRect.left()),
                 floor(params.dstRect.top() * scaleY_ - params.dstRect.top()));
