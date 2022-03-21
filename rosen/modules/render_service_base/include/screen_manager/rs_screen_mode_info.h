@@ -35,14 +35,10 @@ public:
 
     int32_t GetScreenWidth() const;
     int32_t GetScreenHeight() const;
-    // Depreted: there is a spelling error in GetScreenFreshRate, so it will be removed later.
-    uint32_t GetScreenFreshRate() const;
     uint32_t GetScreenRefreshRate() const;
     int32_t GetScreenModeId() const;
     void SetScreenWidth(int32_t width);
     void SetScreenHeight(int32_t height);
-    // Depreted: there is a spelling error in SetScreenFreshRate, so it will be removed later.
-    void SetScreenFreshRate(uint32_t freshRate);
     void SetScreenRefreshRate(uint32_t refreshRate);
     void SetScreenModeId(int32_t id);
 
