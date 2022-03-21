@@ -67,11 +67,6 @@ int32_t RSScreenModeInfo::GetScreenHeight() const
     return height_;
 }
 
-uint32_t RSScreenModeInfo::GetScreenFreshRate() const
-{
-    return refreshRate_;
-}
-
 uint32_t RSScreenModeInfo::GetScreenRefreshRate() const
 {
     return refreshRate_;
@@ -90,11 +85,6 @@ void RSScreenModeInfo::SetScreenWidth(int32_t width)
 void RSScreenModeInfo::SetScreenHeight(int32_t height)
 {
     height_ = height;
-}
-
-void RSScreenModeInfo::SetScreenFreshRate(uint32_t freshRate)
-{
-    refreshRate_ = freshRate;
 }
 
 void RSScreenModeInfo::SetScreenRefreshRate(uint32_t refreshRate)
