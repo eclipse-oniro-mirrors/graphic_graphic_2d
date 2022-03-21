@@ -910,6 +910,18 @@ void RSProperties::ResetBounds()
     }
 }
 
+// mask properties
+void RSProperties::SetMask(std::shared_ptr<RSMask> mask)
+{
+    mask_ = mask;
+    SetDirty();
+}
+
+std::shared_ptr<RSMask> RSProperties::GetMask() const
+{
+    return mask_;
+}
+
 std::string RSProperties::Dump() const
 {
     std::string dumpInfo;
@@ -1107,18 +1119,6 @@ std::string RSProperties::Dump() const
     }
 
     return dumpInfo;
-}
-
-// mask properties
-void RSProperties::SetMask(std::shared_ptr<RSMask> mask)
-{
-    mask_ = mask;
-    SetDirty();
-}
-
-std::shared_ptr<RSMask> RSProperties::GetMask() const
-{
-    return mask_;
 }
 } // namespace Rosen
 } // namespace OHOS

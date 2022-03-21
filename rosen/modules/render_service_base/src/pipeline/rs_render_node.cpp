@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -104,6 +104,7 @@ bool RSRenderNode::IsDirty() const
 void RSRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
 {
 #ifdef ROSEN_OHOS
+    saveCount_ = canvas.getSaveCount();
     canvas.save();
     canvas.SaveAlpha();
     canvas.MultiplyAlpha(GetRenderProperties().GetAlpha());
@@ -113,6 +114,7 @@ void RSRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
     }
     auto transitionProperties = GetAnimationManager().GetTransitionProperties();
     RSPropertiesPainter::DrawTransitionProperties(transitionProperties, GetRenderProperties(), canvas);
+    RSPropertiesPainter::DrawMask(GetRenderProperties(), canvas);
 #endif
 }
 
@@ -121,7 +123,7 @@ void RSRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 #ifdef ROSEN_OHOS
     GetMutableRenderProperties().ResetBounds();
     canvas.RestoreAlpha();
-    canvas.restore();
+    canvas.restoreToCount(saveCount_);
 #endif
 }
 } // namespace Rosen
