@@ -16,6 +16,7 @@
 
 #include <unordered_set>
 
+#include "display_type.h"
 #include "include/core/SkRect.h"
 #include "platform/common/rs_log.h"
 #include "property/rs_properties_painter.h"
@@ -680,22 +681,141 @@ bool RsRenderServiceUtil::CreateYuvToRGBABitMap(sptr<OHOS::SurfaceBuffer> buffer
     return bitmap.installPixels(pixmap);
 }
 
-BufferDrawParam RsRenderServiceUtil::CreateBufferDrawParam(RSSurfaceRenderNode& node)
+SkMatrix RsRenderServiceUtil::GetCanvasTransform(const RSSurfaceRenderNode& node, const SkMatrix& canvasMatrix,
+    ScreenRotation rotation)
+{
+    SkMatrix transform = canvasMatrix;
+    auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(node.GetRenderProperties().GetBoundsGeometry());
+    if (geoPtr == nullptr) {
+        return transform;
+    }
+    sptr<Surface> surface = node.GetConsumer();
+    if (surface == nullptr) {
+        return transform;
+    }
+
+    const auto &geoAbsRect = node.GetDstRect();
+    switch (rotation) {
+        case ScreenRotation::ROTATION_90: {
+            transform.postTranslate(geoAbsRect.top_, -geoAbsRect.left_);
+            switch (surface->GetTransform()) {
+                case TransformType::ROTATE_90: {
+                    transform.postRotate(-90);
+                    transform.postTranslate(geoAbsRect.height_, 0);
+                    break;
+                }
+                case TransformType::ROTATE_180: {
+                    transform.postRotate(180);
+                    transform.postTranslate(geoAbsRect.height_, -geoAbsRect.width_);
+                    break;
+                }
+                case TransformType::ROTATE_270: {
+                    transform.postRotate(-270);
+                    transform.postTranslate(0, -geoAbsRect.width_);
+                    break;
+                }
+                default:
+                    break;
+            }
+            break;
+        }
+        case ScreenRotation::ROTATION_180: {
+            transform.postTranslate(-geoAbsRect.left_, -geoAbsRect.top_);
+            switch (surface->GetTransform()) {
+                case TransformType::ROTATE_90: {
+                    transform.postRotate(-90);
+                    transform.postTranslate(0, -geoAbsRect.height_);
+                    break;
+                }
+                case TransformType::ROTATE_180: {
+                    transform.postRotate(180);
+                    transform.postTranslate(-geoAbsRect.width_, -geoAbsRect.height_);
+                    break;
+                }
+                case TransformType::ROTATE_270: {
+                    transform.postRotate(-270);
+                    transform.postTranslate(-geoAbsRect.width_, 0);
+                    break;
+                }
+                default:
+                    break;
+            }
+            break;
+        }
+        case ScreenRotation::ROTATION_270: {
+            transform.postTranslate(-geoAbsRect.top_, geoAbsRect.left_);
+            switch (surface->GetTransform()) {
+                case TransformType::ROTATE_90: {
+                    transform.postRotate(-90);
+                    transform.postTranslate(-geoAbsRect.height_, 0);
+                    break;
+                }
+                case TransformType::ROTATE_180: {
+                    transform.postRotate(180);
+                    transform.postTranslate(-geoAbsRect.height_, geoAbsRect.width_);
+                    break;
+                }
+                case TransformType::ROTATE_270: {
+                    transform.postRotate(-270);
+                    transform.postTranslate(0, geoAbsRect.width_);
+                    break;
+                }
+                default:
+                    break;
+            }
+            break;
+        }
+        default: {
+            transform = geoPtr->GetAbsMatrix();
+            switch (surface->GetTransform()) {
+                case TransformType::ROTATE_90: {
+                    transform.postRotate(-90);
+                    transform.postTranslate(0, geoAbsRect.height_);
+                    break;
+                }
+                case TransformType::ROTATE_180: {
+                    transform.postRotate(180);
+                    transform.postTranslate(geoAbsRect.width_, geoAbsRect.height_);
+                    break;
+                }
+                case TransformType::ROTATE_270: {
+                    transform.postRotate(-270);
+                    transform.postTranslate(geoAbsRect.width_, 0);
+                    break;
+                }
+                default:
+                    break;
+            }
+            break;
+        }
+    }
+
+    return transform;
+}
+
+BufferDrawParam RsRenderServiceUtil::CreateBufferDrawParam(RSSurfaceRenderNode& node, SkMatrix canvasMatrix,
+    ScreenRotation rotation)
 {
     const RSProperties& property = node.GetRenderProperties();
     BufferDrawParam params;
     auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(property.GetBoundsGeometry());
     auto buffer = node.GetBuffer();
-    if (!geoPtr || !buffer) {
+    sptr<Surface> surface = node.GetConsumer();
+    if (!geoPtr || !buffer || !surface) {
         return params;
     }
     SkPaint paint;
     paint.setAlphaf(node.GetAlpha() * property.GetAlpha());
 
     params.buffer = buffer;
-    params.matrix = geoPtr->GetAbsMatrix();
+    params.matrix = GetCanvasTransform(node, canvasMatrix, rotation);
     params.srcRect = SkRect::MakeXYWH(0, 0, buffer->GetSurfaceBufferWidth(), buffer->GetSurfaceBufferHeight());
-    params.dstRect = SkRect::MakeXYWH(0, 0, property.GetBoundsWidth(), property.GetBoundsHeight());
+    const auto surfaceTransform = surface->GetTransform();
+    if (surfaceTransform == TransformType::ROTATE_90 || surfaceTransform == TransformType::ROTATE_270) {
+        params.dstRect = SkRect::MakeXYWH(0, 0, property.GetBoundsHeight(), property.GetBoundsWidth());
+    } else {
+        params.dstRect = SkRect::MakeXYWH(0, 0, property.GetBoundsWidth(), property.GetBoundsHeight());
+    }
     params.clipRect = SkRect::MakeXYWH(node.GetDstRect().left_, node.GetDstRect().top_, node.GetDstRect().width_,
         node.GetDstRect().height_);
     params.paint = paint;
