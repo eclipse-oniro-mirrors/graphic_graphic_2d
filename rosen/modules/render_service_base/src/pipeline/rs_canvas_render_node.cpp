@@ -96,9 +96,6 @@ void RSCanvasRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 
     RSPropertiesPainter::DrawBorder(GetRenderProperties(), canvas);
     RSPropertiesPainter::DrawForegroundColor(GetRenderProperties(), canvas);
-    // Drawmask, Need later debugging.
-    // RSPropertiesPainter::DrawMask(GetRenderProperties(), canvas);
-
     RSRenderNode::ProcessRenderAfterChildren(canvas);
 #endif
 }
