@@ -61,6 +61,8 @@ int RSLog::Output(RSLog::Level level, const char* format, ...)
         case LEVEL_FATAL:
             OHOS::HiviewDFX::HiLog::Fatal(GenerateLabel(tag_), "%{public}s", logStr);
             break;
+        default:
+            break;
     }
     return 0;
 }

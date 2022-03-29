@@ -52,6 +52,7 @@ public:
 
 private:
     explicit ScheduledTask(Task&& task) : task_(std::move(task)) {}
+    ~ScheduledTask() {}
 
     using Return = std::invoke_result_t<Task>;
     std::packaged_task<Return()> task_;
