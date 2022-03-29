@@ -29,6 +29,7 @@ public:
     inline SizeF() noexcept;
     inline SizeF(const SizeF& s) noexcept;
     inline SizeF(scalar w, scalar h) noexcept;
+    inline ~SizeF() noexcept;
 
     inline bool IsZero() const;
     inline bool IsEmpty() const;
@@ -52,6 +53,8 @@ inline SizeF::SizeF() noexcept : width_(0.0), height_(0.0) {}
 inline SizeF::SizeF(const SizeF& s) noexcept : width_(s.Width()), height_(s.Height()) {}
 
 inline SizeF::SizeF(scalar w, scalar h) noexcept : width_(w), height_(h) {}
+
+inline SizeF::~SizeF() noexcept {}
 
 inline bool SizeF::IsZero() const
 {
@@ -98,6 +101,7 @@ public:
     inline SizeI() noexcept;
     inline SizeI(const SizeI& s) noexcept;
     inline SizeI(int w, int h) noexcept;
+    inline ~SizeI() noexcept;
 
     inline bool IsZero() const;
     inline bool IsEmpty() const;
@@ -121,6 +125,8 @@ inline SizeI::SizeI() noexcept : width_(0.0), height_(0.0) {}
 inline SizeI::SizeI(const SizeI& s) noexcept : width_(s.Width()), height_(s.Height()) {}
 
 inline SizeI::SizeI(int w, int h) noexcept : width_(w), height_(h) {}
+
+inline SizeI::~SizeI() noexcept {}
 
 inline bool SizeI::IsZero() const
 {
