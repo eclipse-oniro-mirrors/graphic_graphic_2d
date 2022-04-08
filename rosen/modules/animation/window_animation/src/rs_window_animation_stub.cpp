@@ -28,7 +28,8 @@ const std::map<uint32_t, WindowAnimationStubFunc> RSWindowAnimationStub::stubFun
     std::make_pair(RSIWindowAnimationController::ON_CLOSE_WINDOW, &RSWindowAnimationStub::CloseWindow),
 };
 
-int RSWindowAnimationStub::OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption &option)
+int RSWindowAnimationStub::OnRemoteRequest(uint32_t code, MessageParcel& data,
+    MessageParcel& reply, MessageOption &option)
 {
     WALOGD("Window animation on remote request!");
     if (data.ReadInterfaceToken() != GetDescriptor()) {

@@ -20,7 +20,6 @@
 
 namespace OHOS {
 namespace Rosen {
-
 namespace {
 // The "0xD001400" is the domain ID for graphic module that allocated by the OS.
 constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "RSWindowAnimation" };
