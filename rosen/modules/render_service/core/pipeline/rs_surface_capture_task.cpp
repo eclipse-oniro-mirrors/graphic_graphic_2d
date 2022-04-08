@@ -190,6 +190,11 @@ static void AdjustSurfaceTransform(BufferDrawParam &param, TransformType surface
 
 void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode &node)
 {
+    if (node.GetSecurityLayer()) {
+        RS_LOGD("RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode: \
+            process RSSurfaceRenderNode(id:[%llu]) paused, because surfaceNode is the security layer.", node.GetId());
+        return;
+    }
     if (node.GetBuffer() == nullptr) {
         RS_LOGD("RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode: node Buffer is nullptr!");
         return;

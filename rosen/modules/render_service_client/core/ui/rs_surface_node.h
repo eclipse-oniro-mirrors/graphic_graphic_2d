@@ -53,6 +53,8 @@ public:
     void SetBoundsWidth(float width) override;
     void SetBoundsHeight(float height) override;
     void SetColorSpace(ColorGamut colorSpace);
+    void SetSecurityLayer(bool isSecurityLayer);
+    bool GetSecurityLayer() const;
 
     bool SetFirstTimeOnScreenCallback(FirstTimeOnScreenCallback callback);
 
@@ -83,6 +85,7 @@ private:
     std::mutex mutex_;
     FirstTimeOnScreenCallback callback_;
     ColorGamut colorSpace_ = ColorGamut::COLOR_GAMUT_SRGB;
+    bool isSecurityLayer_ = false;
 
     friend class RSUIDirector;
     friend class RSAnimation;
