@@ -130,8 +130,8 @@ bool UnzipFile(const std::string& srcFilePath, const std::string& dstFilePath)
 
 int RemoveDir(const char *dir)
 {
-    std::string curDir{"."};
-    std::string upDir{".."};
+    std::string curDir = ".";
+    std::string upDir = "..";
     DIR *dirp;
     struct dirent *dp;
     struct stat dirStat;
@@ -172,8 +172,8 @@ int RemoveDir(const char *dir)
 
 int CountPicNum(const char *dir, int32_t& picNum)
 {
-    std::string curDir{"."};
-    std::string upDir{".."};
+    std::string curDir = ".";
+    std::string upDir = "..";
     DIR *dirp;
     struct dirent *dp;
     struct stat dirStat;
