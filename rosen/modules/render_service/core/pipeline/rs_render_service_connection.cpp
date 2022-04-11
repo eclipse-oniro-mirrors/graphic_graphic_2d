@@ -226,9 +226,8 @@ sptr<IVSyncConnection> RSRenderServiceConnection::CreateVSyncConnection(const st
 
 ScreenId RSRenderServiceConnection::GetDefaultScreenId()
 {
-    return mainThread_->ScheduleTask([this]() {
-        return screenManager_->GetDefaultScreenId();
-    }).get();
+    std::lock_guard<std::mutex> lock(mutex_);
+    return screenManager_->GetDefaultScreenId();
 }
 
 ScreenId RSRenderServiceConnection::CreateVirtualScreen(
