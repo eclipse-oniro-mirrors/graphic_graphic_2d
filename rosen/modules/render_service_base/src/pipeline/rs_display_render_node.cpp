@@ -15,12 +15,9 @@
 
 #include "pipeline/rs_display_render_node.h"
 
-#include "platform/ohos/backend/rs_surface_ohos_gl.h"
-#include "platform/ohos/backend/rs_surface_ohos_raster.h"
-
-//#include "pipeline/rs_main_thread.h"
 #include "platform/common/rs_log.h"
 #include "visitor/rs_node_visitor.h"
+#include "drawing_engine/drawing_proxy.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -154,17 +151,10 @@ bool RSDisplayRenderNode::CreateSurface(sptr<IBufferConsumerListener> listener)
     }
     auto producer = consumer_->GetProducer();
     sptr<Surface> surface = Surface::CreateSurfaceAsProducer(producer);
-#ifdef ACE_ENABLE_GL
-    // GPU render
-    surface_ = std::make_shared<RSSurfaceOhosGl>(surface);
-    ROSEN_LOGI("RSDisplayRenderNode::CreateSurface SetRenderContext start");
-    RenderContext* rc = new RenderContext();
-    rc->InitializeEglContext();
-    surface_->SetRenderContext(rc);
-#else
-    // CPU render
-    surface_ = std::make_shared<RSSurfaceOhosRaster>(surface);
-#endif
+    DrawingProxy* drawingProxy = new DrawingProxy();
+    drawingProxy->InitDrawContext();
+    surface_ = OHOS::Rosen::RSSurfaceOhos::CreateSurface(surface);
+    surface_->SetDrawingProxy(drawingProxy);
     ROSEN_LOGI("RSDisplayRenderNode::CreateSurface end");
     return true;
 }

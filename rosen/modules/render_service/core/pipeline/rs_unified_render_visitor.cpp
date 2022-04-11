@@ -22,7 +22,6 @@
 #include <window.h>
 #include <window_manager.h>
 #include <window_option.h>
-#include "render_context/render_context.h"
 
 #include "common/rs_obj_abs_geometry.h"
 #include "display_type.h"
@@ -34,7 +33,6 @@
 #include "pipeline/rs_processor_factory.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
-#include "platform/drawing/rs_surface.h"
 #include "screen_manager/screen_types.h"
 #include "property/rs_properties_painter.h"
 #include "render/rs_skia_filter.h"
@@ -174,7 +172,7 @@ void RSUnifiedRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             return;
         }
         ROSEN_LOGI("RSUnifiedRenderVisitor::ProcessDisplayRenderNode RequestFrame end");
-        canvas_ = new RSPaintFilterCanvas(surfaceFrame->GetCanvas());
+        canvas_ = new RSPaintFilterCanvas(rsSurface->GetCanvas(surfaceFrame));
         canvas_->clear(SK_ColorTRANSPARENT);
 
         ProcessBaseRenderNode(node);
