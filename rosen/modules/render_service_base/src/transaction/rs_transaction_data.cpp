@@ -97,6 +97,7 @@ bool RSTransactionData::UnmarshallingCommand(Parcel& parcel)
         }
         auto command = (*func)(parcel);
         if (command == nullptr) {
+            ROSEN_LOGE("unirender: fail RSTransactionData::UnmarshallingCommand, type=%d subtype=%d", commandType, commandSubType);
             break;
         }
         AddCommand(std::unique_ptr<RSCommand>(command));

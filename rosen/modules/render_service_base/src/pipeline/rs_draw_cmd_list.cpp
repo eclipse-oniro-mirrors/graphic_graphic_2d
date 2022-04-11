@@ -171,7 +171,8 @@ DrawCmdList* DrawCmdList::Unmarshalling(Parcel& parcel)
         return nullptr;
     }
 
-    ROSEN_LOGE("unirender: DrawCmdList::Unmarshalling start");
+    ROSEN_LOGD("unirender: DrawCmdList::Unmarshalling start");
+    // RS_TRACE_BEGIN("UMa DrawCmdList count:" + std::to_string(size));
     DrawCmdList* drawCmdList = new DrawCmdList(width, height);
     for (int i = 0; i < size; ++i) {
         RSOpType type;
@@ -180,16 +181,21 @@ DrawCmdList* DrawCmdList::Unmarshalling(Parcel& parcel)
         }
         auto func = GetOpUnmarshallingFunc(type);
         if (!func) {
-            ROSEN_LOGE("unirender: opItem Unmarshalling no funcDefine, optype = %d", type);
+            ROSEN_LOGW("unirender: opItem Unmarshalling no funcDefine, optype = %d", type);
             continue;
         }
         OpItem* item = (*func)(parcel);
-        if (item) {
-            drawCmdList->AddOp(std::unique_ptr<OpItem>(item));
+
+        if (!item) {
+            ROSEN_LOGE("unirender: Fail DrawCmdList::Unmarshalling!");
+            delete drawCmdList;
+            return nullptr;
         }
-        ROSEN_LOGE("unirender: opItem Unmarshalling, optype = %d, result = %d", type, item != nullptr);
+        drawCmdList->AddOp(std::unique_ptr<OpItem>(item));
+        ROSEN_LOGD("unirender: opItem Unmarshalling, optype = %d, result = %d", type, item != nullptr);
     }
-    ROSEN_LOGE("unirender: DrawCmdList::Unmarshalling finish.");
+
+    ROSEN_LOGD("unirender: DrawCmdList::Unmarshalling finish.");
     return drawCmdList;
 }
 #endif

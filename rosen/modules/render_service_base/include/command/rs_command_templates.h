@@ -53,6 +53,14 @@ public:
         return "commandType:[" + std::to_string(commandType) + ", " + std::to_string
             (commandSubType) + "], ";
     }
+    uint16_t GetType() const override
+    {
+        return commandType;
+    }
+    uint16_t GetSubType() const override
+    {
+        return commandSubType;
+    }
 
 #ifdef ROSEN_OHOS
     bool Marshalling(Parcel& parcel) const override
@@ -86,6 +94,14 @@ public:
     {
         return "commandType:[" + std::to_string(commandType) + ", " + std::to_string
             (commandSubType) + "], ";
+    }
+    uint16_t GetType() const override
+    {
+        return commandType;
+    }
+    uint16_t GetSubType() const override
+    {
+        return commandSubType;
     }
 
 #ifdef ROSEN_OHOS
@@ -126,6 +142,14 @@ public:
     {
         return "commandType:[" + std::to_string(commandType) + ", " + std::to_string
             (commandSubType) + "], ";
+    }
+    uint16_t GetType() const override
+    {
+        return commandType;
+    }
+    uint16_t GetSubType() const override
+    {
+        return commandSubType;
     }
 
 #ifdef ROSEN_OHOS
@@ -172,6 +196,14 @@ public:
     {
         return "commandType:[" + std::to_string(commandType) + ", " + std::to_string
             (commandSubType) + "], ";
+    }
+    uint16_t GetType() const override
+    {
+        return commandType;
+    }
+    uint16_t GetSubType() const override
+    {
+        return commandSubType;
     }
 
 #ifdef ROSEN_OHOS
@@ -227,6 +259,14 @@ public:
     {
         return "commandType:[" + std::to_string(commandType) + ", " + std::to_string
             (commandSubType) + "], ";
+    }
+    uint16_t GetType() const override
+    {
+        return commandType;
+    }
+    uint16_t GetSubType() const override
+    {
+        return commandSubType;
     }
 
 #ifdef ROSEN_OHOS
@@ -288,6 +328,14 @@ public:
     {
         return "commandType:[" + std::to_string(commandType) + ", " + std::to_string
             (commandSubType) + "], ";
+    }
+    uint16_t GetType() const override
+    {
+        return commandType;
+    }
+    uint16_t GetSubType() const override
+    {
+        return commandSubType;
     }
 
 #ifdef ROSEN_OHOS
@@ -355,6 +403,14 @@ public:
     {
         return "commandType:[" + std::to_string(commandType) + ", " + std::to_string
             (commandSubType) + "], ";
+    }
+    uint16_t GetType() const override
+    {
+        return commandType;
+    }
+    uint16_t GetSubType() const override
+    {
+        return commandSubType;
     }
 
 #ifdef ROSEN_OHOS

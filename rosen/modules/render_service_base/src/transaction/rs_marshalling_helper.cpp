@@ -117,21 +117,18 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkData>& val)
 // SkFlattenable
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const sk_sp<SkFlattenable>& val)
 {
-    SkBinaryWriteBuffer writer;
-    writer.writeFlattenable(val.get());
-    SkAutoMalloc buf(writer.bytesWritten());
-    writer.writeToMemory(buf.get());
-    auto skData = SkData::MakeFromMalloc(buf.get(), writer.bytesWritten());
-    return parcel.WriteUint32(val->getFlattenableType()) && Marshalling(parcel, skData);
+    sk_sp<SkData> data = val->serialize();
+    return parcel.WriteUint32(val->getFlattenableType()) && Marshalling(parcel, data);
 }
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkFlattenable>& val)
 {
     auto type = static_cast<SkFlattenable::Type>(parcel.ReadUint32());
     sk_sp<SkData> data;
-    Unmarshalling(parcel, data);
-    SkReadBuffer reader(data->data(), data->size());
-    val = sk_sp<SkFlattenable>(reader.readFlattenable(type));
-    return true;
+    if (!Unmarshalling(parcel, data)) {
+        return false;
+    }
+    val = SkFlattenable::Deserialize(type, data->data(), data->size());
+    return val != nullptr;
 }
 
 // SkTextBlob
@@ -147,7 +144,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkTextBlob>& val)
         return false;
     }
     val = SkTextBlob::Deserialize(data->data(), data->size(), SkDeserialProcs());
-    return true;
+    return val != nullptr;
 }
 
 // SkPaint
@@ -217,7 +214,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkPicture>& val)
         return false;
     }
     val = SkPicture::MakeFromData(data->data(), data->size());
-    return true;
+    return val != nullptr;
 }
 
 // SkVertices
@@ -233,7 +230,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkVertices>& val)
         return false;
     }
     val = SkVertices::Decode(data->data(), data->size());
-    return true;
+    return val != nullptr;
 }
 
 // SkRegion
@@ -309,22 +306,6 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkImageFilter>& va
 }
 
 // RSShader
-bool RSMarshallingHelper::Marshalling(Parcel& parcel, const RSShader& val)
-{
-    return Marshalling(parcel, sk_sp<SkFlattenable>(val.GetSkShader()));
-}
-bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, RSShader& val)
-{
-    sk_sp<SkFlattenable> flattenablePtr;
-    if (!Unmarshalling(parcel, flattenablePtr)) {
-        return false;
-    }
-    auto shaderPtr = sk_reinterpret_cast<SkShader>(flattenablePtr);
-    val.SetSkShader(shaderPtr);
-    return true;
-}
-
-// RSShader
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSShader>& val)
 {
     return Marshalling(parcel, sk_sp<SkFlattenable>(val->GetSkShader()));
@@ -336,50 +317,36 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSShader
         return false;
     }
     auto shaderPtr = sk_reinterpret_cast<SkShader>(flattenablePtr);
-    val->SetSkShader(shaderPtr);
-    return true;
-}
-
-// RSPath
-bool RSMarshallingHelper::Marshalling(Parcel& parcel, const RSPath& val)
-{
-    SkBinaryWriteBuffer writer;
-    writer.writePath(val.GetSkiaPath());
-    SkAutoMalloc buf(writer.bytesWritten());
-    writer.writeToMemory(buf.get());
-    auto skData = SkData::MakeFromMalloc(buf.get(), writer.bytesWritten());
-    return Marshalling(parcel, skData);
-}
-bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, RSPath& val)
-{
-    sk_sp<SkData> data;
-    Unmarshalling(parcel, data);
-    SkReadBuffer reader(data->data(), data->size());
-    SkPath path;
-    reader.readPath(&path);
-    val.SetSkiaPath(path);
-    return true;
+    val = RSShader::CreateRSShader(shaderPtr);
+    return val != nullptr;
 }
 
 // RSPath
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSPath>& val)
 {
-    SkBinaryWriteBuffer writer;
-    writer.writePath(val->GetSkiaPath());
-    SkAutoMalloc buf(writer.bytesWritten());
-    writer.writeToMemory(buf.get());
-    auto skData = SkData::MakeFromMalloc(buf.get(), writer.bytesWritten());
-    return Marshalling(parcel, skData);
+    if (val == nullptr) {
+        return parcel.WriteInt32(0);
+    }
+    if (!parcel.WriteInt32(1)) {
+        return false;
+    }
+
+    return Marshalling(parcel, val->GetSkiaPath());
 }
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSPath>& val)
 {
-    sk_sp<SkData> data;
-    Unmarshalling(parcel, data);
-    SkReadBuffer reader(data->data(), data->size());
+    int32_t size = parcel.ReadInt32();
+    if (size == 0) {
+        val = nullptr;
+        return true;
+    }
+
     SkPath path;
-    reader.readPath(&path);
-    val->SetSkiaPath(path);
-    return true;
+    if (!Unmarshalling(parcel, path)) {
+        return false;
+    }
+    val = RSPath::CreateRSPath(path);
+    return val != nullptr;
 }
 
 // RSMask

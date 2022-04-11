@@ -81,7 +81,7 @@ public:
         return parcel.WriteUnpadBuffer(val, count * sizeof(T));
     }
     template<typename T>
-    static bool Unmarshalling(Parcel& parcel, T* val, int count)
+    static bool Unmarshalling(Parcel& parcel, T*& val, int count)
     {
         if (const uint8_t* buff = parcel.ReadUnpadBuffer(count * sizeof(T))) {
             val = reinterpret_cast<const T*>(buff);
@@ -120,8 +120,6 @@ public:
     DECLARE_FUNCTION_OVERLOAD(sk_sp<SkImage>)
     DECLARE_FUNCTION_OVERLOAD(sk_sp<SkVertices>)
     // RS types
-    DECLARE_FUNCTION_OVERLOAD(RSShader)
-    DECLARE_FUNCTION_OVERLOAD(RSPath)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSShader>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSPath>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSFilter>)
