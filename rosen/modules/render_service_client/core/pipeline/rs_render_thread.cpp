@@ -78,7 +78,8 @@ RSRenderThread::RSRenderThread()
     DrawingProxy_ = new DrawingProxy();
     mainFunc_ = [&]() {
         clock_t startTime = clock();
-        ROSEN_TRACE_BEGIN(BYTRACE_TAG_GRAPHIC_AGP, "RSRenderThread::DrawFrame");
+        std::string str = "RSRenderThread DrawFrame: " + std::to_string(timestamp_);
+        ROSEN_TRACE_BEGIN(BYTRACE_TAG_GRAPHIC_AGP, str.c_str());
         {
             prevTimestamp_ = timestamp_;
             ProcessCommands();
