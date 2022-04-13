@@ -26,6 +26,7 @@
 #include "pipeline/rs_processor_factory.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "pipeline/rs_render_service_util.h"
 #include "pipeline/rs_uni_render_listener.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
@@ -180,13 +181,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         node.SetGlobalZOrder(uniZOrder_);
         processor_->ProcessSurface(node);
     } else {
-        OHOS::sptr<SurfaceBuffer> buffer;
-        RSProcessor::SpecialTask task = [] () {};
-        bool ret = processor_->ConsumeAndUpdateBuffer(node, task, buffer);
-        auto& surfaceConsumer = node.GetConsumer();
-        if (ret && surfaceConsumer != nullptr) {
-            (void)surfaceConsumer->ReleaseBuffer(node.GetBuffer(), -1);
-        }
+        RsRenderServiceUtil::ConsumeAndUpdateBuffer(node, true);
         ProcessBaseRenderNode(node);
     }
     processor_->PostProcess();
@@ -218,13 +213,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
                     node.GetId());
                 return;
             }
-            OHOS::sptr<SurfaceBuffer> buffer;
-            RSProcessor::SpecialTask task = [] () {};
-            bool ret = processor_->ConsumeAndUpdateBuffer(node, task, buffer);
-            auto& surfaceConsumer = node.GetConsumer();
-            if (ret && surfaceConsumer != nullptr) {
-                (void)surfaceConsumer->ReleaseBuffer(node.GetBuffer(), -1);
-            }
+            RsRenderServiceUtil::ConsumeAndUpdateBuffer(node, true);
 
             uniZOrder_ = globalZOrder_++;
             canvas_->save();
@@ -240,12 +229,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
                 RS_LOGI("RSUniRenderVisitor::ProcessSurfaceRenderNode buffer is not available, set black");
                 canvas_->clear(SK_ColorBLACK);
             } else {
-                OHOS::sptr<SurfaceBuffer> buffer;
-                RSProcessor::SpecialTask task = [] () {};
-                if (!processor_->ConsumeAndUpdateBuffer(node, task, buffer)) {
-                    RS_LOGI("RSUniRenderVisitor::ProcessSurfaceRenderNode consume buffer fail");
-                    return;
-                }
+                RsRenderServiceUtil::ConsumeAndUpdateBuffer(node, false);
                 RS_LOGI("RSUniRenderVisitor::ProcessSurfaceRenderNode draw buffer on canvas");
                 DrawBufferOnCanvas(node);
             }

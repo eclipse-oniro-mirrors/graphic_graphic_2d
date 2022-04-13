@@ -21,7 +21,7 @@
 
 namespace OHOS {
 namespace Rosen {
-enum UniRenderEnabledType : uint32_t {
+enum class UniRenderEnabledType {
     UNI_RENDER_DISABLED = 0,
     UNI_RENDER_ENABLED_FOR_ALL,
     UNI_RENDER_PARTIALLY_ENABLED,

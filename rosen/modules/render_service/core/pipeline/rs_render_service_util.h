@@ -69,6 +69,8 @@ public:
     using CanvasPostProcess = std::function<void(SkCanvas&, BufferDrawParam&)>;
     static void ComposeSurface(std::shared_ptr<HdiLayerInfo> layer, sptr<Surface> consumerSurface,
         std::vector<LayerInfoPtr>& layers, ComposeInfo info, RSSurfaceRenderNode* node = nullptr);
+    static void ComposeSurface(std::shared_ptr<HdiLayerInfo> layer, sptr<Surface> consumerSurface,
+        std::vector<LayerInfoPtr>& layers, ComposeInfo info, RSDisplayRenderNode* node);
     static void DrawBuffer(SkCanvas& canvas, BufferDrawParam& bufferDrawParam, CanvasPostProcess process = nullptr);
     static BufferDrawParam CreateBufferDrawParam(RSSurfaceRenderNode& node, SkMatrix canvasMatrix = SkMatrix(),
         ScreenRotation rotation = ScreenRotation::ROTATION_0);
@@ -76,6 +78,10 @@ public:
     static void ExtractAnimationInfo(const std::unique_ptr<RSTransitionProperties>& transitionProperties,
         RSSurfaceRenderNode& node, AnimationInfo& info);
     static void InitEnableClient();
+
+    static bool ConsumeAndUpdateBuffer(RSDisplayRenderNode& node, bool toReleaseBuffer = false);
+    static bool ConsumeAndUpdateBuffer(RSSurfaceRenderNode& node, bool toReleaseBuffer = false);
+
 private:
     static SkMatrix GetCanvasTransform(const RSSurfaceRenderNode& node, const SkMatrix& canvasMatrix,
         ScreenRotation rotation);

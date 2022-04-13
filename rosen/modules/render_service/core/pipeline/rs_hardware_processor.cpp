@@ -220,23 +220,20 @@ void RSHardwareProcessor::ProcessSurface(RSSurfaceRenderNode &node)
         node.GetRenderProperties().GetPositionZ(), info.zOrder, info.blendType);
     RsRenderServiceUtil::ComposeSurface(layer, node.GetConsumer(), layers_, info, &node);
     if (info.buffer->GetSurfaceBufferColorGamut() != static_cast<ColorGamut>(currScreenInfo_.colorGamut)) {
-        layer->SetCompositionType(CompositionType::COMPOSITION_CLIENT);
+        layer->SetCompositionType(CompositionType::COMPOSITION_CLIEsNT);
     }
 }
 
 void RSHardwareProcessor::ProcessSurface(RSDisplayRenderNode& node)
 {
-    ROSEN_LOGI("RsDebug RSHardwareProcessor::ProcessSurface displayNode id:%llu available buffer:%d", node.GetId(),
+    RS_LOGI("RSHardwareProcessor::ProcessSurface displayNode id:%llu available buffer:%d", node.GetId(),
         node.GetAvailableBufferCount());
     if (!output_) {
-        ROSEN_LOGE("RSHardwareProcessor::ProcessSurface output is nullptr");
+        RS_LOGE("RSHardwareProcessor::ProcessSurface output is nullptr");
         return;
     }
-    OHOS::sptr<SurfaceBuffer> cbuffer;
-    RSProcessor::SpecialTask task = [] () -> void{};
-    bool ret = ConsumeAndUpdateBuffer(node, task, cbuffer);
-    if (!ret) {
-        ROSEN_LOGE("RsDebug RSHardwareProcessor::ProcessSurface consume buffer fail");
+    if (!RsRenderServiceUtil::ConsumeAndUpdateBuffer(node)) {
+        RS_LOGE("RSHardwareProcessor::ProcessSurface consume buffer fail");
         return;
     }
     ComposeInfo info = {
@@ -269,7 +266,7 @@ void RSHardwareProcessor::ProcessSurface(RSDisplayRenderNode& node)
         .blendType = BLEND_NONE,
     };
     std::shared_ptr<HdiLayerInfo> layer = HdiLayerInfo::CreateHdiLayerInfo();
-    ROSEN_LOGE("RsDebug RSHardwareProcessor::ProcessSurface displayNode id:%llu dst [%d %d %d %d]"\
+    RS_LOGE("RSHardwareProcessor::ProcessSurface displayNode id:%llu dst [%d %d %d %d]"\
         "SrcRect [%d %d] rawbuffer [%d %d] surfaceBuffer [%d %d] buffaddr:%p, globalZOrder:%d, blendType = %d",
         node.GetId(),
         info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h, info.srcRect.w, info.srcRect.h,
