@@ -156,6 +156,7 @@ bool RSDisplayRenderNode::CreateSurface(sptr<IBufferConsumerListener> listener)
     surface_ = OHOS::Rosen::RSSurfaceOhos::CreateSurface(surface);
     surface_->SetDrawingProxy(drawingProxy);
     ROSEN_LOGI("RSDisplayRenderNode::CreateSurface end");
+    surfaceCreated_ = true;
     return true;
 }
 } // namespace Rosen

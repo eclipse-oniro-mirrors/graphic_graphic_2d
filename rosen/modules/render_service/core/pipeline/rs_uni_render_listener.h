@@ -16,8 +16,10 @@
 #ifndef RENDER_SERVICE_PIPELINE_RS_UNI_RENDER_LISTENER_H
 #define RENDER_SERVICE_PIPELINE_RS_UNI_RENDER_LISTENER_H
 
+#include <mutex>
 #include <ibuffer_consumer_listener.h>
 #include "pipeline/rs_display_render_node.h"
+#include "pipeline/rs_processor.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -26,9 +28,12 @@ public:
     RSUniRenderListener(std::weak_ptr<RSDisplayRenderNode> displayRenderNode);
     ~RSUniRenderListener() override;
     void OnBufferAvailable() override;
+    void UpdateProcessor(std::shared_ptr<RSProcessor> processor);
 
-private :
+private:
+    std::mutex mutex_;
     std::weak_ptr<RSDisplayRenderNode> displayRenderNode_;
+    std::shared_ptr<RSProcessor> processor_;
 };
 } // namespace Rosen
 } // namespace OHOS

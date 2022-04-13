@@ -61,8 +61,22 @@ void RSUniRenderListener::OnBufferAvailable()
         });
     } else {
         node->IncreaseAvailableBuffer();
+        std::shared_ptr<RSProcessor> processor;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            processor = processor_;
+        }
+        if (processor != nullptr) {
+            processor_->ProcessSurface(*node);
+            processor_->PostProcess();
+        }
     }
-    RSMainThread::Instance()->RequestNextVSync();
+}
+
+void RSUniRenderListener::UpdateProcessor(std::shared_ptr<RSProcessor> processor)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    processor_ = processor;
 }
 }
 }

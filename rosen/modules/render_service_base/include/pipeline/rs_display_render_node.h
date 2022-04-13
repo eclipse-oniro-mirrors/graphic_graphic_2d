@@ -144,6 +144,16 @@ public:
         return damageRect_;
     }
 
+    sptr<IBufferConsumerListener> GetConsumerListener() const
+    {
+        return consumerListener_;
+    }
+
+    bool IsSurfaceCreated() const
+    {
+        return surfaceCreated_;
+    }
+
 private:
     CompositeType compositeType_ { HARDWARE_COMPOSITE };
     uint64_t screenId_;
@@ -161,8 +171,10 @@ private:
     std::atomic<int> bufferAvailableCount_ = 0;
     sptr<SurfaceBuffer> buffer_;
     sptr<SurfaceBuffer> preBuffer_;
-    int32_t fence_ = -1;
-    int32_t preFence_ = -1;
+    sptr<SyncFence> fence_;
+    sptr<SyncFence> preFence_;
+    bool surfaceCreated_ { false };
+    sptr<IBufferConsumerListener> consumerListener_;
 };
 } // namespace Rosen
 } // namespace OHOS

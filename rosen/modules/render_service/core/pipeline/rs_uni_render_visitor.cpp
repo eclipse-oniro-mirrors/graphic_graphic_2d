@@ -154,10 +154,16 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode ReinterpretCastTo fail");
             return;
         }
-        sptr<IBufferConsumerListener> listener = new RSUniRenderListener(displayNodePtr);
-        if (!node.CreateSurface(listener)) {
-            RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode CreateSurface failed");
-            return;
+        if (!node.IsSurfaceCreated()) {
+            sptr<IBufferConsumerListener> listener = new RSUniRenderListener(displayNodePtr);
+            if (!node.CreateSurface(listener)) {
+                RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode CreateSurface failed");
+                return;
+            }
+        }
+        auto consumerListener = static_cast<RSUniRenderListener*>(node.GetConsumerListener().GetRefPtr());
+        if (consumerListener != nullptr) {
+            consumerListener->UpdateProcessor(processor_);
         }
         auto rsSurface = node.GetRSSurface();
         if (rsSurface == nullptr) {
