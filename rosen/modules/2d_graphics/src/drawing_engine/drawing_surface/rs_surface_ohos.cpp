@@ -24,7 +24,7 @@ namespace Rosen {
 RSSurfaceOhos::RSSurfaceOhos(const sptr<Surface>& producer)
     : producer_(producer)
 {
-    producer_->SetQueueSize(5);
+    producer_->SetQueueSize(3);
 }
 
 std::shared_ptr<RSSurface> RSSurfaceOhos::CreateSurface(sptr<Surface> surface)
