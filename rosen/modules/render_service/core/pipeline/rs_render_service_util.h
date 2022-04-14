@@ -78,6 +78,8 @@ public:
     static void ExtractAnimationInfo(const std::unique_ptr<RSTransitionProperties>& transitionProperties,
         RSSurfaceRenderNode& node, AnimationInfo& info);
     static void InitEnableClient();
+    static bool CreateYuvToRGBABitMap(sptr<OHOS::SurfaceBuffer> buffer, std::vector<uint8_t>& newBuffer,
+        SkBitmap& bitmap);
 
     static bool ConsumeAndUpdateBuffer(RSDisplayRenderNode& node, bool toReleaseBuffer = false);
     static bool ConsumeAndUpdateBuffer(RSSurfaceRenderNode& node, bool toReleaseBuffer = false);
@@ -87,8 +89,7 @@ private:
         ScreenRotation rotation);
     static bool IsNeedClient(RSSurfaceRenderNode* node);
     static bool CreateBitmap(sptr<OHOS::SurfaceBuffer> buffer, SkBitmap& bitmap);
-    static bool CreateYuvToRGBABitMap(sptr<OHOS::SurfaceBuffer> buffer, std::vector<uint8_t>& newBuffer,
-        SkBitmap& bitmap);
+
     static bool CreateNewColorGamutBitmap(sptr<OHOS::SurfaceBuffer> buffer, std::vector<uint8_t>& newGamutBuffer,
         SkBitmap& bitmap, ColorGamut srcGamut, ColorGamut dstGamut);
     static bool enableClient;

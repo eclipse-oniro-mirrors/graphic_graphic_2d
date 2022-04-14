@@ -32,6 +32,7 @@
 #include "platform/common/rs_system_properties.h"
 #include "property/rs_properties_painter.h"
 #include "render/rs_skia_filter.h"
+#include "rs_trace.h"
 #include "screen_manager/screen_types.h"
 
 namespace OHOS {
@@ -119,7 +120,7 @@ void RSUniRenderVisitor::ProcessBaseRenderNode(RSBaseRenderNode& node)
 
 void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
 {
-    RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode node: %llu, child size:%d", node.GetChildrenCount(),
+    RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode node: %llu, child size:%u", node.GetChildrenCount(),
         node.GetId());
     globalZOrder_ = 0.0f;
     sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
@@ -196,8 +197,8 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
 
 void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 {
-    RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode node: %llu, child size:%d", node.GetId(),
-        node.GetChildrenCount());
+    RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode node: %llu, child size:%u %s", node.GetId(),
+        node.GetChildrenCount(), node.GetName().c_str());
     if (isUniRenderForAll_ || uniRenderList_.find(node.GetName()) != uniRenderList_.end()) {
         isUniRender_ = true;
     }
@@ -220,26 +221,35 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
                 return;
             }
             RsRenderServiceUtil::ConsumeAndUpdateBuffer(node, true);
-
+            RS_TRACE_BEGIN("RSUniRender::Process:" + node.GetName());
             uniZOrder_ = globalZOrder_++;
             canvas_->save();
+            canvas_->SaveAlpha();
+            canvas_->MultiplyAlpha(node.GetAlpha());
             canvas_->setMatrix(geoPtr->GetAbsMatrix());
             ProcessBaseRenderNode(node);
+            canvas_->RestoreAlpha();
             canvas_->restore();
+            RS_TRACE_END();
         } else {
+            if (IsChildOfSurfaceNode(node)) {
+                RS_LOGI("RSUniRenderVisitor::ProcessSurfaceRenderNode not ChildOfSurfaceNode");
+                return;
+            }
+            RS_TRACE_BEGIN("UniRender::Process:" + node.GetName());
             canvas_->save();
             canvas_->clipRect(SkRect::MakeXYWH(
                 node.GetRenderProperties().GetBoundsPositionX(), node.GetRenderProperties().GetBoundsPositionY(),
                 node.GetRenderProperties().GetBoundsWidth(), node.GetRenderProperties().GetBoundsHeight()));
-            if (node.GetConsumer() != nullptr && node.GetBuffer() == nullptr) {
+            if (!RsRenderServiceUtil::ConsumeAndUpdateBuffer(node, true)) {
                 RS_LOGI("RSUniRenderVisitor::ProcessSurfaceRenderNode buffer is not available, set black");
                 canvas_->clear(SK_ColorBLACK);
             } else {
-                RsRenderServiceUtil::ConsumeAndUpdateBuffer(node, false);
                 RS_LOGI("RSUniRenderVisitor::ProcessSurfaceRenderNode draw buffer on canvas");
                 DrawBufferOnCanvas(node);
             }
             canvas_->restore();
+            RS_TRACE_END();
         }
     } else {
         ProcessBaseRenderNode(node);
@@ -251,7 +261,10 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 
 void RSUniRenderVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
 {
+    RS_LOGD("RSUniRenderVisitor::ProcessRootRenderNode node: %llu, child size:%u", node.GetId(),
+        node.GetChildrenCount());
     if (!isUniRender_ || !node.GetRenderProperties().GetVisible() || !IsChildOfSurfaceNode(node)) {
+        RS_LOGD("RSUniRenderVisitor::ProcessRootRenderNode, no need process");
         return;
     }
 
@@ -268,6 +281,7 @@ void RSUniRenderVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
 void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
 {
     if (!node.GetRenderProperties().GetVisible()) {
+        RS_LOGD("RSUniRenderVisitor::ProcessCanvasRenderNode, no need process");
         return;
     }
     if (!canvas_) {
@@ -307,19 +321,33 @@ bool RSUniRenderVisitor::IsChildOfSurfaceNode(RSBaseRenderNode& node)
 
 void RSUniRenderVisitor::DrawBufferOnCanvas(RSSurfaceRenderNode& node)
 {
+    if (!canvas_) {
+        RS_LOGE("RSUniRenderVisitor::DrawBufferOnCanvas canvas is nullptr");
+    }
+
+    bool bitmapCreated = false;
+    SkBitmap bitmap;
+    std::vector<uint8_t> newTmpBuffer;
     auto buffer = node.GetBuffer();
-    SkColorType colorType = (buffer->GetFormat() == PIXEL_FMT_BGRA_8888) ?
-        kBGRA_8888_SkColorType : kRGBA_8888_SkColorType;
-    SkImageInfo imageInfo = SkImageInfo::Make(buffer->GetWidth(), buffer->GetHeight(),
-        colorType, kPremul_SkAlphaType);
-    auto pixmap = SkPixmap(imageInfo, buffer->GetVirAddr(), buffer->GetStride());
+    if (buffer->GetFormat() == PIXEL_FMT_YCRCB_420_SP || buffer->GetFormat() == PIXEL_FMT_YCBCR_420_SP) {
+        bitmapCreated = RsRenderServiceUtil::CreateYuvToRGBABitMap(buffer, newTmpBuffer, bitmap);
+    } else {
+        SkColorType colorType = (buffer->GetFormat() == PIXEL_FMT_BGRA_8888) ?
+            kBGRA_8888_SkColorType : kRGBA_8888_SkColorType;
+        SkImageInfo imageInfo = SkImageInfo::Make(buffer->GetWidth(), buffer->GetHeight(),
+            colorType, kPremul_SkAlphaType);
+        auto pixmap = SkPixmap(imageInfo, buffer->GetVirAddr(), buffer->GetStride());
+        bitmapCreated = bitmap.installPixels(pixmap);
+    }
+    if (!bitmapCreated) {
+        RS_LOGE("RSUniRenderVisitor::DrawBufferOnCanvas installPixels failed");
+        return;
+    }
+
     SkPaint paint;
     paint.setAntiAlias(true);
-    paint.setAlphaf(node.GetAlpha() * node.GetRenderProperties().GetAlpha()); // ??
-    SkBitmap bitmap;
-    if (!bitmap.installPixels(pixmap)) {
-        RS_LOGE("RSUniRenderVisitor::DrawBufferOnCanvas installPixels failed");
-    }
+    paint.setAlphaf(node.GetAlpha() * node.GetRenderProperties().GetAlpha());
+
     canvas_->save();
     const RSProperties& property = node.GetRenderProperties();
     auto filter = std::static_pointer_cast<RSSkiaFilter>(property.GetBackgroundFilter());

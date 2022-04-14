@@ -17,7 +17,6 @@
 
 #include "platform/common/rs_log.h"
 #include "visitor/rs_node_visitor.h"
-#include "drawing_engine/drawing_proxy.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -26,7 +25,14 @@ RSDisplayRenderNode::RSDisplayRenderNode(NodeId id, const RSDisplayNodeConfig& c
     isMirroredDisplay_(config.isMirrored)
 {}
 
-RSDisplayRenderNode::~RSDisplayRenderNode() {}
+RSDisplayRenderNode::~RSDisplayRenderNode()
+{
+    if (drawingProxy_ != nullptr) {
+        RS_LOGD("Destroy drawingProxy_!!");
+        delete drawingProxy_ ;
+        drawingProxy_  = nullptr;
+    }
+}
 
 void RSDisplayRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)
 {
@@ -136,26 +142,28 @@ int32_t RSDisplayRenderNode::ReduceAvailableBuffer()
 bool RSDisplayRenderNode::CreateSurface(sptr<IBufferConsumerListener> listener)
 {
     if (consumer_ != nullptr && surface_ != nullptr) {
-        ROSEN_LOGI("RSDisplayRenderNode::CreateSurface already created, return");
+        RS_LOGI("RSDisplayRenderNode::CreateSurface already created, return");
         return true;
     }
     consumer_ = Surface::CreateSurfaceAsConsumer("DisplayNode");
     if (consumer_ == nullptr) {
-        ROSEN_LOGE("RSDisplayRenderNode::CreateSurface get consumer surface fail");
+        RS_LOGE("RSDisplayRenderNode::CreateSurface get consumer surface fail");
         return false;
     }
     SurfaceError ret = consumer_->RegisterConsumerListener(listener);
     if (ret != SURFACE_ERROR_OK) {
-        ROSEN_LOGE("RSRenderService::CreateNodeAndSurface Register Consumer Listener fail");
+        RS_LOGE("RSDisplayRenderNode::CreateSurface RegisterConsumerListener fail");
         return false;
     }
+
     auto producer = consumer_->GetProducer();
     sptr<Surface> surface = Surface::CreateSurfaceAsProducer(producer);
-    DrawingProxy* drawingProxy = new DrawingProxy();
-    drawingProxy->InitDrawContext();
+    drawingProxy_ = new DrawingProxy();
+    drawingProxy_->InitDrawContext();
     surface_ = OHOS::Rosen::RSSurfaceOhos::CreateSurface(surface);
-    surface_->SetDrawingProxy(drawingProxy);
-    ROSEN_LOGI("RSDisplayRenderNode::CreateSurface end");
+    surface_->SetDrawingProxy(drawingProxy_);
+
+    RS_LOGI("RSDisplayRenderNode::CreateSurface end");
     surfaceCreated_ = true;
     return true;
 }
