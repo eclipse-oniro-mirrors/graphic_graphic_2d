@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#include "drawing_engine_sample.h"
+#include "render_context_sample.h"
 
 int32_t main(int32_t argc, const char *argv[])
 {
-    OHOS::Rosen::DrawingEngineSample m;
+    OHOS::Rosen::RenderContextSample m;
     m.Run();
 
     return 0;
