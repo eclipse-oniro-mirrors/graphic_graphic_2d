@@ -203,7 +203,13 @@ void RSHardwareProcessor::ProcessSurface(RSSurfaceRenderNode &node)
         ReleaseNodePrevBuffer(node);
         return;
     }
-    RS_TRACE_NAME(std::string("ProcessSurfaceNode Name:") + node.GetName().c_str());
+    std::string inf;
+    char strBuffer[UINT8_MAX] = { 0 };
+    if (sprintf_s(strBuffer, UINT8_MAX, "ProcessSurfaceNode:%s XYWH[%d %d %d %d]", node.GetName().c_str(),
+        info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h) != -1) {
+        inf.append(strBuffer);
+    }
+    RS_TRACE_NAME(inf.c_str());
     std::shared_ptr<HdiLayerInfo> layer = HdiLayerInfo::CreateHdiLayerInfo();
     RS_LOGI("RsDebug RSHardwareProcessor::ProcessSurface surfaceNode id:%llu name:[%s] dst [%d %d %d %d]"\
         "SrcRect [%d %d] rawbuffer [%d %d] surfaceBuffer [%d %d] buffaddr:%p, z:%f, globalZOrder:%d, blendType = %d",
