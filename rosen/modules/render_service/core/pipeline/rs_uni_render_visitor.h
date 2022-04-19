@@ -53,11 +53,11 @@ private:
     ScreenInfo screenInfo_;
     RSDirtyRegionManager dirtyManager_;
     RSRenderNode* parent_ = nullptr;
-    bool dirtyFlag_ = false;
+    bool dirtyFlag_ { false };
     RSPaintFilterCanvas* canvas_ = nullptr;
 
-    float globalZOrder_ = 0.0f;
-    float uniZOrder_ = 0.0f;
+    float globalZOrder_ { 0.0f };
+    float uniZOrder_ { 0.0f };
     std::shared_ptr<RSProcessor> processor_;
     bool isUniRender_ { false };
     bool hasUniRender_ { false };

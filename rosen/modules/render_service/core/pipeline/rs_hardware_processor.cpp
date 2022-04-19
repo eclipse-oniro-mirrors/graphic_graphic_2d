@@ -27,6 +27,7 @@
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -266,7 +267,7 @@ void RSHardwareProcessor::ProcessSurface(RSDisplayRenderNode& node)
         .blendType = BLEND_NONE,
     };
     std::shared_ptr<HdiLayerInfo> layer = HdiLayerInfo::CreateHdiLayerInfo();
-    RS_LOGE("RSHardwareProcessor::ProcessSurface displayNode id:%llu dst [%d %d %d %d]"\
+    RS_LOGI("RSHardwareProcessor::ProcessSurface displayNode id:%llu dst [%d %d %d %d]"\
         "SrcRect [%d %d] rawbuffer [%d %d] surfaceBuffer [%d %d] buffaddr:%p, globalZOrder:%d, blendType = %d",
         node.GetId(),
         info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h, info.srcRect.w, info.srcRect.h,
@@ -354,7 +355,6 @@ void RSHardwareProcessor::Redraw(sptr<Surface>& surface, const struct PrepareCom
         .format = PIXEL_FMT_RGBA_8888,      // [PLANNING] different soc need different format
         .usage = HBM_USE_CPU_READ | HBM_USE_CPU_WRITE | HBM_USE_MEM_DMA | HBM_USE_MEM_FB,
         .timeout = 0,
-
     };
     RS_TRACE_NAME("Redraw");
     auto canvas = CreateCanvas(surface, requestConfig);
@@ -410,6 +410,9 @@ void RSHardwareProcessor::Redraw(sptr<Surface>& surface, const struct PrepareCom
 
 void RSHardwareProcessor::OnRotate()
 {
+    if (RSSystemProperties::GetUniRenderEnabledType() != UniRenderEnabledType::UNI_RENDER_DISABLED) {
+        return;
+    }
     int32_t width = static_cast<int32_t>(currScreenInfo_.width);
     int32_t height = static_cast<int32_t>(currScreenInfo_.height);
     for (auto& layer: layers_) {
