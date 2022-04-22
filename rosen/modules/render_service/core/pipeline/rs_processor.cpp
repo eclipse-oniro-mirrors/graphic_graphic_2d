@@ -100,56 +100,5 @@ void RSProcessor::SetBufferTimeStamp()
         RS_LOGE("RSProcessor::SetBufferTimeStamp buffer ExtraSet failed");
     }
 }
-
-bool RSProcessor::ConsumeAndUpdateBuffer(RSSurfaceRenderNode& node, SpecialTask& task, sptr<SurfaceBuffer>& buffer)
-{
-    sptr<SyncFence> acquireFence = SyncFence::INVALID_FENCE;
-    Rect damage = {0};
-
-    auto availableBufferCnt = node.GetAvailableBufferCount();
-    if (availableBufferCnt == 0) {
-        RS_LOGD("RSProcessor::ProcessSurface(node: %lld): no new buffer, try use old buffer.", node.GetId());
-        buffer = node.GetBuffer();
-        acquireFence = node.GetFence();
-        damage = node.GetDamageRegion();
-    } else {
-        const auto& surfaceConsumer = node.GetConsumer();
-        if (surfaceConsumer == nullptr) {
-            RS_LOGE("RSProcessor::ProcessSurface(node: %lld): surfaceConsumer is null!", node.GetId());
-            return false;
-        }
-
-        int32_t fenceFd = -1;
-        int64_t timeStamp = 0;
-        auto ret = surfaceConsumer->AcquireBuffer(buffer, fenceFd, timeStamp, damage);
-        acquireFence = new SyncFence(fenceFd);
-        if (ret != OHOS::SURFACE_ERROR_OK) {
-            RS_LOGW("RSProcessor::ProcessSurface(node: %lld): AcquireBuffer failed(ret: %d), try use old buffer.",
-                node.GetId(), ret);
-            buffer = node.GetBuffer();
-            acquireFence = node.GetFence();
-            damage = node.GetDamageRegion();
-        } else {
-            availableBufferCnt = node.ReduceAvailableBuffer();
-        }
-    }
-
-    if (buffer == nullptr) {
-        RS_LOGE("RSProcessor::ProcessSurface(node: %lld): no avaliable buffer!", node.GetId());
-        return false;
-    }
-
-    task();
-    node.SetBuffer(buffer);
-    node.SetFence(acquireFence);
-    node.SetDamageRegion(damage);
-
-    // still hava buffer(s) to consume.
-    if (availableBufferCnt > 0) {
-        RSMainThread::Instance()->RequestNextVSync();
-    }
-
-    return true;
-}
 } // namespace Rosen
 } // namespace OHOS

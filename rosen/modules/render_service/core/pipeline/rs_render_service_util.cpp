@@ -18,6 +18,7 @@
 
 #include "display_type.h"
 #include "include/core/SkRect.h"
+#include "pipeline/rs_main_thread.h"
 #include "platform/common/rs_log.h"
 #include "property/rs_properties_painter.h"
 #include "render/rs_blur_filter.h"
@@ -538,6 +539,142 @@ void RsRenderServiceUtil::ComposeSurface(std::shared_ptr<HdiLayerInfo> layer, sp
     layer->SetBlendType(info.blendType);
     layer->SetCropRect(info.srcRect);
     layers.emplace_back(layer);
+}
+
+void RsRenderServiceUtil::ComposeSurface(std::shared_ptr<HdiLayerInfo> layer, sptr<Surface> consumerSurface,
+    std::vector<LayerInfoPtr>& layers, ComposeInfo info, RSDisplayRenderNode* node)
+{
+    layer->SetSurface(consumerSurface);
+    layer->SetBuffer(info.buffer, info.fence, info.preBuffer, info.preFence);
+    layer->SetZorder(info.zOrder);
+    layer->SetAlpha(info.alpha);
+    layer->SetLayerSize(info.dstRect);
+    layer->SetLayerAdditionalInfo(node);
+    layer->SetCompositionType(CompositionType::COMPOSITION_DEVICE);
+    layer->SetVisibleRegion(1, info.visibleRect);
+    layer->SetDirtyRegion(info.srcRect);
+    layer->SetBlendType(info.blendType);
+    layer->SetCropRect(info.srcRect);
+    layers.emplace_back(layer);
+}
+
+bool RsRenderServiceUtil::ConsumeAndUpdateBuffer(RSDisplayRenderNode& node, bool toReleaseBuffer)
+{
+    sptr<SurfaceBuffer> buffer;
+    sptr<SyncFence> acquireFence = SyncFence::INVALID_FENCE;
+    Rect damage = {0};
+    const auto& surfaceConsumer = node.GetConsumer();
+
+    auto availableBufferCnt = node.GetAvailableBufferCount();
+    if (availableBufferCnt == 0) {
+        RS_LOGD("RsRenderServiceUtil::ConsumeAndUpdateBuffer(node: %lld) uniRender no new buffer, try use old buffer",
+            node.GetId());
+        buffer = node.GetBuffer();
+        acquireFence = node.GetFence();
+        damage = node.GetDamageRegion();
+    } else {
+        if (surfaceConsumer == nullptr) {
+            RS_LOGE("RsRenderServiceUtil::ConsumeAndUpdateBuffer(node: %lld) uniRender surfaceConsumer is null!",
+                node.GetId());
+            return false;
+        }
+
+        int32_t fenceFd = -1;
+        int64_t timeStamp = 0;
+        auto ret = surfaceConsumer->AcquireBuffer(buffer, fenceFd, timeStamp, damage);
+        acquireFence = new SyncFence(fenceFd);
+        if (ret != OHOS::SURFACE_ERROR_OK) {
+            RS_LOGW("RsRenderServiceUtil::ConsumeAndUpdateBuffer(node: %lld) uniRender AcquireBuffer failed(ret: %d),"\
+                "try use old buffer.", node.GetId(), ret);
+            buffer = node.GetBuffer();
+            acquireFence = node.GetFence();
+            damage = node.GetDamageRegion();
+        } else {
+            availableBufferCnt = node.ReduceAvailableBuffer();
+        }
+    }
+
+    if (buffer == nullptr) {
+        RS_LOGE("RsRenderServiceUtil::ConsumeAndUpdateBuffer(node: %lld) uniRender no available buffer!", node.GetId());
+        return false;
+    }
+
+    if (toReleaseBuffer && node.GetBuffer() != nullptr && node.GetBuffer() != buffer) {
+        SurfaceError ret = surfaceConsumer->ReleaseBuffer(node.GetBuffer(), -1);
+        if (ret != SURFACE_ERROR_OK) {
+            RS_LOGE("RsRenderServiceUtil::ConsumeAndUpdateBuffer uniRender ReleaseBuffer error:%d.", ret);
+            return false;
+        }
+    }
+    node.SetBuffer(buffer);
+    node.SetFence(acquireFence);
+    node.SetDamageRegion(damage);
+
+    // still hava buffer(s) to consume.
+    if (availableBufferCnt > 0) {
+        RSMainThread::Instance()->RequestNextVSync();
+    }
+
+    return true;
+
+}
+
+bool RsRenderServiceUtil::ConsumeAndUpdateBuffer(RSSurfaceRenderNode& node, bool toReleaseBuffer)
+{
+    sptr<SurfaceBuffer> buffer;
+    sptr<SyncFence> acquireFence = SyncFence::INVALID_FENCE;
+    Rect damage = {0};
+    const auto& surfaceConsumer = node.GetConsumer();
+
+    auto availableBufferCnt = node.GetAvailableBufferCount();
+    if (availableBufferCnt == 0) {
+        RS_LOGD("RsRenderServiceUtil::ConsumeAndUpdateBuffer(node: %lld): no new buffer, try use old buffer.", node.GetId());
+        buffer = node.GetBuffer();
+        acquireFence = node.GetFence();
+        damage = node.GetDamageRegion();
+    } else {
+        if (surfaceConsumer == nullptr) {
+            RS_LOGE("RsRenderServiceUtil::ConsumeAndUpdateBuffer(node: %lld): surfaceConsumer is null!", node.GetId());
+            return false;
+        }
+
+        int32_t fenceFd = -1;
+        int64_t timeStamp = 0;
+        auto ret = surfaceConsumer->AcquireBuffer(buffer, fenceFd, timeStamp, damage);
+        acquireFence = new SyncFence(fenceFd);
+        if (ret != OHOS::SURFACE_ERROR_OK) {
+            RS_LOGW("RsRenderServiceUtil::ConsumeAndUpdateBuffer(node: %lld): AcquireBuffer failed(ret: %d), try use old buffer.",
+                node.GetId(), ret);
+            buffer = node.GetBuffer();
+            acquireFence = node.GetFence();
+            damage = node.GetDamageRegion();
+        } else {
+            availableBufferCnt = node.ReduceAvailableBuffer();
+        }
+    }
+
+    if (buffer == nullptr) {
+        RS_LOGE("RsRenderServiceUtil::ConsumeAndUpdateBuffer(node: %lld): no available buffer!", node.GetId());
+        return false;
+    }
+
+    if (toReleaseBuffer && node.GetBuffer() != nullptr && node.GetBuffer() != buffer) {
+        SurfaceError ret = surfaceConsumer->ReleaseBuffer(node.GetBuffer(), -1);
+        if (ret != SURFACE_ERROR_OK) {
+            RS_LOGE("RsRenderServiceUtil::ConsumeAndUpdateBuffer ReleaseBuffer error:%d.", ret);
+            return false;
+        }
+    }
+    node.SetBuffer(buffer);
+    node.SetFence(acquireFence);
+    node.SetDamageRegion(damage);
+
+    // still hava buffer(s) to consume.
+    if (availableBufferCnt > 0) {
+        RSMainThread::Instance()->RequestNextVSync();
+    }
+
+    return true;
 }
 
 bool RsRenderServiceUtil::IsNeedClient(RSSurfaceRenderNode* node)
