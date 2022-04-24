@@ -93,7 +93,7 @@ void HdiFramebufferSurface::OnBufferAvailable()
     fbAcquireFence_ = new SyncFence(fbAcquireFence);
 }
 
-sptr<Surface> HdiFramebufferSurface::GetSurface()
+sptr<OHOS::Surface> HdiFramebufferSurface::GetSurface()
 {
     return producerSurface_;
 }

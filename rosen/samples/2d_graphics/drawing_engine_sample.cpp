@@ -338,7 +338,7 @@ void DrawingEngineSample::OnHotPlugEvent(std::shared_ptr<HdiOutput> &output, boo
     }
 }
 
-void DrawingEngineSample::DoPrepareCompleted(sptr<Surface> &surface, const struct PrepareCompleteParam &param)
+void DrawingEngineSample::DoPrepareCompleted(sptr<Surface> surface, const struct PrepareCompleteParam &param)
 {
     BufferRequestConfig requestConfig = {
         .width = display_w,  // need display width

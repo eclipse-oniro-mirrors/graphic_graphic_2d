@@ -64,9 +64,14 @@ void RenderContextSample::OnScreenPlug(std::shared_ptr<HdiOutput> &output, bool 
     thisPtr->OnHotPlugEvent(output, connected);
 }
 
-void RenderContextSample::OnPrepareCompleted(sptr<Surface> &surface, const struct PrepareCompleteParam &param, void* data)
+void RenderContextSample::OnPrepareCompleted(
+    sptr<Surface> &surface, const struct PrepareCompleteParam &param, void* data)
 {
     if (!param.needFlushFramebuffer) {
+        return;
+    }
+
+    if (surface == nullptr) {
         return;
     }
 
@@ -457,7 +462,7 @@ void RenderContextSample::OnHotPlugEvent(std::shared_ptr<HdiOutput> &output, boo
     }
  }
 
-void RenderContextSample::DoPrepareCompleted(sptr<Surface> &surface, const struct PrepareCompleteParam &param)
+void RenderContextSample::DoPrepareCompleted(sptr<Surface> surface, const struct PrepareCompleteParam &param)
 {
     BufferRequestConfig requestConfig = {
         .width = display_w,  // need display width

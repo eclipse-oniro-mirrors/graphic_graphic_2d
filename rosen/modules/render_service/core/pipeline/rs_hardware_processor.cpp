@@ -22,12 +22,15 @@
 #include "common/rs_vector3.h"
 #include "common/rs_vector4.h"
 #include "display_type.h"
+#include "rs_render_service.h"
 #include "rs_trace.h"
 #include "common/rs_vector4.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
+
+#include <platform/ohos/rs_surface_ohos.h>
 
 namespace OHOS {
 namespace Rosen {
@@ -61,6 +64,13 @@ void RSHardwareProcessor::Init(ScreenId id, int32_t offsetX, int32_t offsetY)
     damageRect.w = static_cast<int32_t>(currScreenInfo_.width);
     damageRect.h = static_cast<int32_t>(currScreenInfo_.height);
     output_->SetOutputDamage(1, damageRect);
+
+#ifdef RS_ENABLE_GL
+    auto mainThread = RSMainThread::Instance();
+    if (mainThread != nullptr) {
+        renderContext_ = mainThread->GetRenderContext();
+    }
+#endif // RS_ENABLE_GL
 }
 
 void RSHardwareProcessor::PostProcess()
@@ -333,7 +343,8 @@ void RSHardwareProcessor::CalculateInfoWithAnimation(
     };
 }
 
-void RSHardwareProcessor::Redraw(sptr<Surface>& surface, const struct PrepareCompleteParam& param, void* data)
+void RSHardwareProcessor::Redraw(
+    sptr<Surface>& surface, const struct PrepareCompleteParam& param, void* data)
 {
     if (!param.needFlushFramebuffer) {
         RS_LOGI("RsDebug RSHardwareProcessor::Redraw no need to flush frame buffer");
@@ -354,6 +365,9 @@ void RSHardwareProcessor::Redraw(sptr<Surface>& surface, const struct PrepareCom
         .timeout = 0,
     };
     RS_TRACE_NAME("Redraw");
+
+    // [PLANNING]: use surface to create egl surface and use new CreateCanvas()
+
     auto canvas = CreateCanvas(surface, requestConfig);
     if (canvas == nullptr) {
         RS_LOGE("RSHardwareProcessor::Redraw: canvas is null.");

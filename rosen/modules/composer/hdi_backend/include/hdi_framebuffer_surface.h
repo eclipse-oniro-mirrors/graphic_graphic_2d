@@ -26,7 +26,7 @@ namespace Rosen {
 class HdiFramebufferSurface : public IBufferConsumerListener {
 public:
     static sptr<HdiFramebufferSurface> CreateFramebufferSurface();
-    sptr<Surface> GetSurface();
+    sptr<OHOS::Surface> GetSurface();
     sptr<OHOS::SurfaceBuffer> GetFramebuffer();
     sptr<SyncFence> GetFramebufferFence();
     int32_t ReleaseFramebuffer(const sptr<SyncFence> &releaseFence);

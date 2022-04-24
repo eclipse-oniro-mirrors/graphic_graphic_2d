@@ -167,8 +167,9 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         canvas_->clear(SK_ColorTRANSPARENT);
 
         ProcessBaseRenderNode(node);
-
+        RS_TRACE_BEGIN("RSUniRender:FlushFrame");
         rsSurface->FlushFrame(surfaceFrame);
+        RS_TRACE_END();
         delete canvas_;
         canvas_ = nullptr;
 

@@ -410,7 +410,7 @@ void HelloComposer::RemoveOffScreenData(uint32_t offScreenId)
     }
 }
 
-void HelloComposer::DoPrepareCompleted(sptr<Surface> &surface, const struct PrepareCompleteParam &param)
+void HelloComposer::DoPrepareCompleted(sptr<Surface> surface, const struct PrepareCompleteParam &param)
 {
     uint32_t screenId = curOutput_->GetScreenId();
     uint32_t displayWidth = displayWidthsMap_[screenId];

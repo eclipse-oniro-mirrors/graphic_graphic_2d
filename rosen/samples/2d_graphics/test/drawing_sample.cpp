@@ -79,7 +79,7 @@ void DrawingSample::OnScreenPlug(std::shared_ptr<HdiOutput>& output, bool connec
 }
 
 void DrawingSample::OnPrepareCompleted(
-    sptr<Surface>& surface, const struct PrepareCompleteParam& param, void* data)
+    sptr<Surface> &surface, const struct PrepareCompleteParam& param, void* data)
 {
     if (!param.needFlushFramebuffer) {
         return;
@@ -254,7 +254,7 @@ void DrawingSample::OnHotPlug(std::shared_ptr<HdiOutput>& output, bool connected
     }
 }
 
-void DrawingSample::DoPrepareCompleted(sptr<Surface>& surface, const struct PrepareCompleteParam& param)
+void DrawingSample::DoPrepareCompleted(sptr<Surface> surface, const struct PrepareCompleteParam& param)
 {
     uint32_t screenId = curOutput_->GetScreenId();
     uint32_t displayWidth = displayWidthsMap_[screenId];

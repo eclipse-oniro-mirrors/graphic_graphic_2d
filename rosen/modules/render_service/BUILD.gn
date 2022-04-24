@@ -52,6 +52,7 @@ ohos_shared_library("librender_service") {
     "core",
     "//foundation/graphic/standard/rosen/include",
     "//foundation/graphic/standard/rosen/modules/composer/vsync/include",
+    "//foundation/graphic/standard/rosen/modules/render_service_base/src",
     "//foundation/graphic/standard/rosen/modules/utils",
     "//utils/native/base/include",
     "//utils/system/safwk/native/include",
