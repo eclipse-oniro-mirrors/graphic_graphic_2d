@@ -78,6 +78,7 @@ protected:
 };
 
 using OnReleaseFunc = std::function<GSError(sptr<SurfaceBuffer> &)>;
+using OnDeleteBufferFunc = std::function<void(int32_t)>;
 } // namespace OHOS
 
 #endif // INTERFACES_INNERKITS_SURFACE_SURFACE_BUFFER_H

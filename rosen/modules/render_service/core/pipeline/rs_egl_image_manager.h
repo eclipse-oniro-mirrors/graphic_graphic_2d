@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <unordered_map>
 
 #include <surface.h>
@@ -26,6 +27,7 @@
 #include "GLES/gl.h"
 #include "GLES/glext.h"
 #include "GLES3/gl32.h"
+#include "sync_fence.h"
 #include "pipeline/rs_context.h"
 
 namespace OHOS {
@@ -43,9 +45,6 @@ public:
         EGLClientBuffer eglClientbuffer);
     ~ImageCacheSeq() noexcept;
 
-    // wait release fence and generate a new fence.
-    bool WaitReleaseFence();
-
     GLuint TextureId() const
     {
         return textureId_;
@@ -59,7 +58,6 @@ private:
     EGLImageKHR eglImage_ = EGL_NO_IMAGE_KHR;
     EGLClientBuffer eglClientbuffer_ = nullptr;
     GLuint textureId_ = 0;
-    EGLSyncKHR eglSync_ = EGL_NO_SYNC_KHR;
 };
 
 class RSEglImageManager {
@@ -67,12 +65,17 @@ public:
     explicit RSEglImageManager(EGLDisplay display);
     ~RSEglImageManager() noexcept = default;
 
-    GLuint MapEglImageFromSurfaceBuffer(sptr<OHOS::SurfaceBuffer>& buffer);
+    GLuint MapEglImageFromSurfaceBuffer(const sptr<OHOS::SurfaceBuffer>& buffer,
+        const sptr<SyncFence>& acquireFence);
     void UnMapEglImageFromSurfaceBuffer(int32_t seqNum);
+    void ShrinkCachesIfNeeded();
 private:
+    void WaitAcquireFence(const sptr<SyncFence>& acquireFence);
     GLuint CreateImageCacheFromBuffer(const sptr<OHOS::SurfaceBuffer>& buffer);
 
     mutable std::mutex opMutex_;
+    static constexpr size_t MAX_CACHE_SIZE = 64;
+    std::queue<int32_t> cacheQueue_; // fifo, size restricted by MAX_CACHE_SIZE
     std::unordered_map<int32_t, std::unique_ptr<ImageCacheSeq>> imageCacheSeqs_; // guarded by opMutex_.
     EGLDisplay eglDisplay_ = EGL_NO_DISPLAY;
 };

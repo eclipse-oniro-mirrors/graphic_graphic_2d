@@ -353,6 +353,13 @@ void RSHardwareProcessor::Redraw(
                 [this, &node, &center](RSPaintFilterCanvas& canvas, BufferDrawParam& params) -> void {
                     RsRenderServiceUtil::DealAnimation(canvas, node, params, center);
             });
+            auto consumerSurface = node.GetConsumer();
+            GSError error = consumerSurface->RegisterDeleteBufferListener([eglImageManager = eglImageManager_]
+                (int32_t bufferId) {eglImageManager->UnMapEglImageFromSurfaceBuffer(bufferId);
+            });
+            if (error != GSERROR_OK) {
+                RS_LOGE("RSHardwareProcessor::Redraw: fail to register UnMapEglImage callback.");
+            }
         } else {
             RsRenderServiceUtil::DrawBuffer(*canvas, params, [this, &node, &center](RSPaintFilterCanvas& canvas,
                 BufferDrawParam& params) -> void {
@@ -367,6 +374,9 @@ void RSHardwareProcessor::Redraw(
 #endif // RS_ENABLE_GL
     }
     rsSurface_->FlushFrame(currFrame_);
+#ifdef RS_ENABLE_GL
+    eglImageManager_->ShrinkCachesIfNeeded();
+#endif // RS_ENABLE_GL
 }
 
 void RSHardwareProcessor::OnRotate()

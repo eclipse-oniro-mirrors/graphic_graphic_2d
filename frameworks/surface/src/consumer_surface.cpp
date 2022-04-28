@@ -197,6 +197,11 @@ GSError ConsumerSurface::RegisterReleaseListener(OnReleaseFunc func)
     return consumer_->RegisterReleaseListener(func);
 }
 
+GSError ConsumerSurface::RegisterDeleteBufferListener(OnDeleteBufferFunc func)
+{
+    return consumer_->RegisterDeleteBufferListener(func);
+}
+
 GSError ConsumerSurface::UnregisterConsumerListener()
 {
     return consumer_->UnregisterConsumerListener();

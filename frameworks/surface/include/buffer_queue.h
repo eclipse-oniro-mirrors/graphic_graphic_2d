@@ -84,6 +84,7 @@ public:
     GSError RegisterConsumerListener(sptr<IBufferConsumerListener>& listener);
     GSError RegisterConsumerListener(IBufferConsumerListenerClazz *listener);
     GSError RegisterReleaseListener(OnReleaseFunc func);
+    GSError RegisterDeleteBufferListener(OnDeleteBufferFunc func);
     GSError UnregisterConsumerListener();
 
     GSError SetDefaultWidthAndHeight(int32_t width, int32_t height);
@@ -135,6 +136,7 @@ private:
     const uint64_t uniqueId_;
     sptr<BufferManager> bufferManager_ = nullptr;
     OnReleaseFunc onBufferRelease = nullptr;
+    OnDeleteBufferFunc onBufferDelete_ = nullptr;
     bool isShared_ = false;
     std::condition_variable waitReqCon_;
 };

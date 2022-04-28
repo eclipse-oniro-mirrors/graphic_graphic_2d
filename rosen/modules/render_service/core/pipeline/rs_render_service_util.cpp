@@ -769,6 +769,8 @@ BufferDrawParam RsRenderServiceUtil::CreateBufferDrawParam(RSSurfaceRenderNode& 
 
     params.buffer = buffer;
     params.matrix = GetCanvasTransform(node, canvasMatrix, rotation, dstRect);
+    params.acquireFence = node.GetFence();
+
     params.srcRect = SkRect::MakeXYWH(0, 0, buffer->GetSurfaceBufferWidth(), buffer->GetSurfaceBufferHeight());
     const auto surfaceTransform = surface->GetTransform();
     if (surfaceTransform == TransformType::ROTATE_90 || surfaceTransform == TransformType::ROTATE_270) {
@@ -848,46 +850,23 @@ void RsRenderServiceUtil::DrawImage(std::shared_ptr<RSEglImageManager> eglImageM
         return;
     }
     sk_sp<SkImage> image;
-    auto eglTextureId = eglImageManager->MapEglImageFromSurfaceBuffer(buffer);
+    auto eglTextureId = eglImageManager->MapEglImageFromSurfaceBuffer(buffer, bufferDrawParam.acquireFence);
     if (eglTextureId == 0) {
         RS_LOGE("RsRenderServiceUtil::MapEglImageFromSurfaceBuffer return invalid EGL texture ID");
         return;
     }
-    bool bitmapCreated = false;
-    SkBitmap bitmap;
-    ColorGamut srcGamut = static_cast<ColorGamut>(buffer->GetSurfaceBufferColorGamut());
-    ColorGamut dstGamut = bufferDrawParam.targetColorGamut;
-    std::vector<uint8_t> newTmpBuffer;
-    if (buffer->GetFormat() == PIXEL_FMT_YCRCB_420_SP || buffer->GetFormat() == PIXEL_FMT_YCBCR_420_SP) {
-        bitmapCreated = CreateYuvToRGBABitMap(buffer, newTmpBuffer, bitmap);
-        if (!bitmapCreated) {
-            RS_LOGE("RsRenderServiceUtil::DrawImage: create bitmap failed.");
-            return;
-        }
-    } else if (srcGamut != dstGamut) {
-        bitmapCreated = CreateNewColorGamutBitmap(buffer, newTmpBuffer, bitmap, srcGamut, dstGamut);
-        if (!bitmapCreated) {
-            RS_LOGE("RsRenderServiceUtil::DrawImage: create bitmap failed.");
-            return;
-        }
-    } else {
-        GrGLTextureInfo grExternalTextureInfo = {GL_TEXTURE_EXTERNAL_OES, eglTextureId, GL_RGBA8};
-        GrBackendTexture backendTexture(bufferDrawParam.srcRect.width(), bufferDrawParam.srcRect.height(),
-            GrMipMapped::kNo, grExternalTextureInfo);
-        image = SkImage::MakeFromTexture(grContext, backendTexture,
-            kTopLeft_GrSurfaceOrigin, kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
-    }
+    GrGLTextureInfo grExternalTextureInfo = {GL_TEXTURE_EXTERNAL_OES, eglTextureId, GL_RGBA8};
+    GrBackendTexture backendTexture(bufferDrawParam.srcRect.width(), bufferDrawParam.srcRect.height(),
+        GrMipMapped::kNo, grExternalTextureInfo);
+    image = SkImage::MakeFromTexture(grContext, backendTexture,
+        kTopLeft_GrSurfaceOrigin, kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
     canvas.save();
     canvas.clipRect(bufferDrawParam.clipRect);
     canvas.setMatrix(bufferDrawParam.matrix);
     if (process) {
         process(canvas, bufferDrawParam);
     }
-    if (bitmapCreated) {
-        canvas.drawBitmapRect(bitmap, bufferDrawParam.srcRect, bufferDrawParam.dstRect, &(bufferDrawParam.paint));
-    } else {
-        canvas.drawImageRect(image, bufferDrawParam.srcRect, bufferDrawParam.dstRect, &(bufferDrawParam.paint));
-    }
+    canvas.drawImageRect(image, bufferDrawParam.srcRect, bufferDrawParam.dstRect, &(bufferDrawParam.paint));
     canvas.restore();
 }
 #endif // RS_ENABLE_GL

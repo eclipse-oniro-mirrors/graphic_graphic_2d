@@ -39,13 +39,13 @@ namespace OHOS {
 namespace Rosen {
 struct BufferDrawParam {
     sptr<OHOS::SurfaceBuffer> buffer;
+    sptr<SyncFence> acquireFence = SyncFence::INVALID_FENCE;
     SkMatrix matrix;
     SkRect srcRect;
     SkRect dstRect;
     SkRect clipRect;
     SkPaint paint;
     ColorGamut targetColorGamut = ColorGamut::COLOR_GAMUT_SRGB;
-    uint32_t textureId = 0; // EGL texture ID
 };
 
 struct ComposeInfo {
