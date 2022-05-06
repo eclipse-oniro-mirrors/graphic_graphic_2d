@@ -272,6 +272,11 @@ GSError ProducerSurface::RegisterReleaseListener(OnReleaseFunc func)
     return producer_->RegisterReleaseListener(func);
 }
 
+GSError ProducerSurface::RegisterDeleteBufferListener(OnDeleteBufferFunc func)
+{
+    return GSERROR_NOT_SUPPORT;
+}
+
 bool ProducerSurface::IsRemote()
 {
     return producer_->AsObject()->IsProxyObject();

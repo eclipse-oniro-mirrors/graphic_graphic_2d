@@ -65,7 +65,7 @@ BufferQueue::BufferQueue(const std::string &name, bool isShared)
 BufferQueue::~BufferQueue()
 {
     BLOGNI("dtor, Queue id: %{public}" PRIu64 "", uniqueId_);
-    // we don't have to do anything
+    CleanCache();
 }
 
 GSError BufferQueue::Init()
@@ -458,7 +458,7 @@ GSError BufferQueue::ReleaseBuffer(sptr<SurfaceBuffer> &buffer, const sptr<SyncF
     {
         std::lock_guard<std::mutex> lockGuard(mutex_);
         if (bufferQueueCache_.find(sequence) == bufferQueueCache_.end()) {
-            BLOGN_FAILURE_ID(sequence, "not find in cache");
+            BLOGN_FAILURE_ID(sequence, "not find in cache, Queue id: %{public}" PRIu64 "", uniqueId_);
             return GSERROR_NO_ENTRY;
         }
 
@@ -534,6 +534,9 @@ void BufferQueue::DeleteBufferInCache(int32_t sequence)
 {
     auto it = bufferQueueCache_.find(sequence);
     if (it != bufferQueueCache_.end()) {
+        if (onBufferDelete_ != nullptr) {
+            onBufferDelete_(sequence);
+        }
         bufferQueueCache_.erase(it);
         deletingList_.push_back(sequence);
     }
@@ -654,7 +657,9 @@ GSError BufferQueue::DetachBuffer(sptr<SurfaceBuffer> &buffer)
     } else {
         BLOGN_FAILURE_ID_RET(sequence, GSERROR_NO_ENTRY);
     }
-
+    if (onBufferDelete_ != nullptr) {
+        onBufferDelete_(sequence);
+    }
     bufferQueueCache_.erase(sequence);
     return GSERROR_OK;
 }
@@ -715,6 +720,16 @@ GSError BufferQueue::RegisterReleaseListener(OnReleaseFunc func)
     return GSERROR_OK;
 }
 
+GSError BufferQueue::RegisterDeleteBufferListener(OnDeleteBufferFunc func)
+{
+    std::lock_guard<std::mutex> lockGuard(mutex_);
+    if (onBufferDelete_ != nullptr) {
+        return GSERROR_OK;
+    }
+    onBufferDelete_ = func;
+    return GSERROR_OK;
+}
+
 GSError BufferQueue::SetDefaultWidthAndHeight(int32_t width, int32_t height)
 {
     if (width <= 0) {
@@ -756,6 +771,11 @@ uint32_t BufferQueue::GetDefaultUsage()
 GSError BufferQueue::CleanCache()
 {
     std::lock_guard<std::mutex> lockGuard(mutex_);
+    for (auto &[id, _] : bufferQueueCache_) {
+        if (onBufferDelete_ != nullptr) {
+            onBufferDelete_(id);
+        }
+    }
     bufferQueueCache_.clear();
     freeList_.clear();
     dirtyList_.clear();
