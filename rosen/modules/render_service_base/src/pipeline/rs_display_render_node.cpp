@@ -80,21 +80,6 @@ void RSDisplayRenderNode::SetMirrorSource(SharedPtr node)
     mirrorSource_ = node;
 }
 
-void RSDisplayRenderNode::SetDamageRegion(const Rect& damage)
-{
-    damageRect_ = damage;
-}
-
-void RSDisplayRenderNode::SetGlobalZOrder(float globalZOrder)
-{
-    globalZOrder_ = globalZOrder;
-}
-
-float RSDisplayRenderNode::GetGlobalZOrder() const
-{
-    return globalZOrder_;
-}
-
 bool RSDisplayRenderNode::IsMirrorDisplay() const
 {
     return isMirroredDisplay_;
@@ -108,37 +93,6 @@ void RSDisplayRenderNode::SetSecurityDisplay(bool isSecurityDisplay)
 bool RSDisplayRenderNode::GetSecurityDisplay() const
 {
     return isSecurityDisplay_;
-}
-
-void RSDisplayRenderNode::SetConsumer(const sptr<Surface>& consumer)
-{
-    consumer_ = consumer;
-}
-
-void RSDisplayRenderNode::SetBuffer(const sptr<SurfaceBuffer>& buffer)
-{
-    if (buffer_ != nullptr) {
-        preBuffer_ = buffer_;
-        buffer_ = buffer;
-    } else {
-        buffer_ = buffer;
-    }
-}
-
-void RSDisplayRenderNode::SetFence(sptr<SyncFence> fence)
-{
-    preFence_ = fence_;
-    fence_ = fence;
-}
-
-void RSDisplayRenderNode::IncreaseAvailableBuffer()
-{
-    bufferAvailableCount_++;
-}
-
-int32_t RSDisplayRenderNode::ReduceAvailableBuffer()
-{
-    return --bufferAvailableCount_;
 }
 
 bool RSDisplayRenderNode::CreateSurface(sptr<IBufferConsumerListener> listener)
@@ -157,7 +111,7 @@ bool RSDisplayRenderNode::CreateSurface(sptr<IBufferConsumerListener> listener)
         RS_LOGE("RSDisplayRenderNode::CreateSurface RegisterConsumerListener fail");
         return false;
     }
-
+    consumerListener_ = listener;
     auto producer = consumer_->GetProducer();
     sptr<Surface> surface = Surface::CreateSurfaceAsProducer(producer);
 

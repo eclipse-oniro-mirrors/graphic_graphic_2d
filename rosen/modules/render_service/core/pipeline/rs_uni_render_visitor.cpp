@@ -174,12 +174,13 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         canvas_ = nullptr;
 
         node.SetGlobalZOrder(uniZOrder_);
-        processor_->ProcessSurface(node);
     } else {
         RsRenderServiceUtil::ConsumeAndUpdateBuffer(node, true);
         ProcessBaseRenderNode(node);
     }
-    processor_->PostProcess();
+    if (!hasUniRender_) {
+        processor_->PostProcess();
+    }
     RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode end");
 }
 

@@ -152,10 +152,7 @@ void RSHardwareProcessor::ProcessSurface(RSSurfaceRenderNode &node)
     RS_LOGI("RsDebug RSHardwareProcessor::ProcessSurface start node id:%llu available buffer:%d name:[%s]"\
         "[%d %d %d %d]", node.GetId(), node.GetAvailableBufferCount(), node.GetName().c_str(),
         node.GetDstRect().left_, node.GetDstRect().top_, node.GetDstRect().width_, node.GetDstRect().height_);
-    OHOS::sptr<SurfaceBuffer> cbuffer;
-    RSProcessor::SpecialTask task = [] () -> void {};
-    bool ret = ConsumeAndUpdateBuffer(node, task, cbuffer);
-    if (!ret) {
+    if (!RsRenderServiceUtil::ConsumeAndUpdateBuffer(node)) {
         RS_LOGI("RsDebug RSHardwareProcessor::ProcessSurface consume buffer fail");
         return;
     }

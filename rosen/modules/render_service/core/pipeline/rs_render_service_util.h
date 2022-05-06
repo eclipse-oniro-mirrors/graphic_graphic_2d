@@ -66,9 +66,7 @@ class RsRenderServiceUtil {
 public:
     using CanvasPostProcess = std::function<void(RSPaintFilterCanvas&, BufferDrawParam&)>;
     static void ComposeSurface(std::shared_ptr<HdiLayerInfo> layer, sptr<Surface> consumerSurface,
-        std::vector<LayerInfoPtr>& layers, ComposeInfo info, RSSurfaceRenderNode* node = nullptr);
-    static void ComposeSurface(std::shared_ptr<HdiLayerInfo> layer, sptr<Surface> consumerSurface,
-        std::vector<LayerInfoPtr>& layers, ComposeInfo info, RSDisplayRenderNode* node);
+        std::vector<LayerInfoPtr>& layers, ComposeInfo info, RSBaseRenderNode* node = nullptr);
     static void DrawBuffer(RSPaintFilterCanvas& canvas, BufferDrawParam& bufferDrawParam,
         CanvasPostProcess process = nullptr);
 
@@ -76,6 +74,7 @@ public:
     static void DrawImage(std::shared_ptr<RSEglImageManager> eglImageManager, GrContext* grContext,
         RSPaintFilterCanvas& canvas, BufferDrawParam& bufferDrawParam, CanvasPostProcess process);
 #endif // RS_ENABLE_GL
+
     static BufferDrawParam CreateBufferDrawParam(RSSurfaceRenderNode& node, SkMatrix canvasMatrix = SkMatrix(),
         ScreenRotation rotation = ScreenRotation::ROTATION_0);
     static void DealAnimation(RSPaintFilterCanvas& canvas, RSSurfaceRenderNode& node, BufferDrawParam& params,
@@ -84,8 +83,8 @@ public:
     static bool CreateYuvToRGBABitMap(sptr<OHOS::SurfaceBuffer> buffer, std::vector<uint8_t>& newBuffer,
         SkBitmap& bitmap);
 
-    static bool ConsumeAndUpdateBuffer(RSDisplayRenderNode& node, bool toReleaseBuffer = false);
-    static bool ConsumeAndUpdateBuffer(RSSurfaceRenderNode& node, bool toReleaseBuffer = false);
+    static void DropFrameProcess(RSSurfaceHandler& node);
+    static bool ConsumeAndUpdateBuffer(RSSurfaceHandler& node, bool toReleaseBuffer = false);
 
 private:
     static SkMatrix GetCanvasTransform(const RSSurfaceRenderNode& node, const SkMatrix& canvasMatrix,
