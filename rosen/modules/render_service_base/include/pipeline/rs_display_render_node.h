@@ -130,7 +130,6 @@ private:
     std::shared_ptr<RSSurface> surface_;
     bool surfaceCreated_ { false };
     sptr<IBufferConsumerListener> consumerListener_;
-    RenderContext* renderContext_ = nullptr;
 };
 } // namespace Rosen
 } // namespace OHOS

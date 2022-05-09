@@ -345,8 +345,9 @@ void RSHardwareProcessor::Redraw(
         .usage = HBM_USE_CPU_READ | HBM_USE_CPU_WRITE | HBM_USE_MEM_DMA | HBM_USE_MEM_FB,
         .timeout = 0,
     };
+    bool isUni = RSSystemProperties::GetUniRenderEnabledType() != UniRenderEnabledType::UNI_RENDER_DISABLED;
     RS_TRACE_NAME("Redraw");
-    bool ifUseGPU = IfUseGPUClient(param);
+    bool ifUseGPU = !isUni && IfUseGPUClient(param);
     RS_LOGE("RSHardwareProcessor::Redraw if use GPU client: %d!", ifUseGPU);
 #ifdef RS_ENABLE_GL
     if (ifUseGPU) {
@@ -367,6 +368,9 @@ void RSHardwareProcessor::Redraw(
     }
     std::unique_ptr<RSPaintFilterCanvas> canvas = std::make_unique<RSPaintFilterCanvas>(skCanvas);
     for (auto it = param.layers.begin(); it != param.layers.end(); ++it) {
+        if (isUni) {
+            break;
+        }
         LayerInfoPtr layerInfo = *it;
         if (layerInfo == nullptr) {
             continue;

@@ -47,7 +47,7 @@ RSNode::~RSNode()
 
 bool RSNode::NeedForcedSendToRemote() const
 {
-    return !IsRenderServiceNode();
+    return !IsRenderServiceNode() && isUni_;
 }
 
 void RSNode::OpenImplicitAnimation(const RSAnimationTimingProtocol& timingProtocol,

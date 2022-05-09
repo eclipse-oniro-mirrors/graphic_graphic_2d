@@ -27,14 +27,7 @@ RSDisplayRenderNode::RSDisplayRenderNode(NodeId id, const RSDisplayNodeConfig& c
     isMirroredDisplay_(config.isMirrored)
 {}
 
-RSDisplayRenderNode::~RSDisplayRenderNode()
-{
-    if (renderContext_ != nullptr) {
-        RS_LOGD("Destroy renderContext_!!");
-        delete renderContext_ ;
-        renderContext_  = nullptr;
-    }
-}
+RSDisplayRenderNode::~RSDisplayRenderNode() {}
 
 void RSDisplayRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)
 {
@@ -118,10 +111,6 @@ bool RSDisplayRenderNode::CreateSurface(sptr<IBufferConsumerListener> listener)
 #ifdef ACE_ENABLE_GL
     // GPU render
     surface_ = std::make_shared<RSSurfaceOhosGl>(surface);
-    RS_LOGD("RSDisplayRenderNode::CreateSurface InitializeEglContext");
-    renderContext_ = new RenderContext();
-    renderContext_->InitializeEglContext();
-    surface_->SetRenderContext(renderContext_);
 #else
     // CPU render
     surface_ = std::make_shared<RSSurfaceOhosRaster>(surface);
