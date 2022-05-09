@@ -207,6 +207,11 @@ void BootAnimation::OnVsync()
 void BootAnimation::CheckExitAnimation()
 {
     LOGI("CheckExitAnimation enter");
+    if (!setBootEvent_) {
+        LOGI("CheckExitAnimation set bootevent parameter");
+        system::SetParameter("bootevent.bootanimation.started", "true");
+        setBootEvent_ = true;
+    }
     std::string windowInit = system::GetParameter("persist.window.boot.inited", "0");
     if (windowInit == "1") {
         PostTask(std::bind(&AppExecFwk::EventRunner::Stop, runner_));
