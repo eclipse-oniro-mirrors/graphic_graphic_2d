@@ -32,46 +32,20 @@ void RSUniRenderListener::OnBufferAvailable()
         RS_LOGE("RSUniRenderListener::OnBufferAvailable node is nullptr");
         return;
     }
-    RS_LOGI("RSUniRenderListener::OnBufferAvailable node id:%llu", node->GetId());
+    RS_LOGD("RSUniRenderListener::OnBufferAvailable node id:%llu", node->GetId());
+    node->IncreaseAvailableBuffer();
 
-    if (!node->IsOnTheTree()) {
-        RSMainThread::Instance()->PostTask([node]() {
-            RS_LOGI("RSUniRenderListener::OnBufferAvailable node id:%llu: is not on the tree",
-                node->GetId());
-            auto& surfaceConsumer = node->GetConsumer();
-            if (surfaceConsumer == nullptr) {
-                RS_LOGE("RSUniRenderListener::OnBufferAvailable: consumer is null!");
-                return;
-            }
-            sptr<SurfaceBuffer> buffer;
-            int32_t fence = -1;
-            int64_t timestamp = 0;
-            Rect damage;
-            auto ret = surfaceConsumer->AcquireBuffer(buffer, fence, timestamp, damage);
-            if (buffer == nullptr || ret != SURFACE_ERROR_OK) {
-                RS_LOGE("RSUniRenderListener::OnBufferAvailable: AcquireBuffer failed!");
-                return;
-            }
-
-            if (node->GetBuffer() != nullptr && node->GetBuffer() != buffer) {
-                (void)surfaceConsumer->ReleaseBuffer(node->GetBuffer(), -1);
-            }
-            node->SetBuffer(buffer);
-            sptr<SyncFence> acquireFence = new SyncFence(fence);
-            node->SetFence(acquireFence);
-        });
-    } else {
-        node->IncreaseAvailableBuffer();
-        std::shared_ptr<RSProcessor> processor;
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            processor = processor_;
-        }
-        if (processor != nullptr) {
-            processor_->ProcessSurface(*node);
-            processor_->PostProcess();
-        }
+    std::shared_ptr<RSProcessor> processor;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        processor = processor_;
     }
+    RSMainThread::Instance()->PostTask([node, processor]() {
+        if (processor != nullptr) {
+            processor->ProcessSurface(*node);
+            processor->PostProcess();
+        }
+    });
 }
 
 void RSUniRenderListener::UpdateProcessor(std::shared_ptr<RSProcessor> processor)

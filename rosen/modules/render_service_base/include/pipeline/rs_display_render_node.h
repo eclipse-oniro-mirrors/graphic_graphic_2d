@@ -21,12 +21,13 @@
 
 #include "platform/drawing/rs_surface.h"
 #include "pipeline/rs_base_render_node.h"
+#include "pipeline/rs_surface_handler.h"
 #include "render_context/render_context.h"
 #include "sync_fence.h"
 
 namespace OHOS {
 namespace Rosen {
-class RSDisplayRenderNode : public RSBaseRenderNode {
+class RSDisplayRenderNode : public RSBaseRenderNode, public RSSurfaceHandler {
 public:
     enum CompositeType {
         COMPATIBLE_COMPOSITE = 0,
@@ -84,16 +85,6 @@ public:
     void SetSecurityDisplay(bool isSecurityDisplay);
     bool GetSecurityDisplay() const;
 
-    bool CreateSurface(sptr<IBufferConsumerListener> listener);
-    void SetDamageRegion(const Rect& damage);
-    void SetGlobalZOrder(float globalZOrder);
-    float GetGlobalZOrder() const;
-    void SetConsumer(const sptr<Surface>& consumer);
-    void SetBuffer(const sptr<SurfaceBuffer>& buffer);
-    void SetFence(sptr<SyncFence> fence);
-    void IncreaseAvailableBuffer();
-    int32_t ReduceAvailableBuffer();
-
     WeakPtr GetMirrorSource() const
     {
         return mirrorSource_;
@@ -104,44 +95,16 @@ public:
         return false;
     }
 
-    const sptr<Surface>& GetConsumer() const
+    NodeId GetId() const override
     {
-        return consumer_;
+        return RSBaseRenderNode::GetId();
     }
 
-    sptr<SurfaceBuffer>& GetBuffer()
-    {
-        return buffer_;
-    }
-
-    sptr<SyncFence> GetFence() const
-    {
-        return fence_;
-    }
-
-    sptr<SurfaceBuffer>& GetPreBuffer()
-    {
-        return preBuffer_;
-    }
-
-    sptr<SyncFence> GetPreFence() const
-    {
-        return preFence_;
-    }
-
-    int32_t GetAvailableBufferCount() const
-    {
-        return bufferAvailableCount_;
-    }
+    bool CreateSurface(sptr<IBufferConsumerListener> listener);
 
     std::shared_ptr<RSSurface> GetRSSurface() const
     {
         return surface_;
-    }
-
-    const Rect& GetDamageRegion() const
-    {
-        return damageRect_;
     }
 
     sptr<IBufferConsumerListener> GetConsumerListener() const
@@ -164,18 +127,9 @@ private:
     bool isSecurityDisplay_ = false;
     WeakPtr mirrorSource_;
 
-    Rect damageRect_;
-    float globalZOrder_ = 0.0f;
     std::shared_ptr<RSSurface> surface_;
-    sptr<Surface> consumer_;
-    std::atomic<int> bufferAvailableCount_ = 0;
-    sptr<SurfaceBuffer> buffer_;
-    sptr<SurfaceBuffer> preBuffer_;
-    sptr<SyncFence> fence_;
-    sptr<SyncFence> preFence_;
     bool surfaceCreated_ { false };
     sptr<IBufferConsumerListener> consumerListener_;
-    RenderContext* renderContext_ = nullptr;
 };
 } // namespace Rosen
 } // namespace OHOS

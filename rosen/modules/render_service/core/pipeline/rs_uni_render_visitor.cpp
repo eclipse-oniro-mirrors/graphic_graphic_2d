@@ -18,6 +18,7 @@
 #include "common/rs_obj_abs_geometry.h"
 #include "display_type.h"
 #include "pipeline/rs_display_render_node.h"
+#include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_processor_factory.h"
 #include "pipeline/rs_render_service_util.h"
 #include "pipeline/rs_root_render_node.h"
@@ -148,6 +149,10 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode CreateSurface failed");
                 return;
             }
+#ifdef ACE_ENABLE_GL
+            RS_LOGI("RSUniRenderVisitor::ProcessDisplayRenderNode SetRenderContext");
+            node.GetRSSurface()->SetRenderContext(RSMainThread::Instance()->GetRenderContext().get());
+#endif
         }
         auto consumerListener = static_cast<RSUniRenderListener*>(node.GetConsumerListener().GetRefPtr());
         if (consumerListener != nullptr) {
@@ -174,12 +179,13 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         canvas_ = nullptr;
 
         node.SetGlobalZOrder(uniZOrder_);
-        processor_->ProcessSurface(node);
     } else {
         RsRenderServiceUtil::ConsumeAndUpdateBuffer(node, true);
         ProcessBaseRenderNode(node);
     }
-    processor_->PostProcess();
+    if (!hasUniRender_) {
+        processor_->PostProcess();
+    }
     RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode end");
 }
 

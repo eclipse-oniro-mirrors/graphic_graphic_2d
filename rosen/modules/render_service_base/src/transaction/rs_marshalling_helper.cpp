@@ -14,13 +14,13 @@
  */
 
 #include "transaction/rs_marshalling_helper.h"
-
 #include <sys/mman.h>
 #include <unistd.h>
 #include "ashmem.h"
 #include "securec.h"
 
 #include <message_parcel.h>
+#include "src/image/SkImage_Base.h"
 #include "animation/rs_render_curve_animation.h"
 #include "animation/rs_render_keyframe_animation.h"
 #include "animation/rs_render_path_animation.h"
@@ -172,26 +172,103 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SkPaint& val)
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const sk_sp<SkImage>& val)
 {
     if (!val) {
-        ROSEN_LOGE("unirender: RSMarshallingHelper::Marshalling SkImage is nullptr");
+        ROSEN_LOGE("RSMarshallingHelper::Marshalling SkImage is nullptr");
         return false;
     }
-    SkBinaryWriteBuffer writer;
-    writer.writeImage(val.get());
-    size_t length = writer.bytesWritten();
-    sk_sp<SkData> data = SkData::MakeUninitialized(length);
-    writer.writeToMemory(data->writable_data());
-    return Marshalling(parcel, data);
+
+    if (val->isLazyGenerated()) {
+        ROSEN_LOGD("RSMarshallingHelper::Marshalling SkImage isLazyGenerated");
+        parcel.WriteUint32(1);
+        SkBinaryWriteBuffer writer;
+        writer.writeImage(val.get());
+        size_t length = writer.bytesWritten();
+        sk_sp<SkData> data = SkData::MakeUninitialized(length);
+        writer.writeToMemory(data->writable_data());
+        return Marshalling(parcel, data);
+    } else {
+        parcel.WriteUint32(0);
+        SkBitmap bitmap;
+        if (!as_IB(val.get())->getROPixels(&bitmap)) {
+            ROSEN_LOGE("RSMarshallingHelper::Marshalling SkImage getROPixels failed");
+            return false;
+        }
+        SkPixmap pixmap;
+        if (!bitmap.peekPixels(&pixmap)) {
+            ROSEN_LOGE("RSMarshallingHelper::Marshalling SkImage peekPixels failed");
+            return false;
+        }
+        size_t rb = pixmap.rowBytes();
+        int width = pixmap.width();
+        int height = pixmap.height();
+        const void* addr = pixmap.addr();
+        size_t size = rb * height;
+
+        parcel.WriteUint32(size);
+        if (!WriteToParcel(parcel, addr, size)) {
+            ROSEN_LOGE("RSMarshallingHelper::Marshalling SkImage WriteToParcel failed");
+            return false;
+        }
+
+        parcel.WriteUint32(rb);
+        parcel.WriteInt32(width);
+        parcel.WriteInt32(height);
+
+        SkColorType colorType = pixmap.colorType();
+        SkAlphaType alphaType = pixmap.alphaType();
+        parcel.WriteUint32(colorType);
+        parcel.WriteUint32(alphaType);
+
+        auto colorSpace = pixmap.colorSpace();
+        auto data = colorSpace->serialize();
+        parcel.WriteUint32(data->size());
+        if (!WriteToParcel(parcel, data->data(), data->size())) {
+            ROSEN_LOGE("RSMarshallingHelper::Marshalling SkImage WriteToParcel colorSpace failed");
+            return false;
+        }
+        return true;
+    }
 }
+
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkImage>& val)
 {
     sk_sp<SkData> data;
-    if (!Unmarshalling(parcel, data)) {
-        ROSEN_LOGE("unirender: failed RSMarshallingHelper::Unmarshalling SkImage");
-        return false;
+    if (parcel.ReadUint32() == 1) {
+        ROSEN_LOGD("RSMarshallingHelper::Unmarshalling lazy");
+        if (!Unmarshalling(parcel, data)) {
+            ROSEN_LOGE("failed RSMarshallingHelper::Unmarshalling SkImage");
+            return false;
+        }
+        SkReadBuffer reader(data->data(), data->size());
+        val = reader.readImage();
+        return val != nullptr;
+    } else {
+        size_t pixmapSize = parcel.ReadUint32();
+        const void* addr = RSMarshallingHelper::ReadFromParcel(parcel, pixmapSize);
+        if (addr == nullptr) {
+            ROSEN_LOGE("failed RSMarshallingHelper::Unmarshalling SkData addr");
+            return false;
+        }
+
+        size_t rb = parcel.ReadUint32();
+        int width = parcel.ReadInt32();
+        int height = parcel.ReadInt32();
+
+        SkColorType colorType = static_cast<SkColorType>(parcel.ReadUint32());
+        SkAlphaType alphaType = static_cast<SkAlphaType>(parcel.ReadUint32());
+
+        size_t size = parcel.ReadUint32();
+        const void* data = RSMarshallingHelper::ReadFromParcel(parcel, size);
+        if (data == nullptr) {
+            ROSEN_LOGE("failed RSMarshallingHelper::Unmarshalling SkData data");
+            return false;
+        }
+        auto colorSpace = SkColorSpace::Deserialize(data, size);
+
+        SkImageInfo imageInfo = SkImageInfo::Make(width, height, colorType, alphaType, colorSpace);
+        auto skData = SkData::MakeWithoutCopy(addr, pixmapSize);
+        val = SkImage::MakeRasterData(imageInfo, skData, rb);
+        return val != nullptr;
     }
-    SkReadBuffer reader(data->data(), data->size());
-    val = reader.readImage();
-    return val != nullptr;
 }
 
 // SkPicture
