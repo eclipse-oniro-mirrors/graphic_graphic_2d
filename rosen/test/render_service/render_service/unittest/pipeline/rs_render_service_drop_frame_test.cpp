@@ -64,13 +64,13 @@ void RSDropFrameProcessorTest::SetUp() {}
 void RSDropFrameProcessorTest::TearDown() {}
 
 /**
- * @tc.name: TestDropFrameInit
+ * @tc.name: TestDropFrame001 
  * @tc.desc:
  * @tc.type:
  * @tc.require:
  * @tc.author:
  */
-HWTEST_F(RSDropFrameProcessorTest, TestDropFrameInit, TestSize.Level1)
+HWTEST_F(RSDropFrameProcessorTest, TestDropFrame001, TestSize.Level1)
 {
     RSSurfaceRenderNodeConfig config;
     rsNode = std::make_shared<RSSurfaceRenderNode>(config);
@@ -86,6 +86,10 @@ HWTEST_F(RSDropFrameProcessorTest, TestDropFrameInit, TestSize.Level1)
     csurf = Surface::CreateSurfaceAsConsumer(config.name);
     ASSERT_NE(csurf, nullptr);
     rsNode->SetConsumer(csurf);
+    RS_LOGI("SetUpTestCase::CreateNodeAndSurface node id:%llu name:%s surface id:%llu ",
+        rsNode->GetId(), rsNode->GetName().c_str(), csurf->GetUniqueId());
+    printf("SetUpTestCase::CreateNodeAndSurface node id:%llu name:%s surface id:%llu ",
+        rsNode->GetId(), rsNode->GetName().c_str(), csurf->GetUniqueId());
     std::weak_ptr<RSSurfaceRenderNode> surfaceRenderNode(rsNode);
     sptr<IBufferConsumerListener> listener = new RSRenderServiceListener(surfaceRenderNode);
     ASSERT_NE(listener, nullptr);
@@ -96,18 +100,8 @@ HWTEST_F(RSDropFrameProcessorTest, TestDropFrameInit, TestSize.Level1)
     psurf = Surface::CreateSurfaceAsProducer(producer);
     ASSERT_NE(psurf, nullptr);
     psurf->SetQueueSize(3); // only test 3 frames
-    ASSERT_EQ(3, psurf->GetQueueSize());
-}
+    ASSERT_EQ(3, static_cast<int>(psurf->GetQueueSize()));
 
-/**
- * @tc.name: TestDropFrame001 
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
- */
-HWTEST_F(RSDropFrameProcessorTest, TestDropFrame001, TestSize.Level1)
-{
     // request&&flush 3 buffer make queue size full
     for ( int i = 0; i < 3; i ++ ) {
         sptr<SurfaceBuffer> buffer;
