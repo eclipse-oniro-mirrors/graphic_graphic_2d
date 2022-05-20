@@ -106,7 +106,7 @@ void RSAnimationLog::PreProcessLogFile(const std::string& logFilePath)
 void RSAnimationLog::InitNodeAndPropertyInfo()
 {
     std::string configFilePath = ANIMATION_LOG_PATH + CONFIG_FILE_NAME;
-    char newpath[PATH_MAX + 1] = { 0x00 };
+    char newpath[strlen(configFilePath.c_str()) + 1] = { 0x00 };
     if (strlen(configFilePath.c_str()) > PATH_MAX || realpath(configFilePath.c_str(), newpath) == NULL) {
         return;
     }
@@ -281,8 +281,7 @@ void RSAnimationLog::WriteAnimationValueToLog(const Matrix3f& value,
         (DATA_INDEX_TWO < DATA_ARRAY_SIZE) && (DATA_INDEX_THREE < DATA_ARRAY_SIZE) &&
         (DATA_INDEX_FOUR < DATA_ARRAY_SIZE) && (DATA_INDEX_FIVE < DATA_ARRAY_SIZE) &&
         (DATA_INDEX_SIX < DATA_ARRAY_SIZE) && (DATA_INDEX_SEVEN < DATA_ARRAY_SIZE) &&
-        (DATA_INDEX_EIGHT < DATA_ARRAY_SIZE))
-    {
+        (DATA_INDEX_EIGHT < DATA_ARRAY_SIZE)) {
         WRITE_LOG("RSAnimationValueLog NodeId:{%llu} time:{%lld} property:{%llu} " \
             "value:{%d %d %d %d %d %d %d %d %d}\n", id, GetNowTime(), property,
             data[DATA_INDEX_ZERO], data[DATA_INDEX_ONE], data[DATA_INDEX_TWO],
@@ -301,8 +300,7 @@ void RSAnimationLog::WriteAnimationInfoToLog(const RSAnimatableProperty& propert
         (DATA_INDEX_TWO < DATA_ARRAY_SIZE) && (DATA_INDEX_THREE < DATA_ARRAY_SIZE) &&
         (DATA_INDEX_FOUR < DATA_ARRAY_SIZE) && (DATA_INDEX_FIVE < DATA_ARRAY_SIZE) &&
         (DATA_INDEX_SIX < DATA_ARRAY_SIZE) && (DATA_INDEX_SEVEN < DATA_ARRAY_SIZE) &&
-        (DATA_INDEX_EIGHT < DATA_ARRAY_SIZE))
-    {
+        (DATA_INDEX_EIGHT < DATA_ARRAY_SIZE)) {
         WRITE_LOG("RSAnimationInfoLog AnimationId:{%llu} time:{%lld} property:{%llu} " \
             "startValue:{%d %d %d %d %d %d %d %d %d} endValue:{%d %d %d %d %d %d %d %d %d}\n",
             id, GetNowTime(), property, startData[DATA_INDEX_ZERO], startData[DATA_INDEX_ONE],
