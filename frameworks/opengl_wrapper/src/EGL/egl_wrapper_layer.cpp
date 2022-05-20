@@ -19,9 +19,10 @@
 
 #include "egl_defs.h"
 #include "../wrapper_log.h"
-
 namespace OHOS {
-
+namespace {
+constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
+}
 EglWrapperLayer& EglWrapperLayer::GetInstance()
 {
     static EglWrapperLayer layer;
@@ -49,10 +50,7 @@ bool EglWrapperLayer::Init(EglWrapperDispatchTable *table)
         return false;
     }
 
-    // Layer init proc TBD.
-    
     loaded_ = true;
     return true;
 }
-
 } // namespace OHOS

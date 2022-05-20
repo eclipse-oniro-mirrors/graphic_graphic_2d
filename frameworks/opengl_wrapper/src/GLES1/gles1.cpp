@@ -12,49 +12,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "../hook.h"
-#include "../thread_private_data.h"
+#include "../thread_private_data_ctl.h"
 #include "../wrapper_log.h"
 
-using namespace OHOS;
+namespace {
+constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
+}
+#undef CALL_HOOK_API
+#define CALL_HOOK_API(api, ...)                                                         \
+    do {                                                                                \
+        OHOS::GlHookTable const *table = OHOS::ThreadPrivateDataCtl::GetGlHookTable();  \
+        if (table && table->table1.api) {                                               \
+            table->table1.api(__VA_ARGS__);                                             \
+        } else {                                                                        \
+            WLOGE("%{public}s is invalid.", #api);                                      \
+        }                                                                               \
+    } while(0);                                                                         \
+}
+
+#undef CALL_HOOK_API_RET
+#define CALL_HOOK_API_RET(api, ...)                                                     \
+    do {                                                                                \
+        OHOS::GlHookTable const *table = OHOS::ThreadPrivateDataCtl::GetGlHookTable();  \
+        if (table && table->table1.api) {                                               \
+            return table->table1.api(__VA_ARGS__);                                      \
+        } else {                                                                        \
+            WLOGE("%{public}s is invalid.", #api);                                      \
+            return 0;                                                                   \
+        }                                                                               \
+    } while(0);                                                                         \
+}
 
 #undef HOOK_API_ENTRY
-#undef CALL_HOOK_API
-#undef CALL_HOOK_API_RET
-
-#define CALL_HOOK_API(api, ...)  \
-    WLOGD("");\
-    GlHookTable const *table = ThreadPrivateDataCtl::GetGlHookTable();\
-    if (table && table->table1.api) {\
-        return table->table1.api(__VA_ARGS__);\
-    }\
-    else {\
-        WLOGE("%{public}s is invalid.", #api);\
-    }\
-    return;\
-}
-
-#define CALL_HOOK_API_RET(api, ...)  \
-    WLOGD("");\
-    GlHookTable const *table = ThreadPrivateDataCtl::GetGlHookTable();\
-    if (table && table->table1.api) {\
-        return table->table1.api(__VA_ARGS__);\
-    }\
-    else {\
-        WLOGE("%{public}s is invalid.", #api);\
-    }\
-    return 0;\
-}
-
-#define HOOK_API_ENTRY(r, api, ...) r api(__VA_ARGS__) { \
+#define HOOK_API_ENTRY(r, api, ...) r api(__VA_ARGS__) {                                \
 
 extern "C" {
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "../gl1_hook_entries.in"
 #pragma GCC diagnostic warning "-Wunused-parameter"
 }
-
-#undef HOOK_API_ENTRY
-#undef CALL_HOOK_API
-#undef CALL_HOOK_API_RET

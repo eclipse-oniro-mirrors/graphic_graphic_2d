@@ -17,10 +17,12 @@
 
 #include "egl_wrapper_display.h"
 #include "../wrapper_log.h"
-
 namespace OHOS {
+namespace {
+constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
+}
 
-EglWrapperObject::EglWrapperObject(EglWrapperDisplay * disp) : display_(disp)
+EglWrapperObject::EglWrapperObject(EglWrapperDisplay *disp) : display_(disp)
 {
     WLOGD("");
     if (display_) {
@@ -28,7 +30,7 @@ EglWrapperObject::EglWrapperObject(EglWrapperDisplay * disp) : display_(disp)
     }
 }
 
-EglWrapperDisplay * EglWrapperObject::GetDisplay()
+EglWrapperDisplay *EglWrapperObject::GetDisplay()
 {
     WLOGD("");
     return display_;
@@ -54,5 +56,4 @@ void EglWrapperObject::Release()
     WLOGD("");
     delete this;
 }
-
 } // namespace OHOS

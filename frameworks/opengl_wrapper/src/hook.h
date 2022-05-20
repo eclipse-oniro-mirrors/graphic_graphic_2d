@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef FRAMEWORKS_OPENGL_WRAPPER_HOOK_H
 #define FRAMEWORKS_OPENGL_WRAPPER_HOOK_H
 
@@ -27,13 +26,14 @@
 #include <GLES/glext.h>
 
 namespace OHOS {
-
-#undef HOOK_API_ENTRY
 #undef CALL_HOOK_API
-#undef CALL_HOOK_API_RET
 #define CALL_HOOK_API(...)
+#undef CALL_HOOK_API_RET
 #define CALL_HOOK_API_RET CALL_HOOK_API
+#undef HOOK_API_ENTRY
 #define HOOK_API_ENTRY(r, api, ...) r (*(api))(__VA_ARGS__);
+#define EGL_API_NUM    (100)
+#define GL_API_NUM     (1000)
 
 struct WrapperHookTable {
     #include "wrapper_hook_entries.in"
@@ -60,11 +60,5 @@ struct GlHookTable {
     GlHookTable2 table2;
     GlHookTable3 table3;
 };
-
-#undef HOOK_API_ENTRY
-#undef CALL_HOOK_API
-#undef CALL_HOOK_API_RET
-
 } // namespace OHOS
-
 #endif // FRAMEWORKS_OPENGL_WRAPPER_HOOK_H

@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef FRAMEWORKS_OPENGL_WRAPPER_EGL_DEFS_H
 #define FRAMEWORKS_OPENGL_WRAPPER_EGL_DEFS_H
 
@@ -20,11 +19,9 @@
 
 #include "egl_wrapper_entry.h"
 #include "../hook.h"
-
 namespace OHOS {
-
 struct EglWrapperDispatchTable {
-    inline EglWrapperDispatchTable() : isLoad(false) {}
+    inline EglWrapperDispatchTable() noexcept : isLoad(false) {}
     WrapperHookTable    wrapper;
     EglHookTable        egl;
     GlHookTable         gl;
@@ -33,18 +30,16 @@ struct EglWrapperDispatchTable {
     EGLint              minor;
 };
 
-extern char const * const gWrapperApiNames[];
-extern char const * const gEglApiNames[];
-extern char const * const gGlApiNames1[];
-extern char const * const gGlApiNames2[];
-extern char const * const gGlApiNames3[];
+extern char const * const gWrapperApiNames[EGL_API_NUM];
+extern char const * const gEglApiNames[EGL_API_NUM];
+extern char const * const gGlApiNames1[GL_API_NUM];
+extern char const * const gGlApiNames2[GL_API_NUM];
+extern char const * const gGlApiNames3[GL_API_NUM];
 extern const std::map<std::string, EglWrapperFuncPointer> gExtensionMap;
 
 extern GlHookTable gGlHookNoContext;
 extern EglWrapperDispatchTable gWrapperHook;
 
-using EglWrapperDispatchTablePtr = EglWrapperDispatchTable * const;
-
+using EglWrapperDispatchTablePtr = EglWrapperDispatchTable *;
 }; // namespace OHOS
-
 #endif // FRAMEWORKS_OPENGL_WRAPPER_EGL_DEFS_H

@@ -12,16 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "egl_wrapper_context.h"
 
 #include "egl_wrapper_display.h"
 #include "../wrapper_log.h"
-
 namespace OHOS {
+namespace {
+constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
+}
 
-EglWrapperContext::EglWrapperContext(EglWrapperDisplay * disp, EGLContext context)
- : EglWrapperObject(disp), context_(context), read_(nullptr), draw_(nullptr)
+EglWrapperContext::EglWrapperContext(EglWrapperDisplay *disp, EGLContext context)
+    : EglWrapperObject(disp), context_(context), read_(nullptr), draw_(nullptr)
 {
     WLOGD("");
 }
@@ -58,10 +59,9 @@ EGLSurface EglWrapperContext::GetCurrentSurface(EGLint type)
             return draw_;
         }
         default: {
-            WLOGE("surface type error!");
+            WLOGE("type error!");
             return EGL_NO_SURFACE;
         }
     }
 }
-
 } // namespace OHOS

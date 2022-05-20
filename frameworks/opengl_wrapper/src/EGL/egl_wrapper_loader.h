@@ -15,12 +15,14 @@
 
 #ifndef FRAMEWORKS_OPENGL_WRAPPER_EGL_WRAPPER_LOADER_H
 #define FRAMEWORKS_OPENGL_WRAPPER_EGL_WRAPPER_LOADER_H
+#include <EGL/egl.h>
 
 namespace OHOS {
-
 struct EglWrapperDispatchTable;
 struct EglHookTable;
 struct GlHookTable;
+
+using FunctionPointerType = __eglMustCastToProperFunctionPointerType;
 
 class EglWrapperLoader {
 public:
@@ -33,14 +35,12 @@ private:
     EglWrapperLoader() : dlEglHandle_(nullptr), dlGlHandle1_(nullptr),
         dlGlHandle2_(nullptr), dlGlHandle3_(nullptr) {};
     bool LoadEgl(const char *path, EglHookTable *table);
-    void *LoadGl(const char *path, char const * const *glName, void *entry);
+    void *LoadGl(const char *path, char const * const *glName, FunctionPointerType *entry);
     bool LoadVendorDriver(EglWrapperDispatchTable *table);
     void *dlEglHandle_;
     void *dlGlHandle1_;
     void *dlGlHandle2_;
     void *dlGlHandle3_;
 };
-
 } // namespace OHOS
-
 #endif // FRAMEWORKS_OPENGL_WRAPPER_EGL_WRAPPER_LOADER_H

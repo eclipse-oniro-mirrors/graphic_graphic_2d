@@ -15,7 +15,6 @@
 
 #ifndef FRAMEWORKS_OPENGL_WRAPPER_EGL_WRAPPER_LAYER_H
 #define FRAMEWORKS_OPENGL_WRAPPER_EGL_WRAPPER_LAYER_H
-
 namespace OHOS {
 
 struct EglWrapperDispatchTable;
@@ -30,7 +29,5 @@ private:
     bool loaded_;
     void *dlhandle_;
 };
-
 } // namespace OHOS
-
 #endif // FRAMEWORKS_OPENGL_WRAPPER_EGL_WRAPPER_LAYER_H

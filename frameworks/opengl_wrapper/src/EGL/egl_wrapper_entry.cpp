@@ -24,12 +24,14 @@
 #include "egl_wrapper_context.h"
 #include "egl_wrapper_display.h"
 #include "egl_wrapper_loader.h"
-#include "../thread_private_data.h"
+#include "../thread_private_data_ctl.h"
 #include "../wrapper_log.h"
 
 using namespace OHOS;
-
 namespace OHOS {
+namespace {
+constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
+}
 
 static EglWrapperDisplay *ValidateDisplay(EGLDisplay dpy)
 {
@@ -49,8 +51,7 @@ static EglWrapperDisplay *ValidateDisplay(EGLDisplay dpy)
 }
 
 EGLBoolean EglChooseConfigImpl(EGLDisplay dpy, const EGLint *attribList,
-                                EGLConfig *configs, EGLint configSize,
-                                EGLint *numConfig)
+    EGLConfig *configs, EGLint configSize, EGLint *numConfig)
 {
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
@@ -71,15 +72,14 @@ EGLBoolean EglChooseConfigImpl(EGLDisplay dpy, const EGLint *attribList,
     if (table->isLoad && table->egl.eglChooseConfig) {
         ret = table->egl.eglChooseConfig(display->GetEglDisplay(),
             attribList, configs, configSize, numConfig);
-    }
-    else {
+    } else {
         WLOGE("eglChooseConfig is invalid.");
     }
 
     return ret;
 }
 
-EGLBoolean EglCopyBuffersImpl(EGLDisplay dpy, EGLSurface surface, NativePixmapType target)
+EGLBoolean EglCopyBuffersImpl(EGLDisplay dpy, EGLSurface surf, NativePixmapType target)
 {
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
@@ -87,7 +87,7 @@ EGLBoolean EglCopyBuffersImpl(EGLDisplay dpy, EGLSurface surface, NativePixmapTy
         return EGL_FALSE;
     }
 
-    return display->CopyBuffers(surface, target);
+    return display->CopyBuffers(surf, target);
 }
 
 EGLContext EglCreateContextImpl(EGLDisplay dpy, EGLConfig config,
@@ -126,7 +126,7 @@ EGLSurface EglCreatePixmapSurfaceImpl(EGLDisplay dpy, EGLConfig config,
     return display->CreatePixmapSurface(config, pixmap, attribList);
 }
 
-EGLSurface EglCreateWindowSurfaceImpl(EGLDisplay dpy, 
+EGLSurface EglCreateWindowSurfaceImpl(EGLDisplay dpy,
     EGLConfig config, NativeWindowType window, const EGLint* attribList)
 {
     WLOGD("");
@@ -149,7 +149,7 @@ EGLBoolean EglDestroyContextImpl(EGLDisplay dpy, EGLContext ctx)
     return display->DestroyEglContext(ctx);
 }
 
-EGLBoolean EglDestroySurfaceImpl(EGLDisplay dpy, EGLSurface surface)
+EGLBoolean EglDestroySurfaceImpl(EGLDisplay dpy, EGLSurface surf)
 {
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
@@ -157,7 +157,7 @@ EGLBoolean EglDestroySurfaceImpl(EGLDisplay dpy, EGLSurface surface)
         return EGL_FALSE;
     }
 
-    return display->DestroyEglSurface(surface);
+    return display->DestroyEglSurface(surf);
 }
 
 EGLBoolean EglGetConfigAttribImpl(EGLDisplay dpy, EGLConfig config,
@@ -173,8 +173,7 @@ EGLBoolean EglGetConfigAttribImpl(EGLDisplay dpy, EGLConfig config,
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglGetConfigAttrib) {
         ret = table->egl.eglGetConfigAttrib(display->GetEglDisplay(), config, attribute, value);
-    }
-    else {
+    } else {
         WLOGE("eglGetConfigAttrib is not found.");
     }
     return ret;
@@ -198,8 +197,7 @@ EGLBoolean EglGetConfigsImpl(EGLDisplay dpy, EGLConfig *configs,
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglGetConfigs) {
         ret = table->egl.eglGetConfigs(display->GetEglDisplay(), configs, configSize, numConfig);
-    }
-    else {
+    } else {
         WLOGE("eglGetConfigs is not found.");
     }
 
@@ -237,8 +235,8 @@ EGLSurface EglGetCurrentSurfaceImpl(EGLint type)
 }
 
 static EGLDisplay EglGetPlatformDisplayInternal(EGLenum platform,
-                                                EGLNativeDisplayType type,
-                                                const EGLAttrib *attribList) {
+    EGLNativeDisplayType type, const EGLAttrib *attribList)
+{
     WLOGD("");
     if (type != EGL_DEFAULT_DISPLAY) {
         WLOGE("EGLNativeDisplayType is invalid.");
@@ -267,8 +265,7 @@ EGLint EglGetErrorImpl(void)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglGetError) {
         ret = table->egl.eglGetError();
-    }
-    else {
+    } else {
         WLOGE("eglGetError is not found.");
     }
 
@@ -346,7 +343,7 @@ const char *EglQueryStringImpl(EGLDisplay dpy, EGLint name)
     if (dpy != EGL_NO_DISPLAY) {
         EglWrapperDisplay *display = ValidateDisplay(dpy);
         if (!display) {
-            return (const char *) nullptr;
+            return nullptr;
         }
         actualDpy = display->GetEglDisplay();
     }
@@ -354,15 +351,14 @@ const char *EglQueryStringImpl(EGLDisplay dpy, EGLint name)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglQueryString) {
         return table->egl.eglQueryString(actualDpy, name);
-    }
-    else {
+    } else {
         WLOGE("eglQueryString is not found.");
     }
 
-    return (const char *) nullptr;
+    return nullptr;
 }
 
-EGLBoolean EglQuerySurfaceImpl(EGLDisplay dpy, EGLSurface surface, 
+EGLBoolean EglQuerySurfaceImpl(EGLDisplay dpy, EGLSurface surf,
     EGLint attribute, EGLint* value)
 {
     WLOGD("");
@@ -377,10 +373,10 @@ EGLBoolean EglQuerySurfaceImpl(EGLDisplay dpy, EGLSurface surface,
         return EGL_FALSE;
     }
 
-    return display->QuerySurface(surface, attribute, value);
+    return display->QuerySurface(surf, attribute, value);
 }
 
-EGLBoolean EglSwapBuffersImpl(EGLDisplay dpy, EGLSurface surface)
+EGLBoolean EglSwapBuffersImpl(EGLDisplay dpy, EGLSurface surf)
 {
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
@@ -388,7 +384,7 @@ EGLBoolean EglSwapBuffersImpl(EGLDisplay dpy, EGLSurface surface)
         return EGL_FALSE;
     }
 
-    return display->SwapBuffers(surface);
+    return display->SwapBuffers(surf);
 }
 
 EGLBoolean EglTerminateImpl(EGLDisplay dpy)
@@ -409,8 +405,7 @@ EGLBoolean EglWaitGLImpl(void)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglWaitGL) {
         ret = table->egl.eglWaitGL();
-    }
-    else {
+    } else {
         WLOGE("eglWaitGL is not found.");
     }
     return ret;
@@ -423,14 +418,13 @@ EGLBoolean EglWaitNativeImpl(EGLint engine)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglWaitNative) {
         ret = table->egl.eglWaitNative(engine);
-    }
-    else {
+    } else {
         WLOGE("eglWaitNative is not found.");
     }
     return ret;
 }
 
-EGLBoolean EglBindTexImageImpl(EGLDisplay dpy, EGLSurface surface, EGLint buffer)
+EGLBoolean EglBindTexImageImpl(EGLDisplay dpy, EGLSurface surf, EGLint buffer)
 {
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
@@ -438,10 +432,10 @@ EGLBoolean EglBindTexImageImpl(EGLDisplay dpy, EGLSurface surface, EGLint buffer
         return EGL_FALSE;
     }
 
-    return display->BindTexImage(surface, buffer);
+    return display->BindTexImage(surf, buffer);
 }
 
-EGLBoolean EglReleaseTexImageImpl(EGLDisplay dpy, EGLSurface surface, EGLint buffer)
+EGLBoolean EglReleaseTexImageImpl(EGLDisplay dpy, EGLSurface surf, EGLint buffer)
 {
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
@@ -449,10 +443,10 @@ EGLBoolean EglReleaseTexImageImpl(EGLDisplay dpy, EGLSurface surface, EGLint buf
         return EGL_FALSE;
     }
 
-    return display->ReleaseTexImage(surface, buffer);
+    return display->ReleaseTexImage(surf, buffer);
 }
 
-EGLBoolean EglSurfaceAttribImpl(EGLDisplay dpy, EGLSurface surface,
+EGLBoolean EglSurfaceAttribImpl(EGLDisplay dpy, EGLSurface surf,
     EGLint attribute, EGLint value)
 {
     WLOGD("");
@@ -461,7 +455,7 @@ EGLBoolean EglSurfaceAttribImpl(EGLDisplay dpy, EGLSurface surface,
         return EGL_FALSE;
     }
 
-    return display->SurfaceAttrib(surface, attribute, value);
+    return display->SurfaceAttrib(surf, attribute, value);
 }
 
 EGLBoolean EglSwapIntervalImpl(EGLDisplay dpy, EGLint interval)
@@ -476,8 +470,7 @@ EGLBoolean EglSwapIntervalImpl(EGLDisplay dpy, EGLint interval)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglSwapInterval) {
         ret = table->egl.eglSwapInterval(display->GetEglDisplay(), interval);
-    }
-    else {
+    } else {
         WLOGE("eglQueryString is not found.");
     }
 
@@ -491,8 +484,7 @@ EGLBoolean EglBindAPIImpl(EGLenum api)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglBindAPI) {
         ret = table->egl.eglBindAPI(api);
-    }
-    else {
+    } else {
         WLOGE("eglBindAPI is not found.");
     }
     return ret;
@@ -504,8 +496,7 @@ EGLBoolean EglQueryAPIImpl(void)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglQueryAPI) {
         return table->egl.eglQueryAPI();
-    }
-    else {
+    } else {
         WLOGE("eglQueryAPI is not found.");
     }
 
@@ -531,8 +522,7 @@ EGLBoolean EglReleaseThreadImpl(void)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglReleaseThread) {
         table->egl.eglReleaseThread();
-    }
-    else {
+    } else {
         WLOGE("eglReleaseThread is not found.");
     }
 
@@ -555,8 +545,7 @@ EGLBoolean EglWaitClientImpl(void)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglWaitClient) {
         ret = table->egl.eglWaitClient();
-    }
-    else {
+    } else {
         WLOGE("eglWaitClient is not found.");
     }
     return ret;
@@ -580,8 +569,7 @@ EGLSync EglCreateSyncImpl(EGLDisplay dpy, EGLenum type, const EGLAttrib *attribL
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglCreateSync) {
         ret = table->egl.eglCreateSync(display->GetEglDisplay(), type, attribList);
-    }
-    else {
+    } else {
         WLOGE("eglCreateSync is not found.");
     }
 
@@ -600,8 +588,7 @@ EGLBoolean EglDestroySyncImpl(EGLDisplay dpy, EGLSync sync)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglDestroySync) {
         ret = table->egl.eglDestroySync(display->GetEglDisplay(), sync);
-    }
-    else {
+    } else {
         WLOGE("eglDestroySync is not found.");
     }
 
@@ -622,8 +609,7 @@ EGLint EglClientWaitSyncImpl(EGLDisplay dpy, EGLSync sync,
     if (table->isLoad && table->egl.eglClientWaitSync) {
         ret = table->egl.eglClientWaitSync(display->GetEglDisplay(),
             sync, flags, timeout);
-    }
-    else {
+    } else {
         WLOGE("eglClientWaitSync is not found.");
     }
 
@@ -650,8 +636,7 @@ EGLBoolean EglGetSyncAttribImpl(EGLDisplay dpy, EGLSync sync,
     if (table->isLoad && table->egl.eglGetSyncAttrib) {
         ret = table->egl.eglGetSyncAttrib(display->GetEglDisplay(),
             sync, attribute, value);
-    }
-    else {
+    } else {
         WLOGE("eglGetSyncAttrib is not found.");
     }
 
@@ -688,7 +673,7 @@ EGLDisplay EglGetPlatformDisplayImpl(EGLenum platform,
         static_cast<EGLNativeDisplayType>(nativeDisplay), attribList);
 }
 
-EGLSurface EglCreatePlatformWindowSurfaceImpl(EGLDisplay dpy, 
+EGLSurface EglCreatePlatformWindowSurfaceImpl(EGLDisplay dpy,
     EGLConfig config, void *nativeWindow, const EGLAttrib *attribList)
 {
     WLOGD("");
@@ -725,15 +710,14 @@ EGLBoolean EglWaitSyncImpl(EGLDisplay dpy, EGLSync sync, EGLint flags)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglWaitSync) {
         ret = table->egl.eglWaitSync(display->GetEglDisplay(), sync, flags);
-    }
-    else {
+    } else {
         WLOGE("eglWaitSync is not found.");
     }
 
     return ret;
 }
 
-EGLBoolean EglLockSurfaceKHRImpl(EGLDisplay dpy, EGLSurface surface,
+EGLBoolean EglLockSurfaceKHRImpl(EGLDisplay dpy, EGLSurface surf,
     const EGLint *attribList)
 {
     WLOGD("");
@@ -742,10 +726,10 @@ EGLBoolean EglLockSurfaceKHRImpl(EGLDisplay dpy, EGLSurface surface,
         return EGL_FALSE;
     }
 
-    return display->LockSurfaceKHR(surface, attribList);
+    return display->LockSurfaceKHR(surf, attribList);
 }
 
-EGLBoolean EglUnlockSurfaceKHRImpl(EGLDisplay dpy, EGLSurface surface)
+EGLBoolean EglUnlockSurfaceKHRImpl(EGLDisplay dpy, EGLSurface surf)
 {
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
@@ -753,7 +737,7 @@ EGLBoolean EglUnlockSurfaceKHRImpl(EGLDisplay dpy, EGLSurface surface)
         return EGL_FALSE;
     }
 
-    return display->UnlockSurfaceKHR(surface);
+    return display->UnlockSurfaceKHR(surf);
 }
 
 EGLImageKHR EglCreateImageKHRImpl(EGLDisplay dpy, EGLContext ctx,
@@ -791,8 +775,7 @@ EGLSyncKHR EglCreateSyncKHRImpl(EGLDisplay dpy, EGLenum type, const EGLint* attr
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglCreateSyncKHR) {
         ret = table->egl.eglCreateSyncKHR(display->GetEglDisplay(), type, attribList);
-    }
-    else {
+    } else {
         WLOGE("eglCreateSyncKHR is not found.");
     }
 
@@ -811,8 +794,7 @@ EGLBoolean EglDestroySyncKHRImpl(EGLDisplay dpy, EGLSyncKHR sync)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglDestroySyncKHR) {
         ret = table->egl.eglDestroySyncKHR(display->GetEglDisplay(), sync);
-    }
-    else {
+    } else {
         WLOGE("eglDestroySyncKHR is not found.");
     }
 
@@ -833,8 +815,7 @@ EGLint EglClientWaitSyncKHRImpl(EGLDisplay dpy, EGLSyncKHR sync,
     if (table->isLoad && table->egl.eglClientWaitSyncKHR) {
         ret = table->egl.eglClientWaitSyncKHR(display->GetEglDisplay(),
             sync, flags, timeout);
-    }
-    else {
+    } else {
         WLOGE("eglClientWaitSyncKHR is not found.");
     }
 
@@ -861,8 +842,7 @@ EGLBoolean EglGetSyncAttribKHRImpl(EGLDisplay dpy, EGLSyncKHR sync,
     if (table->isLoad && table->egl.eglGetSyncAttribKHR) {
         ret = table->egl.eglGetSyncAttribKHR(display->GetEglDisplay(),
             sync, attribute, value);
-    }
-    else {
+    } else {
         WLOGE("eglGetSyncAttribKHR is not found.");
     }
 
@@ -881,8 +861,7 @@ EGLBoolean EglSignalSyncKHRImpl(EGLDisplay dpy, EGLSyncKHR sync, EGLenum mode)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglSignalSyncKHR) {
         ret = table->egl.eglSignalSyncKHR(display->GetEglDisplay(), sync, mode);
-    }
-    else {
+    } else {
         WLOGE("eglSignalSyncKHR is not found.");
     }
 
@@ -901,8 +880,7 @@ EGLStreamKHR EglCreateStreamKHRImpl(EGLDisplay dpy, const EGLint *attribList)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglCreateStreamKHR) {
         ret = table->egl.eglCreateStreamKHR(display->GetEglDisplay(), attribList);
-    }
-    else {
+    } else {
         WLOGE("eglCreateStreamKHR is not found.");
     }
 
@@ -921,8 +899,7 @@ EGLBoolean EglDestroyStreamKHRImpl(EGLDisplay dpy, EGLStreamKHR stream)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglDestroyStreamKHR) {
         ret = table->egl.eglDestroyStreamKHR(display->GetEglDisplay(), stream);
-    }
-    else {
+    } else {
         WLOGE("eglDestroyStreamKHR is not found.");
     }
 
@@ -943,8 +920,7 @@ EGLBoolean EglStreamAttribKHRImpl(EGLDisplay dpy, EGLStreamKHR stream,
     if (table->isLoad && table->egl.eglStreamAttribKHR) {
         ret = table->egl.eglStreamAttribKHR(display->GetEglDisplay(),
             stream, attribute, value);
-    }
-    else {
+    } else {
         WLOGE("eglStreamAttribKHR is not found.");
     }
 
@@ -971,8 +947,7 @@ EGLBoolean EglQueryStreamKHRImpl(EGLDisplay dpy, EGLStreamKHR stream,
     if (table->isLoad && table->egl.eglQueryStreamKHR) {
         ret = table->egl.eglQueryStreamKHR(display->GetEglDisplay(),
             stream, attribute, value);
-    }
-    else {
+    } else {
         WLOGE("eglQueryStreamKHR is not found.");
     }
 
@@ -980,7 +955,7 @@ EGLBoolean EglQueryStreamKHRImpl(EGLDisplay dpy, EGLStreamKHR stream,
 }
 
 EGLBoolean EglQueryStreamu64KHRImpl(EGLDisplay dpy, EGLStreamKHR stream,
-        EGLenum attribute, EGLuint64KHR *value)
+    EGLenum attribute, EGLuint64KHR *value)
 {
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
@@ -999,8 +974,7 @@ EGLBoolean EglQueryStreamu64KHRImpl(EGLDisplay dpy, EGLStreamKHR stream,
     if (table->isLoad && table->egl.eglQueryStreamu64KHR) {
         ret = table->egl.eglQueryStreamu64KHR(display->GetEglDisplay(),
             stream, attribute, value);
-    }
-    else {
+    } else {
         WLOGE("eglQueryStreamu64KHR is not found.");
     }
 
@@ -1008,7 +982,7 @@ EGLBoolean EglQueryStreamu64KHRImpl(EGLDisplay dpy, EGLStreamKHR stream,
 }
 
 EGLBoolean EglStreamConsumerGLTextureExternalKHRImpl(EGLDisplay dpy,
-        EGLStreamKHR stream)
+    EGLStreamKHR stream)
 {
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
@@ -1021,8 +995,7 @@ EGLBoolean EglStreamConsumerGLTextureExternalKHRImpl(EGLDisplay dpy,
     if (table->isLoad && table->egl.eglStreamConsumerGLTextureExternalKHR) {
         ret = table->egl.eglStreamConsumerGLTextureExternalKHR(
             display->GetEglDisplay(), stream);
-    }
-    else {
+    } else {
         WLOGE("eglStreamConsumerGLTextureExternalKHR is not found.");
     }
 
@@ -1042,8 +1015,7 @@ EGLBoolean EglStreamConsumerAcquireKHRImpl(EGLDisplay dpy, EGLStreamKHR stream)
     if (table->isLoad && table->egl.eglStreamConsumerAcquireKHR) {
         ret = table->egl.eglStreamConsumerAcquireKHR(
             display->GetEglDisplay(), stream);
-    }
-    else {
+    } else {
         WLOGE("eglStreamConsumerAcquireKHR is not found.");
     }
 
@@ -1063,8 +1035,7 @@ EGLBoolean EglStreamConsumerReleaseKHRImpl(EGLDisplay dpy, EGLStreamKHR stream)
     if (table->isLoad && table->egl.eglStreamConsumerReleaseKHR) {
         ret = table->egl.eglStreamConsumerReleaseKHR(
             display->GetEglDisplay(), stream);
-    }
-    else {
+    } else {
         WLOGE("eglStreamConsumerReleaseKHR is not found.");
     }
 
@@ -1103,8 +1074,7 @@ EGLBoolean EglQueryStreamTimeKHRImpl(EGLDisplay dpy, EGLStreamKHR stream,
     if (table->isLoad && table->egl.eglQueryStreamTimeKHR) {
         ret = table->egl.eglQueryStreamTimeKHR(display->GetEglDisplay(),
             stream, attribute, value);
-    }
-    else {
+    } else {
         WLOGE("eglQueryStreamTimeKHR is not found.");
     }
 
@@ -1112,7 +1082,7 @@ EGLBoolean EglQueryStreamTimeKHRImpl(EGLDisplay dpy, EGLStreamKHR stream,
 }
 
 EGLNativeFileDescriptorKHR EglGetStreamFileDescriptorKHRImpl(
-        EGLDisplay dpy, EGLStreamKHR stream)
+    EGLDisplay dpy, EGLStreamKHR stream)
 {
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
@@ -1125,8 +1095,7 @@ EGLNativeFileDescriptorKHR EglGetStreamFileDescriptorKHRImpl(
     if (table->isLoad && table->egl.eglGetStreamFileDescriptorKHR) {
         ret = table->egl.eglGetStreamFileDescriptorKHR(
             display->GetEglDisplay(), stream);
-    }
-    else {
+    } else {
         WLOGE("eglGetStreamFileDescriptorKHR is not found.");
     }
 
@@ -1134,7 +1103,7 @@ EGLNativeFileDescriptorKHR EglGetStreamFileDescriptorKHRImpl(
 }
 
 EGLStreamKHR EglCreateStreamFromFileDescriptorKHRImpl(
-        EGLDisplay dpy, EGLNativeFileDescriptorKHR fd)
+    EGLDisplay dpy, EGLNativeFileDescriptorKHR fd)
 {
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
@@ -1147,8 +1116,7 @@ EGLStreamKHR EglCreateStreamFromFileDescriptorKHRImpl(
     if (table->isLoad && table->egl.eglCreateStreamFromFileDescriptorKHR) {
         ret = table->egl.eglCreateStreamFromFileDescriptorKHR(
             display->GetEglDisplay(), fd);
-    }
-    else {
+    } else {
         WLOGE("eglCreateStreamFromFileDescriptorKHR is not found.");
     }
 
@@ -1167,8 +1135,7 @@ EGLBoolean EglWaitSyncKHRImpl(EGLDisplay dpy, EGLSyncKHR sync, EGLint flags)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglWaitSyncKHR) {
         ret = table->egl.eglWaitSyncKHR(display->GetEglDisplay(), sync, flags);
-    }
-    else {
+    } else {
         WLOGE("eglWaitSyncKHR is not found.");
     }
 
@@ -1194,26 +1161,6 @@ EGLDisplay EglGetPlatformDisplayEXTImpl(EGLenum platform,
     return EglWrapperDisplay::GetEglDisplayExt(platform, nativeDisplay, attribList);
 }
 
-EGLint EglDupNativeFenceFDANDROIDImpl(EGLDisplay dpy, EGLSyncKHR sync)
-{
-    WLOGD("");
-    EglWrapperDisplay *display = ValidateDisplay(dpy);
-    if (!display) {
-        return EGL_NO_NATIVE_FENCE_FD_ANDROID;
-    }
-
-    EGLint ret = EGL_NO_NATIVE_FENCE_FD_ANDROID;
-    EglWrapperDispatchTablePtr table = &gWrapperHook;
-    if (table->isLoad && table->egl.eglDupNativeFenceFDANDROID) {
-        ret = table->egl.eglDupNativeFenceFDANDROID(display->GetEglDisplay(), sync);
-    }
-    else {
-        WLOGE("eglDupNativeFenceFDANDROID is not found.");
-    }
-
-    return ret;
-}
-
 EGLBoolean EglSwapBuffersWithDamageKHRImpl(EGLDisplay dpy, EGLSurface draw,
     EGLint *rects, EGLint nRects)
 {
@@ -1226,7 +1173,7 @@ EGLBoolean EglSwapBuffersWithDamageKHRImpl(EGLDisplay dpy, EGLSurface draw,
     return display->SwapBuffersWithDamageKHR(draw, rects, nRects);
 }
 
-EGLBoolean EglSetDamageRegionKHRImpl(EGLDisplay dpy, EGLSurface surface,
+EGLBoolean EglSetDamageRegionKHRImpl(EGLDisplay dpy, EGLSurface surf,
     EGLint *rects, EGLint nRects)
 {
     WLOGD("");
@@ -1235,7 +1182,7 @@ EGLBoolean EglSetDamageRegionKHRImpl(EGLDisplay dpy, EGLSurface surface,
         return EGL_FALSE;
     }
 
-    return display->SetDamageRegionKHR(surface, rects, nRects);
+    return display->SetDamageRegionKHR(surf, rects, nRects);
 }
 
 static const std::map<std::string, EglWrapperFuncPointer> gEglWrapperMap = {
@@ -1329,8 +1276,6 @@ static const std::map<std::string, EglWrapperFuncPointer> gEglWrapperMap = {
 
     { "eglGetPlatformDisplayEXT", (EglWrapperFuncPointer)&EglGetPlatformDisplayEXTImpl },
 
-    { "eglDupNativeFenceFDANDROID", (EglWrapperFuncPointer)&EglDupNativeFenceFDANDROIDImpl },
-
     { "eglSwapBuffersWithDamageKHR", (EglWrapperFuncPointer)&EglSwapBuffersWithDamageKHRImpl },
     { "eglSetDamageRegionKHR", (EglWrapperFuncPointer)&EglSetDamageRegionKHRImpl },
 
@@ -1353,5 +1298,4 @@ bool CheckEglWrapperApi(const std::string &name)
     }
     return false;
 }
-
 }; // namespace OHOS

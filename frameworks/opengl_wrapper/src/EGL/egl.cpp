@@ -14,46 +14,37 @@
  */
 #include "egl_core.h"
 #include "egl_defs.h"
-#include "../thread_private_data.h"
+#include "../thread_private_data_ctl.h"
 #include "../wrapper_log.h"
 
-using namespace OHOS;
+namespace {
+constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
+}
+#undef CALL_HOOK_API
+#define CALL_HOOK_API(api, ...)                                     \
+    if (OHOS::EglCoreInit()) {                                      \
+        if (OHOS::CheckEglWrapperApi(#api)) {                       \
+            OHOS::gWrapperHook.wrapper.api(__VA_ARGS__);            \
+        } else {                                                    \
+            WLOGE("%{public}s is invalid.", #api);                  \
+        }                                                           \
+    }                                                               \
+}
+
+#undef CALL_HOOK_API_RET
+#define CALL_HOOK_API_RET(api, ...)                                 \
+    if (OHOS::EglCoreInit()) {                                      \
+        if (OHOS::CheckEglWrapperApi(#api)) {                       \
+            return OHOS::gWrapperHook.wrapper.api(__VA_ARGS__);     \
+        } else {                                                    \
+            WLOGE("%{public}s is invalid.", #api);                  \
+        }                                                           \
+    }                                                               \
+    return 0;                                                       \
+}
 
 #undef HOOK_API_ENTRY
-#undef CALL_HOOK_API
-#undef CALL_HOOK_API_RET
-
-#define CALL_HOOK_API(api, ...)  \
-    if (!EglCoreInit()) {\
-        ThreadPrivateDataCtl::SetError(EGL_BAD_PARAMETER);\
-        return;\
-    }\
-    if (CheckEglWrapperApi(#api)) {\
-        return gWrapperHook.wrapper.api(__VA_ARGS__);\
-    }\
-    else if(gWrapperHook.egl.api) {\
-        return gWrapperHook.egl.api(__VA_ARGS__);\
-    }\
-    WLOGE("%{public}s is invalid.", #api);\
-    return;\
-}
-
-#define CALL_HOOK_API_RET(api, ...)  \
-    if (!EglCoreInit()) {\
-        ThreadPrivateDataCtl::SetError(EGL_BAD_PARAMETER);\
-        return 0;\
-    }\
-    if (CheckEglWrapperApi(#api)) {\
-        return gWrapperHook.wrapper.api(__VA_ARGS__);\
-    }\
-    else if(gWrapperHook.egl.api) {\
-        return gWrapperHook.egl.api(__VA_ARGS__);\
-    }\
-    WLOGE("%{public}s is invalid.", #api);\
-    return 0;\
-}
-
-#define HOOK_API_ENTRY(r, api, ...) r api(__VA_ARGS__) { \
+#define HOOK_API_ENTRY(r, api, ...) r api(__VA_ARGS__) {            \
 
 extern "C" {
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -61,13 +52,8 @@ extern "C" {
 #pragma GCC diagnostic warning "-Wunused-parameter"
 }
 
-#undef HOOK_API_ENTRY
-#undef CALL_HOOK_API
-#undef CALL_HOOK_API_RET
-
 namespace OHOS {
 const std::map<std::string, EglWrapperFuncPointer> gExtensionMap = {
-    // EGL_KHR_lock_surface
     { "eglLockSurfaceKHR", (EglWrapperFuncPointer)&eglLockSurfaceKHR },
     { "eglUnlockSurfaceKHR", (EglWrapperFuncPointer)&eglUnlockSurfaceKHR },
 
@@ -103,8 +89,5 @@ const std::map<std::string, EglWrapperFuncPointer> gExtensionMap = {
     { "eglStreamConsumerReleaseKHR", (EglWrapperFuncPointer)&eglStreamConsumerReleaseKHR },
     { "eglGetStreamFileDescriptorKHR", (EglWrapperFuncPointer)&eglGetStreamFileDescriptorKHR },
     { "eglCreateStreamFromFileDescriptorKHR", (EglWrapperFuncPointer)&eglCreateStreamFromFileDescriptorKHR },
-
-    // EGL_ANDROID_native_fence_sync
-    { "eglDupNativeFenceFDANDROID", (EglWrapperFuncPointer)&eglDupNativeFenceFDANDROID },
 };
 }

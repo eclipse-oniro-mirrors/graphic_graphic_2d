@@ -18,7 +18,6 @@
 
 #include <EGL/egl.h>
 #include "egl_wrapper_object.h"
-
 namespace OHOS {
 
 class EglWrapperDisplay;
@@ -26,17 +25,19 @@ class EglWrapperDisplay;
 class EglWrapperContext : public EglWrapperObject {
 public:
     EglWrapperContext(EglWrapperDisplay *disp, EGLContext context);
-    ~EglWrapperContext();
     void SetCurrentSurface(EGLSurface draw, EGLSurface read);
     EGLSurface GetCurrentSurface(EGLint type);
     static EglWrapperContext *GetWrapperContext(EGLContext ctx);
-    inline EGLContext GetEglContext() const {return context_;};
+    inline EGLContext GetEglContext() const
+    {
+        return context_;
+    };
+protected:
+    virtual ~EglWrapperContext() override;
 private:
     EGLContext context_;
     EGLSurface read_;
     EGLSurface draw_;
 };
-
 } // namespace OHOS
-
 #endif // FRAMEWORKS_OPENGL_WRAPPER_EGL_WRAPPER_CONTEXT_H

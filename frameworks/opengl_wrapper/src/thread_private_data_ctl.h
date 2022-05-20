@@ -20,7 +20,6 @@
 #include <EGL/egl.h>
 
 #include "hook.h"
-
 namespace OHOS {
 
 struct ThreadPrivateData {
@@ -46,7 +45,5 @@ private:
     static pthread_key_t key_;
     static pthread_once_t onceCtl_;
 };
-
 } // namespace OHOS
-
 #endif // FRAMEWORKS_OPENGL_WRAPPER_THREAD_PRIVATE_DATA_H

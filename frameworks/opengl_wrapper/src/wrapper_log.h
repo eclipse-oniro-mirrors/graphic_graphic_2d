@@ -12,17 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef FRAMEWORKS_OPENGL_WRAPPER_WRAPPER_LOG_H
 #define FRAMEWORKS_OPENGL_WRAPPER_WRAPPER_LOG_H
 
 #include <hilog/log.h>
-
 namespace OHOS {
-namespace {
-// The "0xD001400" is the domain ID for graphic module that alloted by the OS.
-constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
-}
 
 #ifdef __aarch64__
 #define WPUBI64  "%{public}ld"
@@ -34,24 +28,22 @@ constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWr
 #define WPUBU64  "%{public}llu"
 #endif
 
-#define _W_DFUNC HiviewDFX::HiLog::Debug
-#define _W_IFUNC HiviewDFX::HiLog::Info
-#define _W_WFUNC HiviewDFX::HiLog::Warn
-#define _W_EFUNC HiviewDFX::HiLog::Error
+#define GLW_DFUNC OHOS::HiviewDFX::HiLog::Debug
+#define GLW_IFUNC OHOS::HiviewDFX::HiLog::Info
+#define GLW_WFUNC OHOS::HiviewDFX::HiLog::Warn
+#define GLW_EFUNC OHOS::HiviewDFX::HiLog::Error
 
-#define _W_CPRINTF(func, fmt, ...) \
+#define GLW_CPRINTF(func, fmt, ...) \
     func(LABEL, "<%{public}d>%{public}s: " fmt, \
         __LINE__, __func__, ##__VA_ARGS__)
 
 #ifdef EGL_WRAPPER_DEBUG_ENABLE
-#define WLOGD(fmt, ...) _W_CPRINTF(_W_DFUNC, fmt, ##__VA_ARGS__)
+#define WLOGD(fmt, ...) GLW_CPRINTF(GLW_DFUNC, fmt, ##__VA_ARGS__)
 #else
-#define WLOGD(fmt, ...)
+#define WLOGD(fmt, ...) (LABEL)
 #endif
-#define WLOGI(fmt, ...) _W_CPRINTF(_W_IFUNC, fmt, ##__VA_ARGS__)
-#define WLOGW(fmt, ...) _W_CPRINTF(_W_WFUNC, fmt, ##__VA_ARGS__)
-#define WLOGE(fmt, ...) _W_CPRINTF(_W_EFUNC, fmt, ##__VA_ARGS__)
-
+#define WLOGI(fmt, ...) GLW_CPRINTF(GLW_IFUNC, fmt, ##__VA_ARGS__)
+#define WLOGW(fmt, ...) GLW_CPRINTF(GLW_WFUNC, fmt, ##__VA_ARGS__)
+#define WLOGE(fmt, ...) GLW_CPRINTF(GLW_EFUNC, fmt, ##__VA_ARGS__)
 } // namespace OHOS
-
 #endif // FRAMEWORKS_OPENGL_WRAPPER_WRAPPER_LOG_H

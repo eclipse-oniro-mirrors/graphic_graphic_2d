@@ -18,15 +18,15 @@
 #include "egl_defs.h"
 #include "egl_wrapper_context.h"
 #include "egl_wrapper_surface.h"
-#include "../thread_private_data.h"
+#include "../thread_private_data_ctl.h"
 #include "../wrapper_log.h"
-
 namespace OHOS {
-
+namespace {
+constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
+}
 EglWrapperDisplay EglWrapperDisplay::wrapperDisp_;
 
-EglWrapperDisplay::EglWrapperDisplay()
-: disp_(EGL_NO_DISPLAY), refCnt_(0)
+EglWrapperDisplay::EglWrapperDisplay() noexcept : disp_(EGL_NO_DISPLAY), refCnt_(0)
 {
     WLOGD("");
 }
@@ -69,8 +69,7 @@ EGLBoolean EglWrapperDisplay::Init(EGLint *major, EGLint *minor)
                 *minor = table->minor;
             }            
             refCnt_++;
-        }
-        else {
+        } else {
             WLOGE("eglInitialize Error.");
         }
         return ret;
@@ -105,14 +104,39 @@ EGLBoolean EglWrapperDisplay::Terminate()
     return EGL_FALSE;
 }
 
-EGLBoolean EglWrapperDisplay::MakeCurrent(EGLSurface draw, EGLSurface read, EGLContext ctx)
+EGLBoolean EglWrapperDisplay::InternalMakeCurrent(
+    EGLSurface actualDraw, EGLSurface actualRead, EGLContext actualCtx,
+    EglWrapperSurface *draw, EglWrapperSurface *read, EglWrapperContext *ctx)
 {
     WLOGD("");
+    EGLBoolean ret = EGL_FALSE;
+    EglWrapperDispatchTablePtr table = &gWrapperHook;
+    if (table->isLoad && table->egl.eglMakeCurrent) {
+        ret = table->egl.eglMakeCurrent(disp_, actualDraw, actualRead, actualCtx);
+        if (ret == EGL_TRUE) {
+            GlHookTable *hookTable = &gGlHookNoContext;
+            if (ctx != nullptr) {
+                hookTable = &gWrapperHook.gl;
+                ctx->SetCurrentSurface(draw, read);
+            }
+            ThreadPrivateDataCtl::SetGlHookTable(hookTable);
+            ThreadPrivateDataCtl::SetContext(ctx);
+        } else {
+            WLOGE("eglMakeCurrent error.");
+        }
+    } else {
+        WLOGE("eglMakeCurrent is invalid.");
+    }
+    return ret;
+}
+
+EGLBoolean EglWrapperDisplay::MakeCurrent(EGLSurface draw, EGLSurface read, EGLContext ctx)
+{
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
     EglWrapperContext *ctxPtr = nullptr;
-    EglWrapperSurface *surfaceDrawPtr = nullptr;
-    EglWrapperSurface *surfaceReadPtr = nullptr;
+    EglWrapperSurface *surDrawPtr = nullptr;
+    EglWrapperSurface *surReadPtr = nullptr;
     EGLContext actualCtx  = EGL_NO_CONTEXT;
     EGLSurface actualDraw = EGL_NO_SURFACE;
     EGLSurface actualRead = EGL_NO_SURFACE;
@@ -125,8 +149,7 @@ EGLBoolean EglWrapperDisplay::MakeCurrent(EGLSurface draw, EGLSurface read, EGLC
             return EGL_FALSE;
         }
         actualCtx = ctxPtr->GetEglContext();
-    }
-    else {
+    } else {
         if (draw != EGL_NO_SURFACE || read != EGL_NO_SURFACE) {
             WLOGE("EGLContext and EGLSurface is bad match.");
             ThreadPrivateDataCtl::SetError(EGL_BAD_MATCH);
@@ -139,47 +162,26 @@ EGLBoolean EglWrapperDisplay::MakeCurrent(EGLSurface draw, EGLSurface read, EGLC
     }
 
     if (draw != EGL_NO_SURFACE) {
-        surfaceDrawPtr = EglWrapperSurface::GetWrapperSurface(draw);
-        if (!CheckObject(surfaceDrawPtr)) {
+        surDrawPtr = EglWrapperSurface::GetWrapperSurface(draw);
+        if (!CheckObject(surDrawPtr)) {
             WLOGE("EGLSurface is invalid.");
             ThreadPrivateDataCtl::SetError(EGL_BAD_SURFACE);
             return EGL_FALSE;
         }
-        actualDraw = surfaceDrawPtr->GetEglSurface();
+        actualDraw = surDrawPtr->GetEglSurface();
     }
 
     if (read != EGL_NO_SURFACE) {
-        surfaceReadPtr = EglWrapperSurface::GetWrapperSurface(read);
-        if (!CheckObject(surfaceReadPtr)) {
+        surReadPtr = EglWrapperSurface::GetWrapperSurface(read);
+        if (!CheckObject(surReadPtr)) {
             WLOGE("EGLSurface is invalid.");
             ThreadPrivateDataCtl::SetError(EGL_BAD_SURFACE);
             return EGL_FALSE;
         }
-        actualRead = surfaceReadPtr->GetEglSurface();
+        actualRead = surReadPtr->GetEglSurface();
     }
 
-    EGLBoolean ret = EGL_FALSE;
-    EglWrapperDispatchTablePtr table = &gWrapperHook;
-    if (table->isLoad && table->egl.eglMakeCurrent) {
-        ret = table->egl.eglMakeCurrent(disp_, actualDraw, actualRead, actualCtx);
-        if (ret == EGL_TRUE) {
-            GlHookTable *hookTable = &gGlHookNoContext;
-            if (ctxPtr != nullptr) {
-                hookTable = &gWrapperHook.gl;
-                ctxPtr->SetCurrentSurface(surfaceDrawPtr, surfaceReadPtr);
-            }
-            ThreadPrivateDataCtl::SetGlHookTable(hookTable);
-            ThreadPrivateDataCtl::SetContext(ctx);
-        }
-        else {
-            WLOGE("eglMakeCurrent error.");
-        }
-    }
-    else {
-        WLOGE("eglMakeCurrent is invalid.");
-    }
-
-    return ret;
+    return InternalMakeCurrent(actualDraw, actualRead, actualCtx, surDrawPtr, surReadPtr, ctxPtr);
 }
 
 EglWrapperDisplay *EglWrapperDisplay::GetWrapperDisplay(EGLDisplay display)
@@ -200,7 +202,6 @@ EGLDisplay EglWrapperDisplay::GetEglNativeDisplay(EGLenum platform,
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad) {
         if (table->egl.eglGetPlatformDisplay) {
-            //WLOGD("table: %{public}p, wrapper: %{public}p", table->egl.eglGetPlatformDisplay, gExtensionMap.at("eglGetPlatformDisplay"));
             disp_ = table->egl.eglGetPlatformDisplay(platform, disp, attribList);
         }
 
@@ -211,13 +212,11 @@ EGLDisplay EglWrapperDisplay::GetEglNativeDisplay(EGLenum platform,
 
             if (table->egl.eglGetDisplay) {
                 disp_ = table->egl.eglGetDisplay(disp);
-            }
-            else {
+            } else {
                 WLOGE("eglGetDisplay is invalid.");
             }
         }
-    }
-    else {
+    } else {
         WLOGE("EglWrapperDispatchTable is not load.");
     }
 
@@ -233,8 +232,7 @@ EGLDisplay EglWrapperDisplay::GetEglNativeDisplayExt(EGLenum platform,
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglGetPlatformDisplayEXT) {
         disp_ = table->egl.eglGetPlatformDisplayEXT(platform, disp, attribList);
-    }
-    else {
+    } else {
         WLOGE("eglGetPlatformDisplayEXT is invalid.");
     }
 
@@ -260,7 +258,7 @@ bool EglWrapperDisplay::ValidateEglContext(EGLContext ctx)
     return false;
 }
 
-bool EglWrapperDisplay::ValidateEglSurface(EGLSurface surface)
+bool EglWrapperDisplay::ValidateEglSurface(EGLSurface surf)
 {
     WLOGD("");
     return false;
@@ -273,7 +271,7 @@ EGLContext EglWrapperDisplay::CreateEglContext(EGLConfig config, EGLContext shar
 
     EGLContext shareCtx = EGL_NO_CONTEXT;
     if (shareList != EGL_NO_CONTEXT) {
-        EglWrapperContext * ctxPtr = EglWrapperContext::GetWrapperContext(shareList);
+        EglWrapperContext *ctxPtr = EglWrapperContext::GetWrapperContext(shareList);
         if (!CheckObject(ctxPtr)) {
             WLOGE("EGLContext is invalid.");
             ThreadPrivateDataCtl::SetError(EGL_BAD_CONTEXT);
@@ -287,12 +285,10 @@ EGLContext EglWrapperDisplay::CreateEglContext(EGLConfig config, EGLContext shar
         EGLContext context = table->egl.eglCreateContext(disp_, config, shareCtx, attribList);
         if (context != EGL_NO_CONTEXT) {
             return new EglWrapperContext(this, context);
-        }
-        else {
+        } else {
             WLOGE("egl.eglCreateContext error.");
         }
-    }
-    else {
+    } else {
         WLOGE("eglCreateContext is invalid.");
     }
 
@@ -318,12 +314,10 @@ EGLBoolean EglWrapperDisplay::DestroyEglContext(EGLContext context)
         ret = table->egl.eglDestroyContext(disp_, ctx);
         if (ret == EGL_TRUE) {
             ctxPtr->Destroy();
-        }
-        else {
+        } else {
             WLOGE("eglDestroyContext error.");
         }
-    }
-    else {
+    } else {
         WLOGE("eglDestroyContext is invalid.");
     }
 
@@ -343,46 +337,42 @@ EGLSurface EglWrapperDisplay::CreateEglSurface(EGLConfig config, NativeWindowTyp
 
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglCreateWindowSurface) {
-        EGLSurface surface = table->egl.eglCreateWindowSurface(disp_, config, window, attribList);
-        if (surface != EGL_NO_SURFACE) {
-            return new EglWrapperSurface(this, surface);
-        }
-        else {
+        EGLSurface surf = table->egl.eglCreateWindowSurface(disp_, config, window, attribList);
+        if (surf != EGL_NO_SURFACE) {
+            return new EglWrapperSurface(this, surf);
+        } else {
             WLOGE("egl.eglCreateWindowSurface error.");
         }
-    }
-    else {
+    } else {
         WLOGE("eglCreateWindowSurface is invalid.");
     }
 
     return EGL_NO_SURFACE;
 }
 
-EGLBoolean EglWrapperDisplay::DestroyEglSurface(EGLSurface surface)
+EGLBoolean EglWrapperDisplay::DestroyEglSurface(EGLSurface surf)
 {
     WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
-    EglWrapperSurface *surfacePtr = EglWrapperSurface::GetWrapperSurface(surface);
-    if (!CheckObject(surfacePtr)) {
+    EglWrapperSurface *surfPtr = EglWrapperSurface::GetWrapperSurface(surf);
+    if (!CheckObject(surfPtr)) {
         WLOGE("EGLSurface is invalid.");
         ThreadPrivateDataCtl::SetError(EGL_BAD_SURFACE);
         return EGL_FALSE;
     }
-    EGLSurface sur = surfacePtr->GetEglSurface();
+    EGLSurface sur = surfPtr->GetEglSurface();
 
     EGLBoolean ret = EGL_FALSE;
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglDestroySurface) {
         ret = table->egl.eglDestroySurface(disp_, sur);
         if (ret == EGL_TRUE) {
-            surfacePtr->Destroy();
-        }
-        else {
+            surfPtr->Destroy();
+        } else {
             WLOGE("eglDestroySurface error.");
         }
-    }
-    else {
+    } else {
         WLOGE("eglDestroySurface is invalid.");
     }
 
@@ -421,13 +411,13 @@ bool EglWrapperDisplay::CheckObject(EglWrapperObject *obj)
     return false;
 }
 
-EGLBoolean EglWrapperDisplay::CopyBuffers(EGLSurface surface, NativePixmapType target)
+EGLBoolean EglWrapperDisplay::CopyBuffers(EGLSurface surf, NativePixmapType target)
 {
     WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
-    EglWrapperSurface *surfacePtr = EglWrapperSurface::GetWrapperSurface(surface);
-    if (!CheckObject(surfacePtr)) {
+    EglWrapperSurface *surfPtr = EglWrapperSurface::GetWrapperSurface(surf);
+    if (!CheckObject(surfPtr)) {
         WLOGE("EGLSurface is invalid.");
         ThreadPrivateDataCtl::SetError(EGL_BAD_SURFACE);
         return EGL_FALSE;
@@ -436,9 +426,8 @@ EGLBoolean EglWrapperDisplay::CopyBuffers(EGLSurface surface, NativePixmapType t
     EGLBoolean ret = EGL_FALSE;
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglCopyBuffers) {
-        ret = table->egl.eglCopyBuffers(disp_, surfacePtr->GetEglSurface(), target);
-    }
-    else {
+        ret = table->egl.eglCopyBuffers(disp_, surfPtr->GetEglSurface(), target);
+    } else {
         WLOGE("eglCopyBuffers is invalid.");
     }
 
@@ -452,37 +441,34 @@ EGLSurface EglWrapperDisplay::CreatePbufferSurface(EGLConfig config, const EGLin
 
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglCreatePbufferSurface) {
-        EGLSurface surface = table->egl.eglCreatePbufferSurface(disp_, config, attribList);
-        if (surface != EGL_NO_SURFACE) {
-            return new EglWrapperSurface(this, surface);
-        }
-        else {
+        EGLSurface surf = table->egl.eglCreatePbufferSurface(disp_, config, attribList);
+        if (surf != EGL_NO_SURFACE) {
+            return new EglWrapperSurface(this, surf);
+        } else {
             WLOGE("egl.eglCreatePbufferSurface error.");
         }
-    }
-    else {
+    } else {
         WLOGE("eglCreatePbufferSurface is invalid.");
     }
 
     return EGL_NO_SURFACE;
 }
 
-EGLSurface EglWrapperDisplay::CreatePixmapSurface(EGLConfig config, EGLNativePixmapType pixmap, const EGLint* attribList)
+EGLSurface EglWrapperDisplay::CreatePixmapSurface(EGLConfig config,
+    EGLNativePixmapType pixmap, const EGLint* attribList)
 {
     WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglCreatePixmapSurface) {
-        EGLSurface surface = table->egl.eglCreatePixmapSurface(disp_, config, pixmap, attribList);
-        if (surface != EGL_NO_SURFACE) {
-            return new EglWrapperSurface(this, surface);
-        }
-        else {
+        EGLSurface surf = table->egl.eglCreatePixmapSurface(disp_, config, pixmap, attribList);
+        if (surf != EGL_NO_SURFACE) {
+            return new EglWrapperSurface(this, surf);
+        } else {
             WLOGE("egl.eglCreatePixmapSurface error.");
         }
-    }
-    else {
+    } else {
         WLOGE("eglCreatePixmapSurface is invalid.");
     }
 
@@ -506,21 +492,20 @@ EGLBoolean EglWrapperDisplay::QueryContext(EGLContext ctx, EGLint attribute, EGL
     if (table->isLoad && table->egl.eglQueryContext) {
         ret = table->egl.eglQueryContext(disp_,
             ctxPtr->GetEglContext(), attribute, value);
-    }
-    else {
+    } else {
         WLOGE("eglQueryContext is invalid.");
     }
 
     return ret;
 }
 
-EGLBoolean EglWrapperDisplay::QuerySurface(EGLSurface surface, EGLint attribute, EGLint *value)
+EGLBoolean EglWrapperDisplay::QuerySurface(EGLSurface surf, EGLint attribute, EGLint *value)
 {
     WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
-    EglWrapperSurface *surfacePtr = EglWrapperSurface::GetWrapperSurface(surface);
-    if (!CheckObject(surfacePtr)) {
+    EglWrapperSurface *surfPtr = EglWrapperSurface::GetWrapperSurface(surf);
+    if (!CheckObject(surfPtr)) {
         WLOGE("EGLSurface is invalid.");
         ThreadPrivateDataCtl::SetError(EGL_BAD_SURFACE);
         return EGL_FALSE;
@@ -530,22 +515,21 @@ EGLBoolean EglWrapperDisplay::QuerySurface(EGLSurface surface, EGLint attribute,
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglQuerySurface) {
         ret = table->egl.eglQuerySurface(disp_,
-            surfacePtr->GetEglSurface(), attribute, value);
-    }
-    else {
+            surfPtr->GetEglSurface(), attribute, value);
+    } else {
         WLOGE("eglQuerySurface is invalid.");
     }
 
     return ret;
 }
 
-EGLBoolean EglWrapperDisplay::SwapBuffers(EGLSurface surface)
+EGLBoolean EglWrapperDisplay::SwapBuffers(EGLSurface surf)
 {
     WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
-    EglWrapperSurface *surfacePtr = EglWrapperSurface::GetWrapperSurface(surface);
-    if (!CheckObject(surfacePtr)) {
+    EglWrapperSurface *surfPtr = EglWrapperSurface::GetWrapperSurface(surf);
+    if (!CheckObject(surfPtr)) {
         WLOGE("EGLSurface is invalid.");
         ThreadPrivateDataCtl::SetError(EGL_BAD_SURFACE);
         return EGL_FALSE;
@@ -554,22 +538,21 @@ EGLBoolean EglWrapperDisplay::SwapBuffers(EGLSurface surface)
     EGLBoolean ret = EGL_FALSE;
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglSwapBuffers) {
-        ret = table->egl.eglSwapBuffers(disp_, surfacePtr->GetEglSurface());
-    }
-    else {
+        ret = table->egl.eglSwapBuffers(disp_, surfPtr->GetEglSurface());
+    } else {
         WLOGE("eglSwapBuffers is invalid.");
     }
 
     return ret;
 }
 
-EGLBoolean EglWrapperDisplay::BindTexImage(EGLSurface surface, EGLint buffer)
+EGLBoolean EglWrapperDisplay::BindTexImage(EGLSurface surf, EGLint buffer)
 {
     WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
-    EglWrapperSurface *surfacePtr = EglWrapperSurface::GetWrapperSurface(surface);
-    if (!CheckObject(surfacePtr)) {
+    EglWrapperSurface *surfPtr = EglWrapperSurface::GetWrapperSurface(surf);
+    if (!CheckObject(surfPtr)) {
         WLOGE("EGLSurface is invalid.");
         ThreadPrivateDataCtl::SetError(EGL_BAD_SURFACE);
         return EGL_FALSE;
@@ -578,22 +561,21 @@ EGLBoolean EglWrapperDisplay::BindTexImage(EGLSurface surface, EGLint buffer)
     EGLBoolean ret = EGL_FALSE;
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglBindTexImage) {
-        ret = table->egl.eglBindTexImage(disp_, surfacePtr->GetEglSurface(), buffer);
-    }
-    else {
+        ret = table->egl.eglBindTexImage(disp_, surfPtr->GetEglSurface(), buffer);
+    } else {
         WLOGE("eglBindTexImage is invalid.");
     }
 
     return ret;
 }
 
-EGLBoolean EglWrapperDisplay::ReleaseTexImage(EGLSurface surface, EGLint buffer)
+EGLBoolean EglWrapperDisplay::ReleaseTexImage(EGLSurface surf, EGLint buffer)
 {
     WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
-    EglWrapperSurface *surfacePtr = EglWrapperSurface::GetWrapperSurface(surface);
-    if (!CheckObject(surfacePtr)) {
+    EglWrapperSurface *surfPtr = EglWrapperSurface::GetWrapperSurface(surf);
+    if (!CheckObject(surfPtr)) {
         WLOGE("EGLSurface is invalid.");
         ThreadPrivateDataCtl::SetError(EGL_BAD_SURFACE);
         return EGL_FALSE;
@@ -602,22 +584,21 @@ EGLBoolean EglWrapperDisplay::ReleaseTexImage(EGLSurface surface, EGLint buffer)
     EGLBoolean ret = EGL_FALSE;
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglReleaseTexImage) {
-        ret = table->egl.eglReleaseTexImage(disp_, surfacePtr->GetEglSurface(), buffer);
-    }
-    else {
+        ret = table->egl.eglReleaseTexImage(disp_, surfPtr->GetEglSurface(), buffer);
+    } else {
         WLOGE("eglReleaseTexImage is invalid.");
     }
 
     return ret;
 }
 
-EGLBoolean EglWrapperDisplay::SurfaceAttrib(EGLSurface surface, EGLint attribute, EGLint value)
+EGLBoolean EglWrapperDisplay::SurfaceAttrib(EGLSurface surf, EGLint attribute, EGLint value)
 {
     WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
-    EglWrapperSurface *surfacePtr = EglWrapperSurface::GetWrapperSurface(surface);
-    if (!CheckObject(surfacePtr)) {
+    EglWrapperSurface *surfPtr = EglWrapperSurface::GetWrapperSurface(surf);
+    if (!CheckObject(surfPtr)) {
         WLOGE("EGLSurface is invalid.");
         ThreadPrivateDataCtl::SetError(EGL_BAD_SURFACE);
         return EGL_FALSE;
@@ -627,9 +608,8 @@ EGLBoolean EglWrapperDisplay::SurfaceAttrib(EGLSurface surface, EGLint attribute
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglSurfaceAttrib) {
         ret = table->egl.eglSurfaceAttrib(disp_,
-            surfacePtr->GetEglSurface(), attribute, value);
-    }
-    else {
+            surfPtr->GetEglSurface(), attribute, value);
+    } else {
         WLOGE("eglSurfaceAttrib is invalid.");
     }
 
@@ -640,21 +620,19 @@ EGLSurface EglWrapperDisplay::CreatePbufferFromClientBuffer(
     EGLenum buftype, EGLClientBuffer buffer,
     EGLConfig config, const EGLint *attribList)
 {
-    WLOGD("");    
+    WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglCreatePbufferFromClientBuffer) {
-        EGLSurface surface = table->egl.eglCreatePbufferFromClientBuffer(
+        EGLSurface surf = table->egl.eglCreatePbufferFromClientBuffer(
             disp_, buftype, buffer, config, attribList);
-        if (surface != EGL_NO_SURFACE) {
-            return new EglWrapperSurface(this, surface);
-        }
-        else {
+        if (surf != EGL_NO_SURFACE) {
+            return new EglWrapperSurface(this, surf);
+        } else {
             WLOGE("egl.eglCreatePbufferFromClientBuffer error.");
         }
-    }
-    else {
+    } else {
         WLOGE("eglCreatePbufferFromClientBuffer is invalid.");
     }
 
@@ -662,9 +640,9 @@ EGLSurface EglWrapperDisplay::CreatePbufferFromClientBuffer(
 }
 
 EGLImage EglWrapperDisplay::CreateImage(EGLContext ctx, EGLenum target,
-        EGLClientBuffer buffer, const EGLAttrib *attribList)
+    EGLClientBuffer buffer, const EGLAttrib *attribList)
 {
-    WLOGD("");    
+    WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
     EGLContext actualCtx  = EGL_NO_CONTEXT;
@@ -678,8 +656,7 @@ EGLImage EglWrapperDisplay::CreateImage(EGLContext ctx, EGLenum target,
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglCreateImage) {
         return table->egl.eglCreateImage(disp_, actualCtx, target, buffer, attribList);
-    }
-    else {
+    } else {
         WLOGE("eglCreateImage is invalid.");
     }
 
@@ -695,8 +672,7 @@ EGLBoolean EglWrapperDisplay::DestroyImage(EGLImage img)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglDestroyImage) {
         ret = table->egl.eglDestroyImage(disp_, img);
-    }
-    else {
+    } else {
         WLOGE("eglDestroyImage is invalid.");
     }
 
@@ -706,7 +682,7 @@ EGLBoolean EglWrapperDisplay::DestroyImage(EGLImage img)
 EGLSurface EglWrapperDisplay::CreatePlatformWindowSurface(EGLConfig config,
     void *nativeWindow, const EGLAttrib *attribList)
 {
-    WLOGD("");    
+    WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
     if (!nativeWindow) {
@@ -717,16 +693,14 @@ EGLSurface EglWrapperDisplay::CreatePlatformWindowSurface(EGLConfig config,
 
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglCreatePlatformWindowSurface) {
-        EGLSurface surface = table->egl.eglCreatePlatformWindowSurface(disp_,
+        EGLSurface surf = table->egl.eglCreatePlatformWindowSurface(disp_,
             config, nativeWindow, attribList);
-        if (surface != EGL_NO_SURFACE) {
-            return new EglWrapperSurface(this, surface);
-        }
-        else {
+        if (surf != EGL_NO_SURFACE) {
+            return new EglWrapperSurface(this, surf);
+        } else {
             WLOGE("egl.eglCreatePlatformWindowSurface error.");
         }
-    }
-    else {
+    } else {
         WLOGE("eglCreatePlatformWindowSurface is invalid.");
     }
 
@@ -736,7 +710,7 @@ EGLSurface EglWrapperDisplay::CreatePlatformWindowSurface(EGLConfig config,
 EGLSurface EglWrapperDisplay::CreatePlatformPixmapSurface(EGLConfig config,
     void *nativePixmap, const EGLAttrib *attribList)
 {
-    WLOGD("");    
+    WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
     if (!nativePixmap) {
@@ -747,29 +721,27 @@ EGLSurface EglWrapperDisplay::CreatePlatformPixmapSurface(EGLConfig config,
 
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglCreatePlatformPixmapSurface) {
-        EGLSurface surface = table->egl.eglCreatePlatformPixmapSurface(disp_,
+        EGLSurface surf = table->egl.eglCreatePlatformPixmapSurface(disp_,
             config, nativePixmap, attribList);
-        if (surface != EGL_NO_SURFACE) {
-            return new EglWrapperSurface(this, surface);
-        }
-        else {
+        if (surf != EGL_NO_SURFACE) {
+            return new EglWrapperSurface(this, surf);
+        } else {
             WLOGE("egl.eglCreatePlatformPixmapSurface error.");
         }
-    }
-    else {
+    } else {
         WLOGE("eglCreatePlatformPixmapSurface is invalid.");
     }
 
     return EGL_NO_SURFACE;
 }
 
-EGLBoolean EglWrapperDisplay::LockSurfaceKHR(EGLSurface surface, const EGLint *attribList)
+EGLBoolean EglWrapperDisplay::LockSurfaceKHR(EGLSurface surf, const EGLint *attribList)
 {
     WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
-    EglWrapperSurface *surfacePtr = EglWrapperSurface::GetWrapperSurface(surface);
-    if (!CheckObject(surfacePtr)) {
+    EglWrapperSurface *surfPtr = EglWrapperSurface::GetWrapperSurface(surf);
+    if (!CheckObject(surfPtr)) {
         WLOGE("EGLSurface is invalid.");
         ThreadPrivateDataCtl::SetError(EGL_BAD_SURFACE);
         return EGL_FALSE;
@@ -779,22 +751,21 @@ EGLBoolean EglWrapperDisplay::LockSurfaceKHR(EGLSurface surface, const EGLint *a
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglLockSurfaceKHR) {
         ret = table->egl.eglLockSurfaceKHR(disp_,
-            surfacePtr->GetEglSurface(), attribList);
-    }
-    else {
+            surfPtr->GetEglSurface(), attribList);
+    } else {
         WLOGE("eglLockSurfaceKHR is invalid.");
     }
 
     return ret;
 }
 
-EGLBoolean EglWrapperDisplay::UnlockSurfaceKHR(EGLSurface surface)
+EGLBoolean EglWrapperDisplay::UnlockSurfaceKHR(EGLSurface surf)
 {
     WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
-    EglWrapperSurface *surfacePtr = EglWrapperSurface::GetWrapperSurface(surface);
-    if (!CheckObject(surfacePtr)) {
+    EglWrapperSurface *surfPtr = EglWrapperSurface::GetWrapperSurface(surf);
+    if (!CheckObject(surfPtr)) {
         WLOGE("EGLSurface is invalid.");
         ThreadPrivateDataCtl::SetError(EGL_BAD_SURFACE);
         return EGL_FALSE;
@@ -803,9 +774,8 @@ EGLBoolean EglWrapperDisplay::UnlockSurfaceKHR(EGLSurface surface)
     EGLBoolean ret = EGL_FALSE;
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglUnlockSurfaceKHR) {
-        ret = table->egl.eglUnlockSurfaceKHR(disp_, surfacePtr->GetEglSurface());
-    }
-    else {
+        ret = table->egl.eglUnlockSurfaceKHR(disp_, surfPtr->GetEglSurface());
+    } else {
         WLOGE("eglUnlockSurfaceKHR is invalid.");
     }
 
@@ -815,7 +785,7 @@ EGLBoolean EglWrapperDisplay::UnlockSurfaceKHR(EGLSurface surface)
 EGLImageKHR EglWrapperDisplay::CreateImageKHR(EGLContext ctx, EGLenum target, 
     EGLClientBuffer buffer, const EGLint *attribList)
 {
-    WLOGD("");    
+    WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
     EGLContext actualCtx  = EGL_NO_CONTEXT;
@@ -829,8 +799,7 @@ EGLImageKHR EglWrapperDisplay::CreateImageKHR(EGLContext ctx, EGLenum target,
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglCreateImageKHR) {
         return table->egl.eglCreateImageKHR(disp_, actualCtx, target, buffer, attribList);
-    }
-    else {
+    } else {
         WLOGE("eglCreateImageKHR is invalid.");
     }
 
@@ -846,8 +815,7 @@ EGLBoolean EglWrapperDisplay::DestroyImageKHR(EGLImageKHR img)
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglDestroyImageKHR) {
         ret = table->egl.eglDestroyImageKHR(disp_, img);
-    }
-    else {
+    } else {
         WLOGE("eglDestroyImageKHR is invalid.");
     }
 
@@ -855,23 +823,21 @@ EGLBoolean EglWrapperDisplay::DestroyImageKHR(EGLImageKHR img)
 }
 
 EGLSurface EglWrapperDisplay::CreateStreamProducerSurfaceKHR(EGLConfig config,
-        EGLStreamKHR stream, const EGLint *attribList)
+    EGLStreamKHR stream, const EGLint *attribList)
 {
-    WLOGD("");    
+    WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglCreateStreamProducerSurfaceKHR) {
-        EGLSurface surface = table->egl.eglCreateStreamProducerSurfaceKHR(
+        EGLSurface surf = table->egl.eglCreateStreamProducerSurfaceKHR(
             disp_, config, stream, attribList);
-        if (surface != EGL_NO_SURFACE) {
-            return new EglWrapperSurface(this, surface);
-        }
-        else {
+        if (surf != EGL_NO_SURFACE) {
+            return new EglWrapperSurface(this, surf);
+        } else {
             WLOGE("egl.eglCreateStreamProducerSurfaceKHR error.");
         }
-    }
-    else {
+    } else {
         WLOGE("eglCreateStreamProducerSurfaceKHR is invalid.");
     }
 
@@ -901,21 +867,20 @@ EGLBoolean EglWrapperDisplay::SwapBuffersWithDamageKHR(EGLSurface draw, EGLint *
     if (table->isLoad && table->egl.eglSwapBuffersWithDamageKHR) {
         ret = table->egl.eglSwapBuffersWithDamageKHR(
             disp_, surfacePtr->GetEglSurface(), rects, nRects);
-    }
-    else {
+    } else {
         WLOGE("eglSwapBuffersWithDamageKHR is invalid.");
     }
 
     return ret;
 }
 
-EGLBoolean EglWrapperDisplay::SetDamageRegionKHR(EGLSurface surface, EGLint *rects, EGLint nRects)
+EGLBoolean EglWrapperDisplay::SetDamageRegionKHR(EGLSurface surf, EGLint *rects, EGLint nRects)
 {
     WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
 
-    EglWrapperSurface *surfacePtr = EglWrapperSurface::GetWrapperSurface(surface);
-    if (!CheckObject(surfacePtr)) {
+    EglWrapperSurface *surfPtr = EglWrapperSurface::GetWrapperSurface(surf);
+    if (!CheckObject(surfPtr)) {
         WLOGE("EGLSurface is invalid.");
         ThreadPrivateDataCtl::SetError(EGL_BAD_SURFACE);
         return EGL_FALSE;
@@ -931,14 +896,11 @@ EGLBoolean EglWrapperDisplay::SetDamageRegionKHR(EGLSurface surface, EGLint *rec
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglSetDamageRegionKHR) {
         ret = table->egl.eglSetDamageRegionKHR(
-            disp_, surfacePtr->GetEglSurface(), rects, nRects);
-    }
-    else {
+            disp_, surfPtr->GetEglSurface(), rects, nRects);
+    } else {
         WLOGE("eglSetDamageRegionKHR is invalid.");
     }
 
     return ret;
 }
-
-
 } // namespace OHOS

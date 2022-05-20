@@ -15,7 +15,6 @@
 
 #ifndef FRAMEWORKS_OPENGL_WRAPPER_EGL_WRAPPER_OBJECT_H
 #define FRAMEWORKS_OPENGL_WRAPPER_EGL_WRAPPER_OBJECT_H
-
 namespace OHOS {
 
 class EglWrapperDisplay;
@@ -32,7 +31,5 @@ protected:
 private:
     EglWrapperDisplay *display_;
 };
-
 } // namespace OHOS
-
 #endif // FRAMEWORKS_OPENGL_WRAPPER_EGL_WRAPPER_OBJECT_H

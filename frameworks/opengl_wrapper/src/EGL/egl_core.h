@@ -12,12 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef FRAMEWORKS_OPENGL_WRAPPER_EGL_CORE_H
 #define FRAMEWORKS_OPENGL_WRAPPER_EGL_CORE_H
 
 namespace OHOS {
     bool EglCoreInit();
 }; // namespace OHOS
-
 #endif // FRAMEWORKS_OPENGL_WRAPPER_EGL_CORE_H

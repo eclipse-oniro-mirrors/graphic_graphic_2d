@@ -12,16 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "egl_wrapper_surface.h"
 
 #include "egl_wrapper_display.h"
 #include "../wrapper_log.h"
 
 namespace OHOS {
+namespace {
+constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
+}
 
-EglWrapperSurface::EglWrapperSurface(EglWrapperDisplay * disp, EGLSurface surface)
- : EglWrapperObject(disp), surface_(surface)
+EglWrapperSurface::EglWrapperSurface(EglWrapperDisplay *disp, EGLSurface surf)
+    : EglWrapperObject(disp), surf_(surf)
 {
     WLOGD("");
 }
@@ -29,13 +31,12 @@ EglWrapperSurface::EglWrapperSurface(EglWrapperDisplay * disp, EGLSurface surfac
 EglWrapperSurface::~EglWrapperSurface()
 {
     WLOGD("");
-    surface_ = nullptr;
+    surf_ = nullptr;
 }
 
-EglWrapperSurface * EglWrapperSurface::GetWrapperSurface(EGLSurface surface)
+EglWrapperSurface *EglWrapperSurface::GetWrapperSurface(EGLSurface surf)
 {
     WLOGD("");
-    return reinterpret_cast<EglWrapperSurface *>(surface);
+    return reinterpret_cast<EglWrapperSurface *>(surf);
 }
-
 } // namespace OHOS

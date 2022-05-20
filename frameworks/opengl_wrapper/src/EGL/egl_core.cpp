@@ -19,58 +19,59 @@
 #include "egl_defs.h"
 #include "egl_wrapper_layer.h"
 #include "egl_wrapper_loader.h"
-#include "../thread_private_data.h"
+#include "../thread_private_data_ctl.h"
 #include "../wrapper_log.h"
 
 using namespace OHOS;
-
 namespace OHOS {
+namespace {
+constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
+}
 
 EglWrapperDispatchTable gWrapperHook;
 GlHookTable gGlHookNoContext;
 
-#undef HOOK_API_ENTRY
 #undef CALL_HOOK_API
-#undef CALL_HOOK_API_RET
 #define CALL_HOOK_API(...)
+
+#undef CALL_HOOK_API_RET
 #define CALL_HOOK_API_RET CALL_HOOK_API
+
+#undef HOOK_API_ENTRY
 #define HOOK_API_ENTRY(r, api, ...) #api,
 
-char const * const gWrapperApiNames[] = {
-    #include "../wrapper_hook_entries.in"
+char const * const gWrapperApiNames[EGL_API_NUM] = {
+#include "../wrapper_hook_entries.in"
     nullptr
 };
 
-char const * const gEglApiNames[] = {
-    #include "../egl_hook_entries.in"
+char const * const gEglApiNames[EGL_API_NUM] = {
+#include "../egl_hook_entries.in"
     nullptr
 };
 
-char const * const gGlApiNames1[] = {
-    #include "../gl1_hook_entries.in"
+char const * const gGlApiNames1[GL_API_NUM] = {
+#include "../gl1_hook_entries.in"
     nullptr
 };
 
-char const * const gGlApiNames2[] = {
-    #include "../gl2_hook_entries.in"
+char const * const gGlApiNames2[GL_API_NUM] = {
+#include "../gl2_hook_entries.in"
     nullptr
 };
 
-char const * const gGlApiNames3[] = {
-    #include "../gl3_hook_entries.in"
+char const * const gGlApiNames3[GL_API_NUM] = {
+#include "../gl3_hook_entries.in"
     nullptr
 };
 
-#undef HOOK_API_ENTRY
-#undef CALL_HOOK_API
-#undef CALL_HOOK_API_RET
-
-static void CallGlApiNoContext(void) {
+static void CallGlApiNoContext(void) noexcept
+{
     WLOGE("Call To OpenGL ES API With No Current Context");
     return;
 }
 
-static void PreInit(void)
+static void PreInit(void) noexcept
 {
     WLOGD("");
     int numApis = sizeof(gGlHookNoContext) / sizeof(EglWrapperFuncPointer);
@@ -89,7 +90,7 @@ static std::mutex gInitMutex;
 void WrapperHookTableInit()
 {
     WLOGD("");
-    char const* const* apiName = gWrapperApiNames;
+    char const* const *apiName = gWrapperApiNames;
     EglWrapperFuncPointer *curr = reinterpret_cast<EglWrapperFuncPointer*>(&gWrapperHook.wrapper);
     while (*apiName) {
         std::string name = *apiName;
@@ -102,7 +103,8 @@ void WrapperHookTableInit()
     }
 }
 
-bool EglCoreInit() {
+bool EglCoreInit()
+{
     std::lock_guard<std::mutex> lock(gInitMutex);
 
     if (gWrapperHook.isLoad) {

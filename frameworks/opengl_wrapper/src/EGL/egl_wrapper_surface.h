@@ -18,21 +18,22 @@
 
 #include <EGL/egl.h>
 #include "egl_wrapper_object.h"
-
 namespace OHOS {
 
 class EglWrapperDisplay;
 
 class EglWrapperSurface : public EglWrapperObject {
 public:
-    EglWrapperSurface(EglWrapperDisplay *disp, EGLSurface surface);
-    ~EglWrapperSurface();
-    static EglWrapperSurface *GetWrapperSurface(EGLSurface ctx);
-    inline EGLSurface GetEglSurface() const {return surface_;};
+    EglWrapperSurface(EglWrapperDisplay *disp, EGLSurface surf);
+    static EglWrapperSurface *GetWrapperSurface(EGLSurface surf);
+    inline EGLSurface GetEglSurface() const
+    {
+        return surf_;
+    };
+protected:
+    virtual ~EglWrapperSurface() override;
 private:
-    EGLSurface surface_;
+    EGLSurface surf_;
 };
-
 } // namespace OHOS
-
 #endif // FRAMEWORKS_OPENGL_WRAPPER_EGL_WRAPPER_SURFACE_H

@@ -486,5 +486,4 @@ HWTEST_F(OpenglWrapperApiTest, eglReleaseThread, TestSize.Level0)
     EXPECT_EQ(error, EGL_SUCCESS);
 
 }
-
 }

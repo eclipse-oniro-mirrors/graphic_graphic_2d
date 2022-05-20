@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef FRAMEWORKS_OPENGL_WRAPPER_EGL_WRAPPER_ENTRY_H
 #define FRAMEWORKS_OPENGL_WRAPPER_EGL_WRAPPER_ENTRY_H
 
@@ -24,7 +23,5 @@ using EglWrapperFuncPointer = __eglMustCastToProperFunctionPointerType;
 namespace OHOS {
     EglWrapperFuncPointer FindEglWrapperApi(const std::string &name);
     bool CheckEglWrapperApi(const std::string &name);
-
-}; // namespace OHOS
-
+} // namespace OHOS
 #endif // FRAMEWORKS_OPENGL_WRAPPER_EGL_WRAPPER_ENTRY_H

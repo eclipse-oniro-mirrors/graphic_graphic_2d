@@ -22,14 +22,15 @@
 #include "../wrapper_log.h"
 
 using namespace OHOS;
-
 namespace OHOS {
-
+namespace {
+constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
 constexpr const char *VENDOR_LIB_PATH = "/system/lib/";
 constexpr const char *LIB_EGL_NAME = "libEGL.so";
 constexpr const char *LIB_GLESV1_NAME = "libGLESv1.so";
 constexpr const char *LIB_GLESV2_NAME = "libGLESv2.so";
 constexpr const char *LIB_GLESV3_NAME = "libGLESv3.so";
+}
 
 EglWrapperLoader& EglWrapperLoader::GetInstance()
 {
@@ -42,7 +43,7 @@ EglWrapperLoader::~EglWrapperLoader()
     WLOGD("");
 }
 
-using GetProcAddressType = __eglMustCastToProperFunctionPointerType (*)(const char *);
+using GetProcAddressType = FunctionPointerType (*)(const char *);
 bool EglWrapperLoader::LoadEgl(const char *path, EglHookTable *table)
 {
     WLOGD("");
@@ -55,18 +56,15 @@ bool EglWrapperLoader::LoadEgl(const char *path, EglHookTable *table)
     GetProcAddressType getProcAddr =
         (GetProcAddressType)dlsym(dlEglHandle_, "eglGetProcAddress");
     if (getProcAddr == nullptr) {
-         WLOGE("can't find eglGetProcAddress() in EGL driver library.");
-         return false;
+        WLOGE("can't find eglGetProcAddress() in EGL driver library.");
+        return false;
     }
 
-    __eglMustCastToProperFunctionPointerType *current = 
-        (__eglMustCastToProperFunctionPointerType *)table;
+    FunctionPointerType *current = (FunctionPointerType *)table;
     char const * const *api = gEglApiNames;
     while (*api) {
         char const *name = *api;
-        __eglMustCastToProperFunctionPointerType func =
-            (__eglMustCastToProperFunctionPointerType)dlsym(dlEglHandle_, name);
-
+        FunctionPointerType func = (FunctionPointerType)dlsym(dlEglHandle_, name);
         if (func == nullptr) {
             WLOGD("try to getProcAddr %{public}s.", name);
             func = getProcAddr(name);
@@ -82,24 +80,22 @@ bool EglWrapperLoader::LoadEgl(const char *path, EglHookTable *table)
     return true;
 }
 
-void *EglWrapperLoader::LoadGl(const char *path, char const * const *glName, void *entry)
+void *EglWrapperLoader::LoadGl(const char *path, char const * const *glName, FunctionPointerType *entry)
 {
     WLOGD("");
     void *dlHandle = dlopen(path, RTLD_NOW | RTLD_LOCAL);
     if (dlHandle == nullptr) {
-         WLOGE("dlopen failed. error: %{public}s.", dlerror());
-         return nullptr;
+        WLOGE("dlopen failed. error: %{public}s.", dlerror());
+        return nullptr;
     }
 
-    __eglMustCastToProperFunctionPointerType *current = 
-        (__eglMustCastToProperFunctionPointerType *)entry;
+    FunctionPointerType *current = entry;
     char const * const *api = glName;
     while (*api) {
         char const *name = *api;
-        __eglMustCastToProperFunctionPointerType func =
-            (__eglMustCastToProperFunctionPointerType)dlsym(dlHandle, name);
+        FunctionPointerType func = (FunctionPointerType)dlsym(dlHandle, name);
         if (func == nullptr) {
-             WLOGD("couldn't find the entry-point: %{public}s.", name);
+            WLOGD("couldn't find the entry-point: %{public}s.", name);
         }
         *current++ = func;
         api++;
@@ -119,7 +115,7 @@ bool EglWrapperLoader::LoadVendorDriver(EglWrapperDispatchTable *table)
 
     WLOGD("GLESV1");
     std::string glPath = std::string(VENDOR_LIB_PATH) + std::string(LIB_GLESV1_NAME);
-    dlGlHandle1_ = LoadGl(glPath.c_str(), gGlApiNames1, &table->gl.table1);
+    dlGlHandle1_ = LoadGl(glPath.c_str(), gGlApiNames1, (FunctionPointerType *)&table->gl.table1);
     if (!dlEglHandle_) {
         WLOGE("LoadGl GLESV1 Failed.");
         return false;
@@ -127,7 +123,7 @@ bool EglWrapperLoader::LoadVendorDriver(EglWrapperDispatchTable *table)
 
     WLOGD("GLESV2");
     glPath = std::string(VENDOR_LIB_PATH) + std::string(LIB_GLESV2_NAME);
-    dlGlHandle2_ = LoadGl(glPath.c_str(), gGlApiNames2, &table->gl.table2);
+    dlGlHandle2_ = LoadGl(glPath.c_str(), gGlApiNames2, (FunctionPointerType *)&table->gl.table2);
     if (!dlGlHandle2_) {
         WLOGE("LoadGl GLESV2 Failed.");
         return false;
@@ -135,7 +131,7 @@ bool EglWrapperLoader::LoadVendorDriver(EglWrapperDispatchTable *table)
 
     WLOGD("GLESV3");
     glPath = std::string(VENDOR_LIB_PATH) + std::string(LIB_GLESV3_NAME);
-    dlGlHandle3_ = LoadGl(glPath.c_str(), gGlApiNames3, &table->gl.table3);
+    dlGlHandle3_ = LoadGl(glPath.c_str(), gGlApiNames3, (FunctionPointerType *)&table->gl.table3);
     if (!dlGlHandle3_) {
         WLOGE("LoadGl GLESV3 Failed.");
         return false;
@@ -222,5 +218,4 @@ void *EglWrapperLoader::GetProcAddrFromDriver(const char *name)
 
     return func;
 }
-
 } // namespace OHOS
