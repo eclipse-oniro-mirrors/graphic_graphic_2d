@@ -67,6 +67,8 @@ ohos_shared_library("EGL_wrapper") {
 config("glesv1_config") {
   visibility = [ ":*" ]
 
+  #defines = [ "EGL_WRAPPER_DEBUG_ENABLE" ]
+
   cflags = [
     "-Wall",
     "-Werror",
@@ -105,6 +107,8 @@ ohos_shared_library("GLESv1_wrapper") {
 ## Build libGLESv2_wrapper.so {{{
 config("glesv2_config") {
   visibility = [ ":*" ]
+
+  #defines = [ "EGL_WRAPPER_DEBUG_ENABLE" ]
 
   cflags = [
     "-Wall",
@@ -182,31 +186,29 @@ ohos_shared_library("GLESv3_wrapper") {
 
 ## Build libGLESv3_wrapper.so }}}
 
-## Build opengl_wrapper_test {{{
-config("opengl_wrapper_test_config") {
-  visibility = [ ":*" ]
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-g3",
-  ]
-}
-
-ohos_executable("opengl_wrapper_test") {
+## Build opengl_wrapper_native_test {{{
+ohos_executable("opengl_wrapper_native_test") {
   install_enable = true
-  sources = [
-    "test/main.cpp",
-  ]
 
-  configs = [ ":opengl_wrapper_test_config" ]
+  sources = [ "test/opengl_wrapper_native_test.cpp" ]
+
+  include_dirs = [
+    "//foundation/graphic/graphic/interfaces/inner_api/surface",
+    "//foundation/graphic/graphic/interfaces/inner_api/common",
+    "//foundation/graphic/graphic/rosen/modules/render_service_client",
+  ]
 
   deps = [
-    ":EGL_wrapper",
-    ":GLESv3_wrapper",
+    "//utils/native/base:utils",
+    "//foundation/graphic/graphic/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  external_deps = [
+    "hilog_native:libhilog",
+    "multimedia_image_standard:image_native",
   ]
 
   part_name = "graphic_standard"
   subsystem_name = "graphic"
 }
-## Build opengl_wrapper_test }}}
+## Build opengl_wrapper_native_test }}}

@@ -25,6 +25,7 @@ public:
     explicit EglWrapperObject(EglWrapperDisplay *disp);
     EglWrapperDisplay *GetDisplay();
     void Destroy();
+    void Release();
 protected:
     virtual ~EglWrapperObject();
 

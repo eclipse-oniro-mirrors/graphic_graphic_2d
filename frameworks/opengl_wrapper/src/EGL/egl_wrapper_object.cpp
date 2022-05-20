@@ -49,4 +49,10 @@ void EglWrapperObject::Destroy()
     delete this;
 }
 
+void EglWrapperObject::Release()
+{
+    WLOGD("");
+    delete this;
+}
+
 } // namespace OHOS

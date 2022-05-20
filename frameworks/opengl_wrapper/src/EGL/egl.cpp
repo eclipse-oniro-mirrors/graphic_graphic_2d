@@ -12,9 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include <mutex>
-
 #include "egl_core.h"
 #include "egl_defs.h"
 #include "../thread_private_data.h"
