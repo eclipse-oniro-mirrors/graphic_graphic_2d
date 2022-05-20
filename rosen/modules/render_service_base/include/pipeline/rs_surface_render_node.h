@@ -130,12 +130,8 @@ public:
     }
 
     void SetConsumer(const sptr<Surface>& consumer);
-    void SetParentId(NodeId parentId, bool sendMsg = true);
-    NodeId GetParentId() const;
 
     void UpdateSurfaceDefaultSize(float width, float height);
-
-    static void SendCommandFromRT(std::unique_ptr<RSCommand>& command);
 
     BlendType GetBlendType();
     void SetBlendType(BlendType blendType);
@@ -164,6 +160,8 @@ public:
     bool NeedSetCallbackForRenderThreadRefresh();
 
 private:
+    void SendCommandFromRT(std::unique_ptr<RSCommand>& command);
+
     RectI CalculateClipRegion(RSPaintFilterCanvas& canvas);
     friend class RSRenderTransition;
 
@@ -176,7 +174,6 @@ private:
     Vector4f contextClipRect_;
 
     bool isSecurityLayer_ = false;
-    NodeId parentId_ = 0;
     RectI dstRect_;
     int32_t offsetX_ = 0;
     int32_t offsetY_ = 0;

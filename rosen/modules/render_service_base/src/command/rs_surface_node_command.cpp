@@ -62,26 +62,6 @@ void SurfaceNodeCommandHelper::SetSecurityLayer(RSContext& context, NodeId id, b
     }
 }
 
-void SurfaceNodeCommandHelper::SetParentSurface(RSContext& context, NodeId id, NodeId parentId)
-{
-    auto& nodeMap = context.GetNodeMap();
-    auto node = nodeMap.GetRenderNode<RSSurfaceRenderNode>(id);
-    auto parent = nodeMap.GetRenderNode<RSBaseRenderNode>(parentId);
-    if (node && parent) {
-        node->SetParentId(parentId, false);
-        parent->AddChild(node);
-    }
-}
-
-void SurfaceNodeCommandHelper::RemoveSelf(RSContext& context, NodeId id)
-{
-    auto& nodeMap = context.GetNodeMap();
-    auto node = nodeMap.GetRenderNode<RSBaseRenderNode>(id);
-    if (node) {
-        node->RemoveFromTree();
-    }
-}
-
 void SurfaceNodeCommandHelper::UpdateSurfaceDefaultSize(RSContext& context, NodeId id, float width, float height)
 {
     if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(id)) {

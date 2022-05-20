@@ -52,8 +52,12 @@ private:
     bool dirtyFlag_ = false;
     bool isIdle_ = true;
     RSPaintFilterCanvas* canvas_;
-    RSRootRenderNode* curTreeRoot_ = nullptr;
     std::set<NodeId> forceRasterNodes;
+
+    void ClipHoleForSurfaceNode(RSSurfaceRenderNode& node);
+
+    NodeId parentSurfaceNodeId_ = 0;
+    void SendCommandFromRT(std::unique_ptr<RSCommand>& command);
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -19,6 +19,7 @@
 #include <include/core/SkFont.h>
 #include <include/core/SkPaint.h>
 
+#include "command/rs_base_node_command.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_dirty_region_manager.h"
 #include "pipeline/rs_node_map.h"
@@ -48,9 +49,6 @@ void RSRenderThreadVisitor::PrepareBaseRenderNode(RSBaseRenderNode& node)
 void RSRenderThreadVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
 {
     if (isIdle_) {
-        curTreeRoot_ = &node;
-        curTreeRoot_->ClearSurfaceNodeInRS();
-
         dirtyManager_.Clear();
         dirtyFlag_ = false;
         isIdle_ = false;
@@ -71,9 +69,6 @@ void RSRenderThreadVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode& node)
 
 void RSRenderThreadVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 {
-    if (!node.IsProxy()) {
-        curTreeRoot_->AddSurfaceRenderNode(node.GetId());
-    }
     bool dirtyFlag = dirtyFlag_;
     dirtyFlag_ = node.Update(dirtyManager_, nullptr, dirtyFlag_);
     PrepareBaseRenderNode(node);
@@ -151,6 +146,12 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     }
     canvas_->clear(SK_ColorTRANSPARENT);
     isIdle_ = false;
+
+    // clear current children before traversal, we will re-add them again during traversal
+    parentSurfaceNodeId_ = node.GetRSSurfaceNodeId();
+    std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeClearChild>(parentSurfaceNodeId_);
+    SendCommandFromRT(command);
+
     ProcessCanvasRenderNode(node);
 
     if (skSurface) {
@@ -211,11 +212,34 @@ void RSRenderThreadVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         ProcessBaseRenderNode(node);
         return;
     }
-    node.SetParentId(node.GetParent().lock()->GetId());
     auto clipRect = canvas_->getDeviceClipBounds();
-    node.SetContextClipRegion({ clipRect.left(), clipRect.top(), clipRect.width(), clipRect.height() });
+    node.SetContextClipRegion({clipRect.left(), clipRect.top(), clipRect.width(), clipRect.height()});
 
     // clip hole
+    ClipHoleForSurfaceNode(node);
+#endif
+    // 1. add this node to parent's children list
+    std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeAddChild>(parentSurfaceNodeId_, node.GetId(), -1);
+    SendCommandFromRT(command);
+
+    // 2. remember current parent node id, will restore it after traversal
+    auto parentSurfaceNodeId = parentSurfaceNodeId_;
+
+    // 3. clear children of this node, will be re-add during traversal
+    command = std::make_unique<RSBaseNodeClearChild>(node.GetId());
+    SendCommandFromRT(command);
+
+    // 4. traversal children, set parent node id to this node
+    parentSurfaceNodeId_ = node.GetId();
+    ProcessBaseRenderNode(node);
+
+    // 5. restore parent node id
+    parentSurfaceNodeId_ = parentSurfaceNodeId;
+}
+
+void RSRenderThreadVisitor::ClipHoleForSurfaceNode(RSSurfaceRenderNode& node)
+{
+#ifdef ROSEN_OHOS
     auto x = node.GetRenderProperties().GetBoundsPositionX();
     auto y = node.GetRenderProperties().GetBoundsPositionY();
     auto width = node.GetRenderProperties().GetBoundsWidth();
@@ -237,9 +261,15 @@ void RSRenderThreadVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         }
     }
     canvas_->restore();
-
 #endif
-    ProcessBaseRenderNode(node);
+}
+
+void RSRenderThreadVisitor::SendCommandFromRT(std::unique_ptr<RSCommand>& command)
+{
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommandFromRT(command);
+    }
 }
 } // namespace Rosen
 } // namespace OHOS
