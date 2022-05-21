@@ -156,8 +156,11 @@ public:
     // Only SurfaceNode in RT calls "ConnectToNodeInRenderService" to send callback method to RS
     void ConnectToNodeInRenderService();
 
-    void NotifyBufferAvailable();
-    bool IsBufferAvailable() const;
+    void NotifyRTBufferAvailable();
+    bool IsNotifyRTBufferAvailable() const;
+
+    void NotifyUIBufferAvailable();
+    bool IsNotifyUIBufferAvailable() const;
 
     // UI Thread would not be notified when SurfaceNode created by Video/Camera in RenderService has available buffer.
     // And RenderThread does not call mainFunc_ if nothing in UI thread is changed
@@ -172,6 +175,8 @@ private:
     RectI CalculateClipRegion(RSPaintFilterCanvas& canvas);
     friend class RSRenderTransition;
 
+    std::mutex mutexRT_;
+    std::mutex mutexUI_;
     std::mutex mutex_;
     SkMatrix matrix_;
     float alpha_ = 1.0f;
@@ -185,7 +190,8 @@ private:
     std::string name_;
     bool isProxy_ = false;
     BlendType blendType_ = BlendType::BLEND_SRCOVER;
-    std::atomic<bool> isBufferAvailable_ = false;
+    std::atomic<bool> isNotifyRTBufferAvailable_ = false;
+    std::atomic<bool> isNotifyUIBufferAvailable_ = false;
     sptr<RSIBufferAvailableCallback> callbackFromRT_;
     sptr<RSIBufferAvailableCallback> callbackFromUI_;
     std::function<void(void)> callbackForRenderThreadRefresh_ = nullptr;
