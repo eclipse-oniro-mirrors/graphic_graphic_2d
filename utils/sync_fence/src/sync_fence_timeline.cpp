@@ -51,7 +51,6 @@ ns_sec_t SyncFenceTime::GetSignalTimestamp()
         return signaledTimestamps_.load(std::memory_order_relaxed);
     }
     fence = fence_;
-    
 
     timestamp = fence->SyncFileReadTimestamp();
     if (timestamp != SyncFence::FENCE_PENDING_TIMESTAMP) {
@@ -66,7 +65,6 @@ ns_sec_t SyncFenceTime::GetCachedSignalTimestamp() const
 {
     return signaledTimestamps_.load(std::memory_order_relaxed);
 }
-
 
 void SyncFenceTimeline::Push(const std::shared_ptr<SyncFenceTime> &fence)
 {
