@@ -18,10 +18,6 @@
 #include "../wrapper_log.h"
 
 namespace OHOS {
-namespace {
-constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
-}
-
 EglWrapperSurface::EglWrapperSurface(EglWrapperDisplay *disp, EGLSurface surf)
     : EglWrapperObject(disp), surf_(surf)
 {

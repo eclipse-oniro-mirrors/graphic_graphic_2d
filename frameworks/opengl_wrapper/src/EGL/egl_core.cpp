@@ -23,10 +23,6 @@
 #include "../wrapper_log.h"
 
 namespace OHOS {
-namespace {
-constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
-}
-
 EglWrapperDispatchTable gWrapperHook;
 GlHookTable gGlHookNoContext;
 
@@ -66,41 +62,34 @@ char const * const gGlApiNames3[GL_API_NUM] = {
 
 using namespace OHOS;
 
-static void CallGlApiNoContext(void)
-{
-    WLOGE("Call To OpenGL ES API With No Current Context");
-    return;
-}
-
-static void PreInit(void)
-{
-    WLOGD("");
-    int numApis = sizeof(gGlHookNoContext) / sizeof(EglWrapperFuncPointer);
-    EglWrapperFuncPointer *iter = reinterpret_cast<EglWrapperFuncPointer*>(&gGlHookNoContext);
-    for (int i = 0; i < numApis; ++i) {
-        *(iter++) = reinterpret_cast<EglWrapperFuncPointer>(CallGlApiNoContext);
-    }
-
-    ThreadPrivateDataCtl::SetGlHookTable(&gGlHookNoContext);
-}
-
 class PreInitializer {
 public:
     PreInitializer() noexcept
     {
-        initState_ = pthread_once(&onceCtl_, &PreInit);
+        WLOGD("");
+        int numApis = sizeof(gGlHookNoContext) / sizeof(EglWrapperFuncPointer);
+        EglWrapperFuncPointer *iter = reinterpret_cast<EglWrapperFuncPointer*>(&gGlHookNoContext);
+        for (int i = 0; i < numApis; ++i) {
+            *(iter++) = reinterpret_cast<EglWrapperFuncPointer>(CallGlApiNoContext);
+        }
+        ThreadPrivateDataCtl::SetGlHookTable(&gGlHookNoContext);
+        preInitFlag = true;
     }
-    int InitStat()
+    static void CallGlApiNoContext(void)
     {
-        return initState_;
+        WLOGE("Call To OpenGL ES API With No Current Context");
+        return;
+    }
+    bool InitStat()
+    {
+        return preInitFlag;
     }
 private:
-    pthread_once_t onceCtl_ = PTHREAD_ONCE_INIT;
-    int initState_;
+    bool preInitFlag = false;
 };
 
 static std::mutex gInitMutex;
-PreInitializer preInitializer;
+static PreInitializer preInitializer;
 
 void WrapperHookTableInit() noexcept
 {
@@ -126,8 +115,8 @@ bool EglCoreInit()
         return true;
     }
 
-    if (preInitializer.InitStat()) {
-        WLOGE("initState_ Error.");
+    if (!preInitializer.InitStat()) {
+        WLOGE("preInit Error.");
         return false;
     }
 

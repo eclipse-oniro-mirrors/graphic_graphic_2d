@@ -17,9 +17,6 @@
 #include "../thread_private_data_ctl.h"
 #include "../wrapper_log.h"
 
-namespace {
-constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
-}
 #undef CALL_HOOK_API
 #define CALL_HOOK_API(api, ...)                                         \
     do {                                                                \

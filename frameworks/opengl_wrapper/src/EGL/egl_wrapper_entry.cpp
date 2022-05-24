@@ -29,10 +29,6 @@
 
 using namespace OHOS;
 namespace OHOS {
-namespace {
-constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
-}
-
 static EglWrapperDisplay *ValidateDisplay(EGLDisplay dpy)
 {
     EglWrapperDisplay *display = EglWrapperDisplay::GetWrapperDisplay(dpy);

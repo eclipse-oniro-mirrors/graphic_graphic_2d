@@ -24,7 +24,6 @@
 using namespace OHOS;
 namespace OHOS {
 namespace {
-constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
 constexpr const char *VENDOR_LIB_PATH = "/system/lib/";
 constexpr const char *LIB_EGL_NAME = "libEGL.so";
 constexpr const char *LIB_GLESV1_NAME = "libGLESv1.so";

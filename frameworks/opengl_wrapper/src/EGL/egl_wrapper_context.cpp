@@ -17,10 +17,6 @@
 #include "egl_wrapper_display.h"
 #include "../wrapper_log.h"
 namespace OHOS {
-namespace {
-constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
-}
-
 EglWrapperContext::EglWrapperContext(EglWrapperDisplay *disp, EGLContext context)
     : EglWrapperObject(disp), context_(context), read_(nullptr), draw_(nullptr)
 {

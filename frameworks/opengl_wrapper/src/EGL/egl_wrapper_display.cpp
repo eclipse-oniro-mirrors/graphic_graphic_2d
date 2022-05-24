@@ -21,9 +21,6 @@
 #include "../thread_private_data_ctl.h"
 #include "../wrapper_log.h"
 namespace OHOS {
-namespace {
-constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "OpenGLWrapper" };
-}
 EglWrapperDisplay EglWrapperDisplay::wrapperDisp_;
 
 EglWrapperDisplay::EglWrapperDisplay() noexcept : disp_(EGL_NO_DISPLAY), refCnt_(0)

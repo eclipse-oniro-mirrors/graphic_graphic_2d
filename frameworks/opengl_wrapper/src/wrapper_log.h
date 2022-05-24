@@ -33,14 +33,15 @@ namespace OHOS {
 #define GLW_EFUNC OHOS::HiviewDFX::HiLog::Error
 
 #define GLW_CPRINTF(func, fmt, ...) \
-    func(LABEL, "<%{public}d>%{public}s: " fmt, \
+    func({LOG_CORE, 0xD001400, "OpenGLWrapper"}, "<%{public}d>%{public}s: " fmt, \
         __LINE__, __func__, ##__VA_ARGS__)
 
 #ifdef EGL_WRAPPER_DEBUG_ENABLE
 #define WLOGD(fmt, ...) GLW_CPRINTF(GLW_DFUNC, fmt, ##__VA_ARGS__)
 #else
-#define WLOGD(fmt, ...) (LABEL)
+#define WLOGD(fmt, ...)
 #endif
+
 #define WLOGI(fmt, ...) GLW_CPRINTF(GLW_IFUNC, fmt, ##__VA_ARGS__)
 #define WLOGW(fmt, ...) GLW_CPRINTF(GLW_WFUNC, fmt, ##__VA_ARGS__)
 #define WLOGE(fmt, ...) GLW_CPRINTF(GLW_EFUNC, fmt, ##__VA_ARGS__)

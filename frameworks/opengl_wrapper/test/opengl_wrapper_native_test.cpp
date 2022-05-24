@@ -27,7 +27,6 @@
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 
-
 #define LOGD(fmt, ...)                                                                  \
     ::OHOS::HiviewDFX::HiLog::Debug(                                                    \
         ::OHOS::HiviewDFX::HiLogLabel { LOG_CORE, 0, "opengl_wrapper_native_test" },    \
