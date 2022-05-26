@@ -147,7 +147,7 @@ void RSRenderServiceVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
     auto currentGeoPtr = std::static_pointer_cast<RSObjAbsGeometry>(node.GetRenderProperties().GetBoundsGeometry());
     if (currentGeoPtr != nullptr) {
-        currentGeoPtr->UpdateByMatrixFromRenderThread(node.GetMatrix());
+        currentGeoPtr->UpdateByMatrixFromRenderThread(node.GetContextMatrix());
         currentGeoPtr->UpdateByMatrixFromSelf();
     }
 

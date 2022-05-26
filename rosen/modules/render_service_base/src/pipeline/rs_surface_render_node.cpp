@@ -56,7 +56,7 @@ void RSSurfaceRenderNode::SetConsumer(const sptr<Surface>& consumer)
 void RSSurfaceRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
 {
     canvas.SaveAlpha();
-    canvas.MultiplyAlpha(GetRenderProperties().GetAlpha() * GetAlpha());
+    canvas.MultiplyAlpha(GetRenderProperties().GetAlpha() * GetContextAlpha());
     SkIRect clipBounds = canvas.getDeviceClipBounds();  // this clip region from parent node from render service
     clipRegionFromParent_.SetAll(clipBounds.left(), clipBounds.top(), clipBounds.width(), clipBounds.height());
     RectI clipRegion = CalculateClipRegion(canvas);
@@ -72,7 +72,7 @@ void RSSurfaceRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canva
 
 RectI RSSurfaceRenderNode::CalculateClipRegion(RSPaintFilterCanvas& canvas)
 {
-    const Vector4f& clipRegionFromRT = GetClipRegion(); // this clip region from render thread, it`s relative position
+    const Vector4f& clipRegionFromRT = GetContextClipRegion(); // this clip region from render thread, it`s relative position
     RectI clipRegion(clipRegionFromRT.x_, clipRegionFromRT.y_, clipRegionFromRT.z_, clipRegionFromRT.w_);
     clipRegion.left_ = clipRegionFromRT.x_ + clipRegionFromParent_.left_;
     clipRegion.top_ = clipRegionFromRT.y_ + clipRegionFromParent_.top_;
@@ -115,56 +115,61 @@ void RSSurfaceRenderNode::Process(const std::shared_ptr<RSNodeVisitor>& visitor)
     visitor->ProcessSurfaceRenderNode(*this);
 }
 
-void RSSurfaceRenderNode::SetMatrix(const SkMatrix& matrix, bool sendMsg)
+void RSSurfaceRenderNode::SetContextMatrix(const SkMatrix& matrix, bool sendMsg)
 {
-    if (matrix_ == matrix) {
+    if (contextMatrix_ == matrix) {
         return;
     }
-    matrix_ = matrix;
+    contextMatrix_ = matrix;
     if (!sendMsg) {
         return;
     }
     // send a Command
-    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetMatrix>(GetId(), matrix);
-    SendPropertyCommand(command);
+    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetContextMatrix>(GetId(), matrix);
+    SendCommandFromRT(command);
 }
 
-const SkMatrix& RSSurfaceRenderNode::GetMatrix() const
+const SkMatrix& RSSurfaceRenderNode::GetContextMatrix() const
 {
-    return matrix_;
+    return contextMatrix_;
 }
 
-void RSSurfaceRenderNode::SetAlpha(float alpha, bool sendMsg)
+void RSSurfaceRenderNode::SetContextAlpha(float alpha, bool sendMsg)
 {
-    if (alpha_ == alpha) {
+    if (contextAlpha_ == alpha) {
         return;
     }
-    alpha_ = alpha;
+    contextAlpha_ = alpha;
     if (!sendMsg) {
         return;
     }
     // send a Command
-    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetAlpha>(GetId(), alpha);
-    SendPropertyCommand(command);
+    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetContextAlpha>(GetId(), alpha);
+    SendCommandFromRT(command);
 }
 
-float RSSurfaceRenderNode::GetAlpha() const
+float RSSurfaceRenderNode::GetContextAlpha() const
 {
-    return alpha_;
+    return contextAlpha_;
 }
 
-void RSSurfaceRenderNode::SetClipRegion(Vector4f clipRegion, bool sendMsg)
+void RSSurfaceRenderNode::SetContextClipRegion(Vector4f clipRegion, bool sendMsg)
 {
-    if (clipRect_ == clipRegion) {
+    if (contextClipRect_ == clipRegion) {
         return;
     }
-    clipRect_ = clipRegion;
+    contextClipRect_ = clipRegion;
     if (!sendMsg) {
         return;
     }
     // send a Command
-    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetClipRegion>(GetId(), clipRegion);
-    SendPropertyCommand(command);
+    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetContextClipRegion>(GetId(), clipRegion);
+    SendCommandFromRT(command);
+}
+
+const Vector4f& RSSurfaceRenderNode::GetContextClipRegion() const
+{
+    return contextClipRect_;
 }
 
 void RSSurfaceRenderNode::SetSecurityLayer(bool isSecurityLayer)
@@ -201,7 +206,7 @@ void RSSurfaceRenderNode::SetParentId(NodeId parentId, bool sendMsg)
     }
     // send a Command
     if (command) {
-        SendPropertyCommand(command);
+        SendCommandFromRT(command);
     }
 }
 
@@ -217,7 +222,7 @@ void RSSurfaceRenderNode::UpdateSurfaceDefaultSize(float width, float height)
     }  
 }
 
-void RSSurfaceRenderNode::SendPropertyCommand(std::unique_ptr<RSCommand>& command)
+void RSSurfaceRenderNode::SendCommandFromRT(std::unique_ptr<RSCommand>& command)
 {
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {

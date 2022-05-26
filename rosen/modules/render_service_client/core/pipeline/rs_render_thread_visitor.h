@@ -19,9 +19,10 @@
 #include <memory>
 #include <set>
 
-#include "visitor/rs_node_visitor.h"
 #include "pipeline/rs_dirty_region_manager.h"
 #include "pipeline/rs_paint_filter_canvas.h"
+#include "transaction/rs_transaction_proxy.h"
+#include "visitor/rs_node_visitor.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -48,7 +49,6 @@ public:
 
 private:
     RSDirtyRegionManager dirtyManager_;
-    RSRenderNode* parent_ = nullptr;
     bool dirtyFlag_ = false;
     bool isIdle_ = true;
     RSPaintFilterCanvas* canvas_;

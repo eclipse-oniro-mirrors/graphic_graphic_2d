@@ -52,7 +52,6 @@ void RSRenderThreadVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
         curTreeRoot_->ClearSurfaceNodeInRS();
 
         dirtyManager_.Clear();
-        parent_ = nullptr;
         dirtyFlag_ = false;
         isIdle_ = false;
         PrepareCanvasRenderNode(node);
@@ -65,7 +64,7 @@ void RSRenderThreadVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
 void RSRenderThreadVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode& node)
 {
     bool dirtyFlag = dirtyFlag_;
-    dirtyFlag_ = node.Update(dirtyManager_, parent_ ? &(parent_->GetRenderProperties()) : nullptr, dirtyFlag_);
+    dirtyFlag_ = node.Update(dirtyManager_, nullptr, dirtyFlag_);
     PrepareBaseRenderNode(node);
     dirtyFlag_ = dirtyFlag;
 }
@@ -76,7 +75,7 @@ void RSRenderThreadVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         curTreeRoot_->AddSurfaceRenderNode(node.GetId());
     }
     bool dirtyFlag = dirtyFlag_;
-    dirtyFlag_ = node.Update(dirtyManager_, parent_ ? &(parent_->GetRenderProperties()) : nullptr, dirtyFlag_);
+    dirtyFlag_ = node.Update(dirtyManager_, nullptr, dirtyFlag_);
     PrepareBaseRenderNode(node);
     dirtyFlag_ = dirtyFlag;
 }
@@ -204,8 +203,8 @@ void RSRenderThreadVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     // RSSurfaceRenderNode in RSRenderThreadVisitor do not have information of property.
     // We only get parent's matrix and send it to RenderService
 #ifdef ROSEN_OHOS
-    node.SetMatrix(canvas_->getTotalMatrix());
-    node.SetAlpha(canvas_->GetAlpha());
+    node.SetContextMatrix(canvas_->getTotalMatrix());
+    node.SetContextAlpha(canvas_->GetAlpha());
     // for proxied nodes (i.e. remote window components), we only set matrix & alpha, do not change its hierarchy and
     // clip status.
     if (node.IsProxy()) {
@@ -214,8 +213,9 @@ void RSRenderThreadVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
     node.SetParentId(node.GetParent().lock()->GetId());
     auto clipRect = canvas_->getDeviceClipBounds();
-    node.SetClipRegion({ clipRect.left(), clipRect.top(), clipRect.width(), clipRect.height() });
+    node.SetContextClipRegion({ clipRect.left(), clipRect.top(), clipRect.width(), clipRect.height() });
 
+    // clip hole
     auto x = node.GetRenderProperties().GetBoundsPositionX();
     auto y = node.GetRenderProperties().GetBoundsPositionY();
     auto width = node.GetRenderProperties().GetBoundsWidth();

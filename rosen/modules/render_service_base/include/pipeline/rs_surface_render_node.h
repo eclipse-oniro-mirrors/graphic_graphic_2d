@@ -93,21 +93,18 @@ public:
         return RSRenderNodeType::SURFACE_NODE;
     }
 
-    void SetMatrix(const SkMatrix& transform, bool sendMsg = true);
-    const SkMatrix& GetMatrix() const;
+    // pass render context (matrix/alpha/clip) from RT to RS
+    void SetContextMatrix(const SkMatrix& transform, bool sendMsg = true);
+    const SkMatrix& GetContextMatrix() const;
 
-    void SetAlpha(float alpha, bool sendMsg = true);
-    float GetAlpha() const;
+    void SetContextAlpha(float alpha, bool sendMsg = true);
+    float GetContextAlpha() const;
 
-    void SetClipRegion(Vector4f clipRegion, bool sendMsg = true);
+    void SetContextClipRegion(Vector4f clipRegion, bool sendMsg = true);
+    const Vector4f& GetContextClipRegion() const;
 
     void SetSecurityLayer(bool isSecurityLayer);
     bool GetSecurityLayer() const;
-
-    const Vector4f& GetClipRegion() const
-    {
-        return clipRect_;
-    }
 
     void SetDstRect(const RectI& dstRect)
     {
@@ -138,7 +135,7 @@ public:
 
     void UpdateSurfaceDefaultSize(float width, float height);
 
-    static void SendPropertyCommand(std::unique_ptr<RSCommand>& command);
+    static void SendCommandFromRT(std::unique_ptr<RSCommand>& command);
 
     BlendType GetBlendType();
     void SetBlendType(BlendType blendType);
@@ -173,15 +170,18 @@ private:
     std::mutex mutexRT_;
     std::mutex mutexUI_;
     std::mutex mutex_;
-    SkMatrix matrix_;
-    float alpha_ = 1.0f;
+
+    SkMatrix contextMatrix_;
+    float contextAlpha_ = 1.0f;
+    Vector4f contextClipRect_;
+
     bool isSecurityLayer_ = false;
     NodeId parentId_ = 0;
     RectI dstRect_;
     int32_t offsetX_ = 0;
     int32_t offsetY_ = 0;
     float globalAlpha_ = 1.0f;
-    Vector4f clipRect_;
+
     std::string name_;
     bool isProxy_ = false;
     BlendType blendType_ = BlendType::BLEND_SRCOVER;

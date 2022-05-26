@@ -27,9 +27,9 @@ namespace Rosen {
 enum RSSurfaceNodeCommandType : uint16_t {
     SURFACE_NODE_CREATE,
     SURFACE_NODE_SET_PROXY,
-    SURFACE_NODE_SET_MATRIX,
-    SURFACE_NODE_SET_ALPHA,
-    SURFACE_NODE_SET_CLIP_REGION,
+    SURFACE_NODE_SET_CONTEXT_MATRIX,
+    SURFACE_NODE_SET_CONTEXT_ALPHA,
+    SURFACE_NODE_SET_CONTEXT_CLIP_REGION,
     SURFACE_NODE_SET_PARENT_SURFACE,
     SURFACE_NODE_SET_SECURITY_LAYER,
     SURFACE_NODE_REMOVE_SELF,
@@ -42,10 +42,10 @@ class SurfaceNodeCommandHelper {
 public:
     static void Create(RSContext& context, NodeId nodeId);
     static void SetProxy(RSContext& context, NodeId nodeId);
-    static void SetMatrix(RSContext& context, NodeId nodeId, SkMatrix matrix);
-    static void SetAlpha(RSContext& context, NodeId nodeId, float alpha);
+    static void SetContextMatrix(RSContext& context, NodeId nodeId, SkMatrix matrix);
+    static void SetContextAlpha(RSContext& context, NodeId nodeId, float alpha);
+    static void SetContextClipRegion(RSContext& context, NodeId nodeId, Vector4f clipRect);
     static void SetParentSurface(RSContext& context, NodeId nodeId, NodeId parentId);
-    static void SetClipRegion(RSContext& context, NodeId nodeId, Vector4f clipRect);
     static void SetSecurityLayer(RSContext& context, NodeId nodeId, bool isSecurityLayer);
     static void RemoveSelf(RSContext& context, NodeId nodeId);
     static void UpdateSurfaceDefaultSize(RSContext& context, NodeId nodeId, float width, float height);
@@ -56,12 +56,12 @@ public:
 ADD_COMMAND(RSSurfaceNodeCreate, ARG(SURFACE_NODE, SURFACE_NODE_CREATE, SurfaceNodeCommandHelper::Create, NodeId))
 ADD_COMMAND(
     RSSurfaceNodeSetProxy, ARG(SURFACE_NODE, SURFACE_NODE_SET_PROXY, SurfaceNodeCommandHelper::SetProxy, NodeId))
-ADD_COMMAND(
-    RSSurfaceNodeSetMatrix, ARG(SURFACE_NODE, SURFACE_NODE_SET_MATRIX, SurfaceNodeCommandHelper::SetMatrix, NodeId, SkMatrix))
-ADD_COMMAND(
-    RSSurfaceNodeSetAlpha, ARG(SURFACE_NODE, SURFACE_NODE_SET_ALPHA, SurfaceNodeCommandHelper::SetAlpha, NodeId, float))
-ADD_COMMAND(RSSurfaceNodeSetClipRegion,
-    ARG(SURFACE_NODE, SURFACE_NODE_SET_CLIP_REGION, SurfaceNodeCommandHelper::SetClipRegion, NodeId, Vector4f))
+ADD_COMMAND(RSSurfaceNodeSetContextMatrix,
+    ARG(SURFACE_NODE, SURFACE_NODE_SET_CONTEXT_MATRIX, SurfaceNodeCommandHelper::SetContextMatrix, NodeId, SkMatrix))
+ADD_COMMAND(RSSurfaceNodeSetContextAlpha,
+    ARG(SURFACE_NODE, SURFACE_NODE_SET_CONTEXT_ALPHA, SurfaceNodeCommandHelper::SetContextAlpha, NodeId, float))
+ADD_COMMAND(RSSurfaceNodeSetContextClipRegion,
+    ARG(SURFACE_NODE, SURFACE_NODE_SET_CONTEXT_CLIP_REGION, SurfaceNodeCommandHelper::SetContextClipRegion, NodeId, Vector4f))
 ADD_COMMAND(RSSurfaceNodeSetParentSurface,
     ARG(SURFACE_NODE, SURFACE_NODE_SET_PARENT_SURFACE, SurfaceNodeCommandHelper::SetParentSurface, NodeId, NodeId))
 ADD_COMMAND(RSSurfaceNodeSetSecurityLayer,
@@ -79,5 +79,4 @@ ADD_COMMAND(RSSurfaceNodeSetCallbackForRenderThreadRefresh,
 
 } // namespace Rosen
 } // namespace OHOS
-
 #endif // ROSEN_RENDER_SERVICE_BASE_COMMAND_RS_SURFACE_NODE_COMMAND_H
