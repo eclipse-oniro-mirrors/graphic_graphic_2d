@@ -109,11 +109,13 @@ void RSRenderTransition::OnAttach()
         return;
     }
     target->GetAnimationManager().RegisterTransition(
-        GetAnimationId(), [=](const std::unique_ptr<RSTransitionProperties>& transitionProperties) {
+        GetAnimationId(),
+        [this](const std::unique_ptr<RSTransitionProperties>& transitionProperties) -> void {
             for (auto& effect : effects_) {
                 effect->OnTransition(transitionProperties, currentFraction_);
             }
-        });
+        },
+        isTransitionIn_);
 }
 
 void RSRenderTransition::OnDetach()

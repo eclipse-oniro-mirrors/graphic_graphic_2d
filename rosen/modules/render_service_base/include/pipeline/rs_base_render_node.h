@@ -78,13 +78,13 @@ public:
 
     void DumpTree(std::string& out) const;
 
-    virtual bool HasTransition(bool recursive = true) const
+    virtual bool HasDisappearingTransition(bool recursive = true) const
     {
         if (recursive == false) {
             return false;
         } else {
             auto parent = GetParent().lock();
-            return parent ? parent->HasTransition(true) : false;
+            return parent ? parent->HasDisappearingTransition(true) : false;
         }
     }
 

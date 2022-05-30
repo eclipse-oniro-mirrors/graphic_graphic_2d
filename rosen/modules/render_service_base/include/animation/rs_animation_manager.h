@@ -44,20 +44,19 @@ public:
 
     bool Animate(int64_t time);
 
-    void RegisterTransition(AnimationId id, const TransitionCallback& transition);
+    void RegisterTransition(AnimationId id, const TransitionCallback& transition, bool isTransitionIn);
     void UnregisterTransition(AnimationId id);
     std::unique_ptr<RSTransitionProperties> GetTransitionProperties();
-    bool HasTransition() const;
+    bool HasDisappearingTransition() const;
 
 private:
     void OnAnimationRemove(const std::shared_ptr<RSRenderAnimation>& animation);
     void OnAnimationAdd(const std::shared_ptr<RSRenderAnimation>& animation);
     void OnAnimationFinished(const std::shared_ptr<RSRenderAnimation>& animation);
-    void ClearTransition(AnimationId id);
 
     std::unordered_map<AnimationId, std::shared_ptr<RSRenderAnimation>> animations_;
     std::unordered_map<RSAnimatableProperty, int> animationNum_;
-    std::list<std::pair<AnimationId, TransitionCallback>> transition_;
+    std::list<std::tuple<AnimationId, TransitionCallback, bool>> transition_;
 
     friend class RSRenderNode;
 };

@@ -112,25 +112,18 @@ void RSAnimationManager::OnAnimationFinished(const std::shared_ptr<RSRenderAnima
     animation->Detach();
 }
 
-void RSAnimationManager::RegisterTransition(AnimationId id, const TransitionCallback& transition)
+void RSAnimationManager::RegisterTransition(AnimationId id, const TransitionCallback& transition, bool isTransitionIn)
 {
-    ClearTransition(id);
-    transition_.push_back({ id, transition });
+    transition_.emplace_back(id, transition, isTransitionIn);
 }
 
 void RSAnimationManager::UnregisterTransition(AnimationId id)
-{
-    ClearTransition(id);
-}
-
-void RSAnimationManager::ClearTransition(AnimationId id)
 {
     if (transition_.empty()) {
         ROSEN_LOGE("RSAnimationManager::ClearTransition, transition_ is empty");
         return;
     }
-    transition_.remove_if(
-        [&](std::pair<AnimationId, TransitionCallback>& transition) -> bool { return id == transition.first; });
+    transition_.remove_if([id](auto& transition) -> bool { return id == std::get<NodeId>(transition); });
 }
 
 std::unique_ptr<RSTransitionProperties> RSAnimationManager::GetTransitionProperties()
@@ -139,17 +132,21 @@ std::unique_ptr<RSTransitionProperties> RSAnimationManager::GetTransitionPropert
         return nullptr;
     }
     auto transitionProperties = std::make_unique<RSTransitionProperties>();
-    for (auto& [animationId, transition] : transition_) {
-        if (transition != nullptr) {
-            transition(transitionProperties);
+    for (auto& transition : transition_) {
+        auto& callback = std::get<TransitionCallback>(transition);
+        if (callback != nullptr) {
+            callback(transitionProperties);
         }
     }
     return transitionProperties;
 }
 
-bool RSAnimationManager::HasTransition() const
+bool RSAnimationManager::HasDisappearingTransition() const
 {
-    return !transition_.empty();
+    return !transition_.empty() && std::any_of(transition_.begin(), transition_.end(), [](auto& transition) -> bool {
+        // return true if it has disappearing animation
+        return !std::get<bool>(transition);
+    });
 }
 } // namespace Rosen
 } // namespace OHOS

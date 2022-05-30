@@ -150,6 +150,8 @@ void RSMainThread::Animate(uint64_t timestamp)
         return;
     }
 
+    RS_LOGD("RSMainThread::Animate start, processing %d animating nodes", context_.animatingNodeList_.size());
+
     // iterate and animate all animating nodes, remove if animation finished
     std::__libcpp_erase_if_container(context_.animatingNodeList_, [timestamp](const auto& iter) -> bool {
         auto node = iter.second.lock();
@@ -163,6 +165,8 @@ void RSMainThread::Animate(uint64_t timestamp)
         }
         return animationFinished;
     });
+
+    RS_LOGD("RSMainThread::Animate end, %d animating nodes remains", context_.animatingNodeList_.size());
 
     RequestNextVSync();
 }

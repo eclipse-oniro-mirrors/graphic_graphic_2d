@@ -41,11 +41,7 @@ public:
         return globalRootRenderNode_;
     }
 
-    void RegisterAnimatingRenderNode(const std::shared_ptr<RSBaseRenderNode>& nodePtr)
-    {
-        NodeId id = nodePtr->GetId();
-        animatingNodeList_.emplace(id, nodePtr);
-    }
+    void RegisterAnimatingRenderNode(const std::shared_ptr<RSBaseRenderNode>& nodePtr);
 
 private:
     RSRenderNodeMap nodeMap;
