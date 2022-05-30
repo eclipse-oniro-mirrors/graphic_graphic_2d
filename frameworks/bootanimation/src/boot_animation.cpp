@@ -223,7 +223,7 @@ void BootAnimation::CheckExitAnimation()
 void BootAnimation::PlaySound()
 {
     LOGI("PlaySound start");
-    bool bootSoundEnabled = system::GetBoolParameter("persist.sys.bootsound.enabled", true);
+    bool bootSoundEnabled = system::GetBoolParameter("persist.graphic.bootsound.enabled", true);
     if (bootSoundEnabled == true) {
         LOGI("PlaySound read bootSoundEnabled is true");
         if (soundPlayer_ == nullptr) {
