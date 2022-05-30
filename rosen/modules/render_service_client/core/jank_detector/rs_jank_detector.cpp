@@ -78,7 +78,7 @@ void RSJankDetector::ProcessUiDrawFrameMsg()
 
 void RSJankDetector::CalculateSkippedFrame(uint64_t renderStartTimeStamp, uint64_t renderEndTimeStamp)
 {
-    int dropUiFrameNum = 0;
+    uint64_t dropUiFrameNum = 0;
     uint64_t uiStartTimeStamp = 0;
     uint64_t uiEndTimeStamp = 0;
     std::string abilityName;
@@ -95,7 +95,7 @@ void RSJankDetector::CalculateSkippedFrame(uint64_t renderStartTimeStamp, uint64
     uint64_t renderDrawTime = renderEndTimeStamp - renderStartTimeStamp;
 
     // Currently a frame takes two vsync times
-    int skippedFrame = totalTime / (refreshPeriod_ * 2);
+    uint64_t skippedFrame = totalTime / (refreshPeriod_ * 2);
     if ((skippedFrame >= JANK_SKIPPED_THRESHOLD) || (dropUiFrameNum >= JANK_SKIPPED_THRESHOLD)) {
         DrawEventReport(totalTime, uiDrawTime, renderDrawTime, dropUiFrameNum, abilityName);
         ROSEN_LOGD("%s took %llu, UI took %llu, RSRenderThread took %llu, RSRenderThread dropped %d UI Frames",

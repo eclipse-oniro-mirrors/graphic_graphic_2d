@@ -66,7 +66,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             }
             std::vector<ScreenId> ids = GetAllScreenIds();
             reply.WriteUint32(ids.size());
-            for (int32_t i = 0; i < ids.size(); i++) {
+            for (uint32_t i = 0; i < ids.size(); i++) {
                 reply.WriteUint64(ids[i]);
             }
             break;
