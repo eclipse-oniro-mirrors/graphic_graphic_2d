@@ -29,7 +29,7 @@ bool RSRenderAnimation::Marshalling(Parcel& parcel) const
         ROSEN_LOGE("RSRenderAnimation::Marshalling, write id failed");
         return false;
     }
-    // RSAnimationTimingProtocal
+    // RSAnimationTimingProtocol
     if (!(parcel.WriteInt32(animationFraction_.GetDuration()) &&
         parcel.WriteInt32(animationFraction_.GetStartDelay()) &&
         parcel.WriteFloat(animationFraction_.GetSpeed()) &&
@@ -100,6 +100,9 @@ RSAnimatableProperty RSRenderAnimation::GetProperty() const
 
 void RSRenderAnimation::Attach(RSRenderNode* renderNode)
 {
+    if (target_ != nullptr) {
+        Detach();
+    }
     target_ = renderNode;
     OnAttach();
 }

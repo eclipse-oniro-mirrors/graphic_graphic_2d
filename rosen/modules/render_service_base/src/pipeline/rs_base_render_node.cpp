@@ -65,7 +65,10 @@ void RSBaseRenderNode::RemoveChild(const SharedPtr& child)
     }
     // avoid duplicate entry in disappearingChildren_ (this should not happen)
     disappearingChildren_.remove_if([&child](const auto& pair) -> bool { return pair.first == child; });
-    if (child->HasTransition(true)) {
+    // if child has disappearing transition, add it to disappearingChildren_
+    if (child->HasDisappearingTransition(true)) {
+        ROSEN_LOGD("RSBaseRenderNode::RemoveChild %llu move child(id %llu) into disappearingChildren", GetId(),
+            child->GetId());
         // keep shared_ptr alive for transition
         uint32_t origPos = static_cast<uint32_t>(std::distance(children_.begin(), it));
         disappearingChildren_.emplace_back(child, origPos);
@@ -107,7 +110,7 @@ void RSBaseRenderNode::ClearChildren()
         return;
     }
     // Cache the parent's transition state to avoid redundant recursively check
-    bool parentHasTransition = HasTransition(true);
+    bool parentHasDisappearingTransition = HasDisappearingTransition(true);
     uint32_t pos = 0;
     for (auto& childWeakPtr : children_) {
         auto child = childWeakPtr.lock();
@@ -117,7 +120,7 @@ void RSBaseRenderNode::ClearChildren()
         }
         // avoid duplicate entry in disappearingChildren_ (this should not happen)
         disappearingChildren_.remove_if([&child](const auto& pair) -> bool { return pair.first == child; });
-        if (parentHasTransition || child->HasTransition(false)) {
+        if (parentHasDisappearingTransition || child->HasDisappearingTransition(false)) {
             // keep shared_ptr alive for transition
             disappearingChildren_.emplace_back(child, pos);
         } else {
@@ -149,6 +152,8 @@ void RSBaseRenderNode::DumpTree(std::string& out) const
 {
     out += "id: " + std::to_string(GetId()) + ", type: ";
     DumpNodeType(out);
+    out += ", hasDisappearingTransition: " + std::to_string(HasDisappearingTransition(false)) +
+           ", isOnTheTree: " + std::to_string(isOnTheTree_);
     out += "\n";
     auto p = parent_.lock();
     if (p != nullptr) {
@@ -167,9 +172,22 @@ void RSBaseRenderNode::DumpTree(std::string& out) const
         }
         ++i;
     }
+    i = 0;
+    for (auto& disappearingChild : disappearingChildren_) {
+        out +=
+            "disappearing child[" + std::to_string(i) + "]: " + std::to_string(disappearingChild.first->GetId()) +
+            ", hasDisappearingTransition:" + std::to_string(disappearingChild.first->HasDisappearingTransition(false)) +
+            "\n";
+        ++i;
+    }
 
     for (auto child : children_) {
         if (auto c = child.lock()) {
+            c->DumpTree(out);
+        }
+    }
+    for (auto& child : disappearingChildren_) {
+        if (auto c = child.first) {
             c->DumpTree(out);
         }
     }
@@ -267,13 +285,14 @@ void RSBaseRenderNode::GenerateSortedChildren()
     // Step 2: insert disappearing children into sortedChildren, at it's original position, remove if it's transition
     // finished
     // If exist disappearing Children, cache the parent's transition state to avoid redundant recursively check
-    bool parentHasTransition = disappearingChildren_.empty() ? false : HasTransition(true);
-    disappearingChildren_.remove_if([this, parentHasTransition](const auto& pair) -> bool {
+    bool parentHasDisappearingTransition = disappearingChildren_.empty() ? false : HasDisappearingTransition(true);
+    disappearingChildren_.remove_if([this, parentHasDisappearingTransition](const auto& pair) -> bool {
         auto& disappearingChild = pair.first;
         auto& origPos = pair.second;
         // if neither parent node or child node has transition, we can safely remove it
-        if (!parentHasTransition && !disappearingChild->HasTransition(false)) {
-            ROSEN_LOGD("RSBaseRenderNode::GenerateSortedChildren removing finished transition child");
+        if (!parentHasDisappearingTransition && !disappearingChild->HasDisappearingTransition(false)) {
+            ROSEN_LOGD("RSBaseRenderNode::GenerateSortedChildren removing finished transition child(id %llu)",
+                disappearingChild->GetId());
             if (ROSEN_EQ<RSBaseRenderNode>(disappearingChild->GetParent(), weak_from_this())) {
                 disappearingChild->ResetParent();
             }
@@ -305,7 +324,7 @@ bool RSBaseRenderNode::IsInstanceOf()
     return (static_cast<uint32_t>(GetType()) & targetType) == targetType;
 }
 
-// explicit instantiation with all rendernode types
+// explicit instantiation with all render node types
 template bool RSBaseRenderNode::IsInstanceOf<RSBaseRenderNode>();
 template bool RSBaseRenderNode::IsInstanceOf<RSDisplayRenderNode>();
 template bool RSBaseRenderNode::IsInstanceOf<RSRenderNode>();

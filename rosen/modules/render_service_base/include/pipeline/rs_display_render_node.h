@@ -90,7 +90,7 @@ public:
         return mirrorSource_;
     }
 
-    bool HasTransition(bool) const override
+    bool HasDisappearingTransition(bool) const override
     {
         return false;
     }

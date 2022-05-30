@@ -15,8 +15,13 @@
 
 #include "pipeline/rs_context.h"
 
-namespace OHOS {
-namespace Rosen {
+#include "platform/common/rs_log.h"
 
-} // namespace Rosen
-} // namespace OHOS
+namespace OHOS::Rosen {
+void RSContext::RegisterAnimatingRenderNode(const std::shared_ptr<RSBaseRenderNode>& nodePtr)
+{
+    NodeId id = nodePtr->GetId();
+    animatingNodeList_.emplace(id, nodePtr);
+    ROSEN_LOGD("RSContext::RegisterAnimatingRenderNode, register node id: %d", id);
+}
+} // namespace OHOS::Rosen
