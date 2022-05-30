@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+#ifndef RENDER_SERVICE_CLIENT_CORE_PIPELINE_OVERDRAW_RS_CANVAS_LISTENER_H
+#define RENDER_SERVICE_CLIENT_CORE_PIPELINE_OVERDRAW_RS_CANVAS_LISTENER_H
+
 #include <include/core/SkCanvas.h>
 
 namespace OHOS {
@@ -21,6 +24,9 @@ class RSCanvasListener {
 public:
     RSCanvasListener(SkCanvas &canvas) : canvas_(canvas) {}
     virtual ~RSCanvasListener() = default;
+    virtual void Draw() {}
+    virtual bool IsValid() const { return false; }
+    virtual const char *Name() const { return "RSCanvasListener"; }
     virtual void onDrawPaint(const SkPaint& paint) {}
     virtual void onDrawBehind(const SkPaint&) {}
     virtual void onDrawRect(const SkRect& rect, const SkPaint& paint) {}
@@ -53,3 +59,5 @@ protected:
 };
 } // namespace Rosen
 } // namespace OHOS
+
+#endif // RENDER_SERVICE_CLIENT_CORE_PIPELINE_OVERDRAW_RS_CANVAS_LISTENER_H

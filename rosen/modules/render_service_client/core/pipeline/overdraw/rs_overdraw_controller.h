@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+#ifndef RENDER_SERVICE_CLIENT_CORE_PIPELINE_OVERDRAW_RS_OVERDRAW_CONTROLLER_H
+#define RENDER_SERVICE_CLIENT_CORE_PIPELINE_OVERDRAW_RS_OVERDRAW_CONTROLLER_H
+
 #include <memory>
 
 #include "common/rs_macros.h"
@@ -41,11 +44,16 @@ public:
     std::shared_ptr<RSCanvasListenerImpl> SetHook(RSPaintFilterCanvas *&canvas)
     {
         if (enabled_ == true && canvas != nullptr) {
-            ROSEN_LOGD("SetHook!");
-            auto listened = new RSListenedCanvas(canvas);
             auto listener = std::make_shared<RSCanvasListenerImpl>(*canvas);
+            if (listener->IsValid() == false) {
+                ROSEN_LOGD("SetHook %s failed", listener->Name());
+                return nullptr;
+            }
+
+            auto listened = new RSListenedCanvas(canvas);
             listened->SetListener(listener);
             canvas = listened;
+            ROSEN_LOGD("SetHook %s success", listener->Name());
             return listener;
         }
 
@@ -60,3 +68,5 @@ private:
 };
 } // namespace Rosen
 } // namespace OHOS
+
+#endif // RENDER_SERVICE_CLIENT_CORE_PIPELINE_OVERDRAW_RS_OVERDRAW_CONTROLLER_H

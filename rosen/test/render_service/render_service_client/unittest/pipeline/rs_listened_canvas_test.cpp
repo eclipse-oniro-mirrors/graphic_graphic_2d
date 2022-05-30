@@ -18,8 +18,8 @@
 #include <include/core/SkRegion.h>
 #include <test_header.h>
 
-#include "pipeline/rs_canvas_listener.h"
-#include "pipeline/rs_listened_canvas.h"
+#include "pipeline/overdraw/rs_canvas_listener.h"
+#include "pipeline/overdraw/rs_listened_canvas.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -134,6 +134,8 @@ HWTEST_F(RSListenedCanvasTest, RequestSplitToListener, Function | SmallTest | Le
         STEP("5. call RSListenedCanvas's drawRect") {
             listenedCanvas->drawRect(rect, {});
         }
+
+        delete listenedCanvas;
     }
 }
 } // namespace Rosen

@@ -13,22 +13,29 @@
  * limitations under the License.
  */
 
-#include "pipeline/rs_paint_filter_canvas.h"
+#ifndef RENDER_SERVICE_CLIENT_CORE_PIPELINE_OVERDRAW_RS_CPU_OVERDRAW_CANVAS_LISTENER_H
+#define RENDER_SERVICE_CLIENT_CORE_PIPELINE_OVERDRAW_RS_CPU_OVERDRAW_CANVAS_LISTENER_H
+
+#include "rs_canvas_listener.h"
+
+#include <map>
+
+#include <include/core/SkRegion.h>
+
+#include "common/rs_macros.h"
 
 namespace OHOS {
 namespace Rosen {
-class RSCanvasListener;
-
-class RS_EXPORT RSListenedCanvas : public RSPaintFilterCanvas {
+class RS_EXPORT RSCPUOverdrawCanvasListener : public RSCanvasListener {
 public:
-    RSListenedCanvas(RSPaintFilterCanvas *canvas);
-    ~RSListenedCanvas();
+    RSCPUOverdrawCanvasListener(SkCanvas &canvas);
 
-    void SetListener(const std::shared_ptr<RSCanvasListener> &listener);
+    void Draw() override;
+    bool IsValid() const override { return true; }
+    const char *Name() const override { return "RSCPUOverdrawCanvasListener"; }
 
-    void onDrawPaint(const SkPaint& paint) override;
     void onDrawRect(const SkRect& rect, const SkPaint& paint) override;
-    void onDrawRRect(const SkRRect& rrect, const SkPaint& paint) override;
+    void onDrawRRect(const SkRRect& rect, const SkPaint& paint) override;
     void onDrawDRRect(const SkRRect& outer, const SkRRect& inner,
                       const SkPaint& paint) override;
     void onDrawOval(const SkRect& rect, const SkPaint& paint) override;
@@ -43,23 +50,20 @@ public:
                      const SkPaint& paint) override;
     void onDrawPoints(SkCanvas::PointMode mode, size_t count, const SkPoint pts[],
                       const SkPaint& paint) override;
+    void onDrawEdgeAAQuad(const SkRect& rect, const SkPoint clip[4],
+            SkCanvas::QuadAAFlags aaFlags, const SkColor4f& color, SkBlendMode mode) override;
     void onDrawAnnotation(const SkRect& rect, const char key[], SkData* value) override;
     void onDrawShadowRec(const SkPath& path, const SkDrawShadowRec& rect) override;
     void onDrawDrawable(SkDrawable* drawable, const SkMatrix* matrix) override;
     void onDrawPicture(const SkPicture* picture, const SkMatrix* matrix,
                        const SkPaint* paint) override;
-    void willSave() override;
-    void willRestore() override;
-    void onFlush() override;
-    void didTranslate(SkScalar dx, SkScalar dy) override;
-    void onClipRect(const SkRect& rect, SkClipOp clipOp, ClipEdgeStyle style) override;
-    void onClipRRect(const SkRRect& rect, SkClipOp clipOp, ClipEdgeStyle style) override;
-    void onClipPath(const SkPath& path, SkClipOp clipOp, ClipEdgeStyle style) override;
-    void onClipRegion(const SkRegion& region, SkClipOp clipop) override;
 
 private:
-    OHOS::Rosen::RSPaintFilterCanvas *canvas_ = nullptr;
-    std::shared_ptr<RSCanvasListener> listener_ = nullptr;
+    void AppendRegion(SkPath &path);
+
+    std::map<int, SkRegion> regions;
 };
 } // namespace Rosen
 } // namespace OHOS
+
+#endif // RENDER_SERVICE_CLIENT_CORE_PIPELINE_OVERDRAW_RS_CPU_OVERDRAW_CANVAS_LISTENER_H

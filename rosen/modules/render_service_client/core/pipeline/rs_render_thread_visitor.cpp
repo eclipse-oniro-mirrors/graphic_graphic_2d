@@ -37,8 +37,9 @@
 #include "transaction/rs_transaction_proxy.h"
 #include "ui/rs_surface_extractor.h"
 #include "ui/rs_surface_node.h"
-#include "rs_overdraw_controller.h"
-#include "rs_overdraw_canvas_listener.h"
+#include "overdraw/rs_cpu_overdraw_canvas_listener.h"
+#include "overdraw/rs_gpu_overdraw_canvas_listener.h"
+#include "overdraw/rs_overdraw_controller.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -227,7 +228,13 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
 
     auto skSurface = surfaceFrame->GetSurface();
     canvas_ = new RSPaintFilterCanvas(skSurface.get());
-    auto listener = RSOverdrawController::GetInstance().SetHook<RSOverdrawCanvasListener>(canvas_);
+
+    auto &overdrawController = RSOverdrawController::GetInstance();
+    std::shared_ptr<RSCanvasListener> overdrawListener = nullptr;
+    overdrawListener = overdrawController.SetHook<RSGPUOverdrawCanvasListener>(canvas_);
+    if (overdrawListener == nullptr) {
+        overdrawListener = overdrawController.SetHook<RSCPUOverdrawCanvasListener>(canvas_);
+    }
 
     canvas_->clipRect(SkRect::MakeWH(node.GetSurfaceWidth(), node.GetSurfaceHeight()));
     canvas_->clear(SK_ColorTRANSPARENT);
@@ -257,8 +264,8 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
         DrawDirtyRegion();
     }
 
-    if (listener != nullptr) {
-        listener->Draw();
+    if (overdrawListener != nullptr) {
+        overdrawListener->Draw();
     }
 
     RS_TRACE_BEGIN("rsSurface->FlushFrame");

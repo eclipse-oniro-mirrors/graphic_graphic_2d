@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "rs_overdraw_canvas_listener.h"
+#include "rs_cpu_overdraw_canvas_listener.h"
 
 #include <include/core/SkDrawable.h>
 #include <include/core/SkPath.h>
@@ -23,12 +23,12 @@
 
 namespace OHOS {
 namespace Rosen {
-RSOverdrawCanvasListener::RSOverdrawCanvasListener(SkCanvas &canvas)
+RSCPUOverdrawCanvasListener::RSCPUOverdrawCanvasListener(SkCanvas &canvas)
     : RSCanvasListener(canvas)
 {
 }
 
-void RSOverdrawCanvasListener::Draw()
+void RSCPUOverdrawCanvasListener::Draw()
 {
     static const std::map<int, SkColor> overdrawColorMap = {
         {1, 0x00000000},
@@ -56,21 +56,21 @@ void RSOverdrawCanvasListener::Draw()
     }
 }
 
-void RSOverdrawCanvasListener::onDrawRect(const SkRect& rect, const SkPaint& paint)
+void RSCPUOverdrawCanvasListener::onDrawRect(const SkRect& rect, const SkPaint& paint)
 {
     SkPath path;
     path.addRect(rect);
     AppendRegion(path);
 }
 
-void RSOverdrawCanvasListener::onDrawRRect(const SkRRect& rect, const SkPaint& paint)
+void RSCPUOverdrawCanvasListener::onDrawRRect(const SkRRect& rect, const SkPaint& paint)
 {
     SkPath path;
     path.addRRect(rect);
     AppendRegion(path);
 }
 
-void RSOverdrawCanvasListener::onDrawDRRect(const SkRRect& outer, const SkRRect& inner,
+void RSCPUOverdrawCanvasListener::onDrawDRRect(const SkRRect& outer, const SkRRect& inner,
                   const SkPaint& paint)
 {
     SkPath path;
@@ -79,14 +79,14 @@ void RSOverdrawCanvasListener::onDrawDRRect(const SkRRect& outer, const SkRRect&
     AppendRegion(path);
 }
 
-void RSOverdrawCanvasListener::onDrawOval(const SkRect& rect, const SkPaint& paint)
+void RSCPUOverdrawCanvasListener::onDrawOval(const SkRect& rect, const SkPaint& paint)
 {
     SkPath path;
     path.addOval(rect);
     AppendRegion(path);
 }
 
-void RSOverdrawCanvasListener::onDrawArc(const SkRect& rect, SkScalar startAngle, SkScalar sweepAngle, bool useCenter,
+void RSCPUOverdrawCanvasListener::onDrawArc(const SkRect& rect, SkScalar startAngle, SkScalar sweepAngle, bool useCenter,
                const SkPaint& paint)
 {
     SkPath path;
@@ -94,20 +94,20 @@ void RSOverdrawCanvasListener::onDrawArc(const SkRect& rect, SkScalar startAngle
     AppendRegion(path);
 }
 
-void RSOverdrawCanvasListener::onDrawPath(const SkPath& path, const SkPaint& paint)
+void RSCPUOverdrawCanvasListener::onDrawPath(const SkPath& path, const SkPaint& paint)
 {
     SkPath tpath = path;
     AppendRegion(tpath);
 }
 
-void RSOverdrawCanvasListener::onDrawRegion(const SkRegion& region, const SkPaint& paint)
+void RSCPUOverdrawCanvasListener::onDrawRegion(const SkRegion& region, const SkPaint& paint)
 {
     SkPath path;
     region.getBoundaryPath(&path);
     AppendRegion(path);
 }
 
-void RSOverdrawCanvasListener::onDrawTextBlob(const SkTextBlob* blob, SkScalar x, SkScalar y,
+void RSCPUOverdrawCanvasListener::onDrawTextBlob(const SkTextBlob* blob, SkScalar x, SkScalar y,
                     const SkPaint& paint)
 {
     if (blob == nullptr) {
@@ -119,20 +119,20 @@ void RSOverdrawCanvasListener::onDrawTextBlob(const SkTextBlob* blob, SkScalar x
     onDrawRect(rect, paint);
 }
 
-void RSOverdrawCanvasListener::onDrawPatch(const SkPoint cubics[12], const SkColor colors[4],
+void RSCPUOverdrawCanvasListener::onDrawPatch(const SkPoint cubics[12], const SkColor colors[4],
                  const SkPoint texCoords[4], SkBlendMode mode,
                  const SkPaint& paint)
 {
     // TODO
 }
 
-void RSOverdrawCanvasListener::onDrawPoints(SkCanvas::PointMode mode, size_t count, const SkPoint pts[],
+void RSCPUOverdrawCanvasListener::onDrawPoints(SkCanvas::PointMode mode, size_t count, const SkPoint pts[],
                   const SkPaint& paint)
 {
     // TODO
 }
 
-void RSOverdrawCanvasListener::onDrawEdgeAAQuad(const SkRect& rect, const SkPoint clip[4],
+void RSCPUOverdrawCanvasListener::onDrawEdgeAAQuad(const SkRect& rect, const SkPoint clip[4],
         SkCanvas::QuadAAFlags aaFlags, const SkColor4f& color, SkBlendMode mode)
 {
     SkPaint paint{color};
@@ -146,17 +146,17 @@ void RSOverdrawCanvasListener::onDrawEdgeAAQuad(const SkRect& rect, const SkPoin
     }
 }
 
-void RSOverdrawCanvasListener::onDrawAnnotation(const SkRect& rect, const char key[], SkData* value)
+void RSCPUOverdrawCanvasListener::onDrawAnnotation(const SkRect& rect, const char key[], SkData* value)
 {
     // TODO
 }
 
-void RSOverdrawCanvasListener::onDrawShadowRec(const SkPath& path, const SkDrawShadowRec& rect)
+void RSCPUOverdrawCanvasListener::onDrawShadowRec(const SkPath& path, const SkDrawShadowRec& rect)
 {
     // TODO
 }
 
-void RSOverdrawCanvasListener::onDrawDrawable(SkDrawable* drawable, const SkMatrix* matrix)
+void RSCPUOverdrawCanvasListener::onDrawDrawable(SkDrawable* drawable, const SkMatrix* matrix)
 {
     if (drawable == nullptr) {
         return;
@@ -173,7 +173,7 @@ void RSOverdrawCanvasListener::onDrawDrawable(SkDrawable* drawable, const SkMatr
     canvas_.restore();
 }
 
-void RSOverdrawCanvasListener::onDrawPicture(const SkPicture* picture, const SkMatrix* matrix,
+void RSCPUOverdrawCanvasListener::onDrawPicture(const SkPicture* picture, const SkMatrix* matrix,
                    const SkPaint* paint)
 {
     if (picture == nullptr) {
@@ -196,7 +196,7 @@ void RSOverdrawCanvasListener::onDrawPicture(const SkPicture* picture, const SkM
     canvas_.restore();
 }
 
-void RSOverdrawCanvasListener::AppendRegion(SkPath &path)
+void RSCPUOverdrawCanvasListener::AppendRegion(SkPath &path)
 {
     SkRegion target;
     path.transform(canvas_.getTotalMatrix());

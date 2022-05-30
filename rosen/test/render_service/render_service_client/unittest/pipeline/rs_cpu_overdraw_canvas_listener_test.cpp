@@ -19,15 +19,15 @@
 #include <include/core/SkRRect.h>
 #include <test_header.h>
 
-#include "pipeline/rs_overdraw_canvas_listener.h"
-#include "pipeline/rs_listened_canvas.h"
+#include "pipeline/overdraw/rs_cpu_overdraw_canvas_listener.h"
+#include "pipeline/overdraw/rs_listened_canvas.h"
 
 using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS {
 namespace Rosen {
-class RSOverdrawCanvasListenerTest : public testing::Test {
+class RSCPUOverdrawCanvasListenerTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
@@ -35,10 +35,10 @@ public:
     void TearDown() override;
 };
 
-void RSOverdrawCanvasListenerTest::SetUpTestCase() {}
-void RSOverdrawCanvasListenerTest::TearDownTestCase() {}
-void RSOverdrawCanvasListenerTest::SetUp() {}
-void RSOverdrawCanvasListenerTest::TearDown() {}
+void RSCPUOverdrawCanvasListenerTest::SetUpTestCase() {}
+void RSCPUOverdrawCanvasListenerTest::TearDownTestCase() {}
+void RSCPUOverdrawCanvasListenerTest::SetUp() {}
+void RSCPUOverdrawCanvasListenerTest::TearDown() {}
 
 class MockSkCanvas : public SkCanvas {
 public:
@@ -51,13 +51,13 @@ public:
  * EnvConditions: N/A
  * CaseDescription: 1. new mock MockSkCanvas
  *                  2. expect MockSkCanvas call onDrawRegion 3 times
- *                  3. new RSOverdrawCanvasListener from MockSkCanvas
- *                  4. call RSOverdrawCanvasListener's onDrawRect 3 times
+ *                  3. new RSCPUOverdrawCanvasListener from MockSkCanvas
+ *                  4. call RSCPUOverdrawCanvasListener's onDrawRect 3 times
  *                      - rect{  0,   0, 600, 600}
  *                      - rect{100, 100, 400, 400}
  *                      - rect{200, 200, 200, 200}
  */
-HWTEST_F(RSOverdrawCanvasListenerTest, Intersect, Function | SmallTest | Level2)
+HWTEST_F(RSCPUOverdrawCanvasListenerTest, Intersect, Function | SmallTest | Level2)
 {
     PART("CaseDescription") {
         std::unique_ptr<MockSkCanvas> mockSkCanvas = nullptr;
@@ -69,12 +69,12 @@ HWTEST_F(RSOverdrawCanvasListenerTest, Intersect, Function | SmallTest | Level2)
             EXPECT_CALL(*mockSkCanvas, onDrawRegion(_, _)).Times(3);
         }
 
-        std::unique_ptr<RSOverdrawCanvasListener> rsOverdrawCanvasListener = nullptr;
-        STEP("3. new RSOverdrawCanvasListener from MockSkCanvas") {
-            rsOverdrawCanvasListener = std::make_unique<RSOverdrawCanvasListener>(*mockSkCanvas);
+        std::unique_ptr<RSCPUOverdrawCanvasListener> rsOverdrawCanvasListener = nullptr;
+        STEP("3. new RSCPUOverdrawCanvasListener from MockSkCanvas") {
+            rsOverdrawCanvasListener = std::make_unique<RSCPUOverdrawCanvasListener>(*mockSkCanvas);
         }
 
-        STEP("4. call RSOverdrawCanvasListener's onDrawRect 3 times") {
+        STEP("4. call RSCPUOverdrawCanvasListener's onDrawRect 3 times") {
             rsOverdrawCanvasListener->onDrawRRect(SkRRect::MakeOval(SkRect::MakeXYWH(  0,   0, 600, 600)), {});
             rsOverdrawCanvasListener->onDrawRRect(SkRRect::MakeOval(SkRect::MakeXYWH(100, 100, 400, 400)), {});
             rsOverdrawCanvasListener->onDrawRRect(SkRRect::MakeOval(SkRect::MakeXYWH(200, 200, 200, 200)), {});
@@ -89,13 +89,13 @@ HWTEST_F(RSOverdrawCanvasListenerTest, Intersect, Function | SmallTest | Level2)
  * EnvConditions: N/A
  * CaseDescription: 1. new mock MockSkCanvas
  *                  2. expect MockSkCanvas call onDrawRegion once
- *                  3. new RSOverdrawCanvasListener from MockSkCanvas
- *                  4. call RSOverdrawCanvasListener's onDrawRect 3 times
+ *                  3. new RSCPUOverdrawCanvasListener from MockSkCanvas
+ *                  4. call RSCPUOverdrawCanvasListener's onDrawRect 3 times
  *                      - rect{  0,   0, 100, 100}
  *                      - rect{200, 200, 100, 100}
  *                      - rect{400, 400, 100, 100}
  */
-HWTEST_F(RSOverdrawCanvasListenerTest, NoIntersect, Function | SmallTest | Level2)
+HWTEST_F(RSCPUOverdrawCanvasListenerTest, NoIntersect, Function | SmallTest | Level2)
 {
     PART("CaseDescription") {
         std::unique_ptr<MockSkCanvas> mockSkCanvas = nullptr;
@@ -107,12 +107,12 @@ HWTEST_F(RSOverdrawCanvasListenerTest, NoIntersect, Function | SmallTest | Level
             EXPECT_CALL(*mockSkCanvas, onDrawRegion(_, _)).Times(1);
         }
 
-        std::unique_ptr<RSOverdrawCanvasListener> rsOverdrawCanvasListener = nullptr;
-        STEP("3. new RSOverdrawCanvasListener from MockSkCanvas") {
-            rsOverdrawCanvasListener = std::make_unique<RSOverdrawCanvasListener>(*mockSkCanvas);
+        std::unique_ptr<RSCPUOverdrawCanvasListener> rsOverdrawCanvasListener = nullptr;
+        STEP("3. new RSCPUOverdrawCanvasListener from MockSkCanvas") {
+            rsOverdrawCanvasListener = std::make_unique<RSCPUOverdrawCanvasListener>(*mockSkCanvas);
         }
 
-        STEP("4. call RSOverdrawCanvasListener's onDrawRect 3 times") {
+        STEP("4. call RSCPUOverdrawCanvasListener's onDrawRect 3 times") {
             rsOverdrawCanvasListener->onDrawRect(SkRect::MakeXYWH(  0,   0, 100, 100), {});
             rsOverdrawCanvasListener->onDrawRect(SkRect::MakeXYWH(200, 200, 100, 100), {});
             rsOverdrawCanvasListener->onDrawRect(SkRect::MakeXYWH(400, 400, 100, 100), {});

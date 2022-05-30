@@ -17,8 +17,8 @@
 #include <gtest/gtest.h>
 #include <test_header.h>
 
-#include "pipeline/rs_canvas_listener.h"
-#include "pipeline/rs_overdraw_controller.h"
+#include "pipeline/overdraw/rs_canvas_listener.h"
+#include "pipeline/overdraw/rs_overdraw_controller.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -37,9 +37,6 @@ void RSOverdrawControllerTest::SetUpTestCase() {}
 void RSOverdrawControllerTest::TearDownTestCase() {}
 void RSOverdrawControllerTest::SetUp() {}
 void RSOverdrawControllerTest::TearDown() {}
-
-class MockSkCanvas : public SkCanvas {
-};
 
 class MockRSPaintFilterCanvas : public RSPaintFilterCanvas {
 public:
@@ -131,12 +128,12 @@ HWTEST_F(RSOverdrawControllerTest, SwitchFunction, Function | SmallTest | Level2
  * Function: SetHook
  * Type: Function
  * EnvConditions: RSOverdrawController disabled
- * CaseDescription: 1. new mock MockRSPaintFilterCanvas
- *                  2. SetHook<RSCanvasListener>(MockRSPaintFilterCanvas) == nullptr
- *                  3. SetHook<RSCanvasListener>(nullptr) == nullptr
- *                  4. enable RSOverdrawController
- *                  5. SetHook<RSCanvasListener>(nullptr) == nullptr
- *                  6. SetHook<RSCanvasListener>(MockRSPaintFilterCanvas) != nullptr
+ * CaseDescription: 1. SetHook<RSCanvasListener>(new MockRSPaintFilterCanvas) == nullptr
+ *                  2. SetHook<RSCanvasListener>(nullptr) == nullptr
+ *                  3. enable RSOverdrawController
+ *                  4. SetHook<RSCanvasListener>(nullptr) == nullptr
+ *                  5. SetHook<RSCanvasListener>(new MockRSPaintFilterCanvas) == nullptr
+ *                  6. SetHook<RSValidCanvasListener>(new MockRSPaintFilterCanvas) != nullptr
  */
 HWTEST_F(RSOverdrawControllerTest, SetHookNormal, Function | SmallTest | Level2)
 {
@@ -145,46 +142,59 @@ HWTEST_F(RSOverdrawControllerTest, SetHookNormal, Function | SmallTest | Level2)
     }
 
     PART("CaseDescription") {
-        auto mockSkCanvas = std::make_unique<MockSkCanvas>();
-        MockRSPaintFilterCanvas *mockRSPaintFilterCanvas = nullptr;
+        auto skCanvas = std::make_unique<SkCanvas>();
         RSPaintFilterCanvas *canvas = nullptr;
-        STEP("1. new mock MockRSPaintFilterCanvas") {
-            mockRSPaintFilterCanvas = new MockRSPaintFilterCanvas(mockSkCanvas.get());
-        }
-
-        STEP("2. SetHook<RSCanvasListener>(MockRSPaintFilterCanvas) == nullptr") {
+        STEP("1. SetHook<RSCanvasListener>(new MockRSPaintFilterCanvas) == nullptr") {
+            auto mockRSPaintFilterCanvas = new MockRSPaintFilterCanvas(skCanvas.get());
             canvas = mockRSPaintFilterCanvas;
             auto listener = RSOverdrawController::GetInstance().SetHook<RSCanvasListener>(canvas);
             STEP_ASSERT_EQ(listener, nullptr);
             STEP_ASSERT_EQ(canvas, mockRSPaintFilterCanvas);
+            delete canvas;
         }
 
-        STEP("3. SetHook<RSCanvasListener>(nullptr) == nullptr") {
+        STEP("2. SetHook<RSCanvasListener>(nullptr) == nullptr") {
             canvas = nullptr;
             auto listener = RSOverdrawController::GetInstance().SetHook<RSCanvasListener>(canvas);
             STEP_ASSERT_EQ(listener, nullptr);
             STEP_ASSERT_EQ(canvas, nullptr);
         }
 
-        STEP("4. enable RSOverdrawController") {
+        STEP("3. enable RSOverdrawController") {
             RSOverdrawController::GetInstance().SetEnable(true);
         }
 
-        STEP("5. SetHook<RSCanvasListener>(nullptr) == nullptr") {
+        STEP("4. SetHook<RSCanvasListener>(nullptr) == nullptr") {
             canvas = nullptr;
             auto listener = RSOverdrawController::GetInstance().SetHook<RSCanvasListener>(canvas);
             STEP_ASSERT_EQ(listener, nullptr);
             STEP_ASSERT_EQ(canvas, nullptr);
         }
 
-        STEP("6. SetHook<RSCanvasListener>(MockRSPaintFilterCanvas) != nullptr") {
+        class RSValidCanvasListener : public RSCanvasListener {
+        public:
+            RSValidCanvasListener(SkCanvas &canvas) : RSCanvasListener(canvas) {}
+            bool IsValid() const override { return true; }
+            const char *Name() const override { return "RSValidCanvasListener"; }
+        };
+
+        STEP("5. SetHook<RSCanvasListener>(new MockRSPaintFilterCanvas) == nullptr") {
+            auto mockRSPaintFilterCanvas = new MockRSPaintFilterCanvas(skCanvas.get());
             canvas = mockRSPaintFilterCanvas;
             auto listener = RSOverdrawController::GetInstance().SetHook<RSCanvasListener>(canvas);
-            STEP_ASSERT_NE(listener, nullptr);
-            STEP_ASSERT_NE(canvas, mockRSPaintFilterCanvas);
+            STEP_ASSERT_EQ(listener, nullptr);
+            STEP_ASSERT_EQ(canvas, mockRSPaintFilterCanvas);
+            delete canvas;
         }
 
-        delete canvas;
+        STEP("6. SetHook<RSValidCanvasListener>(new MockRSPaintFilterCanvas) != nullptr") {
+            auto mockRSPaintFilterCanvas = new MockRSPaintFilterCanvas(skCanvas.get());
+            canvas = mockRSPaintFilterCanvas;
+            auto listener = RSOverdrawController::GetInstance().SetHook<RSValidCanvasListener>(canvas);
+            STEP_ASSERT_NE(listener, nullptr);
+            STEP_ASSERT_NE(canvas, mockRSPaintFilterCanvas);
+            // delete canvas;
+        }
     }
 }
 } // namespace Rosen
