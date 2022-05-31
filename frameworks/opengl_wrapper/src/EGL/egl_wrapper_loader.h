@@ -34,8 +34,8 @@ public:
 private:
     EglWrapperLoader() : dlEglHandle_(nullptr), dlGlHandle1_(nullptr),
         dlGlHandle2_(nullptr), dlGlHandle3_(nullptr) {};
-    bool LoadEgl(const char *path, EglHookTable *table);
-    void *LoadGl(const char *path, char const * const *glName, FunctionPointerType *entry);
+    bool LoadEgl(const char *libName, EglHookTable *table);
+    void *LoadGl(const char *libName, char const * const *glName, FunctionPointerType *entry);
     bool LoadVendorDriver(EglWrapperDispatchTable *table);
     void *dlEglHandle_;
     void *dlGlHandle1_;
