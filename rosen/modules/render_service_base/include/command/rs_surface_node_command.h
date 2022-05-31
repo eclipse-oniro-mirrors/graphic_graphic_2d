@@ -20,6 +20,7 @@
 #include "common/rs_vector4.h"
 
 class SkMatrix;
+struct SkRect;
 
 namespace OHOS {
 namespace Rosen {
@@ -42,7 +43,7 @@ public:
     static void SetProxy(RSContext& context, NodeId nodeId);
     static void SetContextMatrix(RSContext& context, NodeId nodeId, SkMatrix matrix);
     static void SetContextAlpha(RSContext& context, NodeId nodeId, float alpha);
-    static void SetContextClipRegion(RSContext& context, NodeId nodeId, Vector4f clipRect);
+    static void SetContextClipRegion(RSContext& context, NodeId nodeId, SkRect clipRect);
     static void SetSecurityLayer(RSContext& context, NodeId nodeId, bool isSecurityLayer);
     static void UpdateSurfaceDefaultSize(RSContext& context, NodeId nodeId, float width, float height);
     static void ConnectToNodeInRenderService(RSContext& context, NodeId id);
@@ -57,7 +58,7 @@ ADD_COMMAND(RSSurfaceNodeSetContextMatrix,
 ADD_COMMAND(RSSurfaceNodeSetContextAlpha,
     ARG(SURFACE_NODE, SURFACE_NODE_SET_CONTEXT_ALPHA, SurfaceNodeCommandHelper::SetContextAlpha, NodeId, float))
 ADD_COMMAND(RSSurfaceNodeSetContextClipRegion,
-    ARG(SURFACE_NODE, SURFACE_NODE_SET_CONTEXT_CLIP_REGION, SurfaceNodeCommandHelper::SetContextClipRegion, NodeId, Vector4f))
+    ARG(SURFACE_NODE, SURFACE_NODE_SET_CONTEXT_CLIP_REGION, SurfaceNodeCommandHelper::SetContextClipRegion, NodeId, SkRect))
 ADD_COMMAND(RSSurfaceNodeSetSecurityLayer,
     ARG(SURFACE_NODE, SURFACE_NODE_SET_SECURITY_LAYER, SurfaceNodeCommandHelper::SetSecurityLayer, NodeId, bool))
 ADD_COMMAND(RSSurfaceNodeUpdateSurfaceDefaultSize, ARG(SURFACE_NODE, SURFACE_NODE_UPDATE_SURFACE_SIZE,

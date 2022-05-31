@@ -48,7 +48,7 @@ void SurfaceNodeCommandHelper::SetContextAlpha(RSContext& context, NodeId id, fl
     }
 }
 
-void SurfaceNodeCommandHelper::SetContextClipRegion(RSContext& context, NodeId id, Vector4f clipRect)
+void SurfaceNodeCommandHelper::SetContextClipRegion(RSContext& context, NodeId id, SkRect clipRect)
 {
     if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(id)) {
         node->SetContextClipRegion(clipRect, false);

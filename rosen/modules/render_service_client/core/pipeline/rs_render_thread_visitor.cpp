@@ -218,7 +218,7 @@ void RSRenderThreadVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     // RSSurfaceRenderNode in RSRenderThreadVisitor do not have information of property.
     // We only get parent's matrix and send it to RenderService
 #ifdef ROSEN_OHOS
-    SkMatrix invertMatrix;
+    //SkMatrix invertMatrix;
     SkMatrix contextMatrix = canvas_->getTotalMatrix();
 
     if (parentSurfaceNodeMatrix_.invert(&invertMatrix)) {
@@ -234,9 +234,15 @@ void RSRenderThreadVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         ProcessBaseRenderNode(node);
         return;
     }
-    auto contextClipRect = canvas_->getLocalClipBounds();
-    node.SetContextClipRegion(
-        { contextClipRect.left(), contextClipRect.top(), contextClipRect.width(), contextClipRect.height() });
+    // auto contextClipRect = canvas_->getLocalClipBounds();
+    // node.SetContextClipRegion(
+    //     { contextClipRect.left(), contextClipRect.top(), contextClipRect.width(), contextClipRect.height() });
+    auto clipDeviceBounds = canvas_->getDeviceClipBounds();
+    auto clipLocalBounds = canvas_->getLocalClipBounds();
+    ROSEN_LOGI("chenlu RSRenderThreadVisitor::ProcessSurfaceRenderNode node :%llu  name:%s, clipDevice[%d, %d, %d, %d] clipLocal[%f, %f, %f, %f]",
+            node.GetId(), node.GetName().c_str(), clipDeviceBounds.left(), clipDeviceBounds.top(), clipDeviceBounds.width(), clipDeviceBounds.height(),
+            clipLocalBounds.left(), clipLocalBounds.top(), clipLocalBounds.width(), clipLocalBounds.height());
+    node.SetContextClipRegion(canvas_->getLocalClipBounds());
 
     // clip hole
     ClipHoleForSurfaceNode(node);
@@ -280,9 +286,10 @@ void RSRenderThreadVisitor::ClipHoleForSurfaceNode(RSSurfaceRenderNode& node)
     auto height = node.GetRenderProperties().GetBoundsHeight();
     canvas_->save();
     canvas_->clipRect(SkRect::MakeXYWH(x, y, width, height));
+    SkMatrix contextMatrix = canvas_->getTotalMatrix();
     if (node.IsNotifyRTBufferAvailable() == true) {
-        ROSEN_LOGI("RSRenderThreadVisitor::ProcessSurfaceRenderNode node : %llu, clip [%f, %f, %f, %f]",
-            node.GetId(), x, y, width, height);
+        ROSEN_LOGI("RSRenderThreadVisitor::ProcessSurfaceRenderNode node : %llu, clip [%f, %f, %f, %f] tran[%f %f]",
+            node.GetId(), x, y, width, height, contextMatrix.getTranslateX(), contextMatrix.getTranslateY());
         canvas_->clear(SK_ColorTRANSPARENT);
     } else {
         ROSEN_LOGI("RSRenderThreadVisitor::ProcessSurfaceRenderNode node : %llu, not clip [%f, %f, %f, %f]",

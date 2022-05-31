@@ -100,8 +100,8 @@ public:
     void SetContextAlpha(float alpha, bool sendMsg = true);
     float GetContextAlpha() const;
 
-    void SetContextClipRegion(Vector4f clipRegion, bool sendMsg = true);
-    const Vector4f& GetContextClipRegion() const;
+    void SetContextClipRegion(SkRect clipRegion, bool sendMsg = true);
+    const SkRect& GetContextClipRegion() const;
 
     void SetSecurityLayer(bool isSecurityLayer);
     bool GetSecurityLayer() const;
@@ -171,7 +171,7 @@ private:
 
     SkMatrix contextMatrix_;
     float contextAlpha_ = 1.0f;
-    Vector4f contextClipRect_;
+    SkRect contextClipRect_;
 
     bool isSecurityLayer_ = false;
     RectI dstRect_;

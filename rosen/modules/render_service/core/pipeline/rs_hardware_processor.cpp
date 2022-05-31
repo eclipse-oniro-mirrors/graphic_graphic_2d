@@ -259,9 +259,11 @@ void RSHardwareProcessor::ProcessSurface(RSSurfaceRenderNode &node)
         return;
     }
     RectI originDstRect(geoPtr->GetAbsRect().left_ - offsetX_, geoPtr->GetAbsRect().top_ - offsetY_,
-            geoPtr->GetAbsRect().width_, geoPtr->GetAbsRect().height_);
+        geoPtr->GetAbsRect().width_, geoPtr->GetAbsRect().height_);
+    // RectI originDstRect(node.GetOriRect().left(), node.GetOriRect().top(), node.GetOriRect().width(),
+    //      node.GetOriRect().height());
     RectI clipRegion(info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h);
-    CalculateSrcRect(info, clipRegion, originDstRect);
+    //CalculateSrcRect(info, clipRegion, originDstRect);
     std::string inf;
     char strBuffer[UINT8_MAX] = { 0 };
     if (sprintf_s(strBuffer, UINT8_MAX, "ProcessSurfaceNode:%s XYWH[%d %d %d %d]", node.GetName().c_str(),

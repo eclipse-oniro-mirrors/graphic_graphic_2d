@@ -18,6 +18,7 @@
 #include "command/rs_surface_node_command.h"
 #include "common/rs_obj_abs_geometry.h"
 #include "display_type.h"
+#include "include/core/SkMatrix.h"
 #include "include/core/SkRect.h"
 #include "common/rs_rect.h"
 #include "common/rs_vector2.h"
@@ -57,11 +58,16 @@ void RSSurfaceRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canva
 {
     canvas.SaveAlpha();
     canvas.MultiplyAlpha(GetRenderProperties().GetAlpha() * GetContextAlpha());
-    SkIRect clipBounds = canvas.getDeviceClipBounds();  // this clip region from parent node from render service
-    clipRegionFromParent_.SetAll(clipBounds.left(), clipBounds.top(), clipBounds.width(), clipBounds.height());
+    auto clipRectFromRT = GetContextClipRegion();
+    canvas.concat(GetContextMatrix());
+    if (!clipRectFromRT.isEmpty()){
+        canvas.clipRect(clipRectFromRT);
+    }
     RectI clipRegion = CalculateClipRegion(canvas);
     SkRect rect;
-    SkPoint points[] = {{clipRegion.left_, clipRegion.top_}, {clipRegion.GetRight(), clipRegion.GetBottom()}};
+    auto currentClipRegion1 = canvas.getDeviceClipBounds();
+    SkPoint points[] = {{clipRegion.left_ + currentClipRegion1.left(), clipRegion.top_ + currentClipRegion1.top()},
+        {clipRegion.GetRight() + currentClipRegion1.left(), clipRegion.GetBottom() + currentClipRegion1.top()}};
     rect.setBounds(points, rectBounds);
     canvas.clipRect(rect);
     auto currentClipRegion = canvas.getDeviceClipBounds();
@@ -72,27 +78,13 @@ void RSSurfaceRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canva
 
 RectI RSSurfaceRenderNode::CalculateClipRegion(RSPaintFilterCanvas& canvas)
 {
-    // this clip region from render thread, it`s relative position
-    const Vector4f& clipRegionFromRT = GetContextClipRegion();
-    RectI clipRegion(clipRegionFromRT.x_, clipRegionFromRT.y_, clipRegionFromRT.z_, clipRegionFromRT.w_);
-    clipRegion.left_ = clipRegionFromRT.x_ + clipRegionFromParent_.left_;
-    clipRegion.top_ = clipRegionFromRT.y_ + clipRegionFromParent_.top_;
-    clipRegion.SetRight(clipRegion.IsEmpty() ? clipRegionFromParent_.GetRight()
-                                             : std::min(clipRegion.GetRight(), clipRegionFromParent_.GetRight()));
-    clipRegion.SetBottom(clipRegion.IsEmpty() ? clipRegionFromParent_.GetBottom()
-                                              : std::min(clipRegion.GetBottom(), clipRegionFromParent_.GetBottom()));
-    auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(GetRenderProperties().GetBoundsGeometry());
-    if (geoPtr == nullptr) {
-        RS_LOGE("RsDebug RSSurfaceRenderNode::ProcessRenderBeforeChildren geoPtr == nullptr");
-        return RectI();
-    }
-    RectI originDstRect(geoPtr->GetAbsRect().left_ - offsetX_, geoPtr->GetAbsRect().top_ - offsetY_,
-            geoPtr->GetAbsRect().width_, geoPtr->GetAbsRect().height_);
-    RectI resClipRegion = clipRegion.IntersectRect(originDstRect);
+    const RSProperties& properties = GetRenderProperties();
+    RectI originDstRect(properties.GetBoundsPositionX() - offsetX_, properties.GetBoundsPositionY() - offsetY_,
+            properties.GetBoundsWidth(), properties.GetBoundsHeight());
     auto transitionProperties = GetAnimationManager().GetTransitionProperties();
-    Vector2f center(resClipRegion.width_ * 0.5f, resClipRegion.height_ * 0.5f);
+    Vector2f center(originDstRect.width_ * 0.5f, originDstRect.height_ * 0.5f);
     RSPropertiesPainter::DrawTransitionProperties(transitionProperties, center, canvas);
-    return resClipRegion;
+    return originDstRect;
 }
 
 void RSSurfaceRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
@@ -154,7 +146,7 @@ float RSSurfaceRenderNode::GetContextAlpha() const
     return contextAlpha_;
 }
 
-void RSSurfaceRenderNode::SetContextClipRegion(Vector4f clipRegion, bool sendMsg)
+void RSSurfaceRenderNode::SetContextClipRegion(SkRect clipRegion, bool sendMsg)
 {
     if (contextClipRect_ == clipRegion) {
         return;
@@ -168,7 +160,7 @@ void RSSurfaceRenderNode::SetContextClipRegion(Vector4f clipRegion, bool sendMsg
     SendCommandFromRT(command);
 }
 
-const Vector4f& RSSurfaceRenderNode::GetContextClipRegion() const
+const SkRect& RSSurfaceRenderNode::GetContextClipRegion() const
 {
     return contextClipRect_;
 }
