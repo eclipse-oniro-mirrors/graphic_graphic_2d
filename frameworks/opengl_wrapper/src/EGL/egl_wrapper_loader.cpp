@@ -26,8 +26,10 @@ namespace OHOS {
 namespace {
 #ifdef __aarch64__
     constexpr const char *VENDOR_LIB_PATH = "/vendor/lib64/chipsetsdk/";
+    constexpr const char *SYSTEM_LIB_PATH = "/system/lib64/";
 #else
     constexpr const char *VENDOR_LIB_PATH = "/vendor/lib/chipsetsdk/";
+    constexpr const char *SYSTEM_LIB_PATH = "/system/lib/";
 #endif
 constexpr const char *LIB_EGL_NAME = "libmali.so.0";
 constexpr const char *LIB_GLESV1_NAME = "libmali.so.0";
@@ -47,13 +49,18 @@ EglWrapperLoader::~EglWrapperLoader()
 }
 
 using GetProcAddressType = FunctionPointerType (*)(const char *);
-bool EglWrapperLoader::LoadEgl(const char *path, EglHookTable *table)
+bool EglWrapperLoader::LoadEgl(const char *libName, EglHookTable *table)
 {
     WLOGD("");
-    dlEglHandle_ = dlopen(path, RTLD_NOW | RTLD_LOCAL);
+    std::string path = std::string(VENDOR_LIB_PATH) + std::string(libName);
+    dlEglHandle_ = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
     if (dlEglHandle_ == nullptr) {
-        WLOGE("dlopen failed. error: %{public}s.", dlerror());
-        return false;
+        path = std::string(SYSTEM_LIB_PATH) + std::string(libName);
+        dlEglHandle_ = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
+        if (dlEglHandle_ == nullptr) {
+            WLOGE("dlopen failed. error: %{public}s.", dlerror());
+            return false;
+        }
     }
 
     GetProcAddressType getProcAddr =
@@ -83,13 +90,18 @@ bool EglWrapperLoader::LoadEgl(const char *path, EglHookTable *table)
     return true;
 }
 
-void *EglWrapperLoader::LoadGl(const char *path, char const * const *glName, FunctionPointerType *entry)
+void *EglWrapperLoader::LoadGl(const char *libName, char const * const *glName, FunctionPointerType *entry)
 {
     WLOGD("");
-    void *dlHandle = dlopen(path, RTLD_NOW | RTLD_LOCAL);
+    std::string path = std::string(VENDOR_LIB_PATH) + std::string(libName);
+    void *dlHandle = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
     if (dlHandle == nullptr) {
-        WLOGE("dlopen failed. error: %{public}s.", dlerror());
-        return nullptr;
+        path = std::string(SYSTEM_LIB_PATH) + std::string(libName);
+        dlHandle = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
+        if (dlHandle == nullptr) {
+            WLOGE("dlopen failed. error: %{public}s.", dlerror());
+            return nullptr;
+        }
     }
 
     FunctionPointerType *current = entry;
@@ -110,31 +122,27 @@ void *EglWrapperLoader::LoadGl(const char *path, char const * const *glName, Fun
 bool EglWrapperLoader::LoadVendorDriver(EglWrapperDispatchTable *table)
 {
     WLOGD("EGL");
-    std::string eglPath = std::string(VENDOR_LIB_PATH) + std::string(LIB_EGL_NAME);
-    if (!LoadEgl(eglPath.c_str(), &table->egl)) {
+    if (!LoadEgl(LIB_EGL_NAME, &table->egl)) {
         WLOGE("LoadEgl Failed.");
         return false;
     }
 
     WLOGD("GLESV1");
-    std::string glPath = std::string(VENDOR_LIB_PATH) + std::string(LIB_GLESV1_NAME);
-    dlGlHandle1_ = LoadGl(glPath.c_str(), gGlApiNames1, (FunctionPointerType *)&table->gl.table1);
+    dlGlHandle1_ = LoadGl(LIB_GLESV1_NAME, gGlApiNames1, (FunctionPointerType *)&table->gl.table1);
     if (!dlEglHandle_) {
         WLOGE("LoadGl GLESV1 Failed.");
         return false;
     }
 
     WLOGD("GLESV2");
-    glPath = std::string(VENDOR_LIB_PATH) + std::string(LIB_GLESV2_NAME);
-    dlGlHandle2_ = LoadGl(glPath.c_str(), gGlApiNames2, (FunctionPointerType *)&table->gl.table2);
+    dlGlHandle2_ = LoadGl(LIB_GLESV2_NAME, gGlApiNames2, (FunctionPointerType *)&table->gl.table2);
     if (!dlGlHandle2_) {
         WLOGE("LoadGl GLESV2 Failed.");
         return false;
     }
 
     WLOGD("GLESV3");
-    glPath = std::string(VENDOR_LIB_PATH) + std::string(LIB_GLESV3_NAME);
-    dlGlHandle3_ = LoadGl(glPath.c_str(), gGlApiNames3, (FunctionPointerType *)&table->gl.table3);
+    dlGlHandle3_ = LoadGl(LIB_GLESV3_NAME, gGlApiNames3, (FunctionPointerType *)&table->gl.table3);
     if (!dlGlHandle3_) {
         WLOGE("LoadGl GLESV3 Failed.");
         return false;

@@ -52,7 +52,8 @@ ohos_shared_library("EGL") {
 
   external_deps = [ "hilog_native:libhilog" ]
 
-  symlink_target_name = [ "libEGL.so" ]
+  output_name = "EGL"
+  output_extension = "so"
 
   part_name = "graphic_standard"
   subsystem_name = "graphic"
@@ -91,7 +92,8 @@ ohos_shared_library("GLESv1") {
 
   external_deps = [ "hilog_native:libhilog" ]
 
-  symlink_target_name = [ "libGLESv1.so" ]
+  output_name = "GLESv1"
+  output_extension = "so"
 
   part_name = "graphic_standard"
   subsystem_name = "graphic"
@@ -130,7 +132,8 @@ ohos_shared_library("GLESv2") {
 
   external_deps = [ "hilog_native:libhilog" ]
 
-  symlink_target_name = [ "libGLESv2.so" ]
+  output_name = "GLESv2"
+  output_extension = "so"
 
   part_name = "graphic_standard"
   subsystem_name = "graphic"
@@ -169,7 +172,8 @@ ohos_shared_library("GLESv3") {
 
   external_deps = [ "hilog_native:libhilog" ]
 
-  symlink_target_name = [ "libGLESv3.so" ]
+  output_name = "GLESv3"
+  output_extension = "so"
 
   part_name = "graphic_standard"
   subsystem_name = "graphic"
