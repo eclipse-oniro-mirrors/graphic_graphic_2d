@@ -319,7 +319,7 @@ int main()
     config.screenId = id;
     RSDisplayNode::SharedPtr sourceDisplayNode = RSDisplayNode::Create(config);
     sourceDisplayNode->AddChild(surfaceLauncher, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction(0);
 
     RSScreenModeInfo modeInfo = RSInterfaces::GetInstance().GetScreenActiveMode(id);
     cout << "height=" << modeInfo.GetScreenHeight() << ", width=" << modeInfo.GetScreenWidth() << endl;
@@ -339,7 +339,7 @@ int main()
     for (int i = 0; i < frameCnt; ++i) {
         DrawSurface(SkRect::MakeXYWH(SKSCALAR_X, SKSCALAR_Y, SKSCALAR_W, SKSCALAR_H), 0xFFF0FFF0,
             SkRect::MakeXYWH(SKSCALAR_X, SKSCALAR_Y, SKSCALAR_W, SKSCALAR_H), surfaceLauncher);
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSTransactionProxy::GetInstance()->FlushImplicitTransaction(0);
         sleep(detail::SLEEP_TIME);
     }
 
@@ -348,7 +348,7 @@ int main()
     for (int i = 0; i < frameCnt; ++i) {
         DrawSurface(SkRect::MakeXYWH(SKSCALAR_X, SKSCALAR_Y, SKSCALAR_W, SKSCALAR_H), 0xFFF0FFF0,
             SkRect::MakeXYWH(SKSCALAR_X, SKSCALAR_Y, SKSCALAR_W, SKSCALAR_H), surfaceLauncher);
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSTransactionProxy::GetInstance()->FlushImplicitTransaction(0);
         sleep(detail::SLEEP_TIME);
     }
 

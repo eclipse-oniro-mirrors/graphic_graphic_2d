@@ -371,14 +371,14 @@ public:
 
         auto transactionProxy = RSTransactionProxy::GetInstance();
         if (transactionProxy != nullptr) {
-            transactionProxy->FlushImplicitTransaction();
+            transactionProxy->FlushImplicitTransaction(0);
         }
         float alpha = 0;
         for (int index = 0; index <= 10; index += 2) { // 10 is boundary, 2 is step
             printf("printf alpha=%f \n", alpha);
             surfaceNode2->SetAlpha(alpha);
             if (transactionProxy != nullptr) {
-                transactionProxy->FlushImplicitTransaction();
+                transactionProxy->FlushImplicitTransaction(0);
             }
             usleep(300000);
             alpha += 0.2f;
@@ -388,7 +388,7 @@ public:
             printf("scale=%f\n", scale);
             surfaceNode2->SetScaleX(scale);
             if (transactionProxy != nullptr) {
-                transactionProxy->FlushImplicitTransaction();
+                transactionProxy->FlushImplicitTransaction(0);
             }
             usleep(300000);
             scale += 0.2f;
@@ -401,13 +401,13 @@ public:
             printf("roate=%f\n", rotate);
             surfaceNode2->SetRotation(rotate);
             if (transactionProxy != nullptr) {
-                transactionProxy->FlushImplicitTransaction();
+                transactionProxy->FlushImplicitTransaction(0);
             }
             usleep(300000);
         }
         displayNode->RemoveFromTree();
         if (transactionProxy != nullptr) {
-            transactionProxy->FlushImplicitTransaction();
+            transactionProxy->FlushImplicitTransaction(0);
         }
         std::cout << "Compatible rotation test end\n";
         std::cout << "Render service Client rs Demo.cpp testCaseDefault end\n";

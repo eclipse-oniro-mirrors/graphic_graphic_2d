@@ -95,5 +95,16 @@ bool RSSurfaceOhosGl::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame)
     ROSEN_LOGD("RSSurfaceOhosGl: FlushFrame, SwapBuffers eglsurface is %p", mEglSurface);
     return true;
 }
+
+std::unique_ptr<RSSurfaceFrame> RSSurfaceOhosGl::RequestFrame(int32_t width, int32_t height, uint64_t UITimestamp)
+{
+    std::unique_ptr<RSSurfaceFrame> ret = RequestFrame(width, height);
+    NativeWindowHandleOpt(mWindow, SET_UI_TIMESTAMP, UITimestamp);
+    return ret;
+}
+
+bool RSSurfaceOhosGl::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uint64_t UITimestamp) {
+    return FlushFrame(frame);
+}
 } // namespace Rosen
 } // namespace OHOS

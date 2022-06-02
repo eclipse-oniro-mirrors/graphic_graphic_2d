@@ -24,7 +24,7 @@ void RSTransaction::FlushImplicitTransaction()
 {
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
-        transactionProxy->FlushImplicitTransaction();
+        transactionProxy->FlushImplicitTransaction(0);
     }
 }
 } // namespace Rosen

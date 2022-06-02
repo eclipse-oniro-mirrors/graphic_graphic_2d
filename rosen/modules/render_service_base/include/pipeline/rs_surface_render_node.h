@@ -143,7 +143,7 @@ public:
 
     void UpdateSurfaceDefaultSize(float width, float height);
 
-    static void SendPropertyCommand(std::unique_ptr<RSCommand>& command);
+    static void SendPropertyCommand(std::unique_ptr<RSCommand>& command, NodeId nodeId);
 
     BlendType GetBlendType();
     void SetBlendType(BlendType blendType);

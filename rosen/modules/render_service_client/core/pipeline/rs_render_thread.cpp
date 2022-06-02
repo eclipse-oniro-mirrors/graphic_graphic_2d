@@ -77,7 +77,7 @@ RSRenderThread::RSRenderThread()
         SendCommands();
         auto transactionProxy = RSTransactionProxy::GetInstance();
         if (transactionProxy != nullptr) {
-            transactionProxy->FlushImplicitTransactionFromRT();
+            transactionProxy->FlushImplicitTransactionFromRT(UITimestamp_);
         }
         ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
         jankDetector_.CalculateSkippedFrame(renderStartTimeStamp, jankDetector_.GetSysTimeNs());
@@ -135,6 +135,7 @@ void RSRenderThread::RecvTransactionData(std::unique_ptr<RSTransactionData>& tra
 {
     {
         std::unique_lock<std::mutex> cmdLock(cmdMutex_);
+        UITimestamp_ = transactionData->GetTimestamp();
         std::string str = "RecvCommands ptr:" + std::to_string(reinterpret_cast<uintptr_t>(transactionData.get()));
         ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, str.c_str());
         cmds_.emplace_back(std::move(transactionData));

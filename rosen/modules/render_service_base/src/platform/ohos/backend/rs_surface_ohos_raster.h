@@ -37,6 +37,9 @@ public:
     std::unique_ptr<RSSurfaceFrame> RequestFrame(int32_t width, int32_t height) override;
     bool FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame) override;
 
+    std::unique_ptr<RSSurfaceFrame> RequestFrame(int32_t width, int32_t height, uint64_t UITimestamp) override;
+    bool FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uint64_t UITimestamp) override;
+
     void SetSurfaceBufferUsage(int32_t usage) override;
 };
 } // namespace Rosen

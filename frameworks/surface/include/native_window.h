@@ -34,6 +34,7 @@ struct NativeWindow : public NativeWindowMagic {
     ~NativeWindow();
     OHOS::BufferRequestConfig config = {0};
     OHOS::sptr<OHOS::Surface> surface;
+    int64_t UITimestamp = 0;
 };
 
 struct NativeWindowBuffer : public NativeWindowMagic {

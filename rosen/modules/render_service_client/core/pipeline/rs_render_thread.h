@@ -72,6 +72,7 @@ public:
 
     void OnTransaction(std::shared_ptr<RSTransactionData> transactionData) override;
 
+    uint64_t UITimestamp_ = 0;
 private:
     RSRenderThread();
     ~RSRenderThread();

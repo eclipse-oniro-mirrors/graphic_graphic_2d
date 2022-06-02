@@ -58,7 +58,8 @@ RSBaseNode::~RSBaseNode()
     std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeDestroy>(id_);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
-        transactionProxy->AddCommand(command, IsRenderServiceNode());
+        // Todo:Is this need wait for parent Node?
+        transactionProxy->AddCommand(command, IsRenderServiceNode(), GetType(), id_);
     }
 }
 
@@ -83,7 +84,7 @@ void RSBaseNode::AddChild(SharedPtr child, int index)
     std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeAddChild>(id_, childId, index);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
-        transactionProxy->AddCommand(command, IsRenderServiceNode());
+        transactionProxy->AddCommand(command, IsRenderServiceNode(), GetType(), id_);
     }
 }
 
@@ -101,7 +102,7 @@ void RSBaseNode::RemoveChild(SharedPtr child)
     std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeRemoveChild>(id_, childId);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
-        transactionProxy->AddCommand(command, IsRenderServiceNode());
+        transactionProxy->AddCommand(command, IsRenderServiceNode(), GetType(), id_);
     }
 }
 
@@ -124,7 +125,7 @@ void RSBaseNode::RemoveFromTree()
     std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeRemoveFromTree>(id_);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
-        transactionProxy->AddCommand(command, IsRenderServiceNode());
+        transactionProxy->AddCommand(command, IsRenderServiceNode(), GetType(), id_);
     }
 }
 
@@ -140,7 +141,7 @@ void RSBaseNode::ClearChildren()
     std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeClearChild>(id_);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
-        transactionProxy->AddCommand(command, IsRenderServiceNode());
+        transactionProxy->AddCommand(command, IsRenderServiceNode(), GetType(), id_);
     }
 }
 

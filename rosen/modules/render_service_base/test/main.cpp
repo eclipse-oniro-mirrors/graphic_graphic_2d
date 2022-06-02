@@ -31,7 +31,7 @@ int main()
     if (transactionProxy != nullptr) {
         transactionProxy->SetRenderServiceClient(renderClient);
         transactionProxy->AddCommand(command);
-        transactionProxy->FlushImplicitTransaction();
+        transactionProxy->FlushImplicitTransaction(0);
     }
     // create surface
     RSSurfaceRenderNodeConfig config = {.id=0, .name="testSurface"};

@@ -213,12 +213,12 @@ int main()
         sleep(2);
         displayNode->AddChild(surfaceNode, -1);
         surfaceNode->SetBounds(0, 0, WIDTH, HEIGHT);
-        transactionProxy->FlushImplicitTransaction();
+        transactionProxy->FlushImplicitTransaction(0);
         DrawSurface(surfaceNode, WIDTH, HEIGHT, i);
         // sleep 8s
         sleep(8);
         displayNode->RemoveChild(surfaceNode);
-        transactionProxy->FlushImplicitTransaction();
+        transactionProxy->FlushImplicitTransaction(0);
     }
     return 0;
 }

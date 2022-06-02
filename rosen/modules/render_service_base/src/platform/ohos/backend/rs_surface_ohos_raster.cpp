@@ -81,5 +81,17 @@ bool RSSurfaceOhosRaster::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame)
     return true;
 }
 
+std::unique_ptr<RSSurfaceFrame> RSSurfaceOhosRaster::RequestFrame(int32_t width, int32_t height, uint64_t UITimestamp)
+{
+    std::unique_ptr<RSSurfaceFrame> ret = RequestFrame(width, height);
+    return ret;
+}
+
+bool RSSurfaceOhosRaster::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uint64_t UITimestamp)
+{
+    RSSurfaceFrameOhosRaster* oriFramePtr = static_cast<RSSurfaceFrameOhosRaster*>(frame.get());
+    oriFramePtr->flushConfig_.timestamp = static_cast<int64_t>(UITimestamp);
+    return FlushFrame(frame);
+}
 } // namespace Rosen
 } // namespace OHOS

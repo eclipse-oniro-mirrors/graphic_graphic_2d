@@ -167,11 +167,11 @@ int main(int argc, char** argv)
         sleep(2); // delay 2 second
         displayNode->AddChild(surfaceNode, -1);
         surfaceNode->SetBounds(0, 0, 2560, 1600); // Draw Range 2560, 1600
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSTransactionProxy::GetInstance()->FlushImplicitTransaction(0);
         DrawSurface(surfaceNode, 2560, 1600, i); // Draw Range 2560, 1600
         sleep(4); // delay 4 second
         displayNode->RemoveChild(surfaceNode);
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+        RSTransactionProxy::GetInstance()->FlushImplicitTransaction(0);
     }
     return 0;
 }
