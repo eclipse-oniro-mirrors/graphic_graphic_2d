@@ -17,7 +17,10 @@
 
 #include <include/core/SkColor.h>
 #include <include/core/SkFont.h>
+#include <include/core/SkMatrix.h>
 #include <include/core/SkPaint.h>
+
+#include "rs_trace.h"
 
 #include "command/rs_base_node_command.h"
 #include "pipeline/rs_canvas_render_node.h"
@@ -28,7 +31,6 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 #include "platform/drawing/rs_surface.h"
-#include "rs_trace.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "ui/rs_surface_extractor.h"
 #include "ui/rs_surface_node.h"
@@ -150,6 +152,9 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     // clear current children before traversal, we will re-add them again during traversal
     childSurfaceNodeIds_.clear();
 
+    // reset matrix
+    parentSurfaceNodeMatrix_ = SkMatrix::I();
+
     ProcessCanvasRenderNode(node);
 
     if (childSurfaceNodeIds_ != node.childSurfaceNodeIds_) {
@@ -213,7 +218,15 @@ void RSRenderThreadVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     // RSSurfaceRenderNode in RSRenderThreadVisitor do not have information of property.
     // We only get parent's matrix and send it to RenderService
 #ifdef ROSEN_OHOS
-    node.SetContextMatrix(canvas_->getTotalMatrix());
+    SkMatrix invertMatrix;
+    SkMatrix contextMatrix = canvas_->getTotalMatrix();
+
+    if (parentSurfaceNodeMatrix_.invert(&invertMatrix)) {
+        contextMatrix.preConcat(parentSurfaceNodeMatrix_);
+    } else {
+        ROSEN_LOGE("RSRenderThreadVisitor::ProcessSurfaceRenderNode, invertMatrix failed");
+    }
+    node.SetContextMatrix(contextMatrix);
     node.SetContextAlpha(canvas_->GetAlpha());
     // for proxied nodes (i.e. remote window components), we only set matrix & alpha, do not change its hierarchy and
     // clip status.
@@ -221,8 +234,9 @@ void RSRenderThreadVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         ProcessBaseRenderNode(node);
         return;
     }
-    auto clipRect = canvas_->getDeviceClipBounds();
-    node.SetContextClipRegion({clipRect.left(), clipRect.top(), clipRect.width(), clipRect.height()});
+    auto contextClipRect = canvas_->getLocalClipBounds();
+    node.SetContextClipRegion(
+        { contextClipRect.left(), contextClipRect.top(), contextClipRect.width(), contextClipRect.height() });
 
     // clip hole
     ClipHoleForSurfaceNode(node);
@@ -230,11 +244,14 @@ void RSRenderThreadVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     // 1. add this node to parent's children list
     childSurfaceNodeIds_.emplace_back(node.GetId());
 
-    // 2. backup and clear children list
+    // 2. backup and reset environment variables before traversal children
     std::vector<NodeId> siblingSurfaceNodeIds(std::move(childSurfaceNodeIds_));
     childSurfaceNodeIds_.clear();
+    auto parentSurfaceNodeMatrix = parentSurfaceNodeMatrix_;
+    parentSurfaceNodeMatrix_ = canvas_->getTotalMatrix();
 
-    // 3. traversal children, add child surface node to childSurfaceNodeIds_
+    // 3. traversal children, child surface node will be added to childSurfaceNodeIds_
+    // note: apply current node properties onto canvas if there is any child node
     ProcessBaseRenderNode(node);
 
     // 4. if children changed, sync children to RenderService
@@ -249,8 +266,9 @@ void RSRenderThreadVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         node.childSurfaceNodeIds_ = std::move(childSurfaceNodeIds_);
     }
 
-    // 5. restore children list and continue traversal siblings
+    // 5. restore environments variables before continue traversal siblings
     childSurfaceNodeIds_ = std::move(siblingSurfaceNodeIds);
+    parentSurfaceNodeMatrix_ = parentSurfaceNodeMatrix;
 }
 
 void RSRenderThreadVisitor::ClipHoleForSurfaceNode(RSSurfaceRenderNode& node)

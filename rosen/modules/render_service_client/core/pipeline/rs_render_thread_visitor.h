@@ -24,6 +24,7 @@
 #include "transaction/rs_transaction_proxy.h"
 #include "visitor/rs_node_visitor.h"
 
+class SkMatrix;
 namespace OHOS {
 namespace Rosen {
 class RSDirtyRegionManager;
@@ -57,6 +58,7 @@ private:
     void ClipHoleForSurfaceNode(RSSurfaceRenderNode& node);
 
     std::vector<NodeId> childSurfaceNodeIds_;
+    SkMatrix parentSurfaceNodeMatrix_;
 
     void SendCommandFromRT(std::unique_ptr<RSCommand>& command);
 };
