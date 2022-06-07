@@ -20,8 +20,8 @@
 #include <include/core/SkFont.h>
 #include <include/core/SkMatrix.h>
 #include <include/core/SkPaint.h>
-#include <stdint.h>
 
+#include "include/core/SkRect.h"
 #include "rs_trace.h"
 
 #include "command/rs_base_node_command.h"
@@ -34,8 +34,6 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 #include "platform/drawing/rs_surface.h"
-#include "include/core/SkRect.h"
-#include "rs_trace.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "ui/rs_surface_extractor.h"
 #include "ui/rs_surface_node.h"
@@ -150,8 +148,8 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     } else {
         auto skSurface = surfaceFrame->GetSurface();
         canvas_ = new RSPaintFilterCanvas(skSurface.get());
-         canvas_->clipRect(SkRect::MakeWH(node.GetSurfaceWidth(), node.GetSurfaceHeight()));
     }
+    canvas_->clipRect(SkRect::MakeWH(node.GetSurfaceWidth(), node.GetSurfaceHeight()));
     canvas_->clear(SK_ColorTRANSPARENT);
     isIdle_ = false;
 
@@ -295,10 +293,10 @@ void RSRenderThreadVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 
 const Vector4f CalSrcRectRatio(const SkRect& originRect, const SkRect& resRect)
 {
-    float x = std::max((resRect.left() - originRect.left()) / originRect.width(), 0.0f);
-    float y = std::max((resRect.top() - originRect.top()) / originRect.height(), 0.0f);
-    float width = std::min(resRect.width() / originRect.width(), 1.0f);
-    float height = std::min(resRect.height() / originRect.height(), 1.0f);
+    float x = std::clamp((resRect.left() - originRect.left()) / originRect.width(), 0.0f, 1.0f);
+    float y = std::clamp((resRect.top() - originRect.top()) / originRect.height(), 0.0f, 1.0f);
+    float width = std::clamp(resRect.width() / originRect.width(), 0.0f, 1.0f - x);
+    float height = std::clamp(resRect.height() / originRect.height(), 0.0f, 1.0f - y);
     return Vector4f(x, y, width, height);
 }
 
@@ -307,8 +305,8 @@ void RSRenderThreadVisitor::ClipHoleForSurfaceNode(RSSurfaceRenderNode& node)
 #ifdef ROSEN_OHOS
     auto x = std::ceil(node.GetRenderProperties().GetBoundsPositionX());
     auto y = std::ceil(node.GetRenderProperties().GetBoundsPositionY());
-    auto width = std::ceil(node.GetRenderProperties().GetBoundsWidth());
-    auto height = std::ceil(node.GetRenderProperties().GetBoundsHeight());
+    auto width = std::floor(node.GetRenderProperties().GetBoundsWidth());
+    auto height = std::floor(node.GetRenderProperties().GetBoundsHeight());
     canvas_->save();
     SkRect originRect = SkRect::MakeXYWH(x, y, width, height);
     canvas_->clipRect(originRect);
@@ -318,8 +316,8 @@ void RSRenderThreadVisitor::ClipHoleForSurfaceNode(RSSurfaceRenderNode& node)
     if (node.IsNotifyRTBufferAvailable() == true) {
         canvas_->clear(SK_ColorTRANSPARENT);
     } else {
-        ROSEN_LOGI("RSRenderThreadVisitor::ProcessSurfaceRenderNode node : %llu, not clip [%f, %f, %f, %f]",
-            node.GetId(), x, y, width, height);
+        ROSEN_LOGI("RSRenderThreadVisitor::ClipHoleForSurfaceNode node : %llu, not clip [%f, %f, %f, %f]", node.GetId(),
+            x, y, width, height);
         auto backgroundColor = node.GetRenderProperties().GetBackgroundColor();
         if (backgroundColor != RgbPalette::Transparent()) {
             canvas_->clear(backgroundColor.AsArgbInt());

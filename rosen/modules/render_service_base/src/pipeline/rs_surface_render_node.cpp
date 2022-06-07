@@ -14,14 +14,13 @@
  */
 
 #include "pipeline/rs_surface_render_node.h"
-#include <cmath>
-#include <stdint.h>
 
-#include "command/rs_surface_node_command.h"
-#include "common/rs_obj_abs_geometry.h"
 #include "display_type.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkRect.h"
+
+#include "command/rs_surface_node_command.h"
+#include "common/rs_obj_abs_geometry.h"
 #include "common/rs_rect.h"
 #include "common/rs_vector2.h"
 #include "common/rs_vector4.h"
@@ -30,14 +29,12 @@
 #include "platform/common/rs_log.h"
 #include "property/rs_properties_painter.h"
 #include "property/rs_transition_properties.h"
-#include "transaction/rs_transaction_proxy.h"
 #include "transaction/rs_render_service_client.h"
+#include "transaction/rs_transaction_proxy.h"
 #include "visitor/rs_node_visitor.h"
 
 namespace OHOS {
 namespace Rosen {
-static const int rectBounds = 2;
-
 RSSurfaceRenderNode::RSSurfaceRenderNode(const RSSurfaceRenderNodeConfig& config, std::weak_ptr<RSContext> context)
     : RSRenderNode(config.id, context),
       RSSurfaceHandler(config.id),
@@ -60,44 +57,43 @@ void RSSurfaceRenderNode::SetConsumer(const sptr<Surface>& consumer)
 void RSSurfaceRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
 {
     canvas.SaveAlpha();
+    canvas.save();
     canvas.MultiplyAlpha(GetRenderProperties().GetAlpha() * GetContextAlpha());
+
+    // apply intermediate properties from RT
     auto clipRectFromRT = GetContextClipRegion();
     canvas.concat(GetContextMatrix());
-    if (!clipRectFromRT.isEmpty()){
+    if (!clipRectFromRT.isEmpty()) {
         canvas.clipRect(clipRectFromRT);
     }
 
-    RectI clipRegion = CalculateClipRegion(canvas);
-    SkRect rect;
-    SkPoint points[] = {{clipRegion.left_, clipRegion.top_}, {clipRegion.GetRight(), clipRegion.GetBottom()}};
-    rect.setBounds(points, rectBounds);
-    canvas.clipRect(rect);
-    auto currentClipRegion = canvas.getDeviceClipBounds();
-    SetDstRect({ currentClipRegion.left(), currentClipRegion.top(), currentClipRegion.width(),
-        currentClipRegion.height() });
-    SetGlobalAlpha(canvas.GetAlpha()); 
-}
-
-RectI RSSurfaceRenderNode::CalculateClipRegion(RSPaintFilterCanvas& canvas)
-{
+    // apply node properties
     const RSProperties& properties = GetRenderProperties();
-    float width = std::ceil(properties.GetBoundsWidth());
-    float height = std::ceil(properties.GetBoundsHeight());
-    RectI originDstRect(0, 0, width, height);
     auto currentGeoPtr = std::static_pointer_cast<RSObjAbsGeometry>(properties.GetBoundsGeometry());
     if (currentGeoPtr != nullptr) {
         currentGeoPtr->UpdateByMatrixFromSelf();
     }
     canvas.concat(currentGeoPtr->GetMatrix());
+
+    // apply transition properties
     auto transitionProperties = GetAnimationManager().GetTransitionProperties();
-    Vector2f center(originDstRect.width_ * 0.5f, originDstRect.height_ * 0.5f);
+    Vector2f center(properties.GetBoundsWidth() * 0.5f, properties.GetBoundsHeight() * 0.5f);
     RSPropertiesPainter::DrawTransitionProperties(transitionProperties, center, canvas);
-    return originDstRect;
+
+    // clip by bounds
+    canvas.clipRect(SkRect::MakeWH(properties.GetBoundsWidth(), properties.GetBoundsHeight()));
+
+    // extract information from SkCanvas to compositor, we use deviceClipBounds as DstRect, canvas alpha as GlobalAlpha
+    auto currentClipRegion = canvas.getDeviceClipBounds();
+    SetDstRect({ currentClipRegion.left(), currentClipRegion.top(), currentClipRegion.width(),
+        currentClipRegion.height() });
+    SetGlobalAlpha(canvas.GetAlpha());
 }
 
 void RSSurfaceRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 {
     canvas.RestoreAlpha();
+    canvas.restore();
 }
 
 void RSSurfaceRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)

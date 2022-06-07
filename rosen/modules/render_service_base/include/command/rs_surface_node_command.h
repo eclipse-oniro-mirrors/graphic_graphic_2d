@@ -62,8 +62,8 @@ ADD_COMMAND(RSSurfaceNodeSetContextMatrix,
     ARG(SURFACE_NODE, SURFACE_NODE_SET_CONTEXT_MATRIX, SurfaceNodeCommandHelper::SetContextMatrix, NodeId, SkMatrix))
 ADD_COMMAND(RSSurfaceNodeSetContextAlpha,
     ARG(SURFACE_NODE, SURFACE_NODE_SET_CONTEXT_ALPHA, SurfaceNodeCommandHelper::SetContextAlpha, NodeId, float))
-ADD_COMMAND(RSSurfaceNodeSetContextClipRegion,
-    ARG(SURFACE_NODE, SURFACE_NODE_SET_CONTEXT_CLIP_REGION, SurfaceNodeCommandHelper::SetContextClipRegion, NodeId, SkRect))
+ADD_COMMAND(RSSurfaceNodeSetContextClipRegion, ARG(SURFACE_NODE, SURFACE_NODE_SET_CONTEXT_CLIP_REGION,
+    SurfaceNodeCommandHelper::SetContextClipRegion, NodeId, SkRect))
 ADD_COMMAND(RSSurfaceNodeSetSecurityLayer,
     ARG(SURFACE_NODE, SURFACE_NODE_SET_SECURITY_LAYER, SurfaceNodeCommandHelper::SetSecurityLayer, NodeId, bool))
 ADD_COMMAND(RSSurfaceNodeUpdateSurfaceDefaultSize, ARG(SURFACE_NODE, SURFACE_NODE_UPDATE_SURFACE_SIZE,

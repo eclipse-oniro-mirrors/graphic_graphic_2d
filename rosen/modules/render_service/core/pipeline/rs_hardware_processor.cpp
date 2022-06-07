@@ -249,7 +249,7 @@ void RSHardwareProcessor::ProcessSurface(RSSurfaceRenderNode &node)
         .zOrder = node.GetGlobalZOrder(),
         .alpha = {
             .enGlobalAlpha = true,
-            .gAlpha = node.GetGlobalAlhpa() * 255,
+            .gAlpha = node.GetGlobalAlpha() * 255,
         },
         .buffer = node.GetBuffer(),
         .fence = node.GetAcquireFence(),

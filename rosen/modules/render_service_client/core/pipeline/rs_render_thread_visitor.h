@@ -24,7 +24,6 @@
 #include "transaction/rs_transaction_proxy.h"
 #include "visitor/rs_node_visitor.h"
 
-class SkMatrix;
 namespace OHOS {
 namespace Rosen {
 class RSDirtyRegionManager;

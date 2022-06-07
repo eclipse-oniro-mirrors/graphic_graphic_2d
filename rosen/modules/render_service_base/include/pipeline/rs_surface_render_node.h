@@ -129,7 +129,7 @@ public:
         globalAlpha_ = alpha;
     }
 
-    float GetGlobalAlhpa() const
+    float GetGlobalAlpha() const
     {
         return globalAlpha_;
     }
@@ -142,7 +142,7 @@ public:
     void SetBlendType(BlendType blendType);
 
     // Only SurfaceNode in RS calls "RegisterBufferAvailableListener"
-    // to save callback method sent by RT or UI which depands on the value of "isFromRenderThread".
+    // to save callback method sent by RT or UI which depends on the value of "isFromRenderThread".
     void RegisterBufferAvailableListener(
         sptr<RSIBufferAvailableCallback> callback, bool isFromRenderThread);
 
@@ -159,16 +159,13 @@ public:
     // And RenderThread does not call mainFunc_ if nothing in UI thread is changed
     // which would cause callback for "clip" on parent SurfaceNode cannot be triggered
     // for "clip" is executed in RenderThreadVisitor::ProcessSurfaceRenderNode.
-    // To fix this bug, we set callback which would call RSRenderThread::RequestNextVSync() to forcely "refresh"
+    // To fix this bug, we set callback which would call RSRenderThread::RequestNextVSync() to forcedly "refresh"
     // RenderThread when SurfaceNode in RenderService has available buffer and execute RSIBufferAvailableCallback.
     void SetCallbackForRenderThreadRefresh(std::function<void(void)> callback);
     bool NeedSetCallbackForRenderThreadRefresh();
 
 private:
     void SendCommandFromRT(std::unique_ptr<RSCommand>& command);
-
-    RectI CalculateClipRegion(RSPaintFilterCanvas& canvas);
-    friend class RSRenderTransition;
 
     std::mutex mutexRT_;
     std::mutex mutexUI_;
@@ -177,14 +174,13 @@ private:
     SkMatrix contextMatrix_;
     float contextAlpha_ = 1.0f;
     SkRect contextClipRect_;
+    Vector4f srcRatio_ = {0.0f, 0.0f, 1.0f, 1.0f};
 
     bool isSecurityLayer_ = false;
     RectI dstRect_;
     int32_t offsetX_ = 0;
     int32_t offsetY_ = 0;
     float globalAlpha_ = 1.0f;
-    RectI clipRegionFromParent_;
-    Vector4f srcRatio_ = {0.0f, 0.0f, 1.0f, 1.0f};
 
     std::string name_;
     bool isProxy_ = false;
