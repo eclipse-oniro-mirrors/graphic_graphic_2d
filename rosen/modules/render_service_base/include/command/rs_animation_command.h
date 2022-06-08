@@ -20,6 +20,7 @@
 #include "animation/rs_render_curve_animation.h"
 #include "animation/rs_render_keyframe_animation.h"
 #include "animation/rs_render_path_animation.h"
+#include "animation/rs_render_spring_animation.h"
 #include "animation/rs_render_transition.h"
 #include "command/rs_command_templates.h"
 #include "pipeline/rs_render_node.h"
@@ -210,6 +211,19 @@ ADD_COMMAND(
     RSAnimationCreateTransition, ARG(ANIMATION, ANIMATION_CREATE_TRANSITION, AnimationCommandHelper::CreateAnimation,
                                      NodeId, std::shared_ptr<RSRenderTransition>))
 
+// create spring animation
+ADD_COMMAND(
+    RSAnimationCreateSpringFloat, ARG(ANIMATION, ANIMATION_CREATE_SPRING_FLOAT, AnimationCommandHelper::CreateAnimation,
+                                      NodeId, std::shared_ptr<RSRenderSpringAnimation<float>>))
+ADD_COMMAND(
+    RSAnimationCreateSpringColor, ARG(ANIMATION, ANIMATION_CREATE_SPRING_COLOR, AnimationCommandHelper::CreateAnimation,
+                                      NodeId, std::shared_ptr<RSRenderSpringAnimation<Color>>))
+ADD_COMMAND(
+    RSAnimationCreateSpringVec2f, ARG(ANIMATION, ANIMATION_CREATE_SPRING_VEC2F, AnimationCommandHelper::CreateAnimation,
+                                      NodeId, std::shared_ptr<RSRenderSpringAnimation<Vector2f>>))
+ADD_COMMAND(
+    RSAnimationCreateSpringVec4f, ARG(ANIMATION, ANIMATION_CREATE_SPRING_VEC4F, AnimationCommandHelper::CreateAnimation,
+                                      NodeId, std::shared_ptr<RSRenderSpringAnimation<Vector4f>>))
 } // namespace Rosen
 } // namespace OHOS
 
