@@ -80,6 +80,7 @@ void RSMainThread::Start()
 
 void RSMainThread::ProcessCommand()
 {
+    RS_TRACE_BEGIN("RSMainThread::ProcessCommand");
     {
         std::lock_guard<std::mutex> lock(transitionDataMutex_);
         for (auto it = cacheCommand_.begin(); it != cacheCommand_.end(); it++) {
@@ -88,31 +89,16 @@ void RSMainThread::ProcessCommand()
                     std::make_move_iterator(it2->second.begin()), std::make_move_iterator(it2->second.end()));
             }
         }
-        // if (cacheCommand_.find(0) != cacheCommand_.end()) {
-        //     effectCommand_.insert(effectCommand_.end(),
-        //         std::make_move_iterator(cacheCommand_[0][0].begin()), std::make_move_iterator(cacheCommand_[0][0].end()));
-        // }
-        // for (auto it = bufferTimestamps_.begin(); it != bufferTimestamps_.end(); it++) {
-        //     auto nodeCommand = cacheCommand_.find(it->first);
-        //     if (nodeCommand != cacheCommand_.end()) {
-        //         if (cacheCommand_[it->first].find(it->second) != cacheCommand_[it->first].end()) {
-        //             effectCommand_.insert(effectCommand_.end(),
-        //                 std::make_move_iterator(cacheCommand_[it->first][it->second].begin()),
-        //                 std::make_move_iterator(cacheCommand_[it->first][it->second].end()));
-        //             cacheCommand_[it->first].erase(it->second);
-        //         }
-        //     }
-        // }
-
+        cacheCommand_.clear();
     }
-    for (size_t i = 0; i < effectCommand_.size(); i++)
-    {
+    for (size_t i = 0; i < effectCommand_.size(); i++) {
         auto rsCommand = std::move(effectCommand_[i]);
         if (rsCommand) {
             rsCommand->Process(context_);
         }
     }
     effectCommand_.clear();
+    RS_TRACE_END();
 }
 
 void RSMainThread::Render()
@@ -199,8 +185,6 @@ void RSMainThread::RecvRSTransactionData(std::unique_ptr<RSTransactionData>& rsT
         std::lock_guard<std::mutex> lock(transitionDataMutex_);
         std::unique_ptr<RSTransactionData> transactionData(std::move(rsTransactionData));
         if (transactionData) {
-            RS_LOGD("RSMainThread::RecvRSTransactionData node = %zu, command = %d followType = %zu",
-                transactionData->GetNodeIds().size(), transactionData->GetCommandCount(), transactionData->GetFollowTypes().size());
             auto nodeIds = transactionData->GetNodeIds();
             auto followTypes = transactionData->GetFollowTypes();
             auto& commands = transactionData->GetCommands();
@@ -222,8 +206,6 @@ void RSMainThread::RecvRSTransactionData(std::unique_ptr<RSTransactionData>& rsT
                     cacheCommand_[nodeId][timestamp].emplace_back(std::move(command));
                 }
             }
-        } else {
-            RS_LOGD("RSMainThread::RecvRSTransactionData nullptr");
         }
     }
     RequestNextVSync();

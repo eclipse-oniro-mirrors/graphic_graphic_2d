@@ -266,7 +266,7 @@ int main()
     displayNode->AddChild(surfaceNode1, -1);
     displayNode->AddChild(surfaceNode2, -1);
     displayNode->AddChild(surfaceNode3, -1);
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction(0);
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
 
     class TestSurfaceCapture : public SurfaceCaptureCallback {
     public:

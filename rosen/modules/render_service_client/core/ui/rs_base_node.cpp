@@ -58,8 +58,7 @@ RSBaseNode::~RSBaseNode()
     std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeDestroy>(id_);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
-        // Todo:Is this need wait for parent Node?
-        transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), id_);
+        transactionProxy->AddCommand(command, IsRenderServiceNode());
     }
 }
 

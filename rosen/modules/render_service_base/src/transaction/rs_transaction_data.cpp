@@ -42,7 +42,7 @@ bool RSTransactionData::Marshalling(Parcel& parcel) const
     bool success = true;
     success = success && parcel.WriteInt32(static_cast<int32_t>(commands_.size()));
     for (auto followType : followTypes_) {
-        success = success && parcel.WriteUint32(static_cast<uint32_t>(followType));
+        success = success && parcel.WriteUint32(static_cast<uint8_t>(followType));
     }
     success = success && parcel.WriteUInt64Vector(nodeIds_);
     success = success && parcel.WriteUint64(timestamp_);
@@ -98,12 +98,12 @@ bool RSTransactionData::UnmarshallingCommand(Parcel& parcel)
         ROSEN_LOGE("RSTransactionData::UnmarshallingCommand cannot read commandSize");
         return false;
     }
-    uint32_t followType = 0;
+    uint8_t followType = 0;
     bool isNotFinished = true;
     Clear();
 
     for (int i = 0; i < commandSize; i++) {
-        if (!parcel.ReadUint32(followType)) {
+        if (!parcel.ReadUint8(followType)) {
             ROSEN_LOGE("RSTransactionData::UnmarshallingCommand cannot read followType");
             return false;
         }

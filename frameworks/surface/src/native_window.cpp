@@ -118,13 +118,13 @@ int32_t NativeWindowFlushBuffer(OHNativeWindow *window, OHNativeWindowBuffer *bu
         config.damage.y = region.rects->y;
         config.damage.w = static_cast<int32_t>(region.rects->w);
         config.damage.h = static_cast<int32_t>(region.rects->h);
-        config.timestamp = window->UITimestamp;
+        config.timestamp = window->uiTimestamp;
     } else {
         config.damage.x = 0;
         config.damage.y = 0;
         config.damage.w = window->config.width;
         config.damage.h = window->config.height;
-        config.timestamp = window->UITimestamp;
+        config.timestamp = window->uiTimestamp;
     }
 
     OHOS::sptr<OHOS::SyncFence> acquireFence = new OHOS::SyncFence(fenceFd);
@@ -185,8 +185,8 @@ static int32_t InternalHanleNativeWindowOpt(OHNativeWindow *window, int code, va
             break;
         }
         case SET_UI_TIMESTAMP : {
-            uint64_t UITimestamp = va_arg(args, uint64_t);
-            window->UITimestamp = static_cast<int64_t>(UITimestamp);
+            uint64_t uiTimestamp = va_arg(args, uint64_t);
+            window->uiTimestamp = static_cast<int64_t>(uiTimestamp);
             break;
         }
         case SET_SCALING_MODE : {

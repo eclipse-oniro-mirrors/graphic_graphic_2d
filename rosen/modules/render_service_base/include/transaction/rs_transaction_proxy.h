@@ -37,7 +37,7 @@ public:
                     FollowType followType = FollowType::NONE, NodeId nodeId = 0);
     void AddCommandFromRT(std::unique_ptr<RSCommand>& command, NodeId nodeId);
 
-    void FlushImplicitTransaction(uint64_t timestamp);
+    void FlushImplicitTransaction(uint64_t timestamp = 0);
     void FlushImplicitTransactionFromRT(uint64_t timestamp);
 
     void ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task, bool isRenderServiceTask = false);
@@ -53,7 +53,7 @@ private:
     RSTransactionProxy& operator=(const RSTransactionProxy&&) = delete;
 
     void AddCommonCommand(std::unique_ptr<RSCommand>& command);
-    void AddRemoteCommand(std::unique_ptr<RSCommand>& command, NodeId nodeId, FollowType followType = FollowType::NONE);
+    void AddRemoteCommand(std::unique_ptr<RSCommand>& command, NodeId nodeId, FollowType followType);
 
     // Command Transaction Triggered by UI Thread.
     std::mutex mutex_;

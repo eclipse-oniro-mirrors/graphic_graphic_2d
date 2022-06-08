@@ -176,11 +176,11 @@ int main()
         sleep(restTime);
         displayNode->AddChild(surfaceNode, -1);
         surfaceNode->SetBounds(0, 0, WIDTH, HEIGHT);
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction(0);
+        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
         DrawSurface(surfaceNode, WIDTH, HEIGHT, i);
         sleep(restTime);
         displayNode->RemoveChild(surfaceNode);
-        RSTransactionProxy::GetInstance()->FlushImplicitTransaction(0);
+        RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     }
     return 0;
 }

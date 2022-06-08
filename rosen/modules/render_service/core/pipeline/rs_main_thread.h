@@ -27,7 +27,6 @@
 #include "command/rs_command.h"
 #include "ipc_callbacks/iapplication_render_thread.h"
 #include "pipeline/rs_context.h"
-#include "pipeline/rs_surface_render_node.h"
 #include "platform/drawing/rs_vsync_client.h"
 #include "refbase.h"
 #include "vsync_receiver.h"
@@ -128,7 +127,6 @@ private:
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
     RSTaskMessage::RSTask mainLoop_;
     std::unique_ptr<RSVsyncClient> vsyncClient_ = nullptr;
-    // std::map<NodeId, uint64_t> bufferTimestamps_;
     std::map<NodeId, std::map<uint64_t, std::vector<std::unique_ptr<RSCommand>>> > cacheCommand_;
     std::vector<std::unique_ptr<RSCommand>> effectCommand_;
 

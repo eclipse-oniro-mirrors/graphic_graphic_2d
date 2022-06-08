@@ -136,7 +136,7 @@ void RSTransactionProxy::FlushImplicitTransactionFromRT(uint64_t timestamp)
 
 void RSTransactionProxy::AddCommonCommand(std::unique_ptr<RSCommand> &command)
 {
-    implicitCommonTransactionData_->AddCommand(command);
+    implicitCommonTransactionData_->AddCommand(command, 0, FollowType::NONE);
 }
 
 void RSTransactionProxy::AddRemoteCommand(std::unique_ptr<RSCommand>& command, NodeId nodeId, FollowType followType)

@@ -130,9 +130,9 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     RenderContext* rc = RSRenderThread::Instance().GetRenderContext();
     rsSurface->SetRenderContext(rc);
 #endif
-    UITimestamp_ = RSRenderThread::Instance().UITimestamp_;
+    uiTimestamp_ = RSRenderThread::Instance().GetUITimestamp();
     RS_TRACE_BEGIN("rsSurface->RequestFrame");
-    auto surfaceFrame = rsSurface->RequestFrame(node.GetSurfaceWidth(), node.GetSurfaceHeight(), UITimestamp_);
+    auto surfaceFrame = rsSurface->RequestFrame(node.GetSurfaceWidth(), node.GetSurfaceHeight(), uiTimestamp_);
     RS_TRACE_END();
     if (surfaceFrame == nullptr) {
         ROSEN_LOGE("Request Frame Failed");
@@ -157,7 +157,7 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
 
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
-        transactionProxy->FlushImplicitTransactionFromRT(UITimestamp_);
+        transactionProxy->FlushImplicitTransactionFromRT(uiTimestamp_);
     }
 
     if (skSurface) {
@@ -174,7 +174,7 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     }
 
     RS_TRACE_BEGIN("rsSurface->FlushFrame");
-    rsSurface->FlushFrame(surfaceFrame, UITimestamp_);
+    rsSurface->FlushFrame(surfaceFrame, uiTimestamp_);
     RS_TRACE_END();
 
     delete canvas_;

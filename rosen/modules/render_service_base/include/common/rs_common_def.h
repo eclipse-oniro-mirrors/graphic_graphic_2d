@@ -40,7 +40,7 @@ enum class RSUINodeType {
     ROOT_NODE    = 0x12210,
 };
 
-enum class FollowType {
+enum class FollowType : uint8_t {
     NONE,
     FOLLOW_TO_PARENT,
     FOLLOW_TO_SELF,
