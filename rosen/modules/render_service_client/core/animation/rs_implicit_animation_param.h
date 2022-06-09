@@ -134,22 +134,23 @@ private:
 
 class RSImplicitSpringAnimationParam : public RSImplicitAnimationParam {
 public:
-    RSImplicitSpringAnimationParam(const RSAnimationTimingProtocol& timingProtocol, float response, float dampingRatio);
+    RSImplicitSpringAnimationParam(
+        const RSAnimationTimingProtocol& timingProtocol, const RSAnimationTimingCurve& timingCurve);
     virtual ~RSImplicitSpringAnimationParam() = default;
 
     template<typename T>
-    std::shared_ptr<RSAnimation> CreateAnimation(const RSAnimatableProperty& property, const T& endValue) const
+    std::shared_ptr<RSAnimation> CreateAnimation(
+        const RSAnimatableProperty& property, const T& startValue, const T& endValue) const
     {
         return nullptr;
-        auto springAnimation = std::make_shared<RSSpringAnimation<T>>(property, endValue);
-        springAnimation->SetSpringParameters(response_, dampingRatio_);
+        auto springAnimation = std::make_shared<RSSpringAnimation<T>>(property, startValue, endValue);
+        springAnimation->SetTimingCurve(timingCurve_);
         ApplyTimingProtocol(springAnimation);
         return springAnimation;
     }
 
 private:
-    float response_;
-    float dampingRatio_;
+    RSAnimationTimingCurve timingCurve_;
 };
 
 class RSImplicitTransitionParam : public RSImplicitAnimationParam {

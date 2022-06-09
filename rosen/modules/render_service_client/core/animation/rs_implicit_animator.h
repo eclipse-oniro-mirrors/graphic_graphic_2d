@@ -38,9 +38,6 @@ public:
     void BeginImplicitKeyFrameAnimation(float fraction);
     void EndImplicitKeyFrameAnimation();
 
-    void BeginImplicitSpringAnimation(float response, float dampingRatio);
-    void EndImplicitSpringAnimation();
-
     void BeginImplicitTransition(const std::shared_ptr<const RSTransitionEffect>& effect);
     void EndImplicitTransition();
 
@@ -57,6 +54,9 @@ public:
 private:
     void BeginImplicitCurveAnimation();
     void EndImplicitCurveAnimation();
+    void BeginImplicitSpringAnimation();
+    void EndImplicitSpringAnimation();
+
     void PushImplicitParam(const std::shared_ptr<RSImplicitAnimationParam>& implicitParam);
     void PopImplicitParam();
     void CreateEmptyAnimation();

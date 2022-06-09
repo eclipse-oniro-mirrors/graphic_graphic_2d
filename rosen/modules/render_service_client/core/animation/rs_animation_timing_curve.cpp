@@ -40,6 +40,11 @@ const RSAnimationTimingCurve RSAnimationTimingCurve::EASE_IN_OUT =
 
 const RSAnimationTimingCurve RSAnimationTimingCurve::DEFAULT = EASE_IN_OUT;
 
+const RSAnimationTimingCurve RSAnimationTimingCurve::SPRING = RSAnimationTimingCurve::CreateSpring(0.55, 0.825);
+
+const RSAnimationTimingCurve RSAnimationTimingCurve::INTERACTIVE_SPRING =
+    RSAnimationTimingCurve::CreateSpring(0.15, 0.86);
+
 RSAnimationTimingCurve::RSAnimationTimingCurve()
     : RSAnimationTimingCurve(std::make_shared<RSCubicBezierInterpolator>(0.42f, 0.0f, 0.58f, 1.0f))
 {}
@@ -50,6 +55,11 @@ RSAnimationTimingCurve::RSAnimationTimingCurve(const std::shared_ptr<RSInterpola
 
 RSAnimationTimingCurve::RSAnimationTimingCurve(const std::function<float(float)>& customCurveFunc)
     : interpolator_(nullptr), customCurveFunc_(customCurveFunc)
+{}
+
+RSAnimationTimingCurve::RSAnimationTimingCurve(float response, float dampingRatio)
+    : type_(RSTimingCurveType::SPRING), response_(response), dampingRatio_(dampingRatio), interpolator_(nullptr),
+      customCurveFunc_(nullptr)
 {}
 
 RSAnimationTimingCurve RSAnimationTimingCurve::CreateCustomCurve(const std::function<float(float)>& customCurveFunc)
@@ -68,6 +78,11 @@ RSAnimationTimingCurve RSAnimationTimingCurve::CreateSpringCurve(
     float response = 1.0;
     float dampingRatio = (damping / (2 * sqrt(mass * stiffness)));
     return RSAnimationTimingCurve(std::make_shared<RSSpringInterpolator>(response, dampingRatio, velocity));
+}
+
+RSAnimationTimingCurve RSAnimationTimingCurve::CreateSpring(float response, float dampingRatio)
+{
+    return RSAnimationTimingCurve(response, dampingRatio);
 }
 
 std::shared_ptr<RSInterpolator> RSAnimationTimingCurve::GetInterpolator(int duration) const

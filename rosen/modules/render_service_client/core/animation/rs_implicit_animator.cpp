@@ -21,11 +21,6 @@
 
 namespace OHOS {
 namespace Rosen {
-namespace {
-static constexpr int TIMING_PROTOCOL_INDEX = 0;
-static constexpr int TIMING_CURVE_INDEX = 1;
-static constexpr int FINISH_INDEX = 2;
-} // namespace
 
 void RSImplicitAnimator::OpenImplicitAnimation(const RSAnimationTimingProtocol& timingProtocol,
     const RSAnimationTimingCurve& timingCurve, const std::function<void()>& finishCallback)
@@ -33,7 +28,11 @@ void RSImplicitAnimator::OpenImplicitAnimation(const RSAnimationTimingProtocol& 
     globalImplicitParams_.push({ timingProtocol, timingCurve, finishCallback });
     implicitAnimations_.push({});
     keyframeAnimations_.push({});
-    BeginImplicitCurveAnimation();
+    if (timingCurve.type_ == RSTimingCurveType::INTERPOLATING) {
+        BeginImplicitCurveAnimation();
+    } else {
+        BeginImplicitSpringAnimation();
+    }
 }
 
 std::vector<std::shared_ptr<RSAnimation>> RSImplicitAnimator::CloseImplicitAnimation()
@@ -44,7 +43,7 @@ std::vector<std::shared_ptr<RSAnimation>> RSImplicitAnimator::CloseImplicitAnima
         return {};
     }
 
-    auto finishCallback = std::get<FINISH_INDEX>(globalImplicitParams_.top());
+    auto finishCallback = std::get<std::function<void()>>(globalImplicitParams_.top());
     if (implicitAnimations_.top().empty()) {
         ROSEN_LOGD("No implicit animations created!");
         if (finishCallback == nullptr) {
@@ -104,7 +103,7 @@ void RSImplicitAnimator::BeginImplicitKeyFrameAnimation(float fraction, const RS
 
     auto paramsTuple = globalImplicitParams_.top();
     auto keyframeAnimationParam = std::make_shared<RSImplicitKeyframeAnimationParam>(
-        std::get<TIMING_PROTOCOL_INDEX>(paramsTuple), timingCurve, fraction);
+        std::get<RSAnimationTimingProtocol>(paramsTuple), timingCurve, fraction);
     PushImplicitParam(keyframeAnimationParam);
 }
 
@@ -115,7 +114,7 @@ void RSImplicitAnimator::BeginImplicitKeyFrameAnimation(float fraction)
         return;
     }
 
-    BeginImplicitKeyFrameAnimation(fraction, std::get<TIMING_CURVE_INDEX>(globalImplicitParams_.top()));
+    BeginImplicitKeyFrameAnimation(fraction, std::get<RSAnimationTimingCurve>(globalImplicitParams_.top()));
 }
 
 void RSImplicitAnimator::EndImplicitKeyFrameAnimation()
@@ -180,7 +179,7 @@ void RSImplicitAnimator::EndImplicitPathAnimation()
     PopImplicitParam();
 }
 
-void RSImplicitAnimator::BeginImplicitSpringAnimation(float response, float dampingRatio)
+void RSImplicitAnimator::BeginImplicitSpringAnimation()
 {
     if (globalImplicitParams_.empty()) {
         ROSEN_LOGE("Failed to begin implicit transition, need to open implicit transition firstly!");
@@ -188,7 +187,10 @@ void RSImplicitAnimator::BeginImplicitSpringAnimation(float response, float damp
     }
 
     [[maybe_unused]] auto& [protocol, curve, unused] = globalImplicitParams_.top();
-    auto springParam = std::make_shared<RSImplicitSpringAnimationParam>(protocol, response, dampingRatio);
+    if (curve.type_ != RSTimingCurveType::SPRING) {
+        return;
+    }
+    auto springParam = std::make_shared<RSImplicitSpringAnimationParam>(protocol, curve);
     PushImplicitParam(springParam);
 }
 

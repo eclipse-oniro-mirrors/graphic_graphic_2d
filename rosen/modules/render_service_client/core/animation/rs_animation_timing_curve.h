@@ -24,6 +24,11 @@
 namespace OHOS {
 namespace Rosen {
 class RSInterpolator;
+enum class RSTimingCurveType
+{
+    INTERPOLATING,
+    SPRING,
+};
 
 class RS_EXPORT RSAnimationTimingCurve final {
 public:
@@ -39,30 +44,44 @@ public:
 
     static const RSAnimationTimingCurve EASE_IN_OUT;
 
+    static const RSAnimationTimingCurve SPRING;
+
+    static const RSAnimationTimingCurve INTERACTIVE_SPRING;
+
     static RSAnimationTimingCurve CreateCustomCurve(const std::function<float(float)>& customCurveFunc);
 
     static RSAnimationTimingCurve CreateCubicCurve(float ctrlX1, float ctrlY1, float ctrlX2, float ctrlY2);
 
     static RSAnimationTimingCurve CreateSpringCurve(float velocity, float mass, float stiffness, float damping);
 
+    static RSAnimationTimingCurve CreateSpring(float response, float dampingRatio);
+
     RSAnimationTimingCurve();
     RSAnimationTimingCurve(const RSAnimationTimingCurve& timingCurve) = default;
     RSAnimationTimingCurve& operator=(const RSAnimationTimingCurve& timingCurve) = default;
     virtual ~RSAnimationTimingCurve() = default;
 
+    RSTimingCurveType type_ { RSTimingCurveType::INTERPOLATING };
 private:
     RSAnimationTimingCurve(const std::shared_ptr<RSInterpolator>& interpolator);
     RSAnimationTimingCurve(const std::function<float(float)>& customCurveFunc);
+    RSAnimationTimingCurve(float response, float dampingRatio);
+
+    float response_ { 0.0f };
+    float dampingRatio_ { 0.0f };
 
     std::shared_ptr<RSInterpolator> GetInterpolator(int duration) const;
 
     std::shared_ptr<RSInterpolator> interpolator_;
     std::function<float(float)> customCurveFunc_;
 
+
     template<typename T>
     friend class RSCurveAnimation;
     template<typename T>
     friend class RSKeyframeAnimation;
+    template<typename T>
+    friend class RSSpringAnimation;
     friend class RSPathAnimation;
     friend class RSTransition;
 };

@@ -47,23 +47,21 @@ public:
 
     virtual ~RSSpringAnimation() = default;
 
-    void SetSpringParameters(float response, float dampingRatio)
+    void SetTimingCurve(const RSAnimationTimingCurve& timingCurve)
     {
-        response_ = response;
-        dampingRatio_ = dampingRatio;
+        timingCurve_ = timingCurve;
     }
 
-    std::tuple<float, float> GetSpringParameters() const
+    const RSAnimationTimingCurve& GetTimingCurve() const
     {
-        return { response_, dampingRatio_ };
+        return timingCurve_;
     }
 
 protected:
     void OnStart() override;
 
 private:
-    float response_;
-    float dampingRatio_;
+    RSAnimationTimingCurve timingCurve_ { RSAnimationTimingCurve::SPRING };
 };
 
 template class RSSpringAnimation<float>;
