@@ -63,42 +63,6 @@ void RSRenderNodeMap::TraversalNodes(std::function<void (const std::shared_ptr<R
     }
 }
 
-void RSRenderNodeMap::DumpNodeNotOnTree(std::string& dumpString) const
-{
-    dumpString.append("\n");
-    dumpString.append("-- Node Not On Tree\n");
-    TraversalNodes([this, &dumpString](const std::shared_ptr<RSBaseRenderNode>& node) mutable {
-        if (node == nullptr) {
-            return;
-        }
-        if (node->GetType() == RSRenderNodeType::SURFACE_NODE && !node->IsOnTheTree()) {
-            RSSurfaceRenderNode& surfaceNode = *(RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node));
-            dumpString += "\n node Id[" + std::to_string(node->GetId()) + "]:\n";
-            auto& surfaceConsumer = surfaceNode.GetConsumer();
-            if (surfaceConsumer == nullptr) {
-                return;
-            }
-            surfaceConsumer->Dump(dumpString);
-        }
-    });
-}
-
-void RSRenderNodeMap::DumpAllNodeMemSize(std::string& dumpString) const
-{
-    dumpString.append("\n");
-    dumpString.append("-- All Surfaces Memory Size\n");
-    dumpString.append("the memory size of all surfaces buffer is : dumpend");
-    for (auto it = renderNodeMap_.begin(); it != renderNodeMap_.end(); it++) {
-        if ((*it).second->GetType() != RSRenderNodeType::SURFACE_NODE) {
-            continue;
-        }
-        auto node = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>((*it).second);
-        auto& surfaceConsumer = node->GetConsumer();
-        surfaceConsumer->Dump(dumpString);
-        break;
-    }
-}
-
 template<>
 const std::shared_ptr<RSBaseRenderNode> RSRenderNodeMap::GetRenderNode(NodeId id) const
 {
