@@ -807,7 +807,7 @@ SkMatrix RsRenderServiceUtil::GetCanvasTransform(const RSSurfaceRenderNode& node
             break;
         }
         default: {
-            transform = geoPtr->GetAbsMatrix();
+            transform = node.GetTotalMatrix();
             switch (surface->GetTransform()) {
                 case TransformType::ROTATE_90: {
                     transform.preTranslate(0, geoAbsRect.height_);

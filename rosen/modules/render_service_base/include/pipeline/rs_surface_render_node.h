@@ -98,6 +98,15 @@ public:
     void SetContextMatrix(const SkMatrix& transform, bool sendMsg = true);
     const SkMatrix& GetContextMatrix() const;
 
+    void SetTotalMatrix(const SkMatrix& totalMatrix)
+    {
+        totalMatrix_ = totalMatrix;
+    }
+    const SkMatrix& GetTotalMatrix() const
+    {
+        return totalMatrix_;
+    }
+
     void SetContextAlpha(float alpha, bool sendMsg = true);
     float GetContextAlpha() const;
 
@@ -172,6 +181,7 @@ private:
     std::mutex mutex_;
 
     SkMatrix contextMatrix_;
+    SkMatrix totalMatrix_;
     float contextAlpha_ = 1.0f;
     SkRect contextClipRect_;
     Vector4f srcRatio_ = {0.0f, 0.0f, 1.0f, 1.0f};

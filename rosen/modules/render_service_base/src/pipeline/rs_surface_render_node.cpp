@@ -87,6 +87,7 @@ void RSSurfaceRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canva
     auto currentClipRegion = canvas.getDeviceClipBounds();
     SetDstRect({ currentClipRegion.left(), currentClipRegion.top(), currentClipRegion.width(),
         currentClipRegion.height() });
+    SetTotalMatrix(canvas.getTotalMatrix());
     SetGlobalAlpha(canvas.GetAlpha());
 }
 
