@@ -99,14 +99,28 @@ void RSHardwareProcessor::PostProcess()
         backend_->Repaint(outputs);
         const auto layersReleaseFence = backend_->GetLayersReleaseFence(output_);
         for (const auto& [layer, fence] : layersReleaseFence) {
-            if (layerToNodeMap_.count(layer) == 0) {
+            if (layer == nullptr) {
                 continue;
             }
-            auto *node = layerToNodeMap_.at(layer);
-            if (node == nullptr) {
+
+            auto nodePtr = static_cast<RSBaseRenderNode*>(layer->GetLayerAdditionalInfo());
+            if (nodePtr == nullptr) {
+                RS_LOGW("RSHardwareProcessor::PostProcess: layer's node is nullptr.");
                 continue;
             }
-            node->SetReleaseFence(fence);
+
+            RSSurfaceHandler* surfaceHandler = nullptr;
+            if (nodePtr->IsInstanceOf<RSSurfaceRenderNode>()) {
+                auto surfaceNode = static_cast<RSSurfaceRenderNode*>(nodePtr);
+                surfaceHandler = static_cast<RSSurfaceHandler*>(surfaceNode);
+            } else if (nodePtr->IsInstanceOf<RSDisplayRenderNode>()) {
+                auto displayNode = static_cast<RSDisplayRenderNode*>(nodePtr);
+                surfaceHandler = static_cast<RSSurfaceHandler*>(displayNode);
+            }
+            if (surfaceHandler == nullptr) {
+                continue;
+            }
+            surfaceHandler->SetReleaseFence(fence);
         }
     }
 }
@@ -249,7 +263,7 @@ void RSHardwareProcessor::ProcessSurface(RSSurfaceRenderNode &node)
         .zOrder = node.GetGlobalZOrder(),
         .alpha = {
             .enGlobalAlpha = true,
-            .gAlpha = node.GetGlobalAlhpa() * 255,
+            .gAlpha = node.GetGlobalAlpha() * 255,
         },
         .buffer = node.GetBuffer(),
         .fence = node.GetAcquireFence(),
@@ -258,10 +272,7 @@ void RSHardwareProcessor::ProcessSurface(RSSurfaceRenderNode &node)
     if (info.dstRect.w <= 0 || info.dstRect.h <= 0) {
         return;
     }
-    RectI originDstRect(geoPtr->GetAbsRect().left_ - offsetX_, geoPtr->GetAbsRect().top_ - offsetY_,
-            geoPtr->GetAbsRect().width_, geoPtr->GetAbsRect().height_);
-    RectI clipRegion(info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h);
-    CalculateSrcRect(info, clipRegion, originDstRect);
+    CalculateSrcRect(info, node.GetSrcRatio());
     std::string inf;
     char strBuffer[UINT8_MAX] = { 0 };
     if (sprintf_s(strBuffer, UINT8_MAX, "ProcessSurfaceNode:%s XYWH[%d %d %d %d]", node.GetName().c_str(),
@@ -278,7 +289,6 @@ void RSHardwareProcessor::ProcessSurface(RSSurfaceRenderNode &node)
         node.GetBuffer()->GetSurfaceBufferHeight(), node.GetBuffer().GetRefPtr(),
         node.GetRenderProperties().GetPositionZ(), info.zOrder, info.blendType);
     RsRenderServiceUtil::ComposeSurface(layer, node.GetConsumer(), layers_, info, &node);
-    layerToNodeMap_[layer] = &(static_cast<RSSurfaceHandler&>(node));
     if (info.buffer->GetSurfaceBufferColorGamut() != static_cast<ColorGamut>(currScreenInfo_.colorGamut)) {
         layer->SetCompositionType(CompositionType::COMPOSITION_CLIENT);
     }
@@ -332,17 +342,14 @@ void RSHardwareProcessor::ProcessSurface(RSDisplayRenderNode& node)
         node.GetBuffer()->GetSurfaceBufferHeight(), node.GetBuffer().GetRefPtr(),
         info.zOrder, info.blendType);
     RsRenderServiceUtil::ComposeSurface(layer, node.GetConsumer(), layers_, info, &node);
-    layerToNodeMap_[layer] = &(static_cast<RSSurfaceHandler&>(node));
 }
 
-void RSHardwareProcessor::CalculateSrcRect(ComposeInfo& info, RectI clipRegion, RectI originDstRect)
+void RSHardwareProcessor::CalculateSrcRect(ComposeInfo& info, const Vector4f& ratio)
 {
-    info.srcRect.x = clipRegion.IsEmpty() ? 0 : std::ceil((clipRegion.left_ - originDstRect.left_) *
-        info.srcRect.w / originDstRect.width_);
-    info.srcRect.y = clipRegion.IsEmpty() ? 0 : std::ceil((clipRegion.top_ - originDstRect.top_) *
-        info.srcRect.h / originDstRect.height_);
-    info.srcRect.w = originDstRect.IsEmpty() ? 0 : info.srcRect.w * clipRegion.width_ / originDstRect.width_;
-    info.srcRect.h = originDstRect.IsEmpty() ? 0 : info.srcRect.h * clipRegion.height_ / originDstRect.height_;
+    info.srcRect.x = info.srcRect.w * ratio.x_;
+    info.srcRect.y = info.srcRect.h * ratio.y_;
+    info.srcRect.w = info.srcRect.w * ratio.z_;
+    info.srcRect.h = info.srcRect.h * ratio.w_;
 }
 
 bool IfUseGPUClient(const struct PrepareCompleteParam& param)
@@ -434,12 +441,14 @@ void RSHardwareProcessor::Redraw(
         if (layerInfo == nullptr) {
             continue;
         }
-        RSSurfaceRenderNode* nodePtr = static_cast<RSSurfaceRenderNode *>(layerInfo->GetLayerAdditionalInfo());
-        if (nodePtr == nullptr) {
-            RS_LOGE("RSHardwareProcessor::DrawBuffer surfaceNode is nullptr!");
+        auto nodePtr = static_cast<RSBaseRenderNode*>(layerInfo->GetLayerAdditionalInfo());
+        if (nodePtr == nullptr || !nodePtr->IsInstanceOf<RSSurfaceRenderNode>()) {
+            // [PLANNING]: Need to handle RSDisplayRenderNode in uniRender mode, maybe.
+            RS_LOGE("RSHardwareProcessor::DrawBuffer: node is nullptr or not RSSurfaceRenderNode!");
             continue;
         }
-        RSSurfaceRenderNode& node = *nodePtr;
+
+        RSSurfaceRenderNode& node = *(static_cast<RSSurfaceRenderNode*>(nodePtr));
         std::string info;
         char strBuffer[UINT8_MAX] = { 0 };
         if (sprintf_s(strBuffer, UINT8_MAX, "Node name:%s DstRect[%d %d %d %d]", node.GetName().c_str(),

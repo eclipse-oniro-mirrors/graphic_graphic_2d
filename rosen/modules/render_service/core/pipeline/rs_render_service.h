@@ -43,6 +43,9 @@ public:
 private:
     int Dump(int fd, const std::vector<std::u16string>& args) override;
     void DoDump(std::unordered_set<std::u16string>& argSets, std::string& dumpString) const;
+    void DumpNodesNotOnTheTree(std::string& dumpString) const;
+    void DumpAllNodesMemSize(std::string& dumpString) const;
+
     sptr<RSIRenderServiceConnection> CreateConnection(const sptr<RSIConnectionToken>& token) override;
     void RemoveConnection(sptr<IRemoteObject> token);
 

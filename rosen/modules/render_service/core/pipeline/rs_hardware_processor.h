@@ -46,7 +46,7 @@ public:
 private:
     void Redraw(sptr<Surface>& surface, const struct PrepareCompleteParam& param, void* data);
     void OnRotate();
-    void CalculateSrcRect(ComposeInfo& info, RectI clipRegion, RectI originDstRect);
+    void CalculateSrcRect(ComposeInfo& info, const Vector4f& ratio);
     void ScaleDownLayers();
     HdiBackend* backend_ = nullptr;
     sptr<RSScreenManager> screenManager_;
@@ -54,7 +54,6 @@ private:
     std::shared_ptr<HdiOutput> output_;
     std::vector<LayerInfoPtr> layers_;
     ScreenRotation rotation_ {ScreenRotation::ROTATION_0};
-    std::map<LayerInfoPtr, RSSurfaceHandler*> layerToNodeMap_;
     int32_t offsetX_ = 0;
     int32_t offsetY_ = 0;
 };
