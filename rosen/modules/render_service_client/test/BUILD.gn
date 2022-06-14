@@ -16,7 +16,10 @@ import("//build/ohos.gni")
 group("test") {
   testonly = true
 
-  deps = [ "unittest:unittest" ]
+  deps = [
+    "systemtest:systemtest",
+    "unittest:unittest",
+  ]
 }
 
 ohos_executable("render_service_client_rs_demo") {
