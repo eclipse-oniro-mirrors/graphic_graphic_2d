@@ -144,7 +144,6 @@ void RSRenderAnimation::FinishOnCurrentPosition()
     }
 
     state_ = AnimationState::FINISHED;
-    OnRemoveOnCompletion();
 }
 
 void RSRenderAnimation::Pause()

@@ -142,7 +142,6 @@ public:
     std::shared_ptr<RSAnimation> CreateAnimation(
         const RSAnimatableProperty& property, const T& startValue, const T& endValue) const
     {
-        return nullptr;
         auto springAnimation = std::make_shared<RSSpringAnimation<T>>(property, startValue, endValue);
         springAnimation->SetTimingCurve(timingCurve_);
         ApplyTimingProtocol(springAnimation);

@@ -25,7 +25,7 @@ namespace Rosen {
 
 RSSpringInterpolator::RSSpringInterpolator(float response, float dampingRatio, float initialVelocity)
     // initialOffset: 1, minimumAmplitude: 0.001
-    : RSSpringModel<float>(response, dampingRatio, 1, initialVelocity, 0.001)
+    : RSSpringModel<float>(response, dampingRatio, -1, initialVelocity, 0.001)
 {
     EstimateDuration();
 }
@@ -65,7 +65,7 @@ float RSSpringInterpolator::Interpolate(float fraction) const
     }
     // map [0, 1] to [0, duration], and calculate the output value
     double mappedTime = fraction * estimatedDuration_;
-    return 1.0f - CalculateDisplacement(mappedTime);
+    return 1.0f + CalculateDisplacement(mappedTime);
 }
 } // namespace Rosen
 } // namespace OHOS

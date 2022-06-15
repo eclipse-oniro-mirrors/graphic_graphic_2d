@@ -42,10 +42,6 @@ public:
         RSSpringModel<T>::response_ = response;
         RSSpringModel<T>::dampingRatio_ = dampingRatio;
         RSSpringModel<T>::initialVelocity_ = initialVelocity;
-        RSSpringModel<T>::initialOffset_ = endValue_ - startValue_;
-
-        RSSpringModel<T>::CalculateSpringParameters();
-        RSRenderAnimation::SetDuration(RSSpringModel<T>::GetEstimatedDuration() * SECOND_TO_MILLISECOND);
     }
 
     virtual ~RSRenderSpringAnimation() = default;
@@ -99,21 +95,30 @@ protected:
             return;
         }
         auto property = RSRenderPropertyAnimation<T>::GetProperty();
+        // check if any other spring animation running on this property
         auto prevAnimationId = target->GetAnimationManager().QuerySpringAnimation(property);
-        auto prevAnimation = target->GetAnimationManager().GetAnimation(prevAnimationId);
-        if (prevAnimation != nullptr) {
-            // inherit spring position & velocity from previous spring animation
-            auto prevSpringAnimation = std::static_pointer_cast<RSRenderSpringAnimation<T>>(prevAnimation);
-            auto status = prevSpringAnimation->GetSpringStatus();
-            startValue_ = std::get<0>(status);
-            RSSpringModel<T>::initialVelocity_ = std::get<1>(status);
-            RSSpringModel<T>::initialOffset_ = endValue_ - startValue_;
-            RSSpringModel<T>::CalculateSpringParameters();
-            RSRenderAnimation::SetDuration(RSSpringModel<T>::GetEstimatedDuration() * SECOND_TO_MILLISECOND);
-            // remove previous spring animation
-            prevSpringAnimation->FinishOnCurrentPosition();
-        }
         target->GetAnimationManager().RegisterSpringAnimation(property, RSRenderPropertyAnimation<T>::GetAnimationId());
+        auto prevAnimation = target->GetAnimationManager().GetAnimation(prevAnimationId);
+        if (prevAnimation == nullptr) {
+            UpdateSpringParameters();
+            return;
+        }
+
+        // extract spring status from previous spring animation
+        auto prevSpringAnimation = std::static_pointer_cast<RSRenderSpringAnimation<T>>(prevAnimation);
+        auto status = prevSpringAnimation->GetSpringStatus();
+        // inherit spring position
+        startValue_ = std::get<0>(status);
+        RSRenderPropertyAnimation<T>::originValue_ = startValue_;
+        RSRenderPropertyAnimation<T>::lastValue_ = startValue_;
+        // inherit spring velocity
+        RSSpringModel<T>::initialVelocity_ = std::get<1>(status);
+
+        // re-calculate spring parameters and duration
+        UpdateSpringParameters();
+
+        // set previous spring animation to FINISHED
+        prevSpringAnimation->FinishOnCurrentPosition();
     }
     void OnDetach() override
     {
@@ -123,8 +128,8 @@ protected:
             return;
         }
         auto property = RSRenderPropertyAnimation<T>::GetProperty();
-        target->GetAnimationManager().UnregisterSpringAnimation(
-            property, RSRenderPropertyAnimation<T>::GetAnimationId());
+        auto id = RSRenderPropertyAnimation<T>::GetAnimationId();
+        target->GetAnimationManager().UnregisterSpringAnimation(property, id);
     }
 
 private:
@@ -145,23 +150,26 @@ private:
             return false;
         }
 
-        RSSpringModel<T>::initialOffset_ = endValue_ - startValue_;
-        RSSpringModel<T>::CalculateSpringParameters();
-        RSRenderAnimation::SetDuration(RSSpringModel<T>::GetEstimatedDuration() * SECOND_TO_MILLISECOND);
-
         return true;
     }
 #endif
     RSRenderSpringAnimation() = default;
+    void UpdateSpringParameters()
+    {
+        RSSpringModel<T>::initialOffset_ = startValue_ - endValue_;
+        RSSpringModel<T>::CalculateSpringParameters();
+        RSRenderAnimation::SetDuration(RSSpringModel<T>::GetEstimatedDuration() * SECOND_TO_MILLISECOND);
+    }
     void OnAnimateInner(float fraction)
     {
         if (RSRenderPropertyAnimation<T>::GetProperty() == RSAnimatableProperty::INVALID) {
             return;
         }
+        // always record fraction from previous iterator, will be used to calculate velocity
         prevFraction_ = fraction;
         auto displacement = RSSpringModel<T>::CalculateDisplacement(
             fraction * RSRenderAnimation::GetDuration() * MILLISECOND_TO_SECOND);
-        RSRenderPropertyAnimation<T>::SetAnimationValue(startValue_ + displacement);
+        RSRenderPropertyAnimation<T>::SetAnimationValue(endValue_ + displacement);
     }
     std::tuple<T, T> GetSpringStatus()
     {
@@ -169,7 +177,7 @@ private:
             prevFraction_ * RSRenderAnimation::GetDuration() * MILLISECOND_TO_SECOND);
         auto velocity = RSSpringModel<T>::GetInstantaneousVelocity(
             prevFraction_ * RSRenderAnimation::GetDuration() * MILLISECOND_TO_SECOND);
-        return std::make_tuple(startValue_ + displacement, velocity);
+        return std::make_tuple(endValue_ + displacement, velocity);
     }
 
     float prevFraction_ = 0.0f;

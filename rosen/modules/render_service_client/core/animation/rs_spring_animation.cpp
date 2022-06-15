@@ -23,59 +23,85 @@
 
 namespace OHOS {
 namespace Rosen {
-
-#define START_SPRING_ANIMATION(RSRenderCommand, Type)                                                   \
-    RSPropertyAnimation<Type>::OnStart();                                                               \
-    auto target = GetTarget().lock();                                                                   \
-    if (target == nullptr) {                                                                            \
-        ROSEN_LOGE("Failed to start spring animation, target is null!");                                \
-        return;                                                                                         \
-    }                                                                                                   \
-    auto animation = std::make_shared<RSRenderSpringAnimation<Type>>(GetId(), GetProperty(),            \
-        RSPropertyAnimation<Type>::originValue_, RSPropertyAnimation<Type>::startValue_,                \
-        RSPropertyAnimation<Type>::endValue_);                                                          \
-    animation->SetDuration(GetDuration());                                                              \
-    animation->SetStartDelay(GetStartDelay());                                                          \
-    animation->SetRepeatCount(GetRepeatCount());                                                        \
-    animation->SetAutoReverse(GetAutoReverse());                                                        \
-    animation->SetSpeed(GetSpeed());                                                                    \
-    animation->SetDirection(GetDirection());                                                            \
-    animation->SetFillMode(GetFillMode());                                                              \
-    animation->SetSpringParameters(timingCurve_.response_, timingCurve_.dampingRatio_);                 \
-    std::unique_ptr<RSCommand> command = std::make_unique<RSRenderCommand>(target->GetId(), animation); \
-    auto transactionProxy = RSTransactionProxy::GetInstance();                                          \
-    if (transactionProxy != nullptr) {                                                                  \
-        transactionProxy->AddCommand(command, target->IsRenderServiceNode());                           \
-        if (target->NeedForcedSendToRemote()) {                                                         \
-            std::unique_ptr<RSCommand> commandForRemote =                                               \
-                std::make_unique<RSRenderCommand>(target->GetId(), animation);                          \
-            transactionProxy->AddCommand(commandForRemote, true);                                       \
-        }                                                                                               \
+template<typename T>
+template<typename P>
+void RSSpringAnimation<T>::StartAnimationImpl()
+{
+    RSPropertyAnimation<T>::OnStart();
+    auto target = RSPropertyAnimation<T>::GetTarget().lock();
+    if (target == nullptr) {
+        ROSEN_LOGE("Failed to start spring animation, target is null!");
+        return;
     }
+    auto animation = std::make_shared<RSRenderSpringAnimation<T>>(RSPropertyAnimation<T>::GetId(),
+        RSPropertyAnimation<T>::GetProperty(), RSPropertyAnimation<T>::originValue_,
+        RSPropertyAnimation<T>::startValue_, RSPropertyAnimation<T>::endValue_);
+    animation->SetDuration(RSPropertyAnimation<T>::GetDuration());
+    animation->SetStartDelay(RSPropertyAnimation<T>::GetStartDelay());
+    animation->SetRepeatCount(RSPropertyAnimation<T>::GetRepeatCount());
+    animation->SetAutoReverse(RSPropertyAnimation<T>::GetAutoReverse());
+    animation->SetSpeed(RSPropertyAnimation<T>::GetSpeed());
+    animation->SetDirection(RSPropertyAnimation<T>::GetDirection());
+    animation->SetFillMode(RSPropertyAnimation<T>::GetFillMode());
+    animation->SetSpringParameters(timingCurve_.response_, timingCurve_.dampingRatio_);
+    std::unique_ptr<RSCommand> command = std::make_unique<P>(target->GetId(), animation);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(
+            command, target->IsRenderServiceNode(), target->GetFollowType(), target->GetId());
+        if (target->NeedForcedSendToRemote()) {
+            std::unique_ptr<RSCommand> commandForRemote = std::make_unique<P>(target->GetId(), animation);
+            transactionProxy->AddCommand(commandForRemote, true, target->GetFollowType(), target->GetId());
+        }
+    }
+}
 
 template<>
 void RSSpringAnimation<float>::OnStart()
 {
-    START_SPRING_ANIMATION(RSAnimationCreateSpringFloat, float);
+    StartAnimationImpl<RSAnimationCreateSpringFloat>();
 }
 
 template<>
 void RSSpringAnimation<Color>::OnStart()
 {
-    START_SPRING_ANIMATION(RSAnimationCreateSpringColor, Color);
+    StartAnimationImpl<RSAnimationCreateSpringColor>();
+}
+
+template<>
+void RSSpringAnimation<Matrix3f>::OnStart()
+{
+    StartAnimationImpl<RSAnimationCreateSpringMatrix3f>();
 }
 
 template<>
 void RSSpringAnimation<Vector2f>::OnStart()
 {
-    START_SPRING_ANIMATION(RSAnimationCreateSpringVec2f, Vector2f);
+    StartAnimationImpl<RSAnimationCreateSpringVec2f>();
 }
 
 template<>
 void RSSpringAnimation<Vector4f>::OnStart()
 {
-    START_SPRING_ANIMATION(RSAnimationCreateSpringVec4f, Vector4f);
+    StartAnimationImpl<RSAnimationCreateSpringVec4f>();
 }
 
+template<>
+void RSSpringAnimation<Quaternion>::OnStart()
+{
+    StartAnimationImpl<RSAnimationCreateSpringQuaternion>();
+}
+
+template<>
+void RSSpringAnimation<std::shared_ptr<RSFilter>>::OnStart()
+{
+    StartAnimationImpl<RSAnimationCreateSpringFilter>();
+}
+
+template<>
+void RSSpringAnimation<Vector4<Color>>::OnStart()
+{
+    StartAnimationImpl<RSAnimationCreateSpringVec4Color>();
+}
 } // namespace Rosen
 } // namespace OHOS

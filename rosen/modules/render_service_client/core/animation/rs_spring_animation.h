@@ -19,7 +19,6 @@
 #include <iostream>
 #include <memory>
 
-// #include "animation/rs_animation_timing_spring.h"
 #include "animation/rs_property_animation.h"
 #include "common/rs_color.h"
 #include "common/rs_matrix3.h"
@@ -65,15 +64,11 @@ protected:
     void OnStart() override;
 
 private:
+    template<typename P>
+    void StartAnimationImpl();
+
     RSAnimationTimingCurve timingCurve_ { RSAnimationTimingCurve::SPRING };
 };
-
-template class RSSpringAnimation<float>;
-template class RSSpringAnimation<Color>;
-template class RSSpringAnimation<Vector2f>;
-template class RSSpringAnimation<Vector4f>;
-template class RSSpringAnimation<Quaternion>;
-
 } // namespace Rosen
 } // namespace OHOS
 

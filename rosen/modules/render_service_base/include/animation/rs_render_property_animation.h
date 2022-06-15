@@ -71,7 +71,7 @@ public:
 #endif
 protected:
     RSRenderPropertyAnimation(AnimationId id, const RSAnimatableProperty& property, const T& originValue)
-        : RSRenderAnimation(id), property_(property), originValue_(originValue), lastValue_(originValue)
+        : RSRenderAnimation(id), originValue_(originValue), lastValue_(originValue), property_(property)
     {
         propertyAccessor_ = std::static_pointer_cast<RSPropertyAccessors<T>>(
             RSBasePropertyAccessors::GetAccessor(property));
@@ -194,10 +194,12 @@ protected:
         }
     }
 
-private:
-    RSAnimatableProperty property_ { RSAnimatableProperty::INVALID };
+protected:
     T originValue_;
     T lastValue_;
+
+private:
+    RSAnimatableProperty property_ { RSAnimatableProperty::INVALID };
     bool isAdditive_ { true };
     bool hasUpdateNeedWriteLog_ { false };
     bool needWriteToLog_ { false };

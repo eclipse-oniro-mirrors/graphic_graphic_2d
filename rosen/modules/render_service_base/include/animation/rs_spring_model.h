@@ -16,8 +16,6 @@
 #ifndef ROSEN_ENGINE_CORE_ANIMATION_RS_SPRING_MODEL_H
 #define ROSEN_ENGINE_CORE_ANIMATION_RS_SPRING_MODEL_H
 
-#include "animation/rs_interpolator.h"
-
 namespace OHOS {
 namespace Rosen {
 // RSAnimatableType should have following operators: + - *float ==

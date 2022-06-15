@@ -21,7 +21,6 @@
 
 namespace OHOS {
 namespace Rosen {
-
 void RSImplicitAnimator::OpenImplicitAnimation(const RSAnimationTimingProtocol& timingProtocol,
     const RSAnimationTimingCurve& timingCurve, const std::function<void()>& finishCallback)
 {

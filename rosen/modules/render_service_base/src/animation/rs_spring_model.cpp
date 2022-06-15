@@ -43,7 +43,7 @@ float toFloat(RSAnimatableType value)
 template<>
 float toFloat(float value)
 {
-    return value;
+    return std::fabs(value);
 }
 template<>
 float toFloat(Vector4f value)
@@ -83,22 +83,22 @@ void RSSpringModel<RSAnimatableType>::CalculateSpringParameters()
         minimumAmplitude_ = SPRING_MIN_AMPLITUDE;
     }
 
+    // calculate internal parameters
     double naturalAngularVelocity = 2 * M_PI / response_;
-    RSAnimatableType initialVelocity = initialVelocity_ * -1;
     if (dampingRatio_ < 1) { // Under-damped Systems
         dampedAngularVelocity_ = naturalAngularVelocity * sqrt(1.0f - dampingRatio_ * dampingRatio_);
         coeffDecay_ = -dampingRatio_ * naturalAngularVelocity;
         coeffScale_ =
-            (initialVelocity + initialOffset_ * dampingRatio_ * naturalAngularVelocity) * (1 / dampedAngularVelocity_);
+            (initialVelocity_ + initialOffset_ * dampingRatio_ * naturalAngularVelocity) * (1 / dampedAngularVelocity_);
     } else if (dampingRatio_ == 1) { // Critically-Damped Systems
         coeffDecay_ = -naturalAngularVelocity;
-        coeffScale_ = initialVelocity + initialOffset_ * naturalAngularVelocity;
+        coeffScale_ = initialVelocity_ + initialOffset_ * naturalAngularVelocity;
     } else { // Over-damped Systems
         double coeffTmp = sqrt(dampingRatio_ * dampingRatio_ - 1);
         coeffDecay_ = (-dampingRatio_ + coeffTmp) * naturalAngularVelocity;
-        coeffScale_ = (initialOffset_ * ((dampingRatio_ + coeffTmp) * naturalAngularVelocity) + initialVelocity) *
+        coeffScale_ = (initialOffset_ * ((dampingRatio_ + coeffTmp) * naturalAngularVelocity) + initialVelocity_) *
                       (0.5f / (naturalAngularVelocity * coeffTmp));
-        coeffScaleAlt_ = (initialOffset_ * ((coeffTmp - dampingRatio_) * naturalAngularVelocity) - initialVelocity) *
+        coeffScaleAlt_ = (initialOffset_ * ((coeffTmp - dampingRatio_) * naturalAngularVelocity) - initialVelocity_) *
                          (0.5f / (naturalAngularVelocity * coeffTmp));
         coeffDecayAlt_ = (-dampingRatio_ - coeffTmp) * naturalAngularVelocity;
     }
@@ -120,6 +120,7 @@ void RSSpringModel<RSAnimatableType>::EstimateDuration()
     if (dampingRatio_ < 1) { // Under-damped
         estimatedDuration = log(fmax(coeffScale, initialOffset) / minimumAmplitude_) / -coeffDecay_;
     } else if (dampingRatio_ == 1) { // Critically-damped
+        // critical damping spring will rest at 2 * natural period
         estimatedDuration_ = response_ * 2;
     } else { // Over-damped
         float coeffScaleAlt = toFloat(coeffScaleAlt_);
@@ -183,8 +184,11 @@ float RSSpringModel<RSAnimatableType>::GetEstimatedDuration()
 // explicit instantiation
 template class RSSpringModel<float>;
 template class RSSpringModel<Color>;
+template class RSSpringModel<Matrix3f>;
 template class RSSpringModel<Vector2f>;
 template class RSSpringModel<Vector4f>;
 template class RSSpringModel<Quaternion>;
+template class RSSpringModel<std::shared_ptr<RSFilter>>;
+template class RSSpringModel<Vector4<Color>>;
 } // namespace Rosen
 } // namespace OHOS
