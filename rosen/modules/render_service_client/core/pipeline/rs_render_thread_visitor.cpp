@@ -215,10 +215,7 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     RenderContext* rc = RSRenderThread::Instance().GetRenderContext();
     rsSurface->SetRenderContext(rc);
 #endif
-    uiTimestamp_ = RSRenderThread::Instance().GetUITimestamps().front();
-    if (RSRenderThread::Instance().GetUITimestamps().size() > 1) {
-        RSRenderThread::Instance().GetUITimestamps().pop();
-    }
+    uiTimestamp_ = RSRenderThread::Instance().GetPrevTimestamp();
     RS_TRACE_BEGIN("rsSurface->RequestFrame");
     auto surfaceFrame = rsSurface->RequestFrame(node.GetSurfaceWidth(), node.GetSurfaceHeight(), uiTimestamp_);
     RS_TRACE_END();
@@ -255,6 +252,7 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
 
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
+        ROSEN_LOGD("RSRenderThreadVisitor FlushImplicitTransactionFromRT uiTimestamp = %llu", uiTimestamp_);
         transactionProxy->FlushImplicitTransactionFromRT(uiTimestamp_);
     }
 
@@ -264,6 +262,8 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     }
 
     RS_TRACE_BEGIN("rsSurface->FlushFrame");
+    ROSEN_LOGD("RSRenderThreadVisitor FlushFrame surfaceNodeId = %llu, uiTimestamp = %llu",
+        node.GetRSSurfaceNodeId(), uiTimestamp_);
     rsSurface->FlushFrame(surfaceFrame, uiTimestamp_);
     RS_TRACE_END();
 

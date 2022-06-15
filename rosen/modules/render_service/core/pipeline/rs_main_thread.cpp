@@ -84,6 +84,7 @@ void RSMainThread::Start()
 
 void RSMainThread::ProcessCommand()
 {
+    const auto& nodeMap = context_.GetNodeMap();
     RS_TRACE_BEGIN("RSMainThread::ProcessCommand");
     {
         std::lock_guard<std::mutex> lock(transitionDataMutex_);
@@ -92,17 +93,42 @@ void RSMainThread::ProcessCommand()
                 std::make_move_iterator(cacheCommand_[0][0].begin()), std::make_move_iterator(cacheCommand_[0][0].end()));
             cacheCommand_[0].clear();
         }
-        for (auto it = bufferTimestamps_.begin(); it != bufferTimestamps_.end(); it++) {
+        for (auto it = cacheCommand_.begin(); it != cacheCommand_.end();) {
             auto surfaceNodeId = it->first;
-            auto nodeCommand = cacheCommand_.find(surfaceNodeId);
-            if (nodeCommand != cacheCommand_.end()) {
-                uint64_t timestamp = it->second;
-                auto effectIter = cacheCommand_[surfaceNodeId].upper_bound(timestamp);
+            if (surfaceNodeId == 0) {
+                continue;
+            }
+            auto node = nodeMap.GetRenderNode<RSSurfaceRenderNode>(surfaceNodeId);
+
+            if (!node) {
+                // If node has been destructed, cacheCommand_[surfaceNodeId] should be deleted,
+                // for all command cached in cacheCommand_[surfaceNodeId] could not be executed.
+                it = cacheCommand_.erase(it);
+            } else {
+                std::map<uint64_t, std::vector<std::unique_ptr<RSCommand>>>::iterator effectIter;
+                std::unordered_map<NodeId, uint64_t>::iterator bufferTimestamp = bufferTimestamps_.find(surfaceNodeId);
+
+                if (!node->IsOnTheTree() || bufferTimestamp == bufferTimestamps_.end()) {
+                    // If node is not on the tree or has no valid buffer,
+                    // for all command cached in cacheCommand_[surfaceNodeId] should be executed immediately
+                    effectIter = cacheCommand_[surfaceNodeId].end();
+                } else {
+                    uint64_t timestamp = bufferTimestamp->second;
+                    effectIter = cacheCommand_[surfaceNodeId].upper_bound(timestamp);
+                }
+
                 for (auto it2 = cacheCommand_[surfaceNodeId].begin(); it2 != effectIter; it2++) {
                     effectCommand_.insert(effectCommand_.end(),
                         std::make_move_iterator(it2->second.begin()), std::make_move_iterator(it2->second.end()));
                 }
                 cacheCommand_[surfaceNodeId].erase(cacheCommand_[surfaceNodeId].begin(), effectIter);
+
+                for (auto it2 = cacheCommand_[surfaceNodeId].begin(); it2 != cacheCommand_[surfaceNodeId].end(); it2++) {
+                    RS_LOGD("RSMainThread::ProcessCommand CacheCommand NodeId = %llu, timestamp = %llu, commandSize = %zu",
+                        surfaceNodeId, it2->first, it2->second.size());
+                }
+
+                it++;
             }
         }
     }
@@ -120,6 +146,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
 {
     bool needRequestNextVsync = false;
 
+    bufferTimestamps_.clear();
     const auto& nodeMap = GetContext().GetNodeMap();
     nodeMap.TraversalNodes([this, &needRequestNextVsync](const std::shared_ptr<RSBaseRenderNode>& node) mutable {
         if (node == nullptr) {
@@ -131,8 +158,6 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
             RSSurfaceHandler& surfaceHandler = static_cast<RSSurfaceHandler&>(surfaceNode);
             if (RsRenderServiceUtil::ConsumeAndUpdateBuffer(surfaceHandler)) {
                 this->bufferTimestamps_[surfaceNode.GetId()] = static_cast<uint64_t>(surfaceNode.GetTimestamp());
-            } else {
-                this->bufferTimestamps_.erase(surfaceNode.GetId());
             }
 
             // still have buffer(s) to consume.
@@ -263,7 +288,7 @@ void RSMainThread::Animate(uint64_t timestamp)
 
 void RSMainThread::RecvRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData)
 {
-    auto& nodeMap = context_.GetNodeMap();
+    const auto& nodeMap = context_.GetNodeMap();
     {
         std::lock_guard<std::mutex> lock(transitionDataMutex_);
         std::unique_ptr<RSTransactionData> transactionData(std::move(rsTransactionData));
@@ -271,6 +296,8 @@ void RSMainThread::RecvRSTransactionData(std::unique_ptr<RSTransactionData>& rsT
             auto nodeIds = transactionData->GetNodeIds();
             auto followTypes = transactionData->GetFollowTypes();
             auto& commands = transactionData->GetCommands();
+            auto timestamp = transactionData->GetTimestamp();
+            RS_LOGD("RSMainThread::RecvRSTransactionData timestamp = %llu", timestamp);
             for (int i = 0; i < transactionData->GetCommandCount(); i++) {
                 auto nodeId = nodeIds[i];
                 auto followtype = followTypes[i];
@@ -278,7 +305,6 @@ void RSMainThread::RecvRSTransactionData(std::unique_ptr<RSTransactionData>& rsT
                 if (nodeId == 0 || followtype == FollowType::NONE) {
                     cacheCommand_[0][0].emplace_back(std::move(command));
                 } else {
-                    auto timestamp = transactionData->GetTimestamp();
                     auto node = nodeMap.GetRenderNode<RSBaseRenderNode>(nodeId);
                     if (node && followtype == FollowType::FOLLOW_TO_PARENT) {
                         auto parentNode = node->GetParent().lock();

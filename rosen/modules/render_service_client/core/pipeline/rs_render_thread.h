@@ -19,7 +19,6 @@
 #include <condition_variable>
 #include <functional>
 #include <mutex>
-#include <queue>
 #include <thread>
 #include <unordered_map>
 #include <vector>
@@ -70,9 +69,9 @@ public:
     {
         return context_;
     }
-    std::queue<uint64_t>& GetUITimestamps()
+    uint64_t GetPrevTimestamp() const
     {
-        return uiTimestamps_;
+        return prevTimestamp_;
     }
 
     void OnTransaction(std::shared_ptr<RSTransactionData> transactionData) override;
@@ -114,8 +113,6 @@ private:
     uint64_t refreshPeriod_ = 16666667;
     int32_t tid_ = -1;
     uint64_t mValue = 0;
-
-    std::queue<uint64_t> uiTimestamps_;
 
     // for jank frame detector
     uint64_t uiStartTimeStamp_ = 0;
