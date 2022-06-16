@@ -21,11 +21,6 @@
 
 namespace OHOS {
 namespace Rosen {
-enum class UniRenderEnabledType {
-    UNI_RENDER_DISABLED = 0,
-    UNI_RENDER_ENABLED_FOR_ALL,
-    UNI_RENDER_PARTIALLY_ENABLED,
-};
 
 enum class DirtyRegionDebugType {
     DISABLED = 0,
@@ -40,16 +35,16 @@ class RSSystemProperties final {
 public:
     ~RSSystemProperties() = default;
 
-    static UniRenderEnabledType GetUniRenderEnabledType();
-    static const std::set<std::string>& GetUniRenderEnabledList();
+    // used by clients
+    static bool GetUniRenderEnabled();
+    static void InitUniRenderEnabled(const std::string &bundleName);
     static DirtyRegionDebugType GetDirtyRegionDebugType();
     static bool GetOcclusionEnabled();
 
 private:
     RSSystemProperties() = default;
 
-    static inline UniRenderEnabledType uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
-    static inline std::set<std::string> uniRenderEnabledList_ { "clock0" };
+    static inline bool isUniRenderEnabled_ = false;
 };
 
 } // namespace Rosen

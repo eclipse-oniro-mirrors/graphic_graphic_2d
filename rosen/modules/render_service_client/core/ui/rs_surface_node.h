@@ -92,6 +92,7 @@ protected:
     RSSurfaceNode& operator=(const RSSurfaceNode&&) = delete;
 
 private:
+    bool CreateNode(const RSSurfaceRenderNodeConfig& config);
     bool CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config);
     void OnBoundsSizeChanged() const override;
     std::shared_ptr<RSSurface> surface_;

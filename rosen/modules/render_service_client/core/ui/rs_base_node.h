@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "common/rs_common_def.h"
+#include "platform/common/rs_system_properties.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -97,6 +98,7 @@ protected:
 
 private:
     static NodeId GenerateId();
+    static void InitUniRenderEnabled();
     NodeId id_;
 
     NodeId parent_ = 0;

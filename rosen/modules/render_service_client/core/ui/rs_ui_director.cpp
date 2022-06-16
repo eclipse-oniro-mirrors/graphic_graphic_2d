@@ -47,8 +47,7 @@ void RSUIDirector::Init()
 {
     AnimationCommandHelper::SetFinisCallbackProcessor(AnimationCallbackProcessor);
 
-    isUniRenderEnabled_ =
-        RSSystemProperties::GetUniRenderEnabledType() != UniRenderEnabledType::UNI_RENDER_DISABLED;
+    isUniRenderEnabled_ = RSSystemProperties::GetUniRenderEnabled();
     if (!isUniRenderEnabled_) {
         auto renderThreadClient = RSIRenderClient::CreateRenderThreadClient();
         auto transactionProxy = RSTransactionProxy::GetInstance();

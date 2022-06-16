@@ -37,6 +37,7 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
+#include "pipeline/rs_uni_render_judgement.h"
 #include <platform/ohos/backend/rs_surface_ohos_gl.h>
 #include <platform/ohos/backend/rs_surface_ohos_raster.h>
 #include "property/rs_properties_painter.h"
@@ -415,7 +416,7 @@ void RSHardwareProcessor::Redraw(
         .usage = HBM_USE_CPU_READ | HBM_USE_CPU_WRITE | HBM_USE_MEM_DMA | HBM_USE_MEM_FB,
         .timeout = 0,
     };
-    bool isUni = RSSystemProperties::GetUniRenderEnabledType() != UniRenderEnabledType::UNI_RENDER_DISABLED;
+    bool isUni = RSUniRenderJudgement::GetUniRenderEnabledType() != UniRenderEnabledType::UNI_RENDER_DISABLED;
     RS_TRACE_NAME("Redraw");
     bool ifUseGPU = !isUni && IfUseGPUClient(param);
     RS_LOGE("RSHardwareProcessor::Redraw if use GPU client: %d!", ifUseGPU);
@@ -510,7 +511,7 @@ void RSHardwareProcessor::Redraw(
 
 void RSHardwareProcessor::OnRotate()
 {
-    if (RSSystemProperties::GetUniRenderEnabledType() != UniRenderEnabledType::UNI_RENDER_DISABLED) {
+    if (RSUniRenderJudgement::GetUniRenderEnabledType() != UniRenderEnabledType::UNI_RENDER_DISABLED) {
         return;
     }
     int32_t width = static_cast<int32_t>(currScreenInfo_.width);

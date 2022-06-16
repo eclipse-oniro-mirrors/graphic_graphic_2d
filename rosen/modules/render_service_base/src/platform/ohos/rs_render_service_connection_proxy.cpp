@@ -78,6 +78,44 @@ void RSRenderServiceConnectionProxy::ExecuteSynchronousTask(const std::shared_pt
     }
 }
 
+bool RSRenderServiceConnectionProxy::InitUniRenderEnabled(const std::string &bundleName)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteString(bundleName)) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    int32_t err = Remote()->SendRequest(RSIRenderServiceConnection::GET_UNI_RENDER_TYPE, data, reply, option);
+    if (err != NO_ERROR) {
+        return false;
+    }
+    return reply.ReadBool();
+}
+
+bool RSRenderServiceConnectionProxy::CreateNode(const RSSurfaceRenderNodeConfig& config)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteUint64(config.id)) {
+        return false;
+    }
+    if (!data.WriteString(config.name)) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    int32_t err = Remote()->SendRequest(RSIRenderServiceConnection::CREATE_NODE, data, reply, option);
+    if (err != NO_ERROR) {
+        return false;
+    }
+
+    return reply.ReadBool();
+}
+
 sptr<Surface> RSRenderServiceConnectionProxy::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config)
 {
     MessageParcel data;

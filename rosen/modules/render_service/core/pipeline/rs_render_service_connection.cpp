@@ -19,6 +19,7 @@
 #include "pipeline/rs_render_service_listener.h"
 #include "pipeline/rs_surface_capture_task.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "pipeline/rs_uni_render_judgement.h"
 #include "platform/common/rs_log.h"
 #include "rs_main_thread.h"
 #include "rs_trace.h"
@@ -179,6 +180,26 @@ void RSRenderServiceConnection::ExecuteSynchronousTask(const std::shared_ptr<RSS
     mainThread_->ScheduleTask([task, &context]() {
         task->Process(context);
     }).wait_for(std::chrono::nanoseconds(task->GetTimeout()));
+}
+
+bool RSRenderServiceConnection::InitUniRenderEnabled(const std::string &bundleName)
+{
+    return RSUniRenderJudgement::QueryClientEnabled(bundleName);
+}
+
+bool RSRenderServiceConnection::CreateNode(const RSSurfaceRenderNodeConfig& config)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node =
+        std::make_shared<RSSurfaceRenderNode>(config, mainThread_->GetContext().weak_from_this());
+    if (node == nullptr) {
+        RS_LOGE("RSRenderService::CreateNode fail");
+        return false;
+    }
+    std::function<void()> registerNode = [node, this]() -> void {
+        this->mainThread_->GetContext().GetMutableNodeMap().RegisterRenderNode(node);
+    };
+    mainThread_->PostTask(registerNode);
+    return true;
 }
 
 sptr<Surface> RSRenderServiceConnection::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config)

@@ -22,7 +22,7 @@
 #include "pipeline/rs_uni_render_visitor.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
-#include "platform/common/rs_system_properties.h"
+#include "pipeline/rs_uni_render_judgement.h"
 #include "platform/drawing/rs_vsync_client.h"
 #include "rs_trace.h"
 #include "screen_manager/rs_screen_manager.h"
@@ -220,7 +220,7 @@ void RSMainThread::Render()
         RS_LOGE("RSMainThread::Draw GetGlobalRootRenderNode fail");
         return;
     }
-    static bool isUniRender = RSSystemProperties::GetUniRenderEnabledType() != UniRenderEnabledType::UNI_RENDER_DISABLED;
+    static bool isUniRender = RSUniRenderJudgement::GetUniRenderEnabledType() != UniRenderEnabledType::UNI_RENDER_DISABLED;
     std::shared_ptr<RSNodeVisitor> visitor;
     if (isUniRender) {
         RS_LOGI("RSMainThread::Render isUni");

@@ -18,6 +18,7 @@
 #include "rs_render_service_connection.h"
 #include "vsync_generator.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "pipeline/rs_uni_render_judgement.h"
 
 #include <unistd.h>
 
@@ -33,6 +34,7 @@ RSRenderService::~RSRenderService() noexcept {}
 
 bool RSRenderService::Init()
 {
+    RSUniRenderJudgement::InitUniRenderConfig();
     screenManager_ = CreateOrGetScreenManager();
     if (screenManager_ == nullptr || !screenManager_->Init()) {
         RS_LOGE("RSRenderService CreateOrGetScreenManager fail.");

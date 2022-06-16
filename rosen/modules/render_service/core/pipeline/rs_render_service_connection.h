@@ -54,6 +54,8 @@ private:
     void CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData) override;
     void ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
 
+    bool InitUniRenderEnabled(const std::string &bundleName) override;
+    bool CreateNode(const RSSurfaceRenderNodeConfig& config) override;
     sptr<Surface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config) override;
 
     sptr<IVSyncConnection> CreateVSyncConnection(const std::string& name) override;
