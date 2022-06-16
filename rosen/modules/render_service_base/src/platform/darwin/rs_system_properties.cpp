@@ -17,14 +17,10 @@
 
 namespace OHOS {
 namespace Rosen {
-UniRenderEnabledType RSSystemProperties::GetUniRenderEnabledType()
-{
-    return uniRenderEnabledType_;
-}
 
-const std::set<std::string>& RSSystemProperties::GetUniRenderEnabledList()
+bool RSSystemProperties::GetUniRenderEnabled()
 {
-    return uniRenderEnabledList_;
+    return isUniRenderEnabled_;
 }
 } // namespace Rosen
 } // namespace OHOS
