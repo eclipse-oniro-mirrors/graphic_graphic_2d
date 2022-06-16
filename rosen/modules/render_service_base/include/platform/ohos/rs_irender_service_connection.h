@@ -48,6 +48,8 @@ public:
 
     enum {
         COMMIT_TRANSACTION,
+        GET_UNI_RENDER_TYPE,
+        CREATE_NODE,
         CREATE_NODE_AND_SURFACE,
         GET_DEFAULT_SCREEN_ID,
         GET_ALL_SCREEN_IDS,
@@ -88,6 +90,8 @@ public:
 
     virtual void ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) = 0;
 
+    virtual bool InitUniRenderEnabled(const std::string &bundleName) = 0;
+    virtual bool CreateNode(const RSSurfaceRenderNodeConfig& config) = 0;
     virtual sptr<Surface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config) = 0;
 
     virtual sptr<IVSyncConnection> CreateVSyncConnection(const std::string& name) = 0;

@@ -50,6 +50,24 @@ void RSRenderServiceClient::ExecuteSynchronousTask(const std::shared_ptr<RSSyncT
     }
 }
 
+bool RSRenderServiceClient::InitUniRenderEnabled(const std::string &bundleName)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return false;
+    }
+    return renderService->InitUniRenderEnabled(bundleName);
+}
+
+bool RSRenderServiceClient::CreateNode(const RSSurfaceRenderNodeConfig& config)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return false;
+    }
+    return renderService->CreateNode(config);
+}
+
 std::shared_ptr<RSSurface> RSRenderServiceClient::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
