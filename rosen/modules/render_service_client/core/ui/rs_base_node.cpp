@@ -57,7 +57,7 @@ void RSBaseNode::InitUniRenderEnabled()
     }
 }
 
-RSBaseNode::RSBaseNode(bool isRenderServiceNode) : id_(GenerateId()), isRenderServiceNode_(isRenderServiceNode)
+RSBaseNode::RSBaseNode(bool isRenderServiceNode) : isRenderServiceNode_(isRenderServiceNode), id_(GenerateId())
 {
     InitUniRenderEnabled();
 }
