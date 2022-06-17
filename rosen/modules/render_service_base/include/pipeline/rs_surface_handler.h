@@ -29,6 +29,14 @@ public:
     virtual ~RSSurfaceHandler() noexcept = default;
 
     struct SurfaceBufferEntry {
+        void Reset()
+        {
+            buffer = nullptr;
+            acquireFence = SyncFence::INVALID_FENCE;
+            releaseFence = SyncFence::INVALID_FENCE;
+            damageRect = Rect {0, 0, 0, 0};
+            timestamp = 0;
+        }
         sptr<SurfaceBuffer> buffer;
         sptr<SyncFence> acquireFence = SyncFence::INVALID_FENCE;
         sptr<SyncFence> releaseFence = SyncFence::INVALID_FENCE;
@@ -86,7 +94,7 @@ public:
         preBuffer_.releaseFence = std::move(fence);
     }
 
-    SurfaceBufferEntry GetPreBuffer()
+    SurfaceBufferEntry& GetPreBuffer()
     {
         return preBuffer_;
     }

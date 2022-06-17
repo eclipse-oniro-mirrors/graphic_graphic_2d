@@ -599,8 +599,7 @@ bool RsRenderServiceUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfaceHandle
 {
     auto availableBufferCnt = surfaceHandler.GetAvailableBufferCount();
     if (availableBufferCnt <= 0) {
-        RS_LOGD("RsDebug surfaceHandler(id: %llu) has no new buffer, try use old buffer.",
-            surfaceHandler.GetNodeId());
+        // this node has no new buffer, try use old buffer.
         return true;
     }
     auto& consumer = surfaceHandler.GetConsumer();
@@ -636,7 +635,7 @@ bool RsRenderServiceUtil::ReleaseBuffer(RSSurfaceHandler& surfaceHandler)
         return false;
     }
 
-    auto preBuffer = surfaceHandler.GetPreBuffer();
+    auto& preBuffer = surfaceHandler.GetPreBuffer();
     if (preBuffer.buffer != nullptr) {
         auto ret = consumer->ReleaseBuffer(preBuffer.buffer, preBuffer.releaseFence);
         if (ret != OHOS::SURFACE_ERROR_OK) {
@@ -644,6 +643,9 @@ bool RsRenderServiceUtil::ReleaseBuffer(RSSurfaceHandler& surfaceHandler)
                 surfaceHandler.GetNodeId(), ret);
             return false;
         }
+        // reset prevBuffer if we release it successfully,
+        // to avoid releasing the same buffer next frame in some suitations.
+        preBuffer.Reset();
     }
 
     return true;
