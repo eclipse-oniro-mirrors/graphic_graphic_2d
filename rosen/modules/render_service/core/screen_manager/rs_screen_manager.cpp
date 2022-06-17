@@ -712,6 +712,12 @@ bool RSScreenManager::RequestRotationLocked(ScreenId id, ScreenRotation rotation
         HiLog::Error(LOG_LABEL, "%{public}s: There is no screen for id %{public}" PRIu64 ".\n", __func__, id);
         return false;
     }
+    // In special scenario (sucn as the foreground app is launcher), the rotation does not trigger UI redraw.
+    // So, we trigger the vSync here, to avoid inconsistent between interfaces and keystrokes.
+    auto mainThread = RSMainThread::Instance();
+    if (mainThread != nullptr) {
+        mainThread->RequestNextVSync();
+    }
     return iter->second->SetRotation(rotation);
 }
 
