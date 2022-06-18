@@ -132,7 +132,8 @@ private:
     void ConsumeAndUpdateAllNodes();
     void ReleaseAllNodesBuffer();
     void Render();
-    void CalcOcclusion(const std::shared_ptr<RSNodeVisitor>& visitor);
+    void CalcOcclusion();
+    void CallbackToWMS(VisibleData& curVisVec);
     void SendCommands();
 
     std::mutex transitionDataMutex_;
@@ -155,7 +156,9 @@ private:
     mutable std::mutex uniRenderMutex_;
     bool uniRenderFinished_ = false;
     std::condition_variable uniRenderCond_;
-    std::vector<std::pair<uint64_t, bool>> lastVisibilityVec_;
+    VisibleData lastVisVec_;
+    bool doAnimate_ = false;
+    uint32_t lastSurafceCnt_ = 0;
     
 #ifdef RS_ENABLE_GL
     std::shared_ptr<RenderContext> renderContext_;
