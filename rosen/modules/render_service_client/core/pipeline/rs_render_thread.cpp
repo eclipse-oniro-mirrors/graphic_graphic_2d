@@ -125,7 +125,10 @@ void RSRenderThread::RecvTransactionData(std::unique_ptr<RSTransactionData>& tra
     }
     // [PLANNING]: process in next vsync (temporarily)
     RSRenderThread::Instance().RequestNextVSync();
-    jankDetector_.UpdateUiDrawFrameMsg(uiStartTimeStamp_, jankDetector_.GetSysTimeNs(), uiDrawAbilityName_);
+    if (activeWindowCnt_.load() > 0) {
+        jankDetector_.UpdateUiDrawFrameMsg(uiStartTimeStamp_, jankDetector_.GetSysTimeNs(), uiDrawAbilityName_);
+    }
+    uiStartTimeStamp_ = 0;
 }
 
 void RSRenderThread::RequestNextVSync()
@@ -203,9 +206,9 @@ void RSRenderThread::UpdateWindowStatus(bool active)
     ROSEN_LOGD("RSRenderThread UpdateWindowStatus %d, cur activeWindowCnt_ %d", active, activeWindowCnt_.load());
 }
 
-void RSRenderThread::UpdateUiDrawFrameMsg(uint64_t startTimeStamp, const std::string& abilityName)
+void RSRenderThread::UpdateUiDrawFrameMsg(const std::string& abilityName)
 {
-    uiStartTimeStamp_ = startTimeStamp;
+    uiStartTimeStamp_ = jankDetector_.GetSysTimeNs();
     uiDrawAbilityName_ = abilityName;
 }
 
