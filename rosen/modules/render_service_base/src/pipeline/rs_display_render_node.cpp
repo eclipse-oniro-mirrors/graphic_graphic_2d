@@ -88,6 +88,11 @@ void RSDisplayRenderNode::SetMirrorSource(SharedPtr node)
     mirrorSource_ = node;
 }
 
+void RSDisplayRenderNode::ResetMirrorSource()
+{
+    mirrorSource_.reset();
+}
+
 bool RSDisplayRenderNode::IsMirrorDisplay() const
 {
     return isMirroredDisplay_;
@@ -101,6 +106,11 @@ void RSDisplayRenderNode::SetSecurityDisplay(bool isSecurityDisplay)
 bool RSDisplayRenderNode::GetSecurityDisplay() const
 {
     return isSecurityDisplay_;
+}
+
+void RSDisplayRenderNode::SetIsMirrorDisplay(bool isMirror)
+{
+    isMirroredDisplay_ = isMirror;
 }
 
 bool RSDisplayRenderNode::CreateSurface(sptr<IBufferConsumerListener> listener)
