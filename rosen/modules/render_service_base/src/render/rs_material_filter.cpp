@@ -27,9 +27,6 @@ constexpr int INDEX_R_offset = 4;
 constexpr int INDEX_G_offset = 9;
 constexpr int INDEX_B_offset = 14;
 constexpr int BLUR_SIGMA_SCALE = 0.57735f;
-public static final int STYLE_CARD_THIN_LIGHT = 1;
-public static final int STYLE_CARD_LIGHT = 2;
-public static final int STYLE_CARD_THICK_LIGHT = 3;
 
 RSMaterialFilter::RSMaterialFilter(int style, float dipScale)
     : RSSkiaFilter(RSMaterialFilter::createMaterialStyle(style, dipScale))
@@ -76,20 +73,25 @@ sk_sp<SkImageFilter> RSMaterialFilter::createMaterialfilter(float radius, float 
 
 sk_sp<SkImageFilter> RSMaterialFilter::createMaterialStyle(int style, float dipScale)
 {
-    int blurRadiusVp;
     switch (style) {
         case STYLE_CARD_THIN_LIGHT:
-            // cardThinLight
-            blurRadiusVp=109;
-            return RSMaterialFilter::createMaterialfilter(RSMaterialFilter::vp2sigma(blurRadiusVp, dipScale), 1.22, 0x6BF0F0F0);
+            blurRadiusVp_ = 109;
+            saturation_ = 1.22;
+            maskColor_ = 0x6BF0F0F0;
+            return RSMaterialFilter::createMaterialfilter(RSMaterialFilter::vp2sigma(blurRadiusVp_, dipScale), 
+            saturation_, maskColor_);
         case STYLE_CARD_LIGHT:
-            // cardLight
-            blurRadiusVp=103;
-            return RSMaterialFilter::createMaterialfilter(RSMaterialFilter::vp2sigma(blurRadiusVp, dipScale), 2.4, 0xB8FAFAFA);
+            blurRadiusVp_ = 103;
+            saturation_ = 2.4;
+            maskColor_ = 0xB8FAFAFA;
+            return RSMaterialFilter::createMaterialfilter(RSMaterialFilter::vp2sigma(blurRadiusVp_, dipScale), 
+            saturation_, maskColor_);
         case STYLE_CARD_THICK_LIGHT:
-            // cardThickLight
-            blurRadiusVp=109;
-            return RSMaterialFilter::createMaterialfilter(RSMaterialFilter::vp2sigma(blurRadiusVp, dipScale), 2.4, 0xB8FAFAFA);
+            blurRadiusVp_ = 109;
+            saturation_ = 2.4;
+            maskColor_ = 0xB8FAFAFA;
+            return RSMaterialFilter::createMaterialfilter(RSMaterialFilter::vp2sigma(blurRadiusVp_, dipScale), 
+            saturation_, maskColor_);
         default:
             break;
     }

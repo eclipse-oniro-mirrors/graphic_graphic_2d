@@ -26,6 +26,10 @@ namespace OHOS {
 namespace Rosen {
 class RSMaterialFilter : public RSSkiaFilter {
 public:
+    public static final int STYLE_CARD_THIN_LIGHT = 1;
+    public static final int STYLE_CARD_LIGHT = 2;
+    public static final int STYLE_CARD_THICK_LIGHT = 3;
+
     RSMaterialFilter(int style, float dipScale);
     ~RSMaterialFilter() override;
     
@@ -37,6 +41,10 @@ public:
     std::shared_ptr<RSFilter> Sub(const std::shared_ptr<RSFilter>& rhs) override;
     std::shared_ptr<RSFilter> Multiply(float rhs) override;
     std::shared_ptr<RSFilter> Negate() override;
+private:
+    int blurRadiusVp_;
+    float saturation_;
+    SkColor maskColor_;
 };
 } // namespace Rosen
 } // namespace OHOS
