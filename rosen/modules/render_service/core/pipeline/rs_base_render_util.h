@@ -50,10 +50,11 @@ public:
     static void DropFrameProcess(RSSurfaceHandler& surfaceHandler);
     static bool ConsumeAndUpdateBuffer(RSSurfaceHandler& surfaceHandler);
     static bool ReleaseBuffer(RSSurfaceHandler& surfaceHandler);
-    static bool ConvertBufferToBitmap(sptr<SurfaceBuffer> buffer, ColorGamut dstGamut, SkBitmap& bitmap);
+    static bool ConvertBufferToBitmap(sptr<SurfaceBuffer> buffer, std::vector<uint8_t>& newBuffer, ColorGamut dstGamut,
+        SkBitmap& bitmap);
 #ifdef RS_ENABLE_EGLIMAGE
     static bool ConvertBufferToEglImage(sptr<SurfaceBuffer> buffer, std::shared_ptr<RSEglImageManager> eglImageManager,
-        GrContext* grContext, sptr<SyncFence> acquireFence, sk_sp<SkImage> image);
+        GrContext* grContext, sptr<SyncFence> acquireFence, sk_sp<SkImage>& image);
 #endif
 
 private:

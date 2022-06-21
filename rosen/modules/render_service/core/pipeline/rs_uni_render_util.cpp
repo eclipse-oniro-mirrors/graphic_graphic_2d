@@ -25,7 +25,8 @@ void RSUniRenderUtil::DrawBufferOnCanvas(sptr<SurfaceBuffer> buffer, const Color
     RSPaintFilterCanvas& canvas, SkRect srcRect, SkRect dstRect)
 {
     SkBitmap bitmap;
-    if (!RSBaseRenderUtil::ConvertBufferToBitmap(buffer, dstGamut, bitmap)) {
+    std::vector<uint8_t> newBuffer;
+    if (!RSBaseRenderUtil::ConvertBufferToBitmap(buffer, newBuffer, dstGamut, bitmap)) {
         RS_LOGE("RSUniRenderUtil::DrawBufferOnCanvas ConvertBufferToBitmap failed");
         return;
     }

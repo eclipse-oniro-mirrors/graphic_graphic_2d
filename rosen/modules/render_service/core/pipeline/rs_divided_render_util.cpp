@@ -239,7 +239,9 @@ void RSDividedRenderUtil::DrawBuffer(RSPaintFilterCanvas& canvas, BufferDrawPara
     CanvasPostProcess process)
 {
     SkBitmap bitmap;
-    if (!RSBaseRenderUtil::ConvertBufferToBitmap(bufferDrawParam.buffer, bufferDrawParam.targetColorGamut, bitmap)) {
+    std::vector<uint8_t> newBuffer;
+    if (!RSBaseRenderUtil::ConvertBufferToBitmap(bufferDrawParam.buffer, newBuffer, bufferDrawParam.targetColorGamut,
+        bitmap)) {
         RS_LOGE("RSDividedRenderUtil::DrawBuffer: create bitmap failed.");
         return;
     }
