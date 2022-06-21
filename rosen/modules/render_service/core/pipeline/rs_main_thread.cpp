@@ -14,6 +14,8 @@
  */
 #include "pipeline/rs_main_thread.h"
 #include <memory>
+#include <string>
+#include <securec.h>
 
 #include "command/rs_message_processor.h"
 #include "pipeline/rs_base_render_node.h"
@@ -229,17 +231,16 @@ void RSMainThread::Render()
         visitor = std::make_shared<RSRenderServiceVisitor>();
     }
     rootNode->Prepare(visitor);
-    CalcOcclusion(visitor);
+    CalcOcclusion();
     rootNode->Process(visitor);
 #ifdef RS_ENABLE_EGLIMAGE
     eglImageManager_->ShrinkCachesIfNeeded();
 #endif // RS_ENABLE_EGLIMAGE
 }
 
-void RSMainThread::CalcOcclusion(const std::shared_ptr<RSNodeVisitor>& visitor)
+void RSMainThread::CalcOcclusion()
 {
-    auto rsVisitor = std::static_pointer_cast<RSRenderServiceVisitor>(visitor);
-    if (rsVisitor == nullptr || !rsVisitor->GetWindowDirty() || !RSSystemProperties::GetOcclusionEnabled()) {
+    if (doAnimate_ || !RSSystemProperties::GetOcclusionEnabled()) {
         return;
     }
     const std::shared_ptr<RSBaseRenderNode> node = context_.GetGlobalRootRenderNode();
@@ -247,12 +248,40 @@ void RSMainThread::CalcOcclusion(const std::shared_ptr<RSNodeVisitor>& visitor)
         RS_LOGE("RSMainThread::CalcOcclusion GetGlobalRootRenderNode fail");
         return;
     }
-    RS_TRACE_BEGIN("RSMainThread::CalcOcclusion");
+
     std::vector<RSBaseRenderNode::SharedPtr> curAllSurfaces;
     node->CollectSurface(node, curAllSurfaces);
+    const uint32_t minSurfaceCnt = 2;
+    if (curAllSurfaces.size() < minSurfaceCnt) {
+        return;
+    }
+    // 1. Judge whether it is dirty
+    // Surface cnt changed or surface geoDirty_ == true
+    // ingore background(curAllSurfaces.rend()-1 is [EntryView])
+    bool winDirty = lastSurafceCnt_ != curAllSurfaces.size();
+    lastSurafceCnt_ = curAllSurfaces.size();
+    if (!winDirty) {
+        for (auto it = curAllSurfaces.rbegin(); it != curAllSurfaces.rend() - 1; ++it) {
+            auto surface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
+            if (surface == nullptr) {
+                continue;
+            }
+            if (surface->GetRenderProperties().GetZorderChanged() || surface->GetDstRectChanged()) {
+                winDirty = true;
+            }
+            surface->GetMutableRenderProperties().CleanZorderChanged();
+            surface->CleanDstRectChanged();
+        }
+    }
+    if (!winDirty) {
+        return;
+    }
+
+    RS_TRACE_BEGIN("RSMainThread::CalcOcclusion");
+    // 2. Calc occlusion
     Occlusion::Region curRegion;
-    std::vector<std::pair<uint64_t, bool>> curVisibilityVec;
-    for(auto it = curAllSurfaces.rbegin(); it != curAllSurfaces.rend(); it++) {
+    VisibleData curVisVec;
+    for (auto it = curAllSurfaces.rbegin(); it != curAllSurfaces.rend() - 1; ++it) {
         auto surface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
         if (surface == nullptr || surface->GetDstRect().IsEmpty() ||
             surface->GetRenderProperties().GetAlpha() < 1.0) {
@@ -261,29 +290,48 @@ void RSMainThread::CalcOcclusion(const std::shared_ptr<RSNodeVisitor>& visitor)
         Occlusion::Rect rect { surface->GetDstRect().left_, surface->GetDstRect().top_,
                                surface->GetDstRect().GetRight(), surface->GetDstRect().GetBottom() };
         Occlusion::Region curSurface { rect };
+        // Current surface subtract current region, if result region is empty that means it's covered
         Occlusion::Region subResult = curSurface.Sub(curRegion);
-        surface->SetVisibleRegionRecursive(subResult, curVisibilityVec);
+        // Set relult to SurfaceRenderNode and its children
+        surface->SetVisibleRegionRecursive(subResult, curVisVec);
+        // Current region need to merge current surface for next calculation
         curRegion = curSurface.Or(curRegion);
     }
-    bool isSame = lastVisibilityVec_.size() == curVisibilityVec.size();
-    if (isSame) {
-        std::sort(curVisibilityVec.begin(), curVisibilityVec.end(), [](const auto& lhs, const auto& rhs) -> bool {
-            return lhs.first < rhs.first;
-        });
-        for (uint32_t i = 0; i < curVisibilityVec.size(); i++) {
-            if (lastVisibilityVec_[i].first != curVisibilityVec[i].first) {
-                isSame = false;
+
+    // 3. Callback to WMS
+    CallbackToWMS(curVisVec);
+    RS_TRACE_END();
+}
+
+void RSMainThread::CallbackToWMS(VisibleData& curVisVec)
+{
+    // if visible surfaces changed callback to WMS：
+    // 1. curVisVec size changed
+    // 2. curVisVec content changed
+    bool visibleChanged = curVisVec.size() != lastVisVec_.size();
+    std::sort(curVisVec.begin(), curVisVec.end());
+    if (!visibleChanged) {
+        for (uint32_t i = 0; i < curVisVec.size(); i++) {
+            if (curVisVec[i] != lastVisVec_[i]) {
+                visibleChanged = true;
                 break;
             }
         }
     }
-    if (!isSame) {
+    if (visibleChanged) {
+        std::string inf;
+        char strBuffer[UINT8_MAX] = { 0 };
+        if (sprintf_s(strBuffer, UINT8_MAX, "RSMainThread::CallbackToWMS:%d - %d",
+            lastVisVec_.size(), curVisVec.size()) != -1) {
+            inf.append(strBuffer);
+        }
+        RS_TRACE_NAME(inf.c_str());
         for (auto& listener : occlusionListeners_) {
-            listener->OnOcclusionVisibleChanged(std::make_shared<RSOcclusionData>(curVisibilityVec));
+            listener->OnOcclusionVisibleChanged(std::make_shared<RSOcclusionData>(curVisVec));
         }
     }
-    lastVisibilityVec_ = curVisibilityVec;
-    RS_TRACE_END();
+    lastVisVec_.clear();
+    std::copy(curVisVec.begin(), curVisVec.end(), std::back_inserter(lastVisVec_));
 }
 
 void RSMainThread::RequestNextVSync()
@@ -320,11 +368,13 @@ void RSMainThread::Animate(uint64_t timestamp)
     RS_TRACE_FUNC();
 
     if (context_.animatingNodeList_.empty()) {
+        doAnimate_ = false;
         return;
     }
 
     RS_LOGD("RSMainThread::Animate start, processing %d animating nodes", context_.animatingNodeList_.size());
 
+    doAnimate_ = true;
     // iterate and animate all animating nodes, remove if animation finished
     std::__libcpp_erase_if_container(context_.animatingNodeList_, [timestamp](const auto& iter) -> bool {
         auto node = iter.second.lock();

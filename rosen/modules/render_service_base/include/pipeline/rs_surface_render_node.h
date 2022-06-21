@@ -30,6 +30,7 @@
 #include "refbase.h"
 #include "sync_fence.h"
 #include "common/rs_occlusion_region.h"
+#include "transaction/rs_occlusion_data.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -121,6 +122,9 @@ public:
 
     void SetDstRect(const RectI& dstRect)
     {
+        if (dstRect_ != dstRect) {
+            dstRectChanged_= true;
+        }
         dstRect_ = dstRect;
     }
 
@@ -162,12 +166,13 @@ public:
         return isOcclusionVisible_;
     }
 
-    void SetVisibleRegionRecursive(const Occlusion::Region& region,
-                                    std::vector<std::pair<uint64_t, bool>>& visibilityVec)
+    void SetVisibleRegionRecursive(const Occlusion::Region& region, VisibleData& visibleVec)
     {
         visibleRegion_ = region;
         bool vis = region.GetSize() > 0;
-        visibilityVec.emplace_back(GetId(), vis);
+        if (vis) {
+            visibleVec.emplace_back(GetId());
+        }
         SetOcclusionVisible(vis);
         for (auto& child : GetSortedChildren()) {
             if (child->GetType() == RSRenderNodeType::SURFACE_NODE) {
@@ -175,9 +180,19 @@ public:
                 if (surface == nullptr) {
                     continue;
                 }
-                surface->SetVisibleRegionRecursive(region, visibilityVec);
+                surface->SetVisibleRegionRecursive(region, visibleVec);
             }
         }
+    }
+
+    bool GetDstRectChanged() const
+    {
+        return dstRectChanged_;
+    }
+
+    void CleanDstRectChanged()
+    {
+        dstRectChanged_ = false;
     }
 
     void SetConsumer(const sptr<Surface>& consumer);
@@ -242,6 +257,7 @@ private:
     RectI clipRegionFromParent_;
     Occlusion::Region visibleRegion_;
     bool isOcclusionVisible_ = true;
+    bool dstRectChanged_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS
