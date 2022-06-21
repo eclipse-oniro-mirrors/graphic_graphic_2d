@@ -26,7 +26,7 @@ constexpr int INDEX_A = 18;
 constexpr int INDEX_R_offset = 4;
 constexpr int INDEX_G_offset = 9;
 constexpr int INDEX_B_offset = 14;
-constexpr int BLUR_SIGMA_SCALE = 0.57735f;
+constexpr float BLUR_SIGMA_SCALE = 0.57735f;
 
 RSMaterialFilter::RSMaterialFilter(int style, float dipScale)
     : RSSkiaFilter(RSMaterialFilter::createMaterialStyle(style, dipScale))
