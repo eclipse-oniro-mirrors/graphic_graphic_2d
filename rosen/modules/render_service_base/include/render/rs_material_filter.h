@@ -17,7 +17,7 @@
 
 #include "render/rs_skia_filter.h"
 
-#include "include/effects/SkImageFilters.h" 
+#include "include/effects/SkImageFilters.h"
 #include "include/core/SkColorFilter.h"
 #include "include/core/SkColor.h"
 #include "include/effects/SkColorMatrix.h"
@@ -32,12 +32,11 @@ public:
     float vp2sigma(float radiusVp, float dipScale) const;
     sk_sp<SkColorFilter> maskColorFilter(SkColor maskColor);
     sk_sp<SkImageFilter> createMaterialfilter(float radius, float sat, SkColor maskColor);
-    sk_sp<SkImageFilter> createMaterialStyle(int style, float dipScale);  
+    sk_sp<SkImageFilter> createMaterialStyle(int style, float dipScale);
     std::shared_ptr<RSFilter> Add(const std::shared_ptr<RSFilter>& rhs) override;
     std::shared_ptr<RSFilter> Sub(const std::shared_ptr<RSFilter>& rhs) override;
     std::shared_ptr<RSFilter> Multiply(float rhs) override;
     std::shared_ptr<RSFilter> Negate() override;
-    
 };
 } // namespace Rosen
 } // namespace OHOS

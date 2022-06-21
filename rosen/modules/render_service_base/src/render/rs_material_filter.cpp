@@ -19,8 +19,17 @@
 
 namespace OHOS {
 namespace Rosen {
-
-constexpr float BLUR_SIGMA_SCALE = 0.57735f;
+constexpr int INDEX_R = 0;
+constexpr int INDEX_G = 6;
+constexpr int INDEX_B = 12;
+constexpr int INDEX_A = 18;
+constexpr int INDEX_R_offset = 4;
+constexpr int INDEX_G_offset = 9;
+constexpr int INDEX_B_offset = 14;
+constexpr int BLUR_SIGMA_SCALE = 0.57735f;
+public static final int STYLE_CARD_THIN_LIGHT = 1;
+public static final int STYLE_CARD_LIGHT = 2;
+public static final int STYLE_CARD_THICK_LIGHT = 3;
 
 RSMaterialFilter::RSMaterialFilter(int style, float dipScale)
     : RSSkiaFilter(RSMaterialFilter::createMaterialStyle(style, dipScale))
@@ -40,18 +49,15 @@ float RSMaterialFilter::vp2sigma(float radiusVp, float dipScale) const
 sk_sp<SkColorFilter> RSMaterialFilter::maskColorFilter(SkColor maskColor)
 {
     SkColor4f maskColor4f = SkColor4f::FromColor(maskColor);
-
     SkScalar colorMatrix[20] = { 0 };
+    colorMatrix[INDEX_R] = 1 - maskColor4f.fA;
+    colorMatrix[INDEX_G] = 1 - maskColor4f.fA;
+    colorMatrix[INDEX_B] = 1 - maskColor4f.fA;
+    colorMatrix[INDEX_R_offset] = maskColor4f.fR * maskColor4f.fA;
+    colorMatrix[INDEX_G_offset] = maskColor4f.fG * maskColor4f.fA;
+    colorMatrix[INDEX_B_offset] = maskColor4f.fB * maskColor4f.fA;
+    colorMatrix[INDEX_A] = 1;
 
-    colorMatrix[0] = 1 - maskColor4f.fA;
-    colorMatrix[6] = 1 - maskColor4f.fA;
-    colorMatrix[12] = 1 - maskColor4f.fA;
-
-    colorMatrix[4] = maskColor4f.fR * maskColor4f.fA;
-    colorMatrix[9] = maskColor4f.fG * maskColor4f.fA;
-    colorMatrix[14] = maskColor4f.fB * maskColor4f.fA;
-
-    colorMatrix[18] = 1;
     return SkColorFilters::Matrix(colorMatrix);
 }
 
@@ -70,16 +76,20 @@ sk_sp<SkImageFilter> RSMaterialFilter::createMaterialfilter(float radius, float 
 
 sk_sp<SkImageFilter> RSMaterialFilter::createMaterialStyle(int style, float dipScale)
 {
+    int blurRadiusVp;
     switch (style) {
-        case 1:
+        case STYLE_CARD_THIN_LIGHT:
             // cardThinLight
-            return RSMaterialFilter::createMaterialfilter(RSMaterialFilter::vp2sigma(109, dipScale), 1.22, 0x6BF0F0F0);
-        case 2:
+            blurRadiusVp=109;
+            return RSMaterialFilter::createMaterialfilter(RSMaterialFilter::vp2sigma(blurRadiusVp, dipScale), 1.22, 0x6BF0F0F0);
+        case STYLE_CARD_LIGHT:
             // cardLight
-            return RSMaterialFilter::createMaterialfilter(RSMaterialFilter::vp2sigma(103, dipScale), 2.4, 0xB8FAFAFA);
-        case 3:
+            blurRadiusVp=103;
+            return RSMaterialFilter::createMaterialfilter(RSMaterialFilter::vp2sigma(blurRadiusVp, dipScale), 2.4, 0xB8FAFAFA);
+        case STYLE_CARD_THICK_LIGHT:
             // cardThickLight
-            return RSMaterialFilter::createMaterialfilter(RSMaterialFilter::vp2sigma(109, dipScale), 2.4, 0xB8FAFAFA);
+            blurRadiusVp=109;
+            return RSMaterialFilter::createMaterialfilter(RSMaterialFilter::vp2sigma(blurRadiusVp, dipScale), 2.4, 0xB8FAFAFA);
         default:
             break;
     }
@@ -89,25 +99,21 @@ sk_sp<SkImageFilter> RSMaterialFilter::createMaterialStyle(int style, float dipS
 std::shared_ptr<RSFilter> RSMaterialFilter::Add(const std::shared_ptr<RSFilter>& rhs)
 {
     return shared_from_this();
-    ;
 }
 
 std::shared_ptr<RSFilter> RSMaterialFilter::Sub(const std::shared_ptr<RSFilter>& rhs)
 {
     return shared_from_this();
-    ;
 }
 
 std::shared_ptr<RSFilter> RSMaterialFilter::Multiply(float rhs)
 {
     return shared_from_this();
-    ;
 }
 
 std::shared_ptr<RSFilter> RSMaterialFilter::Negate()
 {
     return shared_from_this();
-    ;
 }
 } // namespace Rosen
 } // namespace OHOS
