@@ -50,6 +50,7 @@
       },
       "build": {
         "sub_component": [
+          "//third_party/libpng:libpng",
           "//foundation/graphic/graphic_2d:default",
           "//foundation/graphic/graphic_2d/interfaces/kits/napi:napi_packages",
           "//foundation/graphic/graphic_2d/rosen/samples/composer:hello_composer",
