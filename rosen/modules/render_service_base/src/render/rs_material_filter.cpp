@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 
-#include "render/rs_material_filter.h"
-
 #include "include/effects/SkBlurImageFilter.h"
+#include "render/rs_material_filter.h"
 
 namespace OHOS {
 namespace Rosen {
