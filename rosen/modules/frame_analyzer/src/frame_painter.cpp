@@ -33,8 +33,8 @@ constexpr int32_t Frame30Ms = 1000 / 30;
 constexpr auto loopstart = static_cast<size_t>(FrameEventType::LoopStart);
 constexpr auto loopend = static_cast<size_t>(FrameEventType::LoopEnd);
 std::map<FrameEventType, SkColor> colorMap = {
-    {FrameEventType::UploadStart,    0x0000ffff}, // cyan
     {FrameEventType::AnimateStart,   0x0000cc00}, // mid green
+    {FrameEventType::UploadStart,    0x0000ffff}, // cyan
     {FrameEventType::LayoutStart,    0x0000ff00}, // green
     {FrameEventType::DrawStart,      0x000000ff}, // blue
     {FrameEventType::WaitVsyncStart, 0x00006600}, // old green

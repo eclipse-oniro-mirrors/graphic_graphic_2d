@@ -226,10 +226,10 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     RS_TRACE_BEGIN("rsSurface->RequestFrame");
     FrameCollector::GetInstance().MarkFrameEvent(FrameEventType::ReleaseStart);
     auto surfaceFrame = rsSurface->RequestFrame(node.GetSurfaceWidth(), node.GetSurfaceHeight(), uiTimestamp_);
-    FrameCollector::GetInstance().MarkFrameEvent(FrameEventType::ReleaseEnd);
     RS_TRACE_END();
     if (surfaceFrame == nullptr) {
         ROSEN_LOGI("ProcessRoot %s: Request Frame Failed", ptr->GetName().c_str());
+        FrameCollector::GetInstance().MarkFrameEvent(FrameEventType::ReleaseEnd);
         return;
     }
 
@@ -283,11 +283,12 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
 
     FramePainter fpainter(FrameCollector::GetInstance());
     fpainter.Draw(*canvas_);
+    FrameCollector::GetInstance().MarkFrameEvent(FrameEventType::ReleaseEnd);
+    FrameCollector::GetInstance().MarkFrameEvent(FrameEventType::FlushStart);
 
     RS_TRACE_BEGIN("rsSurface->FlushFrame");
     ROSEN_LOGD("RSRenderThreadVisitor FlushFrame surfaceNodeId = %llu, uiTimestamp = %llu",
         node.GetRSSurfaceNodeId(), uiTimestamp_);
-    FrameCollector::GetInstance().MarkFrameEvent(FrameEventType::FlushStart);
     rsSurface->FlushFrame(surfaceFrame, uiTimestamp_);
     FrameCollector::GetInstance().MarkFrameEvent(FrameEventType::FlushEnd);
     RS_TRACE_END();

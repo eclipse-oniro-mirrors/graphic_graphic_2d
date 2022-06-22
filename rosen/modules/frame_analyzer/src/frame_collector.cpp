@@ -21,6 +21,7 @@
 #include <map>
 
 #include <hilog/log.h>
+#include <hitrace_meter.h>
 #include <parameter.h>
 
 #include "frame_saver.h"
@@ -34,6 +35,34 @@ constexpr int32_t uimarksEnd = static_cast<int32_t>(FrameEventType::UIMarksEnd) 
 constexpr int32_t loopEnd = static_cast<int32_t>(FrameEventType::LoopEnd) - 1;
 constexpr int32_t vsyncStart = static_cast<int32_t>(FrameEventType::WaitVsyncStart);
 constexpr int32_t vsyncEnd = static_cast<int32_t>(FrameEventType::WaitVsyncEnd);
+
+std::string GetStringByFrameEventType(FrameEventType type)
+{
+    static std::map<FrameEventType, const char *> frameEventTypeStringMap = {
+        {FrameEventType::HandleInputStart, "Frame.1.HandleInput"},
+        {FrameEventType::HandleInputEnd,   "Frame.1.HandleInput"},
+        {FrameEventType::AnimateStart,     "Frame.2.Animate    "},
+        {FrameEventType::AnimateEnd,       "Frame.2.Animate    "},
+        {FrameEventType::UploadStart,      "Frame.3.Upload     "},
+        {FrameEventType::UploadEnd,        "Frame.3.Upload     "},
+        {FrameEventType::LayoutStart,      "Frame.4.Layout     "},
+        {FrameEventType::LayoutEnd,        "Frame.4.Layout     "},
+        {FrameEventType::DrawStart,        "Frame.5.Draw       "},
+        {FrameEventType::DrawEnd,          "Frame.5.Draw       "},
+        {FrameEventType::WaitVsyncStart,   "Frame.6.WaitVsync  "},
+        {FrameEventType::WaitVsyncEnd,     "Frame.6.WaitVsync  "},
+        {FrameEventType::ReleaseStart,     "Frame.7.Release    "},
+        {FrameEventType::ReleaseEnd,       "Frame.7.Release    "},
+        {FrameEventType::FlushStart,       "Frame.8.Flush      "},
+        {FrameEventType::FlushEnd,         "Frame.8.Flush      "},
+    };
+    return frameEventTypeStringMap[type];
+}
+
+std::string GetStringByFrameEventType(int index)
+{
+    return GetStringByFrameEventType(static_cast<FrameEventType>(index));
+}
 } // namespace
 
 FrameCollector &FrameCollector::GetInstance()
@@ -71,9 +100,12 @@ void FrameCollector::MarkFrameEvent(const FrameEventType &type, int64_t timeNs)
     }
 
     ::OHOS::HiviewDFX::HiLog::Debug(LABEL,
-        "FrameCollector::MarkFrameEvent index(%{public}d) occur at %{public}" PRIi64,
-        static_cast<int32_t>(index), timeNs);
+        "FrameCollector::MarkFrameEvent index(%{public}d) occur at %{public}" PRIi64, index, timeNs);
+    ProcessFrameEvent(index, timeNs);
+}
 
+void FrameCollector::ProcessFrameEvent(int32_t index, int64_t timeNs)
+{
     std::lock_guard lockPending(pendingMutex_);
     std::lock_guard lockFrameQueue(frameQueueMutex_);
     if (ProcessUIMarkLocked(index, timeNs)) {
@@ -91,6 +123,8 @@ void FrameCollector::MarkFrameEvent(const FrameEventType &type, int64_t timeNs)
         if (haveAfterVsync_) {
             pbefore_->skiped = true;
             pbefore_->times[vsyncEnd] = pbefore_->times[vsyncStart];
+        } else {
+            StartAsyncTrace(HITRACE_TAG_GRAPHIC_AGP, GetStringByFrameEventType(index), pbefore_->frameNumber);
         }
         return;
     }
@@ -102,6 +136,12 @@ void FrameCollector::MarkFrameEvent(const FrameEventType &type, int64_t timeNs)
 
     if (pafter_ != nullptr) {
         pafter_->times[index] = timeNs;
+
+        if (index % 2 == 0) {
+            StartAsyncTrace(HITRACE_TAG_GRAPHIC_AGP, GetStringByFrameEventType(index), pafter_->frameNumber);
+        } else {
+            FinishAsyncTrace(HITRACE_TAG_GRAPHIC_AGP, GetStringByFrameEventType(index), pafter_->frameNumber);
+        }
     }
 
     if (index == loopEnd) {
@@ -111,18 +151,26 @@ void FrameCollector::MarkFrameEvent(const FrameEventType &type, int64_t timeNs)
 
 bool FrameCollector::ProcessUIMarkLocked(int32_t index, int64_t timeNs)
 {
+    if (index > uimarksEnd) {
+        return false;
+    }
+
+    if (index % 2 == 0) {
+        StartAsyncTrace(HITRACE_TAG_GRAPHIC_AGP, GetStringByFrameEventType(index), currentFrameNumber_);
+    } else {
+        FinishAsyncTrace(HITRACE_TAG_GRAPHIC_AGP, GetStringByFrameEventType(index), currentFrameNumber_);
+    }
+
     if (index < uimarksEnd) {
         pendingUIMarks_.times[index] = timeNs;
         return true;
     }
 
-    if (index == uimarksEnd) {
-        pendingUIMarks_.times[index] = timeNs;
-        currentUIMarks_ = pendingUIMarks_;
-        pendingUIMarks_.frameNumber = ++currentFrameNumber_;
-        return true;
-    }
-    return false;
+    // index == uimarksEnd
+    pendingUIMarks_.times[index] = timeNs;
+    currentUIMarks_ = pendingUIMarks_;
+    pendingUIMarks_.frameNumber = ++currentFrameNumber_;
+    return true;
 }
 
 void FrameCollector::ClearEvents()

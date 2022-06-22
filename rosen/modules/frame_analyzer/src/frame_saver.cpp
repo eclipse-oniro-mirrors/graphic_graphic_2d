@@ -69,10 +69,10 @@ void FrameSaver::SaveFrameEvent(const FrameEventType &type, int64_t timeNs)
     static std::map<FrameEventType, const char *> frameEventTypeStringMap = {
         {FrameEventType::HandleInputStart, "HandleInputStart"},
         {FrameEventType::HandleInputEnd,   "HandleInputEnd  "},
-        {FrameEventType::UploadStart,      "UploadStart     "},
-        {FrameEventType::UploadEnd,        "UploadEnd       "},
         {FrameEventType::AnimateStart,     "AnimateStart    "},
         {FrameEventType::AnimateEnd,       "AnimateEnd      "},
+        {FrameEventType::UploadStart,      "UploadStart     "},
+        {FrameEventType::UploadEnd,        "UploadEnd       "},
         {FrameEventType::LayoutStart,      "LayoutStart     "},
         {FrameEventType::LayoutEnd,        "LayoutEnd       "},
         {FrameEventType::DrawStart,        "DrawStart       "},

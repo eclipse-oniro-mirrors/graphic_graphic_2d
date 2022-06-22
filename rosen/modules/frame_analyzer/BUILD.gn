@@ -50,6 +50,8 @@ ohos_shared_library("libframe_analyzer") {
       "//third_party/flutter/build/skia:ace_skia_ohos",
       "//utils/native/base:utils",
     ]
+
+    external_deps = [ "hitrace_native:hitrace_meter" ]
   } else {
     sources = [
       "src/mingw/frame_collector.cpp",
