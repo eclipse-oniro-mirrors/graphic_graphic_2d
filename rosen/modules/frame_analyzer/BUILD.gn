@@ -22,6 +22,13 @@ config("libframe_analyzer_config") {
     "-Werror",
     "-g3",
   ]
+
+  if (current_os != "ohos") {
+    cflags += [
+      "-Wno-c++17-extensions",
+      "-Wno-unused-private-field",
+    ]
+  }
 }
 
 config("libframe_analyzer_public_config") {
@@ -29,22 +36,30 @@ config("libframe_analyzer_public_config") {
 }
 
 ohos_shared_library("libframe_analyzer") {
-  sources = [
-    "src/frame_collector.cpp",
-    "src/frame_painter.cpp",
-    "src/frame_saver.cpp",
-  ]
+  if (current_os == "ohos") {
+    sources = [
+      "src/frame_collector.cpp",
+      "src/frame_painter.cpp",
+      "src/frame_saver.cpp",
+    ]
+
+    deps = [
+      "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
+      "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara",
+      "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara_watchagent",
+      "//third_party/flutter/build/skia:ace_skia_ohos",
+      "//utils/native/base:utils",
+    ]
+  } else {
+    sources = [
+      "src/mingw/frame_collector.cpp",
+      "src/mingw/frame_painter.cpp",
+    ]
+  }
 
   configs = [ ":libframe_analyzer_config" ]
 
   public_configs = [ ":libframe_analyzer_public_config" ]
-
-  deps = [
-    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
-    "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara",
-    "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara_watchagent",
-    "//third_party/flutter/build/skia:ace_skia_ohos",
-  ]
 
   subsystem_name = "graphic"
   part_name = "graphic_standard"

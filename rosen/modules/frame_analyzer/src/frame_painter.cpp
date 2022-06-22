@@ -27,6 +27,11 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "FramePainter" };
+constexpr size_t FrameEventTypeInterval = 2;
+constexpr int32_t Frame60Ms = 1000 / 60;
+constexpr int32_t Frame30Ms = 1000 / 30;
+constexpr auto loopstart = static_cast<size_t>(FrameEventType::LoopStart);
+constexpr auto loopend = static_cast<size_t>(FrameEventType::LoopEnd);
 std::map<FrameEventType, SkColor> colorMap = {
     {FrameEventType::UploadStart,    0x0000ffff}, // cyan
     {FrameEventType::AnimateStart,   0x0000cc00}, // mid green
@@ -60,12 +65,9 @@ void FramePainter::Draw(SkCanvas &canvas)
     auto x = barWidth * (frameQueueMaxSize - 1);
     auto fq = collector_.LockGetFrameQueue();
     for (auto rit = fq.rbegin(); rit != fq.rend(); rit++) {
-        constexpr auto loopstart = static_cast<size_t>(FrameEventType::LoopStart);
-        constexpr auto loopend = static_cast<size_t>(FrameEventType::LoopEnd);
-
         uint8_t alpha = SumHeight(*rit) >= 16.0 ? 0x7f : 0x3f;
         auto y = height;
-        for (size_t i = loopstart; i < loopend; i += 2) {
+        for (size_t i = loopstart; i < loopend; i += FrameEventTypeInterval) {
             if (auto it = colorMap.find(static_cast<FrameEventType>(i)); it != colorMap.end()) {
                 constexpr auto alphaOffset = 24;
                 paint.setColor(it->second | (alpha << alphaOffset));
@@ -89,10 +91,16 @@ void FramePainter::Draw(SkCanvas &canvas)
     }
     collector_.UnlockFrameQueue();
 
+    auto frameOffset = 0.5 * heightPerMs;
+    auto frameLength = 1 * heightPerMs;
+    auto rect60 = SkRect::MakeXYWH(0, (frameTotalMs - Frame60Ms) * heightPerMs + frameOffset,
+                                   width, frameLength);
+    auto rect30 = SkRect::MakeXYWH(0, (frameTotalMs - Frame30Ms) * heightPerMs + frameOffset,
+                                   width, frameLength);
     paint.setColor(0xbf00ff00);
-    canvas.drawRect(SkRect::MakeXYWH(0, (frameTotalMs - 16 + 0.5) * heightPerMs, width, heightPerMs), paint);
+    canvas.drawRect(rect60, paint);
     paint.setColor(0xbfff0000);
-    canvas.drawRect(SkRect::MakeXYWH(0, (frameTotalMs - 32 + 0.5) * heightPerMs, width, heightPerMs), paint);
+    canvas.drawRect(rect30, paint);
 }
 
 double FramePainter::SumHeight(const struct FrameInfo &info)
@@ -101,7 +109,7 @@ double FramePainter::SumHeight(const struct FrameInfo &info)
     constexpr auto loopend = static_cast<size_t>(FrameEventType::LoopEnd);
 
     auto sum = 0.0;
-    for (size_t i = loopstart; i < loopend; i += 2) {
+    for (size_t i = loopstart; i < loopend; i += FrameEventTypeInterval) {
         if (colorMap.find(static_cast<FrameEventType>(i)) == colorMap.end()) {
             continue;
         }

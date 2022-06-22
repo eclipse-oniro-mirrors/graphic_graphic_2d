@@ -107,53 +107,53 @@ HWTEST_F(FrameCollectorTest, MarkFrameEvent, Function | MediumTest | Level2)
     }
 
     PART("CaseDescription") {
-         STEP("1. check queue size 0") {
-             STEP_ASSERT_EQ(collector.LockGetFrameQueue().GetSize(), 0);
-             collector.UnlockFrameQueue();
-         }
+        STEP("1. check queue size 0") {
+            STEP_ASSERT_EQ(collector.LockGetFrameQueue().GetSize(), 0);
+            collector.UnlockFrameQueue();
+        }
 
-         STEP("2. mark UIMarks") {
-             collector.MarkFrameEvent(FrameEventType::UploadStart);
-             collector.MarkFrameEvent(FrameEventType::UploadEnd);
-             collector.MarkFrameEvent(FrameEventType::AnimateStart);
-             collector.MarkFrameEvent(FrameEventType::AnimateEnd);
-             collector.MarkFrameEvent(FrameEventType::LayoutStart);
-             collector.MarkFrameEvent(FrameEventType::LayoutEnd);
-             collector.MarkFrameEvent(FrameEventType::DrawStart);
-             collector.MarkFrameEvent(FrameEventType::DrawEnd);
-         }
+        STEP("2. mark UIMarks") {
+            collector.MarkFrameEvent(FrameEventType::UploadStart);
+            collector.MarkFrameEvent(FrameEventType::UploadEnd);
+            collector.MarkFrameEvent(FrameEventType::AnimateStart);
+            collector.MarkFrameEvent(FrameEventType::AnimateEnd);
+            collector.MarkFrameEvent(FrameEventType::LayoutStart);
+            collector.MarkFrameEvent(FrameEventType::LayoutEnd);
+            collector.MarkFrameEvent(FrameEventType::DrawStart);
+            collector.MarkFrameEvent(FrameEventType::DrawEnd);
+        }
 
-         STEP("3. check queue size 0") {
-             STEP_ASSERT_EQ(collector.LockGetFrameQueue().GetSize(), 0);
-             collector.UnlockFrameQueue();
-         }
+        STEP("3. check queue size 0") {
+            STEP_ASSERT_EQ(collector.LockGetFrameQueue().GetSize(), 0);
+            collector.UnlockFrameQueue();
+        }
 
-         STEP("4. mark WaitVsyncStart") {
-             collector.MarkFrameEvent(FrameEventType::WaitVsyncStart);
-         }
+        STEP("4. mark WaitVsyncStart") {
+            collector.MarkFrameEvent(FrameEventType::WaitVsyncStart);
+        }
 
-         STEP("5. check queue size 1") {
-             STEP_ASSERT_EQ(collector.LockGetFrameQueue().GetSize(), 1);
-             collector.UnlockFrameQueue();
-         }
+        STEP("5. check queue size 1") {
+            STEP_ASSERT_EQ(collector.LockGetFrameQueue().GetSize(), 1);
+            collector.UnlockFrameQueue();
+        }
 
-         STEP("6. mark WaitVsyncStart") {
-             collector.MarkFrameEvent(FrameEventType::WaitVsyncStart);
-         }
+        STEP("6. mark WaitVsyncStart") {
+            collector.MarkFrameEvent(FrameEventType::WaitVsyncStart);
+        }
 
-         STEP("7. check queue size 2") {
-             STEP_ASSERT_EQ(collector.LockGetFrameQueue().GetSize(), 2);
-             collector.UnlockFrameQueue();
-         }
+        STEP("7. check queue size 2") {
+            STEP_ASSERT_EQ(collector.LockGetFrameQueue().GetSize(), 2);
+            collector.UnlockFrameQueue();
+        }
 
-         STEP("8. clear events") {
-             collector.ClearEvents();
-         }
+        STEP("8. clear events") {
+            collector.ClearEvents();
+        }
 
-         STEP("9. check queue size 0") {
-             STEP_ASSERT_EQ(collector.LockGetFrameQueue().GetSize(), 0);
-             collector.UnlockFrameQueue();
-         }
+        STEP("9. check queue size 0") {
+            STEP_ASSERT_EQ(collector.LockGetFrameQueue().GetSize(), 0);
+            collector.UnlockFrameQueue();
+        }
     }
 }
 } // namespace Rosen

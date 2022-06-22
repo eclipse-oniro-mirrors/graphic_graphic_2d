@@ -44,7 +44,7 @@ FrameSaver::FrameSaver()
         return;
     }
 
-    if (isExist == false) {
+    if (!isExist) {
         fs::create_directory(saveDirectory, ec);
         if (ec) {
             ::OHOS::HiviewDFX::HiLog::Warn(LABEL,
@@ -85,7 +85,7 @@ void FrameSaver::SaveFrameEvent(const FrameEventType &type, int64_t timeNs)
         {FrameEventType::FlushEnd,         "FlushEnd        "},
     };
 
-    if (ofs_.is_open() == false) {
+    if (!ofs_.is_open()) {
         ::OHOS::HiviewDFX::HiLog::Info(LABEL, "%{public}s %{public}" PRIi64, frameEventTypeStringMap[type], timeNs);
         return;
     }

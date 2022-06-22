@@ -13,27 +13,41 @@
  * limitations under the License.
  */
 
-#ifndef ROSEN_MODULE_FRAME_ANALYZER_EXPORT_FRAME_PAINTER_H
-#define ROSEN_MODULE_FRAME_ANALYZER_EXPORT_FRAME_PAINTER_H
-
 #include "frame_collector.h"
-
-class SkCanvas;
 
 namespace OHOS {
 namespace Rosen {
-class FramePainter {
-public:
-    FramePainter(FrameCollector &collector);
+FrameCollector &FrameCollector::GetInstance()
+{
+    if (instance == nullptr) {
+        static std::mutex mutex;
+        std::lock_guard<std::mutex> lock(mutex);
+        if (instance == nullptr) {
+            instance = std::unique_ptr<FrameCollector>(new FrameCollector());
+        }
+    }
+    return *instance;
+}
 
-    void Draw(SkCanvas &canvas);
+void FrameCollector::MarkFrameEvent(const FrameEventType &type, int64_t timeNs)
+{
+}
 
-private:
-    double SumHeight(const struct FrameInfo &info);
+bool FrameCollector::ProcessUIMarkLocked(int32_t index, int64_t timeNs)
+{
+    return false;
+}
 
-    FrameCollector &collector_;
-};
+void FrameCollector::ClearEvents()
+{
+}
+
+FrameCollector::FrameCollector()
+{
+}
+
+void FrameCollector::SwitchFunction(const char *key, const char *value, void *context)
+{
+}
 } // namespace Rosen
 } // namespace OHOS
-
-#endif // ROSEN_MODULE_FRAME_ANALYZER_EXPORT_FRAME_PAINTER_H

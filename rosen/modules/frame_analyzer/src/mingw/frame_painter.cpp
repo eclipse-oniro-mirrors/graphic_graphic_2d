@@ -13,27 +13,23 @@
  * limitations under the License.
  */
 
-#ifndef ROSEN_MODULE_FRAME_ANALYZER_EXPORT_FRAME_PAINTER_H
-#define ROSEN_MODULE_FRAME_ANALYZER_EXPORT_FRAME_PAINTER_H
+#include "frame_painter.h"
 
 #include "frame_collector.h"
 
-class SkCanvas;
-
 namespace OHOS {
 namespace Rosen {
-class FramePainter {
-public:
-    FramePainter(FrameCollector &collector);
+FramePainter::FramePainter(FrameCollector &collector) : collector_(collector)
+{
+}
 
-    void Draw(SkCanvas &canvas);
+void FramePainter::Draw(SkCanvas &canvas)
+{
+}
 
-private:
-    double SumHeight(const struct FrameInfo &info);
-
-    FrameCollector &collector_;
-};
+double FramePainter::SumHeight(const struct FrameInfo &info)
+{
+    return 0;
+}
 } // namespace Rosen
 } // namespace OHOS
-
-#endif // ROSEN_MODULE_FRAME_ANALYZER_EXPORT_FRAME_PAINTER_H

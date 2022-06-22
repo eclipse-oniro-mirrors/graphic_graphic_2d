@@ -29,6 +29,11 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001400, "FrameCollector" };
+constexpr int32_t uimarksStart = static_cast<int32_t>(FrameEventType::UIMarksStart);
+constexpr int32_t uimarksEnd = static_cast<int32_t>(FrameEventType::UIMarksEnd) - 1;
+constexpr int32_t loopEnd = static_cast<int32_t>(FrameEventType::LoopEnd) - 1;
+constexpr int32_t vsyncStart = static_cast<int32_t>(FrameEventType::WaitVsyncStart);
+constexpr int32_t vsyncEnd = static_cast<int32_t>(FrameEventType::WaitVsyncEnd);
 } // namespace
 
 FrameCollector &FrameCollector::GetInstance()
@@ -65,47 +70,59 @@ void FrameCollector::MarkFrameEvent(const FrameEventType &type, int64_t timeNs)
         return;
     }
 
-    constexpr int32_t uimarksStart = static_cast<int32_t>(FrameEventType::UIMarksStart);
-    constexpr int32_t uimarksEnd = static_cast<int32_t>(FrameEventType::UIMarksEnd) - 1;
-    constexpr int32_t loopEnd = static_cast<int32_t>(FrameEventType::LoopEnd) - 1;
-    constexpr int32_t vsyncMark = static_cast<int32_t>(FrameEventType::WaitVsyncEnd);
+    ::OHOS::HiviewDFX::HiLog::Debug(LABEL,
+        "FrameCollector::MarkFrameEvent index(%{public}d) occur at %{public}" PRIi64,
+        static_cast<int32_t>(index), timeNs);
 
     std::lock_guard lockPending(pendingMutex_);
     std::lock_guard lockFrameQueue(frameQueueMutex_);
-    if (index <= uimarksEnd) {
-        pendingUIMarks_.times[index] = timeNs;
-    } else if (index < vsyncMark) {
-        pbefore_ = &frameQueue_.Push({});
+    if (ProcessUIMarkLocked(index, timeNs)) {
+        return;
+    }
+
+    if (index == vsyncStart) {
+        pbefore_ = &frameQueue_.Push(FrameInfo());
         pbefore_->frameNumber = currentUIMarks_.frameNumber;
         for (auto i = uimarksStart; i <= uimarksEnd; i++) {
             pbefore_->times[i] = currentUIMarks_.times[i];
         }
         pbefore_->times[index] = timeNs;
-    } else {
-        if (haveAfterVsync_ == false) {
-            haveAfterVsync_ = true;
-            pafter_ = pbefore_;
+
+        if (haveAfterVsync_) {
+            pbefore_->skiped = true;
+            pbefore_->times[vsyncEnd] = pbefore_->times[vsyncStart];
         }
+        return;
+    }
+
+    if (!haveAfterVsync_) {
+        haveAfterVsync_ = true;
+        pafter_ = pbefore_;
+    }
+
+    if (pafter_ != nullptr) {
         pafter_->times[index] = timeNs;
     }
 
-    if (index == uimarksEnd) {
-        currentUIMarks_ = pendingUIMarks_;
-        pendingUIMarks_.frameNumber = ++currentFrameNumber_;
-        ::OHOS::HiviewDFX::HiLog::Info(LABEL, "currentUIMarks_");
-    }
-
-    if (index == vsyncMark - 1 && haveAfterVsync_) {
-        pbefore_->skiped = true;
-        pbefore_->times[vsyncMark + 1] = pbefore_->times[vsyncMark];
-    }
-
-    ::OHOS::HiviewDFX::HiLog::Debug(LABEL,
-        "FrameCollector::MarkFrameEvent index(%{public}d) occur at %{public}" PRIi64,
-        static_cast<int32_t>(index), timeNs);
     if (index == loopEnd) {
         haveAfterVsync_ = false;
     }
+}
+
+bool FrameCollector::ProcessUIMarkLocked(int32_t index, int64_t timeNs)
+{
+    if (index < uimarksEnd) {
+        pendingUIMarks_.times[index] = timeNs;
+        return true;
+    }
+
+    if (index == uimarksEnd) {
+        pendingUIMarks_.times[index] = timeNs;
+        currentUIMarks_ = pendingUIMarks_;
+        pendingUIMarks_.frameNumber = ++currentFrameNumber_;
+        return true;
+    }
+    return false;
 }
 
 void FrameCollector::ClearEvents()
