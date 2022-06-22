@@ -60,31 +60,32 @@ private:
             scaleY_ = scaleY;
         }
 
-        void SetHasUniRender(const bool flag)
+        void SetUniRender(bool flag)
         {
-            hasUniRender_ = flag;
+            isUniRender_ = flag;
         }
 
-        bool GetHasUniRender() const
+        bool IsUniRender() const
         {
-            return hasUniRender_;
+            return isUniRender_;
         }
 
     private:
         void ProcessSurfaceRenderNodeWithUni(RSSurfaceRenderNode &node);
         void PorcessSurfaceRenderNodeWithoutUni(RSSurfaceRenderNode &node);
+        void DrawBufferOnCanvas(RSSurfaceRenderNode& node);
         void DrawSurface(RSSurfaceRenderNode &node);
         std::unique_ptr<RSPaintFilterCanvas> canvas_ = nullptr;
         bool isDisplayNode_ = false;
         float scaleX_ = 1.0f;
         float scaleY_ = 1.0f;
-        bool hasUniRender_ = false;
+        bool isUniRender_ = false;
     };
 
     std::unique_ptr<SkCanvas> CreateCanvas(const std::unique_ptr<Media::PixelMap>& pixelmap);
 
     std::unique_ptr<Media::PixelMap> CreatePixelMapBySurfaceNode(std::shared_ptr<RSSurfaceRenderNode> node,
-        bool hasUniRender = false);
+        bool isUniRender = false);
 
     std::unique_ptr<Media::PixelMap> CreatePixelMapByDisplayNode(std::shared_ptr<RSDisplayRenderNode> node);
 

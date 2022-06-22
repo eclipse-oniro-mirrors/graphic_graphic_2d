@@ -18,6 +18,7 @@
 #include <memory>
 #include "rs_trace.h"
 
+#include "common/rs_obj_abs_geometry.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkRect.h"
@@ -28,9 +29,9 @@
 #include "pipeline/rs_render_service_connection.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
-#include "pipeline/rs_uni_render_service_util.h"
+#include "pipeline/rs_uni_render_judgement.h"
+#include "pipeline/rs_uni_render_util.h"
 #include "platform/common/rs_log.h"
-#include "platform/common/rs_system_properties.h"
 #include "platform/drawing/rs_surface.h"
 #include "render/rs_skia_filter.h"
 #include "screen_manager/rs_screen_manager.h"
@@ -51,10 +52,10 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTask::Run()
     }
     std::unique_ptr<Media::PixelMap> pixelmap;
     std::shared_ptr<RSSurfaceCaptureVisitor> visitor = std::make_shared<RSSurfaceCaptureVisitor>();
-    visitor->SetHasUniRender(RsUniRenderServiceUtil::isUniRender());
+    visitor->SetUniRender(RSUniRenderJudgement::IsUniRender());
     if (auto surfaceNode = node->ReinterpretCastTo<RSSurfaceRenderNode>()) {
         RS_LOGI("RSSurfaceCaptureTask::Run: Into SURFACE_NODE SurfaceRenderNodeId:[%llu]", node->GetId());
-        pixelmap = CreatePixelMapBySurfaceNode(surfaceNode, visitor->GetHasUniRender());
+        pixelmap = CreatePixelMapBySurfaceNode(surfaceNode, visitor->IsUniRender());
         visitor->IsDisplayNode(false);
     } else if (auto displayNode = node->ReinterpretCastTo<RSDisplayRenderNode>()) {
         RS_LOGI("RSSurfaceCaptureTask::Run: Into DISPLAY_NODE DisplayRenderNodeId:[%llu]", node->GetId());
@@ -80,13 +81,13 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTask::Run()
 }
 
 std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTask::CreatePixelMapBySurfaceNode(
-    std::shared_ptr<RSSurfaceRenderNode> node, bool hasUniRender)
+    std::shared_ptr<RSSurfaceRenderNode> node, bool isUniRender)
 {
     if (node == nullptr) {
         RS_LOGE("CreatePixelMapBySurfaceNode: node == nullptr");
         return nullptr;
     }
-    if (!hasUniRender && node->GetBuffer() == nullptr) {
+    if (!isUniRender && node->GetBuffer() == nullptr) {
         RS_LOGE("CreatePixelMapBySurfaceNode: node GetBuffer == nullptr");
         return nullptr;
     }
@@ -225,34 +226,45 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessSurfaceRenderNodeWith
     canvas_->scale(scaleX_, scaleY_);
     canvas_->SaveAlpha();
     canvas_->MultiplyAlpha(node.GetRenderProperties().GetAlpha() * node.GetContextAlpha());
-    canvas_->concat(geoPtr->GetAbsMatrix());
     canvas_->concat(node.GetContextMatrix());
+    auto contextClipRect = node.GetContextClipRegion();
+    if (!contextClipRect.isEmpty()) {
+        canvas_->clipRect(contextClipRect);
+    }
+
+    canvas_->concat(geoPtr->GetMatrix());
+    canvas_->clipRect(SkRect::MakeWH(node.GetRenderProperties().GetBoundsWidth(),
+        node.GetRenderProperties().GetBoundsHeight()));
     ProcessBaseRenderNode(node);
+
     if (node.GetConsumer() != nullptr) {
-        RS_TRACE_BEGIN("RSSurfaceCaptureVisitor::Process:" + node.GetName());
-        canvas_->save();
-        canvas_->clipRect(SkRect::MakeXYWH(
-            node.GetRenderProperties().GetBoundsPositionX(), node.GetRenderProperties().GetBoundsPositionY(),
-            node.GetRenderProperties().GetBoundsWidth(), node.GetRenderProperties().GetBoundsHeight()));
+        RS_TRACE_BEGIN("UniRender::Process:" + node.GetName());
         if (node.GetBuffer() == nullptr) {
-            RS_LOGI("RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode:%llu buffer is not available, set black",
-                node.GetId());
+            RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode:%llu buffer is not available", node.GetId());
         } else {
             node.NotifyRTBufferAvailable();
-#ifdef RS_ENABLE_EGLIMAGE
-            RS_LOGI("RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode draw image on canvas");
-            RsUniRenderServiceUtil::DrawImageOnCanvas(node, canvas_);
-#else
-            RS_LOGI("RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode draw buffer on canvas");
-            RsUniRenderServiceUtil::DrawBufferOnCanvas(node, canvas_);
-#endif // RS_ENABLE_EGLIMAGE
+            RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode draw buffer on canvas");
+            DrawBufferOnCanvas(node);
         }
-        canvas_->restore();
         RS_TRACE_END();
     }
     canvas_->RestoreAlpha();
     canvas_->restore();
     RS_TRACE_END();
+}
+
+void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::DrawBufferOnCanvas(RSSurfaceRenderNode& node)
+{
+    if (!canvas_) {
+        RS_LOGE("RSUniRenderVisitor::DrawBufferOnCanvas canvas is nullptr");
+        return;
+    }
+
+    auto buffer = node.GetBuffer();
+    auto srcRect = SkRect::MakeWH(buffer->GetSurfaceBufferWidth(), buffer->GetSurfaceBufferHeight());
+    auto dstRect = SkRect::MakeWH(node.GetRenderProperties().GetBoundsWidth(),
+        node.GetRenderProperties().GetBoundsHeight());
+    RSUniRenderUtil::DrawBufferOnCanvas(buffer, ColorGamut::COLOR_GAMUT_SRGB, *canvas_, srcRect, dstRect);
 }
 
 void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
@@ -291,8 +303,7 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::PorcessSurfaceRenderNodeWith
 {
     if (node.GetSecurityLayer()) {
         RS_LOGD("RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode: \
-            process RSSurfaceRenderNode(id:[%llu]) paused, because surfaceNode is the security layer.",
-            node.GetId());
+            process RSSurfaceRenderNode(id:[%llu]) paused, because surfaceNode is the security layer.", node.GetId());
         return;
     }
     if (node.GetBuffer() == nullptr) {
@@ -338,8 +349,7 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::PorcessSurfaceRenderNodeWith
             param.dstRect = SkRect::MakeXYWH(
                 node.GetRenderProperties().GetBoundsPositionX(), node.GetRenderProperties().GetBoundsPositionY(),
                 node.GetRenderProperties().GetBoundsWidth(), node.GetRenderProperties().GetBoundsHeight());
-            param.matrix.preTranslate(-param.matrix.getTranslateX() * scaleX_,
-                -param.matrix.getTranslateY() * scaleY_);
+            param.matrix.preTranslate(-param.matrix.getTranslateX() * scaleX_, -param.matrix.getTranslateY() * scaleY_);
             AdjustSurfaceTransform(param, surfaceTransform);
             RSDividedRenderUtil::DrawBuffer(*canvas_, param,
                 [this](SkCanvas& canvas, BufferDrawParam& params) -> void {
@@ -374,7 +384,7 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::PorcessSurfaceRenderNodeWith
 
 void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode &node)
 {
-    if (GetHasUniRender()) {
+    if (IsUniRender()) {
         ProcessSurfaceRenderNodeWithUni(node);
     } else {
         PorcessSurfaceRenderNodeWithoutUni(node);

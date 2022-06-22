@@ -193,8 +193,6 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 
     auto transitionProperties = node.GetAnimationManager().GetTransitionProperties();
     RSPropertiesPainter::DrawTransitionProperties(transitionProperties, node.GetRenderProperties(), *canvas_);
-
-    node.SetTotalMatrix(canvas_->getTotalMatrix());
     ProcessBaseRenderNode(node);
 
     if (node.GetConsumer() != nullptr) {
@@ -205,10 +203,10 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
             node.NotifyRTBufferAvailable();
 #ifdef RS_ENABLE_EGLIMAGE
             RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode draw image on canvas");
-            DrawImageOnCanvas(node, canvas_);
+            DrawImageOnCanvas(node);
 #else
             RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode draw buffer on canvas");
-            DrawBufferOnCanvas(node, canvas_);
+            DrawBufferOnCanvas(node);
 #endif // RS_ENABLE_EGLIMAGE
         }
         RS_TRACE_END();
