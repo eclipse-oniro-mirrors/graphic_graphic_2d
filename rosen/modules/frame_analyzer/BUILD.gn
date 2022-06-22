@@ -1,0 +1,51 @@
+# Copyright (c) 2021 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+
+## Build libframe_analyzer.so {{{
+config("libframe_analyzer_config") {
+  visibility = [ ":*" ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-g3",
+  ]
+}
+
+config("libframe_analyzer_public_config") {
+  include_dirs = [ "export" ]
+}
+
+ohos_shared_library("libframe_analyzer") {
+  sources = [
+    "src/frame_collector.cpp",
+    "src/frame_painter.cpp",
+  ]
+
+  configs = [ ":libframe_analyzer_config" ]
+
+  public_configs = [ ":libframe_analyzer_public_config" ]
+
+  deps = [
+    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
+    "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara",
+    "//base/startup/syspara_lite/interfaces/innerkits/native/syspara:syspara_watchagent",
+    "//third_party/flutter/build/skia:ace_skia_ohos",
+  ]
+
+  subsystem_name = "graphic"
+  part_name = "graphic_standard"
+}
+## Build libframe_analyzer.so }}}
