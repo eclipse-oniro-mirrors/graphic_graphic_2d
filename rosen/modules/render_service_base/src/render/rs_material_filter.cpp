@@ -15,7 +15,7 @@
 
 #include "render/rs_material_filter.h"
 
-#include "render/rs_blur_filter.h"
+#include "include/effects/SkBlurImageFilter.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -65,8 +65,8 @@ sk_sp<SkColorFilter> RSMaterialFilter::MaskColorFilter(SkColor maskColor)
 
 sk_sp<SkImageFilter> RSMaterialFilter::CreateMaterialFilter(float radius, float sat, SkColor maskColor)
 {
-    sk_sp<SkImageFilter> blurFilter =
-        std::static_pointer_cast<RSBlurFilter>(RSFilter::CreateBlurFilter(radius, radius))->GetBlurFilter(); // blur
+    sk_sp<SkImageFilter> blurFilter = SkBlurImageFilter::Make(radius, radius, nullptr, nullptr,
+        SkBlurImageFilter::kClamp_TileMode); // blur
     SkColorMatrix cm;
     cm.setSaturation(sat);
     sk_sp<SkColorFilter> satFilter = SkColorFilters::Matrix(cm); // saturation

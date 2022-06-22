@@ -20,8 +20,7 @@ namespace OHOS {
 namespace Rosen {
 RSBlurFilter::RSBlurFilter(float blurRadiusX, float blurRadiusY)
     : RSSkiaFilter(SkBlurImageFilter::Make(blurRadiusX, blurRadiusY, nullptr)), blurRadiusX_(blurRadiusX),
-      blurRadiusY_(blurRadiusY), blurFilter_(
-          SkBlurImageFilter::Make(blurRadiusX, blurRadiusY, nullptr, nullptr, SkBlurImageFilter::kClamp_TileMode))
+      blurRadiusY_(blurRadiusY)
 {
     type_ = FilterType::BLUR;
 }
@@ -36,11 +35,6 @@ float RSBlurFilter::GetBlurRadiusX()
 float RSBlurFilter::GetBlurRadiusY()
 {
     return blurRadiusY_;
-}
-
-sk_sp<SkImageFilter> RSBlurFilter::GetBlurFilter()
-{
-    return blurFilter_;
 }
 
 std::shared_ptr<RSFilter> RSBlurFilter::Add(const std::shared_ptr<RSFilter>& rhs)

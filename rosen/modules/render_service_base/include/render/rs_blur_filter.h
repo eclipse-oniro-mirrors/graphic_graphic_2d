@@ -16,7 +16,6 @@
 #define RENDER_SERVICE_CLIENT_CORE_RENDER_RS_BLUR_FILTER_H
 
 #include "render/rs_skia_filter.h"
-#include "include/effects/SkImageFilters.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -26,7 +25,6 @@ public:
     ~RSBlurFilter() override;
     float GetBlurRadiusX();
     float GetBlurRadiusY();
-    sk_sp<SkImageFilter> GetBlurFilter();
 
     std::shared_ptr<RSFilter> Add(const std::shared_ptr<RSFilter>& rhs) override;
     std::shared_ptr<RSFilter> Sub(const std::shared_ptr<RSFilter>& rhs) override;
@@ -35,7 +33,6 @@ public:
 private:
     float blurRadiusX_;
     float blurRadiusY_;
-    sk_sp<SkImageFilter> blurFilter_;
 };
 } // namespace Rosen
 } // namespace OHOS
