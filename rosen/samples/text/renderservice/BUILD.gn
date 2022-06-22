@@ -13,7 +13,6 @@
 
 import("//build/ohos.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
-import("//third_party/wayland_standard/wayland_protocol.gni")
 
 ohos_executable("rendertest") {
   install_enable = true
