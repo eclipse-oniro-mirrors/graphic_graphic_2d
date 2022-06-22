@@ -117,6 +117,8 @@ public:
     GSError GetMetaData(uint32_t sequence, std::vector<HDRMetaData> &metaData);
     GSError GetMetaDataSet(uint32_t sequence, HDRMetadataKey &key,
                            std::vector<uint8_t> &metaData);
+    GSError SetTunnelHandle(const ExtDataHandle *handle);
+    GSError GetTunnelHandle(ExtDataHandle **handle) const;
 
 private:
     GSError AllocBuffer(sptr<SurfaceBuffer>& buffer, const BufferRequestConfig &config);
@@ -152,6 +154,7 @@ private:
     OnDeleteBufferFunc onBufferDelete_ = nullptr;
     bool isShared_ = false;
     std::condition_variable waitReqCon_;
+    ExtDataHandle *tunnelHandle_ = nullptr;
 };
 }; // namespace OHOS
 

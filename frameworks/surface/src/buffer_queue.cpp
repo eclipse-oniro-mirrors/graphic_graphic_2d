@@ -25,6 +25,7 @@
 #include <display_type.h>
 #include <scoped_bytrace.h>
 
+#include "buffer_utils.h"
 #include "buffer_log.h"
 #include "buffer_manager.h"
 #include "hitrace_meter.h"
@@ -897,6 +898,47 @@ GSError BufferQueue::GetMetaDataSet(uint32_t sequence, HDRMetadataKey &key,
     metaData.clear();
     key = bufferQueueCache_.at(sequence).key;
     metaData = bufferQueueCache_.at(sequence).metaDataSet;
+    return GSERROR_OK;
+}
+
+GSError BufferQueue::SetTunnelHandle(const ExtDataHandle *handle)
+{
+    if (handle == nullptr) {
+        BLOGN_INVALID("handle is nullptr");
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    bool tunnelHandleChange = false;
+    if (tunnelHandle_ == nullptr) {
+        tunnelHandleChange = true;
+    } else {
+        tunnelHandleChange = tunnelHandle_->fd != handle->fd ||
+                             tunnelHandle_->reserveInts != handle->reserveInts;
+        for (uint32_t index = 0; index < handle->reserveInts; index++) {
+            tunnelHandleChange = tunnelHandleChange || tunnelHandle_->reserve[index] != handle->reserve[index];
+        }
+    }
+    if (!tunnelHandleChange) {
+        BLOGNW("same tunnel handle, please check");
+        return GSERROR_NO_ENTRY;
+    }
+    ExtDataHandle *prevHandle = tunnelHandle_;
+    tunnelHandle_ = const_cast<ExtDataHandle *>(handle);
+    FreeExtDataHandle(prevHandle);
+    if (listener_ != nullptr) {
+        ScopedBytrace bufferIPCSend("OnTunnelHandleChange");
+        listener_->OnTunnelHandleChange();
+    } else if (listenerClazz_ != nullptr) {
+        ScopedBytrace bufferIPCSend("OnTunnelHandleChande");
+        listenerClazz_->OnTunnelHandleChange();
+    } else {
+        return GSERROR_NO_CONSUMER;
+    }
+    return GSERROR_OK;
+}
+
+GSError BufferQueue::GetTunnelHandle(ExtDataHandle **handle) const
+{
+    *handle = tunnelHandle_;
     return GSERROR_OK;
 }
 
