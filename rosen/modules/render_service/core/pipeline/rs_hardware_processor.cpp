@@ -19,6 +19,7 @@
 #include <securec.h>
 #include <string>
 
+#include "common/rs_obj_abs_geometry.h"
 #include "common/rs_rect.h"
 #include "common/rs_vector2.h"
 #include "common/rs_vector3.h"
@@ -33,7 +34,8 @@
 #include "pipeline/rs_draw_cmd_list.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_paint_filter_canvas.h"
-#include "pipeline/rs_render_service_util.h"
+#include "pipeline/rs_base_render_util.h"
+#include "pipeline/rs_divided_render_util.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
@@ -276,6 +278,7 @@ void RSHardwareProcessor::ProcessSurface(RSSurfaceRenderNode &node)
         .buffer = node.GetBuffer(),
         .fence = node.GetAcquireFence(),
         .blendType = node.GetBlendType(),
+        .needClient = RSDividedRenderUtil::IsNeedClient(&node),
     };
     if (info.srcRect.w <= 0 || info.srcRect.h <= 0 || info.dstRect.w <= 0 || info.dstRect.h <= 0) {
         return;
@@ -306,7 +309,7 @@ void RSHardwareProcessor::ProcessSurface(RSSurfaceRenderNode &node)
         node.GetBuffer()->GetWidth(), node.GetBuffer()->GetHeight(), node.GetBuffer()->GetSurfaceBufferWidth(),
         node.GetBuffer()->GetSurfaceBufferHeight(), node.GetBuffer().GetRefPtr(),
         node.GetRenderProperties().GetPositionZ(), info.zOrder, info.blendType);
-    RsRenderServiceUtil::ComposeSurface(layer, node.GetConsumer(), layers_, info, &node);
+    RSBaseRenderUtil::ComposeSurface(layer, node.GetConsumer(), layers_, info, &node);
     if (info.buffer->GetSurfaceBufferColorGamut() != static_cast<ColorGamut>(currScreenInfo_.colorGamut)) {
         layer->SetCompositionType(CompositionType::COMPOSITION_CLIENT);
     }
@@ -320,7 +323,7 @@ void RSHardwareProcessor::ProcessSurface(RSDisplayRenderNode& node)
         RS_LOGE("RSHardwareProcessor::ProcessSurface output is nullptr");
         return;
     }
-    if (!RsRenderServiceUtil::ConsumeAndUpdateBuffer(node)) {
+    if (!RSBaseRenderUtil::ConsumeAndUpdateBuffer(node)) {
         RS_LOGE("RSHardwareProcessor::ProcessSurface consume buffer fail");
         return;
     }
@@ -350,6 +353,7 @@ void RSHardwareProcessor::ProcessSurface(RSDisplayRenderNode& node)
         .buffer = node.GetBuffer(),
         .fence = node.GetAcquireFence(),
         .blendType = BLEND_NONE,
+        .needClient = false,
     };
     std::shared_ptr<HdiLayerInfo> layer = HdiLayerInfo::CreateHdiLayerInfo();
     RS_LOGI("RSHardwareProcessor::ProcessSurface displayNode id:%llu dst [%d %d %d %d]"\
@@ -359,7 +363,7 @@ void RSHardwareProcessor::ProcessSurface(RSDisplayRenderNode& node)
         node.GetBuffer()->GetWidth(), node.GetBuffer()->GetHeight(), node.GetBuffer()->GetSurfaceBufferWidth(),
         node.GetBuffer()->GetSurfaceBufferHeight(), node.GetBuffer().GetRefPtr(),
         info.zOrder, info.blendType);
-    RsRenderServiceUtil::ComposeSurface(layer, node.GetConsumer(), layers_, info, &node);
+    RSBaseRenderUtil::ComposeSurface(layer, node.GetConsumer(), layers_, info, &node);
 }
 
 static bool IfUseGPUClient(const struct PrepareCompleteParam& param)
@@ -396,7 +400,7 @@ static bool IfUseGPUClient(const struct PrepareCompleteParam& param)
 static void DrawBufferPostProcess(RSPaintFilterCanvas& canvas, RSSurfaceRenderNode& node, BufferDrawParam& params,
     Vector2f& center)
 {
-    RsRenderServiceUtil::DealAnimation(canvas, node, params, center);
+    RSDividedRenderUtil::DealAnimation(canvas, node, params, center);
     RectF maskBounds(0, 0, params.dstRect.width(), params.dstRect.height());
     RSPropertiesPainter::DrawMask(node.GetRenderProperties(), canvas, RSPropertiesPainter::Rect2SkRect(maskBounds));
 }
@@ -476,7 +480,7 @@ void RSHardwareProcessor::Redraw(
         int saveCount = canvas->getSaveCount();
         SkPaint paint;
         paint.setAlphaf(node.GetGlobalAlpha());
-        auto params = RsRenderServiceUtil::CreateBufferDrawParam(node, currScreenInfo_.rotationMatrix,
+        auto params = RSDividedRenderUtil::CreateBufferDrawParam(node, currScreenInfo_.rotationMatrix,
             rotation_, paint);
         params.targetColorGamut = static_cast<ColorGamut>(currScreenInfo_.colorGamut);
         const auto& clipRect = layerInfo->GetLayerSize();
@@ -485,7 +489,7 @@ void RSHardwareProcessor::Redraw(
             node.GetDstRect().top_ + node.GetDstRect().height_ * 0.5f);
 #ifdef RS_ENABLE_EGLIMAGE
         if (ifUseGPU) {
-            RsRenderServiceUtil::DrawImage(eglImageManager_, renderContext_->GetGrContext(), *canvas, params,
+            RSDividedRenderUtil::DrawImage(eglImageManager_, renderContext_->GetGrContext(), *canvas, params,
                 [this, &node, &center](RSPaintFilterCanvas& canvas, BufferDrawParam& params) -> void {
                     DrawBufferPostProcess(canvas, node, params, center);
             });
@@ -497,14 +501,14 @@ void RSHardwareProcessor::Redraw(
                 RS_LOGE("RSHardwareProcessor::Redraw: fail to register UnMapEglImage callback.");
             }
         } else {
-            RsRenderServiceUtil::DrawBuffer(*canvas, params, [this, &node, &center](RSPaintFilterCanvas& canvas,
+            RSDividedRenderUtil::DrawBuffer(*canvas, params, [this, &node, &center](RSPaintFilterCanvas& canvas,
                 BufferDrawParam& params) -> void {
                     DrawBufferPostProcess(canvas, node, params, center);
             });
         }
         canvas->restoreToCount(saveCount);
 #else
-        RsRenderServiceUtil::DrawBuffer(*canvas, params, [this, &node, &center](RSPaintFilterCanvas& canvas,
+        RSDividedRenderUtil::DrawBuffer(*canvas, params, [this, &node, &center](RSPaintFilterCanvas& canvas,
             BufferDrawParam& params) -> void {
             DrawBufferPostProcess(canvas, node, params, center);
         });

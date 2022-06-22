@@ -19,12 +19,13 @@
 
 #include "command/rs_message_processor.h"
 #include "pipeline/rs_base_render_node.h"
-#include "pipeline/rs_render_service_util.h"
+#include "pipeline/rs_base_render_util.h"
+#include "pipeline/rs_divided_render_util.h"
 #include "pipeline/rs_render_service_visitor.h"
-#include "pipeline/rs_uni_render_visitor.h"
 #include "pipeline/rs_surface_render_node.h"
-#include "platform/common/rs_log.h"
 #include "pipeline/rs_uni_render_judgement.h"
+#include "pipeline/rs_uni_render_visitor.h"
+#include "platform/common/rs_log.h"
 #include "platform/drawing/rs_vsync_client.h"
 #include "rs_trace.h"
 #include "screen_manager/rs_screen_manager.h"
@@ -68,7 +69,7 @@ void RSMainThread::Init()
     rsVSyncDistributor_->AddConnection(conn);
     receiver_ = std::make_shared<VSyncReceiver>(conn);
     receiver_->Init();
-    RsRenderServiceUtil::InitEnableClient();
+    RSDividedRenderUtil::InitEnableClient();
 
 #ifdef RS_ENABLE_GL
     renderContext_ = std::make_shared<RenderContext>();
@@ -155,7 +156,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         if (node->IsInstanceOf<RSSurfaceRenderNode>()) {
             RSSurfaceRenderNode& surfaceNode = *(RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node));
             RSSurfaceHandler& surfaceHandler = static_cast<RSSurfaceHandler&>(surfaceNode);
-            if (RsRenderServiceUtil::ConsumeAndUpdateBuffer(surfaceHandler)) {
+            if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler)) {
                 this->bufferTimestamps_[surfaceNode.GetId()] = static_cast<uint64_t>(surfaceNode.GetTimestamp());
             }
 
@@ -182,7 +183,7 @@ void RSMainThread::ReleaseAllNodesBuffer()
         if (node->IsInstanceOf<RSSurfaceRenderNode>()) {
             RSSurfaceRenderNode& surfaceNode = *(RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node));
             RSSurfaceHandler& surfaceHandler = static_cast<RSSurfaceHandler&>(surfaceNode);
-            (void)RsRenderServiceUtil::ReleaseBuffer(surfaceHandler);
+            (void)RSBaseRenderUtil::ReleaseBuffer(surfaceHandler);
         }
     });
 }
