@@ -17,6 +17,7 @@
 #include <memory>
 #include <unistd.h>
 #include <scoped_bytrace.h>
+#include <fcntl.h>
 #include "event_handler.h"
 #include "graphic_common.h"
 #include "vsync_log.h"
