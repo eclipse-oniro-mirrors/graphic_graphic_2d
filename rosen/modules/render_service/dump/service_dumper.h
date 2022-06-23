@@ -113,7 +113,7 @@ private:
     {
         int status = 0;
         auto start = MicroSecondsSinceEpoch() / MICRO_SECS_PER_MILLI;
-        auto end = start + timeOutMs_;
+        auto end = static_cast<int>(start) + timeOutMs_;
 
         char buf[PIPE_BUF] = {0};
         while (true) {
