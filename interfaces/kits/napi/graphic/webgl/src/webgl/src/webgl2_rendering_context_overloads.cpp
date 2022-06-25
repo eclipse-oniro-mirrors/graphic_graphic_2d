@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -964,7 +964,7 @@ napi_value WebGL2RenderingContextOverloads::Uniform2fv(napi_env env, napi_callba
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniform2fv[i] = (float)ele;
+            uniform2fv[i] = static_cast<float>(ele);
         }
         glUniform2fv(static_cast<GLint>(locationId), static_cast<GLsizei>(length),
                      reinterpret_cast<GLfloat*>(uniform2fv + srcOffset));
@@ -1046,7 +1046,7 @@ napi_value WebGL2RenderingContextOverloads::Uniform3fv(napi_env env, napi_callba
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniform3fv[i] = (float)ele;
+            uniform3fv[i] = static_cast<float>(ele);
         }
         glUniform3fv(static_cast<GLint>(locationId), static_cast<GLsizei>(length),
                      reinterpret_cast<GLfloat*>(uniform3fv + srcOffset));
@@ -1128,7 +1128,7 @@ napi_value WebGL2RenderingContextOverloads::Uniform4fv(napi_env env, napi_callba
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniform4fv[i] = (float)ele;
+            uniform4fv[i] = static_cast<float>(ele);
         }
         glUniform4fv(static_cast<GLint>(locationId), static_cast<GLsizei>(length),
                      reinterpret_cast<GLfloat*>(uniform4fv + srcOffset));
@@ -1193,7 +1193,6 @@ napi_value WebGL2RenderingContextOverloads::Uniform1iv(napi_env env, napi_callba
     tie(succ, isArray) = NVal(env, array).IsArray();
     if (isArray) {
         LOGI("WebGL2 uniform1iv is Array");
-        uint32_t length;
         napi_status lengthStatus = napi_get_array_length(env, array, &length);
         if (lengthStatus != napi_ok) {
             return nullptr;
@@ -1548,7 +1547,7 @@ napi_value WebGL2RenderingContextOverloads::UniformMatrix2fv(napi_env env, napi_
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniformMatrix2fv[i] = (float)ele;
+            uniformMatrix2fv[i] = static_cast<float>(ele);
         }
         glUniformMatrix2fv(static_cast<GLint>(locationId), static_cast<GLsizei>(length),
                            static_cast<GLboolean>(transpose),
@@ -1640,7 +1639,7 @@ napi_value WebGL2RenderingContextOverloads::UniformMatrix3fv(napi_env env, napi_
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniformMatrix3fv[i] = (float)ele;
+            uniformMatrix3fv[i] = static_cast<float>(ele);
         }
         glUniformMatrix3fv(static_cast<GLint>(locationId), static_cast<GLsizei>(length),
                            static_cast<GLboolean>(transpose),
@@ -1732,7 +1731,7 @@ napi_value WebGL2RenderingContextOverloads::UniformMatrix4fv(napi_env env, napi_
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniformMatrix4fv[i] = (float)ele;
+            uniformMatrix4fv[i] = static_cast<float>(ele);
         }
         glUniformMatrix4fv(static_cast<GLint>(locationId), static_cast<GLsizei>(length),
                            static_cast<GLboolean>(transpose),

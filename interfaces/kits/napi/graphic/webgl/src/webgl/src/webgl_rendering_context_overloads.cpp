@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -722,7 +722,7 @@ napi_value WebGLRenderingContextOverloads::Uniform1fv(napi_env env, napi_callbac
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniformfv[i] = (float)ele;
+            uniformfv[i] = static_cast<float>(ele);
         }
         glUniform1fv(static_cast<GLint>(location), static_cast<GLsizei>(count),
             reinterpret_cast<GLfloat *>(uniformfv));
@@ -747,7 +747,7 @@ napi_value WebGLRenderingContextOverloads::Uniform1fv(napi_env env, napi_callbac
     LOGI("WebGL WebGLRenderingContextOverloads::uniform1fv count = %{public}u", count);
     LOGI("WebGL WebGLRenderingContextOverloads::uniform1fv type = %{public}u", type);
     if (type == napi_float32_array) {
-        float *inputFloat32 = (float *)((float *)value - byteOffset);
+        float *inputFloat32 = static_cast<float *>(static_cast<float *>(value) - byteOffset);
         LOGI("WebGL WebGLRenderingContextOverloads::uniform1fv input_float32_array = %{public}u", inputFloat32);
         glUniform1fv(static_cast<GLint>(location), static_cast<GLsizei>(count),
             static_cast<GLfloat*>(inputFloat32));
@@ -799,7 +799,7 @@ napi_value WebGLRenderingContextOverloads::Uniform2fv(napi_env env, napi_callbac
                 return nullptr;
             }
             LOGI("WebGL WebGLRenderingContextOverloads::uniform2fv ele = %{public}f", (float)ele);
-            uniformfv[i] = (float)ele;
+            uniformfv[i] = static_cast<float>(ele);
         }
         glUniform2fv(static_cast<GLint>(location), static_cast<GLsizei>(count),
             reinterpret_cast<GLfloat *>(uniformfv));
@@ -825,7 +825,7 @@ napi_value WebGLRenderingContextOverloads::Uniform2fv(napi_env env, napi_callbac
     LOGI("WebGL WebGLRenderingContextOverloads::uniform2fv count = %{public}u", count);
     LOGI("WebGL WebGLRenderingContextOverloads::uniform2fv type = %{public}u", type);
     if (type == napi_float32_array) {
-        float *inputFloat32 = (float *)((float *)value - byteOffset);
+        float *inputFloat32 = static_cast<float *>(static_cast<float *>(value) - byteOffset);
         LOGI("WebGL WebGLRenderingContextOverloads::uniform2fv input_float32_array = %{public}u", inputFloat32);
         glUniform2fv(static_cast<GLint>(location), static_cast<GLsizei>(count),
             static_cast<GLfloat*>(inputFloat32));
@@ -878,7 +878,7 @@ napi_value WebGLRenderingContextOverloads::Uniform3fv(napi_env env, napi_callbac
                 return nullptr;
             }
             LOGI("WebGL WebGLRenderingContextOverloads::uniform3fv ele = %{public}f", (float)ele);
-            uniformfv[i] = (float)ele;
+            uniformfv[i] = static_cast<float>(ele);
         }
         glUniform3fv(static_cast<GLint>(location), static_cast<GLsizei>(count),
             reinterpret_cast<GLfloat *>(uniformfv));
@@ -902,7 +902,7 @@ napi_value WebGLRenderingContextOverloads::Uniform3fv(napi_env env, napi_callbac
     LOGI("WebGL WebGLRenderingContextOverloads::uniform3fv value = %{public}u", value);
     LOGI("WebGL WebGLRenderingContextOverloads::uniform3fv count = %{public}u", count);
     if (type == napi_float32_array) {
-        float *inputFloat32 = (float *)((float *)value - byteOffset);
+        float *inputFloat32 = static_cast<float *>(static_cast<float *>(value) - byteOffset);
         LOGI("WebGL WebGLRenderingContextOverloads::uniform3fv input_float32_array = %{public}u", inputFloat32);
         glUniform3fv(static_cast<GLint>(location), static_cast<GLsizei>(count),
             static_cast<GLfloat*>(inputFloat32));
@@ -955,7 +955,7 @@ napi_value WebGLRenderingContextOverloads::Uniform4fv(napi_env env, napi_callbac
                 return nullptr;
             }
             LOGI("WebGL WebGLRenderingContextOverloads::uniform4fv ele = %{public}f", (float)ele);
-            uniformfv[i] = (float)ele;
+            uniformfv[i] = static_cast<float>(ele);
         }
         glUniform4fv(static_cast<GLint>(location), static_cast<GLsizei>(count),
             reinterpret_cast<GLfloat *>(uniformfv));
@@ -979,7 +979,7 @@ napi_value WebGLRenderingContextOverloads::Uniform4fv(napi_env env, napi_callbac
     LOGI("WebGL WebGLRenderingContextOverloads::uniform4fv value = %{public}u", value);
     LOGI("WebGL WebGLRenderingContextOverloads::uniform4fv count = %{public}u", count);
     if (type == napi_float32_array) {
-        float *inputFloat32 = (float *)((float *)value - byteOffset);
+        float *inputFloat32 = static_cast<float *>(static_cast<float *>(value) - byteOffset);
         LOGI("WebGL WebGLRenderingContextOverloads::uniform4fv input_float32_array = %{public}u", inputFloat32);
         glUniform4fv(static_cast<GLint>(location), static_cast<GLsizei>(count),
             static_cast<GLfloat*>(inputFloat32));
@@ -1032,7 +1032,7 @@ napi_value WebGLRenderingContextOverloads::Uniform1iv(napi_env env, napi_callbac
                 return nullptr;
             }
             LOGI("WebGL WebGLRenderingContextOverloads::uniform1iv ele = %{public}f", (float)ele);
-            uniformfv[i] = (int)ele;
+            uniformfv[i] = static_cast<int>(ele);
         }
         a = uniformfv;
         glUniform1iv(static_cast<GLint>(location), static_cast<GLsizei>(count),
@@ -1057,7 +1057,7 @@ napi_value WebGLRenderingContextOverloads::Uniform1iv(napi_env env, napi_callbac
     LOGI("WebGL WebGLRenderingContextOverloads::uniform1iv value = %{public}u", value);
     LOGI("WebGL WebGLRenderingContextOverloads::uniform1iv count = %{public}u", count);
     if (type == napi_int32_array) {
-        int *intInt32 = (int *)((int *)value - byteOffset);
+        int *intInt32 = static_cast<int *>(static_cast<int *>(value) - byteOffset);
         LOGI("WebGL WebGLRenderingContextOverloads::uniform1iv int_int32_array = %{public}u", intInt32);
         glUniform1iv(static_cast<GLint>(location), static_cast<GLsizei>(count),
             static_cast<GLint*>(intInt32));
@@ -1110,7 +1110,7 @@ napi_value WebGLRenderingContextOverloads::Uniform2iv(napi_env env, napi_callbac
                 return nullptr;
             }
             LOGI("WebGL WebGLRenderingContextOverloads::uniform2iv ele = %{public}d", ele);
-            uniformfv[i] = (int)ele;
+            uniformfv[i] = static_cast<int>(ele);
         }
         a = uniformfv;
         glUniform2iv(static_cast<GLint>(location), static_cast<GLsizei>(count),
@@ -1135,7 +1135,7 @@ napi_value WebGLRenderingContextOverloads::Uniform2iv(napi_env env, napi_callbac
     LOGI("WebGL WebGLRenderingContextOverloads::uniform2iv value = %{public}u", value);
     LOGI("WebGL WebGLRenderingContextOverloads::uniform2iv count = %{public}u", count);
     if (type == napi_int32_array) {
-        int *intInt32 = (int *)((int *)value - byteOffset);
+        int *intInt32 = static_cast<int *>(static_cast<int *>(value) - byteOffset);
         LOGI("WebGL WebGLRenderingContextOverloads::uniform2iv int_int32_array = %{public}u", intInt32);
         glUniform2iv(static_cast<GLint>(location), static_cast<GLsizei>(count),
             static_cast<GLint*>(intInt32));
@@ -1188,7 +1188,7 @@ napi_value WebGLRenderingContextOverloads::Uniform3iv(napi_env env, napi_callbac
                 return nullptr;
             }
             LOGI("WebGL WebGLRenderingContextOverloads::uniform3iv ele = %{public}f", (float)ele);
-            uniformfv[i] = (int)ele;
+            uniformfv[i] = static_cast<int>(ele);
         }
         a = uniformfv;
         glUniform3iv(static_cast<GLint>(location), static_cast<GLsizei>(count),
@@ -1213,7 +1213,7 @@ napi_value WebGLRenderingContextOverloads::Uniform3iv(napi_env env, napi_callbac
     LOGI("WebGL WebGLRenderingContextOverloads::uniform3iv value = %{public}u", value);
     LOGI("WebGL WebGLRenderingContextOverloads::uniform3iv count = %{public}u", count);
     if (type == napi_int32_array) {
-        int *intInt32 = (int *)((int *)value - byteOffset);
+        int *intInt32 = static_cast<int *>(static_cast<int *>(value) - byteOffset);
         LOGI("WebGL WebGLRenderingContextOverloads::uniform3iv int_int32_array = %{public}u", intInt32);
         glUniform3iv(static_cast<GLint>(location), static_cast<GLsizei>(count),
             static_cast<GLint*>(intInt32));
@@ -1266,7 +1266,7 @@ napi_value WebGLRenderingContextOverloads::Uniform4iv(napi_env env, napi_callbac
                 return nullptr;
             }
             LOGI("WebGL WebGLRenderingContextOverloads::uniform4iv ele = %{public}f", (float)ele);
-            uniformfv[i] = (int)ele;
+            uniformfv[i] = static_cast<int>(ele);
         }
         a = uniformfv;
         glUniform4iv(static_cast<GLint>(location), static_cast<GLsizei>(count),
@@ -1291,7 +1291,7 @@ napi_value WebGLRenderingContextOverloads::Uniform4iv(napi_env env, napi_callbac
     LOGI("WebGL WebGLRenderingContextOverloads::uniform4iv value = %{public}u", value);
     LOGI("WebGL WebGLRenderingContextOverloads::uniform4iv count = %{public}u", count);
     if (type == napi_int32_array) {
-        int *intInt32 = (int *)((int *)value - byteOffset);
+        int *intInt32 = static_cast<int *>(static_cast<int *>(value) - byteOffset);
         LOGI("WebGL WebGLRenderingContextOverloads::uniform4iv int_int32_array = %{public}u", intInt32);
         glUniform4iv(static_cast<GLint>(location), static_cast<GLsizei>(count),
             static_cast<GLint*>(intInt32));
@@ -1351,7 +1351,7 @@ napi_value WebGLRenderingContextOverloads::UniformMatrix2fv(napi_env env, napi_c
                 return nullptr;
             }
             LOGI("WebGL WebGLRenderingContextOverloads::uniformMatrix2fv ele = %{public}f", (float)ele);
-            uniformfv[i] = (float)ele;
+            uniformfv[i] = static_cast<float>(ele);
         }
         a = uniformfv;
         glUniformMatrix2fv(static_cast<GLint>(location), static_cast<GLsizei>(count),
@@ -1376,7 +1376,7 @@ napi_value WebGLRenderingContextOverloads::UniformMatrix2fv(napi_env env, napi_c
     LOGI("WebGL WebGLRenderingContextOverloads::uniformMatrix2fv value = %{public}u", value);
     LOGI("WebGL WebGLRenderingContextOverloads::uniformMatrix2fv count = %{public}u", count);
     if (type == napi_float32_array) {
-        float *inputFloat32 = (float *)((float *)value - byteOffset);
+        float *inputFloat32 = static_cast<float *>(static_cast<float *>(value) - byteOffset);
         LOGI("WebGL WebGLRenderingContextOverloads::uniformMatrix2fv aint32 = %{public}u", inputFloat32);
         glUniformMatrix2fv(static_cast<GLint>(location), static_cast<GLsizei>(count),
             static_cast<GLboolean>(transpose), static_cast<GLfloat*>(inputFloat32));
@@ -1436,7 +1436,7 @@ napi_value WebGLRenderingContextOverloads::UniformMatrix3fv(napi_env env, napi_c
                 return nullptr;
             }
             LOGI("WebGL WebGLRenderingContextOverloads::uniformMatrix3fv ele = %{public}f", (float)ele);
-            uniformfv[i] = (float)ele;
+            uniformfv[i] = static_cast<float>(ele);
         }
         a = uniformfv;
         glUniformMatrix3fv(static_cast<GLint>(location), static_cast<GLsizei>(count),
@@ -1455,7 +1455,7 @@ napi_value WebGLRenderingContextOverloads::UniformMatrix3fv(napi_env env, napi_c
     LOGI("WebGL WebGLRenderingContextOverloads::uniformMatrix3fv value = %{public}u", value);
     LOGI("WebGL WebGLRenderingContextOverloads::uniformMatrix3fv count = %{public}u", count);
     if (type == napi_float32_array) {
-        float *inputFloat32 = (float *)((float *)value - byteOffset);
+        float *inputFloat32 = static_cast<float *>(static_cast<float *>(value) - byteOffset);
         LOGI("WebGL WebGLRenderingContextOverloads::uniformMatrix3fv aint32 = %{public}u", inputFloat32);
         glUniformMatrix3fv(static_cast<GLint>(location), static_cast<GLsizei>(count),
             static_cast<GLboolean>(transpose), static_cast<GLfloat*>(inputFloat32));
@@ -1514,7 +1514,7 @@ napi_value WebGLRenderingContextOverloads::UniformMatrix4fv(napi_env env, napi_c
                 return nullptr;
             }
             LOGI("WebGL WebGLRenderingContextOverloads::glUniformMatrix4fv ele = %{public}f", (float)ele);
-            uniformfv[i] = (float)ele;
+            uniformfv[i] = static_cast<float>(ele);
         }
         a = uniformfv;
         glUniformMatrix4fv(static_cast<GLint>(location), static_cast<GLsizei>(count),
@@ -1533,7 +1533,7 @@ napi_value WebGLRenderingContextOverloads::UniformMatrix4fv(napi_env env, napi_c
     LOGI("WebGL WebGLRenderingContextOverloads::glUniformMatrix4fv value = %{public}u", value);
     LOGI("WebGL WebGLRenderingContextOverloads::glUniformMatrix4fv count = %{public}u", count);
     if (type == napi_float32_array) {
-        float *inputFloat32 = (float *)((float *)value - byteOffset);
+        float *inputFloat32 = static_cast<float *>(static_cast<float *>(value) - byteOffset);
         LOGI("WebGL WebGLRenderingContextOverloads::uniformMatrix4fv aint32 = %{public}u", inputFloat32);
         glUniformMatrix4fv(static_cast<GLint>(location), static_cast<GLsizei>(count),
             static_cast<GLboolean>(transpose), static_cast<GLfloat*>(inputFloat32));
