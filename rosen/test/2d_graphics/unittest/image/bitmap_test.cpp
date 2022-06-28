@@ -38,13 +38,13 @@ void BitmapTest::SetUp() {}
 void BitmapTest::TearDown() {}
 
 /**
- * @tc.name: BitmapCreateAndDestory001
+ * @tc.name: BitmapCreateAndDestroy001
  * @tc.desc:
  * @tc.type: FUNC
  * @tc.require:AR000GGNV3
  * @tc.author:
  */
-HWTEST_F(BitmapTest, BitmapCreateAndDestory001, TestSize.Level1)
+HWTEST_F(BitmapTest, BitmapCreateAndDestroy001, TestSize.Level1)
 {
     // The best way to create Bitmap.
     std::unique_ptr<Bitmap> bitmap = std::make_unique<Bitmap>();

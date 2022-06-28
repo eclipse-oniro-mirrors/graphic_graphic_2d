@@ -44,9 +44,7 @@ RSMainThread::RSMainThread() : mainThreadId_(std::this_thread::get_id())
 {
 }
 
-RSMainThread::~RSMainThread() noexcept
-{
-}
+RSMainThread::~RSMainThread() noexcept = default;
 
 void RSMainThread::Init()
 {
@@ -101,7 +99,7 @@ void RSMainThread::ProcessCommand()
             }
             auto node = nodeMap.GetRenderNode<RSSurfaceRenderNode>(surfaceNodeId);
             std::map<uint64_t, std::vector<std::unique_ptr<RSCommand>>>::iterator effectIter;
-            std::unordered_map<NodeId, uint64_t>::iterator bufferTimestamp = bufferTimestamps_.find(surfaceNodeId);
+            auto bufferTimestamp = bufferTimestamps_.find(surfaceNodeId);
 
             if (!node || !node->IsOnTheTree() || bufferTimestamp == bufferTimestamps_.end()) {
                 // If node has been destructed or is not on the tree or has no valid buffer,
@@ -126,10 +124,9 @@ void RSMainThread::ProcessCommand()
             it++;
         }
     }
-    for (size_t i = 0; i < effectCommand_.size(); i++) {
-        auto rsCommand = std::move(effectCommand_[i]);
-        if (rsCommand) {
-            rsCommand->Process(context_);
+    for (auto& command : effectCommand_) {
+        if (command) {
+            command->Process(context_);
         }
     }
     effectCommand_.clear();
@@ -149,7 +146,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
 
         if (node->IsInstanceOf<RSSurfaceRenderNode>()) {
             RSSurfaceRenderNode& surfaceNode = *(RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node));
-            RSSurfaceHandler& surfaceHandler = static_cast<RSSurfaceHandler&>(surfaceNode);
+            auto& surfaceHandler = static_cast<RSSurfaceHandler&>(surfaceNode);
             if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler)) {
                 this->bufferTimestamps_[surfaceNode.GetId()] = static_cast<uint64_t>(surfaceNode.GetTimestamp());
             }
@@ -176,7 +173,7 @@ void RSMainThread::ReleaseAllNodesBuffer()
 
         if (node->IsInstanceOf<RSSurfaceRenderNode>()) {
             RSSurfaceRenderNode& surfaceNode = *(RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node));
-            RSSurfaceHandler& surfaceHandler = static_cast<RSSurfaceHandler&>(surfaceNode);
+            auto& surfaceHandler = static_cast<RSSurfaceHandler&>(surfaceNode);
             (void)RSBaseRenderUtil::ReleaseBuffer(surfaceHandler);
         }
     });
@@ -241,8 +238,8 @@ void RSMainThread::CalcOcclusion()
     node->CollectSurface(node, curAllSurfaces);
     // 1. Judge whether it is dirty
     // Surface cnt changed or surface DstRectChanged or surface ZorderChanged
-    bool winDirty = lastSurafceCnt_ != curAllSurfaces.size();
-    lastSurafceCnt_ = curAllSurfaces.size();
+    bool winDirty = lastSurfaceCnt_ != curAllSurfaces.size();
+    lastSurfaceCnt_ = curAllSurfaces.size();
     if (!winDirty) {
         for (auto it = curAllSurfaces.rbegin(); it != curAllSurfaces.rend(); ++it) {
             auto surface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
@@ -278,7 +275,7 @@ void RSMainThread::CalcOcclusion()
         info.append("name: " + surface->GetName()) + ", ";
         info.append(subResult.GetRegionInfo());
         RS_LOGD(info.c_str());
-        // Set relult to SurfaceRenderNode and its children
+        // Set result to SurfaceRenderNode and its children
         surface->SetVisibleRegionRecursive(subResult, curVisVec);
         // Current region need to merge current surface for next calculation(ingnore alpha surface)
         if (!RSOcclusionConfig::GetInstance().IsAlphaWindow(surface->GetName())) {
@@ -395,13 +392,13 @@ void RSMainThread::RecvRSTransactionData(std::unique_ptr<RSTransactionData>& rsT
             RS_LOGD("RSMainThread::RecvRSTransactionData timestamp = %llu", timestamp);
             for (int i = 0; i < transactionData->GetCommandCount(); i++) {
                 auto nodeId = nodeIds[i];
-                auto followtype = followTypes[i];
+                auto followType = followTypes[i];
                 std::unique_ptr<RSCommand> command = std::move(commands[i]);
-                if (nodeId == 0 || followtype == FollowType::NONE) {
+                if (nodeId == 0 || followType == FollowType::NONE) {
                     cacheCommand_[0][0].emplace_back(std::move(command));
                 } else {
                     auto node = nodeMap.GetRenderNode<RSBaseRenderNode>(nodeId);
-                    if (node && followtype == FollowType::FOLLOW_TO_PARENT) {
+                    if (node && followType == FollowType::FOLLOW_TO_PARENT) {
                         auto parentNode = node->GetParent().lock();
                         if (parentNode) {
                             nodeId = parentNode->GetId();

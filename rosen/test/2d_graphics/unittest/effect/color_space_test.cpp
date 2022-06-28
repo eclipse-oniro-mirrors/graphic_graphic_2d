@@ -38,13 +38,13 @@ void ColorSpaceTest::SetUp() {}
 void ColorSpaceTest::TearDown() {}
 
 /**
- * @tc.name: CreateAndDestory001
+ * @tc.name: CreateAndDestroy001
  * @tc.desc:
  * @tc.type: FUNC
  * @tc.require: AR000GGNV3
  * @tc.author:
  */
-HWTEST_F(ColorSpaceTest, CreateAndDestory001, TestSize.Level1)
+HWTEST_F(ColorSpaceTest, CreateAndDestroy001, TestSize.Level1)
 {
     auto colorSpace = ColorSpace::CreateSRGB();
     EXPECT_FALSE(colorSpace == nullptr);

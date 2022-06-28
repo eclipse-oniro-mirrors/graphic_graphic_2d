@@ -107,7 +107,7 @@ void RSVirtualScreenProcessor::ProcessSurface(RSSurfaceRenderNode& node)
 
 void RSVirtualScreenProcessor::ProcessDisplaySurface(RSDisplayRenderNode& node)
 {
-    RS_LOGI("RSVirtualScreenProcessor::ProcessDisplaySurface() is not suppoerted.");
+    RS_LOGI("RSVirtualScreenProcessor::ProcessDisplaySurface() is not supported.");
 }
 
 void RSVirtualScreenProcessor::SetBufferTimeStamp()

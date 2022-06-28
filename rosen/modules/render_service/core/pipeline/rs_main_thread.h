@@ -56,7 +56,7 @@ public:
 
 private:
     explicit ScheduledTask(Task&& task) : task_(std::move(task)) {}
-    ~ScheduledTask() {}
+    ~ScheduledTask() override = default;
 
     using Return = std::invoke_result_t<Task>;
     std::packaged_task<Return()> task_;
@@ -146,7 +146,7 @@ private:
     std::condition_variable uniRenderCond_;
     VisibleData lastVisVec_;
     bool doAnimate_ = false;
-    uint32_t lastSurafceCnt_ = 0;
+    uint32_t lastSurfaceCnt_ = 0;
 
     std::shared_ptr<RSRenderEngine> renderEngine_;
 };
