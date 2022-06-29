@@ -64,19 +64,18 @@ void DisplayNodeCommandHelper::SetDisplayMode(RSContext& context, NodeId id, con
     if (auto node = context.GetNodeMap().GetRenderNode<RSDisplayRenderNode>(id)) {
         bool isMirror = config.isMirrored;
         node->SetIsMirrorDisplay(isMirror);
-        auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(node);
         if (isMirror) {
             NodeId mirrorNodeId = config.mirrorNodeId;
-            auto& nodeMap = context.GetMutableNodeMap();
+            auto& nodeMap = context.GetNodeMap();
             auto mirrorSourceNode = nodeMap.GetRenderNode<RSDisplayRenderNode>(mirrorNodeId);
             if (mirrorSourceNode == nullptr) {
                 ROSEN_LOGD("DisplayNodeCommandHelper::SetDisplayMode fail, displayNodeId:[%llu] mirrorNodeId:[%llu]",
                     id, mirrorNodeId);
                 return;
             }
-            displayNode->SetMirrorSource(mirrorSourceNode);
+            node->SetMirrorSource(mirrorSourceNode);
         } else {
-            displayNode->ResetMirrorSource();
+            node->ResetMirrorSource();
         }
     }
 }
