@@ -42,7 +42,8 @@ FrameSaver::FrameSaver()
     }
 
     if (errno == ENOENT) {
-        if (mkdir(saveDirectory, 0777)) {
+        constexpr int directoryPermission = 0777; // drwxrwxrwx
+        if (mkdir(saveDirectory, directoryPermission)) {
             ::OHOS::HiviewDFX::HiLog::Warn(LABEL,
                 "create directory '%{public}s' failed: %{public}s",
                 saveDirectory, strerror(errno));
