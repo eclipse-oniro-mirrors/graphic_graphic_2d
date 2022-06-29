@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -54,23 +54,6 @@ NodeId RSRootRenderNode::GetRSSurfaceNodeId()
     return surfaceNodeId_;
 }
 
-void RSRootRenderNode::AddSurfaceRenderNode(NodeId id)
-{
-    childSurfaceNodeId_.push_back(id);
-}
-
-void RSRootRenderNode::ClearSurfaceNodeInRS()
-{
-    for (auto childId : childSurfaceNodeId_) {
-        std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeRemoveSelf>(childId);
-        auto transactionProxy = RSTransactionProxy::GetInstance();
-        if (transactionProxy != nullptr) {
-            transactionProxy->AddCommandFromRT(command);
-        }
-    }
-    childSurfaceNodeId_.clear();
-}
-
 void RSRootRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)
 {
     if (!visitor) {
@@ -85,22 +68,6 @@ void RSRootRenderNode::Process(const std::shared_ptr<RSNodeVisitor>& visitor)
         return;
     }
     visitor->ProcessRootRenderNode(*this);
-}
-
-bool RSRootRenderNode::forceRaster_ = false;
-
-void RSRootRenderNode::MarkForceRaster(bool flag)
-{
-    forceRaster_ = flag;
-}
-
-bool RSRootRenderNode::NeedForceRaster()
-{
-#ifdef ACE_ENABLE_GL
-    return forceRaster_;
-#else
-    return false;
-#endif
 }
 } // namespace Rosen
 } // namespace OHOS

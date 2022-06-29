@@ -181,6 +181,63 @@ int32_t OH_NativeWindow_NativeObjectUnreference(void *obj);
  */
 int32_t OH_NativeWindow_GetNativeObjectMagic(void *obj);
 
+/**
+ * @brief Sets scalingMode of a native window.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeWindow
+ * @param window Indicates the pointer to a <b>NativeWindow</b> instance.
+ * @param sequence Indicates the senquence to a produce buffer.
+ * @param scalingMode Indicates the enum value to <b>OHScalingMode</b>
+ * @return Returns an error code defined in <b>GSError</b>.
+ * @since 8
+ * @version 1.0
+ */
+int32_t OH_NativeWindow_NativeWindowSetScalingMode(OHNativeWindow *window, uint32_t sequence,
+                                                   OHScalingMode scalingMode);
+
+/**
+ * @brief Sets metaData of a native window.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeWindow
+ * @param window Indicates the pointer to a <b>NativeWindow</b> instance.
+ * @param sequence Indicates the senquence to a produce buffer.
+ * @param size Indicates the size of a <b>OHHDRMetaData</b> vector.
+ * @param metaDate Indicates the pointer to a <b>OHHDRMetaData</b> vector.
+ * @return Returns an error code defined in <b>GSError</b>.
+ * @since 8
+ * @version 1.0
+ */
+int32_t OH_NativeWindow_NativeWindowSetMetaData(OHNativeWindow *window, uint32_t sequence, int32_t size,
+                                                const OHHDRMetaData *metaData);
+
+/**
+ * @brief Sets metaDataSet of a native window.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeWindow
+ * @param window Indicates the pointer to a <b>NativeWindow</b> instance.
+ * @param sequence Indicates the senquence to a produce buffer.
+ * @param key Indicates the enum value to <b>OHHDRMetadataKey</b>
+ * @param size Indicates the size of a uint8_t vector.
+ * @param metaDate Indicates the pointer to a uint8_t vector.
+ * @return Returns an error code defined in <b>GSError</b>.
+ * @since 8
+ * @version 1.0
+ */
+int32_t OH_NativeWindow_NativeWindowSetMetaDataSet(OHNativeWindow *window, uint32_t sequence, OHHDRMetadataKey key,
+                                                   int32_t size, const uint8_t *metaData);
+
+/**
+ * @brief Sets tunnel handle of a native window.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeWindow
+ * @param window Indicates the pointer to a <b>NativeWindow</b> instance.
+ * @param handle Indicates the pointer to a <b>OHExtDataHandle</b>.
+ * @return Returns an error code defined in <b>GSError</b>.
+ * @since 8
+ * @version 1.0
+ */
+int32_t OH_NativeWindow_NativeWindowSetTunnelHandle(OHNativeWindow *window, const OHExtDataHandle *handle);
+
 #ifdef __cplusplus
 }
 #endif

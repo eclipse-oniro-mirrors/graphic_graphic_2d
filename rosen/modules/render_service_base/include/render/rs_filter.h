@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,10 +26,12 @@ class RS_EXPORT RSFilter : public std::enable_shared_from_this<RSFilter> {
 public:
     virtual ~RSFilter();
     static std::shared_ptr<RSFilter> CreateBlurFilter(float blurRadiusX, float blurRadiusY);
+    static std::shared_ptr<RSFilter> CreateMaterialFilter(int style, float dipScale);
 
     enum FilterType {
         NONE = 0,
         BLUR,
+        MATERIAL,
     };
     FilterType GetFilterType() const
     {

@@ -48,6 +48,7 @@ public:
     RosenError RegScreenHotplug(OnScreenHotplugFunc func, void* data);
     RosenError RegPrepareComplete(OnPrepareCompleteFunc func, void* data);
     void Repaint(std::vector<OutputPtr> &outputs);
+    std::map<LayerInfoPtr, sptr<SyncFence>> GetLayersReleaseFence(const OutputPtr& output);
     /* for RS end */
 
 private:
@@ -74,11 +75,11 @@ private:
     void ReorderLayerInfo(std::vector<LayerInfoPtr> &newLayerInfos);
     void SetHdiLayerInfo(uint32_t screenId, uint32_t layerId, LayerPtr &layer);
     void OnPrepareComplete(bool needFlush, OutputPtr &output, std::vector<LayerInfoPtr> &newLayerInfos);
-    void ReleaseLayerBuffer(uint32_t screenId, const std::unordered_map<uint32_t, LayerPtr> &layersMap);
     int32_t FlushScreen(const OutputPtr &output, std::vector<LayerPtr> &compClientLayers);
     int32_t SetScreenClientInfo(const FrameBufferEntry &fbEntry, const OutputPtr &output);
     int32_t UpdateLayerCompType(uint32_t screenId, const std::unordered_map<uint32_t, LayerPtr> &layersMap);
-
+    int32_t PreProcessLayersComp(const OutputPtr &output, const std::unordered_map<uint32_t, LayerPtr> &layersMap,
+                                 bool &needFlush);
     inline void CheckRet(int32_t ret, const char* func);
 
     sptr<VSyncSampler> sampler_ = nullptr;

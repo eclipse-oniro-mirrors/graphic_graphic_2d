@@ -25,6 +25,7 @@
 #include <display_type.h>
 #include <scoped_bytrace.h>
 
+#include "buffer_utils.h"
 #include "buffer_log.h"
 #include "buffer_manager.h"
 #include "hitrace_meter.h"
@@ -162,13 +163,6 @@ GSError BufferQueue::CheckRequestConfig(const BufferRequestConfig &config)
             TransformType::ROTATE_BUTT, config.transform);
         return GSERROR_INVALID_ARGUMENTS;
     }
-
-    if (config.scalingMode < ScalingMode::SCALING_MODE_FREEZE ||
-        config.scalingMode > ScalingMode::SCALING_MODE_NO_SCALE_CROP) {
-        BLOGN_INVALID("config.scalingMode [0, %{public}d], now is %{public}d",
-            ScalingMode::SCALING_MODE_NO_SCALE_CROP, config.scalingMode);
-        return GSERROR_INVALID_ARGUMENTS;
-    }
     return GSERROR_OK;
 }
 
@@ -217,7 +211,7 @@ GSError BufferQueue::RequestBuffer(const BufferRequestConfig &config, sptr<Buffe
         if (ret == GSERROR_OK) {
             return ReuseBuffer(config, bedata, retval);
         } else if (GetUsedSize() >= GetQueueSize()) {
-            BLOGN_FAILURE("all buffer are using, Queue id: %{public}" PRIu64 "", uniqueId_);
+            BLOGNW("all buffer are using, Queue id: %{public}" PRIu64 "", uniqueId_);
             return GSERROR_NO_BUFFER;
         }
     }
@@ -270,7 +264,7 @@ GSError BufferQueue::ReuseBuffer(const BufferRequestConfig &config, sptr<BufferE
     dbs.insert(dbs.end(), deletingList_.begin(), deletingList_.end());
     deletingList_.clear();
 
-    if (needRealloc) {
+    if (needRealloc || isShared_) {
         BLOGND("RequestBuffer Succ realloc Buffer[%{public}d %{public}d] with new config "\
             "qid: %{public}d id: %{public}" PRIu64 "", config.width, config.height, retval.sequence, uniqueId_);
     } else {
@@ -284,7 +278,7 @@ GSError BufferQueue::ReuseBuffer(const BufferRequestConfig &config, sptr<BufferE
     return GSERROR_OK;
 }
 
-GSError BufferQueue::CancelBuffer(int32_t sequence, const sptr<BufferExtraData> &bedata)
+GSError BufferQueue::CancelBuffer(uint32_t sequence, const sptr<BufferExtraData> &bedata)
 {
     ScopedBytrace func(__func__);
     if (isShared_) {
@@ -311,7 +305,7 @@ GSError BufferQueue::CancelBuffer(int32_t sequence, const sptr<BufferExtraData> 
     return GSERROR_OK;
 }
 
-GSError BufferQueue::FlushBuffer(int32_t sequence, const sptr<BufferExtraData> &bedata,
+GSError BufferQueue::FlushBuffer(uint32_t sequence, const sptr<BufferExtraData> &bedata,
     const sptr<SyncFence>& fence, const BufferFlushConfig &config)
 {
     ScopedBytrace func(__func__);
@@ -363,7 +357,7 @@ GSError BufferQueue::FlushBuffer(int32_t sequence, const sptr<BufferExtraData> &
     return sret;
 }
 
-void BufferQueue::DumpToFile(int32_t sequence)
+void BufferQueue::DumpToFile(uint32_t sequence)
 {
     if (access("/data/bq_dump", F_OK) == -1) {
         return;
@@ -388,7 +382,7 @@ void BufferQueue::DumpToFile(int32_t sequence)
     rawDataFile.close();
 }
 
-GSError BufferQueue::DoFlushBuffer(int32_t sequence, const sptr<BufferExtraData> &bedata,
+GSError BufferQueue::DoFlushBuffer(uint32_t sequence, const sptr<BufferExtraData> &bedata,
     const sptr<SyncFence>& fence, const BufferFlushConfig &config)
 {
     ScopedBytrace func(__func__);
@@ -437,7 +431,7 @@ GSError BufferQueue::AcquireBuffer(sptr<SurfaceBuffer> &buffer,
     std::lock_guard<std::mutex> lockGuard(mutex_);
     GSError ret = PopFromDirtyList(buffer);
     if (ret == GSERROR_OK) {
-        int32_t sequence = buffer->GetSeqNum();
+        uint32_t sequence = buffer->GetSeqNum();
         if (isShared_ == false && bufferQueueCache_[sequence].state != BUFFER_STATE_FLUSHED) {
             BLOGNW("Warning [%{public}d], Reason: state is not BUFFER_STATE_FLUSHED", sequence);
         }
@@ -465,7 +459,7 @@ GSError BufferQueue::ReleaseBuffer(sptr<SurfaceBuffer> &buffer, const sptr<SyncF
         return GSERROR_INVALID_ARGUMENTS;
     }
 
-    int32_t sequence = buffer->GetSeqNum();
+    uint32_t sequence = buffer->GetSeqNum();
     ScopedBytrace bufferName(std::string(__func__) + "," + name_ + ":" + std::to_string(sequence));
     {
         std::lock_guard<std::mutex> lockGuard(mutex_);
@@ -513,7 +507,7 @@ GSError BufferQueue::AllocBuffer(sptr<SurfaceBuffer> &buffer,
 {
     ScopedBytrace func(__func__);
     sptr<SurfaceBuffer> bufferImpl = new SurfaceBufferImpl();
-    int32_t sequence = bufferImpl->GetSeqNum();
+    uint32_t sequence = bufferImpl->GetSeqNum();
 
     GSError ret = bufferImpl->Alloc(config);
     if (ret != GSERROR_OK) {
@@ -540,7 +534,7 @@ GSError BufferQueue::AllocBuffer(sptr<SurfaceBuffer> &buffer,
     return ret;
 }
 
-void BufferQueue::DeleteBufferInCache(int32_t sequence)
+void BufferQueue::DeleteBufferInCache(uint32_t sequence)
 {
     auto it = bufferQueueCache_.find(sequence);
     if (it != bufferQueueCache_.end()) {
@@ -622,7 +616,7 @@ GSError BufferQueue::AttachBuffer(sptr<SurfaceBuffer> &buffer)
         }
     };
 
-    int32_t sequence = buffer->GetSeqNum();
+    uint32_t sequence = buffer->GetSeqNum();
     int32_t usedSize = static_cast<int32_t>(GetUsedSize());
     int32_t queueSize = static_cast<int32_t>(GetQueueSize());
     if (usedSize >= queueSize) {
@@ -654,7 +648,7 @@ GSError BufferQueue::DetachBuffer(sptr<SurfaceBuffer> &buffer)
     }
 
     std::lock_guard<std::mutex> lockGuard(mutex_);
-    int32_t sequence = buffer->GetSeqNum();
+    uint32_t sequence = buffer->GetSeqNum();
     if (bufferQueueCache_.find(sequence) == bufferQueueCache_.end()) {
         BLOGN_FAILURE_ID(sequence, "not find in cache");
         return GSERROR_NO_ENTRY;
@@ -693,7 +687,14 @@ GSError BufferQueue::SetQueueSize(uint32_t queueSize)
     }
 
     DeleteBuffers(queueSize_ - queueSize);
-    queueSize_ = queueSize;
+
+    // if increase the queue size, try to wakeup the blocked thread
+    if (queueSize > queueSize_) {
+        queueSize_ = queueSize;
+        waitReqCon_.notify_all();
+    } else {
+        queueSize_ = queueSize;
+    }
 
     BLOGN_SUCCESS("queue size: %{public}d, Queue id: %{public}" PRIu64 "", queueSize_, uniqueId_);
     return GSERROR_OK;
@@ -818,6 +819,134 @@ GSError BufferQueue::IsSupportedAlloc(const std::vector<VerifyAllocInfo> &infos,
         BLOGN_FAILURE_API(IsSupportedAlloc, ret);
     }
     return ret;
+}
+
+GSError BufferQueue::SetScalingMode(uint32_t sequence, ScalingMode scalingMode)
+{
+    std::lock_guard<std::mutex> lockGuard(mutex_);
+    if (bufferQueueCache_.find(sequence) == bufferQueueCache_.end()) {
+        BLOGN_FAILURE_ID(sequence, "not find in cache");
+        return GSERROR_NO_ENTRY;
+    }
+    bufferQueueCache_[sequence].scalingMode = scalingMode;
+    return GSERROR_OK;
+}
+
+GSError BufferQueue::GetScalingMode(uint32_t sequence, ScalingMode &scalingMode)
+{
+    std::lock_guard<std::mutex> lockGuard(mutex_);
+    if (bufferQueueCache_.find(sequence) == bufferQueueCache_.end()) {
+        BLOGN_FAILURE_ID(sequence, "not find in cache");
+        return GSERROR_NO_ENTRY;
+    }
+    scalingMode = bufferQueueCache_.at(sequence).scalingMode;
+    return GSERROR_OK;
+}
+
+GSError BufferQueue::SetMetaData(uint32_t sequence, const std::vector<HDRMetaData> &metaData)
+{
+    std::lock_guard<std::mutex> lockGuard(mutex_);
+    if (metaData.size() == 0) {
+        BLOGN_INVALID("metaData size is 0");
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    if (bufferQueueCache_.find(sequence) == bufferQueueCache_.end()) {
+        BLOGN_FAILURE_ID(sequence, "not find in cache");
+        return GSERROR_NO_ENTRY;
+    }
+    bufferQueueCache_[sequence].metaData.clear();
+    bufferQueueCache_[sequence].metaData = metaData;
+    return GSERROR_OK;
+}
+
+GSError BufferQueue::SetMetaDataSet(uint32_t sequence, HDRMetadataKey key,
+                                    const std::vector<uint8_t> &metaData)
+{
+    std::lock_guard<std::mutex> lockGuard(mutex_);
+    if (key < HDRMetadataKey::MATAKEY_RED_PRIMARY_X || key > HDRMetadataKey::MATAKEY_HDR_VIVID) {
+        BLOGN_INVALID("key [%{public}d, %{public}d), now is %{public}d",
+            HDRMetadataKey::MATAKEY_RED_PRIMARY_X, HDRMetadataKey::MATAKEY_HDR_VIVID, key);
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    if (metaData.size() == 0) {
+        BLOGN_INVALID("metaData size is 0");
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    if (bufferQueueCache_.find(sequence) == bufferQueueCache_.end()) {
+        BLOGN_FAILURE_ID(sequence, "not find in cache");
+        return GSERROR_NO_ENTRY;
+    }
+    bufferQueueCache_[sequence].metaDataSet.clear();
+    bufferQueueCache_[sequence].key = key;
+    bufferQueueCache_[sequence].metaDataSet = metaData;
+    return GSERROR_OK;
+}
+
+GSError BufferQueue::GetMetaData(uint32_t sequence, std::vector<HDRMetaData> &metaData)
+{
+    std::lock_guard<std::mutex> lockGuard(mutex_);
+    if (bufferQueueCache_.find(sequence) == bufferQueueCache_.end()) {
+        BLOGN_FAILURE_ID(sequence, "not find in cache");
+        return GSERROR_NO_ENTRY;
+    }
+    metaData.clear();
+    metaData = bufferQueueCache_.at(sequence).metaData;
+    return GSERROR_OK;
+}
+
+GSError BufferQueue::GetMetaDataSet(uint32_t sequence, HDRMetadataKey &key,
+                                    std::vector<uint8_t> &metaData)
+{
+    std::lock_guard<std::mutex> lockGuard(mutex_);
+    if (bufferQueueCache_.find(sequence) == bufferQueueCache_.end()) {
+        BLOGN_FAILURE_ID(sequence, "not find in cache");
+        return GSERROR_NO_ENTRY;
+    }
+    metaData.clear();
+    key = bufferQueueCache_.at(sequence).key;
+    metaData = bufferQueueCache_.at(sequence).metaDataSet;
+    return GSERROR_OK;
+}
+
+GSError BufferQueue::SetTunnelHandle(const ExtDataHandle *handle)
+{
+    if (handle == nullptr) {
+        BLOGN_INVALID("handle is nullptr");
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    bool tunnelHandleChange = false;
+    if (tunnelHandle_ == nullptr) {
+        tunnelHandleChange = true;
+    } else {
+        tunnelHandleChange = tunnelHandle_->fd != handle->fd ||
+                             tunnelHandle_->reserveInts != handle->reserveInts;
+        for (uint32_t index = 0; index < handle->reserveInts; index++) {
+            tunnelHandleChange = tunnelHandleChange || tunnelHandle_->reserve[index] != handle->reserve[index];
+        }
+    }
+    if (!tunnelHandleChange) {
+        BLOGNW("same tunnel handle, please check");
+        return GSERROR_NO_ENTRY;
+    }
+    ExtDataHandle *prevHandle = tunnelHandle_;
+    tunnelHandle_ = const_cast<ExtDataHandle *>(handle);
+    FreeExtDataHandle(prevHandle);
+    if (listener_ != nullptr) {
+        ScopedBytrace bufferIPCSend("OnTunnelHandleChange");
+        listener_->OnTunnelHandleChange();
+    } else if (listenerClazz_ != nullptr) {
+        ScopedBytrace bufferIPCSend("OnTunnelHandleChande");
+        listenerClazz_->OnTunnelHandleChange();
+    } else {
+        return GSERROR_NO_CONSUMER;
+    }
+    return GSERROR_OK;
+}
+
+GSError BufferQueue::GetTunnelHandle(ExtDataHandle **handle) const
+{
+    *handle = tunnelHandle_;
+    return GSERROR_OK;
 }
 
 void BufferQueue::DumpCache(std::string &result)

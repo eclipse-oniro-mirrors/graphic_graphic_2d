@@ -83,11 +83,11 @@ GSError BufferClientProducer::RequestBuffer(const BufferRequestConfig &config, s
     return GSERROR_OK;
 }
 
-GSError BufferClientProducer::CancelBuffer(int32_t sequence, const sptr<BufferExtraData> &bedata)
+GSError BufferClientProducer::CancelBuffer(uint32_t sequence, const sptr<BufferExtraData> &bedata)
 {
     DEFINE_MESSAGE_VARIABLES(arguments, reply, option, BLOGE);
 
-    arguments.WriteInt32(sequence);
+    arguments.WriteUint32(sequence);
     bedata->WriteToParcel(arguments);
 
     SEND_REQUEST_WITH_SEQ(BUFFER_PRODUCER_CANCEL_BUFFER, arguments, reply, option, sequence);
@@ -96,12 +96,12 @@ GSError BufferClientProducer::CancelBuffer(int32_t sequence, const sptr<BufferEx
     return GSERROR_OK;
 }
 
-GSError BufferClientProducer::FlushBuffer(int32_t sequence, const sptr<BufferExtraData> &bedata,
+GSError BufferClientProducer::FlushBuffer(uint32_t sequence, const sptr<BufferExtraData> &bedata,
                                           const sptr<SyncFence>& fence, BufferFlushConfig &config)
 {
     DEFINE_MESSAGE_VARIABLES(arguments, reply, option, BLOGE);
 
-    arguments.WriteInt32(sequence);
+    arguments.WriteUint32(sequence);
     bedata->WriteToParcel(arguments);
     fence->WriteToMessageParcel(arguments);
     WriteFlushConfig(arguments, config);
@@ -310,14 +310,78 @@ GSError BufferClientProducer::IsSupportedAlloc(const std::vector<VerifyAllocInfo
 
 GSError BufferClientProducer::Disconnect()
 {
+    MessageOption option(MessageOption::TF_ASYNC);
+    MessageParcel arguments;
+    MessageParcel reply;
+    if (!arguments.WriteInterfaceToken(GetDescriptor())) {
+        BLOGN_FAILURE("write interface token failed");
+    }
+
+    int32_t ret = Remote()->SendRequest(BUFFER_PRODUCER_DISCONNECT, arguments, reply, option);
+    if (ret != ERR_NONE) {
+        BLOGN_FAILURE("SendRequest return %{public}d", ret);
+        return GSERROR_BINDER;
+    }
+    return GSERROR_OK;
+}
+
+GSError BufferClientProducer::SetScalingMode(uint32_t sequence, ScalingMode scalingMode)
+{
     DEFINE_MESSAGE_VARIABLES(arguments, reply, option, BLOGE);
-    SEND_REQUEST(BUFFER_PRODUCER_DISCONNECT, arguments, reply, option);
+    arguments.WriteUint32(sequence);
+    arguments.WriteInt32(static_cast<int32_t>(scalingMode));
+    SEND_REQUEST(BUFFER_PRODUCER_SET_SCALING_MODE, arguments, reply, option);
     int32_t ret = reply.ReadInt32();
     if (ret != GSERROR_OK) {
         BLOGN_FAILURE("Remote return %{public}d", ret);
         return (GSError)ret;
     }
 
+    return GSERROR_OK;
+}
+
+GSError BufferClientProducer::SetMetaData(uint32_t sequence, const std::vector<HDRMetaData> &metaData)
+{
+    DEFINE_MESSAGE_VARIABLES(arguments, reply, option, BLOGE);
+    arguments.WriteUint32(sequence);
+    WriteHDRMetaData(arguments, metaData);
+    SEND_REQUEST(BUFFER_PRODUCER_SET_METADATA, arguments, reply, option);
+    int32_t ret = reply.ReadInt32();
+    if (ret != GSERROR_OK) {
+        BLOGN_FAILURE("Remote return %{public}d", ret);
+        return (GSError)ret;
+    }
+
+    return GSERROR_OK;
+}
+
+GSError BufferClientProducer::SetMetaDataSet(uint32_t sequence, HDRMetadataKey key,
+                                             const std::vector<uint8_t> &metaData)
+{
+    DEFINE_MESSAGE_VARIABLES(arguments, reply, option, BLOGE);
+    arguments.WriteUint32(sequence);
+    arguments.WriteUint32(static_cast<uint32_t>(key));
+    WriteHDRMetaDataSet(arguments, metaData);
+    SEND_REQUEST(BUFFER_PRODUCER_SET_METADATASET, arguments, reply, option);
+    int32_t ret = reply.ReadInt32();
+    if (ret != GSERROR_OK) {
+        BLOGN_FAILURE("Remote return %{public}d", ret);
+        return (GSError)ret;
+    }
+
+    return GSERROR_OK;
+}
+
+GSError BufferClientProducer::SetTunnelHandle(const ExtDataHandle *handle)
+{
+    DEFINE_MESSAGE_VARIABLES(arguments, reply, option, BLOGE);
+    WriteExtDataHandle(arguments, handle);
+    SEND_REQUEST(BUFFER_PRODUCER_SET_TUNNEL_HANDLE, arguments, reply, option);
+    int32_t ret = reply.ReadInt32();
+    if (ret != GSERROR_OK) {
+        BLOGN_FAILURE("Remote return %{public}d", ret);
+        return (GSError)ret;
+    }
     return GSERROR_OK;
 }
 }; // namespace OHOS

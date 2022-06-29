@@ -17,31 +17,30 @@ import("graphic_config.gni")
 
 group("default") {
   public_deps = [
-    ":default.scss",
     ":graphic.rc",
-    "frameworks/animation_server:animation_server",
-    "frameworks/animation_server:cursor.raw",
-    "frameworks/bootanimation:bootanimation",
-    "frameworks/bootanimation:bootanimation_pics",
-    "frameworks/bootanimation:bootanimation_sounds",
     "frameworks/dumper:gdumper",
     "frameworks/dumper:gdumper.ini",
     "frameworks/dumper:graphic_dumper_server",
     "frameworks/vsync:vsync_server",
-    "frameworks/wmserver:screen-info-test",
-    "frameworks/wmserver:wmserver",
-    "frameworks/wmservice:wmservice_test",
   ]
+
+  if (graphic_standard_feature_bootanimation_enable) {
+    public_deps += [ "frameworks/bootanimation:bootanimation" ]
+    public_deps += [ "frameworks/bootanimation:bootanimation_pics" ]
+    public_deps += [ "frameworks/bootanimation:bootanimation_sounds" ]
+  }
 }
 
 group("graphic_standard_test") {
   testonly = true
 
   public_deps = [
+    "frameworks/opengl_wrapper/test:test",
     "frameworks/surface/test:test",
-    "frameworks/wmtest:wmtest",
     "rosen/modules/composer:test",
     "rosen/modules/effect/test/unittest:test",
+    "rosen/test/frame_analyzer:test",
+    "rosen/test/render_service:unittest",
     "utils/sync_fence:test",
   ]
 
@@ -60,33 +59,12 @@ ohos_prebuilt_etc("graphic.rc") {
 
 ## Install graphic.rc to /system/etc/init/graphic.rc }}}
 
-## Install default.scss to /system/etc/wmlayout.d/default.scss {{{
-wmlayout_scss("default.scss") {
-  scss = "default.scss"
-  part_name = "graphic_standard"
-  subsystem_name = "graphic"
-}
-
-## Install default.scss to /system/etc/wmlayout.d/default.scss }}}
-
 group("libsurface") {
   public_deps = [ "frameworks/surface:surface" ]
 }
 
 group("libvsync_client") {
   public_deps = [ "frameworks/vsync:libvsync_client" ]
-}
-
-group("libwms_client") {
-  public_deps = [ "frameworks/wm:wms_client" ]
-}
-
-group("libwmclient") {
-  public_deps = [ "frameworks/wm:libwmclient" ]
-}
-
-group("libwmservice") {
-  public_deps = [ "frameworks/wmservice:libwmservice" ]
 }
 
 group("libfence") {

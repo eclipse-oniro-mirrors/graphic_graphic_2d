@@ -33,13 +33,13 @@ public:
     BufferClientProducer(const sptr<IRemoteObject>& impl);
     virtual ~BufferClientProducer();
 
-    virtual GSError RequestBuffer(const BufferRequestConfig &config, sptr<BufferExtraData> &bedata,
-                                       RequestBufferReturnValue &retval) override;
+    GSError RequestBuffer(const BufferRequestConfig &config, sptr<BufferExtraData> &bedata,
+                          RequestBufferReturnValue &retval) override;
 
-    GSError CancelBuffer(int32_t sequence, const sptr<BufferExtraData> &bedata) override;
+    GSError CancelBuffer(uint32_t sequence, const sptr<BufferExtraData> &bedata) override;
 
-    GSError FlushBuffer(int32_t sequence, const sptr<BufferExtraData> &bedata,
-                             const sptr<SyncFence>& fence, BufferFlushConfig &config) override;
+    GSError FlushBuffer(uint32_t sequence, const sptr<BufferExtraData> &bedata,
+                        const sptr<SyncFence>& fence, BufferFlushConfig &config) override;
 
     uint32_t GetQueueSize() override;
     GSError SetQueueSize(uint32_t queueSize) override;
@@ -53,15 +53,21 @@ public:
     uint32_t GetDefaultUsage() override;
     GSError SetTransform(TransformType transform) override;
 
-    virtual GSError AttachBuffer(sptr<SurfaceBuffer>& buffer) override;
-    virtual GSError DetachBuffer(sptr<SurfaceBuffer>& buffer) override;
-    virtual GSError RegisterReleaseListener(OnReleaseFunc func) override;
+    GSError AttachBuffer(sptr<SurfaceBuffer>& buffer) override;
+    GSError DetachBuffer(sptr<SurfaceBuffer>& buffer) override;
+    GSError RegisterReleaseListener(OnReleaseFunc func) override;
 
     GSError IsSupportedAlloc(const std::vector<VerifyAllocInfo> &infos, std::vector<bool> &supporteds) override;
 
     // Call carefully. This interface will empty all caches of the current process
     GSError CleanCache() override;
     GSError Disconnect() override;
+
+    GSError SetScalingMode(uint32_t sequence, ScalingMode scalingMode) override;
+    GSError SetMetaData(uint32_t sequence, const std::vector<HDRMetaData> &metaData) override;
+    GSError SetMetaDataSet(uint32_t sequence, HDRMetadataKey key,
+                           const std::vector<uint8_t> &metaData) override;
+    GSError SetTunnelHandle(const ExtDataHandle *handle) override;
 
 private:
     static inline BrokerDelegator<BufferClientProducer> delegator_;

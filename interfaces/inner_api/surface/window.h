@@ -68,9 +68,43 @@ enum NativeWindowOperation {
     GET_COLOR_GAMUT,        // ([out int32_t *colorGamut])
     SET_TRANSFORM,          // ([in] int32_t transform)
     GET_TRANSFORM,          // ([out] int32_t *transform)
-    SET_SCALING_MODE,       // ([in] int32_t scalingMode)
-    GET_SCALING_MODE,       // ([out] int32_t *scalingMode)
+    SET_UI_TIMESTAMP,       // ([in] uint64_t uiTimestamp)
 };
+
+typedef enum {
+    OH_SCALING_MODE_FREEZE = 0,
+    OH_SCALING_MODE_SCALE_TO_WINDOW,
+    OH_SCALING_MODE_SCALE_CROP,
+    OH_SCALING_MODE_NO_SCALE_CROP,
+} OHScalingMode;
+
+typedef enum {
+    OH_MATAKEY_RED_PRIMARY_X = 0,
+    OH_MATAKEY_RED_PRIMARY_Y = 1,
+    OH_MATAKEY_GREEN_PRIMARY_X = 2,
+    OH_MATAKEY_GREEN_PRIMARY_Y = 3,
+    OH_MATAKEY_BLUE_PRIMARY_X = 4,
+    OH_MATAKEY_BLUE_PRIMARY_Y = 5,
+    OH_MATAKEY_WHITE_PRIMARY_X = 6,
+    OH_MATAKEY_WHITE_PRIMARY_Y = 7,
+    OH_MATAKEY_MAX_LUMINANCE = 8,
+    OH_MATAKEY_MIN_LUMINANCE = 9,
+    OH_MATAKEY_MAX_CONTENT_LIGHT_LEVEL = 10,
+    OH_MATAKEY_MAX_FRAME_AVERAGE_LIGHT_LEVEL = 11,
+    OH_MATAKEY_HDR10_PLUS = 12,
+    OH_MATAKEY_HDR_VIVID = 13,
+} OHHDRMetadataKey;
+
+typedef struct {
+    OHHDRMetadataKey key;
+    float value;
+} OHHDRMetaData;
+
+typedef struct {
+    int32_t fd;
+    uint32_t reserveInts;
+    int32_t reserve[0];
+} OHExtDataHandle;
 
 // pSurface type is OHOS::sptr<OHOS::Surface>*
 OHNativeWindow* CreateNativeWindowFromSurface(void* pSurface);
@@ -95,6 +129,13 @@ BufferHandle *GetBufferHandleFromNative(OHNativeWindowBuffer *buffer);
 int32_t NativeObjectReference(void *obj);
 int32_t NativeObjectUnreference(void *obj);
 int32_t GetNativeObjectMagic(void *obj);
+
+int32_t NativeWindowSetScalingMode(OHNativeWindow *window, uint32_t sequence, OHScalingMode scalingMode);
+int32_t NativeWindowSetMetaData(OHNativeWindow *window, uint32_t sequence, int32_t size,
+                                const OHHDRMetaData *metaData);
+int32_t NativeWindowSetMetaDataSet(OHNativeWindow *window, uint32_t sequence, OHHDRMetadataKey key,
+                                   int32_t size, const uint8_t *metaData);
+int32_t NativeWindowSetTunnelHandle(OHNativeWindow *window, const OHExtDataHandle *handle);
 
 #ifdef __cplusplus
 }

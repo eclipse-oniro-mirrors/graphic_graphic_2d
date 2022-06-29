@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,40 +36,10 @@ void RSRenderServiceListener::OnBufferAvailable()
         return;
     }
     RS_LOGI("RsDebug RSRenderServiceListener::OnBufferAvailable node id:%llu", node->GetId());
-
-    if (!node->IsOnTheTree() || !node->GetRenderProperties().GetVisible()) {
-        RSMainThread::Instance()->PostTask([node]() {
-            RS_LOGI("RsDebug RSRenderServiceListener::OnBufferAvailable node id:%llu:"\
-                "IsOnTheTree = %s, IsVisible = %s",
-                node->GetId(), node->IsOnTheTree() ? "true" : "false",
-                node->GetRenderProperties().GetVisible() ? "true" : "false");
-            auto& surfaceConsumer = node->GetConsumer();
-            if (surfaceConsumer == nullptr) {
-                RS_LOGE("RsDebug RSRenderServiceListener::OnBufferAvailable: consumer is null!");
-                return;
-            }
-            sptr<SurfaceBuffer> buffer;
-            sptr<SyncFence> acquireFence = SyncFence::INVALID_FENCE;
-            int64_t timestamp = 0;
-            Rect damage;
-            auto ret = surfaceConsumer->AcquireBuffer(buffer, acquireFence, timestamp, damage);
-            if (buffer == nullptr || ret != SURFACE_ERROR_OK) {
-                RS_LOGE("RsDebug RSRenderServiceListener::OnBufferAvailable: AcquireBuffer failed!");
-                return;
-            }
-            if (node->GetBuffer() != nullptr && node->GetBuffer() != buffer) {
-                (void)surfaceConsumer->ReleaseBuffer(node->GetBuffer(), SyncFence::INVALID_FENCE);
-            }
-            node->SetBuffer(buffer);
-            node->SetFence(acquireFence);
-        });
-    } else {
-        node->IncreaseAvailableBuffer();
-    }
-
+    node->IncreaseAvailableBuffer();
     if (!node->IsNotifyUIBufferAvailable()) {
         // Only ipc for one time.
-        RS_LOGI("RsDebug RSRenderServiceListener::OnBufferAvailable id = %llu "\
+        RS_LOGD("RsDebug RSRenderServiceListener::OnBufferAvailable id = %llu "\
                 "Notify UI buffer available", node->GetId());
         node->NotifyUIBufferAvailable();
     }

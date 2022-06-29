@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -97,6 +97,7 @@ public:
         const SkRect*, const SkPaint*) override;
     void onDrawShadowRec(const SkPath&, const SkDrawShadowRec&) override;
 
+    void ClipOutsetRect(float dx, float dy);
     void DrawAdaptiveRRect(float radius, const SkPaint& paint);
     void ClipAdaptiveRRect(float radius);
     void DrawImageWithParm(const sk_sp<SkImage>, int, int, float, const SkPaint& paint);

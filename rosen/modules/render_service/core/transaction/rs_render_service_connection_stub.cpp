@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,10 +25,10 @@ namespace Rosen {
 int RSRenderServiceConnectionStub::OnRemoteRequest(
     uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
 {
-    RS_ASYNC_TRACE_END("RSProxySendRequest", data.GetDataSize());
     int ret = ERR_NONE;
     switch (code) {
         case COMMIT_TRANSACTION: {
+            RS_ASYNC_TRACE_END("RSProxySendRequest", data.GetDataSize());
             auto token = data.ReadInterfaceToken();
 
             RS_TRACE_BEGIN("UnMarsh RSTransactionData: data size:" + std::to_string(data.GetDataSize()));
@@ -37,6 +37,18 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
 
             std::unique_ptr<RSTransactionData> transData(transactionData);
             CommitTransaction(transData);
+            break;
+        }
+        case GET_UNI_RENDER_TYPE: {
+            auto packageName = data.ReadString();
+            reply.WriteBool(InitUniRenderEnabled(packageName));
+            break;
+        }
+        case CREATE_NODE: {
+            auto nodeId = data.ReadUint64();
+            auto surfaceName = data.ReadString();
+            RSSurfaceRenderNodeConfig config = {.id = nodeId, .name = surfaceName};
+            reply.WriteBool(CreateNode(config));
             break;
         }
         case CREATE_NODE_AND_SURFACE: {
@@ -66,7 +78,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             }
             std::vector<ScreenId> ids = GetAllScreenIds();
             reply.WriteUint32(ids.size());
-            for (int32_t i = 0; i < ids.size(); i++) {
+            for (uint32_t i = 0; i < ids.size(); i++) {
                 reply.WriteUint64(ids[i]);
             }
             break;
@@ -192,15 +204,15 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             TakeSurfaceCapture(id, cb, scaleX, scaleY);
             break;
         }
-        case REGISTER_APPLICATION_RENDER_THREAD: {
+        case REGISTER_APPLICATION_AGENT: {
             uint32_t pid = data.ReadUint32();
             auto remoteObject = data.ReadRemoteObject();
             if (remoteObject == nullptr) {
                 ret = ERR_NULL_OBJECT;
                 break;
             }
-            sptr<IApplicationRenderThread> app = iface_cast<IApplicationRenderThread>(remoteObject);
-            RegisterApplicationRenderThread(pid, app);
+            sptr<IApplicationAgent> app = iface_cast<IApplicationAgent>(remoteObject);
+            RegisterApplicationAgent(pid, app);
             break;
         }
         case GET_VIRTUAL_SCREEN_RESOLUTION: {
@@ -474,6 +486,40 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             reply.WriteUint32(type);
+            break;
+        }
+        case REGISTER_OCCLUSION_CHANGE_CALLBACK: {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+
+            auto remoteObject = data.ReadRemoteObject();
+            if (remoteObject == nullptr) {
+                ret = ERR_NULL_OBJECT;
+                break;
+            }
+            sptr<RSIOcclusionChangeCallback> callback = iface_cast<RSIOcclusionChangeCallback>(remoteObject);
+            int32_t status = RegisterOcclusionChangeCallback(callback);
+            reply.WriteInt32(status);
+            break;
+        }
+        case UNREGISTER_OCCLUSION_CHANGE_CALLBACK: {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+
+            auto remoteObject = data.ReadRemoteObject();
+            if (remoteObject == nullptr) {
+                ret = ERR_NULL_OBJECT;
+                break;
+            }
+            sptr<RSIOcclusionChangeCallback> callback = iface_cast<RSIOcclusionChangeCallback>(remoteObject);
+            int32_t status = UnRegisterOcclusionChangeCallback(callback);
+            reply.WriteInt32(status);
             break;
         }
         default: {

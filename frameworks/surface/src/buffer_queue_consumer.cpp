@@ -134,4 +134,37 @@ TransformType BufferQueueConsumer::GetTransform() const
     }
     return bufferQueue_->GetTransform();
 }
+
+GSError BufferQueueConsumer::GetScalingMode(uint32_t sequence, ScalingMode &scalingMode) const
+{
+    if (bufferQueue_ == nullptr) {
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    return bufferQueue_->GetScalingMode(sequence, scalingMode);
+}
+
+GSError BufferQueueConsumer::GetMetaData(uint32_t sequence, std::vector<HDRMetaData> &metaData) const
+{
+    if (bufferQueue_ == nullptr) {
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    return bufferQueue_->GetMetaData(sequence, metaData);
+}
+
+GSError BufferQueueConsumer::GetMetaDataSet(uint32_t sequence, HDRMetadataKey &key,
+                                            std::vector<uint8_t> &metaData) const
+{
+    if (bufferQueue_ == nullptr) {
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    return bufferQueue_->GetMetaDataSet(sequence, key, metaData);
+}
+
+GSError BufferQueueConsumer::GetTunnelHandle(ExtDataHandle **handle) const
+{
+    if (bufferQueue_ == nullptr) {
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    return bufferQueue_->GetTunnelHandle(handle);
+}
 } // namespace OHOS

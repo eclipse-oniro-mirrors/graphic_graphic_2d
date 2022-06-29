@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -35,6 +35,7 @@ public:
     void GoBackground();
     void GoForeground();
     void Init();
+    void Destroy();
     void SetRSSurfaceNode(std::shared_ptr<RSSurfaceNode> surfaceNode);
 
     void SetRoot(NodeId root);
@@ -44,7 +45,6 @@ public:
     void SetTimeStamp(uint64_t timeStamp, const std::string& abilityName);
 
 private:
-    void Destroy();
     void AttachSurface();
     static void RecvMessages();
     static void RecvMessages(std::shared_ptr<RSTransactionData> cmds);
@@ -61,6 +61,7 @@ private:
     NodeId root_ = 0;
 
     bool isActive_ = false;
+    bool isUniRenderEnabled_ = false;
     uint64_t refreshPeriod_ = 16666667;
     uint64_t timeStamp_ = 0;
     std::shared_ptr<RSSurfaceNode> surfaceNode_ = nullptr;
@@ -68,6 +69,7 @@ private:
     int surfaceHeight_ = 0;
 
     friend class RSRenderThread;
+    friend class RSApplicationAgentImpl;
 };
 } // namespace Rosen
 } // namespace OHOS

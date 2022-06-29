@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,7 @@
 #include <surface.h>
 
 #include "ipc_callbacks/buffer_available_callback.h"
-#include "ipc_callbacks/iapplication_render_thread.h"
+#include "ipc_callbacks/iapplication_agent.h"
 #include "ipc_callbacks/screen_change_callback.h"
 #include "ipc_callbacks/surface_capture_callback.h"
 #include "platform/drawing/rs_surface.h"
@@ -36,12 +36,15 @@
 #include "screen_manager/screen_types.h"
 #include "screen_manager/rs_virtual_screen_resolution.h"
 #include "vsync_receiver.h"
+#include "ipc_callbacks/rs_iocclusion_change_callback.h"
+#include "rs_occlusion_data.h"
 
 namespace OHOS {
 namespace Rosen {
 // normal callback functor for client users.
 using ScreenChangeCallback = std::function<void(ScreenId, ScreenEvent)>;
 using BufferAvailableCallback = std::function<void()>;
+using OcclusionChangeCallback = std::function<void(std::shared_ptr<RSOcclusionData>)>;
 class SurfaceCaptureCallback {
 public:
     SurfaceCaptureCallback() {}
@@ -60,6 +63,8 @@ public:
     void CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData) override;
     void ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
 
+    bool InitUniRenderEnabled(const std::string &bundleName);
+    bool CreateNode(const RSSurfaceRenderNodeConfig& config);
     std::shared_ptr<RSSurface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config);
 
     std::shared_ptr<VSyncReceiver> CreateVSyncReceiver(
@@ -124,6 +129,10 @@ public:
     int32_t GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability);
 
     int32_t GetScreenType(ScreenId id, RSScreenType& screenType);
+
+    int32_t RegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback);
+
+    int32_t UnRegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback);
 private:
     void TriggerSurfaceCaptureCallback(NodeId id, Media::PixelMap* pixelmap);
     std::mutex mutex_;

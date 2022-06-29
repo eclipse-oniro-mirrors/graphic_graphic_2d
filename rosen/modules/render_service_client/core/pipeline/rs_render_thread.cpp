@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,11 +19,12 @@
 #include <unordered_map>
 #endif
 
+#include <frame_collector.h>
+
 #include "pipeline/rs_frame_report.h"
 #include "pipeline/rs_render_node_map.h"
 #include "pipeline/rs_root_render_node.h"
 #include "platform/common/rs_log.h"
-#include "platform/common/rs_system_properties.h"
 #ifdef OHOS_RSS_CLIENT
 #include "res_sched_client.h"
 #include "res_type.h"
@@ -34,8 +35,6 @@
 #ifdef ROSEN_OHOS
 #include <sys/prctl.h>
 #include <unistd.h>
-
-#include "platform/ohos/rs_render_service_connect_hub.h"
 #endif
 
 static void SystemCallSetThreadName(const std::string& name)
@@ -61,11 +60,6 @@ RSRenderThread::RSRenderThread()
     renderContext_ = new RenderContext();
     ROSEN_LOGD("Create RenderContext, its pointer is %p", renderContext_);
 #endif
-    isUniRenderEnabled_ = RSSystemProperties::GetUniRenderEnabledType() != UniRenderEnabledType::UNI_RENDER_DISABLED;
-    if (isUniRenderEnabled_) {
-        ROSEN_LOGD("RSRenderThread is invalid under UniRender");
-        return;
-    }
     mainFunc_ = [&]() {
         uint64_t renderStartTimeStamp = jankDetector_.GetSysTimeNs();
         std::string str = "RSRenderThread DrawFrame: " + std::to_string(timestamp_);
@@ -81,10 +75,6 @@ RSRenderThread::RSRenderThread()
         Render();
         RS_ASYNC_TRACE_BEGIN("waiting GPU running", 1111); // 1111 means async trace code for gpu
         SendCommands();
-        auto transactionProxy = RSTransactionProxy::GetInstance();
-        if (transactionProxy != nullptr) {
-            transactionProxy->FlushImplicitTransactionFromRT();
-        }
         ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
         jankDetector_.CalculateSkippedFrame(renderStartTimeStamp, jankDetector_.GetSysTimeNs());
     };
@@ -103,35 +93,15 @@ RSRenderThread::~RSRenderThread()
 
 void RSRenderThread::Start()
 {
-    if (isUniRenderEnabled_) {
-        ROSEN_LOGD("RSRenderThread start is invalid under UniRender");
-        return;
-    }
     ROSEN_LOGD("RSRenderThread start.");
     running_.store(true);
     if (thread_ == nullptr) {
         thread_ = std::make_unique<std::thread>(&RSRenderThread::RenderLoop, this);
     }
-
-#ifdef ROSEN_OHOS
-    RSRenderServiceConnectHub::SetOnConnectCallback(
-        [weakThis = wptr<RSRenderThread>(this)](sptr<RSIRenderServiceConnection>& conn) {
-            sptr<IApplicationRenderThread> renderThreadSptr = weakThis.promote();
-            if (renderThreadSptr == nullptr) {
-                return;
-            }
-            conn->RegisterApplicationRenderThread(getpid(), renderThreadSptr);
-        });
-#endif
 }
 
 void RSRenderThread::Stop()
 {
-    if (isUniRenderEnabled_) {
-        ROSEN_LOGD("RSRenderThread stop is invalid under UniRender");
-        return;
-    }
-
     running_.store(false);
 
     if (runner_ != nullptr) {
@@ -151,28 +121,31 @@ void RSRenderThread::RecvTransactionData(std::unique_ptr<RSTransactionData>& tra
     {
         std::unique_lock<std::mutex> cmdLock(cmdMutex_);
         std::string str = "RecvCommands ptr:" + std::to_string(reinterpret_cast<uintptr_t>(transactionData.get()));
+        commandTimestamp_ = transactionData->GetTimestamp();
         ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, str.c_str());
         cmds_.emplace_back(std::move(transactionData));
         ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
     }
     // [PLANNING]: process in next vsync (temporarily)
     RSRenderThread::Instance().RequestNextVSync();
-    jankDetector_.UpdateUiDrawFrameMsg(uiStartTimeStamp_, jankDetector_.GetSysTimeNs(), uiDrawAbilityName_);
+    if (activeWindowCnt_.load() > 0) {
+        jankDetector_.UpdateUiDrawFrameMsg(uiStartTimeStamp_, jankDetector_.GetSysTimeNs(), uiDrawAbilityName_);
+    }
+    uiStartTimeStamp_ = 0;
 }
 
 void RSRenderThread::RequestNextVSync()
 {
     if (handler_) {
         RS_TRACE_FUNC();
-        handler_->PostTask([this]() {
-            VSyncReceiver::FrameCallback fcb = {
-                .userData_ = this,
-                .callback_ = std::bind(&RSRenderThread::OnVsync, this, std::placeholders::_1),
-            };
-            if (receiver_ != nullptr) {
-                receiver_->RequestNextVSync(fcb);
-            }
-        });
+        FrameCollector::GetInstance().MarkFrameEvent(FrameEventType::WaitVsyncStart);
+        VSyncReceiver::FrameCallback fcb = {
+            .userData_ = this,
+            .callback_ = std::bind(&RSRenderThread::OnVsync, this, std::placeholders::_1),
+        };
+        if (receiver_ != nullptr) {
+            receiver_->RequestNextVSync(fcb);
+        }
     }
 }
 
@@ -216,6 +189,7 @@ void RSRenderThread::RenderLoop()
 void RSRenderThread::OnVsync(uint64_t timestamp)
 {
     ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSRenderThread::OnVsync");
+    FrameCollector::GetInstance().MarkFrameEvent(FrameEventType::WaitVsyncEnd);
     mValue = (mValue + 1) % 2; // 1 and 2 is Calculated parameters
     RS_TRACE_INT("Vsync-client", mValue);
     timestamp_ = timestamp;
@@ -235,20 +209,47 @@ void RSRenderThread::UpdateWindowStatus(bool active)
     ROSEN_LOGD("RSRenderThread UpdateWindowStatus %d, cur activeWindowCnt_ %d", active, activeWindowCnt_.load());
 }
 
-void RSRenderThread::UpdateUiDrawFrameMsg(uint64_t startTimeStamp, const std::string& abilityName)
+void RSRenderThread::UpdateUiDrawFrameMsg(const std::string& abilityName)
 {
-    uiStartTimeStamp_ = startTimeStamp;
+    uiStartTimeStamp_ = jankDetector_.GetSysTimeNs();
     uiDrawAbilityName_ = abilityName;
 }
 
 void RSRenderThread::ProcessCommands()
 {
+    // Attention: there are two situations
+    // 1. when commandTimestamp_ != 0, it means that UIDirector has called "RSRenderThread::Instance().RequestNextVSync()",
+    // which equals there are some commands form UIThread need to be executed.
+    // To make commands from UIThread sync with buffer flushed by RenderThread,
+    // we choose commandTimestamp_ as uiTimestamp_ which would be used in RenderThreadVisitor when we call flushFrame.
+    // 2. when cmds_.empty() is true or commandTimestamp_ = 0,
+    // it means that some thread except UIThread like RSRenderThread::Animate
+    // has called "RSRenderThread::Instance().RequestNextVSync()", which equals that some commands form RenderThread need to be executed.
+    // To make commands from RenderThread sync with buffer flushed by RenderThread,
+    // we choose (prevTimestamp_ - 1) as uiTimestamp_ which would be used in RenderThreadVisitor when we call flushFrame.
+
+    // The reason why prevTimestamp_ need to be minues 1 is that timestamp used in UIThread is always less than (for now) timestamp used in RenderThread.
+    // If we do not do this,
+    // when RenderThread::Animate excute flushFrame and use prevTimestamp_ as buffer timestamp which equals T0,
+    // UIDirector send messages in the same vysnc period, and the commandTimestamp_ would also be T0,
+    // RenderService would excute commands from UIDirector and composite buffer which rendering is executed by RSRenderThread::Animate
+    // for they have the same timestamp.
+    // To avoid this situation, we should always use "prevTimestamp_ - 1".
+
     std::unique_lock<std::mutex> cmdLock(cmdMutex_);
     if (cmds_.empty()) {
+        uiTimestamp_ = prevTimestamp_ - 1;
         return;
     }
     if (RsFrameReport::GetInstance().GetEnable()) {
         RsFrameReport::GetInstance().ProcessCommandsStart();
+    }
+
+    if (commandTimestamp_ != 0) {
+        uiTimestamp_ = commandTimestamp_;
+        commandTimestamp_ = 0;
+    } else {
+        uiTimestamp_ = prevTimestamp_ - 1;
     }
 
     ROSEN_LOGD("RSRenderThread ProcessCommands size: %lu\n", cmds_.size());
@@ -321,13 +322,6 @@ void RSRenderThread::SendCommands()
     }
 
     RSUIDirector::RecvMessages();
-    ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
-}
-
-void RSRenderThread::OnTransaction(std::shared_ptr<RSTransactionData> transactionData)
-{
-    ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSRenderThread::OnTransaction");
-    RSUIDirector::RecvMessages(transactionData);
     ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
 }
 

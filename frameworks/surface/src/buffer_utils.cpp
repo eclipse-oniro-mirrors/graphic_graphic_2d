@@ -18,33 +18,34 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "buffer_log.h"
 #include "surface_buffer_impl.h"
 
 namespace OHOS {
-void ReadFence(MessageParcel &parcel, int32_t &fence)
+void ReadFileDescriptor(MessageParcel &parcel, int32_t &fd)
 {
-    fence = parcel.ReadInt32();
-    if (fence < 0) {
+    fd = parcel.ReadInt32();
+    if (fd < 0) {
         return;
     }
 
-    fence = parcel.ReadFileDescriptor();
+    fd = parcel.ReadFileDescriptor();
 }
 
-void WriteFence(MessageParcel &parcel, int32_t fence)
+void WriteFileDescriptor(MessageParcel &parcel, int32_t fd)
 {
-    if (fence >= 0 && fcntl(fence, F_GETFL) == -1 && errno == EBADF) {
-        fence = -1;
+    if (fd >= 0 && fcntl(fd, F_GETFL) == -1 && errno == EBADF) {
+        fd = -1;
     }
 
-    parcel.WriteInt32(fence);
+    parcel.WriteInt32(fd);
 
-    if (fence < 0) {
+    if (fd < 0) {
         return;
     }
 
-    parcel.WriteFileDescriptor(fence);
-    close(fence);
+    parcel.WriteFileDescriptor(fd);
+    close(fd);
 }
 
 void ReadRequestConfig(MessageParcel &parcel, BufferRequestConfig &config)
@@ -57,7 +58,6 @@ void ReadRequestConfig(MessageParcel &parcel, BufferRequestConfig &config)
     config.timeout = parcel.ReadInt32();
     config.colorGamut = static_cast<ColorGamut>(parcel.ReadInt32());
     config.transform = static_cast<TransformType>(parcel.ReadInt32());
-    config.scalingMode = static_cast<ScalingMode>(parcel.ReadInt32());
 }
 
 void WriteRequestConfig(MessageParcel &parcel, BufferRequestConfig const & config)
@@ -70,7 +70,6 @@ void WriteRequestConfig(MessageParcel &parcel, BufferRequestConfig const & confi
     parcel.WriteInt32(config.timeout);
     parcel.WriteInt32(static_cast<int32_t>(config.colorGamut));
     parcel.WriteInt32(static_cast<int32_t>(config.transform));
-    parcel.WriteInt32(static_cast<int32_t>(config.scalingMode));
 }
 
 void ReadFlushConfig(MessageParcel &parcel, BufferFlushConfig &config)
@@ -92,9 +91,9 @@ void WriteFlushConfig(MessageParcel &parcel, BufferFlushConfig const & config)
 }
 
 void ReadSurfaceBufferImpl(MessageParcel &parcel,
-                           int32_t &sequence, sptr<SurfaceBuffer>& buffer)
+                           uint32_t &sequence, sptr<SurfaceBuffer>& buffer)
 {
-    sequence = parcel.ReadInt32();
+    sequence = parcel.ReadUint32();
     if (parcel.ReadBool()) {
         buffer = new SurfaceBufferImpl(sequence);
         buffer->ReadFromMessageParcel(parcel);
@@ -102,9 +101,9 @@ void ReadSurfaceBufferImpl(MessageParcel &parcel,
 }
 
 void WriteSurfaceBufferImpl(MessageParcel &parcel,
-    int32_t sequence, const sptr<SurfaceBuffer> &buffer)
+    uint32_t sequence, const sptr<SurfaceBuffer> &buffer)
 {
-    parcel.WriteInt32(sequence);
+    parcel.WriteUint32(sequence);
     parcel.WriteBool(buffer != nullptr);
     if (buffer == nullptr) {
         return;
@@ -135,5 +134,78 @@ void WriteVerifyAllocInfo(MessageParcel &parcel, const std::vector<VerifyAllocIn
         parcel.WriteUint64(info.usage);
         parcel.WriteInt32(info.format);
     }
+}
+
+void ReadHDRMetaData(MessageParcel &parcel, std::vector<HDRMetaData> &metaData)
+{
+    uint32_t size = parcel.ReadUint32();
+    metaData.clear();
+    HDRMetaData data;
+    for (uint32_t index = 0; index < size; index++) {
+        data.key = static_cast<HDRMetadataKey>(parcel.ReadUint32());
+        data.value = parcel.ReadFloat();
+        metaData.push_back(data);
+    }
+}
+
+void WriteHDRMetaData(MessageParcel &parcel, const std::vector<HDRMetaData> &metaData)
+{
+    parcel.WriteUint32(metaData.size());
+    for (const auto &data : metaData) {
+        parcel.WriteUint32(static_cast<uint32_t>(data.key));
+        parcel.WriteFloat(data.value);
+    }
+}
+
+void ReadHDRMetaDataSet(MessageParcel &parcel, std::vector<uint8_t> &metaData)
+{
+    uint32_t size = parcel.ReadUint32();
+    metaData.clear();
+    uint8_t data;
+    for (uint32_t index = 0; index < size; index++) {
+        data = parcel.ReadUint8();
+        metaData.push_back(data);
+    }
+}
+
+void WriteHDRMetaDataSet(MessageParcel &parcel, const std::vector<uint8_t> &metaData)
+{
+    parcel.WriteUint32(metaData.size());
+    for (const auto &data : metaData) {
+        parcel.WriteUint8(data);
+    }
+}
+
+void ReadExtDataHandle(MessageParcel &parcel, ExtDataHandle **handle)
+{
+    *handle = new ExtDataHandle();
+    ReadFileDescriptor(parcel, (*handle)->fd);
+    (*handle)->reserveInts = parcel.ReadUint32();
+    for (uint32_t index = 0; index < (*handle)->reserveInts; index++) {
+        (*handle)->reserve[index] = parcel.ReadInt32();
+    }
+}
+
+void WriteExtDataHandle(MessageParcel &parcel, const ExtDataHandle *handle)
+{
+    WriteFileDescriptor(parcel, handle->fd);
+    parcel.WriteUint32(handle->reserveInts);
+    for (uint32_t index = 0; index < handle->reserveInts; index++) {
+        parcel.WriteInt32(handle->reserve[index]);
+    }
+}
+
+GSError FreeExtDataHandle(ExtDataHandle *handle)
+{
+    if (handle == nullptr) {
+        BLOGE("FreeExtDataHandle with nullptr handle");
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    if (handle->fd >= 0) {
+        close(handle->fd);
+        handle->fd = -1;
+    }
+    delete handle;
+    return GSERROR_OK;
 }
 } // namespace OHOS

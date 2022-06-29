@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -112,25 +112,18 @@ void RSAnimationManager::OnAnimationFinished(const std::shared_ptr<RSRenderAnima
     animation->Detach();
 }
 
-void RSAnimationManager::RegisterTransition(AnimationId id, const TransitionCallback& transition)
+void RSAnimationManager::RegisterTransition(AnimationId id, const TransitionCallback& transition, bool isTransitionIn)
 {
-    ClearTransition(id);
-    transition_.push_back({ id, transition });
+    transition_.emplace_back(id, transition, isTransitionIn);
 }
 
 void RSAnimationManager::UnregisterTransition(AnimationId id)
-{
-    ClearTransition(id);
-}
-
-void RSAnimationManager::ClearTransition(AnimationId id)
 {
     if (transition_.empty()) {
         ROSEN_LOGE("RSAnimationManager::ClearTransition, transition_ is empty");
         return;
     }
-    transition_.remove_if(
-        [&](std::pair<AnimationId, TransitionCallback>& transition) -> bool { return id == transition.first; });
+    transition_.remove_if([id](auto& transition) -> bool { return id == std::get<NodeId>(transition); });
 }
 
 std::unique_ptr<RSTransitionProperties> RSAnimationManager::GetTransitionProperties()
@@ -139,17 +132,42 @@ std::unique_ptr<RSTransitionProperties> RSAnimationManager::GetTransitionPropert
         return nullptr;
     }
     auto transitionProperties = std::make_unique<RSTransitionProperties>();
-    for (auto& [animationId, transition] : transition_) {
-        if (transition != nullptr) {
-            transition(transitionProperties);
+    for (auto& transition : transition_) {
+        auto& callback = std::get<TransitionCallback>(transition);
+        if (callback != nullptr) {
+            callback(transitionProperties);
         }
     }
     return transitionProperties;
 }
 
-bool RSAnimationManager::HasTransition() const
+bool RSAnimationManager::HasDisappearingTransition() const
 {
-    return !transition_.empty();
+    return !transition_.empty() && std::any_of(transition_.begin(), transition_.end(), [](auto& transition) -> bool {
+        // return true if it has disappearing animation
+        return !std::get<bool>(transition);
+    });
+}
+
+void RSAnimationManager::RegisterSpringAnimation(RSAnimatableProperty property, AnimationId animId)
+{
+    springAnimations_[property] = animId;
+}
+
+void RSAnimationManager::UnregisterSpringAnimation(RSAnimatableProperty property, AnimationId animId)
+{
+    if (springAnimations_[property] == animId) {
+        springAnimations_.erase(property);
+    }
+}
+
+AnimationId RSAnimationManager::QuerySpringAnimation(RSAnimatableProperty property)
+{
+    auto it = springAnimations_.find(property);
+    if (it == springAnimations_.end()) {
+        return 0;
+    }
+    return it->second;
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -49,6 +49,28 @@ void BaseNodeCommandHelper::RemoveChild(RSContext& context, NodeId nodeId, NodeI
     auto child = nodeMap.GetRenderNode<RSBaseRenderNode>(childNodeId);
     if (node && child) {
         node->RemoveChild(child);
+    }
+}
+
+void BaseNodeCommandHelper::AddCrossParentChild(RSContext& context, NodeId id, NodeId childId, int32_t index)
+{
+    auto& nodeMap = context.GetNodeMap();
+    auto node = nodeMap.GetRenderNode<RSBaseRenderNode>(id);
+    auto child = nodeMap.GetRenderNode<RSBaseRenderNode>(childId);
+    if (node && child) {
+        node->AddCrossParentChild(child, index);
+    }
+}
+
+void BaseNodeCommandHelper::RemoveCrossParentChild(RSContext& context, NodeId nodeId, NodeId childNodeId,
+    NodeId newParentId)
+{
+    auto& nodeMap = context.GetNodeMap();
+    auto node = nodeMap.GetRenderNode<RSBaseRenderNode>(nodeId);
+    auto child = nodeMap.GetRenderNode<RSBaseRenderNode>(childNodeId);
+    auto newParent = nodeMap.GetRenderNode<RSBaseRenderNode>(newParentId);
+    if (node && child && newParent) {
+        node->RemoveCrossParentChild(child, newParent);
     }
 }
 

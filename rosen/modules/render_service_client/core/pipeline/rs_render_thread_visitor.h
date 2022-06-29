@@ -19,9 +19,10 @@
 #include <memory>
 #include <set>
 
-#include "visitor/rs_node_visitor.h"
 #include "pipeline/rs_dirty_region_manager.h"
 #include "pipeline/rs_paint_filter_canvas.h"
+#include "transaction/rs_transaction_proxy.h"
+#include "visitor/rs_node_visitor.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -47,13 +48,21 @@ public:
     virtual void ProcessRootRenderNode(RSRootRenderNode& node) override;
 
 private:
+    void DrawRectOnCanvas(const RectI& dirtyRect, const SkColor color, const SkPaint::Style fillType, float alpha);
+    void DrawDirtyRegion();
+
     RSDirtyRegionManager dirtyManager_;
-    RSRenderNode* parent_ = nullptr;
     bool dirtyFlag_ = false;
     bool isIdle_ = true;
     RSPaintFilterCanvas* canvas_;
-    RSRootRenderNode* curTreeRoot_ = nullptr;
-    std::set<NodeId> forceRasterNodes;
+    uint64_t uiTimestamp_ = 0;
+
+    void ClipHoleForSurfaceNode(RSSurfaceRenderNode& node);
+
+    std::vector<NodeId> childSurfaceNodeIds_;
+    SkMatrix parentSurfaceNodeMatrix_;
+
+    void SendCommandFromRT(std::unique_ptr<RSCommand>& command, NodeId nodeId, FollowType followType);
 };
 } // namespace Rosen
 } // namespace OHOS

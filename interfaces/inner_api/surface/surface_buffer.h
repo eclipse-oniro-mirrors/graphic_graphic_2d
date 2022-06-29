@@ -25,6 +25,7 @@
 #include "surface_type.h"
 #include "egl_data.h"
 #include "buffer_extra_data.h"
+#include "hardware_buffer.h"
 
 namespace OHOS {
 class MessageParcel;
@@ -47,14 +48,12 @@ public:
     virtual void SetSurfaceBufferColorGamut(const ColorGamut& colorGamut) = 0;
     virtual void SetSurfaceBufferTransform(const TransformType& transform) = 0;
 
-    virtual const ScalingMode& GetSurfaceBufferScalingMode() const = 0;
-
     virtual int32_t GetSurfaceBufferWidth() const = 0;
     virtual int32_t GetSurfaceBufferHeight() const = 0;
     virtual void SetSurfaceBufferWidth(int32_t width) = 0;
     virtual void SetSurfaceBufferHeight(int32_t width) = 0;
 
-    virtual int32_t GetSeqNum() const = 0;
+    virtual uint32_t GetSeqNum() const = 0;
 
     // opt EglData
     virtual sptr<EglData> GetEglData() const = 0;
@@ -72,6 +71,19 @@ public:
     virtual GSError Unmap() = 0;
     virtual GSError FlushCache() = 0;
     virtual GSError InvalidateCache() = 0;
+
+    static SurfaceBuffer* HardwareBufferToSurfaceBuffer(HardwareBuffer* buffer)
+    {
+        return reinterpret_cast<SurfaceBuffer *>(buffer);
+    };
+
+    static const SurfaceBuffer* HardwareBufferToSurfaceBuffer(HardwareBuffer const* buffer)
+    {
+        return reinterpret_cast<SurfaceBuffer const*>(buffer);
+    };
+
+    virtual HardwareBuffer* SurfaceBufferToHardwareBuffer() = 0;
+
 protected:
     SurfaceBuffer(){}
     SurfaceBuffer(const SurfaceBuffer&) = delete;

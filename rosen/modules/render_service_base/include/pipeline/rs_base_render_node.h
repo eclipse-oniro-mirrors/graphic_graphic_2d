@@ -38,9 +38,13 @@ public:
 
     void AddChild(const SharedPtr& child, int index = -1);
     void RemoveChild(const SharedPtr& child);
+    // Add/RemoveCrossParentChild only used as: the child is under multiple parents(e.g. a window cross multi-screens)
+    void AddCrossParentChild(const SharedPtr& child, int32_t index = -1);
+    void RemoveCrossParentChild(const SharedPtr& child, const WeakPtr& newParent);
     void ClearChildren();
     void RemoveFromTree();
-
+    virtual void CollectSurface(const std::shared_ptr<RSBaseRenderNode>& node,
+                                std::vector<RSBaseRenderNode::SharedPtr>& vec);
     virtual void Prepare(const std::shared_ptr<RSNodeVisitor>& visitor);
     virtual void Process(const std::shared_ptr<RSNodeVisitor>& visitor);
 
@@ -76,15 +80,15 @@ public:
         return children_.size();
     }
 
-    void DumpTree(std::string& out) const;
+    void DumpTree(int32_t depth, std::string& ou) const;
 
-    virtual bool HasTransition(bool recursive = true) const
+    virtual bool HasDisappearingTransition(bool recursive = true) const
     {
         if (recursive == false) {
             return false;
         } else {
             auto parent = GetParent().lock();
-            return parent ? parent->HasTransition(true) : false;
+            return parent ? parent->HasDisappearingTransition(true) : false;
         }
     }
 

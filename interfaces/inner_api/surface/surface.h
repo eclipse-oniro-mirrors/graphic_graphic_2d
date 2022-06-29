@@ -28,7 +28,6 @@ class Surface : public RefBase {
 public:
     static sptr<Surface> CreateSurfaceAsConsumer(std::string name = "noname", bool isShared = false);
     static sptr<Surface> CreateSurfaceAsProducer(sptr<IBufferProducer>& producer);
-    static sptr<Surface> CreateEglSurfaceAsConsumer(std::string name = "noname", bool isShared = false);
 
     virtual ~Surface() = default;
 
@@ -36,23 +35,23 @@ public:
     virtual sptr<IBufferProducer> GetProducer() const = 0;
 
     virtual GSError RequestBuffer(sptr<SurfaceBuffer>& buffer,
-                                       int32_t &fence, BufferRequestConfig &config) = 0;
+                                  int32_t &fence, BufferRequestConfig &config) = 0;
 
     virtual GSError CancelBuffer(sptr<SurfaceBuffer>& buffer) = 0;
 
     virtual GSError FlushBuffer(sptr<SurfaceBuffer>& buffer,
-                                     int32_t fence, BufferFlushConfig &config) = 0;
+                                int32_t fence, BufferFlushConfig &config) = 0;
 
     virtual GSError AcquireBuffer(sptr<SurfaceBuffer>& buffer, int32_t &fence,
-                                       int64_t &timestamp, Rect &damage) = 0;
+                                  int64_t &timestamp, Rect &damage) = 0;
     virtual GSError ReleaseBuffer(sptr<SurfaceBuffer>& buffer, int32_t fence) = 0;
 
     virtual GSError RequestBuffer(sptr<SurfaceBuffer>& buffer,
-                                       sptr<SyncFence>& fence, BufferRequestConfig &config) = 0;
+                                  sptr<SyncFence>& fence, BufferRequestConfig &config) = 0;
     virtual GSError FlushBuffer(sptr<SurfaceBuffer>& buffer,
-                                     const sptr<SyncFence>& fence, BufferFlushConfig &config) = 0;
+                                const sptr<SyncFence>& fence, BufferFlushConfig &config) = 0;
     virtual GSError AcquireBuffer(sptr<SurfaceBuffer>& buffer, sptr<SyncFence>& fence,
-                                       int64_t &timestamp, Rect &damage) = 0;
+                                  int64_t &timestamp, Rect &damage) = 0;
     virtual GSError ReleaseBuffer(sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& fence) = 0;
 
     virtual GSError AttachBuffer(sptr<SurfaceBuffer>& buffer) = 0;
@@ -89,7 +88,18 @@ public:
 
     virtual GSError IsSupportedAlloc(const std::vector<VerifyAllocInfo> &infos,
                                      std::vector<bool> &supporteds) = 0;
-    
+
+    virtual GSError SetScalingMode(uint32_t sequence, ScalingMode scalingMode) = 0;
+    virtual GSError GetScalingMode(uint32_t sequence, ScalingMode &scalingMode) = 0;
+    virtual GSError SetMetaData(uint32_t sequence, const std::vector<HDRMetaData> &metaData) = 0;
+    virtual GSError SetMetaDataSet(uint32_t sequence, HDRMetadataKey key,
+                                   const std::vector<uint8_t> &metaData) = 0;
+    virtual GSError GetMetaData(uint32_t sequence, std::vector<HDRMetaData> &metaData) const = 0;
+    virtual GSError GetMetaDataSet(uint32_t sequence, HDRMetadataKey &key,
+                                   std::vector<uint8_t> &metaData) const = 0;
+    virtual GSError SetTunnelHandle(const ExtDataHandle *handle) = 0;
+    virtual GSError GetTunnelHandle(ExtDataHandle **handle) const = 0;
+
     virtual void Dump(std::string &result) const = 0;
 protected:
     Surface() = default;

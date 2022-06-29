@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,6 +21,7 @@
 #include "ipc_callbacks/screen_change_callback_stub.h"
 #include "ipc_callbacks/surface_capture_callback_stub.h"
 #include "ipc_callbacks/buffer_available_callback_stub.h"
+#include "ipc_callbacks/rs_occlusion_change_callback_stub.h"
 #include "platform/common/rs_log.h"
 #include "rs_render_service_connect_hub.h"
 #include "rs_surface_ohos.h"
@@ -47,6 +48,24 @@ void RSRenderServiceClient::ExecuteSynchronousTask(const std::shared_ptr<RSSyncT
     if (renderService != nullptr) {
         renderService->ExecuteSynchronousTask(task);
     }
+}
+
+bool RSRenderServiceClient::InitUniRenderEnabled(const std::string &bundleName)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return false;
+    }
+    return renderService->InitUniRenderEnabled(bundleName);
+}
+
+bool RSRenderServiceClient::CreateNode(const RSSurfaceRenderNodeConfig& config)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return false;
+    }
+    return renderService->CreateNode(config);
 }
 
 std::shared_ptr<RSSurface> RSRenderServiceClient::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config)
@@ -482,6 +501,45 @@ int32_t RSRenderServiceClient::GetScreenType(ScreenId id, RSScreenType& screenTy
         return RENDER_SERVICE_NULL;
     }
     return renderService->GetScreenType(id, screenType);
+}
+
+class CustomOcclusionChangeCallback : public RSOcclusionChangeCallbackStub
+{
+public:
+    explicit CustomOcclusionChangeCallback(const OcclusionChangeCallback &callback) : cb_(callback) {}
+    ~CustomOcclusionChangeCallback() override {};
+
+    void OnOcclusionVisibleChanged(std::shared_ptr<RSOcclusionData> occlusionData) override
+    {
+        if (cb_ != nullptr) {
+            cb_(occlusionData);
+        }
+    }
+
+private:
+    OcclusionChangeCallback cb_;
+};
+
+int32_t RSRenderServiceClient::RegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::RegisterOcclusionChangeCallback renderService == nullptr!");
+        return RENDER_SERVICE_NULL;
+    }
+    sptr<CustomOcclusionChangeCallback> cb = new CustomOcclusionChangeCallback(callback);
+    return renderService->RegisterOcclusionChangeCallback(cb);
+}
+
+int32_t RSRenderServiceClient::UnRegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::UnRegisterOcclusionChangeCallback renderService == nullptr!");
+        return RENDER_SERVICE_NULL;
+    }
+    sptr<CustomOcclusionChangeCallback> cb = new CustomOcclusionChangeCallback(callback);
+    return renderService->UnRegisterOcclusionChangeCallback(cb);
 }
 } // namespace Rosen
 } // namespace OHOS

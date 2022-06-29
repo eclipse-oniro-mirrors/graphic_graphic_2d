@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,24 +21,30 @@
 
 namespace OHOS {
 namespace Rosen {
-enum class UniRenderEnabledType {
-    UNI_RENDER_DISABLED = 0,
-    UNI_RENDER_ENABLED_FOR_ALL,
-    UNI_RENDER_PARTIALLY_ENABLED,
+
+enum class DirtyRegionDebugType {
+    DISABLED = 0,
+    CURRENT_SUB,
+    CURRENT_WHOLE,
+    MULTI_HISTORY,
+    CURRENT_SUB_AND_WHOLE,
+    CURRENT_WHOLE_AND_MULTI_HISTORY
 };
 
 class RSSystemProperties final {
 public:
     ~RSSystemProperties() = default;
 
-    static UniRenderEnabledType GetUniRenderEnabledType();
-    static const std::set<std::string>& GetUniRenderEnabledList();
+    // used by clients
+    static bool GetUniRenderEnabled();
+    static void InitUniRenderEnabled(const std::string &bundleName);
+    static DirtyRegionDebugType GetDirtyRegionDebugType();
+    static bool GetOcclusionEnabled();
 
 private:
     RSSystemProperties() = default;
 
-    static inline UniRenderEnabledType uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
-    static inline std::set<std::string> uniRenderEnabledList_ { "clock0" };
+    static inline bool isUniRenderEnabled_ = false;
 };
 
 } // namespace Rosen

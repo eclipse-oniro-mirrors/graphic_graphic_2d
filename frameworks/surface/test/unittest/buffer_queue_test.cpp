@@ -362,7 +362,7 @@ HWTEST_F(BufferQueueTest, ReqCanFluAcqRel008, Function | MediumTest | Level2)
     GSError ret = bq->AcquireBuffer(buffer, acquireFence, timestamp, damage);
     ASSERT_EQ(ret, OHOS::GSERROR_OK);
 
-    int32_t sequence;
+    uint32_t sequence;
     for (auto it = cache.begin(); it != cache.end(); it++) {
         if (it->second.GetRefPtr() == buffer.GetRefPtr()) {
             sequence = it->first;
@@ -513,25 +513,6 @@ HWTEST_F(BufferQueueTest, RequestBuffer006, Function | MediumTest | Level2)
     IBufferProducer::RequestBufferReturnValue retval;
     BufferRequestConfig config = requestConfig;
     config.format = -1;
-
-    GSError ret = bq->RequestBuffer(config, bedata, retval);
-    ASSERT_EQ(ret, OHOS::GSERROR_INVALID_ARGUMENTS);
-}
-
-/*
-* Function: RequestBuffer
-* Type: Function
-* Rank: Important(2)
-* EnvConditions: N/A
-* CaseDescription: 1. set BufferRequestConfig with abnormal value
-*                  2. call RequestBuffer
-*                  3. check ret
- */
-HWTEST_F(BufferQueueTest, RequestBuffer007, Function | MediumTest | Level2)
-{
-    IBufferProducer::RequestBufferReturnValue retval;
-    BufferRequestConfig config = requestConfig;
-    config.format = PIXEL_FMT_BUTT + 1;
 
     GSError ret = bq->RequestBuffer(config, bedata, retval);
     ASSERT_EQ(ret, OHOS::GSERROR_INVALID_ARGUMENTS);

@@ -49,6 +49,10 @@ RosenError HdiOutput::Init()
 void HdiOutput::SetLayerInfo(const std::vector<LayerInfoPtr> &layerInfos)
 {
     for (auto &layerInfo : layerInfos) {
+        if (layerInfo == nullptr || layerInfo->GetSurface() == nullptr) {
+            HLOGE("current layerInfo or layerInfo's cSurface is null");
+            continue;
+        }
         uint64_t surfaceId = layerInfo->GetSurface()->GetUniqueId();
         auto iter = surfaceIdMap_.find(surfaceId);
         if (iter != surfaceIdMap_.end()) {
@@ -142,6 +146,16 @@ const std::unordered_map<uint32_t, std::shared_ptr<HdiLayer>>& HdiOutput::GetLay
 uint32_t HdiOutput::GetScreenId() const
 {
     return screenId_;
+}
+
+void HdiOutput::SetLayerCompCapacity(uint32_t layerCompositionCapacity)
+{
+    layerCompCapacity_ = layerCompositionCapacity;
+}
+
+uint32_t HdiOutput::GetLayerCompCapacity() const
+{
+    return layerCompCapacity_;
 }
 
 sptr<Surface> HdiOutput::GetFrameBufferSurface()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,7 +21,9 @@
 #include "pipeline/rs_node_map.h"
 #include "pipeline/rs_render_thread.h"
 #include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
 #include "rs_trace.h"
+#include "transaction/rs_application_agent_impl.h"
 #include "transaction/rs_interfaces.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "ui/rs_root_node.h"
@@ -44,16 +46,21 @@ RSUIDirector::~RSUIDirector()
 
 void RSUIDirector::Init()
 {
-    auto renderThreadClient = RSIRenderClient::CreateRenderThreadClient();
-    auto transactionProxy = RSTransactionProxy::GetInstance();
-    if (transactionProxy != nullptr) {
-        transactionProxy->SetRenderThreadClient(renderThreadClient);
-    }
-
     AnimationCommandHelper::SetFinisCallbackProcessor(AnimationCallbackProcessor);
 
-    RsFrameReport::GetInstance().Init();
-    RSRenderThread::Instance().Start();
+    isUniRenderEnabled_ = RSSystemProperties::GetUniRenderEnabled();
+    if (!isUniRenderEnabled_) {
+        auto renderThreadClient = RSIRenderClient::CreateRenderThreadClient();
+        auto transactionProxy = RSTransactionProxy::GetInstance();
+        if (transactionProxy != nullptr) {
+            transactionProxy->SetRenderThreadClient(renderThreadClient);
+        }
+
+        RsFrameReport::GetInstance().Init();
+        RSRenderThread::Instance().Start();
+    }
+    RSApplicationAgentImpl::Instance().RegisterRSApplicationAgent();
+
     GoForeground();
 }
 
@@ -61,7 +68,9 @@ void RSUIDirector::GoForeground()
 {
     ROSEN_LOGI("RSUIDirector::GoForeground");
     if (!isActive_) {
-        RSRenderThread::Instance().UpdateWindowStatus(true);
+        if (!isUniRenderEnabled_) {
+            RSRenderThread::Instance().UpdateWindowStatus(true);
+        }
         isActive_ = true;
         if (auto node = RSNodeMap::Instance().GetNode<RSRootNode>(root_)) {
             node->SetVisible(true);
@@ -73,7 +82,9 @@ void RSUIDirector::GoBackground()
 {
     ROSEN_LOGI("RSUIDirector::GoBackground");
     if (isActive_) {
-        RSRenderThread::Instance().UpdateWindowStatus(false);
+        if (!isUniRenderEnabled_) {
+            RSRenderThread::Instance().UpdateWindowStatus(false);
+        }
         isActive_ = false;
         if (auto node = RSNodeMap::Instance().GetNode<RSRootNode>(root_)) {
             node->SetVisible(false);
@@ -84,7 +95,9 @@ void RSUIDirector::GoBackground()
 void RSUIDirector::Destroy()
 {
     if (root_ != 0) {
-        RSRenderThread::Instance().Detach(root_);
+        if (!isUniRenderEnabled_) {
+            RSRenderThread::Instance().Detach(root_);
+        }
         root_ = 0;
     }
     GoBackground();
@@ -120,7 +133,7 @@ void RSUIDirector::AttachSurface()
 void RSUIDirector::SetTimeStamp(uint64_t timeStamp, const std::string& abilityName)
 {
     timeStamp_ = timeStamp;
-    RSRenderThread::Instance().UpdateUiDrawFrameMsg(timeStamp_, abilityName);
+    RSRenderThread::Instance().UpdateUiDrawFrameMsg(abilityName);
 }
 
 void RSUIDirector::SetUITaskRunner(const TaskRunner& uiTaskRunner)
@@ -133,7 +146,7 @@ void RSUIDirector::SendMessages()
     ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "SendCommands");
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
-        transactionProxy->FlushImplicitTransaction();
+        transactionProxy->FlushImplicitTransaction(timeStamp_);
     }
     ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
 }

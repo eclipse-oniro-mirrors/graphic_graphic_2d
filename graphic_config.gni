@@ -12,8 +12,10 @@
 # limitations under the License.
 
 declare_args() {
-  graphic_standard_feature_ace_enable_gpu = false
+  graphic_standard_feature_bootanimation_enable = true
+  graphic_standard_feature_ace_enable_gpu = true
   graphic_standard_feature_color_gamut_enable = false
+  graphic_standard_feature_rs_enable_eglimage = false
 }
 
 if (graphic_standard_feature_ace_enable_gpu) {
@@ -27,14 +29,22 @@ if (graphic_standard_feature_ace_enable_gpu) {
   # libgl is a native stub for decoupling system.img and vendor.img
   # real libgl installed in /vendor/lib/chipsetsdk
   libgl = [
-    "//foundation/graphic/graphic_2d/frameworks/opengl/libs/EGL:libEGL_stub",
-    "//foundation/graphic/graphic_2d/frameworks/opengl/libs/GLES3:libGLESv3_stub",
+    "//foundation/graphic/graphic_2d/frameworks/opengl_wrapper:EGL",
+    "//foundation/graphic/graphic_2d/frameworks/opengl_wrapper:GLESv3",
   ]
 } else {
   gpu_defines = [ "ACE_DISABLE_GL" ]
   ace_enable_gpu = false
   rs_enable_gpu = false
   libgl = []
+}
+
+if (graphic_standard_feature_rs_enable_eglimage) {
+  gpu_defines += [ "RS_ENABLE_EGLIMAGE" ]
+  rs_enable_eglimage = true
+} else {
+  gpu_defines += [ "RS_DISABLE_EGLIMAGE" ]
+  rs_enable_eglimage = false
 }
 
 if (graphic_standard_feature_color_gamut_enable) {

@@ -23,8 +23,8 @@
 #include "surface_type.h"
 #include "sync_fence.h"
 
-#ifndef weak_alias
-    #define weak_alias(old, new) \
+#ifndef WEAK_ALIAS
+    #define WEAK_ALIAS(old, new) \
         extern __typeof(old) new __attribute__((__weak__, __alias__(#old)))
 #endif
 
@@ -33,7 +33,7 @@ using namespace OHOS;
 OHNativeWindow* CreateNativeWindowFromSurface(void* pSuface)
 {
     if (pSuface == nullptr) {
-        BLOGE("para error, please check input parameter");
+        BLOGE("parameter error, please check input parameter");
         return nullptr;
     }
     OHNativeWindow* nativeWindow = new OHNativeWindow();
@@ -47,7 +47,6 @@ OHNativeWindow* CreateNativeWindowFromSurface(void* pSuface)
     nativeWindow->config.timeout = 3000;        // default timout is 3000 ms
     nativeWindow->config.colorGamut = ColorGamut::COLOR_GAMUT_SRGB;
     nativeWindow->config.transform = TransformType::ROTATE_NONE;
-    nativeWindow->config.scalingMode = ScalingMode::SCALING_MODE_SCALE_TO_WINDOW;
 
     NativeObjectReference(nativeWindow);
     return nativeWindow;
@@ -56,7 +55,7 @@ OHNativeWindow* CreateNativeWindowFromSurface(void* pSuface)
 void DestoryNativeWindow(OHNativeWindow *window)
 {
     if (window == nullptr) {
-        BLOGE("para error, please check input parameter");
+        BLOGE("parameter error, please check input parameter");
         return;
     }
     // unreference nativewindow object
@@ -66,7 +65,7 @@ void DestoryNativeWindow(OHNativeWindow *window)
 OHNativeWindowBuffer* CreateNativeWindowBufferFromSurfaceBuffer(void* pSurfaceBuffer)
 {
     if (pSurfaceBuffer == nullptr) {
-        BLOGE("para error, please check input parameter");
+        BLOGE("parameter error, please check input parameter");
         return nullptr;
     }
     OHNativeWindowBuffer *nwBuffer = new OHNativeWindowBuffer();
@@ -77,7 +76,7 @@ OHNativeWindowBuffer* CreateNativeWindowBufferFromSurfaceBuffer(void* pSurfaceBu
 void DestoryNativeWindowBuffer(OHNativeWindowBuffer* buffer)
 {
     if (buffer == nullptr) {
-        BLOGE("para error, please check input parameter");
+        BLOGE("parameter error, please check input parameter");
         return;
     }
     NativeObjectUnreference(buffer);
@@ -87,7 +86,7 @@ int32_t NativeWindowRequestBuffer(OHNativeWindow *window,
     OHNativeWindowBuffer **buffer, int *fenceFd)
 {
     if (window == nullptr || buffer == nullptr || fenceFd == nullptr) {
-        BLOGE("para error, please check input parameter");
+        BLOGE("parameter error, please check input parameter");
         return OHOS::GSERROR_INVALID_ARGUMENTS;
     }
     OHOS::sptr<OHOS::SurfaceBuffer> sfbuffer;
@@ -99,6 +98,7 @@ int32_t NativeWindowRequestBuffer(OHNativeWindow *window,
     }
     OHNativeWindowBuffer *nwBuffer = new OHNativeWindowBuffer();
     nwBuffer->sfbuffer = sfbuffer;
+    nwBuffer->uiTimestamp = window->uiTimestamp;
     *buffer = nwBuffer;
     *fenceFd = relaeaseFence->Dup();
     return OHOS::GSERROR_OK;
@@ -108,7 +108,7 @@ int32_t NativeWindowFlushBuffer(OHNativeWindow *window, OHNativeWindowBuffer *bu
     int fenceFd, struct Region region)
 {
     if (window == nullptr || buffer == nullptr || window->surface == nullptr) {
-        BLOGE("para error, please check input parameter");
+        BLOGE("parameter error, please check input parameter");
         return OHOS::GSERROR_INVALID_ARGUMENTS;
     }
 
@@ -118,13 +118,13 @@ int32_t NativeWindowFlushBuffer(OHNativeWindow *window, OHNativeWindowBuffer *bu
         config.damage.y = region.rects->y;
         config.damage.w = static_cast<int32_t>(region.rects->w);
         config.damage.h = static_cast<int32_t>(region.rects->h);
-        config.timestamp = 0;
+        config.timestamp = buffer->uiTimestamp;
     } else {
         config.damage.x = 0;
         config.damage.y = 0;
         config.damage.w = window->config.width;
         config.damage.h = window->config.height;
-        config.timestamp = 0;
+        config.timestamp = buffer->uiTimestamp;
     }
 
     OHOS::sptr<OHOS::SyncFence> acquireFence = new OHOS::SyncFence(fenceFd);
@@ -136,7 +136,7 @@ int32_t NativeWindowFlushBuffer(OHNativeWindow *window, OHNativeWindowBuffer *bu
 int32_t NativeWindowCancelBuffer(OHNativeWindow *window, OHNativeWindowBuffer *buffer)
 {
     if (window == nullptr || buffer == nullptr) {
-        BLOGE("para error, please check input parameter");
+        BLOGE("parameter error, please check input parameter");
         return OHOS::GSERROR_INVALID_ARGUMENTS;
     }
 
@@ -184,9 +184,9 @@ static int32_t InternalHanleNativeWindowOpt(OHNativeWindow *window, int code, va
             window->config.transform = static_cast<TransformType>(transform);
             break;
         }
-        case SET_SCALING_MODE : {
-            int32_t scalingMode = va_arg(args, int32_t);
-            window->config.scalingMode = static_cast<ScalingMode>(scalingMode);
+        case SET_UI_TIMESTAMP : {
+            uint64_t uiTimestamp = va_arg(args, uint64_t);
+            window->uiTimestamp = static_cast<int64_t>(uiTimestamp);
             break;
         }
         case GET_USAGE: {
@@ -227,11 +227,6 @@ static int32_t InternalHanleNativeWindowOpt(OHNativeWindow *window, int code, va
             *transform = static_cast<int32_t>(window->config.transform);
             break;
         }
-        case GET_SCALING_MODE: {
-            int32_t *scalingMode = va_arg(args, int32_t*);
-            *scalingMode = static_cast<int32_t>(window->config.scalingMode);
-            break;
-        }
         default:
             break;
     }
@@ -241,7 +236,7 @@ static int32_t InternalHanleNativeWindowOpt(OHNativeWindow *window, int code, va
 int32_t NativeWindowHandleOpt(OHNativeWindow *window, int code, ...)
 {
     if (window == nullptr) {
-        BLOGE("para error, please check input parameter");
+        BLOGE("parameter error, please check input parameter");
         return OHOS::GSERROR_INVALID_ARGUMENTS;
     }
     va_list args;
@@ -254,7 +249,7 @@ int32_t NativeWindowHandleOpt(OHNativeWindow *window, int code, ...)
 BufferHandle *GetBufferHandleFromNative(OHNativeWindowBuffer *buffer)
 {
     if (buffer == nullptr) {
-        BLOGE("para error, please check input parameter");
+        BLOGE("parameter error, please check input parameter");
         return nullptr;
     }
     return buffer->sfbuffer->GetBufferHandle();
@@ -263,7 +258,7 @@ BufferHandle *GetBufferHandleFromNative(OHNativeWindowBuffer *buffer)
 int32_t GetNativeObjectMagic(void *obj)
 {
     if (obj == nullptr) {
-        BLOGE("para error, please check input parameter");
+        BLOGE("parameter error, please check input parameter");
         return OHOS::GSERROR_INVALID_ARGUMENTS;
     }
     NativeWindowMagic* nativeWindowMagic = reinterpret_cast<NativeWindowMagic *>(obj);
@@ -273,7 +268,7 @@ int32_t GetNativeObjectMagic(void *obj)
 int32_t NativeObjectReference(void *obj)
 {
     if (obj == nullptr) {
-        BLOGE("para error, please check input parameter");
+        BLOGE("parameter error, please check input parameter");
         return OHOS::GSERROR_INVALID_ARGUMENTS;
     }
     switch (GetNativeObjectMagic(obj)) {
@@ -291,7 +286,7 @@ int32_t NativeObjectReference(void *obj)
 int32_t NativeObjectUnreference(void *obj)
 {
     if (obj == nullptr) {
-        BLOGE("para error, please check input parameter");
+        BLOGE("parameter error, please check input parameter");
         return OHOS::GSERROR_INVALID_ARGUMENTS;
     }
     switch (GetNativeObjectMagic(obj)) {
@@ -304,6 +299,52 @@ int32_t NativeObjectUnreference(void *obj)
     OHOS::RefBase *ref = reinterpret_cast<OHOS::RefBase *>(obj);
     ref->DecStrongRef(ref);
     return OHOS::GSERROR_OK;
+}
+
+int32_t NativeWindowSetScalingMode(OHNativeWindow *window, uint32_t sequence, OHScalingMode scalingMode)
+{
+    if (window == nullptr || window->surface == nullptr ||
+        scalingMode < OHScalingMode::OH_SCALING_MODE_FREEZE ||
+        scalingMode > OHScalingMode::OH_SCALING_MODE_NO_SCALE_CROP) {
+        BLOGE("parameter error, please check input parameter");
+        return OHOS::GSERROR_INVALID_ARGUMENTS;
+    }
+    return window->surface->SetScalingMode(sequence, static_cast<ScalingMode>(scalingMode));
+}
+
+int32_t NativeWindowSetMetaData(OHNativeWindow *window, uint32_t sequence, int32_t size,
+                                const OHHDRMetaData *metaData)
+{
+    if (window == nullptr || window->surface == nullptr || size <= 0 || metaData == nullptr) {
+        BLOGE("parameter error, please check input parameter");
+        return OHOS::GSERROR_INVALID_ARGUMENTS;
+    }
+
+    std::vector<HDRMetaData> data(reinterpret_cast<const HDRMetaData *>(metaData),
+                                  reinterpret_cast<const HDRMetaData *>(metaData) + size);
+    return window->surface->SetMetaData(sequence, data);
+}
+
+int32_t NativeWindowSetMetaDataSet(OHNativeWindow *window, uint32_t sequence, OHHDRMetadataKey key,
+                                   int32_t size, const uint8_t *metaData)
+{
+    if (window == nullptr || window->surface == nullptr ||
+        key < OHHDRMetadataKey::OH_MATAKEY_RED_PRIMARY_X || key > OHHDRMetadataKey::OH_MATAKEY_HDR_VIVID ||
+        size <= 0 || metaData == nullptr) {
+        BLOGE("parameter error, please check input parameter");
+        return OHOS::GSERROR_INVALID_ARGUMENTS;
+    }
+    std::vector<uint8_t> data(metaData, metaData + size);
+    return window->surface->SetMetaDataSet(sequence, static_cast<HDRMetadataKey>(key), data);
+}
+
+int32_t NativeWindowSetTunnelHandle(OHNativeWindow *window, const OHExtDataHandle *handle)
+{
+    if (window == nullptr || window->surface == nullptr || handle == nullptr) {
+        BLOGE("parameter error, please check input parameter");
+        return OHOS::GSERROR_INVALID_ARGUMENTS;
+    }
+    return window->surface->SetTunnelHandle(reinterpret_cast<const ExtDataHandle *>(handle));
 }
 
 NativeWindow::NativeWindow() : NativeWindowMagic(NATIVE_OBJECT_MAGIC_WINDOW), surface(nullptr)
@@ -322,15 +363,19 @@ NativeWindowBuffer::NativeWindowBuffer() : NativeWindowMagic(NATIVE_OBJECT_MAGIC
 {
 }
 
-weak_alias(CreateNativeWindowFromSurface, OH_NativeWindow_CreateNativeWindow);
-weak_alias(DestoryNativeWindow, OH_NativeWindow_DestroyNativeWindow);
-weak_alias(CreateNativeWindowBufferFromSurfaceBuffer, OH_NativeWindow_CreateNativeWindowBufferFromSurfaceBuffer);
-weak_alias(DestoryNativeWindowBuffer, OH_NativeWindow_DestroyNativeWindowBuffer);
-weak_alias(NativeWindowRequestBuffer, OH_NativeWindow_NativeWindowRequestBuffer);
-weak_alias(NativeWindowFlushBuffer, OH_NativeWindow_NativeWindowFlushBuffer);
-weak_alias(NativeWindowCancelBuffer, OH_NativeWindow_NativeWindowAbortBuffer);
-weak_alias(NativeWindowHandleOpt, OH_NativeWindow_NativeWindowHandleOpt);
-weak_alias(GetBufferHandleFromNative, OH_NativeWindow_GetBufferHandleFromNative);
-weak_alias(NativeObjectReference, OH_NativeWindow_NativeObjectReference);
-weak_alias(NativeObjectUnreference, OH_NativeWindow_NativeObjectUnreference);
-weak_alias(GetNativeObjectMagic, OH_NativeWindow_GetNativeObjectMagic);
+WEAK_ALIAS(CreateNativeWindowFromSurface, OH_NativeWindow_CreateNativeWindow);
+WEAK_ALIAS(DestoryNativeWindow, OH_NativeWindow_DestroyNativeWindow);
+WEAK_ALIAS(CreateNativeWindowBufferFromSurfaceBuffer, OH_NativeWindow_CreateNativeWindowBufferFromSurfaceBuffer);
+WEAK_ALIAS(DestoryNativeWindowBuffer, OH_NativeWindow_DestroyNativeWindowBuffer);
+WEAK_ALIAS(NativeWindowRequestBuffer, OH_NativeWindow_NativeWindowRequestBuffer);
+WEAK_ALIAS(NativeWindowFlushBuffer, OH_NativeWindow_NativeWindowFlushBuffer);
+WEAK_ALIAS(NativeWindowCancelBuffer, OH_NativeWindow_NativeWindowAbortBuffer);
+WEAK_ALIAS(NativeWindowHandleOpt, OH_NativeWindow_NativeWindowHandleOpt);
+WEAK_ALIAS(GetBufferHandleFromNative, OH_NativeWindow_GetBufferHandleFromNative);
+WEAK_ALIAS(NativeObjectReference, OH_NativeWindow_NativeObjectReference);
+WEAK_ALIAS(NativeObjectUnreference, OH_NativeWindow_NativeObjectUnreference);
+WEAK_ALIAS(GetNativeObjectMagic, OH_NativeWindow_GetNativeObjectMagic);
+WEAK_ALIAS(NativeWindowSetScalingMode, OH_NativeWindow_NativeWindowSetScalingMode);
+WEAK_ALIAS(NativeWindowSetMetaData, OH_NativeWindow_NativeWindowSetMetaData);
+WEAK_ALIAS(NativeWindowSetMetaDataSet, OH_NativeWindow_NativeWindowSetMetaDataSet);
+WEAK_ALIAS(NativeWindowSetTunnelHandle, OH_NativeWindow_NativeWindowSetTunnelHandle);

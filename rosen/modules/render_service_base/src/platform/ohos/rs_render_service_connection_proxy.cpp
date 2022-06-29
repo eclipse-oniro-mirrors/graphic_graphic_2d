@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -76,6 +76,44 @@ void RSRenderServiceConnectionProxy::ExecuteSynchronousTask(const std::shared_pt
     if (task->CheckHeader(reply)) {
         task->ReadFromParcel(reply);
     }
+}
+
+bool RSRenderServiceConnectionProxy::InitUniRenderEnabled(const std::string &bundleName)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteString(bundleName)) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    int32_t err = Remote()->SendRequest(RSIRenderServiceConnection::GET_UNI_RENDER_TYPE, data, reply, option);
+    if (err != NO_ERROR) {
+        return false;
+    }
+    return reply.ReadBool();
+}
+
+bool RSRenderServiceConnectionProxy::CreateNode(const RSSurfaceRenderNodeConfig& config)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteUint64(config.id)) {
+        return false;
+    }
+    if (!data.WriteString(config.name)) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    int32_t err = Remote()->SendRequest(RSIRenderServiceConnection::CREATE_NODE, data, reply, option);
+    if (err != NO_ERROR) {
+        return false;
+    }
+
+    return reply.ReadBool();
 }
 
 sptr<Surface> RSRenderServiceConnectionProxy::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config)
@@ -156,8 +194,8 @@ std::vector<ScreenId> RSRenderServiceConnectionProxy::GetAllScreenIds()
         return std::vector<ScreenId>();
     }
 
-    int32_t size = reply.ReadUint32();
-    for (int32_t i = 0; i < size; i++) {
+    uint32_t size = reply.ReadUint32();
+    for (uint32_t i = 0; i < size; i++) {
         screenIds.emplace_back(reply.ReadUint64());
     }
 
@@ -335,7 +373,7 @@ void RSRenderServiceConnectionProxy::SetScreenPowerStatus(ScreenId id, ScreenPow
     }
 }
 
-void RSRenderServiceConnectionProxy::RegisterApplicationRenderThread(uint32_t pid, sptr<IApplicationRenderThread> app)
+void RSRenderServiceConnectionProxy::RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app)
 {
     if (app == nullptr) {
         ROSEN_LOGE("RSRenderServiceProxy: callback == nullptr\n");
@@ -348,7 +386,7 @@ void RSRenderServiceConnectionProxy::RegisterApplicationRenderThread(uint32_t pi
     option.SetFlags(MessageOption::TF_ASYNC);
     data.WriteUint32(pid);
     data.WriteRemoteObject(app->AsObject());
-    int32_t err = Remote()->SendRequest(RSIRenderServiceConnection::REGISTER_APPLICATION_RENDER_THREAD, data, reply, option);
+    int32_t err = Remote()->SendRequest(RSIRenderServiceConnection::REGISTER_APPLICATION_AGENT, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RSRenderServiceProxy: Remote()->SendRequest() error.\n");
         return;
@@ -774,6 +812,44 @@ int32_t RSRenderServiceConnectionProxy::GetScreenType(ScreenId id, RSScreenType&
     if (result == SUCCESS) {
         screenType = static_cast<RSScreenType>(reply.ReadUint32());
     }
+    return result;
+}
+
+int32_t RSRenderServiceConnectionProxy::RegisterOcclusionChangeCallback(sptr<RSIOcclusionChangeCallback> callback)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return RS_CONNECTION_ERROR;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    data.WriteRemoteObject(callback->AsObject());
+    int32_t err = Remote()->SendRequest(
+        RSIRenderServiceConnection::REGISTER_OCCLUSION_CHANGE_CALLBACK, data, reply, option);
+    if (err != NO_ERROR) {
+        return RS_CONNECTION_ERROR;
+    }
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t RSRenderServiceConnectionProxy::UnRegisterOcclusionChangeCallback(sptr<RSIOcclusionChangeCallback> callback)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return RS_CONNECTION_ERROR;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    data.WriteRemoteObject(callback->AsObject());
+    int32_t err = Remote()->SendRequest(
+        RSIRenderServiceConnection::UNREGISTER_OCCLUSION_CHANGE_CALLBACK, data, reply, option);
+    if (err != NO_ERROR) {
+        return RS_CONNECTION_ERROR;
+    }
+    int32_t result = reply.ReadInt32();
     return result;
 }
 } // namespace Rosen

@@ -245,26 +245,6 @@ HWTEST_F(NativeWindowTest, HandleOpt007, Function | MediumTest | Level2)
 }
 
 /*
-* Function: NativeWindowHandleOpt
-* Type: Function
-* Rank: Important(2)
-* EnvConditions: N/A
-* CaseDescription: 1. call NativeWindowHandleOpt by different param
-*                  2. check ret
- */
-HWTEST_F(NativeWindowTest, HandleOpt008, Function | MediumTest | Level2)
-{
-    int code = SET_SCALING_MODE;
-    ScalingMode scalingModeSet = ScalingMode::SCALING_MODE_SCALE_CROP;
-    ASSERT_EQ(NativeWindowHandleOpt(nativeWindow, code, scalingModeSet), OHOS::GSERROR_OK);
-
-    code = GET_SCALING_MODE;
-    ScalingMode scalingModeGet = ScalingMode::SCALING_MODE_FREEZE;
-    ASSERT_EQ(NativeWindowHandleOpt(nativeWindow, code, &scalingModeGet), OHOS::GSERROR_OK);
-    ASSERT_EQ(scalingModeSet, scalingModeGet);
-}
-
-/*
 * Function: CreateNativeWindowBufferFromSurfaceBuffer
 * Type: Function
 * Rank: Important(2)
@@ -537,5 +517,91 @@ HWTEST_F(NativeWindowTest, DestoryNativeWindowBuffer001, Function | MediumTest |
 HWTEST_F(NativeWindowTest, DestoryNativeWindowBuffer002, Function | MediumTest | Level2)
 {
     DestoryNativeWindowBuffer(nativeWindowBuffer);
+}
+
+/*
+* Function: NativeWindowSetScalingMode
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call NativeWindowSetScalingMode with abnormal parameters and check ret
+*                  2. call NativeWindowSetScalingMode with normal parameters and check ret
+ */
+HWTEST_F(NativeWindowTest, SetScalingMode001, Function | MediumTest | Level2)
+{
+    int32_t sequence = 0;
+    OHScalingMode scalingMode = OHScalingMode::OH_SCALING_MODE_SCALE_TO_WINDOW;
+    ASSERT_EQ(NativeWindowSetScalingMode(nullptr, -1, scalingMode), OHOS::GSERROR_INVALID_ARGUMENTS);
+    ASSERT_EQ(NativeWindowSetScalingMode(nativeWindow, -1, scalingMode), OHOS::GSERROR_NO_ENTRY);
+    ASSERT_EQ(NativeWindowSetScalingMode(nativeWindow, sequence,
+                                         static_cast<OHScalingMode>(OHScalingMode::OH_SCALING_MODE_NO_SCALE_CROP + 1)),
+                                         OHOS::GSERROR_INVALID_ARGUMENTS);
+    ASSERT_EQ(NativeWindowSetScalingMode(nativeWindow, sequence, scalingMode), OHOS::GSERROR_OK);
+}
+
+/*
+* Function: NativeWindowSetMetaData
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call NativeWindowSetMetaData with abnormal parameters and check ret
+*                  2. call NativeWindowSetMetaData with normal parameters and check ret
+ */
+HWTEST_F(NativeWindowTest, SetMetaData001, Function | MediumTest | Level2)
+{
+    int32_t sequence = 0;
+    int32_t size = 1;
+    const OHHDRMetaData metaData[] = {{OH_MATAKEY_RED_PRIMARY_X, 0}};
+    ASSERT_EQ(NativeWindowSetMetaData(nullptr, -1, 0, nullptr), OHOS::GSERROR_INVALID_ARGUMENTS);
+    ASSERT_EQ(NativeWindowSetMetaData(nativeWindow, -1, 0, nullptr), OHOS::GSERROR_INVALID_ARGUMENTS);
+    ASSERT_EQ(NativeWindowSetMetaData(nativeWindow, sequence, 0, nullptr), OHOS::GSERROR_INVALID_ARGUMENTS);
+    ASSERT_EQ(NativeWindowSetMetaData(nativeWindow, sequence, size, nullptr), OHOS::GSERROR_INVALID_ARGUMENTS);
+    ASSERT_EQ(NativeWindowSetMetaData(nativeWindow, -1, size, metaData), OHOS::GSERROR_NO_ENTRY);
+    ASSERT_EQ(NativeWindowSetMetaData(nativeWindow, sequence, size, metaData), OHOS::GSERROR_OK);
+}
+
+/*
+* Function: NativeWindowSetMetaDataSet
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call NativeWindowSetMetaDataSet with abnormal parameters and check ret
+*                  2. call NativeWindowSetMetaDataSet with normal parameters and check ret
+ */
+HWTEST_F(NativeWindowTest, SetMetaDataSet001, Function | MediumTest | Level2)
+{
+    int32_t sequence = 0;
+    int32_t size = 1;
+    OHHDRMetadataKey key = OHHDRMetadataKey::OH_MATAKEY_HDR10_PLUS;
+    const uint8_t metaData[] = {0};
+    ASSERT_EQ(NativeWindowSetMetaDataSet(nullptr, -1, key, 0, nullptr), OHOS::GSERROR_INVALID_ARGUMENTS);
+    ASSERT_EQ(NativeWindowSetMetaDataSet(nativeWindow, -1, key, 0, nullptr), OHOS::GSERROR_INVALID_ARGUMENTS);
+    ASSERT_EQ(NativeWindowSetMetaDataSet(nativeWindow, sequence, key, 0, nullptr), OHOS::GSERROR_INVALID_ARGUMENTS);
+    ASSERT_EQ(NativeWindowSetMetaDataSet(nativeWindow, sequence, key, size, nullptr), OHOS::GSERROR_INVALID_ARGUMENTS);
+    ASSERT_EQ(NativeWindowSetMetaDataSet(nativeWindow, -1, key, size, metaData), OHOS::GSERROR_NO_ENTRY);
+    ASSERT_EQ(NativeWindowSetMetaDataSet(nativeWindow, sequence, key, size, metaData), OHOS::GSERROR_OK);
+}
+
+/*
+* Function: NativeWindowSetTunnelHandle
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call NativeWindowSetTunnelHandle with abnormal parameters and check ret
+*                  2. call NativeWindowSetTunnelHandle with normal parameters and check ret
+ */
+HWTEST_F(NativeWindowTest, SetTunnelHandle001, Function | MediumTest | Level2)
+{
+    OHExtDataHandle *handle = new OHExtDataHandle();
+    handle->fd = -1;
+    handle->reserveInts = 0;
+    ASSERT_EQ(NativeWindowSetTunnelHandle(nullptr, nullptr), OHOS::GSERROR_INVALID_ARGUMENTS);
+    ASSERT_EQ(NativeWindowSetTunnelHandle(nativeWindow, nullptr), OHOS::GSERROR_INVALID_ARGUMENTS);
+    ASSERT_EQ(NativeWindowSetTunnelHandle(nativeWindow, handle), OHOS::GSERROR_INVALID_ARGUMENTS);
+    handle->reserveInts = 1;
+    handle->reserve[0] = 1;
+    ASSERT_EQ(NativeWindowSetTunnelHandle(nativeWindow, handle), OHOS::GSERROR_OK);
+    ASSERT_EQ(NativeWindowSetTunnelHandle(nativeWindow, handle), OHOS::GSERROR_NO_ENTRY);
+    delete handle;
 }
 }

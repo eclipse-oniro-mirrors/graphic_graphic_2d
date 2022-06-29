@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,59 +13,41 @@
  * limitations under the License.
  */
 
- #ifndef RS_PROCESSOR_H
- #define RS_PROCESSOR_H
+ #ifndef RS_CORE_PIPELINE_PROCESSOR_H
+ #define RS_CORE_PIPELINE_PROCESSOR_H
 
-#include "include/core/SkCanvas.h"
-#include "include/core/SkMatrix.h"
-#include <surface.h>
-
-#include "hdi_output.h"
-#include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
-#include "screen_manager/screen_types.h"
-
-#include "platform/drawing/rs_surface_frame.h"
-
-#include "platform/ohos/rs_surface_ohos.h"
-#ifdef RS_ENABLE_GL
-#include "render_context/render_context.h"
-#include "rs_egl_image_manager.h"
-#endif // RS_ENABLE_GL
+#include "rs_render_engine.h"
+#include "screen_manager/rs_screen_manager.h"
 
 namespace OHOS {
 namespace Rosen {
-
 class RSProcessor {
 public:
-    using SpecialTask = std::function<void()>;
-    RSProcessor() {}
-    virtual ~RSProcessor() {}
+    RSProcessor() = default;
+    virtual ~RSProcessor() noexcept = default;
+
+    RSProcessor(const RSProcessor&) = delete;
+    void operator=(const RSProcessor&) = delete;
+
+    virtual bool Init(ScreenId id, int32_t offsetX, int32_t offsetY, ScreenId mirroredId);
     virtual void ProcessSurface(RSSurfaceRenderNode& node) = 0;
-    virtual void ProcessSurface(RSDisplayRenderNode& node) = 0;
-    virtual void Init(ScreenId id, int32_t offsetX, int32_t offsetY) = 0;
+    virtual void ProcessDisplaySurface(RSDisplayRenderNode& node) = 0;
     virtual void PostProcess() = 0;
 
 protected:
-    SkCanvas* CreateCanvas(
-        const std::shared_ptr<RSSurfaceOhos>& surface,
-        const BufferRequestConfig& requestConfig);
+    void CalculateMirrorAdaptiveCoefficient(float curWidth, float curHeight,
+        float mirroredWidth, float mirroredHeight);
 
-    void SetBufferTimeStamp();
-    int32_t GetOffsetX();
-    int32_t GetOffsetY();
-
-#ifdef RS_ENABLE_GL
-    std::shared_ptr<RenderContext> renderContext_;
-    std::shared_ptr<RSEglImageManager> eglImageManager_;
-#endif // RS_ENABLE_GL
-    std::unique_ptr<RSSurfaceFrame> currFrame_;
-    std::shared_ptr<RSSurfaceOhos> rsSurface_;
-private:
-    int32_t releaseFence_ = -1;
+    ScreenInfo screenInfo_;
+    int32_t offsetX_ = 0;
+    int32_t offsetY_ = 0;
+    ScreenId mirroredId_ = INVALID_SCREEN_ID;
+    float mirrorAdaptiveCoefficient_ = 1.0f;
+    std::shared_ptr<RSRenderEngine> renderEngine_;
+    BufferRequestConfig renderFrameConfig_ {};
 };
 } // namespace Rosen
 } // namespace OHOS
-
- #endif
+#endif // RS_CORE_PIPELINE_PROCESSOR_H

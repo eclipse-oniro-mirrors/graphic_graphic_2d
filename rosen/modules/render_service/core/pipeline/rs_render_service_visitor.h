@@ -42,9 +42,11 @@ public:
     virtual void ProcessSurfaceRenderNode(RSSurfaceRenderNode &node) override;
     virtual void ProcessCanvasRenderNode(RSCanvasRenderNode& node) override {}
     virtual void ProcessRootRenderNode(RSRootRenderNode& node) override {}
-
-    void UpdateGeometry(RSBaseRenderNode &displayNode);
-
+    
+    void SetAnimateState(bool doAnimate)
+    {
+        doAnimate_ = doAnimate;
+    }
 private:
     std::unique_ptr<SkCanvas> skCanvas_;
     std::shared_ptr<RSPaintFilterCanvas> canvas_;
@@ -53,6 +55,7 @@ private:
     int32_t offsetY_ = 0;
     bool isSecurityDisplay_ = false;
     std::shared_ptr<RSProcessor> processor_ = nullptr;
+    bool doAnimate_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

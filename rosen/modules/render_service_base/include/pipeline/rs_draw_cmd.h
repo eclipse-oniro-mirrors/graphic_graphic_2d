@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -64,6 +64,7 @@ enum RSOpType : uint16_t {
     BITMAP_NINE_OPITEM,
     ADAPTIVE_RRECT_OPITEM,
     CLIP_ADAPTIVE_RRECT_OPITEM,
+    CLIP_OUTSET_RECT_OPITEM,
     PATH_OPITEM,
     CLIP_PATH_OPITEM,
     PAINT_OPITEM,
@@ -73,6 +74,7 @@ enum RSOpType : uint16_t {
     PICTURE_OPITEM,
     POINTS_OPITEM,
     VERTICES_OPITEM,
+    SHADOW_REC_OPITEM,
     MULTIPLY_ALPHA_OPITEM,
     SAVE_ALPHA_OPITEM,
     RESTORE_ALPHA_OPITEM,
@@ -89,10 +91,7 @@ public:
 
     virtual void Draw(RSPaintFilterCanvas& canvas, const SkRect* rect) const {};
 
-    virtual RSOpType GetType() const
-    {
-        return RSOpType::OPITEM;
-    }
+    virtual RSOpType GetType() const = 0;
 #ifdef ROSEN_OHOS
     bool Marshalling(Parcel& parcel) const override
     {
@@ -564,6 +563,27 @@ private:
     float radius_;
 };
 
+class ClipOutsetRectOpItem : public OpItem {
+public:
+    ClipOutsetRectOpItem(float dx, float dy);
+    ~ClipOutsetRectOpItem() override {}
+    void Draw(RSPaintFilterCanvas& canvas, const SkRect*) const override;
+
+    RSOpType GetType() const override
+    {
+        return RSOpType::CLIP_OUTSET_RECT_OPITEM;
+    }
+
+#ifdef ROSEN_OHOS
+    bool Marshalling(Parcel& parcel) const override;
+    static OpItem* Unmarshalling(Parcel& parcel);
+#endif
+
+private:
+    float dx_;
+    float dy_;
+};
+
 class PathOpItem : public OpItemWithPaint {
 public:
     PathOpItem(const SkPath& path, const SkPaint& paint);
@@ -764,6 +784,16 @@ public:
     ShadowRecOpItem(const SkPath& path, const SkDrawShadowRec& rec);
     ~ShadowRecOpItem() override {}
     void Draw(RSPaintFilterCanvas& canvas, const SkRect*) const override;
+
+    RSOpType GetType() const override
+    {
+        return RSOpType::SHADOW_REC_OPITEM;
+    }
+
+#ifdef ROSEN_OHOS
+    bool Marshalling(Parcel& parcel) const override;
+    static OpItem* Unmarshalling(Parcel& parcel);
+#endif
 
 private:
     SkPath path_;

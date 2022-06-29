@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -41,18 +41,12 @@ public:
     int32_t GetSurfaceWidth() const;
     int32_t GetSurfaceHeight() const;
 
-    void AddSurfaceRenderNode(NodeId id);
-    void ClearSurfaceNodeInRS();
-
-    static void MarkForceRaster(bool flag = true);
-    static bool NeedForceRaster();
-
 private:
     std::shared_ptr<RSSurface> rsSurface_ = nullptr;
     NodeId surfaceNodeId_ = 0;
-    std::vector<NodeId> childSurfaceNodeId_;
 
-    static bool forceRaster_;
+    std::vector<NodeId> childSurfaceNodeIds_;
+    friend class RSRenderThreadVisitor;
 };
 } // namespace Rosen
 } // namespace OHOS

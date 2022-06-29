@@ -56,51 +56,10 @@ void RSRenderNodeMap::FilterNodeByPid(pid_t pid)
     });
 }
 
-void RSRenderNodeMap::DumpNodeNotOnTree(std::string& dumpString) const
+void RSRenderNodeMap::TraversalNodes(std::function<void (const std::shared_ptr<RSBaseRenderNode>&)> func) const
 {
-    dumpString.append("\n");
-    dumpString.append("-- Node Not On Tree\n");
-    for (auto it = renderNodeMap_.begin(); it != renderNodeMap_.end(); it++) {
-        if ((*it).second->GetType() == RSRenderNodeType::SURFACE_NODE && !(*it).second->IsOnTheTree()) {
-            dumpString += "\n node Id[" + std::to_string((*it).first) + "]:\n";
-            auto node = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>((*it).second);
-            auto& surfaceConsumer = node->GetConsumer();
-            if (surfaceConsumer == nullptr) {
-                continue;
-            }
-            surfaceConsumer->Dump(dumpString);
-        }
-    }
-}
-
-void RSRenderNodeMap::DumpAllNodeMemSize(std::string& dumpString) const
-{
-    dumpString.append("\n");
-    dumpString.append("-- All Surfaces Memory Size\n");
-    dumpString.append("the memory size of all surfaces buffer is : dumpend");
-
-    for (auto it = renderNodeMap_.begin(); it != renderNodeMap_.end(); it++) {
-        if ((*it).second->GetType() != RSRenderNodeType::SURFACE_NODE) {
-            continue;
-        }
-        auto node = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>((*it).second);
-        auto& surfaceConsumer = node->GetConsumer();
-        surfaceConsumer->Dump(dumpString);
-        break;
-    }
-}
-
-void RSRenderNodeMap::ConsumeNodesNotOnTree() const
-{
-    for (auto it = renderNodeMap_.begin(); it != renderNodeMap_.end(); it++) {
-        if ((*it).second->GetType() == RSRenderNodeType::SURFACE_NODE && !(*it).second->IsOnTheTree()) {
-            auto node = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>((*it).second);
-            auto& surfaceConsumer = node->GetConsumer();
-            if (surfaceConsumer == nullptr) {
-                continue;
-            }
-            node->ConsumeNodeNotOnTree();
-        }
+    for (const auto& [_, node] : renderNodeMap_) {
+        func(node);
     }
 }
 

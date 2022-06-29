@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,6 +20,7 @@
 #include <surface.h>
 
 #include "display_type.h"
+#include "common/rs_vector4.h"
 #include "ipc_callbacks/buffer_available_callback.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_paint_filter_canvas.h"
@@ -28,6 +29,8 @@
 #include "pipeline/rs_surface_handler.h"
 #include "refbase.h"
 #include "sync_fence.h"
+#include "common/rs_occlusion_region.h"
+#include "transaction/rs_occlusion_data.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -44,7 +47,6 @@ public:
 
     void ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas) override;
     void ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas) override;
-    void ConsumeNodeNotOnTree();
 
     std::string GetName() const
     {
@@ -86,6 +88,8 @@ public:
         return isProxy_;
     }
 
+    void CollectSurface(const std::shared_ptr<RSBaseRenderNode>& node,
+                        std::vector<RSBaseRenderNode::SharedPtr>& vec) override;
     void Prepare(const std::shared_ptr<RSNodeVisitor>& visitor) override;
     void Process(const std::shared_ptr<RSNodeVisitor>& visitor) override;
 
@@ -94,24 +98,33 @@ public:
         return RSRenderNodeType::SURFACE_NODE;
     }
 
-    void SetMatrix(const SkMatrix& transform, bool sendMsg = true);
-    const SkMatrix& GetMatrix() const;
+    // pass render context (matrix/alpha/clip) from RT to RS
+    void SetContextMatrix(const SkMatrix& transform, bool sendMsg = true);
+    const SkMatrix& GetContextMatrix() const;
 
-    void SetAlpha(float alpha, bool sendMsg = true);
-    float GetAlpha() const;
+    void SetTotalMatrix(const SkMatrix& totalMatrix)
+    {
+        totalMatrix_ = totalMatrix;
+    }
+    const SkMatrix& GetTotalMatrix() const
+    {
+        return totalMatrix_;
+    }
 
-    void SetClipRegion(Vector4f clipRegion, bool sendMsg = true);
+    void SetContextAlpha(float alpha, bool sendMsg = true);
+    float GetContextAlpha() const;
+
+    void SetContextClipRegion(SkRect clipRegion, bool sendMsg = true);
+    const SkRect& GetContextClipRegion() const;
 
     void SetSecurityLayer(bool isSecurityLayer);
     bool GetSecurityLayer() const;
 
-    const Vector4f& GetClipRegion() const
-    {
-        return clipRect_;
-    }
-
     void SetDstRect(const RectI& dstRect)
     {
+        if (dstRect_ != dstRect) {
+            dstRectChanged_= true;
+        }
         dstRect_ = dstRect;
     }
 
@@ -120,36 +133,77 @@ public:
         return dstRect_;
     }
 
+    void SetSrcRect(const RectI& rect)
+    {
+        srcRect_ = rect;
+    }
+
+    const RectI& GetSrcRect() const
+    {
+        return srcRect_;
+    }
+
     void SetGlobalAlpha(float alpha)
     {
         if (globalAlpha_ == alpha) {
-        return;
+            return;
         }
         globalAlpha_ = alpha;
     }
 
-    float GetGlobalAlhpa() const
+    float GetGlobalAlpha() const
     {
         return globalAlpha_;
     }
 
-    NodeId GetId() const override
+    void SetOcclusionVisible(bool visible)
     {
-        return RSBaseRenderNode::GetId();
+        isOcclusionVisible_ = visible;
     }
 
-    void SetParentId(NodeId parentId, bool sendMsg = true);
-    NodeId GetParentId() const;
+    bool GetOcclusionVisible() const
+    {
+        return isOcclusionVisible_;
+    }
+
+    void SetVisibleRegionRecursive(const Occlusion::Region& region, VisibleData& visibleVec)
+    {
+        visibleRegion_ = region;
+        bool vis = region.GetSize() > 0;
+        if (vis) {
+            visibleVec.emplace_back(GetId());
+        }
+        SetOcclusionVisible(vis);
+        for (auto& child : GetSortedChildren()) {
+            if (child->GetType() == RSRenderNodeType::SURFACE_NODE) {
+                auto surface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child);
+                if (surface == nullptr) {
+                    continue;
+                }
+                surface->SetVisibleRegionRecursive(region, visibleVec);
+            }
+        }
+    }
+
+    bool GetDstRectChanged() const
+    {
+        return dstRectChanged_;
+    }
+
+    void CleanDstRectChanged()
+    {
+        dstRectChanged_ = false;
+    }
+
+    void SetConsumer(const sptr<Surface>& consumer);
 
     void UpdateSurfaceDefaultSize(float width, float height);
-
-    static void SendPropertyCommand(std::unique_ptr<RSCommand>& command);
 
     BlendType GetBlendType();
     void SetBlendType(BlendType blendType);
 
     // Only SurfaceNode in RS calls "RegisterBufferAvailableListener"
-    // to save callback method sent by RT or UI which depands on the value of "isFromRenderThread".
+    // to save callback method sent by RT or UI which depends on the value of "isFromRenderThread".
     void RegisterBufferAvailableListener(
         sptr<RSIBufferAvailableCallback> callback, bool isFromRenderThread);
 
@@ -166,27 +220,30 @@ public:
     // And RenderThread does not call mainFunc_ if nothing in UI thread is changed
     // which would cause callback for "clip" on parent SurfaceNode cannot be triggered
     // for "clip" is executed in RenderThreadVisitor::ProcessSurfaceRenderNode.
-    // To fix this bug, we set callback which would call RSRenderThread::RequestNextVSync() to forcely "refresh"
+    // To fix this bug, we set callback which would call RSRenderThread::RequestNextVSync() to forcedly "refresh"
     // RenderThread when SurfaceNode in RenderService has available buffer and execute RSIBufferAvailableCallback.
     void SetCallbackForRenderThreadRefresh(std::function<void(void)> callback);
     bool NeedSetCallbackForRenderThreadRefresh();
 
 private:
-    RectI CalculateClipRegion(RSPaintFilterCanvas& canvas);
-    friend class RSRenderTransition;
+    void SendCommandFromRT(std::unique_ptr<RSCommand>& command, NodeId nodeId);
 
     std::mutex mutexRT_;
     std::mutex mutexUI_;
     std::mutex mutex_;
-    SkMatrix matrix_;
-    float alpha_ = 1.0f;
+
+    SkMatrix contextMatrix_ = SkMatrix::I();
+    float contextAlpha_ = 1.0f;
+    SkRect contextClipRect_ = SkRect::MakeEmpty();
+
     bool isSecurityLayer_ = false;
-    NodeId parentId_ = 0;
+    RectI srcRect_;
     RectI dstRect_;
+    SkMatrix totalMatrix_;
     int32_t offsetX_ = 0;
     int32_t offsetY_ = 0;
     float globalAlpha_ = 1.0f;
-    Vector4f clipRect_;
+
     std::string name_;
     bool isProxy_ = false;
     BlendType blendType_ = BlendType::BLEND_SRCOVER;
@@ -195,7 +252,12 @@ private:
     sptr<RSIBufferAvailableCallback> callbackFromRT_;
     sptr<RSIBufferAvailableCallback> callbackFromUI_;
     std::function<void(void)> callbackForRenderThreadRefresh_ = nullptr;
+    std::vector<NodeId> childSurfaceNodeIds_;
+    friend class RSRenderThreadVisitor;
     RectI clipRegionFromParent_;
+    Occlusion::Region visibleRegion_;
+    bool isOcclusionVisible_ = true;
+    bool dstRectChanged_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

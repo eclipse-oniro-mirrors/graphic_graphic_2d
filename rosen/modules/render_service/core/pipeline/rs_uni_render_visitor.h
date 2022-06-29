@@ -15,17 +15,15 @@
 #ifndef RENDER_SERVICE_CORE_PIPELINE_RS_UNI_RENDER_VISITOR_H
 #define RENDER_SERVICE_CORE_PIPELINE_RS_UNI_RENDER_VISITOR_H
 
-#include <set>
-#include <string>
-
-#include "pipeline/rs_processor.h"
 #include "pipeline/rs_dirty_region_manager.h"
-#include "pipeline/rs_paint_filter_canvas.h"
+#include "pipeline/rs_processor.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "visitor/rs_node_visitor.h"
 
 namespace OHOS {
 namespace Rosen {
+class RSPaintFilterCanvas;
+
 class RSUniRenderVisitor : public RSNodeVisitor {
 public:
     RSUniRenderVisitor();
@@ -45,22 +43,19 @@ public:
 
 private:
     void DrawBufferOnCanvas(RSSurfaceRenderNode& node);
-    static bool IsChildOfDisplayNode(RSBaseRenderNode& node);
-    static bool IsChildOfSurfaceNode(RSBaseRenderNode& node);
+#ifdef RS_ENABLE_EGLIMAGE
+    void DrawImageOnCanvas(RSSurfaceRenderNode& node);
+#endif // RS_ENABLE_EGLIMAGE
 
     ScreenInfo screenInfo_;
     RSDirtyRegionManager dirtyManager_;
-    RSRenderNode* parent_ = nullptr;
     bool dirtyFlag_ { false };
-    RSPaintFilterCanvas* canvas_ = nullptr;
+    std::unique_ptr<RSPaintFilterCanvas> canvas_;
+    std::unique_ptr<SkCanvas> skCanvas_;
 
-    float globalZOrder_ { 0.0f };
-    float uniZOrder_ { 0.0f };
+    int32_t offsetX_ { 0 };
+    int32_t offsetY_ { 0 };
     std::shared_ptr<RSProcessor> processor_;
-    bool isUniRender_ { false };
-    bool hasUniRender_ { false };
-    bool isUniRenderForAll_ { false };
-    std::set<std::string> uniRenderList_;
 };
 } // namespace Rosen
 } // namespace OHOS

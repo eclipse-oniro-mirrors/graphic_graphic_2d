@@ -57,9 +57,19 @@ public:
         return RSRenderNodeType::RS_NODE;
     }
 
-    bool HasTransition(bool recursive) const override
+    bool HasDisappearingTransition(bool recursive) const override
     {
-        return animationManager_.HasTransition() || RSBaseRenderNode::HasTransition(recursive);
+        return animationManager_.HasDisappearingTransition() || RSBaseRenderNode::HasDisappearingTransition(recursive);
+    }
+
+    inline RectI GetOldDirty() const
+    {
+        return oldDirty_;
+    }
+
+    inline bool IsDirtyRegionUpdated() const
+    {
+        return isDirtyRegionUpdated_;
     }
 
 protected:
@@ -70,6 +80,7 @@ protected:
 private:
     void FallbackAnimationsToRoot();
     int32_t saveCount_ = 0;
+    bool isDirtyRegionUpdated_ = false;
     RectI oldDirty_;
     RSProperties renderProperties_;
     RSAnimationManager animationManager_;

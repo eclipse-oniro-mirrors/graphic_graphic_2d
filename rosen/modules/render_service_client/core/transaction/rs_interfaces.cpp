@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -184,6 +184,16 @@ int32_t RSInterfaces::GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability&
 int32_t RSInterfaces::GetScreenType(ScreenId id, RSScreenType& screenType)
 {
     return renderServiceClient_->GetScreenType(id, screenType);
+}
+
+int32_t RSInterfaces::RegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback)
+{
+    return renderServiceClient_->RegisterOcclusionChangeCallback(callback);
+}
+
+int32_t RSInterfaces::UnRegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback)
+{
+    return renderServiceClient_->UnRegisterOcclusionChangeCallback(callback);
 }
 } // namespace Rosen
 } // namespace OHOS

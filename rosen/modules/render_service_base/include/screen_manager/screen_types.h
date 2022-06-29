@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,6 +30,8 @@ using ScreenPhysicalId = uint32_t;
 constexpr ScreenId INVALID_SCREEN_ID = ~(static_cast<ScreenId>(0));
 
 constexpr int32_t INVALID_BACKLIGHT_VALUE = -1;
+
+constexpr uint32_t LAYER_COMPOSITION_CAPACITY = 12;
 
 inline constexpr ScreenId ToScreenId(ScreenPhysicalId physicalId)
 {

@@ -15,11 +15,6 @@
 
 #include "pipeline/rs_render_service_visitor.h"
 
-#include <surface.h>
-#include <window.h>
-#include <window_manager.h>
-#include <window_option.h>
-
 #include "common/rs_obj_abs_geometry.h"
 #include "display_type.h"
 #include "include/core/SkCanvas.h"
@@ -67,10 +62,8 @@ void RSRenderServiceVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
             RS_LOGI("RSRenderServiceVisitor::PrepareDisplayRenderNode mirrorSource haven't existed");
             return;
         }
-        UpdateGeometry(*existingSource);
         PrepareBaseRenderNode(*existingSource);
     } else {
-        UpdateGeometry(node);
         PrepareBaseRenderNode(node);
     }
 }
@@ -96,8 +89,9 @@ void RSRenderServiceVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             node.SetCompositeType(RSDisplayRenderNode::CompositeType::SOFTWARE_COMPOSITE);
             break;
         case ScreenState::HDI_OUTPUT_ENABLE:
-            node.SetCompositeType(node.IsForceSoftComposite() ? RSDisplayRenderNode::CompositeType::COMPATIBLE_COMPOSITE
-                                                              : RSDisplayRenderNode::CompositeType::HARDWARE_COMPOSITE);
+            node.SetCompositeType(node.IsForceSoftComposite() ?
+                RSDisplayRenderNode::CompositeType::SOFTWARE_COMPOSITE:
+                RSDisplayRenderNode::CompositeType::HARDWARE_COMPOSITE);
             break;
         default:
             RS_LOGE("RSRenderServiceVisitor::ProcessDisplayRenderNode State is unusual");
@@ -108,7 +102,12 @@ void RSRenderServiceVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         RS_LOGE("RSRenderServiceVisitor::ProcessDisplayRenderNode: RSProcessor is null!");
         return;
     }
-    processor_->Init(node.GetScreenId(), node.GetDisplayOffsetX(), node.GetDisplayOffsetY());
+    auto mirrorNode = node.GetMirrorSource().lock();
+    if (!processor_->Init(node.GetScreenId(), node.GetDisplayOffsetX(), node.GetDisplayOffsetY(),
+        mirrorNode ? mirrorNode->GetScreenId() : INVALID_SCREEN_ID)) {
+        RS_LOGE("RSRenderServiceVisitor::ProcessDisplayRenderNode: processor init failed!");
+        return;
+    }
 
     if (node.IsMirrorDisplay()) {
         auto mirrorSource = node.GetMirrorSource();
@@ -127,6 +126,7 @@ void RSRenderServiceVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         }
         skCanvas_ = std::make_unique<SkCanvas>(boundWidth, boundHeight);
         canvas_ = std::make_shared<RSPaintFilterCanvas>(skCanvas_.get());
+        canvas_->clipRect(SkRect::MakeWH(boundWidth, boundHeight));
         ProcessBaseRenderNode(node);
     }
     processor_->PostProcess();
@@ -142,32 +142,6 @@ void RSRenderServiceVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     if (!node.GetRenderProperties().GetVisible()) {
         RS_LOGI("RSRenderServiceVisitor::PrepareSurfaceRenderNode node : %llu is invisible", node.GetId());
         return;
-    }
-    auto currentGeoPtr = std::static_pointer_cast<RSObjAbsGeometry>(node.GetRenderProperties().GetBoundsGeometry());
-    if (currentGeoPtr != nullptr) {
-        currentGeoPtr->UpdateByMatrixFromRenderThread(node.GetMatrix());
-        currentGeoPtr->UpdateByMatrixFromSelf();
-    }
-
-    const auto updateGeometryFunc = [&](const std::shared_ptr<RSBaseRenderNode>& node) {
-        if (!node) {
-            RS_LOGI("RSRenderServiceVisitor::PrepareSurfaceRenderNode this child haven't existed");
-            return;
-        }
-        auto surfaceChild = node->ReinterpretCastTo<RSSurfaceRenderNode>();
-        if (!surfaceChild) {
-            RS_LOGI("RSRenderServiceVisitor::PrepareSurfaceRenderNode this child is not SurfaceNode");
-            return;
-        }
-        auto childGeoPtr =
-            std::static_pointer_cast<RSObjAbsGeometry>(surfaceChild->GetRenderProperties().GetBoundsGeometry());
-        if (childGeoPtr != nullptr) {
-            childGeoPtr->UpdateByMatrixFromParent(currentGeoPtr);
-        }
-    };
-
-    for (auto& child : node.GetSortedChildren()) {
-        updateGeometryFunc(child);
     }
     PrepareBaseRenderNode(node);
 }
@@ -187,7 +161,9 @@ void RSRenderServiceVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         RS_LOGI("RSRenderServiceVisitor::ProcessSurfaceRenderNode node : %llu is invisible", node.GetId());
         return;
     }
-    canvas_->save();
+    if (!node.GetOcclusionVisible() && !doAnimate_ && RSSystemProperties::GetOcclusionEnabled()) {
+        return;
+    }
     node.SetOffset(offsetX_, offsetY_);
     node.ProcessRenderBeforeChildren(*canvas_);
     ProcessBaseRenderNode(node);
@@ -195,30 +171,6 @@ void RSRenderServiceVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     globalZOrder_ = globalZOrder_ + 1;
     processor_->ProcessSurface(node);
     node.ProcessRenderAfterChildren(*canvas_);
-    canvas_->restore();
-}
-
-void RSRenderServiceVisitor::UpdateGeometry(RSBaseRenderNode& displayNode)
-{
-    static const auto updateGeometryFunc = [&](const std::shared_ptr<RSBaseRenderNode>& child) {
-        if (!child) {
-            RS_LOGI("RSRenderServiceVisitor::PrepareDisplayRenderNode this child haven't existed");
-            return;
-        }
-        auto surfaceChild = child->ReinterpretCastTo<RSSurfaceRenderNode>();
-        if (!surfaceChild) {
-            RS_LOGI("RSRenderServiceVisitor::PrepareDisplayRenderNode this child is not SurfaceNode");
-            return;
-        }
-        auto childGeoPtr =
-            std::static_pointer_cast<RSObjAbsGeometry>(surfaceChild->GetRenderProperties().GetBoundsGeometry());
-        if (childGeoPtr != nullptr) {
-            childGeoPtr->UpdateByMatrixFromParent(nullptr);
-        }
-    };
-    for (auto& child : displayNode.GetSortedChildren()) {
-        updateGeometryFunc(child);
-    }
 }
 } // namespace Rosen
 } // namespace OHOS

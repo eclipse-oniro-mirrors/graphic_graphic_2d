@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -265,6 +265,16 @@ void ClipAdaptiveRRectOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect* re
     canvas.clipRRect(rrect, true);
 }
 
+ClipOutsetRectOpItem::ClipOutsetRectOpItem(float dx, float dy)
+    : OpItem(sizeof(ClipOutsetRectOpItem)), dx_(dx), dy_(dy)
+{}
+
+void ClipOutsetRectOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect* rect) const
+{
+    auto clipRect = canvas.getLocalClipBounds().makeOutset(dx_, dy_);
+    canvas.clipRect(clipRect, SkClipOp::kExtraEnumNeedInternallyPleaseIgnoreWillGoAway5, true);
+}
+
 PathOpItem::PathOpItem(const SkPath& path, const SkPaint& paint) : OpItemWithPaint(sizeof(PathOpItem))
 {
     path_ = path;
@@ -355,9 +365,6 @@ void SaveLayerOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
 {
     canvas.saveLayer(
         { rectPtr_, &paint_, backdrop_.get(), mask_.get(), matrix_.isIdentity() ? nullptr : &matrix_, flags_ });
-    if (paint_.getImageFilter() || paint_.getColorFilter()) {
-        RSRootRenderNode::MarkForceRaster();
-    }
 }
 
 DrawableOpItem::DrawableOpItem(SkDrawable* drawable, const SkMatrix* matrix) : OpItem(sizeof(DrawableOpItem))
@@ -955,6 +962,28 @@ OpItem* ClipAdaptiveRRectOpItem::Unmarshalling(Parcel& parcel)
     return new ClipAdaptiveRRectOpItem(radius);
 }
 
+// ClipOutsetRectOpItem
+bool ClipOutsetRectOpItem::Marshalling(Parcel& parcel) const
+{
+    bool success = true;
+    success &= RSMarshallingHelper::Marshalling(parcel, dx_);
+    success &= RSMarshallingHelper::Marshalling(parcel, dy_);
+    return success;
+}
+
+OpItem* ClipOutsetRectOpItem::Unmarshalling(Parcel& parcel)
+{
+    float dx;
+    float dy;
+    if (!RSMarshallingHelper::Unmarshalling(parcel, dx)) {
+        return nullptr;
+    }
+    if (!RSMarshallingHelper::Unmarshalling(parcel, dy)) {
+        return nullptr;
+    }
+    return new ClipOutsetRectOpItem(dx, dy);
+}
+
 // PathOpItem
 bool PathOpItem::Marshalling(Parcel& parcel) const
 {
@@ -1206,6 +1235,28 @@ OpItem* VerticesOpItem::Unmarshalling(Parcel& parcel)
     }
 
     return new VerticesOpItem(vertices.get(), bones, boneCount, mode, paint);
+}
+
+// ShadowRecOpItem
+bool ShadowRecOpItem::Marshalling(Parcel& parcel) const
+{
+    bool success = true;
+    success &= RSMarshallingHelper::Marshalling(parcel, path_);
+    success &= RSMarshallingHelper::Marshalling(parcel, rec_);
+    return success;
+}
+
+OpItem* ShadowRecOpItem::Unmarshalling(Parcel& parcel)
+{
+    SkPath path;
+    SkDrawShadowRec rec;
+    if (!RSMarshallingHelper::Unmarshalling(parcel, path)) {
+        return nullptr;
+    }
+    if (!RSMarshallingHelper::Unmarshalling(parcel, rec)) {
+        return nullptr;
+    }
+    return new ShadowRecOpItem(path, rec);
 }
 
 // MultiplyAlphaOpItem

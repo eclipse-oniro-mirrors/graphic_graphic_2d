@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,7 +30,7 @@ namespace Rosen {
 class RSDisplayRenderNode : public RSBaseRenderNode, public RSSurfaceHandler {
 public:
     enum CompositeType {
-        COMPATIBLE_COMPOSITE = 0,
+        UNI_RENDER_COMPOSITE = 0,
         HARDWARE_COMPOSITE,
         SOFTWARE_COMPOSITE
     };
@@ -66,7 +66,9 @@ public:
     {
         return offsetY_;
     }
-
+    
+    void CollectSurface(const std::shared_ptr<RSBaseRenderNode>& node,
+                        std::vector<RSBaseRenderNode::SharedPtr>& vec) override;
     void Prepare(const std::shared_ptr<RSNodeVisitor>& visitor) override;
     void Process(const std::shared_ptr<RSNodeVisitor>& visitor) override;
 
@@ -90,14 +92,9 @@ public:
         return mirrorSource_;
     }
 
-    bool HasTransition(bool) const override
+    bool HasDisappearingTransition(bool) const override
     {
         return false;
-    }
-
-    NodeId GetId() const override
-    {
-        return RSBaseRenderNode::GetId();
     }
 
     bool CreateSurface(sptr<IBufferConsumerListener> listener);

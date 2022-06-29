@@ -23,8 +23,8 @@
 #include "surface_buffer.h"
 
 namespace OHOS {
-void ReadFence(MessageParcel &parcel, int32_t &fence);
-void WriteFence(MessageParcel &parcel, int32_t fence);
+void ReadFileDescriptor(MessageParcel &parcel, int32_t &fd);
+void WriteFileDescriptor(MessageParcel &parcel, int32_t fd);
 
 void ReadRequestConfig(MessageParcel &parcel, BufferRequestConfig &config);
 void WriteRequestConfig(MessageParcel &parcel, const BufferRequestConfig  &config);
@@ -32,11 +32,21 @@ void WriteRequestConfig(MessageParcel &parcel, const BufferRequestConfig  &confi
 void ReadFlushConfig(MessageParcel &parcel, BufferFlushConfig &config);
 void WriteFlushConfig(MessageParcel &parcel, const BufferFlushConfig &config);
 
-void ReadSurfaceBufferImpl(MessageParcel &parcel, int32_t &sequence, sptr<SurfaceBuffer> &buffer);
-void WriteSurfaceBufferImpl(MessageParcel &parcel, int32_t sequence, const sptr<SurfaceBuffer> &buffer);
+void ReadSurfaceBufferImpl(MessageParcel &parcel, uint32_t &sequence, sptr<SurfaceBuffer> &buffer);
+void WriteSurfaceBufferImpl(MessageParcel &parcel, uint32_t sequence, const sptr<SurfaceBuffer> &buffer);
 
 void ReadVerifyAllocInfo(MessageParcel &parcel, std::vector<VerifyAllocInfo> &infos);
 void WriteVerifyAllocInfo(MessageParcel &parcel, const std::vector<VerifyAllocInfo> &infos);
+
+void ReadHDRMetaData(MessageParcel &parcel, std::vector<HDRMetaData> &metaData);
+void WriteHDRMetaData(MessageParcel &parcel, const std::vector<HDRMetaData> &metaData);
+
+void ReadHDRMetaDataSet(MessageParcel &parcel, std::vector<uint8_t> &metaData);
+void WriteHDRMetaDataSet(MessageParcel &parcel, const std::vector<uint8_t> &metaData);
+
+void ReadExtDataHandle(MessageParcel &parcel, ExtDataHandle **handle);
+void WriteExtDataHandle(MessageParcel &parcel, const ExtDataHandle *handle);
+GSError FreeExtDataHandle(ExtDataHandle *handle);
 } // namespace OHOS
 
 #endif // FRAMEWORKS_SURFACE_INCLUDE_BUFFER_UTILS_H

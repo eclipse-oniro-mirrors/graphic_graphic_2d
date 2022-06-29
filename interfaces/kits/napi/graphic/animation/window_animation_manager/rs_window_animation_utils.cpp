@@ -44,10 +44,10 @@ NativeValue* RSWindowAnimationUtils::CreateJsWindowAnimationTarget(NativeEngine&
     }
 
     NativeFinalize finalizeCallback = [](NativeEngine* engine, void* data, void* hint) {
-        sptr<RSWindowAnimationTarget>(static_cast<RSWindowAnimationTarget*>(data));
+        sptr<RSWindowAnimationTarget>(static_cast<RSWindowAnimationTarget*>(hint));
     };
     target.GetRefPtr()->IncStrongRef(target.GetRefPtr());
-    object->SetNativePointer(target.GetRefPtr(), finalizeCallback, nullptr);
+    object->SetNativePointer(&(target->surfaceNode_), finalizeCallback, target.GetRefPtr());
 
     object->SetProperty("bundleName", CreateJsValue(engine, target->bundleName_));
     object->SetProperty("abilityName", CreateJsValue(engine, target->abilityName_));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -33,7 +33,7 @@ template <typename Duration>
 using SysTime = std::chrono::time_point<std::chrono::system_clock, Duration>;
 using SysMicroSeconds = SysTime<std::chrono::microseconds>;
 
-inline uint64_t MicroSecondsSinceEpoch()
+inline int64_t MicroSecondsSinceEpoch()
 {
     SysMicroSeconds tmp = std::chrono::system_clock::now();
     return tmp.time_since_epoch().count();
@@ -99,6 +99,7 @@ public:
             std::cout << "fps:               Show the fps info." << std::endl;
             std::cout << "nodeNotOnTree:     Show the surfaces info which are not on the tree." << std::endl;
             std::cout << "allSurfacesMem:    Show the memory size of all surfaces buffer." << std::endl;
+            std::cout << "RSTree:            Show the structure of render_service tree." << std::endl;
             std::cout << "NULL:              Show all of the information above." << std::endl;
             retCode = 1;
         }
@@ -112,7 +113,7 @@ private:
     {
         int status = 0;
         auto start = MicroSecondsSinceEpoch() / MICRO_SECS_PER_MILLI;
-        auto end = start + timeOutMs_;
+        auto end = start + static_cast<int64_t>(timeOutMs_);
 
         char buf[PIPE_BUF] = {0};
         while (true) {

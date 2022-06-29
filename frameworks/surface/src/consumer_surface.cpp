@@ -15,22 +15,34 @@
 
 #include "consumer_surface.h"
 
+#include <cinttypes>
+
 #include "buffer_log.h"
 #include "buffer_queue_producer.h"
 #include "sync_fence.h"
 
 namespace OHOS {
+namespace {
+constexpr uint32_t CONSUMER_REF_COUNT_IN_CONSUMER_SURFACE = 1;
+constexpr uint32_t PRODUCER_REF_COUNT_IN_CONSUMER_SURFACE = 2;
+}
+
 ConsumerSurface::ConsumerSurface(const std::string &name, bool isShared)
     : name_(name), isShared_(isShared)
 {
-    BLOGNI("ctor");
+    BLOGND("ctor");
     consumer_ = nullptr;
     producer_ = nullptr;
 }
 
 ConsumerSurface::~ConsumerSurface()
 {
-    BLOGNI("dtor");
+    if (consumer_->GetSptrRefCount() > CONSUMER_REF_COUNT_IN_CONSUMER_SURFACE ||
+        producer_->GetSptrRefCount() > PRODUCER_REF_COUNT_IN_CONSUMER_SURFACE) {
+        BLOGNE("Wrong SptrRefCount! Queue Id:%{public}" PRIu64 " consumer_:%{public}d producer_:%{public}d",
+            producer_->GetUniqueId(), consumer_->GetSptrRefCount(), producer_->GetSptrRefCount());
+    }
+    BLOGND("dtor");
     consumer_ = nullptr;
     producer_ = nullptr;
 }
@@ -236,5 +248,61 @@ GSError ConsumerSurface::IsSupportedAlloc(const std::vector<VerifyAllocInfo> &in
                                           std::vector<bool> &supporteds)
 {
     return GSERROR_NOT_SUPPORT;
+}
+
+GSError ConsumerSurface::SetScalingMode(uint32_t sequence, ScalingMode scalingMode)
+{
+    if (scalingMode < ScalingMode::SCALING_MODE_FREEZE ||
+        scalingMode > ScalingMode::SCALING_MODE_NO_SCALE_CROP) {
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    return producer_->SetScalingMode(sequence, scalingMode);
+}
+
+GSError ConsumerSurface::GetScalingMode(uint32_t sequence, ScalingMode &scalingMode)
+{
+    return consumer_->GetScalingMode(sequence, scalingMode);
+}
+
+GSError ConsumerSurface::SetMetaData(uint32_t sequence, const std::vector<HDRMetaData> &metaData)
+{
+    if (metaData.size() == 0) {
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    return producer_->SetMetaData(sequence, metaData);
+}
+
+GSError ConsumerSurface::SetMetaDataSet(uint32_t sequence, HDRMetadataKey key,
+                                        const std::vector<uint8_t> &metaData)
+{
+    if (key < HDRMetadataKey::MATAKEY_RED_PRIMARY_X ||
+        key > HDRMetadataKey::MATAKEY_HDR_VIVID || metaData.size() == 0) {
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    return producer_->SetMetaDataSet(sequence, key, metaData);
+}
+
+GSError ConsumerSurface::GetMetaData(uint32_t sequence, std::vector<HDRMetaData> &metaData) const
+{
+    return consumer_->GetMetaData(sequence, metaData);
+}
+
+GSError ConsumerSurface::GetMetaDataSet(uint32_t sequence, HDRMetadataKey &key,
+                                        std::vector<uint8_t> &metaData) const
+{
+    return consumer_->GetMetaDataSet(sequence, key, metaData);
+}
+
+GSError ConsumerSurface::SetTunnelHandle(const ExtDataHandle *handle)
+{
+    if (handle == nullptr || handle->reserveInts == 0) {
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    return producer_->SetTunnelHandle(handle);
+}
+
+GSError ConsumerSurface::GetTunnelHandle(ExtDataHandle **handle) const
+{
+    return consumer_->GetTunnelHandle(handle);
 }
 } // namespace OHOS

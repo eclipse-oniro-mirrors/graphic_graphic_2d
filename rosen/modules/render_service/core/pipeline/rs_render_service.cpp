@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,6 +17,8 @@
 #include "rs_main_thread.h"
 #include "rs_render_service_connection.h"
 #include "vsync_generator.h"
+#include "pipeline/rs_surface_render_node.h"
+#include "pipeline/rs_uni_render_judgement.h"
 
 #include <unistd.h>
 
@@ -32,6 +34,7 @@ RSRenderService::~RSRenderService() noexcept {}
 
 bool RSRenderService::Init()
 {
+    RSUniRenderJudgement::InitUniRenderConfig();
     screenManager_ = CreateOrGetScreenManager();
     if (screenManager_ == nullptr || !screenManager_->Init()) {
         RS_LOGE("RSRenderService CreateOrGetScreenManager fail.");
@@ -119,6 +122,51 @@ int RSRenderService::Dump(int fd, const std::vector<std::u16string>& args)
     return OHOS::NO_ERROR;
 }
 
+void RSRenderService::DumpNodesNotOnTheTree(std::string& dumpString) const
+{
+    dumpString.append("\n");
+    dumpString.append("-- Node Not On Tree\n");
+
+    const auto& nodeMap = mainThread_->GetContext().GetNodeMap();
+    nodeMap.TraversalNodes([&dumpString](const std::shared_ptr<RSBaseRenderNode>& node) {
+        if (node == nullptr) {
+            return;
+        }
+
+        if (node->IsInstanceOf<RSSurfaceRenderNode>() && !node->IsOnTheTree()) {
+            const auto& surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node);
+            dumpString += "\n node Id[" + std::to_string(node->GetId()) + "]:\n";
+            const auto& surfaceConsumer = surfaceNode->GetConsumer();
+            if (surfaceConsumer == nullptr) {
+                return;
+            }
+            surfaceConsumer->Dump(dumpString);
+        }
+    });
+}
+
+void RSRenderService::DumpAllNodesMemSize(std::string& dumpString) const
+{
+    dumpString.append("\n");
+    dumpString.append("-- All Surfaces Memory Size\n");
+    dumpString.append("the memory size of all surfaces buffer is : dumpend");
+
+    const auto& nodeMap = mainThread_->GetContext().GetNodeMap();
+    nodeMap.TraversalNodes([&dumpString](const std::shared_ptr<RSBaseRenderNode>& node) {
+        if (node == nullptr || !node->IsInstanceOf<RSSurfaceRenderNode>()) {
+            return;
+        }
+
+        const auto& surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node);
+        const auto& surfaceConsumer = surfaceNode->GetConsumer();
+        if (surfaceConsumer == nullptr) {
+            return;
+        }
+
+        surfaceConsumer->Dump(dumpString);
+    });
+}
+
 void RSRenderService::DoDump(std::unordered_set<std::u16string>& argSets, std::string& dumpString) const
 {
     std::u16string arg1(u"display");
@@ -126,7 +174,7 @@ void RSRenderService::DoDump(std::unordered_set<std::u16string>& argSets, std::s
     std::u16string arg3(u"fps");
     std::u16string arg4(u"nodeNotOnTree");
     std::u16string arg5(u"allSurfacesMem");
-    std::u16string arg6(u"renderServiceTree");
+    std::u16string arg6(u"RSTree");
 
     if (argSets.size() == 0 || argSets.count(arg1) != 0) {
         mainThread_->ScheduleTask([this, &dumpString]() {
@@ -140,15 +188,15 @@ void RSRenderService::DoDump(std::unordered_set<std::u16string>& argSets, std::s
     }
     if (argSets.size() == 0 || argSets.count(arg4) != 0) {
         mainThread_->ScheduleTask([this, &dumpString]() {
-            mainThread_->GetContext().GetNodeMap().DumpNodeNotOnTree(dumpString);
+            DumpNodesNotOnTheTree(dumpString);
         }).wait();
     }
     if (argSets.size() == 0 || argSets.count(arg5) != 0) {
         mainThread_->ScheduleTask([this, &dumpString]() {
-            mainThread_->GetContext().GetNodeMap().DumpAllNodeMemSize(dumpString);
+            DumpAllNodesMemSize(dumpString);
         }).wait();
     }
-    if (argSets.size() == 0 || argSets.count(arg6) != 0) {
+    if (argSets.count(arg6) != 0) {
         mainThread_->ScheduleTask([this, &dumpString]() {
             mainThread_->RenderServiceTreeDump(dumpString);
         }).wait();

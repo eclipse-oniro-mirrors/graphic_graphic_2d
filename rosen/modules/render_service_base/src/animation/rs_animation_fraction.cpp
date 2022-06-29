@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -145,10 +145,10 @@ void RSAnimationFraction::UpdateRemainTimeFraction(float fraction, int remainTim
     int64_t remainTimeNS = remainTime * MS_TO_NS;
     int64_t durationNs = duration_ * MS_TO_NS;
     int64_t startDelayNs = startDelay_ * MS_TO_NS;
-    float curRemianProgress = currentIsReverseCycle_ ? curTimeFraction_ : (1.0f - curTimeFraction_);
+    float curRemainProgress = currentIsReverseCycle_ ? curTimeFraction_ : (1.0f - curTimeFraction_);
     float ratio = 1.0f;
     if (remainTime != 0) {
-        ratio = curRemianProgress * durationNs / remainTimeNS;
+        ratio = curRemainProgress * durationNs / remainTimeNS;
     }
 
     if (runningTime_ > startDelayNs || fabs(fraction) > 1e-6) {

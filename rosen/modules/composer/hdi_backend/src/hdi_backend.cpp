@@ -54,6 +54,44 @@ RosenError HdiBackend::RegPrepareComplete(OnPrepareCompleteFunc func, void* data
     return ROSEN_ERROR_OK;
 }
 
+int32_t HdiBackend::PreProcessLayersComp(const OutputPtr &output,
+                                         const std::unordered_map<uint32_t, LayerPtr> &layersMap, bool &needFlush)
+{
+    if (device_ == nullptr) {
+        HLOGE("device has not been initialized");
+        return DISPLAY_FAILURE;
+    }
+
+    uint32_t layersNum = layersMap.size();
+    uint32_t layerCompCapacity = output->GetLayerCompCapacity();
+    uint32_t screenId = output->GetScreenId();
+    // If shouldClientCompDirect is true then layer->SetHdiLayerInfo and UpdateLayerCompType is no need to run.
+    bool doClientCompositionDirectly = ((layerCompCapacity != LAYER_COMPOSITION_CAPACITY_INVALID) &&
+                                   (layersNum > layerCompCapacity));
+
+    for (auto iter = layersMap.begin(); iter != layersMap.end(); ++iter) {
+        const LayerPtr &layer = iter->second;
+        if (doClientCompositionDirectly) {
+            layer->UpdateCompositionType(CompositionType::COMPOSITION_CLIENT);
+            continue;
+        }
+        layer->SetHdiLayerInfo();
+    }
+
+    int32_t ret = device_->PrepareScreenLayers(screenId, needFlush);
+    if (ret != DISPLAY_SUCCESS) {
+        HLOGE("PrepareScreenLayers failed, ret is %{public}d", ret);
+        return DISPLAY_FAILURE;
+    }
+
+    if (doClientCompositionDirectly) {
+        ScopedBytrace doClientCompositionDirectlyTag("DoClientCompositionDirectly");
+        return DISPLAY_SUCCESS;
+    }
+
+    return UpdateLayerCompType(screenId, layersMap);
+}
+
 void HdiBackend::Repaint(std::vector<OutputPtr> &outputs)
 {
     ScopedBytrace bytrace(__func__);
@@ -78,25 +116,14 @@ void HdiBackend::Repaint(std::vector<OutputPtr> &outputs)
             HLOGI("layer map is empty, drop this frame");
             continue;
         }
+        bool needFlush = false;
+        ret = PreProcessLayersComp(output, layersMap, needFlush);
+        if (ret != DISPLAY_SUCCESS) {
+            HLOGE("Pre process layers composition failed, ret = %{public}d.", ret);
+            return;
+        }
 
         uint32_t screenId = output->GetScreenId();
-        for (auto iter = layersMap.begin(); iter != layersMap.end(); ++iter) {
-            const LayerPtr &layer = iter->second;
-            layer->SetHdiLayerInfo();
-        }
-
-        bool needFlush = false;
-        ret = device_->PrepareScreenLayers(screenId, needFlush);
-        if (ret != DISPLAY_SUCCESS) {
-            HLOGE("PrepareScreenLayers failed, ret is %{public}d", ret);
-            return;
-        }
-
-        ret = UpdateLayerCompType(screenId, layersMap);
-        if (ret != DISPLAY_SUCCESS) {
-            return;
-        }
-
         std::vector<LayerPtr> compClientLayers;
         std::vector<LayerInfoPtr> newLayerInfos;
         for (auto iter = layersMap.begin(); iter != layersMap.end(); ++iter) {
@@ -127,16 +154,14 @@ void HdiBackend::Repaint(std::vector<OutputPtr> &outputs)
             // return
         }
 
-        ReleaseLayerBuffer(screenId, layersMap);
-
         int64_t timestamp = lastPresentFence_->SyncFileReadTimestamp();
         bool ret = false;
         if (timestamp != SyncFence::FENCE_PENDING_TIMESTAMP) {
             ret = sampler_->AddPresentFenceTime(timestamp);
+            output->RecordCompositionTime(timestamp);
             for (auto iter = layersMap.begin(); iter != layersMap.end(); ++iter) {
                 const LayerPtr &layer = iter->second;
                 layer->RecordPresentTime(timestamp);
-                output->RecordCompositionTime(timestamp);
             }
         }
         if (ret) {
@@ -245,18 +270,23 @@ int32_t HdiBackend::SetScreenClientInfo(const FrameBufferEntry &fbEntry, const O
     return DISPLAY_SUCCESS;
 }
 
-void HdiBackend::ReleaseLayerBuffer(uint32_t screenId, const std::unordered_map<uint32_t,
-                                    LayerPtr> &layersMap)
+std::map<LayerInfoPtr, sptr<SyncFence>> HdiBackend::GetLayersReleaseFence(const OutputPtr& output)
 {
+    if (output == nullptr) {
+        return {};
+    }
+    uint32_t screenId = output->GetScreenId();
     std::vector<uint32_t> layersId;
     std::vector<sptr<SyncFence>> fences;
     int32_t ret = device_->GetScreenReleaseFence(screenId, layersId, fences);
     if (ret != DISPLAY_SUCCESS || layersId.size() != fences.size()) {
         HLOGE("GetScreenReleaseFence failed, ret is %{public}d, layerId size[%{public}d], fence size[%{public}d]",
                ret, (int)layersId.size(), (int)fences.size());
-        return;
+        return {};
     }
 
+    std::map<LayerInfoPtr, sptr<SyncFence>> res;
+    auto layersMap = output->GetLayers();
     size_t layerNum = layersId.size();
     for (size_t i = 0; i < layerNum; i++) {
         auto iter = layersMap.find(layersId[i]);
@@ -267,11 +297,9 @@ void HdiBackend::ReleaseLayerBuffer(uint32_t screenId, const std::unordered_map<
 
         const LayerPtr &layer = iter->second;
         layer->MergeWithLayerFence(fences[i]);
+        res[layer->GetLayerInfo()] = layer->GetReleaseFence();
     }
-    for (auto iter = layersMap.begin(); iter != layersMap.end(); ++iter) {
-        const LayerPtr &layer = iter->second;
-        layer->ReleaseBuffer();
-    }
+    return res;
 }
 
 void HdiBackend::OnHdiBackendHotPlugEvent(uint32_t screenId, bool connected, void *data)

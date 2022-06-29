@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -33,9 +33,11 @@ class SkImageFilter;
 class SkPaint;
 class SkPath;
 class SkPicture;
+struct SkRect;
 class SkRegion;
 class SkTextBlob;
 class SkVertices;
+class SkTypeface;
 
 namespace OHOS {
 namespace Rosen {
@@ -110,6 +112,7 @@ public:
     // skia types
     DECLARE_FUNCTION_OVERLOAD(SkPath)
     DECLARE_FUNCTION_OVERLOAD(SkPaint)
+    DECLARE_FUNCTION_OVERLOAD(SkRect)
     DECLARE_FUNCTION_OVERLOAD(SkRegion)
     DECLARE_FUNCTION_OVERLOAD(sk_sp<SkData>)
     DECLARE_FUNCTION_OVERLOAD(sk_sp<SkFlattenable>)
@@ -149,6 +152,8 @@ public:
     template<typename T>
     static bool Unmarshalling(Parcel& parcel, std::vector<T>& val);
 private:
+    static sk_sp<SkData> SerializeTypeface(SkTypeface* tf, void* ctx);
+    static sk_sp<SkTypeface> DeserializeTypeface(const void* data, size_t length, void* ctx);
     static void ReleaseMemory(void* data, int* fd, size_t size);
     inline static std::atomic<uint32_t> shmemCount = 0;
     static constexpr size_t MAX_DATA_SIZE = 128 * 1024 * 1024; // 128M

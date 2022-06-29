@@ -50,24 +50,13 @@ ohos_shared_library("surface") {
     "src/buffer_queue_producer.cpp",
     "src/buffer_utils.cpp",
     "src/consumer_surface.cpp",
+    "src/hardware_buffer.cpp",
     "src/native_window.cpp",
     "src/producer_surface.cpp",
     "src/surface.cpp",
     "src/surface_buffer_impl.cpp",
     "src/surface_utils.cpp",
   ]
-
-  if (ace_enable_gpu) {
-    sources += [
-      "src/egl_consumer_surface.cpp",
-      "src/egl_data_impl.cpp",
-      "src/egl_manager.cpp",
-      "src/egl_surface.cpp",
-      "src/producer_egl_surface.cpp",
-    ]
-  } else {
-    sources += [ "src/mock/egl_consumer_surface.cpp" ]
-  }
 
   configs = [
     ":surface_config",
@@ -97,8 +86,6 @@ ohos_shared_library("surface") {
     "//utils/native/base:utils",
   ]
 
-  public_deps += libgl
-
   external_deps = [ "hitrace_native:hitrace_meter" ]
 
   symlink_target_name = [ "libnative_window.so" ]
@@ -106,4 +93,6 @@ ohos_shared_library("surface") {
   part_name = "graphic_standard"
   subsystem_name = "graphic"
 }
+
 ## Build surface.so }}}
+

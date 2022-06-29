@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,7 +29,7 @@ bool RSRenderAnimation::Marshalling(Parcel& parcel) const
         ROSEN_LOGE("RSRenderAnimation::Marshalling, write id failed");
         return false;
     }
-    // RSAnimationTimingProtocal
+    // RSAnimationTimingProtocol
     if (!(parcel.WriteInt32(animationFraction_.GetDuration()) &&
         parcel.WriteInt32(animationFraction_.GetStartDelay()) &&
         parcel.WriteFloat(animationFraction_.GetSpeed()) &&
@@ -100,6 +100,9 @@ RSAnimatableProperty RSRenderAnimation::GetProperty() const
 
 void RSRenderAnimation::Attach(RSRenderNode* renderNode)
 {
+    if (target_ != nullptr) {
+        Detach();
+    }
     target_ = renderNode;
     OnAttach();
 }
@@ -131,6 +134,16 @@ void RSRenderAnimation::Finish()
 
     state_ = AnimationState::FINISHED;
     ProcessFillModeOnFinish(animationFraction_.GetEndFraction());
+}
+
+void RSRenderAnimation::FinishOnCurrentPosition()
+{
+    if (!IsPaused() && !IsRunning()) {
+        ROSEN_LOGE("Failed to finish animation, animation is not running!");
+        return;
+    }
+
+    state_ = AnimationState::FINISHED;
 }
 
 void RSRenderAnimation::Pause()

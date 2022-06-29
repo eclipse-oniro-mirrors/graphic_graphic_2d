@@ -77,11 +77,8 @@ HWTEST_F(HdiLayerInfoTest, GetBuffer001, Function | MediumTest| Level3)
 {
     sptr<SyncFence> acquireFence = SyncFence::INVALID_FENCE;
     sptr<SurfaceBuffer> sbuffer = nullptr;
-    sptr<SurfaceBuffer> preBuffer = nullptr;
-    sptr<SyncFence> preAcquireFence = SyncFence::INVALID_FENCE;
-    HdiLayerInfoTest::hdiLayerInfo_->SetBuffer(sbuffer, acquireFence, preBuffer, preAcquireFence);
+    HdiLayerInfoTest::hdiLayerInfo_->SetBuffer(sbuffer, acquireFence);
     ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetBuffer(), nullptr);
-    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetPreBuffer(), nullptr);
 }
 
 /**
@@ -94,18 +91,6 @@ HWTEST_F(HdiLayerInfoTest, GetBuffer001, Function | MediumTest| Level3)
 HWTEST_F(HdiLayerInfoTest, GetAcquireFence001, Function | MediumTest| Level3)
 {
     ASSERT_NE(HdiLayerInfoTest::hdiLayerInfo_->GetAcquireFence(), nullptr);
-}
-
-/**
- * @tc.name: GetPreAcquireFence001
- * @tc.desc: Verify the GetPreAcquireFence of hdilayerinfo
- * @tc.type:FUNC
- * @tc.require:AR000GGP0P
- * @tc.author:
- */
-HWTEST_F(HdiLayerInfoTest, GetPreAcquireFence001, Function | MediumTest| Level3)
-{
-    ASSERT_NE(HdiLayerInfoTest::hdiLayerInfo_->GetPreAcquireFence(), nullptr);
 }
 
 /**
@@ -319,6 +304,50 @@ HWTEST_F(HdiLayerInfoTest, IsPreMulti001, Function | MediumTest| Level3)
 
     HdiLayerInfoTest::hdiLayerInfo_->SetPreMulti(false);
     ASSERT_NE(HdiLayerInfoTest::hdiLayerInfo_->IsPreMulti(), true);
+}
+
+/*
+* Function: SetTunnelHandleChange and GetTunnelHandleChange
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call GetTunnelHandleChange with default
+*                  2. call SetTunnelHandleChange
+*                  3. call GetTunnelHandleChange and check ret
+ */
+HWTEST_F(HdiLayerInfoTest, TunnelHandleChange001, Function | MediumTest | Level2)
+{
+    bool change = HdiLayerInfoTest::hdiLayerInfo_->GetTunnelHandleChange();
+    ASSERT_EQ(change, false);
+    HdiLayerInfoTest::hdiLayerInfo_->SetTunnelHandleChange(true);
+    change = HdiLayerInfoTest::hdiLayerInfo_->GetTunnelHandleChange();
+    ASSERT_EQ(change, true);
+}
+
+/*
+* Function: SetTunnelHandle and GetTunnelHandle
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call GetTunnelHandle with default
+*                  2. call SetTunnelHandle
+*                  3. call GetTunnelHandle and check ret
+ */
+HWTEST_F(HdiLayerInfoTest, TunnelHandle001, Function | MediumTest | Level2)
+{
+    ExtDataHandle *handle = new ExtDataHandle();
+    handle = HdiLayerInfoTest::hdiLayerInfo_->GetTunnelHandle();
+    ASSERT_EQ(handle, nullptr);
+    delete handle;
+    ExtDataHandle *tunnelHandle = new ExtDataHandle();
+    tunnelHandle->fd = -1;
+    tunnelHandle->reserveInts = 1;
+    tunnelHandle->reserve[0] = 1;
+    HdiLayerInfoTest::hdiLayerInfo_->SetTunnelHandle(tunnelHandle);
+    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetTunnelHandle()->fd, tunnelHandle->fd);
+    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetTunnelHandle()->reserveInts, tunnelHandle->reserveInts);
+    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetTunnelHandle()->reserve[0], tunnelHandle->reserve[0]);
+    delete tunnelHandle;
 }
 } // namespace
 } // namespace Rosen

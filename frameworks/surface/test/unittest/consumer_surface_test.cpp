@@ -395,4 +395,177 @@ HWTEST_F(ConsumerSurfaceTest, isSupportedAlloc001, Function | MediumTest | Level
     GSError ret = cs->IsSupportedAlloc(infos, supporteds);
     ASSERT_EQ(ret, OHOS::GSERROR_NOT_SUPPORT);
 }
+
+/*
+* Function: SetScalingMode and GetScalingMode
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetScalingMode with abnormal parameters and check ret
+*                  2. call SetScalingMode with normal parameters and check ret
+*                  3. call GetScalingMode and check ret
+ */
+HWTEST_F(ConsumerSurfaceTest, scalingMode001, Function | MediumTest | Level2)
+{
+    uint32_t sequence = 0;
+    ScalingMode scalingMode = ScalingMode::SCALING_MODE_SCALE_TO_WINDOW;
+
+    GSError ret = cs->SetScalingMode(-1, scalingMode);
+    ASSERT_EQ(ret, OHOS::GSERROR_NO_ENTRY);
+
+    ret = cs->GetScalingMode(-1, scalingMode);
+    ASSERT_EQ(ret, OHOS::GSERROR_NO_ENTRY);
+
+    sptr<SurfaceBuffer> buffer;
+    int releaseFence = -1;
+    ret = ps->RequestBuffer(buffer, releaseFence, requestConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    ASSERT_NE(buffer, nullptr);
+
+    sequence = buffer->GetSeqNum();
+    ret = cs->SetScalingMode(sequence, scalingMode);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    ScalingMode scalingModeGet = ScalingMode::SCALING_MODE_FREEZE;
+    ret = cs->GetScalingMode(sequence, scalingModeGet);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    ASSERT_EQ(scalingMode, scalingModeGet);
+
+    ret = ps->CancelBuffer(buffer);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+}
+
+/*
+* Function: SetMetaData and GetMetaData
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetMetaData with abnormal parameters and check ret
+*                  2. call SetMetaData with normal parameters and check ret
+*                  3. call GetMetaData and check ret
+ */
+HWTEST_F(ConsumerSurfaceTest, metaData001, Function | MediumTest | Level2)
+{
+    uint32_t sequence = 0;
+    std::vector<HDRMetaData> metaData;
+
+    GSError ret = cs->SetMetaData(sequence, metaData);
+    ASSERT_EQ(ret, OHOS::GSERROR_INVALID_ARGUMENTS);
+
+    HDRMetaData data = {
+        .key = HDRMetadataKey::MATAKEY_RED_PRIMARY_X,
+        .value = 100,  // for test
+    };
+    metaData.push_back(data);
+    ret = cs->SetMetaData(sequence, metaData);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    sptr<SurfaceBuffer> buffer;
+    int releaseFence = -1;
+    ret = ps->RequestBuffer(buffer, releaseFence, requestConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    ASSERT_NE(buffer, nullptr);
+
+    sequence = buffer->GetSeqNum();
+    ret = cs->SetMetaData(sequence, metaData);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    std::vector<HDRMetaData> metaDataGet;
+    ret = cs->GetMetaData(sequence, metaDataGet);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    ASSERT_EQ(metaData[0].key, metaDataGet[0].key);
+    ASSERT_EQ(metaData[0].value, metaDataGet[0].value);
+
+    ret = cs->GetMetaData(sequence + 1, metaDataGet);
+    ASSERT_EQ(ret, OHOS::GSERROR_NO_ENTRY);
+
+    ret = ps->CancelBuffer(buffer);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+}
+
+/*
+* Function: SetMetaDataSet and GetMetaDataSet
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetMetaDataSet with abnormal parameters and check ret
+*                  2. call SetMetaDataSet with normal parameters and check ret
+*                  3. call GetMetaDataSet and check ret
+ */
+HWTEST_F(ConsumerSurfaceTest, metaDataSet001, Function | MediumTest | Level2)
+{
+    uint32_t sequence = 0;
+    HDRMetadataKey key = HDRMetadataKey::MATAKEY_HDR10_PLUS;
+    std::vector<uint8_t> metaData;
+
+    GSError ret = cs->SetMetaDataSet(sequence, key, metaData);
+    ASSERT_EQ(ret, OHOS::GSERROR_INVALID_ARGUMENTS);
+
+    uint8_t data = 10;  // for test
+    metaData.push_back(data);
+    ret = cs->SetMetaDataSet(sequence, key, metaData);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    sptr<SurfaceBuffer> buffer;
+    int releaseFence = -1;
+    ret = ps->RequestBuffer(buffer, releaseFence, requestConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    ASSERT_NE(buffer, nullptr);
+
+    sequence = buffer->GetSeqNum();
+    ret = cs->SetMetaDataSet(sequence, key, metaData);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    HDRMetadataKey keyGet = HDRMetadataKey::MATAKEY_RED_PRIMARY_X;
+    std::vector<uint8_t> metaDataGet;
+    ret = cs->GetMetaDataSet(sequence, keyGet, metaDataGet);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    ASSERT_EQ(key, keyGet);
+    ASSERT_EQ(metaData[0], metaDataGet[0]);
+
+    ret = cs->GetMetaDataSet(sequence + 1, keyGet, metaDataGet);
+    ASSERT_EQ(ret, OHOS::GSERROR_NO_ENTRY);
+
+    ret = ps->CancelBuffer(buffer);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+}
+
+/*
+* Function: SetTunnelHandle and GetTunnelHandle
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetTunnelHandle with abnormal parameters and check ret
+*                  2. call SetTunnelHandle with normal parameters and check ret
+*                  3. call GetTunnelHandle and check ret
+ */
+HWTEST_F(ConsumerSurfaceTest, TunnelHandle001, Function | MediumTest | Level2)
+{
+    ExtDataHandle *handle = nullptr;
+    GSError ret = cs->SetTunnelHandle(handle);
+    ASSERT_EQ(ret, OHOS::GSERROR_INVALID_ARGUMENTS);
+
+    handle = new ExtDataHandle();
+    handle->fd = -1;
+    handle->reserveInts = 0;
+    ret = cs->SetTunnelHandle(handle);
+    ASSERT_EQ(ret, OHOS::GSERROR_INVALID_ARGUMENTS);
+
+    handle->reserveInts = 1;
+    handle->reserve[0] = 0;
+    ret = cs->SetTunnelHandle(handle);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    ret = cs->SetTunnelHandle(handle);
+    ASSERT_EQ(ret, OHOS::GSERROR_NO_ENTRY);
+
+    ExtDataHandle *handleGet = nullptr;
+    ret = cs->GetTunnelHandle(&handleGet);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    ASSERT_NE(handleGet, nullptr);
+    ASSERT_EQ(handle->fd, handleGet->fd);
+    ASSERT_EQ(handle->reserveInts, handleGet->reserveInts);
+    ASSERT_EQ(handle->reserve[0], handleGet->reserve[0]);
+    delete handle;
+}
 }

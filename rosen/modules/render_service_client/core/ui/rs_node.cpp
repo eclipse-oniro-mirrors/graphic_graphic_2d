@@ -250,11 +250,11 @@ bool IsValid(const Vector4f& value)
                 std::make_unique<RSNodeSet##propertyName##Delta>(GetId(), (value)-currentValue);            \
             auto transactionProxy = RSTransactionProxy::GetInstance();                                      \
             if (transactionProxy != nullptr) {                                                              \
-                transactionProxy->AddCommand(command, IsRenderServiceNode());                               \
+                transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());           \
                 if (NeedForcedSendToRemote()) {                                                             \
                     std::unique_ptr<RSCommand> commandForRemote =                                           \
                         std::make_unique<RSNodeSet##propertyName##Delta>(GetId(), (value)-currentValue);    \
-                    transactionProxy->AddCommand(commandForRemote, true);                                   \
+                    transactionProxy->AddCommand(commandForRemote, true, GetFollowType(), GetId());               \
                 }                                                                                           \
             }                                                                                               \
             stagingProperties_.Set##propertyName(value);                                                    \
@@ -262,11 +262,11 @@ bool IsValid(const Vector4f& value)
             std::unique_ptr<RSCommand> command = std::make_unique<RSNodeSet##propertyName>(GetId(), value); \
             auto transactionProxy = RSTransactionProxy::GetInstance();                                      \
             if (transactionProxy != nullptr) {                                                              \
-                transactionProxy->AddCommand(command, IsRenderServiceNode());                               \
+                transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());           \
                 if (NeedForcedSendToRemote()) {                                                             \
                     std::unique_ptr<RSCommand> commandForRemote =                                           \
                         std::make_unique<RSNodeSet##propertyName>(GetId(), value);                          \
-                    transactionProxy->AddCommand(commandForRemote, true);                                   \
+                    transactionProxy->AddCommand(commandForRemote, true, GetFollowType(), GetId());               \
                 }                                                                                           \
             }                                                                                               \
             stagingProperties_.Set##propertyName(value);                                                    \
@@ -282,11 +282,11 @@ bool IsValid(const Vector4f& value)
         std::unique_ptr<RSCommand> command = std::make_unique<RSNodeSet##propertyName>(GetId(), value); \
         auto transactionProxy = RSTransactionProxy::GetInstance();                                      \
         if (transactionProxy != nullptr) {                                                              \
-            transactionProxy->AddCommand(command, IsRenderServiceNode());                               \
+            transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());           \
             if (NeedForcedSendToRemote()) {                                                             \
                 std::unique_ptr<RSCommand> commandForRemote =                                           \
                     std::make_unique<RSNodeSet##propertyName>(GetId(), value);                          \
-                transactionProxy->AddCommand(commandForRemote, true);                                   \
+                transactionProxy->AddCommand(commandForRemote, true, GetFollowType(), GetId());               \
             }                                                                                           \
         }                                                                                               \
         stagingProperties_.Set##propertyName(value);                                                    \
@@ -327,6 +327,7 @@ void RSNode::SetBounds(const Vector4f& bounds)
     }
 
     SET_ANIMATABLE_PROPERTY(Bounds, bounds, RSAnimatableProperty::BOUNDS);
+    OnBoundsSizeChanged();
 }
 
 void RSNode::SetBounds(float positionX, float positionY, float width, float height)
@@ -337,6 +338,7 @@ void RSNode::SetBounds(float positionX, float positionY, float width, float heig
 void RSNode::SetBoundsSize(const Vector2f& size)
 {
     SET_ANIMATABLE_PROPERTY(BoundsSize, size, RSAnimatableProperty::BOUNDS_SIZE);
+    OnBoundsSizeChanged();
 }
 
 void RSNode::SetBoundsSize(float width, float height)
@@ -347,11 +349,13 @@ void RSNode::SetBoundsSize(float width, float height)
 void RSNode::SetBoundsWidth(float width)
 {
     SET_ANIMATABLE_PROPERTY(BoundsWidth, width, RSAnimatableProperty::BOUNDS_WIDTH);
+    OnBoundsSizeChanged();
 }
 
 void RSNode::SetBoundsHeight(float height)
 {
     SET_ANIMATABLE_PROPERTY(BoundsHeight, height, RSAnimatableProperty::BOUNDS_HEIGHT);
+    OnBoundsSizeChanged();
 }
 
 void RSNode::SetBoundsPosition(const Vector2f& boundsPosition)

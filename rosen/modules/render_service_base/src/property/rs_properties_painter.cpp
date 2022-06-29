@@ -64,7 +64,7 @@ SkRRect RSPropertiesPainter::RRect2SkRRect(const RRect& rr)
     return rrect;
 }
 
-bool GetGravityMatrix(Gravity gravity, RectF rect, float w, float h, SkMatrix& mat)
+bool RSPropertiesPainter::GetGravityMatrix(Gravity gravity, RectF rect, float w, float h, SkMatrix& mat)
 {
     if (w == rect.width_ && h == rect.height_) {
         return false;
@@ -177,7 +177,7 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, SkCanvas& c
 {
     SkPaint paint;
     paint.setAntiAlias(true);
-    paint.setBlendMode(SkBlendMode::kSrc);
+    paint.setBlendMode(SkBlendMode::kSrcOver);
     if (skSurface == nullptr) {
         ROSEN_LOGE("skSurface null");
         return ;

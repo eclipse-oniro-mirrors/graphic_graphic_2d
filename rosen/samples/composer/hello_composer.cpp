@@ -89,6 +89,8 @@ void HelloComposer::ParseArgs(std::vector<std::string> &runArgs)
             testClient_ = true;
         } else if (arg == "--testLayerRotate") {
             testLayerRotate_ = true;
+        } else if (arg == "--YUV") {
+            YUVFormat_ = true;
         }
     }
 }
@@ -216,18 +218,21 @@ void HelloComposer::Sync(int64_t, void *data)
 
 void HelloComposer::SetRunArgs(const std::unique_ptr<LayerContext> &drawLayer)
 {
+    LayerType type = drawLayer->GetLayerType();
+    if (type < LayerType::LAYER_EXTRA) {
+        return;
+    }
+
     if (testClient_) {
-        LayerType type = drawLayer->GetLayerType();
-        if (type >= LayerType::LAYER_EXTRA) {
-            drawLayer->SetTestClientStatus(true);
-        }
+        drawLayer->SetTestClientStatus(true);
     }
 
     if (testLayerRotate_) {
-        LayerType type = drawLayer->GetLayerType();
-        if (type >= LayerType::LAYER_EXTRA) {
-            drawLayer->SetTestRotateStatus(true);
-        }
+        drawLayer->SetTestRotateStatus(true);
+    }
+
+    if (YUVFormat_) {
+        drawLayer->SetTestYUVStatus(true);
     }
 }
 
@@ -266,6 +271,14 @@ void HelloComposer::Draw()
         }
 
         backend_->Repaint(outputs);
+        auto layersReleaseFence = backend_->GetLayersReleaseFence(curOutput_);
+        for (auto& layerContext : drawLayers) {
+            auto preBuffer = layerContext->GetPreBuffer();
+            int32_t releaseFence = -1;
+            sptr<SyncFence> tempFence = new SyncFence(releaseFence);
+            layerContext->GetHdiLayer()->GetSurface()->ReleaseBuffer(preBuffer, tempFence);
+            tempFence->Wait(100); // 100 ms
+        }
     }
 }
 

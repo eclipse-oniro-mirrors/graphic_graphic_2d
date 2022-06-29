@@ -38,12 +38,12 @@ public:
                                 MessageParcel &reply, MessageOption &option) override;
 
     virtual GSError RequestBuffer(const BufferRequestConfig &config, sptr<BufferExtraData> &bedata,
-                                       RequestBufferReturnValue &retval) override;
+                                  RequestBufferReturnValue &retval) override;
 
-    GSError CancelBuffer(int32_t sequence, const sptr<BufferExtraData> &bedata) override;
+    GSError CancelBuffer(uint32_t sequence, const sptr<BufferExtraData> &bedata) override;
 
-    GSError FlushBuffer(int32_t sequence, const sptr<BufferExtraData> &bedata,
-                             const sptr<SyncFence>& fence, BufferFlushConfig &config) override;
+    GSError FlushBuffer(uint32_t sequence, const sptr<BufferExtraData> &bedata,
+                        const sptr<SyncFence>& fence, BufferFlushConfig &config) override;
 
     GSError AttachBuffer(sptr<SurfaceBuffer>& buffer) override;
 
@@ -70,6 +70,12 @@ public:
 
     GSError Disconnect() override;
 
+    GSError SetScalingMode(uint32_t sequence, ScalingMode scalingMode) override;
+    GSError SetMetaData(uint32_t sequence, const std::vector<HDRMetaData> &metaData) override;
+    GSError SetMetaDataSet(uint32_t sequence, HDRMetadataKey key,
+                           const std::vector<uint8_t> &metaData) override;
+    GSError SetTunnelHandle(const ExtDataHandle *handle) override;
+
 private:
     GSError CheckConnectLocked();
 
@@ -91,6 +97,10 @@ private:
     int32_t IsSupportedAllocRemote(MessageParcel &arguments, MessageParcel &reply, MessageOption &option);
     int32_t GetNameAndUniqueIdRemote(MessageParcel &arguments, MessageParcel &reply, MessageOption &option);
     int32_t DisconnectRemote(MessageParcel &arguments, MessageParcel &reply, MessageOption &option);
+    int32_t SetScalingModeRemote(MessageParcel &arguments, MessageParcel &reply, MessageOption &option);
+    int32_t SetMetaDataRemote(MessageParcel &arguments, MessageParcel &reply, MessageOption &option);
+    int32_t SetMetaDataSetRemote(MessageParcel &arguments, MessageParcel &reply, MessageOption &option);
+    int32_t SetTunnelHandleRemote(MessageParcel &arguments, MessageParcel &reply, MessageOption &option);
 
     using BufferQueueProducerFunc = int32_t (BufferQueueProducer::*)(MessageParcel &arguments,
         MessageParcel &reply, MessageOption &option);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -41,15 +41,15 @@ void RootNodeCommandHelper::AttachToUniSurfaceNode(RSContext& context, NodeId id
     auto& nodeMap = context.GetNodeMap();
     auto parent = nodeMap.GetRenderNode<RSSurfaceRenderNode>(surfaceNodeId);
     auto node = nodeMap.GetRenderNode<RSRootRenderNode>(id);
-    if (!parent) {
-        RS_LOGE("unirender: RootNodeCommandHelper::AddToSurfaceNode no parent surfaceNode");
+    if (!parent || !node) {
+        RS_LOGE("unirender: RootNodeCommandHelper::AttachToUniSurfaceNode surfaceNodeId:%llu id:%llu, parent " \
+            "valid:%d, node valid:%d", surfaceNodeId, id, parent != nullptr, node != nullptr);
+        return;
     }
-    if (!node) {
-        RS_LOGE("unirender: RootNodeCommandHelper::AddToSurfaceNode no RootRenderNode");
-    }
-    if (node && parent) {
-        parent->AddChild(node);
-    }
+    parent->AddChild(node);
+    RS_LOGI("unirender: RootNodeCommandHelper::AttachToUniSurfaceNode NotifyUIBufferAvailable parent:%llu node:%llu",
+        surfaceNodeId, id);
+    parent->NotifyUIBufferAvailable();
 }
 
 } // namespace Rosen
