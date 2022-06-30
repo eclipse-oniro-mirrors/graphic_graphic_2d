@@ -113,6 +113,13 @@ public:
         const IRect& clipRect,
         bool forceCPU = false);
 
+    void ClipHoleForLayer(
+        RSPaintFilterCanvas& canvas,
+        RSSurfaceRenderNode& node,
+        const ScreenInfo& screenInfo,
+        const IRect& clipRect,
+        bool forceCPU = false);
+
 #ifdef RS_ENABLE_GL
     const std::shared_ptr<RenderContext>& GetRenderContext() const
     {
@@ -136,7 +143,7 @@ private:
         RSDisplayRenderNode& node,
         const ScreenInfo& screenInfo,
         bool forceCPU = false);
-
+        
 #ifdef RS_ENABLE_GL
     std::shared_ptr<RenderContext> renderContext_;
 #endif // RS_ENABLE_GL
