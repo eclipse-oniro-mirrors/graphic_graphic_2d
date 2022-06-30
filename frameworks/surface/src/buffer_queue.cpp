@@ -935,7 +935,7 @@ GSError BufferQueue::SetTunnelHandle(const ExtDataHandle *handle)
         ScopedBytrace bufferIPCSend("OnTunnelHandleChange");
         listener_->OnTunnelHandleChange();
     } else if (listenerClazz_ != nullptr) {
-        ScopedBytrace bufferIPCSend("OnTunnelHandleChande");
+        ScopedBytrace bufferIPCSend("OnTunnelHandleChange");
         listenerClazz_->OnTunnelHandleChange();
     } else {
         return GSERROR_NO_CONSUMER;

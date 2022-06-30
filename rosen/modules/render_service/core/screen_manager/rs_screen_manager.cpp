@@ -366,12 +366,12 @@ RSScreenCapability RSScreenManager::GetScreenCapabilityLocked(ScreenId id) const
     screenCapability.SetPhyHeight(capability.phyHeight);
     screenCapability.SetSupportLayers(capability.supportLayers);
     screenCapability.SetVirtualDispCount(capability.virtualDispCount);
-    screenCapability.SetSupportWriteback(capability.supportWriteBack);
+    screenCapability.SetSupportWriteBack(capability.supportWriteBack);
     screenCapability.SetProps(props);
     return screenCapability;
 }
 
-ScreenPowerStatus RSScreenManager::GetScreenPowerStatuslocked(ScreenId id) const
+ScreenPowerStatus RSScreenManager::GetScreenPowerStatusLocked(ScreenId id) const
 {
     if (screens_.count(id) == 0) {
         HiLog::Error(LOG_LABEL, "%{public}s: There is no screen for id %{public}" PRIu64 ".\n", __func__, id);
@@ -414,7 +414,8 @@ ScreenId RSScreenManager::CreateVirtualScreen(
                 continue;
             }
             if (screenSurface->GetUniqueId() == surfaceId) {
-                HiLog::Error(LOG_LABEL, "surface %{public}" PRIu64 " is used, create virtualscreen failed!", surfaceId);
+                HiLog::Error(
+                    LOG_LABEL, "surface %{public}" PRIu64 " is used, create virtual screen failed!", surfaceId);
                 return INVALID_SCREEN_ID;
             }
         }
@@ -578,7 +579,7 @@ ScreenPowerStatus RSScreenManager::GetScreenPowerStatus(ScreenId id) const
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    return GetScreenPowerStatuslocked(id);
+    return GetScreenPowerStatusLocked(id);
 }
 
 RSScreenData RSScreenManager::GetScreenData(ScreenId id) const
@@ -593,7 +594,7 @@ RSScreenData RSScreenManager::GetScreenData(ScreenId id) const
     RSScreenModeInfo activeMode;
     GetScreenActiveModeLocked(id, activeMode);
     std::vector<RSScreenModeInfo> supportModes = GetScreenSupportedModesLocked(id);
-    ScreenPowerStatus powerStatus = GetScreenPowerStatuslocked(id);
+    ScreenPowerStatus powerStatus = GetScreenPowerStatusLocked(id);
     screenData.SetCapability(capability);
     screenData.SetActivityModeInfo(activeMode);
     screenData.SetSupportModeInfo(supportModes);
@@ -604,10 +605,10 @@ RSScreenData RSScreenManager::GetScreenData(ScreenId id) const
 int32_t RSScreenManager::GetScreenBacklight(ScreenId id)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    return GetScreenBacklightlocked(id);
+    return GetScreenBacklightLocked(id);
 }
 
-int32_t RSScreenManager::GetScreenBacklightlocked(ScreenId id) const
+int32_t RSScreenManager::GetScreenBacklightLocked(ScreenId id) const
 {
     if (screens_.count(id) == 0) {
         HiLog::Error(LOG_LABEL, "%{public}s: There is no screen for id %{public}" PRIu64 ".\n", __func__, id);
@@ -785,7 +786,7 @@ bool RSScreenManager::RequestRotationLocked(ScreenId id, ScreenRotation rotation
         HiLog::Error(LOG_LABEL, "%{public}s: There is no screen for id %{public}" PRIu64 ".\n", __func__, id);
         return false;
     }
-    // In special scenario (sucn as the foreground app is launcher), the rotation does not trigger UI redraw.
+    // In special scenario (such as the foreground app is launcher), the rotation does not trigger UI redraw.
     // So, we trigger the vSync here, to avoid inconsistent between interfaces and keystrokes.
     auto mainThread = RSMainThread::Instance();
     if (mainThread != nullptr) {

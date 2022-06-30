@@ -70,12 +70,12 @@ bool RSRenderEngine::NeedForceCPU(const std::vector<LayerInfoPtr>& layers)
 }
 
 std::unique_ptr<RSRenderFrame> RSRenderEngine::RequestFrame(
-    const sptr<Surface>& targetSurfce,
+    const sptr<Surface>& targetSurface,
     const BufferRequestConfig& config,
     bool forceCPU)
 {
     RS_TRACE_NAME("RSRenderEngine::RequestFrame");
-    if (targetSurfce == nullptr) {
+    if (targetSurface == nullptr) {
         RS_LOGE("RSRenderEngine::RequestFrame: surface is null!");
         return nullptr;
     }
@@ -84,13 +84,13 @@ std::unique_ptr<RSRenderFrame> RSRenderEngine::RequestFrame(
     auto bufferUsage = config.usage;
 #if (defined RS_ENABLE_GL) && (defined RS_ENABLE_EGLIMAGE)
     if (forceCPU) {
-        rsSurface = std::make_shared<RSSurfaceOhosRaster>(targetSurfce);
+        rsSurface = std::make_shared<RSSurfaceOhosRaster>(targetSurface);
         bufferUsage |= HBM_USE_CPU_WRITE;
     } else {
-        rsSurface = std::make_shared<RSSurfaceOhosGl>(targetSurfce);
+        rsSurface = std::make_shared<RSSurfaceOhosGl>(targetSurface);
     }
 #else
-    rsSurface = std::make_shared<RSSurfaceOhosRaster>(targetSurfce);
+    rsSurface = std::make_shared<RSSurfaceOhosRaster>(targetSurface);
     bufferUsage |= HBM_USE_CPU_WRITE;
 #endif // (defined RS_ENABLE_GL) && (defined RS_ENABLE_EGLIMAGE)
     rsSurface->SetSurfaceBufferUsage(bufferUsage);

@@ -61,7 +61,7 @@ void RSPhysicalScreenProcessor::ProcessSurface(RSSurfaceRenderNode &node)
 
 void RSPhysicalScreenProcessor::ProcessDisplaySurface(RSDisplayRenderNode& node)
 {
-    RS_LOGI("RSPhysicalScreenProcessor::ProcessDisplaySurface() is not suppoerted.");
+    RS_LOGI("RSPhysicalScreenProcessor::ProcessDisplaySurface() is not supported.");
 }
 
 void RSPhysicalScreenProcessor::Redraw(const sptr<Surface>& surface, const std::vector<LayerInfoPtr>& layers)

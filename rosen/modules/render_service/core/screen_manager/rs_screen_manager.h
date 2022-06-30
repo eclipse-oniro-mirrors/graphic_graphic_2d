@@ -261,8 +261,8 @@ private:
     void GetScreenActiveModeLocked(ScreenId id, RSScreenModeInfo& screenModeInfo) const;
     std::vector<RSScreenModeInfo> GetScreenSupportedModesLocked(ScreenId id) const;
     RSScreenCapability GetScreenCapabilityLocked(ScreenId id) const;
-    ScreenPowerStatus GetScreenPowerStatuslocked(ScreenId id) const;
-    int32_t GetScreenBacklightlocked(ScreenId id) const;
+    ScreenPowerStatus GetScreenPowerStatusLocked(ScreenId id) const;
+    int32_t GetScreenBacklightLocked(ScreenId id) const;
 
     void RemoveVirtualScreenLocked(ScreenId id);
     ScreenId GenerateVirtualScreenIdLocked();

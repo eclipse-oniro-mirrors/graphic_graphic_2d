@@ -102,7 +102,7 @@ public:
 
     // There would only one user(thread) to renderFrame(request frame) at one time.
     std::unique_ptr<RSRenderFrame> RequestFrame(
-        const sptr<Surface>& targetSurfce,
+        const sptr<Surface>& targetSurface,
         const BufferRequestConfig& config,
         bool forceCPU = false);
 
