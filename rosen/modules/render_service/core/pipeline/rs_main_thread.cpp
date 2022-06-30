@@ -30,6 +30,7 @@
 #include "pipeline/rs_uni_render_visitor.h"
 #include "pipeline/rs_occlusion_config.h"
 #include "platform/common/rs_log.h"
+#include "platform/common/rs_innovation.h"
 #include "platform/drawing/rs_vsync_client.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "transaction/rs_transaction_proxy.h"
@@ -44,7 +45,10 @@ RSMainThread* RSMainThread::Instance()
 
 RSMainThread::RSMainThread() : mainThreadId_(std::this_thread::get_id()) {}
 
-RSMainThread::~RSMainThread() noexcept = default;
+RSMainThread::~RSMainThread() noexcept
+{
+    RSInnovation::CloseInnovationSo();
+}
 
 void RSMainThread::Init()
 {
@@ -71,6 +75,8 @@ void RSMainThread::Init()
     RSDividedRenderUtil::InitEnableClient();
 
     renderEngine_ = std::make_shared<RSRenderEngine>();
+    RSInnovation::OpenInnovationSo();
+    Occlusion::Region::InitDynamicLibraryFunction();
 }
 
 void RSMainThread::Start()
@@ -206,6 +212,14 @@ void RSMainThread::Render()
         RS_LOGI("RSMainThread::Render isUni");
         visitor = std::make_shared<RSUniRenderVisitor>();
     } else {
+        bool doParallelComposition = false;
+        if (RSInnovation::GetParallelCompositionEnabled()) {
+            doParallelComposition = DoParallelComposition(rootNode);
+        }
+        if (doParallelComposition) {
+            renderEngine_->ShrinkEGLImageCachesIfNeeded();
+            return;
+        }
         auto rsVisitor = std::make_shared<RSRenderServiceVisitor>();
         rsVisitor->SetAnimateState(doAnimate_);
         visitor = rsVisitor;
@@ -227,7 +241,7 @@ void RSMainThread::CalcOcclusion()
         RS_LOGE("RSMainThread::CalcOcclusion GetGlobalRootRenderNode fail");
         return;
     }
-
+    RSInnovation::UpdateOcclusionCullingSoEnabled();
     std::vector<RSBaseRenderNode::SharedPtr> curAllSurfaces;
     node->CollectSurface(node, curAllSurfaces);
     // 1. Judge whether it is dirty
@@ -472,6 +486,61 @@ void RSMainThread::RenderServiceTreeDump(std::string& dumpString)
         return;
     }
     rootNode->DumpTree(0, dumpString);
+}
+
+bool RSMainThread::DoParallelComposition(std::shared_ptr<RSBaseRenderNode> rootNode)
+{
+    typedef void* (*CreateParallelSyncSignalFunc)(uint32_t);
+    typedef void (*SignalCountDownFunc)(void*);
+    typedef void (*SignalAwaitFunc)(void*);
+    typedef void (*AssignTaskFunc)(std::function<void()>);
+    typedef void (*RemoveStoppedThreadsFunc)();
+
+    CreateParallelSyncSignalFunc CreateParallelSyncSignal =
+        (CreateParallelSyncSignalFunc)RSInnovation::_s_createParallelSyncSignal;
+    SignalCountDownFunc SignalCountDown = (SignalCountDownFunc)RSInnovation::_s_signalCountDown;
+    SignalAwaitFunc SignalAwait = (SignalAwaitFunc)RSInnovation::_s_signalAwait;
+    AssignTaskFunc AssignTask = (AssignTaskFunc)RSInnovation::_s_assignTask;
+    RemoveStoppedThreadsFunc RemoveStoppedThreads = (RemoveStoppedThreadsFunc)RSInnovation::_s_removeStoppedThreads;
+
+    void* syncSignal = (*CreateParallelSyncSignal)(rootNode->GetChildrenCount());
+    if (!syncSignal) {
+        return false;
+    }
+
+    (*RemoveStoppedThreads)();
+    std::shared_ptr<OHOS::Rosen::RSNodeVisitor> visitor = std::make_shared<RSRenderServiceVisitor>();
+    rootNode->Prepare(visitor);
+    CalcOcclusion();
+    auto children = rootNode->GetSortedChildren();
+    bool animate_ = doAnimate_;
+    for (auto it = children.rbegin(); it != children.rend(); it++) {
+        auto child = *it;
+        auto task = [&syncSignal, SignalCountDown, child, animate_]() {
+            std::shared_ptr<RSNodeVisitor> visitor;
+            auto rsVisitor = std::make_shared<RSRenderServiceVisitor>(true);
+            rsVisitor->SetAnimateState(animate_);
+            visitor = rsVisitor;
+            child->Process(visitor);
+            (*SignalCountDown)(syncSignal);
+        };
+        if (*it == *children.begin()) {
+            task();
+        } else {
+            (*AssignTask)(task);
+        }
+    }
+    (*SignalAwait)(syncSignal);
+    ResetSortedChildren(rootNode);
+    return true;
+}
+
+void RSMainThread::ResetSortedChildren(std::shared_ptr<RSBaseRenderNode> node)
+{
+    for (auto& child : node->GetSortedChildren()) {
+        ResetSortedChildren(child);
+    }
+    node->ResetSortedChildren();
 }
 } // namespace Rosen
 } // namespace OHOS
