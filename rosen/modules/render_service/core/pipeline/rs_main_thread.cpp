@@ -135,8 +135,8 @@ void RSMainThread::ProcessCommand()
 
 void RSMainThread::ConsumeAndUpdateAllNodes()
 {
+    RS_TRACE_NAME("RSMainThread::ConsumeAndUpdateAllNodes");
     bool needRequestNextVsync = false;
-
     bufferTimestamps_.clear();
     const auto& nodeMap = GetContext().GetNodeMap();
     nodeMap.TraversalNodes([this, &needRequestNextVsync](const std::shared_ptr<RSBaseRenderNode>& node) mutable {
@@ -165,6 +165,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
 
 void RSMainThread::ReleaseAllNodesBuffer()
 {
+    RS_TRACE_NAME("RSMainThread::ReleaseAllNodesBuffer");
     const auto& nodeMap = GetContext().GetNodeMap();
     nodeMap.TraversalNodes([this](const std::shared_ptr<RSBaseRenderNode>& node) mutable {
         if (node == nullptr) {
