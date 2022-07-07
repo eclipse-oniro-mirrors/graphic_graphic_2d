@@ -37,19 +37,24 @@ foundation/graphic/graphic_2d/
 │   ├── bootanimation       # 开机动画目录
 │   ├── dumper              # graphic dumper代码
 │   ├── fence               # fence代码
+│   ├── opengl_wrapper      # opengl_wrapper
 │   ├── surface             # Surface代码
+│   ├── surfaceimage        # surfaceimage代码
 │   ├── vsync               # Vsync代码
+│   ├── wm                  # wm代码
+│   ├── wmserver            # wmserver代码
+│   ├── wmservice           # wmservice代码
+│   ├── wmtest              # wmtest代码
 ├── rosen                   # 框架代码目录
 │   ├── build               # 构建说明
 │   ├── doc                 # doc
 │   ├── include             # 对外头文件代码
-│   ├── lib                 # lib
 │   ├── modules             # graphic 子系统各模块代码
 │   ├── samples             # 实例代码
 │   ├── test                # 开发测试代码
 │   ├── tools               # 工具代码
 ├── interfaces              # 图形接口存放目录
-│   ├── innerkits           # 内部native接口存放目录
+│   ├── inner_api           # 内部native接口存放目录
 │   └── kits                # js/napi外部接口存放目录
 └── utils                   # 小部件存放目录
 ```
