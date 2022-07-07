@@ -26,6 +26,7 @@
 #include "pipeline/rs_processor_factory.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
+#include "rs_divided_render_util.h"
 #include "rs_trace.h"
 #include "platform/drawing/rs_surface.h"
 #include "screen_manager/rs_screen_manager.h"
@@ -148,6 +149,14 @@ void RSRenderServiceVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         skCanvas_ = std::make_unique<SkCanvas>(boundWidth, boundHeight);
         canvas_ = std::make_shared<RSPaintFilterCanvas>(skCanvas_.get());
         canvas_->clipRect(SkRect::MakeWH(boundWidth, boundHeight));
+        auto boundsGeoPtr = std::static_pointer_cast<RSObjAbsGeometry>(node.GetRenderProperties().GetBoundsGeometry());
+        if (boundsGeoPtr && boundsGeoPtr->IsNeedClientCompose()) {
+            RSDividedRenderUtil::SetNeedClient(true);
+            boundsGeoPtr->SetSize(boundWidth, boundHeight);
+        } else {
+            RSDividedRenderUtil::SetNeedClient(false);
+        }
+        processor_->SetBoundsGeometry(boundsGeoPtr);
         ProcessBaseRenderNode(node);
     }
     processor_->PostProcess();

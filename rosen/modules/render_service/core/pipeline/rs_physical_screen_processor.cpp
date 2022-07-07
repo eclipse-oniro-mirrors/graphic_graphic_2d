@@ -85,6 +85,12 @@ void RSPhysicalScreenProcessor::Redraw(const sptr<Surface>& surface, const std::
         RS_LOGE("RsDebug RSPhysicalScreenProcessor::Redraw：canvas is nullptr.");
         return;
     }
+    canvas->clipRect(SkRect::MakeXYWH(0, 0, renderFrameConfig_.width, renderFrameConfig_.height));
+    auto boundsGeoPtr = GetBoundsGeometry();
+    if (boundsGeoPtr) {
+        boundsGeoPtr->UpdateByMatrixFromSelf();
+        canvas->concat(boundsGeoPtr->GetMatrix());
+    }
     renderEngine_->DrawLayers(*canvas, layers, screenInfo_, forceCPU, mirrorAdaptiveCoefficient_);
     renderFrame->Flush();
     RS_LOGD("RsDebug RSPhysicalScreenProcessor::Redraw flush frame buffer end");

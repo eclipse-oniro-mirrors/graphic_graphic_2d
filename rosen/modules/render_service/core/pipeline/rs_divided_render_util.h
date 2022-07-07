@@ -67,6 +67,7 @@ public:
         const Vector2f& center);
     static void InitEnableClient();
     static bool IsNeedClient(RSSurfaceRenderNode& node, const ComposeInfo& info);
+    static void SetNeedClient(bool flag);
 
 private:
     static SkMatrix GetCanvasTransform(const RSSurfaceRenderNode& node, const SkMatrix& canvasMatrix,
