@@ -135,7 +135,7 @@ DECLARE_DELTA_COMMAND(RSNodeSetBorderColorDelta, SET_BORDER_COLOR_DELTA, Vector4
 DECLARE_SET_COMMAND(RSNodeSetBorderWidth, SET_BORDER_WIDTH, Vector4f, SetBorderWidth)
 DECLARE_DELTA_COMMAND(RSNodeSetBorderWidthDelta, SET_BORDER_WIDTH_DELTA, Vector4f, SetBorderWidth, GetBorderWidth)
 
-DECLARE_SET_COMMAND(RSNodeSetBorderStyle, SET_BORDER_STYLE, Vector4<BorderStyle>, SetBorderStyle)
+DECLARE_SET_COMMAND(RSNodeSetBorderStyle, SET_BORDER_STYLE, Vector4<uint32_t>, SetBorderStyle)
 
 DECLARE_SET_COMMAND(RSNodeSetSublayerTransform, SET_SUBLAYER_TRANSFORM, Matrix3f, SetSublayerTransform)
 DECLARE_DELTA_COMMAND(RSNodeSetSublayerTransformDelta, SET_SUBLAYER_TRANSFORM_DELTA, Matrix3f, SetSublayerTransform, GetSublayerTransform)

@@ -636,7 +636,7 @@ void RSProperties::SetBorderWidth(Vector4f width)
     SetDirty();
 }
 
-void RSProperties::SetBorderStyle(Vector4<BorderStyle> style)
+void RSProperties::SetBorderStyle(Vector4<uint32_t> style)
 {
     if (!border_) {
         border_ = std::make_shared<RSBorder>();
@@ -655,9 +655,9 @@ Vector4f RSProperties::GetBorderWidth() const
     return border_ ? border_->GetWidthFour() : Vector4f(0.f);
 }
 
-Vector4<BorderStyle> RSProperties::GetBorderStyle() const
+Vector4<uint32_t> RSProperties::GetBorderStyle() const
 {
-    return border_ ? border_->GetStyleFour() : Vector4<BorderStyle>(BorderStyle::NONE);
+    return border_ ? border_->GetStyleFour() : Vector4<uint32_t>(static_cast<uint32_t>(BorderStyle::NONE));
 }
 
 std::shared_ptr<RSBorder> RSProperties::GetBorder() const
@@ -753,7 +753,7 @@ void RSProperties::SetShadowPath(std::shared_ptr<RSPath> shadowPath)
 
 Color RSProperties::GetShadowColor() const
 {
-    return shadow_ ? shadow_->GetColor() : Color(DEFAULT_SPOT_COLOR);
+    return shadow_ ? shadow_->GetColor() : Color::FromArgbInt(DEFAULT_SPOT_COLOR);
 }
 
 float RSProperties::GetShadowOffsetX() const
@@ -900,6 +900,26 @@ bool RSProperties::NeedFilter() const
 bool RSProperties::NeedClip() const
 {
     return clipToBounds_ || clipToFrame_;
+}
+
+void RSProperties::Reset()
+{
+    isDirty_ = true;
+    boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
+    frameGeo_ = std::make_shared<RSObjGeometry>();
+    visible_ = true;
+    clipToBounds_ = false;
+    clipToFrame_ = false;
+    clipPath_ = nullptr;
+    frameGravity_ = Gravity::DEFAULT;
+    alpha_ = 1.f;
+    decoration_ = nullptr;
+    cornerRadius_ = nullptr;
+    shadow_ = nullptr;
+    border_ = nullptr;
+    backgroundFilter_ = nullptr;
+    filter_ = nullptr;
+    mask_ = nullptr;
 }
 
 void RSProperties::SetDirty()

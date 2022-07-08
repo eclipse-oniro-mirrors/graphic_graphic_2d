@@ -16,6 +16,8 @@
 #define RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_CANVAS_RENDER_NODE_H
 
 #include <memory>
+#include <unordered_set>
+#include "modifier/rs_modifier_type.h"
 
 #include "pipeline/rs_render_node.h"
 
@@ -23,6 +25,7 @@ namespace OHOS {
 namespace Rosen {
 class DrawCmdList;
 class RSPaintFilterCanvas;
+struct RSModifyContext;
 
 class RSCanvasRenderNode : public RSRenderNode {
 public:
@@ -46,9 +49,12 @@ public:
     {
         return RSRenderNodeType::CANVAS_NODE;
     }
-
+    void AddModifier(const std::shared_ptr<RSRenderModifier>& modifier) override;
 private:
+    void ApplyDrawCmdModifier(RSModifyContext& context, RSModifierType type);
+
     std::shared_ptr<DrawCmdList> drawCmdList_ { nullptr };
+    std::unordered_set<PropertyId> drawCmdModifiers_;
     bool drawContentLast_ = false;
 
     friend class RSRenderTransition;

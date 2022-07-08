@@ -78,5 +78,14 @@ void RSCanvasNode::FinishRecording()
 #endif
 }
 
+int RSCanvasNode::GetPaintWidth() const
+{
+    return GetStagingProperties().GetFrame().z_;
+}
+
+int RSCanvasNode::GetPaintHeight() const
+{
+    return GetStagingProperties().GetFrame().w_;
+}
 } // namespace Rosen
 } // namespace OHOS

@@ -88,7 +88,7 @@ public:
 
     static float EstimateFraction(const std::shared_ptr<RSInterpolator>& interpolator, const Vector4<Color>& value,
         const Vector4<Color>& startValue, const Vector4<Color>& endValue);
-    
+
     static float EstimateFraction(const std::shared_ptr<RSInterpolator>& interpolator,
         const std::shared_ptr<RSAnimatableBase>& value, const std::shared_ptr<RSAnimatableBase>& startValue,
         const std::shared_ptr<RSAnimatableBase>& endValue);

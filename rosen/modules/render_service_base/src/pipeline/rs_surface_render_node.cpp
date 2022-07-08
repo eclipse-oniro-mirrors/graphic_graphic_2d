@@ -154,6 +154,7 @@ void RSSurfaceRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)
     if (!visitor) {
         return;
     }
+    ApplyModifiers();
     visitor->PrepareSurfaceRenderNode(*this);
 }
 

@@ -138,10 +138,10 @@ public:
     // border properties
     void SetBorderColor(Vector4<Color> color);
     void SetBorderWidth(Vector4f width);
-    void SetBorderStyle(Vector4<BorderStyle> style);
+    void SetBorderStyle(Vector4<uint32_t> style);
     Vector4<Color> GetBorderColor() const;
     Vector4f GetBorderWidth() const;
-    Vector4<BorderStyle> GetBorderStyle() const;
+    Vector4<uint32_t> GetBorderStyle() const;
     std::shared_ptr<RSBorder> GetBorder() const;
 
     // filter properties
@@ -192,6 +192,7 @@ public:
     void CleanZorderChanged();
 
 private:
+    void Reset();
     void SetDirty();
     void ResetDirty();
     bool IsDirty() const;

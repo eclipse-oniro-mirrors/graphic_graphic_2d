@@ -45,6 +45,7 @@ ohos_source_set("render_service_client_src") {
     "core/animation/rs_animation.cpp",
     "core/animation/rs_animation_callback.cpp",
     "core/animation/rs_animation_group.cpp",
+    "core/animation/rs_animation_manager_map.cpp",
     "core/animation/rs_animation_timing_curve.cpp",
     "core/animation/rs_curve_animation.cpp",
     "core/animation/rs_implicit_animation_param.cpp",
@@ -54,6 +55,14 @@ ohos_source_set("render_service_client_src") {
     "core/animation/rs_path_animation.cpp",
     "core/animation/rs_spring_animation.cpp",
     "core/animation/rs_transition.cpp",
+    "core/animation/rs_ui_animation_manager.cpp",
+
+    #modifier
+    "core/modifier/rs_extended_modifier.cpp",
+    "core/modifier/rs_modifier.cpp",
+    "core/modifier/rs_modifier_extractor.cpp",
+    "core/modifier/rs_modifier_manager.cpp",
+    "core/modifier/rs_property.cpp",
 
     #jank_detector
     "core/jank_detector/rs_jank_detector.cpp",

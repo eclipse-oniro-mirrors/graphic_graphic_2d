@@ -35,7 +35,11 @@ public:
     static std::shared_ptr<RSPath> CreateRSPath(const SkPath& skPath);
     static std::shared_ptr<RSPath> CreateRSPath(const std::string& path);
     float GetDistance() const;
-    bool GetPosTan(float distance, Vector2f& pos, float& degrees) const;
+    template<typename T>
+    bool GetPosTan(float distance, T& pos, float& degrees) const
+    {
+        return true;
+    }
 
     std::shared_ptr<RSPath> Reverse();
 
@@ -50,6 +54,11 @@ private:
 
     SkPath* skPath_ = nullptr;
 };
+
+template<>
+bool RSPath::GetPosTan(float distance, Vector2f& pos, float& degrees) const;
+template<>
+bool RSPath::GetPosTan(float distance, Vector4f& pos, float& degrees) const;
 } // namespace Rosen
 } // namespace OHOS
 

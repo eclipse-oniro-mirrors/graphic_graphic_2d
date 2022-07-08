@@ -58,10 +58,10 @@ public:
 
     void SetColorFour(Vector4<Color> color);
     void SetWidthFour(Vector4f width);
-    void SetStyleFour(Vector4<BorderStyle> style);
+    void SetStyleFour(Vector4<uint32_t> style);
     Vector4<Color> GetColorFour() const;
     Vector4f GetWidthFour() const;
-    Vector4<BorderStyle> GetStyleFour() const;
+    Vector4<uint32_t> GetStyleFour() const;
 
     bool HasBorder() const
     {

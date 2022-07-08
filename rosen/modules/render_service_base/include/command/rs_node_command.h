@@ -136,6 +136,28 @@ enum RSNodeCommandType : uint16_t {
     SET_SHADOW_ALPHA_DELTA,
     SET_SHADOW_ELEVATION_DELTA,
     SET_SHADOW_RADIUS_DELTA,
+
+    CLEAR_MODIFIER,
+    ADD_MODIFIER,
+    REMOVE_MODIFIER,
+
+    UPDATE_MODIFIER_BOOL,
+    UPDATE_MODIFIER_FLOAT,
+    UPDATE_MODIFIER_INT,
+    UPDATE_MODIFIER_COLOR,
+    UPDATE_MODIFIER_GRAVITY,
+    UPDATE_MODIFIER_MATRIX3F,
+    UPDATE_MODIFIER_QUATERNION,
+    UPDATE_MODIFIER_FILTER_PTR,
+    UPDATE_MODIFIER_IMAGE_PTR,
+    UPDATE_MODIFIER_MASK_PTR,
+    UPDATE_MODIFIER_PATH_PTR,
+    UPDATE_MODIFIER_SHADER_PTR,
+    UPDATE_MODIFIER_VECTOR2F,
+    UPDATE_MODIFIER_VECTOR4_BORDER_STYLE,
+    UPDATE_MODIFIER_VECTOR4_COLOR,
+    UPDATE_MODIFIER_VECTOR4F,
+    UPDATE_MODIFIER_DRAW_CMD_LIST,
 };
 
 class RSRenderNodeCommandHelper {
@@ -173,6 +195,72 @@ public:
 
 #undef DECLARE_SET_COMMAND
 #undef DECLARE_DELTA_COMMAND
+
+class RSNodeCommandHelper {
+public:
+    static void ClearModifiers(RSContext& context, NodeId nodeId);
+    static void AddModifier(RSContext& context, NodeId nodeId, const std::shared_ptr<RSRenderModifier>& modifier);
+    static void RemoveModifier(RSContext& context, NodeId nodeId, PropertyId propertyId);
+    static void UpdateModifier(RSContext& context, NodeId nodeId, std::shared_ptr<RSRenderProperty> prop, bool isDelta);
+};
+
+ADD_COMMAND(RSClearModifiers, ARG(RS_NODE, CLEAR_MODIFIER, RSNodeCommandHelper::ClearModifiers, NodeId))
+ADD_COMMAND(RSAddModifier,
+    ARG(RS_NODE, ADD_MODIFIER, RSNodeCommandHelper::AddModifier, NodeId, std::shared_ptr<RSRenderModifier>))
+ADD_COMMAND(RSRemoveModifier,
+    ARG(RS_NODE, REMOVE_MODIFIER, RSNodeCommandHelper::RemoveModifier, NodeId, PropertyId))
+
+ADD_COMMAND(RSUpdatePropertyBool,
+    ARG(RS_NODE, UPDATE_MODIFIER_BOOL, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<bool>>, bool))
+ADD_COMMAND(RSUpdatePropertyFloat,
+    ARG(RS_NODE, UPDATE_MODIFIER_FLOAT, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<float>>, bool))
+ADD_COMMAND(RSUpdatePropertyInt,
+    ARG(RS_NODE, UPDATE_MODIFIER_INT, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<int>>, bool))
+ADD_COMMAND(RSUpdatePropertyColor,
+    ARG(RS_NODE, UPDATE_MODIFIER_COLOR, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<Color>>, bool))
+ADD_COMMAND(RSUpdatePropertyGravity,
+    ARG(RS_NODE, UPDATE_MODIFIER_GRAVITY, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<Gravity>>, bool))
+ADD_COMMAND(RSUpdatePropertyMatrix3f,
+    ARG(RS_NODE, UPDATE_MODIFIER_MATRIX3F, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<Matrix3f>>, bool))
+ADD_COMMAND(RSUpdatePropertyQuaternion,
+    ARG(RS_NODE, UPDATE_MODIFIER_QUATERNION, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<Quaternion>>, bool))
+ADD_COMMAND(RSUpdatePropertyFilter,
+    ARG(RS_NODE, UPDATE_MODIFIER_FILTER_PTR, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<std::shared_ptr<RSFilter>>>, bool))
+ADD_COMMAND(RSUpdatePropertyImage,
+    ARG(RS_NODE, UPDATE_MODIFIER_IMAGE_PTR, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<std::shared_ptr<RSImage>>>, bool))
+ADD_COMMAND(RSUpdatePropertyMask,
+    ARG(RS_NODE, UPDATE_MODIFIER_MASK_PTR, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<std::shared_ptr<RSMask>>>, bool))
+ADD_COMMAND(RSUpdatePropertyPath,
+    ARG(RS_NODE, UPDATE_MODIFIER_PATH_PTR, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<std::shared_ptr<RSPath>>>, bool))
+ADD_COMMAND(RSUpdatePropertyShader,
+    ARG(RS_NODE, UPDATE_MODIFIER_SHADER_PTR, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<std::shared_ptr<RSShader>>>, bool))
+ADD_COMMAND(RSUpdatePropertyVector2f,
+    ARG(RS_NODE, UPDATE_MODIFIER_VECTOR2F, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<Vector2f>>, bool))
+ADD_COMMAND(RSUpdatePropertyBorderStyle,
+    ARG(RS_NODE, UPDATE_MODIFIER_VECTOR4_BORDER_STYLE, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<Vector4<uint32_t>>>, bool))
+ADD_COMMAND(RSUpdatePropertyVector4Color,
+    ARG(RS_NODE, UPDATE_MODIFIER_VECTOR4_COLOR, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<Vector4<Color>>>, bool))
+ADD_COMMAND(RSUpdatePropertyVector4f,
+    ARG(RS_NODE, UPDATE_MODIFIER_VECTOR4F, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<Vector4f>>, bool))
+ADD_COMMAND(RSUpdatePropertyDrawCmdList,
+    ARG(RS_NODE, UPDATE_MODIFIER_DRAW_CMD_LIST, RSNodeCommandHelper::UpdateModifier,
+        NodeId, std::shared_ptr<RSAnimatableRenderProperty<DrawCmdListPtr>>, bool))
 
 } // namespace Rosen
 } // namespace OHOS

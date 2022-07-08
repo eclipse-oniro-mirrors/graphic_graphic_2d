@@ -17,6 +17,46 @@
 
 namespace OHOS {
 namespace Rosen {
+void RSNodeCommandHelper::ClearModifiers(RSContext& context, NodeId nodeId)
+{
+    auto& nodeMap = context.GetNodeMap();
+    auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
+    if (node) {
+        node->ClearModifiers();
+    }
+}
 
+void RSNodeCommandHelper::AddModifier(RSContext& context, NodeId nodeId,
+    const std::shared_ptr<RSRenderModifier>& modifier)
+{
+    auto& nodeMap = context.GetNodeMap();
+    auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
+    if (node) {
+        node->AddModifier(modifier);
+    }
+}
+
+void RSNodeCommandHelper::RemoveModifier(RSContext& context, NodeId nodeId, PropertyId propertyId)
+{
+    auto& nodeMap = context.GetNodeMap();
+    auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
+    if (node) {
+        node->RemoveModifier(propertyId);
+    }
+}
+
+void RSNodeCommandHelper::UpdateModifier(
+    RSContext& context, NodeId nodeId, std::shared_ptr<RSRenderProperty> prop, bool isDelta)
+{
+    auto& nodeMap = context.GetNodeMap();
+    auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
+    if (!node) {
+        return;
+    }
+    auto modifier = node->GetModifier(prop->GetId());
+    if (modifier) {
+        modifier->Update(prop, isDelta);
+    }
+}
 } // namespace Rosen
 } // namespace OHOS

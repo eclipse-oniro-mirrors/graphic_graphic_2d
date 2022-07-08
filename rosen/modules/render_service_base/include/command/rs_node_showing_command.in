@@ -95,7 +95,7 @@ DECLARE_GET_COMMAND(RSNodeGetBorderColor, GET_BORDER_COLOR, Vector4<Color>, GetB
 
 DECLARE_GET_COMMAND(RSNodeGetBorderWidth, GET_BORDER_WIDTH, Vector4f, GetBorderWidth)
 
-DECLARE_GET_COMMAND(RSNodeGetBorderStyle, GET_BORDER_STYLE, Vector4<BorderStyle>, GetBorderStyle)
+DECLARE_GET_COMMAND(RSNodeGetBorderStyle, GET_BORDER_STYLE, Vector4<uint32_t>, GetBorderStyle)
 
 DECLARE_GET_COMMAND(RSNodeGetSublayerTransform, GET_SUBLAYER_TRANSFORM, Matrix3f, GetSublayerTransform)
 

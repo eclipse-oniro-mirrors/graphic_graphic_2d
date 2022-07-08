@@ -105,12 +105,13 @@ void RSBorder::SetWidthFour(Vector4f width)
     widths_ = { width.x_, width.y_, width.z_, width.w_ };
 }
 
-void RSBorder::SetStyleFour(Vector4<BorderStyle> style)
+void RSBorder::SetStyleFour(Vector4<uint32_t> style)
 {
     if (style.x_ == style.y_ && style.x_ == style.z_ && style.x_ == style.w_) {
-        return SetStyle(style.x_);
+        return SetStyle(static_cast<BorderStyle>(style.x_));
     }
-    styles_ = { style.x_, style.y_, style.z_, style.w_ };
+    styles_ = { static_cast<BorderStyle>(style.x_), static_cast<BorderStyle>(style.y_),
+                static_cast<BorderStyle>(style.z_), static_cast<BorderStyle>(style.w_) };
 }
 
 Vector4<Color> RSBorder::GetColorFour() const
@@ -131,12 +132,13 @@ Vector4f RSBorder::GetWidthFour() const
     }
 }
 
-Vector4<BorderStyle> RSBorder::GetStyleFour() const
+Vector4<uint32_t> RSBorder::GetStyleFour() const
 {
     if (styles_.size() == 4) {
-        return Vector4<BorderStyle>(styles_[0], styles_[1], styles_[2], styles_[3]);
+        return Vector4<uint32_t>(static_cast<uint32_t>(styles_[0]), static_cast<uint32_t>(styles_[1]),
+                                 static_cast<uint32_t>(styles_[2]), static_cast<uint32_t>(styles_[3]));
     } else {
-        return Vector4<BorderStyle>(GetStyle());
+        return Vector4<uint32_t>(static_cast<uint32_t>(GetStyle()));
     }
 }
 

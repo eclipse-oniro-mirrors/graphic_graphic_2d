@@ -60,20 +60,6 @@ bool IsValid(const Vector4f& value)
 {
     return !value.IsInfinite();
 }
-
-template<typename T>
-T CheckAndAdd(const T& value1, const T& value2)
-{
-    ROSEN_LOGE("not support +");
-    return value2;
-}
-
-template<typename T, void (T::*)(const T& value) = &T::operator+>
-T CheckAndAdd(const T& value1, const T& value2)
-{
-    ROSEN_LOGE("can support +");
-    return value1 + value2;
-}
 } // namespace
 
 template<typename T>
@@ -81,14 +67,6 @@ RSProperty<T>::RSProperty() : id_(GenerateId()) {}
 
 template<typename T>
 RSProperty<T>::RSProperty(const T& value) : animatingValue_(value), stagingValue_(value), id_(GenerateId()) {}
-
-template<typename T>
-RSProperty<T>& RSProperty<T>::operator+=(const T& value)
-{
-    ROSEN_LOGE("check and add support +");
-    Set(CheckAndAdd<T>(Get(), value));
-    return *this;
-}
 
 template<typename T>
 void RSProperty<T>::Set(const T& value)
@@ -169,82 +147,82 @@ void RSAnimatableProperty<T>::Set(const T& value)
 template<>
 void RSProperty<bool>::UpdateToRender(const bool& value, bool isDelta) const
 {
-    UPDATE_TO_RENDER(RSUpdateModifierBool, bool, value, isDelta);
+    UPDATE_TO_RENDER(RSUpdatePropertyBool, bool, value, isDelta);
 }
 template<>
 void RSProperty<float>::UpdateToRender(const float& value, bool isDelta) const
 {
-    UPDATE_TO_RENDER(RSUpdateModifierFloat, float, value, isDelta);
+    UPDATE_TO_RENDER(RSUpdatePropertyFloat, float, value, isDelta);
 }
 template<>
 void RSProperty<int>::UpdateToRender(const int& value, bool isDelta) const
 {
-    UPDATE_TO_RENDER(RSUpdateModifierInt, int, value, isDelta);
+    UPDATE_TO_RENDER(RSUpdatePropertyInt, int, value, isDelta);
 }
 template<>
 void RSProperty<Color>::UpdateToRender(const Color& value, bool isDelta) const
 {
-    UPDATE_TO_RENDER(RSUpdateModifierColor, Color, value, isDelta);
+    UPDATE_TO_RENDER(RSUpdatePropertyColor, Color, value, isDelta);
 }
 template<>
 void RSProperty<Gravity>::UpdateToRender(const Gravity& value, bool isDelta) const
 {
-    UPDATE_TO_RENDER(RSUpdateModifierGravity, Gravity, value, isDelta);
+    UPDATE_TO_RENDER(RSUpdatePropertyGravity, Gravity, value, isDelta);
 }
 template<>
 void RSProperty<Matrix3f>::UpdateToRender(const Matrix3f& value, bool isDelta) const
 {
-    UPDATE_TO_RENDER(RSUpdateModifierMatrix3f, Matrix3f, value, isDelta);
+    UPDATE_TO_RENDER(RSUpdatePropertyMatrix3f, Matrix3f, value, isDelta);
 }
 template<>
 void RSProperty<Quaternion>::UpdateToRender(const Quaternion& value, bool isDelta) const
 {
-    UPDATE_TO_RENDER(RSUpdateModifierQuaternion, Quaternion, value, isDelta);
+    UPDATE_TO_RENDER(RSUpdatePropertyQuaternion, Quaternion, value, isDelta);
 }
 template<>
 void RSProperty<std::shared_ptr<RSFilter>>::UpdateToRender(const std::shared_ptr<RSFilter>& value, bool isDelta) const
 {
-    UPDATE_TO_RENDER(RSUpdateModifierFilter, std::shared_ptr<RSFilter>, value, isDelta);
+    UPDATE_TO_RENDER(RSUpdatePropertyFilter, std::shared_ptr<RSFilter>, value, isDelta);
 }
 template<>
 void RSProperty<std::shared_ptr<RSImage>>::UpdateToRender(const std::shared_ptr<RSImage>& value, bool isDelta) const
 {
-    UPDATE_TO_RENDER(RSUpdateModifierImage, std::shared_ptr<RSImage>, value, isDelta);
+    UPDATE_TO_RENDER(RSUpdatePropertyImage, std::shared_ptr<RSImage>, value, isDelta);
 }
 template<>
 void RSProperty<std::shared_ptr<RSMask>>::UpdateToRender(const std::shared_ptr<RSMask>& value, bool isDelta) const
 {
-    UPDATE_TO_RENDER(RSUpdateModifierMask, std::shared_ptr<RSMask>, value, isDelta);
+    UPDATE_TO_RENDER(RSUpdatePropertyMask, std::shared_ptr<RSMask>, value, isDelta);
 }
 template<>
 void RSProperty<std::shared_ptr<RSPath>>::UpdateToRender(const std::shared_ptr<RSPath>& value, bool isDelta) const
 {
-    UPDATE_TO_RENDER(RSUpdateModifierPath, std::shared_ptr<RSPath>, value, isDelta);
+    UPDATE_TO_RENDER(RSUpdatePropertyPath, std::shared_ptr<RSPath>, value, isDelta);
 }
 template<>
 void RSProperty<std::shared_ptr<RSShader>>::UpdateToRender(const std::shared_ptr<RSShader>& value, bool isDelta) const
 {
-    UPDATE_TO_RENDER(RSUpdateModifierShader, std::shared_ptr<RSShader>, value, isDelta);
+    UPDATE_TO_RENDER(RSUpdatePropertyShader, std::shared_ptr<RSShader>, value, isDelta);
 }
 template<>
 void RSProperty<Vector2f>::UpdateToRender(const Vector2f& value, bool isDelta) const
 {
-    UPDATE_TO_RENDER(RSUpdateModifierVector2f, Vector2f, value, isDelta);
+    UPDATE_TO_RENDER(RSUpdatePropertyVector2f, Vector2f, value, isDelta);
 }
 template<>
 void RSProperty<Vector4<uint32_t>>::UpdateToRender(const Vector4<uint32_t>& value, bool isDelta) const
 {
-    UPDATE_TO_RENDER(RSUpdateModifierBorderStyle, Vector4<uint32_t>, value, isDelta);
+    UPDATE_TO_RENDER(RSUpdatePropertyBorderStyle, Vector4<uint32_t>, value, isDelta);
 }
 template<>
 void RSProperty<Vector4<Color>>::UpdateToRender(const Vector4<Color>& value, bool isDelta) const
 {
-    UPDATE_TO_RENDER(RSUpdateModifierVector4Color, Vector4<Color>, value, isDelta);
+    UPDATE_TO_RENDER(RSUpdatePropertyVector4Color, Vector4<Color>, value, isDelta);
 }
 template<>
 void RSProperty<Vector4f>::UpdateToRender(const Vector4f& value, bool isDelta) const
 {
-    UPDATE_TO_RENDER(RSUpdateModifierVector4f, Vector4f, value, isDelta);
+    UPDATE_TO_RENDER(RSUpdatePropertyVector4f, Vector4f, value, isDelta);
 }
 template<>
 void RSProperty<std::shared_ptr<RSAnimatableBase>>::UpdateToRender(

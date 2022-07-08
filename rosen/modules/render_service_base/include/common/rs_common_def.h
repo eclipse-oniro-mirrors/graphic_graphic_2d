@@ -28,6 +28,7 @@ namespace OHOS {
 namespace Rosen {
 using AnimationId = uint64_t;
 using NodeId = uint64_t;
+using PropertyId = uint64_t;
 
 // types in the same layer should be 0/1/2/4/8
 // types for UINode

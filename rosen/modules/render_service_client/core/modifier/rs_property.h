@@ -15,7 +15,7 @@
 
 #ifndef RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_PROP_H
 #define RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_PROP_H
- 
+
 #include <type_traits>
 #include <unistd.h>
 
@@ -55,8 +55,6 @@ public:
         Set(value);
         return *this;
     }
-
-    RSProperty& operator+=(const T& value);
 
     virtual void Set(const T& value);
     T Get() const

@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <string>
 
 #include "common/rs_common_def.h"
 
