@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -136,7 +136,7 @@ napi_value WebGL2RenderingContextBase::ClearBufferfv(napi_env env, napi_callback
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            clearBufferfv[i] = (float)ele;
+            clearBufferfv[i] = static_cast<float>(ele);
         }
         glClearBufferfv(static_cast<GLenum>(buffer), static_cast<GLint>(drawbuffer),
             reinterpret_cast<GLfloat *>(clearBufferfv + srcOffset));
@@ -3005,7 +3005,7 @@ napi_value WebGL2RenderingContextBase::Uniform1uiv(napi_env env, napi_callback_i
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniform1uiv[i] = (float) ele;
+            uniform1uiv[i] = static_cast<float> (ele);
         }
         glUniform1uiv(static_cast<GLint>(location), static_cast<GLsizei>(srcLength),
             reinterpret_cast<GLuint *>(uniform1uiv + srcOffset));
@@ -3092,7 +3092,7 @@ napi_value WebGL2RenderingContextBase::Uniform2uiv(napi_env env, napi_callback_i
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniform2uiv[i] = (float) ele;
+            uniform2uiv[i] = static_cast<float> (ele);
         }
         glUniform2uiv(static_cast<GLint>(location), static_cast<GLsizei>(srcLength),
             reinterpret_cast<GLuint *>(uniform2uiv + srcOffset));
@@ -3179,7 +3179,7 @@ napi_value WebGL2RenderingContextBase::Uniform3uiv(napi_env env, napi_callback_i
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniform3uiv[i] = (float) ele;
+            uniform3uiv[i] = static_cast<float> (ele);
         }
         glUniform3uiv(static_cast<GLint>(location), static_cast<GLsizei>(srcLength),
             reinterpret_cast<GLuint *>(uniform3uiv + srcOffset));
@@ -3266,7 +3266,7 @@ napi_value WebGL2RenderingContextBase::Uniform4uiv(napi_env env, napi_callback_i
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniform4uiv[i] = (float) ele;
+            uniform4uiv[i] = static_cast<float> (ele);
         }
         glUniform4uiv(static_cast<GLint>(location), static_cast<GLsizei>(srcLength),
             reinterpret_cast<GLuint *>(uniform4uiv + srcOffset));
@@ -3360,7 +3360,7 @@ napi_value WebGL2RenderingContextBase::UniformMatrix3x2fv(napi_env env, napi_cal
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniformMatrix3x2fv[i] = (float) ele;
+            uniformMatrix3x2fv[i] = static_cast<float> (ele);
         }
         glUniformMatrix3x2fv(static_cast<GLuint>(location), static_cast<GLsizei>(srcLength),
             static_cast<GLboolean>(transpose), reinterpret_cast<GLfloat*>(uniformMatrix3x2fv + srcOffset));
@@ -3454,7 +3454,7 @@ napi_value WebGL2RenderingContextBase::UniformMatrix4x2fv(napi_env env, napi_cal
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniformMatrix4x2fv[i] = (float) ele;
+            uniformMatrix4x2fv[i] = static_cast<float> (ele);
         }
         glUniformMatrix4x2fv(static_cast<GLuint>(location), static_cast<GLsizei>(srcLength),
             static_cast<GLboolean>(transpose), reinterpret_cast<GLfloat*>(uniformMatrix4x2fv + srcOffset));
@@ -3548,7 +3548,7 @@ napi_value WebGL2RenderingContextBase::UniformMatrix2x3fv(napi_env env, napi_cal
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniformMatrix2x3fv[i] = (float) ele;
+            uniformMatrix2x3fv[i] = static_cast<float> (ele);
         }
         glUniformMatrix2x3fv(static_cast<GLuint>(location), static_cast<GLsizei>(srcLength),
             static_cast<GLboolean>(transpose), reinterpret_cast<GLfloat*>(uniformMatrix2x3fv + srcOffset));
@@ -3641,7 +3641,7 @@ napi_value WebGL2RenderingContextBase::UniformMatrix4x3fv(napi_env env, napi_cal
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniformMatrix4x3fv[i] = (float) ele;
+            uniformMatrix4x3fv[i] = static_cast<float> (ele);
         }
         glUniformMatrix4x3fv(static_cast<GLuint>(location), static_cast<GLsizei>(srcLength),
             static_cast<GLboolean>(transpose), reinterpret_cast<GLfloat*>(uniformMatrix4x3fv + srcOffset));
@@ -3735,7 +3735,7 @@ napi_value WebGL2RenderingContextBase::UniformMatrix2x4fv(napi_env env, napi_cal
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniformMatrix2x4fv[i] = (float) ele;
+            uniformMatrix2x4fv[i] = static_cast<float> (ele);
         }
         glUniformMatrix2x4fv(static_cast<GLuint>(location), static_cast<GLsizei>(srcLength),
             static_cast<GLboolean>(transpose), reinterpret_cast<GLfloat*>(uniformMatrix2x4fv + srcOffset));
@@ -3828,7 +3828,7 @@ napi_value WebGL2RenderingContextBase::UniformMatrix3x4fv(napi_env env, napi_cal
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            uniformMatrix3x4fv[i] = (float) ele;
+            uniformMatrix3x4fv[i] = static_cast<float> (ele);
         }
         glUniformMatrix3x4fv(static_cast<GLuint>(location), static_cast<GLsizei>(srcLength),
             static_cast<GLboolean>(transpose), reinterpret_cast<GLfloat*>(uniformMatrix3x4fv + srcOffset));
@@ -3894,7 +3894,7 @@ napi_value WebGL2RenderingContextBase::VertexAttribI4iv(napi_env env, napi_callb
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            vertexAttribI4iv[i] = (float) ele;
+            vertexAttribI4iv[i] = static_cast<float> (ele);
         }
         glVertexAttribI4iv(static_cast<GLuint>(index), reinterpret_cast<GLint *>(vertexAttribI4iv));
         LOGI("WebGL2 vertexAttribI4iv array end");
@@ -3959,7 +3959,7 @@ napi_value WebGL2RenderingContextBase::VertexAttribI4uiv(napi_env env, napi_call
             if (doubleStatus != napi_ok) {
                 return nullptr;
             }
-            vertexAttribI4uiv[i] = (float) ele;
+            vertexAttribI4uiv[i] = static_cast<float> (ele);
         }
         glVertexAttribI4uiv(static_cast<GLuint>(index), reinterpret_cast<const GLuint *>(vertexAttribI4uiv));
         LOGI("WebGL2 vertexAttribI4uiv array end");
@@ -4414,7 +4414,7 @@ napi_value WebGL2RenderingContextBase::GetActiveUniforms(napi_env env, napi_call
                               reinterpret_cast<GLint *>(params));
         LOGI("WebGL2 WebGL2RenderingContextBase::getActiveUniforms params = %{public}u", params);
         for (uint32_t i = 0; i < uniformCount; i++) {
-            uint32_t a = ((uint32_t*)params)[i];
+            uint32_t a = (static_cast<uint32_t*>(params))[i];
             LOGI("WebGL2 WebGL2RenderingContextBase::getActiveUniforms a = %{public}u", a);
             napi_value result;
             napi_status status = napi_create_uint32(env, a, &result);
@@ -4435,7 +4435,7 @@ napi_value WebGL2RenderingContextBase::GetActiveUniforms(napi_env env, napi_call
                               reinterpret_cast<GLint *>(params));
         LOGI("WebGL2 WebGL2RenderingContextBase::getActiveUniforms params = %{public}u", params);
         for (uint32_t i = 0; i < uniformCount; i++) {
-            int32_t a = ((int32_t*)params)[i];
+            int32_t a = (static_cast<int32_t*>(params))[i];
             napi_value result;
             napi_status status = napi_create_int32(env, a, &result);
             if (status != napi_ok) {
