@@ -51,5 +51,11 @@ bool RSSystemProperties::GetOcclusionEnabled()
 {
     return std::atoi((system::GetParameter("rosen.occlusion.enabled", "1")).c_str()) != 0;
 }
+
+static std::string GetRSEventProperty(const std::string &paraName)
+{
+    return system::GetParameter(paraName, "0");
+}
+
 } // namespace Rosen
 } // namespace OHOS
