@@ -72,7 +72,7 @@ HWTEST_F(ColorPickerUnittest, CreateColorPickerFromPixelmapTest002, TestSize.Lev
 {
     GTEST_LOG_(INFO) << "ColorPickerUnittest CreateColorPickerFromPixelmapTest002 start";
     size_t bufferSize = 0;
-    uint8_t *buffer = getTestPngBuffer(bufferSize);
+    uint8_t *buffer = GetPngBuffer(bufferSize);
     ASSERT_NE(buffer, nullptr);
     
     /**
@@ -137,7 +137,7 @@ HWTEST_F(ColorPickerUnittest, GetMainColorTest001, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "ColorPickerUnittest GetMainColorTest001 start";
     size_t bufferSize = 0;
-    uint8_t *buffer = getTestJpgBuffer(bufferSize);
+    uint8_t *buffer = GetJpgBuffer(bufferSize);
     ASSERT_NE(buffer, nullptr);
 
     /**
@@ -192,7 +192,7 @@ HWTEST_F(ColorPickerUnittest, GetMainColorTest002, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "ColorPickerUnittest GetMainColorTest002 start";
     size_t bufferSize = 0;
-    uint8_t *buffer = getTestPngBuffer(bufferSize);
+    uint8_t *buffer = GetPngBuffer(bufferSize);
     ASSERT_NE(buffer, nullptr);
 
     /**

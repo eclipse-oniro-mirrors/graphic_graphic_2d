@@ -21,8 +21,8 @@
 
 namespace OHOS {
 namespace Rosen {
-uint8_t* getTestPngBuffer(size_t& bufSize);
-uint8_t* getTestJpgBuffer(size_t& bufSize);
+uint8_t* GetPngBuffer(size_t& bufSize);
+uint8_t* GetJpgBuffer(size_t& bufSize);
 }
 }
 #endif
