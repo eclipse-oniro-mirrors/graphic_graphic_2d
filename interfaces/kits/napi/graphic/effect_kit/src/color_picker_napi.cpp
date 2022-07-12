@@ -214,12 +214,10 @@ static void CreateColorPickerFromPixelmapExecute(napi_env env, void* data)
     uint32_t errorCode = ERR_EFFECT_INVALID_VALUE;
     context->rColorPicker = ColorPicker::CreateColorPicker(context->rPixelMap, errorCode);
 
-    EFFECT_LOG_I("color.picker=%p, %u", context->rColorPicker.get(), errorCode);
     context->status = ERROR;
     if (IMG_NOT_NULL(context->rColorPicker) && errorCode == SUCCESS) {
         context->status = SUCCESS;
     }
-    EFFECT_LOG_I("create ColorPicker Execute.end");
 }
 
 void ColorPickerNapi::CreateColorPickerFromPixelmapComplete(napi_env env, napi_status status, void* data)
