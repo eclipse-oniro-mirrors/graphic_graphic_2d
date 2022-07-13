@@ -258,7 +258,8 @@ RSSurfaceNode::RSSurfaceNode(const RSSurfaceNodeConfig& config, bool isRenderSer
     : RSNode(isRenderServiceNode), name_(config.SurfaceNodeName)
 {}
 
-RSSurfaceNode::~RSSurfaceNode() {
+RSSurfaceNode::~RSSurfaceNode()
+{
     if (!IsRenderServiceNode()) {
         std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeDestroy>(GetId());
         auto transactionProxy = RSTransactionProxy::GetInstance();

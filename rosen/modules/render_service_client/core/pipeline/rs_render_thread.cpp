@@ -104,7 +104,12 @@ void RSRenderThread::Stop()
 {
     running_.store(false);
 
-    if (runner_ != nullptr) {
+    if (handler_) {
+        handler_->RemoveAllEvents();
+        handler_ = nullptr;
+    }
+    receiver_ = nullptr;
+    if (runner_) {
         runner_->Stop();
     }
 
