@@ -46,6 +46,10 @@ public:
     void GetDirtySurfaceNodes(std::map<NodeId, RectI>& target) const;
     bool SetBufferAge(const int age);
     RectI GetAllHistoryMerge();
+    std::vector<RectI> GetDirtyHistory() const
+    {
+        return dirtyHistory_;
+    }
 
     void UpdateDebugRegionTypeEnable();
     
