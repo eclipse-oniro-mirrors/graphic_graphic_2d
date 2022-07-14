@@ -13,26 +13,16 @@
  * limitations under the License.
  */
 
-#include "animation/rs_implicit_animator_map.h"
+#ifndef __TEST_PICTURE_FILES_H__
+#define __TEST_PICTURE_FILES_H__
 
-#include "animation/rs_implicit_animator.h"
+#include <cstddef>
+#include <cstdint>
 
 namespace OHOS {
 namespace Rosen {
-RSImplicitAnimatorMap& RSImplicitAnimatorMap::Instance()
-{
-    static RSImplicitAnimatorMap animatorMap;
-    return animatorMap;
+uint8_t* GetPngBuffer(size_t& bufSize);
+uint8_t* GetJpgBuffer(size_t& bufSize);
 }
-
-const std::shared_ptr<RSImplicitAnimator>& RSImplicitAnimatorMap::GetAnimator(const int32_t id)
-{
-    std::unique_lock<std::mutex> lock(mutex_);
-    auto& animator = animatorMap_[id];
-    if (animator == nullptr) {
-        animator = std::make_shared<RSImplicitAnimator>();
-    }
-    return animator;
 }
-} // namespace Rosen
-} // namespace OHOS
+#endif

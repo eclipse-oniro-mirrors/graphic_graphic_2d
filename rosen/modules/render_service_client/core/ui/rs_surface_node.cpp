@@ -137,9 +137,6 @@ void RSSurfaceNode::ClearChildren()
 
 void RSSurfaceNode::OnBoundsSizeChanged() const
 {
-    if (surface_ == nullptr) {
-        return;
-    }
     std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeUpdateSurfaceDefaultSize>(
         GetId(), GetStagingProperties().GetBoundsWidth(), GetStagingProperties().GetBoundsHeight());
     auto transactionProxy = RSTransactionProxy::GetInstance();

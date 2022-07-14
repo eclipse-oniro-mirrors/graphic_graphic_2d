@@ -23,8 +23,8 @@
 
 namespace OHOS {
 namespace {
-constexpr uint32_t CONSUMER_REF_COUNT_IN_CONSUMER_SURFACE = 1;
-constexpr uint32_t PRODUCER_REF_COUNT_IN_CONSUMER_SURFACE = 2;
+constexpr int32_t CONSUMER_REF_COUNT_IN_CONSUMER_SURFACE = 1;
+constexpr int32_t PRODUCER_REF_COUNT_IN_CONSUMER_SURFACE = 2;
 }
 
 ConsumerSurface::ConsumerSurface(const std::string &name, bool isShared)
@@ -43,7 +43,7 @@ ConsumerSurface::~ConsumerSurface()
         BLOGNE("Wrong SptrRefCount! Queue Id:%{public}" PRIu64 " consumer_:%{public}d producer_:%{public}d",
             producer_->GetUniqueId(), consumer_->GetSptrRefCount(), producer_->GetSptrRefCount());
     }
-    producer_->CleanCache();
+    CleanCache();
     producer_->SetStatus(false);
     consumer_ = nullptr;
     producer_ = nullptr;
@@ -223,7 +223,10 @@ GSError ConsumerSurface::UnregisterConsumerListener()
 
 GSError ConsumerSurface::CleanCache()
 {
-    return producer_->CleanCache();
+    if (consumer_ == nullptr) {
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    return consumer_->CleanCache();
 }
 
 uint64_t ConsumerSurface::GetUniqueId() const
@@ -254,7 +257,7 @@ GSError ConsumerSurface::IsSupportedAlloc(const std::vector<VerifyAllocInfo> &in
 
 GSError ConsumerSurface::Disconnect()
 {
-    return producer_->Disconnect();
+    return GSERROR_NOT_SUPPORT;
 }
 
 GSError ConsumerSurface::SetScalingMode(uint32_t sequence, ScalingMode scalingMode)

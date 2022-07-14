@@ -15,8 +15,6 @@
 
 #include "buffer_queue_consumer.h"
 
-#include "buffer_log.h"
-
 namespace OHOS {
 BufferQueueConsumer::BufferQueueConsumer(sptr<BufferQueue>& bufferQueue)
 {
@@ -176,5 +174,13 @@ bool BufferQueueConsumer::GetStatus() const
 void BufferQueueConsumer::SetStatus(bool status)
 {
     bufferQueue_->SetStatus(status);
+}
+
+GSError BufferQueueConsumer::CleanCache()
+{
+    if (bufferQueue_ == nullptr) {
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    return bufferQueue_->CleanCache();
 }
 } // namespace OHOS
