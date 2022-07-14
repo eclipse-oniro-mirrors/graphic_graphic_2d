@@ -15,8 +15,6 @@
 
 #include "buffer_queue_consumer.h"
 
-#include "buffer_log.h"
-
 namespace OHOS {
 BufferQueueConsumer::BufferQueueConsumer(sptr<BufferQueue>& bufferQueue)
 {
