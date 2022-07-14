@@ -73,7 +73,7 @@ void RSUIDirector::GoForeground()
         }
         isActive_ = true;
         if (auto node = RSNodeMap::Instance().GetNode<RSRootNode>(root_)) {
-            node->SetVisible(true);
+            node->SetEnableRender(true);
         }
     }
 }
@@ -87,7 +87,7 @@ void RSUIDirector::GoBackground()
         }
         isActive_ = false;
         if (auto node = RSNodeMap::Instance().GetNode<RSRootNode>(root_)) {
-            node->SetVisible(false);
+            node->SetEnableRender(false);
         }
     }
 }
