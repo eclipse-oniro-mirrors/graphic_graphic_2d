@@ -90,7 +90,7 @@ private:
     RectI oldDirty_;
     RSProperties renderProperties_;
     RSAnimationManager animationManager_;
-    std::unordered_map<PropertyId, std::shared_ptr<RSRenderModifier>> modifiers_;
+    std::map<PropertyId, std::shared_ptr<RSRenderModifier>> modifiers_;
 
     friend class RSRenderTransition;
 };

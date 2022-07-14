@@ -71,7 +71,7 @@ public:
     }
 
 protected:
-    void UpdateToRender(const T& value, bool isDelta) const;
+    void UpdateToRender(const T& value, bool isDelta, bool forceUpdate = false) const;
     void AttachModifier(const std::shared_ptr<RSModifier>& modifier)
     {
         modifier_ = modifier;

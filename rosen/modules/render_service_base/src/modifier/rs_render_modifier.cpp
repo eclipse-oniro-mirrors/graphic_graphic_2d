@@ -108,11 +108,12 @@ RSRenderModifier* RSRenderModifier::Unmarshalling(Parcel& parcel, RSModifierType
     {                                                                                                               \
         TYPE setValue;                                                                                              \
         if (isFirstSet_) {                                                                                          \
-            setValue = isAdditive_ ? context.property_.Get##MODIFIER_NAME() + property_->Get() : property_->Get();  \
+            setValue = context.property_.Get##MODIFIER_NAME() + property_->Get();                                   \
             isFirstSet_ = false;                                                                                    \
         } else {                                                                                                    \
             setValue = context.property_.Get##MODIFIER_NAME() + property_->Get() - lastValue_;                      \
         }                                                                                                           \
+        setValue = isAdditive_ ? setValue : property_->Get();                                                       \
         lastValue_ = property_->Get();                                                                              \
         context.property_.Set##MODIFIER_NAME(setValue);                                                             \
     }                                                                                                               \

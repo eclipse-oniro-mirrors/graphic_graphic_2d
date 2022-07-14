@@ -53,6 +53,8 @@ private:
 
     virtual void UpdateToRender() = 0;
 
+    virtual void SetPropertyOnAllAnimationFinish() = 0;
+
     friend class RSNode;
     template<typename T>
     friend class RSProperty;
@@ -116,6 +118,11 @@ protected:
     }
 
     void UpdateToRender() override {}
+
+    void SetPropertyOnAllAnimationFinish() override
+    {
+        property_->UpdateToRender(property_->Get(), false, true);
+    }
 
     std::shared_ptr<RSProperty<T>> property_;
     bool isAdditive_ { false };
