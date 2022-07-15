@@ -182,7 +182,7 @@ namespace pipelineTestUtils {
     }
 
     static std::shared_ptr<RSDisplayNode> CreateDisplayNode(std::shared_ptr<RSSurfaceNode> surfaceNode)
-    {        
+    {
         RSDisplayNodeConfig displayConfig;
         RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(displayConfig);
         displayNode->AddChild(surfaceNode, -1);
@@ -251,10 +251,10 @@ public:
 
     void TestCaseDefault()
     {
-        auto sourceSurcaseNode = pipelineTestUtils::CreateSurface(SURFACE_NODE_SIZE, screenHeight_ * 0.2f, 
+        auto sourceSurcaseNode = pipelineTestUtils::CreateSurface(SURFACE_NODE_SIZE, screenHeight_ * 0.2f,
             screenWidth_ * 0.4f, screenHeight_ * 0.3f, 0xff0000ff);
         auto sourceDisplayNode = pipelineTestUtils::CreateDisplayNode(sourceSurcaseNode);
-        auto targetSurfaceNode = pipelineTestUtils::CreateSurface(SURFACE_NODE_SIZE, screenHeight_ * 0.6f, 
+        auto targetSurfaceNode = pipelineTestUtils::CreateSurface(SURFACE_NODE_SIZE, screenHeight_ * 0.6f,
             screenWidth_ * 0.6f, screenHeight_ * 0.3f, 0xffff0000);
         auto targetDisplayNode = pipelineTestUtils::CreateDisplayNode(targetSurfaceNode);
 
