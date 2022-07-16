@@ -14,6 +14,7 @@
  */
 
 #include "modifier/rs_extended_modifier.h"
+
 #include <memory>
 
 #include "command/rs_node_command.h"

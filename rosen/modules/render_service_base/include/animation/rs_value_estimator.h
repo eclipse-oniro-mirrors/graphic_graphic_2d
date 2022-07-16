@@ -20,11 +20,11 @@
 
 #include "animation/rs_animation_common.h"
 #include "animation/rs_interpolator.h"
-#include "modifier/rs_animatable_arithmetic.h"
 #include "common/rs_color.h"
 #include "common/rs_matrix3.h"
 #include "common/rs_vector2.h"
 #include "common/rs_vector4.h"
+#include "modifier/rs_animatable_arithmetic.h"
 #include "render/rs_filter.h"
 
 namespace OHOS {

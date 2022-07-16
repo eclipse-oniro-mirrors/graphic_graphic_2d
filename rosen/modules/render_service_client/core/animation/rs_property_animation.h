@@ -19,9 +19,9 @@
 #include <memory>
 
 #include "animation/rs_animation.h"
+#include "animation/rs_animation_manager_map.h"
 #include "animation/rs_render_animation.h"
 #include "animation/rs_ui_animation_manager.h"
-#include "animation/rs_animation_manager_map.h"
 #include "common/rs_macros.h"
 #include "modifier/rs_property.h"
 #include "ui/rs_node.h"

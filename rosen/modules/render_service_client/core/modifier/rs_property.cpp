@@ -18,8 +18,8 @@
 #include "animation/rs_implicit_animator.h"
 #include "animation/rs_implicit_animator_map.h"
 #include "command/rs_node_command.h"
-#include "transaction/rs_transaction_proxy.h"
 #include "pipeline/rs_node_map.h"
+#include "transaction/rs_transaction_proxy.h"
 
 namespace OHOS {
 namespace Rosen {

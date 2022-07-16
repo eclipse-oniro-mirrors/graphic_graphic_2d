@@ -14,9 +14,9 @@
  */
 
 #include "modifier/rs_render_modifier.h"
+
 #include <memory>
 #include <unordered_map>
-#include "parcel.h"
 
 #include "modifier/rs_modifier_type.h"
 #include "pipeline/rs_draw_cmd_list.h"

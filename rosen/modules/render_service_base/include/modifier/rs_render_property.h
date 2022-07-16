@@ -16,8 +16,8 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_PROP_H
 #define RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_PROP_H
 
-#include "modifier/rs_animatable_arithmetic.h"
 #include "common/rs_common_def.h"
+#include "modifier/rs_animatable_arithmetic.h"
 #include "pipeline/rs_base_render_node.h"
 
 namespace OHOS {

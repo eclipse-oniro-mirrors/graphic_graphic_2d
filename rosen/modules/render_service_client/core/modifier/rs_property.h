@@ -19,16 +19,16 @@
 #include <type_traits>
 #include <unistd.h>
 
-#include "modifier/rs_animatable_arithmetic.h"
-#include "modifier/rs_render_property.h"
-#include "modifier/rs_modifier_manager.h"
-#include "modifier/rs_modifier_type.h"
 #include "animation/rs_motion_path_option.h"
 #include "common/rs_color.h"
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
 #include "common/rs_vector2.h"
 #include "common/rs_vector4.h"
+#include "modifier/rs_animatable_arithmetic.h"
+#include "modifier/rs_modifier_manager.h"
+#include "modifier/rs_modifier_type.h"
+#include "modifier/rs_render_property.h"
 #include "property/rs_properties_def.h"
 #include "render/rs_border.h"
 #include "render/rs_filter.h"

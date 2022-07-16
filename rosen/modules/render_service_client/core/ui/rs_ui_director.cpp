@@ -15,8 +15,8 @@
 
 #include "ui/rs_ui_director.h"
 
-#include "animation/rs_ui_animation_manager.h"
 #include "animation/rs_animation_manager_map.h"
+#include "animation/rs_ui_animation_manager.h"
 #include "command/rs_animation_command.h"
 #include "command/rs_message_processor.h"
 #include "modifier/rs_modifier_manager.h"

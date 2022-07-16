@@ -15,8 +15,8 @@
 
 #include "animation/rs_ui_animation_manager.h"
 
-#include "platform/common/rs_log.h"
 #include "modifier/rs_modifier_manager.h"
+#include "platform/common/rs_log.h"
 
 namespace OHOS {
 namespace Rosen {

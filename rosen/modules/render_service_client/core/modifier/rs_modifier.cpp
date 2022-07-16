@@ -15,8 +15,8 @@
 
 #include "modifier/rs_modifier.h"
 
-#include "modifier/rs_render_modifier.h"
 #include "modifier/rs_modifier_type.h"
+#include "modifier/rs_render_modifier.h"
 
 namespace OHOS {
 namespace Rosen {

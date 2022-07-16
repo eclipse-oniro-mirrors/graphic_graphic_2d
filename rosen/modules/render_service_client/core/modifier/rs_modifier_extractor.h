@@ -17,8 +17,8 @@
 #define RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_MODIFIER_EXTRACTOR_H
 
 #include "common/rs_common_def.h"
-
 #include "property/rs_properties.h"
+
 namespace OHOS {
 namespace Rosen {
 class RSNode;

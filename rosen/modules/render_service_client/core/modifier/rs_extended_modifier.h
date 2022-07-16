@@ -16,9 +16,9 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_EXTENDED_MODIFIER_H
 #define RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_EXTENDED_MODIFIER_H
 
-#include "modifier/rs_modifier_base.h"
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
+#include "modifier/rs_modifier_base.h"
 
 class SkCanvas;
 

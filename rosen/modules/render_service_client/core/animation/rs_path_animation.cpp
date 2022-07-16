@@ -17,10 +17,10 @@
 
 #include "animation/rs_animation_common.h"
 #include "animation/rs_render_path_animation.h"
-#include "platform/common/rs_log.h"
 #include "command/rs_animation_command.h"
-#include "transaction/rs_transaction_proxy.h"
+#include "platform/common/rs_log.h"
 #include "render/rs_path.h"
+#include "transaction/rs_transaction_proxy.h"
 
 namespace OHOS {
 namespace Rosen {
