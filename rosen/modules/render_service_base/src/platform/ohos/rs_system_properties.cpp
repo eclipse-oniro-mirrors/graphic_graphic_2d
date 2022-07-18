@@ -51,5 +51,12 @@ bool RSSystemProperties::GetOcclusionEnabled()
 {
     return std::atoi((system::GetParameter("rosen.occlusion.enabled", "1")).c_str()) != 0;
 }
+
+bool RSSystemProperties::GetDirectClientCompEnableStatus()
+{
+    // If the value of rosen.directClientComposition.enabled is not 0 then enable the direct CLIENT composition.
+    // Direct CLIENT composition will be processed only when the num of layer is larger than 11
+    return std::atoi((system::GetParameter("rosen.directClientComposition.enabled", "1")).c_str()) != 0;
+}
 } // namespace Rosen
 } // namespace OHOS

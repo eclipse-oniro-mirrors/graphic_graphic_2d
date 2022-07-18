@@ -40,6 +40,7 @@ public:
     static void InitUniRenderEnabled(const std::string &bundleName);
     static DirtyRegionDebugType GetDirtyRegionDebugType();
     static bool GetOcclusionEnabled();
+    static bool GetDirectClientCompEnableStatus();
 
 private:
     RSSystemProperties() = default;
