@@ -222,7 +222,7 @@ std::shared_ptr<RSSurfaceNode> RSSurfaceNode::Unmarshalling(Parcel& parcel)
     surfaceNode->SetId(id);
     RSNodeMap::MutableInstance().RegisterNode(surfaceNode);
 
-    return node;
+    return surfaceNode;
 }
 
 bool RSSurfaceNode::CreateNode(const RSSurfaceRenderNodeConfig& config)

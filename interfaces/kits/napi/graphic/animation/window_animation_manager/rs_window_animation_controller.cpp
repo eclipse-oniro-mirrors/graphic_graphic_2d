@@ -184,7 +184,8 @@ void RSWindowAnimationController::HandleOnStartApp(StartingAppType type,
     };
 
     if (startingWindowTarget && startingWindowTarget->surfaceNode_) {
-        startingWindowTarget->surfaceNode_->SetBoundsSize(-1, -1);
+        startingWindowTarget->surfaceNode_->SetBoundsWidth(-1.0f);
+        startingWindowTarget->surfaceNode_->SetBoundsHeight(-1.0f);
     }
 
     switch (type) {

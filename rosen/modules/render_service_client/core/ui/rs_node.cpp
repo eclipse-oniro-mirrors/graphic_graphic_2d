@@ -759,7 +759,7 @@ void RSNode::SetVisible(bool visible)
     }
 }
 
-void RSNode::SetMask(std::shared_ptr<RSMask> mask)
+void RSNode::SetMask(const std::shared_ptr<RSMask>& mask)
 {
     SET_NONANIMATABLE_MODIFIER(Mask, std::shared_ptr<RSMask>, mask, MASK, nullptr);
 }
@@ -928,14 +928,6 @@ std::string RSNode::DumpNode(int depth) const
     return ss.str();
 }
 
-<<<<<<< HEAD
-void RSNode::SetMask(const std::shared_ptr<RSMask>& mask)
-{
-    SET_NONANIMATABLE_PROPERTY(Mask, mask);
-}
-
-=======
->>>>>>> 9e2ab37e... add modifier and apply
 void RSNode::UpdateImplicitAnimator()
 {
     auto tid = gettid();
