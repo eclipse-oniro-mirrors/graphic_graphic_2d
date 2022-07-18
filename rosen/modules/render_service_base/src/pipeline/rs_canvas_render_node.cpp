@@ -75,7 +75,7 @@ void RSCanvasRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas
         RSPropertiesPainter::DrawFilter(GetRenderProperties(), canvas, filter, nullptr, canvas.GetSurface());
     }
 
-    canvas.save();
+    canvasNodeSaveCount_ = canvas.SaveCanvasAndAlpha();
     canvas.translate(GetRenderProperties().GetFrameOffsetX(), GetRenderProperties().GetFrameOffsetY());
 
     if (GetRenderProperties().GetClipToFrame()) {
@@ -98,7 +98,7 @@ void RSCanvasRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
     if (filter != nullptr) {
         RSPropertiesPainter::DrawFilter(GetRenderProperties(), canvas, filter, nullptr, canvas.GetSurface());
     }
-    canvas.restore();
+    canvas.RestoreCanvasAndAlpha(canvasNodeSaveCount_);
     RSPropertiesPainter::DrawBorder(GetRenderProperties(), canvas);
     RSPropertiesPainter::DrawForegroundColor(GetRenderProperties(), canvas);
     RSRenderNode::ProcessRenderAfterChildren(canvas);

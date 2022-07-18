@@ -50,6 +50,7 @@ public:
 private:
     std::shared_ptr<DrawCmdList> drawCmdList_ { nullptr };
     bool drawContentLast_ = false;
+    std::pair<int, int> canvasNodeSaveCount_ = { 0, 0 };
 
     friend class RSRenderTransition;
 };
