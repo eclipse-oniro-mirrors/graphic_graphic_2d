@@ -56,7 +56,7 @@ public:
 
 private:
     // check if the node is out of the screen region.
-    bool IsOutOfScreenRegion(RSSurfaceRenderNode& node) const;
+    bool IsOutOfScreenRegion(const ComposeInfo& info) const;
     LayerInfoPtr CreateBufferLayer(RSSurfaceRenderNode& node);
     LayerInfoPtr CreateTunnelLayer(RSSurfaceRenderNode& node);
     ComposeInfo BuildComposeInfo(RSSurfaceRenderNode& node, bool isTunnelCheck =false) const;

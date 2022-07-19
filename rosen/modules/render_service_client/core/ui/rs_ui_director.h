@@ -45,6 +45,8 @@ public:
 
     void SetTimeStamp(uint64_t timeStamp, const std::string& abilityName);
 
+    bool RunningCustomAnimation(uint64_t timeStamp);
+
 private:
     void AttachSurface();
     static void RecvMessages();
@@ -65,7 +67,7 @@ private:
     bool isUniRenderEnabled_ = false;
     uint64_t refreshPeriod_ = 16666667;
     uint64_t timeStamp_ = 0;
-    std::shared_ptr<RSSurfaceNode> surfaceNode_ = nullptr;
+    std::weak_ptr<RSSurfaceNode> surfaceNode_;
     int surfaceWidth_ = 0;
     int surfaceHeight_ = 0;
 

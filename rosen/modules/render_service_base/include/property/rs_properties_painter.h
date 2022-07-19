@@ -17,10 +17,10 @@
 #define RENDER_SERVICE_CLIENT_CORE_PROPERTY_RS_PROPERTIES_PAINTER_H
 
 #include "property/rs_properties.h"
+#include "pipeline/rs_draw_cmd_list.h"
 
 namespace OHOS {
 namespace Rosen {
-class DrawCmdList;
 class RSSkiaFilter;
 class RSPaintFilterCanvas;
 class RSTransitionProperties;
@@ -30,8 +30,7 @@ public:
     static void Clip(SkCanvas& canvas, RectF rect);
     static void DrawBackground(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawBorder(const RSProperties& properties, SkCanvas& canvas);
-    static void DrawFrame(
-        const RSProperties& properties, RSPaintFilterCanvas& canvas, std::shared_ptr<DrawCmdList>& drawCmdList);
+    static void DrawFrame(const RSProperties& properties, RSPaintFilterCanvas& canvas, DrawCmdListPtr& drawCmdList);
     static void DrawShadow(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawFilter(const RSProperties& properties, SkCanvas& canvas,
         std::shared_ptr<RSSkiaFilter>& filter, const std::unique_ptr<SkRect>& rect = nullptr,

@@ -137,7 +137,7 @@ void RSPropertiesPainter::Clip(SkCanvas& canvas, RectF rect)
 void RSPropertiesPainter::DrawShadow(const RSProperties& properties, RSPaintFilterCanvas& canvas)
 {
     if (properties.shadow_ && properties.shadow_->IsValid()) {
-        canvas.save();
+        SkAutoCanvasRestore acr(&canvas, true);
         SkPath skPath;
         if (properties.GetShadowPath() && !properties.GetShadowPath()->GetSkiaPath().isEmpty()) {
             skPath = properties.GetShadowPath()->GetSkiaPath();
@@ -152,6 +152,9 @@ void RSPropertiesPainter::DrawShadow(const RSProperties& properties, RSPaintFilt
         skPath.offset(properties.GetShadowOffsetX(), properties.GetShadowOffsetY());
         Color spotColor = properties.GetShadowColor();
         if (properties.shadow_->GetHardwareAcceleration()) {
+            if (properties.GetShadowElevation() <= 0.f) {
+                return;
+            }
             SkPoint3 planeParams = { 0.0f, 0.0f, properties.GetShadowElevation() };
             SkPoint3 lightPos = { canvas.getTotalMatrix().getTranslateX() + skPath.getBounds().centerX(),
                 canvas.getTotalMatrix().getTranslateY() + skPath.getBounds().centerY(), DEFAULT_LIGHT_HEIGHT };
@@ -167,7 +170,6 @@ void RSPropertiesPainter::DrawShadow(const RSProperties& properties, RSPaintFilt
             paint.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, properties.GetShadowRadius()));
             canvas.drawPath(skPath, paint);
         }
-        canvas.restore();
     }
 }
 
@@ -234,7 +236,7 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
 }
 
 void RSPropertiesPainter::DrawFrame(
-    const RSProperties& properties, RSPaintFilterCanvas& canvas, std::shared_ptr<DrawCmdList>& cmds)
+    const RSProperties& properties, RSPaintFilterCanvas& canvas, DrawCmdListPtr& cmds)
 {
     if (cmds != nullptr) {
         SkMatrix mat;

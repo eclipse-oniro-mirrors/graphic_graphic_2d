@@ -81,6 +81,7 @@ float RSPath::GetDistance() const
     return pathMeasure.getLength();
 }
 
+template<>
 bool RSPath::GetPosTan(float distance, Vector2f& pos, float& degrees) const
 {
     SkPoint position;
@@ -95,6 +96,16 @@ bool RSPath::GetPosTan(float distance, Vector2f& pos, float& degrees) const
     pos.data_[1] = position.y();
     degrees = SkRadiansToDegrees(std::atan2(tangent.y(), tangent.x()));
     return true;
+}
+
+template<>
+bool RSPath::GetPosTan(float distance, Vector4f& pos, float& degrees) const
+{
+    Vector2f position;
+    bool res = GetPosTan(distance, position, degrees);
+    pos[0] = position[0];
+    pos[1] = position[1];
+    return res;
 }
 } // namespace Rosen
 } // namespace OHOS

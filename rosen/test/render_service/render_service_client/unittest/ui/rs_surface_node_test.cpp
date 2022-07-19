@@ -94,14 +94,11 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBounds001, TestSize.Level1)
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetBounds(TestSrc::limitNumber::floatLimit[0], TestSrc::limitNumber::floatLimit[1],
         TestSrc::limitNumber::floatLimit[2], TestSrc::limitNumber::floatLimit[3]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionX(),
-        TestSrc::limitNumber::floatLimit[0]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionY(),
-        TestSrc::limitNumber::floatLimit[1]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[2]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[3]));
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    EXPECT_TRUE(ROSEN_EQ(bounds.x_, TestSrc::limitNumber::floatLimit[0]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.y_, TestSrc::limitNumber::floatLimit[1]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.z_, TestSrc::limitNumber::floatLimit[2]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.w_, TestSrc::limitNumber::floatLimit[3]));
 }
 
 /**
@@ -115,14 +112,11 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBounds002, TestSize.Level1)
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetBounds(TestSrc::limitNumber::floatLimit[3], TestSrc::limitNumber::floatLimit[1],
         TestSrc::limitNumber::floatLimit[2], TestSrc::limitNumber::floatLimit[0]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionX(),
-        TestSrc::limitNumber::floatLimit[3]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionY(),
-        TestSrc::limitNumber::floatLimit[1]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[2]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[0]));
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    EXPECT_TRUE(ROSEN_EQ(bounds.x_, TestSrc::limitNumber::floatLimit[3]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.y_, TestSrc::limitNumber::floatLimit[1]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.z_, TestSrc::limitNumber::floatLimit[2]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.w_, TestSrc::limitNumber::floatLimit[0]));
 }
 
 /**
@@ -136,14 +130,11 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBounds003, TestSize.Level1)
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetBounds(TestSrc::limitNumber::floatLimit[3], TestSrc::limitNumber::floatLimit[2],
         TestSrc::limitNumber::floatLimit[1], TestSrc::limitNumber::floatLimit[0]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionX(),
-        TestSrc::limitNumber::floatLimit[3]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionY(),
-        TestSrc::limitNumber::floatLimit[2]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[1]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[0]));
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    EXPECT_TRUE(ROSEN_EQ(bounds.x_, TestSrc::limitNumber::floatLimit[3]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.y_, TestSrc::limitNumber::floatLimit[2]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.z_, TestSrc::limitNumber::floatLimit[1]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.w_, TestSrc::limitNumber::floatLimit[0]));
 }
 
 /**
@@ -158,14 +149,11 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBounds004, TestSize.Level1)
     Vector4f quaternion(TestSrc::limitNumber::floatLimit[0], TestSrc::limitNumber::floatLimit[1],
         TestSrc::limitNumber::floatLimit[2], TestSrc::limitNumber::floatLimit[3]);
     surfaceNode->SetBounds(quaternion);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionX(),
-        TestSrc::limitNumber::floatLimit[0]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionY(),
-        TestSrc::limitNumber::floatLimit[1]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[2]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[3]));
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    EXPECT_TRUE(ROSEN_EQ(bounds.x_, TestSrc::limitNumber::floatLimit[0]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.y_, TestSrc::limitNumber::floatLimit[1]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.z_, TestSrc::limitNumber::floatLimit[2]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.w_, TestSrc::limitNumber::floatLimit[3]));
 }
 
 /**
@@ -180,14 +168,11 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBounds005, TestSize.Level1)
     Vector4f quaternion(TestSrc::limitNumber::floatLimit[3], TestSrc::limitNumber::floatLimit[1],
         TestSrc::limitNumber::floatLimit[2], TestSrc::limitNumber::floatLimit[0]);
     surfaceNode->SetBounds(quaternion);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionX(),
-        TestSrc::limitNumber::floatLimit[3]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionY(),
-        TestSrc::limitNumber::floatLimit[1]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[2]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[0]));
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    EXPECT_TRUE(ROSEN_EQ(bounds.x_, TestSrc::limitNumber::floatLimit[3]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.y_, TestSrc::limitNumber::floatLimit[1]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.z_, TestSrc::limitNumber::floatLimit[2]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.w_, TestSrc::limitNumber::floatLimit[0]));
 }
 
 /**
@@ -202,170 +187,11 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBounds006, TestSize.Level1)
     Vector4f quaternion(TestSrc::limitNumber::floatLimit[3], TestSrc::limitNumber::floatLimit[2],
         TestSrc::limitNumber::floatLimit[1], TestSrc::limitNumber::floatLimit[0]);
     surfaceNode->SetBounds(quaternion);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionX(),
-        TestSrc::limitNumber::floatLimit[3]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionY(),
-        TestSrc::limitNumber::floatLimit[2]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[1]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[0]));
-}
-
-/**
- * @tc.name: SetandGetBoundsSize001
- * @tc.desc:
- * @tc.type:FUNC
- */
-HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsSize001, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    surfaceNode->SetBoundsSize(TestSrc::limitNumber::floatLimit[0], TestSrc::limitNumber::floatLimit[1]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[0]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[1]));
-}
-
-/**
- * @tc.name: SetandGetBoundsSize002
- * @tc.desc:
- * @tc.type:FUNC
- */
-HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsSize002, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    surfaceNode->SetBoundsSize(TestSrc::limitNumber::floatLimit[3],
-        TestSrc::limitNumber::floatLimit[1]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[3]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[1]));
-}
-
-/**
- * @tc.name: SetandGetBoundsSize003
- * @tc.desc:
- * @tc.type:FUNC
- */
-HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsSize003, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    surfaceNode->SetBoundsSize(TestSrc::limitNumber::floatLimit[3],
-        TestSrc::limitNumber::floatLimit[2]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[3]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[2]));
-}
-
-/**
- * @tc.name: SetandGetBoundsSize004
- * @tc.desc:
- * @tc.type:FUNC
- */
-HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsSize004, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    Vector2f quaternion(TestSrc::limitNumber::floatLimit[0],
-        TestSrc::limitNumber::floatLimit[1]);
-    surfaceNode->SetBoundsSize(quaternion);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[0]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[1]));
-}
-
-/**
- * @tc.name: SetandGetBoundsSize005
- * @tc.desc:
- * @tc.type:FUNC
- */
-HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsSize005, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    Vector2f quaternion(TestSrc::limitNumber::floatLimit[3],
-        TestSrc::limitNumber::floatLimit[1]);
-    surfaceNode->SetBoundsSize(quaternion);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[3]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[1]));
-}
-
-/**
- * @tc.name: SetandGetBoundsSize006
- * @tc.desc:
- * @tc.type:FUNC
- */
-HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsSize006, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    Vector2f quaternion(TestSrc::limitNumber::floatLimit[3],
-        TestSrc::limitNumber::floatLimit[2]);
-    surfaceNode->SetBoundsSize(quaternion);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[3]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[2]));
-}
-
-/**
- * @tc.name: SetandGetBoundsPosition001
- * @tc.desc:
- * @tc.type:FUNC
- */
-HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsPosition001, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    Vector2f quaternion(TestSrc::limitNumber::floatLimit[2], TestSrc::limitNumber::floatLimit[3]);
-    surfaceNode->SetBoundsPosition(quaternion);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionX(),
-        TestSrc::limitNumber::floatLimit[2]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionY(),
-        TestSrc::limitNumber::floatLimit[3]));
-}
-
-/**
- * @tc.name: SetandGetBoundsPosition002
- * @tc.desc:
- * @tc.type:FUNC
- */
-HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsPosition002, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    Vector2f quaternion(TestSrc::limitNumber::floatLimit[2], TestSrc::limitNumber::floatLimit[0]);
-    surfaceNode->SetBoundsPosition(quaternion);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionX(),
-        TestSrc::limitNumber::floatLimit[2]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionY(),
-        TestSrc::limitNumber::floatLimit[0]));
-}
-
-/**
- * @tc.name: SetandGetBoundsPosition003
- * @tc.desc:
- * @tc.type:FUNC
- */
-HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsPosition003, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    Vector2f quaternion(TestSrc::limitNumber::floatLimit[1],
-        TestSrc::limitNumber::floatLimit[3]);
-    surfaceNode->SetBoundsPosition(quaternion);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionX(),
-        TestSrc::limitNumber::floatLimit[1]));
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsPositionY(),
-        TestSrc::limitNumber::floatLimit[3]));
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    EXPECT_TRUE(ROSEN_EQ(bounds.x_, TestSrc::limitNumber::floatLimit[3]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.y_, TestSrc::limitNumber::floatLimit[2]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.z_, TestSrc::limitNumber::floatLimit[1]));
+    EXPECT_TRUE(ROSEN_EQ(bounds.w_, TestSrc::limitNumber::floatLimit[0]));
 }
 
 /**
@@ -378,8 +204,8 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsWidth001, TestSize.Level1)
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetBoundsWidth(TestSrc::limitNumber::floatLimit[1]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[1]));
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    EXPECT_TRUE(ROSEN_EQ(bounds.z_, TestSrc::limitNumber::floatLimit[1]));
 }
 
 /**
@@ -392,8 +218,8 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsWidth002, TestSize.Level1)
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetBoundsWidth(TestSrc::limitNumber::floatLimit[2]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[2]));
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    EXPECT_TRUE(ROSEN_EQ(bounds.z_, TestSrc::limitNumber::floatLimit[2]));
 }
 
 /**
@@ -406,8 +232,8 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsWidth003, TestSize.Level1)
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetBoundsWidth(TestSrc::limitNumber::floatLimit[3]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[3]));
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    EXPECT_TRUE(ROSEN_EQ(bounds.z_, TestSrc::limitNumber::floatLimit[3]));
 }
 
 /**
@@ -420,8 +246,8 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsWidth004, TestSize.Level1)
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetBoundsWidth(TestSrc::limitNumber::floatLimit[4]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[4]));
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    EXPECT_TRUE(ROSEN_EQ(bounds.z_, TestSrc::limitNumber::floatLimit[4]));
 }
 
 /**
@@ -434,8 +260,8 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsWidth005, TestSize.Level1)
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetBoundsWidth(TestSrc::limitNumber::floatLimit[0]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsWidth(),
-        TestSrc::limitNumber::floatLimit[0]));
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    EXPECT_TRUE(ROSEN_EQ(bounds.z_, TestSrc::limitNumber::floatLimit[0]));
 }
 
 /**
@@ -448,8 +274,8 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsHeight001, TestSize.Level1)
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetBoundsHeight(TestSrc::limitNumber::floatLimit[1]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[1]));
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    EXPECT_TRUE(ROSEN_EQ(bounds.w_, TestSrc::limitNumber::floatLimit[1]));
 }
 
 /**
@@ -462,8 +288,8 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsHeight002, TestSize.Level1)
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetBoundsHeight(TestSrc::limitNumber::floatLimit[2]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[2]));
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    EXPECT_TRUE(ROSEN_EQ(bounds.w_, TestSrc::limitNumber::floatLimit[2]));
 }
 
 /**
@@ -476,8 +302,8 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsHeight003, TestSize.Level1)
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetBoundsHeight(TestSrc::limitNumber::floatLimit[3]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[3]));
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    EXPECT_TRUE(ROSEN_EQ(bounds.w_, TestSrc::limitNumber::floatLimit[3]));
 }
 
 /**
@@ -490,8 +316,8 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsHeight004, TestSize.Level1)
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetBoundsHeight(TestSrc::limitNumber::floatLimit[4]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[4]));
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    EXPECT_TRUE(ROSEN_EQ(bounds.w_, TestSrc::limitNumber::floatLimit[4]));
 }
 
 /**
@@ -504,8 +330,8 @@ HWTEST_F(RSSurfaceNodeTest, SetandGetBoundsHeight005, TestSize.Level1)
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetBoundsHeight(TestSrc::limitNumber::floatLimit[0]);
-    EXPECT_TRUE(ROSEN_EQ(surfaceNode->GetStagingProperties().GetBoundsHeight(),
-        TestSrc::limitNumber::floatLimit[0]));
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    EXPECT_TRUE(ROSEN_EQ(bounds.w_, TestSrc::limitNumber::floatLimit[0]));
 }
 
 /**

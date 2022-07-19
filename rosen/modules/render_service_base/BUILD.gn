@@ -41,7 +41,6 @@ ohos_shared_library("librender_service_base") {
     "src/animation/rs_animation_log.cpp",
     "src/animation/rs_animation_manager.cpp",
     "src/animation/rs_interpolator.cpp",
-    "src/animation/rs_property_accessors.cpp",
     "src/animation/rs_render_animation.cpp",
     "src/animation/rs_render_path_animation.cpp",
     "src/animation/rs_render_transition.cpp",
@@ -53,6 +52,10 @@ ohos_shared_library("librender_service_base") {
 
     # message(depracated)
     "src/command/rs_message_processor.cpp",
+
+    # modifier
+    "src/modifier/rs_animatable_arithmetric.cpp",
+    "src/modifier/rs_render_modifier.cpp",
 
     #command
     "src/command/rs_animation_command.cpp",

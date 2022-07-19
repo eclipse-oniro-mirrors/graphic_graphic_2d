@@ -24,6 +24,7 @@
 #include "common/rs_matrix3.h"
 #include "common/rs_vector2.h"
 #include "common/rs_vector4.h"
+#include "modifier/rs_animatable_arithmetic.h"
 #include "render/rs_filter.h"
 
 namespace OHOS {
@@ -87,6 +88,10 @@ public:
 
     static float EstimateFraction(const std::shared_ptr<RSInterpolator>& interpolator, const Vector4<Color>& value,
         const Vector4<Color>& startValue, const Vector4<Color>& endValue);
+
+    static float EstimateFraction(const std::shared_ptr<RSInterpolator>& interpolator,
+        const std::shared_ptr<RSAnimatableBase>& value, const std::shared_ptr<RSAnimatableBase>& startValue,
+        const std::shared_ptr<RSAnimatableBase>& endValue);
 };
 } // namespace Rosen
 } // namespace OHOS

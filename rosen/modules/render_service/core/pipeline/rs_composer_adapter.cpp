@@ -113,7 +113,7 @@ void RSComposerAdapter::CommitLayers(const std::vector<LayerInfoPtr>& layers)
 }
 
 // private func
-bool RSComposerAdapter::IsOutOfScreenRegion(RSSurfaceRenderNode& node) const
+bool RSComposerAdapter::IsOutOfScreenRegion(const ComposeInfo& info) const
 {
     uint32_t boundWidth = screenInfo_.width;
     uint32_t boundHeight = screenInfo_.height;
@@ -122,10 +122,8 @@ bool RSComposerAdapter::IsOutOfScreenRegion(RSSurfaceRenderNode& node) const
         std::swap(boundWidth, boundHeight);
     }
 
-    const auto& property = node.GetRenderProperties();
-    const float nodeBoundX = property.GetBoundsPositionX();
-    const float nodeBoundY = property.GetBoundsPositionY();
-    if (nodeBoundX >= static_cast<float>(boundWidth) || nodeBoundY >= static_cast<float>(boundHeight)) {
+    const auto& dstRect = info.dstRect;
+    if (dstRect.x >= boundWidth || dstRect.y >= boundHeight) {
         return true;
     }
 
@@ -303,13 +301,13 @@ void RSComposerAdapter::SetComposeInfoToLayer(
 bool RSComposerAdapter::CheckNodeBeforeCreateLayer(RSSurfaceRenderNode& node, bool isTunnelCheck) const
 {
     if (output_ == nullptr) {
-        RS_LOGE("RSComposerAdapter::CreateLayer: output is nullptr");
+        RS_LOGE("RSComposerAdapter::CheckNodeBeforeCreateLayer: output is nullptr");
         return false;
     }
 
     auto& buffer = node.GetBuffer();
     if (isTunnelCheck == false && buffer == nullptr) {
-        RS_LOGE("RsDebug RSComposerAdapter::CreateLayer: node(%llu) has no available buffer.", node.GetId());
+        RS_LOGE("RsDebug RSComposerAdapter::CheckNodeBeforeCreateLayer: node(%llu) has no available buffer.", node.GetId());
         return false;
     }
 
@@ -320,18 +318,11 @@ bool RSComposerAdapter::CheckNodeBeforeCreateLayer(RSSurfaceRenderNode& node, bo
         return false;
     }
 
-    RS_LOGD("RsDebug RSComposerAdapter::CreateLayer start(node(%llu) name:[%s] dst:[%d %d %d %d]).",
+    RS_LOGD("RsDebug RSComposerAdapter::CheckNodeBeforeCreateLayer start(node(%llu) name:[%s] dst:[%d %d %d %d]).",
         node.GetId(), node.GetName().c_str(), dstRect.left_, dstRect.top_, dstRect.width_, dstRect.height_);
-
-    if (IsOutOfScreenRegion(node)) {
-        RS_LOGE("RsDebug RSComposerAdapter::CreateLayer: node(%llu) out of screen region, no need to composite.",
-            node.GetId());
-        return false;
-    }
-
     auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(node.GetRenderProperties().GetBoundsGeometry());
     if (geoPtr == nullptr) {
-        RS_LOGE("RsDebug RSComposerAdapter::CreateLayer: node(%llu)'s geoPtr is nullptr!", node.GetId());
+        RS_LOGE("RsDebug RSComposerAdapter::CheckNodeBeforeCreateLayer: node(%llu)'s geoPtr is nullptr!", node.GetId());
         return false;
     }
 
@@ -350,11 +341,16 @@ LayerInfoPtr RSComposerAdapter::CreateBufferLayer(RSSurfaceRenderNode& node)
         return nullptr;
     }
     ComposeInfo info = BuildComposeInfo(node);
+    if (IsOutOfScreenRegion(info)) {
+        RS_LOGD("RsDebug RSComposerAdapter::CreateBufferLayer: node(%llu) out of screen region, no need to composite.",
+            node.GetId());
+        return nullptr;
+    }
     std::string traceInfo;
     AppendFormat(traceInfo, "ProcessSurfaceNode:%s XYWH[%d %d %d %d]", node.GetName().c_str(),
         info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h);
     RS_TRACE_NAME(traceInfo.c_str());
-    RS_LOGD("RsDebug RSComposerAdapter::CreateLayer surfaceNode id:%llu name:[%s] dst [%d %d %d %d]"\
+    RS_LOGD("RsDebug RSComposerAdapter::CreateBufferLayer surfaceNode id:%llu name:[%s] dst [%d %d %d %d]"\
         "SrcRect [%d %d] rawbuffer [%d %d] surfaceBuffer [%d %d] buffaddr:%p, z:%f, globalZOrder:%d, blendType = %d",
         node.GetId(), node.GetName().c_str(),
         info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h, info.srcRect.w, info.srcRect.h,
@@ -375,6 +371,11 @@ LayerInfoPtr RSComposerAdapter::CreateTunnelLayer(RSSurfaceRenderNode& node)
         return nullptr;
     }
     ComposeInfo info = BuildComposeInfo(node, true);
+    if (IsOutOfScreenRegion(info)) {
+        RS_LOGD("RsDebug RSComposerAdapter::CreateTunnelLayer: node(%llu) out of screen region, no need to composite.",
+            node.GetId());
+        return nullptr;
+    }
     std::string traceInfo;
     AppendFormat(traceInfo, "ProcessSurfaceNode:%s XYWH[%d %d %d %d]", node.GetName().c_str(),
         info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h);
@@ -382,7 +383,7 @@ LayerInfoPtr RSComposerAdapter::CreateTunnelLayer(RSSurfaceRenderNode& node)
     LayerInfoPtr layer = HdiLayerInfo::CreateHdiLayerInfo();
     SetComposeInfoToLayer(layer, info, node.GetConsumer(), &node);
     LayerRotate(layer);
-    RS_LOGD("RsDebug RSComposerAdapter::CreateLayer surfaceNode id:%llu name:[%s] dst [%d %d %d %d]"\
+    RS_LOGD("RsDebug RSComposerAdapter::CreateTunnelLayer surfaceNode id:%llu name:[%s] dst [%d %d %d %d]"\
         "SrcRect [%d %d], z:%f, globalZOrder:%d, blendType = %d",
         node.GetId(), node.GetName().c_str(),
         info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h, info.srcRect.w, info.srcRect.h,

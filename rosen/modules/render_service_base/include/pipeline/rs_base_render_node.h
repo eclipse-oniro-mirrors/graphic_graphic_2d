@@ -80,16 +80,6 @@ public:
         return children_.size();
     }
 
-    void SetTunnelHandleChange(bool change)
-    {
-        isTunnelHandleChange_ = change;
-    }
-
-    bool GetTunnelHandleChange() const
-    {
-      return isTunnelHandleChange_;
-    }
-
     void DumpTree(int32_t depth, std::string& ou) const;
 
     virtual bool HasDisappearingTransition(bool recursive = true) const
@@ -100,6 +90,16 @@ public:
             auto parent = GetParent().lock();
             return parent ? parent->HasDisappearingTransition(true) : false;
         }
+    }
+    
+    void SetTunnelHandleChange(bool change)
+    {
+        isTunnelHandleChange_ = change;
+    }
+
+    bool GetTunnelHandleChange() const
+    {
+        return isTunnelHandleChange_;
     }
 
     virtual RSRenderNodeType GetType() const
@@ -128,8 +128,8 @@ protected:
         DIRTY,
     };
     virtual bool IsDirty() const;
-    void SetDirty();
     void SetClean();
+    void SetDirty();
 
     void DumpNodeType(std::string& out) const;
 
@@ -153,6 +153,7 @@ private:
 
     const std::weak_ptr<RSContext> context_;
     NodeDirty dirtyStatus_ = NodeDirty::DIRTY;
+    friend class RSRenderPropertyBase;
     std::atomic<bool> isTunnelHandleChange_ = false;
 };
 } // namespace Rosen

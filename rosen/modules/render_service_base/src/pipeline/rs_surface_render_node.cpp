@@ -75,8 +75,7 @@ static SkRect getLocalClipBounds(const RSPaintFilterCanvas& canvas)
 
 void RSSurfaceRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
 {
-    canvas.save();
-    canvas.SaveAlpha();
+    renderNodeSaveCount_ = canvas.SaveCanvasAndAlpha();
 
     // apply intermediate properties from RT to canvas
     canvas.MultiplyAlpha(GetContextAlpha());
@@ -128,8 +127,7 @@ void RSSurfaceRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canva
 
 void RSSurfaceRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 {
-    canvas.RestoreAlpha();
-    canvas.restore();
+    canvas.RestoreCanvasAndAlpha(renderNodeSaveCount_);
 }
 
 void RSSurfaceRenderNode::CollectSurface(
@@ -144,6 +142,11 @@ void RSSurfaceRenderNode::CollectSurface(
         }
         return;
     }
+    auto& consumer = GetConsumer();
+    if (consumer != nullptr && consumer->GetTunnelHandle() != nullptr) {
+        return;
+    }
+    
     if (GetBuffer() != nullptr && GetRenderProperties().GetVisible()) {
         vec.emplace_back(shared_from_this());
     }

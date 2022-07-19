@@ -122,9 +122,7 @@ bool RSRenderNode::IsDirty() const
 void RSRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
 {
 #ifdef ROSEN_OHOS
-    saveCount_ = canvas.getSaveCount();
-    canvas.save();
-    canvas.SaveAlpha();
+    renderNodeSaveCount_ = canvas.SaveCanvasAndAlpha();
     canvas.MultiplyAlpha(GetRenderProperties().GetAlpha());
     auto boundsGeo = std::static_pointer_cast<RSObjAbsGeometry>(GetRenderProperties().GetBoundsGeometry());
     if (boundsGeo && !boundsGeo->IsEmpty()) {
@@ -140,9 +138,50 @@ void RSRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 {
 #ifdef ROSEN_OHOS
     GetMutableRenderProperties().ResetBounds();
-    canvas.RestoreAlpha();
-    canvas.restoreToCount(saveCount_);
+    canvas.RestoreCanvasAndAlpha(renderNodeSaveCount_);
 #endif
+}
+
+void RSRenderNode::ClearModifiers()
+{
+    modifiers_.clear();
+    SetDirty();
+}
+
+void RSRenderNode::AddModifier(const std::shared_ptr<RSRenderModifier>& modifier)
+{
+    if (modifier) {
+        modifiers_.insert({ modifier->GetPropertyId(), modifier });
+        modifier->GetProperty()->Attach(shared_from_this());
+        SetDirty();
+    }
+}
+
+void RSRenderNode::RemoveModifier(const PropertyId& id)
+{
+    auto iter = modifiers_.find(id);
+    if (iter != modifiers_.end()) {
+        modifiers_.erase(iter);
+        SetDirty();
+    }
+}
+
+void RSRenderNode::ApplyModifiers()
+{
+    if (!RSBaseRenderNode::IsDirty()) {
+        return;
+    }
+    RSModifyContext context = { GetMutableRenderProperties() };
+    for (auto& [id, modify] : modifiers_) {
+        if (modify) {
+            modify->Apply(context);
+        }
+    }
+}
+
+std::shared_ptr<RSRenderModifier> RSRenderNode::GetModifier(const PropertyId& id)
+{
+    return modifiers_.count(id) ? modifiers_[id] : nullptr;
 }
 } // namespace Rosen
 } // namespace OHOS

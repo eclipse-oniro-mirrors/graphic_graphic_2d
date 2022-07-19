@@ -63,6 +63,8 @@ private:
     int width_;
     int height_;
 };
+
+using DrawCmdListPtr = std::shared_ptr<DrawCmdList>;
 } // namespace Rosen
 } // namespace OHOS
 
