@@ -40,8 +40,8 @@ void RSEventManager::DumpDetectorParam(std::shared_ptr<RSBaseEventDetector> dete
         RS_LOGD("RSEventManager::DumpDetectorParam detectorPtr nullptr");
         return;
     }
-    auto paramList = detectorPtr->GetParamList();
-    for (auto& item : paramList) {
+    const auto& paramList = detectorPtr->GetParamList();
+    for (const auto& item : paramList) {
         std::string paraName = "rosen.RsDFXEvent." + detectorPtr->GetStringId() +
             "." + item.first + ": ";
         dumpString.append(paraName + item.second + "\n");
@@ -84,8 +84,8 @@ void RSEventManager::UpdateDetectorParam(std::shared_ptr<RSBaseEventDetector> de
         RS_LOGD("RSEventManager::UpdateDetectorParam detectorPtr nullptr");
         return;
     }
-    auto paramList = detectorPtr->GetParamList();
-    for (auto& item : paramList) {
+    const auto& paramList = detectorPtr->GetParamList();
+    for (const auto& item : paramList) {
         std::string paraName = "rosen.RsDFXEvent." + detectorPtr->GetStringId() +
             "." + item.first;
         RS_LOGD("RSEventManager::UpdateDetectorParam paraName: %s", paraName.c_str());
@@ -121,7 +121,7 @@ void RSEventManager::UpdateEventIntervalMs(std::shared_ptr<RSBaseEventDetector> 
 void RSEventManager::UpdateParam()
 {
     updateCount_++;
-    if (updateCount_ % updateThreshold_ != 0) {
+    if (updateCount_ < updateThreshold_) {
         return;
     }
     updateCount_ = 0;

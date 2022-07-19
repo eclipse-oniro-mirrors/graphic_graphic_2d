@@ -54,7 +54,7 @@ public:
         return stringId_;
     }
 
-    std::map<std::string, std::string> GetParamList()
+    const std::map<std::string, std::string>& GetParamList()
     {
         return paramList_;
     }

@@ -84,22 +84,24 @@ void RSMainThread::Init()
 
 void RSMainThread::RsEventParamDump(std::string& dumpString)
 {
-    dumpString.append("\n");
-    dumpString.append("-- EventParamListDump: \n");
     rsEventManager_.DumpAllEventParam(dumpString);
 }
 
 void RSMainThread::RemoveRSEventDetector()
 {
-    rsEventManager_.RemoveEvent(rsCompositionTimeoutDetector_->GetStringId());
+    if (rsCompositionTimeoutDetector_ != nullptr) {
+        rsEventManager_.RemoveEvent(rsCompositionTimeoutDetector_->GetStringId());
+    }
 }
 
 void RSMainThread::InitRSEventDetector()
 {
     // default Threshold value of Timeout Event: 2000ms
     rsCompositionTimeoutDetector_ = RSBaseEventDetector::CreateRSTimeOutDetector(2000, "RS_COMPOSITION_TIMEOUT");
-    rsEventManager_.AddEvent(rsCompositionTimeoutDetector_, 60000); // report Internal 1min:60s：60000ms
-    RS_LOGD("InitRSEventDetector  finish");
+    if (rsCompositionTimeoutDetector_ != nullptr) {
+        rsEventManager_.AddEvent(rsCompositionTimeoutDetector_, 60000); // report Internal 1min:60s：60000ms
+        RS_LOGD("InitRSEventDetector  finish");
+    }
 }
 
 void RSMainThread::SetRSEventDetectorLoopStartTag()
@@ -518,8 +520,6 @@ void RSMainThread::SendCommands()
 
 void RSMainThread::RenderServiceTreeDump(std::string& dumpString)
 {
-    dumpString.append("\n");
-    dumpString.append("-- RenderServiceTreeDump: \n");
     const std::shared_ptr<RSBaseRenderNode> rootNode = context_.GetGlobalRootRenderNode();
     if (rootNode == nullptr) {
         dumpString.append("rootNode is null\n");
