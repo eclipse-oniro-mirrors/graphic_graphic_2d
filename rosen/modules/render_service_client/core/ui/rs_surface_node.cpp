@@ -138,8 +138,9 @@ void RSSurfaceNode::ClearChildren()
 
 void RSSurfaceNode::OnBoundsSizeChanged() const
 {
+    auto bounds = GetStagingProperties().GetBounds();
     std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeUpdateSurfaceDefaultSize>(
-        GetId(), GetStagingProperties().GetBoundsWidth(), GetStagingProperties().GetBoundsHeight());
+        GetId(), bounds.z_, bounds.w_);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
         transactionProxy->AddCommand(command, true);
@@ -201,7 +202,7 @@ bool RSSurfaceNode::Marshalling(Parcel& parcel) const
     return parcel.WriteUint64(GetId()) && parcel.WriteString(name_) && parcel.WriteBool(IsRenderServiceNode());
 }
 
-RSSurfaceNode::SharedPtr RSSurfaceNode::Unmarshalling(Parcel& parcel)
+std::shared_ptr<RSSurfaceNode> RSSurfaceNode::Unmarshalling(Parcel& parcel)
 {
     uint64_t id = UINT64_MAX;
     std::string name;

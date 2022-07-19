@@ -16,6 +16,7 @@
 #include "pipeline/rs_canvas_render_node.h"
 
 #include <algorithm>
+#include "modifier/rs_modifier_type.h"
 
 #ifdef ROSEN_OHOS
 #include "common/rs_obj_abs_geometry.h"
@@ -84,6 +85,8 @@ void RSCanvasRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas
     if (!drawContentLast_) {
         ProcessRenderContents(canvas);
     }
+    RSModifyContext context = { GetMutableRenderProperties(), &canvas };
+    ApplyDrawCmdModifier(context, RSModifierType::CONTENT_STYLE);
 #endif
 }
 
@@ -100,9 +103,37 @@ void RSCanvasRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
     }
     canvas.restore();
     RSPropertiesPainter::DrawBorder(GetRenderProperties(), canvas);
+
+    RSModifyContext context = { GetMutableRenderProperties(), &canvas };
+    ApplyDrawCmdModifier(context, RSModifierType::OVERLAY_STYLE);
+
     RSPropertiesPainter::DrawForegroundColor(GetRenderProperties(), canvas);
     RSRenderNode::ProcessRenderAfterChildren(canvas);
 #endif
+}
+
+void RSCanvasRenderNode::ApplyDrawCmdModifier(RSModifyContext& context, RSModifierType type)
+{
+    for (auto& id : drawCmdModifiers_) {
+        auto modifier = std::static_pointer_cast<RSDrawCmdListRenderModifier>(GetModifier(id));
+        if (!modifier) {
+            drawCmdModifiers_.erase(id);
+            continue;
+        }
+        if (modifier->drawStyle_ == type) {
+            modifier->Apply(context);
+        }
+    }
+}
+
+void RSCanvasRenderNode::AddModifier(const std::shared_ptr<RSRenderModifier>& modifier)
+{
+    if (modifier) {
+        RSRenderNode::AddModifier(modifier);
+        if (modifier->GetType() == RSModifierType::EXTENDED) {
+            drawCmdModifiers_.insert(modifier->GetPropertyId());
+        }
+    }
 }
 
 } // namespace Rosen

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -65,10 +65,21 @@ public:
         return rotationMode_;
     }
 
+    void SetPathNeedAddOrigin(bool pathNeedOrigin)
+    {
+        pathNeedOrigin_ = pathNeedOrigin;
+    }
+
+    bool GetPathNeedAddOrigin()
+    {
+        return pathNeedOrigin_;
+    }
+
 private:
     std::string path_;
     float beginFraction_ { FRACTION_MIN };
     float endFraction_ { FRACTION_MAX };
+    bool pathNeedOrigin_ { true };
     RotationMode rotationMode_ { RotationMode::ROTATE_NONE };
 };
 } // namespace Rosen

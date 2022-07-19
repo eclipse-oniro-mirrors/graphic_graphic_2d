@@ -144,5 +144,47 @@ void RSRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
     canvas.restoreToCount(saveCount_);
 #endif
 }
+
+void RSRenderNode::ClearModifiers()
+{
+    modifiers_.clear();
+    SetDirty();
+}
+
+void RSRenderNode::AddModifier(const std::shared_ptr<RSRenderModifier>& modifier)
+{
+    if (modifier) {
+        modifiers_.insert({ modifier->GetPropertyId(), modifier });
+        modifier->GetProperty()->Attach(shared_from_this());
+        SetDirty();
+    }
+}
+
+void RSRenderNode::RemoveModifier(const PropertyId& id)
+{
+    auto iter = modifiers_.find(id);
+    if (iter != modifiers_.end()) {
+        modifiers_.erase(iter);
+        SetDirty();
+    }
+}
+
+void RSRenderNode::ApplyModifiers()
+{
+    if (!RSBaseRenderNode::IsDirty()) {
+        return;
+    }
+    RSModifyContext context = { GetMutableRenderProperties() };
+    for (auto& [id, modify] : modifiers_) {
+        if (modify) {
+            modify->Apply(context);
+        }
+    }
+}
+
+std::shared_ptr<RSRenderModifier> RSRenderNode::GetModifier(const PropertyId& id)
+{
+    return modifiers_.count(id) ? modifiers_[id] : nullptr;
+}
 } // namespace Rosen
 } // namespace OHOS

@@ -56,9 +56,13 @@ template<typename T>
 class RSRenderKeyframeAnimation;
 template<typename T>
 class RSRenderSpringAnimation;
+template<typename T>
 class RSRenderPathAnimation;
 class RSRenderTransition;
 class RSRenderTransitionEffect;
+class RSRenderModifier;
+template<typename T>
+class RSRenderProperty;
 
 class RSMarshallingHelper {
 public:
@@ -142,9 +146,10 @@ public:
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<DrawCmdList>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<Media::PixelMap>)
     // animation
-    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSRenderPathAnimation>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSRenderTransition>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSRenderTransitionEffect>)
+
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSRenderModifier>)
 #undef DECLARE_FUNCTION_OVERLOAD
 
     // reloaded marshalling & unmarshalling function for animation template
@@ -157,6 +162,9 @@ public:
     DECLARE_TEMPLATE_OVERLOAD(RSRenderCurveAnimation)
     DECLARE_TEMPLATE_OVERLOAD(RSRenderKeyframeAnimation)
     DECLARE_TEMPLATE_OVERLOAD(RSRenderSpringAnimation)
+    DECLARE_TEMPLATE_OVERLOAD(RSRenderPathAnimation)
+
+    DECLARE_TEMPLATE_OVERLOAD(RSRenderProperty)
 #undef DECLARE_TEMPLATE_OVERLOAD
 
     // reloaded marshalling & unmarshalling function for std::vector

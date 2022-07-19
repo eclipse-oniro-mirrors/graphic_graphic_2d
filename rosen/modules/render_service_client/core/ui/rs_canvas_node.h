@@ -36,6 +36,8 @@ public:
     SkCanvas* BeginRecording(int width, int height);
     bool IsRecording() const;
     void FinishRecording();
+    float GetPaintWidth() const;
+    float GetPaintHeight() const;
 
     RSUINodeType GetType() const override
     {
@@ -54,6 +56,7 @@ private:
 
     friend class RSUIDirector;
     friend class RSAnimation;
+    template<typename T>
     friend class RSPathAnimation;
     template<typename T>
     friend class RSPropertyAnimation;

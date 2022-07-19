@@ -60,8 +60,7 @@ public:
     bool SetBufferAvailableCallback(BufferAvailableCallback callback);
 
     bool Marshalling(Parcel& parcel) const;
-    static SharedPtr Unmarshalling(Parcel& parcel);
-
+    static std::shared_ptr<RSSurfaceNode> Unmarshalling(Parcel& parcel);
     sptr<OHOS::Surface> GetSurface() const;
     RSUINodeType GetType() const override
     {
@@ -106,6 +105,7 @@ private:
 
     friend class RSUIDirector;
     friend class RSAnimation;
+    template<typename T>
     friend class RSPathAnimation;
     template<typename T>
     friend class RSPropertyAnimation;
