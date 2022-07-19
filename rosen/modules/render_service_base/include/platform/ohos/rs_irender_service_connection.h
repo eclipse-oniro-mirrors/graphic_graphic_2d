@@ -79,8 +79,6 @@ public:
         SET_SCREEN_GAMUT_MAP,
         GET_SCREEN_GAMUT_MAP,
         CREATE_VSYNC_CONNECTION,
-        REQUEST_ROTATION,
-        GET_ROTATION,
         GET_SCREEN_HDR_CAPABILITY,
         GET_SCREEN_TYPE,
         SET_SCREEN_SKIP_FRAME_INTERVAL,
@@ -158,10 +156,6 @@ public:
     virtual int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode) = 0;
 
     virtual int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode) = 0;
-    
-    virtual bool RequestRotation(ScreenId id, ScreenRotation rotation) = 0;
-
-    virtual ScreenRotation GetRotation(ScreenId id) = 0;
 
     virtual int32_t GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability) = 0;
 

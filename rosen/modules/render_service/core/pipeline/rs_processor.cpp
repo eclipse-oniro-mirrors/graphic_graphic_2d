@@ -69,12 +69,12 @@ void RSProcessor::CalculateMirrorAdaptiveCoefficient(float curWidth, float curHe
     mirrorAdaptiveCoefficient_ = std::min(curWidth / mirroredWidth, curHeight / mirroredHeight);
 }
 
-void RSProcessor::SetBoundsGeometry(std::shared_ptr<RSObjAbsGeometry> boundsGeo)
+void RSProcessor::SetBoundsGeometry(const std::shared_ptr<RSObjAbsGeometry>& boundsGeo)
 {
     boundsGeo_ = boundsGeo;
 }
 
-std::shared_ptr<RSObjAbsGeometry> RSProcessor::GetBoundsGeometry() const
+const std::shared_ptr<RSObjAbsGeometry>& RSProcessor::GetBoundsGeometry() const
 {
     return boundsGeo_;
 }

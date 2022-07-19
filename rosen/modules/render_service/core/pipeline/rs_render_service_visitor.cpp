@@ -15,19 +15,20 @@
 
 #include "pipeline/rs_render_service_visitor.h"
 
-#include "common/rs_obj_abs_geometry.h"
 #include "display_type.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
+#include "rs_divided_render_util.h"
+#include "rs_trace.h"
+
+#include "common/rs_obj_abs_geometry.h"
 #include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_processor.h"
 #include "pipeline/rs_processor_factory.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
-#include "rs_divided_render_util.h"
-#include "rs_trace.h"
 #include "platform/drawing/rs_surface.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "screen_manager/screen_types.h"
@@ -128,7 +129,7 @@ void RSRenderServiceVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             return;
         }
         if (mParallelEnable) {
-            ScreenRotation rotation = screenManager->GetRotation(node.GetScreenId());
+            ScreenRotation rotation = ScreenRotation::ROTATION_0;
             uint32_t boundWidth = currScreenInfo.width;
             uint32_t boundHeight = currScreenInfo.height;
             if (rotation == ScreenRotation::ROTATION_90 || rotation == ScreenRotation::ROTATION_270) {
@@ -140,7 +141,7 @@ void RSRenderServiceVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         }
         ProcessBaseRenderNode(*existingSource);
     } else {
-        ScreenRotation rotation = screenManager->GetRotation(node.GetScreenId());
+        ScreenRotation rotation = ScreenRotation::ROTATION_0;
         uint32_t boundWidth = currScreenInfo.width;
         uint32_t boundHeight = currScreenInfo.height;
         if (rotation == ScreenRotation::ROTATION_90 || rotation == ScreenRotation::ROTATION_270) {
@@ -153,10 +154,10 @@ void RSRenderServiceVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         if (boundsGeoPtr && boundsGeoPtr->IsNeedClientCompose()) {
             RSDividedRenderUtil::SetNeedClient(true);
             boundsGeoPtr->SetSize(boundWidth, boundHeight);
+            processor_->SetBoundsGeometry(boundsGeoPtr);
         } else {
             RSDividedRenderUtil::SetNeedClient(false);
         }
-        processor_->SetBoundsGeometry(boundsGeoPtr);
         ProcessBaseRenderNode(node);
     }
     processor_->PostProcess();

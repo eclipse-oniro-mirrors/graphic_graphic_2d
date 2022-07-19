@@ -51,8 +51,10 @@ struct ScreenInfo {
     uint32_t height = 0;
     ScreenColorGamut colorGamut = ScreenColorGamut::COLOR_GAMUT_SRGB;
     ScreenState state = ScreenState::UNKNOWN;
+    // TODO: FILL THESE VALUES
     ScreenRotation rotation = ScreenRotation::ROTATION_0;
     SkMatrix rotationMatrix; // Screen rotation matrix for canvas.
+
     uint32_t skipFrameInterval = DEFAULT_SKIP_FRAME_INTERVAL;  // skip frame interval for change screen refresh rate
 
     uint32_t GetRotatedWidth() const
@@ -147,10 +149,6 @@ public:
     virtual int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode) = 0;
 
     virtual int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode) const = 0;
-
-    virtual bool RequestRotation(ScreenId id, ScreenRotation rotation) = 0;
-
-    virtual ScreenRotation GetRotation(ScreenId id) const = 0;
 
     virtual int32_t GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability) const = 0;
 
@@ -252,10 +250,6 @@ public:
 
     int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode) const override;
 
-    bool RequestRotation(ScreenId id, ScreenRotation rotation) override;
-
-    ScreenRotation GetRotation(ScreenId id) const override;
-
     int32_t GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability) const override;
 
     int32_t GetScreenType(ScreenId id, RSScreenType& type) const override;
@@ -291,8 +285,6 @@ private:
     int32_t SetScreenColorGamutLocked(ScreenId id, int32_t modeIdx);
     int32_t SetScreenGamutMapLocked(ScreenId id, ScreenGamutMap mode);
     int32_t GetScreenGamutMapLocked(ScreenId id, ScreenGamutMap& mode) const;
-    bool RequestRotationLocked(ScreenId id, ScreenRotation rotation);
-    ScreenRotation GetRotationLocked(ScreenId id) const;
     int32_t GetScreenHDRCapabilityLocked(ScreenId id, RSScreenHDRCapability& screenHdrCapability) const;
     int32_t GetScreenTypeLocked(ScreenId id, RSScreenType& type) const;
     int32_t SetScreenSkipFrameIntervalLocked(ScreenId id, uint32_t skipFrameInterval);

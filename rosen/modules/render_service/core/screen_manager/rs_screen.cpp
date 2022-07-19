@@ -25,14 +25,6 @@ namespace Rosen {
 using namespace HiviewDFX;
 
 namespace impl {
-namespace detail {
-template <int ROTATE_DEGREES>
-constexpr SkMatrix RotateMatrix()
-{
-    return SkMatrix().setRotate(ROTATE_DEGREES);
-}
-} // namespace detail
-
 RSScreen::RSScreen(ScreenId id,
     bool isVirtual,
     std::shared_ptr<HdiOutput> output,
@@ -406,8 +398,6 @@ void RSScreen::DisplayDump(int32_t screenIndex, std::string& dumpString)
         dumpString += "backlight=" + std::to_string(GetScreenBacklight());
         dumpString += ", ";
         ScreenTypeDump(dumpString);
-        dumpString += ", ";
-        ScreenRotationDump(dumpString);
         dumpString += "\n";
         ModeInfoDump(dumpString);
         CapabilityDump(dumpString);
@@ -435,33 +425,6 @@ void RSScreen::ScreenTypeDump(std::string& dumpString)
             break;
         }
     }
-}
-
-void RSScreen::ScreenRotationDump(std::string& dumpString)
-{
-    dumpString += "rotationStatus=";
-    switch (rotation_) {
-        case ScreenRotation::ROTATION_0: {
-            dumpString += "ROTATION_0";
-            break;
-        }
-        case ScreenRotation::ROTATION_90: {
-            dumpString += "ROTATION_90";
-            break;
-        }
-        case ScreenRotation::ROTATION_180: {
-            dumpString += "ROTATION_180";
-            break;
-        }
-        case ScreenRotation::ROTATION_270: {
-            dumpString += "ROTATION_270";
-            break;
-        }
-        default: {
-            dumpString += "INVALID_SCREEN_ROTATION";
-            break;
-        }
-    };
 }
 
 void RSScreen::SurfaceDump(int32_t screenIndex, std::string& dumpString)
@@ -606,52 +569,6 @@ int32_t RSScreen::GetScreenGamutMap(ScreenGamutMap &mode) const
         return StatusCode::SUCCESS;
     }
     return StatusCode::HDI_ERROR;
-}
-
-void RSScreen::UpdateRotationMatrix()
-{
-    switch (rotation_) {
-        case ScreenRotation::ROTATION_90: {
-            // rotate 90 degrees anticlockwise
-            rotationMatrix_ = detail::RotateMatrix<-90>().postTranslate(0.0, static_cast<float>(height_));
-            break;
-        }
-        case ScreenRotation::ROTATION_180: {
-            // rotate 180 degrees
-            rotationMatrix_ = detail::RotateMatrix<180>().postTranslate(
-                static_cast<float>(width_), static_cast<float>(height_));
-            break;
-        }
-        case ScreenRotation::ROTATION_270: {
-            // rotate 270 degrees anticlockwise
-            rotationMatrix_ = detail::RotateMatrix<-270>().postTranslate(static_cast<float>(width_), 0.0);
-            break;
-        }
-        default: {
-            rotationMatrix_ = SkMatrix();
-            break;
-        }
-    };
-}
-
-SkMatrix RSScreen::GetRotationMatrix() const
-{
-    return rotationMatrix_;
-}
-
-bool RSScreen::SetRotation(ScreenRotation rotation)
-{
-    if (rotation_ != rotation) {
-        rotation_ = rotation;
-        UpdateRotationMatrix();
-    }
-
-    return true;
-}
-
-ScreenRotation RSScreen::GetRotation() const
-{
-    return rotation_;
 }
 
 const HDRCapability& RSScreen::GetHDRCapability() const

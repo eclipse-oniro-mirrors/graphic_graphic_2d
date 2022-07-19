@@ -653,8 +653,6 @@ ScreenInfo RSScreenManager::QueryScreenInfo(ScreenId id) const
     } else {
         info.state = ScreenState::PRODUCER_SURFACE_ENABLE;
     }
-    info.rotation = screen->GetRotation();
-    info.rotationMatrix = screen->GetRotationMatrix();
     info.skipFrameInterval = screen->GetScreenSkipFrameInterval();
 
     return info;
@@ -791,32 +789,6 @@ int32_t RSScreenManager::GetScreenGamutMapLocked(ScreenId id, ScreenGamutMap &mo
     return screens_.at(id)->GetScreenGamutMap(mode);
 }
 
-bool RSScreenManager::RequestRotationLocked(ScreenId id, ScreenRotation rotation)
-{
-    auto iter = screens_.find(id);
-    if (iter == screens_.end()) {
-        RS_LOGW("RSScreenManager %s: There is no screen for id %" PRIu64 ".", __func__, id);
-        return false;
-    }
-    // In special scenario (such as the foreground app is launcher), the rotation does not trigger UI redraw.
-    // So, we trigger the vSync here, to avoid inconsistent between interfaces and keystrokes.
-    auto mainThread = RSMainThread::Instance();
-    if (mainThread != nullptr) {
-        mainThread->RequestNextVSync();
-    }
-    return iter->second->SetRotation(rotation);
-}
-
-ScreenRotation RSScreenManager::GetRotationLocked(ScreenId id) const
-{
-    auto iter = screens_.find(id);
-    if (iter == screens_.end()) {
-        RS_LOGW("RSScreenManager %s: There is no screen for id %" PRIu64 ".", __func__, id);
-        return ScreenRotation::INVALID_SCREEN_ROTATION;
-    }
-    return iter->second->GetRotation();
-}
-
 int32_t RSScreenManager::GetScreenHDRCapabilityLocked(ScreenId id, RSScreenHDRCapability& screenHdrCapability) const
 {
     if (screens_.count(id) == 0) {
@@ -901,18 +873,6 @@ int32_t RSScreenManager::GetScreenGamutMap(ScreenId id, ScreenGamutMap &mode) co
 {
     std::lock_guard<std::mutex> lock(mutex_);
     return GetScreenGamutMapLocked(id, mode);
-}
-
-bool RSScreenManager::RequestRotation(ScreenId id, ScreenRotation rotation)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    return RequestRotationLocked(id, rotation);
-}
-
-ScreenRotation RSScreenManager::GetRotation(ScreenId id) const
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    return GetRotationLocked(id);
 }
 
 int32_t RSScreenManager::GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability) const

@@ -39,8 +39,8 @@ public:
     virtual void ProcessSurface(RSSurfaceRenderNode& node) = 0;
     virtual void ProcessDisplaySurface(RSDisplayRenderNode& node) = 0;
     virtual void PostProcess() = 0;
-    virtual void SetBoundsGeometry(std::shared_ptr<RSObjAbsGeometry> frameGeo);
-    virtual std::shared_ptr<RSObjAbsGeometry> GetBoundsGeometry() const;
+    virtual void SetBoundsGeometry(const std::shared_ptr<RSObjAbsGeometry>& frameGeo);
+    virtual const std::shared_ptr<RSObjAbsGeometry>& GetBoundsGeometry() const;
 
 protected:
     void CalculateMirrorAdaptiveCoefficient(float curWidth, float curHeight,
