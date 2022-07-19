@@ -54,6 +54,16 @@ struct ScreenInfo {
     ScreenRotation rotation = ScreenRotation::ROTATION_0;
     SkMatrix rotationMatrix; // Screen rotation matrix for canvas.
     uint32_t skipFrameInterval = DEFAULT_SKIP_FRAME_INTERVAL;  // skip frame interval for change screen refresh rate
+
+    uint32_t GetRotatedWidth() const
+    {
+        return (rotation == ScreenRotation::ROTATION_0 || rotation == ScreenRotation::ROTATION_180) ? width : height;
+    }
+
+    uint32_t GetRotatedHeight() const
+    {
+        return (rotation == ScreenRotation::ROTATION_0 || rotation == ScreenRotation::ROTATION_180) ? height : width;
+    }
 };
 
 class RSScreenManager : public RefBase {

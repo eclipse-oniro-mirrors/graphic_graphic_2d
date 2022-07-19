@@ -142,7 +142,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode No RSSurface found");
         return;
     }
-    auto surfaceFrame = rsSurface->RequestFrame(screenInfo_.width, screenInfo_.height);
+    auto surfaceFrame = rsSurface->RequestFrame(screenInfo_.GetRotatedWidth(), screenInfo_.GetRotatedHeight());
     if (surfaceFrame == nullptr) {
         RS_LOGE("RSUniRenderVisitor Request Frame Failed");
         return;
