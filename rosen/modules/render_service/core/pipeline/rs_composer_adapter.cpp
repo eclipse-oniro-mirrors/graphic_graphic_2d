@@ -250,8 +250,8 @@ ComposeInfo RSComposerAdapter::BuildComposeInfo(RSDisplayRenderNode& node) const
     info.dstRect = IRect {
         0,
         0,
-        static_cast<int32_t>(static_cast<float>(screenInfo_.width) * mirrorAdaptiveCoefficient_),
-        static_cast<int32_t>(static_cast<float>(screenInfo_.height) * mirrorAdaptiveCoefficient_)
+        static_cast<int32_t>(static_cast<float>(screenInfo_.GetRotatedWidth()) * mirrorAdaptiveCoefficient_),
+        static_cast<int32_t>(static_cast<float>(screenInfo_.GetRotatedHeight()) * mirrorAdaptiveCoefficient_)
     };
     info.visibleRect = IRect {info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h};
     info.zOrder = static_cast<int32_t>(node.GetGlobalZOrder());
