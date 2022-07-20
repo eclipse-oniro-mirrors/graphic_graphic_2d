@@ -106,8 +106,7 @@ public:
             // get random scales and set them with pivot(start point or center point).
             float scaleX = GetRandomScale();
             float scaleY = GetRandomScale();
-            surfaceNode_->SetScaleX(scaleX);
-            surfaceNode_->SetScaleY(scaleY);
+            surfaceNode_->SetScale(scaleX, scaleY);
             // default pivot: center
             float pivotX = 0.5f; // centerX: 0.5
             float pivotY = 0.5f; // centerY: 0.5

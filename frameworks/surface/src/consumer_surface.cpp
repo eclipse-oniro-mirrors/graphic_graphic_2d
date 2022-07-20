@@ -43,7 +43,7 @@ ConsumerSurface::~ConsumerSurface()
         BLOGNE("Wrong SptrRefCount! Queue Id:%{public}" PRIu64 " consumer_:%{public}d producer_:%{public}d",
             producer_->GetUniqueId(), consumer_->GetSptrRefCount(), producer_->GetSptrRefCount());
     }
-    producer_->CleanCache();
+    CleanCache();
     producer_->SetStatus(false);
     consumer_ = nullptr;
     producer_ = nullptr;
@@ -223,7 +223,10 @@ GSError ConsumerSurface::UnregisterConsumerListener()
 
 GSError ConsumerSurface::CleanCache()
 {
-    return producer_->CleanCache();
+    if (consumer_ == nullptr) {
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    return consumer_->CleanCache();
 }
 
 uint64_t ConsumerSurface::GetUniqueId() const
@@ -289,6 +292,11 @@ GSError ConsumerSurface::SetMetaDataSet(uint32_t sequence, HDRMetadataKey key,
     return producer_->SetMetaDataSet(sequence, key, metaData);
 }
 
+GSError ConsumerSurface::QueryMetaDataType(uint32_t sequence, HDRMetaDataType &type) const
+{
+    return consumer_->QueryMetaDataType(sequence, type);
+}
+
 GSError ConsumerSurface::GetMetaData(uint32_t sequence, std::vector<HDRMetaData> &metaData) const
 {
     return consumer_->GetMetaData(sequence, metaData);
@@ -308,8 +316,8 @@ GSError ConsumerSurface::SetTunnelHandle(const ExtDataHandle *handle)
     return producer_->SetTunnelHandle(handle);
 }
 
-GSError ConsumerSurface::GetTunnelHandle(ExtDataHandle **handle) const
+sptr<SurfaceTunnelHandle> ConsumerSurface::GetTunnelHandle() const
 {
-    return consumer_->GetTunnelHandle(handle);
+    return consumer_->GetTunnelHandle();
 }
 } // namespace OHOS

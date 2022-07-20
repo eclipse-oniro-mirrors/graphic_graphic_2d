@@ -353,6 +353,11 @@ GSError ProducerSurface::SetMetaDataSet(uint32_t sequence, HDRMetadataKey key,
     return producer_->SetMetaDataSet(sequence, key, metaData);
 }
 
+GSError ProducerSurface::QueryMetaDataType(uint32_t sequence, HDRMetaDataType &type) const
+{
+    return GSERROR_NOT_SUPPORT;
+}
+
 GSError ProducerSurface::GetMetaData(uint32_t sequence, std::vector<HDRMetaData> &metaData) const
 {
     return GSERROR_NOT_SUPPORT;
@@ -372,8 +377,9 @@ GSError ProducerSurface::SetTunnelHandle(const ExtDataHandle *handle)
     return producer_->SetTunnelHandle(handle);
 }
 
-GSError ProducerSurface::GetTunnelHandle(ExtDataHandle **handle) const
+sptr<SurfaceTunnelHandle> ProducerSurface::GetTunnelHandle() const
 {
-    return GSERROR_NOT_SUPPORT;
+    // not support
+    return nullptr;
 }
 } // namespace OHOS

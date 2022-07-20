@@ -29,7 +29,8 @@ namespace OHOS {
 namespace Rosen {
 void RSBaseRenderNode::AddChild(const SharedPtr& child, int index)
 {
-    if (child == nullptr) {
+    // sanity check, avoid loop
+    if (child == nullptr || child->GetId() == GetId()) {
         return;
     }
     // if child already has a parent, remove it from its previous parent
@@ -218,6 +219,7 @@ void RSBaseRenderNode::DumpTree(int32_t depth, std::string& out) const
         auto p = parent_.lock();
         out += ", parent [" + (p != nullptr ? std::to_string(p->GetId()) : "null") + "]";
         out = out + ", " + surfaceNode->GetVisibleRegion().GetRegionInfo();
+        out += ", SurfaceBgAlpha[ " + std::to_string(surfaceNode->GetAbilityBgAlpha()) + " ]";
     }
     out += ", children[";
     for (auto child : children_) {

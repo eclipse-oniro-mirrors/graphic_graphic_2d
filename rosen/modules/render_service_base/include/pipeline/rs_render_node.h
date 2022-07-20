@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "animation/rs_animation_manager.h"
+#include "modifier/rs_render_modifier.h"
 #include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_dirty_region_manager.h"
 #include "property/rs_properties.h"
@@ -71,19 +72,25 @@ public:
     {
         return isDirtyRegionUpdated_;
     }
+    void ClearModifiers();
+    virtual void AddModifier(const std::shared_ptr<RSRenderModifier>& modifier);
+    void RemoveModifier(const PropertyId& id);
+    void ApplyModifiers();
+    std::shared_ptr<RSRenderModifier> GetModifier(const PropertyId& id);
 
 protected:
     explicit RSRenderNode(NodeId id, std::weak_ptr<RSContext> context = {});
     void UpdateDirtyRegion(RSDirtyRegionManager& dirtyManager, bool parentDirty);
     bool IsDirty() const override;
+    std::pair<int, int> renderNodeSaveCount_ = { 0, 0 };
 
 private:
     void FallbackAnimationsToRoot();
-    int32_t saveCount_ = 0;
     bool isDirtyRegionUpdated_ = false;
     RectI oldDirty_;
     RSProperties renderProperties_;
     RSAnimationManager animationManager_;
+    std::map<PropertyId, std::shared_ptr<RSRenderModifier>> modifiers_;
 
     friend class RSRenderTransition;
 };

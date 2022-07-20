@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include <graphic_common.h>
 #include <display_type.h>
@@ -43,6 +44,17 @@ using ScalingMode = enum {
     SCALING_MODE_SCALE_TO_WINDOW,
     SCALING_MODE_SCALE_CROP,
     SCALING_MODE_NO_SCALE_CROP,
+};
+
+using HDRMetaDataType = enum {
+    HDR_NOT_USED = 0,
+    HDR_META_DATA,
+    HDR_META_DATA_SET,
+};
+
+using HDRMetaDataSet = struct HDRMetaDataSet {
+    HDRMetadataKey key = HDRMetadataKey::MATAKEY_RED_PRIMARY_X;
+    std::vector<uint8_t> metaData;
 };
 
 using BufferRequestConfig = struct BufferRequestConfig {

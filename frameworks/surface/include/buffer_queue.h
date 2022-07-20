@@ -25,6 +25,7 @@
 #include <ibuffer_producer.h>
 #include <surface_type.h>
 #include <buffer_manager.h>
+#include <surface_tunnel_handle.h>
 
 #include "surface_buffer.h"
 
@@ -37,7 +38,7 @@ enum BufferState {
     BUFFER_STATE_ATTACHED,
 };
 
-typedef struct {
+using BufferElement = struct BufferElement {
     sptr<SurfaceBuffer> buffer;
     BufferState state;
     bool isDeleting;
@@ -47,10 +48,11 @@ typedef struct {
     int64_t timestamp;
     Rect damage;
     ScalingMode scalingMode;
+    HDRMetaDataType hdrMetaDataType = HDRMetaDataType::HDR_NOT_USED;
     std::vector<HDRMetaData> metaData;
     HDRMetadataKey key;
     std::vector<uint8_t> metaDataSet;
-} BufferElement;
+};
 
 class BufferQueue : public RefBase {
 public:
@@ -114,11 +116,12 @@ public:
     GSError SetMetaData(uint32_t sequence, const std::vector<HDRMetaData> &metaData);
     GSError SetMetaDataSet(uint32_t sequence, HDRMetadataKey key,
                            const std::vector<uint8_t> &metaData);
+    GSError QueryMetaDataType(uint32_t sequence, HDRMetaDataType &type);
     GSError GetMetaData(uint32_t sequence, std::vector<HDRMetaData> &metaData);
     GSError GetMetaDataSet(uint32_t sequence, HDRMetadataKey &key,
                            std::vector<uint8_t> &metaData);
-    GSError SetTunnelHandle(const ExtDataHandle *handle);
-    GSError GetTunnelHandle(ExtDataHandle **handle) const;
+    GSError SetTunnelHandle(const sptr<SurfaceTunnelHandle> &handle);
+    sptr<SurfaceTunnelHandle> GetTunnelHandle();
 
     bool GetStatus() const;
     void SetStatus(bool status);
@@ -157,7 +160,7 @@ private:
     OnDeleteBufferFunc onBufferDelete_ = nullptr;
     bool isShared_ = false;
     std::condition_variable waitReqCon_;
-    ExtDataHandle *tunnelHandle_ = nullptr;
+    sptr<SurfaceTunnelHandle> tunnelHandle_ = nullptr;
     std::atomic_bool isValidStatus_ = true;
 };
 }; // namespace OHOS

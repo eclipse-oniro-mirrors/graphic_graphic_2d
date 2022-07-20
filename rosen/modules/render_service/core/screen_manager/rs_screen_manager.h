@@ -23,7 +23,6 @@
 #include <unordered_map>
 
 #include <hdi_backend.h>
-#include <hilog/log.h>
 #include <ipc_callbacks/screen_change_callback.h>
 #include <refbase.h>
 #include <screen_manager/rs_screen_props.h>
@@ -55,6 +54,16 @@ struct ScreenInfo {
     ScreenRotation rotation = ScreenRotation::ROTATION_0;
     SkMatrix rotationMatrix; // Screen rotation matrix for canvas.
     uint32_t skipFrameInterval = DEFAULT_SKIP_FRAME_INTERVAL;  // skip frame interval for change screen refresh rate
+
+    uint32_t GetRotatedWidth() const
+    {
+        return (rotation == ScreenRotation::ROTATION_0 || rotation == ScreenRotation::ROTATION_180) ? width : height;
+    }
+
+    uint32_t GetRotatedHeight() const
+    {
+        return (rotation == ScreenRotation::ROTATION_0 || rotation == ScreenRotation::ROTATION_180) ? height : width;
+    }
 };
 
 class RSScreenManager : public RefBase {
@@ -251,9 +260,6 @@ public:
 private:
     RSScreenManager();
     ~RSScreenManager() noexcept override;
-
-    // [PLANNING]: fixme -- domain 0 only for debug.
-    static constexpr HiviewDFX::HiLogLabel LOG_LABEL = { LOG_CORE, 0, "RSScreenManager" };
 
     static void OnHotPlug(std::shared_ptr<HdiOutput> &output, bool connected, void *data);
     void OnHotPlugEvent(std::shared_ptr<HdiOutput> &output, bool connected);

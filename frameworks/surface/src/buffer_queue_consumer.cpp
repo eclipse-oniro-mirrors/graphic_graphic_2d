@@ -15,8 +15,6 @@
 
 #include "buffer_queue_consumer.h"
 
-#include "buffer_log.h"
-
 namespace OHOS {
 BufferQueueConsumer::BufferQueueConsumer(sptr<BufferQueue>& bufferQueue)
 {
@@ -143,6 +141,14 @@ GSError BufferQueueConsumer::GetScalingMode(uint32_t sequence, ScalingMode &scal
     return bufferQueue_->GetScalingMode(sequence, scalingMode);
 }
 
+GSError BufferQueueConsumer::QueryMetaDataType(uint32_t sequence, HDRMetaDataType &type) const
+{
+    if (bufferQueue_ == nullptr) {
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    return bufferQueue_->QueryMetaDataType(sequence, type);
+}
+
 GSError BufferQueueConsumer::GetMetaData(uint32_t sequence, std::vector<HDRMetaData> &metaData) const
 {
     if (bufferQueue_ == nullptr) {
@@ -160,12 +166,12 @@ GSError BufferQueueConsumer::GetMetaDataSet(uint32_t sequence, HDRMetadataKey &k
     return bufferQueue_->GetMetaDataSet(sequence, key, metaData);
 }
 
-GSError BufferQueueConsumer::GetTunnelHandle(ExtDataHandle **handle) const
+sptr<SurfaceTunnelHandle> BufferQueueConsumer::GetTunnelHandle() const
 {
     if (bufferQueue_ == nullptr) {
-        return GSERROR_INVALID_ARGUMENTS;
+        return nullptr;
     }
-    return bufferQueue_->GetTunnelHandle(handle);
+    return bufferQueue_->GetTunnelHandle();
 }
 
 bool BufferQueueConsumer::GetStatus() const
@@ -176,5 +182,13 @@ bool BufferQueueConsumer::GetStatus() const
 void BufferQueueConsumer::SetStatus(bool status)
 {
     bufferQueue_->SetStatus(status);
+}
+
+GSError BufferQueueConsumer::CleanCache()
+{
+    if (bufferQueue_ == nullptr) {
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    return bufferQueue_->CleanCache();
 }
 } // namespace OHOS

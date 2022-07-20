@@ -145,14 +145,34 @@ public:
         return additionalInfo_;
     }
 
+    void SetColorTransform(const float *matrix)
+    {
+        colorTransformMatrix_ = const_cast<float *>(matrix);
+    }
+
+    void SetColorDataSpace(ColorDataSpace colorSpace)
+    {
+        colorSpace_ = colorSpace;
+    }
+
+    void SetMetaData(const std::vector<HDRMetaData> &metaData)
+    {
+        metaData_ = metaData;
+    }
+
+    void SetMetaDataSet(const HDRMetaDataSet &metaDataSet)
+    {
+        metaDataSet_ = metaDataSet;
+    }
+
     void SetTunnelHandleChange(bool change)
     {
         tunnelHandleChange_ = change;
     }
 
-    void SetTunnelHandle(const ExtDataHandle *handle)
+    void SetTunnelHandle(const sptr<SurfaceTunnelHandle> &handle)
     {
-        tunnelHandle_ = const_cast<ExtDataHandle *>(handle);
+        tunnelHandle_ = handle;
     }
     /* rs create and set/get layer info end */
 
@@ -227,12 +247,32 @@ public:
         return preMulti_;
     }
 
+    float* GetColorTransform() const
+    {
+        return colorTransformMatrix_;
+    }
+
+    ColorDataSpace GetColorDataSpace() const
+    {
+        return colorSpace_;
+    }
+
+    std::vector<HDRMetaData>& GetMetaData()
+    {
+        return metaData_;
+    }
+
+    HDRMetaDataSet &GetMetaDataSet()
+    {
+        return metaDataSet_;
+    }
+
     bool GetTunnelHandleChange() const
     {
         return tunnelHandleChange_;
     }
 
-    ExtDataHandle *GetTunnelHandle() const
+    sptr<SurfaceTunnelHandle> GetTunnelHandle() const
     {
         return tunnelHandle_;
     }
@@ -281,7 +321,11 @@ private:
     TransformType transformType_ = TransformType::ROTATE_BUTT;
     CompositionType compositionType_;
     BlendType blendType_;
-    ExtDataHandle *tunnelHandle_ = nullptr;
+    float *colorTransformMatrix_ = nullptr;
+    ColorDataSpace colorSpace_ = ColorDataSpace::COLOR_DATA_SPACE_UNKNOWN;
+    std::vector<HDRMetaData> metaData_;
+    HDRMetaDataSet metaDataSet_;
+    sptr<SurfaceTunnelHandle> tunnelHandle_ = nullptr;
     bool tunnelHandleChange_ = false;
 
     void *additionalInfo_ = nullptr;

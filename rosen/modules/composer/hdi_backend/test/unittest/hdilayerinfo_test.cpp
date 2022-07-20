@@ -14,6 +14,7 @@
  */
 
 #include "hdi_layer_info.h"
+#include "surface_tunnel_handle.h"
 #include "sync_fence.h"
 
 #include <gtest/gtest.h>
@@ -309,13 +310,13 @@ HWTEST_F(HdiLayerInfoTest, IsPreMulti001, Function | MediumTest| Level3)
 /*
 * Function: SetTunnelHandleChange and GetTunnelHandleChange
 * Type: Function
-* Rank: Important(2)
+* Rank: Important(1)
 * EnvConditions: N/A
 * CaseDescription: 1. call GetTunnelHandleChange with default
 *                  2. call SetTunnelHandleChange
 *                  3. call GetTunnelHandleChange and check ret
  */
-HWTEST_F(HdiLayerInfoTest, TunnelHandleChange001, Function | MediumTest | Level2)
+HWTEST_F(HdiLayerInfoTest, TunnelHandleChange001, Function | MediumTest | Level1)
 {
     bool change = HdiLayerInfoTest::hdiLayerInfo_->GetTunnelHandleChange();
     ASSERT_EQ(change, false);
@@ -327,27 +328,139 @@ HWTEST_F(HdiLayerInfoTest, TunnelHandleChange001, Function | MediumTest | Level2
 /*
 * Function: SetTunnelHandle and GetTunnelHandle
 * Type: Function
-* Rank: Important(2)
+* Rank: Important(1)
 * EnvConditions: N/A
 * CaseDescription: 1. call GetTunnelHandle with default
-*                  2. call SetTunnelHandle
-*                  3. call GetTunnelHandle and check ret
  */
-HWTEST_F(HdiLayerInfoTest, TunnelHandle001, Function | MediumTest | Level2)
+HWTEST_F(HdiLayerInfoTest, TunnelHandle001, Function | MediumTest | Level1)
 {
-    ExtDataHandle *handle = new ExtDataHandle();
-    handle = HdiLayerInfoTest::hdiLayerInfo_->GetTunnelHandle();
+    sptr<SurfaceTunnelHandle> handle = HdiLayerInfoTest::hdiLayerInfo_->GetTunnelHandle();
     ASSERT_EQ(handle, nullptr);
-    delete handle;
-    ExtDataHandle *tunnelHandle = new ExtDataHandle();
-    tunnelHandle->fd = -1;
-    tunnelHandle->reserveInts = 1;
-    tunnelHandle->reserve[0] = 1;
+}
+
+/*
+* Function: SetTunnelHandle and GetTunnelHandle
+* Type: Function
+* Rank: Important(1)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetTunnelHandle
+*                  2. call GetTunnelHandle and check ret
+ */
+HWTEST_F(HdiLayerInfoTest, TunnelHandle002, Function | MediumTest | Level1)
+{
+    sptr<SurfaceTunnelHandle> handle = HdiLayerInfoTest::hdiLayerInfo_->GetTunnelHandle();
+    ASSERT_EQ(handle, nullptr);
+
+    sptr<SurfaceTunnelHandle> tunnelHandle = new SurfaceTunnelHandle;
+
+    ExtDataHandle *handleSet = new ExtDataHandle();
+    handleSet->fd = -1;
+    handleSet->reserveInts = 1;
+    handleSet->reserve[0] = 0;
+    ASSERT_EQ(tunnelHandle->SetHandle(handleSet), OHOS::GSERROR_OK);
+    ASSERT_NE(tunnelHandle, nullptr);
     HdiLayerInfoTest::hdiLayerInfo_->SetTunnelHandle(tunnelHandle);
-    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetTunnelHandle()->fd, tunnelHandle->fd);
-    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetTunnelHandle()->reserveInts, tunnelHandle->reserveInts);
-    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetTunnelHandle()->reserve[0], tunnelHandle->reserve[0]);
-    delete tunnelHandle;
+    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetTunnelHandle()->GetHandle()->fd,
+              tunnelHandle->GetHandle()->fd);
+    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetTunnelHandle()->GetHandle()->reserveInts,
+              tunnelHandle->GetHandle()->reserveInts);
+    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetTunnelHandle()->GetHandle()->reserve[0],
+              tunnelHandle->GetHandle()->reserve[0]);
+    delete handleSet;
+}
+
+/*
+* Function: SetColorTransform and GetColorTransform
+* Type: Function
+* Rank: Important(1)
+* EnvConditions: N/A
+* CaseDescription: 1. call GetColorTransform with default
+ */
+HWTEST_F(HdiLayerInfoTest, ColorTransform001, Function | MediumTest | Level1)
+{
+    float* transform = HdiLayerInfoTest::hdiLayerInfo_->GetColorTransform();
+    ASSERT_EQ(transform, nullptr);
+}
+
+/*
+* Function: SetColorTransform and GetColorTransform
+* Type: Function
+* Rank: Important(1)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetColorTransform
+*                  2. call GetColorTransform and check ret
+ */
+HWTEST_F(HdiLayerInfoTest, ColorTransform002, Function | MediumTest | Level1)
+{
+    float matrix[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    HdiLayerInfoTest::hdiLayerInfo_->SetColorTransform(matrix);
+    float* transform = HdiLayerInfoTest::hdiLayerInfo_->GetColorTransform();
+    ASSERT_NE(transform, nullptr);
+}
+
+/*
+* Function: SetColorDataSpace and GetColorDataSpace
+* Type: Function
+* Rank: Important(1)
+* EnvConditions: N/A
+* CaseDescription: 1. call GetColorDataSpace with default
+ */
+HWTEST_F(HdiLayerInfoTest, ColorDataSpace001, Function | MediumTest | Level1)
+{
+    ColorDataSpace colorSpace = HdiLayerInfoTest::hdiLayerInfo_->GetColorDataSpace();
+    ASSERT_EQ(colorSpace, ColorDataSpace::COLOR_DATA_SPACE_UNKNOWN);
+}
+
+/*
+* Function: SetColorDataSpace and GetColorDataSpace
+* Type: Function
+* Rank: Important(1)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetColorDataSpace
+*                  2. call GetColorDataSpace and check ret
+ */
+HWTEST_F(HdiLayerInfoTest, ColorDataSpace002, Function | MediumTest | Level1)
+{
+    ColorDataSpace colorSpaceSet = ColorDataSpace::GAMUT_DISPLAY_P3;
+    HdiLayerInfoTest::hdiLayerInfo_->SetColorDataSpace(colorSpaceSet);
+    ColorDataSpace colorSpaceGet = HdiLayerInfoTest::hdiLayerInfo_->GetColorDataSpace();
+    ASSERT_EQ(colorSpaceSet, colorSpaceGet);
+}
+
+/*
+* Function: SetMetaData and GetMetaData
+* Type: Function
+* Rank: Important(1)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetMetaData
+*                  2. call GetMetaData and check ret
+ */
+HWTEST_F(HdiLayerInfoTest, MetaData001, Function | MediumTest | Level1)
+{
+    std::vector<HDRMetaData> metaData = {{MATAKEY_RED_PRIMARY_X, 1}};
+    HdiLayerInfoTest::hdiLayerInfo_->SetMetaData(metaData);
+    std::vector<HDRMetaData> metaDataGet = HdiLayerInfoTest::hdiLayerInfo_->GetMetaData();
+    ASSERT_EQ(metaData[0].key, metaDataGet[0].key);
+    ASSERT_EQ(metaData[0].value, metaDataGet[0].value);
+}
+
+/*
+* Function: SetMetaDataSet and GetMetaDataSet
+* Type: Function
+* Rank: Important(1)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetMetaDataSet
+*                  2. call GetMetaDataSet and check ret
+ */
+HWTEST_F(HdiLayerInfoTest, MetaDataSet001, Function | MediumTest | Level1)
+{
+    HDRMetaDataSet metaDataSet = {HDRMetadataKey::MATAKEY_RED_PRIMARY_X, {1, 2, 3}};
+    HdiLayerInfoTest::hdiLayerInfo_->SetMetaDataSet(metaDataSet);
+    HDRMetaDataSet metaDataSetGet = HdiLayerInfoTest::hdiLayerInfo_->GetMetaDataSet();
+    ASSERT_EQ(metaDataSet.key, metaDataSetGet.key);
+    ASSERT_EQ(metaDataSet.metaData[0], metaDataSetGet.metaData[0]);
+    ASSERT_EQ(metaDataSet.metaData[1], metaDataSetGet.metaData[1]);
+    ASSERT_EQ(metaDataSet.metaData[2], metaDataSetGet.metaData[2]);
 }
 } // namespace
 } // namespace Rosen

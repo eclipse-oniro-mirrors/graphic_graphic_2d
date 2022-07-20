@@ -24,7 +24,9 @@
 #include "property/rs_properties_def.h"
 #include "platform/common/rs_log.h"
 
+class SkCanvas;
 class SkPaint;
+class SkRRect;
 
 namespace OHOS {
 namespace Rosen {
@@ -56,10 +58,10 @@ public:
 
     void SetColorFour(Vector4<Color> color);
     void SetWidthFour(Vector4f width);
-    void SetStyleFour(Vector4<BorderStyle> style);
+    void SetStyleFour(Vector4<uint32_t> style);
     Vector4<Color> GetColorFour() const;
     Vector4f GetWidthFour() const;
-    Vector4<BorderStyle> GetStyleFour() const;
+    Vector4<uint32_t> GetStyleFour() const;
 
     bool HasBorder() const
     {
@@ -68,16 +70,26 @@ public:
     }
 
     std::string ToString() const;
+
+protected:
     bool ApplyFillStyle(SkPaint& paint) const;
     bool ApplyPathStyle(SkPaint& paint) const;
     bool ApplyFourLine(SkPaint& paint) const;
     bool ApplyLineStyle(SkPaint& paint, int borderIdx, float length) const;
+    void PaintFourLine(SkCanvas& canvas, SkPaint& paint, RectF rect) const;
+    void PaintTopPath(SkCanvas& canvas, SkPaint& paint, SkRRect& rrect) const;
+    void PaintRightPath(SkCanvas& canvas, SkPaint& paint, SkRRect& rrect) const;
+    void PaintBottomPath(SkCanvas& canvas, SkPaint& paint, SkRRect& rrect) const;
+    void PaintLeftPath(SkCanvas& canvas, SkPaint& paint, SkRRect& rrect) const;
+
 private:
     // Vectors containing uniform or four-sided border attributes.
     // If four-sided, the order of contents is left, top, right, bottom.
     std::vector<Color> colors_;
     std::vector<float> widths_;
     std::vector<BorderStyle> styles_;
+
+    friend class RSPropertiesPainter;
 };
 } // namespace Rosen
 } // namespace OHOS

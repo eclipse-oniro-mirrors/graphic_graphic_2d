@@ -116,6 +116,11 @@ void RSWindowAnimationController::OnMinimizeAllWindow(
     const sptr<RSIWindowAnimationFinishedCallback>& finishedCallback)
 {
     WALOGD("Window animation controller on minimize all windows.");
+    if (minimizingWindowsTarget.empty()) {
+        finishedCallback->OnAnimationFinished();
+        WALOGE("The minimizing Windows vector is empty!");
+        return;
+    }
     for (auto target : minimizingWindowsTarget) {
         sptr<RSIWindowAnimationFinishedCallback> animationCallback =
             new(std::nothrow) RSWindowAnimationCallback(finishedCallback);
@@ -177,6 +182,11 @@ void RSWindowAnimationController::HandleOnStartApp(StartingAppType type,
         RSWindowAnimationUtils::CreateJsWindowAnimationTarget(engine_, startingWindowTarget),
         RSWindowAnimationUtils::CreateJsWindowAnimationFinishedCallback(engine_, finishedCallback),
     };
+
+    if (startingWindowTarget && startingWindowTarget->surfaceNode_) {
+        startingWindowTarget->surfaceNode_->SetBoundsWidth(-1.0f);
+        startingWindowTarget->surfaceNode_->SetBoundsHeight(-1.0f);
+    }
 
     switch (type) {
         case StartingAppType::FROM_LAUNCHER:
@@ -242,7 +252,7 @@ void RSWindowAnimationController::CallJsFunction(const std::string& methodName, 
 {
     WALOGD("Call js function:%{public}s.", methodName.c_str());
     if (jsController_ == nullptr) {
-        WALOGE("JsConterller is null!");
+        WALOGE("JsController is null!");
         return;
     }
 

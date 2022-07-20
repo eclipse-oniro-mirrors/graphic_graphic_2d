@@ -15,13 +15,14 @@
 
 #include "hdilayer_fuzzer.h"
 
+#include <securec.h>
+#include <surface_tunnel_handle.h>
 #include "hdi_layer.h"
 using namespace OHOS::Rosen;
 
 namespace OHOS {
     namespace {
         constexpr size_t STR_LEN = 10;
-        constexpr char STR_END_CHAR = '\0';
         const uint8_t* data_ = nullptr;
         size_t size_ = 0;
         size_t pos;
@@ -39,7 +40,10 @@ namespace OHOS {
         if (data_ == nullptr || objectSize > size_ - pos) {
             return object;
         }
-        std::memcpy(&object, data_ + pos, objectSize);
+        errno_t ret = memcpy_s(&object, objectSize, data_ + pos, objectSize);
+        if (ret != EOK) {
+            return {};
+        }
         pos += objectSize;
         return object;
     }
@@ -50,8 +54,8 @@ namespace OHOS {
     std::string GetStringFromData(int strlen)
     {
         char cstr[strlen];
-        cstr[strlen-1] = STR_END_CHAR;
-        for (int i = 0; i < strlen-1; i++) {
+        cstr[strlen - 1] = '\0';
+        for (int i = 0; i < strlen - 1; i++) {
             cstr[i] = GetData<char>();
         }
         std::string str(cstr);
@@ -74,7 +78,6 @@ namespace OHOS {
         IRect layerRect = GetData<IRect>();
         void* info = static_cast<void*>(GetStringFromData(STR_LEN).data());
         bool change = GetData<bool>();
-        ExtDataHandle handle = GetData<ExtDataHandle>();
 
         // test
         std::shared_ptr<HdiLayerInfo> layerInfo = HdiLayerInfo::CreateHdiLayerInfo();
@@ -90,8 +93,6 @@ namespace OHOS {
         layerInfo->SetLayerSize(layerRect);
         layerInfo->SetLayerAdditionalInfo(info);
         layerInfo->SetTunnelHandleChange(change);
-        layerInfo->SetTunnelHandle(&handle);
-
         return layerInfo;
     }
 
@@ -110,19 +111,6 @@ namespace OHOS {
         uint32_t screenId = GetData<uint32_t>();
         bool inUsing = GetData<bool>();
         int64_t timestamp = GetData<int64_t>();
-        float matrix = GetData<float>();
-        ColorDataSpace colorSpace = GetData<ColorDataSpace>();
-        std::vector<HDRMetaData> hdrMetaData;
-        for (int i = 0; i < 10; i++) { // add 10 elements to the vector
-            HDRMetaData ele = GetData<HDRMetaData>();
-            hdrMetaData.push_back(ele);
-        }
-        HDRMetadataKey key = GetData<HDRMetadataKey>();
-        std::vector<uint8_t> metaData;
-        for (int i = 0; i < 10; i++) { // add 10 elements to the vector
-            uint8_t ele = GetData<uint8_t>();
-            metaData.push_back(ele);
-        }
 
         // test
         std::shared_ptr<HdiLayerInfo> layerInfo = GetLayerInfoFromData();
@@ -131,10 +119,6 @@ namespace OHOS {
         hdiLayer->SetLayerStatus(inUsing);
         hdiLayer->UpdateLayerInfo(layerInfo);
         hdiLayer->RecordPresentTime(timestamp);
-        hdiLayer->SetLayerColorTransform(&matrix);
-        hdiLayer->SetLayerColorDataSpace(colorSpace);
-        hdiLayer->SetLayerMetaData(hdrMetaData);
-        hdiLayer->SetLayerMetaDataSet(key, metaData);
         sptr<SyncFence> fence = SyncFence::INVALID_FENCE;
         hdiLayer->MergeWithFramebufferFence(fence);
         hdiLayer->MergeWithLayerFence(fence);

@@ -486,6 +486,72 @@ HWTEST_F(ConsumerSurfaceTest, scalingMode002, Function | MediumTest | Level1)
 }
 
 /*
+* Function: QueryMetaDataType
+* Type: Function
+* Rank: Important(1)
+* EnvConditions: N/A
+* CaseDescription: 1. call QueryMetaDataType and check ret
+ */
+HWTEST_F(ConsumerSurfaceTest, QueryMetaDataType001, Function | MediumTest | Level1)
+{
+    uint32_t sequence = 0;
+    HDRMetaDataType type = HDRMetaDataType::HDR_META_DATA;
+    GSError ret = cs->QueryMetaDataType(sequence, type);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    ASSERT_EQ(type, HDRMetaDataType::HDR_NOT_USED);
+}
+
+/*
+* Function: QueryMetaDataType
+* Type: Function
+* Rank: Important(1)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetMetaData with normal parameters and check ret
+*                  2. call QueryMetaDataType and check ret
+ */
+HWTEST_F(ConsumerSurfaceTest, QueryMetaDataType002, Function | MediumTest | Level1)
+{
+    uint32_t sequence = 0;
+    std::vector<HDRMetaData> metaData;
+    HDRMetaData data = {
+        .key = HDRMetadataKey::MATAKEY_RED_PRIMARY_X,
+        .value = 1,
+    };
+    metaData.push_back(data);
+    GSError ret = cs->SetMetaData(sequence, metaData);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    HDRMetaDataType type = HDRMetaDataType::HDR_NOT_USED;
+    ret = cs->QueryMetaDataType(sequence, type);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    ASSERT_EQ(type, HDRMetaDataType::HDR_META_DATA);
+}
+
+/*
+* Function: QueryMetaDataType
+* Type: Function
+* Rank: Important(1)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetMetaDataSet with normal parameters and check ret
+*                  2. call QueryMetaDataType and check ret
+ */
+HWTEST_F(ConsumerSurfaceTest, QueryMetaDataType003, Function | MediumTest | Level1)
+{
+    uint32_t sequence = 0;
+    HDRMetadataKey key = HDRMetadataKey::MATAKEY_HDR10_PLUS;
+    std::vector<uint8_t> metaData;
+    uint8_t data = 1;
+    metaData.push_back(data);
+    GSError ret = cs->SetMetaDataSet(sequence, key, metaData);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    HDRMetaDataType type = HDRMetaDataType::HDR_NOT_USED;
+    ret = cs->QueryMetaDataType(sequence, type);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    ASSERT_EQ(type, HDRMetaDataType::HDR_META_DATA_SET);
+}
+
+/*
 * Function: SetMetaData and GetMetaData
 * Type: Function
 * Rank: Important(2)
@@ -676,8 +742,7 @@ HWTEST_F(ConsumerSurfaceTest, TunnelHandle002, Function | MediumTest | Level2)
  */
 HWTEST_F(ConsumerSurfaceTest, TunnelHandle003, Function | MediumTest | Level1)
 {
-    ExtDataHandle *handle = nullptr;
-    handle = new ExtDataHandle();
+    ExtDataHandle *handle = new ExtDataHandle();
     handle->fd = -1;
     handle->reserveInts = 1;
     handle->reserve[0] = 0;
@@ -687,13 +752,12 @@ HWTEST_F(ConsumerSurfaceTest, TunnelHandle003, Function | MediumTest | Level1)
     ret = cs->SetTunnelHandle(handle);
     ASSERT_EQ(ret, OHOS::GSERROR_NO_ENTRY);
 
-    ExtDataHandle *handleGet = nullptr;
-    ret = cs->GetTunnelHandle(&handleGet);
-    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    sptr<SurfaceTunnelHandle> handleGet = nullptr;
+    handleGet = cs->GetTunnelHandle();
     ASSERT_NE(handleGet, nullptr);
-    ASSERT_EQ(handle->fd, handleGet->fd);
-    ASSERT_EQ(handle->reserveInts, handleGet->reserveInts);
-    ASSERT_EQ(handle->reserve[0], handleGet->reserve[0]);
+    ASSERT_EQ(handle->fd, handleGet->GetHandle()->fd);
+    ASSERT_EQ(handle->reserveInts, handleGet->GetHandle()->reserveInts);
+    ASSERT_EQ(handle->reserve[0], handleGet->GetHandle()->reserve[0]);
     delete handle;
 }
 

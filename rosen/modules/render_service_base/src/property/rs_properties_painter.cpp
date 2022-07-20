@@ -137,7 +137,7 @@ void RSPropertiesPainter::Clip(SkCanvas& canvas, RectF rect)
 void RSPropertiesPainter::DrawShadow(const RSProperties& properties, RSPaintFilterCanvas& canvas)
 {
     if (properties.shadow_ && properties.shadow_->IsValid()) {
-        canvas.save();
+        SkAutoCanvasRestore acr(&canvas, true);
         SkPath skPath;
         if (properties.GetShadowPath() && !properties.GetShadowPath()->GetSkiaPath().isEmpty()) {
             skPath = properties.GetShadowPath()->GetSkiaPath();
@@ -152,6 +152,9 @@ void RSPropertiesPainter::DrawShadow(const RSProperties& properties, RSPaintFilt
         skPath.offset(properties.GetShadowOffsetX(), properties.GetShadowOffsetY());
         Color spotColor = properties.GetShadowColor();
         if (properties.shadow_->GetHardwareAcceleration()) {
+            if (properties.GetShadowElevation() <= 0.f) {
+                return;
+            }
             SkPoint3 planeParams = { 0.0f, 0.0f, properties.GetShadowElevation() };
             SkPoint3 lightPos = { canvas.getTotalMatrix().getTranslateX() + skPath.getBounds().centerX(),
                 canvas.getTotalMatrix().getTranslateY() + skPath.getBounds().centerY(), DEFAULT_LIGHT_HEIGHT };
@@ -167,7 +170,6 @@ void RSPropertiesPainter::DrawShadow(const RSProperties& properties, RSPaintFilt
             paint.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, properties.GetShadowRadius()));
             canvas.drawPath(skPath, paint);
         }
-        canvas.restore();
     }
 }
 
@@ -234,7 +236,7 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
 }
 
 void RSPropertiesPainter::DrawFrame(
-    const RSProperties& properties, RSPaintFilterCanvas& canvas, std::shared_ptr<DrawCmdList>& cmds)
+    const RSProperties& properties, RSPaintFilterCanvas& canvas, DrawCmdListPtr& cmds)
 {
     if (cmds != nullptr) {
         SkMatrix mat;
@@ -255,34 +257,7 @@ void RSPropertiesPainter::DrawBorder(const RSProperties& properties, SkCanvas& c
         paint.setAntiAlias(true);
         if (properties.GetCornerRadius().IsZero() && border->ApplyFourLine(paint)) {
             RectF rect = properties.GetBoundsRect();
-            float borderLeftWidth = border->GetWidth(RSBorder::LEFT);
-            float borderRightWidth = border->GetWidth(RSBorder::RIGHT);
-            float borderTopWidth = border->GetWidth(RSBorder::TOP);
-            float borderBottomWidth = border->GetWidth(RSBorder::BOTTOM);
-            if (border->ApplyLineStyle(paint, RSBorder::LEFT, rect.height_)) {
-                float addLen = (border->GetStyle(RSBorder::LEFT) != BorderStyle::DOTTED) ? 0.0f : 0.5f;
-                canvas.drawLine(
-                    rect.left_ + borderLeftWidth / PARAM_DOUBLE, rect.top_ + addLen * borderTopWidth,
-                    rect.left_ + borderLeftWidth / PARAM_DOUBLE, rect.GetBottom() - borderBottomWidth, paint);
-            }
-            if (border->ApplyLineStyle(paint, RSBorder::RIGHT, rect.height_)) {
-                float addLen = (border->GetStyle(RSBorder::RIGHT) != BorderStyle::DOTTED) ? 0.0f : 0.5f;
-                canvas.drawLine(
-                    rect.GetRight() - borderRightWidth / PARAM_DOUBLE, rect.GetBottom() - addLen * borderBottomWidth,
-                    rect.GetRight() - borderRightWidth / PARAM_DOUBLE, rect.top_ + borderTopWidth, paint);
-            }
-            if (border->ApplyLineStyle(paint, RSBorder::TOP, rect.width_)) {
-                float addLen = (border->GetStyle(RSBorder::TOP) != BorderStyle::DOTTED) ? 0.0f : 0.5f;
-                canvas.drawLine(
-                    rect.GetRight() - addLen * borderRightWidth, rect.top_ + borderTopWidth / PARAM_DOUBLE,
-                    rect.left_ + borderLeftWidth, rect.top_ + borderTopWidth / PARAM_DOUBLE, paint);
-            }
-            if (border->ApplyLineStyle(paint, RSBorder::BOTTOM, rect.width_)) {
-                float addLen = (border->GetStyle(RSBorder::BOTTOM) != BorderStyle::DOTTED) ? 0.0f : 0.5f;
-                canvas.drawLine(
-                    rect.left_ + addLen * borderLeftWidth, rect.GetBottom() - borderBottomWidth / PARAM_DOUBLE,
-                    rect.GetRight() - borderRightWidth, rect.GetBottom() - borderBottomWidth / PARAM_DOUBLE, paint);
-            }
+            border->PaintFourLine(canvas, paint, rect);
         } else if (border->ApplyFillStyle(paint)) {
             canvas.drawDRRect(RRect2SkRRect(properties.GetRRect()), RRect2SkRRect(properties.GetInnerRRect()), paint);
         } else if (border->ApplyPathStyle(paint)) {
@@ -295,7 +270,14 @@ void RSPropertiesPainter::DrawBorder(const RSProperties& properties, SkCanvas& c
             borderPath.addRRect(RRect2SkRRect(rrect));
             canvas.drawPath(borderPath, paint);
         } else {
-            ROSEN_LOGW("Border style not support yet");
+            SkAutoCanvasRestore acr(&canvas, true);
+            canvas.clipRRect(RRect2SkRRect(properties.GetInnerRRect()), SkClipOp::kDifference, true);
+            SkRRect rrect = RRect2SkRRect(properties.GetRRect());
+            paint.setStyle(SkPaint::Style::kStroke_Style);
+            border->PaintTopPath(canvas, paint, rrect);
+            border->PaintRightPath(canvas, paint, rrect);
+            border->PaintBottomPath(canvas, paint, rrect);
+            border->PaintLeftPath(canvas, paint, rrect);
         }
     }
 }

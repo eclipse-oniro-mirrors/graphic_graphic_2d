@@ -44,11 +44,13 @@ void RSUniRenderVisitor::PrepareBaseRenderNode(RSBaseRenderNode& node)
 
 void RSUniRenderVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
 {
+    node.ApplyModifiers();
     PrepareBaseRenderNode(node);
 }
 
 void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 {
+    node.ApplyModifiers();
     bool dirtyFlag = dirtyFlag_;
     dirtyFlag_ = node.Update(dirtyManager_, nullptr, dirtyFlag_);
     PrepareBaseRenderNode(node);
@@ -63,6 +65,7 @@ void RSUniRenderVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
 
 void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
 {
+    node.ApplyModifiers();
     bool dirtyFlag = dirtyFlag_;
     dirtyFlag_ = node.Update(dirtyManager_, nullptr, dirtyFlag_);
     PrepareBaseRenderNode(node);
@@ -139,7 +142,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode No RSSurface found");
         return;
     }
-    auto surfaceFrame = rsSurface->RequestFrame(screenInfo_.width, screenInfo_.height);
+    auto surfaceFrame = rsSurface->RequestFrame(screenInfo_.GetRotatedWidth(), screenInfo_.GetRotatedHeight());
     if (surfaceFrame == nullptr) {
         RS_LOGE("RSUniRenderVisitor Request Frame Failed");
         return;
@@ -195,18 +198,19 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
 
     canvas_->concat(geoPtr->GetMatrix());
-    clipRect_ = SkRect::MakeWH(property.GetBoundsWidth(), property.GetBoundsHeight());
+    SkRect boundsRect = SkRect::MakeWH(property.GetBoundsWidth(), property.GetBoundsHeight());
+    clipRect_ = boundsRect;
     frameGravity_ = property.GetFrameGravity();
     canvas_->clipRect(clipRect_);
-
-    auto backgroundColor = SkColor4f::FromBytes_RGBA(property.GetBackgroundColor().AsRgbaInt()).toSkColor();
-    if (backgroundColor != SK_ColorTRANSPARENT) {
-        canvas_->clear(backgroundColor);
-    }
 
     auto transitionProperties = node.GetAnimationManager().GetTransitionProperties();
     RSPropertiesPainter::DrawTransitionProperties(transitionProperties, property, *canvas_);
     ProcessBaseRenderNode(node);
+
+    auto backgroundColor = static_cast<SkColor>(property.GetBackgroundColor().AsArgbInt());
+    if (SkColorGetA(backgroundColor) != SK_AlphaTRANSPARENT) {
+        canvas_->drawColor(backgroundColor);
+    }
 
     if (node.GetConsumer() != nullptr) {
         RS_TRACE_BEGIN("UniRender::Process:" + node.GetName());
@@ -219,7 +223,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
             const float frameHeight = buffer->GetSurfaceBufferHeight();
             SkMatrix gravityMatrix;
             (void)RSPropertiesPainter::GetGravityMatrix(frameGravity_,
-                RectF {0.0f, 0.0f, clipRect_.width(), clipRect_.height()},
+                RectF {0.0f, 0.0f, boundsRect.width(), boundsRect.height()},
                 frameWidth, frameHeight, gravityMatrix);
             canvas_->concat(gravityMatrix);
 

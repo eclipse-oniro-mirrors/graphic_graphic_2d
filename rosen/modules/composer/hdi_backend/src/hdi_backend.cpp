@@ -65,13 +65,19 @@ int32_t HdiBackend::PreProcessLayersComp(const OutputPtr &output,
     uint32_t layersNum = layersMap.size();
     uint32_t layerCompCapacity = output->GetLayerCompCapacity();
     uint32_t screenId = output->GetScreenId();
-    // If shouldClientCompDirect is true then layer->SetHdiLayerInfo and UpdateLayerCompType is no need to run.
+
+    // If doClientCompositionDirectly is true then layer->SetHdiLayerInfo and UpdateLayerCompType is no need to run.
     bool doClientCompositionDirectly = ((layerCompCapacity != LAYER_COMPOSITION_CAPACITY_INVALID) &&
-                                   (layersNum > layerCompCapacity));
+                                        (layersNum > layerCompCapacity));
+    bool isDirectClientCompositionEnabled = output->GetDirectClientCompEnableStatus();
+    if (!isDirectClientCompositionEnabled) {
+        doClientCompositionDirectly = false;
+    }
 
     for (auto iter = layersMap.begin(); iter != layersMap.end(); ++iter) {
         const LayerPtr &layer = iter->second;
         if (doClientCompositionDirectly) {
+            HLOGD("Direct client composition is enabled.");
             layer->UpdateCompositionType(CompositionType::COMPOSITION_CLIENT);
             continue;
         }

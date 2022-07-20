@@ -56,6 +56,8 @@ bool RSComposerAdapter::Init(ScreenId screenId,  int32_t offsetX, int32_t offset
     screenInfo_ = screenManager->QueryScreenInfo(screenId);
     IRect damageRect {0, 0, static_cast<int32_t>(screenInfo_.width), static_cast<int32_t>(screenInfo_.height)};
     output_->SetOutputDamage(1, damageRect);
+    bool directClientCompEnableStatus = RSSystemProperties::GetDirectClientCompEnableStatus();
+    output_->SetDirectClientCompEnableStatus(directClientCompEnableStatus);
 
 #if (defined RS_ENABLE_GL) && (defined RS_ENABLE_EGLIMAGE)
     // enable direct GPU composition.
@@ -113,7 +115,7 @@ void RSComposerAdapter::CommitLayers(const std::vector<LayerInfoPtr>& layers)
 }
 
 // private func
-bool RSComposerAdapter::IsOutOfScreenRegion(RSSurfaceRenderNode& node)
+bool RSComposerAdapter::IsOutOfScreenRegion(const ComposeInfo& info) const
 {
     uint32_t boundWidth = screenInfo_.width;
     uint32_t boundHeight = screenInfo_.height;
@@ -122,18 +124,76 @@ bool RSComposerAdapter::IsOutOfScreenRegion(RSSurfaceRenderNode& node)
         std::swap(boundWidth, boundHeight);
     }
 
-    const auto& property = node.GetRenderProperties();
-    const float nodeBoundX = property.GetBoundsPositionX();
-    const float nodeBoundY = property.GetBoundsPositionY();
-    if (nodeBoundX >= static_cast<float>(boundWidth) || nodeBoundY >= static_cast<float>(boundHeight)) {
+    const auto& dstRect = info.dstRect;
+    if (dstRect.x >= boundWidth || dstRect.y >= boundHeight) {
         return true;
     }
 
     return false;
 }
 
+void RSComposerAdapter::DealWithNodeGravity(RSSurfaceRenderNode& node, ComposeInfo& info) const
+{
+    const auto& buffer = node.GetBuffer(); // private func, guarantee node's buffer is valid.
+    const auto& property = node.GetRenderProperties();
+    const float frameWidth = buffer->GetSurfaceBufferWidth();
+    const float frameHeight = buffer->GetSurfaceBufferHeight();
+    const float boundsWidth = property.GetBoundsWidth();
+    const float boundsHeight = property.GetBoundsHeight();
+    const Gravity frameGravity = property.GetFrameGravity();
+    // we do not need to do additional works for Gravity::RESIZE and if frameSize == boundsSize.
+    if (frameGravity == Gravity::RESIZE || (frameWidth == boundsWidth && frameHeight == boundsHeight)) {
+        return;
+    }
+
+    auto traceInfo = node.GetName() + " DealWithNodeGravity " + std::to_string(static_cast<int>(frameGravity));
+    RS_TRACE_NAME(traceInfo.c_str());
+
+    // get current node's translate matrix and calculate gravity matrix.
+    auto translateMatrix = SkMatrix::MakeTrans(
+        std::ceil(node.GetTotalMatrix().getTranslateX()), std::ceil(node.GetTotalMatrix().getTranslateY()));
+    SkMatrix gravityMatrix;
+    (void)RSPropertiesPainter::GetGravityMatrix(frameGravity,
+        RectF {0.0f, 0.0f, boundsWidth, boundsHeight}, frameWidth, frameHeight, gravityMatrix);
+
+    // create a canvas to calculate new dstRect and new srcRect
+    int32_t screenWidth = screenInfo_.width;
+    int32_t screenHeight = screenInfo_.height;
+    const auto screenRotation = screenInfo_.rotation;
+    if (screenRotation == ScreenRotation::ROTATION_90 || screenRotation == ScreenRotation::ROTATION_270) {
+        std::swap(screenWidth, screenHeight);
+    }
+    auto canvas = std::make_unique<SkCanvas>(screenWidth, screenHeight);
+    canvas->concat(translateMatrix);
+    canvas->concat(gravityMatrix);
+    SkRect clipRect;
+    gravityMatrix.mapRect(&clipRect, SkRect::MakeWH(frameWidth, frameHeight));
+    canvas->clipRect(SkRect::MakeWH(clipRect.width(), clipRect.height()));
+    SkIRect newDstRect = canvas->getDeviceClipBounds();
+    // we make the newDstRect as the intersection of new and old dstRect,
+    // to deal with the situation that frameSize > boundsSize.
+    newDstRect.intersect(SkIRect::MakeXYWH(info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h));
+    auto localRect = canvas->getLocalClipBounds();
+    IRect newSrcRect = {
+        std::clamp<int>(localRect.left(), 0, frameWidth),
+        std::clamp<int>(localRect.top(), 0, frameHeight),
+        std::clamp<int>(localRect.width(), 0, frameWidth - localRect.left()),
+        std::clamp<int>(localRect.height(), 0, frameHeight - localRect.top())};
+
+    // log and apply new dstRect and srcRect
+    RS_LOGD("RsDebug DealWithNodeGravity: name[%s], gravity[%d], oldDstRect[%d %d %d %d], newDstRect[%d %d %d %d],"\
+        " oldSrcRect[%d %d %d %d], newSrcRect[%d %d %d %d].",
+        node.GetName().c_str(), static_cast<int>(frameGravity),
+        info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h,
+        newDstRect.left(), newDstRect.top(), newDstRect.width(), newDstRect.height(),
+        info.srcRect.x, info.srcRect.y, info.srcRect.w, info.srcRect.h,
+        newSrcRect.x, newSrcRect.y, newSrcRect.w, newSrcRect.h);
+    info.dstRect = {newDstRect.left(), newDstRect.top(), newDstRect.width(), newDstRect.height()};
+    info.srcRect = newSrcRect;
+}
+
 // private func, for RSSurfaceRenderNode.
-ComposeInfo RSComposerAdapter::BuildComposeInfo(RSSurfaceRenderNode& node)
+ComposeInfo RSComposerAdapter::BuildComposeInfo(RSSurfaceRenderNode& node) const
 {
     const auto& dstRect = node.GetDstRect();
     const auto& srcRect = node.GetSrcRect();
@@ -147,7 +207,6 @@ ComposeInfo RSComposerAdapter::BuildComposeInfo(RSSurfaceRenderNode& node)
         static_cast<int32_t>(static_cast<float>(dstRect.width_) * mirrorAdaptiveCoefficient_),
         static_cast<int32_t>(static_cast<float>(dstRect.height_) * mirrorAdaptiveCoefficient_)
     };
-    info.visibleRect = {0, 0, static_cast<int32_t>(screenInfo_.width), static_cast<int32_t>(screenInfo_.height)};
     info.zOrder = static_cast<int32_t>(node.GetGlobalZOrder());
     info.alpha.enGlobalAlpha = true;
     info.alpha.gAlpha = node.GetGlobalAlpha() * 255; // map gAlpha from float(0, 1) to uint8_t(0, 255).
@@ -157,6 +216,7 @@ ComposeInfo RSComposerAdapter::BuildComposeInfo(RSSurfaceRenderNode& node)
 
     info.dstRect.x -= static_cast<int32_t>(static_cast<float>(offsetX_) * mirrorAdaptiveCoefficient_);
     info.dstRect.y -= static_cast<int32_t>(static_cast<float>(offsetY_) * mirrorAdaptiveCoefficient_);
+    info.visibleRect = info.dstRect;
 
     const auto& property = node.GetRenderProperties();
     const auto bufferWidth = buffer->GetSurfaceBufferWidth();
@@ -177,11 +237,14 @@ ComposeInfo RSComposerAdapter::BuildComposeInfo(RSSurfaceRenderNode& node)
         needClient = true;
     }
     info.needClient = needClient;
+
+    DealWithNodeGravity(node, info);
+
     return info;
 }
 
 // private func, for RSDisplayRenderNode
-ComposeInfo RSComposerAdapter::BuildComposeInfo(RSDisplayRenderNode& node)
+ComposeInfo RSComposerAdapter::BuildComposeInfo(RSDisplayRenderNode& node) const
 {
     const auto& buffer = node.GetBuffer(); // we guarantee the buffer is valid.
     ComposeInfo info {};
@@ -189,8 +252,8 @@ ComposeInfo RSComposerAdapter::BuildComposeInfo(RSDisplayRenderNode& node)
     info.dstRect = IRect {
         0,
         0,
-        static_cast<int32_t>(static_cast<float>(screenInfo_.width) * mirrorAdaptiveCoefficient_),
-        static_cast<int32_t>(static_cast<float>(screenInfo_.height) * mirrorAdaptiveCoefficient_)
+        static_cast<int32_t>(static_cast<float>(screenInfo_.GetRotatedWidth()) * mirrorAdaptiveCoefficient_),
+        static_cast<int32_t>(static_cast<float>(screenInfo_.GetRotatedHeight()) * mirrorAdaptiveCoefficient_)
     };
     info.visibleRect = IRect {info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h};
     info.zOrder = static_cast<int32_t>(node.GetGlobalZOrder());
@@ -206,7 +269,7 @@ void RSComposerAdapter::SetComposeInfoToLayer(
     const LayerInfoPtr& layer,
     const ComposeInfo& info,
     const sptr<Surface>& surface,
-    RSBaseRenderNode* node)
+    RSBaseRenderNode* node) const
 {
     if (layer == nullptr) {
         return;
@@ -248,12 +311,6 @@ LayerInfoPtr RSComposerAdapter::CreateLayer(RSSurfaceRenderNode& node)
     RS_LOGD("RsDebug RSComposerAdapter::CreateLayer start(node(%llu) name:[%s] dst:[%d %d %d %d]).",
         node.GetId(), node.GetName().c_str(), dstRect.left_, dstRect.top_, dstRect.width_, dstRect.height_);
 
-    if (IsOutOfScreenRegion(node)) {
-        RS_LOGE("RsDebug RSComposerAdapter::CreateLayer: node(%llu) out of screen region, no need to composite.",
-            node.GetId());
-        return nullptr;
-    }
-
     auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(node.GetRenderProperties().GetBoundsGeometry());
     if (geoPtr == nullptr) {
         RS_LOGE("RsDebug RSComposerAdapter::CreateLayer: node(%llu)'s geoPtr is nullptr!", node.GetId());
@@ -268,6 +325,11 @@ LayerInfoPtr RSComposerAdapter::CreateLayer(RSSurfaceRenderNode& node)
     }
 
     ComposeInfo info = BuildComposeInfo(node);
+    if (IsOutOfScreenRegion(info)) {
+        RS_LOGD("RsDebug RSComposerAdapter::CreateLayer: node(%llu) out of screen region, no need to composite.",
+            node.GetId());
+        return nullptr;
+    }
     std::string traceInfo;
     AppendFormat(traceInfo, "ProcessSurfaceNode:%s XYWH[%d %d %d %d]", node.GetName().c_str(),
         info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h);
@@ -418,7 +480,7 @@ static void RotateLayerWhenScreenRotationNone(const LayerInfoPtr& layer, const s
 }
 
 // private func, guarantee the layer is valid
-void RSComposerAdapter::LayerRotate(const LayerInfoPtr& layer)
+void RSComposerAdapter::LayerRotate(const LayerInfoPtr& layer) const
 {
     auto surface = layer->GetSurface();
     if (surface == nullptr) {
@@ -467,7 +529,7 @@ void RSComposerAdapter::LayerRotate(const LayerInfoPtr& layer)
 }
 
 // private func, guarantee the layer is valid
-void RSComposerAdapter::LayerCrop(const LayerInfoPtr& layer)
+void RSComposerAdapter::LayerCrop(const LayerInfoPtr& layer) const
 {
     IRect dstRect = layer->GetLayerSize();
     IRect srcRect = layer->GetCropRect();
@@ -496,7 +558,7 @@ void RSComposerAdapter::LayerCrop(const LayerInfoPtr& layer)
 }
 
 // private func, guarantee the layer is valid
-void RSComposerAdapter::LayerScaleDown(const LayerInfoPtr& layer)
+void RSComposerAdapter::LayerScaleDown(const LayerInfoPtr& layer) const
 {
     ScalingMode scalingMode = ScalingMode::SCALING_MODE_SCALE_TO_WINDOW;
     const auto& buffer = layer->GetBuffer();

@@ -75,8 +75,7 @@ static SkRect getLocalClipBounds(const RSPaintFilterCanvas& canvas)
 
 void RSSurfaceRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
 {
-    canvas.save();
-    canvas.SaveAlpha();
+    renderNodeSaveCount_ = canvas.SaveCanvasAndAlpha();
 
     // apply intermediate properties from RT to canvas
     canvas.MultiplyAlpha(GetContextAlpha());
@@ -94,7 +93,8 @@ void RSSurfaceRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canva
     if (currentGeoPtr != nullptr) {
         currentGeoPtr->UpdateByMatrixFromSelf();
         auto matrix = currentGeoPtr->GetMatrix();
-        matrix.setTranslate(std::ceil(matrix.getTranslateX()), std::ceil(matrix.getTranslateY()));
+        matrix.setTranslateX(std::ceil(matrix.getTranslateX()));
+        matrix.setTranslateY(std::ceil(matrix.getTranslateY()));
         canvas.concat(matrix);
     }
 
@@ -127,8 +127,7 @@ void RSSurfaceRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canva
 
 void RSSurfaceRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 {
-    canvas.RestoreAlpha();
-    canvas.restore();
+    canvas.RestoreCanvasAndAlpha(renderNodeSaveCount_);
 }
 
 void RSSurfaceRenderNode::CollectSurface(
@@ -143,7 +142,9 @@ void RSSurfaceRenderNode::CollectSurface(
         }
         return;
     }
-    vec.emplace_back(shared_from_this());
+    if (GetBuffer() != nullptr && GetRenderProperties().GetVisible()) {
+        vec.emplace_back(shared_from_this());
+    }
 }
 
 void RSSurfaceRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)

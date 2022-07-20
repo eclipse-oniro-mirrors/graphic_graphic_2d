@@ -118,8 +118,8 @@ protected:
         DIRTY,
     };
     virtual bool IsDirty() const;
-    void SetDirty();
     void SetClean();
+    void SetDirty();
 
     void DumpNodeType(std::string& out) const;
 
@@ -143,6 +143,8 @@ private:
 
     const std::weak_ptr<RSContext> context_;
     NodeDirty dirtyStatus_ = NodeDirty::DIRTY;
+
+    friend class RSRenderPropertyBase;
 };
 } // namespace Rosen
 } // namespace OHOS

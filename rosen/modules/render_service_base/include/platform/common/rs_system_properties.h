@@ -41,6 +41,7 @@ public:
     static DirtyRegionDebugType GetDirtyRegionDebugType();
     static bool GetOcclusionEnabled();
     static std::string GetRSEventProperty(const std::string &paraName);
+    static bool GetDirectClientCompEnableStatus();
 
 private:
     RSSystemProperties() = default;

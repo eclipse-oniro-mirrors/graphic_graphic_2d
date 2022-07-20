@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,6 +17,32 @@
 
 namespace OHOS {
 namespace Rosen {
+void RSNodeCommandHelper::ClearModifiers(RSContext& context, NodeId nodeId)
+{
+    auto& nodeMap = context.GetNodeMap();
+    auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
+    if (node) {
+        node->ClearModifiers();
+    }
+}
 
+void RSNodeCommandHelper::AddModifier(RSContext& context, NodeId nodeId,
+    const std::shared_ptr<RSRenderModifier>& modifier)
+{
+    auto& nodeMap = context.GetNodeMap();
+    auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
+    if (node) {
+        node->AddModifier(modifier);
+    }
+}
+
+void RSNodeCommandHelper::RemoveModifier(RSContext& context, NodeId nodeId, PropertyId propertyId)
+{
+    auto& nodeMap = context.GetNodeMap();
+    auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
+    if (node) {
+        node->RemoveModifier(propertyId);
+    }
+}
 } // namespace Rosen
 } // namespace OHOS

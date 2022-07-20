@@ -37,12 +37,15 @@ public:
     void Init(bool shouldCreateRenderThread = true);
     void Destroy();
     void SetRSSurfaceNode(std::shared_ptr<RSSurfaceNode> surfaceNode);
+    void SetAbilityBGAlpha(uint8_t alpha);
 
     void SetRoot(NodeId root);
     void SetUITaskRunner(const TaskRunner& uiTaskRunner);
     void SendMessages(); // post messages to render thread
 
     void SetTimeStamp(uint64_t timeStamp, const std::string& abilityName);
+
+    bool RunningCustomAnimation(uint64_t timeStamp);
 
 private:
     void AttachSurface();
@@ -64,7 +67,7 @@ private:
     bool isUniRenderEnabled_ = false;
     uint64_t refreshPeriod_ = 16666667;
     uint64_t timeStamp_ = 0;
-    std::shared_ptr<RSSurfaceNode> surfaceNode_ = nullptr;
+    std::weak_ptr<RSSurfaceNode> surfaceNode_;
     int surfaceWidth_ = 0;
     int surfaceHeight_ = 0;
 

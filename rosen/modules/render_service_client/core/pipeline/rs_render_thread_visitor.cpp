@@ -74,6 +74,7 @@ void RSRenderThreadVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
 
 void RSRenderThreadVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode& node)
 {
+    node.ApplyModifiers();
     if (!node.GetRenderProperties().GetVisible()) {
         return;
     }
@@ -93,6 +94,7 @@ void RSRenderThreadVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode& node)
 
 void RSRenderThreadVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 {
+    node.ApplyModifiers();
     bool dirtyFlag = dirtyFlag_;
     auto nodeParent = node.GetParent().lock();
     std::shared_ptr<RSRenderNode> rsParent = nullptr;
@@ -202,7 +204,7 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
         ROSEN_LOGE("ProcessRoot: No valid RSSurfaceNode id");
         return;
     }
-    if (!node.GetRenderProperties().GetVisible()) {
+    if (!node.enableRender_) {
         ROSEN_LOGI("ProcessRoot %s: Invisible", ptr->GetName().c_str());
         return;
     }
@@ -360,15 +362,18 @@ void RSRenderThreadVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
     node.SetContextMatrix(contextMatrix);
     node.SetContextAlpha(canvas_->GetAlpha());
-    // PLANNING: This is a temporary modification. Animation for surfaveView should not be trigged in RenderService.
-    // We plan to refactor code here.
-    node.SetContextBounds(node.GetRenderProperties().GetBounds());
-    // for proxied nodes (i.e. remote window components), we only set matrix & alpha, do not change its hierarchy and
-    // clip status.
+
+    // for proxied nodes (i.e. remote window components), we only extract matrix & alpha, do not change their hierarchy
+    // or clip or other properties.
     if (node.IsProxy()) {
         ProcessBaseRenderNode(node);
         return;
     }
+
+    // PLANNING: This is a temporary modification. Animation for surfaceView should not be triggered in RenderService.
+    // We plan to refactor code here.
+    node.SetContextBounds(node.GetRenderProperties().GetBounds());
+
     auto clipRect = getLocalClipBounds(canvas_);
     if (clipRect.width() < std::numeric_limits<float>::epsilon() ||
         clipRect.height() < std::numeric_limits<float>::epsilon()) {

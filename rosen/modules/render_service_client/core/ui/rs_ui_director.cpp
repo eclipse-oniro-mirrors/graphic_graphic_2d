@@ -15,8 +15,11 @@
 
 #include "ui/rs_ui_director.h"
 
+#include "animation/rs_animation_manager_map.h"
+#include "animation/rs_ui_animation_manager.h"
 #include "command/rs_animation_command.h"
 #include "command/rs_message_processor.h"
+#include "modifier/rs_modifier_manager.h"
 #include "pipeline/rs_frame_report.h"
 #include "pipeline/rs_node_map.h"
 #include "pipeline/rs_render_thread.h"
@@ -73,7 +76,7 @@ void RSUIDirector::GoForeground()
         }
         isActive_ = true;
         if (auto node = RSNodeMap::Instance().GetNode<RSRootNode>(root_)) {
-            node->SetVisible(true);
+            node->SetEnableRender(true);
         }
     }
 }
@@ -87,7 +90,16 @@ void RSUIDirector::GoBackground()
         }
         isActive_ = false;
         if (auto node = RSNodeMap::Instance().GetNode<RSRootNode>(root_)) {
-            node->SetVisible(false);
+            node->SetEnableRender(false);
+        }
+
+        // clean bufferQueue cache
+        auto surfaceNode = surfaceNode_.lock();
+        if (surfaceNode != nullptr) {
+            sptr<OHOS::Surface> pSurface = surfaceNode->GetSurface();
+            if (pSurface != nullptr) {
+                pSurface->CleanCache();
+            }
         }
     }
 }
@@ -109,6 +121,16 @@ void RSUIDirector::SetRSSurfaceNode(std::shared_ptr<RSSurfaceNode> surfaceNode)
     AttachSurface();
 }
 
+void RSUIDirector::SetAbilityBGAlpha(uint8_t alpha)
+{
+    auto node = surfaceNode_.lock();
+    if (!node) {
+        ROSEN_LOGI("RSUIDirector::SetAbilityBGAlpha, surfaceNode_ is nullptr");
+        return;
+    }
+    node->SetAbilityBGAlpha(alpha);
+}
+
 void RSUIDirector::SetRoot(NodeId root)
 {
     if (root_ == root) {
@@ -122,9 +144,10 @@ void RSUIDirector::SetRoot(NodeId root)
 void RSUIDirector::AttachSurface()
 {
     auto node = RSNodeMap::Instance().GetNode<RSRootNode>(root_);
-    if (node != nullptr && surfaceNode_ != nullptr) {
-        node->AttachRSSurfaceNode(surfaceNode_);
-        ROSEN_LOGD("RSUIDirector::AttachSurface [%llu]", surfaceNode_->GetId());
+    auto surfaceNode = surfaceNode_.lock();
+    if (node != nullptr && surfaceNode != nullptr) {
+        node->AttachRSSurfaceNode(surfaceNode);
+        ROSEN_LOGD("RSUIDirector::AttachSurface [%llu]", surfaceNode->GetId());
     } else {
         ROSEN_LOGD("RSUIDirector::AttachSurface not ready");
     }
@@ -134,6 +157,17 @@ void RSUIDirector::SetTimeStamp(uint64_t timeStamp, const std::string& abilityNa
 {
     timeStamp_ = timeStamp;
     RSRenderThread::Instance().UpdateUiDrawFrameMsg(abilityName);
+}
+
+bool RSUIDirector::RunningCustomAnimation(uint64_t timeStamp)
+{
+    bool hasRunningAnimation = false;
+    auto animationManager = RSAnimationManagerMap::Instance().GetAnimationManager(gettid());
+    if (animationManager != nullptr) {
+        hasRunningAnimation = animationManager->Animate(timeStamp);
+        animationManager->Draw();
+    }
+    return hasRunningAnimation;
 }
 
 void RSUIDirector::SetUITaskRunner(const TaskRunner& uiTaskRunner)
