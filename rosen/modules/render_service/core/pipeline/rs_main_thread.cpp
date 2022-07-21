@@ -238,6 +238,10 @@ void RSMainThread::CalcOcclusion()
         return;
     }
     const std::shared_ptr<RSBaseRenderNode> node = context_.GetGlobalRootRenderNode();
+    if (node == nullptr) {
+        RS_LOGE("RSMainThread::CalcOcclusion GetGlobalRootRenderNode fail");
+        return;
+    }
     RSInnovation::UpdateOcclusionCullingSoEnabled();
     std::vector<RSBaseRenderNode::SharedPtr> curAllSurfaces;
     node->CollectSurface(node, curAllSurfaces);
