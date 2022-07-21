@@ -296,6 +296,7 @@ void RSComposerAdapter::SetComposeInfoToLayer(
     layer->SetCropRect(info.srcRect);
     if (node -> GetTunnelHandleChange()) {
         layer->SetTunnelHandleChange(true);
+        layer->SetTunnelHandle(surface->GetTunnelHandle());
         node ->SetTunnelHandleChange(false);
     }
 }
