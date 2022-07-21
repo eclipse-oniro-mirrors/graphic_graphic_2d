@@ -203,6 +203,16 @@ void HdiOutput::RecordCompositionTime(int64_t timeStamp)
     compTimeRcdIndex_ = (compTimeRcdIndex_ + 1) % COMPOSITION_RECORDS_NUM;
 }
 
+void HdiOutput::SetDirectClientCompEnableStatus(bool enableStatus)
+{
+    directClientCompositionEnabled_ = enableStatus;
+}
+
+bool HdiOutput::GetDirectClientCompEnableStatus() const
+{
+    return directClientCompositionEnabled_;
+}
+
 void HdiOutput::Dump(std::string &result) const
 {
     std::vector<LayerDumpInfo> dumpLayerInfos;

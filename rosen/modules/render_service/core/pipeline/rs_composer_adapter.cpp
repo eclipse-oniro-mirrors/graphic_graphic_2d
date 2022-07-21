@@ -56,6 +56,8 @@ bool RSComposerAdapter::Init(ScreenId screenId,  int32_t offsetX, int32_t offset
     screenInfo_ = screenManager->QueryScreenInfo(screenId);
     IRect damageRect {0, 0, static_cast<int32_t>(screenInfo_.width), static_cast<int32_t>(screenInfo_.height)};
     output_->SetOutputDamage(1, damageRect);
+    bool directClientCompEnableStatus = RSSystemProperties::GetDirectClientCompEnableStatus();
+    output_->SetDirectClientCompEnableStatus(directClientCompEnableStatus);
 
 #if (defined RS_ENABLE_GL) && (defined RS_ENABLE_EGLIMAGE)
     // enable direct GPU composition.
@@ -258,8 +260,8 @@ ComposeInfo RSComposerAdapter::BuildComposeInfo(RSDisplayRenderNode& node) const
     info.dstRect = IRect {
         0,
         0,
-        static_cast<int32_t>(static_cast<float>(screenInfo_.width) * mirrorAdaptiveCoefficient_),
-        static_cast<int32_t>(static_cast<float>(screenInfo_.height) * mirrorAdaptiveCoefficient_)
+        static_cast<int32_t>(static_cast<float>(screenInfo_.GetRotatedWidth()) * mirrorAdaptiveCoefficient_),
+        static_cast<int32_t>(static_cast<float>(screenInfo_.GetRotatedHeight()) * mirrorAdaptiveCoefficient_)
     };
     info.visibleRect = IRect {info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h};
     info.zOrder = static_cast<int32_t>(node.GetGlobalZOrder());

@@ -145,6 +145,38 @@ HWTEST_F(HdiOutputTest, GetFramebuffer001, Function | MediumTest| Level3)
 {
     ASSERT_EQ(HdiOutputTest::hdiOutput_->GetFramebuffer(), nullptr);
 }
+
+/*
+* Function: GetDirectClientCompEnableStatus
+* Type: Function
+* Rank: Important(1)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetDirectClientCompEnableStatus
+*                  2. call GetDirectClientCompEnableStatus
+*                  3. check ret
+ */
+HWTEST_F(HdiOutputTest, GetDirectClientCompEnableStatus001, Function | MediumTest| Level1)
+{
+    bool enablStatus = false;
+    HdiOutputTest::hdiOutput_->SetDirectClientCompEnableStatus(enablStatus);
+    ASSERT_EQ(HdiOutputTest::hdiOutput_->GetDirectClientCompEnableStatus(), false);
+}
+
+/*
+* Function: GetDirectClientCompEnableStatus
+* Type: Function
+* Rank: Important(1)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetDirectClientCompEnableStatus
+*                  2. call GetDirectClientCompEnableStatus
+*                  3. check ret
+ */
+HWTEST_F(HdiOutputTest, GetDirectClientCompEnableStatus002, Function | MediumTest| Level1)
+{
+    bool enablStatus = true;
+    HdiOutputTest::hdiOutput_->SetDirectClientCompEnableStatus(enablStatus);
+    ASSERT_EQ(HdiOutputTest::hdiOutput_->GetDirectClientCompEnableStatus(), true);
+}
 } // namespace
 } // namespace Rosen
 } // namespace OHOS

@@ -67,6 +67,8 @@ public:
     void Dump(std::string &result) const;
     void DumpFps(std::string &result, const std::string &arg) const;
     void RecordCompositionTime(int64_t timeStamp);
+    void SetDirectClientCompEnableStatus(bool enableStatus);
+    bool GetDirectClientCompEnableStatus() const;
 
 private:
     std::array<int64_t, COMPOSITION_RECORDS_NUM> compositionTimeRecords_ = {};
@@ -80,6 +82,7 @@ private:
     uint32_t layerCompCapacity_ = LAYER_COMPOSITION_CAPACITY_INVALID;
     IRect outputDamage_;
     uint32_t outputDamageNum_;
+    bool directClientCompositionEnabled_ = true;
 
     int32_t CreateLayer(uint64_t surfaceId, const LayerInfoPtr &layerInfo);
     void DeletePrevLayers();

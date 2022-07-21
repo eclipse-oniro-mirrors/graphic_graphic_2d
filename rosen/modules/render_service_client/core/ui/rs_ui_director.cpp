@@ -92,6 +92,15 @@ void RSUIDirector::GoBackground()
         if (auto node = RSNodeMap::Instance().GetNode<RSRootNode>(root_)) {
             node->SetEnableRender(false);
         }
+
+        // clean bufferQueue cache
+        auto surfaceNode = surfaceNode_.lock();
+        if (surfaceNode != nullptr) {
+            sptr<OHOS::Surface> pSurface = surfaceNode->GetSurface();
+            if (pSurface != nullptr) {
+                pSurface->CleanCache();
+            }
+        }
     }
 }
 
@@ -112,10 +121,14 @@ void RSUIDirector::SetRSSurfaceNode(std::shared_ptr<RSSurfaceNode> surfaceNode)
     AttachSurface();
 }
 
-std::shared_ptr<RSSurfaceNode>& RSUIDirector::GetMutableRSSurfaceNode()
+void RSUIDirector::SetAbilityBGAlpha(uint8_t alpha)
 {
     auto node = surfaceNode_.lock();
-    return node;
+    if (!node) {
+        ROSEN_LOGI("RSUIDirector::SetAbilityBGAlpha, surfaceNode_ is nullptr");
+        return;
+    }
+    node->SetAbilityBGAlpha(alpha);
 }
 
 void RSUIDirector::SetRoot(NodeId root)
