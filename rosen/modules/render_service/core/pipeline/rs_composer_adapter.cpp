@@ -301,16 +301,16 @@ void RSComposerAdapter::SetComposeInfoToLayer(
     }
 }
 
-bool RSComposerAdapter::CheckNodeBeforeCreateLayer(RSSurfaceRenderNode& node, bool isTunnelCheck) const
+bool RSComposerAdapter::CheckStatusBeforeCreateLayer(RSSurfaceRenderNode& node, bool isTunnelCheck) const
 {
     if (output_ == nullptr) {
-        RS_LOGE("RSComposerAdapter::CheckNodeBeforeCreateLayer: output is nullptr");
+        RS_LOGE("RSComposerAdapter::CheckStatusBeforeCreateLayer: output is nullptr");
         return false;
     }
 
     auto& buffer = node.GetBuffer();
     if (isTunnelCheck == false && buffer == nullptr) {
-        RS_LOGE("RsDebug RSComposerAdapter::CheckNodeBeforeCreateLayer:node(%llu) has no available buffer.",
+        RS_LOGD("RsDebug RSComposerAdapter::CheckStatusBeforeCreateLayer:node(%llu) has no available buffer.",
             node.GetId());
         return false;
     }
@@ -322,11 +322,11 @@ bool RSComposerAdapter::CheckNodeBeforeCreateLayer(RSSurfaceRenderNode& node, bo
         return false;
     }
 
-    RS_LOGD("RsDebug RSComposerAdapter::CheckNodeBeforeCreateLayer start(node(%llu) name:[%s] dst:[%d %d %d %d]).",
+    RS_LOGD("RsDebug RSComposerAdapter::CheckStatusBeforeCreateLayer start(node(%llu) name:[%s] dst:[%d %d %d %d]).",
         node.GetId(), node.GetName().c_str(), dstRect.left_, dstRect.top_, dstRect.width_, dstRect.height_);
     auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(node.GetRenderProperties().GetBoundsGeometry());
     if (geoPtr == nullptr) {
-        RS_LOGE("RsDebug RSComposerAdapter::CheckNodeBeforeCreateLayer: node(%llu)'s geoPtr is nullptr!", node.GetId());
+        RS_LOGE("RsDebug RSComposerAdapter::CheckStatusBeforeCreateLayer: node(%llu)'s geoPtr is nullptr!", node.GetId());
         return false;
     }
 
@@ -341,7 +341,7 @@ bool RSComposerAdapter::CheckNodeBeforeCreateLayer(RSSurfaceRenderNode& node, bo
 
 LayerInfoPtr RSComposerAdapter::CreateBufferLayer(RSSurfaceRenderNode& node)
 {
-    if (!CheckNodeBeforeCreateLayer(node)) {
+    if (!CheckStatusBeforeCreateLayer(node)) {
         return nullptr;
     }
     ComposeInfo info = BuildComposeInfo(node);
@@ -371,7 +371,7 @@ LayerInfoPtr RSComposerAdapter::CreateBufferLayer(RSSurfaceRenderNode& node)
 
 LayerInfoPtr RSComposerAdapter::CreateTunnelLayer(RSSurfaceRenderNode& node)
 {
-    if (!CheckNodeBeforeCreateLayer(node, true)) {
+    if (!CheckStatusBeforeCreateLayer(node, true)) {
         return nullptr;
     }
     ComposeInfo info = BuildComposeInfo(node, true);
