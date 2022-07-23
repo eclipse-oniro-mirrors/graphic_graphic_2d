@@ -102,13 +102,13 @@ GSError EglDataImpl::CreateEglData(const sptr<SurfaceBuffer> &buffer)
     BufferHandle *handle = buffer->GetBufferHandle();
     if (!handle) {
         BLOGE("Failed to GetBufferHandle");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     uint32_t drmFormat;
     if (PixelFormatToDrmFormat(handle->format, drmFormat) == false) {
         BLOGE("PixelFormatToDrmFormat failed");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     EGLint attribs[] = {
@@ -123,7 +123,7 @@ GSError EglDataImpl::CreateEglData(const sptr<SurfaceBuffer> &buffer)
     eglImage_ = EglManager::GetInstance()->EglCreateImage(EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, NULL, attribs);
     if (eglImage_ == EGL_NO_IMAGE_KHR) {
         BLOGE("##createImage failed.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
     EglManager::GetInstance()->EglMakeCurrent();
 
@@ -141,7 +141,7 @@ GSError EglDataImpl::CreateEglData(const sptr<SurfaceBuffer> &buffer)
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glTexture_, 0);
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         BLOGE("FBO creation failed");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
     return GSERROR_OK;
 }

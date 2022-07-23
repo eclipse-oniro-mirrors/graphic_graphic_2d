@@ -57,7 +57,7 @@ GSError EglConsumerSurface::AcquireBuffer(sptr<SurfaceBuffer>& buffer, int32_t &
         auto ret = eglDataImpl->CreateEglData(buffer);
         if (ret) {
             BLOGE("EglDataImpl::CreateEglData failed with %{public}d", ret);
-            return GSERROR_INTERNEL;
+            return GSERROR_INTERNAL;
         } else {
             eglData = eglDataImpl;
             buffer->SetEglData(eglData);

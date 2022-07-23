@@ -55,7 +55,7 @@ enum RosenError : int32_t {
 
     // 500 INTERNAL ERROR
     ROSEN_ERROR_API_FAILED            = 50001000,
-    ROSEN_ERROR_INTERNEL              = 50002000,
+    ROSEN_ERROR_INTERNAL              = 50002000,
     ROSEN_ERROR_NO_MEM                = 50003000,
     ROSEN_ERROR_PROXY_NOT_INCLUDE     = 50004000,
     ROSEN_ERROR_SERVER_ERROR          = 50005000,
@@ -84,7 +84,7 @@ static const std::map<RosenError, std::string> RosenErrorStrs = {
     {ROSEN_ERROR_NOT_INIT,              "<412 not init>"},
     {ROSEN_ERROR_TYPE_ERROR,            "<412 type error>"},
     {ROSEN_ERROR_API_FAILED,            "<500 api call failed>"},
-    {ROSEN_ERROR_INTERNEL,              "<500 internal error>"},
+    {ROSEN_ERROR_INTERNAL,              "<500 internal error>"},
     {ROSEN_ERROR_NO_MEM,                "<500 no memory>"},
     {ROSEN_ERROR_PROXY_NOT_INCLUDE,     "<500 proxy not include>"},
     {ROSEN_ERROR_SERVER_ERROR,          "<500 server occur error>"},
@@ -96,14 +96,14 @@ static const std::map<RosenError, std::string> RosenErrorStrs = {
 // backstore error
 enum BSError : int32_t {
     BS_ERROR_OK = ROSEN_ERROR_OK,
-    BS_ERROR_ERROR = ROSEN_ERROR_INTERNEL,
+    BS_ERROR_ERROR = ROSEN_ERROR_INTERNAL,
     BS_ERROR_BINDER_ERROR = ROSEN_ERROR_BINDER,
     BS_ERROR_NULLPTR = ROSEN_ERROR_INVALID_ARGUMENTS,
     BS_ERROR_NO_ENTRY = ROSEN_ERROR_NO_ENTRY,
     BS_ERROR_INVALID_OPERATING = ROSEN_ERROR_INVALID_OPERATING,
     BS_ERROR_NO_BUFFER = ROSEN_ERROR_NO_BUFFER,
     BS_ERROR_INVALID_PARAM = ROSEN_ERROR_INVALID_ARGUMENTS,
-    BS_ERROR_INIT = ROSEN_ERROR_INTERNEL,
+    BS_ERROR_INIT = ROSEN_ERROR_INTERNAL,
     BS_ERROR_NOMEM = ROSEN_ERROR_NO_MEM,
     BS_ERROR_API_FAILED = ROSEN_ERROR_API_FAILED,
     BS_ERROR_NOT_SUPPORT = ROSEN_ERROR_NOT_SUPPORT,

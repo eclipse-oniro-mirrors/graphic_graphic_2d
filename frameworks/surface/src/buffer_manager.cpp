@@ -85,7 +85,7 @@ GSError BufferManager::Init()
     displayGralloc_.reset(::OHOS::HDI::Display::V1_0::IDisplayGralloc::Get());
     if (displayGralloc_ == nullptr) {
         BLOGE("IDisplayGralloc::Get return nullptr.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
     return GSERROR_OK;
 }

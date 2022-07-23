@@ -106,7 +106,7 @@ GSError VsyncClient::InitVsyncFrequency()
             VLOG_FAILURE_RET(vret);
         }
         if (vsyncFrequency_ == 0) {
-            VLOG_FAILURE_RET(GSERROR_INTERNEL);
+            VLOG_FAILURE_RET(GSERROR_INTERNAL);
         }
         VLOG_SUCCESS("Get Frequency: %{public}u", vsyncFrequency_);
     }

@@ -74,7 +74,7 @@ void AnimationModule::OnScreenShot(const struct WMImageInfo &info)
     ainfo.wmimage.data = ainfo.ptr.get();
     if (memcpy_s(ainfo.ptr->ptr.get(), length, info.data, info.size) != EOK) {
         GSLOG2HI(ERROR) << "memcpy_s failed: " << strerror(errno);
-        ainfo.wmimage.wret = static_cast<enum GSError>(GSERROR_INTERNEL);
+        ainfo.wmimage.wret = static_cast<enum GSError>(GSERROR_INTERNAL);
         screenshotPromise->Resolve(ainfo);
         return;
     }

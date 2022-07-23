@@ -128,12 +128,12 @@ GSError ProducerEglSurface::InitContext(EGLContext context)
     sEglManager_ = EglManager::GetInstance();
     if (sEglManager_ == nullptr) {
         BLOGNE("EglManager::GetInstance Failed.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     if (sEglManager_->Init(context) != GSERROR_OK) {
         BLOGNE("EglManager init failed.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     if (initFlag_) {
@@ -142,7 +142,7 @@ GSError ProducerEglSurface::InitContext(EGLContext context)
 
     if (RequestBufferProc() != GSERROR_OK) {
         BLOGNE("RequestBufferProc failed.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     initFlag_ = true;
@@ -187,7 +187,7 @@ GSError ProducerEglSurface::SwapBuffers()
     ScopedBytrace func(__func__);
     if (!initFlag_) {
         BLOGNE("ProducerEglSurface is not init.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     if (FlushBufferProc() != GSERROR_OK) {
@@ -196,7 +196,7 @@ GSError ProducerEglSurface::SwapBuffers()
 
     if (RequestBufferProc() != GSERROR_OK) {
         BLOGNE("RequestBufferProc failed.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     return GSERROR_OK;
@@ -228,17 +228,17 @@ GSError ProducerEglSurface::WaitForReleaseFence(int32_t fd)
         EGLSyncKHR sync = sEglManager_->EglCreateSync(EGL_SYNC_NATIVE_FENCE_ANDROID, attribList);
         if (sync == EGL_NO_SYNC_KHR) {
             BLOGNE("EglCreateSync failed.");
-            return GSERROR_INTERNEL;
+            return GSERROR_INTERNAL;
         }
 
         if (sEglManager_->EglWaitSync(sync, 0) != EGL_TRUE) {
             BLOGNE("EglWaitSync failed.");
-            ret = GSERROR_INTERNEL;
+            ret = GSERROR_INTERNAL;
         }
 
         if (sEglManager_->EglDestroySync(sync) != EGL_TRUE) {
             BLOGNE("EglDestroySync failed.");
-            ret = GSERROR_INTERNEL;
+            ret = GSERROR_INTERNAL;
         }
     }
     return ret;
@@ -265,18 +265,18 @@ GSError ProducerEglSurface::RequestBufferProc()
         currentBuffer_ = nullptr;
         if (RequestBuffer(currentBuffer_, releaseFence, rconfig) != GSERROR_OK) {
             BLOGNE("RequestBuffer failed.");
-            return GSERROR_INTERNEL;
+            return GSERROR_INTERNAL;
         }
     }
 
     if (AddEglData(currentBuffer_) != GSERROR_OK) {
         BLOGNE("AddEglData failed.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     if (WaitForReleaseFence(releaseFence) != GSERROR_OK) {
         BLOGNE("WaitForReleaseFence failed.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     return GSERROR_OK;
@@ -287,7 +287,7 @@ GSError ProducerEglSurface::CreateEglFenceFd(int32_t &fd)
     EGLSyncKHR sync = sEglManager_->EglCreateSync(EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr);
     if (sync == EGL_NO_SYNC_KHR) {
         BLOGNE("EglCreateSync failed.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     glFlush();
@@ -299,7 +299,7 @@ GSError ProducerEglSurface::CreateEglFenceFd(int32_t &fd)
 
     if (fd == EGL_NO_NATIVE_FENCE_FD_ANDROID) {
         BLOGNE("EglDupNativeFenceFd failed.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
     return GSERROR_OK;
 }
@@ -310,7 +310,7 @@ GSError ProducerEglSurface::FlushBufferProc()
     int32_t fd = EGL_NO_NATIVE_FENCE_FD_ANDROID;
     if (currentBuffer_ == nullptr) {
         BLOGNE("currentBuffer_ is nullptr.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     if (CreateEglFenceFd(fd) != GSERROR_OK) {
@@ -328,7 +328,7 @@ GSError ProducerEglSurface::FlushBufferProc()
     };
     if (FlushBuffer(currentBuffer_, fd, fconfig) != GSERROR_OK) {
         BLOGNE("FlushBuffer failed.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     return GSERROR_OK;

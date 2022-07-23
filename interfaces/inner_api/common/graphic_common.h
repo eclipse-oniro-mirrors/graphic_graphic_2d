@@ -45,7 +45,7 @@ static const std::map<GSError, std::string> GSErrorStrs = {
     {GSERROR_NOT_INIT,              "<412 not init>"},
     {GSERROR_TYPE_ERROR,            "<412 type error>"},
     {GSERROR_API_FAILED,            "<500 api call failed>"},
-    {GSERROR_INTERNEL,              "<500 internal error>"},
+    {GSERROR_INTERNAL,              "<500 internal error>"},
     {GSERROR_NO_MEM,                "<500 no memory>"},
     {GSERROR_PROXY_NOT_INCLUDE,     "<500 proxy not include>"},
     {GSERROR_SERVER_ERROR,          "<500 server occur error>"},

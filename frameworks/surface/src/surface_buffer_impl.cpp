@@ -105,7 +105,7 @@ GSError SurfaceBufferImpl::Alloc(const BufferRequestConfig &config)
 {
     if (GetDisplayGralloc() == nullptr) {
         BLOGE("GetDisplayGralloc failed!");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     {
@@ -141,7 +141,7 @@ GSError SurfaceBufferImpl::Map()
 {
     if (GetDisplayGralloc() == nullptr) {
         BLOGE("GetDisplayGralloc failed!");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     BufferHandle *handle = nullptr;
@@ -166,7 +166,7 @@ GSError SurfaceBufferImpl::Unmap()
 {
     if (GetDisplayGralloc() == nullptr) {
         BLOGE("GetDisplayGralloc failed!");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
     BufferHandle *handle = nullptr;
     {
@@ -193,7 +193,7 @@ GSError SurfaceBufferImpl::FlushCache()
 {
     if (GetDisplayGralloc() == nullptr) {
         BLOGE("GetDisplayGralloc failed!");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
     BufferHandle *handle = nullptr;
     {
@@ -221,7 +221,7 @@ GSError SurfaceBufferImpl::InvalidateCache()
 {
     if (GetDisplayGralloc() == nullptr) {
         BLOGE("GetDisplayGralloc failed!");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
     BufferHandle *handle = nullptr;
     {

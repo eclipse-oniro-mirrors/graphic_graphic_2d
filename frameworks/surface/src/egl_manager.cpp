@@ -85,12 +85,12 @@ GSError EglManager::Init(EGLContext context)
 
     if (GbmInit() != GSERROR_OK) {
         BLOGE("GbmInit failed.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     if (EglInit(context) != GSERROR_OK) {
         BLOGE("EglInit failed.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     initFlag_ = true;
@@ -155,17 +155,17 @@ GSError EglManager::EglCheckExt()
     const char *eglExtensions = eglQueryString(display_, EGL_EXTENSIONS);
     if (eglExtensions == nullptr) {
         BLOGE("param is nullptr.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     if (!CheckEglExtension(eglExtensions, EGL_EXT_IMAGE_DMA_BUF_IMPORT)) {
         BLOGE("EGL_EXT_image_dma_buf_import not supported");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     if (!CheckEglExtension(eglExtensions, EGL_KHR_SURFACELESS_CONTEXT)) {
         BLOGE("EGL_KHR_surfaceless_context not supported");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     if (CheckEglExtension(eglExtensions, EGL_KHR_NO_CONFIG_CONTEXT)) {
@@ -185,7 +185,7 @@ GSError EglManager::EglCheckExt()
         EGLBoolean ret = eglChooseConfig(display_, config_attribs, &conf_, 1, &count);
         if (!(ret && count >= 1)) {
             BLOGE("Failed to eglChooseConfig");
-            return GSERROR_INTERNEL;
+            return GSERROR_INTERNAL;
         }
     }
     return GSERROR_OK;
@@ -196,50 +196,50 @@ GSError EglManager::EglFuncInit()
     const char *eglExtensions = eglQueryString(display_, EGL_EXTENSIONS);
     if (eglExtensions == nullptr) {
         BLOGE("param eglExtensions is nullptr.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     createImage_ = (EglCreateImageFunc)eglGetProcAddress(EGL_CREATE_IMAGE_KHR);
     if (createImage_ == nullptr) {
         BLOGE("param createImage_ is nullptr.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     destroyImage_ = (EglDestroyImageFunc)eglGetProcAddress(EGL_DESTROY_IMAGE_KHR);
     if (destroyImage_ == nullptr) {
         BLOGE("param destroyImage_ is nullptr.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     imageTargetTexture2d_ = (EglImageTargetTexture2DFunc)eglGetProcAddress(EGL_IMAGE_TARGET_TEXTURE2DOES);
     if (imageTargetTexture2d_ == nullptr) {
         BLOGE("param imageTargetTexture2d_ is nullptr.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
     
     if (CheckEglExtension(eglExtensions, EGL_KHR_FENCE_SYNC)) {
         createSync_ = (EglCreateSyncFunc)eglGetProcAddress(EGL_CREATE_SYNC_KHR);
         if (createSync_ == nullptr) {
             BLOGE("param createSync_ is nullptr.");
-            return GSERROR_INTERNEL;
+            return GSERROR_INTERNAL;
         }
         
         destroySync_ = (EglDestroySyncFunc)eglGetProcAddress(EGL_DESTROY_SYNC_KHR);
         if (destroySync_ == nullptr) {
             BLOGE("param destroySync_ is nullptr.");
-            return GSERROR_INTERNEL;
+            return GSERROR_INTERNAL;
         }
 
         clientWaitSync_ = (EglClientWaitSyncFunc)eglGetProcAddress(EGL_CLIENT_WAIT_SYNC_KHR);
         if (clientWaitSync_ == nullptr) {
             BLOGE("param clientWaitSync_ is nullptr.");
-            return GSERROR_INTERNEL;
+            return GSERROR_INTERNAL;
         }
 
         dupNativeFenceFd_ = (EglDupNativeFenceFdFunc)eglGetProcAddress(EGL_DUP_NATIVE_FENCE_FD_ANDROID);
         if (dupNativeFenceFd_ == nullptr) {
             BLOGE("param dupNativeFenceFd_ is nullptr.");
-            return GSERROR_INTERNEL;
+            return GSERROR_INTERNAL;
         }
     }
 
@@ -247,7 +247,7 @@ GSError EglManager::EglFuncInit()
         waitSync_ = (EglWaitSyncFunc)eglGetProcAddress(EGL_WAIT_SYNC_KHR);
         if (waitSync_ == nullptr) {
             BLOGE("param waitSync_ is nullptr.");
-            return GSERROR_INTERNEL;
+            return GSERROR_INTERNAL;
         }
     }
     return GSERROR_OK;
@@ -259,23 +259,23 @@ GSError EglManager::EglInit(EGLContext ctx)
     display_ = GetPlatformEglDisplay(EGL_PLATFORM_GBM_KHR, device_, NULL);
     if (display_ == EGL_NO_DISPLAY) {
         BLOGE("Failed to create EGLDisplay");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     EGLint major, minor;
     if (eglInitialize(display_, &major, &minor) == EGL_FALSE) {
         BLOGE("Failed to initialize EGLDisplay");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     if (eglBindAPI(EGL_OPENGL_ES_API) == EGL_FALSE) {
         BLOGE("Failed to bind OpenGL ES API");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     if (EglCheckExt() != GSERROR_OK) {
         BLOGE("EglCheckExt failed");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     static const EGLint context_attribs[] = {
@@ -287,7 +287,7 @@ GSError EglManager::EglInit(EGLContext ctx)
         context_ = eglCreateContext(display_, conf_, EGL_NO_CONTEXT, context_attribs);
         if (context_ == EGL_NO_CONTEXT) {
             BLOGE("Failed to create EGLContext");
-            return GSERROR_INTERNEL;
+            return GSERROR_INTERNAL;
         }
         ctxReleaseFlg_ = true;
     } else {
@@ -299,17 +299,17 @@ GSError EglManager::EglInit(EGLContext ctx)
     const char *glExtensions = (const char *) glGetString(GL_EXTENSIONS);
     if (glExtensions == nullptr) {
         BLOGE("param glExtensions is nullptr.");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     if (!CheckEglExtension(glExtensions, GL_OES_EGL_IMAGE)) {
         BLOGE("GL_OES_EGL_image not supported");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     if (EglFuncInit() != GSERROR_OK) {
         BLOGE("EglFuncInit failed");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     return GSERROR_OK;
