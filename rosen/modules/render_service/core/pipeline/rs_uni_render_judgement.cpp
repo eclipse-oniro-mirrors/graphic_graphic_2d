@@ -39,7 +39,7 @@ UniRenderEnabledType RSUniRenderJudgement::GetUniRenderEnabledType()
 
 const std::set<std::string>& RSUniRenderJudgement::GetUniRenderEnabledList()
 {
-    return uniRenderEnabledList_;
+    return uniRenderBlockList_;
 }
 
 bool RSUniRenderJudgement::IsUniRender()
@@ -51,7 +51,7 @@ bool RSUniRenderJudgement::QueryClientEnabled(const std::string &bundleName)
 {
     switch (uniRenderEnabledType_) {
         case UniRenderEnabledType::UNI_RENDER_PARTIALLY_ENABLED:
-            return uniRenderEnabledList_.find(bundleName) != uniRenderEnabledList_.end();
+            return uniRenderBlockList_.find(bundleName) == uniRenderBlockList_.end();
         case UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL:
             return true;
         case UniRenderEnabledType::UNI_RENDER_DISABLED:
@@ -79,14 +79,14 @@ void RSUniRenderJudgement::InitUniRenderWithConfigFile()
     } else if (line == UNI_RENDER_ENABLED_FOR_ALL_TAG) {
         uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL;
     } else {
-        // init uniRenderEnabledList_
+        // init uniRenderBlockList_
         while (std::getline(configFile, line)) {
             if (line == "" || StartsWith(line, "//")) {
                 continue;
             }
-            uniRenderEnabledList_.insert(line);
+            uniRenderBlockList_.insert(line);
         }
-        if (!uniRenderEnabledList_.empty()) {
+        if (!uniRenderBlockList_.empty()) {
             uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_PARTIALLY_ENABLED;
         }
     }
