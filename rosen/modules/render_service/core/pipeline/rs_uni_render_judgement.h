@@ -45,7 +45,7 @@ private:
     static void InitUniRenderWithConfigFile();
 
     static inline UniRenderEnabledType uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
-    static inline std::set<std::string> uniRenderEnabledList_ {};
+    static inline std::set<std::string> uniRenderBlockList_ {};
 };
 } // namespace Rosen
 } // namespace OHOS
