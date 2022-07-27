@@ -70,6 +70,11 @@ public:
 protected:
     void UpdateToRender(const T& value, bool isDelta, bool forceUpdate = false) const;
 
+    void UpdateOnAllAnimationFinish()
+    {
+        UpdateToRender(stagingValue_, false, true);
+    }
+
     T stagingValue_;
     NodeId nodeId_;
     PropertyId id_;
