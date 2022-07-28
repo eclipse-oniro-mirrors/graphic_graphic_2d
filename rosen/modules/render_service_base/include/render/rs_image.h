@@ -24,6 +24,9 @@
 #include "transaction/rs_marshalling_helper.h"
 
 namespace OHOS {
+namespace Media {
+class PixelMap;
+}
 namespace Rosen {
 class RsImageInfo final {
 public:
@@ -60,6 +63,7 @@ public:
 
     void CanvasDrawImage(SkCanvas& canvas, const SkRect& rect, const SkPaint& paint, bool isBackground = false);
     void SetImage(const sk_sp<SkImage> image);
+    void SetPixelMap(const std::shared_ptr<Media::PixelMap>& pixelmap);
     void SetDstRect(const RectF& dstRect);
     void SetImageFit(int fitNum);
     void SetImageRepeat(int repeatNum);
@@ -76,6 +80,7 @@ private:
     void DrawImageRepeatRect(const SkPaint& paint, SkCanvas& canvas);
 
     sk_sp<SkImage> image_;
+    std::shared_ptr<Media::PixelMap> pixelmap_;
     ImageFit imageFit_ = ImageFit::COVER;
     ImageRepeat imageRepeat_ = ImageRepeat::NO_REPEAT;
     SkVector radius_[4];

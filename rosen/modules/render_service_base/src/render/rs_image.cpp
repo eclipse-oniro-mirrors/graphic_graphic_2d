@@ -17,6 +17,8 @@
 
 #include "include/core/SkPaint.h"
 #include "include/core/SkRRect.h"
+#include "pipeline/rs_pixel_map_util.h"
+#include "pixel_map.h"
 #include "property/rs_properties_painter.h"
 
 namespace OHOS {
@@ -117,6 +119,9 @@ void RSImage::DrawImageRepeatRect(const SkPaint& paint, SkCanvas& canvas)
         }
     }
     // draw repeat rect
+    if (!image_ && pixelmap_) {
+        image_ = RSPixelMapUtil::PixelMapToSkImage(pixelmap_);
+    }
     auto src = RSPropertiesPainter::Rect2SkRect(srcRect_);
     for (int i = minX; i <= maxX; ++i) {
         for (int j = minY; j <= maxY; ++j) {
@@ -132,6 +137,15 @@ void RSImage::SetImage(const sk_sp<SkImage> image)
     image_ = image;
     if (image_) {
         srcRect_.SetAll(0.0, 0.0, image_->width(), image_->height());
+    }
+}
+
+void RSImage::SetPixelMap(const std::shared_ptr<Media::PixelMap>& pixelmap)
+{
+    pixelmap_ = pixelmap;
+    if (pixelmap_) {
+        srcRect_.SetAll(0.0, 0.0, pixelmap_->GetWidth(), pixelmap_->GetHeight());
+        image_ = nullptr;
     }
 }
 
@@ -171,6 +185,7 @@ bool RSImage::Marshalling(Parcel& parcel) const
     int imageFit = static_cast<int>(imageFit_);
     int imageRepeat = static_cast<int>(imageRepeat_);
     success &= RSMarshallingHelper::Marshalling(parcel, image_);
+    success &= RSMarshallingHelper::Marshalling(parcel, pixelmap_);
     success &= RSMarshallingHelper::Marshalling(parcel, imageFit);
     success &= RSMarshallingHelper::Marshalling(parcel, imageRepeat);
     success &= RSMarshallingHelper::Marshalling(parcel, radius_);
@@ -180,11 +195,15 @@ bool RSImage::Marshalling(Parcel& parcel) const
 RSImage* RSImage::Unmarshalling(Parcel& parcel)
 {
     sk_sp<SkImage> img;
+    std::shared_ptr<Media::PixelMap> pixelmap;
     int fitNum;
     int repeatNum;
     SkVector radius[CORNER_SIZE];
     double scale;
     if (!RSMarshallingHelper::Unmarshalling(parcel, img)) {
+        return nullptr;
+    }
+    if (!RSMarshallingHelper::Unmarshalling(parcel, pixelmap)) {
         return nullptr;
     }
     if (!RSMarshallingHelper::Unmarshalling(parcel, fitNum)) {
@@ -204,6 +223,7 @@ RSImage* RSImage::Unmarshalling(Parcel& parcel)
 
     RSImage* rsImage = new RSImage();
     rsImage->SetImage(img);
+    rsImage->SetPixelMap(pixelmap);
     rsImage->SetImageFit(fitNum);
     rsImage->SetImageRepeat(repeatNum);
     rsImage->SetRadius(radius);
