@@ -101,13 +101,13 @@ HWTEST_F(VsyncHelperImplTest, Init4, testing::ext::TestSize.Level0)
     StaticCall::SetInstance(staticCall);
     auto sm =SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     auto remoteObject = sm->GetSystemAbility(VSYNC_MANAGER_ID);
-    auto servive = iface_cast<IVsyncManager>(remoteObject);
+    auto service = iface_cast<IVsyncManager>(remoteObject);
     EXPECT_CALL(*mockInstance, GetSystemAbilityManager())
                 .Times(1).WillRepeatedly(testing::Return(sm));
     EXPECT_CALL(*mockInstance, GetSystemAbility(testing::_, testing::_))
                 .Times(1).WillRepeatedly(testing::Return(remoteObject));
     EXPECT_CALL(*mockInstance, GetCast(testing::_))
-                .Times(1).WillRepeatedly(testing::Return(servive));
+                .Times(1).WillRepeatedly(testing::Return(service));
     EXPECT_CALL(*mockInstance, GetVsyncFrequency(testing::_, testing::_))
                 .Times(1).WillRepeatedly(testing::Return(GSERROR_INVALID_OPERATING));
     auto ret = client->Init();
@@ -124,11 +124,11 @@ HWTEST_F(VsyncHelperImplTest, Init5, testing::ext::TestSize.Level0)
     StaticCall::SetInstance(staticCall);
     auto sm =SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     auto remoteObject = sm->GetSystemAbility(VSYNC_MANAGER_ID);
-    auto servive = iface_cast<IVsyncManager>(remoteObject);
+    auto service = iface_cast<IVsyncManager>(remoteObject);
     EXPECT_CALL(*mockInstance, GetVsyncFrequency(testing::_, testing::_))
                 .Times(1).WillRepeatedly(testing::Return(GSERROR_OK));
     auto ret = client->Init();
-    ASSERT_EQ(ret, GSERROR_INTERNEL);
+    ASSERT_EQ(ret, GSERROR_INTERNAL);
     StaticCall::SetInstance(origin);
 }
 

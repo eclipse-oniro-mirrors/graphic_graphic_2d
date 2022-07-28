@@ -56,7 +56,7 @@ HWTEST_F(FenceFdTest, BufferQueueFenceItem, testing::ext::TestSize.Level0) {
     PART("CaseDescription") {
         sptr<SurfaceBuffer> buffer = nullptr;
         int32_t releaseFence = 0;
-        GSError ret = GSERROR_INTERNEL;
+        GSError ret = GSERROR_INTERNAL;
 
         STEP("1. Check release fence fd") {
             ret = psurf->RequestBuffer(buffer, releaseFence, requestConfig);

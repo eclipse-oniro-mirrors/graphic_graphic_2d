@@ -29,7 +29,7 @@ GSError BufferExtraDataImpl::ReadFromParcel(MessageParcel &parcel)
     int32_t magic;
     if (parcel.ReadInt32(magic) == false || magic != BUFFER_EXTRA_DATA_MAGIC) {
         BLOGW("read failed, magic is error");
-        return GSERROR_INTERNEL;
+        return GSERROR_INTERNAL;
     }
 
     int32_t size = parcel.ReadInt32();
