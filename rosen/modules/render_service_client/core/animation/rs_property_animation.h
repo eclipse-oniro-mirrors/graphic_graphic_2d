@@ -161,7 +161,7 @@ protected:
 
     void SetPropertyOnAllAnimationFinish() override
     {
-        property_.UpdateToRender(property_.Get(), false, true);
+        property_.UpdateOnAllAnimationFinish();
     }
 
     RSAnimatableProperty<T>& property_;
