@@ -63,7 +63,7 @@ ohos_shared_library("librender_service") {
     "//foundation/graphic/graphic_2d/rosen/modules/composer/vsync/include",
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_base/src",
     "//foundation/graphic/graphic_2d/rosen/modules/utils",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
     "//utils/system/safwk/native/include",
     "//foundation/graphic/graphic_2d/utils/log",
   ]
@@ -72,12 +72,12 @@ ohos_shared_library("librender_service") {
     "//foundation/graphic/graphic_2d:libsurface",
     "//foundation/graphic/graphic_2d/rosen/modules/composer:libcomposer",
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_base:librender_service_base",
-    "//utils/native/base:utils",
   ]
 
   public_deps = [ "//third_party/flutter/build/skia:ace_skia_ohos" ]
 
   external_deps = [
+    "c_utils:utils",
     "hitrace_native:hitrace_meter",
     "init:libbegetutil",
     "ipc:ipc_core",
@@ -94,7 +94,7 @@ ohos_executable("render_service") {
 
   include_dirs = [
     "core",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
   ]
 
   deps = [

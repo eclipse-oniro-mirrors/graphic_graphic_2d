@@ -23,7 +23,6 @@ ohos_unittest("EffectTest") {
   deps = [
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//third_party/googletest:gtest_main",
-    "//utils/native/base:utils",
   ]
 
   sources = [
@@ -68,6 +67,7 @@ ohos_unittest("EffectTest") {
     ":effect_test_config",
     "//foundation/graphic/graphic_2d/utils/color_manager:color_manager_public_config",
   ]
+  external_deps = [ "c_utils:utils" ]
 }
 
 config("effect_test_config") {

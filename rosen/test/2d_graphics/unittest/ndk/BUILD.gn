@@ -40,10 +40,10 @@ ohos_unittest("2d_graphics_ndk_test") {
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics",
     "//third_party/googletest:gtest_main",
-    "//utils/native/base:utils",
   ]
 
   subsystem_name = "graphic"
+  external_deps = [ "c_utils:utils" ]
 }
 
 group("unittest") {

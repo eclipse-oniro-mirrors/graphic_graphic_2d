@@ -42,10 +42,10 @@ ohos_unittest("RSRenderServiceClientUITest") {
   deps = [
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_client:librender_service_client",
     "//third_party/googletest:gtest_main",
-    "//utils/native/base:utils",
   ]
 
   subsystem_name = "graphic"
+  external_deps = [ "c_utils:utils" ]
 }
 
 ###############################################################################
