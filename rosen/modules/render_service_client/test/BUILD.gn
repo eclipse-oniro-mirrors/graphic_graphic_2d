@@ -261,3 +261,54 @@ ohos_executable("render_service_display_mode_demo") {
   part_name = "graphic_standard"
   subsystem_name = "graphic"
 }
+ohos_executable("render_service_client_tunnel_handle_demo") {
+  sources = [ "render_service_client_tunnel_handle_demo.cpp" ]
+
+  include_dirs = [
+    "//foundation/window/window_manager/interfaces/innerkits",
+
+    # render_service_base include
+    "//foundation/graphic/graphic_2d/rosen/modules/render_service_base/src",
+    "//foundation/graphic/graphic_2d/interfaces/inner_api/surface/",
+    "//foundation/graphic/graphic_2d/interfaces/inner_api/wmclient/",
+  ]
+
+  deps = [
+    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
+    "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics",
+    "//foundation/graphic/graphic_2d/rosen/modules/render_service_base:librender_service_base",
+    "//foundation/graphic/graphic_2d/rosen/modules/render_service_client:librender_service_client",
+    "//foundation/window/window_manager/wm:libwm",
+    "//foundation/window/window_manager/wmserver:libwms",
+    "//third_party/zlib:libz",
+  ]
+
+  part_name = "graphic_standard"
+  subsystem_name = "graphic"
+}
+
+ohos_executable("render_service_client_overlay_demo") {
+  sources = [ "render_service_client_overlay_demo.cpp" ]
+
+  include_dirs = [
+    "//foundation/window/window_manager/interfaces/innerkits",
+
+    # render_service_base include
+    "//foundation/graphic/graphic_2d/rosen/modules/render_service_base/src",
+    "//foundation/graphic/graphic_2d/interfaces/inner_api/surface/",
+    "//foundation/graphic/graphic_2d/interfaces/inner_api/wmclient/",
+  ]
+
+  deps = [
+    "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
+    "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics",
+    "//foundation/graphic/graphic_2d/rosen/modules/render_service_base:librender_service_base",
+    "//foundation/graphic/graphic_2d/rosen/modules/render_service_client:librender_service_client",
+    "//foundation/window/window_manager/wm:libwm",
+    "//foundation/window/window_manager/wmserver:libwms",
+    "//third_party/zlib:libz",
+  ]
+
+  part_name = "graphic_standard"
+  subsystem_name = "graphic"
+}
