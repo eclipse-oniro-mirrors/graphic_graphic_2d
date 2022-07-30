@@ -52,8 +52,8 @@ ohos_shared_library("libeffectchain") {
   ]
 
   external_deps = [
+    "c_utils:utils",
     "hitrace_native:hitrace_meter",
-    "utils_base:utils",
   ]
 
   if (effect_enable_gpu) {
@@ -83,7 +83,7 @@ ohos_shared_library("libeffectchain") {
 
   public_configs = [
     ":effect_public_config",
-    "//utils/native/base:utils_config",
+    "//commonlibrary/c_utils/base:utils_config",
   ]
 
   cflags_cc = [ "-std=c++17" ]

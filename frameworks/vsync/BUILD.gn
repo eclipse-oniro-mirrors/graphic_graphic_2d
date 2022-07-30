@@ -32,7 +32,7 @@ config("libvsync_client_config") {
 config("libvsync_client_public_config") {
   include_dirs = [
     "//foundation/graphic/graphic_2d/interfaces/inner_api/vsync",
-    "//utils/native/base/include",
+    "//commonlibrary/c_utils/base/include",
   ]
 }
 
@@ -60,8 +60,8 @@ ohos_shared_library("libvsync_client") {
 
   public_deps = [
     "//base/notification/eventhandler/frameworks/eventhandler:libeventhandler",
+    "//commonlibrary/c_utils/base:utils",
     "//foundation/graphic/graphic_2d:libgraphic_dumper_client",
-    "//utils/native/base:utils",
   ]
 
   part_name = "graphic_standard"
@@ -118,8 +118,8 @@ ohos_shared_library("libvsync_module") {
   ]
 
   public_deps = [
+    "//commonlibrary/c_utils/base:utils",
     "//foundation/graphic/graphic_2d/utils:semaphore",
-    "//utils/native/base:utils",
   ]
 
   part_name = "graphic_standard"

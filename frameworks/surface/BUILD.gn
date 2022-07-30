@@ -66,7 +66,7 @@ ohos_shared_library("surface") {
 
   public_configs = [
     ":surface_public_config",
-    "//utils/native/base:utils_config",
+    "//commonlibrary/c_utils/base:utils_config",
   ]
 
   deps = [
@@ -75,6 +75,7 @@ ohos_shared_library("surface") {
   ]
 
   public_deps = [
+    "//commonlibrary/c_utils/base:utils",
     "//drivers/peripheral/display/hdi_service/gralloc/client:hdi_gralloc_client",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
     "//foundation/graphic/graphic_2d/utils/buffer_handle:buffer_handle",
@@ -83,7 +84,6 @@ ohos_shared_library("surface") {
     "//foundation/graphic/graphic_2d/utils/sync_fence:sync_fence",
     "//third_party/EGL:libEGL",
     "//third_party/openGLES:libGLES",
-    "//utils/native/base:utils",
   ]
 
   external_deps = [ "hitrace_native:hitrace_meter" ]

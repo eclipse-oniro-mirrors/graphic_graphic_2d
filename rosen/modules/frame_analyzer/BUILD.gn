@@ -46,10 +46,10 @@ ohos_shared_library("libframe_analyzer") {
     deps = [
       "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
       "//third_party/flutter/build/skia:ace_skia_ohos",
-      "//utils/native/base:utils",
     ]
 
     external_deps = [
+      "c_utils:utils",
       "hitrace_native:hitrace_meter",
       "init:libbeget_proxy",
       "init:libbegetutil",

@@ -42,13 +42,13 @@ config("effect_SKeffectChian_public_config") {
 ohos_shared_library("skeffectchain") {
   public_deps = [
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
+    "//commonlibrary/c_utils/base:utils",
     "//foundation/arkui/napi:ace_napi",
     "//foundation/graphic/graphic_2d:libsurface",
     "//foundation/multimedia/image_standard/frameworks/innerkitsimpl/pixelconverter:pixelconvertadapter",
     "//foundation/multimedia/image_standard/interfaces/innerkits:image",
     "//foundation/multimedia/image_standard/interfaces/innerkits:image_native",
     "//third_party/flutter/build/skia:ace_skia_ohos",
-    "//utils/native/base:utils",
   ]
 
   external_deps = [
@@ -67,7 +67,7 @@ ohos_shared_library("skeffectchain") {
 
   public_configs = [
     ":effect_SKeffectChian_public_config",
-    "//utils/native/base:utils_config",
+    "//commonlibrary/c_utils/base:utils_config",
   ]
 
   cflags_cc = [ "-std=c++17" ]

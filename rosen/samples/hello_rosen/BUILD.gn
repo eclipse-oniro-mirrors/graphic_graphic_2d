@@ -36,7 +36,7 @@ ohos_executable("hello_rosen") {
 
   public_configs = [
     ":public_config",
-    "//utils/native/base:utils_config",
+    "//commonlibrary/c_utils/base:utils_config",
   ]
 
   deps = [
@@ -45,8 +45,8 @@ ohos_executable("hello_rosen") {
   ]
 
   public_deps = [
+    "//commonlibrary/c_utils/base:utils",
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
-    "//utils/native/base:utils",
   ]
 
   part_name = "graphic_standard"

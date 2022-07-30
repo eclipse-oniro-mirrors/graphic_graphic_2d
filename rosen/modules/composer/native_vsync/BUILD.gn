@@ -39,7 +39,7 @@ ohos_shared_library("libnative_vsync") {
 
   public_configs = [
     ":native_vsync_public_config",
-    "//utils/native/base:utils_config",
+    "//commonlibrary/c_utils/base:utils_config",
   ]
 
   deps = [
@@ -48,7 +48,7 @@ ohos_shared_library("libnative_vsync") {
     "//foundation/graphic/graphic_2d/utils:libgraphic_utils",
   ]
 
-  public_deps = [ "//utils/native/base:utils" ]
+  public_deps = [ "//commonlibrary/c_utils/base:utils" ]
 
   part_name = "graphic_standard"
   subsystem_name = "graphic"

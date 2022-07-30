@@ -40,7 +40,7 @@ ohos_executable("test_effect_chain") {
       "//foundation/graphic/graphic_2d/rosen/modules/effect/egl:libegl_effect",
     ]
 
-    external_deps = [ "utils_base:utils" ]
+    external_deps = [ "c_utils:utils" ]
   }
 
   if (effect_enable_gpu) {

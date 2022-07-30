@@ -38,8 +38,8 @@ ohos_fuzztest("SetArgbFuzzTest") {
   ]
 
   external_deps = [
+    "c_utils:utils",
     "hilog_native:libhilog",
-    "utils_base:utils",
   ]
 
   part_name = "graphic_standard"
