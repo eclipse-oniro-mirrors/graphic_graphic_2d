@@ -533,29 +533,6 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             reply.WriteRemoteObject(conn->AsObject());
             break;
         }
-        case REQUEST_ROTATION: {
-            auto token = data.ReadInterfaceToken();
-            if (token != RSIRenderServiceConnection::GetDescriptor()) {
-                ret = ERR_INVALID_STATE;
-                break;
-            }
-            ScreenId id = data.ReadUint64();
-            ScreenRotation rotation = static_cast<ScreenRotation>(data.ReadUint32());
-            bool res = RequestRotation(id, rotation);
-            reply.WriteBool(res);
-            break;
-        }
-        case GET_ROTATION: {
-            auto token = data.ReadInterfaceToken();
-            if (token != RSIRenderServiceConnection::GetDescriptor()) {
-                ret = ERR_INVALID_STATE;
-                break;
-            }
-            ScreenId id = data.ReadUint64();
-            ScreenRotation rotation = GetRotation(id);
-            reply.WriteUint32(static_cast<uint32_t>(rotation));
-            break;
-        }
         case GET_SCREEN_HDR_CAPABILITY: {
             auto token = data.ReadInterfaceToken();
             if (token != RSIRenderServiceConnection::GetDescriptor()) {

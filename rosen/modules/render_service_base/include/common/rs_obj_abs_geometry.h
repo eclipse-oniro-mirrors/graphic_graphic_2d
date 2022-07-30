@@ -56,6 +56,8 @@ public:
 
     bool IsPointInHotZone(const float x, const float y) const;
 
+    bool IsNeedClientCompose() const;
+
 private:
     void UpdateAbsMatrix2D();
     void UpdateAbsMatrix3D();

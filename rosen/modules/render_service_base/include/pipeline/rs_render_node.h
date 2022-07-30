@@ -35,7 +35,7 @@ public:
     using SharedPtr = std::shared_ptr<RSRenderNode>;
     static inline constexpr RSRenderNodeType Type = RSRenderNodeType::RS_NODE;
 
-    virtual ~RSRenderNode();
+    ~RSRenderNode() override;
 
     bool Animate(int64_t timestamp) override;
     bool Update(RSDirtyRegionManager& dirtyManager, const RSProperties* parent, bool parentDirty);

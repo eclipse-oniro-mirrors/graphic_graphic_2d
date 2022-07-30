@@ -15,18 +15,20 @@
 
 #include "pipeline/rs_render_service_visitor.h"
 
-#include "common/rs_obj_abs_geometry.h"
 #include "display_type.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkPoint.h"
 #include "include/core/SkRect.h"
+#include "rs_divided_render_util.h"
+#include "rs_trace.h"
+
+#include "common/rs_obj_abs_geometry.h"
 #include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_processor.h"
 #include "pipeline/rs_processor_factory.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
-#include "rs_trace.h"
 #include "platform/drawing/rs_surface.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "screen_manager/screen_types.h"
@@ -113,10 +115,23 @@ void RSRenderServiceVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         return;
     }
     auto mirrorNode = node.GetMirrorSource().lock();
-    if (!processor_->Init(node.GetScreenId(), node.GetDisplayOffsetX(), node.GetDisplayOffsetY(),
+    if (!processor_->Init(node, node.GetDisplayOffsetX(), node.GetDisplayOffsetY(),
         mirrorNode ? mirrorNode->GetScreenId() : INVALID_SCREEN_ID)) {
         RS_LOGE("RSRenderServiceVisitor::ProcessDisplayRenderNode: processor init failed!");
         return;
+    }
+
+    ScreenRotation rotation = node.GetRotation();
+    uint32_t logicalScreenWidth = node.GetRenderProperties().GetFrameWidth();
+    uint32_t logicalScreenHeight = node.GetRenderProperties().GetFrameHeight();
+
+    if (logicalScreenWidth <= 0 || logicalScreenHeight <= 0) {
+        logicalScreenWidth = currScreenInfo.width;
+        logicalScreenHeight = currScreenInfo.height;
+
+        if (rotation == ScreenRotation::ROTATION_90 || rotation == ScreenRotation::ROTATION_270) {
+            std::swap(logicalScreenWidth, logicalScreenHeight);
+        }
     }
 
     if (node.IsMirrorDisplay()) {
@@ -127,27 +142,24 @@ void RSRenderServiceVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             return;
         }
         if (mParallelEnable) {
-            ScreenRotation rotation = screenManager->GetRotation(node.GetScreenId());
-            uint32_t boundWidth = currScreenInfo.width;
-            uint32_t boundHeight = currScreenInfo.height;
-            if (rotation == ScreenRotation::ROTATION_90 || rotation == ScreenRotation::ROTATION_270) {
-                std::swap(boundWidth, boundHeight);
-            }
-            skCanvas_ = std::make_unique<SkCanvas>(boundWidth, boundHeight);
+            skCanvas_ = std::make_unique<SkCanvas>(logicalScreenWidth, logicalScreenHeight);
             canvas_ = std::make_shared<RSPaintFilterCanvas>(skCanvas_.get());
-            canvas_->clipRect(SkRect::MakeWH(boundWidth, boundHeight));
+            canvas_->clipRect(SkRect::MakeWH(logicalScreenWidth, logicalScreenHeight));
         }
         ProcessBaseRenderNode(*existingSource);
     } else {
-        ScreenRotation rotation = screenManager->GetRotation(node.GetScreenId());
-        uint32_t boundWidth = currScreenInfo.width;
-        uint32_t boundHeight = currScreenInfo.height;
-        if (rotation == ScreenRotation::ROTATION_90 || rotation == ScreenRotation::ROTATION_270) {
-            std::swap(boundWidth, boundHeight);
+        auto boundsGeoPtr = std::static_pointer_cast<RSObjAbsGeometry>(node.GetRenderProperties().GetBoundsGeometry());
+        if (boundsGeoPtr && boundsGeoPtr->IsNeedClientCompose()) {
+            RSDividedRenderUtil::SetNeedClient(true);
+            processor_->SetBoundsGeometry(boundsGeoPtr);
+        } else {
+            RSDividedRenderUtil::SetNeedClient(false);
+            processor_->SetBoundsGeometry(nullptr);
         }
-        skCanvas_ = std::make_unique<SkCanvas>(boundWidth, boundHeight);
+
+        skCanvas_ = std::make_unique<SkCanvas>(logicalScreenWidth, logicalScreenHeight);
         canvas_ = std::make_shared<RSPaintFilterCanvas>(skCanvas_.get());
-        canvas_->clipRect(SkRect::MakeWH(boundWidth, boundHeight));
+        canvas_->clipRect(SkRect::MakeWH(logicalScreenWidth, logicalScreenHeight));
         ProcessBaseRenderNode(node);
     }
     processor_->PostProcess();

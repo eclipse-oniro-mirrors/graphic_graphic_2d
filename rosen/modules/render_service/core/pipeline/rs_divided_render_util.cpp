@@ -26,6 +26,11 @@ namespace OHOS {
 namespace Rosen {
 bool RSDividedRenderUtil::enableClient = false;
 
+void RSDividedRenderUtil::SetNeedClient(bool flag)
+{
+    enableClient = flag;
+}
+
 bool RSDividedRenderUtil::IsNeedClient(RSSurfaceRenderNode& node, const ComposeInfo& info)
 {
     if (enableClient) {
@@ -255,7 +260,7 @@ void SetPropertiesForCanvas(RSPaintFilterCanvas& canvas, const BufferDrawParam& 
     if (SkColorGetA(bufferDrawParam.backgroundColor) != SK_AlphaTRANSPARENT) {
         canvas.clear(bufferDrawParam.backgroundColor);
     }
-    canvas.setMatrix(bufferDrawParam.matrix);
+    canvas.concat(bufferDrawParam.matrix);
 }
 
 void DrawShadowForCanvas(RSPaintFilterCanvas& canvas, const BufferDrawParam& bufferDrawParam)

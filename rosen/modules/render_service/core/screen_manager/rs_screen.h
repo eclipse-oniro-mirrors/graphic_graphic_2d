@@ -71,9 +71,6 @@ public:
     virtual int32_t SetScreenColorGamut(int32_t modeIdx) = 0;
     virtual int32_t SetScreenGamutMap(ScreenGamutMap mode) = 0;
     virtual int32_t GetScreenGamutMap(ScreenGamutMap &mode) const = 0;
-    virtual bool SetRotation(ScreenRotation rotation) = 0;
-    virtual SkMatrix GetRotationMatrix() const = 0;
-    virtual ScreenRotation GetRotation() const = 0;
     virtual int32_t GetActiveModePosByModeId(int32_t modeId) const = 0;
     virtual const HDRCapability& GetHDRCapability() const = 0;
     virtual const RSScreenType& GetScreenType() const = 0;
@@ -124,9 +121,6 @@ public:
     int32_t SetScreenColorGamut(int32_t modeIdx) override;
     int32_t SetScreenGamutMap(ScreenGamutMap mode) override;
     int32_t GetScreenGamutMap(ScreenGamutMap &mode) const override;
-    bool SetRotation(ScreenRotation rotation) override;
-    SkMatrix GetRotationMatrix() const override;
-    ScreenRotation GetRotation() const override;
     int32_t GetActiveModePosByModeId(int32_t modeId) const override;
     const HDRCapability& GetHDRCapability() const override;
     const RSScreenType& GetScreenType() const override;
@@ -143,9 +137,6 @@ private:
     void PowerStatusDump(std::string& dumpString);
     void CapabilityTypeDump(InterfaceType capabilityType, std::string& dumpString);
     void ScreenTypeDump(std::string& dumpString);
-    void ScreenRotationDump(std::string& dumpString);
-
-    void UpdateRotationMatrix();
 
     // ScreenId for this screen.
     ScreenId id_ = INVALID_SCREEN_ID;
@@ -156,8 +147,6 @@ private:
 
     int32_t width_ = 0;
     int32_t height_ = 0;
-    ScreenRotation rotation_ = ScreenRotation::ROTATION_0;
-    SkMatrix rotationMatrix_; // rotation matrix for canvas.
 
     bool isVirtual_ = true;
     std::shared_ptr<HdiOutput> hdiOutput_; // has value if the screen is physical

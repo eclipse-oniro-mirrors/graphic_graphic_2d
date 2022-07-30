@@ -90,10 +90,6 @@ public:
 
     int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode);
     
-    bool RequestRotation(ScreenId id, ScreenRotation rotation);
-
-    ScreenRotation GetRotation(ScreenId id);
-
     int32_t GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability);
 
     int32_t GetScreenType(ScreenId id, RSScreenType& screenType);

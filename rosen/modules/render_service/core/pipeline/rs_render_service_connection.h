@@ -121,10 +121,6 @@ private:
 
     int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode) override;
     
-    bool RequestRotation(ScreenId id, ScreenRotation rotation) override;
-
-    ScreenRotation GetRotation(ScreenId id) override;
-
     int32_t GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability) override;
 
     int32_t GetScreenType(ScreenId id, RSScreenType& screenType) override;

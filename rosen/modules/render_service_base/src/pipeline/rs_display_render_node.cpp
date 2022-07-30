@@ -15,9 +15,11 @@
 
 #include "pipeline/rs_display_render_node.h"
 
+#include "common/rs_obj_abs_geometry.h"
 #include "platform/common/rs_log.h"
 #include "platform/ohos/backend/rs_surface_ohos_gl.h"
 #include "platform/ohos/backend/rs_surface_ohos_raster.h"
+#include "screen_manager/screen_types.h"
 #include "visitor/rs_node_visitor.h"
 
 namespace OHOS {
@@ -152,6 +154,16 @@ bool RSDisplayRenderNode::SkipFrame(uint32_t skipFrameInterval)
         return false;
     }
     return true;
+}
+
+ScreenRotation RSDisplayRenderNode::GetRotation() const
+{
+    auto boundsGeoPtr = std::static_pointer_cast<RSObjAbsGeometry>(GetRenderProperties().GetBoundsGeometry());
+    if (boundsGeoPtr == nullptr) {
+        return ScreenRotation::ROTATION_0;
+    }
+    // -90.0f: convert rotation degree to 4 enum values
+    return static_cast<ScreenRotation>(static_cast<int32_t>(std::roundf(boundsGeoPtr->GetRotation() / -90.0f)) % 4);
 }
 } // namespace Rosen
 } // namespace OHOS
