@@ -862,7 +862,7 @@ void RSNode::ClearAllModifiers()
 
 void RSNode::AddModifier(const std::shared_ptr<RSModifierBase>& modifier)
 {
-    if (!modifier) {
+    if (!modifier || modifiers_.count(modifier->GetPropertyId())) {
         return;
     }
     auto iter = propertyModifiers_.find(modifier->GetModifierType());

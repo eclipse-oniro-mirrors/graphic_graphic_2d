@@ -51,6 +51,11 @@ SkCanvas* RSCanvasNode::BeginRecording(int width, int height)
 #ifdef ROSEN_OHOS
     recordingCanvas_ = new RSRecordingCanvas(width, height);
 #endif
+    std::unique_ptr<RSCommand> command = std::make_unique<RSCanvasNodeClearRecording>(GetId());
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, IsRenderServiceNode());
+    }
     return recordingCanvas_;
 }
 
@@ -70,12 +75,26 @@ void RSCanvasNode::FinishRecording()
     delete recordingCanvas_;
     recordingCanvas_ = nullptr;
     std::unique_ptr<RSCommand> command =
-        std::make_unique<RSCanvasNodeUpdateRecording>(GetId(), recording, drawContentLast_);
+        std::make_unique<RSCanvasNodeUpdateRecording>(GetId(), recording,
+            drawContentLast_ ? RSModifierType::FOREGROUND_STYLE : RSModifierType::CONTENT_STYLE);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
         transactionProxy->AddCommand(command, IsRenderServiceNode());
     }
 #endif
+}
+
+void RSCanvasNode::DrawOnNode(RSModifierType type, DrawFunc func)
+{
+    RSRecordingCanvas recordingCanvas(GetPaintWidth(), GetPaintHeight());
+    func(&recordingCanvas);
+    auto recording = recordingCanvas.GetDrawCmdList();
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSCanvasNodeUpdateRecording>(GetId(), recording, type);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, IsRenderServiceNode());
+    }
 }
 
 float RSCanvasNode::GetPaintWidth() const

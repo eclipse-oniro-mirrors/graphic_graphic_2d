@@ -55,10 +55,13 @@ static std::unordered_map<RSModifierType, ModifierUnmarshallingFunc> funcLUT = {
 #include "modifier/rs_modifiers_def.in"
     { RSModifierType::EXTENDED, [](Parcel& parcel) -> RSRenderModifier* {
             std::shared_ptr<RSRenderProperty<std::shared_ptr<DrawCmdList>>> prop;
-            if (!RSMarshallingHelper::Unmarshalling(parcel, prop)) {
+            int16_t type;
+            if (!RSMarshallingHelper::Unmarshalling(parcel, prop) || !parcel.ReadInt16(type)) {
                 return nullptr;
             }
-            return new RSDrawCmdListRenderModifier(prop);
+            RSDrawCmdListRenderModifier* modifier = new RSDrawCmdListRenderModifier(prop);
+            modifier->SetType(static_cast<RSModifierType>(type));
+            return modifier;
         },
     },
 };
@@ -85,12 +88,16 @@ void RSDrawCmdListRenderModifier::Update(const std::shared_ptr<RSRenderPropertyB
 bool RSDrawCmdListRenderModifier::Marshalling(Parcel& parcel)
 {
     return parcel.WriteInt16(static_cast<int16_t>(RSModifierType::EXTENDED)) &&
-        RSMarshallingHelper::Marshalling(parcel, property_);
+        RSMarshallingHelper::Marshalling(parcel, property_) && parcel.WriteInt16(static_cast<int16_t>(GetType()));
 }
 
-RSRenderModifier* RSRenderModifier::Unmarshalling(Parcel& parcel, RSModifierType type)
+RSRenderModifier* RSRenderModifier::Unmarshalling(Parcel& parcel)
 {
-    auto it = funcLUT.find(type);
+    int16_t type = 0;
+    if (!parcel.ReadInt16(type)) {
+        return nullptr;
+    }
+    auto it = funcLUT.find(static_cast<RSModifierType>(type));
     if (it == funcLUT.end()) {
         ROSEN_LOGE("RSRenderModifier Unmarshalling cannot find func in lut %d", type);
         return nullptr;

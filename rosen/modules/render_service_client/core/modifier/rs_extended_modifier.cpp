@@ -44,7 +44,7 @@ std::shared_ptr<RSRenderModifier> RSExtendedModifierHelper::CreateRenderModifier
     auto renderProperty = std::make_shared<RSRenderProperty<DrawCmdListPtr>>(
         RSExtendedModifierHelper::FinishDrawing(ctx), id);
     auto renderModifier =  std::make_shared<RSDrawCmdListRenderModifier>(renderProperty);
-    renderModifier->drawStyle_ = type;
+    renderModifier->SetType(type);
     return renderModifier;
 }
 

@@ -23,7 +23,7 @@
 #include "animation/rs_transition_effect.h"
 #include "common/rs_vector2.h"
 #include "common/rs_vector4.h"
-#include "modifier/rs_modifier.h"
+#include "modifier/rs_property_modifier.h"
 #include "modifier/rs_modifier_extractor.h"
 #include "pipeline/rs_recording_canvas.h"
 #include "property/rs_properties.h"
@@ -35,6 +35,7 @@ class SkCanvas;
 
 namespace OHOS {
 namespace Rosen {
+using DrawFunc = std::function<void(SkCanvas*)>;
 using PropertyCallback = std::function<void()>;
 class RSAnimation;
 class RSCommand;
@@ -68,6 +69,8 @@ public:
     void RemoveAnimation(const std::shared_ptr<RSAnimation>& animation);
     void SetMotionPathOption(const std::shared_ptr<RSMotionPathOption>& motionPathOption);
     const std::shared_ptr<RSMotionPathOption> GetMotionPathOption() const;
+
+    virtual void DrawOnNode(RSModifierType type, DrawFunc func) {} // [PLANNING]: support SurfaceNode
 
     const RSModifierExtractor& GetStagingProperties() const;
 

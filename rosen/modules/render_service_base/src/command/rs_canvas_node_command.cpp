@@ -27,10 +27,17 @@ void RSCanvasNodeCommandHelper::Create(RSContext& context, NodeId id)
 }
 
 void RSCanvasNodeCommandHelper::UpdateRecording(
-    RSContext& context, NodeId id, std::shared_ptr<DrawCmdList> drawCmds, bool drawContentLast)
+    RSContext& context, NodeId id, std::shared_ptr<DrawCmdList> drawCmds, RSModifierType type)
 {
     if (auto node = context.GetNodeMap().GetRenderNode<RSCanvasRenderNode>(id)) {
-        node->UpdateRecording(drawCmds, drawContentLast);
+        node->UpdateRecording(drawCmds, type);
+    }
+}
+
+void RSCanvasNodeCommandHelper::ClearRecording(RSContext& context, NodeId id)
+{
+    if (auto node = context.GetNodeMap().GetRenderNode<RSCanvasRenderNode>(id)) {
+        node->ClearRecording();
     }
 }
 

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "modifier/rs_modifier.h"
+#include "modifier/rs_property_modifier.h"
 
 #include "modifier/rs_modifier_type.h"
 #include "modifier/rs_render_modifier.h"

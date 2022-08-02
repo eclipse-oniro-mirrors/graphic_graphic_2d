@@ -16,6 +16,7 @@
 #ifndef ROSEN_RENDER_SERVICE_BASE_COMMAND_RS_CANVAS_NODE_COMMAND_H
 #define ROSEN_RENDER_SERVICE_BASE_COMMAND_RS_CANVAS_NODE_COMMAND_H
 
+#include "modifier/rs_modifier_type.h"
 #include "rs_command_templates.h"
 
 namespace OHOS {
@@ -24,6 +25,7 @@ namespace Rosen {
 enum RSCanvasNodeCommandType : uint16_t {
     CANVAS_NODE_CREATE,
     CANVAS_NODE_UPDATE_RECORDING,
+    CANVAS_NODE_CLEAR_RECORDING,
 };
 
 class DrawCmdList;
@@ -32,13 +34,16 @@ class RSCanvasNodeCommandHelper {
 public:
     static void Create(RSContext& context, NodeId id);
     static void UpdateRecording(
-        RSContext& context, NodeId id, std::shared_ptr<DrawCmdList> drawCmds, bool drawContentLast);
+        RSContext& context, NodeId id, std::shared_ptr<DrawCmdList> drawCmds, RSModifierType type);
+    static void ClearRecording(RSContext& context, NodeId id);
 };
 
 ADD_COMMAND(RSCanvasNodeCreate, ARG(CANVAS_NODE, CANVAS_NODE_CREATE, RSCanvasNodeCommandHelper::Create, NodeId))
 ADD_COMMAND(RSCanvasNodeUpdateRecording,
     ARG(CANVAS_NODE, CANVAS_NODE_UPDATE_RECORDING, RSCanvasNodeCommandHelper::UpdateRecording, NodeId,
-        std::shared_ptr<DrawCmdList>, bool))
+        std::shared_ptr<DrawCmdList>, RSModifierType))
+ADD_COMMAND(RSCanvasNodeClearRecording,
+    ARG(CANVAS_NODE, CANVAS_NODE_CLEAR_RECORDING, RSCanvasNodeCommandHelper::ClearRecording, NodeId))
 
 } // namespace Rosen
 } // namespace OHOS

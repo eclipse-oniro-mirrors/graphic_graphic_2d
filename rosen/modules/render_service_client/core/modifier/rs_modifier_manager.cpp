@@ -16,7 +16,7 @@
 
 #include "modifier/rs_modifier_manager.h"
 
-#include "modifier/rs_modifier.h"
+#include "modifier/rs_property_modifier.h"
 #include "platform/common/rs_log.h"
 
 namespace OHOS {

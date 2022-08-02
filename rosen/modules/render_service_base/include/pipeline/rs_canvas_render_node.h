@@ -36,10 +36,10 @@ public:
     explicit RSCanvasRenderNode(NodeId id, std::weak_ptr<RSContext> context = {});
     virtual ~RSCanvasRenderNode();
 
-    void UpdateRecording(std::shared_ptr<DrawCmdList> drawCmds, bool drawContentLast);
+    void UpdateRecording(std::shared_ptr<DrawCmdList> drawCmds, RSModifierType type);
+    void ClearRecording();
 
     void ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas) override;
-    void ProcessRenderContents(RSPaintFilterCanvas& canvas) override;
     void ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas) override;
 
     void Prepare(const std::shared_ptr<RSNodeVisitor>& visitor) override;
@@ -49,13 +49,9 @@ public:
     {
         return RSRenderNodeType::CANVAS_NODE;
     }
-    void AddModifier(const std::shared_ptr<RSRenderModifier>& modifier) override;
 private:
     void ApplyDrawCmdModifier(RSModifyContext& context, RSModifierType type);
 
-    std::shared_ptr<DrawCmdList> drawCmdList_ { nullptr };
-    std::unordered_set<PropertyId> drawCmdModifiers_;
-    bool drawContentLast_ = false;
     std::pair<int, int> canvasNodeSaveCount_ = { 0, 0 };
 
     friend class RSRenderTransition;

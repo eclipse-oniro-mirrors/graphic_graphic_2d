@@ -218,12 +218,12 @@ Vector2f RSProperties::GetFramePosition() const
 
 float RSProperties::GetFrameOffsetX() const
 {
-    return frameGeo_->IsEmpty() ? 0 : (frameGeo_->GetX() - boundsGeo_->GetX());
+    return std::isinf(frameGeo_->GetX()) ? 0 : (frameGeo_->GetX() - boundsGeo_->GetX());
 }
 
 float RSProperties::GetFrameOffsetY() const
 {
-    return frameGeo_->IsEmpty() ? 0 : (frameGeo_->GetY() - boundsGeo_->GetY());
+    return std::isinf(frameGeo_->GetY()) ? 0 : (frameGeo_->GetY() - boundsGeo_->GetY());
 }
 
 const std::shared_ptr<RSObjGeometry>& RSProperties::GetBoundsGeometry() const

@@ -154,16 +154,22 @@ void RSRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 void RSRenderNode::ClearModifiers()
 {
     modifiers_.clear();
+    drawCmdModifiers_.clear();
     SetDirty();
 }
 
 void RSRenderNode::AddModifier(const std::shared_ptr<RSRenderModifier>& modifier)
 {
-    if (modifier) {
-        modifiers_.insert({ modifier->GetPropertyId(), modifier });
-        modifier->GetProperty()->Attach(shared_from_this());
-        SetDirty();
+    if (!modifier) {
+        return;
     }
+    if (modifier->GetType() < RSModifierType::CUSTOM) {
+        modifiers_.insert({ modifier->GetPropertyId(), modifier });
+    } else {
+        drawCmdModifiers_[modifier->GetType()].emplace_back(modifier);
+    }
+    modifier->GetProperty()->Attach(shared_from_this());
+    SetDirty();
 }
 
 void RSRenderNode::RemoveModifier(const PropertyId& id)
@@ -172,6 +178,10 @@ void RSRenderNode::RemoveModifier(const PropertyId& id)
     if (iter != modifiers_.end()) {
         modifiers_.erase(iter);
         SetDirty();
+        return;
+    }
+    for (auto& [type, modifiers] : drawCmdModifiers_) {
+        modifiers.remove_if([id](const auto& modifier) -> bool { return modifier->GetPropertyId() == id; });
     }
 }
 
@@ -190,7 +200,17 @@ void RSRenderNode::ApplyModifiers()
 
 std::shared_ptr<RSRenderModifier> RSRenderNode::GetModifier(const PropertyId& id)
 {
-    return modifiers_.count(id) ? modifiers_[id] : nullptr;
+    if (modifiers_.count(id)) {
+        return modifiers_[id];
+    }
+    for (auto& [type, modifiers] : drawCmdModifiers_) {
+        auto it = std::find_if(modifiers.begin(), modifiers.end(),
+            [id](const auto& modifier) -> bool { return modifier->GetPropertyId() == id; });
+        if (it != modifiers.end()) {
+            return *it;
+        }
+    }
+    return nullptr;
 }
 } // namespace Rosen
 } // namespace OHOS

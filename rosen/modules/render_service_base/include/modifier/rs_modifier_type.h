@@ -16,6 +16,8 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_MODIFIER_TYPE_H
 #define RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_MODIFIER_TYPE_H
 
+#include <cstdint>
+
 namespace OHOS {
 namespace Rosen {
 enum class RSModifierType : int16_t {
@@ -74,6 +76,7 @@ enum class RSModifierType : int16_t {
 
     CUSTOM,
     EXTENDED,
+    FOREGROUND_STYLE,
     CONTENT_STYLE,
     OVERLAY_STYLE,
 };

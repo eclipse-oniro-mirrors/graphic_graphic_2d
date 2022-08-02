@@ -38,6 +38,7 @@ public:
     void FinishRecording();
     float GetPaintWidth() const;
     float GetPaintHeight() const;
+    void DrawOnNode(RSModifierType type, DrawFunc func) override;
 
     RSUINodeType GetType() const override
     {
