@@ -697,11 +697,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSRe
 }
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSRenderModifier>& val)
 {
-    short type = 0;
-    if (!parcel.ReadInt16(type)) {
-        return false;
-    }
-    val.reset(RSRenderModifier::Unmarshalling(parcel, static_cast<RSModifierType>(type)));
+    val.reset(RSRenderModifier::Unmarshalling(parcel));
     return val != nullptr;
 }
 

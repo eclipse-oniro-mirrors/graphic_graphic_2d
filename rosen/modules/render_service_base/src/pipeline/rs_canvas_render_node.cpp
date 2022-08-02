@@ -30,16 +30,25 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+constexpr PropertyId ANONYMOUS_MODIFIER_ID = 0;
+}
 
 RSCanvasRenderNode::RSCanvasRenderNode(NodeId id, std::weak_ptr<RSContext> context) : RSRenderNode(id, context) {}
 
 RSCanvasRenderNode::~RSCanvasRenderNode() {}
 
-void RSCanvasRenderNode::UpdateRecording(std::shared_ptr<DrawCmdList> drawCmds, bool drawContentLast)
+void RSCanvasRenderNode::UpdateRecording(std::shared_ptr<DrawCmdList> drawCmds, RSModifierType type)
 {
-    drawCmdList_ = drawCmds;
-    drawContentLast_ = drawContentLast;
-    SetDirty();
+    auto renderProperty = std::make_shared<RSRenderProperty<DrawCmdListPtr>>(drawCmds, ANONYMOUS_MODIFIER_ID);
+    auto renderModifier =  std::make_shared<RSDrawCmdListRenderModifier>(renderProperty);
+    renderModifier->SetType(type);
+    AddModifier(renderModifier);
+}
+
+void RSCanvasRenderNode::ClearRecording()
+{
+    RemoveModifier(ANONYMOUS_MODIFIER_ID);
 }
 
 void RSCanvasRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)
@@ -56,13 +65,6 @@ void RSCanvasRenderNode::Process(const std::shared_ptr<RSNodeVisitor>& visitor)
         return;
     }
     visitor->ProcessCanvasRenderNode(*this);
-}
-
-void RSCanvasRenderNode::ProcessRenderContents(RSPaintFilterCanvas& canvas)
-{
-#ifdef ROSEN_OHOS
-    RSPropertiesPainter::DrawFrame(GetRenderProperties(), canvas, drawCmdList_);
-#endif
 }
 
 void RSCanvasRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
@@ -82,9 +84,6 @@ void RSCanvasRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas
     if (GetRenderProperties().GetClipToFrame()) {
         RSPropertiesPainter::Clip(canvas, GetRenderProperties().GetFrameRect());
     }
-    if (!drawContentLast_) {
-        ProcessRenderContents(canvas);
-    }
     RSModifyContext context = { GetMutableRenderProperties(), &canvas };
     ApplyDrawCmdModifier(context, RSModifierType::CONTENT_STYLE);
 #endif
@@ -93,9 +92,8 @@ void RSCanvasRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas
 void RSCanvasRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 {
 #ifdef ROSEN_OHOS
-    if (drawContentLast_) {
-        ProcessRenderContents(canvas);
-    }
+    RSModifyContext context = { GetMutableRenderProperties(), &canvas };
+    ApplyDrawCmdModifier(context, RSModifierType::FOREGROUND_STYLE);
 
     auto filter = std::static_pointer_cast<RSSkiaFilter>(GetRenderProperties().GetFilter());
     if (filter != nullptr) {
@@ -104,7 +102,6 @@ void RSCanvasRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
     canvas.RestoreCanvasAndAlpha(canvasNodeSaveCount_);
     RSPropertiesPainter::DrawBorder(GetRenderProperties(), canvas);
 
-    RSModifyContext context = { GetMutableRenderProperties(), &canvas };
     ApplyDrawCmdModifier(context, RSModifierType::OVERLAY_STYLE);
 
     RSPropertiesPainter::DrawForegroundColor(GetRenderProperties(), canvas);
@@ -114,24 +111,9 @@ void RSCanvasRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 
 void RSCanvasRenderNode::ApplyDrawCmdModifier(RSModifyContext& context, RSModifierType type)
 {
-    for (auto& id : drawCmdModifiers_) {
-        auto modifier = std::static_pointer_cast<RSDrawCmdListRenderModifier>(GetModifier(id));
-        if (!modifier) {
-            drawCmdModifiers_.erase(id);
-            continue;
-        }
-        if (modifier->drawStyle_ == type) {
+    if (drawCmdModifiers_.count(type)) {
+        for (auto& modifier : drawCmdModifiers_[type]) {
             modifier->Apply(context);
-        }
-    }
-}
-
-void RSCanvasRenderNode::AddModifier(const std::shared_ptr<RSRenderModifier>& modifier)
-{
-    if (modifier) {
-        RSRenderNode::AddModifier(modifier);
-        if (modifier->GetType() == RSModifierType::EXTENDED) {
-            drawCmdModifiers_.insert(modifier->GetPropertyId());
         }
     }
 }

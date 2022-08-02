@@ -57,7 +57,7 @@ public:
     virtual void Update(const std::shared_ptr<RSRenderPropertyBase>& newProp, bool isDelta) = 0;
 
     virtual bool Marshalling(Parcel& parcel) = 0;
-    static RSRenderModifier* Unmarshalling(Parcel& parcel, RSModifierType type);
+    static RSRenderModifier* Unmarshalling(Parcel& parcel);
     virtual void SetIsAdditive(bool isAdditive) = 0;
 };
 
@@ -84,14 +84,15 @@ public:
     void SetIsAdditive(bool isAdditive) override {}
     RSModifierType GetType() override
     {
-        return RSModifierType::EXTENDED;
+        return drawStyle_;
+    }
+    void SetType(RSModifierType type)
+    {
+        drawStyle_ = type;
     }
 protected:
     RSModifierType drawStyle_ = RSModifierType::EXTENDED;
     std::shared_ptr<RSRenderProperty<DrawCmdListPtr>> property_;
-
-    friend class RSCanvasRenderNode;
-    friend class RSExtendedModifierHelper;
 };
 
 template<typename T>

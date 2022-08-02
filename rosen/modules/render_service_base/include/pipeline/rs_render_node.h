@@ -83,6 +83,7 @@ protected:
     void UpdateDirtyRegion(RSDirtyRegionManager& dirtyManager, bool parentDirty);
     bool IsDirty() const override;
     std::pair<int, int> renderNodeSaveCount_ = { 0, 0 };
+    std::unordered_map<RSModifierType, std::list<std::shared_ptr<RSRenderModifier>>> drawCmdModifiers_;
 
 private:
     void FallbackAnimationsToRoot();

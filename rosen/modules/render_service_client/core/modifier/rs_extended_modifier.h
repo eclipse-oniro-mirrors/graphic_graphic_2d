@@ -18,7 +18,7 @@
 
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
-#include "modifier/rs_modifier_base.h"
+#include "modifier/rs_modifier.h"
 
 class SkCanvas;
 
