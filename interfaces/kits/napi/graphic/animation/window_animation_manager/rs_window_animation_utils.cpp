@@ -27,8 +27,8 @@ NativeValue* RSWindowAnimationUtils::CreateJsWindowAnimationTarget(NativeEngine&
 {
     WALOGD("Create!");
     if (target == nullptr) {
-        WALOGE("Target is null!");
-        return engine.CreateUndefined();
+        WALOGD("Target is null!");
+        return engine.CreateNull();
     }
 
     auto objValue = engine.CreateObject();
@@ -65,11 +65,6 @@ NativeValue* RSWindowAnimationUtils::CreateJsWindowAnimationTargetArray(NativeEn
     const std::vector<sptr<RSWindowAnimationTarget>>& targets)
 {
     WALOGD("Create!");
-    if (targets.empty()) {
-        WALOGE("Target is empty!");
-        return engine.CreateUndefined();
-    }
-
     NativeValue* arrayValue = engine.CreateArray(targets.size());
     NativeArray* array = ConvertNativeValueTo<NativeArray>(arrayValue);
     uint32_t index = 0;
