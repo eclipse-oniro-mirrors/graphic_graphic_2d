@@ -97,6 +97,7 @@ private:
     FenceStatus GetStatus();
 
     UniqueFd fenceFd_;
+    static int SyncMerge(const char *name, int fd1, int fd2);
 };
 
 }

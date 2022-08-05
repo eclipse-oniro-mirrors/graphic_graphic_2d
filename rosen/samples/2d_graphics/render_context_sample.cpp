@@ -17,7 +17,7 @@
 
 #include "window.h"
 #include <securec.h>
-#include <vsync_helper.h>
+#include <event_handler.h>
 #include <iostream>
 
 using namespace OHOS;

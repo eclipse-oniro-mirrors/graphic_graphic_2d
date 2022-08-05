@@ -53,7 +53,6 @@ ohos_executable("bootanimation") {
     "//base/global/resource_management/frameworks/resmgr:global_resmgr",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//foundation/graphic/graphic_2d:libsurface",
-    "//foundation/graphic/graphic_2d:libvsync_client",
     "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics",
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_base/src/platform:platform",
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_client:librender_service_client",

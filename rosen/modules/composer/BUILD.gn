@@ -30,7 +30,6 @@ config("composer_public_config") {
   include_dirs = [
     "//foundation/graphic/graphic_2d/rosen/include/common",
     "//drivers/peripheral/display/interfaces/include",
-    "//foundation/graphic/graphic_2d/interfaces/inner_api/vsync_module",
     "//foundation/graphic/graphic_2d/interfaces/inner_api/common",
     "//foundation/graphic/graphic_2d/rosen/modules/composer/hdi_backend/include",
     "//foundation/graphic/graphic_2d/rosen/modules/composer/vsync/include",
@@ -63,7 +62,6 @@ ohos_shared_library("libcomposer") {
   deps = [
     "//base/hiviewdfx/hilog/interfaces/native/innerkits:libhilog",
     "//foundation/graphic/graphic_2d:libsurface",
-    "//foundation/graphic/graphic_2d/frameworks/vsync:libvsync_module",
     "//foundation/graphic/graphic_2d/utils:libgraphic_utils",
   ]
 

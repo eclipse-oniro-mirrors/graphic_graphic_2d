@@ -11,11 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-service vsync_server /system/bin/vsync_server
-    class weston
-    disabled
-    seclabel u:r:wms_service:s0
-
 service graphic_dumper_server /system/bin/graphic_dumper_server
     class weston
     disabled

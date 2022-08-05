@@ -22,7 +22,6 @@
 #include <egl_surface.h>
 #include <ibuffer_producer.h>
 
-#include "egl_manager.h"
 #include "surface_buffer.h"
 
 namespace OHOS {

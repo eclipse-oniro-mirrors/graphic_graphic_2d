@@ -20,7 +20,7 @@
 #include <vsync_generator.h>
 #include <vsync_controller.h>
 #include <vsync_distributor.h>
-#include <vsync_helper.h>
+#include <event_handler.h>
 #include <vsync_receiver.h>
 #include <iostream>
 

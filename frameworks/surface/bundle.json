@@ -26,8 +26,7 @@
           "bytrace_core"
         ],
         "third_party": [
-          "libz",
-          "libdrm"
+          "libz"
         ]
       },
       "build": {

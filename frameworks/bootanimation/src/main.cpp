@@ -15,7 +15,7 @@
 
 #include <display_type.h>
 #include <display_manager.h>
-#include <vsync_helper.h>
+#include <event_handler.h>
 #include "boot_animation.h"
 #include "util.h"
 

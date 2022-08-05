@@ -25,7 +25,7 @@
 #include "refbase.h"
 #include "rs_render_engine.h"
 #include "vsync_distributor.h"
-#include "vsync_helper.h"
+#include <event_handler.h>
 #include "vsync_receiver.h"
 
 #include "command/rs_command.h"

@@ -19,7 +19,7 @@
 #include <functional>
 #include <vector>
 
-#include <vsync_helper.h>
+#include <event_handler.h>
 #include "vsync_receiver.h"
 
 #include "platform/drawing/rs_vsync_client.h"

@@ -16,7 +16,6 @@
 #include "hdi_screen.h"
 #include <chrono>
 #include "hdi_log.h"
-#include "vsync_module.h"
 #include "vsync_sampler.h"
 
 namespace OHOS {
@@ -256,11 +255,6 @@ int32_t HdiScreen::GetSupportedMetaDataKey(std::vector<HDRMetadataKey> &keys) co
 
 void HdiScreen::Destroy()
 {
-    // stop vsync
-    OHOS::VsyncError ret = VsyncModule::GetInstance()->Stop();
-    if (ret != OHOS::VSYNC_ERROR_OK) {
-        HLOGE("vsync Stop failed, ret is %{public}d", ret);
-    }
 }
 
 } // namespace Rosen
