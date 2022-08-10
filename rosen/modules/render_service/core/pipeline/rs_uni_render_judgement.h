@@ -16,11 +16,13 @@
 #ifndef RS_UNI_RENDER_JUDGEMENT_H
 #define RS_UNI_RENDER_JUDGEMENT_H
 
+#include <atomic>
 #include <set>
 #include <string>
 
 namespace OHOS {
 namespace Rosen {
+class RSBaseRenderNode;
 enum class UniRenderEnabledType {
     UNI_RENDER_DISABLED = 0,
     UNI_RENDER_ENABLED_FOR_ALL,
@@ -38,6 +40,9 @@ public:
     static bool QueryClientEnabled(const std::string &bundleName);
     static void InitUniRenderConfig();
     static bool IsUniRender();
+    static bool QueryIfUseUniVisitor();
+    static void CalculateRenderType(std::shared_ptr<RSBaseRenderNode> rootNode);
+    static void UpdateRenderState(bool useUniVisitor);
 
 private:
     RSUniRenderJudgement() = default;
@@ -46,6 +51,7 @@ private:
 
     static inline UniRenderEnabledType uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
     static inline std::set<std::string> uniRenderBlockList_ {};
+    static inline std::atomic_bool useUniVisitor_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

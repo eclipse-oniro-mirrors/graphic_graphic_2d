@@ -391,13 +391,15 @@ void RSMainThread::Render()
 {
     const std::shared_ptr<RSBaseRenderNode> rootNode = context_.GetGlobalRootRenderNode();
     if (rootNode == nullptr) {
-        RS_LOGE("RSMainThread::Draw GetGlobalRootRenderNode fail");
+        RS_LOGE("RSMainThread::Render GetGlobalRootRenderNode fail");
         return;
     }
     std::shared_ptr<RSNodeVisitor> visitor;
-    if (isUniRender_) {
+    if (RSUniRenderJudgement::QueryIfUseUniVisitor()) {
+        RS_LOGE("cqx RSMainThread::Render use RSUniRenderVisitor");
         visitor = std::make_shared<RSUniRenderVisitor>();
     } else {
+        RS_LOGE("cqx RSMainThread::Render use RSRenderServiceVisitor");
         bool doParallelComposition = false;
         if (RSInnovation::GetParallelCompositionEnabled()) {
             doParallelComposition = DoParallelComposition(rootNode);
@@ -410,6 +412,10 @@ void RSMainThread::Render()
         rsVisitor->SetAnimateState(doAnimate_);
         visitor = rsVisitor;
     }
+    if (isUniRender_) {
+        RSUniRenderJudgement::CalculateRenderType(rootNode);
+    }
+
     rootNode->Prepare(visitor);
     CalcOcclusion();
     rootNode->Process(visitor);
@@ -633,6 +639,17 @@ void RSMainThread::RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent
 void RSMainThread::UnRegisterApplicationAgent(sptr<IApplicationAgent> app)
 {
     std::__libcpp_erase_if_container(applicationAgentMap_, [&app](auto& iter) { return iter.second == app; });
+}
+
+void RSMainThread::NotifyRenderStateChanged(bool useUniVisitor)
+{
+    PostTask([useUniVisitor = useUniVisitor, this]() {
+        for (auto& elem : applicationAgentMap_) {
+            if (elem.second != nullptr) {
+                elem.second->OnRenderStateChanged(!useUniVisitor);
+            }
+        }
+    });
 }
 
 void RSMainThread::RegisterOcclusionChangeCallback(sptr<RSIOcclusionChangeCallback> callback)

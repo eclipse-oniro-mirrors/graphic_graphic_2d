@@ -52,7 +52,7 @@ void RSUIDirector::Init(bool shouldCreateRenderThread)
     AnimationCommandHelper::SetFinishCallbackProcessor(AnimationCallbackProcessor);
 
     isUniRenderEnabled_ = RSSystemProperties::GetUniRenderEnabled();
-    if (!isUniRenderEnabled_ && shouldCreateRenderThread) {
+    if (shouldCreateRenderThread) {
         auto renderThreadClient = RSIRenderClient::CreateRenderThreadClient();
         auto transactionProxy = RSTransactionProxy::GetInstance();
         if (transactionProxy != nullptr) {
@@ -96,8 +96,8 @@ void RSUIDirector::GoBackground()
         // clean bufferQueue cache
         auto surfaceNode = surfaceNode_.lock();
         RSRenderThread::Instance().PostTask([surfaceNode]() {
-            if (surfaceNode != nullptr) {
-                std::shared_ptr<RSSurface> rsSurface = RSSurfaceExtractor::ExtractRSSurface(surfaceNode);
+            auto rsSurface = RSSurfaceExtractor::ExtractRSSurface(surfaceNode);
+            if (rsSurface != nullptr) {
                 rsSurface->ClearBuffer();
             }
         });

@@ -17,18 +17,24 @@
 
 #include <fstream>
 
+#include "pipeline/rs_display_render_node.h"
+#include "pipeline/rs_main_thread.h"
 #include "platform/common/rs_log.h"
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+
 const std::string CONFIG_PATH = "/etc/";
 const std::string UNIRENDER_CONFIG_FILE_NAME = "unirender.config";
 const std::string UNI_RENDER_DISABLED_TAG = "DISABLED";
 const std::string UNI_RENDER_ENABLED_FOR_ALL_TAG = "ENABLED_FOR_ALL";
+constexpr uint32_t UNI_RENDER_MAX_WINDOW = 4;
 
 bool StartsWith(const std::string &str, const std::string &prefix)
 {
     return str.size() >= prefix.size() && str.substr(0, prefix.size()) == prefix;
+}
 }
 
 // used by render server
@@ -45,6 +51,38 @@ const std::set<std::string>& RSUniRenderJudgement::GetUniRenderEnabledList()
 bool RSUniRenderJudgement::IsUniRender()
 {
     return RSUniRenderJudgement::GetUniRenderEnabledType() != UniRenderEnabledType::UNI_RENDER_DISABLED;
+}
+
+bool RSUniRenderJudgement::QueryIfUseUniVisitor()
+{
+    RS_LOGI("RSUniRenderJudgement::QueryIfUseUniVisitor useUniVisitor_:%d", useUniVisitor_.load());
+    return useUniVisitor_;
+}
+
+void RSUniRenderJudgement::CalculateRenderType(std::shared_ptr<RSBaseRenderNode> rootNode)
+{
+    uint32_t windowCount = 0;
+    for (auto& child : rootNode->GetSortedChildren()) {
+        if (!child || !child->IsInstanceOf<RSDisplayRenderNode>()) {
+            continue;
+        }
+        auto childNode = child->ReinterpretCastTo<RSDisplayRenderNode>();
+        if (!childNode->IsMirrorDisplay()) {
+            windowCount += childNode->GetSortedChildren().size();
+        }
+    }
+
+    bool shouldUseUniVisitor = windowCount <= UNI_RENDER_MAX_WINDOW;
+    if (shouldUseUniVisitor != useUniVisitor_) {
+        useUniVisitor_ = shouldUseUniVisitor;
+        RSMainThread::Instance()->NotifyRenderStateChanged(useUniVisitor_);
+        RS_LOGI("RSUniRenderJudgement::CalculateRenderType useUniVisitor_:%d", useUniVisitor_.load());
+    }
+}
+
+void RSUniRenderJudgement::UpdateRenderState(bool useUniVisitor)
+{
+    useUniVisitor_.store(useUniVisitor);
 }
 
 bool RSUniRenderJudgement::QueryClientEnabled(const std::string &bundleName)
@@ -64,6 +102,7 @@ void RSUniRenderJudgement::InitUniRenderConfig()
 {
     InitUniRenderWithConfigFile();
     RS_LOGI("Init RenderService UniRender Type:%d", uniRenderEnabledType_);
+    useUniVisitor_ = uniRenderEnabledType_ != UniRenderEnabledType::UNI_RENDER_DISABLED;
 }
 
 void RSUniRenderJudgement::InitUniRenderWithConfigFile()

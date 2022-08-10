@@ -116,6 +116,19 @@ bool RSRenderServiceConnectionProxy::InitUniRenderEnabled(const std::string &bun
     return reply.ReadBool();
 }
 
+bool RSRenderServiceConnectionProxy::QueryIfRTNeedRender()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    int32_t err = Remote()->SendRequest(RSIRenderServiceConnection::QUERY_RT_NEED_RENDER, data, reply, option);
+    if (err != NO_ERROR) {
+        return true;
+    }
+    return reply.ReadBool();
+}
+
 bool RSRenderServiceConnectionProxy::CreateNode(const RSSurfaceRenderNodeConfig& config)
 {
     MessageParcel data;

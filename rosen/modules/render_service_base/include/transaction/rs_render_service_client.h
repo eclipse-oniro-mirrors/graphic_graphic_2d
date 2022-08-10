@@ -64,6 +64,7 @@ public:
     void ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
 
     bool InitUniRenderEnabled(const std::string &bundleName);
+    bool QueryIfRTNeedRender();
     bool CreateNode(const RSSurfaceRenderNodeConfig& config);
     std::shared_ptr<RSSurface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config);
 

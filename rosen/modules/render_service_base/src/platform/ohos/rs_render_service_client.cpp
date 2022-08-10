@@ -59,6 +59,16 @@ bool RSRenderServiceClient::InitUniRenderEnabled(const std::string &bundleName)
     return renderService->InitUniRenderEnabled(bundleName);
 }
 
+bool RSRenderServiceClient::QueryIfRTNeedRender()
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return false;
+    }
+    return renderService->QueryIfRTNeedRender();
+}
+
+
 bool RSRenderServiceClient::CreateNode(const RSSurfaceRenderNodeConfig& config)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();

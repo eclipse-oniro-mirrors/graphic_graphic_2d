@@ -26,6 +26,7 @@
 #include "pipeline/rs_render_node_map.h"
 #include "pipeline/rs_root_render_node.h"
 #include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
 #ifdef OHOS_RSS_CLIENT
 #include "res_sched_client.h"
 #include "res_type.h"
@@ -80,20 +81,21 @@ RSRenderThread::RSRenderThread()
 #endif
     mainFunc_ = [&]() {
         uint64_t renderStartTimeStamp = jankDetector_.GetSysTimeNs();
-        std::string str = "RSRenderThread DrawFrame: " + std::to_string(timestamp_);
-        ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, str.c_str());
         {
+            RS_TRACE_NAME("RSRenderThread DrawFrame: " + std::to_string(timestamp_));
             prevTimestamp_ = timestamp_;
             ProcessCommands();
             jankDetector_.ProcessUiDrawFrameMsg();
-        }
 
-        ROSEN_LOGD("RSRenderThread DrawFrame(%" PRIu64 ") in %s", prevTimestamp_, renderContext_ ? "GPU" : "CPU");
-        Animate(prevTimestamp_);
-        Render();
-        RS_ASYNC_TRACE_BEGIN("waiting GPU running", 1111); // 1111 means async trace code for gpu
-        SendCommands();
-        ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
+            if (!needRender_) {
+                return;
+            }
+            ROSEN_LOGD("RSRenderThread DrawFrame(%" PRIu64 ") in %s", prevTimestamp_, renderContext_ ? "GPU" : "CPU");
+            Animate(prevTimestamp_);
+            Render();
+            RS_ASYNC_TRACE_BEGIN("waiting GPU running", 1111); // 1111 means async trace code for gpu
+            SendCommands();
+        }
         jankDetector_.CalculateSkippedFrame(renderStartTimeStamp, jankDetector_.GetSysTimeNs());
     };
 
@@ -203,6 +205,10 @@ void RSRenderThread::RenderLoop()
 #ifdef ACE_ENABLE_GL
     renderContext_->InitializeEglContext(); // init egl context on RT
 #endif
+    if (RSSystemProperties::GetUniRenderEnabled()) {
+        needRender_ = std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient())
+            ->QueryIfRTNeedRender();
+    }
     std::string name = "RSRenderThread_" + std::to_string(::getpid());
     runner_ = AppExecFwk::EventRunner::Create(false);
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);

@@ -100,6 +100,7 @@ public:
     }
     void RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app);
     void UnRegisterApplicationAgent(sptr<IApplicationAgent> app);
+    void NotifyRenderStateChanged(bool useUniVisitor);
 
     void RegisterOcclusionChangeCallback(sptr<RSIOcclusionChangeCallback> callback);
     void UnRegisterOcclusionChangeCallback(sptr<RSIOcclusionChangeCallback> callback);

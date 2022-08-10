@@ -33,9 +33,11 @@ public:
 
     enum {
         COMMIT_TRANSACTION,
+        NOTIFY_RENDER_STATE_CHANGED,
     };
 
     virtual void OnTransaction(std::shared_ptr<RSTransactionData> transactionData) = 0;
+    virtual void OnRenderStateChanged(bool renderThreadNeedRender) = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

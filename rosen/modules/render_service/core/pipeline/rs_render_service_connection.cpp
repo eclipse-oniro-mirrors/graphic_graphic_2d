@@ -187,6 +187,11 @@ bool RSRenderServiceConnection::InitUniRenderEnabled(const std::string &bundleNa
     return RSUniRenderJudgement::QueryClientEnabled(bundleName);
 }
 
+bool RSRenderServiceConnection::QueryIfRTNeedRender()
+{
+    return !RSUniRenderJudgement::QueryIfUseUniVisitor();
+}
+
 bool RSRenderServiceConnection::CreateNode(const RSSurfaceRenderNodeConfig& config)
 {
     std::shared_ptr<RSSurfaceRenderNode> node =

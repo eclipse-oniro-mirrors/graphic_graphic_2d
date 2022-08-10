@@ -123,6 +123,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             reply.WriteBool(InitUniRenderEnabled(packageName));
             break;
         }
+        case QUERY_RT_NEED_RENDER: {
+            reply.WriteBool(QueryIfRTNeedRender());
+            break;
+        }
         case CREATE_NODE: {
             auto nodeId = data.ReadUint64();
             auto surfaceName = data.ReadString();

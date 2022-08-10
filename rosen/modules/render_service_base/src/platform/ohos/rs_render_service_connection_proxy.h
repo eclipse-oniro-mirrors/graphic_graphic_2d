@@ -31,6 +31,7 @@ public:
     void ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
 
     bool InitUniRenderEnabled(const std::string &bundleName) override;
+    bool QueryIfRTNeedRender() override;
     bool CreateNode(const RSSurfaceRenderNodeConfig& config) override;
     sptr<Surface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config) override;
 
