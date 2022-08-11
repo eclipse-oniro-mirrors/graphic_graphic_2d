@@ -141,9 +141,9 @@ pid_t SurfaceIPCTest::ChildProcessMain()
     sRet = pSurface->FlushBuffer(buffer, -1, flushConfig);
     data = sRet;
     write(pipeFd[1], &data, sizeof(data));
-    sleep(0);
+    usleep(1000); // sleep 1000 microseconds (equals 1 milliseconds)
     read(pipeFd[0], &data, sizeof(data));
-    sleep(1);
+    usleep(1000); // sleep 1000 microseconds (equals 1 milliseconds)
     PresentTimestampType type = PresentTimestampType::HARDWARE_DISPLAY_PTS_DELAY;
     int64_t time = 0;
     sRet = pSurface->GetPresentTimestamp(buffer->GetSeqNum(), type, time);
@@ -179,7 +179,7 @@ HWTEST_F(SurfaceIPCTest, BufferIPC001, Function | MediumTest | Level2)
 
     int64_t data = 0;
     write(pipeFd[1], &data, sizeof(data));
-    sleep(0);
+    usleep(1000); // sleep 1000 microseconds (equals 1 milliseconds)
     read(pipeFd[0], &data, sizeof(data));
     EXPECT_EQ(data, OHOS::GSERROR_OK);
 
