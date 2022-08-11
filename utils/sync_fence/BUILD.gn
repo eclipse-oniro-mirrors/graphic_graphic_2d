@@ -30,7 +30,6 @@ config("sync_fence_public_config") {
   include_dirs = [
     "export",
     "//commonlibrary/c_utils/base/include",
-    "//third_party/libdrm",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits",
   ]
 }

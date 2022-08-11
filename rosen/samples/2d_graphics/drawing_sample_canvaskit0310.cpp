@@ -24,7 +24,7 @@
 
 #include <sync_fence.h>
 
-#include <vsync_helper.h>
+#include <event_handler.h>
 #include <display_type.h>
 #include <surface.h>
 #include "hdi_backend.h"

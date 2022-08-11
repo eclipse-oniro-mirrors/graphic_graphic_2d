@@ -22,10 +22,9 @@
 #include <errno.h>
 #include <securec.h>
 #include <fcntl.h>
-
+#include <sys/poll.h>
 #include <linux/sync_file.h>
-#include <libsync.h>
-
+#include <sys/ioctl.h>
 #include "sw_sync.h"
 #include "hilog/log.h"
 
@@ -106,27 +105,67 @@ SyncFence::~SyncFence()
 
 int32_t SyncFence::Wait(uint32_t timeout)
 {
+    int retCode = -1;
     if (fenceFd_ < 0) {
-        return 0;
+        HiLog::Error(LABEL, "The fence id is invalid.");
+        return retCode;
     }
 
-    int32_t err = sync_wait(fenceFd_, timeout);
-    return err < 0 ? -errno : 0;
+    struct pollfd pollfds = {0};
+    pollfds.fd = fenceFd_;
+    pollfds.events = POLLIN;
+
+    do {
+        retCode = poll(&pollfds, 1, timeout);
+    } while (retCode == -1 && (errno == EINTR || errno == EAGAIN));
+
+    if (retCode == 0) {
+        retCode = -1;
+        errno = ETIME;
+    } else if (retCode > 0) {
+        if (pollfds.revents & (POLLERR | POLLNVAL)) {
+            retCode = -1;
+            errno = EINVAL;
+        }
+        retCode = 0;
+    }
+
+    return retCode < 0 ? -errno : 0;
+}
+
+int SyncFence::SyncMerge(const char *name, int fd1, int fd2)
+{
+    int retCode = -1;
+    struct sync_merge_data syncMergeData = {0};
+    syncMergeData.fd2 = fd2;
+    if (strcpy_s(syncMergeData.name, sizeof(syncMergeData.name), name)) {
+        HiLog::Error(LABEL, "SyncMerge ctrcpy fence name failed.");
+        return retCode;
+    }
+
+    retCode = ioctl(fd1, SYNC_IOC_MERGE, &syncMergeData);
+    if (retCode < 0) {
+        errno = EINVAL;
+        HiLog::Error(LABEL, "Fence merge failed, errno is %{public}d.", errno);
+        return retCode;
+    }
+
+    return syncMergeData.fence;
 }
 
 sptr<SyncFence> SyncFence::MergeFence(const std::string &name,
-                const sptr<SyncFence>& fence1, const sptr<SyncFence>& fence2)
+                                      const sptr<SyncFence>& fence1, const sptr<SyncFence>& fence2)
 {
     int32_t newFenceFd = INVALID_FD;
     int32_t fenceFd1 = fence1->fenceFd_;
     int32_t fenceFd2 = fence2->fenceFd_;
 
     if (fenceFd1 >= 0 && fenceFd2 >= 0) {
-        newFenceFd = sync_merge(name.c_str(), fenceFd1, fenceFd2);
+        newFenceFd = SyncFence::SyncMerge(name.c_str(), fenceFd1, fenceFd2);
     } else if (fenceFd1 >= 0) {
-        newFenceFd = sync_merge(name.c_str(), fenceFd1, fenceFd1);
+        newFenceFd = SyncFence::SyncMerge(name.c_str(), fenceFd1, fenceFd1);
     } else if (fenceFd2 >= 0) {
-        newFenceFd = sync_merge(name.c_str(), fenceFd2, fenceFd2);
+        newFenceFd = SyncFence::SyncMerge(name.c_str(), fenceFd2, fenceFd2);
     } else {
         return INVALID_FENCE;
     }

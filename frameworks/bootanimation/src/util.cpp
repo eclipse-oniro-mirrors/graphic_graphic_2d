@@ -16,7 +16,7 @@
 #include "cJSON.h"
 #include "util.h"
 
-#include <vsync_helper.h>
+#include <event_handler.h>
 #include <securec.h>
 #include <sys/time.h>
 #include <include/codec/SkCodec.h>

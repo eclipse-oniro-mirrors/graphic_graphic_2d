@@ -45,8 +45,7 @@
           "bytrace_core"
         ],
         "third_party": [
-          "libz",
-          "libdrm"
+          "libz"
         ]
       },
       "build": {
@@ -133,17 +132,6 @@
                 "vsync_receiver.h"
               ],
               "header_base": "//foundation/graphic/graphic_2d/interfaces/inner_api/composer"
-            }
-          },
-          {
-            "type": "so",
-            "name": "//foundation/graphic/graphic_2d/frameworks/vsync:libvsync_module",
-            "header": {
-              "header_files": [
-                "vsync_module.h",
-                "vsync_module_c.h"
-              ],
-              "header_base": "//foundation/graphic/graphic_2d/interfaces/inner_api/vsync_module"
             }
           },
           {

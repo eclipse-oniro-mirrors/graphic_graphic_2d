@@ -55,7 +55,6 @@ ohos_executable("drawing_engine_sample") {
     "drawing_engine",
     "drawing_engine/drawing_surface",
     "//foundation/graphic/graphic_2d/rosen/modules/composer/hdi_backend/include",
-    "//foundation/graphic/graphic_2d/interfaces/inner_api/vsync_module",
     "//foundation/graphic/graphic_2d/utils/sync_fence/export",
     "//foundation/graphic/graphic_2d/rosen/include/common",
   ]
@@ -75,8 +74,6 @@ ohos_executable("drawing_engine_sample") {
 
   deps = [
     "//foundation/graphic/graphic_2d:libsurface",
-    "//foundation/graphic/graphic_2d:libvsync_client",
-    "//foundation/graphic/graphic_2d/frameworks/vsync:libvsync_module",
     "//foundation/graphic/graphic_2d/rosen/modules/composer:libcomposer",
     "//foundation/graphic/graphic_2d/utils:sync_fence",
     "//third_party/flutter/build/skia:ace_skia_ohos",
@@ -110,13 +107,11 @@ ohos_executable("drawing_sample_rs") {
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_base/src",
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_base/include",
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_client",
-    "//foundation/graphic/graphic_2d/interfaces/inner_api/vsync_module",
     "//foundation/graphic/graphic_2d/rosen/include/common",
     "//foundation/window/window_manager/interfaces/innerkits/wm",
   ]
 
   deps = [
-    "//foundation/graphic/graphic_2d:libvsync_client",
     "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics",
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_base:librender_service_base",
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_client:librender_service_client",
@@ -142,7 +137,6 @@ ohos_executable("drawing_sample_canvaskit0310") {
     "//foundation/graphic/graphic_2d/rosen/modules/composer/hdi_backend/include",
     "//drivers/peripheral/display/interfaces/include",
     "//foundation/graphic/graphic_2d/rosen/include/common",
-    "//foundation/graphic/graphic_2d/interfaces/inner_api/vsync_module",
     "//foundation/graphic/graphic_2d/interfaces/inner_api/common",
     "//foundation/graphic/graphic_2d/rosen/modules/composer/vsync/include",
     "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics/include",
@@ -151,7 +145,6 @@ ohos_executable("drawing_sample_canvaskit0310") {
 
   deps = [
     "//foundation/graphic/graphic_2d:libsurface",
-    "//foundation/graphic/graphic_2d:libvsync_client",
     "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics_canvaskit0310",
     "//foundation/graphic/graphic_2d/rosen/modules/composer:libcomposer",
     "//foundation/graphic/graphic_2d/utils:libgraphic_utils",

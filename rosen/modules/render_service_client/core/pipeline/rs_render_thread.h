@@ -22,7 +22,7 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
-#include <vsync_helper.h>
+#include <event_handler.h>
 
 #include "common/rs_thread_handler.h"
 #include "common/rs_thread_looper.h"
