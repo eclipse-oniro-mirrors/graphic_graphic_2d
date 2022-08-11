@@ -26,7 +26,8 @@ namespace OHOS {
 namespace Rosen {
 RSDisplayRenderNode::RSDisplayRenderNode(NodeId id, const RSDisplayNodeConfig& config, std::weak_ptr<RSContext> context)
     : RSRenderNode(id, context), RSSurfaceHandler(id), screenId_(config.screenId), offsetX_(0), offsetY_(0),
-      isMirroredDisplay_(config.isMirrored)
+      isMirroredDisplay_(config.isMirrored),
+      dirtyManager_(std::make_shared<RSDirtyRegionManager>())
 {}
 
 RSDisplayRenderNode::~RSDisplayRenderNode() = default;
@@ -164,6 +165,19 @@ ScreenRotation RSDisplayRenderNode::GetRotation() const
     }
     // -90.0f: convert rotation degree to 4 enum values
     return static_cast<ScreenRotation>(static_cast<int32_t>(std::roundf(boundsGeoPtr->GetRotation() / -90.0f)) % 4);
+}
+
+void RSDisplayRenderNode::UpdateDisplayDirtyManager(uint32_t bufferage)
+{
+    for (auto iter = lastFrameSurfacePos_.cbegin(); iter != lastFrameSurfacePos_.cend(); iter++) {
+        if (currentFrameSurfacePos_.find(iter->first) == currentFrameSurfacePos_.end()) {
+            dirtyManager_->MergeDirtyRect(iter->second);
+        }
+    }
+    dirtyManager_->SetBufferAge(bufferage);
+    dirtyManager_->UpdateDirty();
+    lastFrameSurfacePos_.clear();
+    lastFrameSurfacePos_.swap(currentFrameSurfacePos_);
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -53,7 +53,11 @@ void RSUniRenderVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
     currentVisitDisplay_ = node.GetScreenId();
     displayHasSecSurface_.emplace(currentVisitDisplay_, false);
     dirtySurfaceNodeMap_.clear();
-    curDisplayDirtyManager_.Clear();
+
+    curDisplayDirtyManager_ = node.GetDirtyManager();
+    curDisplayDirtyManager_->Clear();
+    curDisplayNode_ = node.shared_from_this()->ReinterpretCastTo<RSDisplayRenderNode>();
+
     dirtyFlag_ = false;
     node.ApplyModifiers();
     PrepareBaseRenderNode(node);
@@ -75,9 +79,9 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         curSurfaceDirtyManager_ = node.GetDirtyManager();
         curSurfaceDirtyManager_->Clear();
         dirtyFlag_ = false;
-        currentFrameSurfacePos_[node.GetId()] = node.GetDstRect();
+        curDisplayNode_->UpdateSurfaceNodePos(node.GetId(), node.GetDstRect());
         if (node.GetDstRectChanged()) {
-            curDisplayDirtyManager_.MergeDirtyRect(lastFrameSurfacePos_[node.GetId()]);
+            curDisplayDirtyManager_->MergeDirtyRect(curDisplayNode_->GetLastFrameSurfacePos(node.GetId()));
         }
     }
 
@@ -282,8 +286,8 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             RS_LOGD("RSUniRenderVisitor buffer age is %d", bufferAge);
             auto dirtyRegion = RSUniRenderUtil::MergeVisibleDirtyRegion(displayNodePtr, bufferAge);
             std::vector<RectI> rects = GetDirtyRects(dirtyRegion);
-            UpdateDisplayDirtyManager(bufferAge);
-            RectI rect = CoordinateTransform(curDisplayDirtyManager_.GetDirtyRegion());
+            node.UpdateDisplayDirtyManager(bufferAge);
+            RectI rect = CoordinateTransform(node.GetDirtyManager()->GetDirtyRegion());
             rects.push_back(rect);
             renderFrame->SetDamageRegion(rects);
         }
@@ -341,19 +345,6 @@ RectI RSUniRenderVisitor::CoordinateTransform(const RectI& rect)
     return resRect;
 }
 #endif
-
-void RSUniRenderVisitor::UpdateDisplayDirtyManager(uint32_t bufferage)
-{
-    for (auto iter = lastFrameSurfacePos_.cbegin(); iter != lastFrameSurfacePos_.cend(); iter++) {
-        if (currentFrameSurfacePos_.find(iter->first) == currentFrameSurfacePos_.end()) {
-            curDisplayDirtyManager_.MergeDirtyRect(iter->second);
-        }
-    }
-    curDisplayDirtyManager_.SetBufferAge(bufferage);
-    curDisplayDirtyManager_.UpdateDirty();
-    lastFrameSurfacePos_.clear();
-    lastFrameSurfacePos_.swap(currentFrameSurfacePos_);
-}
 
 void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 {
