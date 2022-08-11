@@ -61,7 +61,7 @@ private:
     ScreenId currentVisitDisplay_;
     std::map<ScreenId, bool> displayHasSecSurface_;
     std::set<ScreenId> mirroredDisplays_;
-    bool skipSecSurface_ = false;
+    bool isSecurityDisplay_ = false;
 
     std::shared_ptr<RSRenderEngine> renderEngine_;
 };
