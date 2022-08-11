@@ -171,7 +171,7 @@ pid_t NativeWindowBufferTest::ChildProcessMain()
     }
     data = ret;
     write(pipeFd[1], &data, sizeof(data));
-    sleep(0);
+    usleep(1000); // sleep 1000 microseconds (equals 1 milliseconds)
     read(pipeFd[0], &data, sizeof(data));
     close(pipeFd[0]);
     close(pipeFd[1]);
@@ -200,7 +200,7 @@ HWTEST_F(NativeWindowBufferTest, Surface001, Function | MediumTest | Level2)
 
     int64_t data = 0;
     write(pipeFd[1], &data, sizeof(data));
-    sleep(0);
+    usleep(1000); // sleep 1000 microseconds (equals 1 milliseconds)
     read(pipeFd[0], &data, sizeof(data));
     EXPECT_EQ(data, OHOS::GSERROR_OK);
 
