@@ -185,7 +185,7 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWith
     auto params = RSBaseRenderUtil::CreateBufferDrawParam(node, true); // in node's local coordinate.
 
     const auto saveCnt = canvas_->save();
-    if (node.GetConsumer() == nullptr) {
+    if (node.IsUniRender()) {
         canvas_->concat(params.matrix);
     }
     ProcessBaseRenderNode(node);
@@ -214,7 +214,7 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::CaptureSurfaceInDisplayWithU
     auto params = RSBaseRenderUtil::CreateBufferDrawParam(node, true); // use node's local coordinate.
 
     const auto saveCnt = canvas_->save();
-    if (node.GetConsumer() == nullptr) {
+    if (node.IsUniRender()) {
         canvas_->concat(params.matrix);
     }
     ProcessBaseRenderNode(node);

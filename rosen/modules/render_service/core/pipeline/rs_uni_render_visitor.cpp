@@ -70,7 +70,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     node.ApplyModifiers();
     RSUniRenderUtil::UpdateRenderNodeDstRect(node);
     // prepare the surfaceRenderNode whose child is rootRenderNode 
-    if (node.GetConsumer() == nullptr) {
+    if (node.IsUniRender()) {
         curSurfaceDirtyManager_ = node.GetDirtyManager();
         curSurfaceDirtyManager_->Clear();
         dirtyFlag_ = false;
@@ -378,7 +378,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
     ProcessBaseRenderNode(node);
 
-    if (node.GetConsumer() != nullptr) {
+    if (!node.IsUniRender()) {
         RS_TRACE_BEGIN("UniRender::Process:" + node.GetName());
         if (node.GetBuffer() == nullptr) {
             RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode:%" PRIu64 " buffer is not available", node.GetId());

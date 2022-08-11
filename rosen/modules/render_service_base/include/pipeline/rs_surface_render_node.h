@@ -49,6 +49,16 @@ public:
     void ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas) override;
     void ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas) override;
 
+    void SetRenderType(bool isUniRender)
+    {
+        isUni_ = isUniRender;
+    }
+
+    bool IsUniRender() const
+    {
+        return isUni_;
+    }
+
     std::string GetName() const
     {
         return name_;
@@ -287,6 +297,7 @@ private:
     float globalAlpha_ = 1.0f;
 
     std::string name_;
+    bool isUni_ = false;
     bool isProxy_ = false;
     BlendType blendType_ = BlendType::BLEND_SRCOVER;
     std::atomic<bool> isNotifyRTBufferAvailable_ = false;
