@@ -22,6 +22,7 @@
 #include <frame_collector.h>
 
 #include "animation/rs_animation_fraction.h"
+#include "command/rs_surface_node_command.h"
 #include "pipeline/rs_frame_report.h"
 #include "pipeline/rs_node_map.h"
 #include "pipeline/rs_render_node_map.h"
@@ -268,9 +269,34 @@ void RSRenderThread::UpdateRenderState(bool needRender)
             needRender_ = needRender;
             RequestNextVSync();
             if (!needRender_) {
+                UpdateSurfaceNodeParentInRS();
                 ClearBufferCache();
             }
         }, AppExecFwk::EventQueue::Priority::IMMEDIATE);
+    }
+}
+
+void RSRenderThread::UpdateSurfaceNodeParentInRS()
+{
+    auto& nodeMap = context_.GetMutableNodeMap();
+    std::unordered_map<NodeId, NodeId> surfaceNodeMap; // [surfaceNodeId, parentId]
+    nodeMap.TraversalNodes([&surfaceNodeMap](const std::shared_ptr<RSBaseRenderNode>& node) mutable {
+        if (!node || !node->IsInstanceOf<RSSurfaceRenderNode>()) {
+            return;
+        }
+        auto parent = node->GetParent().lock();
+        if (!parent) {
+            return;
+        }
+        surfaceNodeMap.emplace(node->GetId(), parent->GetId());
+    });
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        for (auto& [surfaceNodeId, parentId] : surfaceNodeMap) {
+            std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeUpdateParent>(surfaceNodeId, parentId);
+            transactionProxy->AddCommandFromRT(command, surfaceNodeId, FollowType::FOLLOW_TO_SELF);
+            transactionProxy->FlushImplicitTransactionFromRT(uiTimestamp_);
+        }
     }
 }
 

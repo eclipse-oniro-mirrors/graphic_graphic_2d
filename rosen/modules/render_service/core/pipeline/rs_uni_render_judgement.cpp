@@ -63,7 +63,7 @@ void RSUniRenderJudgement::CalculateRenderType(std::shared_ptr<RSBaseRenderNode>
 {
     uint32_t windowCount = 0;
     for (auto& child : rootNode->GetSortedChildren()) {
-        if (!child || !child->IsInstanceOf<RSDisplayRenderNode>()) {
+        if (!child->IsInstanceOf<RSDisplayRenderNode>()) {
             continue;
         }
         auto childNode = child->ReinterpretCastTo<RSDisplayRenderNode>();

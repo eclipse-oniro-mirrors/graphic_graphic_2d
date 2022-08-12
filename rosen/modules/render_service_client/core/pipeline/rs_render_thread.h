@@ -100,6 +100,7 @@ private:
     void Render();
     void SendCommands();
 
+    void UpdateSurfaceNodeParentInRS();
     void ClearBufferCache();
     std::atomic_bool running_ = false;
     std::atomic_bool hasSkipVsync_ = false;
