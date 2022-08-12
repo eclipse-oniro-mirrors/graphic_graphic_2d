@@ -354,6 +354,7 @@ void RenderContext::DamageFrame(const std::vector<RectI> &rects)
         eglRect[index * 4 + 1] = rect.top_; // 4 is size of RectI.
         eglRect[index * 4 + 2] = rect.width_; // 4 is size of RectI, 2 is the index of the width_ subscript.
         eglRect[index * 4 + 3] = rect.height_; // 4 is size of RectI, 3 is the index of the height_ subscript.
+        index++;
     }
 
     EGLBoolean ret = GetEGLSetDamageRegionKHRFunc()(eglDisplay_, eglSurface_, eglRect, size);
