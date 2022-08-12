@@ -47,7 +47,6 @@ private:
     void DrawDirtyRegion();
     std::vector<RectI> GetDirtyRects(const Occlusion::Region &region);
     RectI CoordinateTransform(const RectI& rect);
-    void UpdateDisplayDirtyManager(uint32_t bufferage);
 
     ScreenInfo screenInfo_;
     std::shared_ptr<RSDirtyRegionManager> curSurfaceDirtyManager_;
@@ -67,9 +66,9 @@ private:
     bool skipSecSurface_ = false;
 
     std::shared_ptr<RSRenderEngine> renderEngine_;
-    std::map<NodeId, RectI> lastFrameSurfacePos_;
-    std::map<NodeId, RectI> currentFrameSurfacePos_;
-    RSDirtyRegionManager curDisplayDirtyManager_;
+    
+    std::shared_ptr<RSDirtyRegionManager> curDisplayDirtyManager_;
+    std::shared_ptr<RSDisplayRenderNode> curDisplayNode_;
 };
 } // namespace Rosen
 } // namespace OHOS
