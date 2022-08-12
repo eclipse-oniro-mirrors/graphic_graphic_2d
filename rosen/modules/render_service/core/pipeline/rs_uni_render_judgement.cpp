@@ -23,8 +23,6 @@ namespace OHOS {
 namespace Rosen {
 const std::string CONFIG_PATH = "/etc/";
 const std::string UNIRENDER_CONFIG_FILE_NAME = "unirender.config";
-const std::string UNI_RENDER_DISABLED_TAG = "DISABLED";
-const std::string UNI_RENDER_ENABLED_FOR_ALL_TAG = "ENABLED_FOR_ALL";
 
 bool StartsWith(const std::string &str, const std::string &prefix)
 {
@@ -73,21 +71,27 @@ void RSUniRenderJudgement::InitUniRenderWithConfigFile()
     std::ifstream configFile = std::ifstream(configFilePath.c_str());
     std::string line;
     // first line, init uniRenderEnabledType_
-    if (!configFile.is_open() || !std::getline(configFile, line) ||
-        line == "" || line == UNI_RENDER_DISABLED_TAG) {
+    if (!configFile.is_open() || !std::getline(configFile, line) || line == "") {
         uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
-    } else if (line == UNI_RENDER_ENABLED_FOR_ALL_TAG) {
-        uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL;
-    } else {
-        // init uniRenderBlockList_
+        configFile.close();
+        return;
+    }
+    auto iter = uniRenderConfigMap_.find(line);
+    if (iter == uniRenderConfigMap_.end()) {
+        uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
+        configFile.close();
+        return;
+    }
+    uniRenderEnabledType_ = iter->second;
+    if (uniRenderEnabledType_ == UniRenderEnabledType::UNI_RENDER_PARTIALLY_ENABLED) {
         while (std::getline(configFile, line)) {
             if (line == "" || StartsWith(line, "//")) {
                 continue;
             }
             uniRenderBlockList_.insert(line);
         }
-        if (!uniRenderBlockList_.empty()) {
-            uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_PARTIALLY_ENABLED;
+        if (uniRenderBlockList_.empty()) {
+            uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL;
         }
     }
     configFile.close();
