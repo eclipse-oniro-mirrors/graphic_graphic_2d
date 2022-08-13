@@ -74,15 +74,10 @@ void RSUniRenderJudgement::CalculateRenderType(std::shared_ptr<RSBaseRenderNode>
 
     bool shouldUseUniVisitor = windowCount <= UNI_RENDER_MAX_WINDOW;
     if (shouldUseUniVisitor != useUniVisitor_) {
-        useUniVisitor_ = shouldUseUniVisitor;
+        useUniVisitor_.store(shouldUseUniVisitor);
         RSMainThread::Instance()->NotifyRenderStateChanged(useUniVisitor_);
         RS_LOGI("RSUniRenderJudgement::CalculateRenderType useUniVisitor_:%d", useUniVisitor_.load());
     }
-}
-
-void RSUniRenderJudgement::UpdateRenderState(bool useUniVisitor)
-{
-    useUniVisitor_.store(useUniVisitor);
 }
 
 bool RSUniRenderJudgement::QueryClientEnabled(const std::string &bundleName)
@@ -112,15 +107,15 @@ void RSUniRenderJudgement::InitUniRenderWithConfigFile()
     std::ifstream configFile = std::ifstream(configFilePath.c_str());
     std::string line;
     // first line, init uniRenderEnabledType_
-    if (!configFile.is_open() || !std::getline(configFile, line) ||
-        line == "" || line == UNI_RENDER_DISABLED_TAG) {
-        uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
-    } else if (line == UNI_RENDER_ENABLED_FOR_ALL_TAG) {
+    if (!configFile.is_open() || !std::getline(configFile, line) || line.empty() ||
+        line == UNI_RENDER_ENABLED_FOR_ALL_TAG) {
         uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL;
+    } else if (line == UNI_RENDER_DISABLED_TAG) {
+        uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
     } else {
         // init uniRenderBlockList_
         while (std::getline(configFile, line)) {
-            if (line == "" || StartsWith(line, "//")) {
+            if (line.empty() || StartsWith(line, "//")) {
                 continue;
             }
             uniRenderBlockList_.insert(line);

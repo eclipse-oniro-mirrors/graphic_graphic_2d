@@ -70,7 +70,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     node.ApplyModifiers();
     RSUniRenderUtil::UpdateRenderNodeDstRect(node);
     // prepare the surfaceRenderNode whose child is rootRenderNode 
-    if (node.IsUniRender()) {
+    if (node.IsWindow()) {
         curSurfaceDirtyManager_ = node.GetDirtyManager();
         curSurfaceDirtyManager_->Clear();
         dirtyFlag_ = false;
@@ -378,16 +378,13 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
     ProcessBaseRenderNode(node);
 
-    if (!node.IsUniRender()) {
-        RS_TRACE_BEGIN("UniRender::Process:" + node.GetName());
-        if (node.GetBuffer() == nullptr) {
-            RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode:%" PRIu64 " buffer is not available", node.GetId());
-        } else {
-            node.NotifyRTBufferAvailable();
-            auto params = RSBaseRenderUtil::CreateBufferDrawParam(node, true); // in node's local coordinate.
-            renderEngine_->DrawSurfaceNodeWithParams(*canvas_, node, params);
-        }
-        RS_TRACE_END();
+    if (node.GetBuffer() == nullptr) {
+        RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode:%" PRIu64 " buffer is not available", node.GetId());
+    } else {
+        RS_TRACE_NAME("UniRender::Process:" + node.GetName());
+        node.NotifyRTBufferAvailable();
+        auto params = RSBaseRenderUtil::CreateBufferDrawParam(node, true); // in node's local coordinate.
+        renderEngine_->DrawSurfaceNodeWithParams(*canvas_, node, params);
     }
     canvas_->RestoreAlpha();
     canvas_->restore();

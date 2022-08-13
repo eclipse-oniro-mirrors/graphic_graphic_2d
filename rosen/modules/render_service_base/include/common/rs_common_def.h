@@ -69,7 +69,7 @@ enum class RSRenderNodeType : uint32_t {
 struct RSSurfaceRenderNodeConfig {
     NodeId id = 0;
     std::string name = "SurfaceNode";
-    bool isUni = false;
+    bool isWindow = false;
 };
 
 struct RSDisplayNodeConfig {

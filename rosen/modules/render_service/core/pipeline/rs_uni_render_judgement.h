@@ -42,16 +42,15 @@ public:
     static bool IsUniRender();
     static bool QueryIfUseUniVisitor();
     static void CalculateRenderType(std::shared_ptr<RSBaseRenderNode> rootNode);
-    static void UpdateRenderState(bool useUniVisitor);
 
 private:
     RSUniRenderJudgement() = default;
 
     static void InitUniRenderWithConfigFile();
 
-    static inline UniRenderEnabledType uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
+    static inline UniRenderEnabledType uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL;
     static inline std::set<std::string> uniRenderBlockList_ {};
-    static inline std::atomic_bool useUniVisitor_ = false;
+    static inline std::atomic_bool useUniVisitor_ = true;
 };
 } // namespace Rosen
 } // namespace OHOS
