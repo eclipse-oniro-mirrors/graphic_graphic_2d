@@ -342,3 +342,38 @@ void OH_Drawing_TypographyPaint(OH_Drawing_Typography* typography, OH_Drawing_Ca
     ConvertToOriginalText(typography)->Paint(reinterpret_cast<OHOS::Rosen::Drawing::Canvas*>(canvas),
         potisionX, potisionY);
 }
+
+double OH_Drawing_TypographyGetMaxWidth(OH_Drawing_Typography* typography)
+{
+    return ConvertToOriginalText(typography)->GetMaxWidth();
+}
+
+double OH_Drawing_TypographyGetHeight(OH_Drawing_Typography* typography)
+{
+    return ConvertToOriginalText(typography)->GetHeight();
+}
+
+double OH_Drawing_TypographyGetLongestLine(OH_Drawing_Typography* typography)
+{
+    return ConvertToOriginalText(typography)->GetLongestLine();
+}
+
+double OH_Drawing_TypographyGetMinIntrinsicWidth(OH_Drawing_Typography* typography)
+{
+    return ConvertToOriginalText(typography)->GetMinIntrinsicWidth();
+}
+
+double OH_Drawing_TypographyGetMaxIntrinsicWidth(OH_Drawing_Typography* typography)
+{
+    return ConvertToOriginalText(typography)->GetMaxIntrinsicWidth();
+}
+
+double OH_Drawing_TypographyGetAlphabeticBaseline(OH_Drawing_Typography* typography)
+{
+    return ConvertToOriginalText(typography)->GetAlphabeticBaseline();
+}
+
+double OH_Drawing_TypographyGetIdeographicBaseline(OH_Drawing_Typography* typography)
+{
+    return ConvertToOriginalText(typography)->GetIdeographicBaseline();
+}
