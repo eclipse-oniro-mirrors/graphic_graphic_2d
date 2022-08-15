@@ -672,13 +672,13 @@ void RSMainThread::UnRegisterApplicationAgent(sptr<IApplicationAgent> app)
     std::__libcpp_erase_if_container(applicationAgentMap_, [&app](auto& iter) { return iter.second == app; });
 }
 
-void RSMainThread::NotifyRenderStateChanged(bool useUniVisitor)
+void RSMainThread::NotifyRenderModeChanged(bool useUniVisitor)
 {
 //    PostTask([useUniVisitor = useUniVisitor, this]() {
         waitBufferAvailable_ = !useUniVisitor;
         for (auto& elem : applicationAgentMap_) {
             if (elem.second != nullptr) {
-                elem.second->OnRenderStateChanged(!useUniVisitor);
+                elem.second->OnRenderModeChanged(!useUniVisitor);
             }
         }
 //    });

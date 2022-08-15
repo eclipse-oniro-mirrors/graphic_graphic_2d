@@ -56,9 +56,9 @@ void RSApplicationAgentImpl::OnTransaction(std::shared_ptr<RSTransactionData> tr
     RSUIDirector::RecvMessages(transactionData);
 }
 
-void RSApplicationAgentImpl::OnRenderStateChanged(bool renderThreadNeedRender)
+void RSApplicationAgentImpl::OnRenderModeChanged(bool renderThreadNeedRender)
 {
-    RSRenderThread::Instance().UpdateRenderState(renderThreadNeedRender);
+    RSRenderThread::Instance().UpdateRenderMode(renderThreadNeedRender);
 }
 #endif
 }

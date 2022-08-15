@@ -50,7 +50,7 @@ void RSApplicationAgentProxy::OnTransaction(std::shared_ptr<RSTransactionData> t
     }
 }
 
-void RSApplicationAgentProxy::OnRenderStateChanged(bool renderThreadNeedRender)
+void RSApplicationAgentProxy::OnRenderModeChanged(bool renderThreadNeedRender)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -65,9 +65,9 @@ void RSApplicationAgentProxy::OnRenderStateChanged(bool renderThreadNeedRender)
     }
 
     option.SetFlags(MessageOption::TF_ASYNC);
-    int32_t err = Remote()->SendRequest(IApplicationAgent::NOTIFY_RENDER_STATE_CHANGED, data, reply, option);
+    int32_t err = Remote()->SendRequest(IApplicationAgent::NOTIFY_RENDER_MODE_CHANGED, data, reply, option);
     if (err != NO_ERROR) {
-        RS_LOGE("RSApplicationAgentProxy::OnRenderStateChanged SendRequest failed! err:%d", err);
+        RS_LOGE("RSApplicationAgentProxy::OnRenderModeChanged SendRequest failed! err:%d", err);
     }
 }
 } // namespace Rosen

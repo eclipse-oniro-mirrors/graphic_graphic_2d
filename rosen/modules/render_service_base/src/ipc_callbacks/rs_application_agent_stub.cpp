@@ -36,8 +36,8 @@ int RSApplicationAgentStub::OnRemoteRequest(
             OnTransaction(transactionData);
             break;
         }
-        case NOTIFY_RENDER_STATE_CHANGED: {
-            OnRenderStateChanged(data.ReadBool());
+        case NOTIFY_RENDER_MODE_CHANGED: {
+            OnRenderModeChanged(data.ReadBool());
             break;
         }
         default: {

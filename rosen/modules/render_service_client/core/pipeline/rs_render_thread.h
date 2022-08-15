@@ -81,7 +81,7 @@ public:
     {
         return isHighContrastEnabled_;
     }
-    void UpdateRenderState(bool needRender);
+    void UpdateRenderMode(bool needRender);
 
 private:
     RSRenderThread();
@@ -104,7 +104,7 @@ private:
     void ClearBufferCache();
     std::atomic_bool running_ = false;
     std::atomic_bool hasSkipVsync_ = false;
-    std::atomic_bool needRender_ = true;
+    bool needRender_ = true;
     std::atomic_int activeWindowCnt_ = 0;
     std::unique_ptr<std::thread> thread_ = nullptr;
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;

@@ -75,7 +75,7 @@ void RSUniRenderJudgement::CalculateRenderType(std::shared_ptr<RSBaseRenderNode>
     bool shouldUseUniVisitor = windowCount <= UNI_RENDER_MAX_WINDOW;
     if (shouldUseUniVisitor != useUniVisitor_) {
         useUniVisitor_.store(shouldUseUniVisitor);
-        RSMainThread::Instance()->NotifyRenderStateChanged(useUniVisitor_);
+        RSMainThread::Instance()->NotifyRenderModeChanged(useUniVisitor_);
         RS_LOGI("RSUniRenderJudgement::CalculateRenderType useUniVisitor_:%d", useUniVisitor_.load());
     }
 }

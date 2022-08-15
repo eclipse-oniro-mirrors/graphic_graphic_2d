@@ -262,7 +262,7 @@ void RSRenderThread::UpdateUiDrawFrameMsg(const std::string& abilityName)
     uiDrawAbilityName_ = abilityName;
 }
 
-void RSRenderThread::UpdateRenderState(bool needRender)
+void RSRenderThread::UpdateRenderMode(bool needRender)
 {
     if (handler_) {
         handler_->PostTask([needRender = needRender, this]() {
