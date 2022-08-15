@@ -54,6 +54,8 @@ private:
     void CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData) override;
     void ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
 
+    int32_t SetRenderModeChangeCallback(sptr<RSIRenderModeChangeCallback> callback) override;
+    void UpdateRenderMode(bool isUniRender) override;
     bool InitUniRenderEnabled(const std::string &bundleName) override;
     bool QueryIfRTNeedRender() override;
     bool CreateNode(const RSSurfaceRenderNodeConfig& config) override;
@@ -72,7 +74,7 @@ private:
         sptr<Surface> surface,
         ScreenId mirrorId = 0,
         int32_t flags = 0) override;
-    
+
     int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface) override;
 
     void RemoveVirtualScreen(ScreenId id) override;
@@ -121,7 +123,7 @@ private:
     int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode) override;
 
     int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode) override;
-    
+
     int32_t GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability) override;
 
     int32_t GetScreenType(ScreenId id, RSScreenType& screenType) override;

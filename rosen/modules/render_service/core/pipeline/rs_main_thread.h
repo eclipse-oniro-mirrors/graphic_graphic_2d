@@ -33,6 +33,7 @@
 #include "common/rs_thread_looper.h"
 #include "ipc_callbacks/iapplication_agent.h"
 #include "ipc_callbacks/rs_iocclusion_change_callback.h"
+#include "ipc_callbacks/rs_irender_mode_change_callback.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "platform/drawing/rs_vsync_client.h"
@@ -110,6 +111,10 @@ public:
     void NotifyUniRenderFinish();
     bool IfUseUniVisitor() const;
     void CheckBufferAvailableIfNeed();
+
+    void SetRenderModeChangeCallback(sptr<RSIRenderModeChangeCallback> callback);
+    void SetUniVisitor(bool isUniRender);
+
     void ClearTransactionDataPidInfo(pid_t remotePid);
     void AddTransactionDataPidInfo(pid_t remotePid);
 
@@ -173,6 +178,8 @@ private:
 
     bool waitBufferAvailable_ = false;
     bool isUniRender_ = RSUniRenderJudgement::IsUniRender();
+    sptr<RSIRenderModeChangeCallback> renderModeChangeCallback_;
+    std::atomic_bool useUniVisitor_ = false;
     RSTaskMessage::RSTask unmarshalBarrierTask_;
     std::condition_variable unmarshalTaskCond_;
     std::mutex unmarshalMutex_;
