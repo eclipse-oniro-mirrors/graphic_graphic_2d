@@ -52,11 +52,14 @@ public:
     static bool GetHighContrastStatus();
     static int32_t GetCorrectionMode();
     static bool GetUniPartialRenderEnabled();
+    static bool GetRenderMode();
+    static void SetRenderMode(bool isUni);
 
 private:
     RSSystemProperties() = default;
 
     static inline bool isUniRenderEnabled_ = false;
+    static inline bool isUniRenderMode_ = false;
 };
 
 } // namespace Rosen

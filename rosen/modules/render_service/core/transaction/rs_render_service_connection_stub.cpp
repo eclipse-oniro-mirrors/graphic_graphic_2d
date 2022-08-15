@@ -110,7 +110,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 RS_LOGE("RSRenderServiceConnectionStub::COMMIT_TRANSACTION failed");
                 return ERR_INVALID_DATA;
             }
-            if (isUniRender) {
+            if (RSUniRenderJudgement::QueryIfUseUniVisitor()) {
                 RSUnmarshalThread::Instance().RecvParcel(parsedParcel);
             } else {
                 auto transactionData = RSBaseRenderUtil::ParseTransactionData(data);

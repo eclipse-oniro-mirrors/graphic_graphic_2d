@@ -41,6 +41,16 @@ void RSSystemProperties::InitUniRenderEnabled(const std::string &bundleName)
     ROSEN_LOGI("Init UniRender Enabled:%d, package name:%s", isUniRenderEnabled_, bundleName.c_str());
 }
 
+bool RSSystemProperties::GetRenderMode()
+{
+    return isUniRenderMode_;
+}
+
+void RSSystemProperties::SetRenderMode(bool isUni)
+{
+    isUniRenderMode_ = isUni;
+}
+
 DirtyRegionDebugType RSSystemProperties::GetDirtyRegionDebugType()
 {
     return static_cast<DirtyRegionDebugType>(

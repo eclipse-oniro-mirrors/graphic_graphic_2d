@@ -212,6 +212,7 @@ void RSRenderThread::RenderLoop()
     if (RSSystemProperties::GetUniRenderEnabled()) {
         needRender_ = std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient())
             ->QueryIfRTNeedRender();
+        RSSystemProperties::SetRenderMode(!needRender_);
     }
     std::string name = "RSRenderThread_" + std::to_string(::getpid());
     runner_ = AppExecFwk::EventRunner::Create(false);

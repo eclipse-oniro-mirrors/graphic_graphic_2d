@@ -214,7 +214,7 @@ void RSMainThread::ProcessCommandForUniRender()
 
         for (auto& rsTransactionElem: effectiveTransactionDataIndexMap_) {
             auto pid = rsTransactionElem.first;
-            auto& lastIndex = rsTransactionElem.second.first;
+//            auto& lastIndex = rsTransactionElem.second.first;
             auto& transactionVec = rsTransactionElem.second.second;
             auto iter = transactionVec.begin();
             for (; iter != transactionVec.end(); ++iter) {
@@ -222,21 +222,21 @@ void RSMainThread::ProcessCommandForUniRender()
                     continue;
                 }
                 auto curIndex = (*iter)->GetIndex();
-                if (curIndex == lastIndex + 1) {
-                    ++lastIndex;
+//                if (curIndex == lastIndex + 1) {
+//                    ++lastIndex;
                     transactionFlags += ", [" + std::to_string(pid) + ", " + std::to_string(curIndex) + "]";
-                } else {
-                    RS_LOGE("RSMainThread::ProcessCommandForUniRender wait curIndex:%llu, lastIndex:%llu, pid:%d",
-                        curIndex, lastIndex, pid);
-                    break;
-                }
+//                } else {
+//                    RS_LOGE("RSMainThread::ProcessCommandForUniRender wait curIndex:%llu, lastIndex:%llu, pid:%d",
+//                        curIndex, lastIndex, pid);
+//                    break;
+//                }
             }
             transactionDataEffective[pid].insert(transactionDataEffective[pid].end(),
                 std::make_move_iterator(transactionVec.begin()), std::make_move_iterator(iter));
             transactionVec.erase(transactionVec.begin(), iter);
         }
     }
-    RS_TRACE_NAME("RSMainThread::ProcessCommand" + transactionFlags);
+    RS_TRACE_NAME("RSMainThread::ProcessCommandUni" + transactionFlags);
     for (auto& rsTransactionElem: transactionDataEffective) {
         for (auto& rsTransaction: rsTransactionElem.second) {
             if (rsTransaction) {

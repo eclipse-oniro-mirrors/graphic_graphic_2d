@@ -58,6 +58,7 @@ void RSApplicationAgentImpl::OnTransaction(std::shared_ptr<RSTransactionData> tr
 
 void RSApplicationAgentImpl::OnRenderModeChanged(bool renderThreadNeedRender)
 {
+    RSSystemProperties::SetRenderMode(!renderThreadNeedRender);
     RSRenderThread::Instance().UpdateRenderMode(renderThreadNeedRender);
 }
 #endif
