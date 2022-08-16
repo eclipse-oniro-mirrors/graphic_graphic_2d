@@ -18,6 +18,7 @@
 
 #include <set>
 #include <string>
+#include <map>
 
 namespace OHOS {
 namespace Rosen {
@@ -26,7 +27,6 @@ enum class UniRenderEnabledType {
     UNI_RENDER_ENABLED_FOR_ALL,
     UNI_RENDER_PARTIALLY_ENABLED,
 };
-
 // Judge the unified rendering strategy of RenderService.
 class RSUniRenderJudgement final {
 public:
@@ -46,6 +46,11 @@ private:
 
     static inline UniRenderEnabledType uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
     static inline std::set<std::string> uniRenderBlockList_ {};
+    static inline const std::map<std::string, UniRenderEnabledType> uniRenderConfigMap_ = {
+        {"DISABLED", UniRenderEnabledType::UNI_RENDER_DISABLED},
+        {"ENABLED_FOR_ALL", UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL},
+        {"ENABLED", UniRenderEnabledType::UNI_RENDER_PARTIALLY_ENABLED}
+    };
 };
 } // namespace Rosen
 } // namespace OHOS
