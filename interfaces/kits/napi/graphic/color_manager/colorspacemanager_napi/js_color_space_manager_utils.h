@@ -26,14 +26,14 @@
 namespace OHOS {
 namespace ColorManager {
 #ifndef TITLE
-#define TITLE __PRETTY_FUNCTION__
+#define TITLE __func__
 #endif
 
-constexpr OHOS::HiviewDFX::HiLogLabel LOG_LABEL = {LOG_CORE, 0, "JsColorSpaceManager"};
+constexpr OHOS::HiviewDFX::HiLogLabel LOG_LABEL = {LOG_CORE, 0xD001400, "JsColorSpaceManager"};
 #define CMLOGE(fmt, args...) \
-    (void)OHOS::HiviewDFX::HiLog::Error(LOG_LABEL, "%{public}s %{public}d: " fmt, TITLE, __LINE__, ##args)
+    (void)OHOS::HiviewDFX::HiLog::Error(LOG_LABEL, "%{public}s: " fmt, TITLE, ##args)
 #define CMLOGI(fmt, args...) \
-    (void)OHOS::HiviewDFX::HiLog::Info(LOG_LABEL, "%{public}s %{public}d: " fmt, TITLE, __LINE__, ##args)
+    (void)OHOS::HiviewDFX::HiLog::Info(LOG_LABEL, "%{public}s: " fmt, TITLE, ##args)
 
 enum class ApiColorSpaceType : uint32_t {
     UNKNOWN = 0,
@@ -52,6 +52,15 @@ const std::map<ColorSpaceName, ApiColorSpaceType> NATIVE_JS_TO_COLOR_SPACE_TYPE_
     { ColorSpaceName::DISPLAY_P3, ApiColorSpaceType::DISPLAY_P3 },
     { ColorSpaceName::SRGB, ApiColorSpaceType::SRGB },
     { ColorSpaceName::CUSTOM, ApiColorSpaceType::CUSTOM },
+};
+
+const std::map<ApiColorSpaceType, ColorSpaceName> JS_TO_NATIVE_COLOR_SPACE_NAME_MAP {
+    { ApiColorSpaceType::UNKNOWN, ColorSpaceName::NONE },
+    { ApiColorSpaceType::ADOBE_RGB_1998, ColorSpaceName::ADOBE_RGB },
+    { ApiColorSpaceType::DCI_P3, ColorSpaceName::DCI_P3 },
+    { ApiColorSpaceType::DISPLAY_P3, ColorSpaceName::DISPLAY_P3 },
+    { ApiColorSpaceType::SRGB, ColorSpaceName::SRGB },
+    { ApiColorSpaceType::CUSTOM, ColorSpaceName::CUSTOM },
 };
 
     NativeValue* ColorSpaceTypeInit(NativeEngine* engine);
