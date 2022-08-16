@@ -118,7 +118,7 @@ NativeValue* RSWindowAnimationManager::OnMinimizeWindowWithAnimation(NativeEngin
 
             std::vector<uint32_t> windowIds = {target->windowId_};
             sptr<RSIWindowAnimationFinishedCallback> finishedCallback;
-            SingletonContainer::Get<WindowAdapter>().MinimizeWindowsByLauncher(windowIds, false, finishedCallback);
+            SingletonContainer::Get<WindowAdapter>().MinimizeWindowsByLauncher(windowIds, true, finishedCallback);
             if (finishedCallback == nullptr) {
                 WALOGE("Window animation finished callback is null!");
                 task.Reject(engine, CreateJsError(engine, errCode, "Animation finished callback is null!"));

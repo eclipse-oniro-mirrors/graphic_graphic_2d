@@ -21,6 +21,9 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+static constexpr int MAX_FLOATING_WINDOW_NUMBER = 100;
+}
 const std::map<uint32_t, WindowAnimationStubFunc> RSWindowAnimationStub::stubFuncMap_{
     std::make_pair(RSIWindowAnimationController::ON_START_APP, &RSWindowAnimationStub::StartApp),
     std::make_pair(RSIWindowAnimationController::ON_APP_TRANSITION, &RSWindowAnimationStub::AppTransition),
@@ -185,13 +188,16 @@ int RSWindowAnimationStub::ScreenUnlock(MessageParcel& data, MessageParcel& repl
 int RSWindowAnimationStub::WindowAnimationTargetsUpdate(MessageParcel& data, MessageParcel& reply)
 {
     WALOGD("Window animation targets update!");
-    sptr<RSWindowAnimationTarget> fullScreenWindowTarget(data.ReadParcelable<RSWindowAnimationTarget>());
-    if (fullScreenWindowTarget == nullptr) {
-        WALOGE("Failed to read full screen window animation target!");
-        return ERR_INVALID_DATA;
+    sptr<RSWindowAnimationTarget> fullScreenWindowTarget = nullptr;
+    if (data.ReadBool()) {
+        fullScreenWindowTarget = data.ReadParcelable<RSWindowAnimationTarget>();
     }
 
     size_t floatWindowSize = data.ReadUint32();
+    if (floatWindowSize > MAX_FLOATING_WINDOW_NUMBER) {
+        WALOGE("Floating windows are too much!");
+        return ERR_INVALID_DATA;
+    }
     std::vector<sptr<RSWindowAnimationTarget>> floatingWindowTargets;
     for (size_t i = 0; i < floatWindowSize; i++) {
         sptr<RSWindowAnimationTarget> floatingWindowTarget(data.ReadParcelable<RSWindowAnimationTarget>());

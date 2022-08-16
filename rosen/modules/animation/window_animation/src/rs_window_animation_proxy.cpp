@@ -21,6 +21,9 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+static constexpr int MAX_FLOATING_WINDOW_NUMBER = 100;
+}
 RSWindowAnimationProxy::RSWindowAnimationProxy(const sptr<IRemoteObject>& impl)
     : IRemoteProxy<RSIWindowAnimationController>(impl)
 {
@@ -266,6 +269,11 @@ void RSWindowAnimationProxy::OnWindowAnimationTargetsUpdate(
     const sptr<RSWindowAnimationTarget>& fullScreenWindowTarget,
     const std::vector<sptr<RSWindowAnimationTarget>>& floatingWindowTargets)
 {
+    if (floatingWindowTargets.size() > MAX_FLOATING_WINDOW_NUMBER) {
+        WALOGE("Floating windows are too much!");
+        return;
+    }
+
     MessageParcel data;
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
@@ -275,9 +283,16 @@ void RSWindowAnimationProxy::OnWindowAnimationTargetsUpdate(
         return;
     }
 
-    if (!data.WriteParcelable(fullScreenWindowTarget.GetRefPtr())) {
-        WALOGE("Failed to write full screen animation target!");
-        return;
+    if (fullScreenWindowTarget.GetRefPtr() == nullptr) {
+        if (!data.WriteBool(false)) {
+            WALOGE("Failed to write null full Screen Window Target!");
+            return;
+        }
+    } else {
+        if (!data.WriteBool(true) || !data.WriteParcelable(fullScreenWindowTarget.GetRefPtr())) {
+            WALOGE("Failed to write full screen animation target!");
+            return;
+        }
     }
 
     if (!data.WriteUint32(floatingWindowTargets.size())) {
