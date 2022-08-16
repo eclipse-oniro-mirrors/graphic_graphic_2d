@@ -45,22 +45,16 @@ NativeValue* JsColorSpaceManager::OnCreateColorSpace(NativeEngine& engine, Nativ
     if (info.argc != ARGC_ONE && info.argc != ARGC_TWO) {
         CMLOGE("[NAPI]Argc is invalid: %{public}zu", info.argc);
         return nullptr;
-    } else {
-        NativeObject* object = ConvertNativeValueTo<NativeObject>(info.argv[0]);
-        if (object == nullptr) {
-            CMLOGE("[NAPI]Failed to convert parameter to VirtualScreenOption.");
-            return nullptr;
-        }
     }
 
     std::shared_ptr<ColorSpace> colorSpace;
     if (info.argc == ARGC_ONE) {
-        ColorSpaceName csName = ColorSpaceName::NONE;
-        if (!ConvertFromJsValue(engine, info.argv[0], csName)) {
-            CMLOGE("[NAPI]Failed to convert parameter to ColorSpaceName.");
+        ApiColorSpaceType csType = ApiColorSpaceType::UNKNOWN;
+        if (!ConvertFromJsValue(engine, info.argv[0], csType)) {
+            CMLOGE("[NAPI]Failed to convert parameter to ColorSpaceType.");
             return nullptr;
         }
-        colorSpace = std::make_shared<ColorSpace>(csName);
+        colorSpace = std::make_shared<ColorSpace>(JS_TO_NATIVE_COLOR_SPACE_NAME_MAP.at(csType));
     } else {
         // info.argc must be ARGC_ONE or ARGC_TWO
         ColorSpacePrimaries primaries;
