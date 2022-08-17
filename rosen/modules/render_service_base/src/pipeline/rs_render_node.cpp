@@ -142,10 +142,17 @@ void RSRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
 {
 #ifdef ROSEN_OHOS
     renderNodeSaveCount_ = canvas.SaveCanvasAndAlpha();
-    canvas.MultiplyAlpha(GetRenderProperties().GetAlpha());
     auto boundsGeo = std::static_pointer_cast<RSObjAbsGeometry>(GetRenderProperties().GetBoundsGeometry());
     if (boundsGeo && !boundsGeo->IsEmpty()) {
         canvas.concat(boundsGeo->GetMatrix());
+    }
+    auto alpha = renderProperties_.GetAlpha();
+    if (alpha < 1.f) {
+        if ((GetChildrenCount() == 0 && drawCmdModifiers_.empty()) || !GetRenderProperties().GetAlphaOffscreen()) {
+            canvas.MultiplyAlpha(alpha);
+        } else {
+            canvas.saveLayerAlpha(nullptr, std::clamp(alpha, 0.f, 1.f) * UINT8_MAX);
+        }
     }
     auto transitionProperties = GetAnimationManager().GetTransitionProperties();
     RSPropertiesPainter::DrawTransitionProperties(transitionProperties, GetRenderProperties(), canvas);

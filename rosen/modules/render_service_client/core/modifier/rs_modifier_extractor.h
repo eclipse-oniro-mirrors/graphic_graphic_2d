@@ -42,6 +42,7 @@ public:
     Vector2f GetScale() const;
 
     float GetAlpha() const;
+    bool GetAlphaOffscreen() const;
 
     Vector4f GetCornerRadius() const;
 

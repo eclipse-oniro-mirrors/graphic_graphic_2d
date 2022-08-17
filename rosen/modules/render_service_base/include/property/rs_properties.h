@@ -109,6 +109,8 @@ public:
 
     void SetAlpha(float alpha);
     float GetAlpha() const;
+    void SetAlphaOffscreen(bool alphaOffscreen);
+    bool GetAlphaOffscreen() const;
 
     void SetSublayerTransform(Matrix3f sublayerTransform);
     Matrix3f GetSublayerTransform() const;
@@ -219,6 +221,7 @@ private:
     Gravity frameGravity_ = Gravity::DEFAULT;
 
     float alpha_ = 1.f;
+    bool alphaOffscreen_ = true;
 
     std::unique_ptr<Matrix3f> sublayerTransform_ = nullptr;
     std::unique_ptr<Decoration> decoration_ = nullptr;

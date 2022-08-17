@@ -155,6 +155,15 @@ protected:
     std::shared_ptr<RSRenderModifier> CreateRenderModifier() const override;
 };
 
+class RS_EXPORT RSAlphaOffscreenModifier : public RSModifier<RSProperty<bool>> {
+public:
+    explicit RSAlphaOffscreenModifier(const std::shared_ptr<RSProperty<bool>>& property);
+    virtual ~RSAlphaOffscreenModifier() = default;
+protected:
+    RSModifierType GetModifierType() const override;
+    std::shared_ptr<RSRenderModifier> CreateRenderModifier() const override;
+};
+
 class RS_EXPORT RSForegroundColorModifier : public RSModifier<RSAnimatableProperty<Color>> {
 public:
     explicit RSForegroundColorModifier(const std::shared_ptr<RSAnimatableProperty<Color>>& property);

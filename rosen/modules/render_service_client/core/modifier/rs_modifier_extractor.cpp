@@ -110,6 +110,11 @@ float RSModifierExtractor::GetAlpha() const
     GET_PROPERTY_FROM_MODIFIERS(float, ALPHA, 1.f, *=);
 }
 
+bool RSModifierExtractor::GetAlphaOffscreen() const
+{
+    GET_PROPERTY_FROM_MODIFIERS(bool, ALPHA_OFFSCREEN, true, =);
+}
+
 Vector4f RSModifierExtractor::GetCornerRadius() const
 {
     GET_PROPERTY_FROM_MODIFIERS(Vector4f, CORNER_RADIUS, 0.f, =);
