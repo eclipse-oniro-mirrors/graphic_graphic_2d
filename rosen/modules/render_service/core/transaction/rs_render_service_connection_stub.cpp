@@ -159,8 +159,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         case CREATE_NODE_AND_SURFACE: {
             auto nodeId = data.ReadUint64();
             auto surfaceName = data.ReadString();
-            bool isWindow = data.ReadBool();
-            RSSurfaceRenderNodeConfig config = {.id = nodeId, .name = surfaceName, .isWindow = isWindow};
+            RSSurfaceRenderNodeConfig config = {.id = nodeId, .name = surfaceName};
             sptr<Surface> surface = CreateNodeAndSurface(config);
             auto producer = surface->GetProducer();
             reply.WriteRemoteObject(producer->AsObject());

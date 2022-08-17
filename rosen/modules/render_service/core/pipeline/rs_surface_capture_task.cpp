@@ -234,7 +234,7 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWith
     auto params = RSBaseRenderUtil::CreateBufferDrawParam(node, true, false, false, false);
 
     const auto saveCnt = canvas_->save();
-    if (node.IsWindow()) {
+    if (node.IsAppWindow()) {
         canvas_->concat(params.matrix);
     }
     ProcessBaseRenderNode(node);

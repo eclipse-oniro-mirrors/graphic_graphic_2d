@@ -408,7 +408,7 @@ void RSMainThread::CheckBufferAvailableIfNeed()
             continue;
         }
         auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node);
-        if (!surfaceNode->IsWindow() || !node->IsOnTheTree()) {
+        if (!surfaceNode->IsAppWindow() || !node->IsOnTheTree()) {
             continue;
         }
         if (!surfaceNode->IsBufferAvailable()) {

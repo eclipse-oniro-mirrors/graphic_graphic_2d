@@ -76,7 +76,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     node.ApplyModifiers();
     RSUniRenderUtil::UpdateRenderNodeDstRect(node);
     // prepare the surfaceRenderNode whose child is rootRenderNode 
-    if (node.IsWindow()) {
+    if (node.IsAppWindow()) {
         curSurfaceDirtyManager_ = node.GetDirtyManager();
         curSurfaceDirtyManager_->Clear();
         dirtyFlag_ = false;
@@ -424,7 +424,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     ProcessBaseRenderNode(node);
     canvas_->restoreToCount(saveCnt);
 
-    if (node.GetBuffer() != nullptr) {
+    if (!node.IsAppWindow() && node.GetBuffer() != nullptr) {
         node.NotifyRTBufferAvailable();
         renderEngine_->DrawSurfaceNodeWithParams(*canvas_, node, params);
     }
