@@ -104,8 +104,8 @@ void RSBaseNode::AddChild(SharedPtr child, int index)
         return;
     }
     std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeAddChild>(id_, childId, index);
-    bool disallowSendToRemote = isUniRenderEnabled_ && !isRenderServiceNode_ && !RSSystemProperties::GetRenderMode() &&
-        child->IsInstanceOf(RSUINodeType::SURFACE_NODE);
+    bool disallowSendToRemote = isUniRenderEnabled_ && !isRenderServiceNode_ &&
+        !RSSystemProperties::IsUniRenderMode() && child->IsInstanceOf(RSUINodeType::SURFACE_NODE);
     if (disallowSendToRemote) {
         transactionProxy->AddCommand(command, false, GetFollowType(), id_);
     }

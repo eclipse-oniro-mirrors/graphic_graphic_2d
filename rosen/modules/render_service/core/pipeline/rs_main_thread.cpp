@@ -198,9 +198,17 @@ void RSMainThread::Start()
 
 void RSMainThread::ProcessCommand()
 {
-    ProcessCommandForDividedRender();
-    if (isUniRender_) {
+    if (!isUniRender_) { // divided render for all
+        ProcessCommandForDividedRender();
+    }
+
+    // dynamic switch
+    if (useUniVisitor_) {
+        ProcessCommandForDividedRender();
         ProcessCommandForUniRender();
+    } else {
+        ProcessCommandForUniRender();
+        ProcessCommandForDividedRender();
     }
 }
 
@@ -218,7 +226,7 @@ void RSMainThread::ProcessCommandForUniRender()
 
         for (auto& rsTransactionElem: effectiveTransactionDataIndexMap_) {
             auto pid = rsTransactionElem.first;
-//            auto& lastIndex = rsTransactionElem.second.first;
+            auto& lastIndex = rsTransactionElem.second.first;
             auto& transactionVec = rsTransactionElem.second.second;
             auto iter = transactionVec.begin();
             for (; iter != transactionVec.end(); ++iter) {
@@ -226,14 +234,14 @@ void RSMainThread::ProcessCommandForUniRender()
                     continue;
                 }
                 auto curIndex = (*iter)->GetIndex();
-//                if (curIndex == lastIndex + 1) {
-//                    ++lastIndex;
+                if (curIndex == lastIndex + 1) {
+                    ++lastIndex;
                     transactionFlags += ", [" + std::to_string(pid) + ", " + std::to_string(curIndex) + "]";
-//                } else {
-//                    RS_LOGE("RSMainThread::ProcessCommandForUniRender wait curIndex:%llu, lastIndex:%llu, pid:%d",
-//                        curIndex, lastIndex, pid);
-//                    break;
-//                }
+                } else {
+                    RS_LOGE("RSMainThread::ProcessCommandForUniRender wait curIndex:%llu, lastIndex:%llu, pid:%d",
+                        curIndex, lastIndex, pid);
+                    break;
+                }
             }
             transactionDataEffective[pid].insert(transactionDataEffective[pid].end(),
                 std::make_move_iterator(transactionVec.begin()), std::make_move_iterator(iter));
@@ -267,7 +275,7 @@ void RSMainThread::ProcessCommandForDividedRender()
             auto bufferTimestamp = bufferTimestamps_.find(surfaceNodeId);
             std::map<uint64_t, std::vector<std::unique_ptr<RSCommand>>>::iterator effectIter;
 
-            if (!node || !node->IsOnTheTree() || bufferTimestamp == bufferTimestamps_.end()) {
+            if (!node || !node->IsOnTheTree() || bufferTimestamp == bufferTimestamps_.end() || useUniVisitor_) {
                 // If node has been destructed or is not on the tree or has no valid buffer,
                 // for all command cached in commandMap should be executed immediately
                 effectIter = commandMap.end();
@@ -733,6 +741,9 @@ void RSMainThread::SendCommands()
     // dispatch messages to corresponding application
     auto transactionMapPtr = std::make_shared<std::unordered_map<uint32_t, RSTransactionData>>(
         RSMessageProcessor::Instance().GetAllTransactions());
+    if (!useUniVisitor_) {
+        return;
+    }
     PostTask([this, transactionMapPtr]() {
         for (auto& transactionIter : *transactionMapPtr) {
             auto pid = transactionIter.first;

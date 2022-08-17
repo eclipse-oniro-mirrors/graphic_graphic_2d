@@ -45,12 +45,13 @@ void RSRenderServiceConnectionProxy::CommitTransaction(std::unique_ptr<RSTransac
     data->SetMaxCapacity(PARCEL_MAX_CPACITY);
     data->WriteInt32(0); // indicate data parcel
 
+    bool isUniMode = RSSystemProperties::IsUniRenderMode();
     transactionData->SetSendingPid(pid_);
-    transactionData->SetIndex(++transactionDataIndex_);
-    transactionData->SetUniRender(RSSystemProperties::GetRenderMode());
+    transactionData->SetIndex(isUniMode ? ++transactionDataIndex_ : transactionDataIndex_);
+    transactionData->SetUniRender(isUniMode);
     RS_TRACE_BEGIN("Marsh RSTransactionData: cmd count:" + std::to_string(transactionData->GetCommandCount()) +
         " transactionFlag:[" + std::to_string(pid_) + ", " + std::to_string(transactionData->GetIndex()) + "],isUni:" +
-        std::to_string(RSSystemProperties::GetRenderMode()));
+        std::to_string(isUniMode));
     bool success = data->WriteParcelable(transactionData.get());
     RS_TRACE_END();
     if (!success) {

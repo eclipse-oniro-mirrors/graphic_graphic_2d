@@ -136,7 +136,7 @@ FollowType RSSurfaceNode::GetFollowType() const
     if (!isUniRenderEnabled_ && !isRenderServiceNode_) {
         return FollowType::FOLLOW_TO_PARENT;
     }
-    if (isUniRenderEnabled_ && !isRenderServiceNode_ && !RSSystemProperties::GetRenderMode()) {
+    if (isUniRenderEnabled_ && !isRenderServiceNode_ && !RSSystemProperties::IsUniRenderMode()) {
         return FollowType::FOLLOW_TO_PARENT;
     }
     return FollowType::NONE;

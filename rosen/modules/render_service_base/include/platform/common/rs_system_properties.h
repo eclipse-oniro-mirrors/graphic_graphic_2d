@@ -51,7 +51,7 @@ public:
     static bool GetHighContrastStatus();
     static int32_t GetCorrectionMode();
     static bool GetUniPartialRenderEnabled();
-    static bool GetRenderMode();
+    static bool IsUniRenderMode();
     static void SetRenderMode(bool isUni);
 
 private:
