@@ -47,6 +47,10 @@ private:
     void DrawDirtyRegion();
     std::vector<RectI> GetDirtyRects(const Occlusion::Region &region);
     RectI CoordinateTransform(const RectI& rect);
+    inline bool GetSurfaceViewDirtyEnabled()
+    {
+        return std::atoi((system::GetParameter("rosen.uni.surfaceviewdirty.enabled", "0")).c_str()) != 0;
+    }
 
     ScreenInfo screenInfo_;
     std::shared_ptr<RSDirtyRegionManager> curSurfaceDirtyManager_;

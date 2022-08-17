@@ -128,6 +128,18 @@ public:
     {
         return consumer_ != nullptr;
     }
+    inline bool IsCurrentFrameBufferConsumed()
+    {
+        return isCurrentFrameBufferConsumed_;
+    }
+    inline void ResetCurrentFrameBufferConsumed()
+    {
+        isCurrentFrameBufferConsumed_ = false;
+    }
+    inline void SetCurrentFrameBufferConsumed()
+    {
+        isCurrentFrameBufferConsumed_ = true;
+    }
 
 protected:
     sptr<Surface> consumer_;
@@ -138,6 +150,8 @@ private:
     SurfaceBufferEntry preBuffer_;
     float globalZOrder_ = 0.0f;
     std::atomic<int> bufferAvailableCount_ = 0;
+
+    bool isCurrentFrameBufferConsumed_ = false;
 };
 }
 }
