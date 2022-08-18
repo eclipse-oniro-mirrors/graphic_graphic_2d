@@ -247,6 +247,42 @@ static const sk_sp<SkColorFilter>& TritanomalyMat()
     return tritanomalyMat;
 }
 
+static const sk_sp<SkColorFilter>& InvertProtanomalyMat()
+{
+    static const SkScalar colorMatrix[MATRIX_SIZE] = {
+        0.025,  -0.796, -0.228, 1.0, 0.0,
+        -0.334, -0.438, -0.228, 1.0, 0.0,
+        -0.382, -1.392, 0.772,  0.0, 1.0,
+        0.0,    0.0,    0.0,    1.0, 1.0
+    };
+    static auto invertProtanomalyMat = SkColorFilters::Matrix(colorMatrix);
+    return invertProtanomalyMat;
+}
+
+static const sk_sp<SkColorFilter>& InvertDeuteranomalyMat()
+{
+    static const SkScalar colorMatrix[MATRIX_SIZE] = {
+        -0.31,  -0.462, -0.228, 1.0, 0.0,
+        -0.545, -0.227, -0.228, 1.0, 0.0,
+        -0.857, -0.917, 0.772,  1.0, 0.0,
+        0.0,    0.0,    0.0,    1.0, 0.0
+    };
+    static auto invertDeuteranomalyMat = SkColorFilters::Matrix(colorMatrix);
+    return invertDeuteranomalyMat;
+}
+
+static const sk_sp<SkColorFilter>& InvertTritanomalyMat()
+{
+    static const SkScalar colorMatrix[MATRIX_SIZE] = {
+        0.401,  -1.98,  0.578, 1.0, 0.0,
+        -0.599, -0.796, 0.393, 1.0, 0.0,
+        -0.599, -1.07,  0.667, 1.0, 0.0,
+        0.0,    0.0,    0.0,   1.0, 0.0
+    };
+    static auto invertTritanomalyMat = SkColorFilters::Matrix(colorMatrix);
+    return invertTritanomalyMat;
+}
+
 class SimpleColorSpace {
 public:
     // 3 RGB basePoints and 1 whitePoint.
@@ -842,24 +878,56 @@ bool RSBaseRenderUtil::ReleaseBuffer(RSSurfaceHandler& surfaceHandler)
     return true;
 }
 
+bool RSBaseRenderUtil::IsColorFilterModeValid(ColorFilterMode mode)
+{
+    bool valid = false;
+    switch (mode) {
+        case ColorFilterMode::INVERT_COLOR_DISABLE_MODE:
+        case ColorFilterMode::INVERT_COLOR_ENABLE_MODE:
+        case ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE:
+        case ColorFilterMode::DALTONIZATION_DEUTERANOMALY_MODE:
+        case ColorFilterMode::DALTONIZATION_TRITANOMALY_MODE:
+        case ColorFilterMode::INVERT_DALTONIZATION_PROTANOMALY_MODE:
+        case ColorFilterMode::INVERT_DALTONIZATION_DEUTERANOMALY_MODE:
+        case ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE:
+        case ColorFilterMode::DALTONIZATION_NORMAL_MODE:
+        case ColorFilterMode::COLOR_FILTER_END:
+            valid = true;
+            break;
+        default:
+            valid = false;
+    }
+    return valid;
+}
+
 void RSBaseRenderUtil::SetColorFilterModeToPaint(ColorFilterMode colorFilterMode, SkPaint& paint)
 {
     switch (colorFilterMode) {
-        case ColorFilterMode::INVERT_MODE:
+        case ColorFilterMode::INVERT_COLOR_ENABLE_MODE:
             paint.setColorFilter(Detail::InvertColorMat());
             break;
-        case ColorFilterMode::PROTANOMALY_MODE:
+        case ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE:
             paint.setColorFilter(Detail::ProtanomalyMat());
             break;
-        case ColorFilterMode::DEUTERANOMALY_MODE:
+        case ColorFilterMode::DALTONIZATION_DEUTERANOMALY_MODE:
             paint.setColorFilter(Detail::DeuteranomalyMat());
             break;
-        case ColorFilterMode::TRITANOMALY_MODE:
+        case ColorFilterMode::DALTONIZATION_TRITANOMALY_MODE:
             paint.setColorFilter(Detail::TritanomalyMat());
             break;
-        case ColorFilterMode::COLOR_FILTER_END:
-            paint.setColorFilter(nullptr);
+        case ColorFilterMode::INVERT_DALTONIZATION_PROTANOMALY_MODE:
+            paint.setColorFilter(Detail::InvertProtanomalyMat());
             break;
+        case ColorFilterMode::INVERT_DALTONIZATION_DEUTERANOMALY_MODE:
+            paint.setColorFilter(Detail::InvertDeuteranomalyMat());
+            break;
+        case ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE:
+            paint.setColorFilter(Detail::InvertTritanomalyMat());
+            break;
+        // INVERT_COLOR_DISABLE_MODE and DALTONIZATION_NORMAL_MODE couldn't be in this process
+        case ColorFilterMode::INVERT_COLOR_DISABLE_MODE:
+        case ColorFilterMode::DALTONIZATION_NORMAL_MODE:
+        case ColorFilterMode::COLOR_FILTER_END:
         default:
             paint.setColorFilter(nullptr);
     }

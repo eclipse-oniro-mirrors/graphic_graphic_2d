@@ -83,11 +83,11 @@ bool RSSystemProperties::GetHighContrastStatus()
     return std::atoi((system::GetParameter("rosen.HighContrast.enabled", "0")).c_str()) != 0;
 }
 
-int32_t RSSystemProperties::GetCorrectionMode()
+uint32_t RSSystemProperties::GetCorrectionMode()
 {
     // If the value of rosen.directClientComposition.enabled is not 0 then enable the direct CLIENT composition.
     // Direct CLIENT composition will be processed only when the num of layer is larger than 11
-    return std::atoi((system::GetParameter("rosen.CorrectionMode", "5")).c_str());
+    return std::atoi((system::GetParameter("rosen.CorrectionMode", "999")).c_str());
 }
 
 bool RSSystemProperties::GetUniPartialRenderEnabled()

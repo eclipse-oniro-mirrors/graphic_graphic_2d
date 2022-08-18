@@ -65,20 +65,21 @@ public:
         if (id == CONFIG_ID::CONFIG_DALTONIZATION_COLOR_FILTER) {
             switch (value.daltonizationColorFilter) {
                 case Protanomaly:
-                    mode = ColorFilterMode::PROTANOMALY_MODE;
+                    mode = ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE;
                     break;
                 case Deuteranomaly:
-                    mode = ColorFilterMode::DEUTERANOMALY_MODE;
+                    mode = ColorFilterMode::DALTONIZATION_DEUTERANOMALY_MODE;
                     break;
                 case Tritanomaly:
-                    mode = ColorFilterMode::TRITANOMALY_MODE;
+                    mode = ColorFilterMode::DALTONIZATION_TRITANOMALY_MODE;
                     break;
                 case Normal:
-                    mode = ColorFilterMode::COLOR_FILTER_END;
+                    mode = ColorFilterMode::DALTONIZATION_NORMAL_MODE;
                     break;
             }
         } else {
-            mode = value.invertColor ? ColorFilterMode::INVERT_MODE : ColorFilterMode::COLOR_FILTER_END;
+            mode = value.invertColor ? ColorFilterMode::INVERT_COLOR_ENABLE_MODE :
+                                        ColorFilterMode::INVERT_COLOR_DISABLE_MODE;
         }
         RSMainThread::Instance()->GetRenderEngine()->SetColorFilterMode(mode);
     }

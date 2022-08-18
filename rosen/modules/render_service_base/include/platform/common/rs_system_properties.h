@@ -49,7 +49,7 @@ public:
     static std::string GetRSEventProperty(const std::string &paraName);
     static bool GetDirectClientCompEnableStatus();
     static bool GetHighContrastStatus();
-    static int32_t GetCorrectionMode();
+    static uint32_t GetCorrectionMode();
     static bool GetUniPartialRenderEnabled();
     static bool IsUniRenderMode();
     static void SetRenderMode(bool isUni);

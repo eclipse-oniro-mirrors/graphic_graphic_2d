@@ -142,10 +142,7 @@ public:
         float mirrorAdaptiveCoefficient = 1.0f);
 
     void ShrinkCachesIfNeeded();
-    void SetColorFilterMode(ColorFilterMode mode)
-    {
-        colorFilterMode_ = mode;
-    }
+    void SetColorFilterMode(ColorFilterMode mode);
 #ifdef RS_ENABLE_GL
     const std::shared_ptr<RenderContext>& GetRenderContext() const
     {
