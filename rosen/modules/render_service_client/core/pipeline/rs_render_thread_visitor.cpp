@@ -68,15 +68,15 @@ void RSRenderThreadVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
         node.ApplyModifiers();
         auto ptr = RSNodeMap::Instance().GetNode<RSSurfaceNode>(node.GetRSSurfaceNodeId());
         if (ptr == nullptr) {
-            ROSEN_LOGE("ProcessRoot: No valid RSSurfaceNode id");
+            ROSEN_LOGE("PrepareRoot: No valid RSSurfaceNode id");
             return;
         }
         if (!node.enableRender_) {
-            ROSEN_LOGI("ProcessRoot %s: Invisible", ptr->GetName().c_str());
+            ROSEN_LOGI("PrepareRoot %s: Invisible", ptr->GetName().c_str());
             return;
         }
         if (node.GetSurfaceWidth() <= 0 || node.GetSurfaceHeight() <= 0) {
-            ROSEN_LOGE("ProcessRoot %s: Negative width or height [%d %d]", ptr->GetName().c_str(),
+            ROSEN_LOGE("PrepareRoot %s: Negative width or height [%d %d]", ptr->GetName().c_str(),
                 node.GetSurfaceWidth(), node.GetSurfaceHeight());
             return;
         }
