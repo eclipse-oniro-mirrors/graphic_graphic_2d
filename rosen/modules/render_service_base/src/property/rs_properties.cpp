@@ -477,6 +477,16 @@ float RSProperties::GetAlpha() const
 {
     return alpha_;
 }
+void RSProperties::SetAlphaOffscreen(bool alphaOffscreen)
+{
+    alphaOffscreen_ = alphaOffscreen;
+    SetDirty();
+}
+
+bool RSProperties::GetAlphaOffscreen() const
+{
+    return alphaOffscreen_;
+}
 
 void RSProperties::SetSublayerTransform(Matrix3f sublayerTransform)
 {

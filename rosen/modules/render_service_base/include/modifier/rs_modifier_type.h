@@ -39,6 +39,7 @@ enum class RSModifierType : int16_t {
 
     CORNER_RADIUS,
     ALPHA,
+    ALPHA_OFFSCREEN,
 
     FOREGROUND_COLOR,
     BACKGROUND_COLOR,

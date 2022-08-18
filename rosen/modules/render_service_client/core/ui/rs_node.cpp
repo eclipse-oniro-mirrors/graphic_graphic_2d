@@ -308,6 +308,11 @@ void RSNode::SetAlpha(float alpha)
     SET_ANIMATABLE_MODIFIER(Alpha, float, alpha, ALPHA, 1.f);
 }
 
+void RSNode::SetAlphaOffscreen(bool alphaOffscreen)
+{
+    SET_NONANIMATABLE_MODIFIER(AlphaOffscreen, bool, alphaOffscreen, ALPHA_OFFSCREEN, true);
+}
+
 // Bounds
 void RSNode::SetBounds(const Vector4f& bounds)
 {

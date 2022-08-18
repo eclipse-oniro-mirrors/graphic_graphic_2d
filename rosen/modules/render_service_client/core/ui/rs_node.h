@@ -113,6 +113,7 @@ public:
     void SetScaleY(float scaleY);
 
     void SetAlpha(float alpha);
+    void SetAlphaOffscreen(bool alphaOffscreen);
 
     void SetForegroundColor(uint32_t colorValue);
     void SetBackgroundColor(uint32_t colorValue);
