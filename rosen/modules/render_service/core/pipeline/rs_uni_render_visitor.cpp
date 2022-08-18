@@ -84,6 +84,13 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         if (node.GetDstRectChanged()) {
             curDisplayDirtyManager_->MergeDirtyRect(curDisplayNode_->GetLastFrameSurfacePos(node.GetId()));
         }
+    } else {
+        if (node.GetBuffer() != nullptr) {
+            auto& surfaceHandler = static_cast<RSSurfaceHandler&>(node);
+            if (surfaceHandler.IsCurrentFrameBufferConsumed() && GetSurfaceViewDirtyEnabled()) {
+                curSurfaceDirtyManager_->MergeDirtyRect(node.GetDstRect());
+            }
+        }
     }
 
     if (node.GetDstRectChanged()) {
