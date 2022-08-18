@@ -101,6 +101,8 @@ public:
     }
     void RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app);
     void UnRegisterApplicationAgent(sptr<IApplicationAgent> app);
+    void NotifyRenderModeChanged(bool useUniVisitor);
+    bool QueryIfUseUniVisitor() const;
 
     void RegisterOcclusionChangeCallback(sptr<RSIOcclusionChangeCallback> callback);
     void UnRegisterOcclusionChangeCallback(sptr<RSIOcclusionChangeCallback> callback);
@@ -109,7 +111,7 @@ public:
     void WaitUtilUniRenderFinished();
     void NotifyUniRenderFinish();
     void SetRenderModeChangeCallback(sptr<RSIRenderModeChangeCallback> callback);
-    void SetUniVisitor(bool isUniRender);
+    bool IfUseUniVisitor() const;
 
     void ClearTransactionDataPidInfo(pid_t remotePid);
     void AddTransactionDataPidInfo(pid_t remotePid);
@@ -150,6 +152,8 @@ private:
     void WaitUntilUnmarshallingTaskFinished();
     void MergeToEffectiveTransactionDataMap(TransactionDataMap& cachedTransactionDataMap);
 
+    void CheckBufferAvailableIfNeed();
+
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
     RSTaskMessage::RSTask mainLoop_;
@@ -172,9 +176,10 @@ private:
     std::shared_ptr<VSyncReceiver> receiver_ = nullptr;
     std::vector<sptr<RSIOcclusionChangeCallback>> occlusionListeners_;
 
+    bool waitBufferAvailable_ = false; // only used in main thread
     bool isUniRender_ = RSUniRenderJudgement::IsUniRender();
     sptr<RSIRenderModeChangeCallback> renderModeChangeCallback_;
-    std::atomic_bool useUniVisitor_ = false;
+    std::atomic_bool useUniVisitor_ = isUniRender_;
     RSTaskMessage::RSTask unmarshalBarrierTask_;
     std::condition_variable unmarshalTaskCond_;
     std::mutex unmarshalMutex_;

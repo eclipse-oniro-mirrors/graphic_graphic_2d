@@ -194,9 +194,17 @@ void RSMainThread::Start()
 
 void RSMainThread::ProcessCommand()
 {
-    ProcessCommandForDividedRender();
-    if (isUniRender_) {
+    if (!isUniRender_) { // divided render for all
+        ProcessCommandForDividedRender();
+    }
+
+    // dynamic switch
+    if (useUniVisitor_) {
+        ProcessCommandForDividedRender();
         ProcessCommandForUniRender();
+    } else {
+        ProcessCommandForUniRender();
+        ProcessCommandForDividedRender();
     }
 }
 
@@ -236,7 +244,7 @@ void RSMainThread::ProcessCommandForUniRender()
             transactionVec.erase(transactionVec.begin(), iter);
         }
     }
-    RS_TRACE_NAME("RSMainThread::ProcessCommand" + transactionFlags);
+    RS_TRACE_NAME("RSMainThread::ProcessCommandUni" + transactionFlags);
     for (auto& rsTransactionElem: transactionDataEffective) {
         for (auto& rsTransaction: rsTransactionElem.second) {
             if (rsTransaction) {
@@ -263,7 +271,7 @@ void RSMainThread::ProcessCommandForDividedRender()
             auto bufferTimestamp = bufferTimestamps_.find(surfaceNodeId);
             std::map<uint64_t, std::vector<std::unique_ptr<RSCommand>>>::iterator effectIter;
 
-            if (!node || !node->IsOnTheTree() || bufferTimestamp == bufferTimestamps_.end()) {
+            if (!node || !node->IsOnTheTree() || bufferTimestamp == bufferTimestamps_.end() || useUniVisitor_) {
                 // If node has been destructed or is not on the tree or has no valid buffer,
                 // for all command cached in commandMap should be executed immediately
                 effectIter = commandMap.end();
@@ -388,15 +396,50 @@ void RSMainThread::NotifyUniRenderFinish()
     }
 }
 
+bool RSMainThread::IfUseUniVisitor() const
+{
+    return useUniVisitor_ || (!useUniVisitor_ && waitBufferAvailable_);
+}
+
+void RSMainThread::CheckBufferAvailableIfNeed()
+{
+    if (!waitBufferAvailable_) {
+        return;
+    }
+    const auto& nodeMap = GetContext().GetNodeMap();
+    bool allBufferAvailable = true;
+    for (auto& [id, node] : nodeMap.renderNodeMap_) {
+        if (node == nullptr || !node->IsInstanceOf<RSSurfaceRenderNode>()) {
+            continue;
+        }
+        auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node);
+        if (!surfaceNode->IsAppWindow() || !node->IsOnTheTree()) {
+            continue;
+        }
+        if (surfaceNode->GetBuffer() == nullptr) {
+            allBufferAvailable = false;
+            break;
+        }
+    }
+    waitBufferAvailable_ = !allBufferAvailable;
+    if (!waitBufferAvailable_ && renderModeChangeCallback_) {
+        renderModeChangeCallback_->OnRenderModeChanged(false);
+    }
+}
+
 void RSMainThread::Render()
 {
     const std::shared_ptr<RSBaseRenderNode> rootNode = context_.GetGlobalRootRenderNode();
     if (rootNode == nullptr) {
-        RS_LOGE("RSMainThread::Draw GetGlobalRootRenderNode fail");
+        RS_LOGE("RSMainThread::Render GetGlobalRootRenderNode fail");
         return;
     }
-    std::shared_ptr<RSNodeVisitor> visitor;
     if (isUniRender_) {
+        CheckBufferAvailableIfNeed();
+    }
+    RS_LOGD("RSMainThread::Render isUni:%d", IfUseUniVisitor());
+    std::shared_ptr<RSNodeVisitor> visitor;
+    if (IfUseUniVisitor()) {
         visitor = std::make_shared<RSUniRenderVisitor>();
     } else {
         bool doParallelComposition = false;
@@ -411,6 +454,7 @@ void RSMainThread::Render()
         rsVisitor->SetAnimateState(doAnimate_);
         visitor = rsVisitor;
     }
+
     rootNode->Prepare(visitor);
     CalcOcclusion();
     rootNode->Process(visitor);
@@ -420,7 +464,7 @@ void RSMainThread::Render()
 
 void RSMainThread::CalcOcclusion()
 {
-    if (doAnimate_ && !isUniRender_) {
+    if (doAnimate_ && !useUniVisitor_) {
         return;
     }
     const std::shared_ptr<RSBaseRenderNode> node = context_.GetGlobalRootRenderNode();
@@ -635,6 +679,35 @@ void RSMainThread::UnRegisterApplicationAgent(sptr<IApplicationAgent> app)
     std::__libcpp_erase_if_container(applicationAgentMap_, [&app](auto& iter) { return iter.second == app; });
 }
 
+void RSMainThread::NotifyRenderModeChanged(bool useUniVisitor)
+{
+    if (RSUniRenderJudgement::GetUniRenderEnabledType() != UniRenderEnabledType::UNI_RENDER_DYNAMIC_SWITCH) {
+        return;
+    }
+    if (useUniVisitor == useUniVisitor_) {
+        RS_LOGI("RSMainThread::NotifyRenderModeChanged useUniVisitor_:%d, not changed", useUniVisitor_.load());
+        return;
+    }
+    PostTask([useUniVisitor = useUniVisitor, this]() {
+        useUniVisitor_ = useUniVisitor;
+        waitBufferAvailable_ = !useUniVisitor;
+        for (auto& elem : applicationAgentMap_) {
+            if (elem.second != nullptr) {
+                elem.second->OnRenderModeChanged(!useUniVisitor);
+            }
+        }
+        if (useUniVisitor_ && renderModeChangeCallback_) {
+            renderModeChangeCallback_->OnRenderModeChanged(true);
+        }
+    });
+}
+
+bool RSMainThread::QueryIfUseUniVisitor() const
+{
+    RS_LOGI("RSMainThread::QueryIfUseUniVisitor useUniVisitor_:%d", useUniVisitor_.load());
+    return useUniVisitor_;
+}
+
 void RSMainThread::RegisterOcclusionChangeCallback(sptr<RSIOcclusionChangeCallback> callback)
 {
     occlusionListeners_.emplace_back(callback);
@@ -658,11 +731,6 @@ void RSMainThread::SetRenderModeChangeCallback(sptr<RSIRenderModeChangeCallback>
     renderModeChangeCallback_ = callback;
 }
 
-void RSMainThread::SetUniVisitor(bool isUniRender)
-{
-    useUniVisitor_ = isUniRender;
-}
-
 void RSMainThread::SendCommands()
 {
     RS_TRACE_FUNC();
@@ -673,6 +741,9 @@ void RSMainThread::SendCommands()
     // dispatch messages to corresponding application
     auto transactionMapPtr = std::make_shared<std::unordered_map<uint32_t, RSTransactionData>>(
         RSMessageProcessor::Instance().GetAllTransactions());
+    if (!useUniVisitor_) {
+        return;
+    }
     PostTask([this, transactionMapPtr]() {
         for (auto& transactionIter : *transactionMapPtr) {
             auto pid = transactionIter.first;

@@ -16,7 +16,7 @@
 #ifndef RENDER_SERVICE_BASE_COMMON_RS_COMMON_DEF_H
 #define RENDER_SERVICE_BASE_COMMON_RS_COMMON_DEF_H
 
-#include <set>
+#include <atomic>
 #include <string>
 
 namespace OHOS {
@@ -43,7 +43,6 @@ public:
 
     // used by clients
     static bool GetUniRenderEnabled();
-    static void InitUniRenderEnabled(const std::string &bundleName);
     static DirtyRegionDebugType GetDirtyRegionDebugType();
     static PartialRenderType GetPartialRenderEnabled();
     static bool GetOcclusionEnabled();
@@ -52,11 +51,14 @@ public:
     static bool GetHighContrastStatus();
     static int32_t GetCorrectionMode();
     static bool GetUniPartialRenderEnabled();
+    static bool IsUniRenderMode();
+    static void SetRenderMode(bool isUni);
 
 private:
     RSSystemProperties() = default;
 
     static inline bool isUniRenderEnabled_ = false;
+    static inline std::atomic_bool isUniRenderMode_ = false;
 };
 
 } // namespace Rosen

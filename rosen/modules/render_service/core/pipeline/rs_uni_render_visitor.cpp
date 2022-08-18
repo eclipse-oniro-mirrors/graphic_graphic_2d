@@ -76,7 +76,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     node.ApplyModifiers();
     RSUniRenderUtil::UpdateRenderNodeDstRect(node);
     // prepare the surfaceRenderNode whose child is rootRenderNode 
-    if (node.GetConsumer() == nullptr) {
+    if (node.IsAppWindow()) {
         curSurfaceDirtyManager_ = node.GetDirtyManager();
         curSurfaceDirtyManager_->Clear();
         dirtyFlag_ = false;
@@ -393,9 +393,8 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     canvas_->save();
     canvas_->SaveAlpha();
 
-    canvas_->MultiplyAlpha(property.GetAlpha() * node.GetContextAlpha());
+    canvas_->MultiplyAlpha(property.GetAlpha());
 
-    canvas_->concat(node.GetContextMatrix());
     canvas_->save();
     canvas_->concat(geoPtr->GetMatrix());
     const RectF absBounds = {
@@ -404,10 +403,6 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     RRect absClipRRect = RRect(absBounds, property.GetCornerRadius());
     RSPropertiesPainter::DrawShadow(property, *canvas_, &absClipRRect);
     canvas_->restore();
-    auto contextClipRect = node.GetContextClipRegion();
-    if (!contextClipRect.isEmpty()) {
-        canvas_->clipRect(contextClipRect);
-    }
 
     SkMatrix translateMatrix;
     translateMatrix.setTranslate(
@@ -417,7 +412,6 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 
     // use node's local coordinate.
     auto params = RSBaseRenderUtil::CreateBufferDrawParam(node, true, false, false, false);
-
     const auto saveCnt = canvas_->save();
     canvas_->concat(params.matrix);
     auto transitionProperties = node.GetAnimationManager().GetTransitionProperties();
@@ -442,7 +436,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     ProcessBaseRenderNode(node);
     canvas_->restoreToCount(saveCnt);
 
-    if (node.GetBuffer() != nullptr) {
+    if (!node.IsAppWindow() && node.GetBuffer() != nullptr) {
         node.NotifyRTBufferAvailable();
         renderEngine_->DrawSurfaceNodeWithParams(*canvas_, node, params);
     }

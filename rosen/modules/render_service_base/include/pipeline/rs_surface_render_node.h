@@ -49,6 +49,16 @@ public:
     void ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas) override;
     void ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas) override;
 
+    bool IsAppWindow() const
+    {
+        return isAppWindow_;
+    }
+
+    void MarkAppWindow()
+    {
+        isAppWindow_ = true;
+    }
+
     std::string GetName() const
     {
         return name_;
@@ -287,10 +297,12 @@ private:
     float globalAlpha_ = 1.0f;
 
     std::string name_;
+    bool isAppWindow_ = false;
     bool isProxy_ = false;
     BlendType blendType_ = BlendType::BLEND_SRCOVER;
     std::atomic<bool> isNotifyRTBufferAvailable_ = false;
     std::atomic<bool> isNotifyUIBufferAvailable_ = false;
+    std::atomic_bool isBufferAvailable_ = false;
     sptr<RSIBufferAvailableCallback> callbackFromRT_;
     sptr<RSIBufferAvailableCallback> callbackFromUI_;
     std::function<void(void)> callbackForRenderThreadRefresh_ = nullptr;

@@ -44,16 +44,10 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
 
     // create node in RS
     RSSurfaceRenderNodeConfig config = { .id = node->GetId(), .name = node->name_ };
-    if (isWindow && isUniRenderEnabled_) {
-        if (!node->CreateNode(config)) {
-            ROSEN_LOGE("RSSurfaceNode::Create, create node failed");
-            return nullptr;
-        }
-    } else {
-        if (!node->CreateNodeAndSurface(config)) {
-            ROSEN_LOGE("RSSurfaceNode::Create, create node and surface failed");
-            return nullptr;
-        }
+
+    if (!node->CreateNodeAndSurface(config)) {
+        ROSEN_LOGE("RSSurfaceNode::Create, create node and surface failed");
+        return nullptr;
     }
 
     node->SetClipToFrame(true);
@@ -135,6 +129,17 @@ void RSSurfaceNode::ClearChildren()
         return;
     }
     RSBaseNode::ClearChildren();
+}
+
+FollowType RSSurfaceNode::GetFollowType() const
+{
+    if (!isUniRenderEnabled_ && !isRenderServiceNode_) {
+        return FollowType::FOLLOW_TO_PARENT;
+    }
+    if (isUniRenderEnabled_ && !isRenderServiceNode_ && !RSSystemProperties::IsUniRenderMode()) {
+        return FollowType::FOLLOW_TO_PARENT;
+    }
+    return FollowType::NONE;
 }
 
 void RSSurfaceNode::OnBoundsSizeChanged() const

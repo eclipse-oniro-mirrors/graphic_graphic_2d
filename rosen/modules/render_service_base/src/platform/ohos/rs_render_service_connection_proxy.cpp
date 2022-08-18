@@ -45,11 +45,16 @@ void RSRenderServiceConnectionProxy::CommitTransaction(std::unique_ptr<RSTransac
     data->SetMaxCapacity(PARCEL_MAX_CPACITY);
     data->WriteInt32(0); // indicate data parcel
 
+    bool isUniMode = RSSystemProperties::IsUniRenderMode();
     transactionData->SetSendingPid(pid_);
-    transactionData->SetIndex(++transactionDataIndex_);
-    transactionData->SetUniRender(RSSystemProperties::GetUniRenderEnabled());
+    if (isUniMode) {
+        ++transactionDataIndex_;
+    }
+    transactionData->SetIndex(transactionDataIndex_);
+    transactionData->SetUniRender(isUniMode);
     RS_TRACE_BEGIN("Marsh RSTransactionData: cmd count:" + std::to_string(transactionData->GetCommandCount()) +
-        " transactionFlag:[" + std::to_string(pid_) + ", " + std::to_string(transactionData->GetIndex()) + "]");
+        " transactionFlag:[" + std::to_string(pid_) + ", " + std::to_string(transactionData->GetIndex()) + "],isUni:" +
+        std::to_string(isUniMode));
     bool success = data->WriteParcelable(transactionData.get());
     RS_TRACE_END();
     if (!success) {
@@ -144,19 +149,29 @@ void RSRenderServiceConnectionProxy::UpdateRenderMode(bool isUniRender)
     }
 }
 
-bool RSRenderServiceConnectionProxy::InitUniRenderEnabled(const std::string &bundleName)
+bool RSRenderServiceConnectionProxy::GetUniRenderEnabled()
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
-    if (!data.WriteString(bundleName)) {
-        return false;
-    }
     option.SetFlags(MessageOption::TF_SYNC);
-    int32_t err = Remote()->SendRequest(RSIRenderServiceConnection::GET_UNI_RENDER_TYPE, data, reply, option);
+    int32_t err = Remote()->SendRequest(RSIRenderServiceConnection::GET_UNI_RENDER_ENABLED, data, reply, option);
     if (err != NO_ERROR) {
         return false;
+    }
+    return reply.ReadBool();
+}
+
+bool RSRenderServiceConnectionProxy::QueryIfRTNeedRender()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    int32_t err = Remote()->SendRequest(RSIRenderServiceConnection::QUERY_RT_NEED_RENDER, data, reply, option);
+    if (err != NO_ERROR) {
+        return true;
     }
     return reply.ReadBool();
 }

@@ -22,10 +22,13 @@
 #include <frame_collector.h>
 
 #include "animation/rs_animation_fraction.h"
+#include "command/rs_surface_node_command.h"
 #include "pipeline/rs_frame_report.h"
+#include "pipeline/rs_node_map.h"
 #include "pipeline/rs_render_node_map.h"
 #include "pipeline/rs_root_render_node.h"
 #include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
 #ifdef OHOS_RSS_CLIENT
 #include "res_sched_client.h"
 #include "res_type.h"
@@ -33,6 +36,8 @@
 #include "rs_trace.h"
 
 #include "transaction/rs_render_service_client.h"
+#include "ui/rs_surface_extractor.h"
+#include "ui/rs_surface_node.h"
 #include "ui/rs_ui_director.h"
 #ifdef ROSEN_OHOS
 #include <sys/prctl.h>
@@ -79,12 +84,15 @@ RSRenderThread::RSRenderThread()
     ROSEN_LOGD("Create RenderContext, its pointer is %p", renderContext_);
 #endif
     mainFunc_ = [&]() {
-        uint64_t renderStartTimeStamp = jankDetector_.GetSysTimeNs();
-        std::string str = "RSRenderThread DrawFrame: " + std::to_string(timestamp_);
-        ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, str.c_str());
-        {
-            prevTimestamp_ = timestamp_;
-            ProcessCommands();
+        uint64_t renderStartTimeStamp;
+        if (needRender_) {
+            renderStartTimeStamp = jankDetector_.GetSysTimeNs();
+        }
+
+        RS_TRACE_BEGIN("RSRenderThread DrawFrame: " + std::to_string(timestamp_));
+        prevTimestamp_ = timestamp_;
+        ProcessCommands();
+        if (needRender_) {
             jankDetector_.ProcessUiDrawFrameMsg();
         }
 
@@ -93,8 +101,11 @@ RSRenderThread::RSRenderThread()
         Render();
         RS_ASYNC_TRACE_BEGIN("waiting GPU running", 1111); // 1111 means async trace code for gpu
         SendCommands();
-        ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
-        jankDetector_.CalculateSkippedFrame(renderStartTimeStamp, jankDetector_.GetSysTimeNs());
+        RS_TRACE_END();
+
+        if (needRender_) {
+            jankDetector_.CalculateSkippedFrame(renderStartTimeStamp, jankDetector_.GetSysTimeNs());
+        }
     };
 
     highContrastObserver_ = std::make_shared<HighContrastObserver>();
@@ -203,6 +214,11 @@ void RSRenderThread::RenderLoop()
 #ifdef ACE_ENABLE_GL
     renderContext_->InitializeEglContext(); // init egl context on RT
 #endif
+    if (RSSystemProperties::GetUniRenderEnabled()) {
+        needRender_ = std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient())
+            ->QueryIfRTNeedRender();
+        RSSystemProperties::SetRenderMode(!needRender_);
+    }
     std::string name = "RSRenderThread_" + std::to_string(::getpid());
     runner_ = AppExecFwk::EventRunner::Create(false);
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);
@@ -252,6 +268,69 @@ void RSRenderThread::UpdateUiDrawFrameMsg(const std::string& abilityName)
     uiDrawAbilityName_ = abilityName;
 }
 
+void RSRenderThread::UpdateRenderMode(bool needRender)
+{
+    if (handler_) {
+        handler_->PostTask([needRender = needRender, this]() {
+            if (needRender_ == needRender) {
+                return;
+            }
+            needRender_ = needRender;
+            RequestNextVSync();
+            if (!needRender_) { // change to uni render, should move surfaceView's position
+                UpdateSurfaceNodeParentInRS();
+                ClearBufferCache();
+            } else {
+                forceUpdateSurfaceNode_ = true;
+            }
+        }, AppExecFwk::EventQueue::Priority::IMMEDIATE);
+    }
+}
+
+void RSRenderThread::UpdateSurfaceNodeParentInRS()
+{
+    auto& nodeMap = context_.GetMutableNodeMap();
+    std::unordered_map<NodeId, NodeId> surfaceNodeMap; // [surfaceNodeId, parentId]
+    nodeMap.TraversalNodes([&surfaceNodeMap](const std::shared_ptr<RSBaseRenderNode>& node) mutable {
+        if (!node || !node->IsInstanceOf<RSSurfaceRenderNode>()) {
+            return;
+        }
+        auto parent = node->GetParent().lock();
+        if (!parent) {
+            return;
+        }
+        surfaceNodeMap.emplace(node->GetId(), parent->GetId());
+    });
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        for (auto& [surfaceNodeId, parentId] : surfaceNodeMap) {
+            std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeUpdateParent>(surfaceNodeId, parentId);
+            transactionProxy->AddCommandFromRT(command, surfaceNodeId, FollowType::FOLLOW_TO_SELF);
+        }
+        transactionProxy->FlushImplicitTransactionFromRT(uiTimestamp_);
+    }
+}
+
+void RSRenderThread::ClearBufferCache()
+{
+    const auto& rootNode = context_.GetGlobalRootRenderNode();
+    if (rootNode == nullptr) {
+        ROSEN_LOGE("RSRenderThread::ClearBufferCache, rootNode is nullptr");
+        return;
+    }
+    for (auto& child : rootNode->GetSortedChildren()) {
+        if (!child || !child->IsInstanceOf<RSRootRenderNode>()) {
+            continue;
+        }
+        auto childNode = child->ReinterpretCastTo<RSRootRenderNode>();
+        auto surfaceNode = RSNodeMap::Instance().GetNode<RSSurfaceNode>(childNode->GetRSSurfaceNodeId());
+        auto rsSurface = RSSurfaceExtractor::ExtractRSSurface(surfaceNode);
+        if (rsSurface != nullptr) {
+            rsSurface->ClearBuffer();
+        }
+    }
+}
+
 void RSRenderThread::ProcessCommands()
 {
     // Attention: there are two situations
@@ -277,7 +356,7 @@ void RSRenderThread::ProcessCommands()
         uiTimestamp_ = prevTimestamp_ - 1;
         return;
     }
-    if (RsFrameReport::GetInstance().GetEnable()) {
+    if (RsFrameReport::GetInstance().GetEnable() && needRender_) {
         RsFrameReport::GetInstance().ProcessCommandsStart();
     }
 
@@ -305,7 +384,7 @@ void RSRenderThread::Animate(uint64_t timestamp)
 {
     RS_TRACE_FUNC();
 
-    if (RsFrameReport::GetInstance().GetEnable()) {
+    if (RsFrameReport::GetInstance().GetEnable() && needRender_) {
         RsFrameReport::GetInstance().AnimateStart();
     }
 
@@ -334,12 +413,16 @@ void RSRenderThread::Animate(uint64_t timestamp)
 
 void RSRenderThread::Render()
 {
+    if (!needRender_) {
+        return;
+    }
     ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSRenderThread::Render");
     if (RsFrameReport::GetInstance().GetEnable()) {
         RsFrameReport::GetInstance().RenderStart();
     }
     std::unique_lock<std::mutex> lock(mutex_);
     const auto& rootNode = context_.GetGlobalRootRenderNode();
+
     if (rootNode == nullptr) {
         ROSEN_LOGE("RSRenderThread::Render, rootNode is nullptr");
         return;
@@ -349,17 +432,18 @@ void RSRenderThread::Render()
     }
     rootNode->Prepare(visitor_);
     rootNode->Process(visitor_);
+    forceUpdateSurfaceNode_ = false;
     ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
 }
 
 void RSRenderThread::SendCommands()
 {
     ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSRenderThread::SendCommands");
-    if (RsFrameReport::GetInstance().GetEnable()) {
+    if (RsFrameReport::GetInstance().GetEnable() && needRender_) {
         RsFrameReport::GetInstance().SendCommandsStart();
     }
 
-    RSUIDirector::RecvMessages();
+    RSUIDirector::RecvMessages(needRender_);
     ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
 }
 
