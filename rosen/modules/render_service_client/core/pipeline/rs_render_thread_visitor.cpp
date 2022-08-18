@@ -65,6 +65,8 @@ void RSRenderThreadVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
     if (isIdle_) {
         curDirtyManager_ = node.GetDirtyManager();
         curDirtyManager_->Clear();
+        // After the node calls applymodifiers, the modifiers assign the renderProperties to the node
+        // Otherwise node.GetSurfaceHeight always less than 0, causing black screen
         node.ApplyModifiers();
         auto ptr = RSNodeMap::Instance().GetNode<RSSurfaceNode>(node.GetRSSurfaceNodeId());
         if (ptr == nullptr) {
