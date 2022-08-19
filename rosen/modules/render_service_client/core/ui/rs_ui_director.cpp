@@ -58,6 +58,9 @@ void RSUIDirector::Init(bool shouldCreateRenderThread)
         }
 
         RsFrameReport::GetInstance().Init();
+        if (!cacheDir_.empty()) {
+            RSRenderThread::Instance().SetCacheDir(cacheDir_);
+        }
         RSRenderThread::Instance().Start();
     }
     RSApplicationAgentImpl::Instance().RegisterRSApplicationAgent();
@@ -142,6 +145,11 @@ void RSUIDirector::SetTimeStamp(uint64_t timeStamp, const std::string& abilityNa
 {
     timeStamp_ = timeStamp;
     RSRenderThread::Instance().UpdateUiDrawFrameMsg(abilityName);
+}
+
+void RSUIDirector::SetCacheDir(const std::string& cacheFilePath)
+{
+    cacheDir_ = cacheFilePath;
 }
 
 bool RSUIDirector::RunningCustomAnimation(uint64_t timeStamp)

@@ -213,6 +213,9 @@ void RSRenderThread::RenderLoop()
 #endif
 #ifdef ACE_ENABLE_GL
     renderContext_->InitializeEglContext(); // init egl context on RT
+    if (!cacheDir_.empty()) {
+        renderContext_->SetCacheDir(cacheDir_);
+    }
 #endif
     if (RSSystemProperties::GetUniRenderEnabled()) {
         needRender_ = std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient())
