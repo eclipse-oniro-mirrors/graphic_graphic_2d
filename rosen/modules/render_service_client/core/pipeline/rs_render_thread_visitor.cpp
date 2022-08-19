@@ -55,15 +55,15 @@ bool RSRenderThreadVisitor::IsValidRootRenderNode(RSRootRenderNode& node)
 {
     auto ptr = RSNodeMap::Instance().GetNode<RSSurfaceNode>(node.GetRSSurfaceNodeId());
     if (ptr == nullptr) {
-        ROSEN_LOGE("ccc No valid RSSurfaceNode id");
+        ROSEN_LOGE("No valid RSSurfaceNode id");
         return false;
     }
     if (!node.enableRender_) {
-        ROSEN_LOGI("ccc RootNode %s: Invisible", ptr->GetName().c_str());
+        ROSEN_LOGI("RootNode %s: Invisible", ptr->GetName().c_str());
         return false;
     }
     if (node.GetSurfaceWidth() <= 0 || node.GetSurfaceHeight() <= 0) {
-        ROSEN_LOGE("ccc Root %s: Negative width or height [%d %d]", ptr->GetName().c_str(),
+        ROSEN_LOGE("Root %s: Negative width or height [%d %d]", ptr->GetName().c_str(),
             node.GetSurfaceWidth(), node.GetSurfaceHeight());
         return false;
     }
