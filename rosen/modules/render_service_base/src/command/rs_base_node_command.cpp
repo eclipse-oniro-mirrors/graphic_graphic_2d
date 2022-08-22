@@ -106,6 +106,7 @@ void BaseNodeCommandHelper::ClearSurfaceNodeChildren(RSContext& context, NodeId 
             child->RemoveFromTree();
         }
     }
+    node->ResetSortedChildren();
 }
 } // namespace Rosen
 } // namespace OHOS

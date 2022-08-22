@@ -208,7 +208,7 @@ void RSMainThread::ProcessCommand()
     if (!isUniRender_) { // divided render for all
         ProcessCommandForDividedRender();
     }
-
+    CheckBufferAvailableIfNeed();
     // dynamic switch
     if (useUniVisitor_) {
         ProcessCommandForDividedRender();
@@ -217,6 +217,7 @@ void RSMainThread::ProcessCommand()
         ProcessCommandForUniRender();
         ProcessCommandForDividedRender();
     }
+    CheckUpdateSurfaceNodeIfNeed();
 }
 
 void RSMainThread::ProcessCommandForUniRender()
@@ -286,6 +287,8 @@ void RSMainThread::ProcessCommandForDividedRender()
                 // If node has been destructed or is not on the tree or has no valid buffer,
                 // for all command cached in commandMap should be executed immediately
                 effectIter = commandMap.end();
+            } else if (waitingBufferAvailable_) {
+                effectIter = commandMap.begin();
             } else {
                 uint64_t timestamp = bufferTimestamp->second;
                 effectIter = commandMap.upper_bound(timestamp);
@@ -409,22 +412,22 @@ void RSMainThread::NotifyUniRenderFinish()
 
 bool RSMainThread::IfUseUniVisitor() const
 {
-    return useUniVisitor_ || (!useUniVisitor_ && waitBufferAvailable_);
+    return (useUniVisitor_ && !waitingUpdateSurfaceNode_) || (!useUniVisitor_ && waitingBufferAvailable_);
 }
 
 void RSMainThread::CheckBufferAvailableIfNeed()
 {
-    if (!waitBufferAvailable_) {
+    if (!waitingBufferAvailable_) {
         return;
     }
     const auto& nodeMap = GetContext().GetNodeMap();
     bool allBufferAvailable = true;
     for (auto& [id, node] : nodeMap.renderNodeMap_) {
-        if (node == nullptr || !node->IsInstanceOf<RSSurfaceRenderNode>()) {
+        if (node == nullptr || !node->IsInstanceOf<RSSurfaceRenderNode>() || !node->IsOnTheTree()) {
             continue;
         }
         auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node);
-        if (!surfaceNode->IsAppWindow() || !node->IsOnTheTree()) {
+        if (!surfaceNode->IsAppWindow()) {
             continue;
         }
         if (surfaceNode->GetBuffer() == nullptr) {
@@ -432,10 +435,50 @@ void RSMainThread::CheckBufferAvailableIfNeed()
             break;
         }
     }
-    waitBufferAvailable_ = !allBufferAvailable;
-    if (!waitBufferAvailable_ && renderModeChangeCallback_) {
+    waitingBufferAvailable_ = !allBufferAvailable;
+    if (!waitingBufferAvailable_ && renderModeChangeCallback_) {
         renderModeChangeCallback_->OnRenderModeChanged(false);
     }
+}
+
+void RSMainThread::CheckUpdateSurfaceNodeIfNeed()
+{
+    if (!waitingUpdateSurfaceNode_) {
+        return;
+    }
+    const auto& nodeMap = GetContext().GetNodeMap();
+    bool allSurfaceNodeUpdated = true;
+    for (auto& [id, node] : nodeMap.renderNodeMap_) {
+        if (!allSurfaceNodeUpdated) {
+            break;
+        }
+        if (node == nullptr || !node->IsInstanceOf<RSSurfaceRenderNode>() || !node->IsOnTheTree()) {
+            continue;
+        }
+        auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node);
+        if (!surfaceNode->IsAppWindow()) {
+            continue;
+        }
+        for (auto& child : node->GetSortedChildren()) {
+            if (child != nullptr && child->IsInstanceOf<RSSurfaceRenderNode>() && child->IsOnTheTree()) {
+                allSurfaceNodeUpdated = false;
+                break;
+            }
+        }
+        node->ResetSortedChildren();
+    }
+    waitingUpdateSurfaceNode_ = !allSurfaceNodeUpdated;
+    if (!waitingBufferAvailable_) {
+        for (auto& elem : applicationAgentMap_) {
+            if (elem.second != nullptr) {
+                elem.second->NotifyClearBufferCache();
+            }
+        }
+        if (renderModeChangeCallback_) {
+            renderModeChangeCallback_->OnRenderModeChanged(true);
+        }
+    }
+
 }
 
 void RSMainThread::Render()
@@ -445,9 +488,7 @@ void RSMainThread::Render()
         RS_LOGE("RSMainThread::Render GetGlobalRootRenderNode fail");
         return;
     }
-    if (isUniRender_) {
-        CheckBufferAvailableIfNeed();
-    }
+
     RS_LOGD("RSMainThread::Render isUni:%d", IfUseUniVisitor());
     std::shared_ptr<RSNodeVisitor> visitor;
     if (IfUseUniVisitor()) {
@@ -702,15 +743,17 @@ void RSMainThread::NotifyRenderModeChanged(bool useUniVisitor)
         return;
     }
     PostTask([useUniVisitor = useUniVisitor, this]() {
+        if (waitingBufferAvailable_ || waitingUpdateSurfaceNode_) {
+            RS_LOGD("RSMainThread::NotifyRenderModeChanged last update mode not finished, return");
+            return;
+        }
         useUniVisitor_ = useUniVisitor;
-        waitBufferAvailable_ = !useUniVisitor;
+        waitingBufferAvailable_ = !useUniVisitor;
+        waitingUpdateSurfaceNode_ = useUniVisitor;
         for (auto& elem : applicationAgentMap_) {
             if (elem.second != nullptr) {
                 elem.second->OnRenderModeChanged(!useUniVisitor);
             }
-        }
-        if (useUniVisitor_ && renderModeChangeCallback_) {
-            renderModeChangeCallback_->OnRenderModeChanged(true);
         }
     });
 }

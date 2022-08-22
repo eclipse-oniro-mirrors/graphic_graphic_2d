@@ -278,14 +278,23 @@ void RSRenderThread::UpdateRenderMode(bool needRender)
             if (needRender_ == needRender) {
                 return;
             }
-            needRender_ = needRender;
             RequestNextVSync();
-            if (!needRender_) { // change to uni render, should move surfaceView's position
+            if (!needRender) { // change to uni render, should move surfaceView's position
                 UpdateSurfaceNodeParentInRS();
-                ClearBufferCache();
             } else {
+                needRender_ = needRender;
                 forceUpdateSurfaceNode_ = true;
             }
+        }, AppExecFwk::EventQueue::Priority::IMMEDIATE);
+    }
+}
+
+void RSRenderThread::NotifyClearBufferCache()
+{
+    if (handler_) {
+        handler_->PostTask([this]() {
+            needRender_ = false;
+            ClearBufferCache();
         }, AppExecFwk::EventQueue::Priority::IMMEDIATE);
     }
 }
@@ -332,6 +341,7 @@ void RSRenderThread::ClearBufferCache()
             rsSurface->ClearBuffer();
         }
     }
+    rootNode->ResetSortedChildren();
 }
 
 void RSRenderThread::ProcessCommands()

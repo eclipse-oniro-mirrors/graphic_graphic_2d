@@ -44,6 +44,7 @@ RSUniRenderVisitor::~RSUniRenderVisitor() {}
 
 void RSUniRenderVisitor::PrepareBaseRenderNode(RSBaseRenderNode& node)
 {
+    node.ResetSortedChildren();
     for (auto& child : node.GetSortedChildren()) {
         child->Prepare(shared_from_this());
     }

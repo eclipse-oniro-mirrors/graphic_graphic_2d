@@ -72,6 +72,7 @@ bool RSRenderThreadVisitor::IsValidRootRenderNode(RSRootRenderNode& node)
 
 void RSRenderThreadVisitor::PrepareBaseRenderNode(RSBaseRenderNode& node)
 {
+    node.ResetSortedChildren();
     isPartialRenderEnabled_ = (RSSystemProperties::GetPartialRenderEnabled() != PartialRenderType::DISABLED);
     isOpDroped_ = (RSSystemProperties::GetPartialRenderEnabled() == PartialRenderType::SET_DAMAGE_AND_DROP_OP);
     for (auto& child : node.GetSortedChildren()) {

@@ -28,11 +28,11 @@ bool RSSystemProperties::GetUniRenderEnabled()
     if (inited) {
         return isUniRenderEnabled_;
     }
-    inited = true;
 
     isUniRenderEnabled_ = std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient())
         ->GetUniRenderEnabled();
     isUniRenderMode_ = isUniRenderEnabled_;
+    inited = true;
     ROSEN_LOGI("RSSystemProperties::GetUniRenderEnabled:%d", isUniRenderEnabled_);
     return isUniRenderEnabled_;
 }
