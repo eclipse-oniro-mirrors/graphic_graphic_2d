@@ -50,6 +50,8 @@ enum class WordBreakType {
 
 class TypographyStyle {
 public:
+    static const std::u16string ELLIPSIS;
+
     FontWeight fontWeight_ = FontWeight::W400;
     FontStyle fontStyle_ = FontStyle::NORMAL;
     std::string fontFamily_ = "";

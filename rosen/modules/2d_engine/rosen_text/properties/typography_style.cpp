@@ -16,6 +16,8 @@
 #include "rosen_text/properties/typography_style.h"
 
 namespace rosen {
+const std::u16string TypographyStyle::ELLIPSIS = u"\u2026";
+
 TextStyle TypographyStyle::GetTextStyle() const
 {
     TextStyle textstyle;
@@ -28,6 +30,9 @@ TextStyle TypographyStyle::GetTextStyle() const
     textstyle.locale_ = locale_;
     textstyle.height_ = height_;
     textstyle.hasHeightOverride_ = hasHeightOverride_;
+    if (Ellipsized()) {
+        textstyle.ellipsis_ = ellipsis_;
+    }
     return textstyle;
 }
 

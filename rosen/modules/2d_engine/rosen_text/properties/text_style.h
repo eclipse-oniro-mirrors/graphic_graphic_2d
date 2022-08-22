@@ -103,6 +103,7 @@ public:
     double wordSpacing_ = 0.0;
     double height_ = 1.0;
     bool hasHeightOverride_ = false;
+    std::u16string ellipsis_;
     std::string locale_;
     bool hasBackground_ = false;
     OHOS::Rosen::Drawing::Pen background_;
