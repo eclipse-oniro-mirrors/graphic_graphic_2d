@@ -261,8 +261,9 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     RS_TRACE_BEGIN("rsSurface->RequestFrame");
     FrameCollector::GetInstance().MarkFrameEvent(FrameEventType::ReleaseStart);
 
-    const float surfaceWidth = node.GetSurfaceWidth();
-    const float surfaceHeight = node.GetSurfaceHeight();
+    const auto& property = node.GetRenderProperties();
+    const float surfaceWidth = node.GetSurfaceWidth() * property.GetScaleX();
+    const float surfaceHeight = node.GetSurfaceHeight() * property.GetScaleY();
     auto surfaceFrame = rsSurface->RequestFrame(surfaceWidth, surfaceHeight, uiTimestamp_);
     RS_TRACE_END();
     if (surfaceFrame == nullptr) {
@@ -324,7 +325,6 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     childSurfaceNodeIds_.clear();
 
     // reset matrix
-    const auto& property = node.GetRenderProperties();
     const float rootWidth = property.GetFrameWidth() * property.GetScaleX();
     const float rootHeight = property.GetFrameHeight() * property.GetScaleY();
     SkMatrix gravityMatrix;
