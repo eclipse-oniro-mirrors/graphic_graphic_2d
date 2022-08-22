@@ -187,6 +187,7 @@ void NativeImageTest::Deinit()
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_Create
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageCreate001, Function | MediumTest | Level1)
 {
@@ -201,6 +202,7 @@ HWTEST_F(NativeImageTest, OHNativeImageCreate001, Function | MediumTest | Level1
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_AcquireNativeWindow by abnormal input
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageAcquireNativeWindow001, Function | MediumTest | Level2)
 {
@@ -215,6 +217,7 @@ HWTEST_F(NativeImageTest, OHNativeImageAcquireNativeWindow001, Function | Medium
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_AcquireNativeWindow
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageAcquireNativeWindow002, Function | MediumTest | Level1)
 {
@@ -229,6 +232,7 @@ HWTEST_F(NativeImageTest, OHNativeImageAcquireNativeWindow002, Function | Medium
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_AttachContext by abnormal input
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageAttachContext001, Function | MediumTest | Level2)
 {
@@ -243,6 +247,7 @@ HWTEST_F(NativeImageTest, OHNativeImageAttachContext001, Function | MediumTest |
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_DetachContext by abnormal input
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageDetachContext001, Function | MediumTest | Level2)
 {
@@ -257,6 +262,7 @@ HWTEST_F(NativeImageTest, OHNativeImageDetachContext001, Function | MediumTest |
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_DetachContext
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageDetachContext002, Function | MediumTest | Level1)
 {
@@ -271,6 +277,7 @@ HWTEST_F(NativeImageTest, OHNativeImageDetachContext002, Function | MediumTest |
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_DetachContext
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageDetachContext003, Function | MediumTest | Level1)
 {
@@ -286,6 +293,7 @@ HWTEST_F(NativeImageTest, OHNativeImageDetachContext003, Function | MediumTest |
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_AttachContext
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageAttachContext002, Function | MediumTest | Level1)
 {
@@ -300,6 +308,7 @@ HWTEST_F(NativeImageTest, OHNativeImageAttachContext002, Function | MediumTest |
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_UpdateSurfaceImage by abnormal input
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageUpdateSurfaceImage001, Function | MediumTest | Level2)
 {
@@ -314,6 +323,7 @@ HWTEST_F(NativeImageTest, OHNativeImageUpdateSurfaceImage001, Function | MediumT
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_UpdateSurfaceImage
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageUpdateSurfaceImage002, Function | MediumTest | Level1)
 {
@@ -330,6 +340,7 @@ HWTEST_F(NativeImageTest, OHNativeImageUpdateSurfaceImage002, Function | MediumT
 *                  2. call OH_NativeWindow_NativeWindowFlushBuffer
 *                  3. OH_NativeImage_UpdateSurfaceImage
 *                  4. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageUpdateSurfaceImage003, Function | MediumTest | Level1)
 {
@@ -386,6 +397,7 @@ HWTEST_F(NativeImageTest, OHNativeImageUpdateSurfaceImage003, Function | MediumT
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_GetTimestamp by abnormal input
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageGetTimestamp001, Function | MediumTest | Level2)
 {
@@ -400,6 +412,7 @@ HWTEST_F(NativeImageTest, OHNativeImageGetTimestamp001, Function | MediumTest | 
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_GetTimestamp
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageGetTimestamp002, Function | MediumTest | Level1)
 {
@@ -414,6 +427,7 @@ HWTEST_F(NativeImageTest, OHNativeImageGetTimestamp002, Function | MediumTest | 
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_GetTransformMatrix by abnormal input
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageGetTransformMatrix001, Function | MediumTest | Level2)
 {
@@ -429,6 +443,7 @@ HWTEST_F(NativeImageTest, OHNativeImageGetTransformMatrix001, Function | MediumT
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_GetTransformMatrix
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageGetTransformMatrix002, Function | MediumTest | Level1)
 {
@@ -444,6 +459,7 @@ HWTEST_F(NativeImageTest, OHNativeImageGetTransformMatrix002, Function | MediumT
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_AttachContext with another texture
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageAttachContext003, Function | MediumTest | Level1)
 {
@@ -460,6 +476,7 @@ HWTEST_F(NativeImageTest, OHNativeImageAttachContext003, Function | MediumTest |
 *                  2. call OH_NativeWindow_NativeWindowFlushBuffer
 *                  3. OH_NativeImage_UpdateSurfaceImage after the bound OPENGL ES texture changed
 *                  4. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageUpdateSurfaceImage004, Function | MediumTest | Level1)
 {
@@ -490,6 +507,7 @@ HWTEST_F(NativeImageTest, OHNativeImageUpdateSurfaceImage004, Function | MediumT
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_DetachContext
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageDetachContext004, Function | MediumTest | Level1)
 {
@@ -504,6 +522,7 @@ HWTEST_F(NativeImageTest, OHNativeImageDetachContext004, Function | MediumTest |
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_AttachContext after OH_NativeImage_DetachContext
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageAttachContext004, Function | MediumTest | Level1)
 {
@@ -520,6 +539,7 @@ HWTEST_F(NativeImageTest, OHNativeImageAttachContext004, Function | MediumTest |
 *                  2. call OH_NativeWindow_NativeWindowFlushBuffer
 *                  3. OH_NativeImage_UpdateSurfaceImage again
 *                  4. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageUpdateSurfaceImage005, Function | MediumTest | Level1)
 {
@@ -550,6 +570,7 @@ HWTEST_F(NativeImageTest, OHNativeImageUpdateSurfaceImage005, Function | MediumT
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_Destroy by abnormal input
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageDestroy001, Function | MediumTest | Level2)
 {
@@ -564,6 +585,7 @@ HWTEST_F(NativeImageTest, OHNativeImageDestroy001, Function | MediumTest | Level
 * EnvConditions: N/A
 * CaseDescription: 1. call OH_NativeImage_Destroy
 *                  2. check ret
+* @tc.require: issueI5KG61
 */
 HWTEST_F(NativeImageTest, OHNativeImageDestroy002, Function | MediumTest | Level1)
 {
