@@ -21,8 +21,12 @@
 
 namespace OHOS {
 namespace Rosen {
-
 #ifdef ROSEN_OHOS
+namespace {
+static constexpr size_t PARCEL_MAX_CPACITY = 2000 * 1024; // upper bound of parcel capacity
+static constexpr size_t PARCEL_SPLIT_THRESHOLD = 1800 * 1024; // should be < PARCEL_MAX_CPACITY
+}
+
 RSTransactionData* RSTransactionData::Unmarshalling(Parcel& parcel)
 {
     auto transactionData = new RSTransactionData();
@@ -37,15 +41,33 @@ RSTransactionData* RSTransactionData::Unmarshalling(Parcel& parcel)
 bool RSTransactionData::Marshalling(Parcel& parcel) const
 {
     bool success = true;
+    parcel.SetMaxCapacity(PARCEL_MAX_CPACITY);
+    // to correct actual marshaled command size later, record its position in parcel
+    size_t recordPosition = parcel.GetWritePosition();
     success = success && parcel.WriteInt32(static_cast<int32_t>(payload_.size()));
-    for (auto& [nodeId, followType, command] : payload_) {
+    size_t marshaledSize = 0;
+    while (marshallingIndex_ < payload_.size()) {
+        auto& [nodeId, followType, command] = payload_[marshallingIndex_];
         success = success && parcel.WriteUint64(nodeId);
         success = success && parcel.WriteUint8(static_cast<uint8_t>(followType));
         success = success && command->Marshalling(parcel);
         if (!success) {
             ROSEN_LOGE("failed RSTransactionData::Marshalling type:%s", command->PrintType().c_str());
+            return false;
+        }
+        ++marshallingIndex_;
+        ++marshaledSize;
+        if (parcel.GetDataSize() > PARCEL_SPLIT_THRESHOLD) {
             break;
         }
+    }
+    if (marshaledSize < payload_.size()) {
+        // correct command size recorded in Parcel
+        *reinterpret_cast<int32_t*>(parcel.GetData() + recordPosition) = static_cast<int32_t>(marshaledSize);
+        ROSEN_LOGW("RSTransactionData::Marshalling data split to several parcels"
+                   ", marshaledSize:%zu, marshallingIndex_:%zu, total count:%zu"
+                   ", parcel size:%zu, threshold:%zu",
+            marshaledSize, marshallingIndex_, payload_.size(), parcel.GetDataSize(), PARCEL_SPLIT_THRESHOLD);
     }
     success = success && parcel.WriteUint64(timestamp_);
     success = success && parcel.WriteInt32(pid_);

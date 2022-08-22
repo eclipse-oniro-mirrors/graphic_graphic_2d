@@ -85,6 +85,11 @@ public:
         return index_;
     }
 
+    size_t GetMarshallingIndex() const
+    {
+        return marshallingIndex_;
+    }
+
     void SetUniRender(bool flag)
     {
         isUniRender_ = flag;
@@ -112,6 +117,7 @@ private:
     pid_t pid_ = 0;
     uint64_t index_ = 0;
     bool isUniRender_ = false;
+    mutable size_t marshallingIndex_ = 0;
 
     friend class RSTransactionProxy;
     friend class RSMessageProcessor;

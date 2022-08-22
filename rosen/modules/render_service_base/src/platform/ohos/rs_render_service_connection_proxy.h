@@ -27,6 +27,8 @@ public:
     virtual ~RSRenderServiceConnectionProxy() noexcept = default;
 
     void CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData) override;
+    bool FillParcelWithTransactionData(
+        std::unique_ptr<RSTransactionData>& transactionData, std::shared_ptr<MessageParcel>& data);
 
     void ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
 

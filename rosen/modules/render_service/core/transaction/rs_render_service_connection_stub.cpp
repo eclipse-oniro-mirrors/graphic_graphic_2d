@@ -95,16 +95,23 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             RS_ASYNC_TRACE_END("RSProxySendRequest", data.GetDataSize());
             static bool isUniRender = RSUniRenderJudgement::IsUniRender();
             std::shared_ptr<MessageParcel> parsedParcel;
-            if (data.ReadInt32() == 0) { // copy original parcel if needed
+            if (data.ReadInt32() == 0) { // indicate normal parcel
                 if (isUniRender) {
+                    // in uni render mode, if parcel size over threshold,
+                    // Unmarshalling task will be post to RSUnmarshalThread,
+                    // copy the origin parcel to maintain the parcel lifetime
                     parsedParcel = CopyParcelIfNeed(data);
                 }
                 if (parsedParcel == nullptr) {
+                    // no need to copy or copy failed, use original parcel
+                    // execute Unmarshalling immediately
                     auto transactionData = RSBaseRenderUtil::ParseTransactionData(data);
                     CommitTransaction(transactionData);
                     break;
                 }
             } else {
+                // indicate ashmem parcel
+                // should be parsed to normal parcel before Unmarshalling
                 parsedParcel = RSAshmemHelper::ParseFromAshmemParcel(&data);
             }
             if (parsedParcel == nullptr) {
@@ -112,8 +119,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 return ERR_INVALID_DATA;
             }
             if (RSMainThread::Instance()->QueryIfUseUniVisitor()) {
+                // post Unmarshalling task to RSUnmarshalThread
                 RSUnmarshalThread::Instance().RecvParcel(parsedParcel);
             } else {
+                // execute Unmarshalling immediately
                 auto transactionData = RSBaseRenderUtil::ParseTransactionData(data);
                 CommitTransaction(transactionData);
             }

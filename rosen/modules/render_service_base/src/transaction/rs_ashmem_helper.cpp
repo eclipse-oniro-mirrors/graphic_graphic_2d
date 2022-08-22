@@ -208,6 +208,9 @@ std::shared_ptr<MessageParcel> RSAshmemHelper::CreateAshmemParcel(std::shared_pt
     size_t dataSize = dataParcel->GetDataSize();
     RS_TRACE_NAME("CreateAshmemParcel data size:" + std::to_string(dataSize));
 
+    // if want a full copy of parcel, need to save its data and fds both:
+    // 1. save origin parcel data to ashmeme and record the fd to new parcel
+    // 2. save all fds and their offsets in new parcel
     auto ashmemAllocator = AshmemAllocator::CreateAshmemAllocator(dataSize, PROT_READ | PROT_WRITE);
     if (!ashmemAllocator) {
         ROSEN_LOGE("CreateAshmemParcel failed, ashmemAllocator is nullptr");
@@ -217,17 +220,21 @@ std::shared_ptr<MessageParcel> RSAshmemHelper::CreateAshmemParcel(std::shared_pt
         ROSEN_LOGE("CreateAshmemParcel: WriteToAshmem failed");
         return nullptr;
     }
+    // 1. save data
     int fd = ashmemAllocator->GetFd();
     std::shared_ptr<MessageParcel> ashmemParcel = std::make_shared<MessageParcel>();
-    ashmemParcel->WriteInt32(1); // indicate asheme parcel
+    ashmemParcel->WriteInt32(1); // 1: indicate ashmem parcel
     ashmemParcel->WriteInt32(dataSize);
     ashmemParcel->WriteFileDescriptor(fd);
 
+    // 2. save fds and their offsets
     size_t offsetSize = dataParcel->GetOffsetsSize();
     ashmemParcel->WriteInt32(offsetSize);
     if (offsetSize > 0) {
+        // save array that record the offsets of all fds
         ashmemParcel->WriteBuffer(
             reinterpret_cast<void*>(dataParcel->GetObjectOffsets()), sizeof(binder_size_t) * offsetSize);
+        // save all fds of origin parcel
         CopyFileDescriptor(ashmemParcel, dataParcel);
     }
 
@@ -256,11 +263,13 @@ std::shared_ptr<MessageParcel> RSAshmemHelper::ParseFromAshmemParcel(MessageParc
             ROSEN_LOGE("ParseFromAshmemParcel: read object offsets failed");
             return nullptr;
         }
+        // restore array that record the offsets of all fds
         dataParcel->InjectOffsets(reinterpret_cast<binder_size_t>(offsets), offsetSize);
+        // restore all fds
         InjectFileDescriptor(dataParcel, ashmemParcel);
     }
 
-    if (dataParcel->ReadInt32() != 0) { // identify data parcel
+    if (dataParcel->ReadInt32() != 0) { // identify normal parcel
         ROSEN_LOGE("RSAshmemHelper::ParseFromAshmemParcel failed");
         return nullptr;
     }
