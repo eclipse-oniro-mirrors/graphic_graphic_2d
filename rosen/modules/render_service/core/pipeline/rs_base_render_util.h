@@ -56,11 +56,16 @@ struct BufferDrawParam {
 };
 
 enum class ColorFilterMode {
-    INVERT_MODE = 0,
-    PROTANOMALY_MODE,
-    DEUTERANOMALY_MODE,
-    TRITANOMALY_MODE,
-    COLOR_FILTER_END,
+    INVERT_COLOR_DISABLE_MODE = 0,
+    INVERT_COLOR_ENABLE_MODE = 1,
+    DALTONIZATION_PROTANOMALY_MODE = 2,
+    DALTONIZATION_DEUTERANOMALY_MODE = 4,
+    DALTONIZATION_TRITANOMALY_MODE = 8,
+    INVERT_DALTONIZATION_PROTANOMALY_MODE = 3,
+    INVERT_DALTONIZATION_DEUTERANOMALY_MODE = 5,
+    INVERT_DALTONIZATION_TRITANOMALY_MODE = 9,
+    DALTONIZATION_NORMAL_MODE = 16,
+    COLOR_FILTER_END = 32,
 };
 
 class RSBaseRenderUtil {
@@ -94,6 +99,7 @@ public:
      * @param paint color matrix applied to SKPaint
      */
     static void SetColorFilterModeToPaint(ColorFilterMode colorFilterMode, SkPaint& paint);
+    static bool IsColorFilterModeValid(ColorFilterMode mode);
 
 private:
     static void CalculateSurfaceNodeClipRects(
