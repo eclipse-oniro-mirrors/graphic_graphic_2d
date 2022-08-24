@@ -199,7 +199,7 @@ void RSRenderEngine::DrawLayers(
                 canvas.restoreToCount(saveCount);
                 continue;
             }
-            RS_LOGD("RSRenderEngine::DrawLayers Name:%s dstRect[%d %d %d %d] SrcRect[%d %d %d %d]",
+            RS_LOGD("RSRenderEngine::DrawLayers dstRect[%d %d %d %d] SrcRect[%d %d %d %d]",
                 layer->GetLayerSize().x, layer->GetLayerSize().y,
                 layer->GetLayerSize().w, layer->GetLayerSize().h,
                 layer->GetDirtyRegion().x, layer->GetDirtyRegion().y,
