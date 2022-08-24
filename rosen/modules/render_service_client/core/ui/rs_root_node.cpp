@@ -63,13 +63,17 @@ void RSRootNode::AttachRSSurfaceNode(std::shared_ptr<RSSurfaceNode> surfaceNode)
 
 void RSRootNode::SetEnableRender(bool flag) const
 {
-    if (!isUniRenderEnabled_) {
-        std::unique_ptr<RSCommand> command = std::make_unique<RSRootNodeSetEnableRender>(GetId(), flag);
-        auto transactionProxy = RSTransactionProxy::GetInstance();
-        if (transactionProxy != nullptr) {
-            transactionProxy->AddCommand(command, IsRenderServiceNode());
-        }
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy == nullptr) {
+        return;
     }
+    std::unique_ptr<RSCommand> command = std::make_unique<RSRootNodeSetEnableRender>(GetId(), flag);
+    transactionProxy->AddCommand(command, IsRenderServiceNode());
+    if (NeedSendExtraCommand()) {
+        std::unique_ptr<RSCommand> extraCommand = std::make_unique<RSRootNodeSetEnableRender>(GetId(), flag);
+        transactionProxy->AddCommand(extraCommand, !IsRenderServiceNode());
+    }
+    transactionProxy->FlushImplicitTransaction();
 }
 
 void RSRootNode::OnBoundsSizeChanged() const

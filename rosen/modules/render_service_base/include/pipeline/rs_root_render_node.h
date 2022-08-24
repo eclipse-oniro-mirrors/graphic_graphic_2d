@@ -48,6 +48,11 @@ public:
         enableRender_ = enableRender;
     }
 
+    bool GetEnableRender() const
+    {
+        return enableRender_;
+    }
+
 private:
     std::shared_ptr<RSDirtyRegionManager> dirtyManager_ = nullptr;
     std::shared_ptr<RSSurface> rsSurface_ = nullptr;

@@ -23,6 +23,7 @@
 #include "pipeline/rs_base_render_util.h"
 #include "pipeline/rs_divided_render_util.h"
 #include "pipeline/rs_render_service_visitor.h"
+#include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_unmarshal_thread.h"
 #include "pipeline/rs_uni_render_visitor.h"
@@ -336,6 +337,23 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
             if (surfaceHandler.GetAvailableBufferCount() > 0) {
                 needRequestNextVsync = true;
             }
+
+            // check first frame callback in uniRender case
+            if (!IfUseUniVisitor() || !surfaceNode.IsAppWindow()) {
+                return;
+            }
+            for (auto& child : surfaceNode.GetSortedChildren()) {
+                if (child != nullptr && child->IsInstanceOf<RSRootRenderNode>()) {
+                    auto rootNode = child->ReinterpretCastTo<RSRootRenderNode>();
+                    rootNode->ApplyModifiers();
+                    const auto& property = rootNode->GetRenderProperties();
+                    if (property.GetFrameWidth() > 0 && property.GetFrameWidth() > 0 &&
+                        rootNode->GetEnableRender()) {
+                        surfaceNode.NotifyUIBufferAvailable();
+                    }
+                }
+            }
+            surfaceNode.ResetSortedChildren();
         }
     });
 
