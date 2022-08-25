@@ -40,6 +40,10 @@ int RSApplicationAgentStub::OnRemoteRequest(
             OnRenderModeChanged(data.ReadBool());
             break;
         }
+        case NOTIFY_CLEAR_BUFFER_CACHE: {
+            NotifyClearBufferCache();
+            break;
+        }
         default: {
             ret = ERR_UNKNOWN_TRANSACTION;
             break;

@@ -70,6 +70,23 @@ void RSApplicationAgentProxy::OnRenderModeChanged(bool renderThreadNeedRender)
         RS_LOGE("RSApplicationAgentProxy::OnRenderModeChanged SendRequest failed! err:%d", err);
     }
 }
+
+void RSApplicationAgentProxy::NotifyClearBufferCache()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(IApplicationAgent::GetDescriptor())) {
+        return;
+    }
+
+    option.SetFlags(MessageOption::TF_ASYNC);
+    int32_t err = Remote()->SendRequest(IApplicationAgent::NOTIFY_CLEAR_BUFFER_CACHE, data, reply, option);
+    if (err != NO_ERROR) {
+        RS_LOGE("RSApplicationAgentProxy::NotifyClearBufferCache SendRequest failed! err:%d", err);
+    }
+}
 } // namespace Rosen
 } // namespace OHOS
 #endif // ROSEN_OHOS

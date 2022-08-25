@@ -153,6 +153,7 @@ private:
     void MergeToEffectiveTransactionDataMap(TransactionDataMap& cachedTransactionDataMap);
 
     void CheckBufferAvailableIfNeed();
+    void CheckUpdateSurfaceNodeIfNeed();
 
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
@@ -176,7 +177,8 @@ private:
     std::shared_ptr<VSyncReceiver> receiver_ = nullptr;
     std::vector<sptr<RSIOcclusionChangeCallback>> occlusionListeners_;
 
-    bool waitBufferAvailable_ = false; // only used in main thread
+    bool waitingBufferAvailable_ = false; // uni->non-uni mode, wait for RT buffer, only used in main thread
+    bool waitingUpdateSurfaceNode_ = false; // non-uni->uni mode, wait for update surfaceView, only used in main thread
     bool isUniRender_ = RSUniRenderJudgement::IsUniRender();
     sptr<RSIRenderModeChangeCallback> renderModeChangeCallback_;
     std::atomic_bool useUniVisitor_ = isUniRender_;

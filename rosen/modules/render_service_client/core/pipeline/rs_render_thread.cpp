@@ -275,17 +275,23 @@ void RSRenderThread::UpdateRenderMode(bool needRender)
 {
     if (handler_) {
         handler_->PostTask([needRender = needRender, this]() {
-            if (needRender_ == needRender) {
-                return;
-            }
-            needRender_ = needRender;
             RequestNextVSync();
-            if (!needRender_) { // change to uni render, should move surfaceView's position
+            if (!needRender) { // change to uni render, should move surfaceView's position
                 UpdateSurfaceNodeParentInRS();
-                ClearBufferCache();
             } else {
+                needRender_ = needRender;
                 forceUpdateSurfaceNode_ = true;
             }
+        }, AppExecFwk::EventQueue::Priority::IMMEDIATE);
+    }
+}
+
+void RSRenderThread::NotifyClearBufferCache()
+{
+    if (handler_) {
+        handler_->PostTask([this]() {
+            needRender_ = false;
+            ClearBufferCache();
         }, AppExecFwk::EventQueue::Priority::IMMEDIATE);
     }
 }
@@ -307,7 +313,8 @@ void RSRenderThread::UpdateSurfaceNodeParentInRS()
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
         for (auto& [surfaceNodeId, parentId] : surfaceNodeMap) {
-            std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeUpdateParent>(surfaceNodeId, parentId);
+            std::unique_ptr<RSCommand> command =
+                std::make_unique<RSSurfaceNodeUpdateParentWithoutTransition>(surfaceNodeId, parentId);
             transactionProxy->AddCommandFromRT(command, surfaceNodeId, FollowType::FOLLOW_TO_SELF);
         }
         transactionProxy->FlushImplicitTransactionFromRT(uiTimestamp_);
@@ -332,6 +339,7 @@ void RSRenderThread::ClearBufferCache()
             rsSurface->ClearBuffer();
         }
     }
+    rootNode->ResetSortedChildren();
 }
 
 void RSRenderThread::ProcessCommands()

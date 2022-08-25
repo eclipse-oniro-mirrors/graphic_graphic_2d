@@ -82,10 +82,12 @@ public:
         return isHighContrastEnabled_;
     }
     void UpdateRenderMode(bool needRender);
+    void NotifyClearBufferCache();
     bool GetForceUpdateSurfaceNode() const
     {
         return forceUpdateSurfaceNode_;
     }
+
     void SetCacheDir(const std::string& filePath)
     {
         cacheDir_ = filePath;
