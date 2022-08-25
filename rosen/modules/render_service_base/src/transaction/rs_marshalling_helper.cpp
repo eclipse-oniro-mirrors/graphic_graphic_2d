@@ -578,6 +578,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSPa
     }
     return parcel.WriteInt32(1) && Marshalling(parcel, val->GetSkiaPath());
 }
+
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSPath>& val)
 {
     if (parcel.ReadInt32() == -1) {
