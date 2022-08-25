@@ -207,6 +207,7 @@ void RSMainThread::ProcessCommand()
 {
     if (!isUniRender_) { // divided render for all
         ProcessCommandForDividedRender();
+        return;
     }
     CheckBufferAvailableIfNeed();
     // dynamic switch
@@ -287,8 +288,6 @@ void RSMainThread::ProcessCommandForDividedRender()
                 // If node has been destructed or is not on the tree or has no valid buffer,
                 // for all command cached in commandMap should be executed immediately
                 effectIter = commandMap.end();
-            } else if (waitingBufferAvailable_) {
-                effectIter = commandMap.begin();
             } else {
                 uint64_t timestamp = bufferTimestamp->second;
                 effectIter = commandMap.upper_bound(timestamp);
@@ -478,7 +477,6 @@ void RSMainThread::CheckUpdateSurfaceNodeIfNeed()
             renderModeChangeCallback_->OnRenderModeChanged(true);
         }
     }
-
 }
 
 void RSMainThread::Render()
@@ -744,8 +742,7 @@ void RSMainThread::NotifyRenderModeChanged(bool useUniVisitor)
     }
     PostTask([useUniVisitor = useUniVisitor, this]() {
         if (waitingBufferAvailable_ || waitingUpdateSurfaceNode_) {
-            RS_LOGD("RSMainThread::NotifyRenderModeChanged last update mode not finished, return");
-            return;
+            RS_LOGE("RSMainThread::NotifyRenderModeChanged last update mode not finished, switch again");
         }
         useUniVisitor_ = useUniVisitor;
         waitingBufferAvailable_ = !useUniVisitor;

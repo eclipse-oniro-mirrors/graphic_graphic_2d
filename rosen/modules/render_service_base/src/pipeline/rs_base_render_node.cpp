@@ -157,6 +157,16 @@ void RSBaseRenderNode::RemoveFromTree()
     }
 }
 
+void RSBaseRenderNode::RemoveFromTreeWithoutTransition()
+{
+    if (auto parentPtr = parent_.lock()) {
+        auto child = shared_from_this();
+        parentPtr->RemoveChild(child);
+        parentPtr->disappearingChildren_.remove_if([&child](const auto& pair) -> bool { return pair.first == child; });
+        child->ResetParent();
+    }
+}
+
 void RSBaseRenderNode::ClearChildren()
 {
     if (children_.empty()) {

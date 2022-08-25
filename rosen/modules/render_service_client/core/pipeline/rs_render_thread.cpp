@@ -275,9 +275,6 @@ void RSRenderThread::UpdateRenderMode(bool needRender)
 {
     if (handler_) {
         handler_->PostTask([needRender = needRender, this]() {
-            if (needRender_ == needRender) {
-                return;
-            }
             RequestNextVSync();
             if (!needRender) { // change to uni render, should move surfaceView's position
                 UpdateSurfaceNodeParentInRS();
@@ -316,7 +313,8 @@ void RSRenderThread::UpdateSurfaceNodeParentInRS()
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
         for (auto& [surfaceNodeId, parentId] : surfaceNodeMap) {
-            std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeUpdateParent>(surfaceNodeId, parentId);
+            std::unique_ptr<RSCommand> command =
+                std::make_unique<RSSurfaceNodeUpdateParentWithoutTransition>(surfaceNodeId, parentId);
             transactionProxy->AddCommandFromRT(command, surfaceNodeId, FollowType::FOLLOW_TO_SELF);
         }
         transactionProxy->FlushImplicitTransactionFromRT(uiTimestamp_);
