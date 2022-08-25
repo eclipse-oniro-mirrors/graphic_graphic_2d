@@ -43,6 +43,16 @@ void BaseNodeCommandHelper::AddChild(RSContext& context, NodeId nodeId, NodeId c
     }
 }
 
+void BaseNodeCommandHelper::MoveChild(RSContext& context, NodeId nodeId, NodeId childNodeId, int32_t index)
+{
+    auto& nodeMap = context.GetNodeMap();
+    auto node = nodeMap.GetRenderNode<RSBaseRenderNode>(nodeId);
+    auto child = nodeMap.GetRenderNode<RSBaseRenderNode>(childNodeId);
+    if (node && child) {
+        node->MoveChild(child, index);
+    }
+}
+
 void BaseNodeCommandHelper::RemoveChild(RSContext& context, NodeId nodeId, NodeId childNodeId)
 {
     auto& nodeMap = context.GetNodeMap();

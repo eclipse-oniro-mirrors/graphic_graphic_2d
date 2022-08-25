@@ -118,6 +118,44 @@ void RSBaseNode::AddChild(SharedPtr child, int index)
     }
 }
 
+void RSBaseNode::MoveChild(SharedPtr child, int index)
+{
+    if (child == nullptr || child->parent_ != id_) {
+        ROSEN_LOGD("RSBaseNode::MoveChild, not valid child");
+        return;
+    }
+    NodeId childId = child->GetId();
+    auto itr = std::find(children_.begin(), children_.end(), childId);
+    if (itr == children_.end()) {
+        ROSEN_LOGD("RSBaseNode::MoveChild, not child");
+        return;
+    }
+    children_.erase(itr);
+    if (index < 0 || index >= static_cast<int>(children_.size())) {
+        children_.push_back(childId);
+    } else {
+        children_.insert(children_.begin() + index, childId);
+    }
+
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy == nullptr) {
+        return;
+    }
+    std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeMoveChild>(id_, childId, index);
+    bool disallowSendToRemote = isUniRenderEnabled_ && !RSSystemProperties::IsUniRenderMode() && // dynamic-Non Uni
+        !isRenderServiceNode_ && !IsInstanceOf(RSUINodeType::SURFACE_NODE) && // canvas/root node
+        child->IsInstanceOf(RSUINodeType::SURFACE_NODE);
+    if (disallowSendToRemote) {
+        transactionProxy->AddCommand(command, false, GetFollowType(), id_);
+        return;
+    }
+    transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), id_);
+    if (NeedSendExtraCommand()) {
+        std::unique_ptr<RSCommand> extraCommand = std::make_unique<RSBaseNodeMoveChild>(id_, childId, index);
+        transactionProxy->AddCommand(extraCommand, !IsRenderServiceNode(), GetFollowType(), id_);
+    }
+}
+
 void RSBaseNode::RemoveChild(SharedPtr child)
 {
     if (child == nullptr || child->parent_ != id_) {
