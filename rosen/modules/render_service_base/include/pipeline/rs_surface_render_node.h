@@ -216,6 +216,16 @@ public:
         }
     }
 
+    const Occlusion::Region& GetVisibleDirtyRegion()
+    {
+        return visibleDirtyRegion_;
+    }
+
+    void SetVisibleDirtyRegion(const Occlusion::Region& region)
+    {
+        visibleDirtyRegion_ = region;
+    }
+
     bool GetDstRectChanged() const
     {
         return dstRectChanged_;
@@ -284,11 +294,25 @@ public:
     bool IsIntersectWithDirty(const RectI& r) const
     {
         if (dirtyManager_ == nullptr) {
+            return true;
+        }
+        Occlusion::Rect dirtyRect { r.left_, r.top_, r.GetRight(), r.GetBottom() };
+
+        // if current node is in occluded region of the surface, it could be skipped in process step
+        bool isVisible = visibleRegion_.IsIntersectWith(dirtyRect);
+        if (!isVisible) {
             return false;
         }
-        auto localRect = r.IntersectRect(dirtyManager_->GetDirtyRegion());
+
+        // if current node is in global dirtyregion, it CANNOT be skipped
         auto globalRect = r.IntersectRect(globalDirtyRegion_);
-        return !(localRect.IsEmpty() && globalRect.IsEmpty());
+        if (!globalRect.IsEmpty()) {
+            return true;
+        }
+        
+        // if current node is in visible dirtyRegion, it CANNOT be skipped
+        bool localIntersect = visibleDirtyRegion_.IsIntersectWith(dirtyRect);
+        return localIntersect;
     }
 private:
     void SendCommandFromRT(std::unique_ptr<RSCommand>& command, NodeId nodeId);
@@ -324,6 +348,7 @@ private:
     friend class RSRenderThreadVisitor;
     RectI clipRegionFromParent_;
     Occlusion::Region visibleRegion_;
+    Occlusion::Region visibleDirtyRegion_;
     bool isOcclusionVisible_ = true;
     std::shared_ptr<RSDirtyRegionManager> dirtyManager_ = nullptr;
     RectI dstRect_;
