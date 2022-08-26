@@ -45,6 +45,7 @@ enum class FollowType : uint8_t {
     NONE,
     FOLLOW_TO_PARENT,
     FOLLOW_TO_SELF,
+    FOLLOW_VISITOR,
 };
 
 static const std::map<RSUINodeType, std::string> RSUINodeTypeStrs = {

@@ -280,6 +280,12 @@ void RSMainThread::ProcessCommandForDividedRender()
                 std::make_move_iterator(pendingEffectiveCommands_.end()));
             pendingEffectiveCommands_.clear();
         }
+        if (!waitingBufferAvailable_ && !followVisitorCommands_.empty()) {
+            effectiveCommands_.insert(effectiveCommands_.end(),
+                std::make_move_iterator(followVisitorCommands_.begin()),
+                std::make_move_iterator(followVisitorCommands_.end()));
+            followVisitorCommands_.clear();
+        }
         for (auto& [surfaceNodeId, commandMap] : cachedCommands_) {
             auto node = nodeMap.GetRenderNode<RSSurfaceRenderNode>(surfaceNodeId);
             auto bufferTimestamp = bufferTimestamps_.find(surfaceNodeId);
@@ -718,6 +724,10 @@ void RSMainThread::ClassifyRSTransactionData(std::unique_ptr<RSTransactionData>&
                 continue;
             }
             auto node = nodeMap.GetRenderNode(nodeId);
+            if (waitingBufferAvailable_ && node && followType == FollowType::FOLLOW_VISITOR) {
+                followVisitorCommands_.emplace_back(std::move(command));
+                continue;
+            }
             if (node && followType == FollowType::FOLLOW_TO_PARENT) {
                 auto parentNode = node->GetParent().lock();
                 if (parentNode) {
