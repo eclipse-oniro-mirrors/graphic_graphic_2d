@@ -66,6 +66,7 @@ Occlusion::Region RSUniRenderUtil::MergeVisibleDirtyRegion(std::shared_ptr<RSDis
         auto visibleRegion = surfaceNode->GetVisibleRegion();
         Occlusion::Region surfaceDirtyRegion { dirtyRect };
         Occlusion::Region uniRegion = surfaceDirtyRegion.And(visibleRegion);
+        surfaceNode->SetVisibleDirtyRegion(uniRegion);
         curRegion = curRegion.Or(uniRegion);
     }
     return curRegion;
