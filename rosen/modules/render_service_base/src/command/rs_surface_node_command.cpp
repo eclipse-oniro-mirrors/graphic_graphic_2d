@@ -117,5 +117,12 @@ void SurfaceNodeCommandHelper::UpdateParentWithoutTransition(RSContext& context,
         parent->AddChild(node);
     }
 }
+
+void SurfaceNodeCommandHelper::SetIsNotifyUIBufferAvailable(RSContext& context, NodeId id, bool available)
+{
+    if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(id)) {
+        node->SetIsNotifyUIBufferAvailable(available);
+    }
+}
 } // namespace Rosen
 } // namespace OHOS
