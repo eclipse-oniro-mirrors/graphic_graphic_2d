@@ -17,10 +17,12 @@
 
 #include <memory>
 
-#include "common/rs_macros.h"
 #include "experimental/svg/model/SkSVGDOM.h"
 #include "third_party/skia/include/core/SkPaint.h"
 #include "third_party/skia/include/core/SkPath.h"
+
+#include "common/rs_macros.h"
+#include "transaction/rs_marshalling_helper.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -58,6 +60,11 @@ public:
     bool IsSvgMask() const;
     bool IsGradientMask() const;
     bool IsPathMask() const;
+
+#ifdef ROSEN_OHOS
+    bool Marshalling(Parcel& parcel) const;
+    static RSMask* Unmarshalling(Parcel& parcel);
+#endif
 
 protected:
     RSMask(const RSMask&) = delete;

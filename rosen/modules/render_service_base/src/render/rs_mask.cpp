@@ -152,5 +152,44 @@ bool RSMask::IsPathMask() const
 {
     return (type_ == MaskType::PATH);
 }
+
+#ifdef ROSEN_OHOS
+bool RSMask::Marshalling(Parcel& parcel) const
+{
+    if (IsSvgMask()) {
+        ROSEN_LOGW("SVG RSMask::Marshalling not implement");
+    }
+    if (!(RSMarshallingHelper::Marshalling(parcel, type_) &&
+            RSMarshallingHelper::Marshalling(parcel, svgX_) &&
+            RSMarshallingHelper::Marshalling(parcel, svgY_) &&
+            RSMarshallingHelper::Marshalling(parcel, scaleX_) &&
+            RSMarshallingHelper::Marshalling(parcel, scaleY_) &&
+            RSMarshallingHelper::Marshalling(parcel, maskPaint_) &&
+            RSMarshallingHelper::Marshalling(parcel, maskPath_))) {
+        ROSEN_LOGE("RSMask::Marshalling failed!");
+        return false;
+    }
+    return true;
+}
+
+RSMask* RSMask::Unmarshalling(Parcel& parcel)
+{
+    auto rsMask = std::make_unique<RSMask>();
+    if (!(RSMarshallingHelper::Unmarshalling(parcel, rsMask->type_) &&
+            RSMarshallingHelper::Unmarshalling(parcel, rsMask->svgX_) &&
+            RSMarshallingHelper::Unmarshalling(parcel, rsMask->svgY_) &&
+            RSMarshallingHelper::Unmarshalling(parcel, rsMask->scaleX_) &&
+            RSMarshallingHelper::Unmarshalling(parcel, rsMask->scaleY_) &&
+            RSMarshallingHelper::Unmarshalling(parcel, rsMask->maskPaint_) &&
+            RSMarshallingHelper::Unmarshalling(parcel, rsMask->maskPath_))) {
+        ROSEN_LOGE("RSMask::Unmarshalling failed!");
+        return nullptr;
+    }
+    if (rsMask->IsSvgMask()) {
+        ROSEN_LOGW("SVG RSMask::Unmarshalling not implement");
+    }
+    return rsMask.release();
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS
