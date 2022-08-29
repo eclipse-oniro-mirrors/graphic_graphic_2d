@@ -599,16 +599,18 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSMa
 {
     if (!val) {
         ROSEN_LOGD("unirender: RSMarshallingHelper::Marshalling RSMask is nullptr");
+        parcel.WriteInt32(-1);
     }
-    // marshalling func planning to be implemented
-    ROSEN_LOGW("unirender: RSMask Marshalling not define");
-    return true;
+    return parcel.WriteInt32(1) && val->Marshalling(parcel);
 }
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSMask>& val)
 {
-    // marshalling func planning to be implemented
-    ROSEN_LOGW("unirender: RSMask Unmarshalling not define");
-    return true;
+    if (parcel.ReadInt32() == -1) {
+        val = nullptr;
+        return true;
+    }
+    val.reset(RSMask::Unmarshalling(parcel));
+    return val != nullptr;
 }
 
 // RSFilter
