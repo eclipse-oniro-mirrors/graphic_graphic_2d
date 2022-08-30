@@ -34,12 +34,10 @@ RSObjAbsGeometry::RSObjAbsGeometry() : RSObjGeometry()
 
 RSObjAbsGeometry::~RSObjAbsGeometry() {}
 
-void RSObjAbsGeometry::UpdateMatrix(const Matrix3f& matrix)
+void RSObjAbsGeometry::ConcatMatrix(const SkMatrix& matrix)
 {
-    SkMatrix skMatrix;
-    skMatrix.set9(matrix.Transpose().GetData());
-    matrix_.preConcat(skMatrix);
-    absMatrix_.preConcat(matrix_);
+    matrix_.preConcat(matrix);
+    absMatrix_.preConcat(matrix);
     SetAbsRect();
 }
 
