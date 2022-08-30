@@ -587,19 +587,21 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         if (!node.IsAppFreeze()) {
             ProcessBaseRenderNode(node);
             node.ClearCacheSurface();
+        } else if (node.GetCacheSurface()) {
+                DrawCacheSurface(node);
         } else {
+            InitCacheSurface(node, property.GetBoundsWidth(), property.GetBoundsHeight());
             if (node.GetCacheSurface()) {
+                auto cacheCanvas = std::make_unique<RSPaintFilterCanvas>(node.GetCacheSurface().get());
+
+                swap(cacheCanvas, canvas_);
+                ProcessBaseRenderNode(node);
+                swap(cacheCanvas, canvas_);
+
                 DrawCacheSurface(node);
             } else {
-                InitCacheSurface(node, property.GetBoundsWidth(), property.GetBoundsHeight());
-                auto cacheCanvas = std::make_unique<RSPaintFilterCanvas>(node.GetCacheSurface().get());
-                if (node.GetCacheSurface()) {
-                    swap(cacheCanvas, canvas_);
-                    ProcessBaseRenderNode(node);
-                    swap(cacheCanvas, canvas_);
-
-                    DrawCacheSurface(node);
-                }
+                RS_LOGE("RSUniRenderVisitor::ProcessSurfaceRenderNode %s Create CacheSurface failed",
+                    node.GetName().c_str());
             }
         }
     } else {
