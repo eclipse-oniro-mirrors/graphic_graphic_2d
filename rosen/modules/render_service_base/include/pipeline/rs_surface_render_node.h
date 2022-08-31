@@ -52,12 +52,17 @@ public:
 
     bool IsAppWindow() const
     {
-        return isAppWindow_;
+        return nodeType_ == RSSurfaceNodeType::APP_WINDOW_NODE;
     }
 
-    void MarkAppWindow()
+    RSSurfaceNodeType GetSurfaceNodeType() const
     {
-        isAppWindow_ = true;
+        return nodeType_;
+    }
+
+    void SetSurfaceNodeType(RSSurfaceNodeType nodeType)
+    {
+        nodeType_ = nodeType;
     }
 
     std::string GetName() const
@@ -384,7 +389,7 @@ private:
     bool qosPidCal_ = false;
 
     std::string name_;
-    bool isAppWindow_ = false;
+    RSSurfaceNodeType nodeType_ = RSSurfaceNodeType::DEFAULT;
     bool isProxy_ = false;
     BlendType blendType_ = BlendType::BLEND_SRCOVER;
     bool isNotifyRTBufferAvailablePre_ = false;
