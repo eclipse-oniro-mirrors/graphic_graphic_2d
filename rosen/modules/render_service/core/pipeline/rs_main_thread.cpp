@@ -550,8 +550,15 @@ void RSMainThread::CalcOcclusion()
         return;
     }
     RSInnovation::UpdateOcclusionCullingSoEnabled();
+
     std::vector<RSBaseRenderNode::SharedPtr> curAllSurfaces;
-    node->CollectSurface(node, curAllSurfaces, isUniRender_);
+    for (auto& child : node->GetSortedChildren()) {
+        auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(child);
+        if (displayNode) {
+            curAllSurfaces.insert(curAllSurfaces.end(),
+                displayNode->GetCurAllSurfaces().begin(), displayNode->GetCurAllSurfaces().end());
+        }
+    }
     // 1. Judge whether it is dirty
     // Surface cnt changed or surface DstRectChanged or surface ZorderChanged
     bool winDirty = lastSurfaceCnt_ != curAllSurfaces.size();
