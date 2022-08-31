@@ -840,29 +840,6 @@ void RSNode::SetPaintOrder(bool drawContentLast)
     drawContentLast_ = drawContentLast;
 }
 
-void RSNode::ClearModifiers()
-{
-    for (auto& [id, modifier] : modifiers_) {
-        modifier->DetachFromNode();
-        std::unique_ptr<RSCommand> command = std::make_unique<RSRemoveModifier>(GetId(), modifier->GetPropertyId());
-        auto transactionProxy = RSTransactionProxy::GetInstance();
-        if (transactionProxy != nullptr) {
-            transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());
-            if (NeedForcedSendToRemote()) {
-                std::unique_ptr<RSCommand> cmdForRemote =
-                    std::make_unique<RSRemoveModifier>(GetId(), modifier->GetPropertyId());
-                transactionProxy->AddCommand(cmdForRemote, true, GetFollowType(), GetId());
-            }
-            if (NeedSendExtraCommand()) {
-                std::unique_ptr<RSCommand> extraCommand =
-                    std::make_unique<RSRemoveModifier>(GetId(), modifier->GetPropertyId());
-                transactionProxy->AddCommand(extraCommand, !IsRenderServiceNode(), GetFollowType(), GetId());
-            }
-        }
-    }
-    modifiers_.clear();
-}
-
 void RSNode::ClearAllModifiers()
 {
     if (animationManager_ == nullptr) {
@@ -871,20 +848,6 @@ void RSNode::ClearAllModifiers()
     for (auto& [id, modifier] : modifiers_) {
         modifier->DetachFromNode();
         animationManager_->RemoveProperty(id);
-    }
-    modifiers_.clear();
-    std::unique_ptr<RSCommand> command = std::make_unique<RSClearModifiers>(GetId());
-    auto transactionProxy = RSTransactionProxy::GetInstance();
-    if (transactionProxy != nullptr) {
-        transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());
-        if (NeedForcedSendToRemote()) {
-            std::unique_ptr<RSCommand> cmdForRemote = std::make_unique<RSClearModifiers>(GetId());
-            transactionProxy->AddCommand(cmdForRemote, true, GetFollowType(), GetId());
-        }
-        if (NeedSendExtraCommand()) {
-            std::unique_ptr<RSCommand> extraCommand = std::make_unique<RSClearModifiers>(GetId());
-            transactionProxy->AddCommand(extraCommand, !IsRenderServiceNode(), GetFollowType(), GetId());
-        }
     }
 }
 

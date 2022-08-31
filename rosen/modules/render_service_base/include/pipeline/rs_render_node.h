@@ -76,13 +76,8 @@ public:
     {
         return isDirtyRegionUpdated_;
     }
-
-    void ClearModifiers();
     void AddModifier(const std::shared_ptr<RSRenderModifier>& modifier);
     void RemoveModifier(const PropertyId& id);
-
-    void AddTransitionModifier(const std::shared_ptr<RSRenderModifier>& modifier);
-    void RemoveTransitionModifier(const std::shared_ptr<RSRenderModifier>& modifier);
 
     void ApplyModifiers();
     std::shared_ptr<RSRenderModifier> GetModifier(const PropertyId& id);
@@ -99,7 +94,7 @@ protected:
 
 private:
     void FallbackAnimationsToRoot();
-    void UpdateOverlayerBounds();
+    void UpdateOverlayBounds();
     bool isDirtyRegionUpdated_ = false;
     bool isLastVisible_ = false;
     uint32_t disappearingTransitionCount_ = 0;

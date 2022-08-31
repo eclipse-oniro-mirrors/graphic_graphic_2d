@@ -175,14 +175,6 @@ void RSRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 #endif
 }
 
-void RSRenderNode::ClearModifiers()
-{
-    modifiers_.clear();
-    drawCmdModifiers_.clear();
-    transitionModifiers_.clear();
-    SetDirty();
-}
-
 void RSRenderNode::AddModifier(const std::shared_ptr<RSRenderModifier>& modifier)
 {
     if (!modifier) {
@@ -229,25 +221,9 @@ void RSRenderNode::RemoveModifier(const PropertyId& id)
             return modifier ? modifier->GetPropertyId() == id : true;
         });
         if (type == RSModifierType::OVERLAY_STYLE) {
-            UpdateOverlayerBounds();
+            UpdateOverlayBounds();
         }
     }
-}
-
-void RSRenderNode::AddTransitionModifier(const std::shared_ptr<RSRenderModifier>& modifier)
-{
-    if (!modifier) {
-        return;
-    }
-    transitionModifiers_.emplace(modifier);
-    modifier->GetProperty()->Attach(shared_from_this());
-    SetDirty();
-}
-
-void RSRenderNode::RemoveTransitionModifier(const std::shared_ptr<RSRenderModifier>& modifier)
-{
-    transitionModifiers_.erase(modifier);
-    SetDirty();
 }
 
 void RSRenderNode::ApplyModifiers()
@@ -263,15 +239,10 @@ void RSRenderNode::ApplyModifiers()
         }
     }
 
-    for (auto& modifier : transitionModifiers_) {
-        if (modifier) {
-            modifier->Apply(context);
-        }
-    }
-    UpdateOverlayerBounds();
+    UpdateOverlayBounds();
 }
 
-void RSRenderNode::UpdateOverlayerBounds()
+void RSRenderNode::UpdateOverlayBounds()
 {
     RSModifierContext context = { GetMutableRenderProperties() };
     auto iterator = drawCmdModifiers_.find(RSModifierType::OVERLAY_STYLE);
@@ -279,12 +250,12 @@ void RSRenderNode::UpdateOverlayerBounds()
         RectI joinRect = RectI();
         for (auto& overlayModifier : iterator->second) {
             auto drawCmdModifier = std::static_pointer_cast<RSDrawCmdListRenderModifier>(overlayModifier);
-            if (drawCmdModifier != nullptr && drawCmdModifier->GetOverlayerBounds() != nullptr &&
-                !drawCmdModifier->GetOverlayerBounds()->IsEmpty()) {
-                joinRect = joinRect.JoinRect(*drawCmdModifier->GetOverlayerBounds());
+            if (drawCmdModifier != nullptr && drawCmdModifier->GetOverlayBounds() != nullptr &&
+                !drawCmdModifier->GetOverlayBounds()->IsEmpty()) {
+                joinRect = joinRect.JoinRect(*drawCmdModifier->GetOverlayBounds());
             }
         }
-        context.property_.SetOverlayerBounds(std::make_shared<RectI>(joinRect));
+        context.property_.SetOverlayBounds(std::make_shared<RectI>(joinRect));
     }
 }
 

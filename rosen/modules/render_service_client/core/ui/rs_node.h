@@ -171,7 +171,7 @@ public:
         transitionEffect_ = effect;
     }
 
-    void ClearModifiers();
+    // Planning: refactor RSUIAnimationManager and remove this method
     void ClearAllModifiers();
     void AddModifier(const std::shared_ptr<RSModifierBase>& modifier);
     void RemoveModifier(const std::shared_ptr<RSModifierBase>& modifier);

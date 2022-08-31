@@ -32,7 +32,23 @@ enum RSTransitionEffectType : uint16_t {
     ROTATE,
     UNDEFINED,
 };
+constexpr int PID_SHIFT = 32;
+
+PropertyId GenerateTransitionPropertyId()
+{
+    // manually set pid to -1 to avoid conflict with other process (note: valid pid is smaller than 2^22)
+    static pid_t pid_ = -1;
+    static std::atomic<uint32_t> currentId_ = 1;
+
+    ++currentId_;
+    if (currentId_ == UINT32_MAX) {
+        // [PLANNING]:process the overflow situations
+        ROSEN_LOGE("Property Id overflow");
+    }
+
+    return ((PropertyId)pid_ << PID_SHIFT) | currentId_;
 }
+} // namespace
 
 RSRenderTransitionEffect* RSRenderTransitionEffect::Unmarshalling(Parcel& parcel)
 {
@@ -53,6 +69,14 @@ RSRenderTransitionEffect* RSRenderTransitionEffect::Unmarshalling(Parcel& parcel
         default:
             return nullptr;
     }
+}
+
+const std::shared_ptr<RSRenderModifier>& RSRenderTransitionEffect::GetModifier()
+{
+    if (modifier_ == nullptr) {
+        modifier_ = CreateModifier();
+    }
+    return modifier_;
 }
 
 bool RSTransitionFade::Marshalling(Parcel& parcel) const
@@ -127,13 +151,10 @@ RSRenderTransitionEffect* RSTransitionRotate::Unmarshalling(Parcel& parcel)
 }
 #endif
 
-const std::shared_ptr<RSRenderModifier>& RSTransitionFade::GetModifier()
+const std::shared_ptr<RSRenderModifier> RSTransitionFade::CreateModifier()
 {
-    if (modifier_ == nullptr || property_ == nullptr) {
-        property_ = std::make_shared<RSRenderAnimatableProperty<float>>();
-        modifier_ = std::make_shared<RSAlphaRenderModifier>(property_);
-    }
-    return modifier_;
+    property_ = std::make_shared<RSRenderAnimatableProperty<float>>(0, GenerateTransitionPropertyId());
+    return std::make_shared<RSAlphaRenderModifier>(property_);
 }
 
 void RSTransitionFade::UpdateFraction(float fraction) const
@@ -147,13 +168,11 @@ void RSTransitionFade::UpdateFraction(float fraction) const
     property_->Set(value);
 }
 
-const std::shared_ptr<RSRenderModifier>& RSTransitionScale::GetModifier()
+const std::shared_ptr<RSRenderModifier> RSTransitionScale::CreateModifier()
 {
-    if (modifier_ == nullptr || property_ == nullptr) {
-        property_ = std::make_shared<RSRenderAnimatableProperty<Vector2f>>();
-        modifier_ = std::make_shared<RSScaleRenderModifier>(property_);
-    }
-    return modifier_;
+    property_ =
+        std::make_shared<RSRenderAnimatableProperty<Vector2f>>(Vector2f { 0, 0 }, GenerateTransitionPropertyId());
+    return std::make_shared<RSScaleRenderModifier>(property_);
 }
 
 void RSTransitionScale::UpdateFraction(float fraction) const
@@ -167,13 +186,11 @@ void RSTransitionScale::UpdateFraction(float fraction) const
     property_->Set(value);
 }
 
-const std::shared_ptr<RSRenderModifier>& RSTransitionTranslate::GetModifier()
+const std::shared_ptr<RSRenderModifier> RSTransitionTranslate::CreateModifier()
 {
-    if (modifier_ == nullptr || property_ == nullptr) {
-        property_ = std::make_shared<RSRenderAnimatableProperty<Vector2f>>();
-        modifier_ = std::make_shared<RSTranslateRenderModifier>(property_);
-    }
-    return modifier_;
+    property_ =
+        std::make_shared<RSRenderAnimatableProperty<Vector2f>>(Vector2f { 0, 0 }, GenerateTransitionPropertyId());
+    return std::make_shared<RSTranslateRenderModifier>(property_);
 }
 
 void RSTransitionTranslate::UpdateFraction(float fraction) const
@@ -187,13 +204,10 @@ void RSTransitionTranslate::UpdateFraction(float fraction) const
     property_->Set(value);
 }
 
-const std::shared_ptr<RSRenderModifier>& RSTransitionRotate::GetModifier()
+const std::shared_ptr<RSRenderModifier> RSTransitionRotate::CreateModifier()
 {
-    if (modifier_ == nullptr || property_ == nullptr) {
-        property_ = std::make_shared<RSRenderAnimatableProperty<Quaternion>>();
-        modifier_ = std::make_shared<RSQuaternionRenderModifier>(property_);
-    }
-    return modifier_;
+    property_ = std::make_shared<RSRenderAnimatableProperty<Quaternion>>(Quaternion {}, GenerateTransitionPropertyId());
+    return std::make_shared<RSQuaternionRenderModifier>(property_);
 }
 
 void RSTransitionRotate::UpdateFraction(float fraction) const

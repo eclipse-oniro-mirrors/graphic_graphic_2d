@@ -815,12 +815,12 @@ Gravity RSProperties::GetFrameGravity() const
     return frameGravity_;
 }
 
-void RSProperties::SetOverlayerBounds(std::shared_ptr<RectI> rect)
+void RSProperties::SetOverlayBounds(std::shared_ptr<RectI> rect)
 {
     overlayRect_ = rect;
 }
 
-std::shared_ptr<RectI> RSProperties::GetOverlayerBounds() const
+std::shared_ptr<RectI> RSProperties::GetOverlayBounds() const
 {
     return overlayRect_;
 }

@@ -170,8 +170,8 @@ public:
     void SetFrameGravity(Gravity gravity);
     Gravity GetFrameGravity() const;
 
-    void SetOverlayerBounds(std::shared_ptr<RectI> rect);
-    std::shared_ptr<RectI> GetOverlayerBounds() const;
+    void SetOverlayBounds(std::shared_ptr<RectI> rect);
+    std::shared_ptr<RectI> GetOverlayBounds() const;
 
     void SetClipBounds(std::shared_ptr<RSPath> path);
     std::shared_ptr<RSPath> GetClipBounds() const;

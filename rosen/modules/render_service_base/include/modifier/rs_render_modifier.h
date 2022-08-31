@@ -89,12 +89,12 @@ public:
         drawStyle_ = type;
     }
 
-    void SetOverlayerBounds(std::shared_ptr<RectI> rect)
+    void SetOverlayBounds(std::shared_ptr<RectI> rect)
     {
         overlayRect_ = rect;
     }
 
-    std::shared_ptr<RectI> GetOverlayerBounds() const
+    std::shared_ptr<RectI> GetOverlayBounds() const
     {
         return overlayRect_;
     }

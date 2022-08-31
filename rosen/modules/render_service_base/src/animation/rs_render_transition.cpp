@@ -103,7 +103,7 @@ void RSRenderTransition::OnAttach()
     }
     // create "transition" modifier and add it to target
     for (auto& effect : effects_) {
-        target->AddTransitionModifier(effect->GetModifier());
+        target->AddModifier(effect->GetModifier());
     }
     // update number of disappearing transition animation
     if (!isTransitionIn_) {
@@ -120,7 +120,7 @@ void RSRenderTransition::OnDetach()
     }
     // remove "transition" modifier from target
     for (auto& effect : effects_) {
-        target->RemoveTransitionModifier(effect->GetModifier());
+        target->RemoveModifier(effect->GetModifier()->GetPropertyId());
     }
     // update number of disappearing transition animation
     if (!isTransitionIn_) {
