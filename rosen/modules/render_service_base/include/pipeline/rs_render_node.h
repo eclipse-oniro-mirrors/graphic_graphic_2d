@@ -96,6 +96,7 @@ protected:
 
 private:
     void FallbackAnimationsToRoot();
+    void UpdateOverlayerBounds();
     bool isDirtyRegionUpdated_ = false;
     bool isLastVisible_ = false;
     RectI oldDirty_;

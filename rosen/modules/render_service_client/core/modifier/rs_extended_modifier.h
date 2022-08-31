@@ -43,7 +43,7 @@ public:
     {
         RSModifier<T>::property_->SetIsCustom(true);
     }
-    RSModifierType GetModifierType()  const override
+    RSModifierType GetModifierType() const override
     {
         return RSModifierType::EXTENDED;
     }
@@ -114,6 +114,29 @@ public:
     {
         return RSModifierType::OVERLAY_STYLE;
     }
+
+    void SetOverlayerBounds(std::shared_ptr<RectI> rect)
+    {
+        overlayRect_ = rect;
+    }
+
+    std::shared_ptr<RectI> GetOverlayerBounds() const
+    {
+        return overlayRect_;
+    }
+
+    std::shared_ptr<RSRenderModifier> CreateRenderModifier() const override
+    {
+        auto renderModifier = RSExtendedModifier<T>::CreateRenderModifier();
+        auto drawCmdModifier = std::static_pointer_cast<RSDrawCmdListRenderModifier>(renderModifier);
+        if (drawCmdModifier != nullptr && drawCmdModifier->GetType() == RSModifierType::OVERLAY_STYLE) {
+            drawCmdModifier->SetOverlayerBounds(overlayRect_);
+        }
+        return renderModifier;
+    }
+
+private:
+    std::shared_ptr<RectI> overlayRect_ = nullptr;
 };
 } // namespace Rosen
 } // namespace OHOS

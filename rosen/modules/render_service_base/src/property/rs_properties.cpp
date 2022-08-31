@@ -821,6 +821,16 @@ Gravity RSProperties::GetFrameGravity() const
     return frameGravity_;
 }
 
+void RSProperties::SetOverlayerBounds(std::shared_ptr<RectI> rect)
+{
+    overlayRect_ = rect;
+}
+
+std::shared_ptr<RectI> RSProperties::GetOverlayerBounds() const
+{
+    return overlayRect_;
+}
+
 void RSProperties::SetClipBounds(std::shared_ptr<RSPath> path)
 {
     if (clipPath_ != path) {
@@ -963,13 +973,19 @@ bool RSProperties::IsDirty() const
 RectI RSProperties::GetDirtyRect() const
 {
 #ifdef ROSEN_OHOS
+    RectI dirtyRect = RectI();
     auto boundsGeometry = std::static_pointer_cast<RSObjAbsGeometry>(boundsGeo_);
     if (clipToBounds_) {
-        return boundsGeometry->GetAbsRect();
+        dirtyRect = boundsGeometry->GetAbsRect();
     } else {
         auto frameRect =
             boundsGeometry->MapAbsRect(RectF(GetFrameOffsetX(), GetFrameOffsetY(), GetFrameWidth(), GetFrameHeight()));
-        return boundsGeometry->GetAbsRect().JoinRect(frameRect);
+        dirtyRect = boundsGeometry->GetAbsRect().JoinRect(frameRect);
+    }
+    if (overlayRect_ == nullptr || overlayRect_->IsEmpty()) {
+        return dirtyRect;
+    } else {
+        return dirtyRect.JoinRect(*overlayRect_);
     }
 #else
     return RectI();

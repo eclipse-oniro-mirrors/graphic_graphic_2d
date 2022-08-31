@@ -171,6 +171,9 @@ public:
     void SetFrameGravity(Gravity gravity);
     Gravity GetFrameGravity() const;
 
+    void SetOverlayerBounds(std::shared_ptr<RectI> rect);
+    std::shared_ptr<RectI> GetOverlayerBounds() const;
+
     void SetClipBounds(std::shared_ptr<RSPath> path);
     std::shared_ptr<RSPath> GetClipBounds() const;
     void SetClipToBounds(bool clipToBounds);
@@ -223,6 +226,8 @@ private:
     bool hasBounds_ = false;
 
     Gravity frameGravity_ = Gravity::DEFAULT;
+
+    std::shared_ptr<RectI> overlayRect_ = nullptr;
 
     float alpha_ = 1.f;
     bool alphaOffscreen_ = true;

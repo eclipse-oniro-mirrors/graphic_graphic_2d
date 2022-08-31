@@ -227,6 +227,9 @@ void RSRenderNode::RemoveModifier(const PropertyId& id)
         modifiers.remove_if([id](const auto& modifier) -> bool {
             return modifier ? modifier->GetPropertyId() == id : true;
         });
+        if (type == RSModifierType::OVERLAY_STYLE) {
+            UpdateOverlayerBounds();
+        }
     }
 }
 
@@ -240,6 +243,24 @@ void RSRenderNode::ApplyModifiers()
         if (modify) {
             modify->Apply(context);
         }
+    }
+    UpdateOverlayerBounds();
+}
+
+void RSRenderNode::UpdateOverlayerBounds()
+{
+    RSModifyContext context = { GetMutableRenderProperties() };
+    auto iterator = drawCmdModifiers_.find(RSModifierType::OVERLAY_STYLE);
+    if (iterator != drawCmdModifiers_.end()) {
+        RectI joinRect = RectI();
+        for (auto& overlayModifier : iterator->second) {
+            auto drawCmdModifier = std::static_pointer_cast<RSDrawCmdListRenderModifier>(overlayModifier);
+            if (drawCmdModifier != nullptr && drawCmdModifier->GetOverlayerBounds() != nullptr &&
+                !drawCmdModifier->GetOverlayerBounds()->IsEmpty()) {
+                joinRect = joinRect.JoinRect(*drawCmdModifier->GetOverlayerBounds());
+            }
+        }
+        context.property_.SetOverlayerBounds(std::make_shared<RectI>(joinRect));
     }
 }
 
