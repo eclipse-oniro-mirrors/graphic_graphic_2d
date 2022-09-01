@@ -169,6 +169,11 @@ public:
         return rects;
     }
 
+    std::vector<RSBaseRenderNode::SharedPtr>& GetCurAllSurfaces()
+    {
+        return curAllSurfaces_;
+    }
+
 private:
     CompositeType compositeType_ { HARDWARE_COMPOSITE };
     uint64_t screenId_;
@@ -189,6 +194,8 @@ private:
     std::map<NodeId, RectI> lastFrameSurfacePos_;
     std::map<NodeId, RectI> currentFrameSurfacePos_;
     std::shared_ptr<RSDirtyRegionManager> dirtyManager_ = nullptr;
+
+    std::vector<RSBaseRenderNode::SharedPtr> curAllSurfaces_;
 };
 } // namespace Rosen
 } // namespace OHOS

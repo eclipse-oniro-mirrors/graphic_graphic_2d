@@ -118,6 +118,9 @@ void RSRenderServiceVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
         canvas_->clipRect(SkRect::MakeWH(logicalScreenWidth, logicalScreenHeight));
         PrepareBaseRenderNode(node);
     }
+
+    node.GetCurAllSurfaces().clear();
+    node.CollectSurface(node.shared_from_this(), node.GetCurAllSurfaces(), false);
 }
 
 void RSRenderServiceVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
