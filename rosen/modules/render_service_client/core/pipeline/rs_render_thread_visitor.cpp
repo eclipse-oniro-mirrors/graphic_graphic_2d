@@ -304,7 +304,7 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     rsSurface->SetRenderContext(rc);
 #endif
     uiTimestamp_ = RSRenderThread::Instance().GetUITimestamp();
-    RS_TRACE_BEGIN("rsSurface->RequestFrame");
+    RS_TRACE_BEGIN(ptr->GetName() + " rsSurface->RequestFrame");
     FrameCollector::GetInstance().MarkFrameEvent(FrameEventType::ReleaseStart);
 
     const auto& property = node.GetRenderProperties();
@@ -398,7 +398,7 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     FrameCollector::GetInstance().MarkFrameEvent(FrameEventType::ReleaseEnd);
     FrameCollector::GetInstance().MarkFrameEvent(FrameEventType::FlushStart);
 
-    RS_TRACE_BEGIN("rsSurface->FlushFrame");
+    RS_TRACE_BEGIN(ptr->GetName() + " rsSurface->FlushFrame");
     ROSEN_LOGD("RSRenderThreadVisitor FlushFrame surfaceNodeId = %" PRIu64 ", uiTimestamp = %" PRIu64,
         node.GetRSSurfaceNodeId(), uiTimestamp_);
     rsSurface->FlushFrame(surfaceFrame, uiTimestamp_);
