@@ -108,7 +108,7 @@ float RSModifierExtractor::GetAlpha() const
 
 bool RSModifierExtractor::GetAlphaOffscreen() const
 {
-    GET_PROPERTY_FROM_MODIFIERS(bool, ALPHA_OFFSCREEN, false, =);
+    GET_PROPERTY_FROM_MODIFIERS(bool, ALPHA_OFFSCREEN, true, =);
 }
 
 Vector4f RSModifierExtractor::GetCornerRadius() const
@@ -194,27 +194,27 @@ Color RSModifierExtractor::GetShadowColor() const
 
 float RSModifierExtractor::GetShadowOffsetX() const
 {
-    GET_PROPERTY_FROM_MODIFIERS(float, SHADOW_OFFSET_X, DEFAULT_SHADOW_OFFSET_X, +=);
+    GET_PROPERTY_FROM_MODIFIERS(float, SHADOW_OFFSET_X, DEFAULT_SHADOW_OFFSET_X, =);
 }
 
 float RSModifierExtractor::GetShadowOffsetY() const
 {
-    GET_PROPERTY_FROM_MODIFIERS(float, SHADOW_OFFSET_Y, DEFAULT_SHADOW_OFFSET_Y, +=);
+    GET_PROPERTY_FROM_MODIFIERS(float, SHADOW_OFFSET_Y, DEFAULT_SHADOW_OFFSET_Y, =);
 }
 
 float RSModifierExtractor::GetShadowAlpha() const
 {
-    GET_PROPERTY_FROM_MODIFIERS(float, SHADOW_ALPHA, 0.f, *=);
+    GET_PROPERTY_FROM_MODIFIERS(float, SHADOW_ALPHA, 0.f, =);
 }
 
 float RSModifierExtractor::GetShadowElevation() const
 {
-    GET_PROPERTY_FROM_MODIFIERS(float, SHADOW_ELEVATION, 0.f, +=);
+    GET_PROPERTY_FROM_MODIFIERS(float, SHADOW_ELEVATION, 0.f, =);
 }
 
 float RSModifierExtractor::GetShadowRadius() const
 {
-    GET_PROPERTY_FROM_MODIFIERS(float, SHADOW_RADIUS, 0.f, +=);
+    GET_PROPERTY_FROM_MODIFIERS(float, SHADOW_RADIUS, DEFAULT_SHADOW_RADIUS, =);
 }
 
 std::shared_ptr<RSPath> RSModifierExtractor::GetShadowPath() const

@@ -747,7 +747,7 @@ void RSNode::SetShadowElevation(float elevation)
 
 void RSNode::SetShadowRadius(float radius)
 {
-    SET_ANIMATABLE_MODIFIER(ShadowRadius, float, radius, SHADOW_RADIUS, 0.f);
+    SET_ANIMATABLE_MODIFIER(ShadowRadius, float, radius, SHADOW_RADIUS, DEFAULT_SHADOW_RADIUS);
 }
 
 void RSNode::SetShadowPath(const std::shared_ptr<RSPath>& shadowPath)

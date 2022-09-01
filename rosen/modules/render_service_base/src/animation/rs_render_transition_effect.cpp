@@ -36,8 +36,8 @@ constexpr int PID_SHIFT = 32;
 
 PropertyId GenerateTransitionPropertyId()
 {
-    // manually set pid to -1 to avoid conflict with other process (note: valid pid is smaller than 2^22)
-    static pid_t pid_ = -1;
+    // manually set pid to INT_MAX to avoid conflict with other process (note: valid pid is smaller than 2^22)
+    static pid_t pid_ = INT_MAX;
     static std::atomic<uint32_t> currentId_ = 1;
 
     ++currentId_;

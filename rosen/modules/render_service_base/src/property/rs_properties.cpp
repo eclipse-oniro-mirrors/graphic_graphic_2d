@@ -789,7 +789,7 @@ float RSProperties::GetShadowElevation() const
 
 float RSProperties::GetShadowRadius() const
 {
-    return shadow_ ? shadow_->GetRadius() : 0.f;
+    return shadow_ ? shadow_->GetRadius() : DEFAULT_SHADOW_RADIUS;
 }
 
 std::shared_ptr<RSPath> RSProperties::GetShadowPath() const

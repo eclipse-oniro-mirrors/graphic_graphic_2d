@@ -228,7 +228,7 @@ private:
     std::shared_ptr<RectI> overlayRect_ = nullptr;
 
     float alpha_ = 1.f;
-    bool alphaOffscreen_ = false;
+    bool alphaOffscreen_ = true;
 
     std::shared_ptr<RSObjGeometry> boundsGeo_;
     std::shared_ptr<RSObjGeometry> frameGeo_;
