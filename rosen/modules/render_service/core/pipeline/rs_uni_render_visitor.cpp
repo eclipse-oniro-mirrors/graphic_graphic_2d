@@ -15,6 +15,7 @@
 
 #include "pipeline/rs_uni_render_visitor.h"
 
+#include "include/core/SkRegion.h"
 #include "common/rs_obj_abs_geometry.h"
 #include "pipeline/rs_base_render_util.h"
 #include "pipeline/rs_display_render_node.h"
@@ -301,6 +302,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             RS_LOGE("RSUniRenderVisitor Request Frame Failed");
             return;
         }
+        SkRegion region;
 #ifdef RS_ENABLE_EGLQUERYSURFACE
         // Get displayNode buffer age in order to merge visible dirty region for displayNode.
         // And then set egl damage region to improve uni_render efficiency.
@@ -317,7 +319,9 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             if (!rect.IsEmpty()) {
                 rects.emplace_back(rect);
             }
+            auto disH = screenInfo_.GetRotatedHeight();
             for (auto& r : rects) {
+                region.op(SkIRect::MakeXYWH(r.left_, disH - r.GetBottom(), r.width_, r.height_), SkRegion::kUnion_Op);
                 RS_LOGD("SetDamageRegion %s", r.ToString().c_str());
             }
             renderFrame->SetDamageRegion(rects);
@@ -328,6 +332,11 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode: failed to create canvas");
             return;
         }
+#ifdef RS_ENABLE_EGLQUERYSURFACE
+        if (isOpDroped_ && !region.isEmpty()) {
+            canvas_->clipRegion(region);
+        }
+#endif
         auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(node.GetRenderProperties().GetBoundsGeometry());
         if (geoPtr != nullptr) {
             geoPtr->UpdateByMatrixFromSelf();
