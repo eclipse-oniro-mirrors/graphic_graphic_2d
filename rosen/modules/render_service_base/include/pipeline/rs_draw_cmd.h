@@ -160,7 +160,8 @@ private:
 
 class ImageWithParmOpItem : public OpItemWithPaint {
 public:
-    ImageWithParmOpItem(const sk_sp<SkImage> img, const RsImageInfo& rsimageInfo, const SkPaint& paint);
+    ImageWithParmOpItem(
+        const sk_sp<SkImage> img, const sk_sp<SkData> data, const RsImageInfo& rsimageInfo, const SkPaint& paint);
     ImageWithParmOpItem(
         const std::shared_ptr<Media::PixelMap>& pixelmap, const RsImageInfo& rsimageInfo, const SkPaint& paint);
     ImageWithParmOpItem(const std::shared_ptr<RSImage>& rsImage, const SkPaint& paint);
