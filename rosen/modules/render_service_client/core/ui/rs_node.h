@@ -177,6 +177,9 @@ public:
     void AddModifier(const std::shared_ptr<RSModifierBase>& modifier);
     void RemoveModifier(const std::shared_ptr<RSModifierBase>& modifier);
 
+    void SetChildIds(const std::vector<NodeId>& childIds);
+    const std::vector<NodeId>& GetChildIds() const;
+
 protected:
     explicit RSNode(bool isRenderServiceNode);
     RSNode(bool isRenderServiceNode, NodeId id);
@@ -220,6 +223,7 @@ private:
     std::shared_ptr<RSUIAnimationManager> animationManager_;
 
     RSModifierExtractor stagingPropertiesExtrator_;
+    std::vector<NodeId> childNodeIds_;
 
     friend class RSAnimation;
     friend class RSCurveAnimation;
