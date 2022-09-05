@@ -126,7 +126,7 @@ bool RSRenderPathAnimation::Marshalling(Parcel& parcel) const
     if (!(parcel.WriteFloat(originRotation_) && parcel.WriteFloat(beginFraction_) &&
             parcel.WriteFloat(endFraction_) && RSMarshallingHelper::Marshalling(parcel, animationPath_) &&
             parcel.WriteInt32(static_cast<std::underlying_type<RotationMode>::type>(rotationMode_)) &&
-            parcel.WriteBool(isNeedPath_) && interpolator_->Marshalling(parcel) &&
+            parcel.WriteBool(isNeedPath_) && parcel.WriteBool(needAddOrigin_) && interpolator_->Marshalling(parcel) &&
             RSRenderPropertyBase::Marshalling(parcel, startValue_) &&
             RSRenderPropertyBase::Marshalling(parcel, endValue_) && parcel.WriteUint64(rotationId_))) {
         ROSEN_LOGE("RSRenderPathAnimation::Marshalling, write failed");
@@ -158,7 +158,7 @@ bool RSRenderPathAnimation::ParseParam(Parcel& parcel)
     bool isNeedPath = true;
     if (!(parcel.ReadFloat(originRotation_) && parcel.ReadFloat(beginFraction_) &&
             parcel.ReadFloat(endFraction_) && RSMarshallingHelper::Unmarshalling(parcel, animationPath_) &&
-            parcel.ReadInt32(rotationMode) && parcel.ReadBool(isNeedPath))) {
+            parcel.ReadInt32(rotationMode) && parcel.ReadBool(isNeedPath) && parcel.ReadBool(needAddOrigin_))) {
         ROSEN_LOGE("RSRenderPathAnimation::ParseParam, Parse PathAnimation Failed");
         return false;
     }
