@@ -21,14 +21,13 @@
 #include "common/rs_matrix3.h"
 #include "common/rs_vector4.h"
 #include "property/rs_properties_def.h"
-#include "property/rs_transition_properties.h"
 #include "render/rs_border.h"
 #include "render/rs_filter.h"
 #include "render/rs_image.h"
+#include "render/rs_mask.h"
 #include "render/rs_path.h"
 #include "render/rs_shader.h"
 #include "render/rs_shadow.h"
-#include "render/rs_mask.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -191,8 +190,7 @@ public:
 
     const std::shared_ptr<RSObjGeometry>& GetBoundsGeometry() const;
     const std::shared_ptr<RSObjGeometry>& GetFrameGeometry() const;
-    bool UpdateGeometry(const RSProperties* parent, bool dirtyFlag, Vector2f& offset,
-        const std::unique_ptr<RSTransitionProperties>& transition = nullptr);
+    bool UpdateGeometry(const RSProperties* parent, bool dirtyFlag, Vector2f& offset);
 
     bool GetZorderChanged() const;
     void CleanZorderChanged();

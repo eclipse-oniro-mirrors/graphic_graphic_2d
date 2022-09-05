@@ -42,8 +42,7 @@ public:
     ~RSRenderNode() override;
 
     bool Animate(int64_t timestamp) override;
-    bool Update(RSDirtyRegionManager& dirtyManager, const RSProperties* parent, bool parentDirty,
-        const std::unique_ptr<RSTransitionProperties>& transition = nullptr);
+    bool Update(RSDirtyRegionManager& dirtyManager, const RSProperties* parent, bool parentDirty);
 
     RSProperties& GetMutableRenderProperties();
     const RSProperties& GetRenderProperties() const;

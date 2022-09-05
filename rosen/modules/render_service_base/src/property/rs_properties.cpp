@@ -236,8 +236,7 @@ const std::shared_ptr<RSObjGeometry>& RSProperties::GetFrameGeometry() const
     return frameGeo_;
 }
 
-bool RSProperties::UpdateGeometry(const RSProperties* parent, bool dirtyFlag, Vector2f& offset,
-    const std::unique_ptr<RSTransitionProperties>& transition)
+bool RSProperties::UpdateGeometry(const RSProperties* parent, bool dirtyFlag, Vector2f& offset)
 {
     if (boundsGeo_ == nullptr) {
         return false;
@@ -250,11 +249,8 @@ bool RSProperties::UpdateGeometry(const RSProperties* parent, bool dirtyFlag, Ve
     auto boundsGeoPtr = std::static_pointer_cast<RSObjAbsGeometry>(boundsGeo_);
 
     if (dirtyFlag || geoDirty_) {
-        auto parentGeo = parent == nullptr ?
-            nullptr : std::static_pointer_cast<RSObjAbsGeometry>(parent->boundsGeo_);
-        Vector3f scale = transition == nullptr ? Vector3f { 1.f, 1.f, 1.f } : transition->GetScale();
-        Vector3f tran = transition == nullptr ? Vector3f { 0.f, 0.f, 0.f } : transition->GetTranslate();
-        boundsGeoPtr->UpdateMatrix(parentGeo, offset, scale, tran);
+        auto parentGeo = parent == nullptr ? nullptr : std::static_pointer_cast<RSObjAbsGeometry>(parent->boundsGeo_);
+        boundsGeoPtr->UpdateMatrix(parentGeo, offset.x_, offset.y_);
     }
 #endif
     return dirtyFlag || geoDirty_;

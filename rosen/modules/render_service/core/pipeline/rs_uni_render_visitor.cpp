@@ -99,19 +99,17 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     if (node.IsAppWindow() || node.GetSurfaceNodeType() == RSSurfaceNodeType::STARTING_WINDOW_NODE) {
         curSurfaceDirtyManager_ = node.GetDirtyManager();
         curSurfaceDirtyManager_->Clear();
-        auto transitionProperties = node.GetAnimationManager().GetTransitionProperties();
         if (auto parentNode = node.GetParent().lock()) {
             dirtyFlag_ = node.Update(*curSurfaceDirtyManager_,
-                &(parentNode->ReinterpretCastTo<RSRenderNode>()->GetRenderProperties()),
-                dirtyFlag_, transitionProperties);
+                &(parentNode->ReinterpretCastTo<RSRenderNode>()->GetRenderProperties()), dirtyFlag_);
         } else {
-            dirtyFlag_ = node.Update(*curSurfaceDirtyManager_, nullptr, dirtyFlag_, transitionProperties);
+            dirtyFlag_ = node.Update(*curSurfaceDirtyManager_, nullptr, dirtyFlag_);
         }
         geoPtr->ConcatMatrix(node.GetContextMatrix());
         node.SetDstRect(geoPtr->GetAbsRect());
         curDisplayNode_->UpdateSurfaceNodePos(node.GetId(), node.GetDstRect());
     } else {
-        dirtyFlag_ |= RSUniRenderUtil::UpdateRenderNodeDstRect(node, node.GetContextMatrix());
+        RSUniRenderUtil::UpdateRenderNodeDstRect(node, node.GetContextMatrix());
         if (node.GetBuffer() != nullptr) {
             auto& surfaceHandler = static_cast<RSSurfaceHandler&>(node);
             if (surfaceHandler.IsCurrentFrameBufferConsumed()) {
@@ -121,9 +119,6 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
     parentSurfaceNodeMatrix_ = geoPtr->GetAbsMatrix();
 
-    if (node.GetDstRectChanged()) {
-        dirtyFlag_ = true;
-    }
     PrepareBaseRenderNode(node);
     // restore flags
     parentSurfaceNodeMatrix_ = parentSurfaceNodeMatrix;
@@ -341,7 +336,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             curDisplayDirtyManager_->SetSurfaceSize(screenInfo_.width, screenInfo_.height);
             CalcDirtyDisplayRegion(displayNodePtr);
             uint32_t bufferAge = renderFrame->GetBufferAge();
-            RS_LOGD("RSUniRenderVisitor buffer age is %d", bufferAge);
             RSUniRenderUtil::MergeDirtyHistory(displayNodePtr, bufferAge);
             auto dirtyRegion = RSUniRenderUtil::MergeVisibleDirtyRegion(displayNodePtr);
             SetSurfaceGlobalDirtyRegion(displayNodePtr);

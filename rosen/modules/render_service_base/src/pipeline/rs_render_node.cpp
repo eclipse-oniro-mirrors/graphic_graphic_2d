@@ -70,8 +70,7 @@ bool RSRenderNode::Animate(int64_t timestamp)
     return animationManager_.Animate(timestamp);
 }
 
-bool RSRenderNode::Update(RSDirtyRegionManager& dirtyManager, const RSProperties* parent, bool parentDirty,
-    const std::unique_ptr<RSTransitionProperties>& transition)
+bool RSRenderNode::Update(RSDirtyRegionManager& dirtyManager, const RSProperties* parent, bool parentDirty)
 {
     // no need to update invisible nodes
     if (!renderProperties_.GetVisible() && !isLastVisible_) {
@@ -80,7 +79,7 @@ bool RSRenderNode::Update(RSDirtyRegionManager& dirtyManager, const RSProperties
     // [planning] surfaceNode use frame instead
     Vector2f offset = (parent == nullptr || IsInstanceOf<RSSurfaceRenderNode>()) ?
         Vector2f { 0.f, 0.f } : Vector2f { parent->GetFrameOffsetX(), parent->GetFrameOffsetY() };
-    bool dirty = renderProperties_.UpdateGeometry(parent, parentDirty, offset, transition);
+    bool dirty = renderProperties_.UpdateGeometry(parent, parentDirty, offset);
     isDirtyRegionUpdated_ = false;
     UpdateDirtyRegion(dirtyManager, dirty);
     isLastVisible_ = renderProperties_.GetVisible();
