@@ -24,15 +24,14 @@
 namespace rosen {
 class FontCollection : public FontCollectionBase {
 public:
-    static std::shared_ptr<FontCollection> GetInstance();
-    FontCollection();
-    ~FontCollection();
+    static std::shared_ptr<FontCollection> GetInstance(bool createWithICU = true);
+    explicit FontCollection(bool createWithICU = true);
+    ~FontCollection() override;
     std::shared_ptr<FontCollectionTxtBase> GetFontCollection() override;
     void RegisterTestFonts() override;
-    void LoadFontFromList(const uint8_t* font_data,
-                          int length,
-                          std::string family_name) override;
+    void LoadFontFromList(const uint8_t* font_data, int length, std::string family_name) override;
     void LoadSystemFont();
+
 private:
     std::shared_ptr<FontCollectionTxtBase> collection_;
     FontCollection(const FontCollection&) = delete;

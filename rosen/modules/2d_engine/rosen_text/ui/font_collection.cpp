@@ -19,17 +19,17 @@
 namespace rosen {
 std::shared_ptr<FontCollection> FontCollection::instance = nullptr;
 
-std::shared_ptr<FontCollection> FontCollection::GetInstance()
+std::shared_ptr<FontCollection> FontCollection::GetInstance(bool createWithICU)
 {
     if (instance == nullptr) {
-        instance = std::make_shared<FontCollection>();
+        instance = std::make_shared<FontCollection>(createWithICU);
     }
     return instance;
 }
 
-FontCollection::FontCollection()
+FontCollection::FontCollection(bool createWithICU)
 {
-    collection_ = std::make_shared<FontCollectionTxt>();
+    collection_ = std::make_shared<FontCollectionTxt>(createWithICU);
 }
 
 FontCollection::~FontCollection()
