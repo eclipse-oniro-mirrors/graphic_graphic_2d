@@ -1073,7 +1073,7 @@ BufferDrawParam RSBaseRenderUtil::CreateBufferDrawParam(
     const RSProperties& property = node.GetRenderProperties();
     auto backgroundColor = property.GetBackgroundColor();
     auto backgroundAlpha = backgroundColor.GetAlpha();
-    int16_t finalBackgroundAlpha = backgroundAlpha * static_cast<int16_t>(node.GetGlobalAlpha());
+    int16_t finalBackgroundAlpha = static_cast<int16_t>(backgroundAlpha * node.GetGlobalAlpha());
     backgroundColor.SetAlpha(finalBackgroundAlpha);
     params.backgroundColor = static_cast<SkColor>(backgroundColor.AsArgbInt());
 
