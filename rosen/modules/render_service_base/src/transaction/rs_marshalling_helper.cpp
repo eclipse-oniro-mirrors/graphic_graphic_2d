@@ -599,7 +599,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSMa
 {
     if (!val) {
         ROSEN_LOGD("unirender: RSMarshallingHelper::Marshalling RSMask is nullptr");
-        parcel.WriteInt32(-1);
+        return parcel.WriteInt32(-1);
     }
     return parcel.WriteInt32(1) && val->Marshalling(parcel);
 }
