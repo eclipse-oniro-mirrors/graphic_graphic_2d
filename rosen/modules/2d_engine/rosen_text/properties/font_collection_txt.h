@@ -26,9 +26,9 @@
 namespace rosen {
 class FontCollectionTxt : public FontCollectionTxtBase {
 public:
-    FontCollectionTxt();
+    explicit FontCollectionTxt(bool createWithICU = true);
 
-    ~FontCollectionTxt();
+    ~FontCollectionTxt() override;
     std::shared_ptr<txt::FontCollection> GetFontCollection() const;
 
     void RegisterTestFonts() override;

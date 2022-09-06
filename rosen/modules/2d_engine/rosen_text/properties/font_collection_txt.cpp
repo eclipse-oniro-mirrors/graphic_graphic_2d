@@ -29,12 +29,15 @@
 #include "rosen_text/properties/typography_txt.h"
 
 namespace rosen {
-FontCollectionTxt::FontCollectionTxt()
+FontCollectionTxt::FontCollectionTxt(bool createWithICU)
 {
     SkGraphics::Init();
 #ifdef OHOS_PLATFORM
     // don't need initialize icu for arkui cross-platform
-    fml::icu::InitializeICU("/system/usr/ohos_icu/icudt67l.dat"); // position of icu
+    // don't need initialize icu for AceAbility or UIContent.
+    if (createWithICU) {
+        fml::icu::InitializeICU("/system/usr/ohos_icu/icudt67l.dat"); // position of icu
+    }
 #endif
     txtCollection = std::make_shared<txt::FontCollection>();
     txtCollection->SetupDefaultFontManager();
