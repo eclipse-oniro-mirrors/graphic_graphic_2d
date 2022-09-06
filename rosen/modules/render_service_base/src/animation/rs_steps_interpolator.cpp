@@ -29,11 +29,11 @@ RSStepsInterpolator::RSStepsInterpolator(int32_t steps, StepsCurvePosition posit
 bool RSStepsInterpolator::Marshalling(Parcel& parcel) const
 {
     if (!parcel.WriteUint16(InterpolatorType::STEPS)) {
-        ROSEN_LOGE("RSStepsInterpolator::Marshalling, Write type failed");
+        ROSEN_LOGE("StepsInterpolator marshalling write type failed.");
         return false;
     }
     if (!(parcel.WriteInt32(steps_) && parcel.WriteInt32(static_cast<int32_t>(position_)))) {
-        ROSEN_LOGE("RSStepsInterpolator::Marshalling, Write value failed");
+        ROSEN_LOGE("StepsInterpolator marshalling write value failed.");
         return false;
     }
     return true;
@@ -43,21 +43,20 @@ RSStepsInterpolator* RSStepsInterpolator::Unmarshalling(Parcel& parcel)
 {
     int32_t steps, position;
     if (!(parcel.ReadInt32(steps) && parcel.ReadInt32(position))) {
-        ROSEN_LOGE("RSStepsInterpolator::Unmarshalling, StepsInterpolator failed");
+        ROSEN_LOGE("StepsInterpolator unmarshalling failed.");
         return nullptr;
     }
-    auto ret = new RSStepsInterpolator(steps, static_cast<StepsCurvePosition>(position));
-    return ret;
+    return new RSStepsInterpolator(steps, static_cast<StepsCurvePosition>(position));
 }
 #endif
 
-float RSStepsInterpolator::Interpolate(float time) const
+float RSStepsInterpolator::Interpolate(float fraction) const
 {
-    if (time < fractionMin || time > fractionMax) {
-        ROSEN_LOGE("StepsCurve MoveInternal: time is less than 0 or larger than 1, return 1");
+    if (fraction < fractionMin || fraction > fractionMax) {
+        ROSEN_LOGE("Fraction is less than 0 or larger than 1, return 1.");
         return fractionMax;
     }
-    auto currentStep = static_cast<int32_t>(time * steps_);
+    auto currentStep = static_cast<int32_t>(fraction * steps_);
     if (position_ == StepsCurvePosition::START) {
         currentStep++;
     }
