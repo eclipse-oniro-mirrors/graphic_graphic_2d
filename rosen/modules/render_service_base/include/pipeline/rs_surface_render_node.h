@@ -199,35 +199,7 @@ public:
 
     void SetVisibleRegionRecursive(const Occlusion::Region& region,
                                    VisibleData& visibleVec,
-                                   std::map<uint32_t, bool>& pidVisMap)
-    {
-        visibleRegion_ = region;
-        bool vis = region.GetSize() > 0;
-        if (vis) {
-            visibleVec.emplace_back(GetId());
-        }
-
-        // collect visible changed pid
-        if (qosPidCal_) {
-            uint32_t tmpPid = (GetId() >> 32) & 0xFFFFFFFF;
-            if (pidVisMap.find(tmpPid) != pidVisMap.end()) {
-                pidVisMap[tmpPid] |= vis;
-            } else {
-                pidVisMap[tmpPid] = vis;
-            }
-        }
-
-        SetOcclusionVisible(vis);
-        for (auto& child : GetSortedChildren()) {
-            if (child->GetType() == RSRenderNodeType::SURFACE_NODE) {
-                auto surface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child);
-                if (surface == nullptr) {
-                    continue;
-                }
-                surface->SetVisibleRegionRecursive(region, visibleVec, pidVisMap);
-            }
-        }
-    }
+                                   std::map<uint32_t, bool>& pidVisMap);
 
     const Occlusion::Region& GetVisibleDirtyRegion() const
     {
@@ -275,9 +247,8 @@ public:
 
     void SetGloblDirtyRegion(const RectI& rect)
     {
-        auto globaldirtyInSurfaceRange = GetDstRect().IntersectRect(rect);
-        globalDirtyRegionIsEmpty_ = globaldirtyInSurfaceRange.IsEmpty();
-        globalDirtyRegion_ = globaldirtyInSurfaceRange;
+        globalDirtyRegion_ = GetDstRect().IntersectRect(rect);
+        globalDirtyRegionIsEmpty_ = globalDirtyRegion_.IsEmpty();
     }
 
     void SetConsumer(const sptr<Surface>& consumer);

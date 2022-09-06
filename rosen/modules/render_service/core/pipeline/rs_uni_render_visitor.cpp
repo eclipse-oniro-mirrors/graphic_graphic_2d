@@ -116,6 +116,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
             }
         }
     }
+    dirtyFlag_ |= node.GetDstRectChanged();
     parentSurfaceNodeMatrix_ = geoPtr->GetAbsMatrix();
 
     PrepareBaseRenderNode(node);
