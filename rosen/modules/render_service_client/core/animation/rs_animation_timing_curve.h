@@ -38,10 +38,10 @@ public:
 
     static RSAnimationTimingCurve CreateCustomCurve(const std::function<float(float)>& customCurveFunc);
     static RSAnimationTimingCurve CreateCubicCurve(float ctrlX1, float ctrlY1, float ctrlX2, float ctrlY2);
+    static RSAnimationTimingCurve CreateStepsCurve(int32_t steps, StepsCurvePosition position);
     // Create interpolating spring, which duration is determined by TimingProtocol. Multiple animations on the same
     // property will run simultaneously and act additively.
     static RSAnimationTimingCurve CreateSpringCurve(float velocity, float mass, float stiffness, float damping);
-    static RSAnimationTimingCurve CreateStepsCurve(int32_t steps, StepsCurvePosition position);
     // Create physical spring, which duration is determined by the spring model. When mixed with other physical spring
     // animations on the same property, each animation will be replaced by their successor, preserving velocity from one
     // animation to the next.
