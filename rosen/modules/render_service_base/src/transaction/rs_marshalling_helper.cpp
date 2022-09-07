@@ -841,7 +841,7 @@ bool RSMarshallingHelper::WriteToParcel(Parcel& parcel, const void* data, size_t
     if (!parcel.WriteUint32(size)) {
         return false;
     }
-    if (size <= MIN_DATA_SIZE) {
+    if (size < MIN_DATA_SIZE) {
         return parcel.WriteUnpadBuffer(data, size);
     }
 
@@ -871,7 +871,7 @@ const void* RSMarshallingHelper::ReadFromParcel(Parcel& parcel, size_t size)
         return nullptr;
     }
 
-    if (static_cast<unsigned int>(bufferSize) <= MIN_DATA_SIZE) {
+    if (static_cast<unsigned int>(bufferSize) < MIN_DATA_SIZE) {
         return parcel.ReadUnpadBuffer(size);
     }
     // read from ashmem
@@ -892,7 +892,7 @@ bool RSMarshallingHelper::SkipFromParcel(Parcel& parcel, size_t size)
         return false;
     }
 
-    if (static_cast<unsigned int>(bufferSize) <= MIN_DATA_SIZE) {
+    if (static_cast<unsigned int>(bufferSize) < MIN_DATA_SIZE) {
         parcel.SkipBytes(size);
         return true;
     }
