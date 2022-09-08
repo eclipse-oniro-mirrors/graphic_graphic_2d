@@ -411,7 +411,6 @@ void RSSurfaceRenderNode::SetVisibleRegionRecursive(const Occlusion::Region& reg
         SetOcclusionVisible(true);
         return;
     }
-
     visibleRegion_ = region;
     bool vis = region.GetSize() > 0;
     if (vis) {
@@ -430,9 +429,10 @@ void RSSurfaceRenderNode::SetVisibleRegionRecursive(const Occlusion::Region& reg
 
     SetOcclusionVisible(vis);
     for (auto& child : GetSortedChildren()) {
-        if (auto surface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(chid)) {
+        if (auto surface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child)) {
             surface->SetVisibleRegionRecursive(region, visibleVec, pidVisMap);
         }
     }
+}
 } // namespace Rosen
 } // namespace OHOS
