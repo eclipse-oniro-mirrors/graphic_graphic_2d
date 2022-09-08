@@ -86,6 +86,7 @@ ohos_shared_library("librender_service") {
 
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "hitrace_native:hitrace_meter",
     "init:libbegetutil",
     "ipc:ipc_core",
