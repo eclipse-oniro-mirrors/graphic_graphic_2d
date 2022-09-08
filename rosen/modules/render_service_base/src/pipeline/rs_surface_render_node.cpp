@@ -178,8 +178,7 @@ void RSSurfaceRenderNode::ResetParent()
     } else {
         auto& consumer = GetConsumer();
         if (consumer != nullptr &&
-            std::strcmp(GetName().c_str(), "RosenRenderTexture") != 0 &&
-            std::strcmp(GetName().c_str(), "RosenRenderWeb") != 0) {
+            GetSurfaceNodeType() != RSSurfaceNodeType::SELF_DRAWING_NODE) {
             consumer->GoBackground();
         }
     }
