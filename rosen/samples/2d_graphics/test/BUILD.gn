@@ -48,7 +48,7 @@ ohos_executable("drawing_sample") {
     "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics/include",
     "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics/src",
     "//foundation/graphic/graphic_2d/rosen/samples/2d_graphics/test/include",
-    "//foundation/multimedia/image_standard/interfaces/innerkits/include",
+    "//foundation/multimedia/image_framework/interfaces/innerkits/include",
     "//foundation/graphic/graphic_2d/rosen/modules/composer/hdi_backend/include",
     "//drivers/peripheral/display/interfaces/include",
     "//foundation/graphic/graphic_2d/rosen/include/common",

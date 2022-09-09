@@ -39,15 +39,15 @@ ohos_shared_library("effectkit") {
     "//foundation/graphic/graphic_2d/rosen/modules/effect/color_picker/include",
     "//foundation/graphic/graphic_2d/rosen/modules/effect/skia_effectChain/include",
     "//foundation/graphic/graphic_2d/utils/color_manager/export",
-    "//foundation/multimedia/image_standard/interfaces/kits/js/common/include",
-    "//foundation/multimedia/image_standard/interfaces/innerkits/include",
+    "//foundation/multimedia/image_framework/interfaces/kits/js/common/include",
+    "//foundation/multimedia/image_framework/interfaces/innerkits/include",
     "//base/hiviewdfx/hilog/interfaces/native/innerkits/include",
   ]
 
   configs = [
     ":graphic_napi_effect_kit_config",
     "//commonlibrary/c_utils/base:utils_config",
-    "//foundation/multimedia/image_standard/interfaces/innerkits:image_external_config",
+    "//foundation/multimedia/image_framework/interfaces/innerkits:image_external_config",
   ]
 
   sources = [
@@ -66,8 +66,8 @@ ohos_shared_library("effectkit") {
     "//foundation/graphic/graphic_2d/rosen/modules/effect/egl:libegl_effect",
     "//foundation/graphic/graphic_2d/rosen/modules/effect/skia_effectChain:skeffectchain",
     "//foundation/graphic/graphic_2d/utils/color_manager:color_manager",
-    "//foundation/multimedia/image_standard/interfaces/innerkits:image",
-    "//foundation/multimedia/image_standard/interfaces/innerkits:image_native",
+    "//foundation/multimedia/image_framework/interfaces/innerkits:image",
+    "//foundation/multimedia/image_framework/interfaces/innerkits:image_native",
   ]
 
   external_deps = [
