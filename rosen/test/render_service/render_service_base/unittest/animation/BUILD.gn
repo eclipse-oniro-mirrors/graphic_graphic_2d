@@ -14,19 +14,16 @@
 import("//build/test.gni")
 import("//foundation/arkui/ace_engine/ace_config.gni")
 
-module_output_path = "graphic/rosen_engine/render_service_base/transaction"
+module_output_path = "graphic/rosen_engine/render_service_base/animation"
 
-##############################  RSRenderServiceBaseTransactionTest  ##################################
-ohos_unittest("RSRenderServiceBaseTransactionTest") {
+##############################  RSRenderServiceBaseAnimationTest  ##################################
+ohos_unittest("RSRenderServiceBaseAnimationTest") {
   module_out_path = module_output_path
 
-  sources = [
-    "rs_ashmem_test.cpp",
-    "rs_marshalling_test.cpp",
-  ]
+  sources = [ "rs_steps_interpolator_test.cpp" ]
 
   configs = [
-    ":transaction_test",
+    ":render_test",
     "$ace_root:ace_test_config",
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_base:export_config",
   ]
@@ -35,7 +32,6 @@ ohos_unittest("RSRenderServiceBaseTransactionTest") {
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_base/include",
     "//foundation/graphic/graphic_2d/rosen/include",
     "//foundation/graphic/graphic_2d/rosen/test/include",
-    "//third_party/flutter/skia/src",
   ]
 
   deps = [
@@ -47,14 +43,13 @@ ohos_unittest("RSRenderServiceBaseTransactionTest") {
   external_deps = [
     "c_utils:utils",
     "init:libbegetutil",
-    "ipc:ipc_core",
   ]
 
   subsystem_name = "graphic"
 }
 
 ###############################################################################
-config("transaction_test") {
+config("render_test") {
   visibility = [ ":*" ]
   include_dirs = [
     "$ace_root",
@@ -64,5 +59,6 @@ config("transaction_test") {
 
 group("unittest") {
   testonly = true
-  deps = [ ":RSRenderServiceBaseTransactionTest" ]
+
+  deps = [ ":RSRenderServiceBaseAnimationTest" ]
 }

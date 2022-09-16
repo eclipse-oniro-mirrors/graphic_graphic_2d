@@ -111,6 +111,11 @@ void RSDirtyRegionManager::UpdateDirty()
     dirtyRegion_ = MergeHistory(bufferAge_, dirtyRegion_);
 }
 
+void RSDirtyRegionManager::UpdateDirtyByAligned(int32_t alignedBits)
+{
+    dirtyRegion_ = GetPixelAlignedRect(dirtyRegion_, alignedBits);
+}
+
 void RSDirtyRegionManager::UpdateDirtyCanvasNodes(NodeId id, const RectI& rect)
 {
     dirtyCanvasNodes_[id] = rect;
@@ -189,9 +194,10 @@ RectI RSDirtyRegionManager::MergeHistory(unsigned int age, RectI rect) const
         return surfaceRect_;
     }
     // GetHistory(historySize_) is equal to dirtyHistory_[historyHead_] (latest his rect)
-    // therefore, this loop merges rect with (age-1) frames' dirtyRect
-    for (unsigned int i = historySize_ - 1; i > historySize_ - age; --i) {
-        auto subRect = GetHistory(i);
+    // therefore, this loop merges rect with age frames' dirtyRect
+    // Attention: should not set i >= 0 for unsigned int!!!!!
+    for (unsigned int i = historySize_; i > historySize_ - age; --i) {
+        auto subRect = GetHistory((i - 1));
         if (subRect.IsEmpty()) {
             continue;
         }

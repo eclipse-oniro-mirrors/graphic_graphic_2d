@@ -234,12 +234,12 @@ void RSMainThread::Start()
 
 void RSMainThread::ProcessCommand()
 {
+    context_.currentTimestamp_ = timestamp_;
     if (!isUniRender_) { // divided render for all
         ProcessCommandForDividedRender();
         return;
     }
     CheckBufferAvailableIfNeed();
-    context_.currentTimestamp_ = timestamp_;
     // dynamic switch
     if (useUniVisitor_) {
         ProcessCommandForDividedRender();
@@ -512,13 +512,6 @@ void RSMainThread::CheckUpdateSurfaceNodeIfNeed()
         if (renderModeChangeCallback_) {
             renderModeChangeCallback_->OnRenderModeChanged(true);
         }
-        const auto& nodeMap = GetContext().GetNodeMap();
-        nodeMap.TraverseSurfaceNodes([](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
-            if (surfaceNode != nullptr && surfaceNode->IsOnTheTree() && surfaceNode->IsAppWindow() &&
-                surfaceNode->GetConsumer() != nullptr) {
-                surfaceNode->GetConsumer()->GoBackground();
-            }
-        });
         // trigger global refresh
         SetDirtyFlag();
     }
@@ -640,8 +633,9 @@ void RSMainThread::CalcOcclusion()
                         surface->GetDstRect().height_ > surface->GetBuffer()->GetHeight()) &&
                         surface->GetRenderProperties().GetFrameGravity() != Gravity::RESIZE &&
                         surface->GetRenderProperties().GetAlpha() != opacity;
-            if (surface->GetAbilityBgAlpha() == opacity &&
-                ROSEN_EQ(surface->GetGlobalAlpha(), 1.0f) && !diff) {
+            if ((surface->GetAbilityBgAlpha() == opacity &&
+                ROSEN_EQ(surface->GetGlobalAlpha(), 1.0f) && !diff) ||
+                RSOcclusionConfig::GetInstance().IsDividerBar(surface->GetName())) {
                 curRegion = curSurface.Or(curRegion);
             }
         }
@@ -970,6 +964,11 @@ void RSMainThread::QosStateDump(std::string& dumpString)
 
 void RSMainThread::RenderServiceTreeDump(std::string& dumpString)
 {
+    dumpString.append("Animating Node: [");
+    for (auto& [nodeId, _]: context_.animatingNodeList_) {
+        dumpString.append(std::to_string(nodeId) + ", ");
+    }
+    dumpString.append("];\n");
     const std::shared_ptr<RSBaseRenderNode> rootNode = context_.GetGlobalRootRenderNode();
     if (rootNode == nullptr) {
         dumpString.append("rootNode is null\n");
@@ -1070,10 +1069,7 @@ void RSMainThread::ClearDisplayBuffer()
             continue;
         }
         if (displayNode->GetRSSurface() != nullptr) {
-            displayNode->GetRSSurface()->ClearBuffer();
-        }
-        if (displayNode->GetConsumer() != nullptr) {
-            displayNode->GetConsumer()->GoBackground();
+            displayNode->GetRSSurface()->ResetBufferAge();
         }
     }
 }

@@ -183,6 +183,11 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
     node.ApplyModifiers();
     bool dirtyFlag = dirtyFlag_;
     auto nodeParent = node.GetParent().lock();
+    while (nodeParent && nodeParent->ReinterpretCastTo<RSSurfaceRenderNode>() &&
+        nodeParent->ReinterpretCastTo<RSSurfaceRenderNode>()->GetSurfaceNodeType() ==
+        RSSurfaceNodeType::SELF_DRAWING_NODE) {
+        nodeParent = nodeParent->GetParent().lock();
+    }
     std::shared_ptr<RSRenderNode> rsParent = nullptr;
     if (nodeParent != nullptr) {
         rsParent = nodeParent->ReinterpretCastTo<RSRenderNode>();
@@ -381,9 +386,16 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode: failed to create canvas");
             return;
         }
+        canvas_->save();
 #ifdef RS_ENABLE_EGLQUERYSURFACE
-        if (isOpDropped_) {
-            canvas_->clipRegion(region);
+        if (isOpDropped_ && !region.isEmpty()) {
+            if (region.isRect()) {
+                canvas_->clipRegion(region);
+            } else {
+                SkPath dirtyPath;
+                region.getBoundaryPath(&dirtyPath);
+                canvas_->clipPath(dirtyPath, true);
+            }
         }
 #endif
         auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(node.GetRenderProperties().GetBoundsGeometry());
@@ -409,6 +421,8 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             RSSubMainThread::Instance().tastManager_.MergeTextures(renderFrame->GetFrame()->GetCanvas());
         }
 #endif
+        canvas_->restore();
+
         // the following code makes DirtyRegion visible, enable this method by turning on the dirtyregiondebug property
         for (auto [id, surfaceNode] : dirtySurfaceNodeMap_) {
             if (surfaceNode->GetDirtyManager()) {
@@ -651,9 +665,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 
     canvas_->concat(geoPtr->GetMatrix());
 
-    const RectF absBounds = {
-        node.GetTotalMatrix().getTranslateX(), node.GetTotalMatrix().getTranslateY(),
-        property.GetBoundsWidth(), property.GetBoundsHeight()};
+    const RectF absBounds = {0, 0, property.GetBoundsWidth(), property.GetBoundsHeight()};
     RRect absClipRRect = RRect(absBounds, property.GetCornerRadius());
     RSPropertiesPainter::DrawShadow(property, *canvas_, &absClipRRect);
 
