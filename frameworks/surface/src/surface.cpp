@@ -29,7 +29,6 @@ sptr<Surface> Surface::CreateSurfaceAsConsumer(std::string name, bool isShared)
     GSError ret = surf->Init();
     if (ret != GSERROR_OK) {
         BLOGE("Failure, Reason: consumer surf init failed");
-        BLOGE("test");
         return nullptr;
     }
     return surf;
