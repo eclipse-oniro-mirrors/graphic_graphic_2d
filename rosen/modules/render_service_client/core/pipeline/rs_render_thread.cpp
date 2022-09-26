@@ -26,6 +26,7 @@
 #include "frame_collector.h"
 #include "delegate/rs_functional_delegate.h"
 #include "overdraw/rs_overdraw_controller.h"
+#include "pipeline/rs_draw_cmd_list.h"
 #include "pipeline/rs_frame_report.h"
 #include "pipeline/rs_node_map.h"
 #include "pipeline/rs_render_node_map.h"
@@ -61,7 +62,7 @@ namespace OHOS {
 namespace Rosen {
 namespace {
     static constexpr uint64_t REFRESH_PERIOD = 16666667;
-    static constexpr uint64_t REFRESH_FREQ_IN_UNI_RENDER = 3600;
+    static constexpr uint64_t REFRESH_FREQ_IN_UNI_RENDER = 1200;
 }
 class HighContrastObserver : public AccessibilityConfigObserver {
 public:
@@ -231,6 +232,7 @@ void RSRenderThread::RenderLoop()
         needRender_ = std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient())
             ->QueryIfRTNeedRender();
         RSSystemProperties::SetRenderMode(!needRender_);
+        DrawCmdListManager::Instance().MarkForceClear(!needRender_);
     }
     CreateAndInitRenderContextIfNeed();
     std::string name = "RSRenderThread_" + std::to_string(GetRealPid());
@@ -300,6 +302,7 @@ void RSRenderThread::UpdateRenderMode(bool needRender)
                 needRender_ = needRender;
                 MarkNeedUpdateSurfaceNode();
                 CreateAndInitRenderContextIfNeed();
+                DrawCmdListManager::Instance().MarkForceClear(!needRender_);
             }
         }, AppExecFwk::EventQueue::Priority::IMMEDIATE);
     }
@@ -311,6 +314,7 @@ void RSRenderThread::NotifyClearBufferCache()
         handler_->PostTask([this]() {
             needRender_ = false;
             ClearBufferCache();
+            DrawCmdListManager::Instance().MarkForceClear(!needRender_);
         }, AppExecFwk::EventQueue::Priority::IMMEDIATE);
     }
 }
