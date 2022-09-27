@@ -57,6 +57,7 @@ void SkiaPaint::BrushToSkPaint(const Brush& brush, SkPaint& paint) const
 
     paint.setAlpha(brush.GetAlpha());
     paint.setBlendMode(static_cast<SkBlendMode>(brush.GetBlendMode()));
+    paint.setAntiAlias(brush.IsAntiAlias());
 
     auto s = brush.GetShaderEffect();
     if (s != nullptr) {
