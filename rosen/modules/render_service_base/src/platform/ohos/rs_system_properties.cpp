@@ -112,5 +112,14 @@ uint64_t RSSystemProperties::GetDumpSurfaceId()
 {
     return std::atoi((system::GetParameter("rosen.dumpsurfaceid", "0")).c_str());
 }
+
+void RSSystemProperties::SetDrawTextAsBitmap(bool flag)
+{
+    isDrawTextAsBitmap_ = flag;
+}
+bool RSSystemProperties::GetDrawTextAsBitmap()
+{
+    return isDrawTextAsBitmap_;
+}
 } // namespace Rosen
 } // namespace OHOS
