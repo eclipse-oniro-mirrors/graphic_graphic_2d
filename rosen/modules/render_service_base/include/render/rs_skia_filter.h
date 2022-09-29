@@ -15,6 +15,7 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_RENDER_SKIA_RS_SKIA_FILTER_H
 #define RENDER_SERVICE_CLIENT_CORE_RENDER_SKIA_RS_SKIA_FILTER_H
 
+#include "include/core/SkCanvas.h"
 #include "include/core/SkImageFilter.h"
 #include "include/core/SkPaint.h"
 
