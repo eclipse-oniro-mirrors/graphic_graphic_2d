@@ -100,8 +100,9 @@ NativeValue* RSWindowAnimationUtils::CreateJsWindowAnimationFinishedCallback(
     }
 
     NativeFinalize finalizeCallback = [](NativeEngine* engine, void* data, void* hint) {
-        auto finishedCallback = sptr<RSIWindowAnimationFinishedCallback>(static_cast<RSIWindowAnimationFinishedCallback*>(data));
-        finishedCallback.GetRefPtr()->IncStrongRef(finishedCallback.GetRefPtr());
+        auto finishedCallback =
+            sptr<RSIWindowAnimationFinishedCallback>(static_cast<RSIWindowAnimationFinishedCallback*>(data));
+        finishedCallback.GetRefPtr()->DecStrongRef(finishedCallback.GetRefPtr());
     };
     finishedCallback.GetRefPtr()->IncStrongRef(finishedCallback.GetRefPtr());
     object->SetNativePointer(finishedCallback.GetRefPtr(), finalizeCallback, nullptr);

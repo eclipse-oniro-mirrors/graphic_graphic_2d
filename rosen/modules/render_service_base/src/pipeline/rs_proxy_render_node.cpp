@@ -31,6 +31,7 @@ RSProxyRenderNode::~RSProxyRenderNode()
 {
     ROSEN_LOGD("RSProxyRenderNode::~RSProxyRenderNode, id:%" PRIu64 " target:%" PRIu64, GetId(), targetId_);
 
+    // if target do not exist (in RT) or already destroyed(in RS), skip remaining operations
     auto target = target_.lock();
     if (target == nullptr) {
         return;
