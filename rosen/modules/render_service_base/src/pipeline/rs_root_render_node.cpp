@@ -34,20 +34,20 @@ void RSRootRenderNode::AttachRSSurfaceNode(NodeId surfaceNodeId)
     surfaceNodeId_ = surfaceNodeId;
 }
 
-int32_t RSRootRenderNode::GetSurfaceWidth() const
+int32_t RSRootRenderNode::GetSuggestedBufferWidth() const
 {
-    return surfaceWidth_;
+    return suggestedBufferWidth_;
 }
 
-int32_t RSRootRenderNode::GetSurfaceHeight() const
+int32_t RSRootRenderNode::GetSuggestedBufferHeight() const
 {
-    return surfaceHeight_;
+    return suggestedBufferHeight_;
 }
 
-void RSRootRenderNode::UpdateSurfaceSize(int32_t width, int32_t height)
+void RSRootRenderNode::UpdateSuggestedBufferSize(int32_t width, int32_t height)
 {
-    surfaceHeight_ = height;
-    surfaceWidth_ = width;
+    suggestedBufferHeight_ = height;
+    suggestedBufferWidth_ = width;
 }
 
 std::shared_ptr<RSSurface> RSRootRenderNode::GetSurface()
