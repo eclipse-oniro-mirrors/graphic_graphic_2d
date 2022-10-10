@@ -347,7 +347,7 @@ int32_t SurfaceBufferImpl::GetFormat() const
     return handle_->format;
 }
 
-int64_t SurfaceBufferImpl::GetUsage() const
+uint64_t SurfaceBufferImpl::GetUsage() const
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (handle_ == nullptr) {
@@ -479,7 +479,7 @@ void SurfaceBufferImpl::SetEglData(const sptr<EglData>& data)
 }
 
 GSError SurfaceBufferImpl::CheckBufferConfig(int32_t width, int32_t height,
-                                             int32_t format, int32_t usage)
+                                             int32_t format, uint64_t usage)
 {
     if (width <= 0 || height <= 0) {
         BLOGE("width or height is greater than 0, now is w %{public}d h %{public}d", width, height);
