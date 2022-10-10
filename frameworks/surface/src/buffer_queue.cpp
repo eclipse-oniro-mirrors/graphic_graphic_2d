@@ -435,7 +435,7 @@ GSError BufferQueue::DoFlushBuffer(uint32_t sequence, const sptr<BufferExtraData
     bufferQueueCache_[sequence].fence = fence;
     bufferQueueCache_[sequence].damage = config.damage;
 
-    uint32_t usage = static_cast<uint32_t>(bufferQueueCache_[sequence].config.usage);
+    uint64_t usage = static_cast<uint32_t>(bufferQueueCache_[sequence].config.usage);
     if (usage & BUFFER_USAGE_CPU_WRITE) {
         // api flush
         auto sret = bufferQueueCache_[sequence].buffer->FlushCache();
