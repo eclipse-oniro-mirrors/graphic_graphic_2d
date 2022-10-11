@@ -169,12 +169,7 @@ sk_sp<SkSurface> RSSurfaceCaptureTask::CreateSurface(const std::unique_ptr<Media
     SkImageInfo info = SkImageInfo::Make(pixelmap->GetWidth(), pixelmap->GetHeight(),
         kRGBA_8888_SkColorType, kPremul_SkAlphaType);
 #if (defined RS_ENABLE_GL) && (defined RS_ENABLE_EGLIMAGE)
-    auto renderEngine = RSMainThread::Instance()->GetRenderEngine();
-    if (renderEngine == nullptr) {
-        RS_LOGE("RSSurfaceCaptureTask::CreateSurface: renderEngine is nullptr");
-        return nullptr;
-    }
-    auto renderContext = renderEngine->GetRenderContext();
+    auto renderContext = RSBaseRenderEngine::GetRenderContext();
     if (renderContext == nullptr) {
         RS_LOGE("RSSurfaceCaptureTask::CreateSurface: renderContext is nullptr");
         return nullptr;
@@ -286,7 +281,7 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWith
     canvas_->restore();
     if (!node.IsAppWindow() && node.GetBuffer() != nullptr) {
         auto params = RSUniRenderUtil::CreateBufferDrawParam(node, false);
-        renderEngine_->DrawUniSurfaceNodeWithParams(*canvas_, node, params);
+        renderEngine_->DrawSurfaceNodeWithParams(*canvas_, node, params);
     }
     if (isSelfDrawingSurface) {
         auto filter = std::static_pointer_cast<RSSkiaFilter>(property.GetFilter());
@@ -360,7 +355,7 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::CaptureSurfaceInDisplayWithU
 
     if (!node.IsAppWindow() && node.GetBuffer() != nullptr) {
         auto params = RSUniRenderUtil::CreateBufferDrawParam(node, false);
-        renderEngine_->DrawUniSurfaceNodeWithParams(*canvas_, node, params);
+        renderEngine_->DrawSurfaceNodeWithParams(*canvas_, node, params);
     }
 
     if (isSelfDrawingSurface) {

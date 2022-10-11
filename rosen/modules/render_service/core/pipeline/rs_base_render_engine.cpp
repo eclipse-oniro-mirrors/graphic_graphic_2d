@@ -17,7 +17,6 @@
 
 #include "rs_divided_render_util.h"
 #include "rs_trace.h"
-#include "string_utils.h"
 
 #include "pipeline/rs_uni_render_judgement.h"
 #include "platform/common/rs_log.h"
@@ -110,10 +109,8 @@ sk_sp<SkImage> RSBaseRenderEngine::CreateEglImageFromBuffer(
 #endif // RS_ENABLE_EGLIMAGE
 }
 
-std::unique_ptr<RSRenderFrame> RSBaseRenderEngine::RequestFrame(
-    const std::shared_ptr<RSSurfaceOhos>& rsSurface,
-    const BufferRequestConfig& config,
-    bool forceCPU)
+std::unique_ptr<RSRenderFrame> RSBaseRenderEngine::RequestFrame(const std::shared_ptr<RSSurfaceOhos>& rsSurface,
+    const BufferRequestConfig& config, bool forceCPU)
 {
     RS_TRACE_NAME("RSBaseRenderEngine::RequestFrame(RSSurface)");
     if (rsSurface == nullptr) {
@@ -147,10 +144,8 @@ std::unique_ptr<RSRenderFrame> RSBaseRenderEngine::RequestFrame(
     return std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
 }
 
-std::unique_ptr<RSRenderFrame> RSBaseRenderEngine::RequestFrame(
-    const sptr<Surface>& targetSurface,
-    const BufferRequestConfig& config,
-    bool forceCPU)
+std::unique_ptr<RSRenderFrame> RSBaseRenderEngine::RequestFrame(const sptr<Surface>& targetSurface,
+    const BufferRequestConfig& config, bool forceCPU)
 {
     RS_TRACE_NAME("RSBaseRenderEngine::RequestFrame(Surface)");
     if (targetSurface == nullptr) {
@@ -172,73 +167,6 @@ std::unique_ptr<RSRenderFrame> RSBaseRenderEngine::RequestFrame(
     }
 
     return RequestFrame(rsSurfaces_.at(surfaceId), config, forceCPU);
-}
-
-void RSBaseRenderEngine::DrawLayers(
-    RSPaintFilterCanvas& canvas,
-    const std::vector<LayerInfoPtr>& layers,
-    bool forceCPU,
-    float mirrorAdaptiveCoefficient)
-{
-    for (const auto& layer : layers) {
-        if (layer == nullptr) {
-            continue;
-        }
-        if (layer->GetCompositionType() == CompositionType::COMPOSITION_DEVICE ||
-            layer->GetCompositionType() == CompositionType::COMPOSITION_DEVICE_CLEAR) {
-            continue;
-        }
-        auto nodePtr = static_cast<RSBaseRenderNode*>(layer->GetLayerAdditionalInfo());
-        if (nodePtr == nullptr) {
-            RS_LOGE("RSBaseRenderEngine::DrawLayers: node is nullptr!");
-            continue;
-        }
-
-        auto saveCount = canvas.getSaveCount();
-        if (nodePtr->IsInstanceOf<RSSurfaceRenderNode>()) {
-            RSSurfaceRenderNode& node = *(static_cast<RSSurfaceRenderNode*>(nodePtr));
-            if (layer->GetCompositionType() == CompositionType::COMPOSITION_CLIENT_CLEAR ||
-            layer->GetCompositionType() == CompositionType::COMPOSITION_TUNNEL) {
-                ClipHoleForLayer(canvas, node);
-                canvas.restoreToCount(saveCount);
-                continue;
-            }
-            RS_LOGD("RSBaseRenderEngine::DrawLayers dstRect[%d %d %d %d] SrcRect[%d %d %d %d]",
-                layer->GetLayerSize().x, layer->GetLayerSize().y,
-                layer->GetLayerSize().w, layer->GetLayerSize().h,
-                layer->GetDirtyRegion().x, layer->GetDirtyRegion().y,
-                layer->GetDirtyRegion().w, layer->GetDirtyRegion().h);
-            DrawSurfaceNode(canvas, node, mirrorAdaptiveCoefficient, forceCPU);
-        } else if (nodePtr->IsInstanceOf<RSDisplayRenderNode>()) {
-            // In uniRender mode, maybe need to handle displayNode.
-            RSDisplayRenderNode& node = *(static_cast<RSDisplayRenderNode*>(nodePtr));
-            DrawDisplayNode(canvas, node, forceCPU);
-        } else {
-            // Probably never reach this branch.
-            RS_LOGE("RSBaseRenderEngine::DrawLayers: unexpected node type!");
-            continue;
-        }
-        canvas.restoreToCount(saveCount);
-    }
-}
-
-void RSBaseRenderEngine::ClipHoleForLayer(
-    RSPaintFilterCanvas& canvas,
-    RSSurfaceRenderNode& node)
-{
-    BufferDrawParam params = RSBaseRenderUtil::CreateBufferDrawParam(node, false, true);
-
-    std::string traceInfo;
-    AppendFormat(traceInfo, "Node name:%s ClipHole[%d %d %d %d]", node.GetName().c_str(),
-        params.clipRect.x(), params.clipRect.y(), params.clipRect.width(), params.clipRect.height());
-    RS_LOGD("RsDebug RSBaseRenderEngine::Redraw layer composition ClipHoleForLayer, %s.", traceInfo.c_str());
-    RS_TRACE_NAME(traceInfo);
-
-    canvas.save();
-    canvas.clipRect(params.clipRect);
-    canvas.clear(SK_ColorTRANSPARENT);
-    canvas.restore();
-    return;
 }
 
 void RSBaseRenderEngine::SetColorFilterMode(ColorFilterMode mode)
@@ -295,20 +223,6 @@ void RSBaseRenderEngine::SetColorFilterMode(ColorFilterMode mode)
     }
 }
 
-void RSBaseRenderEngine::SetColorFilterModeToPaint(SkPaint& paint)
-{
-    ColorFilterMode mode = static_cast<ColorFilterMode>(RSSystemProperties::GetCorrectionMode());
-    if (RSBaseRenderUtil::IsColorFilterModeValid(mode)) {
-        colorFilterMode_ = mode;
-    }
-
-    // for test automation
-    if (colorFilterMode_ != ColorFilterMode::COLOR_FILTER_END) {
-        RS_LOGD("RsDebug RSBaseRenderEngine::SetColorFilterModeToPaint mode:%d", static_cast<int32_t>(colorFilterMode_));
-    }
-    RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode_, paint);
-}
-
 void RSBaseRenderEngine::DrawBuffer(RSPaintFilterCanvas& canvas, BufferDrawParam& params)
 {
     SkBitmap bitmap;
@@ -333,150 +247,17 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
     canvas.drawImageRect(image, params.srcRect, params.dstRect, &(params.paint));
 }
 
-void RSBaseRenderEngine::DrawWithParams(RSPaintFilterCanvas& canvas, BufferDrawParam& params,
-    PreProcessFunc preProcess, PostProcessFunc postProcess)
-{
-    if (params.setColorFilter) {
-        SetColorFilterModeToPaint(params.paint);
-    }
-
-    canvas.save();
-
-    RSBaseRenderUtil::SetPropertiesForCanvas(canvas, params);
-
-    if (preProcess != nullptr) {
-        preProcess(canvas, params);
-    }
-
-    if (params.useCPU) {
-        RSBaseRenderEngine::DrawBuffer(canvas, params);
-    } else {
-        RSBaseRenderEngine::DrawImage(canvas, params);
-    }
-
-    if (postProcess != nullptr) {
-        postProcess(canvas, params);
-    }
-
-    canvas.restore();
-}
-
-void RSBaseRenderEngine::RSSurfaceNodeCommonPreProcess(
-    RSSurfaceRenderNode& node,
-    RSPaintFilterCanvas& canvas,
-    BufferDrawParam& params)
-{
-    const auto& property = node.GetRenderProperties();
-
-    // draw mask.
-    RectF maskBounds(0, 0, params.dstRect.width(), params.dstRect.height());
-    RSPropertiesPainter::DrawMask(
-        node.GetRenderProperties(), canvas, RSPropertiesPainter::Rect2SkRect(maskBounds));
-
-    // draw background filter (should execute this filter before drawing buffer/image).
-    auto filter = std::static_pointer_cast<RSSkiaFilter>(property.GetBackgroundFilter());
-    if (filter != nullptr) {
-        auto skRectPtr = std::make_unique<SkRect>();
-        skRectPtr->setXYWH(0, 0, params.srcRect.width(), params.srcRect.height());
-        RSPropertiesPainter::DrawFilter(property, canvas, filter, skRectPtr, canvas.GetSurface());
-    }
-}
-
-void RSBaseRenderEngine::RSSurfaceNodeCommonPostProcess(
-    RSSurfaceRenderNode& node,
-    RSPaintFilterCanvas& canvas,
-    BufferDrawParam& params)
-{
-    const auto& property = node.GetRenderProperties();
-
-    // draw preprocess filter (should execute this filter after drawing buffer/image).
-    auto filter = std::static_pointer_cast<RSSkiaFilter>(property.GetFilter());
-    if (filter != nullptr) {
-        auto skRectPtr = std::make_unique<SkRect>();
-        skRectPtr->setXYWH(0, 0, params.srcRect.width(), params.srcRect.height());
-        RSPropertiesPainter::DrawFilter(property, canvas, filter, skRectPtr, canvas.GetSurface());
-    }
-}
-
-void RSBaseRenderEngine::DrawSurfaceNodeWithParams(
-    RSPaintFilterCanvas& canvas,
-    RSSurfaceRenderNode& node,
-    BufferDrawParam& params,
-    PreProcessFunc preProcess,
-    PostProcessFunc postProcess)
-{
-    if (!params.useCPU) {
-        RegisterDeleteBufferListener(node.GetConsumer());
-    }
-
-    auto nodePreProcessFunc = [&preProcess, &node](RSPaintFilterCanvas& canvas, BufferDrawParam& params) {
-        // call the preprocess func passed in first.
-        if (preProcess != nullptr) {
-            preProcess(canvas, params);
-        }
-
-        // call RSSurfaceNode's common preprocess func.
-        RSBaseRenderEngine::RSSurfaceNodeCommonPreProcess(node, canvas, params);
-    };
-
-    auto nodePostProcessFunc = [&postProcess, &node](RSPaintFilterCanvas& canvas, BufferDrawParam& params) {
-        // call the postProcess func passed in first.
-        if (postProcess != nullptr) {
-            postProcess(canvas, params);
-        }
-
-        // call RSSurfaceNode's common postProcess func.
-        RSBaseRenderEngine::RSSurfaceNodeCommonPostProcess(node, canvas, params);
-    };
-
-    // draw shadow(should before canvas.clipRect in DrawWithParams()).
-    const auto& property = node.GetRenderProperties();
-    RSPropertiesPainter::DrawShadow(property, canvas, &params.clipRRect);
-
-    DrawWithParams(canvas, params, nodePreProcessFunc, nodePostProcessFunc);
-}
-
-void RSBaseRenderEngine::DrawUniSurfaceNodeWithParams(RSPaintFilterCanvas& canvas, RSSurfaceRenderNode& node,
-    BufferDrawParam& params)
-{
-    canvas.save();
-    canvas.concat(params.matrix);
-    if (!params.useCPU) {
-        RegisterDeleteBufferListener(node.GetConsumer());
-        RSBaseRenderEngine::DrawImage(canvas, params);
-    } else {
-        RSBaseRenderEngine::DrawBuffer(canvas, params);
-    }
-    canvas.restore();
-}
-
 void RSBaseRenderEngine::RegisterDeleteBufferListener(const sptr<Surface>& consumer)
 {
 #ifdef RS_ENABLE_EGLIMAGE
-    auto regUnMapEglImageFunc = [this](int32_t bufferId) {
+    auto regUnMapEglImageFunc = [](int32_t bufferId) {
         eglImageManager_->UnMapEglImageFromSurfaceBuffer(bufferId);
     };
     if (consumer == nullptr ||
         (consumer->RegisterDeleteBufferListener(regUnMapEglImageFunc) != GSERROR_OK)) {
-        RS_LOGE("RSBaseRenderEngine::DrawSurfaceNode: failed to register UnMapEglImage callback.");
+        RS_LOGE("RSBaseRenderEngine::RegisterDeleteBufferListener: failed to register UnMapEglImage callback.");
     }
 #endif // #ifdef RS_ENABLE_EGLIMAGE
-}
-
-void RSBaseRenderEngine::DrawSurfaceNode(
-    RSPaintFilterCanvas& canvas,
-    RSSurfaceRenderNode& node,
-    float mirrorAdaptiveCoefficient,
-    bool forceCPU)
-{
-    // prepare BufferDrawParam
-    auto params = RSBaseRenderUtil::CreateBufferDrawParam(node, false); // in display's coordinate.
-    const float adaptiveDstWidth = params.dstRect.width() * mirrorAdaptiveCoefficient;
-    const float adaptiveDstHeight = params.dstRect.height() * mirrorAdaptiveCoefficient;
-    params.dstRect.setWH(adaptiveDstWidth, adaptiveDstHeight);
-    params.useCPU = forceCPU;
-
-    DrawSurfaceNodeWithParams(canvas, node, params);
 }
 
 void RSBaseRenderEngine::ShrinkCachesIfNeeded()
@@ -491,15 +272,6 @@ void RSBaseRenderEngine::ShrinkCachesIfNeeded()
         auto it = rsSurfaces_.begin();
         (void)rsSurfaces_.erase(it);
     }
-}
-
-void RSBaseRenderEngine::DrawDisplayNode(
-    RSPaintFilterCanvas& canvas,
-    RSDisplayRenderNode& node,
-    bool forceCPU)
-{
-    // [PLANNING]: In uniRender mode, maybe need to handle displayNode.
-    // it is unexpected in now suitation.
 }
 } // namespace Rosen
 } // namespace OHOS

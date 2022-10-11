@@ -27,8 +27,10 @@ public:
     RSUniRenderEngine(const RSUniRenderEngine&) = delete;
     void operator=(const RSUniRenderEngine&) = delete;
 
-private:
-
+    void DrawSurfaceNodeWithParams(RSPaintFilterCanvas& canvas, RSSurfaceRenderNode& node, BufferDrawParam& params,
+        PreProcessFunc preProcess, PostProcessFunc postProcess) override;
+    void DrawLayers(RSPaintFilterCanvas& canvas, const std::vector<LayerInfoPtr>& layers, bool forceCPU,
+        float mirrorAdaptiveCoefficient) override {}
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -20,11 +20,6 @@
 
 namespace OHOS {
 namespace Rosen {
-//// function that will be called before drawing Buffer / Image.
-//using PreProcessFunc = std::function<void(RSPaintFilterCanvas&, BufferDrawParam&)>;
-//// function that will be called after drawing Buffer / Image.
-//using PostProcessFunc = std::function<void(RSPaintFilterCanvas&, BufferDrawParam&)>;
-
 class RSRenderEngine : public RSBaseRenderEngine {
 public:
     RSRenderEngine() = default;
@@ -32,61 +27,27 @@ public:
     RSRenderEngine(const RSRenderEngine&) = delete;
     void operator=(const RSRenderEngine&) = delete;
 
-//    void DrawSurfaceNodeWithParams(
-//        RSPaintFilterCanvas& canvas,
-//        RSSurfaceRenderNode& node,
-//        BufferDrawParam& params,
-//        PreProcessFunc preProcess = nullptr,
-//        PostProcessFunc postProcess = nullptr);
-//
-//    void DrawLayers(
-//        RSPaintFilterCanvas& canvas,
-//        const std::vector<LayerInfoPtr>& layers,
-//        bool forceCPU = false,
-//        float mirrorAdaptiveCoefficient = 1.0f);
-//
-//    void SetColorFilterMode(ColorFilterMode mode);
-//    ColorFilterMode GetColorFilterMode() const
-//    {
-//        return colorFilterMode_;
-//    }
+    void DrawSurfaceNodeWithParams(RSPaintFilterCanvas& canvas, RSSurfaceRenderNode& node, BufferDrawParam& params,
+        PreProcessFunc preProcess, PostProcessFunc postProcess) override;
+    void DrawLayers(RSPaintFilterCanvas& canvas, const std::vector<LayerInfoPtr>& layers, bool forceCPU,
+        float mirrorAdaptiveCoefficient) override;
 
 private:
-//    void DrawBuffer(RSPaintFilterCanvas& canvas, BufferDrawParam& params);
-//    void DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam& params);
-//    void DrawWithParams(RSPaintFilterCanvas& canvas, BufferDrawParam& params,
-//        PreProcessFunc preProcess = nullptr, PostProcessFunc postProcess = nullptr);
-//
-//    static void RSSurfaceNodeCommonPreProcess(
-//        RSSurfaceRenderNode& node,
-//        RSPaintFilterCanvas& canvas,
-//        BufferDrawParam& params);
-//    static void RSSurfaceNodeCommonPostProcess(
-//        RSSurfaceRenderNode& node,
-//        RSPaintFilterCanvas& canvas,
-//        BufferDrawParam& params);
-//
-//    // This func can only by called in DrawLayers().
-//    void ClipHoleForLayer(
-//        RSPaintFilterCanvas& canvas,
-//        RSSurfaceRenderNode& node);
-//
-//    // This func can only by called in DrawLayers().
-//    void DrawSurfaceNode(
-//        RSPaintFilterCanvas& canvas,
-//        RSSurfaceRenderNode& node,
-//        float mirrorAdaptiveCoefficient = 1.0f,
-//        bool forceCPU = false);
-//
-//    // This func can only by called in DrawLayers().
-//    void DrawDisplayNode(
-//        RSPaintFilterCanvas& canvas,
-//        RSDisplayRenderNode& node,
-//        bool forceCPU = false);
-//
-//    void SetColorFilterModeToPaint(SkPaint& paint);
-//
-//    ColorFilterMode colorFilterMode_ = ColorFilterMode::COLOR_FILTER_END;
+    void DrawWithParams(RSPaintFilterCanvas& canvas, BufferDrawParam& params,
+        PreProcessFunc preProcess = nullptr, PostProcessFunc postProcess = nullptr);
+
+    static void RSSurfaceNodeCommonPreProcess(RSSurfaceRenderNode& node, RSPaintFilterCanvas& canvas,
+        BufferDrawParam& params);
+    static void RSSurfaceNodeCommonPostProcess(RSSurfaceRenderNode& node, RSPaintFilterCanvas& canvas,
+        BufferDrawParam& params);
+
+    // These 3 functions can only be called in DrawLayers().
+    void ClipHoleForLayer(RSPaintFilterCanvas& canvas, RSSurfaceRenderNode& node);
+    void DrawSurfaceNode(RSPaintFilterCanvas& canvas, RSSurfaceRenderNode& node,
+        float mirrorAdaptiveCoefficient = 1.0f, bool forceCPU = false);
+    void DrawDisplayNode(RSPaintFilterCanvas& canvas, RSDisplayRenderNode& node, bool forceCPU = false);
+
+    void SetColorFilterModeToPaint(SkPaint& paint);
 };
 } // namespace Rosen
 } // namespace OHOS

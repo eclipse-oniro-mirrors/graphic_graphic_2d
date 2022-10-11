@@ -89,7 +89,7 @@ public:
 
     const std::shared_ptr<RSBaseRenderEngine>& GetRenderEngine() const
     {
-        return renderEngine_;
+        return IfUseUniVisitor() ? uniRenderEngine_ : renderEngine_;
     }
 
     RSContext& GetContext()
@@ -213,6 +213,7 @@ private:
     uint32_t lastSurfaceCnt_ = 0;
 
     std::shared_ptr<RSBaseRenderEngine> renderEngine_;
+    std::shared_ptr<RSBaseRenderEngine> uniRenderEngine_;
     std::shared_ptr<RSBaseEventDetector> rsCompositionTimeoutDetector_;
     RSEventManager rsEventManager_;
     std::shared_ptr<AccessibilityObserver> accessibilityObserver_;

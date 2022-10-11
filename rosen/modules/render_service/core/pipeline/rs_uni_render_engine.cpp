@@ -14,7 +14,21 @@
  */
 
 #include "pipeline/rs_uni_render_engine.h"
+
 namespace OHOS {
 namespace Rosen {
+void RSUniRenderEngine::DrawSurfaceNodeWithParams(RSPaintFilterCanvas& canvas, RSSurfaceRenderNode& node,
+    BufferDrawParam& params, PreProcessFunc preProcess, PostProcessFunc postProcess)
+{
+    canvas.save();
+    canvas.concat(params.matrix);
+    if (!params.useCPU) {
+        RegisterDeleteBufferListener(node.GetConsumer());
+        DrawImage(canvas, params);
+    } else {
+        DrawBuffer(canvas, params);
+    }
+    canvas.restore();
+}
 } // namespace Rosen
 } // namespace OHOS

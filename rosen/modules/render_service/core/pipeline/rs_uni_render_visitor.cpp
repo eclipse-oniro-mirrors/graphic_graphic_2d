@@ -245,7 +245,7 @@ void RSUniRenderVisitor::PrepareProxyRenderNode(RSProxyRenderNode& node)
     if (parentSurfaceNodeMatrix_.invert(&invertMatrix)) {
         contextMatrix.preConcat(invertMatrix);
     } else {
-        ROSEN_LOGE("RSUniRenderVisitor::ProcessSurfaceRenderNode, invertMatrix failed");
+        ROSEN_LOGE("RSUniRenderVisitor::PrepareProxyRenderNode, invertMatrix failed");
     }
     node.SetContextMatrix(contextMatrix);
     node.SetContextAlpha(curAlpha_);
@@ -797,7 +797,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         node.NotifyRTBufferAvailable();
         node.SetGlobalAlpha(1.0f);
         auto params = RSUniRenderUtil::CreateBufferDrawParam(node, false);
-        renderEngine_->DrawUniSurfaceNodeWithParams(*canvas_, node, params);
+        renderEngine_->DrawSurfaceNodeWithParams(*canvas_, node, params);
     }
 
     if (isSelfDrawingSurface) {

@@ -111,93 +111,52 @@ public:
     // We should remove this function in someday.
     static bool NeedForceCPU(const std::vector<LayerInfoPtr>& layers);
 
-    sk_sp<SkImage> CreateEglImageFromBuffer(const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence);
-
     // There would only one user(thread) to renderFrame(request frame) at one time.
     // for framebuffer surface
-    std::unique_ptr<RSRenderFrame> RequestFrame(
-        const sptr<Surface>& rsSurface,
-        const BufferRequestConfig& config,
-        bool forceCPU = false);
+    static std::unique_ptr<RSRenderFrame> RequestFrame(const sptr<Surface>& rsSurface,
+        const BufferRequestConfig& config, bool forceCPU = false);
     // There would only one user(thread) to renderFrame(request frame) at one time.
-    std::unique_ptr<RSRenderFrame> RequestFrame(
-        const std::shared_ptr<RSSurfaceOhos>& rsSurface,
-        const BufferRequestConfig& config,
-        bool forceCPU = false);
+    static std::unique_ptr<RSRenderFrame> RequestFrame(const std::shared_ptr<RSSurfaceOhos>& rsSurface,
+        const BufferRequestConfig& config, bool forceCPU = false);
 
-    void DrawSurfaceNodeWithParams(
-        RSPaintFilterCanvas& canvas,
-        RSSurfaceRenderNode& node,
-        BufferDrawParam& params,
-        PreProcessFunc preProcess = nullptr,
-        PostProcessFunc postProcess = nullptr);
+    virtual void DrawSurfaceNodeWithParams(RSPaintFilterCanvas& canvas, RSSurfaceRenderNode& node,
+        BufferDrawParam& params, PreProcessFunc preProcess = nullptr, PostProcessFunc postProcess = nullptr) = 0;
 
-    void DrawUniSurfaceNodeWithParams(RSPaintFilterCanvas& canvas, RSSurfaceRenderNode& node, BufferDrawParam& params);
+    virtual void DrawLayers(RSPaintFilterCanvas& canvas, const std::vector<LayerInfoPtr>& layers, bool forceCPU = false,
+        float mirrorAdaptiveCoefficient = 1.0f) = 0;
 
-    void DrawLayers(
-        RSPaintFilterCanvas& canvas,
-        const std::vector<LayerInfoPtr>& layers,
-        bool forceCPU = false,
-        float mirrorAdaptiveCoefficient = 1.0f);
-
-    void ShrinkCachesIfNeeded();
-    void SetColorFilterMode(ColorFilterMode mode);
-    ColorFilterMode GetColorFilterMode() const
+    static void ShrinkCachesIfNeeded();
+    static void SetColorFilterMode(ColorFilterMode mode);
+    static ColorFilterMode GetColorFilterMode()
     {
         return colorFilterMode_;
     }
-    void SetHighContrast(bool enabled)
+    static void SetHighContrast(bool enabled)
     {
         isHighContrastEnabled_  = enabled;
     }
-    bool isHighContrastEnabled() const
+    static bool isHighContrastEnabled()
     {
         return isHighContrastEnabled_;
     }
 #ifdef RS_ENABLE_GL
-    const std::shared_ptr<RenderContext>& GetRenderContext() const
+    static const std::shared_ptr<RenderContext>& GetRenderContext()
     {
         return renderContext_;
     }
 #endif // RS_ENABLE_GL
+protected:
+    static void RegisterDeleteBufferListener(const sptr<Surface>& consumer);
+    static void DrawBuffer(RSPaintFilterCanvas& canvas, BufferDrawParam& params);
+    static void DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam& params);
+
+    static inline ColorFilterMode colorFilterMode_ = ColorFilterMode::COLOR_FILTER_END;
+
 private:
-    void DrawBuffer(RSPaintFilterCanvas& canvas, BufferDrawParam& params);
-    void DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam& params);
-    void DrawWithParams(RSPaintFilterCanvas& canvas, BufferDrawParam& params,
-        PreProcessFunc preProcess = nullptr, PostProcessFunc postProcess = nullptr);
-    void RegisterDeleteBufferListener(const sptr<Surface>& consumer);
+    static sk_sp<SkImage> CreateEglImageFromBuffer(const sptr<SurfaceBuffer>& buffer,
+        const sptr<SyncFence>& acquireFence);
 
-    static void RSSurfaceNodeCommonPreProcess(
-        RSSurfaceRenderNode& node,
-        RSPaintFilterCanvas& canvas,
-        BufferDrawParam& params);
-    static void RSSurfaceNodeCommonPostProcess(
-        RSSurfaceRenderNode& node,
-        RSPaintFilterCanvas& canvas,
-        BufferDrawParam& params);
-
-    // This func can only by called in DrawLayers().
-    void ClipHoleForLayer(
-        RSPaintFilterCanvas& canvas,
-        RSSurfaceRenderNode& node);
-
-    // This func can only by called in DrawLayers().
-    void DrawSurfaceNode(
-        RSPaintFilterCanvas& canvas,
-        RSSurfaceRenderNode& node,
-        float mirrorAdaptiveCoefficient = 1.0f,
-        bool forceCPU = false);
-
-    // This func can only by called in DrawLayers().
-    void DrawDisplayNode(
-        RSPaintFilterCanvas& canvas,
-        RSDisplayRenderNode& node,
-        bool forceCPU = false);
-
-    void SetColorFilterModeToPaint(SkPaint& paint);
-
-    ColorFilterMode colorFilterMode_ = ColorFilterMode::COLOR_FILTER_END;
-    std::atomic_bool isHighContrastEnabled_ = false;
+    static inline std::atomic_bool isHighContrastEnabled_ = false;
 
 #ifdef RS_ENABLE_GL
     static inline std::shared_ptr<RenderContext> renderContext_ = nullptr;
@@ -210,7 +169,7 @@ private:
     // RSSurfaces for framebuffer surfaces.
     static constexpr size_t MAX_RS_SURFACE_SIZE = 32; // used for rsSurfaces_.
     using SurfaceId = uint64_t;
-    std::unordered_map<SurfaceId, std::shared_ptr<RSSurfaceOhos>> rsSurfaces_;
+    static inline std::unordered_map<SurfaceId, std::shared_ptr<RSSurfaceOhos>> rsSurfaces_;
 };
 } // namespace Rosen
 } // namespace OHOS
