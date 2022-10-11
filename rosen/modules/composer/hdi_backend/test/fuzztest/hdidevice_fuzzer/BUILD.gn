@@ -17,14 +17,15 @@ import("//build/test.gni")
 module_output_path = "graphic_standard/composer"
 
 ##############################fuzztest##########################################
-ohos_fuzztest("HdiOutputFuzzTest") {
-  fuzz_config_file = "//foundation/graphic/graphic_2d/rosen/modules/composer/hdi_backend/test/fuzztest/hdioutput_fuzzer"
+ohos_fuzztest("HdiDeviceFuzzTest") {
+  fuzz_config_file = "//foundation/graphic/graphic_2d/rosen/modules/composer/hdi_backend/test/fuzztest/hdidevice_fuzzer"
   module_out_path = module_output_path
 
   include_dirs = [
     "//foundation/graphic/graphic_2d/frameworks/surface/include",
     "//foundation/graphic/graphic_2d/rosen/modules/composer/hdi_backend/include",
     "//foundation/graphic/graphic_2d/interfaces/inner_api/surface",
+    "//foundation/communication/ipc/interfaces/innerkits/ipc_core/include",
   ]
   cflags = [
     "-g",
@@ -32,7 +33,7 @@ ohos_fuzztest("HdiOutputFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
-  sources = [ "hdioutput_fuzzer.cpp" ]
+  sources = [ "hdidevice_fuzzer.cpp" ]
   deps = [
     "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
     "//foundation/graphic/graphic_2d:libsurface",
@@ -47,7 +48,7 @@ group("fuzztest") {
   deps = []
   deps += [
     # deps file
-    ":HdiOutputFuzzTest",
+    ":HdiDeviceFuzzTest",
   ]
 }
 ###############################################################################

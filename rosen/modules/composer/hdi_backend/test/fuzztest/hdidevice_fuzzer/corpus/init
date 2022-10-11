@@ -11,14 +11,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-group("fuzztest") {
-  testonly = true
-
-  deps = [
-    "hdibackend_fuzzer:fuzztest",
-    "hdidevice_fuzzer:fuzztest",
-    "hdilayer_fuzzer:fuzztest",
-    "hdioutput_fuzzer:fuzztest",
-    "hdiscreen_fuzzer:fuzztest",
-  ]
-}
+FUZZ
