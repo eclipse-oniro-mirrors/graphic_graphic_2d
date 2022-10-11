@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-#include "pipeline/rs_render_engine.h"
-
+#include "pipeline/rs_uni_render_engine.h"
 namespace OHOS {
 namespace Rosen {
 } // namespace Rosen

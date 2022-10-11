@@ -13,9 +13,23 @@
  * limitations under the License.
  */
 
-#include "pipeline/rs_render_engine.h"
+#ifndef RS_CORE_PIPELINE_UNI_RENDER_ENGINE_H
+#define RS_CORE_PIPELINE_UNI_RENDER_ENGINE_H
+
+#include "pipeline/rs_base_render_engine.h"
 
 namespace OHOS {
 namespace Rosen {
+class RSUniRenderEngine : public RSBaseRenderEngine {
+public:
+    RSUniRenderEngine() = default;
+    ~RSUniRenderEngine() noexcept = default;
+    RSUniRenderEngine(const RSUniRenderEngine&) = delete;
+    void operator=(const RSUniRenderEngine&) = delete;
+
+private:
+
+};
 } // namespace Rosen
 } // namespace OHOS
+#endif // RS_CORE_PIPELINE_UNI_RENDER_ENGINE_H

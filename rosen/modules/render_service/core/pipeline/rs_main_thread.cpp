@@ -163,7 +163,8 @@ void RSMainThread::Init()
     rsVSyncDistributor_->AddConnection(conn);
     receiver_ = std::make_shared<VSyncReceiver>(conn, handler_);
     receiver_->Init();
-    renderEngine_ = std::make_shared<RSRenderEngine>();
+    renderEngine_ = std::make_shared<RSBaseRenderEngine>();
+    renderEngine_->Init();
 #ifdef RS_ENABLE_GL
     if (renderEngine_) {
         int cacheLimitsTimes = 2; // double skia Resource Cache Limits
