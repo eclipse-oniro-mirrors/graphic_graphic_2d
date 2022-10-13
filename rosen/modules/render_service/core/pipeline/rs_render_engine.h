@@ -41,11 +41,10 @@ private:
     static void RSSurfaceNodeCommonPostProcess(RSSurfaceRenderNode& node, RSPaintFilterCanvas& canvas,
         BufferDrawParam& params);
 
-    // These 3 functions can only be called in DrawLayers().
+    // These 2 functions can only be called in DrawLayers().
     void ClipHoleForLayer(RSPaintFilterCanvas& canvas, RSSurfaceRenderNode& node);
     void DrawSurfaceNode(RSPaintFilterCanvas& canvas, RSSurfaceRenderNode& node,
         float mirrorAdaptiveCoefficient = 1.0f, bool forceCPU = false);
-    void DrawDisplayNode(RSPaintFilterCanvas& canvas, RSDisplayRenderNode& node, bool forceCPU = false);
 
     void SetColorFilterModeToPaint(SkPaint& paint);
 };

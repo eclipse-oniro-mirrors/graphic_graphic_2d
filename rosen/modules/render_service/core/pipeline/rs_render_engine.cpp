@@ -14,6 +14,7 @@
  */
 
 #include "pipeline/rs_render_engine.h"
+#include "pipeline/rs_divided_render_util.h"
 #include "string_utils.h"
 #include "render/rs_skia_filter.h"
 #include "rs_trace.h"
@@ -86,10 +87,6 @@ void RSRenderEngine::DrawLayers(RSPaintFilterCanvas& canvas, const std::vector<L
                 layer->GetDirtyRegion().x, layer->GetDirtyRegion().y,
                 layer->GetDirtyRegion().w, layer->GetDirtyRegion().h);
             DrawSurfaceNode(canvas, node, mirrorAdaptiveCoefficient, forceCPU);
-        } else if (nodePtr->IsInstanceOf<RSDisplayRenderNode>()) {
-            // In uniRender mode, maybe need to handle displayNode.
-            RSDisplayRenderNode& node = *(static_cast<RSDisplayRenderNode*>(nodePtr));
-            DrawDisplayNode(canvas, node, forceCPU);
         } else {
             // Probably never reach this branch.
             RS_LOGE("RSRenderEngine::DrawLayers: unexpected node type!");
@@ -164,7 +161,7 @@ void RSRenderEngine::DrawSurfaceNode(RSPaintFilterCanvas& canvas, RSSurfaceRende
     float mirrorAdaptiveCoefficient, bool forceCPU)
 {
     // prepare BufferDrawParam
-    auto params = RSBaseRenderUtil::CreateBufferDrawParam(node, false); // in display's coordinate.
+    auto params = RSDividedRenderUtil::CreateBufferDrawParam(node, false); // in display's coordinate.
     const float adaptiveDstWidth = params.dstRect.width() * mirrorAdaptiveCoefficient;
     const float adaptiveDstHeight = params.dstRect.height() * mirrorAdaptiveCoefficient;
     params.dstRect.setWH(adaptiveDstWidth, adaptiveDstHeight);
@@ -173,15 +170,9 @@ void RSRenderEngine::DrawSurfaceNode(RSPaintFilterCanvas& canvas, RSSurfaceRende
     DrawSurfaceNodeWithParams(canvas, node, params, nullptr, nullptr);
 }
 
-void RSRenderEngine::DrawDisplayNode(RSPaintFilterCanvas& canvas, RSDisplayRenderNode& node, bool forceCPU)
-{
-    // [PLANNING]: In uniRender mode, maybe need to handle displayNode.
-    // it is unexpected in now suitation.
-}
-
 void RSRenderEngine::ClipHoleForLayer(RSPaintFilterCanvas& canvas, RSSurfaceRenderNode& node)
 {
-    BufferDrawParam params = RSBaseRenderUtil::CreateBufferDrawParam(node, false, true);
+    BufferDrawParam params = RSDividedRenderUtil::CreateBufferDrawParam(node, false, true);
 
     std::string traceInfo;
     AppendFormat(traceInfo, "Node name:%s ClipHole[%d %d %d %d]", node.GetName().c_str(),
