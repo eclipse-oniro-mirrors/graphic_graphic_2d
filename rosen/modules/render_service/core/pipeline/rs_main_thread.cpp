@@ -24,10 +24,12 @@
 #include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_base_render_util.h"
 #include "pipeline/rs_divided_render_util.h"
+#include "pipeline/rs_render_engine.h"
 #include "pipeline/rs_render_service_visitor.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_unmarshal_thread.h"
+#include "pipeline/rs_uni_render_engine.h"
 #include "pipeline/rs_uni_render_visitor.h"
 #include "pipeline/rs_occlusion_config.h"
 #include "platform/common/rs_log.h"
@@ -89,13 +91,13 @@ public:
                 default:
                     break;
             }
-            RSMainThread::Instance()->GetRenderEngine()->SetColorFilterMode(mode);
+            RSBaseRenderEngine::SetColorFilterMode(mode);
         } else if (id == CONFIG_ID::CONFIG_INVERT_COLOR) {
             mode = value.invertColor ? ColorFilterMode::INVERT_COLOR_ENABLE_MODE :
                                         ColorFilterMode::INVERT_COLOR_DISABLE_MODE;
-            RSMainThread::Instance()->GetRenderEngine()->SetColorFilterMode(mode);
+            RSBaseRenderEngine::SetColorFilterMode(mode);
         } else {
-            RSMainThread::Instance()->GetRenderEngine()->SetHighContrast(value.highContrastText);
+            RSBaseRenderEngine::SetHighContrast(value.highContrastText);
         }
     }
 };
@@ -164,15 +166,15 @@ void RSMainThread::Init()
     receiver_ = std::make_shared<VSyncReceiver>(conn, handler_);
     receiver_->Init();
     renderEngine_ = std::make_shared<RSRenderEngine>();
+    uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
+    RSBaseRenderEngine::Init();
 #ifdef RS_ENABLE_GL
-    if (renderEngine_) {
-        int cacheLimitsTimes = 2; // double skia Resource Cache Limits
-        auto grContext = renderEngine_->GetRenderContext()->GetGrContext();
-        int maxResources = 0;
-        size_t maxResourcesSize = 0;
-        grContext->getResourceCacheLimits(&maxResources, &maxResourcesSize);
-        grContext->setResourceCacheLimits(cacheLimitsTimes * maxResources, cacheLimitsTimes * maxResourcesSize);
-    }
+    int cacheLimitsTimes = 2; // double skia Resource Cache Limits
+    auto grContext = RSBaseRenderEngine::GetRenderContext()->GetGrContext();
+    int maxResources = 0;
+    size_t maxResourcesSize = 0;
+    grContext->getResourceCacheLimits(&maxResources, &maxResourcesSize);
+    grContext->setResourceCacheLimits(cacheLimitsTimes * maxResources, cacheLimitsTimes * maxResourcesSize);
 #endif
     RSInnovation::OpenInnovationSo();
     Occlusion::Region::InitDynamicLibraryFunction();

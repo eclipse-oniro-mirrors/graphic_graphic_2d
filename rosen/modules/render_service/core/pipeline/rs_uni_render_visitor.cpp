@@ -249,7 +249,7 @@ void RSUniRenderVisitor::PrepareProxyRenderNode(RSProxyRenderNode& node)
     if (parentSurfaceNodeMatrix_.invert(&invertMatrix)) {
         contextMatrix.preConcat(invertMatrix);
     } else {
-        ROSEN_LOGE("RSUniRenderVisitor::ProcessSurfaceRenderNode, invertMatrix failed");
+        ROSEN_LOGE("RSUniRenderVisitor::PrepareProxyRenderNode, invertMatrix failed");
     }
     node.SetContextMatrix(contextMatrix);
     node.SetContextAlpha(curAlpha_);
@@ -753,6 +753,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
 
     RSPropertiesPainter::DrawBackground(property, *canvas_);
+    RSPropertiesPainter::DrawMask(property, *canvas_);
     auto filter = std::static_pointer_cast<RSSkiaFilter>(property.GetBackgroundFilter());
     if (filter != nullptr) {
         auto skRectPtr = std::make_unique<SkRect>();
@@ -769,8 +770,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     if (!node.IsAppWindow() && node.GetBuffer() != nullptr) {
         node.NotifyRTBufferAvailable();
         node.SetGlobalAlpha(1.0f);
-        // use node's local coordinate.
-        auto params = RSBaseRenderUtil::CreateBufferDrawParam(node, true, false, false, false);
+        auto params = RSUniRenderUtil::CreateBufferDrawParam(node, false);
         renderEngine_->DrawSurfaceNodeWithParams(*canvas_, node, params);
     }
 
@@ -834,7 +834,7 @@ void RSUniRenderVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
         return;
     }
 
-    canvas_->SetHighContrast(renderEngine_->isHighContrastEnabled());
+    canvas_->SetHighContrast(renderEngine_->IsHighContrastEnabled());
     ColorFilterMode modeFromSysProperty = static_cast<ColorFilterMode>(RSSystemProperties::GetCorrectionMode());
     ColorFilterMode colorFilterMode = renderEngine_->GetColorFilterMode();
     if (RSBaseRenderUtil::IsColorFilterModeValid(modeFromSysProperty)) {
@@ -842,7 +842,7 @@ void RSUniRenderVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     }
     if (colorFilterMode >= ColorFilterMode::INVERT_COLOR_ENABLE_MODE &&
         colorFilterMode <= ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE) {
-        RS_LOGD("RsDebug RSRenderEngine::SetColorFilterModeToPaint mode:%d", static_cast<int32_t>(colorFilterMode));
+        RS_LOGD("RsDebug RSBaseRenderEngine::SetColorFilterModeToPaint mode:%d", static_cast<int32_t>(colorFilterMode));
         SkPaint paint;
         RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, paint);
         canvas_->saveLayer(nullptr, &paint);
