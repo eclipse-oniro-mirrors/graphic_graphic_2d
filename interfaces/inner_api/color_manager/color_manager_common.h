@@ -37,7 +37,7 @@ enum class CMErrorCode : int32_t {
 
 const std::map<CMError, CMErrorCode> JS_TO_ERROR_CODE_MAP {
     { CMError::CM_OK, CMErrorCode::CM_OK },
-    { CMError::CM_ERROR_NULLPTR, CMErrorCode::CM_ERROR_ABNORMAL_PARAM_VALUE },
+    { CMError::CM_ERROR_NULLPTR, CMErrorCode::CM_ERROR_INVALID_PARAM },
     { CMError::CM_ERROR_INVALID_PARAM, CMErrorCode::CM_ERROR_INVALID_PARAM },
     { CMError::CM_ERROR_INVALID_ENUM_USAGE, CMErrorCode::CM_ERROR_ABNORMAL_PARAM_VALUE },
 };

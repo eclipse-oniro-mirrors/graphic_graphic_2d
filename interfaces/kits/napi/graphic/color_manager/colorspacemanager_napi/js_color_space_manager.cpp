@@ -42,8 +42,8 @@ bool CheckColorSpaceTypeRange(NativeEngine& engine, const ApiColorSpaceType csTy
     if (csType >= ApiColorSpaceType::TYPE_END) {
         CMLOGE("[NAPI]ColorSpaceType is invalid: %{public}u", csType);
         engine.Throw(CreateJsError(engine,
-            static_cast<int32_t>(JS_TO_ERROR_CODE_MAP.at(CMError::CM_ERROR_INVALID_ENUM_USAGE)),
-            "Parameter value is abnormal. ApiColorSpaceType's value is out of range."));
+            static_cast<int32_t>(JS_TO_ERROR_CODE_MAP.at(CMError::CM_ERROR_INVALID_PARAM)),
+            "Parameter check fails. ApiColorSpaceType's value is out of range."));
         return false;
     }
     if (csType == ApiColorSpaceType::UNKNOWN || csType == ApiColorSpaceType::CUSTOM) {
