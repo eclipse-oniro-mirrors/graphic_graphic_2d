@@ -481,7 +481,7 @@ void RSMainThread::CheckBufferAvailableIfNeed()
     bool allBufferAvailable = true;
     for (auto& [id, surfaceNode] : nodeMap.surfaceNodeMap_) {
         if (surfaceNode == nullptr || !surfaceNode->IsOnTheTree() || !surfaceNode->IsAppWindow() ||
-            !surfaceNode->GetRenderProperties().GetVisible()) {
+            !surfaceNode->ShouldPaint()) {
             continue;
         }
         if (surfaceNode->GetBuffer() == nullptr) {
