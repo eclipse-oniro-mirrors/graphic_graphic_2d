@@ -87,7 +87,7 @@ public:
         const RSSurfaceRenderNode& node, const sptr<SurfaceBuffer>& buffer, const RectF& bounds);
     static void SetPropertiesForCanvas(RSPaintFilterCanvas& canvas, const BufferDrawParam& params);
 
-    static void DropFrameProcess(RSSurfaceHandler& surfaceHandler);
+    static GSError DropFrameProcess(RSSurfaceHandler& node);
     static bool ConsumeAndUpdateBuffer(RSSurfaceHandler& surfaceHandler);
     static bool ReleaseBuffer(RSSurfaceHandler& surfaceHandler);
 
