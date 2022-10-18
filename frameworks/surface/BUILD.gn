@@ -34,8 +34,12 @@ config("surface_public_config") {
     "//foundation/graphic/graphic_2d/utils/sandbox",
   ]
 
+  defines = []
   if (ace_enable_gpu) {
-    defines = [ "ACE_ENABLE_GPU" ]
+    defines += [ "ACE_ENABLE_GPU" ]
+  }
+  if (graphic_standard_feature_freemem_enable) {
+    defines += [ "SURFACE_ENABLE_FREEMEM" ]
   }
 
   cflags = [ "-Wno-error=deprecated-declarations" ]
