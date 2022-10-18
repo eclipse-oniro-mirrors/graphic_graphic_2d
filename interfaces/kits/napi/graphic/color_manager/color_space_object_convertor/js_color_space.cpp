@@ -41,7 +41,7 @@ NativeValue* JsColorSpace::GetColorSpaceName(NativeEngine* engine, NativeCallbac
     if (me == nullptr) {
         engine->Throw(CreateJsError(*engine,
             static_cast<int32_t>(JS_TO_ERROR_CODE_MAP.at(CMError::CM_ERROR_NULLPTR)),
-            "Parameter value is abnormal. Js color space object is nullptr."));
+            "Parameter check fails. Js color space object is nullptr."));
         return nullptr;
     }
     return me->OnGetColorSpaceName(*engine, *info);
@@ -53,7 +53,7 @@ NativeValue* JsColorSpace::GetWhitePoint(NativeEngine* engine, NativeCallbackInf
     if (me == nullptr) {
         engine->Throw(CreateJsError(*engine,
             static_cast<int32_t>(JS_TO_ERROR_CODE_MAP.at(CMError::CM_ERROR_NULLPTR)),
-            "Parameter value is abnormal. Js color space object is nullptr."));
+            "Parameter check fails. Js color space object is nullptr."));
         return nullptr;
     }
     return me->OnGetWhitePoint(*engine, *info);
@@ -65,7 +65,7 @@ NativeValue* JsColorSpace::GetGamma(NativeEngine* engine, NativeCallbackInfo* in
     if (me == nullptr) {
         engine->Throw(CreateJsError(*engine,
             static_cast<int32_t>(JS_TO_ERROR_CODE_MAP.at(CMError::CM_ERROR_NULLPTR)),
-            "Parameter value is abnormal. Js color space object is nullptr."));
+            "Parameter check fails. Js color space object is nullptr."));
         return nullptr;
     }
     return me->OnGetGamma(*engine, *info);
@@ -76,7 +76,7 @@ NativeValue* JsColorSpace::OnGetColorSpaceName(NativeEngine& engine, NativeCallb
     if (colorSpaceToken_ == nullptr) {
         CMLOGE("[NAPI]colorSpaceToken_ is nullptr");
         engine.Throw(CreateJsError(engine, static_cast<int32_t>(JS_TO_ERROR_CODE_MAP.at(CMError::CM_ERROR_NULLPTR)),
-            "Parameter value is abnormal. Native color space object is nullptr."));
+            "Parameter check fails. Native color space object is nullptr."));
         return engine.CreateUndefined();
     }
     ColorSpaceName csName = colorSpaceToken_->GetColorSpaceName();
@@ -87,8 +87,8 @@ NativeValue* JsColorSpace::OnGetColorSpaceName(NativeEngine& engine, NativeCallb
     }
     CMLOGE("[NAPI]get color space name %{public}u, but not in api type", csName);
     engine.Throw(CreateJsError(engine,
-        static_cast<int32_t>(JS_TO_ERROR_CODE_MAP.at(CMError::CM_ERROR_INVALID_ENUM_USAGE)),
-        "Parameter value is abnormal. Color space type " + std::to_string(static_cast<int32_t>(csName)) +
+        static_cast<int32_t>(JS_TO_ERROR_CODE_MAP.at(CMError::CM_ERROR_INVALID_PARAM)),
+        "Parameter check fails. Color space type " + std::to_string(static_cast<int32_t>(csName)) +
         "does not in supported type list."));
     return engine.CreateUndefined();
 }
@@ -98,7 +98,7 @@ NativeValue* JsColorSpace::OnGetWhitePoint(NativeEngine& engine, NativeCallbackI
     if (colorSpaceToken_ == nullptr) {
         CMLOGE("[NAPI]colorSpaceToken_ is nullptr");
         engine.Throw(CreateJsError(engine, static_cast<int32_t>(JS_TO_ERROR_CODE_MAP.at(CMError::CM_ERROR_NULLPTR)),
-            "Parameter value is abnormal. Native color space object is nullptr."));
+            "Parameter check fails. Native color space object is nullptr."));
         return engine.CreateUndefined();
     }
     std::array<float, DIMES_2> wp = colorSpaceToken_->GetWhitePoint();
@@ -115,7 +115,7 @@ NativeValue* JsColorSpace::OnGetGamma(NativeEngine& engine, NativeCallbackInfo& 
     if (colorSpaceToken_ == nullptr) {
         CMLOGE("[NAPI]colorSpaceToken_ is nullptr");
         engine.Throw(CreateJsError(engine, static_cast<int32_t>(JS_TO_ERROR_CODE_MAP.at(CMError::CM_ERROR_NULLPTR)),
-            "Parameter value is abnormal. Native color space object is nullptr."));
+            "Parameter check fails. Native color space object is nullptr."));
         return engine.CreateUndefined();
     }
     float gamma = colorSpaceToken_->GetGamma();
