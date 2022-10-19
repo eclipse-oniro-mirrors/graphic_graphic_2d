@@ -62,9 +62,9 @@ bool RSRenderThreadVisitor::IsValidRootRenderNode(RSRootRenderNode& node)
         ROSEN_LOGD("RootNode %s: Invisible", ptr->GetName().c_str());
         return false;
     }
-    if (node.GetSurfaceWidth() <= 0 || node.GetSurfaceHeight() <= 0) {
+    if (node.GetSuggestedBufferWidth() <= 0 || node.GetSuggestedBufferHeight() <= 0) {
         ROSEN_LOGE("Root %s: Negative width or height [%d %d]", ptr->GetName().c_str(),
-            node.GetSurfaceWidth(), node.GetSurfaceHeight());
+            node.GetSuggestedBufferWidth(), node.GetSuggestedBufferHeight());
         return false;
     }
     return true;
@@ -95,8 +95,8 @@ void RSRenderThreadVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
     if (isIdle_) {
         curDirtyManager_ = node.GetDirtyManager();
         curDirtyManager_->Clear();
-        // After the node calls applymodifiers, the modifiers assign the renderProperties to the node
-        // Otherwise node.GetSurfaceHeight always less than 0, causing black screen
+        // After the node calls ApplyModifiers, the modifiers assign the renderProperties to the node
+        // Otherwise node.GetSuggestedBufferHeight always less than 0, causing black screen
         node.ApplyModifiers();
         if (!IsValidRootRenderNode(node)) {
             return;
@@ -113,7 +113,7 @@ void RSRenderThreadVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
 void RSRenderThreadVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode& node)
 {
     node.ApplyModifiers();
-    if (!node.GetRenderProperties().GetVisible()) {
+    if (!node.ShouldPaint()) {
         return;
     }
     bool dirtyFlag = dirtyFlag_;
@@ -151,11 +151,6 @@ void RSRenderThreadVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
     PrepareBaseRenderNode(node);
     dirtyFlag_ = dirtyFlag;
-}
-
-void RSRenderThreadVisitor::PrepareProxyRenderNode(RSProxyRenderNode& node)
-{
-    node.ApplyModifiers();
 }
 
 void RSRenderThreadVisitor::DrawRectOnCanvas(const RectI& dirtyRect, const SkColor color,
@@ -253,7 +248,8 @@ void RSRenderThreadVisitor::UpdateDirtyAndSetEGLDamageRegion(std::unique_ptr<RSS
             // get dirty rect coordinated from upper left to lower left corner in current surface
             RectI dirtyRectFlip = curDirtyManager_->GetRectFlipWithinSurface(curDirtyRegion_);
             // set dirty rect as eglSurfaceFrame's damage region
-            surfaceFrame->SetDamageRegion(dirtyRectFlip.left_, dirtyRectFlip.top_, dirtyRectFlip.width_, dirtyRectFlip.height_);
+            surfaceFrame->SetDamageRegion(dirtyRectFlip.left_, dirtyRectFlip.top_, dirtyRectFlip.width_,
+                dirtyRectFlip.height_);
             // flip aligned rect for op drops
             curDirtyRegion_ = curDirtyManager_->GetRectFlipWithinSurface(dirtyRectFlip);
             ROSEN_LOGD("GetPartialRenderEnabled buffer age %d, dirtyRectFlip = [%d, %d, %d, %d], "
@@ -320,9 +316,9 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     FrameCollector::GetInstance().MarkFrameEvent(FrameEventType::ReleaseStart);
 
     const auto& property = node.GetRenderProperties();
-    const float surfaceWidth = node.GetSurfaceWidth() * property.GetScaleX();
-    const float surfaceHeight = node.GetSurfaceHeight() * property.GetScaleY();
-    auto surfaceFrame = rsSurface->RequestFrame(surfaceWidth, surfaceHeight, uiTimestamp_);
+    const float bufferWidth = node.GetSuggestedBufferWidth() * property.GetScaleX();
+    const float bufferHeight = node.GetSuggestedBufferHeight() * property.GetScaleY();
+    auto surfaceFrame = rsSurface->RequestFrame(bufferWidth, bufferHeight, uiTimestamp_);
     RS_TRACE_END();
     if (surfaceFrame == nullptr) {
         ROSEN_LOGI("ProcessRoot %s: Request Frame Failed", ptr->GetName().c_str());
@@ -370,29 +366,31 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
 
     // node's surface size already check, so here we do not need to check return
     // attention: currently surfaceW/H are float values transformed into int implicitly
-    (void)curDirtyManager_->SetSurfaceSize(surfaceWidth, surfaceHeight);
-    // keep non-nagative rect region within surface
+    (void)curDirtyManager_->SetSurfaceSize(bufferWidth, bufferHeight);
+    // keep non-negative rect region within surface
     curDirtyManager_->ClipDirtyRectWithinSurface();
+    // reset matrix
+    const float rootWidth = property.GetFrameWidth() * property.GetScaleX();
+    const float rootHeight = property.GetFrameHeight() * property.GetScaleY();
+    SkMatrix gravityMatrix;
+    (void)RSPropertiesPainter::GetGravityMatrix(
+        Gravity::RESIZE, RectF { 0.0f, 0.0f, bufferWidth, bufferHeight }, rootWidth, rootHeight, gravityMatrix);
+
     if (isRenderForced_ ||
         curDirtyManager_->GetDirtyRegion().GetWidth() == 0 ||
-        curDirtyManager_->GetDirtyRegion().GetHeight() == 0) {
+        curDirtyManager_->GetDirtyRegion().GetHeight() == 0 ||
+        !gravityMatrix.isIdentity()) {
         curDirtyManager_->ResetDirtyAsSurfaceSize();
     }
     UpdateDirtyAndSetEGLDamageRegion(surfaceFrame);
 
-    canvas_->clipRect(SkRect::MakeWH(surfaceWidth, surfaceHeight));
+    canvas_->clipRect(SkRect::MakeWH(bufferWidth, bufferHeight));
     canvas_->clear(SK_ColorTRANSPARENT);
     isIdle_ = false;
 
     // clear current children before traversal, we will re-add them again during traversal
     childSurfaceNodeIds_.clear();
 
-    // reset matrix
-    const float rootWidth = property.GetFrameWidth() * property.GetScaleX();
-    const float rootHeight = property.GetFrameHeight() * property.GetScaleY();
-    SkMatrix gravityMatrix;
-    (void)RSPropertiesPainter::GetGravityMatrix(
-        Gravity::RESIZE, RectF { 0.0f, 0.0f, surfaceWidth, surfaceHeight }, rootWidth, rootHeight, gravityMatrix);
     canvas_->concat(gravityMatrix);
     parentSurfaceNodeMatrix_ = gravityMatrix;
 
@@ -447,7 +445,7 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
 
 void RSRenderThreadVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
 {
-    if (!node.GetRenderProperties().GetVisible()) {
+    if (!node.ShouldPaint()) {
         return;
     }
     if (!canvas_) {
@@ -487,7 +485,7 @@ void RSRenderThreadVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         ROSEN_LOGE("RSRenderThreadVisitor::ProcessSurfaceRenderNode, canvas is nullptr");
         return;
     }
-    if (!node.GetRenderProperties().GetVisible()) {
+    if (!node.ShouldPaint()) {
         ROSEN_LOGI("RSRenderThreadVisitor::ProcessSurfaceRenderNode node : %" PRIu64 " is invisible", node.GetId());
         node.SetContextAlpha(0.0f);
         return;

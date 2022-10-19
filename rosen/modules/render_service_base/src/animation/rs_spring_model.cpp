@@ -28,7 +28,7 @@ namespace Rosen {
 namespace {
 constexpr float SPRING_MIN_DAMPING_RATIO = 1e-4f;
 constexpr float SPRING_MAX_DAMPING_RATIO = 1e4f;
-constexpr float SPRING_MIN_DURATION = 0.02f;
+constexpr float SPRING_MIN_DURATION = 0.001f;
 constexpr float SPRING_MAX_DURATION = 300.0f;
 constexpr float SPRING_MIN_RESPONSE = 1e-8;
 constexpr float SPRING_MIN_AMPLITUDE_RATIO = 0.001f;
@@ -158,20 +158,6 @@ RSAnimatableType RSSpringModel<RSAnimatableType>::CalculateDisplacement(double t
 }
 
 template<typename RSAnimatableType>
-RSAnimatableType RSSpringModel<RSAnimatableType>::GetInstantaneousVelocity(double time) const
-{
-    if (dampingRatio_ == 0.0f) {
-        ROSEN_LOGE("RSSpringModel::%s, uninitialized spring model", __func__);
-        return {};
-    }
-    // 1e-6f : 1 millisecond to seconds
-    constexpr double DELTA_TIME = 1e-6f;
-    // we use average velocity over 2 milliseconds as instantaneous velocity
-    constexpr double DURATION = DELTA_TIME * 2;
-    return (CalculateDisplacement(time + DELTA_TIME) - CalculateDisplacement(time - DELTA_TIME)) * (1 / DURATION);
-}
-
-template<typename RSAnimatableType>
 float RSSpringModel<RSAnimatableType>::GetEstimatedDuration()
 {
     if (estimatedDuration_ < SPRING_MIN_DURATION) {
@@ -201,20 +187,17 @@ void RSSpringModel<std::shared_ptr<RSRenderPropertyBase>>::CalculateSpringParame
     if (dampingRatio_ < 1) { // Under-damped Systems
         dampedAngularVelocity_ = naturalAngularVelocity * sqrt(1.0f - dampingRatio_ * dampingRatio_);
         coeffDecay_ = -dampingRatio_ * naturalAngularVelocity;
-        coeffScale_ =
-            (initialVelocity_->GetValue() + initialOffset_->GetValue() * dampingRatio_ * naturalAngularVelocity) *
+        coeffScale_ = (initialVelocity_ + initialOffset_ * dampingRatio_ * naturalAngularVelocity) *=
             (1 / dampedAngularVelocity_);
     } else if (dampingRatio_ == 1) { // Critically-Damped Systems
         coeffDecay_ = -naturalAngularVelocity;
-        coeffScale_ = initialVelocity_->GetValue() + initialOffset_->GetValue() * naturalAngularVelocity;
+        coeffScale_ = initialVelocity_ + initialOffset_ * naturalAngularVelocity;
     } else { // Over-damped Systems
         double coeffTmp = sqrt(dampingRatio_ * dampingRatio_ - 1);
         coeffDecay_ = (-dampingRatio_ + coeffTmp) * naturalAngularVelocity;
-        coeffScale_ =
-            (initialOffset_->GetValue() * ((dampingRatio_ + coeffTmp) * naturalAngularVelocity) + initialVelocity_) *
+        coeffScale_ = (initialOffset_ * ((dampingRatio_ + coeffTmp) * naturalAngularVelocity) += initialVelocity_) *=
             (0.5f / (naturalAngularVelocity * coeffTmp));
-        coeffScaleAlt_ =
-            (initialOffset_->GetValue() * ((coeffTmp - dampingRatio_) * naturalAngularVelocity) - initialVelocity_) *
+        coeffScaleAlt_ = (initialOffset_ * ((coeffTmp - dampingRatio_) * naturalAngularVelocity) -= initialVelocity_) *=
             (0.5f / (naturalAngularVelocity * coeffTmp));
         coeffDecayAlt_ = (-dampingRatio_ - coeffTmp) * naturalAngularVelocity;
     }
@@ -264,16 +247,15 @@ std::shared_ptr<RSRenderPropertyBase> RSSpringModel<std::shared_ptr<RSRenderProp
     if (dampingRatio_ < 1) {
         // under-damped
         double rad = dampedAngularVelocity_ * time;
-        std::shared_ptr<RSRenderPropertyBase> coeffPeriod =
-            initialOffset_->GetValue() * cos(rad) + coeffScale_->GetValue() * sin(rad);
-        return coeffPeriod * coeffDecay;
+        auto coeffPeriod = (initialOffset_ * cos(rad)) += (coeffScale_ * sin(rad));
+        return coeffPeriod *= coeffDecay;
     } else if (dampingRatio_ == 1) {
         // critical-damped
-        return (initialOffset_->GetValue() + coeffScale_->GetValue() * time) * coeffDecay;
+        return (initialOffset_ + coeffScale_ * time) *= coeffDecay;
     } else {
         // over-damped
         double coeffDecayAlt = exp(coeffDecayAlt_ * time);
-        return coeffScale_->GetValue() * coeffDecay + coeffScaleAlt_->GetValue() * coeffDecayAlt;
+        return (coeffScale_ * coeffDecay) += (coeffScaleAlt_ * coeffDecayAlt);
     }
 }
 

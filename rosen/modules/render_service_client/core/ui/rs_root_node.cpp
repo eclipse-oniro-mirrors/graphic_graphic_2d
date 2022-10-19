@@ -81,7 +81,8 @@ void RSRootNode::OnBoundsSizeChanged() const
     // Planning: we should use frame size instead of bounds size to calculate the surface size.
     auto bounds = GetStagingProperties().GetBounds();
     // Set RootNode Surface Size with animation final value. NOTE: this logic is only used in RenderThreadVisitor
-    std::unique_ptr<RSCommand> command = std::make_unique<RSRootNodeUpdateSurfaceSize>(GetId(), bounds.z_, bounds.w_);
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSRootNodeUpdateSuggestedBufferSize>(GetId(), bounds.z_, bounds.w_);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
         transactionProxy->AddCommand(command, false);

@@ -39,7 +39,6 @@ public:
     void AddAnimation(const std::shared_ptr<RSRenderAnimation>& animation);
     void RemoveAnimation(AnimationId keyId);
     const std::shared_ptr<RSRenderAnimation> GetAnimation(AnimationId id) const;
-    void ClearAnimation();
     void FilterAnimationByPid(pid_t pid);
 
     bool Animate(int64_t time);
@@ -47,7 +46,7 @@ public:
     // spring animation related
     void RegisterSpringAnimation(PropertyId propertyId, AnimationId animId);
     void UnregisterSpringAnimation(PropertyId propertyId, AnimationId animId);
-    AnimationId QuerySpringAnimation(PropertyId propertyId);
+    std::shared_ptr<RSRenderAnimation> QuerySpringAnimation(PropertyId propertyId);
 
 private:
     void OnAnimationRemove(const std::shared_ptr<RSRenderAnimation>& animation);

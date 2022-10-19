@@ -106,7 +106,7 @@ void SurfaceNodeCommandHelper::UpdateParentWithoutTransition(RSContext& context,
     auto node = nodeMap.GetRenderNode(nodeId);
     auto parent = nodeMap.GetRenderNode(parentId);
     if (node && parent) {
-        node->RemoveFromTreeWithoutTransition();
+        node->RemoveFromTree(true);
         parent->AddChild(node);
     }
 }
@@ -129,6 +129,13 @@ void SurfaceNodeCommandHelper::SetSurfaceNodeType(RSContext& context, NodeId nod
 {
     if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
         node->SetSurfaceNodeType(type);
+    }
+}
+
+void SurfaceNodeCommandHelper::SetContainerWindow(RSContext& context, NodeId nodeId, bool hasContainerWindow)
+{
+    if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
+        node->SetContainerWindow(hasContainerWindow);
     }
 }
 } // namespace Rosen

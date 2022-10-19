@@ -47,7 +47,8 @@ NativeValue* RSWindowAnimationUtils::CreateJsWindowAnimationTarget(NativeEngine&
     }
 
     NativeFinalize finalizeCallback = [](NativeEngine* engine, void* data, void* hint) {
-        sptr<RSWindowAnimationTarget>(static_cast<RSWindowAnimationTarget*>(hint));
+        auto target = sptr<RSWindowAnimationTarget>(static_cast<RSWindowAnimationTarget*>(hint));
+        target.GetRefPtr()->DecStrongRef(target.GetRefPtr());
     };
     target.GetRefPtr()->IncStrongRef(target.GetRefPtr());
     object->SetNativePointer(&(target->surfaceNode_), finalizeCallback, target.GetRefPtr());
@@ -99,7 +100,9 @@ NativeValue* RSWindowAnimationUtils::CreateJsWindowAnimationFinishedCallback(
     }
 
     NativeFinalize finalizeCallback = [](NativeEngine* engine, void* data, void* hint) {
-        sptr<RSIWindowAnimationFinishedCallback>(static_cast<RSIWindowAnimationFinishedCallback*>(data));
+        auto finishedCallback =
+            sptr<RSIWindowAnimationFinishedCallback>(static_cast<RSIWindowAnimationFinishedCallback*>(data));
+        finishedCallback.GetRefPtr()->DecStrongRef(finishedCallback.GetRefPtr());
     };
     finishedCallback.GetRefPtr()->IncStrongRef(finishedCallback.GetRefPtr());
     object->SetNativePointer(finishedCallback.GetRefPtr(), finalizeCallback, nullptr);

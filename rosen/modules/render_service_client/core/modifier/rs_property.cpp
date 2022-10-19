@@ -28,21 +28,21 @@ PropertyId GeneratePropertyId()
     static pid_t pid_ = GetRealPid();
     static std::atomic<uint32_t> currentId_ = 1;
 
-    ++currentId_;
-    if (currentId_ == UINT32_MAX) {
+    auto currentId = currentId_.fetch_add(1, std::memory_order_relaxed);
+    if (currentId == UINT32_MAX) {
         // [PLANNING]:process the overflow situations
         ROSEN_LOGE("Property Id overflow");
     }
 
-    return ((PropertyId)pid_ << PID_SHIFT) | currentId_;
+    return ((PropertyId)pid_ << PID_SHIFT) | currentId;
 }
 } // namespace
 
 RSPropertyBase::RSPropertyBase() : id_(GeneratePropertyId())
 {}
 
-std::shared_ptr<RSPropertyBase> operator+(const std::shared_ptr<RSPropertyBase>& a,
-    const std::shared_ptr<RSPropertyBase>& b)
+std::shared_ptr<RSPropertyBase> operator+=(const std::shared_ptr<RSPropertyBase>& a,
+    const std::shared_ptr<const RSPropertyBase>& b)
 {
     if (a == nullptr) {
         return {};
@@ -51,8 +51,8 @@ std::shared_ptr<RSPropertyBase> operator+(const std::shared_ptr<RSPropertyBase>&
     return a->Add(b);
 }
 
-std::shared_ptr<RSPropertyBase> operator-(const std::shared_ptr<RSPropertyBase>& a,
-    const std::shared_ptr<RSPropertyBase>& b)
+std::shared_ptr<RSPropertyBase> operator-=(const std::shared_ptr<RSPropertyBase>& a,
+    const std::shared_ptr<const RSPropertyBase>& b)
 {
     if (a == nullptr) {
         return {};
@@ -61,7 +61,7 @@ std::shared_ptr<RSPropertyBase> operator-(const std::shared_ptr<RSPropertyBase>&
     return a->Minus(b);
 }
 
-std::shared_ptr<RSPropertyBase> operator*(const std::shared_ptr<RSPropertyBase>& value, const float scale)
+std::shared_ptr<RSPropertyBase> operator*=(const std::shared_ptr<RSPropertyBase>& value, const float scale)
 {
     if (value == nullptr) {
         return {};
@@ -70,19 +70,48 @@ std::shared_ptr<RSPropertyBase> operator*(const std::shared_ptr<RSPropertyBase>&
     return value->Multiply(scale);
 }
 
-bool operator==(const std::shared_ptr<RSPropertyBase>& a, const std::shared_ptr<RSPropertyBase>& b)
+std::shared_ptr<RSPropertyBase> operator+(const std::shared_ptr<const RSPropertyBase>& a,
+    const std::shared_ptr<const RSPropertyBase>& b)
 {
     if (a == nullptr) {
         return {};
     }
 
-    return a->IsEqual(b);
+    return a->Clone()->Add(b);
 }
 
-bool operator!=(const std::shared_ptr<RSPropertyBase>& a, const std::shared_ptr<RSPropertyBase>& b)
+std::shared_ptr<RSPropertyBase> operator-(const std::shared_ptr<const RSPropertyBase>& a,
+    const std::shared_ptr<const RSPropertyBase>& b)
 {
     if (a == nullptr) {
         return {};
+    }
+
+    return a->Clone()->Minus(b);
+}
+
+std::shared_ptr<RSPropertyBase> operator*(const std::shared_ptr<const RSPropertyBase>& value, const float scale)
+{
+    if (value == nullptr) {
+        return {};
+    }
+
+    return value->Clone()->Multiply(scale);
+}
+
+bool operator==(const std::shared_ptr<const RSPropertyBase>& a, const std::shared_ptr<const RSPropertyBase>& b)
+{
+    if (a == nullptr) {
+        return false;
+    }
+
+    return a->IsEqual(b);
+}
+
+bool operator!=(const std::shared_ptr<const RSPropertyBase>& a, const std::shared_ptr<const RSPropertyBase>& b)
+{
+    if (a == nullptr) {
+        return false;
     }
 
     return !a->IsEqual(b);

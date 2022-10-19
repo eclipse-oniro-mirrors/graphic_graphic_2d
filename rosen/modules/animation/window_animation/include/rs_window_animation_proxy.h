@@ -36,6 +36,10 @@ public:
         const sptr<RSWindowAnimationTarget>& toWindowTarget,
         const sptr<RSIWindowAnimationFinishedCallback>& finishedCallback) override;
 
+    void OnAppBackTransition(const sptr<RSWindowAnimationTarget>& fromWindowTarget,
+        const sptr<RSWindowAnimationTarget>& toWindowTarget,
+        const sptr<RSIWindowAnimationFinishedCallback>& finishedCallback) override;
+
     void OnMinimizeWindow(const sptr<RSWindowAnimationTarget>& minimizingWindowTarget,
         const sptr<RSIWindowAnimationFinishedCallback>& finishedCallback) override;
 
@@ -50,6 +54,7 @@ public:
     void OnWindowAnimationTargetsUpdate(const sptr<RSWindowAnimationTarget>& fullScreenWindowTarget,
         const std::vector<sptr<RSWindowAnimationTarget>>& floatingWindowTargets) override;
 
+    void OnWallpaperUpdate(const sptr<RSWindowAnimationTarget>& wallpaperTarget) override;
 private:
     bool WriteInterfaceToken(MessageParcel& data);
     bool WriteTargetAndCallback(MessageParcel& data, const sptr<RSWindowAnimationTarget>& windowTarget,

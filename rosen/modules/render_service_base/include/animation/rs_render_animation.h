@@ -133,6 +133,8 @@ public:
     void Detach();
     RSRenderNode* GetTarget() const;
 
+    NodeId GetTargetId() const;
+
     virtual PropertyId GetPropertyId() const;
 
     virtual void AttachRenderProperty(const std::shared_ptr<RSRenderPropertyBase>& property) {};
@@ -153,21 +155,25 @@ protected:
 
     virtual void OnDetach() {}
 
+    virtual void OnInitialize() {}
+
     virtual void OnAnimate(float fraction) {}
 
     virtual void OnRemoveOnCompletion() {}
 
     void FinishOnCurrentPosition();
 
+    RSAnimationFraction animationFraction_;
 private:
     void ProcessFillModeOnStart(float startFraction);
 
     void ProcessFillModeOnFinish(float endFraction);
 
     AnimationId id_ = 0;
-    RSAnimationFraction animationFraction_;
+    NodeId targetId_ = 0;
     AnimationState state_ { AnimationState::INITIALIZED };
-    bool firstToRunning_ { false };
+    bool needUpdateStartTime_ { true };
+    bool needInitialize_ { true};
     RSRenderNode* target_ { nullptr };
 };
 } // namespace Rosen

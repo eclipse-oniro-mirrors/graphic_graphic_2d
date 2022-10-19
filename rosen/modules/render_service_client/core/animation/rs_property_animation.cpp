@@ -60,7 +60,7 @@ void RSPropertyAnimation::SetPropertyValue(const std::shared_ptr<RSPropertyBase>
 const std::shared_ptr<RSPropertyBase> RSPropertyAnimation::GetPropertyValue() const
 {
     if (property_ != nullptr) {
-        return property_->GetValue();
+        return property_->Clone();
     }
 
     return nullptr;
@@ -87,7 +87,7 @@ void RSPropertyAnimation::OnStart()
 void RSPropertyAnimation::SetOriginValue(const std::shared_ptr<RSPropertyBase>& originValue)
 {
     if (!hasOriginValue_) {
-        originValue_ = originValue->GetValue();
+        originValue_ = originValue->Clone();
         hasOriginValue_ = true;
     }
 }
@@ -95,21 +95,21 @@ void RSPropertyAnimation::SetOriginValue(const std::shared_ptr<RSPropertyBase>& 
 void RSPropertyAnimation::InitInterpolationValue()
 {
     if (isDelta_) {
-        startValue_ = originValue_->GetValue();
-        endValue_ = originValue_->GetValue() + byValue_;
+        startValue_ = originValue_->Clone();
+        endValue_ = originValue_ + byValue_;
     } else {
-        byValue_ = endValue_->GetValue() - startValue_;
+        byValue_ = endValue_ - startValue_;
     }
 }
 
 void RSPropertyAnimation::OnUpdateStagingValue(bool isFirstStart)
 {
-    auto startValue = startValue_->GetValue();
-    auto endValue = endValue_->GetValue();
+    auto startValue = startValue_;
+    auto endValue = endValue_;
     if (!GetDirection()) {
         std::swap(startValue, endValue);
     }
-    auto byValue = endValue->GetValue() - startValue;
+    auto byValue = endValue - startValue;
     auto targetValue = endValue;
     if (isFirstStart) {
         if (GetAutoReverse() && GetRepeatCount() % 2 == 0) {
@@ -151,14 +151,7 @@ void RSPropertyAnimation::StartCustomPropertyAnimation(const std::shared_ptr<RSR
     if (renderProperty == nullptr) {
         renderProperty = property_->CreateRenderProperty();
     }
-    auto modifier = target->GetModifier(property_->GetId());
-    if (modifier != nullptr) {
-        auto uiProperty = modifier->GetProperty();
-        animationManager->AddAnimatableProp(property_->GetId(), uiProperty, renderProperty);
-        if (uiProperty != nullptr) {
-            uiProperty->AttachModifier(modifier);
-        }
-    }
+    animationManager->AddAnimatableProp(property_->GetId(), property_, renderProperty);
     animation->AttachRenderProperty(renderProperty);
     animation->Start();
     animationManager->AddAnimation(animation, shared_from_this());

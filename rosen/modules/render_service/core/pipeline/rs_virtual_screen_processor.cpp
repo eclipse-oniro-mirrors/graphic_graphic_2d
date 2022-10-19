@@ -21,6 +21,7 @@
 #include "platform/common/rs_log.h"
 #include "platform/ohos/backend/rs_surface_frame_ohos_raster.h"
 #include "rs_base_render_util.h"
+#include "rs_divided_render_util.h"
 #include "rs_trace.h"
 #include "string_utils.h"
 

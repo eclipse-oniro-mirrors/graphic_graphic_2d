@@ -777,6 +777,11 @@ void RSNode::SetClipToFrame(bool clipToFrame)
 
 void RSNode::SetVisible(bool visible)
 {
+    // kick off transition only if it's on tree(has valid parent) and visibility is changed.
+    if (transitionEffect_ != nullptr && GetParent() != nullptr && visible != GetStagingProperties().GetVisible()) {
+        NotifyTransition(transitionEffect_, visible);
+    }
+
     SET_NONANIMATABLE_MODIFIER(Visible, bool, visible, VISIBLE, true);
 }
 
@@ -805,34 +810,37 @@ void RSNode::NotifyTransition(const std::shared_ptr<const RSTransitionEffect>& e
 
 void RSNode::OnAddChildren()
 {
-    if (transitionEffect_ != nullptr) {
+    // kick off transition only if it's visible.
+    if (transitionEffect_ != nullptr && GetStagingProperties().GetVisible()) {
         NotifyTransition(transitionEffect_, true);
     }
 }
 
 void RSNode::OnRemoveChildren()
 {
-    if (transitionEffect_ != nullptr) {
+    // kick off transition only if it's visible.
+    if (transitionEffect_ != nullptr && GetStagingProperties().GetVisible()) {
         NotifyTransition(transitionEffect_, false);
     }
 }
 
-void RSNode::AnimationFinish(AnimationId animationId)
+bool RSNode::AnimationFinish(AnimationId animationId)
 {
     auto animationItr = animations_.find(animationId);
     if (animationItr == animations_.end()) {
         ROSEN_LOGE("Failed to find animation[%" PRIu64 "]!", animationId);
-        return;
+        return false;
     }
 
-    auto animation = animationItr->second;
+    auto& animation = animationItr->second;
     if (animation == nullptr) {
         ROSEN_LOGE("Failed to finish animation[%" PRIu64 "], animation is null!", animationId);
-        return;
+        return false;
     }
 
     animation->CallFinishCallback();
     RemoveAnimationInner(animation);
+    return true;
 }
 
 void RSNode::SetPaintOrder(bool drawContentLast)
@@ -935,11 +943,10 @@ void RSNode::UpdateModifierMotionPathOption()
     }
 }
 
-void RSNode::UpdateExtendedModifier(const PropertyId& id)
+void RSNode::UpdateExtendedModifier(const std::weak_ptr<RSModifier>& modifier)
 {
-    auto modifier = GetModifier(id);
-    if (modifier != nullptr) {
-        modifier->UpdateToRender();
+    if (auto sharedModifier = modifier.lock()) {
+        sharedModifier->UpdateToRender();
     }
 }
 

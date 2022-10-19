@@ -41,16 +41,6 @@ void RSAnimationManager::AddAnimation(const std::shared_ptr<RSRenderAnimation>& 
     OnAnimationAdd(animation);
 }
 
-void RSAnimationManager::ClearAnimation()
-{
-    for (auto& [id, animation] : animations_) {
-        animation->Detach();
-    }
-    animations_.clear();
-    animationNum_.clear();
-    springAnimations_.clear();
-}
-
 void RSAnimationManager::RemoveAnimation(AnimationId keyId)
 {
     auto animationItr = animations_.find(keyId);
@@ -58,6 +48,7 @@ void RSAnimationManager::RemoveAnimation(AnimationId keyId)
         ROSEN_LOGE("RSAnimationManager::RemoveAnimation, The Animation does not exist when is deleted");
         return;
     }
+    animationItr->second->Finish();
     animationItr->second->Detach();
     OnAnimationRemove(animationItr->second);
     animations_.erase(animationItr);
@@ -71,6 +62,7 @@ void RSAnimationManager::FilterAnimationByPid(pid_t pid)
         if (static_cast<pid_t>(pair.first >> 32) != pid) {
             return false;
         }
+        pair.second->Finish();
         pair.second->Detach();
         OnAnimationRemove(pair.second);
         return true;
@@ -126,7 +118,7 @@ namespace {
 
 void RSAnimationManager::OnAnimationFinished(const std::shared_ptr<RSRenderAnimation>& animation)
 {
-    NodeId targetId = animation->GetTarget() ? animation->GetTarget()->GetId() : 0;
+    NodeId targetId = animation->GetTargetId();
     AnimationId animationId = animation->GetAnimationId();
 
     std::unique_ptr<RSCommand> command =
@@ -143,18 +135,19 @@ void RSAnimationManager::RegisterSpringAnimation(PropertyId propertyId, Animatio
 
 void RSAnimationManager::UnregisterSpringAnimation(PropertyId propertyId, AnimationId animId)
 {
-    if (springAnimations_[propertyId] == animId) {
-        springAnimations_.erase(propertyId);
+    auto it = springAnimations_.find(propertyId);
+    if (it != springAnimations_.end() && it->second == animId) {
+        springAnimations_.erase(it);
     }
 }
 
-AnimationId RSAnimationManager::QuerySpringAnimation(PropertyId propertyId)
+std::shared_ptr<RSRenderAnimation> RSAnimationManager::QuerySpringAnimation(PropertyId propertyId)
 {
     auto it = springAnimations_.find(propertyId);
-    if (it == springAnimations_.end()) {
-        return 0;
+    if (it == springAnimations_.end() || it->second == 0) {
+        return nullptr;
     }
-    return it->second;
+    return GetAnimation(it->second);
 }
 } // namespace Rosen
 } // namespace OHOS

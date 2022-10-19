@@ -30,13 +30,13 @@
 
 namespace OHOS {
 namespace Rosen {
-RSRenderNode::RSRenderNode(NodeId id, std::weak_ptr<RSContext> context)
-    : RSBaseRenderNode(id, context), renderProperties_(true)
-{}
+RSRenderNode::RSRenderNode(NodeId id, std::weak_ptr<RSContext> context) : RSBaseRenderNode(id, context) {}
 
 RSRenderNode::~RSRenderNode()
 {
-    FallbackAnimationsToRoot();
+    if (fallbackAnimationOnDestroy_) {
+        FallbackAnimationsToRoot();
+    }
 }
 
 void RSRenderNode::FallbackAnimationsToRoot()
@@ -287,6 +287,27 @@ std::shared_ptr<RSRenderModifier> RSRenderNode::GetModifier(const PropertyId& id
         }
     }
     return nullptr;
+}
+
+void RSRenderNode::FilterModifiersByPid(pid_t pid)
+{
+    // remove all modifiers added by given pid (by matching higher 32 bits of node id)
+    std::__libcpp_erase_if_container(
+        modifiers_, [pid](const auto& it) -> bool { return static_cast<pid_t>(it.first >> 32) == pid; });
+
+    // remove all modifiers added by given pid (by matching higher 32 bits of node id)
+    for (auto& [type, modifiers] : drawCmdModifiers_) {
+        modifiers.remove_if(
+            [pid](const auto& it) -> bool { return static_cast<pid_t>(it->GetPropertyId() >> 32) == pid; });
+    }
+}
+
+bool RSRenderNode::ShouldPaint() const
+{
+    // node should be painted if either it is visible or it has disappearing transition animation, but only when its
+    // alpha is not zero
+    return (renderProperties_.GetVisible() || HasDisappearingTransition(false)) &&
+           (renderProperties_.GetAlpha() > 0.0f);
 }
 } // namespace Rosen
 } // namespace OHOS
