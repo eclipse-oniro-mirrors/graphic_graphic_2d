@@ -11,13 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-group("unittest") {
+group("test") {
   testonly = true
 
   deps = [
     "render_service/fuzztest/rsrenderserviceconnection_fuzzer:fuzztest",
     "render_service/unittest/pipeline:unittest",
     "render_service_base/fuzztest/rsbaserendernode_fuzzer:fuzztest",
+    "render_service_base/fuzztest/rsbasescreenmanager_fuzzer:fuzztest",
     "render_service_base/unittest/animation:unittest",
     "render_service_base/unittest/overdraw:unittest",
     "render_service_base/unittest/pipeline:unittest",
