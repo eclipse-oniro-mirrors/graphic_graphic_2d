@@ -617,7 +617,7 @@ void RSMainThread::CalcOcclusion()
                 continue;
             }
             if (surface->GetZorderChanged() || surface->GetDstRectChanged() ||
-                surface->GetAlphaChanged()) {
+                surface->GetAlphaChanged() || (IfUseUniVisitor() && surface->IsDirtyRegionUpdated())) {
                 winDirty = true;
             }
             surface->CleanDstRectChanged();
@@ -639,7 +639,7 @@ void RSMainThread::CalcOcclusion()
             continue;
         }
         Occlusion::Rect rect;
-        if (!surface->GetOldDirty().IsEmpty() && useUniVisitor_) {
+        if (!surface->GetOldDirty().IsEmpty() && IfUseUniVisitor()) {
             rect = Occlusion::Rect{surface->GetOldDirtyInSurface()};
         } else {
             rect = Occlusion::Rect{surface->GetDstRect()};
