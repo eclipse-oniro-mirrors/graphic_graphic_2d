@@ -325,7 +325,7 @@ int32_t HdiLayer::SetLayerMetaDataSet()
     }
 
     // because hdi interface func is not implemented, delete CheckRet to avoid excessive print of log
-    device_->SetLayerMetaDataSet(screenId_, layerId_, layerInfo_->GetMetaDataSet().key,
+    device_->SetLayerMetaDataSet(screenId_, layerId_, (HDRMetadataKey)layerInfo_->GetMetaDataSet().key,
                                  layerInfo_->GetMetaDataSet().metaData);
     return DISPLAY_SUCCESS;
 }
