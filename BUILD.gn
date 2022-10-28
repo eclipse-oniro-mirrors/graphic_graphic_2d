@@ -27,7 +27,6 @@ group("default") {
     public_deps += [ "frameworks/bootanimation:bootanimation" ]
     public_deps += [ "frameworks/bootanimation:bootanimation_pics" ]
     public_deps += [ "frameworks/bootanimation:bootanimation_sounds" ]
-    public_deps += [ "frameworks/bootanimation:bootanimation_custom_config" ]
   }
 }
 
@@ -43,6 +42,7 @@ group("graphic_2d_test") {
     "rosen/test/frame_analyzer:test",
     "rosen/test/render_service:test",
     "utils/color_manager:test",
+    "utils/socketpair:test",
     "utils/sync_fence:test",
   ]
 }
