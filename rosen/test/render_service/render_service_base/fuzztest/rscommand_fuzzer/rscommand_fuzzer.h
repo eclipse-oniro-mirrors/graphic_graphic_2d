@@ -20,5 +20,5 @@
 #include <cstdlib>
 #include <fcntl.h>
 
-#define FUZZ_PROJECT_NAME "rsinterfaces_fuzzer"
+#define FUZZ_PROJECT_NAME "rscommand_fuzzer"
 
