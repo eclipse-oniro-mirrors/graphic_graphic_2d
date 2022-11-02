@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,26 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef FRAMEWORKS_VSYNC_INCLUDE_IVSYNC_CALLBACK_H
-#define FRAMEWORKS_VSYNC_INCLUDE_IVSYNC_CALLBACK_H
+#include <cstdint>
+#include <unistd.h>
+#include <climits>
+#include <cstdio>
+#include <cstdlib>
+#include <fcntl.h>
 
-#include <graphic_common.h>
-#include <iremote_broker.h>
+#define FUZZ_PROJECT_NAME "rsbasecommon_fuzzer"
 
-namespace OHOS {
-namespace Vsync {
-class IVsyncCallback : public IRemoteBroker {
-public:
-    virtual GSError OnVsync(int64_t timestamp) = 0;
-
-    DECLARE_INTERFACE_DESCRIPTOR(u"IVsyncCallback");
-
-protected:
-    enum {
-        IVSYNC_CALLBACK_ON_VSYNC,
-    };
-};
-} // namespace Vsync
-} // namespace OHOS
-
-#endif // FRAMEWORKS_VSYNC_INCLUDE_IVSYNC_CALLBACK_H

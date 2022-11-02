@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,22 +13,12 @@
  * limitations under the License.
  */
 
-#include <vsync_helper.h>
+#include <cstdint>
+#include <unistd.h>
+#include <climits>
+#include <cstdio>
+#include <cstdlib>
+#include <fcntl.h>
 
-#include "vsync_helper_impl.h"
+#define FUZZ_PROJECT_NAME "rspropertyclient_fuzzer"
 
-namespace OHOS {
-sptr<VsyncHelper> VsyncHelper::Current()
-{
-    return Vsync::VsyncHelperImpl::Current();
-}
-
-sptr<VsyncHelper> VsyncHelper::FromHandler(std::shared_ptr<AppExecFwk::EventHandler>& handler)
-{
-    if (handler == nullptr) {
-        return nullptr;
-    }
-    sptr<VsyncHelper> helper = new Vsync::VsyncHelperImpl(handler);
-    return helper;
-}
-} // namespace OHOS
