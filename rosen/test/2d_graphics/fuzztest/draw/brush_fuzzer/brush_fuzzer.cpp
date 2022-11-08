@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,23 +14,59 @@
  */
 
 #include "brush_fuzzer.h"
-
-#include <stddef.h>
-#include <stdint.h>
-
+#include <cstddef>
+#include <cstdint>
 #include "get_object.h"
-
 #include "draw/brush.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
+
+void BrushFuzzTestInner01(Brush& brush)
+{
+    float redF = GetObject<float>();
+    float greeF = GetObject<float>();
+    float blueF = GetObject<float>();
+    float alphaF = GetObject<float>();
+    uint32_t alpha1 = GetObject<uint32_t>();
+
+    Color4f color4f {
+        redF,
+        greeF,
+        blueF,
+        alphaF,
+    };
+    brush.GetColor4f();
+    brush.GetColorSpace();
+
+    std::shared_ptr<ColorSpace> colorSpace = ColorSpace::CreateSRGB();
+    brush.SetColor(color4f, colorSpace);
+    brush.SetAlpha(alpha1);
+    brush.GetAlpha();
+    scalar scalarG = GetObject<scalar>();
+    brush.SetAlphaF(scalarG);
+    brush.GetBlendMode();
+}
+
+void BrushFuzzTestInner02(Brush& brush)
+{
+    BlendMode mode = GetObject<BlendMode>();
+    brush.SetBlendMode(mode);
+    Filter filter;
+    brush.SetFilter(filter);
+    brush.GetFilter();
+    brush.IsAntiAlias();
+    bool isAntiAlias = GetObject<bool>();
+    brush.SetAntiAlias(isAntiAlias);
+    brush.Reset();
+}
+
 bool BrushFuzzTest(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
         return false;
     }
-
     // initialize
     g_data = data;
     g_size = size;
@@ -38,44 +74,20 @@ bool BrushFuzzTest(const uint8_t* data, size_t size)
 
     Brush brush;
     Color color;
-    int c = GetObject<int>();
-    int r = GetObject<int>();
-    int g = GetObject<int>();
-    int b = GetObject<int>();
-    int a = GetObject<int>();
-    uint32_t cc = GetObject<uint32_t>();
-    float color1 = GetObject<float>();
-    float color2 = GetObject<float>();
-    float color3 = GetObject<float>();
-    float color4 = GetObject<float>();
-    brush.GetColor();
+    int colorF = GetObject<int>();
+    int red = GetObject<int>();
+    int gree = GetObject<int>();
+    int blue = GetObject<int>();
+    int alpha = GetObject<int>();
+
     brush.SetColor(color);
-    brush.SetColor(c);
-    brush.SetARGB(r, g, b, a);
-    Color4f color4f {
-        color1,
-        color2,
-        color3,
-        color4,
-    };
-    brush.GetColor4f();
-    brush.GetColorSpace();
-    std::shared_ptr<ColorSpace> s = ColorSpace::CreateSRGB();
-    brush.SetColor(color4f, s);
-    brush.GetAlpha();
-    brush.SetAlpha(cc);
-    scalar sca = GetObject<scalar>();
-    brush.SetAlphaF(sca);
-    brush.GetBlendMode();
-    BlendMode mode = GetObject<BlendMode>();
-    brush.SetBlendMode(mode);
-    Filter filter;
-    brush.SetFilter(filter);
-    brush.GetFilter();
-    brush.IsAntiAlias();
-    bool aa = GetObject<bool>();
-    brush.SetAntiAlias(aa);
-    brush.Reset();
+    brush.SetColor(colorF);
+    brush.GetColor();
+    brush.SetARGB(red, gree, blue, alpha);
+
+    BrushFuzzTestInner01(brush);
+
+    BrushFuzzTestInner02(brush);
 
     return true;
 }
