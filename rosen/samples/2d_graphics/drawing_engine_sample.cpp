@@ -211,7 +211,6 @@ bool DrawingEngineSample::DrawDrawingLayer(std::shared_ptr<HdiLayerInfo> &layer)
     dstRect.y = 0;
     dstRect.w = display_w;
     dstRect.h = display_h;
-    int index = -1;
 
     SurfaceError err = DoDraw();
     if (err != SURFACE_ERROR_OK) {
