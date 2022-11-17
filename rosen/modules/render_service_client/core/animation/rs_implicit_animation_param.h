@@ -116,7 +116,7 @@ private:
 class RSImplicitTransitionParam : public RSImplicitAnimationParam {
 public:
     RSImplicitTransitionParam(const RSAnimationTimingProtocol& timingProtocol,
-        const RSAnimationTimingCurve& timingCurve, const std::shared_ptr<RSTransitionEffect>& effect,
+        const RSAnimationTimingCurve& timingCurve, const std::shared_ptr<const RSTransitionEffect>& effect,
         bool isTransitionIn);
     virtual ~RSImplicitTransitionParam() = default;
 
@@ -130,7 +130,7 @@ private:
 
     bool isTransitionIn_;
     std::shared_ptr<RSTransition> transition_;
-    const std::shared_ptr<RSTransitionEffect> effect_;
+    const std::shared_ptr<const RSTransitionEffect> effect_;
 };
 } // namespace Rosen
 } // namespace OHOS

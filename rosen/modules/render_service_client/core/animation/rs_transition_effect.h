@@ -29,11 +29,33 @@ namespace Rosen {
 class RSRenderTransitionEffect;
 class RSTransitionModifier;
 
+class RS_EXPORT RSCustomTransitionEffect final {
+public:
+    RSCustomTransitionEffect(const std::shared_ptr<RSTransitionModifier>& modifier) : modifier_(modifier)
+    {}
+
+private:
+    void Custom(const std::shared_ptr<RSPropertyBase>& property,
+        const std::shared_ptr<RSPropertyBase>& startValue, const std::shared_ptr<RSPropertyBase>& endValue);
+
+    void Active();
+    void Identity();
+
+    std::shared_ptr<RSTransitionModifier> modifier_;
+    std::vector<std::shared_ptr<RSRenderTransitionEffect>> customTransitionEffects_;
+    std::vector<std::pair<std::shared_ptr<RSPropertyBase>, std::shared_ptr<RSPropertyBase>>> properties_;
+
+    friend class RSNode;
+    friend class RSTransition;
+    friend class RSTransitionEffect;
+    friend class RSImplicitTransitionParam;
+};
+
 class RS_EXPORT RSTransitionEffect final : public std::enable_shared_from_this<RSTransitionEffect> {
 public:
-    static const std::shared_ptr<RSTransitionEffect> EMPTY;
-    static const std::shared_ptr<RSTransitionEffect> OPACITY;
-    static const std::shared_ptr<RSTransitionEffect> SCALE;
+    static const std::shared_ptr<const RSTransitionEffect> EMPTY;
+    static const std::shared_ptr<const RSTransitionEffect> OPACITY;
+    static const std::shared_ptr<const RSTransitionEffect> SCALE;
 
     static std::shared_ptr<RSTransitionEffect> Create();
 
@@ -52,22 +74,11 @@ private:
     RSTransitionEffect(const std::shared_ptr<RSTransitionEffect>& transitionIn,
         const std::shared_ptr<RSTransitionEffect>& transitionOut);
 
-    std::shared_ptr<RSTransitionEffect> Custom(const std::shared_ptr<RSPropertyBase>& property, const std::shared_ptr<RSPropertyBase>& startValue,
-        const std::shared_ptr<RSPropertyBase>& endValue);
-
-    void Active(bool isTransitionIn);
-    void Identity(bool isTransitionIn);
-
     std::vector<std::shared_ptr<RSRenderTransitionEffect>> transitionInEffects_;
     std::vector<std::shared_ptr<RSRenderTransitionEffect>> transitionOutEffects_;
 
-    std::vector<std::shared_ptr<RSRenderTransitionEffect>> customTransitionInEffects_;
-    std::vector<std::shared_ptr<RSRenderTransitionEffect>> customTransitionOutEffects_;
-
-    std::shared_ptr<RSTransitionModifier> transitionInModifier_;
-    std::shared_ptr<RSTransitionModifier> transitionOutModifier_;
-
-    std::vector<std::pair<std::shared_ptr<RSPropertyBase>, std::shared_ptr<RSPropertyBase>>> properties_;
+    std::vector<std::shared_ptr<RSCustomTransitionEffect>> customTransitionInEffects_;
+    std::vector<std::shared_ptr<RSCustomTransitionEffect>> customTransitionOutEffects_;
 
     friend class RSNode;
     friend class RSTransition;

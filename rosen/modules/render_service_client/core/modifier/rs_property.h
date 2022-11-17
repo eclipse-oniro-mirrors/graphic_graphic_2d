@@ -110,7 +110,10 @@ protected:
 
     virtual void UpdateShowingValue(const std::shared_ptr<const RSRenderPropertyBase>& property) {}
 
-    virtual void AttachModifier(const std::shared_ptr<RSModifier>& modifier) {}
+    void AttachModifier(const std::shared_ptr<RSModifier>& modifier)
+    {
+        modifier_ = modifier;
+    }
 
     virtual void MarkModifierDirty(const std::shared_ptr<RSModifierManager>& modifierManager) {}
 
@@ -122,6 +125,7 @@ protected:
     PropertyId id_;
     RSModifierType type_ { RSModifierType::INVALID };
     std::weak_ptr<RSNode> target_;
+    std::weak_ptr<RSModifier> modifier_;
 
 private:
     virtual std::shared_ptr<RSPropertyBase> Add(const std::shared_ptr<const RSPropertyBase>& value)
@@ -160,18 +164,19 @@ private:
     friend bool operator!=(
         const std::shared_ptr<const RSPropertyBase>& a, const std::shared_ptr<const RSPropertyBase>& b);
     friend class RSCurveAnimation;
+    friend class RSCustomTransitionEffect;
     friend class RSExtendedModifier;
     friend class RSImplicitAnimator;
     friend class RSImplicitCurveAnimationParam;
     friend class RSImplicitKeyframeAnimationParam;
     friend class RSImplicitSpringAnimationParam;
+    friend class RSImplicitTransitionParam;
     friend class RSModifier;
     friend class RSPropertyAnimation;
     friend class RSPathAnimation;
     friend class RSKeyframeAnimation;
     friend class RSSpringAnimation;
     friend class RSTransition;
-    friend class RSTransitionEffect;
     friend class RSUIAnimationManager;
 };
 
@@ -241,11 +246,6 @@ protected:
         return true;
     }
 
-    void AttachModifier(const std::shared_ptr<RSModifier>& modifier) override
-    {
-        modifier_ = modifier;
-    }
-
     void SetIsCustom(bool isCustom) override
     {
         isCustom_ = isCustom;
@@ -263,7 +263,6 @@ protected:
 
     T stagingValue_ {};
     bool isCustom_ { false };
-    std::weak_ptr<RSModifier> modifier_;
 
     friend class RSPathAnimation;
     friend class RSImplicitAnimator;

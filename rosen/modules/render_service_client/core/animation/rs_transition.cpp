@@ -22,7 +22,7 @@
 
 namespace OHOS {
 namespace Rosen {
-RSTransition::RSTransition(const std::shared_ptr<RSTransitionEffect>& effect, bool isTransitionIn)
+RSTransition::RSTransition(const std::shared_ptr<const RSTransitionEffect>& effect, bool isTransitionIn)
     : isTransitionIn_(isTransitionIn), effect_(effect)
 {}
 
@@ -37,12 +37,15 @@ void RSTransition::OnStart()
 void RSTransition::OnUpdateStagingValue(bool isFirstStart)
 {
     if (isCustom_) {
-        for (auto& [property, endValue] : effect_->properties_) {
-            property->SetValue(endValue);
+        auto& customEffects =
+            isTransitionIn_ ? effect_->customTransitionInEffects_ : effect_->customTransitionOutEffects_;
+        for (auto& customEffect : customEffects) {
+            for (auto& [property, endValue] : customEffect->properties_) {
+                property->SetValue(endValue);
+            }
+            customEffect->properties_.clear();
+            customEffect->customTransitionEffects_.clear();
         }
-        effect_->properties_.clear();
-        effect_->customTransitionInEffects_.clear();
-        effect_->customTransitionOutEffects_.clear();
     }
 }
 
@@ -53,10 +56,10 @@ void RSTransition::StartCustomTransition()
         return;
     }
     std::vector<std::shared_ptr<RSRenderTransitionEffect>> transitionEffects;
-    if (isTransitionIn_) {
-        transitionEffects = effect_->customTransitionInEffects_;
-    } else {
-        transitionEffects = effect_->customTransitionOutEffects_;
+    auto& customEffects = isTransitionIn_ ? effect_->customTransitionInEffects_ : effect_->customTransitionOutEffects_;
+    for (auto& customEffect : customEffects) {
+        transitionEffects.insert(transitionEffects.end(), customEffect->customTransitionEffects_.begin(),
+            customEffect->customTransitionEffects_.end());
     }
     auto transition = std::make_shared<RSRenderTransition>(GetId(), transitionEffects, isTransitionIn_);
     auto interpolator = timingCurve_.GetInterpolator(GetDuration());

@@ -219,7 +219,7 @@ void RSImplicitAnimator::BeginImplicitSpringAnimation()
     PushImplicitParam(springParam);
 }
 
-void RSImplicitAnimator::BeginImplicitTransition(const std::shared_ptr<RSTransitionEffect>& effect,
+void RSImplicitAnimator::BeginImplicitTransition(const std::shared_ptr<const RSTransitionEffect>& effect,
     bool isTransitionIn)
 {
     if (globalImplicitParams_.empty()) {

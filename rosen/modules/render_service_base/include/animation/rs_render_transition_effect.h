@@ -41,7 +41,10 @@ public:
     virtual void UpdateFraction(float fraction) const = 0;
 
 #ifdef ROSEN_OHOS
-    bool Marshalling(Parcel& parcel) const override { return false; }
+    bool Marshalling(Parcel& parcel) const override
+    {
+        return false;
+    }
     static RSRenderTransitionEffect* Unmarshalling(Parcel& parcel);
 #endif
 private:

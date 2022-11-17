@@ -45,7 +45,7 @@ public:
     void BeginImplicitKeyFrameAnimation(float fraction);
     void EndImplicitKeyFrameAnimation();
 
-    void BeginImplicitTransition(const std::shared_ptr<RSTransitionEffect>& effect, bool isTransitionIn);
+    void BeginImplicitTransition(const std::shared_ptr<const RSTransitionEffect>& effect, bool isTransitionIn);
     void EndImplicitTransition();
 
     void BeginImplicitPathAnimation(const std::shared_ptr<RSMotionPathOption>& motionPathOption);
