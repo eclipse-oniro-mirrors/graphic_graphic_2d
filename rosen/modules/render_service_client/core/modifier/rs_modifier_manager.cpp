@@ -21,6 +21,11 @@
 
 namespace OHOS {
 namespace Rosen {
+RSModifierManager::RSModifierManager()
+{
+    animationManager_ = std::make_shared<RSUIAnimationManager>();
+}
+
 void RSModifierManager::AddModifier(const std::shared_ptr<RSModifier>& modifier)
 {
     modifiers_.insert(modifier);
@@ -36,6 +41,14 @@ void RSModifierManager::Draw()
         modifier->UpdateToRender();
     }
     modifiers_.clear();
+}
+
+std::shared_ptr<RSUIAnimationManager>& RSModifierManager::GetAnimationManager()
+{
+    if (animationManager_ == nullptr) {
+        animationManager_ = std::make_shared<RSUIAnimationManager>();
+    }
+    return animationManager_;
 }
 } // namespace Rosen
 } // namespace OHOS

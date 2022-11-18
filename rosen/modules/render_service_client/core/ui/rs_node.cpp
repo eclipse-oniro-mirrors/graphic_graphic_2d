@@ -21,7 +21,6 @@
 #include <string>
 
 #include "animation/rs_animation.h"
-#include "animation/rs_animation_manager_map.h"
 #include "animation/rs_implicit_animator.h"
 #include "animation/rs_implicit_animator_map.h"
 #include "command/rs_node_command.h"

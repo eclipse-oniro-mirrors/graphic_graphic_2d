@@ -19,7 +19,6 @@
 
 #include "rs_animation.h"
 #include "rs_animation_group.h"
-#include "rs_animation_manager_map.h"
 #include "rs_animation_timing_curve.h"
 #include "rs_curve_animation.h"
 #include "rs_implicit_animation_param.h"
@@ -413,7 +412,7 @@ namespace OHOS {
         g_pos = 0;
         // get data
         int32_t managerId = GetData<int32_t>();
-        RSAnimationManagerMap::Instance()->GetAnimationManager(managerId);
+        RSModifierManagerMap::Instance()->GetModifierManager(managerId);
         RsAnimationGroupFuzzTest();
         RsAnimationTimingCurveFuzzTest();
         RsCurveAnimationFuzzTest();

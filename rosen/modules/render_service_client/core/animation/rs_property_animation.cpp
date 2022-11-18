@@ -15,10 +15,10 @@
 
 #include "animation/rs_property_animation.h"
 
-#include "animation/rs_animation_manager_map.h"
 #include "animation/rs_render_animation.h"
 #include "animation/rs_ui_animation_manager.h"
 #include "modifier/rs_modifier.h"
+#include "modifier/rs_modifier_manager_map.h"
 #include "modifier/rs_property.h"
 #include "ui/rs_node.h"
 
@@ -137,9 +137,9 @@ void RSPropertyAnimation::StartCustomPropertyAnimation(const std::shared_ptr<RSR
         return;
     }
 
-    auto animationManager = RSAnimationManagerMap::Instance()->GetAnimationManager(gettid());
-    if (animationManager == nullptr) {
-        ROSEN_LOGE("Failed to start custom animation, UI animation manager is null!");
+    auto modifierManager = RSModifierManagerMap::Instance()->GetModifierManager(gettid());
+    if (modifierManager == nullptr) {
+        ROSEN_LOGE("Failed to start custom animation, modifier manager is null  animationId: %llu!", GetId());
         return;
     }
 
@@ -156,7 +156,7 @@ void RSPropertyAnimation::StartCustomPropertyAnimation(const std::shared_ptr<RSR
         animation->CallFinishCallback();
     });
     animation->Start();
-    animationManager->AddAnimation(animation);
+    modifierManager->GetAnimationManager()->AddAnimation(animation);
 }
 
 void RSPropertyAnimation::SetPropertyOnAllAnimationFinish()

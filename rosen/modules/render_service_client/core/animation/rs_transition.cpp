@@ -15,7 +15,6 @@
 
 #include "animation/rs_transition.h"
 
-#include "animation/rs_animation_manager_map.h"
 #include "animation/rs_render_transition.h"
 #include "command/rs_animation_command.h"
 #include "modifier/rs_property.h"
@@ -68,9 +67,9 @@ void RSTransition::StartCustomTransition()
     transition->SetInterpolator(interpolator);
     UpdateParamToRenderAnimation(transition);
 
-    auto uiAnimationManager = RSAnimationManagerMap::Instance()->GetAnimationManager(gettid());
-    if (uiAnimationManager == nullptr) {
-        ROSEN_LOGE("Failed to start custom transition, UI animation manager is null!");
+    auto modifierManager = RSModifierManagerMap::Instance()->GetModifierManager(gettid());
+    if (modifierManager == nullptr) {
+        ROSEN_LOGE("Failed to start custom transition, modifier manager is null  id: %llu!", GetId());
         return;
     }
     transition->SetFinishCallback([weakTransition = weak_from_this()]() {
@@ -82,7 +81,7 @@ void RSTransition::StartCustomTransition()
         transition->CallFinishCallback();
     });
     transition->Start();
-    uiAnimationManager->AddAnimation(transition);
+    modifierManager->GetAnimationManager()->AddAnimation(transition);
 }
 
 void RSTransition::StartRenderTransition()

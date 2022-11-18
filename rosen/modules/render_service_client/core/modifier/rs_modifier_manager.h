@@ -24,17 +24,20 @@
 namespace OHOS {
 namespace Rosen {
 class RSModifier;
+class RSUIAnimationManager;
 
 class RS_EXPORT RSModifierManager {
 public:
-    RSModifierManager() = default;
+    RSModifierManager();
     virtual ~RSModifierManager() = default;
 
     void AddModifier(const std::shared_ptr<RSModifier>& modifier);
     void Draw();
+    std::shared_ptr<RSUIAnimationManager>& GetAnimationManager();
 
 private:
     std::set<std::shared_ptr<RSModifier>> modifiers_;
+    std::shared_ptr<RSUIAnimationManager> animationManager_;
 };
 } // namespace Rosen
 } // namespace OHOS
