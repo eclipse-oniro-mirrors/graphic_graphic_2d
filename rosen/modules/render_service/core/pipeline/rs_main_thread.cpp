@@ -47,7 +47,7 @@
 
 #include "frame_trace.h"
 using namespace FRAME_TRACE;
-const std::string RS_INTERVAL_NAME = "renderservice";
+static const std::string RS_INTERVAL_NAME = "renderservice";
 
 using namespace OHOS::AccessibilityConfig;
 namespace OHOS {
