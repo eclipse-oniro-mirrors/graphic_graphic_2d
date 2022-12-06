@@ -944,9 +944,9 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 
     if (node.IsAppWindow()) {
         auto visibleRegions = node.GetVisibleRegion().GetRegionRects();
-        for (auto rect : visibleRegions) {
-            canvas_->GetVisibleRects().emplace_back(
-                SkRect::MakeLTRB(rect.left_, rect.top_, rect.right_, rect.bottom_));
+        if (visibleRegions.size() == 1) {
+            canvas_->SetVisibleRect(SkRect::MakeLTRB(
+                visibleRegions[0].left_, visibleRegions[0].top_, visibleRegions[0].right_, visibleRegions[0].bottom_));
         }
     }
 
@@ -1074,7 +1074,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 
     canvas_->RestoreCanvasAndAlpha(savedState);
     if (node.IsAppWindow()) {
-        canvas_->GetVisibleRects().clear();
+        canvas_->SetVisibleRect(SkRect::MakeLTRB(0, 0, 0, 0));
     }
 }
 
