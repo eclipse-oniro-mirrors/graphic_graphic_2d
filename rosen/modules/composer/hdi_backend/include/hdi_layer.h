@@ -54,6 +54,9 @@ public:
 
     sptr<SyncFence> GetReleaseFence() const;
     void SavePrevLayerInfo();
+
+    /* only used for mock tests */
+    int32_t SetHdiDeviceMock(HdiDevice* hdiDeviceMock);
 private:
     // layer buffer & fence
     class LayerBufferInfo : public RefBase {
