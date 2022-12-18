@@ -29,6 +29,7 @@
 #include "pipeline/rs_render_engine.h"
 #include "pipeline/rs_render_service_visitor.h"
 #include "pipeline/rs_root_render_node.h"
+#include "pipeline/rs_hardware_thread.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_unmarshal_thread.h"
 #include "pipeline/rs_uni_render_engine.h"
@@ -817,9 +818,12 @@ void RSMainThread::OnVsync(uint64_t timestamp, void* data)
         RSUnmarshalThread::Instance().PostTask(unmarshalBarrierTask_);
     }
     mainLoop_();
-    if (handler_) {
-        auto screenManager_ = CreateOrGetScreenManager();
-        if (screenManager_ != nullptr) {
+    auto screenManager_ = CreateOrGetScreenManager();
+    if (screenManager_ != nullptr) {
+        auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
+        if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
+            RSHardwareThread::Instance().PostTask([=]() { screenManager_->ProcessScreenHotPlugEvents(); });
+        } else {
             PostTask([=]() { screenManager_->ProcessScreenHotPlugEvents(); });
         }
     }
@@ -1211,9 +1215,12 @@ void RSMainThread::ForceRefreshForUni()
             RSUnmarshalThread::Instance().PostTask(unmarshalBarrierTask_);
             mainLoop_();
         });
-        if (handler_) {
-            auto screenManager_ = CreateOrGetScreenManager();
-            if (screenManager_ != nullptr) {
+        auto screenManager_ = CreateOrGetScreenManager();
+        if (screenManager_ != nullptr) {
+            auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
+            if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
+                RSHardwareThread::Instance().PostTask([=]() { screenManager_->ProcessScreenHotPlugEvents(); });
+            } else {
                 PostTask([=]() { screenManager_->ProcessScreenHotPlugEvents(); });
             }
         }
