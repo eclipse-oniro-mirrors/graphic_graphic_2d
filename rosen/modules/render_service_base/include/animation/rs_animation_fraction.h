@@ -16,6 +16,8 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_ANIMATION_FRACTION_H
 #define RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_ANIMATION_FRACTION_H
 
+#include "atomic"
+
 #include "animation/rs_animation_timing_protocol.h"
 #include "common/rs_macros.h"
 
@@ -50,9 +52,8 @@ private:
     bool IsFinished() const;
     void UpdateReverseState(bool finish);
 
-    static float animationScale_;
+    static std::atomic<float> animationScale_;
     static bool isInitialized_;
-    static std::mutex mutex_;
 
     ForwardDirection direction_ { ForwardDirection::NORMAL };
     int64_t playTime_ { 0 };

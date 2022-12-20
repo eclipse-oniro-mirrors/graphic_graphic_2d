@@ -35,8 +35,7 @@ constexpr const char* ANIMATION_SCALE_NAME = "persist.sys.graphic.animationscale
 } // namespace
 
 bool RSAnimationFraction::isInitialized_ = false;
-float RSAnimationFraction::animationScale_ = 1.0f;
-std::mutex RSAnimationFraction::mutex_;
+std::atomic<float> RSAnimationFraction::animationScale_ = 1.0f;
 
 RSAnimationFraction::RSAnimationFraction()
 {
@@ -56,14 +55,12 @@ void RSAnimationFraction::Init()
 
 float RSAnimationFraction::GetAnimationScale()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    return animationScale_;
+    return animationScale_.load(std::memory_order_relaxed);
 }
 
 void RSAnimationFraction::SetAnimationScale(float animationScale)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    animationScale_ = animationScale < 0.0 ? 0.0 : animationScale;
+    animationScale_.store(std::max(0.0f, animationScale), std::memory_order_relaxed);
 }
 
 void RSAnimationFraction::OnAnimationScaleChangedCallback(const char* key, const char* value, void* context)
