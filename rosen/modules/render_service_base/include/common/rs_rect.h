@@ -153,6 +153,12 @@ public:
     }
     RectT<T> JoinRect(const RectT<T>& rect) const
     {
+        if (rect.IsEmpty()) {
+            return RectT<T>(left_, top_, width_, height_);
+        }
+        if (IsEmpty()) {
+            return rect;
+        }
         T left = std::min(left_, rect.left_);
         T top = std::min(top_, rect.top_);
         T width = std::max(GetRight(), rect.GetRight()) - left;
