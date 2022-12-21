@@ -42,6 +42,7 @@ public:
     void SetDirectionAfterStart(const ForwardDirection& direction);
     void SetLastFrameTime(int64_t lastFrameTime);
     int64_t GetLastFrameTime() const;
+    void ResetFraction();
 
 private:
     bool IsFinished() const;

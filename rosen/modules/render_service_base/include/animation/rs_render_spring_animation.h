@@ -34,7 +34,7 @@ public:
         const std::shared_ptr<RSRenderPropertyBase>& startValue,
         const std::shared_ptr<RSRenderPropertyBase>& endValue);
 
-    void SetSpringParameters(float response, float dampingRatio);
+    void SetSpringParameters(float response, float dampingRatio, float blendDuration = 0.0f);
 
     ~RSRenderSpringAnimation() override = default;
 
@@ -48,7 +48,7 @@ protected:
 
     void OnAttach() override;
     void OnDetach() override;
-    void OnInitialize() override;
+    void OnInitialize(int64_t time) override;
 
 private:
 #ifdef ROSEN_OHOS
@@ -56,9 +56,16 @@ private:
 #endif
     RSRenderSpringAnimation() = default;
 
-    std::tuple<std::shared_ptr<RSRenderPropertyBase>, std::shared_ptr<RSRenderPropertyBase>> GetSpringStatus();
-
+    // status inherited related
     float prevMappedTime_ = 0.0f;
+    // return current <value, velocity> as a tuple
+    std::tuple<std::shared_ptr<RSRenderPropertyBase>, std::shared_ptr<RSRenderPropertyBase>> GetSpringStatus() const;
+    void InheritSpringStatus(const RSRenderSpringAnimation* from);
+
+    // blend related
+    uint32_t blendDuration_ = 0;
+    float finalResponse_ = 0.0f;
+
     std::shared_ptr<RSRenderPropertyBase> startValue_;
     std::shared_ptr<RSRenderPropertyBase> endValue_;
 };

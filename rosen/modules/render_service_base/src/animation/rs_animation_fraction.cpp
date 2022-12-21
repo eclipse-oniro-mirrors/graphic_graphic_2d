@@ -219,5 +219,14 @@ void RSAnimationFraction::UpdateRemainTimeFraction(float fraction, int remainTim
     speed_ = speed_ * ratio;
     curTimeFraction_ = fraction;
 }
+
+void RSAnimationFraction::ResetFraction()
+{
+    runningTime_ = 0;
+    playTime_ = 0;
+    curTimeFraction_ = 0.0f;
+    curRepeatCount_ = 0;
+    currentIsReverseCycle_ = false;
+}
 } // namespace Rosen
 } // namespace OHOS

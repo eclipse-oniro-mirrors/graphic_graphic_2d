@@ -27,7 +27,7 @@ RSSpringInterpolator::RSSpringInterpolator(float response, float dampingRatio, f
     // initialOffset: 1, minimumAmplitude: 0.001
     : RSSpringModel<float>(response, dampingRatio, -1, initialVelocity, 0.001)
 {
-    EstimateDuration();
+    estimatedDuration_ = EstimateDuration();
 }
 
 #ifdef ROSEN_OHOS

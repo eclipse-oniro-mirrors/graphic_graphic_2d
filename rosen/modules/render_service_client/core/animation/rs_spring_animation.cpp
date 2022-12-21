@@ -63,7 +63,7 @@ void RSSpringAnimation::OnStart()
     // 300: placeholder for estimated duration, will be replaced by real duration on animation start.
     SetDuration(300);
     UpdateParamToRenderAnimation(animation);
-    animation->SetSpringParameters(timingCurve_.response_, timingCurve_.dampingRatio_);
+    animation->SetSpringParameters(timingCurve_.response_, timingCurve_.dampingRatio_, timingCurve_.blendDuration_);
     animation->SetAdditive(GetAdditive());
     if (isCustom_) {
         animation->AttachRenderProperty(property_->GetRenderProperty());
