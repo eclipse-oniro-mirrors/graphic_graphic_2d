@@ -21,11 +21,6 @@
 
 namespace OHOS {
 namespace Rosen {
-namespace {
-constexpr float SECOND_TO_MILLISECOND = 1e3;
-constexpr float MILLISECOND_TO_SECOND = 1e-3;
-} // namespace
-
 class RSRenderSpringAnimation : public RSRenderPropertyAnimation,
     public RSSpringModel<std::shared_ptr<RSRenderPropertyBase>> {
 public:
@@ -63,7 +58,7 @@ private:
     void InheritSpringStatus(const RSRenderSpringAnimation* from);
 
     // blend related
-    uint32_t blendDuration_ = 0;
+    uint64_t blendDuration_ = 0;
     float finalResponse_ = 0.0f;
 
     std::shared_ptr<RSRenderPropertyBase> startValue_;

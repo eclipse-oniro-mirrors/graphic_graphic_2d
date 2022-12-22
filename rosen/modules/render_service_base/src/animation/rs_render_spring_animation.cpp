@@ -20,6 +20,14 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+constexpr static float SECOND_TO_MILLISECOND = 1e3;
+constexpr static float MILLISECOND_TO_SECOND = 1e-3;
+constexpr static float SECOND_TO_NANOSECOND = 1e9;
+constexpr static float RESPONSE_THRESHOLD = 0.001f;
+constexpr static float FRACTION_THRESHOLD = 0.001f;
+} // namespace
+
 RSRenderSpringAnimation::RSRenderSpringAnimation(AnimationId id, const PropertyId& propertyId,
     const std::shared_ptr<RSRenderPropertyBase>& originValue,
     const std::shared_ptr<RSRenderPropertyBase>& startValue,
@@ -36,7 +44,7 @@ void RSRenderSpringAnimation::SetSpringParameters(float response, float dampingR
     response_ = response;
     finalResponse_ = response;
     dampingRatio_ = dampingRatio;
-    blendDuration_ = blendDuration * SECOND_TO_MILLISECOND; // convert to ms
+    blendDuration_ = blendDuration * SECOND_TO_NANOSECOND; // convert to ns
 }
 
 #ifdef ROSEN_OHOS
@@ -89,6 +97,7 @@ bool RSRenderSpringAnimation::ParseParam(Parcel& parcel)
             RSMarshallingHelper::Unmarshalling(parcel, blendDuration_))) {
         return false;
     }
+    // copy response to final response
     finalResponse_ = response_;
 
     return true;
@@ -105,7 +114,7 @@ void RSRenderSpringAnimation::OnAnimate(float fraction)
 {
     if (GetPropertyId() == 0) {
         return;
-    } else if (ROSEN_EQ(fraction, 1.0f)) {
+    } else if (ROSEN_EQ(fraction, 1.0f, FRACTION_THRESHOLD)) {
         SetAnimationValue(endValue_);
         prevMappedTime_ = GetDuration() * MILLISECOND_TO_SECOND;
         return;
@@ -144,12 +153,15 @@ void RSRenderSpringAnimation::OnAttach()
     InheritSpringStatus(prevSpringAnimation.get());
     // inherit spring response
     response_ = prevSpringAnimation->response_;
-    if (ROSEN_EQ(response_, finalResponse_)) {
+    if (ROSEN_EQ(response_, finalResponse_, RESPONSE_THRESHOLD)) {
         // if response is not changed, we can skip blend duration
         blendDuration_ = 0;
     } else if (blendDuration_ == 0) {
         // if blend duration is not set, we can skip blend duration
         response_ = finalResponse_;
+    } else if (ROSEN_EQ(finalResponse_, prevSpringAnimation->finalResponse_, RESPONSE_THRESHOLD)) {
+        // if previous spring is blending to the same final response, we can continue previous blending process
+        blendDuration_ = prevSpringAnimation->blendDuration_;
     }
 
     // set previous spring animation to FINISHED
@@ -179,7 +191,7 @@ void RSRenderSpringAnimation::OnInitialize(int64_t time)
         prevMappedTime_ = 0.0f;
 
         // blend response by linear interpolation
-        uint32_t blendTime = (time - lastFrameTime) * animationFraction_.GetAnimationScale();
+        uint64_t blendTime = (time - lastFrameTime) * animationFraction_.GetAnimationScale();
         if (blendTime < blendDuration_) {
             auto blendRatio = static_cast<float>(blendTime) / static_cast<float>(blendDuration_);
             response_ += (finalResponse_ - response_) * blendRatio;
@@ -213,7 +225,7 @@ std::tuple<std::shared_ptr<RSRenderPropertyBase>, std::shared_ptr<RSRenderProper
 RSRenderSpringAnimation::GetSpringStatus() const
 {
     // if animation is never started, return start value and initial velocity
-    if (ROSEN_EQ(prevMappedTime_, 0.0f)) {
+    if (ROSEN_EQ(prevMappedTime_, 0.0f, FRACTION_THRESHOLD)) {
         return { startValue_, initialVelocity_ };
     }
 
