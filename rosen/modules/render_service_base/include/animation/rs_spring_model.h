@@ -28,11 +28,10 @@ public:
     virtual ~RSSpringModel() = default;
 
     RSAnimatableType CalculateDisplacement(double time) const;
-    float GetEstimatedDuration();
+    float EstimateDuration() const;
 
 protected:
     RSSpringModel() = default;
-    void EstimateDuration();
     void CalculateSpringParameters();
 
     // physical parameters of spring-damper model
@@ -43,7 +42,6 @@ protected:
 
     // estimated duration until the spring is at rest
     float minimumAmplitudeRatio_ { 0.001f };
-    float estimatedDuration_ { -1.0f };
 
 private:
     // calculated intermediate coefficient

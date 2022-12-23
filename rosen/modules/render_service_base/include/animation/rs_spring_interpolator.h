@@ -32,6 +32,9 @@ public:
     bool Marshalling(Parcel& parcel) const override;
     static RSSpringInterpolator* Unmarshalling(Parcel& parcel);
 #endif
+
+private:
+    float estimatedDuration_ = 0.0f;
 };
 } // namespace Rosen
 } // namespace OHOS

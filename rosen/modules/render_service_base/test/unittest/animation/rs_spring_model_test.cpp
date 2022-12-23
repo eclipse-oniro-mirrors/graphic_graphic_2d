@@ -52,19 +52,19 @@ HWTEST_F(RSSpringModelTest, RSSpringModelFloatTest001, TestSize.Level1)
     auto model1 = std::make_shared<RSSpringModel<float>>(0.0f, 0.0f, initialOffset, initialVelocity, 0.0f);
     auto result = model1->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result == 0.0f);
-    auto duration = model1->GetEstimatedDuration();
+    auto duration = model1->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model2 = std::make_shared<RSSpringModel<float>>(1.0f, 1.0f, initialOffset, initialVelocity, 1.0f);
     result = model2->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != 0.0f);
-    duration = model2->GetEstimatedDuration();
+    duration = model2->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model3 = std::make_shared<RSSpringModel<float>>(1.0f, 2.0f, initialOffset, initialVelocity, 1.0f);
     result = model3->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != 0.0f);
-    duration = model3->GetEstimatedDuration();
+    duration = model3->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     GTEST_LOG_(INFO) << "RSSpringModelTest RSSpringModelFloatTest001 end";
@@ -84,19 +84,19 @@ HWTEST_F(RSSpringModelTest, RSSpringModelColorTest001, TestSize.Level1)
     auto model1 = std::make_shared<RSSpringModel<Color>>(0.0f, 0.0f, initialOffset, initialVelocity, 0.0f);
     auto result = model1->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    auto duration = model1->GetEstimatedDuration();
+    auto duration = model1->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model2 = std::make_shared<RSSpringModel<Color>>(1.0f, 1.0f, initialOffset, initialVelocity, 1.0f);
     result = model2->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model2->GetEstimatedDuration();
+    duration = model2->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model3 = std::make_shared<RSSpringModel<Color>>(1.0f, 2.0f, initialOffset, initialVelocity, 1.0f);
     result = model3->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model3->GetEstimatedDuration();
+    duration = model3->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     GTEST_LOG_(INFO) << "RSSpringModelTest RSSpringModelColorTest001 end";
@@ -116,19 +116,19 @@ HWTEST_F(RSSpringModelTest, RSSpringModelMatrix3fTest001, TestSize.Level1)
     auto model1 = std::make_shared<RSSpringModel<Matrix3f>>(0.0f, 0.0f, initialOffset, initialVelocity, 0.0f);
     auto result = model1->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result == initialOffset);
-    auto duration = model1->GetEstimatedDuration();
+    auto duration = model1->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model2 = std::make_shared<RSSpringModel<Matrix3f>>(1.0f, 1.0f, initialOffset, initialVelocity, 1.0f);
     result = model2->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model2->GetEstimatedDuration();
+    duration = model2->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model3 = std::make_shared<RSSpringModel<Matrix3f>>(1.0f, 2.0f, initialOffset, initialVelocity, 1.0f);
     result = model3->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model3->GetEstimatedDuration();
+    duration = model3->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     GTEST_LOG_(INFO) << "RSSpringModelTest RSSpringModelMatrix3fTest001 end";
@@ -148,19 +148,19 @@ HWTEST_F(RSSpringModelTest, RSSpringModelVector2fTest001, TestSize.Level1)
     auto model1 = std::make_shared<RSSpringModel<Vector2f>>(0.0f, 0.0f, initialOffset, initialVelocity, 0.0f);
     auto result = model1->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result == initialOffset);
-    auto duration = model1->GetEstimatedDuration();
+    auto duration = model1->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model2 = std::make_shared<RSSpringModel<Vector2f>>(1.0f, 1.0f, initialOffset, initialVelocity, 1.0f);
     result = model2->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model2->GetEstimatedDuration();
+    duration = model2->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model3 = std::make_shared<RSSpringModel<Vector2f>>(1.0f, 2.0f, initialOffset, initialVelocity, 1.0f);
     result = model3->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model3->GetEstimatedDuration();
+    duration = model3->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     GTEST_LOG_(INFO) << "RSSpringModelTest RSSpringModelVector2fTest001 end";
@@ -180,19 +180,19 @@ HWTEST_F(RSSpringModelTest, RSSpringModelVector4fTest001, TestSize.Level1)
     auto model1 = std::make_shared<RSSpringModel<Vector4f>>(0.0f, 0.0f, initialOffset, initialVelocity, 0.0f);
     auto result = model1->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result == initialOffset);
-    auto duration = model1->GetEstimatedDuration();
+    auto duration = model1->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model2 = std::make_shared<RSSpringModel<Vector4f>>(1.0f, 1.0f, initialOffset, initialVelocity, 1.0f);
     result = model2->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model2->GetEstimatedDuration();
+    duration = model2->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model3 = std::make_shared<RSSpringModel<Vector4f>>(1.0f, 2.0f, initialOffset, initialVelocity, 1.0f);
     result = model3->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model3->GetEstimatedDuration();
+    duration = model3->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     GTEST_LOG_(INFO) << "RSSpringModelTest RSSpringModelVector4fTest001 end";
@@ -212,19 +212,19 @@ HWTEST_F(RSSpringModelTest, RSSpringModelQuaternionTest001, TestSize.Level1)
     auto model1 = std::make_shared<RSSpringModel<Quaternion>>(0.0f, 0.0f, initialOffset, initialVelocity, 0.0f);
     auto result = model1->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result == initialOffset);
-    auto duration = model1->GetEstimatedDuration();
+    auto duration = model1->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model2 = std::make_shared<RSSpringModel<Quaternion>>(1.0f, 1.0f, initialOffset, initialVelocity, 1.0f);
     result = model2->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model2->GetEstimatedDuration();
+    duration = model2->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model3 = std::make_shared<RSSpringModel<Quaternion>>(1.0f, 2.0f, initialOffset, initialVelocity, 1.0f);
     result = model3->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model3->GetEstimatedDuration();
+    duration = model3->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     GTEST_LOG_(INFO) << "RSSpringModelTest RSSpringModelQuaternionTest001 end";
@@ -246,19 +246,19 @@ HWTEST_F(RSSpringModelTest, RSSpringModelVector4ColorTest001, TestSize.Level1)
     auto model1 = std::make_shared<RSSpringModel<Vector4<Color>>>(0.0f, 0.0f, initialOffset, initialVelocity, 0.0f);
     auto result = model1->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    auto duration = model1->GetEstimatedDuration();
+    auto duration = model1->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model2 = std::make_shared<RSSpringModel<Vector4<Color>>>(1.0f, 1.0f, initialOffset, initialVelocity, 1.0f);
     result = model2->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model2->GetEstimatedDuration();
+    duration = model2->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model3 = std::make_shared<RSSpringModel<Vector4<Color>>>(1.0f, 2.0f, initialOffset, initialVelocity, 1.0f);
     result = model3->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model3->GetEstimatedDuration();
+    duration = model3->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     GTEST_LOG_(INFO) << "RSSpringModelTest RSSpringModelVector4ColorTest001 end";
@@ -276,7 +276,7 @@ HWTEST_F(RSSpringModelTest, RSSpringModelRSFilterTest001, TestSize.Level1)
     auto model1 = std::make_shared<RSSpringModel<std::shared_ptr<RSFilter>>>(1.0f, 2.0f, nullptr, nullptr, 1.0f);
     auto result = model1->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result == nullptr);
-    auto duration = model1->GetEstimatedDuration();
+    auto duration = model1->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto initialOffset = RSFilter::CreateBlurFilter(0.f, 0.f);
@@ -286,21 +286,21 @@ HWTEST_F(RSSpringModelTest, RSSpringModelRSFilterTest001, TestSize.Level1)
         std::make_shared<RSSpringModel<std::shared_ptr<RSFilter>>>(0.0f, 0.0f, initialOffset, initialVelocity, 0.0f);
     result = model2->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model2->GetEstimatedDuration();
+    duration = model2->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model3 =
         std::make_shared<RSSpringModel<std::shared_ptr<RSFilter>>>(1.0f, 1.0f, initialOffset, initialVelocity, 1.0f);
     result = model3->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model3->GetEstimatedDuration();
+    duration = model3->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model4 =
         std::make_shared<RSSpringModel<std::shared_ptr<RSFilter>>>(1.0f, 2.0f, initialOffset, initialVelocity, 1.0f);
     result = model4->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model4->GetEstimatedDuration();
+    duration = model4->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     GTEST_LOG_(INFO) << "RSSpringModelTest RSSpringModelRSFilterTest001 end";
@@ -322,21 +322,21 @@ HWTEST_F(RSSpringModelTest, RSSpringModelRSRSRenderPropertyBaseTest001, TestSize
         initialOffset, initialVelocity, 0.0f);
     auto result = model1->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    auto duration = model1->GetEstimatedDuration();
+    auto duration = model1->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model2 = std::make_shared<RSSpringModel<std::shared_ptr<RSRenderPropertyBase>>>(1.0f, 1.0f,
         initialOffset, initialVelocity, 1.0f);
     result = model2->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model2->GetEstimatedDuration();
+    duration = model2->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     auto model3 = std::make_shared<RSSpringModel<std::shared_ptr<RSRenderPropertyBase>>>(1.0f, 2.0f,
         initialOffset, initialVelocity, 1.0f);
     result = model3->CalculateDisplacement(1.0f);
     EXPECT_TRUE(result != initialOffset);
-    duration = model3->GetEstimatedDuration();
+    duration = model3->EstimateDuration();
     EXPECT_TRUE(duration != 0.0f);
 
     GTEST_LOG_(INFO) << "RSSpringModelTest RSSpringModelRSRSRenderPropertyBaseTest001 end";

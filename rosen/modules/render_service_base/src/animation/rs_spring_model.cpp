@@ -103,24 +103,24 @@ void RSSpringModel<RSAnimatableType>::CalculateSpringParameters()
 }
 
 template<typename RSAnimatableType>
-void RSSpringModel<RSAnimatableType>::EstimateDuration()
+float RSSpringModel<RSAnimatableType>::EstimateDuration() const
 {
     if (dampingRatio_ <= 0.0f) {
         ROSEN_LOGE("RSSpringModel::%s, uninitialized spring model", __func__);
-        return;
+        return 0.0f;
     }
 
     // convert templated type to float, simplify estimation of spring duration
     float coeffScale = toFloat(coeffScale_);
     float initialOffset = toFloat(initialOffset_);
     float estimatedDuration = 0.0f;
-    float minimumAmplitude = initialOffset * minimumAmplitudeRatio_;
+    float minimumAmplitude = std::max(initialOffset * minimumAmplitudeRatio_, 0.001f);
 
     if (dampingRatio_ < 1) { // Under-damped
         estimatedDuration = log(fmax(coeffScale, initialOffset) / minimumAmplitude) / -coeffDecay_;
     } else if (dampingRatio_ == 1) { // Critically-damped
         // critical damping spring will rest at 2 * natural period
-        estimatedDuration_ = response_ * 2;
+        estimatedDuration = response_ * 2;
     } else { // Over-damped
         float coeffScaleAlt = toFloat(coeffScaleAlt_);
         double durationMain =
@@ -129,9 +129,7 @@ void RSSpringModel<RSAnimatableType>::EstimateDuration()
             (coeffScaleAlt <= minimumAmplitude) ? 0 : (log(coeffScaleAlt / minimumAmplitude) / -coeffDecayAlt_);
         estimatedDuration = fmax(durationMain, durationAlt);
     }
-    estimatedDuration_ = std::clamp(estimatedDuration, SPRING_MIN_DURATION, SPRING_MAX_DURATION);
-    ROSEN_LOGD("RSSpringModel::%s estimated duration = %.5f, clamped duration = %.5f", __func__, estimatedDuration,
-        estimatedDuration_);
+    return std::clamp(estimatedDuration, SPRING_MIN_DURATION, SPRING_MAX_DURATION);
 }
 
 template<typename RSAnimatableType>
@@ -155,16 +153,6 @@ RSAnimatableType RSSpringModel<RSAnimatableType>::CalculateDisplacement(double t
         double coeffDecayAlt = exp(coeffDecayAlt_ * time);
         return coeffScale_ * coeffDecay + coeffScaleAlt_ * coeffDecayAlt;
     }
-}
-
-template<typename RSAnimatableType>
-float RSSpringModel<RSAnimatableType>::GetEstimatedDuration()
-{
-    if (estimatedDuration_ < SPRING_MIN_DURATION) {
-        // during not estimated yet
-        EstimateDuration();
-    }
-    return estimatedDuration_;
 }
 
 template<>
@@ -204,24 +192,24 @@ void RSSpringModel<std::shared_ptr<RSRenderPropertyBase>>::CalculateSpringParame
 }
 
 template<>
-void RSSpringModel<std::shared_ptr<RSRenderPropertyBase>>::EstimateDuration()
+float RSSpringModel<std::shared_ptr<RSRenderPropertyBase>>::EstimateDuration() const
 {
     if (dampingRatio_ <= 0.0f) {
         ROSEN_LOGE("RSSpringModel::%s, uninitialized spring model", __func__);
-        return;
+        return 0.0f;
     }
 
     // convert templated type to float, simplify estimation of spring duration
     float coeffScale = coeffScale_->ToFloat();
     float initialOffset = initialOffset_->ToFloat();
     float estimatedDuration = 0.0f;
-    float minimumAmplitude = initialOffset * minimumAmplitudeRatio_;
+    float minimumAmplitude = std::max(initialOffset * minimumAmplitudeRatio_, 0.001f);
 
     if (dampingRatio_ < 1) { // Under-damped
         estimatedDuration = log(fmax(coeffScale, initialOffset) / minimumAmplitude) / -coeffDecay_;
     } else if (dampingRatio_ == 1) { // Critically-damped
         // critical damping spring will rest at 2 * natural period
-        estimatedDuration_ = response_ * 2;
+        estimatedDuration = response_ * 2;
     } else { // Over-damped
         float coeffScaleAlt = coeffScaleAlt_->ToFloat();
         double durationMain =
@@ -230,9 +218,7 @@ void RSSpringModel<std::shared_ptr<RSRenderPropertyBase>>::EstimateDuration()
             (coeffScaleAlt <= minimumAmplitude) ? 0 : (log(coeffScaleAlt / minimumAmplitude) / -coeffDecayAlt_);
         estimatedDuration = fmax(durationMain, durationAlt);
     }
-    estimatedDuration_ = std::clamp(estimatedDuration, SPRING_MIN_DURATION, SPRING_MAX_DURATION);
-    ROSEN_LOGD("RSSpringModel::%s estimated duration = %.5f, clamped duration = %.5f", __func__, estimatedDuration,
-        estimatedDuration_);
+    return std::clamp(estimatedDuration, SPRING_MIN_DURATION, SPRING_MAX_DURATION);
 }
 
 template<>

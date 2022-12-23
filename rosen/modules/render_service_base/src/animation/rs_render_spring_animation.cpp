@@ -20,6 +20,14 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+constexpr static float SECOND_TO_MILLISECOND = 1e3;
+constexpr static float MILLISECOND_TO_SECOND = 1e-3;
+constexpr static float SECOND_TO_NANOSECOND = 1e9;
+constexpr static float RESPONSE_THRESHOLD = 0.001f;
+constexpr static float FRACTION_THRESHOLD = 0.001f;
+} // namespace
+
 RSRenderSpringAnimation::RSRenderSpringAnimation(AnimationId id, const PropertyId& propertyId,
     const std::shared_ptr<RSRenderPropertyBase>& originValue,
     const std::shared_ptr<RSRenderPropertyBase>& startValue,
@@ -31,10 +39,12 @@ RSRenderSpringAnimation::RSRenderSpringAnimation(AnimationId id, const PropertyI
     // spring model is not initialized, so we can't calculate estimated duration
 }
 
-void RSRenderSpringAnimation::SetSpringParameters(float response, float dampingRatio)
+void RSRenderSpringAnimation::SetSpringParameters(float response, float dampingRatio, float blendDuration)
 {
     response_ = response;
+    finalResponse_ = response;
     dampingRatio_ = dampingRatio;
+    blendDuration_ = blendDuration * SECOND_TO_NANOSECOND; // convert to ns
 }
 
 #ifdef ROSEN_OHOS
@@ -51,7 +61,8 @@ bool RSRenderSpringAnimation::Marshalling(Parcel& parcel) const
     }
 
     if (!(RSMarshallingHelper::Marshalling(parcel, response_) &&
-            RSMarshallingHelper::Marshalling(parcel, dampingRatio_))) {
+            RSMarshallingHelper::Marshalling(parcel, dampingRatio_) &&
+            RSMarshallingHelper::Marshalling(parcel, blendDuration_))) {
         return false;
     }
 
@@ -82,9 +93,12 @@ bool RSRenderSpringAnimation::ParseParam(Parcel& parcel)
     }
 
     if (!(RSMarshallingHelper::Unmarshalling(parcel, response_) &&
-            RSMarshallingHelper::Unmarshalling(parcel, dampingRatio_))) {
+            RSMarshallingHelper::Unmarshalling(parcel, dampingRatio_) &&
+            RSMarshallingHelper::Unmarshalling(parcel, blendDuration_))) {
         return false;
     }
+    // copy response to final response
+    finalResponse_ = response_;
 
     return true;
 }
@@ -100,7 +114,7 @@ void RSRenderSpringAnimation::OnAnimate(float fraction)
 {
     if (GetPropertyId() == 0) {
         return;
-    } else if (ROSEN_EQ(fraction, 1.0f)) {
+    } else if (ROSEN_EQ(fraction, 1.0f, FRACTION_THRESHOLD)) {
         SetAnimationValue(endValue_);
         prevMappedTime_ = GetDuration() * MILLISECOND_TO_SECOND;
         return;
@@ -128,18 +142,27 @@ void RSRenderSpringAnimation::OnAttach()
     // return if no other spring animation(s) running, or the other animation is finished
     // meanwhile, align run time for both spring animations, prepare for status inheritance
     if (prevAnimation == nullptr || prevAnimation->Animate(animationFraction_.GetLastFrameTime())) {
+        blendDuration_ = 0;
         return;
     }
 
     // extract spring status from previous spring animation
     auto prevSpringAnimation = std::static_pointer_cast<RSRenderSpringAnimation>(prevAnimation);
-    auto status = prevSpringAnimation->GetSpringStatus();
 
     // inherit spring status from previous spring animation
-    startValue_ = std::get<0>(status);
-    originValue_ = startValue_->Clone();
-    lastValue_ = startValue_->Clone();
-    initialVelocity_ = std::get<1>(status);
+    InheritSpringStatus(prevSpringAnimation.get());
+    // inherit spring response
+    response_ = prevSpringAnimation->response_;
+    if (ROSEN_EQ(response_, finalResponse_, RESPONSE_THRESHOLD)) {
+        // if response is not changed, we can skip blend duration
+        blendDuration_ = 0;
+    } else if (blendDuration_ == 0) {
+        // if blend duration is not set, we can skip blend duration
+        response_ = finalResponse_;
+    } else if (ROSEN_EQ(finalResponse_, prevSpringAnimation->finalResponse_, RESPONSE_THRESHOLD)) {
+        // if previous spring is blending to the same final response, we can continue previous blending process
+        blendDuration_ = prevSpringAnimation->blendDuration_;
+    }
 
     // set previous spring animation to FINISHED
     prevSpringAnimation->FinishOnCurrentPosition();
@@ -157,23 +180,52 @@ void RSRenderSpringAnimation::OnDetach()
     target->GetAnimationManager().UnregisterSpringAnimation(propertyId, id);
 }
 
-void RSRenderSpringAnimation::OnInitialize()
+void RSRenderSpringAnimation::OnInitialize(int64_t time)
 {
+    if (blendDuration_) {
+        auto lastFrameTime = animationFraction_.GetLastFrameTime();
+
+        // reset animation fraction
+        InheritSpringStatus(this);
+        animationFraction_.ResetFraction();
+        prevMappedTime_ = 0.0f;
+
+        // blend response by linear interpolation
+        uint64_t blendTime = (time - lastFrameTime) * animationFraction_.GetAnimationScale();
+        if (blendTime < blendDuration_) {
+            auto blendRatio = static_cast<float>(blendTime) / static_cast<float>(blendDuration_);
+            response_ += (finalResponse_ - response_) * blendRatio;
+            blendDuration_ -= blendTime;
+        } else {
+            // if blend duration is over, set response to final response
+            response_ = finalResponse_;
+            blendDuration_ = 0;
+        }
+    }
+
     // set the initial status of spring model
     initialOffset_ = startValue_ - endValue_;
     if (initialVelocity_ == nullptr) {
         initialVelocity_ = initialOffset_ * 0.f;
     }
     CalculateSpringParameters();
-    // use duration calculated by spring model as animation duration
-    SetDuration(std::lroundf(GetEstimatedDuration() * SECOND_TO_MILLISECOND));
+
+    if (blendDuration_) {
+        // blend is still in progress, no need to estimate duration, use 300ms as default
+        SetDuration(300);
+    } else {
+        // blend finished, estimate duration until the spring system reaches rest
+        SetDuration(std::lroundf(EstimateDuration() * SECOND_TO_MILLISECOND));
+        // this will set needInitialize_ to false
+        RSRenderPropertyAnimation::OnInitialize(time);
+    }
 }
 
 std::tuple<std::shared_ptr<RSRenderPropertyBase>, std::shared_ptr<RSRenderPropertyBase>>
-RSRenderSpringAnimation::GetSpringStatus()
+RSRenderSpringAnimation::GetSpringStatus() const
 {
     // if animation is never started, return start value and initial velocity
-    if (ROSEN_EQ(prevMappedTime_, 0.0f)) {
+    if (ROSEN_EQ(prevMappedTime_, 0.0f, FRACTION_THRESHOLD)) {
         return { startValue_, initialVelocity_ };
     }
 
@@ -185,6 +237,14 @@ RSRenderSpringAnimation::GetSpringStatus()
 
     // return current position and velocity
     return { lastValue_->Clone(), velocity };
+}
+
+void RSRenderSpringAnimation::InheritSpringStatus(const RSRenderSpringAnimation* from)
+{
+    // inherit spring status from another spring animation
+    std::tie(startValue_, initialVelocity_) = from->GetSpringStatus();
+    originValue_ = startValue_->Clone();
+    lastValue_ = startValue_->Clone();
 }
 } // namespace Rosen
 } // namespace OHOS
