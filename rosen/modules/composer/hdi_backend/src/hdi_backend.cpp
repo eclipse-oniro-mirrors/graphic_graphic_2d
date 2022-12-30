@@ -120,7 +120,10 @@ int32_t HdiBackend::PrepareCompleteIfNeed(const OutputPtr &output, bool needFlus
     }
 
     OnPrepareComplete(needFlush, output, newLayerInfos);
-    return FlushScreen(output, compClientLayers, buffer);
+    if (needFlush) {
+        return FlushScreen(output, compClientLayers, buffer);
+    }
+    return GRAPHIC_DISPLAY_SUCCESS;
 }
 
 void HdiBackend::UpdateInfosAfterCommit(const OutputPtr &output, sptr<SyncFence> fbFence)
