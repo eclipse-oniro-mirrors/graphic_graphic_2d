@@ -379,6 +379,7 @@ void RSAnimation::StartCustomAnimation(const std::shared_ptr<RSRenderAnimation>&
         return;
     }
 
+    uiAnimation_ = animation;
     animation->Start();
     modifierManager->AddAnimation(animation);
 }

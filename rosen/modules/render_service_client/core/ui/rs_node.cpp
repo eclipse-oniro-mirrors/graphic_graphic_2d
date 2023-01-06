@@ -141,6 +141,9 @@ void RSNode::FallbackAnimationsToRoot()
         return;
     }
     for (const auto& [animationId, animation] : animations_) {
+        if (animation && animation->GetRepeatCount() == -1) {
+            continue;
+        }
         target->AddAnimationInner(animation);
     }
 }

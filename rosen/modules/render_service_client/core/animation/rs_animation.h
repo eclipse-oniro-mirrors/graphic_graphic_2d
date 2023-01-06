@@ -99,6 +99,7 @@ private:
     AnimationState state_ { AnimationState::INITIALIZED };
     std::weak_ptr<RSNode> target_;
     std::shared_ptr<AnimationFinishCallback> finishCallback_;
+    std::shared_ptr<RSRenderAnimation> uiAnimation_;
 
     friend class RSCurveImplicitAnimParam;
     friend class RSAnimationGroup;
