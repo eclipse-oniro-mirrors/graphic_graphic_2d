@@ -70,7 +70,10 @@ bool RSModifierManager::Animate(int64_t time)
 
     // iterate and execute all animations, remove finished animations
     std::__libcpp_erase_if_container(animations_, [this, &hasRunningAnimation, time](auto& iter) -> bool {
-        auto& animation = iter.second;
+        auto animation = iter.second.lock();
+        if (animation == nullptr) {
+            return true;
+        }
         bool isFinished = animation->Animate(time);
         if (isFinished) {
             OnAnimationFinished(animation);

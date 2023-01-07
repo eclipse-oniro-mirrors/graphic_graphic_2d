@@ -44,7 +44,7 @@ private:
     void OnAnimationFinished(const std::shared_ptr<RSRenderAnimation>& animation);
 
     std::set<std::shared_ptr<RSModifier>> modifiers_;
-    std::unordered_map<AnimationId, std::shared_ptr<RSRenderAnimation>> animations_;
+    std::unordered_map<AnimationId, std::weak_ptr<RSRenderAnimation>> animations_;
 
     template <typename T>
     friend class RSAnimatableProperty;
