@@ -15,6 +15,7 @@
 #include "driver_loader.h"
 #include <dlfcn.h>
 #include <iostream>
+#include <mutex>
 #include "wrapper_log.h"
 #include "directory_ex.h"
 
@@ -33,32 +34,18 @@ constexpr const char *HDI_VULKAN_MODULE_UNINIT = "VulkanUnInitialize";
 
 bool DriverLoader::Load()
 {
+    static std::mutex loadLock;
+    std::lock_guard<std::mutex> lock(loadLock);
+
     if (loader_.vulkanFuncs_ != nullptr) {
         return true;
     }
     loader_.supported_ = false;
 
-    std::string path = std::string(VENDOR_LIB_PATH) + std::string(LIB_NAME);
-    std::string realVendorPath;
-    if (OHOS::PathToRealPath(path, realVendorPath)) {
-        WLOGD("file in vendor path, file path: %{private}s", path.c_str());
-        loader_.handle_ = dlopen(realVendorPath.c_str(), RTLD_LOCAL | RTLD_NOW);
+    if (!LoadLib()) {
+        WLOGE("LoadLib failed");
+        return false;
     }
-
-    if (loader_.handle_ == nullptr) {
-        path = std::string(SYSTEM_LIB_PATH) + std::string(LIB_NAME);
-        std::string realPath;
-        if (!OHOS::PathToRealPath(path, realPath)) {
-            WLOGE("file is not in system path, file path: %{private}s", path.c_str());
-            return false;
-        }
-        loader_.handle_ = dlopen(realPath.c_str(), RTLD_NOW | RTLD_LOCAL);
-        if (loader_.handle_ == nullptr) {
-            WLOGE("dlopen failed. error: %{public}s.", dlerror());
-            return false;
-        }
-    }
-    WLOGD("DriverLoader::dlopen success");
 
     PFN_VulkanInitialize VulkanInitializeFunc
         = reinterpret_cast<PFN_VulkanInitialize>(dlsym(loader_.handle_, HDI_VULKAN_MODULE_INIT));
@@ -96,7 +83,49 @@ bool DriverLoader::Unload()
         WLOGE("DriverLoader::Unload vulkan UnInitialize Func success");
         return false;
     }
-    dlclose(loader_.handle_);
+    loader_.vulkanFuncs_ = nullptr;
+    return UnloadLib();
+}
+
+bool DriverLoader::LoadLib()
+{
+    if (loader_.handle_ != nullptr) {
+        WLOGD("handle is not null, no need to dlopen.");
+        return true;
+    }
+    std::string venderPath = std::string(VENDOR_LIB_PATH) + std::string(LIB_NAME);
+    std::string systemPath = std::string(SYSTEM_LIB_PATH) + std::string(LIB_NAME);
+    if (!DLOpenFile(venderPath)) {
+        if (!DLOpenFile(systemPath)) {
+            return false;
+        }
+    }
+    WLOGD("DriverLoader::LoadLib successfully.");
+    return true;
+}
+
+bool DriverLoader::UnloadLib()
+{
+    int ret = dlclose(loader_.handle_);
+    if (ret == 0) {
+        loader_.handle_ = nullptr;
+        return true;
+    }
+    return false;
+}
+
+bool DriverLoader::DLOpenFile(std::string path)
+{
+    std::string realPath;
+    if (!OHOS::PathToRealPath(path, realPath)) {
+        WLOGE("file is not in path: %{private}s", path.c_str());
+        return false;
+    }
+    loader_.handle_ = dlopen(realPath.c_str(), RTLD_LOCAL | RTLD_NOW);
+    if (loader_.handle_ == nullptr) {
+        WLOGE("dlopen failed. error: %{public}s.", dlerror());
+        return false;
+    }
     return true;
 }
 }  // namespace driver
