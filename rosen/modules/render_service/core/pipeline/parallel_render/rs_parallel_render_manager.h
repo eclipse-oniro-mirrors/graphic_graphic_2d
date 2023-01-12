@@ -83,6 +83,14 @@ public:
     }
     ParallelStatus GetParallelRenderingStatus() const;
     void WorkSerialTask(RSSurfaceRenderNode &node);
+    void LockFlushMutex()
+    {
+        flushMutex_.lock();
+    }
+    void UnlockFlushMutex()
+    {
+        flushMutex_.unlock();
+    }
 
 private:
     RSParallelRenderManager() = default;
@@ -104,6 +112,7 @@ private:
     std::vector<uint8_t> flipCoin_;
     std::mutex parallelRenderMutex_;
     std::mutex cvParallelRenderMutex_;
+    std::mutex flushMutex_;
     std::condition_variable cvParallelRender_;
     RenderContext *renderContext_;
     ParallelRenderType renderType_ = ParallelRenderType::DRAW_IMAGE;
