@@ -224,7 +224,9 @@ void RSParallelSubThread::Flush()
     threadTask_ = nullptr;
     if (renderType_ == ParallelRenderType::DRAW_IMAGE) {
         RS_TRACE_BEGIN("Flush");
-        skSurface_->flush();
+        RSParallelRenderManager::Instance()->LockFlushMutex();
+        skCanvas_->flush();
+        RSParallelRenderManager::Instance()->UnlockFlushMutex();
         RS_TRACE_END();
         RS_TRACE_BEGIN("Create Fence");
         eglSync_ = eglCreateSyncKHR(renderContext_->GetEGLDisplay(), EGL_SYNC_FENCE_KHR, nullptr);
