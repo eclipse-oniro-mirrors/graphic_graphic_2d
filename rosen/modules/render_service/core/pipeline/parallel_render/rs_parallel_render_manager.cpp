@@ -178,7 +178,7 @@ void RSParallelRenderManager::WaitPrepareEnd(RSUniRenderVisitor &visitor)
 
 void RSParallelRenderManager::DrawImageMergeFunc(std::shared_ptr<SkCanvas> canvas)
 {
-    for (int i = 0; i < expectedSubThreadNum_; ++i) {
+    for (unsigned int i = 0; i < expectedSubThreadNum_; ++i) {
         RS_TRACE_BEGIN("Wait Render finish");
         WaitSubMainThread(i);
         RS_TRACE_END();
@@ -199,7 +199,7 @@ void RSParallelRenderManager::DrawImageMergeFunc(std::shared_ptr<SkCanvas> canva
 void RSParallelRenderManager::FlushOneBufferFunc()
 {
     renderContext_->ShareMakeCurrent(EGL_NO_CONTEXT);
-    for (int i = 0; i < threadList_.size(); ++i) {
+    for (unsigned int i = 0; i < threadList_.size(); ++i) {
         renderContext_->ShareMakeCurrent(threadList_[i]->GetSharedContext());
         RS_TRACE_BEGIN("Start Flush");
         threadList_[i]->GetSkSurface()->flush();
@@ -213,7 +213,7 @@ void RSParallelRenderManager::MergeRenderResult(std::shared_ptr<SkCanvas> canvas
 {
     if (GetParallelRenderingStatus() == ParallelStatus::FIRSTFLUSH) {
         firstFlush_ = false;
-        for (int i = 0; i < expectedSubThreadNum_; ++i) {
+        for (unsigned int i = 0; i < expectedSubThreadNum_; ++i) {
             WaitSubMainThread(i);
         }
         return;
@@ -237,7 +237,7 @@ void RSParallelRenderManager::GetFrameSize(int &width, int &height)
     height = height_;
 }
 
-void RSParallelRenderManager::SubmitSuperTask(int taskIndex, std::unique_ptr<RSSuperRenderTask> superRenderTask)
+void RSParallelRenderManager::SubmitSuperTask(uint32_t taskIndex, std::unique_ptr<RSSuperRenderTask> superRenderTask)
 {
     if (taskIndex >= threadList_.size()) {
         RS_LOGE("taskIndex geq thread num");
@@ -252,7 +252,7 @@ void RSParallelRenderManager::SubMainThreadNotify(int threadIndex)
     flipCoin_[threadIndex] = 0;
     std::unique_lock<std::mutex> lock(cvParallelRenderMutex_);
     bool isNotify = true;
-    for (int i = 0; i < expectedSubThreadNum_; ++i) {
+    for (unsigned int i = 0; i < expectedSubThreadNum_; ++i) {
         isNotify &= !flipCoin_[i];
     }
     if (isNotify) {

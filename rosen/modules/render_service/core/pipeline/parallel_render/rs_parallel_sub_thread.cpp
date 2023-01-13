@@ -224,6 +224,8 @@ void RSParallelSubThread::Flush()
     threadTask_ = nullptr;
     if (renderType_ == ParallelRenderType::DRAW_IMAGE) {
         RS_TRACE_BEGIN("Flush");
+        // skCanvas_->flush() may tasks a long time when window is zoomed in and out. So let flush operation of
+        // subMainThreads are executed in sequence to reduce probability rather than solve the question.
         RSParallelRenderManager::Instance()->LockFlushMutex();
         skCanvas_->flush();
         RSParallelRenderManager::Instance()->UnlockFlushMutex();
