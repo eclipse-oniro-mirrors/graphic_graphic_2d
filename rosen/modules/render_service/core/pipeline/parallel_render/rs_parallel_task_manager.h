@@ -17,6 +17,7 @@
 #define RENDER_SERVICE_CORE_PIPELINE_PARALLEL_RENDER_RS_PARALLEL_TASK_MANAGER_H
 
 #include "rs_render_task.h"
+#include <cstdint>
 #include <map>
 #include <vector>
 #include <memory>
@@ -30,7 +31,7 @@ public:
     void Initialize(uint32_t threadNum);
     void PushRenderTask(std::unique_ptr<RSRenderTask> renderTask);
     void LBCalcAndSubmitSuperTask(std::shared_ptr<RSBaseRenderNode> displayNode);
-    int GetTaskNum();
+    uint32_t GetTaskNum();
     void Reset();
     void SetSubThreadRenderTaskLoad(uint32_t threadIdx, uint64_t loadId, float cost);
     bool GetParallelRenderExtEnable()
@@ -45,8 +46,8 @@ private:
     std::unique_ptr<RSSuperRenderTask> cachedSuperRenderTask_;
     std::vector<std::unique_ptr<RSSuperRenderTask>> superRenderTaskList_;
     std::map<int, float> evalTaskCost_;
-    int threadNum_;
-    int taskNum_;
+    uint32_t threadNum_;
+    uint32_t taskNum_;
     bool isParallelRenderExtEnabled_;
     int* loadBalance_;
 };

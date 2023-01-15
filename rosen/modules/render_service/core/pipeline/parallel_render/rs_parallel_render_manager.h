@@ -65,7 +65,7 @@ public:
     void MergeRenderResult(std::shared_ptr<SkCanvas> canvas);
     void SetFrameSize(int height, int width);
     void GetFrameSize(int &height, int &width);
-    void SubmitSuperTask(int taskIndex, std::unique_ptr<RSSuperRenderTask> superRenderTask);
+    void SubmitSuperTask(uint32_t taskIndex, std::unique_ptr<RSSuperRenderTask> superRenderTask);
     void SubMainThreadNotify(int threadIndex);
     void WaitSubMainThread(uint32_t threadIndex);
     void SubMainThreadWait(uint32_t threadIndex);

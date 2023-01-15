@@ -27,7 +27,7 @@ class RSParallelPackVisitor : public RSNodeVisitor {
 public:
     RSParallelPackVisitor() {}
     explicit RSParallelPackVisitor(RSUniRenderVisitor &visitor);
-    ~RSParallelPackVisitor() = default;
+    ~RSParallelPackVisitor() override {}
 
     void PrepareBaseRenderNode(RSBaseRenderNode& node) override;
     void PrepareCanvasRenderNode(RSCanvasRenderNode& node) override {}

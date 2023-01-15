@@ -37,6 +37,16 @@ group("unittest") {
     ":RSUniRenderVisitorTest",
     ":RSVirtualScreenProcessorTest",
   ]
+  if (rs_enable_parallel_render && rs_enable_gpu) {
+    deps += [
+      ":RSParallelPackVisitorTest",
+      ":RSParallelRenderExtTest",
+      ":RSParallelRenderManagerTest",
+      ":RSParallelSubThreadTest",
+      ":RSParallelTaskManagerTest",
+      ":RSRenderTaskTest",
+    ]
+  }
 }
 
 ###############################################################################
@@ -215,6 +225,7 @@ ohos_unittest("RSParallelRenderManagerTest") {
   module_out_path = module_output_path
   sources = [ "parallel_render/rs_parallel_render_manager_test.cpp" ]
   deps = [ ":rs_test_common" ]
+  external_deps = [ "init:libbegetutil" ]
   defines = []
   defines += gpu_defines
 }

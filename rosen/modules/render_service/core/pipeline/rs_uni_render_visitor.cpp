@@ -271,7 +271,7 @@ void RSUniRenderVisitor::ParallelPrepareDisplayRenderNodeChildrens(RSDisplayRend
     isParallel_ = AdaptiveSubRenderThreadMode(node.GetChildrenCount()) &&
         parallelRenderManager->GetParallelMode();
     isDirtyRegionAlignedEnable_ = parallelRenderManager->GetParallelModeSafe();
-    // we will open prepare parallel after checjing all properties.
+    // we will open prepare parallel after check all properties.
     if (isParallel_ &&
         RSSystemProperties::GetPrepareParallelRenderingEnabled() != ParallelRenderingType::DISABLE) {
         parallelRenderManager->CopyPrepareVisitorAndPackTask(*this, node);

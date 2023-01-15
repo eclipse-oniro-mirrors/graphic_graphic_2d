@@ -14,6 +14,7 @@
  */
 
 #include "rs_parallel_task_manager.h"
+#include <cstdint>
 #include <memory>
 #include "rs_parallel_render_manager.h"
 #include "rs_parallel_render_ext.h"
@@ -113,7 +114,7 @@ std::vector<uint32_t> RSParallelTaskManager::LoadBalancing()
     return loadNumPerThread;
 }
 
-int RSParallelTaskManager::GetTaskNum()
+uint32_t RSParallelTaskManager::GetTaskNum()
 {
     return taskNum_;
 }
