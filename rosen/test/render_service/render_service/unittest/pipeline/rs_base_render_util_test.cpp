@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -42,6 +42,7 @@ private:
     static inline BufferFlushConfig flushConfig = {
         .damage = { .w = 0x100, .h = 0x100, },
     };
+    static inline SkMatrix matrix = SkMatrix::MakeAll(1, 2, 3, 4, 5, 6, 7, 8, 9);
 };
 std::shared_ptr<RSSurfaceRenderNode> node_ = nullptr;
 
@@ -302,12 +303,12 @@ HWTEST_F(RSBaseRenderUtilTest, SetPropertiesForCanvas_001, TestSize.Level2)
 }
 
 /*
- * @tc.name: IsNeedClient01
+ * @tc.name: IsNeedClient_001
  * @tc.desc: default value
  * @tc.type: FUNC
  * @tc.require: issueI5VTW0
 */
-HWTEST_F(RSBaseRenderUtilTest, IsNeedClient01, Function | SmallTest | Level2)
+HWTEST_F(RSBaseRenderUtilTest, IsNeedClient_001, Function | SmallTest | Level2)
 {
     ComposeInfo info;
     bool needClient = RSBaseRenderUtil::IsNeedClient(*node_, info);
@@ -315,12 +316,12 @@ HWTEST_F(RSBaseRenderUtilTest, IsNeedClient01, Function | SmallTest | Level2)
 }
 
 /*
- * @tc.name: IsNeedClient02
+ * @tc.name: IsNeedClient_002
  * @tc.desc: need client composition when SetCornerRadius
  * @tc.type: FUNC
  * @tc.require: issueI5VTW0
 */
-HWTEST_F(RSBaseRenderUtilTest, IsNeedClient02, Function | SmallTest | Level2)
+HWTEST_F(RSBaseRenderUtilTest, IsNeedClient_002, Function | SmallTest | Level2)
 {
     ComposeInfo info;
     Rosen::Vector4f cornerRadius(5.0f, 5.0f, 5.0f, 5.0f);
@@ -330,12 +331,12 @@ HWTEST_F(RSBaseRenderUtilTest, IsNeedClient02, Function | SmallTest | Level2)
 }
 
 /*
- * @tc.name: IsNeedClient03
+ * @tc.name: IsNeedClient_003
  * @tc.desc: need client composition when Shadow is vaild
  * @tc.type: FUNC
  * @tc.require: issueI5VTW0
 */
-HWTEST_F(RSBaseRenderUtilTest, IsNeedClient03, Function | SmallTest | Level2)
+HWTEST_F(RSBaseRenderUtilTest, IsNeedClient_003, Function | SmallTest | Level2)
 {
     ComposeInfo info;
     node_->GetMutableRenderProperties().SetShadowAlpha(1.0f);
@@ -344,12 +345,12 @@ HWTEST_F(RSBaseRenderUtilTest, IsNeedClient03, Function | SmallTest | Level2)
 }
 
 /*
- * @tc.name: IsNeedClient04
+ * @tc.name: IsNeedClient_004
  * @tc.desc: need client composition when SetRotation
  * @tc.type: FUNC
  * @tc.require: issueI5VTW0
 */
-HWTEST_F(RSBaseRenderUtilTest, IsNeedClient04, Function | SmallTest | Level2)
+HWTEST_F(RSBaseRenderUtilTest, IsNeedClient_004, Function | SmallTest | Level2)
 {
     ComposeInfo info;
     node_->GetMutableRenderProperties().SetRotation(90.0f);
@@ -358,12 +359,12 @@ HWTEST_F(RSBaseRenderUtilTest, IsNeedClient04, Function | SmallTest | Level2)
 }
 
 /*
- * @tc.name: IsNeedClient05
+ * @tc.name: IsNeedClient_005
  * @tc.desc: need client composition when SetRotationX
  * @tc.type: FUNC
  * @tc.require: issueI5VTW0
 */
-HWTEST_F(RSBaseRenderUtilTest, IsNeedClient05, Function | SmallTest | Level2)
+HWTEST_F(RSBaseRenderUtilTest, IsNeedClient_005, Function | SmallTest | Level2)
 {
     ComposeInfo info;
     node_->GetMutableRenderProperties().SetRotationX(90.0f);
@@ -372,12 +373,12 @@ HWTEST_F(RSBaseRenderUtilTest, IsNeedClient05, Function | SmallTest | Level2)
 }
 
 /*
- * @tc.name: IsNeedClient06
+ * @tc.name: IsNeedClient_006
  * @tc.desc: need client composition when SetRotationY
  * @tc.type: FUNC
  * @tc.require: issueI5VTW0
 */
-HWTEST_F(RSBaseRenderUtilTest, IsNeedClient06, Function | SmallTest | Level2)
+HWTEST_F(RSBaseRenderUtilTest, IsNeedClient_006, Function | SmallTest | Level2)
 {
     ComposeInfo info;
     node_->GetMutableRenderProperties().SetRotationY(90.0f);;
@@ -386,12 +387,12 @@ HWTEST_F(RSBaseRenderUtilTest, IsNeedClient06, Function | SmallTest | Level2)
 }
 
 /*
- * @tc.name: IsNeedClient07
+ * @tc.name: IsNeedClient_007
  * @tc.desc: need client composition when SetQuaternion
  * @tc.type: FUNC
  * @tc.require: issueI5VTW0
 */
-HWTEST_F(RSBaseRenderUtilTest, IsNeedClient07, Function | SmallTest | Level2)
+HWTEST_F(RSBaseRenderUtilTest, IsNeedClient_007, Function | SmallTest | Level2)
 {
     ComposeInfo info;
     Quaternion quaternion(90.0f, 90.0f, 90.0f, 90.0f);
@@ -401,13 +402,13 @@ HWTEST_F(RSBaseRenderUtilTest, IsNeedClient07, Function | SmallTest | Level2)
 }
 
 /*
- * @tc.name: IsNeedClient08
+ * @tc.name: IsNeedClient_008
  * @tc.desc: need client composition when Gravity != RESIZE &&
  *           BackgroundColor != Alpha && (srcRect.w != dstRect.w || srcRect.h != dstRect.h)
  * @tc.type: FUNC
  * @tc.require: issueI5VTW0
 */
-HWTEST_F(RSBaseRenderUtilTest, IsNeedClient08, Function | SmallTest | Level2)
+HWTEST_F(RSBaseRenderUtilTest, IsNeedClient_008, Function | SmallTest | Level2)
 {
     ComposeInfo info;
     info.srcRect = GraphicIRect {0, 0, 100, 100};
@@ -419,12 +420,12 @@ HWTEST_F(RSBaseRenderUtilTest, IsNeedClient08, Function | SmallTest | Level2)
 }
 
 /*
- * @tc.name: IsNeedClient09
+ * @tc.name: IsNeedClient_009
  * @tc.desc: need client composition when SetBackgroundFilter
  * @tc.type: FUNC
  * @tc.require: issueI5VTW0
 */
-HWTEST_F(RSBaseRenderUtilTest, IsNeedClient09, Function | SmallTest | Level2)
+HWTEST_F(RSBaseRenderUtilTest, IsNeedClient_009, Function | SmallTest | Level2)
 {
     ComposeInfo info;
     std::shared_ptr<RSFilter> bgFilter = RSFilter::CreateBlurFilter(5.0f, 5.0f);
@@ -434,12 +435,12 @@ HWTEST_F(RSBaseRenderUtilTest, IsNeedClient09, Function | SmallTest | Level2)
 }
 
 /*
- * @tc.name: IsNeedClient10
+ * @tc.name: IsNeedClient_010
  * @tc.desc: need client composition when SetFilter
  * @tc.type: FUNC
  * @tc.require: issueI5VTW0
 */
-HWTEST_F(RSBaseRenderUtilTest, IsNeedClient10, Function | SmallTest | Level2)
+HWTEST_F(RSBaseRenderUtilTest, IsNeedClient_010, Function | SmallTest | Level2)
 {
     ComposeInfo info;
     std::shared_ptr<RSFilter> filter = RSFilter::CreateBlurFilter(5.0f, 5.0f);
@@ -449,16 +450,125 @@ HWTEST_F(RSBaseRenderUtilTest, IsNeedClient10, Function | SmallTest | Level2)
 }
 
 /*
- * @tc.name: IsNeedClient11
+ * @tc.name: IsNeedClient_011
  * @tc.desc: need client composition when SetNeedClient is True
  * @tc.type: FUNC
  * @tc.require: issueI5VTW0
 */
-HWTEST_F(RSBaseRenderUtilTest, IsNeedClient11, Function | SmallTest | Level2)
+HWTEST_F(RSBaseRenderUtilTest, IsNeedClient_011, Function | SmallTest | Level2)
 {
     ComposeInfo info;
     RSBaseRenderUtil::SetNeedClient(true);
     bool needClient = RSBaseRenderUtil::IsNeedClient(*node_, info);
     ASSERT_EQ(needClient, true);
+}
+
+/*
+ * @tc.name: FlipMatrix_001
+ * @tc.desc: Test FlipMatrix By Setting GRAPHIC_FLIP_H
+ * @tc.type: FUNC
+ * @tc.require: issueI6AOQZ
+*/
+HWTEST_F(RSBaseRenderUtilTest, FlipMatrix_001, Function | SmallTest | Level2)
+{
+    BufferDrawParam params;
+    params.matrix = matrix;
+    RSSurfaceRenderNodeConfig config;
+    std::shared_ptr<RSSurfaceRenderNode> rsNode = std::make_shared<RSSurfaceRenderNode>(config);
+
+    sptr<Surface> surface = Surface::CreateSurfaceAsConsumer(config.name);
+    surface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_H);
+    rsNode->SetConsumer(surface);
+    RSBaseRenderUtil::FlipMatrix(*rsNode, params);
+
+    ASSERT_EQ(params.matrix.get(1), -matrix.get(1));
+    ASSERT_EQ(params.matrix.get(4), -matrix.get(4));
+    ASSERT_EQ(params.matrix.get(7), -matrix.get(7));
+}
+
+/*
+ * @tc.name: FlipMatrix_002
+ * @tc.desc: Test FlipMatrix By Setting GRAPHIC_FLIP_V
+ * @tc.type: FUNC
+ * @tc.require: issueI6AOQZ
+*/
+HWTEST_F(RSBaseRenderUtilTest, FlipMatrix_002, Function | SmallTest | Level2)
+{
+    BufferDrawParam params;
+    params.matrix = matrix;
+
+    RSSurfaceRenderNodeConfig config;
+    std::shared_ptr<RSSurfaceRenderNode> rsNode = std::make_shared<RSSurfaceRenderNode>(config);
+
+    sptr<Surface> surface = Surface::CreateSurfaceAsConsumer(config.name);
+    surface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_V);
+    rsNode->SetConsumer(surface);
+    RSBaseRenderUtil::FlipMatrix(*rsNode, params);
+
+    ASSERT_EQ(params.matrix.get(0), -matrix.get(0));
+    ASSERT_EQ(params.matrix.get(3), -matrix.get(3));
+    ASSERT_EQ(params.matrix.get(6), -matrix.get(6));
+}
+
+/*
+ * @tc.name: GetRotateTransform_001
+ * @tc.desc: Test GetRotateTransform Default
+ * @tc.type: FUNC
+ * @tc.require: issueI6AOQZ
+*/
+HWTEST_F(RSBaseRenderUtilTest, GetRotateTransform_001, Function | SmallTest | Level2)
+{
+    RSSurfaceRenderNodeConfig config;
+    std::shared_ptr<RSSurfaceRenderNode> rsNode = std::make_shared<RSSurfaceRenderNode>(config);
+    sptr<Surface> surface = Surface::CreateSurfaceAsConsumer(config.name);
+    auto transform = RSBaseRenderUtil::GetRotateTransform(surface->GetTransform());
+    ASSERT_EQ(transform, GraphicTransformType::GRAPHIC_ROTATE_NONE);
+}
+
+/*
+ * @tc.name: GetRotateTransform_002
+ * @tc.desc: Test GetRotateTransform GRAPHIC_FLIP_H_ROT90
+ * @tc.type: FUNC
+ * @tc.require: issueI6AOQZ
+*/
+HWTEST_F(RSBaseRenderUtilTest, GetRotateTransform_002, Function | SmallTest | Level2)
+{
+    RSSurfaceRenderNodeConfig config;
+    std::shared_ptr<RSSurfaceRenderNode> rsNode = std::make_shared<RSSurfaceRenderNode>(config);
+    sptr<Surface> surface = Surface::CreateSurfaceAsConsumer(config.name);
+    surface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_H_ROT90);
+    auto transform = RSBaseRenderUtil::GetRotateTransform(surface->GetTransform());
+    ASSERT_EQ(transform, GraphicTransformType::GRAPHIC_ROTATE_90);
+}
+
+/*
+ * @tc.name: GetFlipTransform_001
+ * @tc.desc: Test GetFlipTransform Default
+ * @tc.type: FUNC
+ * @tc.require: issueI6AOQZ
+*/
+HWTEST_F(RSBaseRenderUtilTest, GetFlipTransform_001, Function | SmallTest | Level2)
+{
+    RSSurfaceRenderNodeConfig config;
+    std::shared_ptr<RSSurfaceRenderNode> rsNode = std::make_shared<RSSurfaceRenderNode>(config);
+    sptr<Surface> surface = Surface::CreateSurfaceAsConsumer(config.name);
+    auto transform = RSBaseRenderUtil::GetFlipTransform(surface->GetTransform());
+    ASSERT_EQ(transform, GraphicTransformType::GRAPHIC_ROTATE_NONE);
+}
+
+/*
+ * @tc.name: GetFlipTransform_002
+ * @tc.desc: Test GetFlipTransform GRAPHIC_FLIP_H_ROT90
+ * @tc.type: FUNC
+ * @tc.require: issueI6AOQZ
+*/
+HWTEST_F(RSBaseRenderUtilTest, GetFlipTransform_002, Function | SmallTest | Level2)
+{
+    RSSurfaceRenderNodeConfig config;
+    std::shared_ptr<RSSurfaceRenderNode> rsNode = std::make_shared<RSSurfaceRenderNode>(config);
+    sptr<Surface> surface = Surface::CreateSurfaceAsConsumer(config.name);
+    surface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_H_ROT90);
+    auto transform = RSBaseRenderUtil::GetFlipTransform(surface->GetTransform());
+    ASSERT_EQ(transform, GraphicTransformType::GRAPHIC_FLIP_H);
 }
 } // namespace OHOS::Rosen
