@@ -48,6 +48,7 @@ private:
     void DumpHelpInfo(std::string& dumpString) const;
     void DumpRSEvenParam(std::string& dumpString) const;
     void DumpRenderServiceTree(std::string& dumpString) const;
+    void DumpSurfaceNode(std::string& dumpString, NodeId id) const;
     void FPSDUMPProcess(std::unordered_set<std::u16string>& argSets, std::string& dumpString,
         const std::u16string& arg) const;
 
