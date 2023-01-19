@@ -344,8 +344,9 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 
     dirtyFlag_ = dirtyFlag_ || node.GetDstRectChanged();
     parentSurfaceNodeMatrix_ = geoPtr->GetAbsMatrix();
+    auto screenRotation = curDisplayNode_->GetRotation();
     node.ResetSurfaceOpaqueRegion(RectI(0, 0, screenInfo_.width, screenInfo_.height), geoPtr->GetAbsRect(),
-        containerWindowConfig_, node.IsFocusedWindow(currentFocusedPid_));
+        screenRotation, node.IsFocusedWindow(currentFocusedPid_));
 
     node.UpdateChildrenOutOfRectFlag(false);
     PrepareBaseRenderNode(node);
