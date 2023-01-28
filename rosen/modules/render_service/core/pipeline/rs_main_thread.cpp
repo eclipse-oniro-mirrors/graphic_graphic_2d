@@ -606,7 +606,7 @@ void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::Sha
                 bool diff = (curSurface->GetDstRect().width_ > curSurface->GetBuffer()->GetWidth() ||
                             curSurface->GetDstRect().height_ > curSurface->GetBuffer()->GetHeight()) &&
                             curSurface->GetRenderProperties().GetFrameGravity() != Gravity::RESIZE &&
-                            curSurface->GetRenderProperties().GetAlpha() != opacity_;
+                            ROSEN_EQ(curSurface->GetGlobalAlpha(), 1.0f);
                 if (!curSurface->IsTransparent() && !diff) {
                     accumulatedRegion.OrSelf(curRegion);
                 }

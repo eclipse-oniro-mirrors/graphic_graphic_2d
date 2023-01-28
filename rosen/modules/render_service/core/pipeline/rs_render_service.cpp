@@ -220,7 +220,9 @@ void RSRenderService::DumpHelpInfo(std::string& dumpString) const
         .append("dumpMem                        ")
         .append("|dump Cache\n")
         .append("trimMem cpu/gpu/shader         ")
-        .append("|release Cache");
+        .append("|release Cache\n")
+        .append("surfacenode [id]               ")
+        .append("|dump node info\n");
 }
 
 void RSRenderService::FPSDUMPProcess(std::unordered_set<std::u16string>& argSets,
@@ -255,6 +257,43 @@ void RSRenderService::DumpRenderServiceTree(std::string& dumpString) const
     mainThread_->RenderServiceTreeDump(dumpString);
 }
 
+void RSRenderService::DumpSurfaceNode(std::string& dumpString, NodeId id) const
+{
+    dumpString.append("\n");
+    dumpString.append("-- SurfaceNode\n");
+
+    const auto& nodeMap = mainThread_->GetContext().GetNodeMap();
+    auto node = nodeMap.GetRenderNode<RSSurfaceRenderNode>(id);
+    if (node == nullptr) {
+        dumpString +=  std::to_string(id) + "is invalid ID\n";
+        return;
+    }
+    dumpString += "ID: " + std::to_string(node->GetId()) + "\n";
+    dumpString += "Name: " + node->GetName() + "\n";
+    dumpString += "SrcRect: [" + std::to_string(node->GetSrcRect().left_) + "," +
+        std::to_string(node->GetSrcRect().top_) + "," +
+        std::to_string(node->GetSrcRect().width_) + "," +
+        std::to_string(node->GetSrcRect().height_) + "]\n";
+    dumpString += "DstRect: [" + std::to_string(node->GetDstRect().left_) + "," +
+        std::to_string(node->GetDstRect().top_) + "," +
+        std::to_string(node->GetDstRect().width_) + "," +
+        std::to_string(node->GetDstRect().height_) + "]\n";
+    dumpString += "Zorder: " + std::to_string(node->GetGlobalZOrder()) + "\n";
+    dumpString += "IsOnTheTree: " + std::to_string(node->IsOnTheTree()) + "\n";
+    dumpString += "Visible: " + std::to_string(node->GetRenderProperties().GetVisible()) + "\n";
+    dumpString += "OcclusionBg: " + std::to_string(node->GetAbilityBgAlpha())+ "\n";
+    dumpString += "ContentAlpha: " + std::to_string(node->GetContextAlpha()) + "\n";
+    dumpString += "RSPropertyAlpha: " + std::to_string(node->GetRenderProperties().GetAlpha()) + "\n";
+    dumpString += "GlobalAlpha: " + std::to_string(node->GetGlobalAlpha()) + "\n";
+    dumpString += node->GetVisibleRegion().GetRegionInfo() + "\n";
+    const auto& consumer = node->GetConsumer();
+    if (consumer == nullptr) {
+        return;
+    }
+    dumpString += "Consumer Info: \n";
+    consumer->Dump(dumpString);
+}
+
 void RSRenderService::DoDump(std::unordered_set<std::u16string>& argSets, std::string& dumpString) const
 {
     std::u16string arg1(u"screen");
@@ -268,6 +307,7 @@ void RSRenderService::DoDump(std::unordered_set<std::u16string>& argSets, std::s
     std::u16string arg9(u"allInfo");
     std::u16string arg10(u"trimMem");
     std::u16string arg11(u"dumpMem");
+    std::u16string arg12(u"surfacenode");
     if (argSets.count(arg9) || argSets.count(arg1) != 0) {
         auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
         if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
@@ -314,6 +354,16 @@ void RSRenderService::DoDump(std::unordered_set<std::u16string>& argSets, std::s
         mainThread_->ScheduleTask([this, &dumpString]() {
             return mainThread_->DumpMem(dumpString);
         }).wait();
+    }
+    if (auto iter = argSets.find(arg12) != argSets.end()) {
+        iter = argSets.erase(arg12);
+        if (!argSets.empty()) {
+            NodeId id = std::stoull(
+                std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.to_bytes(*argSets.begin()));
+            mainThread_->ScheduleTask([this, &dumpString, &id]() {
+                return DumpSurfaceNode(dumpString, id);
+            }).wait();
+        }
     }
     FPSDUMPProcess(argSets, dumpString, arg3);
     if (argSets.size() == 0 || argSets.count(arg8) != 0 || dumpString.empty()) {
