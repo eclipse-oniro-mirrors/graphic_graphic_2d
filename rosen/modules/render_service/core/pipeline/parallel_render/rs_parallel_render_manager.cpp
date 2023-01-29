@@ -32,6 +32,7 @@ namespace OHOS {
 namespace Rosen {
 
 static constexpr uint32_t PARALLEL_THREAD_NUM = 3;
+static constexpr int32_t MAX_CALC_COST_COUNT = 20;
 
 RSParallelRenderManager* RSParallelRenderManager::Instance()
 {
@@ -82,6 +83,7 @@ void RSParallelRenderManager::StartSubRenderThread(uint32_t threadNum, RenderCon
         }
         processTaskManager_.Initialize(threadNum);
         prepareTaskManager_.Initialize(threadNum);
+        calcCostTaskManager_.Initialize(threadNum);
     }
 }
 
@@ -95,6 +97,7 @@ void RSParallelRenderManager::EndSubRenderThread()
         cvParallelRender_.notify_all();
         packVisitor_ = nullptr;
         packVisitorPrepare_ = nullptr;
+        calcCostVisitor_ = nullptr;
         for (auto &thread : threadList_) {
             thread->WaitSubMainThreadEnd();
         }
@@ -126,6 +129,7 @@ void RSParallelRenderManager::CopyVisitorAndPackTask(RSUniRenderVisitor &visitor
     packVisitor_ = std::make_shared<RSParallelPackVisitor>(visitor);
     displayNode_ = node.shared_from_this();
     processTaskManager_.Reset();
+    processTaskManager_.LoadParallelPolicy(parallelPolicy_);
     packVisitor_->ProcessDisplayRenderNode(node);
     uniVisitor_ = &visitor;
     taskType_ = TaskType::PROCESS_TASK;
@@ -139,6 +143,34 @@ void RSParallelRenderManager::CopyPrepareVisitorAndPackTask(RSUniRenderVisitor &
     prepareTaskManager_.Reset();
     packVisitorPrepare_->PrepareDisplayRenderNode(node);
     taskType_ = TaskType::PREPARE_TASK;
+}
+
+void RSParallelRenderManager::CopyCalcCostVisitorAndPackTask(RSUniRenderVisitor &visitor,
+    RSDisplayRenderNode &node, bool isNeedCalc, bool doAnimate, bool isOpDropped)
+{
+    calcCostTaskManager_.Reset();
+    if (isNeedCalc) {
+        calcCostCount_ = MAX_CALC_COST_COUNT;
+    }
+    if (calcCostCount_ > 0) {
+        calcCostCount_--;
+    }
+    if (IsNeedCalcCost()) {
+        calcCostVisitor_ =  std::make_shared<RSParallelPackVisitor>(visitor);
+        uniVisitor_ = &visitor;
+        displayNode_ = node.shared_from_this();
+        calcCostVisitor_->CalcDisplayRenderNodeCost(node);
+        taskType_ = TaskType::CALC_COST_TASK;
+        GetCostFactor();
+        doAnimate_ = doAnimate;
+        isOpDropped_ = isOpDropped;
+        isSecurityDisplay_ = node.GetSecurityDisplay();
+    }
+}
+
+bool RSParallelRenderManager::IsNeedCalcCost() const
+{
+    return calcCostCount_ > 0;
 }
 
 TaskType RSParallelRenderManager::GetTaskType()
@@ -157,6 +189,10 @@ void RSParallelRenderManager::PackRenderTask(RSSurfaceRenderNode &node, TaskType
             processTaskManager_.PushRenderTask(
                 std::make_unique<RSRenderTask>(node, RSRenderTask::RenderNodeStage::PROCESS));
             break;
+        case TaskType::CALC_COST_TASK:
+            calcCostTaskManager_.PushRenderTask(
+                std::make_unique<RSRenderTask>(node, RSRenderTask::RenderNodeStage::CALC_COST));
+            break;
         default:
             break;
     }
@@ -170,6 +206,9 @@ void RSParallelRenderManager::LoadBalanceAndNotify(TaskType type)
             break;
         case TaskType::PROCESS_TASK:
             processTaskManager_.LBCalcAndSubmitSuperTask(displayNode_);
+            break;
+        case TaskType::CALC_COST_TASK:
+            calcCostTaskManager_.LBCalcAndSubmitSuperTask(displayNode_);
             break;
         default:
             break;
@@ -319,6 +358,9 @@ void RSParallelRenderManager::SetRenderTaskCost(uint32_t subMainThreadIdx, uint6
         case TaskType::PROCESS_TASK:
             processTaskManager_.SetSubThreadRenderTaskLoad(subMainThreadIdx, loadId, cost);
             break;
+        case TaskType::CALC_COST_TASK:
+            calcCostTaskManager_.SetSubThreadRenderTaskLoad(subMainThreadIdx, loadId, cost);
+            break;
         default:
             break;
     }
@@ -381,5 +423,52 @@ void RSParallelRenderManager::ClearSelfDrawingSurface(std::shared_ptr<RSPaintFil
     }
 }
 
+void RSParallelRenderManager::WaitCalcCostEnd()
+{
+    for (uint32_t i = 0; i < expectedSubThreadNum_; ++i) {
+        WaitSubMainThread(i);
+    }
+}
+
+void RSParallelRenderManager::GetCostFactor()
+{
+    if (costFactor_.size() > 0 && imageFactor_.size() > 0) {
+        return;
+    }
+    calcCostTaskManager_.GetCostFactor(costFactor_, imageFactor_);
+}
+
+int32_t RSParallelRenderManager::GetCost(RSRenderNode &node) const
+{
+    int32_t cost = 1;
+    const auto& property = node.GetRenderProperties();
+    if (ROSEN_EQ(property.GetAlpha(), 1.0f)) {
+        cost += costFactor_.count("alpha") > 0 ? costFactor_.find("alpha")->second : 1;
+    }
+    if (property.NeedFilter()) {
+        cost += costFactor_.count("filter") > 0 ? costFactor_.find("filter")->second : 1;
+    }
+    if (property.GetBgImage() != nullptr) {
+        int64_t size = floor(property.GetBgImageHeight() * property.GetBgImageWidth());
+        for (const auto &[imageSize, imageCost] : imageFactor_) {
+            if (size <= imageSize) {
+                cost += imageCost;
+                break;
+            }
+        }
+    }
+    return cost;
+}
+
+int32_t RSParallelRenderManager::GetSelfDrawNodeCost() const
+{
+    return costFactor_.count("selfDraw") > 0 ? costFactor_.find("selfDraw")->second : 1;
+}
+
+void RSParallelRenderManager::UpdateNodeCost(RSDisplayRenderNode &node)
+{
+    parallelPolicy_.clear();
+    calcCostTaskManager_.UpdateNodeCost(node, parallelPolicy_);
+}
 } // namespace Rosen
 } // namespace OHOS
