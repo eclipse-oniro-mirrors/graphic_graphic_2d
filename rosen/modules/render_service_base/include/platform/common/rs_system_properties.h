@@ -87,6 +87,7 @@ public:
     static bool GetTargetDirtyRegionDfxEnabled(std::vector<std::string>& dfxTargetSurfaceNames_);
     static bool GetDumpLayersEnabled();
     static bool GetQuickSkipPrepareEnabled();
+    static bool GetHardwareComposerEnabled();
 
     static void SetDrawTextAsBitmap(bool flag);
     static bool GetDrawTextAsBitmap();

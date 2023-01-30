@@ -340,10 +340,15 @@ void RSMainThread::ProcessCommandForUniRender()
                     break;
                 }
             }
-            transactionDataEffective[pid].insert(transactionDataEffective[pid].end(),
-                std::make_move_iterator(transactionVec.begin()), std::make_move_iterator(iter));
-            transactionVec.erase(transactionVec.begin(), iter);
+            if (iter != transactionVec.begin()) {
+                transactionDataEffective[pid].insert(transactionDataEffective[pid].end(),
+                    std::make_move_iterator(transactionVec.begin()), std::make_move_iterator(iter));
+                transactionVec.erase(transactionVec.begin(), iter);
+            }
         }
+    }
+    if (!transactionDataEffective.empty()) {
+        doDirectComposition_ = false;
     }
     RS_TRACE_NAME("RSMainThread::ProcessCommandUni" + transactionFlags);
     for (auto& rsTransactionElem: transactionDataEffective) {
@@ -402,6 +407,7 @@ void RSMainThread::ProcessCommandForDividedRender()
 void RSMainThread::ConsumeAndUpdateAllNodes()
 {
     RS_TRACE_NAME("RSMainThread::ConsumeAndUpdateAllNodes");
+    ResetHardwareEnabledState();
     bool needRequestNextVsync = false;
     bufferTimestamps_.clear();
     const auto& nodeMap = GetContext().GetNodeMap();
@@ -410,7 +416,12 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         if (surfaceNode == nullptr) {
             return;
         }
-
+        if (surfaceNode->IsAppWindow()) {
+            const auto& property = surfaceNode->GetRenderProperties();
+            if (property.GetBackgroundFilter() || property.GetFilter() || property.IsShadowValid()) {
+                isHardwareForcedDisabled_ = true;
+            }
+        }
         auto& surfaceHandler = static_cast<RSSurfaceHandler&>(*surfaceNode);
         surfaceHandler.ResetCurrentFrameBufferConsumed();
         if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler)) {
@@ -418,12 +429,21 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
             if (surfaceNode->UpdateDirtyIfFrameBufferConsumed()) {
                 // collect surface view's pid to prevent wrong skip
                 activeProcessPids_.emplace(ExtractPid(surfaceNode->GetId()));
+                if (!surfaceNode->IsHardwareEnabled() ||
+                    surfaceNode->GetSrcRect().IsEmpty() || surfaceNode->GetDstRect().IsEmpty()) {
+                    doDirectComposition_ = false;
+                } else {
+                    isHardwareEnabledBufferUpdated_ = true;
+                }
             }
         }
 
         // still have buffer(s) to consume.
         if (surfaceHandler.GetAvailableBufferCount() > 0) {
             needRequestNextVsync = true;
+        }
+        if (surfaceNode->IsHardwareEnabled() && surfaceNode->GetBuffer() != nullptr && surfaceNode->IsOnTheTree()) {
+            hardwareEnabledNodes_.emplace_back(surfaceNode);
         }
     });
 
@@ -434,13 +454,18 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
 
 void RSMainThread::ReleaseAllNodesBuffer()
 {
-    // planning: HWC composition should notice that some surfaceNodes buffer releasing 
-    // executes in rs_hardware_thread. 
     RS_TRACE_NAME("RSMainThread::ReleaseAllNodesBuffer");
     const auto& nodeMap = GetContext().GetNodeMap();
     nodeMap.TraverseSurfaceNodes([](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
         if (surfaceNode == nullptr) {
             return;
+        }
+        // surfaceNode's buffer will be released in hardware thread if last frame enables hardware composer
+        if (surfaceNode->IsHardwareEnabled()) {
+            surfaceNode->ResetCurrentFrameHardwareEnabledState();
+            if (!surfaceNode->IsReleaseBufferInMainThread()) {
+                return;
+            }
         }
         // To avoid traverse surfaceNodeMap again, destroy cold start thread here
         if ((!surfaceNode->IsOnTheTree() || !surfaceNode->ShouldPaint()) &&
@@ -512,12 +537,29 @@ void RSMainThread::Render()
 
     if (isUniRender_) {
         auto uniVisitor = std::make_shared<RSUniRenderVisitor>();
-        uniVisitor->SetAnimateState(doWindowAnimate_);
-        uniVisitor->SetDirtyFlag(isDirty_);
-        uniVisitor->SetFocusedWindowPid(focusAppPid_);
-        rootNode->Prepare(uniVisitor);
-        CalcOcclusion();
-        rootNode->Process(uniVisitor);
+        uniVisitor->SetHardwareEnabledNodes(hardwareEnabledNodes_);
+        if (isHardwareForcedDisabled_ || rootNode->GetChildrenCount() > 1) {
+            // [PLANNING] GetChildrenCount > 1 indicates multi display, only Mirror Mode need be marked here
+            // Mirror Mode reuses display node's buffer, so mark it and disable hardware composer in this case
+            uniVisitor->MarkHardwareForcedDisabled();
+        }
+        bool needTraverseNodeTree = true;
+        if (doDirectComposition_ && !isDirty_) {
+            if (isHardwareEnabledBufferUpdated_) {
+                needTraverseNodeTree = !uniVisitor->DoDirectComposition(rootNode);
+            } else {
+                RS_LOGI("RSMainThread::Render nothing to update");
+                return;
+            }
+        }
+        if (needTraverseNodeTree) {
+            uniVisitor->SetAnimateState(doWindowAnimate_);
+            uniVisitor->SetDirtyFlag(isDirty_);
+            uniVisitor->SetFocusedWindowPid(focusAppPid_);
+            rootNode->Prepare(uniVisitor);
+            CalcOcclusion();
+            rootNode->Process(uniVisitor);
+        }
         isDirty_ = false;
         uniRenderEngine_->ShrinkCachesIfNeeded();
     } else {
@@ -779,7 +821,7 @@ void RSMainThread::Animate(uint64_t timestamp)
         doWindowAnimate_ = false;
         return;
     }
-
+    doDirectComposition_ = false;
     bool curWinAnim = false;
     bool needRequestNextVsync = false;
     // iterate and animate all animating nodes, remove if animation finished
@@ -808,7 +850,7 @@ void RSMainThread::Animate(uint64_t timestamp)
     doWindowAnimate_ = curWinAnim;
     RS_LOGD("RSMainThread::Animate end, %d animating nodes remains, has window animation: %d",
         context_->animatingNodeList_.size(), curWinAnim);
-    
+
     if (needRequestNextVsync) {
         RequestNextVSync();
     }
@@ -1188,6 +1230,14 @@ void RSMainThread::PerfMultiWindow()
 void RSMainThread::SetAppWindowNum(uint32_t num)
 {
     appWindowNum_ = num;
+}
+
+void RSMainThread::ResetHardwareEnabledState()
+{
+    doDirectComposition_ = RSSystemProperties::GetHardwareComposerEnabled();
+    isHardwareEnabledBufferUpdated_ = false;
+    hardwareEnabledNodes_.clear();
+    isHardwareForcedDisabled_ = false;
 }
 } // namespace Rosen
 } // namespace OHOS
