@@ -1023,7 +1023,7 @@ void RSMainThread::ClearTransactionDataPidInfo(pid_t remotePid)
     if ((timestamp_ - lastCleanCacheTimestamp_) / REFRESH_PERIOD > CLEAN_CACHE_FREQ) {
 #ifdef RS_ENABLE_GL
         RS_LOGD("RSMainThread: clear cpu cache");
-        auto grContext = uniRenderEngine_->GetRenderContext()->GetGrContext();
+        auto grContext = GetRenderEngine()->GetRenderContext()->GetGrContext();
         grContext->flush();
         SkGraphics::PurgeAllCaches();
         grContext->flush(kSyncCpu_GrFlushFlag, 0, nullptr);
@@ -1044,7 +1044,7 @@ void RSMainThread::TrimMem(std::unordered_set<std::u16string>& argSets, std::str
     if (!argSets.empty()) {
         type = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> {}.to_bytes(*argSets.begin());
     }
-    auto grContext = renderEngine_->GetRenderContext()->GetGrContext();
+    auto grContext = GetRenderEngine()->GetRenderContext()->GetGrContext();
     if (type.empty()) {
         grContext->flush();
         SkGraphics::PurgeAllCaches();
@@ -1084,7 +1084,7 @@ void RSMainThread::DumpMem(std::string& dumpString)
     if (!RSUniRenderJudgement::IsUniRender()) {
         log.AppendFormat("\n---------------\nNot in UniRender and no information");
     } else {
-        MemoryManager::DumpMemoryUsage(log, renderEngine_->GetRenderContext()->GetGrContext());
+        MemoryManager::DumpMemoryUsage(log, GetRenderEngine()->GetRenderContext()->GetGrContext());
     }
     dumpString.append(log.GetString());
 #else
