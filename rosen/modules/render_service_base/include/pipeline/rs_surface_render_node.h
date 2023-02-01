@@ -33,6 +33,7 @@
 #include "include/core/SkRefCnt.h"
 #include "pipeline/rs_surface_handler.h"
 #include "refbase.h"
+#include "screen_manager/screen_types.h"
 #include "sync_fence.h"
 #include "common/rs_occlusion_region.h"
 #include "transaction/rs_occlusion_data.h"
@@ -453,11 +454,17 @@ public:
         return ExtractPid(GetNodeId()) == focusedWindowPid;
     }
 
+    void ResetSurfaceOpaqueRegion(const RectI& screeninfo, const RectI& absRect,
+        ContainerWindowConfigType containerWindowConfigType, bool isFocusWindow = true);
     Occlusion::Region ResetOpaqueRegion(const RectI& absRect,
         const ContainerWindowConfigType containerWindowConfigType, const bool isFocusWindow);
 
     void ResetSurfaceOpaqueRegion(const RectI& screeninfo, const RectI& absRect,
-        ContainerWindowConfigType containerWindowConfigType, bool isFocusWindow = true);
+        const ScreenRotation screenRotation, const bool isFocusWindow);
+    Occlusion::Region ResetOpaqueRegion(const RectI& absRect,
+        const ScreenRotation screenRotation, const bool isFocusWindow) const;
+    Occlusion::Region SetUnfocusedWindowOpaqueRegion(const RectI& absRect, const ScreenRotation screenRotation) const;
+    Occlusion::Region SetFocusedWindowOpaqueRegion(const RectI& absRect, const ScreenRotation screenRotation) const;
 
     bool IsStartAnimationFinished() const;
     void SetStartAnimationFinished();
