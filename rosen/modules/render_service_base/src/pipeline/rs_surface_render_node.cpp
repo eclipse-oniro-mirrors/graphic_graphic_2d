@@ -52,10 +52,9 @@ void RSSurfaceRenderNode::SetConsumer(const sptr<Surface>& consumer)
     consumer_ = consumer;
 }
 
-static SkRect getLocalClipBounds(const RSPaintFilterCanvas& canvas)
+static SkRect GetLocalClipBounds(const RSPaintFilterCanvas& canvas, SkIRect dstRect)
 {
-    SkIRect ibounds = canvas.getDeviceClipBounds();
-    if (ibounds.isEmpty()) {
+    if (dstRect.isEmpty()) {
         return SkRect::MakeEmpty();
     }
 
@@ -65,9 +64,22 @@ static SkRect getLocalClipBounds(const RSPaintFilterCanvas& canvas)
         return SkRect::MakeEmpty();
     }
     SkRect bounds;
-    SkRect r = SkRect::Make(ibounds);
+    SkRect r = SkRect::Make(dstRect);
     inverse.mapRect(&bounds, r);
     return bounds;
+}
+
+void RSSurfaceRenderNode::UpdateSrcRect(const RSPaintFilterCanvas& canvas, SkIRect dstRect)
+{
+    auto localClipRect = GetLocalClipBounds(canvas, dstRect);
+    const RSProperties& properties = GetRenderProperties();
+    RectI srcRect = {
+        std::clamp<int>(localClipRect.left(), 0, properties.GetBoundsWidth()),
+        std::clamp<int>(localClipRect.top(), 0, properties.GetBoundsHeight()),
+        std::clamp<int>(localClipRect.width(), 0, properties.GetBoundsWidth() - localClipRect.left()),
+        std::clamp<int>(localClipRect.height(), 0, properties.GetBoundsHeight() - localClipRect.top())
+    };
+    SetSrcRect(srcRect);
 }
 
 void RSSurfaceRenderNode::PrepareRenderBeforeChildren(RSPaintFilterCanvas& canvas)
@@ -100,15 +112,8 @@ void RSSurfaceRenderNode::PrepareRenderBeforeChildren(RSPaintFilterCanvas& canva
         SkRect::MakeWH(std::floor(properties.GetBoundsWidth()), std::floor(properties.GetBoundsHeight())));
 
     // extract srcDest and dstRect from SkCanvas, localCLipBounds as SrcRect, deviceClipBounds as DstRect
-    auto localClipRect = getLocalClipBounds(canvas);
-    RectI srcRect = {
-        std::clamp<int>(localClipRect.left(), 0, properties.GetBoundsWidth()),
-        std::clamp<int>(localClipRect.top(), 0, properties.GetBoundsHeight()),
-        std::clamp<int>(localClipRect.width(), 0, properties.GetBoundsWidth() - localClipRect.left()),
-        std::clamp<int>(localClipRect.height(), 0, properties.GetBoundsHeight() - localClipRect.top())
-    };
-    SetSrcRect(srcRect);
     auto deviceClipRect = canvas.getDeviceClipBounds();
+    UpdateSrcRect(canvas, deviceClipRect);
     RectI dstRect = { deviceClipRect.left(), deviceClipRect.top(), deviceClipRect.width(), deviceClipRect.height() };
     SetDstRect(dstRect);
 

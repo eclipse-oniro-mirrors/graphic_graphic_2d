@@ -53,6 +53,8 @@ public:
     void ProcessRootRenderNode(RSRootRenderNode& node) override;
     void ProcessSurfaceRenderNode(RSSurfaceRenderNode& node) override;
 
+    bool DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNode);
+
     void SetAnimateState(bool doAnimate)
     {
         doAnimate_ = doAnimate;
@@ -72,6 +74,15 @@ public:
     {
         return doAnimate_;
     }
+
+    void MarkHardwareForcedDisabled()
+    {
+        isHardwareForcedDisabled_ = true;
+    }
+
+    void SetHardwareEnabledNodes(const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hardwareEnabledNodes);
+    void AdjustZOrderAndCreateLayer();
+
     void CopyForParallelPrepare(std::shared_ptr<RSUniRenderVisitor> visitor);
 private:
     void DrawDirtyRectForDFX(const RectI& dirtyRect, const SkColor color,
@@ -105,6 +116,11 @@ private:
      * If so, reset status flag and stop traversal
      */
     bool CheckIfSurfaceRenderNodeStatic(RSSurfaceRenderNode& node);
+    bool IsHardwareComposerEnabled();
+
+    void ClearTransparentBeforeSaveLayer();
+    // mark parentNode's child surfaceView nodes hardware forced disabled
+    void MarkSubHardwareEnableNodeState(RSSurfaceRenderNode& parentNode);
 
     void RecordAppWindowNodeAndPostTask(RSSurfaceRenderNode& node, float width, float height);
     // offscreen render related
@@ -146,6 +162,7 @@ private:
     bool isTargetDirtyRegionDfxEnabled_ = false;
     bool isOpaqueRegionDfxEnabled_ = false;
     bool isQuickSkipPreparationEnabled_ = false;
+    bool isHardwareComposerEnabled_ = false;
     std::vector<std::string> dfxTargetSurfaceNames_;
     PartialRenderType partialRenderType_;
     bool isDirty_ = false;
@@ -163,11 +180,16 @@ private:
     std::shared_ptr<std::mutex> surfaceNodePrepareMutex_;
 
     RectI prepareClipRect_{0, 0, 0, 0}; // renderNode clip rect used in Prepare
-    
+
     // count prepared and processed canvasnode numbers per app
     // unirender visitor resets every frame, no overflow risk here
     unsigned int preparedCanvasNodeInCurrentSurface_ = 0;
     unsigned int processedCanvasNodeInCurrentSurface_ = 0;
+
+    float globalZOrder_ = 0.0f;
+    bool isAppFreeze_ = false;
+    bool isHardwareForcedDisabled_ = false; // indicates if hardware composer is totally disabled
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
 };
 } // namespace Rosen
 } // namespace OHOS

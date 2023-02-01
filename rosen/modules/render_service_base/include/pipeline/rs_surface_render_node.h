@@ -65,6 +65,39 @@ public:
         return nodeType_ == RSSurfaceNodeType::APP_WINDOW_NODE;
     }
 
+    // indicate if this node type can enable hardware composer
+    bool IsHardwareEnabledType() const
+    {
+        // [PLANNING] enable hardware composer for all self-drawing node
+        return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && name_ != "RosenWeb" && name_ != "RosenRenderWeb";
+    }
+
+    bool IsReleaseBufferInMainThread() const
+    {
+        return !isLastFrameHardwareEnabled_;
+    }
+
+    void MarkCurrentFrameHardwareEnabled()
+    {
+        isCurrentFrameHardwareEnabled_ = true;
+    }
+
+    void ResetCurrentFrameHardwareEnabledState()
+    {
+        isLastFrameHardwareEnabled_ = isCurrentFrameHardwareEnabled_;
+        isCurrentFrameHardwareEnabled_ = false;
+    }
+
+    void SetHardwareForcedDisabledState(bool forcesDisabled)
+    {
+        isHardwareForcedDisabled_ = forcesDisabled;
+    }
+
+    bool GetHardwareForcedDisabledState() const
+    {
+        return isHardwareForcedDisabled_;
+    }
+
     bool IsMainWindowType() const
     {
         // a mainWindowType surfacenode will not mounted under another mainWindowType surfacenode
@@ -490,6 +523,7 @@ public:
     // if surfacenode's buffer has been comsumed, it should be set dirty
     bool UpdateDirtyIfFrameBufferConsumed();
 
+    void UpdateSrcRect(const RSPaintFilterCanvas& canvas, SkIRect dstRect);
 private:
     void ClearChildrenCache(const std::shared_ptr<RSBaseRenderNode>& node);
     bool SubNodeIntersectWithExtraDirtyRegion(const RectI& r) const;
@@ -572,6 +606,13 @@ private:
     bool startAnimationFinished_ = false;
     mutable std::mutex cachedImageMutex_;
     sk_sp<SkImage> cachedImage_;
+
+    // used for hardware enabled nodes
+    bool isCurrentFrameHardwareEnabled_ = false;
+    bool isLastFrameHardwareEnabled_ = false;
+    // mark if this self-drawing node is forced not to use hardware composer
+    // in case where this node's parent window node is occluded or is appFreeze, this variable will be marked true
+    bool isHardwareForcedDisabled_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS
