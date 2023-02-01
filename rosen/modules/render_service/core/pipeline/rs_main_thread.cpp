@@ -165,6 +165,7 @@ void RSMainThread::Init()
         ConsumeAndUpdateAllNodes();
         WaitUntilUnmarshallingTaskFinished();
         ProcessCommand();
+        CollectInfoForHardwareComposer();
         Animate(timestamp_);
         CheckColdStartMap();
         Render();
@@ -311,6 +312,7 @@ void RSMainThread::ProcessCommand()
 
 void RSMainThread::ProcessCommandForUniRender()
 {
+    ResetHardwareEnabledState();
     TransactionDataMap transactionDataEffective;
     std::string transactionFlags;
     {
@@ -407,7 +409,6 @@ void RSMainThread::ProcessCommandForDividedRender()
 void RSMainThread::ConsumeAndUpdateAllNodes()
 {
     RS_TRACE_NAME("RSMainThread::ConsumeAndUpdateAllNodes");
-    ResetHardwareEnabledState();
     bool needRequestNextVsync = false;
     bufferTimestamps_.clear();
     const auto& nodeMap = GetContext().GetNodeMap();
@@ -416,12 +417,6 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         if (surfaceNode == nullptr) {
             return;
         }
-        if (surfaceNode->IsAppWindow() && surfaceNode->IsOnTheTree()) {
-            const auto& property = surfaceNode->GetRenderProperties();
-            if (property.GetBackgroundFilter() || property.GetFilter() || property.IsShadowValid()) {
-                isHardwareForcedDisabled_ = true;
-            }
-        }
         auto& surfaceHandler = static_cast<RSSurfaceHandler&>(*surfaceNode);
         surfaceHandler.ResetCurrentFrameBufferConsumed();
         if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler)) {
@@ -429,12 +424,6 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
             if (surfaceNode->UpdateDirtyIfFrameBufferConsumed()) {
                 // collect surface view's pid to prevent wrong skip
                 activeProcessPids_.emplace(ExtractPid(surfaceNode->GetId()));
-                if (!surfaceNode->IsHardwareEnabledType() ||
-                    surfaceNode->GetSrcRect().IsEmpty() || surfaceNode->GetDstRect().IsEmpty()) {
-                    doDirectComposition_ = false;
-                } else {
-                    isHardwareEnabledBufferUpdated_ = true;
-                }
             }
         }
 
@@ -442,14 +431,45 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         if (surfaceHandler.GetAvailableBufferCount() > 0) {
             needRequestNextVsync = true;
         }
-        if (surfaceNode->IsHardwareEnabledType() && surfaceNode->GetBuffer() != nullptr && surfaceNode->IsOnTheTree()) {
-            hardwareEnabledNodes_.emplace_back(surfaceNode);
-        }
     });
 
     if (needRequestNextVsync) {
         RequestNextVSync();
     }
+}
+
+void RSMainThread::CollectInfoForHardwareComposer()
+{
+    if (!isUniRender_ || !RSSystemProperties::GetHardwareComposerEnabled()) {
+        return;
+    }
+    const auto& nodeMap = GetContext().GetNodeMap();
+    nodeMap.TraverseSurfaceNodes(
+        [this](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
+            if (surfaceNode == nullptr || !surfaceNode->IsOnTheTree()) {
+                return;
+            }
+            if (surfaceNode->IsAppWindow()) {
+                const auto& property = surfaceNode->GetRenderProperties();
+                if (property.NeedFilter() || property.IsShadowValid()) {
+                    isHardwareForcedDisabled_ = true;
+                    return;
+                }
+            }
+            auto& surfaceHandler = static_cast<RSSurfaceHandler&>(*surfaceNode);
+            if (surfaceHandler.IsCurrentFrameBufferConsumed()) {
+                if (!surfaceNode->IsHardwareEnabledType() ||
+                    surfaceNode->GetSrcRect().IsEmpty() || surfaceNode->GetDstRect().IsEmpty()) {
+                    doDirectComposition_ = false;
+                } else {
+                    isHardwareEnabledBufferUpdated_ = true;
+                }
+            }
+
+            if (surfaceNode->IsHardwareEnabledType() && surfaceNode->GetBuffer() != nullptr) {
+                hardwareEnabledNodes_.emplace_back(surfaceNode);
+            }
+        });
 }
 
 void RSMainThread::ReleaseAllNodesBuffer()

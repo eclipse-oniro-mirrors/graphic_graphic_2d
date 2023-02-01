@@ -80,7 +80,8 @@ public:
         isHardwareForcedDisabled_ = true;
     }
 
-    void SetHardwareEnabledNodes(std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hardwareEnabledNodes);
+    void SetHardwareEnabledNodes(const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hardwareEnabledNodes);
+    void AdjustZOrderAndCreateLayer();
 
     void CopyForParallelPrepare(std::shared_ptr<RSUniRenderVisitor> visitor);
 private:

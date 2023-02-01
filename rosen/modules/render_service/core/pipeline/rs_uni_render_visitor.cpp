@@ -878,20 +878,35 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         RS_TRACE_BEGIN("RSUniRender:WaitUtilUniRenderFinished");
         RSMainThread::Instance()->WaitUtilUniRenderFinished();
         RS_TRACE_END();
-        node.SetGlobalZOrder(static_cast<float>(hardwareEnabledNodes_.size()));
+        AdjustZOrderAndCreateLayer();
+        node.SetGlobalZOrder(globalZOrder_);
         processor_->ProcessDisplaySurface(node);
-        if (IsHardwareComposerEnabled()) {
-            // create layer for hardwareEnabledNodes_
-            for (auto& node : hardwareEnabledNodes_) {
-                if (!node->GetHardwareForcedDisabledState()) {
-                    RS_LOGD("createLayer: %" PRIu64 "", node->GetId());
-                    processor_->ProcessSurface((*node));
-                }
-            }
-        }
     }
     processor_->PostProcess();
     RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode end");
+}
+
+void RSUniRenderVisitor::AdjustZOrderAndCreateLayer()
+{
+    if (!IsHardwareComposerEnabled()) {
+        return;
+    }
+    // create layer for hardwareEnabledNodes_
+    globalZOrder_ = 0.0f;
+    // sort the surfaceNodes by ZOrder
+    std::stable_sort(hardwareEnabledNodes_.begin(), hardwareEnabledNodes_.end(),
+        [](const auto& first, const auto& second) -> bool {
+        return first->GetGlobalZOrder() < second->GetGlobalZOrder();
+    });
+
+    for (auto& surfaceNode : hardwareEnabledNodes_) {
+        if (!surfaceNode->GetHardwareForcedDisabledState()) {
+            RS_LOGD("createLayer: %" PRIu64 "", surfaceNode->GetId());
+            // SetGlobalZOrder again to ensure ZOrder committed to composer is continuous
+            surfaceNode->SetGlobalZOrder(globalZOrder_++);
+            processor_->ProcessSurface(*surfaceNode);
+        }
+    }
 }
 
 void RSUniRenderVisitor::AddOverDrawListener(std::unique_ptr<RSRenderFrame>& renderFrame,
@@ -1542,14 +1557,10 @@ bool RSUniRenderVisitor::AdaptiveSubRenderThreadMode(uint32_t renderNodeNum)
 #endif
 }
 
-void RSUniRenderVisitor::SetHardwareEnabledNodes(std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hardwareEnabledNodes)
+void RSUniRenderVisitor::SetHardwareEnabledNodes(
+    const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hardwareEnabledNodes)
 {
-    for (auto& weakNode : hardwareEnabledNodes) {
-        auto node = weakNode.lock();
-        if (node) {
-            hardwareEnabledNodes_.emplace_back(node);
-        }
-    }
+    hardwareEnabledNodes_ = hardwareEnabledNodes;
 }
 
 bool RSUniRenderVisitor::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNode)

@@ -153,6 +153,7 @@ private:
     void ProcessCommand();
     void Animate(uint64_t timestamp);
     void ConsumeAndUpdateAllNodes();
+    void CollectInfoForHardwareComposer();
     void ReleaseAllNodesBuffer();
     void Render();
     bool CheckSurfaceNeedProcess(OcclusionRectISet& occlusionSurfaces, std::shared_ptr<RSSurfaceRenderNode> curSurface);
@@ -242,7 +243,7 @@ private:
     // used for hardware enabled case
     bool doDirectComposition_ = true;
     bool isHardwareEnabledBufferUpdated_ = false;
-    std::vector<std::weak_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
     bool isHardwareForcedDisabled_ = false; // if app node has shadow or filter, disable hardware composer for all
 };
 } // namespace OHOS::Rosen
