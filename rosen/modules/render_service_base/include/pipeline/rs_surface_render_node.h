@@ -65,6 +65,11 @@ public:
         return nodeType_ == RSSurfaceNodeType::APP_WINDOW_NODE;
     }
 
+    bool IsAbilityComponent() const
+    {
+        return nodeType_ == RSSurfaceNodeType::ABILITY_COMPONENT_NODE;
+    }
+
     // indicate if this node type can enable hardware composer
     bool IsHardwareEnabledType() const
     {
@@ -107,7 +112,7 @@ public:
             nodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE;
     }
 
-    bool IsSelfDrawingNodeType() const
+    bool IsSelfDrawingType() const
     {
         // self drawing surfacenode has its own buffer, and rendered in its own progress/thread
         // such as surfaceview (web/videos) and self draw windows (such as mouse pointer and boot animation)
@@ -347,6 +352,11 @@ public:
         globalDirtyRegionIsEmpty_ = globalDirtyRegion_.IsEmpty();
     }
 
+    const Occlusion::Region& GetGlobalDirtyRegion() const
+    {
+        return globalDirtyRegion_;
+    }
+
     void SetConsumer(const sptr<Surface>& consumer);
 
     void UpdateSurfaceDefaultSize(float width, float height);
@@ -524,6 +534,9 @@ public:
     bool UpdateDirtyIfFrameBufferConsumed();
 
     void UpdateSrcRect(const RSPaintFilterCanvas& canvas, SkIRect dstRect);
+
+    // if a surfacenode's dstrect is empty, its subnodes' prepare stage can be skipped
+    bool ShouldPrepareSubnodes();
 private:
     void ClearChildrenCache(const std::shared_ptr<RSBaseRenderNode>& node);
     bool SubNodeIntersectWithExtraDirtyRegion(const RectI& r) const;

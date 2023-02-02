@@ -298,8 +298,7 @@ void RSUniRenderVisitor::MarkSubHardwareEnableNodeState(RSSurfaceRenderNode& par
     if (!IsHardwareComposerEnabled()) {
         return;
     }
-    if (!parentNode.IsMainWindowType() &&
-        parentNode.GetSurfaceNodeType() != RSSurfaceNodeType::ABILITY_COMPONENT_NODE) {
+    if (!parentNode.IsMainWindowType() && !parentNode.IsAbilityComponent()) {
         if (parentNode.IsHardwareEnabledType()) {
             parentNode.SetHardwareForcedDisabledState(true);
         }
@@ -362,7 +361,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
     // [planning] IsMainWindowType should contain ABILITY_COMPONENT_NODE
     // this branch should be included in other judgment
-    if (node.GetSurfaceNodeType() == RSSurfaceNodeType::ABILITY_COMPONENT_NODE && curSurfaceNode_) {
+    if (node.IsAbilityComponent() && curSurfaceNode_) {
         curSurfaceNode_->UpdateAbilityNodeIds(node.GetId());
     }
 
@@ -411,7 +410,9 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         screenRotation, node.IsFocusedWindow(currentFocusedPid_));
 
     node.UpdateChildrenOutOfRectFlag(false);
-    PrepareBaseRenderNode(node);
+    if (node.ShouldPrepareSubnodes()) {
+        PrepareBaseRenderNode(node);
+    }
 #if defined(RS_ENABLE_PARALLEL_RENDER) && defined(RS_ENABLE_GL)
     auto parentNode = node.GetParent().lock();
     auto rsParent = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(parentNode);
@@ -1222,6 +1223,10 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     if (!node.GetOcclusionVisible() && !doAnimate_ && RSSystemProperties::GetOcclusionEnabled()) {
         MarkSubHardwareEnableNodeState(node);
         RS_TRACE_NAME(node.GetName() + " Occlusion Skip");
+        return;
+    }
+    if (node.IsAbilityComponent() && node.GetDstRect().IsEmpty()) {
+        RS_TRACE_NAME(node.GetName() + " Empty AbilityComponent Skip");
         return;
     }
 #ifdef RS_ENABLE_EGLQUERYSURFACE

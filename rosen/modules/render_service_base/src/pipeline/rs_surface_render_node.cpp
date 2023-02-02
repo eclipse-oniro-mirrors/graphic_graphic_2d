@@ -82,6 +82,16 @@ void RSSurfaceRenderNode::UpdateSrcRect(const RSPaintFilterCanvas& canvas, SkIRe
     SetSrcRect(srcRect);
 }
 
+bool RSSurfaceRenderNode::ShouldPrepareSubnodes()
+{
+    // if a appwindow or abilitycomponent has a empty dstrect, its subnodes' prepare stage can be skipped
+    // most common scenario: HiBoard (SwipeLeft screen on home screen)
+    if (GetDstRect().IsEmpty() && (IsAppWindow() || IsAbilityComponent())) {
+        return false;
+    }
+    return true;
+}
+
 void RSSurfaceRenderNode::PrepareRenderBeforeChildren(RSPaintFilterCanvas& canvas)
 {
     renderNodeSaveCount_ = canvas.SaveCanvasAndAlpha();
@@ -182,10 +192,7 @@ void RSSurfaceRenderNode::ResetParent()
         ClearChildrenCache(shared_from_this());
     } else {
         auto& consumer = GetConsumer();
-        if (consumer != nullptr &&
-            (GetSurfaceNodeType() != RSSurfaceNodeType::SELF_DRAWING_NODE &&
-            GetSurfaceNodeType() != RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE &&
-            GetSurfaceNodeType() != RSSurfaceNodeType::ABILITY_COMPONENT_NODE)) {
+        if (consumer != nullptr && !IsSelfDrawingType() && !IsAbilityComponent()) {
             consumer->GoBackground();
         }
     }
@@ -444,8 +451,7 @@ void RSSurfaceRenderNode::SetVisibleRegionRecursive(const Occlusion::Region& reg
                                                     VisibleData& visibleVec,
                                                     std::map<uint32_t, bool>& pidVisMap)
 {
-    if (nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE ||
-        nodeType_ == RSSurfaceNodeType::ABILITY_COMPONENT_NODE) {
+    if (nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE || IsAbilityComponent()) {
         SetOcclusionVisible(true);
         return;
     }
