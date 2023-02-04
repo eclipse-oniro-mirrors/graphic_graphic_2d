@@ -146,6 +146,11 @@ public:
         layerRect_ = layerRect;
     }
 
+    void SetBoundSize(const GraphicIRect &boundRect)
+    {
+        boundRect_ = boundRect;
+    }
+
     void SetLayerAdditionalInfo(void *info)
     {
         additionalInfo_ = info;
@@ -174,6 +179,11 @@ public:
     void SetMetaDataSet(const GraphicHDRMetaDataSet &metaDataSet)
     {
         metaDataSet_ = metaDataSet;
+    }
+
+    void SetMatrix(GraphicMatrix matrix)
+    {
+        matrix_ = matrix;
     }
 
     void SetTunnelHandleChange(bool change)
@@ -269,6 +279,16 @@ public:
         return layerRect_;
     }
 
+    GraphicIRect GetBoundSize() const
+    {
+        return boundRect_;
+    }
+
+    GraphicMatrix GetMatrix() const
+    {
+        return matrix_;
+    }
+
     bool IsPreMulti() const
     {
         return preMulti_;
@@ -319,9 +339,11 @@ public:
         zOrder_ = layerInfo->GetZorder();
         visibleNum_ = layerInfo->GetVisibleNum();
         layerRect_ = layerInfo->GetLayerSize();
+        boundRect_ = layerInfo->GetBoundSize();
         visibleRegion_ = layerInfo->GetVisibleRegion();
         dirtyRegion_ = layerInfo->GetDirtyRegion();
         cropRect_ = layerInfo->GetCropRect();
+        matrix_ = layerInfo->GetMatrix();
         layerAlpha_ = layerInfo->GetAlpha();
         transformType_ = layerInfo->GetTransformType();
         compositionType_ = layerInfo->GetCompositionType();
@@ -380,9 +402,11 @@ private:
     uint32_t zOrder_ = 0;
     uint32_t visibleNum_ = 0;
     GraphicIRect layerRect_;
+    GraphicIRect boundRect_; // node's bound width and height related to this layer, used for uni render redraw
     GraphicIRect visibleRegion_;
     GraphicIRect dirtyRegion_;
     GraphicIRect cropRect_;
+    GraphicMatrix matrix_; // matrix used for uni render redraw
     GraphicLayerAlpha layerAlpha_;
     GraphicTransformType transformType_ = GraphicTransformType::GRAPHIC_ROTATE_BUTT;
     GraphicCompositionType compositionType_;

@@ -89,6 +89,7 @@ ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(RSDisplayRenderNode& no
         static_cast<int32_t>(static_cast<float>(screenInfo_.GetRotatedWidth()) * mirrorAdaptiveCoefficient_),
         static_cast<int32_t>(static_cast<float>(screenInfo_.GetRotatedHeight()) * mirrorAdaptiveCoefficient_)
     };
+    info.boundRect = info.dstRect;
     info.visibleRect = GraphicIRect {info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h};
     info.zOrder = static_cast<int32_t>(node.GetGlobalZOrder());
     info.alpha.enGlobalAlpha = true;
@@ -98,6 +99,7 @@ ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(RSDisplayRenderNode& no
     info.fence = node.GetAcquireFence();
     info.blendType = GRAPHIC_BLEND_SRCOVER;
     info.needClient = GetComposerInfoNeedClient(info, node);
+    info.matrix = GraphicMatrix {1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f};
     return info;
 }
 
@@ -116,12 +118,14 @@ void RSUniRenderComposerAdapter::SetComposeInfoToLayer(
     layer->SetZorder(info.zOrder);
     layer->SetAlpha(info.alpha);
     layer->SetLayerSize(info.dstRect);
+    layer->SetBoundSize(info.boundRect);
     layer->SetCompositionType(info.needClient ?
         GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT : GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
     layer->SetVisibleRegion(1, info.visibleRect);
     layer->SetDirtyRegion(info.srcRect);
     layer->SetBlendType(info.blendType);
     layer->SetCropRect(info.srcRect);
+    layer->SetMatrix(info.matrix);
     HDRMetaDataType type;
     if (surface->QueryMetaDataType(info.buffer->GetSeqNum(), type) != GSERROR_OK) {
         RS_LOGE("RSUniRenderComposerAdapter::SetComposeInfoToLayer: QueryMetaDataType failed");
@@ -273,6 +277,14 @@ ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(RSSurfaceRenderNode& no
     info.dstRect.x -= static_cast<int32_t>(static_cast<float>(offsetX_) * mirrorAdaptiveCoefficient_);
     info.dstRect.y -= static_cast<int32_t>(static_cast<float>(offsetY_) * mirrorAdaptiveCoefficient_);
     info.visibleRect = info.dstRect;
+    auto totalMatrix = node.GetTotalMatrix();
+    info.matrix = GraphicMatrix {totalMatrix[0], totalMatrix[1], totalMatrix[2],
+                                 totalMatrix[3], totalMatrix[4], totalMatrix[5],
+                                 totalMatrix[6], totalMatrix[7], totalMatrix[8]};
+
+    const auto& property = node.GetRenderProperties();
+    info.boundRect = { 0, 0,
+        static_cast<int32_t>(property.GetBoundsWidth()), static_cast<int32_t>(property.GetBoundsHeight())};
     return info;
 }
 

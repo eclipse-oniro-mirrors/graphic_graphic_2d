@@ -55,6 +55,7 @@ void RSUniRenderEngine::DrawHdiLayerWithParams(RSPaintFilterCanvas& canvas, cons
     BufferDrawParam& params)
 {
     canvas.save();
+    canvas.concat(params.matrix);
     if (!params.useCPU) {
         RegisterDeleteBufferListener(layer->GetSurface(), true);
         DrawImage(canvas, params);
