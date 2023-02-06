@@ -41,7 +41,6 @@ group("unittest") {
     deps += [
       ":RSParallelHardwareComposerTest",
       ":RSParallelPackVisitorTest",
-      ":RSParallelRenderExtTest",
       ":RSParallelRenderManagerTest",
       ":RSParallelSubThreadTest",
       ":RSParallelTaskManagerTest",
@@ -218,15 +217,6 @@ ohos_unittest("RSParallelPackVisitorTest") {
   sources = [ "parallel_render/rs_parallel_pack_visitor_test.cpp" ]
   deps = [ ":rs_test_common" ]
   external_deps = [ "init:libbegetutil" ]
-  defines = []
-  defines += gpu_defines
-}
-
-## Build RSParallelRenderExtTest
-ohos_unittest("RSParallelRenderExtTest") {
-  module_out_path = module_output_path
-  sources = [ "parallel_render/rs_parallel_render_ext_test.cpp" ]
-  deps = [ ":rs_test_common" ]
   defines = []
   defines += gpu_defines
 }
