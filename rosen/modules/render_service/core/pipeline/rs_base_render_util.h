@@ -85,9 +85,8 @@ public:
     static bool IsBufferValid(const sptr<SurfaceBuffer>& buffer);
     static BufferRequestConfig GetFrameBufferRequestConfig(const ScreenInfo& screenInfo, bool isPhysical = true);
 
-    static SkMatrix GetSurfaceTransformMatrix(const RSSurfaceRenderNode& node, const RectF& bounds);
-    static SkMatrix GetNodeGravityMatrix(
-        const RSSurfaceRenderNode& node, const sptr<SurfaceBuffer>& buffer, const RectF& bounds);
+    static SkMatrix GetSurfaceTransformMatrix(GraphicTransformType rotationTransform, const RectF& bounds);
+    static SkMatrix GetGravityMatrix(Gravity gravity, const sptr<SurfaceBuffer>& buffer, const RectF& bounds);
     static void SetPropertiesForCanvas(RSPaintFilterCanvas& canvas, const BufferDrawParam& params);
 
     static GSError DropFrameProcess(RSSurfaceHandler& node);
@@ -111,13 +110,17 @@ public:
     static bool WriteFreezeRenderNodeToPng(const RSRenderNode& node);
 
     static bool WritePixelMapToPng(Media::PixelMap& pixelMap);
-    static void DealWithSurfaceRotationAndGravity(
-        const RSSurfaceRenderNode& node, RectF& localBounds, BufferDrawParam& params);
-    static void FlipMatrix(const RSSurfaceRenderNode& node, BufferDrawParam& params);
+    static void DealWithSurfaceRotationAndGravity(GraphicTransformType transform, Gravity gravity,
+        RectF& localBounds, BufferDrawParam& params);
+    static void FlipMatrix(GraphicTransformType transform, BufferDrawParam& params);
 
     // GraphicTransformType has two attributes: rotation and flip, it take out one of the attributes separately
     static GraphicTransformType GetRotateTransform(GraphicTransformType transform);
     static GraphicTransformType GetFlipTransform(GraphicTransformType transform);
+
+    // GraphicTransformType from hdi layer info is clockwise, for surface and surface node is anti-clockwise
+    // need conversion here
+    static GraphicTransformType ClockwiseToAntiClockwiseTransform(GraphicTransformType transform);
 private:
     static bool CreateYuvToRGBABitMap(sptr<OHOS::SurfaceBuffer> buffer, std::vector<uint8_t>& newBuffer,
         SkBitmap& bitmap);

@@ -285,7 +285,8 @@ HWTEST_F(RSBaseRenderUtilTest, DealWithSurfaceRotationAndGravity_001, TestSize.L
 
     sptr<Surface> csurf = Surface::CreateSurfaceAsConsumer(config.name);
     rsNode->SetConsumer(csurf);
-    RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(*rsNode, localBounds, params);
+    RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(csurf->GetTransform(),
+        rsNode->GetRenderProperties().GetFrameGravity(),localBounds, params);
 }
 
 /*
@@ -479,7 +480,7 @@ HWTEST_F(RSBaseRenderUtilTest, FlipMatrix_001, Function | SmallTest | Level2)
     sptr<Surface> surface = Surface::CreateSurfaceAsConsumer(config.name);
     surface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_H);
     rsNode->SetConsumer(surface);
-    RSBaseRenderUtil::FlipMatrix(*rsNode, params);
+    RSBaseRenderUtil::FlipMatrix(surface->GetTransform(), params);
 
     ASSERT_EQ(params.matrix.get(1), -matrix.get(1));
     ASSERT_EQ(params.matrix.get(4), -matrix.get(4));
@@ -503,7 +504,7 @@ HWTEST_F(RSBaseRenderUtilTest, FlipMatrix_002, Function | SmallTest | Level2)
     sptr<Surface> surface = Surface::CreateSurfaceAsConsumer(config.name);
     surface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_V);
     rsNode->SetConsumer(surface);
-    RSBaseRenderUtil::FlipMatrix(*rsNode, params);
+    RSBaseRenderUtil::FlipMatrix(surface->GetTransform(), params);
 
     ASSERT_EQ(params.matrix.get(0), -matrix.get(0));
     ASSERT_EQ(params.matrix.get(3), -matrix.get(3));
