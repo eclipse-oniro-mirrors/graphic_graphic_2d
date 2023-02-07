@@ -299,6 +299,10 @@ void RSRenderService::DumpSurfaceNode(std::string& dumpString, NodeId id) const
         std::to_string(node->GetDstRect().top_) + "," +
         std::to_string(node->GetDstRect().width_) + "," +
         std::to_string(node->GetDstRect().height_) + "]\n";
+    dumpString += "Bounds: [" + std::to_string(node->GetRenderProperties().GetBoundsWidth()) + "," +
+        std::to_string(node->GetRenderProperties().GetBoundsHeight()) + "]\n";
+    dumpString += "ContextClipRegion: [" + std::to_string(node->GetContextClipRegion().width()) + "," +
+        std::to_string(node->GetContextClipRegion().height()) + "]\n";
     dumpString += "Zorder: " + std::to_string(node->GetGlobalZOrder()) + "\n";
     dumpString += "IsOnTheTree: " + std::to_string(node->IsOnTheTree()) + "\n";
     dumpString += "Visible: " + std::to_string(node->GetRenderProperties().GetVisible()) + "\n";
