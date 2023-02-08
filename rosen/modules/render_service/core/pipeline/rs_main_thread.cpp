@@ -158,7 +158,9 @@ void RSMainThread::Init()
     mainLoop_ = [&]() {
         RS_LOGD("RsDebug mainLoop start");
         PerfMultiWindow();
-        QuickStartFrameTrace(RS_INTERVAL_NAME);
+        if (RSSystemProperties::FrameTraceEnabled()) {
+            QuickStartFrameTrace(RS_INTERVAL_NAME);
+        }
         SetRSEventDetectorLoopStartTag();
         ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSMainThread::DoComposition");
         activeProcessPids_.clear();
@@ -507,6 +509,17 @@ void RSMainThread::WaitUtilUniRenderFinished()
     uniRenderFinished_ = false;
 }
 
+void RSMainThread::WaitUntilDisplayNodeBufferReleased(RSDisplayRenderNode& node)
+{
+    std::unique_lock<std::mutex> lock(displayNodeBufferReleasedMutex_);
+    if (node.GetConsumer()->QueryIfBufferAvailable()) {
+        displayNodeBufferReleased_ = false;
+        return;
+    }
+    displayNodeBufferReleasedCond_.wait(lock, [this]() { return displayNodeBufferReleased_; });
+    displayNodeBufferReleased_ = false;
+}
+
 void RSMainThread::WaitUntilUnmarshallingTaskFinished()
 {
     if (!isUniRender_) {
@@ -541,6 +554,14 @@ void RSMainThread::NotifyUniRenderFinish()
     } else {
         uniRenderFinished_ = true;
     }
+}
+
+void RSMainThread::NotifyDisplayNodeBufferReleased()
+{
+    RS_TRACE_NAME("RSMainThread::NotifyDisplayNodeBufferReleased");
+    std::lock_guard<std::mutex> lock(displayNodeBufferReleasedMutex_);
+    displayNodeBufferReleased_ = true;
+    displayNodeBufferReleasedCond_.notify_one();
 }
 
 void RSMainThread::Render()

@@ -132,6 +132,11 @@ void RSUniRenderVisitor::CopyPropertyForParallelVisitor(RSUniRenderVisitor *main
 void RSUniRenderVisitor::PrepareBaseRenderNode(RSBaseRenderNode& node)
 {
     node.ResetSortedChildren();
+    for (auto& child : node.GetChildren()) {
+        if (auto renderChild = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(child.lock())) {
+            renderChild->ApplyModifiers();
+        }
+    }
     const auto& children = node.GetSortedChildren();
 
     // GetSortedChildren() may remove disappearingChildren_ when transition animation end.
@@ -240,7 +245,7 @@ void RSUniRenderVisitor::ParallelPrepareDisplayRenderNodeChildrens(RSDisplayRend
     auto parallelRenderManager = RSParallelRenderManager::Instance();
     isParallel_ = AdaptiveSubRenderThreadMode(node.GetChildrenCount()) &&
         parallelRenderManager->GetParallelMode();
-    isDirtyRegionAlignedEnable_ = parallelRenderManager->GetParallelModeSafe();
+    isDirtyRegionAlignedEnable_ = isParallel_;
     // we will open prepare parallel after check all properties.
     if (isParallel_ &&
         RSSystemProperties::GetPrepareParallelRenderingEnabled() != ParallelRenderingType::DISABLE) {
@@ -787,6 +792,9 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         RS_TRACE_BEGIN("RSUniRender:RequestFrame");
         auto renderFrame = renderEngine_->RequestFrame(std::static_pointer_cast<RSSurfaceOhos>(rsSurface),
             RSBaseRenderUtil::GetFrameBufferRequestConfig(screenInfo_, true));
+        RS_TRACE_BEGIN("RSUniRender::wait for bufferRequest cond");
+        RSMainThread::Instance()->WaitUntilDisplayNodeBufferReleased(node);
+        RS_TRACE_END();
         RS_TRACE_END();
         if (renderFrame == nullptr) {
             RS_LOGE("RSUniRenderVisitor Request Frame Failed");

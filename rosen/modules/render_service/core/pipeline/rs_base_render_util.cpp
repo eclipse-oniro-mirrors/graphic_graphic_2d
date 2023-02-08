@@ -611,7 +611,7 @@ bool ConvertBufferColorGamut(std::vector<uint8_t>& dstBuf, const sptr<OHOS::Surf
     ColorGamut srcGamut, ColorGamut dstGamut, const std::vector<GraphicHDRMetaData>& metaDatas)
 {
     RS_TRACE_NAME("ConvertBufferColorGamut");
-    
+
     int32_t pixelFormat = srcBuf->GetFormat();
     if (!IsSupportedFormatForGamutConversion(pixelFormat)) {
         RS_LOGE("ConvertBufferColorGamut: the buffer's format is not supported.");
@@ -813,7 +813,7 @@ bool RSBaseRenderUtil::IsNeedClient(RSRenderNode& node, const ComposeInfo& info)
         RS_LOGD("RsDebug RSBaseRenderUtil::IsNeedClient enable composition client need filter");
         return true;
     }
-    
+
     if (!property.GetCornerRadius().IsZero()) {
         RS_LOGD("RsDebug RSBaseRenderUtil::IsNeedClient enable composition client need round corner");
         return true;
@@ -1017,18 +1017,12 @@ bool RSBaseRenderUtil::IsBufferValid(const sptr<SurfaceBuffer>& buffer)
     return true;
 }
 
-SkMatrix RSBaseRenderUtil::GetSurfaceTransformMatrix(const RSSurfaceRenderNode& node, const RectF& bounds)
+SkMatrix RSBaseRenderUtil::GetSurfaceTransformMatrix(GraphicTransformType rotationTransform, const RectF& bounds)
 {
     SkMatrix matrix;
     const float boundsWidth = bounds.GetWidth();
     const float boundsHeight = bounds.GetHeight();
-    const sptr<Surface>& surface = node.GetConsumer();
-    if (surface == nullptr) {
-        return matrix;
-    }
-
-    auto transform = GetRotateTransform(surface->GetTransform());
-    switch (transform) {
+    switch (rotationTransform) {
         case GraphicTransformType::GRAPHIC_ROTATE_90: {
             matrix.preTranslate(0, boundsHeight);
             matrix.preRotate(-90); // rotate 90 degrees anti-clockwise at last.
@@ -1051,18 +1045,15 @@ SkMatrix RSBaseRenderUtil::GetSurfaceTransformMatrix(const RSSurfaceRenderNode& 
     return matrix;
 }
 
-SkMatrix RSBaseRenderUtil::GetNodeGravityMatrix(
-    const RSSurfaceRenderNode& node, const sptr<SurfaceBuffer>& buffer, const RectF& bounds)
+SkMatrix RSBaseRenderUtil::GetGravityMatrix(Gravity gravity, const sptr<SurfaceBuffer>& buffer, const RectF& bounds)
 {
     SkMatrix gravityMatrix;
     if (buffer == nullptr) {
         return gravityMatrix;
     }
 
-    const RSProperties& property = node.GetRenderProperties();
-    const Gravity gravity = property.GetFrameGravity();
-    const float frameWidth = buffer->GetSurfaceBufferWidth();
-    const float frameHeight = buffer->GetSurfaceBufferHeight();
+    auto frameWidth = static_cast<float>(buffer->GetSurfaceBufferWidth());
+    auto frameHeight = static_cast<float>(buffer->GetSurfaceBufferHeight());
     const float boundsWidth = bounds.GetWidth();
     const float boundsHeight = bounds.GetHeight();
     if (frameWidth == boundsWidth && frameHeight == boundsHeight) {
@@ -1071,43 +1062,37 @@ SkMatrix RSBaseRenderUtil::GetNodeGravityMatrix(
 
     if (!RSPropertiesPainter::GetGravityMatrix(gravity,
         RectF {0.0f, 0.0f, boundsWidth, boundsHeight}, frameWidth, frameHeight, gravityMatrix)) {
-        RS_LOGD("RSDividedRenderUtil::DealWithNodeGravity did not obtain gravity matrix.");
+        RS_LOGD("RSBaseRenderUtil::DealWithNodeGravity did not obtain gravity matrix.");
     }
 
     return gravityMatrix;
 }
 
-void RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(
-    const RSSurfaceRenderNode& node, RectF& localBounds, BufferDrawParam& params)
+void RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(GraphicTransformType transform, Gravity gravity,
+    RectF& localBounds, BufferDrawParam& params)
 {
     // the surface can rotate itself.
-    params.matrix.preConcat(RSBaseRenderUtil::GetSurfaceTransformMatrix(node, localBounds));
-    const sptr<Surface>& surface = node.GetConsumer(); // private func, guarantee surface is not nullptr.
-    auto transform = GetRotateTransform(surface->GetTransform());
-    if (transform == GraphicTransformType::GRAPHIC_ROTATE_90 ||
-        transform == GraphicTransformType::GRAPHIC_ROTATE_270) {
+    auto rotationTransform = GetRotateTransform(transform);
+    params.matrix.preConcat(RSBaseRenderUtil::GetSurfaceTransformMatrix(rotationTransform, localBounds));
+    if (rotationTransform == GraphicTransformType::GRAPHIC_ROTATE_90 ||
+        rotationTransform == GraphicTransformType::GRAPHIC_ROTATE_270) {
         // after rotate, we should swap dstRect and bound's width and height.
         std::swap(localBounds.width_, localBounds.height_);
         params.dstRect = SkRect::MakeWH(localBounds.GetWidth(), localBounds.GetHeight());
     }
 
     // deal with buffer's gravity effect in node's inner space.
-    params.matrix.preConcat(RSBaseRenderUtil::GetNodeGravityMatrix(node, params.buffer, localBounds));
+    params.matrix.preConcat(RSBaseRenderUtil::GetGravityMatrix(gravity, params.buffer, localBounds));
     // because we use the gravity matrix above(which will implicitly includes scale effect),
     // we must disable the scale effect that from srcRect to dstRect.
     params.dstRect = params.srcRect;
 }
 
-void RSBaseRenderUtil::FlipMatrix(const RSSurfaceRenderNode& node, BufferDrawParam& params)
+void RSBaseRenderUtil::FlipMatrix(GraphicTransformType transform, BufferDrawParam& params)
 {
-    auto& consumer = node.GetConsumer();
-    if (consumer == nullptr) {
-        RS_LOGW("RSBaseRenderUtil::FlipMatrix consumer is null");
-        return;
-    }
     const int angle = 180;
     Sk3DView sk3DView;
-    switch (GetFlipTransform(consumer->GetTransform())) {
+    switch (GetFlipTransform(transform)) {
         case GraphicTransformType::GRAPHIC_FLIP_H: {
             sk3DView.rotateX(angle);
             break;
@@ -1120,7 +1105,7 @@ void RSBaseRenderUtil::FlipMatrix(const RSSurfaceRenderNode& node, BufferDrawPar
             return;
         }
     }
-    RS_LOGD("RSBaseRenderUtil::FlipMatrix %d", consumer->GetTransform());
+    RS_LOGD("RSBaseRenderUtil::FlipMatrix %d", transform);
     SkMatrix flip;
     sk3DView.getMatrix(&flip);
     const float half = 0.5f;
@@ -1395,6 +1380,33 @@ GraphicTransformType RSBaseRenderUtil::GetFlipTransform(GraphicTransformType tra
         case GraphicTransformType::GRAPHIC_FLIP_V_ROT180:
         case GraphicTransformType::GRAPHIC_FLIP_V_ROT270: {
             return GraphicTransformType::GRAPHIC_FLIP_V;
+        }
+        default: {
+            return transform;
+        }
+    }
+}
+
+GraphicTransformType RSBaseRenderUtil::ClockwiseToAntiClockwiseTransform(GraphicTransformType transform)
+{
+    switch (transform) {
+        case GraphicTransformType::GRAPHIC_ROTATE_90: {
+            return GraphicTransformType::GRAPHIC_ROTATE_270;
+        }
+        case GraphicTransformType::GRAPHIC_ROTATE_270: {
+            return GraphicTransformType::GRAPHIC_ROTATE_90;
+        }
+        case GraphicTransformType::GRAPHIC_FLIP_H_ROT90: {
+            return GraphicTransformType::GRAPHIC_FLIP_V_ROT90;
+        }
+        case GraphicTransformType::GRAPHIC_FLIP_H_ROT270: {
+            return GraphicTransformType::GRAPHIC_FLIP_V_ROT270;
+        }
+        case GraphicTransformType::GRAPHIC_FLIP_V_ROT90: {
+            return GraphicTransformType::GRAPHIC_FLIP_H_ROT90;
+        }
+        case GraphicTransformType::GRAPHIC_FLIP_V_ROT270: {
+            return GraphicTransformType::GRAPHIC_FLIP_H_ROT270;
         }
         default: {
             return transform;

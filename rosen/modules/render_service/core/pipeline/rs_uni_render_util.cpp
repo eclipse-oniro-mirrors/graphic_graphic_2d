@@ -89,9 +89,14 @@ BufferDrawParam RSUniRenderUtil::CreateBufferDrawParam(const RSSurfaceRenderNode
     params.acquireFence = node.GetAcquireFence();
     params.srcRect = SkRect::MakeWH(buffer->GetSurfaceBufferWidth(), buffer->GetSurfaceBufferHeight());
 
-    RectF localBounds = {0.0f, 0.0f, property.GetBoundsWidth(), property.GetBoundsHeight()};
-    RSBaseRenderUtil::FlipMatrix(node, params);
-    RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(node, localBounds, params);
+    auto& consumer = node.GetConsumer();
+    if (consumer == nullptr || buffer == nullptr) {
+        return params;
+    }
+    auto transform = consumer->GetTransform();
+    RSBaseRenderUtil::FlipMatrix(transform, params);
+    RectF localBounds = { 0.0f, 0.0f, property.GetBoundsWidth(), property.GetBoundsHeight() };
+    RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(transform, property.GetFrameGravity(), localBounds, params);
     return params;
 }
 
@@ -126,13 +131,25 @@ BufferDrawParam RSUniRenderUtil::CreateLayerBufferDrawParam(const LayerInfoPtr& 
     params.paint.setFilterQuality(SkFilterQuality::kLow_SkFilterQuality);
     params.paint.setAlphaf(layer->GetAlpha().gAlpha);
 
-    auto dstRect = layer->GetLayerSize();
-    auto srcRect = layer->GetDirtyRegion();
-    params.srcRect = SkRect::MakeXYWH(srcRect.x, srcRect.y, srcRect.w, srcRect.h);
-    params.dstRect = SkRect::MakeXYWH(dstRect.x, dstRect.y, dstRect.w, dstRect.h);
-
-    params.buffer = layer->GetBuffer();
+    sptr<SurfaceBuffer> buffer = layer->GetBuffer();
+    if (buffer == nullptr) {
+        return params;
+    }
     params.acquireFence = layer->GetAcquireFence();
+    params.buffer = buffer;
+    params.srcRect = SkRect::MakeWH(buffer->GetSurfaceBufferWidth(), buffer->GetSurfaceBufferHeight());
+    auto boundRect = layer->GetBoundSize();
+    params.dstRect = SkRect::MakeWH(boundRect.w, boundRect.h);
+
+    auto layerMatrix = layer->GetMatrix();
+    params.matrix = SkMatrix::MakeAll(layerMatrix.scaleX, layerMatrix.skewX, layerMatrix.transX,
+                                      layerMatrix.skewY, layerMatrix.scaleY, layerMatrix.transY,
+                                      layerMatrix.pers0, layerMatrix.pers1, layerMatrix.pers2);
+
+    auto transform = RSBaseRenderUtil::ClockwiseToAntiClockwiseTransform(layer->GetTransformType());
+    RectF localBounds = { 0.0f, 0.0f, static_cast<float>(boundRect.w), static_cast<float>(boundRect.h) };
+    RSBaseRenderUtil::FlipMatrix(transform, params);
+    RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(transform, Gravity::RESIZE, localBounds, params);
     return params;
 }
 
