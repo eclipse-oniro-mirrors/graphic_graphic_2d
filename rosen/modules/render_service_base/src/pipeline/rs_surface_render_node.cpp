@@ -47,7 +47,7 @@ RSSurfaceRenderNode::RSSurfaceRenderNode(NodeId id, std::weak_ptr<RSContext> con
 
 RSSurfaceRenderNode::~RSSurfaceRenderNode() {}
 
-void RSSurfaceRenderNode::SetConsumer(const sptr<Surface>& consumer)
+void RSSurfaceRenderNode::SetConsumer(const sptr<IConsumerSurface>& consumer)
 {
     consumer_ = consumer;
 }

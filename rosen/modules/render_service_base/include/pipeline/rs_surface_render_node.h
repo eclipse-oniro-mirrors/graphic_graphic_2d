@@ -357,7 +357,7 @@ public:
         return globalDirtyRegion_;
     }
 
-    void SetConsumer(const sptr<Surface>& consumer);
+    void SetConsumer(const sptr<IConsumerSurface>& consumer);
 
     void UpdateSurfaceDefaultSize(float width, float height);
 

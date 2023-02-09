@@ -15,6 +15,7 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_SURFACE_HANDLER_H
 #define RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_SURFACE_HANDLER_H
 
+#include <iconsumer_surface.h>
 #include <surface.h>
 
 #include "common/rs_common_def.h"
@@ -45,7 +46,7 @@ public:
         int64_t timestamp = 0;
     };
 
-    void SetConsumer(const sptr<Surface>& consumer);
+    void SetConsumer(const sptr<IConsumerSurface>& consumer);
     void IncreaseAvailableBuffer();
     int32_t ReduceAvailableBuffer();
 
@@ -100,7 +101,7 @@ public:
         return preBuffer_;
     }
 
-    const sptr<Surface>& GetConsumer() const
+    const sptr<IConsumerSurface>& GetConsumer() const
     {
         return consumer_;
     }
@@ -147,7 +148,7 @@ public:
     }
 
 protected:
-    sptr<Surface> consumer_;
+    sptr<IConsumerSurface> consumer_;
     bool isCurrentFrameBufferConsumed_ = false;
 
 private:

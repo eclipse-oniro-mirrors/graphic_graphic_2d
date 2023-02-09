@@ -17,7 +17,7 @@
 
 namespace OHOS {
 namespace Rosen {
-void RSSurfaceHandler::SetConsumer(const sptr<Surface>& consumer)
+void RSSurfaceHandler::SetConsumer(const sptr<IConsumerSurface>& consumer)
 {
     consumer_ = consumer;
 }

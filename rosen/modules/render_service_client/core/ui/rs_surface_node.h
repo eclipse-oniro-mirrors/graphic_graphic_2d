@@ -19,6 +19,7 @@
 #include <refbase.h>
 #include <string>
 
+#include "iconsumer_surface.h"
 #include "surface.h"
 #include "surface_delegate.h"
 #include "surface_type.h"
