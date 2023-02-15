@@ -169,8 +169,8 @@ void RSMainThread::Init()
         ConsumeAndUpdateAllNodes();
         WaitUntilUnmarshallingTaskFinished();
         ProcessCommand();
-        CollectInfoForHardwareComposer();
         Animate(timestamp_);
+        CollectInfoForHardwareComposer();
         CheckColdStartMap();
         Render();
         ReleaseAllNodesBuffer();
@@ -487,6 +487,12 @@ void RSMainThread::CollectInfoForHardwareComposer()
                 }
             }
         });
+    for (auto& surfaceNode : hardwareEnabledNodes_) {
+        if (surfaceNode->IsLastFrameHardwareEnabled() && (doWindowAnimate_ || isHardwareForcedDisabled_)) {
+            surfaceNode->SetDirty();
+            activeProcessPids_.emplace(ExtractPid(surfaceNode->GetId()));
+        }
+    }
 }
 
 void RSMainThread::ReleaseAllNodesBuffer()
