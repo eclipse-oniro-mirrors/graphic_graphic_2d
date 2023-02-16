@@ -16,6 +16,7 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_UI_RS_TRANSACTION_H
 #define RENDER_SERVICE_CLIENT_CORE_UI_RS_TRANSACTION_H
 
+#include "common/rs_common_def.h"
 #include "common/rs_macros.h"
 
 namespace OHOS {
@@ -26,6 +27,11 @@ public:
     ~RSTransaction() = default;
 
     static void FlushImplicitTransaction();
+    static void OpenSyncTransaction();
+    static void CloseSyncTransaction(const uint64_t syncId, const int32_t transactionCount);
+
+    static void StartSyncTransactionForProcess();
+    static void CloseSyncTransactionForProcess(const uint64_t syncId);
 
 private:
     RSTransaction() = default;

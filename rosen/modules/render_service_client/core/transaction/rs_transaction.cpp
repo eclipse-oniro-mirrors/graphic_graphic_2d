@@ -27,5 +27,44 @@ void RSTransaction::FlushImplicitTransaction()
         transactionProxy->FlushImplicitTransaction();
     }
 }
+
+void RSTransaction::OpenSyncTransaction()
+{
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->StartSyncTransaction();
+        transactionProxy->Begin();
+    }
+}
+
+void RSTransaction::CloseSyncTransaction(const uint64_t syncId, const int32_t transactonCount)
+{
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->MarkTransactionNeedCloseSync(transactonCount);
+        transactionProxy->SetSyncId(syncId);
+        transactionProxy->CommitSyncTransaction();
+        transactionProxy->CloseSyncTransaction();
+    }
+}
+
+void RSTransaction::StartSyncTransactionForProcess()
+{
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->StartSyncTransaction();
+        transactionProxy->Begin();
+    }
+}
+
+void RSTransaction::CloseSyncTransactionForProcess(const uint64_t syncId)
+{
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->SetSyncId(syncId);
+        transactionProxy->CommitSyncTransaction();
+        transactionProxy->CloseSyncTransaction();
+    }
+}
 } // namespace Rosen
 } // namespace OHOS

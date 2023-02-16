@@ -175,6 +175,8 @@ private:
     void ResetSortedChildren(std::shared_ptr<RSBaseRenderNode> node);
 
     void ClassifyRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData);
+    void ProcessRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData, pid_t pid);
+    void ProcessSyncRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData, pid_t pid);
     void ProcessCommandForDividedRender();
     void ProcessCommandForUniRender();
     void WaitUntilUnmarshallingTaskFinished();
@@ -199,6 +201,7 @@ private:
     std::map<uint64_t, std::vector<std::unique_ptr<RSCommand>>> pendingEffectiveCommands_;
     // Collect pids of surfaceview's update(ConsumeAndUpdateAllNodes), effective commands(processCommand) and Animate
     std::unordered_set<pid_t> activeProcessPids_;
+    std::vector<std::unique_ptr<RSTransactionData>> syncTransactionDatas_;
 
     TransactionDataMap cachedTransactionDataMap_;
     TransactionDataIndexMap effectiveTransactionDataIndexMap_;
@@ -208,6 +211,7 @@ private:
     uint64_t lastAnimateTimestamp_ = 0;
     uint64_t prePerfTimestamp_ = 0;
     uint64_t lastCleanCacheTimestamp_ = 0;
+    uint64_t lastSyncTimeStamp_ = 0;
     std::unordered_map<uint32_t, sptr<IApplicationAgent>> applicationAgentMap_;
 
     std::shared_ptr<RSContext> context_;
