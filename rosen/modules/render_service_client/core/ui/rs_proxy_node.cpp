@@ -41,11 +41,6 @@ RSProxyNode::SharedPtr RSProxyNode::Create(NodeId targetNodeId, std::string name
     std::unique_ptr<RSCommand> command = std::make_unique<RSProxyNodeCreate>(proxyNodeId, targetNodeId);
     transactionProxy->AddCommand(command, node->IsUniRenderEnabled());
 
-    if (node->IsUniRenderEnabled()) {
-        std::unique_ptr<RSCommand> extraCommand = std::make_unique<RSProxyNodeCreate>(proxyNodeId, targetNodeId);
-        transactionProxy->AddCommand(extraCommand, false);
-    }
-
     ROSEN_LOGD("RSProxyNode::Create, target node id:%" PRIu64 ", name %s proxy node id %" PRIu64, node->GetId(),
         node->GetName().c_str(), proxyNodeId);
 
@@ -62,10 +57,6 @@ RSProxyNode::~RSProxyNode()
     // destroy remote RSProxyRenderNode, NOT the target node.
     std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeDestroy>(proxyNodeId_);
     transactionProxy->AddCommand(command, IsUniRenderEnabled());
-    if (isRenderServiceNode_) {
-        std::unique_ptr<RSCommand> extraCommand = std::make_unique<RSBaseNodeDestroy>(proxyNodeId_);
-        transactionProxy->AddCommand(extraCommand, false);
-    }
 
     auto ids = GetModifierIds();
     command = std::make_unique<RSProxyNodeRemoveModifiers>(GetId(), ids);
@@ -91,12 +82,8 @@ void RSProxyNode::ResetContextVariableCache() const
         return;
     }
     // send command to proxy node, not the target node
-    std::unique_ptr<RSCommand> commandRT = std::make_unique<RSProxyNodeResetContextVariableCache>(proxyNodeId_);
-    transactionProxy->AddCommand(commandRT, IsUniRenderEnabled());
-    if (isRenderServiceNode_) {
-        std::unique_ptr<RSCommand> commandRS = std::make_unique<RSProxyNodeResetContextVariableCache>(proxyNodeId_);
-        transactionProxy->AddCommand(commandRS, false);
-    }
+    std::unique_ptr<RSCommand> command = std::make_unique<RSProxyNodeResetContextVariableCache>(proxyNodeId_);
+    transactionProxy->AddCommand(command, IsUniRenderEnabled());
 }
 void RSProxyNode::AddChild(std::shared_ptr<RSBaseNode> child, int index)
 {
