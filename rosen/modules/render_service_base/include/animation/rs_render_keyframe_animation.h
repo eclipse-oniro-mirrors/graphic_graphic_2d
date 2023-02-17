@@ -35,7 +35,7 @@ public:
     void AddKeyframes(const std::vector<std::tuple<float, std::shared_ptr<RSRenderPropertyBase>,
         std::shared_ptr<RSInterpolator>>>& keyframes);
     bool Marshalling(Parcel& parcel) const override;
-    static RSRenderKeyframeAnimation* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSRenderKeyframeAnimation* Unmarshalling(Parcel& parcel);
 protected:
     void OnAnimate(float fraction) override;
 

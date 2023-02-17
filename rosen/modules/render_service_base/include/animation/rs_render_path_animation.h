@@ -59,7 +59,7 @@ public:
 
     bool Marshalling(Parcel& parcel) const override;
 
-    static RSRenderPathAnimation* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSRenderPathAnimation* Unmarshalling(Parcel& parcel);
 
 protected:
     RSRenderPathAnimation() = default;

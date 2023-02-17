@@ -80,7 +80,7 @@ public:
     void SetCompressData(const sk_sp<SkData> data, uint32_t id, int width, int height);
 #ifdef ROSEN_OHOS
     bool Marshalling(Parcel& parcel) const;
-    static RSImage* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSImage* Unmarshalling(Parcel& parcel);
 #endif
 
 private:

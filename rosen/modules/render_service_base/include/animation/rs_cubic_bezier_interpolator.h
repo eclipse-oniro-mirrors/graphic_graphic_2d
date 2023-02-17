@@ -45,7 +45,7 @@ public:
         }
         return true;
     }
-    static RSCubicBezierInterpolator* Unmarshalling(Parcel& parcel)
+    [[nodiscard]] static RSCubicBezierInterpolator* Unmarshalling(Parcel& parcel)
     {
         float x1 = 0;
         float y1 = 0;

@@ -36,7 +36,7 @@ public:
     RSScreenData(RSScreenCapability capability, RSScreenModeInfo activityModeInfo,
         const std::vector<RSScreenModeInfo>& supportModeInfo, ScreenPowerStatus powerStatus);
     ~RSScreenData() = default;
-    static RSScreenData* Unmarshalling(Parcel &parcel);
+    [[nodiscard]] static RSScreenData* Unmarshalling(Parcel &parcel);
     bool Marshalling(Parcel &parcel) const override;
 
     void SetCapability(const RSScreenCapability& capability);

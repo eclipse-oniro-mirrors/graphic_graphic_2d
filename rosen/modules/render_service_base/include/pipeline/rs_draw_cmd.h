@@ -125,7 +125,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkRect rect_;
@@ -143,7 +143,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkRRect rrect_;
@@ -166,7 +166,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     std::shared_ptr<RSImage> rsImage_;
@@ -184,7 +184,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkRRect outer_;
@@ -207,7 +207,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkRect rect_;
@@ -225,7 +225,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkRegion region_;
@@ -243,7 +243,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkRect rect_;
@@ -263,7 +263,7 @@ public:
         return RSOpType::SAVE_OPITEM;
     }
 
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 };
 
 class RestoreOpItem : public OpItem {
@@ -277,7 +277,7 @@ public:
         return RSOpType::RESTORE_OPITEM;
     }
 
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 };
 
 class FlushOpItem : public OpItem {
@@ -291,7 +291,7 @@ public:
         return RSOpType::FLUSH_OPITEM;
     }
 
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 };
 
 class MatrixOpItem : public OpItem {
@@ -306,7 +306,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkMatrix matrix_;
@@ -324,7 +324,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkRect rect_;
@@ -344,7 +344,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkRRect rrect_;
@@ -364,7 +364,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkRegion region_;
@@ -383,7 +383,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     float distanceX_;
@@ -406,7 +406,7 @@ public:
         return RSOpType::TEXTBLOB_OPITEM;
     }
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     sk_sp<SkTextBlob> textBlob_;
@@ -426,7 +426,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     float left_;
@@ -447,7 +447,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkRect rectSrc_;
@@ -467,7 +467,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     std::shared_ptr<Media::PixelMap> pixelmap_;
@@ -490,7 +490,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     std::shared_ptr<Media::PixelMap> pixelmap_;
@@ -513,7 +513,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkIRect center_;
@@ -533,7 +533,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     float radius_;
@@ -552,7 +552,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     float radiusRatio_;
@@ -571,7 +571,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkVector radius_[4];
@@ -589,7 +589,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     float dx_;
@@ -612,7 +612,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkPath path_;
@@ -630,7 +630,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkPath path_;
@@ -650,7 +650,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 };
 
 class ConcatOpItem : public OpItem {
@@ -665,7 +665,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkMatrix matrix_;
@@ -683,7 +683,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkRect* rectPtr_ = nullptr;
@@ -706,7 +706,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     sk_sp<SkDrawable> drawable_;
@@ -725,7 +725,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     sk_sp<SkPicture> picture_ { nullptr };
@@ -747,7 +747,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkCanvas::PointMode mode_;
@@ -768,7 +768,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     sk_sp<SkVertices> vertices_;
@@ -789,7 +789,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     SkPath path_;
@@ -808,7 +808,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
     float alpha_;
@@ -825,7 +825,7 @@ public:
         return RSOpType::SAVE_ALPHA_OPITEM;
     }
 
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 };
 
 class RestoreAlphaOpItem : public OpItem {
@@ -839,7 +839,7 @@ public:
         return RSOpType::RESTORE_ALPHA_OPITEM;
     }
 
-    static OpItem* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 };
 
 } // namespace Rosen

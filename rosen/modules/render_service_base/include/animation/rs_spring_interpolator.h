@@ -30,7 +30,7 @@ public:
 
     float Interpolate(float fraction) const override;
     bool Marshalling(Parcel& parcel) const override;
-    static RSSpringInterpolator* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSSpringInterpolator* Unmarshalling(Parcel& parcel);
 
 private:
     float estimatedDuration_ = 0.0f;

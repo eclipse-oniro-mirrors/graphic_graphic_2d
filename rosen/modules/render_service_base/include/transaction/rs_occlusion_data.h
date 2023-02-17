@@ -38,7 +38,7 @@ public:
     {
         return visibleData_;
     }
-    static RSOcclusionData* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSOcclusionData* Unmarshalling(Parcel& parcel);
     bool Marshalling(Parcel& parcel) const override;
 
 private:

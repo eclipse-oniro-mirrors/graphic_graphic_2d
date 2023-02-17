@@ -31,7 +31,7 @@ public:
     RSScreenProps() = default;
     RSScreenProps(std::string propName, uint32_t propId, uint64_t value);
     ~RSScreenProps() = default;
-    static RSScreenProps* Unmarshalling(Parcel &parcel);
+    [[nodiscard]] static RSScreenProps* Unmarshalling(Parcel &parcel);
     bool Marshalling(Parcel &parcel) const override;
 
     void SetPropertyName(const std::string& propName);
