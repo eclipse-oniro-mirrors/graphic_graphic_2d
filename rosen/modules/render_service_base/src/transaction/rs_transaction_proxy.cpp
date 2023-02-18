@@ -80,7 +80,8 @@ void RSTransactionProxy::AddCommand(std::unique_ptr<RSCommand>& command, bool is
         AddCommonCommand(command);
         return;
     }
-    ROSEN_LOGE("RSTransactionProxy::AddCommand failed, command type and client type not match !");
+    ROSEN_LOGE("RSTransactionProxy::AddCommand failed, isRenderServiceCommand:%d %s", isRenderServiceCommand,
+        command->PrintType().c_str());
 }
 
 void RSTransactionProxy::AddCommandFromRT(std::unique_ptr<RSCommand>& command, NodeId nodeId, FollowType followType)
