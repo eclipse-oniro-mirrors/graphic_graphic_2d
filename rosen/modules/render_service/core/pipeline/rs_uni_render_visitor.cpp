@@ -317,33 +317,55 @@ void RSUniRenderVisitor::ClearTransparentBeforeSaveLayer()
     }
 }
 
-void RSUniRenderVisitor::MarkSubHardwareEnableNodeState(RSSurfaceRenderNode& parentNode)
+void RSUniRenderVisitor::MarkSubHardwareEnableNodeState(RSSurfaceRenderNode& surfaceNode)
 {
     if (!IsHardwareComposerEnabled()) {
         return;
     }
-    if (!parentNode.IsMainWindowType() && !parentNode.IsAbilityComponent()) {
-        if (parentNode.IsHardwareEnabledType()) {
-            parentNode.SetHardwareForcedDisabledState(true);
-        }
-        RS_LOGD("RSUniRenderVisitor::MarkSubHardwareEnableNodeState skip name:%s", parentNode.GetName().c_str());
+
+    // hardware enabled type case: mark self
+    if (surfaceNode.IsHardwareEnabledType()) {
+        surfaceNode.SetHardwareForcedDisabledState(true);
         return;
     }
-    pid_t pid = ExtractPid(parentNode.GetId());
-    std::vector<pid_t> abilityComponentPids;
-    if (parentNode.IsMainWindowType()) {
-        auto abilityNodeIds = parentNode.GetAbilityNodeIds();
-        for (auto& nodeId : abilityNodeIds) {
-            abilityComponentPids.emplace_back(ExtractPid(nodeId));
-        }
+
+    if (!surfaceNode.IsAppWindow() && !surfaceNode.IsAbilityComponent()) {
+        return;
     }
-    for (auto& childNode : hardwareEnabledNodes_) {
-        pid_t childPid = ExtractPid(childNode->GetId());
-        if (pid == childPid || std::find(abilityComponentPids.begin(), abilityComponentPids.end(), childPid) !=
-            abilityComponentPids.end()) {
+
+    // ability component type case: check pid
+    if (surfaceNode.IsAbilityComponent()) {
+        pid_t pid = ExtractPid(surfaceNode.GetId());
+        for (auto& childNode : hardwareEnabledNodes_) {
+            pid_t childPid = ExtractPid(childNode->GetId());
+            if (pid == childPid) {
+                childNode->SetHardwareForcedDisabledState(true);
+            }
+        }
+        return;
+    }
+
+    // app window type case: mark all child hardware enabled nodes
+    for (auto& node : surfaceNode.GetChildHardwareEnabledNodes()) {
+        auto childNode = node.lock();
+        if (childNode) {
             childNode->SetHardwareForcedDisabledState(true);
         }
     }
+}
+
+void RSUniRenderVisitor::AdjustLocalZOrder(std::shared_ptr<RSSurfaceRenderNode> surfaceNode)
+{
+    if (!IsHardwareComposerEnabled() || !surfaceNode || !surfaceNode->IsAppWindow()) {
+        return;
+    }
+
+    auto hardwareEnabledNodes = surfaceNode->GetChildHardwareEnabledNodes();
+    if (hardwareEnabledNodes.empty()) {
+        return;
+    }
+    localZOrder_ = static_cast<float>(hardwareEnabledNodes.size());
+    appWindowNodesInZOrder_.emplace_back(surfaceNode);
 }
 
 void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
@@ -389,6 +411,11 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         curSurfaceNode_->UpdateAbilityNodeIds(node.GetId());
     }
 
+    // collect app window node's child hardware enabled node
+    if (node.IsHardwareEnabledType() && node.GetBuffer() != nullptr && curSurfaceNode_) {
+        curSurfaceNode_->AddChildHardwareEnabledNode(node.ReinterpretCastTo<RSSurfaceRenderNode>());
+    }
+
     // Update node properties, including position (dstrect), OldDirty()
     if (auto parentNode = node.GetParent().lock()) {
         auto rsParent = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(parentNode);
@@ -418,6 +445,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
             // if update appwindow, its children should not skip
             isQuickSkipPreparationEnabled_ = false;
             node.ResetAbilityNodeIds();
+            node.ResetChildHardwareEnabledNodes();
             boundsRect_ = SkRect::MakeWH(property.GetBoundsWidth(), property.GetBoundsHeight());
             frameGravity_ = property.GetFrameGravity();
         }
@@ -928,7 +956,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         RS_TRACE_BEGIN("RSUniRender:WaitUtilUniRenderFinished");
         RSMainThread::Instance()->WaitUtilUniRenderFinished();
         RS_TRACE_END();
-        AdjustZOrderAndCreateLayer();
+        AssignGlobalZOrderAndCreateLayer();
         node.SetGlobalZOrder(globalZOrder_);
         processor_->ProcessDisplaySurface(node);
     }
@@ -936,11 +964,33 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
     RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode end");
 }
 
-void RSUniRenderVisitor::AdjustZOrderAndCreateLayer()
+void RSUniRenderVisitor::AssignGlobalZOrderAndCreateLayer()
 {
     if (!IsHardwareComposerEnabled()) {
         return;
     }
+
+    float zOrder = 0.0f;
+    for (auto& appWindowNode : appWindowNodesInZOrder_) {
+        // sort by local zOrder
+        auto childHardwareEnabledNodes = appWindowNode->GetChildHardwareEnabledNodes();
+        std::stable_sort(childHardwareEnabledNodes.begin(), childHardwareEnabledNodes.end(),
+            [](const auto& first, const auto& second) {
+            auto node1 = first.lock();
+            auto node2 = second.lock();
+            return node1 && node2 && node1->GetLocalZOrder() < node2->GetLocalZOrder();
+        });
+        for (auto& child : childHardwareEnabledNodes) {
+            localZOrder_ = 0.0f;
+            auto childNode = child.lock();
+            if (childNode) {
+                childNode->SetLocalZOrder(localZOrder_++);
+                childNode->SetGlobalZOrder(zOrder++);
+            }
+        }
+    }
+
+    // [PLANNING] remove redundant sort here
     // create layer for hardwareEnabledNodes_
     globalZOrder_ = 0.0f;
     // sort the surfaceNodes by ZOrder
@@ -1299,6 +1349,11 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         return;
     }
 #ifdef RS_ENABLE_EGLQUERYSURFACE
+    if (node.IsAppWindow()) {
+        curSurfaceNode_ = node.ReinterpretCastTo<RSSurfaceRenderNode>();
+        localZOrder_ = 0.0f;
+        AdjustLocalZOrder(curSurfaceNode_);
+    }
     // skip clean surface node
     if (isOpDropped_ && node.IsAppWindow()) {
         if (!node.SubNodeNeedDraw(node.GetOldDirtyInSurface(), partialRenderType_)) {
@@ -1306,9 +1361,6 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
             RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode skip: %s", node.GetName().c_str());
             return;
         }
-    }
-    if (node.IsAppWindow()) {
-        curSurfaceNode_ = node.ReinterpretCastTo<RSSurfaceRenderNode>();
     }
 #endif
 
@@ -1412,7 +1464,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
             node.GetDstRect().GetWidth() > 1 && node.GetDstRect().GetHeight() > 1) { // avoid fallback by composer
             canvas_->clear(SK_ColorTRANSPARENT);
             node.SetGlobalAlpha(canvas_->GetAlpha());
-            node.SetGlobalZOrder(globalZOrder_++);
+            node.SetLocalZOrder(localZOrder_++);
             ParallelRenderEnableHardwareComposer(node);
             auto dstRect = node.GetDstRect();
             SkIRect dst = { dstRect.GetLeft(), dstRect.GetTop(), dstRect.GetRight(), dstRect.GetBottom()};

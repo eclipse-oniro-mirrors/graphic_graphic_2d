@@ -363,6 +363,9 @@ public:
         return globalDirtyRegion_;
     }
 
+    void SetLocalZOrder(float localZOrder);
+    float GetLocalZOrder() const;
+
 #ifndef ROSEN_CROSS_PLATFORM
     void SetColorSpace(ColorGamut colorSpace);
     ColorGamut GetColorSpace() const;
@@ -474,6 +477,11 @@ public:
     void ResetAbilityNodeIds();
     void UpdateAbilityNodeIds(NodeId id);
     const std::vector<NodeId>& GetAbilityNodeIds() const;
+
+    // manage appWindowNode's child hardware enabled nodes info
+    void ResetChildHardwareEnabledNodes();
+    void AddChildHardwareEnabledNode(WeakPtr childNode);
+    std::vector<WeakPtr> GetChildHardwareEnabledNodes() const;
 
     bool IsFocusedWindow(pid_t focusedWindowPid)
     {
@@ -610,6 +618,8 @@ private:
     // mark if this self-drawing node is forced not to use hardware composer
     // in case where this node's parent window node is occluded or is appFreeze, this variable will be marked true
     bool isHardwareForcedDisabled_ = false;
+    float localZOrder_ = 0.0f;
+    std::vector<WeakPtr> childHardwareEnabledNodes_;
 };
 } // namespace Rosen
 } // namespace OHOS

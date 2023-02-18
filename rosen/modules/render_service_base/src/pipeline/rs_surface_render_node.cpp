@@ -865,5 +865,30 @@ const std::vector<NodeId>& RSSurfaceRenderNode::GetAbilityNodeIds() const
 {
     return abilityNodeIds_;
 }
+
+void RSSurfaceRenderNode::ResetChildHardwareEnabledNodes()
+{
+    childHardwareEnabledNodes_.clear();
+}
+
+void RSSurfaceRenderNode::AddChildHardwareEnabledNode(std::weak_ptr<RSSurfaceRenderNode> childNode)
+{
+    childHardwareEnabledNodes_.emplace_back(childNode);
+}
+
+std::vector<std::weak_ptr<RSSurfaceRenderNode>> RSSurfaceRenderNode::GetChildHardwareEnabledNodes() const
+{
+    return childHardwareEnabledNodes_;
+}
+
+void RSSurfaceRenderNode::SetLocalZOrder(float localZOrder)
+{
+    localZOrder_ = localZOrder;
+}
+
+float RSSurfaceRenderNode::GetLocalZOrder() const
+{
+    return localZOrder_;
+}
 } // namespace Rosen
 } // namespace OHOS
