@@ -34,7 +34,7 @@ public:
 
     float Interpolate(float fraction) const override;
     bool Marshalling(Parcel& parcel) const override;
-    static RSStepsInterpolator* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSStepsInterpolator* Unmarshalling(Parcel& parcel);
 private:
     int32_t steps_;
     const StepsCurvePosition position_;

@@ -46,7 +46,7 @@ public:
     virtual ~RSInterpolator() = default;
 
     virtual bool Marshalling(Parcel& parcel) const override = 0;
-    static RSB_EXPORT RSInterpolator* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSB_EXPORT RSInterpolator* Unmarshalling(Parcel& parcel);
 
     virtual float Interpolate(float input) const = 0;
 };
@@ -85,7 +85,7 @@ public:
         }
         return true;
     }
-    static RSCustomInterpolator* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSCustomInterpolator* Unmarshalling(Parcel& parcel);
 
 private:
     RSCustomInterpolator(const std::vector<float>&& times, const std::vector<float>&& values);

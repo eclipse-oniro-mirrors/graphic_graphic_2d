@@ -71,7 +71,7 @@ public:
                    params_);
     };
 
-    static RSCommand* Unmarshalling(Parcel& parcel)
+    [[nodiscard]] static RSCommand* Unmarshalling(Parcel& parcel)
     {
         std::tuple<Params...> params;
         if (!std::apply(

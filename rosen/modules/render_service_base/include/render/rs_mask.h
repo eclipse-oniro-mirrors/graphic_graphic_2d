@@ -65,7 +65,7 @@ public:
 
 #ifdef ROSEN_OHOS
     bool Marshalling(Parcel& parcel) const;
-    static RSMask* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSMask* Unmarshalling(Parcel& parcel);
 #endif
 
 protected:

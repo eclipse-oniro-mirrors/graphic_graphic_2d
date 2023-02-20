@@ -57,7 +57,7 @@ public:
     virtual void Update(const std::shared_ptr<RSRenderPropertyBase>& prop, bool isDelta) = 0;
 
     virtual bool Marshalling(Parcel& parcel) = 0;
-    static RSRenderModifier* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSRenderModifier* Unmarshalling(Parcel& parcel);
 };
 
 class RSB_EXPORT RSDrawCmdListRenderModifier : public RSRenderModifier {

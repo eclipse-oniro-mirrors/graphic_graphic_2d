@@ -35,7 +35,7 @@ public:
         uint32_t phyHeight, uint32_t supportLayers, uint32_t virtualDispCount,
         bool supportWriteBack, const std::vector<RSScreenProps>& props);
     ~RSScreenCapability() = default;
-    static RSScreenCapability* Unmarshalling(Parcel &parcel);
+    [[nodiscard]] static RSScreenCapability* Unmarshalling(Parcel &parcel);
     bool Marshalling(Parcel &parcel) const override;
 
     void SetName(const std::string& name);

@@ -34,7 +34,7 @@ public:
     }
 
     bool Marshalling(Parcel& parcel) const override;
-    static RSRenderTransition* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSRenderTransition* Unmarshalling(Parcel& parcel);
 
 protected:
     bool ParseParam(Parcel& parcel) override;

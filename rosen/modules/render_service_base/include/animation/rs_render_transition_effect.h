@@ -39,7 +39,7 @@ public:
     {
         return false;
     }
-    static RSRenderTransitionEffect* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSRenderTransitionEffect* Unmarshalling(Parcel& parcel);
 private:
     std::shared_ptr<RSRenderModifier> modifier_;
     virtual const std::shared_ptr<RSRenderModifier> CreateModifier() = 0;
@@ -52,7 +52,7 @@ public:
     void UpdateFraction(float fraction) const override;
 
     bool Marshalling(Parcel& parcel) const override;
-    static RSRenderTransitionEffect* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSRenderTransitionEffect* Unmarshalling(Parcel& parcel);
 private:
     float alpha_;
     std::shared_ptr<RSRenderAnimatableProperty<float>> property_;
@@ -68,7 +68,7 @@ public:
     void UpdateFraction(float fraction) const override;
 
     bool Marshalling(Parcel& parcel) const override;
-    static RSRenderTransitionEffect* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSRenderTransitionEffect* Unmarshalling(Parcel& parcel);
 private:
     float scaleX_;
     float scaleY_;
@@ -86,7 +86,7 @@ public:
     void UpdateFraction(float fraction) const override;
 
     bool Marshalling(Parcel& parcel) const override;
-    static RSRenderTransitionEffect* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSRenderTransitionEffect* Unmarshalling(Parcel& parcel);
 private:
     float translateX_;
     float translateY_;
@@ -103,7 +103,7 @@ public:
     void UpdateFraction(float fraction) const override;
 
     bool Marshalling(Parcel& parcel) const override;
-    static RSRenderTransitionEffect* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSRenderTransitionEffect* Unmarshalling(Parcel& parcel);
 private:
     float dx_;
     float dy_;

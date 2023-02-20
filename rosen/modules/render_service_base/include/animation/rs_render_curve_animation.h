@@ -37,7 +37,7 @@ public:
 
     bool Marshalling(Parcel& parcel) const override;
 
-    static RSRenderCurveAnimation* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSRenderCurveAnimation* Unmarshalling(Parcel& parcel);
 protected:
     void OnSetFraction(float fraction) override;
 

@@ -36,7 +36,7 @@ public:
 
 #ifdef ROSEN_OHOS
     bool Marshalling(Parcel& parcel) const override;
-    static RSRenderSpringAnimation* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSRenderSpringAnimation* Unmarshalling(Parcel& parcel);
 #endif
 protected:
     void OnSetFraction(float fraction) override;

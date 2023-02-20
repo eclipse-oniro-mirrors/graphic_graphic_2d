@@ -36,7 +36,7 @@ public:
     {}
     ~RSTransactionData() noexcept = default;
 
-    static RSTransactionData* Unmarshalling(Parcel& parcel);
+    [[nodiscard]] static RSTransactionData* Unmarshalling(Parcel& parcel);
     bool Marshalling(Parcel& parcel) const override;
 
     unsigned long GetCommandCount() const
