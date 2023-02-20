@@ -82,7 +82,7 @@ public:
     }
 
     void SetHardwareEnabledNodes(const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hardwareEnabledNodes);
-    void AdjustZOrderAndCreateLayer();
+    void AssignGlobalZOrderAndCreateLayer();
 
     void CopyForParallelPrepare(std::shared_ptr<RSUniRenderVisitor> visitor);
     // Some properties defiend before ProcessSurfaceRenderNode() may be used in
@@ -125,8 +125,10 @@ private:
     bool IsHardwareComposerEnabled();
 
     void ClearTransparentBeforeSaveLayer();
-    // mark parentNode's child surfaceView nodes hardware forced disabled
-    void MarkSubHardwareEnableNodeState(RSSurfaceRenderNode& parentNode);
+    // mark surfaceNode's child surfaceView nodes hardware forced disabled
+    void MarkSubHardwareEnableNodeState(RSSurfaceRenderNode& surfaceNode);
+    // adjust local zOrder if surfaceNode's child surfaceView nodes skipped by dirty region
+    void AdjustLocalZOrder(std::shared_ptr<RSSurfaceRenderNode> surfaceNode);
 
     void RecordAppWindowNodeAndPostTask(RSSurfaceRenderNode& node, float width, float height);
     // offscreen render related
@@ -200,6 +202,9 @@ private:
     bool isFreeze_ = false;
     bool isHardwareForcedDisabled_ = false; // indicates if hardware composer is totally disabled
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
+    // vector of all app window nodes with surfaceView, sorted by zOrder
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> appWindowNodesInZOrder_;
+    float localZOrder_ = 0.0f; // local zOrder for surfaceView under same app window node
 };
 } // namespace Rosen
 } // namespace OHOS

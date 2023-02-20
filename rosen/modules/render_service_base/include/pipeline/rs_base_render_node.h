@@ -169,13 +169,13 @@ public:
 
     // accumulate all valid children's area
     void UpdateChildrenRect(const RectI& subRect);
+    void SetDirty();
 protected:
     enum class NodeDirty {
         CLEAN = 0,
         DIRTY,
     };
     void SetClean();
-    void SetDirty();
 
     void DumpNodeType(std::string& out) const;
 
