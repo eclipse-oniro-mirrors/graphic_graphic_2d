@@ -1,0 +1,229 @@
+diff --git a/rosen/modules/render_service_base/BUILD.gn b/rosen/modules/render_service_base/BUILD.gn
+index 573bec822577bb36c18ac09019013447065adcf9..c713cd734f9694f425699f53360e56cc7a28b528 100644
+--- a/rosen/modules/render_service_base/BUILD.gn
++++ b/rosen/modules/render_service_base/BUILD.gn
+@@ -119,6 +119,7 @@ ohos_source_set("render_service_base_src") {
+     #render
+     "src/render/rs_blur_filter.cpp",
+     "src/render/rs_border.cpp",
++    "src/render/rs_light_up_effect_filter.cpp",
+     "src/render/rs_filter.cpp",
+     "src/render/rs_image.cpp",
+     "src/render/rs_image_cache.cpp",
+diff --git a/rosen/modules/render_service_base/include/render/rs_filter.h b/rosen/modules/render_service_base/include/render/rs_filter.h
+index 1fb7c5118d3506f4a50684485b2b9bb3dadcde26..5b437c9ba04c7b0c3ba0353f6eb1745642c0bb89 100644
+--- a/rosen/modules/render_service_base/include/render/rs_filter.h
++++ b/rosen/modules/render_service_base/include/render/rs_filter.h
+@@ -33,11 +33,13 @@ public:
+     virtual ~RSFilter();
+     static std::shared_ptr<RSFilter> CreateBlurFilter(float blurRadiusX, float blurRadiusY);
+     static std::shared_ptr<RSFilter> CreateMaterialFilter(int style, float dipScale, BLUR_COLOR_MODE mode = DEFAULT);
++    static std::shared_ptr<RSFilter> CreateLightUpEffectFilter(float lightUpDegree);
+ 
+     enum FilterType {
+         NONE = 0,
+         BLUR,
+         MATERIAL,
++        LIGHTUPEFFECT,
+     };
+     FilterType GetFilterType() const
+     {
+diff --git a/rosen/modules/render_service_base/include/render/rs_light_up_effect_filter.h b/rosen/modules/render_service_base/include/render/rs_light_up_effect_filter.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..e6fda293ef91e17eb090fecbaf7ce56546d04b63
+--- /dev/null
++++ b/rosen/modules/render_service_base/include/render/rs_light_up_effect_filter.h
+@@ -0,0 +1,44 @@
++/*
++ * Copyright (c) 2021 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++#ifndef RENDER_SERVICE_CLIENT_CORE_RENDER_RS_LIGHT_UP_EFFECT_FILTER_H
++#define RENDER_SERVICE_CLIENT_CORE_RENDER_RS_LIGHT_UP_EFFECT_FILTER_H
++
++#include "render/rs_skia_filter.h"
++
++#include "include/core/SkColorFilter.h"
++#include "include/effects/SkImageFilters.h"
++
++namespace OHOS {
++namespace Rosen {
++class RSLightUpEffectFilter : public RSSkiaFilter {
++public:
++    RSLightUpEffectFilter(float lightUpDegree);
++    ~RSLightUpEffectFilter() override;
++    float GetLightUpDegree();
++
++    std::shared_ptr<RSFilter> Add(const std::shared_ptr<RSFilter>& rhs) override;
++    std::shared_ptr<RSFilter> Sub(const std::shared_ptr<RSFilter>& rhs) override;
++    std::shared_ptr<RSFilter> Multiply(float rhs) override;
++    std::shared_ptr<RSFilter> Negate() override;
++private:
++    float lightUpDegree_ = 0.f;
++    sk_sp<SkImageFilter> CreateLightUpEffectFilter(float lightUpDegree);
++
++    friend class RSMarshallingHelper;
++};
++} // namespace Rosen
++} // namespace OHOS
++
++#endif // RENDER_SERVICE_CLIENT_CORE_RENDER_RS_LIGHT_UP_EFFECT_FILTER_H
+\ No newline at end of file
+diff --git a/rosen/modules/render_service_base/src/platform/ohos/rs_marshalling_helper.cpp b/rosen/modules/render_service_base/src/platform/ohos/rs_marshalling_helper.cpp
+index 21aa9d8b9f588bb8e2e26723afd713405c77d9b0..6bdba21c779c18535b4048db257524ff8f0a274c 100644
+--- a/rosen/modules/render_service_base/src/platform/ohos/rs_marshalling_helper.cpp
++++ b/rosen/modules/render_service_base/src/platform/ohos/rs_marshalling_helper.cpp
+@@ -53,6 +53,7 @@
+ #include "render/rs_blur_filter.h"
+ #include "render/rs_filter.h"
+ #include "render/rs_image.h"
++#include "render/rs_light_up_effect_filter.h"
+ #include "render/rs_material_filter.h"
+ #include "render/rs_path.h"
+ #include "render/rs_shader.h"
+@@ -642,6 +643,11 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSFi
+                       parcel.WriteInt32(material->colorMode_);
+             break;
+         }
++        case RSFilter::LIGHTUPEFFECT: {
++            auto lightUp = std::static_pointer_cast<RSLightUpEffectFilter>(val);
++            success = success && parcel.WriteFloat(lightUp->lightUpDegree_);
++            break;
++        }
+         default:
+             break;
+     }
+@@ -671,6 +677,14 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSFilter
+             }
+             break;
+         }
++        case RSFilter::LIGHTUPEFFECT: {
++            float lightUpDegree;
++            success = success && parcel.ReadFloat(lightUpDegree);
++            if (success) {
++                val = RSFilter::CreateLightUpEffectFilter(lightUpDegree);
++            }
++            break;
++        }
+         default: {
+             val = nullptr;
+             break;
+diff --git a/rosen/modules/render_service_base/src/render/rs_filter.cpp b/rosen/modules/render_service_base/src/render/rs_filter.cpp
+index 8cc86dff526f5631b3e971ab71ca9ab1a77f3d13..4ff2d7b5d16157992c841c1d01cd37dbafd37f94 100644
+--- a/rosen/modules/render_service_base/src/render/rs_filter.cpp
++++ b/rosen/modules/render_service_base/src/render/rs_filter.cpp
+@@ -18,6 +18,7 @@
+ #include "platform/common/rs_log.h"
+ #include "render/rs_blur_filter.h"
+ #include "render/rs_material_filter.h"
++#include "render/rs_light_up_effect_filter.h"
+ 
+ namespace OHOS {
+ namespace Rosen {
+@@ -41,6 +42,15 @@ std::shared_ptr<RSFilter> RSFilter::CreateMaterialFilter(int style, float dipSca
+ #endif
+ }
+ 
++std::shared_ptr<RSFilter> RSFilter::CreateLightUpEffectFilter(float lightUpDegree)
++{
++#ifdef ROSEN_OHOS
++    return std::make_shared<RSLightUpEffectFilter>(lightUpDegree);
++#else
++    return nullptr;
++#endif
++}
++
+ std::shared_ptr<RSFilter> operator+(const std::shared_ptr<RSFilter>& lhs, const std::shared_ptr<RSFilter>& rhs)
+ {
+     if (lhs == nullptr) {
+diff --git a/rosen/modules/render_service_base/src/render/rs_light_up_effect_filter.cpp b/rosen/modules/render_service_base/src/render/rs_light_up_effect_filter.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..da6d0c5353d23255ef3605f4b41cf18537373d80
+--- /dev/null
++++ b/rosen/modules/render_service_base/src/render/rs_light_up_effect_filter.cpp
+@@ -0,0 +1,75 @@
++/*
++ * Copyright (c) 2021 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++#include "render/rs_light_up_effect_filter.h"
++
++namespace OHOS {
++namespace Rosen {
++RSLightUpEffectFilter::RSLightUpEffectFilter(float lightUpDegree)
++    : RSSkiaFilter(RSLightUpEffectFilter::CreateLightUpEffectFilter(lightUpDegree)),
++      lightUpDegree_(lightUpDegree)
++{
++    type_ = FilterType::LIGHTUPEFFECT;
++}
++
++RSLightUpEffectFilter::~RSLightUpEffectFilter() = default;
++
++sk_sp<SkImageFilter> RSLightUpEffectFilter::CreateLightUpEffectFilter(float lightUpDegree)
++{
++    float normalizedDegree = lightUpDegree - 1.0;
++    const float lightUp[] = {
++        1.000000f, 0.000000f, 0.000000f, 0.000000f, normalizedDegree,
++        0.000000f, 1.000000f, 0.000000f, 0.000000f, normalizedDegree,
++        0.000000f, 0.000000f, 1.000000f, 0.000000f, normalizedDegree,
++        0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f,
++    };
++    sk_sp<SkColorFilter> lightUpFilter = SkColorFilters::Matrix(lightUp);
++
++    return SkImageFilters::ColorFilter(lightUpFilter, nullptr);
++}
++
++float RSLightUpEffectFilter::GetLightUpDegree()
++{
++    return lightUpDegree_;
++}
++
++std::shared_ptr<RSFilter> RSLightUpEffectFilter::Add(const std::shared_ptr<RSFilter>& rhs)
++{
++    if ((rhs == nullptr) || (rhs->GetFilterType() != FilterType::LIGHTUPEFFECT)) {
++        return shared_from_this();
++    }
++    auto lightUpFilter = std::static_pointer_cast<RSLightUpEffectFilter>(rhs);
++    return std::make_shared<RSLightUpEffectFilter>(lightUpDegree_ + lightUpFilter->GetLightUpDegree());
++}
++
++std::shared_ptr<RSFilter> RSLightUpEffectFilter::Sub(const std::shared_ptr<RSFilter>& rhs)
++{
++    if ((rhs == nullptr) || (rhs->GetFilterType() != FilterType::LIGHTUPEFFECT)) {
++        return shared_from_this();
++    }
++    auto lightUpFilter = std::static_pointer_cast<RSLightUpEffectFilter>(rhs);
++    return std::make_shared<RSLightUpEffectFilter>(lightUpDegree_ - lightUpFilter->GetLightUpDegree());
++}
++
++std::shared_ptr<RSFilter> RSLightUpEffectFilter::Multiply(float rhs)
++{
++    return std::make_shared<RSLightUpEffectFilter>(lightUpDegree_ * rhs);
++}
++
++std::shared_ptr<RSFilter> RSLightUpEffectFilter::Negate()
++{
++    return std::make_shared<RSLightUpEffectFilter>(-lightUpDegree_);
++}
++} // namespace Rosen
++} // namespace OHOS
