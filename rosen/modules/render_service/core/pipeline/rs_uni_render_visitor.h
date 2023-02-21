@@ -90,6 +90,7 @@ public:
     void CopyPropertyForParallelVisitor(RSUniRenderVisitor *mainVisitor);
 
 private:
+    void DrawWatermarkIfNeed();
     void DrawDirtyRectForDFX(const RectI& dirtyRect, const SkColor color,
         const SkPaint::Style fillType, float alpha, int edgeWidth);
     void DrawDirtyRegionForDFX(std::vector<RectI> dirtyRects);

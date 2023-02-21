@@ -997,5 +997,23 @@ void RSRenderServiceConnectionProxy::SetAppWindowNum(uint32_t num)
         ROSEN_LOGE("RSRenderServiceConnectionProxy::SetAppWindowNum: Send Request err.");
     }
 }
+
+void RSRenderServiceConnectionProxy::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    data.WriteParcelable(watermarkImg.get());
+    data.WriteBool(isShow);
+    int32_t err = Remote()->SendRequest(
+        RSIRenderServiceConnection::SHOW_WATERMARK, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::ShowWatermark: Send Request err.");
+    }
+}
 } // namespace Rosen
 } // namespace OHOS

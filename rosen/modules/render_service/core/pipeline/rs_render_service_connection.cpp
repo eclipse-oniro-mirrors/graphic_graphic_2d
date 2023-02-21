@@ -702,5 +702,13 @@ void RSRenderServiceConnection::SetAppWindowNum(uint32_t num)
     };
     mainThread_->PostTask(task);
 }
+
+void RSRenderServiceConnection::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow)
+{
+    auto task = [this, watermarkImg, isShow]() -> void {
+        mainThread_->ShowWatermark(watermarkImg, isShow);
+    };
+    mainThread_->PostTask(task);
+}
 } // namespace Rosen
 } // namespace OHOS

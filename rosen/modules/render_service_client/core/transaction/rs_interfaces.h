@@ -131,6 +131,8 @@ public:
     void UpdateRenderMode(bool isUniRender);
 
     void SetAppWindowNum(uint32_t num);
+
+    void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow);
 private:
     RSInterfaces();
     ~RSInterfaces() noexcept;

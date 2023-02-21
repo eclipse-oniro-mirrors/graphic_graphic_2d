@@ -73,6 +73,7 @@ private:
         void ProcessSurfaceRenderNodeWithoutUni(RSSurfaceRenderNode& node);
         void CaptureSingleSurfaceNodeWithoutUni(RSSurfaceRenderNode& node);
         void CaptureSurfaceInDisplayWithoutUni(RSSurfaceRenderNode& node);
+        void DrawWatermarkIfNeed(float screenWidth, float screenHeight);
         std::unique_ptr<RSPaintFilterCanvas> canvas_ = nullptr;
         bool isDisplayNode_ = false;
         float scaleX_ = 1.0f;

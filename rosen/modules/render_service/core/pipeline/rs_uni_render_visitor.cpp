@@ -792,6 +792,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             && processor) {
             canvas_ = processor->GetCanvas();
             ProcessBaseRenderNode(*mirrorNode);
+            DrawWatermarkIfNeed();
         } else {
             processor_->ProcessDisplaySurface(*mirrorNode);
         }
@@ -938,6 +939,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         if (overdrawListener != nullptr) {
             overdrawListener->Draw();
         }
+        DrawWatermarkIfNeed();
         // the following code makes DirtyRegion visible, enable this method by turning on the dirtyregiondebug property
         if (isPartialRenderEnabled_) {
             if (isDirtyRegionDfxEnabled_) {
@@ -1743,6 +1745,17 @@ bool RSUniRenderVisitor::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> r
     processor_->PostProcess();
     RS_LOGD("RSUniRenderVisitor::DoDirectComposition end");
     return true;
+}
+
+void RSUniRenderVisitor::DrawWatermarkIfNeed()
+{
+    if (RSMainThread::Instance()->GetWatermarkFlag()) {
+        sk_sp<SkImage> skImage = RSMainThread::Instance()->GetWatermarkImg();
+        sk_sp<SkShader> shader = skImage->makeShader(SkTileMode::kRepeat, SkTileMode::kRepeat);
+        SkPaint rectPaint;
+        rectPaint.setShader(shader);
+        canvas_->drawRect(SkRect::MakeWH(screenInfo_.width, screenInfo_.height), rectPaint);
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

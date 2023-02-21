@@ -255,5 +255,9 @@ int32_t RSRenderServiceClient::UnRegisterOcclusionChangeCallback(const Occlusion
 void RSRenderServiceClient::SetAppWindowNum(uint32_t num)
 {
 }
+
+void RSRenderServiceClient::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow)
+{
+}
 } // namespace Rosen
 } // namespace OHOS
