@@ -716,7 +716,7 @@ void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::Sha
     std::map<uint32_t, bool> pidVisMap;
     for (auto it = curAllSurfaces.rbegin(); it != curAllSurfaces.rend(); ++it) {
         auto curSurface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
-        if (curSurface == nullptr || curSurface->GetDstRect().IsEmpty()) {
+        if (curSurface == nullptr || curSurface->GetDstRect().IsEmpty() || curSurface->IsLeashWindow()) {
             continue;
         }
         Occlusion::Rect occlusionRect;
@@ -792,7 +792,7 @@ void RSMainThread::CalcOcclusion()
     if (!winDirty) {
         for (auto it = curAllSurfaces.rbegin(); it != curAllSurfaces.rend(); ++it) {
             auto surface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
-            if (surface == nullptr) {
+            if (surface == nullptr || surface->IsLeashWindow()) {
                 continue;
             }
             if (surface->GetZorderChanged() || surface->GetDstRectChanged() ||
