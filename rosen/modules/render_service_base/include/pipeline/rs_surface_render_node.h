@@ -177,6 +177,8 @@ public:
         bool isUniRender) override;
     void Prepare(const std::shared_ptr<RSNodeVisitor>& visitor) override;
     void Process(const std::shared_ptr<RSNodeVisitor>& visitor) override;
+    void ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanvas& canvas) override;
+    void ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas& canvas) override;
 
     void SetContextBounds(const Vector4f bounds);
 

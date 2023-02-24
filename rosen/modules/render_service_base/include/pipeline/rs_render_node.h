@@ -43,6 +43,11 @@ public:
         return Type;
     }
 
+    enum CacheType {
+        NONE = 0,
+        FREEZE,
+        SPHERIZE,
+    };
     ~RSRenderNode() override;
     bool IsDirty() const override;
 
@@ -69,6 +74,11 @@ public:
     virtual void ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas);
     virtual void ProcessRenderContents(RSPaintFilterCanvas& canvas) {}
     virtual void ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas);
+    virtual void ProcessTransitionBeforeChildren(RSPaintFilterCanvas& canvas) {}
+    virtual void ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanvas& canvas) {}
+    virtual void ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas& canvas) {}
+    virtual void ProcessTransitionAfterChildren(RSPaintFilterCanvas& canvas) {}
+    void CheckCacheType();
     void RenderTraceDebug() const;
     bool HasDisappearingTransition(bool recursive) const override
     {
@@ -130,6 +140,26 @@ public:
     void ClearCacheSurface()
     {
         cacheSurface_ = nullptr;
+    }
+
+    void SetCacheType(CacheType cacheType)
+    {
+        cacheType_ = cacheType;
+    }
+
+    CacheType GetCacheType() const
+    {
+        return cacheType_;
+    }
+
+    void SetCacheTypeChanged(bool cacheTypeChanged)
+    {
+        cacheTypeChanged_ = cacheTypeChanged;
+    }
+
+    bool GetCacheTypeChanged() const
+    {
+        return cacheTypeChanged_;
     }
 
     // driven render ///////////////////////////////////
@@ -220,6 +250,8 @@ private:
 
     std::atomic<bool> isFreeze_ = false;
     sk_sp<SkSurface> cacheSurface_ = nullptr;
+    CacheType cacheType_ = CacheType::NONE;
+    bool cacheTypeChanged_ = false;
 
     // driven render
     int itemIndex_ = -1;

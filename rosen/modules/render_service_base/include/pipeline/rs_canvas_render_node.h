@@ -41,6 +41,11 @@ public:
 
     void ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas) override;
     void ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas) override;
+    void ProcessTransitionBeforeChildren(RSPaintFilterCanvas& canvas) override;
+    void ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanvas& canvas) override;
+    void ProcessRenderContents(RSPaintFilterCanvas& canvas) override;
+    void ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas& canvas) override;
+    void ProcessTransitionAfterChildren(RSPaintFilterCanvas& canvas) override;
 
     void Prepare(const std::shared_ptr<RSNodeVisitor>& visitor) override;
     void Process(const std::shared_ptr<RSNodeVisitor>& visitor) override;

@@ -767,6 +767,11 @@ void RSNode::SetFreeze(bool isFreeze)
     ROSEN_LOGE("SetFreeze only support RSSurfaceNode and RSCanvasNode in uniRender");
 }
 
+void RSNode::SetSpherizeDegree(float spherizeDegree)
+{
+    SetProperty<RSSpherizeModifier, RSAnimatableProperty<float>>(RSModifierType::SPHERIZE, spherizeDegree);
+}
+
 void RSNode::NotifyTransition(const std::shared_ptr<const RSTransitionEffect>& effect, bool isTransitionIn)
 {
     // temporary fix for multithread issue in implicit animator
