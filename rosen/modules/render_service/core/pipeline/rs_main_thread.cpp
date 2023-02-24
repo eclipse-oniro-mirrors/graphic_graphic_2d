@@ -642,7 +642,6 @@ void RSMainThread::Render()
             doDirectComposition_ = false;
         }
         bool needTraverseNodeTree = true;
-        doDirectComposition_ = false;
         if (doDirectComposition_ && !isDirty_) {
             if (isHardwareEnabledBufferUpdated_) {
                 needTraverseNodeTree = !uniVisitor->DoDirectComposition(rootNode);
