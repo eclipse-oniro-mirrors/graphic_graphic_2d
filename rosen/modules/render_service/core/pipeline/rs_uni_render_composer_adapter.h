@@ -63,6 +63,7 @@ private:
     static void GetComposerInfoSrcRect(ComposeInfo &info, const RSSurfaceRenderNode& node);
     bool GetComposerInfoNeedClient(const ComposeInfo &info, RSRenderNode& node) const;
     bool CheckStatusBeforeCreateLayer(RSSurfaceRenderNode& node) const;
+    void SetPreBufferInfo(RSSurfaceHandler& surfaceHandler, ComposeInfo& info) const;
 
     std::shared_ptr<HdiOutput> output_;
     ScreenInfo screenInfo_;

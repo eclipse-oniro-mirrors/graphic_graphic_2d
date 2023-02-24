@@ -915,6 +915,14 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         if (isOpDropped_ && dirtySurfaceNodeMap_.empty() && !curDisplayDirtyManager_->IsDirty()) {
             RS_LOGD("DisplayNode skip");
             RS_TRACE_NAME("DisplayNode skip");
+            if (!IsHardwareComposerEnabled()) {
+                return;
+            }
+            for (auto& node: hardwareEnabledNodes_) {
+                if (!node->IsHardwareForcedDisabled()) {
+                    node->MarkCurrentFrameHardwareEnabled();
+                }
+            }
             return;
         }
 #endif
