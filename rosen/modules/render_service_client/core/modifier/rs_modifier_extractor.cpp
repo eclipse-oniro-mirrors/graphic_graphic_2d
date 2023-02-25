@@ -251,6 +251,11 @@ std::shared_ptr<RSMask> RSModifierExtractor::GetMask() const
     GET_PROPERTY_FROM_MODIFIERS(std::shared_ptr<RSMask>, MASK, nullptr, =);
 }
 
+float RSModifierExtractor::GetSpherizeDegree() const
+{
+    GET_PROPERTY_FROM_MODIFIERS(float, SPHERIZE, 0.f, =);
+}
+
 std::string RSModifierExtractor::Dump() const
 {
     std::string dumpInfo;

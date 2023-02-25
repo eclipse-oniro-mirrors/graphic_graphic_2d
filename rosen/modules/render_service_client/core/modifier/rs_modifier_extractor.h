@@ -79,6 +79,7 @@ public:
     bool GetVisible() const;
 
     std::shared_ptr<RSMask> GetMask() const;
+    float GetSpherizeDegree() const;
 
     std::string Dump() const;
 private:

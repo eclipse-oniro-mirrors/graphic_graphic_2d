@@ -199,6 +199,10 @@ public:
 
     bool IsGeoDirty() const;
 
+    void SetSpherize(float spherizeDegree);
+    float GetSpherize() const;
+    bool IsSpherizeValid() const;
+
 private:
     void Reset();
     void SetDirty();
@@ -240,6 +244,7 @@ private:
     std::shared_ptr<RSMask> mask_ = nullptr;
     std::unique_ptr<RSShadow> shadow_ = nullptr;
     std::unique_ptr<Matrix3f> sublayerTransform_ = nullptr;
+    float spherizeDegree_ = 0.f;
 
     friend class RSCanvasRenderNode;
     friend class RSPropertiesPainter;

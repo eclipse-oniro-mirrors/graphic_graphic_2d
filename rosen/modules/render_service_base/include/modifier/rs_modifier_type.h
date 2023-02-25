@@ -74,6 +74,7 @@ enum class RSModifierType : int16_t {
     SHADOW_RADIUS,
     SHADOW_PATH,
     MASK,
+    SPHERIZE,
 
     CUSTOM,
     EXTENDED,

@@ -228,6 +228,22 @@ void RSRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
     canvas.RestoreCanvasAndAlpha(renderNodeSaveCount_);
 }
 
+void RSRenderNode::CheckCacheType()
+{
+    if (GetRenderProperties().IsSpherizeValid() && cacheType_ != CacheType::SPHERIZE) {
+        cacheType_ = CacheType::SPHERIZE;
+        cacheTypeChanged_ = true;
+    } else if (!GetRenderProperties().IsSpherizeValid()) {
+        if (isFreeze_ && cacheType_ != CacheType::FREEZE) {
+            cacheTypeChanged_ = true;
+            cacheType_ = CacheType::FREEZE;
+        } else if (cacheType_ != CacheType::NONE) {
+            cacheTypeChanged_ = true;
+            cacheType_ = CacheType::NONE;
+        }
+    }
+}
+
 void RSRenderNode::AddModifier(const std::shared_ptr<RSRenderModifier> modifier)
 {
     if (!modifier) {

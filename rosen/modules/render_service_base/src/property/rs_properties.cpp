@@ -988,6 +988,22 @@ std::shared_ptr<RSMask> RSProperties::GetMask() const
     return mask_;
 }
 
+void RSProperties::SetSpherize(float spherizeDegree)
+{
+    spherizeDegree_ = spherizeDegree;
+}
+
+float RSProperties::GetSpherize() const
+{
+    return spherizeDegree_;
+}
+
+bool RSProperties::IsSpherizeValid() const
+{
+    constexpr float epsilon = 0.001f;
+    return GetSpherize() - 0.0 > epsilon;
+}
+
 std::string RSProperties::Dump() const
 {
     std::string dumpInfo;
