@@ -538,6 +538,15 @@ public:
     // if a surfacenode's dstrect is empty, its subnodes' prepare stage can be skipped
     bool ShouldPrepareSubnodes();
 
+    void SetNodeCost(int32_t cost)
+    {
+        nodeCost_ = cost;
+    }
+
+    int32_t GetNodeCost() const
+    {
+        return nodeCost_;
+    }
 private:
     void ClearChildrenCache(const std::shared_ptr<RSBaseRenderNode>& node);
     bool SubNodeIntersectWithExtraDirtyRegion(const RectI& r) const;
@@ -629,6 +638,7 @@ private:
     bool isHardwareForcedDisabled_ = false;
     float localZOrder_ = 0.0f;
     std::vector<WeakPtr> childHardwareEnabledNodes_;
+    int32_t nodeCost_ = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

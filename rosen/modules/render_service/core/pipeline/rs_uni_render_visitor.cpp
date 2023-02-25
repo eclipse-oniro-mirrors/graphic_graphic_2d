@@ -40,6 +40,7 @@
 #include "property/rs_properties_painter.h"
 #include "render/rs_skia_filter.h"
 #include "pipeline/parallel_render/rs_parallel_render_manager.h"
+#include "system/rs_system_parameters.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -92,6 +93,9 @@ RSUniRenderVisitor::RSUniRenderVisitor()
 #endif
     surfaceNodePrepareMutex_ = std::make_shared<std::mutex>();
     parallelRenderType_ = RSSystemProperties::GetParallelRenderingEnabled();
+#if defined(RS_ENABLE_PARALLEL_RENDER)
+    isCalcCostEnable_ = RSSystemParameters::GetCalcCostEnabled();
+#endif
 }
 
 RSUniRenderVisitor::RSUniRenderVisitor(std::shared_ptr<RSPaintFilterCanvas> canvas, uint32_t surfaceIndex)
@@ -828,6 +832,9 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         node.GetDirtyManager()->GetDirtyRegion().ToString().c_str());
     RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode node: %" PRIu64 ", child size:%u", node.GetId(),
         node.GetChildrenCount());
+#if defined(RS_ENABLE_PARALLEL_RENDER) && defined(RS_ENABLE_GL)
+    bool isNeedCalcCost = node.GetSurfaceChangedRects().size() > 0;
+#endif
     sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
     if (!screenManager) {
         RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode ScreenManager is nullptr");
@@ -1025,6 +1032,16 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             canvas_->restoreToCount(saveCount);
         }
 #if defined(RS_ENABLE_PARALLEL_RENDER) && defined(RS_ENABLE_GL)
+        if ((isParallel_ && ((rects.size() > 0) || !isPartialRenderEnabled_)) && isCalcCostEnable_) {
+            auto parallelRenderManager = RSParallelRenderManager::Instance();
+            parallelRenderManager->CopyCalcCostVisitorAndPackTask(*this, node, isNeedCalcCost,
+                doAnimate_, isOpDropped_);
+            if (parallelRenderManager->IsNeedCalcCost()) {
+                parallelRenderManager->LoadBalanceAndNotify(TaskType::CALC_COST_TASK);
+                parallelRenderManager->WaitCalcCostEnd();
+                parallelRenderManager->UpdateNodeCost(node);
+            }
+        }
         if (isParallel_ && ((rects.size() > 0) || !isPartialRenderEnabled_)) {
             ClearTransparentBeforeSaveLayer();
             auto parallelRenderManager = RSParallelRenderManager::Instance();
