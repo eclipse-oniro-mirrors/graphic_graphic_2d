@@ -384,7 +384,7 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessSurfaceRenderNodeWith
         return;
     }
 
-    RSAutoCanvasRestore acr(canvas_, true);
+    RSAutoCanvasRestore acr(canvas_);
     canvas_->MultiplyAlpha(node.GetRenderProperties().GetAlpha() * node.GetContextAlpha());
     if (isDisplayNode_) {
         CaptureSurfaceInDisplayWithUni(node);

@@ -50,7 +50,7 @@ public:
 
     void SetHighContrast(bool enabled)
     {
-        isHighContrastEnabled_  = enabled;
+        isHighContrastEnabled_ = enabled;
     }
     bool isHighContrastEnabled() const
     {
@@ -94,32 +94,40 @@ public:
     /** Preserves SkCanvas::save() and RSPaintFilterCanvas::SaveAlpha() count. Optionally saves SkCanvas clip /
        SkCanvas matrix and RSPaintFilterCanvas alpha.
 
-        @param canvas  RSPaintFilterCanvas to guard
-        @param doSave  call RSPaintFilterCanvas::SaveCanvasAndAlpha()
-        @return        utility to restore RSPaintFilterCanvas state on destructor
+        @param canvas     RSPaintFilterCanvas to guard
+        @param saveCanvas call SkCanvas::save()
+        @param saveAlpha  call RSPaintFilterCanvas::SaveAlpha()
+        @return           utility to restore RSPaintFilterCanvas state on destructor
     */
-    RSAutoCanvasRestore(RSPaintFilterCanvas* canvas, bool doSave) : canvas_(canvas), saveCount_({ 0, 0 })
+    RSAutoCanvasRestore(RSPaintFilterCanvas* canvas, bool saveCanvas = true, bool saveAlpha = true)
+        : canvas_(canvas), saveCount_({ 0, 0 })
     {
         if (canvas_) {
-            saveCount_= canvas->GetSaveCount();
-            if (doSave) {
-                canvas->SaveCanvasAndAlpha();
+            saveCount_ = canvas->GetSaveCount();
+            if (saveCanvas) {
+                canvas->save();
+            }
+            if (saveAlpha) {
+                canvas->SaveAlpha();
             }
         }
     }
 
-    RSAutoCanvasRestore(const std::unique_ptr<RSPaintFilterCanvas>& canvas, bool doSave)
-        : RSAutoCanvasRestore(canvas.get(), doSave)
+    /** Allow RSAutoCanvasRestore to be used with std::unique_ptr and std::shared_ptr */
+    RSAutoCanvasRestore(
+        const std::unique_ptr<RSPaintFilterCanvas>& canvas, bool saveCanvas = true, bool saveAlpha = true)
+        : RSAutoCanvasRestore(canvas.get(), saveCanvas, saveAlpha)
     {}
-
-    RSAutoCanvasRestore(const std::shared_ptr<RSPaintFilterCanvas>& canvas, bool doSave)
-        : RSAutoCanvasRestore(canvas.get(), doSave)
+    RSAutoCanvasRestore(
+        const std::shared_ptr<RSPaintFilterCanvas>& canvas, bool saveCanvas = true, bool saveAlpha = true)
+        : RSAutoCanvasRestore(canvas.get(), saveCanvas, saveAlpha)
     {}
 
     /** Restores RSPaintFilterCanvas to saved state. Destructor is called when container goes out of
         scope.
     */
-    ~RSAutoCanvasRestore() {
+    ~RSAutoCanvasRestore()
+    {
         if (canvas_) {
             canvas_->RestoreCanvasAndAlpha(saveCount_);
         }
@@ -128,7 +136,8 @@ public:
     /** Restores RSPaintFilterCanvas to saved state immediately. Subsequent calls and
         ~RSAutoCanvasRestore() have no effect.
     */
-    void restore() {
+    void restore()
+    {
         if (canvas_) {
             canvas_->RestoreCanvasAndAlpha(saveCount_);
             canvas_ = nullptr;

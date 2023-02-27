@@ -439,7 +439,8 @@ void RSBaseRenderNode::GenerateSortedChildren()
         auto node1 = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(first);
         auto node2 = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(second);
         if (node1 == nullptr || node2 == nullptr) {
-            ROSEN_LOGE("RSBaseRenderNode::GenerateSortedChildren nullptr found in sortedChildren_, this should not happen");
+            ROSEN_LOGE(
+                "RSBaseRenderNode::GenerateSortedChildren nullptr found in sortedChildren_, this should not happen");
             return false;
         }
         return node1->GetRenderProperties().GetPositionZ() < node2->GetRenderProperties().GetPositionZ();
