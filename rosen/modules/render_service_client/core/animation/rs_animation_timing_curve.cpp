@@ -19,6 +19,7 @@
 #include "animation/rs_interpolator.h"
 #include "animation/rs_spring_interpolator.h"
 #include "animation/rs_steps_interpolator.h"
+#include "common/rs_common_def.h"
 
 namespace OHOS {
 namespace Rosen {
