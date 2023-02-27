@@ -81,6 +81,18 @@ void RSUniRenderComposerAdapter::CommitLayers(const std::vector<LayerInfoPtr>& l
     RSHardwareThread::Instance().CommitAndReleaseLayers(output_, layers);
 }
 
+void RSUniRenderComposerAdapter::SetPreBufferInfo(RSSurfaceHandler& surfaceHandler, ComposeInfo& info) const
+{
+    if (surfaceHandler.IsPreBufferReleased()) {
+        // reset prevBuffer if same layer has been committed successfully,
+        // to avoid releasing the same buffer next frame in some situations.
+        info.preBuffer = nullptr;
+    } else {
+        info.preBuffer = surfaceHandler.GetPreBuffer().buffer;
+        surfaceHandler.SetPreBufferReleased(true);
+    }
+}
+
 // private func, for RSDisplayRenderNode
 ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(RSDisplayRenderNode& node) const
 {
@@ -98,7 +110,7 @@ ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(RSDisplayRenderNode& no
     info.zOrder = static_cast<int32_t>(node.GetGlobalZOrder());
     info.alpha.enGlobalAlpha = true;
     info.alpha.gAlpha = 255;
-    info.preBuffer = node.GetPreBuffer().buffer;
+    SetPreBufferInfo(node, info);
     info.buffer = buffer;
     info.fence = node.GetAcquireFence();
     info.blendType = GRAPHIC_BLEND_SRCOVER;
@@ -121,7 +133,7 @@ ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(RSDrivenSurfaceRenderNo
     info.zOrder = static_cast<int32_t>(node.GetGlobalZOrder());
     info.alpha.enGlobalAlpha = true;
     info.alpha.gAlpha = 255;
-    info.preBuffer = node.GetPreBuffer().buffer;
+    SetPreBufferInfo(node, info);
     info.buffer = buffer;
     info.fence = node.GetAcquireFence();
     info.blendType = GRAPHIC_BLEND_SRCOVER;
@@ -299,7 +311,7 @@ ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(RSSurfaceRenderNode& no
     info.blendType = node.GetBlendType();
     const auto& buffer = node.GetBuffer();
     info.buffer = buffer;
-    info.preBuffer = node.GetPreBuffer().buffer;
+    SetPreBufferInfo(node, info);
     GetComposerInfoSrcRect(info, node);
     info.needClient = GetComposerInfoNeedClient(info, node);
     DealWithNodeGravity(node, info);
