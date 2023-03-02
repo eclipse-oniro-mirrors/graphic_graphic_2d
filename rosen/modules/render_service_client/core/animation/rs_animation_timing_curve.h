@@ -43,6 +43,9 @@ public:
     // Create interpolating spring, which duration is determined by TimingProtocol. Multiple animations on the same
     // property will run simultaneously and act additively.
     static RSAnimationTimingCurve CreateSpringCurve(float velocity, float mass, float stiffness, float damping);
+    // Create interpolating spring, which duration is determined by the spring model. Multiple animations on the same
+    // property will run simultaneously and act additively.
+    static RSAnimationTimingCurve CreateInterpolatingSpring(float mass, float stiffness, float damping, float velocity);
     // Create physical spring, which duration is determined by the spring model. When mixed with other physical spring
     // animations on the same property, each animation will be replaced by their successor, preserving velocity from one
     // animation to the next.

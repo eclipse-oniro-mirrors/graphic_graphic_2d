@@ -86,6 +86,14 @@ RSAnimationTimingCurve RSAnimationTimingCurve::CreateSpringCurve(
     return RSAnimationTimingCurve(std::make_shared<RSSpringInterpolator>(response, dampingRatio, velocity));
 }
 
+RSAnimationTimingCurve RSAnimationTimingCurve::CreateInterpolatingSpring(
+    float mass, float stiffness, float damping, float velocity)
+{
+    float response = 2 * PI * sqrt(mass / stiffness);
+    float dampingRatio = (damping / (2 * sqrt(mass * stiffness)));
+    return RSAnimationTimingCurve(response, dampingRatio, velocity, CurveType::INTERPOLATING_SPRING);
+}
+
 RSAnimationTimingCurve RSAnimationTimingCurve::CreateStepsCurve(int32_t steps, StepsCurvePosition position)
 {
     return RSAnimationTimingCurve(std::make_shared<RSStepsInterpolator>(steps, position));
