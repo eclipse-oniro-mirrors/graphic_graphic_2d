@@ -337,7 +337,6 @@ void RSPropertiesPainter::DrawPixelStretch(const RSProperties& properties, RSPai
 {
     auto stretchSize = properties.GetPixelStretch();
     if (stretchSize.IsZero()) {
-        ROSEN_LOGE("RSPropertiesPainter::DrawPixelStretch invalid stretch parameter, zero.");
         return;
     }
     bool isExpend = false;
@@ -353,7 +352,7 @@ void RSPropertiesPainter::DrawPixelStretch(const RSProperties& properties, RSPai
 
     auto skSurface = canvas.GetSurface();
     if (skSurface == nullptr) {
-        ROSEN_LOGD("RSPropertiesPainter::DrawPixelStretch skSurface null");
+        ROSEN_LOGE("RSPropertiesPainter::DrawPixelStretch skSurface null");
         return;
     }
     
