@@ -147,6 +147,8 @@ public:
     int32_t UnRegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback);
 
     void SetAppWindowNum(uint32_t num);
+
+    void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow);
 private:
     void TriggerSurfaceCaptureCallback(NodeId id, Media::PixelMap* pixelmap);
     std::mutex mutex_;

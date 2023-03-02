@@ -115,6 +115,8 @@ public:
     int32_t UnRegisterOcclusionChangeCallback(sptr<RSIOcclusionChangeCallback> callback) override;
 
     void SetAppWindowNum(uint32_t num) override;
+
+    void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow) override;
 private:
     static inline BrokerDelegator<RSRenderServiceConnectionProxy> delegator_;
 

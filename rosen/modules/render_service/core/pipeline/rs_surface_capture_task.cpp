@@ -460,6 +460,7 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::CaptureSurfaceInDisplayWithU
         skRectPtr->setXYWH(0, 0, property.GetBoundsWidth(), property.GetBoundsHeight());
         RSPropertiesPainter::DrawFilter(property, *canvas_, filter, skRectPtr, canvas_->GetSurface());
     }
+    DrawWatermarkIfNeed(property.GetBoundsWidth(), property.GetBoundsHeight());
 }
 
 void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessSurfaceRenderNodeWithUni(RSSurfaceRenderNode &node)
@@ -606,6 +607,17 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode(RSS
         ProcessSurfaceRenderNodeWithUni(node);
     } else {
         ProcessSurfaceRenderNodeWithoutUni(node);
+    }
+}
+
+void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::DrawWatermarkIfNeed(float screenWidth, float screenHeight)
+{
+    if (RSMainThread::Instance()->GetWatermarkFlag()) {
+        sk_sp<SkImage> skImage = RSMainThread::Instance()->GetWatermarkImg();
+        sk_sp<SkShader> shader = skImage->makeShader(SkTileMode::kRepeat, SkTileMode::kRepeat);
+        SkPaint rectPaint;
+        rectPaint.setShader(shader);
+        canvas_->drawRect(SkRect::MakeWH(screenWidth, screenHeight), rectPaint);
     }
 }
 } // namespace Rosen

@@ -668,6 +668,19 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             }
             uint32_t num = data.ReadUint32();
             SetAppWindowNum(num);
+            break;
+        }
+        case SHOW_WATERMARK: {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            std::shared_ptr<Media::PixelMap> watermarkImg =
+                std::shared_ptr<Media::PixelMap>(data.ReadParcelable<Media::PixelMap>());
+            bool isShow = data.ReadBool();
+            ShowWatermark(watermarkImg, isShow);
+            break;
         }
         default: {
             ret = ERR_UNKNOWN_TRANSACTION;

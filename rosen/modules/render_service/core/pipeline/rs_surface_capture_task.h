@@ -73,6 +73,7 @@ private:
         void ProcessSurfaceRenderNodeWithoutUni(RSSurfaceRenderNode& node);
         void CaptureSingleSurfaceNodeWithoutUni(RSSurfaceRenderNode& node);
         void CaptureSurfaceInDisplayWithoutUni(RSSurfaceRenderNode& node);
+        void DrawWatermarkIfNeed(float screenWidth, float screenHeight);
         void FindSecurityLayerAndHardwareEnabledNodes();
         void AdjustZOrderAndDrawSurfaceNode();
         std::unique_ptr<RSPaintFilterCanvas> canvas_ = nullptr;

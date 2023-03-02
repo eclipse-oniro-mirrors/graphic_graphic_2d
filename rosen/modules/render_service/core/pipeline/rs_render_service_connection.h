@@ -142,6 +142,8 @@ private:
 
     void SetAppWindowNum(uint32_t num) override;
 
+    void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow) override;
+
     pid_t remotePid_;
     wptr<RSRenderService> renderService_;
     RSMainThread* mainThread_ = nullptr;

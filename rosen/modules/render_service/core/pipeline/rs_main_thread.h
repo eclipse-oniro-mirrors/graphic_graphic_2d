@@ -145,6 +145,9 @@ public:
     void TrimMem(std::unordered_set<std::u16string>& argSets, std::string& result);
     void DumpMem(std::unordered_set<std::u16string>& argSets, std::string& result);
     void SetAppWindowNum(uint32_t num);
+    void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow);
+    sk_sp<SkImage> GetWatermarkImg();
+    bool GetWatermarkFlag();
     void AddActivePid(pid_t pid);
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
@@ -271,6 +274,11 @@ private:
     bool isHardwareEnabledBufferUpdated_ = false;
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
     bool isHardwareForcedDisabled_ = false; // if app node has shadow or filter, disable hardware composer for all
+
+    // used for watermark
+    std::mutex watermarkMutex_;
+    sk_sp<SkImage> watermarkImg_ = nullptr;
+    bool isShow_ = false;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

@@ -284,6 +284,20 @@ ohos_executable("render_service_client_uni_render_demo") {
   subsystem_name = "graphic"
 }
 
+ohos_executable("render_service_client_watermark_demo") {
+  sources = [ "render_service_client_watermark_demo.cpp" ]
+
+  include_dirs =
+      [ "../../../../../../window/window_manager/interfaces/innerkits" ]
+
+  deps = [ "../../render_service_client:librender_service_client" ]
+
+  public_deps = [ "//third_party/flutter/build/skia:ace_skia_ohos" ]
+
+  part_name = "graphic_standard"
+  subsystem_name = "graphic"
+}
+
 ohos_executable("rs_uni_render_pixelmap_demo") {
   sources = [ "rs_uni_render_pixelmap_demo.cpp" ]
 

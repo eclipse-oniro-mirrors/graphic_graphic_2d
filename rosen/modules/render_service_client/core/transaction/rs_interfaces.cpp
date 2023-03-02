@@ -280,5 +280,10 @@ void RSInterfaces::SetAppWindowNum(uint32_t num)
 {
     renderServiceClient_->SetAppWindowNum(num);
 }
+
+void RSInterfaces::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow)
+{
+    renderServiceClient_->ShowWatermark(watermarkImg, isShow);
+}
 } // namespace Rosen
 } // namespace OHOS

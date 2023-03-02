@@ -41,6 +41,7 @@
 #include "platform/drawing/rs_vsync_client.h"
 #include "property/rs_property_trace.h"
 #include "property/rs_properties_painter.h"
+#include "render/rs_pixel_map_util.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "accessibility_config.h"
@@ -1419,6 +1420,29 @@ void RSMainThread::ResetHardwareEnabledState()
     isHardwareEnabledBufferUpdated_ = false;
     hardwareEnabledNodes_.clear();
     isHardwareForcedDisabled_ = false;
+}
+
+void RSMainThread::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow)
+{
+    std::lock_guard<std::mutex> lock(watermarkMutex_);
+    isShow_ = isShow;
+    if (isShow_) {
+        watermarkImg_ = RSPixelMapUtil::ExtractSkImage(std::move(watermarkImg));
+    } else {
+        watermarkImg_ = nullptr;
+    }
+    SetDirtyFlag();
+    RequestNextVSync();
+}
+
+sk_sp<SkImage> RSMainThread::GetWatermarkImg()
+{
+    return watermarkImg_;
+}
+
+bool RSMainThread::GetWatermarkFlag()
+{
+    return isShow_;
 }
 } // namespace Rosen
 } // namespace OHOS

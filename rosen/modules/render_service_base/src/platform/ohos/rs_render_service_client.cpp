@@ -610,5 +610,13 @@ void RSRenderServiceClient::SetAppWindowNum(uint32_t num)
         renderService->SetAppWindowNum(num);
     }
 }
+
+void RSRenderServiceClient::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService != nullptr) {
+        renderService->ShowWatermark(watermarkImg, isShow);
+    }
+}
 } // namespace Rosen
 } // namespace OHOS
