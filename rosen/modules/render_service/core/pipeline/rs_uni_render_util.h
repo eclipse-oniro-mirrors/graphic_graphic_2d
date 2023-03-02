@@ -48,6 +48,7 @@ public:
         const sk_sp<SkSurface>& surface);
     static void DrawCachedImage(RSSurfaceRenderNode& node, RSPaintFilterCanvas& canvas, sk_sp<SkImage> image);
     static Occlusion::Region AlignedDirtyRegion(const Occlusion::Region& dirtyRegion, int32_t alignedBits = 32);
+    static int GetRotationFromMatrix(SkMatrix matrix);
 };
 }
 }

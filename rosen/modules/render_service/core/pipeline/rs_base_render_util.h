@@ -121,6 +121,10 @@ public:
     // GraphicTransformType from hdi layer info is clockwise, for surface and surface node is anti-clockwise
     // need conversion here
     static GraphicTransformType ClockwiseToAntiClockwiseTransform(GraphicTransformType transform);
+    static int RotateEnumToInt(GraphicTransformType rotation);
+    static GraphicTransformType RotateEnumToInt(int angle,
+        GraphicTransformType flip = GraphicTransformType::GRAPHIC_ROTATE_NONE);
+
 private:
     static bool CreateYuvToRGBABitMap(sptr<OHOS::SurfaceBuffer> buffer, std::vector<uint8_t>& newBuffer,
         SkBitmap& bitmap);

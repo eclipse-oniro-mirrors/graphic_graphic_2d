@@ -562,8 +562,9 @@ static void SetLayerTransform(const LayerInfoPtr& layer, RSBaseRenderNode& node,
     // layerTransform: clockwise
     int surfaceNodeRotation = GetSurfaceNodeRotation(node);
     int totalRotation = (RotateEnumToInt(screenRotation) + surfaceNodeRotation +
-        RotateEnumToInt(RSBaseRenderUtil::GetRotateTransform(surface->GetTransform()))) % 360;
-    GraphicTransformType rotateEnum = RotateEnumToInt(totalRotation, RSBaseRenderUtil::GetFlipTransform(surface->GetTransform()));
+        RSBaseRenderUtil::RotateEnumToInt(RSBaseRenderUtil::GetRotateTransform(surface->GetTransform()))) % 360;
+    GraphicTransformType rotateEnum = RSBaseRenderUtil::RotateEnumToInt(totalRotation,
+        RSBaseRenderUtil::GetFlipTransform(surface->GetTransform()));
     layer->SetTransform(rotateEnum);
 }
 
