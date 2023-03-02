@@ -17,6 +17,7 @@
 
 #include "common/rs_common_def.h"
 #include "common/rs_obj_abs_geometry.h"
+#include "pipeline/rs_uni_render_util.h"
 #include "platform/common/rs_log.h"
 #include "rs_divided_render_util.h"
 #include "rs_trace.h"
@@ -578,17 +579,7 @@ static int GetSurfaceNodeRotation(RSBaseRenderNode& node)
     }
 
     auto& surfaceNode = static_cast<RSSurfaceRenderNode&>(node);
-    auto matrix = surfaceNode.GetTotalMatrix();
-    float value[9];
-    matrix.get9(value);
-
-    int rAngle = static_cast<int>(-round(atan2(value[SkMatrix::kMSkewX], value[SkMatrix::kMScaleX]) * (180 / PI)));
-    // transfer the result to anti-clockwise degrees
-    // only rotation with 90°, 180°, 270° are composed through hardware,
-    // in which situation the transformation of the layer needs to be set.
-    static const std::map<int, int> supportedDegrees = {{90, 270}, {180, 180}, {-90, 90}};
-    auto iter = supportedDegrees.find(rAngle);
-    return iter != supportedDegrees.end() ? iter->second : 0;
+    return RSUniRenderUtil::GetRotationFromMatrix(surfaceNode.GetTotalMatrix());
 }
 
 static void SetLayerTransform(const LayerInfoPtr& layer, RSBaseRenderNode& node,
@@ -598,8 +589,9 @@ static void SetLayerTransform(const LayerInfoPtr& layer, RSBaseRenderNode& node,
     // layerTransform: clockwise
     int surfaceNodeRotation = GetSurfaceNodeRotation(node);
     int totalRotation = (RotateEnumToInt(screenRotation) + surfaceNodeRotation +
-        RotateEnumToInt(RSBaseRenderUtil::GetRotateTransform(surface->GetTransform()))) % 360;
-    GraphicTransformType rotateEnum = RotateEnumToInt(totalRotation, RSBaseRenderUtil::GetFlipTransform(surface->GetTransform()));
+        RSBaseRenderUtil::RotateEnumToInt(RSBaseRenderUtil::GetRotateTransform(surface->GetTransform()))) % 360;
+    GraphicTransformType rotateEnum = RSBaseRenderUtil::RotateEnumToInt(totalRotation,
+        RSBaseRenderUtil::GetFlipTransform(surface->GetTransform()));
     layer->SetTransform(rotateEnum);
 }
 

@@ -147,7 +147,15 @@ BufferDrawParam RSUniRenderUtil::CreateLayerBufferDrawParam(const LayerInfoPtr& 
                                       layerMatrix.skewY, layerMatrix.scaleY, layerMatrix.transY,
                                       layerMatrix.pers0, layerMatrix.pers1, layerMatrix.pers2);
 
-    auto transform = RSBaseRenderUtil::ClockwiseToAntiClockwiseTransform(layer->GetTransformType());
+    int nodeRotation = RSUniRenderUtil::GetRotationFromMatrix(params.matrix); // rotation degree anti-clockwise
+    auto layerTransform = layer->GetTransformType();
+    // calculate clockwise rotation degree excluded rotation in total matrix
+    int realRotation = (nodeRotation +
+        RSBaseRenderUtil::RotateEnumToInt(RSBaseRenderUtil::GetRotateTransform(layerTransform))) % 360;
+    auto flip = RSBaseRenderUtil::GetFlipTransform(layerTransform);
+    // calculate transform in anti-clockwise
+    auto transform = RSBaseRenderUtil::RotateEnumToInt(realRotation, flip);
+
     RectF localBounds = { 0.0f, 0.0f, static_cast<float>(boundRect.w), static_cast<float>(boundRect.h) };
     RSBaseRenderUtil::FlipMatrix(transform, params);
     RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(transform, Gravity::RESIZE, localBounds, params);
@@ -278,5 +286,18 @@ Occlusion::Region RSUniRenderUtil::AlignedDirtyRegion(const Occlusion::Region& d
     return alignedRegion;
 }
 
+int RSUniRenderUtil::GetRotationFromMatrix(SkMatrix matrix)
+{
+    float value[9];
+    matrix.get9(value);
+
+    int rAngle = static_cast<int>(-round(atan2(value[SkMatrix::kMSkewX], value[SkMatrix::kMScaleX]) * (180 / PI)));
+    // transfer the result to anti-clockwise degrees
+    // only rotation with 90°, 180°, 270° are composed through hardware,
+    // in which situation the transformation of the layer needs to be set.
+    static const std::map<int, int> supportedDegrees = {{90, 270}, {180, 180}, {-90, 90}};
+    auto iter = supportedDegrees.find(rAngle);
+    return iter != supportedDegrees.end() ? iter->second : 0;
+}
 } // namespace Rosen
 } // namespace OHOS
