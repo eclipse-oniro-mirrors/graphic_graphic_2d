@@ -462,6 +462,11 @@ void RSNode::SetRotationY(float degree)
     SetProperty<RSRotationYModifier, RSAnimatableProperty<float>>(RSModifierType::ROTATION_Y, degree);
 }
 
+void RSNode::SetCameraDistance(float cameraDistance)
+{
+    SetProperty<RSCameraDistanceModifier, RSAnimatableProperty<float>>(RSModifierType::CAMERA_DISTANCE, cameraDistance);
+}
+
 void RSNode::SetTranslate(const Vector2f& translate)
 {
     SetProperty<RSTranslateModifier, RSAnimatableProperty<Vector2f>>(RSModifierType::TRANSLATE, translate);

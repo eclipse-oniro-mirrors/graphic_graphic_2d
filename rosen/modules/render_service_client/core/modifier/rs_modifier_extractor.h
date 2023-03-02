@@ -37,6 +37,7 @@ public:
     float GetRotation() const;
     float GetRotationX() const;
     float GetRotationY() const;
+    float GetCameraDistance() const;
     Vector2f GetTranslate() const;
     float GetTranslateZ() const;
     Vector2f GetScale() const;

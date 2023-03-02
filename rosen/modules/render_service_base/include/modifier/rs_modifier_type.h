@@ -32,6 +32,7 @@ enum class RSModifierType : int16_t {
     ROTATION,
     ROTATION_X,
     ROTATION_Y,
+    CAMERA_DISTANCE,
     SCALE,
     TRANSLATE,
     TRANSLATE_Z,

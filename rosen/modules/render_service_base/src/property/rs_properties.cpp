@@ -330,6 +330,13 @@ void RSProperties::SetRotationY(float degree)
     SetDirty();
 }
 
+void RSProperties::SetCameraDistance(float cameraDistance)
+{
+    boundsGeo_->SetCameraDistance(cameraDistance);
+    geoDirty_ = true;
+    SetDirty();
+}
+
 void RSProperties::SetScale(Vector2f scale)
 {
     boundsGeo_->SetScale(scale.x_, scale.y_);
@@ -398,6 +405,11 @@ float RSProperties::GetRotationX() const
 float RSProperties::GetRotationY() const
 {
     return boundsGeo_->GetRotationY();
+}
+
+float RSProperties::GetCameraDistance() const
+{
+    return boundsGeo_->GetCameraDistance();
 }
 
 float RSProperties::GetScaleX() const

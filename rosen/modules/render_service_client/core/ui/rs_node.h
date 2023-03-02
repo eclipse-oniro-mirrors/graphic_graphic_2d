@@ -109,6 +109,7 @@ public:
     void SetRotation(float degree);
     void SetRotationX(float degree);
     void SetRotationY(float degree);
+    void SetCameraDistance(float cameraDistance);
 
     void SetTranslate(const Vector2f& translate);
     void SetTranslate(float translateX, float translateY, float translateZ);

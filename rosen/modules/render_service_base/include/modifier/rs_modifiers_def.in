@@ -36,6 +36,8 @@ DECLARE_ANIMATABLE_MODIFIER(RotationX, float, ROTATION_X, Add, Geometry)
 
 DECLARE_ANIMATABLE_MODIFIER(RotationY, float, ROTATION_Y, Add, Geometry)
 
+DECLARE_ANIMATABLE_MODIFIER(CameraDistance, float, CAMERA_DISTANCE, Replace, Geometry)
+
 DECLARE_ANIMATABLE_MODIFIER(Scale, Vector2f, SCALE, Multiply, Geometry)
 
 DECLARE_ANIMATABLE_MODIFIER(Translate, Vector2f, TRANSLATE, Add, Geometry)
