@@ -86,6 +86,7 @@ enum class RSModifierType : int16_t {
     CONTENT_STYLE,
     FOREGROUND_STYLE,
     OVERLAY_STYLE,
+    NODE_MODIFIER,
 };
 
 enum class RSRenderPropertyType : int16_t {

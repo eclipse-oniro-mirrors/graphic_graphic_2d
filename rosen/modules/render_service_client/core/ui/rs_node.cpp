@@ -906,6 +906,9 @@ void RSNode::AddModifier(const std::shared_ptr<RSModifier>& modifier)
     }
     modifier->AttachToNode(std::static_pointer_cast<RSNode>(shared_from_this()));
     modifiers_.emplace(modifier->GetPropertyId(), modifier);
+    if (modifier->GetModifierType() == RSModifierType::NODE_MODIFIER) {
+        return;
+    }
     std::unique_ptr<RSCommand> command = std::make_unique<RSAddModifier>(GetId(), modifier->CreateRenderModifier());
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {

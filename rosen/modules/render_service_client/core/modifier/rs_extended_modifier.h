@@ -178,6 +178,38 @@ public:
 private:
     std::shared_ptr<RectI> overlayRect_ = nullptr;
 };
+
+class RSC_EXPORT RSNodeModifier : public RSExtendedModifier {
+public:
+    RSNodeModifier() : RSExtendedModifier(RSModifierType::NODE_MODIFIER)
+    {}
+
+    RSModifierType GetModifierType() const override
+    {
+        return RSModifierType::NODE_MODIFIER;
+    }
+
+    virtual void Modifier(RSNode& target) const = 0;
+
+private:
+    void OnAttachToNode(const std::weak_ptr<RSNode>& target) override
+    {
+        target_ = target;
+    }
+
+    void UpdateToRender() override
+    {
+        auto node = target_.lock();
+        if (node == nullptr) {
+            return;
+        }
+        Modifier(*node);
+    }
+
+    void Draw(RSDrawingContext& context) const override final {}
+
+    std::weak_ptr<RSNode> target_;
+};
 } // namespace Rosen
 } // namespace OHOS
 

@@ -56,6 +56,7 @@ protected:
     void AttachToNode(const std::weak_ptr<RSNode>& target)
     {
         property_->target_ = target;
+        OnAttachToNode(target);
     }
 
     void DetachFromNode()
@@ -76,6 +77,8 @@ protected:
     virtual std::shared_ptr<RSRenderModifier> CreateRenderModifier() const = 0;
 
     virtual void UpdateToRender() {}
+
+    virtual void OnAttachToNode(const std::weak_ptr<RSNode>& target) {}
 
     void SetDirty(const bool isDirty);
 
