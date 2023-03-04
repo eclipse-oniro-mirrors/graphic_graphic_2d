@@ -622,11 +622,7 @@ napi_value ColorPickerNapi::IsBlackOrWhiteOrGrayColor(napi_env env, napi_callbac
     napi_value result = nullptr;
     napi_get_boolean(env, rst, &result);
     return result;
-
 }
-
-
-
 
 ImageType ColorPickerNapi::ParserArgumentType(napi_env env, napi_value argv)
 {

@@ -95,8 +95,6 @@ uint32_t ColorPicker::GetMainColor(ColorManager::Color &color)
 
 ColorPicker::ColorPicker(std::shared_ptr<Media::PixelMap> pixmap):ColorExtract(pixmap) {}
 
-
-
 // 选取数量占比最多的颜色
 uint32_t ColorPicker::GetLargestProportionColor(ColorManager::Color &color) const
 {
@@ -127,7 +125,6 @@ uint32_t ColorPicker::GetHighestSaturationColor(ColorManager::Color &color) cons
     return SUCCESS;
 }
 
-
 // 计算图片的平均颜色
 uint32_t ColorPicker::GetAverageColor(ColorManager::Color &color) const
 {
@@ -151,7 +148,6 @@ uint32_t ColorPicker::GetAverageColor(ColorManager::Color &color) const
     colorPicked = redMean << ARGB_R_SHIFT | greenMean << ARGB_G_SHIFT | blueMean << ARGB_B_SHIFT;
     color = ColorManager::Color(colorPicked | 0xFF000000);
     return SUCCESS;
-
 }
 
 // 判别黑白灰颜色
@@ -163,8 +159,6 @@ bool ColorPicker::IsBlackOrWhiteOrGrayColor(uint32_t color) const
     }
     return false;
 }
-
-
 
 bool ColorPicker::IsEquals(double val1, double val2) const
 {
@@ -179,11 +173,9 @@ HSV ColorPicker::RGB2HSV(uint32_t rgb) const
     double minComponent, maxComponent;
     double delta;
     HSV hsv;
-
     r = GetARGB32ColorR(rgb) / 255.0;
     g = GetARGB32ColorG(rgb) / 255.0;
     b = GetARGB32ColorB(rgb) / 255.0;
-
     if (r > g) {
         maxComponent = std::max(r, b);
         minComponent = std::min(g, b);
@@ -191,7 +183,6 @@ HSV ColorPicker::RGB2HSV(uint32_t rgb) const
         maxComponent = std::max(g, b);
         minComponent = std::min(r, b);
     }
-
     v = maxComponent;
     delta = maxComponent - minComponent;
 
@@ -213,7 +204,6 @@ HSV ColorPicker::RGB2HSV(uint32_t rgb) const
             h = 60 * (r - g) / delta + 240;
         }
     }
-
     hsv.h = (int)(h + 0.5);
     hsv.h = (hsv.h > 359) ? (hsv.h - 360) : hsv.h;
     hsv.h = (hsv.h < 0) ? (hsv.h + 360) : hsv.h;
@@ -223,13 +213,8 @@ HSV ColorPicker::RGB2HSV(uint32_t rgb) const
     return hsv;
 }
 
-
-// 将HSV转换成RGB
-uint32_t ColorPicker::HSVtoRGB(HSV hsv) const
+void ColorPicker::AdjustHSVToDefinedIterval(HSV& hsv) const
 {
-    float rgb_min, rgb_max;
-    uint32_t r, g, b;
-    uint32_t rgb = 0;
     if (hsv.h > 360) {
         hsv.h = 360;
     }
@@ -248,10 +233,24 @@ uint32_t ColorPicker::HSVtoRGB(HSV hsv) const
     if (hsv.v < 0) {
         hsv.v = 0;
     }
+    return;
+}
+
+// 将HSV转换成RGB
+uint32_t ColorPicker::HSVtoRGB(HSV hsv) const
+{
+    float rgb_min, rgb_max;
+    uint32_t r, g, b;
+    uint32_t rgb = 0;
+    AdjustHSVToDefinedIterval(hsv);
+
     // The brightness is directly proportional to the maximum value that RGB can reach, which is 2.55 times.
     rgb_max = hsv.v * 2.55f;
 
-    // Each time the saturation decreases from 100, the minimum value that RGB can achieve increases linearly by 1/100 from 0 to the maximum value set by the brightness
+    /** 
+    * Each time the saturation decreases from 100, the minimum value that RGB can achieve increases 
+    * linearly by 1/100 from 0 to the maximum value set by the brightness.
+    */
     rgb_min = rgb_max*(100 - hsv.s)/ 100.0f;
 
     int i = hsv.h / 60;
@@ -298,8 +297,6 @@ uint32_t ColorPicker::HSVtoRGB(HSV hsv) const
     rgb = r << ARGB_R_SHIFT | g << ARGB_G_SHIFT | b << ARGB_B_SHIFT;
     return rgb;
 }
-
-
 } // namespace Rosen
 } // namespace OHOS
 

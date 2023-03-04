@@ -35,14 +35,13 @@ namespace Rosen {
 
 
 
-struct HSV
-{
+struct HSV {
     int h;  // 色度取值(0-360)
     double s;  // 饱和度取值 (0-100)
     double v;  // 亮度取值 (0-100)
 };
 
-class ColorPicker : public ColorExtract{
+class ColorPicker : public ColorExtract {
 public:
     ~ColorPicker() {}
     NATIVEEXPORT static std::shared_ptr<ColorPicker> CreateColorPicker(const std::shared_ptr<Media::PixelMap>& pixmap,
@@ -59,6 +58,7 @@ private:
     ColorPicker(std::shared_ptr<Media::PixelMap> pixmap);
     bool IsEquals(double val1, double val2) const;
     HSV RGB2HSV(uint32_t rgb) const;
+    void AdjustHSVToDefinedIterval(HSV& hsv) const;
     uint32_t HSVtoRGB(HSV hsv) const;
 
 };

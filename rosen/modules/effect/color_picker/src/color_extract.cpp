@@ -40,10 +40,8 @@ ColorExtract::ColorExtract(std::shared_ptr<Media::PixelMap> pixmap)
         delete[] ptr;
     });
     colorVal_ = std::move(colorShared);
-
-
-    for(int i = 0; i < pixmap->GetHeight(); i++) {
-        for(int j = 0; j < pixmap->GetWidth(); j++) {
+    for (int i = 0; i < pixmap->GetHeight(); i++) {
+        for (int j = 0; j < pixmap->GetWidth(); j++) {
             pixmap->GetARGB32Color(j, i, colorVal[i * pixmap->GetWidth() + j]);
         }
     }
@@ -72,7 +70,7 @@ uint32_t ColorExtract::QuantizedBlue(uint32_t color)
 uint32_t ColorExtract::ModifyWordWidth(uint8_t color, int inWidth, int outWidth)
 {
     uint32_t newValue;
-    if(outWidth > inWidth) {
+    if (outWidth > inWidth) {
         newValue = color << (outWidth - inWidth);
     } else {
         newValue = color >> (inWidth - outWidth);
@@ -108,8 +106,7 @@ uint32_t ColorExtract::ApproximateToRGB888(uint32_t r, uint32_t g, uint32_t b)
     uint32_t approximatedRed = ModifyWordWidth(r, QUANTIZE_WORD_WIDTH, 8);
     uint32_t approximatedGreen = ModifyWordWidth(g, QUANTIZE_WORD_WIDTH, 8);
     uint32_t approximatedBlue = ModifyWordWidth(b, QUANTIZE_WORD_WIDTH, 8);
-    return approximatedRed << ARGB_R_SHIFT | approximatedGreen << ARGB_G_SHIFT | approximatedBlue << ARGB_B_SHIFT;
-
+    return (approximatedRed << ARGB_R_SHIFT) | (approximatedGreen << ARGB_G_SHIFT) | (approximatedBlue << ARGB_B_SHIFT);
 }
 
 uint32_t ColorExtract::ApproximateToRGB888(uint32_t color)
@@ -126,7 +123,6 @@ std::vector<std::pair<uint32_t, uint32_t>> ColorExtract::QuantizePixels(int colo
     q.push(v);
     SplitBoxes(q, colorNum);
     return GenerateAverageColors(q);
-
 }
 
 
@@ -147,7 +143,8 @@ void ColorExtract::SplitBoxes(std::priority_queue<VBox, std::vector<VBox>, std::
 
 bool ColorExtract::cmp(std::pair<uint32_t, uint32_t>&a, std::pair<uint32_t, uint32_t>&b) {return a.second > b.second;}
 
-std::vector<std::pair<uint32_t, uint32_t>> ColorExtract::GenerateAverageColors(std::priority_queue<VBox, std::vector<VBox>, std::less<VBox> > &queue)
+std::vector<std::pair<uint32_t, uint32_t>> ColorExtract::GenerateAverageColors(std::priority_queue<VBox, \
+                                                                                std::vector<VBox>, std::less<VBox> > &queue)
 {
     std::vector<std::pair<uint32_t, uint32_t>> featureColors;
     while (!queue.empty()) {
@@ -156,7 +153,6 @@ std::vector<std::pair<uint32_t, uint32_t>> ColorExtract::GenerateAverageColors(s
         featureColors.push_back(vBox.GetAverageColor());
     }
     return  featureColors;
-
 }
 
 void ColorExtract::SetFeatureColorNum(int N)
@@ -203,7 +199,8 @@ void ColorExtract::GetNFeatureColors(int colorNum)
     if (distinctColorCount_ < colorNum) {
         //The picture has fewer colors than the maximum requested, just return the colors.
         for (int i = 0; i < distinctColorCount_; ++i) {
-            std::pair<uint32_t, uint32_t> featureColor = std::make_pair(ApproximateToRGB888(colors[i]), hist[colors[i]]);
+            std::pair<uint32_t, uint32_t> featureColor = std::make_pair(ApproximateToRGB888(colors[i]), \
+                                                                                    hist[colors[i]]);
             featureColors.push_back(featureColor);
         }
     } else {
@@ -213,7 +210,6 @@ void ColorExtract::GetNFeatureColors(int colorNum)
     // Sort colors from more to less.
     sort(featureColors.begin(), featureColors.end(), cmp);
     return;
-
 }
 
 } // namespace Rosen

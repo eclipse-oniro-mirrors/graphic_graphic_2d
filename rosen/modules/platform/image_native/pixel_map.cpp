@@ -17,8 +17,9 @@
 
 namespace OHOS {
 namespace Media {
-{
+
 std::unique_ptr<PixelMap> PixelMap::Create(const InitializationOptions &opts)
+{
     return nullptr;
 }
 

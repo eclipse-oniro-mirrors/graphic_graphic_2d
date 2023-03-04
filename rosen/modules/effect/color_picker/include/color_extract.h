@@ -51,7 +51,6 @@ public:
     std::shared_ptr<uint32_t> colorVal_ = nullptr;
     uint32_t colorValLen_ = 0;
 
-
     // 第一个元素为颜色，第二个元素为该颜色的像素个数
     std::vector<std::pair<uint32_t, uint32_t>> featureColors;
 
@@ -90,8 +89,7 @@ private:
     static uint32_t ModifyWordWidth(uint8_t color, int inWidth, int outWidth);
     static uint32_t ApproximateToRGB888(uint32_t r, uint32_t g, uint32_t b);
     static uint32_t ApproximateToRGB888(uint32_t color);
-    static bool cmp(std::pair<uint32_t , uint32_t >&a, std::pair<uint32_t , uint32_t >&b);
-
+    static bool cmp(std::pair<uint32_t, uint32_t >& a, std::pair<uint32_t, uint32_t >& b);
 
     class VBox {
     private:
@@ -103,36 +101,42 @@ private:
         uint32_t minBlue_, maxBlue_;
         ColorExtract *colorExtract_ = nullptr;
     public:
-        VBox(int lowerIndex, int upperIndex, ColorExtract *colorExtract){
+        VBox(int lowerIndex, int upperIndex, ColorExtract *colorExtract) 
+        {
             lowerIndex_ = lowerIndex;
             upperIndex_ = upperIndex;
             colorExtract_ = colorExtract;
             fitBox();
         }
 
-        uint32_t GetVolume() const {
+        uint32_t GetVolume() const 
+        {
             return (maxRed_ - minRed_ + 1) * (maxGreen_ - minGreen_ +1) * (maxBlue_ -minBlue_ + 1);
         }
 
-        bool CanSplit() {
+        bool CanSplit() 
+        {
             return GetColorCount() > 1;
         }
 
-        int GetColorCount() const {
+        int GetColorCount() const 
+        {
             return 1 + upperIndex_ - lowerIndex_;
         }
 
-        bool  operator < (const VBox &v) const {
+        bool  operator < (const VBox &v) const 
+        {
             return this->GetVolume() < v.GetVolume();
         }
 
         // Recomputes the boundaries of this box to tightly fit the color within the box.
-        void fitBox() {
+        void fitBox() 
+        {
             uint32_t *colors = colorExtract_->colors_.get();
             uint32_t *hist = colorExtract_->hist_.get();
 
-            uint32_t minRed, minGreen, minBlue;
-            minRed = minGreen = minBlue = UINT32_MAX;
+            uint32_t minR, minG, minB;
+            minR = minG = minB = UINT32_MAX;
             uint32_t maxRed, maxGreen, maxBlue;
             maxRed = maxGreen = maxBlue = 0;
             int count = 0;
@@ -147,33 +151,34 @@ private:
                 if (r > maxRed) {
                     maxRed = r;
                 }
-                if (r < minRed) {
-                    minRed = r;
+                if (r < minR) {
+                    minR = r;
                 }
                 if (g > maxGreen) {
                     maxGreen = g;
                 }
-                if (g < minGreen) {
-                    minGreen = g;
+                if (g < minG) {
+                    minG = g;
                 }
                 if (b > maxBlue) {
                     maxBlue = b;
                 }
-                if (b < minBlue) {
-                    minBlue = b;
+                if (b < minB) {
+                    minB = b;
                 }
             }
-            minRed_ = minRed;
+            minRed_ = minR;
             maxRed_ = maxRed;
-            minGreen_ = minGreen;
+            minGreen_ = minG;
             maxGreen_ = maxGreen;
-            minBlue_ = minBlue;
+            minBlue_ = minB;
             maxBlue_ = maxBlue;
             pixelNums_ = count;
         }
 
         // Split the color box at the mid-point along its longest dimension
-        VBox SplitBox() {
+        VBox SplitBox() 
+        {
             int splitPoint = FindSplitPoint();
 
             VBox newBox = VBox(splitPoint + 1, upperIndex_, colorExtract_);
@@ -186,21 +191,21 @@ private:
         // return the longest dimension of the box
         int GetLongestColorDimension()
         {
-            uint32_t redLength = maxRed_ - minRed_;
-            uint32_t greenLength = maxGreen_ - minGreen_;
-            uint32_t blueLength = maxBlue_ - minBlue_;
+            uint32_t redLen = maxRed_ - minRed_;
+            uint32_t greenLen = maxGreen_ - minGreen_;
+            uint32_t blueLen = maxBlue_ - minBlue_;
 
-            if (redLength >=greenLength && redLength >= blueLength) {
+            if (redLen >=greenLen && redLen >= blueLen) {
                 return COMPONENT_RED;
-            } else if (greenLength >= redLength && greenLength >= blueLength) {
+            } else if (greenLen >= redLen && greenLen >= blueLen) {
                 return COMPONENT_GREEN;
             } else {
                 return COMPONENT_BLUE;
             }
-
         }
 
-        int FindSplitPoint() {
+        int FindSplitPoint() 
+        {
             int longestDimension = GetLongestColorDimension();
             uint32_t *colors = colorExtract_->colors_.get();
             uint32_t *hist = colorExtract_->hist_.get();
@@ -220,7 +225,6 @@ private:
             }
 
             return lowerIndex_;
-
         }
 
         /**
@@ -235,21 +239,20 @@ private:
                 case COMPONENT_GREEN:
                     for (int i = lower; i <= upper ; i++) {
                         uint32_t color = colors[i];
-                        colors[i] = QuantizedGreen(color) << (QUANTIZE_WORD_WIDTH + QUANTIZE_WORD_WIDTH)
-                                    | QuantizedRed(color) << QUANTIZE_WORD_WIDTH
+                        colors[i] = (QuantizedGreen(color) << (QUANTIZE_WORD_WIDTH + QUANTIZE_WORD_WIDTH))
+                                    | (QuantizedRed(color) << QUANTIZE_WORD_WIDTH)
                                     | QuantizedBlue(color);
                     }
                     break;
                 case COMPONENT_BLUE:
                     for (int i = lower; i <= upper ; i++) {
                         uint32_t color = colors[i];
-                        colors[i] = QuantizedBlue(color) << (QUANTIZE_WORD_WIDTH + QUANTIZE_WORD_WIDTH)
-                                    | QuantizedGreen(color) << QUANTIZE_WORD_WIDTH
+                        colors[i] = (QuantizedBlue(color) << (QUANTIZE_WORD_WIDTH + QUANTIZE_WORD_WIDTH))
+                                    | (QuantizedGreen(color) << QUANTIZE_WORD_WIDTH)
                                     | QuantizedRed(color);
                     }
                     break;
             }
-
         }
 
         // Return the average color of the box
@@ -274,15 +277,14 @@ private:
             uint32_t blueMean = round(blueSum / (float)totalPixelNum);
 
             return std::make_pair(ApproximateToRGB888(redMean, greenMean, blueMean), totalPixelNum);
-
         }
-
     }; // VBox
 
 private:
     std::vector<std::pair<uint32_t, uint32_t>> QuantizePixels(int colorNum);
     void SplitBoxes(std::priority_queue<VBox, std::vector<VBox>, std::less<VBox> > &queue, int maxSize);
-    std::vector<std::pair<uint32_t, uint32_t>> GenerateAverageColors(std::priority_queue<VBox, std::vector<VBox>, std::less<VBox> > &queue);
+    std::vector<std::pair<uint32_t, uint32_t>> GenerateAverageColors(std::priority_queue<VBox, \
+                                                        std::vector<VBox>, std::less<VBox> > &queue);
 
 }; // ColorExtract
 
