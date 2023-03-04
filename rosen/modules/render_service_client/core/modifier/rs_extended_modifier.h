@@ -22,6 +22,7 @@
 #include "modifier/rs_modifier.h"
 #include "pipeline/rs_draw_cmd_list.h"
 #include "transaction/rs_transaction_proxy.h"
+#include "ui/rs_canvas_node.h"
 
 class SkCanvas;
 
@@ -91,6 +92,63 @@ protected:
             if (node->NeedForcedSendToRemote()) {
                 std::unique_ptr<RSCommand> commandForRemote = std::make_unique<RSUpdatePropertyDrawCmdList>(
                     node->GetId(), drawCmdList, property_->id_, false);
+                transactionProxy->AddCommand(commandForRemote, true, node->GetFollowType(), node->GetId());
+            }
+        }
+    }
+};
+
+class RS_EXPORT RSGeometryTransModifier : public RSExtendedModifier {
+public:
+    RSGeometryTransModifier() : RSExtendedModifier(RSModifierType::GEOMETRYTRANS)
+    {}
+    virtual ~RSGeometryTransModifier() = default;
+
+    RSModifierType GetModifierType() const override
+    {
+        return RSModifierType::GEOMETRYTRANS;
+    }
+
+    void Draw(RSDrawingContext& context) const override {};
+
+    virtual SkMatrix GeometryEffect(float width, float height) const = 0;
+
+protected:
+    std::shared_ptr<RSRenderModifier> CreateRenderModifier() const override
+    {
+        auto node = property_->target_.lock();
+        if (node == nullptr) {
+            return nullptr;
+        }
+        auto canvasnode = RSNodeMap::Instance().GetNode<RSCanvasNode>(node->GetId());
+        if (canvasnode == nullptr) {
+            return nullptr;
+        }
+        auto renderProperty = std::make_shared<RSRenderProperty<SkMatrix>>(
+            GeometryEffect(canvasnode->GetPaintWidth(), canvasnode->GetPaintHeight()), property_->GetId());
+        auto renderModifier = std::make_shared<RSGeometryTransRenderModifier>(renderProperty);
+        return renderModifier;
+    }
+
+    void UpdateToRender() override
+    {
+        auto node = property_->target_.lock();
+        if (node == nullptr) {
+            return;
+        }
+        auto canvasnode = RSNodeMap::Instance().GetNode<RSCanvasNode>(node->GetId());
+        if (canvasnode == nullptr) {
+            return;
+        }
+        auto SkMatrix = GeometryEffect(canvasnode->GetPaintWidth(), canvasnode->GetPaintHeight());
+        std::unique_ptr<RSCommand> command = std::make_unique<RSUpdatePropertySkMatrix>(
+            node->GetId(), SkMatrix, property_->id_, false);
+        auto transactionProxy = RSTransactionProxy::GetInstance();
+        if (transactionProxy != nullptr) {
+            transactionProxy->AddCommand(command, node->IsRenderServiceNode());
+            if (node->NeedForcedSendToRemote()) {
+                std::unique_ptr<RSCommand> commandForRemote = std::make_unique<RSUpdatePropertySkMatrix>(
+                    node->GetId(), SkMatrix, property_->id_, false);
                 transactionProxy->AddCommand(commandForRemote, true, node->GetFollowType(), node->GetId());
             }
         }

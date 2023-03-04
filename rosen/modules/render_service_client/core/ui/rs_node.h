@@ -262,6 +262,7 @@ private:
     friend class RSImplicitAnimator;
     friend class RSModifierExtractor;
     friend class RSModifier;
+    friend class RSGeometryTransModifier;
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -178,6 +178,7 @@ private:
     friend class RSCurveAnimation;
     friend class RSCustomTransitionEffect;
     friend class RSExtendedModifier;
+    friend class RSGeometryTransModifier;
     friend class RSImplicitAnimator;
     friend class RSImplicitCurveAnimationParam;
     friend class RSImplicitInterpolatingSpringAnimationParam;
