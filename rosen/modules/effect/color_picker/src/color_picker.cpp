@@ -118,7 +118,7 @@ uint32_t ColorPicker::GetHighestSaturationColor(ColorManager::Color &color) cons
     double maxSaturation = 0.0;
     for (int i = 0; i < featureColors.size(); i++) {
         hsv = RGB2HSV(featureColors[i].first);
-        if (hsv.s > maxSaturation) {
+        if (hsv.s >= maxSaturation) {
             maxSaturation = hsv.s;
             colorPicked = featureColors[i].first;
         }
