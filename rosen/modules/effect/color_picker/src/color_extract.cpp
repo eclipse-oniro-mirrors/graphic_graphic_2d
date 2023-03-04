@@ -144,7 +144,7 @@ void ColorExtract::SplitBoxes(std::priority_queue<VBox, std::vector<VBox>, std::
 bool ColorExtract::cmp(std::pair<uint32_t, uint32_t>&a, std::pair<uint32_t, uint32_t>&b) {return a.second > b.second;}
 
 std::vector<std::pair<uint32_t, uint32_t>> ColorExtract::GenerateAverageColors(std::priority_queue<VBox, \
-                                                                                std::vector<VBox>, std::less<VBox> > &queue)
+                                            std::vector<VBox>, std::less<VBox> > &queue)
 {
     std::vector<std::pair<uint32_t, uint32_t>> featureColors;
     while (!queue.empty()) {
@@ -199,8 +199,8 @@ void ColorExtract::GetNFeatureColors(int colorNum)
     if (distinctColorCount_ < colorNum) {
         //The picture has fewer colors than the maximum requested, just return the colors.
         for (int i = 0; i < distinctColorCount_; ++i) {
-            std::pair<uint32_t, uint32_t> featureColor = std::make_pair(ApproximateToRGB888(colors[i]), \
-                                                                                    hist[colors[i]]);
+            std::pair<uint32_t, uint32_t> featureColor = \
+                    std::make_pair(ApproximateToRGB888(colors[i]), hist[colors[i]]);
             featureColors.push_back(featureColor);
         }
     } else {

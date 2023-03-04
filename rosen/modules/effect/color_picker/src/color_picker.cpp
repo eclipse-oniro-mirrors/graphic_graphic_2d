@@ -32,7 +32,7 @@
 #include "include/core/SkPixmap.h"
 #include "include/core/SkFont.h"
 #include "include/core/SkTypeface.h"
-#include <math.h>
+#include <cmath>
 #include <utility>
 
 #ifdef __cplusplus
@@ -247,8 +247,8 @@ uint32_t ColorPicker::HSVtoRGB(HSV hsv) const
     // The brightness is directly proportional to the maximum value that RGB can reach, which is 2.55 times.
     rgb_max = hsv.v * 2.55f;
 
-    /** 
-    * Each time the saturation decreases from 100, the minimum value that RGB can achieve increases 
+    /**
+    * Each time the saturation decreases from 100, the minimum value that RGB can achieve increases
     * linearly by 1/100 from 0 to the maximum value set by the brightness.
     */
     rgb_min = rgb_max*(100 - hsv.s)/ 100.0f;

@@ -33,8 +33,6 @@ class Color;
 }
 namespace Rosen {
 
-
-
 struct HSV {
     int h;  // 色度取值(0-360)
     double s;  // 饱和度取值 (0-100)
@@ -60,7 +58,6 @@ private:
     HSV RGB2HSV(uint32_t rgb) const;
     void AdjustHSVToDefinedIterval(HSV& hsv) const;
     uint32_t HSVtoRGB(HSV hsv) const;
-
 };
 } // namespace Rosen
 } // namespace OHOS

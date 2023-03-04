@@ -39,9 +39,7 @@ namespace ColorManager {
 class Color;
 }
 namespace Rosen {
-
-
-
+    
 class ColorExtract {
 public:
     ~ColorExtract() {};
@@ -101,7 +99,7 @@ private:
         uint32_t minBlue_, maxBlue_;
         ColorExtract *colorExtract_ = nullptr;
     public:
-        VBox(int lowerIndex, int upperIndex, ColorExtract *colorExtract) 
+        VBox(int lowerIndex, int upperIndex, ColorExtract *colorExtract)
         {
             lowerIndex_ = lowerIndex;
             upperIndex_ = upperIndex;
@@ -109,28 +107,28 @@ private:
             fitBox();
         }
 
-        uint32_t GetVolume() const 
+        uint32_t GetVolume() const
         {
             return (maxRed_ - minRed_ + 1) * (maxGreen_ - minGreen_ +1) * (maxBlue_ -minBlue_ + 1);
         }
 
-        bool CanSplit() 
+        bool CanSplit()
         {
             return GetColorCount() > 1;
         }
 
-        int GetColorCount() const 
+        int GetColorCount() const
         {
             return 1 + upperIndex_ - lowerIndex_;
         }
 
-        bool  operator < (const VBox &v) const 
+        bool  operator < (const VBox &v) const
         {
             return this->GetVolume() < v.GetVolume();
         }
 
         // Recomputes the boundaries of this box to tightly fit the color within the box.
-        void fitBox() 
+        void fitBox()
         {
             uint32_t *colors = colorExtract_->colors_.get();
             uint32_t *hist = colorExtract_->hist_.get();
@@ -177,7 +175,7 @@ private:
         }
 
         // Split the color box at the mid-point along its longest dimension
-        VBox SplitBox() 
+        VBox SplitBox()
         {
             int splitPoint = FindSplitPoint();
 
@@ -185,7 +183,6 @@ private:
             upperIndex_ = splitPoint;
             fitBox();
             return newBox;
-
         }
 
         // return the longest dimension of the box
@@ -204,7 +201,7 @@ private:
             }
         }
 
-        int FindSplitPoint() 
+        int FindSplitPoint()
         {
             int longestDimension = GetLongestColorDimension();
             uint32_t *colors = colorExtract_->colors_.get();
@@ -285,7 +282,6 @@ private:
     void SplitBoxes(std::priority_queue<VBox, std::vector<VBox>, std::less<VBox> > &queue, int maxSize);
     std::vector<std::pair<uint32_t, uint32_t>> GenerateAverageColors(std::priority_queue<VBox, \
                                                         std::vector<VBox>, std::less<VBox> > &queue);
-
 }; // ColorExtract
 
 } // namespace Rosen
