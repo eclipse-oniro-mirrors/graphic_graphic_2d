@@ -39,10 +39,14 @@ public:
     void SetSrcRect(const RectF& dstRect);
     void SetDstRect(const RectF& dstRect);
 #ifdef ROSEN_OHOS
-    bool Marshalling(Parcel& parcel) const;
+    virtual bool Marshalling(Parcel& parcel) const;
     [[nodiscard]] static RSImageBase* Unmarshalling(Parcel& parcel);
 #endif
-
+    static bool UnmarshallingIdAndRect(Parcel& parcel, uint64_t& uniqueId, RectF& srcRect, RectF& dstRect);
+    static bool UnmarshallingSkImageAndPixelMap(Parcel& parcel, uint64_t uniqueId, bool& useSkImage, sk_sp<SkImage>& img,
+        std::shared_ptr<Media::PixelMap>& pixelMap);
+    static void IncreaseCacheRefCount(uint64_t uniqueId,
+        bool useSkImage = true, std::shared_ptr<Media::PixelMap> pixelMap = nullptr);
 protected:
     void ConvertPixelMapToSkImage();
     void GenUniqueId(uint32_t id);
@@ -64,7 +68,7 @@ public:
     void DrawImage(SkCanvas& canvas, const SkPaint& paint) override;
     void SetCenter(SkIRect center);
 #ifdef ROSEN_OHOS
-    bool Marshalling(Parcel& parcel) const;
+    bool Marshalling(Parcel& parcel) const override;
     [[nodiscard]] static RSImageNine* Unmarshalling(Parcel& parcel);
 #endif
 private:

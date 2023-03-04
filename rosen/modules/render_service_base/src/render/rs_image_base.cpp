@@ -78,14 +78,136 @@ void RSImageBase::SetDstRect(const RectF& dstRect)
 }
 
 #ifdef ROSEN_OHOS
+static bool UnmarshallingAndCacheSkImage(Parcel& parcel, sk_sp<SkImage>& img, uint64_t uniqueId)
+{
+    if (img != nullptr) {
+        // match a cached SkImage
+        if (!RSMarshallingHelper::SkipSkImage(parcel)) {
+            RS_LOGE("UnmarshalAndCacheSkImage SkipSkImage fail");
+            return false;
+        }
+    } else if (RSMarshallingHelper::Unmarshalling(parcel, img)) {
+        // unmarshalling the SkImage and cache it
+        RSImageCache::Instance().CacheSkiaImage(uniqueId, img);
+    } else {
+        RS_LOGE("UnmarshalAndCacheSkImage fail");
+        return false;
+    }
+    return true;
+}
+
+static bool UnmarshallingAndCachePixelMap(Parcel& parcel, std::shared_ptr<Media::PixelMap>& pixelMap, uint64_t uniqueId)
+{
+    if (pixelMap != nullptr) {
+        // match a cached pixelMap
+        if (!RSMarshallingHelper::SkipPixelMap(parcel)) {
+            return false;
+        }
+    } else if (RSMarshallingHelper::Unmarshalling(parcel, pixelMap)) {
+        if (pixelMap && !pixelMap->IsEditable()) {
+            // unmarshalling the pixelMap and cache it
+            RSImageCache::Instance().CachePixelMap(uniqueId, pixelMap);
+        }
+    } else {
+        return false;
+    }
+    return true;
+}
+
+bool RSImageBase::UnmarshallingIdAndRect(Parcel& parcel, uint64_t& uniqueId, RectF& srcRect, RectF& dstRect)
+{
+    if (!RSMarshallingHelper::Unmarshalling(parcel, uniqueId)) {
+        RS_LOGE("RSImage::Unmarshalling uniqueId fail");
+        return false;
+    }
+    if (!RSMarshallingHelper::Unmarshalling(parcel, srcRect)) {
+        RS_LOGE("RSImage::Unmarshalling srcRect fail");
+        return false;
+    }
+    if (!RSMarshallingHelper::Unmarshalling(parcel, dstRect)) {
+        RS_LOGE("RSImage::Unmarshalling dstRect fail");
+        return false;
+    }
+    return true;
+}
+
+bool RSImageBase::UnmarshallingSkImageAndPixelMap(Parcel& parcel, uint64_t uniqueId, bool& useSkImage,
+    sk_sp<SkImage>& img, std::shared_ptr<Media::PixelMap>& pixelMap)
+{
+    if (!RSMarshallingHelper::Unmarshalling(parcel, useSkImage)) {
+        return false;
+    }
+    if (useSkImage) {
+        img = RSImageCache::Instance().GetSkiaImageCache(uniqueId);
+        RS_TRACE_NAME_FMT("RSImageBase::Unmarshalling skImage uniqueId:%lu, size:[%d %d], cached:%d",
+            uniqueId, img ? img->width() : 0, img ? img->height() : 0, img != nullptr);
+        if (!UnmarshallingAndCacheSkImage(parcel, img, uniqueId)) {
+            RS_LOGE("RSImageBase::Unmarshalling UnmarshalAndCacheSkImage fail");
+            return false;
+        }
+        RSMarshallingHelper::SkipPixelMap(parcel);
+    } else {
+        if (!RSMarshallingHelper::SkipSkImage(parcel) || !RSMarshallingHelper::SkipSkData(parcel)) {
+            return false;
+        }
+        pixelMap = RSImageCache::Instance().GetPixelMapCache(uniqueId);
+        RS_TRACE_NAME_FMT("RSImageBase::Unmarshalling pixelMap uniqueId:%lu, size:[%d %d], cached:%d",
+            uniqueId, pixelMap ? pixelMap->GetWidth() : 0, pixelMap ? pixelMap->GetHeight() : 0, pixelMap != nullptr);
+        if (!UnmarshallingAndCachePixelMap(parcel, pixelMap, uniqueId)) {
+            RS_LOGE("RSImageBase::Unmarshalling UnmarshalAndCachePixelMap fail");
+            return false;
+        }
+    }
+    return true;
+}
+
+void RSImageBase::IncreaseCacheRefCount(uint64_t uniqueId, bool useSkImage, std::shared_ptr<Media::PixelMap> pixelMap)
+{
+    if (useSkImage) {
+        RSImageCache::Instance().IncreaseSkiaImageCacheRefCount(uniqueId);
+    } else if (pixelMap && !pixelMap->IsEditable()) {
+        RSImageCache::Instance().IncreasePixelMapCacheRefCount(uniqueId);
+    }
+}
+
 bool RSImageBase::Marshalling(Parcel& parcel) const
 {
-    return false;
+    std::lock_guard<std::mutex> lock(mutex_);
+    bool success = RSMarshallingHelper::Marshalling(parcel, uniqueId_) &&
+                   RSMarshallingHelper::Marshalling(parcel, srcRect_) &&
+                   RSMarshallingHelper::Marshalling(parcel, dstRect_) &&
+                   parcel.WriteBool(pixelMap_ == nullptr) &&
+                   RSMarshallingHelper::Marshalling(parcel, image_) &&
+                   RSMarshallingHelper::Marshalling(parcel, pixelMap_);
+    return success;
 }
 
 RSImageBase* RSImageBase::Unmarshalling(Parcel& parcel)
 {
-    return nullptr;
+    uint64_t uniqueId;
+    RectF srcRect;
+    RectF dstRect;
+    if (!UnmarshallingIdAndRect(parcel, uniqueId, srcRect, dstRect)) {
+        RS_LOGE("RSImage::Unmarshalling UnmarshalIdAndSize fail");
+        return nullptr;
+    }
+
+    bool useSkImage;
+    sk_sp<SkImage> img;
+    std::shared_ptr<Media::PixelMap> pixelMap;
+    if (!UnmarshallingSkImageAndPixelMap(parcel, uniqueId, useSkImage, img, pixelMap)) {
+        return nullptr;
+    }
+
+    RSImageBase* rsImage = new RSImageBase();
+    rsImage->SetImage(img);
+    rsImage->SetPixelMap(pixelMap);
+    rsImage->SetSrcRect(srcRect);
+    rsImage->SetDstRect(dstRect);
+    rsImage->uniqueId_ = uniqueId;
+
+    IncreaseCacheRefCount(uniqueId, useSkImage, pixelMap);
+    return rsImage;
 }
 #endif
 
@@ -134,7 +256,36 @@ bool RSImageNine::Marshalling(Parcel& parcel) const
 
 RSImageNine* RSImageNine::Unmarshalling(Parcel& parcel)
 {
-    return nullptr;
+    uint64_t uniqueId;
+    RectF srcRect;
+    RectF dstRect;
+    if (!UnmarshallingIdAndRect(parcel, uniqueId, srcRect, dstRect)) {
+        RS_LOGE("RSImage::Unmarshalling UnmarshalIdAndSize fail");
+        return nullptr;
+    }
+
+    bool useSkImage;
+    sk_sp<SkImage> img;
+    std::shared_ptr<Media::PixelMap> pixelMap;
+    if (!UnmarshallingSkImageAndPixelMap(parcel, uniqueId, useSkImage, img, pixelMap)) {
+        return nullptr;
+    }
+
+    SkIRect center;
+    if (!RSMarshallingHelper::Unmarshalling(parcel, center)) {
+        return nullptr;
+    }
+
+    RSImageNine* rsImage = new RSImageNine();
+    rsImage->SetImage(img);
+    rsImage->SetPixelMap(pixelMap);
+    rsImage->SetSrcRect(srcRect);
+    rsImage->SetDstRect(dstRect);
+    rsImage->SetCenter(center);
+    rsImage->uniqueId_ = uniqueId;
+
+    IncreaseCacheRefCount(uniqueId, useSkImage, pixelMap);
+    return rsImage;
 }
 #endif
 }

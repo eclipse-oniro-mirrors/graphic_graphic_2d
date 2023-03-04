@@ -217,31 +217,6 @@ void RSImage::SetScale(double scale)
 }
 
 #ifdef ROSEN_OHOS
-bool RSImage::Marshalling(Parcel& parcel) const
-{
-    int imageFit = static_cast<int>(imageFit_);
-    int imageRepeat = static_cast<int>(imageRepeat_);
-
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto image = image_;
-    if (image && image->isTextureBacked()) {
-        image = nullptr;
-        ROSEN_LOGE("RSImage::Marshalling skip texture image");
-    }
-    bool success = RSMarshallingHelper::Marshalling(parcel, uniqueId_) &&
-                   RSMarshallingHelper::Marshalling(parcel, static_cast<int>(srcRect_.width_)) &&
-                   RSMarshallingHelper::Marshalling(parcel, static_cast<int>(srcRect_.height_)) &&
-                   parcel.WriteBool(pixelMap_ == nullptr) &&
-                   RSMarshallingHelper::Marshalling(parcel, image) &&
-                   RSMarshallingHelper::Marshalling(parcel, compressData_) &&
-                   RSMarshallingHelper::Marshalling(parcel, pixelMap_) &&
-                   RSMarshallingHelper::Marshalling(parcel, imageFit) &&
-                   RSMarshallingHelper::Marshalling(parcel, imageRepeat) &&
-                   RSMarshallingHelper::Marshalling(parcel, radius_) &&
-                   RSMarshallingHelper::Marshalling(parcel, scale_);
-    return success;
-}
-
 static bool UnmarshallingIdAndSize(Parcel& parcel, uint64_t& uniqueId, int& width, int& height)
 {
     if (!RSMarshallingHelper::Unmarshalling(parcel, uniqueId)) {
@@ -259,21 +234,8 @@ static bool UnmarshallingIdAndSize(Parcel& parcel, uint64_t& uniqueId, int& widt
     return true;
 }
 
-static bool UnmarshallingData(Parcel& parcel, sk_sp<SkData>& compressData, sk_sp<SkImage>& img, const uint64_t uniqueId)
+static bool UnmarshallingCompressData(Parcel& parcel, sk_sp<SkImage> img, sk_sp<SkData>& compressData)
 {
-    if (img != nullptr) {
-        // match a cached skimage
-        if (!RSMarshallingHelper::SkipSkImage(parcel)) {
-            RS_LOGE("RSImage::Unmarshalling SkipSkImage fail");
-            return false;
-        }
-    } else if (RSMarshallingHelper::Unmarshalling(parcel, img)) {
-        // unmarshalling the skimage and cache it
-        RSImageCache::Instance().CacheSkiaImage(uniqueId, img);
-    } else {
-        RS_LOGE("RSImage::Unmarshalling SkImage fail");
-        return false;
-    }
     if (img != nullptr) {
         if (!RSMarshallingHelper::SkipSkData(parcel)) {
             RS_LOGE("RSImage::Unmarshalling SkipSkData fail");
@@ -288,22 +250,29 @@ static bool UnmarshallingData(Parcel& parcel, sk_sp<SkData>& compressData, sk_sp
     return true;
 }
 
-static bool UnmarshalAndCachePixelMap(Parcel& parcel, std::shared_ptr<Media::PixelMap>& pixelMap, uint64_t uniqueId)
+bool RSImage::Marshalling(Parcel& parcel) const
 {
-    if (pixelMap != nullptr) {
-        // match a cached pixelmap
-        if (!RSMarshallingHelper::SkipPixelMap(parcel)) {
-            return false;
-        }
-    } else if (RSMarshallingHelper::Unmarshalling(parcel, pixelMap)) {
-        if (pixelMap && !pixelMap->IsEditable()) {
-            // unmarshalling the skimage and cache it
-            RSImageCache::Instance().CachePixelMap(uniqueId, pixelMap);
-        }
-    } else {
-        return false;
+    int imageFit = static_cast<int>(imageFit_);
+    int imageRepeat = static_cast<int>(imageRepeat_);
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto image = image_;
+    if (image && image->isTextureBacked()) {
+        image = nullptr;
+        ROSEN_LOGE("RSImage::Marshalling skip texture image");
     }
-    return true;
+    bool success = RSMarshallingHelper::Marshalling(parcel, uniqueId_) &&
+                   RSMarshallingHelper::Marshalling(parcel, static_cast<int>(srcRect_.width_)) &&
+                   RSMarshallingHelper::Marshalling(parcel, static_cast<int>(srcRect_.height_)) &&
+                   parcel.WriteBool(pixelMap_ == nullptr) &&
+                   RSMarshallingHelper::Marshalling(parcel, image) &&
+                   RSMarshallingHelper::Marshalling(parcel, pixelMap_) &&
+                   RSMarshallingHelper::Marshalling(parcel, compressData_) &&
+                   RSMarshallingHelper::Marshalling(parcel, imageFit) &&
+                   RSMarshallingHelper::Marshalling(parcel, imageRepeat) &&
+                   RSMarshallingHelper::Marshalling(parcel, radius_) &&
+                   RSMarshallingHelper::Marshalling(parcel, scale_);
+    return success;
 }
 
 RSImage* RSImage::Unmarshalling(Parcel& parcel)
@@ -317,33 +286,14 @@ RSImage* RSImage::Unmarshalling(Parcel& parcel)
     }
 
     bool useSkImage;
-    if (!RSMarshallingHelper::Unmarshalling(parcel, useSkImage)) {
+    sk_sp<SkImage> img;
+    std::shared_ptr<Media::PixelMap> pixelMap;
+    if (!UnmarshallingSkImageAndPixelMap(parcel, uniqueId, useSkImage, img, pixelMap)) {
         return nullptr;
     }
-
-    sk_sp<SkImage> img = nullptr;
-    sk_sp<SkData> compressData = nullptr;
-    std::shared_ptr<Media::PixelMap> pixelmap = nullptr;
-    if (useSkImage) {
-        img = RSImageCache::Instance().GetSkiaImageCache(uniqueId);
-        RS_TRACE_NAME_FMT("RSImage::Unmarshalling skImage uniqueId:%lu, size:[%d %d], cached:%d",
-            uniqueId, width, height, img != nullptr);
-        if (!UnmarshallingData(parcel, compressData, img, uniqueId)) {
-            RS_LOGE("RSImage::Unmarshalling UnmarshallingData fail");
-            return nullptr;
-        }
-        RSMarshallingHelper::SkipPixelMap(parcel);
-    } else {
-        if (!RSMarshallingHelper::SkipSkImage(parcel) || !RSMarshallingHelper::SkipSkData(parcel)) {
-            return nullptr;
-        }
-        pixelmap = RSImageCache::Instance().GetPixelMapCache(uniqueId);
-        RS_TRACE_NAME_FMT("RSImage::Unmarshalling pixelmap uniqueId:%lu, size:[%d %d], cached:%d",
-            uniqueId, width, height, pixelmap != nullptr);
-        if (!UnmarshalAndCachePixelMap(parcel, pixelmap, uniqueId)) {
-            RS_LOGE("RSImage::Unmarshalling UnmarshalAndCachePixelMap fail");
-            return nullptr;
-        }
+    sk_sp<SkData> compressData;
+    if (!UnmarshallingCompressData(parcel, img, compressData)) {
+        return nullptr;
     }
 
     int fitNum;
@@ -375,18 +325,14 @@ RSImage* RSImage::Unmarshalling(Parcel& parcel)
     RSImage* rsImage = new RSImage();
     rsImage->SetImage(img);
     rsImage->SetCompressData(compressData, uniqueId, width, height);
-    rsImage->SetPixelMap(pixelmap);
+    rsImage->SetPixelMap(pixelMap);
     rsImage->SetImageFit(fitNum);
     rsImage->SetImageRepeat(repeatNum);
     rsImage->SetRadius(radius);
     rsImage->SetScale(scale);
     rsImage->uniqueId_ = uniqueId;
 
-    if (useSkImage) {
-        RSImageCache::Instance().IncreaseSkiaImageCacheRefCount(uniqueId);
-    } else if (pixelmap && !pixelmap->IsEditable()) {
-        RSImageCache::Instance().IncreasePixelMapCacheRefCount(uniqueId);
-    }
+    RSImageBase::IncreaseCacheRefCount(uniqueId, useSkImage, pixelMap);
     return rsImage;
 }
 #endif
