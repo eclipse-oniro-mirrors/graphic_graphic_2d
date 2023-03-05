@@ -185,35 +185,35 @@ public:
 };
 
 
-class RSB_EXPORT RSEnvForegroundColorRenderModifier : public RSForegroundRenderModifier {                
+class RSB_EXPORT RSEnvForegroundColorRenderModifier : public RSForegroundRenderModifier {
 public:                                                                                              
-    RSEnvForegroundColorRenderModifier(const std::shared_ptr<RSRenderPropertyBase>& property)         
-        : RSForegroundRenderModifier(property)                                                
-    {}                                                                                               
-    virtual ~RSEnvForegroundColorRenderModifier() = default;                                          
-    void Apply(RSModifierContext& context) const override;                                                 
+    RSEnvForegroundColorRenderModifier(const std::shared_ptr<RSRenderPropertyBase>& property)
+        : RSForegroundRenderModifier(property)
+    {}
+    virtual ~RSEnvForegroundColorRenderModifier() = default;
+    void Apply(RSModifierContext& context) const override;
     void Update(const std::shared_ptr<RSRenderPropertyBase>& prop, bool isDelta) override;           
-    bool Marshalling(Parcel& parcel) override;                                                       
-    RSModifierType GetType() override                                                                
-    {                                                                                                
-        return RSModifierType::ENV_FOREGROUND_COLOR;                                                    
-    }                                                                                                
+    bool Marshalling(Parcel& parcel) override;
+    RSModifierType GetType() override
+    {
+        return RSModifierType::ENV_FOREGROUND_COLOR;
+    }
 };
 
-class RSB_EXPORT RSEnvForegroundColorStrategyRenderModifier : public RSForegroundRenderModifier {                 
-public:                                                                                              
-    RSEnvForegroundColorStrategyRenderModifier(const std::shared_ptr<RSRenderPropertyBase>& property)         
-        : RSForegroundRenderModifier(property)                                                
-    {}                                                                                               
-    virtual ~RSEnvForegroundColorStrategyRenderModifier() = default;                                          
-    void Apply(RSModifierContext& context) const override;                                                 
-    void Update(const std::shared_ptr<RSRenderPropertyBase>& prop, bool isDelta) override;           
-    bool Marshalling(Parcel& parcel) override;                                                       
-    RSModifierType GetType() override                                                                
-    {                                                                                                
-        return RSModifierType::ENV_FOREGROUND_COLOR_STRATEGY;                                                    
-    }           
-    Color GetInvertBackgroundColor(RSModifierContext& context) const;                                                                                 
+class RSB_EXPORT RSEnvForegroundColorStrategyRenderModifier : public RSForegroundRenderModifier {
+public:
+    RSEnvForegroundColorStrategyRenderModifier(const std::shared_ptr<RSRenderPropertyBase>& property)
+        : RSForegroundRenderModifier(property)
+    {}
+    virtual ~RSEnvForegroundColorStrategyRenderModifier() = default;
+    void Apply(RSModifierContext& context) const override;
+    void Update(const std::shared_ptr<RSRenderPropertyBase>& prop, bool isDelta) override;
+    bool Marshalling(Parcel& parcel) override;
+    RSModifierType GetType() override
+    {
+        return RSModifierType::ENV_FOREGROUND_COLOR_STRATEGY;
+    }
+    Color GetInvertBackgroundColor(RSModifierContext& context) const;
 };
 
 // declare RenderModifiers like RSBoundsRenderModifier
