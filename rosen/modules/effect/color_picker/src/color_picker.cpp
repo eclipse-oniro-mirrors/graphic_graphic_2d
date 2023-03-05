@@ -197,13 +197,13 @@ HSV ColorPicker::RGB2HSV(uint32_t rgb) const
         h = 0.0;
     } else {
         if (IsEquals(r, maxComponent) && g >= b) {
-            h = 60 * (g - b) / delta + 0; // 60 is used to calculate color's hue, whitch range between 0 and 360.
+            h = 60 * (g - b) / delta + 0; // 60 is used to calculate color's hue, ranging between 0 and 360.
         } else if (IsEquals(r, maxComponent) && g < b) {
-            h = 60 * (g - b) / delta + 360; // 60 and 360 is used to calculate color's hue, whitch range between 0 and 360.
+            h = 60 * (g - b) / delta + 360; // 60,360 is used to calculate color's hue, ranging between 0 and 360.
         } else if (IsEquals(g, maxComponent)) {
-            h = 60 * (b - r) / delta + 120; // 60 and 120 is used to calculate color's hue, whitch range between 0 and 360.
+            h = 60 * (b - r) / delta + 120; // 60,120 is used to calculate color's hue, ranging between 0 and 360.
         } else {
-            h = 60 * (r - g) / delta + 240; // 60 and 240 is used to calculate color's hue, whitch range between 0 and 360.
+            h = 60 * (r - g) / delta + 240; // 60,240 is used to calculate color's hue, ranging between 0 and 360.
         }
     }
     hsv.h = (int)(h + 0.5); // Hue add 0.5 to round up.
