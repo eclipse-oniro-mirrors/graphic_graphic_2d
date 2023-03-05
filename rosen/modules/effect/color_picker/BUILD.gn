@@ -49,8 +49,8 @@ ohos_shared_library("color_picker") {
   ]
 
   sources = [ 
-    "./src/color_picker.cpp",
-    "./src/color_extract.cpp",
+    "src/color_picker.cpp",
+    "src/color_extract.cpp",
   ]
 
 
