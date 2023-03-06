@@ -200,6 +200,8 @@ public:
 
     bool IsPixelStretchValid() const;
 
+    bool IsPixelStretchExpanded() const;
+
     RectI GetPixelStretchDirtyRect() const;
 
     const std::shared_ptr<RSObjGeometry>& GetBoundsGeometry() const;

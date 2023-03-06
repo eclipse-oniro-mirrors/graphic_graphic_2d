@@ -1105,13 +1105,25 @@ bool RSProperties::IsPixelStretchValid() const
     return false;
 }
 
+bool RSProperties::IsPixelStretchExpanded() const
+{
+    if (IsPixelStretchValid()) {
+        constexpr static float EPS = 1e-5f;
+        if (pixelStretch_->x_ >= -EPS && pixelStretch_->y_ >= -EPS && pixelStretch_->z_ >= -EPS
+            && pixelStretch_->w_ >= -EPS) {
+            return true;
+        }
+    }
+    return false;
+}
+
 RectI RSProperties::GetPixelStretchDirtyRect() const
 {
     auto dirtyRect = GetDirtyRect();
     auto stretchSize = GetPixelStretch();
 
     auto scaledBounds = RectF(dirtyRect.left_ - stretchSize.x_, dirtyRect.top_ - stretchSize.y_,
-         dirtyRect.width_ + stretchSize.x_ + stretchSize.z_,  dirtyRect.height_ + stretchSize.y_ + stretchSize.w_);
+        dirtyRect.width_ + stretchSize.x_ + stretchSize.z_,  dirtyRect.height_ + stretchSize.y_ + stretchSize.w_);
 
     auto scaledIBounds = RectI(std::floor(scaledBounds.left_), std::floor(scaledBounds.top_),
         std::ceil(scaledBounds.width_) + 1, std::ceil(scaledBounds.height_) + 1);
