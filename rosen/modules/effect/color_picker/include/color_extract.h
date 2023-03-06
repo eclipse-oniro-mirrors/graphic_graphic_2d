@@ -49,8 +49,8 @@ public:
     std::shared_ptr<uint32_t> colorVal_ = nullptr;
     uint32_t colorValLen_ = 0;
 
-    // 第一个元素为颜色，第二个元素为该颜色的像素个数
-    std::vector<std::pair<uint32_t, uint32_t>> featureColors;
+    // The first element is color, the second element is pixel num of this color.
+    std::vector<std::pair<uint32_t, uint32_t>> featureColors_;
 
     // Specified number of extracted theme colors, default value is 16;
     int specifiedFeatureColorNum_ = 16;
@@ -70,7 +70,6 @@ public:
     void GetNFeatureColors(int colorNum);
 
 protected:
-
     ColorExtract(std::shared_ptr<Media::PixelMap> pixmap);
 
 private:
@@ -122,7 +121,7 @@ private:
             return 1 + upperIndex_ - lowerIndex_;
         }
 
-        bool  operator < (const VBox &v) const
+        bool operator < (const VBox &v) const
         {
             return this->GetVolume() < v.GetVolume();
         }
@@ -133,10 +132,13 @@ private:
             uint32_t *colors = colorExtract_->colors_.get();
             uint32_t *hist = colorExtract_->hist_.get();
 
-            uint32_t minR, minG, minB;
-            minR = minG = minB = UINT32_MAX;
-            uint32_t maxRed, maxGreen, maxBlue;
-            maxRed = maxGreen = maxBlue = 0;
+            uint32_t minR = UINT32_MAX;
+            uint32_t minG = UINT32_MAX;
+            uint32_t minB = UINT32_MAX;
+            uint32_t maxRed = 0;
+            uint32_t maxGreen = 0;
+            uint32_t maxBlue = 0;
+            
             int count = 0;
 
             for (int i = lowerIndex_; i <= upperIndex_; i++) {

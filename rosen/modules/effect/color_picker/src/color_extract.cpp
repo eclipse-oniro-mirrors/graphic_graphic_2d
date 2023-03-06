@@ -201,14 +201,14 @@ void ColorExtract::GetNFeatureColors(int colorNum)
         for (int i = 0; i < distinctColorCount_; ++i) {
             std::pair<uint32_t, uint32_t> featureColor = \
                     std::make_pair(ApproximateToRGB888(colors[i]), hist[colors[i]]);
-            featureColors.push_back(featureColor);
+            featureColors_.push_back(featureColor);
         }
     } else {
         // Use quantization to reduce the number of color.
-        featureColors = QuantizePixels(colorNum);
+        featureColors_ = QuantizePixels(colorNum);
     }
     // Sort colors from more to less.
-    sort(featureColors.begin(), featureColors.end(), cmp);
+    sort(featureColors_.begin(), featureColors_.end(), cmp);
     return;
 }
 

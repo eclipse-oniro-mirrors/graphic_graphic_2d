@@ -97,26 +97,26 @@ ColorPicker::ColorPicker(std::shared_ptr<Media::PixelMap> pixmap):ColorExtract(p
 
 uint32_t ColorPicker::GetLargestProportionColor(ColorManager::Color &color) const
 {
-    if (featureColors.empty()) {
+    if (featureColors_.empty()) {
         return ERR_EFFECT_INVALID_VALUE;
     }
-    color = ColorManager::Color(featureColors[0].first | 0xFF000000); // alpha = oxFF
+    color = ColorManager::Color(featureColors_[0].first | 0xFF000000); // alpha = oxFF
     return SUCCESS;
 }
 
 uint32_t ColorPicker::GetHighestSaturationColor(ColorManager::Color &color) const
 {
-    if (featureColors.empty()) {
+    if (featureColors_.empty()) {
         return ERR_EFFECT_INVALID_VALUE;
     }
     uint32_t colorPicked = 0;
     HSV hsv = {0};
     double maxSaturation = 0.0;
-    for (int i = 0; i < featureColors.size(); i++) {
-        hsv = RGB2HSV(featureColors[i].first);
+    for (int i = 0; i < featureColors_.size(); i++) {
+        hsv = RGB2HSV(featureColors_[i].first);
         if (hsv.s >= maxSaturation) {
             maxSaturation = hsv.s;
-            colorPicked = featureColors[i].first;
+            colorPicked = featureColors_[i].first;
         }
     }
     color = ColorManager::Color(colorPicked | 0xFF000000);
@@ -130,14 +130,14 @@ uint32_t ColorPicker::GetAverageColor(ColorManager::Color &color) const
     uint32_t greenSum = 0;
     uint32_t blueSum = 0;
     int totalPixelNum = 0;
-    if (featureColors.empty()) {
+    if (featureColors_.empty()) {
         return ERR_EFFECT_INVALID_VALUE;
     }
-    for (int i = 0; i < featureColors.size(); i++) {
-        totalPixelNum += featureColors[i].second;
-        redSum += featureColors[i].second * ((featureColors[i].first >> ARGB_R_SHIFT) & ARGB_MASK);
-        greenSum += featureColors[i].second * ((featureColors[i].first >> ARGB_G_SHIFT) & ARGB_MASK);
-        blueSum += featureColors[i].second * ((featureColors[i].first >> ARGB_B_SHIFT) & ARGB_MASK);
+    for (int i = 0; i < featureColors_.size(); i++) {
+        totalPixelNum += featureColors_[i].second;
+        redSum += featureColors_[i].second * ((featureColors_[i].first >> ARGB_R_SHIFT) & ARGB_MASK);
+        greenSum += featureColors_[i].second * ((featureColors_[i].first >> ARGB_G_SHIFT) & ARGB_MASK);
+        blueSum += featureColors_[i].second * ((featureColors_[i].first >> ARGB_B_SHIFT) & ARGB_MASK);
     }
     uint32_t redMean = round(redSum / (float)totalPixelNum);
     uint32_t greenMean = round(greenSum / (float)totalPixelNum);
@@ -163,7 +163,7 @@ bool ColorPicker::IsEquals(double val1, double val2) const
     return fabs(val1 - val2) < 0.001;
 }
 
-// 将RGB格式转换为HSB格式
+// Transform RGB to HSV.
 HSV ColorPicker::RGB2HSV(uint32_t rgb) const
 {
     double r, g, b;
@@ -184,10 +184,12 @@ HSV ColorPicker::RGB2HSV(uint32_t rgb) const
     v = maxComponent;
     delta = maxComponent - minComponent;
 
-    if (IsEquals(maxComponent, 0))
+    if (IsEquals(maxComponent, 0)) {
         s = 0.0;
-    else
+    } else {
         s = delta / maxComponent;
+    }
+
 
     if (maxComponent == minComponent) {
         h = 0.0;
@@ -234,26 +236,25 @@ void ColorPicker::AdjustHSVToDefinedIterval(HSV& hsv) const
     return;
 }
 
-// 将HSV转换成RGB
+// Transform HSV to RGB.
 uint32_t ColorPicker::HSVtoRGB(HSV hsv) const
 {
-    float rgb_min, rgb_max;
     uint32_t r, g, b;
     uint32_t rgb = 0;
     AdjustHSVToDefinedIterval(hsv);
 
     // The brightness is directly proportional to the maximum value that RGB can reach, which is 2.55 times.
-    rgb_max = hsv.v * 2.55f;
+    float rgb_max = hsv.v * 2.55f;
 
     /**
     * Each time the saturation decreases from 100, the minimum value that RGB can achieve increases
     * linearly by 1/100 from 0 to the maximum value set by the brightness.
     */
-    rgb_min = rgb_max*(100 - hsv.s)/ 100.0f;
+    float rgb_min = rgb_max * (100 - hsv.s) / 100.0f;
 
     int i = hsv.h / 60;
     int difs = hsv.h % 60;
-    float rgb_Adj = (rgb_max - rgb_min)*difs / 60.0f;
+    float rgb_Adj = (rgb_max - rgb_min) * difs / 60.0f;
 
     /**
      * According to the change of H, there are six cases. In each case, a parameter in RBG is linearly
