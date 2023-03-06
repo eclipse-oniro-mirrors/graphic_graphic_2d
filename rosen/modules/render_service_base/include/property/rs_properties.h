@@ -88,10 +88,12 @@ public:
     void SetRotation(float degree);
     void SetRotationX(float degree);
     void SetRotationY(float degree);
+    void SetCameraDistance(float cameraDistance);
     Quaternion GetQuaternion() const;
     float GetRotation() const;
     float GetRotationX() const;
     float GetRotationY() const;
+    float GetCameraDistance() const;
 
     void SetTranslate(Vector2f translate);
     void SetTranslateX(float translate);
