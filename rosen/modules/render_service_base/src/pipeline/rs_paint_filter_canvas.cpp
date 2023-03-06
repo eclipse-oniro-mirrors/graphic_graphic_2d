@@ -34,7 +34,7 @@ SkSurface* RSPaintFilterCanvas::GetSurface() const
 
 bool RSPaintFilterCanvas::onFilter(SkPaint& paint) const
 {
-    if (paint.getColor() == 0x00000001) {
+    if (paint.getColor() == 0x00000001) { // foreground color and foreground color strategy identification
         paint.setColor(envStack_.top().envForegroundColor.AsArgbInt());
     }
 

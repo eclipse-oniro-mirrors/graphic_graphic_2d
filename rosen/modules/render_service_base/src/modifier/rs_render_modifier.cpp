@@ -146,7 +146,6 @@ bool RSDrawCmdListRenderModifier::Marshalling(Parcel& parcel)
     return false;
 }
 
-// RSEnvForegroundColorRenderModifier--ANIMATABLE_MODIFIER
 bool RSEnvForegroundColorRenderModifier::Marshalling(Parcel& parcel)
 {
     auto renderProperty = std::static_pointer_cast<RSRenderAnimatableProperty<Color>>(property_);
@@ -168,8 +167,6 @@ void RSEnvForegroundColorRenderModifier::Update(const std::shared_ptr<RSRenderPr
     }
 }
 
-
-// RSEnvForegroundColorStrategyRenderModifier--NOANIMATABLE_MODIFIER
 bool RSEnvForegroundColorStrategyRenderModifier::Marshalling(Parcel& parcel)
 {
     auto renderProperty = std::static_pointer_cast<RSRenderProperty<ForegroundColorStrategyType>>(property_);
@@ -183,7 +180,7 @@ void RSEnvForegroundColorStrategyRenderModifier ::Apply(RSModifierContext& conte
     auto renderProperty = std::static_pointer_cast<RSRenderProperty<ForegroundColorStrategyType>>(property_);
     switch (renderProperty->Get()) {
         case ForegroundColorStrategyType::INVERT_BACKGROUNDCOLOR: {
-            // 截图调用取色接口算颜色
+            // calculate the color by screebshot
             Color color = GetInvertBackgroundColor(context);
             context.canvas_->SetEnvForegroundColor(color);
             break;
