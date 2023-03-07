@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <event_handler.h>
 #include <iostream>
 #include <surface.h>
 
@@ -266,6 +267,13 @@ int main()
     std::cout << "rs app demo stage " << cnt++ << std::endl;
     auto rsUiDirector = RSUIDirector::Create();
     rsUiDirector->Init();
+    auto runner = OHOS::AppExecFwk::EventRunner::Create(true);
+    auto handler = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    rsUiDirector->SetUITaskRunner(
+        [handler](const std::function<void()>& task) {
+            handler->PostTask(task);
+        });
+    runner->Run();
     RSTransaction::FlushImplicitTransaction();
     rsUiDirector->SetRSSurfaceNode(surfaceNode);
     Init(rsUiDirector, rect.width_, rect.height_);
@@ -301,6 +309,8 @@ int main()
         customModifier->SetWidth(720);
         customModifier->SetHeight(1280);
         customModifier->SetBackgroundColor(Color(255, 0, 0));
+    }, []() {
+        std::cout<<"custom animation 1 finish callback"<<std::endl;
     });
 
     int64_t startNum = 80825861106;
@@ -327,6 +337,8 @@ int main()
         nodeModifier->SetAlpha(0.2);
         nodeModifier->SetScale(Vector2f(3.f, 3.f));
         nodeModifier->SetColor(Color(255, 0, 255));
+    }, []() {
+        std::cout<<"custom animation 2 finish callback"<<std::endl;
     });
 
     hasRunningAnimation = true;
