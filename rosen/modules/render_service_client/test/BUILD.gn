@@ -88,6 +88,8 @@ ohos_executable("render_service_client_modifier_demo") {
 
   public_deps = [ "//third_party/flutter/build/skia:ace_skia_ohos" ]
 
+  external_deps = [ "eventhandler:libeventhandler" ]
+
   part_name = "graphic_standard"
   subsystem_name = "graphic"
 }
@@ -204,6 +206,8 @@ ohos_executable("render_service_client_rs_animation_demo") {
   ]
 
   public_deps = [ "//third_party/flutter/build/skia:ace_skia_ohos" ]
+
+  external_deps = [ "eventhandler:libeventhandler" ]
 
   part_name = "graphic_standard"
   subsystem_name = "graphic"

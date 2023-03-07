@@ -170,6 +170,8 @@ private:
     bool needUpdateStartTime_ { true };
     bool needInitialize_ { true };
     RSRenderNode* target_ { nullptr };
+
+    friend class RSAnimation;
 };
 } // namespace Rosen
 } // namespace OHOS
