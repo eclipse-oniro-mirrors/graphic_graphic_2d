@@ -16,14 +16,9 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_RENDER_RS_IMAGE_H
 #define RENDER_SERVICE_CLIENT_CORE_RENDER_RS_IMAGE_H
 
-#include <cstdint>
-#include <mutex>
-#include "common/rs_macros.h"
-#include "common/rs_rect.h"
-#include "include/core/SkCanvas.h"
 #include "include/core/SkColorFilter.h"
 #include "include/core/SkImage.h"
-#include "transaction/rs_marshalling_helper.h"
+#include "render/rs_image_base.h"
 
 namespace OHOS {
 namespace Media {
@@ -63,23 +58,20 @@ enum class ImageFit {
     TOP_LEFT,
 };
 
-class RSB_EXPORT RSImage {
+class RSB_EXPORT RSImage : public RSImageBase {
 public:
     RSImage() = default;
     ~RSImage();
 
     bool IsEqual(const RSImage& other) const;
     void CanvasDrawImage(SkCanvas& canvas, const SkRect& rect, const SkPaint& paint, bool isBackground = false);
-    void SetImage(const sk_sp<SkImage> image);
-    void SetPixelMap(const std::shared_ptr<Media::PixelMap>& pixelmap);
-    void SetDstRect(const RectF& dstRect);
     void SetImageFit(int fitNum);
     void SetImageRepeat(int repeatNum);
     void SetRadius(const SkVector radius[]);
     void SetScale(double scale);
     void SetCompressData(const sk_sp<SkData> data, uint32_t id, int width, int height);
 #ifdef ROSEN_OHOS
-    bool Marshalling(Parcel& parcel) const;
+    bool Marshalling(Parcel& parcel) const override;
     [[nodiscard]] static RSImage* Unmarshalling(Parcel& parcel);
 #endif
 
@@ -89,19 +81,12 @@ private:
     void DrawImageRepeatRect(const SkPaint& paint, SkCanvas& canvas);
     void UploadGpu(SkCanvas& canvas);
 
-    mutable std::mutex mutex_;
-    sk_sp<SkImage> image_;
     sk_sp<SkData> compressData_;
-    std::shared_ptr<Media::PixelMap> pixelmap_;
-
     ImageFit imageFit_ = ImageFit::COVER;
     ImageRepeat imageRepeat_ = ImageRepeat::NO_REPEAT;
     SkVector radius_[4];
-    RectF srcRect_;
-    RectF dstRect_;
     RectF frameRect_;
     double scale_ = 1.0;
-    uint64_t uniqueId_;
 };
 
 template<>

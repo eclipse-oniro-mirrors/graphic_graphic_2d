@@ -127,6 +127,7 @@ ohos_source_set("render_service_base_src") {
     "src/render/rs_border.cpp",
     "src/render/rs_filter.cpp",
     "src/render/rs_image.cpp",
+    "src/render/rs_image_base.cpp",
     "src/render/rs_image_cache.cpp",
     "src/render/rs_light_up_effect_filter.cpp",
     "src/render/rs_mask.cpp",
@@ -165,11 +166,7 @@ ohos_source_set("render_service_base_src") {
     "-fvisibility-inlines-hidden",
   ]
 
-  public_configs = [
-    ":export_config",
-    "$rosen_root/modules/platform:eventhandler_config",
-    "$rosen_root/modules/platform:image_native_config",
-  ]
+  public_configs = [ ":export_config" ]
   public_deps = [ "src/platform:platform" ]
 
   if (enable_export_macro) {
@@ -197,7 +194,12 @@ ohos_source_set("render_service_base_src") {
     "//foundation/graphic/graphic_2d/utils:sandbox_utils",
   ]
 
-  if (!rosen_cross_platform) {
+  if (rosen_cross_platform) {
+    public_configs += [
+      "$rosen_root/modules/platform:eventhandler_config",
+      "$rosen_root/modules/platform:image_native_config",
+    ]
+  } else {
     external_deps = [ "hitrace_native:hitrace_meter" ]
   }
 

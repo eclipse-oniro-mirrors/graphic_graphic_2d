@@ -47,6 +47,7 @@ namespace Rosen {
 class DrawCmdList;
 class RSFilter;
 class RSImage;
+class RSImageBase;
 class RSMask;
 class RSPath;
 class RSShader;
@@ -139,8 +140,10 @@ public:
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSFilter>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSMask>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSImage>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSImageBase>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<DrawCmdList>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<Media::PixelMap>)
+    static bool SkipPixelMap(Parcel& parcel);
     // animation
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSRenderTransition>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSRenderTransitionEffect>)

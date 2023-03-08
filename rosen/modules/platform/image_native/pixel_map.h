@@ -128,6 +128,11 @@ public:
         return static_cast<void *>(data_);
     }
 
+    NATIVEEXPORT uint32_t GetUniqueId() const
+    {
+        return 0;
+    }
+
     NATIVEEXPORT bool Marshalling(Parcel &data) const override;
     NATIVEEXPORT static PixelMap *Unmarshalling(Parcel &data);
     NATIVEEXPORT bool EncodeTlv(std::vector<uint8_t> &buff) const;
