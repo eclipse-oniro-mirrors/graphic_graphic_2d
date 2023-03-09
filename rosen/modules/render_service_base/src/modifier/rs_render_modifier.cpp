@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include "pixel_map.h"
 
+#include "common/rs_obj_abs_geometry.h"
 #include "modifier/rs_modifier_type.h"
 #include "pipeline/rs_draw_cmd_list.h"
 #include "pipeline/rs_paint_filter_canvas.h"
@@ -107,6 +108,17 @@ static std::unordered_map<RSModifierType, ModifierUnmarshallingFunc> funcLUT = {
         },
     },
 
+    { RSModifierType::GEOMETRYTRANS, [](Parcel& parcel) -> RSRenderModifier* {
+            std::shared_ptr<RSRenderProperty<SkMatrix>> prop;
+            int16_t type;
+            if (!RSMarshallingHelper::Unmarshalling(parcel, prop) || !parcel.ReadInt16(type)) {
+                return nullptr;
+            }
+            auto modifier = new RSGeometryTransRenderModifier(prop);
+            modifier->SetType(static_cast<RSModifierType>(type));
+            return modifier;
+        },
+    },
 };
 
 #undef DECLARE_ANIMATABLE_MODIFIER
@@ -244,6 +256,26 @@ void RSEnvForegroundColorStrategyRenderModifier::Update(const std::shared_ptr<RS
         auto renderProperty = std::static_pointer_cast<RSRenderProperty<ForegroundColorStrategyType >>(property_);
         renderProperty->Set(property->Get());
     }
+}
+
+void RSGeometryTransRenderModifier::Apply(RSModifierContext& context) const
+{
+    auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(context.property_.GetBoundsGeometry());
+    auto property = property_->Get();
+    geoPtr->ConcatMatrix(property);
+}
+
+void RSGeometryTransRenderModifier::Update(const std::shared_ptr<RSRenderPropertyBase>& prop, bool isDelta)
+{
+    if (auto property = std::static_pointer_cast<RSRenderProperty<SkMatrix>>(prop)) {
+        property_->Set(property->Get());
+    }
+}
+
+bool RSGeometryTransRenderModifier::Marshalling(Parcel& parcel)
+{
+    return parcel.WriteInt16(static_cast<int16_t>(RSModifierType::GEOMETRYTRANS)) &&
+           RSMarshallingHelper::Marshalling(parcel, property_) && parcel.WriteInt16(static_cast<int16_t>(GetType()));
 }
 
 RSRenderModifier* RSRenderModifier::Unmarshalling(Parcel& parcel)

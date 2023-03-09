@@ -91,6 +91,12 @@ bool RSRenderNode::Update(
     Vector2f offset = (parent == nullptr || IsInstanceOf<RSSurfaceRenderNode>()) ?
         Vector2f { 0.f, 0.f } : Vector2f { parent->GetFrameOffsetX(), parent->GetFrameOffsetY() };
     bool dirty = renderProperties_.UpdateGeometry(parent, parentDirty, offset);
+    if ((IsDirty() || dirty) && drawCmdModifiers_.count(RSModifierType::GEOMETRYTRANS)) {
+        RSModifierContext context = { GetMutableRenderProperties() };
+        for (auto& modifier : drawCmdModifiers_[RSModifierType::GEOMETRYTRANS]) {
+            modifier->Apply(context);
+        }
+    }
     isDirtyRegionUpdated_ = false;
     UpdateDirtyRegion(dirtyManager, dirty, needClip, clipRect);
     isLastVisible_ = ShouldPaint();
@@ -335,6 +341,9 @@ void RSRenderNode::UpdateOverlayBounds()
     RSModifierContext context = { GetMutableRenderProperties() };
     RectF joinRect = RectF();
     for (auto& iterator : drawCmdModifiers_) {
+        if (iterator.first == RSModifierType::GEOMETRYTRANS) {
+            continue;
+        }
         for (auto& overlayModifier : iterator.second) {
             auto drawCmdModifier = std::static_pointer_cast<RSDrawCmdListRenderModifier>(overlayModifier);
             if (!drawCmdModifier) {

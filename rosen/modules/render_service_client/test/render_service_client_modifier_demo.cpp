@@ -119,6 +119,35 @@ public:
     }
 };
 
+class TransModifier : public RSGeometryTransModifier {
+public:
+    TransModifier() = default;
+    ~TransModifier() = default;
+
+    SkMatrix GeometryEffect(float width, float height) const override
+    {
+        SkMatrix matrix;
+        if (distance_) {
+            matrix.preTranslate(distance_->Get(), distance_->Get());
+            std::cout << "TransModifier GeometryEffect, distance:"<< distance_->Get() << std::endl;
+        }
+
+        return matrix;
+    }
+
+    void SetTrans(float distance)
+    {
+        if (distance_ == nullptr) {
+            distance_ = std::make_shared<RSAnimatableProperty<float>>(distance);
+            AttachProperty(distance_);
+        } else {
+            distance_->Set(distance);
+        }
+    }
+private:
+    std::shared_ptr<RSAnimatableProperty<float>> distance_;
+};
+
 class CustomModifier : public RSContentStyleModifier {
 public:
     CustomModifier() = default;

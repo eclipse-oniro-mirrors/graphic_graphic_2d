@@ -24,6 +24,7 @@
 #include "common/rs_matrix3.h"
 #include "common/rs_vector2.h"
 #include "common/rs_vector4.h"
+#include "include/core/SkMatrix.h"
 #include "modifier/rs_modifier_type.h"
 #include "modifier/rs_render_property.h"
 #include "pipeline/rs_draw_cmd_list.h"
@@ -59,6 +60,40 @@ public:
 
     virtual bool Marshalling(Parcel& parcel) = 0;
     [[nodiscard]] static RSRenderModifier* Unmarshalling(Parcel& parcel);
+};
+
+class RSB_EXPORT RSGeometryTransRenderModifier : public RSRenderModifier {
+public:
+    RSGeometryTransRenderModifier(const std::shared_ptr<RSRenderProperty<SkMatrix>>& property)
+        : property_(property ? property : std::make_shared<RSRenderProperty<SkMatrix>>())
+    {}
+    virtual ~RSGeometryTransRenderModifier() = default;
+    void Apply(RSModifierContext& context) const override;
+    void Update(const std::shared_ptr<RSRenderPropertyBase>& prop, bool isDelta) override;
+    bool Marshalling(Parcel& parcel) override;
+    virtual PropertyId GetPropertyId() override
+    {
+        return property_->GetId();
+    }
+
+    std::shared_ptr<RSRenderPropertyBase> GetProperty() override
+    {
+        return property_;
+    }
+
+    void SetType(RSModifierType type)
+    {
+        drawStyle_ = type;
+    }
+
+    RSModifierType GetType() override
+    {
+        return drawStyle_;
+    }
+
+protected:
+    RSModifierType drawStyle_ = RSModifierType::GEOMETRYTRANS;
+    std::shared_ptr<RSRenderProperty<SkMatrix>> property_;
 };
 
 class RSB_EXPORT RSDrawCmdListRenderModifier : public RSRenderModifier {
