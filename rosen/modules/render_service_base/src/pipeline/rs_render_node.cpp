@@ -244,21 +244,15 @@ void RSRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 
 void RSRenderNode::CheckCacheType()
 {
-    if (GetRenderProperties().IsSpherizeValid() && cacheType_ != CacheType::SPHERIZE) {
-        cacheType_ = CacheType::SPHERIZE;
+    auto currentCacheType = CacheType::NONE;
+    if (GetRenderProperties().IsSpherizeValid()) {
+        currentCacheType = CacheType::SPHERIZE;
+    } else if (isFreeze_) {
+        currentCacheType = CacheType::FREEZE;
+    }
+    if (cacheType_ != currentCacheType) {
+        cacheType_ = currentCacheType;
         cacheTypeChanged_ = true;
-    } else if (!GetRenderProperties().IsSpherizeValid()) {
-        if (isFreeze_) {
-            if (cacheType_ != CacheType::FREEZE) {
-                cacheTypeChanged_ = true;
-                cacheType_ = CacheType::FREEZE;
-            }
-        } else {
-            if (cacheType_ != CacheType::NONE) {
-                cacheTypeChanged_ = true;
-                cacheType_ = CacheType::NONE;
-            }
-        }
     }
 }
 
