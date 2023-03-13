@@ -179,7 +179,7 @@ ParallelRenderingType RSSystemProperties::GetParallelRenderingEnabled()
 
 bool RSSystemProperties::GetColdStartThreadEnabled()
 {
-    return std::atoi((system::GetParameter("rosen.coldstartthread.enabled", "1")).c_str()) != 0;
+    return std::atoi((system::GetParameter("rosen.coldstartthread.enabled", "0")).c_str()) != 0;
 }
 
 float RSSystemProperties::GetAnimationScale()
