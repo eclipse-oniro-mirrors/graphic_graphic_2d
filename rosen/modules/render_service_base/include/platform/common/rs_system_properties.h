@@ -95,6 +95,7 @@ public:
 
     static bool GetColdStartThreadEnabled();
     static float GetAnimationScale();
+    static bool GetSkipForAlphaZeroEnabled();
 
     static bool GetBoolSystemProperty(const char* name, bool defaultValue);
     static int WatchSystemProperty(const char* name, OnSystemPropertyChanged func, void* context);
