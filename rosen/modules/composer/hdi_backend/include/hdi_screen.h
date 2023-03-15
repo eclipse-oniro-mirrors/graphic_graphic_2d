@@ -51,7 +51,7 @@ public:
     int32_t GetScreenColorGamut(GraphicColorGamut &gamut) const;
     int32_t SetScreenGamutMap(GraphicGamutMap gamutMap) const;
     int32_t GetScreenGamutMap(GraphicGamutMap &gamutMap) const;
-    int32_t SetScreenColorTransform(const float *matrix) const;
+    int32_t SetScreenColorTransform(const std::vector<float>& matrix) const;
     int32_t GetHDRCapabilityInfos(GraphicHDRCapability &info) const;
     int32_t GetSupportedMetaDataKey(std::vector<GraphicHDRMetadataKey> &keys) const;
 

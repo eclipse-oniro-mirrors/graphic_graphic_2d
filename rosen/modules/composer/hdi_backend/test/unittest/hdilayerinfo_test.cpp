@@ -164,32 +164,13 @@ HWTEST_F(HdiLayerInfoTest, GetCompositionType001, Function | MediumTest| Level3)
 }
 
 /**
- * @tc.name: GetVisibleNum001
- * @tc.desc: Verify the GetVisibleNum of hdilayerinfo
- * @tc.type:FUNC
- * @tc.require:AR000GGP0P
- * @tc.author:
- */
-HWTEST_F(HdiLayerInfoTest, GetVisibleNum001, Function | MediumTest| Level3)
-{
-    GraphicIRect iRect = {
-        .x = 0,
-        .y = 0,
-        .w = 800,
-        .h = 600,
-    };
-    HdiLayerInfoTest::hdiLayerInfo_->SetVisibleRegion(1, iRect);
-    ASSERT_NE(HdiLayerInfoTest::hdiLayerInfo_->GetVisibleNum(), 0u);
-}
-
-/**
  * @tc.name: GetVisibleRegion001
- * @tc.desc: Verify the GetVisibleRegion of hdilayerinfo
+ * @tc.desc: Verify the GetVisibleRegions of hdilayerinfo
  * @tc.type:FUNC
  * @tc.require:AR000GGP0P
  * @tc.author:
  */
-HWTEST_F(HdiLayerInfoTest, GetVisibleRegion001, Function | MediumTest| Level3)
+HWTEST_F(HdiLayerInfoTest, GetVisibleRegions001, Function | MediumTest| Level3)
 {
     GraphicIRect iRect = {
         .x = 0,
@@ -197,16 +178,20 @@ HWTEST_F(HdiLayerInfoTest, GetVisibleRegion001, Function | MediumTest| Level3)
         .w = 800,
         .h = 600,
     };
-    HdiLayerInfoTest::hdiLayerInfo_->SetVisibleRegion(1, iRect);
-    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetVisibleRegion().x, iRect.x);
-    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetVisibleRegion().y, iRect.y);
-    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetVisibleRegion().w, iRect.w);
-    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetVisibleRegion().h, iRect.h);
+    std::vector<GraphicIRect> inVisibles;
+    inVisibles.emplace_back(iRect);
+    HdiLayerInfoTest::hdiLayerInfo_->SetVisibleRegions(inVisibles);
+    std::vector<GraphicIRect>& outVisibles = HdiLayerInfoTest::hdiLayerInfo_->GetVisibleRegions();
+    ASSERT_EQ(outVisibles.size(), 1);
+    ASSERT_EQ(outVisibles[0].x, iRect.x);
+    ASSERT_EQ(outVisibles[0].y, iRect.y);
+    ASSERT_EQ(outVisibles[0].w, iRect.w);
+    ASSERT_EQ(outVisibles[0].h, iRect.h);
 }
 
 /**
  * @tc.name: GetDirtyRegion001
- * @tc.desc: Verify the GetDirtyRegion of hdilayerinfo
+ * @tc.desc: Verify the GetDirtyRegions of hdilayerinfo
  * @tc.type:FUNC
  * @tc.require:AR000GGP0P
  * @tc.author:
@@ -219,11 +204,15 @@ HWTEST_F(HdiLayerInfoTest, GetDirtyRegion001, Function | MediumTest| Level3)
         .w = 800,
         .h = 600,
     };
-    HdiLayerInfoTest::hdiLayerInfo_->SetDirtyRegion(iRect);
-    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetDirtyRegion().x, iRect.x);
-    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetDirtyRegion().y, iRect.y);
-    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetDirtyRegion().w, iRect.w);
-    ASSERT_EQ(HdiLayerInfoTest::hdiLayerInfo_->GetDirtyRegion().h, iRect.h);
+    std::vector<GraphicIRect> inDirtyRegions;
+    inDirtyRegions.emplace_back(iRect);
+    HdiLayerInfoTest::hdiLayerInfo_->SetDirtyRegions(inDirtyRegions);
+    std::vector<GraphicIRect>& outDirtyRegions = HdiLayerInfoTest::hdiLayerInfo_->GetDirtyRegions();
+    ASSERT_EQ(outDirtyRegions.size(), 1);
+    ASSERT_EQ(outDirtyRegions[0].x, iRect.x);
+    ASSERT_EQ(outDirtyRegions[0].y, iRect.y);
+    ASSERT_EQ(outDirtyRegions[0].w, iRect.w);
+    ASSERT_EQ(outDirtyRegions[0].h, iRect.h);
 }
 
 /**
@@ -377,30 +366,16 @@ HWTEST_F(HdiLayerInfoTest, TunnelHandle002, Function | MediumTest | Level1)
 * Type: Function
 * Rank: Important(1)
 * EnvConditions: N/A
-* CaseDescription: 1. call GetColorTransform with default
-* @tc.require: issueI5H317
- */
-HWTEST_F(HdiLayerInfoTest, ColorTransform001, Function | MediumTest | Level1)
-{
-    float* transform = HdiLayerInfoTest::hdiLayerInfo_->GetColorTransform();
-    ASSERT_EQ(transform, nullptr);
-}
-
-/*
-* Function: SetColorTransform and GetColorTransform
-* Type: Function
-* Rank: Important(1)
-* EnvConditions: N/A
 * CaseDescription: 1. call SetColorTransform
 *                  2. call GetColorTransform and check ret
 * @tc.require: issueI5H317
  */
-HWTEST_F(HdiLayerInfoTest, ColorTransform002, Function | MediumTest | Level1)
+HWTEST_F(HdiLayerInfoTest, ColorTransform001, Function | MediumTest | Level1)
 {
-    float matrix[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    std::vector<float> matrix = {1, 0, 0, 0, 1, 0, 0, 0, 1};
     HdiLayerInfoTest::hdiLayerInfo_->SetColorTransform(matrix);
-    float* transform = HdiLayerInfoTest::hdiLayerInfo_->GetColorTransform();
-    ASSERT_NE(transform, nullptr);
+    std::vector<float>& transform = HdiLayerInfoTest::hdiLayerInfo_->GetColorTransform();
+    ASSERT_EQ(transform.size(), 9);
 }
 
 /*

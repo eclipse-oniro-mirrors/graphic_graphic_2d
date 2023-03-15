@@ -69,9 +69,12 @@ namespace OHOS {
         GraphicLayerAlpha alpha = GetData<GraphicLayerAlpha>();
         GraphicTransformType transformType = GetData<GraphicTransformType>();
         GraphicCompositionType compositionType = GetData<GraphicCompositionType>();
-        uint32_t num = GetData<uint32_t>();
         GraphicIRect visibleRegion = GetData<GraphicIRect>();
+        std::vector<GraphicIRect> visibleRegions;
+        visibleRegions.emplace_back(visibleRegion);
         GraphicIRect dirtyRegion = GetData<GraphicIRect>();
+        std::vector<GraphicIRect> dirtyRegions;
+        dirtyRegions.emplace_back(dirtyRegion);
         GraphicBlendType blendType = GetData<GraphicBlendType>();
         GraphicIRect crop = GetData<GraphicIRect>();
         bool preMulti = GetData<bool>();
@@ -85,8 +88,8 @@ namespace OHOS {
         layerInfo->SetAlpha(alpha);
         layerInfo->SetTransform(transformType);
         layerInfo->SetCompositionType(compositionType);
-        layerInfo->SetVisibleRegion(num, visibleRegion);
-        layerInfo->SetDirtyRegion(dirtyRegion);
+        layerInfo->SetVisibleRegions(visibleRegions);
+        layerInfo->SetDirtyRegions(dirtyRegions);
         layerInfo->SetBlendType(blendType);
         layerInfo->SetCropRect(crop);
         layerInfo->SetPreMulti(preMulti);

@@ -163,7 +163,9 @@ void DrawingSample::Draw()
                 damageRect.y = 0;
                 damageRect.w = static_cast<int32_t>(displayWidthsMap_[screenId]);
                 damageRect.h = static_cast<int32_t>(displayHeightsMap_[screenId]);
-                curOutput_->SetOutputDamage(1, damageRect);
+                std::vector<GraphicIRect> outputDamages;
+                outputDamages.emplace_back(damageRect);
+                curOutput_->SetOutputDamages(outputDamages);
                 backend_->Repaint(curOutput_);
                 sleep(2); // wait 2s
                 auto preBuffer = drawLayer->GetPreBuffer();
@@ -210,7 +212,7 @@ uint32_t DrawingSample::CreatePhysicalScreen()
     screen->GetScreenCapability(info);
     LOGI("ScreenCapability: name(%{public}s), type(%{public}d), phyWidth(%{public}d), "
          "phyHeight(%{public}d)",
-        info.name, info.type, info.phyWidth, info.phyHeight);
+        info.name.c_str(), info.type, info.phyWidth, info.phyHeight);
     LOGI("ScreenCapability: supportLayers(%{public}d), virtualDispCount(%{public}d), "
          "supportWriteBack(%{public}d), propertyCount(%{public}d)",
         info.supportLayers, info.virtualDispCount, info.supportWriteBack, info.propertyCount);

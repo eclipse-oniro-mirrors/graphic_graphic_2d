@@ -107,8 +107,12 @@ GSError HdiLayerContext::FillHdiLayer()
     hdiLayer_->SetAlpha(alpha);
     hdiLayer_->SetLayerSize(dstRect_);
     hdiLayer_->SetCropRect(srcRect_);
-    hdiLayer_->SetDirtyRegion(srcRect_);
-    hdiLayer_->SetVisibleRegion(1, srcRect_);
+    std::vector<GraphicIRect> dirtyRegions;
+    dirtyRegions.emplace_back(srcRect_);
+    hdiLayer_->SetDirtyRegions(dirtyRegions);
+    std::vector<GraphicIRect> visibleRegions;
+    visibleRegions.emplace_back(srcRect_);
+    hdiLayer_->SetVisibleRegions(visibleRegions);
     hdiLayer_->SetBlendType(GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
     hdiLayer_->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
     hdiLayer_->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);

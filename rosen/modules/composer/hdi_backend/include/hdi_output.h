@@ -47,7 +47,7 @@ public:
 
     /* for RS begin */
     void SetLayerInfo(const std::vector<LayerInfoPtr> &layerInfos);
-    void SetOutputDamage(uint32_t num, const GraphicIRect &outputDamage);
+    void SetOutputDamages(const std::vector<GraphicIRect> &outputDamages);
     uint32_t GetScreenId() const;
     void SetLayerCompCapacity(uint32_t layerCompositionCapacity);
     uint32_t GetLayerCompCapacity() const;
@@ -56,8 +56,7 @@ public:
     static std::shared_ptr<HdiOutput> CreateHdiOutput(uint32_t screenId);
     RosenError Init();
     const std::unordered_map<uint32_t, LayerPtr>& GetLayers();
-    GraphicIRect& GetOutputDamage();
-    uint32_t GetOutputDamageNum() const;
+    std::vector<GraphicIRect>& GetOutputDamages();
     sptr<Surface> GetFrameBufferSurface();
     std::unique_ptr<FrameBufferEntry> GetFramebuffer();
     int32_t ReleaseFramebuffer(
@@ -81,8 +80,7 @@ private:
     std::unordered_map<uint64_t, LayerPtr> surfaceIdMap_;
     uint32_t screenId_;
     uint32_t layerCompCapacity_ = LAYER_COMPOSITION_CAPACITY_INVALID;
-    GraphicIRect outputDamage_;
-    uint32_t outputDamageNum_;
+    std::vector<GraphicIRect> outputDamages_;
     bool directClientCompositionEnabled_ = true;
 
     int32_t CreateLayer(uint64_t surfaceId, const LayerInfoPtr &layerInfo);

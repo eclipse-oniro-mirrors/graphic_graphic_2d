@@ -241,8 +241,12 @@ bool DrawingEngineSample::DrawDrawingLayer(std::shared_ptr<HdiLayerInfo> &layer)
     layer->SetAlpha(alpha);
     layer->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
     layer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
-    layer->SetVisibleRegion(1, srcRect);
-    layer->SetDirtyRegion(srcRect);
+    std::vector<GraphicIRect> visibleRegions;
+    visibleRegions.emplace_back(srcRect);
+    layer->SetVisibleRegions(visibleRegions);
+    std::vector<GraphicIRect> dirtyRegions;
+    dirtyRegions.emplace_back(srcRect);
+    layer->SetDirtyRegions(dirtyRegions);
     layer->SetLayerSize(dstRect);
     layer->SetBlendType(GraphicBlendType::GRAPHIC_BLEND_SRC);
     layer->SetCropRect(srcRect);
@@ -272,7 +276,9 @@ void DrawingEngineSample::OutPutDisplay()
         damageRect.y = 0;
         damageRect.w = display_w;
         damageRect.h = display_h;
-        output_->SetOutputDamage(1, damageRect);
+        std::vector<GraphicIRect> outputDamages;
+        outputDamages.emplace_back(damageRect);
+        output_->SetOutputDamages(outputDamages);
 
         backend_->Repaint(output_);
         int32_t releaseFence = -1;

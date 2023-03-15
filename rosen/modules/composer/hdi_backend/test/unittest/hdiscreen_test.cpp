@@ -58,7 +58,7 @@ void HdiScreenTest::CheckNullFunc()
     GraphicGamutMap gamutMap = GRAPHIC_GAMUT_MAP_CONSTANT;
     ASSERT_EQ(hdiScreen_->SetScreenGamutMap(gamutMap), GRAPHIC_DISPLAY_NULL_PTR);
     ASSERT_EQ(hdiScreen_->GetScreenGamutMap(gamutMap), GRAPHIC_DISPLAY_NULL_PTR);
-    float *matrix;
+    std::vector<float> matrix;
     ASSERT_EQ(hdiScreen_->SetScreenColorTransform(matrix), GRAPHIC_DISPLAY_NULL_PTR);
     GraphicHDRCapability infos;
     ASSERT_EQ(hdiScreen_->GetHDRCapabilityInfos(infos), GRAPHIC_DISPLAY_NULL_PTR);
@@ -266,7 +266,7 @@ HWTEST_F(HdiScreenTest, SetScreenVsyncEnabled001, Function | MediumTest| Level3)
 */
 HWTEST_F(HdiScreenTest, SetScreenColorTransform001, Function | MediumTest| Level3)
 {
-    float *matrix = nullptr;
+    std::vector<float> matrix = { 0.0 };
     ASSERT_EQ(HdiScreenTest::hdiScreen_->SetScreenColorTransform(matrix), 0);
 }
 

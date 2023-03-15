@@ -226,7 +226,7 @@ int32_t HdiScreen::GetScreenGamutMap(GraphicGamutMap &gamutMap) const
     return device_->GetScreenGamutMap(screenId_, gamutMap);
 }
 
-int32_t HdiScreen::SetScreenColorTransform(const float *matrix) const
+int32_t HdiScreen::SetScreenColorTransform(const std::vector<float>& matrix) const
 {
     if (device_ == nullptr) {
         return GRAPHIC_DISPLAY_NULL_PTR;

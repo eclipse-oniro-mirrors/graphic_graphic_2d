@@ -44,9 +44,13 @@ void HdiLayerTest::SetUpTestCase()
     GraphicIRect srcRect = {0, 0, WIDTH_VAL, HEIGHT_VAL};
     GraphicIRect dstRect = {0, 0, WIDTH_VAL, HEIGHT_VAL};
     layerInfo_->SetLayerSize(dstRect);
-    layerInfo_->SetDirtyRegion(srcRect);
+    std::vector<GraphicIRect> dirtyRegions;
+    dirtyRegions.emplace_back(srcRect);
+    layerInfo_->SetDirtyRegions(dirtyRegions);
     layerInfo_->SetCropRect(srcRect);
-    layerInfo_->SetVisibleRegion(1, srcRect);
+    std::vector<GraphicIRect> visibleRegions;
+    visibleRegions.emplace_back(srcRect);
+    layerInfo_->SetVisibleRegions(visibleRegions);
     GraphicLayerAlpha layerAlpha = {false, false, 0, 0, 0};
     layerInfo_->SetAlpha(layerAlpha);
     layerInfo_->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
@@ -56,7 +60,7 @@ void HdiLayerTest::SetUpTestCase()
     EXPECT_CALL(*hdiDeviceMock_, SetLayerAlpha(_, _, _)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*hdiDeviceMock_, SetLayerSize(_, _, _)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*hdiDeviceMock_, SetTransformMode(_, _, _)).WillRepeatedly(testing::Return(0));
-    EXPECT_CALL(*hdiDeviceMock_, SetLayerVisibleRegion(_, _, _, _)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerVisibleRegion(_, _, _)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*hdiDeviceMock_, SetLayerDirtyRegion(_, _, _)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*hdiDeviceMock_, SetLayerBuffer(_, _, _, _)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*hdiDeviceMock_, SetLayerCompositionType(_, _, _)).WillRepeatedly(testing::Return(0));

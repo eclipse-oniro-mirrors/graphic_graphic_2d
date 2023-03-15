@@ -299,7 +299,9 @@ void HelloDrawing::Draw()
         damageRect.y = 0;
         damageRect.w = display_w;
         damageRect.h = display_h;
-        output->SetOutputDamage(1, damageRect);
+        std::vector<GraphicIRect> outputDamages;
+        outputDamages.emplace_back(damageRect);
+        output->SetOutputDamages(outputDamages);
 
         backend->Repaint(output);
         for (uint32_t i = 0; i < BASE_LAYER_NUM; i++) {
@@ -389,8 +391,12 @@ bool HelloDrawing::FillBaseLayer(std::shared_ptr<HdiLayerInfo> &showLayer, uint3
     showLayer->SetAlpha(alpha);
     // if rotate is not null, SetTransform
     showLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
-    showLayer->SetVisibleRegion(1, srcRect);
-    showLayer->SetDirtyRegion(srcRect);
+    std::vector<GraphicIRect> visibleRegions;
+    visibleRegions.emplace_back(srcRect);
+    showLayer->SetVisibleRegions(visibleRegions);
+    std::vector<GraphicIRect> dirtyRegions;
+    dirtyRegions.emplace_back(srcRect);
+    showLayer->SetDirtyRegions(dirtyRegions);
     showLayer->SetLayerSize(dstRect);
     showLayer->SetBlendType(GraphicBlendType::GRAPHIC_BLEND_SRC);
     showLayer->SetCropRect(srcRect);

@@ -77,7 +77,6 @@ namespace OHOS {
 
         // get data
         uint32_t screenId = GetData<uint32_t>();
-        uint32_t num = GetData<uint32_t>();
         GraphicIRect outputDamage = GetData<GraphicIRect>();
         int64_t timeStamp = GetData<int64_t>();
         bool enableStatus = GetData<bool>();
@@ -92,7 +91,9 @@ namespace OHOS {
         LayerInfoPtr layerInfoptr = HdiLayerInfo::CreateHdiLayerInfo();
         layerInfos.push_back(layerInfoptr);
         hdiOutput->SetLayerInfo(layerInfos);
-        hdiOutput->SetOutputDamage(num, outputDamage);
+        std::vector<GraphicIRect> outputDamages;
+        outputDamages.emplace_back(outputDamage);
+        hdiOutput->SetOutputDamages(outputDamages);
         hdiOutput->RecordCompositionTime(timeStamp);
         hdiOutput->SetDirectClientCompEnableStatus(enableStatus);
         sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl(seqNum);

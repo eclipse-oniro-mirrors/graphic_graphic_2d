@@ -175,23 +175,41 @@ int32_t HdiLayer::SetTransformMode()
 
 int32_t HdiLayer::SetLayerVisibleRegion()
 {
-    if (doLayerInfoCompare_ && IsSameRect(layerInfo_->GetVisibleRegion(), prevLayerInfo_->GetVisibleRegion()) &&
-        layerInfo_->GetVisibleNum() == prevLayerInfo_->GetVisibleNum()) {
-        return GRAPHIC_DISPLAY_SUCCESS;
+    std::vector<GraphicIRect>& curVisibles = layerInfo_->GetVisibleRegions();
+    if (doLayerInfoCompare_) {
+        std::vector<GraphicIRect>& prevVisibles = prevLayerInfo_->GetVisibleRegions();
+        bool isSameVisble = (curVisibles.size() == prevVisibles.size());
+        if (isSameVisble) {
+            for (decltype(curVisibles.size()) i = 0; i < curVisibles.size(); i++) {
+                isSameVisble &= IsSameRect(curVisibles[i], prevVisibles[i]);
+            }
+        }
+        if (isSameVisble) {
+            return GRAPHIC_DISPLAY_SUCCESS;
+        }
     }
 
-    int32_t ret = device_->SetLayerVisibleRegion(screenId_, layerId_, layerInfo_->GetVisibleNum(),
-                                                 layerInfo_->GetVisibleRegion());
+    int32_t ret = device_->SetLayerVisibleRegion(screenId_, layerId_, curVisibles);
     return ret;
 }
 
 int32_t HdiLayer::SetLayerDirtyRegion()
 {
-    if (doLayerInfoCompare_ && IsSameRect(layerInfo_->GetDirtyRegion(), prevLayerInfo_->GetDirtyRegion())) {
-        return GRAPHIC_DISPLAY_SUCCESS;
+    std::vector<GraphicIRect>& curDirtyRegions = layerInfo_->GetDirtyRegions();
+    if (doLayerInfoCompare_) {
+        std::vector<GraphicIRect>& prevDirtyRegions = prevLayerInfo_->GetDirtyRegions();
+        bool isSameDirtyRegions = (curDirtyRegions.size() == prevDirtyRegions.size());
+        if (isSameDirtyRegions) {
+            for (decltype(curDirtyRegions.size()) i = 0; i < curDirtyRegions.size(); i++) {
+                isSameDirtyRegions &= IsSameRect(curDirtyRegions[i], prevDirtyRegions[i]);
+            }
+        }
+        if (isSameDirtyRegions) {
+            return GRAPHIC_DISPLAY_SUCCESS;
+        }
     }
 
-    int32_t ret = device_->SetLayerDirtyRegion(screenId_, layerId_, layerInfo_->GetDirtyRegion());
+    int32_t ret = device_->SetLayerDirtyRegion(screenId_, layerId_, curDirtyRegions);
     return ret;
 }
 
@@ -260,12 +278,21 @@ int32_t HdiLayer::SetLayerPreMulti()
 
 int32_t HdiLayer::SetLayerColorTransform()
 {
-    if (doLayerInfoCompare_ && layerInfo_->GetColorTransform() == prevLayerInfo_->GetColorTransform()) {
-        return GRAPHIC_DISPLAY_SUCCESS;
+    std::vector<float>& curMatrix = layerInfo_->GetColorTransform();
+    if (doLayerInfoCompare_) {
+        std::vector<float>& prevMatrix = prevLayerInfo_->GetColorTransform();
+        bool isSameMatrix = (curMatrix.size() == prevMatrix.size());
+        if (isSameMatrix) {
+            for (decltype(curMatrix.size()) i = 0; i < curMatrix.size(); i++) {
+                isSameMatrix &= (curMatrix[i] == prevMatrix[i]);
+            }
+        }
+        if (isSameMatrix) {
+            return GRAPHIC_DISPLAY_SUCCESS;
+        }
     }
 
-    // because hdi interface func is not implemented, delete CheckRet to avoid excessive print of log
-    device_->SetLayerColorTransform(screenId_, layerId_, layerInfo_->GetColorTransform());
+    device_->SetLayerColorTransform(screenId_, layerId_, curMatrix);
     return GRAPHIC_DISPLAY_SUCCESS;
 }
 
@@ -420,7 +447,6 @@ int32_t HdiLayer::SetHdiLayerInfo()
     ret = SetLayerPreMulti();
     CheckRet(ret, "SetLayerPreMulti");
     ret = SetLayerColorTransform();
-    CheckRet(ret, "SetLayerColorTransform");
     ret = SetLayerColorDataSpace();
     CheckRet(ret, "SetLayerColorDataSpace");
     ret = SetLayerMetaData();
