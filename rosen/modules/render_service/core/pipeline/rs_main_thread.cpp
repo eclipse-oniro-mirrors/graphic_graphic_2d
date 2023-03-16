@@ -854,6 +854,11 @@ void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::Sha
         if (curSurface == nullptr || curSurface->GetDstRect().IsEmpty() || curSurface->IsLeashWindow()) {
             continue;
         }
+        // When a surfacenode is in animation (i.e. 3d animation), its dstrect cannot be trusted, we treated it as
+        // a full transparent layer.
+        if (curSurface->GetAnimateState()) {
+            continue;
+        }
         Occlusion::Rect occlusionRect;
         if (isUniRender_) {
             // In UniReder, CalcOcclusion should consider the shadow area of window
@@ -1077,7 +1082,9 @@ void RSMainThread::Animate(uint64_t timestamp)
             RS_LOGD("RSMainThread::Animate removing finished animating node %" PRIu64, node->GetId());
         }
         needRequestNextVsync = needRequestNextVsync || result.second;
-        if (node->template IsInstanceOf<RSSurfaceRenderNode>()) {
+        if (node->template IsInstanceOf<RSSurfaceRenderNode>() && result.first) {
+            auto surfacenode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node);
+            surfacenode->SetAnimateState();
             curWinAnim = true;
         }
         return !result.first;
@@ -1086,9 +1093,7 @@ void RSMainThread::Animate(uint64_t timestamp)
     if (!doWindowAnimate_ && curWinAnim && RSInnovation::UpdateQosVsyncEnabled()) {
         RSQosThread::ResetQosPid();
     }
-    doWindowAnimate_ = std::any_of(context_->animatingNodeList_.begin(), context_->animatingNodeList_.end(), [](const auto& iter) {
-        return RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(iter.second.lock()) != nullptr;
-    });
+    doWindowAnimate_ = curWinAnim;
     RS_LOGD("RSMainThread::Animate end, %d animating nodes remains, has window animation: %d",
         context_->animatingNodeList_.size(), curWinAnim);
 
