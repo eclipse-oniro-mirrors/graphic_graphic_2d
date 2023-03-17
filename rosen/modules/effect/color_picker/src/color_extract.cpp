@@ -13,12 +13,11 @@
  * limitations under the License.
  */
 #include "color_extract.h"
+#include <cmath>
 #include <iostream>
 #include <vector>
 #include <memory>
 #include "hilog/log.h"
-#include <cmath>
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -165,12 +164,12 @@ void ColorExtract::SetFeatureColorNum(int N)
     return;
 }
 
-uint32_t ColorExtract::Rgb2Gray(uint32_t color) const
+uint8_t ColorExtract::Rgb2Gray(uint32_t color)
 {
     uint32_t r = GetARGB32ColorR(color);
     uint32_t g = GetARGB32ColorG(color);
     uint32_t b = GetARGB32ColorB(color);
-    return static_cast<uint32_t>(r * RED_GRAY_RATIO + g * GREEN_GRAY_RATIO + b * BLUE_GRAY_RATIO);
+    return static_cast<uint8_t>(r * RED_GRAY_RATIO + g * GREEN_GRAY_RATIO + b * BLUE_GRAY_RATIO);
 }
 
 uint32_t ColorExtract::CalcGrayMsd() const
@@ -189,7 +188,7 @@ uint32_t ColorExtract::CalcGrayMsd() const
     return static_cast<uint32_t>(grayVar);
 }
 
-float ColorExtract::NormalizeRgb(uint32_t val) const
+float ColorExtract::NormalizeRgb(uint32_t val)
 {
     float res = static_cast<float>(val) / 255;
     if (res <= 0.03928) { // 0.03928 is used to normalize rgb;
@@ -200,7 +199,7 @@ float ColorExtract::NormalizeRgb(uint32_t val) const
     return res;
 }
 
-float ColorExtract::CalcRelativeLum(uint32_t color) const
+float ColorExtract::CalcRelativeLum(uint32_t color)
 {
     uint32_t r = GetARGB32ColorR(color);
     uint32_t g = GetARGB32ColorG(color);

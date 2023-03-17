@@ -288,10 +288,10 @@ private:
     static constexpr double RED_LUMINACE_RATIO = 0.2126;
     static constexpr double GREEN_LUMINACE_RATIO = 0.7152;
     static constexpr double BLUE_LUMINACE_RATIO = 0.0722;
-    uint32_t Rgb2Gray(uint32_t color) const;
+    static uint8_t Rgb2Gray(uint32_t color);
     uint32_t CalcGrayMsd() const;
-    float NormalizeRgb(uint32_t val) const;
-    float CalcRelativeLum(uint32_t color) const;
+    static float NormalizeRgb(uint32_t val);
+    static float CalcRelativeLum(uint32_t color);
     float CalcContrastToWhite() const;
     std::vector<std::pair<uint32_t, uint32_t>> QuantizePixels(int colorNum);
     void SplitBoxes(std::priority_queue<VBox, std::vector<VBox>, std::less<VBox> > &queue, int maxSize);
