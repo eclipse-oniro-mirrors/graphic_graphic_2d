@@ -51,6 +51,7 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr uint32_t USE_CACHE_APP_WINDOW_NUM = 7;
+constexpr uint32_t PHONE_MAX_APP_WINDOW_NUM = 1;
 
 bool IsFirstFrameReadyToDraw(RSSurfaceRenderNode& node)
 {
@@ -1148,8 +1149,9 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
 #endif
     } else {
 #ifdef RS_ENABLE_EGLQUERYSURFACE
+        curDisplayDirtyManager_->SetSurfaceSize(screenInfo_.width, screenInfo_.height);
+        ClosePartialRenderWhenAnimatingWindows(displayNodePtr);
         if (isPartialRenderEnabled_) {
-            curDisplayDirtyManager_->SetSurfaceSize(screenInfo_.width, screenInfo_.height);
             CalcDirtyDisplayRegion(displayNodePtr);
             CalcDirtyRegionForFilterNode(displayNodePtr);
             displayNodePtr->ClearCurrentSurfacePos();
@@ -1799,15 +1801,14 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         AdjustLocalZOrder(curSurfaceNode_);
     }
     // skip clean surface node
-    if (isOpDropped_ && node.IsAppWindow()) {
-        if (!node.SubNodeNeedDraw(node.GetOldDirtyInSurface(), partialRenderType_)) {
-            RS_TRACE_NAME(node.GetName() + " QuickReject Skip");
-            RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode skip: %s", node.GetName().c_str());
-            return;
-        }
+    if (isOpDropped_ && node.IsAppWindow() && !node.GetAnimateState() &&
+        !node.SubNodeNeedDraw(node.GetOldDirtyInSurface(), partialRenderType_)) {
+        RS_TRACE_NAME(node.GetName() + " QuickReject Skip");
+        RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode skip: %s", node.GetName().c_str());
+        return;
     }
 #endif
-
+    node.ResetAnimateState();
     if (!canvas_) {
         RS_LOGE("RSUniRenderVisitor::ProcessSurfaceRenderNode, canvas is nullptr");
         return;
@@ -2002,9 +2003,8 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
         return;
     }
 #ifdef RS_ENABLE_EGLQUERYSURFACE
-    if (isOpDropped_ && curSurfaceNode_ &&
-        !curSurfaceNode_->SubNodeNeedDraw(node.GetOldDirtyInSurface(), partialRenderType_) &&
-        !node.HasChildrenOutOfRect()) {
+    if (isOpDropped_ && curSurfaceNode_ && !node.HasChildrenOutOfRect() &&
+        !curSurfaceNode_->SubNodeNeedDraw(node.GetOldDirtyInSurface(), partialRenderType_)) {
         return;
     }
 #endif
@@ -2140,6 +2140,21 @@ void RSUniRenderVisitor::ParallelRenderEnableHardwareComposer(RSSurfaceRenderNod
         RectF clipRect = {dstRect.GetLeft(), dstRect.GetTop(), dstRect.GetWidth(), dstRect.GetHeight()};
         RSParallelRenderManager::Instance()->AddSelfDrawingSurface(parallelRenderVisitorIndex_,
             property.GetCornerRadius().IsZero(), clipRect, property.GetCornerRadius());
+    }
+#endif
+}
+
+void RSUniRenderVisitor::ClosePartialRenderWhenAnimatingWindows(std::shared_ptr<RSDisplayRenderNode>& node)
+{
+#if defined(RS_ENABLE_PARALLEL_RENDER) && defined (RS_ENABLE_GL)
+    if (!doAnimate_) {
+        return;
+    }
+    if (appWindowNum_ > PHONE_MAX_APP_WINDOW_NUM) {
+        node->GetDirtyManager()->MergeSurfaceRect();
+    } else {
+        isPartialRenderEnabled_ = 0;
+        isOpDropped_ = 0;
     }
 #endif
 }

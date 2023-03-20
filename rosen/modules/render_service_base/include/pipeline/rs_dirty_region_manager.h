@@ -82,10 +82,12 @@ public:
     {
         return surfaceRect_;
     }
+    void MergeSurfaceRect();
+
     void ResetDirtyAsSurfaceSize();
 
     void UpdateDebugRegionTypeEnable(DirtyRegionDebugType dirtyDebugType);
-    
+
     inline bool IsDebugRegionTypeEnable(DebugRegionType var) const
     {
         if (var < DebugRegionType::TYPE_MAX) {

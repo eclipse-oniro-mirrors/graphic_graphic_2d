@@ -547,6 +547,15 @@ public:
     }
 
     std::string DirtyRegionDump() const;
+    void SetAnimateState() {
+        animateState_ = true;
+    }
+    void ResetAnimateState() {
+        animateState_ = false;
+    }
+    bool GetAnimateState() const{
+        return animateState_;
+    }
 
 private:
     void ClearChildrenCache(const std::shared_ptr<RSBaseRenderNode>& node);
@@ -640,6 +649,8 @@ private:
     float localZOrder_ = 0.0f;
     std::vector<WeakPtr> childHardwareEnabledNodes_;
     int32_t nodeCost_ = 0;
+
+    bool animateState_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -182,6 +182,9 @@ private:
     void ParallelPrepareDisplayRenderNodeChildrens(RSDisplayRenderNode& node);
     bool AdaptiveSubRenderThreadMode(uint32_t renderNodeNum);
     void ParallelRenderEnableHardwareComposer(RSSurfaceRenderNode& node);
+    // close partialrender when perform window animation
+    void ClosePartialRenderWhenAnimatingWindows(std::shared_ptr<RSDisplayRenderNode>& node);
+
     sk_sp<SkSurface> offscreenSurface_;                 // temporary holds offscreen surface
     std::shared_ptr<RSPaintFilterCanvas> canvasBackup_; // backup current canvas before offscreen render
 

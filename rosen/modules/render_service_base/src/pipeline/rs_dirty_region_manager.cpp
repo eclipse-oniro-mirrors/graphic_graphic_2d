@@ -172,6 +172,11 @@ bool RSDirtyRegionManager::SetSurfaceSize(const int32_t width, const int32_t hei
     return true;
 }
 
+void RSDirtyRegionManager::MergeSurfaceRect()
+{
+    return MergeDirtyRect(GetSurfaceRect());
+}
+
 void RSDirtyRegionManager::ResetDirtyAsSurfaceSize()
 {
     dirtyRegion_ = surfaceRect_;
