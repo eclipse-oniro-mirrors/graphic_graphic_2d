@@ -17,7 +17,7 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
-constexpr uint32_t MEM_MAX_SIZE = 2;    
+constexpr uint32_t MEM_MAX_SIZE = 2;
 }
 
 MemoryNodeOfPid::MemoryNodeOfPid(size_t size, NodeId id) : nodeSize_(size), nodeId_(id) {}
@@ -40,6 +40,7 @@ MemoryTrack& MemoryTrack::Instance()
 
 void MemoryTrack::AddNodeRecord(const NodeId id, const MemoryInfo& info)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     memNodeMap_.emplace(id, info);
     MemoryNodeOfPid nodeInfoOfPid(info.size, id);
     memNodeOfPidMap_[info.pid].push_back(nodeInfoOfPid);
@@ -47,6 +48,7 @@ void MemoryTrack::AddNodeRecord(const NodeId id, const MemoryInfo& info)
 
 void MemoryTrack::RemoveNodeRecord(const NodeId id)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     pid_t pid = memNodeMap_[id].pid;
     size_t size = memNodeMap_[id].size;
     memNodeMap_.erase(id);

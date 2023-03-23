@@ -296,7 +296,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const sk_sp<SkImage>& val)
 static void sk_free_releaseproc(const void* ptr, void*)
 {
     MemoryTrack::Instance().RemovePictureRecord(ptr);
-    free((void*)ptr);
+    free(const_cast<void*>(ptr));
 }
 
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkImage>& val)

@@ -477,7 +477,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     float alpha = curAlpha_;
     curAlpha_ *= (property.GetAlpha() * node.GetContextAlpha());
     node.SetGlobalAlpha(curAlpha_);
-    
+
     if (isSkipForAlphaZero_) {
         if (ROSEN_EQ(node.GetGlobalAlpha(), 0.f)) {
             ROSEN_LOGW("RSUniRenderVisitor::PrepareSurfaceRenderNode skip because node.GlobalAlpha is 0.f");

@@ -78,6 +78,6 @@ private:
     // Data to statistic information of Pid
     std::unordered_map<pid_t, std::vector<MemoryNodeOfPid>> memNodeOfPidMap_;
 };
-} // namespace OHOS  
+} // namespace OHOS
 } // namespace Rosen
 #endif
