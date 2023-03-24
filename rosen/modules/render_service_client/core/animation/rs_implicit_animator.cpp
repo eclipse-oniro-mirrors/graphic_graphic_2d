@@ -23,6 +23,7 @@
 #include "pipeline/rs_node_map.h"
 #include "platform/common/rs_log.h"
 #include "ui/rs_node.h"
+#include "ui/rs_ui_director.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -86,25 +87,34 @@ std::vector<std::shared_ptr<RSAnimation>> RSImplicitAnimator::CloseImplicitAnima
     auto& finishCallback = std::get<std::shared_ptr<AnimationFinishCallback>>(globalImplicitParams_.top());
     auto& currentAnimations = implicitAnimations_.top();
     auto& currentKeyframeAnimations = keyframeAnimations_.top();
+    // if no implicit animation created
     if (currentAnimations.empty() && currentKeyframeAnimations.empty()) {
-        // no implicit animation created
-        ROSEN_LOGD("No implicit animations created!");
-        if (finishCallback != nullptr && finishCallback.use_count() == 1 &&
-            finishCallback->isTimingSensitive_ == true) {
-            // If finish callback 1. is not null and 2. not referenced by any animation and 3. timing sensitive (i.e.
-            // callbacks created by user), we need to create an empty animation that act like a timer, in order to
-            // execute finish callback on the right time.
-            CreateEmptyAnimation();
-        } else {
-            // If finish callback either 1. is null or 2. is referenced by any animation or 3. timing insensitive. We
-            // don't need to create an empty animation, just pop the stack and return. finish callback, if exist, will
-            // be executed when shared_ptr use_count goes to zero.
+        // If finish callback either 1. is null or 2. is referenced by any animation or implicitly parameters, we don't
+        // do anything.
+        if (finishCallback.use_count() != 1) {
             globalImplicitParams_.pop();
             implicitAnimations_.pop();
             keyframeAnimations_.pop();
             EndImplicitAnimation();
             return {};
         }
+        // we are the only one who holds the finish callback, if the callback is NOT timing sensitive, we need to
+        // execute it asynchronously, in order to avoid timing issues.
+        if (finishCallback->isTimingSensitive_ == false) {
+            ROSEN_LOGD("RSImplicitAnimator::CloseImplicitAnimation, No implicit animations created, execute finish "
+                       "callback asynchronously");
+            RSUIDirector::PostTask([finishCallback]() { finishCallback->Execute(); });
+            globalImplicitParams_.pop();
+            implicitAnimations_.pop();
+            keyframeAnimations_.pop();
+            EndImplicitAnimation();
+            return {};
+        }
+        // we are the only one who holds the finish callback, and the callback is timing sensitive, we need to create an
+        // empty animation that act like a timer, in order to execute it on the right time.
+        ROSEN_LOGD("RSImplicitAnimator::CloseImplicitAnimation, No implicit animations created, creating empty 'timer' "
+                   "animation.");
+        CreateEmptyAnimation();
     }
 
     std::vector<std::shared_ptr<RSAnimation>> resultAnimations;
@@ -240,8 +250,8 @@ void RSImplicitAnimator::BeginImplicitInterpolatingSpringAnimation()
     PushImplicitParam(interpolatingSpringParam);
 }
 
-void RSImplicitAnimator::BeginImplicitTransition(const std::shared_ptr<const RSTransitionEffect>& effect,
-    bool isTransitionIn)
+void RSImplicitAnimator::BeginImplicitTransition(
+    const std::shared_ptr<const RSTransitionEffect>& effect, bool isTransitionIn)
 {
     if (globalImplicitParams_.empty()) {
         ROSEN_LOGE("Failed to begin implicit transition, need to open implicit transition firstly!");
@@ -318,8 +328,8 @@ void RSImplicitAnimator::CreateEmptyAnimation()
     return;
 }
 
-void RSImplicitAnimator::SetPropertyValue(std::shared_ptr<RSPropertyBase> property,
-    const std::shared_ptr<RSPropertyBase>& value)
+void RSImplicitAnimator::SetPropertyValue(
+    std::shared_ptr<RSPropertyBase> property, const std::shared_ptr<RSPropertyBase>& value)
 {
     if (property != nullptr) {
         property->SetValue(value);

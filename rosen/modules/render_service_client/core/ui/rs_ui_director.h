@@ -64,6 +64,7 @@ private:
     static void RecvMessages(std::shared_ptr<RSTransactionData> cmds);
     static void ProcessMessages(std::shared_ptr<RSTransactionData> cmds); // receive message
     static void AnimationCallbackProcessor(NodeId nodeId, AnimationId animId);
+    static void PostTask(const std::function<void()>& task);
 
     RSUIDirector() = default;
     RSUIDirector(const RSUIDirector&) = delete;
@@ -84,8 +85,9 @@ private:
     int surfaceHeight_ = 0;
     std::string cacheDir_;
 
-    friend class RSRenderThread;
     friend class RSApplicationAgentImpl;
+    friend class RSRenderThread;
+    friend class RSImplicitAnimator;
 };
 } // namespace Rosen
 } // namespace OHOS

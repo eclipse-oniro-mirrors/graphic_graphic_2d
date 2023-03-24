@@ -61,10 +61,6 @@ namespace Rosen {
 #define RSC_EXPORT      RS_IMPORT
 #define RSC_EXPORT_TMP
 #endif
-
-#ifdef __gnu_linux__
-#define __libcpp_erase_if_container __detail::__erase_nodes_if
-#endif
 } // namespace Rosen
 } // namespace OHOS
 #endif // RENDER_SERVICE_CLIENT_CORE_COMMON_RS_MACROS_H
