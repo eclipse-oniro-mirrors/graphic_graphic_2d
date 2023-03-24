@@ -36,10 +36,9 @@ void RSProcessorFactoryTest::TearDown() {}
 
 /**
  * @tc.name: CreateAndDestroy001
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
+ * @tc.desc: Check if RSProcessorFactory constructor and destructor is available
+ * @tc.type: FUNC
+ * @tc.require: issueI6PXHH
  */
 HWTEST_F(RSProcessorFactoryTest, CreateAndDestroy001, TestSize.Level1)
 {
@@ -47,43 +46,39 @@ HWTEST_F(RSProcessorFactoryTest, CreateAndDestroy001, TestSize.Level1)
     // The using of RSProcessorFactory destructor is not suggested, but allowed.
     // Use its static function by :: first.
     RSProcessorFactory f;
-    f.CreateProcessor(RSDisplayRenderNode::CompositeType::HARDWARE_COMPOSITE);
+    auto p = f.CreateProcessor(RSDisplayRenderNode::CompositeType::HARDWARE_COMPOSITE);
+    EXPECT_FALSE(nullptr == p);
 }
 
 /**
  * @tc.name: CreateProcessor001
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
+ * @tc.desc: Create shared point of RSSoftwareProcessor
+ * @tc.type: FUNC
+ * @tc.require: issueI6PXHH
  */
 HWTEST_F(RSProcessorFactoryTest, CreateProcessor001, TestSize.Level1)
 {
-    // The way to create shared point of RSSoftwareProcessor.
     auto p = RSProcessorFactory::CreateProcessor(RSDisplayRenderNode::CompositeType::HARDWARE_COMPOSITE);
     EXPECT_FALSE(nullptr == p);
 }
 
 /**
  * @tc.name: CreateProcessor002
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
+ * @tc.desc: Create shared point of RSHardwareProcessor
+ * @tc.type: FUNC
+ * @tc.require: issueI6PXHH
  */
 HWTEST_F(RSProcessorFactoryTest, CreateProcessor002, TestSize.Level1)
 {
-    // The way to create shared point of RSHardwareProcessor.
     auto p = RSProcessorFactory::CreateProcessor(RSDisplayRenderNode::CompositeType::SOFTWARE_COMPOSITE);
     EXPECT_FALSE(nullptr == p);
 }
 
 /**
  * @tc.name: CreateProcessor003
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
+ * @tc.desc: Create shared point of UniRenderProcessor.
+ * @tc.type: FUNC
+ * @tc.require: issueI6PXHH
  */
 HWTEST_F(RSProcessorFactoryTest, CreateProcessor003, TestSize.Level1)
 {

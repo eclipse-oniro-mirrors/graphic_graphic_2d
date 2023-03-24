@@ -46,7 +46,8 @@ void RSRenderServiceTest::TearDown() {}
 HWTEST_F(RSRenderServiceTest, TestRenderService001, TestSize.Level1)
 {
     const std::string rsCmd = defaultCmd_ + " -a nodeNotOnTree";
-    (void)system(rsCmd.c_str());
+    int ret = system(rsCmd.c_str());
+    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -58,7 +59,8 @@ HWTEST_F(RSRenderServiceTest, TestRenderService001, TestSize.Level1)
 HWTEST_F(RSRenderServiceTest, TestRenderService002, TestSize.Level1)
 {
     const std::string rsCmd = defaultCmd_ + " -a allSurfacesMem";
-    (void)system(rsCmd.c_str());
+    int ret = system(rsCmd.c_str());
+    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -70,7 +72,8 @@ HWTEST_F(RSRenderServiceTest, TestRenderService002, TestSize.Level1)
 HWTEST_F(RSRenderServiceTest, TestRenderService003, TestSize.Level1)
 {
     const std::string rsCmd = defaultCmd_ + " -a EventParamList";
-    (void)system(rsCmd.c_str());
+    int ret = system(rsCmd.c_str());
+    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -82,7 +85,8 @@ HWTEST_F(RSRenderServiceTest, TestRenderService003, TestSize.Level1)
 HWTEST_F(RSRenderServiceTest, TestRenderService004, TestSize.Level1)
 {
     const std::string rsCmd = defaultCmd_ + " -a RSTree";
-    (void)system(rsCmd.c_str());
+    int ret = system(rsCmd.c_str());
+    ASSERT_EQ(ret, 0);
 }
 
 
@@ -95,13 +99,17 @@ HWTEST_F(RSRenderServiceTest, TestRenderService004, TestSize.Level1)
 HWTEST_F(RSRenderServiceTest, TestRenderService005, TestSize.Level1)
 {
     const std::string rsCmd1 = defaultCmd_;
-    (void)system(rsCmd1.c_str());
+    int ret = system(rsCmd1.c_str());
+    ASSERT_EQ(ret, 0);
     const std::string rsCmd2 = defaultCmd_ + " -a h";
-    (void)system(rsCmd2.c_str());
+    ret = system(rsCmd2.c_str());
+    ASSERT_EQ(ret, 0);
     const std::string rsCmd3 = defaultCmd_ + " ";
-    (void)system(rsCmd3.c_str());
+    ret = system(rsCmd3.c_str());
+    ASSERT_EQ(ret, 0);
     const std::string rsCmd4 = defaultCmd_ + " -h";
-    (void)system(rsCmd4.c_str());
+    ret = system(rsCmd4.c_str());
+    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -113,7 +121,8 @@ HWTEST_F(RSRenderServiceTest, TestRenderService005, TestSize.Level1)
 HWTEST_F(RSRenderServiceTest, TestRenderService006, TestSize.Level1)
 {
     const std::string rsCmd = defaultCmd_ + " -a surface";
-    (void)system(rsCmd.c_str());
+    int ret = system(rsCmd.c_str());
+    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -125,7 +134,8 @@ HWTEST_F(RSRenderServiceTest, TestRenderService006, TestSize.Level1)
 HWTEST_F(RSRenderServiceTest, TestRenderService007, TestSize.Level1)
 {
     const std::string rsCmd = defaultCmd_ + " -a screen";
-    (void)system(rsCmd.c_str());
+    int ret = system(rsCmd.c_str());
+    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -137,7 +147,8 @@ HWTEST_F(RSRenderServiceTest, TestRenderService007, TestSize.Level1)
 HWTEST_F(RSRenderServiceTest, TestRenderService008, TestSize.Level1)
 {
     const std::string rsCmd = defaultCmd_ + " -a allInfo";
-    (void)system(rsCmd.c_str());
+    int ret = system(rsCmd.c_str());
+    ASSERT_EQ(ret, 0);
 }
 
 /**
@@ -149,6 +160,7 @@ HWTEST_F(RSRenderServiceTest, TestRenderService008, TestSize.Level1)
 HWTEST_F(RSRenderServiceTest, TestRenderService009, TestSize.Level1)
 {
     const std::string rsCmd = defaultCmd_ + " -a 'composer fps'";
-    (void)system(rsCmd.c_str());
+    int ret = system(rsCmd.c_str());
+    ASSERT_EQ(ret, 0);
 }
 } // namespace OHOS::Rosen

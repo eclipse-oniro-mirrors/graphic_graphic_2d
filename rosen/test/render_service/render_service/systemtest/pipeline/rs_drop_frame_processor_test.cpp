@@ -107,7 +107,7 @@ HWTEST_F(RSDropFrameProcessorTest, TestDropFrame001, TestSize.Level1)
         sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
         ret = psurf->FlushBuffer(buffer, flushFence, flushConfig);
         ASSERT_EQ(ret, OHOS::GSERROR_OK);
-        sleep(4); // every frame wait 4 seconds
+        usleep(40000); // every frame wait 40 microseconds
     }
     
     // create RSHardwareProcessor
