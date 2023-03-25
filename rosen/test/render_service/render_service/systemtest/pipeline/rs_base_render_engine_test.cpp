@@ -63,23 +63,45 @@ HWTEST_F(RSBaseRenderEngineTest, TestRSBaseRenderEngine001, TestSize.Level1)
  */
 HWTEST_F(RSBaseRenderEngineTest, TestRSBaseRenderEngine002, TestSize.Level1)
 {
-    std::vector<LayerInfoPtr> layerInfo;
+    ColorFilterMode defaultMode = renderEngine_->GetColorFilterMode();
+
+    // disable invert mode
     renderEngine_->SetColorFilterMode(ColorFilterMode::INVERT_COLOR_DISABLE_MODE);
-    renderEngine_->SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
-    renderEngine_->SetColorFilterMode(ColorFilterMode::INVERT_COLOR_DISABLE_MODE);
-    renderEngine_->SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
-    renderEngine_->SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
+    renderEngine_->SetColorFilterMode(ColorFilterMode::DALTONIZATION_NORMAL_MODE);
+    ASSERT_EQ(renderEngine_->GetColorFilterMode(), ColorFilterMode::COLOR_FILTER_END);
+
     renderEngine_->SetColorFilterMode(ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE);
+    ASSERT_EQ(renderEngine_->GetColorFilterMode(), ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE);
     renderEngine_->SetColorFilterMode(ColorFilterMode::DALTONIZATION_DEUTERANOMALY_MODE);
+    ASSERT_EQ(renderEngine_->GetColorFilterMode(), ColorFilterMode::DALTONIZATION_DEUTERANOMALY_MODE);
     renderEngine_->SetColorFilterMode(ColorFilterMode::DALTONIZATION_TRITANOMALY_MODE);
+    ASSERT_EQ(renderEngine_->GetColorFilterMode(), ColorFilterMode::DALTONIZATION_TRITANOMALY_MODE);
+
+    // enable invert mode
+    renderEngine_->SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
+    renderEngine_->SetColorFilterMode(ColorFilterMode::DALTONIZATION_NORMAL_MODE);
+    ASSERT_EQ(renderEngine_->GetColorFilterMode(), ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
+
+    renderEngine_->SetColorFilterMode(ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE);
+    ASSERT_EQ(renderEngine_->GetColorFilterMode(), ColorFilterMode::INVERT_DALTONIZATION_PROTANOMALY_MODE);
+    renderEngine_->SetColorFilterMode(ColorFilterMode::DALTONIZATION_DEUTERANOMALY_MODE);
+    ASSERT_EQ(renderEngine_->GetColorFilterMode(), ColorFilterMode::INVERT_DALTONIZATION_DEUTERANOMALY_MODE);
     renderEngine_->SetColorFilterMode(ColorFilterMode::DALTONIZATION_TRITANOMALY_MODE);
-    renderEngine_->SetColorFilterMode(ColorFilterMode::DALTONIZATION_NORMAL_MODE);
-    renderEngine_->SetColorFilterMode(ColorFilterMode::DALTONIZATION_NORMAL_MODE);
+    ASSERT_EQ(renderEngine_->GetColorFilterMode(), ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE);
+
+    // these mode cannot be set directly
     renderEngine_->SetColorFilterMode(ColorFilterMode::INVERT_DALTONIZATION_PROTANOMALY_MODE);
+    ASSERT_EQ(renderEngine_->GetColorFilterMode(), ColorFilterMode::COLOR_FILTER_END);
     renderEngine_->SetColorFilterMode(ColorFilterMode::INVERT_DALTONIZATION_DEUTERANOMALY_MODE);
+    ASSERT_EQ(renderEngine_->GetColorFilterMode(), ColorFilterMode::COLOR_FILTER_END);
     renderEngine_->SetColorFilterMode(ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE);
+    ASSERT_EQ(renderEngine_->GetColorFilterMode(), ColorFilterMode::COLOR_FILTER_END);
     renderEngine_->SetColorFilterMode(ColorFilterMode::COLOR_FILTER_END);
+    ASSERT_EQ(renderEngine_->GetColorFilterMode(), ColorFilterMode::COLOR_FILTER_END);
     renderEngine_->SetColorFilterMode(static_cast<ColorFilterMode>(-1));
-    renderEngine_->SetColorFilterMode(ColorFilterMode::INVERT_COLOR_DISABLE_MODE);
+    ASSERT_EQ(renderEngine_->GetColorFilterMode(), ColorFilterMode::COLOR_FILTER_END);
+
+    // recover default mode
+    renderEngine_->SetColorFilterMode(defaultMode);
 }
 } // namespace OHOS::Rosen
