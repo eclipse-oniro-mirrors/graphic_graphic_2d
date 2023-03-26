@@ -2036,7 +2036,6 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
 {
     processedCanvasNodeInCurrentSurface_++;
     if (!node.ShouldPaint()) {
-        RS_LOGD("RSUniRenderVisitor::ProcessCanvasRenderNode, no need process");
         return;
     }
 #ifdef RS_ENABLE_EGLQUERYSURFACE

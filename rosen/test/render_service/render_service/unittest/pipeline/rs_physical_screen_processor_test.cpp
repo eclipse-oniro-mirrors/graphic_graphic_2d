@@ -38,10 +38,9 @@ void RSPhysicalScreenProcessorTest::TearDown() {}
 
 /**
  * @tc.name: CreateAndDestroy001
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
+ * @tc.desc: create hardware processor
+ * @tc.type: FUNC
+ * @tc.require: issuesI6Q871
  */
 HWTEST_F(RSPhysicalScreenProcessorTest, CreateAndDestroy001, TestSize.Level1)
 {
@@ -52,10 +51,9 @@ HWTEST_F(RSPhysicalScreenProcessorTest, CreateAndDestroy001, TestSize.Level1)
 
 /**
  * @tc.name: CreateAndDestroy002
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
+ * @tc.desc: create hardware processor
+ * @tc.type: FUNC
+ * @tc.require: issuesI6Q871
  */
 HWTEST_F(RSPhysicalScreenProcessorTest, CreateAndDestroy002, TestSize.Level1)
 {
@@ -66,10 +64,9 @@ HWTEST_F(RSPhysicalScreenProcessorTest, CreateAndDestroy002, TestSize.Level1)
 
 /**
  * @tc.name: Init
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
+ * @tc.desc: init hardware processor
+ * @tc.type: FUNC
+ * @tc.require: issuesI6Q871
  */
 HWTEST_F(RSPhysicalScreenProcessorTest, Init, TestSize.Level1)
 {
@@ -86,14 +83,12 @@ HWTEST_F(RSPhysicalScreenProcessorTest, Init, TestSize.Level1)
     ASSERT_EQ(false, rsHardwareProcessor->Init(rsDisplayRenderNode, offsetX, offsetY, INVALID_SCREEN_ID, renderEngine));
 }
 
-/*
-* Function: ProcessSurface001
-* Type: Function
-* Rank: Important(2)
-* EnvConditions: N/A
-* CaseDescription: call ProcessSurface
-* @tc.require: IssueI5VYCA
-*/
+/**
+ * @tc.name: ProcessSurface001
+ * @tc.desc: call ProcessSurface
+ * @tc.type: FUNC
+ * @tc.require: IssueI5VYCA
+ */
 HWTEST_F(RSPhysicalScreenProcessorTest, ProcessSurface001, TestSize.Level1)
 {
     auto rsHardwareProcessor = RSProcessorFactory::CreateProcessor(RSDisplayRenderNode::CompositeType::
@@ -112,14 +107,12 @@ HWTEST_F(RSPhysicalScreenProcessorTest, ProcessSurface001, TestSize.Level1)
     rsHardwareProcessor->ProcessSurface(rsSurfaceRenderNode);
 }
 
-/*
-* Function: ProcessSurface002
-* Type: Function
-* Rank: Important(2)
-* EnvConditions: N/A
-* CaseDescription: call ProcessDisplaySurface
-* @tc.require: IssueI5VYCA
-*/
+/**
+ * @tc.name: ProcessSurface002
+ * @tc.desc: call ProcessDisplaySurface
+ * @tc.type: FUNC
+ * @tc.require: IssueI5VYCA
+ */
 HWTEST_F(RSPhysicalScreenProcessorTest, ProcessSurface002, TestSize.Level1)
 {
     auto rsUniRenderProcessor = RSProcessorFactory::CreateProcessor(RSDisplayRenderNode::CompositeType::
@@ -132,10 +125,9 @@ HWTEST_F(RSPhysicalScreenProcessorTest, ProcessSurface002, TestSize.Level1)
 
 /**
  * @tc.name: ProcessSurface003
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
+ * @tc.desc: call ProcessSurface
+ * @tc.type: FUNC
+ * @tc.require: issuesI6Q871
  */
 HWTEST_F(RSPhysicalScreenProcessorTest, ProcessSurface003, TestSize.Level1)
 {
@@ -148,10 +140,9 @@ HWTEST_F(RSPhysicalScreenProcessorTest, ProcessSurface003, TestSize.Level1)
 
 /**
  * @tc.name: ProcessSurface004
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
+ * @tc.desc: call ProcessSurface
+ * @tc.type: FUNC
+ * @tc.require: issuesI6Q871
  */
 HWTEST_F(RSPhysicalScreenProcessorTest, ProcessSurface004, TestSize.Level1)
 {
@@ -164,10 +155,9 @@ HWTEST_F(RSPhysicalScreenProcessorTest, ProcessSurface004, TestSize.Level1)
 
 /**
  * @tc.name: ProcessSurface005
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
+ * @tc.desc: call ProcessSurface
+ * @tc.type: FUNC
+ * @tc.require: issuesI6Q871
  */
 HWTEST_F(RSPhysicalScreenProcessorTest, ProcessSurface005, TestSize.Level1)
 {
@@ -180,10 +170,9 @@ HWTEST_F(RSPhysicalScreenProcessorTest, ProcessSurface005, TestSize.Level1)
 
 /**
  * @tc.name: ProcessSurface006
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
+ * @tc.desc: call ProcessSurface
+ * @tc.type: FUNC
+ * @tc.require: issuesI6Q871
  */
 HWTEST_F(RSPhysicalScreenProcessorTest, ProcessSurface006, TestSize.Level1)
 {
@@ -196,10 +185,9 @@ HWTEST_F(RSPhysicalScreenProcessorTest, ProcessSurface006, TestSize.Level1)
 
 /**
  * @tc.name: ProcessSurface007
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
+ * @tc.desc: call ProcessSurface
+ * @tc.type: FUNC
+ * @tc.require: issuesI6Q871
  */
 HWTEST_F(RSPhysicalScreenProcessorTest, ProcessSurface007, TestSize.Level1)
 {
@@ -212,10 +200,9 @@ HWTEST_F(RSPhysicalScreenProcessorTest, ProcessSurface007, TestSize.Level1)
 
 /**
  * @tc.name: ProcessSurface008
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
+ * @tc.desc: call ProcessSurface
+ * @tc.type: FUNC
+ * @tc.require: issuesI6Q871
  */
 HWTEST_F(RSPhysicalScreenProcessorTest, ProcessSurface008, TestSize.Level1)
 {
@@ -228,10 +215,9 @@ HWTEST_F(RSPhysicalScreenProcessorTest, ProcessSurface008, TestSize.Level1)
 
 /**
  * @tc.name: ProcessDisplaySurface
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
+ * @tc.desc: call ProcessSurface
+ * @tc.type: FUNC
+ * @tc.require: issuesI6Q871
  */
 HWTEST_F(RSPhysicalScreenProcessorTest, ProcessDisplaySurface, TestSize.Level1)
 {
@@ -246,10 +232,9 @@ HWTEST_F(RSPhysicalScreenProcessorTest, ProcessDisplaySurface, TestSize.Level1)
 
 /**
  * @tc.name: PostProcess001
- * @tc.desc:
- * @tc.type:
- * @tc.require:
- * @tc.author:
+ * @tc.desc: call PostProcess
+ * @tc.type: FUNC
+ * @tc.require: issuesI6Q871
  */
 HWTEST_F(RSPhysicalScreenProcessorTest, PostProcess001, TestSize.Level1)
 {
