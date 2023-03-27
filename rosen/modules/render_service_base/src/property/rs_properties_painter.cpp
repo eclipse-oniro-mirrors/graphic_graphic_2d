@@ -300,7 +300,7 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
                      std::to_string(std::static_pointer_cast<RSBlurFilter>(filter)->GetBlurRadiusX()) + " sigma";
     } else if (filter->GetFilterType() == RSFilter::MATERIAL) {
         traceName += " blur radius is " +
-                     std::to_string(std::static_pointer_cast<RSBlurFilter>(filter)->GetBlurRadius()) + " vp";
+                     std::to_string(std::static_pointer_cast<RSMaterialFilter>(filter)->GetBlurRadius()) + " vp";
     }
     RS_TRACE_NAME(traceName);
     g_blurCnt++;
