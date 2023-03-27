@@ -294,12 +294,12 @@ void RSPropertiesPainter::DrawShadowInner(const RSProperties& properties, RSPain
 void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas,
     std::shared_ptr<RSSkiaFilter>& filter, const std::unique_ptr<SkRect>& rect, SkSurface* skSurface)
 {
-    std::string traceName = "RSPropertiesPainter::DrawFilter ";
+    std::string traceName = "DrawFilter:" + std::to_string(filter->GetFilterType());
     if (filter->GetFilterType == RSFiler::BLUR) {
-        traceName += "RSBlurFilter blur radius is " +
+        traceName += "blur radius is " +
                      std::to_string(std::static_pointer_cast<RSBlurFilter>(filter)->GetBlurRadiusX()) + " sigma";
     } else if (filter->GetFilterType == RSFiler::MATERIAL) {
-        traceName += "RSMaterialFilter blur radius is " +
+        traceName += "blur radius is " +
                      std::to_string(std::static_pointer_cast<RSBlurFilter>(filter)->GetBlurRadius() + " vp");
     }
     RS_TRACE_NAME(traceName);
