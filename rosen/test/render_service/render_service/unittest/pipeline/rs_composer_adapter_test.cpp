@@ -75,8 +75,10 @@ void RSComposerAdapterTest::TearDown()
 }
 
 /**
- * @tc.name: CommitLayers
+ * @tc.name: CommitLayersTest001
  * @tc.desc: commitLayer when csurface is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueI60QXK
  */
 HWTEST_F(RSComposerAdapterTest, CommitLayersTest001, Function | SmallTest | Level2)
 {
@@ -95,8 +97,10 @@ HWTEST_F(RSComposerAdapterTest, CommitLayersTest001, Function | SmallTest | Leve
 }
 
 /**
- * @tc.name: CommitLayers
+ * @tc.name: CommitLayersTest002
  * @tc.desc: commitTunnelLayer when csurface is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueI60QXK
  */
 HWTEST_F(RSComposerAdapterTest, CommitLayersTest002, Function | SmallTest | Level2)
 {
@@ -116,8 +120,10 @@ HWTEST_F(RSComposerAdapterTest, CommitLayersTest002, Function | SmallTest | Leve
 }
 
 /**
- * @tc.name: CreateLayers
+ * @tc.name: CreateLayersTest001
  * @tc.desc: CreateLayers when surfaceNode has valid buffer
+ * @tc.type: FUNC
+ * @tc.require: issueI60QXK
  */
 HWTEST_F(RSComposerAdapterTest, CreateLayersTest001, Function | SmallTest | Level2)
 {
@@ -146,8 +152,10 @@ HWTEST_F(RSComposerAdapterTest, CreateLayersTest001, Function | SmallTest | Leve
 }
 
 /**
- * @tc.name: CreateLayers
+ * @tc.name: CreateLayersTest002
  * @tc.desc: CreateLayers when surfaceNode is out of screen region
+ * @tc.type: FUNC
+ * @tc.require: issueI60QXK
  */
 HWTEST_F(RSComposerAdapterTest, CreateLayersTest002, Function | SmallTest | Level2)
 {
@@ -174,8 +182,10 @@ HWTEST_F(RSComposerAdapterTest, CreateLayersTest002, Function | SmallTest | Leve
 }
 
 /**
- * @tc.name: CreateLayers
+ * @tc.name: CreateLayersTest003
  * @tc.desc: CreateLayers with screen rotation
+ * @tc.type: FUNC
+ * @tc.require: issueI60QXK
  */
 HWTEST_F(RSComposerAdapterTest, CreateLayersTest003, Function | SmallTest | Level2)
 {
@@ -194,8 +204,10 @@ HWTEST_F(RSComposerAdapterTest, CreateLayersTest003, Function | SmallTest | Leve
 }
 
 /**
- * @tc.name: CreateLayers
+ * @tc.name: CreateLayersTest004
  * @tc.desc: CreateLayers with screen rotation
+ * @tc.type: FUNC
+ * @tc.require: issueI60QXK
  */
 HWTEST_F(RSComposerAdapterTest, CreateLayersTest004, Function | SmallTest | Level2)
 {
@@ -214,8 +226,10 @@ HWTEST_F(RSComposerAdapterTest, CreateLayersTest004, Function | SmallTest | Leve
 }
 
 /**
- * @tc.name: CreateLayers
+ * @tc.name: CreateLayersTest005
  * @tc.desc: CreateLayers with screen rotation
+ * @tc.type: FUNC
+ * @tc.require: issueI60QXK
  */
 HWTEST_F(RSComposerAdapterTest, CreateLayersTest005, Function | SmallTest | Level2)
 {
@@ -234,8 +248,10 @@ HWTEST_F(RSComposerAdapterTest, CreateLayersTest005, Function | SmallTest | Leve
 }
 
 /**
- * @tc.name: CreateLayers
+ * @tc.name: CreateLayersTest006
  * @tc.desc: CreateLayers with screen rotation and scale
+ * @tc.type: FUNC
+ * @tc.require: issueI60QXK
  */
 HWTEST_F(RSComposerAdapterTest, CreateLayersTest006, Function | SmallTest | Level2)
 {
@@ -257,8 +273,10 @@ HWTEST_F(RSComposerAdapterTest, CreateLayersTest006, Function | SmallTest | Leve
 }
 
 /**
- * @tc.name: CreateLayers
+ * @tc.name: CreateLayersTest007
  * @tc.desc: CreateLayers when surfaceNode has metadate
+ * @tc.type: FUNC
+ * @tc.require: issueI60QXK
  */
 HWTEST_F(RSComposerAdapterTest, CreateLayersTest007, Function | SmallTest | Level2)
 {
@@ -282,8 +300,10 @@ HWTEST_F(RSComposerAdapterTest, CreateLayersTest007, Function | SmallTest | Leve
 }
 
 /**
- * @tc.name: CreateLayers
+ * @tc.name: CreateLayersTest008
  * @tc.desc: CreateLayers when surfaceNode has gravity
+ * @tc.type: FUNC
+ * @tc.require: issueI60QXK
  */
 HWTEST_F(RSComposerAdapterTest, CreateLayersTest008, Function | SmallTest | Level2)
 {
@@ -309,8 +329,10 @@ HWTEST_F(RSComposerAdapterTest, CreateLayersTest008, Function | SmallTest | Leve
 }
 
 /**
- * @tc.name: CreateLayers
+ * @tc.name: CreateLayersTest009
  * @tc.desc: CreateLayers when surfacenode has scaling mode
+ * @tc.type: FUNC
+ * @tc.require: issueI60QXK
  */
 HWTEST_F(RSComposerAdapterTest, CreateLayersTest009, Function | SmallTest | Level2)
 {

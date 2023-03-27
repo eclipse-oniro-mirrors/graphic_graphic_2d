@@ -28,6 +28,7 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
+    void CompareMatrix(float mat1[], float mat2[]);
 
 private:
     static inline sptr<Surface> psurf = nullptr;
@@ -43,6 +44,49 @@ private:
         .damage = { .w = 0x100, .h = 0x100, },
     };
     static inline SkMatrix matrix = SkMatrix::MakeAll(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    static const uint32_t MATRIX_SIZE = 20;
+    static inline float InvertColorMat[MATRIX_SIZE] = {
+        0.402,  -1.174, -0.228, 1.0, 0.0,
+        -0.598, -0.174, -0.228, 1.0, 0.0,
+        -0.599, -1.175, 0.772,  1.0, 0.0,
+        0.0,    0.0,    0.0,    1.0, 0.0
+    };
+    static inline float ProtanomalyMat[MATRIX_SIZE] = {
+        0.622,  0.377,  0.0, 0.0, 0.0,
+        0.264,  0.736,  0.0, 0.0, 0.0,
+        0.217,  -0.217, 1.0, 0.0, 0.0,
+        0.0,    0.0,    0.0, 1.0, 0.0
+    };
+    static inline float DeuteranomalyMat[MATRIX_SIZE] = {
+        0.288,  0.712, 0.0, 0.0, 0.0,
+        0.053,  0.947, 0.0, 0.0, 0.0,
+        -0.258, 0.258, 1.0, 0.0, 0.0,
+        0.0,    0.0,   0.0, 1.0, 0.0
+    };
+    static inline float TritanomalyMat[MATRIX_SIZE] = {
+        1.0, -0.806, 0.806, 0.0, 0.0,
+        0.0, 0.379,  0.621, 0.0, 0.0,
+        0.0, 0.105,  0.895, 0.0, 0.0,
+        0.0, 0.0,    0.0,   1.0, 0.0
+    };
+    static inline float InvertProtanomalyMat[MATRIX_SIZE] = {
+        -0.109, -0.663, -0.228, 1.0, 0.0,
+        -0.468, -0.304, -0.228, 1.0, 0.0,
+        -0.516, -1.258, 0.772,  1.0, 0.0,
+        0.0,    0.0,    0.0,    1.0, 0.0
+    };
+    static inline float InvertDeuteranomalyMat[MATRIX_SIZE] = {
+        0.113,  -0.885, -0.228, 1.0, 0.0,
+        -0.123, -0.649, -0.228, 1.0, 0.0,
+        -0.434, -1.341, 0.772,  1.0, 0.0,
+        0.0,    0.0,    0.0,    1.0, 0.0
+    };
+    static inline float InvertTritanomalyMat[MATRIX_SIZE] = {
+        0.402,  -0.792, -0.609, 1.0, 0.0,
+        -0.598, 0.392,  -0.794, 1.0, 0.0,
+        -0.598, 0.118,  -0.521, 1.0, 0.0,
+        0.0,    0.0,    0.0,    1.0, 0.0
+    };
 };
 std::shared_ptr<RSSurfaceRenderNode> node_ = nullptr;
 
@@ -59,6 +103,13 @@ void RSBaseRenderUtilTest::TearDownTestCase()
 
 void RSBaseRenderUtilTest::SetUp() {}
 void RSBaseRenderUtilTest::TearDown() {}
+
+void RSBaseRenderUtilTest::CompareMatrix(float mat1[], float mat2[])
+{
+    for (uint32_t i = 0; i < MATRIX_SIZE; i++) {
+        ASSERT_EQ(mat1[i], mat2[i]);
+    }
+}
 
 /*
  * @tc.name: IsBufferValid_001
@@ -95,7 +146,7 @@ HWTEST_F(RSBaseRenderUtilTest, DropFrameProcess_001, TestSize.Level2)
 {
     NodeId id = 0;
     RSSurfaceHandler surfaceHandler(id);
-    RSBaseRenderUtil::DropFrameProcess(surfaceHandler);
+    ASSERT_EQ(OHOS::GSERROR_NO_CONSUMER, RSBaseRenderUtil::DropFrameProcess(surfaceHandler));
 }
 
 /*
@@ -133,22 +184,45 @@ HWTEST_F(RSBaseRenderUtilTest, ReleaseBuffer_001, TestSize.Level2)
 HWTEST_F(RSBaseRenderUtilTest, SetColorFilterModeToPaint_001, TestSize.Level2)
 {
     SkPaint paint;
+    float matrix[MATRIX_SIZE];
     ColorFilterMode colorFilterMode = ColorFilterMode::INVERT_COLOR_ENABLE_MODE;
     RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, paint);
+    paint.refColorFilter()->asAColorMatrix(matrix);
+    CompareMatrix(matrix, InvertColorMat);
+
     colorFilterMode = ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE;
     RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, paint);
+    paint.refColorFilter()->asAColorMatrix(matrix);
+    CompareMatrix(matrix, ProtanomalyMat);
+
     colorFilterMode = ColorFilterMode::DALTONIZATION_DEUTERANOMALY_MODE;
     RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, paint);
+    paint.refColorFilter()->asAColorMatrix(matrix);
+    CompareMatrix(matrix, DeuteranomalyMat);
+
     colorFilterMode = ColorFilterMode::DALTONIZATION_TRITANOMALY_MODE;
     RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, paint);
+    paint.refColorFilter()->asAColorMatrix(matrix);
+    CompareMatrix(matrix, TritanomalyMat);
+
     colorFilterMode = ColorFilterMode::INVERT_DALTONIZATION_PROTANOMALY_MODE;
     RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, paint);
+    paint.refColorFilter()->asAColorMatrix(matrix);
+    CompareMatrix(matrix, InvertProtanomalyMat);
+
     colorFilterMode = ColorFilterMode::INVERT_DALTONIZATION_DEUTERANOMALY_MODE;
     RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, paint);
+    paint.refColorFilter()->asAColorMatrix(matrix);
+    CompareMatrix(matrix, InvertDeuteranomalyMat);
+
     colorFilterMode = ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE;
     RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, paint);
+    paint.refColorFilter()->asAColorMatrix(matrix);
+    CompareMatrix(matrix, InvertTritanomalyMat);
+
     colorFilterMode = static_cast<ColorFilterMode>(40); // use invalid number to test default mode
     RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, paint);
+    ASSERT_EQ(paint.refColorFilter(), nullptr);
 }
 
 /*
@@ -300,7 +374,64 @@ HWTEST_F(RSBaseRenderUtilTest, SetPropertiesForCanvas_001, TestSize.Level2)
     std::unique_ptr<SkCanvas> skCanvas = std::make_unique<SkCanvas>(10, 10); // width height
     std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(skCanvas.get());;
     BufferDrawParam params;
+    params.clipRect = SkRect::MakeWH(5, 5);
     RSBaseRenderUtil::SetPropertiesForCanvas(*canvas, params);
+    auto rect = skCanvas->getDeviceClipBounds();
+    ASSERT_EQ(params.clipRect.width(), rect.width());
+    ASSERT_EQ(params.clipRect.height(), rect.height());
+}
+
+/*
+ * @tc.name: SetPropertiesForCanvas_002
+ * @tc.desc: Test SetPropertiesForCanvas
+ * @tc.type: FUNC
+ * @tc.require: issuesI6Q871
+ */
+HWTEST_F(RSBaseRenderUtilTest, SetPropertiesForCanvas_002, TestSize.Level2)
+{
+    std::unique_ptr<SkCanvas> skCanvas = std::make_unique<SkCanvas>(10, 10); // width height
+    std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(skCanvas.get());;
+    BufferDrawParam params;
+    params.isNeedClip = false;
+    RSBaseRenderUtil::SetPropertiesForCanvas(*canvas, params);
+    auto rect = skCanvas->getDeviceClipBounds();
+    ASSERT_EQ(10, rect.width());
+}
+
+/*
+ * @tc.name: SetPropertiesForCanvas_003
+ * @tc.desc: Test SetPropertiesForCanvas
+ * @tc.type: FUNC
+ * @tc.require: issuesI6Q871
+ */
+HWTEST_F(RSBaseRenderUtilTest, SetPropertiesForCanvas_003, TestSize.Level2)
+{
+    std::unique_ptr<SkCanvas> skCanvas = std::make_unique<SkCanvas>(10, 10); // width height
+    std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(skCanvas.get());;
+    BufferDrawParam params;
+    params.cornerRadius = Vector4f(1.0f);
+    RSBaseRenderUtil::SetPropertiesForCanvas(*canvas, params);
+    auto rect = skCanvas->getDeviceClipBounds();
+    ASSERT_EQ(0, rect.width());
+}
+
+/*
+ * @tc.name: SetPropertiesForCanvas_004
+ * @tc.desc: Test SetPropertiesForCanvas
+ * @tc.type: FUNC
+ * @tc.require: issuesI6Q871
+ */
+HWTEST_F(RSBaseRenderUtilTest, SetPropertiesForCanvas_004, TestSize.Level2)
+{
+    std::unique_ptr<SkCanvas> skCanvas = std::make_unique<SkCanvas>(10, 10); // width height
+    std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(skCanvas.get());;
+    BufferDrawParam params;
+    params.clipRect = SkRect::MakeWH(5, 5);
+    params.backgroundColor = SK_ColorRED;
+    RSBaseRenderUtil::SetPropertiesForCanvas(*canvas, params);
+    auto rect = skCanvas->getDeviceClipBounds();
+    ASSERT_EQ(params.clipRect.width(), rect.width());
+    ASSERT_EQ(params.clipRect.height(), rect.height());
 }
 
 /*
