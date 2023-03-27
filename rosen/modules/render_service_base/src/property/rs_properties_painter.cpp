@@ -28,7 +28,6 @@
 #include "include/effects/SkDashPathEffect.h"
 #include "include/effects/SkLumaColorFilter.h"
 #include "include/utils/SkShadowUtils.h"
-#include "rs_trace.h"
 
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_vector2.h"
