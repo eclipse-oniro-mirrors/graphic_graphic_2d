@@ -446,4 +446,49 @@ HWTEST_F(RSParallelRenderManagerTest, IsSecurityDisplayTest, TestSize.Level1)
     ASSERT_FALSE(result);
 }
 
+/**
+ * @tc.name: PackParallelCompositionTask
+ * @tc.desc: Test RSParallelRenderManagerTest.PackParallelCompositionTask
+ * @tc.type: FUNC
+ * @tc.require: AR000HQ6GH
+ */
+HWTEST_F(RSParallelRenderManagerTest, PackParallelCompositionTask, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto rsBaseRenderNode = std::make_shared<RSBaseRenderNode>(11, rsContext->weak_from_this());
+    RSDisplayNodeConfig displayConfig1 = {
+        .screenId = 0,
+        .isMirrored = false,
+        .mirrorNodeId = 0,
+    };
+    auto rsDisplayRenderNode1 = std::make_shared<RSDisplayRenderNode>(21, displayConfig1, rsContext->weak_from_this());
+    rsBaseRenderNode->AddChild(rsDisplayRenderNode1);
+    RSDisplayNodeConfig displayConfig2 = {
+        .screenId = 1,
+        .isMirrored = true,
+        .mirrorNodeId = 21,
+    };
+    auto rsDisplayRenderNode2 = std::make_shared<RSDisplayRenderNode>(31, displayConfig2, rsContext->weak_from_this());
+    rsBaseRenderNode->AddChild(rsDisplayRenderNode2);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    auto parallelRenderManager = RSParallelRenderManager::Instance();
+    ParallelStatus status = parallelRenderManager->GetParallelRenderingStatus();
+    ASSERT_EQ(status, ParallelStatus::OFF);
+    parallelRenderManager->SetParallelMode(true);
+    status = parallelRenderManager->GetParallelRenderingStatus();
+    ASSERT_EQ(status, ParallelStatus::FIRSTFLUSH);
+    auto visitor = parallelRenderManager->GetUniParallelCompositionVisitor();
+    ASSERT_EQ(visitor, nullptr);
+    parallelRenderManager->PackParallelCompositionTask(rsUniRenderVisitor, rsBaseRenderNode);
+    visitor = parallelRenderManager->GetUniParallelCompositionVisitor();
+    ASSERT_NE(visitor, nullptr);
+    auto taskType = parallelRenderManager->GetTaskType();
+    ASSERT_EQ(taskType, TaskType::COMPOSITION_TASK);
+    parallelRenderManager->LoadBalanceAndNotify(TaskType::COMPOSITION_TASK);
+    parallelRenderManager->WaitCompositionEnd();
+    parallelRenderManager->SetParallelMode(false);
+    status = parallelRenderManager->GetParallelRenderingStatus();
+    ASSERT_EQ(status, ParallelStatus::FIRSTFLUSH);
+}
+
 } // namespace OHOS::Rosen
