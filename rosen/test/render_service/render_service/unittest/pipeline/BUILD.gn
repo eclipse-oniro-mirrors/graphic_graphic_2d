@@ -25,6 +25,7 @@ group("unittest") {
     ":RSBaseRenderUtilTest",
     ":RSColdStartThreadTest",
     ":RSComposerAdapterTest",
+    ":RSDividedRenderUtilTest",
     ":RSDropFrameProcessorTest",
     ":RSMainThreadTest",
     ":RSNodeCostManagerTest",
@@ -34,10 +35,12 @@ group("unittest") {
     ":RSRenderServiceListenerTest",
     ":RSRenderServiceVisitorTest",
     ":RSSurfaceCaptureTaskTest",
+    ":RSUniRenderEngineTest",
     ":RSUniRenderJudgementTest",
     ":RSUniRenderUtilTest",
     ":RSUniRenderVirtualProcessorTest",
     ":RSUniRenderVisitorTest",
+    ":RSUnmarshalThreadTest",
     ":RSVirtualScreenProcessorTest",
   ]
   if (rs_enable_parallel_render && rs_enable_gpu) {
@@ -330,6 +333,36 @@ ohos_unittest("RSDrivenRenderExtTest") {
   module_out_path = module_output_path
   sources = [ "driven_render/rs_driven_render_ext_test.cpp" ]
   deps = [ ":rs_test_common" ]
+  defines = []
+  defines += gpu_defines
+}
+
+## Build RSDividedRenderUtilTest
+ohos_unittest("RSDividedRenderUtilTest") {
+  module_out_path = module_output_path
+  sources = [ "rs_divided_render_util_test.cpp" ]
+  deps = [ ":rs_test_common" ]
+  defines = []
+  defines += gpu_defines
+}
+
+## Build RSUniRenderEngineTest
+ohos_unittest("RSUniRenderEngineTest") {
+  module_out_path = module_output_path
+  sources = [ "rs_uni_render_engine_test.cpp" ]
+  deps = [ ":rs_test_common" ]
+  defines = []
+  defines += gpu_defines
+}
+
+## Build RSUnmarshalThreadTest
+ohos_unittest("RSUnmarshalThreadTest") {
+  module_out_path = module_output_path
+  sources = [ "rs_unmarshal_thread_test.cpp" ]
+  deps = [
+    ":rs_test_common",
+    "../../../../../modules/render_service_base:render_service_base_src",
+  ]
   defines = []
   defines += gpu_defines
 }
