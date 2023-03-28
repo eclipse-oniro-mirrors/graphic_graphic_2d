@@ -50,9 +50,7 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
-#if defined(RS_ENABLE_PARALLEL_RENDER) && defined (RS_ENABLE_GL)
 constexpr uint32_t PHONE_MAX_APP_WINDOW_NUM = 1;
-#endif
 
 bool IsFirstFrameReadyToDraw(RSSurfaceRenderNode& node)
 {
@@ -285,6 +283,7 @@ void RSUniRenderVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
     // hence partial-render quick-reject should be disabled.
     if(node.IsRotationChanged()) {
         isOpDropped_ = false;
+        RS_TRACE_NAME("ClosePartialRender 1 RotationChanged");
     }
     node.UpdateRotation();
     curAlpha_ = node.GetRenderProperties().GetAlpha();
@@ -464,6 +463,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     if (node.GetName() == "pointer window") {
         isOpDropped_ = false;
         isPartialRenderEnabled_ = false;
+        RS_TRACE_NAME("ClosePartialRender 0 pointer window");
     }
     // avoid EntryView upload texture while screen rotation
     if (node.GetName() == "EntryView" && curDisplayNode_) {
@@ -1180,6 +1180,12 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             CalcDirtyDisplayRegion(displayNodePtr);
             CalcDirtyRegionForFilterNode(displayNodePtr);
             displayNodePtr->ClearCurrentSurfacePos();
+        } else {
+            // if isPartialRenderEnabled_ is disabled for some reason (i.e. screen rotation, pointer window, and window animation),
+            // we should keep a fullscreen dirtyregion history to avoid dirtyregion losses.
+            // isPartialRenderEnabled_ should not be disabled after current position.
+            curDisplayDirtyManager_->MergeSurfaceRect();
+            curDisplayDirtyManager_->UpdateDirty(isDirtyRegionAlignedEnable_);
         }
         if (isOpDropped_ && dirtySurfaceNodeMap_.empty() && !curDisplayDirtyManager_->IsDirty()) {
             RS_LOGD("DisplayNode skip");
@@ -2189,7 +2195,6 @@ void RSUniRenderVisitor::ParallelRenderEnableHardwareComposer(RSSurfaceRenderNod
 
 void RSUniRenderVisitor::ClosePartialRenderWhenAnimatingWindows(std::shared_ptr<RSDisplayRenderNode>& node)
 {
-#if defined(RS_ENABLE_PARALLEL_RENDER) && defined (RS_ENABLE_GL)
     if (!doAnimate_) {
         return;
     }
@@ -2198,8 +2203,8 @@ void RSUniRenderVisitor::ClosePartialRenderWhenAnimatingWindows(std::shared_ptr<
     } else {
         isPartialRenderEnabled_ = false;
         isOpDropped_ = false;
+        RS_TRACE_NAME("ClosePartialRender 0 Window Animation");
     }
-#endif
 }
 
 void RSUniRenderVisitor::SetHardwareEnabledNodes(
