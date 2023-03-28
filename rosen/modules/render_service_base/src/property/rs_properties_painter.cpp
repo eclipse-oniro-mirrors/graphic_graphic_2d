@@ -349,12 +349,13 @@ void RSPropertiesPainter::DrawPixelStretch(const RSProperties& properties, RSPai
     auto bounds = RSPropertiesPainter::Rect2SkRect(properties.GetBoundsRect());
     canvas.clipRect(bounds);
     auto clipBounds = canvas.getDeviceClipBounds();
+    clipBounds.setXYWH(clipBounds.left(), clipBounds.top(), clipBounds.width() - 1, clipBounds.height() - 1);
     canvas.restore();
 
     auto stretchSize = properties.GetPixelStretch();
     auto scaledBounds = SkRect::MakeLTRB(bounds.left() - stretchSize.x_, bounds.top() - stretchSize.y_,
         bounds.right() + stretchSize.z_, bounds.bottom() + stretchSize.w_);
-    if (scaledBounds.isEmpty()) {
+    if (scaledBounds.isEmpty() || clipBounds.isEmpty()) {
         ROSEN_LOGE("RSPropertiesPainter::DrawPixelStretch invalid scaled bounds");
         return;
     }
