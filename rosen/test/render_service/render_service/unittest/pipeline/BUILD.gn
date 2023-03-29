@@ -27,6 +27,7 @@ group("unittest") {
     ":RSComposerAdapterTest",
     ":RSDividedRenderUtilTest",
     ":RSDropFrameProcessorTest",
+    ":RSHardwareThreadTest",
     ":RSMainThreadTest",
     ":RSPhysicalScreenProcessorTest",
     ":RSProcessorFactoryTest",
@@ -195,6 +196,15 @@ ohos_unittest("RSQosThreadTest") {
   sources = [ "rs_qos_thread_test.cpp" ]
   deps = [ ":rs_test_common" ]
   external_deps = [ "init:libbegetutil" ]
+  defines = []
+  defines += gpu_defines
+}
+
+## Build RSHardwareThreadTest
+ohos_unittest("RSHardwareThreadTest") {
+  module_out_path = module_output_path
+  sources = [ "rs_hardware_thread_test.cpp" ]
+  deps = [ ":rs_test_common" ]
   defines = []
   defines += gpu_defines
 }
