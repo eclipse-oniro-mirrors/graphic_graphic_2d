@@ -1633,6 +1633,9 @@ void RSUniRenderVisitor::CalcDirtyRegionForFilterNode(std::shared_ptr<RSDisplayR
             }
         }
     }
+    if (needFilter_) { // when need draw filter, disable hardware composer
+        isHardwareForcedDisabled_ = true;
+    }
 }
 
 void RSUniRenderVisitor::SetSurfaceGlobalDirtyRegion(std::shared_ptr<RSDisplayRenderNode>& node)
