@@ -904,6 +904,8 @@ void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::Sha
         } else {
             occlusionRect = Occlusion::Rect {curSurface->GetDstRect()};
         }
+        RS_LOGD("RSMainThread::CalcOcclusionImplementation name: %s id: %llu rect: %s",
+            curSurface->GetName().c_str(), curSurface->GetId(), occlusionRect.GetRectInfo().c_str());
         curSurface->setQosCal(qosPidCal_);
         if (CheckSurfaceNeedProcess(occlusionSurfaces, curSurface)) {
             Occlusion::Region curRegion { occlusionRect };
@@ -942,6 +944,7 @@ void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::Sha
 void RSMainThread::CalcOcclusion()
 {
     RS_TRACE_NAME("RSMainThread::CalcOcclusion");
+    RS_LOGD("RSMainThread::CalcOcclusion animate:%d isUniRender:%d", doWindowAnimate_.load(), isUniRender_);
     if (doWindowAnimate_ && !isUniRender_) {
         return;
     }
@@ -1044,6 +1047,7 @@ void RSMainThread::CallbackToWMS(VisibleData& curVisVec)
     }
     if (visibleChanged) {
         for (auto& listener : occlusionListeners_) {
+            RS_LOGD("RSMainThread::CallbackToWMS curVisVec size:%u", curVisVec.size());
             listener->OnOcclusionVisibleChanged(std::make_shared<RSOcclusionData>(curVisVec));
         }
     }
