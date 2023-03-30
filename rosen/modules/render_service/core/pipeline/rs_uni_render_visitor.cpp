@@ -76,6 +76,8 @@ constexpr uint32_t PARALLEL_RENDER_MINIMUN_RENDER_NODE_NUMBER = 50;
 RSUniRenderVisitor::RSUniRenderVisitor()
     : curSurfaceDirtyManager_(std::make_shared<RSDirtyRegionManager>())
 {
+    auto mainThread = RSMainThread::Instance();
+    renderEngine_ = mainThread->GetRenderEngine();
     partialRenderType_ = RSSystemProperties::GetUniPartialRenderEnabled();
     sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
     auto screenNum = screenManager->GetAllScreenIds().size();
@@ -1800,7 +1802,9 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
                     + " Alpha: " + std::to_string(node.GetGlobalAlpha()).substr(0, 4));
     RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode node: %" PRIu64 ", child size:%u %s", node.GetId(),
         node.GetChildrenCount(), node.GetName().c_str());
-    RSTagTracker tagTracker(canvas_->getGrContext(), node.GetId(), RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE);
+    if (canvas_ != nullptr) {
+        RSTagTracker tagTracker(canvas_->getGrContext(), node.GetId(), RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE);
+    }
     node.UpdatePositionZ();
     if (isSecurityDisplay_ && node.GetSecurityLayer()) {
         RS_TRACE_NAME(node.GetName() + " SecurityLayer Skip");
