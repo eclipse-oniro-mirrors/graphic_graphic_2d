@@ -294,7 +294,7 @@ void RSPropertiesPainter::DrawShadowInner(const RSProperties& properties, RSPain
 void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas,
     std::shared_ptr<RSSkiaFilter>& filter, const std::unique_ptr<SkRect>& rect, SkSurface* skSurface)
 {
-    RS_TRACE_NAME("DrawFilter:" + std::to_string(filter->GetFilterType()));
+    RS_TRACE_NAME("DrawFilter " + filter->GetDescription());
     g_blurCnt++;
     SkAutoCanvasRestore acr(&canvas, true);
     if (rect != nullptr) {
