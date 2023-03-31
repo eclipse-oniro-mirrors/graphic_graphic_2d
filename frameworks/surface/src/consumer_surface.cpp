@@ -103,10 +103,30 @@ GSError ConsumerSurface::FlushBuffer(sptr<SurfaceBuffer>& buffer,
 {
     return GSERROR_NOT_SUPPORT;
 }
+
+GSError ConsumerSurface::FlushBuffer(sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& fence,
+                                     BufferFlushConfigWithDamages &config)
+{
+    return GSERROR_NOT_SUPPORT;
+}
+
 GSError ConsumerSurface::AcquireBuffer(sptr<SurfaceBuffer>& buffer, sptr<SyncFence>& fence,
                                        int64_t &timestamp, Rect &damage)
 {
-    return consumer_->AcquireBuffer(buffer, fence, timestamp, damage);
+    std::vector<Rect> damages;
+    GSError ret = AcquireBuffer(buffer, fence, timestamp, damages);
+    if (ret == GSERROR_OK && damages.size() == 1) {
+        damage = damages[0];
+        return ret;
+    }
+    BLOGN_FAILURE("Acquire damage faild, the size of damages is %{public}zu, should Acquire damages", damages.size());
+    return GSERROR_INVALID_ARGUMENTS;
+}
+
+GSError ConsumerSurface::AcquireBuffer(sptr<SurfaceBuffer>& buffer, sptr<SyncFence>& fence,
+                                       int64_t &timestamp, std::vector<Rect> &damages)
+{
+    return consumer_->AcquireBuffer(buffer, fence, timestamp, damages);
 }
 
 GSError ConsumerSurface::ReleaseBuffer(sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& fence)

@@ -18,6 +18,7 @@
 #include <buffer_queue_producer.h>
 #include <consumer_surface.h>
 #include "buffer_consumer_listener.h"
+#include "sync_fence.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -42,8 +43,17 @@ public:
             .h = 0x100,
         },
     };
+    static inline BufferFlushConfigWithDamages flushConfigWithDamages = {
+        .damages = {
+            {
+                .w = 0x100,
+                .h = 0x100,
+            }
+        },
+    };
     static inline int64_t timestamp = 0;
     static inline Rect damage = {};
+    static inline std::vector<Rect> damages = {};
     static inline sptr<IConsumerSurface> cs = nullptr;
     static inline sptr<Surface> ps = nullptr;
 };
@@ -794,6 +804,36 @@ HWTEST_F(ConsumerSurfaceTest, presentTimestamp005, Function | MediumTest | Level
     uint32_t sequence = 0;
     GraphicPresentTimestamp timestamp = {GRAPHIC_DISPLAY_PTS_TIMESTAMP, 0};
     GSError ret = cs->SetPresentTimestamp(sequence, timestamp);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+}
+
+/*
+* Function: AcquireBuffer and ReleaseBuffer
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call RequestBuffer and FlushBuffer
+*                  2. call AcquireBuffer and ReleaseBuffer
+*                  3. check ret
+ */
+HWTEST_F(ConsumerSurfaceTest, ReqCanFluAcqRel005, Function | MediumTest | Level2)
+{
+    sptr<SurfaceBuffer> buffer;
+    int releaseFence = -1;
+
+    GSError ret = ps->RequestBuffer(buffer, releaseFence, requestConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    ASSERT_NE(buffer, nullptr);
+
+    ret = ps->FlushBuffer(buffer, SyncFence::INVALID_FENCE, flushConfigWithDamages);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    sptr<OHOS::SyncFence> flushFence;
+    ret = cs->AcquireBuffer(buffer, flushFence, timestamp, damages);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    ASSERT_NE(buffer, nullptr);
+
+    ret = cs->ReleaseBuffer(buffer, -1);
     ASSERT_EQ(ret, OHOS::GSERROR_OK);
 }
 

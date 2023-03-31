@@ -36,15 +36,17 @@ public:
         .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
         .timeout = 0,
     };
-    static inline BufferFlushConfig flushConfig = {
-        .damage = {
-            .w = 0x100,
-            .h = 0x100,
+    static inline BufferFlushConfigWithDamages flushConfig = {
+        .damages = {
+            {
+                .w = 0x100,
+                .h = 0x100,
+            }
         },
     };
     static inline std::vector<int32_t> deletingBuffers;
     static inline int64_t timestamp = 0;
-    static inline Rect damage = {};
+    static inline std::vector<Rect> damages = {};
     static inline sptr<BufferQueue> bq = nullptr;
     static inline sptr<BufferQueueProducer> bqp = nullptr;
     static inline sptr<BufferExtraData> bedata = nullptr;
@@ -187,7 +189,7 @@ HWTEST_F(BufferQueueProducerTest, ReqFlu001, Function | MediumTest | Level2)
     ret = bqp->FlushBuffer(retval.sequence, bedata, acquireFence, flushConfig);
     ASSERT_EQ(ret, OHOS::GSERROR_OK);
 
-    ret = bq->AcquireBuffer(retval.buffer, retval.fence, timestamp, damage);
+    ret = bq->AcquireBuffer(retval.buffer, retval.fence, timestamp, damages);
     ASSERT_EQ(ret, OHOS::GSERROR_OK);
 
     sptr<SyncFence> releaseFence = SyncFence::INVALID_FENCE;
@@ -218,7 +220,7 @@ HWTEST_F(BufferQueueProducerTest, ReqFlu002, Function | MediumTest | Level2)
     ret = bqp->FlushBuffer(retval.sequence, bedata, acquireFence, flushConfig);
     ASSERT_NE(ret, OHOS::GSERROR_OK);
 
-    ret = bq->AcquireBuffer(retval.buffer, retval.fence, timestamp, damage);
+    ret = bq->AcquireBuffer(retval.buffer, retval.fence, timestamp, damages);
     ASSERT_EQ(ret, OHOS::GSERROR_OK);
 
     sptr<SyncFence> releaseFence = SyncFence::INVALID_FENCE;
