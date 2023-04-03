@@ -1156,8 +1156,10 @@ void RSMainThread::Animate(uint64_t timestamp)
         }
         needRequestNextVsync = needRequestNextVsync || result.second;
         if (node->template IsInstanceOf<RSSurfaceRenderNode>() && result.first) {
-            auto surfacenode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node);
-            surfacenode->SetAnimateState();
+            if (isUniRender_) {
+                auto surfacenode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node);
+                surfacenode->SetAnimateState();
+            }
             curWinAnim = true;
         }
         return !result.first;
