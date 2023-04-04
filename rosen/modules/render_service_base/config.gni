@@ -34,7 +34,10 @@ if (rosen_cross_platform) {
 }
 
 if (rosen_preview) {
-  rs_common_define += [ "ROSEN_PREVIEW" ]
+  rs_common_define += [
+    "ROSEN_PREVIEW",
+    "ROSEN_DISABLE_DEBUGLOG",
+  ]
 }
 
 if (rosen_is_ohos) {
