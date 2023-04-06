@@ -126,7 +126,8 @@ namespace OHOS {
         bool enabled = GetData<bool>();
         GraphicColorGamut gamut = GetData<GraphicColorGamut>();
         GraphicGamutMap gamutMap = GetData<GraphicGamutMap>();
-        float matrix = GetData<float>();
+        float matrixElement = GetData<float>();
+        std::vector<float> matrix = { matrixElement };
         uint32_t sequence = GetData<uint32_t>();
         uint64_t ns = GetData<uint64_t>();
         void* dt = static_cast<void*>(GetStringFromData(STR_LEN).data());
@@ -145,7 +146,7 @@ namespace OHOS {
         hdiScreen->SetScreenVsyncEnabled(enabled);
         hdiScreen->SetScreenColorGamut(gamut);
         hdiScreen->SetScreenGamutMap(gamutMap);
-        hdiScreen->SetScreenColorTransform(&matrix);
+        hdiScreen->SetScreenColorTransform(matrix);
         hdiScreen->OnVsync(sequence, ns, dt);
 
         GraphicDisplayModeInfo mode = {width, height, freshRate, id};

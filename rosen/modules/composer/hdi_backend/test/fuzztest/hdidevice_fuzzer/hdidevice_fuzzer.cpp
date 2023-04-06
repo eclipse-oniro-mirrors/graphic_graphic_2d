@@ -58,22 +58,22 @@ namespace OHOS {
         uint32_t layerId = GetData<uint32_t>();
         int32_t fenceFd = GetData<int32_t>() % 32768; // maximum fd of linux is 32768
         // fd 0,1,2 represent stdin, stdout and stderr respectively, they should not be closed.
-        if (fenceFd >= 0 && fenceFd <= 2) {
-            fenceFd = DEFAULT_FENCE;
-        }
+        fenceFd = ((fenceFd >= 0 && fenceFd <= 2) ? DEFAULT_FENCE : fenceFd);
         sptr<SyncFence> fence = new SyncFence(fenceFd);
         GraphicLayerAlpha alpha = GetData<GraphicLayerAlpha>();
         GraphicIRect layerRect = GetData<GraphicIRect>();
         GraphicTransformType ttype = GetData<GraphicTransformType>();
-        uint32_t num = GetData<uint32_t>();
         GraphicIRect visible = GetData<GraphicIRect>();
+        std::vector<GraphicIRect> visibles = { visible };
         GraphicIRect dirty = GetData<GraphicIRect>();
+        std::vector<GraphicIRect> dirtyRegions = { dirty };
         GraphicCompositionType ctype = GetData<GraphicCompositionType>();
         GraphicBlendType btype = GetData<GraphicBlendType>();
         GraphicIRect crop = GetData<GraphicIRect>();
         uint32_t zorder = GetData<uint32_t>();
         bool isPreMulti = GetData<bool>();
-        float matrix = GetData<float>();
+        float matrixElement = GetData<float>();
+        std::vector<float> matrix = { matrixElement };
         GraphicColorDataSpace colorSpace = GetData<GraphicColorDataSpace>();
         GraphicHDRMetaData metaData = GetData<GraphicHDRMetaData>();
         GraphicHDRMetadataKey key = GetData<GraphicHDRMetadataKey>();
@@ -86,15 +86,15 @@ namespace OHOS {
         device->SetLayerAlpha(screenId, layerId, alpha);
         device->SetLayerSize(screenId, layerId, layerRect);
         device->SetTransformMode(screenId, layerId, ttype);
-        device->SetLayerVisibleRegion(screenId, layerId, num, visible);
-        device->SetLayerDirtyRegion(screenId, layerId, dirty);
+        device->SetLayerVisibleRegion(screenId, layerId, visibles);
+        device->SetLayerDirtyRegion(screenId, layerId, dirtyRegions);
         device->SetLayerBuffer(screenId, layerId, nullptr, fence);
         device->SetLayerCompositionType(screenId, layerId, ctype);
         device->SetLayerBlendType(screenId, layerId, btype);
         device->SetLayerCrop(screenId, layerId, crop);
         device->SetLayerZorder(screenId, layerId, zorder);
         device->SetLayerPreMulti(screenId, layerId, isPreMulti);
-        device->SetLayerColorTransform(screenId, layerId, &matrix);
+        device->SetLayerColorTransform(screenId, layerId, matrix);
         device->SetLayerColorDataSpace(screenId, layerId, colorSpace);
         device->GetLayerColorDataSpace(screenId, layerId, colorSpace);
         std::vector<GraphicHDRMetaData> metaDatas = {metaData};
@@ -125,8 +125,8 @@ namespace OHOS {
             fenceFd = DEFAULT_FENCE;
         }
         sptr<SyncFence> fence = new SyncFence(fenceFd);
-        uint32_t num = GetData<uint32_t>();
         GraphicIRect damageRect = GetData<GraphicIRect>();
+        std::vector<GraphicIRect> damageRects = { damageRect };
         GraphicGamutMap gamutMap = GetData<GraphicGamutMap>();
 
         uint32_t formatCount = GetData<uint32_t>();
@@ -142,7 +142,7 @@ namespace OHOS {
         std::vector<int32_t> types;
         device->GetScreenCompChange(screenId, layersId, types);
         device->SetScreenClientBuffer(screenId, nullptr, fence);
-        device->SetScreenClientDamage(screenId, num, damageRect);
+        device->SetScreenClientDamage(screenId, damageRects);
         std::vector<uint32_t> layers;
         std::vector<sptr<SyncFence>> fences;
         device->GetScreenReleaseFence(screenId, layers, fences);

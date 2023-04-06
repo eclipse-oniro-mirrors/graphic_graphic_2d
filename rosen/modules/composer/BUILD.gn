@@ -74,7 +74,11 @@ ohos_shared_library("libcomposer") {
     "//foundation/graphic/graphic_2d/utils:sync_fence",
   ]
 
-  external_deps = [ "drivers_interface_display:display_device_client" ]
+  external_deps = [
+    "drivers_interface_display:display_buffer_idl_headers",
+    "drivers_interface_display:display_composer_idl_headers",
+    "drivers_interface_display:libdisplay_composer_hdi_impl",
+  ]
 
   part_name = "graphic_standard"
   subsystem_name = "graphic"

@@ -55,7 +55,9 @@ bool RSUniRenderComposerAdapter::Init(const ScreenInfo& screenInfo, int32_t offs
     screenInfo_ = screenInfo;
 
     GraphicIRect damageRect {0, 0, static_cast<int32_t>(screenInfo_.width), static_cast<int32_t>(screenInfo_.height)};
-    output_->SetOutputDamage(1, damageRect);
+    std::vector<GraphicIRect> damageRects;
+    damageRects.emplace_back(damageRect);
+    output_->SetOutputDamages(damageRects);
     bool directClientCompEnableStatus = RSSystemProperties::GetDirectClientCompEnableStatus();
     output_->SetDirectClientCompEnableStatus(directClientCompEnableStatus);
 
@@ -164,11 +166,21 @@ void RSUniRenderComposerAdapter::SetComposeInfoToLayer(
     layer->SetBoundSize(info.boundRect);
     layer->SetCompositionType(info.needClient ?
         GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT : GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
-    layer->SetVisibleRegion(1, info.visibleRect);
-    layer->SetDirtyRegion(info.srcRect);
+    std::vector<GraphicIRect> visibleRegions;
+    visibleRegions.emplace_back(info.visibleRect);
+    layer->SetVisibleRegions(visibleRegions);
+    std::vector<GraphicIRect> dirtyRegions;
+    dirtyRegions.emplace_back(info.srcRect);
+    layer->SetDirtyRegions(dirtyRegions);
     layer->SetBlendType(info.blendType);
     layer->SetCropRect(info.srcRect);
     layer->SetMatrix(info.matrix);
+    SetMetaDataInfoToLayer(layer, info, surface);
+}
+
+void RSUniRenderComposerAdapter::SetMetaDataInfoToLayer(const LayerInfoPtr& layer, const ComposeInfo& info,
+                                                        const sptr<IConsumerSurface>& surface) const
+{
     HDRMetaDataType type;
     if (surface->QueryMetaDataType(info.buffer->GetSeqNum(), type) != GSERROR_OK) {
         RS_LOGE("RSUniRenderComposerAdapter::SetComposeInfoToLayer: QueryMetaDataType failed");
@@ -433,7 +445,9 @@ void RSUniRenderComposerAdapter::LayerCrop(const LayerInfoPtr& layer) const
     srcRect.w = dstRectI.IsEmpty() ? 0 : originSrcRect.w * resDstRect.width_ / dstRectI.width_;
     srcRect.h = dstRectI.IsEmpty() ? 0 : originSrcRect.h * resDstRect.height_ / dstRectI.height_;
     layer->SetLayerSize(dstRect);
-    layer->SetDirtyRegion(srcRect);
+    std::vector<GraphicIRect> dirtyRegions;
+    dirtyRegions.emplace_back(srcRect);
+    layer->SetDirtyRegions(dirtyRegions);
     layer->SetCropRect(srcRect);
     RS_LOGD("RsDebug RSUniRenderComposerAdapter::LayerCrop layer has been cropped dst[%d %d %d %d] src[%d %d %d %d]",
         dstRect.x, dstRect.y, dstRect.w, dstRect.h, srcRect.x, srcRect.y, srcRect.w, srcRect.h);
@@ -485,7 +499,9 @@ void RSUniRenderComposerAdapter::LayerScaleDown(const LayerInfoPtr& layer)
             srcRect.y += static_cast<int32_t>(halfdh);
             srcRect.h = static_cast<int32_t>(newHeight);
         }
-        layer->SetDirtyRegion(srcRect);
+        std::vector<GraphicIRect> dirtyRegions;
+        dirtyRegions.emplace_back(srcRect);
+        layer->SetDirtyRegions(dirtyRegions);
         layer->SetCropRect(srcRect);
         RS_LOGD("RsDebug RSUniRenderComposerAdapter::LayerScaleDown layer has been scaledown dst[%d %d %d %d]"\
             "src[%d %d %d %d]", dstRect.x, dstRect.y, dstRect.w, dstRect.h,

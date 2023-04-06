@@ -17,8 +17,6 @@
 #define INTERFACES_INNERKITS_WMSERVICE_IWINDOW_MANAGER_SERVICE_H
 
 #include <vector>
-
-#include <display_type.h>
 #include <promise.h>
 #include <refbase.h>
 #include <window_manager_type.h>

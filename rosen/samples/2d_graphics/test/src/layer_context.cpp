@@ -120,8 +120,12 @@ SurfaceError LayerContext::FillHDILayer()
     hdiLayer_->SetZorder(static_cast<int32_t>(zorder_));
     hdiLayer_->SetAlpha(alpha);
     hdiLayer_->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
-    hdiLayer_->SetVisibleRegion(1, src_);
-    hdiLayer_->SetDirtyRegion(src_);
+    std::vector<GraphicIRect> visibleRegions;
+    visibleRegions.emplace_back(src_);
+    hdiLayer_->SetVisibleRegions(visibleRegions);
+    std::vector<GraphicIRect> dirtyRegions;
+    dirtyRegions.emplace_back(src_);
+    hdiLayer_->SetDirtyRegions(dirtyRegions);
     hdiLayer_->SetLayerSize(dst_);
     hdiLayer_->SetBlendType(GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
     hdiLayer_->SetCropRect(src_);

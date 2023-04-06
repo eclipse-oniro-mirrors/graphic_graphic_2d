@@ -42,11 +42,11 @@ void HdiDeviceTest::TearDownTestCase()
 
 namespace {
 /*
-* Function: all DeviceFuncs
+* Function: DeviceFuncs001
 * Type: Function
 * Rank: Important(3)
 * EnvConditions: N/A
-* CaseDescription: 1. call all DeviceFuncs
+* CaseDescription: 1. call DeviceFuncs
 *                  2. check ret
 */
 HWTEST_F(HdiDeviceTest, DeviceFuncs001, Function | MediumTest| Level3)
@@ -77,8 +77,8 @@ HWTEST_F(HdiDeviceTest, DeviceFuncs001, Function | MediumTest| Level3)
     BufferHandle *buffer = nullptr;
     sptr<SyncFence> fence = nullptr;
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetScreenClientBuffer(screenId, buffer, fence), GRAPHIC_DISPLAY_NULL_PTR);
-    GraphicIRect damageRect = {0, 0, 0, 0};
-    ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetScreenClientDamage(screenId, num, damageRect), GRAPHIC_DISPLAY_NULL_PTR);
+    std::vector<GraphicIRect> damageRects = { {0, 0, 0, 0} };
+    ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetScreenClientDamage(screenId, damageRects), GRAPHIC_DISPLAY_NULL_PTR);
     std::vector<uint32_t> layers;
     std::vector<sptr<SyncFence>> fences;
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->GetScreenReleaseFence(screenId, layers, fences), GRAPHIC_DISPLAY_NULL_PTR);
@@ -90,7 +90,7 @@ HWTEST_F(HdiDeviceTest, DeviceFuncs001, Function | MediumTest| Level3)
     GraphicGamutMap gamutMap = GRAPHIC_GAMUT_MAP_CONSTANT;
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetScreenGamutMap(screenId, gamutMap), GRAPHIC_DISPLAY_NULL_PTR);
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->GetScreenGamutMap(screenId, gamutMap), GRAPHIC_DISPLAY_NULL_PTR);
-    const float *matrix;
+    std::vector<float> matrix = { 0.0 };
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetScreenColorTransform(screenId, matrix), GRAPHIC_DISPLAY_NULL_PTR);
     GraphicHDRCapability info;
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->GetHDRCapabilityInfos(screenId, info), GRAPHIC_DISPLAY_NULL_PTR);
@@ -100,28 +100,27 @@ HWTEST_F(HdiDeviceTest, DeviceFuncs001, Function | MediumTest| Level3)
 }
 
 /*
-* Function: all LayerFuncs
+* Function: LayerFuncs001
 * Type: Function
 * Rank: Important(3)
 * EnvConditions: N/A
-* CaseDescription: 1. call all LayerFuncs
+* CaseDescription: 1. call LayerFuncs
 *                  2. check ret
 */
 HWTEST_F(HdiDeviceTest, LayerFuncs001, Function | MediumTest| Level3)
 {
-    uint32_t screenId = 0, layerId = 0;
+    uint32_t screenId = 0, layerId = 0, zorder = 0;
     GraphicLayerAlpha alpha;
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetLayerAlpha(screenId, layerId, alpha), GRAPHIC_DISPLAY_NULL_PTR);
     GraphicIRect layerRect = {0, 0, 0, 0};
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetLayerSize(screenId, layerId, layerRect), GRAPHIC_DISPLAY_NULL_PTR);
     GraphicTransformType type = GRAPHIC_ROTATE_NONE;
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetTransformMode(screenId, layerId, type), GRAPHIC_DISPLAY_NULL_PTR);
-    uint32_t num = 1;
-    GraphicIRect visible = {0, 0, 0, 0};
-    ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetLayerVisibleRegion(screenId, layerId, num, visible),
+    std::vector<GraphicIRect> visibles = { {0, 0, 0, 0} };
+    ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetLayerVisibleRegion(screenId, layerId, visibles), GRAPHIC_DISPLAY_NULL_PTR);
+    std::vector<GraphicIRect> dirtyRegions = { {0, 0, 0, 0} };
+    ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetLayerDirtyRegion(screenId, layerId, dirtyRegions),
               GRAPHIC_DISPLAY_NULL_PTR);
-    GraphicIRect dirty = {0, 0, 0, 0};
-    ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetLayerDirtyRegion(screenId, layerId, dirty), GRAPHIC_DISPLAY_NULL_PTR);
     BufferHandle *handle = nullptr;
     sptr<SyncFence> acquireFence = nullptr;
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetLayerBuffer(screenId, layerId, handle, acquireFence),
@@ -132,11 +131,10 @@ HWTEST_F(HdiDeviceTest, LayerFuncs001, Function | MediumTest| Level3)
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetLayerBlendType(screenId, layerId, blendType), GRAPHIC_DISPLAY_NULL_PTR);
     GraphicIRect crop = {0, 0, 0, 0};
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetLayerCrop(screenId, layerId, crop), GRAPHIC_DISPLAY_NULL_PTR);
-    uint32_t zorder = 0;
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetLayerZorder(screenId, layerId, zorder), GRAPHIC_DISPLAY_NULL_PTR);
     bool isPreMulti = false;
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetLayerPreMulti(screenId, layerId, isPreMulti), GRAPHIC_DISPLAY_NULL_PTR);
-    float *matrix;
+    std::vector<float> matrix = { 0.0 };
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetLayerColorTransform(screenId, layerId, matrix), GRAPHIC_DISPLAY_NULL_PTR);
     GraphicColorDataSpace colorSpace = GRAPHIC_COLOR_DATA_SPACE_UNKNOWN;
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->SetLayerColorDataSpace(screenId, layerId, colorSpace),
@@ -157,6 +155,19 @@ HWTEST_F(HdiDeviceTest, LayerFuncs001, Function | MediumTest| Level3)
               GRAPHIC_DISPLAY_NULL_PTR);
     GraphicPresentTimestamp timestamp;
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->GetPresentTimestamp(screenId, layerId, timestamp), GRAPHIC_DISPLAY_NULL_PTR);
+}
+
+/*
+* Function: LayerFuncs002
+* Type: Function
+* Rank: Important(3)
+* EnvConditions: N/A
+* CaseDescription: 1. call LayerFuncs
+*                  2. check ret
+*/
+HWTEST_F(HdiDeviceTest, LayerFuncs002, Function | MediumTest| Level3)
+{
+    uint32_t screenId = 0, layerId = 0;
     GraphicLayerInfo layerInfo;
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->CreateLayer(screenId, layerInfo, layerId), GRAPHIC_DISPLAY_NULL_PTR);
     ASSERT_EQ(HdiDeviceTest::hdiDevice_->CloseLayer(screenId, layerId), GRAPHIC_DISPLAY_NULL_PTR);

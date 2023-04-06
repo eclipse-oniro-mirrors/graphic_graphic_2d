@@ -124,52 +124,32 @@ HWTEST_F(HdiOutputTest, ReleaseFramebuffer002, Function | MediumTest| Level1)
     ASSERT_EQ(HdiOutputTest::hdiOutput_->ReleaseFramebuffer(buffer, releaseFence), 0);
 }
 
-
 /*
 * Function: Init
 * Type: Function
 * Rank: Important(3)
 * EnvConditions: N/A
-* CaseDescription: 1. call SetOutputDamage()
-*                  2. call GetOutputDamage()
+* CaseDescription: 1. call SetOutputDamages()
+*                  2. call GetOutputDamages()
 *                  3. check ret
 */
 HWTEST_F(HdiOutputTest, GetOutputDamage001, Function | MediumTest| Level3)
 {
-    uint32_t num = 1;
     GraphicIRect iRect = {
         .x = 0,
         .y = 0,
         .w = 800,
         .h = 600,
     };
-    HdiOutputTest::hdiOutput_->SetOutputDamage(num, iRect);
-    ASSERT_EQ(HdiOutputTest::hdiOutput_->GetOutputDamage().x, iRect.x);
-    ASSERT_EQ(HdiOutputTest::hdiOutput_->GetOutputDamage().y, iRect.y);
-    ASSERT_EQ(HdiOutputTest::hdiOutput_->GetOutputDamage().w, iRect.w);
-    ASSERT_EQ(HdiOutputTest::hdiOutput_->GetOutputDamage().h, iRect.h);
-}
-
-/*
-* Function: Init
-* Type: Function
-* Rank: Important(3)
-* EnvConditions: N/A
-* CaseDescription: 1. call SetOutputDamage()
-*                  2. call GetOutputDamageNum()
-*                  3. check ret
-*/
-HWTEST_F(HdiOutputTest, GetOutputDamageNum001, Function | MediumTest| Level3)
-{
-    uint32_t num = 1;
-    GraphicIRect iRect = {
-        .x = 0,
-        .y = 0,
-        .w = 800,
-        .h = 600,
-    };
-    HdiOutputTest::hdiOutput_->SetOutputDamage(num, iRect);
-    ASSERT_EQ(HdiOutputTest::hdiOutput_->GetOutputDamageNum(), 1u);
+    std::vector<GraphicIRect> inDamages;
+    inDamages.emplace_back(iRect);
+    HdiOutputTest::hdiOutput_->SetOutputDamages(inDamages);
+    std::vector<GraphicIRect>& outDamages = HdiOutputTest::hdiOutput_->GetOutputDamages();
+    ASSERT_EQ(outDamages.size(), 1);
+    ASSERT_EQ(outDamages[0].x, iRect.x);
+    ASSERT_EQ(outDamages[0].y, iRect.y);
+    ASSERT_EQ(outDamages[0].w, iRect.w);
+    ASSERT_EQ(outDamages[0].h, iRect.h);
 }
 
 /*

@@ -81,11 +81,12 @@ void RSRenderEngine::DrawLayers(RSPaintFilterCanvas& canvas, const std::vector<L
                 canvas.restoreToCount(saveCount);
                 continue;
             }
-            RS_LOGD("RSRenderEngine::DrawLayers dstRect[%d %d %d %d] SrcRect[%d %d %d %d]",
-                layer->GetLayerSize().x, layer->GetLayerSize().y,
-                layer->GetLayerSize().w, layer->GetLayerSize().h,
-                layer->GetDirtyRegion().x, layer->GetDirtyRegion().y,
-                layer->GetDirtyRegion().w, layer->GetDirtyRegion().h);
+            RS_LOGD("RSRenderEngine::DrawLayers dstRect[%d %d %d %d]", layer->GetLayerSize().x,
+                    layer->GetLayerSize().y, layer->GetLayerSize().w, layer->GetLayerSize().h);
+            std::vector<GraphicIRect>& dirtyRegions = layer->GetDirtyRegions();
+            for (auto iter = dirtyRegions.begin(); iter != dirtyRegions.end(); iter++) {
+                RS_LOGD("RSRenderEngine::DrawLayers SrcRect[%d %d %d %d]", iter->x, iter->y, iter->w, iter->h);
+            }
             DrawSurfaceNode(canvas, node, mirrorAdaptiveCoefficient, forceCPU);
         } else {
             // Probably never reach this branch.

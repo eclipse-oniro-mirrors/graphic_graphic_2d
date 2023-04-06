@@ -67,36 +67,22 @@ HWTEST_F(HdiOutputSysTest, TestHdiOutput001, Function | MediumTest| Level3)
 {
     ASSERT_EQ(HdiOutputSysTest::hdiOutput_->GetScreenId(), 0u);
     ASSERT_EQ(HdiOutputSysTest::hdiOutput_->Init(), ROSEN_ERROR_OK);
-    uint32_t num = 1;
     GraphicIRect iRect = {
         .x = 0,
         .y = 0,
         .w = 800,
         .h = 600,
     };
-    HdiOutputSysTest::hdiOutput_->SetOutputDamage(num, iRect);
-    ASSERT_EQ(HdiOutputSysTest::hdiOutput_->GetOutputDamage().x, iRect.x);
-    ASSERT_EQ(HdiOutputSysTest::hdiOutput_->GetOutputDamage().y, iRect.y);
-    ASSERT_EQ(HdiOutputSysTest::hdiOutput_->GetOutputDamage().w, iRect.w);
-    ASSERT_EQ(HdiOutputSysTest::hdiOutput_->GetOutputDamage().h, iRect.h);
+    std::vector<GraphicIRect> inDamages;
+    inDamages.emplace_back(iRect);
+    HdiOutputSysTest::hdiOutput_->SetOutputDamages(inDamages);
+    std::vector<GraphicIRect>& outDamages = HdiOutputSysTest::hdiOutput_->GetOutputDamages();
+    ASSERT_EQ(outDamages.size(), 1);
+    ASSERT_EQ(outDamages[0].x, iRect.x);
+    ASSERT_EQ(outDamages[0].y, iRect.y);
+    ASSERT_EQ(outDamages[0].w, iRect.w);
+    ASSERT_EQ(outDamages[0].h, iRect.h);
 
-    GraphicIRect iRect1 = {
-        .x = 0,
-        .y = 0,
-        .w = 800,
-        .h = 600,
-    };
-    HdiOutputSysTest::hdiOutput_->SetOutputDamage(num, iRect1);
-    ASSERT_EQ(HdiOutputSysTest::hdiOutput_->GetOutputDamageNum(), 1u);
-
-    GraphicIRect iRect2 = {
-        .x = 0,
-        .y = 0,
-        .w = 800,
-        .h = 600,
-    };
-    HdiOutputSysTest::hdiOutput_->SetOutputDamage(num, iRect2);
-    ASSERT_EQ(HdiOutputSysTest::hdiOutput_->GetOutputDamageNum(), 1u);
     std::string dumpStr = "";
     HdiOutputSysTest::hdiOutput_->Dump(dumpStr);
     uint32_t dumpStrLen = dumpStr.size();

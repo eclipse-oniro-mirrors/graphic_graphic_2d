@@ -117,20 +117,14 @@ int32_t HdiOutput::CreateLayer(uint64_t surfaceId, const LayerInfoPtr &layerInfo
     return GRAPHIC_DISPLAY_SUCCESS;
 }
 
-void HdiOutput::SetOutputDamage(uint32_t num, const GraphicIRect &outputDamage)
+void HdiOutput::SetOutputDamages(const std::vector<GraphicIRect> &outputDamages)
 {
-    outputDamageNum_ = num;
-    outputDamage_ = outputDamage;
+    outputDamages_ = outputDamages;
 }
 
-/* const */ GraphicIRect& HdiOutput::GetOutputDamage()
+/* const */ std::vector<GraphicIRect>& HdiOutput::GetOutputDamages()
 {
-    return outputDamage_;
-}
-
-uint32_t HdiOutput::GetOutputDamageNum() const
-{
-    return outputDamageNum_;
+    return outputDamages_;
 }
 
 const std::unordered_map<uint32_t, std::shared_ptr<HdiLayer>>& HdiOutput::GetLayers()

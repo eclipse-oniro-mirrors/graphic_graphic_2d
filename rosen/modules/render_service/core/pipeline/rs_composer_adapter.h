@@ -72,11 +72,13 @@ private:
     LayerInfoPtr CreateTunnelLayer(RSSurfaceRenderNode& node) const;
     ComposeInfo BuildComposeInfo(RSSurfaceRenderNode& node, bool isTunnelCheck = false) const;
     ComposeInfo BuildComposeInfo(RSDisplayRenderNode& node) const;
-    static void SetComposeInfoToLayer(
+    void SetComposeInfoToLayer(
         const LayerInfoPtr& layer,
         const ComposeInfo& info,
         const sptr<IConsumerSurface>& surface,
-        RSBaseRenderNode* node);
+        RSBaseRenderNode* node) const;
+    void SetMetaDataInfoToLayer(const LayerInfoPtr& layer, const ComposeInfo& info,
+                                const sptr<IConsumerSurface>& surface) const;
     void DealWithNodeGravity(const RSSurfaceRenderNode& node, ComposeInfo& info) const;
     void DumpLayersToFile(const std::vector<LayerInfoPtr>& layers);
 

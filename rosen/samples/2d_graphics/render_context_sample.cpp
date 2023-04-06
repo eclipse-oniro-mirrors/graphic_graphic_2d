@@ -305,7 +305,9 @@ void RenderContextSample::Draw()
         damageRect.y = 0;
         damageRect.w = display_w;
         damageRect.h = display_h;
-        output_->SetOutputDamage(1, damageRect);
+        std::vector<GraphicIRect> outputDamages;
+        outputDamages.emplace_back(damageRect);
+        output_->SetOutputDamages(outputDamages);
         
         backend_->Repaint(output_);
         for (auto layerI : layers) {
@@ -352,8 +354,12 @@ bool RenderContextSample::FillDrawingLayer(std::shared_ptr<HdiLayerInfo> &showLa
     showLayer->SetAlpha(alpha);
     showLayer->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
     showLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
-    showLayer->SetVisibleRegion(1, srcRect);
-    showLayer->SetDirtyRegion(srcRect);
+    std::vector<GraphicIRect> visibleRegions;
+    visibleRegions.emplace_back(srcRect);
+    showLayer->SetVisibleRegions(visibleRegions);
+    std::vector<GraphicIRect> dirtyRegions;
+    dirtyRegions.emplace_back(srcRect);
+    showLayer->SetDirtyRegions(dirtyRegions);
     showLayer->SetLayerSize(dstRect);
     showLayer->SetBlendType(GraphicBlendType::GRAPHIC_BLEND_SRC);
     showLayer->SetCropRect(srcRect);
@@ -397,8 +403,12 @@ bool RenderContextSample::FillBackGroundLayer(std::shared_ptr<HdiLayerInfo> &sho
     showLayer->SetZorder(zorder);
     showLayer->SetAlpha(alpha);
     showLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
-    showLayer->SetVisibleRegion(1, srcRect);
-    showLayer->SetDirtyRegion(srcRect);
+    std::vector<GraphicIRect> visibleRegions;
+    visibleRegions.emplace_back(srcRect);
+    showLayer->SetVisibleRegions(visibleRegions);
+    std::vector<GraphicIRect> dirtyRegions;
+    dirtyRegions.emplace_back(srcRect);
+    showLayer->SetDirtyRegions(dirtyRegions);
     showLayer->SetLayerSize(dstRect);
     showLayer->SetBlendType(GraphicBlendType::GRAPHIC_BLEND_SRC);
     showLayer->SetCropRect(srcRect);
