@@ -22,13 +22,15 @@ namespace Rosen {
 
 RSPaintFilterCanvas::RSPaintFilterCanvas(SkCanvas* canvas, float alpha)
     : SkPaintFilterCanvas(canvas), alphaStack_({ std::clamp(alpha, 0.f, 1.f) }), // construct stack with given alpha
-      envStack_({ Env({ Color(0x000000FF) }) }) // construct stack with default foreground color
+      // Temporary fix, this default color should be 0x000000FF, fix this after foreground color refactor
+      envStack_({ Env({ Color(0xFF000000) }) }) // construct stack with default foreground color
 {}
 
 RSPaintFilterCanvas::RSPaintFilterCanvas(SkSurface* skSurface, float alpha)
     : SkPaintFilterCanvas(skSurface ? skSurface->getCanvas() : nullptr), skSurface_(skSurface),
       alphaStack_({ std::clamp(alpha, 0.f, 1.f) }), // construct stack with given alpha
-      envStack_({ Env({ Color(0x000000FF) }) })     // construct stack with default foreground color
+      // Temporary fix, this default color should be 0x000000FF, fix this after foreground color refactor
+      envStack_({ Env({ Color(0xFF000000) }) }) // construct stack with default foreground color
 {}
 
 SkSurface* RSPaintFilterCanvas::GetSurface() const
