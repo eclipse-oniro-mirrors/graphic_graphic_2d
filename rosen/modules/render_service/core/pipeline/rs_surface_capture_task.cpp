@@ -369,7 +369,7 @@ void RSSurfaceCaptureTask::RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWith
         if (geoPtr->GetAbsMatrix().invert(&invertMatrix)) {
             captureMatrix_.preConcat(invertMatrix);
         }
-    } else if (!node.IsStartingWindow()) {
+    } else if (!node.IsStartingWindow() && !isSelfDrawingSurface) {
         canvas_->setMatrix(captureMatrix_);
         canvas_->concat(geoPtr->GetAbsMatrix());
     }
