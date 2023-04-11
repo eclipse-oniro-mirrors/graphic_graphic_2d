@@ -54,6 +54,8 @@ NativeValue* RSWindowAnimationManager::Init(NativeEngine* engine, NativeValue* e
     BindNativeFunction(*engine, *object, "setController", moduleName, RSWindowAnimationManager::SetController);
     BindNativeFunction(*engine, *object, "minimizeWindowWithAnimation", moduleName,
         RSWindowAnimationManager::MinimizeWindowWithAnimation);
+    BindNativeFunction(*engine, *object, "getWindowAnimationTargets", moduleName,
+        RSWindowAnimationManager::GetWindowAnimationTargets);
     return nullptr;
 }
 
@@ -86,6 +88,19 @@ NativeValue* RSWindowAnimationManager::MinimizeWindowWithAnimation(NativeEngine*
     }
     auto me = CheckParamsAndGetThis<RSWindowAnimationManager>(engine, info);
     return (me != nullptr) ? me->OnMinimizeWindowWithAnimation(*engine, *info) : nullptr;
+}
+
+NativeValue* RSWindowAnimationManager::GetWindowAnimationTargets(NativeEngine* engine, NativeCallbackInfo* info)
+{
+    WALOGD("GetWindowAnimationTargets");
+    if (!RSWindowAnimationUtils::IsSystemApp()) {
+        WALOGE("GetWindowAnimationTargets failed");
+        engine->Throw(CreateJsError(*engine, ERR_NOT_SYSTEM_APP,
+            "WindowAnimationManager getWindowAnimationTargets failed, is not system app"));
+        return nullptr;
+    }
+    auto me = CheckParamsAndGetThis<RSWindowAnimationManager>(engine, info);
+    return (me != nullptr) ? me->OnGetWindowAnimationTargets(*engine, *info) : nullptr;
 }
 
 NativeValue* RSWindowAnimationManager::OnSetController(NativeEngine& engine, NativeCallbackInfo& info)
@@ -152,6 +167,55 @@ NativeValue* RSWindowAnimationManager::OnMinimizeWindowWithAnimation(NativeEngin
         (info.argv[1]->TypeOf() == NATIVE_FUNCTION ? info.argv[1] : nullptr);
     NativeValue* result = nullptr;
     AsyncTask::Schedule("RSWindowAnimationManager::OnMinimizeWindowWithAnimation",
+        engine, CreateAsyncTaskWithLastParam(engine, lastParam, nullptr, std::move(complete), &result));
+    return result;
+}
+
+NativeValue* RSWindowAnimationManager::OnGetWindowAnimationTargets(NativeEngine& engine, NativeCallbackInfo& info)
+{
+    int32_t errCode = ERR_OK;
+    if (info.argc < ARGC_ONE || info.argc > ARGC_TWO) {
+        WALOGE("No enough params!");
+        errCode = ERR_NOT_OK;
+    }
+
+    std::vector<uint32_t> missionIds;
+    auto arr = ConvertNativeValueTo<NativeArray>(info.argv[0]);
+    if (arr == nullptr) {
+        errCode = ERR_NOT_OK;
+    } else {
+        uint32_t len = arr->GetLength();
+        for (uint32_t index = 0; index < len; index++) {
+            NativeNumber* value = ConvertNativeValueTo<NativeNumber>(arr->GetElement(index));
+            if (value == nullptr) {
+                errCode = ERR_NOT_OK;
+                WALOGE("element is not number!");
+                break;
+            }
+            uint32_t missionId = static_cast<uint32_t>(*value);
+            missionIds.push_back(missionId);
+        }
+    }
+    AsyncTask::CompleteCallback complete =
+        [missionIds, errCode](NativeEngine& engine, AsyncTask& task, int32_t status) {
+            if (errCode != ERR_OK) {
+                task.Reject(engine, CreateJsError(engine, errCode, "Invalid params."));
+                return;
+            }
+            std::vector<sptr<RSWindowAnimationTarget>> targets;
+            if (!missionIds.empty()) {
+                SingletonContainer::Get<WindowAdapter>().GetWindowAnimationTargets(missionIds, targets);
+            }
+
+            WALOGD("Resolve get window animation targets!");
+            task.Resolve(engine,
+                RSWindowAnimationUtils::CreateJsWindowAnimationTargetArray(engine, targets));
+        };
+
+    NativeValue* lastParam = (info.argc <= 1) ? nullptr :
+        (info.argv[1]->TypeOf() == NATIVE_FUNCTION ? info.argv[1] : nullptr);
+    NativeValue* result = nullptr;
+    AsyncTask::Schedule("RSWindowAnimationManager::OnGetWindowAnimationTargets",
         engine, CreateAsyncTaskWithLastParam(engine, lastParam, nullptr, std::move(complete), &result));
     return result;
 }
