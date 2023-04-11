@@ -25,13 +25,15 @@
 #include "texgine/typography_style.h"
 
 namespace OHOS {
+namespace Rosen {
 namespace TextEngine {
-/* class TypographyBuilder
- * TypographyBuilder can build Typography by styles and texts.
+/*
+ * @brief TypographyBuilder can build Typography by styles and texts.
  */
 class TypographyBuilder {
 public:
-    /* Create TypographyBuilder instance.
+    /*
+     * @brief Create TypographyBuilder instance.
      * @param ys             the style used by Typography.
      * @param fontProviders  the font providers used by Typography.
      * @return TypographyBuilder
@@ -39,18 +41,21 @@ public:
     static std::unique_ptr<TypographyBuilder> Create(const TypographyStyle& ys = {},
         std::unique_ptr<FontProviders> fontProviders = FontProviders::SystemFontOnly());
 
-    // Is interface.
     virtual ~TypographyBuilder() = default;
 
-    /* Push TextStyle in style stack.
+    /*
+     * @brief Push TextStyle in style stack.
      * @param xs The style to be pushed onto the stack.
      */
     virtual void PushStyle(const TextStyle& xs) = 0;
 
-    // Pop a style in the style stack.
+    /*
+     * @brief Pop a style in the style stack.
+     */
     virtual void PopStyle() = 0;
 
-    /* Append a span.
+    /*
+     * @brief Append a span.
      * @param span The appended span.
      */
     virtual void AppendSpan(const std::shared_ptr<AnySpan>& span) = 0;
@@ -60,12 +65,14 @@ public:
     virtual void AppendSpan(const std::vector<uint16_t>& text) = 0;
     virtual void AppendSpan(const std::vector<uint32_t>& text) = 0;
 
-    /* Use styles and spans to build a Typography.
+    /*
+     * @brief Use styles and spans to build a Typography.
      * @return Typography
      */
     virtual std::shared_ptr<Typography> Build() = 0;
 };
 } // namespace TextEngine
+} // namespace Rosen
 } // namespace OHOS
 
 #endif // ROSEN_MODULES_TEXGINE_EXPORT_TEXGINE_TYPOGRAPHY_BUILDER_H
