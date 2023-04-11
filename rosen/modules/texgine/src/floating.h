@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,9 +16,11 @@
 #ifndef ROSEN_MODULES_TEXGINE_SRC_FLOATING_H
 #define ROSEN_MODULES_TEXGINE_SRC_FLOATING_H
 
+#include <math.h>
+
 static inline double FloatingAbs(double floating)
 {
-    return floating < 0 ? -floating : floating;
+    return fabs(floating);
 }
 
 #define FLOATING_EPSILON 1e-6

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,13 +25,15 @@
 #include "typeface.h"
 #include "variant_font_style_set.h"
 
-namespace Texgine {
-#define PARAMETERERROR 1;
-#define APIERROR 2;
+namespace OHOS {
+namespace Rosen {
+namespace TextEngine {
+#define PARAMETERERROR 1
+#define APIERROR 2
 
 std::shared_ptr<DynamicFontProvider> DynamicFontProvider::Create() noexcept(true)
 {
-    return std::shared_ptr<DynamicFontProvider>(new DynamicFontProvider());
+    return std::make_shared<DynamicFontProvider>();
 }
 
 int DynamicFontProvider::LoadFont(const std::string &familyName, const void *data, size_t datalen) noexcept(true)
@@ -74,4 +76,6 @@ std::shared_ptr<VariantFontStyleSet> DynamicFontProvider::MatchFamily(const std:
     }
     return nullptr;
 }
-} // namespace Texgine
+} // namespace TextEngine
+} // namespace Rosen
+} // namespace OHOS

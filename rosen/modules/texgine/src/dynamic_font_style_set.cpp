@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,19 +18,21 @@
 #include "texgine_exception.h"
 #include "texgine/utils/exlog.h"
 
-namespace Texgine {
+namespace OHOS {
+namespace Rosen {
+namespace TextEngine {
 DynamicFontStyleSet::DynamicFontStyleSet(std::unique_ptr<Typeface> typeface)
 {
     typeface_ = std::move(typeface);
 }
 
-int DynamicFontStyleSet::Count()
+int DynamicFontStyleSet::Count() const
 {
     return typeface_ != nullptr ? 1 : 0;
 }
 
 void DynamicFontStyleSet::GetStyle(int index, std::shared_ptr<TexgineFontStyle> style,
-    std::shared_ptr<TexgineString> name)
+    std::shared_ptr<TexgineString> name) const
 {
     if (style == nullptr || style->GetFontStyle() == nullptr) {
         LOG2EX(ERROR) << "style is nullptr";
@@ -57,4 +59,6 @@ std::shared_ptr<TexgineTypeface> DynamicFontStyleSet::MatchStyle(std::shared_ptr
     }
     return nullptr;
 }
-} // namespace Texgine
+} // namespace TextEngine
+} // namespace Rosen
+} // namespace OHOS
