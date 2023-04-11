@@ -20,6 +20,7 @@
 #include <iomanip>
 
 namespace OHOS {
+namespace Rosen {
 namespace TextEngine {
 void ExTime(Logger &algnlogger, enum Logger::LOG_PHASE phase)
 {
@@ -28,13 +29,24 @@ void ExTime(Logger &algnlogger, enum Logger::LOG_PHASE phase)
         auto now = localtime(&timer);
         int64_t nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count() + (8 * 1000LL * 60 * 60);
-        algnlogger << std::setw(4) << std::setfill('0') << (now->tm_year + 1900)
-            << "/" << std::setw(2) << std::setfill('0') << (now->tm_mon + 1)
-            << "/" << std::setw(2) << std::setfill('0') << (now->tm_mday)
-            << " " << std::setw(2) << std::setfill('0') << (nowMs / (1000LL * 60 * 60) % 24)
-            << ":" << std::setw(2) << std::setfill('0') << (nowMs / (1000LL * 60) % 60)
-            << ":" << std::setw(2) << std::setfill('0') << (nowMs / (1000LL) % 60)
-            << "." << std::setw(3) << std::setfill('0') << (nowMs % 1000);
+        int year = now->tm_year + 1900;
+        int month = now->tm_mon + 1;
+        int day = now->tm_mday;
+        int hour = nowMs / (1000LL * 60 * 60) % 24;
+        int minute = nowMs / (1000LL * 60) % 60
+        int second = nowMs / (1000LL) % 60;
+        int milliseconds = nowMs % 1000;
+        int longWidth = 4;
+        int middleWidth = 3;
+        int minWidth = 2;
+        char fill = '0';
+        algnlogger << std::setw(longWidth) << std::setfill(fill) << year
+            << "/" << std::setw(minWidth) << std::setfill(fill) << month
+            << "/" << std::setw(minWidth) << std::setfill(fill) << day
+            << " " << std::setw(minWidth) << std::setfill(fill) << hour
+            << ":" << std::setw(minWidth) << std::setfill(fill) << minute
+            << ":" << std::setw(minWidth) << std::setfill(fill) << second
+            << "." << std::setw(middleWidth) << std::setfill(fill) << milliseconds;
     }
 
     if (algnlogger.GetLevel() != Logger::LOG_LEVEL::DEBUG) {
@@ -42,4 +54,5 @@ void ExTime(Logger &algnlogger, enum Logger::LOG_PHASE phase)
     }
 }
 } // namespace TextEngine
+} // namespace Rosen
 } // namespace OHOS

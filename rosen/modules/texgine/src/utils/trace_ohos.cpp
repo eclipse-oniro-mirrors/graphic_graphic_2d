@@ -18,6 +18,7 @@
 #include <hitrace_meter.h>
 
 namespace OHOS {
+namespace Rosen {
 namespace TextEngine {
 void Trace::Start(const std::string &proc)
 {
@@ -38,4 +39,5 @@ void Trace::Disable()
 {
 }
 } // namespace TextEngine
+} // namespace Rosen
 } // namespace OHOS
