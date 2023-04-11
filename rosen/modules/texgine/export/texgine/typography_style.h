@@ -26,10 +26,11 @@
 #include "texgine/typography_types.h"
 
 namespace OHOS {
+namespace Rosen {
 namespace TextEngine {
-/* struct TypographyStyle
- * TypographyStyle is a collection of parameters that control how Typography is displayed,
- * including parameters for default TextStyle, multi-text, and line style.
+/*
+ * @brief TypographyStyle is a collection of parameters that control how Typography is displayed,
+ *        including parameters for default TextStyle, multi-text, and line style.
  */
 struct TypographyStyle {
     // default TextStyle
@@ -45,7 +46,7 @@ struct TypographyStyle {
     size_t maxLines_ = 1e9;
     std::u16string ellipsis_ = u"...";
     BreakStrategy breakStrategy_ = BreakStrategy::GREEDY;
-    WordBreakType wordBreakType_ = WordBreakType::BREAKWORD;
+    WordBreakType wordBreakType_ = WordBreakType::BREAK_WORD;
     TextAlign align_ = TextAlign::START;
     TextDirection direction_ = TextDirection::LTR;
 
@@ -62,13 +63,18 @@ struct TypographyStyle {
         std::optional<double> spacingScale_ = std::nullopt;
     } lineStyle_;
 
-    // Returns the equivalent align by TextAlign and TextDirection.
+    /*
+     * @brief Returns the equivalent align by TextAlign and TextDirection.
+     */
     TextAlign GetEquivalentAlign() const;
 
-    // Returns the default TextStyle.
+    /*
+     * @brief Returns the default TextStyle.
+     */
     TextStyle ConvertToTextStyle() const;
 };
 } // namespace TextEngine
+} // namespace Rosen
 } // namespace OHOS
 
 #endif // ROSEN_MODULES_TEXGINE_EXPORT_TEXGINE_TYPOGRAPHY_STYLE_H

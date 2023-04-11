@@ -24,10 +24,11 @@
 #include "texgine_paint.h"
 
 namespace OHOS {
+namespace Rosen {
 namespace TextEngine {
-/* enum BreakStrategy
- * BreakStrategy is a strategy on how to wrap when
- * there are multiple lines of text.
+/*
+ * @brief BreakStrategy is a strategy on how to wrap when
+ *        there are multiple lines of text.
  */
 enum class BreakStrategy {
     GREEDY,                  // this strategy wraps lines when they have to.
@@ -36,17 +37,17 @@ enum class BreakStrategy {
     BALANCED = HIGH_QUALITY, // to be done.
 };
 
-/* enum FontStyle
- * FontStyle is font italic style.
+/*
+ * @brief FontStyle is font italic style.
  */
 enum class FontStyle {
-    NORMAL, // use no italic.
-    ITALIC, // use italic.
-    MAX,    // use for check.
+    NORMAL,
+    ITALIC,
+    MAX,
 };
 
-/* enum FontWeight
- * FontWeight is font weight style.
+/*
+ * @brief FontWeight is font weight style.
  */
 enum class FontWeight {
     W100 = 0, // weight value 100 thin.
@@ -61,9 +62,9 @@ enum class FontWeight {
     MAX,      // use for check.
 };
 
-/* enum TextAlign
- * TextAlign is text alignment style.
- * The bit field has an alignment style and trim style.
+/*
+ * @brief TextAlign is text alignment style.
+ *        The bit field has an alignment style and trim style.
  */
 enum class TextAlign {
     DEFAULT = 0,   // alias for Start.
@@ -93,24 +94,24 @@ void operator &=(TextAlign &lhs, const TextAlign &rhs);
 void operator |=(TextAlign &lhs, const TextAlign &rhs);
 void operator ^=(TextAlign &lhs, const TextAlign &rhs);
 
-/* enum TextBaseline
- * TextBaseline is text baseline style.
+/*
+ * @brief TextBaseline is text baseline style.
  */
 enum class TextBaseline {
-    ALPHABETIC,  // baseline is alphabetic.
-    IDEOGRAPHIC, // baseline is ideographic.
+    ALPHABETIC,
+    IDEOGRAPHIC,
 };
 
-/* enum TextDecoration
- * TextDecoration is text decoration style.
- * Use bit fields for storage.
+/*
+ * @brief TextDecoration is text decoration style.
+ *        Use bit fields for storage.
  */
 enum class TextDecoration : int {
-    NONE = 0x0,        // no style.
-    UNDERLINE = 0x1,   // draw underline.
-    OVERLINE = 0x2,    // draw overline.
-    LINETHROUGH = 0x4, // draw line through text.
-    BASELINE = 0x8,    // draw baseline.
+    NONE = 0x0,
+    UNDERLINE = 0x1,
+    OVERLINE = 0x2,
+    LINE_THROUGH = 0x4,
+    BASELINE = 0x8,
 };
 TextDecoration operator &(TextDecoration const &lhs, TextDecoration const &rhs);
 TextDecoration operator |(TextDecoration const &lhs, TextDecoration const &rhs);
@@ -121,27 +122,27 @@ void operator |=(TextDecoration &lhs, TextDecoration const &rhs);
 void operator ^=(TextDecoration &lhs, TextDecoration const &rhs);
 void operator +=(TextDecoration &lhs, TextDecoration const &rhs);
 
-/* enum TextDecorationStyle
- * TextDecorationStyle is decoration line style.
+/*
+ * @brief TextDecorationStyle is decoration line style.
  */
 enum class TextDecorationStyle {
-    SOLID,  // SOLID line
-    DOUBLE, // DOUBLE line
-    DOTTED, // DOTTED line
-    DASHED, // DASHED line
-    WAVY,   // WAVY line
+    SOLID,
+    DOUBLE,
+    DOTTED,
+    DASHED,
+    WAVY,
 };
 
-/* enum TextDirection
- * TextDirection is text direction style.
+/*
+ * @brief TextDirection is text direction style.
  */
 enum class TextDirection {
     LTR, // left to right
     RTL, // right to left
 };
 
-/* enum WordBreakType
- * WordBreakType is the type of word break when multiline text wraps.
+/*
+ * @brief WordBreakType is the type of word break when multiline text wraps.
  */
 enum class WordBreakType {
     NORMAL,     // to be done.
@@ -149,6 +150,7 @@ enum class WordBreakType {
     BREAK_WORD, // break only occur after word.
 };
 } // namespace TextEngine
+} // namespace Rosen
 } // namespace OHOS
 
 #endif // ROSEN_MODULES_TEXGINE_EXPORT_TEXGINE_TYPOGRAPHY_TYPES_H
