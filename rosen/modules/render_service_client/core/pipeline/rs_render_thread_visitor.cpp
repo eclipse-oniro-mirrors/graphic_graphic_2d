@@ -550,10 +550,11 @@ void RSRenderThreadVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     node.SetContextBounds(node.GetRenderProperties().GetBounds());
 
     auto clipRect = RSPaintFilterCanvas::GetLocalClipBounds(*canvas_);
-    if (clipRect.width() < std::numeric_limits<float>::epsilon() ||
-        clipRect.height() < std::numeric_limits<float>::epsilon()) {
+    if (!clipRect.has_value() ||
+        clipRect->width() < std::numeric_limits<float>::epsilon() ||
+        clipRect->height() < std::numeric_limits<float>::epsilon()) {
         // if clipRect is empty, this node will be removed from parent's children list.
-        node.SetContextClipRegion(SkRect::MakeEmpty());
+        node.SetContextClipRegion(std::nullopt);
         return;
     }
     node.SetContextClipRegion(clipRect);

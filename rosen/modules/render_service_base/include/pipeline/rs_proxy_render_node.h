@@ -44,9 +44,9 @@ public:
     // 1. All three variables (alpha, matrix, and clipRegion) are RELATIVE to its parent node.
     // 2. Alpha can be processed as an absolute value, as its parent (surface) node's alpha should always be 1.0f.
     // 3. The matrix and clipRegion should be applied according to the parent node's matrix.
-    void SetContextMatrix(const SkMatrix& transform);
+    void SetContextMatrix(const std::optional<SkMatrix>& transform);
     void SetContextAlpha(float alpha);
-    void SetContextClipRegion(SkRect clipRegion);
+    void SetContextClipRegion(const std::optional<SkRect>& clipRegion);
 
     void ResetContextVariableCache();
 
@@ -54,9 +54,9 @@ private:
     std::weak_ptr<RSSurfaceRenderNode> target_;
     NodeId targetId_;
 
-    SkMatrix contextMatrix_ = SkMatrix::I();
+    std::optional<SkMatrix> contextMatrix_;
     float contextAlpha_ = 0.0f;
-    SkRect contextClipRect_ = SkRect::MakeEmpty();
+    std::optional<SkRect> contextClipRect_;
 };
 } // namespace Rosen
 } // namespace OHOS

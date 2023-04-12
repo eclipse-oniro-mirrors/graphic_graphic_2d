@@ -16,6 +16,7 @@
 #define RENDER_SERVICE_CLIENT_CORE_COMMON_RS_OBJ_ABS_GEOMETRY_H
 
 #include <memory>
+#include <optional>
 
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPoint.h"
@@ -55,7 +56,7 @@ public:
 
     bool IsNeedClientCompose() const;
 
-    void SetContextMatrix(const SkMatrix& matrix);
+    void SetContextMatrix(const std::optional<SkMatrix>& matrix);
 
 private:
     void UpdateAbsMatrix2D();
@@ -66,9 +67,9 @@ private:
     bool IsPointInLine(const SkPoint& p1, const SkPoint& p2, const SkPoint& p, const float crossRes) const;
     RectI absRect_;
     SkMatrix matrix_;
-    std::unique_ptr<SkMatrix> matrixWithoutContext_;
-    std::unique_ptr<SkMatrix> absMatrix_;
-    std::unique_ptr<SkMatrix> contextMatrix_;
+    std::optional<SkMatrix> matrixWithoutContext_;
+    std::optional<SkMatrix> absMatrix_;
+    std::optional<SkMatrix> contextMatrix_;
     SkPoint vertices_[4];
 };
 } // namespace Rosen

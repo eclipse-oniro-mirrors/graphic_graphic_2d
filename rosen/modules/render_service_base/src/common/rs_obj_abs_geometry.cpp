@@ -19,17 +19,6 @@
 #include "include/core/SkMatrix44.h"
 namespace OHOS {
 namespace Rosen {
-namespace {
-template<typename T>
-inline void UpdateValue(std::unique_ptr<T>& pointer, const T& value)
-{
-    if (pointer == nullptr) {
-        pointer = std::make_unique<T>(value);
-    } else {
-        *pointer = value;
-    }
-}
-} // namespace
 constexpr unsigned RECT_POINT_NUM = 4;
 constexpr unsigned LEFT_TOP_POINT = 0;
 constexpr unsigned RIGHT_TOP_POINT = 1;
@@ -52,10 +41,10 @@ void RSObjAbsGeometry::ConcatMatrix(const SkMatrix& matrix)
         return;
     }
     matrix_.preConcat(matrix);
-    if (absMatrix_ != nullptr) {
+    if (absMatrix_.has_value()) {
         absMatrix_->preConcat(matrix);
     }
-    if (matrixWithoutContext_ != nullptr) {
+    if (matrixWithoutContext_.has_value()) {
         matrixWithoutContext_->preConcat(matrix);
     }
     SetAbsRect();
@@ -71,16 +60,13 @@ void RSObjAbsGeometry::ConcatMatrix(const SkMatrix& matrix)
 void RSObjAbsGeometry::UpdateMatrix(const std::shared_ptr<RSObjAbsGeometry>& parent, float offsetX, float offsetY)
 {
     // If it is unecessary to use absolute matrix, reset absolute matrix, and use local matrix instead
-    if (parent == nullptr || parent->absMatrix_ == nullptr ||
-        (parent->absMatrix_->isIdentity() && ROSEN_EQ(offsetX, 0.f) && ROSEN_EQ(offsetY, 0.f))) {
-        absMatrix_.reset();
-    } else {
-        // Update the absolute matrix of the current view with respect to its parent
-        UpdateValue(absMatrix_, *parent->absMatrix_);
+    absMatrix_ = (parent == nullptr) ? std::nullopt : parent->absMatrix_;
+    if (absMatrix_.has_value() && (offsetX != 0 || offsetY != 0)) {
         absMatrix_->preTranslate(offsetX, offsetY);
     }
     // Reset the matrix of the current view
     matrix_.reset();
+    matrixWithoutContext_.reset();
     // filter invalid width and height
     if (IsEmpty()) {
         return;
@@ -95,17 +81,15 @@ void RSObjAbsGeometry::UpdateMatrix(const std::shared_ptr<RSObjAbsGeometry>& par
         UpdateAbsMatrix3D();
     }
     // If the absolute matrix of the current view exists, update it with the context matrix and the current matrix
-    if (absMatrix_ != nullptr) {
-        if (contextMatrix_ != nullptr) {
+    if (absMatrix_.has_value()) {
+        if (contextMatrix_.has_value()) {
             absMatrix_->preConcat(*contextMatrix_);
         }
         absMatrix_->preConcat(matrix_);
     }
     // If the context matrix of the current view exists, update the current matrix with it
-    if (contextMatrix_ == nullptr) {
-        matrixWithoutContext_.reset();
-    } else {
-        UpdateValue(matrixWithoutContext_, matrix_);
+    if (contextMatrix_.has_value()) {
+        matrixWithoutContext_ = matrix_;
         matrix_.preConcat(*contextMatrix_);
     }
     // Update the absolute rectangle of the current view
@@ -119,6 +103,7 @@ void RSObjAbsGeometry::UpdateByMatrixFromSelf()
 {
     absMatrix_.reset();
     matrix_.reset();
+    matrixWithoutContext_.reset();
 
     // If the view has no transformations or only 2D transformations, update the absolute matrix with 2D transformations
     if (!trans_ || (ROSEN_EQ(trans_->translateZ_, 0.f) && ROSEN_EQ(trans_->rotationX_, 0.f) &&
@@ -130,10 +115,8 @@ void RSObjAbsGeometry::UpdateByMatrixFromSelf()
     }
 
     // If the context matrix of the view exists, update the current matrix with it
-    if (contextMatrix_ == nullptr) {
-        matrixWithoutContext_.reset();
-    } else {
-        UpdateValue(matrixWithoutContext_, matrix_);
+    if (contextMatrix_.has_value()) {
+        matrixWithoutContext_ = matrix_;
         matrix_.preConcat(*contextMatrix_);
     }
 
@@ -253,7 +236,7 @@ void RSObjAbsGeometry::SetAbsRect()
 RectI RSObjAbsGeometry::MapAbsRect(const RectF& rect) const
 {
     RectI absRect;
-    auto& matrix = (absMatrix_ == nullptr) ? matrix_ : *absMatrix_;
+    auto& matrix = (absMatrix_.has_value()) ? *absMatrix_ : matrix_;
     // Check if the matrix has skew or negative scaling
     if (!ROSEN_EQ(matrix.getSkewX(), 0.f) || (matrix.getScaleX() < 0) ||
         !ROSEN_EQ(matrix.getSkewY(), 0.f) || (matrix.getScaleY() < 0)) {
@@ -367,28 +350,25 @@ bool RSObjAbsGeometry::IsPointInLine(const SkPoint& p1, const SkPoint& p2, const
            std::min(p1.y(), p2.y()) <= p.y() && p.y() <= std::max(p1.y(), p2.y());
 }
 
-void RSObjAbsGeometry::SetContextMatrix(const SkMatrix& matrix)
+void RSObjAbsGeometry::SetContextMatrix(const std::optional<SkMatrix>& matrix)
 {
-    // no need to set context matrix if it is identity
-    if (matrix.isIdentity()) {
-        contextMatrix_.reset();
-        return;
-    }
-    UpdateValue(contextMatrix_, matrix);
+    contextMatrix_ = matrix;
 }
 
 const SkMatrix& RSObjAbsGeometry::GetMatrix() const
 {
     return matrix_;
 }
+
 const SkMatrix& RSObjAbsGeometry::GetMatrixWithOutContext() const
 {
-    // if matrixWithoutContext_ is nullptr, return matrix_ instead
+    // if matrixWithoutContext_ is empty, return matrix_ instead
     return matrixWithoutContext_ ? *matrixWithoutContext_ : matrix_;
 }
+
 const SkMatrix& RSObjAbsGeometry::GetAbsMatrix() const
 {
-    // if absMatrix_ is nullptr, return matrix_ instead
+    // if absMatrix_ is empty, return matrix_ instead
     return absMatrix_ ? *absMatrix_ : matrix_;
 }
 } // namespace Rosen

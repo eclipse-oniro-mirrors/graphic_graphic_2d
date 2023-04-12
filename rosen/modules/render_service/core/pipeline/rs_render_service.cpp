@@ -320,8 +320,12 @@ void RSRenderService::DumpSurfaceNode(std::string& dumpString, NodeId id) const
         std::to_string(node->GetRenderProperties().GetCornerRadius().w_) + "]\n";
     dumpString += "Bounds: [" + std::to_string(node->GetRenderProperties().GetBoundsWidth()) + "," +
         std::to_string(node->GetRenderProperties().GetBoundsHeight()) + "]\n";
-    dumpString += "ContextClipRegion: [" + std::to_string(node->GetContextClipRegion().width()) + "," +
-        std::to_string(node->GetContextClipRegion().height()) + "]\n";
+    if (auto& contextClipRegion = node->GetContextClipRegion()) {
+        dumpString += "ContextClipRegion: [" + std::to_string(contextClipRegion->width()) + "," +
+                      std::to_string(contextClipRegion->height()) + "]\n";
+    } else {
+        dumpString += "ContextClipRegion: [ empty ]\n";
+    }
     dumpString += "Zorder: " + std::to_string(node->GetRenderProperties().GetPositionZ()) + "\n";
     dumpString += "IsOnTheTree: " + std::to_string(node->IsOnTheTree()) + "\n";
     dumpString += "Visible: " + std::to_string(node->GetRenderProperties().GetVisible()) + "\n";

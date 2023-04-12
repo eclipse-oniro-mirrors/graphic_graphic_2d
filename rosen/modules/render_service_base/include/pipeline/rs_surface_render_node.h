@@ -212,14 +212,14 @@ public:
     // - All three variables are relative to their parent node.
     // - Alpha can be processed as an absolute value, as its parent (surface) node's alpha should always be 1.0f.
     // - The matrix and clipRegion should be applied according to the parent node's matrix.
-    void SetContextMatrix(const SkMatrix& transform, bool sendMsg = true);
-    const SkMatrix& GetContextMatrix() const;
+    void SetContextMatrix(const std::optional<SkMatrix>& transform, bool sendMsg = true);
+    const std::optional<SkMatrix>& GetContextMatrix() const;
 
     void SetContextAlpha(float alpha, bool sendMsg = true);
     float GetContextAlpha() const;
 
-    void SetContextClipRegion(SkRect clipRegion, bool sendMsg = true);
-    const SkRect& GetContextClipRegion() const;
+    void SetContextClipRegion(const std::optional<SkRect>& clipRegion, bool sendMsg = true);
+    const std::optional<SkRect>& GetContextClipRegion() const;
 
     void SetSecurityLayer(bool isSecurityLayer);
     bool GetSecurityLayer() const;
@@ -580,9 +580,9 @@ private:
 
     std::mutex parallelVisitMutex_;
 
-    SkMatrix contextMatrix_ = SkMatrix::I();
     float contextAlpha_ = 1.0f;
-    SkRect contextClipRect_ = SkRect::MakeEmpty();
+    std::optional<SkMatrix> contextMatrix_;
+    std::optional<SkRect> contextClipRect_;
 
     bool isSecurityLayer_ = false;
     RectI srcRect_;

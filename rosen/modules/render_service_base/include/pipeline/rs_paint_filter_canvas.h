@@ -17,6 +17,7 @@
 #define RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_PAINT_FILTER_CANVAS_H
 
 #include <include/utils/SkPaintFilterCanvas.h>
+#include <optional>
 #include <stack>
 #include <vector>
 
@@ -86,7 +87,7 @@ public:
     void SetDisplayNodeMatrix(SkMatrix matrix);
     SkMatrix GetDisplayNodeMatrix() const;
 
-    static SkRect GetLocalClipBounds(const SkCanvas& canvas, const SkIRect* clipBounds = nullptr);
+    static std::optional<SkRect> GetLocalClipBounds(const SkCanvas& canvas, const SkIRect* clipBounds = nullptr);
 
 protected:
     bool onFilter(SkPaint& paint) const override;

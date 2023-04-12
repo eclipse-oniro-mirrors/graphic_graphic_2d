@@ -64,11 +64,15 @@ void RSSurfaceRenderNode::SetConsumer(const sptr<IConsumerSurface>& consumer)
 void RSSurfaceRenderNode::UpdateSrcRect(const RSPaintFilterCanvas& canvas, const SkIRect& dstRect)
 {
     auto localClipRect = RSPaintFilterCanvas::GetLocalClipBounds(canvas, &dstRect);
+    if (!localClipRect.has_value()) {
+        SetSrcRect(RectI(0, 0, 0, 0));
+        return;
+    }
     const RSProperties& properties = GetRenderProperties();
-    int left = std::clamp<int>(localClipRect.left(), 0, properties.GetBoundsWidth());
-    int top = std::clamp<int>(localClipRect.top(), 0, properties.GetBoundsHeight());
-    int width = std::clamp<int>(localClipRect.width(), 0, properties.GetBoundsWidth() - left);
-    int height = std::clamp<int>(localClipRect.height(), 0, properties.GetBoundsHeight() - top);
+    int left = std::clamp<int>(localClipRect->left(), 0, properties.GetBoundsWidth());
+    int top = std::clamp<int>(localClipRect->top(), 0, properties.GetBoundsHeight());
+    int width = std::clamp<int>(localClipRect->width(), 0, properties.GetBoundsWidth() - left);
+    int height = std::clamp<int>(localClipRect->height(), 0, properties.GetBoundsHeight() - top);
     RectI srcRect = {left, top, width, height};
     SetSrcRect(srcRect);
 }
@@ -293,7 +297,7 @@ bool RSSurfaceRenderNode::IsUIHidden() const
     return isUIHidden_;
 }
 
-void RSSurfaceRenderNode::SetContextMatrix(const SkMatrix& matrix, bool sendMsg)
+void RSSurfaceRenderNode::SetContextMatrix(const std::optional<SkMatrix>& matrix, bool sendMsg)
 {
     if (contextMatrix_ == matrix) {
         return;
@@ -308,7 +312,7 @@ void RSSurfaceRenderNode::SetContextMatrix(const SkMatrix& matrix, bool sendMsg)
     SendCommandFromRT(command, GetId());
 }
 
-const SkMatrix& RSSurfaceRenderNode::GetContextMatrix() const
+const std::optional<SkMatrix>& RSSurfaceRenderNode::GetContextMatrix() const
 {
     return contextMatrix_;
 }
@@ -333,7 +337,7 @@ float RSSurfaceRenderNode::GetContextAlpha() const
     return contextAlpha_;
 }
 
-void RSSurfaceRenderNode::SetContextClipRegion(SkRect clipRegion, bool sendMsg)
+void RSSurfaceRenderNode::SetContextClipRegion(const std::optional<SkRect>& clipRegion, bool sendMsg)
 {
     if (contextClipRect_ == clipRegion) {
         return;
@@ -348,7 +352,7 @@ void RSSurfaceRenderNode::SetContextClipRegion(SkRect clipRegion, bool sendMsg)
     SendCommandFromRT(command, GetId());
 }
 
-const SkRect& RSSurfaceRenderNode::GetContextClipRegion() const
+const std::optional<SkRect>& RSSurfaceRenderNode::GetContextClipRegion() const
 {
     return contextClipRect_;
 }
@@ -914,7 +918,7 @@ void RSSurfaceRenderNode::OnApplyModifiers()
     geoPtr->SetContextMatrix(contextMatrix_);
 
     // No valid clipRect, return
-    auto clipRect = GetContextClipRegion();
+    auto clipRect = GetContextClipRegion().value_or(SkRect::MakeEmpty());
     if (clipRect.width() < 1 || clipRect.height() < 1) {
         return;
     }

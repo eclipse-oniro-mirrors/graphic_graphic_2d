@@ -491,6 +491,9 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     auto parentSurfaceNodeMatrix = parentSurfaceNodeMatrix_;
     auto& property = node.GetMutableRenderProperties();
     auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(property.GetBoundsGeometry());
+    if (geoPtr == nullptr) {
+        return;
+    }
     float alpha = curAlpha_;
     curAlpha_ *= (property.GetAlpha());
     node.SetGlobalAlpha(curAlpha_);
@@ -641,8 +644,12 @@ void RSUniRenderVisitor::PrepareProxyRenderNode(RSProxyRenderNode& node)
     }
     node.SetContextMatrix(contextMatrix);
     node.SetContextAlpha(curAlpha_);
-    auto rect = property.GetBoundsRect();
-    node.SetContextClipRegion(SkRect::MakeXYWH(rect.left_, rect.top_, rect.width_, rect.height_));
+    if (property.GetClipToBounds()) {
+        auto rect = property.GetBoundsRect();
+        node.SetContextClipRegion(SkRect::MakeXYWH(rect.left_, rect.top_, rect.width_, rect.height_));
+    } else {
+        node.SetContextClipRegion(std::nullopt);
+    }
 
     PrepareBaseRenderNode(node);
 }
