@@ -94,6 +94,9 @@ void RSSyncTransactionController::OpenSyncTransaction()
 {
     {
         std::unique_lock<std::mutex> lock(mutex_);
+        if (needCloseSync_) {
+            return;
+        }
         needCloseSync_ = true;
     }
     ROSEN_LOGD("RS sync transaction controller OpenSyncTransaction");
