@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +19,11 @@
 #include "texgine/utils/exlog.h"
 #include "typeface.h"
 
-namespace Texgine {
+namespace OHOS {
+namespace Rosen {
+namespace TextEngine {
+#define SUCCESSED 0
+#define FAILED 1
 std::shared_ptr<DynamicFileFontProvider> DynamicFileFontProvider::Create() noexcept(true)
 {
     return std::make_shared<DynamicFileFontProvider>();
@@ -32,45 +36,48 @@ int DynamicFileFontProvider::LoadFont(const std::string &familyName, const std::
     auto ret = StdFilesystemExists(path, ec);
     if (ec) {
         LOG2EX(ERROR) << "open file failed: " << ec.message();
-        return 1;
+        return FAILED;
     }
 
     if (!ret) {
         LOG2EX(ERROR) << "file is not exists";
-        return 1;
+        return FAILED;
     }
 
     MockIFStream ifs(path);
     if (!ifs.StdFilesystemIsOpen()) {
         LOG2EX(ERROR) << "file open failed";
-        return 1;
+        return FAILED;
     }
 
     ifs.StdFilesystemSeekg(0, ifs.end);
     if (!ifs.good()) {
         LOG2EX(ERROR) << "seekg(0, ifs.end) failed!";
-        return 1;
+        return FAILED;
     }
 
     auto size = ifs.StdFilesystemTellg();
     if (ifs.fail()) {
         LOG2EX(ERROR) << "tellg failed!";
-        return 1;
+        return FAILED;
     }
 
     ifs.StdFilesystemSeekg(ifs.beg);
     if (!ifs.good()) {
         LOG2EX(ERROR) << "seekg(ifs.beg) failed!";
-        return 1;
+        return FAILED;
     }
 
     std::unique_ptr<char[]> buf = std::make_unique<char[]>(size);
     ifs.StdFilesystemRead(buf.get(), size);
     if (!ifs.good()) {
         LOG2EX(ERROR) << "read failed!";
-        return 1;
+        return FAILED;
     }
 
+    ifs.StdFilestystemClose();
     return DynamicFontProvider::LoadFont(familyName, buf.get(), size);
 }
-} // namespace Texgine
+} // namespace TextEngine
+} // namespace Rosen
+} // namespace OHOS

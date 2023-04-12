@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,8 +20,10 @@
 #include "texgine/utils/exlog.h"
 #include "texgine/utils/trace.h"
 
-namespace Texgine {
-std::vector<VariantSpan> BidiProcesser::ProcessBidiText(std::vector<VariantSpan> &spans, const TextDirection dir)
+namespace OHOS {
+namespace Rosen {
+namespace TextEngine {
+std::vector<VariantSpan> BidiProcesser::ProcessBidiText(const std::vector<VariantSpan> &spans, const TextDirection dir)
 {
     ScopedTrace scope("BidiProcesser::ProcessBidiText");
     LOGSCOPED(sl, LOG2EX_DEBUG(), "ProcessBidiText");
@@ -36,8 +38,8 @@ std::vector<VariantSpan> BidiProcesser::ProcessBidiText(std::vector<VariantSpan>
         span.Dump();
         auto nsis = DoBidiProcess(ts->cgs_, dir);
         for (auto const &nsi : nsis) {
-            ts->rtl_ = nsi.rtl_;
-            VariantSpan vs(ts->CloneWithCharGroups(nsi.cgs_));
+            ts->rtl_ = nsi.rtl;
+            VariantSpan vs(ts->CloneWithCharGroups(nsi.cgs));
             vs.SetTextStyle(span.GetTextStyle());
             newSpans.push_back(vs);
         }
@@ -46,14 +48,14 @@ std::vector<VariantSpan> BidiProcesser::ProcessBidiText(std::vector<VariantSpan>
     return newSpans;
 }
 
-std::vector<NewSpanInfo> BidiProcesser::DoBidiProcess(CharGroups &cgs, const TextDirection dir)
+std::vector<NewSpanInfo> BidiProcesser::DoBidiProcess(const CharGroups &cgs, const TextDirection dir)
 {
     LOGSCOPED(sl, LOG2EX_DEBUG(), "BidiProcesser::doBidiProcess");
     if (!cgs.IsValid() || cgs.GetSize() == 0) {
         throw TEXGINE_EXCEPTION(InvalidArgument);
     }
 
-    auto deleter = [](UBiDi *p){ubidi_close(p);};
+    auto deleter = [](UBiDi *p) {ubidi_close(p);};
     std::unique_ptr<UBiDi, decltype(deleter)> bidi(ubidi_open(), deleter);
     if (bidi == nullptr) {
         throw APIFailedException("ubidi_open is failed");
@@ -63,8 +65,8 @@ std::vector<NewSpanInfo> BidiProcesser::DoBidiProcess(CharGroups &cgs, const Tex
     auto status = U_ZERO_ERROR;
     auto level = dir == TextDirection::RTL ? UBIDI_RTL : UBIDI_LTR;
     ubidi_setPara(bidi.get(), reinterpret_cast<UChar *>(u16vect.data()),
-                      u16vect.size(), level, nullptr, &status);
-    if(!U_SUCCESS(status)) {
+        u16vect.size(), level, nullptr, &status);
+    if (!U_SUCCESS(status)) {
         throw APIFailedException("ubidi_setPara failed");
     }
 
@@ -74,16 +76,15 @@ std::vector<NewSpanInfo> BidiProcesser::DoBidiProcess(CharGroups &cgs, const Tex
         NewSpanInfo nsi;
         int start = -1;
         int length = -1;
-        nsi.rtl_ = (ubidi_getVisualRun(bidi.get(), i, &start, &length) == UBIDI_RTL);
+        nsi.rtl = (ubidi_getVisualRun(bidi.get(), i, &start, &length) == UBIDI_RTL);
         if (start < 0 || length < 0) {
             throw APIFailedException("ubidi_getVisualRun is failed");
         }
 
         auto cc = cgs.GetSubFromU16RangeAll(start, start + length);
-        LOG2EX_DEBUG(Logger::NoReturn)
-            << "u16[" << start << ", " << start + length << ")"
-            << " is " << (nsi.rtl_ ? "rtl" : "ltr")
-            << " ";
+        LOG2EX_DEBUG(Logger::NoReturn) <<
+            "u16[" << start << ", " << start + length << ")" <<
+            " is " << (nsi.rtl ? "rtl" : "ltr") << " ";
         if (cgs.IsIntersect(cc) == false) {
             LOGCEX_DEBUG() << "not intersect";
             continue;
@@ -91,9 +92,11 @@ std::vector<NewSpanInfo> BidiProcesser::DoBidiProcess(CharGroups &cgs, const Tex
 
         auto ic = cgs.GetIntersect(cc);
         LOGCEX_DEBUG() << "intersect at cgs" << ic.GetRange();
-        nsi.cgs_ = ic;
+        nsi.cgs = ic;
         nsis.push_back(nsi);
     }
     return nsis;
 }
-} // namespace Texgine
+} // namespace TextEngine
+} // namespace Rosen
+} // namespace OHOS

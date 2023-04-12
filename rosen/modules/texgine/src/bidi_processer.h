@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,17 +21,21 @@
 
 #include "variant_span.h"
 
-namespace Texgine {
+namespace OHOS {
+namespace Rosen {
+namespace TextEngine {
 struct NewSpanInfo {
-    CharGroups cgs_;
-    bool rtl_ = false;
+    CharGroups cgs;
+    bool rtl = false;
 };
 
 class BidiProcesser {
 public:
-    std::vector<VariantSpan> ProcessBidiText(std::vector<VariantSpan> &spans, const TextDirection dir);
-    std::vector<NewSpanInfo> DoBidiProcess(CharGroups &cgs, const TextDirection dir);
+    std::vector<VariantSpan> ProcessBidiText(const std::vector<VariantSpan> &spans, const TextDirection dir);
+    std::vector<NewSpanInfo> DoBidiProcess(const CharGroups &cgs, const TextDirection dir);
 };
-} // namespace Texgine
+} // namespace TextEngine
+} // namespace Rosen
+} // namespace OHOS
 
 #endif // ROSEN_MODULES_TEXGINE_SRC_BIDI_PROCESSER_H
