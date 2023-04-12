@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,7 +26,9 @@
 #include "text_converter.h"
 #include "word_breaker.h"
 
-namespace Texgine {
+namespace OHOS {
+namespace Rosen {
+namespace TextEngine {
 int TextBreaker::WordBreak(std::vector<VariantSpan> &spans,
                            const TypographyStyle &ys,
                            const std::unique_ptr<FontProviders> &fontProviders)
@@ -45,6 +47,7 @@ int TextBreaker::WordBreak(std::vector<VariantSpan> &spans,
         auto xs = vspan.GetTextStyle();
         auto fontCollection = GenerateFontCollection(ys, xs, fontProviders);
         if (fontCollection == nullptr) {
+            // WordBreak failed
             return 1;
         }
 
@@ -56,8 +59,8 @@ int TextBreaker::WordBreak(std::vector<VariantSpan> &spans,
         }
 
         LOGSCOPED(sl2, LOG2EX_DEBUG(), "TextBreaker::doWordBreak algo");
-        preBreak = 0;
-        postBreak = 0;
+        preBreak_ = 0;
+        postBreak_ = 0;
         for (auto &[start, end] : boundaries) {
             const auto &wordcgs = cgs.GetSubFromU16RangeAll(start, end);
             std::stringstream ss;
@@ -66,6 +69,7 @@ int TextBreaker::WordBreak(std::vector<VariantSpan> &spans,
             BreakWord(wordcgs, ys, xs, spans);
         }
     }
+    // WordBreak successed
     return 0;
 }
 
@@ -76,7 +80,7 @@ std::shared_ptr<FontCollection> TextBreaker::GenerateFontCollection(
 {
     LOGSCOPED(sl, LOG2EX_DEBUG(), "TextBreaker::GenerateFontCollection");
     auto families = xs.fontFamilies_;
-    if (families.empty() == true) {
+    if (families.empty()) {
         families = ys.fontFamilies_;
     }
 
@@ -129,14 +133,14 @@ void TextBreaker::BreakWord(const CharGroups &wordcgs,
     size_t rangeOffset = 0;
     for (size_t i = 0; i < wordcgs.GetNumberOfCharGroup(); i++) {
         const auto &cg = wordcgs.Get(i);
-        postBreak += cg.GetWidth();
+        postBreak_ += cg.GetWidth();
         if (u_isWhitespace(cg.chars_[0]) == 0) {
             // not white space
-            preBreak = postBreak;
+            preBreak_ = postBreak_;
         }
 
         LOG2EX_DEBUG() << "Now: [" << i << "] '" << TextConverter::ToStr(cg.chars_) << "'"
-            << " preBreak: " << preBreak << ", postBreak: " << postBreak;
+            << " preBreak_: " << preBreak_ << ", postBreak_: " << postBreak_;
 
         const auto &breakType = ys.wordBreakType_;
         bool isBreakAll = (breakType == WordBreakType::BREAKALL);
@@ -168,8 +172,8 @@ void TextBreaker::GenerateSpan(const CharGroups &currentCgs,
     LOGCEX_DEBUG() << TextConverter::ToStr(currentCgs.ToUTF16()) << "'\033[0m";
     auto newSpan = std::make_shared<TextSpan>();
     newSpan->cgs_ = currentCgs;
-    newSpan->postBreak_ = postBreak;
-    newSpan->preBreak_ = preBreak;
+    newSpan->postBreak_ = postBreak_;
+    newSpan->preBreak_ = preBreak_;
     newSpan->typeface_ = currentCgs.Get(0).typeface_;
 
     for ([[maybe_unused]] const auto &cg : currentCgs) {
@@ -179,4 +183,6 @@ void TextBreaker::GenerateSpan(const CharGroups &currentCgs,
     vs.SetTextStyle(xs);
     spans.push_back(vs);
 }
-} // namespace Texgine
+} // namespace TextEngine
+} // namespace Rosen
+} // namespace OHOS
