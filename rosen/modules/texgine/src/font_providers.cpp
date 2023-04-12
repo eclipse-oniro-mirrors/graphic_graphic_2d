@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,7 +17,9 @@
 #include "texgine/font_providers.h"
 #include "texgine/system_font_provider.h"
 
-namespace Texgine {
+namespace OHOS {
+namespace Rosen {
+namespace TextEngine {
 std::unique_ptr<FontProviders> FontProviders::Create() noexcept(true)
 {
     return std::make_unique<FontProviders>();
@@ -50,7 +52,8 @@ void FontProviders::DisableFallback()
     enableFallback_ = false;
 }
 
-std::shared_ptr<FontCollection> FontProviders::GenerateFontCollection(const std::vector<std::string> &families) const noexcept(true)
+std::shared_ptr<FontCollection> FontProviders::GenerateFontCollection(
+    const std::vector<std::string> &families) const noexcept(true)
 {
     std::vector<std::shared_ptr<VariantFontStyleSet>> sets;
     for (const auto &familyName : families) {
@@ -77,4 +80,6 @@ std::shared_ptr<FontCollection> FontProviders::GenerateFontCollection(const std:
     }
     return collection;
 }
-} // namespace Texgine
+} // namespace TextEngine
+} // namespace Rosen
+} // namespace OHOS

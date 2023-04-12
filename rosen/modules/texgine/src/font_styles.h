@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,7 +20,9 @@
 
 #include "texgine_font_style.h"
 
-namespace Texgine {
+namespace OHOS {
+namespace Rosen {
+namespace TextEngine {
 class FontStyles {
 public:
     enum class Weight {
@@ -64,15 +66,17 @@ public:
 
     TexgineFontStyle ToTexgineFontStyle() const;
 
-    bool operator ==(const FontStyles &rhs) const;
-    bool operator !=(const FontStyles &rhs) const;
-    bool operator <(const FontStyles& rhs) const;
+    bool operator==(const FontStyles &rhs) const;
+    bool operator!=(const FontStyles &rhs) const;
+    bool operator<(const FontStyles& rhs) const;
 
 private:
     Weight weight_ = Weight::NORMAL;
     Width width_ = Width::NORMAL;
     Slant slant_ = Slant::UPRIGHT;
 };
-} // namespace Texgine
+} // namespace TextEngine
+} // namespace Rosen
+} // namespace OHOS
 
 #endif // ROSEN_MODULES_TEXGINE_SRC_FONT_STYLES_H

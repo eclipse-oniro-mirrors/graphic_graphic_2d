@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +19,9 @@
 #include "texgine_exception.h"
 #include "texgine/utils/exlog.h"
 
-namespace Texgine {
+namespace OHOS {
+namespace Rosen {
+namespace TextEngine {
 #define MULTIPLE 100
 #define DIFFERENCE 1
 
@@ -88,17 +90,17 @@ TexgineFontStyle FontStyles::ToTexgineFontStyle() const
         static_cast<int>(width_) + DIFFERENCE, ToTexgineSlant(slant_));
 }
 
-bool FontStyles::operator ==(const FontStyles &rhs) const
+bool FontStyles::operator==(const FontStyles &rhs) const
 {
     return weight_ == rhs.weight_ && width_ == rhs.width_ && slant_ == rhs.slant_;
 }
 
-bool FontStyles::operator !=(const FontStyles &rhs) const
+bool FontStyles::operator!=(const FontStyles &rhs) const
 {
     return !(*this == rhs);
 }
 
-bool FontStyles::operator <(const FontStyles& rhs) const
+bool FontStyles::operator<(const FontStyles& rhs) const
 {
     if (weight_ != rhs.weight_) {
         return weight_ < rhs.weight_;
@@ -109,4 +111,6 @@ bool FontStyles::operator <(const FontStyles& rhs) const
     }
     return slant_ < rhs.slant_;
 }
-} // namespace Texgine
+} // namespace TextEngine
+} // namespace Rosen
+} // namespace OHOS
