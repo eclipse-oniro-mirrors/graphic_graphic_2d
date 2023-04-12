@@ -256,5 +256,15 @@ SkRect RSPaintFilterCanvas::GetVisibleRect() const
 {
     return visibleRect_;
 }
+
+void RSPaintFilterCanvas::SetDisplayNodeMatrix(SkMatrix matrix)
+{
+    displayNodeMatrix_ = matrix;
+}
+
+SkMatrix RSPaintFilterCanvas::GetDisplayNodeMatrix() const
+{
+    return displayNodeMatrix_;
+}
 } // namespace Rosen
 } // namespace OHOS

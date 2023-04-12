@@ -1337,7 +1337,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             canvas_->SetHighContrast(renderEngine_->IsHighContrastEnabled());
             auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(node.GetRenderProperties().GetBoundsGeometry());
             if (geoPtr != nullptr) {
-                canvas_->concat(geoPtr->GetMatrix());
                 // enable cache if screen rotation is not times of 90 degree
                 canvas_->SetCacheType(geoPtr->IsNeedClientCompose() ? RSPaintFilterCanvas::CacheType::ENABLED
                                                                     : RSPaintFilterCanvas::CacheType::DISABLED);
@@ -1345,9 +1344,16 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             if (clipPath) {
                 canvas_->SetCacheType(RSPaintFilterCanvas::CacheType::ENABLED);
             }
-            if (canvas_->GetCacheType() == RSPaintFilterCanvas::CacheType::ENABLED) {
+
+            bool cacheEnabled = canvas_->GetCacheType() == RSPaintFilterCanvas::CacheType::ENABLED;
+            if (cacheEnabled) {
+                ClearTransparentBeforeSaveLayer(); // clear transparent before concat display node's matrix
+            }
+            if (geoPtr != nullptr) {
+                canvas_->concat(geoPtr->GetMatrix());
+            }
+            if (cacheEnabled) {
                 // we are doing rotation animation, try offscreen render if capable
-                ClearTransparentBeforeSaveLayer();
                 PrepareOffscreenRender(node);
                 ProcessBaseRenderNode(node);
                 FinishOffscreenRender();
@@ -1947,9 +1953,18 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
                 node.SetGlobalAlpha(canvas_->GetAlpha());
                 node.SetLocalZOrder(localZOrder_++);
                 ParallelRenderEnableHardwareComposer(node);
+
+                auto displayNodeMatrix = canvas_->GetDisplayNodeMatrix();
+                auto originMatrix = canvas_->getTotalMatrix();
+                auto newMatrix = displayNodeMatrix.preConcat(originMatrix);
+                canvas_->setMatrix(newMatrix);
+                node.SetTotalMatrix(newMatrix);
+
                 auto dstRect = node.GetDstRect();
-                SkIRect dst = { dstRect.GetLeft(), dstRect.GetTop(), dstRect.GetRight(), dstRect.GetBottom()};
+                SkIRect dst = { dstRect.GetLeft(), dstRect.GetTop(), dstRect.GetRight(), dstRect.GetBottom() };
                 node.UpdateSrcRect(*canvas_, dst);
+
+                canvas_->setMatrix(originMatrix);
                 RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode src:%s, dst:%s name:%s id:%" PRIu64 "",
                     node.GetSrcRect().ToString().c_str(), node.GetDstRect().ToString().c_str(),
                     node.GetName().c_str(), node.GetId());
@@ -2140,6 +2155,7 @@ void RSUniRenderVisitor::PrepareOffscreenRender(RSRenderNode& node)
 
     // copy current canvas properties into offscreen canvas
     offscreenCanvas->CopyConfiguration(*canvas_);
+    offscreenCanvas->SetDisplayNodeMatrix(canvas_->getTotalMatrix());
 
     // backup current canvas and replace with offscreen canvas
     canvasBackup_ = std::move(canvas_);
