@@ -118,6 +118,14 @@ bool RSTransactionData::UnmarshallingCommand(Parcel& parcel)
     uint16_t commandType = 0;
     uint16_t commandSubType = 0;
 
+    size_t readableSize = parcel.GetReadableBytes();
+    size_t len = static_cast<size_t>(commandSize);
+    if (len > readableSize || len > payload_.max_size()) {
+        ROSEN_LOGE("RSTransactionData UnmarshallingCommand Failed read vector, size:%zu, readAbleSize:%zu",
+            len, readableSize);
+        return false;
+    }
+
     for (int i = 0; i < commandSize; i++) {
         if (!parcel.ReadUint64(nodeId)) {
             ROSEN_LOGE("RSTransactionData::UnmarshallingCommand cannot read nodeId");
