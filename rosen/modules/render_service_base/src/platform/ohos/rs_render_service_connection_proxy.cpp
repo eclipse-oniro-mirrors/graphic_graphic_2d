@@ -243,6 +243,13 @@ std::vector<ScreenId> RSRenderServiceConnectionProxy::GetAllScreenIds()
     }
 
     uint32_t size = reply.ReadUint32();
+    size_t readableSize = reply.GetReadableBytes() / sizeof(ScreenId);
+    size_t len = static_cast<size_t>(size);
+    if (len > readableSize || len > screenIds.max_size()) {
+        RS_LOGE("RSRenderServiceConnectionProxy GetAllScreenIds Failed read vector, size:%zu, readableSize:%zu", len,
+            readableSize);
+        return screenIds;
+    }
     for (uint32_t i = 0; i < size; i++) {
         screenIds.emplace_back(reply.ReadUint64());
     }
@@ -534,6 +541,13 @@ std::vector<RSScreenModeInfo> RSRenderServiceConnectionProxy::GetScreenSupported
     }
 
     uint64_t modeCount = reply.ReadUint64();
+    size_t readableSize = reply.GetReadableBytes();
+    size_t len = static_cast<size_t>(modeCount);
+    if (len > readableSize || len > screenSupportedModes.max_size()) {
+        RS_LOGE("RSRenderServiceConnectionProxy GetScreenSupportedModes Fail read vector, size:%zu, readableSize:%zu",
+            len, readableSize);
+        return screenSupportedModes;
+    }
     screenSupportedModes.resize(modeCount);
     for (uint64_t modeIndex = 0; modeIndex < modeCount; modeIndex++) {
         sptr<RSScreenModeInfo> itemScreenMode = reply.ReadParcelable<RSScreenModeInfo>();
@@ -564,6 +578,13 @@ std::vector<MemoryGraphic> RSRenderServiceConnectionProxy::GetMemoryGraphics()
     }
 
     uint64_t count = reply.ReadUint64();
+    size_t readableSize = reply.GetReadableBytes();
+    size_t len = static_cast<size_t>(count);
+    if (len > readableSize || len > memoryGraphics.max_size()) {
+        RS_LOGE("RSRenderServiceConnectionProxy GetMemoryGraphics Failed to read vector, size:%zu, readableSize:%zu",
+            len, readableSize);
+        return memoryGraphics;
+    }
     memoryGraphics.resize(count);
     for (uint64_t index = 0; index < count; index++) {
         sptr<MemoryGraphic> item = reply.ReadParcelable<MemoryGraphic>();
