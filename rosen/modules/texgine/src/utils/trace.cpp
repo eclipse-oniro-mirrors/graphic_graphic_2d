@@ -21,6 +21,7 @@
 #include <string>
 
 namespace OHOS {
+namespace Rosen {
 namespace TextEngine {
 class TraceContent {
 public:
@@ -38,7 +39,7 @@ public:
         }
 
         fprintf(fp, "# tracer: nop\n");
-        for (const auto &[timeUs, content] : contents) {
+        for (const auto &[timeUs, content] : contents_) {
             fprintf(fp, "texgine-1 (1) [000] .... %.6lf: tracing_mark_write: %c|1|%s\n",
                     timeUs / 1e6, content[0], content.substr(1).c_str());
         }
@@ -48,12 +49,12 @@ public:
 
     void Disable()
     {
-        enable = false;
+        enable_ = false;
     }
 
     void AppendContent(char action, const std::string &content)
     {
-        if (enable == false) {
+        if (enable_ == false) {
             return;
         }
 
@@ -62,12 +63,12 @@ public:
         std::string c;
         c.push_back(action);
         c.insert(c.end(), content.begin(), content.end());
-        contents.push_back(std::make_pair(nowUs, std::move(c)));
+        contents_.push_back(std::make_pair(nowUs, std::move(c)));
     }
 
 private:
-    std::list<std::pair<uint64_t, std::string>> contents;
-    bool enable = true;
+    std::list<std::pair<uint64_t, std::string>> contents_;
+    bool enable_ = true;
 };
 
 void Trace::Start(const std::string &proc)
@@ -90,4 +91,5 @@ void Trace::Disable()
     TraceContent::GetInstance().Disable();
 }
 } // namespace TextEngine
+} // namespace Rosen
 } // namespace OHOS

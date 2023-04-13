@@ -29,32 +29,38 @@
 #endif
 
 namespace OHOS {
+namespace Rosen
 namespace TextEngine {
 namespace {
 const char *GetLevelStr(enum Logger::LOG_LEVEL level)
 {
     switch (level) {
-        case Logger::LOG_LEVEL::DEBUG: return IF_COLOR("\033[37m") "D" IF_COLOR("\033[0m");
-        case Logger::LOG_LEVEL::INFO: return IF_COLOR("\033[36m") "I" IF_COLOR("\033[0m");
-        case Logger::LOG_LEVEL::WARN: return IF_COLOR("\033[33m") "W" IF_COLOR("\033[0m");
-        case Logger::LOG_LEVEL::ERROR: return IF_COLOR("\033[31m") "E" IF_COLOR("\033[0m");
-        case Logger::LOG_LEVEL::FATAL: return IF_COLOR("\033[4;31m") "F" IF_COLOR("\033[0m");
+        case Logger::LOG_LEVEL::DEBUG:
+            return IF_COLOR("\033[37m") "D" IF_COLOR("\033[0m");
+        case Logger::LOG_LEVEL::INFO:
+            return IF_COLOR("\033[36m") "I" IF_COLOR("\033[0m");
+        case Logger::LOG_LEVEL::WARN:
+            return IF_COLOR("\033[33m") "W" IF_COLOR("\033[0m");
+        case Logger::LOG_LEVEL::ERROR:
+            return IF_COLOR("\033[31m") "E" IF_COLOR("\033[0m");
+        case Logger::LOG_LEVEL::FATAL:
+            return IF_COLOR("\033[4;31m") "F" IF_COLOR("\033[0m");
     }
     return "?";
 }
 } // namespace
 
-void Logger::NoReturn(Logger& logger, enum LOG_PHASE phase)
+void Logger::SetToNoReturn(Logger& logger, enum LOG_PHASE phase)
 {
     logger.return_ = false;
 }
 
-void Logger::Continue(Logger& logger, enum LOG_PHASE phase)
+void Logger::SetToContinue(Logger& logger, enum LOG_PHASE phase)
 {
     logger.continue_ = true;
 }
 
-void Logger::Stdout(Logger& logger, enum LOG_PHASE phase)
+void Logger::OutputByStdout(Logger& logger, enum LOG_PHASE phase)
 {
     if (phase == LOG_PHASE::BEGIN) {
         return;
@@ -71,7 +77,7 @@ void Logger::Stdout(Logger& logger, enum LOG_PHASE phase)
     }
 }
 
-void Logger::Stderr(Logger& logger, enum LOG_PHASE phase)
+void Logger::OutputByStderr(Logger& logger, enum LOG_PHASE phase)
 {
     if (phase == LOG_PHASE::BEGIN) {
         return;
@@ -88,7 +94,7 @@ void Logger::Stderr(Logger& logger, enum LOG_PHASE phase)
     }
 }
 
-void Logger::FileLog(Logger& logger, enum LOG_PHASE phase)
+void Logger::OutputByFileLog(Logger& logger, enum LOG_PHASE phase)
 {
     struct FileLogData {
         const char *filename;
@@ -115,9 +121,10 @@ void Logger::FileLog(Logger& logger, enum LOG_PHASE phase)
     if (logger.return_) {
         ofs << std::endl;
     }
+    ofs.close();
 }
 
-void Logger::Func(Logger& logger, enum LOG_PHASE phase)
+void Logger::AppendFunc(Logger& logger, enum LOG_PHASE phase)
 {
     if (phase == LOG_PHASE::BEGIN) {
         logger << IF_COLOR("\033[34m");
@@ -126,7 +133,7 @@ void Logger::Func(Logger& logger, enum LOG_PHASE phase)
     }
 }
 
-void Logger::FuncLine(Logger& logger, enum LOG_PHASE phase)
+void Logger::AppendFuncLine(Logger& logger, enum LOG_PHASE phase)
 {
     if (phase == LOG_PHASE::BEGIN) {
         logger << IF_COLOR("\033[34m");
@@ -137,4 +144,5 @@ void Logger::FuncLine(Logger& logger, enum LOG_PHASE phase)
     }
 }
 } // namespace TextEngine
+} // namespace Rosen
 } // namespace OHOS
