@@ -2072,9 +2072,19 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
         return;
     }
 #ifdef RS_ENABLE_EGLQUERYSURFACE
-    if (isOpDropped_ && curSurfaceNode_ && !node.HasChildrenOutOfRect() &&
-        !curSurfaceNode_->SubNodeNeedDraw(node.GetOldDirtyInSurface(), partialRenderType_)) {
-        return;
+    if (isOpDropped_ && curSurfaceNode_) {
+        // If a canvasnode do NOT has children draw out of itself (GetOldDirtyInSurface), it can
+        // be directly skipped if not intersect with any dirtyregion. Otherwise, its childrenRect_ 
+        // should be considered.
+        if (!node.HasChildrenOutOfRect()){
+            if (!curSurfaceNode_->SubNodeNeedDraw(node.GetOldDirtyInSurface(), partialRenderType_)) {
+                return;
+            }
+        } else {
+            if (!curSurfaceNode_->SubNodeNeedDraw(node.GetChildrenRect(), partialRenderType_)) {
+                return;
+            }
+        }
     }
 #endif
     if (!canvas_) {

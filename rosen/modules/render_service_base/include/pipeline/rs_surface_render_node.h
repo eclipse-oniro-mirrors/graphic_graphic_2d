@@ -449,6 +449,8 @@ public:
 
     bool SubNodeIntersectWithDirty(const RectI& r) const;
 
+    // judge if a rect r is intersect with existing dirtyregion, include current surface's dirtyregion, display
+    // dirtyregion, and dirtyregion from other surfacenode because of 32/64 bits alignment.
     bool SubNodeNeedDraw(const RectI& r, PartialRenderType opDropType) const;
 
     bool GetZorderChanged() const
