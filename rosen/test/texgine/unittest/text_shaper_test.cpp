@@ -112,6 +112,11 @@ public:
     static inline std::shared_ptr<TypographyStyle> ysNoProvider_ = std::make_shared<TypographyStyle>();
 };
 
+/**
+ * @tc.name: DoShape1
+ * @tc.desc: Verify the DoShape
+ * @tc.type:FUNC
+ */
 HWTEST_F(TextShaperTest, DoShape1, TestSize.Level1)
 {
     TextShaper shaper;

@@ -27,6 +27,11 @@ namespace {
 class TextConverterTest : public testing::Test {
 };
 
+/**
+ * @tc.name: ToUTF8
+ * @tc.desc: Verify the ToUTF8
+ * @tc.type:FUNC
+ */
 HWTEST_F(TextConverterTest, ToUTF8, TestSize.Level1)
 {
     UTF16String u16 = {0x00, 0x20, 0x41, 0x7f, 0x00, 0x80, 0x100, 0x601, 0x7ff, 0x800, 0xffff};
@@ -58,6 +63,11 @@ HWTEST_F(TextConverterTest, ToUTF8, TestSize.Level1)
     EXPECT_EQ(u8[18], 0b10111111);
 }
 
+/**
+ * @tc.name: ToStr
+ * @tc.desc: Verify the ToStr
+ * @tc.type:FUNC
+ */
 HWTEST_F(TextConverterTest, ToStr, TestSize.Level1)
 {
     UTF16String u16 = {0x20, 0x41, 0x7f, 0x80, 0x100, 0x601, 0x7ff, 0x800, 0xffff};
@@ -87,6 +97,11 @@ HWTEST_F(TextConverterTest, ToStr, TestSize.Level1)
     EXPECT_EQ(str[16], static_cast<char>(0b10111111));
 }
 
+/**
+ * @tc.name: ToUTF16
+ * @tc.desc: Verify the ToUTF16
+ * @tc.type:FUNC
+ */
 HWTEST_F(TextConverterTest, ToUTF16, TestSize.Level1)
 {
     auto u16 = TextConverter::ToUTF16("\U0001ffff\uffff a1");
@@ -118,6 +133,11 @@ HWTEST_F(TextConverterTest, ToUTF16, TestSize.Level1)
     EXPECT_EQ(u16[5], static_cast<uint16_t>('1'));
 }
 
+/**
+ * @tc.name: ToUTF32
+ * @tc.desc: Verify the ToUTF32
+ * @tc.type:FUNC
+ */
 HWTEST_F(TextConverterTest, ToUTF32, TestSize.Level1)
 {
     auto u32 = TextConverter::ToUTF32(UTF16String{0xd83f, 0xdfff, 0xffff, 0x20, 0x61, 0x31});
