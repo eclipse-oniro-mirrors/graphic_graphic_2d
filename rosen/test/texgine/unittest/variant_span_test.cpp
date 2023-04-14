@@ -54,20 +54,20 @@ double TextSpan::GetHeight() const
     return variantMockvars.tsHeight_;
 }
 
-void TextSpan::Paint(TexgineCanvas &canvas, double offsetx, double offsety, const TextStyle &xs)
+void TextSpan::Paint(TexgineCanvas &canvas, double offsetX, double offsetY, const TextStyle &xs)
 {
     variantMockvars.calledTimesPaint_++;
     variantMockvars.catchedPaintCanvas_ = &canvas;
-    variantMockvars.catchedPaintOffsetX_ = offsetx;
-    variantMockvars.catchedPaintOffsetY_ = offsety;
+    variantMockvars.catchedPaintOffsetX_ = offsetX;
+    variantMockvars.catchedPaintOffsetY_ = offsetY;
 }
 
-void TextSpan::PaintShadow(TexgineCanvas &canvas, double offsetx, double offsety, const std::vector<TextShadow> &shadows)
+void TextSpan::PaintShadow(TexgineCanvas &canvas, double offsetX, double offsetY, const std::vector<TextShadow> &shadows)
 {
     variantMockvars.calledTimesPaintShadow_++;
     variantMockvars.catchedPaintShadowCanvas_ = &canvas;
-    variantMockvars.catchedPaintShadowOffsetX_ = offsetx;
-    variantMockvars.catchedPaintShadowOffsetY_ = offsety;
+    variantMockvars.catchedPaintShadowOffsetX_ = offsetX;
+    variantMockvars.catchedPaintShadowOffsetY_ = offsetY;
 }
 
 class VariantSpanTest : public testing::Test {
@@ -94,6 +94,11 @@ public:
     VariantSpan span5 = as;
 };
 
+/**
+ * @tc.name: TryToTextAndAnySpan
+ * @tc.desc: Verify the TryToTextAndAnySpan
+ * @tc.type:FUNC
+ */
 HWTEST_F(VariantSpanTest, TryToTextAndAnySpan, TestSize.Level1)
 {
     ASSERT_EQ(span1.TryToTextSpan(), nullptr);
@@ -109,6 +114,11 @@ HWTEST_F(VariantSpanTest, TryToTextAndAnySpan, TestSize.Level1)
     ASSERT_EQ(span5.TryToAnySpan(), as);
 }
 
+/**
+ * @tc.name: GetWidthAndHeight
+ * @tc.desc: Verify the GetWidthAndHeight
+ * @tc.type:FUNC
+ */
 HWTEST_F(VariantSpanTest, GetWidthAndHeight, TestSize.Level1)
 {
     InitMockvars({.tsWidth_ = 8, .tsHeight_ = 4});
@@ -130,17 +140,26 @@ HWTEST_F(VariantSpanTest, GetWidthAndHeight, TestSize.Level1)
     ASSERT_EQ(span5.GetHeight(), 1);
 }
 
+/**
+ * @tc.name: PaintAndPaintShadow
+ * @tc.desc: Verify the PaintAndPaintShadow
+ * @tc.type:FUNC
+ */
 HWTEST_F(VariantSpanTest, PaintAndPaintShadow, TestSize.Level1)
 {
     TexgineCanvas canvas, canvas1, canvas2, canvas3, canvas4;
+    int paintX1 = 2048;
+    int paintX2 = 512;
+    int paintY1 = 4096;
+    int paintY2 = 1024;
     InitMockvars({});
     TexgineCanvas *pcanvas = nullptr;
     double asX = 0;
     double asY = 0;
-    EXPECT_CALL(*as, Paint).Times(1).WillOnce([&](TexgineCanvas &canvas, double offsetx, double offsety) {
+    EXPECT_CALL(*as, Paint).Times(1).WillOnce([&](TexgineCanvas &canvas, double offsetX, double offsetY) {
         pcanvas = &canvas;
-        asX = offsetx;
-        asY = offsety;
+        asX = offsetX;
+        asY = offsetY;
     });
 
     ASSERT_EXCEPTION(ExceptionType::ErrorStatus, span0.Paint(canvas, 0, 0));
@@ -149,17 +168,17 @@ HWTEST_F(VariantSpanTest, PaintAndPaintShadow, TestSize.Level1)
     ASSERT_EXCEPTION(ExceptionType::Nullptr, span3.Paint(canvas, 0, 0));
     EXPECT_NO_THROW({
         ASSERT_EQ(variantMockvars.calledTimesPaint_, 0);
-        span4.Paint(canvas2, 2048, 4096);
+        span4.Paint(canvas2, paintX1, paintY1);
         ASSERT_EQ(variantMockvars.calledTimesPaint_, 1);
         ASSERT_EQ(variantMockvars.catchedPaintCanvas_, &canvas2);
-        ASSERT_EQ(variantMockvars.catchedPaintOffsetX_, 2048);
-        ASSERT_EQ(variantMockvars.catchedPaintOffsetY_, 4096);
+        ASSERT_EQ(variantMockvars.catchedPaintOffsetX_, paintX1);
+        ASSERT_EQ(variantMockvars.catchedPaintOffsetY_, paintY1);
     });
     EXPECT_NO_THROW({
-        span5.Paint(canvas1, 512, 1024);
+        span5.Paint(canvas1, paintX2, paintY2);
         ASSERT_EQ(pcanvas, &canvas1);
-        ASSERT_EQ(asX, 512);
-        ASSERT_EQ(asY, 1024);
+        ASSERT_EQ(asX, paintX2);
+        ASSERT_EQ(asY, paintY2);
     });
 
     ASSERT_EXCEPTION(ExceptionType::ErrorStatus, span0.PaintShadow(canvas, 0, 0));
@@ -177,6 +196,11 @@ HWTEST_F(VariantSpanTest, PaintAndPaintShadow, TestSize.Level1)
     EXPECT_NO_THROW({span5.PaintShadow(canvas3, 8192, 16384);});
 }
 
+/**
+ * @tc.name: Operator
+ * @tc.desc: Verify the Operator
+ * @tc.type:FUNC
+ */
 HWTEST_F(VariantSpanTest, Operator, TestSize.Level1)
 {
     ASSERT_EXCEPTION(ExceptionType::ErrorStatus, (void)(bool)span0);
