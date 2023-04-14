@@ -75,7 +75,7 @@ void RSSyncTransactionController::CreateTransactionFinished()
         transactionCount_++;
     }
     if (processCount_ == 0) {
-        ROSEN_LOGD("RS sync transaction controller CreateTransactionFinished, processCount: %{public}d", processCount_);
+        ROSEN_LOGD("RS sync transaction controller CreateTransactionFinished, processCount: %d", processCount_);
         CloseSyncTransaction();
     }
 }
@@ -87,13 +87,16 @@ void RSSyncTransactionController::StartCreateTransaction()
         processCount_ = 0;
     }
     processCount_++;
-    ROSEN_LOGD("RS sync transaction controller StartCreateTransaction, processCount: %{public}d", processCount_);
+    ROSEN_LOGD("RS sync transaction controller StartCreateTransaction, processCount: %d", processCount_);
 }
 
 void RSSyncTransactionController::OpenSyncTransaction()
 {
     {
         std::unique_lock<std::mutex> lock(mutex_);
+        if (needCloseSync_) {
+            return;
+        }
         needCloseSync_ = true;
     }
     ROSEN_LOGD("RS sync transaction controller OpenSyncTransaction");
