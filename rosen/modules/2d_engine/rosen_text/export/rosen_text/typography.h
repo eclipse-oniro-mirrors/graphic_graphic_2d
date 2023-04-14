@@ -80,7 +80,7 @@ public:
     virtual bool DidExceedMaxLines() const = 0;
     virtual int GetLineCount() const = 0;
 
-    virtual void SetIndents(const std::vector<float> &indents) = 0;
+    virtual void SetIndents(const std::vector<float>& indents) = 0;
     virtual void Layout(double width) = 0;
     virtual void Paint(SkCanvas *canvas, double x, double y) = 0; // SKIA
     virtual void Paint(Drawing::Canvas *canvas, double x, double y) = 0; // DRAWING

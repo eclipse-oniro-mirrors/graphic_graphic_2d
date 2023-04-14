@@ -62,7 +62,7 @@ struct TextStyle {
     FontStyle fontStyle_ = FontStyle::NORMAL;
     TextBaseline baseline_ = TextBaseline::ALPHABETIC;
     std::vector<std::string> fontFamilies_;
-    double fontSize_ = 14.0;
+    double fontSize_ = 14.0; // default is libtxt text style font size
     double letterSpacing_ = 0.0;
     double wordSpacing_ = 0.0;
     double heightScale_ = 1.0;
