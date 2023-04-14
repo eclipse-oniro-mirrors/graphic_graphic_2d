@@ -77,6 +77,7 @@ auto DoBreakLinesChecker(const std::vector<int> &arg)
     };
 }
 
+// Setting the flag of break lines
 std::vector<ScoredSpan> GenScoredSpansByPrevs(const std::vector<int> &prevs)
 {
     std::vector<ScoredSpan> sss;
@@ -125,6 +126,7 @@ public:
     static void SetUpTestCase()
     {
         CharGroups cgs1 = CharGroups::CreateEmpty();
+        // {0x013B, 13.664}: {glyph codepont, davanceX}
         cgs1.PushBack({.chars_ = TextConverter::ToUTF16("m"), .glyphs_ = {{0x013B, 13.664}}});
         cgs1.PushBack({.chars_ = TextConverter::ToUTF16("o"), .glyphs_ = {{0x0145, 9.456}}});
         cgs1.PushBack({.chars_ = TextConverter::ToUTF16("s"), .glyphs_ = {{0x0166, 7.28}}});
@@ -150,10 +152,12 @@ public:
     static inline TypographyStyle hStyle_;
 };
 
+//(10, 0): (width, height)
 auto as10 = std::make_shared<MyAnySpan>(10, 0);
 auto as20 = std::make_shared<MyAnySpan>(20, 0);
 std::shared_ptr<AnySpan> asNullptr = nullptr;
 std::shared_ptr<TextSpan> tsNullptr = nullptr;
+// {0, 10}: {preBreak, postBreak}
 auto longChecker1 = ScoredSpansChecker({{0, 10, false}, {20, 20, true}, {40, 40, false}, {60, 60, true}});
 auto longChecker2 = ScoredSpansChecker(
     {{0, 10, false}, {20, 20, true}, {30, 30, false}, {30, 40, false}, {60, 60, true}});
@@ -166,17 +170,27 @@ DEFINE_PARAM_TEST1(LineBreaker, GenerateScoreSpans, std::vector<VariantSpan>, {
     { .arg1 = {ts10_, as10, ts11_, ts12_, as20}, .checkFunc = longChecker2 },
 });
 
+// {100, 100}: {preBreak, postBreak}
 auto ss1 = GenScoredSpansByBreaks({{100, 100}, {200, 200}, {300, 300}});
 auto ss2 = GenScoredSpansByBreaks({{90, 90}, {100, 100}, {180, 180}});
 auto ss3 = GenScoredSpansByBreaks({{90, 90}, {100, 1100}, {1180, 1180}});
+
+// These vectors is the flag of break lines
 std::vector<int> prevs000 = {0, 0, 0};
 std::vector<int> prevs001 = {0, 0, 1};
 std::vector<int> prevs002 = {0, 0, 2};
 std::vector<int> prevs012 = {0, 1, 2};
+
+/**
+ * @tc.name: DoBreakLines
+ * @tc.desc: Verify the DoBreakLines
+ * @tc.type:FUNC
+ */
 #define PARAMFUNC DoBreakLines
 HWTEST_F(LineBreakerTest, DoBreakLines, TestSize.Level1) {
     DEFINE_VOID_TESTINFO3(std::vector<struct ScoredSpan>, double, TypographyStyle);
     LineBreaker breaker;
+    // arg1~3 is the parameters of DoBreakLines
     RUN_VOID_TESTINFO3(breaker, { .arg1 = ss1, .arg2 = 100, .arg3 = gStyle_,
         .checkFunc = DoBreakLinesChecker(prevs012) });
     RUN_VOID_TESTINFO3(breaker, { .arg1 = ss1, .arg2 = 1e9, .arg3 = gStyle_,
@@ -194,6 +208,11 @@ HWTEST_F(LineBreakerTest, DoBreakLines, TestSize.Level1) {
 }
 #undef PARAMFUNC
 
+/**
+ * @tc.name: GenerateBreaks
+ * @tc.desc: Verify the GenerateBreaks
+ * @tc.type:FUNC
+ */
 DEFINE_PARAM_TEST1(LineBreaker, GenerateBreaks, std::vector<ScoredSpan>, {
     { .arg1 = GenScoredSpansByPrevs({0, 2}), .exception = ExceptionType::ErrorStatus },
     { .arg1 = GenScoredSpansByPrevs({0, 3, 2}), .exception = ExceptionType::ErrorStatus },
@@ -202,6 +221,11 @@ DEFINE_PARAM_TEST1(LineBreaker, GenerateBreaks, std::vector<ScoredSpan>, {
       .checkFunc = GetResultChecker(std::vector<int>{2, 4, 7, 9}) },
 });
 
+/**
+ * @tc.name: GenerateLineMetrics
+ * @tc.desc: Verify the GenerateLineMetrics
+ * @tc.type:FUNC
+ */
 #define PARAMFUNC GenerateLineMetrics
 HWTEST_F(LineBreakerTest, GenerateLineMetrics, TestSize.Level1)
 {
