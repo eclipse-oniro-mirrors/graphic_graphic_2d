@@ -30,7 +30,7 @@ struct TypographyStyle {
     FontWeight fontWeight_ = FontWeight::W400;
     FontStyle fontStyle_ = FontStyle::NORMAL;
     std::string fontFamily_ = "";
-    double fontSize_ = 14.0;
+    double fontSize_ = 14.0; // default is libtxt text style fonst size
     double heightScale_ = 1.0;
     bool heightOnly_ = false;
     bool useLineStyle_ = false;
@@ -38,7 +38,7 @@ struct TypographyStyle {
     FontWeight lineStyleFontWeight_ = FontWeight::W400;
     FontStyle lineStyleFontStyle_ = FontStyle::NORMAL;
     std::vector<std::string> lineStyleFontFamilies_;
-    double lineStyleFontSize_ = 14.0;
+    double lineStyleFontSize_ = 14.0; // default is libtxt text style font size
     double lineStyleHeightScale_ = 1.0;
     bool lineStyleHeightOnly_ = false;
     double lineStyleSpacingScale_ = -1.0;
