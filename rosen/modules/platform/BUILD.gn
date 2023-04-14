@@ -25,6 +25,8 @@ group("ace_skia") {
 group("eventhandler") {
   if (platform == "ohos") {
     public_deps = eventhandler_deps
+  } else if (cross_platform) {
+    public_deps = [ "$appframework_root/ability/ability_runtime/cross_platform/frameworks/native/base/event_handler:cross_platform_event_handler" ]
   } else {
     public_deps = [ ":impl_eventhandler" ]
   }
@@ -74,6 +76,8 @@ group("hilog") {
 group("image_native") {
   if (platform == "ohos") {
     public_deps = image_deps
+  } else if (platform == "ios") {
+    public_deps = [ "$image_framework_root/interfaces/innerkits:image_native" ]
   } else {
     public_deps = [ ":mock_image_native" ]
   }
@@ -136,14 +140,23 @@ config("utils_config") {
   include_dirs = [ "utils" ]
 }
 
+config("ios_utils_config") {
+  defines = [ "IOS_PLATFORM" ]
+}
+
 ohos_source_set("mock_utils") {
-  public_configs = [ ":utils_config" ]
-  sources = [
-    "utils/directory_ex.cpp",
-    "utils/parcel.cpp",
-    "utils/refbase.cpp",
-  ]
-  public_deps = [ "//third_party/bounds_checking_function:libsec_shared" ]
+  if (current_os == "ios") {
+    public_configs = [ ":ios_utils_config" ]
+    public_deps = [ "$c_utils_root/base:utilsbase" ]
+  } else {
+    public_configs = [ ":utils_config" ]
+    sources = [
+      "utils/directory_ex.cpp",
+      "utils/parcel.cpp",
+      "utils/refbase.cpp",
+    ]
+    public_deps = [ "//third_party/bounds_checking_function:libsec_shared" ]
+  }
   part_name = "graphic_standard"
   subsystem_name = "graphic"
 }

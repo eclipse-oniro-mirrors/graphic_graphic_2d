@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,13 +20,16 @@
 #include "skia_adapter/skia_canvas.h"
 #include "skia_adapter/skia_color_filter.h"
 #include "skia_adapter/skia_color_space.h"
+#include "skia_adapter/skia_data.h"
 #include "skia_adapter/skia_image.h"
 #include "skia_adapter/skia_image_filter.h"
 #include "skia_adapter/skia_mask_filter.h"
 #include "skia_adapter/skia_matrix.h"
+#include "skia_adapter/skia_matrix44.h"
 #include "skia_adapter/skia_path.h"
 #include "skia_adapter/skia_path_effect.h"
 #include "skia_adapter/skia_picture.h"
+#include "skia_adapter/skia_region.h"
 #include "skia_adapter/skia_shader_effect.h"
 
 namespace OHOS {
@@ -41,6 +44,11 @@ std::unique_ptr<CoreCanvasImpl> SkiaImplFactory::CreateCoreCanvas(void* rawCanva
 {
     auto skCanvasPtr = reinterpret_cast<std::shared_ptr<SkCanvas>*>(rawCanvas);
     return std::make_unique<SkiaCanvas>(*skCanvasPtr);
+}
+
+std::unique_ptr<DataImpl> SkiaImplFactory::CreateData()
+{
+    return std::make_unique<SkiaData>();
 }
 
 std::unique_ptr<BitmapImpl> SkiaImplFactory::CreateBitmap()
@@ -104,9 +112,19 @@ std::unique_ptr<MatrixImpl> SkiaImplFactory::CreateMatrix()
     return std::make_unique<SkiaMatrix>();
 }
 
+std::unique_ptr<Matrix44Impl> SkiaImplFactory::CreateMatrix44()
+{
+    return std::make_unique<SkiaMatrix44>();
+}
+
 std::unique_ptr<CameraImpl> SkiaImplFactory::CreateCamera()
 {
     return std::make_unique<SkiaCamera>();
+}
+
+std::unique_ptr<RegionImpl> SkiaImplFactory::CreateRegion()
+{
+    return std::make_unique<SkiaRegion>();
 }
 } // namespace Drawing
 } // namespace Rosen

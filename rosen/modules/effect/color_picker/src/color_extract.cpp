@@ -177,11 +177,11 @@ uint32_t ColorExtract::CalcGrayMsd() const
     uint32_t *colorVal = colorVal_.get();
     long long int graySum = 0;
     long long int grayVar = 0;
-    for (int i = 0; i < colorValLen_; i++) {
+    for (uint32_t i = 0; i < colorValLen_; i++) {
         graySum += Rgb2Gray(colorVal[i]);
     }
     uint32_t grayAve = graySum / colorValLen_;
-    for (int i = 0; i < colorValLen_; i++) {
+    for (uint32_t i = 0; i < colorValLen_; i++) {
         grayVar += pow(static_cast<long long int>(Rgb2Gray(colorVal[i])) - grayAve, 2); // 2 is square
     }
     grayVar /= colorValLen_;
@@ -215,7 +215,7 @@ float ColorExtract::CalcContrastToWhite() const
     uint32_t *colorVal = colorVal_.get();
     float lightDegree = 0;
     float luminanceSum = 0;
-    for (int i = 0; i < colorValLen_; i++) {
+    for (uint32_t i = 0; i < colorValLen_; i++) {
         luminanceSum += CalcRelativeLum(colorVal[i]);
     }
     float luminanceAve = luminanceSum / colorValLen_;
@@ -227,7 +227,7 @@ float ColorExtract::CalcContrastToWhite() const
 void ColorExtract::GetNFeatureColors(int colorNum)
 {
     uint32_t *colorVal = colorVal_.get();
-    int histLen = (1 << (QUANTIZE_WORD_WIDTH * 3));
+    uint32_t histLen = (1 << (QUANTIZE_WORD_WIDTH * 3));
     auto hist = new uint32_t[histLen]();
     std::shared_ptr<uint32_t> histShared(hist, [](uint32_t *ptr) {
         delete[] ptr;
@@ -238,7 +238,7 @@ void ColorExtract::GetNFeatureColors(int colorNum)
         hist[quantizedColor]++;
     }
 
-    for (int color = 0; color < histLen; color++) {
+    for (uint32_t color = 0; color < histLen; color++) {
         if (hist[color] > 0) {
             distinctColorCount_++;
         }

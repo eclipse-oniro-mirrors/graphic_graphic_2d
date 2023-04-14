@@ -123,20 +123,26 @@ void RSRenderServiceClient::TriggerSurfaceCaptureCallback(NodeId id, Media::Pixe
 {
     ROSEN_LOGI("RSRenderServiceClient::Into TriggerSurfaceCaptureCallback nodeId:[%" PRIu64 "]", id);
     std::shared_ptr<Media::PixelMap> surfaceCapture(pixelmap);
-    std::shared_ptr<SurfaceCaptureCallback> callback = nullptr;
+    std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector;
     {
         std::lock_guard<std::mutex> lock(mutex_);
         auto iter = surfaceCaptureCbMap_.find(id);
         if (iter != surfaceCaptureCbMap_.end()) {
-            callback = iter->second;
+            callbackVector = iter->second;
             surfaceCaptureCbMap_.erase(iter);
         }
     }
-    if (callback == nullptr) {
-        ROSEN_LOGE("RSRenderServiceClient::TriggerSurfaceCaptureCallback: callback is nullptr!");
+    if (callbackVector.empty()) {
+        ROSEN_LOGE("RSRenderServiceClient::TriggerSurfaceCaptureCallback: callbackVector is empty!");
         return;
     }
-    callback->OnSurfaceCapture(surfaceCapture);
+    for (auto callback : callbackVector) {
+        if (callback == nullptr) {
+            ROSEN_LOGE("RSRenderServiceClient::TriggerSurfaceCaptureCallback: callback is nullptr!");
+            continue;
+        }
+        callback->OnSurfaceCapture(surfaceCapture);
+    }
 }
 
 class SurfaceCaptureCallbackDirector : public RSSurfaceCaptureCallbackStub
@@ -167,11 +173,14 @@ bool RSRenderServiceClient::TakeSurfaceCapture(NodeId id, std::shared_ptr<Surfac
     }
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        if (surfaceCaptureCbMap_.count(id) != 0) {
+        auto iter = surfaceCaptureCbMap_.find(id);
+        if (iter != surfaceCaptureCbMap_.end()) {
             ROSEN_LOGW("RSRenderServiceClient::TakeSurfaceCapture surfaceCaptureCbMap_.count(id) != 0");
-            return false;
+            iter->second.emplace_back(callback);
+            return true;
         }
-        surfaceCaptureCbMap_.emplace(id, callback);
+        std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector = {callback};
+        surfaceCaptureCbMap_.emplace(id, callbackVector);
     }
 
     if (surfaceCaptureCbDirector_ == nullptr) {

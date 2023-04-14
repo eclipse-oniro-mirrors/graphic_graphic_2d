@@ -156,7 +156,7 @@ private:
     std::map<NodeId, sptr<RSIBufferAvailableCallback>> bufferAvailableCbUIMap_;
     sptr<RSIScreenChangeCallback> screenChangeCb_;
     sptr<RSISurfaceCaptureCallback> surfaceCaptureCbDirector_;
-    std::map<NodeId, std::shared_ptr<SurfaceCaptureCallback>> surfaceCaptureCbMap_;
+    std::map<NodeId, std::vector<std::shared_ptr<SurfaceCaptureCallback>>> surfaceCaptureCbMap_;
 
     friend class SurfaceCaptureCallbackDirector;
 };

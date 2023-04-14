@@ -357,7 +357,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkImage>& val)
         val = SkImage::MakeRasterData(imageInfo, skData, rb);
         // add to MemoryTrack for memoryManager
         if (pixmapSize >= MIN_DATA_SIZE) {
-            MemoryInfo info = { pixmapSize, 0, MEMORY_TYPE::MEM_SKIMAGE }; // pid is set to 0 temporarily.
+            MemoryInfo info = { pixmapSize, 0, 0, MEMORY_TYPE::MEM_SKIMAGE }; // pid is set to 0 temporarily.
             MemoryTrack::Instance().AddPictureRecord(addr, info);
         }
         return val != nullptr;
@@ -782,7 +782,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Media::P
         ROSEN_LOGE("failed RSMarshallingHelper::Unmarshalling Media::PixelMap");
         return false;
     }
-    MemoryInfo info = {val->GetByteCount(), 0, MEMORY_TYPE::MEM_PIXELMAP}; // pid is set to 0 temporarily.
+    MemoryInfo info = {val->GetByteCount(), 0, 0, MEMORY_TYPE::MEM_PIXELMAP}; // pid is set to 0 temporarily.
     MemoryTrack::Instance().AddPictureRecord(val->GetPixels(), info);
     val->SetFreePixelMapProc(CustomFreePixelMap);
     return true;
@@ -794,6 +794,25 @@ bool RSMarshallingHelper::SkipPixelMap(Parcel& parcel)
         parcel.SkipBytes(size);
     }
     return true;
+}
+
+// RectF
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RectT<float>>& val)
+{
+    if (!val) {
+        ROSEN_LOGD("unirender: RSMarshallingHelper::Marshalling RectF is nullptr");
+        return parcel.WriteInt32(-1);
+    }
+    return parcel.WriteInt32(1) && val->Marshalling(parcel);
+}
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RectT<float>>& val)
+{
+    if (parcel.ReadInt32() == -1) {
+        val = nullptr;
+        return true;
+    }
+    val.reset(RectT<float>::Unmarshalling(parcel));
+    return val != nullptr;
 }
 
 #define MARSHALLING_AND_UNMARSHALLING(TYPE)                                                 \
