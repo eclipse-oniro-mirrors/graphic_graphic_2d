@@ -33,7 +33,6 @@
 #include "screen_manager/rs_screen_manager.h"
 #include "visitor/rs_node_visitor.h"
 
-
 class SkPicture;
 namespace OHOS {
 namespace Rosen {

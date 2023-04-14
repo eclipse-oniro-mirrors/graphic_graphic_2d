@@ -34,7 +34,8 @@ public:
     RSObjAbsGeometry();
     ~RSObjAbsGeometry() override;
     void ConcatMatrix(const SkMatrix& matrix);
-    void UpdateMatrix(const std::shared_ptr<RSObjAbsGeometry>& parent, float offsetX, float offsetY);
+    void UpdateMatrix(const std::shared_ptr<RSObjAbsGeometry>& parent, const std::optional<SkPoint>& offset,
+        const std::optional<SkRect>& clipRect);
 
     // Using by RenderService
     void UpdateByMatrixFromSelf();
@@ -47,8 +48,6 @@ public:
     
     // return transform matrix (context + self)
     const SkMatrix& GetMatrix() const;
-    // return transform matrix (only self)
-    const SkMatrix& GetMatrixWithOutContext() const;
     // return transform matrix (parent + context + self)
     const SkMatrix& GetAbsMatrix() const;
 
@@ -67,7 +66,6 @@ private:
     bool IsPointInLine(const SkPoint& p1, const SkPoint& p2, const SkPoint& p, const float crossRes) const;
     RectI absRect_;
     SkMatrix matrix_;
-    std::optional<SkMatrix> matrixWithoutContext_;
     std::optional<SkMatrix> absMatrix_;
     std::optional<SkMatrix> contextMatrix_;
     SkPoint vertices_[4];

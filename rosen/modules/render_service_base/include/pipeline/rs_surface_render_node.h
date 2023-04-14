@@ -215,6 +215,7 @@ public:
     void SetContextMatrix(const std::optional<SkMatrix>& transform, bool sendMsg = true);
     void SetContextAlpha(float alpha, bool sendMsg = true);
     void SetContextClipRegion(const std::optional<SkRect>& clipRegion, bool sendMsg = true);
+    std::optional<SkRect> GetContextClipRegion() const override;
 
     void SetSecurityLayer(bool isSecurityLayer);
     bool GetSecurityLayer() const;

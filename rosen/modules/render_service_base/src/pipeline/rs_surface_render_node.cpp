@@ -63,16 +63,12 @@ void RSSurfaceRenderNode::SetConsumer(const sptr<IConsumerSurface>& consumer)
 
 void RSSurfaceRenderNode::UpdateSrcRect(const RSPaintFilterCanvas& canvas, const SkIRect& dstRect)
 {
-    auto localClipRect = RSPaintFilterCanvas::GetLocalClipBounds(canvas, &dstRect);
-    if (!localClipRect.has_value()) {
-        SetSrcRect(RectI(0, 0, 0, 0));
-        return;
-    }
+    auto localClipRect = RSPaintFilterCanvas::GetLocalClipBounds(canvas, &dstRect).value_or(SkRect::MakeEmpty());
     const RSProperties& properties = GetRenderProperties();
-    int left = std::clamp<int>(localClipRect->left(), 0, properties.GetBoundsWidth());
-    int top = std::clamp<int>(localClipRect->top(), 0, properties.GetBoundsHeight());
-    int width = std::clamp<int>(localClipRect->width(), 0, properties.GetBoundsWidth() - left);
-    int height = std::clamp<int>(localClipRect->height(), 0, properties.GetBoundsHeight() - top);
+    int left = std::clamp<int>(localClipRect.left(), 0, properties.GetBoundsWidth());
+    int top = std::clamp<int>(localClipRect.top(), 0, properties.GetBoundsHeight());
+    int width = std::clamp<int>(localClipRect.width(), 0, properties.GetBoundsWidth() - left);
+    int height = std::clamp<int>(localClipRect.height(), 0, properties.GetBoundsHeight() - top);
     RectI srcRect = {left, top, width, height};
     SetSrcRect(srcRect);
 }
@@ -892,7 +888,6 @@ float RSSurfaceRenderNode::GetLocalZOrder() const
 
 void RSSurfaceRenderNode::OnApplyModifiers()
 {
-    // Get the render properties and the bounds geometry
     auto& properties = GetMutableRenderProperties();
     auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(properties.GetBoundsGeometry());
 
@@ -901,34 +896,11 @@ void RSSurfaceRenderNode::OnApplyModifiers()
 
     // Apply the context matrix into the bounds geometry
     geoPtr->SetContextMatrix(contextMatrix_);
+}
 
-    // No valid clipRect, return
-    auto clipRect = contextClipRect_.value_or(SkRect::MakeEmpty());
-    if (clipRect.width() < 1 || clipRect.height() < 1) {
-        return;
-    }
-
-    // Map clipRect from parent coordinate to local coordinate if needed
-    geoPtr->UpdateByMatrixFromSelf();
-    const auto& matrixWithoutContextMatrix = geoPtr->GetMatrixWithOutContext();
-    if (!matrixWithoutContextMatrix.isIdentity()) {
-        SkMatrix invertMatrix;
-        if (matrixWithoutContextMatrix.invert(&invertMatrix)) {
-            clipRect = invertMatrix.mapRect(clipRect);
-        }
-        // MatrixWithoutContextMatrix already includes bounds offset, we need to revert it
-        clipRect.offset(geoPtr->GetX(), geoPtr->GetY());
-    }
-
-    // Update BoundsRect with intersected clipRect
-    if (!clipRect.intersect(geoPtr->GetX(), geoPtr->GetY(), geoPtr->GetX() + geoPtr->GetWidth(),
-            geoPtr->GetY() + geoPtr->GetHeight())) {
-        // No visible area
-        properties.SetBounds({ 0, 0, 0, 0 });
-        return;
-    }
-
-    properties.SetBounds({ clipRect.x(), clipRect.y(), clipRect.width(), clipRect.height() });
+std::optional<SkRect> RSSurfaceRenderNode::GetContextClipRegion() const
+{
+    return contextClipRect_;
 }
 } // namespace Rosen
 } // namespace OHOS

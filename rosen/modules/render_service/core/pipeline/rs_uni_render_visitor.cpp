@@ -628,29 +628,41 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 
 void RSUniRenderVisitor::PrepareProxyRenderNode(RSProxyRenderNode& node)
 {
+    // alpha is not affected by dirty flag, always update
+    node.SetContextAlpha(curAlpha_);
+    // skip matrix & clipRegion update if not dirty
+    if (!dirtyFlag_) {
+        return;
+    }
     auto rsParent = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(node.GetParent().lock());
     if (rsParent == nullptr) {
         return;
     }
     auto& property = rsParent->GetMutableRenderProperties();
     auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(property.GetBoundsGeometry());
-    SkMatrix invertMatrix;
-    SkMatrix contextMatrix = geoPtr->GetAbsMatrix();
 
+    // Context matrix should be relative to the parent surface node, so we need to revert the parentSurfaceNodeMatrix_.
+    SkMatrix invertMatrix;
+    auto contextMatrix = geoPtr->GetAbsMatrix();
     if (parentSurfaceNodeMatrix_.invert(&invertMatrix)) {
         contextMatrix.preConcat(invertMatrix);
     } else {
-        ROSEN_LOGE("RSUniRenderVisitor::PrepareProxyRenderNode, invertMatrix failed");
+        ROSEN_LOGE("RSUniRenderVisitor::PrepareProxyRenderNode, invert parentSurfaceNodeMatrix_ failed");
     }
     node.SetContextMatrix(contextMatrix);
-    node.SetContextAlpha(curAlpha_);
-    if (property.GetClipToBounds()) {
-        auto rect = property.GetBoundsRect();
-        node.SetContextClipRegion(SkRect::MakeXYWH(rect.left_, rect.top_, rect.width_, rect.height_));
-    } else {
+
+    // For now, we only set the clipRegion if the parent node has ClipToBounds set to true.
+    if (!property.GetClipToBounds()) {
         node.SetContextClipRegion(std::nullopt);
+    } else {
+        // Maybe we should use prepareClipRect_ and make the clipRegion in device coordinate, but it will be more
+        // complex to calculate the intersect, and it will make app developers confused.
+        auto rect = property.GetBoundsRect();
+        // Context clip region is in the parent node coordinate, so we don't need to map it.
+        node.SetContextClipRegion(SkRect::MakeXYWH(rect.left_, rect.top_, rect.width_, rect.height_));
     }
 
+    // prepare children
     PrepareBaseRenderNode(node);
 }
 
@@ -1842,16 +1854,20 @@ void RSUniRenderVisitor::DrawChildRenderNode(RSRenderNode& node)
 
 void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 {
-    if (RSSystemProperties::GetProxyNodeDebugEnabled() && node.contextClipRect_.has_value()) {
-        RSAutoCanvasRestore acr(canvas_);
-        canvas_->concat(node.contextMatrix_.value_or(SkMatrix::I()));
-        SkPaint paint;
-        paint.setARGB(0x40, 0xFF, 0, 0); //transparent red
-        canvas_->drawRect(node.contextClipRect_.value(), paint);
+    if (RSSystemProperties::GetProxyNodeDebugEnabled() && node.contextClipRect_.has_value() && canvas_ != nullptr) {
+        // draw transparent red rect to indicate valid clip area
+        {
+            RSAutoCanvasRestore acr(canvas_);
+            canvas_->concat(node.contextMatrix_.value_or(SkMatrix::I()));
+            SkPaint paint;
+            paint.setARGB(0x80, 0xFF, 0, 0); // transparent red
+            canvas_->drawRect(node.contextClipRect_.value(), paint);
+        }
+        // make this node context transparent
+        canvas_->MultiplyAlpha(0.5);
     }
-
-    RS_TRACE_NAME("RSUniRender::Process:[" + node.GetName() + "]" + " " + node.GetDstRect().ToString() +
-                  " Alpha: " + std::to_string(node.GetGlobalAlpha()).substr(0, 4));
+    RS_TRACE_NAME("RSUniRender::Process:[" + node.GetName() + "]" + " " + node.GetDstRect().ToString()
+                    + " Alpha: " + std::to_string(node.GetGlobalAlpha()).substr(0, 4));
     RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode node:%" PRIu64 ",child size:%u,name:%s,OcclusionVisible:%d",
         node.GetId(), node.GetChildrenCount(), node.GetName().c_str(), node.GetOcclusionVisible());
     if (canvas_ != nullptr) {
@@ -1976,16 +1992,19 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
                 node.SetLocalZOrder(localZOrder_++);
                 ParallelRenderEnableHardwareComposer(node);
 
-                auto originMatrix = canvas_->getTotalMatrix();
-                auto displayNodeMatrix = displayNodeMatrix_.value_or(SkMatrix::I()).preConcat(originMatrix);
-                canvas_->setMatrix(displayNodeMatrix);
-                node.SetTotalMatrix(displayNodeMatrix);
+                {
+                    SkAutoCanvasRestore acr(canvas_.get(), true);
 
-                auto dstRect = node.GetDstRect();
-                SkIRect dst = { dstRect.GetLeft(), dstRect.GetTop(), dstRect.GetRight(), dstRect.GetBottom() };
-                node.UpdateSrcRect(*canvas_, dst);
+                    if (displayNodeMatrix_.has_value()) {
+                        auto& displayNodeMatrix = displayNodeMatrix_.value();
+                        canvas_->concat(displayNodeMatrix);
+                    }
+                    node.SetTotalMatrix(canvas_->getTotalMatrix());
 
-                canvas_->setMatrix(originMatrix);
+                    auto dstRect = node.GetDstRect();
+                    SkIRect dst = { dstRect.GetLeft(), dstRect.GetTop(), dstRect.GetRight(), dstRect.GetBottom() };
+                    node.UpdateSrcRect(*canvas_, dst);
+                }
                 RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode src:%s, dst:%s name:%s id:%" PRIu64 "",
                     node.GetSrcRect().ToString().c_str(), node.GetDstRect().ToString().c_str(),
                     node.GetName().c_str(), node.GetId());
@@ -2054,10 +2073,11 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 
 void RSUniRenderVisitor::ProcessProxyRenderNode(RSProxyRenderNode& node)
 {
-    if (RSSystemProperties::GetProxyNodeDebugEnabled() && node.target_.lock() != nullptr &&
-        node.contextClipRect_.has_value()) {
+    if (RSSystemProperties::GetProxyNodeDebugEnabled() && node.contextClipRect_.has_value() &&
+        node.target_.lock() != nullptr) {
+        // draw transparent green rect to indicate clip area of proxy node
         SkPaint paint;
-        paint.setARGB(0x40, 0, 0xFF, 0); // Transparent green
+        paint.setARGB(0x80, 0, 0xFF, 0); // transparent green
         canvas_->drawRect(node.contextClipRect_.value(), paint);
     }
     ProcessBaseRenderNode(node);

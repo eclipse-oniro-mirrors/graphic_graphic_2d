@@ -17,6 +17,7 @@
 
 #include "include/utils/SkCamera.h"
 #include "include/core/SkMatrix44.h"
+
 namespace OHOS {
 namespace Rosen {
 constexpr unsigned RECT_POINT_NUM = 4;
@@ -25,6 +26,8 @@ constexpr unsigned RIGHT_TOP_POINT = 1;
 constexpr unsigned RIGHT_BOTTOM_POINT = 2;
 constexpr unsigned LEFT_BOTTOM_POINT = 3;
 constexpr float INCH_TO_PIXEL = 72;
+constexpr float EPSILON = 1e-4f;
+
 RSObjAbsGeometry::RSObjAbsGeometry() : RSObjGeometry()
 {
     vertices_[LEFT_TOP_POINT].set(0, 0);
@@ -44,9 +47,6 @@ void RSObjAbsGeometry::ConcatMatrix(const SkMatrix& matrix)
     if (absMatrix_.has_value()) {
         absMatrix_->preConcat(matrix);
     }
-    if (matrixWithoutContext_.has_value()) {
-        matrixWithoutContext_->preConcat(matrix);
-    }
     SetAbsRect();
 }
 
@@ -54,19 +54,23 @@ void RSObjAbsGeometry::ConcatMatrix(const SkMatrix& matrix)
  * @brief Updates the matrix of the view with respect to its parent view.
  *
  * @param parent The parent view of the current view.
- * @param offsetX The x-coordinate offset of the current view with respect to its parent.
- * @param offsetY The y-coordinate offset of the current view with respect to its parent.
+ * @param offset The offset of the current view with respect to its parent.
+ * @param clipRect The optional clipping rectangle of the current view.
  */
-void RSObjAbsGeometry::UpdateMatrix(const std::shared_ptr<RSObjAbsGeometry>& parent, float offsetX, float offsetY)
+void RSObjAbsGeometry::UpdateMatrix(const std::shared_ptr<RSObjAbsGeometry>& parent,
+    const std::optional<SkPoint>& offset, const std::optional<SkRect>& clipRect)
 {
-    // If it is unecessary to use absolute matrix, reset absolute matrix, and use local matrix instead
-    absMatrix_ = (parent == nullptr) ? std::nullopt : parent->absMatrix_;
-    if (absMatrix_.has_value() && (offsetX != 0 || offsetY != 0)) {
-        absMatrix_->preTranslate(offsetX, offsetY);
+    // Initialize the absolute matrix with the absolute matrix of the parent view if the parent view exists
+    if (parent == nullptr) {
+        absMatrix_.reset();
+    } else {
+        absMatrix_ = parent->GetAbsMatrix();
+    }
+    if (absMatrix_.has_value() && offset.has_value() && !offset.value().isZero()) {
+        absMatrix_->preTranslate(offset->x(), offset->y());
     }
     // Reset the matrix of the current view
     matrix_.reset();
-    matrixWithoutContext_.reset();
     // filter invalid width and height
     if (IsEmpty()) {
         return;
@@ -74,7 +78,7 @@ void RSObjAbsGeometry::UpdateMatrix(const std::shared_ptr<RSObjAbsGeometry>& par
     // If the view has no transformations or only 2D transformations, update the absolute matrix with 2D
     // transformations
     if (!trans_ || (ROSEN_EQ(trans_->translateZ_, 0.f) && ROSEN_EQ(trans_->rotationX_, 0.f) &&
-                    ROSEN_EQ(trans_->rotationY_, 0.f) && trans_->quaternion_.IsIdentity())) {
+        ROSEN_EQ(trans_->rotationY_, 0.f) && trans_->quaternion_.IsIdentity())) {
         UpdateAbsMatrix2D();
     } else {
         // Otherwise, update the absolute matrix with 3D transformations
@@ -87,9 +91,30 @@ void RSObjAbsGeometry::UpdateMatrix(const std::shared_ptr<RSObjAbsGeometry>& par
         }
         absMatrix_->preConcat(matrix_);
     }
+    // if clipRect is valid, update rect with clipRect
+    if (clipRect.has_value() && !clipRect.value().isEmpty()) {
+        auto mappedClipRect = clipRect.value();
+        if (!matrix_.isIdentity()) {
+            SkMatrix invertMatrix;
+            if (matrix_.invert(&invertMatrix)) {
+                mappedClipRect = invertMatrix.mapRect(mappedClipRect);
+            }
+            // matrix_ already includes bounds offset, we need to revert it
+            mappedClipRect.offset(GetX(), GetY());
+        }
+
+        if (!mappedClipRect.intersect(x_, y_, x_ + width_, y_ + height_)) {
+            // No visible area
+            x_ = y_ = width_ = height_ = 0.0f;
+            return;
+        }
+        x_ = mappedClipRect.left();
+        y_ = mappedClipRect.top();
+        width_ = mappedClipRect.width();
+        height_ = mappedClipRect.height();
+    }
     // If the context matrix of the current view exists, update the current matrix with it
     if (contextMatrix_.has_value()) {
-        matrixWithoutContext_ = matrix_;
         matrix_.preConcat(*contextMatrix_);
     }
     // Update the absolute rectangle of the current view
@@ -103,7 +128,6 @@ void RSObjAbsGeometry::UpdateByMatrixFromSelf()
 {
     absMatrix_.reset();
     matrix_.reset();
-    matrixWithoutContext_.reset();
 
     // If the view has no transformations or only 2D transformations, update the absolute matrix with 2D transformations
     if (!trans_ || (ROSEN_EQ(trans_->translateZ_, 0.f) && ROSEN_EQ(trans_->rotationX_, 0.f) &&
@@ -116,7 +140,6 @@ void RSObjAbsGeometry::UpdateByMatrixFromSelf()
 
     // If the context matrix of the view exists, update the current matrix with it
     if (contextMatrix_.has_value()) {
-        matrixWithoutContext_ = matrix_;
         matrix_.preConcat(*contextMatrix_);
     }
 
@@ -129,8 +152,8 @@ bool RSObjAbsGeometry::IsNeedClientCompose() const
     if (!trans_) {
         return false;
     }
-    // return false if rotation degree is times of 90, with a tolerance of 0.001
-    return !ROSEN_EQ(std::remainder(trans_->rotation_, 90.f), 0.f, 0.001f);
+    // return false if rotation degree is times of 90
+    return !ROSEN_EQ(std::remainder(trans_->rotation_, 90.f), 0.f, EPSILON);
 }
 
 void RSObjAbsGeometry::UpdateAbsMatrix2D()
@@ -143,7 +166,7 @@ void RSObjAbsGeometry::UpdateAbsMatrix2D()
             matrix_.preTranslate(x_ + trans_->translateX_, y_ + trans_->translateY_);
         }
         // rotation
-        if (!ROSEN_EQ(trans_->rotation_, 0.f)) {
+        if (!ROSEN_EQ(trans_->rotation_, 0.f, EPSILON)) {
             matrix_.preRotate(trans_->rotation_, trans_->pivotX_ * width_, trans_->pivotY_ * height_);
         }
         // Scale
@@ -236,7 +259,7 @@ void RSObjAbsGeometry::SetAbsRect()
 RectI RSObjAbsGeometry::MapAbsRect(const RectF& rect) const
 {
     RectI absRect;
-    auto& matrix = (absMatrix_.has_value()) ? *absMatrix_ : matrix_;
+    auto& matrix = GetAbsMatrix();
     // Check if the matrix has skew or negative scaling
     if (!ROSEN_EQ(matrix.getSkewX(), 0.f) || (matrix.getScaleX() < 0) ||
         !ROSEN_EQ(matrix.getSkewY(), 0.f) || (matrix.getScaleY() < 0)) {
@@ -358,12 +381,6 @@ void RSObjAbsGeometry::SetContextMatrix(const std::optional<SkMatrix>& matrix)
 const SkMatrix& RSObjAbsGeometry::GetMatrix() const
 {
     return matrix_;
-}
-
-const SkMatrix& RSObjAbsGeometry::GetMatrixWithOutContext() const
-{
-    // if matrixWithoutContext_ is empty, return matrix_ instead
-    return matrixWithoutContext_ ? *matrixWithoutContext_ : matrix_;
 }
 
 const SkMatrix& RSObjAbsGeometry::GetAbsMatrix() const
