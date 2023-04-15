@@ -137,6 +137,7 @@ class TextMergerTest : public testing::Test {
 public:
     static void SetUpTestCase()
     {
+        // {0x013B, 13.664}: {glyph codepoint, glyph advanceX}
         cgs1_.PushBack({.chars_ = TextConverter::ToUTF16("m"), .glyphs_ = {{0x013B, 13.664}}});
         cgs1_.PushBack({.chars_ = TextConverter::ToUTF16("o"), .glyphs_ = {{0x0145, 9.456}}});
         cgs1_.PushBack({.chars_ = TextConverter::ToUTF16("s"), .glyphs_ = {{0x0166, 7.28}}});
@@ -147,6 +148,7 @@ public:
         cgs2_.PushBack({.chars_ = TextConverter::ToUTF16("o"), .glyphs_ = {{0x0145, 9.456}}});
 
         tsCgs1_ = GenTestSpan({.rtl_ = false, .cgs_ = cgs1_});
+        // (1, 2): (sart, end)
         tsSubCgs12_ = GenTestSpan({.rtl_ = false, .cgs_ = cgs1_.GetSub(1, 2)});
 
         seqT_ = {GenTestSpan({.rtl_ = false, .cgs_  = cgs1_.GetSub(0, 1)})};
@@ -214,6 +216,7 @@ HWTEST_F(TextMergerTest, MergeSpan, TestSize.Level1)
     RUN_ALL_TESTINFO3(tm, {.arg1 = tsNull, .arg2 = false, .arg3 = {}, .exception = ExceptionType::InvalidArgument });
     RUN_ALL_TESTINFO3(tm, {.arg1 = tsNull, .arg2 = false, .arg3 = {}, .exception = ExceptionType::InvalidArgument });
     RUN_ALL_TESTINFO3(tm, {.arg1 = asNull, .arg2 = false, .arg3 = {}, .exception = ExceptionType::InvalidArgument });
+    // (0, 0): (width, height)
     RUN_ALL_TESTINFO3(tm, {.arg1 = std::make_shared<MyAnySpan>(0, 0), .arg2 = false, .arg3 = CharGroups::CreateEmpty(),
      .checkFunc = GetMergerResultChecker(MergeResult::REJECTED) });
     RUN_ALL_TESTINFO3(tm, {.arg1 = std::make_shared<MyAnySpan>(0, 0), .arg2 = false, .arg3 = {},
@@ -234,6 +237,7 @@ HWTEST_F(TextMergerTest, MergeSpan, TestSize.Level1)
      .checkFunc = GetMergerResultChecker(MergeResult::ACCEPTED, ControllerForTest::GetCharGroups(tsCgs1_)) });
     RUN_ALL_TESTINFO3(tm, {.init = InitMockArgs({1}, {0}), .arg1 = tsSubCgs12_,
      .arg2 = false, .arg3 = cgs1_.GetSub(0, 1),
+     // {0, 2}: check the IndexRange
      .checkFunc = GetMergerResultChecker(MergeResult::ACCEPTED, {}, true, {0, 2}) });
     RUN_ALL_TESTINFO3(tm, {.init = InitMockArgs({0}, {1}), .arg1 = tsSubCgs12_,
      .arg2 = false, .arg3 = cgs1_.GetSub(0, 1),
