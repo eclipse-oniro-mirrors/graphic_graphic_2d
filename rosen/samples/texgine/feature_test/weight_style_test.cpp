@@ -25,7 +25,7 @@ struct TestInfo {
     std::string title;
     std::string text = "华为鸿蒙系统是一款全新的面向全场景的分布式操作系统，创造一个超级虚拟终端互联的世界。";
     TextStyle style;
-} testInfos[] = {
+} g_testInfos[] = {
     {
         .title = "default",
         .style = {
@@ -108,7 +108,7 @@ public:
 
     void Layout()
     {
-        for (auto &[title, text, style] : testInfos) {
+        for (auto &[title, text, style] : g_testInfos) {
             auto builder = TypographyBuilder::Create();
             builder->PushStyle(style);
             builder->AppendSpan(text);
