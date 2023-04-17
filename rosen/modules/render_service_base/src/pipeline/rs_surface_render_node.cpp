@@ -884,6 +884,55 @@ Occlusion::Region RSSurfaceRenderNode::SetCornerRadiusOpaqueRegion(const RectI& 
     return opaqueRegion;
 }
 
+void RSSurfaceRenderNode::ResetSurfaceContainerRegion(const RectI& screeninfo, const RectI& absRect, const ScreenRotation screenRotation)
+{
+    if (!HasContainerWindow()) {
+        containerRegion_ = Occlusion::Region{};
+        return;
+    }
+    Occlusion::Region absRegion{Occlusion::Rect{absRect}};
+    Occlusion::Rect innerRect;
+    switch (screenRotation) {
+        case ScreenRotation::ROTATION_0: {
+            innerRect = Occlusion::Rect{ absRect.left_ + cc_.bp,
+                absRect.top_ + cc_.bt,
+                absRect.GetRight() - cc_.bp,
+                absRect.GetBottom() - cc_.bp};
+            break;
+        }
+        case ScreenRotation::ROTATION_90: {
+            innerRect = Occlusion::Rect{ absRect.left_ + cc_.bt,
+                absRect.top_ + cc_.bp,
+                absRect.GetRight() - cc_.bp,
+                absRect.GetBottom() - cc_.bp};
+            break;
+        }
+        case ScreenRotation::ROTATION_180: {
+            innerRect = Occlusion::Rect{ absRect.left_ + cc_.bp,
+                absRect.top_ + cc_.bp,
+                absRect.GetRight() - cc_.bp,
+                absRect.GetBottom() - cc_.bt};
+            break;
+        }
+        case ScreenRotation::ROTATION_270: {
+            innerRect = Occlusion::Rect{ absRect.left_ + cc_.bp,
+                absRect.top_ + cc_.bp,
+                absRect.GetRight() - cc_.bt,
+                absRect.GetBottom() - cc_.bp};
+            break;
+        }
+        default: {
+            innerRect = Occlusion::Rect{ absRect.left_ + cc_.bp,
+                absRect.top_ + cc_.bt,
+                absRect.GetRight() - cc_.bp,
+                absRect.GetBottom() - cc_.bp};
+            break;
+        }
+    }
+    Occlusion::Region innerRectRegion{innerRect};
+    containerRegion_ = absRegion.Sub(innerRectRegion);
+}
+
 // [planning] Remove this after skia is upgraded, the clipRegion is supported
 void RSSurfaceRenderNode::ResetChildrenFilterRects()
 {

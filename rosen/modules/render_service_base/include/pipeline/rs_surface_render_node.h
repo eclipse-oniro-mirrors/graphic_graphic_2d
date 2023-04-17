@@ -255,6 +255,11 @@ public:
         return opaqueRegion_;
     }
 
+    Occlusion::Region& GetContainerRegion()
+    {
+        return containerRegion_;
+    }
+
     void SetGlobalAlpha(float alpha)
     {
         if (globalAlpha_ == alpha) {
@@ -511,6 +516,9 @@ public:
     Occlusion::Region SetFocusedWindowOpaqueRegion(const RectI& absRect, const ScreenRotation screenRotation) const;
     Occlusion::Region SetCornerRadiusOpaqueRegion(const RectI& absRect, float radius) const;
 
+    void ResetSurfaceContainerRegion(const RectI& screeninfo, const RectI& absRect, const ScreenRotation screenRotation);
+
+
     bool IsStartAnimationFinished() const;
     void SetStartAnimationFinished();
     void SetCachedImage(sk_sp<SkImage> image)
@@ -631,6 +639,7 @@ private:
     // transparent region of the surface, floating window's container window is always treated as transparent
     Occlusion::Region transparentRegion_;
 
+    Occlusion::Region containerRegion_;
     class ContarinerConfig
     {
         public:

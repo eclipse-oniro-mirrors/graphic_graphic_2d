@@ -558,6 +558,8 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     auto screenRotation = curDisplayNode_->GetRotation();
     node.ResetSurfaceOpaqueRegion(RectI(0, 0, screenInfo_.width, screenInfo_.height), geoPtr->GetAbsRect(),
         screenRotation, node.IsFocusedWindow(currentFocusedPid_));
+    node.ResetSurfaceContainerRegion(RectI(0, 0, screenInfo_.width, screenInfo_.height), geoPtr->GetAbsRect(),
+        screenRotation);
 
 #if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
     bool isLeashWindowNode = false;
@@ -1579,20 +1581,20 @@ void RSUniRenderVisitor::CalcDirtyDisplayRegion(std::shared_ptr<RSDisplayRenderN
                 surfaceNode->SetShadowValidLastFrame(false);
             }
         }
-        auto transparentRegion = surfaceNode->GetTransparentRegion();
-        Occlusion::Rect tmpRect = Occlusion::Rect { surfaceDirtyRect.left_, surfaceDirtyRect.top_,
-            surfaceDirtyRect.GetRight(), surfaceDirtyRect.GetBottom() };
-        Occlusion::Region surfaceDirtyRegion { tmpRect };
-        Occlusion::Region transparentDirtyRegion = transparentRegion.And(surfaceDirtyRegion);
-        if (!transparentDirtyRegion.IsEmpty()) {
-            RS_LOGD("CalcDirtyDisplayRegion merge TransparentDirtyRegion %s region %s",
-                surfaceNode->GetName().c_str(), transparentDirtyRegion.GetRegionInfo().c_str());
-            std::vector<Occlusion::Rect> rects = transparentDirtyRegion.GetRegionRects();
+
+        auto containerRegion = surfaceNode->GetContainerRegion();
+        auto surfaceDirtyRegion = Occlusion::Region{Occlusion::Rect{surfaceDirtyRect}};
+        auto containerDirtyRegion = containerRegion.And(surfaceDirtyRegion);
+        if (!containerDirtyRegion.IsEmpty()) {
+            RS_LOGD("CalcDirtyDisplayRegion merge containerDirtyRegion %s region %s",
+                surfaceNode->GetName().c_str(), containerDirtyRegion.GetRegionInfo().c_str());
+            std::vector<Occlusion::Rect> rects = containerDirtyRegion.GetRegionRects();
             for (const auto& rect : rects) {
                 displayDirtyManager->MergeDirtyRect(RectI
                     { rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_ });
             }
         }
+
     }
     std::vector<RectI> surfaceChangedRects = node->GetSurfaceChangedRects();
     for (auto& surfaceChangedRect : surfaceChangedRects) {
