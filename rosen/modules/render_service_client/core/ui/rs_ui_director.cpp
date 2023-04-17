@@ -269,15 +269,11 @@ void RSUIDirector::RecvMessages()
 
 void RSUIDirector::RecvMessages(std::shared_ptr<RSTransactionData> cmds)
 {
-    if (g_uiTaskRunner == nullptr) {
-        ROSEN_LOGE("RSUIDirector::RecvMessages, Notify ui message failed, uiTaskRunner is null");
-        return;
-    }
     if (cmds == nullptr || cmds->IsEmpty()) {
         return;
     }
 
-    g_uiTaskRunner([cmds]() { RSUIDirector::ProcessMessages(cmds); });
+    PostTask([cmds]() { RSUIDirector::ProcessMessages(cmds); });
 }
 
 void RSUIDirector::ProcessMessages(std::shared_ptr<RSTransactionData> cmds)
@@ -305,6 +301,15 @@ void RSUIDirector::AnimationCallbackProcessor(NodeId nodeId, AnimationId animId)
         ROSEN_LOGE("RSUIDirector::AnimationCallbackProcessor, could not find animation %" PRIu64 " on fallback node.",
             animId);
     }
+}
+
+void RSUIDirector::PostTask(const std::function<void()>& task)
+{
+    if (g_uiTaskRunner == nullptr) {
+        ROSEN_LOGE("RSUIDirector::PostTask, uiTaskRunner is null");
+        return;
+    }
+    g_uiTaskRunner(task);
 }
 } // namespace Rosen
 } // namespace OHOS

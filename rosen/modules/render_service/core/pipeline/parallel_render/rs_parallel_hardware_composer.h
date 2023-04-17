@@ -19,10 +19,12 @@
 #include <map>
 #include <memory>
 #include <vector>
+
+#include "include/core/SkRRect.h"
+#include "include/core/SkRect.h"
+
 #include "common/rs_vector4.h"
 #include "pipeline/rs_paint_filter_canvas.h"
-#include "SkRRect.h"
-#include "third_party/skia/include/core/SkRect.h"
 #include "property/rs_properties_painter.h"
 
 namespace OHOS {
