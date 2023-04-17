@@ -126,12 +126,12 @@ template("rosen_libharfbuzz") {
     if (defined(use_new_skia) && use_new_skia) {
       sources -= [
         "$skia_root/third_party/externals/harfbuzz/src/hb-ot-shape-complex-use-table.cc",
-        "$skia_root/third_party/externals/harfbuzz/src/hb-warning.cc"
+        "$skia_root/third_party/externals/harfbuzz/src/hb-warning.cc",
       ]
       sources += [
+        "$skia_root/third_party/externals/harfbuzz/src/hb-fallback-shape.cc",
         "$skia_root/third_party/externals/harfbuzz/src/hb-number.cc",
         "$skia_root/third_party/externals/harfbuzz/src/hb-ot-metrics.cc",
-        "$skia_root/third_party/externals/harfbuzz/src/hb-fallback-shape.cc",
         "$skia_root/third_party/externals/harfbuzz/src/hb-ot-shape-complex-syllabic.cc",
       ]
     }
