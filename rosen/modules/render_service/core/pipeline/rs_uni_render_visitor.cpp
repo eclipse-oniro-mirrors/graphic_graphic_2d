@@ -1581,7 +1581,9 @@ void RSUniRenderVisitor::CalcDirtyDisplayRegion(std::shared_ptr<RSDisplayRenderN
                 surfaceNode->SetShadowValidLastFrame(false);
             }
         }
-
+        // If a surface's dirty is intersect with container region (which can be considered transparent)
+        // should be added to display dirty region.
+        // Note: we use containerRegion rather transparentRegion to bypass inner corner dirty problem.
         auto containerRegion = surfaceNode->GetContainerRegion();
         auto surfaceDirtyRegion = Occlusion::Region{Occlusion::Rect{surfaceDirtyRect}};
         auto containerDirtyRegion = containerRegion.And(surfaceDirtyRegion);
@@ -1594,7 +1596,6 @@ void RSUniRenderVisitor::CalcDirtyDisplayRegion(std::shared_ptr<RSDisplayRenderN
                     { rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_ });
             }
         }
-
     }
     std::vector<RectI> surfaceChangedRects = node->GetSurfaceChangedRects();
     for (auto& surfaceChangedRect : surfaceChangedRects) {
@@ -2074,11 +2075,11 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
         return;
     }
 #ifdef RS_ENABLE_EGLQUERYSURFACE
-    if (isOpDropped_ && curSurfaceNode_) {
-        // If a canvasnode do NOT has children draw out of itself (GetOldDirtyInSurface), it can
-        // be directly skipped if not intersect with any dirtyregion. Otherwise, its childrenRect_ 
-        // should be considered.
-        if (!node.HasChildrenOutOfRect()){
+    if (isOpDropped_ && (curSurfaceNode_ != nullptr)) {
+        // If all the child nodes have drawing areas that do not exceed the current node, then current node
+        // can be directly skipped if not intersect with any dirtyregion.
+        // Otherwise, its childrenRect_ should be considered.
+        if (!node.HasChildrenOutOfRect()) {
             if (!curSurfaceNode_->SubNodeNeedDraw(node.GetOldDirtyInSurface(), partialRenderType_)) {
                 return;
             }

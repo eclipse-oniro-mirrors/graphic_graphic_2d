@@ -454,7 +454,7 @@ public:
 
     bool SubNodeIntersectWithDirty(const RectI& r) const;
 
-    // judge if a rect r is intersect with existing dirtyregion, include current surface's dirtyregion, display
+    // judge if a rect r is intersect with existing dirtyregion, include current surfacenode's dirtyregion, display
     // dirtyregion, and dirtyregion from other surfacenode because of 32/64 bits alignment.
     bool SubNodeNeedDraw(const RectI& r, PartialRenderType opDropType) const;
 
@@ -475,12 +475,12 @@ public:
 
     inline bool HasContainerWindow() const
     {
-        return cc_.hasContainerWindow_;
+        return containerConfig_.hasContainerWindow_;
     }
 
     void SetContainerWindow(bool hasContainerWindow, float density)
     {
-        cc_.Update(hasContainerWindow, density);
+        containerConfig_.Update(hasContainerWindow, density);
     }
 
     bool IsOpaqueRegionChanged() const
@@ -515,9 +515,8 @@ public:
     Occlusion::Region SetUnfocusedWindowOpaqueRegion(const RectI& absRect, const ScreenRotation screenRotation) const;
     Occlusion::Region SetFocusedWindowOpaqueRegion(const RectI& absRect, const ScreenRotation screenRotation) const;
     Occlusion::Region SetCornerRadiusOpaqueRegion(const RectI& absRect, float radius) const;
-
-    void ResetSurfaceContainerRegion(const RectI& screeninfo, const RectI& absRect, const ScreenRotation screenRotation);
-
+    void ResetSurfaceContainerRegion(const RectI& screeninfo, const RectI& absRect,
+        const ScreenRotation screenRotation);
 
     bool IsStartAnimationFinished() const;
     void SetStartAnimationFinished();
@@ -640,30 +639,37 @@ private:
     Occlusion::Region transparentRegion_;
 
     Occlusion::Region containerRegion_;
-    class ContarinerConfig
-    {
-        public:
-            inline int MyFloor(float length)
-            {
-                return std::abs(length - std::round(length)) < 0.05f ? std::round(length) : std::floor(length);
-            }
-            void Update(bool hasContainer, float density);
-        public:
-            bool hasContainerWindow_ = false;               // set to false as default, set by arkui
-            // temporary const value from ACE container_modal_constants.h, will be replaced by uniform interface
-            const static int CONTAINER_TITLE_HEIGHT = 37;   // container title height = 37 vp
-            const static int CONTENT_PADDING = 4;           // container <--> content distance 4 vp
-            const static int CONTAINER_BORDER_WIDTH = 1;    // container border width 2 vp
-            const static int CONTAINER_OUTER_RADIUS = 16;   // container outter radius 16 vp
-            const static int CONTAINER_INNER_RADIUS = 14;   // container inner radius 14 vp
-            float density = 2.0f;                           // The density default value is 2
-            int outR;
-            int inR;
-            int bp;
-            int bt;
+
+    /*
+        ContainerWindow configs acquired from arkui, including container window state, screen density, container border
+        width, padding width, inner/outer radius, etc.
+    */
+    class ContarinerConfig {
+    public:
+        void Update(bool hasContainer, float density);
+    private:
+        inline int RoundFloor(float length)
+        {
+            // if a float value is very close to a integer (< 0.05f), return round value
+            return std::abs(length - std::round(length)) < 0.05f ? std::round(length) : std::floor(length);
+        }
+    public:
+        // temporary const value from ACE container_modal_constants.h, will be replaced by uniform interface
+        const static int CONTAINER_TITLE_HEIGHT = 37;   // container title height = 37 vp
+        const static int CONTENT_PADDING = 4;           // container <--> content distance 4 vp
+        const static int CONTAINER_BORDER_WIDTH = 1;    // container border width 2 vp
+        const static int CONTAINER_OUTER_RADIUS = 16;   // container outter radius 16 vp
+        const static int CONTAINER_INNER_RADIUS = 14;   // container inner radius 14 vp
+
+        bool hasContainerWindow_ = false;               // set to false as default, set by arkui
+        float density = 2.0f;                           // The density default value is 2
+        int outR = 32;                                  // outer radius (int value)
+        int inR = 28;                                   // inner radius (int value)
+        int bp = 10;                                    // border width + padding (int value)
+        int bt = 76;                                    // border width + title (int value)
     };
 
-    ContarinerConfig cc_;
+    ContarinerConfig containerConfig_;
 
     bool startAnimationFinished_ = false;
     mutable std::mutex cachedImageMutex_;
