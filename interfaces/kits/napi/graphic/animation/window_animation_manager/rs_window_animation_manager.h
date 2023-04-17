@@ -37,10 +37,14 @@ public:
 
     static NativeValue* MinimizeWindowWithAnimation(NativeEngine* engine, NativeCallbackInfo* info);
 
+    static NativeValue* GetWindowAnimationTargets(NativeEngine* engine, NativeCallbackInfo* info);
+
 private:
     NativeValue* OnSetController(NativeEngine& engine, NativeCallbackInfo& info);
 
     NativeValue* OnMinimizeWindowWithAnimation(NativeEngine& engine, NativeCallbackInfo& info);
+
+    NativeValue* OnGetWindowAnimationTargets(NativeEngine& engine, NativeCallbackInfo& info);
 };
 } // namespace Rosen
 } // namespace OHOS
