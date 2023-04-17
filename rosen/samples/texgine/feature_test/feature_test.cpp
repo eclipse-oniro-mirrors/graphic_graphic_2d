@@ -22,33 +22,33 @@
 using namespace OHOS::Rosen::TextEngine;
 
 namespace {
-constexpr auto exampleText = "Hello 1234";
+constexpr auto EXAMPLE_TEXT = "Hello 1234";
 
 struct FeatureInfo {
     std::string path = "";
     std::string fontFamily;
-    std::string title_ = "";
+    std::string title = "";
     std::map<std::string, int> features;
-} infos[] = {
+} g_infos[] = {
     {
-        .title_ = "default",
+        .title = "default",
     },
     {
         .path = RESOURCE_PATH_PREFIX "Roboto-Black.ttf",
         .fontFamily = "Roboto",
-        .title_ = "Roboto, pnum",
-        .features = {std::pair<std::string, int>("pnum", 1),},
+        .title = "Roboto, pnum",
+        .features = { std::pair<std::string, int>("pnum", 1), },
     },
     {
         .path = RESOURCE_PATH_PREFIX "Roboto-Black.ttf",
         .fontFamily = "Roboto",
-        .title_ = "Roboto, tnum",
-        .features = {std::pair<std::string, int>("tnum", 1),},
+        .title = "Roboto, tnum",
+        .features = { std::pair<std::string, int>("tnum", 1), },
     },
     {
         .path = RESOURCE_PATH_PREFIX "Roboto-Black.ttf",
         .fontFamily = "Roboto",
-        .title_ = "Roboto, pnum 1, pnum 0, tnum 1",
+        .title = "Roboto, pnum 1, pnum 0, tnum 1",
         .features = {
             std::pair<std::string, int>("pnum", 1),
             std::pair<std::string, int>("pnum", 0),
@@ -65,29 +65,30 @@ public:
 
     void Layout()
     {
-        for (const auto &info : infos) {
-            auto dfprovider = DynamicFileFontProvider::Create();
-            dfprovider->LoadFont(info.fontFamily, info.path);
+        for (const auto &info : g_infos) {
+            auto dfProvider = DynamicFileFontProvider::Create();
+            dfProvider->LoadFont(info.fontFamily, info.path);
             auto fps = FontProviders::Create();
-            fps->AppendFontProvider(dfprovider);
+            fps->AppendFontProvider(dfProvider);
             fps->AppendFontProvider(SystemFontProvider::GetInstance());
             auto builder = TypographyBuilder::Create({}, std::move(fps));
 
             TextStyle style;
-            style.fontFamilies_ = {info.fontFamily};
-            style.fontSize_ = 64;
+            style.fontFamilies = {info.fontFamily};
+            style.fontSize = 64;
             for (const auto &[feature, value] : info.features) {
                 style.fontFeature_.SetFeature(feature, value);
             }
 
             builder->PushStyle(style);
-            builder->AppendSpan(exampleText);
+            builder->AppendSpan(EXAMPLE_TEXT);
             builder->PopStyle();
             auto typography = builder->Build();
-            typography->Layout(300);
+            double widthLimit = 300.0;
+            typography->Layout(widthLimit);
             typographies_.push_back({
                 .typography = typography,
-                .comment = info.title_,
+                .comment = info.title,
             });
         }
     }

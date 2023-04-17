@@ -23,131 +23,129 @@
 using namespace OHOS::Rosen::TextEngine;
 
 namespace {
-#define Family1 Woman Skin1 ZWJ RedHeart ZWJ Man Skin0
-#define Family2 Person Skin4 ZWJ RedHeart ZWJ Man ZWJ Person Skin2
-#define Role1 Person Skin3 ZWJ Airplane
-#define Role2 Person Skin1 ZWJ Laptop
-#define Genered1 BouncingBall Skin2 ZWJ WomanSportVariant EmojiVariant
-#define Genered2 LiftingWeights Skin0 ZWJ ManSportVariant EmojiVariant
-#define Hair1 Man Skin2 ZWJ HairBald
-#define Hair2 Person Skin4 ZWJ HairCurly
-#define Other1 RedHeart ZWJ "\U0001F525"
-#define Other2 Flag EmojiVariant ZWJ Transgender EmojiVariant
+#define FAMILY1 WOMAN SKIN1 ZWJ RED_HEART ZWJ MAN SKIN0
+#define FAMILY2 PERSON SKIN4 ZWJ RED_HEART ZWJ MAN ZWJ PERSON SKIN2
+#define ROLE1 PERSON SKIN3 ZWJ AIRPLANE
+#define ROLE2 PERSON SKIN1 ZWJ LAPTOP
+#define GENERED1 BOUNCING_BALL SKIN2 ZWJ WOMAN_SPORT_VARIANT EMOJI_VARIANT
+#define GENERED2 LIFTING_WEIGHTS SKIN0 ZWJ MAN_SPORT_VARIANT EMOJI_VARIANT
+#define HAIR1 MAN SKIN2 ZWJ HAIR_BALD
+#define HAIR2 PERSON SKIN4 ZWJ HAIR_CURLY
+#define OTHER1 RED_HEART ZWJ "\U0001F525"
+#define OTHER2 FLAG EMOJI_VARIANT ZWJ TRANSGENDER EMOJI_VARIANT
 
 struct Emoji {
-    TextStyle style_ = { .fontSize_ = 32 };
-    std::string emoji_;
-    std::string title_;
-} emojis[] = {
+    TextStyle style = { .fontSize_ = 32 };
+    std::string emoji;
+    std::string title;
+} g_emojis[] = {
     {
-        .emoji_ = Watch,
-        .title_ = "watch",
+        .emoji = WATCH,
+        .title = "watch",
     },
     {
-        .emoji_ = FastForwardButton,
-        .title_ = "fast forward button",
+        .emoji = FAST_FORWARD_BUTTON,
+        .title = "fast forward button",
     },
     {
-        .emoji_ = AlartClock,
-        .title_ = "alart clock",
+        .emoji = ALART_CLOCK,
+        .title = "alart clock",
     },
     {
-        .emoji_ = Umbrella,
-        .title_ = "umbrella",
+        .emoji = UMBRELLA,
+        .title = "umbrella",
     },
     {
-        .emoji_ = RedCircle,
-        .title_ = "red circle",
+        .emoji = RED_CIRCLE,
+        .title = "red circle",
     },
     {
-        .emoji_ = BlackLargeSquare,
-        .title_ = "black large square",
+        .emoji = BLACK_LARGE_SQUARE,
+        .title = "black large square",
     },
     {
-        .emoji_ = CurlyLoop,
-        .title_ = "curly loop",
+        .emoji = CURLY_LOOP,
+        .title = "curly loop",
     },
     {
-        .emoji_ = Plus,
-        .title_ = "plus",
+        .emoji = PLUS,
+        .title = "plus",
     },
     {
-        .emoji_ = Snowman,
-        .title_ = "snowman",
+        .emoji = SNOWMAN,
+        .title = "snowman",
     },
     {
-        .emoji_ = Voltage,
-        .title_ = "voltage",
-    },
-    // =======================
-    {
-        .emoji_ = Copyright,
-        .title_ = "copyright",
+        .emoji = VOLTAGE,
+        .title = "voltage",
     },
     {
-        .emoji_ = Registered,
-        .title_ = "registered",
+        .emoji = COPYRIGHT,
+        .title = "copyright",
     },
     {
-        .emoji_ = DoubleExclamationMark,
-        .title_ = "double exclamation mark",
+        .emoji = REGISTERED,
+        .title = "registered",
     },
     {
-        .emoji_ = ExclamationQuestionMark,
-        .title_ = "exclamation question mark",
+        .emoji = DOUBLE_EXCLAMATION_MARK,
+        .title = "double exclamation mark",
     },
     {
-        .emoji_ = WavyDash,
-        .title_ = "wavy dash",
+        .emoji = EXCLAMATION_QUESTION_MARK,
+        .title = "exclamation question mark",
     },
     {
-        .emoji_ = LeftArrow,
-        .title_ = "left arrow",
+        .emoji = WAVY_DASH,
+        .title = "wavy dash",
     },
     {
-        .emoji_ = RedHeart,
-        .title_ = "red heart",
+        .emoji = LEFT_ARROW,
+        .title = "left arrow",
     },
     {
-        .emoji_ = Pencil,
-        .title_ = "pencil",
+        .emoji = RED_HEART,
+        .title = "red heart",
     },
     {
-        .emoji_ = Airplane,
-        .title_ = "airplan",
+        .emoji = PENCIL,
+        .title = "pencil",
     },
     {
-        .emoji_ = Atom,
-        .title_ = "atom",
-    },
-    // =======================
-    {
-        .emoji_ = RedDragon,
-        .title_ = "red dragon",
+        .emoji = AIRPLANE,
+        .title = "airplan",
     },
     {
-        .emoji_ = Joker,
-        .title_ = "joker",
+        .emoji = ATOM,
+        .title = "atom",
     },
     {
-        .emoji_ = Cyclone,
-        .title_ = "cyclone",
+        .emoji = RED_DRAGON,
+        .title = "red dragon",
     },
     {
-        .emoji_ = NewMoonFace,
-        .title_ = "new moon face",
+        .emoji = JOKER,
+        .title = "joker",
     },
     {
-        .emoji_ = Cat,
-        .title_ = "cat",
+        .emoji = CYCLONE,
+        .title = "cyclone",
     },
     {
-        .emoji_ = Dog,
-        .title_ = "dog",
+        .emoji = NEW_MOON_FACE,
+        .title = "new moon face",
     },
     {
-        .emoji_ = Boy,
-        .title_ = "boy",
+        .emoji = CAT,
+        .title = "cat",
+    },
+    {
+        .emoji = DOG,
+        .title = "dog",
+    },
+    {
+        .emoji = BOY,
+        .title = "boy",
     },
 };
 
@@ -159,23 +157,24 @@ public:
 
     void Layout()
     {
-        for (auto &emoji : emojis) {
+        for (auto &emoji : g_emojis) {
             TypographyStyle tystyle;
-            auto dfprovider = DynamicFileFontProvider::Create();
-            dfprovider->LoadFont("Segoe UI Emoji", RESOURCE_PATH_PREFIX "seguiemj.ttf");
+            auto dfProvider = DynamicFileFontProvider::Create();
+            dfProvider->LoadFont("Segoe UI Emoji", RESOURCE_PATH_PREFIX "seguiemj.ttf");
             auto fps = FontProviders::Create();
-            fps->AppendFontProvider(dfprovider);
+            fps->AppendFontProvider(dfProvider);
             fps->AppendFontProvider(SystemFontProvider::GetInstance());
             auto builder = TypographyBuilder::Create(tystyle, std::move(fps));
 
-            emoji.style_.fontFamilies_ = {"Segoe UI Emoji"};
-            builder->PushStyle(emoji.style_);
-            builder->AppendSpan(emoji.emoji_);
+            emoji.style.fontFamilies_ = {"Segoe UI Emoji"};
+            builder->PushStyle(emoji.style);
+            builder->AppendSpan(emoji.emoji);
             builder->PopStyle();
 
             auto typography = builder->Build();
-            typography->Layout(100);
-            typographies_.push_back({.typography = typography, .comment = emoji.title_});
+            double widthLimit = 100;
+            typography->Layout(widthLimit);
+            typographies_.push_back({ .typography = typography, .comment = emoji.title });
         }
     }
 } g_test;
