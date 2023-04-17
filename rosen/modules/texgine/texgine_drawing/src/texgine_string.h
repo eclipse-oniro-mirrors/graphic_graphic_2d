@@ -25,9 +25,25 @@ namespace Rosen {
 namespace TextEngine {
 class TexgineString {
 public:
-    SkString *GetString();
-    void SetString(std::shared_ptr<SkString> string);
-    void SetString(const char *string);
+    /*
+     * @brief Returns the pointer of SkString
+     */
+    SkString *GetString() const;
+
+    /*
+     * @brief Sets SkString to TexgineString
+     * @param string SkString
+     */
+    void SetString(const std::shared_ptr<SkString> string);
+
+    /*
+     * @brief Sets string to TexgineString
+     */
+    void SetString(const std::string &s);
+
+    /*
+     * @brief Covert SkString to String
+     */
     std::string ToString();
 
 private:

@@ -26,12 +26,20 @@ namespace TextEngine {
 class TexgineMemoryStream {
 public:
     TexgineMemoryStream();
-    TexgineMemoryStream(std::unique_ptr<SkMemoryStream> stream);
-    std::unique_ptr<SkMemoryStream> GetStream();
+    explicit TexgineMemoryStream(std::unique_ptr<SkMemoryStream> stream);
+
+    /*
+     * @brief Returns SkMemoryStream that user init or set to TexgineMemoryStream
+     */
+    std::unique_ptr<SkMemoryStream> GetStream() const;
+
+    /*
+     * @brief Returns a stream with a copy of the input data.
+     */
     static std::unique_ptr<TexgineMemoryStream> MakeCopy(const void *data, size_t length);
 
 private:
-    std::unique_ptr<SkMemoryStream> memoryStream_;
+    std::unique_ptr<SkMemoryStream> memoryStream_ = nullptr;
 };
 } // namespace TextEngine
 } // namespace Rosen

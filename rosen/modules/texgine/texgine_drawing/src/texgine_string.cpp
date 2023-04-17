@@ -18,23 +18,26 @@
 namespace OHOS {
 namespace Rosen {
 namespace TextEngine {
-SkString *TexgineString::GetString()
+SkString *TexgineString::GetString() const
 {
     return string_.get();
 }
 
-void TexgineString::SetString(std::shared_ptr<SkString> string)
+void TexgineString::SetString(const std::shared_ptr<SkString> string)
 {
     string_ = string;
 }
 
-void TexgineString::SetString(const char *string)
+void TexgineString::SetString(const std::string &s)
 {
-    *string_ = string;
+    *string_ = string.c_str();
 }
 
 std::string TexgineString::ToString()
 {
+    if (string_ == nullptr) {
+        return "";
+    }
     return string_->c_str();
 }
 } // namespace TextEngine

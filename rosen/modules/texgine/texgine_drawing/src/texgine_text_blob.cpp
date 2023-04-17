@@ -18,12 +18,12 @@
 namespace OHOS {
 namespace Rosen {
 namespace TextEngine {
-sk_sp<SkTextBlob> TexgineTextBlob::GetTextBlob()
+sk_sp<SkTextBlob> TexgineTextBlob::GetTextBlob() const
 {
     return textBlob_;
 }
 
-void TexgineTextBlob::SetTextBlob(sk_sp<SkTextBlob> textBlob)
+void TexgineTextBlob::SetTextBlob(const sk_sp<SkTextBlob> textBlob)
 {
     textBlob_ = textBlob;
 }

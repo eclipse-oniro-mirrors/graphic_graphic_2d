@@ -26,16 +26,47 @@ namespace TextEngine {
 class TexgineRect {
 public:
     TexgineRect();
-    static TexgineRect MakeLTRB(float left, float top, float right, float bottom);
-    static TexgineRect MakeXYWH(float x, float y, float w, float h);
-    static TexgineRect MakeWH(float w, float h);
-    std::shared_ptr<SkRect> GetRect() const;
-    void SetRect(SkRect rect);
 
-    float *fLeft_;
-    float *fTop_;
-    float *fRight_;
-    float *fBottom_;
+    /*
+     * @brief Create TexgineRect
+     * @param left The left boundary of TexgineRect
+     * @param right The right boundary of TexgineRect
+     * @param top The top boundary of TexgineRect
+     * @param bottom The bottom boundary of TexgineRect
+     */
+    static TexgineRect MakeLTRB(float left, float top, float right, float bottom);
+
+    /*
+     * @brief Create TexgineRect
+     * @param x The left boundary of TexgineRect
+     * @param y The top boundary of TexgineRect
+     * @param w The width of TexgineRect
+     * @param h The height of TexgineRect
+     */
+    static TexgineRect MakeXYWH(float x, float y, float w, float h);
+
+    /*
+     * @brief Create TexgineRect at (0, 0, w, h)
+     * @param w The width of TexgineRect
+     * @param h The height of TexgineRect
+     */
+    static TexgineRect MakeWH(float w, float h);
+
+    /*
+     * @brief Return SkRect that user init or set to TexgineRect
+     */
+    std::shared_ptr<SkRect> GetRect() const;
+
+    /*
+     * @brief Sets SkRect to TexgineRect
+     * @param rect SkRect user want
+     */
+    void SetRect(const SkRect &rect);
+
+    float *fLeft_ = nullptr;
+    float *fTop_ = nullptr;
+    float *fRight_ = nullptr;
+    float *fBottom_ = nullptr;
 
 private:
     std::shared_ptr<SkRect> rect_ = nullptr;
