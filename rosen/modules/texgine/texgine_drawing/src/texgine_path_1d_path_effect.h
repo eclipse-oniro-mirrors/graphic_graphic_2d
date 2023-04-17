@@ -36,6 +36,12 @@ public:
         kLastEnum_Style = kMorph_Style,
     };
 
+    /*
+     * @brief Dash by copying the specified path
+     * @param path The path to copying
+     * @param advance Space between path instances
+     * @param style Path transformation style between each point
+     */
     static std::shared_ptr<TexginePathEffect> Make(TexginePath& path, float advance, float phase, Style style);
 };
 } // namespace TextEngine

@@ -18,12 +18,12 @@
 namespace OHOS {
 namespace Rosen {
 namespace TextEngine {
-sk_sp<SkPathEffect> TexginePathEffect::GetPathEffect()
+sk_sp<SkPathEffect> TexginePathEffect::GetPathEffect() const
 {
     return pathEffect_;
 }
 
-void TexginePathEffect::SetPathEffect(sk_sp<SkPathEffect> effect)
+void TexginePathEffect::SetPathEffect(const sk_sp<SkPathEffect> effect)
 {
     pathEffect_ = effect;
 }

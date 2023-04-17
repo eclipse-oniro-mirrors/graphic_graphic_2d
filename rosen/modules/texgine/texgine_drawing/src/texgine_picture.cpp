@@ -18,12 +18,12 @@
 namespace OHOS {
 namespace Rosen {
 namespace TextEngine {
-sk_sp<SkPicture> TexginePicture::GetPicture()
+sk_sp<SkPicture> TexginePicture::GetPicture() const
 {
     return picture_;
 }
 
-void TexginePicture::SetPicture(sk_sp<SkPicture> picture)
+void TexginePicture::SetPicture(const sk_sp<SkPicture> picture)
 {
     picture_ = picture;
 }

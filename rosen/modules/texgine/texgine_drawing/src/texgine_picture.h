@@ -25,11 +25,11 @@ namespace Rosen {
 namespace TextEngine {
 class TexginePicture {
 public:
-    sk_sp<SkPicture> GetPicture();
-    void SetPicture(sk_sp<SkPicture> picture);
+    sk_sp<SkPicture> GetPicture() const;
+    void SetPicture(const sk_sp<SkPicture> picture);
 
 private:
-    sk_sp<SkPicture> picture_;
+    sk_sp<SkPicture> picture_ = nullptr;
 };
 } // namespace TextEngine
 } // namespace Rosen

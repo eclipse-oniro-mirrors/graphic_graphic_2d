@@ -25,11 +25,11 @@ namespace Rosen {
 namespace TextEngine {
 class TexginePathEffect {
 public:
-    sk_sp<SkPathEffect> GetPathEffect();
-    void SetPathEffect(sk_sp<SkPathEffect> effect);
+    sk_sp<SkPathEffect> GetPathEffect() const;
+    void SetPathEffect(const sk_sp<SkPathEffect> effect);
 
 private:
-    sk_sp<SkPathEffect> pathEffect_;
+    sk_sp<SkPathEffect> pathEffect_ == nullptr;
 };
 } // namespace TextEngine
 } // namespace Rosen
