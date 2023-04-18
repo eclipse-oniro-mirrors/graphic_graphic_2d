@@ -88,13 +88,12 @@ template("rosen_icu_make_data_assembly") {
   forward_variables_from(invoker, "*")
 
   action(target_name) {
-    script = "$skia_root/third_party/externals/icu/scripts/make_data_assembly.py"
+    script =
+        "$skia_root/third_party/externals/icu/scripts/make_data_assembly.py"
     if (platform == "windows" || platform == "mac") {
-      inputs =
-          [ "$skia_root/third_party/externals/icu/common/icudtl.dat" ]
+      inputs = [ "$skia_root/third_party/externals/icu/common/icudtl.dat" ]
     } else {
-      inputs =
-          [ "$skia_root/third_party/externals/icu/flutter/icudtl.dat" ]
+      inputs = [ "$skia_root/third_party/externals/icu/flutter/icudtl.dat" ]
     }
     outputs = [ "$root_out_dir/rosen_icu_$platform/icudtl_dat.S" ]
     args = [
@@ -141,6 +140,7 @@ template("rosen_libicu") {
       ]
 
       sources = [
+        "$root_out_dir/ace_icu_$platform/icudtl_dat.S",
         "$skia_root/third_party/externals/icu/source/common/appendable.cpp",
         "$skia_root/third_party/externals/icu/source/common/bmpset.cpp",
         "$skia_root/third_party/externals/icu/source/common/brkeng.cpp",
@@ -558,7 +558,6 @@ template("rosen_libicu") {
         "$skia_root/third_party/externals/icu/source/i18n/zonemeta.cpp",
         "$skia_root/third_party/externals/icu/source/i18n/zrule.cpp",
         "$skia_root/third_party/externals/icu/source/i18n/ztrans.cpp",
-        "$root_out_dir/ace_icu_$platform/icudtl_dat.S",
       ]
 
       deps = [
