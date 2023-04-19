@@ -923,11 +923,6 @@ void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::Sha
         if (curSurface == nullptr || curSurface->GetDstRect().IsEmpty() || curSurface->IsLeashWindow()) {
             continue;
         }
-        // When a surfacenode is in animation (i.e. 3d animation), its dstrect cannot be trusted, we treated it as
-        // a full transparent layer.
-        if (curSurface->GetAnimateState()) {
-            continue;
-        }
         Occlusion::Rect occlusionRect;
         if (isUniRender_) {
             // In UniRender, CalcOcclusion should consider the shadow area of window
@@ -953,7 +948,13 @@ void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::Sha
                 }
             }
             if (isUniRender_) {
-                accumulatedRegion.OrSelf(curSurface->GetOpaqueRegion());
+                // When a surfacenode is in animation (i.e. 3d animation), its dstrect cannot be trusted, we treated
+                // it as a full transparent layer.
+                if (!(curSurface->GetAnimateState())) {
+                    accumulatedRegion.OrSelf(curSurface->GetOpaqueRegion());
+                } else {
+                    curSurface->ResetAnimateState();
+                }
             } else {
                 bool diff = (curSurface->GetDstRect().width_ > curSurface->GetBuffer()->GetWidth() ||
                             curSurface->GetDstRect().height_ > curSurface->GetBuffer()->GetHeight()) &&

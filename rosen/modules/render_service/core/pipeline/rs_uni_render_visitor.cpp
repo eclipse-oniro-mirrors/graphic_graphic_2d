@@ -1903,14 +1903,13 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         AdjustLocalZOrder(curSurfaceNode_);
     }
     // skip clean surface node
-    if (isOpDropped_ && node.IsAppWindow() && !node.GetAnimateState() &&
+    if (isOpDropped_ && node.IsAppWindow() &&
         !node.SubNodeNeedDraw(node.GetOldDirtyInSurface(), partialRenderType_)) {
         RS_TRACE_NAME(node.GetName() + " QuickReject Skip");
         RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode skip: %s", node.GetName().c_str());
         return;
     }
 #endif
-    node.ResetAnimateState();
     if (!canvas_) {
         RS_LOGE("RSUniRenderVisitor::ProcessSurfaceRenderNode, canvas is nullptr");
         return;
