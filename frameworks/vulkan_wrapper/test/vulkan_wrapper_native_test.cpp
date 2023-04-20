@@ -20,9 +20,9 @@
 #include "vulkan/vulkan.h"
 
 #ifdef __aarch64__
-constexpr const char *LIB_CACULATE_PATH = "/system/lib64/libvulkan.so";
+constexpr const char *LIB_CACULATE_PATH = "/system/lib64/libvulkan_wrapper.so";
 #else
-constexpr const char *LIB_CACULATE_PATH = "/system/lib/libvulkan.so";
+constexpr const char *LIB_CACULATE_PATH = "/system/lib/libvulkan_wrapper.so";
 #endif
 
 int32_t main(int32_t argc, const char* argv[])
