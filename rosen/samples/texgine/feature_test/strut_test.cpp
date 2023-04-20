@@ -25,7 +25,7 @@ struct Rect {
     TextRectHeightStyle heightStyle;
     TextRectWidthStyle widthStyle;
     std::string title = "";
-} rectinfos[] = {
+} g_rectInfos[] = {
     {
         .heightStyle = TextRectHeightStyle::TIGHT,
         .widthStyle = TextRectWidthStyle::TIGHT,
@@ -84,7 +84,7 @@ public:
             },
         };
 
-        for (auto &[heightStyle, widthStyle, title] : rectinfos) {
+        for (auto &[heightStyle, widthStyle, title] : g_rectInfos) {
             auto builder = TypographyBuilder::Create(tpStyle);
             builder->PushStyle(style);
             builder->AppendSpan("jhello hello hello JHELLO");

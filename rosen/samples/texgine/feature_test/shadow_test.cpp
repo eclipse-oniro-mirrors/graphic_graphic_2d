@@ -24,7 +24,7 @@ namespace {
 struct ShadowTestData {
     std::string text;
     TextStyle style;
-} datas[] = {
+} g_datas[] = {
     {
         .text = "阴影对照.",
         .style = {},
@@ -120,7 +120,7 @@ public:
 
     void Layout()
     {
-        for (auto &[text, style] : datas) {
+        for (auto &[text, style] : g_datas) {
             auto builder = TypographyBuilder::Create();
             builder->PushStyle(style);
             builder->AppendSpan(text);
