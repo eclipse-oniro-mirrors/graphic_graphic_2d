@@ -315,11 +315,10 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
 
     // Expand the screenshot area to avoid animation flickering caused by floating points.
     // Interset with the screen to prevent exceeding the screen and ensure that the boundary is greater than zero.
-    auto toSkIRect = [](const SkRect& rc) { return SkIRect::MakeXYWH(rc.left(), rc.top(), rc.width(), rc.height());};
     auto clipIBounds = canvas.getDeviceClipBounds();
     auto screenIRect = SkIRect::MakeWH(skSurface->width(), skSurface->height());
     auto radius = (int32_t)filter->GetBlurRadiusPx();
-    auto clipIPadding = SkIRect(clipIBounds).makeOutset(radius, radius);
+    auto clipIPadding = clipIBounds.makeOutset(radius, radius);
     clipIPadding.intersect(screenIRect);
     auto imageSnapshot = skSurface->makeImageSnapshot(clipIPadding);
     if (imageSnapshot == nullptr) {
@@ -329,10 +328,10 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
     auto imgSub = imageSnapshot->makeSubset(clipIBounds.makeOffset(-clipIPadding.left(), -clipIPadding.top()));
     filter->PreProcess(imgSub);
     canvas.resetMatrix();
-    auto visibleIRect = toSkIRect(canvas.GetVisibleRect());
+    auto visibleIRect = canvas.GetVisibleRect().round();
     if (visibleIRect.intersect(clipIBounds)) {
         canvas.clipRect(SkRect::Make(visibleIRect));
-        auto visibleIPadding = SkIRect(visibleIRect).makeOutset(radius, radius);
+        auto visibleIPadding = visibleIRect.makeOutset(radius, radius);
         visibleIPadding.intersect(screenIRect);
         canvas.drawImageRect(imageSnapshot.get(),
             SkRect::Make(visibleIPadding.makeOffset(-clipIPadding.left(), -clipIPadding.top())),
