@@ -23,16 +23,16 @@
 using namespace OHOS::Rosen::TextEngine;
 
 namespace {
-constexpr auto exampleText = "hello world, hello openharmony!";
-constexpr auto exampleText2 = "你 好 世 界 你好鸿蒙！";
+constexpr auto EXAMPLE_TEXT = "hello world, hello openharmony!";
+constexpr auto EXAMPLE_TEXT2 = "你 好 世 界 你好鸿蒙！";
 
 struct IntrinsicTestData {
     TypographyStyle ys_;
     std::string title_;
     double widthLimit_ = 150;
-    const char *text_ = exampleText;
+    const char *text_ = EXAMPLE_TEXT;
     std::shared_ptr<MyAnySpan> as_ = std::make_shared<MyAnySpan>(20, 80);
-} datas[] = {
+} g_datas[] = {
     {
         .ys_ = {
             .ellipsis_ = u"",
@@ -67,7 +67,7 @@ struct IntrinsicTestData {
         },
         .title_ = "breakAll，中文",
         .widthLimit_ = 120,
-        .text_ = exampleText2,
+        .text_ = EXAMPLE_TEXT2,
     },
 };
 
@@ -79,7 +79,7 @@ public:
 
     void Layout()
     {
-        for (auto &[ys, title, limit, text, as] : datas) {
+        for (auto &[ys, title, limit, text, as] : g_datas) {
             auto builder = TypographyBuilder::Create(ys);
             builder->PushStyle({});
             builder->AppendSpan(text);
