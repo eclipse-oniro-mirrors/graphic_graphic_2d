@@ -155,7 +155,7 @@ bool TextSpan::IsRTL() const
     return rtl_;
 }
 
-void TextSpan::Paint(TexgineCanvas &canvas, double offsetx, double offsety, const TextStyle &xs)
+void TextSpan::Paint(TexgineCanvas &canvas, double offsetX, double offsetY, const TextStyle &xs)
 {
     TexginePaint paint;
     paint.SetAntiAlias(true);
@@ -163,7 +163,7 @@ void TextSpan::Paint(TexgineCanvas &canvas, double offsetx, double offsety, cons
     paint.SetColor(xs.color_);
     paint.SetStyle(TexginePaint::FILL);
     if (xs.background_.has_value()) {
-        auto rect = TexgineRect::MakeXYWH(offsetx, offsety + *tmetrics_.fAscent_, width_,
+        auto rect = TexgineRect::MakeXYWH(offsetX, offsetY + *tmetrics_.fAscent_, width_,
             *tmetrics_.fDescent_ - *tmetrics_.fAscent_);
         canvas.DrawRect(rect, xs.background_.value());
     }
@@ -171,29 +171,29 @@ void TextSpan::Paint(TexgineCanvas &canvas, double offsetx, double offsety, cons
     if (xs.foreground_.has_value()) {
         paint = xs.foreground_.value();
     }
-    canvas.DrawTextBlob(textBlob_, offsetx, offsety, paint);
-    PaintDecoration(canvas, offsetx, offsety, xs);
+    canvas.DrawTextBlob(textBlob_, offsetX, offsetY, paint);
+    PaintDecoration(canvas, offsetX, offsetY, xs);
 }
 
-void TextSpan::PaintDecoration(TexgineCanvas &canvas, double offsetx, double offsety, const TextStyle &xs)
+void TextSpan::PaintDecoration(TexgineCanvas &canvas, double offsetX, double offsetY, const TextStyle &xs)
 {
-    double left = offsetx;
+    double left = offsetX;
     double right = left + GetWidth();
 
     if ((xs.decoration_ & TextDecoration::UNDERLINE) == TextDecoration::UNDERLINE) {
-        double y = offsety + *tmetrics_.fUnderlinePosition_;
+        double y = offsetY + *tmetrics_.fUnderlinePosition_;
         PaintDecorationStyle(canvas, left, right, y, xs);
     }
     if ((xs.decoration_ & TextDecoration::OVERLINE) == TextDecoration::OVERLINE) {
-        double y = offsety - abs(*tmetrics_.fAscent_);
+        double y = offsetY - abs(*tmetrics_.fAscent_);
         PaintDecorationStyle(canvas, left, right, y, xs);
     }
     if ((xs.decoration_ & TextDecoration::LINETHROUGH) == TextDecoration::LINETHROUGH) {
-        double y = offsety - (*tmetrics_.fCapHeight_ * HALF);
+        double y = offsetY - (*tmetrics_.fCapHeight_ * HALF);
         PaintDecorationStyle(canvas, left, right, y, xs);
     }
     if ((xs.decoration_ & TextDecoration::BASELINE) == TextDecoration::BASELINE) {
-        double y = offsety;
+        double y = offsetY;
         PaintDecorationStyle(canvas, left, right, y, xs);
     }
 }
@@ -250,11 +250,12 @@ void TextSpan::PaintDecorationStyle(TexgineCanvas &canvas, double left, double r
     canvas.DrawLine(left, y, right, y, paint);
 }
 
-void TextSpan::PaintShadow(TexgineCanvas &canvas, double offsetx, double offsety, const std::vector<TextShadow> &shadows)
+void TextSpan::PaintShadow(TexgineCanvas &canvas, double offsetX, double offsetY,
+    const std::vector<TextShadow> &shadows)
 {
     for (const auto &shadow : shadows) {
-        auto x = offsetx + shadow.offsetX_;
-        auto y = offsety + shadow.offsetY_;
+        auto x = offsetX + shadow.offsetX_;
+        auto y = offsetY + shadow.offsetY_;
         auto blurRadius = std::min(shadow.blurLeave_, MAX_BLURRADIUS);
 
         TexginePaint paint;
