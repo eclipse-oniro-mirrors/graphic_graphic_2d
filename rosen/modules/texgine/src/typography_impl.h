@@ -55,7 +55,7 @@ public:
     int GetLineCount() const override;
     void SetIndents(const std::vector<float> &indents) override;
     void Layout(double widthLimit) override;
-    void Paint(TexgineCanvas &canvas, double offsetx, double offsety) override;
+    void Paint(TexgineCanvas &canvas, double offsetX, double offsetY) override;
     std::vector<TextRect> GetTextRectsByBoundary(Boundary boundary,
                                                  TextRectHeightStyle heightStyle,
                                                  TextRectWidthStyle widthStyle) const override;
@@ -80,7 +80,8 @@ private:
     size_t FindGlyphTargetIndex(size_t line, double x, double &offsetX, std::vector<double> &widths) const;
     std::vector<TextRect> MergeRects(const std::vector<TextRect> &boxes, Boundary boundary) const;
     void ComputeWordBoundary() const;
-    void ComputeSpans(int i, double baseline, const CalcResult &calcResult, std::vector<TextRect> &lineBoxes) const;
+    void ComputeSpans(int lineIndex, double baseline, const CalcResult &calcResult,
+        std::vector<TextRect> &lineBoxes) const;
 
     TypographyStyle typographyStyle_;
     std::vector<VariantSpan> spans_;
