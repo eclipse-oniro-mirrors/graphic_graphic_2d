@@ -332,10 +332,14 @@ HWTEST_F(OpenglWrapperApiTest, eglQuerySurface, TestSize.Level0)
  */
 HWTEST_F(OpenglWrapperApiTest, glClearColor, TestSize.Level0)
 {
+    for (GLint error = glGetError(); error != GL_NO_ERROR; error = glGetError()) {
+        continue;
+    }
+
     glClearColor(0, 0, 0, 1.0);
 
-    EGLint error = eglGetError();
-    EXPECT_EQ(error, EGL_SUCCESS);
+    GLint error = glGetError();
+    EXPECT_EQ(error, GL_NO_ERROR);
 }
 
 /*
@@ -347,10 +351,14 @@ HWTEST_F(OpenglWrapperApiTest, glClearColor, TestSize.Level0)
  */
 HWTEST_F(OpenglWrapperApiTest, glClear, TestSize.Level0)
 {
+    for (GLint error = glGetError(); error != GL_NO_ERROR; error = glGetError()) {
+        continue;
+    }
+
     glClear(GL_COLOR_BUFFER_BIT);
 
-    EGLint error = eglGetError();
-    EXPECT_EQ(error, EGL_SUCCESS);
+    GLint error = glGetError();
+    EXPECT_EQ(error, GL_NO_ERROR);
 }
 
 /*
