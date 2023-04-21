@@ -17,13 +17,18 @@
 
 #include <hilog/log.h>
 namespace OHOS {
-#define SWLOGD(fmt, ...) OHOS::HiviewDFX::HiLog::Debug({ LOG_CORE, 0xD001402, "SwapchainLayer" }, \
+namespace {
+// The "0xD001402" is the domain ID for graphic module that alloted by the OS.
+constexpr ::OHOS::HiviewDFX::HiLogLabel LABEL = { LOG_CORE, 0xD001402, "SwapchainLayer" };
+}
+
+#define SWLOGD(fmt, ...) OHOS::HiviewDFX::HiLog::Debug(LABEL, \
     "<%{public}d>%{public}s: " fmt, __LINE__, __func__, ##__VA_ARGS__)
-#define SWLOGI(fmt, ...) OHOS::HiviewDFX::HiLog::Info({ LOG_CORE, 0xD001402, "SwapchainLayer" }, \
+#define SWLOGI(fmt, ...) OHOS::HiviewDFX::HiLog::Info(LABEL, \
     "<%{public}d>%{public}s: " fmt, __LINE__, __func__, ##__VA_ARGS__)
-#define SWLOGW(fmt, ...) OHOS::HiviewDFX::HiLog::Warn({ LOG_CORE, 0xD001402, "SwapchainLayer" }, \
+#define SWLOGW(fmt, ...) OHOS::HiviewDFX::HiLog::Warn(LABEL, \
     "<%{public}d>%{public}s: " fmt, __LINE__, __func__, ##__VA_ARGS__)
-#define SWLOGE(fmt, ...) OHOS::HiviewDFX::HiLog::Error({ LOG_CORE, 0xD001402, "SwapchainLayer" }, \
+#define SWLOGE(fmt, ...) OHOS::HiviewDFX::HiLog::Error(LABEL, \
     "<%{public}d>%{public}s: " fmt, __LINE__, __func__, ##__VA_ARGS__)
 } // namespace OHOS
 #endif // SWAPCHAIN_LAYER_LOG_H
