@@ -393,6 +393,129 @@ DEFINE_PARAM_TEST0(CharGroups, ToUTF16All, {
     {.object = normalSubCgs2_, .checkFunc = GetVecSizeChecker<uint16_t>(4)},
     {.object = glyphsCgs_,     .checkFunc = GetVecSizeChecker<uint16_t>(4)},
 });
+
+/**
+ * @tc.name: begin
+ * @tc.desc: Verify the begin
+ * @tc.type:FUNC
+ * @tc.require: issueI6XQ27
+ */
+DEFINE_PARAM_TEST0(CharGroups, begin, {
+    INVALID_CGS(),
+    {.object = defaultCgs_,  .exception = ExceptionType::InvalidCharGroups},
+    {.object = emptyCgs_,    .checkFunc = [&](std::vector<struct CharGroup>::iterator ret) {
+        ASSERT_EQ(ret, emptyCgs_.end());
+    }},
+    {.object = normalCgs_,   .checkFunc = [](std::vector<struct CharGroup>::iterator ret) {
+        ASSERT_EQ(TextConverter::ToStr(ret->chars_), "m");
+    }},
+});
+
+/**
+ * @tc.name: end
+ * @tc.desc: Verify the end
+ * @tc.type:FUNC
+ * @tc.require: issueI6XQ27
+ */
+DEFINE_PARAM_TEST0(CharGroups, end, {
+    INVALID_CGS(),
+    {.object = defaultCgs_,  .exception = ExceptionType::InvalidCharGroups},
+    {.object = emptyCgs_,    .checkFunc = [](std::vector<struct CharGroup>::iterator ret) {
+        ASSERT_EQ(ret, emptyCgs_.begin());
+    }},
+    {.object = normalCgs_,   .checkFunc = [](std::vector<struct CharGroup>::iterator ret) {
+        ASSERT_EQ(TextConverter::ToStr((ret - 1)->chars_), "t");
+    }},
+});
+
+auto GetCharGroupsEqualChecker(const CharGroups &cgs)
+{
+    return [cgs](CharGroups &&obj) {
+        ASSERT_FALSE(obj.IsSameCharGroups(cgs));
+        ASSERT_EQ(obj.GetRange().start_, cgs.GetRange().start_);
+        ASSERT_EQ(obj.GetRange().end_, cgs.GetRange().end_);
+    };
+}
+
+/**
+ * @tc.name: Clone
+ * @tc.desc: Verify the Clone
+ * @tc.type:FUNC
+ * @tc.require: issueI6XQ27
+ */
+DEFINE_PARAM_TEST0(CharGroups, Clone, {
+    INVALID_CGS(),
+    {.object = defaultCgs_,    .exception = ExceptionType::InvalidCharGroups},
+    {.object = emptyCgs_,      .checkFunc = GetCharGroupsEqualChecker(emptyCgs_)},
+    {.object = normalCgs_,     .checkFunc = GetCharGroupsEqualChecker(normalCgs_)},
+    {.object = normalSubCgs1_, .checkFunc = GetCharGroupsEqualChecker(normalSubCgs1_)},
+    {.object = normalSubCgs2_, .checkFunc = GetCharGroupsEqualChecker(normalSubCgs2_)},
+    {.object = glyphsCgs_,     .checkFunc = GetCharGroupsEqualChecker(glyphsCgs_)},
+});
+
+/**
+ * @tc.name: Merge
+ * @tc.desc: Verify the Merge
+ * @tc.type:FUNC
+ * @tc.require: issueI6XQ27
+ */
+DEFINE_VOID_PARAM_TEST1(CharGroups, Merge, CharGroups, {
+    INVALID_CGS(.arg1 = normalSubCgs1_),
+    {.object = defaultCgs_,    .arg1 = normalSubCgs1_, .exception = ExceptionType::InvalidCharGroups},
+    {.object = normalSubCgs1_, .arg1 = defaultCgs_,    .exception = ExceptionType::InvalidArgument},
+    {.object = normalSubCgs1_, .arg1 = invalid1Cgs_,   .exception = ExceptionType::InvalidArgument},
+    {.object = normalSubCgs1_, .arg1 = normalSubCgs1_, .exception = ExceptionType::Custom},
+    {.object = normalSubCgs2_, .arg1 = normalSubCgs1_, .exception = ExceptionType::Custom},
+    {.object = normalSubCgs1_, .arg1 = normalSubCgs2_, .checkFunc = [](CharGroups &arg1, CharGroups &obj) {
+        ASSERT_EQ(obj.GetRange().end_, 2);
+    }},
+});
+
+/**
+ * @tc.name: PushBack
+ * @tc.desc: Verify the PushBack
+ * @tc.type:FUNC
+ * @tc.require: issueI6XQ27
+ */
+DEFINE_VOID_PARAM_TEST1(CharGroups, PushBack, CharGroup, {
+    INVALID_CGS(.arg1 = cg_),
+    {.object = defaultCgs_,            .arg1 = cg_, .exception = ExceptionType::InvalidCharGroups},
+    {.object = emptyCgs_.Clone(),      .arg1 = cg_, .checkFunc = [](CharGroup &arg1, CharGroups &obj) {
+        ASSERT_EQ(obj.GetSize(), 1);
+        ASSERT_EQ(TextConverter::ToStr(obj.GetAll(0).chars_), "n");
+    }},
+    {.object = normalCgs_.Clone(),     .arg1 = cg_, .checkFunc = [](CharGroup &arg1, CharGroups &obj) {
+        ASSERT_EQ(obj.GetSize(), 5);
+        ASSERT_EQ(TextConverter::ToStr(obj.GetAll(4).chars_), "n");
+    }},
+    {.object = normalSubCgs1_.Clone(), .arg1 = cg_, .exception = ExceptionType::Custom},
+    {.object = normalSubCgs2_.Clone(), .arg1 = cg_, .exception = ExceptionType::Custom},
+    {.object = glyphsCgs_.Clone(),     .arg1 = cg_, .checkFunc = [](CharGroup &arg1, CharGroups &obj) {
+        ASSERT_EQ(obj.GetSize(), 2);
+        ASSERT_EQ(TextConverter::ToStr(obj.GetAll(1).chars_), "n");
+    }},
+});
+
+/**
+ * @tc.name: ReverseAll
+ * @tc.desc: Verify the ReverseAll
+ * @tc.type:FUNC
+ * @tc.require: issueI6XQ27
+ */
+DEFINE_VOID_PARAM_TEST0(CharGroups, ReverseAll, {
+    INVALID_CGS(),
+    {.object = defaultCgs_,            .exception = ExceptionType::InvalidCharGroups},
+    {.object = emptyCgs_.Clone(),      .checkFunc = [](CharGroups &obj) {}},
+    {.object = normalCgs_.Clone(),     .checkFunc = [](CharGroups &obj) {
+        ASSERT_EQ(TextConverter::ToStr((obj.begin())->chars_), "t");
+        ASSERT_EQ(TextConverter::ToStr((obj.end() - 1)->chars_), "m");
+    }},
+    {.object = normalSubCgs1_.Clone(), .exception = ExceptionType::Custom},
+    {.object = normalSubCgs2_.Clone(), .exception = ExceptionType::Custom},
+    {.object = glyphsCgs_.Clone(),     .checkFunc = [](CharGroups &obj) {
+        ASSERT_EQ(TextConverter::ToStr((obj.begin())->chars_), "most");
+    }},
+});
 } // namespace TextEngine
 } // namespace Rosen
 } // namespace OHOS
