@@ -17,7 +17,11 @@
 
 #include "include/core/SkMatrix.h"
 #include "include/core/SkRect.h"
+#ifdef NEW_SKIA
+#include "include/gpu/GrDirectContext.h"
+#else
 #include "include/gpu/GrContext.h"
+#endif
 
 #include "command/rs_surface_node_command.h"
 #include "common/rs_obj_abs_geometry.h"
