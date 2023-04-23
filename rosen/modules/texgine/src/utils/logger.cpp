@@ -50,17 +50,17 @@ const char *GetLevelStr(enum Logger::LOG_LEVEL level)
 }
 } // namespace
 
-void Logger::SetToNoReturn(Logger& logger, enum LOG_PHASE phase)
+void Logger::SetToNoReturn(Logger &logger, enum LOG_PHASE phase)
 {
     logger.return_ = false;
 }
 
-void Logger::SetToContinue(Logger& logger, enum LOG_PHASE phase)
+void Logger::SetToContinue(Logger &logger, enum LOG_PHASE phase)
 {
     logger.continue_ = true;
 }
 
-void Logger::OutputByStdout(Logger& logger, enum LOG_PHASE phase)
+void Logger::OutputByStdout(Logger &logger, enum LOG_PHASE phase)
 {
     if (phase == LOG_PHASE::BEGIN) {
         return;
@@ -77,7 +77,7 @@ void Logger::OutputByStdout(Logger& logger, enum LOG_PHASE phase)
     }
 }
 
-void Logger::OutputByStderr(Logger& logger, enum LOG_PHASE phase)
+void Logger::OutputByStderr(Logger &logger, enum LOG_PHASE phase)
 {
     if (phase == LOG_PHASE::BEGIN) {
         return;
@@ -94,7 +94,7 @@ void Logger::OutputByStderr(Logger& logger, enum LOG_PHASE phase)
     }
 }
 
-void Logger::OutputByFileLog(Logger& logger, enum LOG_PHASE phase)
+void Logger::OutputByFileLog(Logger &logger, enum LOG_PHASE phase)
 {
     struct FileLogData {
         const char *filename;
@@ -124,7 +124,7 @@ void Logger::OutputByFileLog(Logger& logger, enum LOG_PHASE phase)
     ofs.close();
 }
 
-void Logger::AppendFunc(Logger& logger, enum LOG_PHASE phase)
+void Logger::AppendFunc(Logger &logger, enum LOG_PHASE phase)
 {
     if (phase == LOG_PHASE::BEGIN) {
         logger << IF_COLOR("\033[34m");
@@ -133,7 +133,7 @@ void Logger::AppendFunc(Logger& logger, enum LOG_PHASE phase)
     }
 }
 
-void Logger::AppendFuncLine(Logger& logger, enum LOG_PHASE phase)
+void Logger::AppendFuncLine(Logger &logger, enum LOG_PHASE phase)
 {
     if (phase == LOG_PHASE::BEGIN) {
         logger << IF_COLOR("\033[34m");
@@ -144,7 +144,7 @@ void Logger::AppendFuncLine(Logger& logger, enum LOG_PHASE phase)
     }
 }
 
-void Logger::AppendFileLine(Logger& logger, enum LOG_PHASE phase)
+void Logger::AppendFileLine(Logger &logger, enum LOG_PHASE phase)
 {
     if (phase == LOG_PHASE::BEGIN) {
         logger << IF_COLOR("\033[34m") << logger.GetFile() << " ";
@@ -153,7 +153,7 @@ void Logger::AppendFileLine(Logger& logger, enum LOG_PHASE phase)
     }
 }
 
-void Logger::AppendFileFuncLine(Logger& logger, enum LOG_PHASE phase)
+void Logger::AppendFileFuncLine(Logger &logger, enum LOG_PHASE phase)
 {
     if (phase == LOG_PHASE::BEGIN) {
         logger << IF_COLOR("\033[34m") << logger.GetFile() << " ";
@@ -211,6 +211,7 @@ Logger::Logger(const std::string &file, const std::string &func, int line, enum 
 #ifdef LOGGER_ENABLE_SCOPE
     {
         std::lock_guard<std::mutex> lock(scopeMutex_);
+        // The number of space if enable scope
         Align(scope_ * 2);
     }
 #endif
@@ -267,7 +268,7 @@ enum Logger::LOG_LEVEL Logger::GetLevel() const
     return level_;
 }
 
-va_list &Logger::GetVariousArgument()
+va_list &Logger::GetVariousArgument() const
 {
     return vl_;
 }
@@ -289,6 +290,7 @@ void Logger::AlignLine()
         auto line = GetLine();
         auto num = line == 0 ? 1 : 0;
         while (line) {
+            // 10 is to calculate the number of bits in the row where the function is located
             line /= 10;
             num++;
         }

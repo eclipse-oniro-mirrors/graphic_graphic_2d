@@ -67,7 +67,7 @@ public:
     const std::string &GetFunc() const;
     int GetLine() const;
     enum LOG_LEVEL GetLevel() const;
-    va_list &GetVariousArgument();
+    va_list &GetVariousArgument() const;
 
     void Align(int num);
     void AlignLine();
@@ -122,10 +122,12 @@ public:
 
 class ScopedLogger {
 public:
+    ScopedLogger(const ScopedLogger &) = default;
     ScopedLogger(NoLogger &&logger);
     ScopedLogger(NoLogger &&logger, const std::string &name);
     ScopedLogger(Logger &&logger);
     ScopedLogger(Logger &&logger, const std::string &name);
+    ScopedLogger &operator=(const ScopedLogger &) = default;
     ~ScopedLogger();
 
     void Finish();
