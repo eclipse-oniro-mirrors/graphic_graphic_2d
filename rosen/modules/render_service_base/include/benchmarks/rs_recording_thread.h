@@ -18,9 +18,10 @@
 
 
 #include "pipeline/rs_draw_cmd_list.h"
-#include "event_handler.h"
 
 #include <sys/stat.h>
+
+#include "event_handler.h"
 
 namespace OHOS::Rosen {
 class RSB_EXPORT RSRecordingThread {

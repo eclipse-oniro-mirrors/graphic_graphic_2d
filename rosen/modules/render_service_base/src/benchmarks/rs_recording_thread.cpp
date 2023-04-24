@@ -14,10 +14,10 @@
  */
 
 #include "benchmarks/rs_recording_thread.h"
-#include "benchmarks/file_util.h"
 
-#include "message_parcel.h"
+#include "benchmarks/file_util.h"
 #include "common/rs_thread_handler.h"
+#include "message_parcel.h"
 #include "platform/common/rs_system_properties.h"
 #include "platform/common/rs_log.h"
 #include "rs_trace.h"

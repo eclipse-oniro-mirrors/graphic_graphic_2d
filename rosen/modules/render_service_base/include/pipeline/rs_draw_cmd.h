@@ -36,10 +36,7 @@
 #include "render/rs_image.h"
 #include "transaction/rs_marshalling_helper.h"
 #include <optional>
-#ifdef RS_ENABLE_RECORDING
-#include "include/core/SkString.h"
-#include "src/core/SkStringUtils.h"
-#endif
+
 namespace OHOS {
 namespace Rosen {
 class RSPaintFilterCanvas;
