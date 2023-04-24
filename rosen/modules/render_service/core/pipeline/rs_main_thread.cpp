@@ -16,7 +16,10 @@
 
 #include <SkGraphics.h>
 #include <securec.h>
+#include <stdint.h>
+#include <string>
 #include "include/gpu/GrContext.h"
+#include "include/gpu/GrGpuResource.h"
 #include "rs_trace.h"
 #include "sandbox_utils.h"
 
@@ -1505,7 +1508,9 @@ void RSMainThread::TrimMem(std::unordered_set<std::u16string>& argSets, std::str
         std::shared_ptr<RenderContext> rendercontext = std::make_shared<RenderContext>();
         rendercontext->CleanAllShaderCache();
     } else {
-        type = "error";
+        uint32_t pid = std::stoll(type);
+        GrGpuResourceTag tag(pid, 0, 0, 0);
+        MemoryManager::ReleaseAllGpuResource(grContext, tag);    
     }
     dumpString.append("trimMem: " + type + "\n");
 #else
