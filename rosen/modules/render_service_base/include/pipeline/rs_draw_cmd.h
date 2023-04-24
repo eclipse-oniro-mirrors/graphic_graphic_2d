@@ -16,6 +16,12 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_DRAW_CMD_H
 #define RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_DRAW_CMD_H
 
+#include <GLES/gl.h>
+
+#include "EGL/egl.h"
+#include "EGL/eglext.h"
+#include "GLES2/gl2.h"
+#include "GLES2/gl2ext.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkDrawable.h"
 #include "include/core/SkImage.h"
@@ -32,9 +38,14 @@
 #endif
 #include "pixel_map.h"
 #include "src/core/SkDrawShadowInfo.h"
+#ifdef ROSEN_OHOS
+#include "surface_buffer.h"
+#include "window.h"
+#endif
 
 #include "common/rs_common_def.h"
 #include "pipeline/rs_draw_cmd_list.h"
+#include "pipeline/rs_recording_canvas.h"
 #include "property/rs_properties_def.h"
 #include "render/rs_image.h"
 #include "transaction/rs_marshalling_helper.h"
@@ -86,6 +97,7 @@ enum RSOpType : uint16_t {
     MULTIPLY_ALPHA_OPITEM,
     SAVE_ALPHA_OPITEM,
     RESTORE_ALPHA_OPITEM,
+    SURFACEBUFFER_OPITEM,
 };
 
 class OpItem : public MemObject, public Parcelable {
@@ -941,6 +953,28 @@ public:
     [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 };
 
+#ifdef ROSEN_OHOS
+class SurfaceBufferOpItem : public OpItemWithPaint {
+public:
+    SurfaceBufferOpItem(const RSSurfaceBufferInfo& surfaceBufferInfo);
+    ~SurfaceBufferOpItem() override;
+    void Draw(RSPaintFilterCanvas& canvas, const SkRect*) const override;
+
+    RSOpType GetType() const override
+    {
+        return RSOpType::SURFACEBUFFER_OPITEM;
+    }
+
+    bool Marshalling(Parcel& parcel) const override;
+    static OpItem* Unmarshalling(Parcel& parcel);
+
+private:
+    RSSurfaceBufferInfo surfaceBufferInfo_;
+    mutable EGLImageKHR eglImage_ = EGL_NO_IMAGE_KHR;
+    mutable GLuint texId_ = 0;
+    mutable OHNativeWindowBuffer* nativeWindowBuffer_ = nullptr;
+};
+#endif
 } // namespace Rosen
 } // namespace OHOS
 

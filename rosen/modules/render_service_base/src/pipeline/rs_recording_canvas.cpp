@@ -400,6 +400,14 @@ void RSRecordingCanvas::DrawPixelMapWithParm(
     AddOp(std::move(op));
 }
 
+#ifdef ROSEN_OHOS
+void RSRecordingCanvas::DrawSurfaceBuffer(const RSSurfaceBufferInfo& surfaceBufferInfo)
+{
+    std::unique_ptr<OpItem> op = std::make_unique<SurfaceBufferOpItem>(surfaceBufferInfo);
+    AddOp(std::move(op));
+}
+#endif
+
 void RSRecordingCanvas::onDrawBehind(const SkPaint& paint)
 {
     // [PLANNING]: To be implemented
