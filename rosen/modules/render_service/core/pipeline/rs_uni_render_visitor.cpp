@@ -1885,7 +1885,9 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         node.GetId(), node.GetChildrenCount(), node.GetName().c_str(), node.GetOcclusionVisible());
     if (canvas_ != nullptr) {
 #ifndef NEW_SKIA
-        RSTagTracker tagTracker(canvas_->getGrContext(), node.GetId(), RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE);
+        bool needSkip = node.GetId() == RSMainThread::Instance()->GetContext().GetNodeMap().GetScreenLockWindowNodeId();
+        RSTagTracker tagTracker(canvas_->getGrContext(), node.GetId(),
+            RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE, needSkip);
 #endif
     }
     node.UpdatePositionZ();
