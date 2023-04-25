@@ -15,7 +15,7 @@
 
 #include "typography_builder_impl.h"
 
-#include <assert.h>
+#include <cassert.h>
 #include <iostream>
 #include <memory>
 
@@ -24,7 +24,7 @@
 namespace OHOS {
 namespace Rosen {
 namespace TextEngine {
-std::unique_ptr<TypographyBuilder> TypographyBuilder::Create(const TypographyStyle &ys,
+std::unique_ptr<TypographyBuilder> TypographyBuilder::Create(const TypographyStyle& ys,
     std::unique_ptr<FontProviders> fontProviders)
 {
     return std::make_unique<TypographyBuilderImpl>(ys, std::move(fontProviders));
@@ -49,7 +49,7 @@ void TypographyBuilderImpl::PopStyle()
     styleStack_.pop();
 }
 
-void TypographyBuilderImpl::AppendSpan(const std::shared_ptr<AnySpan> &as)
+void TypographyBuilderImpl::AppendSpan(const std::shared_ptr<AnySpan>& as)
 {
     if (as == nullptr) {
         return;
@@ -66,7 +66,7 @@ void TypographyBuilderImpl::AppendSpan(const std::shared_ptr<AnySpan> &as)
     lastTextSpan_ = nullptr;
 }
 
-void TypographyBuilderImpl::AppendSpan(const std::shared_ptr<TextSpan> &ts)
+void TypographyBuilderImpl::AppendSpan(const std::shared_ptr<TextSpan>& ts)
 {
     if (ts == nullptr) {
         return;
@@ -88,27 +88,27 @@ void TypographyBuilderImpl::AppendSpan(const std::shared_ptr<TextSpan> &ts)
     lastTextSpan_ = ts;
 }
 
-void TypographyBuilderImpl::AppendSpan(const std::string &text)
+void TypographyBuilderImpl::AppendSpan(const std::string& text)
 {
     AppendSpan(TextSpan::MakeFromText(text));
 }
 
-void TypographyBuilderImpl::AppendSpan(const std::u16string &text)
+void TypographyBuilderImpl::AppendSpan(const std::u16string& text)
 {
     AppendSpan(TextSpan::MakeFromText(text));
 }
 
-void TypographyBuilderImpl::AppendSpan(const std::u32string &text)
+void TypographyBuilderImpl::AppendSpan(const std::u32string& text)
 {
     AppendSpan(TextSpan::MakeFromText(text));
 }
 
-void TypographyBuilderImpl::AppendSpan(const std::vector<uint16_t> &text)
+void TypographyBuilderImpl::AppendSpan(const std::vector<uint16_t>& text)
 {
     AppendSpan(TextSpan::MakeFromText(text));
 }
 
-void TypographyBuilderImpl::AppendSpan(const std::vector<uint32_t> &text)
+void TypographyBuilderImpl::AppendSpan(const std::vector<uint32_t>& text)
 {
     AppendSpan(TextSpan::MakeFromText(text));
 }

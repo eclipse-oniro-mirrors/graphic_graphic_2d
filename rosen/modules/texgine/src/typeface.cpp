@@ -78,7 +78,7 @@ bool Typeface::ParseCmap(const std::shared_ptr<CmapParser> &parser)
     }
 
     hblob_ = hb_blob_create(reinterpret_cast<const char *>(cmapData_.get()),
-            size, HB_MEMORY_MODE_WRITABLE, cmapData_.get(), nullptr);
+        size, HB_MEMORY_MODE_WRITABLE, cmapData_.get(), nullptr);
     if (hblob_ == nullptr) {
         LOG2EX(ERROR) << "hblob_ is nullptr";
         throw TEXGINE_EXCEPTION(APIFailed);
