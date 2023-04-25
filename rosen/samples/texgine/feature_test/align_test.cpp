@@ -21,72 +21,74 @@
 using namespace OHOS::Rosen::TextEngine;
 
 namespace {
-constexpr auto exampleText = "    Landscape engineering quality management, the most likely "
-                             "problem is not clear responsible person, responsible unit, resulting "
-                             "in problems again and again, therefore, should establish a strict quality "
-                             "management responsibility system and norms, through the system to ensure the quality "
-                             "of     Landscape engineering construction.";
+constexpr auto EXAMPLE_TEXT = "    Landscape engineering quality management, the most likely "
+    "problem is not clear responsible person, responsible unit, resulting "
+    "in problems again and again, therefore, should establish a strict quality "
+    "management responsibility system and norms, through the system to ensure the quality "
+    "of     Landscape engineering construction.";
+
 struct AlignTestData {
     std::string title;
     TypographyStyle tStyle;
-} datas[] = {
+} g_datas[] = {
     {
         .title = "Start对齐布局",
         .tStyle = {
-            .align_ = TextAlign::START,
+            .align = TextAlign::START,
         },
     },
     {
         .title = "左对齐布局",
         .tStyle = {
-            .align_ = TextAlign::LEFT,
+            .align = TextAlign::LEFT,
         },
     },
     {
         .title = "右对齐布局",
         .tStyle = {
-            .align_ = TextAlign::RIGHT,
+            .align = TextAlign::RIGHT,
         },
     },
     {
         .title = "居中对齐布局",
         .tStyle = {
-            .align_ = TextAlign::CENTER,
+            .align = TextAlign::CENTER,
         },
     },
     {
         .title = "End对齐布局",
         .tStyle = {
-            .align_ = TextAlign::END,
+            .align = TextAlign::END,
         },
     },
 };
 
 class AlignTest : public TestFeature {
 public:
-    AlignTest() : TestFeature("AlignTest")
-    {
-    }
+    AlignTest() : TestFeature("AlignTest") {}
 
     void Layout()
     {
         TexginePaint background;
-        background.SetColor(0xff00ff00);
-        background.SetStrokeWidth(2.0f);
+        uint32_t color = 0xff00ff00;
+        double strokeWidth = 2.0;
+        background.SetColor(color);
+        background.SetStrokeWidth(strokeWidth);
         background.SetStyle(TexginePaint::STROKE);
         TextStyle style = {
-            .fontSize_ = 16,
-            .background_ = background,
+            .fontSize = 16,
+            .background = background,
         };
 
-        for (auto &[title, tstyle] : datas) {
+        for (auto &[title, tstyle] : g_datas) {
             for (auto dir : {TextDirection::LTR, TextDirection::RTL}) {
                 tstyle.direction_ = dir;
                 auto builder = TypographyBuilder::Create(tstyle);
                 builder->PushStyle(style);
-                builder->AppendSpan(exampleText);
+                builder->AppendSpan(EXAMPLE_TEXT);
                 auto typography = builder->Build();
-                typography->Layout(325);
+                double widthLimit = 325.0;
+                typography->Layout(widthLimit);
                 typographies_.push_back({
                     .typography = typography,
                     .comment = (dir == TextDirection::LTR ? "LTR " : "RTL ") + title,

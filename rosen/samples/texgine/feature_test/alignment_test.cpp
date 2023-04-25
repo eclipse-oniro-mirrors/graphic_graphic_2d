@@ -12,11 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#include "texgine/any_span.h"
-
 #include <sstream>
 
+#include <texgine/any_span.h>
 #include <texgine/system_font_provider.h>
 #include <texgine/typography_builder.h>
 
@@ -26,24 +24,24 @@
 using namespace OHOS::Rosen::TextEngine;
 
 namespace {
-constexpr const char *text = "Hi 世界";
+constexpr const char *TEXT = "Hi 世界";
 
 struct AlignmentTestData {
-    AnySpanAlignment alignment_;
-    double offset_ = 0;
-    TextBaseline baseline_ = TextBaseline::ALPHABETIC;
-} testDatas[] = {
-    { .alignment_ = AnySpanAlignment::ABOVE_BASELINE },
-    { .alignment_ = AnySpanAlignment::ABOVE_BASELINE, .baseline_ = TextBaseline::IDEOGRAPHIC },
-    { .alignment_ = AnySpanAlignment::OFFSET_AT_BASELINE },
-    { .alignment_ = AnySpanAlignment::OFFSET_AT_BASELINE, .offset_ = 40 },
-    { .alignment_ = AnySpanAlignment::BELOW_BASELINE },
-    { .alignment_ = AnySpanAlignment::TOP_OF_ROW_BOX },
-    { .alignment_ = AnySpanAlignment::CENTER_OF_ROW_BOX },
-    { .alignment_ = AnySpanAlignment::BOTTOM_OF_ROW_BOX },
+    AnySpanAlignment alignment;
+    double offset = 0;
+    TextBaseline baseline = TextBaseline::ALPHABETIC;
+} g_testDatas[] = {
+    { .alignment = AnySpanAlignment::ABOVE_BASELINE },
+    { .alignment = AnySpanAlignment::ABOVE_BASELINE, .baseline = TextBaseline::IDEOGRAPHIC },
+    { .alignment = AnySpanAlignment::OFFSET_AT_BASELINE },
+    { .alignment = AnySpanAlignment::OFFSET_AT_BASELINE, .offset = 40 },
+    { .alignment = AnySpanAlignment::BELOW_BASELINE },
+    { .alignment = AnySpanAlignment::TOP_OF_ROW_BOX },
+    { .alignment = AnySpanAlignment::CENTER_OF_ROW_BOX },
+    { .alignment = AnySpanAlignment::BOTTOM_OF_ROW_BOX },
 };
 
-AnySpanAlignment onelineAlignments[] = {
+AnySpanAlignment g_onelineAlignments[] = {
     AnySpanAlignment::TOP_OF_ROW_BOX,
     AnySpanAlignment::TOP_OF_ROW_BOX,
     AnySpanAlignment::CENTER_OF_ROW_BOX,
@@ -53,7 +51,7 @@ AnySpanAlignment onelineAlignments[] = {
     AnySpanAlignment::BELOW_BASELINE,
 };
 
-std::map<AnySpanAlignment, std::string> alignmentToString = {
+std::map<AnySpanAlignment, std::string> g_alignmentToString = {
     {AnySpanAlignment::ABOVE_BASELINE, "AB"},
     {AnySpanAlignment::BELOW_BASELINE, "BB"},
     {AnySpanAlignment::OFFSET_AT_BASELINE, "BL"},
@@ -62,46 +60,45 @@ std::map<AnySpanAlignment, std::string> alignmentToString = {
     {AnySpanAlignment::CENTER_OF_ROW_BOX, "MI"},
 };
 
-std::map<TextBaseline, std::string> baselineToString = {
+std::map<TextBaseline, std::string> g_baselineToString = {
     {TextBaseline::ALPHABETIC, "Alpha"},
     {TextBaseline::IDEOGRAPHIC, "Ideog"},
 };
 
 class AlignmentTest : public TestFeature {
 public:
-    AlignmentTest() : TestFeature("AlignmentTest")
-    {
-    }
+    AlignmentTest() : TestFeature("AlignmentTest") {}
 
     void Layout()
     {
         option_.needRainbowChar = true;
-
         TextStyle textStyle = {
-            .fontSize_ = 20,
-            .decoration_ = TextDecoration::BASELINE,
+            .fontSize = 20,
+            .decoration = TextDecoration::BASELINE,
         };
 
-        for (const auto &data : testDatas) {
-            auto heights = {20, 40, 60};
+        for (const auto &data : g_testDatas) {
+            std::vector<double> heights = {20, 40, 60};
+            double width = 20.0;
             for (const auto &height : heights) {
                 auto builder = TypographyBuilder::Create();
                 builder->PushStyle(textStyle);
-                builder->AppendSpan(text);
+                builder->AppendSpan(TEXT);
 
-                auto anySpan = std::make_shared<MyAnySpan>(20,
-                    height, data.alignment_, data.baseline_, data.offset_);
+                auto anySpan = std::make_shared<MyAnySpan>(width,
+                    height, data.alignment, data.baseline, data.offset);
                 builder->AppendSpan(anySpan);
 
                 auto typography = builder->Build();
-                typography->Layout(150);
+                double widthLimit = 150.0;
+                typography->Layout(widthLimit);
 
                 std::stringstream ss;
-                ss << alignmentToString[data.alignment_];
-                if (data.alignment_ == AnySpanAlignment::OFFSET_AT_BASELINE) {
-                    ss << "(" << data.offset_ << ")";
+                ss << g_alignmentToString[data.alignment];
+                if (data.alignment == AnySpanAlignment::OFFSET_AT_BASELINE) {
+                    ss << "(" << data.offset << ")";
                 }
-                ss << " " << baselineToString[data.baseline_];
+                ss << " " << g_baselineToString[data.baseline];
                 ss << " " << height << "px";
 
                 typographies_.push_back({
@@ -112,18 +109,26 @@ public:
             }
         }
 
+        LayoutOneLine(textStyle);
+    }
+
+    void LayoutOneLine(const TextStyle &textStyle)
+    {
         auto builder = TypographyBuilder::Create();
         std::string title = "单行多个不同对齐方式";
-        for (const auto &alignment : onelineAlignments) {
-            auto anySpan = std::make_shared<MyAnySpan>(20, 30, alignment);
+        double anySpanWidth = 20.0;
+        double anySpanHeight = 30.0;
+        for (const auto &alignment : g_onelineAlignments) {
+            auto anySpan = std::make_shared<MyAnySpan>(anySpanWidth, anySpanHeight, alignment);
             builder->AppendSpan(anySpan);
             builder->PushStyle(textStyle);
-            builder->AppendSpan(text);
-            title += alignmentToString[alignment] + " ";
+            builder->AppendSpan(TEXT);
+            title += g_alignmentToString[alignment] + " ";
         }
 
         auto typography = builder->Build();
-        typography->Layout(800);
+        double widthLimit = 800.0;
+        typography->Layout(widthLimit);
         typographies_.push_back({
             .typography = typography,
             .comment = title,
