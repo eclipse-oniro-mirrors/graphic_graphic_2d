@@ -28,7 +28,7 @@
 
 namespace OHOS {
 namespace Rosen {
-
+namespace Benchmarks{
 bool WriteToFile(uintptr_t data, size_t size, const std::string& filePath)
 {
     int fd = open(filePath.c_str(), O_RDWR | O_CREAT, static_cast<mode_t>(0600));
@@ -69,6 +69,7 @@ bool WriteStringToFile(const std::string& str, const std::string& filePath)
     bool result = WriteStringToFile(fd, str);
     close(fd);
     return result;
+}
 }
 } // namespace Rosen
 } // namespace OHOS

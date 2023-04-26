@@ -32,9 +32,6 @@
 #include "platform/ohos/overdraw/rs_overdraw_controller.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "visitor/rs_node_visitor.h"
-#ifdef RS_ENABLE_RECORDING
-#include "benchmarks/rs_recording_thread.h"
-#endif
 
 class SkPicture;
 namespace OHOS {

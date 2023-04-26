@@ -46,6 +46,9 @@
 #include "render/rs_skia_filter.h"
 #include "pipeline/parallel_render/rs_parallel_render_manager.h"
 #include "system/rs_system_parameters.h"
+#ifdef RS_ENABLE_RECORDING
+#include "benchmarks/rs_recording_thread.h"
+#endif
 
 namespace OHOS {
 namespace Rosen {
