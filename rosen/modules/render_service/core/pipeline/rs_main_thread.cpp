@@ -1441,27 +1441,23 @@ void RSMainThread::ClearTransactionDataPidInfo(pid_t remotePid)
 bool RSMainThread::IsResidentProcess(pid_t pid)
 {
     const auto& nodeMap = context_->GetNodeMap();
-    return pid == nodeMap.GetEntryViewNodeId() || pid == nodeMap.GetScreenLockWindowNodeId() ||
-        pid == nodeMap.GetWallPaperViewNodeId();
+    return pid == ExtractPid(nodeMap.GetEntryViewNodeId()) || pid == ExtractPid(nodeMap.GetScreenLockWindowNodeId()) ||
+        pid == ExtractPid(nodeMap.GetWallPaperViewNodeId());
 }
 
 void RSMainThread::ReleaseExitSurfaceNodeAllGpuResource(GrContext* grContext, pid_t pid)
 {
+    if (IsResidentProcess(pid)) {
+        RS_LOGW("ReleaseExitSurfaceNodeAllGpuResource pid:%d", pid);
+        return;
+    }
     const auto& nodeMap = context_->GetNodeMap();
     switch (RSSystemProperties::GetReleaseGpuResourceEnabled()) {
         case ReleaseGpuResourceType::WINDOW_HIDDEN:
-            if (!IsResidentProcess(pid)) {
-                MemoryManager::ReleaseAllGpuResource(grContext, pid);
-            } else {
-                MemoryManager::ReleaseUnlockGpuResource(grContext, pid);
-            }
+            MemoryManager::ReleaseAllGpuResource(grContext, pid);
             break;
         case ReleaseGpuResourceType::WINDOW_HIDDEN_AND_LAUCHER:
-            if (!IsResidentProcess(pid)) {
-                MemoryManager::ReleaseAllGpuResource(grContext, pid);
-            } else {
-                MemoryManager::ReleaseUnlockGpuResource(grContext, pid);
-            }
+            MemoryManager::ReleaseAllGpuResource(grContext, pid);
             MemoryManager::ReleaseUnlockLauncherGpuResource(grContext,
                 nodeMap.GetEntryViewNodeId(), nodeMap.GetWallPaperViewNodeId());
             break;
