@@ -14,7 +14,11 @@
  */
 
 #include "pipeline/rs_draw_cmd.h"
-
+#ifdef ROSEN_OHOS
+#include "buffer_utils.h"
+#endif
+#include "include/gpu/GrContext.h"
+#include "message_parcel.h"
 #include "rs_trace.h"
 #include "securec.h"
 
@@ -786,6 +790,72 @@ void RestoreAlphaOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
 {
     canvas.RestoreAlpha();
 }
+
+#ifdef ROSEN_OHOS
+SurfaceBufferOpItem::SurfaceBufferOpItem(const RSSurfaceBufferInfo& surfaceBufferInfo)
+    : OpItemWithPaint(sizeof(SurfaceBufferOpItem)), surfaceBufferInfo_(surfaceBufferInfo)
+{}
+
+SurfaceBufferOpItem::~SurfaceBufferOpItem()
+{
+    if (eglImage_ != EGL_NO_IMAGE_KHR) {
+        auto disp = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+        eglDestroyImageKHR(disp, eglImage_);
+    }
+    if (nativeWindowBuffer_ != nullptr) {
+        DestroyNativeWindowBuffer(nativeWindowBuffer_);
+    }
+    if (texId_ != 0U) {
+        glDeleteTextures(1, &texId_);
+    }
+}
+
+void SurfaceBufferOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
+{
+    if (surfaceBufferInfo_.surfaceBuffer_ == nullptr) {
+        ROSEN_LOGE("SurfaceBufferOpItem::Draw surfaceBuffer_ is nullptr");
+        return;
+    }
+    nativeWindowBuffer_ = CreateNativeWindowBufferFromSurfaceBuffer(surfaceBufferInfo_.surfaceBuffer_);
+    if (!nativeWindowBuffer_) {
+        ROSEN_LOGE("SurfaceBufferOpItem::Draw create native window buffer fail");
+        return;
+    }
+    EGLint attrs[] = {
+        EGL_IMAGE_PRESERVED,
+        EGL_TRUE,
+        EGL_NONE,
+    };
+
+    auto disp = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    eglImage_ = eglCreateImageKHR(disp, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_OHOS, nativeWindowBuffer_, attrs);
+    if (eglImage_ == EGL_NO_IMAGE_KHR) {
+        ROSEN_LOGE("%s create egl image fail %d", __func__, eglGetError());
+        return;
+    }
+
+    // Create texture object
+    texId_ = 0;
+    glGenTextures(1, &texId_);
+    glBindTexture(GL_TEXTURE_2D, texId_);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, static_cast<GLeglImageOES>(eglImage_));
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    GrGLTextureInfo textureInfo = { GL_TEXTURE_2D, texId_, GL_RGBA8_OES };
+
+    GrBackendTexture backendTexture(
+        surfaceBufferInfo_.width_, surfaceBufferInfo_.height_, GrMipMapped::kNo, textureInfo);
+
+    auto skImage = SkImage::MakeFromTexture(canvas.getGrContext(), backendTexture, kTopLeft_GrSurfaceOrigin,
+        kRGBA_8888_SkColorType, kPremul_SkAlphaType, SkColorSpace::MakeSRGB());
+
+    canvas.drawImage(skImage, surfaceBufferInfo_.offSetX_, surfaceBufferInfo_.offSetY_);
+}
+#endif
 
 // RectOpItem
 bool RectOpItem::Marshalling(Parcel& parcel) const
@@ -1795,5 +1865,37 @@ OpItem* RestoreAlphaOpItem::Unmarshalling(Parcel& parcel)
 {
     return new RestoreAlphaOpItem();
 }
+
+// SurfaceBufferOpItem
+#ifdef ROSEN_OHOS
+bool SurfaceBufferOpItem::Marshalling(Parcel& parcel) const
+{
+    MessageParcel* parcelSurfaceBuffer = static_cast<MessageParcel*>(&parcel);
+    WriteSurfaceBufferImpl(
+        *parcelSurfaceBuffer, surfaceBufferInfo_.surfaceBuffer_->GetSeqNum(), surfaceBufferInfo_.surfaceBuffer_);
+    bool success = RSMarshallingHelper::Marshalling(parcel, surfaceBufferInfo_.offSetX_) &&
+                   RSMarshallingHelper::Marshalling(parcel, surfaceBufferInfo_.offSetY_) &&
+                   RSMarshallingHelper::Marshalling(parcel, surfaceBufferInfo_.width_) &&
+                   RSMarshallingHelper::Marshalling(parcel, surfaceBufferInfo_.height_);
+    return success;
+}
+
+OpItem* SurfaceBufferOpItem::Unmarshalling(Parcel& parcel)
+{
+    RSSurfaceBufferInfo surfaceBufferInfo;
+    MessageParcel *parcelSurfaceBuffer = static_cast<MessageParcel*>(&parcel);
+    uint32_t sequence = 1U;
+    ReadSurfaceBufferImpl(*parcelSurfaceBuffer, sequence, surfaceBufferInfo.surfaceBuffer_);
+    bool success = RSMarshallingHelper::Unmarshalling(parcel, surfaceBufferInfo.offSetX_) &&
+                   RSMarshallingHelper::Unmarshalling(parcel, surfaceBufferInfo.offSetY_) &&
+                   RSMarshallingHelper::Unmarshalling(parcel, surfaceBufferInfo.width_) &&
+                   RSMarshallingHelper::Unmarshalling(parcel, surfaceBufferInfo.height_);
+    if (!success) {
+        ROSEN_LOGE("SurfaceBufferOptItem::Unmarshalling failed");
+        return nullptr;
+    }
+    return new SurfaceBufferOpItem(surfaceBufferInfo);
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS
