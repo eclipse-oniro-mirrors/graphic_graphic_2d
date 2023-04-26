@@ -145,6 +145,7 @@ namespace {
             GETOPTYPESTRING(MULTIPLY_ALPHA_OPITEM);
             GETOPTYPESTRING(SAVE_ALPHA_OPITEM);
             GETOPTYPESTRING(RESTORE_ALPHA_OPITEM);
+            GETOPTYPESTRING(SURFACEBUFFER_OPITEM);
             default:
                 break;
         }
@@ -1411,6 +1412,13 @@ public:
     SurfaceBufferOpItem(const RSSurfaceBufferInfo& surfaceBufferInfo);
     ~SurfaceBufferOpItem() override;
     void Draw(RSPaintFilterCanvas& canvas, const SkRect*) const override;
+
+    std::string GetTypeWithDesc() const override
+    {
+        std::string desc = "{OpType: " + GetOpTypeString(GetType()) +", Description:{";
+        desc += "}, \n";
+        return desc;
+    }
 
     RSOpType GetType() const override
     {

@@ -107,8 +107,8 @@ void RSRecordingThread::RecordingToFile(const std::shared_ptr<DrawCmdList> & dra
         uintptr_t buf = messageParcel.GetData();
         std::string opsDescription = drawCmdList->GetOpsWithDesc();
 
-        WriteToFile(buf, sz, drawCmdListFile);
-        WriteStringToFile(opsDescription, opsFile);
+        OHOS::Rosen::Benchmarks::WriteToFile(buf, sz, drawCmdListFile);
+        OHOS::Rosen::Benchmarks::WriteStringToFile(opsDescription, opsFile);
     };
     PostTask(task);
 }
