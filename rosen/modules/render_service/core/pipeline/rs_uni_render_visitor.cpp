@@ -1289,6 +1289,12 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         }
         std::shared_ptr<RSCanvasListener> overdrawListener = nullptr;
         AddOverDrawListener(renderFrame_, overdrawListener);
+
+        if (canvas_ == nullptr) {
+            RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode: failed to create canvas");
+            return;
+        }
+
 #ifdef RS_ENABLE_RECORDING
         RSRecordingCanvas canvas(node.GetRenderProperties().GetBoundsWidth(),
                 node.GetRenderProperties().GetBoundsHeight());
@@ -1296,19 +1302,15 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         bool recordingEnabled = false;
         if (RSSystemProperties::GetRecordingEnabled()) {
             RS_TRACE_BEGIN("RSUniRender:Recording begin");
-    #ifdef RS_ENABLE_GL
+#ifdef RS_ENABLE_GL
             canvas.SetGrContext(canvas_->getGrContext()); // SkImage::MakeFromCompressed need GrContext
-    #endif
+#endif
             recordingCanvas = std::make_shared<RSPaintFilterCanvas>(&canvas);
             recordingEnabled = true;
             swap(canvas_, recordingCanvas);
             RSRecordingThread::Instance().CheckAndRecording();
         }
 #endif
-        if (canvas_ == nullptr) {
-            RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode: failed to create canvas");
-            return;
-        }
 
 #ifdef RS_ENABLE_VK
         canvas_->clear(SK_ColorTRANSPARENT);

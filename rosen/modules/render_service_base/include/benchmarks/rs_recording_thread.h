@@ -34,7 +34,10 @@ public:
     bool CheckAndRecording();
     void FinishRecordingOneFrame();
     void RecordingToFile(const std::shared_ptr<DrawCmdList> & drawCmdList);
-    [[nodiscard]] int GetCurDumpFrame() const {return curDumpFrame_;}
+    [[nodiscard]] int GetCurDumpFrame() const
+    {
+        return curDumpFrame_;
+    }
 
 private:
     RSRecordingThread() = default;

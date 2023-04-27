@@ -144,13 +144,13 @@ void DrawCmdList::Playback(RSPaintFilterCanvas& canvas, const SkRect* rect)
     }
 }
 
-std::string DrawCmdList::PlaybackWithParam(SkCanvas& canvas, int start, int end, int recordStart, const SkRect* rect)
+std::string DrawCmdList::PlayBackForRecord(SkCanvas& canvas, int startOpId, int endOpId, int descStartOpId, const SkRect* rect)
 {
     RSPaintFilterCanvas filterCanvas(&canvas);
-    return PlaybackWithParam(filterCanvas, start, end, recordStart, rect);
+    return PlayBackForRecord(filterCanvas, startOpId, endOpId, descStartOpId, rect);
 }
 
-std::string DrawCmdList::PlaybackWithParam(RSPaintFilterCanvas& canvas, int start, int end, int recordStart,
+std::string DrawCmdList::PlayBackForRecord(RSPaintFilterCanvas& canvas, int startOpId, int endOpId, int descStartOpId,
     const SkRect* rect)
 {
     std::string str;
@@ -158,11 +158,11 @@ std::string DrawCmdList::PlaybackWithParam(RSPaintFilterCanvas& canvas, int star
         return str;
     }
     std::lock_guard<std::mutex> lock(mutex_);
-    for (int i = start; i < end; ++i) {
+    for (int i = startOpId; i < endOpId; ++i) {
         if (ops_[i] == nullptr) {
             continue;
         }
-        if (i < recordStart) {
+        if (i < descStartOpId) {
             ops_[i]->GetTypeWithDesc();
         } else {
             str += std::to_string(i) + ":";
