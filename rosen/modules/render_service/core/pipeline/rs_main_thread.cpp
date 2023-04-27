@@ -74,6 +74,10 @@
 #include "pipeline/driven_render/rs_driven_render_manager.h"
 #endif
 
+#if defined(RS_ENABLE_RECORDING)
+#include "benchmarks/rs_recording_thread.h"
+#endif
+
 using namespace FRAME_TRACE;
 static const std::string RS_INTERVAL_NAME = "renderservice";
 
