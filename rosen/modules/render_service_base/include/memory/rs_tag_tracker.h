@@ -46,7 +46,7 @@ private:
     GrContext* grContext_ = nullptr;
     static ReleaseGpuResourceType releaseGpuResourceEnable_;
 };
-} // namespace OHOS
 } // namespace Rosen
+} // namespace OHOS
 #endif
 #endif
