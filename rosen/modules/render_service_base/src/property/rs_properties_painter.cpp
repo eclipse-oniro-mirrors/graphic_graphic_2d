@@ -473,6 +473,8 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
         canvas.clipPath(properties.GetClipBounds()->GetSkiaPath(), antiAlias);
     } else if (properties.GetClipToBounds()) {
         canvas.clipRRect(RRect2SkRRect(properties.GetRRect()), antiAlias);
+    } else if (properties.GetClipToRRect()) {
+        canvas.clipRRect(RRect2SkRRect(properties.GetClipRRect()), antiAlias);
     }
     // paint backgroundColor
     SkPaint paint;
@@ -564,6 +566,8 @@ void RSPropertiesPainter::DrawForegroundColor(const RSProperties& properties, Sk
         canvas.clipPath(properties.GetClipBounds()->GetSkiaPath(), true);
     } else if (properties.GetClipToBounds()) {
         canvas.clipRect(Rect2SkRect(properties.GetBoundsRect()), true);
+    } else if (properties.GetClipToRRect()) {
+        canvas.clipRRect(RRect2SkRRect(properties.GetClipRRect()), true);
     }
 
     SkPaint paint;

@@ -181,6 +181,12 @@ public:
     void SetDrawRegion(std::shared_ptr<RectF> rect);
     std::shared_ptr<RectF> GetDrawRegion() const;
 
+    void SetClipRRectRect(Vector4f clipRect);
+    void SetClipRRectRadius(Vector4f clipRadius);
+    Vector4f GetClipRRectRect() const;
+    Vector4f GetClipRRectRadius() const;
+    RRect GetClipRRect() const;
+    bool GetClipToRRect() const;
     void SetClipBounds(std::shared_ptr<RSPath> path);
     std::shared_ptr<RSPath> GetClipBounds() const;
     void SetClipToBounds(bool clipToBounds);
@@ -279,6 +285,8 @@ private:
     std::unique_ptr<Vector4f> pixelStretch_ = nullptr;
 
     std::unique_ptr<Vector4f> pixelStretchPercent_ = nullptr;
+    std::unique_ptr<Vector4f> clipRRectRect_ = nullptr;
+    std::unique_ptr<Vector4f> clipRRectRadius_ = nullptr;
 
     friend class RSCanvasRenderNode;
     friend class RSPropertiesPainter;

@@ -831,6 +831,12 @@ void RSNode::SetFrameGravity(Gravity gravity)
     SetProperty<RSFrameGravityModifier, RSProperty<Gravity>>(RSModifierType::FRAME_GRAVITY, gravity);
 }
 
+void RSNode::SetClipRRect(const Vector4f& clipRect, const Vector4f& clipRadius)
+{
+    SetProperty<RSClipRRectRectModifier, RSAnimatableProperty<Vector4f>>(RSModifierType::CLIP_RRECT_RECT, clipRect);
+    SetProperty<RSClipRRectRadiusModifier, RSAnimatableProperty<Vector4f>>(RSModifierType::CLIP_RRECT_RADIUS, clipRadius);
+}
+
 void RSNode::SetClipBounds(const std::shared_ptr<RSPath>& path)
 {
     SetProperty<RSClipBoundsModifier, RSProperty<std::shared_ptr<RSPath>>>(RSModifierType::CLIP_BOUNDS, path);

@@ -810,6 +810,48 @@ std::shared_ptr<RectF> RSProperties::GetDrawRegion() const
     return drawRegion_;
 }
 
+void RSProperties::SetClipRRectRect(Vector4f clipRect)
+{
+    if (!clipRRectRect_) {
+        clipRRectRect_ = std::make_unique<Vector4f>();
+    }
+    clipRRectRect_->SetValues(clipRect.x_, clipRect.y_, clipRect.z_, clipRect.w_);
+    SetDirty();
+}
+
+void RSProperties::SetClipRRectRadius(Vector4f clipRadius)
+{
+    if (!clipRRectRadius_) {
+        clipRRectRadius_ = std::make_unique<Vector4f>();
+    }
+    clipRRectRadius_->SetValues(clipRadius.x_, clipRadius.y_, clipRadius.z_, clipRadius.w_);
+    SetDirty();
+}
+
+Vector4f RSProperties::GetClipRRectRect() const
+{
+    return clipRRectRect_ ? *clipRRectRect_ : Vector4f();
+}
+
+Vector4f RSProperties::GetClipRRectRadius() const
+{
+    return clipRRectRadius_ ? *clipRRectRadius_ : Vector4f();
+}
+
+RRect RSProperties::GetClipRRect() const
+{
+    Vector4f clipRect = GetClipRRectRect();
+    RectF rect = RectF(clipRect[0], clipRect[1], clipRect[2], clipRect[3]);
+    Vector4f clipRadius = GetClipRRectRadius();
+    RRect rrect = RRect(rect, clipRadius);
+    return rrect;
+}
+
+bool RSProperties::GetClipToRRect() const
+{
+    return clipRRectRect_ != nullptr;
+}
+
 void RSProperties::SetClipBounds(std::shared_ptr<RSPath> path)
 {
     if (clipPath_ != path) {
@@ -931,6 +973,8 @@ void RSProperties::Reset()
 
     backgroundFilter_ = nullptr;
     border_ = nullptr;
+    clipRRectRect_ = nullptr;
+    clipRRectRadius_ = nullptr;
     clipPath_ = nullptr;
     cornerRadius_ = nullptr;
     decoration_ = nullptr;
