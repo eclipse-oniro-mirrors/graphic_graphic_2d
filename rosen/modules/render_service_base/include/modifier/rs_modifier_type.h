@@ -62,8 +62,8 @@ enum class RSModifierType : int16_t {
 
     FRAME_GRAVITY,
 
-    CLIP_RECT,
-    CLIP_RADIUS,
+    CLIP_RRECT_RECT,
+    CLIP_RRECT_RADIUS,
     CLIP_BOUNDS,
     CLIP_TO_BOUNDS,
     CLIP_TO_FRAME,

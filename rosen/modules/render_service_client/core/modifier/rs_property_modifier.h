@@ -329,19 +329,19 @@ protected:
     std::shared_ptr<RSRenderModifier> CreateRenderModifier() const override;
 };
 
-class RSC_EXPORT RSClipRectModifier : public RSAppearanceModifier {
+class RSC_EXPORT RSClipRRectRectModifier : public RSAppearanceModifier {
 public:
-    explicit RSClipRectModifier(const std::shared_ptr<RSPropertyBase>& property);
-    virtual ~RSClipRectModifier() = default;
+    explicit RSClipRRectRectModifier(const std::shared_ptr<RSPropertyBase>& property);
+    virtual ~RSClipRRectRectModifier() = default;
 protected:
     RSModifierType GetModifierType() const override;
     std::shared_ptr<RSRenderModifier> CreateRenderModifier() const override;
 };
 
-class RSC_EXPORT RSClipRadiusModifier : public RSAppearanceModifier {
+class RSC_EXPORT RSClipRRectRadiusModifier : public RSAppearanceModifier {
 public:
-    explicit RSClipRadiusModifier(const std::shared_ptr<RSPropertyBase>& property);
-    virtual ~RSClipRadiusModifier() = default;
+    explicit RSClipRRectRadiusModifier(const std::shared_ptr<RSPropertyBase>& property);
+    virtual ~RSClipRRectRadiusModifier() = default;
 protected:
     RSModifierType GetModifierType() const override;
     std::shared_ptr<RSRenderModifier> CreateRenderModifier() const override;
