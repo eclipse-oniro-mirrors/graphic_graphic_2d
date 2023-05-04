@@ -47,6 +47,13 @@ bool Image::BuildFromCompressed(GPUContext& gpuContext, const std::shared_ptr<Da
 {
     return (imageImplPtr == nullptr) ? false : imageImplPtr->BuildFromCompressed(gpuContext, data, width, height, type);
 }
+
+bool Image::BuildFromTexture(GPUContext& gpuContext, const TextureInfo& info, TextureOrigin origin,
+    BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace)
+{
+    return (imageImplPtr == nullptr) ? false : imageImplPtr->BuildFromTexture(
+        gpuContext, info, origin, bitmapFormat, colorSpace);
+}
 #endif
 
 int Image::GetWidth() const
