@@ -16,7 +16,11 @@
 #include "surface_ohos.h"
 
 #include "surface_frame_ohos.h"
+#if defined(ACE_ENABLE_VK)
+#include "surface_ohos_vulkan.h"
+#else
 #include "surface_ohos_gl.h"
+#endif
 #include "surface_ohos_raster.h"
 
 namespace OHOS {
@@ -32,6 +36,12 @@ std::shared_ptr<SurfaceBase> SurfaceOhos::CreateSurface(sptr<Surface> surface)
     auto type = Setting::GetRenderBackendType();
     std::shared_ptr<SurfaceBase> producer = nullptr;
     switch (type) {
+        case RenderBackendType::VULKAN:
+#ifdef ACE_ENABLE_VK
+            LOGI("SurfaceOhos::CreateSurface with vulkan backend");
+            producer = std::make_shared<SurfaceOhosVulkan>(surface);
+#endif
+            break;
         case RenderBackendType::GLES:
 #ifdef ACE_ENABLE_GL
             LOGI("SurfaceOhos::CreateSurface with gles backend");

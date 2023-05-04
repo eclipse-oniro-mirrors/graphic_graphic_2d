@@ -16,12 +16,13 @@
 #ifndef SURFACE_OHOS_VULKAN_H
 #define SURFACE_OHOS_VULKAN_H
 
-#include <surface.h>
 #include <vulkan_window.h>
+
 #include "surface.h"
+#include "window.h"
+
 #include "surface_ohos.h"
 #include "surface_frame_ohos_vulkan.h"
-#include "window.h"
 
 namespace OHOS {
 namespace Rosen {

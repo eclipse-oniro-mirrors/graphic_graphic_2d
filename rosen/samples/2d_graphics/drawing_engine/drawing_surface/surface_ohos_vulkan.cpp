@@ -32,6 +32,12 @@ SurfaceOhosVulkan::SurfaceOhosVulkan(const sptr<Surface>& producer)
 SurfaceOhosVulkan::~SurfaceOhosVulkan()
 {
     frame_ = nullptr;
+    if (mNativeWindow_ != nullptr) {
+        delete mNativeWindow_;
+    }
+    if (mVulkanWindow_ != nullptr) {
+        delete mVulkanWindow_;
+    }
 }
 
 std::unique_ptr<SurfaceFrame> SurfaceOhosVulkan::RequestFrame(int32_t width, int32_t height)
@@ -47,7 +53,6 @@ std::unique_ptr<SurfaceFrame> SurfaceOhosVulkan::RequestFrame(int32_t width, int
     if (mVulkanWIndow_ == nullptr) {
         auto vulkan_surface_ohos = std::make_unique<vulkan::VulkanNativeSurfaceOHOS>(mNativeWindow_);
         mVulkanWIndow_ = new vulkan::VulkanWindow(std::move(vulkan_surface_ohos));
-        LOGI("SurfaceOhosVulkan vulkanwindow %p", mVulkanWIndow_);
     }
 
     sk_sp<SkSurface> skSurface = mVulkanWIndow_ -> AcquireSurface();
@@ -59,7 +64,6 @@ std::unique_ptr<SurfaceFrame> SurfaceOhosVulkan::RequestFrame(int32_t width, int
     NativeWindowHandleOpt(mNativeWindow_, SET_COLOR_GAMUT, frame_->GetColorSpace());
 
     std::unique_ptr<SurfaceFrame> ret(std::move(frame_));
-    DestoryNativeWindow(nativeWindow);
     return ret;
 }
 
