@@ -34,26 +34,26 @@ void RegionCmdList::Playback(Region& region) const
     do {
         void* itemPtr = opAllocator_.OffsetToAddr(offset);
         OpItem* curOpItemPtr = static_cast<OpItem*>(itemPtr);
-        if (curOpItemPtr != nullptr) {
-            switch (curOpItemPtr->GetType()) {
-                case RegionOpItem::SETRECT_OPITEM:
-                    static_cast<SetRectOpItem*>(itemPtr)->Playback(region);
-                    break;
-                case RegionOpItem::SETPATH_OPITEM:
-                    static_cast<SetPathOpItem*>(itemPtr)->Playback(region, opAllocator_);
-                    break;
-                case RegionOpItem::REGIONOPWITH_OPITEM:
-                    static_cast<RegionOpWithOpItem*>(itemPtr)->Playback(region, opAllocator_);
-                    break;
-                default:
-                    LOGE("ColorFilterCmdList unknown OpItem type!");
-                    break;
-            }
-            offset = curOpItemPtr->GetNextOpItemOffset();
-        } else {
+        if (curOpItemPtr == nullptr) {
             LOGE("RegionCmdList Playback failed!");
             break;
         }
+
+        switch (curOpItemPtr->GetType()) {
+            case RegionOpItem::SETRECT_OPITEM:
+                static_cast<SetRectOpItem*>(itemPtr)->Playback(region);
+                break;
+            case RegionOpItem::SETPATH_OPITEM:
+                static_cast<SetPathOpItem*>(itemPtr)->Playback(region, opAllocator_);
+                break;
+            case RegionOpItem::REGIONOPWITH_OPITEM:
+                static_cast<RegionOpWithOpItem*>(itemPtr)->Playback(region, opAllocator_);
+                break;
+            default:
+                LOGE("ColorFilterCmdList unknown OpItem type!");
+                break;
+        }
+        offset = curOpItemPtr->GetNextOpItemOffset();
     } while (offset != 0);
 }
 
@@ -92,6 +92,10 @@ RegionOpWithOpItem::RegionOpWithOpItem(const CmdListSiteInfo& region, RegionOp o
 void RegionOpWithOpItem::Playback(Region& region, const MemAllocator& memAllocator) const
 {
     auto* regionPtr = memAllocator.OffsetToAddr(region_.first);
+    if (!regionPtr) {
+        return;
+    }
+
     auto regionCmdList = std::make_shared<RegionCmdList>(std::make_pair(regionPtr, region_.second));
 
     Region restoreRegion;

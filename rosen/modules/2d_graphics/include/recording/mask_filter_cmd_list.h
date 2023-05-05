@@ -17,45 +17,26 @@
 #define MASK_FILTER_CMD_LILST_H
 
 #include "effect/mask_filter.h"
-#include "recording/mem_allocator.h"
-#include "recording/op_item.h"
+#include "recording/cmd_list.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
-
-class MaskFilterCmdList {
+class MaskFilterCmdList : public CmdList {
 public:
     MaskFilterCmdList() = default;
-    ~MaskFilterCmdList() = default;
+    ~MaskFilterCmdList() override = default;
 
-    static std::shared_ptr<MaskFilterCmdList> CreateFromData(CmdListData data);
+    /*
+     * @brief       Creates a MaskFilterCmdList with contiguous buffers.
+     * @param data  A contiguous buffers.
+     */
+    static std::shared_ptr<MaskFilterCmdList> CreateFromData(const CmdListData& data);
 
-    template<typename T, typename... Args>
-    void AddOp(Args&&... args)
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        T* op = allocator_.Allocate<T>(std::forward<Args>(args)...);
-        if (op == nullptr) {
-            return;
-        }
-        if (lastOpItem != nullptr) {
-            Offset_t offset = allocator_.AddrToOffset(op);
-            lastOpItem->SetNextOpItemOffset(offset);
-        }
-        lastOpItem = op;
-    }
-
-    Offset_t AddCmdListData(CmdListData src);
-
-    CmdListData GetData() const;
-
+    /*
+     * @brief  Creates a MaskFilter by the MaskFilterCmdList playback operation.
+     */
     std::shared_ptr<MaskFilter> Playback() const;
-
-private:
-    MemAllocator allocator_;
-    std::mutex mutex_;
-    OpItem* lastOpItem = nullptr;
 };
 
 /* OpItem */
@@ -64,7 +45,7 @@ public:
     MaskFilterOpItem(uint32_t type) : OpItem(type) {}
 
     enum Type : uint32_t {
-        OPITEM_HEAD,
+        OPITEM_HEAD = 0,    // OPITEM_HEAD must be 0
         CREATE_BLUR,
     };
 };
@@ -80,7 +61,6 @@ private:
     BlurType blurType_;
     scalar sigma_;
 };
-
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

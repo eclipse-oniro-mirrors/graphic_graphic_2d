@@ -17,7 +17,7 @@
 #define REGION_CMD_LIST_H
 
 #include "utils/region.h"
-#include "cmd_list.h"
+#include "recording/cmd_list.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -28,6 +28,9 @@ public:
     RegionCmdList(const CmdListData& data);
     ~RegionCmdList() override = default;
 
+    /*
+     * @brief  Calls the corresponding operations of all opitems in RegionCmdList to the region.
+     */
     void Playback(Region& region) const;
 };
 
