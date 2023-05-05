@@ -272,14 +272,6 @@ public:
         radius_[2] = { radius[2], radius[2] };
         radius_[3] = { radius[3], radius[3] };
     }
-    RRectT(const Vector4<T>& rect, const Vector4f& radius)
-    {
-        rect_ = RectT(rect);
-        radius_[0] = { radius[0], radius[0] };
-        radius_[1] = { radius[1], radius[1] };
-        radius_[2] = { radius[2], radius[2] };
-        radius_[3] = { radius[3], radius[3] };
-    }
 
     void SetValues(RectT<T> rect, const Vector2f* radius)
     {
