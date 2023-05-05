@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,37 +13,34 @@
  * limitations under the License.
  */
 
-#ifndef SURFACE_OHOS_H
-#define SURFACE_OHOS_H
+#ifndef SURFACE_OHOS_VULKAN_H
+#define SURFACE_OHOS_VULKAN_H
 
-#include <surface.h>
+#include <vulkan_window.h>
 #include "surface.h"
 #include "window.h"
-#include "surface_frame_ohos.h"
-#include "drawing_utils.h"
-#include "drawing_proxy.h"
+#include "surface_ohos.h"
+#include "surface_frame_ohos_vulkan.h"
 
 namespace OHOS {
 namespace Rosen {
-class SurfaceOhos : public SurfaceBase {
+class SurfaceOhosVulkan : public SurfaceOhos {
 public:
-    static std::shared_ptr<SurfaceBase> CreateSurface(sptr<Surface> surface);
-
-    explicit SurfaceOhos(const sptr<Surface>& producer);
-    ~SurfaceOhos() override {};
+    explicit SurfaceOhosVulkan(const sptr<Surface>& producer);
+    ~SurfaceOhosVulkan() override;
 
     bool IsValid() const override
     {
         return producer_ != nullptr;
     }
 
-    sptr<Surface> GetSurface() const
-    {
-        return producer_;
-    }
-protected:
-    sptr<Surface> producer_;
-    ColorGamut colorSpace_ = ColorGamut::COLOR_GAMUT_SRGB;
+    std::unique_ptr<SurfaceFrame> RequestFrame(int32_t width, int32_t height) override;
+    bool FlushFrame(std::unique_ptr<SurfaceFrame>& frame) override;
+    SkCanvas* GetCanvas(std::unique_ptr<SurfaceFrame>& frame) override;
+private:
+    std::unique_ptr<SurfaceFrameOhosVulkan> frame_;
+    struct NativeWindow *mNativeWindow_ = nullptr;
+    vulkan::VulkanWindow *mVulkanWIndow_ = nullptr;
 };
 } // namespace Rosen
 } // namespace OHOS
