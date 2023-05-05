@@ -816,7 +816,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<Medi
         ROSEN_LOGE("failed RSMarshallingHelper::Marshalling Media::PixelMap");
         return false;
     }
-    // coRRectT<float> pixelmap size recorded in Parcel
+    // correct pixelmap size recorded in Parcel
     *reinterpret_cast<int32_t*>(parcel.GetData() + position) =
         static_cast<int32_t>(parcel.GetWritePosition() - position - sizeof(int32_t));
     return true;
@@ -871,7 +871,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RectT<fl
     return val != nullptr;
 }
 
-//RRectT<float>
+//RRect
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const RRectT<float>& val)
 {
     return Marshalling(parcel, val.rect_) && Marshalling(parcel, val.radius_[0]) &&
@@ -1016,7 +1016,7 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector4<uint32_t>)            \
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector4<Color>)               \
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector4f)                     \
-    EXPLICIT_INSTANTIATION(TEMPLATE, RRectT<float>)                        \
+    EXPLICIT_INSTANTIATION(TEMPLATE, RRectT<float>)                \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<DrawCmdList>) \
     EXPLICIT_INSTANTIATION(TEMPLATE, SkMatrix)
 
