@@ -35,20 +35,20 @@ constexpr float BLUR_SIGMA_SCALE = 0.57735f;
 std::unordered_map<MATERIAL_BLUR_STYLE, MaterialParam> materialParams_ {
     // card blur params
     { STYLE_CARD_THIN_LIGHT,         { 23.0f,  1.05, 1.05, RSColor(0xFFFFFF33) } },
-    { STYLE_CARD_LIGHT,              { 50.0f,  1.8, 1.2, RSColor(0xFAFAFA99) } },
-    { STYLE_CARD_THICK_LIGHT,        { 57.0f,  1.2, 1.1, RSColor(0xFFFFFF8C) } },
-    { STYLE_CARD_THIN_DARK,          { 75.0f,  1.35, 1.0, RSColor(0x1A1A1A6B) } },
-    { STYLE_CARD_DARK,               { 50.0f,  2.15, 1.0, RSColor(0x1F1F1FD1) } },
-    { STYLE_CARD_THICK_DARK,         { 75.0f,  2.15, 1.0, RSColor(0x1F1F1FD1) } },
+    { STYLE_CARD_LIGHT,              { 50.0f,  1.8,  1.2,  RSColor(0xFAFAFA99) } },
+    { STYLE_CARD_THICK_LIGHT,        { 57.0f,  1.2,  1.1,  RSColor(0xFFFFFF8C) } },
+    { STYLE_CARD_THIN_DARK,          { 75.0f,  1.35, 1.0,  RSColor(0x1A1A1A6B) } },
+    { STYLE_CARD_DARK,               { 50.0f,  2.15, 1.0,  RSColor(0x1F1F1FD1) } },
+    { STYLE_CARD_THICK_DARK,         { 75.0f,  2.15, 1.0,  RSColor(0x1F1F1FD1) } },
     // background blur params
-    { STYLE_BACKGROUND_SMALL_LIGHT,  { 23.0f,  1.05,  1.0, RSColor(0x80808033) } },                        
-    { STYLE_BACKGROUND_MEDIUM_LIGHT, { 29.0f,  1.1,  1.0, RSColor(0x80808033) } },
-    { STYLE_BACKGROUND_LARGE_LIGHT,  { 57.0f,  1.2,  1.0, RSColor(0x80808033) } },
-    { STYLE_BACKGROUND_XLARGE_LIGHT, { 120.0f, 1.3,  1.0, RSColor(0x6666664C) } },
-    { STYLE_BACKGROUND_SMALL_DARK,   { 15.0f,  1.1,  1.0, RSColor(0x0D0D0D80) } },
-    { STYLE_BACKGROUND_MEDIUM_DARK,  { 55.0f,  1.15, 1.0, RSColor(0x0D0D0D80) } },
-    { STYLE_BACKGROUND_LARGE_DARK,   { 75.0f,  1.5,  1.0, RSColor(0x0D0D0D80) } },
-    { STYLE_BACKGROUND_XLARGE_DARK,  { 130.0f, 1.3,  1.0, RSColor(0x0D0D0D80) } },
+    { STYLE_BACKGROUND_SMALL_LIGHT,  { 23.0f,  1.05, 1.0,  RSColor(0x80808033) } },                        
+    { STYLE_BACKGROUND_MEDIUM_LIGHT, { 29.0f,  1.1,  1.0,  RSColor(0x80808033) } },
+    { STYLE_BACKGROUND_LARGE_LIGHT,  { 57.0f,  1.2,  1.0,  RSColor(0x80808033) } },
+    { STYLE_BACKGROUND_XLARGE_LIGHT, { 120.0f, 1.3,  1.0,  RSColor(0x6666664C) } },
+    { STYLE_BACKGROUND_SMALL_DARK,   { 15.0f,  1.1,  1.0,  RSColor(0x0D0D0D80) } },
+    { STYLE_BACKGROUND_MEDIUM_DARK,  { 55.0f,  1.15, 1.0,  RSColor(0x0D0D0D80) } },
+    { STYLE_BACKGROUND_LARGE_DARK,   { 75.0f,  1.5,  1.0,  RSColor(0x0D0D0D80) } },
+    { STYLE_BACKGROUND_XLARGE_DARK,  { 130.0f, 1.3,  1.0,  RSColor(0x0D0D0D80) } },
 };
 } // namespace
 
