@@ -112,22 +112,10 @@ HWTEST_F(RSParallelTaskManagerTest, PushRenderTaskTest, TestSize.Level1)
  */
 HWTEST_F(RSParallelTaskManagerTest, ResetTest, TestSize.Level1)
 {
-    parallelTaskManager_->Reset();
-    auto num = parallelTaskManager_->GetTaskNum();
-    ASSERT_EQ(num, 0);
-}
-
-/**
- * @tc.name: SetSubThreadRenderTaskLoadTest
- * @tc.desc: Test RSParallelTaskManagerTest.SetSubThreadRenderTaskLoadTest
- * @tc.type: FUNC
- * @tc.require: issueI69JAV
- */
-HWTEST_F(RSParallelTaskManagerTest, SetSubThreadRenderTaskLoadTest, TestSize.Level1)
-{
     parallelTaskManager_->SetSubThreadRenderTaskLoad(0, 1000, 1.0f);
     parallelTaskManager_->SetSubThreadRenderTaskLoad(1, 2000, 2.0f);
     parallelTaskManager_->SetSubThreadRenderTaskLoad(2, 3000, 3.0f);
+    parallelTaskManager_->Reset();
     auto num = parallelTaskManager_->GetTaskNum();
     ASSERT_EQ(num, 0);
 }
