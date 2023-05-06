@@ -714,10 +714,8 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSFi
         case RSFilter::MATERIAL: {
             auto material = std::static_pointer_cast<RSMaterialFilter>(val);
             success = success && parcel.WriteFloat(material->radius_) && parcel.WriteFloat(material->saturation_) &&
-                      parcel.WriteFloat(material->brightness_) && parcel.WriteInt16(material->maskColor_.GetRed()) &&
-                      parcel.WriteInt16(material->maskColor_.GetGreen()) &&
-                      parcel.WriteInt16(material->maskColor_.GetBlue()) &&
-                      parcel.WriteInt16(material->maskColor_.GetAlpha()) && parcel.WriteInt32(material->colorMode_);
+                      parcel.WriteFloat(material->brightness_) &&
+                      RSMarshallingHelper::Marshalling(material->maskColor_) && parcel.WriteInt32(material->colorMode_);
             break;
         }
         case RSFilter::LIGHTUPEFFECT: {
@@ -746,15 +744,11 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSFilter
         }
         case RSFilter::MATERIAL: {
             MaterialParam materialParam;
-            int16_t alpha {};
-            int16_t red {};
-            int16_t green {};
-            int16_t blue {};
             int colorMode;
             success = success && parcel.ReadFloat(materialParam.radius) && parcel.ReadFloat(materialParam.saturation) &&
-                      parcel.ReadFloat(materialParam.brightness) && parcel.ReadInt16(red) && parcel.ReadInt16(green) &&
-                      parcel.ReadInt16(blue) && parcel.ReadInt16(alpha) && parcel.ReadInt32(colorMode);
-            materialParam.maskColor = RSColor(red, green, blue, alpha);
+                      parcel.ReadFloat(materialParam.brightness) &&
+                      RSMarshallingHelper::Unmarshalling(parcel, materialParam.maskColor) &&
+                      parcel.ReadInt32(colorMode);
             if (success) {
                 val = std::make_shared<RSMaterialFilter>(materialParam, static_cast<BLUR_COLOR_MODE>(colorMode));
             }
