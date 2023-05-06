@@ -40,17 +40,34 @@
       ],
       "deps": {
         "components": [
-          "libhilog",
-          "ipc_core",
-          "samgr_proxy",
-          "utils",
-          "libeventhandler",
-          "image_native",
-          "hdi_display_device",
-          "bytrace_core"
+          "common",
+          "window_manager",
+          "resource_management",
+          "napi",
+          "samgr",
+          "zlib",
+          "hiviewdfx_hilog_native",
+          "hitrace_native",
+          "ability_runtime",
+          "drivers_interface_display",
+          "hilog_native",
+          "c_utils",
+          "access_token",
+          "safwk",
+          "hisysevent_native",
+          "eventhandler",
+          "config_policy",
+          "init",
+          "hicollie_native",
+          "bounds_checking_function",
+          "multimedia_image_framework",
+          "cjson",
+          "ipc",
+          "multimedia_player_framework"
         ],
         "third_party": [
-          "libz"
+          "flutter",
+          "libuv"
         ]
       },
       "build": {
