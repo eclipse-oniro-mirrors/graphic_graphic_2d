@@ -49,33 +49,33 @@ private:
     };
 
     const std::unordered_map<std::string, CommandType> commandMap_ = {
-        { std::string("-t"), CommandType::CT_T },           { std::string("--type"), CommandType::CT_T },
-        { std::string("-b"), CommandType::CT_B },           { std::string("--beginFrame"), CommandType::CT_B },
-        { std::string("-e"), CommandType::CT_E },           { std::string("--endFrame"), CommandType::CT_E },
-        { std::string("-l"), CommandType::CT_L },           { std::string("--loop"), CommandType::CT_L },
-        { std::string("-s"), CommandType::CT_S },           { std::string("--step"), CommandType::CT_S },
-        { std::string("-i"), CommandType::CT_I },           { std::string("--inputFilePath"), CommandType::CT_I },
-        { std::string("-o"), CommandType::CT_O },           { std::string("--outputFilePath"), CommandType::CT_O },
-        { std::string("-h"), CommandType::CT_H },           { std::string("--help"), CommandType::CT_H },
+        { std::string("-t"), CommandType::CT_T }, { std::string("--type"), CommandType::CT_T },
+        { std::string("-b"), CommandType::CT_B }, { std::string("--beginFrame"), CommandType::CT_B },
+        { std::string("-e"), CommandType::CT_E }, { std::string("--endFrame"), CommandType::CT_E },
+        { std::string("-l"), CommandType::CT_L }, { std::string("--loop"), CommandType::CT_L },
+        { std::string("-s"), CommandType::CT_S }, { std::string("--step"), CommandType::CT_S },
+        { std::string("-i"), CommandType::CT_I }, { std::string("--inputFilePath"), CommandType::CT_I },
+        { std::string("-o"), CommandType::CT_O }, { std::string("--outputFilePath"), CommandType::CT_O },
+        { std::string("-h"), CommandType::CT_H }, { std::string("--help"), CommandType::CT_H },
     };
 
     const std::string dclMsgErr_ = "error input!\n use command '--help' get more information\n";
     const std::string breakLine_ = std::string(80, '-');
     const std::string dclMsg_ = "usage: /data/drawing_engine_sample dcl <option> <argument> \n" + breakLine_ +
-                                "\nThere are common commands list:\n"
-                                " -t,--type                  set the type of playback, \n"
-                                "                            \t0: iterate by frame,\n"
-                                "                            \t1: iterate by opItem,\n"
-                                "                            \t2: iterate by opItem using manual control,\n"
-                                " -b,--beginFrame            set the start number of frames for playback, \n"
-                                " -e,--beginFrame            set the end number of frames for playback, \n"
-                                " -l,--loop                  set the loops of iterating by frame, \n"
-                                " -s,--step                  set the step when iterating by opItem "
-                                                             "(the step can be a decimal), \n"
-                                " -i,--inputFilePath         set the input path for drawCmdList files, \n"
-                                " -o,--outputFilePath        set the output path for drawCmdList files, \n"
-                                " -h,--help                  get help, \n" + breakLine_ +
-                                "\nExample: /data/drawing_ening_sample dcl -t 0 -b 1 -e 100 \n" + breakLine_ + "\n";
+        "\nThere are common commands list:\n"
+        " -t,--type                  set the type of playback, \n"
+        "                            \t0: iterate by frame,\n"
+        "                            \t1: iterate by opItem,\n"
+        "                            \t2: iterate by opItem using manual control,\n"
+        " -b,--beginFrame            set the start number of frames for playback, \n"
+        " -e,--beginFrame            set the end number of frames for playback, \n"
+        " -l,--loop                  set the loops of iterating by frame, \n"
+        " -s,--step                  set the step when iterating by opItem "
+                                        "(the step can be a decimal), \n"
+        " -i,--inputFilePath         set the input path for drawCmdList files, \n"
+        " -o,--outputFilePath        set the output path for drawCmdList files, \n"
+        " -h,--help                  get help, \n" + breakLine_ +
+        "\nExample: /data/drawing_ening_sample dcl -t 0 -b 1 -e 100 \n" + breakLine_ + "\n";
 
     IterateType iterateType_ = IterateType::ITERATE_FRAME;
     int beginFrame_ = 0;
