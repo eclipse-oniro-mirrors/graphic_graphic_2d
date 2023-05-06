@@ -73,6 +73,7 @@ static std::unordered_map<RSOpType, OpUnmarshallingFunc> opUnmarshallingFuncLUT 
 #ifdef ROSEN_OHOS
     { SURFACEBUFFER_OPITEM,        SurfaceBufferOpItem::Unmarshalling },
 #endif
+    { SCALE_OPITEM,               ScaleOpItem::Unmarshalling },
 };
 
 #ifdef ROSEN_OHOS

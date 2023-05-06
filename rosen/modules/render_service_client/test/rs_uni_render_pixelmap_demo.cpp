@@ -137,7 +137,8 @@ int main()
 #ifdef NEW_SKIA
     canvas->DrawPixelMap(pixelmap, 100, 200, SkSamplingOptions(), nullptr);
     cout << "DrawPixelMapRect" << endl;
-    canvas->DrawPixelMapRect(pixelmap, SkRect::MakeXYWH(10, 10, 200, 200), SkRect::MakeXYWH(20, 300, 400, 600), SkSamplingOptions(), &paint);
+    canvas->DrawPixelMapRect(pixelmap, SkRect::MakeXYWH(10, 10, 200, 200), SkRect::MakeXYWH(20, 300, 400, 600),
+        SkSamplingOptions(), &paint);
 #else
     canvas->DrawPixelMap(pixelmap, 100, 200);
     cout << "DrawPixelMapRect" << endl;

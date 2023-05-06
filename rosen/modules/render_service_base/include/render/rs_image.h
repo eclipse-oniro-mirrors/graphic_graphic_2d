@@ -64,7 +64,12 @@ public:
     ~RSImage();
 
     bool IsEqual(const RSImage& other) const;
+#ifdef NEW_SKIA
+    void CanvasDrawImage(SkCanvas& canvas, const SkRect& rect, const SkSamplingOptions& samplingOptions,
+        const SkPaint& paint, bool isBackground = false);
+#else
     void CanvasDrawImage(SkCanvas& canvas, const SkRect& rect, const SkPaint& paint, bool isBackground = false);
+#endif
     void SetImageFit(int fitNum);
     void SetImageRepeat(int repeatNum);
     void SetRadius(const SkVector radius[]);
@@ -91,8 +96,12 @@ public:
 private:
     void ApplyImageFit();
     void ApplyCanvasClip(SkCanvas& canvas);
-    void DrawImageRepeatRect(const SkPaint& paint, SkCanvas& canvas);
     void UploadGpu(SkCanvas& canvas);
+#ifdef NEW_SKIA
+    void DrawImageRepeatRect(const SkSamplingOptions& samplingOptions, const SkPaint& paint, SkCanvas& canvas);
+#else
+    void DrawImageRepeatRect(const SkPaint& paint, SkCanvas& canvas);
+#endif
 
     sk_sp<SkData> compressData_;
     ImageFit imageFit_ = ImageFit::COVER;

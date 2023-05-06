@@ -476,10 +476,6 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const sk_sp<SkVertices>& v
 }
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkVertices>& val)
 {
-    if (!val) {
-        ROSEN_LOGD("unirender: RSMarshallingHelper::Unmarshalling SkVertices is nullptr");
-        return false;
-    }
     sk_sp<SkData> data;
     if (!Unmarshalling(parcel, data)) {
         ROSEN_LOGE("unirender: failed RSMarshallingHelper::Unmarshalling SkVertices");
@@ -491,8 +487,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkVertices>& val)
     }
 #ifdef NEW_SKIA
     SkReadBuffer reader(data->data(), data->size());
-    SkVerticesPriv info(val->priv());
-    val = info.Decode(reader);
+    val = SkVerticesPriv::Decode(reader);
 #else
     val = SkVertices::Decode(data->data(), data->size());
 #endif
@@ -984,6 +979,29 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     template bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<TEMPLATE<TYPE>>& val); \
     template bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<TEMPLATE<TYPE>>& val);
 
+#ifdef NEW_SKIA
+#define BATCH_EXPLICIT_INSTANTIATION(TEMPLATE)                     \
+    EXPLICIT_INSTANTIATION(TEMPLATE, bool)                         \
+    EXPLICIT_INSTANTIATION(TEMPLATE, float)                        \
+    EXPLICIT_INSTANTIATION(TEMPLATE, int)                          \
+    EXPLICIT_INSTANTIATION(TEMPLATE, Color)                        \
+    EXPLICIT_INSTANTIATION(TEMPLATE, Gravity)                      \
+    EXPLICIT_INSTANTIATION(TEMPLATE, ForegroundColorStrategyType)  \
+    EXPLICIT_INSTANTIATION(TEMPLATE, Matrix3f)                     \
+    EXPLICIT_INSTANTIATION(TEMPLATE, Quaternion)                   \
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSFilter>)    \
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSImage>)     \
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSMask>)      \
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSPath>)      \
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSShader>)    \
+    EXPLICIT_INSTANTIATION(TEMPLATE, Vector2f)                     \
+    EXPLICIT_INSTANTIATION(TEMPLATE, Vector4<uint32_t>)            \
+    EXPLICIT_INSTANTIATION(TEMPLATE, Vector4<Color>)               \
+    EXPLICIT_INSTANTIATION(TEMPLATE, Vector4f)                     \
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<DrawCmdList>) \
+    EXPLICIT_INSTANTIATION(TEMPLATE, SkMatrix)                     \
+    EXPLICIT_INSTANTIATION(TEMPLATE, SkM44)
+#else
 #define BATCH_EXPLICIT_INSTANTIATION(TEMPLATE)                     \
     EXPLICIT_INSTANTIATION(TEMPLATE, bool)                         \
     EXPLICIT_INSTANTIATION(TEMPLATE, float)                        \
@@ -1004,6 +1022,7 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector4f)                     \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<DrawCmdList>) \
     EXPLICIT_INSTANTIATION(TEMPLATE, SkMatrix)
+#endif
 
 BATCH_EXPLICIT_INSTANTIATION(RSRenderProperty)
 

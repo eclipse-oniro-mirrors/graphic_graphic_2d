@@ -200,7 +200,11 @@ void FlushOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
     canvas.flush();
 }
 
+#ifdef NEW_SKIA
+MatrixOpItem::MatrixOpItem(const SkM44& matrix) : OpItem(sizeof(MatrixOpItem)), matrix_(matrix) {}
+#else
 MatrixOpItem::MatrixOpItem(const SkMatrix& matrix) : OpItem(sizeof(MatrixOpItem)), matrix_(matrix) {}
+#endif
 
 void MatrixOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
 {
@@ -241,6 +245,15 @@ TranslateOpItem::TranslateOpItem(float distanceX, float distanceY)
 void TranslateOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
 {
     canvas.translate(distanceX_, distanceY_);
+}
+
+ScaleOpItem::ScaleOpItem(float scaleX, float scaleY)
+    : OpItem(sizeof(ScaleOpItem)), scaleX_(scaleX), scaleY_(scaleY)
+{}
+
+void ScaleOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
+{
+    canvas.scale(scaleX_, scaleY_);
 }
 
 TextBlobOpItem::TextBlobOpItem(const sk_sp<SkTextBlob> textBlob, float x, float y, const SkPaint& paint)
@@ -596,9 +609,15 @@ void PaintOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
     canvas.drawPaint(paint_);
 }
 
+#ifdef NEW_SKIA
+ImageWithParmOpItem::ImageWithParmOpItem(const sk_sp<SkImage> img, const sk_sp<SkData> data,
+    const RsImageInfo& rsimageInfo, const SkSamplingOptions& samplingOptions, const SkPaint& paint)
+    : OpItemWithPaint(sizeof(ImageWithParmOpItem)), samplingOptions_(samplingOptions)
+#else
 ImageWithParmOpItem::ImageWithParmOpItem(const sk_sp<SkImage> img, const sk_sp<SkData> data,
     const RsImageInfo& rsimageInfo, const SkPaint& paint)
     : OpItemWithPaint(sizeof(ImageWithParmOpItem))
+#endif
 {
     rsImage_ = std::make_shared<RSImage>();
     rsImage_->SetImage(img);
@@ -610,9 +629,16 @@ ImageWithParmOpItem::ImageWithParmOpItem(const sk_sp<SkImage> img, const sk_sp<S
     paint_ = paint;
 }
 
+#ifdef NEW_SKIA
+ImageWithParmOpItem::ImageWithParmOpItem(
+    const std::shared_ptr<Media::PixelMap>& pixelmap, const RsImageInfo& rsimageInfo,
+    const SkSamplingOptions& samplingOptions, const SkPaint& paint)
+    : OpItemWithPaint(sizeof(ImageWithParmOpItem)), samplingOptions_(samplingOptions)
+#else
 ImageWithParmOpItem::ImageWithParmOpItem(
     const std::shared_ptr<Media::PixelMap>& pixelmap, const RsImageInfo& rsimageInfo, const SkPaint& paint)
     : OpItemWithPaint(sizeof(ImageWithParmOpItem))
+#endif
 {
     rsImage_ = std::make_shared<RSImage>();
     rsImage_->SetPixelMap(pixelmap);
@@ -623,8 +649,14 @@ ImageWithParmOpItem::ImageWithParmOpItem(
     paint_ = paint;
 }
 
+#ifdef NEW_SKIA
+ImageWithParmOpItem::ImageWithParmOpItem(const std::shared_ptr<RSImage>& rsImage,
+    const SkSamplingOptions& samplingOptions, const SkPaint& paint)
+    : OpItemWithPaint(sizeof(ImageWithParmOpItem)), rsImage_(rsImage), samplingOptions_(samplingOptions)
+#else
 ImageWithParmOpItem::ImageWithParmOpItem(const std::shared_ptr<RSImage>& rsImage, const SkPaint& paint)
     : OpItemWithPaint(sizeof(ImageWithParmOpItem)), rsImage_(rsImage)
+#endif
 {
     paint_ = paint;
 }
@@ -635,10 +667,18 @@ void ImageWithParmOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect* rect) 
         ROSEN_LOGE("ImageWithParmOpItem: no rect");
         return;
     }
+#ifdef NEW_SKIA
+    rsImage_->CanvasDrawImage(canvas, *rect, samplingOptions_, paint_);
+#else
     rsImage_->CanvasDrawImage(canvas, *rect, paint_);
+#endif
 }
 
+#ifdef NEW_SKIA
+ConcatOpItem::ConcatOpItem(const SkM44& matrix) : OpItem(sizeof(ConcatOpItem)), matrix_(matrix) {}
+#else
 ConcatOpItem::ConcatOpItem(const SkMatrix& matrix) : OpItem(sizeof(ConcatOpItem)), matrix_(matrix) {}
+#endif
 
 void ConcatOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
 {
@@ -916,6 +956,9 @@ bool ImageWithParmOpItem::Marshalling(Parcel& parcel) const
 {
     bool success = RSMarshallingHelper::Marshalling(parcel, rsImage_) &&
                    RSMarshallingHelper::Marshalling(parcel, paint_);
+#ifdef NEW_SKIA
+    success = success && RSMarshallingHelper::Marshalling(parcel, samplingOptions_);
+#endif
     if (!success) {
         ROSEN_LOGE("ImageWithParmOpItem::Marshalling failed!");
         return false;
@@ -929,11 +972,19 @@ OpItem* ImageWithParmOpItem::Unmarshalling(Parcel& parcel)
     SkPaint paint;
     bool success = RSMarshallingHelper::Unmarshalling(parcel, rsImage) &&
                    RSMarshallingHelper::Unmarshalling(parcel, paint);
+#ifdef NEW_SKIA
+    SkSamplingOptions samplingOptions;
+    success = success && RSMarshallingHelper::Unmarshalling(parcel, samplingOptions);
+#endif
     if (!success) {
         ROSEN_LOGE("ImageWithParmOpItem::Unmarshalling failed!");
         return nullptr;
     }
+#ifdef NEW_SKIA
+    return new ImageWithParmOpItem(rsImage, samplingOptions, paint);
+#else
     return new ImageWithParmOpItem(rsImage, paint);
+#endif
 }
 
 // DRRectOpItem
@@ -1079,7 +1130,11 @@ bool MatrixOpItem::Marshalling(Parcel& parcel) const
 
 OpItem* MatrixOpItem::Unmarshalling(Parcel& parcel)
 {
+#ifdef NEW_SKIA
+    SkM44 matrix;
+#else
     SkMatrix matrix;
+#endif
     bool success = RSMarshallingHelper::Unmarshalling(parcel, matrix);
     if (!success) {
         ROSEN_LOGE("MatrixOpItem::Unmarshalling failed!");
@@ -1192,6 +1247,31 @@ OpItem* TranslateOpItem::Unmarshalling(Parcel& parcel)
         return nullptr;
     }
     return new TranslateOpItem(distanceX, distanceY);
+}
+
+// ScaleOpItem
+bool ScaleOpItem::Marshalling(Parcel& parcel) const
+{
+    bool success = RSMarshallingHelper::Marshalling(parcel, scaleX_) &&
+                   RSMarshallingHelper::Marshalling(parcel, scaleY_);
+    if (!success) {
+        ROSEN_LOGE("ScaleOpItem::Marshalling failed!");
+        return false;
+    }
+    return success;
+}
+
+OpItem* ScaleOpItem::Unmarshalling(Parcel& parcel)
+{
+    float scaleX;
+    float scaleY;
+    bool success = RSMarshallingHelper::Unmarshalling(parcel, scaleX) &&
+                   RSMarshallingHelper::Unmarshalling(parcel, scaleY);
+    if (!success) {
+        ROSEN_LOGE("ScaleOpItem::Unmarshalling failed!");
+        return nullptr;
+    }
+    return new ScaleOpItem(scaleX, scaleY);
 }
 
 // TextBlobOpItem
@@ -1621,7 +1701,11 @@ bool ConcatOpItem::Marshalling(Parcel& parcel) const
 
 OpItem* ConcatOpItem::Unmarshalling(Parcel& parcel)
 {
+#ifdef NEW_SKIA
+    SkM44 matrix;
+#else
     SkMatrix matrix;
+#endif
     bool success = RSMarshallingHelper::Unmarshalling(parcel, matrix);
     if (!success) {
         ROSEN_LOGE("ConcatOpItem::Unmarshalling failed!");
