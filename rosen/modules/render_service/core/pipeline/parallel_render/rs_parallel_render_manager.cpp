@@ -314,15 +314,44 @@ void RSParallelRenderManager::DrawImageMergeFunc(RSPaintFilterCanvas& canvas)
             RS_TRACE_END();
             auto texture = threadList_[i]->GetTexture();
             if (texture == nullptr) {
-                RS_LOGE("Texture %d is nullptr", i);
+                RS_LOGE("Texture of subThread(%d) is nullptr", i);
                 continue;
             }
+#ifdef NEW_SKIA
+            if (renderContext_ == nullptr) {
+                RS_LOGE("RS main thread render context is nullptr");
+                continue;
+            }
+            auto mainGrContext = renderContext_->GetGrContext();
+            if (mainGrContext == nullptr) {
+                RS_LOGE("RS main thread GrDirectContext is nullptr");
+                continue;
+            }
+            auto sharedBackendTexture = texture->getBackendTexture(false);
+            if (!sharedBackendTexture.isValid()) {
+                RS_LOGE("Texture of subThread(%d) does not has GPU backend", i);
+                continue;
+            }
+            auto sharedTexture = SkImage::MakeFromTexture(mainGrContext, sharedBackendTexture,
+                kBottomLeft_GrSurfaceOrigin, kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
+            if (sharedTexture == nullptr) {
+                RS_LOGE("SharedTexture of subThread(%d) is nullptr", i);
+            }
+            canvas.drawImage(sharedTexture, 0, 0);
+#else
             canvas.drawImage(texture, 0, 0);
+#endif
             // For any one subMainThread' sksurface, we just clear transparent color of self drawing
             // surface drawed in larger skSurface, such as skSurface 0 should clear self drawing surface
             // areas drawed in skSurface 1.
             auto clearTransparentColorSurfaceIndex = i + 1;
             ClearSelfDrawingSurface(canvas, clearTransparentColorSurfaceIndex);
+#ifdef NEW_SKIA
+            sharedTexture.reset();
+            sharedTexture = nullptr;
+            texture.reset();
+            texture = nullptr;
+#endif
         }
     }
 }

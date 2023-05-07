@@ -32,11 +32,6 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "rs_node_cost_manager.h"
 #include "rs_parallel_render_manager.h"
-#ifdef NEW_SKIA
-#include "include/gpu/GrDirectContext.h"
-#else
-#include "include/gpu/GrContext.h"
-#endif
 #include "common/rs_obj_abs_geometry.h"
 #include "pipeline/rs_uni_render_visitor.h"
 #include "rs_parallel_render_ext.h"
@@ -325,11 +320,15 @@ void RSParallelSubThread::Flush()
     }
     if (renderType_ == ParallelRenderType::DRAW_IMAGE) {
         RS_TRACE_BEGIN("Flush");
+#ifdef NEW_SKIA
+        grContext_->flushAndSubmit(false);
+#else
         // skCanvas_->flush() may tasks a long time when window is zoomed in and out. So let flush operation of
         // subMainThreads are executed in sequence to reduce probability rather than solve the question.
         RSParallelRenderManager::Instance()->LockFlushMutex();
         skCanvas_->flush();
         RSParallelRenderManager::Instance()->UnlockFlushMutex();
+#endif
         RS_TRACE_END();
         RS_TRACE_BEGIN("Create Fence");
         eglSync_ = eglCreateSyncKHR(renderContext_->GetEGLDisplay(), EGL_SYNC_FENCE_KHR, nullptr);
@@ -417,7 +416,7 @@ sk_sp<GrContext> RSParallelSubThread::CreateShareGrContext()
     options.fPreferExternalImagesOverES3 = true;
     options.fDisableDistanceFieldPaths = true;
 #ifdef NEW_SKIA
-    sk_sp<GrDirectContext> grContext = GrDirectContext::MakeGL(GrGLMakeNativeInterface(), options);
+    sk_sp<GrDirectContext> grContext = GrDirectContext::MakeGL(std::move(glInterface), options);
 #else
     sk_sp<GrContext> grContext = GrContext::MakeGL(std::move(glInterface), options);
 #endif
