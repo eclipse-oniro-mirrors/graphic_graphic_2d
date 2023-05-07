@@ -12,7 +12,7 @@
 # limitations under the License.
 import("//build/ohos.gni")
 
-## Build libvulkan.so {{{
+## Build libvulkan_wrapper.so {{{
 config("vulkan_config") {
   visibility = [ ":*" ]
 
@@ -59,7 +59,7 @@ ohos_shared_library("vulkan") {
     "hilog_native:libhilog",
   ]
 
-  output_name = "vulkan"
+  output_name = "vulkan_wrapper"
   output_extension = "so"
 
   part_name = "graphic_standard"
@@ -67,7 +67,7 @@ ohos_shared_library("vulkan") {
   license_file = "//third_party/vulkan-headers/LICENSE.txt"
 }
 
-## Build libvulkan.so }}}
+## Build libvulkan_wrapper.so }}}
 
 ## Build vulkan_wrapper_native_test {{{
 ohos_executable("vulkan_wrapper_native_test") {

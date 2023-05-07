@@ -86,6 +86,7 @@
             "//foundation/graphic/graphic_2d/frameworks/surfaceimage:libnative_image",
             "//foundation/graphic/graphic_2d/rosen/modules/effect/egl:libegl_effect",
             "//foundation/graphic/graphic_2d/frameworks/vulkan_wrapper:vulkan",
+            "//third_party/vulkan-loader/openharmony:vulkan_loader",
             "//foundation/graphic/graphic_2d/frameworks/vulkan_layers:vulkan_swapchain_layer",
             "//foundation/graphic/graphic_2d/frameworks/vulkan_layers:vulkan_swapchain_layer_json"
           ],
