@@ -684,8 +684,8 @@ public:
     [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
-    float scaleX_;
-    float scaleY_;
+    float scaleX_ = 1.0f;
+    float scaleY_ = 1.0f;
 };
 
 class TextBlobOpItem : public OpItemWithPaint {
