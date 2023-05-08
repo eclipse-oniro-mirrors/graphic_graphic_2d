@@ -46,8 +46,12 @@ bool RSImage::IsEqual(const RSImage& other) const
            (imageFit_ == other.imageFit_) && (imageRepeat_ == other.imageRepeat_) &&
            (scale_ == other.scale_) && radiusEq && (compressData_ == other.compressData_);
 }
-
+#ifdef NEW_SKIA
+void RSImage::CanvasDrawImage(SkCanvas& canvas, const SkRect& rect, const SkSamplingOptions& samplingOptions,
+    const SkPaint& paint, bool isBackground)
+#else
 void RSImage::CanvasDrawImage(SkCanvas& canvas, const SkRect& rect, const SkPaint& paint, bool isBackground)
+#endif
 {
     UpdateNodeIdToPicture(nodeId_);
     canvas.save();
@@ -56,7 +60,11 @@ void RSImage::CanvasDrawImage(SkCanvas& canvas, const SkRect& rect, const SkPain
         ApplyImageFit();
         ApplyCanvasClip(canvas);
     }
+#ifdef NEW_SKIA
+    DrawImageRepeatRect(samplingOptions, paint, canvas);
+#else
     DrawImageRepeatRect(paint, canvas);
+#endif
     canvas.restore();
 }
 
@@ -155,7 +163,11 @@ void RSImage::UploadGpu(SkCanvas& canvas)
 #endif
 }
 
+#ifdef NEW_SKIA
+void RSImage::DrawImageRepeatRect(const SkSamplingOptions& samplingOptions, const SkPaint& paint, SkCanvas& canvas)
+#else
 void RSImage::DrawImageRepeatRect(const SkPaint& paint, SkCanvas& canvas)
+#endif
 {
     int minX = 0;
     int minY = 0;
@@ -192,7 +204,7 @@ void RSImage::DrawImageRepeatRect(const SkPaint& paint, SkCanvas& canvas)
             auto dst = SkRect::MakeXYWH(dstRect_.left_ + i * dstRect_.width_, dstRect_.top_ + j * dstRect_.height_,
                 dstRect_.width_, dstRect_.height_);
 #ifdef NEW_SKIA
-            canvas.drawImageRect(image_, src, dst, SkSamplingOptions(), &paint, SkCanvas::kFast_SrcRectConstraint);
+            canvas.drawImageRect(image_, src, dst, samplingOptions, &paint, SkCanvas::kFast_SrcRectConstraint);
 #else
             canvas.drawImageRect(image_, src, dst, &paint, SkCanvas::kFast_SrcRectConstraint);
 #endif

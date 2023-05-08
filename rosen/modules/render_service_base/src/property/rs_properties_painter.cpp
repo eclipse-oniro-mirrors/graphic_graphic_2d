@@ -488,7 +488,11 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
         canvas.clipRRect(RRect2SkRRect(properties.GetRRect()), antiAlias);
         auto boundsRect = Rect2SkRect(properties.GetBoundsRect());
         bgImage->SetDstRect(properties.GetBgImageRect());
+#ifdef NEW_SKIA
+        bgImage->CanvasDrawImage(canvas, boundsRect, SkSamplingOptions(), paint, true);
+#else
         bgImage->CanvasDrawImage(canvas, boundsRect, paint, true);
+#endif
     } else if (const auto& bgShader = properties.GetBackgroundShader()) {
         canvas.clipRRect(RRect2SkRRect(properties.GetRRect()), antiAlias);
         paint.setShader(bgShader->GetSkShader());

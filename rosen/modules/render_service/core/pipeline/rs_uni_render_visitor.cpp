@@ -2212,8 +2212,12 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
 void RSUniRenderVisitor::RecordAppWindowNodeAndPostTask(RSSurfaceRenderNode& node, float width, float height)
 {
     RSRecordingCanvas canvas(width, height);
-#if (defined RS_ENABLE_GL) && (!defined NEW_SKIA)
+#if (defined RS_ENABLE_GL)
+#ifdef NEW_SKIA
+    canvas.SetGrRecordingContext(canvas_->recordingContext());
+#else
     canvas.SetGrContext(canvas_->getGrContext()); // SkImage::MakeFromCompressed need GrContext
+#endif
 #endif
     auto recordingCanvas = std::make_shared<RSPaintFilterCanvas>(&canvas);
     swap(canvas_, recordingCanvas);

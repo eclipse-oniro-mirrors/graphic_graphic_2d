@@ -100,6 +100,7 @@ enum RSOpType : uint16_t {
     SAVE_ALPHA_OPITEM,
     RESTORE_ALPHA_OPITEM,
     SURFACEBUFFER_OPITEM,
+    SCALE_OPITEM,
 };
 namespace {
     std::string GetOpTypeString(RSOpType type)
@@ -148,6 +149,7 @@ namespace {
             GETOPTYPESTRING(SAVE_ALPHA_OPITEM);
             GETOPTYPESTRING(RESTORE_ALPHA_OPITEM);
             GETOPTYPESTRING(SURFACEBUFFER_OPITEM);
+            GETOPTYPESTRING(SCALE_OPITEM);
             default:
                 break;
         }
@@ -272,12 +274,22 @@ private:
 
 class ImageWithParmOpItem : public OpItemWithPaint {
 public:
+#ifdef NEW_SKIA
+    ImageWithParmOpItem(
+        const sk_sp<SkImage> img, const sk_sp<SkData> data, const RsImageInfo& rsimageInfo,
+        const SkSamplingOptions& samplingOptions, const SkPaint& paint);
+    ImageWithParmOpItem(
+        const std::shared_ptr<Media::PixelMap>& pixelmap, const RsImageInfo& rsimageInfo,
+        const SkSamplingOptions& samplingOptions, const SkPaint& paint);
+    ImageWithParmOpItem(const std::shared_ptr<RSImage>& rsImage,
+        const SkSamplingOptions& samplingOptions, const SkPaint& paint);
+#else
     ImageWithParmOpItem(
         const sk_sp<SkImage> img, const sk_sp<SkData> data, const RsImageInfo& rsimageInfo, const SkPaint& paint);
     ImageWithParmOpItem(
         const std::shared_ptr<Media::PixelMap>& pixelmap, const RsImageInfo& rsimageInfo, const SkPaint& paint);
     ImageWithParmOpItem(const std::shared_ptr<RSImage>& rsImage, const SkPaint& paint);
-
+#endif
     ~ImageWithParmOpItem() override {}
     void Draw(RSPaintFilterCanvas& canvas, const SkRect*) const override;
 
@@ -309,6 +321,9 @@ public:
 
 private:
     std::shared_ptr<RSImage> rsImage_;
+#ifdef NEW_SKIA
+    SkSamplingOptions samplingOptions_;
+#endif
 };
 
 class DRRectOpItem : public OpItemWithPaint {
@@ -498,7 +513,11 @@ public:
 
 class MatrixOpItem : public OpItem {
 public:
+#ifdef NEW_SKIA
+    MatrixOpItem(const SkM44& matrix);
+#else
     MatrixOpItem(const SkMatrix& matrix);
+#endif
     ~MatrixOpItem() override {}
     void Draw(RSPaintFilterCanvas& canvas, const SkRect*) const override;
 
@@ -506,7 +525,9 @@ public:
     {
         std::string desc = "{OpType: " + GetOpTypeString(GetType()) +", Description:{";
         int depth = 1;
+#ifndef NEW_SKIA
         matrix_.dump(desc, depth);
+#endif
         desc += "}, \n";
         return desc;
     }
@@ -520,7 +541,11 @@ public:
     [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
+#ifdef NEW_SKIA
+    SkM44 matrix_;
+#else
     SkMatrix matrix_;
+#endif
 };
 
 class ClipRectOpItem : public OpItem {
@@ -647,6 +672,34 @@ public:
 private:
     float distanceX_;
     float distanceY_;
+};
+
+class ScaleOpItem : public OpItem {
+public:
+    ScaleOpItem(float scaleX, float scaleY);
+    ~ScaleOpItem() override {}
+    void Draw(RSPaintFilterCanvas& canvas, const SkRect*) const override;
+
+    std::string GetTypeWithDesc() const override
+    {
+        std::string desc = "{OpType: " + GetOpTypeString(GetType()) +", Description:{";
+        desc += "\tscaleX_: " + std::to_string(scaleX_) + "\n";
+        desc += "\tscaleY_: " + std::to_string(scaleY_) + "\n";
+        desc += "}, \n";
+        return desc;
+    }
+
+    RSOpType GetType() const override
+    {
+        return RSOpType::SCALE_OPITEM;
+    }
+
+    bool Marshalling(Parcel& parcel) const override;
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
+
+private:
+    float scaleX_ = 1.0f;
+    float scaleY_ = 1.0f;
 };
 
 class TextBlobOpItem : public OpItemWithPaint {
@@ -1105,7 +1158,11 @@ public:
 
 class ConcatOpItem : public OpItem {
 public:
+#ifdef NEW_SKIA
+    ConcatOpItem(const SkM44& matrix);
+#else
     ConcatOpItem(const SkMatrix& matrix);
+#endif
     ~ConcatOpItem() override {}
     void Draw(RSPaintFilterCanvas& canvas, const SkRect*) const override;
 
@@ -1113,7 +1170,9 @@ public:
     {
         std::string desc = "{OpType: " + GetOpTypeString(GetType()) +", Description:{";
         int depth = 1;
+#ifndef NEW_SKIA
         matrix_.dump(desc, depth);
+#endif
         desc += "}, \n";
         return desc;
     }
@@ -1127,7 +1186,11 @@ public:
     [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
 private:
+#ifdef NEW_SKIA
+    SkM44 matrix_;
+#else
     SkMatrix matrix_;
+#endif
 };
 
 class SaveLayerOpItem : public OpItemWithPaint {
