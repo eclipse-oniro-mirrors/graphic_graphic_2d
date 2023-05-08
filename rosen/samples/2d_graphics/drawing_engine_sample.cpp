@@ -203,7 +203,7 @@ SurfaceError DrawingEngineSample::DoDraw()
         return SURFACE_ERROR_ERROR;
     }
     surface->SetDrawingProxy(drawingProxy);
-#endif
+
     auto surfaceFrame = surface->RequestFrame(drawingWidth, drawingHeight);
     if (surfaceFrame == nullptr) {
         std::cout << "Request Frame Failed" << std::endl;
