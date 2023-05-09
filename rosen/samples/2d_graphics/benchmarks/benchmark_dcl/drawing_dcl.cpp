@@ -230,7 +230,9 @@ public:
             std::cout << "MyAllocator::Dealloc data addr not match!" << std::endl;
         }
         if (mapFile_ != nullptr) {
-            ::munmap(mapFile_, size_);
+            if (::munmap(mapFile_, size_)) {
+                std::cout << "munmap failed!" <<std::endl;
+            }
             mapFile_ = nullptr;
         }
         if (fd_ > 0) {
