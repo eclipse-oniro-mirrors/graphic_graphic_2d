@@ -263,8 +263,9 @@ int DrawingDCL::LoadDrawCmdList(std::string dclFile)
         return -1;
     }
     int32_t fd = open(realDclFilePath, O_RDONLY);
+    delete realDclFilePath;
     if (fd < 0) {
-        std::cout << "Open file failed" << realDclFilePath << std::endl;
+        std::cout << "Open file failed" << dclFile.c_str() << std::endl;
         return -1;
     }
     struct stat statbuf;
