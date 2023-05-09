@@ -1933,6 +1933,10 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         RS_TRACE_NAME(node.GetName() + " Empty AbilityComponent Skip");
         return;
     }
+    if (node.LeashWindowRelatedAppWindowOccluded()) {
+        RS_TRACE_NAME(node.GetName() + " App Occluded Leashwindow Skip");
+        return;
+    }
 #ifdef RS_ENABLE_EGLQUERYSURFACE
     if (node.IsAppWindow()) {
         curSurfaceNode_ = node.ReinterpretCastTo<RSSurfaceRenderNode>();

@@ -569,6 +569,7 @@ public:
     bool GetAnimateState() const{
         return animateState_;
     }
+    bool LeashWindowRelatedAppWindowOccluded();
 
 private:
     void ClearChildrenCache(const std::shared_ptr<RSBaseRenderNode>& node);
