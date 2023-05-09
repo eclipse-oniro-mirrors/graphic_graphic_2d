@@ -54,6 +54,7 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr uint32_t PHONE_MAX_APP_WINDOW_NUM = 1;
+static const std::string CAPTURE_WINDOW_NAME = "CapsuleWindow";
 
 bool IsFirstFrameReadyToDraw(RSSurfaceRenderNode& node)
 {
@@ -244,7 +245,7 @@ void RSUniRenderVisitor::CheckColorSpace(RSSurfaceRenderNode& node)
 void RSUniRenderVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
 {
     currentVisitDisplay_ = node.GetScreenId();
-    displayHasSecSurface_.emplace(currentVisitDisplay_, false);
+    displayHasSecSurface_.emplace(currentVisitDisplay_, 0);
     dirtySurfaceNodeMap_.clear();
 
     RS_TRACE_NAME("RSUniRender:PrepareDisplay " + std::to_string(currentVisitDisplay_));
@@ -468,7 +469,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         hasFingerprint_ = true;
     }
     if (node.GetSecurityLayer()) {
-        displayHasSecSurface_[currentVisitDisplay_] = true;
+        displayHasSecSurface_[currentVisitDisplay_]++;
     }
     // avoid mouse error
     if (node.GetName() == "pointer window") {
@@ -844,7 +845,7 @@ void RSUniRenderVisitor::CopyForParallelPrepare(std::shared_ptr<RSUniRenderVisit
     isOpDropped_ = isOpDropped_ && visitor->isOpDropped_;
     needFilter_ = needFilter_ || visitor->needFilter_;
     for (auto &u : visitor->displayHasSecSurface_) {
-        displayHasSecSurface_[u.first] = displayHasSecSurface_[u.first] || u.second;
+        displayHasSecSurface_[u.first] += u.second;
     }
 
     for (auto &u : visitor->dirtySurfaceNodeMap_) {
@@ -1181,17 +1182,38 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
 
     if (mirrorNode) {
         auto processor = std::static_pointer_cast<RSUniRenderVirtualProcessor>(processor_);
-        if (displayHasSecSurface_[mirrorNode->GetScreenId()] && mirrorNode->GetSecurityDisplay() != isSecurityDisplay_
-            && processor) {
+        if (displayHasSecSurface_[mirrorNode->GetScreenId()] > 0 &&
+            mirrorNode->GetSecurityDisplay() != isSecurityDisplay_ &&
+            processor) {
             canvas_ = processor->GetCanvas();
             if (canvas_ == nullptr) {
                 RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode failed to get canvas.");
                 return;
             }
-            int saveCount = canvas_->save();
-            ProcessBaseRenderNode(*mirrorNode);
-            DrawWatermarkIfNeed();
-            canvas_->restoreToCount(saveCount);
+            if (cacheImgForCapture_ && displayHasSecSurface_[mirrorNode->GetScreenId()] == 1) {
+                canvas_->save();
+                if (resetRotate_) {
+                    SkMatrix invertMatrix;
+                    if (processor->GetScreenTransformMatrix().invert(&invertMatrix)) {
+                        canvas_->concat(invertMatrix);
+                    }
+                }
+                SkPaint paint;
+                paint.setAntiAlias(true);
+#ifdef NEW_SKIA
+                canvas_->drawImage(cacheImgForCapture_, 0, 0, SkSamplingOptions(), &paint);
+#else
+                paint.setFilterQuality(SkFilterQuality::kLow_SkFilterQuality);
+                canvas_->drawImage(cacheImgForCapture_, 0, 0, &paint);
+#endif
+                canvas_->restore();
+                DrawWatermarkIfNeed();
+            } else {
+                int saveCount = canvas_->save();
+                ProcessBaseRenderNode(*mirrorNode);
+                DrawWatermarkIfNeed();
+                canvas_->restoreToCount(saveCount);
+            }
         } else {
             processor_->ProcessDisplaySurface(*mirrorNode);
         }
@@ -1972,6 +1994,14 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         }
     }
 #endif
+
+    // when surfacenode named "CapsuleWindow", cache the current canvas as SkImage for screen recording
+    if (node.GetName().find(CAPTURE_WINDOW_NAME) != std::string::npos &&
+        canvas_->GetSurface() != nullptr) {
+        int angle = RSUniRenderUtil::GetRotationFromMatrix(canvas_->getTotalMatrix());
+        resetRotate_ = angle != 0 && angle % 90 == 0;
+        cacheImgForCapture_ = canvas_->GetSurface()->makeImageSnapshot();
+    }
 
     if (node.GetSurfaceNodeType() == RSSurfaceNodeType::LEASH_WINDOW_NODE) {
         sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
