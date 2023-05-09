@@ -180,18 +180,6 @@ void DrawingDCL::UpdateParameters(bool notNeeded)
     UpdateParametersFromDCLCommand(dclCommand);
 }
 
-void DrawingDCL::Start()
-{
-    std::cout << "DrawingDCL::Start+" << std::endl;
-    std::cout << "DrawingDCL::Start-" << std::endl;
-}
-
-void DrawingDCL::Stop()
-{
-    std::cout << "DrawingDCL::Stop+" << std::endl;
-    std::cout << "DrawingDCL::Stop-" << std::endl;
-}
-
 void DrawingDCL::Test(SkCanvas* canvas, int width, int height)
 {
     std::cout << "DrawingDCL::Test+" << std::endl;

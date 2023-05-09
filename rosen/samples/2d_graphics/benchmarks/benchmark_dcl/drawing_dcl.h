@@ -41,8 +41,8 @@ public:
     void UpdateParameters(bool isNeeded);
     void UpdateParametersFromDCLCommand(const DCLCommand& dclCommand);
     void PrintDurationTime(const std::string &description, std::chrono::time_point<std::chrono::system_clock> start);
-    void Start() override;
-    void Stop() override;
+    void Start() override {};
+    void Stop() override {};
     void Test(SkCanvas *canvas, int width, int height) override;
     void Output() override;
     int LoadDrawCmdList(std::string dclFile);
