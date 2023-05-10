@@ -253,7 +253,7 @@ int DrawingDCL::LoadDrawCmdList(std::string dclFile)
         return -1;
     }
     int32_t fd = open(realDclFilePath, O_RDONLY);
-    delete realDclFilePath;
+    free(realDclFilePath);
     if (fd < 0) {
         std::cout << "Open file failed" << dclFile.c_str() << std::endl;
         return -1;
