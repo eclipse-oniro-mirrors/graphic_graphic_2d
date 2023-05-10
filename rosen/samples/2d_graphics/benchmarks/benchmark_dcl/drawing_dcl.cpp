@@ -261,6 +261,7 @@ int DrawingDCL::LoadDrawCmdList(std::string dclFile)
     struct stat statbuf;
     if (fstat(fd, &statbuf) < 0) {
         close(fd);
+        fd = -1;
         return -1;
     }
     std::cout << "statbuf.st_size = " << statbuf.st_size << std::endl;
