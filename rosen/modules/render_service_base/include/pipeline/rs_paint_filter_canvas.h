@@ -41,6 +41,7 @@ public:
 
     // alpha related
     void MultiplyAlpha(float alpha);
+    void SetAlpha(float alpha);
     float GetAlpha() const;
     int SaveAlpha();
     void RestoreAlpha();

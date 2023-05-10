@@ -104,7 +104,7 @@ public:
     void AssignGlobalZOrderAndCreateLayer();
 
     void CopyForParallelPrepare(std::shared_ptr<RSUniRenderVisitor> visitor);
-    // Some properties defiend before ProcessSurfaceRenderNode() may be used in
+    // Some properties defined before ProcessSurfaceRenderNode() may be used in
     // ProcessSurfaceRenderNode() method. We should copy these properties in parallel render.
     void CopyPropertyForParallelVisitor(RSUniRenderVisitor *mainVisitor);
     bool GetIsPartialRenderEnabled() const
@@ -269,6 +269,20 @@ private:
 
     // driven render
     std::unique_ptr<DrivenInfo> drivenInfo_ = nullptr;
+
+    using RenderParam = std::tuple<std::shared_ptr<RSRenderNode>, float, std::optional<SkMatrix>>;
+    // Note: we use the NodeId of in node as the key
+    std::unordered_map<NodeId, RenderParam> unpairedTransitionNodes_;
+    std::vector<std::pair<RenderParam, RenderParam>> pairedTransitionNodes_;
+    // return true if we should prepare/process, false if we should skip.
+    bool PrepareSharedTransitionNode(RSBaseRenderNode& node);
+    bool ProcessSharedTransitionNode(RSBaseRenderNode& node);
+    // merge unpairedTransitionNodes_ and outList, move paired into pairedTransitionNodes_, left unpaired in outList
+    void FindPairedSharedTransitionNodes(decltype(unpairedTransitionNodes_)& outList);
+    void PreparePairedSharedTransitionNodes();
+    void ProcessPairedSharedTransitionNodes();
+
+    std::shared_ptr<RSBaseRenderNode> logicParentNode_;
 
     bool isCalcCostEnable_ = false;
 

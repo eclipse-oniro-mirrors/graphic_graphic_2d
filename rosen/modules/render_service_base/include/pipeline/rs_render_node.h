@@ -225,6 +225,22 @@ public:
 
     /////////////////////////////////////////////
 
+    // shared transition params, in format <isAppearing, target weakPtr>, nullopt means no transition
+    using SharedTransitionParam = std::optional<std::pair<bool, std::weak_ptr<RSRenderNode>>>;
+
+    void SetSharedTransitionParam(const SharedTransitionParam&& sharedTransitionParam);
+
+    const SharedTransitionParam& GetSharedTransitionParam() const
+    {
+        return sharedTransitionParam_;
+    }
+
+    void SetGlobalAlpha(float alpha);
+
+    virtual void OnAlphaChanged() {}
+
+    float GetGlobalAlpha() const;
+
 protected:
     explicit RSRenderNode(NodeId id, std::weak_ptr<RSContext> context = {});
     void AddGeometryModifier(const std::shared_ptr<RSRenderModifier> modifier);
@@ -269,11 +285,15 @@ private:
     bool isMarkDrivenRender_ = false;
     bool paintState_ = false;
     bool isContentChanged_ = false;
+    float globalAlpha_ = 1.0f;
+    SharedTransitionParam sharedTransitionParam_;
+
     std::shared_ptr<RectF> drawRegion_ = nullptr;
 
     friend class RSRenderTransition;
     friend class RSRenderNodeMap;
     friend class RSProxyRenderNode;
+    friend class RSBaseRenderNode;
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -91,5 +91,30 @@ void RSNodeCommandHelper::SetDrawRegion(RSContext& context, NodeId nodeId, std::
         node->SetDrawRegion(rect);
     }
 }
+
+void RSNodeCommandHelper::RegisterGeometryTransitionPair(RSContext& context, NodeId inNodeId, NodeId outNodeId)
+{
+    auto& nodeMap = context.GetNodeMap();
+    auto inNode = nodeMap.GetRenderNode<RSRenderNode>(inNodeId);
+    auto outNode = nodeMap.GetRenderNode<RSRenderNode>(outNodeId);
+    if (inNode && outNode) {
+        auto inNodeParam = std::make_optional<std::pair<bool, std::weak_ptr<RSRenderNode>>>(true, outNode);
+        inNode->SetSharedTransitionParam(std::move(inNodeParam));
+
+        auto outNodeParam = std::make_optional<std::pair<bool, std::weak_ptr<RSRenderNode>>>(false, inNode);
+        outNode->SetSharedTransitionParam(std::move(outNodeParam));
+    }
+}
+
+void RSNodeCommandHelper::UnregisterGeometryTransitionPair(RSContext& context, NodeId inNodeId, NodeId outNodeId)
+{
+    auto& nodeMap = context.GetNodeMap();
+    if (auto inNode = nodeMap.GetRenderNode<RSRenderNode>(inNodeId)) {
+        inNode->SetSharedTransitionParam(std::nullopt);
+    }
+    if (auto outNode = nodeMap.GetRenderNode<RSRenderNode>(outNodeId)) {
+        outNode->SetSharedTransitionParam(std::nullopt);
+    }
+}
 } // namespace Rosen
 } // namespace OHOS

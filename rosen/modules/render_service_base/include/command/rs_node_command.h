@@ -48,6 +48,9 @@ enum RSNodeCommandType : uint16_t {
     UPDATE_MODIFIER_DRAW_CMD_LIST,
     UPDATE_MODIFIER_SKMATRIX,
 
+    REGISTER_GEOMETRY_TRANSITION,
+    UNREGISTER_GEOMETRY_TRANSITION,
+
     SET_FREEZE,
     MARK_DRIVEN_RENDER,
     MARK_DRIVEN_RENDER_ITEM_INDEX,
@@ -75,6 +78,9 @@ public:
             modifier->Update(prop, isDelta);
         }
     }
+
+    static void RegisterGeometryTransitionPair(RSContext& context, NodeId inNodeId, NodeId outNodeId);
+    static void UnregisterGeometryTransitionPair(RSContext& context, NodeId inNodeId, NodeId outNodeId);
 
     static void SetFreeze(RSContext& context, NodeId nodeId, bool isFreeze);
     static void MarkDrivenRender(RSContext& context, NodeId nodeId, bool flag);
@@ -146,6 +152,11 @@ ADD_COMMAND(RSUpdatePropertyDrawCmdList,
 ADD_COMMAND(RSUpdatePropertySkMatrix,
     ARG(RS_NODE, UPDATE_MODIFIER_SKMATRIX, RSNodeCommandHelper::UpdateModifier<SkMatrix>,
         NodeId, SkMatrix, PropertyId, bool))
+
+ADD_COMMAND(RSRegisterGeometryTransitionNodePair,
+    ARG(RS_NODE, REGISTER_GEOMETRY_TRANSITION, RSNodeCommandHelper::RegisterGeometryTransitionPair, NodeId, NodeId))
+ADD_COMMAND(RSUnregisterGeometryTransitionNodePair,
+    ARG(RS_NODE, UNREGISTER_GEOMETRY_TRANSITION, RSNodeCommandHelper::UnregisterGeometryTransitionPair, NodeId, NodeId))
 
 ADD_COMMAND(RSSetFreeze,
     ARG(RS_NODE, SET_FREEZE, RSNodeCommandHelper::SetFreeze, NodeId, bool))

@@ -380,5 +380,29 @@ bool RSRenderNode::ShouldPaint() const
     return (renderProperties_.GetVisible() || HasDisappearingTransition(false)) &&
            (renderProperties_.GetAlpha() > 0.0f);
 }
+
+void RSRenderNode::SetSharedTransitionParam(const SharedTransitionParam&& sharedTransitionParam)
+{
+    if (!sharedTransitionParam_.has_value() && !sharedTransitionParam.has_value()) {
+        // both are empty, do nothing
+        return;
+    }
+    sharedTransitionParam_ = sharedTransitionParam;
+    SetDirty();
+}
+
+void RSRenderNode::SetGlobalAlpha(float alpha)
+{
+    if (globalAlpha_ == alpha) {
+        return;
+    }
+    globalAlpha_ = alpha;
+    OnAlphaChanged();
+}
+
+float RSRenderNode::GetGlobalAlpha() const
+{
+    return globalAlpha_;
+}
 } // namespace Rosen
 } // namespace OHOS
