@@ -220,7 +220,6 @@ void RSRenderNode::RenderTraceDebug() const
 
 void RSRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
 {
-    renderNodeSaveCount_ = canvas.Save();
     auto boundsGeo = std::static_pointer_cast<RSObjAbsGeometry>(GetRenderProperties().GetBoundsGeometry());
     if (boundsGeo && !boundsGeo->IsEmpty()) {
         canvas.concat(boundsGeo->GetMatrix());
@@ -240,7 +239,6 @@ void RSRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
 void RSRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 {
     GetMutableRenderProperties().ResetBounds();
-    canvas.RestoreStatus(renderNodeSaveCount_);
 }
 
 void RSRenderNode::CheckCacheType()

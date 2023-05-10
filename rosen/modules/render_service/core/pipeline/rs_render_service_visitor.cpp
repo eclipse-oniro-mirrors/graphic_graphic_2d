@@ -51,6 +51,7 @@ void RSRenderServiceVisitor::PrepareBaseRenderNode(RSBaseRenderNode& node)
 void RSRenderServiceVisitor::ProcessBaseRenderNode(RSBaseRenderNode& node)
 {
     for (auto& child : node.GetSortedChildren()) {
+        RSAutoCanvasRestore autoRestore(canvas_);
         child->Process(shared_from_this());
     }
     if (!mParallelEnable) {
@@ -200,9 +201,9 @@ void RSRenderServiceVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         return;
     }
     node.SetOffset(offsetX_, offsetY_);
-    node.PrepareRenderBeforeChildren(*canvas_);
+    RSAutoCanvasRestore autoRestore(canvas_);
+    node.ExtractSurfaceParams(*canvas_);
     PrepareBaseRenderNode(node);
-    node.PrepareRenderAfterChildren(*canvas_);
 }
 
 void RSRenderServiceVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)

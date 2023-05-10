@@ -116,6 +116,7 @@ void RSDividedUICapture::PostTaskToRTRecord(std::shared_ptr<RSRecordingCanvas> c
 void RSDividedUICapture::RSDividedUICaptureVisitor::ProcessBaseRenderNode(RSBaseRenderNode& node)
 {
     for (auto& child : node.GetSortedChildren()) {
+        RSAutoCanvasRestore autoRestore(canvas_);
         child->Process(shared_from_this());
     }
     // clear SortedChildren, it will be generated again in next frame
