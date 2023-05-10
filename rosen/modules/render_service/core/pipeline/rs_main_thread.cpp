@@ -1188,19 +1188,20 @@ void RSMainThread::Animate(uint64_t timestamp)
             return true;
         }
         activeProcessPids_.emplace(ExtractPid(node->GetId()));
-        auto result = node->Animate(timestamp);
-        if (!result.first) {
+        auto [hasRunningAnimation, nodeNeedRequestNextVsync] = node->Animate(timestamp);
+        if (!hasRunningAnimation) {
             RS_LOGD("RSMainThread::Animate removing finished animating node %" PRIu64, node->GetId());
         }
-        needRequestNextVsync = needRequestNextVsync || result.second;
-        if (node->template IsInstanceOf<RSSurfaceRenderNode>() && result.first) {
+        // request vsync if: 1. node has running animation, or 2. transition animation just ended
+        needRequestNextVsync = needRequestNextVsync || nodeNeedRequestNextVsync || (node.use_count() == 1);
+        if (node->template IsInstanceOf<RSSurfaceRenderNode>() && hasRunningAnimation) {
             if (isUniRender_) {
                 auto surfacenode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node);
                 surfacenode->SetAnimateState();
             }
             curWinAnim = true;
         }
-        return !result.first;
+        return !hasRunningAnimation;
     });
     ResSchedDataStartReport(needRequestNextVsync);
     if (!doWindowAnimate_ && curWinAnim && RSInnovation::UpdateQosVsyncEnabled()) {
