@@ -247,9 +247,8 @@ private:
     uint8_t *mapFile_;
 };
 
-bool DrawingDCL::IsValidFile(char* realPath)
+bool DrawingDCL::IsValidFile(string realPathStr)
 {
-    string realPathStr(realPath);
     return realPathStr.find(dclFileDir_) == 0;
 }
 
@@ -260,15 +259,14 @@ int DrawingDCL::LoadDrawCmdList(std::string dclFile)
         std::cout << "The path of DrawCmdList file is empty!" << std::endl;
         return -1;
     }
-    if (!IsValidFile(realDclFilePath)) {
-        free(realDclFilePath);
-        realDclFilePath = nullptr;
+    string realDclFilePathStr(realDclFilePath);
+    free(realDclFilePath);
+    realDclFilePath = nullptr;
+    if (!IsValidFile(realDclFilePathStr)) {
         std::cout << "The path of DrawCmdList file is not valid!" << std::endl;
         return -1;
     }
     int32_t fd = open(realDclFilePath, O_RDONLY);
-    free(realDclFilePath);
-    realDclFilePath = nullptr;
     if (fd < 0) {
         std::cout << "Open file failed" << dclFile.c_str() << std::endl;
         return -1;
