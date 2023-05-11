@@ -277,7 +277,7 @@ int DrawingDCL::LoadDrawCmdList(std::string dclFile)
         std::cout << "The path of DrawCmdList file is not valid!" << std::endl;
         return -1;
     }
-    UniqueFd fd(open(realDclFilePath, O_RDONLY));
+    UniqueFd fd(open(realDclFilePathStr, O_RDONLY));
     if (fd.Get() < 0) {
         std::cout << "Open file failed" << dclFile.c_str() << std::endl;
         return -1;
