@@ -223,10 +223,10 @@ void RSComposerAdapter::DealWithNodeGravity(const RSSurfaceRenderNode& node, Com
     }
     auto canvas = std::make_unique<SkCanvas>(screenWidth, screenHeight);
     canvas->concat(translateMatrix);
-    canvas->concat(gravityMatrix);
     SkRect clipRect;
     gravityMatrix.mapRect(&clipRect, SkRect::MakeWH(frameWidth, frameHeight));
-    canvas->clipRect(SkRect::MakeWH(clipRect.width(), clipRect.height()));
+    canvas->clipRect(clipRect);
+    canvas->concat(gravityMatrix);
     SkIRect newDstRect = canvas->getDeviceClipBounds();
     // we make the newDstRect as the intersection of new and old dstRect,
     // to deal with the situation that frameSize > boundsSize.
