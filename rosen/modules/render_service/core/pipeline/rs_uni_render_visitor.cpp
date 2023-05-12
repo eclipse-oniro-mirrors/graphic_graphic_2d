@@ -335,6 +335,14 @@ void RSUniRenderVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
         RSDrivenRenderManager::GetInstance().DoPrepareRenderTask(drivenInfo_->prepareInfo);
     }
 #endif
+    if (!unpairedTransitionNodes_.empty()) {
+        RS_LOGE("RSUniRenderVisitor::PrepareDisplayRenderNode unpairedTransitionNodes_ is not empty.");
+        // We can't find the paired transition node, so we should clear the transition param.
+        for (auto& [key, params] : unpairedTransitionNodes_) {
+            std::get<std::shared_ptr<RSRenderNode>>(params)->SetSharedTransitionParam(std::nullopt);
+        }
+        unpairedTransitionNodes_.clear();
+    }
 }
 
 void RSUniRenderVisitor::ParallelPrepareDisplayRenderNodeChildrens(RSDisplayRenderNode& node)
@@ -1520,6 +1528,14 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
     }
 #endif
     processor_->PostProcess();
+    if (!unpairedTransitionNodes_.empty()) {
+        RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode unpairedTransitionNodes_ is not empty.");
+        // We can't find the paired transition node, so we should clear the transition param.
+        for (auto& [key, params] : unpairedTransitionNodes_) {
+            std::get<std::shared_ptr<RSRenderNode>>(params)->SetSharedTransitionParam(std::nullopt);
+        }
+        unpairedTransitionNodes_.clear();
+    }
     RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode end");
 }
 
@@ -2493,9 +2509,9 @@ bool RSUniRenderVisitor::PrepareSharedTransitionNode(RSBaseRenderNode& node)
         return true;
     }
 
-    if (node.GetId() == transitionParam->first && !renderChild->HasAnimation()) {
-        // this node is transition in node and the all animation are ended, clear transition param for both nodes and
-        // prepare directly.
+    if ((node.GetId() == transitionParam->first && !renderChild->HasAnimation()) || !pairedNode->IsOnTheTree()) {
+        // if 1. this node is transition in node and has no animation or 2. pairedNode is detached from render tree,
+        // then clear transition param for both nodes and prepare directly.
         pairedNode->SetSharedTransitionParam(std::nullopt);
         renderChild->SetSharedTransitionParam(std::nullopt);
         // PLANNING: maybe we should re-prepare the pairedNode (aka the out node) if we skipped it before, but since
