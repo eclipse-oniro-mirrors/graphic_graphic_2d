@@ -404,6 +404,120 @@ public:
 private:
     Matrix::Buffer matrixBuffer_;
 };
+
+class TranslateOpItem : public DrawOpItem {
+public:
+    TranslateOpItem(scalar dx, scalar dy);
+    ~TranslateOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas) const;
+
+private:
+    scalar dx_;
+    scalar dy_;
+};
+
+class ScaleOpItem : public DrawOpItem {
+public:
+    ScaleOpItem(scalar sx, scalar sy);
+    ~ScaleOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas) const;
+
+private:
+    scalar sx_;
+    scalar sy_;
+};
+
+class RotateOpItem : public DrawOpItem {
+public:
+    RotateOpItem(scalar deg, scalar sx, scalar sy);
+    ~RotateOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas) const;
+
+private:
+    scalar deg_;
+    scalar sx_;
+    scalar sy_;
+};
+
+class ShearOpItem : public DrawOpItem {
+public:
+    ShearOpItem(scalar sx, scalar sy);
+    ~ShearOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas) const;
+
+private:
+    scalar sx_;
+    scalar sy_;
+};
+
+class FlushOpItem : public DrawOpItem {
+public:
+    FlushOpItem();
+    ~FlushOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas) const;
+};
+
+class ClearOpItem : public DrawOpItem {
+public:
+    ClearOpItem(ColorQuad color);
+    ~ClearOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas) const;
+
+private:
+    ColorQuad color_;
+};
+
+class SaveOpItem : public DrawOpItem {
+public:
+    SaveOpItem();
+    ~SaveOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas) const;
+};
+
+class SaveLayerOpItem : public DrawOpItem {
+public:
+    SaveLayerOpItem(const Rect& rect, bool hasBrush, const Color& color, BlendMode mode, bool isAntiAlias,
+        Filter::FilterQuality filterQuality, const BrushHandle brushHandle, const CmdListHandle& imageFilter,
+        const SaveLayerFlags saveLayerFlags = 0);
+    ~SaveLayerOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas, const CmdList& cmdList) const;
+
+private:
+    Rect rect_;
+    bool hasBrush_;
+    Color color_;
+    BlendMode mode_;
+    bool isAntiAlias_;
+    Filter::FilterQuality filterQuality_;
+    BrushHandle brushHandle_;
+    CmdListHandle imageFilter_;
+    SaveLayerFlags saveLayerFlags_;
+};
+
+class RestoreOpItem : public DrawOpItem {
+public:
+    RestoreOpItem();
+    ~RestoreOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas) const;
+};
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
