@@ -213,7 +213,12 @@ public:
 
     bool IsContentChanged() const
     {
-        return isContentChanged_ || !animationManager_.animations_.empty();
+        return isContentChanged_ || HasAnimation();
+    }
+
+    bool HasAnimation() const
+    {
+        return !animationManager_.animations_.empty();
     }
 
     bool HasFilter() const
@@ -261,10 +266,18 @@ public:
 
     /////////////////////////////////////////////
 
+    // shared transition params, in format <InNodeId, target weakPtr>, nullopt means no transition
+    using SharedTransitionParam = std::pair<NodeId, std::weak_ptr<RSRenderNode>>;
+    void SetSharedTransitionParam(const std::optional<SharedTransitionParam>&& sharedTransitionParam);
+    const std::optional<SharedTransitionParam>& GetSharedTransitionParam() const;
+
+    void SetGlobalAlpha(float alpha);
+    float GetGlobalAlpha() const;
+    virtual void OnAlphaChanged() {}
+
 protected:
     explicit RSRenderNode(NodeId id, std::weak_ptr<RSContext> context = {});
     void AddGeometryModifier(const std::shared_ptr<RSRenderModifier> modifier);
-    RSPaintFilterCanvas::SaveStatus renderNodeSaveCount_;
     std::map<RSModifierType, std::list<std::shared_ptr<RSRenderModifier>>> drawCmdModifiers_;
     // if true, it means currently it's in partial render mode and this node is intersect with dirtyRegion
     bool isRenderUpdateIgnored_ = false;
@@ -309,11 +322,15 @@ private:
     bool isMarkDrivenRender_ = false;
     bool paintState_ = false;
     bool isContentChanged_ = false;
+    float globalAlpha_ = 1.0f;
+    std::optional<SharedTransitionParam> sharedTransitionParam_;
+
     std::shared_ptr<RectF> drawRegion_ = nullptr;
 
     friend class RSRenderTransition;
     friend class RSRenderNodeMap;
     friend class RSProxyRenderNode;
+    friend class RSBaseRenderNode;
 };
 } // namespace Rosen
 } // namespace OHOS

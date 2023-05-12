@@ -57,8 +57,7 @@ public:
     explicit RSSurfaceRenderNode(const RSSurfaceRenderNodeConfig& config, std::weak_ptr<RSContext> context = {});
     ~RSSurfaceRenderNode() override;
 
-    void PrepareRenderBeforeChildren(RSPaintFilterCanvas& canvas);
-    void PrepareRenderAfterChildren(RSPaintFilterCanvas& canvas);
+    void ExtractSurfaceParams(RSPaintFilterCanvas& canvas);
     void ResetParent() override;
 
     bool IsAppWindow() const
@@ -265,18 +264,8 @@ public:
         return containerRegion_;
     }
 
-    void SetGlobalAlpha(float alpha)
-    {
-        if (globalAlpha_ == alpha) {
-            return;
-        }
+    void OnAlphaChanged() override {
         alphaChanged_ = true;
-        globalAlpha_ = alpha;
-    }
-
-    float GetGlobalAlpha() const
-    {
-        return globalAlpha_;
     }
 
     void SetOcclusionVisible(bool visible)
@@ -595,7 +584,6 @@ private:
     SkMatrix totalMatrix_;
     int32_t offsetX_ = 0;
     int32_t offsetY_ = 0;
-    float globalAlpha_ = 1.0f;
     float positionZ_ = 0.0f;
     bool qosPidCal_ = false;
 
