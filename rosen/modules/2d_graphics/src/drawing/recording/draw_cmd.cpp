@@ -521,6 +521,185 @@ void ConcatMatrixOpItem::Playback(Canvas& canvas) const
 
     canvas.ConcatMatrix(matrix);
 }
+
+TranslateOpItem::TranslateOpItem(scalar dx, scalar dy) : DrawOpItem(TRANSLATE_OPITEM), dx_(dx), dy_(dy) {}
+
+void TranslateOpItem::Playback(CanvasPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const TranslateOpItem*>(opItem);
+        op->Playback(player.canvas_);
+    }
+}
+
+void TranslateOpItem::Playback(Canvas& canvas) const
+{
+    canvas.Translate(dx_, dy_);
+}
+
+ScaleOpItem::ScaleOpItem(scalar sx, scalar sy) : DrawOpItem(SCALE_OPITEM), sx_(sx), sy_(sy) {}
+
+void ScaleOpItem::Playback(CanvasPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const ScaleOpItem*>(opItem);
+        op->Playback(player.canvas_);
+    }
+}
+
+void ScaleOpItem::Playback(Canvas& canvas) const
+{
+    canvas.Scale(sx_, sy_);
+}
+
+RotateOpItem::RotateOpItem(scalar deg, scalar sx, scalar sy) : DrawOpItem(ROTATE_OPITEM), deg_(deg), sx_(sx), sy_(sy) {}
+
+void RotateOpItem::Playback(CanvasPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const RotateOpItem*>(opItem);
+        op->Playback(player.canvas_);
+    }
+}
+
+void RotateOpItem::Playback(Canvas& canvas) const
+{
+    canvas.Rotate(deg_, sx_, sy_);
+}
+
+ShearOpItem::ShearOpItem(scalar sx, scalar sy) : DrawOpItem(SHEAR_OPITEM), sx_(sx), sy_(sy) {}
+
+void ShearOpItem::Playback(CanvasPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const ShearOpItem*>(opItem);
+        op->Playback(player.canvas_);
+    }
+}
+
+void ShearOpItem::Playback(Canvas& canvas) const
+{
+    canvas.Shear(sx_, sy_);
+}
+
+FlushOpItem::FlushOpItem() : DrawOpItem(FLUSH_OPITEM) {}
+
+void FlushOpItem::Playback(CanvasPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const FlushOpItem*>(opItem);
+        op->Playback(player.canvas_);
+    }
+}
+
+void FlushOpItem::Playback(Canvas& canvas) const
+{
+    canvas.Flush();
+}
+
+ClearOpItem::ClearOpItem(ColorQuad color) : DrawOpItem(CLEAR_OPITEM), color_(color) {}
+
+void ClearOpItem::Playback(CanvasPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const ClearOpItem*>(opItem);
+        op->Playback(player.canvas_);
+    }
+}
+
+void ClearOpItem::Playback(Canvas& canvas) const
+{
+    canvas.Clear(color_);
+}
+
+SaveOpItem::SaveOpItem() : DrawOpItem(SAVE_OPITEM) {}
+
+void SaveOpItem::Playback(CanvasPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const SaveOpItem*>(opItem);
+        op->Playback(player.canvas_);
+    }
+}
+
+void SaveOpItem::Playback(Canvas& canvas) const
+{
+    canvas.Save();
+}
+
+SaveLayerOpItem::SaveLayerOpItem(const Rect& rect, bool hasBrush, const Color& color, BlendMode mode, bool isAntiAlias,
+    Filter::FilterQuality filterQuality, const BrushHandle brushHandle, const CmdListHandle& imageFilter,
+    const SaveLayerFlags saveLayerFlags)
+    : DrawOpItem(SAVE_LAYER_OPITEM), rect_(rect), color_(color), mode_(mode), isAntiAlias_(isAntiAlias),
+    filterQuality_(filterQuality), brushHandle_(brushHandle), imageFilter_(imageFilter),
+    saveLayerFlags_(saveLayerFlags) {}
+
+void SaveLayerOpItem::Playback(CanvasPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const SaveLayerOpItem*>(opItem);
+        op->Playback(player.canvas_, player.opAllocator_, player.largeObjectAllocator_);
+    }
+}
+
+void SaveLayerOpItem::Playback(Canvas& canvas, const CmdList& cmdList) const
+{
+    const Rect* rectPtr = nullptr;
+    if (rect_.IsValid()) {
+        rectPtr = &rect_;
+    }
+
+    std::shared_ptr<Brush> brush = nullptr;
+    if (hasBrush_) {
+        auto colorSpace = CmdListHelper::GetFromCmdList<ColorSpaceCmdList, ColorSpace>(
+            cmdList, brushHandle_.colorSpaceHandle);
+        auto shaderEffect = CmdListHelper::GetFromCmdList<ShaderEffectCmdList, ShaderEffect>(
+            cmdList, brushHandle_.shaderEffectHandle);
+        auto colorFilter = CmdListHelper::GetFromCmdList<ColorFilterCmdList, ColorFilter>(
+            cmdList, brushHandle_.colorFilterHandle);
+        auto imageFilter = CmdListHelper::GetFromCmdList<ImageFilterCmdList, ImageFilter>(
+            cmdList, brushHandle_.imageFilterHanle);
+        auto maskFilter = CmdListHelper::GetFromCmdList<MaskFilterCmdList, MaskFilter>(
+            cmdList, brushHandle_.maskFilterHandle);
+
+        Filter filter;
+        filter.SetColorFilter(colorFilter);
+        filter.SetImageFilter(imageFilter);
+        filter.SetMaskFilter(maskFilter);
+        filter.SetFilterQuality(filterQuality_);
+        filter.SetFilterQuality(filterQuality_);
+
+        const Color4f color4f = { color_.GetRedF(), color_.GetGreenF(), color_.GetBlueF(), color_.GetAlphaF() };
+
+        brush = std::make_shared<Brush>();
+        brush->SetColor(color4f, colorSpace);
+        brush->SetShaderEffect(shaderEffect);
+        brush->SetBlendMode(mode_);
+        brush->SetAntiAlias(isAntiAlias_);
+        brush->SetFilter(filter);
+    }
+
+    auto saveImageFilter = CmdListHelper::GetFromCmdList<ImageFilterCmdList, ImageFilter>(
+        cmdList, brushHandle_.imageFilter);
+
+    SaveLayerRec slr(rectPtr, brush.get(), saveImageFilter.get(), saveLayerFlags_);
+    canvas.SaveLayer(slr);
+}
+
+RestoreOpItem::RestoreOpItem() : DrawOpItem(RESTORE_OPITEM) {}
+
+void RestoreOpItem::Playback(CanvasPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const RestoreOpItem*>(opItem);
+        op->Playback(player.canvas_);
+    }
+}
+
+void RestoreOpItem::Playback(Canvas& canvas) const
+{
+    canvas.Restore();
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
