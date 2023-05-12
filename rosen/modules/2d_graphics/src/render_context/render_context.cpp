@@ -287,9 +287,7 @@ bool RenderContext::SetUpGrContext()
     }
 
     GrContextOptions options;
-#if !defined(NEW_SKIA)
     options.fGpuPathRenderers &= ~GpuPathRenderers::kCoverageCounting;
-#endif
     options.fPreferExternalImagesOverES3 = true;
     options.fDisableDistanceFieldPaths = true;
 

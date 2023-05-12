@@ -410,9 +410,7 @@ sk_sp<GrContext> RSParallelSubThread::CreateShareGrContext()
     }
 
     GrContextOptions options = {};
-#ifndef NEW_SKIA
-    options.fGpuPathRenderers = GpuPathRenderers::kAll & ~GpuPathRenderers::kCoverageCounting;
-#endif
+    options.fGpuPathRenderers &= ~GpuPathRenderers::kCoverageCounting;
     options.fPreferExternalImagesOverES3 = true;
     options.fDisableDistanceFieldPaths = true;
 #ifdef NEW_SKIA

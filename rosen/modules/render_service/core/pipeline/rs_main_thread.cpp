@@ -113,6 +113,8 @@ constexpr int32_t CLICK_ANIMATION_COMPLETE      = 4;
 constexpr int32_t ANIMATION_START               = 0;
 constexpr int32_t ANIMATION_COMPLETE            = 1;
 #endif
+constexpr size_t DEFAULT_SKIA_CACHE_SIZE        = 256 * (1 << 20);
+constexpr int DEFAULT_SKIA_CACHE_COUNT          = 2 * (1 << 12);
 const std::map<int, int32_t> BLUR_CNT_TO_BLUR_CODE {
     { 1, 10021 },
     { 2, 10022 },
@@ -268,7 +270,11 @@ void RSMainThread::Init()
     int maxResources = 0;
     size_t maxResourcesSize = 0;
     grContext->getResourceCacheLimits(&maxResources, &maxResourcesSize);
-    grContext->setResourceCacheLimits(cacheLimitsTimes * maxResources, cacheLimitsTimes * maxResourcesSize);
+    if (maxResourcesSize > 0) {
+        grContext->setResourceCacheLimits(cacheLimitsTimes * maxResources, cacheLimitsTimes * maxResourcesSize);
+    } else {
+        grContext->setResourceCacheLimits(DEFAULT_SKIA_CACHE_COUNT, DEFAULT_SKIA_CACHE_SIZE);
+    }
 #endif
     RSInnovation::OpenInnovationSo();
     Occlusion::Region::InitDynamicLibraryFunction();

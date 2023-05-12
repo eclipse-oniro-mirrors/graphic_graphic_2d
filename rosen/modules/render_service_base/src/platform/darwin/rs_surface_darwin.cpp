@@ -174,10 +174,10 @@ bool RSSurfaceDarwin::SetupGrContext()
     GrContextOptions options;
     options.fPreferExternalImagesOverES3 = true;
     options.fDisableDistanceFieldPaths = true;
+    options.fGpuPathRenderers &= ~GpuPathRenderers::kCoverageCounting;
 #if defined(NEW_SKIA)
     const auto &grContext = GrDirectContext::MakeGL(glinterface, options);
 #else
-    options.fGpuPathRenderers &= ~GpuPathRenderers::kCoverageCounting;
     const auto &grContext = GrContext::MakeGL(glinterface, options);
 #endif
     if (grContext == nullptr) {

@@ -70,9 +70,7 @@ bool SkiaGPUContext::BuildFromGL(const GPUContextOptions& options)
     }
 
     GrContextOptions grOptions;
-#ifndef NEW_SKIA
     grOptions.fGpuPathRenderers &= ~GpuPathRenderers::kCoverageCounting;
-#endif
     grOptions.fPreferExternalImagesOverES3 = true;
     grOptions.fDisableDistanceFieldPaths = true;
     grOptions.fAllowPathMaskCaching = true;
