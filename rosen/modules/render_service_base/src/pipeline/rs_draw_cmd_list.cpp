@@ -177,7 +177,10 @@ std::string DrawCmdList::PlayBackForRecord(RSPaintFilterCanvas& canvas, int star
 std::string DrawCmdList::GetOpsWithDesc() const
 {
     std::string desc;
-    for (const auto& item : ops_) {
+    for (auto& item : ops_) {
+        if (item == nullptr) {
+            continue;
+        }
         desc += item->GetTypeWithDesc();
     }
     return desc + "\n";

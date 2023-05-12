@@ -92,9 +92,9 @@ void RSRecordingThread::RecordingToFile(const std::shared_ptr<DrawCmdList> & dra
         return;
     }
     int tmpCurDumpFrame = curDumpFrame_;
-    MessageParcel messageParcel;
-    messageParcel.SetMaxCapacity(RECORDING_PARCEL_MAX_CAPCITY);
-    drawCmdList->Marshalling(messageParcel);
+    std::stared_ptr<MessageParcel> messageParcel(new MessageParcel());
+    messageParcel->SetMaxCapacity(RECORDING_PARCEL_MAX_CAPCITY);
+    drawCmdList->Marshalling(*messageParcel);
     FinishRecordingOneFrame();
     RSTaskMessage::RSTask task = [this, tmpCurDumpFrame, drawCmdList, messageParcel]() {
         std::string line = "RSRecordingThread::RecordingToFile curDumpFrame = " + std::to_string(curDumpFrame_) +
@@ -105,8 +105,8 @@ void RSRecordingThread::RecordingToFile(const std::shared_ptr<DrawCmdList> & dra
         std::string drawCmdListFile = fileDir_ + "/frame" + std::to_string(tmpCurDumpFrame) + ".txt";
         std::string opsFile = fileDir_ + "/ops_frame" + std::to_string(tmpCurDumpFrame) + ".txt";
         // get data
-        size_t sz = messageParcel.GetDataSize();
-        uintptr_t buf = messageParcel.GetData();
+        size_t sz = messageParcel->GetDataSize();
+        uintptr_t buf = messageParcel->GetData();
         std::string opsDescription = drawCmdList->GetOpsWithDesc();
 
         OHOS::Rosen::Benchmarks::WriteToFile(buf, sz, drawCmdListFile);

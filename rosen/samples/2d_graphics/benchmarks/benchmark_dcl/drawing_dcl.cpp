@@ -262,7 +262,6 @@ std::string DrawingDCL::GetRealPathStr(std::string filePath)
         return realPathStr;
     }
     realPathStr = realDclFilePath;
-    free(realDclFilePath);
     realDclFilePath = nullptr;
     return realPathStr;
 }
@@ -293,18 +292,16 @@ int DrawingDCL::LoadDrawCmdList(std::string dclFile)
     }
     std::cout << "statbuf.st_size = " << statbuf.st_size << std::endl;
 
-    auto mapFile = std::unique_ptr<uint8_t, void(*)(void*)>(
-        static_cast<uint8_t*>(mmap(nullptr, statbuf.st_size, PROT_READ, MAP_PRIVATE, fd, 0)),
-        [](void* p) { struct stat statbuf; munmap(p, statbuf.st_size); });
-
-    if (mapFile.get() == MAP_FAILED) {
+    auto mapFile = static_cast<uint8_t *>(mmap(nullptr, statbuf.st_size, PROT_READ, MAP_PRIVATE, fd, 0));
+    if (mapFile == MAP_FAILED) {
         return -1;
     }
     std::cout << "mapFile OK" << std::endl;
 
-    MessageParcel messageParcel(new MyAllocator(fd.Get(), statbuf.st_size, mapFile.get()));
+    MessageParcel messageParcel(new MyAllocator(fd.Get(), statbuf.st_size, mapFile));
     messageParcel.SetMaxCapacity(recordingParcelMaxCapcity_);
-    if (!messageParcel.ParseFrom(reinterpret_cast<uintptr_t>(mapFile.get()), statbuf.st_size)) {
+    if (!messageParcel.ParseFrom(reinterpret_cast<uintptr_t>(mapFile), statbuf.st_size)) {
+        munmap(mapFile, statbuf.st_size);
         return -1;
     }
     std::cout << "messageParcel GetDataSize() = " << messageParcel.GetDataSize() << std::endl;
@@ -312,9 +309,11 @@ int DrawingDCL::LoadDrawCmdList(std::string dclFile)
     dcl_ = DrawCmdList::Unmarshalling(messageParcel);
     if (dcl_ == nullptr) {
         std::cout << "dcl is nullptr" << std::endl;
+        munmap(mapFile, statbuf.st_size);
         return -1;
     }
     std::cout << "The size of Ops is " << dcl_->GetSize() << std::endl;
+        munmap(mapFile, statbuf.st_size);
     return 0;
 }
 }
