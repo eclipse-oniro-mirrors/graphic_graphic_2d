@@ -92,7 +92,7 @@ void RSRecordingThread::RecordingToFile(const std::shared_ptr<DrawCmdList> & dra
         return;
     }
     int tmpCurDumpFrame = curDumpFrame_;
-    std::stared_ptr<MessageParcel> messageParcel(new MessageParcel());
+    std::shared_ptr<MessageParcel> messageParcel(new MessageParcel());
     messageParcel->SetMaxCapacity(RECORDING_PARCEL_MAX_CAPCITY);
     drawCmdList->Marshalling(*messageParcel);
     FinishRecordingOneFrame();
