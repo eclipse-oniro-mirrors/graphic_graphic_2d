@@ -990,5 +990,21 @@ std::optional<SkRect> RSSurfaceRenderNode::GetContextClipRegion() const
 {
     return contextClipRect_;
 }
+
+bool RSSurfaceRenderNode::LeashWindowRelatedAppWindowOccluded()
+{
+    if (!IsLeashWindow()) {
+        return false;
+    }
+    for (auto& child : GetChildren()) {
+        auto childNode = child.lock();
+        const auto& childNodeSurface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(childNode);
+        if (childNodeSurface->GetVisibleRegion().IsEmpty()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 } // namespace Rosen
 } // namespace OHOS

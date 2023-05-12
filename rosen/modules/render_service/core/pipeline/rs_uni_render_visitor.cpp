@@ -552,7 +552,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 
     if (node.IsMainWindowType() || node.IsLeashWindow()) {
         // record node position for display render node dirtyManager
-        curDisplayNode_->UpdateSurfaceNodePos(node.GetId(), node.GetDstRect());
+        curDisplayNode_->UpdateSurfaceNodePos(node.GetId(), node.GetOldDirty());
 
         if (node.IsAppWindow()) {
             curSurfaceNode_ = node.ReinterpretCastTo<RSSurfaceRenderNode>();
@@ -1953,6 +1953,10 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
     if (node.IsAbilityComponent() && node.GetDstRect().IsEmpty()) {
         RS_TRACE_NAME(node.GetName() + " Empty AbilityComponent Skip");
+        return;
+    }
+    if (node.LeashWindowRelatedAppWindowOccluded()) {
+        RS_TRACE_NAME(node.GetName() + " App Occluded Leashwindow Skip");
         return;
     }
 #ifdef RS_ENABLE_EGLQUERYSURFACE
