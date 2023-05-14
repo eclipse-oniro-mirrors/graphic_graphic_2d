@@ -128,7 +128,8 @@ void RSCanvasRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas
     canvas.RestoreStatus(canvasNodeSaveCount_);
     auto filter = std::static_pointer_cast<RSSkiaFilter>(GetRenderProperties().GetFilter());
     if (GetRenderProperties().IsLightUpEffectValid()) {
-        std::shared_ptr<RSSkiaFilter> lightUpFilter = std::make_shared<RSLightUpEffectFilter>(GetRenderProperties().GetLightUpEffect());
+        std::shared_ptr<RSSkiaFilter> lightUpFilter =
+            std::make_shared<RSLightUpEffectFilter>(GetRenderProperties().GetLightUpEffect());
         filter = filter ? filter->Compose(lightUpFilter) : lightUpFilter;
     }
     if (filter != nullptr) {
