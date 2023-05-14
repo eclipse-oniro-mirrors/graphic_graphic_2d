@@ -501,12 +501,6 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     if (node.GetSecurityLayer()) {
         displayHasSecSurface_[currentVisitDisplay_] = true;
     }
-    // avoid mouse error
-    if (node.GetName() == "pointer window") {
-        isOpDropped_ = false;
-        isPartialRenderEnabled_ = false;
-        RS_TRACE_NAME("ClosePartialRender 0 pointer window");
-    }
     // avoid EntryView upload texture while screen rotation
     if (node.GetName() == "EntryView" && curDisplayNode_) {
         node.SetStaticCached(curDisplayNode_->IsRotationChanged());
@@ -1267,7 +1261,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
     } else {
 #ifdef RS_ENABLE_EGLQUERYSURFACE
         curDisplayDirtyManager_->SetSurfaceSize(screenInfo_.width, screenInfo_.height);
-        ClosePartialRenderWhenAnimatingWindows(displayNodePtr);
         if (isPartialRenderEnabled_) {
             CalcDirtyDisplayRegion(displayNodePtr);
             CalcDirtyRegionForFilterNode(displayNodePtr);
