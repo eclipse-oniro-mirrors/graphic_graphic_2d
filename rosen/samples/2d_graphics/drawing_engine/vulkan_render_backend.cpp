@@ -13,11 +13,10 @@
  * limitations under the License.
  */
 
-#include "surface_ohos_vulkan.h"
 #include "vulkan_render_backend.h"
-
+#include <iostream>
 #include "drawing_utils.h"
-#include "iostream"
+#include "surface_ohos_vulkan.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -36,7 +35,7 @@ void VulkanRenderBackend::RenderFrame()
     }
     // flush commands
     if (skSurface_->getCanvas() != nullptr) {
-        LOGD("RenderFrame: Canvas");
+        LOGD("VulkanRenderBackend::RenderFrame RenderFrame flushing");
         skSurface_->getCanvas()->flush();
     } else {
         LOGW("canvas is nullptr!!!");

@@ -15,7 +15,7 @@
 
 #include "surface_ohos_vulkan.h"
 
-#include <vulakn_native_surface_ohos.h>
+#include <vulkan_native_surface_ohos.h>
 #include <vulkan_window.h>
 #include <vulkan_proc_table.h>
 #include <hilog/log.h>
@@ -44,7 +44,7 @@ SurfaceOhosVulkan::~SurfaceOhosVulkan()
 std::unique_ptr<SurfaceFrame> SurfaceOhosVulkan::RequestFrame(int32_t width, int32_t height)
 {
     if (mNativeWindow_ == nullptr) {
-        mNativeWindow_ = CreateNativeWindowBufferFromSurface(&producer_);
+        mNativeWindow_ = CreateNativeWindowFromSurface(&producer_);
         if (mNativeWindow_ == nullptr) {
             LOGE("SurfaceOhosVulkan nativewindow is null");
             return nullptr;
@@ -76,8 +76,8 @@ bool SurfaceOhosVulkan::FlushFrame(std::unique_ptr<SurfaceFrame>& frame)
     }
     // gpu render flush
     drawingProxy_->RenderFrame();
-    if (mVulkanWIndow_ != nullptr) {
-        drawingProxy_->SwapBuffers();
+    if (mVulkanWindow_ != nullptr) {
+        mVulkanWindow_->SwapBuffers();
     } else {
         LOGE("mVulkanWIndow_ is null");
     }

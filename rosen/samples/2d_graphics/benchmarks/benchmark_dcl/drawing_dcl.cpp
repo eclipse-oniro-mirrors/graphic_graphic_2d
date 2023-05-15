@@ -62,7 +62,7 @@ bool DrawingDCL::PlayBackByFrame(SkCanvas* skiaCanvas, bool isDumpPictures)
     static int frame = beginFrame_;
     static int curLoop = 0;
     std::string dclFile = inputFilePath_ + "frame" + std::to_string(frame) + ".txt";
-    std::cout << "PlayBackFrame dclFile:" << dclFile << std::endl;
+    std::cout << "PlayBackByFrame dclFile:" << dclFile << std::endl;
 
     if (LoadDrawCmdList(dclFile) < 0) {
         std::cout << "failed to loadDrawCmdList" << std::endl;
