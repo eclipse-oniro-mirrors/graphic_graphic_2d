@@ -29,6 +29,11 @@ public:
     DrawCmdList(const CmdListData& cmdListData, const LargeObjectData& largeObjectData);
     ~DrawCmdList() override = default;
 
+    uint32_t GetType() const override
+    {
+        return Type::DRAW_CMD_LIST;
+    }
+
     /*
      * @brief       Add large object data to the buffers of DrawCmdList.
      * @param data  A large object data.

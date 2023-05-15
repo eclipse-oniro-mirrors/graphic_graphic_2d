@@ -61,7 +61,7 @@ public:
     explicit CmdList(const CmdListData& cmdListData);
     virtual ~CmdList() = default;
 
-    virtual uint32_t GetType()
+    virtual uint32_t GetType() const
     {
         return Type::CMD_LIST;
     }

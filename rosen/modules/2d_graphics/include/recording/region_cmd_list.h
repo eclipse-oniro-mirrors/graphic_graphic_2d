@@ -28,6 +28,11 @@ public:
     RegionCmdList(const CmdListData& data);
     ~RegionCmdList() override = default;
 
+    uint32_t GetType() const override
+    {
+        return Type::REGION_CMD_LIST;
+    }
+
     /*
      * @brief  Calls the corresponding operations of all opitems in RegionCmdList to the region.
      */
