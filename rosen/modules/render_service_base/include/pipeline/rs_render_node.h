@@ -46,6 +46,7 @@ public:
 
     ~RSRenderNode() override;
     bool IsDirty() const override;
+    bool IsContentDirty() const override;
 
     std::pair<bool, bool> Animate(int64_t timestamp) override;
     // PrepareCanvasRenderNode in UniRender
@@ -175,6 +176,26 @@ public:
     float GetShadowRectOffsetY() const
     {
         return shadowRectOffsetY_;
+    }
+    
+    void SetDrawingCacheType(RSDrawingCacheType cacheType)
+    {
+        drawingCacheType_ = cacheType;
+    }
+
+    RSDrawingCacheType GetDrawingCacheType() const
+    {
+        return drawingCacheType_;
+    }
+
+    void SetDrawingCacheChanged(bool cacheChanged)
+    {
+        isDrawingCacheChanged_ = cacheChanged;
+    }
+
+    bool GetDrawingCacheChanged() const
+    {
+        return isDrawingCacheChanged_;
     }
 
     // driven render ///////////////////////////////////
@@ -339,6 +360,9 @@ private:
     sk_sp<SkSurface> cacheCompletedSurface_ = nullptr;
     std::atomic<bool> isStaticCached_ = false;
     CacheType cacheType_ = CacheType::NONE;
+    // drawing group cache
+    RSDrawingCacheType drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;
+    bool isDrawingCacheChanged_ = false;
 
     bool isMainThreadNode_ = true;
     bool hasFilter_ = false;
