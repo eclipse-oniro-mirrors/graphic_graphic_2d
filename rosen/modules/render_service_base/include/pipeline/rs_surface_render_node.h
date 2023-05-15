@@ -570,6 +570,13 @@ public:
     }
     bool LeashWindowRelatedAppWindowOccluded();
 
+    void OnTreeStateChanged() override;
+#ifndef NEW_SKIA
+    void SetGrContext(GrContext* grContext) {
+        grContext_ = grContext;
+    }
+#endif
+
 private:
     void ClearChildrenCache(const std::shared_ptr<RSBaseRenderNode>& node);
     bool SubNodeIntersectWithExtraDirtyRegion(const RectI& r) const;
@@ -578,7 +585,9 @@ private:
     std::mutex mutexRT_;
     std::mutex mutexUI_;
     std::mutex mutex_;
-
+#ifndef NEW_SKIA
+    GrContext* grContext_;
+#endif
     std::mutex parallelVisitMutex_;
 
     float contextAlpha_ = 1.0f;

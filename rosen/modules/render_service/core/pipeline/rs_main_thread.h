@@ -192,7 +192,6 @@ private:
 #else
     void ReleaseExitSurfaceNodeAllGpuResource(GrContext* grContext, pid_t pid);
 #endif
-    void ReleaseBackGroundNodeUnlockGpuResource(const std::shared_ptr<RSSurfaceRenderNode> surfaceNode);
 
     bool DoParallelComposition(std::shared_ptr<RSBaseRenderNode> rootNode);
     void ResetSortedChildren(std::shared_ptr<RSBaseRenderNode> node);
@@ -219,6 +218,8 @@ private:
     void ResSchedDataStartReport(bool needRequestNextVsync);
     // Click animation, report the complete event to RS
     void ResSchedDataCompleteReport(bool needRequestNextVsync);
+
+    bool NeedReleaseGpuResource(const RSRenderNodeMap& nodeMap);
 
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
@@ -288,6 +289,7 @@ private:
     uint64_t focusNodeId_ = 0;
     uint32_t appWindowNum_ = 0;
     uint32_t requestNextVsyncNum_ = 0;
+    bool lastFrameHasFilter_ = false;
 
     std::shared_ptr<RSBaseRenderEngine> renderEngine_;
     std::shared_ptr<RSBaseRenderEngine> uniRenderEngine_;

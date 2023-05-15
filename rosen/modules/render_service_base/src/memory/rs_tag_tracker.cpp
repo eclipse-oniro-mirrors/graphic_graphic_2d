@@ -53,6 +53,9 @@ std::string RSTagTracker::TagType2String(TAGTYPE type)
         case TAG_SAVELAYER_COLOR_FILTER :
             tagType = "savelayer_color_filter";
             break;
+        case TAG_FILTER :
+            tagType = "filter";
+            break;
         case TAG_CAPTURE :
             tagType = "capture";
             break;
