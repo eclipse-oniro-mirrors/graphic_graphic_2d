@@ -2223,6 +2223,11 @@ void RSUniRenderVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     } else {
         saveCount = canvas_->save();
     }
+
+    if (node.GetChildrenCount() > 0) {
+        rootMatrix_ = canvas_->getTotalMatrix();
+    }
+
     ProcessCanvasRenderNode(node);
     canvas_->restoreToCount(saveCount);
 }
@@ -2261,6 +2266,13 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
 #endif
     // in case preparation'update is skipped
     node.GetMutableRenderProperties().CheckEmptyBounds();
+    // draw self and children in sandbox which will not be affected by parent's transition
+    const auto& sandboxPos = node.GetRenderProperties().GetSandBox();
+    if (!sandboxPos.IsInfinite()) {
+        canvas_->setMatrix(rootMatrix_);
+        canvas_->translate(sandboxPos.x_, sandboxPos.y_);
+    }
+
     DrawChildRenderNode(node);
 }
 
