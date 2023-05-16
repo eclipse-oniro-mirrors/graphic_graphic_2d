@@ -347,10 +347,9 @@ HWTEST_F(RectTest, RectFNotEqual002, TestSize.Level1)
 
 /**
  * @tc.name: RectIntersect001
- * @tc.desc:
+ * @tc.desc: test for seting RectF to intersection.
  * @tc.type: FUNC
- * @tc.require:AR000GGNV3
- * @tc.author:
+ * @tc.require: I6ZMMK
  */
 HWTEST_F(RectTest, RectIntersect001, TestSize.Level1)
 {
@@ -361,10 +360,9 @@ HWTEST_F(RectTest, RectIntersect001, TestSize.Level1)
 
 /**
  * @tc.name: RectIntersect002
- * @tc.desc:
+ * @tc.desc: test for seting RectF to intersection.
  * @tc.type: FUNC
- * @tc.require:AR000GGNV3
- * @tc.author:
+ * @tc.require: I6ZMMK
  */
 HWTEST_F(RectTest, RectIntersect002, TestSize.Level1)
 {
@@ -375,10 +373,9 @@ HWTEST_F(RectTest, RectIntersect002, TestSize.Level1)
 
 /**
  * @tc.name: RectIntersect003
- * @tc.desc:
+ * @tc.desc: test for seting RectF to intersection.
  * @tc.type: FUNC
- * @tc.require:AR000GGNV3
- * @tc.author:
+ * @tc.require: I6ZMMK
  */
 HWTEST_F(RectTest, RectIntersect003, TestSize.Level1)
 {
@@ -389,10 +386,9 @@ HWTEST_F(RectTest, RectIntersect003, TestSize.Level1)
 
 /**
  * @tc.name: RectJoin001
- * @tc.desc:
+ * @tc.desc: test for seting RectF to the union of itself and other.
  * @tc.type: FUNC
- * @tc.require:AR000GGNV3
- * @tc.author:
+ * @tc.require: I6ZMMK
  */
 HWTEST_F(RectTest, RectJoin001, TestSize.Level1)
 {
@@ -403,10 +399,9 @@ HWTEST_F(RectTest, RectJoin001, TestSize.Level1)
 
 /**
  * @tc.name: RectJoin002
- * @tc.desc:
+ * @tc.desc: test for seting RectF to the union of itself and other.
  * @tc.type: FUNC
- * @tc.require:AR000GGNV3
- * @tc.author:
+ * @tc.require: I6ZMMK
  */
 HWTEST_F(RectTest, RectJoin002, TestSize.Level1)
 {
@@ -417,10 +412,9 @@ HWTEST_F(RectTest, RectJoin002, TestSize.Level1)
 
 /**
  * @tc.name: RectJoin003
- * @tc.desc:
+ * @tc.desc: test for seting RectF to the union of itself and other.
  * @tc.type: FUNC
- * @tc.require:AR000GGNV3
- * @tc.author:
+ * @tc.require: I6ZMMK
  */
 HWTEST_F(RectTest, RectJoin003, TestSize.Level1)
 {
@@ -739,10 +733,9 @@ HWTEST_F(RectTest, RectINotEqual002, TestSize.Level1)
 
 /**
  * @tc.name: RectIIntersect001
- * @tc.desc:
+ * @tc.desc: test for seting RectI to intersection.
  * @tc.type: FUNC
- * @tc.require:AR000GGNV3
- * @tc.author:
+ * @tc.require: I6ZMMK
  */
 HWTEST_F(RectTest, RectIIntersect001, TestSize.Level1)
 {
@@ -753,10 +746,9 @@ HWTEST_F(RectTest, RectIIntersect001, TestSize.Level1)
 
 /**
  * @tc.name: RectIIntersect002
- * @tc.desc:
+ * @tc.desc: test for seting RectI to intersection.
  * @tc.type: FUNC
- * @tc.require:AR000GGNV3
- * @tc.author:
+ * @tc.require: I6ZMMK
  */
 HWTEST_F(RectTest, RectIIntersect002, TestSize.Level1)
 {
@@ -767,10 +759,9 @@ HWTEST_F(RectTest, RectIIntersect002, TestSize.Level1)
 
 /**
  * @tc.name: RectIIntersect003
- * @tc.desc:
+ * @tc.desc: test for seting RectI to intersection.
  * @tc.type: FUNC
- * @tc.require:AR000GGNV3
- * @tc.author:
+ * @tc.require: I6ZMMK
  */
 HWTEST_F(RectTest, RectIIntersect003, TestSize.Level1)
 {
@@ -781,10 +772,9 @@ HWTEST_F(RectTest, RectIIntersect003, TestSize.Level1)
 
 /**
  * @tc.name: RectIJoin001
- * @tc.desc:
+ * @tc.desc: test for seting RectI to the union of itself and other.
  * @tc.type: FUNC
- * @tc.require:AR000GGNV3
- * @tc.author:
+ * @tc.require: I6ZMMK
  */
 HWTEST_F(RectTest, RectIJoin001, TestSize.Level1)
 {
@@ -795,10 +785,9 @@ HWTEST_F(RectTest, RectIJoin001, TestSize.Level1)
 
 /**
  * @tc.name: RectIJoin002
- * @tc.desc:
+ * @tc.desc: test for seting RectI to the union of itself and other.
  * @tc.type: FUNC
- * @tc.require:AR000GGNV3
- * @tc.author:
+ * @tc.require: I6ZMMK
  */
 HWTEST_F(RectTest, RectIJoin002, TestSize.Level1)
 {
@@ -809,10 +798,9 @@ HWTEST_F(RectTest, RectIJoin002, TestSize.Level1)
 
 /**
  * @tc.name: RectIJoin003
- * @tc.desc:
+ * @tc.desc: test for seting RectI to the union of itself and other.
  * @tc.type: FUNC
- * @tc.require:AR000GGNV3
- * @tc.author:
+ * @tc.require: I6ZMMK
  */
 HWTEST_F(RectTest, RectIJoin003, TestSize.Level1)
 {
