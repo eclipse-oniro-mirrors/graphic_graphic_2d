@@ -51,10 +51,9 @@ HWTEST_F(PathTest, CreateAndDestroy001, TestSize.Level1)
 
 /**
  * @tc.name: BuildFromSVGString001
- * @tc.desc:
+ * @tc.desc: Test for Parsing the SVG format string and sets the Path.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, BuildFromSVGString001, TestSize.Level1)
 {
@@ -66,10 +65,9 @@ HWTEST_F(PathTest, BuildFromSVGString001, TestSize.Level1)
 
 /**
  * @tc.name: BuildFromSVGString002
- * @tc.desc:
+ * @tc.desc: Test for Parsing the SVG format string and sets the Path.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, BuildFromSVGString002, TestSize.Level1)
 {
@@ -81,10 +79,9 @@ HWTEST_F(PathTest, BuildFromSVGString002, TestSize.Level1)
 
 /**
  * @tc.name: BuildFromSVGString003
- * @tc.desc:
+ * @tc.desc: Test for Parsing the SVG format string and sets the Path.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, BuildFromSVGString003, TestSize.Level1)
 {
@@ -96,10 +93,9 @@ HWTEST_F(PathTest, BuildFromSVGString003, TestSize.Level1)
 
 /**
  * @tc.name: ConvertToSVGString001
- * @tc.desc:
+ * @tc.desc: Test for Parsing into a string in SVG format that describes the Path.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, ConvertToSVGString001, TestSize.Level1)
 {
@@ -110,10 +106,9 @@ HWTEST_F(PathTest, ConvertToSVGString001, TestSize.Level1)
 
 /**
  * @tc.name: ConvertToSVGString002
- * @tc.desc:
+ * @tc.desc: Test for Parsing into a string in SVG format that describes the Path.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, ConvertToSVGString002, TestSize.Level1)
 {
@@ -589,10 +584,9 @@ HWTEST_F(PathTest, AddRoundRect002, TestSize.Level1)
 
 /**
  * @tc.name: AddRoundRect003
- * @tc.desc:
+ * @tc.desc: Test for adding the circle rectangle to the Path.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, AddRoundRect003, TestSize.Level1)
 {
@@ -604,10 +598,9 @@ HWTEST_F(PathTest, AddRoundRect003, TestSize.Level1)
 
 /**
  * @tc.name: AddRoundRect004
- * @tc.desc:
+ * @tc.desc: Test for adding the circle rectangle to the Path.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, AddRoundRect004, TestSize.Level1)
 {
@@ -619,10 +612,9 @@ HWTEST_F(PathTest, AddRoundRect004, TestSize.Level1)
 
 /**
  * @tc.name: AddRoundRect005
- * @tc.desc:
+ * @tc.desc: Test for adding the circle rectangle to the Path.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, AddRoundRect005, TestSize.Level1)
 {
@@ -712,10 +704,9 @@ HWTEST_F(PathTest, AddPath2002, TestSize.Level1)
 
 /**
  * @tc.name: ReverseAddPath001
- * @tc.desc:
+ * @tc.desc: Test for adding the src from back forward to the Path.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, ReverseAddPath001, TestSize.Level1)
 {
@@ -727,10 +718,9 @@ HWTEST_F(PathTest, ReverseAddPath001, TestSize.Level1)
 
 /**
  * @tc.name: ReverseAddPath002
- * @tc.desc:
+ * @tc.desc: Test for adding the src from back forward to the Path.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, ReverseAddPath002, TestSize.Level1)
 {
@@ -892,10 +882,9 @@ HWTEST_F(PathTest, Op002, TestSize.Level1)
 
 /**
  * @tc.name: IsValid001
- * @tc.desc:
+ * @tc.desc: Test for Checking whether the Path is valid.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, IsValid001, TestSize.Level1)
 {
@@ -906,10 +895,9 @@ HWTEST_F(PathTest, IsValid001, TestSize.Level1)
 
 /**
  * @tc.name: IsValid002
- * @tc.desc:
+ * @tc.desc: Test for Checking whether the Path is valid.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, IsValid002, TestSize.Level1)
 {
@@ -949,10 +937,9 @@ HWTEST_F(PathTest, Close001, TestSize.Level1)
 
 /**
  * @tc.name: GetLength001
- * @tc.desc:
+ * @tc.desc: Test for geting the length of the current path object.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, GetLength001, TestSize.Level1)
 {
@@ -963,10 +950,9 @@ HWTEST_F(PathTest, GetLength001, TestSize.Level1)
 
 /**
  * @tc.name: GetLength002
- * @tc.desc:
+ * @tc.desc: Test for geting the length of the current path object.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, GetLength002, TestSize.Level1)
 {
@@ -977,10 +963,9 @@ HWTEST_F(PathTest, GetLength002, TestSize.Level1)
 
 /**
  * @tc.name: GetLength003
- * @tc.desc:
+ * @tc.desc: Test for geting the length of the current path object.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, GetLength003, TestSize.Level1)
 {
@@ -992,10 +977,9 @@ HWTEST_F(PathTest, GetLength003, TestSize.Level1)
 
 /**
  * @tc.name: GetPositionAndTangent001
- * @tc.desc:
+ * @tc.desc: Test for geting the position and tangent of the distance from the starting position of the Path.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, GetPositionAndTangent001, TestSize.Level1)
 {
@@ -1008,10 +992,9 @@ HWTEST_F(PathTest, GetPositionAndTangent001, TestSize.Level1)
 
 /**
  * @tc.name: GetPositionAndTangent002
- * @tc.desc:
+ * @tc.desc: Test for geting the position and tangent of the distance from the starting position of the Path.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, GetPositionAndTangent002, TestSize.Level1)
 {
@@ -1025,10 +1008,9 @@ HWTEST_F(PathTest, GetPositionAndTangent002, TestSize.Level1)
 
 /**
  * @tc.name: GetPositionAndTangent003
- * @tc.desc:
+ * @tc.desc: Test for geting the position and tangent of the distance from the starting position of the Path.
  * @tc.type: FUNC
- * @tc.require: AR000GGNV3
- * @tc.author:
+ * @tc.require: I715J0
  */
 HWTEST_F(PathTest, GetPositionAndTangent003, TestSize.Level1)
 {
