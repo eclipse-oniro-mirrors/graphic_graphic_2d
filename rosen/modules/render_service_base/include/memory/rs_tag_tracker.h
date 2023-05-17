@@ -32,6 +32,7 @@ public:
         TAG_SAVELAYER_COLOR_FILTER,
         TAG_COLD_START,
         TAG_ACQUIRE_SURFACE,
+        TAG_FILTER,
         TAG_CAPTURE,
     };
     RSTagTracker(GrContext* grContext, RSTagTracker::TAGTYPE tagType);

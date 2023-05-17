@@ -1976,6 +1976,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 #ifndef NEW_SKIA
     RSTagTracker tagTracker(canvas_ ? canvas_->getGrContext() : nullptr, node.GetId(),
         RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE);
+    node.SetGrContext(canvas_->getGrContext());
 #endif
     node.UpdatePositionZ();
     if (isSecurityDisplay_ && node.GetSecurityLayer()) {
