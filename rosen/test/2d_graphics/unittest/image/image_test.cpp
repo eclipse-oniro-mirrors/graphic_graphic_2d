@@ -88,7 +88,7 @@ HWTEST_F(ImageTest, BuildFromPicture001, TestSize.Level1)
     Matrix matrix;
     Brush brush;
     BitDepth bitDepth = BitDepth::KU8;
-    std::shared_ptr<ColorSpace> colorSpace(new ColorSpace(ColorSpace::ColorSpaceType::NO_TYPE));
+    auto colorSpace = std::make_shared<ColorSpace>(ColorSpace::ColorSpaceType::NO_TYPE);
     image->BuildFromPicture(picture, dimensions, matrix, brush, bitDepth, colorSpace);
 }
 
@@ -302,7 +302,7 @@ HWTEST_F(ImageTest, BuildFromTextureTest001, TestSize.Level1)
     TextureInfo info;
     info.SetWidth(10);
     BitmapFormat bitmapFormat { COLORTYPE_RGBA_8888, ALPHATYPE_OPAQUE };
-    std::shared_ptr<ColorSpace> colorSpace(new ColorSpace(ColorSpace::ColorSpaceType::NO_TYPE));
+    auto colorSpace = std::make_shared<ColorSpace>(ColorSpace::ColorSpaceType::NO_TYPE);
     std::unique_ptr<Image> image = std::make_unique<Image>();
     ASSERT_TRUE(image != nullptr);
     image->BuildFromTexture(gpuContext, info, TextureOrigin::TOP_LEFT, bitmapFormat, colorSpace);
