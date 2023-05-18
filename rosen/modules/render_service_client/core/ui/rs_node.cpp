@@ -961,14 +961,14 @@ bool RSNode::AnimationCallback(AnimationId animationId, AnimationCallbackEvent e
         return false;
     }
 
-    auto& animation = animationItr->second;
+    auto animation = animationItr->second;
     if (animation == nullptr) {
         ROSEN_LOGE("Failed to callback animation[%" PRIu64 "], animation is null!", animationId);
         return false;
     }
     if (event == FINISHED) {
-        animation->CallFinishCallback();
         RemoveAnimationInner(animation);
+        animation->CallFinishCallback();
         return true;
     } else if (event == REPEAT_FINISHED) {
         animation->CallRepeatCallback();
