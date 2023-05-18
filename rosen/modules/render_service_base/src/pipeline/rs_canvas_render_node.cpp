@@ -22,6 +22,7 @@
 #include "common/rs_common_def.h"
 #include "include/core/SkCanvas.h"
 #include "memory/rs_memory_track.h"
+#include "memory/rs_tag_tracker.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "property/rs_properties_painter.h"
 #include "render/rs_blur_filter.h"
@@ -94,6 +95,9 @@ void RSCanvasRenderNode::ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanva
     RSPropertiesPainter::DrawBackground(GetRenderProperties(), canvas);
     auto filter = std::static_pointer_cast<RSSkiaFilter>(GetRenderProperties().GetBackgroundFilter());
     if (filter != nullptr) {
+#ifndef NEW_SKIA
+        RSTagTracker tagTracker(canvas.getGrContext(), GetId(), RSTagTracker::TAGTYPE::TAG_FILTER);
+#endif
         RSPropertiesPainter::DrawFilter(GetRenderProperties(), canvas, filter, nullptr, canvas.GetSurface());
     }
     ApplyDrawCmdModifier(context, RSModifierType::BACKGROUND_STYLE);
@@ -132,6 +136,9 @@ void RSCanvasRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas
         filter = filter ? filter->Compose(lightUpFilter) : lightUpFilter;
     }
     if (filter != nullptr) {
+#ifndef NEW_SKIA
+        RSTagTracker tagTracker(canvas.getGrContext(), GetId(), RSTagTracker::TAGTYPE::TAG_FILTER);
+#endif
         RSPropertiesPainter::DrawFilter(GetRenderProperties(), canvas, filter, nullptr, canvas.GetSurface());
     }
     RSPropertiesPainter::DrawBorder(GetRenderProperties(), canvas);
@@ -197,6 +204,9 @@ void RSCanvasRenderNode::ProcessDrivenBackgroundRender(RSPaintFilterCanvas& canv
     RSPropertiesPainter::DrawBackground(GetRenderProperties(), canvas);
     auto filter = std::static_pointer_cast<RSSkiaFilter>(GetRenderProperties().GetBackgroundFilter());
     if (filter != nullptr) {
+#ifndef NEW_SKIA
+        RSTagTracker tagTracker(canvas.getGrContext(), GetId(), RSTagTracker::TAGTYPE::TAG_FILTER);
+#endif
         RSPropertiesPainter::DrawFilter(GetRenderProperties(), canvas, filter, nullptr, canvas.GetSurface());
     }
     ApplyDrawCmdModifier(context, RSModifierType::BACKGROUND_STYLE);

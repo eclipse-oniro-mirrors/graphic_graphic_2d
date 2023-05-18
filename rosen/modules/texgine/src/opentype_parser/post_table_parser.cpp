@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,29 +13,24 @@
  * limitations under the License.
  */
 
-#include "render_context.h"
-#include "render_context_egl.h"
+#include "post_table_parser.h"
+
+#include "texgine/utils/exlog.h"
 
 namespace OHOS {
 namespace Rosen {
-RenderContextFactory& RenderContextFactory::GetInstance()
+namespace TextEngine {
+const struct PostTable* PostTableParser::Parse(const char* data, int32_t size) const
 {
-    static RenderContextFactory rf;
-    return rf;
+    return reinterpret_cast<const struct PostTable*>(data);
 }
 
-RenderContext* RenderContextFactory::CreateEngine()
+void PostTableParser::Dump() const
 {
-    if (context_ == nullptr) {
-        context_ = new RenderContextEGL();
-    }
-
-    return context_;
+    const auto& table = *reinterpret_cast<const struct PostTable*>(data_);
+    LOG2SO(INFO) << "postTable size: " << size_ << "version: " << table.version.Get()
+                 << "italicAngle: " << table.italicAngle.Get() << "isFixedPitch: " << table.isFixedPitch.Get();
 }
-
-RenderContext* RenderContextFactory::CreateNewEngine()
-{
-    return new RenderContextEGL();
-}
+} // namespace TextEngine
 } // namespace Rosen
 } // namespace OHOS

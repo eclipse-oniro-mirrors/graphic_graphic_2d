@@ -21,7 +21,6 @@ group("default") {
     "frameworks/dumper:gdumper",
     "frameworks/dumper:gdumper.ini",
     "frameworks/dumper:graphic_dumper_server",
-    "frameworks/vulkan_wrapper:vulkan",
   ]
 
   if (graphic_standard_feature_bootanimation_enable) {
@@ -39,7 +38,6 @@ group("graphic_2d_test") {
     "frameworks/opengl_wrapper/test:test",
     "frameworks/surface/test:test",
     "frameworks/vulkan_layers/test:test",
-    "frameworks/vulkan_wrapper/test:test",
     "rosen/modules/composer:test",
     "rosen/modules/effect/test/unittest:test",
     "rosen/test/frame_analyzer:test",
