@@ -145,7 +145,8 @@ void DrawCmdList::Playback(RSPaintFilterCanvas& canvas, const SkRect* rect)
     }
 }
 
-std::string DrawCmdList::PlayBackForRecord(SkCanvas& canvas, int startOpId, int endOpId, int descStartOpId, const SkRect* rect)
+std::string DrawCmdList::PlayBackForRecord(SkCanvas& canvas, int startOpId, int endOpId, int descStartOpId,
+    const SkRect* rect)
 {
     RSPaintFilterCanvas filterCanvas(&canvas);
     return PlayBackForRecord(filterCanvas, startOpId, endOpId, descStartOpId, rect);
@@ -177,7 +178,10 @@ std::string DrawCmdList::PlayBackForRecord(RSPaintFilterCanvas& canvas, int star
 std::string DrawCmdList::GetOpsWithDesc() const
 {
     std::string desc;
-    for (const auto& item : ops_) {
+    for (auto& item : ops_) {
+        if (item == nullptr) {
+            continue;
+        }
         desc += item->GetTypeWithDesc();
     }
     return desc + "\n";
