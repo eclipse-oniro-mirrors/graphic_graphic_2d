@@ -3045,10 +3045,10 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
     // in case preparation'update is skipped
     node.GetMutableRenderProperties().CheckEmptyBounds();
     // draw self and children in sandbox which will not be affected by parent's transition
-    const auto& sandboxPos = node.GetRenderProperties().GetSandBox();
-    if (sandboxPos.has_value() && rootMatrix_.has_value()) {
+    if (const auto& sandboxPos = node.GetRenderProperties().GetSandBox();
+        sandboxPos.has_value() && rootMatrix_.has_value()) {
 #ifndef USE_ROSEN_DRAWING
-        canvas_->setMatrix(rootMatrix_.value());
+        canvas_->setMatrix(*rootMatrix_);
         canvas_->translate(sandboxPos->x_, sandboxPos->y_);
 #else
         canvas_->SetMatrix(rootMatrix_.value());
