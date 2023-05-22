@@ -16,8 +16,6 @@
 #ifndef ROSEN_RENDER_SERVICE_BASE_BENCHMARKS_RS_FILE_UTIL_H
 #define ROSEN_RENDER_SERVICE_BASE_BENCHMARKS_RS_FILE_UTIL_H
 
-#include <string>
-
 namespace OHOS {
 namespace Rosen {
 namespace Benchmarks {
