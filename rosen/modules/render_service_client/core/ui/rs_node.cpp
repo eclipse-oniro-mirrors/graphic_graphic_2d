@@ -1193,5 +1193,18 @@ void RSNode::UnregisterTransitionPair(NodeId inNodeId, NodeId outNodeId)
         transactionProxy->AddCommand(command, true);
     }
 }
+
+void RSNode::MarkNodeGroup(bool isNodeGroup)
+{
+    if (isNodeGroup_ == isNodeGroup) {
+        return;
+    }
+    isNodeGroup_ = isNodeGroup;
+    std::unique_ptr<RSCommand> command = std::make_unique<RSMarkNodeGroup>(GetId(), isNodeGroup);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, IsRenderServiceNode());
+    }
+}
 } // namespace Rosen
 } // namespace OHOS

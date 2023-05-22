@@ -57,6 +57,8 @@ enum RSNodeCommandType : uint16_t {
 
     REGISTER_GEOMETRY_TRANSITION,
     UNREGISTER_GEOMETRY_TRANSITION,
+
+    MARK_NODE_GROUP,
 };
 
 class RSB_EXPORT RSNodeCommandHelper {
@@ -80,6 +82,8 @@ public:
     }
 
     static void SetFreeze(RSContext& context, NodeId nodeId, bool isFreeze);
+    static void MarkNodeGroup(RSContext& context, NodeId nodeId, bool isNodeGroup);
+
     static void MarkDrivenRender(RSContext& context, NodeId nodeId, bool flag);
     static void MarkDrivenRenderItemIndex(RSContext& context, NodeId nodeId, int32_t index);
     static void MarkDrivenRenderFramePaintState(RSContext& context, NodeId nodeId, bool flag);
@@ -155,6 +159,8 @@ ADD_COMMAND(RSUpdatePropertySkMatrix,
 
 ADD_COMMAND(RSSetFreeze,
     ARG(RS_NODE, SET_FREEZE, RSNodeCommandHelper::SetFreeze, NodeId, bool))
+ADD_COMMAND(RSMarkNodeGroup,
+    ARG(RS_NODE, MARK_NODE_GROUP, RSNodeCommandHelper::MarkNodeGroup, NodeId, bool))
 
 ADD_COMMAND(RSMarkDrivenRender,
     ARG(RS_NODE, MARK_DRIVEN_RENDER, RSNodeCommandHelper::MarkDrivenRender, NodeId, bool))

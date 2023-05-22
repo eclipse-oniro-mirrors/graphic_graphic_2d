@@ -266,6 +266,22 @@ public:
 
     void UpdateDrawRegion();
 
+    bool HasGroupableAnimations() const;
+    bool isForcedDrawInGroup() const;
+    bool isSuggestedDrawInGroup() const;
+
+    enum NodeGroupType {
+        NONE,
+        GROUPED_BY_ANIM,
+        GROUPED_BY_UI,
+        GROUPED_BY_USER,
+    };
+    void MarkNodeGroup(NodeGroupType type);
+    NodeGroupType GetNodeGroupType()
+    {
+        return nodeGroupType_;
+    }
+
     /////////////////////////////////////////////
 
     // shared transition params, in format <InNodeId, target weakPtr>, nullopt means no transition
@@ -329,6 +345,7 @@ private:
     std::optional<SharedTransitionParam> sharedTransitionParam_;
 
     std::shared_ptr<RectF> drawRegion_ = nullptr;
+    NodeGroupType nodeGroupType_ = NodeGroupType::NONE;
 
     friend class RSRenderTransition;
     friend class RSRenderNodeMap;
