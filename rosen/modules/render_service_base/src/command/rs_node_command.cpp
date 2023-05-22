@@ -45,6 +45,14 @@ void RSNodeCommandHelper::SetFreeze(RSContext& context, NodeId nodeId, bool isFr
     }
 }
 
+void RSNodeCommandHelper::MarkNodeGroup(RSContext& context, NodeId nodeId, bool isNodeGroup)
+{
+    auto& nodeMap = context.GetNodeMap();
+    if (auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId)) {
+        node->MarkNodeGroup(isNodeGroup ? RSRenderNode::GROUPED_BY_UI : RSRenderNode::NONE);
+    }
+}
+
 void RSNodeCommandHelper::MarkDrivenRender(RSContext& context, NodeId nodeId, bool flag)
 {
     auto node = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);

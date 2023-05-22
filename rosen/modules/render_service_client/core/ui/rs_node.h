@@ -216,6 +216,9 @@ public:
     void SetIsCustomTextType(bool isCustomTextType);
 
     void SetDrawRegion(std::shared_ptr<RectF> rect);
+
+    // Mark preferentially draw node and childrens
+    void MarkNodeGroup(bool isNodeGroup);
 protected:
     explicit RSNode(bool isRenderServiceNode);
     explicit RSNode(bool isRenderServiceNode, NodeId id);
@@ -258,6 +261,8 @@ private:
     bool extendModifierIsDirty_ { false };
     // driven render
     bool drivenFlag_ = false;
+
+    bool isNodeGroup_ = false;
 
     RSModifierExtractor stagingPropertiesExtractor_;
     std::unordered_map<PropertyId, std::shared_ptr<RSModifier>> modifiers_;
