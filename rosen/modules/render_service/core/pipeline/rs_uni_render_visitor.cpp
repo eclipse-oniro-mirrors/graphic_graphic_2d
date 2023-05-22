@@ -2797,7 +2797,7 @@ bool RSUniRenderVisitor::PrepareSharedTransitionNode(RSBaseRenderNode& node)
     auto key = transitionParam->first;
     // add this node and render params (only alpha for prepare phase) into unpairedTransitionNodes_.
     RenderParam value { std::move(renderChild), curAlpha_, std::nullopt };
-    unpairedTransitionNodes_.emplace(key, std::move(value));
+    unpairedTransitionNodes_.emplace_back(key, std::move(value));
 
     // skip prepare for shared transition node and its children
     return false;
@@ -2830,34 +2830,50 @@ bool RSUniRenderVisitor::ProcessSharedTransitionNode(RSBaseRenderNode& node)
     auto key = transitionParam->first;
     // add this node and render params (alpha and matrix) into unpairedTransitionNodes_.
     RenderParam value { std::move(renderChild), canvas_->GetAlpha(), canvas_->getTotalMatrix() };
-    unpairedTransitionNodes_.emplace(key, std::move(value));
+    unpairedTransitionNodes_.emplace_back(key, std::move(value));
 
     // skip processing the current node and all its children.
     return false;
 }
 
 // Merge unpairedTransitionNodes_ into outList, and call func for paired node (aka duplicated keys).
-void RSUniRenderVisitor::FindPairedSharedTransitionNodes(std::unordered_map<NodeId, RenderParam>& outList,
+void RSUniRenderVisitor::FindPairedSharedTransitionNodes(decltype(unpairedTransitionNodes_)& outList,
     void (RSUniRenderVisitor::*func)(const RenderParam&, const RenderParam&))
 {
-    if (unpairedTransitionNodes_.empty() || func == nullptr) {
-        return;
-    }
-
-    // merge unpairedTransitionNodes_ into outList, the remaining elements in unpairedTransitionNodes_ are actually the
-    // paired nodes.
-    outList.merge(unpairedTransitionNodes_);
-
     if (unpairedTransitionNodes_.empty()) {
+        // nothing to do
         return;
     }
-    auto unpairedTransitionNodes = std::move(unpairedTransitionNodes_);
-    for (auto& [key, node2Param] : unpairedTransitionNodes) {
-        // key must exist in outList, no need to check
-        auto& node1Param = outList[key];
-        (this->*func)(std::move(node1Param), std::move(node2Param));
-        outList.erase(key);
+
+    if (outList.empty()) {
+        // outList is empty, just move unpairedTransitionNodes_ to outList
+        outList = std::move(unpairedTransitionNodes_);
+        return;
     }
+
+    // reserve enough space for outList
+    outList.reserve(outList.size() + unpairedTransitionNodes_.size());
+
+    // iterate unpairedTransitionNodes_ and outList, find paired nodes and call func for them, erase paired nodes from
+    // both lists.
+    for (auto it2 = unpairedTransitionNodes_.begin(); it2 != unpairedTransitionNodes_.end(); ++it2) {
+        auto it1 =
+            std::find_if(outList.begin(), outList.end(), [it2](const auto& it1) { return it1.first == it2->first; });
+        if (it1 == outList.end()) {
+            // no paired nodes, just move it2 to outList
+            outList.emplace_back(std::move(*it2));
+            continue;
+        }
+        // call func for paired nodes
+        auto& node1Param = it1->second;
+        auto& node2Param = it2->second;
+        if (func) {
+            (this->*func)(node1Param, node2Param);
+        }
+        // remove paired nodes
+        outList.erase(it1);
+    }
+    unpairedTransitionNodes_.clear();
 }
 
 void RSUniRenderVisitor::PreparePairedSharedTransitionNodes(const RenderParam& first, const RenderParam& second)
