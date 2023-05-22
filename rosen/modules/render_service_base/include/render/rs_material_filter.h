@@ -17,8 +17,8 @@
 
 #include "render/rs_skia_filter.h"
 
-#ifndef USE_ROSEN_DRAWING
 #include "common/rs_color.h"
+#ifndef USE_ROSEN_DRAWING
 #include "include/core/SkColorFilter.h"
 #include "include/core/SkColor.h"
 #include "include/effects/SkColorMatrix.h"
@@ -73,7 +73,11 @@ public:
     void PreProcess(std::shared_ptr<Drawing::Image> image) override;
 #endif
     void PostProcess(RSPaintFilterCanvas& canvas) override;
+#ifndef USE_ROSEN_DRAWING
     std::shared_ptr<RSSkiaFilter> Compose(const std::shared_ptr<RSSkiaFilter>& inner) override;
+#else
+    std::shared_ptr<RSDrawingFilter> Compose(const std::shared_ptr<RSDrawingFilter>& inner) override;
+#endif
     std::string GetDescription() override;
 
     std::shared_ptr<RSFilter> Add(const std::shared_ptr<RSFilter>& rhs) override;

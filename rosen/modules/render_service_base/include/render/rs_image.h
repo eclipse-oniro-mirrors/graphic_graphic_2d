@@ -120,8 +120,10 @@ public:
 #ifndef USE_ROSEN_DRAWING
             radius_[i].dump(desc, depth + 1);
 #else
-            //Todo
-            //radius_[i].dump(desc, depth + 1);
+            desc += split + "\tPointF:{ \n";
+            desc += split + "\t\t x_: " + std::to_string(radius_[i].GetX()) + "\n";
+            desc += split + "\t\t y_: " + std::to_string(radius_[i].GetY()) + "\n";
+            desc += split + "\t}\n";
 #endif
         }
         desc += split + frameRect_.ToString();
@@ -154,7 +156,7 @@ private:
 #ifndef USE_ROSEN_DRAWING
     SkVector radius_[4];
 #else
-    std::vector<Drawing::Point> radius_;
+    std::vector<Drawing::Point> radius_ = std::vector<Drawing::Point>(4);
 #endif
     RectF frameRect_;
     double scale_ = 1.0;

@@ -21,15 +21,15 @@
 #include "include/core/SkPaint.h"
 #include "include/core/SkPath.h"
 #include "include/core/SkPicture.h"
+#else
+#include "draw/brush.h"
+#include "draw/path.h"
+#include "image/picture.h"
+#endif
 #if defined(NEW_SKIA)
 #include "modules/svg/include/SkSVGDOM.h"
 #else
 #include "experimental/svg/model/SkSVGDOM.h"
-#endif
-#else
-#include "images/svg/svg_dom.h"
-#include "draw/brush.h"
-#include "draw/path.h"
 #endif
 #include "transaction/rs_marshalling_helper.h"
 
@@ -49,14 +49,13 @@ public:
 #ifndef USE_ROSEN_DRAWING
     static std::shared_ptr<RSMask> CreateGradientMask(const SkPaint& maskPaint);
     static std::shared_ptr<RSMask> CreatePathMask(const SkPath& maskPath, const SkPaint& maskPaint);
-    static std::shared_ptr<RSMask> CreateSVGMask(double x, double y, double scaleX, double scaleY,
-        const sk_sp<SkSVGDOM>& svgDom);
 #else
     static std::shared_ptr<RSMask> CreateGradientMask(const Drawing::Brush& maskBrush);
     static std::shared_ptr<RSMask> CreatePathMask(const Drawing::Path& maskPath, const Drawing::Brush& maskBrush);
-    static std::shared_ptr<RSMask> CreateSVGMask(double x, double y, double scaleX, double scaleY,
-        const std::shared_ptr<Drawing::SVGDOM>& svgDom);
 #endif
+    static std::shared_ptr<RSMask> CreateSVGMask(double x, double y, double scaleX, double scaleY,
+        const sk_sp<SkSVGDOM>& svgDom);
+
     void SetSvgX(double x);
     double GetSvgX() const;
     void SetSvgY(double y);
@@ -70,17 +69,18 @@ public:
     SkPath GetMaskPath() const;
     void SetMaskPaint(const SkPaint& paint);
     SkPaint GetMaskPaint() const;
-    void SetSvgDom(const sk_sp<SkSVGDOM>& svgDom);
-    sk_sp<SkSVGDOM> GetSvgDom() const;
-    sk_sp<SkPicture> GetSvgPicture() const;
 #else
     void SetMaskPath(const Drawing::Path& path);
     Drawing::Path GetMaskPath() const;
     void SetMaskBrush(const Drawing::Brush& brush);
     Drawing::Brush GetMaskBrush() const;
-    void SetSvgDom(const std::shared_ptr<Drawing::SVGDOM>& svgDom);
-    std::shared_ptr<Drawing::SVGDOM> GetSvgDom() const;
-    std::shared_ptr<Drawing::DrawCmdList> GetSVGDrawCmdList() const;
+#endif
+    void SetSvgDom(const sk_sp<SkSVGDOM>& svgDom);
+    sk_sp<SkSVGDOM> GetSvgDom() const;
+#ifndef USE_ROSEN_DRAWING
+    sk_sp<SkPicture> GetSvgPicture() const;
+#else
+    std::shared_ptr<Drawing::Picture> GetSvgPicture() const;
 #endif
     void SetMaskType(MaskType type);
     bool IsSvgMask() const;
@@ -104,14 +104,13 @@ private:
     double svgY_ = 0.0f;
     double scaleX_ = 1.0f;
     double scaleY_ = 1.0f;
-#ifndef USE_ROSEN_DRAWING
     sk_sp<SkSVGDOM> svgDom_;
+#ifndef USE_ROSEN_DRAWING
     sk_sp<SkPicture> svgPicture_;
     SkPaint maskPaint_;
     SkPath maskPath_;
 #else
-    std::shared_ptr<Drawing::SVGDOM> svgDom_;
-    std::shared_ptr<Drawing::DrawCmdList> svgDrawCmdList_;
+    std::shared_ptr<Drawing::Picture> svgPicture_;
     Drawing::Brush maskBrush_;
     Drawing::Path maskPath_;
 #endif

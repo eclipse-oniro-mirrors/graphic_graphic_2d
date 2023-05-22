@@ -52,12 +52,11 @@ public:
     ~RSDrawingFilter() override;
     Drawing::Brush GetBrush() const;
     std::shared_ptr<Drawing::ImageFilter> GetImageFilter() const;
-    static std::shared_ptr<RSDrawingFilter> Compose(const std::shared_ptr<RSDrawingFilter>& outer,
-        const std::shared_ptr<RSDrawingFilter>& inner);
+    virtual std::shared_ptr<RSDrawingFilter> Compose(const std::shared_ptr<RSDrawingFilter>& inner) = 0;
     virtual void PreProcess(std::shared_ptr<Drawing::Image> image) {};
     virtual void PostProcess(RSPaintFilterCanvas& canvas) {};
 
-private:
+protected:
     std::shared_ptr<Drawing::ImageFilter> imageFilter_ = nullptr;
 };
 #endif
