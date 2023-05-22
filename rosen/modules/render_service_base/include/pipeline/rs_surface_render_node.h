@@ -22,7 +22,9 @@
 
 #include "include/core/SkRect.h"
 #include "include/core/SkRefCnt.h"
-#ifndef NEW_SKIA
+#ifdef NEW_SKIA
+#include "include/gpu/GrDirectContext.h"
+#else
 #include "include/gpu/GrContext.h"
 #include "refbase.h"
 #endif
@@ -581,11 +583,15 @@ public:
     bool LeashWindowRelatedAppWindowOccluded();
 
     void OnTreeStateChanged() override;
-#ifndef NEW_SKIA
-    void SetGrContext(GrContext* grContext) {
+
+#ifdef NEW_SKIA
+    void SetGrContext(GrDirectContext* grContext)
+#else
+    void SetGrContext(GrContext* grContext)
+#endif
+    {
         grContext_ = grContext;
     }
-#endif
 
     void SetSubmittedSubThreadIndex(uint32_t index)
     {
@@ -605,7 +611,9 @@ private:
     std::mutex mutexRT_;
     std::mutex mutexUI_;
     std::mutex mutex_;
-#ifndef NEW_SKIA
+#ifdef NEW_SKIA
+    GrDirectContext* grContext_;
+#else
     GrContext* grContext_;
 #endif
     std::mutex parallelVisitMutex_;
