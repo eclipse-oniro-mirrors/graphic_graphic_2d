@@ -182,7 +182,8 @@ private:
      */
     RectI UpdateHardwardEnableList(std::vector<RectI>& filterRects,
         std::vector<std::weak_ptr<RSSurfaceRenderNode>>& validHwcNodes) const;
-    
+    void AddContainerDirtyToGlobalDirty(std::shared_ptr<RSDisplayRenderNode>& node) const;
+
     // set global dirty region to each surface node
     void SetSurfaceGlobalDirtyRegion(std::shared_ptr<RSDisplayRenderNode>& node);
     void SetSurfaceGlobalAlignedDirtyRegion(std::shared_ptr<RSDisplayRenderNode>& node,

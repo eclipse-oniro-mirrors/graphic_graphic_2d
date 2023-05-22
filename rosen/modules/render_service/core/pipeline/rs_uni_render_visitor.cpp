@@ -1410,6 +1410,8 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             int bufferAge = renderFrame_->GetBufferAge();
             RS_TRACE_END();
             RSUniRenderUtil::MergeDirtyHistory(displayNodePtr, bufferAge, isDirtyRegionAlignedEnable_);
+            // The global dirty region caused by container dirty should be calculated after merge dirty history.
+            AddContainerDirtyToGlobalDirty(displayNodePtr);
             Occlusion::Region dirtyRegion = RSUniRenderUtil::MergeVisibleDirtyRegion(
                 displayNodePtr, isDirtyRegionAlignedEnable_);
             dirtyRegionTest = dirtyRegion;
@@ -1721,21 +1723,6 @@ void RSUniRenderVisitor::CalcDirtyDisplayRegion(std::shared_ptr<RSDisplayRenderN
                 surfaceNode->SetShadowValidLastFrame(false);
             }
         }
-        // If a surface's dirty is intersect with container region (which can be considered transparent)
-        // should be added to display dirty region.
-        // Note: we use containerRegion rather transparentRegion to bypass inner corner dirty problem.
-        auto containerRegion = surfaceNode->GetContainerRegion();
-        auto surfaceDirtyRegion = Occlusion::Region{Occlusion::Rect{surfaceDirtyRect}};
-        auto containerDirtyRegion = containerRegion.And(surfaceDirtyRegion);
-        if (!containerDirtyRegion.IsEmpty()) {
-            RS_LOGD("CalcDirtyDisplayRegion merge containerDirtyRegion %s region %s",
-                surfaceNode->GetName().c_str(), containerDirtyRegion.GetRegionInfo().c_str());
-            std::vector<Occlusion::Rect> rects = containerDirtyRegion.GetRegionRects();
-            for (const auto& rect : rects) {
-                displayDirtyManager->MergeDirtyRect(RectI
-                    { rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_ });
-            }
-        }
     }
     std::vector<RectI> surfaceChangedRects = node->GetSurfaceChangedRects();
     for (auto& surfaceChangedRect : surfaceChangedRects) {
@@ -1745,6 +1732,7 @@ void RSUniRenderVisitor::CalcDirtyDisplayRegion(std::shared_ptr<RSDisplayRenderN
         }
     }
 }
+
 RectI RSUniRenderVisitor::UpdateHardwardEnableList(std::vector<RectI>& filterRects,
     std::vector<std::weak_ptr<RSSurfaceRenderNode>>& validHwcNodes) const
 {
@@ -1898,6 +1886,36 @@ void RSUniRenderVisitor::CalcDirtyFilterRegion(std::shared_ptr<RSDisplayRenderNo
             needFilter_ = needFilter_ || !currentSurfaceNode->IsStaticCached();
             CalcDirtyRegionForFilterNode(
                 currentSurfaceNode->GetOldDirtyInSurface(), currentSurfaceNode, displayNode);
+        }
+    }
+}
+
+void RSUniRenderVisitor::AddContainerDirtyToGlobalDirty(std::shared_ptr<RSDisplayRenderNode>& node) const
+{
+    RS_TRACE_FUNC();
+    auto displayDirtyManager = node->GetDirtyManager();
+    for (auto it = node->GetCurAllSurfaces().rbegin(); it != node->GetCurAllSurfaces().rend(); ++it) {
+        auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
+        if (surfaceNode == nullptr) {
+            continue;
+        }
+        auto surfaceDirtyManager = surfaceNode->GetDirtyManager();
+        RectI surfaceDirtyRect = surfaceDirtyManager->GetDirtyRegion();
+
+        // If a surface's dirty is intersect with container region (which can be considered transparent)
+        // should be added to display dirty region.
+        // Note: we use containerRegion rather transparentRegion to bypass inner corner dirty problem.
+        auto containerRegion = surfaceNode->GetContainerRegion();
+        auto surfaceDirtyRegion = Occlusion::Region{Occlusion::Rect{surfaceDirtyRect}};
+        auto containerDirtyRegion = containerRegion.And(surfaceDirtyRegion);
+        if (!containerDirtyRegion.IsEmpty()) {
+            RS_LOGD("CalcDirtyDisplayRegion merge containerDirtyRegion %s region %s",
+                surfaceNode->GetName().c_str(), containerDirtyRegion.GetRegionInfo().c_str());
+            std::vector<Occlusion::Rect> rects = containerDirtyRegion.GetRegionRects();
+            for (const auto& rect : rects) {
+                displayDirtyManager->MergeDirtyRect(RectI
+                    { rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_ });
+            }
         }
     }
 }
