@@ -159,10 +159,10 @@ private:
     sk_sp<SkColorSpace> color_space_ = nullptr;
     void *layer_ = nullptr;
     EGLContext resource_context_ = EGL_NO_CONTEXT;
-    unsigned int framebuffer_ = 0;
-    unsigned int colorbuffer_ = 0;
-    int storage_size_width_ = 0;
-    int storage_size_height_ = 0;
+    uint32_t framebuffer_ = 0;
+    uint32_t colorbuffer_ = 0;
+    int32_t storage_width_ = 0;
+    int32_t storage_height_ = 0;
     bool valid_ = false;
 #endif   
     EGLConfig config_;
