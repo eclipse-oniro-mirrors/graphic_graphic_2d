@@ -20,7 +20,11 @@
 
 namespace OHOS {
 namespace Rosen {
+#ifndef USE_ROSEN_DRAWING
 class RSB_EXPORT RSBlurFilter : public RSSkiaFilter {
+#else
+class RSB_EXPORT RSBlurFilter : public RSDrawingFilter {
+#endif
 public:
     RSBlurFilter(float blurRadiusX, float blurRadiusY);
     ~RSBlurFilter() override;

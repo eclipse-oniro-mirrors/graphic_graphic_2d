@@ -17,6 +17,7 @@
 
 #include <memory>
 #include "common/rs_macros.h"
+#ifndef USE_ROSEN_DRAWING
 #include "include/core/SkPaint.h"
 #include "include/core/SkPath.h"
 #include "include/core/SkPicture.h"
@@ -24,6 +25,11 @@
 #include "modules/svg/include/SkSVGDOM.h"
 #else
 #include "experimental/svg/model/SkSVGDOM.h"
+#endif
+#else
+#include "images/svg/svg_dom.h"
+#include "draw/brush.h"
+#include "draw/path.h"
 #endif
 #include "transaction/rs_marshalling_helper.h"
 
@@ -40,11 +46,17 @@ class RSB_EXPORT RSMask : public std::enable_shared_from_this<RSMask> {
 public:
     RSMask();
     virtual ~RSMask();
+#ifndef USE_ROSEN_DRAWING
     static std::shared_ptr<RSMask> CreateGradientMask(const SkPaint& maskPaint);
     static std::shared_ptr<RSMask> CreatePathMask(const SkPath& maskPath, const SkPaint& maskPaint);
     static std::shared_ptr<RSMask> CreateSVGMask(double x, double y, double scaleX, double scaleY,
         const sk_sp<SkSVGDOM>& svgDom);
-
+#else
+    static std::shared_ptr<RSMask> CreateGradientMask(const Drawing::Brush& maskBrush);
+    static std::shared_ptr<RSMask> CreatePathMask(const Drawing::Path& maskPath, const Drawing::Brush& maskBrush);
+    static std::shared_ptr<RSMask> CreateSVGMask(double x, double y, double scaleX, double scaleY,
+        const std::shared_ptr<Drawing::SVGDOM>& svgDom);
+#endif
     void SetSvgX(double x);
     double GetSvgX() const;
     void SetSvgY(double y);
@@ -53,6 +65,7 @@ public:
     double GetScaleX() const;
     void SetScaleY(double scaleY);
     double GetScaleY() const;
+#ifndef USE_ROSEN_DRAWING
     void SetMaskPath(const SkPath& path);
     SkPath GetMaskPath() const;
     void SetMaskPaint(const SkPaint& paint);
@@ -60,6 +73,15 @@ public:
     void SetSvgDom(const sk_sp<SkSVGDOM>& svgDom);
     sk_sp<SkSVGDOM> GetSvgDom() const;
     sk_sp<SkPicture> GetSvgPicture() const;
+#else
+    void SetMaskPath(const Drawing::Path& path);
+    Drawing::Path GetMaskPath() const;
+    void SetMaskBrush(const Drawing::Brush& brush);
+    Drawing::Brush GetMaskBrush() const;
+    void SetSvgDom(const std::shared_ptr<Drawing::SVGDOM>& svgDom);
+    std::shared_ptr<Drawing::SVGDOM> GetSvgDom() const;
+    std::shared_ptr<Drawing::DrawCmdList> GetSVGDrawCmdList() const;
+#endif
     void SetMaskType(MaskType type);
     bool IsSvgMask() const;
     bool IsGradientMask() const;
@@ -82,10 +104,17 @@ private:
     double svgY_ = 0.0f;
     double scaleX_ = 1.0f;
     double scaleY_ = 1.0f;
+#ifndef USE_ROSEN_DRAWING
     sk_sp<SkSVGDOM> svgDom_;
     sk_sp<SkPicture> svgPicture_;
     SkPaint maskPaint_;
     SkPath maskPath_;
+#else
+    std::shared_ptr<Drawing::SVGDOM> svgDom_;
+    std::shared_ptr<Drawing::DrawCmdList> svgDrawCmdList_;
+    Drawing::Brush maskBrush_;
+    Drawing::Path maskPath_;
+#endif
 
 };
 } // namespace Rosen
