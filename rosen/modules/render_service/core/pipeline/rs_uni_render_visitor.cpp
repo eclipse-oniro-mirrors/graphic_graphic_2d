@@ -2063,6 +2063,11 @@ bool RSUniRenderVisitor::UpdateCacheSurface(RSRenderNode& node)
     // When cacheType == CacheType::ANIMATE_PROPERTY,
     // we should draw AnimateProperty on cacheCanvas
     if (cacheType == CacheType::ANIMATE_PROPERTY) {
+        if (node.GetRenderProperties().IsShadowValid()
+            && !node.GetRenderProperties().IsSpherizeValid()) {
+            canvas_->save();
+            canvas_->translate(node.GetShadowRectOffsetX(), node.GetShadowRectOffsetY());
+        }
         node.ProcessAnimatePropertyBeforeChildren(*canvas_);
     }
 
@@ -2070,6 +2075,10 @@ bool RSUniRenderVisitor::UpdateCacheSurface(RSRenderNode& node)
     ProcessBaseRenderNode(node);
 
     if (cacheType == CacheType::ANIMATE_PROPERTY) {
+        if (node.GetRenderProperties().IsShadowValid()
+            && !node.GetRenderProperties().IsSpherizeValid()) {
+            canvas_->restore();
+        }
         node.ProcessAnimatePropertyAfterChildren(*canvas_);
     }
     swap(cacheCanvas, canvas_);
