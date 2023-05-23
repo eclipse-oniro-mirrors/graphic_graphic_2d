@@ -34,7 +34,7 @@ std::string GetRealPath(const std::string& filePath)
         RS_LOGE("The file path is empty!");
         return realPathStr;
     }
-    realPathStr = realDclFilePath;
+    realPathStr = actualPath;
     if (IsValidFile(realPathStr)) {
         return realPathStr;
     } else {
