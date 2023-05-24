@@ -421,6 +421,8 @@ void RSRenderNode::InitCacheSurface(RSPaintFilterCanvas& canvas)
     ClearCacheSurface();
     auto cacheType = GetCacheType();
     float width = 0.0f, height = 0.0f;
+    boundsWidth_ = renderProperties_.GetBoundsRect().GetWidth();
+    boundsHeight_ = renderProperties_.GetBoundsRect().GetHeight();
     if (cacheType == CacheType::ANIMATE_PROPERTY &&
         renderProperties_.IsShadowValid() && !renderProperties_.IsSpherizeValid()) {
         width = shadowRect_.GetWidth();
@@ -432,8 +434,8 @@ void RSRenderNode::InitCacheSurface(RSPaintFilterCanvas& canvas)
         shadowRectOffsetX_ = geoPtr->GetAbsRect().GetLeft() - shadowRect_.GetLeft();
         shadowRectOffsetY_ = geoPtr->GetAbsRect().GetTop() - shadowRect_.GetTop();
     } else {
-        width = renderProperties_.GetBoundsRect().GetWidth();
-        height = renderProperties_.GetBoundsRect().GetHeight();
+        width = boundsWidth_;
+        height = boundsHeight_;
     }
 #if ((defined RS_ENABLE_GL) && (defined RS_ENABLE_EGLIMAGE)) || (defined RS_ENABLE_VK)
     SkImageInfo info = SkImageInfo::MakeN32Premul(width, height);
@@ -450,22 +452,13 @@ void RSRenderNode::InitCacheSurface(RSPaintFilterCanvas& canvas)
 void RSRenderNode::DrawCacheSurface(RSPaintFilterCanvas& canvas) const
 {
     auto surface = GetCompletedCacheSurface();
-    if (surface == nullptr || (surface->width() == 0 || surface->height() == 0)) {
+    if (surface == nullptr || (boundsWidth_ == 0 || boundsHeight_ == 0)) {
         return;
     }
     auto cacheType = GetCacheType();
-    float width = 0.0f, height = 0.0f;
-    float scaleX = 0.0f, scaleY = 0.0f;
     canvas.save();
-    if (cacheType == CacheType::ANIMATE_PROPERTY && renderProperties_.IsShadowValid()) {
-        width = shadowRect_.GetWidth();
-        height = shadowRect_.GetHeight();
-    } else {
-        width = renderProperties_.GetBoundsRect().GetWidth();
-        height = renderProperties_.GetBoundsRect().GetHeight();
-    }
-    scaleX = width / surface->width();
-    scaleY = height / surface->height();
+    float scaleX = renderProperties_.GetBoundsRect().GetWidth() / boundsWidth_;
+    float scaleY = renderProperties_.GetBoundsRect().GetHeight() / boundsHeight_;
     canvas.scale(scaleX, scaleY);
     SkPaint paint;
     if (cacheType == CacheType::ANIMATE_PROPERTY && renderProperties_.IsShadowValid()) {
