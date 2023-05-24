@@ -167,6 +167,16 @@ public:
         return cacheType_;
     }
 
+    float GetShadowRectOffsetX() const
+    {
+        return shadowRectOffsetX_;
+    }
+
+    float GetShadowRectOffsetY() const
+    {
+        return shadowRectOffsetY_;
+    }
+
     // driven render ///////////////////////////////////
     void SetIsMarkDriven(bool isMarkDriven)
     {
@@ -345,6 +355,11 @@ private:
 
     std::shared_ptr<RectF> drawRegion_ = nullptr;
     NodeGroupType nodeGroupType_ = NodeGroupType::NONE;
+
+    RectI shadowRect_;
+    // shadowRectOffset means offset between shadowRect and absRect of node
+    float shadowRectOffsetX_ = 0.0f;
+    float shadowRectOffsetY_ = 0.0f;
 
     friend class RSRenderTransition;
     friend class RSRenderNodeMap;

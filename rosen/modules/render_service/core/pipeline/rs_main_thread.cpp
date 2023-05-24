@@ -564,7 +564,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         surfaceHandler.ResetCurrentFrameBufferConsumed();
         if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler)) {
             this->bufferTimestamps_[surfaceNode->GetId()] = static_cast<uint64_t>(surfaceNode->GetTimestamp());
-            if (surfaceNode->UpdateDirtyIfFrameBufferConsumed()) {
+            if (surfaceNode->IsCurrentFrameBufferConsumed()) {
                 // collect surface view's pid to prevent wrong skip
                 activeProcessPids_.emplace(ExtractPid(surfaceNode->GetId()));
             }
@@ -912,7 +912,8 @@ void RSMainThread::Render()
     PerfForBlurIfNeeded();
 }
 
-bool RSMainThread::CheckSurfaceNeedProcess(OcclusionRectISet& occlusionSurfaces, std::shared_ptr<RSSurfaceRenderNode> curSurface)
+bool RSMainThread::CheckSurfaceNeedProcess(OcclusionRectISet& occlusionSurfaces,
+    std::shared_ptr<RSSurfaceRenderNode> curSurface)
 {
     bool needProcess = false;
     if (curSurface->IsFocusedWindow(focusAppPid_)) {

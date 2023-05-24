@@ -290,6 +290,9 @@ void RSSurfaceRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas
 
 void RSSurfaceRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas& canvas)
 {
+    if (GetCacheType() != CacheType::ANIMATE_PROPERTY && !needDrawAnimateProperty_) {
+        return;
+    }
     const auto& property = GetRenderProperties();
     auto filter = std::static_pointer_cast<RSSkiaFilter>(property.GetFilter());
     if (filter != nullptr) {
