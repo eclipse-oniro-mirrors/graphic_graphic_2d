@@ -64,7 +64,7 @@ public:
     void Init(uint32_t threadNum);
     void ClearTransparentColor(RSPaintFilterCanvas& canvas, unsigned int surfaceIndex);
     void AddTransparentColorArea(unsigned int surfaceIndex,
-        std::unique_ptr<RSParallelSelfDrawingSurfaceShape> && shape);
+        std::unique_ptr<RSParallelSelfDrawingSurfaceShape> &&shape);
 private:
     using Holes = std::vector<std::unique_ptr<RSParallelSelfDrawingSurfaceShape>>;
     std::map<unsigned int, Holes> surfaceAndHolesMap_;
