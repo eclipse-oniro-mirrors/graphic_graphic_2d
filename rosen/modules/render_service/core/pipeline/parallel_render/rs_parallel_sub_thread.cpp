@@ -548,12 +548,12 @@ void RSParallelSubThread::Composition()
     compositionTask_ = nullptr;
 }
 
-EGLContext RSParallelSubThread::GetSharedContext()
+EGLContext RSParallelSubThread::GetSharedContext() const
 {
     return eglShareContext_;
 }
 
-sk_sp<SkSurface> RSParallelSubThread::GetSkSurface()
+sk_sp<SkSurface> RSParallelSubThread::GetSkSurface() const
 {
     return skSurface_;
 }
@@ -568,7 +568,7 @@ void RSParallelSubThread::SetCompositionTask(std::unique_ptr<RSCompositionTask> 
     compositionTask_ = std::move(compositionTask);
 }
 
-sk_sp<SkImage> RSParallelSubThread::GetTexture()
+sk_sp<SkImage> RSParallelSubThread::GetTexture() const
 {
     return texture_;
 }

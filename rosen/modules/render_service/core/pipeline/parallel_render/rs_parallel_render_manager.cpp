@@ -207,7 +207,7 @@ bool RSParallelRenderManager::IsNeedCalcCost() const
     return calcCostCount_ > 0;
 }
 
-TaskType RSParallelRenderManager::GetTaskType()
+TaskType RSParallelRenderManager::GetTaskType() const
 {
     return taskType_;
 }
@@ -409,7 +409,7 @@ void RSParallelRenderManager::SetFrameSize(int width, int height)
     height_ = height;
 }
 
-void RSParallelRenderManager::GetFrameSize(int &width, int &height)
+void RSParallelRenderManager::GetFrameSize(int &width, int &height) const
 {
     width = width_;
     height = height_;

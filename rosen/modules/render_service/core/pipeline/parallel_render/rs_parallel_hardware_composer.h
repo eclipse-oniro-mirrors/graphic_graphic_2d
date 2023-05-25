@@ -33,7 +33,7 @@ class RSParallelSelfDrawingSurfaceShape {
 public:
     RSParallelSelfDrawingSurfaceShape(bool isRRect, RectF rect, Vector4f cornerRadius);
     ~RSParallelSelfDrawingSurfaceShape() = default;
-    bool IsRRect()
+    bool IsRRect() const
     {
         return isRRect_;
     }
