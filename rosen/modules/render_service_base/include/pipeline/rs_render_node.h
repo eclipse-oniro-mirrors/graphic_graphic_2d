@@ -387,6 +387,9 @@ private:
     // shadowRectOffset means offset between shadowRect and absRect of node
     float shadowRectOffsetX_ = 0.0f;
     float shadowRectOffsetY_ = 0.0f;
+    // Only use in RSRenderNode::DrawCacheSurface to calculate scale factor
+    float boundsWidth_ = 0.0f;
+    float boundsHeight_ = 0.0f;
 
     friend class RSRenderTransition;
     friend class RSRenderNodeMap;
