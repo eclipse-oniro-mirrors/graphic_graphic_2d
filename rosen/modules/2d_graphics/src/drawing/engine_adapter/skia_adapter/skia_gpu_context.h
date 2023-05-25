@@ -44,7 +44,13 @@ class SkiaGPUContext : public GPUContextImpl {
 public:
     static inline constexpr AdapterType TYPE = AdapterType::SKIA_ADAPTER;
     SkiaGPUContext();
-    ~SkiaGPUContext() override {};
+    ~SkiaGPUContext() override = default;;
+
+    AdapterType GetType() const override
+    {
+        return AdapterType::SKIA_ADAPTER;
+    }
+
     bool BuildFromGL(const GPUContextOptions& options) override;
 
     void Flush() override;
