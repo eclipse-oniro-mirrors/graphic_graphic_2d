@@ -45,9 +45,7 @@ void SkiaMatrix44::Multiply(const Matrix44& a, const Matrix44& b)
 {
     auto m1 = a.GetImpl<SkiaMatrix44>();
     auto m2 = b.GetImpl<SkiaMatrix44>();
-    if (m1 != nullptr && m2 != nullptr) {
-        skMatrix44_.setConcat(m1->GetSkMatrix44(), m2->GetSkMatrix44());
-    }
+    skMatrix44_.setConcat(m1->GetSkMatrix44(), m2->GetSkMatrix44());
 }
 
 void SkiaMatrix44::SetMatrix44(const std::array<scalar, Matrix44Impl::MATRIX44_SIZE>& buffer)
