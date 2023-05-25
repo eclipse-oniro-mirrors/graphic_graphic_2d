@@ -187,6 +187,7 @@ protected:
 #ifndef USE_ROSEN_DRAWING
     bool onFilter(SkPaint& paint) const override;
     void onDrawPicture(const SkPicture* picture, const SkMatrix* matrix, const SkPaint* paint) override;
+    SkCanvas::SaveLayerStrategy getSaveLayerStrategy(const SaveLayerRec& rec) override;
 #else
     using Env = struct {
         Color envForegroundColor;
