@@ -31,7 +31,7 @@ namespace Rosen {
 namespace Drawing {
 class SkiaPersistentCache : public GrContextOptions::PersistentCache {
 public:
-    SkiaPersistentCache(GPUContextOptions::PersistentCache* cache);
+    explicit SkiaPersistentCache(GPUContextOptions::PersistentCache* cache);
     ~SkiaPersistentCache() {}
 
     sk_sp<SkData> load(const SkData& key) override;
