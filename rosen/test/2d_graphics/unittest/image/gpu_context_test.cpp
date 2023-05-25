@@ -148,6 +148,14 @@ HWTEST_F(GpuContextTest, BuildFromGLTest001, TestSize.Level1)
     ASSERT_TRUE(gpuContext != nullptr);
     GPUContextOptions options;
     EXPECT_TRUE(gpuContext->BuildFromGL(options));
+
+    gpuContext->Flush();
+    std::chrono::milliseconds msNotUsed;
+    gpuContext->PerformDeferredCleanup(msNotUsed);
+    int32_t maxResource = 100;
+    size_t maxResourceBytes = 1000;
+    gpuContext->GetResourceCacheLimits(maxResource, maxResourceBytes);
+    gpuContext->SetResourceCacheLimits(maxResource, maxResourceBytes);
 }
 
 /**

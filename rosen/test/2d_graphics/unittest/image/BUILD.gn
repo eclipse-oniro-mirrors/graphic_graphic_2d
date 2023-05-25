@@ -39,8 +39,9 @@ ohos_unittest("2d_graphics_image_test") {
     "//third_party/googletest:gtest_main",
   ]
 
+  defines = [ "ROSEN_OHOS" ]
   if (ace_enable_gpu) {
-    defines = [ "ACE_ENABLE_GPU" ]
+    defines += [ "ACE_ENABLE_GPU" ]
   }
 
   subsystem_name = "graphic"
