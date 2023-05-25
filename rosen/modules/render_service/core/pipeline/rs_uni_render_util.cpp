@@ -254,7 +254,7 @@ Occlusion::Region RSUniRenderUtil::AlignedDirtyRegion(const Occlusion::Region& d
     if (alignedBits <= 1) {
         return dirtyRegion;
     }
-    for (auto& dirtyRect : dirtyRegion.GetRegionRects()) {
+    for (const auto& dirtyRect : dirtyRegion.GetRegionRects()) {
         int32_t left = (dirtyRect.left_ / alignedBits) * alignedBits;
         int32_t top = (dirtyRect.top_ / alignedBits) * alignedBits;
         int32_t width = ((dirtyRect.right_ + alignedBits - 1) / alignedBits) * alignedBits - left;

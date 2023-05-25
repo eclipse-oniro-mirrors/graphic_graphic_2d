@@ -78,7 +78,7 @@ public:
     void MergeRenderResult(RSPaintFilterCanvas& canvas);
     void DrawCacheSurface(RSPaintFilterCanvas& canvas, const RSRenderNode& node);
     void SetFrameSize(int width, int height);
-    void GetFrameSize(int &width, int &height);
+    void GetFrameSize(int &width, int &height) const;
     void SubmitSuperTask(uint32_t taskIndex, std::unique_ptr<RSSuperRenderTask> superRenderTask);
     void SubmitSubThreadTask(const std::shared_ptr<RSDisplayRenderNode>& node,
         const std::list<std::shared_ptr<RSSurfaceRenderNode>>& subThreadNodes);
@@ -100,7 +100,7 @@ public:
     void ReadySubThreadNumIncrement();
     void CommitSurfaceNum(int surfaceNum);
     void WaitPrepareEnd(RSUniRenderVisitor &visitor);
-    TaskType GetTaskType();
+    TaskType GetTaskType() const;
     RSUniRenderVisitor* GetUniVisitor() const
     {
         return uniVisitor_;
@@ -176,14 +176,14 @@ private:
     RSParallelTaskManager prepareTaskManager_;
     RSParallelTaskManager calcCostTaskManager_;
     RSParallelTaskManager compositionTaskManager_;
-    int height_;
-    int width_;
+    int width_ = 0;
+    int height_ = 0;
     std::vector<uint8_t> flipCoin_;
     std::mutex parallelRenderMutex_;
     std::mutex cvParallelRenderMutex_;
     std::mutex flushMutex_;
     std::condition_variable cvParallelRender_;
-    RenderContext *renderContext_;
+    RenderContext *renderContext_ = nullptr;
     ParallelRenderType renderType_ = ParallelRenderType::DRAW_IMAGE;
     std::shared_ptr<RSBaseRenderNode> displayNode_ = nullptr;
     std::shared_ptr<RSDisplayRenderNode> mainDisplayNode_ = nullptr;

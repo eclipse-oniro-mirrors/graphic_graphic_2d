@@ -924,7 +924,7 @@ void RSUniRenderVisitor::CopyForParallelPrepare(std::shared_ptr<RSUniRenderVisit
         displayHasSecSurface_[u.first] += u.second;
     }
 
-    for (auto &u : visitor->dirtySurfaceNodeMap_) {
+    for (const auto &u : visitor->dirtySurfaceNodeMap_) {
         dirtySurfaceNodeMap_[u.first] = u.second;
     }
 #endif
@@ -1638,10 +1638,6 @@ void RSUniRenderVisitor::DrawCacheRenderNode(RSRenderNode& node)
     isUpdateCachedSurface_ = true;
     if (node.GetCacheSurface()) {
         auto cacheCanvas = std::make_shared<RSPaintFilterCanvas>(node.GetCacheSurface().get());
-        if (!cacheCanvas) {
-            RS_LOGE("draw cache render node canvas is null");
-            return;
-        }
         bool isOpDropped = isOpDropped_;
         isOpDropped_ = false;
         swap(cacheCanvas, canvas_);
