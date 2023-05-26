@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
 group("test") {
   testonly = true
@@ -49,6 +50,20 @@ ohos_executable("render_service_client_rs_demo") {
   ]
 
   public_deps = [ "$public_deps_skia" ]
+
+  part_name = "graphic_standard"
+  subsystem_name = "graphic"
+}
+
+ohos_executable("render_service_client_screen_mode_demo") {
+  sources = [ "render_service_client_screen_mode_demo.cpp" ]
+
+  deps = [
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
 
   part_name = "graphic_standard"
   subsystem_name = "graphic"
