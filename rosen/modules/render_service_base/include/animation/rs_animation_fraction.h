@@ -40,6 +40,9 @@ public:
 
     // return <fraction, isInStartDelay, isFinished, isRepeatFinished> as tuple
     std::tuple<float, bool, bool, bool> GetAnimationFraction(int64_t time);
+    // return <fraction, isInStartDelay, placeholder, placeholder> as tuple, the third and fourth return values are
+    // placeholders to ensure that the return type is the same as the function GetAnimationFraction
+    std::tuple<float, bool, bool, bool> GetAnimationPlayTime(int64_t time);
     void UpdateRemainTimeFraction(float fraction, int remainTime = 0);
     float GetStartFraction() const;
     float GetEndFraction() const;
@@ -47,6 +50,15 @@ public:
     void SetLastFrameTime(int64_t lastFrameTime);
     int64_t GetLastFrameTime() const;
     void ResetFraction();
+    void SetRemainingDelayTime(int64_t time);
+    int64_t GetRemainingDelayTime() const;
+    void OnCurrentAnimationRoundFinish();
+    int GetRemainingRepeatCount() const;
+    void ResetPlayTime();
+    void SetStartDelay(int startDelay) override;
+    bool CurrentIsReverseCycle() const;
+    void UpdateReverseState(bool finish);
+    bool IsInRepeat() const;
 
     void SetRepeatCallbackEnable(bool isEnable)
     {
@@ -59,9 +71,7 @@ public:
     }
 
 private:
-    bool IsInRepeat() const;
     bool IsFinished() const;
-    void UpdateReverseState(bool finish);
 
     static std::atomic<float> animationScale_;
     static bool isInitialized_;
@@ -73,7 +83,8 @@ private:
     int64_t runningTime_ { 0 };
     bool currentIsReverseCycle_ { false };
     int64_t lastFrameTime_ { -1 };
-    bool isRepeatCallbackEnable_ {false};
+    bool isRepeatCallbackEnable_ { false };
+    int64_t remainingDelayTime_ { 0 };
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -34,6 +34,11 @@ enum class AnimationState {
     FINISHED,
 };
 
+enum class AnimationTimingMode {
+    BY_FRACTION,
+    BY_TIME,
+};
+
 class RSB_EXPORT RSRenderAnimation : public Parcelable {
 public:
     virtual ~RSRenderAnimation() = default;
@@ -153,16 +158,35 @@ protected:
 
     virtual void OnAnimate(float fraction) {}
 
+    // the time unit is millisecond
+    virtual std::tuple<bool, bool> OnAnimateByTime(float time)
+    {
+        return { true, true };
+    }
+
     virtual void OnRemoveOnCompletion() {}
 
     void FinishOnCurrentPosition();
+
+    void SetAnimationTimingMode(const AnimationTimingMode timingMode)
+    {
+        timingMode_ = timingMode;
+    }
+
+    virtual void ProcessFillModeOnFinishByTime(float endTime = 0) {}
 
     RSAnimationFraction animationFraction_;
 
 private:
     void ProcessFillModeOnStart(float startFraction);
 
+    void ProcessFillModeOnStartByFraction(float startFraction);
+
+    void ProcessFillModeOnStartByTime(float startTime = 0) const;
+
     void ProcessFillModeOnFinish(float endFraction);
+
+    void ProcessFillModeOnFinishByFraction(float endFraction);
 
     void ProcessOnRepeatFinish();
 
@@ -182,6 +206,7 @@ private:
     bool needUpdateStartTime_ { true };
     bool needInitialize_ { true };
     RSRenderNode* target_ { nullptr };
+    AnimationTimingMode timingMode_ { AnimationTimingMode::BY_FRACTION };
 
     friend class RSAnimation;
 };
