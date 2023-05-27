@@ -193,7 +193,9 @@ private:
     void SetSurfaceGlobalAlignedDirtyRegion(std::shared_ptr<RSDisplayRenderNode>& node,
         const Occlusion::Region alignedDirtyRegion);
 
+    void CheckAndSetNodeCacheType(RSRenderNode& node);
     bool UpdateCacheSurface(RSRenderNode& node);
+    void DrawSpherize(RSRenderNode& node);
     void DrawChildRenderNode(RSRenderNode& node);
 
     void CheckColorSpace(RSSurfaceRenderNode& node);
@@ -213,6 +215,8 @@ private:
     void SetNodeCacheChangeStatus(RSBaseRenderNode& node, int markedCachedNodeCnt);
 
     bool IsHardwareComposerEnabled();
+
+    bool CheckIfSurfaceRenderNodeNeedProcess(RSSurfaceRenderNode& node);
 
     void ClearTransparentBeforeSaveLayer();
     // mark surfaceNode's child surfaceView nodes hardware forced disabled
