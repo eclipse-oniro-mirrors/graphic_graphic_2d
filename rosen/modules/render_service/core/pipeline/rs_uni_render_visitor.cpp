@@ -1681,6 +1681,9 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         }
         unpairedTransitionNodes_.clear();
     }
+    if (isUIFirst_) {
+        RSParallelRenderManager::Instance()->WaitProcessEnd();
+    }
     RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode end");
 }
 
