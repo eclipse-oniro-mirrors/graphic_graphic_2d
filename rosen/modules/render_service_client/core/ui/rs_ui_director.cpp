@@ -272,7 +272,10 @@ void RSUIDirector::RecvMessages(std::shared_ptr<RSTransactionData> cmds)
         return;
     }
     ROSEN_LOGD("RSUIDirector::RecvMessages success");
-    PostTask([cmds]() { RSUIDirector::ProcessMessages(cmds); });
+    PostTask([cmds]() {
+        ROSEN_LOGD("RSUIDirector::ProcessMessages success");
+        RSUIDirector::ProcessMessages(cmds);
+    });
 }
 
 void RSUIDirector::ProcessMessages(std::shared_ptr<RSTransactionData> cmds)
