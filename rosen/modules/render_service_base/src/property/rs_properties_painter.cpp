@@ -399,9 +399,23 @@ void RSPropertiesPainter::DrawPixelStretch(const RSProperties& properties, RSPai
 
     Vector4f stretchSize = GetStretchSize(properties);
 
+    SkMatrix worldToLocalMat;
+    if (!canvas.getTotalMatrix().invert(&worldToLocalMat)) {
+        ROSEN_LOGE("RSPropertiesPainter::DrawPixelStretch get invert matrix failed.");
+    }
+
+    SkRect localClipBounds;
+    SkRect fClipBounds = SkRect::MakeXYWH(clipBounds.x(), clipBounds.y(), clipBounds.width(), clipBounds.height());
+    if (!worldToLocalMat.mapRect(&localClipBounds, fClipBounds)) {
+        ROSEN_LOGE("RSPropertiesPainter::DrawPixelStretch map rect failed.");
+    }
+    if (!bounds.intersect(localClipBounds)) {
+        ROSEN_LOGE("RSPropertiesPainter::DrawPixelStretch intersect clipbounds failed");
+    }
+
     auto scaledBounds = SkRect::MakeLTRB(bounds.left() - stretchSize.x_, bounds.top() - stretchSize.y_,
         bounds.right() + stretchSize.z_, bounds.bottom() + stretchSize.w_);
-    if (scaledBounds.isEmpty() || clipBounds.isEmpty()) {
+    if (scaledBounds.isEmpty() || bounds.isEmpty() || clipBounds.isEmpty()) {
         ROSEN_LOGE("RSPropertiesPainter::DrawPixelStretch invalid scaled bounds");
         return;
     }
@@ -422,6 +436,8 @@ void RSPropertiesPainter::DrawPixelStretch(const RSProperties& properties, RSPai
         scaleMat.setScale(inverseMat.getScaleX(), inverseMat.getScaleY());
     }
 
+    canvas.save();
+    canvas.translate(bounds.x(), bounds.y());
     if (properties.IsPixelStretchExpanded()) {
 #ifdef NEW_SKIA
         paint.setShader(image->makeShader(SkTileMode::kClamp, SkTileMode::kClamp, SkSamplingOptions(), &scaleMat));
@@ -437,11 +453,10 @@ void RSPropertiesPainter::DrawPixelStretch(const RSProperties& properties, RSPai
 #else
         paint.setShader(image->makeShader(SkTileMode::kClamp, SkTileMode::kClamp, &scaleMat));
 #endif
-        canvas.save();
         canvas.translate(-stretchSize.x_, -stretchSize.y_);
         canvas.drawRect(SkRect::MakeXYWH(stretchSize.x_, stretchSize.y_, bounds.width(), bounds.height()), paint);
-        canvas.restore();
     }
+    canvas.restore();
 }
 
 SkColor RSPropertiesPainter::CalcAverageColor(sk_sp<SkImage> imageSnapshot)
