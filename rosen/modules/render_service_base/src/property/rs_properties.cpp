@@ -224,8 +224,13 @@ const std::shared_ptr<RSObjGeometry>& RSProperties::GetFrameGeometry() const
     return frameGeo_;
 }
 
+#ifndef USE_ROSEN_DRAWING
 bool RSProperties::UpdateGeometry(const RSProperties* parent, bool dirtyFlag, const std::optional<SkPoint>& offset,
     const std::optional<SkRect>& clipRect)
+#else
+bool RSProperties::UpdateGeometry(const RSProperties* parent, bool dirtyFlag, const std::optional<Drawing::Point>& offset,
+    const std::optional<Drawing::Rect>& clipRect)
+#endif
 {
     if (boundsGeo_ == nullptr) {
         return false;

@@ -1173,6 +1173,8 @@ void RSPropertiesPainter::DrawForegroundColor(const RSProperties& properties, Dr
 }
 #endif
 
+
+#ifndef USE_ROSEN_DRAWING
 void RSPropertiesPainter::DrawMask(const RSProperties& properties, SkCanvas& canvas, SkRect maskBounds)
 {
     std::shared_ptr<RSMask> mask = properties.GetMask();
@@ -1220,42 +1222,136 @@ void RSPropertiesPainter::DrawMask(const RSProperties& properties, SkCanvas& can
     canvas.saveLayer(maskBounds, &maskPaint);
     canvas.clipRect(maskBounds, true);
 }
+#else
+void RSPropertiesPainter::DrawMask(const RSProperties& properties, Drawing::Canvas& canvas, Drawing::Rect maskBounds)
+{
+    std::shared_ptr<RSMask> mask = properties.GetMask();
+    if (mask == nullptr) {
+        return;
+    }
+    if (mask->IsSvgMask() && !mask->GetSvgDom() && !mask->GetSVGDrawCmdList()) {
+        ROSEN_LOGD("RSPropertiesPainter::DrawMask not has Svg Mask property");
+        return;
+    }
 
+    canvas.Save();
+    Drawing::SaveLayerOps slr(&maskBounds, nullptr);
+    canvas.SaveLayer(slr);
+    int tmpLayer = canvas.GetSaveCount();
+
+    Drawing::Brush maskfilter;
+    Drawing::Filter filter;
+    filter.SetColorFilter(Drawing::ColorFilter::CreateComposeColorFilter(
+        *(Drawing::ColorFilter::CreateLumaColorFilter()),
+        *(Drawing::ColorFilter::CreateSrgbGammaToLinear())
+        ));
+    maskfilter.SetFilter(filter);
+    Drawing::SaveLayerOps slrMask(&maskBounds, &maskfilter);
+    canvas.SaveLayer(slrMask);
+    if (mask->IsSvgMask()) {
+        Drawing::AutoCanvasRestore maskSave(canvas, true);
+        canvas.Translate(maskBounds.GetLeft() + mask->GetSvgX(), maskBounds.GetTop() + mask->GetSvgY());
+        canvas.Scale(mask->GetScaleX(), mask->GetScaleY());
+        if (mask->GetSvgDom()) {
+            mask->GetSvgDom()->Render(canvas);
+        } else if (mask->GetSVGDrawCmdList()) {
+            auto svgDrawCmdList = mask->GetSVGDrawCmdList();
+            svgDrawCmdList->Playback(canvas);
+        }
+    } else if (mask->IsGradientMask()) {
+        Drawing::AutoCanvasRestore maskSave(canvas, true);
+        canvas.Translate(maskBounds.GetLeft(), maskBounds.GetTop());
+        Drawing::Rect rect = Drawing::Rect(
+            0, 0, maskBounds.GetRight() - maskBounds.GetLeft(), maskBounds.GetBottom() - maskBounds.GetTop());
+        canvas.AttachBrush(mask->GetMaskBrush());
+        canvas.DrawRect(rect);
+        canvas.DetachBrush();
+    } else if (mask->IsPathMask()) {
+        Drawing::AutoCanvasRestore maskSave(canvas, true);
+        canvas.Translate(maskBounds.GetLeft(), maskBounds.GetTop());
+        canvas.AttachBrush(mask->GetMaskBrush());
+        canvas.DrawPath(mask->GetMaskPath());
+        canvas.DetachBrush();
+    }
+
+    // back to mask layer
+    canvas.RestoreToCount(tmpLayer);
+    // create content layer
+    Drawing::Brush maskPaint;
+    maskPaint.SetBlendMode(Drawing::BlendMode::SRC_IN);
+    Drawing::SaveLayerOps slrContent(&maskBounds, &maskPaint);
+    canvas.SaveLayer(slrContent);
+    canvas.ClipRect(maskBounds, Drawing::ClipOp::INTERSECT, true);
+}
+#endif
+
+#ifndef USE_ROSEN_DRAWING
 void RSPropertiesPainter::DrawMask(const RSProperties& properties, SkCanvas& canvas)
 {
     SkRect maskBounds = Rect2SkRect(properties.GetBoundsRect());
     DrawMask(properties, canvas, maskBounds);
 }
+#else
+void RSPropertiesPainter::DrawMask(const RSProperties& properties, Drawing::Canvas& canvas)
+{
+    Drawing::Rect maskBounds = Rect2DrawingRect(properties.GetBoundsRect());
+    DrawMask(properties, canvas, maskBounds);
+}
+#endif
 
+#ifndef USE_ROSEN_DRAWING
 RectF RSPropertiesPainter::GetCmdsClipRect(DrawCmdListPtr& cmds)
+#else
+RectF RSPropertiesPainter::GetCmdsClipRect(Drawing::DrawCmdListPtr& cmds)
+#endif
 {
 #if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
     RectF clipRect;
     if (cmds == nullptr) {
         return clipRect;
     }
+#ifndef USE_ROSEN_DRAWING
     SkRect rect;
     cmds->CheckClipRect(rect);
     clipRect = { rect.left(), rect.top(), rect.width(), rect.height() };
+#else
+    Drawing::Rect rect;
+    cmds->CheckClipRect(rect);
+    clipRect = { rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight() };
+#endif
     return clipRect;
 #else
     return RectF { 0.0f, 0.0f, 0.0f, 0.0f };
 #endif
 }
 
+#ifndef USE_ROSEN_DRAWING
 void RSPropertiesPainter::DrawFrameForDriven(const RSProperties& properties, RSPaintFilterCanvas& canvas,
                                              DrawCmdListPtr& cmds)
+#else
+void RSPropertiesPainter::DrawFrameForDriven(const RSProperties& properties, RSPaintFilterCanvas& canvas,
+                                             Drawing::DrawCmdListPtr& cmds)
+#endif
 {
 #if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
     if (cmds == nullptr) {
         return;
     }
+#ifndef USE_ROSEN_DRAWING
     SkMatrix mat;
     if (GetGravityMatrix(
             properties.GetFrameGravity(), properties.GetFrameRect(), cmds->GetWidth(), cmds->GetHeight(), mat)) {
         canvas.concat(mat);
     }
     auto frameRect = Rect2SkRect(properties.GetFrameRect());
+#else
+    Rosen::Drawing::Matrix mat;
+    if (GetGravityMatrix(
+            properties.GetFrameGravity(), properties.GetFrameRect(), cmds->GetWidth(), cmds->GetHeight(), mat)) {
+        canvas.ConcatMatrix(mat);
+    }
+    auto frameRect = Rect2DrawingRect(properties.GetFrameRect());
+#endif
     // temporary solution for driven content clip
     cmds->ReplaceDrivenCmds();
     cmds->Playback(canvas, &frameRect);
@@ -1263,6 +1359,7 @@ void RSPropertiesPainter::DrawFrameForDriven(const RSProperties& properties, RSP
 #endif
 }
 
+#ifndef USE_ROSEN_DRAWING
 void RSPropertiesPainter::DrawSpherize(const RSProperties& properties, RSPaintFilterCanvas& canvas,
     const sk_sp<SkSurface>& spherizeSurface)
 {
@@ -1344,5 +1441,12 @@ void RSPropertiesPainter::DrawSpherize(const RSProperties& properties, RSPaintFi
     canvas.clipPath(path, true);
     canvas.drawPatch(ctrlPoints, nullptr, texCoords, SkBlendMode::kSrcOver, paint);
 }
+#else
+void RSPropertiesPainter::DrawSpherize(const RSProperties& properties, RSPaintFilterCanvas& canvas,
+    const std::shared_ptr<Drawing::Surface>& spherizeSurface)
+{
+    // TODO DRAWING
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS
