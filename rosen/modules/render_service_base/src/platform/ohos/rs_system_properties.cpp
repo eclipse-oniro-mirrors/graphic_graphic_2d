@@ -247,6 +247,12 @@ bool RSSystemProperties::GetUIFirstEnabled()
     return std::atoi((system::GetParameter("rosen.ui.first.enabled", "0")).c_str()) != 0;
 }
 
+bool RSSystemProperties::GetASTCEnabled()
+{
+    static bool isASTCEnabled = std::atoi((system::GetParameter("rosen.astc.enabled", "0")).c_str()) != 0;
+    return isASTCEnabled;
+}
+
 bool RSSystemProperties::GetBoolSystemProperty(const char* name, bool defaultValue)
 {
     return std::atoi((system::GetParameter(name, defaultValue ? "1" : "0")).c_str()) != 0;
