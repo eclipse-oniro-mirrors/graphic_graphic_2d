@@ -59,10 +59,11 @@ void SkiaMatrix44::SetMatrix44(const std::array<scalar, Matrix44Impl::MATRIX44_S
     };
     skMatrix44_.RowMajor(r);
 #else
-    skMatrix44_.set4x4(buffer[0], buffer[1], buffer[2], buffer[3],
-                        buffer[4], buffer[5], buffer[6], buffer[7],
-                        buffer[8], buffer[9], buffer[10], buffer[11],
-                        buffer[12], buffer[13], buffer[14], buffer[15]);
+    skMatrix44_.set4x4(
+        buffer[0], buffer[1], buffer[2], buffer[3],
+        buffer[4], buffer[5], buffer[6], buffer[7],
+        buffer[8], buffer[9], buffer[10], buffer[11],
+        buffer[12], buffer[13], buffer[14], buffer[15]);
 #endif
 }
 
