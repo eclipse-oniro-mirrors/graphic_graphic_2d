@@ -14,6 +14,7 @@
  */
 
 #include "benchmarks/file_utils.h"
+#include <fstream>
 #include <fcntl.h>
 #include <unistd.h>
 #include "platform/common/rs_log.h"
@@ -31,7 +32,7 @@ std::string GetRealPath(const std::string& filePath)
     std::string realPathStr = "";
     char actualPath[PATH_MAX + 1] = {0};
     if (realpath(filePath.c_str(), actualPath) == nullptr) {
-        RS_LOGE("The file path is empty!");
+        RS_LOGE("The file path is not exist!");
         return realPathStr;
     }
     realPathStr = actualPath;
@@ -43,9 +44,40 @@ std::string GetRealPath(const std::string& filePath)
     }
 }
 
-bool WriteToFile(uintptr_t data, size_t size, const std::string& filePath, const std::string& fileName)
+bool IsExistFile(const std::string& filePath)
 {
-    std::string realDclFilePathStr = GetRealPath(filePath);
+    char actualPath[PATH_MAX + 1] = {0};
+    if (filePath.size() > PATH_MAX || realpath(filePath.c_str(), actualPath) == nullptr) {
+        return false;
+    }
+    std::ifstream inFile(actualPath);
+    if (inFile.is_open()) {
+        inFile.clear();
+        inFile.close();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool CreateFile(const std::string& filePath)
+{
+    if (IsExistFile(filePath)) {
+        return true;
+    }
+    std::ofstream outFile(filePath.c_str());
+    if (!outFile.is_open()) {
+        RS_LOGE("file %s open failed!");
+        return false;
+    }
+    outFile.clear();
+    outFile.close();
+    return true;
+}
+
+bool WriteToFile(uintptr_t data, size_t size, const std::string& filePath)
+{
+    std::string realDclFilePathStr = CreateFile(filePath);
     if (realDclFilePathStr.empty()) {
         return false;
     }
@@ -78,9 +110,9 @@ bool WriteStringToFile(int fd, const std::string& str)
     return true;
 }
 
-bool WriteStringToFile(const std::string& str, const std::string& filePath, const std::string& fileName)
+bool WriteStringToFile(const std::string& str, const std::string& filePath)
 {
-    std::string realDclFilePathStr = GetRealPath(filePath);
+    std::string realDclFilePathStr = CreateFile(filePath);
     if (realDclFilePathStr.empty()) {
         return false;
     }

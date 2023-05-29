@@ -86,7 +86,6 @@ void RSRecordingThread::FinishRecordingOneFrame()
     }
 }
 
-#ifndef USE_ROSEN_DRAWING
 void RSRecordingThread::RecordingToFile(const std::shared_ptr<DrawCmdList> & drawCmdList)
 {
     if (curDumpFrame_ < 0) {
@@ -103,17 +102,16 @@ void RSRecordingThread::RecordingToFile(const std::shared_ptr<DrawCmdList> & dra
         RS_LOGD(line.c_str());
         RS_TRACE_NAME(line);
         // file name
-        std::string drawCmdListFileName = "frame" + std::to_string(tmpCurDumpFrame) + ".txt";
-        std::string opsFileName = "ops_frame" + std::to_string(tmpCurDumpFrame) + ".txt";
+        std::string drawCmdListFile = fileDir_ + "/frame" + std::to_string(tmpCurDumpFrame) + ".txt";
+        std::string opsFile = fileDir_ + "/ops_frame" + std::to_string(tmpCurDumpFrame) + ".txt";
         // get data
         size_t sz = messageParcel->GetDataSize();
         uintptr_t buf = messageParcel->GetData();
         std::string opsDescription = drawCmdList->GetOpsWithDesc();
 
-        OHOS::Rosen::Benchmarks::WriteToFile(buf, sz, fileDir_, drawCmdListFileName);
-        OHOS::Rosen::Benchmarks::WriteStringToFile(opsDescription, fileDir_,  opsFileName);
+        OHOS::Rosen::Benchmarks::WriteToFile(buf, sz, drawCmdListFile);
+        OHOS::Rosen::Benchmarks::WriteStringToFile(opsDescription, opsFile);
     };
     PostTask(task);
 }
-#endif
 }
