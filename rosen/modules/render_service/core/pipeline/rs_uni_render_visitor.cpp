@@ -1630,8 +1630,10 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         }
 #endif
         if (saveLayerCnt > 0) {
+#ifdef RS_ENABLE_GL
             RSTagTracker tagTracker(
                 renderEngine_->GetRenderContext()->GetGrContext(), RSTagTracker::TAGTYPE::TAG_RESTORELAYER_DRAW_NODE);
+#endif
             RS_TRACE_NAME("RSUniRender:RestoreLayer");
             canvas_->restoreToCount(saveLayerCnt);
         }
@@ -2334,12 +2336,14 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
                     + " Alpha: " + std::to_string(node.GetGlobalAlpha()).substr(0, 4));
     RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode node:%" PRIu64 ",child size:%u,name:%s,OcclusionVisible:%d",
         node.GetId(), node.GetChildrenCount(), node.GetName().c_str(), node.GetOcclusionVisible());
+#ifdef RS_ENABLE_GL
 #ifdef NEW_SKIA
     GrDirectContext* grContext = renderEngine_->GetRenderContext()->GetGrContext();
 #else
     GrContext* grContext = renderEngine_->GetRenderContext()->GetGrContext();
 #endif
     RSTagTracker tagTracker(grContext, node.GetId(), RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE);
+#endif
     node.SetGrContext(grContext);
     node.UpdatePositionZ();
     if (!CheckIfSurfaceRenderNodeNeedProcess(node)) {
@@ -2564,8 +2568,10 @@ void RSUniRenderVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
         RS_LOGD("RsDebug RSBaseRenderEngine::SetColorFilterModeToPaint mode:%d", static_cast<int32_t>(colorFilterMode));
         SkPaint paint;
         RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, paint);
+#ifdef RS_ENABLE_GL
         RSTagTracker tagTracker(
             renderEngine_->GetRenderContext()->GetGrContext(), RSTagTracker::TAG_SAVELAYER_COLOR_FILTER);
+#endif
         saveCount = canvas_->saveLayer(nullptr, &paint);
     } else {
         saveCount = canvas_->save();
