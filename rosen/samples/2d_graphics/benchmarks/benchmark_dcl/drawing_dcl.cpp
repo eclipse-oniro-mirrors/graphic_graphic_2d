@@ -252,7 +252,7 @@ private:
     uint8_t *mapFile_;
 };
 
-std::string DrawingDCL::GetRealPathStr(std::string filePath)
+std::string DrawingDCL::GetRealPathStr(const std::string& filePath)
 {
     std::string realPathStr = "";
     char actualPath[PATH_MAX + 1] = {0};
@@ -264,12 +264,12 @@ std::string DrawingDCL::GetRealPathStr(std::string filePath)
     return realPathStr;
 }
 
-bool DrawingDCL::IsValidFile(std::string realPathStr)
+bool DrawingDCL::IsValidFile(const std::string& realPathStr)
 {
     return realPathStr.find(dclFileDir_) == 0;
 }
 
-int DrawingDCL::LoadDrawCmdList(std::string dclFile)
+int DrawingDCL::LoadDrawCmdList(const std::string& dclFile)
 {
     std::string realDclFilePathStr = GetRealPathStr(dclFile);
     if (realDclFilePathStr.empty()) {
