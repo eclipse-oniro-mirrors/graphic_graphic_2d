@@ -132,10 +132,10 @@ public:
     void RestoreEnvToCount(int count);
 
     // save/restore utils
-    using SaveStatus = struct {
-        int canvasSaveCount;
-        int alphaSaveCount;
-        int envSaveCount;
+    struct SaveStatus {
+        int canvasSaveCount = -1;
+        int alphaSaveCount = -1;
+        int envSaveCount = -1;
     };
 #ifndef USE_ROSEN_DRAWING
     SaveStatus Save();
