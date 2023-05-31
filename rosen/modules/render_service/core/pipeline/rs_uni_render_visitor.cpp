@@ -270,8 +270,10 @@ void RSUniRenderVisitor::SetNodeCacheChangeStatus(RSBaseRenderNode& node, int ma
     }
     auto targetNode = node.ReinterpretCastTo<RSRenderNode>();
     if (targetNode != nullptr && targetNode->GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE) {
-        // only enable lowest marked cached node
-        if (targetNode->ChildHasFilter() || (markedCachedNodeCnt != markedCachedNodes_)) {
+        // Attention: currently not support filter and out of parent
+        // Only enable lowest marked cached node
+        if (targetNode->ChildHasFilter() || targetNode->HasChildrenOutOfRect() ||
+            (markedCachedNodeCnt != markedCachedNodes_)) {
             ROSEN_LOGD("RSUniRenderVisitor::SetNodeCacheChangeStatus: disable node %" PRIu64 ", "
                 "childHasFilter %d, markedCachedNodeCnt|markedCachedNodes_: (%d, %d)", targetNode->GetId(),
                 static_cast<int>(targetNode->ChildHasFilter()), markedCachedNodeCnt, markedCachedNodes_);
