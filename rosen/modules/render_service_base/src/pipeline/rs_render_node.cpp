@@ -194,7 +194,8 @@ bool RSRenderNode::IsDirty() const
 
 bool RSRenderNode::IsContentDirty() const
 {
-    return !RSBaseRenderNode::IsContentDirty() && renderProperties_.IsContentDirty();
+    // Considering renderNode, it should consider both basenode's case and its properties
+    return RSBaseRenderNode::IsContentDirty() || renderProperties_.IsContentDirty();
 }
 
 void RSRenderNode::UpdateRenderStatus(RectI& dirtyRegion, bool isPartialRenderEnabled)

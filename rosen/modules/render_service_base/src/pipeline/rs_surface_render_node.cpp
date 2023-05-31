@@ -562,21 +562,6 @@ bool RSSurfaceRenderNode::UpdateDirtyIfFrameBufferConsumed()
     return false;
 }
 
-bool RSSurfaceRenderNode::IsDirty() const
-{
-    return RSRenderNode::IsDirty();
-}
-
-bool RSSurfaceRenderNode::IsContentDirty() const
-{
-    return RSRenderNode::IsContentDirty();
-}
-
-void RSSurfaceRenderNode::SetClean()
-{
-    RSRenderNode::SetClean();
-}
-
 void RSSurfaceRenderNode::SetVisibleRegionRecursive(const Occlusion::Region& region,
                                                     VisibleData& visibleVec,
                                                     std::map<uint32_t, bool>& pidVisMap)
