@@ -955,7 +955,10 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
     }
     // FrameRect(if exists) is mapped to rect using abstract coordinate explicitly by calling MapAbsRect.
     if (property.GetClipToFrame()) {
-        RectF frameRect{property.GetFrameOffsetX(), property.GetFrameOffsetY(),
+        // MapAbsRect do not handle the translation of OffsetX and OffsetY
+        RectF frameRect{
+            property.GetFrameOffsetX() * geoPtr->GetAbsMatrix().getScaleX(),
+            property.GetFrameOffsetY() * geoPtr->GetAbsMatrix().getScaleY(),
             property.GetFrameWidth(), property.GetFrameHeight()};
         prepareClipRect_ = prepareClipRect_.IntersectRect(geoPtr->MapAbsRect(frameRect));
     }
