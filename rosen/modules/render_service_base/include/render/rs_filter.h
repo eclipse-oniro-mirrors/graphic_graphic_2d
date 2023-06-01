@@ -18,6 +18,7 @@
 
 #include <memory>
 
+#include "common/rs_common_def.h"
 #include "common/rs_macros.h"
 
 namespace OHOS {
@@ -50,6 +51,12 @@ public:
     bool IsValid() const
     {
         return type_ != FilterType::NONE;
+    }
+
+    virtual bool IsNearEqual(
+        const std::shared_ptr<RSFilter>& other, float threshold = std::numeric_limits<float>::epsilon()) const
+    {
+        return true;
     }
 
 protected:

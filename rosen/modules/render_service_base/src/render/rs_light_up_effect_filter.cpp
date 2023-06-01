@@ -108,5 +108,15 @@ std::shared_ptr<RSFilter> RSLightUpEffectFilter::Negate()
 {
     return std::make_shared<RSLightUpEffectFilter>(-lightUpDegree_);
 }
+
+bool RSLightUpEffectFilter::IsNearEqual(const std::shared_ptr<RSFilter>& other, float threshold) const
+{
+    auto otherLightUpFilter = std::static_pointer_cast<RSLightUpEffectFilter>(other);
+    if (otherLightUpFilter == nullptr) {
+        return true;
+    }
+    float otherLightUpDegree = otherLightUpFilter->GetLightUpDegree();
+    return ROSEN_EQ(lightUpDegree_, otherLightUpDegree, threshold);
+}
 } // namespace Rosen
 } // namespace OHOS
