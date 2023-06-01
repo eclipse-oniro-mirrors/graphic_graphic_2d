@@ -20,6 +20,7 @@
 
 #include "platform/common/rs_log.h"
 #include "render/rs_filter.h"
+#include "common/rs_common_def.h"
 #include "common/rs_obj_abs_geometry.h"
 
 namespace OHOS {
@@ -1174,7 +1175,7 @@ float RSProperties::GetLightUpEffect() const
 
 bool RSProperties::IsLightUpEffectValid() const
 {
-    return GreatOrEqual(GetLightUpEffect(), 0.0) && LessNotEqual(GetLightUpEffect(), 1.0);
+    return ROSEN_GE(GetLightUpEffect(), 0.0) && ROSEN_LNE(GetLightUpEffect(), 1.0);
 }
 
 void RSProperties::SetPixelStretch(Vector4f stretchSize)
