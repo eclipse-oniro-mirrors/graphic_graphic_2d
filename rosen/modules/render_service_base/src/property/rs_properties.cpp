@@ -20,7 +20,6 @@
 
 #include "platform/common/rs_log.h"
 #include "render/rs_filter.h"
-#include "common/rs_common_def.h"
 #include "common/rs_obj_abs_geometry.h"
 
 namespace OHOS {
@@ -1412,6 +1411,12 @@ static bool GreatOrEqual(double left, double right)
 {
     constexpr double epsilon = -0.001f;
     return (left - right) > epsilon;
+}
+
+static bool LessNotEqual(double left, double right)
+{
+    constexpr double epsilon = -0.001f;
+    return (left - right) < epsilon;
 }
 
 const sk_sp<SkColorFilter> RSProperties::GetColorFilter() const

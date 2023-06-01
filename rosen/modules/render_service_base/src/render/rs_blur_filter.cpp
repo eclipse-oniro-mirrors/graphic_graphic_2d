@@ -60,7 +60,7 @@ std::string RSBlurFilter::GetDescription()
 bool RSBlurFilter::IsValid() const
 {
     constexpr float epsilon = 0.001f;
-    if (ROSEN_EQ(blurRadiusX, 0.f, epsilon) && ROSEN_EQ(blurRadiusY, 0.f, epsilon)) {
+    if (ROSEN_EQ(blurRadiusX_, 0.f, epsilon) && ROSEN_EQ(blurRadiusY_, 0.f, epsilon)) {
         return false;
     }
     return true;
