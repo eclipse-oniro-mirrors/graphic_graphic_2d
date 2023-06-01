@@ -480,6 +480,7 @@ void RSParallelRenderManager::SubmitSubThreadTask(const std::shared_ptr<RSDispla
             RS_TRACE_NAME_FMT("SubmitTask cacheCmdSkippedNode: %s", child->GetName().c_str());
             continue;
         }
+        nodeTaskState_[child->GetId()] = 1;
         renderTaskList.push_back(std::make_unique<RSRenderTask>(*child, RSRenderTask::RenderNodeStage::CACHE));
     }
 
@@ -521,6 +522,20 @@ void RSParallelRenderManager::SubmitSubThreadTask(const std::shared_ptr<RSDispla
         flipCoin_[i] = 1;
     }
     cvParallelRender_.notify_all();
+}
+
+void RSParallelRenderManager::WaitNodeTask(uint64_t nodeId)
+{
+    std::unique_lock<std::mutex> lock(parallelRenderMutex_);
+    cvParallelRender_.wait(lock, [&]() {
+        return !nodeTaskState_[nodeId];
+    });
+}
+
+void RSParallelRenderManager::NodeTaskNotify(uint64_t nodeId)
+{
+    nodeTaskState_[nodeId] = 0;
+    cvParallelRender_.notify_one();
 }
 
 void RSParallelRenderManager::SubmitCompositionTask(uint32_t taskIndex,
