@@ -48,6 +48,81 @@ void RSUniRenderVisitorTest::TearDown()
     system::GetParameter("rosen.dirtyregiondebug.surfacenames", "0");
 }
 
+/*
+ * @tc.name: PrepareBaseRenderNode001
+ * @tc.desc: PrepareBaseRenderNode Test
+ * @tc.type: FUNC
+ * @tc.require: issueI79U8E
+ */
+HWTEST_F(RSUniRenderVisitorTest, PrepareBaseRenderNode001, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto rsBaseRenderNode = std::make_shared<RSBaseRenderNode>(10, rsContext->weak_from_this());
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    rsUniRenderVisitor->PrepareBaseRenderNode(*rsBaseRenderNode);
+}
+
+/*
+ * @tc.name: SetHardwareEnabledNodes001
+ * @tc.desc: SetHardwareEnabledNodes Test
+ * @tc.type: FUNC
+ * @tc.require: issueI79U8E
+ */
+HWTEST_F(RSUniRenderVisitorTest, SetHardwareEnabledNodes001, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto rsRootRenderNode = std::make_shared<RSRootRenderNode>(10, rsContext->weak_from_this());
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    rsUniRenderVisitor->DoDirectComposition(rsRootRenderNode);
+}
+
+/*
+ * @tc.name: DrawAllSurfaceOpaqueRegionForDFX001
+ * @tc.desc: DrawAllSurfaceOpaqueRegionForDFX Test
+ * @tc.type: FUNC
+ * @tc.require: issueI79U8E
+ */
+HWTEST_F(RSUniRenderVisitorTest, DrawAllSurfaceOpaqueRegionForDFX001, TestSize.Level1)
+{
+    system::SetParameter("rosen.uni.opaqueregiondebug", "1");
+    auto rsContext = std::make_shared<RSContext>();
+    RSSurfaceRenderNodeConfig config;
+    RSDisplayNodeConfig displayConfig;
+    config.id = 10;
+    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config, rsContext->weak_from_this());
+    auto rsDisplayRenderNode = std::make_shared<RSDisplayRenderNode>(20, displayConfig, rsContext->weak_from_this());
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    rsSurfaceRenderNode->SetSrcRect(RectI(0, 0, 10, 10));
+    rsDisplayRenderNode->AddChild(rsSurfaceRenderNode, -1);
+    rsUniRenderVisitor->PrepareDisplayRenderNode(*rsDisplayRenderNode);
+    rsUniRenderVisitor->ProcessDisplayRenderNode(*rsDisplayRenderNode);
+    system::SetParameter("rosen.uni.opaqueregiondebug", "0");
+}
+
+/*
+ * @tc.name: DrawTargetSurfaceDirtyRegionForDFX001
+ * @tc.desc: DrawTargetSurfaceDirtyRegionForDFX Test
+ * @tc.type: FUNC
+ * @tc.require: issueI79U8E
+ */
+HWTEST_F(RSUniRenderVisitorTest, DrawTargetSurfaceDirtyRegionForDFX001, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    RSSurfaceRenderNodeConfig config;
+    RSDisplayNodeConfig displayConfig;
+    config.name = "SurfaceDirtyDFX";
+    config.id = 10;
+    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config, rsContext->weak_from_this());
+    auto rsDisplayRenderNode = std::make_shared<RSDisplayRenderNode>(20, displayConfig, rsContext->weak_from_this());
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    rsSurfaceRenderNode->SetSrcRect(RectI(0, 0, 10, 10));
+    rsDisplayRenderNode->AddChild(rsSurfaceRenderNode, -1);
+    rsUniRenderVisitor->PrepareDisplayRenderNode(*rsDisplayRenderNode);
+    system::SetParameter("rosen.dirtyregiondebug.surfacenames", "SurfaceDirtyDFX");
+    rsUniRenderVisitor->ProcessDisplayRenderNode(*rsDisplayRenderNode);
+    system::SetParameter("rosen.dirtyregiondebug.surfacenames", "0");
+}
+
 HWTEST_F(RSUniRenderVisitorTest, PrepareProxyRenderNode001, TestSize.Level1)
 {
     RSSurfaceRenderNodeConfig config;

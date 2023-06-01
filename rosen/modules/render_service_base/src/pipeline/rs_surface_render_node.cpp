@@ -1051,7 +1051,7 @@ std::shared_ptr<RSSurfaceRenderNode> RSSurfaceRenderNode::GetLeashWindowNestedAp
     if (!IsLeashWindow()) {
         return nullptr;
     }
-    for(auto& child : GetChildren()) {
+    for (auto& child : GetChildren()) {
         auto childNode = child.lock();
         if (childNode) {
             auto childNodeSurface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(childNode);
