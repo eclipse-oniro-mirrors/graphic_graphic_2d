@@ -38,10 +38,11 @@ enum class GradientDirection {
 class RSB_EXPORT RSLinearGradientBlurPara {
 public:
     float blurRadius_;
-    std::vector<std::array<float, 2>> fractionStops_;
+    // Each pair in fractionStops_ represents <blur degree, position scale>
+    std::vector<std::pair<float, float>> fractionStops_;
     GradientDirection direction_;
-    explicit RSLinearGradientBlurPara(const float blurRadius, const std::vector<std::array<float, 2>>fractionStops,
-                                                                        const GradientDirection direction)
+    explicit RSLinearGradientBlurPara(const float blurRadius,
+                    const std::vector<std::pair<float, float>>fractionStops, const GradientDirection direction)
     {
         blurRadius_ = blurRadius;
         fractionStops_ = fractionStops;

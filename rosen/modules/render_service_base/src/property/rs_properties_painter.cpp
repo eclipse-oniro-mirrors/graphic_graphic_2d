@@ -313,78 +313,50 @@ sk_sp<SkShader> RSPropertiesPainter::MakeAlphaGradientShader(const SkRect clipBo
         case GradientDirection::BOTTOM: {
             pts[0].set(clipBounds.width() / 2, 0);
             pts[1].set(clipBounds.width() / 2, clipBounds.height());
-            for (size_t i = 0; i < para->fractionStops_.size(); i++) {
-                c.emplace_back(SkColorSetARGB(static_cast<int8_t>(para->fractionStops_[i][0] * 255), 255, 255, 255));
-                p.emplace_back(para->fractionStops_[i][1]);
-            }
             break;
         }
         case GradientDirection::TOP: {
             pts[0].set(clipBounds.width() / 2, clipBounds.height());
             pts[1].set(clipBounds.width() / 2, 0);
-            for (size_t i = 0; i < para->fractionStops_.size(); i++) {
-                c.emplace_back(SkColorSetARGB(static_cast<int8_t>(para->fractionStops_[i][0] * 255), 255, 255, 255));
-                p.emplace_back(para->fractionStops_[i][1]);
-            }
             break;
         }
         case GradientDirection::RIGHT: {
             pts[0].set(0, clipBounds.height() / 2);
             pts[1].set(clipBounds.width(), clipBounds.height() / 2);
-            for (size_t i = 0; i < para->fractionStops_.size(); i++) {
-                c.emplace_back(SkColorSetARGB(static_cast<int8_t>(para->fractionStops_[i][0] * 255), 255, 255, 255));
-                p.emplace_back(para->fractionStops_[i][1]);
-            }
             break;
         }
         case GradientDirection::LEFT: {
             pts[0].set(clipBounds.width(), clipBounds.height() / 2);
             pts[1].set(0, clipBounds.height() / 2);
-            for (size_t i = 0; i < para->fractionStops_.size(); i++) {
-                c.emplace_back(SkColorSetARGB(static_cast<int8_t>(para->fractionStops_[i][0] * 255), 255, 255, 255));
-                p.emplace_back(para->fractionStops_[i][1]);
-            }
             break;
         }
         case GradientDirection::RIGHT_BOTTOM: {
             pts[0].set(0, 0);
             pts[1].set(clipBounds.width(), clipBounds.height());
-            for (size_t i = 0; i < para->fractionStops_.size(); i++) {
-                c.emplace_back(SkColorSetARGB(static_cast<int8_t>(para->fractionStops_[i][0] * 255), 255, 255, 255));
-                p.emplace_back(para->fractionStops_[i][1]);
-            }
             break;
         }
         case GradientDirection::LEFT_TOP: {
             pts[0].set(clipBounds.width(), clipBounds.height());
             pts[1].set(0, 0);
-            for (size_t i = 0; i < para->fractionStops_.size(); i++) {
-                c.emplace_back(SkColorSetARGB(static_cast<int8_t>(para->fractionStops_[i][0] * 255), 255, 255, 255));
-                p.emplace_back(para->fractionStops_[i][1]);
-            }
             break;
         }
         case GradientDirection::LEFT_BOTTOM: {
             pts[0].set(clipBounds.width(), 0);
             pts[1].set(0, clipBounds.height());
-            for (size_t i = 0; i < para->fractionStops_.size(); i++) {
-                c.emplace_back(SkColorSetARGB(static_cast<int8_t>(para->fractionStops_[i][0] * 255), 255, 255, 255));
-                p.emplace_back(para->fractionStops_[i][1]);
-            }
             break;
         }
         case GradientDirection::RIGHT_TOP: {
             pts[0].set(0, clipBounds.height());
             pts[1].set(clipBounds.width(), 0);
-            for (size_t i = 0; i < para->fractionStops_.size(); i++) {
-                c.emplace_back(SkColorSetARGB(static_cast<int8_t>(para->fractionStops_[i][0] * 255), 255, 255, 255));
-                p.emplace_back(para->fractionStops_[i][1]);
-            }
             break;
         }
         default: {
             return nullptr;
         }
+    }
+    for (size_t i = 0; i < para->fractionStops_.size(); i++) {
+        c.emplace_back(SkColorSetARGB(static_cast<int8_t>(para->fractionStops_[i].first * 255), 255, 255, 255));
+        p.emplace_back(para->fractionStops_[i].second);
     }
     auto shader = SkGradientShader::MakeLinear(pts, &c[0], &p[0], para->fractionStops_.size(), SkTileMode::kClamp);
     return shader;
@@ -394,8 +366,8 @@ sk_sp<SkShader> RSPropertiesPainter::MakeHorizontalMeanBlurShader(float radiusIn
 {
     const char* prog = R"(
         uniform half r;
-        uniform shader input1;
-        uniform shader input2;
+        uniform shader imageShader;
+        uniform shader gradientShader;
         half4 meanFilter(float2 coord, half radius)
         {
             half4 sum = vec4(0.0);
@@ -406,19 +378,19 @@ sk_sp<SkShader> RSPropertiesPainter::MakeHorizontalMeanBlurShader(float radiusIn
                 }
                 if (abs(x) < radius) {
                     div += 1;
-                    sum += input1.eval(coord + float2(x, 0));
+                    sum += imageShader.eval(coord + float2(x, 0));
                 }
             }
             return half4(sum.xyz / div, 1.0);
         }
         half4 main(float2 coord)
         {
-            float val = clamp(r * input2.eval(coord).a, 1.0, r);
+            float val = clamp(r * gradientShader.eval(coord).a, 1.0, r);
             return meanFilter(coord, val);
         }
     )";
     auto [effect, err] = SkRuntimeEffect::MakeForShader(SkString(prog));
-    sk_sp<SkShader> children[] = {/*input1*/ shader, /*input2*/ gradientShader};
+    sk_sp<SkShader> children[] = {/*imageShader*/ shader, /*gradientShader*/ gradientShader};
     return effect->makeShader(/*uniforms*/ SkData::MakeWithCopy(&radiusIn, sizeof(radiusIn)),
                                      /*children*/ children,  /*childCount*/ 2, /*Matrix*/ nullptr, /*isOpaque*/ false);
 }
@@ -427,8 +399,8 @@ sk_sp<SkShader> RSPropertiesPainter::MakeVerticalMeanBlurShader(float radiusIn, 
 {
     const char* prog = R"(
         uniform half r;
-        uniform shader input1;
-        uniform shader input2;
+        uniform shader imageShader;
+        uniform shader gradientShader;
         half4 meanFilter(float2 coord, half radius)
         {
             half4 sum = vec4(0.0);
@@ -439,19 +411,19 @@ sk_sp<SkShader> RSPropertiesPainter::MakeVerticalMeanBlurShader(float radiusIn, 
                 }
                 if (abs(y) < radius) {
                     div += 1;
-                    sum += input1.eval(coord + float2(0, y));
+                    sum += imageShader.eval(coord + float2(0, y));
                 }
             }
             return half4(sum.xyz / div, 1.0);
         }
         half4 main(float2 coord)
         {
-            float val = clamp(r * input2.eval(coord).a, 1.0, r);
+            float val = clamp(r * gradientShader.eval(coord).a, 1.0, r);
             return meanFilter(coord, val);
         }
     )";
     auto [effect, err] = SkRuntimeEffect::MakeForShader(SkString(prog));
-    sk_sp<SkShader> children[] = {/*input1*/ shader, /*input2*/ gradientShader};
+    sk_sp<SkShader> children[] = {/*imageShader*/ shader, /*gradientShader*/ gradientShader};
     return effect->makeShader(/*uniforms*/ SkData::MakeWithCopy(&radiusIn, sizeof(radiusIn)),
                                      /*children*/ children,  /*childCount*/ 2, /*Matrix*/ nullptr, /*isOpaque*/ false);
 }
@@ -489,27 +461,27 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(const RSProperties& prope
     }
     float radius = para->blurRadius_ / 2;
     auto imageShader = canvas.GetSurface()->makeImageSnapshot(clipIPadding)->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
-    auto shader1 = MakeHorizontalMeanBlurShader(radius, imageShader, alphaGradientShader);
+    auto shader = MakeHorizontalMeanBlurShader(radius, imageShader, alphaGradientShader);
     SkPaint paint;
-    paint.setShader(shader1);
+    paint.setShader(shader);
     canvas.drawPaint(paint);
 
-    auto imageShader2 = canvas.GetSurface()->makeImageSnapshot(clipIPadding)->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
-    auto shader2 = MakeVerticalMeanBlurShader(radius, imageShader2, alphaGradientShader);
+    imageShader = canvas.GetSurface()->makeImageSnapshot(clipIPadding)->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
+    shader = MakeVerticalMeanBlurShader(radius, imageShader, alphaGradientShader);
     SkPaint paint2;
-    paint2.setShader(shader2);
+    paint2.setShader(shader);
     canvas.drawPaint(paint2);
 
-    auto imageShader3 = canvas.GetSurface()->makeImageSnapshot(clipIPadding)->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
-    auto shader3 = MakeHorizontalMeanBlurShader(radius, imageShader3, alphaGradientShader);
+    imageShader = canvas.GetSurface()->makeImageSnapshot(clipIPadding)->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
+    shader = MakeHorizontalMeanBlurShader(radius, imageShader, alphaGradientShader);
     SkPaint paint3;
-    paint3.setShader(shader3);
+    paint3.setShader(shader);
     canvas.drawPaint(paint3);
 
-    auto imageShader4 = canvas.GetSurface()->makeImageSnapshot(clipIPadding)->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
-    auto shader4 = MakeVerticalMeanBlurShader(radius, imageShader4, alphaGradientShader);
+    imageShader = canvas.GetSurface()->makeImageSnapshot(clipIPadding)->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
+    shader = MakeVerticalMeanBlurShader(radius, imageShader, alphaGradientShader);
     SkPaint paint4;
-    paint4.setShader(shader4);
+    paint4.setShader(shader);
     canvas.drawPaint(paint4);
 }
 

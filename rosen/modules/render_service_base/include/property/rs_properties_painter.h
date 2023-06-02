@@ -48,9 +48,6 @@ public:
     static void DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas,
         std::shared_ptr<RSSkiaFilter>& filter, const std::unique_ptr<SkRect>& rect = nullptr,
         SkSurface* sKSurface = nullptr);
-    static sk_sp<SkShader> MakeAlphaGradientShader(const SkRect clipBounds, const std::shared_ptr<RSLinearGradientBlurPara> para);
-    static sk_sp<SkShader> MakeHorizontalMeanBlurShader(float radiusIn, sk_sp<SkShader> shader, sk_sp<SkShader>gradientShader);
-    static sk_sp<SkShader>MakeVerticalMeanBlurShader(float radiusIn, sk_sp<SkShader> shader, sk_sp<SkShader>gradientShader);
     static void DrawLinearGradientBlurFilter(const RSProperties& properties, 
                                 RSPaintFilterCanvas& canvas, const std::unique_ptr<SkRect>& rect);
     static void DrawForegroundColor(const RSProperties& properties, SkCanvas& canvas);
@@ -73,6 +70,9 @@ private:
     inline static int g_blurCnt = 0;
     static void DrawColorfulShadowInner(const RSProperties& properties, RSPaintFilterCanvas& canvas, SkPath& path);
     static void DrawShadowInner(const RSProperties& properties, RSPaintFilterCanvas& canvas, SkPath& path);
+    static sk_sp<SkShader> MakeAlphaGradientShader(const SkRect clipBounds, const std::shared_ptr<RSLinearGradientBlurPara> para);
+    static sk_sp<SkShader> MakeHorizontalMeanBlurShader(float radiusIn, sk_sp<SkShader> shader, sk_sp<SkShader> gradientShader);
+    static sk_sp<SkShader>MakeVerticalMeanBlurShader(float radiusIn, sk_sp<SkShader> shader, sk_sp<SkShader> gradientShader);
 #else
     static void Clip(Drawing::Canvas& canvas, RectF rect);
     static void SetBgAntiAlias(bool forceBgAntiAlias);
