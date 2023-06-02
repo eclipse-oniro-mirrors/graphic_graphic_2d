@@ -631,6 +631,13 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     if (isQuickSkipPreparationEnabled_ && CheckIfSurfaceRenderNodeStatic(node)) {
         return;
     }
+    if (isUIFirst_) {
+        auto skipNodeMap = RSMainThread::Instance()->GetCacheCmdSkippedNodes();
+        if (skipNodeMap.count(node.GetId()) != 0) {
+            RS_TRACE_NAME(node.GetName() + " PreparedNodes cacheCmdSkiped");
+            return;
+        }
+    }
     node.CleanDstRectChanged();
     node.ApplyModifiers();
     bool dirtyFlag = dirtyFlag_;
@@ -1720,11 +1727,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         }
         unpairedTransitionNodes_.clear();
     }
-#ifdef RS_ENABLE_GL
-    if (isUIFirst_) {
-        RSParallelRenderManager::Instance()->WaitProcessEnd();
-    }
-#endif
     RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode end");
 }
 
