@@ -21,16 +21,19 @@ namespace OHOS {
 namespace Rosen {
 
 RSPaintFilterCanvas::RSPaintFilterCanvas(SkCanvas* canvas, float alpha)
-    : SkPaintFilterCanvas(canvas), alphaStack_({ std::clamp(alpha, 0.f, 1.f) }), // construct stack with given alpha
+    : SkPaintFilterCanvas(canvas),
+      alphaStack_({ std::clamp(alpha, 0.f, 1.f) }), // construct stack with given alpha
       // Temporary fix, this default color should be 0x000000FF, fix this after foreground color refactor
-      envStack_({ Env({ Color(0xFF000000) }) }) // construct stack with default foreground color
+      envStack_({ Env({ Color(0xFF000000) }) }), // construct stack with default foreground color
+      effectStack_({ CacheEffectData {} })
 {}
 
 RSPaintFilterCanvas::RSPaintFilterCanvas(SkSurface* skSurface, float alpha)
     : SkPaintFilterCanvas(skSurface ? skSurface->getCanvas() : nullptr), skSurface_(skSurface),
       alphaStack_({ std::clamp(alpha, 0.f, 1.f) }), // construct stack with given alpha
       // Temporary fix, this default color should be 0x000000FF, fix this after foreground color refactor
-      envStack_({ Env({ Color(0xFF000000) }) }) // construct stack with default foreground color
+      envStack_({ Env({ Color(0xFF000000) }) }), // construct stack with default foreground color
+      effectStack_({ CacheEffectData {} })
 {}
 
 SkSurface* RSPaintFilterCanvas::GetSurface() const
@@ -288,5 +291,35 @@ SkCanvas::SaveLayerStrategy RSPaintFilterCanvas::getSaveLayerStrategy(const Save
     }
     return SkPaintFilterCanvas::getSaveLayerStrategy(tmpRec);
 }
+
+#ifndef USE_ROSEN_DRAWING
+void RSPaintFilterCanvas::SetEffectData(const CacheEffectData& effectData)
+{
+    effectStack_.top() = effectData;
+}
+
+void RSPaintFilterCanvas::SetChildrenPath(const SkPath& childrenPath)
+{
+    effectStack_.top().childrenPath_ = childrenPath;
+}
+
+const CacheEffectData& RSPaintFilterCanvas::GetEffectData() const
+{
+    return effectStack_.top();
+}
+
+void RSPaintFilterCanvas::SaveEffectData()
+{
+    effectStack_.push({});
+}
+
+void RSPaintFilterCanvas::RestoreEffectData()
+{
+    if (effectStack_.size() < 1u) {
+        return;
+    }
+    effectStack_.pop();
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

@@ -66,7 +66,14 @@ public:
     static void DrawSpherize(const RSProperties& properties, RSPaintFilterCanvas& canvas,
         const sk_sp<SkSurface>& spherizeSurface);
 
-    static void DrawColorFilter(const RSProperties& properties, SkCanvas* canvas);
+    // EffectView and useEffect
+    static void DrawBackgroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas, const SkIRect& rect);
+    static void DrawForegroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas);
+    static void ApplyBackgroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas);
+
+    // Foreground Color filter
+    static void DrawColorFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas);
+
 private:
     inline static int g_blurCnt = 0;
     static void DrawColorfulShadowInner(const RSProperties& properties, RSPaintFilterCanvas& canvas, SkPath& path);

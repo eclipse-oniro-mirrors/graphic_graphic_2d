@@ -265,6 +265,9 @@ public:
 
     const sk_sp<SkColorFilter> GetColorFilter() const;
 
+    void SetUseEffect(bool useEffect);
+    bool GetUseEffect() const;
+
 private:
     void Reset();
     void SetDirty();
@@ -289,6 +292,7 @@ private:
     bool contentDirty_ = false;
 
     bool hasBounds_ = false;
+    bool useEffect_ = false;
 
     Gravity frameGravity_ = Gravity::DEFAULT;
 
