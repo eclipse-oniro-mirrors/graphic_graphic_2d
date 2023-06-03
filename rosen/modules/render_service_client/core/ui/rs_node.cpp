@@ -798,7 +798,8 @@ void RSNode::SetFilter(const std::shared_ptr<RSFilter>& filter)
 
 void RSNode::SetLinearGradientBlurPara(const std::shared_ptr<RSLinearGradientBlurPara>& para)
 {
-    SetProperty<RSLinearGradientBlurParaModifier, RSProperty<std::shared_ptr<RSLinearGradientBlurPara>>>(RSModifierType::LINEAR_GRADIENT_BLUR_PARA, para);
+    SetProperty<RSLinearGradientBlurParaModifier, RSProperty<std::shared_ptr<RSLinearGradientBlurPara>>>
+                                                                    (RSModifierType::LINEAR_GRADIENT_BLUR_PARA, para);
 }
 
 void RSNode::SetCompositingFilter(const std::shared_ptr<RSFilter>& compositingFilter) {}
