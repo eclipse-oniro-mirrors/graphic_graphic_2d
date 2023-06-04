@@ -418,6 +418,15 @@ void RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWithUni(RSSurfaceRenderNod
             skRectPtr->setXYWH(0, 0, property.GetBoundsWidth(), property.GetBoundsHeight());
             RSPropertiesPainter::DrawFilter(property, *canvas_, filter, skRectPtr, canvas_->GetSurface());
         }
+        auto para = property.GetLinearGradientBlurPara();
+        if (para != nullptr && para->blurRadius_ > 0) {
+            auto skRectPtr = std::make_unique<SkRect>();
+            skRectPtr->setXYWH(0, 0, property.GetBoundsWidth(), property.GetBoundsHeight());
+            RSPropertiesPainter::DrawLinearGradientBlurFilter(property, *canvas_, skRectPtr);
+        }
+    }
+
+    if (isSelfDrawingSurface) {
         canvas_->restore();
     }
     if (node.IsAppWindow() && RSColdStartManager::Instance().IsColdStartThreadRunning(node.GetId()) &&
@@ -494,6 +503,12 @@ void RSSurfaceCaptureVisitor::CaptureSurfaceInDisplayWithUni(RSSurfaceRenderNode
         auto skRectPtr = std::make_unique<SkRect>();
         skRectPtr->setXYWH(0, 0, property.GetBoundsWidth(), property.GetBoundsHeight());
         RSPropertiesPainter::DrawFilter(property, *canvas_, filter, skRectPtr, canvas_->GetSurface());
+    }
+    auto para = property.GetLinearGradientBlurPara();
+    if (para != nullptr && para->blurRadius_ > 0) {
+        auto skRectPtr = std::make_unique<SkRect>();
+        skRectPtr->setXYWH(0, 0, property.GetBoundsWidth(), property.GetBoundsHeight());
+        RSPropertiesPainter::DrawLinearGradientBlurFilter(property, *canvas_, skRectPtr);
     }
     DrawWatermarkIfNeed(property.GetBoundsWidth(), property.GetBoundsHeight());
 }
