@@ -136,7 +136,7 @@ void RSRenderSpringAnimation::OnAnimate(float fraction)
 std::tuple<bool, bool> RSRenderSpringAnimation::OnAnimateByTime(float time)
 {
     // keep the mapped time, this will be used to calculate instantaneous velocity
-    prevMappedTime_ = time;
+    prevMappedTime_ = time * MILLISECOND_TO_SECOND;
 
     bool isRepeatFinished = false;
     bool isFinished = true;
