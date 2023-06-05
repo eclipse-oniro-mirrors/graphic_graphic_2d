@@ -272,10 +272,16 @@ Occlusion::Region RSUniRenderUtil::AlignedDirtyRegion(const Occlusion::Region& d
     return alignedRegion;
 }
 
-bool RSUniRenderUtil::HandleSubThreadNode(const RSRenderNode& node, RSPaintFilterCanvas& canvas)
+bool RSUniRenderUtil::HandleSubThreadNode(RSRenderNode& node, RSPaintFilterCanvas& canvas)
 {
     if (node.IsMainThreadNode()) {
         return false;
+    }
+    if (!node.HasCachedTexture()) {
+        RS_TRACE_NAME_FMT("HandleSubThreadNode wait %" PRIu64 "", node.GetId());
+        RSParallelRenderManager::Instance()->WaitNodeTask(node.GetId());
+        node.UpdateCompletedCacheSurface();
+        RSParallelRenderManager::Instance()->SaveCacheTexture(node);
     }
     RS_TRACE_NAME_FMT("RSUniRenderUtil::HandleSubThreadNode %" PRIu64 "", node.GetId());
     node.DrawCacheSurface(canvas, true);

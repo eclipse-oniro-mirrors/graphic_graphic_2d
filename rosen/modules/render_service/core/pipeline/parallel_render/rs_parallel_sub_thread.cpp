@@ -282,6 +282,8 @@ void RSParallelSubThread::RenderCache()
         }
         // flag CacheSurfaceProcessed is used for cacheCmdskippedNodes collection in rs_mainThread
         surfaceNodePtr->SetCacheSurfaceProcessedStatus(false);
+
+        bool needNotify = !surfaceNodePtr->HasCachedTexture();
         node->Process(visitor_);
 #ifndef NEW_SKIA
         auto skCanvas = surfaceNodePtr->GetCacheSurface() ? surfaceNodePtr->GetCacheSurface()->getCanvas() : nullptr;
@@ -296,6 +298,10 @@ void RSParallelSubThread::RenderCache()
         surfaceNodePtr->GetCacheSurface()->flushAndSubmit(false);
 #endif
         surfaceNodePtr->SetCacheSurfaceProcessedStatus(true);
+
+        if (needNotify) {
+            RSParallelRenderManager::Instance()->NodeTaskNotify(node->GetId());
+        }
     }
     eglSync_ = eglCreateSyncKHR(renderContext_->GetEGLDisplay(), EGL_SYNC_FENCE_KHR, nullptr);
 #endif
