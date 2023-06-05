@@ -25,6 +25,20 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+constexpr int32_t INDEX_2 = 2;
+constexpr int32_t INDEX_4 = 4;
+constexpr int32_t INDEX_5 = 5;
+constexpr int32_t INDEX_6 = 6;
+constexpr int32_t INDEX_7 = 7;
+constexpr int32_t INDEX_9 = 9;
+constexpr int32_t INDEX_10 = 10;
+constexpr int32_t INDEX_11 = 11;
+constexpr int32_t INDEX_12 = 12;
+constexpr int32_t INDEX_14 = 14;
+constexpr int32_t INDEX_18 = 18;
+}
+
 RSProperties::RSProperties()
 {
     boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
@@ -1452,7 +1466,6 @@ static bool GreatOrEqual(double left, double right)
 
 const sk_sp<SkColorFilter> RSProperties::GetColorFilter() const
 {
-    // return colorMatrix_;
     if (!grayScale_ && !brightness_ && !contrast_ && !saturate_ && !sepia_ && !invert_ && !hueRotate_ && !colorBlend_) {
         return nullptr;
     }
@@ -1463,105 +1476,104 @@ const sk_sp<SkColorFilter> RSProperties::GetColorFilter() const
     sk_sp<SkColorFilter> tmpFilter = nullptr;
     if (grayScale_.has_value() && GreatNotEqual(*grayScale_, 0.f)) {
         auto grayScale = grayScale_.value();
-        float matrix[20] = { 0.0f };
-        matrix[0] = matrix[5] = matrix[10] = 0.2126f * grayScale;
-        matrix[1] = matrix[6] = matrix[11] = 0.7152f * grayScale;
-        matrix[2] = matrix[7] = matrix[12] = 0.0722f * grayScale;
-        matrix[18] = 1.0 * grayScale;
+        float matrix[20] = { 0.0f }; // 20 : matrix size
+        matrix[0] = matrix[INDEX_5] = matrix[INDEX_10] = 0.2126f * grayScale; // 0.2126 : gray scale coefficient
+        matrix[1] = matrix[INDEX_6] = matrix[INDEX_11] = 0.7152f * grayScale; // 0.7152 : gray scale coefficient
+        matrix[INDEX_2] = matrix[INDEX_7] = matrix[INDEX_12] = 0.0722f * grayScale; // 0.0722 : gray scale coefficient
+        matrix[INDEX_18] = 1.0 * grayScale;
         tmpFilter = SkColorFilters::Matrix(matrix);
         filter = tmpFilter->makeComposed(filter);
     }
     if (brightness_.has_value() && !NearEqual(*brightness_, 1.0)) {
         auto brightness = brightness_.value();
-        float matrix[20] = { 0.0f };
+        float matrix[20] = { 0.0f }; // 20 : matrix size
         // shift brightness to (-1, 1)
         brightness = brightness - 1;
-        matrix[0] = matrix[6] = matrix[12] = matrix[18] = 1.0f;
-        matrix[4] = matrix[9] = matrix[14] = brightness;
+        matrix[0] = matrix[INDEX_6] = matrix[INDEX_12] = matrix[INDEX_18] = 1.0f;
+        matrix[INDEX_4] = matrix[INDEX_9] = matrix[INDEX_14] = brightness;
         tmpFilter = SkColorFilters::Matrix(matrix);
         filter = tmpFilter->makeComposed(filter);
     }
     if (contrast_.has_value() && !NearEqual(*contrast_, 1.0)) {
         auto contrast = contrast_.value();
-        float matrix[20] = { 0.0f };
-        matrix[0] = matrix[6] = matrix[12] = contrast;
-        matrix[4] = matrix[9] = matrix[14] = 128 * (1 - contrast) / 255;
-        matrix[18] = 1.0f;
+        float matrix[20] = { 0.0f }; // 20 : matrix size
+        matrix[0] = matrix[INDEX_6] = matrix[INDEX_12] = contrast;
+        matrix[INDEX_4] = matrix[INDEX_9] = matrix[INDEX_14] = 128 * (1 - contrast) / 255;
+        matrix[INDEX_18] = 1.0f;
         tmpFilter = SkColorFilters::Matrix(matrix);
         filter = tmpFilter->makeComposed(filter);
     }
     if (saturate_.has_value() && !NearEqual(*saturate_, 1.0) && GreatOrEqual(*saturate_, 0.0)) {
         auto saturate = saturate_.value();
-        float matrix[20] = { 0.0f };
-        matrix[0] = 0.3086f * (1 - saturate) + saturate;
-        matrix[1] = matrix[11] = 0.6094f * (1 - saturate);
-        matrix[2] = matrix[7] = 0.0820f * (1 - saturate);
-        matrix[5] = matrix[10] = 0.3086f * (1 - saturate);
-        matrix[6] = 0.6094f * (1 - saturate) + saturate;
-        matrix[12] = 0.0820f * (1 - saturate) + saturate;
-        matrix[18] = 1.0f;
+        float matrix[20] = { 0.0f }; // 20 : matrix size
+        matrix[0] = 0.3086f * (1 - saturate) + saturate; // 0.3086 : saturate coefficient
+        matrix[1] = matrix[INDEX_11] = 0.6094f * (1 - saturate); // 0.6094 : saturate coefficient
+        matrix[INDEX_2] = matrix[INDEX_7] = 0.0820f * (1 - saturate); // 0.0820 : saturate coefficient
+        matrix[INDEX_5] = matrix[INDEX_10] = 0.3086f * (1 - saturate); // 0.3086 : saturate coefficient
+        matrix[INDEX_6] = 0.6094f * (1 - saturate) + saturate; // 0.6094 : saturate coefficient
+        matrix[INDEX_12] = 0.0820f * (1 - saturate) + saturate; // 0.0820 : saturate coefficient
+        matrix[INDEX_18] = 1.0f;
         tmpFilter = SkColorFilters::Matrix(matrix);
         filter = tmpFilter->makeComposed(filter);
     }
     if (sepia_.has_value() && GreatNotEqual(*sepia_, 0.0)) {
         auto sepia = sepia_.value();
-        float matrix[20] = { 0.0f };
+        float matrix[20] = { 0.0f }; // 20 : matrix size
         matrix[0] = 0.393f * sepia;
         matrix[1] = 0.769f * sepia;
-        matrix[2] = 0.189f * sepia;
+        matrix[INDEX_2] = 0.189f * sepia;
 
-        matrix[5] = 0.349f * sepia;
-        matrix[6] = 0.686f * sepia;
-        matrix[7] = 0.168f * sepia;
+        matrix[INDEX_5] = 0.349f * sepia;
+        matrix[INDEX_6] = 0.686f * sepia;
+        matrix[INDEX_7] = 0.168f * sepia;
 
-        matrix[10] = 0.272f * sepia;
-        matrix[11] = 0.534f * sepia;
-        matrix[12] = 0.131f * sepia;
-        matrix[18] = 1.0f * sepia;
+        matrix[INDEX_10] = 0.272f * sepia;
+        matrix[INDEX_11] = 0.534f * sepia;
+        matrix[INDEX_12] = 0.131f * sepia;
+        matrix[INDEX_18] = 1.0f * sepia;
         tmpFilter = SkColorFilters::Matrix(matrix);
         filter = tmpFilter->makeComposed(filter);
     }
     if (invert_.has_value() && GreatNotEqual(*invert_, 0.0)) {
         auto invert = invert_.value();
-        float matrix[20] = { 0.0f };
+        float matrix[20] = { 0.0f }; // 20 : matrix size
         if (invert > 1.0) {
             invert = 1.0;
         }
         // complete color invert when dstRGB = 1 - srcRGB
         // map (0, 1) to (1, -1)
-        matrix[0] = matrix[6] = matrix[12] = 1.0 - 2.0 * invert;
-        matrix[18] = 1.0f;
+        matrix[0] = matrix[INDEX_6] = matrix[INDEX_12] = 1.0 - 2.0 * invert;
+        matrix[INDEX_18] = 1.0f;
         // invert = 0.5 -> RGB = (0.5, 0.5, 0.5) -> image completely gray
-        matrix[4] = matrix[9] = matrix[14] = invert;
+        matrix[INDEX_4] = matrix[INDEX_9] = matrix[INDEX_14] = invert;
         tmpFilter = SkColorFilters::Matrix(matrix);
         filter = tmpFilter->makeComposed(filter);
     }
     if (hueRotate_.has_value() && GreatNotEqual(*hueRotate_, 0.0)) {
         auto hueRotate = hueRotate_.value();
-        while (hueRotate >= 360) {
-            hueRotate -= 360;
+        while (hueRotate >= 360) { // 360 : degree
+            hueRotate -= 360; // 360 : degree
         }
-        float matrix[20] = { 0.0f };
-        int32_t type = hueRotate / 120;
-        float N = (hueRotate - 120 * type) / 120;
+        float matrix[20] = { 0.0f }; // 20 : matrix size
+        int32_t type = hueRotate / 120; // 120 : degree
+        float N = (hueRotate - 120 * type) / 120; // 120 : degree
         switch (type) {
             case 0:
                 // color change = R->G, G->B, B->R
-                matrix[2] = matrix[5] = matrix[11] = N;
-                matrix[0] = matrix[6] = matrix[12] = 1 - N;
-                matrix[18] = 1.0f;
+                matrix[INDEX_2] = matrix[INDEX_5] = matrix[INDEX_11] = N;
+                matrix[0] = matrix[INDEX_6] = matrix[INDEX_12] = 1 - N;
+                matrix[INDEX_18] = 1.0f;
                 break;
             case 1:
                 // compare to original: R->B, G->R, B->G
-                matrix[1] = matrix[7] = matrix[10] = N;
-                matrix[2] = matrix[5] = matrix[11] = 1 - N;
-                matrix[18] = 1.0f;
+                matrix[1] = matrix[INDEX_7] = matrix[INDEX_10] = N;
+                matrix[INDEX_2] = matrix[INDEX_5] = matrix[INDEX_11] = 1 - N;
+                matrix[INDEX_18] = 1.0f;
                 break;
-            case 2:
-                // back to normal color
-                matrix[0] = matrix[6] = matrix[12] = N;
-                matrix[1] = matrix[7] = matrix[10] = 1 - N;
-                matrix[18] = 1.0f;
+            case 2: // 2: back to normal color
+                matrix[0] = matrix[INDEX_6] = matrix[INDEX_12] = N;
+                matrix[1] = matrix[INDEX_7] = matrix[INDEX_10] = 1 - N;
+                matrix[INDEX_18] = 1.0f;
                 break;
             default:
                 break;
