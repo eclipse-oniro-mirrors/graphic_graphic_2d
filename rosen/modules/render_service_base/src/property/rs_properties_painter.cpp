@@ -558,7 +558,8 @@ void RSPropertiesPainter::DrawShadowInner(const RSProperties& properties, RSPain
         SkPaint paint;
         paint.setColor(spotColor.AsArgbInt());
         paint.setAntiAlias(true);
-        paint.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, properties.GetShadowRadius()));
+        paint.setImageFilter(SkImageFilters::Blur(
+            properties.GetShadowRadius(), properties.GetShadowRadius(), SkTileMode::kDecal, nullptr));
         canvas.drawPath(skPath, paint);
     }
 }
