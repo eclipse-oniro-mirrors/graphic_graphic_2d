@@ -740,6 +740,10 @@ sk_sp<SkShader> RSPropertiesPainter::MakeVerticalMeanBlurShader(
 void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     const RSProperties& properties, RSPaintFilterCanvas& canvas, const std::unique_ptr<SkRect>& rect)
 {
+    SkSurface* skSurface = canvas.GetSurface();
+    if (skSurface == nullptr) {
+        return;
+    }
     SkAutoCanvasRestore acr(&canvas, true);
     if (rect != nullptr) {
         canvas.clipRect((*rect), true);
@@ -747,9 +751,6 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
         canvas.clipPath(properties.GetClipBounds()->GetSkiaPath(), true);
     } else {
         canvas.clipRRect(RRect2SkRRect(properties.GetRRect()), true);
-    }
-    if (canvas.GetSurface() == nullptr) {
-        return;
     }
 
     canvas.resetMatrix();
@@ -763,39 +764,46 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
         return;
     }
     float radius = para->blurRadius_ / 2;
-    auto imageShader = canvas.GetSurface()->makeImageSnapshot(clipIPadding)
-                                            ->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
-    
-    auto visibleIRect = canvas.GetVisibleRect().round();
-    if (visibleIRect.intersect(clipBounds)) {
-        canvas.clipRect(SkRect::Make(visibleIRect), true);
-    }
 
+    auto image = skSurface->makeImageSnapshot();
+    if (image == nullptr) {
+        return;
+    }
+    auto imageShader = image->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
     auto shader = MakeHorizontalMeanBlurShader(radius, imageShader, alphaGradientShader);
     SkPaint paint;
     paint.setShader(shader);
-    canvas.drawPaint(paint);
+    canvas.drawRect(SkRect::Make(clipIPadding), paint);
 
-    imageShader = canvas.GetSurface()->makeImageSnapshot(clipIPadding)
-                                            ->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
+    image = skSurface->makeImageSnapshot();
+    if (image == nullptr) {
+        return;
+    }
+    imageShader = image->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
     shader = MakeVerticalMeanBlurShader(radius, imageShader, alphaGradientShader);
     SkPaint paint2;
     paint2.setShader(shader);
-    canvas.drawPaint(paint2);
+    canvas.drawRect(SkRect::Make(clipIPadding), paint2);
 
-    imageShader = canvas.GetSurface()->makeImageSnapshot(clipIPadding)
-                                            ->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
+    image = skSurface->makeImageSnapshot();
+    if (image == nullptr) {
+        return;
+    }
+    imageShader = image->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
     shader = MakeHorizontalMeanBlurShader(radius, imageShader, alphaGradientShader);
     SkPaint paint3;
     paint3.setShader(shader);
-    canvas.drawPaint(paint3);
+    canvas.drawRect(SkRect::Make(clipIPadding), paint3);
 
-    imageShader = canvas.GetSurface()->makeImageSnapshot(clipIPadding)
-                                            ->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
+    image = skSurface->makeImageSnapshot();
+    if (image == nullptr) {
+        return;
+    }
+    imageShader = image->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
     shader = MakeVerticalMeanBlurShader(radius, imageShader, alphaGradientShader);
     SkPaint paint4;
     paint4.setShader(shader);
-    canvas.drawPaint(paint4);
+    canvas.drawRect(SkRect::Make(clipIPadding), paint4);
 }
 
 void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas,
