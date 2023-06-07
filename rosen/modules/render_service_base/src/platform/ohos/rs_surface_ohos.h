@@ -47,7 +47,7 @@ protected:
     sptr<Surface> producer_;
     RenderContext* context_ = nullptr;
     GraphicColorGamut colorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
-    int32_t pixelFormat_ = PIXEL_FMT_RGBA_8888;
+    int32_t pixelFormat_ = GRAPHIC_PIXEL_FMT_RGBA_8888;
     uint64_t bufferUsage_ = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA;
 };
 
