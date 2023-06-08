@@ -141,6 +141,8 @@ public:
 
     int32_t GetScreenType(ScreenId id, RSScreenType& screenType);
 
+    bool GetBitmap(NodeId id, SkBitmap& bitmap);
+
     int32_t SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval);
 
     int32_t RegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback);

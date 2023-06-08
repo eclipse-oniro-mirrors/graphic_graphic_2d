@@ -204,6 +204,17 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SkRegion& region)
     return {};
 }
 
+// SkBitmap
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const SkBitmap& val)
+{
+    return {};
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SkBitmap& val)
+{
+    return {};
+}
+
 // SKPath
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const SkPath& val)
 {

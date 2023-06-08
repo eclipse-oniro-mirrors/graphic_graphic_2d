@@ -593,6 +593,21 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             reply.WriteUint32(type);
             break;
         }
+        case GET_BITMAP: {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            NodeId id = data.ReadUint64();
+            SkBitmap bm;
+            bool result = GetBitmap(id, bm);
+            reply.WriteBool(result);
+            if (result) {
+                RSMarshallingHelper::Marshalling(reply, bm);
+            }
+            break;
+        }
         case SET_SCREEN_SKIP_FRAME_INTERVAL: {
             auto token = data.ReadInterfaceToken();
             if (token != RSIRenderServiceConnection::GetDescriptor()) {
