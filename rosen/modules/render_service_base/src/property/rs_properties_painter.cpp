@@ -600,6 +600,7 @@ void RSPropertiesPainter::DrawShadowInner(
 #endif
 
 #ifndef USE_ROSEN_DRAWING
+#ifdef NEW_SKIA
 sk_sp<SkShader> RSPropertiesPainter::MakeAlphaGradientShader(
     const SkRect clipBounds, const std::shared_ptr<RSLinearGradientBlurPara> para)
 {
@@ -661,7 +662,6 @@ sk_sp<SkShader> RSPropertiesPainter::MakeAlphaGradientShader(
     return shader;
 }
 
-#ifdef NEW_SKIA
 sk_sp<SkShader> RSPropertiesPainter::MakeHorizontalMeanBlurShader(
     float radiusIn, sk_sp<SkShader> shader, sk_sp<SkShader>gradientShader)
 {
