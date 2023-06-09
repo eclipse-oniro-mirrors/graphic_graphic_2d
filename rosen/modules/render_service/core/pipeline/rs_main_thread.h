@@ -155,6 +155,10 @@ public:
     sk_sp<SkImage> GetWatermarkImg();
     bool GetWatermarkFlag();
     void AddActivePid(pid_t pid);
+    uint64_t GetFrameCount() const
+    {
+        return frameCount_;
+    }
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -329,6 +333,8 @@ private:
     std::list<std::shared_ptr<RSSurfaceRenderNode>> subThreadNodes_;
     std::unordered_map<NodeId, bool> cacheCmdSkippedNodes_;
     std::unordered_map<pid_t, std::pair<std::vector<NodeId>, bool>> cacheCmdSkippedInfo_;
+    std::atomic<uint64_t> frameCount_ = 0;
+    std::set<std::shared_ptr<RSBaseRenderNode>> oldDisplayChildren_;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD
