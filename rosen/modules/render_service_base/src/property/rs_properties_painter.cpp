@@ -850,6 +850,8 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
     filter->PreProcess(imageSnapshot);
     canvas.resetMatrix();
     auto visibleIRect = canvas.GetVisibleRect().round();
+    canvas.SaveAlpha();
+    canvas.SetAlpha(1.0);
     if (visibleIRect.intersect(clipIBounds)) {
         canvas.clipRect(SkRect::Make(visibleIRect));
         auto visibleIPadding = visibleIRect.makeOutset(-1, -1);
@@ -873,6 +875,7 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
             SkRect::Make(clipIPadding), &paint);
 #endif
     }
+    canvas.RestoreAlpha();
     filter->PostProcess(canvas);
 }
 #else
