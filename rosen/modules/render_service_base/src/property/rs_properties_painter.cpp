@@ -33,6 +33,7 @@
 #include "include/effects/Sk1DPathEffect.h"
 #ifdef NEW_SKIA
 #include "include/effects/SkImageFilters.h"
+#include "include/effects/SkRuntimeEffect.h"
 #else
 #include "include/effects/SkBlurImageFilter.h"
 #endif
@@ -40,7 +41,6 @@
 #include "include/effects/SkDashPathEffect.h"
 #include "include/effects/SkGradientShader.h"
 #include "include/effects/SkLumaColorFilter.h"
-#include "include/effects/SkRuntimeEffect.h"
 #include "include/utils/SkShadowUtils.h"
 #else
 #include "draw/canvas.h"
@@ -601,6 +601,7 @@ void RSPropertiesPainter::DrawShadowInner(
 #endif
 
 #ifndef USE_ROSEN_DRAWING
+#ifdef NEW_SKIA
 sk_sp<SkShader> RSPropertiesPainter::MakeAlphaGradientShader(
     const SkRect clipBounds, const std::shared_ptr<RSLinearGradientBlurPara> para)
 {
@@ -737,10 +738,12 @@ sk_sp<SkShader> RSPropertiesPainter::MakeVerticalMeanBlurShader(
     return effect->makeShader(SkData::MakeWithCopy(
         &radiusIn, sizeof(radiusIn)), children, childCount, nullptr, false);
 }
+#endif
 
 void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     const RSProperties& properties, RSPaintFilterCanvas& canvas, const std::unique_ptr<SkRect>& rect)
 {
+#ifdef NEW_SKIA
     SkSurface* skSurface = canvas.GetSurface();
     if (skSurface == nullptr) {
         return;
@@ -754,7 +757,6 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
         canvas.clipRRect(RRect2SkRRect(properties.GetRRect()), true);
     }
 
-    canvas.resetMatrix();
     auto clipBounds = canvas.getDeviceClipBounds();
     auto clipIPadding = clipBounds.makeOutset(-1, -1);
 
@@ -766,7 +768,7 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     }
     float radius = para->blurRadius_ / 2;
 
-    auto image = skSurface->makeImageSnapshot();
+    auto image = skSurface->makeImageSnapshot(clipIPadding);
     if (image == nullptr) {
         return;
     }
@@ -774,9 +776,11 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     auto shader = MakeHorizontalMeanBlurShader(radius, imageShader, alphaGradientShader);
     SkPaint paint;
     paint.setShader(shader);
-    canvas.drawRect(SkRect::Make(clipIPadding), paint);
+    canvas.resetMatrix();
+    canvas.translate(clipIPadding.left(), clipIPadding.top());
+    canvas.drawRect(SkRect::Make(clipIPadding.makeOffset(-clipIPadding.left(), -clipIPadding.top())), paint);
 
-    image = skSurface->makeImageSnapshot();
+    image = skSurface->makeImageSnapshot(clipIPadding);
     if (image == nullptr) {
         return;
     }
@@ -784,9 +788,9 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     shader = MakeVerticalMeanBlurShader(radius, imageShader, alphaGradientShader);
     SkPaint paint2;
     paint2.setShader(shader);
-    canvas.drawRect(SkRect::Make(clipIPadding), paint2);
+    canvas.drawRect(SkRect::Make(clipIPadding.makeOffset(-clipIPadding.left(), -clipIPadding.top())), paint2);
 
-    image = skSurface->makeImageSnapshot();
+    image = skSurface->makeImageSnapshot(clipIPadding);
     if (image == nullptr) {
         return;
     }
@@ -794,9 +798,9 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     shader = MakeHorizontalMeanBlurShader(radius, imageShader, alphaGradientShader);
     SkPaint paint3;
     paint3.setShader(shader);
-    canvas.drawRect(SkRect::Make(clipIPadding), paint3);
+    canvas.drawRect(SkRect::Make(clipIPadding.makeOffset(-clipIPadding.left(), -clipIPadding.top())), paint3);
 
-    image = skSurface->makeImageSnapshot();
+    image = skSurface->makeImageSnapshot(clipIPadding);
     if (image == nullptr) {
         return;
     }
@@ -804,7 +808,8 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     shader = MakeVerticalMeanBlurShader(radius, imageShader, alphaGradientShader);
     SkPaint paint4;
     paint4.setShader(shader);
-    canvas.drawRect(SkRect::Make(clipIPadding), paint4);
+    canvas.drawRect(SkRect::Make(clipIPadding.makeOffset(-clipIPadding.left(), -clipIPadding.top())), paint4);
+#endif
 }
 
 void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas,
@@ -1270,8 +1275,8 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
     if (properties.GetClipBounds() != nullptr) {
         canvas.clipPath(properties.GetClipBounds()->GetSkiaPath(), antiAlias);
     } else if (properties.GetClipToBounds()) {
-    // In NEW_SKIA version, L476 code will cause crash if the second parameter is true.
-    // so isAntiAlias is false only the method is called in ProcessAnimatePropertyBeforeChildren().
+        // In NEW_SKIA version, L476 code will cause crash if the second parameter is true.
+        // so isAntiAlias is false only the method is called in ProcessAnimatePropertyBeforeChildren().
 #ifdef NEW_SKIA
         if (properties.GetCornerRadius().IsZero()) {
             canvas.clipRect(Rect2SkRect(properties.GetBoundsRect()), isAntiAlias);
@@ -1292,7 +1297,13 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
     if (bgColor != RgbPalette::Transparent()) {
         paint.setColor(bgColor.AsArgbInt());
         canvas.drawRRect(RRect2SkRRect(properties.GetRRect()), paint);
-    } else if (const auto& bgImage = properties.GetBgImage()) {
+    }
+    if (const auto& bgShader = properties.GetBackgroundShader()) {
+        canvas.clipRRect(RRect2SkRRect(properties.GetRRect()), antiAlias);
+        paint.setShader(bgShader->GetSkShader());
+        canvas.drawPaint(paint);
+    }
+    if (const auto& bgImage = properties.GetBgImage()) {
         canvas.clipRRect(RRect2SkRRect(properties.GetRRect()), antiAlias);
         auto boundsRect = Rect2SkRect(properties.GetBoundsRect());
         bgImage->SetDstRect(properties.GetBgImageRect());
@@ -1301,10 +1312,6 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
 #else
         bgImage->CanvasDrawImage(canvas, boundsRect, paint, true);
 #endif
-    } else if (const auto& bgShader = properties.GetBackgroundShader()) {
-        canvas.clipRRect(RRect2SkRRect(properties.GetRRect()), antiAlias);
-        paint.setShader(bgShader->GetSkShader());
-        canvas.drawPaint(paint);
     }
     canvas.restore();
 #else
@@ -1323,17 +1330,19 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
         canvas.AttachBrush(brush);
         canvas.DrawRoundRect(RRect2DrawingRRect(properties.GetRRect()));
         canvas.DetachBrush();
-    } else if (const auto& bgImage = properties.GetBgImage()) {
+    }
+    if (const auto& bgShader = properties.GetBackgroundShader()) {
+        canvas.ClipRoundRect(RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::INTERSECT, antiAlias);
+        brush.SetShaderEffect(bgShader->GetDrawingShader());
+        canvas.DrawBackground(brush);
+    }
+    if (const auto& bgImage = properties.GetBgImage()) {
         canvas.ClipRoundRect(RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::INTERSECT, antiAlias);
         auto boundsRect = Rect2DrawingRect(properties.GetBoundsRect());
         bgImage->SetDstRect(properties.GetBgImageRect());
         canvas.AttachBrush(brush);
         bgImage->CanvasDrawImage(canvas, boundsRect, true);
         canvas.DetachBrush();
-    } else if (const auto& bgShader = properties.GetBackgroundShader()) {
-        canvas.ClipRoundRect(RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::INTERSECT, antiAlias);
-        brush.SetShaderEffect(bgShader->GetDrawingShader());
-        canvas.DrawBackground(brush);
     }
     canvas.Restore();
 #endif
