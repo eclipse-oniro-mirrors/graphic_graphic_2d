@@ -757,7 +757,6 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
         canvas.clipRRect(RRect2SkRRect(properties.GetRRect()), true);
     }
 
-    canvas.resetMatrix();
     auto clipBounds = canvas.getDeviceClipBounds();
     auto clipIPadding = clipBounds.makeOutset(-1, -1);
 
@@ -769,7 +768,7 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     }
     float radius = para->blurRadius_ / 2;
 
-    auto image = skSurface->makeImageSnapshot();
+    auto image = skSurface->makeImageSnapshot(clipIPadding);
     if (image == nullptr) {
         return;
     }
@@ -777,9 +776,11 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     auto shader = MakeHorizontalMeanBlurShader(radius, imageShader, alphaGradientShader);
     SkPaint paint;
     paint.setShader(shader);
-    canvas.drawRect(SkRect::Make(clipIPadding), paint);
+    canvas.resetMatrix();
+    canvas.translate(clipIPadding.left(), clipIPadding.top());
+    canvas.drawRect(SkRect::Make(clipIPadding.makeOffset(-clipIPadding.left(), -clipIPadding.top())), paint);
 
-    image = skSurface->makeImageSnapshot();
+    image = skSurface->makeImageSnapshot(clipIPadding);
     if (image == nullptr) {
         return;
     }
@@ -787,9 +788,9 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     shader = MakeVerticalMeanBlurShader(radius, imageShader, alphaGradientShader);
     SkPaint paint2;
     paint2.setShader(shader);
-    canvas.drawRect(SkRect::Make(clipIPadding), paint2);
+    canvas.drawRect(SkRect::Make(clipIPadding.makeOffset(-clipIPadding.left(), -clipIPadding.top())), paint2);
 
-    image = skSurface->makeImageSnapshot();
+    image = skSurface->makeImageSnapshot(clipIPadding);
     if (image == nullptr) {
         return;
     }
@@ -797,9 +798,9 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     shader = MakeHorizontalMeanBlurShader(radius, imageShader, alphaGradientShader);
     SkPaint paint3;
     paint3.setShader(shader);
-    canvas.drawRect(SkRect::Make(clipIPadding), paint3);
+    canvas.drawRect(SkRect::Make(clipIPadding.makeOffset(-clipIPadding.left(), -clipIPadding.top())), paint3);
 
-    image = skSurface->makeImageSnapshot();
+    image = skSurface->makeImageSnapshot(clipIPadding);
     if (image == nullptr) {
         return;
     }
@@ -807,9 +808,8 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     shader = MakeVerticalMeanBlurShader(radius, imageShader, alphaGradientShader);
     SkPaint paint4;
     paint4.setShader(shader);
-    canvas.drawRect(SkRect::Make(clipIPadding), paint4);
+    canvas.drawRect(SkRect::Make(clipIPadding.makeOffset(-clipIPadding.left(), -clipIPadding.top())), paint4);
 #endif
-
 }
 
 void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas,

@@ -214,6 +214,12 @@ void RSProperty<std::shared_ptr<RSPath>>::UpdateToRender(
     UPDATE_TO_RENDER(RSUpdatePropertyPath, value, isDelta, forceUpdate);
 }
 template<>
+void RSProperty<std::shared_ptr<RSLinearGradientBlurPara>>::UpdateToRender(
+    const std::shared_ptr<RSLinearGradientBlurPara>& value, bool isDelta, bool forceUpdate) const
+{
+    UPDATE_TO_RENDER(RSUpdatePropertyLinearGradientBlurPara, value, isDelta, forceUpdate);
+}
+template<>
 void RSProperty<std::shared_ptr<RSShader>>::UpdateToRender(
     const std::shared_ptr<RSShader>& value, bool isDelta, bool forceUpdate) const
 {

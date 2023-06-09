@@ -524,6 +524,9 @@ template<>
 RSC_EXPORT void RSProperty<std::shared_ptr<RSPath>>::UpdateToRender(
     const std::shared_ptr<RSPath>& value, bool isDelta, bool forceUpdate) const;
 template<>
+RSC_EXPORT void RSProperty<std::shared_ptr<RSLinearGradientBlurPara>>::UpdateToRender(
+    const std::shared_ptr<RSLinearGradientBlurPara>& value, bool isDelta, bool forceUpdate) const;
+template<>
 RSC_EXPORT void RSProperty<std::shared_ptr<RSShader>>::UpdateToRender(
     const std::shared_ptr<RSShader>& value, bool isDelta, bool forceUpdate) const;
 template<>
