@@ -258,6 +258,7 @@ void RSUniRenderVisitor::UpdateCacheChangeStatus(RSBaseRenderNode& node)
     if (!isDrawingCacheEnabled_ || targetNode == nullptr) {
         return;
     }
+    targetNode->CheckDrawingCacheType();
     // drawing group root node
     if (targetNode->GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE) {
         markedCachedNodes_++;
