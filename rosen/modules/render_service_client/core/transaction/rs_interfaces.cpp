@@ -90,12 +90,20 @@ int32_t RSInterfaces::SetScreenChangeCallback(const ScreenChangeCallback &callba
 bool RSInterfaces::TakeSurfaceCapture(std::shared_ptr<RSSurfaceNode> node,
     std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX, float scaleY)
 {
+    if (!node) {
+        ROSEN_LOGW("node is nullptr");
+        return false;
+    }
     return renderServiceClient_->TakeSurfaceCapture(node->GetId(), callback, scaleX, scaleY);
 }
 
 bool RSInterfaces::TakeSurfaceCapture(std::shared_ptr<RSDisplayNode> node,
     std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX, float scaleY)
 {
+    if (!node) {
+        ROSEN_LOGW("node is nullptr");
+        return false;
+    }
     return renderServiceClient_->TakeSurfaceCapture(node->GetId(), callback, scaleX, scaleY);
 }
 
