@@ -294,5 +294,10 @@ std::vector<MemoryGraphic> RSInterfaces::GetMemoryGraphics()
     return renderServiceClient_->GetMemoryGraphics();
 }
 
+void RSInterfaces::ReportJankStats()
+{
+    renderServiceClient_->ReportJankStats();
+}
+
 } // namespace Rosen
 } // namespace OHOS
