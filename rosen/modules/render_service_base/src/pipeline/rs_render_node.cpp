@@ -385,6 +385,32 @@ void RSRenderNode::UpdateDrawRegion()
     context.property_.SetDrawRegion(std::make_shared<RectF>(joinRect));
 }
 
+void RSRenderNode::UpdateEffectRegion(std::optional<std::pair<RectI, SkPath>>& region) const
+{
+    if (!region.has_value()) {
+        return;
+    }
+    const auto& property = GetRenderProperties();
+    if (!property.GetUseEffect()) {
+        return;
+    }
+    auto& effectRect = region.value().first;
+    auto& effectPath = region.value().second;
+    auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(property.GetBoundsGeometry());
+    effectRect = effectRect.JoinRect(geoPtr->GetAbsRect());
+
+    SkPath clipPath;
+    if (property.GetClipBounds() != nullptr) {
+        clipPath = property.GetClipBounds()->GetSkiaPath();
+    } else {
+        auto rrect = RRect2SkRRect(property.GetRRect());
+        clipPath.addRRect(rrect);
+    }
+
+    // accumulate children clip path, with matrix
+    effectPath.addPath(clipPath, geoPtr->GetAbsMatrix());
+}
+
 std::shared_ptr<RSRenderModifier> RSRenderNode::GetModifier(const PropertyId& id)
 {
     if (modifiers_.count(id)) {

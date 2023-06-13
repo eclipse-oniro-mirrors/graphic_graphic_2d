@@ -392,6 +392,7 @@ private:
     bool resetRotate_ = false;
     bool needCacheImg_ = false;
     uint32_t captureWindowZorder_ = 0;
+    std::optional<std::pair<RectI, SkPath>> effectRegion_ = std::nullopt;
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -56,24 +56,30 @@ void RSEffectRenderNode::Process(const std::shared_ptr<RSNodeVisitor>& visitor)
 void RSEffectRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
 {
     canvas.SaveEffectData();
-    auto boundsGeo = std::static_pointer_cast<RSObjAbsGeometry>(GetRenderProperties().GetBoundsGeometry());
+    auto& properties = GetRenderProperties();
+    auto boundsGeo = std::static_pointer_cast<RSObjAbsGeometry>(properties.GetBoundsGeometry());
     if (boundsGeo && !boundsGeo->IsEmpty()) {
         canvas.concat(boundsGeo->GetMatrix());
     }
-    auto alpha = GetRenderProperties().GetAlpha();
+    auto alpha = properties.GetAlpha();
     if (alpha < 1.f) {
-        if ((GetChildrenCount() == 0) || !(GetRenderProperties().GetAlphaOffscreen() || isForcedDrawInGroup())) {
+        if ((GetChildrenCount() == 0) || !(properties.GetAlphaOffscreen() || isForcedDrawInGroup())) {
             canvas.MultiplyAlpha(alpha);
         } else {
-            auto rect = RSPropertiesPainter::Rect2SkRect(GetRenderProperties().GetBoundsRect());
+            auto rect = RSPropertiesPainter::Rect2SkRect(properties.GetBoundsRect());
             canvas.saveLayerAlpha(&rect, std::clamp(alpha, 0.f, 1.f) * UINT8_MAX);
         }
     }
 
-    if (GetRenderProperties().GetBackgroundFilter() != nullptr) {
-        RectI childRec = GetChildrenRect();
-        RSPropertiesPainter::DrawBackgroundEffect(GetRenderProperties(), canvas,
-            { childRec.GetLeft(), childRec.GetTop(), childRec.GetRight(), childRec.GetBottom() });
+    if (properties.GetBackgroundFilter() != nullptr &&
+        effectRegion_.has_value() && !(effectRegion_.value().first.IsEmpty())) {
+        auto effectRect = effectRegion_.value().first;
+        RSPropertiesPainter::DrawBackgroundEffect(properties, canvas,
+            { effectRect.GetLeft(), effectRect.GetTop(), effectRect.GetRight(), effectRect.GetBottom() });
+    }
+    if (properties.GetColorFilter() != nullptr &&
+        effectRegion_.has_value() && !(effectRegion_.value().second.IsEmpty())) {
+        canvas.SetChildrenPath(effectRegion_.value().second);
     }
 }
 

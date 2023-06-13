@@ -1042,6 +1042,7 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
     PrepareBaseRenderNode(node);
     // attention: accumulate direct parent's childrenRect
     node.UpdateParentChildrenRect(logicParentNode_.lock());
+    node.UpdateEffectRegion(effectRegion_);
     if (property.NeedFilter()) {
         // filterRects_ is used in RSUniRenderVisitor::CalcDirtyFilterRegion
         // When oldDirtyRect of node with filter has intersect with any surfaceNode or displayNode dirtyRegion,
@@ -1076,7 +1077,9 @@ void RSUniRenderVisitor::PrepareEffectRenderNode(RSEffectRenderNode& node)
     bool dirtyFlag = dirtyFlag_;
     RectI prepareClipRect = prepareClipRect_;
     float alpha = curAlpha_;
+    auto effectRegion = effectRegion_;
 
+    effectRegion_ = std::make_pair(RectI(), SkPath());
     const auto& property = node.GetRenderProperties();
     curAlpha_ *= property.GetAlpha();
 
@@ -1088,7 +1091,9 @@ void RSUniRenderVisitor::PrepareEffectRenderNode(RSEffectRenderNode& node)
     node.UpdateChildrenOutOfRectFlag(false);
     PrepareBaseRenderNode(node);
     node.UpdateParentChildrenRect(logicParentNode_.lock());
+    node.SetEffectRegion(effectRegion_);
 
+    effectRegion_ = effectRegion;
     curAlpha_ = alpha;
     dirtyFlag_ = dirtyFlag;
     prepareClipRect_ = prepareClipRect;
