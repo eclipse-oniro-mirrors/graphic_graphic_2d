@@ -288,30 +288,6 @@ void RSDividedUICapture::RSDividedUICaptureVisitor::ProcessSurfaceRenderNode(RSS
             "RSDividedUICaptureVisitor::ProcessSurfaceRenderNode node : %" PRIu64 " is invisible", node.GetId());
         return;
     }
-    if (node.GetId() == nodeId_) {
-        // When drawing nodes, canvas will offset the bounds value, so we will move in reverse here first
-        const auto& property = node.GetRenderProperties();
-        auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(property.GetBoundsGeometry());
-#ifndef USE_ROSEN_DRAWING
-        SkMatrix relativeMatrix = SkMatrix::I();
-        relativeMatrix.setScaleX(scaleX_);
-        relativeMatrix.setScaleY(scaleY_);
-        SkMatrix invertMatrix;
-        if (geoPtr->GetMatrix().invert(&invertMatrix)) {
-            relativeMatrix.preConcat(invertMatrix);
-        }
-        canvas_->setMatrix(relativeMatrix);
-#else
-        Drawing::Matrix relativeMatrix;
-        relativeMatrix.Set(Drawing::Matrix::SCALE_X, scaleX_);
-        relativeMatrix.Set(Drawing::Matrix::SCALE_Y, scaleY_);
-        Drawing::Matrix invertMatrix;
-        if (geoPtr->GetMatrix().Invert(invertMatrix)) {
-            relativeMatrix.PreConcat(invertMatrix);
-        }
-        canvas_->SetMatrix(relativeMatrix);
-#endif
-    }
     std::shared_ptr<RSOffscreenRenderCallback> callback = std::make_shared<RSOffscreenRenderCallback>();
     auto renderServiceClient = std::make_unique<RSRenderServiceClient>();
     renderServiceClient->TakeSurfaceCapture(node.GetId(), callback, scaleX_, scaleY_);
