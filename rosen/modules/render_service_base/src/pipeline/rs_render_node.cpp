@@ -258,7 +258,7 @@ void RSRenderNode::ProcessTransitionBeforeChildren(RSPaintFilterCanvas& canvas)
     }
     auto alpha = renderProperties_.GetAlpha();
     if (alpha < 1.f) {
-        if ((GetChildrenCount() == 0) || !(GetRenderProperties().GetAlphaOffscreen() || isForcedDrawInGroup())) {
+        if ((GetChildrenCount() == 0) || !(GetRenderProperties().GetAlphaOffscreen() || IsForcedDrawInGroup())) {
             canvas.MultiplyAlpha(alpha);
         } else {
 #ifndef USE_ROSEN_DRAWING
@@ -551,6 +551,7 @@ void RSRenderNode::CheckGroupableAnimation(const PropertyId& id, bool isAnimAdd)
     }
     if (isAnimAdd) {
         MarkNodeGroup(NodeGroupType::GROUPED_BY_ANIM, true);
+        return;
     }
     for (auto& [_, animation] : animationManager_.animations_) {
         if (!animation || id == animation->GetPropertyId()) {
@@ -564,12 +565,12 @@ void RSRenderNode::CheckGroupableAnimation(const PropertyId& id, bool isAnimAdd)
     MarkNodeGroup(NodeGroupType::GROUPED_BY_ANIM, false);
 }
 
-bool RSRenderNode::isForcedDrawInGroup() const
+bool RSRenderNode::IsForcedDrawInGroup() const
 {
     return (nodeGroupType_ == NodeGroupType::GROUPED_BY_USER) && (renderProperties_.GetAlpha() < 1.f);
 }
 
-bool RSRenderNode::isSuggestedDrawInGroup() const
+bool RSRenderNode::IsSuggestedDrawInGroup() const
 {
     return nodeGroupType_ != NodeGroupType::NONE;
 }
@@ -578,15 +579,19 @@ void RSRenderNode::MarkNodeGroup(NodeGroupType type, bool isNodeGroup)
 {
     if (type >= nodeGroupType_) {
         nodeGroupType_ = isNodeGroup ? type : NodeGroupType::NONE;
-        if ((nodeGroupType_ == NodeGroupType::GROUPED_BY_USER) && (renderProperties_.GetAlpha() < 1.f)) {
-            SetDrawingCacheType(RSDrawingCacheType::FORCED_CACHE);
-        } else if (nodeGroupType_ != NodeGroupType::NONE) {
-            SetDrawingCacheType(RSDrawingCacheType::TARGETED_CACHE);
-        } else {
-            SetDrawingCacheType(RSDrawingCacheType::DISABLED_CACHE);
-        }
+        SetDirty();
     }
 }
 
+void RSRenderNode::CheckDrawingCacheType()
+{
+    if (nodeGroupType_ == NodeGroupType::NONE) {
+        SetDrawingCacheType(RSDrawingCacheType::DISABLED_CACHE);
+    } else if ((nodeGroupType_ == NodeGroupType::GROUPED_BY_USER) && (renderProperties_.GetAlpha() < 1.f)) {
+        SetDrawingCacheType(RSDrawingCacheType::FORCED_CACHE);
+    } else {
+        SetDrawingCacheType(RSDrawingCacheType::TARGETED_CACHE);
+    }
+}
 } // namespace Rosen
 } // namespace OHOS

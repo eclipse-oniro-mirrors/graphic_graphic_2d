@@ -31,6 +31,9 @@
 
 #include "common/rs_obj_abs_geometry.h"
 #include "memory/rs_tag_tracker.h"
+#ifdef NEW_RENDER_CONTEXT
+#include "render_context/memory_handler.h"
+#endif
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
@@ -239,6 +242,7 @@ void MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(Drawing::GPUContext* gp
 }
 #endif
 
+#if !defined(USE_ROSEN_DRAWING)
 #if defined(NEW_RENDER_CONTEXT)
 #ifdef NEW_SKIA
 void MemoryManager::ClearRedundantResources(GrDirectContext* grContext)
@@ -253,6 +257,7 @@ void MemoryManager::ClearRedundantResources(GrContext* grContext)
         grContext->purgeResourcesNotUsedInMs(std::chrono::seconds(10));
     }
 }
+#endif
 #endif
 
 #ifndef USE_ROSEN_DRAWING
@@ -511,9 +516,12 @@ void MemoryManager::DumpDrawingGpuMemory(DfxString& log, const GrContext* grCont
 
     //////////////////////////ShaderCache///////////////////
     log.AppendFormat("\n---------------\nShader Caches:\n");
+#ifdef NEW_RENDER_CONTEXT
+    log.AppendFormat(MemoryHandler::QuerryShader().c_str());
+#else
     std::shared_ptr<RenderContext> rendercontext = std::make_shared<RenderContext>();
     log.AppendFormat(rendercontext->GetShaderCacheSize().c_str());
-
+#endif
     // gpu stat
     log.AppendFormat("\n---------------\ndumpGpuStats:\n");
     SkString stat;

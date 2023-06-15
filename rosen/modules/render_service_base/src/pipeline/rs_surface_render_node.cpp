@@ -241,9 +241,6 @@ void RSSurfaceRenderNode::ClearChildrenCache(const std::shared_ptr<RSBaseRenderN
 
 void RSSurfaceRenderNode::OnTreeStateChanged()
 {
-    if (!RSSystemProperties::GetUniRenderEnabled()) {
-        return;
-    }
 #ifdef RS_ENABLE_GL
     if (grContext_ && !IsOnTheTree() && IsLeashWindow()) {
         RS_TRACE_NAME_FMT("purgeUnlockedResources this SurfaceNode isn't onthe tree Id:%" PRIu64 " Name:%s",
@@ -430,7 +427,7 @@ void RSSurfaceRenderNode::SetContextMatrix(const std::optional<Drawing::Matrix>&
         return;
     }
     contextMatrix_ = matrix;
-    SetDirty();
+    SetContentDirty();
     if (!sendMsg) {
         return;
     }
@@ -445,7 +442,7 @@ void RSSurfaceRenderNode::SetContextAlpha(float alpha, bool sendMsg)
         return;
     }
     contextAlpha_ = alpha;
-    SetDirty();
+    SetContentDirty();
     if (!sendMsg) {
         return;
     }
@@ -464,7 +461,7 @@ void RSSurfaceRenderNode::SetContextClipRegion(const std::optional<Drawing::Rect
         return;
     }
     contextClipRect_ = clipRegion;
-    SetDirty();
+    SetContentDirty();
     if (!sendMsg) {
         return;
     }

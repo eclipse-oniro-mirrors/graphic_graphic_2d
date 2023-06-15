@@ -63,7 +63,7 @@ void RSEffectRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas
     }
     auto alpha = properties.GetAlpha();
     if (alpha < 1.f) {
-        if ((GetChildrenCount() == 0) || !(properties.GetAlphaOffscreen() || isForcedDrawInGroup())) {
+        if ((GetChildrenCount() == 0) || !(properties.GetAlphaOffscreen() || IsForcedDrawInGroup())) {
             canvas.MultiplyAlpha(alpha);
         } else {
             auto rect = RSPropertiesPainter::Rect2SkRect(properties.GetBoundsRect());

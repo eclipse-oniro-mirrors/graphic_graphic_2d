@@ -542,6 +542,15 @@ void RSPropertiesPainter::DrawShadowInner(const RSProperties& properties, RSPain
 {
     skPath.offset(properties.GetShadowOffsetX(), properties.GetShadowOffsetY());
     Color spotColor = properties.GetShadowColor();
+    
+    // The translation of the matrix is rounded to improve the hit ratio of skia blurfilter cache,
+    // the function <compute_key_and_clip_bounds> in <skia/src/gpu/GrBlurUtil.cpp> for more details.
+    RSAutoCanvasRestore rst(&canvas);
+    auto matrix = canvas.getTotalMatrix();
+    matrix.setTranslateX(std::ceil(matrix.getTranslateX()));
+    matrix.setTranslateY(std::ceil(matrix.getTranslateY()));
+    canvas.setMatrix(matrix);
+
     if (properties.shadow_->GetHardwareAcceleration()) {
         if (properties.GetShadowElevation() <= 0.f) {
             return;
@@ -558,8 +567,7 @@ void RSPropertiesPainter::DrawShadowInner(const RSProperties& properties, RSPain
         SkPaint paint;
         paint.setColor(spotColor.AsArgbInt());
         paint.setAntiAlias(true);
-        paint.setImageFilter(SkImageFilters::Blur(
-            properties.GetShadowRadius(), properties.GetShadowRadius(), SkTileMode::kDecal, nullptr));
+        paint.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, properties.GetShadowRadius()));
         canvas.drawPath(skPath, paint);
     }
 }
