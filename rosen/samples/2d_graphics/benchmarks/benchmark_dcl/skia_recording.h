@@ -23,6 +23,7 @@
 #include "include/core/SkDocument.h"
 #include "include/core/SkPictureRecorder.h"
 #include "include/core/SkNWayCanvas.h"
+#include "src/utils/SkMakeMultiPictureDocument.h"
 #include "tools/SkSharingProc.h"
 
 namespace OHOS {
@@ -36,9 +37,10 @@ public:
     };
     bool GetCaptureEnabled();
     void InitConfigsFromParam();
-    void SetupMultiFrame();
+    bool SetupMultiFrame();
     SkCanvas*  BeginCapture(SkCanvas* canvas, int width, int height);
     void EndCapture();
+    void SavePicture(const sk_sp<SkData>& data, const std::string& filename);
 
 private:
     bool captureEnabled_ = false;

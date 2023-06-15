@@ -187,7 +187,7 @@ void DrawingDCL::Test(SkCanvas* canvas, int width, int height)
     std::cout << "DrawingDCL::Test+" << std::endl;
     skiaRecording.InitConfigsFromParam();
     if (skiaRecording.GetCaptureEnabled()) {
-        canvas = skiaRecording.BeginCapture();
+        canvas = skiaRecording.BeginCapture(canvas, width, height);
     }
     auto start = std::chrono::system_clock::now();
     switch (iterateType) {

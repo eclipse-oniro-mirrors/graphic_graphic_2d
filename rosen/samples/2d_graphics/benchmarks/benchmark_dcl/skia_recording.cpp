@@ -41,14 +41,14 @@ void SkiaRecording::InitConfigsFromParam()
     }
 }
 
-void SkiaRecording::SetupMultiFrame()
+bool SkiaRecording::SetupMultiFrame()
 {
     std::cout<< "Set up multi-frame capture, the frame number is " << captureFrameNum_ << std::endl;
     auto stream = std::make_unique<SkFILEWStream>(captureFileName_.c_str());
     if (!stream->isValid()) {
-        std::cout<< "Could not open " << capturedFile_ << " for writing." << std::endl;
-        captureSequence_ = 0;
-        captureMode_ = CaptureMode::None;
+        std::cout<< "Could not open " << captureFileName_ << " for writing." << std::endl;
+        captureFrameNum_ = 0;
+        captureMode_ = SkiaCaptureMode::None;
         return false;
     }
     openMultiPicStream_ = std::move(stream);
@@ -83,17 +83,17 @@ SkCanvas* SkiaRecording::BeginCapture(SkCanvas* canvas, int width, int height)
     // Create a canvas pointer, fill it depending on what kind of capture is requested (if any)
     SkCanvas* pictureCanvas = nullptr;
     switch (captureMode_) {
-        case CaptureMode::CallbackAPI:
-        case CaptureMode::SingleFrameSKP:
+        case SkiaCaptureMode::CallbackAPI:
+        case SkiaCaptureMode::SingleFrameSKP:
             recorder_.reset(new SkPictureRecorder());
             pictureCanvas = recorder_->beginRecording(width, height);
             break;
-        case CaptureMode::MultiFrameSKP:
+        case SkiaCaptureMode::MultiFrameSKP:
             // If a multi frame recording is active, initialize recording for a single frame of a
             // multi frame file.
             pictureCanvas = multiPic_->beginPage(width, height);
             break;
-        case CaptureMode::None:
+        case SkiaCaptureMode::None:
             // Returning here in the non-capture case means we can count on pictureCanvas being
             // non-null below.
             return nullptr;
@@ -108,45 +108,54 @@ SkCanvas* SkiaRecording::BeginCapture(SkCanvas* canvas, int width, int height)
 }
 
 void SkiaRecording::endCapture() {
-    if (CC_LIKELY(captureMode_ == CaptureMode::None)) { return; }
+    if (CC_LIKELY(captureMode_ == SkiaCaptureMode::None)) { return; }
     nwayCanvas_.reset();
 
-    if (captureFrameNum_ > 0 && captureMode_ == CaptureMode::MultiFrameSKP) {
+    if (captureFrameNum_ > 0 && captureMode_ == SkiaCaptureMode::MultiFrameSKP) {
         multiPic_->endPage();
         captureFrameNum_--;
         if (captureFrameNum_ == 0) {
             captureEnabled_ = false;
-            captureMode_ = CaptureMode::None;
+            captureMode_ = SkiaCaptureMode::None;
             // Pass multiPic_ and openMultiPicStream_ to a background thread, which will handle
             // the heavyweight serialization work and destroy them. openMultiPicStream_ is released
             // to a bare pointer because keeping it in a smart pointer makes the lambda
             // non-copyable. The lambda is only called once, so this is safe.
             SkFILEWStream* stream = openMultiPicStream_.release();
-            CommonPool::post([doc = std::move(multiPic_), stream]{
-                std::cout << "Finalizing multi frame SKP" << std::endl;
-                doc->close();
-                delete stream;
-                std::cout << "Multi frame SKP complete." << std::endl;
-            });
+            std::cout << "Finalizing multi frame SKP" << std::endl;
+            stream->close();
+            delete stream;
+            std::cout << "Multi frame SKP complete." << std::endl;
         }
     } else {
         sk_sp<SkPicture> picture = recorder_->finishRecordingAsPicture();
         if (picture->approximateOpCount() > 0) {
-            if (mPictureCapturedCallback) {
-                std::invoke(mPictureCapturedCallback, std::move(picture));
-            } else {
-                // single frame skp to file
-                SkSerialProcs procs;
-                procs.fTypefaceProc = [](SkTypeface* tf, void* ctx){
-                    return tf->serialize(SkTypeface::SerializeBehavior::kDoIncludeData);
-                };
-                auto data = picture->serialize(&procs);
-                savePictureAsync(data, captureFileName_);
-                captureFrameNum_ = 0;
-                captureMode_ = CaptureMode::None;
-            }
+            // single frame skp to file
+            SkSerialProcs procs;
+            procs.fTypefaceProc = [](SkTypeface* tf, void* ctx){
+                return tf->serialize(SkTypeface::SerializeBehavior::kDoIncludeData);
+            };
+            auto data = picture->serialize(&procs);
+            SavePicture(data, captureFileName_);
+            captureFrameNum_ = 0;
+            captureMode_ = SkiaCaptureMode::None;
         }
         recorder_.reset();
+    }
+}
+
+void SkiaRecording::SavePicture(const sk_sp<SkData>& data, const std::string& filename)
+{
+    if (0 == access(filename.c_str(), F_OK)) {
+        return;
+    }
+
+    SkFILEWStream stream(filename.c_str());
+    if (stream.isValid()) {
+        stream.write(data->data(), data->size());
+        stream.flush();
+        std::cout << "SKP Captured Drawing Output (" << stream.bytesWritten() << " bytes) for frame. " 
+            << filename << std::endl;
     }
 }
 }
