@@ -49,7 +49,7 @@ public:
     {
         if (enableRender_ != enableRender) {
             enableRender_ = enableRender;
-            SetDirty();
+            SetContentDirty();
         }
     }
 

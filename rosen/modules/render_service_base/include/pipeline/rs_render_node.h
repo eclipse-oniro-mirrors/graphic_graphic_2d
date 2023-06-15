@@ -366,8 +366,9 @@ public:
     void UpdateDrawRegion();
 
     void CheckGroupableAnimation(const PropertyId& id, bool isAnimAdd);
-    bool isForcedDrawInGroup() const;
-    bool isSuggestedDrawInGroup() const;
+    bool IsForcedDrawInGroup() const;
+    bool IsSuggestedDrawInGroup() const;
+    void CheckDrawingCacheType();
 
     enum NodeGroupType {
         NONE = 0,

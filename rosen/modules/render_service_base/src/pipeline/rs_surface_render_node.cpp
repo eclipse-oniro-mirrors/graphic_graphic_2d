@@ -427,7 +427,7 @@ void RSSurfaceRenderNode::SetContextMatrix(const std::optional<Drawing::Matrix>&
         return;
     }
     contextMatrix_ = matrix;
-    SetDirty();
+    SetContentDirty();
     if (!sendMsg) {
         return;
     }
@@ -442,7 +442,7 @@ void RSSurfaceRenderNode::SetContextAlpha(float alpha, bool sendMsg)
         return;
     }
     contextAlpha_ = alpha;
-    SetDirty();
+    SetContentDirty();
     if (!sendMsg) {
         return;
     }
@@ -461,7 +461,7 @@ void RSSurfaceRenderNode::SetContextClipRegion(const std::optional<Drawing::Rect
         return;
     }
     contextClipRect_ = clipRegion;
-    SetDirty();
+    SetContentDirty();
     if (!sendMsg) {
         return;
     }

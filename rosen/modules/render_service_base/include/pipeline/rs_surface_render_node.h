@@ -575,7 +575,7 @@ public:
     void SetCachedImage(std::shared_ptr<Drawing::Image> image)
 #endif
     {
-        SetDirty();
+        SetContentDirty();
         std::lock_guard<std::mutex> lock(cachedImageMutex_);
         cachedImage_ = image;
     }
