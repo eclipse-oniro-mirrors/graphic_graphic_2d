@@ -1161,7 +1161,7 @@ std::shared_ptr<RSSurfaceRenderNode> RSSurfaceRenderNode::GetLeashWindowNestedAp
 
 bool RSSurfaceRenderNode::IsCurrentFrameStatic()
 {
-    if (dirtyManager_ == nullptr || !dirtyManager_->GetLastestHistory().IsEmpty()) {
+    if (dirtyManager_ == nullptr || !dirtyManager_->GetLatestDirtyRegion().IsEmpty()) {
         return false;
     }
     if (IsMainWindowType()) {
@@ -1182,7 +1182,7 @@ void RSSurfaceRenderNode::UpdateCacheSurfaceDirtyManager(int bufferAge)
         return;
     }
     cacheSurfaceDirtyManager_->Clear();
-    cacheSurfaceDirtyManager_->MergeDirtyRect(dirtyManager_->GetLastestHistory());
+    cacheSurfaceDirtyManager_->MergeDirtyRect(dirtyManager_->GetLatestDirtyRegion());
     cacheSurfaceDirtyManager_->SetBufferAge(bufferAge);
     cacheSurfaceDirtyManager_->UpdateDirty(false);
     // for leashwindow type, nested app surfacenode's cacheSurfaceDirtyManager update is required
