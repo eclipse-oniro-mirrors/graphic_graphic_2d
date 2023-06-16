@@ -335,6 +335,13 @@ ohos_executable("texgine_sample_dynamic_otf_font") {
 
   sources = [ "feature_test/dynamic_otf_font_test.cpp" ]
   defines = [ "RESOURCE_PATH_PREFIX=\"/system/etc/test_resources/\"" ]
+
+  deps = [ ":texgine_sample" ]
+
+  part_name = "graphic_standard"
+  subsystem_name = "graphic"
+}
+
 ohos_executable("texgine_sample_text_height") {
   install_enable = true
 
