@@ -161,7 +161,9 @@ class RSAnimatableRenderModifier : public RSRenderModifier {
 public:
     RSAnimatableRenderModifier(const std::shared_ptr<RSRenderPropertyBase>& property)
         : property_(property ? property : std::make_shared<RSRenderPropertyBase>())
-    {}
+    {
+        property_->SetModifierType(GetType());
+    }
 
     virtual ~RSAnimatableRenderModifier() = default;
 

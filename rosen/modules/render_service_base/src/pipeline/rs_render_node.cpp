@@ -304,7 +304,7 @@ void RSRenderNode::AddModifier(const std::shared_ptr<RSRenderModifier> modifier)
     } else {
         drawCmdModifiers_[modifier->GetType()].emplace_back(modifier);
     }
-    modifier->GetProperty()->Attach(shared_from_this());
+    modifier->GetProperty()->Attach(ReinterpretCastTo<RSRenderNode>());
     SetDirty();
 }
 
@@ -345,15 +345,19 @@ void RSRenderNode::ApplyModifiers()
     if (!RSBaseRenderNode::IsDirty()) {
         return;
     }
-    RSModifierContext context = { GetMutableRenderProperties() };
-    context.property_.Reset();
+    RSModifierContext context = { renderProperties_ };
+    for (auto type : dirtyTypes_) {
+        renderProperties_.ResetProperty(type);
+    }
+    
     for (auto& [id, modifier] : modifiers_) {
-        if (modifier) {
+        if (modifier && (dirtyTypes_.find(modifier->GetType()) != dirtyTypes_.end())) {
             modifier->Apply(context);
         }
     }
     OnApplyModifiers();
     UpdateDrawRegion();
+    dirtyTypes_.clear();
 }
 
 void RSRenderNode::UpdateDrawRegion()

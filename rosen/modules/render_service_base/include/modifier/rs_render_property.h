@@ -43,6 +43,11 @@ public:
         node_ = node;
     }
 
+    void SetModifierType(RSModifierType type)
+    {
+        type_ = type;
+    }
+
     static bool Marshalling(Parcel& parcel, const std::shared_ptr<RSRenderPropertyBase>& val);
     [[nodiscard]] static bool Unmarshalling(Parcel& parcel, std::shared_ptr<RSRenderPropertyBase>& val);
 
@@ -51,6 +56,7 @@ protected:
     {
         if (auto node = node_.lock()) {
             node->SetDirty();
+            node->AddDirtyType(type_);
         }
     }
 
@@ -84,7 +90,8 @@ protected:
     }
 
     PropertyId id_;
-    std::weak_ptr<RSBaseRenderNode> node_;
+    std::weak_ptr<RSRenderNode> node_;
+    RSModifierType type_ { RSModifierType::INVALID };
 
 private:
     virtual std::shared_ptr<RSRenderPropertyBase> Add(const std::shared_ptr<const RSRenderPropertyBase>& value)
