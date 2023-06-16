@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,28 +13,14 @@
  * limitations under the License.
  */
 
-#ifndef SURFACE_NDK_COMMON_DEFINE_TYPES_
-#define SURFACE_NDK_COMMON_DEFINE_TYPES_
-#include <stdint.h>
+#ifndef TEST_FUZZTEST_DRAWING_FUZZER_H
+#define TEST_FUZZTEST_DRAWING_FUZZER_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <climits>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 
-/**
- * @brief Defines the ExtData Handle
- */
-typedef struct OHExtDataHandle {
-    /**< Handle fd, -1 if not supported */
-    int32_t fd;
-    /**< the number of reserved integer value */
-    uint32_t reserveInts;
-    /**< the reserved data */
-    int32_t reserve[0];
-} OHExtDataHandle;
+#define FUZZ_PROJECT_NAME "drawing_fuzzer"
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif // SURFACE_NDK_COMMON_DEFINE_TYPES_
+#endif // TEST_FUZZTEST_DRAWING_FUZZER_H

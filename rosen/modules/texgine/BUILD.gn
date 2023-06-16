@@ -112,7 +112,10 @@ ohos_shared_library("libtexgine") {
       "//third_party/jsoncpp:jsoncpp",
     ]
 
-    external_deps = [ "hitrace_native:hitrace_meter" ]
+    external_deps = [
+      "c_utils:utils",
+      "hitrace_native:hitrace_meter",
+    ]
   }
 
   part_name = "graphic_standard"

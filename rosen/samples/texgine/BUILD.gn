@@ -34,6 +34,8 @@ group("texgine_feature_test") {
     ":texgine_sample_shadow",
     ":texgine_sample_spacing",
     ":texgine_sample_text_color",
+    ":texgine_sample_text_height",
+    ":texgine_sample_typography_height",
     ":texgine_sample_weight_style",
     ":texgine_sample_word_boundary",
   ]
@@ -333,6 +335,21 @@ ohos_executable("texgine_sample_dynamic_otf_font") {
 
   sources = [ "feature_test/dynamic_otf_font_test.cpp" ]
   defines = [ "RESOURCE_PATH_PREFIX=\"/system/etc/test_resources/\"" ]
+ohos_executable("texgine_sample_text_height") {
+  install_enable = true
+
+  sources = [ "feature_test/text_height_test.cpp" ]
+
+  deps = [ ":texgine_sample" ]
+
+  part_name = "graphic_standard"
+  subsystem_name = "graphic"
+}
+
+ohos_executable("texgine_sample_typography_height") {
+  install_enable = true
+
+  sources = [ "feature_test/typography_height_test.cpp" ]
 
   deps = [ ":texgine_sample" ]
 

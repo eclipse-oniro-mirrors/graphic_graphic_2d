@@ -96,11 +96,13 @@ class RSSurfaceCaptureVisitor : public RSNodeVisitor {
         float scaleY_ = 1.0f;
         bool isUniRender_ = false;
         bool hasSecurityLayer_ = false;
+        bool isUIFirst_ = false;
 
         std::shared_ptr<RSBaseRenderEngine> renderEngine_;
 
         std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
 };
+
 class RSSurfaceCaptureTask {
 public:
     explicit RSSurfaceCaptureTask(NodeId nodeId, float scaleX, float scaleY)
@@ -114,6 +116,7 @@ private:
 
 #ifndef USE_ROSEN_DRAWING
     sk_sp<SkSurface> CreateSurface(const std::unique_ptr<Media::PixelMap>& pixelmap);
+    bool CopyDataToPixelMap(sk_sp<SkImage> img, const std::unique_ptr<Media::PixelMap>& pixelmap);
 #else
     std::shared_ptr<Drawing::Surface> CreateSurface(const std::unique_ptr<Media::PixelMap>& pixelmap);
 #endif

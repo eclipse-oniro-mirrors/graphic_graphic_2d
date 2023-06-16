@@ -119,7 +119,7 @@ void RSProxyRenderNode::OnTreeStateChanged()
 {
     if (IsOnTheTree()) {
         // new added to tree
-        SetDirty();
+        SetContentDirty();
     } else {
         // removed from tree, clean up context variables
         CleanUp(false);
