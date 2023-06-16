@@ -46,24 +46,23 @@ static void ParseDfxSurfaceNamesString(const std::string& paramsStr,
 // used by clients
 int RSSystemProperties::GetDumpFrameNum()
 {
-    return std::atoi((system::GetParameter("rosen.recording.frameNum", "0")).c_str());
+    return std::atoi((system::GetParameter("debug.graphic.recording.frameNum", "0")).c_str());
 }
 
 bool RSSystemProperties::GetRecordingEnabled()
 {
-    return (system::GetParameter("rosen.recording.enabled", "0") != "0") && isRecordingEnabled_;
+    return (system::GetParameter("debug.graphic.recording.enabled", "0") != "0");
 }
 
 void RSSystemProperties::SetRecordingDisenabled()
 {
-    isRecordingEnabled_ = false;
-    system::SetParameter("rosen.recording enabled", "0");
+    system::SetParameter("debug.graphic.recording.enabled", "0");
     RS_LOGD("RSSystemProperties::SetRecordingDisenabled");
 }
 
 std::string RSSystemProperties::GetRecordingFile()
 {
-    return system::GetParameter("rosen.dumpfile.path", "");
+    return system::GetParameter("debug.graphic.dumpfile.path", "");
 }
 
 bool RSSystemProperties::GetUniRenderEnabled()
@@ -78,6 +77,12 @@ bool RSSystemProperties::GetUniRenderEnabled()
     inited = true;
     ROSEN_LOGI("RSSystemProperties::GetUniRenderEnabled:%d", isUniRenderEnabled_);
     return isUniRenderEnabled_;
+}
+
+SkiaTraceType RSSystemProperties::GetSkiaTraceEnabled()
+{
+    return static_cast<SkiaTraceType>(
+        std::atoi((system::GetParameter("persist.rosen.skiatrace.enabled", "0")).c_str()));
 }
 
 bool RSSystemProperties::GetDrawOpTraceEnabled()
@@ -245,6 +250,11 @@ bool RSSystemProperties::GetProxyNodeDebugEnabled()
 bool RSSystemProperties::GetUIFirstEnabled()
 {
     return std::atoi((system::GetParameter("rosen.ui.first.enabled", "0")).c_str()) != 0;
+}
+
+bool RSSystemProperties::GetCacheCmdEnabled()
+{
+    return std::atoi((system::GetParameter("rosen.cacheCmd.enabled", "1")).c_str()) != 0;
 }
 
 bool RSSystemProperties::GetASTCEnabled()

@@ -14,6 +14,8 @@
  */
 
 #include "benchmarks/file_utils.h"
+#include <fstream>
+#include <filesystem>
 #include <fcntl.h>
 #include <unistd.h>
 #include "platform/common/rs_log.h"
@@ -26,37 +28,61 @@ bool IsValidFile(const std::string& realPathStr, const std::string& validFile)
     return realPathStr.find(validFile) == 0;
 }
 
-std::string GetRealPath(const std::string& filePath)
+std::string GetRealAndValidPath(const std::string& filePath)
 {
-    std::string realPathStr = "";
-    char actualPath[PATH_MAX + 1] = {0};
-    if (realpath(filePath.c_str(), actualPath) == nullptr) {
-        RS_LOGE("The file path is empty!");
-        return realPathStr;
-    }
-    realPathStr = actualPath;
+    std::string realPathStr = std::filesystem::path(filePath).lexically_normal().string();
     if (IsValidFile(realPathStr)) {
         return realPathStr;
     } else {
-        RS_LOGE("The file path is not valid!");
+        RS_LOGE("FileUtils: The file path is not valid!");
         return "";
     }
 }
 
-bool WriteToFile(uintptr_t data, size_t size, const std::string& filePath)
+bool IsExistFile(const std::string& filePath)
 {
-    std::string realDclFilePathStr = GetRealPath(filePath);
-    if (realDclFilePathStr.empty()) {
+    std::ifstream inFile(filePath.c_str());
+    if (!inFile.is_open()) {
         return false;
     }
-    int fd = open(realDclFilePathStr.c_str(), O_RDWR | O_CREAT, static_cast<mode_t>(0600));
+    inFile.clear();
+    inFile.close();
+    return true;
+}
+
+bool CreateFile(const std::string& filePath)
+{
+    std::string realPath = GetRealAndValidPath(filePath);
+    if (realPath.empty()) {
+        return false;
+    }
+    std::ofstream outFile(realPath);
+    if (!outFile.is_open()) {
+        RS_LOGE("FileUtils: file %s open failed!", realPath.c_str());
+        return false;
+    }
+    outFile.clear();
+    outFile.close();
+    return true;
+}
+
+bool WriteToFile(uintptr_t data, size_t size, const std::string& filePath)
+{
+    if (!CreateFile(filePath)) {
+        return false;
+    }
+    if (filePath.empty()) {
+        return false;
+    }
+    int fd = open(filePath.c_str(), O_RDWR | O_CREAT, static_cast<mode_t>(0600));
     if (fd < 0) {
-        RS_LOGE("%{public}s failed. file: %s, fd = %{public}d", __func__, realDclFilePathStr.c_str(), fd);
+        RS_LOGE("FileUtils: %s failed. file: %s, fd = %d", __func__, filePath.c_str(), fd);
         return false;
     }
     ssize_t nwrite = write(fd, reinterpret_cast<uint8_t *>(data), size);
     if (nwrite < 0) {
-        RS_LOGE("%{public}s failed to persist data = %d, size = %d,  fd = %{public}d", __func__, data, size, fd);
+        RS_LOGE("FileUtils: %s failed to persist data = %d, size = %d,  fd = %d",
+            __func__, data, size, fd);
     }
     close(fd);
     return true;
@@ -80,13 +106,15 @@ bool WriteStringToFile(int fd, const std::string& str)
 
 bool WriteStringToFile(const std::string& str, const std::string& filePath)
 {
-    std::string realDclFilePathStr = GetRealPath(filePath);
-    if (realDclFilePathStr.empty()) {
+    if (!CreateFile(filePath)) {
         return false;
     }
-    int fd = open(realDclFilePathStr.c_str(), O_RDWR | O_CREAT, static_cast<mode_t>(0600));
+    if (filePath.empty()) {
+        return false;
+    }
+    int fd = open(filePath.c_str(), O_RDWR | O_CREAT, static_cast<mode_t>(0600));
     if (fd < 0) {
-        RS_LOGE("%{public}s failed. file: %s, fd = %{public}d", __func__, realDclFilePathStr.c_str(), fd);
+        RS_LOGE("FileUtils: %s failed. file: %s, fd = %d", __func__, filePath.c_str(), fd);
         return false;
     }
     bool result = WriteStringToFile(fd, str);

@@ -103,6 +103,11 @@ public:
         return isLastFrameHardwareEnabled_;
     }
 
+    bool IsCurrentFrameHardwareEnabled() const
+    {
+        return isCurrentFrameHardwareEnabled_;
+    }
+
     void MarkCurrentFrameHardwareEnabled()
     {
         isCurrentFrameHardwareEnabled_ = true;
@@ -125,6 +130,11 @@ public:
         isHardwareForcedDisabled_ = forcesDisabled;
     }
 
+    void SetHardwareDisabledByCache(bool disabledByCache)
+    {
+        isHardwareDisabledByCache_ = disabledByCache;
+    }
+
     void SetHardwareForcedDisabledStateByFilter(bool forcesDisabled)
     {
         isHardwareForcedDisabledByFilter_ = forcesDisabled;
@@ -137,7 +147,7 @@ public:
 
     bool IsHardwareForcedDisabled() const
     {
-        return isHardwareForcedDisabled_ ||
+        return isHardwareForcedDisabled_ || isHardwareDisabledByCache_ ||
             GetDstRect().GetWidth() <= 1 || GetDstRect().GetHeight() <= 1; // avoid fallback by composer
     }
 
@@ -243,7 +253,8 @@ public:
         return totalMatrix_;
     }
 
-    // Transfer the rendering context variables (matrix, alpha, and clipRegion) from the source node (in the render thread) to the
+    // Transfer the rendering context variables (matrix, alpha, and clipRegion) from the
+    // source node (in the render thread) to the
     // target node (in the render service). Note that:
     // - All three variables are relative to their parent node.
     // - Alpha can be processed as an absolute value, as its parent (surface) node's alpha should always be 1.0f.
@@ -428,8 +439,8 @@ public:
     float GetLocalZOrder() const;
 
 #ifndef ROSEN_CROSS_PLATFORM
-    void SetColorSpace(ColorGamut colorSpace);
-    ColorGamut GetColorSpace() const;
+    void SetColorSpace(GraphicColorGamut colorSpace);
+    GraphicColorGamut GetColorSpace() const;
     void SetConsumer(const sptr<IConsumerSurface>& consumer);
     void SetBlendType(GraphicBlendType blendType);
     GraphicBlendType GetBlendType();
@@ -497,7 +508,7 @@ public:
 
     bool GetZorderChanged() const
     {
-        return (std::abs(GetRenderProperties().GetPositionZ() - positionZ_) > (std::numeric_limits<float>::epsilon()));
+        return zOrderChanged_;
     }
 
     bool IsZOrderPromoted() const
@@ -507,6 +518,7 @@ public:
 
     void UpdatePositionZ()
     {
+        zOrderChanged_ = !ROSEN_EQ(GetRenderProperties().GetPositionZ(), positionZ_);
         positionZ_ = GetRenderProperties().GetPositionZ();
     }
 
@@ -563,7 +575,7 @@ public:
     void SetCachedImage(std::shared_ptr<Drawing::Image> image)
 #endif
     {
-        SetDirty();
+        SetContentDirty();
         std::lock_guard<std::mutex> lock(cachedImageMutex_);
         cachedImage_ = image;
     }
@@ -586,10 +598,6 @@ public:
 
     // if surfacenode's buffer has been comsumed, it should be set dirty
     bool UpdateDirtyIfFrameBufferConsumed();
-    // if buffer content updated, marked it as content dirty
-    bool IsDirty() const override;
-    bool IsContentDirty() const override;
-    void SetClean() override;
 
 #ifndef USE_ROSEN_DRAWING
     void UpdateSrcRect(const RSPaintFilterCanvas& canvas, const SkIRect& dstRect);
@@ -620,7 +628,7 @@ public:
     bool GetAnimateState() const{
         return animateState_;
     }
-    bool LeashWindowRelatedAppWindowOccluded();
+    bool LeashWindowRelatedAppWindowOccluded(std::shared_ptr<RSSurfaceRenderNode>& appNode);
 
     void OnTreeStateChanged() override;
 
@@ -632,7 +640,7 @@ public:
     {
         grContext_ = grContext;
     }
-
+    // UIFirst
     void SetSubmittedSubThreadIndex(uint32_t index)
     {
         submittedSubThreadIndex_ = index;
@@ -641,6 +649,18 @@ public:
     uint32_t GetSubmittedSubThreadIndex() const
     {
         return submittedSubThreadIndex_;        
+    }
+
+    void SetCacheSurfaceProcessedStatus(CacheProcessStatus cacheProcessStatus)
+    {
+        std::lock_guard<std::mutex> lock(cacheSurfaceProcessedMutex_);
+        cacheProcessStatus_ = cacheProcessStatus;
+    }
+
+    CacheProcessStatus GetCacheSurfaceProcessedStatus() const
+    {
+        std::lock_guard<std::mutex> lock(cacheSurfaceProcessedMutex_);
+        return cacheProcessStatus_;
     }
 
 private:
@@ -652,9 +672,9 @@ private:
     std::mutex mutexUI_;
     std::mutex mutex_;
 #ifdef NEW_SKIA
-    GrDirectContext* grContext_;
+    GrDirectContext* grContext_ = nullptr;
 #else
-    GrContext* grContext_;
+    GrContext* grContext_ = nullptr;
 #endif
     std::mutex parallelVisitMutex_;
 
@@ -678,12 +698,13 @@ private:
     int32_t offsetX_ = 0;
     int32_t offsetY_ = 0;
     float positionZ_ = 0.0f;
+    bool zOrderChanged_ = false;
     bool qosPidCal_ = false;
 
     std::string name_;
     RSSurfaceNodeType nodeType_ = RSSurfaceNodeType::DEFAULT;
 #ifndef ROSEN_CROSS_PLATFORM
-    ColorGamut colorSpace_ = ColorGamut::COLOR_GAMUT_SRGB;
+    GraphicColorGamut colorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     GraphicBlendType blendType_ = GraphicBlendType::GRAPHIC_BLEND_SRCOVER;
 #endif
     bool isNotifyRTBufferAvailablePre_ = false;
@@ -775,6 +796,7 @@ private:
     // in case where this node's parent window node is occluded or is appFreeze, this variable will be marked true
     bool isHardwareForcedDisabled_ = false;
     bool isHardwareForcedDisabledByFilter_ = false;
+    bool isHardwareDisabledByCache_ = false;
     float localZOrder_ = 0.0f;
     std::vector<WeakPtr> childHardwareEnabledNodes_;
     int32_t nodeCost_ = 0;
@@ -785,6 +807,8 @@ private:
 
     // UIFirst
     uint32_t submittedSubThreadIndex_ = INT_MAX;
+    mutable std::mutex cacheSurfaceProcessedMutex_;
+    CacheProcessStatus cacheProcessStatus_ = CacheProcessStatus::WAITING;
 
     friend class RSUniRenderVisitor;
     friend class RSBaseRenderNode;

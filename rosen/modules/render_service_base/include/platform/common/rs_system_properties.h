@@ -25,6 +25,13 @@
 namespace OHOS {
 namespace Rosen {
 
+enum class SkiaTraceType {
+    DISABLED = 0,                        // 0, disable trace and log
+    TRACE_ONLY,                          // 1, print trace only
+    TRACE_AND_BRIEF_LOG,                 // 2, print trace and brief log
+    TRACE_AND_DETAILED_LOG               // 3, print trace and detailed log
+};
+
 enum class DirtyRegionDebugType {
     DISABLED = 0,
     CURRENT_SUB,
@@ -51,9 +58,9 @@ enum class PartialRenderType {
 };
 
 enum class ReleaseGpuResourceType {
-    DISABLED = 0,                               // 0, disable releaseGpuResource
-    WINDOW_HIDDEN,                              // 1, release window GpuResource when it Exit or GoBackGround
-    WINDOW_HIDDEN_AND_LAUCHER,                  // 2, release window and launcher GpuResource when it Exit or GoBackGround
+    DISABLED = 0,                            // 0, disable releaseGpuResource
+    WINDOW_HIDDEN,                           // 1, release window GpuResource when it Exit or GoBackGround
+    WINDOW_HIDDEN_AND_LAUCHER,               // 2, release window and launcher GpuResource when it Exit or GoBackGround
 };
 
 enum class DumpSurfaceType {
@@ -83,6 +90,7 @@ public:
 
     static bool GetUniRenderEnabled();
     static bool GetRenderNodeTraceEnabled();
+    static SkiaTraceType GetSkiaTraceEnabled();
     static bool GetDrawOpTraceEnabled();
     static DirtyRegionDebugType GetDirtyRegionDebugType();
     static PartialRenderType GetPartialRenderEnabled();
@@ -115,11 +123,11 @@ public:
     static bool GetBoolSystemProperty(const char* name, bool defaultValue);
     static int WatchSystemProperty(const char* name, OnSystemPropertyChanged func, void* context);
     static bool GetUIFirstEnabled();
+    static bool GetCacheCmdEnabled();
     static bool GetASTCEnabled();
 private:
     RSSystemProperties() = default;
 
-    static inline bool isRecordingEnabled_ = true;
     static inline bool isUniRenderEnabled_ = false;
     inline static bool isDrawTextAsBitmap_ = false;
 };

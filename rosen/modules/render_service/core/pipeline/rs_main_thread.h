@@ -39,6 +39,7 @@
 #include "pipeline/rs_uni_render_judgement.h"
 #include "platform/drawing/rs_vsync_client.h"
 #include "platform/common/rs_event_manager.h"
+#include "platform/common/rs_system_properties.h"
 #include "transaction/rs_transaction_data.h"
 
 namespace OHOS::Rosen {
@@ -127,7 +128,7 @@ public:
     void WaitUtilUniRenderFinished();
     void NotifyUniRenderFinish();
 
-    void WaitUntilDisplayNodeBufferReleased(RSDisplayRenderNode& node);
+    bool WaitUntilDisplayNodeBufferReleased(RSDisplayRenderNode& node);
     void NotifyDisplayNodeBufferReleased();
 
     // driven render
@@ -139,6 +140,7 @@ public:
 
     void SetFocusAppInfo(
         int32_t pid, int32_t uid, const std::string &bundleName, const std::string &abilityName, uint64_t focusNodeId);
+    std::unordered_map<NodeId, bool> GetCacheCmdSkippedNodes() const;
 
     sptr<VSyncDistributor> rsVSyncDistributor_;
 
@@ -151,9 +153,17 @@ public:
     void CountMem(std::vector<MemoryGraphic>& mems);
     void SetAppWindowNum(uint32_t num);
     void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow);
+#ifndef USE_ROSEN_DRAWING
     sk_sp<SkImage> GetWatermarkImg();
+#else
+    std::shared_ptr<Drawing::Image> GetWatermarkImg();
+#endif
     bool GetWatermarkFlag();
     void AddActivePid(pid_t pid);
+    uint64_t GetFrameCount() const
+    {
+        return frameCount_;
+    }
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -186,10 +196,14 @@ private:
     void RemoveRSEventDetector();
     void SetRSEventDetectorLoopStartTag();
     void SetRSEventDetectorLoopFinishTag();
+#ifndef USE_ROSEN_DRAWING
 #ifdef NEW_SKIA
-    void ReleaseExitSurfaceNodeAllGpuResource(GrDirectContext* grContext, pid_t pid);
+    void ReleaseExitSurfaceNodeAllGpuResource(GrDirectContext* grContext);
 #else
-    void ReleaseExitSurfaceNodeAllGpuResource(GrContext* grContext, pid_t pid);
+    void ReleaseExitSurfaceNodeAllGpuResource(GrContext* grContext);
+#endif
+#else
+    void ReleaseExitSurfaceNodeAllGpuResource(Drawing::GPUContext* grContext, pid_t pid);
 #endif
 
     bool DoParallelComposition(std::shared_ptr<RSBaseRenderNode> rootNode);
@@ -213,12 +227,20 @@ private:
 
     bool IsResidentProcess(pid_t pid);
 
+    // used for drawop statistic
+    void DrawOpStatisticBegin() const;
+    void DrawOpStatisticEnd(const std::string &logPrefix) const;
+
     // Click animation, report the start event to RS
     void ResSchedDataStartReport(bool needRequestNextVsync);
     // Click animation, report the complete event to RS
     void ResSchedDataCompleteReport(bool needRequestNextVsync);
 
     bool NeedReleaseGpuResource(const RSRenderNodeMap& nodeMap);
+
+    // UIFirst
+    void CheckParallelSubThreadNodesStatus();
+    void CacheCommands();
 
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
@@ -307,15 +329,29 @@ private:
 
     // used for watermark
     std::mutex watermarkMutex_;
+#ifndef USE_ROSEN_DRAWING
     sk_sp<SkImage> watermarkImg_ = nullptr;
+#else
+    std::shared_ptr<Drawing::Image> watermarkImg_ = nullptr;
+#endif
     bool isShow_ = false;
 
     // driven render
     bool hasDrivenNodeOnUniTree_ = false;
     bool hasDrivenNodeMarkRender_ = false;
 
+    // used for print control of trace
+    SkiaTraceType skiaTraceEnabled_ = SkiaTraceType::DISABLED;
+
     // used for control start and end of the click animation
     bool requestResschedReport_ = true;
+
+    // UIFirst
+    std::list<std::shared_ptr<RSSurfaceRenderNode>> subThreadNodes_;
+    std::unordered_map<NodeId, bool> cacheCmdSkippedNodes_;
+    std::unordered_map<pid_t, std::pair<std::vector<NodeId>, bool>> cacheCmdSkippedInfo_;
+    std::atomic<uint64_t> frameCount_ = 0;
+    std::set<std::shared_ptr<RSBaseRenderNode>> oldDisplayChildren_;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

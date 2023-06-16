@@ -93,8 +93,8 @@ public:
     void Flush();
 
     /*
-     * @brief             Purge GPU resources that haven't been used in the past 'msNotUsed' milliseconds or are otherwise
-                          marked for deletion.
+     * @brief             Purge GPU resources that haven't been used in the past 'msNotUsed' milliseconds
+                          or are otherwise marked for deletion.
      * @param msNotUsed   Only unlocked resources not used in these last milliseconds will be cleaned up.
      */
     void PerformDeferredCleanup(std::chrono::milliseconds msNotUsed);
@@ -102,7 +102,8 @@ public:
     /*
      * @brief                   Gets the current GPU resource cache limits.
      * @param maxResource       If non-null, returns maximum number of resources that can be held in the cache.
-     * @param maxResourceBytes  If non-null, returns maximum number of bytes of video memory that can be held in the cache.
+     * @param maxResourceBytes  If non-null, returns maximum number of bytes of video memory
+                                that can be held in the cache.
      */
     void GetResourceCacheLimits(int& maxResource, size_t& maxResourceBytes) const;
 

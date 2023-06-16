@@ -17,6 +17,7 @@
 #define RENDER_SERVICE_BASE_TRANSACTION_RS_MARSHALLING_HELPER_H
 
 #include <memory>
+#include <optional>
 #include "common/rs_macros.h"
 #ifdef USE_ROSEN_DRAWING
 #include "image/image.h"
@@ -68,6 +69,7 @@ class RSImage;
 class RSImageBase;
 class RSMask;
 class RSPath;
+class RSLinearGradientBlurPara;
 class RSRenderCurveAnimation;
 class RSRenderInterpolatingSpringAnimation;
 class RSRenderKeyframeAnimation;
@@ -174,6 +176,7 @@ public:
     // RS types
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSShader>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSPath>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSLinearGradientBlurPara>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSFilter>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSMask>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSImage>)

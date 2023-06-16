@@ -76,17 +76,16 @@ public:
     };
 
     FontParser();
-    std::vector<FontDescriptor> GetVisibilityFonts() const;
+    std::vector<FontDescriptor> GetVisibilityFonts();
 
 private:
-    void GetStringFromNameId(NameId nameId, const char* stringStorage, uint16_t stringOffset, uint16_t len,
-        FontDescriptor& fontDescriptor);
-    void ProcessCmapTable(const struct CmapTables* cmapTable, FontDescriptor& fontDescriptor);
-    void ProcessNameTable(const struct NameTable* nameTableData, FontDescriptor& fontDescriptor);
-    void ProcessPostTable(const struct PostTable* postTable, FontDescriptor& fontDescriptor);
-    int ParseCmapTable(sk_sp<SkTypeface> typeface, FontParser::FontDescriptor& fontDescriptor);
-    int ParseNameTable(sk_sp<SkTypeface> typeface, FontParser::FontDescriptor& fontDescriptor);
-    int ParsePostTable(sk_sp<SkTypeface> typeface, FontParser::FontDescriptor& fontDescriptor);
+    void GetStringFromNameId(NameId nameId, const std::string& nameString, FontDescriptor& fontDescriptor) const;
+    void ProcessCmapTable(const struct CmapTables* cmapTable, FontDescriptor& fontDescriptor) const;
+    int ProcessNameTable(const struct NameTable* nameTableData, FontDescriptor& fontDescriptor) const;
+    void ProcessPostTable(const struct PostTable* postTable, FontDescriptor& fontDescriptor) const;
+    int ParseCmapTable(sk_sp<SkTypeface> typeface, FontDescriptor& fontDescriptor);
+    int ParseNameTable(sk_sp<SkTypeface> typeface, FontDescriptor& fontDescriptor);
+    int ParsePostTable(sk_sp<SkTypeface> typeface, FontDescriptor& fontDescriptor);
     int ParseTable(sk_sp<SkTypeface> typeface, FontDescriptor& fontDescriptor);
     int SetFontDescriptor();
 

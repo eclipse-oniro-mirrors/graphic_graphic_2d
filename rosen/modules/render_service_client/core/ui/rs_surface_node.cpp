@@ -223,7 +223,7 @@ bool RSSurfaceNode::GetFingerprint() const
 }
 
 #ifndef ROSEN_CROSS_PLATFORM
-void RSSurfaceNode::SetColorSpace(ColorGamut colorSpace)
+void RSSurfaceNode::SetColorSpace(GraphicColorGamut colorSpace)
 {
     colorSpace_ = colorSpace;
     std::unique_ptr<RSCommand> command =
@@ -337,14 +337,14 @@ RSNode::SharedPtr RSSurfaceNode::UnmarshallingAsProxyNode(Parcel& parcel)
 
 bool RSSurfaceNode::CreateNode(const RSSurfaceRenderNodeConfig& config)
 {
-    return std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient())
-               ->CreateNode(config);
+    return std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient())->
+        CreateNode(config);
 }
 
 bool RSSurfaceNode::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config)
 {
-    surface_ = std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient())
-                   ->CreateNodeAndSurface(config);
+    surface_ = std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient())->
+        CreateNodeAndSurface(config);
     return (surface_ != nullptr);
 }
 

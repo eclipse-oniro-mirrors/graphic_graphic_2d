@@ -77,6 +77,8 @@ public:
     void LoadBalanceAndNotify(TaskType type = TaskType::PROCESS_TASK);
     void MergeRenderResult(RSPaintFilterCanvas& canvas);
     void SaveCacheTexture(RSRenderNode& node) const;
+    void WaitNodeTask(uint64_t nodeId);
+    void NodeTaskNotify(uint64_t nodeId);
     void SetFrameSize(int width, int height);
     void GetFrameSize(int &width, int &height) const;
     void SubmitSuperTask(uint32_t taskIndex, std::unique_ptr<RSSuperRenderTask> superRenderTask);
@@ -212,6 +214,8 @@ private:
     std::vector<timespec> stopTime_;
 
     uint32_t minLoadThreadIndex_ = 0;
+
+    std::map<uint64_t, bool> nodeTaskState_;
 
     // Use for Vulkan
     std::vector<std::shared_ptr<RSDisplayRenderNode>> parallelDisplayNodes_;

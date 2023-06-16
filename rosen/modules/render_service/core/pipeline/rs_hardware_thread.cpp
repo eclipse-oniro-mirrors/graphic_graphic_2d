@@ -44,15 +44,16 @@ void RSHardwareThread::Start()
     redrawCb_ = std::bind(&RSHardwareThread::Redraw, this,std::placeholders::_1, std::placeholders::_2,
         std::placeholders::_3);
     if (handler_) {
-        ScheduleTask([this]() {
-            auto screenManager = CreateOrGetScreenManager();
-            if (screenManager == nullptr || !screenManager->Init()) {
-                RS_LOGE("RSHardwareThread CreateOrGetScreenManager or init fail.");
-                return;
-            }
-            uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
-            uniRenderEngine_->Init();
-        }).wait();
+        ScheduleTask(
+            [this]() {
+                auto screenManager = CreateOrGetScreenManager();
+                if (screenManager == nullptr || !screenManager->Init()) {
+                    RS_LOGE("RSHardwareThread CreateOrGetScreenManager or init fail.");
+                    return;
+                }
+                uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
+                uniRenderEngine_->Init();
+            }).wait();
     }
     auto onPrepareCompleteFunc = [this](auto& surface, const auto& param, void* data) {
         OnPrepareComplete(surface, param, data);
@@ -185,6 +186,7 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
             layer->GetCompositionType() == GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE_CLEAR) {
             continue;
         }
+#ifndef USE_ROSEN_DRAWING
         auto saveCount = canvas->getSaveCount();
 
         canvas->save();
@@ -196,6 +198,20 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
         // prepare BufferDrawParam
         auto params = RSUniRenderUtil::CreateLayerBufferDrawParam(layer, forceCPU);
         canvas->concat(params.matrix);
+#else
+        auto saveCount = canvas->GetSaveCount();
+
+        canvas->Save();
+        auto dstRect = layer->GetLayerSize();
+        Drawing::Rect clipRect = Drawing::Rect(static_cast<float>(dstRect.x), static_cast<float>(dstRect.y),
+            static_cast<float>(dstRect.w) + static_cast<float>(dstRect.x),
+            static_cast<float>(dstRect.h) + static_cast<float>(dstRect.y));
+        canvas->ClipRect(clipRect, Drawing::ClipOp::INTERSECT, false);
+
+        // prepare BufferDrawParam
+        auto params = RSUniRenderUtil::CreateLayerBufferDrawParam(layer, forceCPU);
+        canvas->ConcatMatrix(params.matrix);
+#endif
 #ifndef RS_ENABLE_EGLIMAGE
         uniRenderEngine_->DrawBuffer(*canvas, params);
 #else
@@ -251,8 +267,13 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
             uniRenderEngine_->DrawBuffer(*canvas, params);
         }
 #endif
+#ifndef USE_ROSEN_DRAWING
         canvas->restore();
         canvas->restoreToCount(saveCount);
+#else
+        canvas->Restore();
+        canvas->RestoreToCount(saveCount);
+#endif
     }
     renderFrame->Flush();
 #ifdef RS_ENABLE_EGLIMAGE

@@ -50,7 +50,7 @@ void RSBaseRenderNode::AddChild(SharedPtr child, int index)
     if (isOnTheTree_) {
         child->SetIsOnTheTree(true);
     }
-    SetDirty();
+    SetContentDirty();
 }
 
 void RSBaseRenderNode::MoveChild(SharedPtr child, int index)
@@ -71,7 +71,7 @@ void RSBaseRenderNode::MoveChild(SharedPtr child, int index)
         children_.emplace(std::next(children_.begin(), index), child);
     }
     children_.erase(it);
-    SetDirty();
+    SetContentDirty();
 }
 
 void RSBaseRenderNode::RemoveChild(SharedPtr child, bool skipTransition)
@@ -98,7 +98,7 @@ void RSBaseRenderNode::RemoveChild(SharedPtr child, bool skipTransition)
         child->ResetParent();
     }
     children_.erase(it);
-    SetDirty();
+    SetContentDirty();
 }
 
 void RSBaseRenderNode::SetIsOnTheTree(bool flag)
@@ -160,7 +160,7 @@ void RSBaseRenderNode::AddCrossParentChild(const SharedPtr& child, int32_t index
     if (isOnTheTree_) {
         child->SetIsOnTheTree(true);
     }
-    SetDirty();
+    SetContentDirty();
 }
 
 void RSBaseRenderNode::RemoveCrossParentChild(const SharedPtr& child, const WeakPtr& newParent)
@@ -191,7 +191,7 @@ void RSBaseRenderNode::RemoveCrossParentChild(const SharedPtr& child, const Weak
         hasRemovedChild_ = true;
     }
     children_.erase(it);
-    SetDirty();
+    SetContentDirty();
 }
 
 void RSBaseRenderNode::RemoveFromTree(bool skipTransition)
@@ -236,7 +236,7 @@ void RSBaseRenderNode::ClearChildren()
         ++pos;
     }
     children_.clear();
-    SetDirty();
+    SetContentDirty();
 }
 
 void RSBaseRenderNode::SetParent(WeakPtr parent)
@@ -268,6 +268,12 @@ void RSBaseRenderNode::DumpTree(int32_t depth, std::string& out) const
     out += "| ";
     DumpNodeType(out);
     out += "[" + std::to_string(GetId()) + "]";
+    if (IsInstanceOf<RSRenderNode>()) {
+        auto node = (static_cast<const RSRenderNode*>(this));
+        if (node->IsSuggestedDrawInGroup()) {
+            out += ", [node group]";
+        }
+    }
     if (GetType() == RSRenderNodeType::SURFACE_NODE) {
         auto surfaceNode = (static_cast<const RSSurfaceRenderNode*>(this));
         auto p = parent_.lock();
@@ -346,18 +352,19 @@ void RSBaseRenderNode::DumpNodeType(std::string& out) const
 
 bool RSBaseRenderNode::IsDirty() const
 {
-    return dirtyStatus_ == NodeDirty::DIRTY;
+    return dirtyStatus_ != NodeDirty::CLEAN;
+}
+
+bool RSBaseRenderNode::IsContentDirty() const
+{
+    return isContentDirty_;
 }
 
 // attention: current all base node's dirty ops causing content dirty
-bool RSBaseRenderNode::IsContentDirty() const
-{
-    return dirtyStatus_ == NodeDirty::DIRTY;
-}
-
 void RSBaseRenderNode::SetContentDirty()
 {
-    dirtyStatus_ = NodeDirty::DIRTY;
+    isContentDirty_ = true;
+    SetDirty();
 }
 
 void RSBaseRenderNode::SetDirty()

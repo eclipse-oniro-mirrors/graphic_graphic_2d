@@ -19,12 +19,14 @@
 #include <optional>
 #include <vector>
 
+#include "include/effects/SkColorMatrix.h"
 #include "common/rs_macros.h"
 #include "common/rs_matrix3.h"
 #include "common/rs_vector4.h"
 #include "property/rs_properties_def.h"
 #include "render/rs_border.h"
 #include "render/rs_filter.h"
+#include "render/rs_gradient_blur_para.h"
 #include "render/rs_image.h"
 #include "render/rs_mask.h"
 #include "render/rs_path.h"
@@ -72,8 +74,8 @@ public:
     float GetFrameOffsetX() const;
     float GetFrameOffsetY() const;
 
-    void SetSandBox(Vector2f parentPosition);
-    Vector2f GetSandBox() const;
+    void SetSandBox(const std::optional<Vector2f>& parentPosition);
+    const std::optional<Vector2f>& GetSandBox() const;
 
     void SetPositionZ(float positionZ);
     float GetPositionZ() const;
@@ -81,9 +83,11 @@ public:
     void SetPivot(Vector2f pivot);
     void SetPivotX(float pivotX);
     void SetPivotY(float pivotY);
+    void SetPivotZ(float pivotZ);
     Vector2f GetPivot() const;
     float GetPivotX() const;
     float GetPivotY() const;
+    float GetPivotZ() const;
 
     void SetCornerRadius(Vector4f cornerRadius);
     Vector4f GetCornerRadius() const;
@@ -120,8 +124,8 @@ public:
     void SetAlphaOffscreen(bool alphaOffscreen);
     bool GetAlphaOffscreen() const;
 
-    void SetSublayerTransform(Matrix3f sublayerTransform);
-    Matrix3f GetSublayerTransform() const;
+    void SetSublayerTransform(const std::optional<Matrix3f>& sublayerTransform);
+    const std::optional<Matrix3f>& GetSublayerTransform() const;
 
     // foreground properties
     void SetForegroundColor(Color color);
@@ -154,8 +158,10 @@ public:
 
     // filter properties
     void SetBackgroundFilter(std::shared_ptr<RSFilter> backgroundFilter);
+    void SetLinearGradientBlurPara(std::shared_ptr<RSLinearGradientBlurPara> para);
     void SetFilter(std::shared_ptr<RSFilter> filter);
     std::shared_ptr<RSFilter> GetBackgroundFilter() const;
+    std::shared_ptr<RSLinearGradientBlurPara> GetLinearGradientBlurPara() const;
     std::shared_ptr<RSFilter> GetFilter() const;
     bool NeedFilter() const;
 
@@ -240,6 +246,30 @@ public:
     void SetLightUpEffect(float lightUpEffectDegree);
     float GetLightUpEffect() const;
     bool IsLightUpEffectValid() const;
+
+    // Image effect properties
+    void SetGrayScale(const std::optional<float>& grayScale);
+    const std::optional<float>& GetGrayScale() const;
+    void SetBrightness(const std::optional<float>& brightness);
+    const std::optional<float>& GetBrightness() const;
+    void SetContrast(const std::optional<float>& contrast);
+    const std::optional<float>& GetContrast() const;
+    void SetSaturate(const std::optional<float>& saturate);
+    const std::optional<float>& GetSaturate() const;
+    void SetSepia(const std::optional<float>& sepia);
+    const std::optional<float>& GetSepia() const;
+    void SetInvert(const std::optional<float>& invert);
+    const std::optional<float>& GetInvert() const;
+    void SetHueRotate(const std::optional<float>& hueRotate);
+    const std::optional<float>& GetHueRotate() const;
+    void SetColorBlend(const std::optional<Color>& colorBlend);
+    const std::optional<Color>& GetColorBlend() const;
+
+    const sk_sp<SkColorFilter> GetColorFilter() const;
+
+    void SetUseEffect(bool useEffect);
+    bool GetUseEffect() const;
+
 private:
     void Reset();
     void SetDirty();
@@ -264,6 +294,7 @@ private:
     bool contentDirty_ = false;
 
     bool hasBounds_ = false;
+    bool useEffect_ = false;
 
     Gravity frameGravity_ = Gravity::DEFAULT;
 
@@ -276,25 +307,34 @@ private:
     std::shared_ptr<RSObjGeometry> frameGeo_;
 
     std::shared_ptr<RSFilter> backgroundFilter_ = nullptr;
+    std::shared_ptr<RSLinearGradientBlurPara> linearGradientBlurPara_ = nullptr;
     std::shared_ptr<RSBorder> border_ = nullptr;
     std::shared_ptr<RSPath> clipPath_ = nullptr;
-    std::unique_ptr<Vector4f> cornerRadius_ = nullptr;
-    std::unique_ptr<Decoration> decoration_ = nullptr;
+    std::optional<Vector4f> cornerRadius_;
+    std::optional<Decoration> decoration_;
     std::shared_ptr<RSFilter> filter_ = nullptr;
     std::shared_ptr<RSMask> mask_ = nullptr;
-    std::unique_ptr<RSShadow> shadow_ = nullptr;
-    std::unique_ptr<Matrix3f> sublayerTransform_ = nullptr;
+    std::optional<RSShadow> shadow_;
+    std::optional<Matrix3f> sublayerTransform_;
     float spherizeDegree_ = 0.f;
     float lightUpEffectDegree_ = 1.0f;
 
     std::weak_ptr<RSRenderNode> backref_;
 
-    std::unique_ptr<Vector2f> sandboxPosition_ = nullptr;
+    std::optional<Vector2f> sandboxPosition_;
+    std::optional<Vector4f> pixelStretch_;
+    std::optional<Vector4f> pixelStretchPercent_;
+    std::optional<RRect> clipRRect_;
 
-    std::unique_ptr<Vector4f> pixelStretch_ = nullptr;
-
-    std::unique_ptr<Vector4f> pixelStretchPercent_ = nullptr;
-    std::unique_ptr<RRect> clipRRect_ = nullptr;
+    std::optional<float> grayScale_;
+    std::optional<float> brightness_;
+    std::optional<float> contrast_;
+    std::optional<float> saturate_;
+    std::optional<float> sepia_;
+    std::optional<float> invert_;
+    std::optional<float> hueRotate_;
+    std::optional<Color> colorBlend_;
+    sk_sp<SkColorFilter> colorFilter_ = nullptr;
 
     friend class RSCanvasRenderNode;
     friend class RSPropertiesPainter;

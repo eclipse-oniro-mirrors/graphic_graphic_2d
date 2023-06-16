@@ -30,6 +30,7 @@ public:
     ~RSBlurFilter() override;
     float GetBlurRadiusX();
     float GetBlurRadiusY();
+    bool IsValid() const override;
 #ifndef USE_ROSEN_DRAWING
     std::shared_ptr<RSSkiaFilter> Compose(const std::shared_ptr<RSSkiaFilter>& inner) override;
 #else
@@ -41,6 +42,10 @@ public:
     std::shared_ptr<RSFilter> Sub(const std::shared_ptr<RSFilter>& rhs) override;
     std::shared_ptr<RSFilter> Multiply(float rhs) override;
     std::shared_ptr<RSFilter> Negate() override;
+    bool IsNearEqual(
+        const std::shared_ptr<RSFilter>& other, float threshold = std::numeric_limits<float>::epsilon()) const override;
+    bool IsNearZero(float threshold = std::numeric_limits<float>::epsilon()) const override;
+
 private:
     float blurRadiusX_;
     float blurRadiusY_;

@@ -513,6 +513,11 @@ void RSNode::SetPivotY(float pivotY)
     property->Set(pivot);
 }
 
+void RSNode::SetPivotZ(const float pivotZ)
+{
+    SetProperty<RSPivotZModifier, RSAnimatableProperty<float>>(RSModifierType::PIVOT_Z, pivotZ);
+}
+
 void RSNode::SetCornerRadius(float cornerRadius)
 {
     SetCornerRadius(Vector4f(cornerRadius));
@@ -791,6 +796,12 @@ void RSNode::SetFilter(const std::shared_ptr<RSFilter>& filter)
     SetProperty<RSFilterModifier, RSAnimatableProperty<std::shared_ptr<RSFilter>>>(RSModifierType::FILTER, filter);
 }
 
+void RSNode::SetLinearGradientBlurPara(const std::shared_ptr<RSLinearGradientBlurPara>& para)
+{
+    SetProperty<RSLinearGradientBlurParaModifier, RSProperty<std::shared_ptr<RSLinearGradientBlurPara>>>
+                                                                    (RSModifierType::LINEAR_GRADIENT_BLUR_PARA, para);
+}
+
 void RSNode::SetCompositingFilter(const std::shared_ptr<RSFilter>& compositingFilter) {}
 
 void RSNode::SetShadowColor(uint32_t colorValue)
@@ -879,6 +890,11 @@ void RSNode::SetVisible(bool visible)
 void RSNode::SetMask(const std::shared_ptr<RSMask>& mask)
 {
     SetProperty<RSMaskModifier, RSProperty<std::shared_ptr<RSMask>>>(RSModifierType::MASK, mask);
+}
+
+void RSNode::SetUseEffect(bool useEffect)
+{
+    SetProperty<RSUseEffectModifier, RSProperty<bool>>(RSModifierType::USE_EFFECT, useEffect);
 }
 
 void RSNode::SetPixelStretch(const Vector4f& stretchSize)
@@ -1206,6 +1222,48 @@ void RSNode::MarkNodeGroup(bool isNodeGroup)
     if (transactionProxy != nullptr) {
         transactionProxy->AddCommand(command, IsRenderServiceNode());
     }
+}
+
+
+void RSNode::SetGrayScale(float grayScale)
+{
+    SetProperty<RSGrayScaleModifier, RSAnimatableProperty<float>>(RSModifierType::GRAY_SCALE, grayScale);
+}
+
+void RSNode::SetBrightness(float brightness)
+{
+    SetProperty<RSBrightnessModifier, RSAnimatableProperty<float>>(RSModifierType::BRIGHTNESS, brightness);
+}
+
+void RSNode::SetContrast(float contrast)
+{
+    SetProperty<RSContrastModifier, RSAnimatableProperty<float>>(RSModifierType::CONTRAST, contrast);
+}
+
+void RSNode::SetSaturate(float saturate)
+{
+    SetProperty<RSSaturateModifier, RSAnimatableProperty<float>>(RSModifierType::SATURATE, saturate);
+}
+
+void RSNode::SetSepia(float sepia)
+{
+    SetProperty<RSSepiaModifier, RSAnimatableProperty<float>>(RSModifierType::SEPIA, sepia);
+}
+
+void RSNode::SetInvert(float invert)
+{
+    SetProperty<RSInvertModifier, RSAnimatableProperty<float>>(RSModifierType::INVERT, invert);
+}
+
+void RSNode::SetHueRotate(float hueRotate)
+{
+    SetProperty<RSHueRotateModifier, RSAnimatableProperty<float>>(RSModifierType::HUE_ROTATE, hueRotate);
+}
+
+void RSNode::SetColorBlend(uint32_t colorValue)
+{
+    auto colorBlend = Color::FromArgbInt(colorValue);
+    SetProperty<RSColorBlendModifier, RSAnimatableProperty<Color>>(RSModifierType::COLOR_BLEND, colorBlend);
 }
 } // namespace Rosen
 } // namespace OHOS

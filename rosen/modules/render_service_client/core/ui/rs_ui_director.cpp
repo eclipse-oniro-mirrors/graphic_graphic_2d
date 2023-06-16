@@ -15,6 +15,8 @@
 
 #include "ui/rs_ui_director.h"
 
+#include <src/core/SkTraceEventCommon.h>
+
 #include "rs_trace.h"
 #include "sandbox_utils.h"
 
@@ -25,12 +27,16 @@
 #include "pipeline/rs_node_map.h"
 #include "pipeline/rs_render_thread.h"
 #include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
 #include "transaction/rs_application_agent_impl.h"
 #include "transaction/rs_interfaces.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "ui/rs_root_node.h"
 #include "ui/rs_surface_extractor.h"
 #include "ui/rs_surface_node.h"
+#ifdef NEW_RENDER_CONTEXT
+#include "memory/rs_memory_manager.h"
+#endif
 
 #ifdef _WIN32
 #include <windows.h>
@@ -82,6 +88,12 @@ void RSUIDirector::Init(bool shouldCreateRenderThread)
     RSApplicationAgentImpl::Instance().RegisterRSApplicationAgent();
 
     GoForeground();
+
+#ifdef SK_BUILD_TRACE_FOR_OHOS
+    skiaTraceEnabled_ = RSSystemProperties::GetSkiaTraceEnabled();
+    SkOHOSTraceUtil::setEnableTracing((skiaTraceEnabled_ != SkiaTraceType::DISABLED));
+    SkOHOSTraceUtil::setEnableHiLog((skiaTraceEnabled_ == SkiaTraceType::TRACE_AND_DETAILED_LOG));
+#endif
 }
 
 void RSUIDirector::GoForeground()
@@ -129,7 +141,11 @@ void RSUIDirector::GoBackground()
             auto renderContext = RSRenderThread::Instance().GetRenderContext();
             if (renderContext != nullptr) {
 #ifndef ROSEN_CROSS_PLATFORM
+#if defined(NEW_RENDER_CONTEXT)
+                MemoryManager::ClearRedundantResources(renderContext->GetGrContext());
+#else
                 renderContext->ClearRedundantResources();
+#endif
 #endif
             }
         });
@@ -262,6 +278,8 @@ void RSUIDirector::RecvMessages()
     if (!RSMessageProcessor::Instance().HasTransaction(pid)) {
         return;
     }
+    static std::mutex recvMessagesMutex;
+    std::unique_lock<std::mutex> lock(recvMessagesMutex);
     auto transactionDataPtr = std::make_shared<RSTransactionData>(RSMessageProcessor::Instance().GetTransaction(pid));
     RecvMessages(transactionDataPtr);
 }

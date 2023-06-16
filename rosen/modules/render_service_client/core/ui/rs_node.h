@@ -32,11 +32,19 @@
 #include "render/rs_path.h"
 #include "ui/rs_base_node.h"
 
+#ifndef USE_ROSEN_DRAWING
 class SkCanvas;
+#else
+#include "recording/recording_canvas.h"
+#endif
 
 namespace OHOS {
 namespace Rosen {
+#ifndef USE_ROSEN_DRAWING
 using DrawFunc = std::function<void(std::shared_ptr<SkCanvas>)>;
+#else
+using DrawFunc = std::function<void(std::shared_ptr<Drawing::RecordingCanvas>)>;
+#endif
 using PropertyCallback = std::function<void()>;
 class RSAnimation;
 class RSCommand;
@@ -117,6 +125,7 @@ public:
     void SetPivot(float pivotX, float pivotY);
     void SetPivotX(float pivotX);
     void SetPivotY(float pivotY);
+    void SetPivotZ(float pivotZ);
 
     void SetCornerRadius(float cornerRadius);
     void SetCornerRadius(const Vector4f& cornerRadius);
@@ -170,6 +179,7 @@ public:
 
     void SetBackgroundFilter(const std::shared_ptr<RSFilter>& backgroundFilter);
     void SetFilter(const std::shared_ptr<RSFilter>& filter);
+    void SetLinearGradientBlurPara(const std::shared_ptr<RSLinearGradientBlurPara>& para);
     void SetCompositingFilter(const std::shared_ptr<RSFilter>& compositingFilter);
 
     void SetShadowColor(uint32_t colorValue);
@@ -204,6 +214,8 @@ public:
         transitionEffect_ = effect;
     }
 
+    void SetUseEffect(bool useEffect);
+
     // driven render
     void MarkDrivenRender(bool flag);
     void MarkDrivenRenderItemIndex(int index);
@@ -219,6 +231,23 @@ public:
 
     // Mark preferentially draw node and childrens
     void MarkNodeGroup(bool isNodeGroup);
+
+    void SetGrayScale(float grayScale);
+
+    void SetBrightness(float brightness);
+
+    void SetContrast(float contrast);
+
+    void SetSaturate(float saturate);
+
+    void SetSepia(float sepia);
+
+    void SetInvert(float invert);
+
+    void SetHueRotate(float hueRotate);
+
+    void SetColorBlend(uint32_t colorValue);
+
 protected:
     explicit RSNode(bool isRenderServiceNode);
     explicit RSNode(bool isRenderServiceNode, NodeId id);

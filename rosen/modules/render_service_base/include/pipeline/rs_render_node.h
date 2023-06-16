@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <unordered_set>
+#include "common/rs_common_def.h"
 
 #ifndef USE_ROSEN_DRAWING
 #include "include/core/SkRefCnt.h"
@@ -56,7 +57,8 @@ public:
 
     std::pair<bool, bool> Animate(int64_t timestamp) override;
     // PrepareCanvasRenderNode in UniRender
-    bool Update(RSDirtyRegionManager& dirtyManager, const RSProperties* parent, bool parentDirty, RectI clipRect);
+    bool Update(
+        RSDirtyRegionManager& dirtyManager, const RSProperties* parent, bool parentDirty, RectI clipRect);
     // Other situation
     bool Update(RSDirtyRegionManager& dirtyManager, const RSProperties* parent, bool parentDirty);
 #ifndef USE_ROSEN_DRAWING
@@ -138,20 +140,15 @@ public:
         return isStaticCached_;
     }
 
-    void InitCacheSurface(RSPaintFilterCanvas& canvas);
-#ifndef USE_ROSEN_DRAWING
-    void InitCacheSurface(sk_sp<SkSurface> cacheSurface)
-    {
-        cacheSurface_ = cacheSurface;
-    }
+#ifdef NEW_SKIA
+    void InitCacheSurface(GrRecordingContext* grContext);
+#else
+    void InitCacheSurface(GrContext* grContext);
+#endif
 
+#ifndef USE_ROSEN_DRAWING
     sk_sp<SkSurface> GetCacheSurface() const
 #else
-    void InitCacheSurface(std::shared_ptr<Drawing::Surface> cacheSurface)
-    {
-        cacheSurface_ = cacheSurface;
-    }
-
     std::shared_ptr<Drawing::Surface> GetCacheSurface() const
 #endif
     {
@@ -178,7 +175,7 @@ public:
         cacheCompletedSurface_ = nullptr;
     }
 
-    void DrawCacheSurface(RSPaintFilterCanvas& canvas) const;
+    void DrawCacheSurface(RSPaintFilterCanvas& canvas, bool isSubThreadNode = false) const;
 
     void SetCacheType(CacheType cacheType)
     {
@@ -190,16 +187,16 @@ public:
         return cacheType_;
     }
 
-    float GetShadowRectOffsetX() const
+    int GetShadowRectOffsetX() const
     {
         return shadowRectOffsetX_;
     }
 
-    float GetShadowRectOffsetY() const
+    int GetShadowRectOffsetY() const
     {
         return shadowRectOffsetY_;
     }
-    
+
     void SetDrawingCacheType(RSDrawingCacheType cacheType)
     {
         drawingCacheType_ = cacheType;
@@ -286,6 +283,26 @@ public:
         hasFilter_ = hasFilter;
     }
 
+    bool HasHardwareNode() const
+    {
+        return hasHardwareNode_;
+    }
+
+    void SetHasHardwareNode(bool hasHardwareNode)
+    {
+        hasHardwareNode_ = hasHardwareNode;
+    }
+
+    bool HasAbilityComponent() const
+    {
+        return hasAbilityComponent_;
+    }
+
+    void SetHasAbilityComponent(bool hasAbilityComponent)
+    {
+        hasAbilityComponent_ = hasAbilityComponent;
+    }
+
     bool IsMainThreadNode() const
     {
         return isMainThreadNode_;
@@ -294,6 +311,16 @@ public:
     void SetIsMainThreadNode(bool isMainThreadNode)
     {
         isMainThreadNode_ = isMainThreadNode;
+    }
+
+    bool IsScale() const
+    {
+        return isScale_;
+    }
+
+    void SetIsScale(bool isScale)
+    {
+        isScale_ = isScale;
     }
 
     void SetPriority(NodePriorityType priority)
@@ -308,7 +335,7 @@ public:
 
     bool HasCachedTexture() const
     {
-        return cacheCompletedSurface_ != nullptr;
+        return cacheTexture_ != nullptr;
     }
 
     void SetCacheTexture(sk_sp<SkImage> texture)
@@ -321,7 +348,15 @@ public:
         return cacheTexture_;
     }
 
-    void DrawCacheTexture(RSPaintFilterCanvas& canvas) const;
+    void SetNeedClearFlag(bool needClear)
+    {
+        needClear_ = needClear;
+    }
+
+    bool NeedClear() const
+    {
+        return needClear_;
+    }
 
     void SetDrawRegion(std::shared_ptr<RectF> rect)
     {
@@ -329,18 +364,20 @@ public:
     }
 
     void UpdateDrawRegion();
+    void UpdateEffectRegion(std::optional<SkPath>& region) const;
 
-    bool HasGroupableAnimations() const;
-    bool isForcedDrawInGroup() const;
-    bool isSuggestedDrawInGroup() const;
+    void CheckGroupableAnimation(const PropertyId& id, bool isAnimAdd);
+    bool IsForcedDrawInGroup() const;
+    bool IsSuggestedDrawInGroup() const;
+    void CheckDrawingCacheType();
 
     enum NodeGroupType {
-        NONE,
+        NONE = 0,
         GROUPED_BY_ANIM,
         GROUPED_BY_UI,
         GROUPED_BY_USER,
     };
-    void MarkNodeGroup(NodeGroupType type);
+    void MarkNodeGroup(NodeGroupType type, bool isNodeGroup);
     NodeGroupType GetNodeGroupType()
     {
         return nodeGroupType_;
@@ -373,8 +410,8 @@ private:
     // clipRect only used in UniRener when calling PrepareCanvasRenderNode
     // PrepareCanvasRenderNode in UniRender: needClip = true and clipRect is meaningful
     // Other situation: needClip = false and clipRect is meaningless
-    bool Update(
-        RSDirtyRegionManager& dirtyManager, const RSProperties* parent, bool parentDirty, bool needClip, RectI clipRect);
+    bool Update(RSDirtyRegionManager& dirtyManager,
+        const RSProperties* parent, bool parentDirty, bool needClip, RectI clipRect);
     void UpdateDirtyRegion(RSDirtyRegionManager& dirtyManager, bool geoDirty, bool needClip, RectI clipRect);
 
     bool isDirtyRegionUpdated_ = false;
@@ -405,7 +442,11 @@ private:
 
     sk_sp<SkImage> cacheTexture_;
     bool isMainThreadNode_ = true;
+    bool isScale_ = false;
     bool hasFilter_ = false;
+    bool hasHardwareNode_ = false;
+    bool hasAbilityComponent_ = false;
+    bool needClear_ = false;
     NodePriorityType priority_ = NodePriorityType::MAIN_PRIORITY;
 
     // driven render
@@ -420,10 +461,9 @@ private:
     std::shared_ptr<RectF> drawRegion_ = nullptr;
     NodeGroupType nodeGroupType_ = NodeGroupType::NONE;
 
-    RectI shadowRect_;
     // shadowRectOffset means offset between shadowRect and absRect of node
-    float shadowRectOffsetX_ = 0.0f;
-    float shadowRectOffsetY_ = 0.0f;
+    int shadowRectOffsetX_ = 0;
+    int shadowRectOffsetY_ = 0;
     // Only use in RSRenderNode::DrawCacheSurface to calculate scale factor
     float boundsWidth_ = 0.0f;
     float boundsHeight_ = 0.0f;

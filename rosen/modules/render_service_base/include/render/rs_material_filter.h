@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -67,6 +67,8 @@ public:
     RSMaterialFilter(int style, float dipScale, BLUR_COLOR_MODE mode, float ratio);
     RSMaterialFilter(MaterialParam materialParam, BLUR_COLOR_MODE mode);
     ~RSMaterialFilter() override;
+    std::shared_ptr<RSFilter> TransformFilter(float fraction);
+    bool IsValid() const override;
 #ifndef USE_ROSEN_DRAWING
     void PreProcess(sk_sp<SkImage> image) override;
 #else
@@ -84,6 +86,10 @@ public:
     std::shared_ptr<RSFilter> Sub(const std::shared_ptr<RSFilter>& rhs) override;
     std::shared_ptr<RSFilter> Multiply(float rhs) override;
     std::shared_ptr<RSFilter> Negate() override;
+    bool IsNearEqual(
+        const std::shared_ptr<RSFilter>& other, float threshold = std::numeric_limits<float>::epsilon()) const override;
+    bool IsNearZero(float threshold = std::numeric_limits<float>::epsilon()) const override;
+
 private:
     BLUR_COLOR_MODE colorMode_;
     float radius_ {};
