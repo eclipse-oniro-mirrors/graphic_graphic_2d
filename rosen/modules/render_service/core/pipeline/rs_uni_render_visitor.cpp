@@ -1876,6 +1876,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             parallelRenderManager->LoadBalanceAndNotify(TaskType::PROCESS_TASK);
             parallelRenderManager->MergeRenderResult(*canvas_);
             parallelRenderManager->CommitSurfaceNum(node.GetChildrenCount());
+            parallelRenderManager->ProcessFilterSurfaceRenderNode();
         }
 #endif
         if (saveLayerCnt > 0) {
@@ -2659,6 +2660,9 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     // hence visibleRegions cannot be used.
     if (isOpDropped_ && node.IsAppWindow()) {
         auto visibleRegions = node.GetVisibleRegion().GetRegionRects();
+        if (isParallel_) {
+            visibleRegions = node.GetAlignedVisibleDirtyRegion().GetRegionRects();
+        }
         if (visibleRegions.size() == 1) {
             canvas_->SetVisibleRect(SkRect::MakeLTRB(
                 visibleRegions[0].left_, visibleRegions[0].top_, visibleRegions[0].right_, visibleRegions[0].bottom_));
