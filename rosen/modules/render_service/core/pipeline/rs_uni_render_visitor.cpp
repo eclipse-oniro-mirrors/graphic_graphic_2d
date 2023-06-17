@@ -792,7 +792,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     dirtyFlag_ = dirtyFlag;
     isQuickSkipPreparationEnabled_ = isQuickSkipPreparationEnabled;
     prepareClipRect_ = prepareClipRect;
-    if (node.GetDstRectChanged() || (node.GetDirtyManager() && node.GetDirtyManager()->IsDirty())) {
+    if (node.GetDstRectChanged() || (node.GetDirtyManager() && node.GetDirtyManager()->IsCurrentFrameDirty())) {
         dirtySurfaceNodeMap_.emplace(node.GetId(), node.ReinterpretCastTo<RSSurfaceRenderNode>());
     }
     if (node.IsAppWindow()) {
@@ -1607,7 +1607,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             curDisplayDirtyManager_->MergeSurfaceRect();
             curDisplayDirtyManager_->UpdateDirty(isDirtyRegionAlignedEnable_);
         }
-        if (isOpDropped_ && dirtySurfaceNodeMap_.empty() && !curDisplayDirtyManager_->IsDirty()) {
+        if (isOpDropped_ && dirtySurfaceNodeMap_.empty() && !curDisplayDirtyManager_->IsCurrentFrameDirty()) {
             RS_LOGD("DisplayNode skip");
             RS_TRACE_NAME("DisplayNode skip");
             if (!IsHardwareComposerEnabled()) {
@@ -1672,7 +1672,12 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode, RGBA 8888 to RGBA 1010102");
         }
         node.SetFingerprint(hasFingerprint_);
+#ifdef NEW_RENDER_CONTEXT
+        renderFrame_ = renderEngine_->RequestFrame(std::static_pointer_cast<RSRenderSurfaceOhos>(rsSurface),
+            bufferConfig);
+#else
         renderFrame_ = renderEngine_->RequestFrame(std::static_pointer_cast<RSSurfaceOhos>(rsSurface), bufferConfig);
+#endif
         RS_TRACE_BEGIN("RSUniRender::wait for bufferRequest cond");
         if (!RSMainThread::Instance()->WaitUntilDisplayNodeBufferReleased(node)) {
             RS_TRACE_NAME("RSUniRenderVisitor no released buffer");
@@ -1882,8 +1887,14 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         if (saveLayerCnt > 0) {
 #ifndef USE_ROSEN_DRAWING
 #ifdef RS_ENABLE_GL
+#ifdef NEW_RENDER_CONTEXT
+            RSTagTracker tagTracker(
+                renderEngine_->GetDrawingContext()->GetDrawingContext(),
+                RSTagTracker::TAGTYPE::TAG_RESTORELAYER_DRAW_NODE);
+#else
             RSTagTracker tagTracker(
                 renderEngine_->GetRenderContext()->GetGrContext(), RSTagTracker::TAGTYPE::TAG_RESTORELAYER_DRAW_NODE);
+#endif
 #endif
             RS_TRACE_NAME("RSUniRender:RestoreLayer");
             canvas_->restoreToCount(saveLayerCnt);
@@ -1953,7 +1964,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
 
 void RSUniRenderVisitor::DrawSurfaceLayer(RSDisplayRenderNode& node)
 {
-#ifdef RS_ENABLE_GL
+#if defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_RENDER)
     auto parallelRenderManager = RSParallelRenderManager::Instance();
     std::shared_ptr<RSBaseRenderNode> nodePtr = node.shared_from_this();
     auto displayNodePtr = nodePtr->ReinterpretCastTo<RSDisplayRenderNode>();
@@ -2011,11 +2022,47 @@ void RSUniRenderVisitor::AssignGlobalZOrderAndCreateLayer()
 void RSUniRenderVisitor::AddOverDrawListener(std::unique_ptr<RSRenderFrame>& renderFrame,
     std::shared_ptr<RSCanvasListener>& overdrawListener)
 {
-    if (renderFrame->GetFrame() == nullptr) {
-        RS_LOGE("RSUniRenderVisitor::AddOverDrawListener: RSSurfaceFrame is null");
+#if defined(NEW_RENDER_CONTEXT)
+    if (renderFrame == nullptr) {
+        RS_LOGE("RSUniRenderVisitor::AddOverDrawListener: renderFrame is nullptr");
         return;
     }
-#ifndef USE_ROSEN_DRAWING
+    auto renderSurface = renderFrame->GetSurface();
+    if (renderSurface == nullptr) {
+        RS_LOGE("RSUniRenderVisitor::AddOverDrawListener: renderSurface is nullptr");
+        return;
+    }
+#if !defined(USE_ROSEN_DRAWING)
+    RS_TRACE_BEGIN("RSUniRender::GetSurface");
+    auto skSurface = renderSurface->GetSurface();
+    RS_TRACE_END();
+    if (skSurface == nullptr) {
+        RS_LOGE("RSUniRenderVisitor::AddOverDrawListener: skSurface is null");
+        return;
+    }
+    if (skSurface->getCanvas() == nullptr) {
+        ROSEN_LOGE("skSurface.getCanvas is null.");
+        return;
+    }
+#else
+    RS_TRACE_BEGIN("RSUniRender::GetSurface");
+    auto drSurface = renderSurface->GetSurface();
+    RS_TRACE_END();
+    if (drSurface == nullptr) {
+        RS_LOGE("RSUniRenderVisitor::AddOverDrawListener: drSurface is null");
+        return;
+    }
+    if (drSurface->GetCanvas() == nullptr) {
+        ROSEN_LOGE("drSurface.getCanvas is null.");
+        return;
+    }
+#endif
+#else
+    if (renderFrame->GetFrame() == nullptr) {
+        RS_LOGE("RSUniRenderVisitor::AddOverDrawListener: RSSurfaceFrame is nullptr");
+        return;
+    }
+#if !defined(USE_ROSEN_DRAWING)
     RS_TRACE_BEGIN("RSUniRender::GetSurface");
     auto skSurface = renderFrame->GetFrame()->GetSurface();
     RS_TRACE_END();
@@ -2039,6 +2086,7 @@ void RSUniRenderVisitor::AddOverDrawListener(std::unique_ptr<RSRenderFrame>& ren
         ROSEN_LOGE("drSurface.getCanvas is null.");
         return;
     }
+#endif
 #endif
     // if listenedCanvas is nullptr, that means disabled or listen failed
     std::shared_ptr<RSListenedCanvas> listenedCanvas = nullptr;
@@ -2084,7 +2132,7 @@ void RSUniRenderVisitor::CalcDirtyDisplayRegion(std::shared_ptr<RSDisplayRenderN
             continue;
         }
         auto surfaceDirtyManager = surfaceNode->GetDirtyManager();
-        RectI surfaceDirtyRect = surfaceDirtyManager->GetDirtyRegion();
+        RectI surfaceDirtyRect = surfaceDirtyManager->GetCurrentFrameDirtyRegion();
         if (surfaceNode->IsTransparent()) {
             // Handles the case of transparent surface, merge transparent dirty rect
             RectI transparentDirtyRect = surfaceNode->GetDstRect().IntersectRect(surfaceDirtyRect);
@@ -2228,8 +2276,8 @@ void RSUniRenderVisitor::CalcDirtyRegionForFilterNode(const RectI filterRect,
         return;
     }
 
-    RectI displayDirtyRect = displayDirtyManager->GetDirtyRegion();
-    RectI currentSurfaceDirtyRect = currentSurfaceDirtyManager->GetDirtyRegion();
+    RectI displayDirtyRect = displayDirtyManager->GetCurrentFrameDirtyRegion();
+    RectI currentSurfaceDirtyRect = currentSurfaceDirtyManager->GetCurrentFrameDirtyRegion();
 
     if (!displayDirtyRect.IntersectRect(filterRect).IsEmpty() ||
         !currentSurfaceDirtyRect.IntersectRect(filterRect).IsEmpty()) {
@@ -2254,7 +2302,7 @@ void RSUniRenderVisitor::CalcDirtyRegionForFilterNode(const RectI filterRect,
             }
             auto belowSurfaceDirtyManager = belowSurfaceNode->GetDirtyManager();
             RectI belowDirtyRect =
-                belowSurfaceDirtyManager ? belowSurfaceDirtyManager->GetDirtyRegion() : RectI{0, 0, 0, 0};
+                belowSurfaceDirtyManager ? belowSurfaceDirtyManager->GetCurrentFrameDirtyRegion() : RectI{0, 0, 0, 0};
             if (belowDirtyRect.IsEmpty()) {
                 continue;
             }
@@ -2327,7 +2375,7 @@ void RSUniRenderVisitor::AddContainerDirtyToGlobalDirty(std::shared_ptr<RSDispla
                 surfaceNode->GetName().c_str(), containerDirtyRegion.GetRegionInfo().c_str());
             std::vector<Occlusion::Rect> rects = containerDirtyRegion.GetRegionRects();
             for (const auto& rect : rects) {
-                displayDirtyManager->MergeDirtyRect(RectI{
+                displayDirtyManager->MergeDirtyRectAfterMergeHistory(RectI{
                     rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_ });
             }
         }
@@ -2616,10 +2664,10 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         node.GetId(), node.GetChildrenCount(), node.GetName().c_str(), node.GetOcclusionVisible());
 #ifdef RS_ENABLE_GL
 #ifndef USE_ROSEN_DRAWING
-#ifdef NEW_SKIA
-    GrDirectContext* grContext = renderEngine_->GetRenderContext()->GetGrContext();
+#ifdef NEW_RENDER_CONTEXT
+    auto grContext = renderEngine_->GetDrawingContext()->GetDrawingContext();
 #else
-    GrContext* grContext = renderEngine_->GetRenderContext()->GetGrContext();
+    auto grContext = renderEngine_->GetRenderContext()->GetGrContext();
 #endif
     RSTagTracker tagTracker(grContext, node.GetId(), RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE);
     node.SetGrContext(grContext);
@@ -2660,9 +2708,6 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     // hence visibleRegions cannot be used.
     if (isOpDropped_ && node.IsAppWindow()) {
         auto visibleRegions = node.GetVisibleRegion().GetRegionRects();
-        if (isParallel_) {
-            visibleRegions = node.GetAlignedVisibleDirtyRegion().GetRegionRects();
-        }
         if (visibleRegions.size() == 1) {
             canvas_->SetVisibleRect(SkRect::MakeLTRB(
                 visibleRegions[0].left_, visibleRegions[0].top_, visibleRegions[0].right_, visibleRegions[0].bottom_));
@@ -2739,11 +2784,11 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     if (property.IsSpherizeValid()) {
         DrawSpherize(node);
     } else {
+        node.ProcessRenderBeforeChildren(*canvas_);
         if (isUIFirst_ && RSUniRenderUtil::HandleSubThreadNode(node, *canvas_)) {
+            node.ProcessRenderAfterChildren(*canvas_);
             return;
         }
-        node.ProcessRenderBeforeChildren(*canvas_);
-
         if (node.GetBuffer() != nullptr) {
             if (node.IsHardwareEnabledType()) {
                 // since node has buffer, hwc disabledState could be reset by filter or surface cached
@@ -2903,8 +2948,14 @@ void RSUniRenderVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
         SkPaint paint;
         RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, paint);
 #ifdef RS_ENABLE_GL
-        RSTagTracker tagTracker(
-            renderEngine_->GetRenderContext()->GetGrContext(), RSTagTracker::TAG_SAVELAYER_COLOR_FILTER);
+#ifdef NEW_RENDER_CONTEXT
+            RSTagTracker tagTracker(
+                renderEngine_->GetDrawingContext()->GetDrawingContext(),
+                RSTagTracker::TAG_SAVELAYER_COLOR_FILTER);
+#else
+            RSTagTracker tagTracker(
+                renderEngine_->GetRenderContext()->GetGrContext(), RSTagTracker::TAG_SAVELAYER_COLOR_FILTER);
+#endif
 #endif
         saveCount = canvas_->saveLayer(nullptr, &paint);
     } else {

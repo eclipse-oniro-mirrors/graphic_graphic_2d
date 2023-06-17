@@ -67,24 +67,24 @@ void RSParallelPackVisitor::ProcessBaseRenderNode(RSBaseRenderNode &node)
 
 void RSParallelPackVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode &node)
 {
+    RSParallelRenderManager::Instance()->ClearFilterSurfaceRenderNode();
     isSecurityDisplay_ = node.GetSecurityDisplay();
     ProcessBaseRenderNode(node);
-    RSParallelRenderManager::Instance()->ClearFilterSurfaceRenderNode();
 }
 
 void RSParallelPackVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode &node)
 {
+    auto instance = RSParallelRenderManager::Instance();
+    // DockView and windows whose z-order is larger than DockView are drawn in render service main thread.
+    if (node.GetName() == "DockView" || instance->GetFilterSurfaceRenderNodeCount() > 0) {
+        instance->SetFilterSurfaceRenderNode(node);
+        return;
+    }
     RS_TRACE_NAME("RSParallelPackVisitor::Process:[" + node.GetName() + "]" + node.GetDstRect().ToString());
     RS_LOGD("RSParallelPackVisitor::ProcessSurfaceRenderNode node: %" PRIu64 ", child size:%u %s", node.GetId(),
         node.GetChildrenCount(), node.GetName().c_str());
     node.UpdatePositionZ();
     if (IsSkipProcessing(node)) {
-        return;
-    }
-    auto instance = RSParallelRenderManager::Instance();
-    // DockView and windows whose z-order is larger than DockView are drawn in render service main thread.
-    if (node.GetName() == "DockView" || instance->GetFilterSurfaceRenderNodeCount() > 0) {
-        instance->SetFilterSurfaceRenderNode(node);
         return;
     }
     instance->PackRenderTask(node, TaskType::PROCESS_TASK);

@@ -160,7 +160,7 @@ public:
     std::unique_ptr<RSRenderFrame> GetParallelFrame(uint32_t subMainThreadIdx);
     void SetFilterSurfaceRenderNode(RSSurfaceRenderNode& node)
     {
-        filterSurfaceRenderNodes_.push_back(node);
+        filterSurfaceRenderNodes_.push_back(node.ReinterpretCastTo<RSSurfaceRenderNode>());
     }
     void ClearFilterSurfaceRenderNode()
     {
@@ -170,7 +170,7 @@ public:
     {
         return filterSurfaceRenderNodes_.size();
     }
-    void DrawFilterSurfaceRenderNode();
+    void ProcessFilterSurfaceRenderNode();
 
 private:
     RSParallelRenderManager();
