@@ -563,6 +563,16 @@ int32_t RSRenderServiceClient::GetScreenType(ScreenId id, RSScreenType& screenTy
     return renderService->GetScreenType(id, screenType);
 }
 
+bool RSRenderServiceClient::GetBitmap(NodeId id, SkBitmap& bitmap)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::GetBitmap renderService == nullptr!");
+        return false;
+    }
+    return renderService->GetBitmap(id, bitmap);
+}
+
 int32_t RSRenderServiceClient::SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();

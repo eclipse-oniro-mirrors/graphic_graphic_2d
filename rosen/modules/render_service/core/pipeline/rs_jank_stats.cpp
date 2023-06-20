@@ -96,6 +96,7 @@ void RSJankStats::ReportJankStats()
     HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, reportName,
         OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "STARTTIME", lastReportTime_, "DURATION", reportDuration,
         "JANK_STATS", rsJankStats_, "JANK_STATS_VER", 1);
+    std::fill(rsJankStats_.begin(), rsJankStats_.end(), 0);
     lastReportTime_ = reportTime;
     isNeedReport_ = false;
 }

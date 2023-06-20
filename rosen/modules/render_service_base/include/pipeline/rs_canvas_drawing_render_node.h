@@ -40,6 +40,8 @@ public:
         return Type;
     }
 
+    bool GetBitmap(SkBitmap& bitmap);
+
 private:
     void ApplyDrawCmdModifier(RSModifierContext& context, RSModifierType type) const override;
 

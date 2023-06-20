@@ -43,6 +43,7 @@ class SkRegion;
 class SkTextBlob;
 class SkVertices;
 class SkTypeface;
+class SkBitmap;
 
 #ifdef NEW_SKIA
 struct SkSamplingOptions;
@@ -161,6 +162,7 @@ public:
     DECLARE_FUNCTION_OVERLOAD(SkPaint)
     DECLARE_FUNCTION_OVERLOAD(SkRect)
     DECLARE_FUNCTION_OVERLOAD(SkRegion)
+    DECLARE_FUNCTION_OVERLOAD(SkBitmap)
     DECLARE_FUNCTION_OVERLOAD(sk_sp<SkFlattenable>)
     DECLARE_FUNCTION_OVERLOAD(sk_sp<SkTextBlob>)
     DECLARE_FUNCTION_OVERLOAD(sk_sp<SkPicture>)

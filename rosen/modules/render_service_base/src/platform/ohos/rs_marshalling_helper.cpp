@@ -695,6 +695,85 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SkRegion& region)
     return true;
 }
 
+// SkBitmap
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const SkBitmap& val)
+{
+    size_t rb = val.rowBytes();
+    int width = val.width();
+    int height = val.height();
+    const void* addr = val.pixmap().addr();
+    size_t pixmapSize = rb * static_cast<size_t>(height);
+
+    parcel.WriteUint32(pixmapSize);
+    if (!WriteToParcel(parcel, addr, pixmapSize)) {
+        ROSEN_LOGE("RSMarshallingHelper::Marshalling write SkBitmap addr failed");
+        return false;
+    }
+
+    parcel.WriteUint32(rb);
+    parcel.WriteInt32(width);
+    parcel.WriteInt32(height);
+
+    parcel.WriteUint32(val.colorType());
+    parcel.WriteUint32(val.alphaType());
+
+    if (val.colorSpace() == nullptr) {
+        parcel.WriteUint32(0);
+        return true;
+    } else {
+        auto data = val.colorSpace()->serialize();
+        parcel.WriteUint32(data->size());
+        if (!WriteToParcel(parcel, data->data(), data->size())) {
+            ROSEN_LOGE("RSMarshallingHelper::Marshalling write SkBitmap colorSpace failed");
+            return false;
+        }
+    }
+    return true;
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SkBitmap& val)
+{
+    size_t pixmapSize = parcel.ReadUint32();
+    const void* addr = RSMarshallingHelper::ReadFromParcel(parcel, pixmapSize);
+    if (addr == nullptr) {
+        ROSEN_LOGE("RSMarshallingHelper::Unmarshalling read SkBitmap addr failed");
+        return false;
+    }
+
+    size_t rb = parcel.ReadUint32();
+    int width = parcel.ReadInt32();
+    int height = parcel.ReadInt32();
+
+    SkColorType colorType = static_cast<SkColorType>(parcel.ReadUint32());
+    SkAlphaType alphaType = static_cast<SkAlphaType>(parcel.ReadUint32());
+    sk_sp<SkColorSpace> colorSpace;
+
+    size_t size = parcel.ReadUint32();
+    if (size == 0) {
+        colorSpace = nullptr;
+    } else {
+        const void* data = RSMarshallingHelper::ReadFromParcel(parcel, size);
+        if (data == nullptr) {
+            ROSEN_LOGE("failed RSMarshallingHelper::Unmarshalling read SkBitmap data failed");
+            return false;
+        }
+        colorSpace = SkColorSpace::Deserialize(data, size);
+
+#ifdef RS_ENABLE_RECORDING
+        if (size >= MIN_DATA_SIZE && parcel.GetMaxCapacity() != RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY) {
+#else
+        if (size >= MIN_DATA_SIZE) {
+#endif
+            free(const_cast<void*>(data));
+        }
+    }
+
+    SkImageInfo imageInfo = SkImageInfo::Make(width, height, colorType, alphaType, colorSpace);
+    val.setInfo(imageInfo, rb);
+    val.setPixels(const_cast<void*>(addr));
+    return true;
+}
+
 // SKPath
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const SkPath& val)
 {

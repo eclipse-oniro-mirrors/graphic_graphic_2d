@@ -37,6 +37,7 @@ public:
 
     ~RSCanvasDrawingNode() override;
     static SharedPtr Create(bool isRenderServiceNode = false);
+    bool GetBitmap(SkBitmap& bitmap, std::shared_ptr<DrawCmdList> drawCmdList = nullptr, const SkRect* rect = nullptr);
 
 protected:
     RSCanvasDrawingNode(bool isRenderServiceNode);

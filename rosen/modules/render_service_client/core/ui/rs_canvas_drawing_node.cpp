@@ -17,12 +17,19 @@
 
 #include "command/rs_canvas_drawing_node_command.h"
 #include "common/rs_obj_geometry.h"
+#include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_node_map.h"
+#include "pipeline/rs_render_thread.h"
 #include "platform/common/rs_log.h"
+#include "transaction/rs_render_service_client.h"
 #include "transaction/rs_transaction_proxy.h"
 
 namespace OHOS {
 namespace Rosen {
+RSCanvasDrawingNode::RSCanvasDrawingNode(bool isRenderServiceNode) : RSCanvasNode(isRenderServiceNode) {}
+
+RSCanvasDrawingNode::~RSCanvasDrawingNode() {}
+
 RSCanvasDrawingNode::SharedPtr RSCanvasDrawingNode::Create(bool isRenderServiceNode)
 {
     SharedPtr node(new RSCanvasDrawingNode(isRenderServiceNode));
@@ -38,8 +45,44 @@ RSCanvasDrawingNode::SharedPtr RSCanvasDrawingNode::Create(bool isRenderServiceN
     return node;
 }
 
-RSCanvasDrawingNode::RSCanvasDrawingNode(bool isRenderServiceNode) : RSCanvasNode(isRenderServiceNode) {}
-
-RSCanvasDrawingNode::~RSCanvasDrawingNode() {}
+bool RSCanvasDrawingNode::GetBitmap(SkBitmap& bitmap, std::shared_ptr<DrawCmdList> drawCmdList, const SkRect* rect)
+{
+    if (IsUniRenderEnabled()) {
+        auto renderServiceClient =
+            std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient());
+        if (renderServiceClient == nullptr) {
+            ROSEN_LOGE("RSCanvasDrawingNode::GetBitmap renderServiceClient is nullptr!");
+            return false;
+        }
+        bool ret = renderServiceClient->GetBitmap(GetId(), bitmap);
+        if (!ret) {
+            ROSEN_LOGE("RSCanvasDrawingNode::GetBitmap GetBitmap failed");
+            return ret;
+        }
+    } else {
+        auto node =
+            RSRenderThread::Instance().GetContext().GetNodeMap().GetRenderNode<RSCanvasDrawingRenderNode>(GetId());
+        if (node == nullptr) {
+            RS_LOGE("RSCanvasDrawingNode::GetBitmap cannot find NodeId: [%" PRIu64 "]", GetId());
+            return false;
+        }
+        if (node->GetType() != RSRenderNodeType::CANVAS_DRAWING_NODE) {
+            RS_LOGE("RSCanvasDrawingNode::GetBitmap RenderNodeType != RSRenderNodeType::CANVAS_DRAWING_NODE");
+            return false;
+        }
+        auto getBitmapTask = [&]() { node->GetBitmap(bitmap); };
+        RSRenderThread::Instance().PostSyncTask(getBitmapTask);
+        if (bitmap.empty()) {
+            return false;
+        }
+    }
+    if (drawCmdList == nullptr) {
+        RS_LOGD("RSCanvasDrawingNode::GetBitmap drawCmdList == nullptr");
+    } else {
+        SkCanvas canvas(bitmap);
+        drawCmdList->Playback(canvas, rect);
+    }
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS
