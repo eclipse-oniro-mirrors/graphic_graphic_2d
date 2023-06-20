@@ -25,9 +25,6 @@
 
 namespace OHOS {
 namespace Rosen {
-namespace {
-    constexpr const char* ENTRY_VIEW = "EntryView";
-}
 void RSUniRenderUtil::MergeDirtyHistory(std::shared_ptr<RSDisplayRenderNode>& node, int32_t bufferAge,
     bool useAlignedDirtyRegion)
 {
@@ -433,7 +430,7 @@ int RSUniRenderUtil::GetRotationFromMatrix(Drawing::Matrix matrix)
 }
 #endif
 
-void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNode>& displayNode, uint64_t focusNodeId,
+void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNode>& displayNode,
     std::list<std::shared_ptr<RSSurfaceRenderNode>>& mainThreadNodes,
     std::list<std::shared_ptr<RSSurfaceRenderNode>>& subThreadNodes)
 {
@@ -442,60 +439,35 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
         return;
     }
     RS_TRACE_NAME("AssignWindowNodes");
-    auto isRotation = displayNode->IsRotationChanged();
-    std::shared_ptr<RSSurfaceRenderNode> entryViewNode = nullptr;
-    bool entryViewNeedReassign = false;
+    bool isRotation = displayNode->IsRotationChanged();
+    bool isScale = false;
     for (auto iter = displayNode->GetSortedChildren().begin(); iter != displayNode->GetSortedChildren().end(); iter++) {
         auto node = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*iter);
-        if (node == nullptr || !node->ShouldPaint()) {
+        if (node == nullptr) {
             ROSEN_LOGE("RSUniRenderUtil::AssignWindowNodes nullptr found in sortedChildren, this should not happen");
             continue;
         }
-        if (node->GetName() == ENTRY_VIEW) {
-            entryViewNode = node;
-            continue;
-        }
         if (node->IsLeashWindow() && node->IsScale()) {
-            entryViewNeedReassign = true;
-        }
-        bool isFocusNode = false;
-        if (node->GetId() == focusNodeId) {
-            isFocusNode = true;
-        }
-        if (!isFocusNode && node->IsLeashWindow()) {
-            for (auto& child : node->GetSortedChildren()) {
-                if (child && child->GetId() == focusNodeId) {
-                    isFocusNode = true;
-                    break;
-                }
-            }
-        }
-        if ((node->GetCacheSurfaceProcessedStatus() != CacheProcessStatus::DOING) &&
-            (node->HasFilter() || node->HasHardwareNode() || node->HasAbilityComponent() ||
-            (!node->IsScale() && isFocusNode) || isRotation)) {
-            AssignMainThreadNode(mainThreadNodes, node, subThreadNodes);
-        } else {
-            AssignSubThreadNode(subThreadNodes, node);
+            isScale = true;
+            break;
         }
     }
-    if (entryViewNode) {
-        if (entryViewNode->GetCacheSurfaceProcessedStatus() == CacheProcessStatus::DOING) {
-            AssignSubThreadNode(subThreadNodes, entryViewNode);
-        } else {
-            if (entryViewNeedReassign) {
-                AssignMainThreadNode(mainThreadNodes, entryViewNode, subThreadNodes);
-            } else {
-                if (entryViewNode->HasFilter() || entryViewNode->HasHardwareNode() ||
-                    entryViewNode->HasAbilityComponent() || isRotation ||
-                    (!entryViewNode->IsScale() && entryViewNode->GetId() == focusNodeId)) {
-                    AssignMainThreadNode(mainThreadNodes, entryViewNode, subThreadNodes);
-                } else {
-                    AssignSubThreadNode(subThreadNodes, entryViewNode);
-                }
-            }
+    for (auto iter = displayNode->GetSortedChildren().begin(); iter != displayNode->GetSortedChildren().end(); iter++) {
+        auto node = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*iter);
+        if (node == nullptr) {
+            ROSEN_LOGE("RSUniRenderUtil::AssignWindowNodes nullptr found in sortedChildren, this should not happen");
+            continue;
         }
-    } else {
-        ROSEN_LOGW("RSUniRenderUtil::AssignWindowNodes EntryView is nullptr, should not happen");
+        if (isScale) { // app start or close scene
+            if ((node->GetCacheSurfaceProcessedStatus() == CacheProcessStatus::DOING) ||
+                (!node->HasFilter() && !node->HasAbilityComponent() && !isRotation)) {
+                AssignSubThreadNode(subThreadNodes, node);
+            } else {
+                AssignMainThreadNode(mainThreadNodes, node, subThreadNodes);
+            }
+        } else {
+            AssignMainThreadNode(mainThreadNodes, node, subThreadNodes);
+        }
     }
     SortSubThreadNodes(subThreadNodes);
 }

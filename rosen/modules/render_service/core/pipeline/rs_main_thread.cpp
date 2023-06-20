@@ -1007,7 +1007,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
                 rootNode->GetSortedChildren().front());
             std::list<std::shared_ptr<RSSurfaceRenderNode>> mainThreadNodes;
             std::list<std::shared_ptr<RSSurfaceRenderNode>> subThreadNodes;
-            RSUniRenderUtil::AssignWindowNodes(displayNode, focusNodeId_, mainThreadNodes, subThreadNodes);
+            RSUniRenderUtil::AssignWindowNodes(displayNode, mainThreadNodes, subThreadNodes);
             const auto& nodeMap = context_->GetNodeMap();
             RSUniRenderUtil::ClearSurfaceIfNeed(nodeMap, displayNode, oldDisplayChildren_);
             uniVisitor->SetAssignedWindowNodes(mainThreadNodes, subThreadNodes);
