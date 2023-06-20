@@ -821,7 +821,7 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
 }
 
 void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas,
-    std::shared_ptr<RSSkiaFilter>& filter, const std::unique_ptr<SkRect>& rect, FilterType filterType)
+    std::shared_ptr<RSSkiaFilter>& filter, FilterType filterType, const std::unique_ptr<SkRect>& rect)
 {
     if (!filter->IsValid()) {
         return;
@@ -895,7 +895,7 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
 }
 #else
 void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas,
-    std::shared_ptr<RSDrawingFilter>& filter, const std::unique_ptr<Drawing::Rect>& rect, Drawing::Surface* surface)
+    std::shared_ptr<RSDrawingFilter>& filter, FilterType filterType, const std::unique_ptr<Drawing::Rect>& rect)
 {
     g_blurCnt++;
     Drawing::AutoCanvasRestore acr(canvas, true);
