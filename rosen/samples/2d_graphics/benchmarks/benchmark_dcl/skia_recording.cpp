@@ -146,16 +146,14 @@ void SkiaRecording::EndCapture() {
 
 void SkiaRecording::SavePicture(const sk_sp<SkData>& data, const std::string& filename)
 {
-    if (0 == access(filename.c_str(), F_OK)) {
-        return;
-    }
-
     SkFILEWStream stream(filename.c_str());
     if (stream.isValid()) {
         stream.write(data->data(), data->size());
         stream.flush();
-        std::cout << "SKP Captured Drawing Output (" << stream.bytesWritten() << " bytes) for frame. " 
+        std::cout << "SKP Captured Drawing Output (" << stream.bytesWritten() << " bytes) for frame. "
             << filename << std::endl;
+    } else {
+        std::cout << "Save picture failed. " << filename << " is not valid for frame." << filename << std::endl;
     }
 }
 }
