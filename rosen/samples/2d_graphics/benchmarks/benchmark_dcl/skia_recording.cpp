@@ -72,8 +72,7 @@ bool SkiaRecording::SetupMultiFrame()
 
 SkCanvas* SkiaRecording::BeginCapture(SkCanvas* canvas, int width, int height)
 {
-    SkCanvas* recordingCanvas = nullptr;
-    bool isFirstFrame = true;
+    static bool isFirstFrame = true;
     if (isFirstFrame && captureMode_ == SkiaCaptureMode::MultiFrame) {
         isFirstFrame = false;
         if (!SetupMultiFrame()) {
@@ -83,12 +82,11 @@ SkCanvas* SkiaRecording::BeginCapture(SkCanvas* canvas, int width, int height)
     // Create a canvas pointer, fill it depending on what kind of capture is requested (if any)
     SkCanvas* pictureCanvas = nullptr;
     switch (captureMode_) {
-        case SkiaCaptureMode::CallbackAPI:
-        case SkiaCaptureMode::SingleFrameSKP:
+        case SkiaCaptureMode::SingleFrame:
             recorder_.reset(new SkPictureRecorder());
             pictureCanvas = recorder_->beginRecording(width, height);
             break;
-        case SkiaCaptureMode::MultiFrameSKP:
+        case SkiaCaptureMode::MultiFrame:
             // If a multi frame recording is active, initialize recording for a single frame of a
             // multi frame file.
             pictureCanvas = multiPic_->beginPage(width, height);
@@ -107,11 +105,13 @@ SkCanvas* SkiaRecording::BeginCapture(SkCanvas* canvas, int width, int height)
     return nwayCanvas_.get();
 }
 
-void SkiaRecording::endCapture() {
-    if (CC_LIKELY(captureMode_ == SkiaCaptureMode::None)) { return; }
+void SkiaRecording::EndCapture() {
+    if (captureMode_ == SkiaCaptureMode::None) {
+        return;
+    }
     nwayCanvas_.reset();
 
-    if (captureFrameNum_ > 0 && captureMode_ == SkiaCaptureMode::MultiFrameSKP) {
+    if (captureFrameNum_ > 0 && captureMode_ == SkiaCaptureMode::MultiFrame) {
         multiPic_->endPage();
         captureFrameNum_--;
         if (captureFrameNum_ == 0) {
@@ -123,7 +123,7 @@ void SkiaRecording::endCapture() {
             // non-copyable. The lambda is only called once, so this is safe.
             SkFILEWStream* stream = openMultiPicStream_.release();
             std::cout << "Finalizing multi frame SKP" << std::endl;
-            stream->close();
+            multiPic_->close();
             delete stream;
             std::cout << "Multi frame SKP complete." << std::endl;
         }

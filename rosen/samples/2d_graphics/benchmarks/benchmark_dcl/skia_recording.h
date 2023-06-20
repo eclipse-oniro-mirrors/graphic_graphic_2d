@@ -22,8 +22,9 @@
 #include "include/core/SkStream.h"
 #include "include/core/SkDocument.h"
 #include "include/core/SkPictureRecorder.h"
-#include "include/core/SkNWayCanvas.h"
-#include "src/utils/SkMakeMultiPictureDocument.h"
+#include "include/core/SkSerialProcs.h"
+#include "include/utils/SkNWayCanvas.h"
+#include "src/utils/SkMultiPictureDocument.h"
 #include "tools/SkSharingProc.h"
 
 namespace OHOS {
