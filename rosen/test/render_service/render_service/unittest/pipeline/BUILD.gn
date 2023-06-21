@@ -236,7 +236,10 @@ ohos_unittest("RSQosThreadTest") {
 ## Build RSHardwareThreadTest
 ohos_unittest("RSHardwareThreadTest") {
   module_out_path = module_output_path
-  sources = [ "rs_hardware_thread_test.cpp" ]
+  sources = [
+    "mock/mock_hdi_device.cpp",
+    "rs_hardware_thread_test.cpp",
+  ]
   deps = [ ":rs_test_common" ]
   defines = []
   defines += gpu_defines
