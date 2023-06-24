@@ -682,9 +682,11 @@ sk_sp<SkShader> RSPropertiesPainter::MakeAlphaGradientShader(
             static_cast<uint8_t>(para->fractionStops_[i].first * ColorMax), ColorMax, ColorMax, ColorMax));
         p.emplace_back(para->fractionStops_[i].second);
     }
-    if (para->fractionStops_[para->fractionStops_.size() - 1].second < (1 - 0.01)) {  // 0.01 represents the fraction bias
+    // 0.01 represents the fraction bias
+    if (para->fractionStops_[para->fractionStops_.size() - 1].second < (1 - 0.01)) {
         c.emplace_back(SkColorSetARGB(ColorMin, ColorMax, ColorMax, ColorMax));
-        p.emplace_back(para->fractionStops_[para->fractionStops_.size() - 1].second + 0.01); // 0.01 represents the fraction bias
+        // 0.01 represents the fraction bias
+        p.emplace_back(para->fractionStops_[para->fractionStops_.size() - 1].second + 0.01);
     }
     auto shader = SkGradientShader::MakeLinear(pts, &c[0], &p[0], p.size(), SkTileMode::kClamp);
     return shader;
