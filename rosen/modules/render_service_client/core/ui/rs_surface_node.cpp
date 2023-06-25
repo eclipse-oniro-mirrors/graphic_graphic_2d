@@ -456,5 +456,22 @@ RSSurfaceNode::~RSSurfaceNode()
     }
 }
 
+void RSSurfaceNode::AttachToDisplay(uint64_t screenId)
+{
+    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeAttachToDisplay>(GetId(), screenId);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, IsRenderServiceNode());
+    }
+}
+
+void RSSurfaceNode::DetachToDisplay(uint64_t screenId)
+{
+    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeDetachToDisplay>(GetId(), screenId);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, IsRenderServiceNode());
+    }
+}
 } // namespace Rosen
 } // namespace OHOS
