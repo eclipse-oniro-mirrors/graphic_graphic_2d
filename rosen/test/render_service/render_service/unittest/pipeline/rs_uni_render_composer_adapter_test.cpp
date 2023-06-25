@@ -115,7 +115,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, BuildComposeInfo001, TestSize.Level1)
 
 /**
  * @tc.name: GetComposerInfoSrcRect001
- * @tc.desc: Test RSUniRenderComposerAdapterTest.GetComposerInfoSrcRect
+ * @tc.desc: Test RSUniRenderComposerAdapterTest.GetComposerInfoSrcRect with GRAPHIC_FLIP_V_ROT90
  * @tc.type: FUNC
  * @tc.require: issueI6S774
  */
@@ -128,12 +128,18 @@ HWTEST_F(RSUniRenderComposerAdapterTest, GetComposerInfoSrcRect001, TestSize.Lev
     surfaceNode->SetSrcRect(dstRect);
     surfaceNode->SetDstRect(dstRect);
     ComposeInfo info = composerAdapter_->BuildComposeInfo(*surfaceNode);
+    info.srcRect.x = DEFAULT_CANVAS_WIDTH;
+    info.srcRect.y = DEFAULT_CANVAS_HEIGHT;
+    surfaceNode->renderProperties_.SetBoundsWidth(DEFAULT_CANVAS_WIDTH);
+    surfaceNode->renderProperties_.SetBoundsHeight(DEFAULT_CANVAS_HEIGHT);
     composerAdapter_->GetComposerInfoSrcRect(info, *surfaceNode);
+    ASSERT_NE(0, info.srcRect.x);
+    ASSERT_NE(0, info.srcRect.y);
 }
 
 /**
  * @tc.name: GetComposerInfoSrcRect002
- * @tc.desc: Test RSUniRenderComposerAdapterTest.GetComposerInfoSrcRect
+ * @tc.desc: Test RSUniRenderComposerAdapterTest.GetComposerInfoSrcRect with GRAPHIC_FLIP_H_ROT180
  * @tc.type: FUNC
  * @tc.require: issueI6S774
  */
@@ -151,7 +157,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, GetComposerInfoSrcRect002, TestSize.Lev
 
 /**
  * @tc.name: GetComposerInfoSrcRect003
- * @tc.desc: Test RSUniRenderComposerAdapterTest.GetComposerInfoSrcRect
+ * @tc.desc: Test RSUniRenderComposerAdapterTest.GetComposerInfoSrcRect with GRAPHIC_FLIP_H_ROT270
  * @tc.type: FUNC
  * @tc.require: issueI6S774
  */
@@ -176,13 +182,14 @@ HWTEST_F(RSUniRenderComposerAdapterTest, GetComposerInfoSrcRect003, TestSize.Lev
 HWTEST_F(RSUniRenderComposerAdapterTest, GetComposerInfoSrcRect004, TestSize.Level1)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNode, nullptr);
     surfaceNode->renderProperties_.SetBoundsWidth(DEFAULT_CANVAS_WIDTH);
     surfaceNode->renderProperties_.SetBoundsHeight(DEFAULT_CANVAS_HEIGHT);
-    ASSERT_NE(surfaceNode, nullptr);
     RectI dstRect{0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT};
     surfaceNode->SetSrcRect(dstRect);
     surfaceNode->SetDstRect(dstRect);
     ComposeInfo info = composerAdapter_->BuildComposeInfo(*surfaceNode);
+    ASSERT_NE(info.buffer, nullptr);
     info.buffer->SetSurfaceBufferWidth(DEFAULT_CANVAS_WIDTH);
     info.buffer->SetSurfaceBufferHeight(DEFAULT_CANVAS_HEIGHT);
     composerAdapter_->GetComposerInfoSrcRect(info, *surfaceNode);
@@ -195,7 +202,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, GetComposerInfoSrcRect004, TestSize.Lev
 
 /**
  * @tc.name: DealWithNodeGravity001
- * @tc.desc: Test RSUniRenderComposerAdapterTest.DealWithNodeGravity
+ * @tc.desc: Test RSUniRenderComposerAdapterTest.DealWithNodeGravity when frameGravity is RESIZE
  * @tc.type: FUNC
  * @tc.require: issueI6S774
  */
@@ -210,6 +217,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, DealWithNodeGravity001, TestSize.Level1
     surfaceNode->SetSrcRect(dstRect);
     surfaceNode->SetDstRect(dstRect);
     ComposeInfo info = composerAdapter_->BuildComposeInfo(*surfaceNode);
+    ASSERT_NE(info.buffer, nullptr);
     info.buffer->SetSurfaceBufferWidth(DEFAULT_CANVAS_WIDTH);
     info.buffer->SetSurfaceBufferHeight(DEFAULT_CANVAS_HEIGHT);
 
@@ -224,7 +232,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, DealWithNodeGravity001, TestSize.Level1
 
 /**
  * @tc.name: DealWithNodeGravity002
- * @tc.desc: Test RSUniRenderComposerAdapterTest.DealWithNodeGravity
+ * @tc.desc: Test RSUniRenderComposerAdapterTest.DealWithNodeGravity when frameGravity is TOP
  * @tc.type: FUNC
  * @tc.require: issueI6S774
  */
@@ -239,6 +247,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, DealWithNodeGravity002, TestSize.Level1
     surfaceNode->SetSrcRect(dstRect);
     surfaceNode->SetDstRect(dstRect);
     ComposeInfo info = composerAdapter_->BuildComposeInfo(*surfaceNode);
+    ASSERT_NE(info.buffer, nullptr);
     info.buffer->SetSurfaceBufferWidth(DEFAULT_CANVAS_WIDTH);
     info.buffer->SetSurfaceBufferHeight(DEFAULT_CANVAS_HEIGHT);
 
@@ -252,7 +261,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, DealWithNodeGravity002, TestSize.Level1
 
 /**
  * @tc.name: DealWithNodeGravity003
- * @tc.desc: Test RSUniRenderComposerAdapterTest.DealWithNodeGravity
+ * @tc.desc: Test RSUniRenderComposerAdapterTest.DealWithNodeGravity when rotation is ROTATION_90
  * @tc.type: FUNC
  * @tc.require: issueI6S774
  */
@@ -267,6 +276,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, DealWithNodeGravity003, TestSize.Level1
     surfaceNode->SetSrcRect(dstRect);
     surfaceNode->SetDstRect(dstRect);
     ComposeInfo info = composerAdapter_->BuildComposeInfo(*surfaceNode);
+    ASSERT_NE(info.buffer, nullptr);
     info.buffer->SetSurfaceBufferWidth(DEFAULT_CANVAS_WIDTH);
     info.buffer->SetSurfaceBufferHeight(DEFAULT_CANVAS_HEIGHT);
 
@@ -278,7 +288,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, DealWithNodeGravity003, TestSize.Level1
 
 /**
  * @tc.name: DealWithNodeGravity004
- * @tc.desc: Test RSUniRenderComposerAdapterTest.DealWithNodeGravity
+ * @tc.desc: Test RSUniRenderComposerAdapterTest.DealWithNodeGravity when rotation is ROTATION_270
  * @tc.type: FUNC
  * @tc.require: issueI6S774
  */
@@ -293,6 +303,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, DealWithNodeGravity004, TestSize.Level1
     surfaceNode->SetSrcRect(dstRect);
     surfaceNode->SetDstRect(dstRect);
     ComposeInfo info = composerAdapter_->BuildComposeInfo(*surfaceNode);
+    ASSERT_NE(info.buffer, nullptr);
     info.buffer->SetSurfaceBufferWidth(DEFAULT_CANVAS_WIDTH);
     info.buffer->SetSurfaceBufferHeight(DEFAULT_CANVAS_HEIGHT);
 
@@ -304,7 +315,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, DealWithNodeGravity004, TestSize.Level1
 
 /**
  * @tc.name: DealWithNodeGravity005
- * @tc.desc: Test RSUniRenderComposerAdapterTest.DealWithNodeGravity
+ * @tc.desc: Test RSUniRenderComposerAdapterTest.DealWithNodeGravity when rotation is ROTATION_180
  * @tc.type: FUNC
  * @tc.require: issueI6S774
  */
@@ -319,6 +330,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, DealWithNodeGravity005, TestSize.Level1
     surfaceNode->SetSrcRect(dstRect);
     surfaceNode->SetDstRect(dstRect);
     ComposeInfo info = composerAdapter_->BuildComposeInfo(*surfaceNode);
+    ASSERT_NE(info.buffer, nullptr);
     info.buffer->SetSurfaceBufferWidth(DEFAULT_CANVAS_WIDTH);
     info.buffer->SetSurfaceBufferHeight(DEFAULT_CANVAS_HEIGHT);
 
@@ -342,7 +354,9 @@ HWTEST_F(RSUniRenderComposerAdapterTest, SrcRectRotateTransform001, TestSize.Lev
     RectI dstRect{0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT};
     surfaceNode->SetSrcRect(dstRect);
     surfaceNode->SetDstRect(dstRect);
-    composerAdapter_->SrcRectRotateTransform(*surfaceNode);
+    auto rect = composerAdapter_->SrcRectRotateTransform(*surfaceNode);
+    ASSERT_NE(0, rect.width_);
+    ASSERT_NE(0, rect.height_);
 }
 
 /**
@@ -359,7 +373,9 @@ HWTEST_F(RSUniRenderComposerAdapterTest, SrcRectRotateTransform002, TestSize.Lev
     RectI dstRect{0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT};
     surfaceNode->SetSrcRect(dstRect);
     surfaceNode->SetDstRect(dstRect);
-    composerAdapter_->SrcRectRotateTransform(*surfaceNode);
+    auto rect = composerAdapter_->SrcRectRotateTransform(*surfaceNode);
+    ASSERT_NE(0, rect.width_);
+    ASSERT_NE(0, rect.height_);
 }
 
 /**
@@ -376,7 +392,9 @@ HWTEST_F(RSUniRenderComposerAdapterTest, SrcRectRotateTransform003, TestSize.Lev
     RectI dstRect{0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT};
     surfaceNode->SetSrcRect(dstRect);
     surfaceNode->SetDstRect(dstRect);
-    composerAdapter_->SrcRectRotateTransform(*surfaceNode);
+    auto rect = composerAdapter_->SrcRectRotateTransform(*surfaceNode);
+    ASSERT_NE(0, rect.width_);
+    ASSERT_NE(0, rect.height_);
 }
 
 /**
@@ -393,7 +411,9 @@ HWTEST_F(RSUniRenderComposerAdapterTest, SrcRectRotateTransform004, TestSize.Lev
     RectI dstRect{0, 0, DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT};
     surfaceNode->SetSrcRect(dstRect);
     surfaceNode->SetDstRect(dstRect);
-    composerAdapter_->SrcRectRotateTransform(*surfaceNode);
+    auto rect = composerAdapter_->SrcRectRotateTransform(*surfaceNode);
+    ASSERT_NE(0, rect.width_);
+    ASSERT_NE(0, rect.height_);
 }
 
 /**
@@ -409,7 +429,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, CheckStatusBeforeCreateLayer001, TestSi
     surfaceNode->GetConsumer()->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
     ASSERT_NE(surfaceNode, nullptr);
     composerAdapter_->output_ = nullptr;
-    composerAdapter_->CheckStatusBeforeCreateLayer(*surfaceNode);
+    ASSERT_EQ(false, composerAdapter_->CheckStatusBeforeCreateLayer(*surfaceNode));
 }
 
 /**
@@ -532,7 +552,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, LayerCrop001, TestSize.Level1)
 }
 
 /**
- * @tc.name: LayerCrop001
+ * @tc.name: LayerCrop002
  * @tc.desc: Test RSUniRenderComposerAdapterTest.LayerCrop
  * @tc.type: FUNC
  * @tc.require: issueI6S774
@@ -600,10 +620,11 @@ HWTEST_F(RSUniRenderComposerAdapterTest, IsOutOfScreenRegion001, TestSize.Level1
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
     ComposeInfo info = composerAdapter_->BuildComposeInfo(*surfaceNode);
+    ASSERT_NE(info.buffer, nullptr);
     info.buffer->SetSurfaceBufferWidth(DEFAULT_CANVAS_WIDTH);
     info.buffer->SetSurfaceBufferHeight(DEFAULT_CANVAS_HEIGHT);
     composerAdapter_->screenInfo_.rotation = ScreenRotation::ROTATION_90;
-    composerAdapter_->IsOutOfScreenRegion(info);
+    ASSERT_NE(true, composerAdapter_->IsOutOfScreenRegion(info));
 }
 
 /**
@@ -617,10 +638,11 @@ HWTEST_F(RSUniRenderComposerAdapterTest, IsOutOfScreenRegion002, TestSize.Level1
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
     ComposeInfo info = composerAdapter_->BuildComposeInfo(*surfaceNode);
+    ASSERT_NE(info.buffer, nullptr);
     info.buffer->SetSurfaceBufferWidth(DEFAULT_CANVAS_WIDTH);
     info.buffer->SetSurfaceBufferHeight(DEFAULT_CANVAS_HEIGHT);
     composerAdapter_->screenInfo_.rotation = ScreenRotation::ROTATION_270;
-    composerAdapter_->IsOutOfScreenRegion(info);
+    ASSERT_NE(true, composerAdapter_->IsOutOfScreenRegion(info));
 }
 
 /**
@@ -634,6 +656,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, IsOutOfScreenRegion003, TestSize.Level1
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
     ComposeInfo info = composerAdapter_->BuildComposeInfo(*surfaceNode);
+    ASSERT_NE(info.buffer, nullptr);
     info.buffer->SetSurfaceBufferWidth(DEFAULT_CANVAS_WIDTH);
     info.buffer->SetSurfaceBufferHeight(DEFAULT_CANVAS_HEIGHT);
     info.dstRect.x = 0;
@@ -652,6 +675,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, IsOutOfScreenRegion004, TestSize.Level1
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
     ComposeInfo info = composerAdapter_->BuildComposeInfo(*surfaceNode);
+    ASSERT_NE(info.buffer, nullptr);
     info.buffer->SetSurfaceBufferWidth(DEFAULT_CANVAS_WIDTH);
     info.buffer->SetSurfaceBufferHeight(DEFAULT_CANVAS_HEIGHT);
     info.dstRect.x = DEFAULT_CANVAS_WIDTH_1K;
@@ -672,6 +696,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, IsOutOfScreenRegion005, TestSize.Level1
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
     ComposeInfo info = composerAdapter_->BuildComposeInfo(*surfaceNode);
+    ASSERT_NE(info.buffer, nullptr);
     info.buffer->SetSurfaceBufferWidth(DEFAULT_CANVAS_WIDTH);
     info.buffer->SetSurfaceBufferHeight(DEFAULT_CANVAS_HEIGHT);
     info.dstRect.x = DEFAULT_CANVAS_WIDTH;
@@ -692,6 +717,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, IsOutOfScreenRegion006, TestSize.Level1
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
     ComposeInfo info = composerAdapter_->BuildComposeInfo(*surfaceNode);
+    ASSERT_NE(info.buffer, nullptr);
     info.buffer->SetSurfaceBufferWidth(DEFAULT_CANVAS_WIDTH);
     info.buffer->SetSurfaceBufferHeight(DEFAULT_CANVAS_HEIGHT);
     info.dstRect.x = DEFAULT_CANVAS_WIDTH;
