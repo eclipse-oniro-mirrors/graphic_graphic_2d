@@ -73,6 +73,7 @@ public:
 
 protected:
     ColorExtract(std::shared_ptr<Media::PixelMap> pixmap);
+    ColorExtract(std::shared_ptr<Media::PixelMap> pixmap, float* coordinates);
 
 private:
 

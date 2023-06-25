@@ -28,6 +28,7 @@ namespace {
     constexpr uint32_t NUM_0 = 0;
     constexpr uint32_t NUM_1 = 1;
     constexpr uint32_t NUM_2 = 2;
+    constexpr uint32_t NUM_3 = 3;
     constexpr uint32_t NUM_4 = 4;
 }
 
@@ -51,7 +52,7 @@ struct ColorPickerAsyncContext {
     std::shared_ptr<Media::PixelMap> rPixelMap;
     ColorManager::Color color;
     bool regionFlag = false;
-    void* coordinatesBuffer;
+    float* coordinatesBuffer;
     size_t coordinatesSizeBufferSize;
 };
 
@@ -213,7 +214,7 @@ void ColorPickerNapi::Destructor(napi_env env, void* nativeObject, void* finaliz
         pColorPickerNapi->~ColorPickerNapi();
     }
 }
-asyncContext->regionFlag = true;
+
 static void CreateColorPickerFromPixelmapExecute(napi_env env, void* data)
 {
     EFFECT_LOG_I("create ColorPicker Execute");
@@ -289,14 +290,16 @@ napi_value ColorPickerNapi::CreateColorPicker(napi_env env, napi_callback_info i
         if (Media::ImageNapiUtils::getType(env, argValue[argCount - 1]) == napi_function) {
             napi_create_reference(env, argValue[argCount - 1], refCount, &asyncContext->callbackRef);
         } else {
+            void * buffer;
             status = napi_get_arraybuffer_info(env, argValue[NUM_1],
-                    &(asyncContext->coordinatesBuffer), &(asyncContext->coordinatesSizeBufferSize));
+                    &(buffer), &(asyncContext->coordinatesSizeBufferSize));
             IMG_NAPI_CHECK_RET_D(IMG_IS_OK(status), nullptr, EFFECT_LOG_E("fail to parse coordinates"));
             IMG_NAPI_CHECK_RET_D(asyncContext->coordinatesSizeBufferSize >= NUM_4, nullptr,
                 EFFECT_LOG_E("coordinates should be more than 3"));
             asyncContext->regionFlag = true;
+            asyncContext->coordinatesBuffer = static_cast<float*>(buffer);
             for (size_t i = 0; i < NUM_4; i++) {
-                asyncContext->coordinatesBuffer[i] = std::clamp(asyncContext->coordinatesBuffer[i], 0.0, 1.0);
+                asyncContext->coordinatesBuffer[i] = std::clamp<float>(asyncContext->coordinatesBuffer[i], 0.0, 1.0);
             }
             IMG_NAPI_CHECK_RET_D(((asyncContext->coordinatesBuffer[NUM_2] > asyncContext->coordinatesBuffer[NUM_0]) &&
                 (asyncContext->coordinatesBuffer[NUM_3] > asyncContext->coordinatesBuffer[NUM_1])),
@@ -304,14 +307,16 @@ napi_value ColorPickerNapi::CreateColorPicker(napi_env env, napi_callback_info i
         }
     }
     if (argCount == NUM_3 && Media::ImageNapiUtils::getType(env, argValue[argCount - 2]) == napi_function) {
+        void * buffer;
         status = napi_get_arraybuffer_info(env, argValue[NUM_2],
-                &(asyncContext->coordinatesBuffer), &(asyncContext->coordinatesSizeBufferSize));
+                &(buffer), &(asyncContext->coordinatesSizeBufferSize));
         IMG_NAPI_CHECK_RET_D(IMG_IS_OK(status), nullptr, EFFECT_LOG_E("fail to parse coordinates"));
         IMG_NAPI_CHECK_RET_D(asyncContext->coordinatesSizeBufferSize >= NUM_4, nullptr,
             EFFECT_LOG_E("coordinates should be more than 3"));
         asyncContext->regionFlag = true;
+        asyncContext->coordinatesBuffer = static_cast<float*>(buffer);
         for (size_t i = 0; i < NUM_4; i++) {
-            asyncContext->coordinatesBuffer[i] = std::clamp(asyncContext->coordinatesBuffer[i], 0.0, 1.0);
+            asyncContext->coordinatesBuffer[i] = std::clamp<float>(asyncContext->coordinatesBuffer[i], 0.0, 1.0);
         }
         IMG_NAPI_CHECK_RET_D(((asyncContext->coordinatesBuffer[NUM_2] > asyncContext->coordinatesBuffer[NUM_0]) &&
             (asyncContext->coordinatesBuffer[NUM_3] > asyncContext->coordinatesBuffer[NUM_1])),
