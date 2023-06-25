@@ -256,8 +256,8 @@ float RSSpringModel<float>::EstimateDuration() const
         ROSEN_LOGE("RSSpringModel::%s, uninitialized spring model", __func__);
         return 0.0f;
     }
-    if (response_ <= 0.0f || (initialOffset_ == 0.0f && initialVelocity_ == 0.0f) || (!isfinite(response_)) ||
-        (!isfinite(dampingRatio_)) || (!isfinite(initialVelocity_))) {
+    if (response_ <= 0.0f || (initialOffset_ == 0.0f && initialVelocity_ == 0.0f) || (!std::isfinite(response_)) ||
+        (!std::isfinite(dampingRatio_)) || (!std::isfinite(initialVelocity_))) {
         ROSEN_LOGE("RSSpringModel::%s, parameters is invalid", __func__);
         return 0.0f;
     }
@@ -289,7 +289,7 @@ float RSSpringModel<float>::BinarySearchTime(float left, float right, float targ
 
     float midTime = left + (right - left) / 2.0f;
     auto midValue = RSSpringModel<float>::CalculateDisplacement(midTime);
-    if ((!isfinite(midTime)) || (!isfinite(midValue))) {
+    if ((!std::isfinite(midTime)) || (!std::isfinite(midValue))) {
         return right;
     }
     if (std::fabs(midValue - target) < 1e-6) {
