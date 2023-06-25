@@ -58,6 +58,10 @@ public:
     ~RSRenderNode() override;
     bool IsDirty() const override;
     bool IsContentDirty() const override;
+    void AddDirtyType(RSModifierType type)
+    {
+        dirtyTypes_.emplace(type);
+    }
 
     std::pair<bool, bool> Animate(int64_t timestamp) override;
     // PrepareCanvasRenderNode in UniRender
@@ -486,6 +490,7 @@ private:
     // Only use in RSRenderNode::DrawCacheSurface to calculate scale factor
     float boundsWidth_ = 0.0f;
     float boundsHeight_ = 0.0f;
+    std::unordered_set<RSModifierType> dirtyTypes_;
 
     friend class RSRenderTransition;
     friend class RSRenderNodeMap;
