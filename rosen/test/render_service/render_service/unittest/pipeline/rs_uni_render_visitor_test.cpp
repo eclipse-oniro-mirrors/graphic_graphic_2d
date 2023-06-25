@@ -16,7 +16,6 @@
 #include <memory>
 #include "gtest/gtest.h"
 #include "limit_number.h"
-#define PRIVATE PUBLIC
 #include "pipeline/rs_uni_render_visitor.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_root_render_node.h"
@@ -25,6 +24,7 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_context.h"
+#include "rs_test_util.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -476,5 +476,142 @@ HWTEST_F(RSUniRenderVisitorTest, MarkSubHardwareEnableNodeStateTest002, TestSize
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     rsUniRenderVisitor->hardwareEnabledNodes_.emplace_back(newRsSurfaceRenderNode);
     rsUniRenderVisitor->MarkSubHardwareEnableNodeState(*rsSurfaceRenderNode);
+}
+
+/**
+ * @tc.name: DrawAllSurfaceOpaqueRegionForDFX002
+ * @tc.desc: Test RSUniRenderVisitorTest.DrawAllSurfaceOpaqueRegionForDFX
+ * @tc.type: FUNC
+ * @tc.require: issueI79KM8
+ */
+HWTEST_F(RSUniRenderVisitorTest, DrawAllSurfaceOpaqueRegionForDFX002, TestSize.Level1)
+{
+    NodeId id = 0;
+    RSDisplayNodeConfig config;
+    auto node = std::make_shared<RSDisplayRenderNode>(id, config);
+    auto surfaceNodeMain = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNodeMain, nullptr);
+    surfaceNodeMain->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
+    node->curAllSurfaces_.push_back(surfaceNodeMain);
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->nodeType_ = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    node->curAllSurfaces_.push_back(surfaceNode);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    rsUniRenderVisitor->DrawAllSurfaceOpaqueRegionForDFX(*node);
+}
+
+/**
+ * @tc.name: DrawTargetSurfaceDirtyRegionForDFX002
+ * @tc.desc: Test RSUniRenderVisitorTest.DrawTargetSurfaceDirtyRegionForDFX
+ * @tc.type: FUNC
+ * @tc.require: issueI79KM8
+ */
+HWTEST_F(RSUniRenderVisitorTest, DrawTargetSurfaceDirtyRegionForDFX002, TestSize.Level1)
+{
+    NodeId id = 0;
+    RSDisplayNodeConfig config;
+    auto node = std::make_shared<RSDisplayRenderNode>(id, config);
+    auto surfaceNodeNull = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNodeNull, nullptr);
+    surfaceNodeNull = nullptr;
+    node->curAllSurfaces_.push_back(surfaceNodeNull);
+    auto surfaceNodeNotApp = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNodeNotApp, nullptr);
+    surfaceNodeNotApp->nodeType_ = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    node->curAllSurfaces_.push_back(surfaceNodeNotApp);
+    auto surfaceNodeMain = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNodeMain, nullptr);
+    surfaceNodeMain->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
+    surfaceNodeMain->name_ = "1";
+    node->curAllSurfaces_.push_back(surfaceNodeMain);
+    auto surfaceNodeMain2 = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNodeMain2, nullptr);
+    surfaceNodeMain2->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
+    surfaceNodeMain2->name_ = "2";
+    node->curAllSurfaces_.push_back(surfaceNodeMain2);
+    
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    auto& vs = rsUniRenderVisitor->dfxTargetSurfaceNames_;
+    vs.push_back("1");
+    ASSERT_EQ(true, rsUniRenderVisitor->CheckIfSurfaceTargetedForDFX(surfaceNodeMain->name_));
+    ASSERT_EQ(false, rsUniRenderVisitor->CheckIfSurfaceTargetedForDFX(surfaceNodeMain2->name_));
+    rsUniRenderVisitor->DrawTargetSurfaceDirtyRegionForDFX(*node);
+}
+
+/**
+ * @tc.name: DrawTargetSurfaceDirtyRegionForDFX003
+ * @tc.desc: Test RSUniRenderVisitorTest.DrawTargetSurfaceDirtyRegionForDFX
+ * @tc.type: FUNC
+ * @tc.require: issueI79KM8
+ */
+HWTEST_F(RSUniRenderVisitorTest, DrawTargetSurfaceDirtyRegionForDFX003, TestSize.Level1)
+{
+    NodeId id = 0;
+    RSDisplayNodeConfig config;
+    auto node = std::make_shared<RSDisplayRenderNode>(id, config);
+    auto surfaceNodeMain = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNodeMain, nullptr);
+    surfaceNodeMain->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
+    surfaceNodeMain->name_ = "1";
+    node->curAllSurfaces_.push_back(surfaceNodeMain);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    auto& vs = rsUniRenderVisitor->dfxTargetSurfaceNames_;
+    vs.push_back("1");
+    ASSERT_EQ(true, rsUniRenderVisitor->CheckIfSurfaceTargetedForDFX(surfaceNodeMain->name_));
+    rsUniRenderVisitor->dirtyRegionDebugType_ = DirtyRegionDebugType::DISABLED;
+    rsUniRenderVisitor->DrawTargetSurfaceDirtyRegionForDFX(*node);
+}
+
+/**
+ * @tc.name: DrawTargetSurfaceDirtyRegionForDFX004
+ * @tc.desc: Test RSUniRenderVisitorTest.DrawTargetSurfaceDirtyRegionForDFX
+ * @tc.type: FUNC
+ * @tc.require: issueI79KM8
+ */
+HWTEST_F(RSUniRenderVisitorTest, DrawTargetSurfaceDirtyRegionForDFX005, TestSize.Level1)
+{
+    NodeId id = 0;
+    RSDisplayNodeConfig config;
+    auto node = std::make_shared<RSDisplayRenderNode>(id, config);
+    auto surfaceNodeMain = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNodeMain, nullptr);
+    surfaceNodeMain->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
+    surfaceNodeMain->name_ = "1";
+    auto dirtyManager = surfaceNodeMain->GetDirtyManager();
+    dirtyManager.dirtyCanvasNodeInfo_.emplace(std::make_pair(surfaceNodeMain->nodeType_, RectI(0, 0, 10, 10)));
+    node->curAllSurfaces_.push_back(surfaceNodeMain);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    auto& vs = rsUniRenderVisitor->dfxTargetSurfaceNames_;
+    vs.push_back("1");
+    ASSERT_EQ(true, rsUniRenderVisitor->CheckIfSurfaceTargetedForDFX(surfaceNodeMain->name_));
+    rsUniRenderVisitor->dirtyRegionDebugType_ = DirtyRegionDebugType::UPDATE_DIRTY_REGION;
+    rsUniRenderVisitor->DrawTargetSurfaceDirtyRegionForDFX(*node);
+}
+
+/*
+ * @tc.name: DrawTargetSurfaceDirtyRegionForDFX001
+ * @tc.desc: DrawTargetSurfaceDirtyRegionForDFX Test
+ * @tc.type: FUNC
+ * @tc.require: issueI79U8E
+ */
+HWTEST_F(RSUniRenderVisitorTest, DrawTargetSurfaceDirtyRegionForDFX005, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    RSSurfaceRenderNodeConfig config;
+    RSDisplayNodeConfig displayConfig;
+    config.name = "SurfaceDirtyDFX";
+    config.id = 10;
+    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config, rsContext->weak_from_this());
+    auto rsDisplayRenderNode = std::make_shared<RSDisplayRenderNode>(20, displayConfig, rsContext->weak_from_this());
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    rsSurfaceRenderNode->SetSrcRect(RectI(0, 0, 10, 10));
+    rsDisplayRenderNode->AddChild(rsSurfaceRenderNode, -1);
+    rsUniRenderVisitor->PrepareDisplayRenderNode(*rsDisplayRenderNode);
+    system::SetParameter("rosen.dirtyregiondebug.surfacenames", "SurfaceDirtyDFX");
+    rsUniRenderVisitor->ProcessDisplayRenderNode(*rsDisplayRenderNode);
+    system::SetParameter("rosen.dirtyregiondebug.surfacenames", "0");
+    auto dirtyManager = rsSurfaceRenderNode->GetDirtyManager();
+    std::cout << "dirtyManager.dirtyCanvasNodeInfo_: " << dirtyManager.dirtyCanvasNodeInfo_.size() << std::endl;
 }
 } // OHOS::Rosen
