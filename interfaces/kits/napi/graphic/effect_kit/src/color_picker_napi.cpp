@@ -292,7 +292,7 @@ static bool GetRegionCoordinates(napi_env env, napi_value param, std::unique_ptr
             return false;
         }
         double value = 0.0;
-        if (napi_get_value_double(env, param, &value) == napi_ok) {
+        if (napi_get_value_double(env, jsValue, &value) == napi_ok) {
             asyncContext->coordinatesBuffer[i] = std::clamp<double>(value, 0.0, 1.0);
         } else {
             EFFECT_LOG_E("GetRegionCoordinates region coordinates not double");
@@ -303,7 +303,7 @@ static bool GetRegionCoordinates(napi_env env, napi_value param, std::unique_ptr
                 (asyncContext->coordinatesBuffer[NUM_3] < asyncContext->coordinatesBuffer[NUM_1])) {
         EFFECT_LOG_E("GetRegionCoordinates right must be greater than left, bottom must be greater than top");   
         return false;            
-    }
+    };
     return true;
 }
 

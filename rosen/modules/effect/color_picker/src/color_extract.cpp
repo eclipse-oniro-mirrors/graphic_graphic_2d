@@ -53,13 +53,13 @@ ColorExtract::ColorExtract(std::shared_ptr<Media::PixelMap> pixmap)
 ColorExtract::ColorExtract(std::shared_ptr<Media::PixelMap> pixmap, double* coordinates)
 {
     if (pixmap == nullptr) {
-        return ;
+        return;
     }
     pixelmap_ = pixmap;
-    uint32_t left = static_cast<uint32_t>(pixmap->GetWidth() * coordinates[0]);
-    uint32_t top = static_cast<uint32_t>(pixmap->GetHeight() * coordinates[1]);
-    uint32_t right = static_cast<uint32_t>(pixmap->GetWidth() * coordinates[2]);
-    uint32_t bottom = static_cast<uint32_t>(pixmap->GetHeight() * coordinates[3]);
+    uint32_t left = static_cast<uint32_t>(pixmap->GetWidth() * coordinates[0]); // 0 is index of left
+    uint32_t top = static_cast<uint32_t>(pixmap->GetHeight() * coordinates[1]); // 1 is index of top
+    uint32_t right = static_cast<uint32_t>(pixmap->GetWidth() * coordinates[2]); // 2 is index of right
+    uint32_t bottom = static_cast<uint32_t>(pixmap->GetHeight() * coordinates[3]); // 3 is index of bottom
     colorValLen_ = (right - left) * (bottom -top);
     if (colorValLen_ == 0) {
         return;
@@ -69,9 +69,9 @@ ColorExtract::ColorExtract(std::shared_ptr<Media::PixelMap> pixmap, double* coor
         delete[] ptr;
     });
     colorVal_ = std::move(colorShared);
-    for (uint32_t i = top; i <= bottom; i++) {
-        for (uint32_t j = left; j <= right; j++) {
-            pixmap->GetARGB32Color(j, i, colorVal[i * (right - left + 1) + j]);
+    for (uint32_t i = top; i < bottom; i++) {
+        for (uint32_t j = left; j < right; j++) {
+            pixmap->GetARGB32Color(j, i, colorVal[(i - top) * (right - left) + (j - left)]);
         }
     }
     grayMsd_ = CalcGrayMsd();
@@ -244,7 +244,7 @@ float ColorExtract::CalcRelativeLum(uint32_t color)
 float ColorExtract::CalcContrastToWhite() const
 {
     if (colorValLen_ == 0) {
-        return 0;
+        return 0.0;
     }
     uint32_t *colorVal = colorVal_.get();
     float lightDegree = 0;
