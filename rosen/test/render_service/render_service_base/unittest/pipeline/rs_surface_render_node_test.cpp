@@ -365,7 +365,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, CollectSurfaceTest002, TestSize.Level1)
  * @tc.name: ProcessAnimatePropertyBeforeChildrenTest
  * @tc.desc: function test
  * @tc.type:FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSSurfaceRenderNodeTest, ProcessAnimatePropertyBeforeChildrenTest, TestSize.Level1)
 {

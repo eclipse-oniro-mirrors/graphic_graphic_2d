@@ -105,7 +105,6 @@ HWTEST_F(RSRenderNodeTest, AddModifierTest, TestSize.Level1)
     node.AddModifier(modifier);
     RSBaseRenderNode rsBaseRenderNode(id, context);
     ASSERT_TRUE(rsBaseRenderNode.IsDirty());
-
 }
 
 /**
@@ -153,7 +152,7 @@ HWTEST_F(RSRenderNodeTest, DrawCacheSurfaceTest001, TestSize.Level1)
     RSRenderNode node(id, context);
     bool isSubThreadNode = false;
     node.DrawCacheSurface(*canvas_, isSubThreadNode);
-    if (node.GetCompletedCacheSurface() == nullptr){
+    if (node.GetCompletedCacheSurface() == nullptr) {
         ASSERT_EQ(NULL, node.GetCacheSurface());
     }
 }
@@ -185,7 +184,6 @@ HWTEST_F(RSRenderNodeTest, MarkNodeGroupTest, TestSize.Level1)
     RSRenderNode node(id, context);
     bool isNodeGruop = true;
     bool isNodeGruop_ = false;
-
     auto nodeGruopType = node.GetNodeGroupType();
     RSRenderNode::NodeGroupType type = RSRenderNode::NodeGroupType::GROUPED_BY_UI;
     if (type >= nodeGruopType) {
