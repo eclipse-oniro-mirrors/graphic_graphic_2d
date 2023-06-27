@@ -130,12 +130,16 @@ void RSSubThreadManager::WaitNodeTask(uint64_t nodeId)
 
 void RSSubThreadManager::NodeTaskNotify(uint64_t nodeId)
 {
-    nodeTaskState_[nodeId] = 0;
+    {
+        std::unique_lock<std::mutex> lock(parallelRenderMutex_);
+        nodeTaskState_[nodeId] = 0;
+    }
     cvParallelRender_.notify_one();
 }
 
 void RSSubThreadManager::SaveCacheTexture(RSRenderNode& node) const
 {
+    std::scoped_lock<std::recursive_mutex> lock(node.GetSurfaceMutex());
 #ifdef NEW_SKIA
     auto surface = node.GetCompletedCacheSurface(UNI_MAIN_THREAD_INDEX, true);
     if (surface == nullptr || (surface->width() == 0 || surface->height() == 0)) {
