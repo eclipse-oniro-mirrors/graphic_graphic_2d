@@ -100,6 +100,8 @@ bool RSRenderNode::Update(
 {
     // no need to update invisible nodes
     if (!ShouldPaint() && !isLastVisible_) {
+        SetClean();
+        renderProperties_.ResetDirty();
         return false;
     }
     // [planning] surfaceNode use frame instead
