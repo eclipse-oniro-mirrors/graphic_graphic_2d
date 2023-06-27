@@ -108,7 +108,6 @@ int FontParser::ProcessNameTable(const struct NameTable* nameTable, FontParser::
     auto stringStorage = data_ + storageOffset;
     for (int i = 0; i < count; ++i) {
         if (nameTable->nameRecord[i].stringOffset.Get() == 0 || nameTable->nameRecord[i].length.Get() == 0) {
-            LOGSO_FUNC_LINE(ERROR) << "empty";
             continue;
         }
         FontParser::NameId nameId = static_cast<FontParser::NameId>(nameTable->nameRecord[i].nameId.Get());
@@ -278,8 +277,8 @@ int FontParser::SetFontDescriptor()
         const char* path = fontSet_[i].c_str();
         auto typeface = SkTypeface::MakeFromFile(path);
         if (typeface == nullptr) {
-            LOGSO_FUNC_LINE(ERROR) << "typeface is nullptr";
-            return FAILED;
+            LOGSO_FUNC_LINE(ERROR) << "typeface is nullptr, can not parse: " << fontDescriptor.path;
+            continue;
         }
         auto fontStyle = typeface->fontStyle();
         fontDescriptor.weight = fontStyle.weight();
