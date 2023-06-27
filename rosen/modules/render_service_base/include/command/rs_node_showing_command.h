@@ -34,7 +34,7 @@ template<uint16_t commandType, uint16_t commandSubType>
 class RSB_EXPORT RSGetRenderPropertyAndCancelAnimationTask : public RSSyncTask {
 public:
     explicit RSGetRenderPropertyAndCancelAnimationTask(
-        NodeId targetId, std::shared_ptr<RSRenderPropertyBase> property, uint64_t timeoutNS = 1e6)
+        NodeId targetId, std::shared_ptr<RSRenderPropertyBase> property, uint64_t timeoutNS = 1e8)
         : RSSyncTask(timeoutNS), targetId_(targetId), property_(property)
     {}
 
@@ -125,7 +125,7 @@ public:
         property_ = modifier->GetProperty();
         result_ = (property_ == nullptr) ? false : true;
         if (result_) {
-            auto animationManager = node->GetAnimationManager();
+            auto& animationManager = node->GetAnimationManager();
             animationManager.CancelAnimationByPropertyId(property_->GetId());
         }
     }
