@@ -186,7 +186,29 @@ void RSRenderNode::UpdateDirtyRegion(
             }
         }
     }
+
     SetClean();
+
+#ifndef USE_ROSEN_DRAWING
+    {
+        // background filter
+        auto& filter = renderProperties_.GetBackgroundFilter();
+        auto& manager = renderProperties_.backgroundFilterCacheManager_;
+        if (filter != nullptr && manager != nullptr) {
+            // empty implementation, invalidate filter cache on every update
+            manager->UpdateCacheState({ 0, 0, INT_MAX, INT_MAX }, {}, filter->Hash());
+        }
+    }
+    {
+        // foreground filter
+        auto& filter = renderProperties_.GetFilter();
+        auto& manager = renderProperties_.filterCacheManager_;
+        if (filter != nullptr && manager != nullptr) {
+            // empty implementation, invalidate filter cache on every update
+            manager->UpdateCacheState({ 0, 0, INT_MAX, INT_MAX }, {}, filter->Hash());
+        }
+    }
+#endif
 }
 
 bool RSRenderNode::IsDirty() const
@@ -357,6 +379,19 @@ void RSRenderNode::ApplyModifiers()
     OnApplyModifiers();
     UpdateDrawRegion();
     dirtyTypes_.clear();
+
+#ifndef USE_ROSEN_DRAWING
+    // filter and filterCacheManager should be both nullptr or not nullptr
+    if ((context.property_.backgroundFilter_ == nullptr) !=
+        (context.property_.backgroundFilterCacheManager_ == nullptr)) {
+        context.property_.backgroundFilterCacheManager_ =
+            context.property_.backgroundFilter_ ? std::make_unique<RSFilterCacheManager>() : nullptr;
+    }
+    if ((context.property_.filter_ == nullptr) != (context.property_.filterCacheManager_ == nullptr)) {
+        context.property_.filterCacheManager_ =
+            context.property_.filter_ ? std::make_unique<RSFilterCacheManager>() : nullptr;
+    }
+#endif
 }
 
 void RSRenderNode::UpdateDrawRegion()
