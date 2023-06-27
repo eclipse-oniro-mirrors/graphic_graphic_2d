@@ -370,24 +370,24 @@ public:
 
     bool GetShowingValueAndCancelAnimation(bool isRenderServiceNode) override
     {
-        bool success = false;
         auto node = RSProperty<T>::target_.lock();
         if (node == nullptr) {
-            return success;
+            return false;
         }
-        if (node->HasPropertyAnimation(RSProperty<T>::id_) && (!RSProperty<T>::GetIsCustom())) {
-            auto task =
-                std::make_shared<RSNodeGetShowingPropertyAndCancelAnimation>(node->GetId(), GetRenderProperty());
-            RSTransactionProxy::GetInstance()->ExecuteSynchronousTask(task, node->IsRenderServiceNode());
-            if (task && task->GetResult()) {
-                auto renderProperty = std::static_pointer_cast<RSRenderAnimatableProperty<T>>(task->GetProperty());
-                if (renderProperty) {
-                    RSProperty<T>::stagingValue_ = renderProperty->Get();
-                    success = true;
-                }
-            }
+        if (!node->HasPropertyAnimation(RSProperty<T>::id_) || RSProperty<T>::GetIsCustom()) {
+            return true;
         }
-        return success;
+        auto task = std::make_shared<RSNodeGetShowingPropertyAndCancelAnimation>(node->GetId(), GetRenderProperty());
+        RSTransactionProxy::GetInstance()->ExecuteSynchronousTask(task, node->IsRenderServiceNode());
+        if (!task || !task->GetResult()) {
+            return false;
+        }
+        auto renderProperty = std::static_pointer_cast<RSRenderAnimatableProperty<T>>(task->GetProperty());
+        if (!renderProperty) {
+            return false;
+        }
+        RSProperty<T>::stagingValue_ = renderProperty->Get();
+        return true;
     }
 
     void SetUpdateCallback(const std::function<void(T)>& updateCallback)

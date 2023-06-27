@@ -270,11 +270,7 @@ void RSNode::FinishAnimationByProperty(const PropertyId& id)
 void RSNode::CancelAnimationByProperty(const PropertyId& id)
 {
     animatingPropertyNum_.erase(id);
-    for (const auto& [animationId, animation] : animations_) {
-        if (animation && (animation->GetPropertyId() == id)) {
-            animations_.erase(animationId);
-        }
-    }
+    EraseIf(animations_, [id](const auto& pair) { return (pair.second && (pair.second->GetPropertyId() == id)); });
 }
 
 const RSModifierExtractor& RSNode::GetStagingProperties() const

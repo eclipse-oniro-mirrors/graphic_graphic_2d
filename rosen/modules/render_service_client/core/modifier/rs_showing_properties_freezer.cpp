@@ -26,30 +26,28 @@ namespace OHOS {
 namespace Rosen {
 RSShowingPropertiesFreezer::RSShowingPropertiesFreezer(NodeId id) : id_(id) {}
 
-#define SHOWING_PROPERTIES_FREEZER(T, propertyType, defaultValue)                                           \
-    do {                                                                                                    \
-        bool success = false;                                                                               \
-        T value = defaultValue;                                                                             \
-        auto node = RSNodeMap::Instance().GetNode<RSNode>(id_);                                             \
-        if (node == nullptr) {                                                                              \
-            return { value, success };                                                                      \
-        }                                                                                                   \
-        auto iter = node->propertyModifiers_.find(RSModifierType::propertyType);                            \
-        if (iter != node->propertyModifiers_.end()) {                                                       \
-            auto property = std::static_pointer_cast<RSAnimatableProperty<T>>(iter->second->GetProperty()); \
-            if (property == nullptr) {                                                                      \
-                ROSEN_LOGE("RSShowingPropertiesFreezer::Get##propertyType## failed, property is null!");    \
-            } else {                                                                                        \
-                success = property->GetShowingValueAndCancelAnimation(node->IsRenderServiceNode());         \
-                if (success) {                                                                              \
-                    node->CancelAnimationByProperty(property->GetId());                                     \
-                    value = property->Get();                                                                \
-                }                                                                                           \
-            }                                                                                               \
-        } else {                                                                                            \
-            ROSEN_LOGE("RSShowingPropertiesFreezer::Ge##propertyType## failed, modifier is not exist");     \
-        }                                                                                                   \
-        return { value, success };                                                                          \
+#define SHOWING_PROPERTIES_FREEZER(T, propertyType, defaultValue)                                       \
+    do {                                                                                                \
+        auto node = RSNodeMap::Instance().GetNode<RSNode>(id_);                                         \
+        if (node == nullptr) {                                                                          \
+            return { defaultValue, false };                                                             \
+        }                                                                                               \
+        auto iter = node->propertyModifiers_.find(RSModifierType::propertyType);                        \
+        if (iter == node->propertyModifiers_.end()) {                                                   \
+            return { defaultValue, false };                                                             \
+        }                                                                                               \
+        auto property = std::static_pointer_cast<RSAnimatableProperty<T>>(iter->second->GetProperty()); \
+        if (property == nullptr) {                                                                      \
+            ROSEN_LOGE("RSShowingPropertiesFreezer::Get" #propertyType " failed, property is null!");   \
+            return { defaultValue, false };                                                             \
+        }                                                                                               \
+        bool success = property->GetShowingValueAndCancelAnimation(node->IsRenderServiceNode());        \
+        if (!success) {                                                                                 \
+            ROSEN_LOGE("RSShowingPropertiesFreezer::Get" #propertyType " failed!");                     \
+            return { defaultValue, false };                                                             \
+        }                                                                                               \
+        node->CancelAnimationByProperty(property->GetId());                                             \
+        return { property->Get(), true };                                                               \
     } while (0)
 
 std::tuple<Vector4f, bool> RSShowingPropertiesFreezer::GetBounds() const
