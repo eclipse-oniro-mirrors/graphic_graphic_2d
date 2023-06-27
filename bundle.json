@@ -63,13 +63,16 @@
           "multimedia_image_framework",
           "cjson",
           "ipc",
-          "player_framework"
+          "player_framework",
+          "soc_perf"
         ],
         "third_party": [
           "flutter",
           "libuv",
           "openssl",
-          "third_party_skia"
+          "third_party_skia",
+          "zilb",
+          "skia"
         ]
       },
       "build": {
