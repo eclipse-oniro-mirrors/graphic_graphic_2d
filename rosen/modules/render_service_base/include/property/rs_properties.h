@@ -155,15 +155,15 @@ public:
     Vector4<Color> GetBorderColor() const;
     Vector4f GetBorderWidth() const;
     Vector4<uint32_t> GetBorderStyle() const;
-    std::shared_ptr<RSBorder> GetBorder() const;
+    const std::shared_ptr<RSBorder>& GetBorder() const;
 
     // filter properties
     void SetBackgroundFilter(std::shared_ptr<RSFilter> backgroundFilter);
     void SetLinearGradientBlurPara(std::shared_ptr<RSLinearGradientBlurPara> para);
     void SetFilter(std::shared_ptr<RSFilter> filter);
-    std::shared_ptr<RSFilter> GetBackgroundFilter() const;
-    std::shared_ptr<RSLinearGradientBlurPara> GetLinearGradientBlurPara() const;
-    std::shared_ptr<RSFilter> GetFilter() const;
+    const std::shared_ptr<RSFilter>& GetBackgroundFilter() const;
+    const std::shared_ptr<RSLinearGradientBlurPara>& GetLinearGradientBlurPara() const;
+    const std::shared_ptr<RSFilter>& GetFilter() const;
     bool NeedFilter() const;
 
     // shadow properties

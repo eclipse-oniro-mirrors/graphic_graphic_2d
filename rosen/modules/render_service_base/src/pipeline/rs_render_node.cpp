@@ -84,19 +84,7 @@ std::pair<bool, bool> RSRenderNode::Animate(int64_t timestamp)
 }
 
 bool RSRenderNode::Update(
-    RSDirtyRegionManager& dirtyManager, const RSProperties* parent, bool parentDirty, RectI clipRect)
-{
-    return Update(dirtyManager, parent, parentDirty, true, clipRect);
-}
-
-bool RSRenderNode::Update(RSDirtyRegionManager& dirtyManager, const RSProperties* parent, bool parentDirty)
-{
-    RectI clipRect{0, 0, 0, 0};
-    return Update(dirtyManager, parent, parentDirty, false, clipRect);
-}
-
-bool RSRenderNode::Update(
-    RSDirtyRegionManager& dirtyManager, const RSProperties* parent, bool parentDirty, bool needClip, RectI clipRect)
+    RSDirtyRegionManager& dirtyManager, const RSProperties* parent, bool parentDirty, std::optional<RectI> clipRect)
 {
     // no need to update invisible nodes
     if (!ShouldPaint() && !isLastVisible_) {
@@ -124,7 +112,7 @@ bool RSRenderNode::Update(
         }
     }
     isDirtyRegionUpdated_ = false;
-    UpdateDirtyRegion(dirtyManager, dirty, needClip, clipRect);
+    UpdateDirtyRegion(dirtyManager, dirty, clipRect);
     isLastVisible_ = ShouldPaint();
     renderProperties_.ResetDirty();
     return dirty;
@@ -141,7 +129,7 @@ const RSProperties& RSRenderNode::GetRenderProperties() const
 }
 
 void RSRenderNode::UpdateDirtyRegion(
-    RSDirtyRegionManager& dirtyManager, bool geoDirty, bool needClip, RectI clipRect)
+    RSDirtyRegionManager& dirtyManager, bool geoDirty, std::optional<RectI> clipRect)
 {
     if (!IsDirty() && !geoDirty) {
         return;
@@ -175,8 +163,8 @@ void RSRenderNode::UpdateDirtyRegion(
             dirtyRect = dirtyRect.JoinRect(stretchDirtyRect);
         }
 
-        if (needClip) {
-            dirtyRect = dirtyRect.IntersectRect(clipRect);
+        if (clipRect.has_value()) {
+            dirtyRect = dirtyRect.IntersectRect(*clipRect);
         }
         oldDirty_ = dirtyRect;
         oldDirtyInSurface_ = oldDirty_.IntersectRect(dirtyManager.GetSurfaceRect());
@@ -194,7 +182,7 @@ void RSRenderNode::UpdateDirtyRegion(
                 dirtyManager.UpdateDirtyRegionInfoForDfx(
                     GetId(), GetType(), DirtyRegionType::SHADOW_RECT, shadowRect);
                 dirtyManager.UpdateDirtyRegionInfoForDfx(
-                    GetId(), GetType(), DirtyRegionType::PREPARE_CLIP_RECT, clipRect);
+                    GetId(), GetType(), DirtyRegionType::PREPARE_CLIP_RECT, clipRect.value_or(RectI()));
             }
         }
     }

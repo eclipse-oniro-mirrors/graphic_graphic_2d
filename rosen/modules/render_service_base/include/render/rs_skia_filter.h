@@ -35,10 +35,11 @@ class RSPaintFilterCanvas;
 class RSSkiaFilter : public RSFilter {
 public:
     RSSkiaFilter(sk_sp<SkImageFilter> imagefilter);
+    RSSkiaFilter(const RSSkiaFilter&) = delete;
     ~RSSkiaFilter() override;
     SkPaint GetPaint() const;
     sk_sp<SkImageFilter> GetImageFilter() const;
-    virtual std::shared_ptr<RSSkiaFilter> Compose(const std::shared_ptr<RSSkiaFilter>& inner) = 0;
+    virtual std::shared_ptr<RSSkiaFilter> Compose(const std::shared_ptr<RSSkiaFilter>& inner) const = 0;
     virtual void PreProcess(sk_sp<SkImage> image) {};
     virtual void PostProcess(RSPaintFilterCanvas& canvas) {};
 
