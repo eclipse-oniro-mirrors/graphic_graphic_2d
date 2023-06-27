@@ -72,8 +72,11 @@ private:
     CacheType cacheType_ = CacheType::CACHE_TYPE_NONE;
     std::optional<SkIRect> cachedImageRegion_ = std::nullopt; // Note: this should always be in device coordinate space
     sk_sp<SkImage> cachedImage_ = nullptr ;
+    // for automatically converting cached snapshot to blurred snapshot if the filter is persistent
     uint32_t cachedFilterHash_ = 0;
     int frameSinceFilterChange_ = 0;
+    // for lowering snapshot frequency even if the snapshot is changed
+    int cacheUpdateInterval_ = 0;
 };
 
 } // namespace Rosen

@@ -22,11 +22,11 @@
 #include "common/rs_obj_abs_geometry.h"
 #include "modifier/rs_modifier_type.h"
 #include "pipeline/rs_context.h"
+#include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
-#include "property/rs_property_trace.h"
-#include "pipeline/rs_paint_filter_canvas.h"
 #include "property/rs_properties_painter.h"
+#include "property/rs_property_trace.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -190,23 +190,39 @@ void RSRenderNode::UpdateDirtyRegion(
     SetClean();
 
 #ifndef USE_ROSEN_DRAWING
-    {
-        // background filter
-        auto& filter = renderProperties_.GetBackgroundFilter();
-        auto& manager = renderProperties_.backgroundFilterCacheManager_;
-        if (filter != nullptr && manager != nullptr) {
-            // empty implementation, invalidate filter cache on every update
-            manager->UpdateCacheState({ 0, 0, INT_MAX, INT_MAX }, {}, filter->Hash());
-        }
+    if (!RSSystemProperties::GetFilterCacheEnabled()) {
+        return;
     }
-    {
-        // foreground filter
-        auto& filter = renderProperties_.GetFilter();
-        auto& manager = renderProperties_.filterCacheManager_;
-        if (filter != nullptr && manager != nullptr) {
-            // empty implementation, invalidate filter cache on every update
-            manager->UpdateCacheState({ 0, 0, INT_MAX, INT_MAX }, {}, filter->Hash());
+    auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(GetRenderProperties().GetBoundsGeometry());
+    auto absRect = geoPtr->GetAbsRect();
+
+    // Note: cache manager will use dirty region to update cache validity, but:
+    // background filter cache manager should use 'dirty region of all the nodes drawn before this node', and foreground
+    // filter cache manager should use 'dirty region of all the nodes drawn before this node, this node, and the
+    // children of this node'
+
+    // background filter
+    if (auto& filter = renderProperties_.GetBackgroundFilter()) {
+        auto& manager = renderProperties_.backgroundFilterCacheManager_;
+        if (manager == nullptr) {
+            manager = std::make_unique<RSFilterCacheManager>();
         }
+        // empty implementation, invalidate filter cache on every update
+        manager->UpdateCacheState({ 0, 0, INT_MAX, INT_MAX }, absRect, filter->Hash());
+    } else {
+        renderProperties_.backgroundFilterCacheManager_.reset();
+    }
+
+    // foreground filter
+    if (auto& filter = renderProperties_.GetFilter()) {
+        auto& manager = renderProperties_.filterCacheManager_;
+        if (manager == nullptr) {
+            manager = std::make_unique<RSFilterCacheManager>();
+        }
+        // empty implementation, invalidate filter cache on every update
+        manager->UpdateCacheState({ 0, 0, INT_MAX, INT_MAX }, absRect, filter->Hash());
+    } else {
+        renderProperties_.filterCacheManager_.reset();
     }
 #endif
 }
@@ -379,19 +395,6 @@ void RSRenderNode::ApplyModifiers()
     OnApplyModifiers();
     UpdateDrawRegion();
     dirtyTypes_.clear();
-
-#ifndef USE_ROSEN_DRAWING
-    // filter and filterCacheManager should be both nullptr or not nullptr
-    if ((context.property_.backgroundFilter_ == nullptr) !=
-        (context.property_.backgroundFilterCacheManager_ == nullptr)) {
-        context.property_.backgroundFilterCacheManager_ =
-            context.property_.backgroundFilter_ ? std::make_unique<RSFilterCacheManager>() : nullptr;
-    }
-    if ((context.property_.filter_ == nullptr) != (context.property_.filterCacheManager_ == nullptr)) {
-        context.property_.filterCacheManager_ =
-            context.property_.filter_ ? std::make_unique<RSFilterCacheManager>() : nullptr;
-    }
-#endif
 }
 
 void RSRenderNode::UpdateDrawRegion()

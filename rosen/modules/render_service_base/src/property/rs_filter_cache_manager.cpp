@@ -18,6 +18,7 @@
 #include "rs_trace.h"
 
 #include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
 #include "render/rs_skia_filter.h"
 
 namespace OHOS {
@@ -28,31 +29,47 @@ bool RSFilterCacheManager::UpdateCacheState(const RectI& dirtyRegion, const Rect
     if (cacheType_ == CacheType::CACHE_TYPE_NONE) {
         return false;
     }
+    // Note: if cacheType_ is not CACHE_TYPE_NONE, cachedImage_ and cachedImageRegion_ must not not empty, no need to check.
 
+    // use dirty region to determine if cache is valid. we will delay the cache invalidation for 2 frames.
     auto SkDirtyRegion =
         SkIRect::MakeLTRB(dirtyRegion.GetLeft(), dirtyRegion.GetTop(), dirtyRegion.GetRight(), dirtyRegion.GetBottom());
     if (SkDirtyRegion.intersect(*cachedImageRegion_)) {
-        ROSEN_LOGD("RSFilterCacheManager::UpdateCacheState cache expired, dirty region intersect cached region.");
-        InvalidateCache();
-        return false;
+        --cacheUpdateInterval_;
+        if (cacheUpdateInterval_ < 0) {
+            ROSEN_LOGD("RSFilterCacheManager::UpdateCacheState cache expired, REASON: dirty region intersect with "
+                       "cached region.");
+            InvalidateCache();
+            return false;
+        } else {
+            ROSEN_LOGD("RSFilterCacheManager::UpdateCacheState delay cache invalidate for %d frames.",
+                cacheUpdateInterval_ + 1);
+        }
     }
 
-    // Our cachedImageRegion_ is shrunk by 1 pixel, we need to shrink SkAbsRect by 1 pixel before compare
+    // use absRect to determine if cache is valid.
+    // Note: absRect may be different from filter region (e.g. node has clipBounds or effectComponent), should be
+    // take with care.
+    // Our cachedImageRegion_ is shrunk by 1 pixel, we need to shrink SkAbsRect by 1 pixel before compare.
     auto SkAbsRect =
         SkIRect::MakeLTRB(absRect.GetLeft() + 1, absRect.GetTop() + 1, absRect.GetRight() - 1, absRect.GetBottom() - 1);
     if (!cachedImageRegion_->contains(SkAbsRect)) {
-        ROSEN_LOGD("RSFilterCacheManager::UpdateCacheState cache expired, absRect not in cached region.");
+        ROSEN_LOGD("RSFilterCacheManager::UpdateCacheState cache expired, REASON: absRect not in cached region.");
         InvalidateCache();
         return false;
     }
 
+    // if we are caching blurred snapshot, we need to check filter hash match.
     if (cacheType_ == CacheType::CACHE_TYPE_BLURRED_SNAPSHOT && filterHash != cachedFilterHash_) {
-        ROSEN_LOGD("RSFilterCacheManager::UpdateCacheState cache expired, cached blurred snapshot %X does not match "
-                   "filter hash %X.",
+        ROSEN_LOGD(
+            "RSFilterCacheManager::UpdateCacheState cache expired, REASON: cached blurred snapshot %X does not match "
+            "filter hash %X.",
             cachedFilterHash_, filterHash);
         InvalidateCache();
         return false;
     }
+
+    // all check passed, cache is valid.
     return true;
 }
 
@@ -127,7 +144,6 @@ CachedEffectData RSFilterCacheManager::GeneratedCacheEffectData(
 void RSFilterCacheManager::TakeSnapshot(RSPaintFilterCanvas& canvas, const std::shared_ptr<RSSkiaFilter>& filter)
 {
     RS_TRACE_FUNC();
-    InvalidateCache();
     auto skSurface = canvas.GetSurface();
     if (skSurface == nullptr) {
         return;
@@ -144,6 +160,7 @@ void RSFilterCacheManager::TakeSnapshot(RSPaintFilterCanvas& canvas, const std::
     cachedImageRegion_ = clipIPadding;
     cacheType_ = CacheType::CACHE_TYPE_SNAPSHOT;
     frameSinceFilterChange_ = 0;
+    cacheUpdateInterval_ = RSSystemProperties::GetFilterCacheUpdateInterval();
 }
 
 void RSFilterCacheManager::GenerateBlurredSnapshot(SkSurface* surface, const std::shared_ptr<RSSkiaFilter>& filter)
@@ -223,6 +240,7 @@ void RSFilterCacheManager::InvalidateCache()
     cachedImageRegion_.reset();
     cachedFilterHash_ = 0;
     frameSinceFilterChange_ = 0;
+    cacheUpdateInterval_ = 0;
 }
 } // namespace Rosen
 } // namespace OHOS

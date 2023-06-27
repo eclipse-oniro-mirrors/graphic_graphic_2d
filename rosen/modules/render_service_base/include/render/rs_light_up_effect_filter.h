@@ -34,9 +34,9 @@ public:
     ~RSLightUpEffectFilter() override;
     float GetLightUpDegree();
 #ifndef USE_ROSEN_DRAWING
-    std::shared_ptr<RSSkiaFilter> Compose(const std::shared_ptr<RSSkiaFilter>& inner) const override;
+    std::shared_ptr<RSSkiaFilter> Compose(const std::shared_ptr<RSSkiaFilter>& other) const override;
 #else
-    std::shared_ptr<RSDrawingFilter> Compose(const std::shared_ptr<RSDrawingFilter>& inner) override;
+    std::shared_ptr<RSDrawingFilter> Compose(const std::shared_ptr<RSDrawingFilter>& other) const override;
 #endif
     std::string GetDescription() override;
 
