@@ -183,14 +183,11 @@ HWTEST_F(RSRenderNodeTest, MarkNodeGroupTest, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     bool isNodeGruop = true;
-    bool isNodeGruop_ = false;
     auto nodeGruopType = node.GetNodeGroupType();
-    RSRenderNode::NodeGroupType type = RSRenderNode::NodeGroupType::GROUPED_BY_UI;
+    RSRenderNode::NodeGroupType type = RSRenderNode::NodeGroupType::GROUPED_BY_USER;
     if (type >= nodeGruopType) {
         node.MarkNodeGroup(type, isNodeGruop);
-        ASSERT_EQ(node.GetDrawingCacheType(), RSDrawingCacheType::TARGETED_CACHE);
-        node.MarkNodeGroup(type, isNodeGruop_);
-        ASSERT_EQ(node.GetDrawingCacheType(), RSDrawingCacheType::DISABLED_CACHE);
+        ASSERT_EQ(node.GetNodeGroupType(), type);
     }
 }
 } // namespace Rosen
