@@ -64,7 +64,7 @@ void RSRenderEngineTest::TearDown() {}
  * @tc.type: FUNC
  * @tc.require: issueI6R34I
  */
-HWTEST(RSRenderEngineTest, DrawSurfaceNodeWithParams001, TestSize.Level1)
+HWTEST_F(RSRenderEngineTest, DrawSurfaceNodeWithParams001, TestSize.Level1)
 {
     auto renderEngine = std::make_shared<RSRenderEngine>();
     std::unique_ptr<SkCanvas> skCanvas = std::make_unique<SkCanvas>(10, 10);
@@ -82,7 +82,7 @@ HWTEST(RSRenderEngineTest, DrawSurfaceNodeWithParams001, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: issueI6R34I
  */
-HWTEST(RSRenderEngineTest, DrawSurfaceNodeWithParams002, TestSize.Level1)
+HWTEST_F(RSRenderEngineTest, DrawSurfaceNodeWithParams002, TestSize.Level1)
 {
     auto renderEngine = std::make_shared<RSRenderEngine>();
     std::unique_ptr<SkCanvas> skCanvas = std::make_unique<SkCanvas>(10, 10);
@@ -100,7 +100,7 @@ HWTEST(RSRenderEngineTest, DrawSurfaceNodeWithParams002, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: issueI6R34I
  */
-HWTEST(RSRenderEngineTest, DrawLayers001, TestSize.Level1)
+HWTEST_F(RSRenderEngineTest, DrawLayers001, TestSize.Level1)
 {
     auto renderEngine = std::make_shared<RSRenderEngine>();
     std::unique_ptr<SkCanvas> skCanvas = std::make_unique<SkCanvas>(10, 10);
@@ -126,7 +126,7 @@ HWTEST(RSRenderEngineTest, DrawLayers001, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: issueI6R34I
  */
-HWTEST(RSRenderEngineTest, DrawWithParams, TestSize.Level1)
+HWTEST_F(RSRenderEngineTest, DrawWithParams, TestSize.Level1)
 {
     auto renderEngine = std::make_shared<RSRenderEngine>();
     std::unique_ptr<SkCanvas> skCanvas = std::make_unique<SkCanvas>(10, 10);
@@ -142,7 +142,7 @@ HWTEST(RSRenderEngineTest, DrawWithParams, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: issueI6R34I
  */
-HWTEST(RSRenderEngineTest, RSSurfaceNodeCommonPreProcess, TestSize.Level1)
+HWTEST_F(RSRenderEngineTest, RSSurfaceNodeCommonPreProcess, TestSize.Level1)
 {
     auto renderEngine = std::make_shared<RSRenderEngine>();
     std::unique_ptr<SkCanvas> skCanvas = std::make_unique<SkCanvas>(10, 10);
@@ -159,7 +159,7 @@ HWTEST(RSRenderEngineTest, RSSurfaceNodeCommonPreProcess, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: issueI6R34I
  */
-HWTEST(RSRenderEngineTest, RSSurfaceNodeCommonPostProcess, TestSize.Level1)
+HWTEST_F(RSRenderEngineTest, RSSurfaceNodeCommonPostProcess, TestSize.Level1)
 {
     auto renderEngine = std::make_shared<RSRenderEngine>();
     std::unique_ptr<SkCanvas> skCanvas = std::make_unique<SkCanvas>(10, 10);
@@ -176,7 +176,7 @@ HWTEST(RSRenderEngineTest, RSSurfaceNodeCommonPostProcess, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: issueI6R34I
  */
-HWTEST(RSRenderEngineTest, ClipHoleForLayer, TestSize.Level1)
+HWTEST_F(RSRenderEngineTest, ClipHoleForLayer, TestSize.Level1)
 {
     auto renderEngine = std::make_shared<RSRenderEngine>();
     std::unique_ptr<SkCanvas> skCanvas = std::make_unique<SkCanvas>(10, 10);
@@ -192,7 +192,7 @@ HWTEST(RSRenderEngineTest, ClipHoleForLayer, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: issueI6R34I
  */
-HWTEST(RSRenderEngineTest, SetColorFilterModeToPaint, TestSize.Level1)
+HWTEST_F(RSRenderEngineTest, SetColorFilterModeToPaint, TestSize.Level1)
 {
     auto renderEngine = std::make_shared<RSRenderEngine>();
     std::unique_ptr<SkPaint> skPaint = std::make_unique<SkPaint>();
