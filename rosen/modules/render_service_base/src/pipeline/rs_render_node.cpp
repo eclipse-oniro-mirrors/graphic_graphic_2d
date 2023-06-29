@@ -544,7 +544,7 @@ void RSRenderNode::InitCacheSurface(Drawing::GPUContext* gpuContext, ClearCacheS
         return;
     }
     SkImageInfo info = SkImageInfo::MakeN32Premul(width, height);
-    std::scoped_lock<std::mutex> lock(surfaceMutex_);
+    std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
     cacheSurface_ = SkSurface::MakeRenderTarget(grContext, SkBudgeted::kYes, info);
 #else
     cacheSurface_ = SkSurface::MakeRasterN32Premul(width, height);
@@ -563,7 +563,7 @@ void RSRenderNode::InitCacheSurface(Drawing::GPUContext* gpuContext, ClearCacheS
     image.BuildFromBitmap(*gpuContext, bitmap);
     auto surface = std::make_shared<Drawing::Surface>();
     surface->Bind(image);
-    std::scoped_lock<std::mutex> lock(surfaceMutex_);
+    std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
     cacheSurface_ = surface;
 #else
     cacheSurface_ = std::make_shared<Drawing::Surface>();
@@ -669,8 +669,11 @@ sk_sp<SkSurface> RSRenderNode::GetCompletedCacheSurface(uint32_t threadIndex, bo
 std::shared_ptr<Drawing::Surface> RSRenderNode::GetCompletedCacheSurface(uint32_t threadIndex, bool isUIFirst)
 #endif
 {
-    if (isUIFirst || cacheSurfaceThreadIndex_ == threadIndex || !cacheCompletedSurface_) {
-        return cacheCompletedSurface_;
+    {
+        std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
+        if (isUIFirst || cacheSurfaceThreadIndex_ == threadIndex || !cacheCompletedSurface_) {
+            return cacheCompletedSurface_;
+        }
     }
 
     // freeze cache scene
