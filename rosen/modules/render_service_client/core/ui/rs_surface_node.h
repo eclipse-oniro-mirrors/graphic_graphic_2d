@@ -49,6 +49,8 @@ struct RSSurfaceNodeConfig {
 
 class RSC_EXPORT RSSurfaceNode : public RSNode {
 public:
+    static constexpr float POINTER_WINDOW_POSITION_Z = 9999;
+
     using WeakPtr = std::weak_ptr<RSSurfaceNode>;
     using SharedPtr = std::shared_ptr<RSSurfaceNode>;
     static inline constexpr RSUINodeType Type = RSUINodeType::SURFACE_NODE;
@@ -90,6 +92,9 @@ public:
     static RSNode::SharedPtr UnmarshallingAsProxyNode(Parcel& parcel);
 
     FollowType GetFollowType() const override;
+    
+    void AttachToDisplay(uint64_t screenId);
+    void DetachToDisplay(uint64_t screenId);
 
 #ifndef ROSEN_CROSS_PLATFORM
     sptr<OHOS::Surface> GetSurface() const;
