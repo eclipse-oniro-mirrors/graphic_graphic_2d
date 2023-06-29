@@ -119,9 +119,12 @@ public:
     static bool UnmarshallingArray(Parcel& parcel, T*& val, int count)
     {
         if (count <= 0) {
-            return true;
+            return false;
         }
         if (const uint8_t* buff = parcel.ReadUnpadBuffer(count * sizeof(T))) {
+            if (buff == nullptr) {
+                return false;
+            }
             val = reinterpret_cast<const T*>(buff);
             return true;
         }
