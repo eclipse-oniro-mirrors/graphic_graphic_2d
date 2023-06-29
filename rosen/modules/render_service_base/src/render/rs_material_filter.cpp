@@ -414,7 +414,7 @@ void RSMaterialFilter::DrawImageRect(
     static constexpr float kMaxCrossFadeRadius = 10.0f;
     bool supporteLargeRadius = true;
 
-    int blurRadius = blurRadiusX_ * 3;
+    int blurRadius = radius_ * 3;
     uint32_t maxPasses = supporteLargeRadius ? kMaxPassesLargeRadius : kMaxPasses;
     float dilatedConvolutionFactor = supporteLargeRadius ? kDilatedConvolutionLargeRadius : kDilatedConvolution;
     float tmpRadius = static_cast<float>(blurRadius) / dilatedConvolutionFactor;
@@ -461,7 +461,9 @@ void RSMaterialFilter::DrawImageRect(
     const auto blurShader = tmpBlur->makeShader(SkTileMode::kClamp, SkTileMode::kClamp, linear, &blurMatrix);
 
     SkMatrix inputMatrix;
-    canvas.getTotalMatrix().invert(&inputMatrix);
+    if (canvas.getTotalMatrix().invert(&inputMatrix)) {
+        inputMatrix = inputMatrix;
+    }
     if (tmpBlur->width() == image->width() && tmpBlur->height() == image->height()) {
         inputMatrix.preScale(invBlurScale, invBlurScale);
     }
