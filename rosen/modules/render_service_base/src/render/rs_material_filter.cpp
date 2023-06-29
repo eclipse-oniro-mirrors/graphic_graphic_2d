@@ -70,9 +70,11 @@ RSMaterialFilter::RSMaterialFilter(int style, float dipScale, BLUR_COLOR_MODE mo
     hash_ = SkOpts::hash(&colorMode_, sizeof(colorMode_), hash_);
     hash_ = SkOpts::hash(&ratio, sizeof(ratio), hash_);
 
+#ifndef USE_ROSEN_DRAWING
     if (RSSystemProperties::GetFilterCacheEnabled()) {
         useKawase = true;
     }
+#endif
 
    SkString blurString(R"(
         uniform shader imageInput;
@@ -125,11 +127,11 @@ RSMaterialFilter::RSMaterialFilter(MaterialParam materialParam, BLUR_COLOR_MODE 
     hash_ = SkOpts::hash(&type_, sizeof(type_), 0);
     hash_ = SkOpts::hash(&materialParam, sizeof(materialParam), hash_);
     hash_ = SkOpts::hash(&colorMode_, sizeof(colorMode_), hash_);
-
+#ifndef USE_ROSEN_DRAWING
     if (RSSystemProperties::GetFilterCacheEnabled()) {
         useKawase = true;
     }
-
+#endif
     SkString blurString(R"(
         uniform shader imageInput;
         uniform float2 in_blurOffset;

@@ -44,10 +44,6 @@ RSBlurFilter::RSBlurFilter(float blurRadiusX, float blurRadiusY): RSSkiaFilter(S
     hash_ = SkOpts::hash(&blurRadiusX, sizeof(blurRadiusX), hash_);
     hash_ = SkOpts::hash(&blurRadiusY, sizeof(blurRadiusY), hash_);
 
-    if (RSSystemProperties::GetFilterCacheEnabled()) {
-        useKawase = true;
-    }
-
     SkString blurString(R"(
         uniform shader imageInput;
         uniform float2 in_blurOffset;
