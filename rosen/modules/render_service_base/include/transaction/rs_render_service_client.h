@@ -68,6 +68,7 @@ public:
     void operator=(const RSRenderServiceClient&) = delete;
 
     void CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData) override;
+    void ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
 
     bool GetUniRenderEnabled();
 
@@ -158,6 +159,8 @@ public:
     int32_t GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability);
 
     int32_t GetScreenType(ScreenId id, RSScreenType& screenType);
+
+    bool GetBitmap(NodeId id, SkBitmap& bitmap);
 
     int32_t SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval);
 

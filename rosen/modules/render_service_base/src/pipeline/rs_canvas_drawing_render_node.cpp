@@ -34,7 +34,14 @@ RSCanvasDrawingRenderNode::~RSCanvasDrawingRenderNode() {}
 
 void RSCanvasDrawingRenderNode::ProcessRenderContents(RSPaintFilterCanvas& canvas)
 {
-    if (!skSurface_) {
+    if (GetRenderProperties().GetBoundsWidth() <= 0 || GetRenderProperties().GetBoundsHeight() <= 0) {
+        RS_LOGE("RSCanvasDrawingRenderNode::ProcessRenderContents: The width or height of the canvas is less than or "
+                "equal to 0");
+        return;
+    }
+    if (!skSurface_ ||
+        static_cast<int>(GetRenderProperties().GetBoundsWidth()) != static_cast<int>(skSurface_->width()) ||
+        static_cast<int>(GetRenderProperties().GetBoundsHeight()) != static_cast<int>(skSurface_->height())) {
         SkImageInfo info = SkImageInfo::Make(GetRenderProperties().GetBoundsWidth(),
             GetRenderProperties().GetBoundsHeight(), kRGBA_8888_SkColorType, kPremul_SkAlphaType);
 
@@ -81,6 +88,24 @@ void RSCanvasDrawingRenderNode::ApplyDrawCmdModifier(RSModifierContext& context,
         auto cmd = std::static_pointer_cast<RSRenderProperty<DrawCmdListPtr>>(prop)->Get();
         cmd->ClearOp();
     }
+}
+
+bool RSCanvasDrawingRenderNode::GetBitmap(SkBitmap& bitmap)
+{
+    if (skSurface_ == nullptr) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetBitmap: SkSurface is nullptr");
+        return false;
+    }
+    sk_sp<SkImage> image = skSurface_->makeImageSnapshot();
+    if (image == nullptr) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetBitmap: SkImage is nullptr");
+        return false;
+    }
+    if (!image->asLegacyBitmap(&bitmap)) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetBitmap: asLegacyBitmap failed");
+        return false;
+    }
+    return true;
 }
 } // namespace Rosen
 } // namespace OHOS

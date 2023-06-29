@@ -53,7 +53,7 @@ private:
 
     // IPC RSIRenderServiceConnection Interfaces
     void CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData) override;
-
+    void ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
     MemoryGraphic GetMemoryGraphic(int pid) override;
     std::vector<MemoryGraphic> GetMemoryGraphics() override;
     bool GetUniRenderEnabled() override;
@@ -142,6 +142,8 @@ private:
     int32_t GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability) override;
 
     int32_t GetScreenType(ScreenId id, RSScreenType& screenType) override;
+
+    bool GetBitmap(NodeId id, SkBitmap& bitmap) override;
 
     int32_t SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval) override;
 

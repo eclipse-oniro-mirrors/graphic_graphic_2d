@@ -22,6 +22,7 @@
 #endif
 
 #include "command/rs_command.h"
+#include "command/rs_node_showing_command.h"
 #include "ipc_callbacks/screen_change_callback_stub.h"
 #include "ipc_callbacks/surface_capture_callback_stub.h"
 #include "ipc_callbacks/buffer_available_callback_stub.h"
@@ -46,6 +47,18 @@ void RSRenderServiceClient::CommitTransaction(std::unique_ptr<RSTransactionData>
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService != nullptr) {
         renderService->CommitTransaction(transactionData);
+    }
+}
+
+void RSRenderServiceClient::ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task)
+{
+    if (task == nullptr) {
+        return;
+    }
+
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService != nullptr) {
+        renderService->ExecuteSynchronousTask(task);
     }
 }
 
@@ -605,6 +618,16 @@ int32_t RSRenderServiceClient::GetScreenType(ScreenId id, RSScreenType& screenTy
         return RENDER_SERVICE_NULL;
     }
     return renderService->GetScreenType(id, screenType);
+}
+
+bool RSRenderServiceClient::GetBitmap(NodeId id, SkBitmap& bitmap)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::GetBitmap renderService == nullptr!");
+        return false;
+    }
+    return renderService->GetBitmap(id, bitmap);
 }
 
 int32_t RSRenderServiceClient::SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval)

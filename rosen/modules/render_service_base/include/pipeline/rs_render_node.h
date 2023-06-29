@@ -16,6 +16,7 @@
 #define RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_RENDER_NODE_H
 
 #include <memory>
+#include <mutex>
 #include <unordered_set>
 #include <stdint.h>
 #include <functional>
@@ -57,6 +58,10 @@ public:
     ~RSRenderNode() override;
     bool IsDirty() const override;
     bool IsContentDirty() const override;
+    void AddDirtyType(RSModifierType type)
+    {
+        dirtyTypes_.emplace(type);
+    }
 
     std::pair<bool, bool> Animate(int64_t timestamp) override;
     // PrepareCanvasRenderNode in UniRender
@@ -159,11 +164,13 @@ public:
     std::shared_ptr<Drawing::Surface> GetCacheSurface() const
 #endif
     {
+        std::scoped_lock<std::mutex> lock(surfaceMutex_);
         return cacheSurface_;
     }
 
     void UpdateCompletedCacheSurface()
     {
+        std::scoped_lock<std::mutex> lock(surfaceMutex_);
         std::swap(cacheSurface_, cacheCompletedSurface_);
     }
 
@@ -177,6 +184,7 @@ public:
 
     void ClearCacheSurface()
     {
+        std::scoped_lock<std::mutex> lock(surfaceMutex_);
         cacheSurface_ = nullptr;
         cacheCompletedSurface_ = nullptr;
     }
@@ -375,6 +383,11 @@ public:
         drawRegion_ = rect;
     }
 
+    std::shared_ptr<RectF> GetDrawRegion() const
+    {
+        return drawRegion_;
+    }
+
     void UpdateDrawRegion();
     void UpdateEffectRegion(std::optional<SkPath>& region) const;
 
@@ -405,6 +418,15 @@ public:
     void SetGlobalAlpha(float alpha);
     float GetGlobalAlpha() const;
     virtual void OnAlphaChanged() {}
+
+    sk_sp<SkPicture> GetRecordedContents() const
+    {
+        return recordedContents_;
+    }
+    void SetRecordedContents(sk_sp<SkPicture> recordedContents)
+    {
+        recordedContents_ = recordedContents;
+    }
 
 protected:
     explicit RSRenderNode(NodeId id, std::weak_ptr<RSContext> context = {});
@@ -452,6 +474,7 @@ private:
     RSDrawingCacheType drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;
     bool isDrawingCacheChanged_ = false;
 
+    mutable std::mutex surfaceMutex_;
     sk_sp<SkImage> cacheTexture_ = nullptr;
     ClearCacheSurfaceFunc clearCacheSurfaceFunc_ = nullptr;
     uint32_t cacheSurfaceThreadIndex_ = UNI_MAIN_THREAD_INDEX;
@@ -481,6 +504,9 @@ private:
     // Only use in RSRenderNode::DrawCacheSurface to calculate scale factor
     float boundsWidth_ = 0.0f;
     float boundsHeight_ = 0.0f;
+    std::unordered_set<RSModifierType> dirtyTypes_;
+
+    sk_sp<SkPicture> recordedContents_ = nullptr;
 
     friend class RSRenderTransition;
     friend class RSRenderNodeMap;

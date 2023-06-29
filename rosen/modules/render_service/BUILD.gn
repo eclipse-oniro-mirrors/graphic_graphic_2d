@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
+import("$graphic_2d_root/rosen/modules/render_service_base/config.gni")
 
 ## Build librender_service.so
 ohos_shared_library("librender_service") {
@@ -118,16 +119,12 @@ ohos_shared_library("librender_service") {
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager:libhyper_graphic_manager",
     "$graphic_2d_root/rosen/modules/render_frame_trace:render_frame_trace",
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
-    "//foundation/systemabilitymgr/safwk/interfaces/innerkits/safwk:system_ability_fwk",
   ]
 
   public_deps = [ "//third_party/libpng:libpng" ]
 
   if (defined(use_new_skia) && use_new_skia) {
     public_deps += [ "//third_party/skia:skia_ohos" ]
-    if (is_ohos) {
-      defines += [ "SK_BUILD_TRACE_FOR_OHOS" ]
-    }
   } else {
     public_deps += [ "//third_party/flutter/build/skia:ace_skia_ohos" ]
   }
@@ -148,13 +145,18 @@ ohos_shared_library("librender_service") {
   external_deps = [
     "c_utils:utils",
     "eventhandler:libeventhandler",
-    "hicollie_native:libhicollie",
+    "hicollie:libhicollie",
     "hisysevent_native:libhisysevent",
     "hitrace_native:hitrace_meter",
     "init:libbegetutil",
     "ipc:ipc_core",
+    "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  if (rosen_is_ohos) {
+    external_deps += [ "multimedia_image_framework:image_native" ]
+  }
 
   if (defined(global_parts_info) &&
       defined(global_parts_info.resourceschedule_soc_perf)) {

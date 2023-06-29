@@ -18,6 +18,7 @@
 #include "hgm_core.h"
 #include "hgm_command.h"
 #include "offscreen_render/rs_offscreen_render_thread.h"
+#include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_render_node_map.h"
 #include "pipeline/rs_render_service_listener.h"
 #include "pipeline/rs_surface_capture_task.h"
@@ -178,6 +179,22 @@ void RSRenderServiceConnection::RSApplicationRenderThreadDeathRecipient::OnRemot
 void RSRenderServiceConnection::CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData)
 {
     mainThread_->RecvRSTransactionData(transactionData);
+}
+
+void RSRenderServiceConnection::ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task)
+{
+    std::mutex mutex;
+    std::unique_lock<std::mutex> lock(mutex);
+    auto cv = std::make_shared<std::condition_variable>();
+    auto& mainThread = mainThread_;
+    mainThread->PostTask([task, cv, &mainThread]() {
+        if (task == nullptr || cv == nullptr) {
+            return;
+        }
+        task->Process(mainThread->GetContext());
+        cv->notify_all();
+    });
+    cv->wait_for(lock, std::chrono::nanoseconds(task->GetTimeout()));
 }
 
 bool RSRenderServiceConnection::GetUniRenderEnabled()
@@ -723,6 +740,22 @@ int32_t RSRenderServiceConnection::GetScreenType(ScreenId id, RSScreenType& scre
 {
     std::lock_guard<std::mutex> lock(mutex_);
     return screenManager_->GetScreenType(id, screenType);
+}
+
+bool RSRenderServiceConnection::GetBitmap(NodeId id, SkBitmap& bitmap)
+{
+    auto node = mainThread_->GetContext().GetNodeMap().GetRenderNode<RSCanvasDrawingRenderNode>(id);
+    if (node == nullptr) {
+        RS_LOGE("RSRenderServiceConnection::GetBitmap cannot find NodeId: [%" PRIu64 "]", id);
+        return false;
+    }
+    if (node->GetType() != RSRenderNodeType::CANVAS_DRAWING_NODE) {
+        RS_LOGE("RSRenderServiceConnection::GetBitmap RenderNodeType != RSRenderNodeType::CANVAS_DRAWING_NODE");
+        return false;
+    }
+    auto getBitmapTask = [&]() -> bool { return node->GetBitmap(bitmap); };
+    mainThread_->PostSyncTask(getBitmapTask);
+    return !bitmap.empty();
 }
 
 int32_t RSRenderServiceConnection::SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval)

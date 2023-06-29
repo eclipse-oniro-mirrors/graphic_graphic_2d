@@ -79,12 +79,6 @@ bool RSSystemProperties::GetUniRenderEnabled()
     return isUniRenderEnabled_;
 }
 
-SkiaTraceType RSSystemProperties::GetSkiaTraceEnabled()
-{
-    return static_cast<SkiaTraceType>(
-        std::atoi((system::GetParameter("persist.rosen.skiatrace.enabled", "0")).c_str()));
-}
-
 bool RSSystemProperties::GetDrawOpTraceEnabled()
 {
     static bool code = system::GetParameter("persist.rosen.drawoptrace.enabled", "0") != "0";
@@ -249,7 +243,8 @@ bool RSSystemProperties::GetProxyNodeDebugEnabled()
 
 bool RSSystemProperties::GetUIFirstEnabled()
 {
-    return std::atoi((system::GetParameter("rosen.ui.first.enabled", "0")).c_str()) != 0;
+    static bool isPhone = system::GetParameter("const.product.devicetype", "pc") == "phone";
+    return (std::atoi((system::GetParameter("rosen.ui.first.enabled", "1")).c_str()) != 0) && isPhone;
 }
 
 bool RSSystemProperties::GetCacheCmdEnabled()

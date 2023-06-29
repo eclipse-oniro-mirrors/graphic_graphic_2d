@@ -328,7 +328,7 @@ void RSSurfaceRenderNode::ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanv
     if (filter != nullptr) {
         auto skRectPtr = std::make_unique<SkRect>();
         skRectPtr->setXYWH(0, 0, property.GetBoundsWidth(), property.GetBoundsHeight());
-        RSPropertiesPainter::DrawFilter(property, canvas, filter, skRectPtr, canvas.GetSurface());
+        RSPropertiesPainter::DrawFilter(property, canvas, filter, FilterType::BACKGROUND_FILTER, skRectPtr);
     }
     SetTotalMatrix(canvas.getTotalMatrix());
 #else
@@ -336,7 +336,7 @@ void RSSurfaceRenderNode::ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanv
     if (filter != nullptr) {
         auto rectPtr =
             std::make_unique<Drawing::Rect>(0, 0, property.GetBoundsWidth(), property.GetBoundsHeight());
-        RSPropertiesPainter::DrawFilter(property, canvas, filter, rectPtr, canvas.GetSurface());
+        RSPropertiesPainter::DrawFilter(property, canvas, filter, FilterType::BACKGROUND_FILTER, rectPtr);
     }
     SetTotalMatrix(canvas.GetTotalMatrix());
 #endif
@@ -360,7 +360,7 @@ void RSSurfaceRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanva
     if (filter != nullptr) {
         auto skRectPtr = std::make_unique<SkRect>();
         skRectPtr->setXYWH(0, 0, property.GetBoundsWidth(), property.GetBoundsHeight());
-        RSPropertiesPainter::DrawFilter(property, canvas, filter, skRectPtr, canvas.GetSurface());
+        RSPropertiesPainter::DrawFilter(property, canvas, filter, FilterType::FOREGROUND_FILTER, skRectPtr);
     }
     auto para = property.GetLinearGradientBlurPara();
     if (para != nullptr && para->blurRadius_ > 0) {
@@ -379,7 +379,7 @@ void RSSurfaceRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanva
     auto filter = std::static_pointer_cast<RSDrawingFilter>(property.GetFilter());
     if (filter != nullptr) {
         auto rectPtr = std::make_unique<Drawing::Rect>(0, 0, property.GetBoundsWidth(), property.GetBoundsHeight());
-        RSPropertiesPainter::DrawFilter(property, canvas, filter, rectPtr, canvas.GetSurface());
+        RSPropertiesPainter::DrawFilter(property, canvas, filter, FilterType::FOREGROUND_FILTER, rectPtr);
     }
     canvas.Save();
     if (GetSurfaceNodeType() == RSSurfaceNodeType::SELF_DRAWING_NODE) {
@@ -428,6 +428,8 @@ void RSSurfaceRenderNode::SetContextMatrix(const std::optional<Drawing::Matrix>&
     }
     contextMatrix_ = matrix;
     SetContentDirty();
+    AddDirtyType(RSModifierType::SCALE);
+    AddDirtyType(RSModifierType::TRANSLATE);
     if (!sendMsg) {
         return;
     }
@@ -443,6 +445,7 @@ void RSSurfaceRenderNode::SetContextAlpha(float alpha, bool sendMsg)
     }
     contextAlpha_ = alpha;
     SetContentDirty();
+    AddDirtyType(RSModifierType::ALPHA);
     if (!sendMsg) {
         return;
     }
@@ -462,6 +465,7 @@ void RSSurfaceRenderNode::SetContextClipRegion(const std::optional<Drawing::Rect
     }
     contextClipRect_ = clipRegion;
     SetContentDirty();
+    AddDirtyType(RSModifierType::BOUNDS);
     if (!sendMsg) {
         return;
     }

@@ -21,6 +21,7 @@
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "transaction/rs_ashmem_helper.h"
+#include "transaction/rs_marshalling_helper.h"
 #include "rs_trace.h"
 
 namespace OHOS {
@@ -67,6 +68,35 @@ void RSRenderServiceConnectionProxy::CommitTransaction(std::unique_ptr<RSTransac
             ROSEN_LOGE("RSRenderServiceConnectionProxy::CommitTransaction SendRequest failed, err = %d", err);
             return;
         }
+    }
+}
+
+void RSRenderServiceConnectionProxy::ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task)
+{
+    if (task == nullptr) {
+        return;
+    }
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(RSRenderServiceConnectionProxy::GetDescriptor())) {
+        return;
+    }
+
+    if (!task->Marshalling(data)) {
+        return;
+    }
+
+    option.SetFlags(MessageOption::TF_SYNC);
+    int32_t err = Remote()->SendRequest(RSIRenderServiceConnection::EXECUTE_SYNCHRONOUS_TASK, data, reply, option);
+    if (err != NO_ERROR) {
+        return;
+    }
+
+    if (task->CheckHeader(reply)) {
+        task->ReadFromParcel(reply);
     }
 }
 
@@ -1017,6 +1047,28 @@ int32_t RSRenderServiceConnectionProxy::GetScreenType(ScreenId id, RSScreenType&
         screenType = static_cast<RSScreenType>(reply.ReadUint32());
     }
     return result;
+}
+
+bool RSRenderServiceConnectionProxy::GetBitmap(NodeId id, SkBitmap& bitmap)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    data.WriteUint64(id);
+    int32_t err = Remote()->SendRequest(RSIRenderServiceConnection::GET_BITMAP, data, reply, option);
+    if (err != NO_ERROR) {
+        return false;
+    }
+    bool result = reply.ReadBool();
+    if (!result || !RSMarshallingHelper::Unmarshalling(reply, bitmap)) {
+        RS_LOGE("RSRenderServiceConnectionProxy::GetBitmap: Unmarshalling failed");
+        return false;
+    }
+    return true;
 }
 
 int32_t RSRenderServiceConnectionProxy::SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval)

@@ -31,6 +31,8 @@ void RSRenderServiceClient::CommitTransaction(std::unique_ptr<RSTransactionData>
 {
 }
 
+void RSRenderServiceClient::ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) {}
+
 bool RSRenderServiceClient::GetUniRenderEnabled()
 {
     return {};
@@ -249,6 +251,11 @@ int32_t RSRenderServiceClient::GetScreenHDRCapability(ScreenId id, RSScreenHDRCa
 }
 
 int32_t RSRenderServiceClient::GetScreenType(ScreenId id, RSScreenType& screenType)
+{
+    return {};
+}
+
+bool RSRenderServiceClient::GetBitmap(NodeId id, SkBitmap& bitmap)
 {
     return {};
 }

@@ -16,6 +16,7 @@
 #ifndef ROSEN_RENDER_SERVICE_BASE_TRANSACTION_RS_RENDER_SERVICE_CONNECTION_PROXY_H
 #define ROSEN_RENDER_SERVICE_BASE_TRANSACTION_RS_RENDER_SERVICE_CONNECTION_PROXY_H
 
+#include "command/rs_node_showing_command.h"
 #include <iremote_proxy.h>
 #include <platform/ohos/rs_irender_service_connection.h>
 #include "sandbox_utils.h"
@@ -28,6 +29,7 @@ public:
     virtual ~RSRenderServiceConnectionProxy() noexcept = default;
 
     void CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData) override;
+    void ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
 
     MemoryGraphic GetMemoryGraphic(int pid) override;
     std::vector<MemoryGraphic> GetMemoryGraphics() override;
@@ -113,6 +115,8 @@ public:
     int32_t GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability) override;
 
     int32_t GetScreenType(ScreenId id, RSScreenType& screenType) override;
+
+    bool GetBitmap(NodeId id, SkBitmap& bitmap) override;
 
     int32_t SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval) override;
 
