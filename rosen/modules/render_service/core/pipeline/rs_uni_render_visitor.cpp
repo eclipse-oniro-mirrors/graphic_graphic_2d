@@ -1643,9 +1643,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         RS_TRACE_BEGIN("RSUniRender::wait for bufferRequest cond");
         if (!RSMainThread::Instance()->WaitUntilDisplayNodeBufferReleased(node)) {
             RS_TRACE_NAME("RSUniRenderVisitor no released buffer");
-            RS_TRACE_END();
-            RS_TRACE_END();
-            return;
         }
         RS_TRACE_END();
         RS_TRACE_END();
