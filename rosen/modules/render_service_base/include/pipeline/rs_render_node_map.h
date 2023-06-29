@@ -52,6 +52,7 @@ public:
     void TraverseSurfaceNodes(std::function<void (const std::shared_ptr<RSSurfaceRenderNode>&)> func) const;
     void TraverseDrivenRenderNodes(std::function<void (const std::shared_ptr<RSRenderNode>&)> func) const;
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> GetResidentSurfaceNodeMap() const;
+    bool IsResidentProcessNode(NodeId id) const;
 
     NodeId GetEntryViewNodeId() const;
     NodeId GetWallPaperViewNodeId() const;
