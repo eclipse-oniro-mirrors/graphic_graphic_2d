@@ -19,6 +19,8 @@
 
 #include "common/rs_common_def.h"
 
+#include "property/rs_property_trace.h"
+
 #ifndef USE_ROSEN_DRAWING
 #if defined(NEW_SKIA)
 #include "include/core/SkTileMode.h"
@@ -41,6 +43,10 @@ RSBlurFilter::RSBlurFilter(float blurRadiusX, float blurRadiusY): RSSkiaFilter(S
     hash_ = SkOpts::hash(&type_, sizeof(type_), 0);
     hash_ = SkOpts::hash(&blurRadiusX, sizeof(blurRadiusX), hash_);
     hash_ = SkOpts::hash(&blurRadiusY, sizeof(blurRadiusY), hash_);
+
+    if (RSSystemProperties::GetFilterCacheEnabled()) {
+        useKawase = true;
+    }
 
     SkString blurString(R"(
         uniform shader imageInput;
@@ -87,6 +93,10 @@ RSBlurFilter::RSBlurFilter(float blurRadiusX, float blurRadiusY): RSSkiaFilter(S
     hash_ = SkOpts::hash(&type_, sizeof(type_), 0);
     hash_ = SkOpts::hash(&blurRadiusX, sizeof(blurRadiusX), hash_);
     hash_ = SkOpts::hash(&blurRadiusY, sizeof(blurRadiusY), hash_);
+
+    if (RSSystemProperties::GetFilterCacheEnabled()) {
+        useKawase = true;
+    }
 
     SkString blurString(R"(
         uniform shader imageInput;

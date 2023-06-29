@@ -21,6 +21,7 @@
 #include "common/rs_common_def.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "property/rs_properties_painter.h"
+#include "property/rs_property_trace.h"
 
 #if defined(NEW_SKIA)
 #include "include/effects/SkImageFilters.h"
@@ -68,6 +69,10 @@ RSMaterialFilter::RSMaterialFilter(int style, float dipScale, BLUR_COLOR_MODE mo
     hash_ = SkOpts::hash(&style, sizeof(style), hash_);
     hash_ = SkOpts::hash(&colorMode_, sizeof(colorMode_), hash_);
     hash_ = SkOpts::hash(&ratio, sizeof(ratio), hash_);
+
+    if (RSSystemProperties::GetFilterCacheEnabled()) {
+        useKawase = true;
+    }
 
    SkString blurString(R"(
         uniform shader imageInput;
@@ -120,6 +125,10 @@ RSMaterialFilter::RSMaterialFilter(MaterialParam materialParam, BLUR_COLOR_MODE 
     hash_ = SkOpts::hash(&type_, sizeof(type_), 0);
     hash_ = SkOpts::hash(&materialParam, sizeof(materialParam), hash_);
     hash_ = SkOpts::hash(&colorMode_, sizeof(colorMode_), hash_);
+
+    if (RSSystemProperties::GetFilterCacheEnabled()) {
+        useKawase = true;
+    }
 
     SkString blurString(R"(
         uniform shader imageInput;
