@@ -300,8 +300,8 @@ void RSBlurFilter::DrawImageRect(
     const auto blurShader = tmpBlur->makeShader(SkTileMode::kClamp, SkTileMode::kClamp, linear, &blurMatrix);
 
     SkMatrix inputMatrix;
-    canvas.getTotalMatrix.invert(&inputMatrix);
-    if (tmpBlur.width() == image.width() && tmpBlur.height() == image.height()) {
+    canvas.getTotalMatrix().invert(&inputMatrix);
+    if (tmpBlur->width() == image->width() && tmpBlur->height() == image->height()) {
         inputMatrix.preScale(invBlurScale, invBlurScale);
     }
 
