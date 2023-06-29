@@ -67,9 +67,6 @@
           "resource_schedule_service",
           "soc_perf",
           "accessibility",
-          "resource_schedule_service",
-          "soc_perf",
-          "accessibility",
           "soc_perf"
         ],
         "third_party": [
