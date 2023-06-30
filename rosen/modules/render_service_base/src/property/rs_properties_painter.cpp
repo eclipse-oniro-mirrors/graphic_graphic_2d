@@ -660,6 +660,8 @@ void RSPropertiesPainter::DrawShadowInner(const RSProperties& properties, RSPain
     auto matrix = canvas.getTotalMatrix();
     matrix.setTranslateX(std::ceil(matrix.getTranslateX()));
     matrix.setTranslateY(std::ceil(matrix.getTranslateY()));
+    matrix.setScaleX(std::round(matrix.getScaleX() * 100) / 100);
+    matrix.setScaleY(std::round(matrix.getScaleY() * 100) / 100);
     canvas.setMatrix(matrix);
 
     if (properties.shadow_->GetHardwareAcceleration()) {
