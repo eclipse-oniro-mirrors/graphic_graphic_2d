@@ -1655,9 +1655,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         RS_TRACE_BEGIN("RSUniRender::wait for bufferRequest cond");
         if (!RSMainThread::Instance()->WaitUntilDisplayNodeBufferReleased(node)) {
             RS_TRACE_NAME("RSUniRenderVisitor no released buffer");
-            RS_TRACE_END();
-            RS_TRACE_END();
-            return;
         }
         RS_TRACE_END();
         RS_TRACE_END();
@@ -2156,6 +2153,23 @@ void RSUniRenderVisitor::CalcDirtyDisplayRegion(std::shared_ptr<RSDisplayRenderN
             }
             if (isShadowDisappear) {
                 surfaceNode->SetShadowValidLastFrame(false);
+            }
+        }
+
+        if (surfaceNode->IsAppWindow() && !surfaceNode->HasContainerWindow()) {
+            auto transparentRegion = surfaceNode->GetTransparentRegion();
+            Occlusion::Rect tmpRect = Occlusion::Rect { surfaceDirtyRect.left_, surfaceDirtyRect.top_,
+                surfaceDirtyRect.GetRight(), surfaceDirtyRect.GetBottom() };
+            Occlusion::Region surfaceDirtyRegion { tmpRect };
+            Occlusion::Region transparentDirtyRegion = transparentRegion.And(surfaceDirtyRegion);
+            if (!transparentDirtyRegion.IsEmpty()) {
+                RS_LOGD("CalcDirtyDisplayRegion merge TransparentDirtyRegion %s region %s",
+                    surfaceNode->GetName().c_str(), transparentDirtyRegion.GetRegionInfo().c_str());
+                std::vector<Occlusion::Rect> rects = transparentDirtyRegion.GetRegionRects();
+                for (const auto& rect : rects) {
+                    displayDirtyManager->MergeDirtyRect(RectI
+                        { rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_ });
+                }
             }
         }
     }
