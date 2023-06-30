@@ -92,7 +92,6 @@ public:
     bool IsNearEqual(
         const std::shared_ptr<RSFilter>& other, float threshold = std::numeric_limits<float>::epsilon()) const override;
     bool IsNearZero(float threshold = std::numeric_limits<float>::epsilon()) const override;
-    
     void DrawImageRect(
         SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& src, const SkRect& dst) const override;
 
@@ -112,7 +111,7 @@ private:
 #endif
     static float RadiusVp2Sigma(float radiusVp, float dipScale);
 
-    bool useKawase = true;
+    bool useKawase = false;
     friend class RSMarshallingHelper;
 };
 } // namespace Rosen

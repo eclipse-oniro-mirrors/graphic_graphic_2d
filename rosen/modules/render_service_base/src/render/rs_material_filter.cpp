@@ -70,6 +70,9 @@ RSMaterialFilter::RSMaterialFilter(int style, float dipScale, BLUR_COLOR_MODE mo
     hash_ = SkOpts::hash(&style, sizeof(style), hash_);
     hash_ = SkOpts::hash(&colorMode_, sizeof(colorMode_), hash_);
     hash_ = SkOpts::hash(&ratio, sizeof(ratio), hash_);
+#ifndef USE_ROSEN_DRAWING
+    useKawase = RSSystemProperties::GetKawaseEnabled();
+#endif
 }
 
 RSMaterialFilter::RSMaterialFilter(MaterialParam materialParam, BLUR_COLOR_MODE mode)
@@ -87,6 +90,9 @@ RSMaterialFilter::RSMaterialFilter(MaterialParam materialParam, BLUR_COLOR_MODE 
     hash_ = SkOpts::hash(&type_, sizeof(type_), 0);
     hash_ = SkOpts::hash(&materialParam, sizeof(materialParam), hash_);
     hash_ = SkOpts::hash(&colorMode_, sizeof(colorMode_), hash_);
+#ifndef USE_ROSEN_DRAWING
+    useKawase = RSSystemProperties::GetKawaseEnabled();
+#endif
 }
 
 RSMaterialFilter::~RSMaterialFilter() = default;

@@ -48,14 +48,13 @@ public:
     bool IsNearEqual(
         const std::shared_ptr<RSFilter>& other, float threshold = std::numeric_limits<float>::epsilon()) const override;
     bool IsNearZero(float threshold = std::numeric_limits<float>::epsilon()) const override;
-    
     void DrawImageRect(
         SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& src, const SkRect& dst) const override;
 
 private:
     float blurRadiusX_;
     float blurRadiusY_;
-    bool useKawase = true;
+    bool useKawase = false;
 };
 } // namespace Rosen
 } // namespace OHOS
