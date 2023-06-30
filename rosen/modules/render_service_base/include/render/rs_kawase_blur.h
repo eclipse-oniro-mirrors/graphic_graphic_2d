@@ -103,7 +103,6 @@ public:
         float tmpRadius = static_cast<float>(blurRadius) / dilatedConvolutionFactor;
         float numberOfPasses = std::min(maxPasses, static_cast<uint32_t>(ceil(tmpRadius)));
         float radiusByPasses = tmpRadius / (float)numberOfPasses;
-        // create blur surface with the bit depth and colorspace of the original surface
         SkImageInfo scaledInfo = image->imageInfo().makeWH(std::ceil(dst.width() * kBlurScale), 
             std::ceil(dst.height() * kBlurScale));
         SkMatrix blurMatrix = SkMatrix::Translate(-dst.fLeft, -dst.fTop);
