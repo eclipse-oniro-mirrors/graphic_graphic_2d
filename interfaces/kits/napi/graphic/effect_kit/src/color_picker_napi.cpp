@@ -220,7 +220,8 @@ static void CreateColorPickerFromPixelmapExecute(napi_env env, void* data)
     auto context = static_cast<ColorPickerAsyncContext*>(data);
     uint32_t errorCode = ERR_EFFECT_INVALID_VALUE;
     if (context->regionFlag) {
-        context->rColorPicker = ColorPicker::CreateColorPicker(context->rPixelMap, context->coordinatesBuffer, errorCode);
+        context->rColorPicker = ColorPicker::CreateColorPicker(
+            context->rPixelMap, context->coordinatesBuffer, errorCode);
     } else {
         context->rColorPicker = ColorPicker::CreateColorPicker(context->rPixelMap, errorCode);
     }
@@ -301,8 +302,8 @@ static bool GetRegionCoordinates(napi_env env, napi_value param, std::unique_ptr
     }
     if ((asyncContext->coordinatesBuffer[NUM_2] < asyncContext->coordinatesBuffer[NUM_0]) ||
                 (asyncContext->coordinatesBuffer[NUM_3] < asyncContext->coordinatesBuffer[NUM_1])) {
-        EFFECT_LOG_E("GetRegionCoordinates right must be greater than left, bottom must be greater than top");   
-        return false;            
+        EFFECT_LOG_E("GetRegionCoordinates right must be greater than left, bottom must be greater than top");
+        return false;
     };
     return true;
 }
@@ -317,7 +318,6 @@ napi_value ColorPickerNapi::CreateColorPicker(napi_env env, napi_callback_info i
     napi_value argValue[NUM_4] = {0};
     size_t argCount = NUM_4;
     ImageType imgType = ImageType::TYPE_UNKOWN;
-    EFFECT_LOG_I("[ColorPickerNapi]Create ColorPicker IN");
     IMG_JS_ARGS(env, info, status, argCount, argValue, thisVar);
     IMG_NAPI_CHECK_RET_D(IMG_IS_OK(status), nullptr, EFFECT_LOG_E("fail to napi_get_cb_info"));
     std::unique_ptr<ColorPickerAsyncContext> asyncContext = std::make_unique<ColorPickerAsyncContext>();
@@ -335,12 +335,14 @@ napi_value ColorPickerNapi::CreateColorPicker(napi_env env, napi_callback_info i
         if (Media::ImageNapiUtils::getType(env, argValue[argCount - 1]) == napi_function) {
             napi_create_reference(env, argValue[argCount - 1], refCount, &asyncContext->callbackRef);
         } else {
-            IMG_NAPI_CHECK_RET_D(GetRegionCoordinates(env, argValue[NUM_1], asyncContext), nullptr, EFFECT_LOG_E("fail to parse coordinates"));
-            asyncContext->regionFlag = true;            
+            IMG_NAPI_CHECK_RET_D(GetRegionCoordinates(
+                env, argValue[NUM_1], asyncContext), nullptr, EFFECT_LOG_E("fail to parse coordinates"));
+            asyncContext->regionFlag = true;  
         }
     }
-    if (argCount == NUM_3 && Media::ImageNapiUtils::getType(env, argValue[argCount - 2]) == napi_function) {
-        IMG_NAPI_CHECK_RET_D(GetRegionCoordinates(env, argValue[NUM_1], asyncContext), nullptr, EFFECT_LOG_E("fail to parse coordinates"));
+    if (argCount == NUM_3 && Media::ImageNapiUtils::getType(env, argValue[argCount - NUM_2]) == napi_function) {
+        IMG_NAPI_CHECK_RET_D(GetRegionCoordinates(
+            env, argValue[NUM_1], asyncContext), nullptr, EFFECT_LOG_E("fail to parse coordinates"));
         asyncContext->regionFlag = true;
     }
 
@@ -348,18 +350,11 @@ napi_value ColorPickerNapi::CreateColorPicker(napi_env env, napi_callback_info i
         napi_create_promise(env, &(asyncContext->deferred), &result);
     }
     if (asyncContext->errorMsg != nullptr) {
-        IMG_CREATE_CREATE_ASYNC_WORK(env, status,
-                                     "CreateColorPickerError",
-                                     [](napi_env env, void* data) {},
-                                     CreateColorPickerErrorComplete,
-                                     asyncContext,
-                                     asyncContext->work);
+        IMG_CREATE_CREATE_ASYNC_WORK(env, status, "CreateColorPickerError", [](napi_env env, void* data) {},
+                                        CreateColorPickerErrorComplete, asyncContext, asyncContext->work);
     } else if (imgType == ImageType::TYPE_PIXEL_MAP) {
-        IMG_CREATE_CREATE_ASYNC_WORK(env, status,
-                                     "CreateColorPickerFromPixelMap",
-                                     CreateColorPickerFromPixelmapExecute,
-                                     CreateColorPickerFromPixelmapComplete,
-                                     asyncContext, asyncContext->work);
+        IMG_CREATE_CREATE_ASYNC_WORK(env, status, "CreateColorPickerFromPixelMap", CreateColorPickerFromPixelmapExecute,
+                                        CreateColorPickerFromPixelmapComplete, asyncContext, asyncContext->work);
     } else {
         EFFECT_LOG_E("Create error");
     }
