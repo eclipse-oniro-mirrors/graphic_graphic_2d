@@ -1,11 +1,11 @@
 {
-    "name": "@ohos/graphic_2d",
+    "name": "@ohos/graphic_standard",
     "description": "graphic_standard",
     "version": "3.1",
     "license": "Apache License 2.0",
     "publishAs": "code-segment",
     "segment": {
-      "destPath": "foundation/graphic/graphic_2d"
+      "destPath": "foundation/graphic/graphic_standard"
     },
     "dirs": {},
     "scripts": {},
