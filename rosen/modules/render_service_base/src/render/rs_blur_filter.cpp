@@ -259,7 +259,7 @@ void RSBlurFilter::DrawImageRect(
     static constexpr float kMaxCrossFadeRadius = 10.0f;
     bool supporteLargeRadius = true;
 
-    int blurRadius = blurRadiusX_ * 3;
+    int blurRadius = 347;
     uint32_t maxPasses = supporteLargeRadius ? kMaxPassesLargeRadius : kMaxPasses;
     float dilatedConvolutionFactor = supporteLargeRadius ? kDilatedConvolutionLargeRadius : kDilatedConvolution;
     float tmpRadius = static_cast<float>(blurRadius) / dilatedConvolutionFactor;
