@@ -281,6 +281,53 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             SetScreenActiveMode(id, modeId);
             break;
         }
+        case SET_SCREEN_REFRESH_RATE: {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            ScreenId id = data.ReadUint64();
+            int32_t sceneId = data.ReadInt32();
+            int32_t rate = data.ReadInt32();
+            SetScreenRefreshRate(id, sceneId, rate);
+            break;
+        }
+        case SET_REFRESH_RATE_MODE: {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            int32_t mode = data.ReadInt32();
+            SetRefreshRateMode(mode);
+            break;
+        }
+        case GET_SCREEN_CURRENT_REFRESH_RATE: {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            ScreenId id = data.ReadUint64();
+            uint32_t refreshRate = GetScreenCurrentRefreshRate(id);
+            reply.WriteUint32(refreshRate);
+            break;
+        }
+        case GET_SCREEN_SUPPORTED_REFRESH_RATES: {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            ScreenId id = data.ReadUint64();
+            std::vector<uint32_t> rates = GetScreenSupportedRefreshRates(id);
+            reply.WriteUint64(static_cast<uint64_t>(rates.size()));
+            for (auto ratesIter : rates) {
+                reply.WriteUint32(ratesIter);
+            }
+            break;
+        }
         case SET_VIRTUAL_SCREEN_RESOLUTION: {
             auto token = data.ReadInterfaceToken();
             if (token != RSIRenderServiceConnection::GetDescriptor()) {

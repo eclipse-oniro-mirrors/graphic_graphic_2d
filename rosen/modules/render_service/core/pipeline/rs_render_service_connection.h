@@ -87,6 +87,14 @@ private:
 
     void SetScreenActiveMode(ScreenId id, uint32_t modeId) override;
 
+    void SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate) override;
+
+    void SetRefreshRateMode(int32_t refreshRateMode) override;
+
+    uint32_t GetScreenCurrentRefreshRate(ScreenId id) override;
+
+    std::vector<uint32_t> GetScreenSupportedRefreshRates(ScreenId id) override;
+
     int32_t SetVirtualScreenResolution(ScreenId id, uint32_t width, uint32_t height) override;
 
     void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status) override;
