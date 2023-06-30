@@ -29,42 +29,6 @@ namespace {
 };
 
 namespace OHOS::Rosen {
-class RSHardwareThreadMock : public RSHardwareThread {
-public:
-    static RSHardwareThreadMock& Instance();
-    void Start();
-};
-
-RSHardwareThreadMock& RSHardwareThreadMock::Instance()
-{
-    static RSHardwareThreadMock instance;
-    return instance;
-}
-
-void RSHardwareThreadMock::Start()
-{
-    hdiBackend_ = HdiBackend::GetInstance();
-    redrawCb_ = std::bind(&RSHardwareThread::Redraw, this,std::placeholders::_1, std::placeholders::_2,
-        std::placeholders::_3);
-    if (handler_) {
-        ScheduleTask(
-            [this]() {
-                auto screenManager = CreateOrGetScreenManager();
-                if (screenManager == nullptr) {
-                    return;
-                }
-                uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
-                uniRenderEngine_->Init();
-            }).wait();
-    }
-    auto onPrepareCompleteFunc = [this](auto& surface, const auto& param, void* data) {
-        OnPrepareComplete(surface, param, data);
-    };
-    if (hdiBackend_ != nullptr) {
-        hdiBackend_->RegPrepareComplete(onPrepareCompleteFunc, this);
-    }
-}
-
 class RSHardwareThreadTest : public testing::Test {
 public:
     static void SetUpTestCase();
