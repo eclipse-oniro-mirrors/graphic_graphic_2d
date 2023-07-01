@@ -454,15 +454,18 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
     RS_TRACE_NAME("AssignWindowNodes");
     bool isRotation = displayNode->IsRotationChanged();
     bool isScale = false;
+    uint32_t leashWindowCount = 0;
     for (auto iter = displayNode->GetSortedChildren().begin(); iter != displayNode->GetSortedChildren().end(); iter++) {
         auto node = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*iter);
         if (node == nullptr) {
             ROSEN_LOGE("RSUniRenderUtil::AssignWindowNodes nullptr found in sortedChildren, this should not happen");
             continue;
         }
+        if (node->IsLeashWindow()) {
+            leashWindowCount++;
+        }
         if (node->IsLeashWindow() && node->IsScale()) {
             isScale = true;
-            break;
         }
     }
     for (auto iter = displayNode->GetSortedChildren().begin(); iter != displayNode->GetSortedChildren().end(); iter++) {
@@ -473,6 +476,8 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
         }
         if (node->GetCacheSurfaceProcessedStatus() == CacheProcessStatus::DOING) { // node exceed one vsync
             AssignSubThreadNode(subThreadNodes, node);
+        } else if (leashWindowCount > 1) { // start app from another app
+            AssignMainThreadNode(mainThreadNodes, node);
         } else if (isScale) { // app start or close scene
             if (!node->HasFilter() && !node->HasAbilityComponent() && !isRotation) {
                 AssignSubThreadNode(subThreadNodes, node);
