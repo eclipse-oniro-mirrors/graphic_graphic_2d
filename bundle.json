@@ -296,6 +296,16 @@
               ],
               "header_base": "//foundation/graphic/graphic_2d/rosen/modules/texgine/export/texgine"
             }
+          },
+          {
+            "type": "so",
+            "name": "//foundation/graphic/graphic_2d/rosen/modules/glfw_render_context:libglfw_render_context",
+            "header": {
+              "header_files": [
+                "export/glfw_render_context.h"
+              ],
+              "header_base": "/foundation/graphic/graphic_2d/rosen/modules/glfw_render_context"
+            }
           }
         ],
         "test": [
