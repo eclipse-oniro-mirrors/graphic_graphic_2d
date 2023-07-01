@@ -34,16 +34,26 @@ RSCanvasDrawingRenderNode::~RSCanvasDrawingRenderNode() {}
 
 void RSCanvasDrawingRenderNode::ProcessRenderContents(RSPaintFilterCanvas& canvas)
 {
-    if (GetRenderProperties().GetBoundsWidth() <= 0 || GetRenderProperties().GetBoundsHeight() <= 0) {
+    int width = 0;
+    int height = 0;
+    auto it = drawCmdModifiers_.find(RSModifierType::CONTENT_STYLE);
+    if (it != drawCmdModifiers_.end() && !it->second.empty()) {
+        for (const auto& modifier : it->second) {
+            auto prop = modifier->GetProperty();
+            if (auto cmd = std::static_pointer_cast<RSRenderProperty<DrawCmdListPtr>>(prop)->Get()) {
+                width = std::max(width, cmd->GetWidth());
+                height = std::max(height, cmd->GetHeight());
+            }
+        }
+    }
+    if (width <= 0 || height <= 0) {
         RS_LOGE("RSCanvasDrawingRenderNode::ProcessRenderContents: The width or height of the canvas is less than or "
                 "equal to 0");
         return;
     }
-    if (!skSurface_ ||
-        static_cast<int>(GetRenderProperties().GetBoundsWidth()) != static_cast<int>(skSurface_->width()) ||
-        static_cast<int>(GetRenderProperties().GetBoundsHeight()) != static_cast<int>(skSurface_->height())) {
-        SkImageInfo info = SkImageInfo::Make(GetRenderProperties().GetBoundsWidth(),
-            GetRenderProperties().GetBoundsHeight(), kRGBA_8888_SkColorType, kPremul_SkAlphaType);
+
+    if (!skSurface_ || width != skSurface_->width() || height != skSurface_->height()) {
+        SkImageInfo info = SkImageInfo::Make(width, height, kRGBA_8888_SkColorType, kPremul_SkAlphaType);
 
 #if (defined RS_ENABLE_GL) && (defined RS_ENABLE_EGLIMAGE)
 #ifdef NEW_SKIA
