@@ -1012,21 +1012,12 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
     RS_TRACE_NAME("DrawFilter " + RSFilter->GetDescription());
     g_blurCnt++;
     SkAutoCanvasRestore acr(&canvas, true);
-    auto visibleIRect = canvas.GetVisibleRect().round();
-    if (!visibleIRect.isEmpty()) {
-        canvas.clipIRect(visibleIRect);
-    }
     if (rect.has_value()) {
         canvas.clipRect((*rect), true);
     } else if (properties.GetClipBounds() != nullptr) {
         canvas.clipPath(properties.GetClipBounds()->GetSkiaPath(), true);
     } else { // we always do clip for DrawFilter, even if ClipToBounds is false
         canvas.clipRRect(RRect2SkRRect(properties.GetRRect()), true);
-    }
-    auto clipIBounds = canvas.getDeviceClipBounds();
-    if (clipIBounds.isEmpty()) {
-        // clipIBounds is empty, no need to draw filter
-        return;
     }
 
     auto filter = std::static_pointer_cast<RSSkiaFilter>(RSFilter);
@@ -1056,6 +1047,7 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
         return;
     }
 
+    auto clipIBounds = canvas.getDeviceClipBounds();
     auto imageSnapshot = skSurface->makeImageSnapshot(clipIBounds);
     if (imageSnapshot == nullptr) {
         ROSEN_LOGE("RSPropertiesPainter::DrawFilter image null");
@@ -1063,6 +1055,10 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
     }
     filter->PreProcess(imageSnapshot);
     canvas.resetMatrix();
+    auto visibleIRect = canvas.GetVisibleRect().round();
+    if (!visibleIRect.isEmpty()) {
+        canvas.clipIRect(visibleIRect);
+    }
     filter->DrawImageRect(
         canvas, imageSnapshot, SkRect::Make(imageSnapshot->bounds().makeOutset(-1, -1)), SkRect::Make(clipIBounds));
     filter->PostProcess(canvas);

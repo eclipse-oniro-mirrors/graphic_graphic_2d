@@ -51,38 +51,40 @@ public:
 
     // Similar to DrawFilter(), but not draw anything on canvas, just return the cache data.
     // for effect component adaption in RSPropertiesPainter::DrawBackgroundEffect
-    CachedEffectData GeneratedCachedEffectData(RSPaintFilterCanvas& canvas, const std::shared_ptr<RSSkiaFilter>& filter);
+    CachedEffectData GeneratedCachedEffectData(
+        RSPaintFilterCanvas& canvas, const std::shared_ptr<RSSkiaFilter>& filter);
 
     // Clear the cache, next time DrawFilter() will regenerate the cache.
     void InvalidateCache();
 
 private:
-    // UpdateSnapshot won't apply the filter, but we need to call filter::Preprocess()
+    // UpdateSnapshot won't apply the filter, but we need to call filter::PreProcess()
     void TakeSnapshot(RSPaintFilterCanvas& canvas, const std::shared_ptr<RSSkiaFilter>& filter);
-    // Convert cached snapshot to blurred snapshot
+    // GenerateBlurredSnapshot will use DrawCachedSnapshot to generate blurred snapshot.
     void GenerateBlurredSnapshot(RSPaintFilterCanvas& canvas, const std::shared_ptr<RSSkiaFilter>& filter);
     void DrawCachedSnapshot(RSPaintFilterCanvas& canvas, const std::shared_ptr<RSSkiaFilter>& filter) const;
     void DrawCachedBlurredSnapshot(RSPaintFilterCanvas& canvas) const;
+    void ClipVisibleRect(RSPaintFilterCanvas& canvas) const;
 
     enum class CacheType : uint8_t {
-        CACHE_TYPE_NONE             = 0,
-        CACHE_TYPE_SNAPSHOT         = 1,
-        CACHE_TYPE_BLURRED_SNAPSHOT = 2,
+        CACHE_TYPE_NONE,
+        CACHE_TYPE_SNAPSHOT,
+        CACHE_TYPE_BLURRED_SNAPSHOT,
     };
 
     CacheType cacheType_ = CacheType::CACHE_TYPE_NONE;
-    sk_sp<SkImage> cachedImage_ = nullptr ;
+    sk_sp<SkImage> cachedImage_ = nullptr;
 
     // for automatically converting cached snapshot to blurred snapshot if the filter is persistent
     uint32_t cachedFilterHash_ = 0;
     int frameSinceLastBlurChange_ = 0;
 
-    // for lowering snapshot frequency even if the snapshot is changed
+    // for delaying snapshot update even if the snapshot is intersected with dirty region
     int cacheUpdateInterval_ = 0;
 
     // Note: all rects should be in device coordinate space
-    std::optional<SkIRect> cachedImageRegion_ = std::nullopt; // coordinate of cached image
-    std::optional<SkIRect> blurRegion_ = std::nullopt;        // coordinate of previous blurred region
+    SkIRect cachedImageRegion_; // region of cached image
+    SkIRect blurRegion_;        // region of previous blur region
 };
 
 } // namespace Rosen
