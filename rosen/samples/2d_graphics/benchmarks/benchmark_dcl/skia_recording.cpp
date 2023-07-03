@@ -38,6 +38,9 @@ void SkiaRecording::InitConfigsFromParam()
             captureMode_ = SkiaCaptureMode::MULTI_FRAME;
         }
         captureFileName_ = system::GetParameter("debug.graphic.skpcapture.path", "");
+        if (captureFileName_.endWith(".skp")) {
+            captureMode_ = SkiaCaptureMode::SINGLE_FRAME;
+        }
     }
 }
 
@@ -145,9 +148,18 @@ void SkiaRecording::EndCapture()
                 return tf->serialize(SkTypeface::SerializeBehavior::kDoIncludeData);
             };
             auto data = picture->serialize(&procs);
-            SavePicture(data, captureFileName_);
-            captureFrameNum_ = 0;
-            captureMode_ = SkiaCaptureMode::NONE;
+            static int tmpId = 0;
+            std::string fileName = captureFileName_;
+            std::string fileExtension = ".skp";
+            if (captureFileName_.endWith(fileExtension)){
+                fileName.insert(fileName.size() - fileExtension.size(), "_" + std::to_string(tmpId++));
+            } else {
+                fileName = fileName + "_" + std::to_string(tmpId++) + fileExtension;
+            }
+            SavePicture(data, fileName);
+            if (--captureFrameNum_ == 0) {
+                captureMode_ = SkiaCaptureMode::NONE;
+            }
         }
         recorder_.reset();
     }
