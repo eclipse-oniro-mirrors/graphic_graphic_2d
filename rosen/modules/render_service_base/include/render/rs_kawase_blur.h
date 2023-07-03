@@ -56,7 +56,7 @@ public:
             c += imageInput.eval(float2(clamp(-in_blurOffset.x + xy.x, 0, in_maxSizeXY.x),
                                         clamp(in_blurOffset.y + xy.y, 0, in_maxSizeXY.y)));
             c += imageInput.eval(float2(clamp(-in_blurOffset.x + xy.x, 0, in_maxSizeXY.x),
-                                        clamp(-in_blurOffset.y + xy.y, 0, in_maxSizeXY.y)));                                                          
+                                        clamp(-in_blurOffset.y + xy.y, 0, in_maxSizeXY.y)));
             return half4(c.rgb * 0.2, 1.0);
         }
         )");
@@ -65,7 +65,6 @@ public:
             uniform shader blurredInput;
             uniform shader originalInput;
             uniform float mixFactor;
-    
             half4 main(float2 xy) {
                 return half4(mix(originalInput.eval(xy), blurredInput.eval(xy), mixFactor));
             }
@@ -84,7 +83,8 @@ public:
         fMixEffect = std::move(mixEffect);
     }
 
-    static SkMatrix getShaderTransform(const SkCanvas* canvas, const SkRect& blurRect, float scale) {
+    static SkMatrix getShaderTransform(const SkCanvas* canvas, const SkRect& blurRect, float scale)
+    {
         auto matrix = SkMatrix::Scale(scale, scale);
         matrix.postConcat(SkMatrix::Translate(blurRect.fLeft, blurRect.fTop));
         SkMatrix drawInverse;
@@ -98,31 +98,33 @@ public:
         SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& src, const SkRect& dst, int radius) const
     {
         float blurRadius = radius * 3; // 3 : radio between gauss to kawase
-        uint32_t maxPasses = supporteLargeRadius ? kMaxPassesLargeRadius : kMaxPasses;
+        float blurScale = std::min(1.f, 
+            std::max(0.01f, 3.f / static_cast<float>(radius + 0.1f))); // 0.01 : min downSample radio
+        int maxPasses = supporteLargeRadius ? kMaxPassesLargeRadius : kMaxPasses;
         float dilatedConvolutionFactor = supporteLargeRadius ? kDilatedConvolutionLargeRadius : kDilatedConvolution;
         float tmpRadius = static_cast<float>(blurRadius) / dilatedConvolutionFactor;
-        float numberOfPasses = std::min(maxPasses, static_cast<uint32_t>(ceil(tmpRadius)));
+        int numberOfPasses = std::min(maxPasses, std::max(static_cast<int>(ceil(tmpRadius)), 1));// 1 : min pass num
         float radiusByPasses = tmpRadius / (float)numberOfPasses;
-        SkImageInfo scaledInfo = image->imageInfo().makeWH(std::ceil(dst.width() * kBlurScale), 
-            std::ceil(dst.height() * kBlurScale));
+        // create blur surface with the bit depth and colorspace of the original surface
+        SkImageInfo scaledInfo = image->imageInfo().makeWH(std::ceil(dst.width() * blurScale),
+            std::ceil(dst.height() * blurScale));
         SkMatrix blurMatrix = SkMatrix::Translate(-dst.fLeft, -dst.fTop);
-        blurMatrix.postScale(kBlurScale, kBlurScale);
-        // start by downscaling and doing the first blur pass
+        blurMatrix.postScale(blurScale, blurScale);
         SkSamplingOptions linear(SkFilterMode::kLinear, SkMipmapMode::kNone);
         SkRuntimeShaderBuilder blurBuilder(fBlurEffect);
         blurBuilder.child("imageInput") = image->makeShader(SkTileMode::kClamp, SkTileMode::kClamp, linear, blurMatrix);
-        blurBuilder.uniform("in_blurOffset") = SkV2{radiusByPasses * kBlurScale, radiusByPasses * kBlurScale};
-        blurBuilder.uniform("in_maxSizeXY") = SkV2{dst.width() * kBlurScale, dst.height() * kBlurScale};
+        blurBuilder.uniform("in_blurOffset") = SkV2{radiusByPasses * blurScale, radiusByPasses * blurScale};
+        blurBuilder.uniform("in_maxSizeXY") = SkV2{dst.width() * blurScale, dst.height() * blurScale};
         sk_sp<SkImage> tmpBlur(blurBuilder.makeImage(canvas.recordingContext(), nullptr, scaledInfo, false));
         // And now we'll build our chain of scaled blur stages
         for (auto i = 1; i < numberOfPasses; i++) {
-            const float stepScale = (float)i * kBlurScale;
+            const float stepScale = (float)i * blurScale;
             blurBuilder.child("imageInput") = tmpBlur->makeShader(SkTileMode::kClamp, SkTileMode::kClamp, linear);
             blurBuilder.uniform("in_blurOffset") = SkV2{radiusByPasses * stepScale, radiusByPasses * stepScale};
-            blurBuilder.uniform("in_maxSizeXY") = SkV2{dst.width() * kBlurScale, dst.height() * kBlurScale};
+            blurBuilder.uniform("in_maxSizeXY") = SkV2{dst.width() * blurScale, dst.height() * blurScale};
             tmpBlur = blurBuilder.makeImage(canvas.recordingContext(), nullptr, scaledInfo, false);
         }
-        float invBlurScale = 1 / kBlurScale;
+        float invBlurScale = 1 / blurScale;
         blurMatrix = SkMatrix::Scale(invBlurScale, invBlurScale);
         blurMatrix.postConcat(SkMatrix::Translate(dst.fLeft, dst.fTop));
         SkMatrix drawInverse;
@@ -139,12 +141,12 @@ public:
         }
         SkRuntimeShaderBuilder mixBuilder(fMixEffect);
         mixBuilder.child("blurredInput") = blurShader;
-        mixBuilder.child("originalInput") = image->makeShader(SkTileMode::kClamp, SkTileMode::kClamp, linear, inputMatrix);
+        mixBuilder.child("originalInput") = image->makeShader(
+            SkTileMode::kClamp, SkTileMode::kClamp, linear, inputMatrix);
         mixBuilder.uniform("mixFactor") = std::min(1.0f, (float)blurRadius / kMaxCrossFadeRadius);
-    
         SkPaint paint;
         paint.setShader(mixBuilder.makeShader(nullptr, true));
-        canvas.drawIRect(image->bounds(), paint);
+        canvas.drawRect(dst, paint);
     }
 
 private:
