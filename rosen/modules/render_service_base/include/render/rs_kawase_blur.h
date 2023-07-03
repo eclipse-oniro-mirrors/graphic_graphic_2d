@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+ * Copyright (c) 2023-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -105,7 +105,6 @@ public:
         float tmpRadius = static_cast<float>(blurRadius) / dilatedConvolutionFactor;
         int numberOfPasses = std::min(maxPasses, std::max(static_cast<int>(ceil(tmpRadius)), 1));// 1 : min pass num
         float radiusByPasses = tmpRadius / (float)numberOfPasses;
-        // create blur surface with the bit depth and colorspace of the original surface
         SkImageInfo scaledInfo = image->imageInfo().makeWH(std::ceil(dst.width() * blurScale),
             std::ceil(dst.height() * blurScale));
         SkMatrix blurMatrix = SkMatrix::Translate(-dst.fLeft, -dst.fTop);
