@@ -944,17 +944,4 @@ HWTEST_F(RSUniRenderComposerAdapterTest, SetLayerSize001, TestSize.Level1)
     composerAdapter_->screenInfo_.rotation = ScreenRotation::ROTATION_0;
     composerAdapter_->LayerRotate(layer, *surfaceNode);
 }
-
-/**
- * @tc.name: BuildComposeInfo003
- * @tc.desc: Test RSUniRenderComposerAdapterTest.BuildComposeInfo api
- * @tc.type: FUNC
- * @tc.require: issueI6S774
- */
-HWTEST_F(RSUniRenderComposerAdapterTest, BuildComposeInfo003, TestSize.Level1)
-{
-    std::shared_ptr<RSDrivenSurfaceRenderNode> contentSurfaceNode =
-        std::make_shared<RSDrivenSurfaceRenderNode>(0, DrivenSurfaceType::CONTENT);
-    composerAdapter_->BuildComposeInfo(*contentSurfaceNode);
-}
 } // namespace

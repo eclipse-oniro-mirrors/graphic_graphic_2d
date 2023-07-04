@@ -131,6 +131,9 @@ HWTEST_F(RSUniUiCaptureTest, ProcessEffectRenderNode001, TestSize.Level1)
 {
     NodeId id = 0;
     RSEffectRenderNode node(id);
+    float scaleX = 0.0;
+    float scaleY = 0.0;
+    RSUniUICapture::RSUniUICaptureVisitor rsUniUICaptureVisitor(id, scaleX, scaleY);
     rsUniUICaptureVisitor.ProcessEffectRenderNode(node);
 }
 } // namespace OHOS::Rosen
