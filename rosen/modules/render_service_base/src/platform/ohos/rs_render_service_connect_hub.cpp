@@ -31,10 +31,10 @@
 namespace OHOS {
 namespace Rosen {
 std::once_flag RSRenderServiceConnectHub::flag_;
-RSRenderServiceConnectHub* RSRenderServiceConnectHub::instance_ = nullptr;
+sptr<RSRenderServiceConnectHub> RSRenderServiceConnectHub::instance_ = nullptr;
 OnConnectCallback RSRenderServiceConnectHub::onConnectCallback_ = nullptr;
 
-RSRenderServiceConnectHub* RSRenderServiceConnectHub::GetInstance()
+sptr<RSRenderServiceConnectHub> RSRenderServiceConnectHub::GetInstance()
 {
     std::call_once(flag_, &RSRenderServiceConnectHub::Init);
     return instance_;

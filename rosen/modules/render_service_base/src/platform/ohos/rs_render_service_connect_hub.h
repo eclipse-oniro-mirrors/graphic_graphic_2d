@@ -36,7 +36,7 @@ public:
     }
 
 private:
-    static RSRenderServiceConnectHub* GetInstance();
+    static sptr<RSRenderServiceConnectHub> GetInstance();
     static void Init();
     static void Destroy();
 
@@ -68,7 +68,7 @@ private:
     sptr<IRemoteObject::DeathRecipient> deathRecipient_;
 
     static std::once_flag flag_;
-    static RSRenderServiceConnectHub* instance_;
+    static sptr<RSRenderServiceConnectHub> instance_;
     static OnConnectCallback onConnectCallback_;
 };
 } // namespace Rosen
