@@ -61,7 +61,7 @@ void RSRenderServiceConnectionProxy::CommitTransaction(std::unique_ptr<RSTransac
 
     MessageOption option;
     option.SetFlags(MessageOption::TF_ASYNC);
-    for (auto& parcel : parcelVector) {
+    for (const auto& parcel : parcelVector) {
         MessageParcel reply;
         int32_t err = Remote()->SendRequest(RSIRenderServiceConnection::COMMIT_TRANSACTION, *parcel, reply, option);
         if (err != NO_ERROR) {
