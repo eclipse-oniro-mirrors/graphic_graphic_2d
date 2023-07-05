@@ -3453,8 +3453,12 @@ bool RSUniRenderVisitor::PrepareSharedTransitionNode(RSBaseRenderNode& node)
     // If the paired node has already been visited (this means all sanity checks passed), process both nodes in order.
     if (auto existingNodeIter = unpairedTransitionNodes_.find(key);
         existingNodeIter != unpairedTransitionNodes_.end()) {
-        // backup curAlpha_
+        // backup environment variables
         auto curAlpha = curAlpha_;
+        auto clipRect = prepareClipRect_;
+
+        // hack to ensure that dirty region will include the shared-transition nodes
+        prepareClipRect_.SetAll(0, 0, INT_MAX, INT_MAX);
 
         // set curAlpha_ and prepare paired node
         [[maybe_unused]] auto& [node, alpha, unused_matrix] = existingNodeIter->second;
@@ -3462,8 +3466,9 @@ bool RSUniRenderVisitor::PrepareSharedTransitionNode(RSBaseRenderNode& node)
         node->Prepare(shared_from_this());
         unpairedTransitionNodes_.erase(existingNodeIter);
 
-        // restore curAlpha_ and continue prepare current node
+        // restore environment variables and continue prepare node
         curAlpha_ = curAlpha;
+        prepareClipRect_ = clipRect;
         return true;
     }
 
