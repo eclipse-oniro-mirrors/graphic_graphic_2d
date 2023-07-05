@@ -34,7 +34,7 @@ ohos_shared_library("rosen_text") {
     platform = "windows"
   }
 
-#  deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics_drawing" ]
+  #deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics_drawing" ]
   if (platform == "ohos") {
     deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
   } else {

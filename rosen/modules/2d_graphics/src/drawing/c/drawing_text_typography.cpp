@@ -28,8 +28,7 @@
 using namespace OHOS::Rosen;
 
 namespace {
-__attribute__((constructor))
-void init()
+__attribute__((constructor)) void init()
 {
 #ifndef _WIN32
     u_setDataDirectory("/system/usr/ohos_icu");

@@ -122,11 +122,7 @@ template("graphics2d_source_set") {
         "multimedia_image_framework:image_native",
       ]
       deps = [
-        #"$ace_flutter_engine_root:flutter_engine_fml_$platform",
-        #"$graphic_2d_root/rosen/build/flutter/icu:rosen_libicu_$platform",
-        #"$ace_flutter_engine_root/icu:ace_libicu_$platform",
         "$ace_flutter_engine_root/libtxt:thirdparty_lib_txt_$platform",
-        #"$graphic_2d_root/rosen/build/flutter/libtxt:thirdparty_lib_txt_rosen_$platform",
         "//third_party/bounds_checking_function:libsec_static",
       ]
       include_dirs += [ "$flutter_root/engine" ]
@@ -149,17 +145,10 @@ template("graphics2d_source_set") {
       cflags = [ "-Wno-c++17-extensions" ]
 
       deps = [
-   #     "$ace_flutter_engine_root:flutter_engine_fml_$platform",
-   #     "$graphic_2d_root/rosen/build/flutter/icu:rosen_libicu_$platform",
-    #    "$ace_flutter_engine_root/icu:ace_libicu_$platform",
         "$ace_flutter_engine_root/libtxt:thirdparty_lib_txt_$platform",
         "//third_party/skia:skia_$platform",
-#        "//third_party/skia/third_party/icu",
       ]
-      include_dirs += [
-#        "$flutter_root/engine",
-        "$flutter_root/txt/src",
-      ]
+      include_dirs += [ "$flutter_root/txt/src" ]
 
       if (!is_cross_platform_build) {
         deps += [ "//base/hiviewdfx/hilog/frameworks/libhilog:libhilog_source_$platform" ]
@@ -276,14 +265,12 @@ ohos_shared_library("2d_graphics_canvaskit0310") {
     ]
   }
 
-  external_deps = [
-    "hilog:libhilog",
-    #"multimedia_image_framework:image_native",
-  ]
+  external_deps = [ "hilog:libhilog" ]
 
   part_name = "graphic_standard"
   subsystem_name = "graphic"
 }
+
 ## Build 2d_graphics.so
 
 ohos_shared_library("2d_graphics_drawing") {
@@ -317,10 +304,7 @@ ohos_shared_library("2d_graphics_drawing") {
   if (platform == "mingw") {
     platform = "windows"
   }
- deps = [
-    "$rosen_root/modules/2d_engine/rosen_text:rosen_text_inner",
-  ]
-
+  deps = [ "$rosen_root/modules/2d_engine/rosen_text:rosen_text_inner" ]
 
   part_name = "graphic_standard"
   subsystem_name = "graphic"
