@@ -1186,9 +1186,9 @@ void RSUniRenderVisitor::DrawDirtyRegionForDFX(std::vector<RectI> dirtyRects)
 
 void RSUniRenderVisitor::DrawAllSurfaceDirtyRegionForDFX(RSDisplayRenderNode& node, const Occlusion::Region& region)
 {
-    std::vector<Occlusion::Rect> visibleDirtyRects = region.GetRegionRects();
+    const auto& visibleDirtyRects = region.GetRegionRects();
     std::vector<RectI> rects;
-    for (auto rect : visibleDirtyRects) {
+    for (auto& rect : visibleDirtyRects) {
         rects.emplace_back(rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_);
     }
     DrawDirtyRegionForDFX(rects);
@@ -1224,14 +1224,14 @@ void RSUniRenderVisitor::DrawTargetSurfaceDirtyRegionForDFX(RSDisplayRenderNode&
             if (DrawDetailedTypesOfDirtyRegionForDFX(*surfaceNode)) {
                 continue;
             }
-            auto visibleDirtyRegions = surfaceNode->GetVisibleDirtyRegion().GetRegionRects();
+            const auto& visibleDirtyRegions = surfaceNode->GetVisibleDirtyRegion().GetRegionRects();
             std::vector<RectI> rects;
-            for (auto rect : visibleDirtyRegions) {
+            for (auto& rect : visibleDirtyRegions) {
                 rects.emplace_back(rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_);
             }
-            auto visibleRegions = surfaceNode->GetVisibleRegion().GetRegionRects();
+            const auto& visibleRegions = surfaceNode->GetVisibleRegion().GetRegionRects();
             auto displayDirtyRegion = node.GetDirtyManager()->GetDirtyRegion();
-            for (auto rect : visibleRegions) {
+            for (auto& rect : visibleRegions) {
                 auto visibleRect = RectI(rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_);
                 auto intersectRegion = displayDirtyRegion.IntersectRect(visibleRect);
                 rects.emplace_back(intersectRegion);
@@ -1305,7 +1305,7 @@ bool RSUniRenderVisitor::DrawDetailedTypesOfDirtyRegionForDFX(RSSurfaceRenderNod
 
 void RSUniRenderVisitor::DrawSurfaceOpaqueRegionForDFX(RSSurfaceRenderNode& node)
 {
-    auto opaqueRegionRects = node.GetOpaqueRegion().GetRegionRects();
+    const auto& opaqueRegionRects = node.GetOpaqueRegion().GetRegionRects();
     for (const auto &subRect: opaqueRegionRects) {
 #ifndef USE_ROSEN_DRAWING
         DrawDirtyRectForDFX(subRect.ToRectI(), SK_ColorGREEN, SkPaint::kFill_Style, 0.2f, 0);
@@ -1572,6 +1572,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         curDisplayDirtyManager_->SetSurfaceSize(screenInfo_.width, screenInfo_.height);
         if (isPartialRenderEnabled_) {
             CalcDirtyDisplayRegion(displayNodePtr);
+            AddContainerDirtyToGlobalDirty(displayNodePtr);
             // Aligning displayRenderNode and surfaceRenderNode dirty region before merge dirty filter region
             if (isDirtyRegionAlignedEnable_) {
                 AlignGlobalAndSurfaceDirtyRegions(displayNodePtr);
@@ -1722,8 +1723,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             int bufferAge = renderFrame_->GetBufferAge();
             RS_TRACE_END();
             RSUniRenderUtil::MergeDirtyHistory(displayNodePtr, bufferAge, isDirtyRegionAlignedEnable_);
-            // The global dirty region caused by container dirty should be calculated after merge dirty history.
-            AddContainerDirtyToGlobalDirty(displayNodePtr);
             Occlusion::Region dirtyRegion = RSUniRenderUtil::MergeVisibleDirtyRegion(
                 displayNodePtr, isDirtyRegionAlignedEnable_);
             dirtyRegionTest = dirtyRegion;
@@ -2159,23 +2158,6 @@ void RSUniRenderVisitor::CalcDirtyDisplayRegion(std::shared_ptr<RSDisplayRenderN
                 surfaceNode->SetShadowValidLastFrame(false);
             }
         }
-
-        if (surfaceNode->IsAppWindow() && !surfaceNode->HasContainerWindow()) {
-            auto transparentRegion = surfaceNode->GetTransparentRegion();
-            Occlusion::Rect tmpRect = Occlusion::Rect { surfaceDirtyRect.left_, surfaceDirtyRect.top_,
-                surfaceDirtyRect.GetRight(), surfaceDirtyRect.GetBottom() };
-            Occlusion::Region surfaceDirtyRegion { tmpRect };
-            Occlusion::Region transparentDirtyRegion = transparentRegion.And(surfaceDirtyRegion);
-            if (!transparentDirtyRegion.IsEmpty()) {
-                RS_LOGD("CalcDirtyDisplayRegion merge TransparentDirtyRegion %s region %s",
-                    surfaceNode->GetName().c_str(), transparentDirtyRegion.GetRegionInfo().c_str());
-                std::vector<Occlusion::Rect> rects = transparentDirtyRegion.GetRegionRects();
-                for (const auto& rect : rects) {
-                    displayDirtyManager->MergeDirtyRect(RectI
-                        { rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_ });
-                }
-            }
-        }
     }
     std::vector<RectI> surfaceChangedRects = node->GetSurfaceChangedRects();
     for (auto& surfaceChangedRect : surfaceChangedRects) {
@@ -2366,21 +2348,44 @@ void RSUniRenderVisitor::AddContainerDirtyToGlobalDirty(std::shared_ptr<RSDispla
             continue;
         }
         auto surfaceDirtyManager = surfaceNode->GetDirtyManager();
-        RectI surfaceDirtyRect = surfaceDirtyManager->GetDirtyRegion();
+        if (surfaceDirtyManager == nullptr) {
+            continue;
+        }
+        RectI surfaceDirtyRect = surfaceDirtyManager->GetCurrentFrameDirtyRegion();
 
-        // If a surface's dirty is intersect with container region (which can be considered transparent)
-        // should be added to display dirty region.
-        // Note: we use containerRegion rather transparentRegion to bypass inner corner dirty problem.
-        auto containerRegion = surfaceNode->GetContainerRegion();
-        auto surfaceDirtyRegion = Occlusion::Region{Occlusion::Rect{surfaceDirtyRect}};
-        auto containerDirtyRegion = containerRegion.And(surfaceDirtyRegion);
-        if (!containerDirtyRegion.IsEmpty()) {
-            RS_LOGD("CalcDirtyDisplayRegion merge containerDirtyRegion %s region %s",
-                surfaceNode->GetName().c_str(), containerDirtyRegion.GetRegionInfo().c_str());
-            std::vector<Occlusion::Rect> rects = containerDirtyRegion.GetRegionRects();
-            for (const auto& rect : rects) {
-                displayDirtyManager->MergeDirtyRectAfterMergeHistory(RectI{
-                    rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_ });
+        if (surfaceNode->HasContainerWindow()) {
+            // If a surface's dirty is intersect with container region (which can be considered transparent)
+            // should be added to display dirty region.
+            // Note: we use containerRegion rather transparentRegion to bypass inner corner dirty problem.
+            auto containerRegion = surfaceNode->GetContainerRegion();
+            auto surfaceDirtyRegion = Occlusion::Region{Occlusion::Rect{surfaceDirtyRect}};
+            auto containerDirtyRegion = containerRegion.And(surfaceDirtyRegion);
+            if (!containerDirtyRegion.IsEmpty()) {
+                RS_LOGD("CalcDirtyDisplayRegion merge containerDirtyRegion %s region %s",
+                    surfaceNode->GetName().c_str(), containerDirtyRegion.GetRegionInfo().c_str());
+                // plan: we can use surfacenode's absrect as containerRegion's bound
+                const auto& rect = containerRegion.GetBoundRef();
+                displayDirtyManager->MergeDirtyRect(RectI{
+                        rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_ });
+            }
+        } else {
+            // warning: if a surfacenode has transparent region and opaque region, and its dirty pattern appears in
+            // transparent region and opaque region in adjacent frame, may cause displaydirty region incomplete after
+            // merge history (as surfacenode's dirty region merging opaque region will enlarge surface dirty region
+            // which include transparent region but not counted in display dirtyregion)
+            auto transparentRegion = surfaceNode->GetTransparentRegion();
+            Occlusion::Rect tmpRect = Occlusion::Rect { surfaceDirtyRect.left_, surfaceDirtyRect.top_,
+                surfaceDirtyRect.GetRight(), surfaceDirtyRect.GetBottom() };
+            Occlusion::Region surfaceDirtyRegion { tmpRect };
+            Occlusion::Region transparentDirtyRegion = transparentRegion.And(surfaceDirtyRegion);
+            if (!transparentDirtyRegion.IsEmpty()) {
+                RS_LOGD("CalcDirtyDisplayRegion merge TransparentDirtyRegion %s region %s",
+                    surfaceNode->GetName().c_str(), transparentDirtyRegion.GetRegionInfo().c_str());
+                const std::vector<Occlusion::Rect>& rects = transparentDirtyRegion.GetRegionRects();
+                for (const auto& rect : rects) {
+                    displayDirtyManager->MergeDirtyRect(RectI
+                        { rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_ });
+                }
             }
         }
     }
@@ -2467,7 +2472,7 @@ void RSUniRenderVisitor::AlignGlobalAndSurfaceDirtyRegions(std::shared_ptr<RSDis
 #ifdef RS_ENABLE_EGLQUERYSURFACE
 std::vector<RectI> RSUniRenderVisitor::GetDirtyRects(const Occlusion::Region &region)
 {
-    std::vector<Occlusion::Rect> rects = region.GetRegionRects();
+    const std::vector<Occlusion::Rect>& rects = region.GetRegionRects();
     std::vector<RectI> retRects;
     for (const Occlusion::Rect& rect : rects) {
         // origin transformation
@@ -2731,7 +2736,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     // when display is in rotation state, occlusion relationship will be ruined,
     // hence visibleRegions cannot be used.
     if (isOpDropped_ && node.IsAppWindow()) {
-        auto visibleRegions = node.GetVisibleRegion().GetRegionRects();
+        const auto& visibleRegions = node.GetVisibleRegion().GetRegionRects();
         if (visibleRegions.size() == 1) {
             canvas_->SetVisibleRect(SkRect::MakeLTRB(
                 visibleRegions[0].left_, visibleRegions[0].top_, visibleRegions[0].right_, visibleRegions[0].bottom_));
