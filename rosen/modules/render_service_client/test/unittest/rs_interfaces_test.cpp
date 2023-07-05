@@ -964,7 +964,19 @@ HWTEST_F(RSInterfacesTest, SetScreenRefreshRate003, Function | SmallTest | Level
     rsInterfaces->SetScreenRefreshRate(screenId, 0, rateToSet);
     sleep(SET_REFRESHRATE_SLEEP_S);
     uint32_t currentRate = rsInterfaces->GetScreenCurrentRefreshRate(screenId);
-    EXPECT_EQ(currentRate, rateToSet);
+    auto supportedRates = rsInterfaces->GetScreenSupportedRefreshRates(screenId);
+
+    bool ifSupported = false;
+    for (auto rateIter : supportedRates) {
+        if (rateIter == rateToSet) {
+            ifSupported = true;
+        }
+    }
+    if (ifSupported) {
+        EXPECT_EQ(currentRate, rateToSet);
+    } else {
+        EXPECT_NE(currentRate, rateToSet);
+    }
 }
 
 /*
@@ -994,10 +1006,20 @@ HWTEST_F(RSInterfacesTest, SetRefreshRateMode001, Function | SmallTest | Level2)
             ifSupported = true;
         }
     }
+
+    bool ifFormerSupported = false;
+    for (auto rateIter : supportedRates) {
+        if (rateIter == formerRate) {
+            ifFormerSupported = true;
+        }
+    }
+
     if (ifSupported) {
         EXPECT_EQ(currentRate, newRate);
-    } else {
+    } else if (ifFormerSupported) {
         EXPECT_EQ(currentRate, formerRate);
+    } else {
+        EXPECT_NE(currentRate, formerRate);
     }
 }
 } // namespace Rosen
