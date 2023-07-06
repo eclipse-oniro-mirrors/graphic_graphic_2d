@@ -1798,9 +1798,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 FinishOffscreenRender();
             } else {
                 // render directly
-                if (isUIFirst_) {
-                    DrawSurfaceLayer(node);
-                }
                 ProcessBaseRenderNode(node);
             }
             canvas_->restoreToCount(saveCount);
@@ -1939,14 +1936,13 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
     RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode end");
 }
 
-void RSUniRenderVisitor::DrawSurfaceLayer(RSDisplayRenderNode& node)
+void RSUniRenderVisitor::DrawSurfaceLayer(const std::shared_ptr<RSDisplayRenderNode>& displayNode,
+    const std::list<std::shared_ptr<RSSurfaceRenderNode>>& subThreadNodes) const
 {
 #if defined(RS_ENABLE_GL)
     auto subThreadManager = RSSubThreadManager::Instance();
-    std::shared_ptr<RSBaseRenderNode> nodePtr = node.shared_from_this();
-    auto displayNodePtr = nodePtr->ReinterpretCastTo<RSDisplayRenderNode>();
     subThreadManager->Start(renderEngine_->GetRenderContext().get());
-    subThreadManager->SubmitSubThreadTask(displayNodePtr, subThreadNodes_);
+    subThreadManager->SubmitSubThreadTask(displayNode, subThreadNodes);
 #endif
 }
 
