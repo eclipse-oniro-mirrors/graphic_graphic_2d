@@ -364,10 +364,11 @@ private:
     std::unique_ptr<RSFilterCacheManager> filterCacheManager_;
 #endif
 
+    friend class RSCanvasDrawingRenderNode;
     friend class RSCanvasRenderNode;
     friend class RSPropertiesPainter;
     friend class RSRenderNode;
-    friend class RSCanvasDrawingRenderNode;
+    friend class RSUniRenderVisitor;
 };
 } // namespace Rosen
 } // namespace OHOS

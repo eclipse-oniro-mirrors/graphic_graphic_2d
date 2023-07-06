@@ -117,9 +117,6 @@ bool RSRenderNode::Update(
     renderProperties_.ResetDirty();
 
 #ifndef USE_ROSEN_DRAWING
-    auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(GetRenderProperties().GetBoundsGeometry());
-    auto& absRect = geoPtr->GetAbsRect();
-
     // Note:
     // 1. cache manager will use dirty region to update cache validity, background filter cache manager should use
     // 'dirty region of all the nodes drawn before this node', and foreground filter cache manager should use 'dirty
@@ -129,12 +126,12 @@ bool RSRenderNode::Update(
     // background filter
     if (auto& manager = renderProperties_.backgroundFilterCacheManager_) {
         // empty implementation, invalidate filter cache on every update
-        manager->UpdateCacheState({ 0, 0, INT_MAX, INT_MAX }, absRect, renderProperties_.GetBackgroundFilter()->Hash());
+        manager->UpdateCacheStateWithDirtyRegion({ 0, 0, INT_MAX, INT_MAX });
     }
     // foreground filter
     if (auto& manager = renderProperties_.filterCacheManager_) {
         // empty implementation, invalidate filter cache on every update
-        manager->UpdateCacheState({ 0, 0, INT_MAX, INT_MAX }, absRect, renderProperties_.GetFilter()->Hash());
+        manager->UpdateCacheStateWithDirtyRegion({ 0, 0, INT_MAX, INT_MAX });
     }
 #endif
 
@@ -389,18 +386,23 @@ void RSRenderNode::ApplyModifiers()
     if (!RSSystemProperties::GetFilterCacheEnabled()) {
         return;
     }
-    // make sure filter cache manager is created when filter is not null, and vice versa
-    if (renderProperties_.GetBackgroundFilter() != nullptr &&
-        renderProperties_.backgroundFilterCacheManager_ == nullptr) {
-        renderProperties_.backgroundFilterCacheManager_ = std::make_unique<RSFilterCacheManager>();
-    } else if (renderProperties_.GetBackgroundFilter() == nullptr &&
-        renderProperties_.backgroundFilterCacheManager_ != nullptr) {
+    if (auto& filter = renderProperties_.GetBackgroundFilter()) {
+        auto& cacheManager = renderProperties_.backgroundFilterCacheManager_;
+        if (cacheManager == nullptr) {
+            cacheManager = std::make_unique<RSFilterCacheManager>();
+        }
+        cacheManager->UpdateCacheStateWithFilterHash(filter->Hash());
+    } else {
         renderProperties_.backgroundFilterCacheManager_.reset();
     }
 
-    if (renderProperties_.GetFilter() != nullptr && renderProperties_.filterCacheManager_ == nullptr) {
-        renderProperties_.filterCacheManager_ = std::make_unique<RSFilterCacheManager>();
-    } else if (renderProperties_.GetFilter() == nullptr && renderProperties_.filterCacheManager_ != nullptr) {
+    if (auto& filter = renderProperties_.GetFilter()) {
+        auto& cacheManager = renderProperties_.filterCacheManager_;
+        if (cacheManager == nullptr) {
+            cacheManager = std::make_unique<RSFilterCacheManager>();
+        }
+        cacheManager->UpdateCacheStateWithFilterHash(filter->Hash());
+    } else {
         renderProperties_.filterCacheManager_.reset();
     }
 #endif
@@ -786,6 +788,31 @@ void RSRenderNode::CheckDrawingCacheType()
         SetDrawingCacheType(RSDrawingCacheType::FORCED_CACHE);
     } else {
         SetDrawingCacheType(RSDrawingCacheType::TARGETED_CACHE);
+    }
+}
+
+RectI RSRenderNode::GetFilterRect() const
+{
+    auto& properties = GetRenderProperties();
+    auto geoPtr = std::static_pointer_cast<RSObjAbsGeometry>(properties.GetBoundsGeometry());
+    if (properties.GetClipBounds() != nullptr) {
+        auto filterRect = properties.GetClipBounds()->GetSkiaPath().getBounds();
+        auto absRect = geoPtr->GetAbsMatrix().mapRect(filterRect);
+        return {absRect.x(), absRect.y(), absRect.width(), absRect.height()};
+    } else {
+        return geoPtr->GetAbsRect();
+    }
+}
+
+void RSRenderNode::UpdateFilterCacheManagerWithCacheRegion() const
+{
+    // background filter
+    if (auto& manager = renderProperties_.backgroundFilterCacheManager_) {
+        manager->UpdateCacheStateWithFilterRegion(GetFilterRect());
+    }
+    // foreground filter
+    if (auto& manager = renderProperties_.filterCacheManager_) {
+        manager->UpdateCacheStateWithFilterRegion(GetFilterRect());
     }
 }
 } // namespace Rosen

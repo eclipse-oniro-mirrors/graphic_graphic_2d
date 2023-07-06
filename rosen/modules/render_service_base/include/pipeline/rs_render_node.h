@@ -137,6 +137,7 @@ public:
 
     // update parent's children rect including childRect and itself
     void UpdateParentChildrenRect(std::shared_ptr<RSBaseRenderNode> parentNode) const;
+    void UpdateFilterCacheManagerWithCacheRegion() const;
 
     void SetStaticCached(bool isStaticCached)
     {
@@ -426,6 +427,8 @@ protected:
     // if true, it means currently it's in partial render mode and this node is intersect with dirtyRegion
     bool isRenderUpdateIgnored_ = false;
     bool isShadowValidLastFrame_ = false;
+
+    virtual RectI GetFilterRect() const;
 
 private:
     void FallbackAnimationsToRoot();
