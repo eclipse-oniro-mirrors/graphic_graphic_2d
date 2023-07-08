@@ -40,6 +40,7 @@ private:
     void ApplyBlur(
         SkCanvas& canvas, const sk_sp<SkImage>& image, const sk_sp<SkImage>& blurImage, const SkRect& dst) const;
     int GetDecelerateRadius(int radius);
+    void AdjustRadiusAndScale(int radius);
 
     static constexpr float kBlurScale = 0.03f;
     // Maximum number of render passes

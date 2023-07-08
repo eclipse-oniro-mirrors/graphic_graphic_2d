@@ -15,6 +15,7 @@
 
 #include "render/rs_kawase_blur.h"
 #include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -78,9 +79,8 @@ SkMatrix KawaseBlur::GetShaderTransform(const SkCanvas* canvas, const SkRect& bl
 void KawaseBlur::ApplyKawaseBlur(
     SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& src, const SkRect& dst, const int radius)
 {
-    ROSEN_LOGE("KawaseBlurFilter::Use kawase");
-    blurRadius_ = GetDecelerateRadius(radius); // 3 : radio from gauss to kawase
-    blurScale_ = blurRadius_ >= 250 ? 0.03f : blurRadius_ >= 120 ? 0.06f : 0.2f;
+    blurRadius_ = GetDecelerateRadius(radius);
+    AdjustRadiusAndScale(blurRadius_);
     int maxPasses = supporteLargeRadius ? kMaxPassesLargeRadius : kMaxPasses;
     float dilatedConvolutionFactor = supporteLargeRadius ? kDilatedConvolutionLargeRadius : kDilatedConvolution;
     float tmpRadius = blurRadius_ / dilatedConvolutionFactor;
@@ -148,8 +148,21 @@ int KawaseBlur::GetDecelerateRadius(int radius)
 {
     float factor = std::min(1.0f, static_cast<float>(radius) / kMaxGaussRadius);
     float optimizedFactor = 1.0f - (1.0f - factor) * (1.0f - factor);
-    ROSEN_LOGE("cxh KawaseBlurFilter::GetDecelerateRadius in radius : %d, factor : %f, out facotr : %f", radius, factor, optimizedFactor);
     return kMaxKawaseRadius * optimizedFactor;
+}
+
+void KawaseBlur::AdjustRadiusAndScale(int radius)
+{
+    float scale = 0.2f; // base downSample radio
+    if (radius > 170) { // 170 : radius step
+        scale = 0.1f; // 0.1 : downSample radio step
+        radius -= 20 / (radius - 170);
+    } else if (radius > 260) { // 260 : radius step
+        scale = 0.03f; // 0.03 : downSample radio step
+        radius -= 20 / (radius - 260);
+    }
+    blurRadius_ = radius;
+    blurScale_ = scale;
 }
 #endif
 } // namespace Rosen
