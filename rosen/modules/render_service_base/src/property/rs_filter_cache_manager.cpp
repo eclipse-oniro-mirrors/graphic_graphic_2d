@@ -69,13 +69,13 @@ void RSFilterCacheManager::UpdateCacheStateWithDirtyRegion(const RectI& dirtyReg
     auto SkDirtyRegion =
         SkIRect::MakeLTRB(dirtyRegion.GetLeft(), dirtyRegion.GetTop(), dirtyRegion.GetRight(), dirtyRegion.GetBottom());
     // The underlying image is not affected by the dirty region, cache is valid.
-    if (SkDirtyRegion.isEmpty() || !SkDirtyRegion.intersect(blurRegion_)) {
+    if (!SkDirtyRegion.intersect(blurRegion_)) {
         return;
     }
 
     // The underlying image is affected by the dirty region, determine if the cache should be invalidated by cache  age.
     // [PLANNING]: also take into account the filter radius / cache size / percentage of intersected area.
-    if (cacheUpdateInterval_ >= 0) {
+    if (cacheUpdateInterval_ > 0) {
         ROSEN_LOGD("RSFilterCacheManager::UpdateCacheStateWithDirtyRegion Delaying cache invalidation for %d frames.",
             cacheUpdateInterval_);
     } else {
@@ -110,7 +110,7 @@ void RSFilterCacheManager::DrawFilter(RSPaintFilterCanvas& canvas, const std::sh
 
     // Update the cache age, this will ensure that an old cache will be invalidated immediately when intersecting with
     // dirty region.
-    if (cacheUpdateInterval_ >= 0) {
+    if (cacheUpdateInterval_ > 0) {
         --cacheUpdateInterval_;
     }
     if (cacheType_ == CacheType::CACHE_TYPE_BLURRED_SNAPSHOT) {

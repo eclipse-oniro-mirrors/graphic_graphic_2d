@@ -1989,5 +1989,39 @@ std::string RSProperties::Dump() const
 
     return dumpInfo;
 }
+
+#ifndef USE_ROSEN_DRAWING
+void RSProperties::CreateFilterCacheManagerIfNeed() {
+    if (auto& filter = GetBackgroundFilter()) {
+        auto& cacheManager = backgroundFilterCacheManager_;
+        if (cacheManager == nullptr) {
+            cacheManager = std::make_unique<RSFilterCacheManager>();
+        }
+        cacheManager->UpdateCacheStateWithFilterHash(filter->Hash());
+    } else {
+        backgroundFilterCacheManager_.reset();
+    }
+    if (auto& filter = GetFilter()) {
+        auto& cacheManager = foregroundFilterCacheManager_;
+        if (cacheManager == nullptr) {
+            cacheManager = std::make_unique<RSFilterCacheManager>();
+        }
+        cacheManager->UpdateCacheStateWithFilterHash(filter->Hash());
+    } else {
+        foregroundFilterCacheManager_.reset();
+    }
+}
+
+void RSProperties::ResetFilterCacheManager()
+{
+    backgroundFilterCacheManager_.reset();
+    foregroundFilterCacheManager_.reset();
+}
+
+const std::unique_ptr<RSFilterCacheManager>& RSProperties::GetFilterCacheManager(bool isForeground) const
+{
+    return isForeground ? foregroundFilterCacheManager_ : backgroundFilterCacheManager_;
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

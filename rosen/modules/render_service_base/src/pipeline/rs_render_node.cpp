@@ -127,12 +127,12 @@ bool RSRenderNode::Update(
     // 2. Filter must be valid when filter cache manager is valid, we make sure that in RSRenderNode::ApplyModifiers().
 
     // background filter
-    if (auto& manager = renderProperties_.backgroundFilterCacheManager_) {
+    if (auto& manager = renderProperties_.GetFilterCacheManager(false)) {
         // empty implementation, invalidate filter cache on every update
         manager->UpdateCacheStateWithDirtyRegion({ 0, 0, INT_MAX, INT_MAX });
     }
     // foreground filter
-    if (auto& manager = renderProperties_.filterCacheManager_) {
+    if (auto& manager = renderProperties_.GetFilterCacheManager(true)) {
         // empty implementation, invalidate filter cache on every update
         manager->UpdateCacheStateWithDirtyRegion({ 0, 0, INT_MAX, INT_MAX });
     }
@@ -391,24 +391,7 @@ void RSRenderNode::ApplyModifiers()
         return;
     }
     // Create or release filter cache manager on demand, update cache state with filter hash.
-    if (auto& filter = renderProperties_.GetBackgroundFilter()) {
-        auto& cacheManager = renderProperties_.backgroundFilterCacheManager_;
-        if (cacheManager == nullptr) {
-            cacheManager = std::make_unique<RSFilterCacheManager>();
-        }
-        cacheManager->UpdateCacheStateWithFilterHash(filter->Hash());
-    } else {
-        renderProperties_.backgroundFilterCacheManager_.reset();
-    }
-    if (auto& filter = renderProperties_.GetFilter()) {
-        auto& cacheManager = renderProperties_.filterCacheManager_;
-        if (cacheManager == nullptr) {
-            cacheManager = std::make_unique<RSFilterCacheManager>();
-        }
-        cacheManager->UpdateCacheStateWithFilterHash(filter->Hash());
-    } else {
-        renderProperties_.filterCacheManager_.reset();
-    }
+    renderProperties_.CreateFilterCacheManagerIfNeed();
 #endif
 }
 
@@ -812,11 +795,11 @@ void RSRenderNode::UpdateFilterCacheManagerWithCacheRegion() const
 {
 #ifndef USE_ROSEN_DRAWING
     // background filter
-    if (auto& manager = renderProperties_.backgroundFilterCacheManager_) {
+    if (auto& manager = GetRenderProperties().GetFilterCacheManager(false)) {
         manager->UpdateCacheStateWithFilterRegion(GetFilterRect());
     }
     // foreground filter
-    if (auto& manager = renderProperties_.filterCacheManager_) {
+    if (auto& manager = GetRenderProperties().GetFilterCacheManager(true)) {
         manager->UpdateCacheStateWithFilterRegion(GetFilterRect());
     }
 #endif
@@ -825,9 +808,11 @@ void RSRenderNode::UpdateFilterCacheManagerWithCacheRegion() const
 void RSRenderNode::OnTreeStateChanged()
 {
 #ifndef USE_ROSEN_DRAWING
-    // clear filter cache on tree state changed
-    renderProperties_.backgroundFilterCacheManager_.reset();
-    renderProperties_.filterCacheManager_.reset();
+    if (IsOnTheTree()) {
+        GetMutableRenderProperties().CreateFilterCacheManagerIfNeed();
+    } else {
+        GetMutableRenderProperties().ResetFilterCacheManager();
+    }
 #endif
 }
 } // namespace Rosen
