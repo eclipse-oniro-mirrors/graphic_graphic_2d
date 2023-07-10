@@ -90,16 +90,12 @@ txt::PlaceholderRun Convert(const PlaceholderSpan &run)
 txt::TextStyle Convert(const TextStyle &style)
 {
     txt::TextStyle textStyle;
-    auto color = SkColorSetARGB(style.color.GetAlpha(),
-                                style.color.GetRed(),
-                                style.color.GetGreen(),
-                                style.color.GetBlue());
+    auto color = SkColorSetARGB(
+        style.color.GetAlpha(), style.color.GetRed(), style.color.GetGreen(), style.color.GetBlue());
     textStyle.color = color;
     textStyle.decoration = style.decoration;
     auto decorationColor = SkColorSetARGB(style.decorationColor.GetAlpha(),
-                                          style.decorationColor.GetRed(),
-                                          style.decorationColor.GetGreen(),
-                                          style.decorationColor.GetBlue());
+        style.decorationColor.GetRed(), style.decorationColor.GetGreen(), style.decorationColor.GetBlue());
     textStyle.decoration_color = decorationColor;
     textStyle.decoration_style = static_cast<txt::TextDecorationStyle>(style.decorationStyle);
     textStyle.decoration_thickness_multiplier = style.decorationThicknessScale;

@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//foundation/arkui/ace_engine/ace_config.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
 config("rosen_text_public_config") {
@@ -34,11 +33,9 @@ ohos_shared_library("rosen_text") {
     platform = "windows"
   }
 
-  #deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics_drawing" ]
   if (platform == "ohos") {
     deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
   } else {
-    #deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics_source_$platform" ]
     deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics_new" ]
   }
 

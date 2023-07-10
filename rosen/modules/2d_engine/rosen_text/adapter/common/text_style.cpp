@@ -79,24 +79,24 @@ bool TextShadow::HasShadow() const
 bool TextStyle::operator ==(const TextStyle& rhs) const
 {
     return color == rhs.color &&
-           decoration == rhs.decoration &&
-           decorationColor == rhs.decorationColor &&
-           decorationStyle == rhs.decorationStyle &&
-           decorationThicknessScale == rhs.decorationThicknessScale &&
-           fontWeight == rhs.fontWeight &&
-           fontStyle == rhs.fontStyle &&
-           baseline == rhs.baseline &&
-           fontFamilies == rhs.fontFamilies &&
-           fontSize == rhs.fontSize &&
-           letterSpacing == rhs.letterSpacing &&
-           wordSpacing == rhs.wordSpacing &&
-           heightScale == rhs.heightScale &&
-           heightOnly == rhs.heightOnly &&
-           locale == rhs.locale &&
-           background == rhs.background &&
-           foreground == rhs.foreground &&
-           shadows == rhs.shadows &&
-           fontFeatures == rhs.fontFeatures;
+        decoration == rhs.decoration &&
+        decorationColor == rhs.decorationColor &&
+        decorationStyle == rhs.decorationStyle &&
+        decorationThicknessScale == rhs.decorationThicknessScale &&
+        fontWeight == rhs.fontWeight &&
+        fontStyle == rhs.fontStyle &&
+        baseline == rhs.baseline &&
+        fontFamilies == rhs.fontFamilies &&
+        fontSize == rhs.fontSize &&
+        letterSpacing == rhs.letterSpacing &&
+        wordSpacing == rhs.wordSpacing &&
+        heightScale == rhs.heightScale &&
+        heightOnly == rhs.heightOnly &&
+        locale == rhs.locale &&
+        background == rhs.background &&
+        foreground == rhs.foreground &&
+        shadows == rhs.shadows &&
+        fontFeatures == rhs.fontFeatures;
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -59,14 +59,10 @@ TextEngine::TypographyStyle Convert(const TypographyStyle &style)
 
 TextEngine::TextStyle Convert(const TextStyle &style)
 {
-    auto color = SkColorSetARGB(style.color.GetAlpha(),
-                                style.color.GetRed(),
-                                style.color.GetGreen(),
-                                style.color.GetBlue());
+    auto color = SkColorSetARGB(
+        style.color.GetAlpha(), style.color.GetRed(), style.color.GetGreen(), style.color.GetBlue());
     auto decorationColor = SkColorSetARGB(style.decorationColor.GetAlpha(),
-                                          style.decorationColor.GetRed(),
-                                          style.decorationColor.GetGreen(),
-                                          style.decorationColor.GetBlue());
+        style.decorationColor.GetRed(), style.decorationColor.GetGreen(), style.decorationColor.GetBlue());
     auto foreground = std::make_shared<TextEngine::TexginePaint>();
     foreground->SetPaint(*style.foreground);
     auto background = std::make_shared<TextEngine::TexginePaint>();

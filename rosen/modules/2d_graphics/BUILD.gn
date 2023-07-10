@@ -143,6 +143,7 @@ template("graphics2d_source_set") {
       }
     } else {
       cflags = [ "-Wno-c++17-extensions" ]
+      configs = [ "$ace_flutter_engine_root/icu:icu_config_$platform" ]
 
       deps = [
         "$ace_flutter_engine_root/libtxt:thirdparty_lib_txt_$platform",
