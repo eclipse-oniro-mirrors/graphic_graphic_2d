@@ -67,6 +67,7 @@ void RSSubThreadManager::SubmitSubThreadTask(const std::shared_ptr<RSDisplayRend
     auto cacheSkippedNodeMap = RSMainThread::Instance()->GetCacheCmdSkippedNodes();
     for (const auto& child : subThreadNodes) {
         if (!child->ShouldPaint()) {
+            RS_TRACE_NAME_FMT("SubmitTask skip node: [%s, %llu]", child->GetName().c_str(), child->GetId());
             continue;
         }
         if (cacheSkippedNodeMap.count(child->GetId()) != 0 && child->HasCachedTexture()) {
@@ -84,8 +85,8 @@ void RSSubThreadManager::SubmitSubThreadTask(const std::shared_ptr<RSDisplayRend
             RSMainThread::Instance()->GetFrameCount()));
     }
 
-    for (size_t i = 0; i < renderTaskList.size(); i++) {
-        auto renderNode = renderTaskList[i]->GetNode();
+    for (auto& renderTask : renderTaskList) {
+        auto renderNode = renderTask->GetNode();
         auto surfaceNode = renderNode->ReinterpretCastTo<RSSurfaceRenderNode>();
         if (surfaceNode == nullptr) {
             ROSEN_LOGE("RSSubThreadManager::SubmitSubThreadTask surfaceNode is null");
@@ -93,20 +94,24 @@ void RSSubThreadManager::SubmitSubThreadTask(const std::shared_ptr<RSDisplayRend
         }
         auto threadIndex = surfaceNode->GetSubmittedSubThreadIndex();
         if (threadIndex != INT_MAX && superRenderTaskList[threadIndex]) {
-            superRenderTaskList[threadIndex]->AddTask(std::move(renderTaskList[i]));
+            RS_TRACE_NAME("node:[ " + surfaceNode->GetName() + ", " + std::to_string(surfaceNode->GetId()) +
+                ", " + std::to_string(threadIndex) + " ]; ");
+            superRenderTaskList[threadIndex]->AddTask(std::move(renderTask));
         } else {
             if (superRenderTaskList[minLoadThreadIndex_]) {
-                superRenderTaskList[minLoadThreadIndex_]->AddTask(std::move(renderTaskList[i]));
+                RS_TRACE_NAME("node:[ " + surfaceNode->GetName() + ", " + std::to_string(surfaceNode->GetId()) +
+                    ", " + std::to_string(minLoadThreadIndex_) + " ]; ");
+                superRenderTaskList[minLoadThreadIndex_]->AddTask(std::move(renderTask));
                 surfaceNode->SetSubmittedSubThreadIndex(minLoadThreadIndex_);
             }
         }
         uint32_t minLoadThreadIndex = 0;
         auto minNodesNum = superRenderTaskList[0]->GetTaskSize();
-        for (uint32_t j = 0; j < SUB_THREAD_NUM; j++) {
-            auto num = superRenderTaskList[j]->GetTaskSize();
+        for (uint32_t i = 0; i < SUB_THREAD_NUM; i++) {
+            auto num = superRenderTaskList[i]->GetTaskSize();
             if (num < minNodesNum) {
                 minNodesNum = num;
-                minLoadThreadIndex = j;
+                minLoadThreadIndex = i;
             }
         }
         minLoadThreadIndex_ = minLoadThreadIndex;
@@ -135,39 +140,5 @@ void RSSubThreadManager::NodeTaskNotify(uint64_t nodeId)
         nodeTaskState_[nodeId] = 0;
     }
     cvParallelRender_.notify_one();
-}
-
-void RSSubThreadManager::SaveCacheTexture(RSRenderNode& node) const
-{
-    std::scoped_lock<std::recursive_mutex> lock(node.GetSurfaceMutex());
-#ifdef NEW_SKIA
-    auto surface = node.GetCompletedCacheSurface(UNI_MAIN_THREAD_INDEX, true);
-    if (surface == nullptr || (surface->width() == 0 || surface->height() == 0)) {
-        RS_LOGE("invalid cache surface");
-        return;
-    }
-    if (renderContext_ == nullptr) {
-        RS_LOGE("SaveCacheTexture render context is nullptr");
-        return;
-    }
-    auto mainGrContext = renderContext_->GetGrContext();
-    if (mainGrContext == nullptr) {
-        RS_LOGE("SaveCacheTexture GrDirectContext is nullptr");
-        return;
-    }
-    auto sharedBackendTexture =
-        surface->getBackendTexture(SkSurface::BackendHandleAccess::kFlushRead_BackendHandleAccess);
-    if (!sharedBackendTexture.isValid()) {
-        RS_LOGE("SaveCacheTexture does not has GPU backend, %llu", node.GetId());
-        return;
-    }
-    auto sharedTexture = SkImage::MakeFromTexture(mainGrContext, sharedBackendTexture,
-        kBottomLeft_GrSurfaceOrigin, kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
-    if (sharedTexture == nullptr) {
-        RS_LOGE("SaveCacheTexture shared texture is nullptr, %llu", node.GetId());
-        return;
-    }
-    node.SetCacheTexture(sharedTexture);
-#endif
 }
 }

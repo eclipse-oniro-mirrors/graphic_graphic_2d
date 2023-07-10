@@ -176,6 +176,16 @@ std::string DrawCmdList::PlayBackForRecord(RSPaintFilterCanvas& canvas, int star
     return str;
 }
 
+void DrawCmdList::SetWidth(int width)
+{
+    width_ = width;
+}
+
+void DrawCmdList::SetHeight(int height)
+{
+    height_ = height;
+}
+
 std::string DrawCmdList::GetOpsWithDesc() const
 {
     std::string desc;

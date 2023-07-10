@@ -194,11 +194,11 @@ CharGroups CharGroups::GetSubFromU16RangeAll(const int &u16start, const int &u16
     }
 
     size_t sum = 0;
-    int start_index = 0;
-    int end_index = 1e9;
+    int startIndex = 0;
+    int endIndex = 1e9;
     for (int i = -1; i <= static_cast<int>(pcgs_->size()); i++) {
         if (static_cast<int>(sum) <= u16start) {
-            start_index = std::max(start_index, i);
+            startIndex = std::max(startIndex, i);
         }
 
         if (0 <= i && i < static_cast<int>(pcgs_->size())) {
@@ -206,11 +206,11 @@ CharGroups CharGroups::GetSubFromU16RangeAll(const int &u16start, const int &u16
         }
 
         if (static_cast<int>(sum) >= u16end) {
-            end_index = std::min(end_index, i);
+            endIndex = std::min(endIndex, i);
         }
     }
 
-    return GetSubAll(start_index, end_index + 1);
+    return GetSubAll(startIndex, endIndex + 1);
 }
 
 CharGroups CharGroups::GetIntersect(const CharGroups &right) const
@@ -344,7 +344,7 @@ void CharGroups::PushBack(const struct CharGroup &cg)
         throw TEXGINE_EXCEPTION(INVALID_CHAR_GROUPS);
     }
 
-    if (!(0 == range_.start && range_.end == static_cast<int>(pcgs_->size()))) {
+    if (!(range_.start == 0 && range_.end == static_cast<int>(pcgs_->size()))) {
         throw CustomException("incomplete CharGroups cannot revert");
     }
 
@@ -358,7 +358,7 @@ void CharGroups::ReverseAll()
         throw TEXGINE_EXCEPTION(INVALID_CHAR_GROUPS);
     }
 
-    if (!(0 == range_.start && range_.end == static_cast<int>(pcgs_->size()))) {
+    if (!(range_.start == 0 && range_.end == static_cast<int>(pcgs_->size()))) {
         throw CustomException("incomplete CharGroups cannot revert");
     }
 

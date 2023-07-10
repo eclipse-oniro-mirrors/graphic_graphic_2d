@@ -205,7 +205,6 @@ void RSScreenManager::AddScreenToHgm(std::shared_ptr<HdiOutput> &output)
         RS_LOGE("RSScreenManager %s: output is nullptr.", __func__);
         return;
     }
-
     RS_LOGI("RSScreenManager AddScreenToHgm");
     auto &hgmCore = OHOS::Rosen::HgmCore::Instance();
     ScreenId thisId = ToScreenId(output->GetScreenId());
@@ -214,15 +213,21 @@ void RSScreenManager::AddScreenToHgm(std::shared_ptr<HdiOutput> &output)
         return;
     }
 
-    auto supportedModes = screens_[thisId]->GetSupportedModes();
-    int32_t initMode = 2;
-    if (hgmCore.AddScreen(thisId, initMode)) {
+    int32_t initModeId = 0;
+    auto initMode = screens_[thisId]->GetActiveMode();
+    if (!initMode) {
+        RS_LOGE("RSScreenManager failed to get initial mode");
+    } else {
+        initModeId = initMode->id;
+    }
+    if (hgmCore.AddScreen(thisId, initModeId)) {
         RS_LOGW("RSScreenManager failed to add screen : %" PRIu64 "", thisId);
         return;
     }
 
     // for each supported mode, use the index as modeId to add the detailed mode to hgm
     int32_t modeId = 0;
+    auto supportedModes = screens_[thisId]->GetSupportedModes();
     for (auto mode = supportedModes.begin(); mode != supportedModes.end(); ++mode) {
         if (!hgmCore.AddScreenInfo(thisId, (*mode).width, (*mode).height,
             (*mode).freshRate, modeId)) {

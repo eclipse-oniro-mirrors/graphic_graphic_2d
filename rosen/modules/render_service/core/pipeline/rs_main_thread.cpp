@@ -477,7 +477,7 @@ void RSMainThread::CheckParallelSubThreadNodesStatus()
 void RSMainThread::ProcessCommandForUniRender()
 {
     ResetHardwareEnabledState();
-    TransactionDataMap transactionDataEffective;
+    std::shared_ptr<TransactionDataMap> transactionDataEffective = std::make_shared<TransactionDataMap>();
     std::string transactionFlags;
     if (RSSystemProperties::GetUIFirstEnabled() && RSSystemProperties::GetCacheCmdEnabled()) {
         CheckParallelSubThreadNodesStatus();
@@ -522,17 +522,17 @@ void RSMainThread::ProcessCommandForUniRender()
                 }
             }
             if (iter != transactionVec.begin()) {
-                transactionDataEffective[pid].insert(transactionDataEffective[pid].end(),
+                (*transactionDataEffective)[pid].insert((*transactionDataEffective)[pid].end(),
                     std::make_move_iterator(transactionVec.begin()), std::make_move_iterator(iter));
                 transactionVec.erase(transactionVec.begin(), iter);
             }
         }
     }
-    if (!transactionDataEffective.empty()) {
+    if (!transactionDataEffective->empty()) {
         doDirectComposition_ = false;
     }
     RS_TRACE_NAME("RSMainThread::ProcessCommandUni" + transactionFlags);
-    for (auto& rsTransactionElem: transactionDataEffective) {
+    for (auto& rsTransactionElem: *transactionDataEffective) {
         for (auto& rsTransaction: rsTransactionElem.second) {
             if (rsTransaction) {
                 if (rsTransaction->IsNeedSync() || syncTransactionData_.count(rsTransactionElem.first) > 0) {
@@ -543,6 +543,10 @@ void RSMainThread::ProcessCommandForUniRender()
             }
         }
     }
+    RSUnmarshalThread::Instance().PostTask([ transactionDataEffective ] () {
+        RS_TRACE_NAME("RSMainThread::ProcessCommandForUniRender transactionDataEffective clear");
+        transactionDataEffective->clear();
+    });
 }
 
 void RSMainThread::ProcessCommandForDividedRender()
@@ -1002,7 +1006,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
             RSUniRenderUtil::AssignWindowNodes(displayNode, mainThreadNodes, subThreadNodes);
             const auto& nodeMap = context_->GetNodeMap();
             RSUniRenderUtil::ClearSurfaceIfNeed(nodeMap, displayNode, oldDisplayChildren_);
-            uniVisitor->SetAssignedWindowNodes(mainThreadNodes, subThreadNodes);
+            uniVisitor->DrawSurfaceLayer(displayNode, subThreadNodes);
             RSUniRenderUtil::CacheSubThreadNodes(subThreadNodes_, subThreadNodes);
         }
         rootNode->Process(uniVisitor);
@@ -1275,6 +1279,8 @@ void RSMainThread::OnVsync(uint64_t timestamp, void* data)
     ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSMainThread::OnVsync");
     RSJankStats::GetInstance().SetStartTime();
     timestamp_ = timestamp;
+    curTime_ = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
     requestNextVsyncNum_ = 0;
     frameCount_++;
     if (isUniRender_) {
@@ -1864,6 +1870,11 @@ void RSMainThread::ForceRefreshForUni()
         PostTask([=]() {
             MergeToEffectiveTransactionDataMap(cachedTransactionDataMap_);
             RSUnmarshalThread::Instance().PostTask(unmarshalBarrierTask_);
+            auto now = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()).count();
+            timestamp_ = timestamp_ + (now - curTime_);
+            curTime_ = now;
+            RS_TRACE_NAME("RSMainThread::ForceRefreshForUni timestamp:" + std::to_string(timestamp_));
             mainLoop_();
         });
         auto screenManager_ = CreateOrGetScreenManager();

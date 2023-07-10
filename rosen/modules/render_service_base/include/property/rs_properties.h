@@ -17,6 +17,7 @@
 #define RENDER_SERVICE_CLIENT_CORE_PROPERTY_RS_PROPERTIES_H
 
 #include <optional>
+#include <tuple>
 #include <vector>
 
 #include "include/effects/SkColorMatrix.h"
@@ -276,6 +277,17 @@ public:
     void SetUseEffect(bool useEffect);
     bool GetUseEffect() const;
 
+    std::tuple<bool, bool, bool> GetDirtyStatus() const
+    {
+        return { isDirty_, geoDirty_, contentDirty_ };
+    }
+    void SetDirtyStatus(std::tuple<bool, bool, bool> status)
+    {
+        isDirty_ = std::get<0>(status);
+        geoDirty_ = std::get<1>(status);
+        contentDirty_ = std::get<2>(status);
+    }
+
 private:
     void Reset();
     void ResetProperty(RSModifierType type);
@@ -351,6 +363,7 @@ private:
     friend class RSCanvasRenderNode;
     friend class RSPropertiesPainter;
     friend class RSRenderNode;
+    friend class RSCanvasDrawingRenderNode;
 };
 } // namespace Rosen
 } // namespace OHOS

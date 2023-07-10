@@ -15,7 +15,10 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_RENDER_RS_MATERIAL_FILTER_H
 #define RENDER_SERVICE_CLIENT_CORE_RENDER_RS_MATERIAL_FILTER_H
 
+#ifdef NEW_SKIA
 #include "include/effects/SkRuntimeEffect.h"
+#endif
+
 #include "common/rs_color.h"
 #include "render/rs_skia_filter.h"
 
@@ -112,10 +115,7 @@ private:
 #endif
     static float RadiusVp2Sigma(float radiusVp, float dipScale);
 
-    bool useKawase = true;
-    sk_sp<SkRuntimeEffect> fBlurEffect;
-    sk_sp<SkRuntimeEffect> fMixEffect;
-
+    bool useKawase = false;
     friend class RSMarshallingHelper;
 };
 } // namespace Rosen

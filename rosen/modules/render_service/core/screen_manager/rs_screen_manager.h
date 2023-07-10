@@ -312,7 +312,7 @@ private:
     mutable std::mutex mutex_;
     HdiBackend *composer_ = nullptr;
     ScreenId defaultScreenId_ = INVALID_SCREEN_ID;
-    std::unordered_map<ScreenId, std::unique_ptr<OHOS::Rosen::RSScreen>> screens_;
+    std::map<ScreenId, std::unique_ptr<OHOS::Rosen::RSScreen>> screens_;
     std::queue<ScreenId> freeVirtualScreenIds_;
     uint32_t maxVirtualScreenNum_ = 0;
     std::vector<sptr<RSIScreenChangeCallback>> screenChangeCallbacks_;

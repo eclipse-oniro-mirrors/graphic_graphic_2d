@@ -144,7 +144,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         case CREATE_NODE: {
             auto nodeId = data.ReadUint64();
             auto surfaceName = data.ReadString();
-            RSSurfaceRenderNodeConfig config = {.id = nodeId, .name = surfaceName};
+            auto bundleName = data.ReadString();
+            RSSurfaceRenderNodeConfig config = {.id = nodeId, .name = surfaceName, .bundleName = bundleName};
             reply.WriteBool(CreateNode(config));
             break;
         }
@@ -152,8 +153,14 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             auto nodeId = data.ReadUint64();
             auto surfaceName = data.ReadString();
             auto type = static_cast<RSSurfaceNodeType>(data.ReadUint8());
-            RSSurfaceRenderNodeConfig config = {.id = nodeId, .name = surfaceName, .nodeType = type };
+            auto bundleName = data.ReadString();
+            RSSurfaceRenderNodeConfig config = {
+                .id = nodeId, .name = surfaceName, .nodeType = type, .bundleName = bundleName};
             sptr<Surface> surface = CreateNodeAndSurface(config);
+            if (surface == nullptr) {
+                ret = ERR_NULL_OBJECT;
+                break;
+            }
             auto producer = surface->GetProducer();
             reply.WriteRemoteObject(producer->AsObject());
             break;
@@ -217,7 +224,6 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
 
             ScreenId mirrorId = data.ReadUint64();
             int32_t flags = data.ReadInt32();
-
             ScreenId id = CreateVirtualScreen(name, width, height, surface, mirrorId, flags);
             reply.WriteUint64(id);
             break;
@@ -238,7 +244,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             }
             auto bufferProducer = iface_cast<IBufferProducer>(remoteObject);
             sptr<Surface> surface = Surface::CreateSurfaceAsProducer(bufferProducer);
-
+            if (surface == nullptr) {
+                ret = ERR_NULL_OBJECT;
+                break;
+            }
             int32_t status = SetVirtualScreenSurface(id, surface);
             reply.WriteInt32(status);
             break;
@@ -266,6 +275,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             sptr<RSIScreenChangeCallback> cb = iface_cast<RSIScreenChangeCallback>(remoteObject);
+            if (cb == nullptr) {
+                ret = ERR_NULL_OBJECT;
+                break;
+            }
             int32_t status = SetScreenChangeCallback(cb);
             reply.WriteInt32(status);
             break;
@@ -360,6 +373,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             sptr<RSISurfaceCaptureCallback> cb = iface_cast<RSISurfaceCaptureCallback>(remoteObject);
+            if (cb == nullptr) {
+                ret = ERR_NULL_OBJECT;
+                break;
+            }
             float scaleX = data.ReadFloat();
             float scaleY = data.ReadFloat();
             TakeSurfaceCapture(id, cb, scaleX, scaleY);
@@ -373,6 +390,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             sptr<IApplicationAgent> app = iface_cast<IApplicationAgent>(remoteObject);
+            if (app == nullptr) {
+                ret = ERR_NULL_OBJECT;
+                break;
+            }
             RegisterApplicationAgent(pid, app);
             break;
         }
@@ -505,6 +526,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             sptr<RSIBufferAvailableCallback> cb = iface_cast<RSIBufferAvailableCallback>(remoteObject);
+            if (cb == nullptr) {
+                ret = ERR_NULL_OBJECT;
+                break;
+            }
             RegisterBufferAvailableListener(id, cb, isFromRenderThread);
             break;
         }
@@ -605,6 +630,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         case CREATE_VSYNC_CONNECTION: {
             std::string name = data.ReadString();
             sptr<IVSyncConnection> conn = CreateVSyncConnection(name);
+            if (conn == nullptr) {
+                ret = ERR_NULL_OBJECT;
+                break;
+            }
             reply.WriteRemoteObject(conn->AsObject());
             break;
         }
@@ -680,6 +709,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             sptr<RSIOcclusionChangeCallback> callback = iface_cast<RSIOcclusionChangeCallback>(remoteObject);
+            if (callback == nullptr) {
+                ret = ERR_NULL_OBJECT;
+                break;
+            }
             int32_t status = RegisterOcclusionChangeCallback(callback);
             reply.WriteInt32(status);
             break;
@@ -739,10 +772,6 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             std::shared_ptr<RSSyncTask> task(command);
-            if (task == nullptr) {
-                ret = ERR_INVALID_STATE;
-                break;
-            }
             ExecuteSynchronousTask(task);
             if (!task->Marshalling(reply)) {
                 ret = ERR_INVALID_STATE;

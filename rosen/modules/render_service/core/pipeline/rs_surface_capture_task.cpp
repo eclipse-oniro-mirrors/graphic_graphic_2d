@@ -162,8 +162,11 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTask::Run()
     if (auto displayNode = node->ReinterpretCastTo<RSDisplayRenderNode>()) {
         if (visitor_->IsUniRender() && !visitor_->GetHasingSecurityLayer()) {
             auto rotation = displayNode->GetRotation();
-            if (rotation == ScreenRotation::ROTATION_90 || rotation == ScreenRotation::ROTATION_270) {
+            if (rotation == ScreenRotation::ROTATION_90) {
                 pixelmap->rotate(static_cast<int32_t>(90)); // 90 degrees
+            }
+            if (rotation == ScreenRotation::ROTATION_270) {
+                pixelmap->rotate(static_cast<int32_t>(270)); // 270 degrees
             }
             RS_LOGD("RSSurfaceCaptureTask::Run: PixelmapRotation: %d", static_cast<int32_t>(rotation));
         }
@@ -1058,10 +1061,15 @@ void RSSurfaceCaptureVisitor::DrawWatermarkIfNeed(float screenWidth, float scree
     if (RSMainThread::Instance()->GetWatermarkFlag()) {
 #ifndef USE_ROSEN_DRAWING
         sk_sp<SkImage> skImage = RSMainThread::Instance()->GetWatermarkImg();
+        SkPaint rectPaint;
+        auto skSrcRect = SkRect::MakeWH(skImage->width(), skImage->height());
+        auto skDstRect = SkRect::MakeWH(screenWidth, screenHeight);
 #ifdef NEW_SKIA
-        sk_sp<SkShader> shader = skImage->makeShader(SkTileMode::kRepeat, SkTileMode::kRepeat, SkSamplingOptions());
+        canvas_->drawImageRect(
+            skImage, skSrcRect, skDstRect, SkSamplingOptions(), 
+            &rectPaint, SkCanvas::kStrict_SrcRectConstraint);
 #else
-        sk_sp<SkShader> shader = skImage->makeShader(SkTileMode::kRepeat, SkTileMode::kRepeat);
+        canvas_->drawImageRect(skImage, skSrcRect, skDstRect, &rectPaint);
 #endif
 #else
         auto image = RSMainThread::Instance()->GetWatermarkImg();
