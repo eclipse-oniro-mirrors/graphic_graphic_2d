@@ -30,7 +30,9 @@
 #include "texgine_path.h"
 #include "texgine_path_1d_path_effect.h"
 #include "texgine/utils/exlog.h"
+#ifdef LOGGER_ENABLE_SCOPE
 #include "texgine/utils/trace.h"
+#endif
 #include "text_converter.h"
 #include "word_breaker.h"
 
