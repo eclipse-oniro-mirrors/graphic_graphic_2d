@@ -21,28 +21,26 @@
 #include "include/core/SkSize.h"
 #include "include/core/SkString.h"
 #include "include/core/SkSurface.h"
-#ifdef NEW_SKIA
 #include "include/effects/SkRuntimeEffect.h"
-#endif
 #include "tools/Resources.h"
 
 namespace OHOS {
 namespace Rosen {
 #ifndef USE_ROSEN_DRAWING
-class KawaseBlur {
+class KawaseBlurFilter {
 public:
-    explicit KawaseBlur();
-    ~KawaseBlur();
+    explicit KawaseBlurFilter(int radius);
+    ~KawaseBlurFilter();
+    void SetColorFilter(sk_sp<SkColorFilter> colorFilter);
     void ApplyKawaseBlur(
-        SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& src, const SkRect& dst, const int radius);
-    const sk_sp<SkImage> GetBlurImage(SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& dst) const;
+        SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& src, const SkRect& dst) const;
 
 private:
     static SkMatrix GetShaderTransform(const SkCanvas* canvas, const SkRect& blurRect, float scale);
     void ApplyBlur(
         SkCanvas& canvas, const sk_sp<SkImage>& image, const sk_sp<SkImage>& blurImage, const SkRect& dst) const;
     int GetDecelerateRadius(int radius);
-    void AdjustRadiusAndScale(int radius);
+    void AdjustRadiusAndScale();
 
     static constexpr float kBlurScale = 0.03f;
     // Maximum number of render passes
@@ -50,20 +48,19 @@ private:
     static constexpr uint32_t kMaxPassesLargeRadius = 7;
     static constexpr float kDilatedConvolution = 2.0f;
     static constexpr float kDilatedConvolutionLargeRadius = 4.0f;
-    // To avoid downscaling artifacts, we interpolate the blurred fbo with the full composited
-    // image, up to this radius.
+    // To avoid downscaling artifacts,  interpolate the blurred fbo with the full composited image, up to this radius.
     static constexpr float kMaxCrossFadeRadius = 10.0f;
-    static constexpr int kMaxGaussRadius = 100;
+    static constexpr int kMaxGaussRadius = 120;
     static constexpr int kMaxKawaseRadius = 300;
     static constexpr bool supporteLargeRadius = true;
 
     sk_sp<SkRuntimeEffect> blurEffect_;
     sk_sp<SkRuntimeEffect> mixEffect_;
+    SkPaint finalPaint_;
     float blurRadius_;
     float blurScale_;
 };
 #endif
 } // namespace Rosen
 } // namespace OHOS
-
 #endif // RENDER_SERVICE_CLIENT_CORE_RENDER_RS_KAWASE_BLUR_H

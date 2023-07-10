@@ -14,7 +14,6 @@
  */
 
 #include "render/rs_blur_filter.h"
-#include "render/rs_kawase_blur.h"
 
 #include "src/core/SkOpts.h"
 
@@ -45,6 +44,13 @@ RSBlurFilter::RSBlurFilter(float blurRadiusX, float blurRadiusY): RSSkiaFilter(S
     hash_ = SkOpts::hash(&blurRadiusX, sizeof(blurRadiusX), hash_);
     hash_ = SkOpts::hash(&blurRadiusY, sizeof(blurRadiusY), hash_);
     useKawase_ = RSSystemProperties::GetKawaseEnabled();
+    int gaussRadius = static_cast<int>(blurRadiusX);
+    if (gaussRadius == 0) {
+        useKawase_ = false;
+    }
+    if (useKawase_) {
+        kawaseFunc_ = std::make_shared<KawaseBlurFilter>(gaussRadius);
+    }
 }
 #else
 RSBlurFilter::RSBlurFilter(float blurRadiusX, float blurRadiusY): RSSkiaFilter(SkBlurImageFilter::Make(blurRadiusX,
@@ -165,10 +171,8 @@ void RSBlurFilter::DrawImageRect(
 {
     auto paint = GetPaint();
 #ifdef NEW_SKIA
-    int radius = static_cast<int>(blurRadiusX_);
-    if (useKawase_ && radius != 0) {
-        KawaseBlur kawase;
-        kawase.ApplyKawaseBlur(canvas, image, src, dst, radius);
+    if (useKawase_) {
+        kawaseFunc_->ApplyKawaseBlur(canvas, image, src, dst);
     } else {
         canvas.drawImageRect(image.get(), src, dst, SkSamplingOptions(), &paint, SkCanvas::kStrict_SrcRectConstraint);
     }

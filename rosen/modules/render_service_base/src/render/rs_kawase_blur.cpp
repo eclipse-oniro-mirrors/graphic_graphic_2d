@@ -16,11 +16,12 @@
 #include "render/rs_kawase_blur.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
+#include "rs_trace.h"
 
 namespace OHOS {
 namespace Rosen {
 #ifndef USE_ROSEN_DRAWING
-KawaseBlur::KawaseBlur()
+KawaseBlurFilter::KawaseBlurFilter(int radius)
 {
     SkString blurString(R"(
         uniform shader imageInput;
@@ -61,11 +62,14 @@ KawaseBlur::KawaseBlur()
         ROSEN_LOGE("KawaseBlurFilter::RuntimeShader error: %s\n", error2.c_str());
     }
     mixEffect_ = std::move(mixEffect);
+
+    blurRadius_ = GetDecelerateRadius(radius);
+    AdjustRadiusAndScale();
 }
 
-KawaseBlur::~KawaseBlur() = default;
+KawaseBlurFilter::~KawaseBlurFilter() = default;
 
-SkMatrix KawaseBlur::GetShaderTransform(const SkCanvas* canvas, const SkRect& blurRect, float scale)
+SkMatrix KawaseBlurFilter::GetShaderTransform(const SkCanvas* canvas, const SkRect& blurRect, float scale)
 {
     auto matrix = SkMatrix::Scale(scale, scale);
     matrix.postConcat(SkMatrix::Translate(blurRect.fLeft, blurRect.fTop));
@@ -76,11 +80,15 @@ SkMatrix KawaseBlur::GetShaderTransform(const SkCanvas* canvas, const SkRect& bl
     return matrix;
 }
 
-void KawaseBlur::ApplyKawaseBlur(
-    SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& src, const SkRect& dst, const int radius)
+void KawaseBlurFilter::SetColorFilter(sk_sp<SkColorFilter> colorFilter)
 {
-    blurRadius_ = GetDecelerateRadius(radius);
-    AdjustRadiusAndScale(blurRadius_);
+    finalPaint_.setColorFilter(colorFilter);
+}
+
+void KawaseBlurFilter::ApplyKawaseBlur(
+    SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& src, const SkRect& dst) const
+{
+    RS_TRACE_NAME("ApplyKawaseBlur");
     int maxPasses = supporteLargeRadius ? kMaxPassesLargeRadius : kMaxPasses;
     float dilatedConvolutionFactor = supporteLargeRadius ? kDilatedConvolutionLargeRadius : kDilatedConvolution;
     float tmpRadius = blurRadius_ / dilatedConvolutionFactor;
@@ -107,7 +115,7 @@ void KawaseBlur::ApplyKawaseBlur(
     return ApplyBlur(canvas, image, tmpBlur, dst);
 }
 
-void KawaseBlur::ApplyBlur(
+void KawaseBlurFilter::ApplyBlur(
     SkCanvas& canvas, const sk_sp<SkImage>& image, const sk_sp<SkImage>& blurImage, const SkRect& dst) const
 {
     float invBlurScale = 1 / blurScale_;
@@ -116,7 +124,7 @@ void KawaseBlur::ApplyBlur(
         std::ceil(dst.height() * blurScale_));
     const auto blurMatrix = GetShaderTransform(&canvas, dst, invBlurScale);
     const auto blurShader = blurImage->makeShader(SkTileMode::kClamp, SkTileMode::kClamp, linear, &blurMatrix);
-    SkPaint paint;
+    SkPaint paint = finalPaint_;
     if (blurRadius_ < kMaxCrossFadeRadius) {
         SkMatrix inputMatrix;
         if (!canvas.getTotalMatrix().invert(&inputMatrix)) {
@@ -137,29 +145,26 @@ void KawaseBlur::ApplyBlur(
     canvas.drawRect(dst, paint);
 }
 
-const sk_sp<SkImage> KawaseBlur::GetBlurImage(SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& dst) const
-{
-    SkImageInfo imageInfo = image->imageInfo().makeWH(std::ceil(dst.width()), std::ceil(dst.height()));
-    auto drawSurface = canvas.makeSurface(imageInfo);
-    return drawSurface->makeImageSnapshot();
-}
-
-int KawaseBlur::GetDecelerateRadius(int radius)
+int KawaseBlurFilter::GetDecelerateRadius(int radius)
 {
     float factor = std::min(1.0f, static_cast<float>(radius) / kMaxGaussRadius);
     float optimizedFactor = 1.0f - (1.0f - factor) * (1.0f - factor);
     return kMaxKawaseRadius * optimizedFactor;
 }
 
-void KawaseBlur::AdjustRadiusAndScale(int radius)
+void KawaseBlurFilter::AdjustRadiusAndScale()
 {
-    float scale = 0.2f; // base downSample radio
-    if (radius > 170) { // 170 : radius step
+    int step1 = 170; // 170 : radius step
+    int step2 = 260; // 260 : radius step
+    int smoothScope = 20; // 20 : smooth radius change
+    int radius = blurRadius_;
+    float scale = 0.25f; // base downSample radio
+    if (radius > step1) {
         scale = 0.1f; // 0.1 : downSample radio step
-        radius -= 20 / (radius - 170);
-    } else if (radius > 260) { // 260 : radius step
+        radius -= smoothScope / (radius - step1);
+    } else if (radius > step2) {
         scale = 0.03f; // 0.03 : downSample radio step
-        radius -= 20 / (radius - 260);
+        radius -= smoothScope / (radius - step2);
     }
     blurRadius_ = radius;
     blurScale_ = scale;

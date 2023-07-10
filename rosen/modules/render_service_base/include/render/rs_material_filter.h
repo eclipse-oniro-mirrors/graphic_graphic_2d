@@ -21,6 +21,7 @@
 
 #include "common/rs_color.h"
 #include "render/rs_skia_filter.h"
+#include "render/rs_kawase_blur.h"
 
 #ifndef USE_ROSEN_DRAWING
 #include "include/core/SkColorFilter.h"
@@ -107,6 +108,7 @@ private:
     RSColor maskColor_ = RSColor();
 
 #ifndef USE_ROSEN_DRAWING
+    sk_sp<SkColorFilter> GetColorFilter(float sat, float brightness);
     sk_sp<SkImageFilter> CreateMaterialStyle(MATERIAL_BLUR_STYLE style, float dipScale, float ratio);
     sk_sp<SkImageFilter> CreateMaterialFilter(float radius, float sat, float brightness);
 #else
@@ -115,6 +117,7 @@ private:
 #endif
     static float RadiusVp2Sigma(float radiusVp, float dipScale);
 
+    std::shared_ptr<KawaseBlurFilter> kawaseFunc_;
     bool useKawase_ = false;
     friend class RSMarshallingHelper;
 };
