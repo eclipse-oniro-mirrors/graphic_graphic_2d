@@ -13,27 +13,33 @@
  * limitations under the License.
  */
 
-#include "texgine_mask_filter.h"
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
+#include "texgine_path_effect.h"
+
+using namespace testing;
+using namespace testing::ext;
 
 namespace OHOS {
 namespace Rosen {
 namespace TextEngine {
-sk_sp<SkMaskFilter> TexgineMaskFilter::GetMaskFilter() const
-{
-    return filter_;
-}
+class TexginePathEffectTest : public testing::Test {
+};
 
-void TexgineMaskFilter::SetMaskFilter(const sk_sp<SkMaskFilter> filter)
+/**
+ * @tc.name:SetAndGet
+ * @tc.desc: Verify the SetAndGet
+ * @tc.type:FUNC
+ */
+HWTEST_F(TexginePathEffectTest, SetAndGet, TestSize.Level1)
 {
-    filter_ = filter;
-}
-std::shared_ptr<TexgineMaskFilter> TexgineMaskFilter::MakeBlur(TexgineBlurStyle style,
-    float sigma, bool respectCTM)
-{
-    auto filter = SkMaskFilter::MakeBlur(static_cast<SkBlurStyle>(style), sigma, respectCTM);
-    auto maskFilter = std::make_shared<TexgineMaskFilter>();
-    maskFilter->SetMaskFilter(filter);
-    return maskFilter;
+    std::shared_ptr<TexginePathEffect> tpe = std::make_shared<TexginePathEffect>();
+    sk_sp<SkPathEffect> spe = nullptr;
+    EXPECT_NO_THROW({
+        tpe->SetPathEffect(spe);
+        EXPECT_EQ(tpe->GetPathEffect(), spe);
+    });
 }
 } // namespace TextEngine
 } // namespace Rosen

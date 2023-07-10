@@ -13,27 +13,31 @@
  * limitations under the License.
  */
 
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
 #include "texgine_mask_filter.h"
+
+using namespace testing;
+using namespace testing::ext;
 
 namespace OHOS {
 namespace Rosen {
 namespace TextEngine {
-sk_sp<SkMaskFilter> TexgineMaskFilter::GetMaskFilter() const
-{
-    return filter_;
-}
+class TexgineMaskFilterTest : public testing::Test {
+};
 
-void TexgineMaskFilter::SetMaskFilter(const sk_sp<SkMaskFilter> filter)
+/**
+ * @tc.name:MakeBlur
+ * @tc.desc: Verify the MakeBlur
+ * @tc.type:FUNC
+ */
+HWTEST_F(TexgineMaskFilterTest, MakeBlur, TestSize.Level1)
 {
-    filter_ = filter;
-}
-std::shared_ptr<TexgineMaskFilter> TexgineMaskFilter::MakeBlur(TexgineBlurStyle style,
-    float sigma, bool respectCTM)
-{
-    auto filter = SkMaskFilter::MakeBlur(static_cast<SkBlurStyle>(style), sigma, respectCTM);
-    auto maskFilter = std::make_shared<TexgineMaskFilter>();
-    maskFilter->SetMaskFilter(filter);
-    return maskFilter;
+    EXPECT_NO_THROW({
+        std::shared_ptr<TexgineMaskFilter> tmf = TexgineMaskFilter::MakeBlur(
+            TexgineMaskFilter::TexgineBlurStyle::K_NORMAL_SK_BLUR_STYLE, 1.0, true);
+    });
 }
 } // namespace TextEngine
 } // namespace Rosen
