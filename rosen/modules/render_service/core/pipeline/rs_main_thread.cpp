@@ -16,9 +16,13 @@
 
 #include <list>
 #include "include/core/SkGraphics.h"
+#include "memory/rs_memory_graphic.h"
+#include "pipeline/parallel_render/rs_sub_thread_manager.h"
 #include <securec.h>
 #include <stdint.h>
 #include <string>
+#include <unistd.h>
+#include <malloc.h>
 #ifdef NEW_SKIA
 #include "include/gpu/GrDirectContext.h"
 #else
@@ -106,6 +110,7 @@ constexpr int32_t FLUSH_SYNC_TRANSACTION_TIMEOUT = 100;
 constexpr uint64_t CLEAN_CACHE_FREQ = 60;
 constexpr uint64_t SKIP_COMMAND_FREQ_LIMIT = 30;
 constexpr uint64_t PERF_PERIOD_BLUR = 80000000;
+constexpr const char* MEM_GPU_TYPE = "gpu";
 constexpr uint64_t PERF_PERIOD_MULTI_WINDOW = 80000000;
 constexpr uint32_t MULTI_WINDOW_PERF_START_NUM = 2;
 constexpr uint32_t MULTI_WINDOW_PERF_END_NUM = 4;
@@ -1734,6 +1739,9 @@ void RSMainThread::TrimMem(std::unordered_set<std::u16string>& argSets, std::str
         std::shared_ptr<RenderContext> rendercontext = std::make_shared<RenderContext>();
         rendercontext->CleanAllShaderCache();
 #endif
+    } else if (type == "flushcache") {
+        int ret = mallopt(M_FLUSH_THREAD_CACHE, 0);
+        dumpString.append("flushcache " + std::to_string(ret) + "\n");
     } else {
         uint32_t pid = static_cast<uint32_t>(std::stoll(type));
         GrGpuResourceTag tag(pid, 0, 0, 0);
@@ -1772,6 +1780,12 @@ void RSMainThread::DumpMem(std::unordered_set<std::u16string>& argSets, std::str
         }
     }
 #endif
+    if (type.empty() || type == MEM_GPU_TYPE) {
+        auto subThreadManager = RSSubThreadManager::Instance();
+        if (subThreadManager) {
+            subThreadManager->DumpMem(log);
+        }
+    }
     dumpString.append("dumpMem: " + type + "\n");
     dumpString.append(log.GetString());
 #else

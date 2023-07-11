@@ -16,6 +16,7 @@
 #include "rs_sub_thread_manager.h"
 
 #include "pipeline/rs_main_thread.h"
+#include "memory/rs_memory_manager.h"
 #include "rs_trace.h"
 
 namespace OHOS::Rosen {
@@ -49,6 +50,19 @@ void RSSubThreadManager::PostTask(const std::function<void()>& task, uint32_t th
         return;
     }
     threadList_[threadIndex]->PostTask(task);
+}
+
+void RSSubThreadManager::DumpMem(DfxString& log)
+{
+    if (threadList_.empty()) {
+        return;
+    }
+    for (auto subThread : threadList_) {
+        if (!subThread) {
+            continue;
+        }
+        subThread->DumpMem(log);
+    }
 }
 
 void RSSubThreadManager::SubmitSubThreadTask(const std::shared_ptr<RSDisplayRenderNode>& node,

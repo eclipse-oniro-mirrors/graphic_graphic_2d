@@ -37,8 +37,10 @@ public:
 
     void Start();
     void PostTask(const std::function<void()>& task);
+    void PostSyncTask(const std::function<void()>& task);
     void RenderCache(const std::shared_ptr<RSSuperRenderTask>& threadTask);
     void ResetGrContext();
+    void DumpMem(DfxString& log);
 private:
     void CreateShareEglContext();
     void DestroyShareEglContext();

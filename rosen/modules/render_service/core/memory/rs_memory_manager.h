@@ -38,6 +38,7 @@ public:
 #if defined(NEW_SKIA)
     static void DumpMemoryUsage(DfxString& log, const GrDirectContext* grContext, std::string& type);
     static void DumpPidMemory(DfxString& log, int pid, const GrDirectContext* grContext);
+    static void DumpDrawingGpuMemory(DfxString& log, const GrDirectContext* grContext);
     // Count memory for hidumper
     static MemoryGraphic CountPidMemory(int pid, const GrDirectContext* grContext);
     static void CountMemory(std::vector<pid_t> pids, const GrDirectContext* grContext,
@@ -55,6 +56,7 @@ public:
 #else
     static void DumpMemoryUsage(DfxString& log, const GrContext* grContext, std::string& type);
     static void DumpPidMemory(DfxString& log, int pid, const GrContext* grContext);
+    static void DumpDrawingGpuMemory(DfxString& log, const GrContext* grContext);
     // Count memory for hidumper
     static MemoryGraphic CountPidMemory(int pid, const GrContext* grContext);
     static void CountMemory(std::vector<pid_t> pids, const GrContext* grContext, std::vector<MemoryGraphic>& mems);
@@ -72,6 +74,7 @@ public:
 #else
     static void DumpMemoryUsage(DfxString& log, const Drawing::GPUContext* gpuContext, std::string& type);
     static void DumpPidMemory(DfxString& log, int pid, const Drawing::GPUContext* gpuContext);
+    static void DumpDrawingGpuMemory(DfxString& log, const Drawing::GPUContext* grContext);
     // Count memory for hidumper
     static MemoryGraphic CountPidMemory(int pid, const Drawing::GPUContext* gpuContext);
     static void CountMemory(std::vector<pid_t> pids,
@@ -88,17 +91,14 @@ private:
     static void DumpDrawingCpuMemory(DfxString& log);
 #ifndef USE_ROSEN_DRAWING
 #if defined(NEW_SKIA)
-    static void DumpDrawingGpuMemory(DfxString& log, const GrDirectContext* grContext);
     static void DumpAllGpuInfo(DfxString& log, const GrDirectContext* grContext);
     static void DumpGpuCache(
         DfxString& log, const GrDirectContext* grContext, GrGpuResourceTag* tag, std::string& name);
 #else
-    static void DumpDrawingGpuMemory(DfxString& log, const GrContext* grContext);
     static void DumpGpuCache(DfxString& log, const GrContext* grContext, GrGpuResourceTag* tag, std::string& name);
     static void DumpAllGpuInfo(DfxString& log, const GrContext* grContext);
 #endif
 #else
-    static void DumpDrawingGpuMemory(DfxString& log, const Drawing::GPUContext* grContext);
     static void DumpAllGpuInfo(DfxString& log, const Drawing::GPUContext* grContext);
 #endif
     //jemalloc info
