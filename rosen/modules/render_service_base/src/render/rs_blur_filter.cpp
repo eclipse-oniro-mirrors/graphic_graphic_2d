@@ -14,7 +14,6 @@
  */
 
 #include "render/rs_blur_filter.h"
-#include "render/rs_kawase_blur.h"
 
 #include "src/core/SkOpts.h"
 
@@ -44,7 +43,14 @@ RSBlurFilter::RSBlurFilter(float blurRadiusX, float blurRadiusY): RSSkiaFilter(S
     hash_ = SkOpts::hash(&type_, sizeof(type_), 0);
     hash_ = SkOpts::hash(&blurRadiusX, sizeof(blurRadiusX), hash_);
     hash_ = SkOpts::hash(&blurRadiusY, sizeof(blurRadiusY), hash_);
-    useKawase = RSSystemProperties::GetKawaseEnabled();
+    useKawase_ = RSSystemProperties::GetKawaseEnabled();
+    int gaussRadius = static_cast<int>(blurRadiusX);
+    if (gaussRadius == 0) {
+        useKawase_ = false;
+    }
+    if (useKawase_) {
+        kawaseFunc_ = std::make_shared<KawaseBlurFilter>(gaussRadius);
+    }
 }
 #else
 RSBlurFilter::RSBlurFilter(float blurRadiusX, float blurRadiusY): RSSkiaFilter(SkBlurImageFilter::Make(blurRadiusX,
@@ -56,8 +62,6 @@ RSBlurFilter::RSBlurFilter(float blurRadiusX, float blurRadiusY): RSSkiaFilter(S
     hash_ = SkOpts::hash(&type_, sizeof(type_), 0);
     hash_ = SkOpts::hash(&blurRadiusX, sizeof(blurRadiusX), hash_);
     hash_ = SkOpts::hash(&blurRadiusY, sizeof(blurRadiusY), hash_);
-
-    useKawase = RSSystemProperties::GetKawaseEnabled();
 }
 #endif
 #else
@@ -150,18 +154,15 @@ std::shared_ptr<RSFilter> RSBlurFilter::Negate()
 void RSBlurFilter::DrawImageRect(
     SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& src, const SkRect& dst) const
 {
-    if (!useKawase) {
-        auto paint = GetPaint();
+    auto paint = GetPaint();
 #ifdef NEW_SKIA
+    if (useKawase_) {
+        kawaseFunc_->ApplyKawaseBlur(canvas, image, src, dst);
+    } else {
         canvas.drawImageRect(image.get(), src, dst, SkSamplingOptions(), &paint, SkCanvas::kStrict_SrcRectConstraint);
-#else
-        canvas.drawImageRect(image.get(), src, dst, &paint);
-#endif
-        return;
     }
-    KawaseBlur kawase;
-#if defined(NEW_SKIA)
-    kawase.ApplyKawaseBlur(canvas, image, src, dst, static_cast<int>(blurRadiusX_));
+#else
+    canvas.drawImageRect(image.get(), src, dst, &paint);
 #endif
 }
 } // namespace Rosen

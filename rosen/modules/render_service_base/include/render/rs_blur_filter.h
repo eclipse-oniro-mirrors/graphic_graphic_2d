@@ -20,6 +20,7 @@
 
 #include "common/rs_macros.h"
 #include "render/rs_skia_filter.h"
+#include "render/rs_kawase_blur.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -53,7 +54,8 @@ public:
 private:
     float blurRadiusX_;
     float blurRadiusY_;
-    bool useKawase = false;
+    std::shared_ptr<KawaseBlurFilter> kawaseFunc_;
+    bool useKawase_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS
