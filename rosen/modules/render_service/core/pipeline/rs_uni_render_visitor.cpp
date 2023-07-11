@@ -805,6 +805,11 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         }
         RS_TRACE_NAME(node.GetName() + " PreparedNodes: " + std::to_string(preparedCanvasNodeInCurrentSurface_));
         preparedCanvasNodeInCurrentSurface_ = 0;
+#ifndef USE_ROSEN_DRAWING
+        if (hasFilter) {
+            node.UpdateFilterCacheManagerWithCacheRegion();
+        }
+#endif
     }
     if (parentNode != nullptr && node.GetRenderProperties().NeedFilter()) {
         parentNode->SetChildHasFilter(true);
@@ -1052,6 +1057,9 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
         if (curSurfaceNode_) {
             curSurfaceNode_->UpdateChildrenFilterRects(node.GetOldDirtyInSurface());
         }
+#ifndef USE_ROSEN_DRAWING
+        node.UpdateFilterCacheManagerWithCacheRegion();
+#endif
     }
     curAlpha_ = alpha;
     dirtyFlag_ = dirtyFlag;
@@ -1087,6 +1095,9 @@ void RSUniRenderVisitor::PrepareEffectRenderNode(RSEffectRenderNode& node)
     node.UpdateParentChildrenRect(logicParentNode_.lock());
     node.SetEffectRegion(effectRegion_);
 
+#ifndef USE_ROSEN_DRAWING
+    node.UpdateFilterCacheManagerWithCacheRegion();
+#endif
     effectRegion_ = effectRegion;
     curAlpha_ = alpha;
     dirtyFlag_ = dirtyFlag;

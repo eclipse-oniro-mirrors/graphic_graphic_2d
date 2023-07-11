@@ -137,6 +137,7 @@ public:
 
     // update parent's children rect including childRect and itself
     void UpdateParentChildrenRect(std::shared_ptr<RSBaseRenderNode> parentNode) const;
+    void UpdateFilterCacheManagerWithCacheRegion() const;
 
     void SetStaticCached(bool isStaticCached)
     {
@@ -427,6 +428,9 @@ protected:
     bool isRenderUpdateIgnored_ = false;
     bool isShadowValidLastFrame_ = false;
 
+    virtual RectI GetFilterRect() const;
+    void OnTreeStateChanged() override;
+
 private:
     void FallbackAnimationsToRoot();
     void FilterModifiersByPid(pid_t pid);
@@ -492,6 +496,7 @@ private:
     float boundsWidth_ = 0.0f;
     float boundsHeight_ = 0.0f;
     std::unordered_set<RSModifierType> dirtyTypes_;
+    static bool isUniRender_;
 
     friend class RSRenderTransition;
     friend class RSRenderNodeMap;

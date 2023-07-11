@@ -36,7 +36,11 @@ enum class AnimationState {
 
 class RSB_EXPORT RSRenderAnimation : public Parcelable {
 public:
-    virtual ~RSRenderAnimation() = default;
+    RSRenderAnimation(const RSRenderAnimation&) = delete;
+    RSRenderAnimation(const RSRenderAnimation&&) = delete;
+    RSRenderAnimation& operator=(const RSRenderAnimation&) = delete;
+    RSRenderAnimation& operator=(const RSRenderAnimation&&) = delete;
+    ~RSRenderAnimation() override = default;
     AnimationId GetAnimationId() const;
     void Start();
     void Finish();
