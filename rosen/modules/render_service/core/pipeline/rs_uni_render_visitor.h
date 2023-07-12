@@ -390,6 +390,7 @@ private:
     std::optional<SkPath> effectRegion_ = std::nullopt;
     bool curDirty_ = false;
 
+    // calculate preferred fps
     FrameRateRange currSurfaceNodeRSRange_ = {0, 0, 0};
     FrameRateRange currSurfaceNodeUIRange_ = {0, 0, 0};
     FrameRateRange currDisplayNodeRSRange_ = {0, 0, 0};
