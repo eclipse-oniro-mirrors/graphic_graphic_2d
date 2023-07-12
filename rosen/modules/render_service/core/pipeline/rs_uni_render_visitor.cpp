@@ -836,10 +836,14 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         drivenInfo_->isPrepareLeashWinSubTree = false;
     }
 #endif
-    node.SetFrameRateRangeToRS(currSurfaceNodeRSRange_);
-    node.SetFrameRateRangeToUI(currSurfaceNodeUIRange_);
-    currDisplayNodeRSRange_.MixNewRange(currSurfaceNodeRSRange_);
-    currDisplayNodeUIRange_.MixNewRange(currSurfaceNodeUIRange_);
+    if (node.IsAppWindow()) {
+        currSurfaceNodeRSRange_.MixNewRange(node.GetFrameRateRangeFromRSAnimations());
+
+        node.SetFrameRateRangeToRS(currSurfaceNodeRSRange_);
+        node.SetFrameRateRangeToUI(currSurfaceNodeUIRange_);
+        currDisplayNodeRSRange_.MixNewRange(currSurfaceNodeRSRange_);
+        currDisplayNodeUIRange_.MixNewRange(currSurfaceNodeUIRange_);
+    }
     currSurfaceNodeRSRange_.Reset();
     currSurfaceNodeUIRange_.Reset();
 }
