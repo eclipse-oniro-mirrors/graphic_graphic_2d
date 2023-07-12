@@ -389,6 +389,9 @@ private:
     uint32_t captureWindowZorder_ = 0;
     std::optional<SkPath> effectRegion_ = std::nullopt;
     bool curDirty_ = false;
+
+    FrameRateRange currSurfaceNodeRSRange_ = {0, 0, 0};
+    FrameRateRange currSurfaceNodeUIRange_ = {0, 0, 0};
 };
 } // namespace Rosen
 } // namespace OHOS
