@@ -26,20 +26,15 @@ public:
 
     FrameRateRange(int min, int max, int preferred) : min_(min), max_(max), preferred_(preferred) {}
 
-    bool IsBlank()
+    bool IsZero()
     {
         return this->min_ == 0 && this->max_ == 0 && this->preferred_ == 0;
     }
 
     bool IsValid()
     {
-        return this->min_ <= this->preferred_ && this->preferred_ <= this->max_ &&
+        return !this->IsZero() && this->min_ <= this->preferred_ && this->preferred_ <= this->max_ &&
             this->min_ >= 0 && this->max_ <= RANGE_MAX_REFRESHRATE;
-    }
-
-    bool IsValidAndNotBlank()
-    {
-        return this->IsValid() && !this->IsBlank();
     }
 
     void Reset()
@@ -56,7 +51,7 @@ public:
         this->preferred_ = preferred;
     }
 
-    void MixNewRange(FrameRateRange other)
+    void Merge(FrameRateRange other)
     {
         if (this->preferred_ < other.preferred_) {
             this->Set(other.min_, other.max_, other.preferred_);

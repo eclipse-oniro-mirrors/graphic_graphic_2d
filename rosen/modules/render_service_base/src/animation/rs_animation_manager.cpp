@@ -94,8 +94,8 @@ std::pair<bool, bool> RSAnimationManager::Animate(int64_t time, bool nodeIsOnThe
             needRequestNextVsync = animation->IsRunning() || needRequestNextVsync;
 
             auto range = animation->GetFrameRateRange();
-            if (range.IsValidAndNotBlank()) {
-                rsRange_.MixNewRange(range);
+            if (range.IsValid()) {
+                rsRange_.Merge(range);
             }
         }
         return isFinished;

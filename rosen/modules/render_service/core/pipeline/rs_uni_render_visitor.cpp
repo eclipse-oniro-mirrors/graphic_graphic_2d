@@ -413,13 +413,13 @@ void RSUniRenderVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
         unpairedTransitionNodes_.clear();
     }
 
-    if (currDisplayNodeRSRange_.IsValidAndNotBlank()) {
+    if (currDisplayNodeRSRange_.IsValid()) {
         node.SetFrameRateRangeToRS(currDisplayNodeRSRange_);
         ROSEN_LOGI("RSUniRenderVisitor::PrepareDisplayRenderNode current \
             FrameRateRange(RS) is [%d, %d, %d]", currDisplayNodeRSRange_.min_,
             currDisplayNodeRSRange_.max_, currDisplayNodeRSRange_.preferred_);
     }
-    if (currDisplayNodeUIRange_.IsValidAndNotBlank()) {
+    if (currDisplayNodeUIRange_.IsValid()) {
         node.SetFrameRateRangeToUI(currDisplayNodeUIRange_);
         ROSEN_LOGI("RSUniRenderVisitor::PrepareDisplayRenderNode current \
             FrameRateRange(UI) is [%d, %d, %d]", currDisplayNodeUIRange_.min_,
@@ -845,11 +845,11 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
 #endif
 
-    currSurfaceNodeRSRange_.MixNewRange(node.GetFrameRateRangeFromRSAnimations());
+    currSurfaceNodeRSRange_.Merge(node.GetFrameRateRangeFromRSAnimations());
     node.SetFrameRateRangeToRS(currSurfaceNodeRSRange_);
     node.SetFrameRateRangeToUI(currSurfaceNodeUIRange_);
-    currDisplayNodeRSRange_.MixNewRange(currSurfaceNodeRSRange_);
-    currDisplayNodeUIRange_.MixNewRange(currSurfaceNodeUIRange_);
+    currDisplayNodeRSRange_.Merge(currSurfaceNodeRSRange_);
+    currDisplayNodeUIRange_.Merge(currSurfaceNodeUIRange_);
 
     auto nodeParent = node.GetParent().lock();
     if (nodeParent && nodeParent->ReinterpretCastTo<RSDisplayRenderNode>()) {
@@ -1071,13 +1071,13 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
     node.UpdateChildrenOutOfRectFlag(false);
 
     auto currRSRange = node.GetFrameRateRangeFromRSAnimations();
-    if (!currRSRange.IsValidAndNotBlank()) {
-        currSurfaceNodeRSRange_.MixNewRange(currRSRange);
+    if (!currRSRange.IsValid()) {
+        currSurfaceNodeRSRange_.Merge(currRSRange);
     }
 
     auto currUIRange = node.GetFrameRateRangeFromUI();
-    if (currUIRange.IsValidAndNotBlank()) {
-        currSurfaceNodeUIRange_.MixNewRange(currUIRange);
+    if (currUIRange.IsValid()) {
+        currSurfaceNodeUIRange_.Merge(currUIRange);
     }
 
     PrepareBaseRenderNode(node);

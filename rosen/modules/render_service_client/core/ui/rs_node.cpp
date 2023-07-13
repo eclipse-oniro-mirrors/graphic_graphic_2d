@@ -1283,7 +1283,7 @@ void RSNode::SetColorBlend(uint32_t colorValue)
 
 void RSNode::UpdateFrameRateRange(FrameRateRange range)
 {
-    if (range.IsValidAndNotBlank()) {
+    if (range.IsValid()) {
         return;
     }
     if (range.preferred_ > nodeRange_.preferred_) {
