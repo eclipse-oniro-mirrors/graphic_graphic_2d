@@ -15,6 +15,7 @@
 
 #include "property/rs_filter_cache_manager.h"
 
+#ifndef USE_ROSEN_DRAWING
 #include "rs_trace.h"
 
 #include "platform/common/rs_log.h"
@@ -305,3 +306,4 @@ void RSFilterCacheManager::ClipVisibleRect(RSPaintFilterCanvas& canvas) const
 }
 } // namespace Rosen
 } // namespace OHOS
+#endif

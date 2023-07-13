@@ -48,14 +48,21 @@ public:
     std::shared_ptr<RSFilter> Sub(const std::shared_ptr<RSFilter>& rhs) override;
     std::shared_ptr<RSFilter> Multiply(float rhs) override;
     std::shared_ptr<RSFilter> Negate() override;
+#ifndef USE_ROSEN_DRAWING
     void DrawImageRect(
         SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& src, const SkRect& dst) const override;
+#else
+    void DrawImageRect(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image>& image,
+        const Drawing::Rect& src, const Drawing::Rect& dst) const override;
+#endif
 
 private:
     float blurRadiusX_;
     float blurRadiusY_;
+#ifndef USE_ROSEN_DRAWING
     std::shared_ptr<KawaseBlurFilter> kawaseFunc_;
     bool useKawase_ = false;
+#endif
 };
 } // namespace Rosen
 } // namespace OHOS

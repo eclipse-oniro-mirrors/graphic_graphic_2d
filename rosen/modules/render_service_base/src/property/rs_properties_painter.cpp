@@ -68,8 +68,10 @@ constexpr float MAX_TRANS_RATIO = 0.95f;
 constexpr float MIN_SPOT_RATIO = 1.0f;
 constexpr float MAX_SPOT_RATIO = 1.95f;
 constexpr float MAX_AMBIENT_RADIUS = 150.0f;
+#ifndef USE_ROSEN_DRAWING
 constexpr static float FLOAT_ZERO_THRESHOLD = 0.001f;
 constexpr static uint8_t DIRECTION_NUM = 4;
+#endif
 } // namespace
 
 #ifndef USE_ROSEN_DRAWING
@@ -440,7 +442,8 @@ void RSPropertiesPainter::GetShadowDirtyRect(RectI& dirtyShadow, const RSPropert
     dirtyShadow.height_ = shadowRect.height();
 }
 #else
-void RSPropertiesPainter::GetShadowDirtyRect(RectI& dirtyShadow, const RSProperties& properties, const RRect* rrect)
+void RSPropertiesPainter::GetShadowDirtyRect(RectI& dirtyShadow, const RSProperties& properties,
+    const RRect* rrect, bool isAbsCoordinate)
 {
     // [Planning]: After Skia being updated, we should directly call SkShadowUtils::GetLocalBounds here.
     if (!properties.IsShadowValid()) {
@@ -959,7 +962,9 @@ uint8_t RSPropertiesPainter::CalcDirectionBias(const SkMatrix& mat)
     return directionBias;
 }
 #endif
+#endif
 
+#ifndef USE_ROSEN_DRAWING
 void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     const RSProperties& properties, RSPaintFilterCanvas& canvas, const std::optional<SkRect>& rect)
 {
@@ -1001,7 +1006,15 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     DrawVerticalLinearGradientBlur(skSurface, canvas, radius, alphaGradientShader, clipIPadding);
 #endif
 }
+#else
+void RSPropertiesPainter::DrawLinearGradientBlurFilter(
+    const RSProperties& properties, RSPaintFilterCanvas& canvas, const std::optional<Drawing::Rect>& rect)
+{
+}
+#endif
 
+
+#ifndef USE_ROSEN_DRAWING
 void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas,
     FilterType filterType, const std::optional<SkRect>& rect)
 {
@@ -1066,58 +1079,74 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
 }
 #else
 void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas,
-    std::shared_ptr<RSDrawingFilter>& filter, FilterType filterType, const std::unique_ptr<Drawing::Rect>& rect)
+    FilterType filterType, const std::optional<Drawing::Rect>& rect)
 {
+    auto& RSFilter =
+        (filterType == FilterType::BACKGROUND_FILTER) ? properties.GetBackgroundFilter() : properties.GetFilter();
+    if (RSFilter == nullptr || !RSFilter->IsValid()) {
+        return;
+    }
+    RS_TRACE_NAME("DrawFilter " + RSFilter->GetDescription());
     g_blurCnt++;
     Drawing::AutoCanvasRestore acr(canvas, true);
-    if (rect != nullptr) {
+    if (rect.has_value()) {
         canvas.ClipRect((*rect), Drawing::ClipOp::INTERSECT, true);
     } else if (properties.GetClipBounds() != nullptr) {
         canvas.ClipPath(properties.GetClipBounds()->GetDrawingPath(), Drawing::ClipOp::INTERSECT, true);
     } else {
         canvas.ClipRoundRect(RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::INTERSECT, true);
     }
-    auto brush = filter->GetBrush();
+    auto filter = std::static_pointer_cast<RSDrawingFilter>(RSFilter);
+    auto surface = canvas.GetSurface();
     if (surface == nullptr) {
         ROSEN_LOGD("RSPropertiesPainter::DrawFilter surface null");
+        auto brush = filter->GetBrush();
         Drawing::SaveLayerOps slr(nullptr, &brush, Drawing::SaveLayerOps::Flags::INIT_WITH_PREVIOUS);
         canvas.SaveLayer(slr);
         filter->PostProcess(canvas);
         return;
     }
 
-    // canvas draw by snapshot instead of SaveLayer, since the blur layer moves while using saveLayer
-    auto imageSnapshot = surface->GetImageSnapshot(canvas.GetDeviceClipBounds());
+    // for foreground filter, when do online opacity, rendering result already applied opacity,
+    // so drawImage should not apply opacity again
+    RSAutoCanvasRestore autoCanvasRestore(&canvas,
+        filterType == FilterType::FOREGROUND_FILTER ? RSAutoCanvasRestore::kAlpha : RSAutoCanvasRestore::kNone);
+    if (filterType == FilterType::FOREGROUND_FILTER) {
+        canvas.SetAlpha(1.0);
+    }
+
+    auto clipIBounds = canvas.GetDeviceClipBounds();
+    auto clipIPadding = Drawing::RectI(clipIBounds.GetLeft() + 1, clipIBounds.GetTop() + 1,
+        clipIBounds.GetRight() - 1, clipIBounds.GetBottom() - 1);
+    auto imageSnapshot = surface->GetImageSnapshot(clipIPadding);
     if (imageSnapshot == nullptr) {
         ROSEN_LOGE("RSPropertiesPainter::DrawFilter image null");
         return;
     }
-
     filter->PreProcess(imageSnapshot);
-    auto iRect = canvas.GetDeviceClipBounds();
-    auto clipBounds = Drawing::Rect(iRect.GetLeft(), iRect.GetTop(), iRect.GetRight(), iRect.GetBottom());
     canvas.ResetMatrix();
     auto visibleRect = canvas.GetVisibleRect();
-    Drawing::SamplingOptions samplingOptions;
-    canvas.AttachBrush(brush);
-    if (visibleRect.Intersect(clipBounds)) {
-        // the snapshot only contains the clip region, so we need to offset the src rect
-        Drawing::Rect srcRect = visibleRect;
-        srcRect.Offset(-clipBounds.GetLeft(), -clipBounds.GetTop());
-        canvas.DrawImageRect(*imageSnapshot,
-            srcRect, visibleRect, samplingOptions, Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
+    auto visibleIRect = Drawing::RectI(visibleRect.GetLeft(), visibleRect.GetTop(),
+        visibleRect.GetRight(), visibleRect.GetBottom());
+    if (visibleIRect.Intersect(clipIBounds)) {
+        auto clipRect = Drawing::Rect(visibleIRect.GetLeft(), visibleIRect.GetTop(),
+            visibleIRect.GetRight(), visibleIRect.GetBottom());
+        canvas.ClipRect(clipRect, Drawing::ClipOp::INTERSECT, false);
+        auto srcRect = Drawing::Rect(visibleIRect.GetLeft() + 1, visibleIRect.GetTop() + 1,
+            visibleIRect.GetRight() - 1, visibleIRect.GetBottom() - 1);
+        srcRect.Offset(-clipIPadding.GetLeft(), -clipIPadding.GetTop());
+        filter->DrawImageRect(canvas, imageSnapshot, srcRect, clipRect);
     } else {
-        // the snapshot only contains the clip region, so we need to offset the src rect
-        Drawing::Rect srcRect = visibleRect;
-        srcRect.Offset(-clipBounds.GetLeft(), -clipBounds.GetTop());
-        canvas.DrawImageRect(*imageSnapshot,
-            srcRect, clipBounds, samplingOptions, Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
+        auto srcRect = Drawing::Rect(0, 0, clipIPadding.GetWidth(), clipIPadding.GetHeight());
+        auto dstRect = Drawing::Rect(clipIBounds.GetLeft(), clipIBounds.GetTop(),
+            clipIBounds.GetRight(), clipIBounds.GetBottom());
+        filter->DrawImageRect(canvas, imageSnapshot, srcRect, dstRect);
     }
-    canvas.DetachBrush();
     filter->PostProcess(canvas);
 }
 #endif
 
+#ifndef USE_ROSEN_DRAWING
 void RSPropertiesPainter::DrawBackgroundEffect(
     const RSProperties& properties, RSPaintFilterCanvas& canvas, const SkIRect& rect)
 {
@@ -1175,9 +1204,16 @@ void RSPropertiesPainter::DrawBackgroundEffect(
     CachedEffectData data = { imageCache, imageRect };
     canvas.SetEffectData(data);
 }
+#else
+void RSPropertiesPainter::DrawBackgroundEffect(
+    const RSProperties& properties, RSPaintFilterCanvas& canvas, const Drawing::RectI& rect)
+{
+}
+#endif
 
 void RSPropertiesPainter::ApplyBackgroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas)
 {
+#ifndef USE_ROSEN_DRAWING
     RS_TRACE_NAME("ApplyBackgroundEffect");
     SkAutoCanvasRestore acr(&canvas, true);
     if (properties.GetClipBounds() != nullptr) {
@@ -1212,10 +1248,12 @@ void RSPropertiesPainter::ApplyBackgroundEffect(const RSProperties& properties, 
     canvas.drawImageRect(bgImage, SkRect::Make(clipIPadding.makeOffset(-imageIRect.left(), -imageIRect.top())),
         SkRect::Make(clipIPadding), &defaultPaint);
 #endif
+#endif
 }
 
 void RSPropertiesPainter::DrawForegroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas)
 {
+#ifndef USE_ROSEN_DRAWING
     const auto& data = canvas.GetEffectData();
     if (data.childrenPath_.isEmpty()) {
         return;
@@ -1234,6 +1272,7 @@ void RSPropertiesPainter::DrawForegroundEffect(const RSProperties& properties, R
     auto pathBounds = data.childrenPath_.getBounds();
     SkCanvas::SaveLayerRec slr(&pathBounds, &paint, SkCanvas::kInitWithPrevious_SaveLayerFlag);
     canvas.saveLayer(slr);
+#endif
 }
 
 static Vector4f GetStretchSize(const RSProperties& properties)
@@ -1962,6 +2001,7 @@ void RSPropertiesPainter::DrawColorFilter(const RSProperties& properties, RSPain
     if (colorFilter == nullptr) {
         return;
     }
+#ifndef USE_ROSEN_DRAWING
     SkAutoCanvasRestore acr(&canvas, true);
     canvas.clipRRect(RRect2SkRRect(properties.GetRRect()), true);
     SkPaint paint;
@@ -1969,10 +2009,12 @@ void RSPropertiesPainter::DrawColorFilter(const RSProperties& properties, RSPain
     paint.setColorFilter(colorFilter);
     SkCanvas::SaveLayerRec slr(nullptr, &paint, SkCanvas::kInitWithPrevious_SaveLayerFlag);
     canvas.saveLayer(slr);
+#endif
 }
 
 void RSPropertiesPainter::DrawLightUpEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas)
 {
+#ifndef USE_ROSEN_DRAWING
 #ifdef NEW_SKIA
     SkSurface* skSurface = canvas.GetSurface();
     if (skSurface == nullptr) {
@@ -2000,8 +2042,10 @@ void RSPropertiesPainter::DrawLightUpEffect(const RSProperties& properties, RSPa
     canvas.translate(clipBounds.left(), clipBounds.top());
     canvas.drawPaint(paint);
 #endif
+#endif
 }
 
+#ifndef USE_ROSEN_DRAWING
 #ifdef NEW_SKIA
 sk_sp<SkShader> RSPropertiesPainter::MakeLightUpEffectShader(float lightUpDeg, sk_sp<SkShader> imageShader)
 {
@@ -2037,6 +2081,7 @@ sk_sp<SkShader> RSPropertiesPainter::MakeLightUpEffectShader(float lightUpDeg, s
     return effect->makeShader(SkData::MakeWithCopy(
         &lightUpDeg, sizeof(lightUpDeg)), children, childCount, nullptr, false);
 }
+#endif
 #endif
 } // namespace Rosen
 } // namespace OHOS

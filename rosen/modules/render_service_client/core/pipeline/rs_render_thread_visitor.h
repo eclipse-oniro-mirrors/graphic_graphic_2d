@@ -101,10 +101,11 @@ private:
     std::vector<NodeId> childSurfaceNodeIds_;
 #ifndef USE_ROSEN_DRAWING
     SkMatrix parentSurfaceNodeMatrix_;
+    std::optional<SkPath> effectRegion_ = std::nullopt;
 #else
     Drawing::Matrix parentSurfaceNodeMatrix_;
+    std::optional<Drawing::Path> effectRegion_ = std::nullopt;
 #endif // USE_ROSEN_DRAWING
-    std::optional<SkPath> effectRegion_ = std::nullopt;
 
     static void SendCommandFromRT(std::unique_ptr<RSCommand>& command, NodeId nodeId, FollowType followType);
     static bool IsValidRootRenderNode(RSRootRenderNode& node);
