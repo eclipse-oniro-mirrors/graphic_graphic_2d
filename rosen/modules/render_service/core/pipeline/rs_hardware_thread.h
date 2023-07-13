@@ -62,6 +62,9 @@ private:
     std::shared_ptr<RSBaseRenderEngine> uniRenderEngine_;
     UniFallbackCallback redrawCb_;
     std::mutex mutex_;
+
+    HgmRefreshRates hgmRefreshRates_;
+    HgmRefreshRateModes hgmRefreshRateModes_;
 };
 }
 #endif // RS_HARDWARE_THREAD_H

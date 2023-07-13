@@ -69,6 +69,13 @@ int32_t HgmScreen::SetRateAndResolution(int32_t sceneId, uint32_t rate, int32_t 
     return modeIdToApply;
 }
 
+int32_t HgmScreen::SetRefreshRateRange(uint32_t minRate, uint32_t maxRate)
+{
+    minRefreshRateRange_ = minRate;
+    maxRefreshRateRange_ = maxRate;
+    return EXEC_SUCCESS;
+}
+
 int32_t HgmScreen::AddScreenModeInfo(int32_t width, int32_t height, uint32_t rate, int32_t modeId)
 {
     if (supportedModeIds_.find(modeId) == supportedModeIds_.end()) {
@@ -116,19 +123,27 @@ std::shared_ptr<HgmScreen::ScreenProfile> HgmScreen::GetModeViaId(int32_t id) co
 
 bool HgmScreen::IfSwitchToRate(int32_t screenId, uint32_t rate) const
 {
-    // decision fabricating system to be developped, now it approves as long as we have different rates
+    // decides if a refreshrate switch will be accepted or not
     auto profilePtr = GetModeViaId(activeModeId_);
+    bool ifSwitch = false;
+
     if (!profilePtr) {
-        return false;
+        return ifSwitch;
     }
 
     if (rate == profilePtr->GetRate() || screenId < 0) {
         HGM_LOGI("HgmScreen Set framerate to %{public}u is rejected!!!", rate);
-        return false;
+        return ifSwitch;
     }
 
+    if (rate < minRefreshRateRange_ || rate > maxRefreshRateRange_) {
+        HGM_LOGI("HgmScreen Set framerate to %{public}u is rejected, rate does not belong to range", rate);
+        return ifSwitch;
+    }
+
+    ifSwitch = true;
     HGM_LOGI("HgmScreen Set framerate to %{public}u is accepted", rate);
-    return true;
+    return ifSwitch;
 }
 
 int32_t HgmScreen::GetModeIdViaRate(uint32_t rate) const

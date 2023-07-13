@@ -220,6 +220,18 @@ ParallelRenderingType RSSystemProperties::GetParallelRenderingEnabled()
         std::atoi((system::GetParameter("rosen.parallelrender.enabled", "0")).c_str()));
 }
 
+HgmRefreshRates RSSystemProperties::GetHgmRefreshRatesEnabled()
+{
+    return static_cast<HgmRefreshRates>(
+        std::atoi((system::GetParameter("rosen.sethgmrefreshrate.enabled", "0")).c_str()));
+}
+
+HgmRefreshRateModes RSSystemProperties::GetHgmRefreshRateModesEnabled()
+{
+    return static_cast<HgmRefreshRateModes>(
+        std::atoi((system::GetParameter("rosen.sethgmrefreshratemode.enabled", "0")).c_str()));
+}
+
 bool RSSystemProperties::GetColdStartThreadEnabled()
 {
     return std::atoi((system::GetParameter("rosen.coldstartthread.enabled", "0")).c_str()) != 0;
