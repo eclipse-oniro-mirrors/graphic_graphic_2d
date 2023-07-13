@@ -35,6 +35,7 @@
 #include "memory/rs_memory_track.h"
 #include "common/rs_common_def.h"
 #include "hgm_core.h"
+#include "platform/ohos/rs_jank_stats.h"
 #include "platform/ohos/overdraw/rs_overdraw_controller.h"
 #include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_base_render_util.h"
@@ -45,7 +46,6 @@
 #include "pipeline/rs_render_service_visitor.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_hardware_thread.h"
-#include "pipeline/rs_jank_stats.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_unmarshal_thread.h"
 #include "pipeline/rs_uni_render_engine.h"
@@ -530,6 +530,9 @@ void RSMainThread::ProcessCommandForUniRender()
                 }
                 auto curIndex = (*iter)->GetIndex();
                 if (curIndex == lastIndex + 1) {
+                    if ((*iter)->GetTimestamp() >= timestamp_) {
+                        break;
+                    }
                     ++lastIndex;
                     transactionFlags += " [" + std::to_string(pid) + "," + std::to_string(curIndex) + "]";
                 } else {

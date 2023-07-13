@@ -245,7 +245,7 @@ void RSUniRenderVisitor::UpdateCacheChangeStatus(RSBaseRenderNode& node)
     if (targetNode->GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE) {
         markedCachedNodes_++;
         // For rootnode, init drawing changes only if there is any content dirty
-        isDrawingCacheChanged_ = targetNode->IsContentDirty();
+        isDrawingCacheChanged_ = curContentDirty_;
         RS_TRACE_NAME_FMT("RSUniRenderVisitor::UpdateCacheChangeStatus: cachable node %" PRIu64 " markedNum: %d, "
             "contentDirty(cacheChanged): %d", targetNode->GetId(), static_cast<int>(markedCachedNodes_),
             static_cast<int>(isDrawingCacheChanged_));
@@ -805,6 +805,11 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         }
         RS_TRACE_NAME(node.GetName() + " PreparedNodes: " + std::to_string(preparedCanvasNodeInCurrentSurface_));
         preparedCanvasNodeInCurrentSurface_ = 0;
+#ifndef USE_ROSEN_DRAWING
+        if (hasFilter) {
+            node.UpdateFilterCacheManagerWithCacheRegion();
+        }
+#endif
     }
     if (parentNode != nullptr && node.GetRenderProperties().NeedFilter()) {
         parentNode->SetChildHasFilter(true);
@@ -948,6 +953,7 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
 {
     preparedCanvasNodeInCurrentSurface_++;
     node.ApplyModifiers();
+    curContentDirty_ = node.IsContentDirty();
     bool dirtyFlag = dirtyFlag_;
     RectI prepareClipRect = prepareClipRect_;
 
@@ -1052,6 +1058,9 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
         if (curSurfaceNode_) {
             curSurfaceNode_->UpdateChildrenFilterRects(node.GetOldDirtyInSurface());
         }
+#ifndef USE_ROSEN_DRAWING
+        node.UpdateFilterCacheManagerWithCacheRegion();
+#endif
     }
     curAlpha_ = alpha;
     dirtyFlag_ = dirtyFlag;
@@ -1087,6 +1096,9 @@ void RSUniRenderVisitor::PrepareEffectRenderNode(RSEffectRenderNode& node)
     node.UpdateParentChildrenRect(logicParentNode_.lock());
     node.SetEffectRegion(effectRegion_);
 
+#ifndef USE_ROSEN_DRAWING
+    node.UpdateFilterCacheManagerWithCacheRegion();
+#endif
     effectRegion_ = effectRegion;
     curAlpha_ = alpha;
     dirtyFlag_ = dirtyFlag;
