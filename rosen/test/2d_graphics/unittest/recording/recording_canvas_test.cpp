@@ -41,7 +41,7 @@ void RecordingCanvasTest::TearDown() {}
  * @tc.name: DrawPoint001
  * @tc.desc: Test the playback of the DrawPoint function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawPoint001, TestSize.Level1)
 {
@@ -59,7 +59,7 @@ HWTEST_F(RecordingCanvasTest, DrawPoint001, TestSize.Level1)
  * @tc.name: DrawLine001
  * @tc.desc: Test the playback of the DrawLine function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawLine001, TestSize.Level1)
 {
@@ -78,7 +78,7 @@ HWTEST_F(RecordingCanvasTest, DrawLine001, TestSize.Level1)
  * @tc.name: DrawRect001
  * @tc.desc: Test the playback of the DrawRect function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawRect001, TestSize.Level1)
 {
@@ -96,7 +96,7 @@ HWTEST_F(RecordingCanvasTest, DrawRect001, TestSize.Level1)
  * @tc.name: DrawRoundRect001
  * @tc.desc: Test the playback of the DrawRoundRect function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawRoundRect001, TestSize.Level1)
 {
@@ -115,7 +115,7 @@ HWTEST_F(RecordingCanvasTest, DrawRoundRect001, TestSize.Level1)
  * @tc.name: DrawNestedRoundRect001
  * @tc.desc: Test the playback of the DrawNestedRoundRect function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawNestedRoundRect001, TestSize.Level1)
 {
@@ -136,7 +136,7 @@ HWTEST_F(RecordingCanvasTest, DrawNestedRoundRect001, TestSize.Level1)
  * @tc.name: DrawArc001
  * @tc.desc: Test the playback of the DrawArc function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawArc001, TestSize.Level1)
 {
@@ -154,7 +154,7 @@ HWTEST_F(RecordingCanvasTest, DrawArc001, TestSize.Level1)
  * @tc.name: DrawPie001
  * @tc.desc: Test the playback of the DrawPie function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawPie001, TestSize.Level1)
 {
@@ -172,7 +172,7 @@ HWTEST_F(RecordingCanvasTest, DrawPie001, TestSize.Level1)
  * @tc.name: DrawOval001
  * @tc.desc: Test the playback of the DrawOval function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawOval001, TestSize.Level1)
 {
@@ -190,7 +190,7 @@ HWTEST_F(RecordingCanvasTest, DrawOval001, TestSize.Level1)
  * @tc.name: DrawCircle001
  * @tc.desc: Test the playback of the DrawCircle function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawCircle001, TestSize.Level1)
 {
@@ -208,7 +208,7 @@ HWTEST_F(RecordingCanvasTest, DrawCircle001, TestSize.Level1)
  * @tc.name: DrawPath001
  * @tc.desc: Test the playback of the DrawPath function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawPath001, TestSize.Level1)
 {
@@ -226,7 +226,7 @@ HWTEST_F(RecordingCanvasTest, DrawPath001, TestSize.Level1)
  * @tc.name: DrawBackground001
  * @tc.desc: Test the playback of the DrawBackground function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawBackground001, TestSize.Level1)
 {
@@ -244,7 +244,7 @@ HWTEST_F(RecordingCanvasTest, DrawBackground001, TestSize.Level1)
  * @tc.name: DrawShadow001
  * @tc.desc: Test the playback of the DrawShadow function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawShadow001, TestSize.Level1)
 {
@@ -265,7 +265,7 @@ HWTEST_F(RecordingCanvasTest, DrawShadow001, TestSize.Level1)
  * @tc.name: DrawRegion001
  * @tc.desc: Test the playback of the DrawRegion function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawRegion001, TestSize.Level1)
 {
@@ -283,7 +283,7 @@ HWTEST_F(RecordingCanvasTest, DrawRegion001, TestSize.Level1)
  * @tc.name: DrawBitmap001
  * @tc.desc: Test the playback of the DrawBitmap function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawBitmap001, TestSize.Level1)
 {
@@ -303,7 +303,7 @@ HWTEST_F(RecordingCanvasTest, DrawBitmap001, TestSize.Level1)
  * @tc.name: DrawImage001
  * @tc.desc: Test the playback of the DrawImage function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawImage001, TestSize.Level1)
 {
@@ -322,7 +322,7 @@ HWTEST_F(RecordingCanvasTest, DrawImage001, TestSize.Level1)
  * @tc.name: DrawImageRect001
  * @tc.desc: Test the playback of the DrawImageRect function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawImageRect001, TestSize.Level1)
 {
@@ -342,7 +342,7 @@ HWTEST_F(RecordingCanvasTest, DrawImageRect001, TestSize.Level1)
  * @tc.name: DrawPicture001
  * @tc.desc: Test the playback of the DrawPicture function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DrawPicture001, TestSize.Level1)
 {
@@ -360,7 +360,7 @@ HWTEST_F(RecordingCanvasTest, DrawPicture001, TestSize.Level1)
  * @tc.name: ClipRect001
  * @tc.desc: Test the playback of the ClipRect function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, ClipRect001, TestSize.Level1)
 {
@@ -378,7 +378,7 @@ HWTEST_F(RecordingCanvasTest, ClipRect001, TestSize.Level1)
  * @tc.name: ClipRoundRect001
  * @tc.desc: Test the playback of the ClipRoundRect function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, ClipRoundRect001, TestSize.Level1)
 {
@@ -397,7 +397,7 @@ HWTEST_F(RecordingCanvasTest, ClipRoundRect001, TestSize.Level1)
  * @tc.name: ClipPath001
  * @tc.desc: Test the playback of the ClipPath function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, ClipPath001, TestSize.Level1)
 {
@@ -415,7 +415,7 @@ HWTEST_F(RecordingCanvasTest, ClipPath001, TestSize.Level1)
  * @tc.name: SetMatrix001
  * @tc.desc: Test the playback of the SetMatrix function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, SetMatrix001, TestSize.Level1)
 {
@@ -433,7 +433,7 @@ HWTEST_F(RecordingCanvasTest, SetMatrix001, TestSize.Level1)
  * @tc.name: ResetMatrix001
  * @tc.desc: Test the playback of the ResetMatrix function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, ResetMatrix001, TestSize.Level1)
 {
@@ -452,7 +452,7 @@ HWTEST_F(RecordingCanvasTest, ResetMatrix001, TestSize.Level1)
  * @tc.name: ConcatMatrix001
  * @tc.desc: Test the playback of the ConcatMatrix function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, ConcatMatrix001, TestSize.Level1)
 {
@@ -470,7 +470,7 @@ HWTEST_F(RecordingCanvasTest, ConcatMatrix001, TestSize.Level1)
  * @tc.name: Translate001
  * @tc.desc: Test the playback of the Translate function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, Translate001, TestSize.Level1)
 {
@@ -487,7 +487,7 @@ HWTEST_F(RecordingCanvasTest, Translate001, TestSize.Level1)
  * @tc.name: Scale001
  * @tc.desc: Test the playback of the Scale function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, Scale001, TestSize.Level1)
 {
@@ -504,7 +504,7 @@ HWTEST_F(RecordingCanvasTest, Scale001, TestSize.Level1)
  * @tc.name: Rotate002
  * @tc.desc: Test the playback of the Rotate function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, Rotate002, TestSize.Level1)
 {
@@ -521,7 +521,7 @@ HWTEST_F(RecordingCanvasTest, Rotate002, TestSize.Level1)
  * @tc.name: Shear001
  * @tc.desc: Test the playback of the Shear function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, Shear001, TestSize.Level1)
 {
@@ -538,7 +538,7 @@ HWTEST_F(RecordingCanvasTest, Shear001, TestSize.Level1)
  * @tc.name: Flush001
  * @tc.desc: Test the playback of the Flush function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, Flush001, TestSize.Level1)
 {
@@ -555,7 +555,7 @@ HWTEST_F(RecordingCanvasTest, Flush001, TestSize.Level1)
  * @tc.name: Clear001
  * @tc.desc: Test the playback of the Clear function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, Clear001, TestSize.Level1)
 {
@@ -572,7 +572,7 @@ HWTEST_F(RecordingCanvasTest, Clear001, TestSize.Level1)
  * @tc.name: Save001
  * @tc.desc: Test the playback of the Save function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, Save001, TestSize.Level1)
 {
@@ -589,7 +589,7 @@ HWTEST_F(RecordingCanvasTest, Save001, TestSize.Level1)
  * @tc.name: SaveLayer001
  * @tc.desc: Test the playback of the SaveLayer function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, SaveLayer001, TestSize.Level1)
 {
@@ -610,7 +610,7 @@ HWTEST_F(RecordingCanvasTest, SaveLayer001, TestSize.Level1)
  * @tc.name: Restore001
  * @tc.desc: Test the playback of the Restore function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, Restore001, TestSize.Level1)
 {
@@ -627,7 +627,7 @@ HWTEST_F(RecordingCanvasTest, Restore001, TestSize.Level1)
  * @tc.name: AttachPen001
  * @tc.desc: Test the playback of the AttachPen function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, AttachPen001, TestSize.Level1)
 {
@@ -645,7 +645,7 @@ HWTEST_F(RecordingCanvasTest, AttachPen001, TestSize.Level1)
  * @tc.name: DetachPen001
  * @tc.desc: Test the playback of the DetachPen function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DetachPen001, TestSize.Level1)
 {
@@ -662,7 +662,7 @@ HWTEST_F(RecordingCanvasTest, DetachPen001, TestSize.Level1)
  * @tc.name: AttachBrush001
  * @tc.desc: Test the playback of the AttachBrush function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, AttachBrush001, TestSize.Level1)
 {
@@ -680,7 +680,7 @@ HWTEST_F(RecordingCanvasTest, AttachBrush001, TestSize.Level1)
  * @tc.name: DetachBrush001
  * @tc.desc: Test the playback of the DetachBrush function.
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: I7K0BS
  */
 HWTEST_F(RecordingCanvasTest, DetachBrush001, TestSize.Level1)
 {
