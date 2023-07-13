@@ -19,9 +19,11 @@
 #include <string>
 #include "GLES3/gl3.h"
 #include "include/core/SkCanvas.h"
+#include "memory/rs_tag_tracker.h"
 #include "rs_trace.h"
 #include "pipeline/parallel_render/rs_sub_thread_manager.h"
 #include "pipeline/rs_main_thread.h"
+#include "memory/rs_memory_manager.h"
 #include "pipeline/rs_uni_render_util.h"
 #include "pipeline/rs_uni_render_visitor.h"
 #include "pipeline/rs_surface_render_node.h"
@@ -74,6 +76,20 @@ void RSSubThread::PostTask(const std::function<void()>& task)
     if (handler_) {
         handler_->PostTask(task, AppExecFwk::EventQueue::Priority::IMMEDIATE);
     }
+}
+
+void RSSubThread::PostSyncTask(const std::function<void()>& task)
+{
+    if (handler_) {
+        handler_->PostSyncTask(task, AppExecFwk::EventQueue::Priority::IMMEDIATE);
+    }
+}
+
+void RSSubThread::DumpMem(DfxString& log)
+{
+    PostSyncTask([&log, this]() {
+        MemoryManager::DumpDrawingGpuMemory(log, grContext_.get());
+    });
 }
 
 void RSSubThread::CreateShareEglContext()
@@ -152,9 +168,11 @@ void RSSubThread::RenderCache(const std::shared_ptr<RSSuperRenderTask>& threadTa
                 std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
             surfaceNodePtr->InitCacheSurface(grContext_.get(), func, threadIndex_);
         }
-
+        RSTagTracker nodeProcessTracker(grContext_.get(), surfaceNodePtr->GetId(),
+            RSTagTracker::TAGTYPE::TAG_SUB_THREAD);
         bool needNotify = !surfaceNodePtr->HasCachedTexture();
         node->Process(visitor);
+        nodeProcessTracker.SetTagEnd();
 #ifndef NEW_SKIA
         auto skCanvas = surfaceNodePtr->GetCacheSurface() ? surfaceNodePtr->GetCacheSurface()->getCanvas() : nullptr;
         if (skCanvas) {
@@ -166,7 +184,10 @@ void RSSubThread::RenderCache(const std::shared_ptr<RSSuperRenderTask>& threadTa
 #else
         if (surfaceNodePtr && surfaceNodePtr->GetCacheSurface()) {
             RS_TRACE_NAME_FMT("Render cache skSurface flush and submit");
+            RSTagTracker nodeFlushTracker(grContext_.get(), surfaceNodePtr->GetId(),
+                RSTagTracker::TAGTYPE::TAG_SUB_THREAD);
             surfaceNodePtr->GetCacheSurface()->flushAndSubmit(true);
+            nodeFlushTracker.SetTagEnd();
         }
 #endif
         surfaceNodePtr->UpdateBackendTexture();

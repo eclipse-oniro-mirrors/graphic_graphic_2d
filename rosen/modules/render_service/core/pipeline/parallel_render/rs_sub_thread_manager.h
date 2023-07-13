@@ -38,6 +38,7 @@ public:
     void SubmitSubThreadTask(const std::shared_ptr<RSDisplayRenderNode>& node,
         const std::list<std::shared_ptr<RSSurfaceRenderNode>>& subThreadNodes);
     void ResetSubThreadGrContext();
+    void DumpMem(DfxString& log);
 private:
     RSSubThreadManager() = default;
     ~RSSubThreadManager() = default;

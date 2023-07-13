@@ -66,6 +66,9 @@ std::string RSTagTracker::TagType2String(TAGTYPE type)
         case TAG_COLD_START :
             tagType = "cold_start";
             break;
+        case TAG_SUB_THREAD :
+            tagType = "sub_thread";
+            break;
         case TAG_ACQUIRE_SURFACE :
             tagType = "acquire_surface";
             break;
