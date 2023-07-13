@@ -161,9 +161,9 @@ void TextSpan::Paint(TexgineCanvas &canvas, double offsetX, double offsetY, cons
 {
     TexginePaint paint;
     paint.SetAntiAlias(true);
+    paint.SetARGB(MAXRGB, MAXRGB, 0, 0);
     paint.SetAlpha(255);
     paint.SetColor(xs.color);
-    paint.SetStyle(TexginePaint::FILL);
     if (xs.background.has_value()) {
         auto rect = TexgineRect::MakeXYWH(offsetX, offsetY + *tmetrics_.fAscent_, width_,
             *tmetrics_.fDescent_ - *tmetrics_.fAscent_);
@@ -171,9 +171,7 @@ void TextSpan::Paint(TexgineCanvas &canvas, double offsetX, double offsetY, cons
     }
 
     if (xs.foreground.has_value()) {
-        auto rect = TexgineRect::MakeXYWH(offsetX, offsetY + *tmetrics_.fAscent_, width_,
-            *tmetrics_.fDescent_ - *tmetrics_.fAscent_);
-        canvas.DrawRect(rect, xs.foreground.value());
+        paint = xs.foreground.value();
     }
 
     canvas.DrawTextBlob(textBlob_, offsetX, offsetY, paint);

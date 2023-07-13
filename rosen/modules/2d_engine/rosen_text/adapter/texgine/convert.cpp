@@ -63,10 +63,16 @@ TextEngine::TextStyle Convert(const TextStyle &style)
         style.color.GetAlpha(), style.color.GetRed(), style.color.GetGreen(), style.color.GetBlue());
     auto decorationColor = SkColorSetARGB(style.decorationColor.GetAlpha(),
         style.decorationColor.GetRed(), style.decorationColor.GetGreen(), style.decorationColor.GetBlue());
-    auto foreground = std::make_shared<TextEngine::TexginePaint>();
-    foreground->SetPaint(*style.foreground);
-    auto background = std::make_shared<TextEngine::TexginePaint>();
-    background->SetPaint(*style.background);
+    std::optional<TextEngine::TexginePaint> foreground = std::nullopt;
+    if (style.foreground.has_value()) {
+        foreground.value().SetPaint(style.foreground.value());
+    }
+
+    std::optional<TextEngine::TexginePaint> background = std::nullopt;
+    if (style.background.has_value()) {
+        background.value().SetPaint(style.background.value());
+    }
+
     TextEngine::TextStyle xs = {
         .fontWeight = Convert(style.fontWeight),
         .fontStyle = Convert(style.fontStyle),
@@ -83,8 +89,8 @@ TextEngine::TextStyle Convert(const TextStyle &style)
         .heightScale = style.heightScale,
         .letterSpacing = style.letterSpacing,
         .wordSpacing = style.wordSpacing,
-        .foreground = *foreground,
-        .background = *background,
+        .foreground = foreground,
+        .background = background,
     };
 
     for (const auto &[tag, value] : style.fontFeatures.GetFontFeatures()) {
