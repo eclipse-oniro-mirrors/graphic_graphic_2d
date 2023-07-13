@@ -51,8 +51,7 @@ HWTEST_F(RecordingRegionTest, SetRectTest001, TestSize.Level1)
     EXPECT_TRUE(recordingRegion->SetRect(rectI));
     auto regionCmdList = recordingRegion->GetCmdList();
     EXPECT_TRUE(regionCmdList != nullptr);
-    Region region;
-    regionCmdList->Playback(region);
+    auto region = regionCmdList->Playback();
 }
 
 /**
@@ -69,8 +68,7 @@ HWTEST_F(RecordingRegionTest, SetRectTest002, TestSize.Level1)
     EXPECT_TRUE(recordingRegion->SetRect(rectI));
     auto regionCmdList = recordingRegion->GetCmdList();
     EXPECT_TRUE(regionCmdList != nullptr);
-    Region region;
-    regionCmdList->Playback(region);
+    auto region = regionCmdList->Playback();
 }
 
 /**
@@ -88,8 +86,7 @@ HWTEST_F(RecordingRegionTest, SetPathTest001, TestSize.Level1)
     EXPECT_TRUE(recordingRegion->SetPath(path, clip));
     auto regionCmdList = recordingRegion->GetCmdList();
     EXPECT_TRUE(regionCmdList != nullptr);
-    Region region;
-    regionCmdList->Playback(region);
+    auto region = regionCmdList->Playback();
 }
 
 /**
@@ -108,8 +105,7 @@ HWTEST_F(RecordingRegionTest, SetPathTest002, TestSize.Level1)
     EXPECT_TRUE(recordingRegion->SetPath(path, clip));
     auto regionCmdList = recordingRegion->GetCmdList();
     EXPECT_TRUE(regionCmdList != nullptr);
-    Region region;
-    regionCmdList->Playback(region);
+    auto region = regionCmdList->Playback();
 }
 
 /**
@@ -130,8 +126,7 @@ HWTEST_F(RecordingRegionTest, OpTest001, TestSize.Level1)
     EXPECT_TRUE(recordingRegion->Op(other, RegionOp::DIFFERENCE));
     auto regionCmdList = recordingRegion->GetCmdList();
     EXPECT_TRUE(regionCmdList != nullptr);
-    Region region;
-    regionCmdList->Playback(region);
+    auto region = regionCmdList->Playback();
 }
 
 /**
@@ -152,8 +147,7 @@ HWTEST_F(RecordingRegionTest, OpTest002, TestSize.Level1)
     EXPECT_TRUE(recordingRegion->Op(other, RegionOp::INTERSECT));
     auto regionCmdList = recordingRegion->GetCmdList();
     EXPECT_TRUE(regionCmdList != nullptr);
-    Region region;
-    regionCmdList->Playback(region);
+    auto region = regionCmdList->Playback();
 }
 } // namespace Drawing
 } // namespace Rosen

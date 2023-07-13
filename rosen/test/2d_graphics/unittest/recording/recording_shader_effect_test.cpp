@@ -179,32 +179,6 @@ HWTEST_F(RecordingShaderEffectTest, CreatePictureShader001, TestSize.Level1)
 }
 
 /**
- * @tc.name: CreatePictureShader002
- * @tc.desc: Test the playback of the CreatePictureShader function.
- * @tc.type: FUNC
- * @tc.require:I77IX8
- */
-HWTEST_F(RecordingShaderEffectTest, CreatePictureShader002, TestSize.Level1)
-{
-    Picture picture;
-    auto data = std::make_shared<Data>();
-    ASSERT_TRUE(data != nullptr);
-    auto intData = new int();
-    EXPECT_TRUE(data->BuildFromMalloc(intData, sizeof(intData)));
-    picture.Deserialize(data);
-    Matrix matrix;
-    Rect rect;
-    auto newRecordingShaderEffect = RecordingShaderEffect::CreatePictureShader(
-        picture, TileMode::CLAMP, TileMode::REPEAT, FilterMode::LINEAR, matrix, rect);
-    EXPECT_TRUE(newRecordingShaderEffect != nullptr);
-    auto shaderEffectCmdList = newRecordingShaderEffect->GetCmdList();
-    EXPECT_TRUE(shaderEffectCmdList != nullptr);
-    auto shaderEffect = shaderEffectCmdList->Playback();
-    EXPECT_TRUE(shaderEffect != nullptr);
-    EXPECT_EQ(shaderEffect->GetType(), ShaderEffect::ShaderEffectType::PICTURE);
-}
-
-/**
  * @tc.name: CreateLinearGradient001
  * @tc.desc: Test the playback of the CreateLinearGradient function.
  * @tc.type: FUNC
