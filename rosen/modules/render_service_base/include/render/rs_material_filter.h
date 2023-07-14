@@ -94,8 +94,13 @@ public:
     std::shared_ptr<RSFilter> Multiply(float rhs) override;
     std::shared_ptr<RSFilter> Negate() override;
 
+#ifndef USE_ROSEN_DRAWING
     void DrawImageRect(
         SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& src, const SkRect& dst) const override;
+#else
+    void DrawImageRect(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image>& image,
+        const Drawing::Rect& src, const Drawing::Rect& dst) const override;
+#endif
 
 private:
     BLUR_COLOR_MODE colorMode_;
@@ -114,7 +119,9 @@ private:
 #endif
     static float RadiusVp2Sigma(float radiusVp, float dipScale);
 
+#ifndef USE_ROSEN_DRAWING
     std::shared_ptr<KawaseBlurFilter> kawaseFunc_;
+#endif
     bool useKawase_ = false;
     friend class RSMarshallingHelper;
 };

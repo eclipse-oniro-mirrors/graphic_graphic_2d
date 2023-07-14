@@ -151,9 +151,15 @@ std::shared_ptr<RSFilter> RSBlurFilter::Negate()
     return std::make_shared<RSBlurFilter>(-blurRadiusX_, -blurRadiusY_);
 }
 
+#ifndef USE_ROSEN_DRAWING
 void RSBlurFilter::DrawImageRect(
     SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& src, const SkRect& dst) const
+#else
+void RSBlurFilter::DrawImageRect(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image>& image,
+    const Drawing::Rect& src, const Drawing::Rect& dst) const
+#endif
 {
+#ifndef USE_ROSEN_DRAWING
     auto paint = GetPaint();
 #ifdef NEW_SKIA
     if (useKawase_) {
@@ -163,6 +169,12 @@ void RSBlurFilter::DrawImageRect(
     }
 #else
     canvas.drawImageRect(image.get(), src, dst, &paint);
+#endif
+#else
+    auto brush = GetBrush();
+    canvas.AttachBrush(brush);
+    canvas.DrawImageRect(*image, src, dst, Drawing::SamplingOptions());
+    canvas.DetachBrush();
 #endif
 }
 } // namespace Rosen

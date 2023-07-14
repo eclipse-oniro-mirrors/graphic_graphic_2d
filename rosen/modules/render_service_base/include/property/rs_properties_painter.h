@@ -99,18 +99,20 @@ private:
     static uint8_t CalcDirectionBias(const SkMatrix& mat);
 #endif
 #else
-    static void Clip(Drawing::Canvas& canvas, RectF rect);
+    static void Clip(Drawing::Canvas& canvas, RectF rect, bool isAntiAlias = true);
     static void SetBgAntiAlias(bool forceBgAntiAlias);
     static bool GetBgAntiAlias();
-    static void DrawBackground(const RSProperties& properties, RSPaintFilterCanvas& canvas);
+    static void DrawBackground(const RSProperties& properties, RSPaintFilterCanvas& canvas, bool isAntiAlias = true);
     static void DrawBorder(const RSProperties& properties, Drawing::Canvas& canvas);
     static void DrawFrame(const RSProperties& properties, RSPaintFilterCanvas& canvas,
         Drawing::DrawCmdListPtr& drawCmdList);
-    static void GetShadowDirtyRect(RectI& dirtyShadow, const RSProperties& properties, const RRect* rrect = nullptr);
+    static void GetShadowDirtyRect(RectI& dirtyShadow, const RSProperties& properties,
+        const RRect* rrect = nullptr, bool isAbsCoordinate = true);
     static void DrawShadow(const RSProperties& properties, RSPaintFilterCanvas& canvas, const RRect* rrect = nullptr);
-    static void DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas,
-        std::shared_ptr<RSDrawingFilter>& filter, FilterType filterType,
-        const std::unique_ptr<Drawing::Rect>& rect = nullptr);
+    static void DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas, FilterType filterType,
+        const std::optional<Drawing::Rect>& rect = std::nullopt);
+    static void DrawLinearGradientBlurFilter(const RSProperties& properties,
+        RSPaintFilterCanvas& canvas, const std::optional<Drawing::Rect>& rect = std::nullopt);
     static void DrawForegroundColor(const RSProperties& properties, Drawing::Canvas& canvas);
     static void DrawMask(const RSProperties& properties, Drawing::Canvas& canvas);
     static void DrawMask(const RSProperties& properties, Drawing::Canvas& canvas, Drawing::Rect maskBounds);
@@ -128,6 +130,17 @@ private:
     // functions that are dedicated to driven render [end]
     static void DrawSpherize(const RSProperties& properties, RSPaintFilterCanvas& canvas,
         const std::shared_ptr<Drawing::Surface>& spherizeSurface);
+
+    // EffectView and useEffect
+    static void DrawBackgroundEffect(
+        const RSProperties& properties, RSPaintFilterCanvas& canvas, const Drawing::RectI& rect);
+    static void DrawForegroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas);
+    static void ApplyBackgroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas);
+
+    // Foreground Color filter
+    static void DrawColorFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas);
+
+    static void DrawLightUpEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas);
 private:
     inline static int g_blurCnt = 0;
     static void DrawColorfulShadowInner(

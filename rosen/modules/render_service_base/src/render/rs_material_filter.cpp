@@ -68,10 +68,12 @@ RSMaterialFilter::RSMaterialFilter(int style, float dipScale, BLUR_COLOR_MODE mo
     imageFilter_ = RSMaterialFilter::CreateMaterialStyle(static_cast<MATERIAL_BLUR_STYLE>(style), dipScale, ratio);
     type_ = FilterType::MATERIAL;
 
+#ifndef USE_ROSEN_DRAWING
     hash_ = SkOpts::hash(&type_, sizeof(type_), 0);
     hash_ = SkOpts::hash(&style, sizeof(style), hash_);
     hash_ = SkOpts::hash(&colorMode_, sizeof(colorMode_), hash_);
     hash_ = SkOpts::hash(&ratio, sizeof(ratio), hash_);
+#endif
 }
 
 RSMaterialFilter::RSMaterialFilter(MaterialParam materialParam, BLUR_COLOR_MODE mode)
@@ -89,9 +91,11 @@ RSMaterialFilter::RSMaterialFilter(MaterialParam materialParam, BLUR_COLOR_MODE 
         materialParam.radius, materialParam.saturation, materialParam.brightness);
     type_ = FilterType::MATERIAL;
 
+#ifndef USE_ROSEN_DRAWING
     hash_ = SkOpts::hash(&type_, sizeof(type_), 0);
     hash_ = SkOpts::hash(&materialParam, sizeof(materialParam), hash_);
     hash_ = SkOpts::hash(&colorMode_, sizeof(colorMode_), hash_);
+#endif
 }
 
 RSMaterialFilter::~RSMaterialFilter() = default;
@@ -114,7 +118,7 @@ std::string RSMaterialFilter::GetDescription()
 #ifndef USE_ROSEN_DRAWING
 std::shared_ptr<RSSkiaFilter> RSMaterialFilter::Compose(const std::shared_ptr<RSSkiaFilter>& other) const
 #else
-std::shared_ptr<RSDrawingFilter> RSMaterialFilter::Compose(const std::shared_ptr<RSDrawingFilter>& inner) const
+std::shared_ptr<RSDrawingFilter> RSMaterialFilter::Compose(const std::shared_ptr<RSDrawingFilter>& other) const
 #endif
 {
     if (other == nullptr) {
@@ -124,11 +128,11 @@ std::shared_ptr<RSDrawingFilter> RSMaterialFilter::Compose(const std::shared_ptr
     std::shared_ptr<RSMaterialFilter> result = std::make_shared<RSMaterialFilter>(materialParam, colorMode_);
 #ifndef USE_ROSEN_DRAWING
     result->imageFilter_ = SkImageFilters::Compose(imageFilter_, other->GetImageFilter());
+    auto otherHash = other->Hash();
+    result->hash_ = SkOpts::hash(&otherHash, sizeof(otherHash), hash_);
 #else
     result->imageFilter_ = Drawing::ImageFilter::CreateComposeImageFilter(imageFilter_, other->GetImageFilter());
 #endif
-    auto otherHash = other->Hash();
-    result->hash_ = SkOpts::hash(&otherHash, sizeof(otherHash), hash_);
     return result;
 }
 
@@ -193,7 +197,7 @@ std::shared_ptr<Drawing::ImageFilter> RSMaterialFilter::CreateMaterialFilter(flo
     cm.SetSaturation(sat);
     std::shared_ptr<Drawing::ColorFilter> satFilter = Drawing::ColorFilter::CreateMatrixColorFilter(cm); // saturation
     std::shared_ptr<Drawing::ColorFilter> filterCompose =
-        Drawing::ColorFilter::CreateComposeColorFilter(brightnessFilter, satFilter); // saturation
+        Drawing::ColorFilter::CreateComposeColorFilter(*brightnessFilter, *satFilter); // saturation
 
     return Drawing::ImageFilter::CreateColorFilterImageFilter(*filterCompose, blurFilter);
 }
@@ -322,9 +326,15 @@ std::shared_ptr<RSFilter> RSMaterialFilter::Negate()
     return std::make_shared<RSMaterialFilter>(materialParam, colorMode_);
 }
 
+#ifndef USE_ROSEN_DRAWING
 void RSMaterialFilter::DrawImageRect(
     SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& src, const SkRect& dst) const
+#else
+void RSMaterialFilter::DrawImageRect(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image>& image,
+    const Drawing::Rect& src, const Drawing::Rect& dst) const
+#endif
 {
+#ifndef USE_ROSEN_DRAWING
     auto paint = GetPaint();
 #ifdef NEW_SKIA
     if (useKawase_) {
@@ -334,6 +344,12 @@ void RSMaterialFilter::DrawImageRect(
     }
 #else
     canvas.drawImageRect(image.get(), src, dst, &paint);
+#endif
+#else
+    auto brush = GetBrush();
+    canvas.AttachBrush(brush);
+    canvas.DrawImageRect(*image, src, dst, Drawing::SamplingOptions());
+    canvas.DetachBrush();
 #endif
 }
 } // namespace Rosen

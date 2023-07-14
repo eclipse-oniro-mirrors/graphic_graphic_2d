@@ -54,6 +54,8 @@ public:
     RSDrawingFilter(std::shared_ptr<Drawing::ImageFilter> imagefilter);
     ~RSDrawingFilter() override;
     Drawing::Brush GetBrush() const;
+    virtual void DrawImageRect(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image>& image,
+        const Drawing::Rect& src, const Drawing::Rect& dst) const;
     std::shared_ptr<Drawing::ImageFilter> GetImageFilter() const;
     virtual std::shared_ptr<RSDrawingFilter> Compose(const std::shared_ptr<RSDrawingFilter>& other) const = 0;
     virtual void PreProcess(std::shared_ptr<Drawing::Image> image) {};

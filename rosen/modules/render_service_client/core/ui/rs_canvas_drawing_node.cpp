@@ -45,6 +45,7 @@ RSCanvasDrawingNode::SharedPtr RSCanvasDrawingNode::Create(bool isRenderServiceN
     return node;
 }
 
+#ifndef USE_ROSEN_DRAWING
 bool RSCanvasDrawingNode::GetBitmap(SkBitmap& bitmap, std::shared_ptr<DrawCmdList> drawCmdList, const SkRect* rect)
 {
     if (IsUniRenderEnabled()) {
@@ -84,5 +85,13 @@ bool RSCanvasDrawingNode::GetBitmap(SkBitmap& bitmap, std::shared_ptr<DrawCmdLis
     }
     return true;
 }
+#else
+bool RSCanvasDrawingNode::GetBitmap(Drawing::Bitmap& bitmap,
+    std::shared_ptr<Drawing::DrawCmdList> drawCmdList, const Drawing::Rect* rect)
+{
+    ROSEN_LOGE("[%s:%d] Drawing is not supported", __func__, __LINE__);
+    return false;
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

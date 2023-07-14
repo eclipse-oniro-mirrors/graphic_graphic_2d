@@ -276,7 +276,11 @@ public:
     void SetColorBlend(const std::optional<Color>& colorBlend);
     const std::optional<Color>& GetColorBlend() const;
 
+#ifndef USE_ROSEN_DRAWING
     const sk_sp<SkColorFilter> GetColorFilter() const;
+#else
+    const std::shared_ptr<Drawing::ColorFilter> GetColorFilter() const;
+#endif
 
     void SetUseEffect(bool useEffect);
     bool GetUseEffect() const;
@@ -363,7 +367,11 @@ private:
     std::optional<float> invert_;
     std::optional<float> hueRotate_;
     std::optional<Color> colorBlend_;
+#ifndef USE_ROSEN_DRAWING
     sk_sp<SkColorFilter> colorFilter_ = nullptr;
+#else
+    std::shared_ptr<Drawing::ColorFilter> colorFilter_ = nullptr;
+#endif
 
 #ifndef USE_ROSEN_DRAWING
     std::unique_ptr<RSFilterCacheManager> backgroundFilterCacheManager_;
