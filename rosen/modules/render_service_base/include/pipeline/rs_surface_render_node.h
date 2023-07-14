@@ -166,7 +166,7 @@ public:
                nodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE;
     }
 
-    std::shared_ptr<RSSurfaceRenderNode> GetLeashWindowNestedAppSurface();
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> GetLeashWindowNestedAppSurface();
     // used to determine whether the layer-1 surfacenodes can be skipped in the subthread of focus-first framework
     bool IsCurrentFrameStatic();
     void UpdateCacheSurfaceDirtyManager(int bufferAge = 2);
@@ -651,7 +651,7 @@ public:
 
     uint32_t GetSubmittedSubThreadIndex() const
     {
-        return submittedSubThreadIndex_;        
+        return submittedSubThreadIndex_;
     }
 
     void SetCacheSurfaceProcessedStatus(CacheProcessStatus cacheProcessStatus)
