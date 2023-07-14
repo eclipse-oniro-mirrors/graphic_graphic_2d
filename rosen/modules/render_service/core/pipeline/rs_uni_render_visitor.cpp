@@ -2866,7 +2866,8 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         if (node.GetBuffer() != nullptr) {
             if (node.IsHardwareEnabledType()) {
                 // since node has buffer, hwc disabledState could be reset by filter or surface cached
-                node.SetHardwareForcedDisabledState(node.IsHardwareForcedDisabledByFilter());
+                node.SetHardwareForcedDisabledState(
+                    node.IsHardwareForcedDisabledByFilter() || canvas_->GetAlpha() < 1.f);
                 node.SetHardwareDisabledByCache(isUpdateCachedSurface_);
             }
             // if this window is in freeze state, disable hardware composer for its child surfaceView
