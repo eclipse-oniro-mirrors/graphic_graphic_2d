@@ -130,6 +130,16 @@ ParallelRenderingType RSSystemProperties::GetParallelRenderingEnabled()
     return {};
 }
 
+HgmRefreshRates RSSystemProperties::GetHgmRefreshRatesEnabled()
+{
+    return {};
+}
+
+HgmRefreshRateModes RSSystemProperties::GetHgmRefreshRateModesEnabled()
+{
+    return {};
+}
+
 bool RSSystemProperties::GetColdStartThreadEnabled()
 {
     return {};

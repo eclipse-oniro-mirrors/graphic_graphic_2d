@@ -123,17 +123,21 @@ int32_t HgmCore::SetModeBySettingConfig()
         return HGM_ERROR;
     }
     int32_t rateToSwitch = std::stoi(mParsedConfigData_->detailedStrategies_[strat].max);
+    int32_t rateFloor = std::stoi(mParsedConfigData_->detailedStrategies_[strat].min);
 
-    HGM_LOGW("HgmCore switching to rate : %{public}d via refreshrate mode", rateToSwitch);
-    if (rateToSwitch <= 0) {
+    HGM_LOGW("HgmCore switching to rate: %d via refreshrate mode, range min: %d, max: %d",
+        rateToSwitch, rateFloor, rateToSwitch);
+    if (rateToSwitch <= 0 || rateFloor <= 0) {
         HGM_LOGW("HgmCore get an illegal rate via parsed config data : %{public}d", rateToSwitch);
         return HGM_ERROR;
     }
 
     rateToSwitch = RequestBundlePermission(rateToSwitch);
     for (auto &screen : screenList_) {
+        int32_t setRange = screen->SetRefreshRateRange(
+            static_cast<uint32_t>(rateFloor), static_cast<uint32_t>(rateToSwitch));
         int32_t setThisScreen = SetScreenRefreshRate(screen->GetId(), 0, rateToSwitch);
-        if (setThisScreen) {
+        if (setThisScreen != EXEC_SUCCESS || setRange != EXEC_SUCCESS) {
             HGM_LOGW("HgmCore failed to apply refreshrate mode to screen : " PUBU64 "", screen->GetId());
             return HGM_ERROR;
         }
