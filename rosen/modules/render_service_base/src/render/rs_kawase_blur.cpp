@@ -21,7 +21,7 @@
 namespace OHOS {
 namespace Rosen {
 #ifndef USE_ROSEN_DRAWING
-KawaseBlurFilter::KawaseBlurFilter(int radius)
+KawaseBlurFilter::KawaseBlurFilter()
 {
     SkString blurString(R"(
         uniform shader imageInput;
@@ -54,17 +54,16 @@ KawaseBlurFilter::KawaseBlurFilter(int radius)
     auto [blurEffect, error] = SkRuntimeEffect::MakeForShader(blurString);
     if (!blurEffect) {
         ROSEN_LOGE("KawaseBlurFilter::RuntimeShader error: %s\n", error.c_str());
+        return;
     }
     blurEffect_ = std::move(blurEffect);
 
     auto [mixEffect, error2] = SkRuntimeEffect::MakeForShader(mixString);
     if (!mixEffect) {
         ROSEN_LOGE("KawaseBlurFilter::RuntimeShader error: %s\n", error2.c_str());
+        return;
     }
     mixEffect_ = std::move(mixEffect);
-
-    blurRadius_ = GetDecelerateRadius(radius);
-    AdjustRadiusAndScale();
 }
 
 KawaseBlurFilter::~KawaseBlurFilter() = default;
@@ -76,15 +75,15 @@ SkMatrix KawaseBlurFilter::GetShaderTransform(const SkCanvas* canvas, const SkRe
     return matrix;
 }
 
-void KawaseBlurFilter::SetColorFilter(sk_sp<SkColorFilter> colorFilter)
+bool KawaseBlurFilter::ApplyKawaseBlur(SkCanvas& canvas, const sk_sp<SkImage>& image, const KawaseParameter& param)
 {
-    finalPaint_.setColorFilter(colorFilter);
-}
-
-void KawaseBlurFilter::ApplyKawaseBlur(
-    SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& src, const SkRect& dst) const
-{
-    RS_TRACE_NAME("ApplyKawaseBlur");
+    if (!blurEffect_ || !mixEffect_) {
+        return false;
+    }
+    RS_TRACE_NAME("ApplyKawaseBlur " + GetDescription());
+    ComputeRadiusAndScale(param.radius);
+    auto src = param.src;
+    auto dst = param.dst;
     int maxPasses = supporteLargeRadius ? kMaxPassesLargeRadius : kMaxPasses;
     float dilatedConvolutionFactor = supporteLargeRadius ? kDilatedConvolutionLargeRadius : kDilatedConvolution;
     float tmpRadius = blurRadius_ / dilatedConvolutionFactor;
@@ -102,68 +101,72 @@ void KawaseBlurFilter::ApplyKawaseBlur(
     sk_sp<SkImage> tmpBlur(blurBuilder.makeImage(canvas.recordingContext(), nullptr, scaledInfo, false));
     // And now we'll build our chain of scaled blur stages
     for (auto i = 1; i < numberOfPasses; i++) {
-        const float stepScale = (float)i * blurScale_;
+        const float stepScale = i * blurScale_;
         blurBuilder.child("imageInput") = tmpBlur->makeShader(SkTileMode::kClamp, SkTileMode::kClamp, linear);
         blurBuilder.uniform("in_blurOffset") = SkV2{radiusByPasses * stepScale, radiusByPasses * stepScale};
         blurBuilder.uniform("in_maxSizeXY") = SkV2{dst.width() * blurScale_, dst.height() * blurScale_};
         tmpBlur = blurBuilder.makeImage(canvas.recordingContext(), nullptr, scaledInfo, false);
     }
-    return ApplyBlur(canvas, image, tmpBlur, dst);
+    return ApplyBlur(canvas, image, tmpBlur, param);
 }
 
-void KawaseBlurFilter::ApplyBlur(
-    SkCanvas& canvas, const sk_sp<SkImage>& image, const sk_sp<SkImage>& blurImage, const SkRect& dst) const
+bool KawaseBlurFilter::ApplyBlur(SkCanvas& canvas, const sk_sp<SkImage>& image, const sk_sp<SkImage>& blurImage,
+    const KawaseParameter& param) const
 {
+    auto src = param.src;
+    auto dst = param.dst;
     float invBlurScale = 1 / blurScale_;
     SkSamplingOptions linear(SkFilterMode::kLinear, SkMipmapMode::kNone);
     SkImageInfo scaledInfo = image->imageInfo().makeWH(std::ceil(dst.width() * blurScale_),
         std::ceil(dst.height() * blurScale_));
     const auto blurMatrix = GetShaderTransform(&canvas, dst, invBlurScale);
     const auto blurShader = blurImage->makeShader(SkTileMode::kClamp, SkTileMode::kClamp, linear, &blurMatrix);
-    SkPaint paint = finalPaint_;
+    SkPaint paint;
+    if (param.colorFilter) {
+        paint.setColorFilter(param.colorFilter);
+    }
     if (blurRadius_ < kMaxCrossFadeRadius) {
-        SkMatrix inputMatrix;
-        if (!canvas.getTotalMatrix().invert(&inputMatrix)) {
-            inputMatrix.setIdentity();
-        }
-        if (blurImage->width() == image->width() && blurImage->height() == image->height()) {
-            inputMatrix.preScale(invBlurScale, invBlurScale);
-        }
+        SkMatrix inputMatrix = SkMatrix::Translate(-src.fLeft, -src.fTop);
+        inputMatrix.postConcat(SkMatrix::Translate(dst.fLeft, dst.fTop));
         SkRuntimeShaderBuilder mixBuilder(mixEffect_);
         mixBuilder.child("blurredInput") = blurShader;
         mixBuilder.child("originalInput") = image->makeShader(
             SkTileMode::kClamp, SkTileMode::kClamp, linear, inputMatrix);
-        mixBuilder.uniform("mixFactor") = std::min(1.0f, (float)blurRadius_ / kMaxCrossFadeRadius);
+        mixBuilder.uniform("mixFactor") = std::min(1.0f, blurRadius_ / kMaxCrossFadeRadius);
         paint.setShader(mixBuilder.makeShader(nullptr, true));
     } else {
         paint.setShader(blurShader);
     }
     canvas.drawRect(dst, paint);
+    return true;
 }
 
-int KawaseBlurFilter::GetDecelerateRadius(int radius)
+void KawaseBlurFilter::ComputeRadiusAndScale(int radius)
 {
     float factor = std::min(1.0f, static_cast<float>(radius) / kMaxGaussRadius);
     float optimizedFactor = 1.0f - (1.0f - factor) * (1.0f - factor);
-    return kMaxKawaseRadius * optimizedFactor;
+    blurRadius_ = kMaxKawaseRadius * optimizedFactor;
+    AdjustRadiusAndScale();
 }
 
 void KawaseBlurFilter::AdjustRadiusAndScale()
 {
-    int step1 = 170; // 170 : radius step1
-    int step2 = 260; // 260 : radius step2
-    int smoothScope = 20; // 20 : smooth radius change
     int radius = blurRadius_;
-    float scale = 0.25f; // base downSample radio
-    if (radius > step1) {
+    float scale = baseBlurScale;
+    if (radius > radiusStep1) {
         scale = 0.1f; // 0.1 : downSample radio step
-        radius -= smoothScope / (radius - step1);
-    } else if (radius > step2) {
+        radius -= smoothScope / (radius - radiusStep1);
+    } else if (radius > radiusStep2) {
         scale = 0.03f; // 0.03 : downSample radio step
-        radius -= smoothScope / (radius - step2);
+        radius -= smoothScope / (radius - radiusStep2);
     }
     blurRadius_ = radius;
     blurScale_ = scale;
+}
+
+std::string KawaseBlurFilter::GetDescription() const
+{
+    return "blur radius is " + std::to_string(blurRadius_);
 }
 #endif
 } // namespace Rosen

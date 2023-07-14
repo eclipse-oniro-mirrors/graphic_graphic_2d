@@ -54,8 +54,8 @@ public:
 private:
     float blurRadiusX_;
     float blurRadiusY_;
-    std::shared_ptr<KawaseBlurFilter> kawaseFunc_;
     bool useKawase_ = false;
+    static std::shared_ptr<KawaseBlurFilter> kawaseFunc_;
 };
 } // namespace Rosen
 } // namespace OHOS

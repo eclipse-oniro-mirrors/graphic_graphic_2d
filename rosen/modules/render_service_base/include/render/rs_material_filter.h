@@ -114,8 +114,9 @@ private:
 #endif
     static float RadiusVp2Sigma(float radiusVp, float dipScale);
 
-    std::shared_ptr<KawaseBlurFilter> kawaseFunc_;
     bool useKawase_ = false;
+    sk_sp<SkColorFilter> colorFilter_;
+    static std::shared_ptr<KawaseBlurFilter> kawaseFunc_;
     friend class RSMarshallingHelper;
 };
 } // namespace Rosen
