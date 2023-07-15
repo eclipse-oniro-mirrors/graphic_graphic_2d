@@ -18,6 +18,7 @@
     "name": ".Test",
     "deviceType": [
       "tablet",
+      "2in1",
       "default",
       "phone"
     ],

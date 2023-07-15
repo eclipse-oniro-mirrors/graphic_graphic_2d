@@ -24,7 +24,6 @@ ohos_fuzztest("VsyncConnectionFuzzTest") {
   include_dirs = [
     "//foundation/graphic/graphic_2d/interfaces/inner_api/common",
     "//foundation/graphic/graphic_2d/rosen/modules/composer/vsync/include",
-    "//third_party/bounds_checking_function/include",
   ]
   cflags = [
     "-g",
@@ -37,6 +36,7 @@ ohos_fuzztest("VsyncConnectionFuzzTest") {
     "//foundation/graphic/graphic_2d/rosen/modules/composer/vsync:libvsync",
     "//foundation/graphic/graphic_2d/utils:socketpair",
   ]
+  external_deps = [ "c_utils:utils" ]
 }
 
 ###############################################################################
