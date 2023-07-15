@@ -199,6 +199,7 @@ public:
 
     void ReportEventJankFrame(DataBaseRs info);
 
+    void SetHardwareEnabled(NodeId id, bool isEnabled);
 private:
     void TriggerSurfaceCaptureCallback(NodeId id, Media::PixelMap* pixelmap);
     std::mutex mutex_;

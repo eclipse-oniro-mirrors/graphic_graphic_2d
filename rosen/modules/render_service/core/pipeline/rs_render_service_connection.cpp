@@ -837,5 +837,16 @@ void RSRenderServiceConnection::ReportEventJankFrame(DataBaseRs info)
     mainThread_->PostTask(task);
 }
 
+void RSRenderServiceConnection::SetHardwareEnabled(NodeId id, bool isEnabled)
+{
+    auto task = [this, id, isEnabled]() -> void {
+        auto& context = mainThread_->GetContext();
+        auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(id);
+        if (node) {
+            node->SetHardwareEnabled(isEnabled);
+        }
+    };
+    mainThread_->PostTask(task);
+}
 } // namespace Rosen
 } // namespace OHOS

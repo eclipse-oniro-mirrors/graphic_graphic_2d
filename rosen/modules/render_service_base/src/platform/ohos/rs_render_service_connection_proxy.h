@@ -139,6 +139,7 @@ public:
 
     void ReportEventJankFrame(DataBaseRs info) override;
 
+    void SetHardwareEnabled(NodeId id, bool isEnabled) override;
 private:
     bool FillParcelWithTransactionData(
         std::unique_ptr<RSTransactionData>& transactionData, std::shared_ptr<MessageParcel>& data);

@@ -719,5 +719,12 @@ void RSRenderServiceClient::ReportEventJankFrame(DataBaseRs info)
     }
 }
 
+void RSRenderServiceClient::SetHardwareEnabled(NodeId id, bool isEnabled)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService != nullptr) {
+        renderService->SetHardwareEnabled(id, isEnabled);
+    }
+}
 } // namespace Rosen
 } // namespace OHOS

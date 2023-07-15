@@ -92,8 +92,12 @@ public:
     // indicate if this node type can enable hardware composer
     bool IsHardwareEnabledType() const
     {
-        // [PLANNING] enable hardware composer for all self-drawing node
-        return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && name_ != "RosenWeb" && name_ != "RosenRenderWeb";
+        return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && isHardwareEnabledNode_;
+    }
+
+    void SetHardwareEnabled(bool isEnabled)
+    {
+        isHardwareEnabledNode_ = isEnabled;
     }
 
     bool IsLastFrameHardwareEnabled() const
@@ -831,6 +835,7 @@ private:
 #endif
 
     // used for hardware enabled nodes
+    bool isHardwareEnabledNode_ = false;
     bool isCurrentFrameHardwareEnabled_ = false;
     bool isLastFrameHardwareEnabled_ = false;
     // mark if this self-drawing node is forced not to use hardware composer

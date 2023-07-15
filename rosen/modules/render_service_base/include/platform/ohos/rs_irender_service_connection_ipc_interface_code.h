@@ -70,6 +70,7 @@ enum class RSIRenderServiceConnectionInterfaceCode {
     REPORT_EVENT_COMPLETE,
     REPORT_EVENT_JANK_FRAME,
     REPORT_EVENT_FIRST_FRAME,
+    SET_HARDWARE_ENABLED,
 };
 } // namespace Rosen
 } // namespace OHOS

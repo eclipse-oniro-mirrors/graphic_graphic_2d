@@ -815,6 +815,17 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_HARDWARE_ENABLED) : {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            auto id = data.ReadUint64();
+            auto isEnabled = data.ReadBool();
+            SetHardwareEnabled(id, isEnabled);
+            break;
+        }
         default: {
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }
