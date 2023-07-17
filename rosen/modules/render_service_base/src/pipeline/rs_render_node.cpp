@@ -843,16 +843,24 @@ RectI RSRenderNode::GetFilterRect() const
     }
 }
 
-void RSRenderNode::UpdateFilterCacheManagerWithCacheRegion() const
+void RSRenderNode::UpdateFilterCacheManagerWithCacheRegion(const std::optional<RectI>& clipRect) const
 {
 #ifndef USE_ROSEN_DRAWING
+    auto& renderProperties = GetRenderProperties();
+    if (!renderProperties.NeedFilter()) {
+        return;
+    }
+    auto filterRect = GetFilterRect();
+    if (clipRect.has_value()) {
+        filterRect.IntersectRect(*clipRect);
+    }
     // background filter
-    if (auto& manager = GetRenderProperties().GetFilterCacheManager(false)) {
-        manager->UpdateCacheStateWithFilterRegion(GetFilterRect());
+    if (auto& manager = renderProperties.GetFilterCacheManager(false)) {
+        manager->UpdateCacheStateWithFilterRegion(filterRect);
     }
     // foreground filter
-    if (auto& manager = GetRenderProperties().GetFilterCacheManager(true)) {
-        manager->UpdateCacheStateWithFilterRegion(GetFilterRect());
+    if (auto& manager = renderProperties.GetFilterCacheManager(true)) {
+        manager->UpdateCacheStateWithFilterRegion(filterRect);
     }
 #endif
 }
