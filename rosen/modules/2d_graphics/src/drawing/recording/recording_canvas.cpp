@@ -64,12 +64,33 @@ void RecordingCanvas::DrawRect(const Rect& rect)
 
 void RecordingCanvas::DrawRoundRect(const RoundRect& roundRect)
 {
-    cmdList_->AddOp<DrawRoundRectOpItem>(roundRect);
+    std::vector<Point> radiusXY;
+    radiusXY.push_back(roundRect.GetCornerRadius(RoundRect::CornerPos::TOP_LEFT_POS));
+    radiusXY.push_back(roundRect.GetCornerRadius(RoundRect::CornerPos::TOP_RIGHT_POS));
+    radiusXY.push_back(roundRect.GetCornerRadius(RoundRect::CornerPos::BOTTOM_RIGHT_POS));
+    radiusXY.push_back(roundRect.GetCornerRadius(RoundRect::CornerPos::BOTTOM_LEFT_POS));
+    auto radiusXYData = CmdListHelper::AddVectorToCmdList<Point>(*cmdList_, radiusXY);
+
+    cmdList_->AddOp<DrawRoundRectOpItem>(radiusXYData, roundRect.GetRect());
 }
 
 void RecordingCanvas::DrawNestedRoundRect(const RoundRect& outer, const RoundRect& inner)
 {
-    cmdList_->AddOp<DrawNestedRoundRectOpItem>(outer, inner);
+    std::vector<Point> outerRadiusXY;
+    outerRadiusXY.push_back(outer.GetCornerRadius(RoundRect::CornerPos::TOP_LEFT_POS));
+    outerRadiusXY.push_back(outer.GetCornerRadius(RoundRect::CornerPos::TOP_RIGHT_POS));
+    outerRadiusXY.push_back(outer.GetCornerRadius(RoundRect::CornerPos::BOTTOM_RIGHT_POS));
+    outerRadiusXY.push_back(outer.GetCornerRadius(RoundRect::CornerPos::BOTTOM_LEFT_POS));
+    auto outerRadiusXYData = CmdListHelper::AddVectorToCmdList<Point>(*cmdList_, outerRadiusXY);
+
+    std::vector<Point> innerRadiusXY;
+    innerRadiusXY.push_back(inner.GetCornerRadius(RoundRect::CornerPos::TOP_LEFT_POS));
+    innerRadiusXY.push_back(inner.GetCornerRadius(RoundRect::CornerPos::TOP_RIGHT_POS));
+    innerRadiusXY.push_back(inner.GetCornerRadius(RoundRect::CornerPos::BOTTOM_RIGHT_POS));
+    innerRadiusXY.push_back(inner.GetCornerRadius(RoundRect::CornerPos::BOTTOM_LEFT_POS));
+    auto innerRadiusXYData = CmdListHelper::AddVectorToCmdList<Point>(*cmdList_, innerRadiusXY);
+
+    cmdList_->AddOp<DrawNestedRoundRectOpItem>(outerRadiusXYData, outer.GetRect(), innerRadiusXYData, inner.GetRect());
 }
 
 void RecordingCanvas::DrawArc(const Rect& oval, scalar startAngle, scalar sweepAngle)
@@ -158,7 +179,14 @@ void RecordingCanvas::ClipRect(const Rect& rect, ClipOp op, bool doAntiAlias)
 
 void RecordingCanvas::ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias)
 {
-    cmdList_->AddOp<ClipRoundRectOpItem>(roundRect, op, doAntiAlias);
+    std::vector<Point> radiusXY;
+    radiusXY.push_back(roundRect.GetCornerRadius(RoundRect::CornerPos::TOP_LEFT_POS));
+    radiusXY.push_back(roundRect.GetCornerRadius(RoundRect::CornerPos::TOP_RIGHT_POS));
+    radiusXY.push_back(roundRect.GetCornerRadius(RoundRect::CornerPos::BOTTOM_RIGHT_POS));
+    radiusXY.push_back(roundRect.GetCornerRadius(RoundRect::CornerPos::BOTTOM_LEFT_POS));
+    auto radiusXYData = CmdListHelper::AddVectorToCmdList<Point>(*cmdList_, radiusXY);
+
+    cmdList_->AddOp<ClipRoundRectOpItem>(radiusXYData, roundRect.GetRect(), op, doAntiAlias);
 }
 
 void RecordingCanvas::ClipPath(const Path& path, ClipOp op, bool doAntiAlias)
@@ -262,6 +290,34 @@ void RecordingCanvas::Restore()
         cmdList_->AddOp<RestoreOpItem>();
         --saveCount_;
     }
+}
+
+void RecordingCanvas::ClipAdaptiveRoundRect(const std::vector<Point>& radius)
+{
+    auto radiusData = CmdListHelper::AddVectorToCmdList<Point>(*cmdList_, radius);
+    cmdList_->AddOp<ClipAdaptiveRoundRectOpItem>(radiusData);
+}
+
+void RecordingCanvas::DrawImage(const std::shared_ptr<Image>& image, const std::shared_ptr<Data>& data,
+    const AdaptiveImageInfo& rsImageInfo, const SamplingOptions& smapling)
+{
+    ImageHandle imageHandle;
+    if (data != nullptr) {
+        imageHandle = CmdListHelper::AddCompressDataToCmdList(*cmdList_, data);
+        cmdList_->AddOp<DrawAdaptiveImageOpItem>(imageHandle, rsImageInfo, smapling, false);
+        return;
+    }
+    if (image != nullptr) {
+        imageHandle = CmdListHelper::AddImageToCmdList(*cmdList_, image);
+        cmdList_->AddOp<DrawAdaptiveImageOpItem>(imageHandle, rsImageInfo, smapling, true);
+    }
+}
+
+void RecordingCanvas::DrawPixelMap(const std::shared_ptr<Media::PixelMap>& pixelMap,
+    const AdaptiveImageInfo& rsImageInfo, const SamplingOptions& smapling)
+{
+    auto pixelmapHandle = CmdListHelper::AddPixelMapToCmdList(*cmdList_, pixelMap);
+    cmdList_->AddOp<DrawAdaptivePixelMapOpItem>(pixelmapHandle, rsImageInfo, smapling);
 }
 
 CoreCanvas& RecordingCanvas::AttachPen(const Pen& pen)

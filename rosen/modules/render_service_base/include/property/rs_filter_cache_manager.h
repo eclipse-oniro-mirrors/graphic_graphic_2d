@@ -16,6 +16,7 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_PROPERTY_RS_FILTER_CACHE_MANAGER_H
 #define RENDER_SERVICE_CLIENT_CORE_PROPERTY_RS_FILTER_CACHE_MANAGER_H
 
+#ifndef USE_ROSEN_DRAWING
 #include "include/core/SkRect.h"
 
 #include "common/rs_macros.h"
@@ -94,5 +95,6 @@ private:
 
 } // namespace Rosen
 } // namespace OHOS
+#endif
 
 #endif // RENDER_SERVICE_CLIENT_CORE_PROPERTY_RS_FILTER_CACHE_MANAGER_H

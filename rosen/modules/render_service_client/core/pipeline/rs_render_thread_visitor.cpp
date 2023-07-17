@@ -207,7 +207,11 @@ void RSRenderThreadVisitor::PrepareEffectRenderNode(RSEffectRenderNode& node)
     }
     auto effectRegion = effectRegion_;
 
+#ifndef USE_ROSEN_DRAWING
     effectRegion_ = SkPath();
+#else
+    effectRegion_ = Drawing::Path();
+#endif
     bool dirtyFlag = dirtyFlag_;
     auto nodeParent = node.GetParent().lock();
     std::shared_ptr<RSRenderNode> rsParent = nullptr;
@@ -699,10 +703,14 @@ void RSRenderThreadVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
 bool RSRenderThreadVisitor::UpdateAnimatePropertyCacheSurface(RSRenderNode& node)
 {
     if (!node.GetCacheSurface()) {
+#ifndef USE_ROSEN_DRAWING
 #ifdef NEW_SKIA
         node.InitCacheSurface(canvas_ ? canvas_->recordingContext() : nullptr);
 #else
         node.InitCacheSurface(canvas_ ? canvas_->getGrContext() : nullptr);
+#endif
+#else
+        node.InitCacheSurface(canvas_ ? canvas_->GetGPUContext().get() : nullptr);
 #endif
     }
     auto cacheCanvas = std::make_shared<RSPaintFilterCanvas>(node.GetCacheSurface().get());

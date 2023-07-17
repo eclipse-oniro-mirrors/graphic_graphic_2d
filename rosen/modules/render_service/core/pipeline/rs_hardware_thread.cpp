@@ -21,6 +21,7 @@
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_uni_render_engine.h"
 #include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "rs_trace.h"
 #include "hdi_backend.h"
@@ -144,18 +145,30 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
 
 void RSHardwareThread::PerformSetActiveMode()
 {
+    RS_TRACE_NAME("RSHardwareThread::PerformSetActiveMode setting active mode");
     auto &hgmCore = OHOS::Rosen::HgmCore::Instance();
     auto screenManager = CreateOrGetScreenManager();
     if (screenManager == nullptr) {
         RS_LOGE("RSHardwareThread CreateOrGetScreenManager fail.");
         return;
     }
+
+    HgmRefreshRates newRate = RSSystemProperties::GetHgmRefreshRatesEnabled();
+    HgmRefreshRateModes newRateMode = RSSystemProperties::GetHgmRefreshRateModesEnabled();
+    if (hgmRefreshRates_ != newRate) {
+        hgmRefreshRates_ = newRate;
+        hgmCore.SetScreenRefreshRate(screenManager->GetDefaultScreenId(), 0, static_cast<int32_t>(hgmRefreshRates_));
+    }
+    if (hgmRefreshRateModes_ != newRateMode) {
+        hgmRefreshRateModes_ = newRateMode;
+        hgmCore.SetRefreshRateMode(static_cast<RefreshRateMode>(hgmRefreshRateModes_));
+    }
+
     std::unique_ptr<std::unordered_map<ScreenId, int32_t>> modeMap(hgmCore.GetModesToApply());
     if (modeMap == nullptr) {
         return;
     }
 
-    RS_TRACE_NAME("RSHardwareThread::PerformSetActiveMode setting active mode");
     for (auto mapIter = modeMap->begin(); mapIter != modeMap->end(); ++mapIter) {
         ScreenId id = mapIter->first;
         int32_t modeId = mapIter->second;

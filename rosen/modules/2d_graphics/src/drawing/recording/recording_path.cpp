@@ -30,7 +30,15 @@ std::shared_ptr<PathCmdList> RecordingPath::GetCmdList() const
 
 bool RecordingPath::BuildFromSVGString(const std::string& str)
 {
-    cmdList_->AddOp<BuildFromSVGOpItem>(str);
+    uint32_t offset = 0;
+    size_t length = str.length();
+    if (str.length() != 0) {
+        const void* data = static_cast<const void*>(str.data());
+        size_t size = length + (8 - length % 8);
+        offset = cmdList_->AddCmdListData({ data, size });
+    }
+
+    cmdList_->AddOp<BuildFromSVGOpItem>(offset, length);
     return true;
 }
 
@@ -113,12 +121,20 @@ void RecordingPath::AddCircle(scalar x, scalar y, scalar radius, PathDirection d
 
 void RecordingPath::AddRoundRect(const Rect& rect, scalar xRadius, scalar yRadius, PathDirection dir)
 {
-    cmdList_->AddOp<AddRoundRectOpItem>(rect, xRadius, yRadius, dir);
+    RoundRect roundRect(rect, xRadius, yRadius);
+    AddRoundRect(roundRect, dir);
 }
 
 void RecordingPath::AddRoundRect(const RoundRect& rrect, PathDirection dir)
 {
-    cmdList_->AddOp<AddRoundRectOpItem>(rrect, dir);
+    std::vector<Point> radiusXY;
+    radiusXY.push_back(rrect.GetCornerRadius(RoundRect::CornerPos::TOP_LEFT_POS));
+    radiusXY.push_back(rrect.GetCornerRadius(RoundRect::CornerPos::TOP_RIGHT_POS));
+    radiusXY.push_back(rrect.GetCornerRadius(RoundRect::CornerPos::BOTTOM_RIGHT_POS));
+    radiusXY.push_back(rrect.GetCornerRadius(RoundRect::CornerPos::BOTTOM_LEFT_POS));
+    auto radiusXYData = CmdListHelper::AddVectorToCmdList<Point>(*cmdList_, radiusXY);
+    
+    cmdList_->AddOp<AddRoundRectOpItem>(radiusXYData, rrect.GetRect(), dir);
 }
 
 void RecordingPath::AddPath(const Path& src, scalar dx, scalar dy)

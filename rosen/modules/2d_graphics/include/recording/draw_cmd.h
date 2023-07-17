@@ -21,6 +21,7 @@
 #include "draw/canvas.h"
 #include "draw/pen.h"
 #include "recording/cmd_list.h"
+#include "recording/recording_canvas.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -44,13 +45,14 @@ struct PenHandle {
 
 class CanvasPlayer {
 public:
-    CanvasPlayer(Canvas& canvas, const CmdList& cmdList);
+    CanvasPlayer(Canvas& canvas, const CmdList& cmdList, const Rect& rect);
     ~CanvasPlayer() = default;
 
     bool Playback(uint32_t type, const void* opItem);
 
     Canvas& canvas_;
     const CmdList& cmdList_;
+    const Rect& rect_;
 
     using PlaybackFunc = void(*)(CanvasPlayer& palyer, const void* opItem);
 private:
@@ -99,6 +101,9 @@ public:
         ATTACH_BRUSH_OPITEM,
         DETACH_PEN_OPITEM,
         DETACH_BRUSH_OPITEM,
+        CLIP_ADAPTIVE_ROUND_RECT_OPITEM,
+        ADAPTIVE_IMAGE_OPITEM,
+        ADAPTIVE_PIXELMAP_OPITEM,
     };
 };
 
@@ -141,27 +146,31 @@ private:
 
 class DrawRoundRectOpItem : public DrawOpItem {
 public:
-    explicit DrawRoundRectOpItem(const RoundRect& rrect);
+    explicit DrawRoundRectOpItem(const std::pair<int32_t, size_t> radiusXYData, const Rect& rect);
     ~DrawRoundRectOpItem()  = default;
 
     static void Playback(CanvasPlayer& player, const void* opItem);
-    void Playback(Canvas& canvas) const;
+    void Playback(Canvas& canvas, const CmdList& cmdList) const;
 
 private:
-    RoundRect rrect_;
+    std::pair<int32_t, size_t> radiusXYData_;
+    Rect rect_;
 };
 
 class DrawNestedRoundRectOpItem : public DrawOpItem {
 public:
-    DrawNestedRoundRectOpItem(const RoundRect& outer, const RoundRect& inner);
+    DrawNestedRoundRectOpItem(const std::pair<int32_t, size_t> outerRadiusXYData, const Rect& outerRect,
+        const std::pair<int32_t, size_t> innerRadiusXYData, const Rect& innerRect);
     ~DrawNestedRoundRectOpItem() = default;
 
     static void Playback(CanvasPlayer& player, const void* opItem);
-    void Playback(Canvas& canvas) const;
+    void Playback(Canvas& canvas, const CmdList& cmdList) const;
 
 private:
-    RoundRect outer_;
-    RoundRect inner_;
+    std::pair<int32_t, size_t> outerRadiusXYData_;
+    std::pair<int32_t, size_t> innerRadiusXYData_;
+    Rect outerRect_;
+    Rect innerRect_;
 };
 
 class DrawArcOpItem : public DrawOpItem {
@@ -339,14 +348,15 @@ private:
 
 class ClipRoundRectOpItem : public DrawOpItem {
 public:
-    ClipRoundRectOpItem(const RoundRect& roundRect, ClipOp op, bool doAntiAlias);
+    ClipRoundRectOpItem(const std::pair<int32_t, size_t> radiusXYData, const Rect& rect, ClipOp op, bool doAntiAlias);
     ~ClipRoundRectOpItem() = default;
 
     static void Playback(CanvasPlayer& player, const void* opItem);
-    void Playback(Canvas& canvas) const;
+    void Playback(Canvas& canvas, const CmdList& cmdList) const;
 
 private:
-    RoundRect roundRect_;
+    std::pair<int32_t, size_t> radiusXYData_;
+    Rect rect_;
     ClipOp clipOp_;
     bool doAntiAlias_;
 };
@@ -567,6 +577,49 @@ public:
 
     static void Playback(CanvasPlayer& player, const void* opItem);
     void Playback(Canvas& canvas) const;
+};
+
+class ClipAdaptiveRoundRectOpItem : public DrawOpItem {
+public:
+    ClipAdaptiveRoundRectOpItem(const std::pair<int32_t, size_t>& radiusData);
+    ~ClipAdaptiveRoundRectOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas, const CmdList& cmdList, const Rect& rect) const;
+
+private:
+    std::pair<int32_t, size_t> radiusData_;
+};
+
+class DrawAdaptiveImageOpItem : public DrawOpItem {
+public:
+    DrawAdaptiveImageOpItem(const ImageHandle& image, const AdaptiveImageInfo& rsImageInfo,
+        const SamplingOptions& smapling, const bool isImage);
+    ~DrawAdaptiveImageOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas, const CmdList& cmdList, const Rect& rect) const;
+
+private:
+    ImageHandle image_;
+    AdaptiveImageInfo rsImageInfo_;
+    SamplingOptions sampling_;
+    bool isImage_;
+};
+
+class DrawAdaptivePixelMapOpItem : public DrawOpItem {
+public:
+    DrawAdaptivePixelMapOpItem(const ImageHandle& pixelMap, const AdaptiveImageInfo& imageInfo,
+        const SamplingOptions& smapling);
+    ~DrawAdaptivePixelMapOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas, const CmdList& cmdList, const Rect& rect) const;
+
+private:
+    ImageHandle pixelMap_;
+    AdaptiveImageInfo imageInfo_;
+    SamplingOptions smapling_;
 };
 } // namespace Drawing
 } // namespace Rosen

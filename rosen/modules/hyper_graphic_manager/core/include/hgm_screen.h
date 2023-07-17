@@ -16,6 +16,7 @@
 #ifndef HGM_SCREEN_H
 #define HGM_SCREEN_H
 
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <unistd.h>
@@ -64,6 +65,7 @@ public:
     uint32_t GetActiveRefreshRate();
     int32_t SetActiveRefreshRate(int32_t sceneId, uint32_t rate);
     int32_t SetRateAndResolution(int32_t sceneId, uint32_t rate, int32_t width, int32_t height);
+    int32_t SetRefreshRateRange(uint32_t minRate, uint32_t maxRate);
     int32_t AddScreenModeInfo(int32_t width, int32_t height, uint32_t rate, int32_t modeId);
 
 private:
@@ -125,6 +127,10 @@ private:
     int32_t GetModeIdViaRate(uint32_t rate) const;
     int32_t GetModeIdViaResolutionAndRate(int32_t width, int32_t height, uint32_t rate) const;
     static constexpr uint32_t RATE_NOT_SUPPORTED = 0;
+
+    // defined by xml configuration, participate in refresh rate decision system
+    uint32_t minRefreshRateRange_ = 1;
+    uint32_t maxRefreshRateRange_ = 120;
 };
 } // namespace Ohos::Rosen
 # endif // HGM_SCREEN_H

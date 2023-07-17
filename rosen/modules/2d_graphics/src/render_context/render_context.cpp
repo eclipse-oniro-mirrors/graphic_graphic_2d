@@ -416,15 +416,15 @@ std::shared_ptr<Drawing::Surface> RenderContext::AcquireSurface(int width, int h
     switch (colorSpace_) {
         // [planning] in order to stay consistant with the colorspace used before, we disabled
         // COLOR_GAMUT_SRGB to let the branch to default, then skColorSpace is set to nullptr
-        case COLOR_GAMUT_DISPLAY_P3:
+        case GRAPHIC_COLOR_GAMUT_DISPLAY_P3:
             colorSpace = Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB,
                 Drawing::CMSMatrixType::DCIP3);
             break;
-        case COLOR_GAMUT_ADOBE_RGB:
+        case GRAPHIC_COLOR_GAMUT_ADOBE_RGB:
             colorSpace = Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB,
                 Drawing::CMSMatrixType::ADOBE_RGB);
             break;
-        case COLOR_GAMUT_BT2020:
+        case GRAPHIC_COLOR_GAMUT_BT2020:
             colorSpace = Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB,
                 Drawing::CMSMatrixType::REC2020);
             break;
@@ -440,7 +440,6 @@ std::shared_ptr<Drawing::Surface> RenderContext::AcquireSurface(int width, int h
     bufferInfo.gpuContext = drGPUContext_;
     bufferInfo.colorSpace = colorSpace;
 
-    RSTagTracker tagTracker(GetDrGPUContext(), RSTagTracker::TAGTYPE::TAG_ACQUIRE_SURFACE);
     surface_ = std::make_shared<Drawing::Surface>();
     if (!surface_->Bind(bufferInfo)) {
         LOGW("surface_ is nullptr");
@@ -463,7 +462,7 @@ void RenderContext::RenderFrame()
         RSTagTracker tagTracker(GetGrContext(), RSTagTracker::TAGTYPE::TAG_RENDER_FRAME);
         skSurface_->getCanvas()->flush();
 #else
-    if (surface != nullptr && surface_->GetCanvas() != nullptr) {
+    if (surface_ != nullptr && surface_->GetCanvas() != nullptr) {
         LOGD("RenderFrame: Canvas");
         surface_->GetCanvas()->Flush();
 #endif

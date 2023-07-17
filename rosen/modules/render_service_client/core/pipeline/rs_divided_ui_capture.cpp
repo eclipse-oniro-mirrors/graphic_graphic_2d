@@ -228,12 +228,18 @@ void RSDividedUICapture::RSDividedUICaptureVisitor::ProcessCanvasRenderNode(RSCa
     }
     if (node.GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
         auto canvasDrawingNode = node.ReinterpretCastTo<RSCanvasDrawingRenderNode>();
+#ifndef USE_ROSEN_DRAWING
         SkBitmap bitmap;
         canvasDrawingNode->GetBitmap(bitmap);
 #ifndef NEW_SKIA
         canvas_->drawBitmap(bitmap, 0, 0);
 #else
         canvas_->drawImage(bitmap.asImage(), 0, 0);
+#endif
+#else
+        Drawing::Bitmap bitmap;
+        canvasDrawingNode->GetBitmap(bitmap);
+        canvas_->DrawBitmap(bitmap, 0, 0);
 #endif
         ProcessBaseRenderNode(*canvasDrawingNode);
     } else {

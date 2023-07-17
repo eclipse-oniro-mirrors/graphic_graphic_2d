@@ -24,10 +24,15 @@ namespace Drawing {
 static constexpr int32_t FUNCTION_OVERLOADING_1 = 1;
 static constexpr int32_t FUNCTION_OVERLOADING_2 = 2;
 
-std::shared_ptr<PathCmdList> PathCmdList::CreateFromData(const CmdListData& data)
+std::shared_ptr<PathCmdList> PathCmdList::CreateFromData(const CmdListData& data, bool isCopy)
 {
     auto cmdList = std::make_shared<PathCmdList>();
-    cmdList->opAllocator_.BuildFromData(data.first, data.second);
+    if (isCopy) {
+        cmdList->opAllocator_.BuildFromDataWithCopy(data.first, data.second);
+    }
+    else {
+        cmdList->opAllocator_.BuildFromData(data.first, data.second);
+    }
     return cmdList;
 }
 
@@ -100,19 +105,21 @@ bool PathPlayer::Playback(uint32_t type, const void* opItem)
     return true;
 }
 
-BuildFromSVGOpItem::BuildFromSVGOpItem(const std::string& str) : PathOpItem(BUILDFROMSVG_OPITEM), str_(str) {}
+BuildFromSVGOpItem::BuildFromSVGOpItem(const uint32_t offset, const size_t size)
+    : PathOpItem(BUILDFROMSVG_OPITEM), offset_(offset), size_(size) {}
 
 void BuildFromSVGOpItem::Playback(PathPlayer& player, const void* opItem)
 {
     if (opItem != nullptr) {
         const auto* op = static_cast<const BuildFromSVGOpItem*>(opItem);
-        op->Playback(player.path_);
+        op->Playback(player.path_, player.cmdList_);
     }
 }
 
-void BuildFromSVGOpItem::Playback(Path& path) const
+void BuildFromSVGOpItem::Playback(Path& path, const CmdList& cmdList) const
 {
-    path.BuildFromSVGString(str_);
+    std::string str(static_cast<const char*>(cmdList.GetCmdListData(offset_)), size_);
+    path.BuildFromSVGString(str);
 }
 
 MoveToOpItem::MoveToOpItem(const scalar x, const scalar y) : PathOpItem(MOVETO_OPITEM), x_(x), y_(y) {}
@@ -283,23 +290,23 @@ void AddCircleOpItem::Playback(Path& path) const
     path.AddCircle(x_, y_, radius_, dir_);
 }
 
-AddRoundRectOpItem::AddRoundRectOpItem(const Rect& rect, const scalar xRadius, const scalar yRadius, PathDirection dir)
-    : PathOpItem(ADDRRECT_OPITEM), rrect_(rect, xRadius, yRadius), dir_(dir) {}
-
-AddRoundRectOpItem::AddRoundRectOpItem(const RoundRect& rrect, PathDirection dir)
-    : PathOpItem(ADDRRECT_OPITEM), rrect_(rrect), dir_(dir) {}
+AddRoundRectOpItem::AddRoundRectOpItem(std::pair<int32_t, size_t> radiusXYData, const Rect& rect, PathDirection dir)
+    : PathOpItem(ADDRRECT_OPITEM), radiusXYData_(radiusXYData), rect_(rect), dir_(dir) {}
 
 void AddRoundRectOpItem::Playback(PathPlayer& player, const void* opItem)
 {
     if (opItem != nullptr) {
         const auto* op = static_cast<const AddRoundRectOpItem*>(opItem);
-        op->Playback(player.path_);
+        op->Playback(player.path_, player.cmdList_);
     }
 }
 
-void AddRoundRectOpItem::Playback(Path& path) const
+void AddRoundRectOpItem::Playback(Path& path, const CmdList& cmdList) const
 {
-    path.AddRoundRect(rrect_, dir_);
+    auto radiusXYData = CmdListHelper::GetVectorFromCmdList<Point>(cmdList, radiusXYData_);
+    RoundRect roundRect(rect_, radiusXYData);
+
+    path.AddRoundRect(roundRect, dir_);
 }
 
 AddPathOpItem::AddPathOpItem(const CmdListHandle& src, const scalar x, const scalar y)

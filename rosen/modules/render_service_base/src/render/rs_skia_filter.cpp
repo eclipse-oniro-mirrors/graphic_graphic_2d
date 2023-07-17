@@ -62,14 +62,26 @@ std::shared_ptr<Drawing::ImageFilter> RSDrawingFilter::GetImageFilter() const
     return imageFilter_;
 }
 
+#ifndef USE_ROSEN_DRAWING
 void RSSkiaFilter::DrawImageRect(
     SkCanvas& canvas, const sk_sp<SkImage>& image, const SkRect& src, const SkRect& dst) const
+#else
+void RSDrawingFilter::DrawImageRect(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image>& image,
+    const Drawing::Rect& src, const Drawing::Rect& dst) const
+#endif
 {
+#ifndef USE_ROSEN_DRAWING
     auto paint = GetPaint();
 #ifdef NEW_SKIA
     canvas.drawImageRect(image.get(), src, dst, SkSamplingOptions(), &paint, SkCanvas::kStrict_SrcRectConstraint);
 #else
     canvas.drawImageRect(image.get(), src, dst, &paint);
+#endif
+#else
+    auto brush = GetBrush();
+    canvas.AttachBrush(brush);
+    canvas.DrawImageRect(*image, src, dst, Drawing::SamplingOptions());
+    canvas.DetachBrush();
 #endif
 }
 } // namespace Rosen

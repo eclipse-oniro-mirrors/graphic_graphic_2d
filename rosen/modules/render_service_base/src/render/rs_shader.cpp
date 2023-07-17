@@ -43,7 +43,7 @@ const sk_sp<SkShader>& RSShader::GetSkShader() const
 #else
 std::shared_ptr<RSShader> RSShader::CreateRSShader(const std::shared_ptr<Drawing::ShaderEffect>& drShader)
 {
-    auto rsShader = std::make_shared<RSShader>();
+    std::shared_ptr<RSShader> rsShader(new RSShader());
     rsShader->SetDrawingShader(drShader);
     return rsShader;
 }

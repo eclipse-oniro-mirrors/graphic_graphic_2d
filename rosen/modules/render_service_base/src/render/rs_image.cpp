@@ -336,7 +336,11 @@ void RSImage::SetRadius(const std::vector<Drawing::Point>& radius)
     hasRadius_ = false;
     for (auto i = 0; i < CORNER_SIZE; i++) {
         radius_[i] = radius[i];
+#ifndef USE_ROSEN_DRAWING
         hasRadius_ = hasRadius_ || !radius_[i].isZero();
+#else
+        hasRadius_ = hasRadius_ || radius_[i].GetX() != 0 || radius_[i].GetY() != 0;
+#endif
     }
 }
 

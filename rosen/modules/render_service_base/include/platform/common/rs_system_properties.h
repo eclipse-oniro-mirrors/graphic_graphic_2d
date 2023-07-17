@@ -69,6 +69,20 @@ enum class ParallelRenderingType {
     ENABLE = 2
 };
 
+enum class HgmRefreshRates {
+    SET_RATE_AUTO = 0,
+    SET_RATE_60 = 60,
+    SET_RATE_90 = 90,
+    SET_RATE_120 = 120
+};
+
+enum class HgmRefreshRateModes {
+    SET_RATE_MODE_AUTO = -1,
+    SET_RATE_MODE_LOW = 1,
+    SET_RATE_MODE_MEDIUN = 2,
+    SET_RATE_MODE_HIGH = 3
+};
+
 using OnSystemPropertyChanged = void(*)(const char*, const char*, void*);
 
 class RSB_EXPORT RSSystemProperties final {
@@ -106,6 +120,8 @@ public:
     static bool GetDrawTextAsBitmap();
     static ParallelRenderingType GetPrepareParallelRenderingEnabled();
     static ParallelRenderingType GetParallelRenderingEnabled();
+    static HgmRefreshRates GetHgmRefreshRatesEnabled();
+    static HgmRefreshRateModes GetHgmRefreshRateModesEnabled();
 
     static bool GetColdStartThreadEnabled();
     static float GetAnimationScale();

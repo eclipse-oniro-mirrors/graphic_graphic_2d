@@ -76,10 +76,13 @@ std::unordered_map<uint32_t, CanvasPlayer::PlaybackFunc> CanvasPlayer::opPlaybac
     { DrawOpItem::ATTACH_BRUSH_OPITEM,      AttachBrushOpItem::Playback },
     { DrawOpItem::DETACH_PEN_OPITEM,        DetachPenOpItem::Playback },
     { DrawOpItem::DETACH_BRUSH_OPITEM,      DetachBrushOpItem::Playback },
+    { DrawOpItem::CLIP_ADAPTIVE_ROUND_RECT_OPITEM, ClipAdaptiveRoundRectOpItem::Playback},
+    { DrawOpItem::ADAPTIVE_IMAGE_OPITEM,    DrawAdaptiveImageOpItem::Playback},
+    { DrawOpItem::ADAPTIVE_PIXELMAP_OPITEM, DrawAdaptivePixelMapOpItem::Playback},
 };
 
-CanvasPlayer::CanvasPlayer(Canvas& canvas, const CmdList& cmdList)
-    : canvas_(canvas), cmdList_(cmdList) {}
+CanvasPlayer::CanvasPlayer(Canvas& canvas, const CmdList& cmdList, const Rect& rect)
+    : canvas_(canvas), cmdList_(cmdList), rect_(rect) {}
 
 bool CanvasPlayer::Playback(uint32_t type, const void* opItem)
 {
@@ -145,35 +148,46 @@ void DrawRectOpItem::Playback(Canvas& canvas) const
     canvas.DrawRect(rect_);
 }
 
-DrawRoundRectOpItem::DrawRoundRectOpItem(const RoundRect& rrect) : DrawOpItem(ROUND_RECT_OPITEM), rrect_(rrect) {}
+DrawRoundRectOpItem::DrawRoundRectOpItem(std::pair<int32_t, size_t> radiusXYData, const Rect& rect)
+    : DrawOpItem(ROUND_RECT_OPITEM), radiusXYData_(radiusXYData), rect_(rect) {}
 
 void DrawRoundRectOpItem::Playback(CanvasPlayer& player, const void* opItem)
 {
     if (opItem != nullptr) {
         const auto* op = static_cast<const DrawRoundRectOpItem*>(opItem);
-        op->Playback(player.canvas_);
+        op->Playback(player.canvas_, player.cmdList_);
     }
 }
 
-void DrawRoundRectOpItem::Playback(Canvas& canvas) const
+void DrawRoundRectOpItem::Playback(Canvas& canvas, const CmdList& cmdList) const
 {
-    canvas.DrawRoundRect(rrect_);
+    auto radiusXYData = CmdListHelper::GetVectorFromCmdList<Point>(cmdList, radiusXYData_);
+    RoundRect roundRect(rect_, radiusXYData);
+
+    canvas.DrawRoundRect(roundRect);
 }
 
-DrawNestedRoundRectOpItem::DrawNestedRoundRectOpItem(const RoundRect& outer, const RoundRect& inner)
-    : DrawOpItem(NESTED_ROUND_RECT_OPITEM), outer_(outer), inner_(inner) {}
+DrawNestedRoundRectOpItem::DrawNestedRoundRectOpItem(const std::pair<int32_t, size_t> outerRadiusXYData,
+    const Rect& outerRect, const std::pair<int32_t, size_t> innerRadiusXYData, const Rect& innerRect)
+    : DrawOpItem(NESTED_ROUND_RECT_OPITEM), outerRadiusXYData_(outerRadiusXYData), innerRadiusXYData_(innerRadiusXYData)
+    , outerRect_(outerRect), innerRect_(innerRect) {}
 
 void DrawNestedRoundRectOpItem::Playback(CanvasPlayer& player, const void* opItem)
 {
     if (opItem != nullptr) {
         const auto* op = static_cast<const DrawNestedRoundRectOpItem*>(opItem);
-        op->Playback(player.canvas_);
+        op->Playback(player.canvas_, player.cmdList_);
     }
 }
 
-void DrawNestedRoundRectOpItem::Playback(Canvas& canvas) const
+void DrawNestedRoundRectOpItem::Playback(Canvas& canvas, const CmdList& cmdList) const
 {
-    canvas.DrawNestedRoundRect(outer_, inner_);
+    auto outerRadiusXYData = CmdListHelper::GetVectorFromCmdList<Point>(cmdList, outerRadiusXYData_);
+    RoundRect outerRect(outerRect_, outerRadiusXYData);
+    auto innerRadiusXYData = CmdListHelper::GetVectorFromCmdList<Point>(cmdList, innerRadiusXYData_);
+    RoundRect innerRect(innerRect_, innerRadiusXYData);
+
+    canvas.DrawNestedRoundRect(outerRect, innerRect);
 }
 
 DrawArcOpItem::DrawArcOpItem(const Rect& rect, scalar startAngle, scalar sweepAngle)
@@ -429,20 +443,24 @@ void ClipRectOpItem::Playback(Canvas& canvas) const
     canvas.ClipRect(rect_, clipOp_, doAntiAlias_);
 }
 
-ClipRoundRectOpItem::ClipRoundRectOpItem(const RoundRect& roundRect, ClipOp op, bool doAntiAlias)
-    : DrawOpItem(CLIP_ROUND_RECT_OPITEM), roundRect_(roundRect), clipOp_(op), doAntiAlias_(doAntiAlias) {}
+ClipRoundRectOpItem::ClipRoundRectOpItem(std::pair<int32_t, size_t> radiusXYData, const Rect& rect, ClipOp op,
+    bool doAntiAlias) : DrawOpItem(CLIP_ROUND_RECT_OPITEM), radiusXYData_(radiusXYData), rect_(rect), clipOp_(op),
+    doAntiAlias_(doAntiAlias) {}
 
 void ClipRoundRectOpItem::Playback(CanvasPlayer& player, const void* opItem)
 {
     if (opItem != nullptr) {
         const auto* op = static_cast<const ClipRoundRectOpItem*>(opItem);
-        op->Playback(player.canvas_);
+        op->Playback(player.canvas_, player.cmdList_);
     }
 }
 
-void ClipRoundRectOpItem::Playback(Canvas& canvas) const
+void ClipRoundRectOpItem::Playback(Canvas& canvas, const CmdList& cmdList) const
 {
-    canvas.ClipRoundRect(roundRect_, clipOp_, doAntiAlias_);
+    auto radiusXYData = CmdListHelper::GetVectorFromCmdList<Point>(cmdList, radiusXYData_);
+    RoundRect roundRect(rect_, radiusXYData);
+
+    canvas.ClipRoundRect(roundRect, clipOp_, doAntiAlias_);
 }
 
 ClipPathOpItem::ClipPathOpItem(const CmdListHandle& path, ClipOp clipOp, bool doAntiAlias)
@@ -829,6 +847,77 @@ void DetachBrushOpItem::Playback(CanvasPlayer& player, const void* opItem)
 void DetachBrushOpItem::Playback(Canvas& canvas) const
 {
     canvas.DetachBrush();
+}
+
+ClipAdaptiveRoundRectOpItem::ClipAdaptiveRoundRectOpItem(const std::pair<int32_t, size_t>& radiusData)
+    : DrawOpItem(CLIP_ADAPTIVE_ROUND_RECT_OPITEM) , radiusData_(radiusData) {}
+
+void ClipAdaptiveRoundRectOpItem::Playback(CanvasPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const ClipAdaptiveRoundRectOpItem*>(opItem);
+        op->Playback(player.canvas_, player.cmdList_, player.rect_);
+    }
+}
+
+void ClipAdaptiveRoundRectOpItem::Playback(Canvas& canvas, const CmdList& cmdList, const Rect& rect) const
+{
+    auto radius = CmdListHelper::GetVectorFromCmdList<Point>(cmdList, radiusData_);
+    auto roundRect = RoundRect(rect, radius);
+    canvas.ClipRoundRect(roundRect, ClipOp::INTERSECT, true);
+}
+
+DrawAdaptiveImageOpItem::DrawAdaptiveImageOpItem(const ImageHandle& image, const AdaptiveImageInfo& rsImageInfo,
+    const SamplingOptions& sampling, const bool isImage) : DrawOpItem(ADAPTIVE_IMAGE_OPITEM),
+    image_(image), rsImageInfo_(rsImageInfo), sampling_(sampling), isImage_(isImage) {}
+
+void DrawAdaptiveImageOpItem::Playback(CanvasPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const DrawAdaptiveImageOpItem*>(opItem);
+        op->Playback(player.canvas_, player.cmdList_, player.rect_);
+    }
+}
+
+void DrawAdaptiveImageOpItem::Playback(Canvas& canvas, const CmdList& cmdList, const Rect& rect) const
+{
+    if (isImage_) {
+        auto image = CmdListHelper::GetImageFromCmdList(cmdList, image_);
+        if (image == nullptr) {
+        LOGE("image is nullptr!");
+            return;
+        }
+        AdaptiveImageHelper::DrawImage(canvas, rect, image, rsImageInfo_, sampling_);
+        return;
+    }
+    auto data = CmdListHelper::GetCompressDataFromCmdList(cmdList, image_);
+    if (data == nullptr) {
+        LOGE("compress data is nullptr!");
+        return;
+    }
+    AdaptiveImageHelper::DrawImage(canvas, rect, data, rsImageInfo_, sampling_);
+}
+
+DrawAdaptivePixelMapOpItem::DrawAdaptivePixelMapOpItem(const ImageHandle& pixelMap, const AdaptiveImageInfo& imageInfo,
+    const SamplingOptions& smapling) : DrawOpItem(ADAPTIVE_PIXELMAP_OPITEM), pixelMap_(pixelMap),
+    imageInfo_(imageInfo), smapling_(smapling) {}
+
+void DrawAdaptivePixelMapOpItem::Playback(CanvasPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const DrawAdaptivePixelMapOpItem*>(opItem);
+        op->Playback(player.canvas_, player.cmdList_, player.rect_);
+    }
+}
+
+void DrawAdaptivePixelMapOpItem::Playback(Canvas& canvas, const CmdList& cmdList, const Rect& rect) const
+{
+    auto pixelMap = CmdListHelper::GetPixelMapFromCmdList(cmdList, pixelMap_);
+    if (pixelMap == nullptr) {
+        LOGE("pixelMap is nullptr!");
+        return;
+    }
+    AdaptiveImageHelper::DrawPixelMap(canvas, rect, pixelMap, imageInfo_, smapling_);
 }
 } // namespace Drawing
 } // namespace Rosen
