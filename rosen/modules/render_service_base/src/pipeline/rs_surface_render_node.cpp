@@ -1135,7 +1135,7 @@ bool RSSurfaceRenderNode::LeashWindowRelatedAppWindowOccluded(std::shared_ptr<RS
     return false;
 }
 
-std::vector<std::shared_ptr<RSSurfaceRenderNode>> RSSurfaceRenderNode::GetLeashWindowNestedAppSurface()
+std::vector<std::shared_ptr<RSSurfaceRenderNode>> RSSurfaceRenderNode::GetLeashWindowNestedSurfaces()
 {
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> res;
     if (!IsLeashWindow()) {
@@ -1163,7 +1163,7 @@ bool RSSurfaceRenderNode::IsCurrentFrameStatic()
     } else if (IsLeashWindow()) {
         // leashwindow subthread cache considered static if and only if all nested surfacenode static
         // (include appwindow and starting window)
-        auto nestedSurfaceNodes = GetLeashWindowNestedAppSurface();
+        auto nestedSurfaceNodes = GetLeashWindowNestedSurfaces();
         for (auto& nestedSurface: nestedSurfaceNodes) {
             if (nestedSurface && !nestedSurface->IsCurrentFrameStatic()) {
                 return false;
@@ -1187,7 +1187,7 @@ void RSSurfaceRenderNode::UpdateCacheSurfaceDirtyManager(int bufferAge)
     cacheSurfaceDirtyManager_->SetBufferAge(bufferAge);
     cacheSurfaceDirtyManager_->UpdateDirty(false);
     // for leashwindow type, nested app surfacenode's cacheSurfaceDirtyManager update is required
-    auto nestedSurfaceNodes = GetLeashWindowNestedAppSurface();
+    auto nestedSurfaceNodes = GetLeashWindowNestedSurfaces();
     for (auto& nestedSurface : nestedSurfaceNodes) {
         if (nestedSurface) {
             nestedSurface->UpdateCacheSurfaceDirtyManager(bufferAge);

@@ -545,7 +545,7 @@ void RSUniRenderUtil::AssignSubThreadNode(std::list<std::shared_ptr<RSSurfaceRen
 
     // skip complete static window, DO NOT assign it to subthread.
     if (node->GetCacheSurfaceProcessedStatus() == CacheProcessStatus::DONE &&
-        node->IsCurrentFrameStatic()) {
+        node->IsCurrentFrameStatic() && node->HasCachedTexture()) {
         RS_TRACE_NAME_FMT("subThreadNodes : static skip %s", node->GetName().c_str());
         return;
     }
