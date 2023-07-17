@@ -139,8 +139,8 @@ void RSScreenManager::OnHwcDeadEvent()
                 screenPowerStatus_.erase(id);
             }
         }
-        screens_.erase(id);
     }
+    screens_.clear();
     defaultScreenId_ = INVALID_SCREEN_ID;
 }
 
