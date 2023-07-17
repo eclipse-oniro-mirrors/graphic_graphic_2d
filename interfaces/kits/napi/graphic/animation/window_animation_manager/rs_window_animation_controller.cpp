@@ -20,6 +20,7 @@
 #include <js_runtime_utils.h>
 #include <rs_window_animation_log.h>
 
+#include "rs_trace.h"
 #include "rs_window_animation_utils.h"
 #ifdef SOC_PERF_ENABLE
 #include "socperf_client.h"
@@ -52,6 +53,7 @@ void RSWindowAnimationController::OnStartApp(StartingAppType type,
     WALOGD("Window animation controller on start app.");
     wptr<RSWindowAnimationController> controllerWptr = this;
     auto task = [controllerWptr, type, startingWindowTarget, finishedCallback]() {
+        RS_TRACE_NAME("RSWindowAnimationController::OnStartApp");
         auto controllerSptr = controllerWptr.promote();
         if (controllerSptr == nullptr) {
             WALOGE("Controller is null!");
@@ -78,6 +80,7 @@ void RSWindowAnimationController::OnAppTransition(const sptr<RSWindowAnimationTa
     WALOGD("Window animation controller on app transition.");
     wptr<RSWindowAnimationController> controllerWptr = this;
     auto task = [controllerWptr, fromWindowTarget, toWindowTarget, finishedCallback]() {
+        RS_TRACE_NAME("RSWindowAnimationController::OnAppTransition");
         auto controllerSptr = controllerWptr.promote();
         if (controllerSptr == nullptr) {
             WALOGE("Controller is null!");
@@ -104,6 +107,7 @@ void RSWindowAnimationController::OnAppBackTransition(const sptr<RSWindowAnimati
     WALOGD("Window animation controller on app back transition.");
     wptr<RSWindowAnimationController> controllerWptr = this;
     auto task = [controllerWptr, fromWindowTarget, toWindowTarget, finishedCallback]() {
+        RS_TRACE_NAME("RSWindowAnimationController::OnAppBackTransition");
         auto controllerSptr = controllerWptr.promote();
         if (controllerSptr == nullptr) {
             WALOGE("Controller is null!");
@@ -126,6 +130,7 @@ void RSWindowAnimationController::OnMinimizeWindow(const sptr<RSWindowAnimationT
     WALOGD("Window animation controller on minimize window.");
     wptr<RSWindowAnimationController> controllerWptr = this;
     auto task = [controllerWptr, minimizingWindowTarget, finishedCallback]() {
+        RS_TRACE_NAME("RSWindowAnimationController::OnMinimizeWindow");
         auto controllerSptr = controllerWptr.promote();
         if (controllerSptr == nullptr) {
             WALOGE("Controller is null!");
@@ -168,6 +173,7 @@ void RSWindowAnimationController::OnCloseWindow(const sptr<RSWindowAnimationTarg
     WALOGD("Window animation controller on close window.");
     wptr<RSWindowAnimationController> controllerWptr = this;
     auto task = [controllerWptr, closingWindowTarget, finishedCallback]() {
+        RS_TRACE_NAME("RSWindowAnimationController::OnCloseWindow");
         auto controllerSptr = controllerWptr.promote();
         if (controllerSptr == nullptr) {
             WALOGE("Controller is null!");
@@ -192,6 +198,7 @@ void RSWindowAnimationController::OnScreenUnlock(const sptr<RSIWindowAnimationFi
     WALOGD("Window animation controller on screen unlock.");
     wptr<RSWindowAnimationController> controllerWptr = this;
     auto task = [controllerWptr, finishedCallback]() {
+        RS_TRACE_NAME("RSWindowAnimationController::OnScreenUnlock");
         auto controllerSptr = controllerWptr.promote();
         if (controllerSptr == nullptr) {
             WALOGE("Controller is null!");
@@ -221,6 +228,7 @@ void RSWindowAnimationController::OnWindowAnimationTargetsUpdate(
     WALOGD("Window animation controller on window animation targets update.");
     wptr<RSWindowAnimationController> controllerWptr = this;
     auto task = [controllerWptr, fullScreenWindowTarget, floatingWindowTargets]() {
+        RS_TRACE_NAME("RSWindowAnimationController::OnWindowAnimationTargetsUpdate");
         auto controllerSptr = controllerWptr.promote();
         if (controllerSptr == nullptr) {
             WALOGE("Controller is null!");
@@ -245,6 +253,7 @@ void RSWindowAnimationController::OnWallpaperUpdate(const sptr<RSWindowAnimation
     WALOGD("Window animation controller on wallpaper update.");
     wptr<RSWindowAnimationController> controllerWptr = this;
     auto task = [controllerWptr, wallpaperTarget]() {
+        RS_TRACE_NAME("RSWindowAnimationController::OnWallpaperUpdate");
         auto controllerSptr = controllerWptr.promote();
         if (controllerSptr == nullptr) {
             WALOGE("Controller is null!");
