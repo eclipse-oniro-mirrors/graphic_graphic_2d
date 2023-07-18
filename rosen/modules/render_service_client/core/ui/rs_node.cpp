@@ -1286,14 +1286,12 @@ void RSNode::UpdateFrameRateRange(FrameRateRange range)
     if (!range.IsValid()) {
         return;
     }
-    if (range.preferred_ > nodeRange_.preferred_) {
-        nodeRange_ = range;
+    nodeRange_ = range;
 
-        std::unique_ptr<RSCommand> command = std::make_unique<RSSetUIFrameRateRange>(GetId(), range);
-        auto transactionProxy = RSTransactionProxy::GetInstance();
-        if (transactionProxy != nullptr) {
-            transactionProxy->AddCommand(command, IsRenderServiceNode());
-        }
+    std::unique_ptr<RSCommand> command = std::make_unique<RSSetUIFrameRateRange>(GetId(), range);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, IsRenderServiceNode());
     }
 }
 } // namespace Rosen

@@ -76,6 +76,7 @@ bool RSRenderAnimation::ParseParam(Parcel& parcel)
     SetDirection(direction);
     SetFillMode(static_cast<FillMode>(fillMode));
     SetRepeatCallbackEnable(isRepeatCallbackEnable);
+    SetFrameRateRange({fpsMin, fpsMax, fpsPreferred});
     return true;
 }
 AnimationId RSRenderAnimation::GetAnimationId() const
