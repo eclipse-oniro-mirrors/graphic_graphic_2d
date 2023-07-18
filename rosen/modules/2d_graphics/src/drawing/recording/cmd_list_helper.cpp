@@ -134,7 +134,7 @@ ImageHandle CmdListHelper::AddPixelMapToCmdList(CmdList& cmdList, const std::sha
 }
 
 std::shared_ptr<Media::PixelMap> CmdListHelper::GetPixelMapFromCmdList(
-        const CmdList& cmdList, const ImageHandle& pixelMapHandle)
+    const CmdList& cmdList, const ImageHandle& pixelMapHandle)
 {
 #ifdef SUPPORT_OHOS_PIXMAP
         return (const_cast<CmdList&>(cmdList)).GetPixelMap(pixelMapHandle.offset);

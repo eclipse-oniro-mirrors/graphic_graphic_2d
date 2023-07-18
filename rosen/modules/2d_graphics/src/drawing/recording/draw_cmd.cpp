@@ -169,8 +169,8 @@ void DrawRoundRectOpItem::Playback(Canvas& canvas, const CmdList& cmdList) const
 
 DrawNestedRoundRectOpItem::DrawNestedRoundRectOpItem(const std::pair<int32_t, size_t> outerRadiusXYData,
     const Rect& outerRect, const std::pair<int32_t, size_t> innerRadiusXYData, const Rect& innerRect)
-    : DrawOpItem(NESTED_ROUND_RECT_OPITEM), outerRadiusXYData_(outerRadiusXYData), innerRadiusXYData_(innerRadiusXYData)
-    , outerRect_(outerRect), innerRect_(innerRect) {}
+    : DrawOpItem(NESTED_ROUND_RECT_OPITEM), outerRadiusXYData_(outerRadiusXYData),
+    innerRadiusXYData_(innerRadiusXYData), outerRect_(outerRect), innerRect_(innerRect) {}
 
 void DrawNestedRoundRectOpItem::Playback(CanvasPlayer& player, const void* opItem)
 {
@@ -850,7 +850,7 @@ void DetachBrushOpItem::Playback(Canvas& canvas) const
 }
 
 ClipAdaptiveRoundRectOpItem::ClipAdaptiveRoundRectOpItem(const std::pair<int32_t, size_t>& radiusData)
-    : DrawOpItem(CLIP_ADAPTIVE_ROUND_RECT_OPITEM) , radiusData_(radiusData) {}
+    : DrawOpItem(CLIP_ADAPTIVE_ROUND_RECT_OPITEM), radiusData_(radiusData) {}
 
 void ClipAdaptiveRoundRectOpItem::Playback(CanvasPlayer& player, const void* opItem)
 {
