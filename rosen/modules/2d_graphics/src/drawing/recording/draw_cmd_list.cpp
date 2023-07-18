@@ -83,7 +83,7 @@ void DrawCmdList::Playback(Canvas& canvas, const Rect* rect) const
     if (rect != nullptr) {
         tmpRect = *rect;
     }
-    CanvasPlayer player = { canvas, *this , tmpRect};
+    CanvasPlayer player = { canvas, *this, tmpRect};
     do {
         void* itemPtr = opAllocator_.OffsetToAddr(offset);
         auto* curOpItemPtr = static_cast<OpItem*>(itemPtr);
