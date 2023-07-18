@@ -38,7 +38,8 @@ void SkiaRecording::InitConfigsFromParam()
             captureMode_ = SkiaCaptureMode::MULTI_FRAME;
         }
         captureFileName_ = system::GetParameter("debug.graphic.skpcapture.path", "");
-        if (captureFileName_.endWith(".skp")) {
+        std::string fileExtension = ".skp";
+        if (captureFileName_.rfind(fileExtension) == (captureFileName_.size() - fileExtension.size())) {
             captureMode_ = SkiaCaptureMode::SINGLE_FRAME;
         }
     }
@@ -66,10 +67,13 @@ bool SkiaRecording::SetupMultiFrame()
     // we need to keep it until after multiPic_.close()
     // procs is passed as a pointer, but just as a method of having an optional default.
     // procs doesn't need to outlive this Make call.
-    multiPic_ = SkMakeMultiPictureDocument(openMultiPicStream_.get(), &procs,
-        [sharingCtx = serialContext_.get()](const SkPicture* pic) {
+    multiPic_ = SkMakeMultiPictureDocument(openMultiPicStream_.get(), &procs
+#ifdef NEW_SKIA
+        , [sharingCtx = serialContext_.get()](const SkPicture* pic) {
                 SkSharingSerialContext::collectNonTextureImagesFromPicture(pic, sharingCtx);
-        });
+        }
+#endif
+    );
     return true;
 }
 
@@ -151,7 +155,7 @@ void SkiaRecording::EndCapture()
             static int tmpId = 0;
             std::string fileName = captureFileName_;
             std::string fileExtension = ".skp";
-            if (captureFileName_.endWith(fileExtension)){
+            if (captureFileName_.rfind(fileExtension) == (captureFileName_.size() - fileExtension.size())) {
                 fileName.insert(fileName.size() - fileExtension.size(), "_" + std::to_string(tmpId++));
             } else {
                 fileName = fileName + "_" + std::to_string(tmpId++) + fileExtension;
