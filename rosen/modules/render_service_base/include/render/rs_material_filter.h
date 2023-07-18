@@ -120,9 +120,10 @@ private:
     static float RadiusVp2Sigma(float radiusVp, float dipScale);
 
 #ifndef USE_ROSEN_DRAWING
-    std::shared_ptr<KawaseBlurFilter> kawaseFunc_;
-#endif
     bool useKawase_ = false;
+    static std::shared_ptr<KawaseBlurFilter> kawaseFunc_;
+#endif
+    sk_sp<SkColorFilter> colorFilter_;
     friend class RSMarshallingHelper;
 };
 } // namespace Rosen
