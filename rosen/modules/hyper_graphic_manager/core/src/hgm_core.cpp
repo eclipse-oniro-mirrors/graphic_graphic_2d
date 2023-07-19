@@ -313,6 +313,11 @@ int32_t HgmCore::RefreshBundleName(std::string name)
     }
 
     currentBundleName_ = name;
+
+    if (customFrameRateMode_ == HGM_REFRESHRATE_MODE_AUTO) {
+        return EXEC_SUCCESS;
+    }
+
     int resetResult = SetRefreshRateMode(customFrameRateMode_);
     if (resetResult == EXEC_SUCCESS) {
         HGM_LOGI("HgmCore reset current refreshrate mode: %{public}d due to bundlename: %{public}s",
