@@ -67,13 +67,14 @@ bool SkiaRecording::SetupMultiFrame()
     // we need to keep it until after multiPic_.close()
     // procs is passed as a pointer, but just as a method of having an optional default.
     // procs doesn't need to outlive this Make call.
-    multiPic_ = SkMakeMultiPictureDocument(openMultiPicStream_.get(), &procs
 #ifdef NEW_SKIA
-        , [sharingCtx = serialContext_.get()](const SkPicture* pic) {
-                SkSharingSerialContext::collectNonTextureImagesFromPicture(pic, sharingCtx);
-        }
+    multiPic_ = SkMakeMultiPictureDocument(openMultiPicStream_.get(), &procs,
+        [sharingCtx = serialContext_.get()](const SkPicture* pic) {
+        SkSharingSerialContext::collectNonTextureImagesFromPicture(pic, sharingCtx);
+    });
+#else
+    multiPic_ = SkMakeMultiPictureDocument(openMultiPicStream_.get(), &procs);
 #endif
-    );
     return true;
 }
 
