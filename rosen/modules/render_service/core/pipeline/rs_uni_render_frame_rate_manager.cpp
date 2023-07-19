@@ -63,7 +63,8 @@ void RSUniRenderFrameRateManager::FindAndSendRefreshRate()
         }
 
         // Send RefreshRate
-        if (currRefreshRate != instance.GetScreenCurrentRefreshRate(id)) {
+        int screenRefreshRate = static_cast<int>(instance.GetScreenCurrentRefreshRate(id));
+        if (currRefreshRate != screenRefreshRate) {
             ROSEN_LOGD("RSUniRenderFrameRateManager::FindAndSendRefreshRate current refreshRate is %d",
                 currRefreshRate);
             int status = instance.SetScreenRefreshRate(id, 0, currRefreshRate);
