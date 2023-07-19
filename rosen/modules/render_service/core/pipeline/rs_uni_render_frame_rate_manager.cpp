@@ -34,7 +34,7 @@ void RSUniRenderFrameRateManager::FindAndSendRefreshRate()
         ScreenId id = idToRange.first;
         auto& instance = HgmCore::Instance();
 
-        // Get supportted refreshRates
+        // Get supported refreshRates
         auto& refreshRateMap = screenIdToSupportedRefreshRates_;
         if (refreshRateMap.find(id) == refreshRateMap.end()) {
             refreshRateMap[id] = instance.GetScreenSupportedRefreshRates(id);
@@ -43,9 +43,9 @@ void RSUniRenderFrameRateManager::FindAndSendRefreshRate()
         auto& refreshRates = refreshRateMap[id];
 
         // Find current refreshRate by FrameRateRange. For example, 
-        // 1. FrameRateRange[min, max, preferred] = [24, 48, 48], supportted refreshRates
+        // 1. FrameRateRange[min, max, preferred] = [24, 48, 48], supported refreshRates
         // of current screen are {30, 60, 90}. The good refreshRate should be 30, not 60.
-        // 2. FrameRateRange[150, 150, 150], supportted refreshRates are {30, 60, 90}, the
+        // 2. FrameRateRange[150, 150, 150], supported refreshRates are {30, 60, 90}, the
         // result is 90.
         int currRefreshRate = 0;
         FrameRateRange range = screenIdToFrameRateRange_[id];
@@ -59,7 +59,7 @@ void RSUniRenderFrameRateManager::FindAndSendRefreshRate()
                 currRefreshRate = refreshRates[pos];
             }
         } else {
-            currRefreshRate = refreshRates.back(); // preferred fps >= biggest supportted refreshRate
+            currRefreshRate = refreshRates.back(); // preferred fps >= biggest supported refreshRate
         }
 
         // Send RefreshRate
