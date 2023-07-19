@@ -163,14 +163,14 @@ void RSHardwareThread::PerformSetActiveMode()
         hgmCore.SetRefreshRateMode(static_cast<RefreshRateMode>(hgmRefreshRateModes_));
     }
 
-    std::unique_ptr<std::unordered_map<ScreenId, int32_t>> modeMap(hgmCore.GetModesToApply());
-    if (modeMap == nullptr) {
-        return;
-    }
-
     if (lockRefreshRateOnce_ == false) {
         hgmCore.SetDefaultRefreshRateMode();
         lockRefreshRateOnce_ = true;
+    }
+
+    std::unique_ptr<std::unordered_map<ScreenId, int32_t>> modeMap(hgmCore.GetModesToApply());
+    if (modeMap == nullptr) {
+        return;
     }
 
     RS_TRACE_NAME("RSHardwareThread::PerformSetActiveMode setting active mode");
