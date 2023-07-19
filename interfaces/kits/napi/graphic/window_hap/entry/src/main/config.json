@@ -17,8 +17,8 @@
     "package": "com.test.window",
     "name": ".Test",
     "deviceType": [
-      "2in1",
       "tablet",
+      "2in1",
       "default",
       "phone"
     ],
