@@ -64,12 +64,15 @@ void HgmFrameRateManager::FindAndSendRefreshRate()
         }
 
         // Send RefreshRate
+        if (!refreshRateSwitch) {
+            HGM_LOGD("HgmFrameRateManager: refreshRateSwitch is off, currRefreshRate is %{public}d", currRefreshRate);
+            return;
+        }
         if (currRefreshRate != instance.GetScreenCurrentRefreshRate(id)) {
-            HGM_LOGD("HgmFrameRateManager::FindAndSendRefreshRate current refreshRate is %d",
-                currRefreshRate);
+            HGM_LOGD("HgmFrameRateManager: current refreshRate is %{public}d", currRefreshRate);
             int status = instance.SetScreenRefreshRate(id, 0, currRefreshRate);
             if (status != EXEC_SUCCESS) {
-                HGM_LOGE("HgmFrameRateManager::FindAndSendRefreshRate failed to set refreshRate %d, screenId %d",
+                HGM_LOGE("HgmFrameRateManager: failed to set refreshRate %{public}d, screenId %{public}d",
                     currRefreshRate, static_cast<int>(id));
             }
         }
