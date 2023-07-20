@@ -64,7 +64,7 @@ void HgmFrameRateManager::FindAndSendRefreshRate()
         }
 
         // Send RefreshRate
-        if (!refreshRateSwitch) {
+        if (!refreshRateSwitch_) {
             HGM_LOGD("HgmFrameRateManager: refreshRateSwitch is off, currRefreshRate is %{public}d", currRefreshRate);
             return;
         }
