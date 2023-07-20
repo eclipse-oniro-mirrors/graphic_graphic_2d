@@ -416,7 +416,7 @@ private:
     std::unordered_map<NodeId, FrameRateRange> uiFrameRateRangeMap_; // RSSurfaceRenderNode id
     std::unordered_map<NodeId, FrameRateRange> finalFrameRateRangeMap_; // RSDisplayRenderNode id
 
-    std::unique_ptr<RSUniRenderFrameRateManager> frameRateMgr_;
+    std::unique_ptr<HgmFrameRateManager> frameRateMgr_;
 };
 } // namespace Rosen
 } // namespace OHOS

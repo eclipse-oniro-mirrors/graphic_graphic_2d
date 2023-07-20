@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef RENDER_SERVICE_PIPELINE_RS_UNI_RENDER_FRAME_RATE_RANGE_H
-#define RENDER_SERVICE_PIPELINE_RS_UNI_RENDER_FRAME_RATE_RANGE_H
+#ifndef HGM_FRAME_RATE_MANAGER_H
+#define HGM_FRAME_RATE_MANAGER_H
 
 #include <unordered_map>
 #include <vector>
@@ -37,4 +37,4 @@ private:
 };
 } // namespace Rosen
 } // namespace OHOS
-#endif // RENDER_SERVICE_PIPELINE_RS_UNI_RENDER_FRAME_RATE_RANGE_H
+#endif // HGM_FRAME_RATE_MANAGER_H
