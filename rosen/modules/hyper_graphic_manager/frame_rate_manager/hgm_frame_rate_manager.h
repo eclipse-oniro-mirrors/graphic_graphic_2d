@@ -18,6 +18,7 @@
 
 #include <unordered_map>
 #include <vector>
+
 #include "animation/rs_frame_rate_range.h"
 #include "parameters.h"
 #include "screen_manager/screen_types.h"
