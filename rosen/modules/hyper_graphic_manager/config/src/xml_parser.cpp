@@ -114,14 +114,14 @@ int32_t XMLParser::ParseParam(xmlNode &node)
     std::string paraName = ExtractPropertyValue("name", node);
     if (paraName == "default_refreshrate_mode") {
         HGM_LOGD("XMLParser parsing default_refreshrate_mode");
-        std::string parsed = ExtractPropertyValue("value", node);
-        mParsedData_->isDynamicFrameRateEnable_ = parsed;
+        std::string mode = ExtractPropertyValue("value", node);
+        mParsedData_->defaultRefreshRateMode_ = mode;
     }
 
     if (paraName == "general_config_enable") {
         HGM_LOGD("XMLParser parsing general_config_enable");
-        std::string mode = ExtractPropertyValue("value", node);
-        mParsedData_->defaultRefreshRateMode_ = mode;
+        std::string parsed = ExtractPropertyValue("value", node);
+        mParsedData_->isDynamicFrameRateEnable_ = parsed;
     }
 
     HGM_LOGD("XMLParser parsing general_config_enable finish: %{public}s",

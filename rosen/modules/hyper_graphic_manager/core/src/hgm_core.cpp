@@ -115,7 +115,7 @@ int32_t HgmCore::SetModeBySettingConfig()
         HGM_LOGW("HgmCore failed to find strategy for customer setting : %{public}d", customFrameRateMode_);
         return HGM_ERROR;
     }
-    
+
     std::string strat = mParsedConfigData_->customerSettingConfig_[settingTag];
     auto strategy = mParsedConfigData_->detailedStrategies_.find(strat);
     if (strategy == mParsedConfigData_->detailedStrategies_.end()) {
