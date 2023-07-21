@@ -126,7 +126,7 @@ RSUniRenderVisitor::RSUniRenderVisitor()
     }
 #endif
     surfaceNodePrepareMutex_ = std::make_shared<std::mutex>();
-    parallelRenderType_ = ParallelRenderingType::DISABLE;
+    parallelRenderType_ = RSSystemProperties::GetParallelRenderingEnabled();
 #if defined(RS_ENABLE_PARALLEL_RENDER)
     isCalcCostEnable_ = RSSystemParameters::GetCalcCostEnabled();
 #endif
@@ -846,10 +846,14 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     dirtyFlag_ = dirtyFlag_ || node.GetDstRectChanged();
     parentSurfaceNodeMatrix_ = geoPtr->GetAbsMatrix();
     auto screenRotation = curDisplayNode_->GetRotation();
-    node.ResetSurfaceOpaqueRegion(RectI(0, 0, screenInfo_.width, screenInfo_.height), geoPtr->GetAbsRect(),
-        screenRotation, node.IsFocusedWindow(currentFocusedPid_));
-    node.ResetSurfaceContainerRegion(RectI(0, 0, screenInfo_.width, screenInfo_.height), geoPtr->GetAbsRect(),
-        screenRotation);
+    auto screenRect = RectI(0, 0, screenInfo_.width, screenInfo_.height);
+    if (!node.CheckOpaqueRegionBaseInfo(
+        screenRect, geoPtr->GetAbsRect(), screenRotation, node.IsFocusedWindow(currentFocusedPid_))) {
+        node.ResetSurfaceOpaqueRegion(screenRect, geoPtr->GetAbsRect(),
+            screenRotation, node.IsFocusedWindow(currentFocusedPid_));
+    }
+    node.SetOpaqueRegionBaseInfo(
+        screenRect, geoPtr->GetAbsRect(), screenRotation, node.IsFocusedWindow(currentFocusedPid_));
 
 #if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
     bool isLeashWindowNode = false;
@@ -1098,6 +1102,7 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
         rsParent = nodeParent->ReinterpretCastTo<RSRenderNode>();
     }
 
+    node.SetIsAncestorDirty(rsParent->IsDirty() || rsParent->IsAncestorDirty());
     if (curSurfaceDirtyManager_ == nullptr) {
         RS_LOGE("RSUniRenderVisitor::PrepareCanvasRenderNode curSurfaceDirtyManager is nullptr");
         return;
@@ -3323,7 +3328,8 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
         // Otherwise, its childrenRect_ should be considered.
         RectI dirtyRect = node.HasChildrenOutOfRect() ?
             node.GetOldDirtyInSurface().JoinRect(node.GetChildrenRect()) : node.GetOldDirtyInSurface();
-        if (isSubNodeOfSurfaceInProcess_ && !curSurfaceNode_->SubNodeNeedDraw(dirtyRect, partialRenderType_)) {
+        if (isSubNodeOfSurfaceInProcess_ && !node.IsAncestorDirty() &&
+            !curSurfaceNode_->SubNodeNeedDraw(dirtyRect, partialRenderType_)) {
             return;
         }
     }
