@@ -36,7 +36,6 @@ public:
 private:
     std::unordered_map<ScreenId, FrameRateRange> screenIdToFrameRateRange_;
     std::unordered_map<ScreenId, std::vector<uint32_t>> screenIdToSupportedRefreshRates_;
-    bool refreshRateSwitch_ = system::GetBoolParameter("persist.hgm.refreshrate.enabled", false);
 };
 } // namespace Rosen
 } // namespace OHOS

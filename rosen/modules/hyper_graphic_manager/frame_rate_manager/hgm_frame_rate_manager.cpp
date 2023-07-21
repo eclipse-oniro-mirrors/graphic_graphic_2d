@@ -64,7 +64,8 @@ void HgmFrameRateManager::FindAndSendRefreshRate()
         }
 
         // Send RefreshRate
-        if (!refreshRateSwitch_) {
+        static bool refreshRateSwitch = system::GetBoolParameter("persist.hgm.refreshrate.enabled", false);
+        if (!refreshRateSwitch) {
             HGM_LOGD("HgmFrameRateManager: refreshRateSwitch is off, currRefreshRate is %{public}d", currRefreshRate);
             return;
         }
