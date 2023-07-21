@@ -53,5 +53,6 @@ ohos_systemtest("vsync_test") {
     "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy:samgr_proxy",
     "//third_party/googletest:gtest_main",
   ]
+  external_deps = [ "c_utils:utils" ]
 }
 ## SystemTest vsync_test }}}

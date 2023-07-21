@@ -37,6 +37,7 @@ ohos_fuzztest("VsyncReceiverFuzzTest") {
     "//foundation/graphic/graphic_2d/rosen/modules/composer/vsync:libvsync",
     "//foundation/graphic/graphic_2d/utils:socketpair",
   ]
+  external_deps = [ "c_utils:utils" ]
 }
 
 ###############################################################################
