@@ -115,7 +115,7 @@ int32_t HgmCore::SetModeBySettingConfig()
         HGM_LOGW("HgmCore failed to find strategy for customer setting : %{public}d", customFrameRateMode_);
         return HGM_ERROR;
     }
-    
+
     std::string strat = mParsedConfigData_->customerSettingConfig_[settingTag];
     auto strategy = mParsedConfigData_->detailedStrategies_.find(strat);
     if (strategy == mParsedConfigData_->detailedStrategies_.end()) {
@@ -228,6 +228,18 @@ int32_t HgmCore::SetRefreshRateMode(RefreshRateMode refreshRateMode)
     return EXEC_SUCCESS;
 }
 
+int32_t HgmCore::SetDefaultRefreshRateMode()
+{
+    if (!mParsedConfigData_) {
+        HGM_LOGW("HgmCore no parsed xml configuration found, failed to apply refreshrate mode");
+        return HGM_ERROR;
+    }
+    int32_t mode = std::stoi(mParsedConfigData_->defaultRefreshRateMode_);
+    HGM_LOGD("HgmCore set default refreshrate mode to : %{public}d", mode);
+
+    return SetRefreshRateMode(static_cast<RefreshRateMode>(mode));
+}
+
 int32_t HgmCore::AddScreen(ScreenId id, int32_t defaultMode)
 {
     // add a physical screen to hgm during hotplug event
@@ -301,6 +313,11 @@ int32_t HgmCore::RefreshBundleName(std::string name)
     }
 
     currentBundleName_ = name;
+
+    if (customFrameRateMode_ == HGM_REFRESHRATE_MODE_AUTO) {
+        return EXEC_SUCCESS;
+    }
+
     int resetResult = SetRefreshRateMode(customFrameRateMode_);
     if (resetResult == EXEC_SUCCESS) {
         HGM_LOGI("HgmCore reset current refreshrate mode: %{public}d due to bundlename: %{public}s",

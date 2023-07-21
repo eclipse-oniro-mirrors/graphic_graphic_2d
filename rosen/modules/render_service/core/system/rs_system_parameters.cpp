@@ -31,5 +31,16 @@ bool RSSystemParameters::GetDrawingCacheEnabled()
 {
     return std::atoi((system::GetParameter("rosen.drawingCache.enabled", "1")).c_str()) != 0;
 }
+
+bool RSSystemParameters::GetDrawingCacheEnabledDfx()
+{
+    return std::atoi((system::GetParameter("rosen.drawingCache.enabledDfx", "0")).c_str()) != 0;
+}
+
+QuickSkipPrepareType RSSystemParameters::GetQuickSkipPrepareType()
+{
+    return static_cast<QuickSkipPrepareType>(
+        std::atoi((system::GetParameter("rosen.quickskipprepare.enabled", "1")).c_str()));
+}
 } // namespace Rosen
 } // namespace OHOS

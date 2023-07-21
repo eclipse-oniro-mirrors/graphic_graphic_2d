@@ -166,7 +166,6 @@ public:
                nodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE;
     }
 
-    std::shared_ptr<RSSurfaceRenderNode> GetLeashWindowNestedAppSurface();
     // used to determine whether the layer-1 surfacenodes can be skipped in the subthread of focus-first framework
     bool IsCurrentFrameStatic();
     void UpdateCacheSurfaceDirtyManager(int bufferAge = 2);
@@ -675,10 +674,29 @@ public:
         return cacheProcessStatus_;
     }
 
+    bool GetFilterCacheFullyCovered() const
+    {
+        return isFilterCacheFullyCovered_;
+    }
+
+    void SetFilterCacheFullyCovered(bool val)
+    {
+        isFilterCacheFullyCovered_ = val;
+    }
+
+    void ResetFilterNodes()
+    {
+        filterNodes_.clear();
+    }
+    void UpdateFilterNodes(const std::shared_ptr<RSRenderNode>& nodePtr);
+    // update static node's back&front-ground filter cache status
+    void UpdateFilterCacheStatusIfNodeStatic(const RectI& clipRect);
+
 private:
     void ClearChildrenCache(const std::shared_ptr<RSBaseRenderNode>& node);
     bool SubNodeIntersectWithExtraDirtyRegion(const RectI& r) const;
     Vector4f GetWindowCornerRadius();
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> GetLeashWindowNestedSurfaces();
 
     std::mutex mutexRT_;
     std::mutex mutexUI_;
@@ -767,6 +785,8 @@ private:
     Occlusion::Region transparentRegion_;
 
     Occlusion::Region containerRegion_;
+    bool isFilterCacheFullyCovered_ = false;
+    std::vector<std::shared_ptr<RSRenderNode>> filterNodes_ = {};  // valid filter nodes within, including itself
 
     //<screenRect, absRect, screenRotation, isFocusWindow>
     std::tuple<RectI, RectI, ScreenRotation, bool> OpaqueRegionBaseInfo_;
