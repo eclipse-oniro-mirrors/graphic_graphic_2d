@@ -76,6 +76,9 @@ bool RSSurfaceNodeFuzzTest(const uint8_t* data, size_t size)
     float density = GetData<float>();
 
     std::shared_ptr<RSSurfaceNode> surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+    if (!surfaceNode) {
+        return false;
+    }
     surfaceNode->AddChild(child, index);
     surfaceNode->RemoveChild(child);
     surfaceNode->SetColorSpace(colorSpace);
