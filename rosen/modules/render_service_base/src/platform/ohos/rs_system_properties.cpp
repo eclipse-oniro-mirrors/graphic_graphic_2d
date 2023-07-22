@@ -237,6 +237,11 @@ bool RSSystemProperties::GetSkipForAlphaZeroEnabled()
     return std::atoi((system::GetParameter("persist.skipForAlphaZero.enabled", "1")).c_str()) != 0;
 }
 
+bool RSSystemProperties::GetSkipUnGeodirtyEnabled()
+{
+    return std::atoi((system::GetParameter("persist.skipUnGeodirty.enabled", "0")).c_str()) != 0;
+}
+
 float RSSystemProperties::GetAnimationScale()
 {
     return std::atof((system::GetParameter("persist.sys.graphic.animationscale", "1.0")).c_str());

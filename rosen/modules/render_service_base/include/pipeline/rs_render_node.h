@@ -478,6 +478,11 @@ public:
     void ResetRSFrameRateRange();
     void ResetUIFrameRateRange();
 
+    void MarkUnGeoDirty()
+    {
+        unGeoDirty_ = true;
+    }
+
 protected:
     explicit RSRenderNode(NodeId id, std::weak_ptr<RSContext> context = {});
     void AddGeometryModifier(const std::shared_ptr<RSRenderModifier> modifier);
@@ -560,6 +565,7 @@ private:
     float boundsHeight_ = 0.0f;
     std::unordered_set<RSModifierType> dirtyTypes_;
     bool hasCacheableAnim_ = false;
+    bool unGeoDirty_ = false;
 
     FrameRateRange rsRange_ = {0, 0, 0};
     FrameRateRange uiRange_ = {0, 0, 0};

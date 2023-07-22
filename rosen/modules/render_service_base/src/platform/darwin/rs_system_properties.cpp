@@ -150,6 +150,11 @@ bool RSSystemProperties::GetSkipForAlphaZeroEnabled()
     return {};
 }
 
+bool RSSystemProperties::GetSkipUnGeodirtyEnabled()
+{
+    return {};
+}
+
 float RSSystemProperties::GetAnimationScale()
 {
     return 1.f;
