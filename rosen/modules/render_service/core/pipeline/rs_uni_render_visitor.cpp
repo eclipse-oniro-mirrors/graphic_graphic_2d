@@ -57,6 +57,7 @@
 #ifdef RS_ENABLE_RECORDING
 #include "benchmarks/rs_recording_thread.h"
 #endif
+#include "scene_board_judgement.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -406,7 +407,7 @@ void RSUniRenderVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
     }
 
     node.GetCurAllSurfaces().clear();
-    node.CollectSurface(node.shared_from_this(), node.GetCurAllSurfaces(), true);
+    node.CollectSurface(node.shared_from_this(), node.GetCurAllSurfaces(), true, false);
 
 #if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
     if (drivenInfo_) {
@@ -2871,7 +2872,8 @@ bool RSUniRenderVisitor::CheckIfSurfaceRenderNodeNeedProcess(RSSurfaceRenderNode
 void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 {
     if (isUIFirst_ && isSubThread_) {
-        if (auto parentNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(node.GetParent().lock())) {
+        if (auto parentNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(node.GetParent().lock()) ||
+            (Rosen::SceneBoardJudgement::IsSceneBoardEnabled() && node.IsLeashWindow())) {
             UpdateCacheSurface(node);
             return;
         }
@@ -2903,13 +2905,15 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         node.GetId(), node.GetChildrenCount(), node.GetName().c_str(), node.GetOcclusionVisible());
 #ifdef RS_ENABLE_GL
 #ifndef USE_ROSEN_DRAWING
+    if (!Rosen::SceneBoardJudgement::IsSceneBoardEnabled()) {
 #ifdef NEW_RENDER_CONTEXT
-    auto grContext = renderEngine_->GetDrawingContext()->GetDrawingContext();
+        auto grContext = renderEngine_->GetDrawingContext()->GetDrawingContext();
 #else
-    auto grContext = static_cast<GrDirectContext*>(canvas_->recordingContext());
+        auto grContext = static_cast<GrDirectContext*>(canvas_->recordingContext());
 #endif
-    RSTagTracker tagTracker(grContext, node.GetId(), RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE);
-    node.SetGrContext(grContext);
+        RSTagTracker tagTracker(grContext, node.GetId(), RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE);
+        node.SetGrContext(grContext);
+    }
 #else
     Drawing::GPUContext* gpuContext = renderEngine_->GetRenderContext()->GetDrGPUContext();
     node.SetDrawingGPUContext(gpuContext);
