@@ -23,6 +23,7 @@
 #include "platform/common/rs_log.h"
 #include "render/rs_path.h"
 #include "rs_trace.h"
+#include "scene_board_judgement.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -33,6 +34,13 @@ constexpr const char* SCREENLOCK_WINDOW = "ScreenLockWindow";
 constexpr const char* SYSUI_DROPDOWN = "SysUI_Dropdown";
 constexpr const char* SYSUI_STATUS_BAR = "SysUI_StatusBar";
 constexpr const char* PRIVACY_INDICATOR = "PrivacyIndicator";
+constexpr const char* SCB_DESK_TOP = "SCBDesktop2";
+constexpr const char* SCB_WALL_PAPER = "SCBWallpaper1";
+constexpr const char* SCB_SCREEN_LOCK = "SCBScreenLock10";
+constexpr const char* SCB_DROP_DOWN_PANEL = "SCBDropdownPanel7";
+constexpr const char* SCB_STATUS_BAR = "SCBStatusBar6";
+constexpr const char* SCB_NEGATIVE_SCREEN = "SCBNegativeScreen3";
+constexpr const char* SCB_GESTURE_BACK = "SCBGestureBack9";
 };
 void RSUniRenderUtil::MergeDirtyHistory(std::shared_ptr<RSDisplayRenderNode>& node, int32_t bufferAge,
     bool useAlignedDirtyRegion)
@@ -462,7 +470,15 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
     bool isRotation = displayNode->IsRotationChanged();
     bool isScale = false;
     uint32_t leashWindowCount = 0;
-    for (auto iter = displayNode->GetSortedChildren().begin(); iter != displayNode->GetSortedChildren().end(); iter++) {
+    std::list<RSBaseRenderNode::SharedPtr> curAllSurfaces;
+    if (Rosen::SceneBoardJudgement::IsSceneBoardEnabled()) {
+        std::vector<RSBaseRenderNode::SharedPtr> curAllSurfacesVec;
+        displayNode->CollectSurface(displayNode, curAllSurfacesVec, true, true);
+        std::copy(curAllSurfacesVec.begin(), curAllSurfacesVec.end(), std::back_inserter(curAllSurfaces));
+    } else {
+        curAllSurfaces = displayNode->GetSortedChildren();
+    }
+    for (auto iter = curAllSurfaces.begin(); iter != curAllSurfaces.end(); iter++) {
         auto node = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*iter);
         if (node == nullptr) {
             ROSEN_LOGE("RSUniRenderUtil::AssignWindowNodes nullptr found in sortedChildren, this should not happen");
@@ -479,7 +495,7 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
     std::string traceInfo = "{ isScale: " + std::to_string(isScale) + ", " +
         "leashWindowCount: " + std::to_string(leashWindowCount) + ", " +
         "isRotation: " + std::to_string(isRotation) + " }; ";
-    for (auto iter = displayNode->GetSortedChildren().begin(); iter != displayNode->GetSortedChildren().end(); iter++) {
+    for (auto iter = curAllSurfaces.begin(); iter != curAllSurfaces.end(); iter++) {
         auto node = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*iter);
         if (node == nullptr) {
             ROSEN_LOGE("RSUniRenderUtil::AssignWindowNodes nullptr found in sortedChildren, this should not happen");
@@ -490,8 +506,13 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
             "( " + std::to_string(static_cast<uint32_t>(node->GetCacheSurfaceProcessedStatus())) + ", " +
             std::to_string(node->HasFilter()) + ", " + std::to_string(node->HasAbilityComponent()) + " ); ";
         std::string surfaceName = node->GetName();
-        if (surfaceName == ENTRY_VIEW || surfaceName == WALLPAPER_VIEW || surfaceName == SYSUI_STATUS_BAR ||
-            surfaceName == SCREENLOCK_WINDOW ||surfaceName == SYSUI_DROPDOWN || surfaceName == PRIVACY_INDICATOR) {
+        bool needFilter = surfaceName == ENTRY_VIEW || surfaceName == WALLPAPER_VIEW ||
+            surfaceName == SYSUI_STATUS_BAR || surfaceName == SCREENLOCK_WINDOW ||
+            surfaceName == SYSUI_DROPDOWN || surfaceName == PRIVACY_INDICATOR;
+        bool needFilterSCB = surfaceName == SCB_DESK_TOP || surfaceName == SCB_WALL_PAPER ||
+            surfaceName == SCB_SCREEN_LOCK || surfaceName == SCB_DROP_DOWN_PANEL || surfaceName == SCB_STATUS_BAR ||
+            surfaceName == SCB_NEGATIVE_SCREEN || surfaceName == SCB_GESTURE_BACK;
+        if (needFilter || needFilterSCB) {
             AssignMainThreadNode(mainThreadNodes, node);
             continue;
         }
@@ -631,8 +652,15 @@ void RSUniRenderUtil::ClearSurfaceIfNeed(const RSRenderNodeMap& map,
     if (displayNode == nullptr) {
         return;
     }
-    auto sortedChildren = displayNode->GetSortedChildren();
-    std::set<std::shared_ptr<RSBaseRenderNode>> tmpSet(sortedChildren.begin(), sortedChildren.end());
+    std::list<RSBaseRenderNode::SharedPtr> curAllSurfaces;
+    if (Rosen::SceneBoardJudgement::IsSceneBoardEnabled()) {
+        std::vector<RSBaseRenderNode::SharedPtr> curAllSurfacesVec;
+        displayNode->CollectSurface(displayNode, curAllSurfacesVec, true, true);
+        std::copy(curAllSurfacesVec.begin(), curAllSurfacesVec.end(), std::back_inserter(curAllSurfaces));
+    } else {
+        curAllSurfaces = displayNode->GetSortedChildren();
+    }
+    std::set<std::shared_ptr<RSBaseRenderNode>> tmpSet(curAllSurfaces.begin(), curAllSurfaces.end());
     for (auto& child : oldChildren) {
         auto surface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child);
         if (tmpSet.count(surface) == 0) {
