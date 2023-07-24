@@ -17,6 +17,11 @@
 
 #include "hgm_core.h"
 #include "hgm_log.h"
+namespace {
+    constexpr float MARGIN = 0.00001;
+    constexpr int MIN_DRAWING_FPS = 10;
+    constexpr int DUPLATION = 2;
+}
 
 namespace OHOS {
 namespace Rosen {
@@ -62,6 +67,7 @@ void HgmFrameRateManager::FindAndSendRefreshRate()
         } else {
             currRefreshRate = refreshRates.back(); // preferred fps >= biggest supported refreshRate
         }
+        screenIdToLCDRefreshRates_[id] = currRefreshRate;
 
         // Send RefreshRate
         static bool refreshRateSwitch = system::GetBoolParameter("persist.hgm.refreshrate.enabled", false);
@@ -69,10 +75,12 @@ void HgmFrameRateManager::FindAndSendRefreshRate()
             HGM_LOGD("HgmFrameRateManager: refreshRateSwitch is off, currRefreshRate is %{public}d", currRefreshRate);
             return;
         }
-        if (currRefreshRate != instance.GetScreenCurrentRefreshRate(id)) {
+        int lcdRefreshRate = static_cast<int>(instance.GetScreenCurrentRefreshRate(id));
+        if (currRefreshRate != lcdRefreshRate) {
             HGM_LOGD("HgmFrameRateManager: current refreshRate is %{public}d", currRefreshRate);
             int status = instance.SetScreenRefreshRate(id, 0, currRefreshRate);
             if (status != EXEC_SUCCESS) {
+                screenIdToLCDRefreshRates_[id] = lcdRefreshRate;
                 HGM_LOGE("HgmFrameRateManager: failed to set refreshRate %{public}d, screenId %{public}d",
                     currRefreshRate, static_cast<int>(id));
             }
@@ -83,6 +91,71 @@ void HgmFrameRateManager::FindAndSendRefreshRate()
 void HgmFrameRateManager::ResetFrameRateRangeMap()
 {
     screenIdToFrameRateRange_.clear();
+    drawingFrameRateMap_.clear();
+}
+
+void HgmFrameRateManager::DecideSurfaceDrawingFrameRate(NodeId displayNodeId,
+    NodeId surfaceNodeId, FrameRateRange range)
+{
+    if (!range.IsValid()) {
+        return;
+    }
+
+    int refreshRate = static_cast<int>(screenIdToLCDRefreshRates_[displayNodeId]);
+    int drawingFps = refreshRate;
+    if (range.preferred_ == refreshRate) {
+        drawingFrameRateMap_[surfaceNodeId] = range.preferred_;
+    } else if (!range.IsDynamic()) {
+        // if the FrameRateRange of a surface is [50, 50, 50], the refreshRate is
+        // 90, the drawing fps of the surface should be 45.
+        int divisor = refreshRate / range.preferred_;
+        drawingFps = refreshRate / divisor;
+        drawingFrameRateMap_[surfaceNodeId] = drawingFps;
+    } else {
+        // if the FrameRateRange of a surface is [24, 48, 48], the refreshRate is
+        // 60, the drawing fps of the surface should be 30.
+        float ratio = 1.0f;
+        int divisor = 1;
+        int dividedFps = refreshRate;
+        while (dividedFps >= MIN_DRAWING_FPS) {
+            if (dividedFps < range.min_) {
+                break;
+            }
+            if (dividedFps > range.max_) {
+                divisor++;
+                dividedFps = refreshRate / divisor;
+                drawingFps = dividedFps;
+                continue;
+            }
+            // We want to measure the satisfaction of current drawing fps.
+            // The KPI of satisfaction is the ratio of lack.
+            // e.g. Preferred fps is 58, refreshRate is 60. When the
+            // drawing fps is 60, we lack the least(the ratio is 2/60).
+            // Preferred fps is 34, refreshRate is 60. When the
+            // drawing fps is 34, we lack the least(the ratio is 4/30).
+            int remainder = std::min(range.preferred_ % dividedFps,
+                (DUPLATION * dividedFps - range.preferred_) %  dividedFps);
+            float currRatio = static_cast<float>(remainder) /
+                static_cast<float>(dividedFps);
+            // dividedFps is the perfect result, currRatio is almost zero.
+            if (currRatio < MARGIN) {
+                ratio = currRatio;
+                drawingFps = dividedFps;
+                drawingFrameRateMap_[surfaceNodeId] = drawingFps;
+                break;
+            }
+            // dividedFps is better than previous result
+            if (currRatio < ratio) {
+                ratio = currRatio;
+                drawingFps = dividedFps;
+            }
+            divisor++;
+            dividedFps = refreshRate / divisor;
+        }
+        drawingFrameRateMap_[surfaceNodeId] = drawingFps;
+    }
+    HGM_LOGD("HgmFrameRateManager:: Surface - %{public}d, Drawing FrameRate %{public}d",
+        static_cast<int>(surfaceNodeId), drawingFps);
 }
 } // namespace Rosen
 } // namespace OHOS

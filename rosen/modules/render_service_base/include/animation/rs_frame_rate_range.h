@@ -37,6 +37,10 @@ public:
             this->min_ >= 0 && this->max_ <= RANGE_MAX_REFRESHRATE;
     }
 
+    bool IsDynamic() {
+        return this->min_ == this->max_ && this->max_ == this->preferred_;
+    }
+
     void Reset()
     {
         this->min_ = 0;

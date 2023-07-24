@@ -154,6 +154,7 @@ public:
     void ResetFrameRateRangeMaps();
     void UpdateSurfaceFrameRateRange(RSRenderNode& node);
     void FindAndSendRefreshRate();
+    void DecideSurfaceDrawingFrameRate();
 
 private:
     void DrawWatermarkIfNeed();
@@ -415,7 +416,8 @@ private:
     FrameRateRange currDisplayRSRange_ = {0, 0, 0};
     FrameRateRange currDisplayUIRange_ = {0, 0, 0};
     std::unordered_map<NodeId, FrameRateRange> rsFrameRateRangeMap_; // RSDisplayRenderNode id
-    std::unordered_map<NodeId, FrameRateRange> uiFrameRateRangeMap_; // RSSurfaceRenderNode id
+    // "key" is RSSurfaceRenderNode id, "pair.first" is RSDisplayRenderNode id, which is the parent of "key"
+    std::unordered_map<NodeId, std::pair<NodeId, FrameRateRange>> uiFrameRateRangeMap_;
     std::unordered_map<NodeId, FrameRateRange> finalFrameRateRangeMap_; // RSDisplayRenderNode id
 
     std::unique_ptr<HgmFrameRateManager> frameRateMgr_;

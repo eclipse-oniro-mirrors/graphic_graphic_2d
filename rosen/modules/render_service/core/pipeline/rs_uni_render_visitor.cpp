@@ -924,7 +924,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     auto nodeParent = node.GetParent().lock();
     if (nodeParent && nodeParent->ReinterpretCastTo<RSDisplayRenderNode>()) {
         if (currSurfaceUIRange_.IsValid()) {
-            uiFrameRateRangeMap_[node.GetId()] = currSurfaceUIRange_;
+            uiFrameRateRangeMap_[node.GetId()] = {nodeParent->GetId(), currSurfaceUIRange_};
         }
         currSurfaceRSRange_.Reset();
         currSurfaceUIRange_.Reset();
@@ -3774,6 +3774,14 @@ void RSUniRenderVisitor::ResetFrameRateRangeMaps()
 void RSUniRenderVisitor::FindAndSendRefreshRate()
 {
     frameRateMgr_->FindAndSendRefreshRate();
+}
+
+void RSUniRenderVisitor::DecideSurfaceDrawingFrameRate()
+{
+    for (auto idToPair : uiFrameRateRangeMap_) {
+        frameRateMgr_->DecideSurfaceDrawingFrameRate(idToPair.first,
+            idToPair.second.first, idToPair.second.second);
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

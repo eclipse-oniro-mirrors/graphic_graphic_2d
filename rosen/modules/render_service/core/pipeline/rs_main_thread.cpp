@@ -1054,6 +1054,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         }
         rootNode->Process(uniVisitor);
         uniVisitor->FindAndSendRefreshRate();
+        uniVisitor->DecideSurfaceDrawingFrameRate();
     }
     isDirty_ = false;
     uniRenderEngine_->ShrinkCachesIfNeeded();

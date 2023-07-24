@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "animation/rs_frame_rate_range.h"
+#include "common/rs_common_def.h"
 #include "parameters.h"
 #include "screen_manager/screen_types.h"
 
@@ -32,10 +33,14 @@ public:
     void UpdateFrameRateRange(ScreenId id, FrameRateRange range);
     void FindAndSendRefreshRate();
     void ResetFrameRateRangeMap();
+    void DecideSurfaceDrawingFrameRate(NodeId displayNodeId,
+        NodeId surfaceNodeId, FrameRateRange range);
 
 private:
     std::unordered_map<ScreenId, FrameRateRange> screenIdToFrameRateRange_;
     std::unordered_map<ScreenId, std::vector<uint32_t>> screenIdToSupportedRefreshRates_;
+    std::unordered_map<ScreenId, uint32_t> screenIdToLCDRefreshRates_;
+    std::unordered_map<NodeId, int> drawingFrameRateMap_; // RSSurfaceRenderNode id - frameRate
 };
 } // namespace Rosen
 } // namespace OHOS
