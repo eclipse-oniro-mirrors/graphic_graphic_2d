@@ -38,7 +38,7 @@ public:
     }
 
     bool IsDynamic() {
-        return this->min_ == this->max_ && this->max_ == this->preferred_;
+        return IsValid() && this->min_ != this->max_;
     }
 
     void Reset()

@@ -123,7 +123,17 @@ void HgmFrameRateManager::DecideSurfaceDrawingFrameRate(NodeId displayNodeId,
             }
             if (dividedFps > range.max_) {
                 divisor++;
+                int preDividedFps = dividedFps;
                 dividedFps = refreshRate / divisor;
+                // FrameRateRange is [50, 80, 80], refreshrate is
+                // 90, the drawing frame rate is 90.
+                // FrameRateRange is [40, 80, 80], refreshrate is
+                // 90, the drawing frame rate is 45.
+                if (dividedFps < range.min_ && (range.preferred_ - dividedFps) >
+                    (preDividedFps - range.preferred_)) {
+                    drawingFps = preDividedFps;
+                    break;
+                }
                 drawingFps = dividedFps;
                 continue;
             }
@@ -134,7 +144,7 @@ void HgmFrameRateManager::DecideSurfaceDrawingFrameRate(NodeId displayNodeId,
             // Preferred fps is 34, refreshRate is 60. When the
             // drawing fps is 34, we lack the least(the ratio is 4/30).
             int remainder = std::min(range.preferred_ % dividedFps,
-                (DUPLATION * dividedFps - range.preferred_) %  dividedFps);
+                std::abs(DUPLATION * dividedFps - range.preferred_) %  dividedFps);
             float currRatio = static_cast<float>(remainder) /
                 static_cast<float>(dividedFps);
             // dividedFps is the perfect result, currRatio is almost zero.
