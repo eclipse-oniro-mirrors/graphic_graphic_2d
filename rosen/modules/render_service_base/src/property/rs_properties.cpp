@@ -22,6 +22,7 @@
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_vector4.h"
 #include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
 #include "render/rs_filter.h"
 
 namespace OHOS {
@@ -335,12 +336,28 @@ bool RSProperties::UpdateGeometry(const RSProperties* parent, bool dirtyFlag,
     CheckEmptyBounds();
     auto boundsGeoPtr = std::static_pointer_cast<RSObjAbsGeometry>(boundsGeo_);
 
-    if (dirtyFlag || geoDirty_) {
-        auto parentGeo = parent == nullptr ? nullptr : std::static_pointer_cast<RSObjAbsGeometry>(parent->boundsGeo_);
-        boundsGeoPtr->UpdateMatrix(parentGeo, offset, clipRect);
-        return true;
+    if (RSSystemProperties::GetSkipGeometryNotChangeEnabled()) {
+        if (dirtyFlag || geoDirty_) {
+            auto parentGeo = parent == nullptr ? nullptr : std::static_pointer_cast<RSObjAbsGeometry>(parent->boundsGeo_);
+            boundsGeoPtr->UpdateMatrix(parentGeo, offset, clipRect);
+            auto rect = boundsGeoPtr->GetAbsRect();
+            if (!lastRect_.has_value()) {
+                lastRect_ = rect;
+                return true;
+            }
+            dirtyFlag = dirtyFlag || rect != lastRect_.value();
+            lastRect_ = rect;
+            return dirtyFlag;
+        }
+        return false;
+    } else {
+        if (dirtyFlag || geoDirty_) {
+            auto parentGeo = parent == nullptr ? nullptr : std::static_pointer_cast<RSObjAbsGeometry>(parent->boundsGeo_);
+            boundsGeoPtr->UpdateMatrix(parentGeo, offset, clipRect);
+            return true;
+        }
+        return false;
     }
-    return false;
 }
 
 void RSProperties::SetSandBox(const std::optional<Vector2f>& parentPosition)

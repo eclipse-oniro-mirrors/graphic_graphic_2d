@@ -133,6 +133,7 @@ public:
     static int GetFilterCacheSizeThreshold();
     static bool GetKawaseEnabled();
     static bool GetSkipForAlphaZeroEnabled();
+    static bool GetSkipGeometryNotChangeEnabled();
 
     static bool GetBoolSystemProperty(const char* name, bool defaultValue);
     static int WatchSystemProperty(const char* name, OnSystemPropertyChanged func, void* context);

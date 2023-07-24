@@ -174,6 +174,13 @@ void RSRenderNode::UpdateDirtyRegion(
     if (!IsDirty() && !geoDirty) {
         return;
     }
+    if (RSSystemProperties::GetSkipGeometryNotChangeEnabled()) {
+        // while node absRect not change and other content not change, return directly for not generate dirty region
+        if (!geometryChangeNotPerceived_ && !geoDirty) {
+            return;
+        }
+        geometryChangeNotPerceived_ = false;
+    }
     if (!oldDirty_.IsEmpty()) {
         dirtyManager.MergeDirtyRect(oldDirty_);
     }
