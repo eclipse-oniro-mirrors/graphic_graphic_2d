@@ -106,13 +106,13 @@ void HgmFrameRateManager::CalcSurfaceDrawingFrameRate(NodeId surfaceNodeId,
     if (range.preferred_ == refreshRate || refreshRate % range.preferred_ == 0) {
         drawingFps = range.preferred_;
     } else if (!range.IsDynamic()) {
-        // if the FrameRateRange of a surface is [50, 50, 50], the refreshRate is
-        // 90, the drawing fps of the surface should be 45.
+        // if the FrameRateRange of a surfaceNode is [50, 50, 50], the refreshRate is
+        // 90, the drawing fps of the surfaceNode should be 45.
         int divisor = refreshRate / range.preferred_;
         drawingFps = refreshRate / divisor;
     } else {
-        // if the FrameRateRange of a surface is [24, 48, 48], the refreshRate is
-        // 60, the drawing fps of the surface should be 30.
+        // if the FrameRateRange of a surfaceNode is [24, 48, 48], the refreshRate is
+        // 60, the drawing fps of the surfaceNode should be 30.
         float ratio = 1.0f;
         int divisor = 1;
         int dividedFps = refreshRate;
@@ -162,7 +162,7 @@ void HgmFrameRateManager::CalcSurfaceDrawingFrameRate(NodeId surfaceNodeId,
         }
     }
     drawingFrameRateMap_[surfaceNodeId] = drawingFps;
-    HGM_LOGD("HgmFrameRateManager:: Surface - %{public}d, Drawing FrameRate %{public}d",
+    HGM_LOGD("HgmFrameRateManager:: surfaceNodeId - %{public}d, Drawing FrameRate %{public}d",
         static_cast<int>(surfaceNodeId), drawingFps);
 }
 } // namespace Rosen
