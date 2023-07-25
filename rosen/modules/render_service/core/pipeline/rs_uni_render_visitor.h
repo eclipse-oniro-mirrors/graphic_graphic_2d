@@ -416,8 +416,8 @@ private:
     FrameRateRange currDisplayRSRange_ = {0, 0, 0};
     FrameRateRange currDisplayUIRange_ = {0, 0, 0};
     std::unordered_map<NodeId, FrameRateRange> rsFrameRateRangeMap_; // RSDisplayRenderNode id
-    // "key" is RSSurfaceRenderNode id, "pair.first" is RSDisplayRenderNode id, which is the parent of "key"
-    std::unordered_map<NodeId, std::pair<NodeId, FrameRateRange>> uiFrameRateRangeMap_;
+    // RSSurfaceRenderNode id
+    std::unordered_map<NodeId, std::pair<ScreenId, FrameRateRange>> uiFrameRateRangeMap_;
     std::unordered_map<NodeId, FrameRateRange> finalFrameRateRangeMap_; // RSDisplayRenderNode id
 
     std::unique_ptr<HgmFrameRateManager> frameRateMgr_;
