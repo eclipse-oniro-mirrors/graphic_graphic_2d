@@ -377,12 +377,6 @@ private:
 
     bool isCalcCostEnable_ = false;
 
-#ifndef USE_ROSEN_DRAWING
-    std::optional<SkMatrix> rootMatrix_ = std::nullopt;
-#else
-    std::optional<Drawing::Matrix> rootMatrix_ = std::nullopt;
-#endif
-
     uint32_t appWindowNum_ = 0;
 
     bool isParallel_ = false;
