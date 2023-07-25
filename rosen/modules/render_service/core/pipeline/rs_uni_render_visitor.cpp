@@ -114,8 +114,7 @@ RSUniRenderVisitor::RSUniRenderVisitor()
     quickSkipPrepareType_ = RSSystemParameters::GetQuickSkipPrepareType();
     sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
     auto screenNum = screenManager->GetAllScreenIds().size();
-    isPartialRenderEnabled_ = (screenNum <= 1) && (partialRenderType_ != PartialRenderType::DISABLED) &&
-        !SceneBoardJudgement::IsSceneBoardEnabled();
+    isPartialRenderEnabled_ = (screenNum <= 1) && (partialRenderType_ != PartialRenderType::DISABLED);
     isTargetDirtyRegionDfxEnabled_ = RSSystemProperties::GetTargetDirtyRegionDfxEnabled(dfxTargetSurfaceNames_);
     dirtyRegionDebugType_ = RSSystemProperties::GetDirtyRegionDebugType();
     isDirtyRegionDfxEnabled_ = !isTargetDirtyRegionDfxEnabled_ &&
@@ -228,11 +227,15 @@ void RSUniRenderVisitor::PrepareBaseRenderNode(RSBaseRenderNode& node)
     // merge last childRect as dirty if any child has been removed
     if (curSurfaceDirtyManager_ && node.HasRemovedChild()) {
         RectI dirtyRect = prepareClipRect_.IntersectRect(node.GetChildrenRect());
-        curSurfaceDirtyManager_->MergeDirtyRect(dirtyRect);
-        if (curSurfaceDirtyManager_->IsTargetForDfx()) {
-            // since childRect includes multiple rects, defaultly marked as canvas_node
-            curSurfaceDirtyManager_->UpdateDirtyRegionInfoForDfx(node.GetId(), RSRenderNodeType::CANVAS_NODE,
-                DirtyRegionType::REMOVE_CHILD_RECT, dirtyRect);
+        if (isSubNodeOfSurfaceInPrepare_) {
+            curSurfaceDirtyManager_->MergeDirtyRect(dirtyRect);
+            if (curSurfaceDirtyManager_->IsTargetForDfx()) {
+                // since childRect includes multiple rects, defaultly marked as canvas_node
+                curSurfaceDirtyManager_->UpdateDirtyRegionInfoForDfx(node.GetId(), RSRenderNodeType::CANVAS_NODE,
+                    DirtyRegionType::REMOVE_CHILD_RECT, dirtyRect);
+            }
+        } else {
+            curDisplayDirtyManager_->MergeDirtyRect(dirtyRect);
         }
         node.ResetHasRemovedChild();
     }
@@ -883,6 +886,10 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
 #endif
 
+    bool isSubNodeOfSurfaceInPrepare = isSubNodeOfSurfaceInPrepare_;
+    if (node.IsMainWindowType() || node.IsLeashWindow()) {
+        isSubNodeOfSurfaceInPrepare_ = true;
+    }
     node.UpdateChildrenOutOfRectFlag(false);
     if (node.ShouldPrepareSubnodes()) {
         PrepareBaseRenderNode(node);
@@ -904,6 +911,9 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     dirtyFlag_ = dirtyFlag;
     isQuickSkipPreparationEnabled_ = isQuickSkipPreparationEnabled;
     prepareClipRect_ = prepareClipRect;
+    if (node.IsMainWindowType() || node.IsLeashWindow()) {
+        isSubNodeOfSurfaceInPrepare_ = isSubNodeOfSurfaceInPrepare;
+    }
 
     PrepareTypesOfSurfaceRenderNodeAfterUpdate(node);
     if (node.GetDstRectChanged() || (node.GetDirtyManager() && node.GetDirtyManager()->IsCurrentFrameDirty())) {
@@ -1106,8 +1116,14 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
         return;
     }
     node.GetMutableRenderProperties().UpdateSandBoxMatrix(parentSurfaceNodeMatrix_);
-    dirtyFlag_ = node.Update(*curSurfaceDirtyManager_, rsParent ? &(rsParent->GetRenderProperties()) : nullptr,
-        dirtyFlag_, prepareClipRect_);
+    if (!isSubNodeOfSurfaceInPrepare_) {
+        // if canvasNode is not sub node of surfaceNode, merge the dirtyRegion to curDisplayDirtyManager_
+        dirtyFlag_ = node.Update(*curDisplayDirtyManager_, rsParent ? &(rsParent->GetRenderProperties()) : nullptr,
+            dirtyFlag_, prepareClipRect_);
+    } else {
+        dirtyFlag_ = node.Update(*curSurfaceDirtyManager_, rsParent ? &(rsParent->GetRenderProperties()) : nullptr,
+            dirtyFlag_, prepareClipRect_);
+    }
 
 #if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
     // driven render
@@ -3032,16 +3048,26 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 
     canvas_->ConcatMatrix(geoPtr->GetMatrix());
 #endif
+    bool isSubNodeOfSurfaceInProcess = isSubNodeOfSurfaceInProcess_;
+    if (node.IsMainWindowType() || node.IsLeashWindow()) {
+        isSubNodeOfSurfaceInProcess_ = true;
+    }
     if (property.IsSpherizeValid()) {
         DrawSpherize(node);
     } else {
         if (isUIFirst_ && node.GetCacheType() == CacheType::ANIMATE_PROPERTY) {
             RSUniRenderUtil::HandleSubThreadNode(node, *canvas_);
+            if (node.IsMainWindowType() || node.IsLeashWindow()) {
+                isSubNodeOfSurfaceInProcess_ = isSubNodeOfSurfaceInProcess;
+            }
             return;
         }
         node.ProcessRenderBeforeChildren(*canvas_);
         if (isUIFirst_ && RSUniRenderUtil::HandleSubThreadNode(node, *canvas_)) {
             node.ProcessRenderAfterChildren(*canvas_);
+            if (node.IsMainWindowType() || node.IsLeashWindow()) {
+                isSubNodeOfSurfaceInProcess_ = isSubNodeOfSurfaceInProcess;
+            }
             return;
         }
         if (node.GetBuffer() != nullptr) {
@@ -3160,6 +3186,9 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         // count processed canvas node
         RS_TRACE_NAME(node.GetName() + " ProcessedNodes: " + std::to_string(processedCanvasNodeInCurrentSurface_));
         processedCanvasNodeInCurrentSurface_ = 0; // reset
+    }
+    if (node.IsMainWindowType() || node.IsLeashWindow()) {
+        isSubNodeOfSurfaceInProcess_ = isSubNodeOfSurfaceInProcess;
     }
 }
 
@@ -3362,9 +3391,14 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
         // Otherwise, its childrenRect_ should be considered.
         RectI dirtyRect = node.HasChildrenOutOfRect() ?
             node.GetOldDirtyInSurface().JoinRect(node.GetChildrenRect()) : node.GetOldDirtyInSurface();
-        if (!node.IsAncestorDirty() &&
+        if (isSubNodeOfSurfaceInProcess_ && !node.IsAncestorDirty() &&
             !curSurfaceNode_->SubNodeNeedDraw(dirtyRect, partialRenderType_)) {
-            return;
+            auto parent = node.GetParent().lock();
+            bool isParentLeashWindow = parent && parent->ReinterpretCastTo<RSSurfaceRenderNode>() &&
+                parent->ReinterpretCastTo<RSSurfaceRenderNode>()->IsLeashWindow()
+            if (!isParentLeashWindow) {
+                return;
+            }
         }
     }
 #endif

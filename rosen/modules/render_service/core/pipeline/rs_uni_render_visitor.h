@@ -376,6 +376,9 @@ private:
     std::weak_ptr<RSBaseRenderNode> logicParentNode_;
 
     bool isCalcCostEnable_ = false;
+    // adapt to sceneboard, mark if the canvasNode within the scope of surfaceNode
+    bool isSubNodeOfSurfaceInPrepare_ = false;
+    bool isSubNodeOfSurfaceInProcess_ = false;
 
     uint32_t appWindowNum_ = 0;
 
