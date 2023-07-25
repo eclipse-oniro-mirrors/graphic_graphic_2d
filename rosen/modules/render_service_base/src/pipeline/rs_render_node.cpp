@@ -30,6 +30,7 @@
 #include "platform/common/rs_system_properties.h"
 #include "property/rs_properties_painter.h"
 #include "property/rs_property_trace.h"
+#include "scene_board_judgement.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -46,7 +47,8 @@ const std::set<RSModifierType> CACHEABLE_ANIMATION_TYPE = {
     RSModifierType::FRAME,
 };
 // Only enable filter cache when uni-render is enabled and filter cache is enabled
-const bool FILTER_CACHE_ENABLED = RSSystemProperties::GetFilterCacheEnabled() && RSUniRenderJudgement::IsUniRender();
+const bool FILTER_CACHE_ENABLED = RSSystemProperties::GetFilterCacheEnabled() &&
+    RSUniRenderJudgement::IsUniRender() && !SceneBoardJudgement::IsSceneBoardEnabled();
 }
 
 RSRenderNode::RSRenderNode(NodeId id, std::weak_ptr<RSContext> context) : RSBaseRenderNode(id, context) {}
