@@ -37,6 +37,9 @@ public:
         ScreenId screenId, FrameRateRange range);
 
 private:
+    int GetRefreshRateByScreenId(ScreenId screenId);
+    float GetDrawingFps(int refreshRate, FrameRateRange range);
+
     std::unordered_map<ScreenId, FrameRateRange> screenIdToFrameRateRange_;
     std::unordered_map<ScreenId, std::vector<uint32_t>> screenIdToSupportedRefreshRates_;
     std::unordered_map<ScreenId, uint32_t> screenIdToLCDRefreshRates_;

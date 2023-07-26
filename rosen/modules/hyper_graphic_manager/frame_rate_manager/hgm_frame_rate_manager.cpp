@@ -19,8 +19,8 @@
 #include "hgm_log.h"
 namespace {
     constexpr float MARGIN = 0.00001;
-    constexpr float MIN_RATIO = 1.0f;
     constexpr int MIN_DRAWING_FPS = 10;
+    constexpr int REFRESH_RATE_OUTLIER = -1;
 }
 
 namespace OHOS {
@@ -102,81 +102,97 @@ void HgmFrameRateManager::CalcSurfaceDrawingFrameRate(NodeId surfaceNodeId,
     if (!range.IsValid()) {
         return;
     }
+    int refreshRate = GetRefreshRateByScreenId(screenId);
+    if (GetRefreshRateByScreenId(screenId) == REFRESH_RATE_OUTLIER) {
+        return;
+    }
+
+    float drawingFps = GetDrawingFps(refreshRate, range);
+    drawingFrameRateMap_[surfaceNodeId] = drawingFps;
+    HGM_LOGD("HgmFrameRateManager:: surfaceNodeId - %{public}d, Drawing FrameRate %{public}.1f",
+        static_cast<int>(surfaceNodeId), drawingFps);
+}
+
+int HgmFrameRateManager::GetRefreshRateByScreenId(ScreenId screenId)
+{
     auto& refreshRatesMap = screenIdToLCDRefreshRates_;
     if (refreshRatesMap.find(screenId) == refreshRatesMap.end()) {
         HGM_LOGE("HgmFrameRateManager:: Failed to find ScreenId - %{public}d",
             static_cast<int>(screenId));
-        return;
+        return REFRESH_RATE_OUTLIER;
     }
+    return refreshRatesMap[screenId];
+}
 
-    int refreshRate = static_cast<int>(refreshRatesMap[screenId]);
-    float drawingFps = static_cast<float>(refreshRate);
+float HgmFrameRateManager::GetDrawingFps(int refreshRate, FrameRateRange range)
+{
     const float preferredFps = static_cast<float>(range.preferred_);
     if (range.preferred_ == refreshRate || refreshRate % range.preferred_ == 0) {
-        drawingFps = preferredFps;
-    } else if (!range.IsDynamic()) {
-        // if the FrameRateRange of a surfaceNode is [50, 50, 50], the refreshRate is
-        // 90, the drawing fps of the surfaceNode should be 45.
+        return preferredFps;
+    }
+
+    // e.g. If the FrameRateRange of a surfaceNode is [50, 50, 50], the refreshRate is
+    // 90, the drawing fps of the surfaceNode should be 45.
+    if (!range.IsDynamic()) {
         int divisor = refreshRate / range.preferred_;
-        drawingFps = static_cast<float>(refreshRate) / static_cast<float>(divisor);
-    } else {
-        // if the FrameRateRange of a surfaceNode is [24, 48, 48], the refreshRate is
-        // 60, the drawing fps of the surfaceNode should be 30.
-        int divisor = 1;
-        float dividedFps = static_cast<float>(refreshRate);
-        float currRatio = std::abs(dividedFps - preferredFps) / preferredFps;
-        float ratio = std::min(MIN_RATIO, currRatio);
-        while (dividedFps > MIN_DRAWING_FPS - MARGIN) {
-            if (dividedFps < range.min_) {
+        return static_cast<float>(refreshRate) / static_cast<float>(divisor);
+    }
+
+    // We will find a drawing fps, which is divisible by refreshRate.
+    // If the refreshRate is 60, the options of drawing fps are 60, 30, 15, 12, etc.
+    int divisor = 1;
+    float drawingFps = static_cast<float>(refreshRate);
+    float dividedFps = drawingFps;
+    float currRatio = std::abs(dividedFps - preferredFps) / preferredFps;
+    float ratio = currRatio;
+    while (dividedFps > MIN_DRAWING_FPS - MARGIN) {
+        if (dividedFps < range.min_) {
+            break;
+        }
+        if (dividedFps > range.max_) {
+            divisor++;
+            float preDividedFps = dividedFps;
+            dividedFps = static_cast<float>(refreshRate) / static_cast<float>(divisor);
+            // FrameRateRange is [50, 80, 80], refreshrate is
+            // 90, the drawing frame rate is 90.
+            // FrameRateRange is [40, 80, 80], refreshrate is
+            // 90, the drawing frame rate is 45.
+            if (dividedFps < range.min_ && (preferredFps - dividedFps) >
+                (preDividedFps - preferredFps)) {
+                drawingFps = preDividedFps;
                 break;
             }
-            if (dividedFps > range.max_) {
-                divisor++;
-                float preDividedFps = dividedFps;
-                dividedFps = static_cast<float>(refreshRate) / static_cast<float>(divisor);
-                // FrameRateRange is [50, 80, 80], refreshrate is
-                // 90, the drawing frame rate is 90.
-                // FrameRateRange is [40, 80, 80], refreshrate is
-                // 90, the drawing frame rate is 45.
-                if (dividedFps < range.min_ && (preferredFps - dividedFps) >
-                    (preDividedFps - preferredFps)) {
-                    drawingFps = preDividedFps;
-                    break;
-                }
-                currRatio = std::abs(dividedFps - preferredFps) / preferredFps;
-                if (currRatio < ratio) {
-                    ratio = currRatio;
-                    drawingFps = dividedFps;
-                }
-                continue;
-            }
-            // We want to measure the satisfaction of current drawing fps.
-            // The KPI of satisfaction is the ratio of lack.
-            // e.g. Preferred fps is 58, refreshRate is 60. When the
-            // drawing fps is 60, we lack the least(the ratio is 2/60).
-            // Preferred fps is 34, refreshRate is 60. When the
-            // drawing fps is 34, we lack the least(the ratio is 4/30).
-            float remainder = std::min(std::fmodf(preferredFps, dividedFps),
-                std::fmodf(std::abs(dividedFps - preferredFps), dividedFps));
-            currRatio = remainder / dividedFps;
-            // When currRatio is almost zero, dividedFps is the perfect result
-            if (currRatio < MARGIN) {
-                ratio = currRatio;
-                drawingFps = dividedFps;
-                break;
-            }
-            // dividedFps is better than previous result
+            currRatio = std::abs(dividedFps - preferredFps) / preferredFps;
             if (currRatio < ratio) {
                 ratio = currRatio;
                 drawingFps = dividedFps;
             }
-            divisor++;
-            dividedFps = static_cast<float>(refreshRate) / static_cast<float>(divisor);
+            continue;
         }
+        // We want to measure the satisfaction of current drawing fps.
+        // The KPI of satisfaction is the ratio of lack.
+        // e.g. Preferred fps is 58, refreshRate is 60. When the
+        // drawing fps is 60, we lack the least(the ratio is 2/60).
+        // Preferred fps is 34, refreshRate is 60. When the
+        // drawing fps is 34, we lack the least(the ratio is 4/30).
+        float remainder = std::min(std::fmodf(preferredFps, dividedFps),
+            std::fmodf(std::abs(dividedFps - preferredFps), dividedFps));
+        currRatio = remainder / dividedFps;
+        // When currRatio is almost zero, dividedFps is the perfect result
+        if (currRatio < MARGIN) {
+            ratio = currRatio;
+            drawingFps = dividedFps;
+            break;
+        }
+
+        if (currRatio < ratio) {
+            ratio = currRatio;
+            drawingFps = dividedFps;
+        }
+        divisor++;
+        dividedFps = static_cast<float>(refreshRate) / static_cast<float>(divisor);
     }
-    drawingFrameRateMap_[surfaceNodeId] = drawingFps;
-    HGM_LOGD("HgmFrameRateManager:: surfaceNodeId - %{public}d, Drawing FrameRate %{public}.1f",
-        static_cast<int>(surfaceNodeId), drawingFps);
+    return drawingFps;
 }
 } // namespace Rosen
 } // namespace OHOS
