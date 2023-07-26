@@ -44,7 +44,7 @@ void RSDrivenRenderVisitor::PrepareChildren(RSRenderNode& node)
 
 void RSDrivenRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode& node)
 {
-    auto rsParent = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(node.GetParent().lock());
+    auto rsParent = (node.GetParent().lock());
     if (rsParent && rsParent->IsMarkDrivenRender()) {
         auto paintItem = node.GetRenderProperties().GetFrame();
         int32_t itemIndex = node.GetItemIndex();

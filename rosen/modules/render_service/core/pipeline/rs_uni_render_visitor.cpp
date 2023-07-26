@@ -216,7 +216,7 @@ void RSUniRenderVisitor::PrepareChildren(RSRenderNode& node)
     }
     node.ResetSortedChildren();
     for (auto& child : node.GetChildren()) {
-        if (auto renderChild = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(child.lock())) {
+        if (auto renderChild = (child.lock())) {
             renderChild->ApplyModifiers();
         }
     }
@@ -790,7 +790,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         auto skipNodeMap = RSMainThread::Instance()->GetCacheCmdSkippedNodes();
         if (skipNodeMap.count(node.GetId()) != 0) {
             auto parentNode = node.GetParent().lock();
-            auto rsParent = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(parentNode);
+            auto rsParent = (parentNode);
             dirtyFlag_ = node.Update(*curSurfaceDirtyManager_, rsParent ? &(rsParent->GetRenderProperties()) : nullptr,
                 dirtyFlag_, prepareClipRect_);
             dirtyFlag_ = dirtyFlag;
@@ -800,7 +800,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
     // Update node properties, including position (dstrect), OldDirty()
     auto parentNode = node.GetParent().lock();
-    auto rsParent = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(parentNode);
+    auto rsParent = (parentNode);
     auto rsSurfaceParent = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(parentNode);
     if (node.IsAppWindow() && rsSurfaceParent && rsSurfaceParent->IsLeashWindow()
         && rsSurfaceParent->GetDstRect().IsEmpty()) {
@@ -895,7 +895,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         PrepareChildren(node);
     }
 #if defined(RS_ENABLE_PARALLEL_RENDER) && (defined (RS_ENABLE_GL) || defined (RS_ENABLE_VK))
-    rsParent = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(logicParentNode_.lock());
+    rsParent = (logicParentNode_.lock());
     if (rsParent == curDisplayNode_) {
         std::unique_lock<std::mutex> lock(*surfaceNodePrepareMutex_);
         node.UpdateParentChildrenRect(logicParentNode_.lock());
@@ -962,7 +962,7 @@ void RSUniRenderVisitor::PrepareProxyRenderNode(RSProxyRenderNode& node)
     if (!dirtyFlag_) {
         return;
     }
-    auto rsParent = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(logicParentNode_.lock());
+    auto rsParent = (logicParentNode_.lock());
     if (rsParent == nullptr) {
         return;
     }
@@ -1018,7 +1018,7 @@ void RSUniRenderVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
     auto parentSurfaceNodeMatrix = parentSurfaceNodeMatrix_;
     RectI prepareClipRect = prepareClipRect_;
 
-    auto rsParent = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(node.GetParent().lock());
+    auto rsParent = (node.GetParent().lock());
     const auto& property = node.GetRenderProperties();
     bool geoDirty = property.IsGeoDirty();
     auto geoPtr = (property.GetBoundsGeometry());
@@ -1250,7 +1250,7 @@ void RSUniRenderVisitor::PrepareEffectRenderNode(RSEffectRenderNode& node)
     curAlpha_ *= property.GetAlpha();
 
     auto parentNode = node.GetParent().lock();
-    auto rsParent = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(parentNode);
+    auto rsParent = (parentNode);
     dirtyFlag_ = node.Update(*curSurfaceDirtyManager_, rsParent ? &(rsParent->GetRenderProperties()) : nullptr,
         dirtyFlag_, prepareClipRect_);
 

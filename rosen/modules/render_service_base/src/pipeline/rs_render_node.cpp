@@ -300,11 +300,9 @@ void RSBaseRenderNode::DumpTree(int32_t depth, std::string& out) const
     out += "[" + std::to_string(GetId()) + "]";
     out += ", rootSurfaceNodeId";
     out += "[" + std::to_string(GetRootSurfaceNodeId()) + "]";
-    if (IsInstanceOf<RSRenderNode>()) {
-        auto node = (static_cast<const RSRenderNode*>(this));
-        if (node->IsSuggestedDrawInGroup()) {
-            out += ", [node group]";
-        }
+    auto node = (static_cast<const RSRenderNode*>(this));
+    if (node->IsSuggestedDrawInGroup()) {
+        out += ", [node group]";
     }
     if (GetType() == RSRenderNodeType::SURFACE_NODE) {
         auto surfaceNode = (static_cast<const RSSurfaceRenderNode*>(this));
@@ -478,8 +476,8 @@ void RSBaseRenderNode::GenerateSortedChildren()
 
     // Step 3: sort all children by z-order (std::list::sort is stable)
     sortedChildren_.sort([](const auto& first, const auto& second) -> bool {
-        auto node1 = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(first);
-        auto node2 = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(second);
+        auto node1 = (first);
+        auto node2 = (second);
         if (node1 == nullptr || node2 == nullptr) {
             ROSEN_LOGE(
                 "RSBaseRenderNode::GenerateSortedChildren nullptr found in sortedChildren_, this should not happen");
@@ -727,7 +725,7 @@ void RSRenderNode::UpdateRenderStatus(RectI& dirtyRegion, bool isPartialRenderEn
 
 void RSRenderNode::UpdateParentChildrenRect(std::shared_ptr<RSBaseRenderNode> parentNode) const
 {
-    auto renderParent = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(parentNode);
+    auto renderParent = (parentNode);
     if (renderParent) {
         // accumulate current node's all children region(including itself)
         // apply oldDirty_ as node's real region(including overlay and shadow)

@@ -104,7 +104,7 @@ void RSRenderThreadVisitor::PrepareChildren(RSRenderNode& node)
 {
     node.ResetSortedChildren();
     for (auto& child : node.GetChildren()) {
-        if (auto renderChild = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(child.lock())) {
+        if (auto renderChild = (child.lock())) {
             renderChild->ApplyModifiers();
         }
     }
