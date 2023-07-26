@@ -204,7 +204,7 @@ void RSSurfaceRenderNode::CollectSurface(
         if (onlyFirstLevel) {
             return;
         }
-        for (auto& child : node->GetChildren()) {
+        for (auto& child : node->GetSortedChildren()) {
             child->CollectSurface(child, vec, isUniRender, onlyFirstLevel);
         }
         return;
@@ -261,10 +261,8 @@ void RSSurfaceRenderNode::OnTreeStateChanged()
 #endif
 }
 
-void RSSurfaceRenderNode::ResetParent()
+void RSSurfaceRenderNode::OnResetParent()
 {
-    RSBaseRenderNode::ResetParent();
-
     if (nodeType_ == RSSurfaceNodeType::LEASH_WINDOW_NODE) {
         ClearChildrenCache(shared_from_this());
     } else {
@@ -799,7 +797,7 @@ void RSSurfaceRenderNode::UpdateFilterCacheStatusIfNodeStatic(const RectI& clipR
     }
 #ifndef USE_ROSEN_DRAWING
     // traversal filter nodes including app window
-    EraseIf(filterNodes_, [this](const auto& pair) { 
+    EraseIf(filterNodes_, [this](const auto& pair) {
         auto& node = pair.second;
         if (node == nullptr || !node->IsOnTheTree() || !node->GetRenderProperties().NeedFilter()) {
             return true;

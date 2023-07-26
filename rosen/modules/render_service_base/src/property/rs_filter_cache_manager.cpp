@@ -401,7 +401,7 @@ void RSFilterCacheManager::ReattachCachedImage(RSPaintFilterCanvas& canvas)
     }
     cachedImage_ = reattachedCachedImage;
 #else
-    invalidateCache();
+    InvalidateCache();
 #endif
 }
 } // namespace Rosen

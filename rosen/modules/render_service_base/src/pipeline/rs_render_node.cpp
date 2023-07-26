@@ -89,7 +89,7 @@ void RSRenderNode::AddChild(SharedPtr child, int index)
         child->SetIsOnTheTree(true);
     }
     SetContentDirty();
-    fullChildrenList_.clear();
+    InvalidateChildrenList();
 }
 
 void RSRenderNode::MoveChild(SharedPtr child, int index)
@@ -111,7 +111,7 @@ void RSRenderNode::MoveChild(SharedPtr child, int index)
     }
     children_.erase(it);
     SetContentDirty();
-    fullChildrenList_.clear();
+    InvalidateChildrenList();
 }
 
 void RSRenderNode::RemoveChild(SharedPtr child, bool skipTransition)
@@ -139,7 +139,7 @@ void RSRenderNode::RemoveChild(SharedPtr child, bool skipTransition)
     }
     children_.erase(it);
     SetContentDirty();
-    fullChildrenList_.clear();
+    InvalidateChildrenList();
 }
 
 void RSRenderNode::SetIsOnTheTree(bool flag)
@@ -202,7 +202,7 @@ void RSRenderNode::AddCrossParentChild(const SharedPtr& child, int32_t index)
         child->SetIsOnTheTree(true);
     }
     SetContentDirty();
-    fullChildrenList_.clear();
+    InvalidateChildrenList();
 }
 
 void RSRenderNode::RemoveCrossParentChild(const SharedPtr& child, const WeakPtr& newParent)
@@ -234,7 +234,7 @@ void RSRenderNode::RemoveCrossParentChild(const SharedPtr& child, const WeakPtr&
     }
     children_.erase(it);
     SetContentDirty();
-    fullChildrenList_.clear();
+    InvalidateChildrenList();
 }
 
 void RSRenderNode::RemoveFromTree(bool skipTransition)
@@ -279,7 +279,7 @@ void RSRenderNode::ClearChildren()
     }
     children_.clear();
     SetContentDirty();
-    fullChildrenList_.clear();
+    InvalidateChildrenList();
 }
 
 void RSRenderNode::SetParent(WeakPtr parent)
@@ -295,6 +295,7 @@ void RSRenderNode::ResetParent()
     }
     parent_.reset();
     SetIsOnTheTree(false);
+    OnResetParent();
 }
 
 RSRenderNode::WeakPtr RSRenderNode::GetParent() const
@@ -418,7 +419,7 @@ void RSRenderNode::CollectSurface(
     const std::shared_ptr<RSRenderNode>& node, std::vector<RSRenderNode::SharedPtr>& vec, bool isUniRender,
     bool onlyFirstLevel)
 {
-    for (auto& child : node->GetChildren()) {
+    for (auto& child : node->GetSortedChildren()) {
         child->CollectSurface(child, vec, isUniRender, onlyFirstLevel);
     }
 }
@@ -454,13 +455,14 @@ void RSRenderNode::InternalRemoveSelfFromDisappearingChildren()
     if (parent == nullptr) {
         return;
     }
-    parent->disappearingChildren_.remove_if([childPtr = shared_from_this()](const auto& pair) -> bool {
-        if (pair.first == childPtr) {
-            childPtr->ResetParent(); // when child been removed, notify dirty by ResetParent()
-            return true;
-        }
-        return false;
-    });
+    auto it = std::find_if(parent->disappearingChildren_.begin(), parent->disappearingChildren_.end(),
+        [childPtr = shared_from_this()](const auto& pair) -> bool { return pair.first == childPtr; });
+    if (it == parent->disappearingChildren_.end()) {
+        return;
+    }
+    parent->disappearingChildren_.erase(it);
+    parent->InvalidateChildrenList();
+    ResetParent();
 }
 
 RSRenderNode::~RSRenderNode()
@@ -1481,9 +1483,16 @@ const std::list<RSRenderNode::SharedPtr>& RSRenderNode::GetSortedChildren()
 
 void RSRenderNode::GenerateFullChildrenList()
 {
-    // if allChildren_ is not empty, it means it's already generated, just return
-    // if both children_ and disappearingChildren_ are empty, it means there's no child, just return
-    if (!fullChildrenList_.empty() || (children_.empty() && disappearingChildren_.empty())) {
+    // if fullChildrenList_ is valid, just return
+    if (isFullChildrenListValid_) {
+        return;
+    }
+    // maybe unnecessary, but just in case
+    fullChildrenList_.clear();
+    // both children_ and disappearingChildren_ are empty, no need to generate fullChildrenList_
+    if (children_.empty() && disappearingChildren_.empty()) {
+        isFullChildrenListValid_ = true;
+        isChildrenSorted_ = true;
         return;
     }
 
@@ -1515,7 +1524,8 @@ void RSRenderNode::GenerateFullChildrenList()
         }
     });
 
-    // reset the sorted flag
+    // update flags
+    isFullChildrenListValid_ = true;
     isChildrenSorted_ = false;
 }
 
@@ -1529,9 +1539,11 @@ void RSRenderNode::SortChildren()
     fullChildrenList_.sort([](const auto& first, const auto& second) -> bool {
         return first->GetRenderProperties().GetPositionZ() < second->GetRenderProperties().GetPositionZ();
     });
+    isChildrenSorted_ = true;
 }
 
-void RSRenderNode::ApplyChildrenModifiers() {
+void RSRenderNode::ApplyChildrenModifiers()
+{
     bool anyChildZOrderChanged = false;
     for (auto& child : GetChildren()) {
         anyChildZOrderChanged = child->ApplyModifiers() || anyChildZOrderChanged;
@@ -1544,6 +1556,14 @@ void RSRenderNode::ApplyChildrenModifiers() {
 uint32_t RSRenderNode::GetChildrenCount() const
 {
     return children_.size();
+}
+
+void RSRenderNode::InvalidateChildrenList() {
+    if (!isFullChildrenListValid_) {
+        return;
+    }
+    fullChildrenList_.clear();
+    isFullChildrenListValid_ = false;
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -98,7 +98,6 @@ public:
     virtual void SetContentDirty();
 
     WeakPtr GetParent() const;
-    virtual void ResetParent();
 
     NodeId GetId() const
     {
@@ -665,15 +664,19 @@ private:
 
     WeakPtr parent_;
     void SetParent(WeakPtr parent);
+    void ResetParent();
+    virtual void OnResetParent() {}
     bool isOnTheTree_ = false;
 
     std::list<WeakPtr> children_;
     std::list<std::pair<SharedPtr, uint32_t>> disappearingChildren_;
 
     std::list<SharedPtr> fullChildrenList_;
+    bool isFullChildrenListValid_ = false;
     bool isChildrenSorted_ = false;
     void GenerateFullChildrenList();
     void GenerateSortedChildren();
+    void InvalidateChildrenList();
     void SortChildren();
 
     const std::weak_ptr<RSContext> context_;
