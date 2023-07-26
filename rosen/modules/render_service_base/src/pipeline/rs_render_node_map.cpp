@@ -154,7 +154,7 @@ void RSRenderNodeMap::FilterNodeByPid(pid_t pid)
         if (ExtractPid(pair.first) != pid) {
             return false;
         }
-        if (auto renderNode = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(pair.second)) {
+        if (auto renderNode = (pair.second)) {
             // update node flag to avoid animation fallback
             renderNode->fallbackAnimationOnDestroy_ = false;
         }
@@ -181,7 +181,7 @@ void RSRenderNodeMap::FilterNodeByPid(pid_t pid)
 
     auto it = renderNodeMap_.find(0);
     if (it != renderNodeMap_.end()) {
-        auto fallbackNode = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(it->second);
+        auto fallbackNode = (it->second);
         if (fallbackNode) {
             // remove all fallback animations belong to given pid
             fallbackNode->GetAnimationManager().FilterAnimationByPid(pid);

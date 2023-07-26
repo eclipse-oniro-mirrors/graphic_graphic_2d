@@ -359,7 +359,7 @@ void RSParallelSubThread::Render()
     }
     displayNode_->Process(visitor_);
     for (auto& child : displayNode_->GetChildren()) {
-        if (auto renderChild = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(child.lock())) {
+        if (auto renderChild = (child.lock())) {
             displayNode_->RemoveCrossParentChild(renderChild, physicalDisplayNode);
         }
     }
