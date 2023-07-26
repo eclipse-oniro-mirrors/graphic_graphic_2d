@@ -1217,8 +1217,8 @@ void RSProperties::Reset()
     frameGravity_ = Gravity::DEFAULT;
     alpha_ = 1.f;
 
-    boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
-    frameGeo_ = std::make_shared<RSObjGeometry>();
+    boundsGeo_->Reset();
+    frameGeo_->Reset();
 
     backgroundFilter_.reset();
     linearGradientBlurPara_.reset();
