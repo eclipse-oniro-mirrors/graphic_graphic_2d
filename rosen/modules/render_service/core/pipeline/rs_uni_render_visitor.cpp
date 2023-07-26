@@ -3395,7 +3395,7 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
             !curSurfaceNode_->SubNodeNeedDraw(dirtyRect, partialRenderType_)) {
             auto parent = node.GetParent().lock();
             bool isParentLeashWindow = parent && parent->ReinterpretCastTo<RSSurfaceRenderNode>() &&
-                parent->ReinterpretCastTo<RSSurfaceRenderNode>()->IsLeashWindow()
+                parent->ReinterpretCastTo<RSSurfaceRenderNode>()->IsLeashWindow();
             if (!isParentLeashWindow) {
                 return;
             }
