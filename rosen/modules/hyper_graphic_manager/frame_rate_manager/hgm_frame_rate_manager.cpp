@@ -19,8 +19,8 @@
 #include "hgm_log.h"
 namespace {
     constexpr float MARGIN = 0.00001;
-    constexpr int MIN_DRAWING_FPS = 1;
-    constexpr int DUPLATION = 2;
+    constexpr float MIN_RATIO = 1.0f;
+    constexpr int MIN_DRAWING_FPS = 10;
 }
 
 namespace OHOS {
@@ -111,8 +111,9 @@ void HgmFrameRateManager::CalcSurfaceDrawingFrameRate(NodeId surfaceNodeId,
 
     int refreshRate = static_cast<int>(refreshRatesMap[screenId]);
     float drawingFps = static_cast<float>(refreshRate);
+    const float preferredFps = static_cast<float>(range.preferred_);
     if (range.preferred_ == refreshRate || refreshRate % range.preferred_ == 0) {
-        drawingFps = static_cast<float>(range.preferred_);
+        drawingFps = preferredFps;
     } else if (!range.IsDynamic()) {
         // if the FrameRateRange of a surfaceNode is [50, 50, 50], the refreshRate is
         // 90, the drawing fps of the surfaceNode should be 45.
@@ -121,9 +122,10 @@ void HgmFrameRateManager::CalcSurfaceDrawingFrameRate(NodeId surfaceNodeId,
     } else {
         // if the FrameRateRange of a surfaceNode is [24, 48, 48], the refreshRate is
         // 60, the drawing fps of the surfaceNode should be 30.
-        float ratio = 1.0f;
         int divisor = 1;
         float dividedFps = static_cast<float>(refreshRate);
+        float currRatio = std::abs(dividedFps - preferredFps) / preferredFps;
+        float ratio = std::min(MIN_RATIO, currRatio);
         while (dividedFps > MIN_DRAWING_FPS - MARGIN) {
             if (dividedFps < range.min_) {
                 break;
@@ -136,12 +138,16 @@ void HgmFrameRateManager::CalcSurfaceDrawingFrameRate(NodeId surfaceNodeId,
                 // 90, the drawing frame rate is 90.
                 // FrameRateRange is [40, 80, 80], refreshrate is
                 // 90, the drawing frame rate is 45.
-                if (dividedFps < range.min_ && (range.preferred_ - dividedFps) >
-                    (preDividedFps - range.preferred_)) {
+                if (dividedFps < range.min_ && (preferredFps - dividedFps) >
+                    (preDividedFps - preferredFps)) {
                     drawingFps = preDividedFps;
                     break;
                 }
-                drawingFps = dividedFps;
+                currRatio = std::abs(dividedFps - preferredFps) / preferredFps;
+                if (currRatio < ratio) {
+                    ratio = currRatio;
+                    drawingFps = dividedFps;
+                }
                 continue;
             }
             // We want to measure the satisfaction of current drawing fps.
@@ -150,11 +156,10 @@ void HgmFrameRateManager::CalcSurfaceDrawingFrameRate(NodeId surfaceNodeId,
             // drawing fps is 60, we lack the least(the ratio is 2/60).
             // Preferred fps is 34, refreshRate is 60. When the
             // drawing fps is 34, we lack the least(the ratio is 4/30).
-            int remainder = std::min(range.preferred_ % static_cast<int>(dividedFps),
-                std::abs(static_cast<int>(DUPLATION * dividedFps) - range.preferred_) %
-                static_cast<int>(dividedFps));
-            float currRatio = static_cast<float>(remainder) / dividedFps;
-            // dividedFps is the perfect result, currRatio is almost zero.
+            float remainder = std::min(std::fmodf(preferredFps, dividedFps),
+                std::fmodf(std::abs(dividedFps - preferredFps), dividedFps));
+            currRatio = remainder / dividedFps;
+            // When currRatio is almost zero, dividedFps is the perfect result
             if (currRatio < MARGIN) {
                 ratio = currRatio;
                 drawingFps = dividedFps;
