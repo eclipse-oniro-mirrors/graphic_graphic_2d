@@ -115,6 +115,7 @@ ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(RSDisplayRenderNode& no
     info.blendType = GRAPHIC_BLEND_SRCOVER;
     info.needClient = GetComposerInfoNeedClient(info, node);
     info.matrix = GraphicMatrix {1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f};
+    info.gravity = static_cast<int32_t>(Gravity::RESIZE);
     return info;
 }
 
@@ -138,6 +139,7 @@ ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(RSDrivenSurfaceRenderNo
     info.blendType = GRAPHIC_BLEND_SRCOVER;
     info.needClient = false;
     info.matrix = GraphicMatrix {1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f};
+    info.gravity = static_cast<int32_t>(Gravity::RESIZE);
     return info;
 #else
     return {};
@@ -171,6 +173,7 @@ void RSUniRenderComposerAdapter::SetComposeInfoToLayer(
     layer->SetBlendType(info.blendType);
     layer->SetCropRect(info.srcRect);
     layer->SetMatrix(info.matrix);
+    layer->SetGravity(info.gravity);
     SetMetaDataInfoToLayer(layer, info, surface);
 }
 
@@ -294,7 +297,7 @@ void RSUniRenderComposerAdapter::DealWithNodeGravity(const RSSurfaceRenderNode& 
 #endif
     (void)RSPropertiesPainter::GetGravityMatrix(frameGravity,
         RectF {0.0f, 0.0f, boundsWidth, boundsHeight}, frameWidth, frameHeight, gravityMatrix);
-
+    info.gravity = static_cast<int32_t>(frameGravity);
     // create a canvas to calculate new dstRect and new srcRect
     int32_t screenWidth = screenInfo_.width;
     int32_t screenHeight = screenInfo_.height;
