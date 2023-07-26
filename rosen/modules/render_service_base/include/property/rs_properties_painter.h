@@ -46,7 +46,8 @@ public:
     static void DrawFrame(const RSProperties& properties, RSPaintFilterCanvas& canvas, DrawCmdListPtr& drawCmdList);
     static void GetShadowDirtyRect(RectI& dirtyShadow, const RSProperties& properties,
         const RRect* rrect = nullptr, bool isAbsCoordinate = true);
-    static void DrawShadow(const RSProperties& properties, RSPaintFilterCanvas& canvas, const RRect* rrect = nullptr);
+    static void DrawShadow(const RSProperties& properties,
+        RSPaintFilterCanvas& canvas, const RRect* rrect = nullptr, bool isLeashWindow = false);
     static void DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas, FilterType filterType,
         const std::optional<SkRect>& rect = std::nullopt);
     static void DrawLinearGradientBlurFilter(
@@ -108,7 +109,8 @@ private:
         Drawing::DrawCmdListPtr& drawCmdList);
     static void GetShadowDirtyRect(RectI& dirtyShadow, const RSProperties& properties,
         const RRect* rrect = nullptr, bool isAbsCoordinate = true);
-    static void DrawShadow(const RSProperties& properties, RSPaintFilterCanvas& canvas, const RRect* rrect = nullptr);
+    static void DrawShadow(const RSProperties& properties,
+        RSPaintFilterCanvas& canvas, const RRect* rrect = nullptr, bool isLeashWindow = false);
     static void DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas, FilterType filterType,
         const std::optional<Drawing::Rect>& rect = std::nullopt);
     static void DrawLinearGradientBlurFilter(const RSProperties& properties,
