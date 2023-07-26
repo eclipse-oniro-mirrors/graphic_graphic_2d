@@ -323,7 +323,8 @@ BufferDrawParam RSUniRenderUtil::CreateLayerBufferDrawParam(const LayerInfoPtr& 
     auto transform = RSBaseRenderUtil::RotateEnumToInt(realRotation, flip);
 
     RectF localBounds = { 0.0f, 0.0f, static_cast<float>(boundRect.w), static_cast<float>(boundRect.h) };
-    RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(transform, Gravity::RESIZE, localBounds, params);
+    RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(transform, static_cast<Gravity>(layer->GetGravity()),
+        localBounds, params);
     RSBaseRenderUtil::FlipMatrix(transform, params);
     return params;
 }

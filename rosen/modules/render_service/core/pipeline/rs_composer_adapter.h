@@ -30,6 +30,7 @@ struct ComposeInfo {
     GraphicIRect boundRect;
     GraphicIRect visibleRect;
     GraphicMatrix matrix;
+    int32_t gravity;
     int32_t zOrder { 0 };
     GraphicLayerAlpha alpha;
     sptr<SurfaceBuffer> buffer;

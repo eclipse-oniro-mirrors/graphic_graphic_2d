@@ -193,6 +193,11 @@ public:
         matrix_ = matrix;
     }
 
+    void SetGravity(int32_t gravity)
+    {
+        gravity_ = gravity;
+    }
+
     void SetTunnelHandleChange(bool change)
     {
         tunnelHandleChange_ = change;
@@ -291,6 +296,11 @@ public:
         return matrix_;
     }
 
+    int32_t GetGravity() const
+    {
+        return gravity_;
+    }
+
     bool IsPreMulti() const
     {
         return preMulti_;
@@ -345,6 +355,7 @@ public:
         dirtyRegions_ = layerInfo->GetDirtyRegions();
         cropRect_ = layerInfo->GetCropRect();
         matrix_ = layerInfo->GetMatrix();
+        gravity_ = layerInfo->GetGravity();
         layerAlpha_ = layerInfo->GetAlpha();
         transformType_ = layerInfo->GetTransformType();
         compositionType_ = layerInfo->GetCompositionType();
@@ -433,6 +444,7 @@ private:
     std::vector<GraphicIRect> dirtyRegions_;
     GraphicIRect cropRect_;
     GraphicMatrix matrix_; // matrix used for uni render redraw
+    int32_t gravity_; // used for uni render redraw
     GraphicLayerAlpha layerAlpha_;
     GraphicTransformType transformType_ = GraphicTransformType::GRAPHIC_ROTATE_BUTT;
     GraphicCompositionType compositionType_;
