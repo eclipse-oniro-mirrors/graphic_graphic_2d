@@ -128,7 +128,7 @@ float HgmFrameRateManager::GetDrawingFps(float refreshRate, FrameRateRange range
 {
     // We will find a drawing fps, which is divisible by refreshRate.
     // If the refreshRate is 60, the options of drawing fps are 60, 30, 15, 12, etc.
-    // 1. preferredFps is divisible by refreshRate.
+    // 1. The preferred fps is divisible by refreshRate.
     const float preferredFps = static_cast<float>(range.preferred_);
     if (std::fmodf(refreshRate, range.preferred_) < MARGIN) {
         return preferredFps;
@@ -146,7 +146,7 @@ float HgmFrameRateManager::GetDrawingFps(float refreshRate, FrameRateRange range
     // The KPI of "smooth" is the ratio of lack.
     // e.g. The preferred fps is 58, the refreshRate is 60. When the drawing fps is 60,
     // we lack the least(the ratio is 2/60).
-    // The preferred fps is 34, the refreshRate is 60, the drawing fps will be 34(the ratio is 4/30).
+    // The preferred fps is 34, the refreshRate is 60, the drawing fps will be 30(the ratio is 4/30).
     int divisor = 1;
     float drawingFps = refreshRate;
     float dividedFps = refreshRate;
