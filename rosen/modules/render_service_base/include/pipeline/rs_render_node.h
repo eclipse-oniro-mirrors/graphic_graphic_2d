@@ -111,22 +111,11 @@ public:
         return isOnTheTree_;
     }
 
+    // return children and disappeared children, not guaranteed to be sorted by z-index
+    const std::list<SharedPtr>& GetChildren();
+    // return children and disappeared children, sorted by z-index
     const std::list<SharedPtr>& GetSortedChildren();
-
-    void ResetSortedChildren()
-    {
-        sortedChildren_.clear();
-    }
-
-    const std::list<WeakPtr>& GetChildren()
-    {
-        return children_;
-    }
-
-    uint32_t GetChildrenCount() const
-    {
-        return children_.size();
-    }
+    uint32_t GetChildrenCount() const;
 
     void DumpTree(int32_t depth, std::string& ou) const;
 
@@ -272,10 +261,9 @@ public:
     }
     void AddModifier(const std::shared_ptr<RSRenderModifier> modifier);
     void RemoveModifier(const PropertyId& id);
-
-    void ApplyModifiers();
-    virtual void OnApplyModifiers() {}
     std::shared_ptr<RSRenderModifier> GetModifier(const PropertyId& id);
+
+    void ApplyChildrenModifiers();
 
     bool IsShadowValidLastFrame() const
     {
@@ -644,6 +632,9 @@ public:
     void SetRSFrameRateRangeByPreferred(int32_t preferred);
 
 protected:
+    bool ApplyModifiers();
+    virtual void OnApplyModifiers() {}
+
     enum class NodeDirty {
         CLEAN = 0,
         DIRTY,
@@ -679,8 +670,11 @@ private:
     std::list<WeakPtr> children_;
     std::list<std::pair<SharedPtr, uint32_t>> disappearingChildren_;
 
-    std::list<SharedPtr> sortedChildren_;
+    std::list<SharedPtr> fullChildrenList_;
+    bool isChildrenSorted_ = false;
+    void GenerateFullChildrenList();
     void GenerateSortedChildren();
+    void SortChildren();
 
     const std::weak_ptr<RSContext> context_;
     NodeDirty dirtyStatus_ = NodeDirty::DIRTY;

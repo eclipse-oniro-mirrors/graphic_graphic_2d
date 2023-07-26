@@ -38,13 +38,12 @@ RSDisplayNode::SharedPtr RSDisplayNode::Create(const RSDisplayNodeConfig& displa
 
 void RSDisplayNode::ClearChildren()
 {
-    auto children = GetChildren();
+    auto& children = GetChildren();
     for (auto child : children) {
         if (auto childPtr = RSNodeMap::Instance().GetNode(child)) {
             RemoveChild(childPtr);
         }
     }
-    children.clear();
 }
 
 void RSDisplayNode::SetScreenId(uint64_t screenId)

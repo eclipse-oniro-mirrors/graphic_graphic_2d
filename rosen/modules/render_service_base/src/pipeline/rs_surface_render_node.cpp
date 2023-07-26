@@ -204,7 +204,7 @@ void RSSurfaceRenderNode::CollectSurface(
         if (onlyFirstLevel) {
             return;
         }
-        for (auto& child : node->GetSortedChildren()) {
+        for (auto& child : node->GetChildren()) {
             child->CollectSurface(child, vec, isUniRender, onlyFirstLevel);
         }
         return;
@@ -233,7 +233,7 @@ void RSSurfaceRenderNode::CollectSurface(
 
 void RSSurfaceRenderNode::ClearChildrenCache(const std::shared_ptr<RSBaseRenderNode>& node)
 {
-    for (auto& child : node->GetSortedChildren()) {
+    for (auto& child : node->GetChildren()) {
         auto surfaceNode = child->ReinterpretCastTo<RSSurfaceRenderNode>();
         if (surfaceNode == nullptr) {
             continue;
@@ -689,7 +689,7 @@ void RSSurfaceRenderNode::SetVisibleRegionRecursive(const Occlusion::Region& reg
     }
 
     SetOcclusionVisible(vis);
-    for (auto& child : GetSortedChildren()) {
+    for (auto& child : GetChildren()) {
         if (auto surface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child)) {
             surface->SetVisibleRegionRecursive(region, visibleVec, pidVisMap);
         }
@@ -1200,8 +1200,7 @@ bool RSSurfaceRenderNode::LeashWindowRelatedAppWindowOccluded(std::shared_ptr<RS
     if (!IsLeashWindow()) {
         return false;
     }
-    for (auto& child : GetChildren()) {
-        auto childNode = child.lock();
+    for (auto& childNode : GetChildren()) {
         const auto& childNodeSurface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(childNode);
         if (childNodeSurface && childNodeSurface->GetVisibleRegion().IsEmpty()) {
             appNode = childNodeSurface;
@@ -1217,8 +1216,7 @@ std::vector<std::shared_ptr<RSSurfaceRenderNode>> RSSurfaceRenderNode::GetLeashW
     if (!IsLeashWindow()) {
         return res;
     }
-    for (auto& child : GetChildren()) {
-        auto childNode = child.lock();
+    for (auto& childNode : GetChildren()) {
         if (childNode) {
             auto childNodeSurface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(childNode);
             if (childNodeSurface) {

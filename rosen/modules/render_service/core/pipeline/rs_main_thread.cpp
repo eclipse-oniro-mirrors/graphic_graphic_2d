@@ -1272,7 +1272,7 @@ void RSMainThread::CalcOcclusion()
         return;
     }
     std::vector<RSBaseRenderNode::SharedPtr> curAllSurfaces;
-    if (node->GetSortedChildren().size() == 1) {
+    if (node->GetChildrenCount()== 1) {
         auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(
             node->GetSortedChildren().front());
         if (displayNode) {
@@ -1654,16 +1654,7 @@ bool RSMainThread::DoParallelComposition(std::shared_ptr<RSBaseRenderNode> rootN
         }
     }
     (*SignalAwait)(syncSignal);
-    ResetSortedChildren(rootNode);
     return true;
-}
-
-void RSMainThread::ResetSortedChildren(std::shared_ptr<RSBaseRenderNode> node)
-{
-    for (auto& child : node->GetSortedChildren()) {
-        ResetSortedChildren(child);
-    }
-    node->ResetSortedChildren();
 }
 
 void RSMainThread::ClearTransactionDataPidInfo(pid_t remotePid)

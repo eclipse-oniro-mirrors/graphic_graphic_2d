@@ -216,14 +216,7 @@ void RSUniRenderVisitor::PrepareChildren(RSRenderNode& node)
     if (curSurfaceNode_) {
         node.SetRootSurfaceNodeId(curSurfaceNode_->GetId());
     }
-    node.ResetSortedChildren();
-    for (auto& child : node.GetChildren()) {
-        if (auto renderChild = (child.lock())) {
-            renderChild->ApplyModifiers();
-            auto nodePreferred = GetNodePreferred(renderChild->GetHgmModifierProfileList());
-            renderChild->SetRSFrameRateRangeByPreferred(nodePreferred);
-        }
-    }
+    node.ApplyChildrenModifiers();
     const auto& children = node.GetSortedChildren();
 
     // GetSortedChildren() may remove disappearingChildren_ when transition animation end.
@@ -252,6 +245,8 @@ void RSUniRenderVisitor::PrepareChildren(RSRenderNode& node)
     int markedCachedNodeCnt = markedCachedNodes_;
 
     for (auto& child : children) {
+        auto nodePreferred = GetNodePreferred(child->GetHgmModifierProfileList());
+        child->SetRSFrameRateRangeByPreferred(nodePreferred);
         if (PrepareSharedTransitionNode(*child)) {
             curDirty_ = child->IsDirty();
             child->Prepare(shared_from_this());
@@ -339,7 +334,7 @@ void RSUniRenderVisitor::CheckColorSpace(RSSurfaceRenderNode& node)
             }
         }
     } else {
-        if (node.GetSortedChildren().size() > 0) {
+        if (node.GetChildrenCount() > 0) {
             auto surfaceNodePtr = node.GetSortedChildren().front()->ReinterpretCastTo<RSSurfaceRenderNode>();
             if (!surfaceNodePtr) {
                 return;
@@ -378,9 +373,6 @@ void RSUniRenderVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
     curDisplayNode_ = node.shared_from_this()->ReinterpretCastTo<RSDisplayRenderNode>();
 
     dirtyFlag_ = isDirty_;
-    node.ApplyModifiers();
-    auto nodePreferred = GetNodePreferred(node.GetHgmModifierProfileList());
-    node.SetRSFrameRateRangeByPreferred(nodePreferred);
     sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
     if (!screenManager) {
         RS_LOGE("RSUniRenderVisitor::PrepareDisplayRenderNode ScreenManager is nullptr");
@@ -618,7 +610,7 @@ void RSUniRenderVisitor::MarkSubHardwareEnableNodeState(RSSurfaceRenderNode& sur
         hardwareEnabledNodes = surfaceNode.GetChildHardwareEnabledNodes();
     } else {
         for (auto& child : surfaceNode.GetChildren()) {
-            auto appNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child.lock());
+            auto appNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child);
             if (appNode && appNode->IsAppWindow()) {
                 hardwareEnabledNodes = appNode->GetChildHardwareEnabledNodes();
                 break;
@@ -789,9 +781,6 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         return;
     }
     node.CleanDstRectChanged();
-    node.ApplyModifiers();
-    auto nodePreferred = GetNodePreferred(node.GetHgmModifierProfileList());
-    node.SetRSFrameRateRangeByPreferred(nodePreferred);
     curContentDirty_ = node.IsContentDirty();
     bool dirtyFlag = dirtyFlag_;
 
@@ -1047,9 +1036,6 @@ void RSUniRenderVisitor::PrepareProxyRenderNode(RSProxyRenderNode& node)
 
 void RSUniRenderVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
 {
-    node.ApplyModifiers();
-    auto nodePreferred = GetNodePreferred(node.GetHgmModifierProfileList());
-    node.SetRSFrameRateRangeByPreferred(nodePreferred);
     bool dirtyFlag = dirtyFlag_;
     float alpha = curAlpha_;
     auto parentSurfaceNodeMatrix = parentSurfaceNodeMatrix_;
@@ -1131,9 +1117,6 @@ void RSUniRenderVisitor::UpdateSurfaceFrameRateRange(RSRenderNode& node)
 void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
 {
     preparedCanvasNodeInCurrentSurface_++;
-    node.ApplyModifiers();
-    auto nodePreferred = GetNodePreferred(node.GetHgmModifierProfileList());
-    node.SetRSFrameRateRangeByPreferred(nodePreferred);
     curContentDirty_ = node.IsContentDirty();
     bool dirtyFlag = dirtyFlag_;
     RectI prepareClipRect = prepareClipRect_;
@@ -1274,9 +1257,6 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
 
 void RSUniRenderVisitor::PrepareEffectRenderNode(RSEffectRenderNode& node)
 {
-    node.ApplyModifiers();
-    auto nodePreferred = GetNodePreferred(node.GetHgmModifierProfileList());
-    node.SetRSFrameRateRangeByPreferred(nodePreferred);
     bool dirtyFlag = dirtyFlag_;
     RectI prepareClipRect = prepareClipRect_;
     float alpha = curAlpha_;
@@ -1615,11 +1595,7 @@ void RSUniRenderVisitor::ProcessParallelDisplayRenderNode(RSDisplayRenderNode& n
     if (geoPtr != nullptr) {
         canvas_->concat(geoPtr->GetMatrix());
     }
-    for (auto& child : node.GetChildren()) {
-        auto childNode = child.lock();
-        if (!childNode) {
-            continue;
-        }
+    for (auto& childNode : node.GetChildren()) {
         RSParallelRenderManager::Instance()->StartTiming(parallelRenderVisitorIndex_);
         childNode->Process(shared_from_this());
         RSParallelRenderManager::Instance()->StopTimingAndSetRenderTaskCost(
