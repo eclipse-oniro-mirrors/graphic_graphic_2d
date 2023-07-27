@@ -56,6 +56,7 @@
 #include "pipeline/parallel_render/rs_sub_thread_manager.h"
 #include "system/rs_system_parameters.h"
 #include "scene_board_judgement.h"
+#include "hgm_core.h"
 #ifdef RS_ENABLE_RECORDING
 #include "benchmarks/rs_recording_thread.h"
 #endif
@@ -218,6 +219,8 @@ void RSUniRenderVisitor::PrepareChildren(RSRenderNode& node)
     for (auto& child : node.GetChildren()) {
         if (auto renderChild = (child.lock())) {
             renderChild->ApplyModifiers();
+            auto nodePreferred = GetNodePreferred(renderChild->GetHgmModifierProfileList());
+            renderChild->SetRSFrameRateRangeByPreferred(nodePreferred);
         }
     }
     const auto& children = node.GetSortedChildren();
@@ -339,11 +342,28 @@ void RSUniRenderVisitor::CheckColorSpace(RSSurfaceRenderNode& node)
     }
 }
 
+int32_t RSUniRenderVisitor::GetNodePreferred(std::vector<HgmModifierProfile> hgmModifierProfileList) const
+{
+    if (hgmModifierProfileList.size() == 0) {
+        return 0;
+    }
+    auto &hgmCore = OHOS::Rosen::HgmCore::Instance();
+    int32_t nodePreferred = 0;
+    for (auto &hgmModifierProfile : hgmModifierProfileList) {
+        auto modifierPreferred = hgmCore.CalModifierPreferred(hgmModifierProfile);
+        nodePreferred = std::max(nodePreferred, modifierPreferred);
+    }
+    return nodePreferred;
+}
+
 void RSUniRenderVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
 {
     currentVisitDisplay_ = node.GetScreenId();
     displayHasSecSurface_.emplace(currentVisitDisplay_, 0);
     dirtySurfaceNodeMap_.clear();
+
+    auto &hgmCore = OHOS::Rosen::HgmCore::Instance();
+    hgmCore.SetActiveScreenId(currentVisitDisplay_);
 
     RS_TRACE_NAME("RSUniRender:PrepareDisplay " + std::to_string(currentVisitDisplay_));
     curDisplayDirtyManager_ = node.GetDirtyManager();
@@ -351,8 +371,9 @@ void RSUniRenderVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
     curDisplayNode_ = node.shared_from_this()->ReinterpretCastTo<RSDisplayRenderNode>();
 
     dirtyFlag_ = isDirty_;
-
     node.ApplyModifiers();
+    auto nodePreferred = GetNodePreferred(node.GetHgmModifierProfileList());
+    node.SetRSFrameRateRangeByPreferred(nodePreferred);
     sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
     if (!screenManager) {
         RS_LOGE("RSUniRenderVisitor::PrepareDisplayRenderNode ScreenManager is nullptr");
@@ -762,6 +783,8 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
     node.CleanDstRectChanged();
     node.ApplyModifiers();
+    auto nodePreferred = GetNodePreferred(node.GetHgmModifierProfileList());
+    node.SetRSFrameRateRangeByPreferred(nodePreferred);
     curContentDirty_ = node.IsContentDirty();
     bool dirtyFlag = dirtyFlag_;
 
@@ -1018,6 +1041,8 @@ void RSUniRenderVisitor::PrepareProxyRenderNode(RSProxyRenderNode& node)
 void RSUniRenderVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
 {
     node.ApplyModifiers();
+    auto nodePreferred = GetNodePreferred(node.GetHgmModifierProfileList());
+    node.SetRSFrameRateRangeByPreferred(nodePreferred);
     bool dirtyFlag = dirtyFlag_;
     float alpha = curAlpha_;
     auto parentSurfaceNodeMatrix = parentSurfaceNodeMatrix_;
@@ -1100,6 +1125,8 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
 {
     preparedCanvasNodeInCurrentSurface_++;
     node.ApplyModifiers();
+    auto nodePreferred = GetNodePreferred(node.GetHgmModifierProfileList());
+    node.SetRSFrameRateRangeByPreferred(nodePreferred);
     curContentDirty_ = node.IsContentDirty();
     bool dirtyFlag = dirtyFlag_;
     RectI prepareClipRect = prepareClipRect_;
@@ -1241,6 +1268,8 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
 void RSUniRenderVisitor::PrepareEffectRenderNode(RSEffectRenderNode& node)
 {
     node.ApplyModifiers();
+    auto nodePreferred = GetNodePreferred(node.GetHgmModifierProfileList());
+    node.SetRSFrameRateRangeByPreferred(nodePreferred);
     bool dirtyFlag = dirtyFlag_;
     RectI prepareClipRect = prepareClipRect_;
     float alpha = curAlpha_;
