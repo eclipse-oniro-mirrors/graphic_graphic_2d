@@ -834,7 +834,7 @@ const std::shared_ptr<RSFilter>& RSProperties::GetBackgroundFilter() const
     return backgroundFilter_;
 }
 
-const float& RSProperties::GetLinearGradientBlurPara() const
+const std::shared_ptr<RSLinearGradientBlurPara>& RSProperties::GetLinearGradientBlurPara() const
 {
     return linearGradientBlurPara_;
 }
