@@ -170,6 +170,8 @@ public:
     // filter properties
     void SetBackgroundFilter(std::shared_ptr<RSFilter> backgroundFilter);
     void SetLinearGradientBlurPara(std::shared_ptr<RSLinearGradientBlurPara> para);
+    void SetDynamicLightUpRate(float rate);
+    void SetDynamicLightUpDegree(float lightUpDegree);
     void SetFilter(std::shared_ptr<RSFilter> filter);
     const std::shared_ptr<RSFilter>& GetBackgroundFilter() const;
     const std::shared_ptr<RSLinearGradientBlurPara>& GetLinearGradientBlurPara() const;
@@ -191,6 +193,8 @@ public:
     float GetShadowAlpha() const;
     float GetShadowElevation() const;
     float GetShadowRadius() const;
+    float GetDynamicLightUpRate() const;
+    float GetDynamicLightUpDegree() const;
     std::shared_ptr<RSPath> GetShadowPath() const;
     bool GetShadowMask() const;
     bool IsShadowValid() const;
@@ -366,6 +370,8 @@ private:
     std::optional<float> sepia_;
     std::optional<float> invert_;
     std::optional<float> hueRotate_;
+    std::optional<float> dynamicLightUpRate_;
+    std::optional<float> dynamicLightUpDegree_;
     std::optional<Color> colorBlend_;
     std::optional<RectI> lastRect_;
 #ifndef USE_ROSEN_DRAWING

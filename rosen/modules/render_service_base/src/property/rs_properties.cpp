@@ -75,6 +75,8 @@ const std::unordered_map<RSModifierType, ResetPropertyFunc> g_funcLUT = {
     { RSModifierType::FILTER, [](RSProperties* prop) { prop->SetFilter(nullptr); } },
     { RSModifierType::BACKGROUND_FILTER, [](RSProperties* prop) { prop->SetBackgroundFilter(nullptr); } },
     { RSModifierType::LINEAR_GRADIENT_BLUR_PARA, [](RSProperties* prop) { prop->SetLinearGradientBlurPara(nullptr); } },
+    { RSModifierType::DYNAMIC_LIGHT_UP_RATE, [](RSProperties* prop) { prop->SetDynamicLightUpRate(0.0f); } },
+    { RSModifierType::DYNAMIC_LIGHT_UP_DEGREE, [](RSProperties* prop) { prop->SetDynamicLightUpDegree(0.0f); } },
     { RSModifierType::FRAME_GRAVITY, [](RSProperties* prop) { prop->SetFrameGravity(Gravity::DEFAULT); } },
     { RSModifierType::CLIP_RRECT, [](RSProperties* prop) { prop->SetClipRRect(RRect()); } },
     { RSModifierType::CLIP_BOUNDS, [](RSProperties* prop) { prop->SetClipBounds(nullptr); } },
@@ -808,6 +810,18 @@ void RSProperties::SetLinearGradientBlurPara(std::shared_ptr<RSLinearGradientBlu
     SetDirty();
 }
 
+void RSProperties::SetDynamicLightUpRate(float rate)
+{
+    dynamicLightUpRate_ = rate;
+    SetDirty();
+}
+
+void RSProperties::SetDynamicLightUpDegree(float lightUpDegree)
+{
+    dynamicLightUpDegree_ = lightUpDegree;
+    SetDirty();
+}
+
 void RSProperties::SetFilter(std::shared_ptr<RSFilter> filter)
 {
     filter_ = filter;
@@ -820,9 +834,19 @@ const std::shared_ptr<RSFilter>& RSProperties::GetBackgroundFilter() const
     return backgroundFilter_;
 }
 
-const std::shared_ptr<RSLinearGradientBlurPara>& RSProperties::GetLinearGradientBlurPara() const
+const float& RSProperties::GetLinearGradientBlurPara() const
 {
     return linearGradientBlurPara_;
+}
+
+float RSProperties::GetDynamicLightUpRate() const
+{
+    return dynamicLightUpRate_;
+}
+
+float RSProperties::GetDynamicLightUpDegree() const
+{
+    return dynamicLightUpDegree_;
 }
 
 const std::shared_ptr<RSFilter>& RSProperties::GetFilter() const
@@ -1163,6 +1187,8 @@ void RSProperties::Reset()
     sepia_.reset();
     invert_.reset();
     hueRotate_.reset();
+    dynamicLightUpRate_.reset();
+    dynamicLightUpDegree_.reset();
     colorBlend_.reset();
     colorFilter_.reset();
 }
