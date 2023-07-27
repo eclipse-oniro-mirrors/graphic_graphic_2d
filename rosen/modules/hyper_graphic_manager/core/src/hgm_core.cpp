@@ -237,6 +237,10 @@ int32_t HgmCore::SetDefaultRefreshRateMode()
     int32_t mode = std::stoi(mParsedConfigData_->defaultRefreshRateMode_);
     HGM_LOGD("HgmCore set default refreshrate mode to : %{public}d", mode);
 
+    if (mode == 0) {
+        return EXEC_SUCCESS;
+    }
+
     return SetRefreshRateMode(static_cast<RefreshRateMode>(mode));
 }
 

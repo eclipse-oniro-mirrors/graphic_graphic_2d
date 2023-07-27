@@ -31,10 +31,10 @@ public:
     void TearDown();
 };
 
-void HyperGraphicManagerTest::SetUpTestCase() {}
-void HyperGraphicManagerTest::TearDownTestCase() {}
-void HyperGraphicManagerTest::SetUp() {}
-void HyperGraphicManagerTest::TearDown() {}
+void HgmXmlParserTest::SetUpTestCase() {}
+void HgmXmlParserTest::TearDownTestCase() {}
+void HgmXmlParserTest::SetUp() {}
+void HgmXmlParserTest::TearDown() {}
 
 /**
  * @tc.name: LoadConfiguration
@@ -76,10 +76,11 @@ HWTEST_F(HgmXmlParserTest, Parse, Function | SmallTest | Level1)
             STEP_ASSERT_EQ(parse, 0);
         }
         STEP("2. check the parsing result ") {
-            STEP_ASSERT_EQ(parsedData->isDynamicFrameRateEnable_, "1");
+            STEP_ASSERT_
+            (parsedData->isDynamicFrameRateEnable_, "1");
             STEP_ASSERT_NE(parsedData->customerSettingConfig_.size(), 0);
             STEP_ASSERT_NE(parsedData->detailedStrategies_.size(), 0);
-            STEP_ASSERT_NE(parsedData->animationDynamicStrats_, 0);
+            STEP_ASSERT_NE(parsedData->animationDynamicStrats_.size(), 0);
         }
     }
 }
