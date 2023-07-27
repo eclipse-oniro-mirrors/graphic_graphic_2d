@@ -198,8 +198,10 @@ public:
         } else {
             RSBaseRenderEngine::SetHighContrast(value.highContrastText);
         }
-        RSMainThread::Instance()->PostTask(
-            []() { RSMainThread::Instance()->SetAccessibilityConfigChanged(); });
+        RSMainThread::Instance()->PostTask([]() {
+            RSMainThread::Instance()->SetAccessibilityConfigChanged();
+            RSMainThread::Instance()->RequestNextVSync();
+        });
     }
 };
 #endif
