@@ -1276,5 +1276,27 @@ void RSRenderServiceConnectionProxy::ReportDataBaseRs(
     data.WriteString(info.pageUrl);
     option.SetFlags(MessageOption::TF_ASYNC);
 }
+
+void RSRenderServiceConnectionProxy::SetHardwareEnabled(NodeId id, bool isEnabled)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return;
+    }
+    if (!data.WriteUint64(id)) {
+        return;
+    }
+    if (!data.WriteBool(isEnabled)) {
+        return;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_HARDWARE_ENABLED);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::SetHardwareEnabled: Send Request err.");
+    }
+}
 } // namespace Rosen
 } // namespace OHOS

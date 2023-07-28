@@ -298,5 +298,8 @@ void RSRenderServiceClient::ReportEventJankFrame(DataBaseRs info)
 {
 }
 
+void RSRenderServiceClient::SetHardwareEnabled(NodeId id, bool isEnabled)
+{
+}
 } // namespace Rosen
 } // namespace OHOS

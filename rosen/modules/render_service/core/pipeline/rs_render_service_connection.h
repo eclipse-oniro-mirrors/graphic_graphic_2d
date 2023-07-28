@@ -166,6 +166,8 @@ private:
 
     void ReportEventJankFrame(DataBaseRs info) override;
 
+    void SetHardwareEnabled(NodeId id, bool isEnabled) override;
+
     pid_t remotePid_;
     wptr<RSRenderService> renderService_;
     RSMainThread* mainThread_ = nullptr;
