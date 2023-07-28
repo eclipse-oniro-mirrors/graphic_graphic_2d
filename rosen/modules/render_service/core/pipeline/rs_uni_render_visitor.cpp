@@ -762,6 +762,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
     node.CleanDstRectChanged();
     node.ApplyModifiers();
+    curContentDirty_ = node.IsContentDirty();
     bool dirtyFlag = dirtyFlag_;
     
 
