@@ -59,7 +59,7 @@ private:
     static constexpr float kDilatedConvolutionLargeRadius = 4.6f;
     // To avoid downscaling artifacts, interpolate the blurred fbo with the full composited image, up to this radius
     static constexpr float kMaxCrossFadeRadius = 10.0f;
-    static constexpr bool supporteLargeRadius = true;
+    static constexpr bool supportLargeRadius = true;
 
     sk_sp<SkRuntimeEffect> blurEffect_;
     sk_sp<SkRuntimeEffect> mixEffect_;

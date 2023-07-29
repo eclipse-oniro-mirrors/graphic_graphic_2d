@@ -84,8 +84,8 @@ bool KawaseBlurFilter::ApplyKawaseBlur(SkCanvas& canvas, const sk_sp<SkImage>& i
     RS_TRACE_NAME("ApplyKawaseBlur " + GetDescription());
     auto src = param.src;
     auto dst = param.dst;
-    int maxPasses = supporteLargeRadius ? kMaxPassesLargeRadius : kMaxPasses;
-    float dilatedConvolutionFactor = supporteLargeRadius ? kDilatedConvolutionLargeRadius : kDilatedConvolution;
+    int maxPasses = supportLargeRadius ? kMaxPassesLargeRadius : kMaxPasses;
+    float dilatedConvolutionFactor = supportLargeRadius ? kDilatedConvolutionLargeRadius : kDilatedConvolution;
     float tmpRadius = static_cast<float>(blurRadius_) / dilatedConvolutionFactor;
     int numberOfPasses = std::min(maxPasses, std::max(static_cast<int>(ceil(tmpRadius)), 1)); // 1 : min pass num
     float radiusByPasses = tmpRadius / numberOfPasses;
