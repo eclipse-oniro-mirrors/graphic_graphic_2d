@@ -928,6 +928,10 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         bool isScale = (matrix.Get(Drawing::Matrix::SCALE_X) > 0 && matrix.Get(Drawing::Matrix::SCALE_X) != 1.0f)
             || (matrix.Get(Drawing::Matrix::SCALE_Y) > 0 && matrix.Get(Drawing::Matrix::SCALE_Y) != 1.0f);
 #endif
+        if (Rosen::SceneBoardJudgement::IsSceneBoardEnabled()) {
+            isScale = isScale && matrix.getSkewX() < std::numeric_limits<float>::epsilon() &&
+                matrix.getSkewX() < std::numeric_limits<float>::epsilon();
+        }
         node.SetIsScale(isScale);
     }
 #if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
