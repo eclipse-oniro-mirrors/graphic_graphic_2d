@@ -75,6 +75,9 @@ const std::unordered_map<RSModifierType, ResetPropertyFunc> g_funcLUT = {
     { RSModifierType::FILTER, [](RSProperties* prop) { prop->SetFilter(nullptr); } },
     { RSModifierType::BACKGROUND_FILTER, [](RSProperties* prop) { prop->SetBackgroundFilter(nullptr); } },
     { RSModifierType::LINEAR_GRADIENT_BLUR_PARA, [](RSProperties* prop) { prop->SetLinearGradientBlurPara(nullptr); } },
+    { RSModifierType::DYNAMIC_LIGHT_UP_RATE, [](RSProperties* prop) { prop->SetDynamicLightUpRate(std::nullopt); } },
+    { RSModifierType::DYNAMIC_LIGHT_UP_DEGREE,
+        [](RSProperties* prop) { prop->SetDynamicLightUpDegree(std::nullopt); } },
     { RSModifierType::FRAME_GRAVITY, [](RSProperties* prop) { prop->SetFrameGravity(Gravity::DEFAULT); } },
     { RSModifierType::CLIP_RRECT, [](RSProperties* prop) { prop->SetClipRRect(RRect()); } },
     { RSModifierType::CLIP_BOUNDS, [](RSProperties* prop) { prop->SetClipBounds(nullptr); } },
@@ -849,6 +852,21 @@ void RSProperties::SetLinearGradientBlurPara(std::shared_ptr<RSLinearGradientBlu
 {
     linearGradientBlurPara_ = para;
     SetDirty();
+    contentDirty_ = true;
+}
+
+void RSProperties::SetDynamicLightUpRate(const std::optional<float>& rate)
+{
+    dynamicLightUpRate_ = rate;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+void RSProperties::SetDynamicLightUpDegree(const std::optional<float>& lightUpDegree)
+{
+    dynamicLightUpDegree_ = lightUpDegree;
+    SetDirty();
+    contentDirty_ = true;
 }
 
 void RSProperties::SetFilter(std::shared_ptr<RSFilter> filter)
@@ -868,9 +886,29 @@ const std::shared_ptr<RSLinearGradientBlurPara>& RSProperties::GetLinearGradient
     return linearGradientBlurPara_;
 }
 
+const std::optional<float>& RSProperties::GetDynamicLightUpRate() const
+{
+    return dynamicLightUpRate_;
+}
+
+const std::optional<float>& RSProperties::GetDynamicLightUpDegree() const
+{
+    return dynamicLightUpDegree_;
+}
+
 const std::shared_ptr<RSFilter>& RSProperties::GetFilter() const
 {
     return filter_;
+}
+
+bool RSProperties::IsDynamicLightUpValid() const
+{
+    if (GetDynamicLightUpRate().has_value() && GetDynamicLightUpDegree().has_value()) {
+        return ROSEN_GNE(GetDynamicLightUpRate().value(), 0.0)
+            && ROSEN_GE(GetDynamicLightUpDegree().value(), 0.0) && ROSEN_LE(GetDynamicLightUpDegree().value(), 1.0);
+    } else {
+        return false;
+    }
 }
 
 // shadow properties
@@ -1158,7 +1196,7 @@ RRect RSProperties::GetInnerRRect() const
 bool RSProperties::NeedFilter() const
 {
     return (backgroundFilter_ != nullptr && backgroundFilter_->IsValid()) ||
-        (filter_ != nullptr && filter_->IsValid()) || IsLightUpEffectValid();
+        (filter_ != nullptr && filter_->IsValid()) || IsLightUpEffectValid() || IsDynamicLightUpValid();
 }
 
 bool RSProperties::NeedClip() const
@@ -1206,6 +1244,8 @@ void RSProperties::Reset()
     sepia_.reset();
     invert_.reset();
     hueRotate_.reset();
+    dynamicLightUpRate_.reset();
+    dynamicLightUpDegree_.reset();
     colorBlend_.reset();
     colorFilter_.reset();
 }
