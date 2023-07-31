@@ -1565,5 +1565,297 @@ void RSRenderNode::InvalidateChildrenList() {
     fullChildrenList_.clear();
     isFullChildrenListValid_ = false;
 }
+
+bool RSRenderNode::IsOnTheTree() const
+{
+    return isOnTheTree_;
+}
+void RSRenderNode::SetTunnelHandleChange(bool change)
+{
+    isTunnelHandleChange_ = change;
+}
+bool RSRenderNode::GetTunnelHandleChange() const
+{
+    return isTunnelHandleChange_;
+}
+bool RSRenderNode::HasChildrenOutOfRect() const
+{
+    return hasChildrenOutOfRect_;
+}
+void RSRenderNode::UpdateChildrenOutOfRectFlag(bool flag)
+{
+    hasChildrenOutOfRect_ = flag;
+}
+void RSRenderNode::ResetHasRemovedChild()
+{
+    hasRemovedChild_ = false;
+}
+bool RSRenderNode::HasRemovedChild() const
+{
+    return hasRemovedChild_;
+}
+void RSRenderNode::ResetChildrenRect()
+{
+    childrenRect_ = RectI();
+}
+RectI RSRenderNode::GetChildrenRect() const
+{
+    return childrenRect_;
+}
+bool RSRenderNode::ChildHasFilter() const
+{
+    return childHasFilter_;
+}
+void RSRenderNode::SetChildHasFilter(bool childHasFilter)
+{
+    childHasFilter_ = childHasFilter;
+}
+void RSRenderNode::SetRootSurfaceNodeId(NodeId id)
+{
+    rootSurfaceNodeId_ = id;
+}
+NodeId RSRenderNode::GetRootSurfaceNodeId() const
+{
+    return rootSurfaceNodeId_;
+}
+bool RSRenderNode::IsRenderUpdateIgnored() const
+{
+    return isRenderUpdateIgnored_;
+}
+RSAnimationManager& RSRenderNode::GetAnimationManager()
+{
+    return animationManager_;
+}
+RectI RSRenderNode::GetOldDirty() const
+{
+    return oldDirty_;
+}
+RectI RSRenderNode::GetOldDirtyInSurface() const
+{
+    return oldDirtyInSurface_;
+}
+bool RSRenderNode::IsDirtyRegionUpdated() const
+{
+    return isDirtyRegionUpdated_;
+}
+bool RSRenderNode::IsShadowValidLastFrame() const
+{
+    return isShadowValidLastFrame_;
+}
+void RSRenderNode::SetStaticCached(bool isStaticCached)
+{
+    isStaticCached_ = isStaticCached;
+}
+bool RSRenderNode::IsStaticCached() const
+{
+    return isStaticCached_;
+}
+void RSRenderNode::UpdateCompletedCacheSurface()
+{
+    std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
+    std::swap(cacheSurface_, cacheCompletedSurface_);
+#ifndef USE_ROSEN_DRAWING
+#ifdef RS_ENABLE_GL
+    std::swap(cacheBackendTexture_, cacheCompletedBackendTexture_);
+    SetTextureValidFlag(true);
+#endif
+#endif
+}
+void RSRenderNode::SetTextureValidFlag(bool isValid)
+{
+#ifndef USE_ROSEN_DRAWING
+#ifdef RS_ENABLE_GL
+    std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
+    isTextureValid_ = isValid;
+#endif
+#endif
+}
+void RSRenderNode::ClearCacheSurface()
+{
+    std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
+    cacheSurface_ = nullptr;
+    cacheCompletedSurface_ = nullptr;
+}
+void RSRenderNode::SetCacheType(CacheType cacheType)
+{
+    cacheType_ = cacheType;
+}
+CacheType RSRenderNode::GetCacheType() const
+{
+    return cacheType_;
+}
+int RSRenderNode::GetShadowRectOffsetX() const
+{
+    return shadowRectOffsetX_;
+}
+int RSRenderNode::GetShadowRectOffsetY() const
+{
+    return shadowRectOffsetY_;
+}
+void RSRenderNode::SetDrawingCacheType(RSDrawingCacheType cacheType)
+{
+    drawingCacheType_ = cacheType;
+}
+RSDrawingCacheType RSRenderNode::GetDrawingCacheType() const
+{
+    return drawingCacheType_;
+}
+void RSRenderNode::SetDrawingCacheChanged(bool cacheChanged)
+{
+    isDrawingCacheChanged_ = cacheChanged;
+}
+bool RSRenderNode::GetDrawingCacheChanged() const
+{
+    return isDrawingCacheChanged_;
+}
+void RSRenderNode::SetIsMarkDriven(bool isMarkDriven)
+{
+    isMarkDriven_ = isMarkDriven;
+}
+bool RSRenderNode::IsMarkDriven() const
+{
+    return isMarkDriven_;
+}
+void RSRenderNode::SetIsMarkDrivenRender(bool isMarkDrivenRender)
+{
+    isMarkDrivenRender_ = isMarkDrivenRender;
+}
+bool RSRenderNode::IsMarkDrivenRender() const
+{
+    return isMarkDrivenRender_;
+}
+void RSRenderNode::SetItemIndex(int index)
+{
+    itemIndex_ = index;
+}
+int RSRenderNode::GetItemIndex() const
+{
+    return itemIndex_;
+}
+void RSRenderNode::SetPaintState(bool paintState)
+{
+    paintState_ = paintState;
+}
+bool RSRenderNode::GetPaintState() const
+{
+    return paintState_;
+}
+void RSRenderNode::SetIsContentChanged(bool isChanged)
+{
+    isContentChanged_ = isChanged;
+}
+bool RSRenderNode::IsContentChanged() const
+{
+    return isContentChanged_ || HasAnimation();
+}
+bool RSRenderNode::HasAnimation() const
+{
+    return !animationManager_.animations_.empty();
+}
+bool RSRenderNode::HasFilter() const
+{
+    return hasFilter_;
+}
+void RSRenderNode::SetHasFilter(bool hasFilter)
+{
+    hasFilter_ = hasFilter;
+}
+std::recursive_mutex& RSRenderNode::GetSurfaceMutex() const
+{
+    return surfaceMutex_;
+}
+bool RSRenderNode::HasHardwareNode() const
+{
+    return hasHardwareNode_;
+}
+void RSRenderNode::SetHasHardwareNode(bool hasHardwareNode)
+{
+    hasHardwareNode_ = hasHardwareNode;
+}
+bool RSRenderNode::HasAbilityComponent() const
+{
+    return hasAbilityComponent_;
+}
+void RSRenderNode::SetHasAbilityComponent(bool hasAbilityComponent)
+{
+    hasAbilityComponent_ = hasAbilityComponent;
+}
+uint32_t RSRenderNode::GetCacheSurfaceThreadIndex() const
+{
+    return cacheSurfaceThreadIndex_;
+}
+bool RSRenderNode::IsMainThreadNode() const
+{
+    return isMainThreadNode_;
+}
+void RSRenderNode::SetIsMainThreadNode(bool isMainThreadNode)
+{
+    isMainThreadNode_ = isMainThreadNode;
+}
+bool RSRenderNode::IsScale() const
+{
+    return isScale_;
+}
+void RSRenderNode::SetIsScale(bool isScale)
+{
+    isScale_ = isScale;
+}
+void RSRenderNode::SetPriority(NodePriorityType priority)
+{
+    priority_ = priority;
+}
+NodePriorityType RSRenderNode::GetPriority()
+{
+    return priority_;
+}
+bool RSRenderNode::IsAncestorDirty() const
+{
+    return isAncestorDirty_;
+}
+void RSRenderNode::SetIsAncestorDirty(bool isAncestorDirty)
+{
+    isAncestorDirty_ = isAncestorDirty;
+}
+bool RSRenderNode::HasCachedTexture() const
+{
+#ifndef USE_ROSEN_DRAWING
+#ifdef RS_ENABLE_GL
+    std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
+    return isTextureValid_;
+#else
+    return true;
+#endif
+#else
+    return false;
+#endif
+}
+void RSRenderNode::SetDrawRegion(std::shared_ptr<RectF> rect)
+{
+    drawRegion_ = rect;
+}
+RSRenderNode::NodeGroupType RSRenderNode::GetNodeGroupType()
+{
+    return nodeGroupType_;
+}
+void RSRenderNode::SetRSFrameRateRange(FrameRateRange range)
+{
+    rsRange_ = range;
+}
+void RSRenderNode::SetUIFrameRateRange(FrameRateRange range)
+{
+    uiRange_ = range;
+}
+FrameRateRange RSRenderNode::GetUIFrameRateRange() const
+{
+    return uiRange_;
+}
+void RSRenderNode::MarkNonGeometryChanged()
+{
+    geometryChangeNotPerceived_ = true;
+}
+std::vector<HgmModifierProfile> RSRenderNode::GetHgmModifierProfileList() const
+{
+    return hgmModifierProfileList_;
+}
 } // namespace Rosen
 } // namespace OHOS
