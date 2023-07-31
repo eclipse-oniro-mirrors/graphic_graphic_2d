@@ -21,6 +21,7 @@
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "render/rs_skia_filter.h"
+#include "src/image/SkImage_Base.h"
 
 #ifdef RS_ENABLE_GL
 #include "include/gpu/GrBackendSurface.h"
@@ -259,6 +260,11 @@ void RSFilterCacheManager::TakeSnapshot(RSPaintFilterCanvas& canvas, const std::
         ROSEN_LOGE("RSFilterCacheManager::TakeSnapshot failed to make an image snapshot.");
         return;
     }
+    if (RSSystemProperties::GetImageGpuResourceCacheEnable(cachedImage_->width(), cachedImage_->height())) {
+        ROSEN_LOGD("TakeSnapshot cache image resource(width:%d, height:%d).",
+            cachedImage_->width(), cachedImage_->height());
+        as_IB(cachedImage_)->hintCacheGpuResource();
+    }
     filter->PreProcess(cachedImage_);
 
     // Update the cache state.
@@ -300,6 +306,11 @@ void RSFilterCacheManager::GenerateFilteredSnapshot(
     // Update the cache state with the filtered snapshot.
     cacheType_ = CacheType::CACHE_TYPE_FILTERED_SNAPSHOT;
     cachedImage_ = offscreenSurface->makeImageSnapshot();
+    if (RSSystemProperties::GetImageGpuResourceCacheEnable(cachedImage_->width(), cachedImage_->height())) {
+        ROSEN_LOGD("GenerateFilteredSnapshot cache image resource(width:%d, height:%d).",
+            cachedImage_->width(), cachedImage_->height());
+        as_IB(cachedImage_)->hintCacheGpuResource();
+    }
     cachedImageRegion_ = filterRegion_;
 }
 
