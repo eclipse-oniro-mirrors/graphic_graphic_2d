@@ -61,8 +61,10 @@ private:
     static constexpr float kMaxCrossFadeRadius = 10.0f;
     static constexpr bool supportLargeRadius = true;
 
+#ifdef NEW_SKIA
     sk_sp<SkRuntimeEffect> blurEffect_;
     sk_sp<SkRuntimeEffect> mixEffect_;
+#endif
     float blurRadius_ = 0.f;
     float blurScale_ = 0.25f;
 };
