@@ -96,6 +96,12 @@ std::shared_ptr<MessageParcel> CopyParcelIfNeed(MessageParcel& old)
     }
     return parcelCopied;
 }
+
+inline bool IsSystemServiceCalling()
+{
+    return Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE == 
+        Security::AccessToken::AccessTokenKit::GetTokenType(IPCSkeleton::GetCallingTokenID());
+}
 }
 
 int RSRenderServiceConnectionStub::OnRemoteRequest(
@@ -208,9 +214,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_VIRTUAL_SCREEN): {
-            auto callingTokenId = IPCSkeleton::GetCallingTokenID();
-            auto tokenType = Security::AccessToken::AccessTokenKit::GetTokenType(callingTokenId);
-            if (Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE != tokenType) {
+            if (!IsSystemServiceCalling()) {
                 ret = ERR_INVALID_STATE;
                 break;
             }
@@ -238,9 +242,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_SURFACE): {
-            auto callingTokenId = IPCSkeleton::GetCallingTokenID();
-            auto tokenType = Security::AccessToken::AccessTokenKit::GetTokenType(callingTokenId);
-            if (Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE != tokenType) {
+            if (!IsSystemServiceCalling()) {
                 ret = ERR_INVALID_STATE;
                 break;
             }
@@ -268,9 +270,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN): {
-            auto callingTokenId = IPCSkeleton::GetCallingTokenID();
-            auto tokenType = Security::AccessToken::AccessTokenKit::GetTokenType(callingTokenId);
-            if (Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE != tokenType) {
+            if (!IsSystemServiceCalling()) {
                 ret = ERR_INVALID_STATE;
                 break;
             }
@@ -363,9 +363,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_RESOLUTION): {
-            auto callingTokenId = IPCSkeleton::GetCallingTokenID();
-            auto tokenType = Security::AccessToken::AccessTokenKit::GetTokenType(callingTokenId);
-            if (Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE != tokenType) {
+            if (!IsSystemServiceCalling()) {
                 ret = ERR_INVALID_STATE;
                 break;
             }
@@ -425,9 +423,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_VIRTUAL_SCREEN_RESOLUTION): {
-            auto callingTokenId = IPCSkeleton::GetCallingTokenID();
-            auto tokenType = Security::AccessToken::AccessTokenKit::GetTokenType(callingTokenId);
-            if (Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE != tokenType) {
+            if (!IsSystemServiceCalling()) {
                 ret = ERR_INVALID_STATE;
                 break;
             }
