@@ -21,9 +21,11 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <unistd.h>
 
 #include "common/rs_macros.h"
+#include "modifier/rs_modifier_type.h"
 
 namespace OHOS {
 class Surface;
@@ -137,6 +139,8 @@ struct RSDisplayNodeConfig {
     bool isMirrored = false;
     NodeId mirrorNodeId = 0;
 };
+
+constexpr int32_t NS_TO_S = 1000000000;
 
 #if defined(M_PI)
 constexpr float PI = M_PI;

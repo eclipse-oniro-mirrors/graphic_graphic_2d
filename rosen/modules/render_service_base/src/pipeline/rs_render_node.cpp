@@ -54,6 +54,14 @@ const std::set<RSModifierType> CACHEABLE_ANIMATION_TYPE = {
 // Only enable filter cache when uni-render is enabled and filter cache is enabled
 const bool FILTER_CACHE_ENABLED = RSSystemProperties::GetFilterCacheEnabled() &&
     RSUniRenderJudgement::IsUniRender() && !SceneBoardJudgement::IsSceneBoardEnabled();
+
+const std::unordered_set<RSModifierType> ANIMATION_MODIFIER_TYPE  = {
+    RSModifierType::TRANSLATE,
+    RSModifierType::SCALE,
+    RSModifierType::ROTATION_X,
+    RSModifierType::ROTATION_Y,
+    RSModifierType::ROTATION
+};
 }
 
 void RSBaseRenderNode::AddChild(SharedPtr child, int index)
@@ -552,6 +560,12 @@ void RSRenderNode::FallbackAnimationsToRoot()
 
 std::pair<bool, bool> RSRenderNode::Animate(int64_t timestamp)
 {
+    if (lastTimestamp_ < 0) {
+        lastTimestamp_ = timestamp;
+    } else {
+        timeDelta_ = (static_cast<float>(timestamp - lastTimestamp_)) / NS_TO_S;
+        lastTimestamp_ = timestamp;
+    }
     return animationManager_.Animate(timestamp, IsOnTheTree());
 }
 
@@ -888,9 +902,65 @@ void RSRenderNode::RemoveModifier(const PropertyId& id)
         });
     }
 }
+void RSRenderNode::AddModifierProfile(std::shared_ptr<RSRenderModifier> modifier, float width, float height)
+{
+    if (timeDelta_ < 0) {
+        return;
+    }
+    if (lastApplyTimestamp_ == lastTimestamp_) {
+        return;
+    }
+    auto propertyId = modifier->GetPropertyId();
+    auto oldPropertyValue = propertyValueMap_.find(propertyId);
+    auto newProperty = modifier->GetProperty();
+    switch (modifier->GetType()) {
+        case RSModifierType::TRANSLATE: {
+            auto newPosition = std::static_pointer_cast<RSRenderAnimatableProperty<Vector2f>>(newProperty)->Get();
+            if (oldPropertyValue != propertyValueMap_.end()) {
+                auto oldPosition = std::get<Vector2f>(oldPropertyValue->second);
+                auto xSpeed = (newPosition[0] - oldPosition[0]) / timeDelta_;
+                auto ySpeed = (newPosition[1] - oldPosition[1]) / timeDelta_;
+                HgmModifierProfile hgmModifierProfile = {xSpeed, ySpeed, HgmModifierType::TRANSLATE};
+                hgmModifierProfileList_.emplace_back(hgmModifierProfile);
+            }
+            propertyValueMap_[propertyId] = newPosition;
+            break;
+        }
+        case RSModifierType::SCALE: {
+            auto newPosition = std::static_pointer_cast<RSRenderAnimatableProperty<Vector2f>>(newProperty)->Get();
+            if (oldPropertyValue != propertyValueMap_.end()) {
+                auto oldPosition = std::get<Vector2f>(oldPropertyValue->second);
+                auto xSpeed = (newPosition[0] - oldPosition[0]) * width / timeDelta_;
+                auto ySpeed = (newPosition[1] - oldPosition[1]) * height / timeDelta_;
+                HgmModifierProfile hgmModifierProfile = {xSpeed, ySpeed, HgmModifierType::SCALE};
+                hgmModifierProfileList_.emplace_back(hgmModifierProfile);
+            }
+            propertyValueMap_[propertyId] = newPosition;
+            break;
+        }
+        case RSModifierType::ROTATION_X:
+        case RSModifierType::ROTATION_Y:
+        case RSModifierType::ROTATION: {
+            HgmModifierProfile hgmModifierProfile = {0, 0, HgmModifierType::ROTATION};
+            hgmModifierProfileList_.emplace_back(hgmModifierProfile);
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void RSRenderNode::SetRSFrameRateRangeByPreferred(int32_t preferred)
+{
+    if (preferred > 0) {
+        FrameRateRange frameRateRange = {0, preferred, preferred};
+        SetRSFrameRateRange(frameRateRange);
+    }
+}
 
 void RSRenderNode::ApplyModifiers()
 {
+    hgmModifierProfileList_.clear();
     if (!RSBaseRenderNode::IsDirty() || dirtyTypes_.empty()) {
         return;
     }
@@ -900,11 +970,21 @@ void RSRenderNode::ApplyModifiers()
     }
     auto dirtyStatus = renderProperties_.GetDirtyStatus();
     renderProperties_.Reset();
+    std::vector<std::shared_ptr<RSRenderModifier>> animationModifiers;
     for (auto& [id, modifier] : modifiers_) {
         if (modifier) {
             modifier->Apply(context);
+            if (ANIMATION_MODIFIER_TYPE.find(modifier->GetType()) != ANIMATION_MODIFIER_TYPE.end()) {
+                animationModifiers.push_back(modifier);
+            }
         }
     }
+
+    for (auto &modifier : animationModifiers) {
+            AddModifierProfile(modifier, context.property_.GetBoundsWidth(), context.property_.GetBoundsHeight());
+    }
+    lastApplyTimestamp_ = lastTimestamp_;
+
     renderProperties_.SetDirtyStatus(dirtyStatus);
     OnApplyModifiers();
     UpdateDrawRegion();
