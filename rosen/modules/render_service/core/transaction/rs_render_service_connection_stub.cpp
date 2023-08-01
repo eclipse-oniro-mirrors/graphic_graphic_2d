@@ -99,7 +99,7 @@ std::shared_ptr<MessageParcel> CopyParcelIfNeed(MessageParcel& old)
 
 inline bool IsSystemServiceCalling()
 {
-    return Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE == 
+    return Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE ==
         Security::AccessToken::AccessTokenKit::GetTokenType(IPCSkeleton::GetCallingTokenID());
 }
 }
