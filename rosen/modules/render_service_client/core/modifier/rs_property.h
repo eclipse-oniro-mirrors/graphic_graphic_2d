@@ -326,12 +326,17 @@ public:
                 implicitAnimator->CreateImplicitAnimation(
                     node, RSProperty<T>::shared_from_this(), startValue, endValue);
                 implicitAnimator->EndImplicitPathAnimation();
+
             } else {
                 implicitAnimator->CreateImplicitAnimation(
                     node, RSProperty<T>::shared_from_this(), startValue, endValue);
             }
             return;
         }
+        // if (RSProperty<T>::type_ ==  RSModifierType::PARTICLE) {
+        //     auto animation = std::make_shared<RSParticleAnimation>(RSProperty<T>::shared_from_this());
+        //     animation->StartParticleAnimation();
+        // }
 
         if (runningPathNum_ > 0) {
             return;
@@ -482,6 +487,7 @@ protected:
     int runningPathNum_ { 0 };
     std::shared_ptr<RSMotionPathOption> motionPathOption_ {};
     std::function<void(T)> propertyChangeListener_;
+    //bool isParticleAnimation_ = false;
 
 private:
     RSRenderPropertyType GetPropertyType() const override
@@ -526,6 +532,7 @@ private:
     friend class RSPathAnimation;
     friend class RSExtendedModifier;
     friend class RSModifier;
+    // friend class RSParticleAnimation;
 };
 
 template<>
@@ -569,6 +576,9 @@ template<>
 RSC_EXPORT void RSProperty<Vector4<Color>>::UpdateToRender(
     const Vector4<Color>& value, bool isDelta, bool forceUpdate) const;
 template<>
+RSC_EXPORT void RSProperty<std::vector<ParticleParams>>::UpdateToRender(
+    const std::vector<ParticleParams>& value, bool isDelta, bool forceUpdate) const;
+template<>
 RSC_EXPORT void RSProperty<Vector4f>::UpdateToRender(const Vector4f& value, bool isDelta, bool forceUpdate) const;
 template<>
 RSC_EXPORT void RSProperty<RRect>::UpdateToRender(const RRect& value, bool isDelta, bool forceUpdate) const;
@@ -598,6 +608,7 @@ template<>
 RSC_EXPORT RSRenderPropertyType RSAnimatableProperty<Vector4<Color>>::GetPropertyType() const;
 template<>
 RSC_EXPORT RSRenderPropertyType RSAnimatableProperty<RRect>::GetPropertyType() const;
+
 } // namespace Rosen
 } // namespace OHOS
 

@@ -452,5 +452,6 @@ void RSImplicitAnimator::ExecuteWithoutAnimation(const std::function<void()>& ca
     callback();
     implicitAnimationDisabled_ = implicitAnimationDisabled;
 }
+
 } // namespace Rosen
 } // namespace OHOS

@@ -23,6 +23,7 @@
 #include "animation/rs_animation_timing_curve.h"
 #include "animation/rs_animation_timing_protocol.h"
 #include "common/rs_macros.h"
+#include "animation/rs_particle_params.h"
 
 namespace OHOS {
 namespace Rosen {

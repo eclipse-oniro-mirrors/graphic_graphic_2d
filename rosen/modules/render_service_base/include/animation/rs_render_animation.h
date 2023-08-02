@@ -49,7 +49,7 @@ public:
     void SetFraction(float fraction);
     void SetReversed(bool isReversed);
     bool Marshalling(Parcel& parcel) const override;
-    bool Animate(int64_t time);
+    virtual bool Animate(int64_t time);
 
     bool IsStarted() const;
     bool IsRunning() const;

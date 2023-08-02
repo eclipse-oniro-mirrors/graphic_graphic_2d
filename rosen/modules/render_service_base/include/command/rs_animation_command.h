@@ -32,6 +32,8 @@ namespace Rosen {
 enum RSAnimationCommandType : uint16_t {
     // curve animation
     ANIMATION_CREATE_CURVE,
+    // particle animation
+    ANIMATION_CREATE_PARTICLE,
     // keyframe animation
     ANIMATION_CREATE_KEYFRAME,
     // path animation
@@ -132,6 +134,10 @@ ADD_COMMAND(RSAnimationCallback,
 // create curve animation
 ADD_COMMAND(RSAnimationCreateCurve, ARG(ANIMATION, ANIMATION_CREATE_CURVE, AnimationCommandHelper::CreateAnimation,
     NodeId, std::shared_ptr<RSRenderCurveAnimation>))
+
+// create particle animation
+ADD_COMMAND(RSAnimationCreateParticle, ARG(ANIMATION, ANIMATION_CREATE_PARTICLE, AnimationCommandHelper::CreateParticleAnimation,
+    NodeId, std::shared_ptr<RSRenderParticleAnimation>))
 
 // create keyframe animation
 ADD_COMMAND(RSAnimationCreateKeyframe,ARG(ANIMATION, ANIMATION_CREATE_KEYFRAME,

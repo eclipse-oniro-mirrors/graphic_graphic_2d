@@ -2211,5 +2211,45 @@ sk_sp<SkShader> RSPropertiesPainter::MakeDynamicLightUpShader(
 }
 #endif
 #endif
+
+void RSPropertiesPainter::DrawParticle(const RSProperties& properties, SkCanvas& canvas)
+{
+    // 画粒子。properties是个粒子数组，判断粒子是否alive，然后取当前粒子的属性值
+    auto particles = properties.GetParticles();
+    for (int i = 0; i < particles.size(); i++) 
+	{ 
+		if (particles[i].IsAlive()) { 
+			// Get particle properties 
+            auto position = particles[i].GetPosition();
+			float opacity = particles[i].GetOpacity();
+            auto particleType = particles[i].GetParticleType();
+            SkPaint paint;
+            paint.setAntiAlias(true);
+            paint.setAlphaf(opacity);
+            if (particleType == ParticleType::POINTS) {
+                auto radius = particles[i].GetRadius();
+			    Color color = particles[i].GetColor();
+                //draw point
+                paint.setColor(color.AsArgbInt());
+                canvas.drawCircle(position.x_, position.y_, radius, paint);
+            } else {
+            //     auto imageFilter = particles[i].GetImageFilter();
+            //     paint.setImageFilter(imageFilter);
+            //     auto image = particles[i].GetRSImage(); 
+            //     SkAutoCanvasRestore acr(&canvas, true);
+            //     auto size = particles[i].GetParticleSize();
+            //     RRect rrect = RRect({position.x_, position.y_, size.width_, size.height_}, {0, 0, 0, 0});;
+            //     canvas.clipRRect(RRect2SkRRect(rrect), antiAlias);
+            //     auto boundsRect = Rect2SkRect(properties.GetBoundsRect());
+            // #ifdef NEW_SKIA
+            //     Image->CanvasDrawImage(canvas, boundsRect, SkSamplingOptions(), paint, true);
+            // #else
+            //     image->CanvasDrawImage(canvas, boundsRect, paint, true);
+            // #endif
+            }
+		}
+	} 
+}
+
 } // namespace Rosen
 } // namespace OHOS

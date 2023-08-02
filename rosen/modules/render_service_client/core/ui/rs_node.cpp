@@ -384,6 +384,9 @@ void RSNode::SetProperty(RSModifierType modifierType, T value)
     auto property = std::make_shared<PropertyName>(value);
     auto propertyModifier = std::make_shared<ModifierName>(property);
     propertyModifiers_.emplace(modifierType, propertyModifier);
+    // if (modifierType == RSModifierType::PARTICLE) {
+    //     property->Set(value);
+    // }//set 不进来
     AddModifier(propertyModifier);
 }
 
@@ -710,6 +713,32 @@ void RSNode::SetEnvForegroundColorStrategy(ForegroundColorStrategyType strategyT
 {
     SetProperty<RSEnvForegroundColorStrategyModifier,
         RSProperty<ForegroundColorStrategyType>>(RSModifierType::ENV_FOREGROUND_COLOR_STRATEGY, strategyType);
+}
+
+// Set ParticleParams 
+void RSNode::SetParticleParams(const std::vector<ParticleParams>& particleParams)
+{
+    std::vector<ParticleRenderParams> particleRenderParams;
+    for (int i = 0; i < particleParams.size(); i++) {
+        particleRenderParams.push_back(particleParams[i]->SetParamsToRenderParticle());
+    }
+    auto rSRenderParticle = RSRenderParticle();
+    rSRenderParticle.particleRenderParams_ = particleRenderParams;
+
+    auto animationId = RSAnimation::GenerateId();
+    auto animation =
+        std::make_shared<RSRenderParticleAnimation>(animationId, rSRenderParticle);
+
+    std::unique_ptr<RSCommand> command = std::make_unique<RSAnimationCreateParticle>(GetId(), animation);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());
+        if (NeedForcedSendToRemote()) {
+            std::unique_ptr<RSCommand> cmdForRemote =
+                std::make_unique<RSAnimationCreateParticle>(GetId(), animation);
+            transactionProxy->AddCommand(cmdForRemote, true, GetFollowType(), GetId());
+        }
+    }
 }
 
 // foreground
@@ -1062,7 +1091,7 @@ void RSNode::MarkDrivenRender(bool flag)
         }
         drivenFlag_ = flag;
     }
-}
+} 
 
 void RSNode::MarkDrivenRenderItemIndex(int index)
 {

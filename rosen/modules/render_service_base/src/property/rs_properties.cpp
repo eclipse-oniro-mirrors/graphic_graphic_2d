@@ -634,6 +634,18 @@ float RSProperties::GetTranslateZ() const
     return boundsGeo_->GetTranslateZ();
 }
 
+
+void RSProperties::SetParticles(std::vector<RSRenderParticle> particle)
+{
+    particle_ = particle;
+    SetDirty();
+}
+
+std::vector<RSRenderParticle> RSProperties::GetParticles() const
+{
+    return particle_;
+}
+
 void RSProperties::SetAlpha(float alpha)
 {
     alpha_ = alpha;
@@ -1234,6 +1246,7 @@ void RSProperties::Reset()
     lightUpEffectDegree_ = 1.0f;
     pixelStretch_.reset();
     pixelStretchPercent_.reset();
+    particles_.reset();
     useEffect_ = false;
 
     sandbox_ = nullptr;

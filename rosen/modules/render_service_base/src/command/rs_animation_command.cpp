@@ -14,6 +14,10 @@
  */
 
 #include "command/rs_animation_command.h"
+#include <memory>
+#include "animation/rs_render_particle.h"
+#include "common/rs_common_def.h"
+#include "modifier/rs_render_property.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -47,6 +51,26 @@ void AnimationCommandHelper::CreateAnimation(
     if (modifier != nullptr) {
         animation->AttachRenderProperty(modifier->GetProperty());
     }
+    auto currentTime = context.GetCurrentTimestamp();
+    animation->SetStartTime(currentTime);
+    animation->Attach(node.get());
+    // register node as animating node
+    context.RegisterAnimatingRenderNode(node);
+}
+
+void AnimationCommandHelper::CreateParticleAnimation(
+    RSContext& context, NodeId targetId, const std::shared_ptr<RSRenderParticleAnimation>& animation)
+{
+    auto node = context.GetNodeMap().GetRenderNode<RSRenderNode>(targetId);
+    if (node == nullptr) {
+        return;
+    }
+    node->GetAnimationManager().AddAnimation(animation);
+
+    auto property = std::make_shared<RSRenderAnimatableProperty<RSRenderParticle>>(animation->renderParticle_, 0);
+    auto modifier = std::make_shared<RSParticleRenderModifier>(property);
+    node->AddModifier(modifier);
+    animation->AttachRenderProperty(property);
     auto currentTime = context.GetCurrentTimestamp();
     animation->SetStartTime(currentTime);
     animation->Attach(node.get());

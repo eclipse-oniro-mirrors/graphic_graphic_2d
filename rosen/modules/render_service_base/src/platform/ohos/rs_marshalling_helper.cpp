@@ -15,6 +15,7 @@
 
 #include "transaction/rs_marshalling_helper.h"
 
+#include <cstdint>
 #include <memory>
 #include <message_parcel.h>
 #include <sys/mman.h>
@@ -1013,6 +1014,222 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSLinear
     return success;
 }
 
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<EmitterConfig>& val)
+{
+    bool success = Marshalling(parcel, val.emitRate); 
+    success = success && Marshalling(parcel, val.emitShape);
+    success = success && Marshalling(parcel, val.position.x_);
+    success = success && Marshalling(parcel, val.position.y_);
+    success = success && Marshalling(parcel, val.emitSize.width_);
+    success = success && Marshalling(parcel, val.emitSize.height_);
+    success = success && Marshalling(parcel, val.particleCount);
+    success = success && Marshalling(parcel, val.lifeTime);
+    success = success && Marshalling(parcel, val.type);
+    success = success && Marshalling(parcel, val.radius);
+    // success = success && Marshalling(parcel, val.image);
+    // success = success && Marshalling(parcel, val.size.width_);
+    // success = success && Marshalling(parcel, val.size.height_);
+    // success = success && Marshalling(parcel, val.imageFit);
+    return success;
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, const std::shared_ptr<EmitterConfig>& val)
+{
+    bool success = Unmarshalling(parcel, val.emitRate);
+    success = success && Unmarshalling(parcel, val.emitShape);
+    success = success && Unmarshalling(parcel, val.position.x_);
+    success = success && Unmarshalling(parcel, val.position.y_);
+    success = success && Unmarshalling(parcel, val.emitSize.width_);
+    success = success && Unmarshalling(parcel, val.emitSize.height_);
+    success = success && Unmarshalling(parcel, val.particleCount);
+    success = success && Unmarshalling(parcel, val.lifeTime);
+    success = success && Unmarshalling(parcel, val.type);
+    success = success && Unmarshalling(parcel, val.radius);
+    // success = success && Unmarshalling(parcel, val.image);
+    // success = success && Unmarshalling(parcel, val.size.width_);
+    // success = success && Unmarshalling(parcel, val.size.height_);
+    // success = success && Unmarshalling(parcel, val.imageFit);
+    return success;
+}
+
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<ParticleVelocity>& val)
+{
+    return Marshalling(parcel, val.velocityValue.start_) && Marshalling(parcel, val.velocityValue.end_) && 
+        Marshalling(parcel, val.velocityAngle.start_) && Marshalling(parcel, val.velocityAngle.end_);
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, const std::shared_ptr<ParticleVelocity>& val)
+{
+    return Unmarshalling(parcel, val.velocityValue.start_) && Unmarshalling(parcel, val.velocityValue.end_);
+        Unmarshalling(parcel, val.velocityAngle.start_) && Unmarshalling(parcel, val.velocityAngle.end_);
+}
+
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const ParticleParaType<float>& val)
+{
+    bool success = Marshalling(parcel, val.val_.start_) && Marshalling(parcel, val.val_.end_) && 
+        Marshalling(parcel, val.updator_);
+        if (val.updator_ == RANDOM) {
+            success = success && Marshalling(parcel, val.random_.start_) && Marshalling(parcel, val.random_.end_);
+        } else if (val.updator_ == CURVE) {
+            success = success && parcel.WriteUint32(static_cast<uint32_t>(val->valChangeOverLife_.size()));
+            for (size_t i = 0; i < val.valChangeOverLife_.size(); i++) {
+                success = success && Marshalling(parcel, val.valChangeOverLife_[i].fromValue_);
+                success = success && Marshalling(parcel, val.valChangeOverLife_[i].toValue_);
+                success = success && Marshalling(parcel, val.valChangeOverLife_[i].startMillis_);
+                success = success && Marshalling(parcel, val.valChangeOverLife_[i].endMillis_);
+                int duration = val.valChangeOverLife_[i].endMillis_ - val.valChangeOverLife_[i].startMillis_;
+                RSAnimationTimingCurve curve = val.valChangeOverLife_[i].curve_;
+                auto interpolator = curve.GetInterpolator(duration); //根据曲线计算插值器，将插值器序列化
+                success = success && interpolator->Marshalling(parcel);
+            }
+        }
+    return success;     
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, ParticleParaType<float>& val)
+{
+    Range<float> value;
+    ParticleUpdator updator;        //变化因子，是变化速度还是曲线
+    Range<float> random;   
+    bool success = Unmarshalling(parcel, value.start_) && Unmarshalling(parcel, value.end_) && 
+        Unmarshalling(parcel, updator);
+    if (val.updator_ == RANDOM) {
+            success = success && Unmarshalling(parcel, val.random_.start_) && Unmarshalling(parcel, val.random_.end_);
+    } else if (val.updator_ == CURVE) {
+        uint32_t valChangeOverLifeSize = parcel.ReadUint32();
+        std::vector<ChangeInOverLife<float>> valChangeOverLife;
+        for (size_t i = 0; i < valChangeOverLifeSize; i++) {
+            float fromValue;
+            float toValue;
+            int startMillis;
+            int endMillis;
+            RSAnimationTimingCurve curve;
+            success = success && Unmarshalling(parcel, fromValue);
+            success = success && Unmarshalling(parcel, toValue);
+            success = success && Unmarshalling(parcel, startMillis);
+            success = success && Unmarshalling(parcel, endMillis);
+            int duration = endMillis - startMillis;
+            std::shared_ptr<RSInterpolator> interpolator(RSInterpolator::Unmarshalling(parcel));
+            curve = RSAnimationTimingCurve(interpolator);
+            auto change = std::make_shared<ChangeInOverLife<float>>(fromValue, toValue, startMillis,endMillis, curve);
+            valChangeOverLife.push_back(change);
+        }
+    }
+    if (success) {
+        val = = std::make_shared<ParticleParaType<float>>(value, updator, random, valChangeOverLife);
+    }
+    return success;
+}
+
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const ParticleColorParaType& val)
+{
+    bool success = Marshalling(parcel, val.colorVal_.start_) && Marshalling(parcel, val.colorVal_.end_) && 
+        Marshalling(parcel, val.updator_);
+        if (val.updator_ == RANDOM) {
+            success = success && Marshalling(parcel, val.redRandom_.start_) && Marshalling(parcel, val.redRandom_.end_);
+            success = success && Marshalling(parcel, val.greenRandom_.start_) && Marshalling(parcel, val.greenRandom_.end_);
+            success = success && Marshalling(parcel, val.blueRandom_.start_) && Marshalling(parcel, val.blueRandom_.end_);
+        } else if (val.updator_ == CURVE) {
+            success = success && parcel.WriteUint32(static_cast<uint32_t>(val->valChangeOverLife_.size()));
+            for (size_t i = 0; i < val.valChangeOverLife_.size(); i++) {
+                success = success && Marshalling(parcel, val.valChangeOverLife_[i].fromValue_);
+                success = success && Marshalling(parcel, val.valChangeOverLife_[i].toValue_);
+                success = success && Marshalling(parcel, val.valChangeOverLife_[i].startMillis_);
+                success = success && Marshalling(parcel, val.valChangeOverLife_[i].endMillis_);
+                int duration = val.valChangeOverLife_[i].endMillis_ - val.valChangeOverLife_[i].startMillis_;
+                RSAnimationTimingCurve curve = val.valChangeOverLife_[i].curve_;
+                auto interpolator = curve.GetInterpolator(duration); //根据曲线计算插值器，将插值器序列化
+                success = success && interpolator->Marshalling(parcel);
+            }
+        }
+    return success;     
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, ParticleColorParaType& val)
+{
+    Range<float> colorVal;
+    ParticleUpdator updator;        //变化因子，是变化速度还是曲线
+    Range<float> redRandom;
+    Range<float> greenRandom;
+    Range<float> blueRandom;  
+    bool success = Unmarshalling(parcel, colorVal.start_) && Unmarshalling(parcel, colorVal.end_) && 
+        Unmarshalling(parcel, updator);
+    if (val.updator_ == RANDOM) {
+            success = success && Unmarshalling(parcel, redRandom.start_) && Unmarshalling(parcel, redRandom.end_)
+                && Unmarshalling(parcel, greenRandom.start_) && Unmarshalling(parcel, greenRandom.end_)
+                && Unmarshalling(parcel, blueRandom.start_) && Unmarshalling(parcel, blueRandom.end_);
+    } else if (val.updator_ == CURVE) {
+        uint32_t valChangeOverLifeSize = parcel.ReadUint32();
+        std::vector<ChangeInOverLife<Color>> valChangeOverLife;
+        for (size_t i = 0; i < valChangeOverLifeSize; i++) {
+            Color fromValue;
+            Color toValue;
+            int startMillis;
+            int endMillis;
+            RSAnimationTimingCurve curve;
+            success = success && Unmarshalling(parcel, fromValue);
+            success = success && Unmarshalling(parcel, toValue);
+            success = success && Unmarshalling(parcel, startMillis);
+            success = success && Unmarshalling(parcel, endMillis);
+            int duration = endMillis - startMillis;
+            std::shared_ptr<RSInterpolator> interpolator(RSInterpolator::Unmarshalling(parcel));
+            curve = RSAnimationTimingCurve(interpolator);
+            auto change = std::make_shared<ChangeInOverLife<Color>>(fromValue, toValue, startMillis,endMillis, curve);
+            valChangeOverLife.push_back(change);
+        }
+    }
+    if (success) {
+        val = = std::make_shared<ParticleColorParaType>(value, updator, random, valChangeOverLife);
+    }
+    return success;
+}
+
+
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<ParticleParams>& val)
+{
+    success = Marshalling(parcel, val->emitterConfig);
+    success = success && Marshalling(parcel, val->velocity);
+    success = success && Marshalling(parcel, val->acceleration.accelerationValue);
+    success = success && Marshalling(parcel, val->acceleration.accelerationAngle);
+    success = success && Marshalling(parcel, val->color);
+    success = success && Marshalling(parcel, val->opacity);
+    success = success && Marshalling(parcel, val->scale);
+    success = success && Marshalling(parcel, val->spin);
+    return success;
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<ParticleParams>& val)
+{
+    success = Unmarshalling(parcel, val->emitterConfig);
+    success = success && Unmarshalling(parcel, val->velocity);
+    success = success && Unmarshalling(parcel, val->acceleration.accelerationValue);
+    success = success && Unmarshalling(parcel, val->acceleration.accelerationAngle);
+    success = success && Unmarshalling(parcel, val->color);
+    success = success && Unmarshalling(parcel, val->opacity);
+    success = success && Unmarshalling(parcel, val->scale);
+    success = success && Unmarshalling(parcel, val->spin);
+    return success;
+}
+
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<std::vector<ParticleParams>>& val)
+{
+    bool success = parcel.WriteUint32(static_cast<uint32_t>(val.size())); //数组大小
+    for (size_t i = 0; i < val.size(); i++) {
+        success = success && Marshalling(parcel, val[i]);
+    }
+    return success;
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<std::vector<ParticleParams>>& val)
+{
+    uint32_t size = parcel.ReadUint32(); //数组大小
+    bool success = true;
+    for (size_t i = 0; i < size; i++) {
+        success = success && Unmarshalling(parcel, val[i]);
+    }
+    return success;
+}
+
 // RSPath
 #ifndef USE_ROSEN_DRAWING
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSPath>& val)
@@ -1484,6 +1701,7 @@ MARSHALLING_AND_UNMARSHALLING(DrawCmdList)
     }
 
 MARSHALLING_AND_UNMARSHALLING(RSRenderCurveAnimation)
+MARSHALLING_AND_UNMARSHALLING(RSRenderParticleAnimation)
 MARSHALLING_AND_UNMARSHALLING(RSRenderInterpolatingSpringAnimation)
 MARSHALLING_AND_UNMARSHALLING(RSRenderKeyframeAnimation)
 MARSHALLING_AND_UNMARSHALLING(RSRenderSpringAnimation)
@@ -1581,6 +1799,7 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector4<uint32_t>)            \
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector4<Color>)               \
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector4f)                     \
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<ParticleParams>)  \
     EXPLICIT_INSTANTIATION(TEMPLATE, RRectT<float>)                \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<DrawCmdList>) \
     EXPLICIT_INSTANTIATION(TEMPLATE, SkMatrix)
@@ -1629,6 +1848,7 @@ BATCH_EXPLICIT_INSTANTIATION(RSRenderProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector2f)                  \
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector4<Color>)            \
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector4f)                  \
+    EXPLICIT_INSTANTIATION(TEMPLATE, ParticleParams)            \
     EXPLICIT_INSTANTIATION(TEMPLATE, RRectT<float>)
 
 BATCH_EXPLICIT_INSTANTIATION(RSRenderAnimatableProperty)

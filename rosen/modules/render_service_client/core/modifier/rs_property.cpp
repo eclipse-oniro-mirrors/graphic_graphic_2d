@@ -242,6 +242,12 @@ void RSProperty<Vector4<Color>>::UpdateToRender(const Vector4<Color>& value,
 {
     UPDATE_TO_RENDER(RSUpdatePropertyVector4Color, value, isDelta, forceUpdate);
 }
+// template<>
+// void RSProperty<std::vector<ParticleParams>>::UpdateToRender(
+//     const std::vector<ParticleParams>& value, bool isDelta, bool forceUpdate) const
+// {
+//     UPDATE_TO_RENDER(RSUpdatePropertyParticle, value, isDelta, forceUpdate);
+// }
 template<>
 void RSProperty<Vector4f>::UpdateToRender(const Vector4f& value, bool isDelta, bool forceUpdate) const
 {
@@ -315,5 +321,10 @@ RSRenderPropertyType RSAnimatableProperty<RRect>::GetPropertyType() const
 {
     return RSRenderPropertyType::PROPERTY_RRECT;
 }
+// template<>
+// RSRenderPropertyType RSAnimatableProperty<std::vector<ParticleParams>>::GetPropertyType() const
+// {
+//     return RSRenderPropertyType::PROPERTY_PARTICLE;
+// }
 } // namespace Rosen
 } // namespace OHOS

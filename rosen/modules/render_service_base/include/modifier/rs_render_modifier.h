@@ -33,7 +33,7 @@
 #include "render/rs_mask.h"
 #include "render/rs_path.h"
 #include "render/rs_shader.h"
-
+#include "animation/rs_render_particle.h"
 #ifndef USE_ROSEN_DRAWING
 #include "include/core/SkMatrix.h"
 #include "pipeline/rs_draw_cmd_list.h"
@@ -161,6 +161,27 @@ protected:
 #else
     std::shared_ptr<RSRenderProperty<Drawing::DrawCmdListPtr>> property_;
 #endif
+};
+
+class RSB_EXPORT RSParticleRenderModifier : public RSRenderModifier {
+public:
+    RSParticleRenderModifier(const std::shared_ptr<RSRenderProperty<std::vector<RSRenderParticle>>>& property)
+        : property_(property ? property : std::make_shared<RSRenderProperty<std::vector<RSRenderParticle>>>())
+    {}
+    virtual ~RSParticleRenderModifier() = default;
+    void Apply(RSModifierContext& context) const override;
+
+    virtual PropertyId GetPropertyId() override
+    {
+        return property_->GetId();
+    }
+
+    std::shared_ptr<RSRenderPropertyBase> GetProperty() override
+    {
+        return property_;
+    }
+
+    std::shared_ptr<RSRenderProperty<std::vector<RSRenderParticle>>> property_;
 };
 
 class RSAnimatableRenderModifier : public RSRenderModifier {

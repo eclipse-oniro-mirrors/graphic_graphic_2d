@@ -77,6 +77,17 @@ static std::unordered_map<RSModifierType, ModifierUnmarshallingFunc> funcLUT = {
             return modifier;
         },
     },
+    // { RSModifierType::PARTICLE, [](Parcel& parcel) -> RSRenderModifier* {
+    //         std::shared_ptr<RSRenderProperty<std::shared_ptr<std::vector<RSRenderParticle>>>> prop;
+    //         int16_t type;
+    //         if (!RSMarshallingHelper::Unmarshalling(parcel, prop) || !parcel.ReadInt16(type)) {
+    //             return nullptr;
+    //         }
+    //         RSParticleRenderModifier* modifier = new RSParticleRenderModifier(prop);
+    //         modifier->SetType(static_cast<RSModifierType>(type));
+    //         return modifier;
+    //     },
+    // },
     { RSModifierType::ENV_FOREGROUND_COLOR, [](Parcel& parcel) -> RSRenderModifier* {
             std::shared_ptr<RSRenderAnimatableProperty<Color>> prop;
             if (!RSMarshallingHelper::Unmarshalling(parcel, prop)) {
@@ -170,6 +181,12 @@ void RSDrawCmdListRenderModifier::ApplyForDrivenContent(RSModifierContext& conte
 #endif
 }
 
+void RSparticleRenderModifier::Apply(RSModifierContext& context) const
+{
+    auto renderProperty = std::static_pointer_cast<RSRenderProperty<std::vector<RSRenderParticle>>>(property_);
+    context.property_.SetParticles(renderProperty->Get());
+}
+
 bool RSEnvForegroundColorRenderModifier::Marshalling(Parcel& parcel)
 {
     auto renderProperty = std::static_pointer_cast<RSRenderAnimatableProperty<Color>>(property_);
@@ -199,7 +216,7 @@ bool RSEnvForegroundColorStrategyRenderModifier::Marshalling(Parcel& parcel)
 }
 
 
-void RSEnvForegroundColorStrategyRenderModifier ::Apply(RSModifierContext& context) const
+void RSEnvForegroundColorStrategyRenderModifier::Apply(RSModifierContext& context) const
 {
     auto renderProperty = std::static_pointer_cast<RSRenderProperty<ForegroundColorStrategyType>>(property_);
     switch (renderProperty->Get()) {
