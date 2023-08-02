@@ -233,7 +233,7 @@ void RSSurfaceRenderNode::CollectSurface(
 
 void RSSurfaceRenderNode::ClearChildrenCache(const std::shared_ptr<RSBaseRenderNode>& node)
 {
-    for (auto& child : node->GetSortedChildren()) {
+    for (auto& child : node->GetChildren()) {
         auto surfaceNode = child->ReinterpretCastTo<RSSurfaceRenderNode>();
         if (surfaceNode == nullptr) {
             continue;
@@ -261,10 +261,8 @@ void RSSurfaceRenderNode::OnTreeStateChanged()
 #endif
 }
 
-void RSSurfaceRenderNode::ResetParent()
+void RSSurfaceRenderNode::OnResetParent()
 {
-    RSBaseRenderNode::ResetParent();
-
     if (nodeType_ == RSSurfaceNodeType::LEASH_WINDOW_NODE) {
         ClearChildrenCache(shared_from_this());
     } else {
@@ -689,7 +687,7 @@ void RSSurfaceRenderNode::SetVisibleRegionRecursive(const Occlusion::Region& reg
     }
 
     SetOcclusionVisible(vis);
-    for (auto& child : GetSortedChildren()) {
+    for (auto& child : GetChildren()) {
         if (auto surface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child)) {
             surface->SetVisibleRegionRecursive(region, visibleVec, pidVisMap);
         }
@@ -799,7 +797,7 @@ void RSSurfaceRenderNode::UpdateFilterCacheStatusIfNodeStatic(const RectI& clipR
     }
 #ifndef USE_ROSEN_DRAWING
     // traversal filter nodes including app window
-    EraseIf(filterNodes_, [this](const auto& pair) { 
+    EraseIf(filterNodes_, [this](const auto& pair) {
         auto& node = pair.second;
         if (node == nullptr || !node->IsOnTheTree() || !node->GetRenderProperties().NeedFilter()) {
             return true;
@@ -1200,8 +1198,7 @@ bool RSSurfaceRenderNode::LeashWindowRelatedAppWindowOccluded(std::shared_ptr<RS
     if (!IsLeashWindow()) {
         return false;
     }
-    for (auto& child : GetChildren()) {
-        auto childNode = child.lock();
+    for (auto& childNode : GetChildren()) {
         const auto& childNodeSurface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(childNode);
         if (childNodeSurface && childNodeSurface->GetVisibleRegion().IsEmpty()) {
             appNode = childNodeSurface;
@@ -1217,8 +1214,7 @@ std::vector<std::shared_ptr<RSSurfaceRenderNode>> RSSurfaceRenderNode::GetLeashW
     if (!IsLeashWindow()) {
         return res;
     }
-    for (auto& child : GetChildren()) {
-        auto childNode = child.lock();
+    for (auto& childNode : GetChildren()) {
         if (childNode) {
             auto childNodeSurface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(childNode);
             if (childNodeSurface) {

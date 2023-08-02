@@ -66,7 +66,6 @@ public:
 
     void PrepareRenderBeforeChildren(RSPaintFilterCanvas& canvas);
     void PrepareRenderAfterChildren(RSPaintFilterCanvas& canvas);
-    void ResetParent() override;
 
 #ifdef OHOS_PLATFORM
     void SetIsOnTheTree(bool flag) override;
@@ -704,6 +703,7 @@ public:
     void SetNotifyRTBufferAvailable(bool isNotifyRTBufferAvailable);
 
 private:
+    void OnResetParent() override;
     void ClearChildrenCache(const std::shared_ptr<RSBaseRenderNode>& node);
     bool SubNodeIntersectWithExtraDirtyRegion(const RectI& r) const;
     Vector4f GetWindowCornerRadius();
