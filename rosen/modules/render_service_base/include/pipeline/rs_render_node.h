@@ -300,6 +300,8 @@ public:
         return isStaticCached_;
     }
 
+    bool NeedInitCacheSurface() const;
+
 #ifndef USE_ROSEN_DRAWING
     using ClearCacheSurfaceFunc = std::function<void(sk_sp<SkSurface>, sk_sp<SkSurface>, uint32_t)>;
 #ifdef NEW_SKIA
