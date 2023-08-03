@@ -20,6 +20,7 @@
 #include <parameters.h>
 #include "platform/common/rs_log.h"
 #include "transaction/rs_render_service_client.h"
+#include "scene_board_judgement.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -44,6 +45,11 @@ static void ParseDfxSurfaceNamesString(const std::string& paramsStr,
     if (pos1 != paramsStr.length()) {
         splitStrs.push_back(paramsStr.substr(pos1));
     }
+}
+
+bool RSSystemProperties::IsSceneBoardEnabled()
+{
+    return SceneBoardJudgement::IsSceneBoardEnabled();
 }
 
 // used by clients

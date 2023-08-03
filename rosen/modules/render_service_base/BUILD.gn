@@ -237,7 +237,7 @@ ohos_source_set("render_service_base_src") {
     "$rosen_root/modules/platform:hilog",
     "$rosen_root/modules/platform:ipc_core",
   ]
-  external_deps = [ "window_manager:libwsutils" ]
+  external_deps = []
 
   if (enable_ipc_security) {
     defines += [ "ENABLE_IPC_SECURITY" ]

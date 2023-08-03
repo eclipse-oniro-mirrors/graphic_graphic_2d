@@ -93,6 +93,7 @@ public:
 
     // used by clients
     static std::string GetRecordingFile();
+    static bool IsSceneBoardEnabled();
     static int GetDumpFrameNum();
     static void SetRecordingDisenabled();
     static bool GetRecordingEnabled();
