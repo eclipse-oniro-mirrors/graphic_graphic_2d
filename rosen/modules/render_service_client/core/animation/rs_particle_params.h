@@ -34,36 +34,7 @@
 
 namespace OHOS {
 namespace Rosen {
-class RSInterpolator;
-
-//enum class ParticleUpdator { NONE = 0, RANDOM, CURVE };
-
-// enum class ShapeType {
-//     RECT = 0,
-//     CIRCLE,
-//     ELLIPSE
-// };
-
-// enum class ParticleType {
-//     POINTS,
-//     IMAGES,
-// };
-
-// template<typename T>
-// struct Range {
-//     T start_, end_;
-//     Range() : start_(), end_() {}
-//     Range(T a, T b) : start_(a), end_(b) {}
-//     bool operator==(const Range<T>& rhs) const
-//     {
-//         return start_ == rhs.start_ && end_ == rhs.end_;
-//     }
-
-//     T Width() const
-//     {
-//         return end_ - start_;
-//     }
-// };
+// class RSInterpolator;
 
 template<typename T>
 class RSB_EXPORT Change {
@@ -105,66 +76,11 @@ public:
             valChangeOverLife_.push_back(change);
         }
     }
-    ParticleParaType(): val_(), updator_(ParticleUpdator::NONE), random_(), valChangeOverLife_(0)  {}
+    ParticleParaType(): val_(), updator_(ParticleUpdator::NONE), random_() {}
     ParticleParaType(const ParticleParaType& paraType) = default;
     ParticleParaType& operator=(const ParticleParaType& paraType) = default;
     ~ParticleParaType() = default;
 };
-
-// class RSB_EXPORT EmitterConfig {
-// public:
-//     int emitRate_;
-//     ShapeType emitShape_;
-//     Vector2f position_;
-//     Vector2f emitSize_;
-//     int particleCount_;
-//     int lifeTime_;
-//     ParticleType type_;
-//     float radius_;
-//     //std::shared_ptr<RSImage> image_ = nullptr;
-//     //Drawing::Size size_;
-//     //ImageFit imageFit_;
-
-//     EmitterConfig(): emitRate_(5), emitShape_(ShapeType::RECT), position_(), emitSize_(), 
-//         particleCount_(10), lifeTime_(100), type_(ParticleType::POINTS), radius_(0.1f)
-//         // , image_(), size_(), imageFit_() 
-//         {}
-//     EmitterConfig(int emitRate, ShapeType emitShape, Vector2f position, Vector2f emitSize, 
-//         int particleCount, int lifeTime, ParticleType type, float radius
-//         //, std::shared_ptr<RSImageBase> rsImage,Drawing::Size size, ImageFit imageFit
-//         )//: image_(rsImage)
-//     {
-//         emitRate_ = emitRate;
-//         emitShape_ = emitShape;
-//         position_ = position;
-//         emitSize_ = emitSize;
-//         particleCount_ = particleCount;
-//         lifeTime_ = lifeTime;
-//         type_ = type;
-//         radius_ = radius;
-//         //size_ = size;
-//         //imageFit_ = imageFit;
-//     }
-//     EmitterConfig(const EmitterConfig& config) = default;
-//     EmitterConfig& operator=(const EmitterConfig& config) = default;
-//     ~EmitterConfig() = default;
-// };
-
-// class RSB_EXPORT ParticleVelocity {
-// public:
-//     Range<float> velocityValue_;
-//     Range<float> velocityAngle_;
-    
-//     ParticleVelocity(): velocityValue_(), velocityAngle_() {}
-//     ParticleVelocity(Range<float> velocityValue, Range<float> velocityAngle)
-//     {
-//         velocityValue_ = Range(velocityValue.start_, velocityValue.end_);
-//         velocityAngle_ = Range(velocityAngle.start_, velocityAngle.end_);
-//     }
-//     ParticleVelocity(const ParticleVelocity& velocity) = default;
-//     ParticleVelocity& operator=(const ParticleVelocity& velocity) = default;
-//     ~ParticleVelocity() = default;
-// };
 
 class RSB_EXPORT ParticleAcceleration {
 public:
@@ -256,14 +172,14 @@ public:
         }else if (val.updator_ == ParticleUpdator::CURVE) {
             uint32_t size =  val.valChangeOverLife_.size();
             for (uint32_t i = 0; i < size; i++) {
-                value.valChangeOverLife_[i].fromValue_ =  val.valChangeOverLife_[i].fromValue_;
-                value.valChangeOverLife_[i].toValue_ =  val.valChangeOverLife_[i].toValue_;
-                value.valChangeOverLife_[i].startMillis_ =  val.valChangeOverLife_[i].startMillis_;
-                value.valChangeOverLife_[i].endMillis_ =  val.valChangeOverLife_[i].endMillis_;
+                value.valChangeOverLife_[i]->fromValue_ =  val.valChangeOverLife_[i].fromValue_;
+                value.valChangeOverLife_[i]->toValue_ =  val.valChangeOverLife_[i].toValue_;
+                value.valChangeOverLife_[i]->startMillis_ =  val.valChangeOverLife_[i].startMillis_;
+                value.valChangeOverLife_[i]->endMillis_ =  val.valChangeOverLife_[i].endMillis_;
                 int duration = val.valChangeOverLife_[i].endMillis_ - val.valChangeOverLife_[i].startMillis_;
                 RSAnimationTimingCurve curve = val.valChangeOverLife_[i].curve_;
                 auto interpolator = curve.GetInterpolator(duration);
-                value.valChangeOverLife_[i].interpolator_ = interpolator;
+                value.valChangeOverLife_[i]->interpolator_ = interpolator;
             }
         }
         return value;
@@ -281,27 +197,27 @@ public:
         }else if (color.updator_ == ParticleUpdator::CURVE) {
             uint32_t size =  val.valChangeOverLife_.size();
             for (uint32_t i = 0; i < size; i++) {
-                color.valChangeOverLife_[i].fromValue_ =  val.valChangeOverLife_[i].fromValue_;
-                color.valChangeOverLife_[i].toValue_ =  val.valChangeOverLife_[i].toValue_;
-                color.valChangeOverLife_[i].startMillis_ =  val.valChangeOverLife_[i].startMillis_;
-                color.valChangeOverLife_[i].endMillis_ =  val.valChangeOverLife_[i].endMillis_;
+                color.valChangeOverLife_[i]->fromValue_ =  val.valChangeOverLife_[i].fromValue_;
+                color.valChangeOverLife_[i]->toValue_ =  val.valChangeOverLife_[i].toValue_;
+                color.valChangeOverLife_[i]->startMillis_ =  val.valChangeOverLife_[i].startMillis_;
+                color.valChangeOverLife_[i]->endMillis_ =  val.valChangeOverLife_[i].endMillis_;
                 int duration = val.valChangeOverLife_[i].endMillis_ - val.valChangeOverLife_[i].startMillis_;
                 RSAnimationTimingCurve curve = val.valChangeOverLife_[i].curve_;
                 auto interpolator = curve.GetInterpolator(duration);
-                color.valChangeOverLife_[i].interpolator_ = interpolator;
+                color.valChangeOverLife_[i]->interpolator_ = interpolator;
             }
         }
         return color;
     }
 
-    ParticleRenderParams& SetParamsToRenderParticle(ParticleParams) {
+    std::shared_ptr<ParticleRenderParams> SetParamsToRenderParticle() {
         auto particleRenderParams = std::make_shared<ParticleRenderParams>();
         particleRenderParams->SetEmitConfig(emitterConfig_);
         particleRenderParams->SetParticleVelocity(velocity_);
         //换算acceleration的曲线到插值器;
-        auto acceleration = std::make_share<RenderParticleAcceleration>();
-        acceleration->accelerationValue_ = translateValToRender(acceleration.accelerationValue_);
-        acceleration->accelerationAngle_ = translateValToRender(acceleration.accelerationAngle_);
+        auto acceleration = RenderParticleAcceleration();
+        acceleration.accelerationValue_ = translateValToRender(acceleration_.accelerationValue_);
+        acceleration.accelerationAngle_ = translateValToRender(acceleration_.accelerationAngle_);
         particleRenderParams->SetParticleAcceleration(acceleration);
         particleRenderParams->SetParticleColor(translateColorToRender(color_));
         particleRenderParams->SetParticleOpacity(translateValToRender(opacity_));
@@ -312,8 +228,6 @@ public:
         return particleRenderParams;
     }
 };
-
-ParticleParams
   
 } // namespace Rosen
 } // namespace OHOS

@@ -14,25 +14,26 @@
  */
 
 #include "animation/rs_render_particle_system.h"
+#include <cstddef>
 namespace OHOS {
 namespace Rosen {
-RSRenderParticleSystem::RSRenderParticleSystem(std::vector<ParticleParams> particlesParams)
-    : particlesParams_(particlesParams)
+RSRenderParticleSystem::RSRenderParticleSystem(const std::vector<std::shared_ptr<ParticleRenderParams>> particlesRenderParams)
+    : particlesRenderParams_(particlesRenderParams)
 {}
 
 //有几个发射器就发射几次
 void RSRenderParticleSystem::Emit(int64_t deltaTime) {
-    for (auto iter = 0; iter < particlesParams_.size(); iter++) { 
-        auto particleParams = particlesParams_[iter];
+    for (std::size_t iter = 0; iter < particlesRenderParams_.size(); iter++) { 
+        auto particleRenderParams = particlesRenderParams_[iter];
         //创建发射器
-        auto emitter = RSRenderParticleEmitter(particleParams);
+        auto emitter = std::make_shared<RSRenderParticleEmitter>(particleRenderParams);
         emitter->EmitParticle(deltaTime);
         // emitter->updateParticle(deltaTime);
     }
 }
-std::vector<RSRenderParticle> RSRenderParticleSystem::Simulation(int64_t deltaTime) {
+std::vector<std::shared_ptr<RSRenderParticle>> RSRenderParticleSystem::Simulation(int64_t deltaTime) {
     Emit(deltaTime);
-    return RSRenderParticleEmitter::getParticles();
+    return RSRenderParticleEmitter::GetRenderParticles();
 }
 } // namespace Rosen
 } // namespace OHOS

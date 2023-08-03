@@ -14,39 +14,41 @@
  */
 
 #include "animation/rs_render_particle_effector.h"
+#include "animation/rs_value_estimator.h"
 
 #include <cmath>
 #include <iostream>
 #include <random>
 namespace OHOS {
 namespace Rosen {
-RSRenderParticleEffector::RSRenderParticleEffector(ParticleParams particleParams)
+RSRenderParticleEffector::RSRenderParticleEffector(const std::shared_ptr<ParticleRenderParams> particleParams)
 {
     particleParams_ = particleParams;
 }
 
 void RSRenderParticleEffector::UpdateColor(RSRenderParticle& particle, int64_t deltaTime, int64_t activeTime)
 {
-    auto colorUpdator = particleParams_.GetColorUpdator();
+    auto colorUpdator = particleParams_->GetColorUpdator();
     if (colorUpdator == ParticleUpdator::RANDOM) {
-        float redSpeed = GetRandomValue(particleParams_.GetRedRandomStart(), particleParams_.GetRedRandomEnd());
-        float greenSpeed = GetRandomValue(particleParams_.GetGreenRandomStart(), particleParams_.GetGreenRandomEnd());
-        float blueSpeed = GetRandomValue(particleParams_.GetBlueRandomStart(), particleParams_.GetBlurRandomEnd());
+        float redSpeed = RSRenderParticle::GetRandomValue(particleParams_->GetRedRandomStart(), particleParams_->GetRedRandomEnd());
+        float greenSpeed = RSRenderParticle::GetRandomValue(particleParams_->GetGreenRandomStart(), particleParams_->GetGreenRandomEnd());
+        float blueSpeed = RSRenderParticle::GetRandomValue(particleParams_->GetBlueRandomStart(), particleParams_->GetBlurRandomEnd());
         Color color = particle.GetColor();
         color.SetRed(color.GetRed() + redSpeed * deltaTime);
         color.SetGreen(color.GetGreen() + greenSpeed * deltaTime);
         color.SetBlue(color.GetBlue() + blueSpeed * deltaTime);
         particle.SetColor(color);
     } else if (colorUpdator == ParticleUpdator::CURVE) {
-        auto valChangeOverLife = particleParams_.color_.valChangeOverLife_;
-        for (int i = 0; i < valChangeOverLife.size(); i++) {
-            auto colorCurve = valChangeOverLife[i].curve_;
-            Color startValue = valChangeOverLife[i].fromValue_;
-            Color endValue = valChangeOverLife[i].toValue_;
-            int startTime = valChangeOverLife[i].startMillis_;
-            int endTime = valChangeOverLife[i].endMillis_;
+        auto valChangeOverLife = particleParams_->color_.valChangeOverLife_;
+        for (size_t i = 0; i < valChangeOverLife.size(); i++) {
+            Color startValue = valChangeOverLife[i]->fromValue_;
+            Color endValue = valChangeOverLife[i]->toValue_;
+            int startTime = valChangeOverLife[i]->startMillis_;
+            int endTime = valChangeOverLife[i]->endMillis_;
+            auto interpolator = valChangeOverLife[i]->interpolator_;
+
             if (activeTime >= startTime && activeTime < endTime) {
-                Color value = GenerateValue(startValue, endValue, startTime, endTime, activeTime, colorCurve);
+                Color value = GenerateValue(startValue, endValue, startTime, endTime, activeTime, interpolator);
                 particle.SetColor(value);
             }
         }
@@ -55,22 +57,22 @@ void RSRenderParticleEffector::UpdateColor(RSRenderParticle& particle, int64_t d
 
 void RSRenderParticleEffector::UpdateOpacity(RSRenderParticle& particle, int64_t deltaTime, int64_t activeTime)
 {
-    auto opacityUpdator = particleParams_.GetOpacityUpdator();
+    auto opacityUpdator = particleParams_->GetOpacityUpdator();
     if (opacityUpdator == ParticleUpdator::RANDOM) {
-        float opacitySpeed = GetRandomValue(particleParams_.GetOpacityRandomStart(), particleParams_.GetOpacityRandomEnd());
+        float opacitySpeed = RSRenderParticle::GetRandomValue(particleParams_->GetOpacityRandomStart(), particleParams_->GetOpacityRandomEnd());
         auto opacity = particle.GetOpacity();
         opacity += opacitySpeed * deltaTime;
         particle.SetOpacity(opacity);
     } else if (opacityUpdator == ParticleUpdator::CURVE) {
-        auto valChangeOverLife = particleParams_.opacity_.valChangeOverLife_;
-        for (int i = 0; i < valChangeOverLife.size(); i++) {
-            auto opacityCurve = valChangeOverLife[i].curve_;
-            float startValue = valChangeOverLife[i].fromValue_;
-            float endValue = valChangeOverLife[i].toValue_;
-            int startTime = valChangeOverLife[i].startMillis_;
-            int endTime = valChangeOverLife[i].endMillis_;
+        auto valChangeOverLife = particleParams_->opacity_.valChangeOverLife_;
+        for (size_t i = 0; i < valChangeOverLife.size(); i++) {
+            float startValue = valChangeOverLife[i]->fromValue_;
+            float endValue = valChangeOverLife[i]->toValue_;
+            int startTime = valChangeOverLife[i]->startMillis_;
+            int endTime = valChangeOverLife[i]->endMillis_;
+            auto interpolator = valChangeOverLife[i]->interpolator_;
             if (activeTime >= startTime && activeTime < endTime) {
-                float value = GenerateValue(startValue, endValue, startTime, endTime, activeTime, opacityCurve);
+                float value = GenerateValue(startValue, endValue, startTime, endTime, activeTime, interpolator);
                 particle.SetOpacity(value);
             }
         }
@@ -80,22 +82,22 @@ void RSRenderParticleEffector::UpdateOpacity(RSRenderParticle& particle, int64_t
 
 void RSRenderParticleEffector::UpdateScale(RSRenderParticle& particle, int64_t deltaTime, int64_t activeTime)
 {
-    auto scaleUpdator = particleParams_.GetScaleUpdator();
+    auto scaleUpdator = particleParams_->GetScaleUpdator();
     if (scaleUpdator == ParticleUpdator::RANDOM) {
-        float scaleSpeed = GetRandomValue(particleParams_.GetScaleRandomStart(), particleParams_.GetScaleRandomEnd());
+        float scaleSpeed = RSRenderParticle::GetRandomValue(particleParams_->GetScaleRandomStart(), particleParams_->GetScaleRandomEnd());
         auto scale = particle.GetScale();
         scale += scaleSpeed * deltaTime;
         particle.SetScale(scale);
     } else if (scaleUpdator == ParticleUpdator::CURVE) {
-        auto valChangeOverLife = particleParams_.scale_.valChangeOverLife_;
-        for (int i = 0; i < valChangeOverLife.size(); i++) {
-            auto scaleCurve = valChangeOverLife[i].curve_;
-            float startValue = valChangeOverLife[i].fromValue_;
-            float endValue = valChangeOverLife[i].toValue_;
-            int startTime = valChangeOverLife[i].startMillis_;
-            int endTime = valChangeOverLife[i].endMillis_;
+        auto valChangeOverLife = particleParams_->scale_.valChangeOverLife_;
+        for (size_t i = 0; i < valChangeOverLife.size(); i++) {
+            float startValue = valChangeOverLife[i]->fromValue_;
+            float endValue = valChangeOverLife[i]->toValue_;
+            int startTime = valChangeOverLife[i]->startMillis_;
+            int endTime = valChangeOverLife[i]->endMillis_;
+            auto interpolator = valChangeOverLife[i]->interpolator_;
             if (activeTime >= startTime && activeTime < endTime) {
-                float value = GenerateValue(startValue, endValue, startTime, endTime, activeTime, scaleCurve);
+                float value = GenerateValue(startValue, endValue, startTime, endTime, activeTime, interpolator);
                 particle.SetScale(value);
             }
         }
@@ -103,22 +105,22 @@ void RSRenderParticleEffector::UpdateScale(RSRenderParticle& particle, int64_t d
 }
 void RSRenderParticleEffector::UpdateSpin(RSRenderParticle& particle, int64_t deltaTime, int64_t activeTime)
 {
-    auto spinUpdator = particleParams_.GetSpinUpdator();
+    auto spinUpdator = particleParams_->GetSpinUpdator();
     if (spinUpdator == ParticleUpdator::RANDOM) {
-        float spinSpeed = GetRandomValue(particleParams_.GetSpinRandomStart(), particleParams_.GetSpinRandomEnd());
+        float spinSpeed = RSRenderParticle::GetRandomValue(particleParams_->GetSpinRandomStart(), particleParams_->GetSpinRandomEnd());
         auto spin = particle.GetSpin();
         spin += spinSpeed * deltaTime;
         particle.SetSpin(spin);
     } else if (spinUpdator == ParticleUpdator::CURVE) {
-        auto valChangeOverLife = particleParams_.spin_.valChangeOverLife_;
-        for (int i = 0; i < valChangeOverLife.size(); i++) {
-            auto spinCurve = valChangeOverLife[i].curve_;
-            float startValue = valChangeOverLife[i].fromValue_;
-            float endValue = valChangeOverLife[i].toValue_;
-            int startTime = valChangeOverLife[i].startMillis_;
-            int endTime = valChangeOverLife[i].endMillis_;
+        auto valChangeOverLife = particleParams_->spin_.valChangeOverLife_;
+        for (size_t i = 0; i < valChangeOverLife.size(); i++) {
+            float startValue = valChangeOverLife[i]->fromValue_;
+            float endValue = valChangeOverLife[i]->toValue_;
+            int startTime = valChangeOverLife[i]->startMillis_;
+            int endTime = valChangeOverLife[i]->endMillis_;
+            auto interpolator = valChangeOverLife[i]->interpolator_;
             if (activeTime >= startTime && activeTime < endTime) {
-                float value = GenerateValue(startValue, endValue, startTime, endTime, activeTime, spinCurve);
+                float value = GenerateValue(startValue, endValue, startTime, endTime, activeTime, interpolator);
                 particle.SetSpin(value);
             }
         }
@@ -127,44 +129,43 @@ void RSRenderParticleEffector::UpdateSpin(RSRenderParticle& particle, int64_t de
 
 void RSRenderParticleEffector::UpdateAccelerate(RSRenderParticle& particle, int64_t deltaTime, int64_t activeTime)
 {
-    auto acceValueUpdator = particleParams_.GetAccelerationValueUpdator();
-    auto acceAngleUpdator = particleParams_.GetAccelerationAngleUpdator();
+    auto acceValueUpdator = particleParams_->GetAccelerationValueUpdator();
+    auto acceAngleUpdator = particleParams_->GetAccelerationAngleUpdator();
     float acceValueChange = 0.f;
     float acceAngleChange = 0.f;
     float value = 0.f;
     float Angle = 0.f;
     if (acceValueUpdator == ParticleUpdator::RANDOM) {
-        float acceValueSpeed = GetRandomValue(particleParams_.GetAccelRandomValueStart(),
-            particleParams_.GetAccelRandomValueEnd());
-        float acceValueChange = acceValueSpeed * deltaTime;
+        float acceValueSpeed = RSRenderParticle::GetRandomValue(particleParams_->GetAccelRandomValueStart(),
+            particleParams_->GetAccelRandomValueEnd());
+        acceValueChange = acceValueSpeed * deltaTime;
     } else if (acceValueUpdator == ParticleUpdator::CURVE) {
-        auto valChangeOverLife = particleParams_.acceleration.accelerationValue.valChangeOverLife_;
-        for (int i = 0; i < valChangeOverLife.size(); i++) {
-            auto acceValCurve = valChangeOverLife[i].curve;
-            float startValue = valChangeOverLife[i].fromValue_;
-            float endValue = valChangeOverLife[i].toValue_;
-            int startTime = valChangeOverLife[i].startMillis_;
-            int endTime = valChangeOverLife[i].endMillis_;
+        auto valChangeOverLife = particleParams_->acceleration_.accelerationValue_.valChangeOverLife_;
+        for (size_t i = 0; i < valChangeOverLife.size(); i++) {
+            float startValue = valChangeOverLife[i]->fromValue_;
+            float endValue = valChangeOverLife[i]->toValue_;
+            int startTime = valChangeOverLife[i]->startMillis_;
+            int endTime = valChangeOverLife[i]->endMillis_;
+            auto interpolator = valChangeOverLife[i]->interpolator_;
             if (activeTime >= startTime && activeTime < endTime) {
-                value = GenerateValue(startValue, endValue, startTime, endTime, activeTime, acceValCurve);
+                value = GenerateValue(startValue, endValue, startTime, endTime, activeTime, interpolator);
             }
         }
     }
     if (acceAngleUpdator == ParticleUpdator::RANDOM) {
-        float acceAngleSpeed = GetRandomValue(particleParams_.GetAccelRandomAngleStart(),
-            particleParams_.GetAccelRandomAngleStart());
-        float acceAngleChange = acceAngleSpeed * deltaTime;
-
+        float acceAngleSpeed = RSRenderParticle::GetRandomValue(particleParams_->GetAccelRandomAngleStart(),
+            particleParams_->GetAccelRandomAngleStart());
+        acceAngleChange = acceAngleSpeed * deltaTime;
     } else if (acceAngleUpdator == ParticleUpdator::CURVE) {
-        auto valChangeOverLife = particleParams_.acceleration_.accelerationAngle.valChangeOverLife_;
-        for (int i = 0; i < valChangeOverLife.size(); i++) {
-            auto acceAngleCurve = valChangeOverLife[i].curve_;
-            float startValue = valChangeOverLife[i].fromValue_;
-            float endValue = valChangeOverLife[i].toValue_;
-            int startTime = valChangeOverLife[i].startMillis_;
-            int endTime = valChangeOverLife[i].endMillis_;
+        auto valChangeOverLife = particleParams_->acceleration_.accelerationAngle_.valChangeOverLife_;
+        for (size_t i = 0; i < valChangeOverLife.size(); i++) {
+            float startValue = valChangeOverLife[i]->fromValue_;
+            float endValue = valChangeOverLife[i]->toValue_;
+            int startTime = valChangeOverLife[i]->startMillis_;
+            int endTime = valChangeOverLife[i]->endMillis_;
+            auto interpolator = valChangeOverLife[i]->interpolator_;
             if (activeTime >= startTime && activeTime < endTime) {
-                Angle = GenerateValue(startValue, endValue, startTime, endTime, activeTime, acceAngleCurve);
+                Angle = GenerateValue(startValue, endValue, startTime, endTime, activeTime, interpolator);
             }
         }
     }
@@ -185,7 +186,7 @@ void RSRenderParticleEffector::UpdateAccelerate(RSRenderParticle& particle, int6
 }
 
 // Apply effector to particle
-void RSRenderParticleEffector::applyEffectorToParticle(RSRenderParticle& particle, int64_t deltaTime) const
+void RSRenderParticleEffector::ApplyEffectorToParticle(RSRenderParticle& particle, int64_t deltaTime)
 {
     int64_t activeTime = particle.GetActiveTime();
     UpdateAccelerate(particle, deltaTime, activeTime);
@@ -227,42 +228,15 @@ void RSRenderParticleEffector::applyEffectorToParticle(RSRenderParticle& particl
 
 // 根据曲线类型和时间参数生成每帧的值
 template<typename T>
-T GenerateValue(T startValue, T endValue, int startTime, int endTime, int currentTime,
-    RSAnimationTimingCurve curve)
+T RSRenderParticleEffector::GenerateValue(T startValue, T endValue, int startTime, int endTime, int currentTime,
+    std::shared_ptr<RSInterpolator> interpolator)
 {
     // 计算时间比例
     float t = (currentTime - startTime) / (endTime - startTime);
-    auto interpolator = curve.GetInterpolator(endTime - startTime);
     float fraction = interpolator -> Interpolate(t);
-
-    auto interpolationValue = RSValueEstimator::Estimate(fraction, startValue, endValue)
-
-    // 根据曲线类型进行插值
-    // if (curveType == LINEAR){
-    //     if ( std::is_same<T, Color>::value ) {
-    //         Color startColor = *reinterpret_cast<Color*>(&startValue);
-    //         Color endColor = *reinterpret_cast<Color*>(&endValue);
-            
-    //         Color result;
-    //         result.SetRed(startColor.GetRed() + t * (endColor.GetRed() - startColor.GetRed()));
-    //         result.SetGreen(startColor.GetGreen() + t * (endColor.GetGreen() - startColor.GetGreen()));
-    //         result.SetBlue(startColor.GetBlue() + t * (endColor.GetBlue() - startColor.GetBlue()));
-    //         result.SetAlpha(startColor.GetAlpha() + t * (endColor.GetAlpha() - startColor.GetAlpha()));
-    //         return *reinterpret_cast<T*>(&result);
-    //     }
-    //     return startValue + t * (endValue - startValue);
-    // }
+    auto interpolationValue = startValue * (1.0f - fraction) + endValue * fraction;
     return interpolationValue;
 }
-
-float GetRandomValue(float min, float max)
-{
-    static std::random_device rd;
-    std::mt19937_64 gen(rd());
-    std::uniform_real_distribution<float> dis(min, max);
-    return dis(gen);
-}
-
 
 //属性之间的联动变化效果器待实现
 

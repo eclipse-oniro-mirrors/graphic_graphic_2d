@@ -165,8 +165,8 @@ protected:
 
 class RSB_EXPORT RSParticleRenderModifier : public RSRenderModifier {
 public:
-    RSParticleRenderModifier(const std::shared_ptr<RSRenderProperty<std::vector<RSRenderParticle>>>& property)
-        : property_(property ? property : std::make_shared<RSRenderProperty<std::vector<RSRenderParticle>>>())
+    RSParticleRenderModifier(const std::shared_ptr<RSRenderProperty<std::vector<std::shared_ptr<RSRenderParticle>>>>& property)
+        : property_(property ? property : std::make_shared<RSRenderProperty<std::vector<std::shared_ptr<RSRenderParticle>>>>())
     {}
     virtual ~RSParticleRenderModifier() = default;
     void Apply(RSModifierContext& context) const override;
@@ -181,7 +181,14 @@ public:
         return property_;
     }
 
-    std::shared_ptr<RSRenderProperty<std::vector<RSRenderParticle>>> property_;
+    void Update(const std::shared_ptr<RSRenderPropertyBase>& prop, bool isDelta) override;
+    bool Marshalling(Parcel& parcel) override;
+    
+    RSModifierType GetType() override
+    {
+        return RSModifierType::INVALID;
+    }
+    std::shared_ptr<RSRenderProperty<std::vector<std::shared_ptr<RSRenderParticle>>>> property_;
 };
 
 class RSAnimatableRenderModifier : public RSRenderModifier {

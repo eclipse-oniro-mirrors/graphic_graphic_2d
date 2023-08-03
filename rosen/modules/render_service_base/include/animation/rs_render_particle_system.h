@@ -16,22 +16,23 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_PARTICLE_SYSTEM_H
 #define RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_PARTICLE_SYSTEM_H
 
-#include "animation/rs_render_particle_emitter.h"
-#include "animation/rs_render_particle_effector.h"
+#include "rs_render_particle_emitter.h"
 #include "common/rs_macros.h"
 
 namespace OHOS {
 namespace Rosen {
 class RSB_EXPORT RSRenderParticleSystem {
 public:
-    RSRenderParticleSystem(std::vector<ParticleParams> particlesParams);
+    RSRenderParticleSystem(const std::vector<std::shared_ptr<ParticleRenderParams>> particlesRenderParams);
     virtual ~RSRenderParticleSystem() = default;
+    RSRenderParticleSystem() = default;
 
-    std::vector<RSRenderParticle> Simulation(int64_t deltaTime);
+    std::vector<std::shared_ptr<RSRenderParticle>> Simulation(int64_t deltaTime);
     void Emit(int64_t deltaTime);
 private:
-    
-    std::vector<ParticleParams> particlesParams_;
+   
+    std::vector<std::shared_ptr<ParticleRenderParams>> particlesRenderParams_;
+    //std::vector<ParticleParams> particlesParams_;
 };
 } // namespace Rosen
 } // namespace OHOS

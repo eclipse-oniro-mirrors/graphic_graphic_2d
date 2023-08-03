@@ -16,14 +16,14 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_PARTICLE_EMITTER_H
 #define RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_PARTICLE_EMITTER_H
 
-#include "rs_render_particle.h"
+#include <memory>
 #include "rs_render_particle_effector.h"
 namespace OHOS {
 namespace Rosen {
 
 class RSRenderParticleEmitter {
 public:
-    RSRenderParticleEmitter(ParticleParams particleParams_);
+    RSRenderParticleEmitter(std::shared_ptr<ParticleRenderParams> particleParams);
 
     void EmitParticle(int64_t deltaTime);
     void UpdateParticle(int64_t deltaTime);
@@ -32,24 +32,24 @@ public:
     void SetEmitRate(int emitRate);
     void SetEmitShape(ShapeType emitShape);
     void SetPosition(const Vector2f& position);
-    void SetEmitSize(const Size& emitSize);
+    void SetEmitSize(const Vector2f& emitSize);
     void SetParticleType(ParticleType type);
     void SetRadius(float radius);
-    void SetImage(const RSImage& image);
-    void SetSize(const Size& size);
-    void SetImageFit(ImageFit imageFit);
+    // void SetImage(const RSImage& image);
+    // void SetSize(const Size& size);
+    // void SetImageFit(ImageFit imageFit);
 
     // Getters
     int GetMaxParticle() const;
     int GetActiveParticle() const;
-    static const std::vector<RSRenderParticle>& GetParticles() const;
-    const std::vector<RSRenderParticle*>& GetActiveParticles() const;
+    static std::vector<std::shared_ptr<RSRenderParticle>> GetRenderParticles();
+    static std::vector<std::shared_ptr<RSRenderParticle>> GetActiveParticles();
     int GetLiveTime() const;
     bool IsEmitting() const;
     int GetEmitRate() const;
     ShapeType GetEmitShape() const;
     const Vector2f& GetPosition() const;
-    const Size& GetEmitSize() const;
+    const Vector2f& GetEmitSize() const;
     ParticleType GetParticleType() const;
     float GetRadius() const;
     // const RSImage& GetImage() const;
@@ -59,20 +59,20 @@ public:
 private:
     int maxParticle_;
     int activeParticle_;
-    static std::vector<RSRenderParticle> particles_;
-    //std::vector<RSRenderParticle*> activeParticles_;
+    static std::vector<std::shared_ptr<RSRenderParticle>> particles_;
+    static std::vector<std::shared_ptr<RSRenderParticle>> activeParticles_;
     int liveTime_;
     bool isEmitting_;
     int emitRate_;
     ShapeType emitShape_;   //发射区域的形状
     Vector2f position_;     //发射区域的位置
-    Size emitSize_;         //发射区域大小
+    Vector2f emitSize_;         //发射区域大小
     ParticleType type_;
     float radius_;
     // RSImage image_;
     // Size size_;
     // ImageFit imageFit_;
-    ParticleParams particleParams_;
+    std::shared_ptr<ParticleRenderParams> particleParams_;
     int64_t m_accumulatedTime;
 };
 

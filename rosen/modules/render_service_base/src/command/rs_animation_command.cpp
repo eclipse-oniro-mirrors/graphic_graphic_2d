@@ -18,6 +18,7 @@
 #include "animation/rs_render_particle.h"
 #include "common/rs_common_def.h"
 #include "modifier/rs_render_property.h"
+#include "modifier/rs_render_modifier.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -67,7 +68,7 @@ void AnimationCommandHelper::CreateParticleAnimation(
     }
     node->GetAnimationManager().AddAnimation(animation);
 
-    auto property = std::make_shared<RSRenderAnimatableProperty<RSRenderParticle>>(animation->renderParticle_, 0);
+    auto property = std::make_shared<RSRenderProperty<std::vector<std::shared_ptr<RSRenderParticle>>>>(animation->renderParticle_, 0);
     auto modifier = std::make_shared<RSParticleRenderModifier>(property);
     node->AddModifier(modifier);
     animation->AttachRenderProperty(property);

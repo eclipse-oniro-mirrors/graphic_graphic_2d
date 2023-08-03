@@ -71,8 +71,12 @@ class RSImageBase;
 class RSMask;
 class RSPath;
 class RSLinearGradientBlurPara;
-class RSParticle;
-class ParticleParams;
+template<typename T>
+class RenderParticleParaType;
+class EmitterConfig;
+class ParticleVelocity;
+class RenderParticleColorParaType;
+class ParticleRenderParams;
 class RSRenderCurveAnimation;
 class RSRenderParticleAnimation;
 class RSRenderInterpolatingSpringAnimation;
@@ -189,11 +193,16 @@ public:
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSShader>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSPath>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSLinearGradientBlurPara>)
-    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<ParticleParams>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSFilter>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSMask>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSImage>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSImageBase>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<EmitterConfig>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<ParticleVelocity>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<ParticleRenderParams>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<std::vector<ParticleRenderParams>>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RenderParticleParaType<float>>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RenderParticleColorParaType>)
 #ifndef USE_ROSEN_DRAWING
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<DrawCmdList>)
 #else

@@ -19,7 +19,8 @@ namespace OHOS {
 namespace Rosen {
     
 constexpr int64_t NANOSECONDS_PER_ONE_SECOND = 1000000000;
-RSRenderParticleEmitter::RSRenderParticleEmitter(ParticleParams particleParams)
+std::vector<std::shared_ptr<RSRenderParticle>> RSRenderParticleEmitter::particles_ = {};
+RSRenderParticleEmitter::RSRenderParticleEmitter(std::shared_ptr<ParticleRenderParams> particleParams)
     : particleParams_(particleParams)
 {}
 
@@ -27,8 +28,8 @@ RSRenderParticleEmitter::RSRenderParticleEmitter(ParticleParams particleParams)
 void RSRenderParticleEmitter::EmitParticle(int64_t deltaTime)
 {
     //configureEmitter 不用配置发射器属性，直接从emitterConfig中获取
-    emitRate_ = particleParams_.GetEmitRate();
-    maxParticle_ = particleParams_.GetParticleCount();
+    emitRate_ = particleParams_->GetEmitRate();
+    maxParticle_ = particleParams_->GetParticleCount();
     m_accumulatedTime = 0; // 单位纳秒
     int particleNum = 0;
     m_accumulatedTime += deltaTime;
@@ -38,7 +39,7 @@ void RSRenderParticleEmitter::EmitParticle(int64_t deltaTime)
         //创建粒子
         //particle.initProperty(particleParams);
         //此时粒子属性已经是初始属性，取过随机值的。将粒子加入粒子数组
-        auto particle = RSRenderParticle(particleParams_); 
+        auto particle = std::make_shared<RSRenderParticle>(particleParams_); 
         //particle.GetActiveTime();
         particles_.push_back(particle);
         particleNum++;
@@ -50,8 +51,8 @@ void RSRenderParticleEmitter::EmitParticle(int64_t deltaTime)
     //update particle
     for (auto it = particles_.begin(); it != particles_.end();) {
         auto effect = RSRenderParticleEffector(particleParams_);
-        effect.applyEffectorToParticle(it, deltaTime);
-        if (!(it->isAlive())) {
+        effect.ApplyEffectorToParticle(*((*it).get()), deltaTime);
+        if (!((*it)->IsAlive())) {
             it = particles_.erase(it);
             particleNum--;
         } else {
@@ -81,7 +82,7 @@ void RSRenderParticleEmitter::SetPosition(const Vector2f& position)
     position_ = position;
 }
 
-void RSRenderParticleEmitter::SetEmitSize(const Size& emitSize)
+void RSRenderParticleEmitter::SetEmitSize(const Vector2f& emitSize)
 {
     emitSize_ = emitSize;
 }
@@ -122,12 +123,14 @@ int RSRenderParticleEmitter::GetActiveParticle() const
     return activeParticle_;
 }
 
-const std::vector<RSRenderParticle>& RSRenderParticleEmitter::GetParticles() const
+std::vector<std::shared_ptr<RSRenderParticle>> RSRenderParticleEmitter::GetRenderParticles()
 {
+    // std::vector<std::shared_ptr<RSRenderParticle>> a;
     return particles_;
+    // return a;
 }
 
-const std::vector<RSRenderParticle*>& RSRenderParticleEmitter::GetActiveParticles() const
+std::vector<std::shared_ptr<RSRenderParticle>> RSRenderParticleEmitter::GetActiveParticles()
 {
     return activeParticles_;
 }
@@ -157,7 +160,7 @@ const Vector2f& RSRenderParticleEmitter::GetPosition() const
     return position_;
 }
 
-const Size& RSRenderParticleEmitter::GetEmitSize() const
+const Vector2f& RSRenderParticleEmitter::GetEmitSize() const
 {
     return emitSize_;
 }

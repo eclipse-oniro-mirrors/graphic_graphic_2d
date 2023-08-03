@@ -345,6 +345,6 @@ template class RSRenderAnimatableProperty<float>;
 template class RSRenderAnimatableProperty<Vector4f>;
 template class RSRenderAnimatableProperty<Quaternion>;
 template class RSRenderAnimatableProperty<Vector2f>;
-template class RSRenderAnimatableProperty<Particle>;
+// template class RSRenderAnimatableProperty<RSRenderParticle>;
 } // namespace Rosen
 } // namespace OHOS

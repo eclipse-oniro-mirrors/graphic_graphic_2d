@@ -20,15 +20,9 @@
 namespace OHOS {
 namespace Rosen {
 
-template<typename T>
-struct ChangeInOverLife {
-    float lifeRatio;
-    T changeValue;
-};
-
 class RSRenderParticleEffector {
 public:
-    RSRenderParticleEffector(ParticleParams particleParams);
+    RSRenderParticleEffector(const std::shared_ptr<ParticleRenderParams> particleParams);
 
     void UpdateProperty(RSRenderParticle& particle, int64_t deltaTime, int64_t activeTime);
     void UpdateAccelerate(RSRenderParticle& particle, int64_t deltaTime, int64_t activeTime);
@@ -37,11 +31,14 @@ public:
     void UpdateScale(RSRenderParticle& particle, int64_t deltaTime, int64_t activeTime);
     void UpdateSpin(RSRenderParticle& particle, int64_t deltaTime, int64_t activeTime);
     // Apply effector to particle
-    void ApplyEffectorToParticle(RSRenderParticle& particle, int64_t deltaTime, int64_t activeTime) const;
-    float GetRandomValue(float min, float max);
+    void ApplyEffectorToParticle(RSRenderParticle& particle, int64_t deltaTime);
+
+    template<typename T>
+    T GenerateValue(T startValue, T endValue, int startTime, int endTime, int currentTime,
+        std::shared_ptr<RSInterpolator> interpolator);
 
 private:
-    ParticleParams particleParams_;
+    std::shared_ptr<ParticleRenderParams> particleParams_;
 };
 
 } // namespace Rosen

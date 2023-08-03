@@ -26,6 +26,7 @@
 #include "animation/rs_animation_callback.h"
 #include "animation/rs_implicit_animator.h"
 #include "animation/rs_implicit_animator_map.h"
+#include "animation/rs_render_particle_animation.h"
 #include "command/rs_base_node_command.h"
 #include "command/rs_node_command.h"
 #include "common/rs_color.h"
@@ -716,18 +717,18 @@ void RSNode::SetEnvForegroundColorStrategy(ForegroundColorStrategyType strategyT
 }
 
 // Set ParticleParams 
-void RSNode::SetParticleParams(const std::vector<ParticleParams>& particleParams)
+void RSNode::SetParticleParams(std::vector<ParticleParams>& particleParams)
 {
-    std::vector<ParticleRenderParams> particleRenderParams;
-    for (int i = 0; i < particleParams.size(); i++) {
-        particleRenderParams.push_back(particleParams[i]->SetParamsToRenderParticle());
+    std::vector<std::shared_ptr<ParticleRenderParams>> particleRenderParams;
+    for (size_t i = 0; i < particleParams.size(); i++) {
+        particleRenderParams.push_back(particleParams[i].SetParamsToRenderParticle());
     }
-    auto rSRenderParticle = RSRenderParticle();
-    rSRenderParticle.particleRenderParams_ = particleRenderParams;
+    // auto rSRenderParticle = std::make_shared<RSRenderParticle>();
+    // rSRenderParticle->particleRenderParams_ = particleRenderParams;
 
     auto animationId = RSAnimation::GenerateId();
     auto animation =
-        std::make_shared<RSRenderParticleAnimation>(animationId, rSRenderParticle);
+        std::make_shared<RSRenderParticleAnimation>(animationId, particleRenderParams);
 
     std::unique_ptr<RSCommand> command = std::make_unique<RSAnimationCreateParticle>(GetId(), animation);
     auto transactionProxy = RSTransactionProxy::GetInstance();

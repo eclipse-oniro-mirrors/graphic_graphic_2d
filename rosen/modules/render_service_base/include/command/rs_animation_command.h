@@ -23,6 +23,7 @@
 #include "animation/rs_render_path_animation.h"
 #include "animation/rs_render_spring_animation.h"
 #include "animation/rs_render_transition.h"
+#include "animation/rs_render_particle_animation.h"
 #include "command/rs_command_templates.h"
 #include "common/rs_macros.h"
 #include "pipeline/rs_render_node.h"
@@ -104,7 +105,9 @@ public:
     }
     static void CreateAnimation(
         RSContext& context, NodeId targetId, const std::shared_ptr<RSRenderAnimation>& animation);
-
+    static void CreateParticleAnimation(
+        RSContext& context, NodeId targetId, const std::shared_ptr<RSRenderParticleAnimation>& animation);
+        
     using AnimationCallbackProcessor = void (*)(NodeId, AnimationId, AnimationCallbackEvent);
     static void AnimationCallback(RSContext& context,
                                   NodeId targetId, AnimationId animId, AnimationCallbackEvent event);

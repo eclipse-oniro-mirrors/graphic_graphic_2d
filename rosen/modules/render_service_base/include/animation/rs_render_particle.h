@@ -20,15 +20,13 @@
 #include <vector>
 
 #include "common/rs_vector2.h"
-
+#include "animation/rs_interpolator.h"
 #include "common/rs_color.h"
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
 #include "render/rs_image.h"
 namespace OHOS {
 namespace Rosen {
-
-class RSInterpolator;
 enum class ParticleUpdator { NONE = 0, RANDOM, CURVE };
 
 enum class ShapeType {
@@ -65,7 +63,7 @@ public:
     T toValue_;
     int startMillis_;
     int endMillis_;
-    std::shared_ptr<RSInterpolator> interpolator_;
+    std::shared_ptr<RSInterpolator> interpolator_ { RSInterpolator::DEFAULT };
     ChangeInOverLife(): fromValue_(), toValue_(), startMillis_(), endMillis_(), interpolator_() {}
     ChangeInOverLife(T fromValue, T toValue, int startMillis, int endMillis, std::shared_ptr<RSInterpolator> interpolator)
     {
@@ -86,9 +84,9 @@ public:
     Range<T> val_;
     ParticleUpdator updator_;        //变化因子，是变化速度还是曲线
     Range<float> random_;            //随机变化速度，乘在属性值之上，用于表示沿着某一方向变化的趋势
-    std::vector<ChangeInOverLife<T>> valChangeOverLife_;            //变化曲线，可以设置多段曲线，由初始值，终止值，开始时间，结束时间，沿着某曲线变化组成
+    std::vector<std::shared_ptr<ChangeInOverLife<T>>> valChangeOverLife_;            //变化曲线，可以设置多段曲线，由初始值，终止值，开始时间，结束时间，沿着某曲线变化组成
     RenderParticleParaType(Range<T>& val, ParticleUpdator updator, Range<float> random,
-        std::vector<ChangeInOverLife<T>>& valChangeOverLife)
+        std::vector<std::shared_ptr<ChangeInOverLife<T>>>& valChangeOverLife)
     {
         val_ = val;
         updator_ = updator;
@@ -98,7 +96,7 @@ public:
             valChangeOverLife_.push_back(change);
         }
     }
-    RenderParticleParaType(): val_(), updator_(ParticleUpdator::NONE), random_(), valChangeOverLife_(0)  {}
+    RenderParticleParaType(): val_(), updator_(ParticleUpdator::NONE), random_()  {}
     RenderParticleParaType(const RenderParticleParaType& paraType) = default;
     RenderParticleParaType& operator=(const RenderParticleParaType& paraType) = default;
     ~RenderParticleParaType() = default;
@@ -176,7 +174,6 @@ public:
 };
 
 class RSB_EXPORT RenderParticleColorParaType
-//:: OHOS::Rosen::RenderParticleParaType<Color>
 {
 public:
     Range<Color> colorVal_;
@@ -186,14 +183,14 @@ public:
     Range<float> blueRandom_;
     //Range<float> alphaRandom_;
 
-    std::vector<ChangeInOverLife<Color>> valChangeOverLife_;
-    RenderParticleColorParaType(Range<Color>& colorVal,
+    std::vector<std::shared_ptr<ChangeInOverLife<Color>>> valChangeOverLife_;
+    RenderParticleColorParaType(Range<Color> colorVal,
         ParticleUpdator updator,
         Range<float> redRandom,
         Range<float> greenRandom,
         Range<float> blueRandom,
         //Range<float> alphaRandom,
-        std::vector<ChangeInOverLife<Color>>& valChangeOverLife)
+        std::vector<std::shared_ptr<ChangeInOverLife<Color>>>& valChangeOverLife)
     {
         colorVal_ = colorVal;
         updator_ = updator;
@@ -207,7 +204,7 @@ public:
         }
     }
     RenderParticleColorParaType(): colorVal_(), updator_(ParticleUpdator::NONE), 
-        redRandom_(), greenRandom_(), blueRandom_(), valChangeOverLife_(0) {}
+        redRandom_(), greenRandom_(), blueRandom_() {}
     RenderParticleColorParaType(const RenderParticleColorParaType& velocity) = default;
     RenderParticleColorParaType& operator=(const RenderParticleColorParaType& velocity) = default;
     ~RenderParticleColorParaType() = default;
@@ -306,7 +303,7 @@ public:
 
 class RSB_EXPORT RSRenderParticle {
 public:
-   RSRenderParticle(ParticleRenderParams particleParams);
+   RSRenderParticle(std::shared_ptr<ParticleRenderParams> particleParams);
    RSRenderParticle() = default;
 
     // Set methods
@@ -338,7 +335,7 @@ public:
     int GetActiveTime();
 
     // Other methods
-    void InitProperty(ParticleRenderParams particleParams);
+    void InitProperty(std::shared_ptr<ParticleRenderParams> particleParams);
     void UpdateProperty(ParticleRenderParams particleParams, int64_t deltaTime);
     void UpdateAccelerate(ParticleRenderParams particleParams, int64_t deltaTime);
     void UpdateColor(ParticleRenderParams particleParams, int64_t deltaTime);
@@ -346,7 +343,7 @@ public:
     void UpdateScale(ParticleRenderParams particleParams, int64_t deltaTime);
     void UpdateSpin(ParticleRenderParams particleParams, int64_t deltaTime);
     bool IsAlive() const;
-    float GetRandomValue(float min, float max);
+    static float GetRandomValue(float min, float max);
     Vector2f CalculateParticlePosition(ShapeType emitShape, Vector2f position, Vector2f emitSize);
     Color Lerp(const Color& start, const Color& end, float t);
     std::vector<std::shared_ptr<ParticleRenderParams>> particleRenderParams_;

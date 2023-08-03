@@ -576,9 +576,6 @@ template<>
 RSC_EXPORT void RSProperty<Vector4<Color>>::UpdateToRender(
     const Vector4<Color>& value, bool isDelta, bool forceUpdate) const;
 template<>
-RSC_EXPORT void RSProperty<std::vector<ParticleParams>>::UpdateToRender(
-    const std::vector<ParticleParams>& value, bool isDelta, bool forceUpdate) const;
-template<>
 RSC_EXPORT void RSProperty<Vector4f>::UpdateToRender(const Vector4f& value, bool isDelta, bool forceUpdate) const;
 template<>
 RSC_EXPORT void RSProperty<RRect>::UpdateToRender(const RRect& value, bool isDelta, bool forceUpdate) const;

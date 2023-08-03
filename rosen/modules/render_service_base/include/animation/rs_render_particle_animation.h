@@ -16,45 +16,38 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_PARTICLE_ANIMATION_H
 #define RENDER_SERVICE_CLIENT_CORE_ANIMATION_RS_RENDER_PARTICLE_ANIMATION_H
 
+#include <memory>
 #include "rs_render_particle.h"
 
 #include "animation/rs_interpolator.h"
 #include "animation/rs_render_property_animation.h"
-#include "modifier/rs_property.h"
 #include "common/rs_macros.h"
+#include "animation/rs_render_particle_system.h"
 
 namespace OHOS {
 namespace Rosen {
 class RSB_EXPORT RSRenderParticleAnimation : public RSRenderPropertyAnimation {
 public:
-    RSRenderParticleAnimation(AnimationId id, const RSRenderParticle renderParticle);
+    RSRenderParticleAnimation(AnimationId id, 
+        const std::vector<std::shared_ptr<ParticleRenderParams>> particlesRenderParams);
 
     virtual ~RSRenderParticleAnimation() = default;
+    RSRenderParticleAnimation() = default;
 
     bool Marshalling(Parcel& parcel) const override;
 
     [[nodiscard]] static RSRenderParticleAnimation* Unmarshalling(Parcel& parcel);
+
+    std::vector<std::shared_ptr<ParticleRenderParams>> particlesRenderParams_;
+    std::vector<std::shared_ptr<RSRenderParticle>> renderParticle_;
 protected:
     bool Animate(int64_t time) override;
-    void AttachRenderProperty(const std::shared_ptr<RSRenderPropertyBase>& property) override;
-
-    // void OnSetFraction(float fraction) override;
-    // void OnAnimate(float fraction) override;
-    // void InitValueEstimator() override;
-    // void StartRenderAnimation(const std::shared_ptr<RSNode>& target);
-    // RSAnimationFraction animationFraction_;
+    // void AttachRenderProperty(const std::shared_ptr<RSRenderPropertyBase>& property) override;
 private:
     bool ParseParam(Parcel& parcel) override;
-    RSRenderParticleAnimation() = default;
-    // void OnAnimateInner(float fraction, const std::shared_ptr<RSInterpolator>& interpolator);
-
-    // std::shared_ptr<RSRenderPropertyBase> startValue_ {};
-    // std::shared_ptr<RSRenderPropertyBase> endValue_ {};
-    // std::shared_ptr<RSInterpolator> interpolator_ { RSInterpolator::DEFAULT };
-    // inline static std::shared_ptr<RSInterpolator> linearInterpolator_ { std::make_shared<LinearInterpolator>() };
-
-    std::vector<ParticleParams> particlesParams_;
-    RSRenderParticle renderParticle_;
+    RSRenderParticleSystem particleSystem_;
+    // AnimationId id_;
+    //std::vector<ParticleParams> particlesParams_;
 };
 } // namespace Rosen
 } // namespace OHOS

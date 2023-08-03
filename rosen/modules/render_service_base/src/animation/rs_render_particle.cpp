@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#include <random>
 #include "animation/rs_render_particle.h"
-
 #include "animation/rs_interpolator.h"
 #include "animation/rs_render_particle_system.h"
 #include "common/rs_color.h"
@@ -222,11 +221,11 @@ float ParticleRenderParams::GetSpinRandomEnd() const
     
 void ParticleRenderParams::SetEmitConfig(EmitterConfig emiterConfig)
 {
-    emitterConfig_ = emiterConfig
+    emitterConfig_ = emiterConfig;
 }
 void ParticleRenderParams::SetParticleVelocity(ParticleVelocity velocity)
 {
-    velocity_ = velocity
+    velocity_ = velocity;
 }
 void ParticleRenderParams::SetParticleAcceleration(RenderParticleAcceleration acceleration)
 {
@@ -249,7 +248,7 @@ void ParticleRenderParams::SetParticleSpin(RenderParticleParaType<float> spin)
     spin_ = spin;
 }
 
-RSRenderParticle::RSRenderParticle(ParticleRenderParams particleParams)
+RSRenderParticle::RSRenderParticle(std::shared_ptr<ParticleRenderParams> particleParams)
 {
     // Initialize member variables
     position_ = { 0.0f, 0.0f };
@@ -390,45 +389,45 @@ int RSRenderParticle::GetActiveTime()
 }
 
 // Other methods
-void RSRenderParticle::InitProperty(ParticleRenderParams particleParams)
+void RSRenderParticle::InitProperty(std::shared_ptr<ParticleRenderParams> particleParams)
 {
     // Initialize particle properties here
     // You can set default values for different properties
     // 确定粒子属性取随机值之后的值
-    auto emitShape = particleParams.GetEmitShape();
-    auto position = particleParams.GetEmitPosition();
-    auto emitSize = particleParams.GetEmitSize();
+    auto emitShape = particleParams->GetEmitShape();
+    auto position = particleParams->GetEmitPosition();
+    auto emitSize = particleParams->GetEmitSize();
     position_ = CalculateParticlePosition(emitShape, position, emitSize);
 
     float velocityValue =
-        GetRandomValue(particleParams.GetVelocityStartValue(), particleParams.GetVelocityEndValue());
+        GetRandomValue(particleParams->GetVelocityStartValue(), particleParams->GetVelocityEndValue());
     float velocityAngle =
-        GetRandomValue(particleParams.GetVelocityStartAngle(), particleParams.GetVelocityEndAngle());
+        GetRandomValue(particleParams->GetVelocityStartAngle(), particleParams->GetVelocityEndAngle());
     velocity_ = Vector2f { velocityValue * cos(velocityAngle), velocityValue * sin(velocityAngle) };
 
-    float accelerationValue = GetRandomValue(particleParams.GetAccelerationStartValue(),
-        particleParams.GetAccelerationEndValue());
-    float accelerationAngle = GetRandomValue(particleParams.GetAccelerationStartAngle(),
-        particleParams.GetAccelerationEndAngle());
+    float accelerationValue = GetRandomValue(particleParams->GetAccelerationStartValue(),
+        particleParams->GetAccelerationEndValue());
+    float accelerationAngle = GetRandomValue(particleParams->GetAccelerationStartAngle(),
+        particleParams->GetAccelerationEndAngle());
     acceleration_ = Vector2f { accelerationValue * cos(accelerationAngle), accelerationValue * sin(accelerationAngle) };
 
-    spin_ = GetRandomValue(particleParams.GetSpinStartValue(), particleParams.GetSpinEndValue());
-    opacity_ = GetRandomValue(particleParams.GetOpacityStartValue(), particleParams.GetOpacityEndValue());
-    scale_ = GetRandomValue(particleParams.GetScaleStartValue(), particleParams.GetScaleEndValue());
+    spin_ = GetRandomValue(particleParams->GetSpinStartValue(), particleParams->GetSpinEndValue());
+    opacity_ = GetRandomValue(particleParams->GetOpacityStartValue(), particleParams->GetOpacityEndValue());
+    scale_ = GetRandomValue(particleParams->GetScaleStartValue(), particleParams->GetScaleEndValue());
 
-    particleType_ = particleParams.GetParticleType();
+    particleType_ = particleParams->GetParticleType();
     if (particleType_ == ParticleType::POINTS) {
         float colorRandomValue = GetRandomValue(0.0f, 1.0f); // 生成一个0.0 ~ 1.0之间的随机值
-        color_ = Lerp(particleParams.GetColorStartValue(), particleParams.GetColorEndValue(), colorRandomValue);
-        radius_ = particleParams.GetParticleRadius() * scale_;
+        color_ = Lerp(particleParams->GetColorStartValue(), particleParams->GetColorEndValue(), colorRandomValue);
+        radius_ = particleParams->GetParticleRadius() * scale_;
     } else if (particleType_ == ParticleType::IMAGES) {
-        // rsImage_ = particleParams.emitterConfig.image;
-        // rsImage_.SetImageFit(particleParams.emitterConfig.imageFit);
-        // rsImage_.SetDstRect(RectF { 0.f, 0.f, particleParams.emitterConfig.size.width_ * scale_,
-        //     particleParams.emitterConfig.size.height_ * scale_ });
+        // rsImage_ = particleParams->emitterConfig.image;
+        // rsImage_.SetImageFit(particleParams->emitterConfig.imageFit);
+        // rsImage_.SetDstRect(RectF { 0.f, 0.f, particleParams->emitterConfig.size.width_ * scale_,
+        //     particleParams->emitterConfig.size.height_ * scale_ });
     }
     activeTime_ = 0;
-    lifeTime_ = particleParams.GetParticleLifeTime();
+    lifeTime_ = particleParams->GetParticleLifeTime();
 }
 
 bool RSRenderParticle::IsAlive() const
@@ -436,7 +435,7 @@ bool RSRenderParticle::IsAlive() const
     return activeTime_ < lifeTime_;
 }
 
-float GetRandomValue(float min, float max)
+float RSRenderParticle::GetRandomValue(float min, float max)
 {
     std::random_device rd;
     std::mt19937_64 gen(rd());
@@ -444,28 +443,29 @@ float GetRandomValue(float min, float max)
     return dis(gen);
 }
 
-Vector2f CalculateParticlePosition(ShapeType emitShape, Vector2f position, Vector2f emitSize)
+Vector2f RSRenderParticle::CalculateParticlePosition(ShapeType emitShape, Vector2f position, Vector2f emitSize)
 {
+    float positionX = 0.f;
+    float positionY = 0.f;
     if (emitShape == ShapeType::RECT) {
         float minX = position.x_;
         float maxX = position.x_ + emitSize.x_;
-        float positionX = GetRandomValue(minX, maxX);
+        positionX = GetRandomValue(minX, maxX);
         float minY = position.y_;
         float maxY = position.y_ + emitSize.y_;
-        float positionY = GetRandomValue(minY, maxY);
-        return Vector2f { positionX, positionY };
+        positionY = GetRandomValue(minY, maxY);
     }
     if (emitShape == ShapeType::CIRCLE || emitShape == ShapeType::ELLIPSE) {
         float rx = GetRandomValue(0.f, emitSize.x_);
         float ry = GetRandomValue(0.f, emitSize.y_);
         float theta = GetRandomValue(0.f, 2 * PI);
-        float positionX = position.x_ + rx * cos(theta);
-        float positionY = position.y_ + ry * sin(theta);
-        return Vector2f { positionX, positionY };
+        positionX = position.x_ + rx * cos(theta);
+        positionY = position.y_ + ry * sin(theta);
     }
+    return Vector2f { positionX, positionY };
 }
 
-Color Lerp(const Color& start, const Color& end, float t)
+Color RSRenderParticle::Lerp(const Color& start, const Color& end, float t)
 {
     Color result;
     result.SetRed(start.GetRed() + static_cast<int>(std::round((end.GetRed() - start.GetRed()) * t)));

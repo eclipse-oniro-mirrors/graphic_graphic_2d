@@ -635,15 +635,15 @@ float RSProperties::GetTranslateZ() const
 }
 
 
-void RSProperties::SetParticles(std::vector<RSRenderParticle> particle)
+void RSProperties::SetParticles(const std::vector<std::shared_ptr<RSRenderParticle>> particles)
 {
-    particle_ = particle;
+    particles_ = particles;
     SetDirty();
 }
 
-std::vector<RSRenderParticle> RSProperties::GetParticles() const
+std::vector<std::shared_ptr<RSRenderParticle>> RSProperties::GetParticles() const
 {
-    return particle_;
+    return particles_;
 }
 
 void RSProperties::SetAlpha(float alpha)
@@ -1246,7 +1246,7 @@ void RSProperties::Reset()
     lightUpEffectDegree_ = 1.0f;
     pixelStretch_.reset();
     pixelStretchPercent_.reset();
-    particles_.reset();
+    particles_.clear();
     useEffect_ = false;
 
     sandbox_ = nullptr;
