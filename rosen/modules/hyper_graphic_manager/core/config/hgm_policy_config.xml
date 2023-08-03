@@ -51,7 +51,7 @@
         <Setting name="whiteBundle1"/>
         <Setting name="whiteBundle2"/>
     </Params>
-    
+
     <!-- stategies for animation, need to review later -->
     <Params name="animation_dynamic_settings">
         <Setting name="animation_zoom" value="21"/>
