@@ -19,7 +19,6 @@
 #include "pipeline/rs_canvas_render_node.h"
 #include "command/rs_message_processor.h"
 #include "platform/common/rs_log.h"
-#include "scene_board_judgement.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -118,7 +117,7 @@ void RSRenderAnimation::Attach(RSRenderNode* renderNode)
     target_ = renderNode;
     if (target_ != nullptr) {
         targetId_ = target_->GetId();
-        if (!SceneBoardJudgement::IsSceneBoardEnabled()) {
+        if (!RSSystemProperties::IsSceneBoardEnabled()) {
             target_->CheckGroupableAnimation(GetPropertyId(), true);
         }
     }
@@ -130,7 +129,7 @@ void RSRenderAnimation::Attach(RSRenderNode* renderNode)
 void RSRenderAnimation::Detach()
 {
     OnDetach();
-    if (target_ != nullptr && (!SceneBoardJudgement::IsSceneBoardEnabled())) {
+    if (target_ != nullptr && (!RSSystemProperties::IsSceneBoardEnabled())) {
         target_->CheckGroupableAnimation(GetPropertyId(), false);
     }
     target_ = nullptr;

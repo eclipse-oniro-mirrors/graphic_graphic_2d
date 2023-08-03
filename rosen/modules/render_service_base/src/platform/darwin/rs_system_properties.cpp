@@ -29,6 +29,11 @@ bool RSSystemProperties::GetRecordingEnabled()
     return false;
 }
 
+bool RSSystemProperties::IsSceneBoardEnabled()
+{
+    return false;
+}
+
 void RSSystemProperties::SetRecordingDisenabled()
 {
     return;
