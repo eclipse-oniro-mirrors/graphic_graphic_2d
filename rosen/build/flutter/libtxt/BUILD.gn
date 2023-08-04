@@ -109,6 +109,9 @@ template("thirdparty_lib_txt_rosen") {
     } else if (platform == "android") {
       sources += [ "$txt_root/src/txt/platform_android.cc" ]
     }
+
+    part_name = "graphic_2d"
+    subsystem_name = "graphic"
   }
 }
 
