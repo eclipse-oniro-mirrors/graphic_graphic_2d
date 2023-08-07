@@ -379,7 +379,11 @@ const SkIRect& RSFilterCacheManager::GetCachedImageRegion() const
 
 void RSFilterCacheManager::ReattachCachedImage(RSPaintFilterCanvas& canvas)
 {
+#if defined(NEW_SKIA)
     if (cacheType_ == CacheType::CACHE_TYPE_NONE || cachedImage_->isValid(canvas.recordingContext())) {
+#else
+    if (cacheType_ == CacheType::CACHE_TYPE_NONE || cachedImage_->isValid(canvas.getGrContext())) {
+#endif
         return;
     }
     RS_TRACE_FUNC();
@@ -391,10 +395,17 @@ void RSFilterCacheManager::ReattachCachedImage(RSPaintFilterCanvas& canvas)
         InvalidateCache();
         return;
     }
-
+#if defined(NEW_SKIA)
     auto reattachedCachedImage = SkImage::MakeFromTexture(canvas.recordingContext(), sharedBackendTexture,
+#else
+    auto reattachedCachedImage = SkImage::MakeFromTexture(canvas.getGrContext(), sharedBackendTexture,
+#endif
         kBottomLeft_GrSurfaceOrigin, cachedImage_->colorType(), cachedImage_->alphaType(), nullptr);
+#if defined(NEW_SKIA)
     if (reattachedCachedImage == nullptr || !reattachedCachedImage->isValid(canvas.recordingContext())) {
+#else
+    if (reattachedCachedImage == nullptr || !reattachedCachedImage->isValid(canvas.getGrContext())) {
+#endif
         ROSEN_LOGE("RSFilterCacheManager::ReattachCachedImage failed to create SkImage from backend texture.");
         InvalidateCache();
         return;
