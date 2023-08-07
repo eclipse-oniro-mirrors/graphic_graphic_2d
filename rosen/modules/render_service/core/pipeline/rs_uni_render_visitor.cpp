@@ -2980,7 +2980,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         node.GetId(), node.GetChildrenCount(), node.GetName().c_str(), node.GetOcclusionVisible());
 #ifdef RS_ENABLE_GL
 #ifndef USE_ROSEN_DRAWING
-    if (canvas_ != nullprt) {
+    if (canvas_ != nullptr) {
 #ifdef NEW_RENDER_CONTEXT
         auto grContext = renderEngine_->GetDrawingContext()->GetDrawingContext();
 #else
