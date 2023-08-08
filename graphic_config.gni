@@ -121,6 +121,10 @@ check_graphic_ext_file_args = [
   "--filename",
   rebase_path("//foundation/graphic/graphic_2d_ext/ohcore/build/config.gni"),
 ]
+check_ddgr_ext_file_args = [
+  "--filename",
+  rebase_path("//foundation/graphic/graphic_2d_ext/ddgr/ddgr_config.gni"),
+]
 if (exec_script(check_graphic_ext_file_script,
                 check_graphic_ext_file_args,
                 "string") == "True" && "${product_name}" == "ohcore") {
@@ -128,7 +132,13 @@ if (exec_script(check_graphic_ext_file_script,
     import("//foundation/graphic/graphic_2d_ext/ohcore/build/config.gni")
   }
 }
-
+if (exec_script(check_graphic_ext_file_script,
+                check_ddgr_ext_file_args,
+                "string") == "True") {
+  ddgr_ext_configs = {
+    import("//foundation/graphic/graphic_2d_ext/ddgr/ddgr_config.gni")
+  }
+}
 graphic_2d_root = "//foundation/graphic/graphic_2d"
 hilog_root = "//base/hiviewdfx/hilog"
 window_base_path = "//foundation/window/window_manager"

@@ -159,6 +159,13 @@ ohos_shared_library("librender_service") {
     "window_manager:libwsutils",
   ]
 
+  if (defined(ddgr_ext_configs)) {
+    libs = ddgr_ext_configs.ddgr_libs
+    defines += ddgr_ext_configs.ddgr_defines
+    sources += ddgr_ext_configs.libddgr_ext_adaptor_sources
+    include_dirs += ddgr_ext_configs.libddgr_ext_adaptor_include_dirs
+  }
+
   if (rosen_is_ohos) {
     external_deps += [ "image_framework:image_native" ]
   }

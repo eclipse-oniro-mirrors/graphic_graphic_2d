@@ -357,5 +357,13 @@ int RSSystemProperties::WatchSystemProperty(const char* name, OnSystemPropertyCh
 {
     return WatchParameter(name, func, context);
 }
+#if defined (ENABLE_DDGR_OPTIMIZE)
+bool RSSystemProperties::GetDDGRIntegrateEnable()
+{
+    static bool isDataStEnable =
+        std::atoi((system::GetParameter("ddgr.data.st.enable", "1")).c_str()) != 0;
+    return isDataStEnable;
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS
