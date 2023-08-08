@@ -36,11 +36,6 @@ bool RSSyncTransactionControllerProxy::WriteInterfaceToken(MessageParcel& data)
 
 void RSSyncTransactionControllerProxy::CreateTransactionFinished()
 {
-    constexpr auto interfaceCode = RSISyncTransactionControllerInterfaceCode::CREATE_TRANSACTION_FINISHED;
-    if (!securityManager_.IsInterfaceCodeAccessible(interfaceCode, callerPrefix_ + __func__)) {
-        return;
-    }
-
     MessageParcel data;
     MessageParcel reply;
     MessageOption option(MessageOption::TF_ASYNC);
@@ -55,15 +50,11 @@ void RSSyncTransactionControllerProxy::CreateTransactionFinished()
         return;
     }
 
-    uint32_t code = static_cast<uint32_t>(interfaceCode);
+    uint32_t code = static_cast<uint32_t>(RSISyncTransactionControllerInterfaceCode::CREATE_TRANSACTION_FINISHED);
     auto ret = remote->SendRequest(code, data, reply, option);
     if (ret != NO_ERROR) {
         ROSEN_LOGE("Failed to send sync transaction controller request, error code:%d", ret);
     }
 }
-
-const RSInterfaceCodeSecurityManager<RSISyncTransactionControllerInterfaceCode> \
-    RSSyncTransactionControllerProxy::securityManager_ = \
-        CreateRSISyncTransactionControllerInterfaceCodeSecurityManager();
 } // namespace Rosen
 } // namespace OHOS
