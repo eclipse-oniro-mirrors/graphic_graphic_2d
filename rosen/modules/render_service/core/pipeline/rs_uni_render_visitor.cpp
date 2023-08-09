@@ -2974,15 +2974,13 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         node.GetId(), node.GetChildrenCount(), node.GetName().c_str(), node.GetOcclusionVisible());
 #ifdef RS_ENABLE_GL
 #ifndef USE_ROSEN_DRAWING
-    if (canvas_ != nullptr) {
 #ifdef NEW_RENDER_CONTEXT
         auto grContext = renderEngine_->GetDrawingContext()->GetDrawingContext();
 #else
-        auto grContext = static_cast<GrDirectContext*>(canvas_->recordingContext());
+        auto grContext = canvas_ != nullptr ? static_cast<GrDirectContext*>(canvas_->recordingContext()) : nullptr;
 #endif
         RSTagTracker tagTracker(grContext, node.GetId(), RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE);
         node.SetGrContext(grContext);
-    }
 #else
     Drawing::GPUContext* gpuContext = renderEngine_->GetRenderContext()->GetDrGPUContext();
     node.SetDrawingGPUContext(gpuContext);
