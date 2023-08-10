@@ -230,7 +230,8 @@ bool RSRenderProperty<float>::IsNeedUpdate(const float& value) const
     switch (modifierType_) {
         case RSModifierType::ALPHA:
         case RSModifierType::SHADOW_ALPHA: {
-            return std::abs(value - stagingValue_) >= float(1 / 256);
+            const float SHADOW_ALPHA_MINMODIFY = 1.0 / 256;
+            return std::abs(value - stagingValue_) >= SHADOW_ALPHA_MINMODIFY;
         }
         case RSModifierType::BG_IMAGE_WIDTH:
         case RSModifierType::BG_IMAGE_HEIGHT:
