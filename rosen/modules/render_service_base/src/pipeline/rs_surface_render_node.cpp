@@ -1155,7 +1155,7 @@ void RSSurfaceRenderNode::AddChildHardwareEnabledNode(std::weak_ptr<RSSurfaceRen
     childHardwareEnabledNodes_.emplace_back(childNode);
 }
 
-std::vector<std::weak_ptr<RSSurfaceRenderNode>> RSSurfaceRenderNode::GetChildHardwareEnabledNodes() const
+const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& RSSurfaceRenderNode::GetChildHardwareEnabledNodes() const
 {
     return childHardwareEnabledNodes_;
 }
@@ -1230,6 +1230,15 @@ bool RSSurfaceRenderNode::IsCurrentFrameStatic()
 {
     if (dirtyManager_ == nullptr || !dirtyManager_->GetCurrentFrameDirtyRegion().IsEmpty()) {
         return false;
+    }
+    if (IsAppWindow()) {
+        auto hardwareEnabledNodes = GetChildHardwareEnabledNodes();
+        for (auto& hardwareEnabledNode : hardwareEnabledNodes) {
+            auto hardwareEnabledNodePtr = hardwareEnabledNode.lock();
+            if (hardwareEnabledNodePtr && hardwareEnabledNodePtr->IsCurrentFrameBufferConsumed()) {
+                return false;
+            }
+        }
     }
     if (IsMainWindowType()) {
         return true;
