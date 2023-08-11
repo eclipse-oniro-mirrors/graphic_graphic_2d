@@ -38,6 +38,7 @@
 #include "memory/rs_memory_manager.h"
 #include "memory/rs_memory_track.h"
 #include "common/rs_common_def.h"
+#include "common/rs_optional_trace.h"
 #include "hgm_core.h"
 #include "platform/ohos/rs_jank_stats.h"
 #include "platform/ohos/overdraw/rs_overdraw_controller.h"
@@ -434,7 +435,7 @@ void RSMainThread::ProcessCommand()
 
 void RSMainThread::CacheCommands()
 {
-    RS_TRACE_FUNC();
+    RS_OPTIONAL_TRACE_FUNC_BEGIN();
     for (auto& skipTransactionData : cachedSkipTransactionDataMap_) {
         pid_t pid = skipTransactionData.first;
         RS_TRACE_NAME("cacheCmd pid: " + std::to_string(pid));
@@ -443,6 +444,7 @@ void RSMainThread::CacheCommands()
             std::make_move_iterator(skipTransactionDataVec.begin()),
             std::make_move_iterator(skipTransactionDataVec.end()));
     }
+    RS_OPTIONAL_TRACE_FUNC_END();
 }
 
 void RSMainThread::CheckIfNodeIsBundle(std::shared_ptr<RSSurfaceRenderNode> node)
@@ -476,7 +478,7 @@ std::unordered_map<NodeId, bool> RSMainThread::GetCacheCmdSkippedNodes() const
 
 void RSMainThread::CheckParallelSubThreadNodesStatus()
 {
-    RS_TRACE_FUNC();
+    RS_OPTIONAL_TRACE_FUNC_BEGIN();
     cacheCmdSkippedInfo_.clear();
     cacheCmdSkippedNodes_.clear();
     for (auto& node : subThreadNodes_) {
@@ -511,6 +513,7 @@ void RSMainThread::CheckParallelSubThreadNodesStatus()
             }
         }
     }
+    RS_OPTIONAL_TRACE_FUNC_END();
 }
 
 bool RSMainThread::IsNeedSkip(NodeId rootSurfaceNodeId, pid_t pid)
@@ -642,7 +645,7 @@ void RSMainThread::ProcessCommandForUniRender()
     if (!transactionDataEffective->empty()) {
         doDirectComposition_ = false;
     }
-    RS_TRACE_NAME("RSMainThread::ProcessCommandUni" + transactionFlags);
+    RS_OPTIONAL_TRACE_BEGIN("RSMainThread::ProcessCommandUni" + transactionFlags);
     for (auto& rsTransactionElem: *transactionDataEffective) {
         for (auto& rsTransaction: rsTransactionElem.second) {
             if (rsTransaction) {
@@ -658,6 +661,7 @@ void RSMainThread::ProcessCommandForUniRender()
         RS_TRACE_NAME("RSMainThread::ProcessCommandForUniRender transactionDataEffective clear");
         transactionDataEffective->clear();
     });
+    RS_OPTIONAL_TRACE_END();
 }
 
 void RSMainThread::ProcessCommandForDividedRender()
@@ -772,7 +776,7 @@ void RSMainThread::ProcessAllSyncTransactionData()
 
 void RSMainThread::ConsumeAndUpdateAllNodes()
 {
-    RS_TRACE_NAME("RSMainThread::ConsumeAndUpdateAllNodes");
+    RS_OPTIONAL_TRACE_BEGIN("RSMainThread::ConsumeAndUpdateAllNodes");
     bool needRequestNextVsync = false;
     bufferTimestamps_.clear();
     const auto& nodeMap = GetContext().GetNodeMap();
@@ -800,6 +804,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
     if (needRequestNextVsync) {
         RequestNextVSync();
     }
+    RS_OPTIONAL_TRACE_END();
 }
 
 void RSMainThread::CollectInfoForHardwareComposer()
@@ -915,7 +920,7 @@ bool RSMainThread::NeedReleaseGpuResource(const RSRenderNodeMap& nodeMap)
 
 void RSMainThread::ReleaseAllNodesBuffer()
 {
-    RS_TRACE_NAME("RSMainThread::ReleaseAllNodesBuffer");
+    RS_OPTIONAL_TRACE_BEGIN("RSMainThread::ReleaseAllNodesBuffer");
     const auto& nodeMap = GetContext().GetNodeMap();
     nodeMap.TraverseSurfaceNodes([this](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
         if (surfaceNode == nullptr) {
@@ -969,6 +974,7 @@ void RSMainThread::ReleaseAllNodesBuffer()
         });
     }
 #endif
+    RS_OPTIONAL_TRACE_END();
 }
 
 void RSMainThread::WaitUtilUniRenderFinished()
@@ -1009,10 +1015,11 @@ void RSMainThread::WaitUntilUnmarshallingTaskFinished()
     if (!isUniRender_) {
         return;
     }
-    RS_TRACE_NAME("RSMainThread::WaitUntilUnmarshallingTaskFinished");
+    RS_OPTIONAL_TRACE_BEGIN("RSMainThread::WaitUntilUnmarshallingTaskFinished");
     std::unique_lock<std::mutex> lock(unmarshalMutex_);
     unmarshalTaskCond_.wait(lock, [this]() { return unmarshalFinishedCount_ > 0; });
     --unmarshalFinishedCount_;
+    RS_OPTIONAL_TRACE_END();
 }
 
 void RSMainThread::MergeToEffectiveTransactionDataMap(TransactionDataMap& cachedTransactionDataMap)
@@ -1383,7 +1390,7 @@ void RSMainThread::CallbackToWMS(VisibleData& curVisVec)
 
 void RSMainThread::RequestNextVSync()
 {
-    RS_TRACE_FUNC();
+    RS_OPTIONAL_TRACE_FUNC_BEGIN();
     VSyncReceiver::FrameCallback fcb = {
         .userData_ = this,
         .callback_ = [this](uint64_t timestamp, void* data) { OnVsync(timestamp, data); },
@@ -1395,11 +1402,12 @@ void RSMainThread::RequestNextVSync()
         }
         receiver_->RequestNextVSync(fcb);
     }
+    RS_OPTIONAL_TRACE_FUNC_END();
 }
 
 void RSMainThread::OnVsync(uint64_t timestamp, void* data)
 {
-    ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSMainThread::OnVsync");
+    RS_OPTIONAL_TRACE_FUNC_BEGIN();
     RSJankStats::GetInstance().SetStartTime();
     timestamp_ = timestamp;
     curTime_ = static_cast<uint64_t>(
@@ -1422,7 +1430,7 @@ void RSMainThread::OnVsync(uint64_t timestamp, void* data)
         }
     }
     RSJankStats::GetInstance().SetEndTime();
-    ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
+    RS_OPTIONAL_TRACE_FUNC_BEGIN();
 }
 
 void RSMainThread::Animate(uint64_t timestamp)
@@ -1568,13 +1576,14 @@ void RSMainThread::UnRegisterOcclusionChangeCallback(pid_t pid)
 
 void RSMainThread::SendCommands()
 {
-    RS_TRACE_FUNC();
+    RS_OPTIONAL_TRACE_FUNC_BEGIN();
     RsFrameReport& fr = RsFrameReport::GetInstance();
     if (fr.GetEnable()) {
         fr.SendCommandsStart();
         fr.RenderEnd();
     }
     if (!RSMessageProcessor::Instance().HasTransaction()) {
+        RS_OPTIONAL_TRACE_FUNC_END();
         return;
     }
 
@@ -1596,6 +1605,7 @@ void RSMainThread::SendCommands()
             app->OnTransaction(transactionPtr);
         }
     });
+    RS_OPTIONAL_TRACE_FUNC_END();
 }
 
 void RSMainThread::QosStateDump(std::string& dumpString)
