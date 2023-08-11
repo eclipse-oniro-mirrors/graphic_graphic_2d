@@ -390,9 +390,9 @@ public:
     void MarkNonGeometryChanged();
     std::vector<HgmModifierProfile> GetHgmModifierProfileList() const;
     void SetRSFrameRateRangeByPreferred(int32_t preferred);
+    bool ApplyModifiers();
 
 protected:
-    bool ApplyModifiers();
     virtual void OnApplyModifiers() {}
 
     enum class NodeDirty {
