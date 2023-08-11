@@ -298,7 +298,7 @@ void RSUniRenderVisitor::SetNodeCacheChangeStatus(RSBaseRenderNode& node, int ma
         cacheRenderNodeMapCnt = cacheRenderNodeMap.count(node.GetId());
     }
     if ((cacheRenderNodeMapCnt == 0 || isDrawingCacheChanged_) &&
-        (node.ChildHasFilter() || (markedCachedNodeCnt != markedCachedNodes_))) {
+        (node.ChildHasFilter() || (markedCachedNodeCnt != markedCachedNodes_) || node.HasChildrenOutOfRect())) {
         node.SetDrawingCacheType(RSDrawingCacheType::DISABLED_CACHE);
     }
     RS_TRACE_NAME_FMT("RSUniRenderVisitor::SetNodeCacheChangeStatus: node %" PRIu64 " drawingtype %d, "
