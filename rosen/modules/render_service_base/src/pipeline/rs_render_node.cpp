@@ -608,7 +608,7 @@ void RSRenderNode::UpdateDirtyRegion(
     }
     if (RSSystemProperties::GetSkipGeometryNotChangeEnabled()) {
         // while node absRect not change and other content not change, return directly for not generate dirty region
-        if (!geometryChangeNotPerceived_ && !geoDirty) {
+        if (!IsSelfDrawingNode() && !geometryChangeNotPerceived_ && !geoDirty) {
             return;
         }
         geometryChangeNotPerceived_ = false;
@@ -667,6 +667,19 @@ void RSRenderNode::UpdateDirtyRegion(
     }
 
     SetClean();
+}
+
+bool RSRenderNode::IsSelfDrawingNode() const
+{
+    if (GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
+        return true;
+    }
+
+    if (GetType() == RSRenderNodeType::SURFACE_NODE) {
+        auto surfaceNode = (static_cast<const RSSurfaceRenderNode*>(this));
+        return surfaceNode->IsSelfDrawingType();
+    }
+    return false;
 }
 
 bool RSRenderNode::IsDirty() const
