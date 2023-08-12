@@ -43,6 +43,11 @@ RSFrameRatePolicy::RSFrameRatePolicy()
     Init();
 }
 
+RSFrameRatePolicy::~RSFrameRatePolicy()
+{
+    animAttributes.clear();
+}
+
 void RSFrameRatePolicy::Init()
 {
     auto callback = std::bind(&RSFrameRatePolicy::HgmConfigChangeCallback, this,

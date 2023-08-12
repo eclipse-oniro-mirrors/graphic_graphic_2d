@@ -27,7 +27,7 @@ public:
 
 private:
     RSFrameRatePolicy();
-    ~RSFrameRatePolicy() = default;
+    ~RSFrameRatePolicy();
     RSFrameRatePolicy(const RSFrameRatePolicy&) = delete;
     RSFrameRatePolicy(const RSFrameRatePolicy&&) = delete;
     RSFrameRatePolicy &operator = (const RSFrameRatePolicy&) = delete;
