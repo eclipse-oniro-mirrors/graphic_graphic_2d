@@ -54,7 +54,7 @@ void HgmConfigCallbackManager::RegisterHgmConfigChangeCallback(
     auto data = std::make_shared<RSHgmConfigData>();
     auto configs = AnimDynamicConfigs::GetInstance()->GetAnimDynamicConfigs();
     for (auto config : configs) {
-        data->AddConfigItem({config.GetAnimType(), config.GetAnimName(), config.GetMinSpeed(),
+        data->AddAnimDynamicItem({config.GetAnimType(), config.GetAnimName(), config.GetMinSpeed(),
             config.GetMaxSpeed(), config.GetPreferredFps()});
     }
     callback->OnHgmConfigChanged(data);

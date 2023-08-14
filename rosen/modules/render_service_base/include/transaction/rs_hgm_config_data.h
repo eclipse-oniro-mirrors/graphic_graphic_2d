@@ -23,7 +23,7 @@
 
 namespace OHOS {
 namespace Rosen {
-struct ConfigItem {
+struct AnimDynamicItem {
     std::string animType = "";
     std::string animName = "";
     int32_t minSpeed = 0;
@@ -40,18 +40,18 @@ public:
     [[nodiscard]] static RSHgmConfigData* Unmarshalling(Parcel& parcel);
     bool Marshalling(Parcel& parcel) const override;
 
-    void AddConfigItem(ConfigItem item)
+    void AddAnimDynamicItem(AnimDynamicItem item)
     {
         configData_.emplace_back(item);
     }
 
-    const std::vector<ConfigItem>& GetConfigData() const
+    const std::vector<AnimDynamicItem>& GetConfigData() const
     {
         return configData_;
     }
 
 private:
-    std::vector<ConfigItem> configData_;
+    std::vector<AnimDynamicItem> configData_;
 };
 } // namespace Rosen
 } // namespace OHOS

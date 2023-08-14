@@ -43,8 +43,8 @@ RSHgmConfigData* RSHgmConfigData::Unmarshalling(Parcel& parcel)
         auto minSpeed = parcel.ReadInt32();
         auto maxSpeed = parcel.ReadInt32();
         auto preferredFps = parcel.ReadInt32();
-        ConfigItem item = {type, name, minSpeed, maxSpeed, preferredFps};
-        data->AddConfigItem(item);
+        AnimDynamicItem item = {type, name, minSpeed, maxSpeed, preferredFps};
+        data->AddAnimDynamicItem(item);
     }
     return data;
 }
