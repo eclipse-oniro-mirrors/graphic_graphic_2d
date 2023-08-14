@@ -1034,6 +1034,10 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
 void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas,
     FilterType filterType, const std::optional<SkRect>& rect)
 {
+    if (!RSSystemProperties::GetBlurEnabled()) {
+        ROSEN_LOGD("RSPropertiesPainter::DrawFilter close blur.");
+        return;
+    }
     auto& RSFilter =
         (filterType == FilterType::BACKGROUND_FILTER) ? properties.GetBackgroundFilter() : properties.GetFilter();
     if (RSFilter == nullptr || !RSFilter->IsValid()) {
