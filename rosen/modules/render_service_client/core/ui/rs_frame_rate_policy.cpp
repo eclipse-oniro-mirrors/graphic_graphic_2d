@@ -19,6 +19,7 @@
 
 #include "platform/common/rs_log.h"
 #include "transaction/rs_interfaces.h"
+#include "ui/rs_ui_director.h"
 
 namespace {
     struct AnimDynamicAttribute {
