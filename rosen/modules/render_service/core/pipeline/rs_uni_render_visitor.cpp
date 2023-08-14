@@ -126,7 +126,6 @@ RSUniRenderVisitor::RSUniRenderVisitor()
     isOpDropped_ = isPartialRenderEnabled_ && (partialRenderType_ != PartialRenderType::SET_DAMAGE)
         && (!isDirtyRegionDfxEnabled_ && !isTargetDirtyRegionDfxEnabled_ && !isOpaqueRegionDfxEnabled_);
     isQuickSkipPreparationEnabled_ = (quickSkipPrepareType_ != QuickSkipPrepareType::DISABLED);
-    isHardwareComposerEnabled_ = RSSystemProperties::GetHardwareComposerEnabled();
     isDrawingCacheEnabled_ = RSSystemParameters::GetDrawingCacheEnabled();
     RSTagTracker::UpdateReleaseGpuResourceEnable(RSSystemProperties::GetReleaseGpuResourceEnabled());
 #if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
@@ -539,7 +538,7 @@ bool RSUniRenderVisitor::CheckIfSurfaceRenderNodeStatic(RSSurfaceRenderNode& nod
 
 bool RSUniRenderVisitor::IsHardwareComposerEnabled()
 {
-    return !isHardwareForcedDisabled_ && !doAnimate_ && isHardwareComposerEnabled_;
+    return !isHardwareForcedDisabled_ && !doAnimate_;
 }
 
 void RSUniRenderVisitor::ClearTransparentBeforeSaveLayer()
@@ -621,17 +620,12 @@ void RSUniRenderVisitor::MarkSubHardwareEnableNodeState(RSSurfaceRenderNode& sur
     }
 }
 
-void RSUniRenderVisitor::AdjustLocalZOrder(std::shared_ptr<RSSurfaceRenderNode> surfaceNode)
+void RSUniRenderVisitor::CollectAppNodeForHwc(std::shared_ptr<RSSurfaceRenderNode> surfaceNode)
 {
-    if (!IsHardwareComposerEnabled() || !surfaceNode || !surfaceNode->IsAppWindow()) {
+    if (!IsHardwareComposerEnabled() || !surfaceNode || surfaceNode->GetChildHardwareEnabledNodes().empty()) {
         return;
     }
 
-    auto hardwareEnabledNodes = surfaceNode->GetChildHardwareEnabledNodes();
-    if (hardwareEnabledNodes.empty()) {
-        return;
-    }
-    localZOrder_ = static_cast<float>(hardwareEnabledNodes.size());
     if (isParallel_ && !isUIFirst_) {
 #if defined(RS_ENABLE_PARALLEL_RENDER) && defined(RS_ENABLE_GL)
         RSParallelRenderManager::Instance()->AddAppWindowNode(parallelRenderVisitorIndex_, surfaceNode);
@@ -669,20 +663,9 @@ void RSUniRenderVisitor::PrepareTypesOfSurfaceRenderNodeBeforeUpdate(RSSurfaceRe
     }
 
     // collect app window node's child hardware enabled node
-    if (node.IsHardwareEnabledType() && node.GetBuffer() != nullptr && curSurfaceNode_) {
+    if (node.IsHardwareEnabledType() && curSurfaceNode_) {
         curSurfaceNode_->AddChildHardwareEnabledNode(node.ReinterpretCastTo<RSSurfaceRenderNode>());
         node.SetLocalZOrder(localZOrder_++);
-    }
-
-    if (node.IsSelfDrawingType()) {
-        if (node.IsHardwareEnabledType()) {
-            if (!IsHardwareComposerEnabled() &&
-                (node.IsCurrentFrameBufferConsumed() || node.IsLastFrameHardwareEnabled())) {
-                node.SetContentDirty();
-            }
-        } else if (node.IsCurrentFrameBufferConsumed()) {
-            node.SetContentDirty();
-        }
     }
 }
 
@@ -2198,24 +2181,19 @@ void RSUniRenderVisitor::AssignGlobalZOrderAndCreateLayer()
     for (auto& appWindowNode : appWindowNodesInZOrder_) {
         // first, sort app window node's child surfaceView by local zOrder
         auto childHardwareEnabledNodes = appWindowNode->GetChildHardwareEnabledNodes();
-        std::stable_sort(childHardwareEnabledNodes.begin(), childHardwareEnabledNodes.end(),
-            [](const auto& first, const auto& second) {
-            auto node1 = first.lock();
-            auto node2 = second.lock();
-            return node1 && node2 && node1->GetLocalZOrder() < node2->GetLocalZOrder();
-        });
-        localZOrder_ = 0.0f;
-        for (auto& child : childHardwareEnabledNodes) {
-            auto childNode = child.lock();
-            if (childNode && childNode->GetBuffer() != nullptr && !childNode->IsHardwareForcedDisabled()) {
-                // assign local zOrder here to ensure it range from 0 to childHardwareEnabledNodes.size()
-                // for each app window node
-                childNode->SetLocalZOrder(localZOrder_++);
+        for (auto iter = childHardwareEnabledNodes.begin(); iter != childHardwareEnabledNodes.end();) {
+            auto childNode = iter->lock();
+            if (!childNode || !childNode->IsOnTheTree()) {
+                iter = childHardwareEnabledNodes.erase(iter);
+                continue;
+            }
+            if (childNode->GetBuffer() != nullptr && !childNode->IsHardwareForcedDisabled()) {
                 // SetGlobalZOrder here to ensure zOrder committed to composer is continuous
                 childNode->SetGlobalZOrder(globalZOrder_++);
                 RS_LOGD("createLayer: %" PRIu64 "", childNode->GetId());
                 processor_->ProcessSurface(*childNode);
             }
+            ++iter;
         }
     }
 }
@@ -2578,12 +2556,6 @@ void RSUniRenderVisitor::CalcDirtyFilterRegion(std::shared_ptr<RSDisplayRenderNo
             needFilter_ = needFilter_ || !currentSurfaceNode->IsStaticCached();
             CalcDirtyRegionForFilterNode(
                 currentSurfaceNode->GetOldDirtyInSurface(), currentSurfaceNode, displayNode);
-        }
-    }
-    for (auto& [childNode, node] : prevHwcEnabledNodes) {
-        if (!childNode->IsLastFrameHardwareEnabled() && node && node->GetDirtyManager()) {
-            node->GetDirtyManager()->MergeDirtyRect(childNode->GetDstRect());
-            dirtySurfaceNodeMap_.emplace(node->GetId(), node);
         }
     }
 }
@@ -3005,7 +2977,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 #ifdef RS_ENABLE_EGLQUERYSURFACE
     if (node.IsAppWindow()) {
         curSurfaceNode_ = node.ReinterpretCastTo<RSSurfaceRenderNode>();
-        AdjustLocalZOrder(curSurfaceNode_);
+        CollectAppNodeForHwc(curSurfaceNode_);
     }
     // skip clean surface node
     if (isOpDropped_ && node.IsAppWindow() &&
@@ -3731,7 +3703,7 @@ void RSUniRenderVisitor::SetHardwareEnabledNodes(
 
 bool RSUniRenderVisitor::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNode)
 {
-    if (!IsHardwareComposerEnabled()) {
+    if (!IsHardwareComposerEnabled() || rootNode->GetSortedChildren().empty()) {
         RS_LOGD("RSUniRenderVisitor::DoDirectComposition HardwareComposer disabled");
         return false;
     }

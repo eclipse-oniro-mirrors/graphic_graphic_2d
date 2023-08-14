@@ -240,6 +240,7 @@ private:
     void PerfMultiWindow();
     void RenderFrameStart();
     void ResetHardwareEnabledState();
+    void CheckIfHardwareForcedDisabled();
     void CheckAndUpdateTransactionIndex(
         std::shared_ptr<TransactionDataMap>& transactionDataEffective, std::string& transactionFlags);
 
