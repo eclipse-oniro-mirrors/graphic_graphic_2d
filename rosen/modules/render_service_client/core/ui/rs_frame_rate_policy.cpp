@@ -64,14 +64,14 @@ void RSFrameRatePolicy::HgmConfigChangeCallback(std::shared_ptr<RSHgmConfigData>
         return;
     }
 
-    RSUIDirector::PostFrameRateTask([configData]) {
+    RSUIDirector::PostFrameRateTask([configData]() {
         for (auto item : configData->GetConfigData()) {
             animAttributes[item.animType][item.animName] = {item.minSpeed, item.maxSpeed, item.preferredFps};
             ROSEN_LOGD("RSFrameRatePolicy: config item type = %s, name = %s, minSpeed = %d, maxSpeed = %d, \
                 preferredFps = %d", item.animType.c_str(), item.animName.c_str(), static_cast<int>(item.minSpeed),
                 static_cast<int>(item.maxSpeed), static_cast<int>(item.preferredFps));
         }
-    }
+    });
 }
 
 int RSFrameRatePolicy::GetPreferredFps(const std::string& scene, float speed)

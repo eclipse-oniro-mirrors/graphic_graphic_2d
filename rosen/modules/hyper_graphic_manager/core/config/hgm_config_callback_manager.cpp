@@ -41,7 +41,7 @@ HgmConfigCallbackManager::~HgmConfigCallbackManager() noexcept
 }
 
 void HgmConfigCallbackManager::RegisterHgmConfigChangeCallback(
-    pid_t pid, const sptr<RSIHgmConfigChangeCallback> &callback)
+    pid_t pid, const sptr<RSIHgmConfigChangeCallback>& callback)
 {
     if (callback == nullptr) {
         HGM_LOGE("HgmConfigCallbackManager %{public}s : callback is null.", __func__);

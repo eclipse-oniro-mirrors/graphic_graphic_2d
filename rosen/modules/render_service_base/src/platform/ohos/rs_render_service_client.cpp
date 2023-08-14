@@ -712,7 +712,7 @@ int32_t RSRenderServiceClient::RegisterOcclusionChangeCallback(const OcclusionCh
 class CustomHgmConfigChangeCallback : public RSHgmConfigChangeCallbackStub
 {
 public:
-    explicit CustomHgmConfigChangeCallback(const HgmConfigChangeCallback &callback) : cb_(callback) {}
+    explicit CustomHgmConfigChangeCallback(const HgmConfigChangeCallback& callback) : cb_(callback) {}
     ~CustomHgmConfigChangeCallback() override {};
 
     void OnHgmConfigChanged(std::shared_ptr<RSHgmConfigData> configData) override
