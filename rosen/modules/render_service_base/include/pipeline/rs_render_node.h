@@ -420,6 +420,8 @@ protected:
     virtual RectI GetFilterRect() const;
     virtual bool NodeIsUsedBySubThread() const { return false; }
 
+    virtual bool IsSelfDrawingNode() const;
+
 private:
     NodeId id_;
     NodeId rootSurfaceNodeId_ = INVALID_NODEID;
