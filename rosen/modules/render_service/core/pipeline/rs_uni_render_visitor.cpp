@@ -1152,8 +1152,8 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
         nodeParent = nodeParent->GetParent().lock();
     }
 
-    if (curSurfaceDirtyManager_ == nullptr) {
-        RS_LOGE("RSUniRenderVisitor::PrepareCanvasRenderNode curSurfaceDirtyManager is nullptr");
+    if (curSurfaceDirtyManager_ == nullptr || curDisplayDirtyManager_ == nullptr) {
+        RS_LOGE("RSUniRenderVisitor::PrepareCanvasRenderNode curXDirtyManager is nullptr");
         return;
     }
     node.GetMutableRenderProperties().UpdateSandBoxMatrix(parentSurfaceNodeMatrix_);
@@ -2462,11 +2462,12 @@ void RSUniRenderVisitor::UpdateHardwareNodeStatusBasedOnFilter(std::shared_ptr<R
     // remove invisible surface since occlusion
     auto visibleRegion = node->GetVisibleRegion();
     for (auto subNode : node->GetChildHardwareEnabledNodes()) {
-        auto childNode = subNode.lock();
-        // recover disabled state before update
-        childNode->SetHardwareForcedDisabledStateByFilter(false);
-        if (visibleRegion.IsIntersectWith(Occlusion::Rect(childNode->GetOldDirtyInSurface()))) {
-            curHwcEnabledNodes.emplace_back(std::make_pair(subNode, node));
+        if (auto childNode = subNode.lock()) {
+            // recover disabled state before update
+            childNode->SetHardwareForcedDisabledStateByFilter(false);
+            if (visibleRegion.IsIntersectWith(Occlusion::Rect(childNode->GetOldDirtyInSurface()))) {
+                curHwcEnabledNodes.emplace_back(std::make_pair(subNode, node));
+            }
         }
     }
     // Within App: disable hwc if intersect with filterRects
