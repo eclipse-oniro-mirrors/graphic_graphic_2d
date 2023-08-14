@@ -1322,7 +1322,6 @@ void RSPropertiesPainter::DrawPixelStretch(const RSProperties& properties, RSPai
     clipBounds.setXYWH(clipBounds.left(), clipBounds.top(), clipBounds.width() - 1, clipBounds.height() - 1);
     canvas.restore();
 
-    // Vector4f stretchSize = GetStretchSize(properties);
     /* Calculates the relative coordinates of the clipbounds
         with respect to the origin of the current canvas coordinates */
     SkMatrix worldToLocalMat;
@@ -1406,7 +1405,6 @@ void RSPropertiesPainter::DrawPixelStretch(const RSProperties& properties, RSPai
         tmpBounds.GetLeft(), tmpBounds.GetTop(), tmpBounds.GetWidth() - 1, tmpBounds.GetHeight() - 1);
     canvas.Restore();
 
-    Vector4f stretchSize = GetStretchSize(properties);
     /*  Calculates the relative coordinates of the clipbounds
         with respect to the origin of the current canvas coordinates */
     Drawing::Matrix worldToLocalMat;

@@ -231,7 +231,6 @@ public:
 
     void SetVisible(bool visible);
     bool GetVisible() const;
-    bool SetId(NodeId id);
     std::string Dump() const;
 
     void SetMask(std::shared_ptr<RSMask> mask);

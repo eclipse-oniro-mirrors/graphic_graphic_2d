@@ -921,25 +921,28 @@ bool RSRenderNode::ApplyModifiers()
     // Reset and re-apply all modifiers
     RSModifierContext context = { renderProperties_ };
     std::vector<std::shared_ptr<RSRenderModifier>> animationModifiers;
-    if (!forceFlushAllModifiers_) {
+
+    // Reset before apply modifiers
+    if (forceFlushAllModifiers_) {
+        // Reset all properties
         renderProperties_.Reset();
-        for (auto& [id, modifier] : modifiers_) {
-            modifier->Apply(context);
-            if (ANIMATION_MODIFIER_TYPE.count(modifier->GetType())) {
-                animationModifiers.push_back(modifier);
-            }
-        }
     } else {
+        // Reset only dirty properties
         renderProperties_.ResetProperty(dirtyTypes_);
-        for (auto& [id, modifier] : modifiers_) {
-            if (dirtyTypes_.count(modifier->GetType())) {
-                modifier->Apply(context);
-                if (ANIMATION_MODIFIER_TYPE.count(modifier->GetType())) {
-                    animationModifiers.push_back(modifier);
-                }
-            }
+    }
+
+    // Apply modifiers
+    for (auto& [id, modifier] : modifiers_) {
+        // skip non-dirty modifiers if forceFlushAllModifiers_ is not set
+        if (!forceFlushAllModifiers_ && !dirtyTypes_.count(modifier->GetType())) {
+            continue;
+        }
+        modifier->Apply(context);
+        if (ANIMATION_MODIFIER_TYPE.count(modifier->GetType())) {
+            animationModifiers.push_back(modifier);
         }
     }
+
     for (auto &modifier : animationModifiers) {
         AddModifierProfile(modifier, context.property_.GetBoundsWidth(), context.property_.GetBoundsHeight());
     }
@@ -952,6 +955,7 @@ bool RSRenderNode::ApplyModifiers()
     forceFlushAllModifiers_ = false;
     lastApplyTimestamp_ = lastTimestamp_;
 
+    // return true if positionZ changed
     return renderProperties_.GetPositionZ() != prevPositionZ;
 }
 

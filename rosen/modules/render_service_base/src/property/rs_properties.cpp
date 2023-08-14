@@ -2281,10 +2281,10 @@ void RSProperties::OnApplyModifiers()
 
 inline static int SignBit(float x)
 {
-    constexpr static float EPS = 1e-5f;
-    if (x <= -EPS) {
+    constexpr static float eps = 1e-5f;
+    if (x <= -eps) {
         return -1;
-    } else if (x >= EPS) {
+    } else if (x >= eps) {
         return 1;
     } else {
         return 0;
