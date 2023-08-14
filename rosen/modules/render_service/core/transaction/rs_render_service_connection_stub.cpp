@@ -897,8 +897,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             ExecuteSynchronousTask(task);
             if (!task->Marshalling(reply)) {
                 ret = ERR_INVALID_STATE;
-                break;
             }
+            break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_HARDWARE_ENABLED) : {
             auto token = data.ReadInterfaceToken();
