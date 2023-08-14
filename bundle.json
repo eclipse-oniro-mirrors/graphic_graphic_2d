@@ -83,7 +83,9 @@
           "cjson",
           "jsoncpp",
           "egl",
-          "opengles"
+          "opengles",
+          "vulkan-headers",
+          "vulkan-loader"
         ]
       },
       "build": {
