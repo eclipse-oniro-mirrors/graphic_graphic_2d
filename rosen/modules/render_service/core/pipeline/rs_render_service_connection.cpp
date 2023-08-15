@@ -100,6 +100,7 @@ void RSRenderServiceConnection::CleanAll(bool toDelete) noexcept
         [this]() {
             CleanVirtualScreens();
             CleanRenderNodes();
+            HgmConfigCallbackManager::GetInstance()->UnRegisterHgmConfigChangeCallback(remotePid_);
             mainThread_->ClearTransactionDataPidInfo(remotePid_);
             mainThread_->UnRegisterOcclusionChangeCallback(remotePid_);
         }).wait();
@@ -825,6 +826,18 @@ int32_t RSRenderServiceConnection::RegisterOcclusionChangeCallback(sptr<RSIOcclu
         return StatusCode::INVALID_ARGUMENTS;
     }
     mainThread_->RegisterOcclusionChangeCallback(remotePid_, callback);
+    return StatusCode::SUCCESS;
+}
+
+int32_t RSRenderServiceConnection::RegisterHgmConfigChangeCallback(sptr<RSIHgmConfigChangeCallback> callback)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!callback) {
+        RS_LOGD("RSRenderServiceConnection::RegisterHgmConfigChangeCallback: callback is nullptr");
+        return StatusCode::INVALID_ARGUMENTS;
+    }
+
+    HgmConfigCallbackManager::GetInstance()->RegisterHgmConfigChangeCallback(remotePid_, callback);
     return StatusCode::SUCCESS;
 }
 

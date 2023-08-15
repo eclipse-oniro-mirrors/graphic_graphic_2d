@@ -28,6 +28,7 @@
 #include "transaction/rs_application_agent_impl.h"
 #include "transaction/rs_interfaces.h"
 #include "transaction/rs_transaction_proxy.h"
+#include "ui/rs_frame_rate_policy.h"
 #include "ui/rs_root_node.h"
 #include "ui/rs_surface_extractor.h"
 #include "ui/rs_surface_node.h"
@@ -84,6 +85,7 @@ void RSUIDirector::Init(bool shouldCreateRenderThread)
         RSRenderThread::Instance().Start();
     }
     RSApplicationAgentImpl::Instance().RegisterRSApplicationAgent();
+    RSFrameRatePolicy::GetInstance()->RegisterHgmConfigChangeCallback();
 
     GoForeground();
 }
@@ -321,6 +323,11 @@ void RSUIDirector::AnimationCallbackProcessor(NodeId nodeId, AnimationId animId,
         ROSEN_LOGE("RSUIDirector::AnimationCallbackProcessor, could not find animation %" PRIu64 " on fallback node.",
             animId);
     }
+}
+
+void RSUIDirector::PostFrameRateTask(const std::function<void()>& task)
+{
+    PostTask(task);
 }
 
 void RSUIDirector::PostTask(const std::function<void()>& task)
