@@ -100,9 +100,9 @@ void RSRenderServiceConnection::CleanAll(bool toDelete) noexcept
         [this]() {
             CleanVirtualScreens();
             CleanRenderNodes();
+            HgmConfigCallbackManager::GetInstance()->UnRegisterHgmConfigChangeCallback(remotePid_);
             mainThread_->ClearTransactionDataPidInfo(remotePid_);
             mainThread_->UnRegisterOcclusionChangeCallback(remotePid_);
-            HgmConfigCallbackManager::GetInstance()->UnRegisterHgmConfigChangeCallback(remotePid_);
         }).wait();
 
     for (auto& conn : vsyncConnections_) {
