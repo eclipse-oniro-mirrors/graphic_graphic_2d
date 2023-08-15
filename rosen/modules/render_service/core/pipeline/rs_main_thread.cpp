@@ -1422,7 +1422,6 @@ void RSMainThread::RequestNextVSync()
 
 void RSMainThread::OnVsync(uint64_t timestamp, void* data)
 {
-    RS_OPTIONAL_TRACE_FUNC_BEGIN();
     RSJankStats::GetInstance().SetStartTime();
     timestamp_ = timestamp;
     curTime_ = static_cast<uint64_t>(
@@ -1445,7 +1444,6 @@ void RSMainThread::OnVsync(uint64_t timestamp, void* data)
         }
     }
     RSJankStats::GetInstance().SetEndTime();
-    RS_OPTIONAL_TRACE_FUNC_END();
 }
 
 void RSMainThread::Animate(uint64_t timestamp)
