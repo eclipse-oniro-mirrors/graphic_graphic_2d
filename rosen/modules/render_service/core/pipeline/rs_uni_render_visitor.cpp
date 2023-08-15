@@ -981,7 +981,11 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         drivenInfo_->isPrepareLeashWinSubTree = false;
     }
 #endif
-    UpdateSurfaceFrameRateRange(node);
+
+    auto rsRange = node.GetRSFrameRateRange();
+    auto uiRange = node.GetUIFrameRateRange();
+    currSurfaceRSRange_.Merge(rsRange);
+    currSurfaceUIRange_.Merge(uiRange);
     currDisplayRSRange_.Merge(currSurfaceRSRange_);
     currDisplayUIRange_.Merge(currSurfaceUIRange_);
 
