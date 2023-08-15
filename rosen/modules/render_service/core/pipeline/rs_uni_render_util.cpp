@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <unordered_set>
 
+#include "common/rs_optional_trace.h"
 #include "pipeline/parallel_render/rs_sub_thread_manager.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_base_render_util.h"
@@ -399,7 +400,7 @@ bool RSUniRenderUtil::HandleSubThreadNode(RSRenderNode& node, RSPaintFilterCanva
         node.UpdateCompletedCacheSurface();
 #endif
     }
-    RS_TRACE_NAME_FMT("RSUniRenderUtil::HandleSubThreadNode %" PRIu64 "", node.GetId());
+    RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderUtil::HandleSubThreadNode %" PRIu64 "", node.GetId());
     node.DrawCacheSurface(canvas, UNI_MAIN_THREAD_INDEX, true);
     return true;
 }
@@ -606,7 +607,7 @@ void RSUniRenderUtil::AssignSubThreadNode(std::list<std::shared_ptr<RSSurfaceRen
     // skip complete static window, DO NOT assign it to subthread.
     if (node->GetCacheSurfaceProcessedStatus() == CacheProcessStatus::DONE &&
         node->IsCurrentFrameStatic() && node->HasCachedTexture()) {
-        RS_TRACE_NAME_FMT("subThreadNodes : static skip %s", node->GetName().c_str());
+        RS_OPTIONAL_TRACE_NAME_FMT("subThreadNodes : static skip %s", node->GetName().c_str());
     } else {
         subThreadNodes.emplace_back(node);
         node->UpdateCacheSurfaceDirtyManager(2); // 2 means buffer age

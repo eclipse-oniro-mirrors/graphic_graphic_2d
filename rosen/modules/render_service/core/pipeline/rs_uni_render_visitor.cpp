@@ -724,7 +724,8 @@ void RSUniRenderVisitor::UpdateForegroundFilterCacheWithDirty(RSRenderNode& node
 
 void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 {
-    RS_TRACE_NAME("RSUniRender::Prepare:[" + node.GetName() + "] pid: " + std::to_string(ExtractPid(node.GetId())) +
+    RS_OPTIONAL_TRACE_BEGIN("RSUniRender::Prepare:[" + node.GetName() + "] pid: " +
+        std::to_string(ExtractPid(node.GetId())) +
         ", nodeType " + std::to_string(static_cast<uint>(node.GetSurfaceNodeType())));
     if (node.GetName().find(CAPTURE_WINDOW_NAME) != std::string::npos) {
         needCacheImg_ = true;
@@ -739,6 +740,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         displayHasSecSurface_[currentVisitDisplay_]++;
     }
     if (curDisplayNode_ == nullptr) {
+        RS_OPTIONAL_TRACE_END();
         return;
     }
     // avoid EntryView upload texture while screen rotation
@@ -753,6 +755,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 #endif
     // stop traversal if node keeps static
     if (isQuickSkipPreparationEnabled_ && CheckIfSurfaceRenderNodeStatic(node)) {
+        RS_OPTIONAL_TRACE_END();
         return;
     }
     node.CleanDstRectChanged();
@@ -768,6 +771,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     auto& property = node.GetMutableRenderProperties();
     auto geoPtr = (property.GetBoundsGeometry());
     if (geoPtr == nullptr) {
+        RS_OPTIONAL_TRACE_END();
         return;
     }
     float alpha = curAlpha_;
@@ -779,6 +783,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     if (curSurfaceDirtyManager_ == nullptr) {
         RS_LOGE("RSUniRenderVisitor::PrepareSurfaceRenderNode %s curSurfaceDirtyManager is nullptr",
             node.GetName().c_str());
+        RS_OPTIONAL_TRACE_END();
         return;
     }
     if (isUIFirst_) {
@@ -790,6 +795,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
             dirtyFlag_ = dirtyFlag;
             isClipBoundDirty_ = isClipBoundDirty;
             RS_TRACE_NAME(node.GetName() + " PreparedNodes cacheCmdSkiped");
+            RS_OPTIONAL_TRACE_END();
             return;
         }
     }
@@ -806,6 +812,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 
     if (curDisplayNode_ == nullptr) {
         ROSEN_LOGE("RSUniRenderVisitor::PrepareSurfaceRenderNode, curDisplayNode_ is nullptr.");
+        RS_OPTIONAL_TRACE_END();
         return;
     }
     // Calculate the absolute destination rectangle of the node, initialize with absolute bounds rect
@@ -955,6 +962,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 #endif
 
     CollectFrameRateRange(node);
+    RS_OPTIONAL_TRACE_END();
 }
 
 void RSUniRenderVisitor::PrepareProxyRenderNode(RSProxyRenderNode& node)
