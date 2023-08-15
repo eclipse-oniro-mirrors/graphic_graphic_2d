@@ -1283,6 +1283,7 @@ void RSSurfaceRenderNode::UpdateCacheSurfaceDirtyManager(int bufferAge)
 void RSSurfaceRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId)
 {
     instanceRootNodeId = (IsMainWindowType() || IsLeashWindow()) ? GetId() : instanceRootNodeId;
+    isNewOnTree_ = flag && !isOnTheTree_;
     RSBaseRenderNode::SetIsOnTheTree(flag, instanceRootNodeId);
     if (flag == isReportFirstFrame_ || !IsAppWindow()) {
         return;

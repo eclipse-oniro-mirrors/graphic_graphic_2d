@@ -67,8 +67,8 @@ public:
     }
 
     explicit RSRenderNode(NodeId id, std::weak_ptr<RSContext> context = {}) : id_(id), context_(context) {};
-    explicit RSRenderNode(NodeId id, bool isOnTheTree, std::weak_ptr<RSContext> context = {}) : id_(id),
-        isOnTheTree_(isOnTheTree), context_(context) {};
+    explicit RSRenderNode(NodeId id, bool isOnTheTree, std::weak_ptr<RSContext> context = {}) :
+        isOnTheTree_(isOnTheTree), id_(id), context_(context) {};
     RSRenderNode(const RSRenderNode&) = delete;
     RSRenderNode(const RSRenderNode&&) = delete;
     RSRenderNode& operator=(const RSRenderNode&) = delete;
@@ -426,6 +426,7 @@ protected:
     virtual bool NodeIsUsedBySubThread() const { return false; }
 
     virtual bool IsSelfDrawingNode() const;
+    bool isOnTheTree_ = false;
 
 private:
     NodeId id_;
@@ -435,7 +436,6 @@ private:
     void SetParent(WeakPtr parent);
     void ResetParent();
     virtual void OnResetParent() {}
-    bool isOnTheTree_ = false;
 
     std::list<WeakPtr> children_;
     std::list<std::pair<SharedPtr, uint32_t>> disappearingChildren_;

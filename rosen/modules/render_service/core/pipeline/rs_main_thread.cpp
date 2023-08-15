@@ -789,9 +789,10 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         surfaceHandler.ResetCurrentFrameBufferConsumed();
         if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler)) {
             this->bufferTimestamps_[surfaceNode->GetId()] = static_cast<uint64_t>(surfaceNode->GetTimestamp());
-            if (surfaceNode->IsCurrentFrameBufferConsumed()) {
-                // collect surface view's pid to prevent wrong skip
+            if (surfaceNode->IsCurrentFrameBufferConsumed() && !surfaceNode->IsHardwareEnabledType()) {
+                surfaceNode->SetContentDirty();
                 AddActiveNodeId(ExtractPid(surfaceNode->GetId()), surfaceNode->GetId());
+                doDirectComposition_ = false;
             }
         }
 
@@ -809,49 +810,64 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
 
 void RSMainThread::CollectInfoForHardwareComposer()
 {
-    if (!isUniRender_ || !RSSystemProperties::GetHardwareComposerEnabled()) {
+    if (!isUniRender_) {
         return;
     }
+    CheckIfHardwareForcedDisabled();
     const auto& nodeMap = GetContext().GetNodeMap();
     nodeMap.TraverseSurfaceNodes(
         [this](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
             if (surfaceNode == nullptr || !surfaceNode->IsOnTheTree()) {
                 return;
             }
-            if (surfaceNode->IsAppWindow()) {
-                const auto& property = surfaceNode->GetRenderProperties();
-                if (property.NeedFilter() || property.IsShadowValid()) {
-                    isHardwareForcedDisabled_ = true;
-                    return;
-                }
+            if (!surfaceNode->IsHardwareEnabledType()) {
+                return;
             }
-            auto& surfaceHandler = static_cast<RSSurfaceHandler&>(*surfaceNode);
-            if (surfaceHandler.IsCurrentFrameBufferConsumed()) {
-                if (!surfaceNode->IsHardwareEnabledType() ||
-                    surfaceNode->GetSrcRect().IsEmpty() || surfaceNode->GetDstRect().IsEmpty()) {
+
+            // if hwc node is set on the tree this frame, mark its parent app node to be prepared
+            if (surfaceNode->IsNewOnTree()) {
+                auto appNodeId = surfaceNode->GetInstanceRootNodeId();
+                AddActiveNodeId(ExtractPid(appNodeId), appNodeId);
+                surfaceNode->ResetIsNewOnTree();
+            }
+
+            if (surfaceNode->GetBuffer() != nullptr) {
+                // collect hwc nodes vector, used for display node skip and direct composition cases
+                hardwareEnabledNodes_.emplace_back(surfaceNode);
+            }
+
+            // set content dirty for hwc node if needed
+            if (isHardwareForcedDisabled_) {
+                // buffer updated or hwc -> gpu
+                if (surfaceNode->IsCurrentFrameBufferConsumed() || surfaceNode->IsLastFrameHardwareEnabled()) {
+                    surfaceNode->SetContentDirty();
+                    AddActiveNodeId(ExtractPid(surfaceNode->GetId()), surfaceNode->GetId());
+                }
+            } else { // gpu -> hwc
+                if (!surfaceNode->IsLastFrameHardwareEnabled()) {
+                    surfaceNode->SetContentDirty();
+                    AddActiveNodeId(ExtractPid(surfaceNode->GetId()), surfaceNode->GetId());
                     doDirectComposition_ = false;
-                } else {
-                    isHardwareEnabledBufferUpdated_ = true;
                 }
             }
 
-            if (surfaceNode->IsHardwareEnabledType() && surfaceNode->GetBuffer() != nullptr) {
-                hardwareEnabledNodes_.emplace_back(surfaceNode);
-                if (!surfaceNode->IsLastFrameHardwareEnabled()) {
-                    doDirectComposition_ = false;
-                }
+            if (surfaceNode->IsCurrentFrameBufferConsumed()) {
+                isHardwareEnabledBufferUpdated_ = true;
             }
         });
+}
 
-    if (doWindowAnimate_ || isHardwareForcedDisabled_) {
-        // setDirty for surfaceView if last frame is hardware enabled
-        for (auto& surfaceNode : hardwareEnabledNodes_) {
-            if (surfaceNode->IsLastFrameHardwareEnabled()) {
-                surfaceNode->SetContentDirty();
-                AddActiveNodeId(ExtractPid(surfaceNode->GetId()), surfaceNode->GetId());
-            }
-        }
-    }
+void RSMainThread::CheckIfHardwareForcedDisabled()
+{
+    ColorFilterMode colorFilterMode = renderEngine_->GetColorFilterMode();
+    bool hasColorFilter = colorFilterMode >= ColorFilterMode::INVERT_COLOR_ENABLE_MODE &&
+        colorFilterMode <= ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE;
+    std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
+    bool isMultiDisplay = rootNode && rootNode->GetChildrenCount() > 1;
+
+    // [PLANNING] GetChildrenCount > 1 indicates multi display, only Mirror Mode need be marked here
+    // Mirror Mode reuses display node's buffer, so mark it and disable hardware composer in this case
+    isHardwareForcedDisabled_ = isHardwareForcedDisabled_ || doWindowAnimate_ || isMultiDisplay || hasColorFilter;
 }
 
 void RSMainThread::CollectInfoForDrivenRender()
@@ -1091,17 +1107,12 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     uniVisitor->SetHardwareEnabledNodes(hardwareEnabledNodes_);
     uniVisitor->SetAppWindowNum(appWindowNum_);
     uniVisitor->SetProcessorRenderEngine(GetRenderEngine());
-    ColorFilterMode colorFilterMode = renderEngine_->GetColorFilterMode();
-    bool hasColorFilter = colorFilterMode >= ColorFilterMode::INVERT_COLOR_ENABLE_MODE &&
-        colorFilterMode <= ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE;
-    if (isHardwareForcedDisabled_ || rootNode->GetChildrenCount() > 1 || hasColorFilter) {
-        // [PLANNING] GetChildrenCount > 1 indicates multi display, only Mirror Mode need be marked here
-        // Mirror Mode reuses display node's buffer, so mark it and disable hardware composer in this case
+
+    if (isHardwareForcedDisabled_) {
         uniVisitor->MarkHardwareForcedDisabled();
         doDirectComposition_ = false;
     }
     bool needTraverseNodeTree = true;
-    doDirectComposition_ = false;
     if (doDirectComposition_ && !isDirty_ && !isAccessibilityConfigChanged_ && !isCachedSurfaceUpdated_) {
         if (isHardwareEnabledBufferUpdated_) {
             needTraverseNodeTree = !uniVisitor->DoDirectComposition(rootNode);
@@ -2073,10 +2084,10 @@ void RSMainThread::AddActiveNodeId(pid_t pid, NodeId id)
 
 void RSMainThread::ResetHardwareEnabledState()
 {
-    doDirectComposition_ = RSSystemProperties::GetHardwareComposerEnabled();
+    isHardwareForcedDisabled_ = !RSSystemProperties::GetHardwareComposerEnabled();
+    doDirectComposition_ = !isHardwareForcedDisabled_;
     isHardwareEnabledBufferUpdated_ = false;
     hardwareEnabledNodes_.clear();
-    isHardwareForcedDisabled_ = false;
 }
 
 void RSMainThread::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow)

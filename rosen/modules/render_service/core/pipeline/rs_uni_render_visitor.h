@@ -258,8 +258,7 @@ private:
     void ClearTransparentBeforeSaveLayer();
     // mark surfaceNode's child surfaceView nodes hardware forced disabled
     void MarkSubHardwareEnableNodeState(RSSurfaceRenderNode& surfaceNode);
-    // adjust local zOrder if surfaceNode's child surfaceView nodes skipped by dirty region
-    void AdjustLocalZOrder(std::shared_ptr<RSSurfaceRenderNode> surfaceNode);
+    void CollectAppNodeForHwc(std::shared_ptr<RSSurfaceRenderNode> surfaceNode);
 
     void RecordAppWindowNodeAndPostTask(RSSurfaceRenderNode& node, float width, float height);
     // offscreen render related
@@ -330,7 +329,6 @@ private:
     bool isTargetDirtyRegionDfxEnabled_ = false;
     bool isOpaqueRegionDfxEnabled_ = false;
     bool isQuickSkipPreparationEnabled_ = false;
-    bool isHardwareComposerEnabled_ = false;
     bool isOcclusionEnabled_ = false;
     std::vector<std::string> dfxTargetSurfaceNames_;
     PartialRenderType partialRenderType_;
