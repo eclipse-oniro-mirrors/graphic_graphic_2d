@@ -99,7 +99,7 @@ HWTEST_F(RSUniUiCaptureTest, ProcessCanvasRenderNodeTest, TestSize.Level1)
     float scaleY = 0.0;
     std::weak_ptr<RSContext> context;
     RSUniUICapture::RSUniUICaptureVisitor rsUniUICaptureVisitor(nodeId, scaleX, scaleY);
-    RSCanvasRenderNode node(nodeId, context);
+    RSRootRenderNode node(nodeId, context);
     rsUniUICaptureVisitor.ProcessCanvasRenderNode(node);
 }
 
@@ -150,7 +150,7 @@ HWTEST_F(RSUniUiCaptureTest, PrepareCanvasRenderNodeTest, TestSize.Level1)
     float scaleY = 0.0;
     std::weak_ptr<RSContext> context;
     RSUniUICapture::RSUniUICaptureVisitor rsUniUICaptureVisitor(nodeId, scaleX, scaleY);
-    RSCanvasRenderNode node(nodeId, context);
+    RSRootRenderNode node(nodeId, context);
     rsUniUICaptureVisitor.PrepareCanvasRenderNode(node);
 }
 
