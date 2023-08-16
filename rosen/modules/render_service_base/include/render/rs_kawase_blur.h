@@ -68,6 +68,7 @@ private:
 #endif
     float blurRadius_ = 0.f;
     float blurScale_ = 0.25f;
+    bool useKawaseOriginal_ = false;
 };
 #endif
 } // namespace Rosen

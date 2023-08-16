@@ -200,6 +200,11 @@ bool RSSystemProperties::GetKawaseEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetKawaseOriginalEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetBlurEnabled()
 {
     return true;
