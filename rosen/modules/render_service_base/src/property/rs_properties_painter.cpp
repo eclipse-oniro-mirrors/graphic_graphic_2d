@@ -494,7 +494,6 @@ void RSPropertiesPainter::GetShadowDirtyRect(RectI& dirtyShadow, const RSPropert
         spotRect.SetBottom(spotRect.GetBottom() + transRatio * DEFAULT_LIGHT_RADIUS);
 
         shadowRect = ambientRect;
-        std::min(elevation * 0.5f, MAX_AMBIENT_RADIUS);
         float ambientBlur = std::min(elevation * 0.5f, MAX_AMBIENT_RADIUS);
         // shadowRect outset (ambientBlur, ambientBlur)
         shadowRect.SetLeft(shadowRect.GetLeft() - ambientBlur);

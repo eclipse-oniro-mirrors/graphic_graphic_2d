@@ -1329,8 +1329,6 @@ void RSUniRenderVisitor::DrawDirtyRectForDFX(const RectI& dirtyRect, const Drawi
     ROSEN_LOGD("DrawDirtyRectForDFX current dirtyRect = %{public}s", dirtyRect.ToString().c_str());
     auto rect = Drawing::Rect(dirtyRect.left_, dirtyRect.top_,
         dirtyRect.left_ + dirtyRect.width_, dirtyRect.top_ + dirtyRect.height_);
-    std::string position = std::to_string(dirtyRect.left_) + ',' + std::to_string(dirtyRect.top_) + ',' +
-        std::to_string(dirtyRect.width_) + ',' + std::to_string(dirtyRect.height_);
     Drawing::Pen rectPen;
     Drawing::Brush rectBrush;
     // font size: 24
