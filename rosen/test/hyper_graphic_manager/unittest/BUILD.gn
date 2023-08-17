@@ -18,8 +18,8 @@ ohos_unittest("hyper_graphic_manager_test") {
   module_out_path = "graphic_2d/rosen/modules/hyper_graphic_manager"
 
   sources = [
-    "hyper_graphic_manager_test.cpp",
     "hgm_frame_rate_manager_test.cpp",
+    "hyper_graphic_manager_test.cpp",
   ]
 
   deps = [
