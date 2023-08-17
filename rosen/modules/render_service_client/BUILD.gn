@@ -170,6 +170,9 @@ template("render_service_client_source_set") {
     } else {
       external_deps = [ "hilog:libhilog" ]
     }
+    if (rosen_cross_platform) {
+      deps += [ "$rosen_root/modules/platform:hilog" ]
+    }
 
     if (rss_enabled) {
       defines += [ "OHOS_RSS_CLIENT" ]
