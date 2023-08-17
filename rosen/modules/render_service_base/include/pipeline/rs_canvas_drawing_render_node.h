@@ -36,7 +36,7 @@ public:
     using SharedPtr = std::shared_ptr<RSCanvasDrawingRenderNode>;
     static inline constexpr RSRenderNodeType Type = RSRenderNodeType::CANVAS_DRAWING_NODE;
 
-    explicit RSCanvasDrawingRenderNode(NodeId id, std::weak_ptr<RSContext> context = {});
+    explicit RSCanvasDrawingRenderNode(NodeId id, const std::weak_ptr<RSContext>& context = {});
     virtual ~RSCanvasDrawingRenderNode();
 
     void ProcessRenderContents(RSPaintFilterCanvas& canvas) override;
