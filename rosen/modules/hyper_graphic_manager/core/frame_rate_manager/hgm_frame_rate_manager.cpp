@@ -119,7 +119,7 @@ uint32_t HgmFrameRateManager::GetDrawingFrameRate(const uint32_t refreshRate, co
     float currRatio = std::abs(dividedFps - preferredFps) / preferredFps;
     float ratio = currRatio;
     while (dividedFps > MIN_DRAWING_FPS - MARGIN) {
-        if (dividedFps < range.min_) {
+        if (dividedFps < range.min_ || dividedFps <= range.preferred_ / 2) {
             break;
         }
         if (dividedFps > range.max_) {
