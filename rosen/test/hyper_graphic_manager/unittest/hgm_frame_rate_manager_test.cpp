@@ -46,12 +46,11 @@ void HgmFrameRateMgrTest::TearDown() {}
 HWTEST_F(HgmFrameRateMgrTest, UniProcessData, Function | SmallTest | Level1)
 {
     std::unique_ptr<HgmFrameRateManager> mgr = std::make_unique<HgmFrameRateManager>();
-
     PART("CaseDescription") {
-        STEP("1. get an xml parser") {
+        STEP("1. get a HgmFrameRateManager") {
             STEP_ASSERT_NE(mgr, nullptr);
         }
-        STEP("2. check the result of configuration") {
+        STEP("2. check the result of UniProcessData") {
             FrameRateRangeData data;
             mgr->UniProcessData(data);
         }

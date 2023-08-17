@@ -23,7 +23,7 @@ namespace OHOS {
 namespace Rosen {
 namespace {
     constexpr float MARGIN = 0.00001;
-    constexpr int MIN_DRAWING_FPS = 10;
+    constexpr float MIN_DRAWING_DIVISOR = 10.0f;
 }
 
 void HgmFrameRateManager::UniProcessData(const FrameRateRangeData& data)
@@ -118,7 +118,8 @@ uint32_t HgmFrameRateManager::GetDrawingFrameRate(const uint32_t refreshRate, co
     float dividedFps = currRefreshRate;
     float currRatio = std::abs(dividedFps - preferredFps) / preferredFps;
     float ratio = currRatio;
-    while (dividedFps > MIN_DRAWING_FPS - MARGIN) {
+    const float minDrawingFps = currRefreshRate / MIN_DRAWING_DIVISOR;
+    while (dividedFps > minDrawingFps - MARGIN) {
         if (dividedFps < range.min_ || dividedFps <= range.preferred_ / 2) {
             break;
         }
