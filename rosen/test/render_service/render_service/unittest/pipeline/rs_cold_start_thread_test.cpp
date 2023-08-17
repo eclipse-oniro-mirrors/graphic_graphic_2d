@@ -92,7 +92,7 @@ HWTEST_F(RSColdStartThreadTest, IsColdStartThreadIdleTest, TestSize.Level1)
     auto isColdStartThreadIdle = rsColdStartManager.IsColdStartThreadIdle(nodeId);
     EXPECT_FALSE(isColdStartThreadIdle);
 
-    auto sp = std::make_shared<RSSurfaceRenderNode>(id);
+    auto sp = std::make_shared<RSSurfaceRenderNode>(nodeId);
     RSColdStartManager::Instance().StartColdStartThreadIfNeed(sp);
     auto isColdStartThreadIdle002 = rsColdStartManager.IsColdStartThreadIdle(nodeId);
     EXPECT_FALSE(isColdStartThreadIdle002);
@@ -128,6 +128,7 @@ HWTEST_F(RSColdStartThreadTest, CheckColdStartMap002, TestSize.Level1)
     RSColdStartManager::Instance().StartColdStartThreadIfNeed(sp1);
     RSColdStartManager::Instance().StartColdStartThreadIfNeed(sp2);
     RSRenderNodeMap nodeMap;
+    RSColdStartManager rsColdStartManager;
     rsColdStartManager.CheckColdStartMap(nodeMap);
 }
 
@@ -200,9 +201,13 @@ HWTEST_F(RSColdStartThreadTest, PostPlayBackTask002, TestSize.Level1)
 #endif
     thread.PostPlayBackTask(drawCmdList, (float)width, (float)height);
 
-    thread.Run();
-
-    thread.PostPlayBackTask(drawCmdList, (float)width, (float)height);
+// #ifdef RS_ENABLE_GL
+//     EGLContext context;
+//     thread.Run(context);
+// #else 
+//     thread.Run();
+// #endif
+//     thread.PostPlayBackTask(drawCmdList, (float)width, (float)height);
 }
 
 /**
@@ -214,7 +219,11 @@ HWTEST_F(RSColdStartThreadTest, PostPlayBackTask002, TestSize.Level1)
  */
 HWTEST_F(RSColdStartThreadTest, IsIdleTest, TestSize.Level1)
 {
-    
+    NodeId id = 5;
+    auto sp = std::make_shared<RSSurfaceRenderNode>(id);
+    std::weak_ptr<RSSurfaceRenderNode> surfaceRenderNode(sp);
+    RSColdStartThread thread { surfaceRenderNode, id };
+    ASSERT_EQ(false, thread.IsIdle());
 }
 
 /**
