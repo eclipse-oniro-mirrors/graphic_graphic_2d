@@ -527,10 +527,9 @@ void RSMainThread::CheckParallelSubThreadNodesStatus()
 bool RSMainThread::IsNeedSkip(NodeId instanceRootNodeId, pid_t pid)
 {
     return std::any_of(cacheCmdSkippedInfo_[pid].first.begin(), cacheCmdSkippedInfo_[pid].first.end(),
-        [&](const auto& cacheCmdSkipNodeId) {
+        [instanceRootNodeId](const auto& cacheCmdSkipNodeId) {
             return cacheCmdSkipNodeId == instanceRootNodeId;
-        }
-    );
+        });
 }
 
 void RSMainThread::SkipCommandByNodeId(std::vector<std::unique_ptr<RSTransactionData>>& transactionVec, pid_t pid)
