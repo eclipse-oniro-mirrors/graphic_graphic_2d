@@ -56,28 +56,11 @@ void RSEffectRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas
 {
     RSRenderNode::ProcessTransitionBeforeChildren(canvas);
 #ifndef USE_ROSEN_DRAWING
-    canvas.SaveEffectData();
     auto& properties = GetRenderProperties();
-    if (effectRegion_.has_value() && !(effectRegion_.value().isEmpty())) {
-        if (properties.GetBackgroundFilter() != nullptr) {
-            SkPath& path = effectRegion_.value();
-            auto effectIRect = path.getBounds().roundOut();
-            RSPropertiesPainter::DrawBackgroundEffect(properties, canvas, effectIRect);
-        }
-        if (properties.GetColorFilter() != nullptr) {
-            canvas.SetChildrenPath(effectRegion_.value());
-        }
+    if (effectRegion_.has_value() && !effectRegion_->isEmpty() && properties.GetBackgroundFilter() != nullptr) {
+        RSPropertiesPainter::DrawBackgroundEffect(properties, canvas, effectRegion_->getBounds());
     }
 #endif
-}
-
-void RSEffectRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
-{
-#ifndef USE_ROSEN_DRAWING
-    RSPropertiesPainter::DrawForegroundEffect(GetRenderProperties(), canvas);
-    canvas.RestoreEffectData();
-#endif
-    RSRenderNode::ProcessTransitionAfterChildren(canvas);
 }
 
 RectI RSEffectRenderNode::GetFilterRect() const
@@ -95,13 +78,18 @@ RectI RSEffectRenderNode::GetFilterRect() const
     }
 }
 
-#ifndef USE_ROSEN_DRAWING
 void RSEffectRenderNode::SetEffectRegion(const std::optional<SkPath>& region)
-#else
-void RSEffectRenderNode::SetEffectRegion(const std::optional<Drawing::Path>& region)
-#endif
 {
-    effectRegion_ = region;
+    if (!region.has_value()) {
+        effectRegion_.reset();
+        return;
+    }
+    auto matrix = GetRenderProperties().GetBoundsGeometry()->GetAbsMatrix();
+    SkMatrix revertMatrix;
+    // Map absolute matrix to local matrix
+    if (matrix.invert(&revertMatrix)) {
+        effectRegion_ = region.value().makeTransform(revertMatrix);
+    }
 }
 } // namespace Rosen
 } // namespace OHOS
