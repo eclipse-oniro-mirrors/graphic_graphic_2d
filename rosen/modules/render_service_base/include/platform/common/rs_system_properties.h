@@ -148,6 +148,7 @@ public:
 #if defined (ENABLE_DDGR_OPTIMIZE)
     static bool GetDDGRIntegrateEnable();
 #endif
+    static bool GetSnapshotWithDMAEnabled();
 private:
     RSSystemProperties() = default;
 

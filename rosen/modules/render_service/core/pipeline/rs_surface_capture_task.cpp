@@ -121,14 +121,20 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTask::Run()
     node->Process(visitor_);
 #if (defined RS_ENABLE_GL) && (defined RS_ENABLE_EGLIMAGE)
 #ifndef USE_ROSEN_DRAWING
-    sk_sp<SkImage> img(skSurface.get()->makeImageSnapshot());
-    if (!img) {
-        RS_LOGE("RSSurfaceCaptureTask::Run: img is nullptr");
-        return nullptr;
-    }
-    if (!CopyDataToPixelMap(img, pixelmap)) {
-        RS_LOGE("RSSurfaceCaptureTask::Run: CopyDataToPixelMap failed");
-        return nullptr;
+    if (RSSystemProperties::GetSnapshotWithDMAEnabled()) {
+        skSurface->flushAndSubmit();
+        glFinish();
+        ReleaseGLMemory();
+    } else {
+        sk_sp<SkImage> img(skSurface.get()->makeImageSnapshot());
+        if (!img) {
+            RS_LOGE("RSSurfaceCaptureTask::Run: img is nullptr");
+            return nullptr;
+        }
+        if (!CopyDataToPixelMap(img, pixelmap)) {
+            RS_LOGE("RSSurfaceCaptureTask::Run: CopyDataToPixelMap failed");
+            return nullptr;
+        }
     }
 #else
     std::shared_ptr<Drawing::Image> img(surface.get()->GetImageSnapshot());
@@ -263,11 +269,126 @@ sk_sp<SkSurface> RSSurfaceCaptureTask::CreateSurface(const std::unique_ptr<Media
         return nullptr;
     }
     renderContext->SetUpGrContext();
-    return SkSurface::MakeRenderTarget(renderContext->GetGrContext(), SkBudgeted::kNo, info);
+    if (RSSystemProperties::GetSnapshotWithDMAEnabled()) {
+        sptr<SurfaceBuffer> surfaceBuffer = DmaMemAlloc(info, pixelmap);
+        return GetSkSurfaceFromSurfaceBuffer(renderContext, surfaceBuffer);
+    } else {
+        return SkSurface::MakeRenderTarget(renderContext->GetGrContext(), SkBudgeted::kNo, info);
+    }
 #endif
 #endif
     return SkSurface::MakeRasterDirect(info, address, pixelmap->GetRowBytes());
 }
+
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
+#ifndef USE_ROSEN_DRAWING
+void RSSurfaceCaptureTask::ReleaseGLMemory()
+{
+    if (texId_ != 0U) {
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glDeleteTextures(1, &texId_);
+        texId_ = 0U;
+    }
+    if (nativeWindowBuffer_ != nullptr) {
+        DestroyNativeWindowBuffer(nativeWindowBuffer_);
+        nativeWindowBuffer_ = nullptr;
+    }
+    if (eglImage_ != EGL_NO_IMAGE_KHR) {
+        auto disp = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+        eglDestroyImageKHR(disp, eglImage_);
+        eglImage_ = EGL_NO_IMAGE_KHR;
+    }
+}
+#endif
+#endif
+
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
+#ifndef USE_ROSEN_DRAWING
+sptr<SurfaceBuffer> RSSurfaceCaptureTask::DmaMemAlloc(SkImageInfo &dstInfo, const std::unique_ptr<Media::PixelMap>& pixelmap)
+{
+#if defined(_WIN32) || defined(_APPLE) || defined(A_PLATFORM) || defined(IOS_PLATFORM)
+    RS_LOGE("Unsupport dma mem alloc");
+    return nullptr;
+#else
+    sptr<SurfaceBuffer> surfaceBuffer = SurfaceBuffer::Create();
+    BufferRequestConfig requestConfig = {
+        .width = dstInfo.width(),
+        .height = dstInfo.height(),
+        .strideAlignment = 0x8, // set 0x8 as default value to alloc SurfaceBufferImpl
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888, // PixelFormat
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_HW_RENDER | BUFFER_USAGE_HW_TEXTURE | BUFFER_USAGE_MEM_DMA,
+        .timeout = 0,
+        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB,
+        .transform = GraphicTransformType::GRAPHIC_ROTATE_NONE,
+    };
+    GSError ret = surfaceBuffer->Alloc(requestConfig);
+    if (ret != GSERROR_OK) {
+        RS_LOGE("SurfaceBuffer Alloc failed, %{public}s", GSErrorStr(ret).c_str());
+        return nullptr;
+    }
+    void* nativeBuffer = surfaceBuffer.GetRefPtr();
+    OHOS::RefBase *ref = reinterpret_cast<OHOS::RefBase *>(nativeBuffer);
+    ref->IncStrongRef(ref);
+    uint32_t bufferSize = pixelmap->GetByteCount();
+    pixelmap->SetPixelsAddr(surfaceBuffer->GetVirAddr(), nativeBuffer, bufferSize, Media::AllocatorType::DMA_ALLOC, nullptr);
+    return surfaceBuffer;
+#endif
+}
+#endif
+#endif
+
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
+#ifndef USE_ROSEN_DRAWING
+sk_sp<SkSurface> RSSurfaceCaptureTask::GetSkSurfaceFromSurfaceBuffer(std::shared_ptr<RenderContext> renderContext, sptr<SurfaceBuffer> surfaceBuffer)
+{
+    if (surfaceBuffer == nullptr) {
+        RS_LOGE("GetSkImageFromSurfaceBuffer surfaceBuffer is nullptr");
+        return nullptr;
+    }
+    if (nativeWindowBuffer_ == nullptr) {
+        nativeWindowBuffer_ = CreateNativeWindowBufferFromSurfaceBuffer(&surfaceBuffer);
+        if (!nativeWindowBuffer_) {
+            RS_LOGE("GetSkImageFromSurfaceBuffer create native window buffer fail");
+            return nullptr;
+        }
+    }
+    EGLint attrs[] = {
+        EGL_IMAGE_PRESERVED,
+        EGL_TRUE,
+        EGL_NONE,
+    };
+
+    auto disp = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    if (eglImage_ == EGL_NO_IMAGE_KHR) {
+        eglImage_ = eglCreateImageKHR(disp, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_OHOS, nativeWindowBuffer_, attrs);
+        if (eglImage_ == EGL_NO_IMAGE_KHR) {
+            RS_LOGE("%s create egl image fail %d", __func__, eglGetError());
+            return nullptr;
+        }
+    }
+
+    // Create texture object
+    if (texId_ == 0U) {
+        glGenTextures(1, &texId_);
+        glBindTexture(GL_TEXTURE_2D, texId_);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, static_cast<GLeglImageOES>(eglImage_));
+    }
+
+    GrGLTextureInfo textureInfo = { GL_TEXTURE_2D, texId_, GL_RGBA8_OES };
+
+    GrBackendTexture backendTexture(
+        surfaceBuffer->GetWidth(), surfaceBuffer->GetHeight(), GrMipMapped::kNo, textureInfo);
+
+    auto skSurface = SkSurface::MakeFromBackendTexture(renderContext->GetGrContext(), backendTexture, kTopLeft_GrSurfaceOrigin, 0,
+        kRGBA_8888_SkColorType, SkColorSpace::MakeSRGB(), nullptr);
+    return skSurface;
+}
+#endif
+#endif
 
 bool RSSurfaceCaptureTask::CopyDataToPixelMap(sk_sp<SkImage> img, const std::unique_ptr<Media::PixelMap>& pixelmap)
 {
