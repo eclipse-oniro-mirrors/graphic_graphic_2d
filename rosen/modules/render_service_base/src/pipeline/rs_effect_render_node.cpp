@@ -65,17 +65,14 @@ void RSEffectRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas
 
 RectI RSEffectRenderNode::GetFilterRect() const
 {
-    if (effectRegion_.has_value()) {
 #ifndef USE_ROSEN_DRAWING
-        auto bounds = effectRegion_->getBounds();
+    if (effectRegion_.has_value()) {
+        auto& matrix = GetRenderProperties().GetBoundsGeometry()->GetAbsMatrix();
+        auto bounds = effectRegion_->makeTransform(matrix).getBounds();
         return {bounds.x(), bounds.y(), bounds.width(), bounds.height()};
-#else
-        auto bounds = effectRegion_->GetBounds();
-        return {bounds.GetLeft(), bounds.GetTop(), bounds.GetWidth(), bounds.GetHeight()};
-#endif
-    } else {
-        return {};
     }
+#endif
+    return {};
 }
 
 void RSEffectRenderNode::SetEffectRegion(const std::optional<SkPath>& region)

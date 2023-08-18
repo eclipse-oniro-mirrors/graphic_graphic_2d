@@ -1240,24 +1240,33 @@ void RSPropertiesPainter::DrawBackgroundEffect(
 }
 #endif
 
+void RSPropertiesPainter::ApplyBackgroundEffectFallback(const RSProperties& properties, RSPaintFilterCanvas& canvas)
+{
+    auto parentNode = properties.backref_.lock();
+    while (parentNode && !parentNode->IsInstanceOf<RSEffectRenderNode>()) {
+        parentNode = parentNode->GetParent().lock();
+    }
+    if (!parentNode) {
+        ROSEN_LOGE("RSPropertiesPainter::ApplyBackgroundEffectFallback: parentNode null, draw filter failed.");
+        return;
+    }
+    auto& filter = parentNode->GetRenderProperties().GetBackgroundFilter();
+    if (filter == nullptr || !filter->IsValid()) {
+        ROSEN_LOGE("RSPropertiesPainter::ApplyBackgroundEffectFallback: parent EffectRenderNode has no filter, "
+                   "draw filter failed.");
+        return;
+    }
+    DrawFilter(properties, canvas, FilterType::BACKGROUND_FILTER, std::nullopt, filter);
+}
+
 void RSPropertiesPainter::ApplyBackgroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas)
 {
 #ifndef USE_ROSEN_DRAWING
     const auto& effectData = canvas.GetEffectData();
     if (effectData == nullptr || effectData->cachedImage_ == nullptr) {
-        // no effectData available, draw background filter directly
-        auto parentNode = properties.backref_.lock();
-        while (parentNode && !parentNode->IsInstanceOf<RSEffectRenderNode>()) {
-            parentNode = parentNode->GetParent().lock();
-        }
-        if (!parentNode) {
-            return;
-        }
-        auto& filter = parentNode->GetRenderProperties().GetBackgroundFilter();
-        if (filter == nullptr || !filter->IsValid()) {
-            return;
-        }
-        DrawFilter(properties, canvas, FilterType::BACKGROUND_FILTER, std::nullopt, filter);
+        // no effectData available, draw background filter in fallback method
+        ROSEN_LOGD("RSPropertiesPainter::ApplyBackgroundEffect: effectData null, try fallback method.");
+        ApplyBackgroundEffectFallback(properties, canvas);
         return;
     }
     RS_TRACE_NAME("ApplyBackgroundEffect");
