@@ -18,6 +18,7 @@
 
 #include <memory>
 
+#include "common/rs_macros.h"
 #include "drawing/engine_adapter/impl_interface/core_canvas_impl.h"
 
 namespace OHOS {
@@ -30,7 +31,7 @@ enum class SrcRectConstraint {
 /*
  * @brief  Contains the option used to create the layer.
  */
-class SaveLayerOps {
+class RS_EXPORT SaveLayerOps {
 public:
     // How to allocate layer
     enum Flags {
@@ -90,7 +91,7 @@ private:
     uint32_t saveLayerFlags_;
 };
 
-class CoreCanvas {
+class RS_EXPORT CoreCanvas {
 public:
     CoreCanvas();
     explicit CoreCanvas(void* rawCanvas);
