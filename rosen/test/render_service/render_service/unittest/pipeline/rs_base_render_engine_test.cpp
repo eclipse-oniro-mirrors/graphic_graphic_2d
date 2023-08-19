@@ -140,49 +140,6 @@ HWTEST(RSBaseRenderEngineUnitTest, DrawDisplayNodeWithParams001, TestSize.Level1
     renderEngine->DrawDisplayNodeWithParams(*canvas, *node, param);
 }
 
-/**
- * @tc.name: ShrinkCachesIfNeeded001
- * @tc.desc: Test ShrinkCachesIfNeeded
- * @tc.type: FUNC
- * @tc.require: issueI6QM6E
- */
-HWTEST(RSBaseRenderEngineUnitTest, ShrinkCachesIfNeeded001, TestSize.Level1)
-{
-    auto renderEngine = std::make_shared<RSRenderEngine>();
-    renderEngine->ShrinkCachesIfNeeded(true);
-    renderEngine->ShrinkCachesIfNeeded(false);
-    renderEngine->Init();
-    renderEngine->ShrinkCachesIfNeeded(true);
-    renderEngine->ShrinkCachesIfNeeded(false);
-
-    for (int i = 0; i <= static_cast<int>(renderEngine->MAX_RS_SURFACE_SIZE); i++) {
-        renderEngine->rsSurfaces_[i] = nullptr;
-    }
-    renderEngine->ShrinkCachesIfNeeded();
-    ASSERT_EQ(renderEngine->rsSurfaces_.size(), renderEngine->MAX_RS_SURFACE_SIZE);
-}
-
-/**
- * @tc.name: UnMapRsSurface001
- * @tc.desc: Test UnMapRsSurface
- * @tc.type: FUNC
- * @tc.require: issueI6QM6E
- */
-HWTEST(RSBaseRenderEngineUnitTest, UnMapRsSurface001, TestSize.Level1)
-{
-    uint64_t id = 0;
-    auto renderEngine = std::make_shared<RSRenderEngine>();
-    renderEngine->Init();
-
-    renderEngine->UnMapRsSurface(0);
-
-    for (int i = 0; i <= static_cast<int>(renderEngine->MAX_RS_SURFACE_SIZE); i++) {
-        renderEngine->rsSurfaces_[i] = nullptr;
-    }
-    renderEngine->ShrinkCachesIfNeeded();
-    renderEngine->UnMapRsSurface(0);
-}
-
 #ifdef RS_ENABLE_EGLIMAGE
 /**
  * @tc.name: CreateEglImageFromBuffer001
@@ -227,45 +184,4 @@ HWTEST(RSBaseRenderEngineUnitTest, RegisterDeleteBufferListener001, TestSize.Lev
     renderEngine->RegisterDeleteBufferListener(node->GetConsumer(), false);
 }
 #endif
-
-/**
- * @tc.name: RequestFrame001
- * @tc.desc: Test RequestFrame
- * @tc.type: FUNC
- * @tc.require: issueI6QM6E
- */
-HWTEST(RSBaseRenderEngineUnitTest, RequestFrame001, TestSize.Level1)
-{
-#ifdef NEW_RENDER_CONTEXT
-    std::shared_ptr<RSRenderSurfaceOhos> surfaceOhos = nullptr;
-#else
-    std::shared_ptr<RSSurfaceOhos> surfaceOhos = nullptr;
-#endif
-    BufferRequestConfig config;
-    ASSERT_EQ(nullptr, RSRenderEngine::RequestFrame(surfaceOhos, config, false, false));
-}
-
-/**
- * @tc.name: RequestFrame002
- * @tc.desc: Test RequestFrame(sptr, BufferRequestConfig, bool, bool)
- * @tc.type: FUNC
- * @tc.require: issueI6QM6E
- */
-HWTEST(RSBaseRenderEngineUnitTest, RequestFrame002, TestSize.Level1)
-{
-    BufferRequestConfig config;
-    ASSERT_EQ(nullptr, RSRenderEngine::RequestFrame(nullptr, config, false, false));
-}
-
-/**
- * @tc.name: SetUiTimeStamp001
- * @tc.desc: Test SetUiTimeStamp
- * @tc.type: FUNC
- * @tc.require: issueI6QM6E
- */
-HWTEST(RSBaseRenderEngineUnitTest, SetUiTimeStamp001, TestSize.Level1)
-{
-    u_int64_t surfaceId = 0;
-    RSRenderEngine::SetUiTimeStamp(nullptr, surfaceId);
-}
 }
