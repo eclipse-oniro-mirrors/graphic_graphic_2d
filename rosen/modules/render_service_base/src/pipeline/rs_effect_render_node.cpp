@@ -57,7 +57,12 @@ void RSEffectRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas
     RSRenderNode::ProcessTransitionBeforeChildren(canvas);
 #ifndef USE_ROSEN_DRAWING
     auto& properties = GetRenderProperties();
-    if (effectRegion_.has_value() && !effectRegion_->isEmpty() && properties.GetBackgroundFilter() != nullptr) {
+    // Disable effect region if either of the following conditions is met:
+    // 1. Effect region is null or empty
+    // 2. Background filter is null
+    // 3. Canvas is offscreen
+    if (effectRegion_.has_value() && !effectRegion_->isEmpty() && properties.GetBackgroundFilter() != nullptr &&
+        canvas.GetCacheType() != RSPaintFilterCanvas::CacheType::OFFSCREEN) {
         RSPropertiesPainter::DrawBackgroundEffect(properties, canvas, effectRegion_->getBounds());
     }
 #endif
