@@ -100,17 +100,19 @@ bool KawaseBlurFilter::ApplyKawaseBlur(SkCanvas& canvas, const sk_sp<SkImage>& i
     }
     auto src = param.src;
     auto dst = param.dst;
-    auto srcRect = SkIRect::MakeLTRB(src.left(), src.top(), src.right(), src.bottom());
-    auto input = image;
-    if (image->bounds() != srcRect && image->bounds().contains(srcRect)) {
-        if (auto resizedImage = image->makeSubset(srcRect, canvas.recordingContext()->asDirectContext())) {
-            input = resizedImage;
-        }
-    }
     static auto useKawaseOriginal = RSSystemProperties::GetKawaseOriginalEnabled();
     if (param.radius <= 0 || useKawaseOriginal) {
         OutputOriginalImage(canvas, input, param);
         return true;
+    }
+    auto srcRect = SkIRect::MakeLTRB(src.left(), src.top(), src.right(), src.bottom());
+    auto input = image;
+    if (image->bounds() != srcRect) {
+        if (auto resizedImage = image->makeSubset(srcRect, canvas.recordingContext()->asDirectContext())) {
+            input = resizedImage;
+        } else {
+            ROSEN_LOGE("KawaseBlurFilter::resize image failed, use original image");
+        }
     }
     ComputeRadiusAndScale(param.radius);
     RS_OPTIONAL_TRACE_BEGIN("ApplyKawaseBlur " + GetDescription());
