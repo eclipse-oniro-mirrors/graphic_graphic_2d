@@ -51,7 +51,6 @@ void RSCanvasDrawingRenderNode::OnTreeStateChanged()
 {
     RSRenderNode::OnTreeStateChanged();
 #if !defined(USE_ROSEN_DRAWING) && defined(RS_ENABLE_GL) && defined(NEW_SKIA)
-    
     if (IsOnTheTree()) {
         return;
     }
