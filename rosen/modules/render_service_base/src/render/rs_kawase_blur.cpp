@@ -102,11 +102,11 @@ bool KawaseBlurFilter::ApplyKawaseBlur(SkCanvas& canvas, const sk_sp<SkImage>& i
     auto dst = param.dst;
     static auto useKawaseOriginal = RSSystemProperties::GetKawaseOriginalEnabled();
     if (param.radius <= 0 || useKawaseOriginal) {
-        OutputOriginalImage(canvas, input, param);
+        OutputOriginalImage(canvas, image, param);
         return true;
     }
-    auto srcRect = SkIRect::MakeLTRB(src.left(), src.top(), src.right(), src.bottom());
     auto input = image;
+    auto srcRect = SkIRect::MakeLTRB(src.left(), src.top(), src.right(), src.bottom());
     if (image->bounds() != srcRect) {
         if (auto resizedImage = image->makeSubset(srcRect, canvas.recordingContext()->asDirectContext())) {
             input = resizedImage;
