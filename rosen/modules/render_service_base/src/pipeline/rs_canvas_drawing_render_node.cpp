@@ -50,23 +50,18 @@ RSCanvasDrawingRenderNode::~RSCanvasDrawingRenderNode()
 void RSCanvasDrawingRenderNode::OnTreeStateChanged()
 {
     RSRenderNode::OnTreeStateChanged();
+#if !defined(USE_ROSEN_DRAWING) && defined(RS_ENABLE_GL) && defined(NEW_SKIA)
+    
     if (IsOnTheTree()) {
         return;
     }
     
-#ifndef USE_ROSEN_DRAWING
-#if (defined RS_ENABLE_GL)
-    #ifdef NEW_SKIA
-        auto grContext = canvas_ != nullptr ? static_cast<GrDirectContext*>(canvas_->recordingContext()) : nullptr;
-    #else
-    #endif
+    auto grContext = canvas_ != nullptr ? static_cast<GrDirectContext*>(canvas_->recordingContext()) : nullptr;
     if (grContext == nullptr) {
         RS_LOGE("RSCanvasDrawingRenderNode: GrContext is nullptr");
         return;
     }
     grContext->purgeUnlockedResources(true);
-#else 
-#endif
 #endif
 }
 
