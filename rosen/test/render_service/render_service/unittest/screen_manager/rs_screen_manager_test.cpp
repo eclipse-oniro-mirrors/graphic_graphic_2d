@@ -577,31 +577,31 @@ HWTEST_F(RSScreenManagerTest, RemoveVirtualScreen_002, TestSize.Level1)
     auto screenManager = CreateOrGetScreenManager();
     ASSERT_NE(nullptr, screenManager);
 
-    std::string name_001 = "virtualScreen01";
-    uint32_t width_001 = 480;
-    uint32_t height_001 = 320;
+    std::string name001 = "virtualScreen01";
+    uint32_t width001 = 480;
+    uint32_t height001 = 320;
 
-    auto csurface_001 = IConsumerSurface::Create();
-    ASSERT_NE(csurface_001, nullptr);
-    auto producer_001 = csurface_001->GetProducer();
-    auto psurface_001 = Surface::CreateSurfaceAsProducer(producer_001);
-    ASSERT_NE(psurface_001, nullptr);
+    auto csurface001 = IConsumerSurface::Create();
+    ASSERT_NE(csurface001, nullptr);
+    auto producer001 = csurface001->GetProducer();
+    auto psurface001 = Surface::CreateSurfaceAsProducer(producer001);
+    ASSERT_NE(psurface001, nullptr);
 
-    std::string name_002 = "virtualScreen02";
-    uint32_t width_002 = 480;
-    uint32_t height_002 = 320;
+    auto id001 = screenManager->CreateVirtualScreen(name001, width001, height001, psurface001);
+    ASSERT_NE(INVALID_SCREEN_ID, id001);
 
-    auto csurface_002 = IConsumerSurface::Create();
-    ASSERT_NE(csurface_002, nullptr);
-    auto producer_002 = csurface_002->GetProducer();
-    auto psurface_002 = Surface::CreateSurfaceAsProducer(producer_002);
-    ASSERT_NE(psurface_002, nullptr);
+    std::string name002 = "virtualScreen02";
+    uint32_t width002 = 480;
+    uint32_t height002 = 320;
 
-    auto id_001 = screenManager->CreateVirtualScreen(name_001, width_001, height_001, psurface_001);
-    ASSERT_NE(INVALID_SCREEN_ID, id_001);
+    auto csurface002 = IConsumerSurface::Create();
+    ASSERT_NE(csurface002, nullptr);
+    auto producer002 = csurface002->GetProducer();
+    auto psurface002 = Surface::CreateSurfaceAsProducer(producer002);
+    ASSERT_NE(psurface002, nullptr);
 
-    auto id_002 = screenManager->CreateVirtualScreen(name_002, width_002, height_002, psurface_002);
-    ASSERT_NE(INVALID_SCREEN_ID, id_002);
+    auto id002 = screenManager->CreateVirtualScreen(name002, width002, height002, psurface002);
+    ASSERT_NE(INVALID_SCREEN_ID, id002);
 
     ScreenId screenId = INVALID_SCREEN_ID;
     screenManager->RemoveVirtualScreen(screenId);
