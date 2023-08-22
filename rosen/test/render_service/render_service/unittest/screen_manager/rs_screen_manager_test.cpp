@@ -567,6 +567,47 @@ HWTEST_F(RSScreenManagerTest, RemoveVirtualScreen_001, TestSize.Level1)
 }
 
 /*
+ * @tc.name: RemoveVirtualScreen_002
+ * @tc.desc: Test RemoveVirtualScreen
+ * @tc.type: FUNC
+ * @tc.require: issueI7AABN
+ */
+HWTEST_F(RSScreenManagerTest, RemoveVirtualScreen_002, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+
+    std::string name_001 = "virtualScreen01";
+    uint32_t width_001 = 480;
+    uint32_t height_001 = 320;
+
+    auto csurface_001 = IConsumerSurface::Create();
+    ASSERT_NE(csurface_001, nullptr);
+    auto producer_001 = csurface_001->GetProducer();
+    auto psurface_001 = Surface::CreateSurfaceAsProducer(producer_001);
+    ASSERT_NE(psurface_001, nullptr);
+
+    std::string name_002 = "virtualScreen02";
+    uint32_t width_002 = 480;
+    uint32_t height_002 = 320;
+
+    auto csurface_002 = IConsumerSurface::Create();
+    ASSERT_NE(csurface_002, nullptr);
+    auto producer_002 = csurface_002->GetProducer();
+    auto psurface_002 = Surface::CreateSurfaceAsProducer(producer_002);
+    ASSERT_NE(psurface_002, nullptr);
+
+    auto id_001 = screenManager->CreateVirtualScreen(name_001, width_001, height_001, psurface_001);
+    ASSERT_NE(INVALID_SCREEN_ID, id_001);
+
+    auto id_002 = screenManager->CreateVirtualScreen(name_002, width_002, height_002, psurface_002);
+    ASSERT_NE(INVALID_SCREEN_ID, id_002);
+
+    ScreenId screenId = INVALID_SCREEN_ID;
+    screenManager->RemoveVirtualScreen(screenId);
+}
+
+/*
  * @tc.name: SetVirtualScreenResolution_002
  * @tc.desc: Test SetVirtualScreenResolution
  * @tc.type: FUNC
