@@ -703,23 +703,6 @@ void RSRenderNode::UpdateParentChildrenRect(std::shared_ptr<RSRenderNode> parent
     }
 }
 
-bool RSRenderNode::IsFilterCacheValid() const
-{
-    if (!RSProperties::FilterCacheEnabled) {
-        return false;
-    }
-#ifndef USE_ROSEN_DRAWING
-    // background filter
-    auto& bgManager = renderProperties_.GetFilterCacheManager(false);
-    // foreground filter
-    auto& frManager = renderProperties_.GetFilterCacheManager(true);
-    if ((bgManager && bgManager->IsCacheValid()) || (frManager && frManager->IsCacheValid())) {
-        return true;
-    }
-#endif
-    return false;
-}
-
 void RSRenderNode::UpdateFilterCacheWithDirty(RSDirtyRegionManager& dirtyManager, bool isForeground) const
 {
 #ifndef USE_ROSEN_DRAWING
@@ -741,6 +724,12 @@ void RSRenderNode::UpdateFilterCacheWithDirty(RSDirtyRegionManager& dirtyManager
     auto isCachedImageRegionIntersectedWithDirtyRegion =
         cachedImageRect.IntersectRect(dirtyManager.GetIntersectedVisitedDirtyRect(geoPtr->GetAbsRect()));
     manager->UpdateCacheStateWithDirtyRegion(isCachedImageRegionIntersectedWithDirtyRegion);
+    // record node's cache area if it has valid filter cache
+    if (manager->IsCacheValid()) {
+        dirtyManager.UpdateCacheableFilterRect(cachedImageRect);
+    } else {
+        dirtyManager.ResetSubNodeFilterCacheValid();
+    }
 #endif
 }
 
