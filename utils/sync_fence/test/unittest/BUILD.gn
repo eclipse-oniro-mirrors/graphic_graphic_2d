@@ -41,6 +41,46 @@ ohos_unittest("sync_fence_test") {
 
 ## UnitTest sync_fence_test }}}
 
+## UnitTest sync_fence_timeline_test {{{
+ohos_unittest("sync_fence_timeline_test") {
+  module_out_path = module_out_path
+
+  sources = [ "sync_fence_timeline_test.cpp" ]
+
+  deps = [
+    ":sync_fence_common",
+    "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "graphic_2d:sync_fence_timeline",
+    "hilog:libhilog",
+  ]
+}
+
+## UnitTest sync_fence_timeline_test }}}
+
+## UnitTest sync_fence_tracker_test {{{
+ohos_unittest("sync_fence_tracker_test") {
+  module_out_path = module_out_path
+
+  sources = [ "sync_fence_tracker_test.cpp" ]
+
+  deps = [
+    ":sync_fence_common",
+    "//foundation/communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "graphic_2d:sync_fence_tracker",
+    "hilog:libhilog",
+  ]
+}
+
+## UnitTest sync_fence_tracker_test }}}
+
 ## Build sync_fence_common.a {{{
 config("sync_fence_common_public_config") {
   cflags = [

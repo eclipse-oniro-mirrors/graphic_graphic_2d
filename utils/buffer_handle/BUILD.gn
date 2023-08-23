@@ -37,9 +37,8 @@ ohos_static_library("buffer_handle") {
   part_name = "graphic_2d"
 }
 
-group("test) {
+group("test") {
   testonly = true
   deps = [ "test:test" ]
 }
-
 ## buffer_handle.a }}}
