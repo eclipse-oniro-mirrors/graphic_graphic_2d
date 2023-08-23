@@ -53,6 +53,7 @@ enum HgmErrCode {
 
     HGM_SCREEN_MODE_EXIST,
     HGM_SCREEN_PARAM_ERROR,
+    FINAL_RANGE_NOT_VALID,
 };
 
 enum HgmXmlNode {

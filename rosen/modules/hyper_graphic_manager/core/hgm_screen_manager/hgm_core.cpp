@@ -395,4 +395,18 @@ void HgmCore::SetActiveScreenId(ScreenId id)
     activeScreenId_ = id;
 }
 
+std::shared_ptr<HgmOneShotTimer> HgmCore::GetScreenTimer(ScreenId screenId)
+{
+    if (auto timer = screenTimerMap_.find(screenId); timer != screenTimerMap_.end()) {
+        return timer->second;
+    }
+    return nullptr;
+}
+
+void HgmCore::InsertScreenTimer(ScreenId screenId, std::shared_ptr<HgmOneShotTimer> timer)
+{
+    screenTimerMap_[screenId] = timer;
+}
+
+
 } // namespace OHOS::Rosen

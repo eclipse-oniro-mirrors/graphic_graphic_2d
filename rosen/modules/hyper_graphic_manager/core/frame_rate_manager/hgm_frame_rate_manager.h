@@ -23,6 +23,7 @@
 #include "common/rs_common_def.h"
 #include "parameters.h"
 #include "screen_manager/screen_types.h"
+#include "hgm_timer.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -36,7 +37,7 @@ class HgmFrameRateManager {
 public:
     HgmFrameRateManager() {}
 
-    void UniProcessData(const FrameRateRangeData& data);
+    int32_t UniProcessData(const FrameRateRangeData& data, bool forceUpdateFlag);
     void Reset();
 private:
     void CalcRefreshRate(const ScreenId id, const FrameRateRange& range);

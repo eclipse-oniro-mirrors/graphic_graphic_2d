@@ -158,6 +158,10 @@ public:
         return frameRateRangeData_;
     }
     void CollectFrameRateRange(RSRenderNode& node);
+    void SetForceUpdateFlag(bool flag)
+    {
+        forceUpdateFlag_ = flag;
+    }
 
 #ifndef USE_ROSEN_DRAWING
     using RenderParam = std::tuple<std::shared_ptr<RSRenderNode>, RSPaintFilterCanvas::CanvasStatus>;
@@ -275,6 +279,7 @@ private:
 
     bool DrawBlurInCache(RSRenderNode& node);
     void UpdateCacheRenderNodeMapWithBlur(RSRenderNode& node);
+    void IdleTimerExpiredCallback(ScreenId screenId) const;
 
 #ifndef USE_ROSEN_DRAWING
     sk_sp<SkSurface> offscreenSurface_;                 // temporary holds offscreen surface
@@ -428,6 +433,7 @@ private:
 
     std::unordered_map<NodeId, std::unordered_map<NodeId, RectI>> allCacheFilterRects_ = {};
     std::stack<std::unordered_map<NodeId, RectI>> curCacheFilterRects_ = {};
+    bool forceUpdateFlag_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

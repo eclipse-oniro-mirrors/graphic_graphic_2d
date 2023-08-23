@@ -25,13 +25,14 @@ namespace {
     constexpr float MARGIN = 0.00001;
     constexpr float MIN_DRAWING_DIVISOR = 10.0f;
     constexpr float DIVISOR_TWO = 2.0f;
+    constexpr int32_t DEFAULT_PREFERRED = 60;
 }
 
-void HgmFrameRateManager::UniProcessData(const FrameRateRangeData& data)
+int32_t HgmFrameRateManager::UniProcessData(const FrameRateRangeData& data, bool forceUpdateFlag)
 {
     auto screenId = data.screenId;
     if (screenId == INVALID_SCREEN_ID) {
-        return;
+        return HGM_ERROR;
     }
 
     FrameRateRange finalRange;
@@ -39,8 +40,17 @@ void HgmFrameRateManager::UniProcessData(const FrameRateRangeData& data)
     for (auto appRange : data.multiAppRange) {
         finalRange.Merge(appRange.second);
     }
+
     if (!finalRange.IsValid()) {
-        return;
+        if (forceUpdateFlag) {
+            finalRange.max_ = DEFAULT_PREFERRED;
+            finalRange.preferred_ = DEFAULT_PREFERRED;
+        } else {
+            return FINAL_RANGE_NOT_VALID;
+        }
+    }
+    if (auto timer = HgmCore::Instance().GetScreenTimer(screenId); timer != nullptr) {
+        timer->reset();
     }
 
     CalcRefreshRate(screenId, finalRange);
@@ -63,6 +73,7 @@ void HgmFrameRateManager::UniProcessData(const FrameRateRangeData& data)
     }
     // [Temporary func]: Switch refresh rate immediately, func will be removed in the future.
     ExecuteSwitchRefreshRate(screenId);
+    return EXEC_SUCCESS;
 }
 
 void HgmFrameRateManager::CalcRefreshRate(const ScreenId id, const FrameRateRange& range)

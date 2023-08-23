@@ -41,6 +41,7 @@
 #include "common/rs_common_def.h"
 #include "common/rs_optional_trace.h"
 #include "hgm_core.h"
+#include "hgm_one_shot_timer.h"
 #include "platform/ohos/rs_jank_stats.h"
 #include "platform/ohos/overdraw/rs_overdraw_controller.h"
 #include "pipeline/rs_base_render_node.h"
@@ -124,6 +125,7 @@ constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
 #ifdef RS_ENABLE_GL
 constexpr size_t DEFAULT_SKIA_CACHE_SIZE        = 96 * (1 << 20);
 constexpr int DEFAULT_SKIA_CACHE_COUNT          = 2 * (1 << 12);
+constexpr int32_t IDLE_TIMER_EXPIRED = 200; // ms
 #endif
 const std::map<int, int32_t> BLUR_CNT_TO_BLUR_CODE {
     { 1, 10021 },
@@ -154,7 +156,13 @@ void PerfRequest(int32_t perfRequestCode, bool onOffTag)
     RS_LOGD("RSMainThread::soc perf info [%{public}d %{public}d]", perfRequestCode, onOffTag);
 #endif
 }
+void idleTimerExpiredCallback()
+{
+    RSMainThread::Instance()->SetForceUpdateUniRenderFlag(true);
+    RSMainThread::Instance()->RequestNextVSync();
 }
+}
+
 
 #if defined(ACCESSIBILITY_ENABLE)
 class AccessibilityObserver : public AccessibilityConfigObserver {
@@ -1126,7 +1134,7 @@ void RSMainThread::NotifyDrivenRenderFinish()
 #endif
 }
 
-void RSMainThread::ProcessHgmFrameRate(FrameRateRangeData data, uint64_t timestamp)
+void RSMainThread::ProcessHgmFrameRate(FrameRateRangeData data, uint64_t timestamp, bool forceUpdateFlag)
 {
     // 0.[Planning]: The HGM logic here will be processed using sub-threads in the future.
 
@@ -1134,8 +1142,19 @@ void RSMainThread::ProcessHgmFrameRate(FrameRateRangeData data, uint64_t timesta
     // 1.[Planning]: Check and processing software vsync frame rate switching task for RS.
 
     // 2.Decision-making process for current frame.
-    frameRateMgr_->UniProcessData(data);
-
+    auto screenId = data.screenId;
+    auto &hgmCore = HgmCore::Instance();
+    if (auto res = frameRateMgr_->UniProcessData(data, forceUpdateFlag); res ==  FINAL_RANGE_NOT_VALID) {
+        if (auto oldtimer = hgmCore.GetScreenTimer(screenId); oldtimer == nullptr) {
+            auto newTimer = std::make_shared<HgmOneShotTimer>(
+                "idle_timer" + std::to_string(screenId),
+                std::chrono::milliseconds(IDLE_TIMER_EXPIRED),
+                nullptr, []() {idleTimerExpiredCallback();}
+            );
+            hgmCore.InsertScreenTimer(screenId, newTimer);
+            newTimer->start();
+        }
+    }
     // 3.[Planning]: Post app and rs switch software vsync rate task.
 }
 
@@ -1149,13 +1168,15 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     uniVisitor->SetHardwareEnabledNodes(hardwareEnabledNodes_);
     uniVisitor->SetAppWindowNum(appWindowNum_);
     uniVisitor->SetProcessorRenderEngine(GetRenderEngine());
+    uniVisitor->SetForceUpdateFlag(forceUpdateUniRenderFlag_);
 
     if (isHardwareForcedDisabled_) {
         uniVisitor->MarkHardwareForcedDisabled();
         doDirectComposition_ = false;
     }
     bool needTraverseNodeTree = true;
-    if (doDirectComposition_ && !isDirty_ && !isAccessibilityConfigChanged_ && !isCachedSurfaceUpdated_) {
+    if (doDirectComposition_ && !isDirty_ && !isAccessibilityConfigChanged_
+        && !isCachedSurfaceUpdated_ && !forceUpdateUniRenderFlag_) {
         if (isHardwareEnabledBufferUpdated_) {
             needTraverseNodeTree = !uniVisitor->DoDirectComposition(rootNode);
         } else {
@@ -1176,7 +1197,8 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         SetFocusLeashWindowId();
         uniVisitor->SetFocusedNodeId(focusNodeId_, focusLeashWindowId_);
         rootNode->Prepare(uniVisitor);
-        ProcessHgmFrameRate(uniVisitor->GetFrameRateRangeData(), timestamp_);
+
+        ProcessHgmFrameRate(uniVisitor->GetFrameRateRangeData(), timestamp_, forceUpdateUniRenderFlag_);
         CalcOcclusion();
         bool doParallelComposition = RSInnovation::GetParallelCompositionEnabled(isUniRender_);
         if (doParallelComposition && rootNode->GetChildrenCount() > 1) {
@@ -1203,6 +1225,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         rootNode->Process(uniVisitor);
     }
     isDirty_ = false;
+    forceUpdateUniRenderFlag_ = false;
 }
 
 void RSMainThread::Render()
