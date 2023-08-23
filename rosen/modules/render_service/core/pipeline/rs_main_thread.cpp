@@ -815,7 +815,6 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
             this->bufferTimestamps_[surfaceNode->GetId()] = static_cast<uint64_t>(surfaceNode->GetTimestamp());
             if (surfaceNode->IsCurrentFrameBufferConsumed() && !surfaceNode->IsHardwareEnabledType()) {
                 surfaceNode->SetContentDirty();
-                AddActiveNode(surfaceNode);
                 doDirectComposition_ = false;
             }
         }
@@ -865,12 +864,10 @@ void RSMainThread::CollectInfoForHardwareComposer()
                 // buffer updated or hwc -> gpu
                 if (surfaceNode->IsCurrentFrameBufferConsumed() || surfaceNode->IsLastFrameHardwareEnabled()) {
                     surfaceNode->SetContentDirty();
-                    AddActiveNode(surfaceNode);
                 }
             } else { // gpu -> hwc
                 if (!surfaceNode->IsLastFrameHardwareEnabled()) {
                     surfaceNode->SetContentDirty();
-                    AddActiveNode(surfaceNode);
                     doDirectComposition_ = false;
                 }
             }

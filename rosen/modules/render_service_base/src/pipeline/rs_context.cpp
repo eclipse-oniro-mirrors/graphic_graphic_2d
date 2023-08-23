@@ -34,7 +34,7 @@ void RSContext::UnregisterAnimatingRenderNode(NodeId id)
 
 void RSContext::AddActiveNodeId(NodeId id)
 {
-    if (id == 0) {
+    if (id == INVALID_NODEID) {
         return;
     }
     auto node = nodeMap.GetRenderNode(id);
@@ -43,7 +43,7 @@ void RSContext::AddActiveNodeId(NodeId id)
 
 void RSContext::AddActiveNode(const std::shared_ptr<RSRenderNode>& node)
 {
-    if (node == nullptr || !node->IsOnTheTree()) {
+    if (node == nullptr || !node->IsOnTheTree() || node->GetId() == INVALID_NODEID) {
         return;
     }
     auto rootNodeId = node->GetInstanceRootNodeId();

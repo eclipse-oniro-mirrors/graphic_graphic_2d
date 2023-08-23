@@ -90,11 +90,11 @@ public:
                                 bool onlyFirstLevel);
     virtual void Prepare(const std::shared_ptr<RSNodeVisitor>& visitor);
     virtual void Process(const std::shared_ptr<RSNodeVisitor>& visitor);
-    virtual bool IsDirty() const;
+    bool IsDirty() const;
     // attention: current all base node's dirty ops causing content dirty
     // if there is any new dirty op, check it
-    virtual bool IsContentDirty() const;
-    virtual void SetContentDirty();
+    bool IsContentDirty() const;
+    void SetContentDirty();
 
     WeakPtr GetParent() const;
 
@@ -161,7 +161,7 @@ public:
         dirtyTypes_.emplace(type);
     }
 
-    virtual std::pair<bool, bool> Animate(int64_t timestamp);
+    std::pair<bool, bool> Animate(int64_t timestamp);
 
     bool IsClipBound() const;
     // clipRect has value in UniRender when calling PrepareCanvasRenderNode, else it is nullopt
@@ -412,7 +412,7 @@ protected:
         CLEAN = 0,
         DIRTY,
     };
-    virtual void SetClean();
+    void SetClean();
 
     void DumpNodeType(std::string& out) const;
 

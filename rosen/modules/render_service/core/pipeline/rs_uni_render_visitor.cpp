@@ -511,7 +511,8 @@ bool RSUniRenderVisitor::CheckIfSurfaceRenderNodeStatic(RSSurfaceRenderNode& nod
     // if node has to be prepared, it's not static
     bool isClassifyByRootNode = (quickSkipPrepareType_ == QuickSkipPrepareType::STATIC_WIDGET);
     NodeId rootId = node.GetInstanceRootNodeId();
-    if (RSMainThread::Instance()->CheckNodeHasToBePreparedByPid(isClassifyByRootNode ? rootId : node.GetId(), isClassifyByRootNode)) {
+    if (RSMainThread::Instance()->CheckNodeHasToBePreparedByPid(
+        isClassifyByRootNode ? rootId : node.GetId(), isClassifyByRootNode)) {
         return false;
     }
     if (node.IsMainWindowType()) {
@@ -520,10 +521,10 @@ bool RSUniRenderVisitor::CheckIfSurfaceRenderNodeStatic(RSSurfaceRenderNode& nod
         // [Attention] node's ability pid could be different but should have same rootId
         auto abilityNodeIds = node.GetAbilityNodeIds();
         bool result = isClassifyByRootNode
-                          ? RSMainThread::Instance()->CheckNodeHasToBePreparedByPid(rootId, true)
-                          : std::any_of(abilityNodeIds.begin(), abilityNodeIds.end(), [&](uint64_t nodeId) {
-                                return RSMainThread::Instance()->CheckNodeHasToBePreparedByPid(nodeId, false);
-                            });
+            ? RSMainThread::Instance()->CheckNodeHasToBePreparedByPid(rootId, true)
+            : std::any_of(abilityNodeIds.begin(), abilityNodeIds.end(), [&](uint64_t nodeId) {
+                return RSMainThread::Instance()->CheckNodeHasToBePreparedByPid(nodeId, false);
+            });
         if (result) {
             return false;
         }
