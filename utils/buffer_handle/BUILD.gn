@@ -13,7 +13,7 @@
 
 import("//build/ohos.gni")
 
-## buffer_handle.a {{{
+## buffer_handle.so {{{
 config("buffer_handle_public_config") {
   include_dirs = [
     "export",
@@ -41,4 +41,4 @@ group("test") {
   testonly = true
   deps = [ "test:test" ]
 }
-## buffer_handle.a }}}
+## buffer_handle.so }}}
