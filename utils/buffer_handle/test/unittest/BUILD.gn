@@ -44,7 +44,7 @@ ohos_static_library("buffer_handle_test_common") {
   public_configs = [ ":buffer_handle_test_config" ]
 
   public_deps = [
-    "../../../../buffer_handle:buffer_handle",
+    "../../../../utils/buffer_handle:buffer_handle",
     "//third_party/googletest:gtest_main",
   ]
 
