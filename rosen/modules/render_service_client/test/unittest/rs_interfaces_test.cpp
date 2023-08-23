@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <cstdint>
 #include <gtest/gtest.h>
 #include <hilog/log.h>
 #include <memory>
@@ -938,7 +939,7 @@ HWTEST_F(RSInterfacesTest, SetScreenRefreshRate001, Function | SmallTest | Level
     auto screenId = rsInterfaces->GetDefaultScreenId();
     EXPECT_NE(screenId, INVALID_SCREEN_ID);
     uint32_t formerRate = rsInterfaces->GetScreenCurrentRefreshRate(screenId);
-    uint32_t rateToSet = 30;
+    uint32_t rateToSet = 90;
 
     rsInterfaces->SetScreenRefreshRate(screenId, 0, rateToSet);
     usleep(SET_REFRESHRATE_SLEEP_US);
@@ -947,7 +948,10 @@ HWTEST_F(RSInterfacesTest, SetScreenRefreshRate001, Function | SmallTest | Level
 
     bool ifSupported = false;
     for (auto rateIter : supportedRates) {
-        if (rateIter == rateToSet) {
+        if (rateIter < 0) {
+            continue;
+        }
+        if (static_cast<uint32_t>(rateIter) == rateToSet) {
             ifSupported = true;
         }
     }
@@ -1003,7 +1007,10 @@ HWTEST_F(RSInterfacesTest, SetScreenRefreshRate003, Function | SmallTest | Level
 
     bool ifSupported = false;
     for (auto rateIter : supportedRates) {
-        if (rateIter == rateToSet) {
+        if (rateIter < 0) {
+            continue;
+        }
+        if (static_cast<uint32_t>(rateIter) == rateToSet) {
             ifSupported = true;
         }
     }
@@ -1034,8 +1041,11 @@ HWTEST_F(RSInterfacesTest, SetRefreshRateMode001, Function | SmallTest | Level2)
     //find a supported rate which not equal to formerRate
     auto supportedRates = rsInterfaces->GetScreenSupportedRefreshRates(screenId);
     for (auto rateIter : supportedRates) {
-        if (rateIter != formerRate) {
-            newRate = rateIter;
+        if (rateIter < 0) {
+            continue;
+        }
+        if (static_cast<uint32_t>(rateIter) != formerRate) {
+            newRate = static_cast<uint32_t>(rateIter);
             break;
         }
     }

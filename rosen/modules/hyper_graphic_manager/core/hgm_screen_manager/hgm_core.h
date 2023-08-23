@@ -58,10 +58,13 @@ public:
         return activeScreenId_;
     }
 
+    // set refresh rates
     int32_t SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate);
     static int32_t SetRateAndResolution(ScreenId id, int32_t sceneId, int32_t rate, int32_t width, int32_t height);
     int32_t SetRefreshRateMode(RefreshRateMode refreshRateMode);
     int32_t SetDefaultRefreshRateMode();
+
+    // screen interface
     int32_t AddScreen(ScreenId id, int32_t defaultMode);
     int32_t RemoveScreen(ScreenId id);
     int32_t AddScreenInfo(ScreenId id, int32_t width, int32_t height, uint32_t rate, int32_t mode);
@@ -69,6 +72,7 @@ public:
     uint32_t GetScreenCurrentRefreshRate(ScreenId id) const;
     sptr<HgmScreen> GetScreen(ScreenId id) const;
     std::vector<uint32_t> GetScreenSupportedRefreshRates(ScreenId id);
+    std::vector<int32_t> GetScreenComponentRefreshRates(ScreenId id);
     std::unique_ptr<std::unordered_map<ScreenId, int32_t>> GetModesToApply();
     int32_t AddScreenProfile(ScreenId id, int32_t width, int32_t height, int32_t phyWidth, int32_t phyHeight);
     int32_t RemoveScreenProfile(ScreenId id);
@@ -77,7 +81,7 @@ public:
 
 private:
     HgmCore();
-    ~HgmCore();
+    ~HgmCore() = default;
     HgmCore(const HgmCore&) = delete;
     HgmCore(const HgmCore&&) = delete;
     HgmCore& operator=(const HgmCore&) = delete;
@@ -91,6 +95,7 @@ private:
 
     bool isEnabled_ = true;
     bool isInit_ = false;
+    static constexpr char CONFIG_FILE[] = "/system/etc/graphic/hgm_policy_config.xml";
     std::unique_ptr<XMLParser> mParser_;
     std::shared_ptr<ParsedConfigData> mParsedConfigData_ = nullptr;
 
