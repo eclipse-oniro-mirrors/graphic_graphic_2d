@@ -218,7 +218,6 @@ private:
     std::unordered_set<ScreenId> virtualScreenIds_;
     sptr<RSIScreenChangeCallback> screenChangeCallback_;
     sptr<VSyncDistributor> appVSyncDistributor_;
-    std::vector<sptr<VSyncConnection>> vsyncConnections_;
 };
 } // namespace Rosen
 } // namespace OHOS

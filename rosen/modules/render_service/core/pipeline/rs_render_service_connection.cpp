@@ -117,13 +117,8 @@ void RSRenderServiceConnection::CleanAll(bool toDelete) noexcept
             HgmConfigCallbackManager::GetInstance()->UnRegisterHgmConfigChangeCallback(remotePid_);
             mainThread_->UnRegisterOcclusionChangeCallback(remotePid_);
         }).wait();
-    for (auto& conn : vsyncConnections_) {
-        appVSyncDistributor_->RemoveConnection(conn);
-    }
-
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        vsyncConnections_.clear();
         cleanDone_ = true;
     }
 
@@ -270,10 +265,9 @@ sptr<IVSyncConnection> RSRenderServiceConnection::CreateVSyncConnection(const st
                                                                         const sptr<VSyncIConnectionToken>& token)
 {
     sptr<VSyncConnection> conn = new VSyncConnection(appVSyncDistributor_, name, token->AsObject());
-    appVSyncDistributor_->AddConnection(conn);
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        vsyncConnections_.push_back(conn);
+    auto ret = appVSyncDistributor_->AddConnection(conn);
+    if (ret != VSYNC_ERROR_OK) {
+        return nullptr;
     }
     return conn;
 }
