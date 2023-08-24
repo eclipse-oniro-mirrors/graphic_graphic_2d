@@ -13,15 +13,8 @@
  * limitations under the License.
  */
 
-#include <array>
 #include <gtest/gtest.h>
 #include <hilog/log.h>
-#include <cmath>
-#include <message_parcel.h>
-#include <unistd.h>
-
-#include <cstdlib>
-#include <securec.h>
 
 #include "buffer_handle_utils.h"
 #include "buffer_handle_parcel.h"
