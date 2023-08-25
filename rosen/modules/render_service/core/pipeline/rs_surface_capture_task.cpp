@@ -329,7 +329,7 @@ sptr<SurfaceBuffer> RSSurfaceCaptureTask::DmaMemAlloc(SkImageInfo &dstInfo, cons
     void* nativeBuffer = surfaceBuffer.GetRefPtr();
     OHOS::RefBase *ref = reinterpret_cast<OHOS::RefBase *>(nativeBuffer);
     ref->IncStrongRef(ref);
-    uint32_t bufferSize = pixelmap->GetByteCount();
+    int32_t bufferSize = pixelmap->GetByteCount();
     pixelmap->SetPixelsAddr(surfaceBuffer->GetVirAddr(), nativeBuffer, bufferSize, Media::AllocatorType::DMA_ALLOC, nullptr);
     return surfaceBuffer;
 #endif
