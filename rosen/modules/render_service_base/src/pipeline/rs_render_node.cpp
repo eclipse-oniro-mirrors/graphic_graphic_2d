@@ -905,7 +905,7 @@ void RSRenderNode::AddModifierProfile(std::shared_ptr<RSRenderModifier> modifier
 void RSRenderNode::SetRSFrameRateRangeByPreferred(int32_t preferred)
 {
     if (preferred > 0) {
-        FrameRateRange frameRateRange = {0, preferred, preferred};
+        FrameRateRange frameRateRange = {0, preferred, RANGE_MAX_REFRESHRATE};
         SetRSFrameRateRange(frameRateRange);
     }
 }
