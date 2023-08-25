@@ -20,15 +20,22 @@ group("unittest") {
   deps = [ ":BufferHandleTest" ]
 }
 
-## Build buffer_handle_test
+## UnitTest buffer_handle_test {{{
 ohos_unittest("BufferHandleTest") {
   module_out_path = module_out_path
   sources = [ "buffer_handle_test.cpp" ]
-  include_dirs = [ "//third_party/googletest/googletest/include" ]
-  deps = [ ":buffer_handle_test_common" ]
-  external_deps = [ "hilog:libhilog" ]
+  deps = [ 
+    ":buffer_handle_test_common",
+    "../../../../../../communication/ipc/interfaces/innerkits/ipc_core:ipc_core",
+  ]
+  external_deps = [ 
+    "c_utils:utils",
+    "graphic_2d:buffer_handle",
+    "hilog:libhilog",
+ ]
 }
 
+## Build buffer_handle_test_common.a {{{
 config("buffer_handle_test_config") {
   cflags = [
     "-Wall",
@@ -39,18 +46,14 @@ config("buffer_handle_test_config") {
   ]
 }
 
+## UnitTest buffer_handle_test }}}
+
 ohos_static_library("buffer_handle_test_common") {
   visibility = [ ":*" ]
   testonly = true
   public_configs = [ ":buffer_handle_test_config" ]
 
-  public_deps = [ "../../../../utils/buffer_handle:buffer_handle" ]
-
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-    "ipc:ipc_single",
-  ]
   subsystem_name = "graphic"
   part_name = "graphic_2d"
 }
+## Build buffer_handle_test_common.a }}}
