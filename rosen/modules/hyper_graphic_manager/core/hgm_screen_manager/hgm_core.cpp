@@ -395,4 +395,28 @@ void HgmCore::SetActiveScreenId(ScreenId id)
     activeScreenId_ = id;
 }
 
+std::shared_ptr<HgmOneShotTimer> HgmCore::GetScreenTimer(ScreenId screenId)
+{
+    if (auto timer = screenTimerMap_.find(screenId); timer != screenTimerMap_.end()) {
+        return timer->second;
+    }
+    return nullptr;
+}
+
+void HgmCore::InsertAndStartScreenTimer(ScreenId screenId, int32_t interval,
+    std::function<void()> resetCallback, std::function<void()> expiredCallback)
+{
+    if (auto oldtimer = GetScreenTimer(screenId); oldtimer == nullptr) {
+        auto newTimer = std::make_shared<HgmOneShotTimer>("idle_timer" + std::to_string(screenId),
+            std::chrono::milliseconds(interval), resetCallback, expiredCallback);
+        screenTimerMap_[screenId] = newTimer;
+        newTimer->Start();
+    }
+}
+void HgmCore::ResetScreenTimer(ScreenId screenId)
+{
+    if (auto timer = GetScreenTimer(screenId); timer != nullptr) {
+        timer->Reset();
+    }
+}
 } // namespace OHOS::Rosen

@@ -18,6 +18,7 @@
 
 #include <functional>
 #include <cinttypes>
+#include <memory>
 #include <thread>
 #include <unordered_map>
 #include <vector>
@@ -27,6 +28,7 @@
 #include "hgm_screen.h"
 #include "hgm_frame_rate_tool.h"
 #include "xml_parser.h"
+#include "hgm_one_shot_timer.h"
 
 namespace OHOS::Rosen {
 class HgmCore final {
@@ -74,7 +76,10 @@ public:
     int32_t RemoveScreenProfile(ScreenId id);
     int32_t CalModifierPreferred(HgmModifierProfile &hgmModifierProfile) const;
     void SetActiveScreenId(ScreenId id);
-
+    std::shared_ptr<HgmOneShotTimer> GetScreenTimer(ScreenId screenId);
+    void ResetScreenTimer(ScreenId screenId);
+    void InsertAndStartScreenTimer(ScreenId screenId, int32_t interval,
+        std::function<void()> resetCallback, std::function<void()> expiredCallback);
 private:
     HgmCore();
     ~HgmCore();
@@ -105,6 +110,7 @@ private:
     std::string currentBundleName_;
     std::shared_ptr<HgmFrameRateTool> hgmFrameRateTool_ = nullptr;
     ScreenId activeScreenId_ = 0;
+    std::unordered_map<ScreenId, std::shared_ptr<HgmOneShotTimer>> screenTimerMap_;
 };
 } // namespace OHOS::Rosen
 #endif // HGM_CORE_H

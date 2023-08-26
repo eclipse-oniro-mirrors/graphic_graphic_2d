@@ -156,6 +156,10 @@ public:
     void SetAppWindowNum(uint32_t num);
     void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow);
     void SetIsCachedSurfaceUpdated(bool isCachedSurfaceUpdated);
+    void SetForceUpdateUniRenderFlag(bool flag)
+    {
+        forceUpdateUniRenderFlag_ = flag;
+    }
 #ifndef USE_ROSEN_DRAWING
     sk_sp<SkImage> GetWatermarkImg();
 #else
@@ -376,7 +380,7 @@ private:
     // used for informing hgm the bundle name of SurfaceRenderNodes
     bool noBundle_ = false;
     std::string currentBundleName_ = "";
-
+    bool forceUpdateUniRenderFlag_ = false;
     // for ui first
     std::mutex mutex_;
     std::queue<sk_sp<SkSurface>> tmpSurfaces_;

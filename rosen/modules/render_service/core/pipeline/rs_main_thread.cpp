@@ -335,6 +335,10 @@ void RSMainThread::Init()
     RSOverdrawController::GetInstance().SetDelegate(delegate);
 
     frameRateMgr_ = std::make_unique<HgmFrameRateManager>();
+    frameRateMgr_->SetTimerExpiredCallback([]() {
+        RSMainThread::Instance()->SetForceUpdateUniRenderFlag(true);
+        RSMainThread::Instance()->RequestNextVSync();
+    });
 }
 
 void RSMainThread::RsEventParamDump(std::string& dumpString)
@@ -1149,13 +1153,15 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     uniVisitor->SetHardwareEnabledNodes(hardwareEnabledNodes_);
     uniVisitor->SetAppWindowNum(appWindowNum_);
     uniVisitor->SetProcessorRenderEngine(GetRenderEngine());
+    uniVisitor->SetForceUpdateFlag(forceUpdateUniRenderFlag_);
 
     if (isHardwareForcedDisabled_) {
         uniVisitor->MarkHardwareForcedDisabled();
         doDirectComposition_ = false;
     }
     bool needTraverseNodeTree = true;
-    if (doDirectComposition_ && !isDirty_ && !isAccessibilityConfigChanged_ && !isCachedSurfaceUpdated_) {
+    if (doDirectComposition_ && !isDirty_ && !isAccessibilityConfigChanged_
+        && !isCachedSurfaceUpdated_ && !forceUpdateUniRenderFlag_) {
         if (isHardwareEnabledBufferUpdated_) {
             needTraverseNodeTree = !uniVisitor->DoDirectComposition(rootNode);
         } else {
@@ -1203,6 +1209,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         rootNode->Process(uniVisitor);
     }
     isDirty_ = false;
+    forceUpdateUniRenderFlag_ = false;
 }
 
 void RSMainThread::Render()
