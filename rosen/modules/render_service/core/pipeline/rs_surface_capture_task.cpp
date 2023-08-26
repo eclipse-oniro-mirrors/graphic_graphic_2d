@@ -1038,6 +1038,7 @@ void RSSurfaceCaptureVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
     }
 
     if (node.GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
+        auto canvasDrawingNode = node.ReinterpretCastTo<RSCanvasDrawingRenderNode>();
 #ifndef USE_ROSEN_DRAWING
             SkBitmap bitmap = canvasDrawingNode->GetBitmap();
 #ifndef NEW_SKIA
