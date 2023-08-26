@@ -86,7 +86,7 @@ public:
     // use floor value of translateX and translateY in matrix of canvas to avoid jittering
     static void FloorTransXYInCanvasMatrix(RSPaintFilterCanvas& canvas);
 #if !defined(USE_ROSEN_DRAWING) && defined(RS_ENABLE_GL) && defined(NEW_SKIA)
-    static void ClearCanvasGpuResource(RSPaintFilterCanvas* canvas, uint64_t threadIndex);
+    static void ClearDrawingNodeGpuResource(uint64_t threadIndex);
 #endif
 private:
     static void AssignMainThreadNode(std::list<std::shared_ptr<RSSurfaceRenderNode>>& mainThreadNodes,
@@ -101,7 +101,7 @@ private:
     static void PostReleaseSurfaceTask(std::shared_ptr<Drawing::Surface>&& surface, uint32_t threadIndex);
 #endif
 #if !defined(USE_ROSEN_DRAWING) && defined(RS_ENABLE_GL) && defined(NEW_SKIA)
-    static void PostReleaseGpuResourceTask(RSPaintFilterCanvas* canvas, uint64_t threadIndex);
+    static void PostPurgeUnlockedResourcesTask(uint64_t threadIndex);
 #endif
 };
 }

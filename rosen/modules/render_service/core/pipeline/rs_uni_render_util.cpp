@@ -799,33 +799,31 @@ void RSUniRenderUtil::PostReleaseSurfaceTask(std::shared_ptr<Drawing::Surface>&&
 }
 
 #if !defined(USE_ROSEN_DRAWING) && defined(RS_ENABLE_GL) && defined(NEW_SKIA)
-void RSUniRenderUtil::ClearCanvasGpuResource(RSPaintFilterCanvas* canvas, uint64_t threadIndex)
+void RSUniRenderUtil::ClearDrawingNodeGpuResource(uint64_t threadIndex)
 {
-    PostReleaseGpuResourceTask(canvas, threadIndex);
+    PostPurgeUnlockedResourcesTask(threadIndex);
 }
 
-void RSUniRenderUtil::PostReleaseGpuResourceTask(RSPaintFilterCanvas* canvas, uint64_t threadIndex)
+void RSUniRenderUtil::PostPurgeUnlockedResourcesTask(uint64_t threadIndex)
 {
-    auto grContext = canvas != nullptr ? static_cast<GrDirectContext*>(canvas->recordingContext()) : nullptr;
-    if (grContext == nullptr) {
-        RS_LOGE("RSCanvasDrawingRenderNode: GrContext is nullptr");
-        return;
-    }
-    
-    auto task = [grContext, threadIndex]() {
-        if (grContext == nullptr) {
-            RS_LOGE("RSCanvasDrawingRenderNode: GrContext is nullptr");
+    auto task = []() {
+        auto renderContext = RSMainThread::Instance()->GetRenderEngine()->GetRenderContext();
+        if (renderContext == nullptr) {
+            RS_LOGE("RSUniRenderUtil: renderContext is nullptr");
             return;
         }
-        grContext->purgeUnlockedResources(true);
+        auto grContext = renderContext->GetGrContext();
+        if (grContext == nullptr) {
+            RS_LOGE("RSUniRenderUtil: GrContext is nullptr");
+            return;
+        }
+        grContext->purgeUnlockedResources(false);
     };
-    
-    if (threadIndex == UNI_MAIN_THREAD_INDEX) {
-        RSMainThread::Instance()->PostTask(task);
-        
-    } else {
-        RSSubThreadManager::Instance()->PostTask(task, threadIndex);
+    if (threadIndex != UNI_MAIN_THREAD_INDEX) {
+        RS_LOGE("RSUniRenderUtil: just do it in MainThread!");
+        return;
     }
+    RSMainThread::Instance()->PostTask(task);
 }
 #endif
 
