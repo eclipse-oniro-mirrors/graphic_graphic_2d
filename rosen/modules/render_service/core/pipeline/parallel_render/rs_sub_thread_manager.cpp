@@ -186,7 +186,7 @@ void RSSubThreadManager::ResetSubThreadGrContext() const
     }
 }
 
-void RSSubThreadManager::ReleaseSurface(const uint32_t threadIndex)
+void RSSubThreadManager::ReleaseSurface(uint32_t threadIndex) const
 {
     if (threadList_.size() <= threadIndex) {
         return;
