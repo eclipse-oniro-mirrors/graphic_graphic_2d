@@ -506,12 +506,12 @@ uint32_t RSRenderServiceConnectionProxy::GetScreenCurrentRefreshRate(ScreenId id
     return rate;
 }
 
-std::vector<uint32_t> RSRenderServiceConnectionProxy::GetScreenSupportedRefreshRates(ScreenId id)
+std::vector<int32_t> RSRenderServiceConnectionProxy::GetScreenSupportedRefreshRates(ScreenId id)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    std::vector<uint32_t> screenSupportedRates;
+    std::vector<int32_t> screenSupportedRates;
 
     if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
         ROSEN_LOGE("RSRenderServiceProxy failed to get descriptor");
@@ -534,7 +534,7 @@ std::vector<uint32_t> RSRenderServiceConnectionProxy::GetScreenSupportedRefreshR
     }
     screenSupportedRates.resize(rateCount);
     for (uint64_t rateIndex = 0; rateIndex < rateCount; rateIndex++) {
-        screenSupportedRates[rateIndex] = reply.ReadUint32();
+        screenSupportedRates[rateIndex] = reply.ReadInt32();
     }
     return screenSupportedRates;
 }

@@ -433,19 +433,19 @@ uint32_t RSRenderServiceConnection::GetScreenCurrentRefreshRate(ScreenId id)
     }
 }
 
-std::vector<uint32_t> RSRenderServiceConnection::GetScreenSupportedRefreshRates(ScreenId id)
+std::vector<int32_t> RSRenderServiceConnection::GetScreenSupportedRefreshRates(ScreenId id)
 {
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
         return RSHardwareThread::Instance().ScheduleTask([=]() {
             auto &hgmCore = OHOS::Rosen::HgmCore::Instance();
-            std::vector<uint32_t> rates = hgmCore.GetScreenSupportedRefreshRates(id);
+            std::vector<int32_t> rates = hgmCore.GetScreenComponentRefreshRates(id);
             return rates;
         }).get();
     } else {
         return mainThread_->ScheduleTask([=]() {
             auto &hgmCore = OHOS::Rosen::HgmCore::Instance();
-            std::vector<uint32_t> rates = hgmCore.GetScreenSupportedRefreshRates(id);
+            std::vector<int32_t> rates = hgmCore.GetScreenComponentRefreshRates(id);
             return rates;
         }).get();
     }

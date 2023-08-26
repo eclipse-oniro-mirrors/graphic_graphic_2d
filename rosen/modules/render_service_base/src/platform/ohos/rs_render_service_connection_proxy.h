@@ -73,7 +73,7 @@ public:
 
     uint32_t GetScreenCurrentRefreshRate(ScreenId id) override;
 
-    std::vector<uint32_t> GetScreenSupportedRefreshRates(ScreenId id) override;
+    std::vector<int32_t> GetScreenSupportedRefreshRates(ScreenId id) override;
 
     int32_t SetVirtualScreenResolution(ScreenId id, uint32_t width, uint32_t height) override;
 
