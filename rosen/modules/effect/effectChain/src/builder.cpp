@@ -34,13 +34,13 @@ ImageChain* Builder::CreateFromConfig(std::string path)
     std::string JFilterParamsString = JFilterParamsStream.str();
     cJSON* overallData = cJSON_Parse(JFilterParamsString.c_str());
     if (overallData != nullptr) {
-        filters_ = cJSON_GetObjectItem(overallData, "filters");
+        cJSON* filters_ = cJSON_GetObjectItem(overallData, "filters");
         if (filters_ != nullptr) {
-            AnalyseFilters(filters_.get());
+            AnalyseFilters(filters_);
         }
-        connections_ = cJSON_GetObjectItem(overallData, "connections");
+        cJSON* connections_ = cJSON_GetObjectItem(overallData, "connections");
         if (connections_ != nullptr) {
-            ConnectPipeline(connections_.get());
+            ConnectPipeline(connections_);
         }
         cJSON_Delete(overallData);
     } else {
