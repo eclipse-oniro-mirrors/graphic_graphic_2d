@@ -2260,6 +2260,9 @@ void RSProperties::CalculatePixelStretch()
     if (pixelStretchPercent_) {
         auto width = GetBoundsWidth();
         auto height = GetBoundsHeight();
+        if (isinf(width) || isinf(height)) {
+            return;
+        }
         pixelStretch_ = *pixelStretchPercent_ * Vector4f(width, height, width, height);
     }
     // parameter check: non-zero
