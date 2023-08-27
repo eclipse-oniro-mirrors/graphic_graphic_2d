@@ -18,6 +18,7 @@
 #include <memory>
 #include <sys/types.h>
 #include <vector>
+#include "pixel_map.h"
 
 #include "animation/rs_interpolator.h"
 #include "common/rs_color.h"
@@ -126,6 +127,12 @@ public:
         radius_ = radius;
         image_ = image;
         imageSize_ = imageSize;
+        if (image_ != nullptr) {
+            auto pixelMap = image_->GetPixelMap();
+            if (pixelMap != nullptr) {
+                image_->SetDstRect(RectF(position_.x_, position_.y_, pixelMap->GetWidth(), pixelMap->GetHeight()));
+            }
+        }
     }
     EmitterConfig(const EmitterConfig& config) = default;
     EmitterConfig& operator=(const EmitterConfig& config) = default;

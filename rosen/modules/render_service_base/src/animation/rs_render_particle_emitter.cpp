@@ -24,6 +24,19 @@ RSRenderParticleEmitter::RSRenderParticleEmitter(std::shared_ptr<ParticleRenderP
 
 void RSRenderParticleEmitter::EmitParticle(int64_t deltaTime)
 {
+    auto particleType = particleParams_->GetParticleType();
+    if (particleType == ParticleType::IMAGES) {
+        auto image = particleParams_->GetParticleImage();
+        if (image == nullptr) {
+            return;
+        } else {
+            auto pixelMap = image->GetPixelMap();
+            if (pixelMap == nullptr) {
+                return;
+            }
+        }
+    }
+
     auto emitRate = particleParams_->GetEmitRate();
     auto maxParticle = particleParams_->GetParticleCount();
     float last = particleCount_;
