@@ -2237,10 +2237,14 @@ void RSPropertiesPainter::DrawParticle(const RSProperties& properties, RSPaintFi
             SkPaint paint;
             paint.setAntiAlias(true);
             paint.setAlphaf(opacity);
+            auto clipBounds = Rect2SkRect(bounds);
+            canvas.clipRect(clipBounds, true);
 #else
             Drawing::Brush brush;
             brush.SetAntiAlias(true);
             brush.SetAlphaF(opacity);
+            auto clipBounds = Rect2DrawingRect(bounds);
+            canvas.ClipRect(clipBounds, Drawing::ClipOp::INTERSECT, true);
 #endif
 
             if (particleType == ParticleType::POINTS) {
@@ -2258,29 +2262,40 @@ void RSPropertiesPainter::DrawParticle(const RSProperties& properties, RSPaintFi
                 canvas.DetachBrush();
 #endif
             } else {
+                auto imageSize = particles[i]->GetImageSize();
                 auto image = particles[i]->GetImage();
+                canvas.save();
+                canvas.translate(position.x_, position.y_);
 #ifndef USE_ROSEN_DRAWING
                 canvas.rotate(particles[i]->GetSpin());
 #else
+                canvas.Save();
+                canvas.Translate(position.x_, position.y_);
                 canvas.Rotate(particles[i]->GetSpin(), 0, 0);
 #endif
-                float fLeft = position.x_;
-                float ftop = position.y_;
-                auto imageSize = particles[i]->GetImageSize();
-                float fRight = imageSize.x_;
-                float fBottom = imageSize.y_;
+                float left = position.x_;
+                float top = position.y_;
+                float right = imageSize.x_;
+                float bottom = imageSize.y_;
+                RectF destRect(left, top, right, bottom);
+                image->SetDstRect(destRect);
+                image->SetScale(scale);
+                image->SetImageRepeat(0);
 #ifndef USE_ROSEN_DRAWING
-                SkRect rect { fLeft, ftop, fRight, fBottom };
+                SkRect rect { left, top, right, bottom };
 #ifdef NEW_SKIA
                 image->CanvasDrawImage(canvas, rect, SkSamplingOptions(), paint, false);
+                canvas.restore();
 #else
                 image->CanvasDrawImage(canvas, rect, paint, false);
+                canvas.restore();
 #endif
 #else
                 Drawing::Rect rect { fLeft, ftop, fRight, fBottom };
                 canvas.AttachBrush(brush);
                 image->CanvasDrawImage(canvas, rect, false);
                 canvas.DetachBrush();
+                canvas.Restore();
 #endif
             }
         }
