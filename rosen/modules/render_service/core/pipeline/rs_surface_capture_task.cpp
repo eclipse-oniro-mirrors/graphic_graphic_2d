@@ -139,7 +139,8 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
         bool ableRotation = ((displayNode != nullptr) && visitor_->IsUniRender());
         auto id = nodeId_;
 
-        std::function<void()> copytask = [wrapper, grBackendTexture, callback, ableRotation, rotation, id]() -> void {
+        std::function<void()> copytask = [wrapper, grBackendTexture = std::move(grBackendTexture), callback,
+                                             ableRotation, rotation, id]() -> void {
             RS_TRACE_NAME("copy and send capture");
             if (!grBackendTexture.isValid()) {
                 RS_LOGE("COPYTASK: SkiaSurface bind Image failed: BackendTexture is invalid");
