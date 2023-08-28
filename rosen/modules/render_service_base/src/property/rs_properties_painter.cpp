@@ -2237,7 +2237,7 @@ void RSPropertiesPainter::DrawParticle(const RSProperties& properties, RSPaintFi
             SkPaint paint;
             paint.setAntiAlias(true);
             paint.setAlphaf(opacity);
-            auto clipBounds = Rect2SkRect(bounds);
+            auto clipBounds = RSPropertiesPainter::Rect2SkRect(bounds);
             canvas.clipRect(clipBounds, true);
 #else
             Drawing::Brush brush;
@@ -2275,8 +2275,8 @@ void RSPropertiesPainter::DrawParticle(const RSProperties& properties, RSPaintFi
 #endif
                 float left = position.x_;
                 float top = position.y_;
-                float right = imageSize.x_;
-                float bottom = imageSize.y_;
+                float right = position.x_ + imageSize.x_;
+                float bottom = position.y_ + imageSize.y_;
                 RectF destRect(left, top, right, bottom);
                 image->SetDstRect(destRect);
                 image->SetScale(scale);
