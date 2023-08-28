@@ -426,7 +426,6 @@ void RSRenderParticle::InitProperty(std::shared_ptr<ParticleRenderParams> partic
     } else if (particleType_ == ParticleType::IMAGES) {
         image_ = particleParams->GetParticleImage();
         imageSize_ = particleParams->GetImageSize();
-        auto pixelMap = image_->GetPixelMap();
         if (image_ != nullptr) {
             auto pixelMap = image_->GetPixelMap();
             if (pixelMap != nullptr) {
