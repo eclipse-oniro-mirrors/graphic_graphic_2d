@@ -61,7 +61,7 @@ private:
 
     void Loop();
     HgmTimerState CheckForResetAndStop(HgmTimerState state);
-    bool CheckTimerExpired(std::chrono::steady_clock::time_point expireTime);
+    bool CheckTimerExpired(std::chrono::steady_clock::time_point expireTime) const;
 
     std::thread thread_;
     std::unique_ptr<ChronoSteadyClock> clock_;
