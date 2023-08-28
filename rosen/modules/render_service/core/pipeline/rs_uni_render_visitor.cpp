@@ -359,7 +359,7 @@ void RSUniRenderVisitor::HandleColorGamuts(RSDisplayRenderNode& node, const sptr
     for (auto& child : node.GetCurAllSurfaces()) {
         auto surfaceNodePtr = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child);
         if (!surfaceNodePtr) {
-            RS_LOGE("RSUniRenderVisitor::PrepareDisplayRenderNode ReinterpretCastTo fail");
+            RS_LOGD("RSUniRenderVisitor::PrepareDisplayRenderNode ReinterpretCastTo fail");
             continue;
         }
         CheckColorSpace(*surfaceNodePtr);
