@@ -38,21 +38,21 @@
 
 namespace OHOS {
 namespace Rosen {
-class MSKPSrc{
+class MSKPSrc {
 public:
     explicit MSKPSrc(std::string path);
 
-    int pageCount() const;
     bool draw(SkCanvas* c) const;
     bool nextFrame();
-    SkISize size() const;
     SkISize size(int) const;
-    SkString name() const;
-    int getCurFrameNum() {return curFrameNum;}
+    int pageCount() const { return fPages_.size(); }
+    SkISize size() const { return this->size(curFrameNum_); }
+    SkString name() const { return SkOSPath::Basename(fPath_.c_str()); }
+    int getCurFrameNum() {return curFrameNum_;}
 private:
-    uint16_t curFrameNum = 0;
-    std::string fPath;
-    mutable SkTArray<SkDocumentPage> fPages;
+    uint16_t curFrameNum_ = 0;
+    std::string fPath_;
+    mutable SkTArray<SkDocumentPage> fPages_;
 };
 
 class DrawingDCL : public BenchMark {
@@ -62,6 +62,7 @@ public:
     ~DrawingDCL();
     bool GetDirectionAndStep(std::string command, bool &isMoreOps);
     bool IterateFrame(int &curLoop, int &frame);
+    bool ReplayMSKP(SkCanvas *skiaCanvas);
     bool ReplaySKP(SkCanvas *skiaCanvas);
     bool PlayBackByFrame(SkCanvas *skiaCanvas, bool isDumpPictures = false);
     bool PlayBackByOpItem(SkCanvas *skiaCanvas, bool isMoreOps = true);
@@ -85,7 +86,7 @@ private:
     int beginFrame_ = 0;
     int endFrame_ = 100;
     int loop_ = 1;
-    double opItemStep_ = 1;
+    double opItemStep_ = 4;
     std::string inputFilePath_ = "/data/lkx/";
     std::string outputFilePath_ = "/data/lkx/";
     SkiaRecording skiaRecording;
