@@ -29,7 +29,7 @@ static inline nsecs_t SystemTime()
     struct timespec t;
     t.tv_sec = t.tv_nsec = 0;
     clock_gettime(CLOCK_REALTIME, &t);
-    return nsecs_t(t.tv_sec) * 1000000000LL + t.tv_nsec;
+    return nsecs_t(t.tv_sec) * NS_TO_SECONDS + t.tv_nsec;
 }
 
 void CalculateTimeoutTime(std::chrono::nanoseconds timestamp, timespec* spec)
@@ -125,7 +125,7 @@ void HgmOneShotTimer::Loop()
     }
 }
 
-bool HgmOneShotTimer::CheckTimerExpired(std::chrono::steady_clock::time_point expireTime)
+bool HgmOneShotTimer::CheckTimerExpired(std::chrono::steady_clock::time_point expireTime) const
 {
     return (expireTime - clock_->Now()) <= ZERO;
 }

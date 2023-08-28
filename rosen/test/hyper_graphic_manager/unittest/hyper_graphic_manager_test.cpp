@@ -503,5 +503,31 @@ HWTEST_F(HyperGraphicManagerTest, HgmFrameRateToolTest, Function | SmallTest | L
         }
     }
 }
+
+/**
+ * @tc.name: HgmOneShotTimerTest
+ * @tc.desc: Verify the result of HgmOneShotTimerTest
+ * @tc.type: FUNC
+ * @tc.require: I7DMS1
+ */
+HWTEST_F(HyperGraphicManagerTest, HgmOneShotTimerTest, Function | SmallTest | Level2)
+{
+    auto &hgm_core = HgmCore::Instance();
+    ScreenId id = 1;
+    int32_t interval = 200; // 200ms means waiting time
+
+    PART("CaseDescription") {
+        STEP("1. insert and start screenTimer") {
+            hgm_core.InsertAndStartScreenTimer(id, interval, nullptr, nullptr);
+            auto timer = hgm_core.GetScreenTimer(id);
+            STEP_ASSERT_NE(timer, nullptr);
+        }
+        STEP("2. reset screenTimer") {
+            hgm_core.ResetScreenTimer(id);
+            auto timer = hgm_core.GetScreenTimer(id);
+            STEP_ASSERT_NE(timer, nullptr);
+        }
+    }
+}
 } // namespace Rosen
 } // namespace OHOS
