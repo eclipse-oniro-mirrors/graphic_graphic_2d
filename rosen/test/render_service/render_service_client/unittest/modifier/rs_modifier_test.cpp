@@ -1820,20 +1820,18 @@ HWTEST_F(RSModifierTest, ModifierManager001, TestSize.Level1)
 
 /**
  * @tc.name: ModifierManager002
- * @tc.desc:
+ * @tc.desc: animation is exit
  * @tc.type:FUNC
  */
 HWTEST_F(RSModifierTest, ModifierManager002, TestSize.Level1)
 {
     RSModifierManager manager;
-    AnimationId id;
-    bool isTransitionIn;
     manager.Draw();
 
     auto prop = std::make_shared<RSAnimatableProperty<float>>(floatData[0]);
     auto modifier = std::make_shared<RSAlphaModifier>(prop);
-    std::vector<std::shared_ptr<RSRenderTransitionEffect>> effects;
-    auto animation = std::make_shared<RSRenderTransition>(id, effects, isTransitionIn);
+    auto animation = std::make_shared<RSRenderAnimation>();
+    ASSERT_NE(animation, nullptr);
     manager.AddAnimation(animation);
     manager.AddModifier(modifier);
     manager.Draw();
@@ -1841,20 +1839,18 @@ HWTEST_F(RSModifierTest, ModifierManager002, TestSize.Level1)
 
 /**
  * @tc.name: ModifierManager003
- * @tc.desc:
+ * @tc.desc: animation is nullptr
  * @tc.type:FUNC
  */
 HWTEST_F(RSModifierTest, ModifierManager003, TestSize.Level1)
 {
     RSModifierManager manager;
     AnimationId id = 0;
-    bool isTransitionIn;
     manager.Draw();
 
     auto prop = std::make_shared<RSAnimatableProperty<float>>(floatData[0]);
     auto modifier = std::make_shared<RSAlphaModifier>(prop);
-    std::vector<std::shared_ptr<RSRenderTransitionEffect>> effects;
-    auto animation = std::make_shared<RSRenderTransition>(id, effects, isTransitionIn);
+    auto animation = std::make_shared<RSRenderAnimation>(id);
     manager.AddAnimation(animation);
     manager.AddModifier(modifier);
     manager.Draw();
@@ -1868,14 +1864,13 @@ HWTEST_F(RSModifierTest, ModifierManager003, TestSize.Level1)
 HWTEST_F(RSModifierTest, ModifierManager004, TestSize.Level1)
 {
     RSModifierManager manager;
-    AnimationId id;
-    bool isTransitionIn;
+    AnimationId id = 10;
     manager.Draw();
 
     auto prop = std::make_shared<RSAnimatableProperty<float>>(floatData[0]);
     auto modifier = std::make_shared<RSAlphaModifier>(prop);
-    std::vector<std::shared_ptr<RSRenderTransitionEffect>> effects;
-    auto animation = std::make_shared<RSRenderTransition>(id, effects, isTransitionIn);
+    auto animation = std::make_shared<RSRenderAnimation>();
+    ASSERT_NE(animation, nullptr);
     manager.AddAnimation(animation);
     manager.RemoveAnimation(id);
     manager.AddModifier(modifier);
@@ -1891,13 +1886,11 @@ HWTEST_F(RSModifierTest, ModifierManager005, TestSize.Level1)
 {
     RSModifierManager manager;
     AnimationId id = 0;
-    bool isTransitionIn;
     manager.Draw();
 
     auto prop = std::make_shared<RSAnimatableProperty<float>>(floatData[0]);
     auto modifier = std::make_shared<RSAlphaModifier>(prop);
-    std::vector<std::shared_ptr<RSRenderTransitionEffect>> effects;
-    auto animation = std::make_shared<RSRenderTransition>(id, effects, isTransitionIn);
+    auto animation = std::make_shared<RSRenderAnimation>(id);
     manager.AddAnimation(animation);
     manager.RemoveAnimation(id);
     manager.AddModifier(modifier);
