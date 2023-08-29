@@ -21,14 +21,22 @@
 
 namespace OHOS {
 namespace Rosen {
+std::shared_ptr<FontCollection> g_instance;
+
 std::shared_ptr<FontCollection> FontCollection::Create()
 {
-    return std::make_shared<AdapterTxt::FontCollection>();
+    if (g_instance == nullptr) {
+        g_instance = std::make_shared<AdapterTxt::FontCollection>();
+    }
+    return g_instance;
 }
 
 std::shared_ptr<FontCollection> FontCollection::From(std::shared_ptr<txt::FontCollection> fontCollection)
 {
-    return std::make_shared<AdapterTxt::FontCollection>(fontCollection);
+    if (g_instance == nullptr) {
+        g_instance = std::make_shared<AdapterTxt::FontCollection>(fontCollection);
+    }
+    return g_instance;
 }
 
 namespace AdapterTxt {
