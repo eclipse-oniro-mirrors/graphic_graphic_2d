@@ -39,12 +39,12 @@ MSKPSrc::MSKPSrc(std::string path) : fPath_(path)
     }
 }
 
-SkISize MSKPSrc::size(int i) const
+SkISize MSKPSrc::Size(int i) const
 {
-    return i >= 0 && i < fPages_.size() ? fPages_[i].fSize.toCeil() : SkISize{0, 0};
+    return (i >= 0 && i < fPages_.size()) ? fPages_[i].fSize.toCeil() : SkISize{0, 0};
 }
 
-bool MSKPSrc::nextFrame()
+bool MSKPSrc::NextFrame()
 {
     if (++curFrameNum_ == fPages_.size()) {
         curFrameNum_ = 0;
@@ -54,7 +54,7 @@ bool MSKPSrc::nextFrame()
     return true;
 }
 
-bool MSKPSrc::draw(SkCanvas* c) const
+bool MSKPSrc::Draw(SkCanvas* c) const
 {
     SkRect cullrect = fPages_[curFrameNum_].fPicture.get()->cullRect();
     std::cout << "cullrect.width()=" << cullrect.width() << "cullrect.width()=" << cullrect.height() << std::endl;
@@ -108,37 +108,37 @@ bool DrawingDCL::ReplayMSKP(SkCanvas* skiaCanvas)
 {
     std::string tmp;
     std::cout << "press any key to draw one skp in OH.(begin)" << std::endl;
-    std::string timePrint = "lkx: draw time of frame " + std::to_string(mskpPtr->getCurFrameNum()) + " is ";
+    std::string timePrint = "lkx: draw time of frame " + std::to_string(mskpPtr->GetCurFrameNum()) + " is ";
     if (loop_ == 0) {
         std::cin>>tmp;
     }
     if (beginFrame_ == 1) {
-        std::cout<<"Frame: " << std::to_string(mskpPtr->getCurFrameNum()) <<" .sleep 4s..."<< std::endl;
+        std::cout<<"Frame: " << std::to_string(mskpPtr->GetCurFrameNum()) <<" .sleep 4s..."<< std::endl;
         sleep(opItemStep_);
     }
     auto start = std::chrono::system_clock::now();
-    mskpPtr->draw(skiaCanvas);
+    mskpPtr->Draw(skiaCanvas);
     PrintDurationTime(timePrint, start);
     if (beginFrame_ == 1) {
-        std::cout<<"Frame: " << std::to_string(mskpPtr->getCurFrameNum()) <<" .sleep 4s again..."<< std::endl;
+        std::cout<<"Frame: " << std::to_string(mskpPtr->GetCurFrameNum()) <<" .sleep 4s again..."<< std::endl;
         sleep(opItemStep_);
     }
     std::cout << "press any key to draw one skp in OH.(end)" << std::endl;
     if (loop_ == 0) {
         std::cin>>tmp;
     }
-    return mskpPtr->nextFrame();
+    return mskpPtr->NextFrame();
 }
 
-bool DrawingDCL::ReplayMSKP(SkCanvas *skiaCanvas)
+void DrawingDCL::ReplaySKP(SkCanvas *skiaCanvas)
 {
     static int frameNum = 0;
     std::cout << "repaly skp. the " << frameNum << "times" << std::endl;
     std::string tmp;
     std::cout << "press any key to draw one frame.(begin)" << std::endl;
     std::cin >> tmp;
-    start = std::chrono::system_clock::now();
-    canvas->drawPicture(skpPtr);
+    auto start = std::chrono::system_clock::now();
+    skiaCanvas->drawPicture(skpPtr);
     std::cout << "press any key to draw one frame.(end)" << std::endl;
     PrintDurationTime("The frame PlayBack time is ", start);
     std::cin >> tmp;
