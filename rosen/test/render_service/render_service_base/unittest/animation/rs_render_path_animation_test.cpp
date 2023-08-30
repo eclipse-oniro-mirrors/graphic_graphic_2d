@@ -35,7 +35,7 @@ void RSRenderPathAnimationTest::TearDown() {}
 
 /**
  * @tc.name: SetInterpolatorTest
- * @tc.desc: 
+ * @tc.desc:
  * @tc.type: FUNC
  */
 HWTEST_F(RSRenderPathAnimationTest, SetInterpolatorTest, Level1)
@@ -53,7 +53,7 @@ HWTEST_F(RSRenderPathAnimationTest, SetInterpolatorTest, Level1)
 
 /**
  * @tc.name: SetRotationModeTest
- * @tc.desc: 
+ * @tc.desc:
  * @tc.type: FUNC
  */
 HWTEST_F(RSRenderPathAnimationTest, SetRotationModeTest, Level1)
@@ -72,7 +72,7 @@ HWTEST_F(RSRenderPathAnimationTest, SetRotationModeTest, Level1)
 
 /**
  * @tc.name: SetBeginFractionTest
- * @tc.desc: 
+ * @tc.desc:
  * @tc.type: FUNC
  */
 HWTEST_F(RSRenderPathAnimationTest, SetBeginFractionTest, Level1)
@@ -90,7 +90,7 @@ HWTEST_F(RSRenderPathAnimationTest, SetBeginFractionTest, Level1)
 
 /**
  * @tc.name: GetBeginFractionTest
- * @tc.desc: 
+ * @tc.desc:
  * @tc.type: FUNC
  */
 HWTEST_F(RSRenderPathAnimationTest, GetBeginFractionTest, Level1)
@@ -107,7 +107,7 @@ HWTEST_F(RSRenderPathAnimationTest, GetBeginFractionTest, Level1)
 
 /**
  * @tc.name: SetEndFractionTest
- * @tc.desc: 
+ * @tc.desc:
  * @tc.type: FUNC
  */
 HWTEST_F(RSRenderPathAnimationTest, SetEndFractionTest, Level1)
@@ -125,7 +125,7 @@ HWTEST_F(RSRenderPathAnimationTest, SetEndFractionTest, Level1)
 
 /**
  * @tc.name: GetEndFractionTest
- * @tc.desc: 
+ * @tc.desc:
  * @tc.type: FUNC
  */
 HWTEST_F(RSRenderPathAnimationTest, GetEndFractionTest, Level1)
@@ -142,7 +142,7 @@ HWTEST_F(RSRenderPathAnimationTest, GetEndFractionTest, Level1)
 
 /**
  * @tc.name: SetIsNeedPathTest
- * @tc.desc: 
+ * @tc.desc:
  * @tc.type: FUNC
  */
 HWTEST_F(RSRenderPathAnimationTest, SetIsNeedPathTest, Level1)
@@ -161,7 +161,7 @@ HWTEST_F(RSRenderPathAnimationTest, SetIsNeedPathTest, Level1)
 
 /**
  * @tc.name: SetPathNeedAddOriginTest
- * @tc.desc: 
+ * @tc.desc:
  * @tc.type: FUNC
  */
 HWTEST_F(RSRenderPathAnimationTest, SetPathNeedAddOriginTest, Level1)
@@ -179,7 +179,7 @@ HWTEST_F(RSRenderPathAnimationTest, SetPathNeedAddOriginTest, Level1)
 
 /**
  * @tc.name: SetRotationIdTest
- * @tc.desc: 
+ * @tc.desc:
  * @tc.type: FUNC
  */
 HWTEST_F(RSRenderPathAnimationTest, SetRotationIdTest, Level1)
@@ -197,7 +197,7 @@ HWTEST_F(RSRenderPathAnimationTest, SetRotationIdTest, Level1)
 
 /**
  * @tc.name: MarshallingTest
- * @tc.desc: 
+ * @tc.desc:
  * @tc.type: FUNC
  */
 HWTEST_F(RSRenderPathAnimationTest, MarshallingTest, Level1)
