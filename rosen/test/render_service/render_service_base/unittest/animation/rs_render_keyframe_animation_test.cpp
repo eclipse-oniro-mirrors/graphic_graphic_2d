@@ -35,7 +35,7 @@ void RSRenderKeyframeAnimationTest::TearDown() {}
 
 /**
  * @tc.name: AddKeyframeTest
- * @tc.desc: 
+ * @tc.desc:
  * @tc.type: FUNC
  */
 HWTEST_F(RSRenderKeyframeAnimationTest, AddKeyframeTest, Level1)
@@ -49,7 +49,7 @@ HWTEST_F(RSRenderKeyframeAnimationTest, AddKeyframeTest, Level1)
 
 /**
  * @tc.name: MarshallingTest
- * @tc.desc: 
+ * @tc.desc:
  * @tc.type: FUNC
  */
 HWTEST_F(RSRenderKeyframeAnimationTest, MarshallingTest, Level1)
