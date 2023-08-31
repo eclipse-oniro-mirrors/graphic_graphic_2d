@@ -45,11 +45,8 @@ public:
 
     bool Draw(SkCanvas* c) const;
     bool NextFrame();
-    SkISize Size(int i) const;
-    int PageCount() const { return fPages_.size(); }
-    SkISize Size() const { return this->Size(curFrameNum_); }
     SkString Name() const { return SkOSPath::Basename(fPath_.c_str()); }
-    int GetCurFrameNum() {return curFrameNum_;}
+    int GetCurFrameNum() const { return curFrameNum_; }
 private:
     uint16_t curFrameNum_ = 0;
     std::string fPath_;
