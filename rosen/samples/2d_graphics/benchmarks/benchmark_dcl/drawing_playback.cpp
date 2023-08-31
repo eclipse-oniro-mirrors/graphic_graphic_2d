@@ -39,11 +39,6 @@ MSKPSrc::MSKPSrc(std::string path) : fPath_(path)
     }
 }
 
-SkISize MSKPSrc::Size(int i) const
-{
-    return (i >= 0 && i < fPages_.size()) ? fPages_[i].fSize.toCeil() : SkISize{0, 0};
-}
-
 bool MSKPSrc::NextFrame()
 {
     if (++curFrameNum_ == fPages_.size()) {
