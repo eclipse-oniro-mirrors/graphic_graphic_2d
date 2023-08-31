@@ -634,7 +634,6 @@ template("rosen_libicu") {
       deps = [
         "$ace_flutter_engine_root/icu:ace_icu_make_data_assembly_$platform",
       ]
-
     }
   }
 }
