@@ -56,9 +56,17 @@ HWTEST_F(RSModifierManagerTest, CreateDrawingContextTest, TestSize.Level1)
  */
 HWTEST_F(RSModifierManagerTest, AddAnimationTest, TestSize.Level1)
 {
-    auto animation = std::shared_ptr<RSRenderAnimation>();
+    uint64_t ANIMATION_ID = 100;
+    uint64_t PROPERTY_ID = 101;
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto renderCurveAnimation =
+        std::make_shared<RSRenderCurveAnimation>(ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+
     RSModifierManager rsModifierManager;
-    rsModifierManager.AddAnimation(animation);
+    rsModifierManager.AddAnimation(renderCurveAnimation);
+    ASSERT_TRUE(renderCurveAnimation->GetAnimationId());
 }
 
 /**
@@ -68,9 +76,17 @@ HWTEST_F(RSModifierManagerTest, AddAnimationTest, TestSize.Level1)
  */
 HWTEST_F(RSModifierManagerTest, RemoveAnimationTest, TestSize.Level1)
 {
-    auto animation = std::shared_ptr<RSRenderAnimation>();
-    AnimationId key = animation->GetAnimationId();
+    uint64_t ANIMATION_ID = 100;
+    uint64_t PROPERTY_ID = 101;
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto renderCurveAnimation =
+        std::make_shared<RSRenderCurveAnimation>(ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    AnimationId key = renderCurveAnimation->GetAnimationId();
+
     RSModifierManager rsModifierManager;
+    rsModifierManager.AddAnimation(renderCurveAnimation);
     rsModifierManager.RemoveAnimation(key);
 }
 } // namespace OHOS::Rosen

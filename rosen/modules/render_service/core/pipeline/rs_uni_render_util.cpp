@@ -45,6 +45,7 @@ constexpr const char* SCB_DROP_DOWN_PANEL = "SCBDropdownPanel";
 constexpr const char* SCB_STATUS_BAR = "SCBStatusBar";
 constexpr const char* SCB_NEGATIVE_SCREEN = "SCBNegativeScreen";
 constexpr const char* SCB_GESTURE_BACK = "SCBGestureBack";
+constexpr const char* SCB_VOLUME_PANEL = "SCBVolumePanel";
 };
 void RSUniRenderUtil::MergeDirtyHistory(std::shared_ptr<RSDisplayRenderNode>& node, int32_t bufferAge,
     bool useAlignedDirtyRegion)
@@ -560,7 +561,8 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
             (surfaceName.find(SCB_DROP_DOWN_PANEL) != std::string::npos) ||
             (surfaceName.find(SCB_STATUS_BAR) != std::string::npos) ||
             (surfaceName.find(SCB_NEGATIVE_SCREEN) != std::string::npos) ||
-            (surfaceName.find(SCB_GESTURE_BACK) != std::string::npos);
+            (surfaceName.find(SCB_GESTURE_BACK) != std::string::npos) ||
+            (surfaceName.find(SCB_VOLUME_PANEL) != std::string::npos);
         if (needFilter || needFilterSCB || node->IsSelfDrawingType()) {
             AssignMainThreadNode(mainThreadNodes, node);
             continue;
