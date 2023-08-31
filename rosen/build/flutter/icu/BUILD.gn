@@ -633,8 +633,10 @@ template("rosen_libicu") {
         "$ace_flutter_engine_root/icu:ace_icu_make_data_assembly_$platform",
       ]
 
-      part_name = "graphic_2d"
-      subsystem_name = "graphic"
+      if (enable_text_gine) {
+        part_name = "graphic_2d"
+        subsystem_name = "graphic"
+      }
     }
   }
 }
