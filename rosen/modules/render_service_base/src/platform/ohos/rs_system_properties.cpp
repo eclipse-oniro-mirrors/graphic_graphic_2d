@@ -136,7 +136,8 @@ bool RSSystemProperties::GetOcclusionEnabled()
 
 bool RSSystemProperties::GetHardwareComposerEnabled()
 {
-    static bool hardwareComposerEnabled = system::GetParameter("persist.rosen.hardwarecomposer.enabled", "1") != "0";
+    static bool hardwareComposerEnabled = system::GetParameter(
+        "persist.rosen.hardwarecomposer.enabled", "1") != "0";
     return hardwareComposerEnabled;
 }
 
