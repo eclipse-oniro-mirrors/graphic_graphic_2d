@@ -107,17 +107,18 @@ uint32_t HgmFrameRateManager::GetDrawingFrameRate(const uint32_t refreshRate, co
     // 1. The preferred fps is divisible by refreshRate.
     const float currRefreshRate = static_cast<float>(refreshRate);
     const float preferredFps = static_cast<float>(range.preferred_);
+    if (preferredFps < MARGIN || currRefreshRate < MARGIN) {
+        return -1;
+    }
     if (std::fmodf(currRefreshRate, range.preferred_) < MARGIN) {
         return static_cast<uint32_t>(preferredFps);
     }
-
     // 2. FrameRateRange is not dynamic, we will find the closest drawing fps to preferredFps.
     // e.g. If the FrameRateRange of a surfaceNode is [50, 50, 50], the refreshRate is
     // 90, the drawing fps of the surfaceNode should be 45.
     if (!range.IsDynamic()) {
         return static_cast<uint32_t>(currRefreshRate / std::round(refreshRate / preferredFps));
     }
-
     // 3. FrameRateRange is dynamic. We will find a divisible result in the range if possible.
     // If several divisible options are in the range, the smoother, the better.
     // The KPI of "smooth" is the ratio of lack.
@@ -152,15 +153,13 @@ uint32_t HgmFrameRateManager::GetDrawingFrameRate(const uint32_t refreshRate, co
             }
             continue;
         }
-        float remainder = std::min(std::fmodf(preferredFps, dividedFps),
-            std::fmodf(std::abs(dividedFps - preferredFps), dividedFps));
-        currRatio = remainder / dividedFps;
+        currRatio = std::min(std::fmodf(preferredFps, dividedFps),
+            std::fmodf(std::abs(dividedFps - preferredFps), dividedFps)) / dividedFps;
         // When currRatio is almost zero, dividedFps is the perfect result
         if (currRatio < MARGIN) {
             drawingFps = dividedFps;
             break;
         }
-
         if (currRatio < ratio) {
             ratio = currRatio;
             drawingFps = dividedFps;

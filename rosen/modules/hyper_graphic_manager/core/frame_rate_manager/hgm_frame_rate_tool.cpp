@@ -16,6 +16,9 @@
 #include "hgm_frame_rate_tool.h"
 
 namespace OHOS::Rosen {
+namespace {
+    constexpr float MARGIN = 0.00001;
+}
 std::once_flag g_createFlag;
 std::shared_ptr<HgmFrameRateTool> instance_ = nullptr;
 
@@ -89,13 +92,18 @@ int32_t HgmFrameRateTool::CalModifierPreferred(
 std::pair<float, float> HgmFrameRateTool::applyDimension(
     SpeedTransType speedTransType, float xSpeed, float ySpeed, std::shared_ptr<ScreenProfile> screenProfile)
 {
+    auto xDpi = screenProfile->GetXDpi();
+    auto yDpi = screenProfile->GetYDpi();
+    if (xDpi < MARGIN || yDpi < MARGIN) {
+        return std::pair<float, float>(0, 0);
+    }
     switch (speedTransType) {
         case SpeedTransType::TRANS_MM_TO_PIXEL:
             return std::pair<float, float>(
-                xSpeed * screenProfile->GetXDpi() / INCH_2_MM, ySpeed * screenProfile->GetYDpi() / INCH_2_MM);
+                xSpeed * xDpi / INCH_2_MM, ySpeed * yDpi / INCH_2_MM);
         case SpeedTransType::TRANS_PIXEL_TO_MM:
             return std::pair<float, float>(
-                xSpeed / screenProfile->GetXDpi() * INCH_2_MM, ySpeed / screenProfile->GetYDpi() * INCH_2_MM);
+                xSpeed / xDpi * INCH_2_MM, ySpeed / yDpi * INCH_2_MM);
         default:
             return std::pair<float, float>(0, 0);
     }
