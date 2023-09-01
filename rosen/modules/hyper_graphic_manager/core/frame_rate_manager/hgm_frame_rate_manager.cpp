@@ -17,6 +17,7 @@
 
 #include "hgm_core.h"
 #include "hgm_log.h"
+#include "parameters.h"
 #include "rs_trace.h"
 
 namespace OHOS {

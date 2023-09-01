@@ -78,7 +78,7 @@ public:
     std::unique_ptr<std::unordered_map<ScreenId, int32_t>> GetModesToApply();
     int32_t AddScreenProfile(ScreenId id, int32_t width, int32_t height, int32_t phyWidth, int32_t phyHeight);
     int32_t RemoveScreenProfile(ScreenId id);
-    int32_t CalModifierPreferred(HgmModifierProfile &hgmModifierProfile) const;
+    int32_t CalModifierPreferred(const HgmModifierProfile &hgmModifierProfile) const;
     void SetActiveScreenId(ScreenId id);
     std::shared_ptr<HgmOneShotTimer> GetScreenTimer(ScreenId screenId) const;
     void ResetScreenTimer(ScreenId screenId) const;

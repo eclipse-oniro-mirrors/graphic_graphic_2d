@@ -25,7 +25,6 @@
 
 #include "rs_base_render_engine.h"
 
-#include "hgm_frame_rate_manager.h"
 #include "pipeline/driven_render/rs_driven_render_manager.h"
 #include "pipeline/rs_dirty_region_manager.h"
 #include "pipeline/rs_processor.h"
@@ -153,7 +152,6 @@ public:
     }
     void SetAppWindowNum(uint32_t num);
 
-    void CollectFrameRateRange(RSRenderNode& node);
     void SetForceUpdateFlag(bool flag)
     {
         forceUpdateFlag_ = flag;

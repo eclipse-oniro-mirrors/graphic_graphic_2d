@@ -41,8 +41,8 @@ public:
     HgmFrameRateTool &operator=(const HgmFrameRateTool &) = delete;
     int32_t AddScreenProfile(ScreenId id, int32_t width, int32_t height, int32_t phyWidth, int32_t phyHeight);
     int32_t RemoveScreenProfile(ScreenId id);
-    int32_t CalModifierPreferred(
-        ScreenId id, HgmModifierProfile &hgmModifierProfile, std::shared_ptr<ParsedConfigData> parsedConfigData) const;
+    int32_t CalModifierPreferred(ScreenId id, const HgmModifierProfile &hgmModifierProfile,
+        std::shared_ptr<ParsedConfigData> parsedConfigData) const;
 private:
     class ScreenProfile {
     public:
