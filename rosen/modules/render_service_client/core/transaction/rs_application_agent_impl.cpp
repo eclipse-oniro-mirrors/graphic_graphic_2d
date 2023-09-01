@@ -24,11 +24,22 @@
 
 namespace OHOS {
 namespace Rosen {
-static std::unique_ptr<RSApplicationAgentImpl> gRSApplicationAgentImplInstance =
-    std::make_unique<RSApplicationAgentImpl>();
-RSApplicationAgentImpl& RSApplicationAgentImpl::Instance()
+#ifdef OHOS_PLATFORM
+static sptr<RSApplicationAgentImpl> gRSApplicationAgentImplInstance;
+#endif
+RSApplicationAgentImpl* RSApplicationAgentImpl::Instance()
 {
-    return *gRSApplicationAgentImplInstance;
+#ifdef OHOS_PLATFORM
+    if (gRSApplicationAgentImplInstance == nullptr) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (gRSApplicationAgentImplInstance == nullptr) {
+            gRSApplicationAgentImplInstance = new RSApplicationAgentImpl();
+        }
+    }
+    return gRSApplicationAgentImplInstance.GetRefPtr();
+#else
+    return nullptr;
+#endif
 }
 
 void RSApplicationAgentImpl::RegisterRSApplicationAgent()
