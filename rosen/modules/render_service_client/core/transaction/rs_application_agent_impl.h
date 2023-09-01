@@ -16,6 +16,8 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_TRANSACTION_RS_APPLICATION_AGENT_IMPL_H
 #define RENDER_SERVICE_CLIENT_CORE_TRANSACTION_RS_APPLICATION_AGENT_IMPL_H
 
+#include <mutex>
+
 #ifdef ROSEN_OHOS
 #include "ipc_callbacks/rs_application_agent_stub.h"
 #endif
@@ -28,7 +30,7 @@ class RSApplicationAgentImpl final : public RSApplicationAgentStub {
 class RSApplicationAgentImpl final {
 #endif
 public:
-    static RSApplicationAgentImpl& Instance();
+    static RSApplicationAgentImpl* Instance();
     void RegisterRSApplicationAgent();
 
     RSApplicationAgentImpl() = default;
@@ -43,6 +45,8 @@ private:
 #ifdef ROSEN_OHOS
     void OnTransaction(std::shared_ptr<RSTransactionData> transactionData) override;
 #endif
+
+    static inline std::mutex mutex_;
 };
 }
 }
