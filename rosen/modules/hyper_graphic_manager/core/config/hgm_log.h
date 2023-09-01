@@ -22,6 +22,9 @@ namespace OHOS {
 #ifdef __aarch64__
 #define PUBI64 "%{public}ld"
 #define PUBU64 "%{public}lu"
+#elif __x86_64__
+#define PUBI64 "%{public}ld"
+#define PUBU64 "%{public}lu"
 #else
 #define PUBI64 "%{public}lld"
 #define PUBU64 "%{public}llu"
