@@ -243,10 +243,16 @@ void RSUniRenderVisitor::PrepareChildren(RSRenderNode& node)
     node.SetGlobalAlpha(curAlpha_);
     for (auto& child : node.GetSortedChildren()) {
         if (UNLIKELY(child->GetSharedTransitionParam().has_value())) {
+            sharedTransitionNodeCnt_++;
+            markedCachedNodes_ = 0;
             PrepareSharedTransitionNode(*child);
+            curDirty_ = child->IsDirty();
+            child->Prepare(shared_from_this());
+            sharedTransitionNodeCnt_--;
+        } else {
+            curDirty_ = child->IsDirty();
+            child->Prepare(shared_from_this());
         }
-        curDirty_ = child->IsDirty();
-        child->Prepare(shared_from_this());
     }
     curAlpha_ = alpha;
 
@@ -314,6 +320,9 @@ void RSUniRenderVisitor::SetNodeCacheChangeStatus(RSRenderNode& node, int marked
         ((markedCachedNodeCnt != markedCachedNodes_) || node.HasChildrenOutOfRect() || childHasSurface_)) {
         node.SetDrawingCacheType(RSDrawingCacheType::DISABLED_CACHE);
     }
+    if (sharedTransitionNodeCnt_ || markedCachedNodes_ <= 0) {
+        node.SetDrawingCacheType(RSDrawingCacheType::DISABLED_CACHE);
+    }
     if (!curCacheFilterRects_.empty()) {
         allCacheFilterRects_.emplace(node.GetId(), curCacheFilterRects_.top());
         curCacheFilterRects_.pop();
@@ -324,6 +333,9 @@ void RSUniRenderVisitor::SetNodeCacheChangeStatus(RSRenderNode& node, int marked
         static_cast<int>(isDrawingCacheChanged_.top()), static_cast<int>(node.ChildHasFilter()),
         static_cast<int>(node.HasChildrenOutOfRect()), markedCachedNodeCnt, markedCachedNodes_);
     node.SetDrawingCacheChanged(isDrawingCacheChanged_.top());
+    if (curSurfaceNode_) {
+        curSurfaceNode_->UpdateChangedDrawingCacheNodes(node.ReinterpretCastTo<RSRenderNode>());
+    }
     markedCachedNodes_--;
     // reset counter after executing the very first marked node
     if (markedCachedNodeCnt == 1) {
@@ -332,7 +344,9 @@ void RSUniRenderVisitor::SetNodeCacheChangeStatus(RSRenderNode& node, int marked
     } else {
         bool isChildChanged = isDrawingCacheChanged_.top();
         isDrawingCacheChanged_.pop();
-        isDrawingCacheChanged_.top() = isDrawingCacheChanged_.top() || isChildChanged;
+        if (!isDrawingCacheChanged_.empty()) {
+            isDrawingCacheChanged_.top() = isDrawingCacheChanged_.top() || isChildChanged;
+        }
     }
 }
 
@@ -535,6 +549,7 @@ bool RSUniRenderVisitor::CheckIfSurfaceRenderNodeStatic(RSSurfaceRenderNode& nod
         }
         node.UpdateFilterCacheStatusIfNodeStatic(prepareClipRect_);
     }
+    node.ResetChangedDrawingCacheStatusIfNodeStatic();
     // static surface keeps same position
     curDisplayNode_->UpdateSurfaceNodePos(node.GetId(), curDisplayNode_->GetLastFrameSurfacePos(node.GetId()));
     return true;
@@ -830,8 +845,10 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     node.SetDstRect(dstRect);
 
     if (node.IsMainWindowType() || node.IsLeashWindow()) {
-        // record node position for display render node dirtyManager
-        curDisplayNode_->UpdateSurfaceNodePos(node.GetId(), node.GetOldDirty());
+        // record visible node position for display render node dirtyManager
+        if (node.ShouldPaint()) {
+            curDisplayNode_->UpdateSurfaceNodePos(node.GetId(), node.GetOldDirty());
+        }
 
         if (node.IsAppWindow()) {
             // if update appwindow, its children should not skip
@@ -865,16 +882,6 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         doAnimate_ = doAnimate_ || isSurfaceRotationChanged_;
         node.SetAnimateState();
     }
-    auto screenRotation = curDisplayNode_->GetRotation();
-    auto screenRect = RectI(0, 0, screenInfo_.width, screenInfo_.height);
-    if (!node.CheckOpaqueRegionBaseInfo(
-        screenRect, geoPtr->GetAbsRect(), screenRotation, node.IsFocusedNode(currentFocusedNodeId_))
-        && node.GetSurfaceNodeType() != RSSurfaceNodeType::SELF_DRAWING_NODE) {
-        node.ResetSurfaceOpaqueRegion(screenRect, geoPtr->GetAbsRect(),
-            screenRotation, node.IsFocusedNode(currentFocusedNodeId_));
-    }
-    node.SetOpaqueRegionBaseInfo(
-        screenRect, geoPtr->GetAbsRect(), screenRotation, node.IsFocusedNode(currentFocusedNodeId_));
 
 #if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
     bool isLeashWindowNode = false;
@@ -958,6 +965,18 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
 #endif
 
+    // Due to the alpha is updated in PrepareChildren, so PrepareChildren
+    // needs to be done before CheckOpaqueRegionBaseInfo
+    auto screenRotation = curDisplayNode_->GetRotation();
+    auto screenRect = RectI(0, 0, screenInfo_.width, screenInfo_.height);
+    if (!node.CheckOpaqueRegionBaseInfo(
+        screenRect, geoPtr->GetAbsRect(), screenRotation, node.IsFocusedNode(currentFocusedNodeId_))
+        && node.GetSurfaceNodeType() != RSSurfaceNodeType::SELF_DRAWING_NODE) {
+        node.ResetSurfaceOpaqueRegion(screenRect, geoPtr->GetAbsRect(),
+            screenRotation, node.IsFocusedNode(currentFocusedNodeId_));
+    }
+    node.SetOpaqueRegionBaseInfo(
+        screenRect, geoPtr->GetAbsRect(), screenRotation, node.IsFocusedNode(currentFocusedNodeId_));
     CollectFrameRateRange(node);
 }
 
@@ -2775,6 +2794,7 @@ bool RSUniRenderVisitor::UpdateCacheSurface(RSRenderNode& node)
     if (canvas_) {
         cacheCanvas->CopyConfiguration(*canvas_);
     }
+    cacheCanvas->SetIsParallelCanvas(isSubThread_);
 
     // When drawing CacheSurface, all child node should be drawn.
     // So set isOpDropped_ = false here.
@@ -3028,7 +3048,10 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 #endif
 #endif
     if (!CheckIfSurfaceRenderNodeNeedProcess(node)) {
+        node.UpdateFilterCacheStatusWithVisible(false);
         return;
+    } else {
+        node.UpdateFilterCacheStatusWithVisible(true);
     }
 #ifdef RS_ENABLE_EGLQUERYSURFACE
     if (node.IsMainWindowType()) {

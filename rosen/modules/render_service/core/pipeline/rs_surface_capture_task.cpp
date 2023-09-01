@@ -652,6 +652,7 @@ void RSSurfaceCaptureVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode &node
             RS_LOGD("RSSurfaceCaptureVisitor::ProcessDisplayRenderNode: \
                 process RSDisplayRenderNode(id:[%{public}" PRIu64 "]) Not using UniRender buffer.", node.GetId());
             ProcessChildren(node);
+            DrawWatermarkIfNeed(node);
         } else {
             if (node.GetBuffer() == nullptr) {
                 RS_LOGE("RSSurfaceCaptureVisitor::ProcessDisplayRenderNode: buffer is null!");
@@ -990,7 +991,6 @@ void RSSurfaceCaptureVisitor::CaptureSurfaceInDisplayWithUni(RSSurfaceRenderNode
     ProcessChildren(node);
     RSPropertiesPainter::DrawFilter(property, *canvas_, FilterType::FOREGROUND_FILTER);
     RSPropertiesPainter::DrawLinearGradientBlurFilter(property, *canvas_);
-    DrawWatermarkIfNeed(property.GetBoundsWidth(), property.GetBoundsHeight());
 }
 #else
 void RSSurfaceCaptureVisitor::CaptureSurfaceInDisplayWithUni(RSSurfaceRenderNode& node)
@@ -1115,24 +1115,21 @@ void RSSurfaceCaptureVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
         return;
     }
 
+    node.ProcessRenderBeforeChildren(*canvas_);
     if (node.GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
         auto canvasDrawingNode = node.ReinterpretCastTo<RSCanvasDrawingRenderNode>();
 #ifndef USE_ROSEN_DRAWING
-            SkBitmap bitmap = canvasDrawingNode->GetBitmap();
+        SkBitmap bitmap = canvasDrawingNode->GetBitmap();
 #ifndef NEW_SKIA
-            canvas_->drawBitmap(bitmap, node.GetRenderProperties().GetBoundsPositionX(),
-                node.GetRenderProperties().GetBoundsPositionY());
+        canvas_->drawBitmap(bitmap, 0, 0);
 #else
-            canvas_->drawImage(bitmap.asImage(), node.GetRenderProperties().GetBoundsPositionX(),
-                node.GetRenderProperties().GetBoundsPositionY());
+        canvas_->drawImage(bitmap.asImage(), 0, 0);
 #endif
 #else
-            Drawing::Bitmap bitmap = canvasDrawingNode->GetBitmap();
-            canvas_->DrawBitmap(bitmap, node.GetRenderProperties().GetBoundsPositionX(),
-                node.GetRenderProperties().GetBoundsPositionY());
+        Drawing::Bitmap bitmap = canvasDrawingNode->GetBitmap();
+        canvas_->DrawBitmap(bitmap, 0, 0);
 #endif
     } else {
-        node.ProcessRenderBeforeChildren(*canvas_);
         node.ProcessRenderContents(*canvas_);
     }
     ProcessChildren(node);
@@ -1284,14 +1281,16 @@ void RSSurfaceCaptureVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode &node
     }
 }
 
-void RSSurfaceCaptureVisitor::DrawWatermarkIfNeed(float screenWidth, float screenHeight)
+void RSSurfaceCaptureVisitor::DrawWatermarkIfNeed(RSDisplayRenderNode& node)
 {
     if (RSMainThread::Instance()->GetWatermarkFlag()) {
+        sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
+        auto screenInfo = screenManager->QueryScreenInfo(node.GetScreenId());
 #ifndef USE_ROSEN_DRAWING
         sk_sp<SkImage> skImage = RSMainThread::Instance()->GetWatermarkImg();
         SkPaint rectPaint;
         auto skSrcRect = SkRect::MakeWH(skImage->width(), skImage->height());
-        auto skDstRect = SkRect::MakeWH(screenWidth, screenHeight);
+        auto skDstRect = SkRect::MakeWH(screenInfo.width, screenInfo.height);
 #ifdef NEW_SKIA
         canvas_->drawImageRect(
             skImage, skSrcRect, skDstRect, SkSamplingOptions(),
@@ -1306,7 +1305,7 @@ void RSSurfaceCaptureVisitor::DrawWatermarkIfNeed(float screenWidth, float scree
         }
 
         auto srcRect = Drawing::Rect(0, 0, image->GetWidth(), image->GetHeight());
-        auto dstRect = Drawing::Rect(0, 0, screenWidth, screenHeight);
+        auto dstRect = Drawing::Rect(0, 0, screenInfo.width, screenInfo.height);
         Drawing::Brush rectBrush;
         canvas_->AttachBrush(rectBrush);
         canvas_->DrawImageRect(*image, srcRect, dstRect, Drawing::SamplingOptions(),

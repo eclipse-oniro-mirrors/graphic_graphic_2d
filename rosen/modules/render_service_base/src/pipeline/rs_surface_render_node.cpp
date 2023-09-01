@@ -459,11 +459,9 @@ void RSSurfaceRenderNode::SetContextClipRegion(const std::optional<Drawing::Rect
 void RSSurfaceRenderNode::SetSecurityLayer(bool isSecurityLayer)
 {
     isSecurityLayer_ = isSecurityLayer;
-    if (isSecurityLayer_) {
-        auto parent = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetParent().lock());
-        if (parent != nullptr && parent ->IsLeashWindow()) {
-            parent->SetSecurityLayer(true);
-        }
+    auto parent = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetParent().lock());
+    if (parent != nullptr && parent ->IsLeashWindow()) {
+        parent->SetSecurityLayer(isSecurityLayer);
     }
 }
 
@@ -808,6 +806,40 @@ void RSSurfaceRenderNode::UpdateFilterNodes(const std::shared_ptr<RSRenderNode>&
         return;
     }
     filterNodes_.emplace(nodePtr->GetId(), nodePtr);
+}
+
+void RSSurfaceRenderNode::UpdateChangedDrawingCacheNodes(const std::shared_ptr<RSRenderNode>& nodePtr)
+{
+    if (nodePtr == nullptr || !nodePtr->GetDrawingCacheChanged()) {
+        return;
+    }
+    changedDrawingCacheNodes_.emplace(nodePtr->GetId(), nodePtr);
+}
+
+void RSSurfaceRenderNode::ResetChangedDrawingCacheStatusIfNodeStatic()
+{
+    // traversal drawing cache nodes including app window
+    EraseIf(changedDrawingCacheNodes_, [this](const auto& pair) {
+        auto& node = pair.second;
+        if (node == nullptr || !node->IsOnTheTree()) {
+            return true;
+        }
+        node->SetDrawingCacheChanged(false);
+        return true;
+    });
+}
+
+void RSSurfaceRenderNode::UpdateFilterCacheStatusWithVisible(bool visible)
+{
+    if (visible == prevVisible_) {
+        return;
+    }
+    prevVisible_ = visible;
+    if (!visible && !filterNodes_.empty()) {
+        for (auto& node : filterNodes_) {
+            node.second->GetMutableRenderProperties().ClearFilterCache();
+        }
+    }
 }
 
 void RSSurfaceRenderNode::UpdateFilterCacheStatusIfNodeStatic(const RectI& clipRect)
@@ -1200,6 +1232,9 @@ void RSSurfaceRenderNode::OnApplyModifiers()
 
     // Apply the context matrix into the bounds geometry
     geoPtr->SetContextMatrix(contextMatrix_);
+    if (!ShouldPaint()) {
+        UpdateFilterCacheStatusWithVisible(false);
+    }
 }
 
 #ifndef USE_ROSEN_DRAWING

@@ -1078,7 +1078,8 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
 
 #if defined(RS_ENABLE_GL)
     // Optional use cacheManager to draw filter
-    if (auto& cacheManager = properties.GetFilterCacheManager(filterType == FilterType::FOREGROUND_FILTER)) {
+    if (auto& cacheManager = properties.GetFilterCacheManager(filterType == FilterType::FOREGROUND_FILTER);
+        cacheManager != nullptr && !canvas.GetIsParallelCanvas()) {
         cacheManager->DrawFilter(canvas, filter);
         return;
     }
@@ -1201,7 +1202,7 @@ void RSPropertiesPainter::DrawBackgroundEffect(
     if (auto& cacheManager = properties.GetFilterCacheManager(false)) {
         // the input rect is in global coordinate, so we need to save/reset matrix before clip
         auto data = cacheManager->GeneratedCachedEffectData(canvas, filter);
-        canvas.SetEffectData(data);
+        canvas.SetEffectData(std::move(data));
         return;
     }
 #endif
@@ -1230,8 +1231,8 @@ void RSPropertiesPainter::DrawBackgroundEffect(
         ROSEN_LOGE("RSPropertiesPainter::DrawBackgroundEffect imageCache snapshot null");
         return;
     }
-    auto data = std::make_shared<RSPaintFilterCanvas::CachedEffectData>(imageCache, imageRect);
-    canvas.SetEffectData(data);
+    auto data = std::make_shared<RSPaintFilterCanvas::CachedEffectData>(std::move(imageCache), std::move(imageRect));
+    canvas.SetEffectData(std::move(data));
 }
 #else
 void RSPropertiesPainter::DrawBackgroundEffect(
@@ -1520,6 +1521,7 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
     if (properties.GetClipBounds() != nullptr) {
         canvas.clipPath(properties.GetClipBounds()->GetSkiaPath(), antiAlias);
     } else if (properties.GetClipToBounds()) {
+        hasClipToBounds = true;
         // In NEW_SKIA version, L476 code will cause crash if the second parameter is true.
         // so isAntiAlias is false only the method is called in ProcessAnimatePropertyBeforeChildren().
 #ifdef NEW_SKIA
@@ -1528,7 +1530,6 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
         } else {
             canvas.clipRRect(RRect2SkRRect(properties.GetRRect()), antiAlias);
         }
-        hasClipToBounds = true;
 #else
         canvas.clipRRect(RRect2SkRRect(properties.GetRRect()), antiAlias);
 #endif
@@ -2270,19 +2271,19 @@ void RSPropertiesPainter::DrawParticle(const RSProperties& properties, RSPaintFi
             } else {
                 auto imageSize = particles[i]->GetImageSize();
                 auto image = particles[i]->GetImage();
-                canvas.save();
-                canvas.translate(position.x_, position.y_);
-#ifndef USE_ROSEN_DRAWING
-                canvas.rotate(particles[i]->GetSpin());
-#else
-                canvas.Save();
-                canvas.Translate(position.x_, position.y_);
-                canvas.Rotate(particles[i]->GetSpin(), 0, 0);
-#endif
                 float left = position.x_;
                 float top = position.y_;
                 float right = position.x_ + imageSize.x_ * scale;
                 float bottom = position.y_ + imageSize.y_ * scale;
+                canvas.save();
+                canvas.translate(position.x_, position.y_);
+#ifndef USE_ROSEN_DRAWING
+                canvas.rotate(particles[i]->GetSpin(), imageSize.x_ * scale / 2.f, imageSize.y_ * scale / 2.f);
+#else
+                canvas.Save();
+                canvas.Translate(position.x_, position.y_);
+                canvas.Rotate(particles[i]->GetSpin(), imageSize.x_ * scale / 2.f, imageSize.y_ * scale / 2.f);
+#endif
                 RectF destRect(left, top, right, bottom);
                 image->SetDstRect(destRect);
                 image->SetScale(scale);

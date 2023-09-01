@@ -71,10 +71,10 @@ void RSSubThread::Start()
     });
 }
 
-void RSSubThread::PostTask(const std::function<void()>& task)
+void RSSubThread::PostTask(const std::function<void()>& task, const std::string& name)
 {
     if (handler_) {
-        handler_->PostTask(task, AppExecFwk::EventQueue::Priority::IMMEDIATE);
+        handler_->PostImmediateTask(task, name);
     }
 }
 
@@ -82,6 +82,13 @@ void RSSubThread::PostSyncTask(const std::function<void()>& task)
 {
     if (handler_) {
         handler_->PostSyncTask(task, AppExecFwk::EventQueue::Priority::IMMEDIATE);
+    }
+}
+
+void RSSubThread::RemoveTask(const std::string& name)
+{
+    if (handler_) {
+        handler_->RemoveTask(name);
     }
 }
 
@@ -226,7 +233,6 @@ void RSSubThread::RenderCache(const std::shared_ptr<RSSuperRenderTask>& threadTa
             continue;
         }
     }
-    eglCreateSyncKHR(renderContext_->GetEGLDisplay(), EGL_SYNC_FENCE_KHR, nullptr);
 #endif
 }
 

@@ -94,6 +94,7 @@ void MemoryTrack::RemoveNodeRecord(const NodeId id)
 
 MemoryGraphic MemoryTrack::CountRSMemory(const pid_t pid)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     MemoryGraphic memoryGraphic;
     auto itr = memNodeOfPidMap_.find(pid);
     if (itr == memNodeOfPidMap_.end()) {

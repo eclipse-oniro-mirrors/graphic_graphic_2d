@@ -45,6 +45,8 @@ constexpr const char* SCB_DROP_DOWN_PANEL = "SCBDropdownPanel";
 constexpr const char* SCB_STATUS_BAR = "SCBStatusBar";
 constexpr const char* SCB_NEGATIVE_SCREEN = "SCBNegativeScreen";
 constexpr const char* SCB_GESTURE_BACK = "SCBGestureBack";
+constexpr const char* SCB_VOLUME_PANEL = "SCBVolumePanel";
+constexpr const char* SCB_TOGGLE_HOME = "SCBToggleHome";
 };
 void RSUniRenderUtil::MergeDirtyHistory(std::shared_ptr<RSDisplayRenderNode>& node, int32_t bufferAge,
     bool useAlignedDirtyRegion)
@@ -560,7 +562,9 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
             (surfaceName.find(SCB_DROP_DOWN_PANEL) != std::string::npos) ||
             (surfaceName.find(SCB_STATUS_BAR) != std::string::npos) ||
             (surfaceName.find(SCB_NEGATIVE_SCREEN) != std::string::npos) ||
-            (surfaceName.find(SCB_GESTURE_BACK) != std::string::npos);
+            (surfaceName.find(SCB_GESTURE_BACK) != std::string::npos) ||
+            (surfaceName.find(SCB_VOLUME_PANEL) != std::string::npos) ||
+            (surfaceName.find(SCB_TOGGLE_HOME) != std::string::npos);
         if (needFilter || needFilterSCB || node->IsSelfDrawingType()) {
             AssignMainThreadNode(mainThreadNodes, node);
             continue;
@@ -631,10 +635,9 @@ void RSUniRenderUtil::AssignSubThreadNode(std::list<std::shared_ptr<RSSurfaceRen
         node->IsCurrentFrameStatic() && node->HasCachedTexture()) {
         RS_OPTIONAL_TRACE_NAME_FMT("subThreadNodes : static skip %s", node->GetName().c_str());
     } else {
-        subThreadNodes.emplace_back(node);
         node->UpdateCacheSurfaceDirtyManager(2); // 2 means buffer age
     }
-
+    subThreadNodes.emplace_back(node);
 #if defined(RS_ENABLE_GL)
     if (node->GetCacheSurfaceProcessedStatus() == CacheProcessStatus::DONE &&
         node->GetCacheSurface(UNI_MAIN_THREAD_INDEX, false) && node->GetCacheSurfaceNeedUpdated()) {

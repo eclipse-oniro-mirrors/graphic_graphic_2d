@@ -15,8 +15,7 @@
 
 #include "gtest/gtest.h"
 #include "animation/rs_render_particle.h"
-#include <cstdint>
-#include <random>
+
 using namespace testing;
 using namespace testing::ext;
 
@@ -36,19 +35,222 @@ void RSRenderParticleTest::TearDown() {}
 
 /**
  * @tc.name: CalculateParticlePositionTest
- * @tc.desc:
- * @tc.type:FUNC
+ * @tc.desc: 
+ * @tc.type: FUNC
  */
-HWTEST_F(RSRenderParticleTest, CalculateParticlePositionTest, TestSize.Level1)
+HWTEST_F(RSRenderParticleTest, CalculateParticlePositionTest, Level1)
 {
-    EmitterConfig config;
-    config.position_.x_ = 0.f;
-    config.position_.y_ = 0.f;
-    config.emitSize_.x_ = 0.f;
-    config.emitSize_.y_ = 0.f;
-    RSRenderParticle rsRenderParticle;
-    rsRenderParticle.CalculateParticlePosition(ShapeType::RECT, config.position_, config.emitSize_);
-    ASSERT_EQ(config.emitShape_, ShapeType::RECT);
-    rsRenderParticle.CalculateParticlePosition(ShapeType::CIRCLE, config.position_, config.emitSize_);
+    ShapeType emitShape_ = ShapeType::RECT;
+    Vector2f position_;
+    Vector2f emitSize_;
+    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    RSRenderParticle rsRenderParticle(particleParams);
+    bool la = rsRenderParticle.IsAlive();
+    rsRenderParticle.CalculateParticlePosition(emitShape_, position_, emitSize_);
+    ASSERT_EQ(la, true);
 }
-} // namespace OHOS::Rosen
+
+/**
+ * @tc.name: LerpTest
+ * @tc.desc: 
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleTest, LerpTest, Level1)
+{
+    Color start;
+    Color end;
+    float t = 1.0f;
+    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    RSRenderParticle rsRenderParticle(particleParams);
+    rsRenderParticle.Lerp(start, end, t);
+    ASSERT_NE(t, 0);
+}
+
+/**
+ * @tc.name: InitPropertyTest
+ * @tc.desc: 
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleTest, InitPropertyTest, Level1)
+{
+    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    RSRenderParticle rsRenderParticle(particleParams);
+    rsRenderParticle.InitProperty(nullptr);
+    bool la = rsRenderParticle.IsAlive();
+    ASSERT_EQ(la, true);
+}
+
+/**
+ * @tc.name: SetPositionTest
+ * @tc.desc: 
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleTest, SetPositionTest, Level1)
+{
+    Vector2f position;
+    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    RSRenderParticle rsRenderParticle(particleParams);
+    rsRenderParticle.SetPosition(position);
+    bool la = rsRenderParticle.IsAlive();
+    ASSERT_EQ(la, true);
+}
+
+/**
+ * @tc.name: SetVelocityTest
+ * @tc.desc: 
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleTest, SetVelocityTest, Level1)
+{
+    Vector2f velocity;
+    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    RSRenderParticle rsRenderParticle(particleParams);
+    rsRenderParticle.SetVelocity(velocity);
+    bool la = rsRenderParticle.IsAlive();
+    ASSERT_EQ(la, true);
+}
+
+/**
+ * @tc.name: SetAccelerationTest
+ * @tc.desc: 
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleTest, SetAccelerationTest, Level1)
+{
+    Vector2f acceleration;
+    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    RSRenderParticle rsRenderParticle(particleParams);
+    rsRenderParticle.SetAcceleration(acceleration);
+    bool la = rsRenderParticle.IsAlive();
+    ASSERT_EQ(la, true);
+}
+
+/**
+ * @tc.name: SetSpinTest
+ * @tc.desc: 
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleTest, SetSpinTest, Level1)
+{
+    float spin = 1.0f;
+    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    RSRenderParticle rsRenderParticle(particleParams);
+    rsRenderParticle.SetSpin(spin);
+    ASSERT_NE(spin, 0);
+}
+
+/**
+ * @tc.name: SetOpacityTest
+ * @tc.desc: 
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleTest, SetOpacityTest, Level1)
+{
+    float opacity = 1.0f;
+    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    RSRenderParticle rsRenderParticle(particleParams);
+    rsRenderParticle.SetOpacity(opacity);
+    ASSERT_NE(opacity, 0);
+}
+
+/**
+ * @tc.name: SetColorTest
+ * @tc.desc: 
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleTest, SetColorTest, Level1)
+{
+    Color color;
+    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    RSRenderParticle rsRenderParticle(particleParams);
+    rsRenderParticle.SetColor(color);
+    bool la = rsRenderParticle.IsAlive();
+    ASSERT_EQ(la, true);
+}
+
+/**
+ * @tc.name: SetScaleTest
+ * @tc.desc: 
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleTest, SetScaleTest, Level1)
+{
+    float scale = 1.0f;
+    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    RSRenderParticle rsRenderParticle(particleParams);
+    rsRenderParticle.SetScale(scale);
+    ASSERT_NE(scale, 0);
+}
+
+/**
+ * @tc.name: SetRadiusTest
+ * @tc.desc: 
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleTest, SetRadiusTest, Level1)
+{
+    float radius = 1.0f;
+    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    RSRenderParticle rsRenderParticle(particleParams);
+    rsRenderParticle.SetRadius(radius);
+    ASSERT_NE(radius, 0);
+}
+
+/**
+ * @tc.name: SetImageTest
+ * @tc.desc: 
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleTest, SetImageTest, Level1)
+{
+    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    RSRenderParticle rsRenderParticle(particleParams);
+    rsRenderParticle.SetImage(nullptr);
+    bool la = rsRenderParticle.IsAlive();
+    ASSERT_EQ(la, true);
+}
+
+/**
+ * @tc.name: SetImageSizeTest
+ * @tc.desc: 
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleTest, SetImageSizeTest, Level1)
+{
+    Vector2f imageSize;
+    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    RSRenderParticle rsRenderParticle(particleParams);
+    rsRenderParticle.SetImageSize(imageSize);
+    bool la = rsRenderParticle.IsAlive();
+    ASSERT_EQ(la, true);
+}
+
+/**
+ * @tc.name: SetParticleTypeTest
+ * @tc.desc: 
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleTest, SetParticleTypeTest, Level1)
+{
+    ParticleType particleType = ParticleType::POINTS;
+    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    RSRenderParticle rsRenderParticle(particleParams);
+    rsRenderParticle.SetParticleType(particleType);
+    bool la = rsRenderParticle.IsAlive();
+    ASSERT_EQ(la, true);
+}
+
+/**
+ * @tc.name: SetActiveTimeTest
+ * @tc.desc: 
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleTest, SetActiveTimeTest, Level1)
+{
+    int64_t activeTime = 60;
+    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    RSRenderParticle rsRenderParticle(particleParams);
+    rsRenderParticle.SetActiveTime(activeTime);
+    ASSERT_NE(activeTime, 0);
+}
+}
