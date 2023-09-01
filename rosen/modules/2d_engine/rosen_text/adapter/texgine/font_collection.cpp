@@ -35,10 +35,7 @@ std::shared_ptr<FontCollection> FontCollection::Create()
 
 std::shared_ptr<FontCollection> FontCollection::From(std::shared_ptr<txt::FontCollection> fontCollection)
 {
-    if (g_instance == nullptr) {
-        g_instance = std::make_shared<AdapterTextEngine::FontCollection>();
-    }
-    return g_instance;
+    return std::make_shared<AdapterTextEngine::FontCollection>();
 }
 
 namespace AdapterTextEngine {
