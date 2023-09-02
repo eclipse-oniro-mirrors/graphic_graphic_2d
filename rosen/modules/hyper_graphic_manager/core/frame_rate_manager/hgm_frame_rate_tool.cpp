@@ -69,8 +69,8 @@ std::shared_ptr<HgmFrameRateTool::ScreenProfile> HgmFrameRateTool::GetScreenProf
     return nullptr;
 }
 
-int32_t HgmFrameRateTool::CalModifierPreferred(
-    ScreenId id, HgmModifierProfile &hgmModifierProfile, std::shared_ptr<ParsedConfigData> parsedConfigData) const
+int32_t HgmFrameRateTool::CalModifierPreferred(ScreenId id, const HgmModifierProfile &hgmModifierProfile,
+    std::shared_ptr<ParsedConfigData> parsedConfigData) const
 {
     auto screenProfile = GetScreenProfile(id);
     if (!screenProfile) {

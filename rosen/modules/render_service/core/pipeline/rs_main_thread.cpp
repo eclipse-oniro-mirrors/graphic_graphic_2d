@@ -41,6 +41,7 @@
 #include "common/rs_common_def.h"
 #include "common/rs_optional_trace.h"
 #include "hgm_core.h"
+#include "hgm_frame_rate_manager.h"
 #include "platform/ohos/rs_jank_stats.h"
 #include "platform/ohos/overdraw/rs_overdraw_controller.h"
 #include "pipeline/rs_base_render_node.h"
@@ -1138,15 +1139,19 @@ void RSMainThread::NotifyDrivenRenderFinish()
 #endif
 }
 
-void RSMainThread::ProcessHgmFrameRate(FrameRateRangeData data, uint64_t timestamp)
+void RSMainThread::ProcessHgmFrameRate(std::shared_ptr<FrameRateRangeData> data, uint64_t timestamp)
 {
+    if (!data) {
+        return;
+    }
+
     // 0.[Planning]: The HGM logic here will be processed using sub-threads in the future.
 
     frameRateMgr_->Reset();
     // 1.[Planning]: Check and processing software vsync frame rate switching task for RS.
 
     // 2.Decision-making process for current frame.
-    frameRateMgr_->UniProcessData(data);
+    frameRateMgr_->UniProcessData(*data);
 
     // 3.[Planning]: Post app and rs switch software vsync rate task.
 }
@@ -1190,7 +1195,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         SetFocusLeashWindowId();
         uniVisitor->SetFocusedNodeId(focusNodeId_, focusLeashWindowId_);
         rootNode->Prepare(uniVisitor);
-        ProcessHgmFrameRate(uniVisitor->GetFrameRateRangeData(), timestamp_);
+        ProcessHgmFrameRate(frameRateRangeData_, timestamp_);
         CalcOcclusion();
         bool doParallelComposition = RSInnovation::GetParallelCompositionEnabled(isUniRender_);
         if (doParallelComposition && rootNode->GetChildrenCount() > 1) {
@@ -2232,11 +2237,57 @@ bool RSMainThread::CheckNodeHasToBePreparedByPid(NodeId nodeId, bool isClassifyB
     }
 }
 
+int32_t RSMainThread::GetNodePreferred(const std::vector<HgmModifierProfile>& hgmModifierProfileList) const
+{
+    if (hgmModifierProfileList.size() == 0) {
+        return 0;
+    }
+    auto &hgmCore = OHOS::Rosen::HgmCore::Instance();
+    int32_t nodePreferred = 0;
+    for (auto &hgmModifierProfile : hgmModifierProfileList) {
+        auto modifierPreferred = hgmCore.CalModifierPreferred(hgmModifierProfile);
+        nodePreferred = std::max(nodePreferred, modifierPreferred);
+    }
+    return nodePreferred;
+}
+
+void RSMainThread::CollectFrameRateRange(std::shared_ptr<RSRenderNode> node)
+{
+    if (!frameRateRangeData_) {
+        return;
+    }
+
+    auto nodePreferred = GetNodePreferred(node->GetHgmModifierProfileList());
+    node->SetRSFrameRateRangeByPreferred(nodePreferred);
+
+    //[Planning]: Support multi-display in the future.
+    frameRateRangeData_->screenId = 0;
+    pid_t nodePid = ExtractPid(node->GetId());
+    auto currRange = node->GetUIFrameRateRange();
+    if (currRange.IsValid()) {
+        if (frameRateRangeData_->multiAppRange.count(nodePid)) {
+            frameRateRangeData_->multiAppRange[nodePid].Merge(currRange);
+        } else {
+            frameRateRangeData_->multiAppRange.insert(std::make_pair(nodePid, currRange));
+        }
+    }
+
+    currRange = node->GetRSFrameRateRange();
+    if (currRange.IsValid()) {
+        frameRateRangeData_->rsRange.Merge(currRange);
+    }
+    node->ResetUIFrameRateRange();
+    node->ResetRSFrameRateRange();
+    frameRateRangeData_->forceUpdateFlag = forceUpdateUniRenderFlag_;
+}
+
 void RSMainThread::ApplyModifiers()
 {
+    frameRateRangeData_ = std::make_shared<FrameRateRangeData>();
     for (const auto& [root, nodeSet] : context_->activeNodesInRoot_) {
         for (const auto& [id, nodePtr] : nodeSet) {
             bool isZOrderChanged = nodePtr->ApplyModifiers();
+            CollectFrameRateRange(nodePtr);
             if (!isZOrderChanged) {
                 continue;
             }

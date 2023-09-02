@@ -21,7 +21,6 @@
 
 #include "animation/rs_frame_rate_range.h"
 #include "common/rs_common_def.h"
-#include "parameters.h"
 #include "screen_manager/screen_types.h"
 
 namespace OHOS {

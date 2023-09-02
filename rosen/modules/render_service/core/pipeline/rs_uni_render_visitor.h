@@ -25,7 +25,6 @@
 
 #include "rs_base_render_engine.h"
 
-#include "hgm_frame_rate_manager.h"
 #include "pipeline/driven_render/rs_driven_render_manager.h"
 #include "pipeline/rs_dirty_region_manager.h"
 #include "pipeline/rs_processor.h"
@@ -153,11 +152,6 @@ public:
     }
     void SetAppWindowNum(uint32_t num);
 
-    FrameRateRangeData GetFrameRateRangeData()
-    {
-        return frameRateRangeData_;
-    }
-    void CollectFrameRateRange(RSRenderNode& node);
     void SetForceUpdateFlag(bool flag)
     {
         forceUpdateFlag_ = flag;
@@ -275,8 +269,6 @@ private:
     void ParallelRenderEnableHardwareComposer(RSSurfaceRenderNode& node);
     // close partialrender when perform window animation
     void ClosePartialRenderWhenAnimatingWindows(std::shared_ptr<RSDisplayRenderNode>& node);
-    int32_t GetNodePreferred(std::vector<HgmModifierProfile> hgmModifierProfileList) const;
-
     bool DrawBlurInCache(RSRenderNode& node);
     void UpdateCacheRenderNodeMapWithBlur(RSRenderNode& node);
 
@@ -426,9 +418,6 @@ private:
     bool curDirty_ = false;
     bool curContentDirty_ = false;
     bool isPhone_ = false;
-
-    // calculate preferred fps
-    FrameRateRangeData frameRateRangeData_;
 
     std::unordered_map<NodeId, std::unordered_map<NodeId, RectI>> allCacheFilterRects_ = {};
     std::stack<std::unordered_map<NodeId, RectI>> curCacheFilterRects_ = {};
