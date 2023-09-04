@@ -81,8 +81,8 @@ HWTEST_F(RSTransactionControllerTest, RSTransactionControllerTest002, TestSize.L
     auto controller = RSSyncTransactionController::GetInstance();
     controller->OpenSyncTransaction();
     auto transaction = controller->GetRSTransaction();
-    EXPECT_TRUE(controller != nullptr);
-    transaction->CloseSyncTransaction();
+    EXPECT_TRUE(transaction != nullptr);
+    controller->CloseSyncTransaction();
     GTEST_LOG_(INFO) << "RSTransactionControllerTest RSTransactionControllerTest002 end";
 }
 
@@ -124,6 +124,7 @@ HWTEST_F(RSTransactionControllerTest, RSTransactionControllerTest004, TestSize.L
     controller->OpenSyncTransaction();
     auto transaction = controller->GetRSTransaction();
     EXPECT_TRUE(controller != nullptr);
+    transaction->Begin();
     transaction->Commit();
     controller->CloseSyncTransaction();
     GTEST_LOG_(INFO) << "RSTransactionControllerTest RSTransactionControllerTest004 end";
