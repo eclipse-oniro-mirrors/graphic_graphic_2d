@@ -2076,8 +2076,9 @@ void RSPropertiesPainter::DrawColorFilter(const RSProperties& properties, RSPain
         ROSEN_LOGE("RSPropertiesPainter::DrawColorFilter image is null");
         return;
     }
-    SkSamplingOptions options;
-    canvas.drawImageRect(imageSnapshot, Rect2SkRect(properties.GetBoundsRect()), options, &paint);
+    canvas.resetMatrix();
+    SkSamplingOptions options(SkFilterMode::kNearest, SkMipmapMode::kNone);
+    canvas.drawImageRect(imageSnapshot, SkRect::Make(clipBounds), options, &paint);
 #endif
 }
 
