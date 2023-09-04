@@ -3343,9 +3343,7 @@ bool RSUniRenderVisitor::GenerateNodeContentCache(RSRenderNode& node)
     }
 
     // The node goes down the tree to clear the cache.
-    if (!node.IsOnTheTree() && cacheRenderNodeMap.count(node.GetId()) > 0) {
-        node.SetCacheType(CacheType::NONE);
-        RSUniRenderUtil::ClearCacheSurface(node, threadIndex_);
+    if (node.GetCacheType() == CacheType::NONE && cacheRenderNodeMap.count(node.GetId()) > 0) {
         cacheRenderNodeMap.erase(node.GetId());
         groupedTransitionNodes.erase(node.GetId());
         return false;
