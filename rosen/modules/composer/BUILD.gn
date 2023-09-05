@@ -24,6 +24,9 @@ config("composer_config") {
     "-Werror",
     "-g3",
   ]
+  if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
+    cflags += [ "-flto=thin" ]
+  }
 }
 
 config("composer_public_config") {

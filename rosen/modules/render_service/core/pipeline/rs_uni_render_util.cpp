@@ -534,7 +534,8 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
         }
     }
     // trace info for assign window nodes
-    if (Rosen::RSSystemProperties::GetDebugTraceEnabled()) {
+    bool debugTraceEnable = Rosen::RSSystemProperties::GetDebugTraceEnabled();
+    if (debugTraceEnable) {
         logInfo += "{ isScale: " + std::to_string(isScale) + ", " +
             "leashWindowCount: " + std::to_string(leashWindowCount) + ", " +
             "isRotation: " + std::to_string(isRotation) + " }; " +
@@ -547,7 +548,7 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
             continue;
         }
         // trace info for assign window nodes
-        if (Rosen::RSSystemProperties::GetDebugTraceEnabled()) {
+        if (debugTraceEnable) {
             logInfo += "node:[ " + node->GetName() + ", " + std::to_string(node->GetId()) + " ]" +
                 "( " + std::to_string(static_cast<uint32_t>(node->GetCacheSurfaceProcessedStatus())) + ", " +
                 std::to_string(node->HasFilter()) + ", " + std::to_string(node->HasAbilityComponent()) + " ); ";
