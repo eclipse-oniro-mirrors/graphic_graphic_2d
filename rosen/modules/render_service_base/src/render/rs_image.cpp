@@ -103,12 +103,12 @@ struct ImageParameter
     float dstH;
 };
 
-void ApplyImageFitSwitch(ImageParameter &imageParameter)
+RectF ApplyImageFitSwitch(ImageParameter &imageParameter, ImageFit imageFit_, RectF tempRectF)
 {
     switch (imageFit_) {
         case ImageFit::TOP_LEFT:
-            dstRect_.SetAll(0.f, 0.f, imageParameter.srcW, imageParameter.srcH);
-            return;
+            tempRectF.SetAll(0.f, 0.f, imageParameter.srcW, imageParameter.srcH);
+            return tempRectF;
         case ImageFit::FILL:
             break;
         case ImageFit::NONE:
@@ -140,6 +140,9 @@ void ApplyImageFitSwitch(ImageParameter &imageParameter)
             imageParameter.dstH = std::min(imageParameter.frameH, imageParameter.frameW / imageParameter.ratio);
             break;
     }
+    tempRectF.SetAll((imageParameter.frameW - imageParameter.dstW) / 2,
+        (imageParameter.frameH - imageParameter.dstH) / 2, imageParameter.dstW, imageParameter.dstH);
+    return tempRectF;
 }
 
 void RSImage::ApplyImageFit()
@@ -171,8 +174,8 @@ void RSImage::ApplyImageFit()
     imageParameter.frameH = frameH;
     imageParameter.dstW = dstW;
     imageParameter.dstH = dstH;
-    ApplyImageFitSwitch(imageParameter);
-    dstRect_.SetAll((frameW - dstW) / 2, (frameH - dstH) / 2, dstW, dstH);
+    RectF tempRectF = dstRect_; 
+    dstRect_ = ApplyImageFitSwitch(imageParameter, imageFit_, tempRectF);
 }
 
 bool RSImage::HasRadius() const
