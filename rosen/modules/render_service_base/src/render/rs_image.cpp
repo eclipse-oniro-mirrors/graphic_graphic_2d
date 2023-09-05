@@ -92,6 +92,56 @@ void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect
 #endif
 }
 
+struct ImageParameter
+{
+    float ratio;
+    float srcW;
+    float srcH;
+    float frameW;
+    float frameH;
+    float dstW;
+    float dstH;
+};
+
+void ApplyImageFitSwitch(ImageParameter &imageParameter)
+{
+    switch (imageFit_) {
+        case ImageFit::TOP_LEFT:
+            dstRect_.SetAll(0.f, 0.f, imageParameter.srcW, imageParameter.srcH);
+            return;
+        case ImageFit::FILL:
+            break;
+        case ImageFit::NONE:
+            imageParameter.dstW = imageParameter.srcW;
+            imageParameter.dstH = imageParameter.srcH;
+            break;
+        case ImageFit::COVER:
+            imageParameter.dstW = std::max(imageParameter.frameW, imageParameter.frameH * imageParameter.ratio);
+            imageParameter.dstH = std::max(imageParameter.frameH, imageParameter.frameW / imageParameter.ratio);
+            break;
+        case ImageFit::FIT_WIDTH:
+            imageParameter.dstH = imageParameter.frameW / imageParameter.ratio;
+            break;
+        case ImageFit::FIT_HEIGHT:
+            imageParameter.dstW = imageParameter.frameH * imageParameter.ratio;
+            break;
+        case ImageFit::SCALE_DOWN:
+            if (imageParameter.srcW < imageParameter.frameW && imageParameter.srcH < imageParameter.frameH) {
+                imageParameter.dstW = imageParameter.srcW;
+                imageParameter.dstH = imageParameter.srcH;
+            } else {
+                imageParameter.dstW = std::min(imageParameter.frameW, imageParameter.frameH * imageParameter.ratio);
+                imageParameter.dstH = std::min(imageParameter.frameH, imageParameter.frameW / imageParameter.ratio);
+            }
+            break;
+        case ImageFit::CONTAIN:
+        default:
+            imageParameter.dstW = std::min(imageParameter.frameW, imageParameter.frameH * imageParameter.ratio);
+            imageParameter.dstH = std::min(imageParameter.frameH, imageParameter.frameW / imageParameter.ratio);
+            break;
+    }
+}
+
 void RSImage::ApplyImageFit()
 {
     if (scale_ == 0) {
@@ -113,41 +163,15 @@ void RSImage::ApplyImageFit()
         RS_LOGE("RSImage::ApplyImageFit failed, ratio is zero ");
         return;
     }
-    switch (imageFit_) {
-        case ImageFit::TOP_LEFT:
-            dstRect_.SetAll(0.f, 0.f, srcW, srcH);
-            return;
-        case ImageFit::FILL:
-            break;
-        case ImageFit::NONE:
-            dstW = srcW;
-            dstH = srcH;
-            break;
-        case ImageFit::COVER:
-            dstW = std::max(frameW, frameH * ratio);
-            dstH = std::max(frameH, frameW / ratio);
-            break;
-        case ImageFit::FIT_WIDTH:
-            dstH = frameW / ratio;
-            break;
-        case ImageFit::FIT_HEIGHT:
-            dstW = frameH * ratio;
-            break;
-        case ImageFit::SCALE_DOWN:
-            if (srcW < frameW && srcH < frameH) {
-                dstW = srcW;
-                dstH = srcH;
-            } else {
-                dstW = std::min(frameW, frameH * ratio);
-                dstH = std::min(frameH, frameW / ratio);
-            }
-            break;
-        case ImageFit::CONTAIN:
-        default:
-            dstW = std::min(frameW, frameH * ratio);
-            dstH = std::min(frameH, frameW / ratio);
-            break;
-    }
+    ImageParameter imageParameter;
+    imageParameter.ratio = ratio;
+    imageParameter.srcW = srcW;
+    imageParameter.srcH = srcH;
+    imageParameter.frameW = frameW;
+    imageParameter.frameH = frameH;
+    imageParameter.dstW = dstW;
+    imageParameter.dstH = dstH;
+    ApplyImageFitSwitch(imageParameter);
     dstRect_.SetAll((frameW - dstW) / 2, (frameH - dstH) / 2, dstW, dstH);
 }
 
