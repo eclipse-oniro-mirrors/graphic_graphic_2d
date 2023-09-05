@@ -713,19 +713,22 @@ void RSRenderNode::UpdateFilterCacheWithDirty(RSDirtyRegionManager& dirtyManager
     }
     auto& properties = GetRenderProperties();
     auto& manager = properties.GetFilterCacheManager(isForeground);
-    if (manager == nullptr || !manager->IsCacheValid()) {
+    if (manager == nullptr) {
+        return;
+    }
+    if (!manager->IsCacheValid()) {
         dirtyManager.ResetSubNodeFilterCacheValid();
         return;
     }
     auto& cachedImageRect = manager->GetCachedImageRegion();
-    if (IsDirty() || dirtyManager.HasIntersectionWithVisitedDirtyRect(cachedImageRect)) {
+    if (dirtyManager.HasIntersectionWithVisitedDirtyRect(cachedImageRect)) {
         manager->UpdateCacheStateWithDirtyRegion();
     }
     // record node's cache area if it has valid filter cache
-    if (manager->IsCacheValid() && ROSEN_EQ(GetGlobalAlpha(), 1.0f)) {
-        dirtyManager.UpdateCacheableFilterRect(cachedImageRect);
-    } else {
+    if (!manager->IsCacheValid()) {
         dirtyManager.ResetSubNodeFilterCacheValid();
+    } else if (ROSEN_EQ(GetGlobalAlpha(), 1.0f) && ROSEN_EQ(properties.GetCornerRadius().x_, 0.0f)) {
+        dirtyManager.UpdateCacheableFilterRect(cachedImageRect);
     }
 #endif
 }
@@ -864,6 +867,9 @@ void RSRenderNode::AddModifierProfile(const std::shared_ptr<RSRenderModifier>& m
             auto newPosition = std::static_pointer_cast<RSRenderAnimatableProperty<Vector2f>>(newProperty)->Get();
             if (oldPropertyValue != propertyValueMap_.end()) {
                 auto oldPosition = std::get<Vector2f>(oldPropertyValue->second);
+                if (ROSEN_EQ(timeDelta_, 0.f)) {
+                    return;
+                }
                 auto xSpeed = (newPosition[0] - oldPosition[0]) / timeDelta_;
                 auto ySpeed = (newPosition[1] - oldPosition[1]) / timeDelta_;
                 HgmModifierProfile hgmModifierProfile = {xSpeed, ySpeed, HgmModifierType::TRANSLATE};
@@ -876,6 +882,9 @@ void RSRenderNode::AddModifierProfile(const std::shared_ptr<RSRenderModifier>& m
             auto newPosition = std::static_pointer_cast<RSRenderAnimatableProperty<Vector2f>>(newProperty)->Get();
             if (oldPropertyValue != propertyValueMap_.end()) {
                 auto oldPosition = std::get<Vector2f>(oldPropertyValue->second);
+                if (ROSEN_EQ(timeDelta_, 0.f)) {
+                    return;
+                }
                 auto xSpeed = (newPosition[0] - oldPosition[0]) * width / timeDelta_;
                 auto ySpeed = (newPosition[1] - oldPosition[1]) * height / timeDelta_;
                 HgmModifierProfile hgmModifierProfile = {xSpeed, ySpeed, HgmModifierType::SCALE};
@@ -937,6 +946,15 @@ bool RSRenderNode::ApplyModifiers()
     // execute hooks
     renderProperties_.OnApplyModifiers();
     OnApplyModifiers();
+
+    if (auto& manager = renderProperties_.GetFilterCacheManager(false);
+        manager != nullptr &&
+        (dirtyTypes_.count(RSModifierType::BACKGROUND_COLOR) || dirtyTypes_.count(RSModifierType::BG_IMAGE))) {
+        manager->UpdateCacheStateWithDirtyRegion();
+    }
+    if (auto& manager = renderProperties_.GetFilterCacheManager(true)) {
+        manager->UpdateCacheStateWithDirtyRegion();
+    }
 
     // update state
     dirtyTypes_.clear();
@@ -1071,9 +1089,6 @@ float RSRenderNode::GetGlobalAlpha() const
 
 bool RSRenderNode::NeedInitCacheSurface() const
 {
-    if (cacheSurface_ == nullptr) {
-        return true;
-    }
     auto cacheType = GetCacheType();
     int width = 0;
     int height = 0;
@@ -1089,6 +1104,10 @@ bool RSRenderNode::NeedInitCacheSurface() const
         Vector2f size = GetOptionalBufferSize();
         width =  size.x_;
         height = size.y_;
+    }
+    std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
+    if (cacheSurface_ == nullptr) {
+        return true;
     }
 #ifndef USE_ROSEN_DRAWING
     return cacheSurface_->width() != width || cacheSurface_->height() !=height;
@@ -1211,6 +1230,9 @@ Vector2f RSRenderNode::GetOptionalBufferSize() const
 #ifndef USE_ROSEN_DRAWING
 void RSRenderNode::DrawCacheSurface(RSPaintFilterCanvas& canvas, uint32_t threadIndex, bool isUIFirst)
 {
+    if (ROSEN_EQ(boundsWidth_, 0.f) || ROSEN_EQ(boundsHeight_, 0.f)) {
+        return;
+    }
     auto cacheType = GetCacheType();
     canvas.save();
     Vector2f size = GetOptionalBufferSize();
@@ -1222,11 +1244,11 @@ void RSRenderNode::DrawCacheSurface(RSPaintFilterCanvas& canvas, uint32_t thread
         canvas.restore();
         return;
     }
+    auto samplingOptions = SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone);
     if ((cacheType == CacheType::ANIMATE_PROPERTY && renderProperties_.IsShadowValid()) || isUIFirst) {
-        auto samplingOptions = SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone);
         canvas.drawImage(cacheImage, -shadowRectOffsetX_ * scaleX, -shadowRectOffsetY_ * scaleY, samplingOptions);
     } else {
-        canvas.drawImage(cacheImage, 0.0, 0.0);
+        canvas.drawImage(cacheImage, 0.f, 0.f, samplingOptions);
     }
     canvas.restore();
 }
@@ -1275,6 +1297,9 @@ sk_sp<SkImage> RSRenderNode::GetCompletedImage(RSPaintFilterCanvas& canvas, uint
 #else
 void RSRenderNode::DrawCacheSurface(RSPaintFilterCanvas& canvas, uint32_t threadIndex, bool isUIFirst)
 {
+    if (ROSEN_EQ(boundsWidth_, 0.f) || ROSEN_EQ(boundsHeight_, 0.f)) {
+        return;
+    }
     auto cacheType = GetCacheType();
     canvas.Save();
     Vector2f size = GetOptionalBufferSize();
@@ -1520,6 +1545,10 @@ void RSRenderNode::OnTreeStateChanged()
         // attempt to clear FullChildrenList, to avoid memory leak
         isFullChildrenListValid_ = false;
         ClearFullChildrenListIfNeeded();
+
+        if (UNLIKELY(GetSharedTransitionParam().has_value())) {
+            SetSharedTransitionParam(std::nullopt);
+        }
     } else {
         SetDirty();
     }
@@ -1713,6 +1742,10 @@ RectI RSRenderNode::GetOldDirtyInSurface() const
 bool RSRenderNode::IsDirtyRegionUpdated() const
 {
     return isDirtyRegionUpdated_;
+}
+void RSRenderNode::CleanDirtyRegionUpdated()
+{
+    isDirtyRegionUpdated_ = false;
 }
 bool RSRenderNode::IsShadowValidLastFrame() const
 {

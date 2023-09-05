@@ -15,6 +15,7 @@
 
 #include "animation/rs_render_particle_emitter.h"
 
+#include <math.h>
 #include <vector>
 namespace OHOS {
 namespace Rosen {
@@ -25,45 +26,77 @@ RSRenderParticleEmitter::RSRenderParticleEmitter(std::shared_ptr<ParticleRenderP
 void RSRenderParticleEmitter::EmitParticle(int64_t deltaTime)
 {
     auto particleType = particleParams_->GetParticleType();
+    auto opacityUpdater = particleParams_->GetOpacityUpdator();
+    auto scaleUpdater = particleParams_->GetScaleUpdator();
+    if (opacityUpdater == ParticleUpdator::NONE && particleParams_->GetOpacityStartValue() <= 0.f &&
+        particleParams_->GetOpacityEndValue() <= 0.f) {
+        emitFinish_ = true;
+        return;
+    } else if (opacityUpdater == ParticleUpdator::RANDOM &&
+        particleParams_->GetOpacityStartValue() <= 0.f && particleParams_->GetOpacityEndValue() <= 0.f &&
+        particleParams_->GetOpacityRandomStart() <= 0.f && particleParams_->GetOpacityRandomEnd() <= 0.f) {
+        emitFinish_ = true;
+        return;
+    }
+    if (scaleUpdater == ParticleUpdator::NONE &&
+        particleParams_->GetScaleStartValue() <= 0.f && particleParams_->GetScaleEndValue() <= 0.f) {
+        emitFinish_ = true;
+        return;
+    } else if (scaleUpdater == ParticleUpdator::RANDOM &&
+        particleParams_->GetScaleStartValue() <= 0.f && particleParams_->GetScaleEndValue() <= 0.f &&
+        particleParams_->GetScaleRandomStart() <= 0.f && particleParams_->GetScaleRandomEnd() <= 0.f) {
+        emitFinish_ = true;
+        return;
+    }
+
     if (particleType == ParticleType::IMAGES) {
-        auto image = particleParams_->GetParticleImage();
+        auto particleImage = particleParams_->GetParticleImage();
         auto imageSize = particleParams_->GetImageSize();
-        auto updater = particleParams_->GetScaleUpdator();
-        if (image == nullptr || (updater == ParticleUpdator::NONE && (imageSize.x_ <= 0.f || imageSize.y_ <= 0.f))) {
+        if (particleImage == nullptr || (imageSize.x_ <= 0.f || imageSize.y_ <= 0.f)) {
+            emitFinish_ = true;
             return;
-        } else {
-            auto pixelMap = image->GetPixelMap();
-            if (pixelMap == nullptr) {
-                return;
-            }
+        }
+    }
+    if (particleType == ParticleType::POINTS) {
+        auto radius = particleParams_->GetParticleRadius();
+        if (radius <= 0.f) {
+            emitFinish_ = true;
+            return;
         }
     }
 
     auto emitRate = particleParams_->GetEmitRate();
     auto maxParticle = particleParams_->GetParticleCount();
     auto lifeTime = particleParams_->GetParticleLifeTime();
-    if (maxParticle <= 0 || lifeTime == 0) {
-        return;
-    }
     float last = particleCount_;
     particleCount_ += static_cast<float>(emitRate * deltaTime) / NS_TO_S;
     spawnNum_ += particleCount_ - last;
     particles_.clear();
-    while (spawnNum_ > 0.f && particleCount_ < static_cast<float>(maxParticle)) {
+    if (maxParticle <= 0 || lifeTime == 0) {
+        emitFinish_ = true;
+        return;
+    }
+    if (ROSEN_EQ(last, 0.f)) {
+        for (uint32_t i = 0; i <= std::min(static_cast<uint32_t>(spawnNum_), maxParticle); i++) {
+            auto particle = std::make_shared<RSRenderParticle>(particleParams_);
+            particles_.push_back(particle);
+            spawnNum_ -= 1.f;
+        }
+    }
+    while (spawnNum_ >= 1.f && std::ceil(last) <= static_cast<float>(maxParticle)) {
         auto particle = std::make_shared<RSRenderParticle>(particleParams_);
         particles_.push_back(particle);
         spawnNum_ -= 1.f;
+        last += 1.f;
+    }
+    if (particleCount_ >= static_cast<float>(maxParticle)) {
+        emitFinish_ = true;
     }
 }
 
 bool RSRenderParticleEmitter::IsEmitterFinish()
 {
-    auto maxParticle = particleParams_->GetParticleCount();
-    bool isEmitterFinish = false;
-    if (particleCount_ == static_cast<float>(maxParticle)) {
-        isEmitterFinish = true;
-    }
-    return isEmitterFinish;
+    return emitFinish_;
 }
 
 std::vector<std::shared_ptr<RSRenderParticle>> RSRenderParticleEmitter::GetParticles()

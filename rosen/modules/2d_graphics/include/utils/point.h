@@ -16,6 +16,8 @@
 #ifndef POINT_H
 #define POINT_H
 
+#include <cfloat>
+#include "utils/drawing_macros.h"
 #include "utils/scalar.h"
 
 namespace OHOS {
@@ -25,7 +27,7 @@ class PointF;
 
 typedef PointF Point;
 
-class PointF {
+class DRAWING_API PointF {
 public:
     inline PointF() noexcept;
     inline PointF(const PointF& p) noexcept;
@@ -108,7 +110,7 @@ inline PointF& PointF::operator*=(scalar scale)
 
 inline PointF& PointF::operator/=(scalar divisor)
 {
-    if (divisor == 0) {
+    if (fabs(divisor) < FLT_EPSILON) {
         return *this;
     }
     x_ /= divisor;
@@ -138,6 +140,9 @@ inline const PointF operator*(const PointF& p, scalar scale)
 
 inline const PointF operator/(const PointF& p, scalar divisor)
 {
+    if (fabs(divisor) < FLT_EPSILON) {
+        return PointF(p.x_, p.y_);
+    }
     return PointF(p.x_ / divisor, p.y_ / divisor);
 }
 
@@ -161,7 +166,7 @@ inline bool operator!=(const PointF& p1, const PointF& p2)
     return !IsScalarAlmostEqual(p1.x_, p2.x_) || !IsScalarAlmostEqual(p1.y_, p2.y_);
 }
 
-class PointI {
+class DRAWING_API PointI {
 public:
     inline PointI() noexcept;
     inline PointI(const PointI& p) noexcept;

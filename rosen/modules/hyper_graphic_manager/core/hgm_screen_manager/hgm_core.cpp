@@ -388,7 +388,7 @@ int32_t HgmCore::RemoveScreenProfile(ScreenId id)
     return hgmFrameRateTool_->RemoveScreenProfile(id);
 }
 
-int32_t HgmCore::CalModifierPreferred(HgmModifierProfile &hgmModifierProfile) const
+int32_t HgmCore::CalModifierPreferred(const HgmModifierProfile &hgmModifierProfile) const
 {
     return hgmFrameRateTool_->CalModifierPreferred(activeScreenId_, hgmModifierProfile, mParsedConfigData_);
 }

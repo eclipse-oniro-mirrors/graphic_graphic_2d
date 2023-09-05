@@ -1086,7 +1086,7 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
 #endif
 
     auto clipIBounds = canvas.getDeviceClipBounds();
-    auto imageSnapshot = skSurface->makeImageSnapshot(clipIBounds);
+    auto imageSnapshot = skSurface->makeImageSnapshot(clipIBounds.makeOutset(-1, -1));
     if (imageSnapshot == nullptr) {
         ROSEN_LOGE("RSPropertiesPainter::DrawFilter image null");
         return;
@@ -1104,7 +1104,7 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
         canvas.clipIRect(visibleIRect);
     }
     filter->DrawImageRect(
-        canvas, imageSnapshot, SkRect::Make(imageSnapshot->bounds().makeOutset(-1, -1)), SkRect::Make(clipIBounds));
+        canvas, imageSnapshot, SkRect::Make(imageSnapshot->bounds()), SkRect::Make(clipIBounds));
     filter->PostProcess(canvas);
 #endif
 }
@@ -1199,10 +1199,10 @@ void RSPropertiesPainter::DrawBackgroundEffect(
 
 #if defined(NEW_SKIA) && defined(RS_ENABLE_GL)
     // Optional use cacheManager to draw filter
-    if (auto& cacheManager = properties.GetFilterCacheManager(false)) {
-        // the input rect is in global coordinate, so we need to save/reset matrix before clip
-        auto data = cacheManager->GeneratedCachedEffectData(canvas, filter);
-        canvas.SetEffectData(std::move(data));
+    if (auto& cacheManager = properties.GetFilterCacheManager(false);
+        cacheManager != nullptr && !canvas.GetIsParallelCanvas()) {
+        auto&& data = cacheManager->GeneratedCachedEffectData(canvas, filter);
+        canvas.SetEffectData(data);
         return;
     }
 #endif
@@ -1545,7 +1545,7 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
         if (hasClipToBounds) {
             canvas.drawPaint(paint);
         } else {
-            canvas.drawRRect(RRect2SkRRect(properties.GetRRect()), paint);
+            canvas.drawRRect(RRect2SkRRect(properties.GetInnerRRect()), paint);
         }
     }
     if (const auto& bgShader = properties.GetBackgroundShader()) {
@@ -2076,8 +2076,9 @@ void RSPropertiesPainter::DrawColorFilter(const RSProperties& properties, RSPain
         ROSEN_LOGE("RSPropertiesPainter::DrawColorFilter image is null");
         return;
     }
-    SkSamplingOptions options;
-    canvas.drawImageRect(imageSnapshot, Rect2SkRect(properties.GetBoundsRect()), options, &paint);
+    canvas.resetMatrix();
+    SkSamplingOptions options(SkFilterMode::kNearest, SkMipmapMode::kNone);
+    canvas.drawImageRect(imageSnapshot, SkRect::Make(clipBounds), options, &paint);
 #endif
 }
 
@@ -2239,6 +2240,9 @@ void RSPropertiesPainter::DrawParticle(const RSProperties& properties, RSPaintFi
             }
             float opacity = particles[i]->GetOpacity();
             float scale = particles[i]->GetScale();
+            if (opacity <= 0.f || scale <= 0.f) {
+                continue;
+            }
             auto particleType = particles[i]->GetParticleType();
 #ifndef USE_ROSEN_DRAWING
             SkPaint paint;

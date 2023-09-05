@@ -40,6 +40,13 @@ public:
         float startValue, float endValue, int startTime, int endTime, int currentTime);
 private:
     std::shared_ptr<ParticleRenderParams> particleParams_;
+    float redSpeed_ = 0.f;
+    float greenSpeed_ = 0.f;
+    float blueSpeed_ = 0.f;
+    float alphaSpeed_ = 0.f;
+    float opacitySpeed_ = 0.f;
+    float scaleSpeed_ = 0.f;
+    float spinSpeed_ = 0.f;
 };
 
 } // namespace Rosen

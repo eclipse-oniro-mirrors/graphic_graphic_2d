@@ -88,7 +88,7 @@ void RSUniRenderComposerAdapter::CommitLayers(const std::vector<LayerInfoPtr>& l
 
 void RSUniRenderComposerAdapter::SetPreBufferInfo(RSSurfaceHandler& surfaceHandler, ComposeInfo& info) const
 {
-    auto preBuffer = surfaceHandler.GetPreBuffer();
+    auto& preBuffer = surfaceHandler.GetPreBuffer();
     info.preBuffer = preBuffer.buffer;
     preBuffer.Reset();
 }
@@ -241,6 +241,9 @@ void RSUniRenderComposerAdapter::GetComposerInfoSrcRect(ComposeInfo &info, const
             float scale = std::min(xScale, yScale);
             info.srcRect.x = info.srcRect.x * scale;
             info.srcRect.y = info.srcRect.y * scale;
+            if (ROSEN_EQ(scale, 0.f)) {
+                return;
+            }
             info.srcRect.w = (bufferWidth / scale - (boundsWidth - info.srcRect.w)) * scale;
             info.srcRect.h = (bufferHeight / scale - (boundsHeight - info.srcRect.h)) * scale;
         } else {

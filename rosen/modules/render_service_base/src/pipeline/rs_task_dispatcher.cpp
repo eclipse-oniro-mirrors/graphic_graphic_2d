@@ -13,37 +13,33 @@
  * limitations under the License.
  */
 
-#ifndef RECORDING_MASK_FILTER_H
-#define RECORDING_MASK_FILTER_H
-
-#include "effect/mask_filter.h"
-#include "recording/mask_filter_cmd_list.h"
+#include "pipeline/rs_task_dispatcher.h"
+#include "platform/common/rs_log.h"
 
 namespace OHOS {
 namespace Rosen {
-namespace Drawing {
-class DRAWING_API RecordingMaskFilter : public MaskFilter {
-public:
-    static std::shared_ptr<RecordingMaskFilter> CreateBlurMaskFilter(BlurType blurType, scalar sigma);
+RSTaskDispatcher& RSTaskDispatcher::GetInstance()
+{
+    static RSTaskDispatcher instance;
+    return instance;
+}
 
-    RecordingMaskFilter() noexcept;
-    ~RecordingMaskFilter() override = default;
-
-    DrawingType GetDrawingType() const override
-    {
-        return DrawingType::RECORDING;
+void RSTaskDispatcher::RegisterTaskDispatchFunc(pid_t tid, const std::function<void(RSTask)>& taskDispatchFunc)
+{
+    if (taskDispatchFunc) {
+        taskDispatchFuncMap_.emplace(tid, taskDispatchFunc);
     }
+}
 
-    std::shared_ptr<MaskFilterCmdList> GetCmdList() const
-    {
-        return cmdList_;
+void RSTaskDispatcher::PostTask(pid_t tid, const RSTask& task)
+{
+    if (taskDispatchFuncMap_.count(tid)) {
+        taskDispatchFuncMap_.at(tid)(task);
+    } else {
+        if (task) {
+            task();
+        }
     }
-
-private:
-    std::shared_ptr<MaskFilterCmdList> cmdList_;
-};
-
-} // namespace Drawing
+}
 } // namespace Rosen
 } // namespace OHOS
-#endif

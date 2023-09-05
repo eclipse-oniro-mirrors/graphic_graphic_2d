@@ -215,7 +215,7 @@ public:
 
     void SetEnvForegroundColor(uint32_t colorValue);
     void SetEnvForegroundColorStrategy(ForegroundColorStrategyType colorType);
-    void SetParticleParams(std::vector<ParticleParams>& particleParams);
+    void SetParticleParams(std::vector<ParticleParams>& particleParams, const std::function<void()>& finishCallback = nullptr);
     void SetForegroundColor(uint32_t colorValue);
     void SetBackgroundColor(uint32_t colorValue);
     void SetBackgroundShader(const std::shared_ptr<RSShader>& shader);
@@ -389,7 +389,6 @@ private:
 
     FrameRateRange nodeRange_ = { 0, 0, 0 };
     std::mutex animationMutex_;
-    AnimationId particleAnimationId_ = 0;
     bool isParticleAnimationFinish_ = true;
 
     friend class RSAnimation;

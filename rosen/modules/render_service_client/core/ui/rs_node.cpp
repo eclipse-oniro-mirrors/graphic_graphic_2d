@@ -23,6 +23,7 @@
 #include "sandbox_utils.h"
 
 #include "animation/rs_animation.h"
+#include "animation/rs_animation_group.h"
 #include "animation/rs_animation_callback.h"
 #include "animation/rs_implicit_animator.h"
 #include "animation/rs_implicit_animator_map.h"
@@ -723,28 +724,33 @@ void RSNode::SetEnvForegroundColorStrategy(ForegroundColorStrategyType strategyT
 }
 
 // Set ParticleParams
-void RSNode::SetParticleParams(std::vector<ParticleParams>& particleParams)
+void RSNode::SetParticleParams(std::vector<ParticleParams>& particleParams, const std::function<void()>& finishCallback)
 {
     std::vector<std::shared_ptr<ParticleRenderParams>> particlesRenderParams;
     for (size_t i = 0; i < particleParams.size(); i++) {
         particlesRenderParams.push_back(particleParams[i].SetParamsToRenderParticle());
     }
-
-    auto animationId = RSAnimation::GenerateId();
+    auto property = std::make_shared<RSPropertyBase>();
+    auto propertyId = property->GetId();
+    auto uiAnimation = std::make_shared<RSAnimationGroup>();
+    auto animationId = uiAnimation->GetId();
+    AddAnimation(uiAnimation);
+    if (finishCallback != nullptr) {
+        uiAnimation->SetFinishCallback(std::make_shared<AnimationFinishCallback>(finishCallback));
+    }
     auto animation =
-        std::make_shared<RSRenderParticleAnimation>(animationId, particlesRenderParams);
+        std::make_shared<RSRenderParticleAnimation>(animationId, propertyId, particlesRenderParams);
 
-    std::unique_ptr<RSCommand> command = std::make_unique<RSAnimationCreateParticle>(GetId(), animation, particleAnimationId_);
+    std::unique_ptr<RSCommand> command = std::make_unique<RSAnimationCreateParticle>(GetId(), animation);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
         transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());
         if (NeedForcedSendToRemote()) {
             std::unique_ptr<RSCommand> cmdForRemote =
-                std::make_unique<RSAnimationCreateParticle>(GetId(), animation, particleAnimationId_);
+                std::make_unique<RSAnimationCreateParticle>(GetId(), animation);
             transactionProxy->AddCommand(cmdForRemote, true, GetFollowType(), GetId());
         }
     }
-    particleAnimationId_ = animationId;
 }
 
 // foreground
