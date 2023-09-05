@@ -15,20 +15,13 @@
 
 #include "property/rs_properties_painter.h"
 
-#include "animation/rs_render_particle.h"
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_optional_trace.h"
-#include "common/rs_vector2.h"
-#include "pipeline/rs_draw_cmd_list.h"
 #include "pipeline/rs_effect_render_node.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_root_render_node.h"
 #include "platform/common/rs_log.h"
 #include "render/rs_blur_filter.h"
-#include "render/rs_image.h"
-#include "render/rs_mask.h"
-#include "render/rs_path.h"
-#include "render/rs_shader.h"
 #include "render/rs_skia_filter.h"
 
 #ifdef USE_ROSEN_DRAWING

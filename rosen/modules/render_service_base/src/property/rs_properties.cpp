@@ -1228,9 +1228,9 @@ bool RSProperties::GetClipToFrame() const
 RectF RSProperties::GetBoundsRect() const
 {
     if (boundsGeo_->IsEmpty()) {
-        return RectF(0, 0, GetFrameWidth(), GetFrameHeight());
+        return {0, 0, GetFrameWidth(), GetFrameHeight()};
     } else {
-        return RectF(0, 0, GetBoundsWidth(), GetBoundsHeight());
+        return {0, 0, GetBoundsWidth(), GetBoundsHeight()};
     }
 }
 
