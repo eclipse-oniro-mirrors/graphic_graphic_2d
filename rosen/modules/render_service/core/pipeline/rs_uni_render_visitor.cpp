@@ -280,13 +280,9 @@ void RSUniRenderVisitor::UpdateCacheChangeStatus(RSRenderNode& node)
     if (!isDrawingCacheChanged_.empty()) {
         // Any child node dirty causes cache change
         isDrawingCacheChanged_.top() = isDrawingCacheChanged_.top() || curDirty_;
-        if (!curCacheFilterRects_.empty()) {
-            if (!node.IsInstanceOf<RSEffectRenderNode>() &&
-                (node.GetRenderProperties().GetBackgroundFilter() || node.GetRenderProperties().GetUseEffect())) {
-                curCacheFilterRects_.top().emplace(node.GetId(), node.GetFilterRect());
-            } else if (node.IsInstanceOf<RSSurfaceRenderNode>()) {
-                childHasSurface_ = true;
-            }
+        if (!curCacheFilterRects_.empty() && !node.IsInstanceOf<RSEffectRenderNode>() &&
+            (node.GetRenderProperties().GetBackgroundFilter() || node.GetRenderProperties().GetUseEffect())) {
+            curCacheFilterRects_.top().emplace(node.GetId(), node.GetFilterRect());
         }
     }
     // drawing group root node
@@ -298,7 +294,6 @@ void RSUniRenderVisitor::UpdateCacheChangeStatus(RSRenderNode& node)
             "contentDirty(cacheChanged): %d", node.GetId(), static_cast<int>(markedCachedNodes_),
             static_cast<int>(isDrawingCacheChanged_.top()));
         curCacheFilterRects_.push({});
-        childHasSurface_ = false;
     }
 }
 
@@ -321,7 +316,7 @@ void RSUniRenderVisitor::SetNodeCacheChangeStatus(RSRenderNode& node, int marked
         cacheRenderNodeMapCnt = cacheRenderNodeMap.count(node.GetId());
     }
     if ((cacheRenderNodeMapCnt == 0 || isDrawingCacheChanged_.top()) &&
-        ((markedCachedNodeCnt != markedCachedNodes_) || node.HasChildrenOutOfRect() || childHasSurface_)) {
+        ((markedCachedNodeCnt != markedCachedNodes_) || node.HasChildrenOutOfRect())) {
         node.SetDrawingCacheType(RSDrawingCacheType::DISABLED_CACHE);
     }
     if (sharedTransitionNodeCnt_ || markedCachedNodes_ <= 0) {
@@ -345,7 +340,6 @@ void RSUniRenderVisitor::SetNodeCacheChangeStatus(RSRenderNode& node, int marked
     // reset counter after executing the very first marked node
     if (markedCachedNodeCnt == 1) {
         isDrawingCacheChanged_.pop();
-        childHasSurface_ = false;
     } else {
         bool isChildChanged = isDrawingCacheChanged_.top();
         isDrawingCacheChanged_.pop();
@@ -2080,16 +2074,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             RS_TRACE_END();
             RS_TRACE_END();
         }
-#endif
-#ifndef USE_ROSEN_DRAWING
-        if (!OpItemTasks::Instance().IsEmpty()) {
-            RSBackgroundThread::Instance().PostTask([]() {
-                RS_TRACE_NAME("RSUniRender:OpItemTasks ProcessTask");
-                OpItemTasks::Instance().ProcessTask();
-            });
-        }
-#else
-        RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode: Drawing is not support: OpItemTasks");
 #endif
         RSMainThread::Instance()->RemoveTask(CLEAR_GPU_CACHE);
         RS_TRACE_BEGIN("RSUniRender:FlushFrame");

@@ -164,7 +164,6 @@ public:
     static OpItemTasks& Instance();
     void AddTask(std::function<void()> task);
     void ProcessTask();
-    bool IsEmpty();
 private:
     OpItemTasks() = default;
     ~OpItemTasks() = default;
