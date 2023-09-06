@@ -1950,12 +1950,12 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             canvas_->SetHighContrast(renderEngine_->IsHighContrastEnabled());
             auto geoPtr = (node.GetRenderProperties().GetBoundsGeometry());
             if (geoPtr != nullptr) {
-                // enable cache if screen rotation is not times of 90 degree
-                canvas_->SetCacheType(geoPtr->IsNeedClientCompose() ? RSPaintFilterCanvas::CacheType::ENABLED
-                                                                    : RSPaintFilterCanvas::CacheType::DISABLED);
+                // enable cache if screen rotation
+                canvas_->SetCacheType(RSSystemProperties::GetCacheEnabledForRotation() ?
+                    RSPaintFilterCanvas::CacheType::ENABLED : RSPaintFilterCanvas::CacheType::DISABLED);
             }
 
-            bool needOffscreen = clipPath || canvas_->GetCacheType() == RSPaintFilterCanvas::CacheType::ENABLED;
+            bool needOffscreen = clipPath;
             if (needOffscreen) {
                 ClearTransparentBeforeSaveLayer(); // clear transparent before concat display node's matrix
             }
@@ -1979,12 +1979,12 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             canvas_->SetHighContrast(renderEngine_->IsHighContrastEnabled());
             auto geoPtr = (node.GetRenderProperties().GetBoundsGeometry());
             if (geoPtr != nullptr) {
-                // enable cache if screen rotation is not times of 90 degree
-                canvas_->SetCacheType(geoPtr->IsNeedClientCompose() ? RSPaintFilterCanvas::CacheType::ENABLED
-                    : RSPaintFilterCanvas::CacheType::DISABLED);
+                // enable cache if screen rotation
+                canvas_->SetCacheType(RSSystemProperties::GetCacheEnabledForRotation() ?
+                    RSPaintFilterCanvas::CacheType::ENABLED : RSPaintFilterCanvas::CacheType::DISABLED);
             }
 
-            bool needOffscreen = clipPath || canvas_->GetCacheType() == RSPaintFilterCanvas::CacheType::ENABLED;
+            bool needOffscreen = clipPath;
             if (needOffscreen) {
                 ClearTransparentBeforeSaveLayer(); // clear transparent before concat display node's matrix
             }
