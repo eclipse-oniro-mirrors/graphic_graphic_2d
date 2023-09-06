@@ -399,7 +399,7 @@ void RSUniUICapture::RSUniUICaptureVisitor::ProcessSurfaceViewWithUni(RSSurfaceR
 #else
         auto backgroundColor = static_cast<Drawing::ColorQuad>(property.GetBackgroundColor().AsArgbInt());
         if (Drawing::Color::ColorQuadGetA(backgroundColor) != Drawing::Color::COLOR_TRANSPARENT) {
-            canvas_->Clear(backgroundColor);
+            canvas_->DrawColor(backgroundColor);
         }
     }
     canvas_->Restore();

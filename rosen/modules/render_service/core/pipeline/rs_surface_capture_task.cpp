@@ -902,7 +902,7 @@ void RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWithUni(RSSurfaceRenderNod
     } else {
         auto backgroundColor = static_cast<Drawing::ColorQuad>(property.GetBackgroundColor().AsArgbInt());
         if (Drawing::Color::ColorQuadGetA(backgroundColor) != Drawing::Color::COLOR_TRANSPARENT) {
-            canvas_->Clear(backgroundColor);
+            canvas_->DrawColor(backgroundColor);
         }
     }
     canvas_->Restore();
@@ -1032,7 +1032,7 @@ void RSSurfaceCaptureVisitor::CaptureSurfaceInDisplayWithUni(RSSurfaceRenderNode
     }
     auto backgroundColor = static_cast<Drawing::ColorQuad>(property.GetBackgroundColor().AsArgbInt());
     if (Drawing::Color::ColorQuadGetA(backgroundColor) != Drawing::Color::COLOR_TRANSPARENT) {
-        canvas_->Clear(backgroundColor);
+        canvas_->DrawColor(backgroundColor);
     }
     RSPropertiesPainter::DrawMask(property, *canvas_);
 
