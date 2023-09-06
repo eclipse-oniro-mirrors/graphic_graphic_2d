@@ -1397,7 +1397,7 @@ void RSBaseRenderUtil::SetPropertiesForCanvas(RSPaintFilterCanvas& canvas, const
         }
     }
     if (Drawing::Color::ColorQuadGetA(params.backgroundColor) != Drawing::Color::COLOR_TRANSPARENT) {
-        canvas.Clear(params.backgroundColor);
+        canvas.DrawColor(params.backgroundColor);
     }
     canvas.ConcatMatrix(params.matrix);
 #endif
