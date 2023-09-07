@@ -89,7 +89,8 @@ private:
     static void AssignMainThreadNode(std::list<std::shared_ptr<RSSurfaceRenderNode>>& mainThreadNodes,
         const std::shared_ptr<RSSurfaceRenderNode>& node);
     static void AssignSubThreadNode(std::list<std::shared_ptr<RSSurfaceRenderNode>>& subThreadNodes,
-        const std::shared_ptr<RSSurfaceRenderNode>& node, DeviceType deviceType = DeviceType::PHONE);
+        const std::shared_ptr<RSSurfaceRenderNode>& node, DeviceType deviceType = DeviceType::PHONE,
+        uint64_t focusNodeId = 0);
     static void SortSubThreadNodes(std::list<std::shared_ptr<RSSurfaceRenderNode>>& subThreadNodes);
     static void HandleHardwareNode(const std::shared_ptr<RSSurfaceRenderNode>& node);
 #ifndef USE_ROSEN_DRAWING

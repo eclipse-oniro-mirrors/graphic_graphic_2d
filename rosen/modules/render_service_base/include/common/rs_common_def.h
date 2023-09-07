@@ -100,7 +100,8 @@ enum RSDrawingCacheType : uint8_t {
 // priority for node, higher number means lower priority
 enum class NodePriorityType : uint8_t {
     MAIN_PRIORITY = 0, // node must render in main thread
-    SUB_HIGH_PRIORITY, // node render in sub thread with high priority
+    SUB_FOCUSNODE_PRIORITY, // node render in sub thread with the highest priority
+    SUB_HIGH_PRIORITY, // node render in sub thread with the second priority
     SUB_LOW_PRIORITY, // node render in sub thread with low priority
 };
 

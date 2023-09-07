@@ -583,7 +583,7 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
             continue;
         }
         if (node->GetCacheSurfaceProcessedStatus() == CacheProcessStatus::DOING) { // node exceed one vsync
-            AssignSubThreadNode(subThreadNodes, node);
+            AssignSubThreadNode(subThreadNodes, node, deviceType, realFocusNodeId);
             continue;
         }
         if (deviceType == DeviceType::PHONE) {
@@ -598,7 +598,7 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
             }
         } else { // PC or TABLET
             if (node->QuerySubAssignable(isRotation)) {
-                AssignSubThreadNode(subThreadNodes, node);
+                AssignSubThreadNode(subThreadNodes, node, deviceType, realFocusNodeId);
             } else {
                 AssignMainThreadNode(mainThreadNodes, node);
             }
@@ -630,18 +630,14 @@ void RSUniRenderUtil::AssignMainThreadNode(std::list<std::shared_ptr<RSSurfaceRe
 }
 
 void RSUniRenderUtil::AssignSubThreadNode(std::list<std::shared_ptr<RSSurfaceRenderNode>>& subThreadNodes,
-    const std::shared_ptr<RSSurfaceRenderNode>& node, DeviceType deviceType)
+    const std::shared_ptr<RSSurfaceRenderNode>& node, DeviceType deviceType, uint64_t focusNodeId)
 {
     if (node == nullptr) {
         ROSEN_LOGW("RSUniRenderUtil::AssignSubThreadNode node is nullptr");
         return;
     }
     node->SetNeedSubmitSubThread(true);
-    if (deviceType == DeviceType::PC || deviceType == DeviceType::TABLET) {
-        node->SetCacheType(CacheType::ANIMATE_PROPERTY);
-    } else {
-        node->SetCacheType(CacheType::CONTENT);
-    }
+    node->SetCacheType(CacheType::CONTENT);
     node->SetIsMainThreadNode(false);
 
     // skip complete static window, DO NOT assign it to subthread.
@@ -672,6 +668,10 @@ void RSUniRenderUtil::AssignSubThreadNode(std::list<std::shared_ptr<RSSurfaceRen
         node->SetCacheSurfaceNeedUpdated(false);
     }
 #endif
+    if ((deviceType == DeviceType::PC || deviceType == DeviceType::TABLET) && node->GetId() == focusNodeId) {
+        node->SetPriority(NodePriorityType::SUB_FOCUSNODE_PRIORITY); // for resolving response latency
+        return;
+    }
     if (node->HasCachedTexture()) {
         node->SetPriority(NodePriorityType::SUB_LOW_PRIORITY);
     } else {
