@@ -2259,9 +2259,6 @@ void RSMainThread::CollectFrameRateRange(std::shared_ptr<RSRenderNode> node)
 
     auto nodePreferred = GetNodePreferred(node->GetHgmModifierProfileList());
     node->SetRSFrameRateRangeByPreferred(nodePreferred);
-
-    //[Planning]: Support multi-display in the future.
-    frameRateRangeData_->screenId = 0;
     pid_t nodePid = ExtractPid(node->GetId());
     auto& uiCurrRange = node->GetUIFrameRateRange();
     if (uiCurrRange.IsValid()) {
@@ -2278,12 +2275,14 @@ void RSMainThread::CollectFrameRateRange(std::shared_ptr<RSRenderNode> node)
     }
     node->ResetUIFrameRateRange();
     node->ResetRSFrameRateRange();
-    frameRateRangeData_->forceUpdateFlag = forceUpdateUniRenderFlag_;
 }
 
 void RSMainThread::ApplyModifiers()
 {
     frameRateRangeData_ = std::make_shared<FrameRateRangeData>();
+    //[Planning]: Support multi-display in the future.
+    frameRateRangeData_->screenId = 0;
+    frameRateRangeData_->forceUpdateFlag = forceUpdateUniRenderFlag_;
     for (const auto& [root, nodeSet] : context_->activeNodesInRoot_) {
         for (const auto& [id, nodePtr] : nodeSet) {
             bool isZOrderChanged = nodePtr->ApplyModifiers();
