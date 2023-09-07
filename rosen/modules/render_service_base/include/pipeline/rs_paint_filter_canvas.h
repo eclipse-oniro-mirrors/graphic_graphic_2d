@@ -226,7 +226,7 @@ protected:
     SkCanvas::SaveLayerStrategy getSaveLayerStrategy(const SaveLayerRec& rec) override;
 #else
     using Env = struct {
-        Color envForegroundColor;
+        Color envForegroundColor_;
     };
     std::stack<float> GetAlphaStack();
     std::stack<Env> GetEnvStack();

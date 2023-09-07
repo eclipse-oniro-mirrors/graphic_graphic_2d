@@ -151,7 +151,11 @@ public:
     sptr<VSyncDistributor> rsVSyncDistributor_;
 
     void ReleaseSurface();
+#ifndef USE_ROSEN_DRAWING
     void AddToReleaseQueue(sk_sp<SkSurface>&& surface);
+#else
+    void AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface);
+#endif
 
     void SetDirtyFlag();
     void SetAccessibilityConfigChanged();
@@ -386,7 +390,11 @@ private:
     bool forceUpdateUniRenderFlag_ = false;
     // for ui first
     std::mutex mutex_;
+#ifndef USE_ROSEN_DRAWING
     std::queue<sk_sp<SkSurface>> tmpSurfaces_;
+#else
+    std::queue<std::shared_ptr<Drawing::Surface>> tmpSurfaces_;
+#endif
 
     // for surface occlusion change callback
     std::mutex surfaceOcclusionMutex_;

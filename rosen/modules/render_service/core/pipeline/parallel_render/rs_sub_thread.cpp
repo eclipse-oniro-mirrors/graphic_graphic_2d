@@ -108,7 +108,11 @@ float RSSubThread::GetAppGpuMemoryInMB()
 {
     float total = 0.f;
     PostSyncTask([&total, this]() {
+#ifndef USE_ROSEN_DRAWING
         total = MemoryManager::GetAppGpuMemoryInMB(grContext_.get());
+#else
+        RS_LOGE("Drawing Unsupport GetAppGpuMemoryInMB");
+#endif
     });
     return total;
 }
@@ -321,7 +325,11 @@ void RSSubThread::ReleaseSurface()
     }
 }
 
+#ifndef USE_ROSEN_DRAWING
 void RSSubThread::AddToReleaseQueue(sk_sp<SkSurface>&& surface)
+#else
+void RSSubThread::AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface)
+#endif
 {
     std::lock_guard<std::mutex> lock(mutex_);
     tmpSurfaces_.push(std::move(surface));
