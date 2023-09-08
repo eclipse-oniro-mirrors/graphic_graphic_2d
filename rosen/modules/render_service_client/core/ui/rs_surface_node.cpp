@@ -290,7 +290,9 @@ bool RSSurfaceNode::SetBufferAvailableCallback(BufferAvailableCallback callback)
             actualCallback = rsSurfaceNode->callback_;
         }
         rsSurfaceNode->bufferAvailable_ = true;
-        actualCallback();
+        if (actualCallback) {
+            actualCallback();
+        }
     });
 }
 
