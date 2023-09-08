@@ -118,7 +118,8 @@ RSUniRenderVisitor::RSUniRenderVisitor()
     quickSkipPrepareType_ = RSSystemParameters::GetQuickSkipPrepareType();
     sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
     auto screenNum = screenManager->GetAllScreenIds().size();
-    isPartialRenderEnabled_ = (screenNum <= 1) && (partialRenderType_ != PartialRenderType::DISABLED);
+    isPartialRenderEnabled_ = (screenNum <= 1) && (partialRenderType_ != PartialRenderType::DISABLED) &&
+        mainThread->IsSingleDisplay();
     isTargetDirtyRegionDfxEnabled_ = RSSystemProperties::GetTargetDirtyRegionDfxEnabled(dfxTargetSurfaceNames_);
     dirtyRegionDebugType_ = RSSystemProperties::GetDirtyRegionDebugType();
     isDirtyRegionDfxEnabled_ = !isTargetDirtyRegionDfxEnabled_ &&
@@ -1610,6 +1611,8 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
     }
     offsetX_ = node.GetDisplayOffsetX();
     offsetY_ = node.GetDisplayOffsetY();
+    // in multidisplay scenario, curDisplayDirtyManager_ will be reset in another display's prepare stage
+    curDisplayDirtyManager_ = node.GetDirtyManager();
     processor_ = RSProcessorFactory::CreateProcessor(node.GetCompositeType());
     if (processor_ == nullptr) {
         RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode: RSProcessor is null!");

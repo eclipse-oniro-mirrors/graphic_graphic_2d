@@ -183,6 +183,7 @@ public:
     }
 
     DeviceType GetDeviceType() const;
+    bool IsSingleDisplay();
     uint64_t GetFocusNodeId() const;
     uint64_t GetFocusLeashWindowId() const;
 private:
@@ -196,7 +197,6 @@ private:
     RSMainThread& operator=(const RSMainThread&) = delete;
     RSMainThread& operator=(const RSMainThread&&) = delete;
 
-    bool IsSingleDisplay();
     void OnVsync(uint64_t timestamp, void* data);
     void ProcessCommand();
     void Animate(uint64_t timestamp);
