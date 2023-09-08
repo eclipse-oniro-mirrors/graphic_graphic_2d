@@ -200,7 +200,7 @@ void SkiaImage::SetGrBackendTexture(const GrBackendTexture& grBackendTexture)
     grBackendTexture_ = grBackendTexture;
 }
 
-BackendTexture SkiaImage::GetBackendTexture(bool flushPendingGrContextIO, TextureOrigin *origin)
+BackendTexture SkiaImage::GetBackendTexture(bool flushPendingGrContextIO, TextureOrigin* origin)
 {
     if (skiaImage_ == nullptr) {
         LOGE("SkiaImage::GetBackendTexture, SkImage is nullptr!");
