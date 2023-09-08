@@ -245,7 +245,13 @@ private:
     void PrepareTypesOfSurfaceRenderNodeBeforeUpdate(RSSurfaceRenderNode& node);
     void PrepareTypesOfSurfaceRenderNodeAfterUpdate(RSSurfaceRenderNode& node);
     // judge if node's cache changes
-    void UpdateCacheChangeStatus(RSRenderNode& node);
+    // return false if cache static and simplify its subtree traversal
+    bool UpdateCacheChangeStatus(RSRenderNode& node);
+    bool IsDrawingCacheStatic(RSRenderNode& node);
+    // if cache root reuses, update its subtree
+    // [attention] check curSurfaceDirtyManager_ before function calls
+    void UpdateStaticCacheSubTree(const std::shared_ptr<RSRenderNode>& cacheRootNode,
+        const std::list<RSRenderNode::SharedPtr>& children);
     // set node cacheable animation after checking whold child tree
     void SetNodeCacheChangeStatus(RSRenderNode& node);
     void DisableNodeCacheInSetting(RSRenderNode& node);

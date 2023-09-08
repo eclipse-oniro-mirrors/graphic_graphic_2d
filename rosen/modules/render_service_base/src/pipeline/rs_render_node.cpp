@@ -88,7 +88,7 @@ void RSRenderNode::AddChild(SharedPtr child, int index)
     disappearingChildren_.remove_if([&child](const auto& pair) -> bool { return pair.first == child; });
     // A child is not on the tree until its parent is on the tree
     if (isOnTheTree_) {
-        child->SetIsOnTheTree(true, instanceRootNodeId_, firstLevelNodeId_);
+        child->SetIsOnTheTree(true, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_);
     }
     SetContentDirty();
     isFullChildrenListValid_ = false;
@@ -143,7 +143,7 @@ void RSRenderNode::RemoveChild(SharedPtr child, bool skipTransition)
     isFullChildrenListValid_ = false;
 }
 
-void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId firstLevelNodeId)
+void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId firstLevelNodeId, NodeId cacheNodeId)
 {
     // We do not need to label a child when the child is removed from a parent that is not on the tree
     if (flag == isOnTheTree_) {
@@ -153,17 +153,23 @@ void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId f
     firstLevelNodeId_ = firstLevelNodeId;
     isOnTheTree_ = flag;
     OnTreeStateChanged();
+    if (IsSuggestedDrawInGroup()) {
+        cacheNodeId = GetId();
+    }
+    if (cacheNodeId != INVALID_NODEID) {
+        drawingCacheRootId_ = cacheNodeId;
+    }
 
     for (auto& weakChild : children_) {
         auto child = weakChild.lock();
         if (child == nullptr) {
             continue;
         }
-        child->SetIsOnTheTree(flag, instanceRootNodeId, firstLevelNodeId);
+        child->SetIsOnTheTree(flag, instanceRootNodeId, firstLevelNodeId, cacheNodeId);
     }
 
     for (auto& [child, _] : disappearingChildren_) {
-        child->SetIsOnTheTree(flag, instanceRootNodeId, firstLevelNodeId);
+        child->SetIsOnTheTree(flag, instanceRootNodeId, firstLevelNodeId, cacheNodeId);
     }
 }
 
@@ -198,7 +204,7 @@ void RSRenderNode::AddCrossParentChild(const SharedPtr& child, int32_t index)
     disappearingChildren_.remove_if([&child](const auto& pair) -> bool { return pair.first == child; });
     // A child is not on the tree until its parent is on the tree
     if (isOnTheTree_) {
-        child->SetIsOnTheTree(true, instanceRootNodeId_, firstLevelNodeId_);
+        child->SetIsOnTheTree(true, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_);
     }
     SetContentDirty();
     isFullChildrenListValid_ = false;
@@ -1216,6 +1222,12 @@ void RSRenderNode::InitCacheSurface(Drawing::GPUContext* gpuContext, ClearCacheS
 #endif // USE_ROSEN_DRAWING
 }
 
+bool RSRenderNode::IsCacheSurfaceValid() const
+{
+    std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
+    return  (cacheCompletedSurface_ != nullptr);
+}
+
 Vector2f RSRenderNode::GetOptionalBufferSize() const
 {
     const auto& modifier = boundsModifier_ ? boundsModifier_ : frameModifier_;
@@ -1838,6 +1850,14 @@ void RSRenderNode::SetVisitedCacheRootIds(const std::unordered_set<NodeId>& visi
 const std::unordered_set<NodeId>& RSRenderNode::GetVisitedCacheRootIds() const
 {
     return visitedCacheRoots_;
+}
+void RSRenderNode::SetDrawingCacheRootId(NodeId id)
+{
+    drawingCacheRootId_ = id;
+}
+NodeId RSRenderNode::GetDrawingCacheRootId() const
+{
+    return drawingCacheRootId_;
 }
 void RSRenderNode::SetIsMarkDriven(bool isMarkDriven)
 {
