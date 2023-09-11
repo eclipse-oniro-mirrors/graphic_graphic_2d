@@ -401,6 +401,9 @@ int Region::Area() const
 
 int Region::IntersectArea(const Rect& r) const
 {
+    if (r.IsEmpty()) {
+        return 0;
+    }
     int areaSum = 0;
     for (const auto& rect : GetRegionRects()) {
         areaSum += rect.IntersectArea(r);
