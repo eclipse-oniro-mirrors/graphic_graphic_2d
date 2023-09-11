@@ -155,6 +155,11 @@ public:
      */
     int32_t GetHeight() const;
 
+    /*
+     * @brief  Gets ImageInfo of Canvas.
+     */
+    ImageInfo GetImageInfo();
+
     // shapes
     virtual void DrawPoint(const Point& point);
     virtual void DrawPoints(PointMode mode, size_t count, const Point pts[]);

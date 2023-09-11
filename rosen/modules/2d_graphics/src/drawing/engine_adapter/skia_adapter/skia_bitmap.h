@@ -34,6 +34,7 @@ public:
     }
 
     void Build(int32_t width, int32_t height, const BitmapFormat& format, int32_t stride) override;
+    void Build(const ImageInfo& imageInfo, int32_t stride) override;
     int GetWidth() const override;
     int GetHeight() const override;
     void* GetPixels() const override;

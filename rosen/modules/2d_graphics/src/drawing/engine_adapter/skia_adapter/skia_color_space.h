@@ -38,6 +38,7 @@ public:
     void InitWithImage(const Image& image) override;
     void InitWithRGB(const CMSTransferFuncType& func, const CMSMatrixType& matrix) override;
     sk_sp<SkColorSpace> GetColorSpace() const;
+    void SetColorSpace(sk_sp<SkColorSpace> skColorSpace);
 
 private:
     sk_sp<SkColorSpace> colorSpace_;

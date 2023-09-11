@@ -65,6 +65,7 @@ public:
 #endif
     int32_t GetWidth() const override;
     int32_t GetHeight() const override;
+    ImageInfo GetImageInfo() override;
 
     // shapes
     void DrawPoint(const Point& point) override;

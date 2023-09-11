@@ -33,6 +33,12 @@ void Bitmap::Build(int32_t width, int32_t height, const BitmapFormat& format, in
     bmpImplPtr->Build(width, height, format, stride);
 }
 
+void Bitmap::Build(const ImageInfo& imageInfo, int32_t stride)
+{
+    imageInfo_ = imageInfo;
+    bmpImplPtr->Build(imageInfo_, stride);
+}
+
 int Bitmap::GetWidth() const
 {
     return bmpImplPtr->GetWidth();
@@ -81,6 +87,11 @@ void Bitmap::Free()
 BitmapFormat Bitmap::GetFormat() const
 {
     return format_;
+}
+
+ImageInfo Bitmap::GetImageInfo() const
+{
+    return imageInfo_;
 }
 } // namespace Drawing
 } // namespace Rosen

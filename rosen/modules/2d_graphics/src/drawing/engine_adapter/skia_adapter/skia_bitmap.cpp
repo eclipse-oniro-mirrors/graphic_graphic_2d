@@ -17,50 +17,14 @@
 
 #include "include/core/SkImageInfo.h"
 
+#include "skia_image_info.h"
+
 #include "image/bitmap.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
 SkiaBitmap::SkiaBitmap() : skiaBitmap_() {}
-
-static inline SkColorType ConvertToSkColorType(const ColorType& format)
-{
-    switch (format) {
-        case COLORTYPE_UNKNOWN:
-            return kUnknown_SkColorType;
-        case COLORTYPE_ALPHA_8:
-            return kAlpha_8_SkColorType;
-        case COLORTYPE_RGB_565:
-            return kRGB_565_SkColorType;
-        case COLORTYPE_ARGB_4444:
-            return kARGB_4444_SkColorType;
-        case COLORTYPE_RGBA_8888:
-            return kRGBA_8888_SkColorType;
-        case COLORTYPE_BGRA_8888:
-            return kBGRA_8888_SkColorType;
-        case COLORTYPE_N32:
-            return kN32_SkColorType;
-        default:
-            return kUnknown_SkColorType;
-    }
-}
-
-static inline SkAlphaType ConvertToSkAlphaType(const AlphaType& format)
-{
-    switch (format) {
-        case ALPHATYPE_UNKNOWN:
-            return kUnknown_SkAlphaType;
-        case ALPHATYPE_OPAQUE:
-            return kOpaque_SkAlphaType;
-        case ALPHATYPE_PREMUL:
-            return kPremul_SkAlphaType;
-        case ALPHATYPE_UNPREMUL:
-            return kUnpremul_SkAlphaType;
-        default:
-            return kUnknown_SkAlphaType;
-    }
-}
 
 static inline SkImageInfo MakeSkImageInfo(const int width, const int height, const BitmapFormat& format)
 {
@@ -73,6 +37,13 @@ void SkiaBitmap::Build(int32_t width, int32_t height, const BitmapFormat& format
 {
     auto imageInfo = MakeSkImageInfo(width, height, format);
     skiaBitmap_.setInfo(imageInfo, stride);
+    skiaBitmap_.allocPixels();
+}
+
+void SkiaBitmap::Build(const ImageInfo& imageInfo, int32_t stride)
+{
+    auto skImageInfo = ConvertToSkImageInfo(imageInfo);
+    skiaBitmap_.setInfo(skImageInfo, stride);
     skiaBitmap_.allocPixels();
 }
 
@@ -103,17 +74,15 @@ const SkBitmap& SkiaBitmap::ExportSkiaBitmap() const
 
 void SkiaBitmap::CopyPixels(Bitmap& dst, int srcLeft, int srcTop, int width, int height) const
 {
-    int w = dst.GetWidth();
-    int h = dst.GetHeight();
-    BitmapFormat format = dst.GetFormat();
+    ImageInfo imageInfo = dst.GetImageInfo();
     void* dstPixels = dst.GetPixels();
 
-    SkImageInfo imageInfo = MakeSkImageInfo(w, h, format);
+    SkImageInfo skImageInfo = ConvertToSkImageInfo(imageInfo);
     int srcX = srcLeft;
     int srcY = srcTop;
     size_t dstRowBytes = static_cast<size_t>(width * height);
 
-    skiaBitmap_.readPixels(imageInfo, dstPixels, dstRowBytes, srcX, srcY);
+    skiaBitmap_.readPixels(skImageInfo, dstPixels, dstRowBytes, srcX, srcY);
 }
 
 void SkiaBitmap::ClearWithColor(const ColorQuad& color) const

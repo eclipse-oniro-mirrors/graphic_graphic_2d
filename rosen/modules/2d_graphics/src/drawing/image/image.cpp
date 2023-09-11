@@ -103,6 +103,11 @@ uint32_t Image::GetUniqueID() const
     return imageImplPtr->GetUniqueID();
 }
 
+ImageInfo Image::GetImageInfo()
+{
+    return imageImplPtr->GetImageInfo();
+}
+
 bool Image::ReadPixels(Bitmap& bitmap, int x, int y)
 {
     return imageImplPtr->ReadPixels(bitmap, x, y);

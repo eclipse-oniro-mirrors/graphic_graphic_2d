@@ -22,6 +22,7 @@
 #include "effect/color_space.h"
 #include "image/bitmap.h"
 #include "image/picture.h"
+#include "image/image_info.h"
 #include "utils/matrix.h"
 #include "utils/size.h"
 
@@ -62,6 +63,7 @@ public:
     virtual ColorType GetColorType() const = 0;
     virtual AlphaType GetAlphaType() const = 0;
     virtual uint32_t GetUniqueID() const = 0;
+    virtual ImageInfo GetImageInfo() = 0;
     virtual bool ReadPixels(Bitmap& bitmap, int x, int y) = 0;
     virtual bool IsTextureBacked() const = 0;
 

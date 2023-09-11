@@ -66,6 +66,7 @@ public:
     ColorType GetColorType() const override;
     AlphaType GetAlphaType() const override;
     uint32_t GetUniqueID() const override;
+    ImageInfo GetImageInfo() override;
     bool ReadPixels(Bitmap& bitmap, int x, int y) override;
     bool IsTextureBacked() const override;
 

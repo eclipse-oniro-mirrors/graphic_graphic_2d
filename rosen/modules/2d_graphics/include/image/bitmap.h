@@ -32,6 +32,7 @@ public:
     Bitmap();
     virtual ~Bitmap();
     void Build(int32_t width, int32_t height, const BitmapFormat& format, int32_t stride = 0);
+    void Build(const ImageInfo& imageInfo, int32_t stride = 0);
 
     /*
      * @brief  Gets the width of Bitmap.
@@ -54,6 +55,7 @@ public:
     ColorQuad GetColor(int x, int y) const;
     void Free();
     BitmapFormat GetFormat() const;
+    ImageInfo GetImageInfo() const;
     template<typename T>
     const std::shared_ptr<T> GetImpl() const
     {
@@ -63,6 +65,7 @@ public:
 private:
     std::shared_ptr<BitmapImpl> bmpImplPtr;
     BitmapFormat format_;
+    ImageInfo imageInfo_;
 };
 } // namespace Drawing
 } // namespace Rosen

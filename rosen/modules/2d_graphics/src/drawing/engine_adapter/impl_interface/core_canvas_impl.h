@@ -28,6 +28,7 @@
 #include "draw/shadow.h"
 #include "effect/filter.h"
 #include "image/bitmap.h"
+#include "image/image_info.h"
 #ifdef ACE_ENABLE_GPU
 #include "image/gpu_context.h"
 #endif
@@ -75,6 +76,7 @@ public:
 #endif
     virtual int32_t GetWidth() const = 0;
     virtual int32_t GetHeight() const = 0;
+    virtual ImageInfo GetImageInfo() = 0;
 
     // shapes
     virtual void DrawPoint(const Point& point) = 0;
