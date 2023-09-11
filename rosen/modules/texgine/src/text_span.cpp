@@ -167,7 +167,6 @@ void TextSpan::Paint(TexgineCanvas &canvas, double offsetX, double offsetY, cons
     paint.SetAlpha(255);
 #endif
     paint.SetColor(xs.color);
-    paint.SetStyle(TexginePaint::FILL);
     if (xs.background.has_value()) {
         auto rect = TexgineRect::MakeXYWH(offsetX, offsetY + *tmetrics_.fAscent_, width_,
             *tmetrics_.fDescent_ - *tmetrics_.fAscent_);
@@ -175,13 +174,7 @@ void TextSpan::Paint(TexgineCanvas &canvas, double offsetX, double offsetY, cons
     }
 
     if (xs.foreground.has_value()) {
-#ifndef USE_GRAPHIC_TEXT_GINE
         paint = xs.foreground.value();
-#else
-        auto rect = TexgineRect::MakeXYWH(offsetX, offsetY + *tmetrics_.fAscent_, width_,
-            *tmetrics_.fDescent_ - *tmetrics_.fAscent_);
-        canvas.DrawRect(rect, xs.foreground.value());
-#endif
     }
     canvas.DrawTextBlob(textBlob_, offsetX, offsetY, paint);
     PaintDecoration(canvas, offsetX, offsetY, xs);
