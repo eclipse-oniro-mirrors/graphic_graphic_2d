@@ -105,17 +105,25 @@ TextEngine::TextStyle Convert(const TextStyle &style)
     auto decorationColor = SkColorSetARGB(style.decorationColor.GetAlpha(),
         style.decorationColor.GetRed(), style.decorationColor.GetGreen(), style.decorationColor.GetBlue());
 #endif
-    auto foreground = std::make_shared<TextEngine::TexginePaint>();
+    std::optional<TextEngine::TexginePaint> foreground = std::nullopt;
 #ifndef USE_GRAPHIC_TEXT_GINE
-    foreground->SetPaint(*style.foreground_);
+    if (style.foreground.has_value()) {
+        foreground.value().SetPaint(style.foreground.value());
+    }
 #else
-    foreground->SetPaint(*style.foreground);
+    if (style.foreground.has_value()) {
+        foreground.value().SetPaint(style.foreground.value());
+    }
 #endif
-    auto background = std::make_shared<TextEngine::TexginePaint>();
+    std::optional<TextEngine::TexginePaint> background = std::nullopt;
 #ifndef USE_GRAPHIC_TEXT_GINE
-    background->SetPaint(*style.background_);
+    if (style.background.has_value()) {
+        background.value().SetPaint(style.background_.value());
+    }
 #else
-    background->SetPaint(*style.background);
+    if (style.background.has_value()) {
+        background.value().SetPaint(style.background.value());
+    }
 #endif
     TextEngine::TextStyle xs = {
 #ifndef USE_GRAPHIC_TEXT_GINE
@@ -134,8 +142,8 @@ TextEngine::TextStyle Convert(const TextStyle &style)
         .heightScale_ = style.heightScale_,
         .letterSpacing_ = style.letterSpacing_,
         .wordSpacing_ = style.wordSpacing_,
-        .foreground_ = *foreground,
-        .background_ = *background,
+        .foreground_ = foreground,
+        .background_ = background,
 #else
         .fontWeight = Convert(style.fontWeight),
         .fontStyle = Convert(style.fontStyle),
@@ -152,8 +160,8 @@ TextEngine::TextStyle Convert(const TextStyle &style)
         .heightScale = style.heightScale,
         .letterSpacing = style.letterSpacing,
         .wordSpacing = style.wordSpacing,
-        .foreground = *foreground,
-        .background = *background,
+        .foreground = foreground,
+        .background = background,
 #endif
     };
 
