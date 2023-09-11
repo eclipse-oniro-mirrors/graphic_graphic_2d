@@ -200,6 +200,7 @@ public:
     RectI GetOldDirty() const;
     RectI GetOldDirtyInSurface() const;
     bool IsDirtyRegionUpdated() const;
+    void CleanDirtyRegionUpdated();
 
     void AddModifier(const std::shared_ptr<RSRenderModifier>& modifier);
     void RemoveModifier(const PropertyId& id);
@@ -265,7 +266,7 @@ public:
     sk_sp<SkSurface> GetCacheSurface(uint32_t threadIndex, bool needCheckThread, bool releaseAfterGet = false);
 #else
     std::shared_ptr<Drawing::Surface> GetCacheSurface(uint32_t threadIndex, bool needCheckThread,
-        bool releaseAfterGet) = false);
+        bool releaseAfterGet = false);
 #endif
 
     void UpdateCompletedCacheSurface();
@@ -277,7 +278,7 @@ public:
     std::shared_ptr<Drawing::Surface> GetCompletedCacheSurface(uint32_t threadIndex = UNI_MAIN_THREAD_INDEX,
         bool needCheckThread = true, bool releaseAfterGet = false);
 #endif
-    void ClearCacheSurface();
+    void ClearCacheSurface(bool isClearCompletedCacheSurface = true);
 
 #ifdef RS_ENABLE_GL
     void UpdateBackendTexture();
@@ -304,10 +305,12 @@ public:
 
     void SetDrawingCacheType(RSDrawingCacheType cacheType);
     RSDrawingCacheType GetDrawingCacheType() const;
-    void ResetFilterRectsInCache(const std::unordered_map<NodeId, RectI>& curRects);
-    void GetFilterRectsInCache(std::unordered_map<NodeId, std::unordered_map<NodeId, RectI>>& allRects) const;
+    void ResetFilterRectsInCache(const std::unordered_set<NodeId>& curRects);
+    void GetFilterRectsInCache(std::unordered_map<NodeId, std::unordered_set<NodeId>>& allRects) const;
     void SetDrawingCacheChanged(bool cacheChanged);
     bool GetDrawingCacheChanged() const;
+    void SetVisitedCacheRootIds(const std::unordered_set<NodeId>& visitedNodes);
+    const std::unordered_set<NodeId>& GetVisitedCacheRootIds() const;
 
     // driven render ///////////////////////////////////
     void SetIsMarkDriven(bool isMarkDriven);
@@ -392,15 +395,15 @@ public:
     virtual void OnAlphaChanged() {}
 
     void SetRSFrameRateRange(FrameRateRange range);
-    FrameRateRange GetRSFrameRateRange();
-    void UpdateUIFrameRateRange(FrameRateRange range);
-    FrameRateRange GetUIFrameRateRange() const;
+    const FrameRateRange& GetRSFrameRateRange();
+    void UpdateUIFrameRateRange(const FrameRateRange& range);
+    const FrameRateRange& GetUIFrameRateRange() const;
 
     void ResetRSFrameRateRange();
     void ResetUIFrameRateRange();
 
     void MarkNonGeometryChanged();
-    std::vector<HgmModifierProfile> GetHgmModifierProfileList() const;
+    const std::vector<HgmModifierProfile>& GetHgmModifierProfileList();
     void SetRSFrameRateRangeByPreferred(int32_t preferred);
     bool ApplyModifiers();
 
@@ -437,6 +440,8 @@ protected:
     bool isOnTheTree_ = false;
 
     std::unordered_set<RSModifierType> dirtyTypes_;
+    bool isFullChildrenListValid_ = false;
+    RSProperties renderProperties_;
 
 private:
     NodeId id_;
@@ -452,7 +457,6 @@ private:
     std::list<std::pair<SharedPtr, uint32_t>> disappearingChildren_;
 
     std::list<SharedPtr> fullChildrenList_;
-    bool isFullChildrenListValid_ = false;
     bool isChildrenSorted_ = false;
     void GenerateFullChildrenList(bool inSubThread);
     void SortChildren(bool inSubThread);
@@ -468,7 +472,6 @@ private:
     bool hasChildrenOutOfRect_ = false;
     RectI childrenRect_;
     bool childHasFilter_ = false;  // only collect children filter status
-    std::unordered_map<NodeId, RectI> curCacheFilterRects_ = {};
 
     void InternalRemoveSelfFromDisappearingChildren();
     void FallbackAnimationsToRoot();
@@ -487,7 +490,6 @@ private:
     uint32_t disappearingTransitionCount_ = 0;
     RectI oldDirty_;
     RectI oldDirtyInSurface_;
-    RSProperties renderProperties_;
     RSAnimationManager animationManager_;
     std::map<PropertyId, std::shared_ptr<RSRenderModifier>> modifiers_;
     // bounds and frame modifiers must be unique
@@ -516,6 +518,8 @@ private:
     // drawing group cache
     RSDrawingCacheType drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;
     bool isDrawingCacheChanged_ = false;
+    std::unordered_set<NodeId> curCacheFilterRects_ = {};
+    std::unordered_set<NodeId> visitedCacheRoots_ = {};
 
     mutable std::recursive_mutex surfaceMutex_;
     ClearCacheSurfaceFunc clearCacheSurfaceFunc_ = nullptr;

@@ -61,6 +61,8 @@ int TextBreaker::WordBreak(std::vector<VariantSpan> &spans, const TypographyStyl
             return 1;
         }
 
+        GenNewBoundryByTypeface(cgs, boundaries);
+
         LOGSCOPED(sl2, LOGEX_FUNC_LINE_DEBUG(), "TextBreaker::doWordBreak algo");
         preBreak_ = 0;
         postBreak_ = 0;
@@ -123,6 +125,31 @@ int TextBreaker::Measure(const TextStyle &xs, const std::vector<uint16_t> &u16ve
     return 0;
 }
 
+void TextBreaker::GenNewBoundryByTypeface(CharGroups cgs, std::vector<Boundary> &boundaries)
+{
+    std::vector<Boundary> newBoundary;
+    for (auto &[start, end] : boundaries) {
+        size_t newStart = start;
+        size_t newEnd = start;
+        const auto &wordCgs = cgs.GetSubFromU16RangeAll(start, end);
+        auto typeface = wordCgs.Get(0).typeface;
+        for (auto cg = wordCgs.begin(); cg != wordCgs.end(); cg++) {
+            if (typeface == cg->typeface) {
+                newEnd++;
+                continue;
+            }
+
+            newBoundary.push_back({newStart, newEnd});
+            newStart = newEnd;
+            typeface = cg->typeface;
+        }
+
+        newBoundary.push_back({newStart, end});
+    }
+
+    boundaries = newBoundary;
+}
+
 void TextBreaker::BreakWord(const CharGroups &wordcgs, const TypographyStyle &ys,
     const TextStyle &xs, std::vector<VariantSpan> &spans)
 {
@@ -169,10 +196,13 @@ void TextBreaker::GenerateSpan(const CharGroups &currentCgs, const TypographySty
     newSpan->postBreak_ = postBreak_;
     newSpan->preBreak_ = preBreak_;
     newSpan->typeface_ = currentCgs.Get(0).typeface;
-
-    for ([[maybe_unused]] const auto &cg : currentCgs) {
-        assert(cg.typeface == newSpan->typeface_);
+    double spanWidth = 0.0;
+    for (const auto &cg : currentCgs) {
+        spanWidth += cg.GetWidth();
     }
+    newSpan->width_ = spanWidth;
+
+
     VariantSpan vs(newSpan);
     vs.SetTextStyle(xs);
     spans.push_back(vs);

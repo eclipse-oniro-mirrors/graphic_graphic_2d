@@ -52,6 +52,13 @@ void RSPaintFilterCanvasBase::DrawPoint(const Point& point)
     }
 }
 
+void RSPaintFilterCanvasBase::DrawPoints(PointMode mode, size_t count, const Point pts[])
+{
+    if (canvas_ != nullptr && OnFilter()) {
+        canvas_->DrawPoints(mode, count, pts);
+    }
+}
+
 void RSPaintFilterCanvasBase::DrawLine(const Point& startPt, const Point& endPt)
 {
     if (canvas_ != nullptr && OnFilter()) {
@@ -130,6 +137,13 @@ void RSPaintFilterCanvasBase::DrawShadow(const Path& path, const Point3& planePa
     }
 }
 
+void RSPaintFilterCanvasBase::DrawColor(Drawing::ColorQuad color, Drawing::BlendMode mode)
+{
+    if (canvas_ != nullptr && OnFilter()) {
+        canvas_->DrawColor(color, mode);
+    }
+}
+
 void RSPaintFilterCanvasBase::DrawRegion(const Drawing::Region& region)
 {
     if (canvas_ != nullptr && OnFilter()) {
@@ -202,6 +216,14 @@ void RSPaintFilterCanvasBase::ClipPath(const Path& path, ClipOp op, bool doAntiA
     Canvas::ClipPath(path, op, doAntiAlias);
     if (canvas_ != nullptr) {
         canvas_->ClipPath(path, op, doAntiAlias);
+    }
+}
+
+void RSPaintFilterCanvasBase::ClipRegion(const Region& region, ClipOp op)
+{
+    Canvas::ClipRegion(region, op);
+    if (canvas_ != nullptr) {
+        canvas_->ClipRegion(region, op);
     }
 }
 
@@ -830,12 +852,30 @@ RSPaintFilterCanvas::CanvasStatus RSPaintFilterCanvas::GetCanvasStatus() const
 }
 #endif
 
-RSPaintFilterCanvas::CachedEffectData::CachedEffectData(const sk_sp<SkImage>& image, const SkIRect& rect)
+RSPaintFilterCanvas::CachedEffectData::CachedEffectData(sk_sp<SkImage>&& image, const SkIRect& rect)
     : cachedImage_(image), cachedRect_(rect)
 {}
-RSPaintFilterCanvas::CachedEffectData::CachedEffectData(sk_sp<SkImage>&& image, SkIRect&& rect)
-    : cachedImage_(std::move(image)), cachedRect_(std::move(rect))
-{}
+
 RSPaintFilterCanvas::CachedEffectData::~CachedEffectData() = default;
+
+void RSPaintFilterCanvas::SetIsParallelCanvas(bool isParallel)
+{
+    isParallelCanvas_ = isParallel;
+}
+
+bool RSPaintFilterCanvas::GetIsParallelCanvas() const
+{
+    return isParallelCanvas_;
+}
+
+void RSPaintFilterCanvas::SetDisableFilterCache(bool disable)
+{
+    disableFilterCache_ = disable;
+}
+
+bool RSPaintFilterCanvas::GetDisableFilterCache() const
+{
+    return disableFilterCache_;
+}
 } // namespace Rosen
 } // namespace OHOS

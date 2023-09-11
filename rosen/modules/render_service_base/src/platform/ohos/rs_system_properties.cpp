@@ -214,6 +214,16 @@ bool RSSystemProperties::GetDrawTextAsBitmap()
     return isDrawTextAsBitmap_;
 }
 
+void RSSystemProperties::SetCacheEnabledForRotation(bool flag)
+{
+    cacheEnabledForRotation_ = flag;
+}
+
+bool RSSystemProperties::GetCacheEnabledForRotation()
+{
+    return cacheEnabledForRotation_;
+}
+
 ParallelRenderingType RSSystemProperties::GetPrepareParallelRenderingEnabled()
 {
     static ParallelRenderingType systemPropertiePrepareType = static_cast<ParallelRenderingType>(
@@ -302,6 +312,20 @@ bool RSSystemProperties::GetKawaseEnabled()
     return kawaseBlurEnabled;
 }
 
+float RSSystemProperties::GetKawaseRandomColorFactor()
+{
+    static float randomFactor =
+        std::atof((system::GetParameter("persist.sys.graphic.kawaseFactor", "1.75")).c_str());
+    return randomFactor;
+}
+
+bool RSSystemProperties::GetRandomColorEnabled()
+{
+    static bool randomColorEnabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.randomColorEnable", "1")).c_str()) != 0;
+    return randomColorEnabled;
+}
+
 bool RSSystemProperties::GetKawaseOriginalEnabled()
 {
     static bool kawaseOriginalEnabled =
@@ -324,7 +348,11 @@ bool RSSystemProperties::GetProxyNodeDebugEnabled()
 
 bool RSSystemProperties::GetUIFirstEnabled()
 {
+#ifdef ROSEN_EMULATOR
+    return false;
+#else
     return (std::atoi((system::GetParameter("rosen.ui.first.enabled", "1")).c_str()) != 0);
+#endif
 }
 
 bool RSSystemProperties::GetDebugTraceEnabled()
@@ -421,6 +449,12 @@ bool RSSystemProperties::GetSnapshotWithDMAEnabled()
         system::GetParameter("const.product.devicetype", "pc") == "tablet" ||
         system::GetParameter("const.product.devicetype", "pc") == "pc";
     return isSupportDma && system::GetBoolParameter("rosen.snapshotDma.enabled", true);
+}
+
+bool RSSystemProperties::IsPhoneType()
+{
+    static bool isPhone = system::GetParameter("const.product.devicetype", "pc") == "phone";
+    return isPhone;
 }
 } // namespace Rosen
 } // namespace OHOS

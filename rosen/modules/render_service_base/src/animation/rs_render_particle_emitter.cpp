@@ -15,6 +15,7 @@
 
 #include "animation/rs_render_particle_emitter.h"
 
+#include <cstdint>
 #include <math.h>
 #include <vector>
 namespace OHOS {
@@ -30,18 +31,22 @@ void RSRenderParticleEmitter::EmitParticle(int64_t deltaTime)
     auto scaleUpdater = particleParams_->GetScaleUpdator();
     if (opacityUpdater == ParticleUpdator::NONE && particleParams_->GetOpacityStartValue() <= 0.f &&
         particleParams_->GetOpacityEndValue() <= 0.f) {
+        emitFinish_ = true;
         return;
     } else if (opacityUpdater == ParticleUpdator::RANDOM &&
         particleParams_->GetOpacityStartValue() <= 0.f && particleParams_->GetOpacityEndValue() <= 0.f &&
         particleParams_->GetOpacityRandomStart() <= 0.f && particleParams_->GetOpacityRandomEnd() <= 0.f) {
+        emitFinish_ = true;
         return;
     }
     if (scaleUpdater == ParticleUpdator::NONE &&
         particleParams_->GetScaleStartValue() <= 0.f && particleParams_->GetScaleEndValue() <= 0.f) {
+        emitFinish_ = true;
         return;
     } else if (scaleUpdater == ParticleUpdator::RANDOM &&
         particleParams_->GetScaleStartValue() <= 0.f && particleParams_->GetScaleEndValue() <= 0.f &&
         particleParams_->GetScaleRandomStart() <= 0.f && particleParams_->GetScaleRandomEnd() <= 0.f) {
+        emitFinish_ = true;
         return;
     }
 
@@ -49,12 +54,14 @@ void RSRenderParticleEmitter::EmitParticle(int64_t deltaTime)
         auto particleImage = particleParams_->GetParticleImage();
         auto imageSize = particleParams_->GetImageSize();
         if (particleImage == nullptr || (imageSize.x_ <= 0.f || imageSize.y_ <= 0.f)) {
+            emitFinish_ = true;
             return;
         }
     }
     if (particleType == ParticleType::POINTS) {
         auto radius = particleParams_->GetParticleRadius();
         if (radius <= 0.f) {
+            emitFinish_ = true;
             return;
         }
     }
@@ -63,12 +70,16 @@ void RSRenderParticleEmitter::EmitParticle(int64_t deltaTime)
     auto maxParticle = particleParams_->GetParticleCount();
     auto lifeTime = particleParams_->GetParticleLifeTime();
     float last = particleCount_;
-    particleCount_ += static_cast<float>(emitRate * deltaTime) / NS_TO_S;
-    spawnNum_ += particleCount_ - last;
     particles_.clear();
-    if (maxParticle <= 0 || lifeTime == 0) {
+    if (maxParticle == -1) {
+        maxParticle = UINT32_MAX;
+    }
+    if (maxParticle <= 0 || lifeTime == 0 || last > static_cast<float>(maxParticle)) {
+        emitFinish_ = true;
         return;
     }
+    particleCount_ += static_cast<float>(emitRate * deltaTime) / NS_TO_S;
+    spawnNum_ += particleCount_ - last;
     if (ROSEN_EQ(last, 0.f)) {
         for (uint32_t i = 0; i <= std::min(static_cast<uint32_t>(spawnNum_), maxParticle); i++) {
             auto particle = std::make_shared<RSRenderParticle>(particleParams_);
@@ -82,16 +93,14 @@ void RSRenderParticleEmitter::EmitParticle(int64_t deltaTime)
         spawnNum_ -= 1.f;
         last += 1.f;
     }
+    if (particleCount_ >= static_cast<float>(maxParticle)) {
+        emitFinish_ = true;
+    }
 }
 
 bool RSRenderParticleEmitter::IsEmitterFinish()
 {
-    auto maxParticle = particleParams_->GetParticleCount();
-    bool isEmitterFinish = false;
-    if (particleCount_ == static_cast<float>(maxParticle)) {
-        isEmitterFinish = true;
-    }
-    return isEmitterFinish;
+    return emitFinish_;
 }
 
 std::vector<std::shared_ptr<RSRenderParticle>> RSRenderParticleEmitter::GetParticles()

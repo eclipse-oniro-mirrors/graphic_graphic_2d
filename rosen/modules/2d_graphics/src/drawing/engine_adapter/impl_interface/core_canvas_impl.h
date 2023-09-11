@@ -53,6 +53,7 @@ namespace Rosen {
 namespace Drawing {
 enum class SrcRectConstraint;
 class SaveLayerOps;
+enum class PointMode;
 
 class CoreCanvasImpl : public BaseImpl {
 public:
@@ -77,6 +78,7 @@ public:
 
     // shapes
     virtual void DrawPoint(const Point& point) = 0;
+    virtual void DrawPoints(PointMode mode, size_t count, const Point pts[]) = 0;
     virtual void DrawLine(const Point& startPt, const Point& endPt) = 0;
     virtual void DrawRect(const Rect& rect) = 0;
     virtual void DrawRoundRect(const RoundRect& roundRect) = 0;
@@ -90,6 +92,9 @@ public:
     virtual void DrawShadow(const Path& path, const Point3& planeParams, const Point3& devLightPos, scalar lightRadius,
         Color ambientColor, Color spotColor, ShadowFlags flag) = 0;
     virtual void DrawRegion(const Region& region) = 0;
+
+    // color
+    virtual void DrawColor(ColorQuad color, BlendMode mode) = 0;
 
     // image
     virtual void DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py) = 0;
@@ -107,6 +112,7 @@ public:
     virtual void ClipRect(const Rect& rect, ClipOp op, bool doAntiAlias = false) = 0;
     virtual void ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias = false) = 0;
     virtual void ClipPath(const Path& path, ClipOp op, bool doAntiAlias = false) = 0;
+    virtual void ClipRegion(const Region& region, ClipOp op = ClipOp::INTERSECT) = 0;
 
     // transform
     virtual void SetMatrix(const Matrix& matrix) = 0;

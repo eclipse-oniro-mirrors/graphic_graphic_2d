@@ -49,6 +49,7 @@ struct TypographyStyle {
     WordBreakType wordBreakType = WordBreakType::BREAK_WORD;
     TextAlign align = TextAlign::START;
     TextDirection direction = TextDirection::LTR;
+    EllipsisModal ellipsisModal = EllipsisModal::TAIL;
 
     // lineStyle
     bool useLineStyle = false;

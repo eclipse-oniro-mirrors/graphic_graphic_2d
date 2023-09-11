@@ -31,6 +31,7 @@
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_handler.h"
+#include "platform/common/rs_system_properties.h"
 #include "property/rs_properties_painter.h"
 #include "screen_manager/screen_types.h"
 #include "transaction/rs_occlusion_data.h"
@@ -91,9 +92,17 @@ public:
         return nodeType_ == RSSurfaceNodeType::LEASH_WINDOW_NODE;
     }
 
+    bool IsRosenWeb() const
+    {
+        return GetName().find("RosenWeb") != std::string::npos;
+    }
+
     // indicate if this node type can enable hardware composer
     bool IsHardwareEnabledType() const
     {
+        if (IsRosenWeb() && !RSSystemProperties::IsPhoneType()) {
+            return false;
+        }
         return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && isHardwareEnabledNode_;
     }
 
@@ -571,6 +580,11 @@ public:
         return opaqueRegionChanged_;
     }
 
+    void CleanOpaqueRegionChanged()
+    {
+        opaqueRegionChanged_ = false;
+    }
+
     // [planning] Remove this after skia is upgraded, the clipRegion is supported
     void ResetChildrenFilterRects();
     void UpdateChildrenFilterRects(const RectI& rect);
@@ -728,7 +742,7 @@ public:
     void UpdateFilterCacheStatusIfNodeStatic(const RectI& clipRect);
     void UpdateDrawingCacheNodes(const std::shared_ptr<RSRenderNode>& nodePtr);
     // reset static node's drawing cache status as not changed and get filter rects
-    void ResetDrawingCacheStatusIfNodeStatic(std::unordered_map<NodeId, std::unordered_map<NodeId, RectI>>& allRects);
+    void ResetDrawingCacheStatusIfNodeStatic(std::unordered_map<NodeId, std::unordered_set<NodeId>>& allRects);
 
     void SetNotifyRTBufferAvailable(bool isNotifyRTBufferAvailable);
 

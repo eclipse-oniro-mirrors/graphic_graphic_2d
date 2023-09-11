@@ -48,6 +48,7 @@ public:
 #endif
 
     void DrawPoint(const Drawing::Point& point) override;
+    void DrawPoints(Drawing::PointMode mode, size_t count, const Drawing::Point pts[]) override;
     void DrawLine(const Drawing::Point& startPt, const Drawing::Point& endPt) override;
     void DrawRect(const Drawing::Rect& rect) override;
     void DrawRoundRect(const Drawing::RoundRect& roundRect) override;
@@ -61,6 +62,7 @@ public:
     void DrawShadow(const Drawing::Path& path, const Drawing::Point3& planeParams,
         const Drawing::Point3& devLightPos, Drawing::scalar lightRadius,
         Drawing::Color ambientColor, Drawing::Color spotColor, Drawing::ShadowFlags flag) override;
+    void DrawColor(Drawing::ColorQuad color, Drawing::BlendMode mode = Drawing::BlendMode::SRC_OVER) override;
     void DrawRegion(const Drawing::Region& region) override;
 
     void DrawBitmap(const Drawing::Bitmap& bitmap, const Drawing::scalar px, const Drawing::scalar py) override;
@@ -76,6 +78,7 @@ public:
     void ClipRect(const Drawing::Rect& rect, Drawing::ClipOp op, bool doAntiAlias) override;
     void ClipRoundRect(const Drawing::RoundRect& roundRect, Drawing::ClipOp op, bool doAntiAlias) override;
     void ClipPath(const Drawing::Path& path, Drawing::ClipOp op, bool doAntiAlias) override;
+    void ClipRegion(const Drawing::Region& region, Drawing::ClipOp op = Drawing::ClipOp::INTERSECT) override;
 
     void SetMatrix(const Drawing::Matrix& matrix) override;
     void ResetMatrix() override;
@@ -186,21 +189,17 @@ public:
     CoreCanvas& AttachPen(const Drawing::Pen& pen) override;
     CoreCanvas& AttachBrush(const Drawing::Brush& brush) override;
 #endif
-    void SetIsParallelCanvas(bool isParallel) {
-        isParallelCanvas_ = isParallel;
-    }
+    void SetIsParallelCanvas(bool isParallel);
+    bool GetIsParallelCanvas() const;
 
-    bool GetIsParallelCanvas() const
-    {
-        return isParallelCanvas_;
-    }
+    void SetDisableFilterCache(bool disable);
+    bool GetDisableFilterCache() const;
 
 #ifndef USE_ROSEN_DRAWING
     // effect cache data relate
     struct CachedEffectData {
         CachedEffectData() = default;
-        CachedEffectData(const sk_sp<SkImage>& image, const SkIRect& rect);
-        CachedEffectData(sk_sp<SkImage>&& image, SkIRect&& rect);
+        CachedEffectData(sk_sp<SkImage>&& image, const SkIRect& rect);
         ~CachedEffectData();
         sk_sp<SkImage> cachedImage_ = nullptr;
         SkIRect cachedRect_ = SkIRect::MakeEmpty();
@@ -225,7 +224,7 @@ protected:
     SkCanvas::SaveLayerStrategy getSaveLayerStrategy(const SaveLayerRec& rec) override;
 #else
     using Env = struct {
-        Color envForegroundColor;
+        Color envForegroundColor_;
     };
     std::stack<float> GetAlphaStack();
     std::stack<Env> GetEnvStack();
@@ -256,6 +255,7 @@ private:
 #endif
 
     bool isParallelCanvas_ = false;
+    bool disableFilterCache_ = false;
 };
 
 // This class extends RSPaintFilterCanvas to also create a color filter for the paint.

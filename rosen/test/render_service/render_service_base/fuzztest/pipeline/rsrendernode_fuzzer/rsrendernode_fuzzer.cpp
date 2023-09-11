@@ -111,7 +111,7 @@ bool RSBaseRenderNodeFuzzTest(const uint8_t* data, size_t size)
     RectI r(left, top, width, height);
 
     // test
-    RSBaseRenderNode* node = new RSBaseRenderNode(id, isOnTheTree, context);
+    std::shared_ptr<RSRenderNode> node = std::make_shared<RSRenderNode>(id, isOnTheTree, context);
     node->AddChild(child, index);
     node->MoveChild(child, index);
     node->RemoveChild(child, skipTransition);
@@ -124,8 +124,6 @@ bool RSBaseRenderNodeFuzzTest(const uint8_t* data, size_t size)
     node->HasDisappearingTransition(recursive);
     node->SetTunnelHandleChange(change);
     node->UpdateChildrenOutOfRectFlag(flag);
-
-    delete node;
 
     return true;
 }
@@ -193,6 +191,7 @@ bool RSDirtyRegionManagerFuzzTest(const uint8_t* data, size_t size)
     g_pos = 0;
 
     RSDirtyRegionManager manager;
+    manager.Clear();
     int left = GetData<int>();
     int top = GetData<int>();
     int width = GetData<int>();

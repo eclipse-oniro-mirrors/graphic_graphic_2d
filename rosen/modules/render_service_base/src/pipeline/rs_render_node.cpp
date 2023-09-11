@@ -508,12 +508,13 @@ std::pair<bool, bool> RSRenderNode::Animate(int64_t timestamp)
     return animationManager_.Animate(timestamp, IsOnTheTree());
 }
 
-FrameRateRange RSRenderNode::GetRSFrameRateRange()
+const FrameRateRange& RSRenderNode::GetRSFrameRateRange()
 {
     if (rsRange_.IsValid()) {
         return rsRange_;
     }
-    rsRange_ = animationManager_.GetFrameRateRangeFromRSAnimations();
+    auto& animationRsRange = animationManager_.GetFrameRateRangeFromRSAnimations();
+    rsRange_.Set(animationRsRange.min_, animationRsRange.max_, animationRsRange.preferred_);
     return rsRange_;
 }
 
@@ -867,6 +868,9 @@ void RSRenderNode::AddModifierProfile(const std::shared_ptr<RSRenderModifier>& m
             auto newPosition = std::static_pointer_cast<RSRenderAnimatableProperty<Vector2f>>(newProperty)->Get();
             if (oldPropertyValue != propertyValueMap_.end()) {
                 auto oldPosition = std::get<Vector2f>(oldPropertyValue->second);
+                if (ROSEN_EQ(timeDelta_, 0.f)) {
+                    return;
+                }
                 auto xSpeed = (newPosition[0] - oldPosition[0]) / timeDelta_;
                 auto ySpeed = (newPosition[1] - oldPosition[1]) / timeDelta_;
                 HgmModifierProfile hgmModifierProfile = {xSpeed, ySpeed, HgmModifierType::TRANSLATE};
@@ -879,6 +883,9 @@ void RSRenderNode::AddModifierProfile(const std::shared_ptr<RSRenderModifier>& m
             auto newPosition = std::static_pointer_cast<RSRenderAnimatableProperty<Vector2f>>(newProperty)->Get();
             if (oldPropertyValue != propertyValueMap_.end()) {
                 auto oldPosition = std::get<Vector2f>(oldPropertyValue->second);
+                if (ROSEN_EQ(timeDelta_, 0.f)) {
+                    return;
+                }
                 auto xSpeed = (newPosition[0] - oldPosition[0]) * width / timeDelta_;
                 auto ySpeed = (newPosition[1] - oldPosition[1]) * height / timeDelta_;
                 HgmModifierProfile hgmModifierProfile = {xSpeed, ySpeed, HgmModifierType::SCALE};
@@ -1083,9 +1090,6 @@ float RSRenderNode::GetGlobalAlpha() const
 
 bool RSRenderNode::NeedInitCacheSurface() const
 {
-    if (cacheSurface_ == nullptr) {
-        return true;
-    }
     auto cacheType = GetCacheType();
     int width = 0;
     int height = 0;
@@ -1101,6 +1105,10 @@ bool RSRenderNode::NeedInitCacheSurface() const
         Vector2f size = GetOptionalBufferSize();
         width =  size.x_;
         height = size.y_;
+    }
+    std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
+    if (cacheSurface_ == nullptr) {
+        return true;
     }
 #ifndef USE_ROSEN_DRAWING
     return cacheSurface_->width() != width || cacheSurface_->height() !=height;
@@ -1223,6 +1231,9 @@ Vector2f RSRenderNode::GetOptionalBufferSize() const
 #ifndef USE_ROSEN_DRAWING
 void RSRenderNode::DrawCacheSurface(RSPaintFilterCanvas& canvas, uint32_t threadIndex, bool isUIFirst)
 {
+    if (ROSEN_EQ(boundsWidth_, 0.f) || ROSEN_EQ(boundsHeight_, 0.f)) {
+        return;
+    }
     auto cacheType = GetCacheType();
     canvas.save();
     Vector2f size = GetOptionalBufferSize();
@@ -1287,6 +1298,9 @@ sk_sp<SkImage> RSRenderNode::GetCompletedImage(RSPaintFilterCanvas& canvas, uint
 #else
 void RSRenderNode::DrawCacheSurface(RSPaintFilterCanvas& canvas, uint32_t threadIndex, bool isUIFirst)
 {
+    if (ROSEN_EQ(boundsWidth_, 0.f) || ROSEN_EQ(boundsHeight_, 0.f)) {
+        return;
+    }
     auto cacheType = GetCacheType();
     canvas.Save();
     Vector2f size = GetOptionalBufferSize();
@@ -1335,7 +1349,7 @@ void RSRenderNode::UpdateBackendTexture()
     cacheBackendTexture_
         = cacheSurface_->getBackendTexture(SkSurface::BackendHandleAccess::kFlushRead_BackendHandleAccess);
 #else
-    RS_LOGE("[%{public}s:%{public}d] Drawing is not supported", __func__, __LINE__);
+    RS_LOGE("[%s:%d] Drawing is not supported", __func__, __LINE__);
 #endif
 }
 #endif
@@ -1459,12 +1473,12 @@ void RSRenderNode::CheckDrawingCacheType()
     }
 }
 
-void RSRenderNode::ResetFilterRectsInCache(const std::unordered_map<NodeId, RectI>& curRects)
+void RSRenderNode::ResetFilterRectsInCache(const std::unordered_set<NodeId>& curRects)
 {
     curCacheFilterRects_ = curRects;
 }
 
-void RSRenderNode::GetFilterRectsInCache(std::unordered_map<NodeId, std::unordered_map<NodeId, RectI>>& allRects) const
+void RSRenderNode::GetFilterRectsInCache(std::unordered_map<NodeId, std::unordered_set<NodeId>>& allRects) const
 {
     if (!curCacheFilterRects_.empty()) {
         allRects.emplace(GetId(), curCacheFilterRects_);
@@ -1730,6 +1744,10 @@ bool RSRenderNode::IsDirtyRegionUpdated() const
 {
     return isDirtyRegionUpdated_;
 }
+void RSRenderNode::CleanDirtyRegionUpdated()
+{
+    isDirtyRegionUpdated_ = false;
+}
 bool RSRenderNode::IsShadowValidLastFrame() const
 {
     return isShadowValidLastFrame_;
@@ -1759,11 +1777,13 @@ void RSRenderNode::SetTextureValidFlag(bool isValid)
     isTextureValid_ = isValid;
 #endif
 }
-void RSRenderNode::ClearCacheSurface()
+void RSRenderNode::ClearCacheSurface(bool isClearCompletedCacheSurface)
 {
     std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
     cacheSurface_ = nullptr;
-    cacheCompletedSurface_ = nullptr;
+    if (isClearCompletedCacheSurface) {
+        cacheCompletedSurface_ = nullptr;
+    }
 }
 void RSRenderNode::SetCacheType(CacheType cacheType)
 {
@@ -1796,6 +1816,14 @@ void RSRenderNode::SetDrawingCacheChanged(bool cacheChanged)
 bool RSRenderNode::GetDrawingCacheChanged() const
 {
     return isDrawingCacheChanged_;
+}
+void RSRenderNode::SetVisitedCacheRootIds(const std::unordered_set<NodeId>& visitedNodes)
+{
+    visitedCacheRoots_ = visitedNodes;
+}
+const std::unordered_set<NodeId>& RSRenderNode::GetVisitedCacheRootIds() const
+{
+    return visitedCacheRoots_;
 }
 void RSRenderNode::SetIsMarkDriven(bool isMarkDriven)
 {
@@ -1944,11 +1972,11 @@ void RSRenderNode::SetRSFrameRateRange(FrameRateRange range)
 {
     rsRange_ = range;
 }
-void RSRenderNode::UpdateUIFrameRateRange(FrameRateRange range)
+void RSRenderNode::UpdateUIFrameRateRange(const FrameRateRange& range)
 {
     uiRange_.Merge(range);
 }
-FrameRateRange RSRenderNode::GetUIFrameRateRange() const
+const FrameRateRange& RSRenderNode::GetUIFrameRateRange() const
 {
     return uiRange_;
 }
@@ -1956,7 +1984,7 @@ void RSRenderNode::MarkNonGeometryChanged()
 {
     geometryChangeNotPerceived_ = true;
 }
-std::vector<HgmModifierProfile> RSRenderNode::GetHgmModifierProfileList() const
+const std::vector<HgmModifierProfile>& RSRenderNode::GetHgmModifierProfileList()
 {
     return hgmModifierProfileList_;
 }

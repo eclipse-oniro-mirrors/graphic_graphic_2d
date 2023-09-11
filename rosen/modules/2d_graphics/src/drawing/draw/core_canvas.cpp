@@ -68,6 +68,11 @@ void CoreCanvas::DrawPoint(const Point& point)
     impl_->DrawPoint(point);
 }
 
+void CoreCanvas::DrawPoints(PointMode mode, size_t count, const Point pts[])
+{
+    impl_->DrawPoints(mode, count, pts);
+}
+
 void CoreCanvas::DrawLine(const Point& startPt, const Point& endPt)
 {
     impl_->DrawLine(startPt, endPt);
@@ -124,6 +129,11 @@ void CoreCanvas::DrawShadow(const Path& path, const Point3& planeParams, const P
     impl_->DrawShadow(path, planeParams, devLightPos, lightRadius, ambientColor, spotColor, flag);
 }
 
+void CoreCanvas::DrawColor(ColorQuad color, BlendMode mode)
+{
+    impl_->DrawColor(color, mode);
+}
+
 void CoreCanvas::DrawRegion(const Region& region)
 {
     impl_->DrawRegion(region);
@@ -178,6 +188,11 @@ void CoreCanvas::ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAnt
 void CoreCanvas::ClipPath(const Path& path, ClipOp op, bool doAntiAlias)
 {
     impl_->ClipPath(path, op, doAntiAlias);
+}
+
+void CoreCanvas::ClipRegion(const Region& region, ClipOp op)
+{
+    impl_->ClipRegion(region, op);
 }
 
 void CoreCanvas::SetMatrix(const Matrix& matrix)

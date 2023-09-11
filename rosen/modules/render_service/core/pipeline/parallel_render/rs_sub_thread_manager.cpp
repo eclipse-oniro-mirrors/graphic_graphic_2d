@@ -14,6 +14,7 @@
  */
 
 #include "rs_sub_thread_manager.h"
+#include <chrono>
 
 #include "common/rs_optional_trace.h"
 #include "pipeline/rs_main_thread.h"
@@ -22,6 +23,7 @@
 
 namespace OHOS::Rosen {
 static constexpr uint32_t SUB_THREAD_NUM = 3;
+static constexpr uint32_t WAIT_NODE_TASK_TIMEOUT = 5 * 1000; // 5s
 constexpr const char* RELEASE_RESOURCE = "releaseResource";
 
 RSSubThreadManager* RSSubThreadManager::Instance()
@@ -37,7 +39,6 @@ void RSSubThreadManager::Start(RenderContext *context)
     }
     renderContext_ = context;
     if (context) {
-
         for (uint32_t i = 0; i < SUB_THREAD_NUM; ++i) {
             auto curThread = std::make_shared<RSSubThread>(context, i);
             auto tid = curThread->Start();
@@ -183,7 +184,7 @@ void RSSubThreadManager::SubmitSubThreadTask(const std::shared_ptr<RSDisplayRend
 void RSSubThreadManager::WaitNodeTask(uint64_t nodeId)
 {
     std::unique_lock<std::mutex> lock(parallelRenderMutex_);
-    cvParallelRender_.wait(lock, [&]() {
+    cvParallelRender_.wait_for(lock, std::chrono::milliseconds(WAIT_NODE_TASK_TIMEOUT), [&]() {
         return !nodeTaskState_[nodeId];
     });
 }
@@ -241,7 +242,11 @@ void RSSubThreadManager::ReleaseSurface(uint32_t threadIndex) const
     });
 }
 
+#ifndef USE_ROSEN_DRAWING
 void RSSubThreadManager::AddToReleaseQueue(sk_sp<SkSurface>&& surface, uint32_t threadIndex)
+#else
+void RSSubThreadManager::AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface, uint32_t threadIndex)
+#endif
 {
     if (threadList_.size() <= threadIndex) {
         return;

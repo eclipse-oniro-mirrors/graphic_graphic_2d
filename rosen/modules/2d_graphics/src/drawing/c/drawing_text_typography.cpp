@@ -349,14 +349,15 @@ OH_Drawing_TypographyCreate* OH_Drawing_CreateTypographyHandler(OH_Drawing_Typog
 #ifndef USE_GRAPHIC_TEXT_GINE
     const TypographyStyle* typoStyle = ConvertToOriginalText<TypographyStyle>(style);
     std::unique_ptr<TypographyCreate> handler = TypographyCreate::CreateRosenBuilder(*typoStyle,
+        std::shared_ptr<FontCollection>(ConvertToOriginalText<FontCollection>(fontCollection)));
 #else
     const TypographyStyle *typoStyle = ConvertToOriginalText<TypographyStyle>(style);
     if (!typoStyle) {
         return nullptr;
     }
     std::unique_ptr<TypographyCreate> handler = TypographyCreate::Create(*typoStyle,
-#endif
         std::shared_ptr<FontCollection>(ConvertToOriginalText<FontCollection>(fontCollection)));
+#endif
     return ConvertToNDKText<OH_Drawing_TypographyCreate>(handler.release());
 }
 

@@ -42,27 +42,6 @@ namespace TextEngine {
 #define SUCCESSED 0
 #define FAILED 1
 
-namespace {
-std::vector<LineMetrics> CreateEllipsisSpan(const TypographyStyle &ys,
-    const std::shared_ptr<FontProviders> &fontProviders)
-{
-    if (ys.ellipsis.empty()) {
-        return {};
-    }
-
-    TextStyle xs;
-    xs.fontSize = ys.lineStyle.fontSize;
-    xs.fontFamilies = ys.lineStyle.fontFamilies;
-
-    std::vector<VariantSpan> spans = {TextSpan::MakeFromText(ys.ellipsis)};
-    spans[0].SetTextStyle(xs);
-    auto ys2 = ys;
-    ys2.wordBreakType = WordBreakType::BREAK_ALL;
-    ys2.breakStrategy = BreakStrategy::GREEDY;
-    return Shaper::DoShape(spans, ys2, fontProviders, MAXWIDTH);
-}
-} // namespace
-
 void LineMetrics::AddSpanAndUpdateMetrics(const VariantSpan &span)
 {
     lineSpans.push_back(span);
@@ -291,15 +270,17 @@ void TypographyImpl::Layout(double maxWidth)
         LOGEX_FUNC_LINE(INFO) << "Layout maxWidth: " << maxWidth << ", spans.size(): " << spans_.size();
         maxWidth_ = maxWidth;
 
-        lineMetrics_ = Shaper::DoShape(spans_, typographyStyle_, fontProviders_, maxWidth);
+        Shaper shaper;
+        lineMetrics_ = shaper.DoShape(spans_, typographyStyle_, fontProviders_, maxWidth);
         if (lineMetrics_.size() == 0) {
             LOGEX_FUNC_LINE(ERROR) << "Shape failed";
             return;
         }
 
-        ComputeIntrinsicWidth();
+        didExceedMaxLines_ = shaper.DidExceedMaxLines();
+        maxIntrinsicWidth_ = shaper.GetMaxIntrinsicWidth();
+        minIntrinsicWidth_ = shaper.GetMinIntrinsicWidth();
 
-        ConsiderEllipsis();
         auto ret = ComputeStrut();
         if (ret) {
             LOGEX_FUNC_LINE(ERROR) << "ComputeStrut failed";
@@ -317,70 +298,6 @@ void TypographyImpl::Layout(double maxWidth)
     } catch (struct TexgineException &e) {
         LOGEX_FUNC_LINE(ERROR) << "catch exception: " << e.message;
     }
-}
-
-void TypographyImpl::ComputeIntrinsicWidth()
-{
-    maxIntrinsicWidth_ = 0.0;
-    minIntrinsicWidth_ = 0.0;
-    double lastInvisibleWidth = 0;
-    for (const auto &line : lineMetrics_) {
-        for (const auto &span : line.lineSpans) {
-            if (span == nullptr) {
-                continue;
-            }
-
-            auto width = span.GetWidth();
-            auto visibleWidth = span.GetVisibleWidth();
-            maxIntrinsicWidth_ += width;
-            minIntrinsicWidth_ = std::max(visibleWidth, minIntrinsicWidth_);
-            lastInvisibleWidth = width - visibleWidth;
-        }
-    }
-
-    maxIntrinsicWidth_ -= lastInvisibleWidth;
-    if (typographyStyle_.maxLines > 1) {
-        minIntrinsicWidth_ = std::min(maxIntrinsicWidth_, minIntrinsicWidth_);
-    } else {
-        minIntrinsicWidth_ = maxIntrinsicWidth_;
-    }
-}
-
-void TypographyImpl::ConsiderEllipsis()
-{
-    didExceedMaxLines_ = false;
-    auto maxLines = typographyStyle_.maxLines;
-    if (lineMetrics_.size() <= maxLines) {
-        return;
-    }
-    lineMetrics_.erase(lineMetrics_.begin() + maxLines, lineMetrics_.end());
-
-    std::vector<LineMetrics> ellipsisMertics = CreateEllipsisSpan(typographyStyle_, fontProviders_);
-    double ellipsisWidth = 0.0;
-    std::vector<VariantSpan> ellipsisSpans;
-    for (auto &metric : ellipsisMertics) {
-        for (auto &es : metric.lineSpans) {
-            ellipsisWidth += es.GetWidth();
-            ellipsisSpans.push_back(es);
-        }
-    }
-
-    double width = 0;
-    auto &lastline = lineMetrics_[maxLines - 1];
-    for (const auto &span : lastline.lineSpans) {
-        width += span.GetWidth();
-    }
-
-    // protected the first span and ellipsis
-    while (static_cast<int>(width) > static_cast<int>(maxWidth_ - ellipsisWidth) &&
-        static_cast<int>(lastline.lineSpans.size()) > 1) {
-        width -= lastline.lineSpans.back().GetWidth();
-        lastline.lineSpans.pop_back();
-    }
-
-    // Add ellipsisSpans
-    lastline.lineSpans.insert(lastline.lineSpans.end(), ellipsisSpans.begin(), ellipsisSpans.end());
-    didExceedMaxLines_ = true;
 }
 
 int TypographyImpl::UpdateMetrics()

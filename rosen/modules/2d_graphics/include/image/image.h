@@ -17,6 +17,7 @@
 #define IMAGE_H
 
 #include "drawing/engine_adapter/impl_interface/image_impl.h"
+#include "utils/drawing_macros.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -36,7 +37,7 @@ enum class TextureOrigin {
     BOTTOM_LEFT,
 };
 
-class TextureInfo {
+class DRAWING_API TextureInfo {
 public:
     /*
      * @brief  Sets the width value of Texture.
@@ -149,7 +150,27 @@ private:
     unsigned int format_ = 0;
 };
 
-class Image {
+class BackendTexture {
+public:
+    BackendTexture(bool isValid) noexcept;
+    virtual ~BackendTexture() {};
+
+    bool IsValid() const;
+    void SetTextureInfo(const TextureInfo& textureInfo);
+    const TextureInfo GetTextureInfo() const;
+
+    template<typename T>
+    const std::shared_ptr<T> GetImpl() const
+    {
+        return imageImplPtr->DowncastingTo<T>();
+    }
+private:
+    bool isValid_;
+    std::shared_ptr<ImageImpl> imageImplPtr;
+    TextureInfo textureInfo_;
+};
+
+class DRAWING_API Image {
 public:
     Image() noexcept;
     // constructor adopt a raw image ptr, using for ArkUI, should remove after enable multi-media image decode.
@@ -192,6 +213,8 @@ public:
      */
     bool BuildFromTexture(GPUContext& gpuContext, const TextureInfo& info, TextureOrigin origin,
         BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace);
+
+    BackendTexture GetBackendTexture(bool flushPendingGrContextIO, TextureOrigin* origin) const;
 #endif
 
     /*

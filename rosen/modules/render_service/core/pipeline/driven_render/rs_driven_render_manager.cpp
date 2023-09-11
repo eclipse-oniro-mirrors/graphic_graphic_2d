@@ -86,10 +86,18 @@ bool RSDrivenRenderManager::ClipHoleForDrivenNode(RSPaintFilterCanvas& canvas, c
     RRect absClipRRect = RRect({x, y, width, height}, property.GetCornerRadius());
 
     // clip hole
+#ifndef USE_ROSEN_DRAWING
     canvas.save();
     canvas.clipRRect(RSPropertiesPainter::RRect2SkRRect(absClipRRect), true);
     canvas.clear(SK_ColorTRANSPARENT);
     canvas.restore();
+#else
+    canvas.Save();
+    canvas.ClipRoundRect(RSPropertiesPainter::RRect2DrawingRRect(absClipRRect),
+        Drawing::ClipOp::INTERSECT, true);
+    canvas.Clear(Drawing::Color::COLOR_TRANSPARENT);
+    canvas.Restore();
+#endif
     return true;
 }
 
@@ -115,14 +123,16 @@ void RSDrivenRenderManager::DoPrepareRenderTask(const DrivenPrepareInfo& info)
     RSBaseRenderNode::SharedPtr currContent = nullptr;
     DrivenDirtyType dirtyType = info.dirtyInfo.type;
 
-    RS_OPTIONAL_TRACE_NAME("RSDrivenRender:DoPrepareRenderTask backgroundDirty: " +
-        std::to_string(static_cast<int>(backgroundDirty)) +
-        ", contentDirty: " + std::to_string(static_cast<int>(contentDirty)) +
-        ", nonContentDirty: " + std::to_string(static_cast<int>(nonContentDirty)) +
-        ", dirtyType: " + std::to_string(static_cast<int>(dirtyType)) +
-        ", hasInvalidScene: " + std::to_string(static_cast<int>(info.hasInvalidScene)) +
-        ", hasDrivenNodeOnUniTree: " + std::to_string(static_cast<int>(info.hasDrivenNodeOnUniTree)) +
-        ", isValidSurface: " + std::to_string(static_cast<int>(isValidSurface)));
+    if (OHOS::Rosen::RSSystemProperties::GetDebugTraceEnabled()) {
+        RS_TRACE_NAME("RSDrivenRender:DoPrepareRenderTask backgroundDirty: " +
+            std::to_string(static_cast<int>(backgroundDirty)) +
+            ", contentDirty: " + std::to_string(static_cast<int>(contentDirty)) +
+            ", nonContentDirty: " + std::to_string(static_cast<int>(nonContentDirty)) +
+            ", dirtyType: " + std::to_string(static_cast<int>(dirtyType)) +
+            ", hasInvalidScene: " + std::to_string(static_cast<int>(info.hasInvalidScene)) +
+            ", hasDrivenNodeOnUniTree: " + std::to_string(static_cast<int>(info.hasDrivenNodeOnUniTree)) +
+            ", isValidSurface: " + std::to_string(static_cast<int>(isValidSurface)));
+    }
 
     if (!info.hasInvalidScene && info.hasDrivenNodeOnUniTree &&
         dirtyType != DrivenDirtyType::INVALID && isValidSurface) {

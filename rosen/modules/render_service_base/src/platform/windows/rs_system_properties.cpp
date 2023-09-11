@@ -125,6 +125,15 @@ bool RSSystemProperties::GetDrawTextAsBitmap()
     return {};
 }
 
+void RSSystemProperties::SetCacheEnabledForRotation(bool flag)
+{
+}
+
+bool RSSystemProperties::GetCacheEnabledForRotation()
+{
+    return {};
+}
+
 ParallelRenderingType RSSystemProperties::GetPrepareParallelRenderingEnabled()
 {
     return {};
@@ -201,6 +210,16 @@ int RSSystemProperties::GetFilterCacheSizeThreshold()
 }
 
 bool RSSystemProperties::GetKawaseEnabled()
+{
+    return false;
+}
+
+float RSSystemProperties::GetKawaseRandomColorFactor()
+{
+    return 0.f;
+}
+
+bool RSSystemProperties::GetRandomColorEnabled()
 {
     return false;
 }

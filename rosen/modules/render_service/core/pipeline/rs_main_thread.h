@@ -91,6 +91,7 @@ public:
     void RsEventParamDump(std::string& dumpString);
     bool IsUIFirstOn() const;
     void GetAppMemoryInMB(float& cpuMemSize, float& gpuMemSize);
+    void ClearGpuCache();
 
     template<typename Task, typename Return = std::invoke_result_t<Task>>
     std::future<Return> ScheduleTask(Task&& task)
@@ -150,7 +151,11 @@ public:
     sptr<VSyncDistributor> rsVSyncDistributor_;
 
     void ReleaseSurface();
+#ifndef USE_ROSEN_DRAWING
     void AddToReleaseQueue(sk_sp<SkSurface>&& surface);
+#else
+    void AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface);
+#endif
 
     void SetDirtyFlag();
     void SetAccessibilityConfigChanged();
@@ -178,6 +183,7 @@ public:
     }
 
     DeviceType GetDeviceType() const;
+    bool IsSingleDisplay();
     uint64_t GetFocusNodeId() const;
     uint64_t GetFocusLeashWindowId() const;
 private:
@@ -191,7 +197,6 @@ private:
     RSMainThread& operator=(const RSMainThread&) = delete;
     RSMainThread& operator=(const RSMainThread&&) = delete;
 
-    bool IsSingleDisplay();
     void OnVsync(uint64_t timestamp, void* data);
     void ProcessCommand();
     void Animate(uint64_t timestamp);
@@ -385,7 +390,11 @@ private:
     bool forceUpdateUniRenderFlag_ = false;
     // for ui first
     std::mutex mutex_;
+#ifndef USE_ROSEN_DRAWING
     std::queue<sk_sp<SkSurface>> tmpSurfaces_;
+#else
+    std::queue<std::shared_ptr<Drawing::Surface>> tmpSurfaces_;
+#endif
 
     // for surface occlusion change callback
     std::mutex surfaceOcclusionMutex_;

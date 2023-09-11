@@ -35,6 +35,12 @@ inline static bool IsLargeArea(int width, int height)
     return width > threshold && height > threshold;
 }
 
+inline static bool isEqualRect(const SkIRect& src, const RectI& dst)
+{
+    return src.x() == dst.GetLeft() && src.y() == dst.GetTop() && src.width() == dst.GetWidth() &&
+           src.height() == dst.GetHeight();
+}
+
 void RSFilterCacheManager::UpdateCacheStateWithFilterHash(const std::shared_ptr<RSFilter>& filter)
 {
     auto filterHash = filter->Hash();
@@ -84,10 +90,7 @@ void RSFilterCacheManager::DrawFilter(RSPaintFilterCanvas& canvas, const std::sh
     const std::optional<SkIRect>& srcRect, const std::optional<SkIRect>& dstRect)
 {
     RS_OPTIONAL_TRACE_FUNC();
-    // Filter validation is not needed, since it's already done in RSPropertiesPainter::DrawFilter.
-    // Using filter cache in multi-thread environment may cause GPU memory leak or invalid textures, we just refuse to
-    // work.
-    if (canvas.getDeviceClipBounds().isEmpty() || canvas.GetIsParallelCanvas()) {
+    if (canvas.getDeviceClipBounds().isEmpty()) {
         return;
     }
     const auto& [src, dst] = ValidateParams(canvas, srcRect, dstRect);
@@ -100,12 +103,18 @@ void RSFilterCacheManager::DrawFilter(RSPaintFilterCanvas& canvas, const std::sh
     } else {
         --cacheUpdateInterval_;
     }
-    bool isFilterHashChanged = filter->Hash() != cachedFilterHash_;
+
+    bool shouldClearFilteredCache = false;
     if (cachedFilteredSnapshot_ == nullptr || cachedFilteredSnapshot_->cachedImage_ == nullptr) {
+        auto previousFilterHash = cachedFilterHash_;
         GenerateFilteredSnapshot(canvas, filter, dst);
+        // If 1. the filter hash matches, 2. the filter region is whole snapshot region, we can safely clear original
+        // snapshot, else we need to clear the filtered snapshot.
+        shouldClearFilteredCache = previousFilterHash != cachedFilterHash_ || !isEqualRect(dst, snapshotRegion_);
     }
     DrawCachedFilteredSnapshot(canvas, dst);
-    CompactCache(isFilterHashChanged);
+    // To reduce the memory consumption, we only keep either the cached snapshot or the filtered image.
+    CompactCache(shouldClearFilteredCache);
 }
 
 const std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> RSFilterCacheManager::GeneratedCachedEffectData(
@@ -113,10 +122,7 @@ const std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> RSFilterCacheManage
     const std::optional<SkIRect>& dstRect)
 {
     RS_OPTIONAL_TRACE_FUNC();
-    // Filter validation is not needed, since it's already done in RSPropertiesPainter::GenerateCachedEffectData.
-    // Using filter cache in multi-thread environment may cause GPU memory leak or invalid textures, we just refuse to
-    // work.
-    if (canvas.getDeviceClipBounds().isEmpty() || canvas.GetIsParallelCanvas()) {
+    if (canvas.getDeviceClipBounds().isEmpty()) {
         return nullptr;
     }
     const auto& [src, dst] = ValidateParams(canvas, srcRect, dstRect);
@@ -129,13 +135,19 @@ const std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> RSFilterCacheManage
     } else {
         --cacheUpdateInterval_;
     }
-    bool isFilterHashChanged = filter->Hash() != cachedFilterHash_;
+
+    bool shouldClearFilteredCache = false;
     if (cachedFilteredSnapshot_ == nullptr || cachedFilteredSnapshot_->cachedImage_ == nullptr) {
+        auto previousFilterHash = cachedFilterHash_;
         GenerateFilteredSnapshot(canvas, filter, dst);
+        // If 1. the filter hash matches, 2. the filter region is whole snapshot region, we can safely clear original
+        // snapshot, else we need to clear the filtered snapshot.
+        shouldClearFilteredCache = previousFilterHash != cachedFilterHash_ || !isEqualRect(dst, snapshotRegion_);
     }
     // Keep a reference to the cached image, since CompactCache may invalidate it.
     auto cachedFilteredSnapshot = cachedFilteredSnapshot_;
-    CompactCache(isFilterHashChanged);
+    // To reduce the memory consumption, we only keep either the cached snapshot or the filtered image.
+    CompactCache(shouldClearFilteredCache);
     return cachedFilteredSnapshot;
 }
 
@@ -166,8 +178,7 @@ void RSFilterCacheManager::TakeSnapshot(
 
     // Update the cache state.
     snapshotRegion_ = RectI(srcRect.x(), srcRect.y(), srcRect.width(), srcRect.height());
-    cachedSnapshot_ =
-        std::make_unique<RSPaintFilterCanvas::CachedEffectData>(std::move(snapshot), std::move(snapshotIBounds));
+    cachedSnapshot_ = std::make_unique<RSPaintFilterCanvas::CachedEffectData>(std::move(snapshot), snapshotIBounds);
 
     // If the cached image is larger than threshold, we will increase the cache update interval, which is configurable
     // by `hdc shell param set persist.sys.graphic.filterCacheUpdateInterval <interval>`, the default value is 1.
@@ -211,7 +222,7 @@ void RSFilterCacheManager::GenerateFilteredSnapshot(
         as_IB(filteredSnapshot)->hintCacheGpuResource();
     }
     cachedFilteredSnapshot_ =
-        std::make_shared<RSPaintFilterCanvas::CachedEffectData>(std::move(filteredSnapshot), std::move(offscreenRect));
+        std::make_shared<RSPaintFilterCanvas::CachedEffectData>(std::move(filteredSnapshot), offscreenRect);
     cachedFilterHash_ = filter->Hash();
 }
 
@@ -298,12 +309,19 @@ std::tuple<SkIRect, SkIRect> RSFilterCacheManager::ValidateParams(
         dst = dstRect.value();
         dst.intersect(deviceRect);
     }
+    if (snapshotRegion_.GetLeft() > dst.x() || snapshotRegion_.GetRight() < dst.right() ||
+        snapshotRegion_.GetTop() > dst.y() || snapshotRegion_.GetBottom() < dst.bottom()) {
+        // dst region is out of snapshot region, cache is invalid.
+        // It should already be checked by UpdateCacheStateWithFilterRegion in prepare phase, we should never be here.
+        ROSEN_LOGD("RSFilterCacheManager::ValidateParams Cache expired. Reason: dst region is out of snapshot region.");
+        InvalidateCache();
+    }
     return { src, dst };
 }
 
-inline void RSFilterCacheManager::CompactCache(bool isFilterHashChanged)
+inline void RSFilterCacheManager::CompactCache(bool shouldClearFilteredCache)
 {
-    if (isFilterHashChanged) {
+    if (shouldClearFilteredCache) {
         cachedFilteredSnapshot_.reset();
     } else {
         cachedSnapshot_.reset();

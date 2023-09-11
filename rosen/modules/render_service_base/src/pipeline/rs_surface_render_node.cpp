@@ -251,11 +251,11 @@ void RSSurfaceRenderNode::OnTreeStateChanged()
     RSRenderNode::OnTreeStateChanged();
 #ifdef RS_ENABLE_GL
     if (grContext_ && !IsOnTheTree() && IsLeashWindow()) {
-#ifndef USE_ROSEN_DRAWING
-        RS_TRACE_NAME_FMT("purgeUnlockedResources this SurfaceNode isn't on the tree Id:%" PRIu64 " Name:%s",
+        RS_TRACE_NAME_FMT("need purgeUnlockedResources this SurfaceNode isn't on the tree Id:%" PRIu64 " Name:%s",
             GetId(), GetName().c_str());
-        grContext_->purgeUnlockedResources(true);
-#endif
+        if (auto context = GetContext().lock()) {
+            context->MarkNeedPurge();
+        }
     }
 #endif
 }
@@ -817,7 +817,7 @@ void RSSurfaceRenderNode::UpdateDrawingCacheNodes(const std::shared_ptr<RSRender
 }
 
 void RSSurfaceRenderNode::ResetDrawingCacheStatusIfNodeStatic(
-    std::unordered_map<NodeId, std::unordered_map<NodeId, RectI>>& allRects)
+    std::unordered_map<NodeId, std::unordered_set<NodeId>>& allRects)
 {
     // traversal drawing cache nodes including app window
     EraseIf(drawingCacheNodes_, [this, &allRects](const auto& pair) {

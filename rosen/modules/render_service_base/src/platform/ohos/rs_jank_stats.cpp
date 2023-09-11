@@ -166,13 +166,14 @@ void RSJankStats::ReportJankStats()
         ROSEN_LOGE("RSJankStats::ReportJankStats lastReportTime is not initialized");
         return;
     }
-    RS_TRACE_NAME("RSJankStats::ReportJankStats receive notification");
     int64_t reportTime = GetCurrentSystimeMs();
+    RS_TRACE_NAME("RSJankStats::ReportJankStats receive notification " + std::to_string(reportTime));
     int64_t reportDuration = reportTime - lastReportTime_;
     auto reportName = "JANK_STATS_RS";
     HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, reportName,
-        OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "STARTTIME", lastReportTime_, "DURATION", reportDuration,
-        "JANK_STATS", rsJankStats_, "JANK_STATS_VER", 1);
+        OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "STARTTIME", static_cast<uint64_t>(lastReportTime_),
+        "DURATION", static_cast<uint64_t>(reportDuration), "JANK_STATS", rsJankStats_,
+        "JANK_STATS_VER", JANK_RANGE_VERSION);
     std::fill(rsJankStats_.begin(), rsJankStats_.end(), 0);
     lastReportTime_ = reportTime;
     isNeedReport_ = false;
@@ -276,6 +277,9 @@ void RSJankStats::ReportEventComplete(const JankFrames& jankFrames) const
 void RSJankStats::ReportEventJankFrame(const JankFrames& jankFrames) const
 {
     auto reportName = "INTERACTION_RENDER_JANK";
+    if (ROSEN_EQ(static_cast<float>(jankFrames.totalFrames_), 0.f)) {
+        return;
+    }
     float aveFrameTime = jankFrames.totalFrameTime_ / static_cast<float>(jankFrames.totalFrames_);
     const auto &info = jankFrames.info_;
     HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, reportName,

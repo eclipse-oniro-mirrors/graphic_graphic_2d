@@ -20,6 +20,7 @@
 
 #include "common/rs_macros.h"
 #include "drawing/engine_adapter/impl_interface/core_canvas_impl.h"
+#include "utils/drawing_macros.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -28,10 +29,25 @@ enum class SrcRectConstraint {
     STRICT_SRC_RECT_CONSTRAINT,
     FAST_SRC_RECT_CONSTRAINT,
 };
+
+/*
+ * @brief PointMode: Selects if an array of points are drawn as discrete points, as lines, or as
+ * an open polygon.
+ */
+enum class PointMode {
+    POINTS_POINTMODE,  // draw each point separately
+    LINES_POINTMODE,   // draw each pair of points as a line segment
+    POLYGON_POINTMODE, // draw the array of points as a open polygon
+};
+
 /*
  * @brief  Contains the option used to create the layer.
  */
+#ifndef USE_ROSEN_DRAWING
 class RS_EXPORT SaveLayerOps {
+#else
+class DRAWING_API SaveLayerOps {
+#endif
 public:
     // How to allocate layer
     enum Flags {
@@ -91,7 +107,11 @@ private:
     uint32_t saveLayerFlags_;
 };
 
+#ifndef USE_ROSEN_DRAWING
 class RS_EXPORT CoreCanvas {
+#else
+class DRAWING_API CoreCanvas {
+#endif
 public:
     CoreCanvas();
     explicit CoreCanvas(void* rawCanvas);
@@ -137,6 +157,7 @@ public:
 
     // shapes
     virtual void DrawPoint(const Point& point);
+    virtual void DrawPoints(PointMode mode, size_t count, const Point pts[]);
     virtual void DrawLine(const Point& startPt, const Point& endPt);
     virtual void DrawRect(const Rect& rect);
     virtual void DrawRoundRect(const RoundRect& roundRect);
@@ -149,6 +170,9 @@ public:
     virtual void DrawBackground(const Brush& brush);
     virtual void DrawShadow(const Path& path, const Point3& planeParams, const Point3& devLightPos, scalar lightRadius,
         Color ambientColor, Color spotColor, ShadowFlags flag);
+
+    // color
+    virtual void DrawColor(ColorQuad color, BlendMode mode);
 
     /*
      * @brief         Draws Region on the Canvas.
@@ -196,6 +220,14 @@ public:
      */
     virtual void ClipPath(const Path& path, ClipOp op, bool doAntiAlias = false);
 
+    /*
+     * @brief              Replace the clipping area with the intersection or difference of the
+                           current clipping area and Region, and use a clipping edge that is aliased or anti-aliased.
+     * @param region       To combine with clip.
+     * @param op           To apply to clip.The default value is ClipOp::INTERSECT
+     */
+    virtual void ClipRegion(const Region& region, ClipOp op = ClipOp::INTERSECT);
+
     // transform
     virtual void SetMatrix(const Matrix& matrix);
     virtual void ResetMatrix();
@@ -229,7 +261,7 @@ public:
     /*
      * @brief  Returns the number of saved states, each containing Matrix and clipping area.
      */
-    uint32_t GetSaveCount() const;
+    virtual uint32_t GetSaveCount() const;
 
     // paint
     virtual CoreCanvas& AttachPen(const Pen& pen);

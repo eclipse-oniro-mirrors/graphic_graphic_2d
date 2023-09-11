@@ -128,7 +128,7 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
         GrBackendTexture grBackendTexture
             = skSurface->getBackendTexture(SkSurface::BackendHandleAccess::kFlushRead_BackendHandleAccess);
         if (!grBackendTexture.isValid()) {
-            RS_LOGE("SkiaSurface bind Image failed: BackendTexture is invalid");
+            RS_LOGE("RSSurfaceCaptureTask: SkiaSurface bind Image failed: BackendTexture is invalid");
             return false;
         }
         auto wrapper = std::make_shared<std::tuple<std::unique_ptr<Media::PixelMap>>>();
@@ -138,19 +138,24 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
             : ScreenRotation::INVALID_SCREEN_ROTATION;
         bool ableRotation = ((displayNode != nullptr) && visitor_->IsUniRender());
         auto id = nodeId_;
-
-        std::function<void()> copytask = [wrapper, grBackendTexture = std::move(grBackendTexture), callback,
+        auto wrapperSf = std::make_shared<std::tuple<sk_sp<SkSurface>>>();
+        std::get<0>(*wrapperSf) = std::move(skSurface);
+        std::function<void()> copytask = [wrapper, callback, grBackendTexture, wrapperSf,
                                              ableRotation, rotation, id]() -> void {
             RS_TRACE_NAME("copy and send capture");
             if (!grBackendTexture.isValid()) {
-                RS_LOGE("COPYTASK: SkiaSurface bind Image failed: BackendTexture is invalid");
+                RS_LOGE("RSSurfaceCaptureTask: SkiaSurface bind Image failed: BackendTexture is invalid");
                 callback->OnSurfaceCapture(id, nullptr);
+                RSUniRenderUtil::ClearNodeCacheSurface(
+                    std::move(std::get<0>(*wrapperSf )), nullptr, UNI_MAIN_THREAD_INDEX, 0);
                 return;
             }
             auto pixelmap = std::move(std::get<0>(*wrapper));
             if (pixelmap == nullptr) {
-                RS_LOGE("COPYTASK: pixelmap == nullptr");
+                RS_LOGE("RSSurfaceCaptureTask: pixelmap == nullptr");
                 callback->OnSurfaceCapture(id, nullptr);
+                RSUniRenderUtil::ClearNodeCacheSurface(
+                    std::move(std::get<0>(*wrapperSf )), nullptr, UNI_MAIN_THREAD_INDEX, 0);
                 return;
             }
 
@@ -199,11 +204,13 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
                 if (rotation == ScreenRotation::ROTATION_270) {
                     pixelmap->rotate(static_cast<int32_t>(270)); // 270 degrees
                 }
-                RS_LOGD("COPYTASK: PixelmapRotation: %d", static_cast<int32_t>(rotation));
+                RS_LOGD("RSSurfaceCaptureTask: PixelmapRotation: %d", static_cast<int32_t>(rotation));
             }
             callback->OnSurfaceCapture(id, pixelmap.get());
             dmaMem.ReleaseGLMemory();
             RSBackgroundThread::Instance().CleanGrResource();
+            RSUniRenderUtil::ClearNodeCacheSurface(
+                std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
         };
         RSBackgroundThread::Instance().PostTask(copytask);
         return true;
@@ -627,6 +634,7 @@ void RSSurfaceCaptureVisitor::SetSurface(SkSurface* surface)
     }
     canvas_ = std::make_unique<RSPaintFilterCanvas>(surface);
     canvas_->scale(scaleX_, scaleY_);
+    canvas_->SetDisableFilterCache(true);
 }
 #else
 void RSSurfaceCaptureVisitor::SetSurface(Drawing::Surface* surface)
@@ -922,7 +930,7 @@ void RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWithUni(RSSurfaceRenderNod
     } else {
         auto backgroundColor = static_cast<Drawing::ColorQuad>(property.GetBackgroundColor().AsArgbInt());
         if (Drawing::Color::ColorQuadGetA(backgroundColor) != Drawing::Color::COLOR_TRANSPARENT) {
-            canvas_->Clear(backgroundColor);
+            canvas_->DrawColor(backgroundColor);
         }
     }
     canvas_->Restore();
@@ -980,7 +988,6 @@ void RSSurfaceCaptureVisitor::CaptureSurfaceInDisplayWithUni(RSSurfaceRenderNode
     }
 
     bool isSelfDrawingSurface = node.GetSurfaceNodeType() == RSSurfaceNodeType::SELF_DRAWING_NODE;
-
     if (isSelfDrawingSurface) {
         canvas_->save();
     }
@@ -1037,7 +1044,6 @@ void RSSurfaceCaptureVisitor::CaptureSurfaceInDisplayWithUni(RSSurfaceRenderNode
     }
 
     bool isSelfDrawingSurface = node.GetSurfaceNodeType() == RSSurfaceNodeType::SELF_DRAWING_NODE;
-
     if (isSelfDrawingSurface) {
         canvas_->Save();
     }
@@ -1054,7 +1060,7 @@ void RSSurfaceCaptureVisitor::CaptureSurfaceInDisplayWithUni(RSSurfaceRenderNode
     }
     auto backgroundColor = static_cast<Drawing::ColorQuad>(property.GetBackgroundColor().AsArgbInt());
     if (Drawing::Color::ColorQuadGetA(backgroundColor) != Drawing::Color::COLOR_TRANSPARENT) {
-        canvas_->Clear(backgroundColor);
+        canvas_->DrawColor(backgroundColor);
     }
     RSPropertiesPainter::DrawMask(property, *canvas_);
 

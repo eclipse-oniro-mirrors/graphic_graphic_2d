@@ -117,7 +117,7 @@ constexpr uint64_t SKIP_COMMAND_FREQ_LIMIT = 30;
 constexpr uint64_t PERF_PERIOD_BLUR = 80000000;
 constexpr const char* MEM_GPU_TYPE = "gpu";
 constexpr uint64_t PERF_PERIOD_MULTI_WINDOW = 80000000;
-constexpr uint64_t CLEAR_GPU_INTERVAL = 240000;
+constexpr uint64_t CLEAR_GPU_INTERVAL = 40000;
 constexpr uint32_t MULTI_WINDOW_PERF_START_NUM = 2;
 constexpr uint32_t MULTI_WINDOW_PERF_END_NUM = 4;
 constexpr uint32_t WAIT_FOR_RELEASED_BUFFER_TIMEOUT = 3000;
@@ -470,6 +470,17 @@ void RSMainThread::ProcessCommand()
         ProcessCommandForUniRender();
     } else {
         ProcessCommandForDividedRender();
+    }
+    if (context_->needPurge_) {
+#ifdef NEW_RENDER_CONTEXT
+        auto grContext = GetRenderEngine()->GetDrawingContext()->GetDrawingContext();
+#else
+        auto grContext = GetRenderEngine()->GetRenderContext()->GetGrContext();
+#endif
+        if (grContext) {
+            grContext->purgeUnlockedResources(true);
+        }
+        context_->needPurge_ = false;
     }
     if (RsFrameReport::GetInstance().GetEnable()) {
         RsFrameReport::GetInstance().AnimateStart();
@@ -1028,15 +1039,18 @@ void RSMainThread::ReleaseAllNodesBuffer()
 #endif
         });
     }
+#endif
+    RS_OPTIONAL_TRACE_END();
+}
+
+void RSMainThread::ClearGpuCache()
+{
     PostTask([this]() {
 #ifndef USE_ROSEN_DRAWING
 #ifdef NEW_RENDER_CONTEXT
         auto grContext = GetRenderEngine()->GetDrawingContext()->GetDrawingContext();
 #else
         auto grContext = GetRenderEngine()->GetRenderContext()->GetGrContext();
-#endif
-#else
-        auto grContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
 #endif
         if (grContext) {
             RS_LOGD("clear gpu cache");
@@ -1047,9 +1061,12 @@ void RSMainThread::ReleaseAllNodesBuffer()
 #endif
             grContext->purgeUnlockAndSafeCacheGpuResources();
         }
-    }, CLEAR_GPU_CACHE, CLEAR_GPU_INTERVAL);
+#else
+        auto grContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
+        grContext()->Flush();
+        RS_LOGE("Drawing Unsupport purgeUnlockAndSafeCacheGpuResources");
 #endif
-    RS_OPTIONAL_TRACE_END();
+    }, CLEAR_GPU_CACHE, CLEAR_GPU_INTERVAL);
 }
 
 void RSMainThread::WaitUtilUniRenderFinished()
@@ -1220,7 +1237,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
             std::list<std::shared_ptr<RSSurfaceRenderNode>> subThreadNodes;
             RSUniRenderUtil::AssignWindowNodes(displayNode, mainThreadNodes, subThreadNodes, focusNodeId_, deviceType_);
             const auto& nodeMap = context_->GetNodeMap();
-            RSUniRenderUtil::ClearSurfaceIfNeed(nodeMap, displayNode, oldDisplayChildren_);
+            RSUniRenderUtil::ClearSurfaceIfNeed(nodeMap, displayNode, oldDisplayChildren_, deviceType_);
             uniVisitor->DrawSurfaceLayer(displayNode, subThreadNodes);
             RSUniRenderUtil::CacheSubThreadNodes(subThreadNodes_, subThreadNodes);
         }
@@ -1431,6 +1448,8 @@ void RSMainThread::CalcOcclusion()
             }
             surface->CleanDstRectChanged();
             surface->CleanAlphaChanged();
+            surface->CleanOpaqueRegionChanged();
+            surface->CleanDirtyRegionUpdated();
         }
     }
     if (!winDirty) {
@@ -1568,7 +1587,6 @@ void RSMainThread::OnVsync(uint64_t timestamp, void* data)
     if (isUniRender_) {
         MergeToEffectiveTransactionDataMap(cachedTransactionDataMap_);
         RSUnmarshalThread::Instance().PostTask(unmarshalBarrierTask_);
-        RemoveTask(CLEAR_GPU_CACHE);
     }
     mainLoop_();
     auto screenManager_ = CreateOrGetScreenManager();
@@ -2263,31 +2281,30 @@ void RSMainThread::CollectFrameRateRange(std::shared_ptr<RSRenderNode> node)
 
     auto nodePreferred = GetNodePreferred(node->GetHgmModifierProfileList());
     node->SetRSFrameRateRangeByPreferred(nodePreferred);
-
-    //[Planning]: Support multi-display in the future.
-    frameRateRangeData_->screenId = 0;
     pid_t nodePid = ExtractPid(node->GetId());
-    auto currRange = node->GetUIFrameRateRange();
-    if (currRange.IsValid()) {
+    auto& uiCurrRange = node->GetUIFrameRateRange();
+    if (uiCurrRange.IsValid()) {
         if (frameRateRangeData_->multiAppRange.count(nodePid)) {
-            frameRateRangeData_->multiAppRange[nodePid].Merge(currRange);
+            frameRateRangeData_->multiAppRange[nodePid].Merge(uiCurrRange);
         } else {
-            frameRateRangeData_->multiAppRange.insert(std::make_pair(nodePid, currRange));
+            frameRateRangeData_->multiAppRange.insert(std::make_pair(nodePid, uiCurrRange));
         }
     }
 
-    currRange = node->GetRSFrameRateRange();
-    if (currRange.IsValid()) {
-        frameRateRangeData_->rsRange.Merge(currRange);
+    auto& rsCurrRange = node->GetRSFrameRateRange();
+    if (rsCurrRange.IsValid()) {
+        frameRateRangeData_->rsRange.Merge(rsCurrRange);
     }
     node->ResetUIFrameRateRange();
     node->ResetRSFrameRateRange();
-    frameRateRangeData_->forceUpdateFlag = forceUpdateUniRenderFlag_;
 }
 
 void RSMainThread::ApplyModifiers()
 {
     frameRateRangeData_ = std::make_shared<FrameRateRangeData>();
+    //[Planning]: Support multi-display in the future.
+    frameRateRangeData_->screenId = 0;
+    frameRateRangeData_->forceUpdateFlag = forceUpdateUniRenderFlag_;
     for (const auto& [root, nodeSet] : context_->activeNodesInRoot_) {
         for (const auto& [id, nodePtr] : nodeSet) {
             bool isZOrderChanged = nodePtr->ApplyModifiers();
@@ -2393,7 +2410,11 @@ void RSMainThread::ReleaseSurface()
     }
 }
 
+#ifndef USE_ROSEN_DRAWING
 void RSMainThread::AddToReleaseQueue(sk_sp<SkSurface>&& surface)
+#else
+void RSMainThread::AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface)
+#endif
 {
     std::lock_guard<std::mutex> lock(mutex_);
     tmpSurfaces_.push(std::move(surface));
@@ -2402,10 +2423,14 @@ void RSMainThread::AddToReleaseQueue(sk_sp<SkSurface>&& surface)
 void RSMainThread::GetAppMemoryInMB(float& cpuMemSize, float& gpuMemSize)
 {
     PostSyncTask([&cpuMemSize, &gpuMemSize, this]() {
+#ifndef USE_ROSEN_DRAWING
 #ifdef NEW_RENDER_CONTEXT
         gpuMemSize = MemoryManager::GetAppGpuMemoryInMB(GetRenderEngine()->GetDrawingContext()->GetDrawingContext());
 #else
         gpuMemSize = MemoryManager::GetAppGpuMemoryInMB(GetRenderEngine()->GetRenderContext()->GetGrContext());
+#endif
+#else
+        RS_LOGE("Drawing Unsupport GetAppGpuMemoryInMB");
 #endif
         cpuMemSize = MemoryTrack::Instance().GetAppMemorySizeInMB();
     });

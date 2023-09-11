@@ -30,6 +30,7 @@ class RSSkiaFilter;
 // Note: we don't care about if the filter will be applied to background or foreground, the caller should take care of
 // this. This means if both background and foreground need to apply filter, the caller should create two
 // RSFilterCacheManager, pass the correct dirty region, and call the DrawFilter() in correct order.
+// Warn: Using filter cache in multi-thread environment may cause GPU memory leak or invalid textures.
 class RSFilterCacheManager final {
 public:
     RSFilterCacheManager() = default;
@@ -84,9 +85,9 @@ private:
     // environment, we don't need to attempt to reattach SkImages.
     void CheckCachedImages(RSPaintFilterCanvas& canvas);
     // To reduce memory usage, clear one of the cached images.
-    inline void CompactCache(bool isFilterHashChanged);
+    inline void CompactCache(bool shouldClearFilteredCache);
     // Validate the input srcRect and dstRect, and return the validated rects.
-    static std::tuple<SkIRect, SkIRect> ValidateParams(RSPaintFilterCanvas& canvas,
+    std::tuple<SkIRect, SkIRect> ValidateParams(RSPaintFilterCanvas& canvas,
         const std::optional<SkIRect>& srcRect, const std::optional<SkIRect>& dstRect);
 
     // We keep both the snapshot and filtered snapshot in the cache, and clear unneeded one in next frame.

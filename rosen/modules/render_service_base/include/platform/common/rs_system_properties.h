@@ -120,6 +120,8 @@ public:
 
     static void SetDrawTextAsBitmap(bool flag);
     static bool GetDrawTextAsBitmap();
+    static void SetCacheEnabledForRotation(bool flag);
+    static bool GetCacheEnabledForRotation();
     static ParallelRenderingType GetPrepareParallelRenderingEnabled();
     static ParallelRenderingType GetParallelRenderingEnabled();
     static HgmRefreshRates GetHgmRefreshRatesEnabled();
@@ -133,6 +135,8 @@ public:
     static int GetFilterCacheUpdateInterval();
     static int GetFilterCacheSizeThreshold();
     static bool GetKawaseEnabled();
+    static float GetKawaseRandomColorFactor();
+    static bool GetRandomColorEnabled();
     static bool GetKawaseOriginalEnabled();
     static bool GetBlurEnabled();
     static bool GetSkipForAlphaZeroEnabled();
@@ -150,11 +154,13 @@ public:
     static bool GetDDGRIntegrateEnable();
 #endif
     static bool GetSnapshotWithDMAEnabled();
+    static bool IsPhoneType();
 private:
     RSSystemProperties() = default;
 
     static inline bool isUniRenderEnabled_ = false;
     inline static bool isDrawTextAsBitmap_ = false;
+    inline static bool cacheEnabledForRotation_ = false;
 };
 
 } // namespace Rosen

@@ -51,14 +51,8 @@ void RSRenderParticleSystem::Emit(int64_t deltaTime)
 
 void RSRenderParticleSystem::UpdateParticle(int64_t deltaTime)
 {
-    for (auto particle : activeParticles_) {
-        if (particle != nullptr) {
-            auto particleRenderParams = particle->GetParticleRenderParams();
-            if (particleRenderParams != nullptr) {
-                auto effect = RSRenderParticleEffector(particleRenderParams);
-                effect.ApplyEffectorToParticle(particle, deltaTime);
-            }
-        }
+    if (activeParticles_.empty()) {
+        return;
     }
     for (auto it = activeParticles_.begin(); it != activeParticles_.end();) {
         std::shared_ptr<RSRenderParticle> particle = *it;
@@ -68,11 +62,23 @@ void RSRenderParticleSystem::UpdateParticle(int64_t deltaTime)
             ++it;
         }
     }
+    for (auto particle : activeParticles_) {
+        if (particle != nullptr) {
+            auto particleRenderParams = particle->GetParticleRenderParams();
+            if (particleRenderParams != nullptr) {
+                auto effect = RSRenderParticleEffector(particleRenderParams);
+                effect.ApplyEffectorToParticle(particle, deltaTime);
+            }
+        }
+    }
 }
 
 bool RSRenderParticleSystem::IsFinish()
 {
     bool finish = true;
+    if (!activeParticles_.empty()) {
+        return false;
+    }
     for (size_t iter = 0; iter < emitters_.size(); iter++) {
         if (emitters_[iter] != nullptr) {
             finish = finish && emitters_[iter]->IsEmitterFinish();

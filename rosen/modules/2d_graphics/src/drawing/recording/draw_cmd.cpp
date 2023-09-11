@@ -26,6 +26,7 @@
 #include "recording/mask_filter_cmd_list.h"
 #include "recording/path_effect_cmd_list.h"
 #include "recording/shader_effect_cmd_list.h"
+#include "recording/region_cmd_list.h"
 
 #include "draw/path.h"
 #include "draw/brush.h"
@@ -42,6 +43,7 @@ namespace Rosen {
 namespace Drawing {
 std::unordered_map<uint32_t, CanvasPlayer::PlaybackFunc> CanvasPlayer::opPlaybackFuncLUT_ = {
     { DrawOpItem::POINT_OPITEM,             DrawPointOpItem::Playback },
+    { DrawOpItem::POINTS_OPITEM,            DrawPointsOpItem::Playback },
     { DrawOpItem::LINE_OPITEM,              DrawLineOpItem::Playback },
     { DrawOpItem::RECT_OPITEM,              DrawRectOpItem::Playback },
     { DrawOpItem::ROUND_RECT_OPITEM,        DrawRoundRectOpItem::Playback },
@@ -53,6 +55,7 @@ std::unordered_map<uint32_t, CanvasPlayer::PlaybackFunc> CanvasPlayer::opPlaybac
     { DrawOpItem::PATH_OPITEM,              DrawPathOpItem::Playback },
     { DrawOpItem::BACKGROUND_OPITEM,        DrawBackgroundOpItem::Playback },
     { DrawOpItem::SHADOW_OPITEM,            DrawShadowOpItem::Playback },
+    { DrawOpItem::COLOR_OPITEM,             DrawColorOpItem::Playback },
     { DrawOpItem::BITMAP_OPITEM,            DrawBitmapOpItem::Playback },
     { DrawOpItem::IMAGE_OPITEM,             DrawImageOpItem::Playback },
     { DrawOpItem::IMAGE_RECT_OPITEM,        DrawImageRectOpItem::Playback },
@@ -60,6 +63,7 @@ std::unordered_map<uint32_t, CanvasPlayer::PlaybackFunc> CanvasPlayer::opPlaybac
     { DrawOpItem::CLIP_RECT_OPITEM,         ClipRectOpItem::Playback },
     { DrawOpItem::CLIP_ROUND_RECT_OPITEM,   ClipRoundRectOpItem::Playback },
     { DrawOpItem::CLIP_PATH_OPITEM,         ClipPathOpItem::Playback },
+    { DrawOpItem::CLIP_REGION_OPITEM,       ClipRegionOpItem::Playback },
     { DrawOpItem::SET_MATRIX_OPITEM,        SetMatrixOpItem::Playback },
     { DrawOpItem::RESET_MATRIX_OPITEM,      ResetMatrixOpItem::Playback },
     { DrawOpItem::CONCAT_MATRIX_OPITEM,     ConcatMatrixOpItem::Playback },
@@ -115,6 +119,23 @@ void DrawPointOpItem::Playback(CanvasPlayer& player, const void *opItem)
 void DrawPointOpItem::Playback(Canvas& canvas) const
 {
     canvas.DrawPoint(point_);
+}
+
+DrawPointsOpItem::DrawPointsOpItem(PointMode mode, const std::pair<uint32_t, size_t> pts)
+    : DrawOpItem(POINTS_OPITEM), mode_(mode), pts_(pts) {}
+
+void DrawPointsOpItem::Playback(CanvasPlayer& player, const void *opItem)
+{
+    if (opItem != nullptr) {
+        const auto *op = static_cast<const DrawPointsOpItem*>(opItem);
+        op->Playback(player.canvas_, player.cmdList_);
+    }
+}
+
+void DrawPointsOpItem::Playback(Canvas& canvas, const CmdList& cmdList) const
+{
+    auto pts = CmdListHelper::GetVectorFromCmdList<Point>(cmdList, pts_);
+    canvas.DrawPoints(mode_, pts.size(), pts.data());
 }
 
 DrawLineOpItem::DrawLineOpItem(const Point& startPt, const Point& endPt) : DrawOpItem(LINE_OPITEM),
@@ -341,6 +362,22 @@ void DrawShadowOpItem::Playback(Canvas& canvas, const CmdList& cmdList) const
     canvas.DrawShadow(*path, planeParams_, devLightPos_, lightRadius_, ambientColor_, spotColor_, flag_);
 }
 
+DrawColorOpItem::DrawColorOpItem(ColorQuad color, BlendMode mode) : DrawOpItem(COLOR_OPITEM),
+    color_(color), mode_(mode) {}
+
+void DrawColorOpItem::Playback(CanvasPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const DrawColorOpItem*>(opItem);
+        op->Playback(player.canvas_);
+    }
+}
+
+void DrawColorOpItem::Playback(Canvas& canvas) const
+{
+    canvas.DrawColor(color_, mode_);
+}
+
 DrawBitmapOpItem::DrawBitmapOpItem(const ImageHandle& bitmap, scalar px, scalar py)
     : DrawOpItem(BITMAP_OPITEM), bitmap_(bitmap), px_(px), py_(py) {}
 
@@ -482,6 +519,28 @@ void ClipPathOpItem::Playback(Canvas& canvas, const CmdList& cmdList) const
     }
 
     canvas.ClipPath(*path, clipOp_, doAntiAlias_);
+}
+
+ClipRegionOpItem::ClipRegionOpItem(const CmdListHandle& region, ClipOp clipOp)
+    : DrawOpItem(CLIP_REGION_OPITEM), region_(region), clipOp_(clipOp) {}
+
+void ClipRegionOpItem::Playback(CanvasPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const ClipRegionOpItem*>(opItem);
+        op->Playback(player.canvas_, player.cmdList_);
+    }
+}
+
+void ClipRegionOpItem::Playback(Canvas& canvas, const CmdList& cmdList) const
+{
+    auto region = CmdListHelper::GetFromCmdList<RegionCmdList, Region>(cmdList, region_);
+    if (region == nullptr) {
+        LOGE("region is nullptr!");
+        return;
+    }
+
+    canvas.ClipRegion(*region, clipOp_);
 }
 
 SetMatrixOpItem::SetMatrixOpItem(const Matrix& matrix) : DrawOpItem(SET_MATRIX_OPITEM)

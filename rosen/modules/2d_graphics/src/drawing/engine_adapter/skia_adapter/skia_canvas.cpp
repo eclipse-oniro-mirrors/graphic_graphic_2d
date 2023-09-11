@@ -155,6 +155,26 @@ void SkiaCanvas::DrawPoint(const Point& point)
     }
 }
 
+void SkiaCanvas::DrawPoints(PointMode mode, size_t count, const Point pts[])
+{
+    if (!skCanvas_) {
+        LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
+        return;
+    }
+
+    std::vector<SkPoint> skPts(count);
+    for (size_t i = 0; i < count; ++i) {
+        skPts[i].fX = pts[i].GetX();
+        skPts[i].fY = pts[i].GetY();
+    }
+
+    for (auto d : skiaPaint_.GetSortedPaints()) {
+        if (d != nullptr) {
+            skCanvas_->drawPoints(static_cast<SkCanvas::PointMode>(mode), count, skPts.data(), d->paint);
+        }
+    }
+}
+
 void SkiaCanvas::DrawLine(const Point& startPt, const Point& endPt)
 {
     if (!skCanvas_) {
@@ -313,6 +333,16 @@ void SkiaCanvas::DrawShadow(const Path& path, const Point3& planeParams, const P
     if (skPathImpl != nullptr) {
         SkShadowUtils::DrawShadow(skCanvas_, skPathImpl->GetPath(), point1, point2, color1, color2, flags);
     }
+}
+
+void SkiaCanvas::DrawColor(ColorQuad color, BlendMode mode)
+{
+    if (!skCanvas_) {
+        LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
+        return;
+    }
+
+    skCanvas_->drawColor(static_cast<SkColor>(color), static_cast<SkBlendMode>(mode));
 }
 
 void SkiaCanvas::DrawRegion(const Region& region)
@@ -652,6 +682,19 @@ void SkiaCanvas::ClipPath(const Path& path, ClipOp op, bool doAntiAlias)
     if (skPathImpl != nullptr) {
         SkClipOp clipOp = static_cast<SkClipOp>(op);
         skCanvas_->clipPath(skPathImpl->GetPath(), clipOp, doAntiAlias);
+    }
+}
+
+void SkiaCanvas::ClipRegion(const Region& region, ClipOp op)
+{
+    if (!skCanvas_) {
+        LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
+        return;
+    }
+    auto skRegionImpl = region.GetImpl<SkiaRegion>();
+    if (skRegionImpl != nullptr) {
+        SkClipOp clipOp = static_cast<SkClipOp>(op);
+        skCanvas_->clipRegion(*(skRegionImpl->GetSkRegion()), clipOp);
     }
 }
 

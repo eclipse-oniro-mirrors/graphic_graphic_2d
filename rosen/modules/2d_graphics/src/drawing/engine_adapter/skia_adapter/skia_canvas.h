@@ -39,7 +39,11 @@
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
+#ifndef USE_ROSEN_DRAWING
 class RS_EXPORT SkiaCanvas : public CoreCanvasImpl {
+#else
+class DRAWING_API SkiaCanvas : public CoreCanvasImpl {
+#endif
 public:
     static inline constexpr AdapterType TYPE = AdapterType::SKIA_ADAPTER;
     SkiaCanvas();
@@ -64,6 +68,7 @@ public:
 
     // shapes
     void DrawPoint(const Point& point) override;
+    void DrawPoints(PointMode mode, size_t count, const Point pts[]) override;
     void DrawLine(const Point& startPt, const Point& endPt) override;
     void DrawRect(const Rect& rect) override;
     void DrawRoundRect(const RoundRect& roundRect) override;
@@ -77,6 +82,9 @@ public:
     void DrawShadow(const Path& path, const Point3& planeParams, const Point3& devLightPos, scalar lightRadius,
         Color ambientColor, Color spotColor, ShadowFlags flag) override;
     void DrawRegion(const Region& region) override;
+
+    // color
+    void DrawColor(ColorQuad color, BlendMode mode) override;
 
     // image
     void DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py) override;
@@ -93,6 +101,7 @@ public:
     void ClipRect(const Rect& rect, ClipOp op, bool doAntiAlias) override;
     void ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias) override;
     void ClipPath(const Path& path, ClipOp op, bool doAntiAlias) override;
+    void ClipRegion(const Region& region, ClipOp op = ClipOp::INTERSECT) override;
 
     // transform
     void SetMatrix(const Matrix& matrix) override;

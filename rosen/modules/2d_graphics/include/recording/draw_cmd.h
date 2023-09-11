@@ -79,6 +79,7 @@ public:
     enum Type : uint32_t {
         OPITEM_HEAD,
         POINT_OPITEM,
+        POINTS_OPITEM,
         LINE_OPITEM,
         RECT_OPITEM,
         ROUND_RECT_OPITEM,
@@ -87,6 +88,7 @@ public:
         PIE_OPITEM,
         OVAL_OPITEM,
         CIRCLE_OPITEM,
+        COLOR_OPITEM,
         PATH_OPITEM,
         BACKGROUND_OPITEM,
         SHADOW_OPITEM,
@@ -97,6 +99,7 @@ public:
         CLIP_RECT_OPITEM,
         CLIP_ROUND_RECT_OPITEM,
         CLIP_PATH_OPITEM,
+        CLIP_REGION_OPITEM,
         SET_MATRIX_OPITEM,
         RESET_MATRIX_OPITEM,
         CONCAT_MATRIX_OPITEM,
@@ -129,6 +132,19 @@ public:
 
 private:
     Point point_;
+};
+
+class DrawPointsOpItem : public DrawOpItem {
+public:
+    explicit DrawPointsOpItem(PointMode mode, const std::pair<uint32_t, size_t> pts);
+    ~DrawPointsOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas, const CmdList& cmdList) const;
+
+private:
+    PointMode mode_;
+    const std::pair<uint32_t, size_t> pts_;
 };
 
 class DrawLineOpItem : public DrawOpItem {
@@ -339,6 +355,19 @@ private:
     ImageHandle picture_;
 };
 
+class DrawColorOpItem : public DrawOpItem {
+public:
+    explicit DrawColorOpItem(ColorQuad color, BlendMode mode);
+    ~DrawColorOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas) const;
+
+private:
+    ColorQuad color_;
+    BlendMode mode_;
+};
+
 class ClipRectOpItem : public DrawOpItem {
 public:
     ClipRectOpItem(const Rect& rect, ClipOp op, bool doAntiAlias);
@@ -380,6 +409,19 @@ private:
     CmdListHandle path_;
     ClipOp clipOp_;
     bool doAntiAlias_;
+};
+
+class ClipRegionOpItem : public DrawOpItem {
+public:
+    ClipRegionOpItem(const CmdListHandle& region, ClipOp clipOp = ClipOp::INTERSECT);
+    ~ClipRegionOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas, const CmdList& cmdList) const;
+
+private:
+    CmdListHandle region_;
+    ClipOp clipOp_;
 };
 
 class SetMatrixOpItem : public DrawOpItem {

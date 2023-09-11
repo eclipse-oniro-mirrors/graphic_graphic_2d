@@ -25,6 +25,7 @@
 #include "recording/recording_mask_filter.h"
 #include "recording/recording_path_effect.h"
 #include "recording/recording_shader_effect.h"
+#include "recording/recording_region.h"
 #include "draw/color.h"
 #include "effect/color_filter.h"
 #include "effect/color_space.h"
@@ -50,6 +51,13 @@ std::shared_ptr<DrawCmdList> RecordingCanvas::GetDrawCmdList() const
 void RecordingCanvas::DrawPoint(const Point& point)
 {
     cmdList_->AddOp<DrawPointOpItem>(point);
+}
+
+void RecordingCanvas::DrawPoints(PointMode mode, size_t count, const Point pts[])
+{
+    std::vector<Point> points(pts, pts + count);
+    auto pointsData = CmdListHelper::AddVectorToCmdList<Point>(*cmdList_, points);
+    cmdList_->AddOp<DrawPointsOpItem>(mode, pointsData);
 }
 
 void RecordingCanvas::DrawLine(const Point& startPt, const Point& endPt)
@@ -143,6 +151,11 @@ void RecordingCanvas::DrawShadow(const Path& path, const Point3& planeParams, co
     cmdList_->AddOp<DrawShadowOpItem>(pathHandle, planeParams, devLightPos, lightRadius, ambientColor, spotColor, flag);
 }
 
+void RecordingCanvas::DrawColor(ColorQuad color, BlendMode mode)
+{
+    cmdList_->AddOp<DrawColorOpItem>(color, mode);
+}
+
 void RecordingCanvas::DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py)
 {
     auto bitmapHandle = CmdListHelper::AddBitmapToCmdList(*cmdList_, bitmap);
@@ -196,6 +209,12 @@ void RecordingCanvas::ClipPath(const Path& path, ClipOp op, bool doAntiAlias)
 {
     auto pathHandle = CmdListHelper::AddRecordedToCmdList<RecordingPath>(*cmdList_, path);
     cmdList_->AddOp<ClipPathOpItem>(pathHandle, op, doAntiAlias);
+}
+
+void RecordingCanvas::ClipRegion(const Region& region, ClipOp op)
+{
+    auto regionHandle = CmdListHelper::AddRecordedToCmdList<RecordingRegion>(*cmdList_, region);
+    cmdList_->AddOp<ClipRegionOpItem>(regionHandle, op);
 }
 
 void RecordingCanvas::SetMatrix(const Matrix& matrix)
@@ -288,6 +307,11 @@ void RecordingCanvas::Restore()
         cmdList_->AddOp<RestoreOpItem>();
         --saveCount_;
     }
+}
+
+uint32_t RecordingCanvas::GetSaveCount() const
+{
+    return saveCount_;
 }
 
 void RecordingCanvas::ClipAdaptiveRoundRect(const std::vector<Point>& radius)
