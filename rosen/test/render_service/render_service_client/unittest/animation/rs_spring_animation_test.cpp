@@ -15,6 +15,8 @@
 
 #include "gtest/gtest.h"
 #include "animation/rs_spring_animation.h"
+#include "modifier/rs_property.h"
+#include "transaction/rs_transaction_proxy.h"
 #include <unistd.h>
 #ifdef ROSEN_OHOS
 #include "base/hiviewdfx/hisysevent/interfaces/native/innerkits/hisysevent/include/hisysevent.h"
@@ -44,7 +46,9 @@ void RSSpringAnimationTest::TearDown() {}
  */
 HWTEST_F(RSSpringAnimationTest, SetTimingCurveTest001, Level1)
 {
-    RSSpringAnimation rsSpringAnimation(nullptr, nullptr);
+    auto property = std::make_shared<RSPropertyBase>();
+    auto byValue = std::make_shared<RSPropertyBase>();
+    RSSpringAnimation rsSpringAnimation(property, byValue);
     RSAnimationTimingCurve timingCurve;
     rsSpringAnimation.SetTimingCurve(timingCurve);
 }
@@ -56,7 +60,30 @@ HWTEST_F(RSSpringAnimationTest, SetTimingCurveTest001, Level1)
  */
 HWTEST_F(RSSpringAnimationTest, GetTimingCurveTest001, Level1)
 {
-    RSSpringAnimation rsSpringAnimation(nullptr, nullptr);
+    auto property = std::make_shared<RSPropertyBase>();
+    auto byValue = std::make_shared<RSPropertyBase>();
+    RSSpringAnimation rsSpringAnimation(property, byValue);;
     rsSpringAnimation.GetTimingCurve();
+    ASSERT_NE(property, nullptr);
+    ASSERT_NE(byValue, nullptr);
+}
+
+/**
+ * @tc.name: StartRenderAnimationTest
+ * @tc.desc: RemoveModifier test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSpringAnimationTest, StartRenderAnimationTest, Level1)
+{
+    auto property = std::make_shared<RSPropertyBase>();
+    auto byValue = std::make_shared<RSPropertyBase>();
+    RSSpringAnimation rsSpringAnimation(property, byValue);
+    auto animation = std::make_shared<RSRenderSpringAnimation>();
+    rsSpringAnimation.StartInner(nullptr);
+    rsSpringAnimation.StartRenderAnimation(animation);
+    rsSpringAnimation.StartUIAnimation(animation);
+    ASSERT_NE(property, nullptr);
+    ASSERT_NE(byValue, nullptr);
+    ASSERT_NE(animation, nullptr);
 }
 }
