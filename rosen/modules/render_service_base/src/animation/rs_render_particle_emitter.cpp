@@ -16,7 +16,7 @@
 #include "animation/rs_render_particle_emitter.h"
 
 #include <cstdint>
-#include <math.h>
+#include <cmath>
 #include <vector>
 namespace OHOS {
 namespace Rosen {
@@ -74,7 +74,7 @@ void RSRenderParticleEmitter::EmitParticle(int64_t deltaTime)
     if (maxParticle == -1) {
         maxParticle = UINT32_MAX;
     }
-    if (maxParticle <= 0 || lifeTime == 0 || last > static_cast<float>(maxParticle)) {
+    if (maxParticle <= 0 || lifeTime == 0 || emitRate == 0 || last > static_cast<float>(maxParticle)) {
         emitFinish_ = true;
         return;
     }
