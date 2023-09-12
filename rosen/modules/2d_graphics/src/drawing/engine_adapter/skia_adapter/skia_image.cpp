@@ -21,6 +21,8 @@
 
 #include "skia_bitmap.h"
 #include "skia_data.h"
+#include "skia_image_info.h"
+
 #ifdef ACE_ENABLE_GPU
 #include "skia_gpu_context.h"
 #endif
@@ -55,7 +57,6 @@ void* SkiaImage::BuildFromBitmap(const Bitmap& bitmap)
 void* SkiaImage::BuildFromPicture(const Picture& picture, const SizeI& dimensions, const Matrix& matrix,
     const Brush& brush, BitDepth bitDepth, std::shared_ptr<ColorSpace> colorSpace)
 {
-    LOGD("+++++++ TestBuildFromPicture");
     auto skPictureImpl = picture.GetImpl<SkiaPicture>();
     auto skMatrixImpl = matrix.GetImpl<SkiaMatrix>();
     auto skColorSpaceImpl = colorSpace->GetImpl<SkiaColorSpace>();
@@ -69,7 +70,6 @@ void* SkiaImage::BuildFromPicture(const Picture& picture, const SizeI& dimension
         skiaImage_ = SkImage::MakeFromPicture(skPictureImpl->GetPicture(), skISize, &skMatrixImpl->ExportSkiaMatrix(),
             &paint, b, skColorSpaceImpl->GetColorSpace());
     }
-    LOGD("------- TestBuildFromPicture");
     return nullptr;
 }
 
@@ -102,44 +102,6 @@ bool SkiaImage::BuildFromCompressed(GPUContext& gpuContext, const std::shared_pt
         skData, width, height, static_cast<SkImage::CompressionType>(type));
 #endif
     return (skiaImage_ != nullptr) ? true : false;
-}
-
-static SkColorType ConvertToSkColorType(const ColorType& format)
-{
-    switch (format) {
-        case COLORTYPE_UNKNOWN:
-            return kUnknown_SkColorType;
-        case COLORTYPE_ALPHA_8:
-            return kAlpha_8_SkColorType;
-        case COLORTYPE_RGB_565:
-            return kRGB_565_SkColorType;
-        case COLORTYPE_ARGB_4444:
-            return kARGB_4444_SkColorType;
-        case COLORTYPE_RGBA_8888:
-            return kRGBA_8888_SkColorType;
-        case COLORTYPE_BGRA_8888:
-            return kBGRA_8888_SkColorType;
-        case COLORTYPE_N32:
-            return kN32_SkColorType;
-        default:
-            return kUnknown_SkColorType;
-    }
-}
-
-static SkAlphaType ConvertToSkAlphaType(const AlphaType& format)
-{
-    switch (format) {
-        case ALPHATYPE_UNKNOWN:
-            return kUnknown_SkAlphaType;
-        case ALPHATYPE_OPAQUE:
-            return kOpaque_SkAlphaType;
-        case ALPHATYPE_PREMUL:
-            return kPremul_SkAlphaType;
-        case ALPHATYPE_UNPREMUL:
-            return kUnpremul_SkAlphaType;
-        default:
-            return kUnknown_SkAlphaType;
-    }
 }
 
 static GrBackendTexture ConvertToGrBackendTexture(const TextureInfo& info)
@@ -236,42 +198,6 @@ int SkiaImage::GetHeight() const
     return (skiaImage_ == nullptr) ? 0 : skiaImage_->height();
 }
 
-static ColorType ConvertToColorType(const SkColorType& format)
-{
-    switch (format) {
-        case kUnknown_SkColorType:
-            return COLORTYPE_UNKNOWN;
-        case kAlpha_8_SkColorType:
-            return COLORTYPE_ALPHA_8;
-        case kRGB_565_SkColorType:
-            return COLORTYPE_RGB_565;
-        case kARGB_4444_SkColorType:
-            return COLORTYPE_ARGB_4444;
-        case kRGBA_8888_SkColorType:
-            return COLORTYPE_RGBA_8888;
-        case kBGRA_8888_SkColorType:
-            return COLORTYPE_BGRA_8888;
-        default:
-            return COLORTYPE_UNKNOWN;
-    }
-}
-
-static AlphaType ConvertToAlphaType(const SkAlphaType& format)
-{
-    switch (format) {
-        case kUnknown_SkAlphaType:
-            return ALPHATYPE_UNKNOWN;
-        case kOpaque_SkAlphaType:
-            return ALPHATYPE_OPAQUE;
-        case kPremul_SkAlphaType:
-            return ALPHATYPE_PREMUL;
-        case kUnpremul_SkAlphaType:
-            return ALPHATYPE_UNPREMUL;
-        default:
-            return ALPHATYPE_UNKNOWN;
-    }
-}
-
 ColorType SkiaImage::GetColorType() const
 {
     return (skiaImage_ == nullptr) ? ColorType::COLORTYPE_UNKNOWN : ConvertToColorType(skiaImage_->colorType());
@@ -285,6 +211,14 @@ AlphaType SkiaImage::GetAlphaType() const
 uint32_t SkiaImage::GetUniqueID() const
 {
     return (skiaImage_ == nullptr) ? 0 : skiaImage_->uniqueID();
+}
+
+ImageInfo SkiaImage::GetImageInfo()
+{
+    if (skiaImage_ == nullptr) {
+        return {};
+    }
+    return ConvertToRSImageInfo(skiaImage_->imageInfo());
 }
 
 bool SkiaImage::ReadPixels(Bitmap& bitmap, int x, int y)

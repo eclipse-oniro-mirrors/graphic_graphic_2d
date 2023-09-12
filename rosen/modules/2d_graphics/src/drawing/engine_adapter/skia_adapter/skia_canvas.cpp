@@ -29,6 +29,7 @@
 #endif
 #include "skia_image_filter.h"
 #include "skia_path.h"
+#include "skia_image_info.h"
 
 #include "draw/core_canvas.h"
 #include "image/bitmap.h"
@@ -140,6 +141,14 @@ int32_t SkiaCanvas::GetWidth() const
 int32_t SkiaCanvas::GetHeight() const
 {
     return (skCanvas_ != nullptr) ? skCanvas_->imageInfo().height() : 0;
+}
+
+ImageInfo SkiaCanvas::GetImageInfo()
+{
+    if (skCanvas_ == nullptr) {
+        return {};
+    }
+    return ConvertToRSImageInfo(skCanvas_->imageInfo());
 }
 
 void SkiaCanvas::DrawPoint(const Point& point)

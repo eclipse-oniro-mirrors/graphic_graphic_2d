@@ -63,6 +63,11 @@ int32_t CoreCanvas::GetHeight() const
     return impl_->GetHeight();
 }
 
+ImageInfo CoreCanvas::GetImageInfo()
+{
+    return impl_->GetImageInfo();
+}
+
 void CoreCanvas::DrawPoint(const Point& point)
 {
     impl_->DrawPoint(point);

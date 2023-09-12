@@ -243,6 +243,11 @@ public:
     uint32_t GetUniqueID() const;
 
     /*
+     * @brief  Gets the ImageInfo of Image.
+     */
+    ImageInfo GetImageInfo();
+
+    /*
      * @brief         Copies a Rect of pixels from Image to Bitmap.
      * @param bitmap  Destination Bitmap.
      * @param x       Column index whose absolute value is less than Image width.

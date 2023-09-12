@@ -83,6 +83,11 @@ public:
      */
     std::shared_ptr<Image> GetImageSnapshot(const RectI& bounds) const;
 
+    /*
+     * @brief   Gets ImageInfo of Surface
+     */
+    ImageInfo GetImageInfo();
+
 private:
     std::shared_ptr<SurfaceImpl> impl_;
     std::shared_ptr<Canvas> cachedCanvas_;

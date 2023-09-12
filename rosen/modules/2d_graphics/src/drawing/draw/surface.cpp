@@ -57,6 +57,11 @@ std::shared_ptr<Image> Surface::GetImageSnapshot(const RectI& bounds) const
     return impl_->GetImageSnapshot(bounds);
 }
 
+ImageInfo Surface::GetImageInfo()
+{
+    return GetCanvas()->GetImageInfo();
+}
+
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

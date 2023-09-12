@@ -59,6 +59,12 @@ public:
      * @return        A shared pointer to ColorSpace that its type is RGB.
      */
     static std::shared_ptr<ColorSpace> CreateRGB(const CMSTransferFuncType& func, const CMSMatrixType& matrix);
+    /*
+     * @brief         Create a ColorSpace form a adaptro impl, only used by ImageInfo to ccreate from adaptor image info
+     * @param impl    A adaptor impl of color space
+     * @return        A shared pointer to ColorSpace that its type is RGB.
+     */
+    static std::shared_ptr<ColorSpace> CreateFromImpl(std::shared_ptr<ColorSpaceImpl> impl);
 
     virtual ~ColorSpace() = default;
     ColorSpaceType GetType() const;
@@ -73,6 +79,7 @@ public:
         return impl_->DowncastingTo<T>();
     }
 
+    ColorSpace(std::shared_ptr<ColorSpaceImpl> impl) noexcept;
     ColorSpace(ColorSpaceType t) noexcept;
     ColorSpace(ColorSpaceType t, const Image& image) noexcept;
     ColorSpace(ColorSpaceType t, const CMSTransferFuncType& func, const CMSMatrixType& matrix) noexcept;
