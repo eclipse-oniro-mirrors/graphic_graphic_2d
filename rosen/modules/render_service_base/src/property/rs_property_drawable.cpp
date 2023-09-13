@@ -25,11 +25,18 @@ constexpr int PARAM_DOUBLE = 2;
 }
 namespace OHOS::Rosen {
 
-using SaveRestorePair = std::pair<std::unique_ptr<RSPropertyDrawable>, std::unique_ptr<RSPropertyDrawable>>;
-SaveRestorePair RSPropertyDrawable::GenerateSaveRestore()
+RSPropertyDrawable::SaveRestorePair RSPropertyDrawable::GenerateSaveRestore(RSPaintFilterCanvas::SaveType type)
 {
-    auto count = std::make_shared<int>(-1);
-    return std::make_pair(std::make_unique<RSSaveDrawable>(count), std::make_unique<RSRestoreDrawable>(count));
+    if (type == RSPaintFilterCanvas::kNone) {
+        return {};
+    } else if (type == RSPaintFilterCanvas::kCanvas) {
+        auto count = std::make_shared<int>(-1);
+        return { std::make_unique<RSSaveDrawable>(count), std::make_unique<RSRestoreDrawable>(count) };
+    } else {
+        auto status = std::make_shared<RSPaintFilterCanvas::SaveStatus>();
+        return { std::make_unique<RSCustomSaveDrawable>(status, type),
+            std::make_unique<RSCustomRestoreDrawable>(status) };
+    }
 }
 
 // ============================================================================
@@ -44,6 +51,22 @@ RSRestoreDrawable::RSRestoreDrawable(std::shared_ptr<int> content) : content_(st
 void RSRestoreDrawable::Draw(RSModifierContext& context)
 {
     context.canvas_->restoreToCount(*content_);
+}
+
+RSCustomSaveDrawable::RSCustomSaveDrawable(std::shared_ptr<RSPaintFilterCanvas::SaveStatus> content, RSPaintFilterCanvas::SaveType type)
+    : content_(std::move(content)), type_(type)
+{}
+void RSCustomSaveDrawable::Draw(RSModifierContext& context)
+{
+    *content_ = context.canvas_->Save(type_);
+}
+
+RSCustomRestoreDrawable::RSCustomRestoreDrawable(std::shared_ptr<RSPaintFilterCanvas::SaveStatus> content)
+    : content_(std::move(content))
+{}
+void RSCustomRestoreDrawable::Draw(RSModifierContext& context)
+{
+    context.canvas_->RestoreStatus(*content_);
 }
 
 // ============================================================================

@@ -20,6 +20,7 @@
 #include <utility>
 
 #include "modifier/rs_render_modifier.h"
+#include "pipeline/rs_paint_filter_canvas.h"
 
 namespace OHOS::Rosen {
 class RSPaintFilterCanvas;
@@ -33,7 +34,8 @@ public:
     virtual void Draw(RSModifierContext& context) = 0;
     virtual void OnGeometryChange(const RSProperties& properties) {}
 
-    static std::pair<std::unique_ptr<RSPropertyDrawable>, std::unique_ptr<RSPropertyDrawable>> GenerateSaveRestore();
+    using SaveRestorePair = std::pair<std::unique_ptr<RSPropertyDrawable>, std::unique_ptr<RSPropertyDrawable>>;
+    static SaveRestorePair GenerateSaveRestore(RSPaintFilterCanvas::SaveType type = RSPaintFilterCanvas::kCanvas);
 
     // not copyable and moveable
     RSPropertyDrawable(const RSPropertyDrawable&) = delete;
@@ -62,6 +64,28 @@ public:
 
 private:
     std::shared_ptr<int> content_;
+};
+
+class RSCustomSaveDrawable : public RSPropertyDrawable {
+public:
+    explicit RSCustomSaveDrawable(
+        std::shared_ptr<RSPaintFilterCanvas::SaveStatus> content, RSPaintFilterCanvas::SaveType type);
+    ~RSCustomSaveDrawable() override = default;
+    void Draw(RSModifierContext& context) override;
+
+private:
+    std::shared_ptr<RSPaintFilterCanvas::SaveStatus> content_;
+    RSPaintFilterCanvas::SaveType type_;
+};
+
+class RSCustomRestoreDrawable : public RSPropertyDrawable {
+public:
+    explicit RSCustomRestoreDrawable(std::shared_ptr<RSPaintFilterCanvas::SaveStatus> content);
+    ~RSCustomRestoreDrawable() override = default;
+    void Draw(RSModifierContext& context) override;
+
+private:
+    std::shared_ptr<RSPaintFilterCanvas::SaveStatus> content_;
 };
 
 // ============================================================================
