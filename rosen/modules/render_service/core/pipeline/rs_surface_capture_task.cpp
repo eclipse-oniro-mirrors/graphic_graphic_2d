@@ -33,7 +33,6 @@
 #include "memory/rs_tag_tracker.h"
 #include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
-#include "pipeline/rs_cold_start_thread.h"
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_divided_render_util.h"
 #include "pipeline/rs_effect_render_node.h"
@@ -843,13 +842,7 @@ void RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWithUni(RSSurfaceRenderNod
         return;
     }
 
-    if (node.IsAppWindow() && RSColdStartManager::Instance().IsColdStartThreadRunning(node.GetId()) &&
-        node.GetCachedImage() != nullptr) {
-        RS_LOGD("RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWithUni: DrawCachedImage.");
-        RSUniRenderUtil::DrawCachedImage(node, *canvas_, node.GetCachedImage());
-    } else {
-        ProcessChildren(node);
-    }
+    ProcessChildren(node);
 }
 #else
 void RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWithUni(RSSurfaceRenderNode& node)
@@ -942,13 +935,7 @@ void RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWithUni(RSSurfaceRenderNod
         return;
     }
 
-    if (node.IsAppWindow() && RSColdStartManager::Instance().IsColdStartThreadRunning(node.GetId()) &&
-        node.GetCachedImage() != nullptr) {
-        RS_LOGD("RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWithUni: DrawCachedImage.");
-        RSUniRenderUtil::DrawCachedImage(node, *canvas_, node.GetCachedImage());
-    } else {
-        ProcessChildren(node);
-    }
+    ProcessChildren(node);
 }
 #endif
 

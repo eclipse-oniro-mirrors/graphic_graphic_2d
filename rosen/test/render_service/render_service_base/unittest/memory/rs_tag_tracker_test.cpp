@@ -55,7 +55,6 @@ HWTEST_F(RSTagTrackerTest, TagType2String001, TestSize.Level1)
         "savelayer_color_filter", RSTagTracker::TagType2String(RSTagTracker::TAGTYPE::TAG_SAVELAYER_COLOR_FILTER));
     ASSERT_EQ("filter", RSTagTracker::TagType2String(RSTagTracker::TAGTYPE::TAG_FILTER));
     ASSERT_EQ("capture", RSTagTracker::TagType2String(RSTagTracker::TAGTYPE::TAG_CAPTURE));
-    ASSERT_EQ("cold_start", RSTagTracker::TagType2String(RSTagTracker::TAGTYPE::TAG_COLD_START));
     ASSERT_EQ("acquire_surface", RSTagTracker::TagType2String(RSTagTracker::TAGTYPE::TAG_ACQUIRE_SURFACE));
     ASSERT_EQ("render_frame", RSTagTracker::TagType2String(RSTagTracker::TAGTYPE::TAG_RENDER_FRAME));
     ASSERT_EQ("draw_surface_node", RSTagTracker::TagType2String(RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE));

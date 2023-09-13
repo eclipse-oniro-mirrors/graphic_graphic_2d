@@ -46,7 +46,6 @@
 #include "platform/ohos/overdraw/rs_overdraw_controller.h"
 #include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_base_render_util.h"
-#include "pipeline/rs_cold_start_thread.h"
 #include "pipeline/rs_divided_render_util.h"
 #include "pipeline/rs_frame_report.h"
 #include "pipeline/rs_render_engine.h"
@@ -232,7 +231,6 @@ void RSMainThread::Init()
 #if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
         CollectInfoForDrivenRender();
 #endif
-        CheckColdStartMap();
         Render();
         InformHgmNodeInfo();
         ReleaseAllNodesBuffer();
@@ -1015,14 +1013,6 @@ void RSMainThread::ReleaseAllNodesBuffer()
             }
             surfaceNode->ResetCurrentFrameHardwareEnabledState();
         }
-        // To avoid traverse surfaceNodeMap again, destroy cold start thread here
-        if ((!surfaceNode->IsOnTheTree() || !surfaceNode->ShouldPaint()) &&
-            RSColdStartManager::Instance().IsColdStartThreadRunning(surfaceNode->GetId())) {
-            if (RSColdStartManager::Instance().IsColdStartThreadIdle(surfaceNode->GetId())) {
-                surfaceNode->ClearCachedImage();
-                RSColdStartManager::Instance().StopColdStartThread(surfaceNode->GetId());
-            }
-        }
         RSBaseRenderUtil::ReleaseBuffer(static_cast<RSSurfaceHandler&>(*surfaceNode));
     });
 #ifdef RS_ENABLE_GL
@@ -1654,12 +1644,6 @@ void RSMainThread::Animate(uint64_t timestamp)
         RequestNextVSync();
     }
     PerfAfterAnim(needRequestNextVsync);
-}
-
-void RSMainThread::CheckColdStartMap()
-{
-    const auto& nodeMap = GetContext().GetNodeMap();
-    RSColdStartManager::Instance().CheckColdStartMap(nodeMap);
 }
 
 void RSMainThread::RecvRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData)

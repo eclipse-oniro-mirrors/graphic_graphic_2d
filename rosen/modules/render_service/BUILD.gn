@@ -36,7 +36,6 @@ ohos_shared_library("librender_service") {
     "core/memory/rs_skia_memory_tracer.cpp",
     "core/pipeline/rs_base_render_engine.cpp",
     "core/pipeline/rs_base_render_util.cpp",
-    "core/pipeline/rs_cold_start_thread.cpp",
     "core/pipeline/rs_composer_adapter.cpp",
     "core/pipeline/rs_divided_render_util.cpp",
     "core/pipeline/rs_hardware_thread.cpp",

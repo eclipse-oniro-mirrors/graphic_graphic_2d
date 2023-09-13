@@ -159,11 +159,6 @@ HgmRefreshRateModes RSSystemProperties::GetHgmRefreshRateModesEnabled()
     return {};
 }
 
-bool RSSystemProperties::GetColdStartThreadEnabled()
-{
-    return {};
-}
-
 bool RSSystemProperties::GetSkipForAlphaZeroEnabled()
 {
     return {};

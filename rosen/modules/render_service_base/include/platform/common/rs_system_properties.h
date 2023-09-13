@@ -128,7 +128,6 @@ public:
     static void SetHgmRefreshRateModesEnabled(std::string param);
     static HgmRefreshRateModes GetHgmRefreshRateModesEnabled();
 
-    static bool GetColdStartThreadEnabled();
     static float GetAnimationScale();
     static bool GetProxyNodeDebugEnabled();
     static bool GetFilterCacheEnabled();

@@ -1276,25 +1276,6 @@ HWTEST_F(RSUniRenderVisitorTest, ProcessEffectRenderNode001, TestSize.Level1)
 }
 
 /**
- * @tc.name: RecordAppWindowNodeAndPostTask001
- * @tc.desc: Test RSUniRenderVisitorTest.RecordAppWindowNodeAndPostTask api
- * @tc.type: FUNC
- * @tc.require: issueI79KM8
- */
-HWTEST_F(RSUniRenderVisitorTest, RecordAppWindowNodeAndPostTask001, TestSize.Level1)
-{
-    auto skCanvas = std::make_shared<SkCanvas>(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
-    ASSERT_NE(skCanvas, nullptr);
-    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
-    ASSERT_NE(surfaceNode, nullptr);
-
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    rsUniRenderVisitor->canvas_ = std::make_unique<RSPaintFilterCanvas>(skCanvas.get());
-    rsUniRenderVisitor->RecordAppWindowNodeAndPostTask(*surfaceNode, 0, 0);
-}
-
-/**
  * @tc.name: PrepareOffscreenRender001
  * @tc.desc: Test RSUniRenderVisitorTest.PrepareOffscreenRender api
  * @tc.type: FUNC
