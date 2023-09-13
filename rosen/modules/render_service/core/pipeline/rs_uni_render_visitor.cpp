@@ -672,10 +672,6 @@ void RSUniRenderVisitor::PrepareTypesOfSurfaceRenderNodeBeforeUpdate(RSSurfaceRe
             curSurfaceDirtyManager_->MarkAsTargetForDfx();
         }
     }
-    // collect ability nodeId info within same app since it belongs to another process
-    if (node.IsAbilityComponent() && curSurfaceNode_) {
-        curSurfaceNode_->UpdateAbilityNodeIds(node.GetId());
-    }
 
     // collect app window node's child hardware enabled node
     if (node.IsHardwareEnabledType() && curSurfaceNode_) {
@@ -847,7 +843,6 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
             // if update appwindow, its children should not skip
             localZOrder_ = 0.0f;
             isQuickSkipPreparationEnabled_ = false;
-            node.ResetAbilityNodeIds();
             node.ResetChildHardwareEnabledNodes();
 #ifndef USE_ROSEN_DRAWING
             boundsRect_ = SkRect::MakeWH(property.GetBoundsWidth(), property.GetBoundsHeight());
