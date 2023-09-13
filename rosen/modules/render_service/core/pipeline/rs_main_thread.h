@@ -260,7 +260,7 @@ private:
     bool NeedReleaseGpuResource(const RSRenderNodeMap& nodeMap);
 
     // UIFirst
-    void CheckParallelSubThreadNodesStatus();
+    bool CheckParallelSubThreadNodesStatus();
     void CacheCommands();
 
     // used for informing hgm the bundle name of SurfaceRenderNodes
