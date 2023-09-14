@@ -23,7 +23,6 @@ group("unittest") {
   deps = [
     ":RSBaseRenderEngineUnitTest",
     ":RSBaseRenderUtilTest",
-    ":RSColdStartThreadTest",
     ":RSComposerAdapterTest",
     ":RSDividedRenderUtilTest",
     ":RSDropFrameProcessorTest",
@@ -341,19 +340,6 @@ ohos_unittest("RSMainThreadTest") {
     "c_utils:utils",
     "hilog:libhilog",
     "init:libbegetutil",
-  ]
-  defines = []
-  defines += gpu_defines
-}
-
-## Build RSColdStartThreadTest
-ohos_unittest("RSColdStartThreadTest") {
-  module_out_path = module_output_path
-  sources = [ "rs_cold_start_thread_test.cpp" ]
-  deps = [ ":rs_test_common" ]
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
   ]
   defines = []
   defines += gpu_defines

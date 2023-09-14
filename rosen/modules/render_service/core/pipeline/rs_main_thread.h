@@ -243,7 +243,6 @@ private:
     void WaitUntilUnmarshallingTaskFinished();
     void MergeToEffectiveTransactionDataMap(TransactionDataMap& cachedTransactionDataMap);
 
-    void CheckColdStartMap();
     void ClearDisplayBuffer();
     void PerfAfterAnim(bool needRequestNextVsync);
     void PerfForBlurIfNeeded();

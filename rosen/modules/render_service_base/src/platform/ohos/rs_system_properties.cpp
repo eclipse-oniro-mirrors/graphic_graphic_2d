@@ -256,11 +256,6 @@ HgmRefreshRateModes RSSystemProperties::GetHgmRefreshRateModesEnabled()
         std::atoi((system::GetParameter("persist.rosen.sethgmrefreshratemode.enabled", "0")).c_str()));
 }
 
-bool RSSystemProperties::GetColdStartThreadEnabled()
-{
-    return std::atoi((system::GetParameter("rosen.coldstartthread.enabled", "0")).c_str()) != 0;
-}
-
 bool RSSystemProperties::GetSkipForAlphaZeroEnabled()
 {
     return std::atoi((system::GetParameter("persist.skipForAlphaZero.enabled", "1")).c_str()) != 0;

@@ -261,7 +261,6 @@ private:
     void MarkSubHardwareEnableNodeState(RSSurfaceRenderNode& surfaceNode);
     void CollectAppNodeForHwc(std::shared_ptr<RSSurfaceRenderNode> surfaceNode);
 
-    void RecordAppWindowNodeAndPostTask(RSSurfaceRenderNode& node, float width, float height);
     // offscreen render related
     void PrepareOffscreenRender(RSRenderNode& node);
     void FinishOffscreenRender();
@@ -347,8 +346,6 @@ private:
     bool isSubThread_ = false;
     bool isUIFirst_ = false;
     uint32_t threadIndex_ = UNI_MAIN_THREAD_INDEX;
-
-    bool needColdStartThread_ = false; // flag used for cold start app window
 
     bool isDirtyRegionAlignedEnable_ = false;
     std::shared_ptr<std::mutex> surfaceNodePrepareMutex_;

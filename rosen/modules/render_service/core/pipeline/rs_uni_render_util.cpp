@@ -358,49 +358,6 @@ bool RSUniRenderUtil::IsNeedClient(RSSurfaceRenderNode& node, const ComposeInfo&
     return false;
 }
 
-#ifndef USE_ROSEN_DRAWING
-void RSUniRenderUtil::DrawCachedImage(RSSurfaceRenderNode& node, RSPaintFilterCanvas& canvas, sk_sp<SkImage> image)
-{
-    if (image == nullptr) {
-        return;
-    }
-    if (image->width() == 0 || image->height() == 0) {
-        return;
-    }
-    canvas.save();
-    canvas.scale(node.GetRenderProperties().GetBoundsWidth() / image->width(),
-        node.GetRenderProperties().GetBoundsHeight() / image->height());
-    SkPaint paint;
-#ifdef NEW_SKIA
-    canvas.drawImage(image.get(), 0.0, 0.0, SkSamplingOptions(), &paint);
-#else
-    canvas.drawImage(image.get(), 0.0, 0.0, &paint);
-#endif
-    canvas.restore();
-}
-#else
-void RSUniRenderUtil::DrawCachedImage(RSSurfaceRenderNode& node, RSPaintFilterCanvas& canvas,
-    std::shared_ptr<Drawing::Image> image)
-{
-    if (image == nullptr) {
-        return;
-    }
-    if (image->GetWidth() == 0 || image->GetHeight() == 0) {
-        return;
-    }
-    canvas.Save();
-    canvas.Scale(node.GetRenderProperties().GetBoundsWidth() / image->GetWidth(),
-        node.GetRenderProperties().GetBoundsHeight() / image->GetHeight());
-    Drawing::Brush brush;
-    canvas.AttachBrush(brush);
-    Drawing::SamplingOptions sampling =
-        Drawing::SamplingOptions(Drawing::FilterMode::NEAREST, Drawing::MipmapMode::NEAREST);
-    canvas.DrawImage(*image.get(), 0.0, 0.0, sampling);
-    canvas.DetachBrush();
-    canvas.Restore();
-}
-#endif
-
 Occlusion::Region RSUniRenderUtil::AlignedDirtyRegion(const Occlusion::Region& dirtyRegion, int32_t alignedBits)
 {
     Occlusion::Region alignedRegion;

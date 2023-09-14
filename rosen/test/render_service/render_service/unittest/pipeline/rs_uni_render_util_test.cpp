@@ -106,38 +106,6 @@ HWTEST_F(RSUniRenderUtilTest, CreateLayerBufferDrawParam_001, Function | SmallTe
 }
 
 /*
- * @tc.name: DrawCachedImage_001
- * @tc.desc:
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSUniRenderUtilTest, DrawCachedImage_001, Function | SmallTest | Level2)
-{
-    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNode();
-    RSSurfaceRenderNode& node = static_cast<RSSurfaceRenderNode&>(*(rsSurfaceRenderNode.get()));
-    SkCanvas skCanvas;
-    RSPaintFilterCanvas canvas(&skCanvas);
-    sk_sp<SkImage> image = nullptr;
-    RSUniRenderUtil::DrawCachedImage(node, canvas, image);
-}
-
-/*
- * @tc.name: DrawCachedImage_002
- * @tc.desc:
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSUniRenderUtilTest, DrawCachedImage_002, Function | SmallTest | Level2)
-{
-    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNode();
-    RSSurfaceRenderNode& node = static_cast<RSSurfaceRenderNode&>(*(rsSurfaceRenderNode.get()));
-    SkCanvas skCanvas;
-    RSPaintFilterCanvas canvas(&skCanvas);
-    sk_sp<SkImage> image = CreateSkImage();
-    RSUniRenderUtil::DrawCachedImage(node, canvas, image);
-}
-
-/*
  * @tc.name: AlignedDirtyRegion_001
  * @tc.desc:
  * @tc.type: FUNC
