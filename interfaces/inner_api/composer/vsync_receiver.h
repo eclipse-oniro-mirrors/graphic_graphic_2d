@@ -25,6 +25,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <stdint.h>
 #include <string>
 
 namespace OHOS {
@@ -36,7 +37,7 @@ public:
         void *userData_;
         VSyncCallback callback_;
     };
-    VSyncCallBackListener() : vsyncCallbacks_(nullptr), userData_(nullptr)
+    VSyncCallBackListener() : period_(0), vsyncCallbacks_(nullptr), userData_(nullptr)
     {
     }
 
@@ -49,6 +50,8 @@ public:
         vsyncCallbacks_ = cb.callback_;
         userData_ = cb.userData_;
     }
+
+    int64_t period_;
 
 private:
     void OnReadable(int32_t fileDescriptor) override;
