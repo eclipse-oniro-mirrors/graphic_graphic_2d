@@ -792,16 +792,14 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
             node.GetName().c_str());
         return;
     }
-    if (isUIFirst_) {
-        auto skipNodeMap = RSMainThread::Instance()->GetCacheCmdSkippedNodes();
-        if (skipNodeMap.count(node.GetId()) != 0) {
-            auto parentNode = node.GetParent().lock();
-            auto rsParent = (parentNode);
-            dirtyFlag_ = node.Update(*curSurfaceDirtyManager_, rsParent, dirtyFlag_, prepareClipRect_);
-            dirtyFlag_ = dirtyFlag;
-            RS_TRACE_NAME(node.GetName() + " PreparedNodes cacheCmdSkiped");
-            return;
-        }
+    auto skipNodeMap = RSMainThread::Instance()->GetCacheCmdSkippedNodes();
+    if (skipNodeMap.count(node.GetId()) != 0) {
+        auto parentNode = node.GetParent().lock();
+        auto rsParent = (parentNode);
+        dirtyFlag_ = node.Update(*curSurfaceDirtyManager_, rsParent, dirtyFlag_, prepareClipRect_);
+        dirtyFlag_ = dirtyFlag;
+        RS_TRACE_NAME(node.GetName() + " PreparedNodes cacheCmdSkiped");
+        return;
     }
     // Update node properties, including position (dstrect), OldDirty()
     auto parentNode = node.GetParent().lock();

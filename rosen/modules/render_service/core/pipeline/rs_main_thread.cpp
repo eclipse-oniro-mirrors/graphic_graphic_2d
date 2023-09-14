@@ -527,14 +527,14 @@ std::unordered_map<NodeId, bool> RSMainThread::GetCacheCmdSkippedNodes() const
     return cacheCmdSkippedNodes_;
 }
 
-void RSMainThread::CheckParallelSubThreadNodesStatus()
+bool RSMainThread::CheckParallelSubThreadNodesStatus()
 {
     RS_OPTIONAL_TRACE_FUNC();
     cacheCmdSkippedInfo_.clear();
     cacheCmdSkippedNodes_.clear();
     if (subThreadNodes_.empty()) {
         RSSubThreadManager::Instance()->ResetSubThreadGrContext();
-        return;
+        return false;
     }
     for (auto& node : subThreadNodes_) {
         if (node == nullptr) {
@@ -568,6 +568,14 @@ void RSMainThread::CheckParallelSubThreadNodesStatus()
             }
         }
     }
+    if (!cacheCmdSkippedNodes_.empty()) {
+        return true;
+    }
+    if (!isUiFirstOn_) {
+        // clear subThreadNodes_ when UIFirst off and none of subThreadNodes_ is in the state of doing
+        subThreadNodes_.clear();
+    }
+    return false;
 }
 
 bool RSMainThread::IsNeedSkip(NodeId instanceRootNodeId, pid_t pid)
@@ -676,22 +684,19 @@ void RSMainThread::ProcessCommandForUniRender()
 {
     std::shared_ptr<TransactionDataMap> transactionDataEffective = std::make_shared<TransactionDataMap>();
     std::string transactionFlags;
-    bool uifirstAndCacheCmdEnabled = isUiFirstOn_ && RSSystemProperties::GetCacheCmdEnabled();
-    if (uifirstAndCacheCmdEnabled) {
-        CheckParallelSubThreadNodesStatus();
-    }
+    bool isNeedCacheCmd = CheckParallelSubThreadNodesStatus();
     {
         std::lock_guard<std::mutex> lock(transitionDataMutex_);
         cachedSkipTransactionDataMap_.clear();
         for (auto& rsTransactionElem: effectiveTransactionDataIndexMap_) {
             auto pid = rsTransactionElem.first;
             auto& transactionVec = rsTransactionElem.second.second;
-            if (uifirstAndCacheCmdEnabled) {
+            if (isNeedCacheCmd) {
                 SkipCommandByNodeId(transactionVec, pid);
             }
             std::sort(transactionVec.begin(), transactionVec.end(), Compare);
         }
-        if (uifirstAndCacheCmdEnabled) {
+        if (isNeedCacheCmd) {
             CacheCommands();
         }
         CheckAndUpdateTransactionIndex(transactionDataEffective, transactionFlags);

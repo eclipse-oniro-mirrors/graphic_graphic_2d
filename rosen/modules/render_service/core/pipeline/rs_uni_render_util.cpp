@@ -38,15 +38,6 @@ constexpr const char* SCREENLOCK_WINDOW = "ScreenLockWindow";
 constexpr const char* SYSUI_DROPDOWN = "SysUI_Dropdown";
 constexpr const char* SYSUI_STATUS_BAR = "SysUI_StatusBar";
 constexpr const char* PRIVACY_INDICATOR = "PrivacyIndicator";
-constexpr const char* SCB_DESK_TOP = "SCBDesktop";
-constexpr const char* SCB_WALL_PAPER = "SCBWallpaper";
-constexpr const char* SCB_SCREEN_LOCK = "SCBScreenLock";
-constexpr const char* SCB_DROP_DOWN_PANEL = "SCBDropdownPanel";
-constexpr const char* SCB_STATUS_BAR = "SCBStatusBar";
-constexpr const char* SCB_NEGATIVE_SCREEN = "SCBNegativeScreen";
-constexpr const char* SCB_GESTURE_BACK = "SCBGestureBack";
-constexpr const char* SCB_VOLUME_PANEL = "SCBVolumePanel";
-constexpr const char* SCB_TOGGLE_HOME = "SCBToggleHome";
 };
 void RSUniRenderUtil::MergeDirtyHistory(std::shared_ptr<RSDisplayRenderNode>& node, int32_t bufferAge,
     bool useAlignedDirtyRegion)
@@ -526,15 +517,7 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
         bool needFilter = surfaceName == ENTRY_VIEW || surfaceName == WALLPAPER_VIEW ||
             surfaceName == SYSUI_STATUS_BAR || surfaceName == SCREENLOCK_WINDOW ||
             surfaceName == SYSUI_DROPDOWN || surfaceName == PRIVACY_INDICATOR;
-        bool needFilterSCB = (surfaceName.find(SCB_DESK_TOP) != std::string::npos) ||
-            (surfaceName.find(SCB_WALL_PAPER) != std::string::npos) ||
-            (surfaceName.find(SCB_SCREEN_LOCK) != std::string::npos) ||
-            (surfaceName.find(SCB_DROP_DOWN_PANEL) != std::string::npos) ||
-            (surfaceName.find(SCB_STATUS_BAR) != std::string::npos) ||
-            (surfaceName.find(SCB_NEGATIVE_SCREEN) != std::string::npos) ||
-            (surfaceName.find(SCB_GESTURE_BACK) != std::string::npos) ||
-            (surfaceName.find(SCB_VOLUME_PANEL) != std::string::npos) ||
-            (surfaceName.find(SCB_TOGGLE_HOME) != std::string::npos);
+        bool needFilterSCB = surfaceName.substr(0, 3) == "SCB";
         if (needFilter || needFilterSCB || node->IsSelfDrawingType()) {
             AssignMainThreadNode(mainThreadNodes, node);
             continue;
