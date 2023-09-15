@@ -22,7 +22,6 @@
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_vector4.h"
 #include "pipeline/rs_uni_render_judgement.h"
-#include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "render/rs_filter.h"
 
@@ -1241,7 +1240,7 @@ RectF RSProperties::GetBoundsRect() const
 
 RectF RSProperties::GetFrameRect() const
 {
-    return RectF(0, 0, GetFrameWidth(), GetFrameHeight());
+    return {0, 0, GetFrameWidth(), GetFrameHeight()};
 }
 
 RectF RSProperties::GetBgImageRect() const

@@ -31,7 +31,7 @@ namespace Rosen {
 class RSDrawingFilter;
 #endif
 class RSPaintFilterCanvas;
-enum FilterType {
+enum class FilterType {
     BACKGROUND_FILTER,
     FOREGROUND_FILTER,
 };

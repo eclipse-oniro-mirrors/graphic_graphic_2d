@@ -16,7 +16,11 @@
 #ifndef RENDER_SERVICE_BASE_PROPERTY_RS_PROPERTY_DRAWABLE_BOUNDS_GEOMETRY_H
 #define RENDER_SERVICE_BASE_PROPERTY_RS_PROPERTY_DRAWABLE_BOUNDS_GEOMETRY_H
 
+#include "include/core/SkMatrix.h"
+#include "include/core/SkPath.h"
+#include "include/core/SkRRect.h"
 #include "rs_properties_painter.h"
+
 #include "property/rs_property_drawable.h"
 
 namespace OHOS::Rosen {
@@ -24,9 +28,9 @@ class RSBoundsGeometryDrawable : public RSPropertyDrawable {
 public:
     explicit RSBoundsGeometryDrawable(const SkMatrix& boundsMatrix);
     ~RSBoundsGeometryDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
 
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSProperties& properties);
+    static RSPropertyDrawable::DrawablePtr Generate(const RSPropertyDrawableGenerateContext& context);
 
 private:
     SkMatrix boundsMatrix_;
@@ -34,14 +38,11 @@ private:
 
 class RSClipBoundsDrawable : public RSPropertyDrawable {
 public:
-    explicit RSClipBoundsDrawable(const SkRect& content) : content_(content) {}
+    explicit RSClipBoundsDrawable() = default;
     ~RSClipBoundsDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
 
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSProperties& properties);
-
-private:
-    SkRect content_;
+    static RSPropertyDrawable::DrawablePtr Generate(const RSPropertyDrawableGenerateContext& context);
 };
 
 // ============================================================================
@@ -50,7 +51,7 @@ class RSBorderDrawable : public RSPropertyDrawable {
 public:
     explicit RSBorderDrawable(SkPaint&& paint) : RSPropertyDrawable(), paint_(std::move(paint)) {}
     ~RSBorderDrawable() override = default;
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSProperties& properties);
+    static RSPropertyDrawable::DrawablePtr Generate(const RSPropertyDrawableGenerateContext& context);
 
 protected:
     SkPaint paint_;
@@ -61,7 +62,7 @@ public:
     explicit RSBorderDRRectDrawable(SkPaint&& paint, const RSProperties& properties);
     ~RSBorderDRRectDrawable() override = default;
     void OnGeometryChange(const RSProperties& properties) override;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
 
 private:
     SkRRect inner_;
@@ -73,7 +74,7 @@ public:
     explicit RSBorderFourLineDrawable(SkPaint&& paint, const RSProperties& properties);
     ~RSBorderFourLineDrawable() override = default;
     void OnGeometryChange(const RSProperties& properties) override;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
 
 private:
     RectF rect_;
@@ -84,7 +85,7 @@ public:
     explicit RSBorderPathDrawable(SkPaint&& paint, const RSProperties& properties);
     ~RSBorderPathDrawable() override = default;
     void OnGeometryChange(const RSProperties& properties) override;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
 
 private:
     SkPath borderPath_;
@@ -95,7 +96,7 @@ public:
     explicit RSBorderFourLineRoundCornerDrawable(SkPaint&& paint, const RSProperties& properties);
     ~RSBorderFourLineRoundCornerDrawable() override = default;
     void OnGeometryChange(const RSProperties& properties) override;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
 
 private:
     SkRRect innerRrect_;
@@ -108,7 +109,7 @@ class RSMaskDrawable : public RSPropertyDrawable {
 public:
     explicit RSMaskDrawable(std::shared_ptr<RSMask> mask, RectF bounds);
     ~RSMaskDrawable() override = default;
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSProperties& properties);
+    static std::unique_ptr<RSPropertyDrawable> Generate(const RSPropertyDrawableGenerateContext& context);
 
 protected:
     SkRect maskBounds_;
@@ -121,28 +122,28 @@ class RSSvgDomMaskDrawable : public RSMaskDrawable {
 public:
     explicit RSSvgDomMaskDrawable(std::shared_ptr<RSMask> mask, RectF bounds);
     ~RSSvgDomMaskDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
 };
 
 class RSSvgPictureMaskDrawable : public RSMaskDrawable {
 public:
     explicit RSSvgPictureMaskDrawable(std::shared_ptr<RSMask> mask, RectF bounds);
     ~RSSvgPictureMaskDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
 };
 
 class RSGradientMaskDrawable : public RSMaskDrawable {
 public:
     explicit RSGradientMaskDrawable(std::shared_ptr<RSMask> mask, RectF bounds);
     ~RSGradientMaskDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
 };
 
 class RSPathMaskDrawable : public RSMaskDrawable {
 public:
     explicit RSPathMaskDrawable(std::shared_ptr<RSMask> mask, RectF bounds);
     ~RSPathMaskDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
 };
 
 // ============================================================================
@@ -151,7 +152,7 @@ class RSShadowBaseDrawable : public RSPropertyDrawable {
 public:
     explicit RSShadowBaseDrawable(SkPath skPath, const RSProperties& properties);
     ~RSShadowBaseDrawable() override = default;
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSProperties& properties);
+    static std::unique_ptr<RSPropertyDrawable> Generate(const RSPropertyDrawableGenerateContext& context);
 
 protected:
     SkPath skPath_;
@@ -164,7 +165,8 @@ class RSShadowDrawable : public RSShadowBaseDrawable {
 public:
     explicit RSShadowDrawable(SkPath skPath, const RSProperties& properties);
     ~RSShadowDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
+
 protected:
     float radius_;
 };
@@ -173,7 +175,8 @@ class RSColorfulShadowDrawable : public RSShadowBaseDrawable {
 public:
     explicit RSColorfulShadowDrawable(SkPath skPath, const RSProperties& properties);
     ~RSColorfulShadowDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
+
 protected:
     SkPaint blurPaint_;
     std::weak_ptr<RSRenderNode> node_;
@@ -183,7 +186,7 @@ class RSHardwareAccelerationShadowDrawable : public RSShadowBaseDrawable {
 public:
     explicit RSHardwareAccelerationShadowDrawable(SkPath skPath, const RSProperties& properties);
     ~RSHardwareAccelerationShadowDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
 
 protected:
     float shadowElevation_;
@@ -195,8 +198,8 @@ class RSDynamicLightUpDrawable : public RSPropertyDrawable {
 public:
     explicit RSDynamicLightUpDrawable(float rate, float degree);
     ~RSDynamicLightUpDrawable() override = default;
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSProperties& properties);
-    void Draw(RSModifierContext& context) override;
+    static std::unique_ptr<RSPropertyDrawable> Generate(const RSPropertyDrawableGenerateContext& context);
+    void Draw(RSPropertyDrawableRenderContext& context) override;
 
 protected:
     float rate_;
@@ -209,8 +212,8 @@ class RSEffectDataApplyDrawable : public RSPropertyDrawable {
 public:
     explicit RSEffectDataApplyDrawable() = default;
     ~RSEffectDataApplyDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSProperties& properties);
+    static std::unique_ptr<RSPropertyDrawable> Generate(const RSPropertyDrawableGenerateContext& context);
+    void Draw(RSPropertyDrawableRenderContext& context) override;
 };
 
 // ============================================================================
@@ -219,8 +222,8 @@ class RSLightUpEffectDrawable : public RSPropertyDrawable {
 public:
     explicit RSLightUpEffectDrawable() {}
     ~RSLightUpEffectDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSProperties& properties);
+    void Draw(RSPropertyDrawableRenderContext& context) override;
+    static std::unique_ptr<RSPropertyDrawable> Generate(const RSPropertyDrawableGenerateContext& context);
 };
 
 class RSFilterDrawable : public RSPropertyDrawable {
@@ -241,8 +244,9 @@ class RSBackgroundFilterDrawable : public RSFilterDrawable {
 public:
     explicit RSBackgroundFilterDrawable(const std::shared_ptr<RSFilter>& filter) : filter_(filter) {}
     ~RSBackgroundFilterDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSProperties& properties);
+    static std::unique_ptr<RSPropertyDrawable> Generate(const RSPropertyDrawableGenerateContext& context);
+    void Draw(RSPropertyDrawableRenderContext& context) override;
+
 private:
     const std::shared_ptr<RSFilter>& filter_;
 };
@@ -253,8 +257,9 @@ class RSForegroundFilterDrawable : public RSFilterDrawable {
 public:
     explicit RSForegroundFilterDrawable(const std::shared_ptr<RSFilter>& filter) : filter_(filter) {}
     ~RSForegroundFilterDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSProperties& properties);
+    static std::unique_ptr<RSPropertyDrawable> Generate(const RSPropertyDrawableGenerateContext& context);
+    void Draw(RSPropertyDrawableRenderContext& context) override;
+
 private:
     const std::shared_ptr<RSFilter>& filter_;
 };
@@ -265,8 +270,9 @@ class RSLinearGradientBlurFilterDrawable : public RSPropertyDrawable {
 public:
     explicit RSLinearGradientBlurFilterDrawable(const std::shared_ptr<RSLinearGradientBlurPara>& para) : para_(para) {}
     ~RSLinearGradientBlurFilterDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSProperties& properties);
+    void Draw(RSPropertyDrawableRenderContext& context) override;
+    static std::unique_ptr<RSPropertyDrawable> Generate(const RSPropertyDrawableGenerateContext& context);
+
 private:
     const std::shared_ptr<RSLinearGradientBlurPara>& para_;
 };
@@ -277,8 +283,8 @@ class RSForegroundColorDrawable : public RSPropertyDrawable {
 public:
     explicit RSForegroundColorDrawable(SkPaint&& paint) : paint_(std::move(paint)) {}
     ~RSForegroundColorDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSProperties& properties);
+    void Draw(RSPropertyDrawableRenderContext& context) override;
+    static std::unique_ptr<RSPropertyDrawable> Generate(const RSPropertyDrawableGenerateContext& context);
 
 private:
     SkPaint paint_;
@@ -291,11 +297,11 @@ public:
     explicit RSParticleDrawable() {}
     ~RSParticleDrawable() override = default;
     void AddPropertyDrawable(std::shared_ptr<RSPropertyDrawable> drawale);
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSProperties& properties);
-    void Draw(RSModifierContext& context) override;
+    static std::unique_ptr<RSPropertyDrawable> Generate(const RSPropertyDrawableGenerateContext& context);
+    void Draw(RSPropertyDrawableRenderContext& context) override;
 
 private:
-    std::vector<std::shared_ptr<RSPropertyDrawable>> drawbleVec_ = {};
+    std::vector<std::shared_ptr<RSPropertyDrawable>> drawableVec_ = {};
 };
 
 class RSPointParticleDrawable : public RSPropertyDrawable {
@@ -304,7 +310,7 @@ public:
         : paint_(std::move(paint)), particles_(particles), bounds_(bounds)
     {}
     ~RSPointParticleDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
 
 private:
     SkPaint paint_;
@@ -318,7 +324,7 @@ public:
         : paint_(std::move(paint)), particles_(particles), bounds_(bounds)
     {}
     ~RSImageParticleDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
 
 private:
     SkPaint paint_;
@@ -334,8 +340,9 @@ public:
         : pixelStretch_(pixelStretch), bounds_(bounds)
     {}
     ~RSPixelStretchDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSProperties& properties);
+    void Draw(RSPropertyDrawableRenderContext& context) override;
+    static std::unique_ptr<RSPropertyDrawable> Generate(const RSPropertyDrawableGenerateContext& context);
+
 private:
     const std::optional<Vector4f>& pixelStretch_;
     SkRect bounds_;
@@ -349,9 +356,9 @@ public:
         : bgShader_(bgShader), isTransparent_(isTransparent), paint_(std::move(paint))
     {}
     ~RSBackgroundDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
     static void setForceBgAntiAlias(bool antiAlias);
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSProperties& properties);
+    static std::unique_ptr<RSPropertyDrawable> Generate(const RSPropertyDrawableGenerateContext& context);
 
 private:
     const std::shared_ptr<RSShader>& bgShader_;
@@ -366,13 +373,13 @@ class RSEffectDataGenerateDrawable : public RSPropertyDrawable {
 public:
     explicit RSEffectDataGenerateDrawable(std::shared_ptr<RSSkiaFilter>&& filter) : filter_(std::move(filter)) {}
     ~RSEffectDataGenerateDrawable() override = default;
-    void Draw(RSModifierContext& context) override;
+    void Draw(RSPropertyDrawableRenderContext& context) override;
     static void setForceBgAntiAlias(bool antiAlias);
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSProperties& properties);
+    static std::unique_ptr<RSPropertyDrawable> Generate(const RSPropertyDrawableGenerateContext& context);
 
 private:
     std::shared_ptr<RSSkiaFilter> filter_ = nullptr;
 };
 
-}; // namespace OHOS::Rosen
+};     // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_PROPERTY_RS_PROPERTY_DRAWABLE_BOUNDS_GEOMETRY_H

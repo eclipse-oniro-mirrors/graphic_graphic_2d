@@ -21,8 +21,8 @@
 #include <list>
 #include <memory>
 #include <mutex>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 #include <variant>
 #include <vector>
 
@@ -54,6 +54,8 @@ class DrawCmdList;
 class RSContext;
 class RSNodeVisitor;
 class RSCommand;
+enum class RSPropertyDrawableSlot : unsigned char;
+class RSPropertyDrawable;
 
 class RSB_EXPORT RSRenderNode : public std::enable_shared_from_this<RSRenderNode>  {
 public:
@@ -127,7 +129,7 @@ public:
     template<typename T>
     bool IsInstanceOf() const
     {
-        constexpr uint32_t targetType = static_cast<uint32_t>(T::Type);
+        constexpr auto targetType = static_cast<uint32_t>(T::Type);
         return (static_cast<uint32_t>(GetType()) & targetType) == targetType;
     }
     template<typename T>
@@ -580,10 +582,18 @@ private:
     std::unordered_map<PropertyId, std::variant<float, Vector2f>> propertyValueMap_;
     std::vector<HgmModifierProfile> hgmModifierProfileList_;
 
+    std::map<RSPropertyDrawableSlot, std::unique_ptr<RSPropertyDrawable>> propertyDrawablesMap_;
+    using DrawableIter = decltype(propertyDrawablesMap_)::iterator;
+    inline std::pair<DrawableIter, DrawableIter> GetDrawableRange(
+        RSPropertyDrawableSlot begin, RSPropertyDrawableSlot end);
+    inline void IterateOnDrawableRange(RSPropertyDrawableSlot begin, RSPropertyDrawableSlot end,
+        const std::function<void(std::unique_ptr<RSPropertyDrawable>&)>& func);
+
     friend class RSMainThread;
     friend class RSProxyRenderNode;
     friend class RSRenderNodeMap;
     friend class RSRenderTransition;
+    friend class RSPropertyDrawableRenderContext;
 };
 // backward compatibility
 using RSBaseRenderNode = RSRenderNode;
