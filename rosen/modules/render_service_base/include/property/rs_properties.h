@@ -300,6 +300,9 @@ public:
 
     void OnApplyModifiers();
 
+    const RRect& GetRRect() const;
+    RRect GetInnerRRect() const;
+
 private:
     void ResetProperty(const std::unordered_set<RSModifierType>& dirtyTypes);
     void SetDirty();
@@ -310,9 +313,7 @@ private:
 
     RectF GetFrameRect() const;
     RectF GetBgImageRect() const;
-    const RRect& GetRRect() const;
     void GenerateRRect();
-    RRect GetInnerRRect() const;
     RectI GetDirtyRect() const;
     // added for update dirty region dfx
     RectI GetDirtyRect(RectI& drawRegion) const;
