@@ -297,7 +297,12 @@ int MeasurerImpl::Shape(CharGroups &cgs, std::list<struct MeasuringRun> &runs, s
 
     for (auto &[start, end] : boundaries) {
         const auto &wordcgs = cgs.GetSubFromU16RangeAll(start, end);
-        wordcgs.Get(wordcgs.GetNumberOfCharGroup() - 1).invisibleWidth += wordSpacing_;
+        auto cg = wordcgs.Get(wordcgs.GetNumberOfCharGroup() - 1);
+        bool isWhitespace = (u_isWhitespace(cg.chars[0]) == 1);
+        if (isWhitespace) {
+            cg.invisibleWidth += wordSpacing_;
+        }
+        cg.isWordEnd = true;
     }
     return SUCCESSED;
 }
