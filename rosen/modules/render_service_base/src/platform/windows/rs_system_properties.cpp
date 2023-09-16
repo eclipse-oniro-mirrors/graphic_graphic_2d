@@ -253,5 +253,15 @@ bool RSSystemProperties::GetImageGpuResourceCacheEnable(int width, int height)
 {
     return false;
 }
+
+bool RSSystemProperties::GetSyncTransactionEnabled()
+{
+    return false;
+}
+
+int RSSystemProperties::GetSyncTransactionWaitDelay()
+{
+    return 0;
+}
 } // namespace Rosen
 } // namespace OHOS

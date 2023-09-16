@@ -154,6 +154,9 @@ public:
 #endif
     static bool GetSnapshotWithDMAEnabled();
     static bool IsPhoneType();
+    static bool GetSyncTransactionEnabled();
+    static int GetSyncTransactionWaitDelay();
+
 private:
     RSSystemProperties() = default;
 

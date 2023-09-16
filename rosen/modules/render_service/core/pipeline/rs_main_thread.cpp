@@ -110,7 +110,6 @@ namespace {
 constexpr uint32_t REQUEST_VSYNC_NUMBER_LIMIT = 10;
 constexpr uint64_t REFRESH_PERIOD = 16666667;
 constexpr int32_t PERF_MULTI_WINDOW_REQUESTED_CODE = 10026;
-constexpr int32_t FLUSH_SYNC_TRANSACTION_TIMEOUT = 100;
 constexpr uint64_t PERF_PERIOD = 250000000;
 constexpr uint64_t CLEAN_CACHE_FREQ = 60;
 constexpr uint64_t SKIP_COMMAND_FREQ_LIMIT = 30;
@@ -813,11 +812,16 @@ void RSMainThread::ProcessSyncRSTransactionData(std::unique_ptr<RSTransactionDat
     bool isNeedCloseSync = rsTransactionData->IsNeedCloseSync();
     if (syncTransactionData_.empty()) {
         if (handler_) {
-            auto task = [this]() {
+            auto task = [this, syncId = rsTransactionData->GetSyncId()]() {
+                if (!syncTransactionData_.empty() && syncTransactionData_.begin()->second.front() &&
+                        syncTransactionData_.begin()->second.front()->GetSyncId() != syncId) {
+                    return;
+                }
                 ROSEN_LOGD("RSMainThread ProcessAllSyncTransactionData timeout task");
                 ProcessAllSyncTransactionData();
             };
-            handler_->PostTask(task, "ProcessAllSyncTransactionsTimeoutTask", FLUSH_SYNC_TRANSACTION_TIMEOUT);
+            handler_->PostTask(task, "ProcessAllSyncTransactionsTimeoutTask",
+                RSSystemProperties::GetSyncTransactionWaitDelay());
         }
     }
     if (!syncTransactionData_.empty() && syncTransactionData_.begin()->second.front() &&
