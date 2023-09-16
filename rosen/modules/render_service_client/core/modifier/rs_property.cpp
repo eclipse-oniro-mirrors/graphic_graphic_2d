@@ -140,17 +140,11 @@ bool operator!=(const std::shared_ptr<const RSPropertyBase>& a, const std::share
         auto transactionProxy = RSTransactionProxy::GetInstance();                                                    \
         if (transactionProxy && node) {                                                                               \
             std::unique_ptr<RSCommand> command = std::make_unique<Command>(node->GetId(), value, id_, isDelta);       \
-            if (forceUpdate) {                                                                                        \
-                transactionProxy->Begin();                                                                            \
-            }                                                                                                         \
             transactionProxy->AddCommand(command, node->IsRenderServiceNode(), node->GetFollowType(), node->GetId()); \
             if (node->NeedForcedSendToRemote()) {                                                                     \
                 std::unique_ptr<RSCommand> commandForRemote =                                                         \
                     std::make_unique<Command>(node->GetId(), value, id_, isDelta);                                    \
                 transactionProxy->AddCommand(commandForRemote, true, node->GetFollowType(), node->GetId());           \
-            }                                                                                                         \
-            if (forceUpdate) {                                                                                        \
-                transactionProxy->Commit();                                                                           \
             }                                                                                                         \
         }                                                                                                             \
     } while (0)
