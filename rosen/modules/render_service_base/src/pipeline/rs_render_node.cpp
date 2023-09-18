@@ -1792,6 +1792,7 @@ void RSRenderNode::ClearCacheSurface(bool isClearCompletedCacheSurface)
     cacheSurface_ = nullptr;
     if (isClearCompletedCacheSurface) {
         cacheCompletedSurface_ = nullptr;
+        isTextureValid_ = false;
     }
 }
 void RSRenderNode::SetCacheType(CacheType cacheType)
