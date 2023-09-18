@@ -194,7 +194,7 @@ void RecordingCanvas::ExperimentalDrawEdgeAAQuad(const Rect& rect, const Point c
     }
 
     auto clipDataPtr = CmdListHelper::AddVectorToCmdList<Point>(*cmdList_, clipData);
-    cmdList_->AddOp<ExperimentalDrawEdgeAAQuadOpItem>(rect, clipDataPtr, aaFalgs, color, mode);
+    cmdList_->AddOp<ExperimentalDrawEdgeAAQuadOpItem>(rect, clipDataPtr, aaFlags, color, mode);
 }
 
 void RecordingCanvas::DrawColor(ColorQuad color, BlendMode mode)

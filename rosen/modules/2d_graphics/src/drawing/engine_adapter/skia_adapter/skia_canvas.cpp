@@ -437,7 +437,7 @@ void SkiaCanvas::ExperimentalDrawEdgeAAQuad(const Rect& rect, const Point clip[4
         }
     }
 
-    skCanvas_->experimental_DrawEdgeAAQuad(skiaRect
+    skCanvas_->experimental_DrawEdgeAAQuad(skiaRect,
         skiaClip.empty() ? nullptr : skiaClip.data(),
         static_cast<SkCanvas::QuadAAFlags>(aaFlags),
         static_cast<SkColor>(color),

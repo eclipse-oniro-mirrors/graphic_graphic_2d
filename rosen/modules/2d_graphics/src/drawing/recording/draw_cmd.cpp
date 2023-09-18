@@ -85,7 +85,7 @@ std::unordered_map<uint32_t, CanvasPlayer::PlaybackFunc> CanvasPlayer::opPlaybac
     { DrawOpItem::ADAPTIVE_PIXELMAP_OPITEM, DrawAdaptivePixelMapOpItem::Playback},
     { DrawOpItem::REGION_OPITEM,            DrawRegionOpItem::Playback },
     { DrawOpItem::PATCH_OPITEM,             DrawPatchOpItem::Playback },
-    { DrawOpItem::EXPERIMENTAL_EDGEAAQUAD_OPITEM, ExperimentalDrawEdgeAAQuadOpIterm::Playback },
+    { DrawOpItem::EXPERIMENTAL_EDGEAAQUAD_OPITEM, ExperimentalDrawEdgeAAQuadOpItem::Playback },
 };
 
 CanvasPlayer::CanvasPlayer(Canvas& canvas, const CmdList& cmdList, const Rect& rect)
@@ -378,7 +378,7 @@ void DrawRegionOpItem::Playback(CanvasPlayer& player, const void* opItem)
 void DrawRegionOpItem::Playback(Canvas& canvas, const CmdList& cmdList) const
 {
     auto region = CmdListHelper::GetFromCmdList<RegionCmdList, Region>(cmdList, region_);
-    if (path == nullptr) {
+    if (region == nullptr) {
         LOGE("region is nullptr!");
         return;
     }
@@ -401,7 +401,7 @@ void DrawPatchOpItem::Playback(CanvasPlayer& player, const void* opItem)
 void DrawPatchOpItem::Playback(Canvas& canvas, const CmdList& cmdList) const
 {
     auto cubics = CmdListHelper::GetVectorFromCmdList<Point>(cmdList, cubics_);
-    auto colors = CmdListHelper::GetVectorFromCmdList<Point>(cmdList, colors_);
+    auto colors = CmdListHelper::GetVectorFromCmdList<ColorQuad>(cmdList, colors_);
     auto texCoords = CmdListHelper::GetVectorFromCmdList<Point>(cmdList, texCoords_);
 
     canvas.DrawPatch(cubics.empty() ? nullptr : cubics.data(),
@@ -410,7 +410,7 @@ void DrawPatchOpItem::Playback(Canvas& canvas, const CmdList& cmdList) const
         mode_);
 }
 
-ExperimentalDrawEdgeAAQuadOpItem::ExperimentalDrawEdgeAAQuadOpItem(const Rect& src,
+ExperimentalDrawEdgeAAQuadOpItem::ExperimentalDrawEdgeAAQuadOpItem(const Rect& rect,
     const std::pair<uint32_t, size_t> clipQuad, QuadAAFlags aaFlags, ColorQuad color, BlendMode mode)
     : DrawOpItem(EXPERIMENTAL_EDGEAAQUAD_OPITEM), rect_(rect), clipQuad_(clipQuad),
     aaFlags_(aaFlags), color_(color), mode_(mode) {}
