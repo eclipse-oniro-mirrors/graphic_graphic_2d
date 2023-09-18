@@ -359,6 +359,9 @@ public:
     bool IsAncestorDirty() const;
     void SetIsAncestorDirty(bool isAncestorDirty);
 
+    bool IsParentLeashWindow() const;
+    void SetParentLeashWindow();
+
     bool HasCachedTexture() const;
 
     void SetDrawRegion(const std::shared_ptr<RectF>& rect);
@@ -534,6 +537,7 @@ private:
     bool hasHardwareNode_ = false;
     bool hasAbilityComponent_ = false;
     bool isAncestorDirty_ = false;
+    bool isParentLeashWindow_ = false;
     NodePriorityType priority_ = NodePriorityType::MAIN_PRIORITY;
 
     // driven render
