@@ -43,13 +43,13 @@ enum class PointMode {
 const int DIVES_SIZE = 2;
 struct Lattice {
     enum RectType : uint8_t {
-        kDefault = 0,
-        kTransparent,
-        kFixedColor,
+        DEFAULT = 0,
+        TRANSPARENT,
+        FIXEDCOLOR,
     };
     int fXDivs[DIVES_SIZE];
     int fYDivs[DIVES_SIZE];
-    RectType fRectTypes = RectType::kDefault;
+    RectType fRectTypes = RectType::DEFAULT;
     int fXCount;
     int fYCount;
     RectI fBounds;
