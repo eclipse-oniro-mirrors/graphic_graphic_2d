@@ -299,7 +299,7 @@ void RSJankStats::ReportEventJankFrame(const JankFrames& jankFrames) const
 
 void RSJankStats::ReportEventFirstFrame()
 {
-    RS_TRACE_NAME_FMT("RSJankStats::ReportEventFirstFrame app pid %{public}d", appPid_);
+    RS_TRACE_NAME_FMT("RSJankStats::ReportEventFirstFrame app pid %d", appPid_);
     auto reportName = "FIRST_FRAME_DRAWN";
     HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, reportName,
         OHOS::HiviewDFX::HiSysEvent::EventType::BEHAVIOR, "APP_PID", appPid_);
@@ -328,7 +328,7 @@ void RSJankStats::RecordAnimationDynamicFrameRate(TraceId traceId, const JankFra
     float animationDuration = static_cast<float>(endTime_ - jankFrames.startTime_) / S_TO_MS;
     float animationTotalFrames = static_cast<float>(jankFrames.totalFrames_);
     float animationDynamicFrameRate = animationTotalFrames / animationDuration;
-    RS_TRACE_NAME_FMT("RSJankStats::RecordAnimationDynamicFrameRate frame rate is %{public}.2f: %{public}s",
+    RS_TRACE_NAME_FMT("RSJankStats::RecordAnimationDynamicFrameRate frame rate is %.2f: %s",
                       animationDynamicFrameRate, animationAsyncTraces_.at(traceId).traceName_.c_str());
 }
 
