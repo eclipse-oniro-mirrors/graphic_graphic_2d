@@ -195,7 +195,7 @@ public:
     virtual void DrawRegion(const Region& region);
 
     virtual void DrawPatch(const Point cubics[12], const ColorQuad colors[4], const Point texCoords[4], BlendMode mode);
-    virtual void ExperimentalDrawEdgeAAQuad(const Rect& rect, const Point clip[4],
+    virtual void DrawEdgeAAQuad(const Rect& rect, const Point clip[4],
         QuadAAFlags aaFlags, ColorQuad color, BlendMode mode);
 
     // image

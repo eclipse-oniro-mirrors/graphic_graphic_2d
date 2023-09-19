@@ -368,14 +368,15 @@ void SkiaCanvas::DrawRegion(const Region& region)
     }
 }
 
-void SkiaCanvas::DrawPatch(const Point cubics[12], const ColorQuad colors[4], const Point texCoords[4], BlendMode mode)
+void SkiaCanvas::DrawPatch(const Point cubics[12], const ColorQuad colors[4],
+    const Point texCoords[4], BlendMode mode)
 {
     if (!skCanvas_) {
         LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
         return;
     }
 
-    size_t cubicsPointCount = 12;
+    const size_t cubicsPointCount = 12;
     std::vector<SkPoint> skiaCubics = {};
     if (cubics != nullptr) {
         skiaCubics.resize(cubicsPointCount);
@@ -385,7 +386,7 @@ void SkiaCanvas::DrawPatch(const Point cubics[12], const ColorQuad colors[4], co
         }
     }
 
-    size_t colorCount = 4;
+    const size_t colorCount = 4;
     std::vector<SkColor> skiaColors = {};
     if (colors != nullptr) {
         skiaColors.resize(colorCount);
@@ -394,7 +395,7 @@ void SkiaCanvas::DrawPatch(const Point cubics[12], const ColorQuad colors[4], co
         }
     }
 
-    size_t texCoordCount = 4;
+    const size_t texCoordCount = 4;
     std::vector<SkPoint> skiaTexCoords = {};
     if (texCoords != nullptr) {
         skiaTexCoords.resize(texCoordCount);
@@ -417,8 +418,8 @@ void SkiaCanvas::DrawPatch(const Point cubics[12], const ColorQuad colors[4], co
     return;
 }
 
-void SkiaCanvas::ExperimentalDrawEdgeAAQuad(const Rect& rect, const Point clip[4],
-        QuadAAFlags aaFlags, ColorQuad color, BlendMode mode)
+void SkiaCanvas::DrawEdgeAAQuad(const Rect& rect, const Point clip[4],
+    QuadAAFlags aaFlags, ColorQuad color, BlendMode mode)
 {
     if (!skCanvas_) {
         LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
@@ -427,7 +428,7 @@ void SkiaCanvas::ExperimentalDrawEdgeAAQuad(const Rect& rect, const Point clip[4
 
     SkRect skiaRect = SkRect::MakeLTRB(rect.GetLeft(), rect.GetTop(), rect.GetRight(), rect.GetBottom());
 
-    size_t clipPointCount = 4;
+    const size_t clipPointCount = 4;
     std::vector<SkPoint> skiaClip = {};
     if (clip != nullptr) {
         skiaClip.resize(clipPointCount);

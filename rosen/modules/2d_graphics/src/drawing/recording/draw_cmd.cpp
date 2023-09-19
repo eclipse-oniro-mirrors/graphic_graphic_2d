@@ -85,7 +85,7 @@ std::unordered_map<uint32_t, CanvasPlayer::PlaybackFunc> CanvasPlayer::opPlaybac
     { DrawOpItem::ADAPTIVE_PIXELMAP_OPITEM, DrawAdaptivePixelMapOpItem::Playback},
     { DrawOpItem::REGION_OPITEM,            DrawRegionOpItem::Playback },
     { DrawOpItem::PATCH_OPITEM,             DrawPatchOpItem::Playback },
-    { DrawOpItem::EXPERIMENTAL_EDGEAAQUAD_OPITEM, ExperimentalDrawEdgeAAQuadOpItem::Playback },
+    { DrawOpItem::EDGEAAQUAD_OPITEM, DrawEdgeAAQuadOpItem::Playback },
 };
 
 CanvasPlayer::CanvasPlayer(Canvas& canvas, const CmdList& cmdList, const Rect& rect)
@@ -410,23 +410,23 @@ void DrawPatchOpItem::Playback(Canvas& canvas, const CmdList& cmdList) const
         mode_);
 }
 
-ExperimentalDrawEdgeAAQuadOpItem::ExperimentalDrawEdgeAAQuadOpItem(const Rect& rect,
+DrawEdgeAAQuadOpItem::DrawEdgeAAQuadOpItem(const Rect& rect,
     const std::pair<uint32_t, size_t> clipQuad, QuadAAFlags aaFlags, ColorQuad color, BlendMode mode)
-    : DrawOpItem(EXPERIMENTAL_EDGEAAQUAD_OPITEM), rect_(rect), clipQuad_(clipQuad),
+    : DrawOpItem(EDGEAAQUAD_OPITEM), rect_(rect), clipQuad_(clipQuad),
     aaFlags_(aaFlags), color_(color), mode_(mode) {}
 
-void ExperimentalDrawEdgeAAQuadOpItem::Playback(CanvasPlayer& player, const void* opItem)
+void DrawEdgeAAQuadOpItem::Playback(CanvasPlayer& player, const void* opItem)
 {
     if (opItem != nullptr) {
-        const auto* op = static_cast<const ExperimentalDrawEdgeAAQuadOpItem*>(opItem);
+        const auto* op = static_cast<const DrawEdgeAAQuadOpItem*>(opItem);
         op->Playback(player.canvas_, player.cmdList_);
     }
 }
 
-void ExperimentalDrawEdgeAAQuadOpItem::Playback(Canvas& canvas, const CmdList& cmdList) const
+void DrawEdgeAAQuadOpItem::Playback(Canvas& canvas, const CmdList& cmdList) const
 {
     auto clip = CmdListHelper::GetVectorFromCmdList<Point>(cmdList, clipQuad_);
-    canvas.ExperimentalDrawEdgeAAQuad(rect_, clip.empty() ? nullptr : clip.data(), aaFlags_, color_, mode_);
+    canvas.DrawEdgeAAQuad(rect_, clip.empty() ? nullptr : clip.data(), aaFlags_, color_, mode_);
 }
 
 DrawColorOpItem::DrawColorOpItem(ColorQuad color, BlendMode mode) : DrawOpItem(COLOR_OPITEM),

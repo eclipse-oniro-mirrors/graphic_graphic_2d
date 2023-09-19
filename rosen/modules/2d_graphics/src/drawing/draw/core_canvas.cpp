@@ -149,10 +149,10 @@ void CoreCanvas::DrawPatch(const Point cubics[12], const ColorQuad colors[4], co
     impl_->DrawPatch(cubics, colors, texCoords, mode);
 }
 
-void CoreCanvas::ExperimentalDrawEdgeAAQuad(const Rect& rect, const Point clip[4],
+void CoreCanvas::DrawEdgeAAQuad(const Rect& rect, const Point clip[4],
     QuadAAFlags aaFlags, ColorQuad color, BlendMode mode)
 {
-    impl_->ExperimentalDrawEdgeAAQuad(rect, clip, aaFlags, color, mode);
+    impl_->DrawEdgeAAQuad(rect, clip, aaFlags, color, mode);
 }
 
 void CoreCanvas::DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py)

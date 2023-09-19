@@ -159,11 +159,11 @@ void RSPaintFilterCanvasBase::DrawPatch(const Drawing::Point cubics[12], const D
     }
 }
 
-void RSPaintFilterCanvasBase::ExperimentalDrawEdgeAAQuad(const Drawing::Rect& rect, const Drawing::Point clip[4],
+void RSPaintFilterCanvasBase::DrawEdgeAAQuad(const Drawing::Rect& rect, const Drawing::Point clip[4],
     Drawing::QuadAAFlags aaFlags, Drawing::ColorQuad color, Drawing::BlendMode mode)
 {
     if (canvas_ != nullptr && OnFilter()) {
-        canvas_->ExperimentalDrawEdgeAAQuad(rect, clip, aaFlags, color, mode);
+        canvas_->DrawEdgeAAQuad(rect, clip, aaFlags, color, mode);
     }
 }
 

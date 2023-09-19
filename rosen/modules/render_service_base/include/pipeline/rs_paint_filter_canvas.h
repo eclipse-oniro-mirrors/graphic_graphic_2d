@@ -66,7 +66,7 @@ public:
     void DrawRegion(const Drawing::Region& region) override;
     void DrawPatch(const Drawing::Point cubics[12], const Drawing::ColorQuad colors[4],
         const Drawing::Point texCoords[4], Drawing::BlendMode mode) override;
-    void ExperimentalDrawEdgeAAQuad(const Drawing::Rect& rect, const Drawing::Point clip[4],
+    void DrawEdgeAAQuad(const Drawing::Rect& rect, const Drawing::Point clip[4],
         Drawing::QuadAAFlags aaFlags, Drawing::ColorQuad color, Drawing::BlendMode mode) override;
 
     void DrawBitmap(const Drawing::Bitmap& bitmap, const Drawing::scalar px, const Drawing::scalar py) override;
