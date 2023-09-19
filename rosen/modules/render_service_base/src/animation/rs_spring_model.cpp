@@ -334,6 +334,7 @@ float RSSpringModel<float>::EstimateDurationForUnderDampedModel() const
     double dampingAngularVelocity = sqrt(1.0 - dampingRatio_ * dampingRatio_) * naturalAngularVelocity;
     if (ROSEN_EQ(dampingAngularVelocity, 0.0)) {
         ROSEN_LOGE("RSSpringModel<float>::EstimateDurationForUnderDampedModel, dampingAngularVelocity equal zero.");
+        // critical damping spring will almost rest at 2 * natural period
         return response_ * 2;
     }
     double tmpCoeffA = -1.0 / (dampingRatio_ * naturalAngularVelocity);
