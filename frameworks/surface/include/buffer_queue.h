@@ -136,7 +136,7 @@ public:
     bool GetStatus() const;
     void SetStatus(bool status);
 
-    GSError SetProducerCacheCleanFlagLocked(bool flag);
+    GSError SetProducerCacheCleanFlag(bool flag);
 
 private:
     GSError AllocBuffer(sptr<SurfaceBuffer>& buffer, const BufferRequestConfig &config);
@@ -154,6 +154,7 @@ private:
     void DumpCache(std::string &result);
     void ClearLocked();
     bool CheckProducerCacheList();
+    GSError SetProducerCacheCleanFlagLocked(bool flag);
 
     int32_t defaultWidth = 0;
     int32_t defaultHeight = 0;
