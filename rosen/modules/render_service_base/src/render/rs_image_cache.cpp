@@ -143,31 +143,35 @@ void RSImageCache::IncreasePixelMapCacheRefCount(uint64_t uniqueId)
 
 void RSImageCache::ReleasePixelMapCache(uint64_t uniqueId)
 {
-    // release the pixelMap if no RSImage holds it
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto it = pixelMapCache_.find(uniqueId);
-    if (it != pixelMapCache_.end()) {
-        it->second.second--;
-        if (it->second.first == nullptr || it->second.second == 0) {
-            pixelMapCache_.erase(it);
+    std::shared_ptr<Media::PixelMap> pixelMap = nullptr;
+    {
+        // release the pixelMap if no RSImage holds it
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = pixelMapCache_.find(uniqueId);
+        if (it != pixelMapCache_.end()) {
+            it->second.second--;
+            if (it->second.first == nullptr || it->second.second == 0) {
+                pixelMap = it->second.first;
+                pixelMapCache_.erase(it);
 #ifndef USE_ROSEN_DRAWING
-            ReleaseSkiaImageCacheByPixelMapId(uniqueId);
+                ReleaseSkiaImageCacheByPixelMapId(uniqueId);
 #else
-            ReleaseDrawingImageCacheByPixelMapId(uniqueId);
+                ReleaseDrawingImageCacheByPixelMapId(uniqueId);
 #endif
+            }
         }
-    }
 #ifndef USE_ROSEN_DRAWING
-    auto itr = pixelMapIdRelatedSkiaImageCache_.find(uniqueId);
-    if (itr != pixelMapIdRelatedSkiaImageCache_.end()) {
-        pixelMapIdRelatedSkiaImageCache_.erase(itr);
-    }
+        auto itr = pixelMapIdRelatedSkiaImageCache_.find(uniqueId);
+        if (itr != pixelMapIdRelatedSkiaImageCache_.end()) {
+            pixelMapIdRelatedSkiaImageCache_.erase(itr);
+        }
 #else
-    auto itr = pixelMapIdRelatedDrawingImageCache_.find(uniqueId);
-    if (itr != pixelMapIdRelatedDrawingImageCache_.end()) {
-        pixelMapIdRelatedDrawingImageCache_.erase(itr);
-    }
+        auto itr = pixelMapIdRelatedDrawingImageCache_.find(uniqueId);
+        if (itr != pixelMapIdRelatedDrawingImageCache_.end()) {
+            pixelMapIdRelatedDrawingImageCache_.erase(itr);
+        }
 #endif
+    }
 }
 
 #ifndef USE_ROSEN_DRAWING

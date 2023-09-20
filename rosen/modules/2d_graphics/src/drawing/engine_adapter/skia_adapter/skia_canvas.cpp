@@ -30,6 +30,7 @@
 #include "skia_image_filter.h"
 #include "skia_path.h"
 #include "skia_image_info.h"
+#include "skia_data.h"
 
 #include "draw/core_canvas.h"
 #include "image/bitmap.h"
@@ -366,6 +367,153 @@ void SkiaCanvas::DrawRegion(const Region& region)
             skCanvas_->drawRegion(*region.GetImpl<SkiaRegion>()->GetSkRegion(), d->paint);
         }
     }
+}
+
+void SkiaCanvas::DrawPatch(const Point cubics[12], const ColorQuad colors[4],
+    const Point texCoords[4], BlendMode mode)
+{
+    if (!skCanvas_) {
+        LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
+        return;
+    }
+
+    const size_t cubicsPointCount = 12;
+    std::vector<SkPoint> skiaCubics = {};
+    if (cubics != nullptr) {
+        skiaCubics.resize(cubicsPointCount);
+        for (size_t i = 0; i < cubicsPointCount; ++i) {
+            skiaCubics[i].fX = cubics[i].GetX();
+            skiaCubics[i].fY = cubics[i].GetY();
+        }
+    }
+
+    const size_t colorCount = 4;
+    std::vector<SkColor> skiaColors = {};
+    if (colors != nullptr) {
+        skiaColors.resize(colorCount);
+        for (size_t i = 0; i < colorCount; ++i) {
+            skiaColors[i] = static_cast<SkColor>(colors[i]);
+        }
+    }
+
+    const size_t texCoordCount = 4;
+    std::vector<SkPoint> skiaTexCoords = {};
+    if (texCoords != nullptr) {
+        skiaTexCoords.resize(texCoordCount);
+        for (size_t i = 0; i < texCoordCount; ++i) {
+            skiaTexCoords[i].fX = texCoords[i].GetX();
+            skiaTexCoords[i].fY = texCoords[i].GetY();
+        }
+    }
+
+    for (auto d : skiaPaint_.GetSortedPaints()) {
+        if (d != nullptr) {
+            LOGI("skCanvas_ drawPatch");
+            skCanvas_->drawPatch(
+                skiaCubics.empty() ? nullptr : skiaCubics.data(),
+                skiaColors.empty() ? nullptr : skiaColors.data(),
+                skiaTexCoords.empty() ? nullptr : skiaTexCoords.data(),
+                static_cast<SkBlendMode>(mode), d->paint);
+        }
+    }
+    return;
+}
+
+void SkiaCanvas::DrawEdgeAAQuad(const Rect& rect, const Point clip[4],
+    QuadAAFlags aaFlags, ColorQuad color, BlendMode mode)
+{
+    if (!skCanvas_) {
+        LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
+        return;
+    }
+
+    SkRect skiaRect = SkRect::MakeLTRB(rect.GetLeft(), rect.GetTop(), rect.GetRight(), rect.GetBottom());
+
+    const size_t clipPointCount = 4;
+    std::vector<SkPoint> skiaClip = {};
+    if (clip != nullptr) {
+        skiaClip.resize(clipPointCount);
+        for (size_t i = 0; i < clipPointCount; ++i) {
+            skiaClip[i].fX = clip[i].GetX();
+            skiaClip[i].fY = clip[i].GetY();
+        }
+    }
+
+    skCanvas_->experimental_DrawEdgeAAQuad(skiaRect,
+        skiaClip.empty() ? nullptr : skiaClip.data(),
+        static_cast<SkCanvas::QuadAAFlags>(aaFlags),
+        static_cast<SkColor>(color),
+        static_cast<SkBlendMode>(mode));
+}
+
+void SkiaCanvas::DrawImageNine(const Image* image, const RectI& center, const Rect& dst,
+    FilterMode filter, const Brush* brush)
+{
+    auto skImageImpl = image->GetImpl<SkiaImage>();
+    sk_sp<SkImage> img = nullptr;
+    if (skImageImpl != nullptr) {
+        img = skImageImpl->GetImage();
+    }
+
+    SkIRect skCenter = SkIRect::MakeLTRB(center.GetLeft(), center.GetTop(),
+        center.GetRight(), center.GetBottom());
+    SkRect skDst = SkRect::MakeLTRB(dst.GetLeft(), dst.GetTop(), dst.GetRight(), dst.GetBottom());
+
+    SkFilterMode skFilterMode = static_cast<SkFilterMode>(filter);
+
+    std::unique_ptr<SkPaint> paint = nullptr;
+    if (brush != nullptr) {
+        paint = std::make_unique<SkPaint>();
+        skiaPaint_.BrushToSkPaint(*brush, *paint);
+    }
+    skCanvas_->drawImageNine(img.get(), skCenter, skDst, skFilterMode, paint.get());
+}
+
+void SkiaCanvas::DrawAnnotation(const Rect& rect, const char* key, const Data& data)
+{
+    SkRect skRect = SkRect::MakeLTRB(rect.GetLeft(), rect.GetTop(), rect.GetRight(), rect.GetBottom());
+    auto dataImp = data.GetImpl<SkiaData>();
+    if (dataImp == nullptr) {
+        LOGE("drawAnnotation:dataImp is null");
+        return;
+    }
+    auto skData = dataImp->GetSkData();
+    skCanvas_->drawAnnotation(skRect, key, skData);
+}
+
+void SkiaCanvas::DrawImageLattice(const Image* image, const Lattice& lattice, const Rect& dst,
+    FilterMode filter, const Brush* brush)
+{
+    auto skImageImpl = image->GetImpl<SkiaImage>();
+    sk_sp<SkImage> img = nullptr;
+    if (skImageImpl != nullptr) {
+        img = skImageImpl->GetImage();
+    }
+    const SkCanvas::Lattice::RectType skRectType =
+        static_cast<const SkCanvas::Lattice::RectType>(lattice.fRectTypes);
+
+    SkIRect skCenter = SkIRect::MakeLTRB(lattice.fBounds.GetLeft(), lattice.fBounds.GetTop(),
+        lattice.fBounds.GetRight(), lattice.fBounds.GetBottom());
+
+    SkColor color = lattice.fColors.CastToColorQuad();
+
+    const int xdivs[] = {lattice.fXDivs[0], lattice.fXDivs[1]};
+    const int ydivs[] = {lattice.fYDivs[0], lattice.fYDivs[1]};
+    SkCanvas::Lattice skLattice = {xdivs, ydivs,
+        &skRectType,
+        lattice.fXCount, lattice.fYCount,
+        &skCenter, &color};
+    SkRect skDst = SkRect::MakeLTRB(dst.GetLeft(), dst.GetTop(), dst.GetRight(), dst.GetBottom());
+
+    SkFilterMode skFilterMode = static_cast<SkFilterMode>(filter);
+
+    std::unique_ptr<SkPaint> paint = nullptr;
+    if (brush != nullptr) {
+        paint = std::make_unique<SkPaint>();
+        skiaPaint_.BrushToSkPaint(*brush, *paint);
+    }
+
+    skCanvas_->drawImageLattice(img.get(), skLattice, skDst, skFilterMode, paint.get());
 }
 
 void SkiaCanvas::DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py)
@@ -705,6 +853,25 @@ void SkiaCanvas::ClipRegion(const Region& region, ClipOp op)
         SkClipOp clipOp = static_cast<SkClipOp>(op);
         skCanvas_->clipRegion(*(skRegionImpl->GetSkRegion()), clipOp);
     }
+}
+
+bool SkiaCanvas::IsClipEmpty()
+{
+    if (!skCanvas_) {
+        LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
+        return false;
+    }
+    return skCanvas_->isClipEmpty();
+}
+
+bool SkiaCanvas::QuickReject(const Rect& rect)
+{
+    if (!skCanvas_) {
+        LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
+        return false;
+    }
+    SkRect clipRect = SkRect::MakeLTRB(rect.GetLeft(), rect.GetTop(), rect.GetRight(), rect.GetBottom());
+    return skCanvas_->quickReject(clipRect);
 }
 
 void SkiaCanvas::SetMatrix(const Matrix& matrix)

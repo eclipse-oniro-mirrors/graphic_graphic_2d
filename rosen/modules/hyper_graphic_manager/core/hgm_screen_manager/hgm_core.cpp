@@ -16,10 +16,13 @@
 #include "hgm_core.h"
 
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <string>
 #include <unistd.h>
 
 #include "hgm_log.h"
+#include "platform/common/rs_system_properties.h"
 
 namespace OHOS::Rosen {
 HgmCore& HgmCore::Instance()
@@ -56,6 +59,19 @@ bool HgmCore::Init()
         return false;
     }
     hgmFrameRateTool_ = HgmFrameRateTool::GetInstance();
+
+    int newRateMode = static_cast<int32_t>(RSSystemProperties::GetHgmRefreshRateModesEnabled());
+    if (newRateMode == 0) {
+        HGM_LOGI("HgmCore No customer refreshrate mode found, set to xml default");
+        if (mParsedConfigData_ == nullptr) {
+            HGM_LOGE("HgmCore failed to get parsed data");
+        } else {
+            customFrameRateMode_ = static_cast<RefreshRateMode>(std::stoi(mParsedConfigData_->defaultRefreshRateMode_));
+        }
+    } else {
+        HGM_LOGI("HgmCore No customer refreshrate mode found: %{public}d", newRateMode);
+        customFrameRateMode_ = static_cast<RefreshRateMode>(newRateMode);
+    }
 
     isInit_ = true;
     HGM_LOGI("HgmCore initialization success!!!");
@@ -181,7 +197,7 @@ int32_t HgmCore::SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate
         HGM_LOGW("HgmCore refuse an illegal framerate: %{public}d", rate);
         return HGM_ERROR;
     }
-
+    sceneId = screenSceneSet_.size();
     int32_t modeToSwitch = screen->SetActiveRefreshRate(sceneId, static_cast<uint32_t>(rate));
     if (modeToSwitch < 0) {
         return modeToSwitch;
@@ -220,22 +236,6 @@ int32_t HgmCore::SetRefreshRateMode(RefreshRateMode refreshRateMode)
     }
 
     return EXEC_SUCCESS;
-}
-
-int32_t HgmCore::SetDefaultRefreshRateMode()
-{
-    if (!mParsedConfigData_) {
-        HGM_LOGW("HgmCore no parsed xml configuration found, failed to apply refreshrate mode");
-        return HGM_ERROR;
-    }
-    int32_t mode = std::stoi(mParsedConfigData_->defaultRefreshRateMode_);
-    HGM_LOGD("HgmCore set default refreshrate mode to : %{public}d", mode);
-
-    if (mode == 0) {
-        return EXEC_SUCCESS;
-    }
-
-    return SetRefreshRateMode(static_cast<RefreshRateMode>(mode));
 }
 
 int32_t HgmCore::AddScreen(ScreenId id, int32_t defaultMode)
@@ -330,6 +330,12 @@ uint32_t HgmCore::GetScreenCurrentRefreshRate(ScreenId id) const
     return screen->GetActiveRefreshRate();
 }
 
+int32_t HgmCore::GetCurrentRefreshRateMode() const
+{
+    int32_t currentRefreshRateMode = static_cast<int32_t>(customFrameRateMode_);
+    return currentRefreshRateMode;
+}
+
 sptr<HgmScreen> HgmCore::GetScreen(ScreenId id) const
 {
     std::lock_guard<std::mutex> lock(listMutex_);
@@ -379,6 +385,9 @@ std::unique_ptr<std::unordered_map<ScreenId, int32_t>> HgmCore::GetModesToApply(
 
 int32_t HgmCore::AddScreenProfile(ScreenId id, int32_t width, int32_t height, int32_t phyWidth, int32_t phyHeight)
 {
+    if (SetRefreshRateMode(customFrameRateMode_) != EXEC_SUCCESS) {
+        HGM_LOGE("HgmCore failed to apply default refreshrate mode to screen");
+    }
     return hgmFrameRateTool_->AddScreenProfile(id, width, height, phyWidth, phyHeight);
 }
 
@@ -415,10 +424,29 @@ void HgmCore::InsertAndStartScreenTimer(ScreenId screenId, int32_t interval,
         newTimer->Start();
     }
 }
+
 void HgmCore::ResetScreenTimer(ScreenId screenId) const
 {
     if (auto timer = GetScreenTimer(screenId); timer != nullptr) {
         timer->Reset();
     }
+}
+
+void HgmCore::StartScreenScene(SceneType sceceType)
+{
+    screenSceneSet_.insert(sceceType);
+}
+
+void HgmCore::StopScreenScene(SceneType sceceType)
+{
+    screenSceneSet_.erase(sceceType);
+}
+
+int32_t HgmCore::GetScenePreferred() const
+{
+    if (screenSceneSet_.find(SceneType::SCREEN_RECORD) != screenSceneSet_.end()) {
+        return 60; // 60 means screen record scene preferred
+    }
+    return 0;
 }
 } // namespace OHOS::Rosen

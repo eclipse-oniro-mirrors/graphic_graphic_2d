@@ -15,20 +15,13 @@
 
 #include "property/rs_properties_painter.h"
 
-#include "animation/rs_render_particle.h"
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_optional_trace.h"
-#include "common/rs_vector2.h"
-#include "pipeline/rs_draw_cmd_list.h"
 #include "pipeline/rs_effect_render_node.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_root_render_node.h"
 #include "platform/common/rs_log.h"
 #include "render/rs_blur_filter.h"
-#include "render/rs_image.h"
-#include "render/rs_mask.h"
-#include "render/rs_path.h"
-#include "render/rs_shader.h"
 #include "render/rs_skia_filter.h"
 
 #ifdef USE_ROSEN_DRAWING
@@ -541,25 +534,17 @@ void RSPropertiesPainter::DrawShadow(const RSProperties& properties,
     SkPath skPath;
     if (properties.GetShadowPath() && !properties.GetShadowPath()->GetSkiaPath().isEmpty()) {
         skPath = properties.GetShadowPath()->GetSkiaPath();
-        if (!isLeashWindow) {
-            canvas.clipPath(skPath, SkClipOp::kDifference, true);
-        }
+        canvas.clipPath(skPath, SkClipOp::kDifference, true);
     } else if (properties.GetClipBounds()) {
         skPath = properties.GetClipBounds()->GetSkiaPath();
-        if (!isLeashWindow) {
-            canvas.clipPath(skPath, SkClipOp::kDifference, true);
-        }
+        canvas.clipPath(skPath, SkClipOp::kDifference, true);
     } else {
         if (rrect != nullptr) {
             skPath.addRRect(RRect2SkRRect(*rrect));
-            if (!isLeashWindow) {
-                canvas.clipRRect(RRect2SkRRect(*rrect), SkClipOp::kDifference, true);
-            }
+            canvas.clipRRect(RRect2SkRRect(*rrect), SkClipOp::kDifference, true);
         } else {
             skPath.addRRect(RRect2SkRRect(properties.GetRRect()));
-            if (!isLeashWindow) {
-                canvas.clipRRect(RRect2SkRRect(properties.GetRRect()), SkClipOp::kDifference, true);
-            }
+            canvas.clipRRect(RRect2SkRRect(properties.GetRRect()), SkClipOp::kDifference, true);
         }
     }
     if (properties.GetShadowMask()) {
@@ -581,25 +566,17 @@ void RSPropertiesPainter::DrawShadow(const RSProperties& properties,
     Drawing::Path path;
     if (properties.GetShadowPath() && !properties.GetShadowPath()->GetDrawingPath().IsValid()) {
         path = properties.GetShadowPath()->GetDrawingPath();
-        if (!isLeashWindow) {
-            canvas.ClipPath(path, Drawing::ClipOp::DIFFERENCE, true);
-        }
+        canvas.ClipPath(path, Drawing::ClipOp::DIFFERENCE, true);
     } else if (properties.GetClipBounds()) {
         path = properties.GetClipBounds()->GetDrawingPath();
-        if (!isLeashWindow) {
-            canvas.ClipPath(path, Drawing::ClipOp::DIFFERENCE, true);
-        }
+        canvas.ClipPath(path, Drawing::ClipOp::DIFFERENCE, true);
     } else {
         if (rrect != nullptr) {
             path.AddRoundRect(RRect2DrawingRRect(*rrect));
-            if (!isLeashWindow) {
-                canvas.ClipRoundRect(RRect2DrawingRRect(*rrect), Drawing::ClipOp::DIFFERENCE, true);
-            }
+            canvas.ClipRoundRect(RRect2DrawingRRect(*rrect), Drawing::ClipOp::DIFFERENCE, true);
         } else {
             path.AddRoundRect(RRect2DrawingRRect(properties.GetRRect()));
-            if (!isLeashWindow) {
-                canvas.ClipRoundRect(RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::DIFFERENCE, true);
-            }
+            canvas.ClipRoundRect(RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::DIFFERENCE, true);
         }
     }
     if (properties.GetShadowMask()) {
@@ -1068,7 +1045,7 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
     // for foreground filter, when do online opacity, rendering result already applied opacity,
     // so drawImage should not apply opacity again
     RSAutoCanvasRestore autoCanvasRestore(&canvas,
-        filterType == FilterType::FOREGROUND_FILTER ? RSAutoCanvasRestore::kAlpha : RSAutoCanvasRestore::kNone);
+        filterType == FilterType::FOREGROUND_FILTER ? RSPaintFilterCanvas::kAlpha : RSPaintFilterCanvas::kNone);
     if (filterType == FilterType::FOREGROUND_FILTER) {
         canvas.SetAlpha(1.0);
     }
@@ -2243,12 +2220,12 @@ void RSPropertiesPainter::DrawParticle(const RSProperties& properties, RSPaintFi
         return;
     }
     auto particles = particleVector.GetParticleVector();
-    auto bounds = properties.GetBoundsRect();
+    auto bounds = properties.GetDrawRegion();
     for (size_t i = 0; i < particles.size(); i++) {
         if (particles[i] != nullptr && particles[i]->IsAlive()) {
             // Get particle properties
             auto position = particles[i]->GetPosition();
-            if (!(bounds.Intersect(position.x_, position.y_))) {
+            if (!(bounds->Intersect(position.x_, position.y_))) {
                 continue;
             }
             float opacity = particles[i]->GetOpacity();
@@ -2261,13 +2238,14 @@ void RSPropertiesPainter::DrawParticle(const RSProperties& properties, RSPaintFi
             SkPaint paint;
             paint.setAntiAlias(true);
             paint.setAlphaf(opacity);
-            auto clipBounds = RSPropertiesPainter::Rect2SkRect(bounds);
+            auto clipBounds = SkRect::MakeXYWH(bounds->left_, bounds->top_, bounds->width_, bounds->height_);
             canvas.clipRect(clipBounds, true);
 #else
             Drawing::Brush brush;
             brush.SetAntiAlias(true);
             brush.SetAlphaF(opacity);
-            auto clipBounds = Rect2DrawingRect(bounds);
+            auto clipBounds = Drawing::Rect(
+                bounds->left_, bounds->top_, bounds->left_ + bounds->width_, bounds->top_ + bounds->height_);
             canvas.ClipRect(clipBounds, Drawing::ClipOp::INTERSECT, true);
 #endif
 

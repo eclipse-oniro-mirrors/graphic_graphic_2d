@@ -59,6 +59,7 @@
 #include "pipeline/rs_uni_render_visitor.h"
 #include "pipeline/rs_uni_render_util.h"
 #include "pipeline/rs_occlusion_config.h"
+#include "pipeline/sk_resource_manager.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_innovation.h"
 #include "platform/common/rs_system_properties.h"
@@ -239,6 +240,7 @@ void RSMainThread::Init()
         ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
         SetRSEventDetectorLoopFinishTag();
         rsEventManager_.UpdateParam();
+        SKResourceManager::Instance().ReleaseResource();
     };
 #ifdef RS_ENABLE_RECORDING
     RSRecordingThread::Instance().Start();
@@ -343,8 +345,11 @@ void RSMainThread::Init()
 
     frameRateMgr_ = std::make_unique<HgmFrameRateManager>();
     frameRateMgr_->SetTimerExpiredCallback([]() {
-        RSMainThread::Instance()->SetForceUpdateUniRenderFlag(true);
-        RSMainThread::Instance()->RequestNextVSync();
+        RSMainThread::Instance()->PostTask([]() {
+            RS_OPTIONAL_TRACE_NAME("RSMainThread::TimerExpiredCallback Run");
+            RSMainThread::Instance()->SetForceUpdateUniRenderFlag(true);
+            RSMainThread::Instance()->RequestNextVSync();
+        });
     });
 }
 
@@ -469,16 +474,31 @@ void RSMainThread::ProcessCommand()
     } else {
         ProcessCommandForDividedRender();
     }
-    if (context_->needPurge_) {
+    if (context_->purgeType_ != RSContext::PurgeType::NONE) {
+        context_->purgeType_ = RSContext::PurgeType::NONE;
+#ifndef USE_ROSEN_DRAWING
 #ifdef NEW_RENDER_CONTEXT
         auto grContext = GetRenderEngine()->GetDrawingContext()->GetDrawingContext();
 #else
         auto grContext = GetRenderEngine()->GetRenderContext()->GetGrContext();
 #endif
         if (grContext) {
-            grContext->purgeUnlockedResources(true);
+            if (context_->purgeType_ == RSContext::PurgeType::PURGE_UNLOCK) {
+                MemoryManager::ReleaseUnlockGpuResource(grContext);
+            } else {
+                MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(grContext);
+            }
         }
-        context_->needPurge_ = false;
+#else
+        auto gpuContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
+        if (gpuContext) {
+            if (context_->purgeType_ == RSContext::PurgeType::PURGE_UNLOCK) {
+                MemoryManager::ReleaseUnlockGpuResource(gpuContext);
+            } else {
+                MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(gpuContext);
+            }
+        }
+#endif
     }
     if (RsFrameReport::GetInstance().GetEnable()) {
         RsFrameReport::GetInstance().AnimateStart();
@@ -527,14 +547,14 @@ std::unordered_map<NodeId, bool> RSMainThread::GetCacheCmdSkippedNodes() const
     return cacheCmdSkippedNodes_;
 }
 
-void RSMainThread::CheckParallelSubThreadNodesStatus()
+bool RSMainThread::CheckParallelSubThreadNodesStatus()
 {
     RS_OPTIONAL_TRACE_FUNC();
     cacheCmdSkippedInfo_.clear();
     cacheCmdSkippedNodes_.clear();
     if (subThreadNodes_.empty()) {
         RSSubThreadManager::Instance()->ResetSubThreadGrContext();
-        return;
+        return false;
     }
     for (auto& node : subThreadNodes_) {
         if (node == nullptr) {
@@ -568,6 +588,14 @@ void RSMainThread::CheckParallelSubThreadNodesStatus()
             }
         }
     }
+    if (!cacheCmdSkippedNodes_.empty()) {
+        return true;
+    }
+    if (!isUiFirstOn_) {
+        // clear subThreadNodes_ when UIFirst off and none of subThreadNodes_ is in the state of doing
+        subThreadNodes_.clear();
+    }
+    return false;
 }
 
 bool RSMainThread::IsNeedSkip(NodeId instanceRootNodeId, pid_t pid)
@@ -676,22 +704,19 @@ void RSMainThread::ProcessCommandForUniRender()
 {
     std::shared_ptr<TransactionDataMap> transactionDataEffective = std::make_shared<TransactionDataMap>();
     std::string transactionFlags;
-    bool uifirstAndCacheCmdEnabled = isUiFirstOn_ && RSSystemProperties::GetCacheCmdEnabled();
-    if (uifirstAndCacheCmdEnabled) {
-        CheckParallelSubThreadNodesStatus();
-    }
+    bool isNeedCacheCmd = CheckParallelSubThreadNodesStatus();
     {
         std::lock_guard<std::mutex> lock(transitionDataMutex_);
         cachedSkipTransactionDataMap_.clear();
         for (auto& rsTransactionElem: effectiveTransactionDataIndexMap_) {
             auto pid = rsTransactionElem.first;
             auto& transactionVec = rsTransactionElem.second.second;
-            if (uifirstAndCacheCmdEnabled) {
+            if (isNeedCacheCmd) {
                 SkipCommandByNodeId(transactionVec, pid);
             }
             std::sort(transactionVec.begin(), transactionVec.end(), Compare);
         }
-        if (uifirstAndCacheCmdEnabled) {
+        if (isNeedCacheCmd) {
             CacheCommands();
         }
         CheckAndUpdateTransactionIndex(transactionDataEffective, transactionFlags);
@@ -1053,8 +1078,11 @@ void RSMainThread::ClearGpuCache()
         }
 #else
         auto grContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
-        grContext()->Flush();
-        RS_LOGE("Drawing Unsupport purgeUnlockAndSafeCacheGpuResources");
+        if (grContext) {
+            RS_LOGD("clear gpu cache");
+            grContext->FlushAndSubmit(true);
+            grContext->PurgeUnlockAndSafeCacheGpuResources();
+        }
 #endif
     }, CLEAR_GPU_CACHE, CLEAR_GPU_INTERVAL);
 }
@@ -1910,7 +1938,7 @@ void RSMainThread::ClearTransactionDataPidInfo(pid_t remotePid)
         if (gpuContext == nullptr) {
             return;
         }
-        gpuContext->Flush();
+        gpuContext->FlushAndSubmit(true);
         if (!IsResidentProcess(remotePid)) {
             ReleaseExitSurfaceNodeAllGpuResource(gpuContext);
         } else {
@@ -2027,9 +2055,49 @@ void RSMainThread::TrimMem(std::unordered_set<std::u16string>& argSets, std::str
         MemoryManager::ReleaseAllGpuResource(grContext, tag);
     }
     dumpString.append("trimMem: " + type + "\n");
-#endif
 #else
-    dumpString.append("No GPU in this device");
+    auto gpuContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
+    if (type.empty()) {
+        gpuContext->Flush();
+        SkGraphics::PurgeAllCaches();
+        gpuContext->FreeGpuResources();
+        gpuContext->PurgeUnlockedResources(true);
+#ifdef NEW_RENDER_CONTEXT
+        MemoryHandler::ClearShader();
+#else
+        std::shared_ptr<RenderContext> rendercontext = std::make_shared<RenderContext>();
+        rendercontext->CleanAllShaderCache();
+#endif
+        gpuContext->FlushAndSubmit(true);
+    } else if (type == "cpu") {
+        gpuContext->Flush();
+        SkGraphics::PurgeAllCaches();
+        gpuContext->FlushAndSubmit(true);
+    } else if (type == "gpu") {
+        gpuContext->Flush();
+        gpuContext->FreeGpuResources();
+        gpuContext->FlushAndSubmit(true);
+    } else if (type == "uihidden") {
+        gpuContext->Flush();
+        gpuContext->PurgeUnlockedResources(true);
+        gpuContext->FlushAndSubmit(true);
+    } else if (type == "shader") {
+#ifdef NEW_RENDER_CONTEXT
+        MemoryHandler::ClearShader();
+#else
+        std::shared_ptr<RenderContext> rendercontext = std::make_shared<RenderContext>();
+        rendercontext->CleanAllShaderCache();
+#endif
+    } else if (type == "flushcache") {
+        int ret = mallopt(M_FLUSH_THREAD_CACHE, 0);
+        dumpString.append("flushcache " + std::to_string(ret) + "\n");
+    } else {
+        uint32_t pid = static_cast<uint32_t>(std::stoll(type));
+        Drawing::GPUResourceTag tag(pid, 0, 0, 0);
+        MemoryManager::ReleaseAllGpuResource(gpuContext, tag);
+    }
+    dumpString.append("trimMem: " + type + "\n");
+#endif
 #endif
 }
 

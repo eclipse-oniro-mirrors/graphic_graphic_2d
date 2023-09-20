@@ -89,6 +89,9 @@ public:
         OVAL_OPITEM,
         CIRCLE_OPITEM,
         COLOR_OPITEM,
+        IMAGE_NINE_OPITEM,
+        IMAGE_ANNOTATION_OPITEM,
+        IMAGE_LATTICE_OPITEM,
         PATH_OPITEM,
         BACKGROUND_OPITEM,
         SHADOW_OPITEM,
@@ -119,6 +122,9 @@ public:
         CLIP_ADAPTIVE_ROUND_RECT_OPITEM,
         ADAPTIVE_IMAGE_OPITEM,
         ADAPTIVE_PIXELMAP_OPITEM,
+        REGION_OPITEM,
+        PATCH_OPITEM,
+        EDGEAAQUAD_OPITEM,
     };
 };
 
@@ -295,6 +301,101 @@ private:
     Color ambientColor_;
     Color spotColor_;
     ShadowFlags flag_;
+};
+
+class DrawRegionOpItem : public DrawOpItem {
+public:
+    DrawRegionOpItem(const CmdListHandle& path);
+    ~DrawRegionOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas, const CmdList& cmdList) const;
+
+private:
+    CmdListHandle region_;
+};
+
+class DrawPatchOpItem : public DrawOpItem {
+public:
+    explicit DrawPatchOpItem(const std::pair<uint32_t, size_t> cubics, const std::pair<uint32_t, size_t> colors,
+        const std::pair<uint32_t, size_t> texCoords, BlendMode mode);
+    ~DrawPatchOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas, const CmdList& cmdList) const;
+
+private:
+    std::pair<uint32_t, size_t> cubics_;
+    std::pair<uint32_t, size_t> colors_;
+    std::pair<uint32_t, size_t> texCoords_;
+    BlendMode mode_;
+};
+
+class DrawEdgeAAQuadOpItem : public DrawOpItem {
+public:
+    explicit DrawEdgeAAQuadOpItem(const Rect& rect, const std::pair<uint32_t, size_t> clipQuad,
+        QuadAAFlags aaFlags, ColorQuad color, BlendMode mode);
+    ~DrawEdgeAAQuadOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas, const CmdList& cmdList) const;
+
+private:
+    Rect rect_;
+    std::pair<uint32_t, size_t> clipQuad_;
+    QuadAAFlags aaFlags_;
+    ColorQuad color_;
+    BlendMode mode_;
+};
+
+class DrawImageNineOpItem : public DrawOpItem {
+public:
+    explicit DrawImageNineOpItem(const ImageHandle& image, const RectI& center, const Rect& dst,
+        FilterMode filterMode, const BrushHandle& brushHandle, bool hasBrush);
+    ~DrawImageNineOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas, const CmdList& cmdList) const;
+
+private:
+    ImageHandle image_;
+    RectI center_;
+    Rect dst_;
+    FilterMode filter_;
+    BrushHandle brushHandle_;
+    bool hasBrush_;
+};
+
+class DrawAnnotationOpItem : public DrawOpItem {
+public:
+    explicit DrawAnnotationOpItem(const Rect& rect, const char* key, const Data& data);
+    ~DrawAnnotationOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas) const;
+
+private:
+    Rect rect_;
+    const char* key_;
+    const Data data_;
+};
+
+class DrawImageLatticeOpItem : public DrawOpItem {
+public:
+    explicit DrawImageLatticeOpItem(const ImageHandle& image, const Lattice& lattice, const Rect& dst,
+        FilterMode filterMode, const BrushHandle& brushHandle, bool hasBrush);
+    ~DrawImageLatticeOpItem() = default;
+
+    static void Playback(CanvasPlayer& player, const void* opItem);
+    void Playback(Canvas& canvas, const CmdList& cmdList) const;
+
+private:
+    ImageHandle image_;
+    Lattice lattice_;
+    Rect dst_;
+    FilterMode filter_;
+    BrushHandle brushHandle_;
+    bool hasBrush_;
 };
 
 class DrawBitmapOpItem : public DrawOpItem {

@@ -40,6 +40,31 @@ enum class PointMode {
     POLYGON_POINTMODE, // draw the array of points as a open polygon
 };
 
+enum class QuadAAFlags {
+    LEFT_QUADAAFLAG = 1,
+    TOP_QUADAAFLAG = 2,
+    RIGHT_QUADAAFLAG = 4,
+    BOTTOM_QUADAAFLAG = 8,
+    NONE_QUADAAFLAGS = 0,
+    ALL_QUADAAFLAGS = 15,
+};
+
+const int DIVES_SIZE = 2;
+struct Lattice {
+    enum RectType : uint8_t {
+        DEFAULT = 0,
+        TRANSPARENT,
+        FIXEDCOLOR,
+    };
+    int fXDivs[DIVES_SIZE];
+    int fYDivs[DIVES_SIZE];
+    RectType fRectTypes = RectType::DEFAULT;
+    int fXCount;
+    int fYCount;
+    RectI fBounds;
+    Color fColors;
+};
+
 /*
  * @brief  Contains the option used to create the layer.
  */
@@ -177,13 +202,24 @@ public:
         Color ambientColor, Color spotColor, ShadowFlags flag);
 
     // color
-    virtual void DrawColor(ColorQuad color, BlendMode mode);
+    virtual void DrawColor(ColorQuad color, BlendMode mode = BlendMode::SRC_OVER);
 
     /*
      * @brief         Draws Region on the Canvas.
      * @param region  Region to draw.
      */
     virtual void DrawRegion(const Region& region);
+
+    virtual void DrawPatch(const Point cubics[12], const ColorQuad colors[4],
+        const Point texCoords[4], BlendMode mode);
+    virtual void DrawEdgeAAQuad(const Rect& rect, const Point clip[4],
+        QuadAAFlags aaFlags, ColorQuad color, BlendMode mode);
+
+    virtual void DrawImageNine(const Image* image, const RectI& center, const Rect& dst,
+        FilterMode filter, const Brush* brush = nullptr);
+    virtual void DrawAnnotation(const Rect& rect, const char* key, const Data& data);
+    virtual void DrawImageLattice(const Image* image, const Lattice& lattice, const Rect& dst,
+        FilterMode filter, const Brush* brush = nullptr);
 
     // image
     virtual void DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py);
@@ -232,6 +268,17 @@ public:
      * @param op           To apply to clip.The default value is ClipOp::INTERSECT
      */
     virtual void ClipRegion(const Region& region, ClipOp op = ClipOp::INTERSECT);
+
+    /*
+     * @brief  Returns true if clip is empty.
+     */
+    virtual bool IsClipEmpty();
+
+    /*
+     * @brief  Returns true if clip is emptySkRect rect, transformed by SkMatrix, 
+     *         can be quickly determined to be outside of clip.
+     */
+    virtual bool QuickReject(const Rect& rect);
 
     // transform
     virtual void SetMatrix(const Matrix& matrix);

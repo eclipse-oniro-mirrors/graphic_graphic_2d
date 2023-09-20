@@ -55,6 +55,8 @@ namespace Drawing {
 enum class SrcRectConstraint;
 class SaveLayerOps;
 enum class PointMode;
+enum class QuadAAFlags;
+struct Lattice;
 
 class CoreCanvasImpl : public BaseImpl {
 public:
@@ -94,6 +96,16 @@ public:
     virtual void DrawShadow(const Path& path, const Point3& planeParams, const Point3& devLightPos, scalar lightRadius,
         Color ambientColor, Color spotColor, ShadowFlags flag) = 0;
     virtual void DrawRegion(const Region& region) = 0;
+    virtual void DrawPatch(const Point cubics[12], const ColorQuad colors[4],
+        const Point texCoords[4], BlendMode mode) = 0;
+    virtual void DrawEdgeAAQuad(const Rect& rect, const Point clip[4],
+        QuadAAFlags aaFlags, ColorQuad color, BlendMode mode) = 0;
+
+    virtual void DrawImageNine(const Image* image, const RectI& center, const Rect& dst,
+        FilterMode filter, const Brush* brush = nullptr) = 0;
+    virtual void DrawAnnotation(const Rect& rect, const char* key, const Data& data) = 0;
+    virtual void DrawImageLattice(const Image* image, const Lattice& lattice, const Rect& dst,
+        FilterMode filter, const Brush* brush = nullptr) = 0;
 
     // color
     virtual void DrawColor(ColorQuad color, BlendMode mode) = 0;
@@ -115,6 +127,8 @@ public:
     virtual void ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias = false) = 0;
     virtual void ClipPath(const Path& path, ClipOp op, bool doAntiAlias = false) = 0;
     virtual void ClipRegion(const Region& region, ClipOp op = ClipOp::INTERSECT) = 0;
+    virtual bool IsClipEmpty() = 0;
+    virtual bool QuickReject(const Rect& rect) = 0;
 
     // transform
     virtual void SetMatrix(const Matrix& matrix) = 0;

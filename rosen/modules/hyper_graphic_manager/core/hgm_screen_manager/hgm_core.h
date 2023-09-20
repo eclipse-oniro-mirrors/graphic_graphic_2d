@@ -22,6 +22,7 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
+#include <unordered_set>
 
 #include <event_handler.h>
 
@@ -64,7 +65,6 @@ public:
     int32_t SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate);
     static int32_t SetRateAndResolution(ScreenId id, int32_t sceneId, int32_t rate, int32_t width, int32_t height);
     int32_t SetRefreshRateMode(RefreshRateMode refreshRateMode);
-    int32_t SetDefaultRefreshRateMode();
 
     // screen interface
     int32_t AddScreen(ScreenId id, int32_t defaultMode);
@@ -72,6 +72,7 @@ public:
     int32_t AddScreenInfo(ScreenId id, int32_t width, int32_t height, uint32_t rate, int32_t mode);
     int32_t RefreshBundleName(const std::string& name);
     uint32_t GetScreenCurrentRefreshRate(ScreenId id) const;
+    int32_t GetCurrentRefreshRateMode() const;
     sptr<HgmScreen> GetScreen(ScreenId id) const;
     std::vector<uint32_t> GetScreenSupportedRefreshRates(ScreenId id);
     std::vector<int32_t> GetScreenComponentRefreshRates(ScreenId id);
@@ -84,6 +85,10 @@ public:
     void ResetScreenTimer(ScreenId screenId) const;
     void InsertAndStartScreenTimer(ScreenId screenId, int32_t interval,
         std::function<void()> resetCallback, std::function<void()> expiredCallback);
+    void StartScreenScene(SceneType sceceType);
+    void StopScreenScene(SceneType sceceType);
+    int32_t GetScenePreferred() const;
+    int32_t SetModeBySettingConfig();
 private:
     HgmCore();
     ~HgmCore() = default;
@@ -95,7 +100,6 @@ private:
     bool Init();
     int32_t InitXmlConfig();
     int32_t SetCustomRateMode(RefreshRateMode mode);
-    int32_t SetModeBySettingConfig();
     int32_t RequestBundlePermission(int32_t rate);
 
     bool isEnabled_ = true;
@@ -116,6 +120,7 @@ private:
     std::shared_ptr<HgmFrameRateTool> hgmFrameRateTool_ = nullptr;
     ScreenId activeScreenId_ = 0;
     std::unordered_map<ScreenId, std::shared_ptr<HgmOneShotTimer>> screenTimerMap_;
+    std::unordered_set<SceneType> screenSceneSet_;
 };
 } // namespace OHOS::Rosen
 #endif // HGM_CORE_H

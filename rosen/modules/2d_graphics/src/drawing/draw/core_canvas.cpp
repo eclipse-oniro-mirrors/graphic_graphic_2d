@@ -144,9 +144,37 @@ void CoreCanvas::DrawRegion(const Region& region)
     impl_->DrawRegion(region);
 }
 
+void CoreCanvas::DrawPatch(const Point cubics[12], const ColorQuad colors[4], const Point texCoords[4], BlendMode mode)
+{
+    impl_->DrawPatch(cubics, colors, texCoords, mode);
+}
+
+void CoreCanvas::DrawEdgeAAQuad(const Rect& rect, const Point clip[4],
+    QuadAAFlags aaFlags, ColorQuad color, BlendMode mode)
+{
+    impl_->DrawEdgeAAQuad(rect, clip, aaFlags, color, mode);
+}
+
 void CoreCanvas::DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py)
 {
     impl_->DrawBitmap(bitmap, px, py);
+}
+
+void CoreCanvas::DrawImageNine(const Image* image, const RectI& center, const Rect& dst,
+    FilterMode filter, const Brush* brush)
+{
+    impl_->DrawImageNine(image, center, dst, filter, brush);
+}
+
+void CoreCanvas::DrawAnnotation(const Rect& rect, const char* key, const Data& data)
+{
+    impl_->DrawAnnotation(rect, key, data);
+}
+
+void CoreCanvas::DrawImageLattice(const Image* image, const Lattice& lattice, const Rect& dst,
+    FilterMode filter, const Brush* brush)
+{
+    impl_->DrawImageLattice(image, lattice, dst, filter, brush);
 }
 
 void CoreCanvas::DrawBitmap(Media::PixelMap& pixelMap, const scalar px, const scalar py)
@@ -198,6 +226,16 @@ void CoreCanvas::ClipPath(const Path& path, ClipOp op, bool doAntiAlias)
 void CoreCanvas::ClipRegion(const Region& region, ClipOp op)
 {
     impl_->ClipRegion(region, op);
+}
+
+bool CoreCanvas::IsClipEmpty()
+{
+    return impl_->IsClipEmpty();
+}
+
+bool CoreCanvas::QuickReject(const Rect& rect)
+{
+    return impl_->QuickReject(rect);
 }
 
 void CoreCanvas::SetMatrix(const Matrix& matrix)
