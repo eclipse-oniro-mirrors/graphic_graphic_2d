@@ -203,6 +203,14 @@ void RSPaintFilterCanvasBase::ClipRect(const Drawing::Rect& rect, Drawing::ClipO
     }
 }
 
+void RSPaintFilterCanvasBase::ClipIRect(const Drawing::RectI& rect, Drawing::ClipOp op)
+{
+    Canvas::ClipIRect(rect, op);
+    if (canvas_ != nullptr) {
+        canvas_->ClipIRect(rect, op);
+    }
+}
+
 void RSPaintFilterCanvasBase::ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias)
 {
     Canvas::ClipRoundRect(roundRect, op, doAntiAlias);
@@ -318,6 +326,14 @@ void RSPaintFilterCanvasBase::Restore()
     Canvas::Restore();
     if (canvas_ != nullptr) {
         canvas_->Restore();
+    }
+}
+
+void RSPaintFilterCanvasBase::Discard()
+{
+    Canvas::Discard();
+    if (canvas_ != nullptr) {
+        canvas_->Discard();
     }
 }
 

@@ -68,6 +68,12 @@ ImageInfo CoreCanvas::GetImageInfo()
     return impl_->GetImageInfo();
 }
 
+bool CoreCanvas::ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+    int srcX, int srcY)
+{
+    return impl_->ReadPixels(dstInfo, dstPixels, dstRowBytes, srcX, srcY);
+}
+
 void CoreCanvas::DrawPoint(const Point& point)
 {
     impl_->DrawPoint(point);
@@ -185,6 +191,11 @@ void CoreCanvas::ClipRect(const Rect& rect, ClipOp op, bool doAntiAlias)
     impl_->ClipRect(rect, op, doAntiAlias);
 }
 
+void CoreCanvas::ClipIRect(const RectI& rect, ClipOp op)
+{
+    impl_->ClipIRect(rect, op);
+}
+
 void CoreCanvas::ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias)
 {
     impl_->ClipRoundRect(roundRect, op, doAntiAlias);
@@ -263,6 +274,11 @@ void CoreCanvas::Restore()
 uint32_t CoreCanvas::GetSaveCount() const
 {
     return impl_->GetSaveCount();
+}
+
+void CoreCanvas::Discard()
+{
+    return impl_->Discard();
 }
 
 CoreCanvas& CoreCanvas::AttachPen(const Pen& pen)
