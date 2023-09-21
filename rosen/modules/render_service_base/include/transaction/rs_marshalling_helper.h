@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <optional>
+#include <thread>
 #include "common/rs_macros.h"
 #ifdef USE_ROSEN_DRAWING
 #include "image/image.h"
@@ -346,7 +347,17 @@ public:
     static bool DserializeInternal(Parcel& parcel, sk_sp<SkTextBlob>& val,
         const SkDeserialProcs& procs, sk_sp<SkData>& data);
 #endif
-
+    static void BeginNoSharedMem(std::thread::id tid) {
+        useSharedMem_ = false;
+        tid_ = tid;
+    }
+    static void EndNoSharedMem() {
+        useSharedMem_ = true;
+        tid_.__reset();
+    }
+    static bool GetUseSharedMem() {
+        return useSharedMem_;
+    }
 private:
     static bool WriteToParcel(Parcel& parcel, const void* data, size_t size);
     static const void* ReadFromParcel(Parcel& parcel, size_t size);
@@ -358,6 +369,8 @@ private:
 
     static constexpr size_t MAX_DATA_SIZE = 128 * 1024 * 1024; // 128M
     static constexpr size_t MIN_DATA_SIZE = 8 * 1024;          // 8k
+    static std::thread::id tid_;
+    static bool useSharedMem_;
 };
 
 } // namespace Rosen
