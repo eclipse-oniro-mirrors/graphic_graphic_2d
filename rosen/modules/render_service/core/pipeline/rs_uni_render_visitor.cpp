@@ -73,6 +73,9 @@ constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
 static std::map<NodeId, uint32_t> cacheRenderNodeMap = {};
 static uint32_t cacheReuseTimes = 0;
 static std::mutex cacheRenderNodeMapMutex;
+static std::mutex groupedTransitionNodesMutex;
+using groupedTransitionNodesType = std::unordered_map<NodeId, std::pair<RSUniRenderVisitor::RenderParam,
+    std::unordered_map<NodeId, RSUniRenderVisitor::RenderParam>>>;
 static std::unordered_map<NodeId, std::pair<RSUniRenderVisitor::RenderParam,
     std::unordered_map<NodeId, RSUniRenderVisitor::RenderParam>>> groupedTransitionNodes = {};
 
@@ -2131,15 +2134,18 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
     }
 #endif
     processor_->PostProcess();
-    EraseIf(groupedTransitionNodes, [](auto& iter) -> bool {
-        auto& [id, pair] = iter;
-        if (pair.second.empty()) {
-            return true;
-        }
-        const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
-        auto node = nodeMap.GetRenderNode<RSRenderNode>(iter.first);
-        return node ? (!node->IsOnTheTree()) : true;
-    });
+    {
+        std::lock_guard<std::mutex> lock(groupedTransitionNodesMutex);
+        EraseIf(groupedTransitionNodes, [](auto& iter) -> bool {
+            auto& [id, pair] = iter;
+            if (pair.second.empty()) {
+                return true;
+            }
+            const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
+            auto node = nodeMap.GetRenderNode<RSRenderNode>(iter.first);
+            return node ? (!node->IsOnTheTree()) : true;
+        });
+    }
     RSMainThread::Instance()->ClearGpuCache();
     RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode end");
 }
@@ -3321,22 +3327,33 @@ void RSUniRenderVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
 
 bool RSUniRenderVisitor::GenerateNodeContentCache(RSRenderNode& node)
 {
-    std::lock_guard<std::mutex> lock(cacheRenderNodeMapMutex);
     // Node cannot have cache.
     if (node.GetDrawingCacheType() == RSDrawingCacheType::DISABLED_CACHE) {
         if (cacheRenderNodeMap.count(node.GetId()) > 0) {
             node.SetCacheType(CacheType::NONE);
             RSUniRenderUtil::ClearCacheSurface(node, threadIndex_);
-            cacheRenderNodeMap.erase(node.GetId());
-            groupedTransitionNodes.erase(node.GetId());
+            {
+                std::lock_guard<std::mutex> lock(cacheRenderNodeMapMutex);
+                cacheRenderNodeMap.erase(node.GetId());
+            }
+            {
+                std::lock_guard<std::mutex> lock(groupedTransitionNodesMutex);
+                groupedTransitionNodes.erase(node.GetId());
+            }
         }
         return false;
     }
 
     // The node goes down the tree to clear the cache.
     if (node.GetCacheType() == CacheType::NONE && cacheRenderNodeMap.count(node.GetId()) > 0) {
-        cacheRenderNodeMap.erase(node.GetId());
-        groupedTransitionNodes.erase(node.GetId());
+        {
+            std::lock_guard<std::mutex> lock(cacheRenderNodeMapMutex);
+            cacheRenderNodeMap.erase(node.GetId());
+        }
+        {
+            std::lock_guard<std::mutex> lock(groupedTransitionNodesMutex);
+            groupedTransitionNodes.erase(node.GetId());
+        }
         return false;
     }
     return true;
@@ -3358,7 +3375,10 @@ bool RSUniRenderVisitor::InitNodeCache(RSRenderNode& node)
             RenderParam val { node.shared_from_this(), canvas_->GetAlpha(), canvas_->GetTotalMatrix() };
 #endif
             curGroupedNodes_.push(val);
-            groupedTransitionNodes[node.GetId()] = { val, {} };
+            {
+                std::lock_guard<std::mutex> lock(groupedTransitionNodesMutex);
+                groupedTransitionNodes[node.GetId()] = { val, {} };
+            }
             node.SetCacheType(CacheType::CONTENT);
             RSUniRenderUtil::ClearCacheSurface(node, threadIndex_);
             if (UpdateCacheSurface(node)) {
@@ -3417,7 +3437,10 @@ void RSUniRenderVisitor::UpdateCacheRenderNodeMap(RSRenderNode& node)
             RenderParam val { node.shared_from_this(), canvas_->GetAlpha(), canvas_->GetTotalMatrix() };
 #endif
             curGroupedNodes_.push(val);
-            groupedTransitionNodes[node.GetId()] = { val, {} };
+            {
+                std::lock_guard<std::mutex> lock(groupedTransitionNodesMutex);
+                groupedTransitionNodes[node.GetId()] = { val, {} };
+            }
             {
                 std::lock_guard<std::mutex> lock(cacheRenderNodeMapMutex);
                 updateTimes = cacheRenderNodeMap[node.GetId()] + 1;
@@ -3455,7 +3478,10 @@ void RSUniRenderVisitor::UpdateCacheRenderNodeMap(RSRenderNode& node)
             RenderParam val { node.shared_from_this(), canvas_->GetAlpha(), canvas_->GetTotalMatrix() };
 #endif
             curGroupedNodes_.push(val);
-            groupedTransitionNodes[node.GetId()] = { val, {} };
+            {
+                std::lock_guard<std::mutex> lock(groupedTransitionNodesMutex);
+                groupedTransitionNodes[node.GetId()] = { val, {} };
+            }
             node.SetCacheType(CacheType::CONTENT);
             if (UpdateCacheSurface(node)) {
                 node.UpdateCompletedCacheSurface();
@@ -3873,8 +3899,12 @@ bool RSUniRenderVisitor::ProcessSharedTransitionNode(RSBaseRenderNode& node)
         unpairedTransitionNodes_.erase(existingNodeIter);
         return true;
     }
-
-    for (auto& [unused, pair] : groupedTransitionNodes) {
+    groupedTransitionNodesType nodes;
+    {
+        std::lock_guard<std::mutex> lock(groupedTransitionNodesMutex);
+        nodes = groupedTransitionNodes;
+    }
+    for (auto& [unused, pair] : nodes) {
         if (auto existingNodeIter = pair.second.find(key); existingNodeIter != pair.second.end()) {
             RSAutoCanvasRestore acr(canvas_);
             // restore render context and process the paired node.
@@ -3924,7 +3954,10 @@ bool RSUniRenderVisitor::ProcessSharedTransitionNode(RSBaseRenderNode& node)
         }
         RenderParam value { node.shared_from_this(), canvas_->GetAlpha() / alpha, matrix };
 #endif
-        groupedTransitionNodes[child->GetId()].second.emplace(key, std::move(value));
+        {
+            std::lock_guard<std::mutex> lock(groupedTransitionNodesMutex);
+            groupedTransitionNodes[child->GetId()].second.emplace(key, std::move(value));
+        }
         return false;
     }
 
