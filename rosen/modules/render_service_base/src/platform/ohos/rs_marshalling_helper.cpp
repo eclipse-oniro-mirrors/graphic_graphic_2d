@@ -80,9 +80,6 @@
 #include "render/rs_path.h"
 #include "render/rs_shader.h"
 #include "transaction/rs_ashmem_helper.h"
-#ifdef RS_ENABLE_RECORDING
-#include "benchmarks/rs_recording_thread.h"
-#endif
 #if defined (ENABLE_DDGR_OPTIMIZE)
 #include <sys/mman.h>
 #include "securec.h"
@@ -95,6 +92,9 @@
 namespace OHOS {
 namespace Rosen {
 
+    bool RSMarshallingHelper::useSharedMem_ = true;
+    std::thread::id RSMarshallingHelper::tid_ = std::thread::id();
+ 
 #define MARSHALLING_AND_UNMARSHALLING(TYPE, TYPENAME)                      \
     bool RSMarshallingHelper::Marshalling(Parcel& parcel, const TYPE& val) \
     {                                                                      \
@@ -166,12 +166,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkData>& val)
         ROSEN_LOGE("unirender: failed RSMarshallingHelper::Unmarshalling SkData");
         return false;
     }
-#ifdef RS_ENABLE_RECORDING
-    if (static_cast<uint32_t>(size) < MIN_DATA_SIZE ||
-        parcel.GetMaxCapacity() == RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY) {
-#else
-    if (static_cast<uint32_t>(size) < MIN_DATA_SIZE) {
-#endif
+    if (static_cast<uint32_t>(size) < MIN_DATA_SIZE || (!useSharedMem_ && tid_ == std::this_thread::get_id())) {
         val = SkData::MakeWithoutCopy(data, size);
     } else {
         val = SkData::MakeFromMalloc(data, size);
@@ -191,12 +186,7 @@ bool RSMarshallingHelper::UnmarshallingWithCopy(Parcel& parcel, sk_sp<SkData>& v
 {
     bool success = Unmarshalling(parcel, val);
     if (success) {
-#ifdef RS_ENABLE_RECORDING
-        if (val && (val->size() < MIN_DATA_SIZE ||
-                       parcel.GetMaxCapacity() == RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY)) {
-#else
-        if (val && val->size() < MIN_DATA_SIZE) {
-#endif
+        if (val && (val->size() < MIN_DATA_SIZE || (!useSharedMem_ && tid_ == std::this_thread::get_id()))) {
             val = SkData::MakeWithCopy(val->data(), val->size());
         }
     }
@@ -542,11 +532,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkImage>& val, voi
             }
             colorSpace = SkColorSpace::Deserialize(data, size);
 
-#ifdef RS_ENABLE_RECORDING
-            if (size >= MIN_DATA_SIZE && parcel.GetMaxCapacity() != RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY) {
-#else
-            if (size >= MIN_DATA_SIZE) {
-#endif
+            if (size >= MIN_DATA_SIZE && useSharedMem_) {
                 free(const_cast<void*>(data));
             }
         }
@@ -554,21 +540,13 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkImage>& val, voi
         // if pixelmapSize >= MIN_DATA_SIZE(copyFromAshMem). record this memory size
         // use this proc to follow release step
         SkImageInfo imageInfo = SkImageInfo::Make(width, height, colorType, alphaType, colorSpace);
-#ifdef RS_ENABLE_RECORDING
         auto skData =
-            (pixmapSize < MIN_DATA_SIZE || parcel.GetMaxCapacity() == RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY)
+            (pixmapSize < MIN_DATA_SIZE || (!useSharedMem_ && tid_ == std::this_thread::get_id()))
                 ? SkData::MakeWithCopy(addr, pixmapSize)
-#else
-        auto skData = pixmapSize < MIN_DATA_SIZE ? SkData::MakeWithCopy(addr, pixmapSize)
-#endif
                 : SkData::MakeWithProc(addr, pixmapSize, sk_free_releaseproc, nullptr);
         val = SkImage::MakeRasterData(imageInfo, skData, rb);
         // add to MemoryTrack for memoryManager
-#ifdef RS_ENABLE_RECORDING
-        if (pixmapSize >= MIN_DATA_SIZE && parcel.GetMaxCapacity() != RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY) {
-#else
-        if (pixmapSize >= MIN_DATA_SIZE) {
-#endif
+        if (pixmapSize >= MIN_DATA_SIZE && useSharedMem_) {
             MemoryInfo info = { pixmapSize, 0, 0, MEMORY_TYPE::MEM_SKIMAGE };
             MemoryTrack::Instance().AddPictureRecord(addr, info);
             imagepixelAddr = const_cast<void*>(addr);
@@ -841,11 +819,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SkBitmap& val)
         }
         colorSpace = SkColorSpace::Deserialize(data, size);
 
-#ifdef RS_ENABLE_RECORDING
-        if (size >= MIN_DATA_SIZE && parcel.GetMaxCapacity() != RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY) {
-#else
-        if (size >= MIN_DATA_SIZE) {
-#endif
+        if (size >= MIN_DATA_SIZE && useSharedMem_) {
             free(const_cast<void*>(data));
         }
     }
@@ -2023,11 +1997,7 @@ bool RSMarshallingHelper::WriteToParcel(Parcel& parcel, const void* data, size_t
     if (!parcel.WriteUint32(size)) {
         return false;
     }
-#ifdef RS_ENABLE_RECORDING
-    if (size < MIN_DATA_SIZE || parcel.GetMaxCapacity() == RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY) {
-#else
-    if (size < MIN_DATA_SIZE) {
-#endif
+    if (size < MIN_DATA_SIZE || (!useSharedMem_ && tid_ == std::this_thread::get_id())) {
         return parcel.WriteUnpadBuffer(data, size);
     }
 
@@ -2056,12 +2026,8 @@ const void* RSMarshallingHelper::ReadFromParcel(Parcel& parcel, size_t size)
         ROSEN_LOGE("RSMarshallingHelper::ReadFromParcel size mismatch");
         return nullptr;
     }
-#ifdef RS_ENABLE_RECORDING
-    if (static_cast<unsigned int>(bufferSize) < MIN_DATA_SIZE ||
-        parcel.GetMaxCapacity() == RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY) {
-#else
-    if (static_cast<unsigned int>(bufferSize) < MIN_DATA_SIZE) {
-#endif
+    if (static_cast<unsigned int>(bufferSize) < MIN_DATA_SIZE  ||
+        (!useSharedMem_ && tid_ == std::this_thread::get_id())) {
         return parcel.ReadUnpadBuffer(size);
     }
     // read from ashmem
@@ -2081,12 +2047,8 @@ bool RSMarshallingHelper::SkipFromParcel(Parcel& parcel, size_t size)
         ROSEN_LOGE("RSMarshallingHelper::SkipFromParcel size mismatch");
         return false;
     }
-#ifdef RS_ENABLE_RECORDING
     if (static_cast<unsigned int>(bufferSize) < MIN_DATA_SIZE ||
-        parcel.GetMaxCapacity() == RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY) {
-#else
-    if (static_cast<unsigned int>(bufferSize) < MIN_DATA_SIZE) {
-#endif
+        (!useSharedMem_ && tid_ == std::this_thread::get_id())) {
         parcel.SkipBytes(size);
         return true;
     }
