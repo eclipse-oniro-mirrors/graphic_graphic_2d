@@ -2235,7 +2235,7 @@ void RSProperties::OnApplyModifiers()
             CalculateFrameOffset();
         }
         // frame and bounds are the same, no need to clip twice
-        if (clipToFrame_ && clipToBounds_ && frameOffsetX_ == 0. && frameOffsetY_ == 0.) {
+        if (clipToFrame_ && clipToBounds_ && frameOffsetX_ == 0 && frameOffsetY_ == 0) {
             clipToFrame_ = false;
         }
     }
