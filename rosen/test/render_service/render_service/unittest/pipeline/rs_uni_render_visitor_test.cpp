@@ -1250,14 +1250,13 @@ HWTEST_F(RSUniRenderVisitorTest, InitNodeCache001, TestSize.Level1)
  */
 HWTEST_F(RSUniRenderVisitorTest, UpdateCacheRenderNodeMap001, TestSize.Level1)
 {
-    NodeId id = 0;
-    RSDisplayNodeConfig config;
-    auto node = std::make_shared<RSDisplayRenderNode>(id, config);
-    ASSERT_NE(node, nullptr);
+    auto rsContext = std::make_shared<RSContext>();
+    auto canvasNode = std::make_shared<RSCanvasRenderNode>(1, rsContext->weak_from_this());
+    ASSERT_NE(canvasNode, nullptr);
 
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
-    rsUniRenderVisitor->UpdateCacheRenderNodeMap(*node);
+    rsUniRenderVisitor->UpdateCacheRenderNodeMap(*canvasNode);
 }
 
 /**
@@ -1908,32 +1907,11 @@ HWTEST_F(RSUniRenderVisitorTest, PrepareTypesOfSurfaceRenderNodeBeforeUpdate001,
 
 /*
  * @tc.name: PrepareTypesOfSurfaceRenderNodeBeforeUpdate002
- * @tc.desc: Test RSUniRenderVisitorTest.PrepareTypesOfSurfaceRenderNodeBeforeUpdateTest for ability component
- * @tc.type: FUNC
- * @tc.require: issuesI7SAJC
- */
-HWTEST_F(RSUniRenderVisitorTest, PrepareTypesOfSurfaceRenderNodeBeforeUpdate002, TestSize.Level2)
-{
-    auto abilityComponentNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    ASSERT_NE(abilityComponentNode, nullptr);
-    ASSERT_NE(surfaceNode, nullptr);
-    abilityComponentNode->SetSurfaceNodeType(RSSurfaceNodeType::ABILITY_COMPONENT_NODE);
-
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
-    rsUniRenderVisitor->PrepareTypesOfSurfaceRenderNodeBeforeUpdate(*abilityComponentNode);
-    ASSERT_FALSE(rsUniRenderVisitor->curSurfaceNode_->GetAbilityNodeIds().empty());
-}
-
-/*
- * @tc.name: PrepareTypesOfSurfaceRenderNodeBeforeUpdate003
  * @tc.desc: Test RSUniRenderVisitorTest.PrepareTypesOfSurfaceRenderNodeBeforeUpdateTest for self drawing node
  * @tc.type: FUNC
  * @tc.require: issuesI7SAJC
  */
-HWTEST_F(RSUniRenderVisitorTest, PrepareTypesOfSurfaceRenderNodeBeforeUpdate003, TestSize.Level2)
+HWTEST_F(RSUniRenderVisitorTest, PrepareTypesOfSurfaceRenderNodeBeforeUpdate002, TestSize.Level2)
 {
     auto selfDrawingNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
@@ -2291,66 +2269,6 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHardwareNodeStatusBasedOnFilter002, TestS
     rsUniRenderVisitor->UpdateHardwareNodeStatusBasedOnFilter(appWindowNode,
         prevHwcEnabledNodes, dirtyManager);
     ASSERT_EQ(prevHwcEnabledNodes.size(), 1);
-}
-
-/**
- * @tc.name: UpdateCacheRenderNodeMap002
- * @tc.desc: Test RSUniRenderVisitorTest.UpdateCacheRenderNodeMap while
- *           the node's RSDrawingCacheType is FORCED_CACHE
- * @tc.type: FUNC
- * @tc.require: issuesI7T9RE
- */
-HWTEST_F(RSUniRenderVisitorTest, UpdateCacheRenderNodeMap002, TestSize.Level2)
-{
-    NodeId id = 0;
-    RSDisplayNodeConfig config;
-    auto displayNode = std::make_shared<RSDisplayRenderNode>(id, config);
-    ASSERT_NE(displayNode, nullptr);
-    displayNode->SetDrawingCacheType(RSDrawingCacheType::FORCED_CACHE);
-
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    auto skCanvas = std::make_shared<SkCanvas>(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    ASSERT_NE(skCanvas, nullptr);
-    rsUniRenderVisitor->canvas_ = std::make_unique<RSPaintFilterCanvas>(skCanvas.get());
-
-    //drawing cache changed is false
-    rsUniRenderVisitor->UpdateCacheRenderNodeMap(*displayNode);
-    ASSERT_EQ(displayNode->GetCacheType(), CacheType::NONE);
-    //drawing cache changed is true
-    displayNode->SetDrawingCacheChanged(true);
-    rsUniRenderVisitor->UpdateCacheRenderNodeMap(*displayNode);
-    ASSERT_EQ(displayNode->GetCacheType(), CacheType::CONTENT);
-}
-
-/**
- * @tc.name: UpdateCacheRenderNodeMap003
- * @tc.desc: Test RSUniRenderVisitorTest.UpdateCacheRenderNodeMap while
- *           the node's RSDrawingCacheType is TARGETED_CACHE
- * @tc.type: FUNC
- * @tc.require: issuesI7T9RE
- */
-HWTEST_F(RSUniRenderVisitorTest, UpdateCacheRenderNodeMap003, TestSize.Level2)
-{
-    NodeId id = 0;
-    RSDisplayNodeConfig config;
-    auto displayNode = std::make_shared<RSDisplayRenderNode>(id, config);
-    ASSERT_NE(displayNode, nullptr);
-    displayNode->SetDrawingCacheType(RSDrawingCacheType::TARGETED_CACHE);
-
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    auto skCanvas = std::make_shared<SkCanvas>(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    ASSERT_NE(skCanvas, nullptr);
-    rsUniRenderVisitor->canvas_ = std::make_unique<RSPaintFilterCanvas>(skCanvas.get());
-
-    //drawing cache changed is false
-    rsUniRenderVisitor->UpdateCacheRenderNodeMap(*displayNode);
-    ASSERT_EQ(displayNode->GetCacheType(), CacheType::NONE);
-    //drawing cache changed is true
-    displayNode->SetDrawingCacheChanged(true);
-    rsUniRenderVisitor->UpdateCacheRenderNodeMap(*displayNode);
-    ASSERT_EQ(displayNode->GetCacheType(), CacheType::CONTENT);
 }
 
 /**

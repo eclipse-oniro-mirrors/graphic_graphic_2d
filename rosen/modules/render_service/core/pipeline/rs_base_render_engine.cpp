@@ -379,6 +379,11 @@ void RSBaseRenderEngine::SetColorFilterMode(ColorFilterMode mode)
     }
 }
 
+ColorFilterMode RSBaseRenderEngine::GetColorFilterMode()
+{
+    return colorFilterMode_;
+}
+
 void RSBaseRenderEngine::DrawBuffer(RSPaintFilterCanvas& canvas, BufferDrawParam& params)
 {
     RS_OPTIONAL_TRACE_BEGIN("RSBaseRenderEngine::DrawBuffer(CPU)");
