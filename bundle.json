@@ -32,7 +32,8 @@
         "graphic_2d_feature_wuji_enable",
         "graphic_2d_feature_enable_afbc",
         "graphic_2d_feature_freemem_enable",
-        "graphic_2d_feature_parallel_render_enable"
+        "graphic_2d_feature_parallel_render_enable",
+        "graphic_2d_feature_tp_switch_enbale"
       ],
       "rom": "10000KB",
       "ram": "10000KB",
