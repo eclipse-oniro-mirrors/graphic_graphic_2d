@@ -29,7 +29,7 @@
  */
 
 /**
- * @file drawing_font_collection.h
+ * @file drawing_register_font.h
  *
  * @brief Declares functions related to <b>FontCollection</b> in the drawing module.
  *
