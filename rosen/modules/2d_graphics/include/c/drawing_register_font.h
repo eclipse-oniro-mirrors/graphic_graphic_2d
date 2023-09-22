@@ -24,7 +24,7 @@
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
  *
- * @since 8
+ * @since 11
  * @version 1.0
  */
 
@@ -33,7 +33,7 @@
  *
  * @brief Declares functions related to <b>FontCollection</b> in the drawing module.
  *
- * @since 8
+ * @since 11
  * @version 1.0
  */
 
