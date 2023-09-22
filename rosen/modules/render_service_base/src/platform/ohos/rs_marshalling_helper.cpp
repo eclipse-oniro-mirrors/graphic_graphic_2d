@@ -2087,5 +2087,15 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::unique_ptr<OpItem>&
     return true;
 }
 #endif
+
+void RSMarshallingHelper::BeginNoSharedMem(std::thread::id tid) {
+    useSharedMem_ = false;
+    tid_ = tid;
+}
+void RSMarshallingHelper::EndNoShareMem() {
+    useSharedMem_ = true;
+    tid_.__reset();
+}
+
 } // namespace Rosen
 } // namespace OHOS
