@@ -40,6 +40,7 @@ struct CharGroup {
     std::shared_ptr<Typeface> typeface;
     double visibleWidth = 0;
     double invisibleWidth = 0;
+    bool isWordEnd = false;
 
     double GetWidth() const
     {

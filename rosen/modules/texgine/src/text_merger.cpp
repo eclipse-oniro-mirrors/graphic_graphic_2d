@@ -124,6 +124,8 @@ MergeResult TextMerger::MergeSpan(const VariantSpan &span, std::optional<bool> &
         cgs = ts->cgs_;
     } else if (cgs.Get(0).typeface != ts->typeface_) {
         return MergeResult::REJECTED;
+    } else if (cgs.GetBack().isWordEnd) {
+        return MergeResult::REJECTED;
     } else {
         cgs.Merge(ts->cgs_);
     }
