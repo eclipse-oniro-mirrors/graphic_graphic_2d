@@ -477,29 +477,33 @@ void RSMainThread::ProcessCommand()
     }
     if (context_->purgeType_ != RSContext::PurgeType::NONE) {
         context_->purgeType_ = RSContext::PurgeType::NONE;
+        if (handler_) {
+            handler_->PostTask([this]() {
 #ifndef USE_ROSEN_DRAWING
 #ifdef NEW_RENDER_CONTEXT
-        auto grContext = GetRenderEngine()->GetDrawingContext()->GetDrawingContext();
+                auto grContext = GetRenderEngine()->GetDrawingContext()->GetDrawingContext();
 #else
-        auto grContext = GetRenderEngine()->GetRenderContext()->GetGrContext();
+                auto grContext = GetRenderEngine()->GetRenderContext()->GetGrContext();
 #endif
-        if (grContext) {
-            if (context_->purgeType_ == RSContext::PurgeType::PURGE_UNLOCK) {
-                MemoryManager::ReleaseUnlockGpuResource(grContext);
-            } else {
-                MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(grContext);
-            }
-        }
+                if (grContext) {
+                    if (context_->purgeType_ == RSContext::PurgeType::PURGE_UNLOCK) {
+                        MemoryManager::ReleaseUnlockGpuResource(grContext);
+                    } else {
+                        MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(grContext);
+                    }
+                }
 #else
-        auto gpuContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
-        if (gpuContext) {
-            if (context_->purgeType_ == RSContext::PurgeType::PURGE_UNLOCK) {
-                MemoryManager::ReleaseUnlockGpuResource(gpuContext);
-            } else {
-                MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(gpuContext);
-            }
-        }
+                auto gpuContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
+                if (gpuContext) {
+                    if (context_->purgeType_ == RSContext::PurgeType::PURGE_UNLOCK) {
+                        MemoryManager::ReleaseUnlockGpuResource(gpuContext);
+                    } else {
+                        MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(gpuContext);
+                    }
+                }
 #endif
+            }, AppExecFwk::EventQueue::Priority::IDLE);
+        }
     }
     if (RsFrameReport::GetInstance().GetEnable()) {
         RsFrameReport::GetInstance().AnimateStart();
