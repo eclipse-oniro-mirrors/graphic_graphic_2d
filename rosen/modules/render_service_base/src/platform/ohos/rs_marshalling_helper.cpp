@@ -2092,7 +2092,7 @@ void RSMarshallingHelper::BeginNoSharedMem(std::thread::id tid) {
     useSharedMem_ = false;
     tid_ = tid;
 }
-void RSMarshallingHelper::EndNoShareMem() {
+void RSMarshallingHelper::EndNoSharedMem() {
     useSharedMem_ = true;
     tid_.__reset();
 }
