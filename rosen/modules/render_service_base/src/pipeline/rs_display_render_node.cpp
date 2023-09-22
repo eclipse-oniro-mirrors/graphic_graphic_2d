@@ -63,9 +63,16 @@ void RSDisplayRenderNode::Process(const std::shared_ptr<RSNodeVisitor>& visitor)
     visitor->ProcessDisplayRenderNode(*this);
 }
 
-void RSDisplayRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId firstLevelNodeId)
+void RSDisplayRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId firstLevelNodeId,
+    NodeId cacheNodeId)
 {
-    RSRenderNode::SetIsOnTheTree(flag, GetId(), firstLevelNodeId);
+    if (IsSuggestedDrawInGroup()) {
+        cacheNodeId = GetId();
+    }
+    if (cacheNodeId != INVALID_NODEID) {
+        SetDrawingCacheRootId(cacheNodeId);
+    }
+    RSRenderNode::SetIsOnTheTree(flag, GetId(), firstLevelNodeId, cacheNodeId);
 }
 
 RSDisplayRenderNode::CompositeType RSDisplayRenderNode::GetCompositeType() const

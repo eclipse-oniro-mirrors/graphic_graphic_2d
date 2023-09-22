@@ -26,9 +26,10 @@ namespace OHOS {
 namespace Rosen {
 
 enum class QuickSkipPrepareType {
-    DISABLED = 0,                      // 0, disable quick skip preparation
-    STATIC_WINDOW,                     // 1, skip no-command window's preparation
-    STATIC_WIDGET,                     // 2, in case of dirty window, skip static widget's preparation
+    DISABLED = 0,           // 0, disable quick skip preparation
+    STATIC_PROCESS,         // 1, skip no-command process's preparation
+    STATIC_APP_INSTANCE,    // 2, in case of dirty process, skip static app instance's preparation
+    STATIC_CACHE,           // 3, in case of dirty instance, simplify static (drawing)cache's preparation
 };
 
 class RSB_EXPORT RSSystemParameters final {

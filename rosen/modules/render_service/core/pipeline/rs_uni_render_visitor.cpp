@@ -219,6 +219,38 @@ void RSUniRenderVisitor::CopyPropertyForParallelVisitor(RSUniRenderVisitor *main
     isSubThread_ = true;
 }
 
+void RSUniRenderVisitor::UpdateStaticCacheSubTree(const std::shared_ptr<RSRenderNode>& cacheRootNode,
+    const std::list<RSRenderNode::SharedPtr>& children)
+{
+    for (auto& child : children) {
+        if (child == nullptr) {
+            continue;
+        }
+        if (child->GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE) {
+            child->SetDrawingCacheChanged(false);
+        }
+        bool isUpdated = false;
+        // [planning] pay attention to outofparent case
+        // since subtree is 'clean', effect node does not need fully preparation
+        if (auto surfaceNode = child->ReinterpretCastTo<RSSurfaceRenderNode>()) {
+            if (surfaceNode->IsHardwareEnabledType()) {
+                PrepareSurfaceRenderNode(*surfaceNode);
+                isUpdated = true;
+            }
+        }
+        if (child->GetRenderProperties().NeedFilter()) {
+            if (!isUpdated) {
+                child->Update(*curSurfaceDirtyManager_, cacheRootNode, dirtyFlag_, prepareClipRect_);
+            }
+            UpdateForegroundFilterCacheWithDirty(*child, *curSurfaceDirtyManager_);
+            if (curSurfaceNode_ && curSurfaceNode_->GetId() == child->GetInstanceRootNodeId()) {
+                curSurfaceNode_->UpdateChildrenFilterRects(child->GetOldDirtyInSurface());
+            }
+        }
+        UpdateStaticCacheSubTree(cacheRootNode, child->GetSortedChildren());
+    }
+}
+
 void RSUniRenderVisitor::PrepareChildren(RSRenderNode& node)
 {
     // GetSortedChildren() may remove disappearingChildren_ when transition animation end.
@@ -244,36 +276,59 @@ void RSUniRenderVisitor::PrepareChildren(RSRenderNode& node)
     auto parentNode = std::move(logicParentNode_);
     logicParentNode_ = node.weak_from_this();
     node.ResetChildrenRect();
-    UpdateCacheChangeStatus(node);
 
-    auto& property = node.GetMutableRenderProperties();
     float alpha = curAlpha_;
-    curAlpha_ *= property.GetAlpha();
+    curAlpha_ *= node.GetRenderProperties().GetAlpha();
     node.SetGlobalAlpha(curAlpha_);
     auto children = node.GetSortedChildren();
-    for (auto& child : children) {
-        if (UNLIKELY(child->GetSharedTransitionParam().has_value())) {
-            firstVisitedCache_ = INVALID_NODEID;
-            PrepareSharedTransitionNode(*child);
-            curDirty_ = child->IsDirty();
-            child->Prepare(shared_from_this());
-        } else {
+    // check curSurfaceDirtyManager_ for UpdateStaticCacheSubTree calls
+    if (UpdateCacheChangeStatus(node) || curSurfaceDirtyManager_ == nullptr) {
+        for (auto& child : children) {
+            if (UNLIKELY(child->GetSharedTransitionParam().has_value())) {
+                firstVisitedCache_ = INVALID_NODEID;
+                PrepareSharedTransitionNode(*child);
+            }
             curDirty_ = child->IsDirty();
             child->Prepare(shared_from_this());
         }
+        SetNodeCacheChangeStatus(node);
+    } else {
+        RS_OPTIONAL_TRACE_NAME_FMT("UpdateCacheChangeStatus quick skip node %llu", node.GetId());
+        UpdateStaticCacheSubTree(node.ReinterpretCastTo<RSRenderNode>(), children);
     }
+    
     curAlpha_ = alpha;
-
-    SetNodeCacheChangeStatus(node);
     // restore environment variables
     logicParentNode_ = std::move(parentNode);
 }
 
-void RSUniRenderVisitor::UpdateCacheChangeStatus(RSRenderNode& node)
+bool RSUniRenderVisitor::IsDrawingCacheStatic(RSRenderNode& node)
+{
+    // since this function only called by drawing group root
+    // if cache valid, cacheRenderNodeMapCnt > 0
+    // check all dirtynodes of app instance if there's any in cache subtree
+    if (curContentDirty_ || node.GetDrawingCacheChanged() || !node.IsCacheSurfaceValid() ||
+        curSurfaceNode_ == nullptr || curSurfaceNode_->GetId() != node.GetInstanceRootNodeId() ||
+        RSMainThread::Instance()->IsDrawingGroupChanged(node)) {
+        return false;
+    }
+    // simplify Cache status reset
+    node.GetFilterRectsInCache(allCacheFilterRects_);
+    node.SetDrawingCacheChanged(false);
+    if (allCacheFilterRects_.count(node.GetId())) {
+        node.SetChildHasFilter(true);
+        if (const auto directParent = node.GetParent().lock()) {
+            directParent->SetChildHasFilter(true);
+        }
+    }
+    return true;
+}
+
+bool RSUniRenderVisitor::UpdateCacheChangeStatus(RSRenderNode& node)
 {
     node.SetChildHasFilter(false);
     if (!isDrawingCacheEnabled_) {
-        return;
+        return true;
     }
     node.CheckDrawingCacheType();
     if (!node.ShouldPaint() || isSurfaceRotationChanged_) {
@@ -281,7 +336,7 @@ void RSUniRenderVisitor::UpdateCacheChangeStatus(RSRenderNode& node)
     }
     // skip status check if there is no upper cache mark
     if (node.GetDrawingCacheType() == RSDrawingCacheType::DISABLED_CACHE && firstVisitedCache_ == INVALID_NODEID) {
-        return;
+        return true;
     }
     // subroot's dirty and cached filter should be count for parent root
     if (!isDrawingCacheChanged_.empty()) {
@@ -294,6 +349,9 @@ void RSUniRenderVisitor::UpdateCacheChangeStatus(RSRenderNode& node)
     }
     // drawing group root node
     if (node.GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE) {
+        if (isPhone_ && (quickSkipPrepareType_ == QuickSkipPrepareType::STATIC_CACHE) && IsDrawingCacheStatic(node)) {
+            return false;
+        }
         // For rootnode, init drawing changes only if there is any content dirty
         isDrawingCacheChanged_.push(curContentDirty_);
         RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderVisitor::UpdateCacheChangeStatus: cachable node %" PRIu64 ""
@@ -303,6 +361,7 @@ void RSUniRenderVisitor::UpdateCacheChangeStatus(RSRenderNode& node)
             firstVisitedCache_ = node.GetId();
         }
     }
+    return true;
 }
 
 void RSUniRenderVisitor::DisableNodeCacheInSetting(RSRenderNode& node)
@@ -524,7 +583,7 @@ bool RSUniRenderVisitor::CheckIfSurfaceRenderNodeStatic(RSSurfaceRenderNode& nod
         accumulatedDirtyRegions_[0] = curDisplayDirtyManager_->GetCurrentFrameDirtyRegion();
     }
     // if node has to be prepared, it's not static
-    bool isClassifyByRootNode = (quickSkipPrepareType_ == QuickSkipPrepareType::STATIC_WIDGET);
+    bool isClassifyByRootNode = (quickSkipPrepareType_ >= QuickSkipPrepareType::STATIC_APP_INSTANCE);
     NodeId rootId = node.GetInstanceRootNodeId();
     if (RSMainThread::Instance()->CheckNodeHasToBePreparedByPid(
         isClassifyByRootNode ? rootId : node.GetId(), isClassifyByRootNode)) {
@@ -907,9 +966,8 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         isSubNodeOfSurfaceInPrepare_ = true;
     }
     node.UpdateChildrenOutOfRectFlag(false);
-    if (node.ShouldPrepareSubnodes()) {
-        PrepareChildren(node);
-    }
+    // [planning] ShouldPrepareSubnodes would be applied again if condition constraint ensures
+    PrepareChildren(node);
 #if defined(RS_ENABLE_PARALLEL_RENDER) && (defined (RS_ENABLE_GL) || defined (RS_ENABLE_VK))
     rsParent = (logicParentNode_.lock());
     if (rsParent == curDisplayNode_) {
@@ -1508,6 +1566,7 @@ void RSUniRenderVisitor::ProcessChildren(RSRenderNode& node)
         for (auto& child : node.GetSortedChildren(true)) {
             if (ProcessSharedTransitionNode(*child)) {
                 child->Process(shared_from_this());
+                child->SetDrawingCacheRootId(node.GetDrawingCacheRootId());
             }
         }
         // Main thread may invalidate the FullChildrenList, check if we need to clear it.
@@ -1517,6 +1576,7 @@ void RSUniRenderVisitor::ProcessChildren(RSRenderNode& node)
         for (auto& child : node.GetSortedChildren()) {
             if (ProcessSharedTransitionNode(*child)) {
                 child->Process(shared_from_this());
+                child->SetDrawingCacheRootId(node.GetDrawingCacheRootId());
             }
         }
     }
@@ -2803,7 +2863,7 @@ bool RSUniRenderVisitor::UpdateCacheSurface(RSRenderNode& node)
         }
         node.ProcessAnimatePropertyBeforeChildren(*canvas_);
     }
-
+    node.SetDrawingCacheRootId(node.GetId());
     node.ProcessRenderContents(*canvas_);
     ProcessChildren(node);
 
@@ -3415,7 +3475,10 @@ void RSUniRenderVisitor::UpdateCacheRenderNodeMapWithBlur(RSRenderNode& node)
 #endif
     auto nodeType = node.GetCacheType();
     node.SetCacheType(CacheType::NONE);
+    bool isOpDropped = isOpDropped_;
+    isOpDropped_ = false;
     DrawChildRenderNode(node);
+    isOpDropped_ = isOpDropped;
     node.SetCacheType(nodeType);
     curCacheFilterRects_.pop();
 }

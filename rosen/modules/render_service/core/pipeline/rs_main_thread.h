@@ -120,6 +120,8 @@ public:
      * If its pid is in activeProcessPids_ set, return true
      */
     bool CheckNodeHasToBePreparedByPid(NodeId nodeId, bool isClassifyByRoot);
+    // check if active app has static drawing cache
+    bool IsDrawingGroupChanged(RSRenderNode& cacheRootNode) const;
 
     void RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app);
     void UnRegisterApplicationAgent(sptr<IApplicationAgent> app);

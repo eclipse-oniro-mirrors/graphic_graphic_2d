@@ -103,8 +103,10 @@ public:
         return id_;
     }
 
+    // flag: isOnTheTree; instanceRootNodeId: displaynode or leash/appnode attached to
+    // firstLevelNodeId: surfacenode for uiFirst to assign task; cacheNodeId: drawing cache rootnode attached to
     virtual void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID,
-        NodeId firstLevelNodeId = INVALID_NODEID);
+        NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID);
     bool IsOnTheTree() const;
 
     // return children and disappeared children, not guaranteed to be sorted by z-index
@@ -280,6 +282,7 @@ public:
         bool needCheckThread = true, bool releaseAfterGet = false);
 #endif
     void ClearCacheSurface(bool isClearCompletedCacheSurface = true);
+    bool IsCacheSurfaceValid() const;
 
 #ifdef RS_ENABLE_GL
     void UpdateBackendTexture();
@@ -313,6 +316,9 @@ public:
     void ResetDrawingCacheNeedUpdate();
     void SetVisitedCacheRootIds(const std::unordered_set<NodeId>& visitedNodes);
     const std::unordered_set<NodeId>& GetVisitedCacheRootIds() const;
+    // manage cache root nodeid
+    void SetDrawingCacheRootId(NodeId id);
+    NodeId GetDrawingCacheRootId() const;
 
     // driven render ///////////////////////////////////
     void SetIsMarkDriven(bool isMarkDriven);
@@ -440,6 +446,7 @@ protected:
 
     bool IsSelfDrawingNode() const;
     bool isOnTheTree_ = false;
+    NodeId drawingCacheRootId_ = INVALID_NODEID;
 
     std::unordered_set<RSModifierType> dirtyTypes_;
     bool isFullChildrenListValid_ = false;
