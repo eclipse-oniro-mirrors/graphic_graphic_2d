@@ -141,6 +141,5 @@ void RSRecordingThread::RecordingToFile(const std::shared_ptr<Drawing::DrawCmdLi
     messageParcelVec.push_back(messageParcel);
     opsDescriptionVec.push_back(drawCmdList->GetOpsWithDesc());
     FinishRecordingOneFrame();
- 
 }
 }
