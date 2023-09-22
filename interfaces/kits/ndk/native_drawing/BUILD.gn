@@ -27,6 +27,7 @@ ohos_ndk_headers("native_drawing_header") {
     "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics/include/c/drawing_text_declaration.h",
     "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics/include/c/drawing_text_typography.h",
     "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics/include/c/drawing_types.h",
+    "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics/include/c/drawing_register_font.h",
   ]
 }
 
@@ -46,5 +47,6 @@ ohos_ndk_library("libnative_drawing_ndk") {
     "native_drawing/drawing_text_declaration.h",
     "native_drawing/drawing_text_typography.h",
     "native_drawing/drawing_types.h",
+    "native_drawing/drawing_register_font.h",
   ]
 }
