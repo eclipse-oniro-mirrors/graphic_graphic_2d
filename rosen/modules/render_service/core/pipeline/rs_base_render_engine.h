@@ -184,10 +184,7 @@ public:
 
     void ShrinkCachesIfNeeded(bool isForUniRedraw = false);
     static void SetColorFilterMode(ColorFilterMode mode);
-    static ColorFilterMode GetColorFilterMode()
-    {
-        return colorFilterMode_;
-    }
+    static ColorFilterMode GetColorFilterMode();
     static void SetHighContrast(bool enabled)
     {
         isHighContrastEnabled_  = enabled;
