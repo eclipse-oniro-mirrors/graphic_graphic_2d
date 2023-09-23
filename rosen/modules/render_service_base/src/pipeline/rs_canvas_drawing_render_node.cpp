@@ -16,6 +16,7 @@
 #include "pipeline/rs_canvas_drawing_render_node.h"
 
 #include "include/core/SkCanvas.h"
+#include "src/image/SkImage_Base.h"
 #ifdef NEW_SKIA
 #include "include/gpu/GrBackendSurface.h"
 #include "include/gpu/GrDirectContext.h"
@@ -264,6 +265,34 @@ SkBitmap RSCanvasDrawingRenderNode::GetBitmap()
     std::lock_guard<std::mutex> lock(mutex_);
     return rsDrawingNodeBitmap_;
 }
+
+bool RSCanvasDrawingRenderNode::GetPixelmap(const std::shared_ptr<Media::PixelMap> pixelmap, const SkRect* rect)
+{
+    if (!pixelmap) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetPixelmap: pixelmap is nullptr");
+        return false;
+    }
+
+    if (!skSurface_) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetPixelmap: SkSurface is nullptr");
+        return false;
+    }
+
+    sk_sp<SkImage> skImage = skSurface_->makeImageSnapshot();
+    if (skImage == nullptr) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetPixelmap: makeImageSnapshot failed");
+        return false;
+    }
+
+    SkImageInfo info =
+        SkImageInfo::Make(pixelmap->GetWidth(), pixelmap->GetHeight(), kRGBA_8888_SkColorType, kPremul_SkAlphaType);
+    if (!skImage->readPixels(info, pixelmap->GetWritablePixels(), pixelmap->GetRowBytes(), rect->x(), rect->y())) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetPixelmap: readPixels failed");
+        return false;
+    }
+    return true;
+}
+
 #else
 Drawing::Bitmap RSCanvasDrawingRenderNode::GetBitmap()
 {
