@@ -202,6 +202,10 @@ bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificat
             /* to implement access interception */
             break;
         }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::GET_PIXELMAP): {
+            /* to implement access interception */
+            break;
+        }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_SCREEN_SKIP_FRAME_INTERVAL): {
             /* to implement access interception */
             break;
