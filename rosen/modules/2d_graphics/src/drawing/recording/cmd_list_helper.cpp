@@ -101,7 +101,7 @@ VerticesHandle CmdListHelper::AddVerticesToCmdList(CmdList& cmdList, const Verti
         return { 0 };
     }
 
-    auto data = skiaVertices.Serialize();
+    auto data = skiaVertices->Serialize();
     if (data == nullptr || data->GetSize() == 0) {
         LOGE("vertices is valid!");
         return { 0 };
@@ -131,7 +131,7 @@ std::shared_ptr<Vertices> CmdListHelper::GetVerticesFromCmdList(
         return nullptr;
     }
 
-    if (vertices->Deserialize(verticesData) == false) {
+    if (skiaVertices->Deserialize(verticesData) == false) {
         LOGE("vertices deserialize failed!");
         return nullptr;
     }
