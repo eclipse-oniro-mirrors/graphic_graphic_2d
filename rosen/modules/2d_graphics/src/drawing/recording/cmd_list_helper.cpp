@@ -27,6 +27,7 @@
 #include "recording/path_effect_cmd_list.h"
 #include "recording/region_cmd_list.h"
 #include "recording/shader_effect_cmd_list.h"
+#include "skia_adapter/skia_vertices.h"
 #include "utils/log.h"
 
 #include "skia_adapter/skia_picture.h"
@@ -94,7 +95,13 @@ std::shared_ptr<Image> CmdListHelper::GetImageFromCmdList(const CmdList& cmdList
 
 VerticesHandle CmdListHelper::AddVerticesToCmdList(CmdList& cmdList, const Vertices& vertices)
 {
-    auto data = vertices.Serialize();
+    std::shared_ptr<SkiaVertices> skiaVertices = vertices.GetImpl<SkiaVertices>();
+    if (skiaVertices == nullptr) {
+        LOGE("skiaVertices nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return { 0 };
+    }
+
+    auto data = skiaVertices.Serialize();
     if (data == nullptr || data->GetSize() == 0) {
         LOGE("vertices is valid!");
         return { 0 };
@@ -117,6 +124,13 @@ std::shared_ptr<Vertices> CmdListHelper::GetVerticesFromCmdList(
     auto verticesData = std::make_shared<Data>();
     verticesData->BuildWithoutCopy(ptr, verticesHandle.size);
     auto vertices = std::make_shared<Vertices>();
+
+    std::shared_ptr<SkiaVertices> skiaVertices = vertices->GetImpl<SkiaVertices>();
+    if (skiaVertices == nullptr) {
+        LOGE("skiaVertices nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return nullptr;
+    }
+
     if (vertices->Deserialize(verticesData) == false) {
         LOGE("vertices deserialize failed!");
         return nullptr;

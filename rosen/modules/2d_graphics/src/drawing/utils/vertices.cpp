@@ -47,24 +47,6 @@ bool Vertices::MakeCopy(VertexMode mode,
     return verticesImplPtr_->MakeCopy(mode, vertexCount, positions, texs, colors);
 }
 
-std::shared_ptr<Data> Vertices::Serialize() const
-{
-    if (verticesImplPtr_ == nullptr) {
-        LOGE("VerticesImpl is null, can't Serialize");
-        return nullptr;
-    }
-    return verticesImplPtr_->Serialize();
-}
-
-bool Vertices::Deserialize(std::shared_ptr<Data> data)
-{
-    if (verticesImplPtr_ == nullptr) {
-        LOGE("VerticesImpl is null, can't Deserialize");
-        return false;
-    }
-    return verticesImplPtr_->Deserialize(data);
-}
-
 Vertices::Builder::Builder(VertexMode mode, int vertexCount, int indexCount, uint32_t flags)
     : builderImplPtr_(ImplFactory::CreateVerticesBuilderImpl())
 {
