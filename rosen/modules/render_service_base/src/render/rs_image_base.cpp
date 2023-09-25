@@ -146,6 +146,9 @@ void RSImageBase::SetSrcRect(const RectF& srcRect)
 
 void RSImageBase::SetDstRect(const RectF& dstRect)
 {
+    if (dstRect_ != dstRect) {
+        isDrawn_ = false;
+    }
     dstRect_ = dstRect;
 }
 
