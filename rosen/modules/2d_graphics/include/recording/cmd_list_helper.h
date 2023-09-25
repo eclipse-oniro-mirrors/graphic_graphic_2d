@@ -39,7 +39,8 @@ public:
     static ImageHandle AddImageToCmdList(CmdList& cmdList, const std::shared_ptr<Image>& image);
     static std::shared_ptr<Image> GetImageFromCmdList(const CmdList& cmdList, const ImageHandle& imageHandle);
     static VerticesHandle AddVerticesToCmdList(CmdList& cmdList, const Vertices& vertices);
-    static std::shared_ptr<Vertices> GetVerticesFromCmdList(const CmdList& cmdList, const VerticesHandle& verticesHandle);
+    static std::shared_ptr<Vertices> GetVerticesFromCmdList(const CmdList& cmdList,
+        const VerticesHandle& verticesHandle);
     static ImageHandle AddBitmapToCmdList(CmdList& cmdList, const Bitmap& bitmap);
     static std::shared_ptr<Bitmap> GetBitmapFromCmdList(const CmdList& cmdList, const ImageHandle& bitmapHandle);
     static ImageHandle AddPixelMapToCmdList(CmdList& cmdList, const std::shared_ptr<Media::PixelMap>& pixelMap);

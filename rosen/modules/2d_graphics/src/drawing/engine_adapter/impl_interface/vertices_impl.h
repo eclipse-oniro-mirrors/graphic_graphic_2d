@@ -70,7 +70,6 @@ public:
         virtual std::shared_ptr<VerticesImpl> Detach() = 0;
     };
 };
-
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

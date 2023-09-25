@@ -14,7 +14,6 @@
  */
 
 #include "skia_vertices.h"
-#include "utils/log.h"
 
 #include <unistd.h>
 #include <securec.h>
@@ -22,6 +21,8 @@
 #include "src/core/SkReadBuffer.h"
 #include "src/core/SkWriteBuffer.h"
 #include "src/core/SkVerticesPriv.h"
+
+#include "utils/log.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -175,7 +176,6 @@ Point* SkiaVertices::SkiaBuilder::TexCoords()
         return nullptr;
     }
     return reinterpret_cast<Point*>(skiaVerticesBuilder_->texCoords());
-
 }
 
 ColorQuad* SkiaVertices::SkiaBuilder::Colors()

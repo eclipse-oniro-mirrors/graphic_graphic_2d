@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
- #include "utils/vertices.h"
-
- #include "impl_factory.h"
+#include "utils/vertices.h"
+#include "impl_factory.h"
+#include "utils/log.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -29,6 +29,10 @@ bool Vertices::MakeCopy(VertexMode mode,
     int vertexCount, const Point positions[], const Point texs[], const ColorQuad colors[],
     int indexCount, const uint16_t indices[])
 {
+    if (verticesImplPtr_ == nullptr) {
+        LOGE("VerticesImpl is null, can't MakeCopy");
+        return false;
+    }
     return verticesImplPtr_->MakeCopy(mode, vertexCount, positions, texs, colors,
         indexCount, indices);
 }
@@ -36,16 +40,28 @@ bool Vertices::MakeCopy(VertexMode mode,
 bool Vertices::MakeCopy(VertexMode mode,
     int vertexCount, const Point positions[], const Point texs[], const ColorQuad colors[])
 {
+    if (verticesImplPtr_ == nullptr) {
+        LOGE("VerticesImpl is null, can't MakeCopy");
+        return false;
+    }
     return verticesImplPtr_->MakeCopy(mode, vertexCount, positions, texs, colors);
 }
 
 std::shared_ptr<Data> Vertices::Serialize() const
 {
+    if (verticesImplPtr_ == nullptr) {
+        LOGE("VerticesImpl is null, can't Serialize");
+        return nullptr;
+    }
     return verticesImplPtr_->Serialize();
 }
 
 bool Vertices::Deserialize(std::shared_ptr<Data> data)
 {
+    if (verticesImplPtr_ == nullptr) {
+        LOGE("VerticesImpl is null, can't Deserialize");
+        return false;
+    }
     return verticesImplPtr_->Deserialize(data);
 }
 

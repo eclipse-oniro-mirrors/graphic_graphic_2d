@@ -73,6 +73,9 @@ public:
     template<typename T>
     const std::shared_ptr<T> GetImpl() const
     {
+        if (verticesImplPtr_ == nullptr) {
+            return nullptr;
+        }
         return verticesImplPtr_->DowncastingTo<T>();
     }
 
