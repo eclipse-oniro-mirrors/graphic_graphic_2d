@@ -133,7 +133,7 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
         auto wrapper = std::make_shared<std::tuple<std::unique_ptr<Media::PixelMap>>>();
         std::get<0>(*wrapper) = std::move(pixelmap);
         auto displayNode = node->ReinterpretCastTo<RSDisplayRenderNode>();
-        auto rotation = (displayNode != nullptr) ? displayNode->GetRotation()
+        auto rotation = (displayNode != nullptr) ? displayNode->GetScreenRotation()
             : ScreenRotation::INVALID_SCREEN_ROTATION;
         bool ableRotation = ((displayNode != nullptr) && visitor_->IsUniRender());
         auto id = nodeId_;
@@ -187,8 +187,9 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
             if (ableRotation) {
                 if (rotation == ScreenRotation::ROTATION_90) {
                     pixelmap->rotate(static_cast<int32_t>(90)); // 90 degrees
-                }
-                if (rotation == ScreenRotation::ROTATION_270) {
+                } else if (rotation == ScreenRotation::ROTATION_180) {
+                    pixelmap->rotate(static_cast<int32_t>(180)); // 180 degrees
+                } else if (rotation == ScreenRotation::ROTATION_270) {
                     pixelmap->rotate(static_cast<int32_t>(270)); // 270 degrees
                 }
                 RS_LOGD("RSSurfaceCaptureTask: PixelmapRotation: %d", static_cast<int32_t>(rotation));
@@ -257,11 +258,12 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
 #endif
     if (auto displayNode = node->ReinterpretCastTo<RSDisplayRenderNode>()) {
         if (visitor_->IsUniRender()) {
-            auto rotation = displayNode->GetRotation();
+            auto rotation = displayNode->GetScreenRotation();
             if (rotation == ScreenRotation::ROTATION_90) {
                 pixelmap->rotate(static_cast<int32_t>(90)); // 90 degrees
-            }
-            if (rotation == ScreenRotation::ROTATION_270) {
+            } else if (rotation == ScreenRotation::ROTATION_180) {
+                pixelmap->rotate(static_cast<int32_t>(180)); // 180 degrees
+            } else if (rotation == ScreenRotation::ROTATION_270) {
                 pixelmap->rotate(static_cast<int32_t>(270)); // 270 degrees
             }
             RS_LOGD("RSSurfaceCaptureTask::Run: PixelmapRotation: %{public}d", static_cast<int32_t>(rotation));
