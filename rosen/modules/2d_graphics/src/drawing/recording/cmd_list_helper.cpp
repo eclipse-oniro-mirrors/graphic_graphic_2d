@@ -30,7 +30,6 @@
 #include "recording/region_cmd_list.h"
 #include "recording/shader_effect_cmd_list.h"
 #include "skia_adapter/skia_vertices.h"
-#include "skia_adapter/skia_data.h"
 #include "utils/log.h"
 
 #include "skia_adapter/skia_picture.h"
@@ -322,11 +321,7 @@ ImageHandle CmdListHelper::AddDataToCmdList(CmdList& cmdList, const Data* srcDat
         LOGE("data nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
         return { 0 };
     }
-    std::shared_ptr<SkiaData> skiaData = srcData->GetImpl<SkiaData>();
-    if (!skiaData) {
-        LOGE("skiaData nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
-        return { 0 };
-    }
+
     auto data = srcData->Serialize();
     if (data == nullptr || data->GetSize() == 0) {
         LOGE("srcData is invalid!");
