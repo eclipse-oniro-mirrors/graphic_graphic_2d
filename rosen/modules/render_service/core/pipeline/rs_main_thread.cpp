@@ -1640,9 +1640,11 @@ void RSMainThread::Animate(uint64_t timestamp)
     doDirectComposition_ = false;
     bool curWinAnim = false;
     bool needRequestNextVsync = false;
+    // isCalculateAnimationValue is embedded modify for stat animate frame drop
+    bool isCalculateAnimationValue = false;
     // iterate and animate all animating nodes, remove if animation finished
     EraseIf(context_->animatingNodeList_,
-        [this, timestamp, &curWinAnim, &needRequestNextVsync](const auto& iter) -> bool {
+        [this, timestamp, &curWinAnim, &needRequestNextVsync, &isCalculateAnimationValue](const auto& iter) -> bool {
         auto node = iter.second.lock();
         if (node == nullptr) {
             RS_LOGD("RSMainThread::Animate removing expired animating node");
@@ -1652,12 +1654,13 @@ void RSMainThread::Animate(uint64_t timestamp)
             RS_LOGD("RSMainThread::Animate skip the cached node");
             return false;
         }
-        auto [hasRunningAnimation, nodeNeedRequestNextVsync] = node->Animate(timestamp);
+        auto [hasRunningAnimation, nodeNeedRequestNextVsync, nodeCalculateAnimationValue] = node->Animate(timestamp);
         if (!hasRunningAnimation) {
             RS_LOGD("RSMainThread::Animate removing finished animating node %{public}" PRIu64, node->GetId());
         }
         // request vsync if: 1. node has running animation, or 2. transition animation just ended
         needRequestNextVsync = needRequestNextVsync || nodeNeedRequestNextVsync || (node.use_count() == 1);
+        isCalculateAnimationValue = isCalculateAnimationValue || nodeCalculateAnimationValue;
         if (node->template IsInstanceOf<RSSurfaceRenderNode>() && hasRunningAnimation) {
             if (isUniRender_) {
                 auto surfacenode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node);
@@ -1670,6 +1673,10 @@ void RSMainThread::Animate(uint64_t timestamp)
     if (!doWindowAnimate_ && curWinAnim && RSInnovation::UpdateQosVsyncEnabled()) {
         RSQosThread::ResetQosPid();
     }
+    if (!isCalculateAnimationValue && needRequestNextVsync) {
+        RS_TRACE_NAME("Animation running empty");
+    }
+
     doWindowAnimate_ = curWinAnim;
     RS_LOGD("RSMainThread::Animate end, animating nodes remains, has window animation: %{public}d", curWinAnim);
 
