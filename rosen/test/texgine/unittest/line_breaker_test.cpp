@@ -213,11 +213,11 @@ HWTEST_F(LineBreakerTest, DoBreakLines, TestSize.Level1) {
  * @tc.desc: Verify the GenerateBreaks
  * @tc.type:FUNC
  */
-DEFINE_PARAM_TEST1(LineBreaker, GenerateBreaks, std::vector<ScoredSpan>, {
-    { .arg1 = GenScoredSpansByPrevs({0, 2}), .exception = ExceptionType::ERROR_STATUS },
-    { .arg1 = GenScoredSpansByPrevs({0, 3, 2}), .exception = ExceptionType::ERROR_STATUS },
-    { .arg1 = GenScoredSpansByPrevs({0, 2, 5}), .exception = ExceptionType::ERROR_STATUS },
-    { .arg1 = GenScoredSpansByPrevs({0, 0, 0, 2, 2, 4, 4, 4, 7}),
+DEFINE_PARAM_TEST2(LineBreaker, GenerateBreaks, std::vector<VariantSpan>, std::vector<ScoredSpan>, {
+    { .arg1 = {ts10_}, .arg2 = GenScoredSpansByPrevs({0, 2}), .exception = ExceptionType::ERROR_STATUS },
+    { .arg1 = {ts10_}, .arg2 = GenScoredSpansByPrevs({0, 3, 2}), .exception = ExceptionType::ERROR_STATUS },
+    { .arg1 = {ts10_}, .arg2 = GenScoredSpansByPrevs({0, 2, 5}), .exception = ExceptionType::ERROR_STATUS },
+    { .arg1 = {ts10_}, .arg2 = GenScoredSpansByPrevs({0, 0, 0, 2, 2, 4, 4, 4, 7}),
       .checkFunc = GetResultChecker(std::vector<int>{2, 4, 7, 9}) },
 });
 

@@ -193,7 +193,7 @@ std::vector<LineMetrics> LineBreaker::GenerateLineMetrics(std::vector<VariantSpa
     for (auto i = 1; i < breaks.size(); i++) {
         std::vector<VariantSpan> vss;
         int32_t next = breaks[i];
-        for ( ; prev < next; prev++) {
+        for (; prev < next; prev++) {
             spans[prev].Dump();
             vss.push_back(spans[prev]);
         }
@@ -201,7 +201,7 @@ std::vector<LineMetrics> LineBreaker::GenerateLineMetrics(std::vector<VariantSpa
             .lineSpans = vss,
         });
         prev = next;
-   }
+    }
 
     return lineMetrics;
 }

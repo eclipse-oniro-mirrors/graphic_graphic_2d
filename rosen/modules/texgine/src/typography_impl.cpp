@@ -278,17 +278,7 @@ void TypographyImpl::Layout(double maxWidth)
         didExceedMaxLines_ = shaper.DidExceedMaxLines();
         maxIntrinsicWidth_ = shaper.GetMaxIntrinsicWidth();
         minIntrinsicWidth_ = shaper.GetMinIntrinsicWidth();
-        for (auto i = 0; i < static_cast<int>(lineMetrics_.size()); i++) {
-            if (i > 0 && !lineMetrics_[i -1].lineSpans.back().IsHardBreak() &&
-                    lineMetrics_[i].lineSpans.back().IsHardBreak()) {
-                lineMetrics_[i - 1].lineSpans.push_back(lineMetrics_[i].lineSpans.front());
-                lineMetrics_[i].lineSpans.erase(lineMetrics_[i].lineSpans.begin());
-                if (lineMetrics_[i].lineSpans.empty()) {
-                    lineMetrics_.erase(lineMetrics_.begin() + i);
-                    i--;
-                }
-            }
-        }
+        ProcessHardBreak();
 
         auto ret = ComputeStrut();
         if (ret) {
@@ -306,6 +296,22 @@ void TypographyImpl::Layout(double maxWidth)
         ApplyAlignment();
     } catch (struct TexgineException &e) {
         LOGEX_FUNC_LINE(ERROR) << "catch exception: " << e.message;
+    }
+}
+
+void TypographyImpl::ProcessHardBreak()
+{
+    for (auto i = 0; i < static_cast<int>(lineMetrics_.size()); i++) {
+        if (i > 0 && !lineMetrics_[i -1].lineSpans.back().IsHardBreak() &&
+                lineMetrics_[i].lineSpans.back().IsHardBreak()) {
+            lineMetrics_[i - 1].lineSpans.push_back(lineMetrics_[i].lineSpans.front());
+            lineMetrics_[i].lineSpans.erase(lineMetrics_[i].lineSpans.begin());
+        }
+
+        if (lineMetrics_[i].lineSpans.empty()) {
+            lineMetrics_.erase(lineMetrics_.begin() + i);
+            i--;
+        }
     }
 }
 

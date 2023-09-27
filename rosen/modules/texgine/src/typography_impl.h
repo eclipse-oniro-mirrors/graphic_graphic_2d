@@ -79,6 +79,7 @@ private:
     void ComputeWordBoundary() const;
     void ComputeSpans(int lineIndex, double baseline, const CalcResult &calcResult,
         std::vector<TextRect> &lineBoxes) const;
+    void ProcessHardBreak();
 
     TypographyStyle typographyStyle_;
     std::vector<VariantSpan> spans_;
