@@ -136,8 +136,8 @@ bool SkiaImage::BuildFromTexture(GPUContext& gpuContext, const TextureInfo& info
     }
 
     skiaImage_ = SkImage::MakeFromTexture(grContext_.get(), ConvertToGrBackendTexture(info),
-        ConvertToGrSurfaceOrigin(origin), ConvertToSkColorType(bitmapFormat.colorType),
-        ConvertToSkAlphaType(bitmapFormat.alphaType), skColorSpace);
+        ConvertToGrSurfaceOrigin(origin), SkiaImageInfo::ConvertToSkColorType(bitmapFormat.colorType),
+        SkiaImageInfo::ConvertToSkAlphaType(bitmapFormat.alphaType), skColorSpace);
 
     return (skiaImage_ != nullptr) ? true : false;
 }
@@ -212,12 +212,14 @@ int SkiaImage::GetHeight() const
 
 ColorType SkiaImage::GetColorType() const
 {
-    return (skiaImage_ == nullptr) ? ColorType::COLORTYPE_UNKNOWN : ConvertToColorType(skiaImage_->colorType());
+    return (skiaImage_ == nullptr) ? ColorType::COLORTYPE_UNKNOWN :
+                                     SkiaImageInfo::ConvertToColorType(skiaImage_->colorType());
 }
 
 AlphaType SkiaImage::GetAlphaType() const
 {
-    return (skiaImage_ == nullptr) ? AlphaType::ALPHATYPE_UNKNOWN : ConvertToAlphaType(skiaImage_->alphaType());
+    return (skiaImage_ == nullptr) ? AlphaType::ALPHATYPE_UNKNOWN :
+                                     SkiaImageInfo::ConvertToAlphaType(skiaImage_->alphaType());
 }
 
 uint32_t SkiaImage::GetUniqueID() const
@@ -230,7 +232,7 @@ ImageInfo SkiaImage::GetImageInfo()
     if (skiaImage_ == nullptr) {
         return {};
     }
-    return ConvertToRSImageInfo(skiaImage_->imageInfo());
+    return SkiaImageInfo::ConvertToRSImageInfo(skiaImage_->imageInfo());
 }
 
 bool SkiaImage::ReadPixels(Bitmap& bitmap, int x, int y)
@@ -271,7 +273,7 @@ bool SkiaImage::ScalePixels(const Bitmap& bitmap, const SamplingOptions& samplin
 
 std::shared_ptr<Data> SkiaImage::EncodeToData(EncodedImageFormat& encodedImageFormat, int quality) const
 {
-    SkEncodedImageFormat skEncodedImageFormat = ConvertToSkEncodedImageFormat(encodedImageFormat);
+    SkEncodedImageFormat skEncodedImageFormat = SkiaImageInfo::ConvertToSkEncodedImageFormat(encodedImageFormat);
     if (skiaImage_ == nullptr) {
         LOGE("SkiaImage::EncodeToData, skiaImage_ is null!");
         return nullptr;
