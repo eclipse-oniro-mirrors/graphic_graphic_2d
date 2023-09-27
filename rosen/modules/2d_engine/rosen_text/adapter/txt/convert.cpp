@@ -73,6 +73,7 @@ txt::ParagraphStyle Convert(const TypographyStyle &style)
         .text_direction = static_cast<txt::TextDirection>(style.textDirection_),
         .max_lines = style.maxLines_,
         .ellipsis = style.ellipsis_,
+        .ellipsisModal = style.ellipsisModal_,
         .locale = style.locale_,
         .break_strategy = static_cast<minikin::BreakStrategy>(style.breakStrategy_),
         .word_break_type = static_cast<minikin::WordBreakType>(style.wordBreakType_),
@@ -96,6 +97,7 @@ txt::ParagraphStyle Convert(const TypographyStyle &style)
         .text_direction = static_cast<txt::TextDirection>(style.textDirection),
         .max_lines = style.maxLines,
         .ellipsis = style.ellipsis,
+        .ellipsisModal = style.ellipsisModal,
         .locale = style.locale,
         .break_strategy = static_cast<minikin::BreakStrategy>(style.breakStrategy),
 #endif

@@ -350,6 +350,7 @@ void RosenConvertTypographyStyle(const TypographyStyle& typographyStyle, txt::Pa
     txtParagraphStyle.text_direction = RosenConvertTxtTextDirection(typographyStyle.textDirection_);
     txtParagraphStyle.max_lines = typographyStyle.maxLines_;
     txtParagraphStyle.ellipsis = typographyStyle.ellipsis_;
+    txtParagraphStyle.ellipsisModal = typographyStyle.ellipsisModal_;
     txtParagraphStyle.locale = typographyStyle.locale_;
     txtParagraphStyle.break_strategy = RosenConverMinkinBreakStrategy(typographyStyle.breakStrategy_);
 #if !defined(USE_CANVASKIT0310_SKIA) && !defined(NEW_SKIA)
