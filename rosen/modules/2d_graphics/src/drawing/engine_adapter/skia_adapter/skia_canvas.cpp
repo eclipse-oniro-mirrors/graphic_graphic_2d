@@ -150,7 +150,7 @@ ImageInfo SkiaCanvas::GetImageInfo()
     if (skCanvas_ == nullptr) {
         return {};
     }
-    return ConvertToRSImageInfo(skCanvas_->imageInfo());
+    return SkiaImageInfo::ConvertToRSImageInfo(skCanvas_->imageInfo());
 }
 
 bool SkiaCanvas::ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
@@ -161,8 +161,9 @@ bool SkiaCanvas::ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t ds
         return false;
     }
     SkImageInfo info = SkImageInfo::Make(dstInfo.GetWidth(), dstInfo.GetHeight(),
-        ConvertToSkColorType(dstInfo.GetColorType()), ConvertToSkAlphaType(dstInfo.GetAlphaType()),
-        dstInfo.GetColorSpace()->GetImpl<SkiaColorSpace>()->GetColorSpace());
+                                         SkiaImageInfo::ConvertToSkColorType(dstInfo.GetColorType()),
+                                         SkiaImageInfo::ConvertToSkAlphaType(dstInfo.GetAlphaType()),
+                                         dstInfo.GetColorSpace()->GetImpl<SkiaColorSpace>()->GetColorSpace());
     return skCanvas_->readPixels(info, dstPixels, dstRowBytes, srcX, srcY);
 }
 

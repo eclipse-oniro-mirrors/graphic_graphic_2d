@@ -28,8 +28,9 @@ SkiaBitmap::SkiaBitmap() : skiaBitmap_() {}
 
 static inline SkImageInfo MakeSkImageInfo(const int width, const int height, const BitmapFormat& format)
 {
-    auto imageInfo = SkImageInfo::Make(
-        width, height, ConvertToSkColorType(format.colorType), ConvertToSkAlphaType(format.alphaType));
+    auto imageInfo = SkImageInfo::Make(width, height,
+                                       SkiaImageInfo::ConvertToSkColorType(format.colorType),
+                                       SkiaImageInfo::ConvertToSkAlphaType(format.alphaType));
     return imageInfo;
 }
 
@@ -42,7 +43,7 @@ void SkiaBitmap::Build(int32_t width, int32_t height, const BitmapFormat& format
 
 void SkiaBitmap::Build(const ImageInfo& imageInfo, int32_t stride)
 {
-    auto skImageInfo = ConvertToSkImageInfo(imageInfo);
+    auto skImageInfo = SkiaImageInfo::ConvertToSkImageInfo(imageInfo);
     skiaBitmap_.setInfo(skImageInfo, stride);
     skiaBitmap_.allocPixels();
 }
@@ -64,12 +65,12 @@ int SkiaBitmap::GetRowBytes() const
 
 ColorType SkiaBitmap::GetColorType() const
 {
-    return ConvertToColorType(skiaBitmap_.colorType());
+    return SkiaImageInfo::ConvertToColorType(skiaBitmap_.colorType());
 }
 
 AlphaType SkiaBitmap::GetAlphaType() const
 {
-    return ConvertToAlphaType(skiaBitmap_.alphaType());
+    return SkiaImageInfo::ConvertToAlphaType(skiaBitmap_.alphaType());
 }
 
 void* SkiaBitmap::GetPixels() const
@@ -92,7 +93,7 @@ void SkiaBitmap::CopyPixels(Bitmap& dst, int srcLeft, int srcTop, int width, int
     ImageInfo imageInfo = dst.GetImageInfo();
     void* dstPixels = dst.GetPixels();
 
-    SkImageInfo skImageInfo = ConvertToSkImageInfo(imageInfo);
+    SkImageInfo skImageInfo = SkiaImageInfo::ConvertToSkImageInfo(imageInfo);
     int srcX = srcLeft;
     int srcY = srcTop;
     size_t dstRowBytes = static_cast<size_t>(width * height);
