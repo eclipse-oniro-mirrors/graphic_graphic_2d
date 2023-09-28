@@ -471,5 +471,19 @@ bool RSSystemProperties::IsPhoneType()
     static bool isPhone = system::GetParameter("const.product.devicetype", "pc") == "phone";
     return isPhone;
 }
+
+bool RSSystemProperties::GetSyncTransactionEnabled()
+{
+    static bool syncTransactionEnabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.syncTransaction.enabled", "1")).c_str()) != 0;
+    return syncTransactionEnabled;
+}
+
+int RSSystemProperties::GetSyncTransactionWaitDelay()
+{
+    static int syncTransactionWaitDelay =
+        std::atoi((system::GetParameter("persist.sys.graphic.syncTransactionWaitDelay", "100")).c_str());
+    return syncTransactionWaitDelay;
+}
 } // namespace Rosen
 } // namespace OHOS
