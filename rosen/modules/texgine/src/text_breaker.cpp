@@ -17,6 +17,8 @@
 
 #include <cassert>
 
+#include <unicode/uchar.h>
+
 #include "measurer.h"
 #include "texgine/any_span.h"
 #include "texgine_exception.h"
@@ -242,9 +244,9 @@ void TextBreaker::BreakWord(const CharGroups &wordcgs, const TypographyStyle &ys
 {
     size_t rangeOffset = 0;
     for (size_t i = 0; i < wordcgs.GetNumberOfCharGroup(); i++) {
-        const auto &cg = wordcgs.Get(i);
+        auto &cg = wordcgs.Get(i);
         postBreak_ += cg.GetWidth();
-        if (u_isWhitespace(cg.chars[0]) == 0) {
+        if (u_isWhitespace(cg.chars[0]) == 0 || cg.IsHardBreak()) {
             // not white space
             preBreak_ = postBreak_;
         }

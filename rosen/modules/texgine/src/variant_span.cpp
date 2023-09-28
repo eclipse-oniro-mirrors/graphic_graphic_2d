@@ -264,6 +264,12 @@ bool VariantSpan::IsRTL() const noexcept(false)
     return false;
 }
 
+bool VariantSpan::IsHardBreak() const noexcept(false)
+{
+    CheckPointer();
+    return (ts_ && ts_->cgs_.GetBack().IsHardBreak());
+}
+
 void VariantSpan::CheckPointer(bool nullable) const noexcept(false)
 {
     if (!nullable && as_ == nullptr && ts_ == nullptr) {
