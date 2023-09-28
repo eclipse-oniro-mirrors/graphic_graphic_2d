@@ -94,7 +94,7 @@ void RSCanvasRenderNode::OnTreeStateChanged()
         // clear node groups cache when node is removed from tree
         if (GetCacheType() == CacheType::CONTENT) {
             SetCacheType(CacheType::NONE);
-            ClearCacheSurface();
+            ClearCacheSurfaceInThread();
             SetDrawingCacheType(RSDrawingCacheType::DISABLED_CACHE);
         }
     }

@@ -1386,12 +1386,17 @@ std::shared_ptr<Drawing::Surface> RSRenderNode::GetCompletedCacheSurface(uint32_
     }
 
     // freeze cache scene
+    ClearCacheSurfaceInThread();
+    return nullptr;
+}
+
+void RSRenderNode::ClearCacheSurfaceInThread()
+{
     if (clearCacheSurfaceFunc_) {
         clearCacheSurfaceFunc_(std::move(cacheSurface_), std::move(cacheCompletedSurface_), cacheSurfaceThreadIndex_,
             completedSurfaceThreadIndex_);
     }
     ClearCacheSurface();
-    return nullptr;
 }
 
 #ifndef USE_ROSEN_DRAWING
@@ -1412,11 +1417,7 @@ std::shared_ptr<Drawing::Surface> RSRenderNode::GetCacheSurface(uint32_t threadI
     }
 
     // freeze cache scene
-    if (clearCacheSurfaceFunc_) {
-        clearCacheSurfaceFunc_(std::move(cacheSurface_), std::move(cacheCompletedSurface_), cacheSurfaceThreadIndex_,
-            completedSurfaceThreadIndex_);
-    }
-    ClearCacheSurface();
+    ClearCacheSurfaceInThread();
     return nullptr;
 }
 
