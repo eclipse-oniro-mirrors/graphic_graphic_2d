@@ -49,7 +49,7 @@ HdiScreen::~HdiScreen()
 
 void HdiScreen::OnVsync(uint32_t sequence, uint64_t ns, void *data)
 {
-    ScopedBytrace onVsyncTrace(__func__ + std::to_string((ns)));
+    ScopedBytrace onVsyncTrace("HdiScreen::OnVsync_" + std::to_string((ns)));
     if (ns == 0) {
         HLOGW("Vsync ns is 0, drop this callback");
         return;
