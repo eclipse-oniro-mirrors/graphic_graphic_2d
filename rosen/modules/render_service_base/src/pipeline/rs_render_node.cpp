@@ -789,6 +789,14 @@ void RSRenderNode::ApplyAlpha(RSPaintFilterCanvas& canvas)
 
 void RSRenderNode::ProcessTransitionBeforeChildren(RSPaintFilterCanvas& canvas)
 {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        RSPropertyDrawableRenderContext context(*this, &canvas);
+        IterateOnDrawableRange(RSPropertyDrawableSlot::BOUNDS_MATRIX, RSPropertyDrawableSlot::MASK,
+            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) {
+                drawablePtr->Draw(context);
+            });
+        return;
+    }
     ApplyBoundsGeometry(canvas);
     ApplyAlpha(canvas);
     RSPropertiesPainter::DrawMask(GetRenderProperties(), canvas);
@@ -801,6 +809,14 @@ void RSRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
 
 void RSRenderNode::ProcessTransitionAfterChildren(RSPaintFilterCanvas& canvas)
 {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        RSPropertyDrawableRenderContext context(*this, &canvas);
+        IterateOnDrawableRange(RSPropertyDrawableSlot::TRANSITION, RSPropertyDrawableSlot::CLIP_TO_FRAME,
+            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) {
+                drawablePtr->Draw(context);
+            });
+        return;
+    }
     canvas.RestoreStatus(renderNodeSaveCount_);
 }
 
