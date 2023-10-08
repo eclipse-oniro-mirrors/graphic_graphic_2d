@@ -29,6 +29,8 @@
 namespace OHOS {
 namespace Rosen {
 namespace TextEngine {
+#define FAILED 1
+
 std::vector<LineMetrics> LineBreaker::BreakLines(std::vector<VariantSpan> &spans,
     const TypographyStyle &tstyle, const double widthLimit)
 {
@@ -194,7 +196,7 @@ std::vector<LineMetrics> LineBreaker::GenerateLineMetrics(std::vector<VariantSpa
         std::vector<VariantSpan> vss;
         int32_t next = breaks[i];
         if (next <= prev) {
-            throw TEXGINE_EXCEPTION(ERROR_STATUS);
+            return {};
         }
 
         for (; prev < next; prev++) {

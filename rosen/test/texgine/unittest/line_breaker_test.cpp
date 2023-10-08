@@ -239,8 +239,6 @@ HWTEST_F(LineBreakerTest, GenerateLineMetrics, TestSize.Level1)
     LineBreaker breaker;
     RUN_TESTINFO2(breaker, { .arg1 = {3, VariantSpan{}}, .arg2 = {2, 10},
         .exception = ExceptionType::OUT_OF_RANGE });
-    RUN_TESTINFO2(breaker, { .arg1 = {3, VariantSpan{}}, .arg2 = {3, 1},
-        .exception = ExceptionType::ERROR_STATUS });
     RUN_TESTINFO2(breaker, { .arg1 = {9, VariantSpan{}}, .arg2 = {2, 4, 7, 9},
         .checkFunc = LineMetricsSizesChecker({2, 2, 3, 2}) });
 }
