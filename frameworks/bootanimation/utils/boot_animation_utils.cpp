@@ -13,28 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef TEXT_BLOB_IMPL_H
-#define TEXT_BLOB_IMPL_H
-
-#include "impl_interface/base_impl.h"
+#include "boot_animation_utils.h"
+#include "parameters.h"
 
 namespace OHOS {
-namespace Rosen {
-namespace Drawing {
-class TextBlobImpl : public BaseImpl {
-public:
-    static inline constexpr AdapterType TYPE = AdapterType::BASE_INTERFACE;
-    ~TextBlobImpl() override = default;
+bool BootAnimationUtils::GetBootAnimationSoundEnabled()
+{
+    static bool soundEnabled =
+        std::atoi((system::GetParameter("persist.graphic.bootsound.enabled", "1")).c_str()) != 0;
+    return soundEnabled;
+}
 
-    AdapterType GetType() const override
-    {
-        return AdapterType::BASE_INTERFACE;
-    }
-
-protected:
-    TextBlobImpl() noexcept = default;
-};
-} // namespace Drawing
-} // namespace Rosen
+void BootAnimationUtils::SetBootAnimationSoundEnabled(bool isEnabled)
+{
+    system::SetParameter("persist.graphic.bootsound.enabled", isEnabled ? "1" : "0");
+}
 } // namespace OHOS
-#endif

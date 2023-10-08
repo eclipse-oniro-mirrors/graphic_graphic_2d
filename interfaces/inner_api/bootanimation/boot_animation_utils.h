@@ -13,28 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef TEXT_BLOB_IMPL_H
-#define TEXT_BLOB_IMPL_H
-
-#include "impl_interface/base_impl.h"
+#ifndef INTERFACES_INNERKITS_BOOTANIMATION_BOOTANIMATION_UTILS_H
+#define INTERFACES_INNERKITS_BOOTANIMATION_BOOTANIMATION_UTILS_H
 
 namespace OHOS {
-namespace Rosen {
-namespace Drawing {
-class TextBlobImpl : public BaseImpl {
+class BootAnimationUtils {
 public:
-    static inline constexpr AdapterType TYPE = AdapterType::BASE_INTERFACE;
-    ~TextBlobImpl() override = default;
+    BootAnimationUtils() = default;
+    virtual ~BootAnimationUtils() = default;
 
-    AdapterType GetType() const override
-    {
-        return AdapterType::BASE_INTERFACE;
-    }
+    static bool GetBootAnimationSoundEnabled();
 
-protected:
-    TextBlobImpl() noexcept = default;
+    static void SetBootAnimationSoundEnabled(bool isEnabled);
 };
-} // namespace Drawing
-} // namespace Rosen
 } // namespace OHOS
-#endif
+
+#endif // INTERFACES_INNERKITS_BOOTANIMATION_BOOTANIMATION_UTILS_H
