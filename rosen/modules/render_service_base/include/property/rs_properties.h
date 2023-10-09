@@ -20,11 +20,9 @@
 #include <tuple>
 #include <vector>
 
-#include "include/effects/SkColorMatrix.h"
-
+#include "animation/rs_render_particle.h"
 #include "common/rs_macros.h"
 #include "common/rs_matrix3.h"
-#include "animation/rs_render_particle.h"
 #include "common/rs_vector4.h"
 #include "modifier/rs_modifier_type.h"
 #include "property/rs_properties_def.h"
@@ -299,10 +297,11 @@ public:
     void ClearFilterCache();
 #endif
 
-    void OnApplyModifiers();
-
     const RRect& GetRRect() const;
     RRect GetInnerRRect() const;
+    RectF GetFrameRect() const;
+
+    void OnApplyModifiers();
 
 private:
     void ResetProperty(const std::unordered_set<RSModifierType>& dirtyTypes);
@@ -312,7 +311,6 @@ private:
 
     bool NeedClip() const;
 
-    RectF GetFrameRect() const;
     RectF GetBgImageRect() const;
     void GenerateRRect();
     RectI GetDirtyRect() const;
@@ -404,13 +402,13 @@ private:
 
     std::unique_ptr<Sandbox> sandbox_ = nullptr;
 
-    friend class RSCanvasDrawingRenderNode;
     friend class RSCanvasRenderNode;
     friend class RSColorfulShadowDrawable;
     friend class RSPropertiesPainter;
     friend class RSRenderNode;
     friend class RSBackgroundDrawable;
     friend class RSEffectDataGenerateDrawable;
+    friend class RSPropertyDrawableRenderContext;
 };
 } // namespace Rosen
 } // namespace OHOS

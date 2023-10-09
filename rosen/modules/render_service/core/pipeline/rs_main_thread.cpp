@@ -2388,6 +2388,10 @@ void RSMainThread::CollectFrameRateRange(std::shared_ptr<RSRenderNode> node)
 
 void RSMainThread::ApplyModifiers()
 {
+    if (context_->activeNodesInRoot_.empty()) {
+        return;
+    }
+    RS_TRACE_FUNC();
     frameRateRangeData_ = std::make_shared<FrameRateRangeData>();
     //[Planning]: Support multi-display in the future.
     frameRateRangeData_->screenId = 0;
