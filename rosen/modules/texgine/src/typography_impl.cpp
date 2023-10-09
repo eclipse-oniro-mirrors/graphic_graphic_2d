@@ -162,14 +162,16 @@ IndexAndAffinity TypographyImpl::GetGlyphIndexByCoordinate(double x, double y) c
     LOGSCOPED(sl, LOGEX_FUNC_LINE_DEBUG(), ss.str());
 
     // process y < 0
-    if (fabs(height_) < DBL_EPSILON || y < 0) {
-        LOGEX_FUNC_LINE_DEBUG() << "special: y < 0";
+    if (fabs(height_) < DBL_EPSILON) {
         return {0, Affinity::NEXT};
     }
 
     // find targetLine
     int targetLine = static_cast<int>(FindGlyphTargetLine(y));
-    LOGEX_FUNC_LINE_DEBUG() << "targetLine: " << targetLine;
+    if (targetLine == static_cast<int>(lineMetrics_.size())) {
+        // process y more than typography, (lineMetrics_.size() - 1) is the last line
+        targetLine = static_cast<int>(lineMetrics_.size() - 1);
+    }
 
     // count glyph before targetLine
     size_t count = 0;
@@ -178,31 +180,22 @@ IndexAndAffinity TypographyImpl::GetGlyphIndexByCoordinate(double x, double y) c
             count += span.GetNumberOfCharGroup();
         }
     }
-    LOGEX_FUNC_LINE_DEBUG() << "count: " << count;
-
-    // process y more than typography
-    if (targetLine == static_cast<int>(lineMetrics_.size())) {
-        LOGEX_FUNC_LINE_DEBUG() << "special: y >= max";
-        return {count, Affinity::PREV};
-    }
 
     // find targetIndex
     double offsetX = 0;
     std::vector<double> widths;
     auto targetIndex = FindGlyphTargetIndex(targetLine, x, offsetX, widths);
     count += targetIndex;
-    LOGEX_FUNC_LINE_DEBUG() << "targetIndex: " << targetIndex;
 
     // process first line left part
     if (targetIndex == 0 && targetLine == 0) {
-        LOGEX_FUNC_LINE_DEBUG() << "special: first line left part";
         return {0, Affinity::NEXT};
     }
 
-    // process right part
     auto affinity = Affinity::PREV;
     if (targetIndex == widths.size()) {
-        return {count, affinity};
+        // process right part, (count - 1) is the index of last chargroup
+        return {count - 1, affinity};
     }
 
     // calc affinity
@@ -215,7 +208,6 @@ IndexAndAffinity TypographyImpl::GetGlyphIndexByCoordinate(double x, double y) c
             affinity = Affinity::PREV;
         }
     }
-    LOGEX_FUNC_LINE_DEBUG() << "affinity: " << (affinity == Affinity::PREV ? "upstream" : "downstream");
 
     return {count, affinity};
 }
