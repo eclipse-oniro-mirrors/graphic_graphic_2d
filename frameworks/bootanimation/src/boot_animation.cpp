@@ -51,11 +51,7 @@ void BootAnimation::OnDraw(SkCanvas* canvas, int32_t curNo)
     SkPaint paint;
     SkRect rect;
     rect.setXYWH(pointX_, pointY_, realWidth_, realHeight_);
-#ifdef NEW_SKIA
     canvas->drawImageRect(image.get(), rect, SkSamplingOptions(), &paint);
-#else
-    canvas->drawImageRect(image.get(), rect, &paint);
-#endif
     ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
 }
 
