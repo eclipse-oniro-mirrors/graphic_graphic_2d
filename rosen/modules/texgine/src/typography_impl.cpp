@@ -637,17 +637,7 @@ void TypographyImpl::ComputeSpans(int lineIndex, double baseline, const CalcResu
         }
 
         if (auto ts = span.TryToTextSpan(); ts != nullptr) {
-            double top = *(ts->tmetrics_.fAscent_);
-            double height = *(ts->tmetrics_.fDescent_) - *(ts->tmetrics_.fAscent_);
-
-            std::vector<TextRect> boxes;
-            double width = 0.0;
-            for (const auto &gw : ts->glyphWidths_) {
-                auto rect = TexgineRect::MakeXYWH(offsetX + width, offsetY + top, gw, height);
-                boxes.push_back({.rect = rect, .direction = TextDirection::LTR});
-                width += gw;
-            }
-
+            std::vector<TextRect> boxes = GenTextRects(ts, offsetX, offsetY);
             spanBoxes.insert(spanBoxes.end(), boxes.begin(), boxes.end());
         }
 
@@ -662,8 +652,34 @@ void TypographyImpl::ComputeSpans(int lineIndex, double baseline, const CalcResu
     }
 }
 
+std::vector<TextRect> TypographyImpl::GenTextRects(std::shared_ptr<TextSpan> &ts, double offsetX, double offsetY) const
+{
+    double top = *(ts->tmetrics_.fAscent_);
+    double height = *(ts->tmetrics_.fDescent_) - *(ts->tmetrics_.fAscent_);
+
+    std::vector<TextRect> boxes;
+    double width = 0.0;
+    for (int i = 0; i < static_cast<int>(ts->glyphWidths_.size()); i++) {
+        auto cg = ts->cgs_.Get(i);
+        // If is emoji, don`t need process ligature, so set chars size to 1
+        int charsSize = cg.IsEmoji() ? 1 : static_cast<int>(cg.chars.size());
+        for (int j = 0; j < charsSize; j++) {
+            auto rect = TexgineRect::MakeXYWH(offsetX + width, offsetY + top,
+                ts->glyphWidths_[i] / charsSize, height);
+            boxes.push_back({.rect = rect, .direction = TextDirection::LTR});
+            width += ts->glyphWidths_[i] / charsSize;
+        }
+    }
+
+    return boxes;
+}
+
 std::vector<TextRect> TypographyImpl::MergeRects(const std::vector<TextRect> &boxes, Boundary boundary) const
 {
+    if (boxes.size() == 0) {
+        return {};
+    }
+
     if (boundary.leftIndex >= boxes.size()) {
         boundary.leftIndex = boxes.size() - 1;
     }

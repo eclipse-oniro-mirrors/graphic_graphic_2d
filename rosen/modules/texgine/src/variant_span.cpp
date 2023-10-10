@@ -120,7 +120,13 @@ std::vector<double> VariantSpan::GetGlyphWidths() const noexcept(false)
     std::vector<double> widths;
     if (ts_) {
         for (const auto &cg : ts_->cgs_) {
-            widths.push_back(cg.GetWidth());
+            if (cg.IsEmoji()) {
+                widths.push_back(cg.GetWidth());
+                continue;
+            }
+            for (int i = 0; i < static_cast<int>(cg.chars.size()); i++) {
+                widths.push_back(cg.GetWidth() / static_cast<int>(cg.chars.size()));
+            }
         }
     }
 
