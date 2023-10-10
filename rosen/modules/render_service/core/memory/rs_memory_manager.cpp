@@ -20,7 +20,8 @@
 #include "rs_trace.h"
 
 #include "memory/rs_dfx_string.h"
-#include "src/drawing/engine_adapter/skia_adapter/rs_skia_memory_tracer.h"
+#include "skia_adapter/rs_skia_memory_tracer.h"
+#include "skia_adapter/skia_graphics.h"
 #include "memory/rs_memory_graphic.h"
 #ifdef NEW_SKIA
 #include "include/gpu/GrDirectContext.h"
@@ -511,6 +512,31 @@ void MemoryManager::DumpDrawingCpuMemory(DfxString& log)
     size_t fontCacheLimit = SkGraphics::GetFontCacheLimit();
     log.AppendFormat("\ncpu cache limit = %zu ( fontcache = %zu ):\n", cacheLimit, fontCacheLimit);
 #else
+    // CPU
+    log.AppendFormat("\n----------\nSkia CPU caches:\n");
+    log.AppendFormat("Font Cache (CPU):\n");
+    log.AppendFormat("  Size: %.2f kB \n", Drawing::SkiaGraphics::GetFontCacheUsed() / MEMUNIT_RATE);
+    log.AppendFormat("  Glyph Count: %d \n", Drawing::SkiaGraphics::GetFontCacheCountUsed());
+
+    std::vector<ResourcePair> cpuResourceMap = {
+        { "skia/sk_resource_cache/bitmap_", "Bitmaps" },
+        { "skia/sk_resource_cache/rrect-blur_", "Masks" },
+        { "skia/sk_resource_cache/rects-blur_", "Masks" },
+        { "skia/sk_resource_cache/tessellated", "Shadows" },
+        { "skia/sk_resource_cache/yuv-planes_", "YUVPlanes" },
+        { "skia/sk_resource_cache/budget_glyph_count", "Bitmaps" },
+    };
+    SkiaMemoryTracer cpuTracer(cpuResourceMap, true);
+    Drawing::SkiaGraphics::DumpMemoryStatistics(&cpuTracer);
+    log.AppendFormat("CPU Cachesxx:\n");
+    cpuTracer.LogOutput(log);
+    log.AppendFormat("Total CPU memory usage:\n");
+    cpuTracer.LogTotals(log);
+
+    // cache limit
+    size_t cacheLimit = Drawing::SkiaGraphics::GetResourceCacheTotalByteLimit();
+    size_t fontCacheLimit = Drawing::SkiaGraphics::GetFontCacheLimit();
+    log.AppendFormat("\ncpu cache limit = %zu ( fontcache = %zu ):\n", cacheLimit, fontCacheLimit);
 #endif
 }
 
@@ -548,7 +574,7 @@ void MemoryManager::DumpGpuCache(
         log.AppendFormat("gpuContext is nullptr.\n");
         return;
     }
-    /////////////////////////////GPU/////////////////////////
+    /* GPU */
 #ifdef RS_ENABLE_GL
     log.AppendFormat("\n---------------\nSkia GPU Caches:%s\n", name.c_str());
     Drawing::TraceMemoryDump gpuTracer("category", true);
@@ -655,7 +681,7 @@ void MemoryManager::DumpDrawingGpuMemory(DfxString& log, const Drawing::GPUConte
         log.AppendFormat("No valid gpu cache instance.\n");
         return;
     }
-    /////////////////////////////GPU/////////////////////////
+    /* GPU */
 #ifdef RS_ENABLE_GL
     std::string gpuInfo;
     // total
@@ -674,7 +700,7 @@ void MemoryManager::DumpDrawingGpuMemory(DfxString& log, const Drawing::GPUConte
     gpuContext->GetResourceCacheUsage(nullptr, &cacheUsed);
     log.AppendFormat("\ngpu limit = %zu ( used = %zu ):\n", cacheLimit, cacheUsed);
 
-    //////////////////////////ShaderCache///////////////////
+    /* ShaderCache */
     log.AppendFormat("\n---------------\nShader Caches:\n");
 #ifdef NEW_RENDER_CONTEXT
     log.AppendFormat(MemoryHandler::QuerryShader().c_str());

@@ -219,6 +219,10 @@ void SkiaGPUContext::DumpMemoryStatisticsByTag(TraceMemoryDump* traceMemoryDump,
         return;
     }
 
+    if (!traceMemoryDump) {
+        LOGE("SkiaGPUContext::DumpMemoryStatisticsByTag, traceMemoryDump is nullptr");
+        return;
+    }
     SkTraceMemoryDump* skTraceMemoryDump = traceMemoryDump->GetImpl<SkiaTraceMemoryDump>()->GetTraceMemoryDump().get();
     GrGpuResourceTag grTag(tag.fPid, tag.fTid, tag.fWid, tag.fFid);
     grContext_->dumpMemoryStatisticsByTag(skTraceMemoryDump, grTag);
@@ -231,6 +235,10 @@ void SkiaGPUContext::DumpMemoryStatistics(TraceMemoryDump* traceMemoryDump)
         return;
     }
 
+    if (!traceMemoryDump) {
+        LOGE("SkiaGPUContext::DumpMemoryStatistics, traceMemoryDump is nullptr");
+        return;
+    }
     SkTraceMemoryDump* skTraceMemoryDump = traceMemoryDump->GetImpl<SkiaTraceMemoryDump>()->GetTraceMemoryDump().get();
     grContext_->dumpMemoryStatistics(skTraceMemoryDump);
 }

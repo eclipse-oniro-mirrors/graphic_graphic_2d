@@ -28,7 +28,7 @@ SkiaTraceMemoryDump::SkiaTraceMemoryDump(const char* categoryKey, bool itemizeTy
 void SkiaTraceMemoryDump::DumpNumericValue(const char* dumpName,
     const char* valueName, const char* units, uint64_t value)
 {
-    if (skiaMemoryTrace_) {
+    if (skiaMemoryTrace_ == nullptr) {
         LOGE("SkiaTraceMemoryDump::DumpNumericValue, skiaMemoryTrace_ is nullptr");
         return;
     }
@@ -38,7 +38,7 @@ void SkiaTraceMemoryDump::DumpNumericValue(const char* dumpName,
 
 void SkiaTraceMemoryDump::DumpStringValue(const char* dumpName, const char* valueName, const char* value)
 {
-    if (skiaMemoryTrace_) {
+    if (skiaMemoryTrace_ == nullptr) {
         LOGE("SkiaTraceMemoryDump::DumpStringValue, skiaMemoryTrace_ is nullptr");
         return;
     }
@@ -48,7 +48,7 @@ void SkiaTraceMemoryDump::DumpStringValue(const char* dumpName, const char* valu
 
 void SkiaTraceMemoryDump::LogOutput(OHOS::Rosen::DfxString& log)
 {
-    if (skiaMemoryTrace_) {
+    if (skiaMemoryTrace_ == nullptr) {
         LOGE("SkiaTraceMemoryDump::LogOutput, skiaMemoryTrace_ is nullptr");
         return;
     }
@@ -58,7 +58,7 @@ void SkiaTraceMemoryDump::LogOutput(OHOS::Rosen::DfxString& log)
 
 void SkiaTraceMemoryDump::LogTotals(OHOS::Rosen::DfxString& log)
 {
-    if (skiaMemoryTrace_) {
+    if (skiaMemoryTrace_ == nullptr) {
         LOGE("SkiaTraceMemoryDump::LogTotals, skiaMemoryTrace_ is nullptr");
         return;
     }
@@ -68,9 +68,9 @@ void SkiaTraceMemoryDump::LogTotals(OHOS::Rosen::DfxString& log)
 
 float SkiaTraceMemoryDump::GetGLMemorySize()
 {
-    if (skiaMemoryTrace_) {
+    if (skiaMemoryTrace_ == nullptr) {
         LOGE("SkiaTraceMemoryDump::GetGLMemorySize, skiaMemoryTrace_ is nullptr");
-        return 0.0;
+        return 0.0f;
     }
 
     return skiaMemoryTrace_->GetGLMemorySize();

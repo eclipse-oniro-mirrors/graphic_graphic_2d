@@ -42,5 +42,4 @@ public:
 }
 }
 }
-
 #endif // TRACE_MEMORY_DUMP_IMPL_H

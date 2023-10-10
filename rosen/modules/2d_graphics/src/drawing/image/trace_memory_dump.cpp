@@ -43,7 +43,7 @@ void TraceMemoryDump::LogTotals(OHOS::Rosen::DfxString& log)
     impl_->LogTotals(log);
 }
 
-float TraceMemoryDump::GetGLMemorySize()
+float TraceMemoryDump::GetGLMemorySize() const
 {
     return impl_->GetGLMemorySize();
 }
