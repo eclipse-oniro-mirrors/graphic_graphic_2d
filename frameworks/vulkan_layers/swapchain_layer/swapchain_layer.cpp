@@ -28,6 +28,7 @@
 #include <cinttypes>
 #include <refbase.h>
 
+#include <vulkan/vulkan_core.h>
 #include <window.h>
 #include <graphic_common.h>
 #include <native_window.h>
@@ -909,6 +910,28 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(
     return ret;
 }
 
+VKAPI_ATTR VkResult GetDeviceGroupPresentCapabilitiesKHR(
+    VkDevice, VkDeviceGroupPresentCapabilitiesKHR* pDeviceGroupPresentCapabilities)
+{
+    if (pDeviceGroupPresentCapabilities == nullptr) {
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+    }
+
+    memset_s(pDeviceGroupPresentCapabilities->presentMask,
+        sizeof(pDeviceGroupPresentCapabilities->presentMask), 0, sizeof(pDeviceGroupPresentCapabilities->presentMask));
+    pDeviceGroupPresentCapabilities->presentMask[0] = 1u;
+    pDeviceGroupPresentCapabilities->modes = VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_BIT_KHR;
+
+    return VK_SUCCESS;
+}
+
+VKAPI_ATTR VkResult GetDeviceGroupSurfacePresentModesKHR(
+    VkDevice, VkSurfaceKHR, VkDeviceGroupPresentModeFlagsKHR* pModes)
+{
+    *pModes = VK_DEVICE_GROUP_PRESENT_MODE_LOCAL_BIT_KHR;
+    return VK_SUCCESS;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceSupportKHR(
     VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, const VkSurfaceKHR surface, VkBool32* pSupported)
 {
@@ -1298,33 +1321,7 @@ static inline PFN_vkVoidFunction GetDebugUtilsProc(const char* name)
     return nullptr;
 }
 
-static inline PFN_vkVoidFunction GetBaseProc(const char* name)
-{
-    if (name == nullptr) {
-        return nullptr;
-    }
-    if (strcmp("vkEnumerateInstanceExtensionProperties", name) == 0) {
-        return reinterpret_cast<PFN_vkVoidFunction>(EnumerateInstanceExtensionProperties);
-    }
-    if (strcmp("vkEnumerateDeviceExtensionProperties", name) == 0) {
-        return reinterpret_cast<PFN_vkVoidFunction>(EnumerateDeviceExtensionProperties);
-    }
-    if (strcmp("vkEnumerateInstanceLayerProperties", name) == 0) {
-        return reinterpret_cast<PFN_vkVoidFunction>(EnumerateInstanceLayerProperties);
-    }
-    if (strcmp("vkEnumerateDeviceLayerProperties", name) == 0) {
-        return reinterpret_cast<PFN_vkVoidFunction>(EnumerateDeviceLayerProperties);
-    }
-    if (strcmp("vkGetInstanceProcAddr", name) == 0) {
-        return reinterpret_cast<PFN_vkVoidFunction>(GetInstanceProcAddr);
-    }
-    if (strcmp("vkGetDeviceProcAddr", name) == 0) {
-        return reinterpret_cast<PFN_vkVoidFunction>(GetDeviceProcAddr);
-    }
-    return nullptr;
-}
-
-static inline PFN_vkVoidFunction LayerInterceptProc(const char* name)
+static inline PFN_vkVoidFunction GetGlobalProc(const char* name)
 {
     if (name == nullptr) {
         return nullptr;
@@ -1332,14 +1329,22 @@ static inline PFN_vkVoidFunction LayerInterceptProc(const char* name)
     if (strcmp("vkCreateInstance", name) == 0) {
         return reinterpret_cast<PFN_vkVoidFunction>(CreateInstance);
     }
-    if (strcmp("vkDestroyInstance", name) == 0) {
-        return reinterpret_cast<PFN_vkVoidFunction>(DestroyInstance);
+    if (strcmp("vkEnumerateInstanceExtensionProperties", name) == 0) {
+        return reinterpret_cast<PFN_vkVoidFunction>(EnumerateInstanceExtensionProperties);
     }
-    if (strcmp("vkCreateDevice", name) == 0) {
-        return reinterpret_cast<PFN_vkVoidFunction>(CreateDevice);
+    if (strcmp("vkEnumerateInstanceLayerProperties", name) == 0) {
+        return reinterpret_cast<PFN_vkVoidFunction>(EnumerateInstanceLayerProperties);
     }
-    if (strcmp("vkDestroyDevice", name) == 0) {
-        return reinterpret_cast<PFN_vkVoidFunction>(DestroyDevice);
+    if (strcmp("vkEnumerateDeviceLayerProperties", name) == 0) {
+        return reinterpret_cast<PFN_vkVoidFunction>(EnumerateDeviceLayerProperties);
+    }
+    return nullptr;
+}
+
+static inline PFN_vkVoidFunction GetSwapchainProc(const char* name)
+{
+    if (name == nullptr) {
+        return nullptr;
     }
     if (strcmp("vkCreateSwapchainKHR", name) == 0) {
         return reinterpret_cast<PFN_vkVoidFunction>(CreateSwapchainKHR);
@@ -1359,11 +1364,31 @@ static inline PFN_vkVoidFunction LayerInterceptProc(const char* name)
     if (strcmp("vkGetSwapchainImagesKHR", name) == 0) {
         return reinterpret_cast<PFN_vkVoidFunction>(GetSwapchainImagesKHR);
     }
-    PFN_vkVoidFunction func = GetDebugUtilsProc(name);
-    if (func != nullptr) {
-        return func;
+    return nullptr;
+}
+
+static inline PFN_vkVoidFunction LayerInterceptDeviceProc(const char* name)
+{
+    if (name == nullptr) {
+        return nullptr;
     }
-    return GetBaseProc(name);
+    if (strcmp("vkGetDeviceProcAddr", name) == 0) {
+        return reinterpret_cast<PFN_vkVoidFunction>(GetDeviceProcAddr);
+    }
+    if (strcmp("vkDestroyDevice", name) == 0) {
+        return reinterpret_cast<PFN_vkVoidFunction>(DestroyDevice);
+    }
+    if (strcmp("vkGetDeviceGroupPresentCapabilitiesKHR", name) == 0) {
+        return reinterpret_cast<PFN_vkVoidFunction>(GetDeviceGroupPresentCapabilitiesKHR);
+    }
+    if (strcmp("vkGetDeviceGroupSurfacePresentModesKHR", name) == 0) {
+        return reinterpret_cast<PFN_vkVoidFunction>(GetDeviceGroupSurfacePresentModesKHR);
+    }
+    PFN_vkVoidFunction addr = GetSwapchainProc(name);
+    if (addr != nullptr) {
+        return addr;
+    }
+    return nullptr;
 }
 
 static inline PFN_vkVoidFunction LayerInterceptInstanceProc(const char* name)
@@ -1371,11 +1396,17 @@ static inline PFN_vkVoidFunction LayerInterceptInstanceProc(const char* name)
     if (name == nullptr) {
         return nullptr;
     }
-    if (strcmp("vkCreateInstance", name) == 0) {
-        return reinterpret_cast<PFN_vkVoidFunction>(CreateInstance);
+    if (strcmp("vkGetInstanceProcAddr", name) == 0) {
+        return reinterpret_cast<PFN_vkVoidFunction>(GetInstanceProcAddr);
     }
     if (strcmp("vkDestroyInstance", name) == 0) {
         return reinterpret_cast<PFN_vkVoidFunction>(DestroyInstance);
+    }
+    if (strcmp("vkCreateDevice", name) == 0) {
+        return reinterpret_cast<PFN_vkVoidFunction>(CreateDevice);
+    }
+    if (strcmp("vkEnumerateDeviceExtensionProperties", name) == 0) {
+        return reinterpret_cast<PFN_vkVoidFunction>(EnumerateDeviceExtensionProperties);
     }
     if (strcmp("vkGetPhysicalDeviceSurfaceFormatsKHR", name) == 0) {
         return reinterpret_cast<PFN_vkVoidFunction>(GetPhysicalDeviceSurfaceFormatsKHR);
@@ -1389,19 +1420,21 @@ static inline PFN_vkVoidFunction LayerInterceptInstanceProc(const char* name)
     if (strcmp("vkGetPhysicalDeviceSurfaceCapabilitiesKHR", name) == 0) {
         return reinterpret_cast<PFN_vkVoidFunction>(GetPhysicalDeviceSurfaceCapabilitiesKHR);
     }
-    if (strcmp("vkCreateDebugUtilsMessengerEXT", name) == 0) {
-        return reinterpret_cast<PFN_vkVoidFunction>(CreateDebugUtilsMessengerEXT);
-    }
-    if (strcmp("vkDestroyDebugUtilsMessengerEXT", name) == 0) {
-        return reinterpret_cast<PFN_vkVoidFunction>(DestroyDebugUtilsMessengerEXT);
-    }
     if (strcmp("vkCreateSurfaceOHOS", name) == 0) {
         return reinterpret_cast<PFN_vkVoidFunction>(CreateSurfaceOHOS);
     }
     if (strcmp("vkDestroySurfaceKHR", name) == 0) {
         return reinterpret_cast<PFN_vkVoidFunction>(DestroySurfaceKHR);
     }
-    return GetBaseProc(name);
+    PFN_vkVoidFunction addr = GetSwapchainProc(name);
+    if (addr != nullptr) {
+        return addr;
+    }
+    addr = GetDebugUtilsProc(name);
+    if (addr != nullptr) {
+        return addr;
+    }
+    return GetGlobalProc(name);
 }
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char* funcName)
@@ -1411,7 +1444,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, cons
         return nullptr;
     }
 
-    PFN_vkVoidFunction addr = LayerInterceptProc(funcName);
+    PFN_vkVoidFunction addr = LayerInterceptDeviceProc(funcName);
     if (addr != nullptr) {
         return addr;
     }
@@ -1425,16 +1458,14 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, cons
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance, const char* funcName)
 {
-    PFN_vkVoidFunction addr = LayerInterceptInstanceProc(funcName);
-    if (addr == nullptr) {
-        addr = LayerInterceptProc(funcName);
-    }
-    if (addr != nullptr) {
-        return addr;
-    }
     if (instance == VK_NULL_HANDLE) {
         SWLOGE("libvulkan_swapchain GetInstanceProcAddr instance is null");
         return nullptr;
+    }
+
+    PFN_vkVoidFunction addr = LayerInterceptInstanceProc(funcName);
+    if (addr != nullptr) {
+        return addr;
     }
     LayerData* layerData = GetLayerDataPtr(GetDispatchKey(instance));
     if (layerData == nullptr) {
