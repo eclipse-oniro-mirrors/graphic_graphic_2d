@@ -123,7 +123,8 @@ private:
     using DrawableGenerator = std::function<RSPropertyDrawable::DrawablePtr(const RSPropertyDrawableGenerateContext&)>;
     static const std::vector<DrawableGenerator> DrawableGeneratorLut;
 
-    static uint8_t CalculateDrawableMapStatus(RSPropertyDrawableGenerateContext& context, DrawableMap& drawableMap);
+    static inline uint8_t CalculateDrawableMapStatus(
+        RSPropertyDrawableGenerateContext& context, DrawableMap& drawableMap);
     static void OptimizeBoundsSaveRestore(
         RSPropertyDrawableGenerateContext& context, DrawableMap& drawableMap, uint8_t flags);
     static void OptimizeFrameSaveRestore(

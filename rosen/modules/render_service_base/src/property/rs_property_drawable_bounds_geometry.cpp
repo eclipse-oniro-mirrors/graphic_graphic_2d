@@ -41,19 +41,17 @@ namespace OHOS::Rosen {
 bool RSBackgroundDrawable::forceBgAntiAlias_ = true;
 // ============================================================================
 // Bounds geometry
-RSBoundsGeometryDrawable::RSBoundsGeometryDrawable(const SkMatrix& boundsMatrix) : boundsMatrix_(boundsMatrix) {}
-
 void RSBoundsGeometryDrawable::Draw(RSPropertyDrawableRenderContext& context)
 {
     context.canvas_->concat(boundsMatrix_);
 }
 RSPropertyDrawable::DrawablePtr RSBoundsGeometryDrawable::Generate(const RSPropertyDrawableGenerateContext& context)
 {
-    auto& matrix = context.properties_.GetBoundsGeometry()->GetMatrix();
-    if (matrix.isIdentity()) {
-        return nullptr;
-    }
-    return std::make_unique<RSBoundsGeometryDrawable>(matrix);
+    return std::make_unique<RSBoundsGeometryDrawable>();
+}
+void RSBoundsGeometryDrawable::OnGeometryChange(const RSProperties& properties)
+{
+    boundsMatrix_ = properties.GetBoundsGeometry()->GetMatrix();
 }
 
 void RSClipBoundsDrawable::Draw(RSPropertyDrawableRenderContext& context)
@@ -61,7 +59,7 @@ void RSClipBoundsDrawable::Draw(RSPropertyDrawableRenderContext& context)
     // Planning: Generate() should calculate the draw op and cache it
     auto& properties = context.properties_;
     if (properties.GetClipBounds() != nullptr) {
-        context.canvas_->clipPath(properties.GetClipBounds()->GetSkiaPath());
+        context.canvas_->clipPath(properties.GetClipBounds()->GetSkiaPath(), true);
     } else if (properties.GetClipToRRect()) {
         context.canvas_->clipRRect(RSPropertiesPainter::RRect2SkRRect(properties.GetClipRRect()));
     } else if (!properties.GetCornerRadius().IsZero()) {
@@ -99,9 +97,7 @@ RSPropertyDrawable::DrawablePtr RSBorderDrawable::Generate(const RSPropertyDrawa
 }
 RSBorderDRRectDrawable::RSBorderDRRectDrawable(SkPaint&& paint, const RSProperties& properties)
     : RSBorderDrawable(std::move(paint))
-{
-    OnGeometryChange(properties);
-}
+{}
 void RSBorderDRRectDrawable::OnGeometryChange(const RSProperties& properties)
 {
     inner_ = RSPropertiesPainter::RRect2SkRRect(properties.GetInnerRRect());
@@ -114,9 +110,7 @@ void RSBorderDRRectDrawable::Draw(RSPropertyDrawableRenderContext& context)
 
 RSBorderFourLineDrawable::RSBorderFourLineDrawable(SkPaint&& paint, const RSProperties& properties)
     : RSBorderDrawable(std::move(paint))
-{
-    OnGeometryChange(properties);
-}
+{}
 void RSBorderFourLineDrawable::OnGeometryChange(const RSProperties& properties)
 {
     rect_ = properties.GetBoundsRect();
@@ -128,9 +122,7 @@ void RSBorderFourLineDrawable::Draw(RSPropertyDrawableRenderContext& context)
 
 RSBorderPathDrawable::RSBorderPathDrawable(SkPaint&& paint, const RSProperties& properties)
     : RSBorderDrawable(std::move(paint))
-{
-    OnGeometryChange(properties);
-}
+{}
 void RSBorderPathDrawable::OnGeometryChange(const RSProperties& properties)
 {
     auto borderWidth = properties.GetBorder()->GetWidth();
@@ -151,7 +143,6 @@ RSBorderFourLineRoundCornerDrawable::RSBorderFourLineRoundCornerDrawable(
     : RSBorderDrawable(std::move(paint))
 {
     paint_.setStyle(SkPaint::Style::kStroke_Style);
-    OnGeometryChange(properties);
 }
 void RSBorderFourLineRoundCornerDrawable::OnGeometryChange(const RSProperties& properties)
 {
@@ -420,7 +411,7 @@ void RSDynamicLightUpDrawable::Draw(RSPropertyDrawableRenderContext& context)
 std::unique_ptr<RSPropertyDrawable> RSEffectDataApplyDrawable::Generate(
     const RSPropertyDrawableGenerateContext& context)
 {
-    if (context.properties_.GetBackgroundFilter() == nullptr) {
+    if (context.properties_.GetUseEffect() == false) {
         return nullptr;
     }
     return std::make_unique<RSEffectDataApplyDrawable>();
@@ -489,6 +480,9 @@ std::unique_ptr<RSPropertyDrawable> RSLightUpEffectDrawable::Generate(const RSPr
 
 void RSBackgroundFilterDrawable::Draw(RSPropertyDrawableRenderContext& context)
 {
+    if (context.canvas_->GetCacheType() == RSPaintFilterCanvas::CacheType::OFFSCREEN) {
+        return;
+    }
     RSFilterDrawable::DrawFilter(context, BACKGROUND_FILTER, filter_);
 }
 
@@ -502,6 +496,10 @@ std::unique_ptr<RSPropertyDrawable> RSBackgroundFilterDrawable::Generate(
     auto& filter = context.properties_.GetBackgroundFilter();
     if (filter == nullptr) {
         return nullptr;
+    }
+    if (context.node_->IsInstanceOf<RSEffectRenderNode>()) {
+        // for RSEffectRenderNode, we just use generates effect data, instead of draw filter
+        return std::make_unique<RSEffectDataGenerateDrawable>(filter);
     }
     return std::make_unique<RSBackgroundFilterDrawable>(filter);
 }
@@ -912,11 +910,12 @@ void RSEffectDataGenerateDrawable::Draw(RSPropertyDrawableRenderContext& context
         canvas->clipRect(rect);
     }
 
+    auto filter = std::static_pointer_cast<RSSkiaFilter>(filter_);
 #if defined(NEW_SKIA) && defined(RS_ENABLE_GL)
     // Optional use cacheManager to draw filter
     if (auto& cacheManager = properties.GetFilterCacheManager(false);
         cacheManager != nullptr && !canvas->GetDisableFilterCache()) {
-        auto&& data = cacheManager->GeneratedCachedEffectData(*canvas, filter_);
+        auto&& data = cacheManager->GeneratedCachedEffectData(*canvas, filter);
         canvas->SetEffectData(data);
         return;
     }
@@ -929,7 +928,7 @@ void RSEffectDataGenerateDrawable::Draw(RSPropertyDrawableRenderContext& context
         return;
     }
 
-    filter_->PreProcess(imageSnapshot);
+    filter->PreProcess(imageSnapshot);
     // create a offscreen skSurface
     sk_sp<SkSurface> offscreenSurface = skSurface->makeSurface(imageSnapshot->imageInfo());
     if (offscreenSurface == nullptr) {
@@ -938,8 +937,8 @@ void RSEffectDataGenerateDrawable::Draw(RSPropertyDrawableRenderContext& context
     }
     RSPaintFilterCanvas offscreenCanvas(offscreenSurface.get());
     auto clipBounds = SkRect::MakeIWH(imageRect.width(), imageRect.height());
-    filter_->DrawImageRect(offscreenCanvas, imageSnapshot, SkRect::Make(imageSnapshot->bounds()), clipBounds);
-    filter_->PostProcess(offscreenCanvas);
+    filter->DrawImageRect(offscreenCanvas, imageSnapshot, SkRect::Make(imageSnapshot->bounds()), clipBounds);
+    filter->PostProcess(offscreenCanvas);
 
     auto imageCache = offscreenSurface->makeImageSnapshot();
     if (imageCache == nullptr) {
@@ -948,17 +947,5 @@ void RSEffectDataGenerateDrawable::Draw(RSPropertyDrawableRenderContext& context
     }
     auto data = std::make_shared<RSPaintFilterCanvas::CachedEffectData>(std::move(imageCache), std::move(imageRect));
     canvas->SetEffectData(std::move(data));
-}
-
-std::unique_ptr<RSPropertyDrawable> RSEffectDataGenerateDrawable::Generate(
-    const RSPropertyDrawableGenerateContext& context)
-{
-    auto& properties = context.properties_;
-    auto& RSfilter = properties.GetBackgroundFilter();
-    if (RSfilter == nullptr) {
-        return nullptr;
-    }
-    std::shared_ptr<RSSkiaFilter> filter = std::static_pointer_cast<RSSkiaFilter>(RSfilter);
-    return std::make_unique<RSEffectDataGenerateDrawable>(std::move(filter));
 }
 } // namespace OHOS::Rosen

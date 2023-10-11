@@ -92,10 +92,7 @@ RSPropertyDrawable::DrawablePtr RSAlphaDrawable::Generate(const RSPropertyDrawab
                                                    : std::make_unique<RSAlphaDrawable>(alpha);
 }
 
-RSAlphaOffscreenDrawable::RSAlphaOffscreenDrawable(float alpha) : RSAlphaDrawable(alpha)
-{
-    OnGeometryChange(RSProperties());
-}
+RSAlphaOffscreenDrawable::RSAlphaOffscreenDrawable(float alpha) : RSAlphaDrawable(alpha) {}
 void RSAlphaOffscreenDrawable::OnGeometryChange(const RSProperties& properties)
 {
 #ifndef USE_ROSEN_DRAWING

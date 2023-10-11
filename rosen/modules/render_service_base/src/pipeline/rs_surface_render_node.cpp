@@ -321,14 +321,6 @@ void RSSurfaceRenderNode::ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanv
     if (GetCacheType() != CacheType::ANIMATE_PROPERTY && !needDrawAnimateProperty_) {
         return;
     }
-    if (RSSystemProperties::GetPropertyDrawableEnable()) {
-        RSPropertyDrawableRenderContext context(*this, &canvas);
-        IterateOnDrawableRange(RSPropertyDrawableSlot::MASK, RSPropertyDrawableSlot::BACKGROUND_FILTER,
-            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) {
-                drawablePtr->Draw(context);
-            });
-        return;
-    }
 
     const auto& property = GetRenderProperties();
     const RectF absBounds = {0, 0, property.GetBoundsWidth(), property.GetBoundsHeight()};
@@ -371,14 +363,6 @@ void RSSurfaceRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas
 void RSSurfaceRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas& canvas)
 {
     if (GetCacheType() != CacheType::ANIMATE_PROPERTY && !needDrawAnimateProperty_) {
-        return;
-    }
-    if (RSSystemProperties::GetPropertyDrawableEnable()) {
-        RSPropertyDrawableRenderContext context(*this, &canvas);
-        IterateOnDrawableRange(RSPropertyDrawableSlot::FOREGROUND_FILTER, RSPropertyDrawableSlot::BORDER,
-            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) {
-                drawablePtr->Draw(context);
-            });
         return;
     }
     const auto& property = GetRenderProperties();

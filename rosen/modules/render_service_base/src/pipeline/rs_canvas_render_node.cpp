@@ -122,9 +122,7 @@ void RSCanvasRenderNode::ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanva
     if (RSSystemProperties::GetPropertyDrawableEnable()) {
         RSPropertyDrawableRenderContext context(*this, &canvas);
         IterateOnDrawableRange(RSPropertyDrawableSlot::TRANSITION, RSPropertyDrawableSlot::CLIP_TO_FRAME,
-            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) {
-                drawablePtr->Draw(context);
-            });
+            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) { drawablePtr->Draw(context); });
         return;
     }
     RSModifierContext context = { GetMutableRenderProperties(), &canvas };
@@ -178,9 +176,7 @@ void RSCanvasRenderNode::ProcessRenderContents(RSPaintFilterCanvas& canvas)
     if (RSSystemProperties::GetPropertyDrawableEnable()) {
         RSPropertyDrawableRenderContext context(*this, &canvas);
         IterateOnDrawableRange(RSPropertyDrawableSlot::CONTENT_STYLE, RSPropertyDrawableSlot::CONTENT_STYLE,
-            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) {
-                drawablePtr->Draw(context);
-            });
+            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) { drawablePtr->Draw(context); });
         return;
     }
     RSModifierContext context = { GetMutableRenderProperties(), &canvas };
@@ -197,10 +193,8 @@ void RSCanvasRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas
 {
     if (RSSystemProperties::GetPropertyDrawableEnable()) {
         RSPropertyDrawableRenderContext context(*this, &canvas);
-        IterateOnDrawableRange(RSPropertyDrawableSlot::EXTRA_RESTORE_BOUNDS, RSPropertyDrawableSlot::PARTICLE_EFFECT,
-            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) {
-                drawablePtr->Draw(context);
-            });
+        IterateOnDrawableRange(RSPropertyDrawableSlot::FOREGROUND_STYLE, RSPropertyDrawableSlot::RESTORE_BOUNDS,
+            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) { drawablePtr->Draw(context); });
         return;
     }
     RSModifierContext context = { GetMutableRenderProperties(), &canvas };
@@ -225,18 +219,22 @@ void RSCanvasRenderNode::ProcessTransitionAfterChildren(RSPaintFilterCanvas& can
 {
     if (RSSystemProperties::GetPropertyDrawableEnable()) {
         RSPropertyDrawableRenderContext context(*this, &canvas);
-        IterateOnDrawableRange(RSPropertyDrawableSlot::PIXEL_STRETCH, RSPropertyDrawableSlot::PIXEL_STRETCH,
-            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) {
-                drawablePtr->Draw(context);
-            });
-    } else {
-        RSPropertiesPainter::DrawPixelStretch(GetRenderProperties(), canvas);
+        IterateOnDrawableRange(RSPropertyDrawableSlot::PIXEL_STRETCH, RSPropertyDrawableSlot::RESTORE_ALL,
+            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) { drawablePtr->Draw(context); });
+        return;
     }
+    RSPropertiesPainter::DrawPixelStretch(GetRenderProperties(), canvas);
     RSRenderNode::ProcessRenderAfterChildren(canvas);
 }
 
 void RSCanvasRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        RSPropertyDrawableRenderContext context(*this, &canvas);
+        IterateOnDrawableRange(RSPropertyDrawableSlot::FOREGROUND_STYLE, RSPropertyDrawableSlot::RESTORE_ALL,
+            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) { drawablePtr->Draw(context); });
+        return;
+    }
     ProcessAnimatePropertyAfterChildren(canvas);
     ProcessTransitionAfterChildren(canvas);
     canvas.RestoreEnv();

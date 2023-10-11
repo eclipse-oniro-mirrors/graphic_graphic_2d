@@ -29,8 +29,9 @@ class RSSkiaFilter;
 
 class RSBoundsGeometryDrawable : public RSPropertyDrawable {
 public:
-    explicit RSBoundsGeometryDrawable(const SkMatrix& boundsMatrix);
+    explicit RSBoundsGeometryDrawable() = default;
     ~RSBoundsGeometryDrawable() override = default;
+    void OnGeometryChange(const RSProperties& properties) override;
     void Draw(RSPropertyDrawableRenderContext& context) override;
 
     static RSPropertyDrawable::DrawablePtr Generate(const RSPropertyDrawableGenerateContext& context);
@@ -355,7 +356,8 @@ private:
 // Background
 class RSBackgroundDrawable : public RSPropertyDrawable {
 public:
-    explicit RSBackgroundDrawable(bool hasRoundedCorners) {
+    explicit RSBackgroundDrawable(bool hasRoundedCorners)
+    {
         paint_.setAntiAlias(forceBgAntiAlias_ || hasRoundedCorners);
     }
     ~RSBackgroundDrawable() override = default;
@@ -405,14 +407,12 @@ private:
 // BackgroundEffect
 class RSEffectDataGenerateDrawable : public RSPropertyDrawable {
 public:
-    explicit RSEffectDataGenerateDrawable(std::shared_ptr<RSSkiaFilter>&& filter) : filter_(std::move(filter)) {}
+    explicit RSEffectDataGenerateDrawable(std::shared_ptr<RSFilter> filter) : filter_(std::move(filter)) {}
     ~RSEffectDataGenerateDrawable() override = default;
     void Draw(RSPropertyDrawableRenderContext& context) override;
-    static void setForceBgAntiAlias(bool antiAlias);
-    static std::unique_ptr<RSPropertyDrawable> Generate(const RSPropertyDrawableGenerateContext& context);
 
 private:
-    std::shared_ptr<RSSkiaFilter> filter_ = nullptr;
+    std::shared_ptr<RSFilter> filter_ = nullptr;
 };
 
 };     // namespace OHOS::Rosen

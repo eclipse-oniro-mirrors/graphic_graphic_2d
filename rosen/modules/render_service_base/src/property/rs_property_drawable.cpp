@@ -143,7 +143,7 @@ const std::vector<RSPropertyDrawable::DrawableGenerator> RSPropertyDrawable::Dra
     nullptr, // SAVE_ALL,
 
     // Bounds Geometry
-    RSBoundsGeometryDrawable::Generate,                          // BOUNDS_MATRIX,
+    nullptr,                                                     // BOUNDS_MATRIX,
     RSAlphaDrawable::Generate,                                   // ALPHA,
     RSMaskDrawable::Generate,                                    // MASK,
     CustomModifierAdapter<RSModifierType::TRANSITION>,           // TRANSITION,
@@ -204,7 +204,7 @@ void RSPropertyDrawable::UpdateDrawableMap(RSPropertyDrawableGenerateContext& co
         dirtySlots.emplace(PropertyToDrawableLut[static_cast<int>(type)]);
     }
 
-    // count all slots after INVALID
+    // no dirty slots (except INVALID), just return
     if (dirtySlots.lower_bound(RSPropertyDrawableSlot::BOUNDS_MATRIX) == dirtySlots.end()) {
         return;
     }
@@ -223,16 +223,18 @@ void RSPropertyDrawable::UpdateDrawableMap(RSPropertyDrawableGenerateContext& co
     }
 
     auto drawableMapStatusNew = CalculateDrawableMapStatus(context, drawableMap);
+    // empty node
     if (drawableMapStatusNew == 0) {
         drawableMap.clear();
         drawableMapStatus = 0;
         return;
     }
 
-    // initialize
+    // initialize if needed
     if (drawableMapStatus == 0) {
         std::tie(drawableMap[RSPropertyDrawableSlot::SAVE_ALL], drawableMap[RSPropertyDrawableSlot::RESTORE_ALL]) =
-            GenerateSaveRestore();
+            GenerateSaveRestore(RSPaintFilterCanvas::kALL);
+        drawableMap[RSPropertyDrawableSlot::BOUNDS_MATRIX] = RSBoundsGeometryDrawable::Generate(context);
     }
 
     // calculate changed bits
@@ -248,7 +250,7 @@ void RSPropertyDrawable::UpdateDrawableMap(RSPropertyDrawableGenerateContext& co
     drawableMapStatus = drawableMapStatusNew;
 }
 
-uint8_t RSPropertyDrawable::CalculateDrawableMapStatus(
+inline uint8_t RSPropertyDrawable::CalculateDrawableMapStatus(
     RSPropertyDrawableGenerateContext& context, DrawableMap& drawableMap)
 {
     uint8_t result = 0;
@@ -273,7 +275,7 @@ uint8_t RSPropertyDrawable::CalculateDrawableMapStatus(
         result |= DrawableMapStatus::BOUNDS_PROPERTY_AFTER;
     }
     if (HasPropertyDrawableInRange(
-        drawableMap, RSPropertyDrawableSlot::CONTENT_STYLE, RSPropertyDrawableSlot::COLOR_FILTER)) {
+        drawableMap, RSPropertyDrawableSlot::FRAME_OFFSET, RSPropertyDrawableSlot::COLOR_FILTER)) {
         result |= DrawableMapStatus::FRAME_PROPERTY;
     }
 

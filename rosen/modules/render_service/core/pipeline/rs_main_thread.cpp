@@ -2392,7 +2392,8 @@ void RSMainThread::ApplyModifiers()
     if (context_->activeNodesInRoot_.empty()) {
         return;
     }
-    RS_TRACE_FUNC();
+    RS_TRACE_NAME_FMT("ApplyModifiers (PropertyDrawableEnable %s)",
+        RSSystemProperties::GetPropertyDrawableEnable() ? "TRUE" : "FALSE");
     frameRateRangeData_ = std::make_shared<FrameRateRangeData>();
     //[Planning]: Support multi-display in the future.
     frameRateRangeData_->screenId = 0;
