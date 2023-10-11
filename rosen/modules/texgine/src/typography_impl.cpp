@@ -177,7 +177,7 @@ IndexAndAffinity TypographyImpl::GetGlyphIndexByCoordinate(double x, double y) c
     size_t count = 0;
     for (auto i = 0; i < targetLine; i++) {
         for (const auto &span : lineMetrics_[i].lineSpans) {
-            count += span.GetNumberOfCharGroup();
+            count += span.GetNumberOfChar();
         }
     }
 

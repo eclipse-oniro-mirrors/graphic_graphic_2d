@@ -160,6 +160,27 @@ double VariantSpan::GetVisibleWidth() const noexcept(false)
     return 0.0;
 }
 
+size_t VariantSpan::GetNumberOfChar() const noexcept(false)
+{
+    CheckPointer();
+    size_t count = 0;
+    if (ts_) {
+        for (const auto &cg : ts_->cgs_) {
+            if (cg.IsEmoji()) {
+                count++;
+                continue;
+            }
+            count += cg.chars.size();
+        }
+    }
+
+    if (as_) {
+        return 1;
+    }
+
+    return count;
+}
+
 void VariantSpan::Dump(const DumpType &dtype) const noexcept(false)
 {
     CheckPointer(true);
