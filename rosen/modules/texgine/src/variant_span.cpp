@@ -175,6 +175,7 @@ size_t VariantSpan::GetNumberOfChar() const noexcept(false)
     }
 
     if (as_) {
+        // Set the number of AnySpan`s char to 1
         return 1;
     }
 
