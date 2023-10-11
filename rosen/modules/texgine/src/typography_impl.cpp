@@ -264,6 +264,13 @@ void TypographyImpl::Layout(double maxWidth)
         LOGSCOPED(sl, LOGEX_FUNC_LINE_DEBUG(), "TypographyImpl::Layout");
         LOGEX_FUNC_LINE(INFO) << "Layout maxWidth: " << maxWidth << ", spans.size(): " << spans_.size();
         maxWidth_ = maxWidth;
+        if (spans_.empty()) {
+            // 0xFFFC is a placeholder, if  the spans is empty when layout, we should add a placeholder to spans.
+            std::vector<uint16_t> text = {0xFFFC};
+            VariantSpan vs = TextSpan::MakeFromText(text);
+            vs.SetTextStyle(typographyStyle_.ConvertToTextStyle());
+            spans_.push_back(vs);
+        }
 
         Shaper shaper;
         lineMetrics_ = shaper.DoShape(spans_, typographyStyle_, fontProviders_, maxWidth);
