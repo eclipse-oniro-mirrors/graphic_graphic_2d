@@ -720,7 +720,11 @@ void RSUniRenderVisitor::CollectAppNodeForHwc(std::shared_ptr<RSSurfaceRenderNod
         RSParallelRenderManager::Instance()->AddAppWindowNode(parallelRenderVisitorIndex_, surfaceNode);
 #endif
     } else {
-        appWindowNodesInZOrder_.emplace_back(surfaceNode);
+        if (surfaceNode->IsHardwareEnabledTopSurface()) {
+            hardwareEnabledTopNodes_.emplace_back(surfaceNode);
+        } else {
+            appWindowNodesInZOrder_.emplace_back(surfaceNode);
+        }
     }
 }
 
@@ -848,6 +852,10 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         return;
     }
     node.CleanDstRectChanged();
+    if (node.IsHardwareEnabledTopSurface()) {
+        node.ResetSubNodeShouldPaint();
+        node.ResetChildHardwareEnabledNodes();
+    }
     curContentDirty_ = node.IsContentDirty();
     bool dirtyFlag = dirtyFlag_;
 
@@ -1177,6 +1185,10 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
     }
     if (node.GetSharedTransitionParam().has_value()) {
         node.GetMutableRenderProperties().UpdateSandBoxMatrix(parentSurfaceNodeMatrix_);
+    }
+    if (isSubNodeOfSurfaceInPrepare_ && curSurfaceNode_ &&
+        curSurfaceNode_->IsHardwareEnabledTopSurface() && node.ShouldPaint()) {
+        curSurfaceNode_->SetSubNodeShouldPaint();
     }
     // if canvasNode is not sub node of surfaceNode, merge the dirtyRegion to curDisplayDirtyManager_
     auto dirtyManager = isSubNodeOfSurfaceInPrepare_ ? curSurfaceDirtyManager_ : curDisplayDirtyManager_;
@@ -2183,9 +2195,11 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         RS_OPTIONAL_TRACE_BEGIN("RSUniRender:WaitUtilUniRenderFinished");
         RSMainThread::Instance()->WaitUtilUniRenderFinished();
         RS_OPTIONAL_TRACE_END();
-        AssignGlobalZOrderAndCreateLayer();
-        node.SetGlobalZOrder(globalZOrder_);
+        UpdateHardwareEnabledInfoBeforeCreateLayer();
+        AssignGlobalZOrderAndCreateLayer(appWindowNodesInZOrder_);
+        node.SetGlobalZOrder(globalZOrder_++);
         processor_->ProcessDisplaySurface(node);
+        AssignGlobalZOrderAndCreateLayer(hardwareEnabledTopNodes_);
     }
 
 #if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
@@ -2223,7 +2237,7 @@ void RSUniRenderVisitor::DrawSurfaceLayer(const std::shared_ptr<RSDisplayRenderN
 #endif
 }
 
-void RSUniRenderVisitor::AssignGlobalZOrderAndCreateLayer()
+void RSUniRenderVisitor::UpdateHardwareEnabledInfoBeforeCreateLayer()
 {
     if (!IsHardwareComposerEnabled()) {
         return;
@@ -2244,7 +2258,18 @@ void RSUniRenderVisitor::AssignGlobalZOrderAndCreateLayer()
 #endif
     }
     globalZOrder_ = 0.0f;
-    for (auto& appWindowNode : appWindowNodesInZOrder_) {
+}
+
+void RSUniRenderVisitor::AssignGlobalZOrderAndCreateLayer(
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>>& nodesInZOrder)
+{
+    if (!IsHardwareComposerEnabled()) {
+        return;
+    }
+    if (hardwareEnabledNodes_.empty()) {
+        return;
+    }
+    for (auto& appWindowNode : nodesInZOrder) {
         // first, sort app window node's child surfaceView by local zOrder
         auto childHardwareEnabledNodes = appWindowNode->GetChildHardwareEnabledNodes();
         for (auto iter = childHardwareEnabledNodes.begin(); iter != childHardwareEnabledNodes.end();) {
@@ -2373,7 +2398,7 @@ void RSUniRenderVisitor::CalcDirtyDisplayRegion(std::shared_ptr<RSDisplayRenderN
     auto displayDirtyManager = node->GetDirtyManager();
     for (auto it = node->GetCurAllSurfaces().rbegin(); it != node->GetCurAllSurfaces().rend(); ++it) {
         auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
-        if (surfaceNode == nullptr) {
+        if (surfaceNode == nullptr || !IsHardwareEnabledNodeNeedCalcGlobalDirty(surfaceNode)) {
             continue;
         }
         auto surfaceDirtyManager = surfaceNode->GetDirtyManager();
@@ -2663,6 +2688,9 @@ void RSUniRenderVisitor::AddContainerDirtyToGlobalDirty(std::shared_ptr<RSDispla
             // transparent region and opaque region in adjacent frame, may cause displaydirty region incomplete after
             // merge history (as surfacenode's dirty region merging opaque region will enlarge surface dirty region
             // which include transparent region but not counted in display dirtyregion)
+            if (!IsHardwareEnabledNodeNeedCalcGlobalDirty(surfaceNode)) {
+                continue;
+            }
             auto transparentRegion = surfaceNode->GetTransparentRegion();
             Occlusion::Rect tmpRect = Occlusion::Rect { surfaceDirtyRect.left_, surfaceDirtyRect.top_,
                 surfaceDirtyRect.GetRight(), surfaceDirtyRect.GetBottom() };
@@ -3224,14 +3252,17 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
                     }
                 }
                 node.SetHardwareForcedDisabledState(
-                    node.IsHardwareForcedDisabledByFilter() || canvas_->GetAlpha() < 1.f ||
-                    backgroundTransparent || rotationDisabled);
+                    (node.IsHardwareForcedDisabledByFilter() || canvas_->GetAlpha() < 1.f ||
+                    backgroundTransparent || rotationDisabled) &&
+                    (!node.IsHardwareEnabledTopSurface() || node.HasSubNodeShouldPaint()));
                 node.SetHardwareDisabledByCache(isUpdateCachedSurface_);
             }
             // if this window is in freeze state, disable hardware composer for its child surfaceView
             if (IsHardwareComposerEnabled() && !node.IsHardwareForcedDisabled() && node.IsHardwareEnabledType()) {
 #ifndef USE_ROSEN_DRAWING
-                canvas_->clear(SK_ColorTRANSPARENT);
+                if (!node.IsHardwareEnabledTopSurface()) {
+                    canvas_->clear(SK_ColorTRANSPARENT);
+                }
 #else
                 canvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
 #endif

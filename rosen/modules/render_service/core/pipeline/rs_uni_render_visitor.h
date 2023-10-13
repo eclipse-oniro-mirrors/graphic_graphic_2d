@@ -121,8 +121,9 @@ public:
         drivenInfo_->hasDrivenNodeMarkRender = hasDrivenNodeMarkRender;
     }
 
+    void UpdateHardwareEnabledInfoBeforeCreateLayer();
     void SetHardwareEnabledNodes(const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hardwareEnabledNodes);
-    void AssignGlobalZOrderAndCreateLayer();
+    void AssignGlobalZOrderAndCreateLayer(std::vector<std::shared_ptr<RSSurfaceRenderNode>>& nodesInZOrder);
 
     void CopyForParallelPrepare(std::shared_ptr<RSUniRenderVisitor> visitor);
     // Some properties defined before ProcessSurfaceRenderNode() may be used in
@@ -193,6 +194,12 @@ private:
     bool DrawDetailedTypesOfDirtyRegionForDFX(RSSurfaceRenderNode& node);
     void DrawAndTraceSingleDirtyRegionTypeForDFX(RSSurfaceRenderNode& node,
         DirtyRegionType dirtyType, bool isDrawn = true);
+
+    bool IsHardwareEnabledNodeNeedCalcGlobalDirty(std::shared_ptr<RSSurfaceRenderNode>& node) const
+    {
+        return !node->IsHardwareEnabledTopSurface() ||
+            isHardwareForcedDisabled_ || node->HasSubNodeShouldPaint();
+    }
 
     std::vector<RectI> GetDirtyRects(const Occlusion::Region &region);
     /* calculate display/global (between windows) level dirty region, current include:
@@ -379,6 +386,8 @@ private:
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
     // vector of all app window nodes with surfaceView, sorted by zOrder
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> appWindowNodesInZOrder_;
+    // vector of hardwareEnabled nodes above displayNodeSurface like pointer window
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledTopNodes_;
     float localZOrder_ = 0.0f; // local zOrder for surfaceView under same app window node
 
     // driven render
