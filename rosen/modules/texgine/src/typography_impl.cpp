@@ -177,7 +177,7 @@ IndexAndAffinity TypographyImpl::GetGlyphIndexByCoordinate(double x, double y) c
     size_t count = 0;
     for (auto i = 0; i < targetLine; i++) {
         for (const auto &span : lineMetrics_[i].lineSpans) {
-            count += span.GetNumberOfCharGroup();
+            count += span.GetNumberOfChar();
         }
     }
 
@@ -264,6 +264,13 @@ void TypographyImpl::Layout(double maxWidth)
         LOGSCOPED(sl, LOGEX_FUNC_LINE_DEBUG(), "TypographyImpl::Layout");
         LOGEX_FUNC_LINE(INFO) << "Layout maxWidth: " << maxWidth << ", spans.size(): " << spans_.size();
         maxWidth_ = maxWidth;
+        if (spans_.empty()) {
+            // 0xFFFC is a placeholder, if  the spans is empty when layout, we should add a placeholder to spans.
+            std::vector<uint16_t> text = {0xFFFC};
+            VariantSpan vs = TextSpan::MakeFromText(text);
+            vs.SetTextStyle(typographyStyle_.ConvertToTextStyle());
+            spans_.push_back(vs);
+        }
 
         Shaper shaper;
         lineMetrics_ = shaper.DoShape(spans_, typographyStyle_, fontProviders_, maxWidth);
@@ -298,11 +305,16 @@ void TypographyImpl::Layout(double maxWidth)
 
 void TypographyImpl::ProcessHardBreak()
 {
-    bool isAllHardBreak = true;
-    for (auto i = 0; i < static_cast<int>(lineMetrics_.size()); i++) {
-        if (!lineMetrics_[i].lineSpans.back().IsHardBreak()) {
-            isAllHardBreak = false;
-        }
+    bool isAllHardBreak = false;
+    int lineCount = static_cast<int>(lineMetrics_.size());
+    // If the number of lines equal 1 and the char is hard break, add a new line.
+    if (lineCount == 1 && lineMetrics_.back().lineSpans.back().IsHardBreak()) {
+        isAllHardBreak = true;
+        // When the number of lines more than 1, and the text ending with two hard breaks, add a new line.
+    } else if (lineCount > 1) {
+        // 1 is the last line, 2 is the penultimate line.
+        isAllHardBreak = lineMetrics_[lineCount - 1].lineSpans.front().IsHardBreak() &&
+            lineMetrics_[lineCount - 2].lineSpans.back().IsHardBreak();
     }
 
     if (isAllHardBreak) {
