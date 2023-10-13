@@ -47,7 +47,7 @@ public:
     void Layout() override
     {
         for (auto &info : g_infos) {
-            OH_Drawing_FontCollection* fontCollection = OH_Drawing_FontCollection();
+            OH_Drawing_FontCollection* fontCollection = OH_Drawing_CreateFontCollection();
             OH_Drawing_RegisterFont(fontCollection, info.fontFamily, info.path)
             TypographyStyle style;
             style.fontFamily_ = {info.fontFamily};

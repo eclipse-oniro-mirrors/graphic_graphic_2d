@@ -53,7 +53,7 @@ extern "C" {
  * @since 11
  * @version 1.0
  */
-uint32_t OH_Drawing_RegisterFont(OH_Drawing_FontCollection*, const char* fontFamily[], const char* familySrc[]);
+uint32_t OH_Drawing_RegisterFont(OH_Drawing_FontCollection*, const char* fontFamily, const char* familySrc);
 
 #ifdef __cplusplus
 }
