@@ -98,18 +98,39 @@ public:
         return GetName().find("RosenWeb") != std::string::npos;
     }
 
+    bool IsHardwareEnabledTopSurface() const
+    {
+        return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE && GetName() == "pointer window";
+    }
+
     // indicate if this node type can enable hardware composer
     bool IsHardwareEnabledType() const
     {
         if (IsRosenWeb() && !RSSystemProperties::IsPhoneType()) {
             return false;
         }
-        return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && isHardwareEnabledNode_;
+        return (nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && isHardwareEnabledNode_) ||
+            IsHardwareEnabledTopSurface();
     }
 
     void SetHardwareEnabled(bool isEnabled)
     {
         isHardwareEnabledNode_ = isEnabled;
+    }
+
+    void SetSubNodeShouldPaint()
+    {
+        hasSubNodeShouldPaint_ = true;
+    }
+
+    void ResetSubNodeShouldPaint()
+    {
+        hasSubNodeShouldPaint_ = false;
+    }
+
+    bool HasSubNodeShouldPaint() const
+    {
+        return hasSubNodeShouldPaint_;
     }
 
     // used for hwc node
@@ -914,6 +935,7 @@ private:
     bool isCurrentFrameHardwareEnabled_ = false;
     bool isLastFrameHardwareEnabled_ = false;
     bool isNewOnTree_ = false;
+    bool hasSubNodeShouldPaint_ = false;
     // mark if this self-drawing node is forced not to use hardware composer
     // in case where this node's parent window node is occluded or is appFreeze, this variable will be marked true
     bool isHardwareForcedDisabled_ = false;
