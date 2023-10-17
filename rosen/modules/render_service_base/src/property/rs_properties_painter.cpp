@@ -1239,9 +1239,12 @@ void RSPropertiesPainter::DrawBackgroundEffect(
 #endif
 
 #ifndef USE_ROSEN_DRAWING
-void RSPropertiesPainter::ApplyBackgroundEffectFallback(const RSProperties& properties, RSPaintFilterCanvas& canvas)
+void RSPropertiesPainter::ApplyBackgroundEffectFallback(const RSProperties& properties, RSPaintFilterCanvas& canvas, RSRenderNode* node)
 {
-    auto parentNode = properties.backref_.lock();
+    if (node == nullptr) {
+        return;
+    }
+    auto parentNode = node->GetParent().lock();
     while (parentNode && !parentNode->IsInstanceOf<RSEffectRenderNode>()) {
         parentNode = parentNode->GetParent().lock();
     }
@@ -1258,20 +1261,20 @@ void RSPropertiesPainter::ApplyBackgroundEffectFallback(const RSProperties& prop
     DrawFilter(properties, canvas, FilterType::BACKGROUND_FILTER, std::nullopt, filter);
 }
 #else
-void RSPropertiesPainter::ApplyBackgroundEffectFallback(const RSProperties& properties, RSPaintFilterCanvas& canvas)
+void RSPropertiesPainter::ApplyBackgroundEffectFallback(const RSProperties& properties, RSPaintFilterCanvas& canvas, RSRenderNode* node)
 {
     ROSEN_LOGE("Drawing Upsupport RSPropertiesPainter::ApplyBackgroundEffectFallback");
 }
 #endif
 
-void RSPropertiesPainter::ApplyBackgroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas)
+void RSPropertiesPainter::ApplyBackgroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas, RSRenderNode* node)
 {
 #ifndef USE_ROSEN_DRAWING
     const auto& effectData = canvas.GetEffectData();
     if (effectData == nullptr || effectData->cachedImage_ == nullptr) {
         // no effectData available, draw background filter in fallback method
         ROSEN_LOGD("RSPropertiesPainter::ApplyBackgroundEffect: effectData null, try fallback method.");
-        ApplyBackgroundEffectFallback(properties, canvas);
+        ApplyBackgroundEffectFallback(properties, canvas, node);
         return;
     }
     RS_TRACE_NAME("ApplyBackgroundEffect");
