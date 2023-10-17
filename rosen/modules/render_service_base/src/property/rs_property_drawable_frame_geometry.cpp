@@ -20,22 +20,18 @@
 #include "property/rs_properties_painter.h"
 
 namespace OHOS::Rosen {
-
-RSFrameGeometryDrawable::RSFrameGeometryDrawable(float frameOffsetX, float frameOffsetY)
-    : frameOffsetX_(frameOffsetX), frameOffsetY_(frameOffsetY)
-{}
 void RSFrameGeometryDrawable::Draw(RSPropertyDrawableRenderContext& context)
 {
     context.canvas_->translate(frameOffsetX_, frameOffsetY_);
 }
+void RSFrameGeometryDrawable::OnBoundsChange(const RSProperties& properties)
+{
+    frameOffsetX_ = properties.GetFrameOffsetX();
+    frameOffsetY_ = properties.GetFrameOffsetY();
+}
 RSPropertyDrawable::DrawablePtr RSFrameGeometryDrawable::Generate(const RSPropertyDrawableGenerateContext& context)
 {
-    auto frameOffsetX = context.properties_.GetFrameOffsetX();
-    auto frameOffsetY = context.properties_.GetFrameOffsetY();
-    if (frameOffsetX == 0 && frameOffsetY == 0) {
-        return nullptr;
-    }
-    return std::make_unique<RSFrameGeometryDrawable>(frameOffsetX, frameOffsetY);
+    return std::make_unique<RSFrameGeometryDrawable>();
 }
 
 void RSColorFilterDrawable::Draw(RSPropertyDrawableRenderContext& context)

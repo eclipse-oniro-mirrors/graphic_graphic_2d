@@ -49,7 +49,7 @@ RSPropertyDrawable::DrawablePtr RSBoundsGeometryDrawable::Generate(const RSPrope
 {
     return std::make_unique<RSBoundsGeometryDrawable>();
 }
-void RSBoundsGeometryDrawable::OnGeometryChange(const RSProperties& properties)
+void RSBoundsGeometryDrawable::OnBoundsMatrixChange(const RSProperties& properties)
 {
     boundsMatrix_ = properties.GetBoundsGeometry()->GetMatrix();
 }
@@ -98,7 +98,7 @@ RSPropertyDrawable::DrawablePtr RSBorderDrawable::Generate(const RSPropertyDrawa
 RSBorderDRRectDrawable::RSBorderDRRectDrawable(SkPaint&& paint, const RSProperties& properties)
     : RSBorderDrawable(std::move(paint))
 {}
-void RSBorderDRRectDrawable::OnGeometryChange(const RSProperties& properties)
+void RSBorderDRRectDrawable::OnBoundsChange(const RSProperties& properties)
 {
     inner_ = RSPropertiesPainter::RRect2SkRRect(properties.GetInnerRRect());
     outer_ = RSPropertiesPainter::RRect2SkRRect(properties.GetRRect());
@@ -111,7 +111,7 @@ void RSBorderDRRectDrawable::Draw(RSPropertyDrawableRenderContext& context)
 RSBorderFourLineDrawable::RSBorderFourLineDrawable(SkPaint&& paint, const RSProperties& properties)
     : RSBorderDrawable(std::move(paint))
 {}
-void RSBorderFourLineDrawable::OnGeometryChange(const RSProperties& properties)
+void RSBorderFourLineDrawable::OnBoundsChange(const RSProperties& properties)
 {
     rect_ = properties.GetBoundsRect();
 }
@@ -123,7 +123,7 @@ void RSBorderFourLineDrawable::Draw(RSPropertyDrawableRenderContext& context)
 RSBorderPathDrawable::RSBorderPathDrawable(SkPaint&& paint, const RSProperties& properties)
     : RSBorderDrawable(std::move(paint))
 {}
-void RSBorderPathDrawable::OnGeometryChange(const RSProperties& properties)
+void RSBorderPathDrawable::OnBoundsChange(const RSProperties& properties)
 {
     auto borderWidth = properties.GetBorder()->GetWidth();
     RRect rrect = properties.GetRRect();
@@ -144,7 +144,7 @@ RSBorderFourLineRoundCornerDrawable::RSBorderFourLineRoundCornerDrawable(
 {
     paint_.setStyle(SkPaint::Style::kStroke_Style);
 }
-void RSBorderFourLineRoundCornerDrawable::OnGeometryChange(const RSProperties& properties)
+void RSBorderFourLineRoundCornerDrawable::OnBoundsChange(const RSProperties& properties)
 {
     innerRrect_ = RSPropertiesPainter::RRect2SkRRect(properties.GetInnerRRect());
     rrect_ = RSPropertiesPainter::RRect2SkRRect(properties.GetRRect());

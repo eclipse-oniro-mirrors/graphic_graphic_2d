@@ -165,7 +165,7 @@ const std::vector<RSPropertyDrawable::DrawableGenerator> RSPropertyDrawable::Dra
 
     // Frame Geometry
     nullptr,                                                 // SAVE_FRAME,
-    RSFrameGeometryDrawable::Generate,                       // FRAME_OFFSET,
+    nullptr,                                                 // FRAME_OFFSET,
     RSClipFrameDrawable::Generate,                           // CLIP_TO_FRAME,
     CustomModifierAdapter<RSModifierType::CONTENT_STYLE>,    // CONTENT_STYLE
     nullptr,                                                 // CHILDREN,
@@ -221,20 +221,19 @@ void RSPropertyDrawable::UpdateDrawableMap(RSPropertyDrawableGenerateContext& co
             drawableMap[slot] = std::move(drawable);
         }
     }
-
-    auto drawableMapStatusNew = CalculateDrawableMapStatus(context, drawableMap);
-    // empty node
-    if (drawableMapStatusNew == 0) {
-        drawableMap.clear();
-        drawableMapStatus = 0;
-        return;
+    if (dirtySlots.count(RSPropertyDrawableSlot::BOUNDS_MATRIX)) {
+        for (auto& [_, drawable] : drawableMap) {
+            drawable->OnBoundsChange(context.properties_);
+        }
     }
 
+    auto drawableMapStatusNew = CalculateDrawableMapStatus(context, drawableMap);
     // initialize if needed
     if (drawableMapStatus == 0) {
         std::tie(drawableMap[RSPropertyDrawableSlot::SAVE_ALL], drawableMap[RSPropertyDrawableSlot::RESTORE_ALL]) =
             GenerateSaveRestore(RSPaintFilterCanvas::kALL);
         drawableMap[RSPropertyDrawableSlot::BOUNDS_MATRIX] = RSBoundsGeometryDrawable::Generate(context);
+        drawableMap[RSPropertyDrawableSlot::FRAME_OFFSET] = RSFrameGeometryDrawable::Generate(context);
     }
 
     // calculate changed bits

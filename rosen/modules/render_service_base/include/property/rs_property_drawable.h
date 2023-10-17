@@ -109,7 +109,8 @@ public:
     using DrawablePtr = std::unique_ptr<RSPropertyDrawable>;
 
     virtual void Draw(RSPropertyDrawableRenderContext& context) = 0;
-    virtual void OnGeometryChange(const RSProperties& properties) {}
+    virtual void OnBoundsMatrixChange(const RSProperties& properties) {}
+    virtual void OnBoundsChange(const RSProperties& properties) {}
 
     // Generator
     using DrawableMap = std::map<RSPropertyDrawableSlot, RSPropertyDrawable::DrawablePtr>;

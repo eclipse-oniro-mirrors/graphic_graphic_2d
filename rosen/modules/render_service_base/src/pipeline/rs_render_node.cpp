@@ -575,7 +575,7 @@ bool RSRenderNode::Update(
     }
     if (dirty) {
         for (auto& [key, value]: propertyDrawablesMap_) {
-            value->OnGeometryChange(renderProperties_);
+            value->OnBoundsMatrixChange(renderProperties_);
         }
     }
     isDirtyRegionUpdated_ = false;

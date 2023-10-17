@@ -31,7 +31,7 @@ class RSBoundsGeometryDrawable : public RSPropertyDrawable {
 public:
     explicit RSBoundsGeometryDrawable() = default;
     ~RSBoundsGeometryDrawable() override = default;
-    void OnGeometryChange(const RSProperties& properties) override;
+    void OnBoundsMatrixChange(const RSProperties& properties) override;
     void Draw(RSPropertyDrawableRenderContext& context) override;
 
     static RSPropertyDrawable::DrawablePtr Generate(const RSPropertyDrawableGenerateContext& context);
@@ -65,7 +65,7 @@ class RSBorderDRRectDrawable : public RSBorderDrawable {
 public:
     explicit RSBorderDRRectDrawable(SkPaint&& paint, const RSProperties& properties);
     ~RSBorderDRRectDrawable() override = default;
-    void OnGeometryChange(const RSProperties& properties) override;
+    void OnBoundsChange(const RSProperties& properties) override;
     void Draw(RSPropertyDrawableRenderContext& context) override;
 
 private:
@@ -77,7 +77,7 @@ class RSBorderFourLineDrawable : public RSBorderDrawable {
 public:
     explicit RSBorderFourLineDrawable(SkPaint&& paint, const RSProperties& properties);
     ~RSBorderFourLineDrawable() override = default;
-    void OnGeometryChange(const RSProperties& properties) override;
+    void OnBoundsChange(const RSProperties& properties) override;
     void Draw(RSPropertyDrawableRenderContext& context) override;
 
 private:
@@ -88,7 +88,7 @@ class RSBorderPathDrawable : public RSBorderDrawable {
 public:
     explicit RSBorderPathDrawable(SkPaint&& paint, const RSProperties& properties);
     ~RSBorderPathDrawable() override = default;
-    void OnGeometryChange(const RSProperties& properties) override;
+    void OnBoundsChange(const RSProperties& properties) override;
     void Draw(RSPropertyDrawableRenderContext& context) override;
 
 private:
@@ -99,7 +99,7 @@ class RSBorderFourLineRoundCornerDrawable : public RSBorderDrawable {
 public:
     explicit RSBorderFourLineRoundCornerDrawable(SkPaint&& paint, const RSProperties& properties);
     ~RSBorderFourLineRoundCornerDrawable() override = default;
-    void OnGeometryChange(const RSProperties& properties) override;
+    void OnBoundsChange(const RSProperties& properties) override;
     void Draw(RSPropertyDrawableRenderContext& context) override;
 
 private:
