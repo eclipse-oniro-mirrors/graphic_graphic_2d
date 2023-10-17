@@ -321,6 +321,8 @@ public:
 
     void UpdateUIFrameRateRange(const FrameRateRange& range);
 
+    void SetOutOfParent(OutOfParentType outOfParent);
+
 protected:
     explicit RSNode(bool isRenderServiceNode);
     explicit RSNode(bool isRenderServiceNode, NodeId id);
@@ -379,6 +381,7 @@ private:
     std::unordered_map<PropertyId, std::shared_ptr<RSModifier>> modifiers_;
     std::unordered_map<RSModifierType, std::shared_ptr<RSModifier>> propertyModifiers_;
     std::shared_ptr<RectF> drawRegion_;
+    OutOfParentType outOfParent_ = OutOfParentType::UNKNOWN;
 
     std::unordered_map<AnimationId, std::shared_ptr<RSAnimation>> animations_;
     std::unordered_map<PropertyId, uint32_t> animatingPropertyNum_;
