@@ -39,6 +39,7 @@ using namespace OHOS::Rosen;
 #define ERROR_GET_SIZE_FAILED 5
 #define ERROR_NULL_FONT_BUFFER 6
 #define ERROR_BUFFER_SIZE_ZERO 7
+#define ERROR_NULL_FONT_COLLECTION 8
 
 #ifdef BUILD_NON_SDK_VER
 static bool StdFilesystemExists(const std::string &p, std::error_code &ec)
@@ -59,16 +60,20 @@ inline T1* ConvertToOriginalText(T2* ptr)
     return reinterpret_cast<T1*>(ptr);
 }
 
-static void LoadFromFontCollection(OH_Drawing_FontCollection* fontCollection,
+static uint32_t LoadFromFontCollection(OH_Drawing_FontCollection* fontCollection,
     const std::string &familyName, const uint8_t* data, size_t dataLength)
 {
+    if (fontCollection == nullptr) {
+        return ERROR_NULL_FONT_COLLECTION;
+    }
+
+    auto fc = ConvertToOriginalText<FontCollection>(fontCollection);
 #ifndef USE_GRAPHIC_TEXT_GINE
-    auto fc = std::shared_ptr<FontCollection>(ConvertToOriginalText<FontCollection>(fontCollection));
     fc->LoadFontFromList(data, dataLength, familyName);
 #else
-    auto fc = std::shared_ptr<FontCollection>(ConvertToOriginalText<FontCollection>(fontCollection));
     fc->LoadFont(familyName, data, dataLength);
 #endif
+    return 0;
 }
 
 uint32_t OH_Drawing_RegisterFont(OH_Drawing_FontCollection* fontCollection, const char* fontFamily,
@@ -121,8 +126,7 @@ uint32_t OH_Drawing_RegisterFont(OH_Drawing_FontCollection* fontCollection, cons
     ifs.close();
     const std::string familyName = fontFamily;
     const uint8_t* data = reinterpret_cast<uint8_t*>(buffer.get());
-    LoadFromFontCollection(fontCollection, familyName, data, size);
-    return 0;
+    return LoadFromFontCollection(fontCollection, familyName, data, size);
 }
 
 uint32_t OH_Drawing_RegisterFontBuffer(OH_Drawing_FontCollection* fontCollection, const char* fontFamily,
@@ -137,6 +141,5 @@ uint32_t OH_Drawing_RegisterFontBuffer(OH_Drawing_FontCollection* fontCollection
     }
 
     const std::string familyName = fontFamily;
-    LoadFromFontCollection(fontCollection, familyName, fontBuffer, length);
-    return 0;
+    return LoadFromFontCollection(fontCollection, familyName, fontBuffer, length);
 }
