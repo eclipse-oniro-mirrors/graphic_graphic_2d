@@ -222,7 +222,8 @@ bool RSCanvasDrawingNode::GetPixelmap(const std::shared_ptr<Media::PixelMap> pix
         RS_LOGD("RSCanvasDrawingNode::GetPixelmap: drawCmdList is nullptr");
     } else {
         Drawing::Bitmap bitmap;
-        Drawing::ImageInfo imageInfo(pixelmap->GetWidth(), pixelmap->GetHeight(), COLORTYPE_RGBA_8888, ALPHATYPE_PREMUL);
+        Drawing::ImageInfo imageInfo(pixelmap->GetWidth(), pixelmap->GetHeight(),
+            COLORTYPE_RGBA_8888, ALPHATYPE_PREMUL);
         bitmap.Build(imageInfo);
         bitmap.SetPixels(static_cast<uint8_t*>(pixelmap->GetWritablePixels()));
 

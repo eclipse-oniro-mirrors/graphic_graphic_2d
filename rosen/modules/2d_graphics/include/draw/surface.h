@@ -83,6 +83,9 @@ public:
      */
     std::shared_ptr<Image> GetImageSnapshot(const RectI& bounds) const;
 
+    /*
+     * @brief   Returns a compatible Surface, with the specified widht and height
+     */
     std::shared_ptr<Surface> MakeSurface(int width, int height) const;
 
     /*
