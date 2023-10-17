@@ -56,6 +56,7 @@ class RSNodeVisitor;
 class RSCommand;
 enum class RSPropertyDrawableSlot : unsigned char;
 class RSPropertyDrawable;
+class RSPropertyDrawableRenderContext;
 
 class RSB_EXPORT RSRenderNode : public std::enable_shared_from_this<RSRenderNode>  {
 public:
@@ -462,6 +463,8 @@ protected:
     std::unordered_set<RSModifierType> dirtyTypes_;
     bool isFullChildrenListValid_ = false;
     RSProperties renderProperties_;
+    void IterateOnDrawableRange(RSPropertyDrawableSlot begin, RSPropertyDrawableSlot end,
+        const std::function<void(std::unique_ptr<RSPropertyDrawable>&)>& func);
 
 private:
     NodeId id_;
@@ -592,8 +595,6 @@ private:
     using DrawableIter = decltype(propertyDrawablesMap_)::iterator;
     inline std::pair<DrawableIter, DrawableIter> GetDrawableRange(
         RSPropertyDrawableSlot begin, RSPropertyDrawableSlot end);
-    inline void IterateOnDrawableRange(RSPropertyDrawableSlot begin, RSPropertyDrawableSlot end,
-        const std::function<void(std::unique_ptr<RSPropertyDrawable>&)>& func);
 
     friend class RSMainThread;
     friend class RSProxyRenderNode;

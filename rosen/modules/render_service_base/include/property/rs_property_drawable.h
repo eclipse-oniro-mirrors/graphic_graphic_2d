@@ -47,10 +47,12 @@ enum class RSPropertyDrawableSlot : unsigned char {
     // In Bounds Clip
     SAVE_BOUNDS,
     CLIP_TO_BOUNDS,
-    BACKGROUND,
+    BACKGROUND_COLOR,
+    BACKGROUND_SHADER,
+    BACKGROUND_IMAGE,
     BACKGROUND_FILTER,
     USE_EFFECT,
-    CUSTOM_BACKGROUND_MODIFIER,
+    BACKGROUND_STYLE,
     DYNAMIC_LIGHT_UP,
     ENV_FOREGROUND_COLOR_STRATEGY,
     EXTRA_RESTORE_BOUNDS,
@@ -107,7 +109,8 @@ public:
     using DrawablePtr = std::unique_ptr<RSPropertyDrawable>;
 
     virtual void Draw(RSPropertyDrawableRenderContext& context) = 0;
-    virtual void OnGeometryChange(const RSProperties& properties) {}
+    virtual void OnBoundsMatrixChange(const RSProperties& properties) {}
+    virtual void OnBoundsChange(const RSProperties& properties) {}
 
     // Generator
     using DrawableMap = std::map<RSPropertyDrawableSlot, RSPropertyDrawable::DrawablePtr>;
@@ -121,7 +124,8 @@ private:
     using DrawableGenerator = std::function<RSPropertyDrawable::DrawablePtr(const RSPropertyDrawableGenerateContext&)>;
     static const std::vector<DrawableGenerator> DrawableGeneratorLut;
 
-    static uint8_t CalculateDrawableMapStatus(RSPropertyDrawableGenerateContext& context, DrawableMap& drawableMap);
+    static inline uint8_t CalculateDrawableMapStatus(
+        RSPropertyDrawableGenerateContext& context, DrawableMap& drawableMap);
     static void OptimizeBoundsSaveRestore(
         RSPropertyDrawableGenerateContext& context, DrawableMap& drawableMap, uint8_t flags);
     static void OptimizeFrameSaveRestore(

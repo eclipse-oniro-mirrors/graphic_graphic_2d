@@ -26,15 +26,16 @@
 namespace OHOS::Rosen {
 class RSFrameGeometryDrawable : public RSPropertyDrawable {
 public:
-    explicit RSFrameGeometryDrawable(float frameOffsetX, float frameOffsetY);
+    explicit RSFrameGeometryDrawable() = default;
     ~RSFrameGeometryDrawable() override = default;
     void Draw(RSPropertyDrawableRenderContext& context) override;
+    void OnBoundsChange(const RSProperties& properties) override;
 
     static RSPropertyDrawable::DrawablePtr Generate(const RSPropertyDrawableGenerateContext& context);
 
 private:
-    float frameOffsetX_;
-    float frameOffsetY_;
+    float frameOffsetX_ { 0.0f };
+    float frameOffsetY_ { 0.0f };
 };
 
 // ============================================================================

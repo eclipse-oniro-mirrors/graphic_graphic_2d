@@ -33,6 +33,7 @@
 #include "render/rs_light_up_effect_filter.h"
 #include "platform/common/rs_log.h"
 #include "visitor/rs_node_visitor.h"
+#include "property/rs_property_drawable.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -118,6 +119,12 @@ void RSCanvasRenderNode::ProcessTransitionBeforeChildren(RSPaintFilterCanvas& ca
 
 void RSCanvasRenderNode::ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanvas& canvas)
 {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        RSPropertyDrawableRenderContext context(*this, &canvas);
+        IterateOnDrawableRange(RSPropertyDrawableSlot::TRANSITION, RSPropertyDrawableSlot::CLIP_TO_FRAME,
+            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) { drawablePtr->Draw(context); });
+        return;
+    }
     RSModifierContext context = { GetMutableRenderProperties(), &canvas };
     ApplyDrawCmdModifier(context, RSModifierType::TRANSITION);
     ApplyDrawCmdModifier(context, RSModifierType::ENV_FOREGROUND_COLOR);
@@ -166,6 +173,12 @@ void RSCanvasRenderNode::ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanva
 
 void RSCanvasRenderNode::ProcessRenderContents(RSPaintFilterCanvas& canvas)
 {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        RSPropertyDrawableRenderContext context(*this, &canvas);
+        IterateOnDrawableRange(RSPropertyDrawableSlot::CONTENT_STYLE, RSPropertyDrawableSlot::CONTENT_STYLE,
+            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) { drawablePtr->Draw(context); });
+        return;
+    }
     RSModifierContext context = { GetMutableRenderProperties(), &canvas };
     ApplyDrawCmdModifier(context, RSModifierType::CONTENT_STYLE);
 }
@@ -178,6 +191,12 @@ void RSCanvasRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas
 
 void RSCanvasRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas& canvas)
 {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        RSPropertyDrawableRenderContext context(*this, &canvas);
+        IterateOnDrawableRange(RSPropertyDrawableSlot::FOREGROUND_STYLE, RSPropertyDrawableSlot::RESTORE_BOUNDS,
+            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) { drawablePtr->Draw(context); });
+        return;
+    }
     RSModifierContext context = { GetMutableRenderProperties(), &canvas };
     ApplyDrawCmdModifier(context, RSModifierType::FOREGROUND_STYLE);
     RSPropertiesPainter::DrawColorFilter(GetRenderProperties(), canvas);
@@ -198,12 +217,24 @@ void RSCanvasRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas
 
 void RSCanvasRenderNode::ProcessTransitionAfterChildren(RSPaintFilterCanvas& canvas)
 {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        RSPropertyDrawableRenderContext context(*this, &canvas);
+        IterateOnDrawableRange(RSPropertyDrawableSlot::PIXEL_STRETCH, RSPropertyDrawableSlot::RESTORE_ALL,
+            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) { drawablePtr->Draw(context); });
+        return;
+    }
     RSPropertiesPainter::DrawPixelStretch(GetRenderProperties(), canvas);
     RSRenderNode::ProcessRenderAfterChildren(canvas);
 }
 
 void RSCanvasRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        RSPropertyDrawableRenderContext context(*this, &canvas);
+        IterateOnDrawableRange(RSPropertyDrawableSlot::FOREGROUND_STYLE, RSPropertyDrawableSlot::RESTORE_ALL,
+            [&](RSPropertyDrawable::DrawablePtr& drawablePtr) { drawablePtr->Draw(context); });
+        return;
+    }
     ProcessAnimatePropertyAfterChildren(canvas);
     ProcessTransitionAfterChildren(canvas);
     canvas.RestoreEnv();

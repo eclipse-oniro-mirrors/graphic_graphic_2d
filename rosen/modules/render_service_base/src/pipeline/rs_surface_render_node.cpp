@@ -41,6 +41,7 @@
 #include "render/rs_skia_filter.h"
 #include "transaction/rs_render_service_client.h"
 #include "visitor/rs_node_visitor.h"
+#include "property/rs_property_drawable.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -320,6 +321,7 @@ void RSSurfaceRenderNode::ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanv
     if (GetCacheType() != CacheType::ANIMATE_PROPERTY && !needDrawAnimateProperty_) {
         return;
     }
+
     const auto& property = GetRenderProperties();
     const RectF absBounds = {0, 0, property.GetBoundsWidth(), property.GetBoundsHeight()};
     RRect absClipRRect = RRect(absBounds, property.GetCornerRadius());

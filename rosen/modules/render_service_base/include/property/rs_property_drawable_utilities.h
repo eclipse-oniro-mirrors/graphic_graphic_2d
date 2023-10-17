@@ -98,7 +98,7 @@ public:
     explicit RSAlphaOffscreenDrawable(float alpha);
 
     void Draw(RSPropertyDrawableRenderContext& context) override;
-    void OnGeometryChange(const RSProperties& properties) override;
+    void OnBoundsChange(const RSProperties& properties) override;
 
 private:
 #ifndef USE_ROSEN_DRAWING
