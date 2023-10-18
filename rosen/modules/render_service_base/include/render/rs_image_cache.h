@@ -89,7 +89,7 @@ private:
 #ifndef USE_ROSEN_DRAWING
     std::unordered_map<uint64_t, std::unordered_map<pid_t, sk_sp<SkImage>>> pixelMapIdRelatedSkiaImageCache_;
 #else
-    std::unordered_map<uint64_t, std::unordered_map<pid_t, std::shared_ptr<Drawing::Image>>> 
+    std::unordered_map<uint64_t, std::unordered_map<pid_t, std::shared_ptr<Drawing::Image>>>
         pixelMapIdRelatedDrawingImageCache_;
 #endif
 };

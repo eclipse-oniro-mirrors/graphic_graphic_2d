@@ -376,7 +376,9 @@ void RSImageBase::ConvertPixelMapToSkImage()
         }
         if (!image_) {
             image_ = RSPixelMapUtil::ExtractSkImage(pixelMap_);
-            SKResourceManager::Instance().HoldResource(image_);
+            if (image_) {
+                SKResourceManager::Instance().HoldResource(image_);
+            }
             if (!pixelMap_->IsEditable()) {
 #if defined(ROSEN_OHOS)
                 RSImageCache::Instance().CacheRenderSkiaImageByPixelMapId(uniqueId_, image_, gettid());

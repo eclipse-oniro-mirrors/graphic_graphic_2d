@@ -184,7 +184,7 @@ void RSImageCache::CacheRenderSkiaImageByPixelMapId(uint64_t uniqueId, sk_sp<SkI
 }
 #else
 void RSImageCache::CacheRenderDrawingImageByPixelMapId(uint64_t uniqueId,
-        std::shared_ptr<Drawing::Image> img, pid_t tid)
+    std::shared_ptr<Drawing::Image> img, pid_t tid)
 {
     if (uniqueId > 0 && img) {
         std::lock_guard<std::mutex> lock(mapMutex_);
