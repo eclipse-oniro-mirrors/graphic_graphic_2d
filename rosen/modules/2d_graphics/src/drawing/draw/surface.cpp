@@ -37,6 +37,16 @@ bool Surface::Bind(const FrameBuffer& frameBuffer)
 {
     return impl_->Bind(frameBuffer);
 }
+
+bool Surface::MakeRenderTarget(GPUContext& gpuContext, bool Budgeted, const ImageInfo& imageInfo)
+{
+    return impl_->MakeRenderTarget(gpuContext, Budgeted, imageInfo);
+}
+
+bool Surface::MakeRasterN32Premul(int32_t width, int32_t height)
+{
+    return impl_->MakeRasterN32Premul(width, height);
+}
 #endif
 
 std::shared_ptr<Canvas> Surface::GetCanvas()
