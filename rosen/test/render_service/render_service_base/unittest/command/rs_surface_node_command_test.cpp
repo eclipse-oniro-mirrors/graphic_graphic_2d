@@ -283,4 +283,21 @@ HWTEST_F(RSSurfaceNodeCommandTest, FingerprintTest001, TestSize.Level1)
     SurfaceNodeCommandHelper::SetFingerprint(context, id, true);
     SurfaceNodeCommandHelper::SetFingerprint(context, id, false);
 }
+
+/**
+ * @tc.name: SetSkipLayerTest001
+ * @tc.desc: SetSkipLayer test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeCommandTest, SetSkipLayerTest001, TestSize.Level1)
+{
+    RSContext context;
+    NodeId id = static_cast<NodeId>(-1);
+    bool isSkipLayer = false;
+    SurfaceNodeCommandHelper::SetSkipLayer(context, id, isSkipLayer);
+    NodeId id2 = 10;
+    auto context2 = std::make_shared<RSContext>();
+    SurfaceNodeCommandHelper::Create(*context2, id2);
+    SurfaceNodeCommandHelper::SetSkipLayer(*context2, id2, isSkipLayer);
+}
 } // namespace OHOS::Rosen

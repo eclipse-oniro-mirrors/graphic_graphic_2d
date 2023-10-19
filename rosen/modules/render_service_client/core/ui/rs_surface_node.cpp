@@ -216,6 +216,24 @@ bool RSSurfaceNode::GetSecurityLayer() const
     return isSecurityLayer_;
 }
 
+void RSSurfaceNode::SetSkipLayer(bool isSkipLayer)
+{
+    isSkipLayer_ = isSkipLayer;
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSSurfaceNodeSetSkipLayer>(GetId(), isSkipLayer);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, true);
+    }
+    ROSEN_LOGD("RSSurfaceNode::SetSkipLayer, surfaceNodeId:[%" PRIu64 "] isSkipLayer:%s", GetId(),
+        isSkipLayer ? "true" : "false");
+}
+
+bool RSSurfaceNode::GetSkipLayer() const
+{
+    return isSkipLayer_;
+}
+
 void RSSurfaceNode::SetFingerprint(bool hasFingerprint)
 {
     hasFingerprint_ = hasFingerprint;

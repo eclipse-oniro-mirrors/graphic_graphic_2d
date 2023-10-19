@@ -19,6 +19,7 @@
 #include <vulkan_window.h>
 #endif
 
+#include "draw/color.h"
 #ifndef USE_ROSEN_DRAWING
 #include "include/core/SkRegion.h"
 #include "include/core/SkTextBlob.h"
@@ -1791,6 +1792,15 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode failed to get canvas.");
                 return;
             }
+            if (displayHasSecSurface_[mirrorNode->GetScreenId()] > 1) {
+#ifndef USE_ROSEN_DRAWING
+                canvas_->clear(SK_ColorBLACK);
+#else
+                canvas_->Clear(Drawing::Color::COLOR_BLACK);
+#endif
+                processor_->PostProcess();
+                return;
+            }
 #ifndef USE_ROSEN_DRAWING
             if (cacheImgForCapture_ && displayHasSecSurface_[mirrorNode->GetScreenId()] == 0) {
                 canvas_->save();
@@ -3033,8 +3043,8 @@ bool RSUniRenderVisitor::CheckIfSurfaceRenderNodeNeedProcess(RSSurfaceRenderNode
     if (isSubThread_) {
         return true;
     }
-    if (isSecurityDisplay_ && node.GetSecurityLayer()) {
-        RS_PROCESS_TRACE(isPhone_, false, node.GetName() + " SecurityLayer Skip");
+    if (isSecurityDisplay_ && node.GetSkipLayer()) {
+        RS_PROCESS_TRACE(isPhone_, false, node.GetName() + " SkipLayer Skip");
         return false;
     }
     if (!node.ShouldPaint()) {

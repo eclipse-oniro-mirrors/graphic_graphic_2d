@@ -302,7 +302,7 @@ HWTEST_F(RSRenderServiceVisitorTest, PrepareSurfaceRenderNode001, TestSize.Level
  * @tc.name: PrepareSurfaceRenderNode002
  * @tc.desc: Test RSRenderServiceVisitorTest.PrepareSurfaceRenderNode
  * @tc.type: FUNC
- * @tc.require: issueI614P1
+ * @tc.require: issueI80HL4
  */
 HWTEST_F(RSRenderServiceVisitorTest, PrepareSurfaceRenderNode002, TestSize.Level1)
 {
@@ -310,7 +310,8 @@ HWTEST_F(RSRenderServiceVisitorTest, PrepareSurfaceRenderNode002, TestSize.Level
     RSSurfaceRenderNodeConfig config;
     RSSurfaceRenderNode rsSurfaceRenderNode(config);
     rsRenderServiceVisitor.isSecurityDisplay_ = true;
-    rsSurfaceRenderNode.SetSecurityLayer(true);
+    rsSurfaceRenderNode.SetSkipLayer(true);
+    ASSERT_EQ(true, rsSurfaceRenderNode.GetSkipLayer());
     rsRenderServiceVisitor.PrepareSurfaceRenderNode(rsSurfaceRenderNode);
 }
 
@@ -838,6 +839,24 @@ HWTEST_F(RSRenderServiceVisitorTest, ProcessSurfaceRenderNode004, TestSize.Level
     rsRenderServiceVisitor.processor_ =
         RSProcessorFactory::CreateProcessor(RSDisplayRenderNode::CompositeType::HARDWARE_COMPOSITE);
     rsSurfaceRenderNode.renderProperties_.SetAlpha(0.0f);
+    rsRenderServiceVisitor.ProcessSurfaceRenderNode(rsSurfaceRenderNode);
+}
+
+/**
+ * @tc.name: ProcessSurfaceRenderNode005
+ * @tc.desc: Test RSRenderServiceVisitorTest.ProcessSurfaceRenderNode
+ * @tc.type: FUNC
+ * @tc.require: issueI80HL4
+ */
+HWTEST_F(RSRenderServiceVisitorTest, ProcessSurfaceRenderNode005, TestSize.Level1)
+{
+    RSRenderServiceVisitor rsRenderServiceVisitor;
+    RSSurfaceRenderNodeConfig config;
+    RSSurfaceRenderNode rsSurfaceRenderNode(config);
+    rsRenderServiceVisitor.processor_ =
+        RSProcessorFactory::CreateProcessor(RSDisplayRenderNode::CompositeType::HARDWARE_COMPOSITE);
+    rsSurfaceRenderNode.SetSkipLayer(true);
+    ASSERT_EQ(true, rsSurfaceRenderNode.GetSkipLayer());
     rsRenderServiceVisitor.ProcessSurfaceRenderNode(rsSurfaceRenderNode);
 }
 
