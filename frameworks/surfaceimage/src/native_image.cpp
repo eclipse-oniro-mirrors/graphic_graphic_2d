@@ -103,7 +103,7 @@ void OH_NativeImage_Destroy(OH_NativeImage** image)
     }
 
     if ((*image)->nativeWindow != nullptr) {
-        DestroyNativeWindow((*image)->nativeWindow);
+        DestoryNativeWindow((*image)->nativeWindow);
         (*image)->nativeWindow = nullptr;
     }
 
