@@ -19,6 +19,7 @@
 
 #include "impl_factory.h"
 #include "impl_interface/typeface_impl.h"
+#include "static_factory.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -27,6 +28,11 @@ Typeface::Typeface(std::shared_ptr<TypefaceImpl> typefaceImpl) noexcept : typefa
 
 Typeface::Typeface(const std::string& specifiedName, FontInfo& info)
     : typefaceImpl_(ImplFactory::CreateTypefaceImpl(specifiedName, info)) {}
+
+std::shared_ptr<Typeface> Typeface::MakeFromFile(const char path[])
+{
+    return StaticFactory::MakeFromFile(path);
+}
 
 std::string Typeface::GetFamilyName() const
 {

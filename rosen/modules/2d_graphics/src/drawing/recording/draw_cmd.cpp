@@ -689,7 +689,7 @@ DrawTextBlobOpItem::DrawTextBlobOpItem(const ImageHandle& textBlob, const scalar
 
 void DrawTextBlobOpItem::Playback(CanvasPlayer& player, const void* opItem)
 {
-    if (!opItem) {
+    if (opItem != nullptr) {
         const auto* op = static_cast<const DrawTextBlobOpItem*>(opItem);
         op->Playback(player.canvas_, player.cmdList_);
     }

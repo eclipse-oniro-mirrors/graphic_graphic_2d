@@ -13,49 +13,30 @@
  * limitations under the License.
  */
 
-#include "utils/region.h"
+#ifndef RS_XFORM_H
+#define RS_XFORM_H
 
-#include "impl_factory.h"
+#include <cmath>
+#include <stdint.h>
+
+#include "utils/scalar.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
-Region::Region() : impl_(ImplFactory::CreateRegionImpl()) {}
+struct RSXform {
+    static RSXform Make(scalar cos, scalar sin, scalar tx, scalar ty)
+    {
+        RSXform xform = { cos, sin, tx, ty };
+        return xform;
+    }
 
-bool Region::SetRect(const RectI& rectI)
-{
-    return impl_->SetRect(rectI);
-}
-
-bool Region::SetPath(const Path& path, const Region& clip)
-{
-    return impl_->SetPath(path, clip);
-}
-
-bool Region::GetBoundaryPath(Path* path) const
-{
-    return impl_->GetBoundaryPath(path);
-}
-
-bool Region::IsIntersects(const Region& other) const
-{
-    return impl_->IsIntersects(other);
-}
-
-bool Region::IsEmpty() const
-{
-    return impl_->IsEmpty();
-}
-
-bool Region::IsRect() const
-{
-    return impl_->IsRect();
-}
-
-bool Region::Op(const Region& region, RegionOp op)
-{
-    return impl_->Op(region, op);
-}
+    scalar cos_;
+    scalar sin_;
+    scalar tx_;
+    scalar ty_;
+};
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
+#endif

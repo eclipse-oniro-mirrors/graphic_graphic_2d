@@ -33,6 +33,8 @@ public:
     Typeface(const std::string& specifiedName, FontInfo& info);
     virtual ~Typeface() = default;
 
+    static std::shared_ptr<Typeface> MakeFromFile(const char path[]);
+
     /*
      * @brief   Get the familyName for this typeface.
      * @return  FamilyName.
