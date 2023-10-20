@@ -61,6 +61,21 @@ public:
      * @param info  FrameBuffer object info.
      */
     bool Bind(const FrameBuffer& frameBuffer);
+    
+    /*
+     * @brief              Create Surface from gpuContext and imageInfo.
+     * @param gpuContext   GPU texture.
+     * @param Budgeted     Texture count.
+     * @param imageInfo    image Info.
+     */
+    bool MakeRenderTarget(GPUContext& gpuContext, bool Budgeted, const ImageInfo& imageInfo);
+
+    /*
+     * @brief              Create Surface using width and height.
+     * @param width        pixel column count.
+     * @param height       pixel row count.
+     */
+    bool MakeRasterN32Premul(int32_t width, int32_t height);
 #endif
 
     /*
