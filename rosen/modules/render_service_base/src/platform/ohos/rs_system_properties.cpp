@@ -59,7 +59,6 @@ int RSSystemProperties::GetDumpFrameNum()
     static CachedHandle g_Handle = CachedParameterCreate("debug.graphic.recording.frameNum", "0");
     int changed = 0;
     const char *num = CachedParameterGetChanged(g_Handle, &changed);
-    // return std::atoi((system::GetParameter("debug.graphic.recording.frameNum", "0")).c_str());
     return std::atoi(num);
 }
 
@@ -68,7 +67,6 @@ bool RSSystemProperties::GetRecordingEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("debug.graphic.recording.enabled", "0");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    // return (system::GetParameter("debug.graphic.recording.enabled", "0") != "0");
     return std::atoi(enable) != 0;
 }
 
@@ -83,7 +81,6 @@ std::string RSSystemProperties::GetRecordingFile()
 {
     static CachedHandle g_Handle = CachedParameterCreate("debug.graphic.dumpfile.path", "");
     int changed = 0;
-    // return system::GetParameter("debug.graphic.dumpfile.path", "");
     return CachedParameterGetChanged(g_Handle, &changed);
 }
 
@@ -198,7 +195,6 @@ bool RSSystemProperties::GetHighContrastStatus()
     int changed = 0;
     const char *status = CachedParameterGetChanged(g_Handle, &changed);
     return std::atoi(status) != 0;
-    // return std::atoi((system::GetParameter("rosen.HighContrast.enabled", "0")).c_str()) != 0;
 }
 
 bool RSSystemProperties::GetTargetDirtyRegionDfxEnabled(std::vector<std::string>& dfxTargetSurfaceNames_)
@@ -206,7 +202,6 @@ bool RSSystemProperties::GetTargetDirtyRegionDfxEnabled(std::vector<std::string>
     static CachedHandle g_Handle = CachedParameterCreate("rosen.dirtyregiondebug.surfacenames", "0");
     int changed = 0;
     const char *targetSurfacesStr = CachedParameterGetChanged(g_Handle, &changed);
-    // std::string targetSurfacesStr = system::GetParameter("rosen.dirtyregiondebug.surfacenames", "0");
     if (std::atoi(targetSurfacesStr) == 0) {
         dfxTargetSurfaceNames_.clear();
         return false;
@@ -221,7 +216,6 @@ bool RSSystemProperties::GetOpaqueRegionDfxEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.opaqueregiondebug", "0");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    // return std::atoi((system::GetParameter("rosen.uni.opaqueregiondebug", "0")).c_str()) != 0;
     return std::atoi(enable) != 0;
 }
 
@@ -231,7 +225,6 @@ bool RSSystemProperties::GetVisibleRegionDfxEnabled()
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return std::atoi(enable) != 0;
-    // return std::atoi((system::GetParameter("rosen.uni.visibleregiondebug", "0")).c_str()) != 0;
 }
 
 SurfaceRegionDebugType RSSystemProperties::GetSurfaceRegionDfxType()
