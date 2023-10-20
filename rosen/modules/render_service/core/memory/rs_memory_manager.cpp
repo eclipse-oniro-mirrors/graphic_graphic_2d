@@ -285,10 +285,10 @@ float MemoryManager::GetAppGpuMemoryInMB(GrDirectContext* grContext)
 float MemoryManager::GetAppGpuMemoryInMB(GrContext* grContext)
 #endif
 {
-#ifdef RS_ENABLE_GL
     if (!grContext) {
         return 0.f;
     }
+#ifdef RS_ENABLE_GL
     SkiaMemoryTracer trace("category", true);
     grContext->dumpMemoryStatistics(&trace);
     auto total = trace.GetGpuMemorySizeInMB();
@@ -300,6 +300,8 @@ float MemoryManager::GetAppGpuMemoryInMB(GrContext* grContext)
         rsMemSize += gpuTrace.GetGpuMemorySizeInMB();
     }
     return total - rsMemSize;
+#else
+    return 0.f;
 #endif
 }
 #else

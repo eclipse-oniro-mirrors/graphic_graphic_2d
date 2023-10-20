@@ -34,7 +34,11 @@ public:
     ImageInfo(int width, int height, ColorType colorType, AlphaType alphaType, std::shared_ptr<ColorSpace> colorSpace = nullptr)
         : width_(width), height_(height), colorType_(colorType), alphaType_(alphaType), colorSpace_(colorSpace) {}
     ~ImageInfo() = default;
-
+    
+    static ImageInfo Make(int32_t width, int32_t height)
+    {
+        return ImageInfo(width, height, COLORTYPE_N32, ALPHATYPE_PREMUL, nullptr);
+    }
     /*
      * @brief  Gets the width value of ImageInfo.
      */
