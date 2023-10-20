@@ -778,6 +778,24 @@ public:
     // whether the subtree has only one root node
     bool HasOnlyOneRootNode() const;
 
+    bool GetHasSecurityLayer()
+    {
+        return hasSecurityLayer_;
+    }
+
+    void SetHasSecurityLayer(bool hasSecurityLayer)
+    {
+        hasSecurityLayer_ = hasSecurityLayer;
+    }
+    bool GetHasSkipLayer()
+    {
+        return hasSkipLayer_;
+    }
+
+    void SetHasSkipLayer(bool hasSkipLayer)
+    {
+        hasSkipLayer_ = hasSkipLayer;
+    }
 private:
     void OnResetParent() override;
     void ClearChildrenCache();
@@ -953,6 +971,8 @@ private:
 
     bool needDrawAnimateProperty_ = false;
     bool prevVisible_ = false;
+    bool hasSecurityLayer_ = false;
+    bool hasSkipLayer_ = false;
 
     // UIFirst
     uint32_t submittedSubThreadIndex_ = INT_MAX;
