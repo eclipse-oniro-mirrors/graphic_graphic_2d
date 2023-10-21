@@ -254,7 +254,7 @@ void RSUniRenderVisitor::UpdateStaticCacheSubTree(const std::shared_ptr<RSRender
             }
             if (surfaceNode->GetSkipLayer() && curSurfaceNode_ &&
                 curSurfaceNode_->GetId() == surfaceNode->GetInstanceRootNodeId() &&
-                surfaceNode->GetName().find(CAPTURE_WINDOW_NAME) != std::string::npos) {
+                surfaceNode->GetName().find(CAPTURE_WINDOW_NAME) == std::string::npos) {
                 curSurfaceNode_->SetHasSkipLayer(true);
                 displayHasSkipSurface_[currentVisitDisplay_] = true;
             }
@@ -819,7 +819,7 @@ void RSUniRenderVisitor::PrepareTypesOfSurfaceRenderNodeAfterUpdate(RSSurfaceRen
         displayHasSecSurface_[currentVisitDisplay_] = true;
     }
     if (node.GetSkipLayer() && curSurfaceNode_ && curSurfaceNode_->GetId() == node.GetInstanceRootNodeId() &&
-        node.GetName().find(CAPTURE_WINDOW_NAME) != std::string::npos ) {
+        node.GetName().find(CAPTURE_WINDOW_NAME) == std::string::npos) {
         curSurfaceNode_->SetHasSkipLayer(true);
         displayHasSkipSurface_[currentVisitDisplay_] = true;
     }
@@ -852,7 +852,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     if (node.GetFingerprint() && node.GetBuffer() != nullptr) {
         hasFingerprint_ = true;
     }
-    
+
     if (curDisplayNode_ == nullptr) {
         ROSEN_LOGE("RSUniRenderVisitor::PrepareSurfaceRenderNode, curDisplayNode_ is nullptr.");
         return;
@@ -874,7 +874,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
             displayHasSecSurface_[currentVisitDisplay_] = true;
         }
         if (node.GetHasSkipLayer() && node.GetId() == node.GetInstanceRootNodeId() &&
-            node.GetName().find(CAPTURE_WINDOW_NAME) != std::string::npos) {
+            node.GetName().find(CAPTURE_WINDOW_NAME) == std::string::npos) {
             displayHasSkipSurface_[currentVisitDisplay_] = true;
         }
         return;
@@ -3932,6 +3932,10 @@ void RSUniRenderVisitor::DrawWatermarkIfNeed()
     if (RSMainThread::Instance()->GetWatermarkFlag()) {
 #ifndef USE_ROSEN_DRAWING
         sk_sp<SkImage> skImage = RSMainThread::Instance()->GetWatermarkImg();
+        if (!skImage) {
+            RS_LOGE("RSUniRenderVisitor::DrawWatermarkIfNeed: no image!");
+            return;
+        }
         SkPaint rectPaint;
         auto skSrcRect = SkRect::MakeWH(skImage->width(), skImage->height());
         auto skDstRect = SkRect::MakeWH(screenInfo_.width, screenInfo_.height);

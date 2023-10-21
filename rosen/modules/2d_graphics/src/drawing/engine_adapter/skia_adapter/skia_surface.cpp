@@ -26,6 +26,7 @@
 #include "skia_canvas.h"
 #ifdef ACE_ENABLE_GPU
 #include "skia_gpu_context.h"
+#include "skia_image_info.h"
 #endif
 
 namespace OHOS {
@@ -122,6 +123,38 @@ bool SkiaSurface::Bind(const FrameBuffer& frameBuffer)
         backendRenderTarget, kBottomLeft_GrSurfaceOrigin, colorType, skColorSpace, &surfaceProps);
     if (skSurface_ == nullptr) {
         LOGE("SkiaSurface bind FBO failed: skSurface is nullptr");
+        return false;
+    }
+    return true;
+}
+
+bool SkiaSurface::MakeRenderTarget(GPUContext& gpuContext, bool Budgeted, const ImageInfo& imageInfo)
+{
+    auto grContext = gpuContext.GetImpl<SkiaGPUContext>()->GetGrContext();
+    if (grContext == nullptr) {
+        LOGE("SkiaSurface Make from imageInfo failed: grContext is nullptr");
+        return false;
+    }
+
+    auto skImageInfo = SkiaImageInfo::ConvertToSkImageInfo(imageInfo);
+    skSurface_ = SkSurface::MakeRenderTarget(grContext.get(), static_cast<SkBudgeted>(Budgeted), skImageInfo);
+    if (skSurface_ == nullptr) {
+        LOGE("SkiaSurface Make from imageInfo failed: skSurface is nullptr");
+        return false;
+    }
+    return true;
+}
+
+bool SkiaSurface::MakeRasterN32Premul(int32_t width, int32_t height)
+{
+    if (width == 0 || height == 0) {
+        LOGE("SkiaSurface MakeRasterN32Premul failed: width or height is 0");
+        return false;
+    }
+
+    skSurface_ = SkSurface::MakeRasterN32Premul(width, height);
+    if (skSurface_ == nullptr) {
+        LOGE("SkiaSurface MakeRasterN32Premul failed: skSurface is nullptr");
         return false;
     }
     return true;

@@ -27,6 +27,8 @@ class Canvas;
 class Image;
 #ifdef ACE_ENABLE_GPU
 struct FrameBuffer;
+class ImageInfo;
+class GPUContext;
 #endif
 
 class SurfaceImpl : public BaseImpl {
@@ -44,6 +46,8 @@ public:
 #ifdef ACE_ENABLE_GPU
     virtual bool Bind(const Image& image) = 0;
     virtual bool Bind(const FrameBuffer& frameBuffer) = 0;
+    virtual bool MakeRenderTarget(GPUContext& gpuContext, bool Budgeted, const ImageInfo& imageInfo) = 0;
+    virtual bool MakeRasterN32Premul(int32_t width, int32_t height) = 0;
 #endif
 
     virtual std::shared_ptr<Canvas> GetCanvas() const = 0;

@@ -138,7 +138,7 @@ void RSCanvasRenderNode::ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanva
 
     if (canvas.GetCacheType() != RSPaintFilterCanvas::CacheType::OFFSCREEN) {
         if (GetRenderProperties().GetUseEffect()) {
-            RSPropertiesPainter::ApplyBackgroundEffect(GetRenderProperties(), canvas);
+            RSPropertiesPainter::ApplyBackgroundEffect(GetRenderProperties(), canvas, this);
         }
         RSPropertiesPainter::DrawFilter(GetRenderProperties(), canvas, FilterType::BACKGROUND_FILTER);
     }

@@ -1235,9 +1235,6 @@ void RSRenderNode::InitCacheSurface(Drawing::GPUContext* gpuContext, ClearCacheS
     cacheSurface_ = SkSurface::MakeRasterN32Premul(width, height);
 #endif
 #else // USE_ROSEN_DRAWING
-    Drawing::BitmapFormat format = { Drawing::ColorType::COLORTYPE_N32, Drawing::AlphaType::ALPHATYPE_PREMUL };
-    auto bitmap = std::make_shared<Drawing::Bitmap>();
-    bitmap->Build(width, height, format);
 #if ((defined RS_ENABLE_GL) && (defined RS_ENABLE_EGLIMAGE)) || (defined RS_ENABLE_VK)
     if (gpuContext == nullptr) {
         if (func) {
@@ -1247,25 +1244,20 @@ void RSRenderNode::InitCacheSurface(Drawing::GPUContext* gpuContext, ClearCacheS
         }
         return;
     }
-    auto image = std::make_shared<Drawing::Image>();
-    if (!image->BuildFromBitmap(*gpuContext, *bitmap)) {
-        RS_LOGE("InitCacheSurface: image BuildFromBitmap failed");
-        return;
-    }
+    auto info = Drawing::ImageInfo::Make(width, height);
     auto surface = std::make_shared<Drawing::Surface>();
-    if (!surface->Bind(*image)) {
-        RS_LOGE("InitCacheSurface: surface bind image failed");
+    if (!surface->MakeRenderTarget(*gpuContext, true, info)) {
+        RS_LOGE("InitCacheSurface: surface MakeRenderTarget failed");
         return;
     }
 #else
     auto surface = std::make_shared<Drawing::Surface>();
-    if (!surface->Bind(*bitmap)) {
-        RS_LOGE("InitCacheSurface: surface bind bitmap failed");
+    if (!surface->MakeRasterN32Premul(width, height)) {
+        RS_LOGE("InitCacheSurface: surface MakeRasterN32Premul failed");
         return;
     }
 #endif
     std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
-    cacheBitmap_ = bitmap;
     cacheSurface_ = surface;
 #endif // USE_ROSEN_DRAWING
 }

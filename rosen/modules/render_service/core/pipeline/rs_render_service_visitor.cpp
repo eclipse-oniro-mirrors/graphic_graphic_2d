@@ -201,7 +201,7 @@ void RSRenderServiceVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             processor_->PostProcess();
             return;
         }
-        ProcessChildren(*existingSource);      
+        ProcessChildren(*existingSource);
     } else {
         ProcessChildren(node);
     }

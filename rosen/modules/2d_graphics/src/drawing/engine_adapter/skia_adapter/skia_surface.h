@@ -33,6 +33,8 @@ public:
 #ifdef ACE_ENABLE_GPU
     bool Bind(const Image& image) override;
     bool Bind(const FrameBuffer& frameBuffer) override;
+    bool MakeRenderTarget(GPUContext& gpuContext, bool Budgeted, const ImageInfo& imageInfo) override;
+    bool MakeRasterN32Premul(int32_t width, int32_t height) override;
 #endif
 
     std::shared_ptr<Canvas> GetCanvas() const override;

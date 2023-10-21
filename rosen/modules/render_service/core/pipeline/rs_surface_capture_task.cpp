@@ -594,7 +594,8 @@ bool RSSurfaceCaptureTask::FindSecurityOrSkipLayer()
 {
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
     bool hasSecurityOrSkipLayer = false;
-    nodeMap.TraverseSurfaceNodes([this, &hasSecurityOrSkipLayer](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode)
+    nodeMap.TraverseSurfaceNodes([this,
+        &hasSecurityOrSkipLayer](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode)
         mutable {
         if (surfaceNode == nullptr || !surfaceNode->IsOnTheTree()) {
             return;

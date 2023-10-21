@@ -71,7 +71,7 @@ public:
     // EffectView and useEffect
     static void DrawBackgroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas, const SkRect& rect);
     static void DrawForegroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas);
-    static void ApplyBackgroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas);
+    static void ApplyBackgroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas, RSRenderNode* node);
 
     // Foreground Color filter
     static void DrawColorFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas);
@@ -82,7 +82,8 @@ public:
     static sk_sp<SkShader> MakeDynamicLightUpShader(
         float dynamicLightUpRate, float dynamicLightUpDeg, sk_sp<SkShader> imageShader);
 private:
-    static void ApplyBackgroundEffectFallback(const RSProperties& properties, RSPaintFilterCanvas& canvas);
+    static void ApplyBackgroundEffectFallback(
+        const RSProperties& properties, RSPaintFilterCanvas& canvas, RSRenderNode* node);
     inline static int g_blurCnt = 0;
     static void DrawColorfulShadowInner(const RSProperties& properties, RSPaintFilterCanvas& canvas, SkPath& path);
     static void DrawShadowInner(const RSProperties& properties, RSPaintFilterCanvas& canvas, SkPath& path);
@@ -142,7 +143,7 @@ private:
     static void DrawBackgroundEffect(
         const RSProperties& properties, RSPaintFilterCanvas& canvas, const Drawing::RectI& rect);
     static void DrawForegroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas);
-    static void ApplyBackgroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas);
+    static void ApplyBackgroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas, RSRenderNode* node);
 
     // Foreground Color filter
     static void DrawColorFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas);
@@ -151,7 +152,8 @@ private:
     static void DrawDynamicLightUp(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawParticle(const RSProperties& properties, RSPaintFilterCanvas& canvas);
 private:
-    static void ApplyBackgroundEffectFallback(const RSProperties& properties, RSPaintFilterCanvas& canvas);
+    static void ApplyBackgroundEffectFallback(
+        const RSProperties& properties, RSPaintFilterCanvas& canvas, RSRenderNode* node);
     inline static int g_blurCnt = 0;
     static void DrawColorfulShadowInner(
         const RSProperties& properties, RSPaintFilterCanvas& canvas, Drawing::Path& path);
