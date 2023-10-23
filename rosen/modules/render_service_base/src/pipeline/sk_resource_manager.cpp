@@ -33,7 +33,12 @@ void SKResourceManager::HoldResource(sk_sp<SkImage> img)
         return;
     }
     std::scoped_lock<std::recursive_mutex> lock(mutex_);
-    skImages_[tid].push(img);
+    for (const auto& skImage : skImages_[tid]) {
+        if (skImage.get() == img.get()) {
+            return;
+        }
+    }
+    skImages_[tid].push_back(img);
 #endif
 }
 
@@ -49,14 +54,14 @@ void SKResourceManager::ReleaseResource()
             size_t size = skImages_[tid].size();
             while (size-- > 0) {
                 auto image = skImages_[tid].front();
-                skImages_[tid].pop();
+                skImages_[tid].pop_front();
                 if (image == nullptr) {
                     continue;
                 }
                 if (image->unique()) {
                     image = nullptr;
                 } else {
-                    skImages_[tid].push(image);
+                    skImages_[tid].push_back(image);
                 }
             }
             });
