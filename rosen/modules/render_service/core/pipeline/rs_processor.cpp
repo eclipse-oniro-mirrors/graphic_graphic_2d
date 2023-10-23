@@ -202,5 +202,16 @@ void RSProcessor::MultiLayersPerf(size_t layerNum)
         lastRequestPerfTime = currentTime;
     }
 }
+
+void RSProcessor::SetSecurityDisplay(bool isSecurityDisplay)
+{
+    isSecurityDisplay_ = isSecurityDisplay;
+}
+
+void RSProcessor::SetDisplayHasSecSurface(bool displayHasSecSurface)
+{
+    displayHasSecSurface_ = displayHasSecSurface;
+}
+
 } // namespace Rosen
 } // namespace OHOS
