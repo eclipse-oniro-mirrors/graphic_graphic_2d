@@ -61,7 +61,7 @@ void VSyncCallBackListener::OnReadable(int32_t fileDescriptor)
     }
     now = data[0];
     period_ = data[1] - data[0];
-    lastTimeStamp_ = data[1];
+    lastTimeStamp_ = data[0];
     VLOGD("dataCount:%{public}d, cb == nullptr:%{public}d", dataCount, (cb == nullptr));
     // 1, 2: index of array data.
     ScopedBytrace func("ReceiveVsync dataCount:" + std::to_string(dataCount) + "bytes now:" + std::to_string(now) +
