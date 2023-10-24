@@ -93,6 +93,8 @@
 #include "scene_board_judgement.h"
 #include "vsync_iconnection_token.h"
 
+#include "mem_mgr_client.h"
+
 using namespace FRAME_TRACE;
 static const std::string RS_INTERVAL_NAME = "renderservice";
 
@@ -118,8 +120,10 @@ constexpr uint32_t MULTI_WINDOW_PERF_END_NUM = 4;
 constexpr uint32_t WAIT_FOR_RELEASED_BUFFER_TIMEOUT = 3000;
 constexpr uint32_t WAIT_FOR_HARDWARE_THREAD_TASK_TIMEOUT = 3000;
 constexpr uint32_t HARDWARE_THREAD_TASK_NUM = 1;
+constexpr uint32_t WAIT_FOR_MEM_MGR_SERVICE = 100;
 constexpr const char* WALLPAPER_VIEW = "WallpaperView";
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
+constexpr const char* MEM_MGR = "MemMgr";
 #ifdef RS_ENABLE_GL
 constexpr size_t DEFAULT_SKIA_CACHE_SIZE        = 96 * (1 << 20);
 constexpr int DEFAULT_SKIA_CACHE_COUNT          = 2 * (1 << 12);
@@ -209,6 +213,7 @@ RSMainThread::RSMainThread() : mainThreadId_(std::this_thread::get_id())
 
 RSMainThread::~RSMainThread() noexcept
 {
+    Memory::MemMgrClient::GetInstance().UnsubscribeAppState(*rsAppStateListener_);
     RemoveRSEventDetector();
     RSInnovation::CloseInnovationSo();
 }
@@ -345,6 +350,7 @@ void RSMainThread::Init()
             RSMainThread::Instance()->RequestNextVSync();
         });
     });
+    SubscribeAppState();
 }
 
 void RSMainThread::RsEventParamDump(std::string& dumpString)
@@ -2543,6 +2549,52 @@ void RSMainThread::GetAppMemoryInMB(float& cpuMemSize, float& gpuMemSize)
 #endif
         cpuMemSize = MemoryTrack::Instance().GetAppMemorySizeInMB();
     });
+}
+
+void RSMainThread::SubscribeAppState()
+{
+    PostTask([this]() {
+        int32_t subscribeFailCount = 0;
+        rsAppStateListener_ = std::make_shared<RSAppStateListener>();
+        if (Memory::MemMgrClient::GetInstance().SubscribeAppState(*rsAppStateListener_) != -1) {
+            RS_LOGD("Subscribe MemMgr Success");
+            subscribeFailCount = 0;
+            return;
+        } else {
+            RS_LOGE("Subscribe Failed, try again");
+            subscribeFailCount++;
+            if (subscribeFailCount < 10) { // The maximum number of failures is 10
+                SubscribeAppState();
+            } else {
+                RS_LOGE("Subscribe Failed 10 times, exiting");
+            }
+        }
+    }, MEM_MGR, WAIT_FOR_MEM_MGR_SERVICE);
+}
+
+void RSMainThread::HandleOnTrim(Memory::SystemMemoryLevel level)
+{
+    if (handler_) {
+        handler_->PostTask(
+            [level, this]() {
+#ifndef USE_ROSEN_DRAWING
+#ifdef NEW_RENDER_CONTEXT
+                auto grContext = GetRenderEngine()->GetDrawingContext()->GetDrawingContext();
+#else
+                auto grContext = GetRenderEngine()->GetRenderContext()->GetGrContext();
+#endif
+#else
+                auto grContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
+#endif
+                switch (level) {
+                    case Memory::SystemMemoryLevel::MEMORY_LEVEL_CRITICAL:
+                        MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(grContext);
+                        break;
+                    default:
+                        break;
+                }
+            }, AppExecFwk::EventQueue::Priority::IDLE);
+    }
 }
 
 } // namespace Rosen
