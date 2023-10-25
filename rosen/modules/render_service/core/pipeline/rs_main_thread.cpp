@@ -334,14 +334,14 @@ void RSMainThread::Init()
 #ifndef USE_ROSEN_DRAWING
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD) && defined(NEW_SKIA)
     uploadTextureBarrierTask_ = [this]() {
-        auto renderConext = GetRenderEngine()->GetRenderContext().get();
+        auto renderContext = GetRenderEngine()->GetRenderContext().get();
         uploadTextureFence = eglCreateSyncKHR(renderContext->GetEGLDisplay(), EGL_SYNC_FENCE_KHR, nullptr);
         {
             std::lock_guard<std::mutex> lock(uploadTextureMutex_);
             ++uploadTextureFinishedCount_;
         }
         uploadTextureTaskCond_.notify_all();
-    }
+    };
     RSUploadTextureThread::Instance().InitRenderContext(GetRenderEngine()->GetRenderContext().get());
 #endif
 #endif
@@ -1156,21 +1156,24 @@ void RSMainThread::WaitUntilUploadTextureTaskFinished()
     RS_OPTIONAL_TRACE_BEGIN("RSMainThread::WaitUntilUploadTextureTASKfINISHED");
     {
         std::unique_lock<std::mutex> lock(uploadTextureMutex_);
-        uploadTextureTaskCond_.wait(lock. [this]() { return uploadTextureFinishedCont_ > 0;});
+        uploadTextureTaskCond_.wait(lock, [this]() { return uploadTextureFinishedCont_ > 0;});
+        --uploadTextureFinishedCont_;
     }
     if (uploadTextureFence != EGL_NO_SYNC_KHR) {
-        auto diplayID = GGetRenderEngine()->GetRenderContext().get()->GetEGLDisplay();
+        auto diplayID = GetRenderEngine()->GetRenderContext().get()->GetEGLDisplay();
         EGLint waitStatus = eglWaitSyncKHR(diplayID, uploadTextureFence, 0);
         if (waitStatus == EGL_FALSE) {
             ROSEN_LOGE("eglClientWaitSyncKHR error 0x%{public}x", eglGetError());
-        } else if (waitStatus == EGL_TIMEOUT_EXPIRED_KHR){
+        } else if (waitStatus == EGL_TIMEOUT_EXPIRED_KHR) {
             ROSEN_LOGE("create eglClientWaitSyncKHR timeout");
         }
-        eglDestorySyncKHR(diplayID, uploadTextureFence);
+        eglDestroySyncKHR(diplayID, uploadTextureFence);
     }
     uploadTextureFence = EGL_NO_SYNC_KHR;
     RS_OPTIONAL_TRACE_END();
 }
+#endif
+
 void RSMainThread::WaitUntilUnmarshallingTaskFinished()
 {
     if (!isUniRender_) {
@@ -1310,7 +1313,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         }
 #ifndef USE_ROSEN_DRAWING
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD) && defined(NEW_SKIA)
-            WaitUntilUploadTextureTaskFinished();
+        WaitUntilUploadTextureTaskFinished();
 #endif
 #endif
         if (IsUIFirstOn()) {
@@ -1342,7 +1345,7 @@ void RSMainThread::Render()
     if (rootNode == nullptr) {
 #ifndef USE_ROSEN_DRAWING
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD) && defined(NEW_SKIA)
-            WaitUntilUploadTextureTaskFinished();
+        WaitUntilUploadTextureTaskFinished();
 #endif
 #endif
         RS_LOGE("RSMainThread::Render GetGlobalRootRenderNode fail");
