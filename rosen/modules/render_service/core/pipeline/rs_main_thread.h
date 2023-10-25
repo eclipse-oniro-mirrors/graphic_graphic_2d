@@ -320,6 +320,7 @@ private:
     int32_t uploadTextureFinishedCount_ = 0;
     EGLSyncKHR uploadTextureFence;
 #endif
+
     mutable std::mutex uniRenderMutex_;
     bool uniRenderFinished_ = false;
     std::condition_variable uniRenderCond_;
