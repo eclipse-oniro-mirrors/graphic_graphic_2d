@@ -16,6 +16,8 @@
 #ifndef SKIA_PATH_H
 #define SKIA_PATH_H
 
+#include <unordered_map>
+
 #include "include/core/SkPath.h"
 
 #include "impl_interface/path_impl.h"
@@ -89,6 +91,20 @@ public:
     scalar GetLength(bool forceClosed) const override;
     bool GetPositionAndTangent(scalar distance, Point& position, Point& tangent, bool forceClosed) const override;
 private:
+    class SkPathSvgCacheManager {
+    public:
+        static SkPathSvgCacheManager& GetInstance();
+        ~SkPathSvgCacheManager() = default;
+        SkPathSvgCacheManager(SkPathSvgCacheManager&&) = delete;
+        SkPathSvgCacheManager(SkPathSvgCacheManager&) = delete;
+        SkPathSvgCacheManager& operator=(SkPathSvgCacheManager&&) = delete;
+        SkPathSvgCacheManager& operator=(SkPathSvgCacheManager&) = delete;
+
+        bool GetPathWithSvgString(const std::string& svgString, SkPath& path);
+    private:
+        SkPathSvgCacheManager() = default;
+        std::unordered_map<std::size_t, SkPath> pathCache_;
+    };
     SkPath path_;
 };
 } // namespace Drawing

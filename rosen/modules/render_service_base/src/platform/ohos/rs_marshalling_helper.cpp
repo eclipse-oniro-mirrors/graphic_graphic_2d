@@ -1768,6 +1768,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing:
 
     uint32_t pixelMapSize = parcel.ReadUint32();
     if (pixelMapSize == 0) {
+        val->UnmarshallingOps();
         return true;
     }
     bool ret = true;
@@ -1782,6 +1783,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing:
         pixelMapVec.emplace_back(pixelMap);
     }
     val->SetupPixelMap(pixelMapVec);
+    val->UnmarshallingOps();
     return ret;
 }
 #endif
