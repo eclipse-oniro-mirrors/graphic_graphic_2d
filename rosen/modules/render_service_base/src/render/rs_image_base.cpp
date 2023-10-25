@@ -391,7 +391,7 @@ void RSImageBase::ConvertPixelMapToSkImage()
 #endif
             }
         }
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && DEFINED(RS_ENABLE_PARALLEL_UPLOAD) && defined(NEW_SKIA)
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD) && defined(NEW_SKIA)
         auto image = image_;
         auto pixelMap = pixelMap_;
         std::function<void()> uploadTexturetask = [image, pixelMap]() -> void {
