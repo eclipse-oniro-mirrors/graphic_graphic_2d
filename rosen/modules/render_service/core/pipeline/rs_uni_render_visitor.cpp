@@ -3301,7 +3301,8 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
                 node.SetHardwareDisabledByCache(isUpdateCachedSurface_);
             }
             // if this window is in freeze state, disable hardware composer for its child surfaceView
-            if (IsHardwareComposerEnabled() && !node.IsHardwareForcedDisabled() && node.IsHardwareEnabledType() && rotation % 90 != 0) {
+            if (IsHardwareComposerEnabled() && !node.IsHardwareForcedDisabled() &&
+                node.IsHardwareEnabledType() && rotation % 90 != 0) {
 #ifndef USE_ROSEN_DRAWING
                 if (!node.IsHardwareEnabledTopSurface()) {
                     canvas_->clear(SK_ColorTRANSPARENT);
