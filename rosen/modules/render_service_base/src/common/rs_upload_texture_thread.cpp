@@ -37,18 +37,21 @@ void RSUploadTextureThread::PostTask(const std::function<void()>& task)
         handler_->PostTask(task, AppExecFwk::EventQueue::Priority::IMMEDIATE);
     }
 }
+
 void RSUploadTextureThread::PostTask(const std::function<void()>& task, const std::string& name)
 {
     if (handler_) {
-        handler_->PostTask(task, name);
+        handler_->PostImmediateTask(task, name);
     }
 }
+
 void RSUploadTextureThread::RemoveTask(const std::string& name)
 {
     if (handler_) {
         handler_->RemoveTask(name);
     }
 }
+
 #if !defined(USE_ROSEN_DRAWING) && defined(RS_ENABLE_GL)
 void RSUploadTextureThread::InitRenderContext(RenderContext* context)
 {
@@ -124,4 +127,3 @@ void RSUploadTextureThread::CleanGrResource()
 }
 #endif
 }
-                                   
