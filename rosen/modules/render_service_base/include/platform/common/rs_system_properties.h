@@ -169,7 +169,6 @@ public:
     static bool IsPhoneType();
     static bool GetSyncTransactionEnabled();
     static int GetSyncTransactionWaitDelay();
-
 private:
     RSSystemProperties() = default;
 
