@@ -40,7 +40,6 @@ public:
     static bool GetDrawingCacheEnabledDfx();
     static QuickSkipPrepareType GetQuickSkipPrepareType();
     static bool GetFilterCacheOcculusionEnabled();
-    static int ConvertToInt(const char *orginValue, int defaultValue);
 };
 
 } // namespace Rosen

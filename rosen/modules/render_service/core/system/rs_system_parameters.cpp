@@ -24,6 +24,10 @@
 namespace OHOS {
 namespace Rosen {
 constexpr int DEFAULT_QUICK_SKIP_PREPARE_TYPE_VALUE = 3;
+int ConvertToInt(const char *originValue, int defaultValue)
+{
+    return orginValue == nullptr ? defaultValue : std::atoi(originValue);
+}
 bool RSSystemParameters::GetCalcCostEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.calcCost.enabled", "0");
@@ -61,10 +65,6 @@ bool RSSystemParameters::GetFilterCacheOcculusionEnabled()
     static bool filterCacheOcclusionEnabled =
         std::atoi((system::GetParameter("persist.sys.graphic.filterCacheOcclusionEnabled", "1")).c_str()) != 0;
     return filterCacheOcclusionEnabled;
-}
-int ConvertToInt(const char *orginValue, int defaultValue)
-{
-    return orginValue == nullptr ? defaultValue : std::atoi(orginValue);
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -169,8 +169,6 @@ public:
     static bool IsPhoneType();
     static bool GetSyncTransactionEnabled();
     static int GetSyncTransactionWaitDelay();
-    static int ConvertToInt(const char *orginValue, int defaultValue);
-
 private:
     RSSystemProperties() = default;
 
