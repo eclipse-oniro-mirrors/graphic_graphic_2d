@@ -32,6 +32,7 @@ constexpr int DEFAULT_PARTIAL_RENDER_ENABLED_VALUE = 2;
 constexpr int DEFAULT_UNI_PARTIAL_RENDER_ENABLED_VALUE = 4;
 constexpr int DEFAULT_GPU_RESOURCE_ENABLED_VALUE = 2;
 constexpr int DEFAULT_CORRECTION_MODE_VALUE = 999;
+
 static void ParseDfxSurfaceNamesString(const std::string& paramsStr,
     std::vector<std::string>& splitStrs, const std::string& seperator)
 {
@@ -85,10 +86,7 @@ std::string RSSystemProperties::GetRecordingFile()
     static CachedHandle g_Handle = CachedParameterCreate("debug.graphic.dumpfile.path", "");
     int changed = 0;
     const char *file = CachedParameterGetChanged(g_Handle, &changed);
-    if (file == nullptr) {
-        return "";
-    }
-    return file;
+    return file == nullptr ? "" : file;
 }
 
 bool RSSystemProperties::GetUniRenderEnabled()
@@ -264,11 +262,7 @@ long long int RSSystemProperties::GetDumpSurfaceId()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.dumpsurfaceid", "0");
     int changed = 0;
     const char *surfaceId = CachedParameterGetChanged(g_Handle, &changed);
-    if (surfaceId == nullptr) {
-        return std::atoll("0");
-    } else {
-        return std::atoll(surfaceId);
-    }
+    return surfaceId == nullptr ? std::atoll("0") : std::atoll(surfaceId);
 }
 
 bool RSSystemProperties::GetDumpLayersEnabled()
@@ -361,10 +355,7 @@ float RSSystemProperties::GetAnimationScale()
     static CachedHandle g_Handle = CachedParameterCreate("persist.sys.graphic.animationscale", "1.0");
     int changed = 0;
     const char *scale = CachedParameterGetChanged(g_Handle, &changed);
-    if (scale == nullptr) {
-        return std::atof("1.0");
-    }
-    return std::atof(scale);
+    return scale == nullptr ? std::atof("1.0") : std::atof(scale);
 }
 
 bool RSSystemProperties::GetFilterCacheEnabled()
