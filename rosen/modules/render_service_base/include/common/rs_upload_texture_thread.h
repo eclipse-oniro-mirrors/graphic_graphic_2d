@@ -18,12 +18,14 @@
 
 #include "event_handler.h"
 #include "common/rs_macros.h"
-#if !defined(USE_ROSEN_DRAWING) && defined(RS_ENABLE_GL)
+#if defined(RS_ENABLE_UNI_RENDER) && defined(RS_ENABLE_GL)
+#ifndef USE_ROSEN_DRAWING
 #include "EGL/egl.h"
 #include "EGL/eglext.h"
 #include "include/core/SkSurface.h"
 #if defined(NEW_SKIA)
 #include "include/gpu/GrDirectContext.h"
+#endif
 #endif
 #endif
 
@@ -38,9 +40,11 @@ public:
     void RemoveTask(const std::string& name);
     void InitRenderContext(RenderContext* context);
 
-#if !defined(USE_ROSEN_DRAWING) && defined(RS_ENABLE_GL)
+#if defined(RS_ENABLE_UNI_RENDER) && defined(RS_ENABLE_GL)
+#ifndef USE_ROSEN_DRAWING
     sk_sp<GrDirectContext> GetShareGrContext() const;
     void CleanGrResource();
+#endif
 #endif
 private:
     RSUploadTextureThread();
@@ -52,12 +56,14 @@ private:
 
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
-#if !defined(USE_ROSEN_DRAWING) && defined(RS_ENABLE_GL)
+#if defined(RS_ENABLE_UNI_RENDER) && defined(RS_ENABLE_GL)
+#ifndef USE_ROSEN_DRAWING
     sk_sp<GrDirectContext> CreateShareGrContext();
     void CreateShareEglContext();
     RenderContext* renderContext_ = nullptr;
     sk_sp<GrDirectContext> grContext_ = nullptr;
     EGLContext eglShareContext_ = EGL_NO_CONTEXT;
+#endif
 #endif
 };
 }
