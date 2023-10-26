@@ -28,7 +28,9 @@ namespace Rosen {
 
 constexpr int DEFAULT_CACHE_WIDTH = 1344;
 constexpr int DEFAULT_CACHE_HEIGHT = 2772;
-
+constexpr int DEFAULT_PARTIAL_RENDER_ENABLED_VALUE = 4;
+constexpr int DEFAULT_GPU_RESOURCE_ENABLED_VALUE = 2;
+constexpr int DEFAULT_CORRECTION_MODE_VALUE = 999;
 static void ParseDfxSurfaceNamesString(const std::string& paramsStr,
     std::vector<std::string>& splitStrs, const std::string& seperator)
 {
@@ -59,7 +61,7 @@ int RSSystemProperties::GetDumpFrameNum()
     static CachedHandle g_Handle = CachedParameterCreate("debug.graphic.recording.frameNum", "0");
     int changed = 0;
     const char *num = CachedParameterGetChanged(g_Handle, &changed);
-    return std::atoi(num);
+    return ConvertToInt(num, 0);
 }
 
 bool RSSystemProperties::GetRecordingEnabled()
@@ -67,7 +69,7 @@ bool RSSystemProperties::GetRecordingEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("debug.graphic.recording.enabled", "0");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return std::atoi(enable) != 0;
+    return ConvertToInt(enable, 0) != 0;
 }
 
 
@@ -81,7 +83,11 @@ std::string RSSystemProperties::GetRecordingFile()
 {
     static CachedHandle g_Handle = CachedParameterCreate("debug.graphic.dumpfile.path", "");
     int changed = 0;
-    return CachedParameterGetChanged(g_Handle, &changed);
+    const char *file = CachedParameterGetChanged(g_Handle, &changed);
+    if (file == nullptr) {
+        return "";
+    }
+    return file;
 }
 
 bool RSSystemProperties::GetUniRenderEnabled()
@@ -115,7 +121,7 @@ DirtyRegionDebugType RSSystemProperties::GetDirtyRegionDebugType()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.dirtyregiondebug.enabled", "0");
     int changed = 0;
     const char *type = CachedParameterGetChanged(g_Handle, &changed);
-    return static_cast<DirtyRegionDebugType>(std::atoi(type));
+    return static_cast<DirtyRegionDebugType>(ConvertToInt(type, 0));
 }
 
 PartialRenderType RSSystemProperties::GetPartialRenderEnabled()
@@ -123,19 +129,22 @@ PartialRenderType RSSystemProperties::GetPartialRenderEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.partialrender.enabled", "2");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return static_cast<PartialRenderType>(std::atoi(enable));
+    int defaultValue = 2;
+    return static_cast<PartialRenderType>(ConvertToInt(enable, defaultValue));
 }
 
 PartialRenderType RSSystemProperties::GetUniPartialRenderEnabled()
 {
+    bool choose_zero;
 #if defined(RS_ENABLE_PARALLEL_RENDER) && defined(RS_ENABLE_VK)
     static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.partialrender.enabled", "0");
+    choose_zero = true;
 #else
     static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.partialrender.enabled", "4");
 #endif
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return static_cast<PartialRenderType>(std::atoi(enable));
+    return static_cast<PartialRenderType>(ConvertToInt(enable, choose_zero ? 0 : DEFAULT_PARTIAL_RENDER_ENABLED_VALUE));
 }
 
 ReleaseGpuResourceType RSSystemProperties::GetReleaseGpuResourceEnabled()
@@ -143,7 +152,7 @@ ReleaseGpuResourceType RSSystemProperties::GetReleaseGpuResourceEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("persist.release.gpuresource.enabled", "2");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return static_cast<ReleaseGpuResourceType>(std::atoi(enable));
+    return static_cast<ReleaseGpuResourceType>(ConvertToInt(enable, DEFAULT_GPU_RESOURCE_ENABLED));
 }
 
 bool RSSystemProperties::GetOcclusionEnabled()
@@ -151,7 +160,7 @@ bool RSSystemProperties::GetOcclusionEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.occlusion.enabled", "1");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return std::atoi(enable) != 0;
+    return ConvertToInt(enable, 1) != 0;
 }
 
 bool RSSystemProperties::GetHardwareComposerEnabled()
@@ -166,7 +175,7 @@ bool RSSystemProperties::GetAFBCEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.afbc.enabled", "1");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return std::atoi(enable) != 0;
+    return ConvertToInt(enable, 1) != 0;
 }
 
 std::string RSSystemProperties::GetRSEventProperty(const std::string &paraName)
@@ -181,7 +190,7 @@ bool RSSystemProperties::GetDirectClientCompEnableStatus()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.directClientComposition.enabled", "1");
     int changed = 0;
     const char *status = CachedParameterGetChanged(g_Handle, &changed);
-    return std::atoi(status) != 0;
+    return ConvertToInt(status, 1) != 0;
 }
 
 bool RSSystemProperties::GetHighContrastStatus()
@@ -191,7 +200,7 @@ bool RSSystemProperties::GetHighContrastStatus()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.HighContrast.enabled", "0");
     int changed = 0;
     const char *status = CachedParameterGetChanged(g_Handle, &changed);
-    return std::atoi(status) != 0;
+    return ConvertToInt(status, 0) != 0;
 }
 
 bool RSSystemProperties::GetTargetDirtyRegionDfxEnabled(std::vector<std::string>& dfxTargetSurfaceNames_)
@@ -199,7 +208,7 @@ bool RSSystemProperties::GetTargetDirtyRegionDfxEnabled(std::vector<std::string>
     static CachedHandle g_Handle = CachedParameterCreate("rosen.dirtyregiondebug.surfacenames", "0");
     int changed = 0;
     const char *targetSurfacesStr = CachedParameterGetChanged(g_Handle, &changed);
-    if (std::atoi(targetSurfacesStr) == 0) {
+    if (ConvertToInt(targetSurfacesStr, 0) == 0) {
         dfxTargetSurfaceNames_.clear();
         return false;
     }
@@ -213,7 +222,7 @@ bool RSSystemProperties::GetOpaqueRegionDfxEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.opaqueregiondebug", "0");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return std::atoi(enable) != 0;
+    return ConvertToInt(enable, 0) != 0;
 }
 
 bool RSSystemProperties::GetVisibleRegionDfxEnabled()
@@ -221,7 +230,7 @@ bool RSSystemProperties::GetVisibleRegionDfxEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.visibleregiondebug", "0");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return std::atoi(enable) != 0;
+    return ConvertToInt(enable, 0) != 0;
 }
 
 SurfaceRegionDebugType RSSystemProperties::GetSurfaceRegionDfxType()
@@ -229,7 +238,7 @@ SurfaceRegionDebugType RSSystemProperties::GetSurfaceRegionDfxType()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.surfaceregiondebug", "0");
     int changed = 0;
     const char *type = CachedParameterGetChanged(g_Handle, &changed);
-    return static_cast<SurfaceRegionDebugType>(std::atoi(type));
+    return static_cast<SurfaceRegionDebugType>(ConvertToInt(type, 0));
 }
 
 uint32_t RSSystemProperties::GetCorrectionMode()
@@ -239,7 +248,7 @@ uint32_t RSSystemProperties::GetCorrectionMode()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.CorrectionMode", "999");
     int changed = 0;
     const char *mode = CachedParameterGetChanged(g_Handle, &changed);
-    return std::atoi(mode);
+    return ConvertToInt(mode, DEFAULT_CORRECTION_MODE_VALUE);
 }
 
 DumpSurfaceType RSSystemProperties::GetDumpSurfaceType()
@@ -247,7 +256,7 @@ DumpSurfaceType RSSystemProperties::GetDumpSurfaceType()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.dumpsurfacetype.enabled", "0");
     int changed = 0;
     const char *type = CachedParameterGetChanged(g_Handle, &changed);
-    return static_cast<DumpSurfaceType>(std::atoi(type));
+    return static_cast<DumpSurfaceType>(ConvertToInt(type, 0));
 }
 
 long long int RSSystemProperties::GetDumpSurfaceId()
@@ -255,7 +264,11 @@ long long int RSSystemProperties::GetDumpSurfaceId()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.dumpsurfaceid", "0");
     int changed = 0;
     const char *surfaceId = CachedParameterGetChanged(g_Handle, &changed);
-    return std::atoll(surfaceId);
+    if (surfaceId == nullptr) {
+        return std::atoll("0");
+    } else {
+        return std::atoll(surfaceId);
+    }
 }
 
 bool RSSystemProperties::GetDumpLayersEnabled()
@@ -263,7 +276,7 @@ bool RSSystemProperties::GetDumpLayersEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.dumplayer.enabled", "0");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return std::atoi(enable) != 0;
+    return ConvertToInt(enable, 0) != 0;
 }
 
 void RSSystemProperties::SetDrawTextAsBitmap(bool flag)
@@ -304,7 +317,7 @@ HgmRefreshRates RSSystemProperties::GetHgmRefreshRatesEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.sethgmrefreshrate.enabled", "0");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return static_cast<HgmRefreshRates>(std::atoi(enable));
+    return static_cast<HgmRefreshRates>(ConvertToInt(enable, 0));
 }
 
 void RSSystemProperties::SetHgmRefreshRateModesEnabled(std::string param)
@@ -318,7 +331,7 @@ HgmRefreshRateModes RSSystemProperties::GetHgmRefreshRateModesEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("persist.rosen.sethgmrefreshratemode.enabled", "0");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return static_cast<HgmRefreshRateModes>(std::atoi(enable));
+    return static_cast<HgmRefreshRateModes>(ConvertToInt(enable, 0));
 }
 
 bool RSSystemProperties::GetSkipForAlphaZeroEnabled()
@@ -326,7 +339,7 @@ bool RSSystemProperties::GetSkipForAlphaZeroEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("persist.skipForAlphaZero.enabled", "1");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return std::atoi(enable) != 0;
+    return ConvertToInt(enable, 1) != 0;
 }
 
 bool RSSystemProperties::GetSkipGeometryNotChangeEnabled()
@@ -348,6 +361,9 @@ float RSSystemProperties::GetAnimationScale()
     static CachedHandle g_Handle = CachedParameterCreate("persist.sys.graphic.animationscale", "1.0");
     int changed = 0;
     const char *scale = CachedParameterGetChanged(g_Handle, &changed);
+    if (scale == nullptr) {
+        return std::atof("1.0");
+    }
     return std::atof(scale);
 }
 
@@ -436,7 +452,7 @@ bool RSSystemProperties::GetUIFirstEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.ui.first.enabled", "1");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return std::atoi(enable) != 0;
+    return ConvertToInt(enable, 1) != 0;
 #endif
 }
 
@@ -483,7 +499,7 @@ bool RSSystemProperties::GetCacheCmdEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.cacheCmd.enabled", "1");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return std::atoi(enable) != 0;
+    return ConvertToInt(enable, 1) != 0;
 }
 
 bool RSSystemProperties::GetASTCEnabled()
@@ -518,7 +534,7 @@ bool RSSystemProperties::GetBoolSystemProperty(const char* name, bool defaultVal
     static CachedHandle g_Handle = CachedParameterCreate(name, defaultValue ? "1" : "0");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return std::atoi(enable) != 0;
+    return ConvertToInt(enable, defaultValue ? 1 : 0) != 0;
 }
 
 int RSSystemProperties::WatchSystemProperty(const char* name, OnSystemPropertyChanged func, void* context)
@@ -560,6 +576,10 @@ int RSSystemProperties::GetSyncTransactionWaitDelay()
     static int syncTransactionWaitDelay =
         std::atoi((system::GetParameter("persist.sys.graphic.syncTransactionWaitDelay", "100")).c_str());
     return syncTransactionWaitDelay;
+}
+int ConvertToInt(const char *orginValue, int defaultValue)
+{
+    return orginValue == nullptr ? defaultValue : std::atoi(orginValue);
 }
 } // namespace Rosen
 } // namespace OHOS
