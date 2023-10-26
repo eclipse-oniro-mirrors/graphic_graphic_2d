@@ -2046,7 +2046,9 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             return;
         }
 
+#ifndef USE_ROSEN_DRAWING
         tryCapture(node.GetRenderProperties().GetBoundsWidth(), node.GetRenderProperties().GetBoundsHeight());
+#endif
 
 #ifdef RS_ENABLE_VK
         canvas_->clear(SK_ColorTRANSPARENT);
@@ -2256,7 +2258,9 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         if (isDrawingCacheEnabled_ && RSSystemParameters::GetDrawingCacheEnabledDfx()) {
             DrawCacheRegionForDFX(cacheRenderNodeMapRects_);
         }
+#ifndef USE_ROSEN_DRAWING
         endCapture();
+#endif
         RSMainThread::Instance()->RemoveTask(CLEAR_GPU_CACHE);
         RS_TRACE_BEGIN("RSUniRender:FlushFrame");
         renderFrame_->Flush();
@@ -4091,7 +4095,7 @@ bool RSUniRenderVisitor::ProcessSharedTransitionNode(RSBaseRenderNode& node)
 #else
         auto& [node, alpha, mat] = existingNodeIter->second;
         canvas_->SetAlpha(alpha);
-        canvas->SetMatrix(mat.value());
+        canvas_->SetMatrix(mat.value());
 #endif
         node->Process(shared_from_this());
         unpairedTransitionNodes_.erase(existingNodeIter);
@@ -4114,10 +4118,10 @@ bool RSUniRenderVisitor::ProcessSharedTransitionNode(RSBaseRenderNode& node)
             canvas_->concat(PreCanvasStatus.matrix_);
 #else
             auto& [unused2, alpha1, mat1] = pair.first;
-            auto& [child, alhpa2, mat2] = existingNodeIter->second;
-            canvas->SetAlpha(alpha1);
+            auto& [child, alpha2, mat2] = existingNodeIter->second;
+            canvas_->SetAlpha(alpha1);
             canvas_->SetMatrix(mat1.value());
-            canvas_->MultipleyAlpha(alpha2);
+            canvas_->MultiplyAlpha(alpha2);
             canvas_->ConcatMatrix(mat2.value());
 #endif
             child->Process(shared_from_this());
@@ -4147,7 +4151,7 @@ bool RSUniRenderVisitor::ProcessSharedTransitionNode(RSBaseRenderNode& node)
         RenderParam value { node.shared_from_this(), canvasStatus };
 #else
         auto& [child, alpha, matrix] = curGroupedNodes_.top();
-        if (!matrix->Invert(matrix)) {
+        if (!matrix->Invert(&matrix)) {
             RS_LOGE("RSUniRenderVisitor::ProcessSharedTransitionNode invert failed");
         }
         RenderParam value { node.shared_from_this(), canvas_->GetAlpha() / alpha, matrix };
@@ -4173,6 +4177,7 @@ bool RSUniRenderVisitor::ProcessSharedTransitionNode(RSBaseRenderNode& node)
 
 void RSUniRenderVisitor::ProcessUnpairedSharedTransitionNode()
 {
+#ifndef USE_ROSEN_DRAWING
     // Do cleanup for unpaired transition nodes.
     for (auto& [key, params] : unpairedTransitionNodes_) {
         RSAutoCanvasRestore acr(canvas_);
@@ -4183,9 +4188,11 @@ void RSUniRenderVisitor::ProcessUnpairedSharedTransitionNode()
         // clear transition param
         node->SetSharedTransitionParam(std::nullopt);
     }
+#endif
     unpairedTransitionNodes_.clear();
 }
 
+#ifndef USE_ROSEN_DRAWING
 void RSUniRenderVisitor::tryCapture(float width, float height)
 {
     if (!RSSystemProperties::GetRecordingEnabled()) {
@@ -4214,5 +4221,6 @@ void RSUniRenderVisitor::endCapture() const
                    std::to_string(RSRecordingThread::Instance().GetCurDumpFrame()));
     RSRecordingThread::Instance().RecordingToFile(drawCmdList);
 }
+#endif
 } // namespace Rosen
 } // namespace OHOS
