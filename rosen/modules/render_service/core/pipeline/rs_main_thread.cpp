@@ -335,7 +335,7 @@ void RSMainThread::Init()
 #endif
 
 #ifndef USE_ROSEN_DRAWING
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD) && defined(NEW_SKIA)
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD) && defined(NEW_SKIA) && defined(RS_ENABLE_UNI_RENDER)
     uploadTextureBarrierTask_ = [this]() {
         auto renderContext = GetRenderEngine()->GetRenderContext().get();
         uploadTextureFence = eglCreateSyncKHR(renderContext->GetEGLDisplay(), EGL_SYNC_FENCE_KHR, nullptr);
