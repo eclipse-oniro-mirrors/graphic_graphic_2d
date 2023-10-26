@@ -26,7 +26,7 @@ namespace Rosen {
 constexpr int DEFAULT_QUICK_SKIP_PREPARE_TYPE_VALUE = 3;
 int ConvertToInt(const char *originValue, int defaultValue)
 {
-    return orginValue == nullptr ? defaultValue : std::atoi(originValue);
+    return originValue == nullptr ? defaultValue : std::atoi(originValue);
 }
 bool RSSystemParameters::GetCalcCostEnabled()
 {

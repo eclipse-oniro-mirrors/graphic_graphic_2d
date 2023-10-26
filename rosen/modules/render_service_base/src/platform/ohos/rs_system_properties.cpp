@@ -35,7 +35,7 @@ constexpr int DEFAULT_CORRECTION_MODE_VALUE = 999;
 
 int ConvertToInt(const char *originValue, int defaultValue)
 {
-    return orginValue == nullptr ? defaultValue : std::atoi(originValue);
+    return originValue == nullptr ? defaultValue : std::atoi(originValue);
 }
 static void ParseDfxSurfaceNamesString(const std::string& paramsStr,
     std::vector<std::string>& splitStrs, const std::string& seperator)
