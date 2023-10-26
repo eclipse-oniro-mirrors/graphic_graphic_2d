@@ -38,7 +38,7 @@ public:
     void RemoveTask(const std::string& name);
     void InitRenderContext(RenderContext* context);
 
-#if !USE_ROSEN_DRAWING && defined(RS_ENABLE_GL)
+#if !defined(USE_ROSEN_DRAWING) && defined(RS_ENABLE_GL)
     sk_sp<GrDirectContext> GetShareGrContext() const;
     void CleanGrResource();
 #endif
@@ -57,7 +57,7 @@ private:
     void CreateShareEglContext();
     RenderContext* renderContext_ = nullptr;
     sk_sp<GrDirectContext> grContext_ = nullptr;
-    EGLContext eglShareContex_ = EGL_NO_CONTEXT;
+    EGLContext eglShareContext_ = EGL_NO_CONTEXT;
 #endif
 };
 }
