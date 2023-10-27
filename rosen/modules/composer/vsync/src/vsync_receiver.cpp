@@ -147,16 +147,8 @@ VsyncError VSyncReceiver::SetVSyncRate(FrameCallback callback, int32_t rate)
 
 VsyncError VSyncReceiver::GetVSyncPeriod(int64_t &period)
 {
-    std::lock_guard<std::mutex> locker(initMutex_);
-    if (!init_) {
-        return VSYNC_ERROR_API_FAILED;
-    }
-    if (listener_->period_ == 0) {
-        VLOGE("%{public}s Hardware vsync is not available. please try again later!", __func__);
-        return VSYNC_ERROR_API_FAILED;
-    }
-    period = listener_->period_;
-    return VSYNC_ERROR_OK;
+    int64_t timeStamp;
+    return GetVSyncPeriodAndLastTimeStamp(period, timeStamp);
 }
 
 VsyncError VSyncReceiver::GetVSyncPeriodAndLastTimeStamp(int64_t &period, int64_t &timeStamp)
