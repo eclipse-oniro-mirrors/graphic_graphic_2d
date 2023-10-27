@@ -328,9 +328,8 @@ void OHDrawingTypographyTest(const uint8_t* data, size_t size)
     uint32_t alpha = static_cast<float>(data[1]);
     OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
     OH_Drawing_TextStyle* txtStyle = OH_Drawing_CreateTextStyle();
-    OH_Drawing_FontCollection* fontCollection = OH_Drawing_CreateFontCollection();
     OH_Drawing_TypographyCreate* handler =
-        OH_Drawing_CreateTypographyHandler(typoStyle, fontCollection);
+        OH_Drawing_CreateTypographyHandler(typoStyle, OH_Drawing_CreateFontCollection());
     OH_Drawing_SetTextStyleColor(txtStyle, OH_Drawing_ColorSetArgb(alpha, red, gree, blue));
     OH_Drawing_SetTextStyleFontSize(txtStyle, fontSize);
     OH_Drawing_SetTextStyleFontWeight(txtStyle, FONT_WEIGHT_400);
@@ -362,7 +361,6 @@ void OHDrawingTypographyTest(const uint8_t* data, size_t size)
     OH_Drawing_TypographyPaint(typography, cCanvas, position[0], position[1]);
     OH_Drawing_DestroyTypography(typography);
     OH_Drawing_DestroyTypographyHandler(handler);
-    OH_Drawing_DestroyFontCollection(fontCollection);
     OH_Drawing_BitmapDestroy(cBitmap);
     OH_Drawing_CanvasDestroy(cCanvas);
     OH_Drawing_DestroyTypographyStyle(typoStyle);
