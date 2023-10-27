@@ -65,6 +65,7 @@ namespace Rosen {
 class DrawCmdList;
 class OpItem;
 #else
+class RSExtendImageObject;
 namespace Drawing {
 class DrawCmdList;
 class Data;
@@ -213,6 +214,7 @@ public:
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<DrawCmdList>)
 #else
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<Drawing::DrawCmdList>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSExtendImageObject>)
 #endif
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<Media::PixelMap>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RectT<float>>)

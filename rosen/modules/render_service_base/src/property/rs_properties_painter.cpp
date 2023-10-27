@@ -1579,6 +1579,7 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
 #endif
     }
 #else
+    bool hasClipToBounds = false;
     if (properties.GetClipBounds() != nullptr) {
         auto& path = properties.GetClipBounds()->GetDrawingPath();
         if (path.GetDrawingType() == Drawing::DrawingType::RECORDING) {
@@ -1588,6 +1589,7 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
             canvas.ClipPath(path, Drawing::ClipOp::INTERSECT, antiAlias);
         }
     } else if (properties.GetClipToBounds()) {
+        hasClipToBounds = true;
         if (properties.GetCornerRadius().IsZero()) {
             canvas.ClipRect(Rect2DrawingRect(properties.GetBoundsRect()), Drawing::ClipOp::INTERSECT, isAntiAlias);
         } else {
@@ -1602,9 +1604,13 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
     auto bgColor = properties.GetBackgroundColor();
     if (bgColor != RgbPalette::Transparent()) {
         brush.SetColor(Drawing::Color(bgColor.AsArgbInt()));
-        canvas.AttachBrush(brush);
-        canvas.DrawRoundRect(RRect2DrawingRRect(properties.GetRRect()));
-        canvas.DetachBrush();
+        if (hasClipToBounds) {
+            canvas.DrawBackground(brush);
+        } else {
+            canvas.AttachBrush(brush);
+            canvas.DrawRoundRect(RRect2DrawingRRect(properties.GetRRect()));
+            canvas.DetachBrush();
+        }
     }
     if (const auto& bgShader = properties.GetBackgroundShader()) {
         canvas.Save();
@@ -1626,7 +1632,7 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
         auto boundsRect = Rect2DrawingRect(properties.GetBoundsRect());
         bgImage->SetDstRect(properties.GetBgImageRect());
         canvas.AttachBrush(brush);
-        bgImage->CanvasDrawImage(canvas, boundsRect, true);
+        bgImage->CanvasDrawImage(canvas, boundsRect, Drawing::SamplingOptions(), true);
         canvas.DetachBrush();
         canvas.Restore();
     }
@@ -2344,7 +2350,7 @@ void RSPropertiesPainter::DrawParticle(const RSProperties& properties, RSPaintFi
 #else
                 Drawing::Rect rect { fLeft, ftop, fRight, fBottom };
                 canvas.AttachBrush(brush);
-                image->CanvasDrawImage(canvas, rect, false);
+                image->CanvasDrawImage(canvas, rect, Drawing::SamplingOptions(), false);
                 canvas.DetachBrush();
                 canvas.Restore();
 #endif
