@@ -162,6 +162,8 @@ hilog_root = "//base/hiviewdfx/hilog"
 window_base_path = "//foundation/window/window_manager"
 safwk_base = "//foundation/systemabilitymgr/safwk"
 skia_root_new = "//third_party/skia"
+memmgr_root = "//foundation/resourceschedule/memmgr"
+memmgr_plugin_root = "//foundation/resourceschedule/memmgr_plugin"
 
 accessibility_enable = false
 if (defined(global_parts_info) &&
@@ -178,4 +180,13 @@ if (defined(global_parts_info) &&
 if (defined(global_parts_info) &&
     !defined(global_parts_info.hdf_drivers_interface_display)) {
   graphic_2d_feature_drivers_interface_display_enable = false
+}
+
+use_memmgr_plugin = false
+if (defined(global_parts_info.resourceschedule_memmgr_plugin)) {
+  use_memmgr_plugin = true
+}
+use_memmgr = false
+if (defined(global_parts_info.resourceschedule_memmgr)) {
+  use_memmgr = true
 }

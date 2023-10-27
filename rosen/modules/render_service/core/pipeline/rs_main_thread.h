@@ -36,6 +36,7 @@
 #include "ipc_callbacks/iapplication_agent.h"
 #include "ipc_callbacks/rs_iocclusion_change_callback.h"
 #include "ipc_callbacks/rs_isurface_occlusion_change_callback.h"
+#include "memory/rs_app_state_listener.h"
 #include "memory/rs_memory_graphic.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_uni_render_judgement.h"
@@ -191,6 +192,9 @@ public:
     bool IsSingleDisplay();
     uint64_t GetFocusNodeId() const;
     uint64_t GetFocusLeashWindowId() const;
+
+    void SubscribeAppState();
+    void HandleOnTrim(Memory::SystemMemoryLevel level);
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -411,6 +415,8 @@ private:
         std::tuple<pid_t, sptr<RSISurfaceOcclusionChangeCallback>, bool>> surfaceOcclusionListeners_;
     std::unordered_map<NodeId,
         std::pair<std::shared_ptr<RSSurfaceRenderNode>, std::shared_ptr<RSSurfaceRenderNode>>> savedAppWindowNode_;
+
+    std::shared_ptr<RSAppStateListener> rsAppStateListener_;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD
