@@ -246,7 +246,7 @@ void RSPropertyDrawable::UpdateDrawableVec(RSPropertyDrawableGenerateContext& co
     }
 
     // calculate changed bits
-    auto changedBits = drawableVecStatus ^ drawableVecStatusNew;
+    uint8_t changedBits = drawableVecStatus ^ drawableVecStatusNew;
     if (changedBits & BOUNDS_MASK) {
         // update bounds
         OptimizeBoundsSaveRestore(context, drawableVec, drawableVecStatusNew);

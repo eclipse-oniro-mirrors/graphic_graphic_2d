@@ -94,7 +94,8 @@ enum DrawableVecStatus : uint8_t {
     BOUNDS_MASK            = CLIP_BOUNDS | BOUNDS_PROPERTY_BEFORE | BOUNDS_PROPERTY_AFTER,
     FRAME_MASK             = CLIP_FRAME | FRAME_PROPERTY | HAS_CHILDREN,
 };
-};
+} // namespace Slot
+
 // Pure virtual base class
 class RSPropertyDrawable {
 public:
