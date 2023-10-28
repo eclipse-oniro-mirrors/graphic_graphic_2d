@@ -37,7 +37,7 @@
 
 namespace OHOS {
 namespace Rosen {
-using namespace Slot;
+using Slot::RSPropertyDrawableSlot;
 namespace {
 constexpr PropertyId ANONYMOUS_MODIFIER_ID = 0;
 }
@@ -162,7 +162,7 @@ void RSCanvasRenderNode::ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanva
 
     if (canvas.GetCacheType() != RSPaintFilterCanvas::CacheType::OFFSCREEN) {
         if (GetRenderProperties().GetUseEffect()) {
-            RSPropertiesPainter::ApplyBackgroundEffect(GetRenderProperties(), canvas, this);
+            RSPropertiesPainter::ApplyBackgroundEffect(GetRenderProperties(), canvas);
         }
         RSPropertiesPainter::DrawFilter(GetRenderProperties(), canvas, FilterType::BACKGROUND_FILTER);
     }

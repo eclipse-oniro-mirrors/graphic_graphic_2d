@@ -37,7 +37,7 @@
 
 namespace OHOS {
 namespace Rosen {
-using namespace Slot;
+using Slot::RSPropertyDrawableSlot;
 namespace {
 const std::set<RSModifierType> GROUPABLE_ANIMATION_TYPE = {
     RSModifierType::ALPHA,
@@ -59,12 +59,16 @@ const std::unordered_set<RSModifierType> ANIMATION_MODIFIER_TYPE  = {
 
 RSRenderNode::RSRenderNode(NodeId id, const std::weak_ptr<RSContext>& context) : id_(id), context_(context)
 {
-    renderProperties_.backref_ = weak_from_this();
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        propertyDrawablesVec_.resize(RSPropertyDrawableSlot::MAX);
+    }
 }
 RSRenderNode::RSRenderNode(NodeId id, bool isOnTheTree, const std::weak_ptr<RSContext>& context)
     : isOnTheTree_(isOnTheTree), id_(id), context_(context)
 {
-    renderProperties_.backref_ = weak_from_this();
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        propertyDrawablesVec_.resize(RSPropertyDrawableSlot::MAX);
+    }
 }
 
 void RSRenderNode::AddChild(SharedPtr child, int index)
@@ -1012,6 +1016,10 @@ bool RSRenderNode::ApplyModifiers()
     dirtyTypes_.clear();
     lastApplyTimestamp_ = lastTimestamp_;
     UpdateShouldPaint();
+    if (renderProperties_.backref_.expired()) {
+        // If the weak_ptr renderProperties_.backref_ is not assigned, assign it.
+        renderProperties_.backref_ = weak_from_this();
+    }
 
     // return true if positionZ changed
     return renderProperties_.GetPositionZ() != prevPositionZ;
