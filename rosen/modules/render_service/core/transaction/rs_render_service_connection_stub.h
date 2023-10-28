@@ -33,6 +33,9 @@ public:
 
     int OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) override;
 
+    void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback) override {};
+    void RunOnRemoteDiedCallback() override {};
+
 private:
     static const RSInterfaceCodeSecurityManager securityManager_;
 

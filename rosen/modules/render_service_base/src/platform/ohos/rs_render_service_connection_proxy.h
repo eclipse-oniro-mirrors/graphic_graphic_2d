@@ -161,6 +161,10 @@ public:
 
     void SetCacheEnabledForRotation(bool isEnabled) override;
 
+    void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback) override;
+
+    void RunOnRemoteDiedCallback() override;
+
 #ifdef TP_FEATURE_ENABLE
     void SetTpFeatureConfig(int32_t feature, const char* config) override;
 #endif
@@ -174,6 +178,7 @@ private:
 
     pid_t pid_ = GetRealPid();
     uint32_t transactionDataIndex_ = 0;
+    OnRemoteDiedCallback OnRemoteDiedCallback_;
 };
 } // namespace Rosen
 } // namespace OHOS
