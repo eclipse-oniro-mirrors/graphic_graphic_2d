@@ -261,9 +261,6 @@ int32_t XMLParser::ParserAnimationDynamicSetting(xmlNode &node, DynamicSetting& 
     currNode = currNode->xmlChildrenNode;
     for (; currNode; currNode = currNode->next) {
         auto dynamicSettingType = ExtractPropertyValue("name", *currNode);
-        if (dynamicSetting.find(dynamicSettingType) == dynamicSetting.end()) {
-            continue;
-        }
         for (xmlNode *thresholdNode = currNode->xmlChildrenNode; thresholdNode; thresholdNode = thresholdNode->next) {
             if (thresholdNode->type != XML_ELEMENT_NODE) {
                 continue;

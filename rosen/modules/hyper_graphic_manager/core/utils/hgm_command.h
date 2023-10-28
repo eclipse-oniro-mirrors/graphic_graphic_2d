@@ -112,8 +112,8 @@ public:
     std::unordered_map<std::string, detailedStrat> detailedStrategies_;
     std::unordered_map<std::string, std::string> animationDynamicStrats_;
     std::unordered_map<std::string, std::string> bundle_black_list_;
-    DynamicSetting dynamicSetting_ = {{"translate", {}}, {"scale", {}}, {"rotation", {}}};
-    DynamicSetting aceSceneDynamicSetting_ = {{"fling", {}}};
+    DynamicSetting dynamicSetting_;
+    DynamicSetting aceSceneDynamicSetting_;
 
     std::unordered_map<std::string, AnimationDynamicSetting> GetAnimationDynamicSettingMap(
         HgmModifierType hgmModifierType) const
