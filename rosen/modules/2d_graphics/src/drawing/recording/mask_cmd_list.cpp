@@ -145,7 +145,6 @@ void MaskPathOpItem::Playback(Path& path, const CmdList& cmdList) const
         cmdList, pathHandle_);
     path = *readPath;
 }
-
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

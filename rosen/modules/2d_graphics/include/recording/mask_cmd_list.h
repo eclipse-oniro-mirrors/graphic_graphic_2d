@@ -106,7 +106,6 @@ public:
 private:
     CmdListHandle pathHandle_;
 };
-
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
