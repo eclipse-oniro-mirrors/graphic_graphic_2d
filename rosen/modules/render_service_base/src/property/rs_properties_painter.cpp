@@ -678,8 +678,9 @@ void RSPropertiesPainter::DrawShadowInner(const RSProperties& properties, RSPain
             return;
         }
         SkPoint3 planeParams = { 0.0f, 0.0f, properties.GetShadowElevation() };
-        SkPoint3 lightPos = { canvas.getTotalMatrix().getTranslateX() + skPath.getBounds().centerX(),
-            canvas.getTotalMatrix().getTranslateY() + skPath.getBounds().centerY(), DEFAULT_LIGHT_HEIGHT };
+        SkPoint pt = { skPath.getBounds().centerX(), skPath.getBounds().centerY()};
+        canvas.getTotalMatrix().mapPoints(&pt, 1);
+        SkPoint3 lightPos = {pt.fX,pt.fY, DEFAULT_LIGHT_HEIGHT};
         Color ambientColor = Color::FromArgbInt(DEFAULT_AMBIENT_COLOR);
         ambientColor.MultiplyAlpha(canvas.GetAlpha());
         spotColor.MultiplyAlpha(canvas.GetAlpha());
