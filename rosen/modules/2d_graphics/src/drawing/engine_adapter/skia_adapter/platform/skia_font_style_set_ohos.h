@@ -28,8 +28,15 @@ namespace Rosen {
 namespace Drawing {
 class SkiaFontStyleSetOhos : public SkiaFontStyleSet {
 public:
+    static inline constexpr AdapterType TYPE = AdapterType::SKIA_ADAPTER;
+
     explicit SkiaFontStyleSetOhos(const std::shared_ptr<FontConfig_OHOS>& fontConfig, int index, bool isFallback);
     ~SkiaFontStyleSetOhos() override = default;
+
+    AdapterType GetType() const override
+    {
+        return AdapterType::SKIA_ADAPTER;
+    }
 };
 } // namespace Drawing
 } // namespace Rosen

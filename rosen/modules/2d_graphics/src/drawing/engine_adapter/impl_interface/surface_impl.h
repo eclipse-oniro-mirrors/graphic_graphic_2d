@@ -34,14 +34,8 @@ class GPUContext;
 
 class SurfaceImpl : public BaseImpl {
 public:
-    static inline constexpr AdapterType TYPE = AdapterType::BASE_INTERFACE;
     SurfaceImpl() {};
     ~SurfaceImpl() override {};
-
-    AdapterType GetType() const override
-    {
-        return AdapterType::BASE_INTERFACE;
-    }
 
     virtual bool Bind(const Bitmap& bitmap) = 0;
 #ifdef ACE_ENABLE_GPU

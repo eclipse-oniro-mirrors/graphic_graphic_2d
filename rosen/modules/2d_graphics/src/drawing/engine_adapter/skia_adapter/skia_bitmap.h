@@ -26,8 +26,10 @@ namespace Drawing {
 class DRAWING_API SkiaBitmap : public BitmapImpl {
 public:
     static inline constexpr AdapterType TYPE = AdapterType::SKIA_ADAPTER;
+
     SkiaBitmap();
     ~SkiaBitmap() override {}
+
     AdapterType GetType() const override
     {
         return AdapterType::SKIA_ADAPTER;

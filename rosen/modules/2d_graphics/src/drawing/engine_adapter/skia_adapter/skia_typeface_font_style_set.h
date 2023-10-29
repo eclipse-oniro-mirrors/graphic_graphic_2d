@@ -25,8 +25,15 @@ namespace Rosen {
 namespace Drawing {
 class SkiaTypefaceFontStyleSet : public SkiaFontStyleSet {
 public:
+    static inline constexpr AdapterType TYPE = AdapterType::SKIA_ADAPTER;
+
     SkiaTypefaceFontStyleSet();
     ~SkiaTypefaceFontStyleSet() override = default;
+
+    AdapterType GetType() const override
+    {
+        return AdapterType::SKIA_ADAPTER;
+    }
 
     void RegisterTypeface(std::shared_ptr<Typeface> typeface) override;
 };
