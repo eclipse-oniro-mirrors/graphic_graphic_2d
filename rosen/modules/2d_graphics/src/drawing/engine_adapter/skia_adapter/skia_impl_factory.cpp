@@ -15,15 +15,20 @@
 
 #include "skia_impl_factory.h"
 
+#include "skia_adapter/platform/skia_font_style_set_ohos.h"
+#include "skia_adapter/platform/skia_typeface_ohos.h"
 #include "skia_adapter/skia_bitmap.h"
 #include "skia_adapter/skia_camera.h"
 #include "skia_adapter/skia_canvas.h"
 #include "skia_adapter/skia_color_filter.h"
 #include "skia_adapter/skia_color_space.h"
 #include "skia_adapter/skia_data.h"
+#include "skia_adapter/skia_dynamic_font_mgr.h"
 #ifdef ACE_ENABLE_GPU
 #include "skia_adapter/skia_gpu_context.h"
 #endif
+#include "skia_adapter/skia_font.h"
+#include "skia_adapter/skia_font_mgr.h"
 #include "skia_adapter/skia_image.h"
 #include "skia_adapter/skia_image_filter.h"
 #include "skia_adapter/skia_mask_filter.h"
@@ -35,6 +40,9 @@
 #include "skia_adapter/skia_region.h"
 #include "skia_adapter/skia_shader_effect.h"
 #include "skia_adapter/skia_surface.h"
+#include "skia_adapter/skia_text_blob_builder.h"
+#include "skia_adapter/skia_typeface_font_style_set.h"
+#include "skia_adapter/skia_trace_memory_dump.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -66,6 +74,11 @@ std::unique_ptr<GPUContextImpl> SkiaImplFactory::CreateGPUContext()
     return std::make_unique<SkiaGPUContext>();
 }
 #endif
+
+std::unique_ptr<TraceMemoryDumpImpl> SkiaImplFactory::CreateTraceMemoryDump(const char* categoryKey, bool itemizeType)
+{
+    return std::make_unique<SkiaTraceMemoryDump>(categoryKey, itemizeType);
+}
 
 std::unique_ptr<BitmapImpl> SkiaImplFactory::CreateBitmap()
 {
@@ -146,6 +159,60 @@ std::unique_ptr<CameraImpl> SkiaImplFactory::CreateCamera()
 std::unique_ptr<RegionImpl> SkiaImplFactory::CreateRegion()
 {
     return std::make_unique<SkiaRegion>();
+}
+
+std::unique_ptr<VerticesImpl> SkiaImplFactory::CreateVertices()
+{
+    return std::make_unique<SkiaVertices>();
+}
+
+std::unique_ptr<VerticesImpl::BuilderImpl> SkiaImplFactory::CreateVerticesBuilder()
+{
+    return std::make_unique<SkiaVertices::SkiaBuilder>();
+}
+
+std::unique_ptr<FontImpl> SkiaImplFactory::CreateFont()
+{
+    return std::make_unique<SkiaFont>();
+}
+
+std::unique_ptr<TextBlobBuilderImpl> SkiaImplFactory::CreateTextBlobBuilder()
+{
+    return std::make_unique<SkiaTextBlobBuilder>();
+}
+
+std::shared_ptr<FontMgrImpl> SkiaImplFactory::CreateDefaultFontMgr()
+{
+    return SkiaFontMgr::CreateDefaultFontMgr();
+}
+
+std::unique_ptr<FontMgrImpl> SkiaImplFactory::CreateDynamicFontMgr()
+{
+#ifndef USE_ROSEN_DRAWING
+    return nullptr;
+#else
+    return std::make_unique<SkiaDynamicFontMgr>();
+#endif
+}
+
+std::unique_ptr<TypefaceImpl> SkiaImplFactory::CreateTypeface(const std::string& specifiedName, FontInfo& info)
+{
+    return std::make_unique<SkiaTypefaceOhos>(specifiedName, info);
+}
+
+std::unique_ptr<FontStyleSetImpl> SkiaImplFactory::CreateTypefaceFontStyleSet()
+{
+#ifndef USE_ROSEN_DRAWING
+    return nullptr;
+#else
+    return std::make_unique<SkiaTypefaceFontStyleSet>();
+#endif
+}
+
+std::unique_ptr<FontStyleSetImpl> SkiaImplFactory::CreateFontStyleSetOhos(
+    const std::shared_ptr<FontConfig_OHOS>& fontConfig, int index, bool isFallback)
+{
+    return std::make_unique<SkiaFontStyleSetOhos>(fontConfig, index, isFallback);
 }
 } // namespace Drawing
 } // namespace Rosen

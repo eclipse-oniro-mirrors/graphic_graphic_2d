@@ -140,6 +140,8 @@ public:
 
     uint32_t GetScreenCurrentRefreshRate(ScreenId id);
 
+    int32_t GetCurrentRefreshRateMode();
+
     std::vector<int32_t> GetScreenSupportedRefreshRates(ScreenId id);
 
     int32_t SetVirtualScreenResolution(ScreenId id, uint32_t width, uint32_t height);
@@ -192,8 +194,10 @@ public:
 
 #ifndef USE_ROSEN_DRAWING
     bool GetBitmap(NodeId id, SkBitmap& bitmap);
+    bool GetPixelmap(NodeId id, const std::shared_ptr<Media::PixelMap> pixelmap, const SkRect* rect);
 #else
     bool GetBitmap(NodeId id, Drawing::Bitmap& bitmap);
+    bool GetPixelmap(NodeId id, const std::shared_ptr<Media::PixelMap> pixelmap, const Drawing::Rect* rect);
 #endif
 
     int32_t SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval);
@@ -221,6 +225,10 @@ public:
     void SetHardwareEnabled(NodeId id, bool isEnabled);
 
     void SetCacheEnabledForRotation(bool isEnabled);
+
+#ifdef TP_FEATURE_ENABLE
+    void SetTpFeatureConfig(int32_t feature, const char* config);
+#endif
 private:
     void TriggerSurfaceCaptureCallback(NodeId id, Media::PixelMap* pixelmap);
     std::mutex mutex_;

@@ -45,11 +45,15 @@ public:
     virtual void DrawImage(SkCanvas& canvas, const SkPaint& paint);
 #endif
     void SetImage(const sk_sp<SkImage> image);
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
     void SetDmaImage(const sk_sp<SkImage> image);
+#endif
 #else
     virtual void DrawImage(Drawing::Canvas& canvas, const Drawing::Brush& brush);
     void SetImage(const std::shared_ptr<Drawing::Image> image);
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
     void SetDmaImage(const std::shared_ptr<Drawing::Image> image);
+#endif
 #endif
     void SetPixelMap(const std::shared_ptr<Media::PixelMap>& pixelMap);
     void SetSrcRect(const RectF& dstRect);
@@ -63,12 +67,13 @@ public:
     [[nodiscard]] static RSImageBase* Unmarshalling(Parcel& parcel);
 #endif
 
-protected:
 #ifndef USE_ROSEN_DRAWING
     void ConvertPixelMapToSkImage();
 #else
     void ConvertPixelMapToDrawingImage();
 #endif
+
+protected:
     void GenUniqueId(uint32_t id);
 #ifndef USE_ROSEN_DRAWING
     static bool UnmarshallingSkImageAndPixelMap(Parcel& parcel, uint64_t uniqueId, bool& useSkImage,
@@ -91,9 +96,11 @@ protected:
 
     RectF srcRect_;
     RectF dstRect_;
+#ifndef USE_ROSEN_DRAWING
     SkRect src_;
     SkRect dst_;
     SkRect lastRect_;
+#endif
     bool isDrawn_ = false;
     uint64_t uniqueId_ = 0;
     bool renderServiceImage_ = false;

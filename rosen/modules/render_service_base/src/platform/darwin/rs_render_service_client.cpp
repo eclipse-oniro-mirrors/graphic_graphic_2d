@@ -156,6 +156,11 @@ uint32_t RSRenderServiceClient::GetScreenCurrentRefreshRate(ScreenId id)
     return {};
 }
 
+int32_t RSRenderServiceClient::GetCurrentRefreshRateMode()
+{
+    return {};
+}
+
 std::vector<int32_t> RSRenderServiceClient::GetScreenSupportedRefreshRates(ScreenId id)
 {
     return {};
@@ -266,7 +271,16 @@ int32_t RSRenderServiceClient::GetScreenType(ScreenId id, RSScreenType& screenTy
     return {};
 }
 
+#ifndef USE_ROSEN_DRAWING
 bool RSRenderServiceClient::GetBitmap(NodeId id, SkBitmap& bitmap)
+#else
+bool RSRenderServiceClient::GetBitmap(NodeId id, Drawing::Bitmap& bitmap)
+#endif
+{
+    return {};
+}
+
+bool RSRenderServiceClient::GetPixelmap(NodeId id, const std::shared_ptr<Media::PixelMap> pixelmap, const SkRect* rect)
 {
     return {};
 }
@@ -328,5 +342,11 @@ void RSRenderServiceClient::SetHardwareEnabled(NodeId id, bool isEnabled)
 void RSRenderServiceClient::SetCacheEnabledForRotation(bool isEnabled)
 {
 }
+
+#ifdef TP_FEATURE_ENABLE
+void RSRenderServiceClient::SetTpFeatureConfig(int32_t feature, const char* config)
+{
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

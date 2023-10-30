@@ -22,6 +22,7 @@
 #include "effect/color_space.h"
 #include "image/bitmap.h"
 #include "image/picture.h"
+#include "image/image_info.h"
 #include "utils/matrix.h"
 #include "utils/size.h"
 
@@ -34,6 +35,7 @@ class GPUContext;
 class TextureInfo;
 enum class TextureOrigin;
 enum class CompressedType;
+class BackendTexture;
 #endif
 enum class BitDepth;
 class ImageImpl : public BaseImpl {
@@ -50,18 +52,27 @@ public:
         const Brush& brush, BitDepth bitDepth, std::shared_ptr<ColorSpace> colorSpace) = 0;
 #ifdef ACE_ENABLE_GPU
     virtual bool BuildFromBitmap(GPUContext& gpuContext, const Bitmap& bitmap) = 0;
+    virtual bool MakeFromEncoded(const std::shared_ptr<Data>& data) = 0;
     virtual bool BuildFromCompressed(GPUContext& gpuContext, const std::shared_ptr<Data>& data, int width, int height,
         CompressedType type) = 0;
     virtual bool BuildFromTexture(GPUContext& gpuContext, const TextureInfo& info, TextureOrigin origin,
         BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace) = 0;
+    virtual BackendTexture GetBackendTexture(bool flushPendingGrContextIO, TextureOrigin* origin) = 0;
+    virtual bool IsValid(GPUContext* context) const = 0;
 #endif
     virtual int GetWidth() const = 0;
     virtual int GetHeight() const = 0;
     virtual ColorType GetColorType() const = 0;
     virtual AlphaType GetAlphaType() const = 0;
     virtual uint32_t GetUniqueID() const = 0;
+    virtual ImageInfo GetImageInfo() = 0;
     virtual bool ReadPixels(Bitmap& bitmap, int x, int y) = 0;
     virtual bool IsTextureBacked() const = 0;
+    virtual bool ScalePixels(const Bitmap& bitmap, const SamplingOptions& sampling,
+        bool allowCachingHint = true) const = 0;
+    virtual std::shared_ptr<Data> EncodeToData(EncodedImageFormat& encodedImageFormat, int quality) const = 0;
+    virtual bool IsLazyGenerated() const = 0;
+
 
     // using for recording, should to remove after using shared memory
     virtual std::shared_ptr<Data> Serialize() const = 0;

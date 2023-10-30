@@ -25,8 +25,12 @@
 #ifdef ACE_ENABLE_GPU
 #include "impl_interface/gpu_context_impl.h"
 #endif
+#include "impl_interface/font_impl.h"
+#include "impl_interface/font_mgr_impl.h"
+#include "impl_interface/font_style_set_impl.h"
 #include "impl_interface/image_filter_impl.h"
 #include "impl_interface/image_impl.h"
+#include "impl_interface/vertices_impl.h"
 #include "impl_interface/mask_filter_impl.h"
 #include "impl_interface/matrix_impl.h"
 #include "impl_interface/matrix44_impl.h"
@@ -36,6 +40,11 @@
 #include "impl_interface/region_impl.h"
 #include "impl_interface/shader_effect_impl.h"
 #include "impl_interface/surface_impl.h"
+#include "impl_interface/text_blob_builder_impl.h"
+#include "impl_interface/typeface_impl.h"
+
+struct FontInfo;
+class FontConfig_OHOS;
 
 namespace OHOS {
 namespace Rosen {
@@ -49,6 +58,7 @@ public:
 #ifdef ACE_ENABLE_GPU
     static std::unique_ptr<GPUContextImpl> CreateGPUContextImpl();
 #endif
+    static std::unique_ptr<TraceMemoryDumpImpl> CreateTraceMemoryDumpImpl(const char* categoryKey, bool itemizeType);
     static std::unique_ptr<BitmapImpl> CreateBitmapImpl();
     static std::unique_ptr<ImageImpl> CreateImageImpl();
     static std::unique_ptr<ImageImpl> CreateImageImpl(void* rawImage);
@@ -65,6 +75,16 @@ public:
     static std::unique_ptr<Matrix44Impl> CreateMatrix44Impl();
     static std::unique_ptr<CameraImpl> CreateCameraImpl();
     static std::unique_ptr<RegionImpl> CreateRegionImpl();
+    static std::unique_ptr<VerticesImpl> CreateVerticesImpl();
+    static std::unique_ptr<VerticesImpl::BuilderImpl> CreateVerticesBuilderImpl();
+    static std::unique_ptr<FontImpl> CreateFontImpl();
+    static std::unique_ptr<TextBlobBuilderImpl> CreateTextBlobBuilderImpl();
+    static std::shared_ptr<FontMgrImpl> CreateDefaultFontMgrImpl();
+    static std::unique_ptr<FontMgrImpl> CreateDynamicFontMgrImpl();
+    static std::unique_ptr<TypefaceImpl> CreateTypefaceImpl(const std::string& specifiedName, FontInfo& info);
+    static std::unique_ptr<FontStyleSetImpl> CreateTypefaceFontStyleSetImpl();
+    static std::unique_ptr<FontStyleSetImpl> CreateFontStyleSetOhosImpl(
+        const std::shared_ptr<FontConfig_OHOS>& fontConfig, int index, bool isFallback);
 };
 } // namespace Drawing
 } // namespace Rosen

@@ -65,8 +65,6 @@ public:
 private:
     void ReportMemoryUsage(const std::string &member, bool needThis) const override;
 
-    void ComputeIntrinsicWidth();
-    void ConsiderEllipsis();
     int ComputeStrut();
     void DoLayout();
     int UpdateMetrics();
@@ -81,10 +79,8 @@ private:
     void ComputeWordBoundary() const;
     void ComputeSpans(int lineIndex, double baseline, const CalcResult &calcResult,
         std::vector<TextRect> &lineBoxes) const;
-    void ConsiderHeadEllipsis(const std::vector<VariantSpan> &ellipsisSpans, const double ellipsisWidth);
-    void ConsiderOneMidEllipsis(const std::vector<VariantSpan> &ellipsisSpans, const double ellipsisWidth);
-    void ConsiderMiddleEllipsis(const std::vector<VariantSpan> &ellipsisSpans, const double ellipsisWidth);
-    void ConsiderTailEllipsis(const std::vector<VariantSpan> &ellipsisSpans, const double ellipsisWidth);
+    void ProcessHardBreak();
+    std::vector<TextRect> GenTextRects(std::shared_ptr<TextSpan> &ts, double offsetX, double offsetY) const;
 
     TypographyStyle typographyStyle_;
     std::vector<VariantSpan> spans_;
@@ -101,6 +97,7 @@ private:
     double maxWidth_ = 0.0;
     double maxLineWidth_ = 0.0;
     double height_ = 0.0;
+    std::vector<double> yOffsets_ = {};
     double maxIntrinsicWidth_ = 0.0;
     double minIntrinsicWidth_ = 0.0;
 };

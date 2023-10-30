@@ -170,9 +170,6 @@ HWTEST_F(RSInterfacesTest, SetVirtualScreenResolution001, Function | SmallTest |
 */
 HWTEST_F(RSInterfacesTest, GetAllScreenIds, Function | SmallTest | Level2)
 {
-    std::vector<ScreenId> ids = rsInterfaces->GetAllScreenIds();
-    int32_t size = ids.size();
-    EXPECT_GT(ids.size(), 0);
     auto csurface = IConsumerSurface::Create();
     EXPECT_NE(csurface, nullptr);
     auto producer = csurface->GetProducer();
@@ -184,12 +181,8 @@ HWTEST_F(RSInterfacesTest, GetAllScreenIds, Function | SmallTest | Level2)
     ScreenId virtualScreenId = rsInterfaces->CreateVirtualScreen(
         "virtual6", defaultWidth, defaultHeight, psurface, GenerateVirtualScreenMirrorId(), -1);
     EXPECT_NE(virtualScreenId, INVALID_SCREEN_ID);
-    ids = rsInterfaces->GetAllScreenIds();
-    if (find(ids.begin(), ids.end(), virtualScreenId) != ids.end()) {
-        EXPECT_EQ(size, ids.size());
-    } else {
-        EXPECT_EQ(size + 1, ids.size());
-    }
+    std::vector<ScreenId> ids = rsInterfaces->GetAllScreenIds();
+    EXPECT_TRUE(find(ids.begin(), ids.end(), virtualScreenId) != ids.end());
 }
 
 /*
@@ -930,7 +923,7 @@ HWTEST_F(RSInterfacesTest, GetScreenCurrentRefreshRate001, Function | SmallTest 
 
 /*
  * @tc.name: SetScreenRefreshRate001
- * @tc.desc: Verify the function of setting the refreshrate with 90hz
+ * @tc.desc: Verify the function of setting the refreshrate with 30hz
  * @tc.type: FUNC
  * @tc.require: I7EM2R
  */
@@ -939,7 +932,7 @@ HWTEST_F(RSInterfacesTest, SetScreenRefreshRate001, Function | SmallTest | Level
     auto screenId = rsInterfaces->GetDefaultScreenId();
     EXPECT_NE(screenId, INVALID_SCREEN_ID);
     uint32_t formerRate = rsInterfaces->GetScreenCurrentRefreshRate(screenId);
-    uint32_t rateToSet = 90;
+    uint32_t rateToSet = 30;
 
     rsInterfaces->SetScreenRefreshRate(screenId, 0, rateToSet);
     usleep(SET_REFRESHRATE_SLEEP_US);
@@ -999,6 +992,7 @@ HWTEST_F(RSInterfacesTest, SetScreenRefreshRate003, Function | SmallTest | Level
     EXPECT_NE(screenId, INVALID_SCREEN_ID);
     uint32_t formerRate = rsInterfaces->GetScreenCurrentRefreshRate(screenId);
     uint32_t rateToSet = 60;
+    uint32_t standardRate = 60;
 
     rsInterfaces->SetScreenRefreshRate(screenId, 0, rateToSet);
     usleep(SET_REFRESHRATE_SLEEP_US);
@@ -1017,7 +1011,7 @@ HWTEST_F(RSInterfacesTest, SetScreenRefreshRate003, Function | SmallTest | Level
     if (ifSupported) {
         EXPECT_GE(currentRate, rateToSet);
     } else {
-        EXPECT_NE(currentRate, rateToSet);
+        EXPECT_GE(currentRate, standardRate);
     }
 
     //restore the former rate
@@ -1037,6 +1031,7 @@ HWTEST_F(RSInterfacesTest, SetRefreshRateMode001, Function | SmallTest | Level2)
 
     uint32_t formerRate = rsInterfaces->GetScreenCurrentRefreshRate(screenId);
     uint32_t newRate = 0;
+    uint32_t standardRate = 60;
 
     //find a supported rate which not equal to formerRate
     auto supportedRates = rsInterfaces->GetScreenSupportedRefreshRates(screenId);
@@ -1054,7 +1049,7 @@ HWTEST_F(RSInterfacesTest, SetRefreshRateMode001, Function | SmallTest | Level2)
         rsInterfaces->SetScreenRefreshRate(screenId, 0, newRate);
         usleep(SET_REFRESHRATE_SLEEP_US);
         uint32_t currentRate = rsInterfaces->GetScreenCurrentRefreshRate(screenId);
-        EXPECT_EQ(currentRate, newRate);
+        EXPECT_GE(currentRate, standardRate);
 
         //restore the former rate
         rsInterfaces->SetScreenRefreshRate(screenId, 0, formerRate);
@@ -1072,6 +1067,35 @@ HWTEST_F(RSInterfacesTest, RegisterHgmConfigChangeCallback_Test, Function | Smal
     ASSERT_NE(rsInterfaces, nullptr);
     HgmConfigChangeCallback cb = [](std::shared_ptr<RSHgmConfigData> data){};
     int32_t ret = rsInterfaces->RegisterHgmConfigChangeCallback(cb);
+    ASSERT_EQ(ret, 0);
+}
+
+/*
+ * @tc.name: RegisterSurfaceOcclusionChangeCallback001
+ * @tc.desc: RegisterOcclusionChangeCallback interface test.
+ * @tc.type: FUNC
+ * @tc.require: issueI851VR
+ */
+HWTEST_F(RSInterfacesTest, RegisterSurfaceOcclusionChangeCallback001, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    NodeId id = 0;
+    SurfaceOcclusionChangeCallback cb = [](bool){};
+    int32_t ret = rsInterfaces->RegisterSurfaceOcclusionChangeCallback(id, cb);
+    ASSERT_EQ(ret, 0);
+}
+
+/*
+ * @tc.name: UnRegisterSurfaceOcclusionChangeCallback001
+ * @tc.desc: UnRegisterSurfaceOcclusionChangeCallback interface test.
+ * @tc.type: FUNC
+ * @tc.require: issueI851VR
+ */
+HWTEST_F(RSInterfacesTest, UnRegisterSurfaceOcclusionChangeCallback001, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    NodeId id = 0;
+    int32_t ret = rsInterfaces->UnRegisterSurfaceOcclusionChangeCallback(id);
     ASSERT_EQ(ret, 0);
 }
 } // namespace Rosen

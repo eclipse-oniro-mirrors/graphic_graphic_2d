@@ -65,6 +65,7 @@ std::shared_ptr<Media::PixelMap> RSUniUICapture::TakeLocalCapture()
 #ifndef USE_ROSEN_DRAWING
     auto skSurface = CreateSurface(pixelmap);
     if (skSurface == nullptr) {
+        RS_LOGE("RSUniUICapture::TakeLocalCapture: skSurface == nullptr!");
         return nullptr;
     }
     auto canvas = std::make_shared<RSPaintFilterCanvas>(skSurface.get());
@@ -184,8 +185,12 @@ void RSUniUICapture::RSUniUICaptureVisitor::SetCanvas(std::shared_ptr<RSRecordin
         RS_LOGE("RSUniUICaptureVisitor::SetCanvas: canvas == nullptr");
         return;
     }
+    auto renderContext = RSMainThread::Instance()->GetRenderEngine()->GetRenderContext();
+    canvas->SetGrRecordingContext(renderContext->GetGrContext());
     canvas_ = std::make_shared<RSPaintFilterCanvas>(canvas.get());
     canvas_->scale(scaleX_, scaleY_);
+    canvas_->SetDisableFilterCache(true);
+    canvas_->SetRecordingState(true);
 }
 #else
 void RSUniUICapture::RSUniUICaptureVisitor::SetCanvas(std::shared_ptr<Drawing::RecordingCanvas> canvas)
@@ -263,24 +268,37 @@ void RSUniUICapture::RSUniUICaptureVisitor::ProcessCanvasRenderNode(RSCanvasRend
         canvas_->SetMatrix(relativeMatrix);
 #endif
     }
+    node.ProcessRenderBeforeChildren(*canvas_);
     if (node.GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
         auto canvasDrawingNode = node.ReinterpretCastTo<RSCanvasDrawingRenderNode>();
+        if (!canvasDrawingNode->IsOnTheTree()) {
+#ifndef USE_ROSEN_DRAWING
+            auto clearFunc = [id = UNI_MAIN_THREAD_INDEX](sk_sp<SkSurface> surface) {
+                // The second param is null, 0 is an invalid value.
+                RSUniRenderUtil::ClearNodeCacheSurface(std::move(surface), nullptr, id, 0);
+            };
+#else
+            auto clearFunc = [id = UNI_MAIN_THREAD_INDEX](std::shared_ptr<Drawing::Surface> surface) {
+                // The second param is null, 0 is an invalid value.
+                RSUniRenderUtil::ClearNodeCacheSurface(std::move(surface), nullptr, id, 0);
+            };
+#endif
+            canvasDrawingNode->SetSurfaceClearFunc({ UNI_MAIN_THREAD_INDEX, clearFunc });
+            canvasDrawingNode->ProcessRenderContents(*canvas_);
+        } else {
 #ifndef USE_ROSEN_DRAWING
             SkBitmap bitmap = canvasDrawingNode->GetBitmap();
 #ifndef NEW_SKIA
-            canvas_->drawBitmap(bitmap, node.GetRenderProperties().GetBoundsPositionX(),
-                node.GetRenderProperties().GetBoundsPositionY());
+            canvas_->drawBitmap(bitmap, 0, 0);
 #else
-            canvas_->drawImage(bitmap.asImage(), node.GetRenderProperties().GetBoundsPositionX(),
-                node.GetRenderProperties().GetBoundsPositionY());
+            canvas_->drawImage(bitmap.asImage(), 0, 0);
 #endif
 #else
             Drawing::Bitmap bitmap = canvasDrawingNode->GetBitmap();
-            canvas_->DrawBitmap(bitmap, node.GetRenderProperties().GetBoundsPositionX(),
-                node.GetRenderProperties().GetBoundsPositionY());
+            canvas_->DrawBitmap(bitmap, 0, 0);
 #endif
+        }
     } else {
-        node.ProcessRenderBeforeChildren(*canvas_);
         node.ProcessRenderContents(*canvas_);
     }
     ProcessChildren(node);
@@ -444,7 +462,7 @@ void RSUniUICapture::RSUniUICaptureVisitor::ProcessSurfaceViewWithoutUni(RSSurfa
         canvas_->restoreToCount(saveCnt);
         if (node.GetBuffer() != nullptr) {
             // in node's local coordinate.
-            auto params = RSDividedRenderUtil::CreateBufferDrawParam(node, true, false, false, false);
+            auto params = RSDividedRenderUtil::CreateBufferDrawParam(node, true, false, true, false);
             renderEngine_->DrawSurfaceNodeWithParams(*canvas_, node, params);
         }
     } else {
@@ -454,7 +472,7 @@ void RSUniUICapture::RSUniUICaptureVisitor::ProcessSurfaceViewWithoutUni(RSSurfa
         }
         if (node.GetBuffer() != nullptr) {
             // in node's local coordinate.
-            auto params = RSDividedRenderUtil::CreateBufferDrawParam(node, true, false, false, false);
+            auto params = RSDividedRenderUtil::CreateBufferDrawParam(node, true, false, true, false);
             renderEngine_->DrawSurfaceNodeWithParams(*canvas_, node, params);
         }
         canvas_->restore();

@@ -16,7 +16,6 @@
 #include "utils/data.h"
 
 #include "impl_factory.h"
-#include "utils/log.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -56,6 +55,11 @@ const void* Data::GetData() const
 void* Data::WritableData()
 {
     return impl_->WritableData();
+}
+
+std::shared_ptr<Data> Data::Serialize() const
+{
+    return impl_->Serialize();
 }
 } // namespace Drawing
 } // namespace Rosen

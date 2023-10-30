@@ -35,6 +35,10 @@ ColorSpace::ColorSpace(ColorSpaceType t) noexcept : ColorSpace()
     }
 }
 
+ColorSpace::ColorSpace(std::shared_ptr<ColorSpaceImpl> impl) noexcept
+    : type_(ColorSpace::ColorSpaceType::NO_TYPE), impl_(impl)
+{}
+
 ColorSpace::ColorSpace(ColorSpaceType t, const Image& image) noexcept : ColorSpace()
 {
     type_ = t;
@@ -55,6 +59,11 @@ ColorSpace::ColorSpace() noexcept
 ColorSpace::ColorSpaceType ColorSpace::GetType() const
 {
     return type_;
+}
+
+std::shared_ptr<ColorSpace> ColorSpace::CreateFromImpl(std::shared_ptr<ColorSpaceImpl> impl)
+{
+    return std::make_shared<ColorSpace>(impl);
 }
 
 std::shared_ptr<ColorSpace> ColorSpace::CreateSRGB()

@@ -33,6 +33,7 @@ TextEngine::TypographyStyle Convert(const TypographyStyle &style)
         .fontFamilies_ = { style.fontFamily_ },
         .fontSize_ = style.fontSize_,
         .heightScale_ = style.heightScale_,
+        .halfLeading_ = style.halfLeading_,
         .heightOnly_ = style.heightOnly_,
         .locale_ = style.locale_,
         .maxLines_ = style.maxLines_,
@@ -41,12 +42,14 @@ TextEngine::TypographyStyle Convert(const TypographyStyle &style)
         .wordBreakType_ = Convert(style.wordBreakType_),
         .align_ = Convert(style.textAlign_),
         .direction_ = Convert(style.textDirection_),
+        .ellipsisModal_ = Convert(style.ellipsisModal_),
         .useLineStyle_ = style.useLineStyle_,
         .lineStyle_ = {
             .only_ = style.lineStyleOnly_,
             .fontWeight_ = Convert(style.lineStyleFontWeight_),
             .fontStyle_ = Convert(style.lineStyleFontStyle_),
             .fontFamilies_ = style.lineStyleFontFamilies_,
+            .halfLeading_ = style.lineStyleHalfLeading_,
             .heightOnly_ = style.lineStyleHeightOnly_,
             .fontSize_ = style.lineStyleFontSize_,
             .heightScale_ = style.lineStyleHeightScale_,
@@ -56,6 +59,7 @@ TextEngine::TypographyStyle Convert(const TypographyStyle &style)
         .fontFamilies = { style.fontFamily },
         .fontSize = style.fontSize,
         .heightScale = style.heightScale,
+        .halfLeading = style.halfLeading,
         .heightOnly = style.heightOnly,
         .locale = style.locale,
         .maxLines = style.maxLines,
@@ -64,13 +68,14 @@ TextEngine::TypographyStyle Convert(const TypographyStyle &style)
         .wordBreakType = Convert(style.wordBreakType),
         .align = Convert(style.textAlign),
         .direction = Convert(style.textDirection),
-        .useLineStyle = style.useLineStyle,
         .ellipsisModal = Convert(style.ellipsisModal),
+        .useLineStyle = style.useLineStyle,
         .lineStyle = {
             .only = style.lineStyleOnly,
             .fontWeight = Convert(style.lineStyleFontWeight),
             .fontStyle = Convert(style.lineStyleFontStyle),
             .fontFamilies = style.lineStyleFontFamilies,
+            .halfLeading = style.lineStyleHalfLeading,
             .heightOnly = style.lineStyleHeightOnly,
             .fontSize = style.lineStyleFontSize,
             .heightScale = style.lineStyleHeightScale,
@@ -105,17 +110,29 @@ TextEngine::TextStyle Convert(const TextStyle &style)
     auto decorationColor = SkColorSetARGB(style.decorationColor.GetAlpha(),
         style.decorationColor.GetRed(), style.decorationColor.GetGreen(), style.decorationColor.GetBlue());
 #endif
-    auto foreground = std::make_shared<TextEngine::TexginePaint>();
+    std::optional<TextEngine::TexginePaint> foreground = std::nullopt;
 #ifndef USE_GRAPHIC_TEXT_GINE
-    foreground->SetPaint(*style.foreground_);
+    if (style.foreground.has_value()) {
+        foreground = TextEngine::TexginePaint();
+        foreground.value().SetPaint(style.foreground.value());
+    }
 #else
-    foreground->SetPaint(*style.foreground);
+    if (style.foreground.has_value()) {
+        foreground = TextEngine::TexginePaint();
+        foreground.value().SetPaint(style.foreground.value());
+    }
 #endif
-    auto background = std::make_shared<TextEngine::TexginePaint>();
+    std::optional<TextEngine::TexginePaint> background = std::nullopt;
 #ifndef USE_GRAPHIC_TEXT_GINE
-    background->SetPaint(*style.background_);
+    if (style.background.has_value()) {
+        background = TextEngine::TexginePaint();
+        background.value().SetPaint(style.background_.value());
+    }
 #else
-    background->SetPaint(*style.background);
+    if (style.background.has_value()) {
+        background = TextEngine::TexginePaint();
+        background.value().SetPaint(style.background.value());
+    }
 #endif
     TextEngine::TextStyle xs = {
 #ifndef USE_GRAPHIC_TEXT_GINE
@@ -130,12 +147,13 @@ TextEngine::TextStyle Convert(const TextStyle &style)
         .color_ = color,
         .baseline_ = Convert(style.baseline_),
         .locale_ = style.locale_,
+        .halfLeading_ = style.halfLeading_,
         .heightOnly_ = style.heightOnly_,
         .heightScale_ = style.heightScale_,
         .letterSpacing_ = style.letterSpacing_,
         .wordSpacing_ = style.wordSpacing_,
-        .foreground_ = *foreground,
-        .background_ = *background,
+        .foreground_ = foreground,
+        .background_ = background,
 #else
         .fontWeight = Convert(style.fontWeight),
         .fontStyle = Convert(style.fontStyle),
@@ -148,12 +166,13 @@ TextEngine::TextStyle Convert(const TextStyle &style)
         .color = color,
         .baseline = Convert(style.baseline),
         .locale = style.locale,
+        .halfLeading = style.halfLeading,
         .heightOnly = style.heightOnly,
         .heightScale = style.heightScale,
         .letterSpacing = style.letterSpacing,
         .wordSpacing = style.wordSpacing,
-        .foreground = *foreground,
-        .background = *background,
+        .foreground = foreground,
+        .background = background,
 #endif
     };
 

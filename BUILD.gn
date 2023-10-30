@@ -33,6 +33,7 @@ group("graphic_common_test") {
   testonly = true
 
   public_deps = [
+    "frameworks/bootanimation/test:test",
     "frameworks/opengl_wrapper/test:test",
     "frameworks/surface/test:test",
     "frameworks/vulkan_layers/test:test",
@@ -79,4 +80,8 @@ group("libvulkan") {
 
 group("libnative_image") {
   public_deps = [ "frameworks/surfaceimage:libnative_image" ]
+}
+
+group("libbootanimation_utils") {
+  public_deps = [ "frameworks/bootanimation/utils:libbootanimation_utils" ]
 }

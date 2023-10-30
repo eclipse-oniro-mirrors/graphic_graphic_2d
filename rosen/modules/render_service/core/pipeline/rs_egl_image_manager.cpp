@@ -289,7 +289,7 @@ GLuint RSEglImageManager::MapEglImageFromSurfaceBuffer(const sptr<OHOS::SurfaceB
         // cache not found, create it.
         return CreateImageCacheFromBuffer(buffer, threadIndex);
     } else {
-        auto& imageCache = imageCacheSeqs_[bufferId];
+        const auto& imageCache = imageCacheSeqs_[bufferId];
         return imageCache->TextureId();
     }
 }
@@ -315,7 +315,9 @@ void RSEglImageManager::UnMapEglImageFromSurfaceBuffer(int32_t seqNum)
         if (imageCacheSeqs_.count(seqNum) == 0) {
             return;
         }
-        threadIndex = imageCacheSeqs_[seqNum]->GetThreadIndex();
+        if (imageCacheSeqs_[seqNum]) {
+            threadIndex = imageCacheSeqs_[seqNum]->GetThreadIndex();
+        }
     }
     auto func = [this, seqNum]() {
         {

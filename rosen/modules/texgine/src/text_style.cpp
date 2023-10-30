@@ -33,6 +33,15 @@ bool FontFeatures::operator ==(const FontFeatures &rhs) const
     return features_ == rhs.features_;
 }
 
+bool TextShadow::HasShadow() const
+{
+    if ((offsetX == 0 && offsetY == 0) || blurLeave <= 0.5) {
+        return false;
+    }
+
+    return true;
+}
+
 bool TextShadow::operator ==(TextShadow const &rhs) const
 {
     return offsetX == rhs.offsetX &&
@@ -46,6 +55,7 @@ bool TextStyle::operator ==(TextStyle const &rhs) const
     return color == rhs.color &&
            fontSize == rhs.fontSize &&
            fontFamilies == rhs.fontFamilies &&
+           halfLeading == rhs.halfLeading &&
            heightOnly == rhs.heightOnly &&
            heightScale == rhs.heightScale &&
            decoration == rhs.decoration &&

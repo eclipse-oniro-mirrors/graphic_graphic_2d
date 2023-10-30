@@ -32,6 +32,7 @@ public:
     Bitmap();
     virtual ~Bitmap();
     void Build(int32_t width, int32_t height, const BitmapFormat& format, int32_t stride = 0);
+    void Build(const ImageInfo& imageInfo, int32_t stride = 0);
 
     /*
      * @brief  Gets the width of Bitmap.
@@ -43,17 +44,24 @@ public:
      */
     int GetHeight() const;
 
+    int GetRowBytes() const;
+    ColorType GetColorType() const;
+    AlphaType GetAlphaType() const;
+
     /*
      * @brief  Gets the pointer to Bitmap buffer.
      */
     void* GetPixels() const;
     void SetPixels(void* pixel);
-    void CopyPixels(Bitmap& dst, int srcLeft, int srcTop, int width, int height) const;
+    void CopyPixels(Bitmap& dst, int srcLeft, int srcTop) const;
+    bool IsImmutable();
+    void SetImmutable();
     void ClearWithColor(const ColorQuad& color) const;
     bool IsValid() const;
     ColorQuad GetColor(int x, int y) const;
     void Free();
     BitmapFormat GetFormat() const;
+    ImageInfo GetImageInfo() const;
     template<typename T>
     const std::shared_ptr<T> GetImpl() const
     {
@@ -63,6 +71,7 @@ public:
 private:
     std::shared_ptr<BitmapImpl> bmpImplPtr;
     BitmapFormat format_;
+    ImageInfo imageInfo_;
 };
 } // namespace Drawing
 } // namespace Rosen

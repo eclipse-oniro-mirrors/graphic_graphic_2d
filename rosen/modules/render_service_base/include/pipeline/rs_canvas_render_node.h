@@ -32,7 +32,7 @@ namespace Drawing {
 class DrawCmdList;
 }
 #endif
-struct RSModifierContext;
+class RSModifierContext;
 
 class RSCanvasRenderNode : public RSRenderNode {
 public:
@@ -80,10 +80,12 @@ private:
     // functions that are dedicated to driven render [start]
     void DrawDrivenContent(RSPaintFilterCanvas& canvas);
     // functions that are dedicated to driven render [end]
+    void ExecuteBlendMode(RSPaintFilterCanvas& canvas, bool isBlendMode);
 
     RSPaintFilterCanvas::SaveStatus canvasNodeSaveCount_;
     mutable std::mutex canvasNodeProcessMutex_;
 
+    friend class RSColorfulShadowDrawable;
     friend class RSRenderTransition;
     friend class RSPropertiesPainter;
 };

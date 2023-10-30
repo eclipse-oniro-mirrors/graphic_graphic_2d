@@ -82,6 +82,11 @@ void SkiaColorSpace::InitWithRGB(const CMSTransferFuncType& func, const CMSMatri
     colorSpace_ = SkColorSpace::MakeRGB(ConvertToSkCMSTransferFunction(func), ConvertToSkCMSMatrix3x3(matrix));
 }
 
+void SkiaColorSpace::SetColorSpace(sk_sp<SkColorSpace> skColorSpace)
+{
+    colorSpace_ = skColorSpace;
+}
+
 sk_sp<SkColorSpace> SkiaColorSpace::GetColorSpace() const
 {
     return colorSpace_;

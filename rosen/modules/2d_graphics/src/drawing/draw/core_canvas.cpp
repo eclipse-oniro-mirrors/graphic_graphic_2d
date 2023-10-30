@@ -63,9 +63,25 @@ int32_t CoreCanvas::GetHeight() const
     return impl_->GetHeight();
 }
 
+ImageInfo CoreCanvas::GetImageInfo()
+{
+    return impl_->GetImageInfo();
+}
+
+bool CoreCanvas::ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+    int srcX, int srcY)
+{
+    return impl_->ReadPixels(dstInfo, dstPixels, dstRowBytes, srcX, srcY);
+}
+
 void CoreCanvas::DrawPoint(const Point& point)
 {
     impl_->DrawPoint(point);
+}
+
+void CoreCanvas::DrawPoints(PointMode mode, size_t count, const Point pts[])
+{
+    impl_->DrawPoints(mode, count, pts);
 }
 
 void CoreCanvas::DrawLine(const Point& startPt, const Point& endPt)
@@ -134,9 +150,42 @@ void CoreCanvas::DrawRegion(const Region& region)
     impl_->DrawRegion(region);
 }
 
+void CoreCanvas::DrawPatch(const Point cubics[12], const ColorQuad colors[4], const Point texCoords[4], BlendMode mode)
+{
+    impl_->DrawPatch(cubics, colors, texCoords, mode);
+}
+
+void CoreCanvas::DrawEdgeAAQuad(const Rect& rect, const Point clip[4],
+    QuadAAFlags aaFlags, ColorQuad color, BlendMode mode)
+{
+    impl_->DrawEdgeAAQuad(rect, clip, aaFlags, color, mode);
+}
+
+void CoreCanvas::DrawVertices(const Vertices& vertices, BlendMode mode)
+{
+    impl_->DrawVertices(vertices, mode);
+}
+
 void CoreCanvas::DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py)
 {
     impl_->DrawBitmap(bitmap, px, py);
+}
+
+void CoreCanvas::DrawImageNine(const Image* image, const RectI& center, const Rect& dst,
+    FilterMode filter, const Brush* brush)
+{
+    impl_->DrawImageNine(image, center, dst, filter, brush);
+}
+
+void CoreCanvas::DrawAnnotation(const Rect& rect, const char* key, const Data* data)
+{
+    impl_->DrawAnnotation(rect, key, data);
+}
+
+void CoreCanvas::DrawImageLattice(const Image* image, const Lattice& lattice, const Rect& dst,
+    FilterMode filter, const Brush* brush)
+{
+    impl_->DrawImageLattice(image, lattice, dst, filter, brush);
 }
 
 void CoreCanvas::DrawBitmap(Media::PixelMap& pixelMap, const scalar px, const scalar py)
@@ -170,9 +219,19 @@ void CoreCanvas::DrawSVGDOM(const sk_sp<SkSVGDOM>& svgDom)
     impl_->DrawSVGDOM(svgDom);
 }
 
+void CoreCanvas::DrawTextBlob(const TextBlob* blob, const scalar x, const scalar y)
+{
+    impl_->DrawTextBlob(blob, x, y);
+}
+
 void CoreCanvas::ClipRect(const Rect& rect, ClipOp op, bool doAntiAlias)
 {
     impl_->ClipRect(rect, op, doAntiAlias);
+}
+
+void CoreCanvas::ClipIRect(const RectI& rect, ClipOp op)
+{
+    impl_->ClipIRect(rect, op);
 }
 
 void CoreCanvas::ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias)
@@ -183,6 +242,21 @@ void CoreCanvas::ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAnt
 void CoreCanvas::ClipPath(const Path& path, ClipOp op, bool doAntiAlias)
 {
     impl_->ClipPath(path, op, doAntiAlias);
+}
+
+void CoreCanvas::ClipRegion(const Region& region, ClipOp op)
+{
+    impl_->ClipRegion(region, op);
+}
+
+bool CoreCanvas::IsClipEmpty()
+{
+    return impl_->IsClipEmpty();
+}
+
+bool CoreCanvas::QuickReject(const Rect& rect)
+{
+    return impl_->QuickReject(rect);
 }
 
 void CoreCanvas::SetMatrix(const Matrix& matrix)
@@ -248,6 +322,11 @@ void CoreCanvas::Restore()
 uint32_t CoreCanvas::GetSaveCount() const
 {
     return impl_->GetSaveCount();
+}
+
+void CoreCanvas::Discard()
+{
+    return impl_->Discard();
 }
 
 CoreCanvas& CoreCanvas::AttachPen(const Pen& pen)

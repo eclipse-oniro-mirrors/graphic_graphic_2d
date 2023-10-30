@@ -16,6 +16,7 @@
 #ifndef RS_HARDWARE_THREAD_H
 #define RS_HARDWARE_THREAD_H
 
+#include <atomic>
 #include <mutex>
 
 #include "event_handler.h"
@@ -42,6 +43,7 @@ public:
         PostTask([t(std::move(scheduledTask))]() { t->Run(); });
         return std::move(taskFuture);
     }
+    uint32_t GetunExcuteTaskNum();
 private:
     RSHardwareThread() = default;
     ~RSHardwareThread() = default;
@@ -54,7 +56,7 @@ private:
     void Redraw(const sptr<Surface>& surface, const std::vector<LayerInfoPtr>& layers, uint32_t screenId);
     void ReleaseLayers(OutputPtr output, const std::unordered_map<uint32_t, LayerPtr>& layerMap);
     void LayerPresentTimestamp(const LayerInfoPtr& layer, const sptr<IConsumerSurface>& surface) const;
-    void PerformSetActiveMode();
+    void PerformSetActiveMode(OutputPtr output);
 
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
@@ -62,10 +64,9 @@ private:
     std::shared_ptr<RSBaseRenderEngine> uniRenderEngine_;
     UniFallbackCallback redrawCb_;
     std::mutex mutex_;
+    std::atomic<uint32_t> unExcuteTaskNum_ = 0;
 
-    bool lockRefreshRateOnce_ = false;
     HgmRefreshRates hgmRefreshRates_;
-    HgmRefreshRateModes hgmRefreshRateModes_;
 };
 }
 #endif // RS_HARDWARE_THREAD_H

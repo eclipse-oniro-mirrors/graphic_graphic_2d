@@ -15,6 +15,8 @@
 
 #include "skia_path.h"
 
+#include <functional>
+
 #include "include/core/SkMatrix.h"
 #include "include/pathops/SkPathOps.h"
 #include "include/utils/SkParsePath.h"
@@ -27,6 +29,28 @@
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
+SkiaPath::SkPathSvgCacheManager& SkiaPath::SkPathSvgCacheManager::GetInstance()
+{
+    static SkPathSvgCacheManager instance;
+    return instance;
+}
+
+bool SkiaPath::SkPathSvgCacheManager::GetPathWithSvgString(const std::string& svgString, SkPath& path)
+{
+    std::size_t h = std::hash<std::string>{}(svgString);
+    bool ret = true;
+    auto iter = pathCache_.find(h);
+    if (iter == pathCache_.end()) {
+        ret = SkParsePath::FromSVGString(svgString.c_str(), &path);
+        if (ret) {
+            pathCache_.emplace(h, path);
+        }
+    } else {
+        path = iter->second;
+    }
+    return ret;
+}
+
 SkiaPath::SkiaPath() noexcept : path_() {}
 
 SkiaPath::SkiaPath(const SkiaPath& other) noexcept
@@ -47,7 +71,7 @@ PathImpl* SkiaPath::Clone()
 
 bool SkiaPath::InitWithSVGString(const std::string& str)
 {
-    return SkParsePath::FromSVGString(str.c_str(), &path_);
+    return SkPathSvgCacheManager::GetInstance().GetPathWithSvgString(str, path_);
 }
 
 std::string SkiaPath::ConvertToSVGString() const
@@ -92,6 +116,37 @@ void SkiaPath::CubicTo(scalar ctrlPt1X, scalar ctrlPt1Y, scalar ctrlPt2X, scalar
 void SkiaPath::QuadTo(scalar ctrlPtX, scalar ctrlPtY, scalar endPtX, scalar endPtY)
 {
     path_.quadTo(ctrlPtX, ctrlPtY, endPtX, endPtY);
+}
+
+void SkiaPath::RMoveTo(scalar dx, scalar dy)
+{
+    path_.rMoveTo(dx, dy);
+}
+
+void SkiaPath::RLineTo(scalar dx, scalar dy)
+{
+    path_.rLineTo(dx, dy);
+}
+
+void SkiaPath::RArcTo(scalar rx, scalar ry, scalar angle, PathDirection direction, scalar dx, scalar dy)
+{
+#if defined(USE_CANVASKIT0310_SKIA) || defined(NEW_SKIA)
+    SkPathDirection pathDir = static_cast<SkPathDirection>(direction);
+#else
+    SkPath::Direction pathDir = static_cast<SkPath::Direction>(direction);
+#endif
+    SkPath::ArcSize arcLarge = SkPath::ArcSize::kSmall_ArcSize;
+    path_.arcTo(rx, ry, angle, arcLarge, pathDir, dx, dy);
+}
+
+void SkiaPath::RCubicTo(scalar dx1, scalar dy1, scalar dx2, scalar dy2, scalar dx3, scalar dy3)
+{
+    path_.rCubicTo(dx1, dy1, dx2, dy2, dx3, dy3);
+}
+
+void SkiaPath::RQuadTo(scalar dx1, scalar dy1, scalar dx2, scalar dy2)
+{
+    path_.rQuadTo(dx1, dy1, dx2, dy2);
 }
 
 void SkiaPath::AddRect(scalar left, scalar top, scalar right, scalar bottom, PathDirection dir)

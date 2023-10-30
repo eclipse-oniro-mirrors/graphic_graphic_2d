@@ -150,6 +150,27 @@ private:
     unsigned int format_ = 0;
 };
 
+class BackendTexture {
+public:
+    BackendTexture() noexcept;
+    BackendTexture(bool isValid) noexcept;
+    virtual ~BackendTexture() {};
+
+    bool IsValid() const;
+    void SetTextureInfo(const TextureInfo& textureInfo);
+    const TextureInfo GetTextureInfo() const;
+
+    template<typename T>
+    const std::shared_ptr<T> GetImpl() const
+    {
+        return imageImplPtr->DowncastingTo<T>();
+    }
+private:
+    bool isValid_;
+    std::shared_ptr<ImageImpl> imageImplPtr;
+    TextureInfo textureInfo_;
+};
+
 class DRAWING_API Image {
 public:
     Image() noexcept;
@@ -168,6 +189,8 @@ public:
      * @return            True if Image is created successed.
      */
     bool BuildFromBitmap(GPUContext& gpuContext, const Bitmap& bitmap);
+
+    bool MakeFromEncoded(const std::shared_ptr<Data>& data);
 
     /*
      * @brief             Create a GPU-backed Image from compressed data.
@@ -193,6 +216,10 @@ public:
      */
     bool BuildFromTexture(GPUContext& gpuContext, const TextureInfo& info, TextureOrigin origin,
         BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace);
+
+    BackendTexture GetBackendTexture(bool flushPendingGrContextIO, TextureOrigin* origin) const;
+
+    bool IsValid(GPUContext* context) const;
 #endif
 
     /*
@@ -221,6 +248,11 @@ public:
     uint32_t GetUniqueID() const;
 
     /*
+     * @brief  Gets the ImageInfo of Image.
+     */
+    ImageInfo GetImageInfo();
+
+    /*
      * @brief         Copies a Rect of pixels from Image to Bitmap.
      * @param bitmap  Destination Bitmap.
      * @param x       Column index whose absolute value is less than Image width.
@@ -228,6 +260,13 @@ public:
      * @return        True of pixels are copied to Bitmap.
      */
     bool ReadPixels(Bitmap& bitmap, int x, int y);
+
+    bool ScalePixels(const Bitmap& bitmap, const SamplingOptions& sampling,
+        bool allowCachingHint = true) const;
+
+    std::shared_ptr<Data> EncodeToData(EncodedImageFormat& encodedImageFormat, int quality) const;
+
+    bool IsLazyGenerated() const;
 
     /*
      * @brief   Returns true the contents of Image was created on or uploaded to GPU memory,

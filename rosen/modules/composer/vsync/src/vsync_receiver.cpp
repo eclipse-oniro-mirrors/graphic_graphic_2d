@@ -60,6 +60,8 @@ void VSyncCallBackListener::OnReadable(int32_t fileDescriptor)
         cb = vsyncCallbacks_;
     }
     now = data[0];
+    period_ = data[1] - data[0];
+    lastTimeStamp_ = data[0];
     VLOGD("dataCount:%{public}d, cb == nullptr:%{public}d", dataCount, (cb == nullptr));
     // 1, 2: index of array data.
     ScopedBytrace func("ReceiveVsync dataCount:" + std::to_string(dataCount) + "bytes now:" + std::to_string(now) +
@@ -107,7 +109,7 @@ VsyncError VSyncReceiver::Init()
         runner->Run();
     }
 
-    looper_->AddFileDescriptorListener(fd_, OHOS::AppExecFwk::FILE_DESCRIPTOR_INPUT_EVENT, listener_);
+    looper_->AddFileDescriptorListener(fd_, OHOS::AppExecFwk::FILE_DESCRIPTOR_INPUT_EVENT, listener_, "vSyncTask");
     init_ = true;
     return VSYNC_ERROR_OK;
 }
@@ -145,15 +147,23 @@ VsyncError VSyncReceiver::SetVSyncRate(FrameCallback callback, int32_t rate)
 
 VsyncError VSyncReceiver::GetVSyncPeriod(int64_t &period)
 {
+    int64_t timeStamp;
+    return GetVSyncPeriodAndLastTimeStamp(period, timeStamp);
+}
+
+VsyncError VSyncReceiver::GetVSyncPeriodAndLastTimeStamp(int64_t &period, int64_t &timeStamp)
+{
     std::lock_guard<std::mutex> locker(initMutex_);
     if (!init_) {
         return VSYNC_ERROR_API_FAILED;
     }
-    VsyncError ret = connection_->GetVSyncPeriod(period);
-    if (ret != VSYNC_ERROR_OK) {
-        VLOGE("%{public}s get vsync period failed", __func__);
+    if (listener_->period_ == 0 || listener_->lastTimeStamp_ == 0) {
+        VLOGE("%{public}s Hardware vsync is not available. please try again later!", __func__);
+        return VSYNC_ERROR_API_FAILED;
     }
-    return ret;
+    period = listener_->period_;
+    timeStamp = listener_->lastTimeStamp_;
+    return VSYNC_ERROR_OK;
 }
 
 VsyncError VSyncReceiver::Destroy()

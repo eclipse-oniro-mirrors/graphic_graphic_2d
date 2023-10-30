@@ -25,8 +25,11 @@ namespace Drawing {
 class Bitmap;
 class Canvas;
 class Image;
+class Surface;
 #ifdef ACE_ENABLE_GPU
 struct FrameBuffer;
+class ImageInfo;
+class GPUContext;
 #endif
 
 class SurfaceImpl : public BaseImpl {
@@ -44,11 +47,16 @@ public:
 #ifdef ACE_ENABLE_GPU
     virtual bool Bind(const Image& image) = 0;
     virtual bool Bind(const FrameBuffer& frameBuffer) = 0;
+    virtual bool MakeRenderTarget(GPUContext& gpuContext, bool Budgeted, const ImageInfo& imageInfo) = 0;
+    virtual bool MakeRasterN32Premul(int32_t width, int32_t height) = 0;
 #endif
 
+    virtual bool MakeRaster(const ImageInfo& imageInfo) = 0;
     virtual std::shared_ptr<Canvas> GetCanvas() const = 0;
     virtual std::shared_ptr<Image> GetImageSnapshot() const = 0;
     virtual std::shared_ptr<Image> GetImageSnapshot(const RectI& bounds) const = 0;
+    virtual std::shared_ptr<Surface> MakeSurface(int width, int height) const = 0;
+    virtual void FlushAndSubmit(bool syncCpu) = 0;
 };
 } // namespace Drawing
 } // namespace Rosen

@@ -33,11 +33,17 @@ public:
 #ifdef ACE_ENABLE_GPU
     bool Bind(const Image& image) override;
     bool Bind(const FrameBuffer& frameBuffer) override;
+    bool MakeRenderTarget(GPUContext& gpuContext, bool Budgeted, const ImageInfo& imageInfo) override;
+    bool MakeRasterN32Premul(int32_t width, int32_t height) override;
 #endif
 
+    bool MakeRaster(const ImageInfo& imageInfo) override;
     std::shared_ptr<Canvas> GetCanvas() const override;
     std::shared_ptr<Image> GetImageSnapshot() const override;
     std::shared_ptr<Image> GetImageSnapshot(const RectI& bounds) const override;
+    std::shared_ptr<Surface> MakeSurface(int width, int height) const override;
+    void SetSkSurface(const sk_sp<SkSurface>& skSurface);
+    void FlushAndSubmit(bool syncCpu) override;
 
 private:
     sk_sp<SkSurface> skSurface_ = nullptr;

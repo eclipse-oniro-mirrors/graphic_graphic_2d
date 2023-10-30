@@ -16,7 +16,6 @@
 #include "hgm_frame_rate_manager.h"
 
 #include "common/rs_optional_trace.h"
-#include "hgm_core.h"
 #include "hgm_log.h"
 #include "parameters.h"
 #include "rs_trace.h"
@@ -37,24 +36,29 @@ void HgmFrameRateManager::UniProcessData(const FrameRateRangeData& data)
     if (screenId == INVALID_SCREEN_ID) {
         return;
     }
-
+    auto& hgmCore = HgmCore::Instance();
     FrameRateRange finalRange;
-    finalRange.Merge(data.rsRange);
-    for (auto appRange : data.multiAppRange) {
-        finalRange.Merge(appRange.second);
-    }
-    if (!finalRange.IsValid()) {
-        if (data.forceUpdateFlag) {
-            finalRange.max_ = DEFAULT_PREFERRED;
-            finalRange.preferred_ = DEFAULT_PREFERRED;
-        } else {
-            HgmCore::Instance().InsertAndStartScreenTimer(screenId, IDLE_TIMER_EXPIRED, nullptr, expiredCallback_);
-            return;
-        }
+    if (auto scenePreferred = hgmCore.GetScenePreferred(); scenePreferred != 0) {
+        ResetScreenTimer(screenId);
+        finalRange.max_ = RANGE_MAX_REFRESHRATE;
+        finalRange.preferred_ = scenePreferred;
     } else {
-        HgmCore::Instance().ResetScreenTimer(screenId);
+        finalRange.Merge(data.rsRange);
+        for (auto appRange : data.multiAppRange) {
+            finalRange.Merge(appRange.second);
+        }
+        if (!finalRange.IsValid()) {
+            if (data.forceUpdateFlag) {
+                finalRange.max_ = RANGE_MAX_REFRESHRATE;
+                finalRange.preferred_ = DEFAULT_PREFERRED;
+            } else {
+                StartScreenTimer(screenId, IDLE_TIMER_EXPIRED, nullptr, expiredCallback_);
+                return;
+            }
+        } else {
+            ResetScreenTimer(screenId);
+        }
     }
-
     CalcRefreshRate(screenId, finalRange);
     rsFrameRate_ = GetDrawingFrameRate(currRefreshRate_, finalRange);
     RS_OPTIONAL_TRACE_NAME("HgmFrameRateManager:UniProcessData refreshRate:" +
@@ -197,6 +201,73 @@ void HgmFrameRateManager::Reset()
     currRefreshRate_ = -1;
     rsFrameRate_ = -1;
     multiAppFrameRate_.clear();
+}
+
+int32_t HgmFrameRateManager::CalModifierPreferred(const HgmModifierProfile &hgmModifierProfile)
+{
+    auto& hgmCore = HgmCore::Instance();
+    sptr<HgmScreen> hgmScreen = hgmCore.GetScreen(hgmCore.GetActiveScreenId());
+    auto parsedConfigData = hgmCore.GetParsedConfigData();
+    if (!hgmScreen) {
+        return HGM_ERROR;
+    }
+    auto [xSpeed, ySpeed] = applyDimension(
+        SpeedTransType::TRANS_PIXEL_TO_MM, hgmModifierProfile.xSpeed, hgmModifierProfile.ySpeed, hgmScreen);
+    auto mixSpeed = sqrt(xSpeed * xSpeed + ySpeed * ySpeed);
+
+    auto dynamicSettingMap = parsedConfigData->GetAnimationDynamicSettingMap(hgmModifierProfile.hgmModifierType);
+    for (const auto &iter: dynamicSettingMap) {
+        if (mixSpeed >= iter.second.min && (mixSpeed < iter.second.max || iter.second.max == -1)) {
+            return iter.second.preferred_fps;
+        }
+    }
+    return HGM_ERROR;
+}
+
+std::pair<float, float> HgmFrameRateManager::applyDimension(
+    SpeedTransType speedTransType, float xSpeed, float ySpeed, sptr<HgmScreen> hgmScreen)
+{
+    auto xDpi = hgmScreen->GetXDpi();
+    auto yDpi = hgmScreen->GetYDpi();
+    if (xDpi < MARGIN || yDpi < MARGIN) {
+        return std::pair<float, float>(0, 0);
+    }
+    switch (speedTransType) {
+        case SpeedTransType::TRANS_MM_TO_PIXEL:
+            return std::pair<float, float>(
+                xSpeed * xDpi / INCH_2_MM, ySpeed * yDpi / INCH_2_MM);
+        case SpeedTransType::TRANS_PIXEL_TO_MM:
+            return std::pair<float, float>(
+                xSpeed / xDpi * INCH_2_MM, ySpeed / yDpi * INCH_2_MM);
+        default:
+            return std::pair<float, float>(0, 0);
+    }
+}
+
+std::shared_ptr<HgmOneShotTimer> HgmFrameRateManager::GetScreenTimer(ScreenId screenId) const
+{
+    if (auto timer = screenTimerMap_.find(screenId); timer != screenTimerMap_.end()) {
+        return timer->second;
+    }
+    return nullptr;
+}
+
+void HgmFrameRateManager::StartScreenTimer(ScreenId screenId, int32_t interval,
+    std::function<void()> resetCallback, std::function<void()> expiredCallback)
+{
+    if (auto oldtimer = GetScreenTimer(screenId); oldtimer == nullptr) {
+        auto newTimer = std::make_shared<HgmOneShotTimer>("idle_timer" + std::to_string(screenId),
+            std::chrono::milliseconds(interval), resetCallback, expiredCallback);
+        screenTimerMap_[screenId] = newTimer;
+        newTimer->Start();
+    }
+}
+
+void HgmFrameRateManager::ResetScreenTimer(ScreenId screenId) const
+{
+    if (auto timer = GetScreenTimer(screenId); timer != nullptr) {
+        timer->Reset();
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

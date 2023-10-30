@@ -31,6 +31,10 @@
 #endif // RS_ENABLE_EGLIMAGE
 
 namespace OHOS::Rosen {
+namespace {
+constexpr uint32_t HARDWARE_THREAD_TASK_NUM = 1;
+}
+
 RSHardwareThread& RSHardwareThread::Instance()
 {
     static RSHardwareThread instance;
@@ -72,6 +76,11 @@ void RSHardwareThread::PostTask(const std::function<void()>& task)
     }
 }
 
+uint32_t RSHardwareThread::GetunExcuteTaskNum()
+{
+    return unExcuteTaskNum_;
+}
+
 void RSHardwareThread::ReleaseBuffer(sptr<SurfaceBuffer> buffer, sptr<SyncFence> releaseFence,
     sptr<IConsumerSurface> cSurface)
 {
@@ -111,6 +120,17 @@ void RSHardwareThread::ReleaseLayers(OutputPtr output, const std::unordered_map<
     }
     const auto layersReleaseFence = output->GetLayersReleaseFence();
     if (layersReleaseFence.size() == 0) {
+        // When release fence's size is 0, the output may invalid, release all buffer
+        // This situation may happen when killing composer_host
+        for (const auto& [id, layer] : layerMap) {
+            if (layer == nullptr || layer->GetLayerInfo()->GetSurface() == nullptr) {
+                RS_LOGW("RSHardwareThread::ReleaseLayers: layer or layer's cSurface is nullptr");
+                continue;
+            }
+            auto preBuffer = layer->GetLayerInfo()->GetPreBuffer();
+            auto consumer = layer->GetLayerInfo()->GetSurface();
+            ReleaseBuffer(preBuffer, SyncFence::INVALID_FENCE, consumer);
+        }
         RS_LOGE("RSHardwareThread::ReleaseLayers: no layer needs to release");
     }
     for (const auto& [layer, fence] : layersReleaseFence) {
@@ -132,16 +152,23 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
     }
     RSTaskMessage::RSTask task = [this, output = output, layers = layers]() {
         RS_TRACE_NAME("RSHardwareThread::CommitAndReleaseLayers");
-        PerformSetActiveMode();
+        PerformSetActiveMode(output);
         output->SetLayerInfo(layers);
-        hdiBackend_->Repaint(output);
+        if (output->IsDeviceValid()) {
+            hdiBackend_->Repaint(output);
+        }
         auto layerMap = output->GetLayers();
         ReleaseLayers(output, layerMap);
+        unExcuteTaskNum_--;
+        if (unExcuteTaskNum_ <= HARDWARE_THREAD_TASK_NUM) {
+            RSMainThread::Instance()->NotifyHardwareThreadCanExcuteTask();
+        }
     };
+    unExcuteTaskNum_++;
     PostTask(task);
 }
 
-void RSHardwareThread::PerformSetActiveMode()
+void RSHardwareThread::PerformSetActiveMode(OutputPtr output)
 {
     auto &hgmCore = OHOS::Rosen::HgmCore::Instance();
     auto screenManager = CreateOrGetScreenManager();
@@ -151,19 +178,9 @@ void RSHardwareThread::PerformSetActiveMode()
     }
 
     HgmRefreshRates newRate = RSSystemProperties::GetHgmRefreshRatesEnabled();
-    HgmRefreshRateModes newRateMode = RSSystemProperties::GetHgmRefreshRateModesEnabled();
     if (hgmRefreshRates_ != newRate) {
         hgmRefreshRates_ = newRate;
         hgmCore.SetScreenRefreshRate(screenManager->GetDefaultScreenId(), 0, static_cast<int32_t>(hgmRefreshRates_));
-    }
-    if (hgmRefreshRateModes_ != newRateMode) {
-        hgmRefreshRateModes_ = newRateMode;
-        hgmCore.SetRefreshRateMode(static_cast<RefreshRateMode>(hgmRefreshRateModes_));
-    }
-
-    if (lockRefreshRateOnce_ == false) {
-        hgmCore.SetDefaultRefreshRateMode();
-        lockRefreshRateOnce_ = true;
     }
 
     std::unique_ptr<std::unordered_map<ScreenId, int32_t>> modeMap(hgmCore.GetModesToApply());
@@ -186,6 +203,7 @@ void RSHardwareThread::PerformSetActiveMode()
         }
 
         screenManager->SetScreenActiveMode(id, modeId);
+        hdiBackend_->StartSample(output);
     }
 }
 

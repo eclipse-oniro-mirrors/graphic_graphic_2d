@@ -135,6 +135,11 @@ uint32_t RSInterfaces::GetScreenCurrentRefreshRate(ScreenId id)
     return renderServiceClient_->GetScreenCurrentRefreshRate(id);
 }
 
+int32_t RSInterfaces::GetCurrentRefreshRateMode()
+{
+    return renderServiceClient_->GetCurrentRefreshRateMode();
+}
+
 std::vector<int32_t> RSInterfaces::GetScreenSupportedRefreshRates(ScreenId id)
 {
     return renderServiceClient_->GetScreenSupportedRefreshRates(id);
@@ -155,7 +160,7 @@ bool RSInterfaces::TakeSurfaceCaptureForUI(
         return false;
     }
     if (RSSystemProperties::GetUniRenderEnabled()) {
-        return renderServiceClient_->TakeSurfaceCapture(node->GetId(), callback, scaleX, scaleY, 
+        return renderServiceClient_->TakeSurfaceCapture(node->GetId(), callback, scaleX, scaleY,
             SurfaceCaptureType::UICAPTURE);
     } else {
         return TakeSurfaceCaptureForUIWithoutUni(node->GetId(), callback, scaleX, scaleY);
@@ -190,19 +195,7 @@ bool RSInterfaces::TakeSurfaceCaptureForUIWithoutUni(NodeId id,
         std::shared_ptr<Media::PixelMap> pixelmap = rsDividedUICapture->TakeLocalCapture();
         ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
         callback->OnSurfaceCapture(pixelmap);
-        std::lock_guard<std::mutex> lock(offscreenRenderMutex_);
-        offscreenRenderNum_--;
-        if (offscreenRenderNum_ == 0) {
-            RSOffscreenRenderThread::Instance().Stop();
-        }
     };
-    {
-        std::lock_guard<std::mutex> lock(offscreenRenderMutex_);
-        if (offscreenRenderNum_ == 0) {
-            RSOffscreenRenderThread::Instance().Start();
-        }
-        offscreenRenderNum_++;
-    }
     RSOffscreenRenderThread::Instance().PostTask(offscreenRenderTask);
     return true;
 }
@@ -368,5 +361,12 @@ void RSInterfaces::DisableCacheForRotation()
 {
     renderServiceClient_->SetCacheEnabledForRotation(false);
 }
+
+#ifdef TP_FEATURE_ENABLE
+void RSInterfaces::SetTpFeatureConfig(int32_t feature, const char* config)
+{
+    renderServiceClient_->SetTpFeatureConfig(feature, config);
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

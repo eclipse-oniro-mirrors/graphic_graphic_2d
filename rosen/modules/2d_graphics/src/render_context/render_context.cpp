@@ -302,6 +302,9 @@ bool RenderContext::SetUpGrContext()
     options.fPreferExternalImagesOverES3 = true;
     options.fDisableDistanceFieldPaths = true;
 
+    // Advanced Filter
+    options.fProcessName = "render_service";
+
     mHandler_ = std::make_shared<MemoryHandler>();
     auto glesVersion = reinterpret_cast<const char*>(glGetString(GL_VERSION));
     auto size = glesVersion ? strlen(glesVersion) : 0;
@@ -464,6 +467,7 @@ void RenderContext::RenderFrame()
 #else
     if (surface_ != nullptr && surface_->GetCanvas() != nullptr) {
         LOGD("RenderFrame: Canvas");
+        RSTagTracker tagTracker(GetDrGPUContext(), RSTagTracker::TAGTYPE::TAG_RENDER_FRAME);
         surface_->GetCanvas()->Flush();
 #endif
     } else {

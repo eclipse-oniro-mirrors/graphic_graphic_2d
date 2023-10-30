@@ -15,6 +15,7 @@
 
 #include "gtest/gtest.h"
 #include "animation/rs_render_particle_emitter.h"
+#include "animation/rs_render_particle.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -41,7 +42,7 @@ void RSRenderParticleEmitterTest::TearDown() {}
 HWTEST_F(RSRenderParticleEmitterTest, EmitParticleTest, Level1)
 {
     int64_t deltaTime = 1;
-    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    auto particleParams = std::make_shared<ParticleRenderParams>();
     RSRenderParticleEmitter rsRenderParticleEmitter(particleParams);
     rsRenderParticleEmitter.EmitParticle(deltaTime);
     ASSERT_NE(deltaTime, 0);

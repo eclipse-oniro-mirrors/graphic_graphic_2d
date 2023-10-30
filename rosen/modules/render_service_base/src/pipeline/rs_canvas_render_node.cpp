@@ -33,9 +33,11 @@
 #include "render/rs_light_up_effect_filter.h"
 #include "platform/common/rs_log.h"
 #include "visitor/rs_node_visitor.h"
+#include "property/rs_property_drawable.h"
 
 namespace OHOS {
 namespace Rosen {
+using Slot::RSPropertyDrawableSlot;
 namespace {
 constexpr PropertyId ANONYMOUS_MODIFIER_ID = 0;
 }
@@ -65,7 +67,7 @@ void RSCanvasRenderNode::UpdateRecording(std::shared_ptr<DrawCmdList> drawCmds, 
 #else
 void RSCanvasRenderNode::UpdateRecording(std::shared_ptr<Drawing::DrawCmdList> drawCmds, RSModifierType type)
 {
-    if (!drawCmds || drawCmds->GetData().second == 0) {
+    if (!drawCmds || drawCmds->IsEmpty()) {
         return;
     }
     auto renderProperty = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>(drawCmds, ANONYMOUS_MODIFIER_ID);
@@ -91,28 +93,14 @@ void RSCanvasRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)
 void RSCanvasRenderNode::OnTreeStateChanged()
 {
     if (!IsOnTheTree()) {
-        // attempt to clear FullChildrenList, to avoid memory leak
-        isFullChildrenListValid_ = false;
-        ClearFullChildrenListIfNeeded();
-
-        if (UNLIKELY(GetSharedTransitionParam().has_value())) {
-            SetSharedTransitionParam(std::nullopt);
-        }
-
         // clear node groups cache when node is removed from tree
         if (GetCacheType() == CacheType::CONTENT) {
             SetCacheType(CacheType::NONE);
-            ClearCacheSurface();
+            ClearCacheSurfaceInThread();
+            SetDrawingCacheType(RSDrawingCacheType::DISABLED_CACHE);
         }
-    } else {
-        SetDirty();
     }
-#if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_GL)
-    if (!IsOnTheTree()) {
-        // clear filter cache when node is removed from tree
-        renderProperties_.ClearFilterCache();
-    }
-#endif
+    RSRenderNode::OnTreeStateChanged();
 }
 
 void RSCanvasRenderNode::Process(const std::shared_ptr<RSNodeVisitor>& visitor)
@@ -130,12 +118,41 @@ void RSCanvasRenderNode::ProcessTransitionBeforeChildren(RSPaintFilterCanvas& ca
     RSRenderNode::ProcessTransitionBeforeChildren(canvas);
 }
 
+void RSCanvasRenderNode::ExecuteBlendMode(RSPaintFilterCanvas& canvas, bool isBlendMode)
+{
+    if (isBlendMode) {
+        SkPaint blendPaint;
+        static const std::vector<SkBlendMode> blendModeList = {
+            SkBlendMode::kSrcIn, // RSColorBlendModeType::SRC_IN
+            SkBlendMode::kDstIn, // RSColorBlendModeType::DST_IN
+        };
+        int blendMode = GetRenderProperties().GetColorBlendMode();
+        if (blendMode >= blendModeList.size()) {
+            ROSEN_LOGE("color blendmode is set %d which is invalid.", blendMode);
+            return;
+        }
+        blendPaint.setBlendMode(blendModeList[blendMode]);
+        canvas.saveLayer(nullptr, &blendPaint);
+    }
+}
+
 void RSCanvasRenderNode::ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanvas& canvas)
 {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        IterateOnDrawableRange(
+            RSPropertyDrawableSlot::TRANSITION, RSPropertyDrawableSlot::CLIP_TO_FRAME, *this, canvas);
+        return;
+    }
     RSModifierContext context = { GetMutableRenderProperties(), &canvas };
     ApplyDrawCmdModifier(context, RSModifierType::TRANSITION);
     ApplyDrawCmdModifier(context, RSModifierType::ENV_FOREGROUND_COLOR);
     RSPropertiesPainter::DrawShadow(GetRenderProperties(), canvas);
+    bool isBlendMode = false;
+    if (GetRenderProperties().GetColorBlendMode() != static_cast<int>(RSColorBlendModeType::NONE)) {
+        canvas.saveLayer(nullptr, nullptr);
+        isBlendMode = true;
+    }
+
     // In NEW_SKIA version, L96 code will cause dump if the 3rd parameter is true.
 #ifdef NEW_SKIA
     RSPropertiesPainter::DrawBackground(GetRenderProperties(), canvas, false);
@@ -176,10 +193,16 @@ void RSCanvasRenderNode::ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanva
         RSPropertiesPainter::Clip(canvas, GetRenderProperties().GetFrameRect());
 #endif
     }
+    ExecuteBlendMode(canvas, isBlendMode);
 }
 
 void RSCanvasRenderNode::ProcessRenderContents(RSPaintFilterCanvas& canvas)
 {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        IterateOnDrawableRange(
+            RSPropertyDrawableSlot::CONTENT_STYLE, RSPropertyDrawableSlot::CONTENT_STYLE, *this, canvas);
+        return;
+    }
     RSModifierContext context = { GetMutableRenderProperties(), &canvas };
     ApplyDrawCmdModifier(context, RSModifierType::CONTENT_STYLE);
 }
@@ -192,6 +215,11 @@ void RSCanvasRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas
 
 void RSCanvasRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas& canvas)
 {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        IterateOnDrawableRange(
+            RSPropertyDrawableSlot::FOREGROUND_STYLE, RSPropertyDrawableSlot::PARTICLE_EFFECT, *this, canvas);
+        return;
+    }
     RSModifierContext context = { GetMutableRenderProperties(), &canvas };
     ApplyDrawCmdModifier(context, RSModifierType::FOREGROUND_STYLE);
     RSPropertiesPainter::DrawColorFilter(GetRenderProperties(), canvas);
@@ -212,12 +240,22 @@ void RSCanvasRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas
 
 void RSCanvasRenderNode::ProcessTransitionAfterChildren(RSPaintFilterCanvas& canvas)
 {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        IterateOnDrawableRange(
+            RSPropertyDrawableSlot::PIXEL_STRETCH, RSPropertyDrawableSlot::RESTORE_ALL, *this, canvas);
+        return;
+    }
     RSPropertiesPainter::DrawPixelStretch(GetRenderProperties(), canvas);
     RSRenderNode::ProcessRenderAfterChildren(canvas);
 }
 
 void RSCanvasRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        IterateOnDrawableRange(
+            RSPropertyDrawableSlot::FOREGROUND_STYLE, RSPropertyDrawableSlot::RESTORE_ALL, *this, canvas);
+        return;
+    }
     ProcessAnimatePropertyAfterChildren(canvas);
     ProcessTransitionAfterChildren(canvas);
     canvas.RestoreEnv();
@@ -275,8 +313,13 @@ void RSCanvasRenderNode::ProcessDrivenBackgroundRender(RSPaintFilterCanvas& canv
 void RSCanvasRenderNode::ProcessDrivenContentRender(RSPaintFilterCanvas& canvas)
 {
 #if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
+#ifndef USE_ROSEN_DRAWING
     canvasNodeSaveCount_ = canvas.Save();
     canvas.translate(GetRenderProperties().GetFrameOffsetX(), GetRenderProperties().GetFrameOffsetY());
+#else
+    canvasNodeSaveCount_ = canvas.SaveAllStatus();
+    canvas.Translate(GetRenderProperties().GetFrameOffsetX(), GetRenderProperties().GetFrameOffsetY());
+#endif
     DrawDrivenContent(canvas);
 #endif
 }

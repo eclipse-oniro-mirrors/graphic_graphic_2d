@@ -29,6 +29,42 @@ enum class SrcRectConstraint {
     STRICT_SRC_RECT_CONSTRAINT,
     FAST_SRC_RECT_CONSTRAINT,
 };
+
+/*
+ * @brief PointMode: Selects if an array of points are drawn as discrete points, as lines, or as
+ * an open polygon.
+ */
+enum class PointMode {
+    POINTS_POINTMODE,  // draw each point separately
+    LINES_POINTMODE,   // draw each pair of points as a line segment
+    POLYGON_POINTMODE, // draw the array of points as a open polygon
+};
+
+enum class QuadAAFlags {
+    LEFT_QUADAAFLAG = 1,
+    TOP_QUADAAFLAG = 2,
+    RIGHT_QUADAAFLAG = 4,
+    BOTTOM_QUADAAFLAG = 8,
+    NONE_QUADAAFLAGS = 0,
+    ALL_QUADAAFLAGS = 15,
+};
+
+const int DIVES_SIZE = 2;
+struct Lattice {
+    enum RectType : uint8_t {
+        DEFAULT = 0,
+        TRANSPARENT,
+        FIXEDCOLOR,
+    };
+    int fXDivs[DIVES_SIZE];
+    int fYDivs[DIVES_SIZE];
+    RectType fRectTypes = RectType::DEFAULT;
+    int fXCount;
+    int fYCount;
+    RectI fBounds;
+    Color fColors;
+};
+
 /*
  * @brief  Contains the option used to create the layer.
  */
@@ -144,8 +180,17 @@ public:
      */
     int32_t GetHeight() const;
 
+    /*
+     * @brief  Gets ImageInfo of Canvas.
+     */
+    ImageInfo GetImageInfo();
+
+    bool ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+        int srcX, int srcY);
+
     // shapes
     virtual void DrawPoint(const Point& point);
+    virtual void DrawPoints(PointMode mode, size_t count, const Point pts[]);
     virtual void DrawLine(const Point& startPt, const Point& endPt);
     virtual void DrawRect(const Rect& rect);
     virtual void DrawRoundRect(const RoundRect& roundRect);
@@ -160,13 +205,25 @@ public:
         Color ambientColor, Color spotColor, ShadowFlags flag);
 
     // color
-    virtual void DrawColor(ColorQuad color, BlendMode mode);
+    virtual void DrawColor(ColorQuad color, BlendMode mode = BlendMode::SRC_OVER);
 
     /*
      * @brief         Draws Region on the Canvas.
      * @param region  Region to draw.
      */
     virtual void DrawRegion(const Region& region);
+
+    virtual void DrawPatch(const Point cubics[12], const ColorQuad colors[4],
+        const Point texCoords[4], BlendMode mode);
+    virtual void DrawEdgeAAQuad(const Rect& rect, const Point clip[4],
+        QuadAAFlags aaFlags, ColorQuad color, BlendMode mode);
+    virtual void DrawVertices(const Vertices& vertices, BlendMode mode);
+
+    virtual void DrawImageNine(const Image* image, const RectI& center, const Rect& dst,
+        FilterMode filter, const Brush* brush = nullptr);
+    virtual void DrawAnnotation(const Rect& rect, const char* key, const Data* data);
+    virtual void DrawImageLattice(const Image* image, const Lattice& lattice, const Rect& dst,
+        FilterMode filter, const Brush* brush = nullptr);
 
     // image
     virtual void DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py);
@@ -180,6 +237,9 @@ public:
     // temporary interface. Support drawing of SkSVGDOM
     virtual void DrawSVGDOM(const sk_sp<SkSVGDOM>& svgDom);
 
+    // text
+    virtual void DrawTextBlob(const TextBlob* blob, const scalar x, const scalar y);
+
     // clip
     /*
      * @brief              Replace the clipping area with the intersection or difference between the
@@ -189,6 +249,15 @@ public:
      * @param doAntiAlias  true if clip is to be anti-aliased. The default value is false.
      */
     virtual void ClipRect(const Rect& rect, ClipOp op, bool doAntiAlias = false);
+
+    /*
+     * @brief              Replace the clipping area with the intersection or difference between the
+                           current clipping area and RectI, and use a clipping edge that is aliased or anti-aliased.
+     * @param rect         To combine with clipping area.
+     * @param op           To apply to clip.
+     * @param doAntiAlias  true if clip is to be anti-aliased. The default value is false.
+     */
+    virtual void ClipIRect(const RectI& rect, ClipOp op = ClipOp::INTERSECT);
 
     /*
      * @brief              Replace the clipping area with the intersection or difference of the
@@ -207,6 +276,25 @@ public:
      * @param doAntiAlias  true if clip is to be anti-aliased. The default value is false.
      */
     virtual void ClipPath(const Path& path, ClipOp op, bool doAntiAlias = false);
+
+    /*
+     * @brief              Replace the clipping area with the intersection or difference of the
+                           current clipping area and Region, and use a clipping edge that is aliased or anti-aliased.
+     * @param region       To combine with clip.
+     * @param op           To apply to clip.The default value is ClipOp::INTERSECT
+     */
+    virtual void ClipRegion(const Region& region, ClipOp op = ClipOp::INTERSECT);
+
+    /*
+     * @brief  Returns true if clip is empty.
+     */
+    virtual bool IsClipEmpty();
+
+    /*
+     * @brief  Returns true if clip is emptySkRect rect, transformed by SkMatrix,
+     *         can be quickly determined to be outside of clip.
+     */
+    virtual bool QuickReject(const Rect& rect);
 
     // transform
     virtual void SetMatrix(const Matrix& matrix);
@@ -241,7 +329,12 @@ public:
     /*
      * @brief  Returns the number of saved states, each containing Matrix and clipping area.
      */
-    uint32_t GetSaveCount() const;
+    virtual uint32_t GetSaveCount() const;
+
+    /*
+     * @brief  Makes Canvas contents undefined.
+     */
+    virtual void Discard();
 
     // paint
     virtual CoreCanvas& AttachPen(const Pen& pen);

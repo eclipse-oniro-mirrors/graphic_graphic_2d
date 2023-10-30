@@ -31,6 +31,12 @@ public:
     RSContext& operator=(const RSContext&) = delete;
     RSContext& operator=(const RSContext&&) = delete;
 
+    enum PurgeType {
+        NONE,
+        PURGE_UNLOCK,
+        PURGE_UNLOCK_SAFECACHE
+    };
+
     RSRenderNodeMap& GetMutableNodeMap()
     {
         return nodeMap;
@@ -61,19 +67,31 @@ public:
     // add node info after cmd data process
     void AddActiveNode(const std::shared_ptr<RSRenderNode>& node);
 
-    void MarkNeedPurge()
+    void MarkNeedPurge(PurgeType purgeType)
     {
-        needPurge_ = true;
+        purgeType_ = purgeType;
+    }
+
+    void SetTaskRunner(const std::function<void(const std::function<void()>&, bool)>& taskRunner)
+    {
+        taskRunner_ = taskRunner;
+    }
+    void PostTask(const std::function<void()>& task, bool isSyncTask = false) const
+    {
+        if (taskRunner_) {
+            taskRunner_(task, isSyncTask);
+        }
     }
 
 private:
     RSRenderNodeMap nodeMap;
     std::shared_ptr<RSBaseRenderNode> globalRootRenderNode_ = std::make_shared<RSRenderNode>(0, true);
     std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> animatingNodeList_;
-    bool needPurge_ = false;
+    PurgeType purgeType_ = PurgeType::NONE;
 
     uint64_t transactionTimestamp_ = 0;
     uint64_t currentTimestamp_ = 0;
+    std::function<void(const std::function<void()>&, bool)> taskRunner_;
     // Collect all active Nodes sorted by root node id in this frame.
     std::unordered_map<NodeId, std::unordered_map<NodeId, std::shared_ptr<RSRenderNode>>> activeNodesInRoot_;
 

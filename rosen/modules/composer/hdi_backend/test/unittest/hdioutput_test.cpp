@@ -36,7 +36,6 @@ void HdiOutputTest::SetUpTestCase()
     uint32_t screenId = 0;
     hdiOutput_ = HdiOutput::CreateHdiOutput(screenId);
     hdiDeviceMock_ = Mock::HdiDeviceMock::GetInstance();
-    hdiOutput_->SetHdiOutputDevice(hdiDeviceMock_);
 }
 
 void HdiOutputTest::TearDownTestCase() {}
@@ -93,7 +92,20 @@ HWTEST_F(HdiOutputTest, GetScreenId001, Function | MediumTest| Level1)
 HWTEST_F(HdiOutputTest, Commit001, Function | MediumTest| Level1)
 {
     sptr<SyncFence> fbFence = SyncFence::INVALID_FENCE;
-    ASSERT_EQ(HdiOutputTest::hdiOutput_->Commit(fbFence), ROSEN_ERROR_OK);
+    ASSERT_EQ(HdiOutputTest::hdiOutput_->Commit(fbFence), ROSEN_ERROR_NOT_INIT);
+}
+
+/*
+* Function: ClearFrameBuffer001
+* Type: Function
+* Rank: Important(1)
+* EnvConditions: N/A
+* CaseDescription: 1.call ClearFrameBuffer()
+*                  2.check ret
+*/
+HWTEST_F(HdiOutputTest, ClearFrameBuffer001, Function | MediumTest | Level1)
+{
+    ASSERT_EQ(HdiOutputTest::hdiOutput_->ClearFrameBuffer(), GSERROR_OK);
 }
 
 /*
@@ -106,6 +118,8 @@ HWTEST_F(HdiOutputTest, Commit001, Function | MediumTest| Level1)
 */
 HWTEST_F(HdiOutputTest, Init001, Function | MediumTest| Level1)
 {
+    ASSERT_EQ(hdiOutput_->SetHdiOutputDevice(hdiDeviceMock_), ROSEN_ERROR_OK);
+    // device_ is already set
     ASSERT_EQ(HdiOutputTest::hdiOutput_->Init(), ROSEN_ERROR_OK);
     // fbSurface_ already initialized
     ASSERT_EQ(HdiOutputTest::hdiOutput_->Init(), ROSEN_ERROR_OK);
@@ -223,10 +237,23 @@ HWTEST_F(HdiOutputTest, GetDirectClientCompEnableStatus002, Function | MediumTes
 */
 HWTEST_F(HdiOutputTest, Commit002, Function | MediumTest| Level1)
 {
+    EXPECT_CALL(*hdiDeviceMock_, Commit(_, _)).WillRepeatedly(testing::Return(0));
     sptr<SyncFence> fbFence = SyncFence::INVALID_FENCE;
     ASSERT_EQ(HdiOutputTest::hdiOutput_->Commit(fbFence), GRAPHIC_DISPLAY_SUCCESS);
 }
 
+/*
+* Function: ClearFrameBuffer002
+* Type: Function
+* Rank: Important(1)
+* EnvConditions: N/A
+* CaseDescription: 1.call ClearFrameBuffer()
+*                  2.check ret
+*/
+HWTEST_F(HdiOutputTest, ClearFrameBuffer002, Function | MediumTest | Level1)
+{
+    ASSERT_EQ(HdiOutputTest::hdiOutput_->ClearFrameBuffer(), GSERROR_INVALID_OPERATING);
+}
 } // namespace
 } // namespace Rosen
 } // namespace OHOS

@@ -161,6 +161,12 @@ void RSNode::AddKeyFrame(float fraction, const PropertyCallback& propertyCallbac
     implicitAnimator->EndImplicitKeyFrameAnimation();
 }
 
+bool RSNode::IsImplicitAnimationOpen()
+{
+    auto implicitAnimator = RSImplicitAnimatorMap::Instance().GetAnimator(gettid());
+    return implicitAnimator && implicitAnimator->NeedImplicitAnimation();
+}
+
 std::vector<std::shared_ptr<RSAnimation>> RSNode::Animate(const RSAnimationTimingProtocol& timingProtocol,
     const RSAnimationTimingCurve& timingCurve, const PropertyCallback& propertyCallback,
     const std::function<void()>& finishCallback, const std::function<void()>& repeatCallback)
@@ -730,6 +736,7 @@ void RSNode::SetParticleParams(std::vector<ParticleParams>& particleParams, cons
     for (size_t i = 0; i < particleParams.size(); i++) {
         particlesRenderParams.push_back(particleParams[i].SetParamsToRenderParticle());
     }
+    SetParticleDrawRegion(particleParams);
     auto property = std::make_shared<RSPropertyBase>();
     auto propertyId = property->GetId();
     auto uiAnimation = std::make_shared<RSAnimationGroup>();
@@ -750,6 +757,51 @@ void RSNode::SetParticleParams(std::vector<ParticleParams>& particleParams, cons
                 std::make_unique<RSAnimationCreateParticle>(GetId(), animation);
             transactionProxy->AddCommand(cmdForRemote, true, GetFollowType(), GetId());
         }
+    }
+}
+
+void RSNode::SetParticleDrawRegion(std::vector<ParticleParams>& particleParams)
+{
+    Vector4f bounds = GetStagingProperties().GetBounds();
+    float left = 0.f;
+    float top = 0.f;
+    float right = bounds.z_;
+    float bottom = bounds.w_;
+    for (size_t i = 0; i < particleParams.size(); i++) {
+        auto particleType = particleParams[i].emitterConfig_.type_;
+        auto position = particleParams[i].emitterConfig_.position_;
+        auto emitSize = particleParams[i].emitterConfig_.emitSize_;
+        float scaleMax = particleParams[i].scale_.val_.end_;
+        if (particleType == ParticleType::POINTS) {
+            auto radius = particleParams[i].emitterConfig_.radius_;
+            auto radiusMax = radius * scaleMax;
+            left = std::min(left, position.x_ - radiusMax);
+            top = std::min(top, position.y_ - radiusMax);
+            right = std::max(right + radiusMax + radiusMax, position.x_ + emitSize.x_ + radiusMax + radiusMax);
+            bottom = std::max(bottom + radiusMax + radiusMax, position.y_ + emitSize.y_ + radiusMax + radiusMax);
+        } else {
+            float imageSizeWidth = 0.f;
+            float imageSizeHeight = 0.f;
+            auto image = particleParams[i].emitterConfig_.image_;
+            auto imageSize = particleParams[i].emitterConfig_.imageSize_;
+            if (image == nullptr)
+                continue;
+            auto pixelMap = image->GetPixelMap();
+            if (pixelMap != nullptr) {
+                imageSizeWidth = std::max(imageSize.x_, static_cast<float>(pixelMap->GetWidth()));
+                imageSizeHeight = std::max(imageSize.y_, static_cast<float>(pixelMap->GetHeight()));
+            }
+            float imageSizeWidthMax = imageSizeWidth * scaleMax;
+            float imageSizeHeightMax = imageSizeHeight * scaleMax;
+            left = std::min(left, position.x_ - imageSizeWidthMax);
+            top = std::min(top, position.y_ - imageSizeHeightMax);
+            right = std::max(right + imageSizeWidthMax + imageSizeWidthMax,
+                position.x_ + emitSize.x_ + imageSizeWidthMax + imageSizeWidthMax);
+            bottom = std::max(bottom + imageSizeHeightMax + imageSizeHeightMax,
+                position.y_ + emitSize.y_ + imageSizeHeightMax + imageSizeHeightMax);
+        }
+        std::shared_ptr<RectF> overlayRect = std::make_shared<RectF>(left, top, right, bottom);
+        SetDrawRegion(overlayRect);
     }
 }
 
@@ -811,6 +863,12 @@ void RSNode::SetBgImagePositionY(float positionY)
 {
     SetProperty<RSBgImagePositionYModifier, RSAnimatableProperty<float>>(
         RSModifierType::BG_IMAGE_POSITION_Y, positionY);
+}
+
+void RSNode::SetColorBlendMode(const RSColorBlendModeType blendMode)
+{
+    SetProperty<RSColorBlendModeModifier, RSProperty<int>>(
+        RSModifierType::COLOR_BLENDMODE, static_cast<int>(blendMode));
 }
 
 // border
@@ -943,8 +1001,14 @@ void RSNode::SetShadowMask(bool shadowMask)
     SetProperty<RSShadowMaskModifier, RSProperty<bool>>(RSModifierType::SHADOW_MASK, shadowMask);
 }
 
+void RSNode::SetShadowIsFilled(bool shadowIsFilled)
+{
+    SetProperty<RSShadowIsFilledModifier, RSProperty<bool>>(RSModifierType::SHADOW_IS_FILLED, shadowIsFilled);
+}
+
 void RSNode::SetFrameGravity(Gravity gravity)
 {
+    ROSEN_LOGI("RSNode::SetFrameGravity, gravity = %{public}d", gravity);
     SetProperty<RSFrameGravityModifier, RSProperty<Gravity>>(RSModifierType::FRAME_GRAVITY, gravity);
 }
 
@@ -1301,13 +1365,13 @@ void RSNode::UnregisterTransitionPair(NodeId inNodeId, NodeId outNodeId)
     }
 }
 
-void RSNode::MarkNodeGroup(bool isNodeGroup)
+void RSNode::MarkNodeGroup(bool isNodeGroup, bool isForced)
 {
     if (isNodeGroup_ == isNodeGroup) {
         return;
     }
     isNodeGroup_ = isNodeGroup;
-    std::unique_ptr<RSCommand> command = std::make_unique<RSMarkNodeGroup>(GetId(), isNodeGroup);
+    std::unique_ptr<RSCommand> command = std::make_unique<RSMarkNodeGroup>(GetId(), isNodeGroup, isForced);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
         transactionProxy->AddCommand(command, IsRenderServiceNode());
@@ -1366,12 +1430,25 @@ void RSNode::AddFRCSceneInfo(const std::string& scene, float speed)
     UpdateUIFrameRateRange(range);
 }
 
-void RSNode::UpdateUIFrameRateRange(FrameRateRange range)
+void RSNode::UpdateUIFrameRateRange(const FrameRateRange& range)
 {
     std::unique_ptr<RSCommand> command = std::make_unique<RSUpdateUIFrameRateRange>(GetId(), range);
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
         transactionProxy->AddCommand(command, IsRenderServiceNode());
+    }
+}
+
+void RSNode::SetOutOfParent(OutOfParentType outOfParent)
+{
+    if (outOfParent != outOfParent_) {
+        outOfParent_ = outOfParent;
+
+        std::unique_ptr<RSCommand> command = std::make_unique<RSSetOutOfParent>(GetId(), outOfParent);
+        auto transactionProxy = RSTransactionProxy::GetInstance();
+        if (transactionProxy != nullptr) {
+            transactionProxy->AddCommand(command, IsRenderServiceNode());
+        }
     }
 }
 

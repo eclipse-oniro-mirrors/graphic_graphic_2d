@@ -41,8 +41,19 @@ public:
     void GenerateSpan(const CharGroups &currentCgs, const TypographyStyle &ys,
         const TextStyle &xs, std::vector<VariantSpan> &spans) noexcept(false);
 
+    void GenNewBoundryByTypeface(CharGroups cgs, std::vector<Boundary> &boundaries);
+    void GenNewBoundryByQuote(CharGroups cgs, std::vector<Boundary> &boundaries);
+    void GenNewBoundryByWidth(CharGroups cgs, std::vector<Boundary> &boundaries);
+    void GenNewBoundryByHardBreak(CharGroups cgs, std::vector<Boundary> &boundaries);
+    void SetWidthLimit(const double widthLimit);
+
     double preBreak_ = 0;
     double postBreak_ = 0;
+
+private:
+    bool IsQuote(const uint16_t c);
+    double widthLimit_ = 0;
+    double currentWidth_ = 0;
 };
 } // namespace TextEngine
 } // namespace Rosen

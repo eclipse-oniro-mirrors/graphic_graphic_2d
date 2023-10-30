@@ -17,12 +17,18 @@
 
 #ifndef USE_ROSEN_DRAWING
 #include "include/core/SkImage.h"
+#include "src/core/SkImagePriv.h"
 #else
 #include "image/image.h"
 #endif
 #include "common/rs_background_thread.h"
+#ifdef RS_ENABLE_PARALLEL_UPLOAD
+#include "common/rs_upload_texture_thread.h"
+#endif
 #include "common/rs_common_def.h"
 #include "platform/common/rs_log.h"
+#include "pipeline/rs_task_dispatcher.h"
+#include "pipeline/sk_resource_manager.h"
 #include "property/rs_properties_painter.h"
 #include "render/rs_image_cache.h"
 #include "render/rs_pixel_map_util.h"
@@ -103,6 +109,7 @@ void RSImageBase::SetImage(const std::shared_ptr<Drawing::Image> image)
     isDrawn_ = false;
     image_ = image;
     if (image_) {
+    SKResourceManager::Instance().HoldResource(image);
 #ifndef USE_ROSEN_DRAWING
         srcRect_.SetAll(0.0, 0.0, image_->width(), image_->height());
         GenUniqueId(image_->uniqueID());
@@ -113,6 +120,7 @@ void RSImageBase::SetImage(const std::shared_ptr<Drawing::Image> image)
     }
 }
 
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
 #ifndef USE_ROSEN_DRAWING
 void RSImageBase::SetDmaImage(const sk_sp<SkImage> image)
 #else
@@ -121,7 +129,9 @@ void RSImageBase::SetDmaImage(const std::shared_ptr<Drawing::Image> image)
 {
     isDrawn_ = false;
     image_ = image;
+    SKResourceManager::Instance().HoldResource(image);
 }
+#endif
 
 void RSImageBase::SetPixelMap(const std::shared_ptr<Media::PixelMap>& pixelmap)
 {
@@ -140,6 +150,9 @@ void RSImageBase::SetSrcRect(const RectF& srcRect)
 
 void RSImageBase::SetDstRect(const RectF& dstRect)
 {
+    if (dstRect_ != dstRect) {
+        isDrawn_ = false;
+    }
     dstRect_ = dstRect;
 }
 
@@ -359,14 +372,38 @@ void RSImageBase::ConvertPixelMapToSkImage()
 {
     if (!image_ && pixelMap_) {
         if (!pixelMap_->IsEditable()) {
+#if defined(ROSEN_OHOS)
+            image_ = RSImageCache::Instance().GetRenderSkiaImageCacheByPixelMapId(uniqueId_, gettid());
+#else
             image_ = RSImageCache::Instance().GetRenderSkiaImageCacheByPixelMapId(uniqueId_);
+#endif
         }
         if (!image_) {
             image_ = RSPixelMapUtil::ExtractSkImage(pixelMap_);
+            if (image_) {
+                SKResourceManager::Instance().HoldResource(image_);
+            }
             if (!pixelMap_->IsEditable()) {
+#if defined(ROSEN_OHOS)
+                RSImageCache::Instance().CacheRenderSkiaImageByPixelMapId(uniqueId_, image_, gettid());
+#else
                 RSImageCache::Instance().CacheRenderSkiaImageByPixelMapId(uniqueId_, image_);
+#endif
             }
         }
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD)
+#if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_UNI_RENDER)
+        auto image = image_;
+        auto pixelMap = pixelMap_;
+        std::function<void()> uploadTexturetask = [image, pixelMap]() -> void {
+            auto grContext = RSUploadTextureThread::Instance().GetShareGrContext().get();
+            if (grContext && image && pixelMap) {
+                SkImage_pinAsTexture(image.get(), grContext);
+            }
+        };
+        RSUploadTextureThread::Instance().PostTask(uploadTexturetask, std::to_string(uniqueId_));
+#endif
+#endif
     }
 }
 #else
@@ -374,12 +411,20 @@ void RSImageBase::ConvertPixelMapToDrawingImage()
 {
     if (!image_ && pixelMap_) {
         if (!pixelMap_->IsEditable()) {
+#if defined(ROSEN_OHOS)
+            image_ = RSImageCache::Instance().GetRenderDrawingImageCacheByPixelMapId(uniqueId_, gettid());
+#else
             image_ = RSImageCache::Instance().GetRenderDrawingImageCacheByPixelMapId(uniqueId_);
+#endif
         }
         if (!image_) {
             image_ = RSPixelMapUtil::ExtractDrawingImage(pixelMap_);
             if (!pixelMap_->IsEditable()) {
+#if defined(ROSEN_OHOS)
+                RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image_, gettid());
+#else
                 RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image_);
+#endif
             }
         }
     }

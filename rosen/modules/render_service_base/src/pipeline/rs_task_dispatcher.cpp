@@ -24,22 +24,30 @@ RSTaskDispatcher& RSTaskDispatcher::GetInstance()
     return instance;
 }
 
-void RSTaskDispatcher::RegisterTaskDispatchFunc(pid_t tid, const std::function<void(RSTask)>& taskDispatchFunc)
+void RSTaskDispatcher::RegisterTaskDispatchFunc(pid_t tid, const std::function<void(RSTask, bool)>& taskDispatchFunc)
 {
     if (taskDispatchFunc) {
         taskDispatchFuncMap_.emplace(tid, taskDispatchFunc);
     }
 }
 
-void RSTaskDispatcher::PostTask(pid_t tid, const RSTask& task)
+void RSTaskDispatcher::PostTask(pid_t tid, const RSTask& task, bool isSyncTask)
 {
     if (taskDispatchFuncMap_.count(tid)) {
-        taskDispatchFuncMap_.at(tid)(task);
+        taskDispatchFuncMap_.at(tid)(task, isSyncTask);
     } else {
         if (task) {
             task();
         }
     }
+}
+
+bool RSTaskDispatcher::HasRegisteredTask(pid_t tid) const
+{
+    if (taskDispatchFuncMap_.count(tid)) {
+        return true;
+    }
+    return false;
 }
 } // namespace Rosen
 } // namespace OHOS

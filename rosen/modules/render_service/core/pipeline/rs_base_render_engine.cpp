@@ -379,6 +379,11 @@ void RSBaseRenderEngine::SetColorFilterMode(ColorFilterMode mode)
     }
 }
 
+ColorFilterMode RSBaseRenderEngine::GetColorFilterMode()
+{
+    return colorFilterMode_;
+}
+
 void RSBaseRenderEngine::DrawBuffer(RSPaintFilterCanvas& canvas, BufferDrawParam& params)
 {
     RS_OPTIONAL_TRACE_BEGIN("RSBaseRenderEngine::DrawBuffer(CPU)");
@@ -422,7 +427,8 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
 #ifndef USE_ROSEN_DRAWING
 #ifdef NEW_SKIA
     canvas.drawImageRect(image, params.srcRect, params.dstRect,
-        SkSamplingOptions(), &(params.paint), SkCanvas::kStrict_SrcRectConstraint);
+        SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), &(params.paint),
+        SkCanvas::kStrict_SrcRectConstraint);
 #else
     canvas.drawImageRect(image, params.srcRect, params.dstRect, &(params.paint));
 #endif

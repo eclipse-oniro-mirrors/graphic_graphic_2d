@@ -506,6 +506,27 @@ uint32_t RSRenderServiceConnectionProxy::GetScreenCurrentRefreshRate(ScreenId id
     return rate;
 }
 
+int32_t RSRenderServiceConnectionProxy::GetCurrentRefreshRateMode()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("RSRenderServiceProxy failed to get descriptor");
+        return SUCCESS;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_CURRENT_REFRESH_RATE_MODE);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceProxy sendrequest error : %{public}d", err);
+        return SUCCESS;
+    }
+    int32_t refreshRateMode = reply.ReadInt32();
+    return refreshRateMode;
+}
+
 std::vector<int32_t> RSRenderServiceConnectionProxy::GetScreenSupportedRefreshRates(ScreenId id)
 {
     MessageParcel data;
@@ -1175,6 +1196,37 @@ bool RSRenderServiceConnectionProxy::GetBitmap(NodeId id, Drawing::Bitmap& bitma
     return true;
 }
 
+#ifndef USE_ROSEN_DRAWING
+bool RSRenderServiceConnectionProxy::GetPixelmap(
+    NodeId id, const std::shared_ptr<Media::PixelMap> pixelmap, const SkRect* rect)
+#else
+bool RSRenderServiceConnectionProxy::GetPixelmap(
+    NodeId id, const std::shared_ptr<Media::PixelMap> pixelmap, const Drawing::Rect* rect)
+#endif
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    data.WriteUint64(id);
+    data.WriteParcelable(pixelmap.get());
+    RSMarshallingHelper::Marshalling(data, *rect);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_PIXELMAP);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        return false;
+    }
+    bool result = reply.ReadBool();
+    if (!result) {
+        RS_LOGE("RSRenderServiceConnectionProxy::GetPixelmap: GetPixelmap failed");
+        return false;
+    }
+    return true;
+}
+
 int32_t RSRenderServiceConnectionProxy::SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval)
 {
     MessageParcel data;
@@ -1443,5 +1495,33 @@ void RSRenderServiceConnectionProxy::SetCacheEnabledForRotation(bool isEnabled)
         ROSEN_LOGE("RSRenderServiceConnectionProxy::SetCacheEnabledForRotation: Send Request err.");
     }
 }
+
+#ifdef TP_FEATURE_ENABLE
+void RSRenderServiceConnectionProxy::SetTpFeatureConfig(int32_t feature, const char* config)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return;
+    }
+
+    if (!data.WriteInt32(feature)) {
+        return;
+    }
+
+    if (!data.WriteCString(config)) {
+        return;
+    }
+
+    option.SetFlags(MessageOption::TF_SYNC);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_TP_FEATURE_CONFIG);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        return;
+    }
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

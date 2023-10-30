@@ -16,6 +16,7 @@
 #include "pipeline/rs_canvas_drawing_render_node.h"
 
 #include "include/core/SkCanvas.h"
+#include "src/image/SkImage_Base.h"
 #ifdef NEW_SKIA
 #include "include/gpu/GrBackendSurface.h"
 #include "include/gpu/GrDirectContext.h"
@@ -24,6 +25,7 @@
 #include "common/rs_common_def.h"
 #include "common/rs_obj_abs_geometry.h"
 #include "pipeline/rs_paint_filter_canvas.h"
+#include "pipeline/sk_resource_manager.h"
 #include "platform/common/rs_log.h"
 #include "property/rs_properties_painter.h"
 #include "visitor/rs_node_visitor.h"
@@ -47,9 +49,9 @@ RSCanvasDrawingRenderNode::~RSCanvasDrawingRenderNode()
 #endif
 }
 
+#ifndef USE_ROSEN_DRAWING
 void RSCanvasDrawingRenderNode::ProcessRenderContents(RSPaintFilterCanvas& canvas)
 {
-#ifndef USE_ROSEN_DRAWING
     int width = 0;
     int height = 0;
     if (!GetSizeFromDrawCmdModifiers(width, height)) {
@@ -109,15 +111,91 @@ void RSCanvasDrawingRenderNode::ProcessRenderContents(RSPaintFilterCanvas& canva
         GetRenderProperties().GetFrameGravity(), GetRenderProperties().GetFrameRect(), width, height, mat)) {
         canvas.concat(mat);
     }
-    auto image = skSurface_->makeImageSnapshot();
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        skImage_ = skSurface_->makeImageSnapshot();
+        if (skImage_) {
+            SKResourceManager::Instance().HoldResource(skImage_);
+        }
+    }
 #ifdef NEW_SKIA
     auto samplingOptions = SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear);
-    canvas.drawImage(image, 0.f, 0.f, samplingOptions, nullptr);
+    canvas.drawImage(skImage_, 0.f, 0.f, samplingOptions, nullptr);
 #else
-    canvas.drawImage(image, 0.f, 0.f, nullptr);
-#endif
+    canvas.drawImage(skImage_, 0.f, 0.f, nullptr);
 #endif
 }
+
+#else // USE_ROSEN_DRAWING
+void RSCanvasDrawingRenderNode::ProcessRenderContents(RSPaintFilterCanvas& canvas)
+{
+    int width = 0;
+    int height = 0;
+    if (!GetSizeFromDrawCmdModifiers(width, height)) {
+        return;
+    }
+
+    if (IsNeedResetSurface(width, height)) {
+        if (preThreadInfo_.second && surface_) {
+            preThreadInfo_.second(std::move(surface_));
+        }
+        if (!ResetSurface(width, height, canvas)) {
+            return;
+        }
+        preThreadInfo_ = curThreadInfo_;
+    } else if (preThreadInfo_.first != curThreadInfo_.first) {
+        auto preMatrix = canvas_->GetTotalMatrix();
+        auto preSurface = surface_;
+        if (!ResetSurface(width, height, canvas)) {
+            return;
+        }
+#ifdef RS_ENABLE_GL
+        auto image = preSurface->GetImageSnapshot();
+        if (!image) {
+            return;
+        }
+        Drawing::TextureOrigin origin = Drawing::TextureOrigin::BOTTOM_LEFT;
+        auto sharedBackendTexture = image->GetBackendTexture(false, &origin);
+        if (!sharedBackendTexture.IsValid()) {
+            RS_LOGE("RSCanvasDrawingRenderNode::ProcessRenderContents sharedBackendTexture is nullptr");
+            return;
+        }
+        auto newImage = std::make_shared<Drawing::image>();
+        Drawing::BitmapFormat info = { Drawing::ColorType::COLORTYPE_RGBA_8888, Drawing::AlphaType::ALPHATYPE_PREMUL };
+        bool ret = newImage->BuildFromTexture(*canvas.GetGPUContext(), sharedBackendTexture.GetTextureInfo(),
+            origin, info, nullptr);
+        if (!ret) {
+            RS_LOGE("RSCanvasDrawingRenderNode::ProcessRenderContents BuildFromTexture failed");
+            return;
+        }
+        canvas_->DrawImage(*newImage, 0.f, 0.f, Drawing::SamplingOptions());
+#else
+        if (auto image = preSurface->GetImageSnapshot()) {
+            canvas_->DrawImage(*image, 0.f, 0.f, Drawing::SamplingOptions());
+        }
+#endif
+        if (preThreadInfo_.second && preSurface) {
+            preThreadInfo_.second(std::move(preSurface));
+        }
+        preThreadInfo_ = curThreadInfo_;
+        canvas_->SetMatrix(preMatrix);
+    }
+
+    RSModifierContext context = { GetMutableRenderProperties(), canvas_.get() };
+    ApplyDrawCmdModifier(context, RSModifierType::CONTENT_STYLE);
+    ApplyDrawCmdModifier(context, RSModifierType::OVERLAY_STYLE);
+
+    Rosen::Drawing::Matrix mat;
+    if (RSPropertiesPainter::GetGravityMatrix(
+        GetRenderProperties().GetFrameGravity(), GetRenderProperties().GetFrameRect(), width, height, mat)) {
+        canvas.ConcatMatrix(mat);
+    }
+    auto image = surface_->GetImageSnapshot();
+
+    auto samplingOptions = Drawing::SamplingOptions(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::LINEAR);
+    canvas.DrawImage(*image, 0.f, 0.f, samplingOptions);
+}
+#endif
 
 #ifndef USE_ROSEN_DRAWING
 bool RSCanvasDrawingRenderNode::ResetSurface(int width, int height, RSPaintFilterCanvas& canvas)
@@ -131,12 +209,13 @@ bool RSCanvasDrawingRenderNode::ResetSurface(int width, int height, RSPaintFilte
     auto grContext = canvas.getGrContext();
 #endif
     if (grContext == nullptr) {
-        RS_LOGE("RSCanvasDrawingRenderNode::ProcessRenderContents: GrContext is nullptr");
-        return false;
-    }
-    skSurface_ = SkSurface::MakeRenderTarget(grContext, SkBudgeted::kNo, info);
-    if (!skSurface_ && width > 0 && height > 0) {
+        RS_LOGD("RSCanvasDrawingRenderNode::ProcessRenderContents: GrContext is nullptr");
         skSurface_ = SkSurface::MakeRaster(info);
+    } else {
+        skSurface_ = SkSurface::MakeRenderTarget(grContext, SkBudgeted::kNo, info);
+        if (!skSurface_) {
+            skSurface_ = SkSurface::MakeRaster(info);
+        }
     }
 #else
     skSurface_ = SkSurface::MakeRaster(info);
@@ -152,37 +231,27 @@ bool RSCanvasDrawingRenderNode::ResetSurface(int width, int height, RSPaintFilte
 bool RSCanvasDrawingRenderNode::ResetSurface(int width, int height, RSPaintFilterCanvas& canvas)
 {
     Drawing::BitmapFormat info = Drawing::BitmapFormat{ Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
-    auto bitmap = std::make_shared<Drawing::Bitmap>();
-    bitmap->Build(width, height, info);
+    auto newSurface = std::make_shared<Drawing::Surface>();
 
 #if (defined RS_ENABLE_GL) && (defined RS_ENABLE_EGLIMAGE)
     auto gpuContext = canvas.GetGPUContext();
     if (gpuContext == nullptr) {
-        RS_LOGE("RSCanvasDrawingRenderNode::ProcessRenderContents: GpuContext is nullptr");
+        RS_LOGE("RSCanvasDrawingRenderNode::ResetSurface: gpuContext is nullptr");
         return false;
     }
-    auto image = std::make_shared<Drawing::Image>();
-    if (!image->BuildFromBitmap(*gpuContext, *bitmap)) {
-        RS_LOGE("RSCanvasDrawingRenderNode::ResetSurface Drawing::Image is nullptr");
-        return false;
-    }
-    auto surface = std::make_shared<Drawing::Surface>();
-    if (!surface->Bind(*image)) {
-        if (!surface->Bind(*bitmap)) {
-            RS_LOGE("RSCanvasDrawingRenderNode::ResetSurface Drawing::Surface is nullptr");
+    if (!newSurface->MakeRenderTarget(*gpuContext, false, info)) {
+        if (!newSurface->MakeRaster(info)) {
+            RS_LOGE("RSCanvasDrawingRenderNode::ResetSurface: MakeRaster failed");
             return false;
         }
-        bitmap_ = bitmap;
     }
 #else
-    auto surface = std::make_shared<Drawing::Surface>();
-    if (!surface->Bind(*bitmap)) {
-        RS_LOGE("RSCanvasDrawingRenderNode::ResetSurface Drawing::Surface is nullptr");
+    if (!newSurface->MakeRaster(info)) {
+        RS_LOGE("RSCanvasDrawingRenderNode::ResetSurface: MakeRaster failed");
         return false;
     }
-    bitmap_ = bitmap;
 #endif
-    surface_ = surface;
+    surface_ = newSurface;
     canvas_ = std::make_unique<RSPaintFilterCanvas>(surface_.get());
     return true;
 }
@@ -196,7 +265,9 @@ void RSCanvasDrawingRenderNode::ApplyDrawCmdModifier(RSModifierContext& context,
     }
     for (const auto& drawCmdList : it->second) {
         drawCmdList->Playback(*context.canvas_);
+#ifndef USE_ROSEN_DRAWING
         drawCmdList->ClearOp();
+#endif
     }
     it->second.clear();
 }
@@ -205,35 +276,78 @@ void RSCanvasDrawingRenderNode::ApplyDrawCmdModifier(RSModifierContext& context,
 SkBitmap RSCanvasDrawingRenderNode::GetBitmap()
 {
     SkBitmap bitmap;
-    if (skSurface_ == nullptr) {
-        RS_LOGE("RSCanvasDrawingRenderNode::GetBitmap: SkSurface is nullptr");
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!skImage_) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetBitmap: skImage_ is nullptr");
         return bitmap;
     }
-    sk_sp<SkImage> image = skSurface_->makeImageSnapshot();
-    if (image == nullptr) {
-        RS_LOGE("RSCanvasDrawingRenderNode::GetBitmap: SkImage is nullptr");
-        return bitmap;
-    }
-    if (!image->asLegacyBitmap(&bitmap)) {
+    if (!skImage_->asLegacyBitmap(&bitmap)) {
         RS_LOGE("RSCanvasDrawingRenderNode::GetBitmap: asLegacyBitmap failed");
     }
     return bitmap;
 }
+
+bool RSCanvasDrawingRenderNode::GetPixelmap(const std::shared_ptr<Media::PixelMap> pixelmap, const SkRect* rect)
+{
+    if (!pixelmap || !rect) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetPixelmap: pixelmap or rect is nullptr");
+        return false;
+    }
+
+    if (!skSurface_) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetPixelmap: SkSurface is nullptr");
+        return false;
+    }
+
+    sk_sp<SkImage> skImage = skSurface_->makeImageSnapshot();
+    if (skImage == nullptr) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetPixelmap: makeImageSnapshot failed");
+        return false;
+    }
+
+    SkImageInfo info =
+        SkImageInfo::Make(pixelmap->GetWidth(), pixelmap->GetHeight(), kRGBA_8888_SkColorType, kPremul_SkAlphaType);
+    if (!skImage->readPixels(info, pixelmap->GetWritablePixels(), pixelmap->GetRowBytes(), rect->x(), rect->y())) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetPixelmap: readPixels failed");
+        return false;
+    }
+    return true;
+}
+
 #else
 Drawing::Bitmap RSCanvasDrawingRenderNode::GetBitmap()
 {
-    Drawing::Bitmap bitmap;
-    if (surface_ == nullptr) {
-        RS_LOGE("RSCanvasDrawingRenderNode::GetBitmap: Drawing::Surface is nullptr");
-        return bitmap;
+    std::lock_guard<std::mutex> lock(mutex_);
+    return *bitmap.get();
+}
+
+bool RSCanvasDrawingRenderNode::GetPixelmap(const std::shared_ptr<Media::PixelMap> pixelmap, const Drawing::Rect* rect)
+{
+    if (!pixelmap) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetPixelmap: pixelmap is nullptr");
+        return false;
     }
-    std::shared_ptr<Drawing::Image> image = surface_->GetImageSnapshot();
+
+    if (!surface_) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetPixelmap: surface is nullptr");
+        return false;
+    }
+
+    auto image = surface_->GetImageSnapshot();
     if (image == nullptr) {
-        RS_LOGE("RSCanvasDrawingRenderNode::GetBitmap: Drawing::Image is nullptr");
-        return bitmap;
+        RS_LOGE("RSCanvasDrawingRenderNode::GetPixelmap: GetImageSnapshot failed");
+        return false;
     }
-    RS_LOGE("RSCanvasDrawingRenderNode::GetBitmap: Drawing asLegacyBitmap failed");
-    return bitmap;
+
+    Drawing::BitmapFormat info =
+        Drawing::BitmapFormat{ Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
+    auto bitmap = std::make_shared<Drawing::Bitmap>();
+    bitmap->Build(pixelmap->GetWidth(), pixelmap->GetHeight(), info)
+    if (!image->ReadPixels(*bitmap.get(), rect->GetLeft(), rect->GetTop())) {
+        RS_LOGE("RSCanvasDrawingRenderNode::GetPixelmap: readPixels failed");
+        return false;
+    }
+    return true;
 }
 #endif
 
@@ -303,7 +417,11 @@ void RSCanvasDrawingRenderNode::AddDirtyType(RSModifierType type)
             if (prop == nullptr) {
                 continue;
             }
+#ifndef USE_ROSEN_DRAWING
             if (auto cmd = std::static_pointer_cast<RSRenderProperty<DrawCmdListPtr>>(prop)->Get()) {
+#else
+            if (auto cmd = std::static_pointer_cast<RSRenderProperty<Drawing::DrawCmdListPtr>>(prop)->Get()) {
+#endif
                 drawCmdLists_[drawCmdModifier.first].emplace_back(cmd);
             }
         }

@@ -19,7 +19,9 @@
 #include "impl_interface/gpu_context_impl.h"
 #include "utils/drawing_macros.h"
 #include "utils/data.h"
+#include "trace_memory_dump.h"
 
+typedef void* EGLContext;
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
@@ -36,6 +38,17 @@ enum class PathRenderers : uint32_t {
 
     ALL               = (TESSELLATING | (TESSELLATING - 1)),
     DEFAULT           = ALL & ~COVERAGECOUNTING
+};
+
+struct GPUResourceTag {
+    GPUResourceTag()
+        : fPid(0), fTid(0), fWid(0), fFid(0) {}
+    GPUResourceTag(uint32_t pid, uint32_t tid, uint32_t wid, uint32_t fid)
+        : fPid(pid), fTid(tid), fWid(wid), fFid(fid) {}
+    uint32_t fPid;
+    uint32_t fTid;
+    uint32_t fWid;
+    uint32_t fFid;
 };
 
 /*
@@ -94,6 +107,11 @@ public:
     void Flush();
 
     /*
+     * @brief   Call to ensure all drawing to the context has been flushed and submitted to underlying 3D API.
+     */
+    void FlushAndSubmit(bool syncCpu = false);
+
+    /*
      * @brief             Purge GPU resources that haven't been used in the past 'msNotUsed' milliseconds
                           or are otherwise marked for deletion.
      * @param msNotUsed   Only unlocked resources not used in these last milliseconds will be cleaned up.
@@ -106,7 +124,7 @@ public:
      * @param maxResourceBytes  If non-null, returns maximum number of bytes of video memory
                                 that can be held in the cache.
      */
-    void GetResourceCacheLimits(int& maxResource, size_t& maxResourceBytes) const;
+    void GetResourceCacheLimits(int* maxResource, size_t* maxResourceBytes) const;
 
     /*
      * @brief                   Specify the GPU resource cache limits.
@@ -114,6 +132,67 @@ public:
      * @param maxResourceBytes  The maximum number of bytes of video memory that can be held in the cache.
      */
     void SetResourceCacheLimits(int maxResource, size_t maxResourceBytes);
+
+    /*
+     * @brief                   Gets the current GPU resource cache usage.
+     * @param resourceCount     If non-null, returns the number of resources that are held in the cache.
+     * @param resourceBytes     If non-null, returns the total number of bytes of video memory held in the cache.
+     */
+    void GetResourceCacheUsage(int* resourceCount, size_t* resourceBytes) const;
+
+    /*
+     * @brief                   Free GPU created by the contetx.
+     */
+    void FreeGpuResources();
+
+    /*
+     * @brief                   Dump GPU stats.
+     * @param out               Dump GPU stat string.
+     */
+    void DumpGpuStats(std::string& out) const;
+
+    /*
+     * @brief                   After returning it will assume that the underlying context may no longer be valid.
+     */
+    void ReleaseResourcesAndAbandonContext();
+
+    /*
+     * @brief                   Purge unlocked resources from the cache until
+     *                          the provided byte count has been reached or we have purged all unlocked resources.
+     */
+    void PurgeUnlockedResources(bool scratchResourcesOnly);
+
+    /*
+     * @brief                   Purge unlocked resources by tag from the cache until
+     *                          the provided byte count has been reached or we have purged all unlocked resources.
+     */
+    void PurgeUnlockedResourcesByTag(bool scratchResourcesOnly, const GPUResourceTag tag);
+
+    /*
+     * @brief                   Purge unlocked resources from the safe cache until
+     *                          the provided byte count has been reached or we have purged all unlocked resources.
+     */
+    void PurgeUnlockAndSafeCacheGpuResources();
+
+    /*
+     * @brief                   Releases GPUResource objects and removes them from the cache by tag.
+     */
+    void ReleaseByTag(const GPUResourceTag tag);
+
+    /*
+     * @brief                   Enumerates all cached GPU resources and dumps their memory to traceMemoryDump.
+     */
+    void DumpMemoryStatisticsByTag(TraceMemoryDump* traceMemoryDump, GPUResourceTag tag) const;
+
+    /*
+     * @brief                   Enumerates all cached GPU resources and dumps their memory to traceMemoryDump.
+     */
+    void DumpMemoryStatistics(TraceMemoryDump* traceMemoryDump) const;
+
+    /*
+     * @brief                   Set current resource tag for gpu cache recycle.
+     */
+    void SetCurrentGpuResourceTag(const GPUResourceTag tag);
 
     /*
      * @brief   Get the adaptation layer instance, called in the adaptation layer.

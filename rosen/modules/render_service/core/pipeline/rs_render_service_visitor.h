@@ -75,6 +75,8 @@ private:
     bool isSecurityDisplay_ = false;
     bool mParallelEnable = false;
     bool mForceSerial = false;
+    ScreenId currentVisitDisplay_ = INVALID_SCREEN_ID;
+    std::map<ScreenId, bool> displayHasSecSurface_;
     std::shared_ptr<RSProcessor> processor_ = nullptr;
     std::shared_ptr<RSBaseRenderEngine> processorRenderEngine_ = nullptr;
     bool doAnimate_ = false;

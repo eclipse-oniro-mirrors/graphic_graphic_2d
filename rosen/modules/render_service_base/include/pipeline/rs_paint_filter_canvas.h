@@ -48,6 +48,7 @@ public:
 #endif
 
     void DrawPoint(const Drawing::Point& point) override;
+    void DrawPoints(Drawing::PointMode mode, size_t count, const Drawing::Point pts[]) override;
     void DrawLine(const Drawing::Point& startPt, const Drawing::Point& endPt) override;
     void DrawRect(const Drawing::Rect& rect) override;
     void DrawRoundRect(const Drawing::RoundRect& roundRect) override;
@@ -63,6 +64,17 @@ public:
         Drawing::Color ambientColor, Drawing::Color spotColor, Drawing::ShadowFlags flag) override;
     void DrawColor(Drawing::ColorQuad color, Drawing::BlendMode mode = Drawing::BlendMode::SRC_OVER) override;
     void DrawRegion(const Drawing::Region& region) override;
+    void DrawPatch(const Drawing::Point cubics[12], const Drawing::ColorQuad colors[4],
+        const Drawing::Point texCoords[4], Drawing::BlendMode mode) override;
+    void DrawEdgeAAQuad(const Drawing::Rect& rect, const Drawing::Point clip[4],
+        Drawing::QuadAAFlags aaFlags, Drawing::ColorQuad color, Drawing::BlendMode mode) override;
+    void DrawVertices(const Drawing::Vertices& vertices, Drawing::BlendMode mode) override;
+
+    void DrawImageNine(const Drawing::Image* image, const Drawing::RectI& center, const Drawing::Rect& dst,
+        Drawing::FilterMode filter, const Drawing::Brush* brush = nullptr) override;
+    void DrawAnnotation(const Drawing::Rect& rect, const char* key, const Drawing::Data* data) override;
+    void DrawImageLattice(const Drawing::Image* image, const Drawing::Lattice& lattice, const Drawing::Rect& dst,
+        Drawing::FilterMode filter, const Drawing::Brush* brush = nullptr) override;
 
     void DrawBitmap(const Drawing::Bitmap& bitmap, const Drawing::scalar px, const Drawing::scalar py) override;
     void DrawBitmap(Media::PixelMap& pixelMap, const Drawing::scalar px, const Drawing::scalar py) override;
@@ -73,10 +85,13 @@ public:
     void DrawImageRect(const Drawing::Image& image,
         const Drawing::Rect& dst, const Drawing::SamplingOptions& sampling) override;
     void DrawPicture(const Drawing::Picture& picture) override;
+    void DrawTextBlob(const Drawing::TextBlob* blob, const Drawing::scalar x, const Drawing::scalar y) override;
 
     void ClipRect(const Drawing::Rect& rect, Drawing::ClipOp op, bool doAntiAlias) override;
+    void ClipIRect(const Drawing::RectI& rect, Drawing::ClipOp op = Drawing::ClipOp::INTERSECT) override;
     void ClipRoundRect(const Drawing::RoundRect& roundRect, Drawing::ClipOp op, bool doAntiAlias) override;
     void ClipPath(const Drawing::Path& path, Drawing::ClipOp op, bool doAntiAlias) override;
+    void ClipRegion(const Drawing::Region& region, Drawing::ClipOp op = Drawing::ClipOp::INTERSECT) override;
 
     void SetMatrix(const Drawing::Matrix& matrix) override;
     void ResetMatrix() override;
@@ -91,6 +106,7 @@ public:
     void Save() override;
     void SaveLayer(const Drawing::SaveLayerOps& saveLayerOps) override;
     void Restore() override;
+    void Discard() override;
 
     CoreCanvas& AttachPen(const Drawing::Pen& pen) override;
     CoreCanvas& AttachBrush(const Drawing::Brush& brush) override;
@@ -143,8 +159,16 @@ public:
         int alphaSaveCount = -1;
         int envSaveCount = -1;
     };
+    enum SaveType : uint8_t {
+        kNone   = 0x0,
+        kCanvas = 0x1,
+        kAlpha  = 0x2,
+        kEnv    = 0x4,
+        kALL    = kCanvas | kAlpha | kEnv,
+    };
+
 #ifndef USE_ROSEN_DRAWING
-    SaveStatus Save();
+    SaveStatus Save(SaveType type = kALL);
 #else
     SaveStatus SaveAllStatus();
 #endif
@@ -187,22 +211,18 @@ public:
     CoreCanvas& AttachPen(const Drawing::Pen& pen) override;
     CoreCanvas& AttachBrush(const Drawing::Brush& brush) override;
 #endif
-    void SetIsParallelCanvas(bool isParallel) {
-        isParallelCanvas_ = isParallel;
-    }
+    void SetIsParallelCanvas(bool isParallel);
+    bool GetIsParallelCanvas() const;
 
-    bool GetIsParallelCanvas() const
-    {
-        return isParallelCanvas_;
-    }
+    void SetDisableFilterCache(bool disable);
+    bool GetDisableFilterCache() const;
 
 #ifndef USE_ROSEN_DRAWING
     // effect cache data relate
     struct CachedEffectData {
         CachedEffectData() = default;
-        CachedEffectData(const sk_sp<SkImage>& image, const SkIRect& rect);
-        CachedEffectData(sk_sp<SkImage>&& image, SkIRect&& rect);
-        ~CachedEffectData();
+        CachedEffectData(sk_sp<SkImage>&& image, const SkIRect& rect);
+        ~CachedEffectData() = default;
         sk_sp<SkImage> cachedImage_ = nullptr;
         SkIRect cachedRect_ = SkIRect::MakeEmpty();
     };
@@ -217,17 +237,40 @@ public:
     };
     CanvasStatus GetCanvasStatus() const;
     void SetCanvasStatus(const CanvasStatus& status);
+#else
+    // effect cache data relate
+    struct CachedEffectData {
+        CachedEffectData() = default;
+        CachedEffectData(std::shared_ptr<Drawing::Image>&& image, const Drawing::RectI& rect);
+        ~CachedEffectData() = default;
+        std::shared_ptr<Drawing::Image> cachedImage_ = nullptr;
+        Drawing::RectI cachedRect_ = {};
+    };
+    void SetEffectData(const std::shared_ptr<CachedEffectData>& effectData);
+    const std::shared_ptr<CachedEffectData>& GetEffectData() const;
+
+    // canvas status relate
+    struct CanvasStatus {
+        float alpha_;
+        Drawing::Matrix matrix_;
+        std::shared_ptr<CachedEffectData> effectData_;
+    };
+    CanvasStatus GetCanvasStatus() const;
+    void SetCanvasStatus(const CanvasStatus& status);
 #endif
+    bool GetRecordingState() const;
+    void SetRecordingState(bool flag);
 
 protected:
+    using Env = struct {
+        Color envForegroundColor_;
+        std::shared_ptr<CachedEffectData> effectData_;
+    };
 #ifndef USE_ROSEN_DRAWING
     bool onFilter(SkPaint& paint) const override;
     void onDrawPicture(const SkPicture* picture, const SkMatrix* matrix, const SkPaint* paint) override;
     SkCanvas::SaveLayerStrategy getSaveLayerStrategy(const SaveLayerRec& rec) override;
 #else
-    using Env = struct {
-        Color envForegroundColor;
-    };
     std::stack<float> GetAlphaStack();
     std::stack<Env> GetEnvStack();
     bool OnFilter() const override;
@@ -240,12 +283,6 @@ private:
     Drawing::Surface* surface_ = nullptr;
 #endif
     std::stack<float> alphaStack_;
-#ifndef USE_ROSEN_DRAWING
-    using Env = struct {
-        Color envForegroundColor_;
-        std::shared_ptr<CachedEffectData> effectData_;
-    };
-#endif
     std::stack<Env> envStack_;
 
     std::atomic_bool isHighContrastEnabled_ { false };
@@ -257,6 +294,8 @@ private:
 #endif
 
     bool isParallelCanvas_ = false;
+    bool disableFilterCache_ = false;
+    bool recordingState_ = false;
 };
 
 // This class extends RSPaintFilterCanvas to also create a color filter for the paint.
@@ -281,14 +320,6 @@ protected:
 // Helper class similar to SkAutoCanvasRestore, but also restores alpha and/or env
 class RSB_EXPORT RSAutoCanvasRestore {
 public:
-    enum SaveType : uint8_t {
-        kNone   = 0x0,
-        kCanvas = 0x1,
-        kAlpha  = 0x2,
-        kEnv    = 0x4,
-        kALL    = kCanvas | kAlpha | kEnv,
-    };
-
     /** Preserves canvas save count. Optionally call SkCanvas::save() and/or RSPaintFilterCanvas::SaveAlpha() and/or
        RSPaintFilterCanvas::SaveEnv().
         @param canvas     RSPaintFilterCanvas to guard
@@ -296,23 +327,40 @@ public:
         @param saveAlpha  call RSPaintFilterCanvas::SaveAlpha()
         @return           utility to restore RSPaintFilterCanvas state on destructor
     */
-    RSAutoCanvasRestore(RSPaintFilterCanvas* canvas, SaveType type = SaveType::kALL);
+#ifndef USE_ROSEN_DRAWING
+    RSAutoCanvasRestore(
+        RSPaintFilterCanvas* canvas, RSPaintFilterCanvas::SaveType type = RSPaintFilterCanvas::SaveType::kALL)
+        : canvas_(canvas), saveCount_(canvas ? canvas->Save(type) : RSPaintFilterCanvas::SaveStatus())
+    {}
+#else
+    RSAutoCanvasRestore(
+        RSPaintFilterCanvas* canvas, RSPaintFilterCanvas::SaveType type = RSPaintFilterCanvas::SaveType::kALL)
+        : canvas_(canvas), saveCount_(canvas ? canvas->SaveAllStatus() : RSPaintFilterCanvas::SaveStatus())
+    {}
+#endif
 
     /** Allow RSAutoCanvasRestore to be used with std::unique_ptr and std::shared_ptr */
-    RSAutoCanvasRestore(const std::unique_ptr<RSPaintFilterCanvas>& canvas, SaveType type = SaveType::kALL)
+    RSAutoCanvasRestore(const std::unique_ptr<RSPaintFilterCanvas>& canvas,
+        RSPaintFilterCanvas::SaveType type = RSPaintFilterCanvas::SaveType::kALL)
         : RSAutoCanvasRestore(canvas.get(), type)
     {}
-    RSAutoCanvasRestore(const std::shared_ptr<RSPaintFilterCanvas>& canvas, SaveType type = SaveType::kALL)
+    RSAutoCanvasRestore(const std::shared_ptr<RSPaintFilterCanvas>& canvas,
+        RSPaintFilterCanvas::SaveType type = RSPaintFilterCanvas::SaveType::kALL)
         : RSAutoCanvasRestore(canvas.get(), type)
     {}
+
+    RSAutoCanvasRestore(RSAutoCanvasRestore&&) = delete;
+    RSAutoCanvasRestore(const RSAutoCanvasRestore&) = delete;
+    RSAutoCanvasRestore& operator=(RSAutoCanvasRestore&&) = delete;
+    RSAutoCanvasRestore& operator=(const RSAutoCanvasRestore&) = delete;
 
     /** Restores RSPaintFilterCanvas to saved state. Destructor is called when container goes out of
         scope.
     */
     ~RSAutoCanvasRestore()
     {
-        if (canvas_ && saveCount_.has_value()) {
-            canvas_->RestoreStatus(saveCount_.value());
+        if (canvas_) {
+            canvas_->RestoreStatus(saveCount_);
         }
     }
 
@@ -321,21 +369,15 @@ public:
     */
     void restore()
     {
-        if (canvas_ && saveCount_.has_value()) {
-            canvas_->RestoreStatus(saveCount_.value());
+        if (canvas_) {
+            canvas_->RestoreStatus(saveCount_);
             canvas_ = nullptr;
-            saveCount_.reset();
         }
     }
 
 private:
     RSPaintFilterCanvas* canvas_ = nullptr;
-    std::optional<RSPaintFilterCanvas::SaveStatus> saveCount_;
-
-    RSAutoCanvasRestore(RSAutoCanvasRestore&&) = delete;
-    RSAutoCanvasRestore(const RSAutoCanvasRestore&) = delete;
-    RSAutoCanvasRestore& operator=(RSAutoCanvasRestore&&) = delete;
-    RSAutoCanvasRestore& operator=(const RSAutoCanvasRestore&) = delete;
+    RSPaintFilterCanvas::SaveStatus saveCount_;
 };
 } // namespace Rosen
 } // namespace OHOS

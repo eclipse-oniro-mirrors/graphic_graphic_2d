@@ -76,7 +76,6 @@ public:
 
     std::string ToString() const;
 
-protected:
 #ifndef USE_ROSEN_DRAWING
     bool ApplyFillStyle(SkPaint& paint) const;
     bool ApplyPathStyle(SkPaint& paint) const;
@@ -106,8 +105,6 @@ private:
     std::vector<Color> colors_;
     std::vector<float> widths_;
     std::vector<BorderStyle> styles_;
-
-    friend class RSPropertiesPainter;
 };
 } // namespace Rosen
 } // namespace OHOS

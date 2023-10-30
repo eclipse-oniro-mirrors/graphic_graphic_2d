@@ -94,6 +94,8 @@ public:
 
     virtual uint32_t GetScreenCurrentRefreshRate(ScreenId id) = 0;
 
+    virtual int32_t GetCurrentRefreshRateMode() = 0;
+
     virtual std::vector<int32_t> GetScreenSupportedRefreshRates(ScreenId id) = 0;
 
     virtual int32_t SetVirtualScreenResolution(ScreenId id, uint32_t width, uint32_t height) = 0;
@@ -151,8 +153,11 @@ public:
 
 #ifndef USE_ROSEN_DRAWING
     virtual bool GetBitmap(NodeId id, SkBitmap& bitmap) = 0;
+    virtual bool GetPixelmap(NodeId id, const std::shared_ptr<Media::PixelMap> pixelmap, const SkRect* rect) = 0;
 #else
     virtual bool GetBitmap(NodeId id, Drawing::Bitmap& bitmap) = 0;
+    virtual bool GetPixelmap(NodeId id, const std::shared_ptr<Media::PixelMap> pixelmap,
+        const Drawing::Rect* rect) = 0;
 #endif
 
     virtual int32_t SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval) = 0;
@@ -181,6 +186,10 @@ public:
     virtual void SetHardwareEnabled(NodeId id, bool isEnabled) = 0;
 
     virtual void SetCacheEnabledForRotation(bool isEnabled) = 0;
+
+#ifdef TP_FEATURE_ENABLE
+    virtual void SetTpFeatureConfig(int32_t feature, const char* config) = 0;
+#endif
 };
 } // namespace Rosen
 } // namespace OHOS

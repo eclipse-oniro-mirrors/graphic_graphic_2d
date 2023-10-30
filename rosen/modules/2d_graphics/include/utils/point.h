@@ -41,6 +41,10 @@ public:
     inline void SetX(scalar x);
     inline void SetY(scalar y);
 
+    inline bool IsZero() const;
+
+    inline void Offset(scalar x, scalar y);
+
     inline PointF& operator+=(const PointF& p);
     inline PointF& operator-=(const PointF& p);
     inline PointF& operator*=(scalar scale);
@@ -87,6 +91,17 @@ inline void PointF::SetY(scalar y)
     y_ = y;
 }
 
+inline bool PointF::IsZero() const
+{
+    return (0 == x_) && (0 == y_);
+}
+
+inline void PointF::Offset(scalar x, scalar y)
+{
+    x_ += x;
+    y_ += y;
+}
+
 inline PointF& PointF::operator+=(const PointF& p)
 {
     x_ += p.x_;
@@ -120,7 +135,7 @@ inline PointF& PointF::operator/=(scalar divisor)
 
 inline const PointF operator+(const PointF& p1, const PointF& p2)
 {
-    return PointF(p1.x_ + p1.y_, p2.x_ + p2.y_);
+    return PointF(p1.x_ + p2.x_, p1.y_ + p2.y_);
 }
 
 inline const PointF operator-(const PointF& p1, const PointF& p2)
@@ -259,7 +274,7 @@ inline PointI& PointI::operator/=(scalar divisor)
 
 inline const PointI operator+(const PointI& p1, const PointI& p2)
 {
-    return PointI(p1.x_ + p1.y_, p2.x_ + p2.y_);
+    return PointI(p1.x_ + p2.x_, p1.y_ + p2.y_);
 }
 
 inline const PointI operator-(const PointI& p1, const PointI& p2)

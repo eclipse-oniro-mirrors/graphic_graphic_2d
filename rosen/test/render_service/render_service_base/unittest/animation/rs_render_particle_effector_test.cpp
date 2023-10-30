@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,6 +15,7 @@
 
 #include "gtest/gtest.h"
 #include "animation/rs_render_particle_effector.h"
+#include "animation/rs_render_particle.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -41,11 +42,11 @@ void RSRenderParticleEffectorTest::TearDown() {}
 HWTEST_F(RSRenderParticleEffectorTest, UpdateColorTest, Level1)
 {
     float deltaTime = 0.f;
-    int64_t activeTime = 1;
-    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    int64_t activeTime = 0;
+    auto particleParams = std::make_shared<ParticleRenderParams>();
     RSRenderParticleEffector rsRenderParticleEffector(particleParams);
     rsRenderParticleEffector.UpdateColor(nullptr, deltaTime, activeTime);
-    ASSERT_NE(activeTime, 0);
+    ASSERT_NE(activeTime, 1);
 }
 
 /**
@@ -57,7 +58,7 @@ HWTEST_F(RSRenderParticleEffectorTest, UpdateAccelerateTest, Level1)
 {
     float deltaTime = 0.f;
     int64_t activeTime = 1;
-    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    auto particleParams = std::make_shared<ParticleRenderParams>();
     RSRenderParticleEffector rsRenderParticleEffector(particleParams);
     rsRenderParticleEffector.UpdateAccelerate(nullptr, deltaTime, activeTime);
     ASSERT_NE(activeTime, 0);
@@ -72,7 +73,7 @@ HWTEST_F(RSRenderParticleEffectorTest, UpdateOpacityTest, Level1)
 {
     float deltaTime = 0.f;
     int64_t activeTime = 1;
-    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    auto particleParams = std::make_shared<ParticleRenderParams>();
     RSRenderParticleEffector rsRenderParticleEffector(particleParams);
     rsRenderParticleEffector.UpdateOpacity(nullptr, deltaTime, activeTime);
     ASSERT_NE(activeTime, 0);
@@ -87,7 +88,7 @@ HWTEST_F(RSRenderParticleEffectorTest, UpdateScaleTest, Level1)
 {
     float deltaTime = 0.f;
     int64_t activeTime = 1;
-    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    auto particleParams = std::make_shared<ParticleRenderParams>();
     RSRenderParticleEffector rsRenderParticleEffector(particleParams);
     rsRenderParticleEffector.UpdateScale(nullptr, deltaTime, activeTime);
     ASSERT_NE(activeTime, 0);
@@ -102,7 +103,7 @@ HWTEST_F(RSRenderParticleEffectorTest, UpdateSpinTest, Level1)
 {
     float deltaTime = 0.f;
     int64_t activeTime = 1;
-    auto particleParams = std::shared_ptr<ParticleRenderParams>();
+    auto particleParams = std::make_shared<ParticleRenderParams>();
     RSRenderParticleEffector rsRenderParticleEffector(particleParams);
     rsRenderParticleEffector.UpdateSpin(nullptr, deltaTime, activeTime);
     ASSERT_NE(activeTime, 0);

@@ -31,7 +31,7 @@ namespace Rosen {
 class RSDrawingFilter;
 #endif
 class RSPaintFilterCanvas;
-enum FilterType {
+enum class FilterType {
     BACKGROUND_FILTER,
     FOREGROUND_FILTER,
 };
@@ -46,8 +46,7 @@ public:
     static void DrawFrame(const RSProperties& properties, RSPaintFilterCanvas& canvas, DrawCmdListPtr& drawCmdList);
     static void GetShadowDirtyRect(RectI& dirtyShadow, const RSProperties& properties,
         const RRect* rrect = nullptr, bool isAbsCoordinate = true);
-    static void DrawShadow(const RSProperties& properties,
-        RSPaintFilterCanvas& canvas, const RRect* rrect = nullptr, bool isLeashWindow = false);
+    static void DrawShadow(const RSProperties& properties, RSPaintFilterCanvas& canvas, const RRect* rrect = nullptr);
     static void DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas, FilterType filterType,
         const std::optional<SkRect>& rect = std::nullopt, const std::shared_ptr<RSFilter>& externalFilter = nullptr);
     static void DrawLinearGradientBlurFilter(
@@ -80,6 +79,8 @@ public:
     static void DrawLightUpEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawDynamicLightUp(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawParticle(const RSProperties& properties, RSPaintFilterCanvas& canvas);
+    static sk_sp<SkShader> MakeDynamicLightUpShader(
+        float dynamicLightUpRate, float dynamicLightUpDeg, sk_sp<SkShader> imageShader);
 private:
     static void ApplyBackgroundEffectFallback(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     inline static int g_blurCnt = 0;
@@ -96,14 +97,14 @@ private:
     static sk_sp<SkShader> MakeVerticalMeanBlurShader(float radiusIn,
                                             sk_sp<SkShader> shader, sk_sp<SkShader> gradientShader);
     static sk_sp<SkShader> MakeLightUpEffectShader(float lightUpDeg, sk_sp<SkShader> imageShader);
-    static sk_sp<SkShader> MakeDynamicLightUpShader(
-        float dynamicLightUpRate, float dynamicLightUpDeg, sk_sp<SkShader> imageShader);
     static void DrawHorizontalLinearGradientBlur(SkSurface* skSurface, RSPaintFilterCanvas& canvas,
         float radius, sk_sp<SkShader> alphaGradientShader, const SkIRect& clipIPadding);
     static void DrawVerticalLinearGradientBlur(SkSurface* skSurface, RSPaintFilterCanvas& canvas,
         float radius, sk_sp<SkShader> alphaGradientShader, const SkIRect& clipIPadding);
     static uint8_t CalcDirectionBias(const SkMatrix& mat);
 #endif
+    friend class RSLinearGradientBlurFilterDrawable;
+    friend class RSLightUpEffectDrawable;
 #else
     static void Clip(Drawing::Canvas& canvas, RectF rect, bool isAntiAlias = true);
     static void SetBgAntiAlias(bool forceBgAntiAlias);
@@ -114,8 +115,7 @@ private:
         Drawing::DrawCmdListPtr& drawCmdList);
     static void GetShadowDirtyRect(RectI& dirtyShadow, const RSProperties& properties,
         const RRect* rrect = nullptr, bool isAbsCoordinate = true);
-    static void DrawShadow(const RSProperties& properties,
-        RSPaintFilterCanvas& canvas, const RRect* rrect = nullptr, bool isLeashWindow = false);
+    static void DrawShadow(const RSProperties& properties, RSPaintFilterCanvas& canvas, const RRect* rrect = nullptr);
     static void DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas, FilterType filterType,
         const std::optional<Drawing::Rect>& rect = std::nullopt);
     static void DrawLinearGradientBlurFilter(const RSProperties& properties,
@@ -151,6 +151,7 @@ private:
     static void DrawDynamicLightUp(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawParticle(const RSProperties& properties, RSPaintFilterCanvas& canvas);
 private:
+    static void ApplyBackgroundEffectFallback(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     inline static int g_blurCnt = 0;
     static void DrawColorfulShadowInner(
         const RSProperties& properties, RSPaintFilterCanvas& canvas, Drawing::Path& path);

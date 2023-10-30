@@ -54,7 +54,7 @@ public:
         NodeId id, const RSDisplayNodeConfig& config, const std::weak_ptr<RSContext>& context = {});
     ~RSDisplayRenderNode() override;
     void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID,
-        NodeId firstLevelNodeId = INVALID_NODEID) override;
+        NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID) override;
 
     void SetScreenId(uint64_t screenId)
     {
@@ -90,6 +90,16 @@ public:
     void SetFingerprint(bool hasFingerprint)
     {
         hasFingerprint_ = hasFingerprint;
+    }
+
+    void SetScreenRotation(const ScreenRotation& screenRotation)
+    {
+        screenRotation_ = screenRotation;
+    }
+
+    ScreenRotation GetScreenRotation()
+    {
+        return screenRotation_;
     }
 
     void CollectSurface(
@@ -221,6 +231,14 @@ public:
         return isFirstTimeToProcessor_;
     }
 
+    void setFirstTimeScreenRotation(const ScreenRotation& rotate) {
+        firstTimeScreenRotation_ = rotate;
+        isFirstTimeToProcessor_ = false;
+    }
+    ScreenRotation getFirstTimeScreenRotation() const {
+        return firstTimeScreenRotation_;
+    }
+
 #ifndef USE_ROSEN_DRAWING
     void SetInitMatrix(const SkMatrix& skMatrix) {
         initMatrix_ = skMatrix;
@@ -240,6 +258,8 @@ public:
     }
 private:
     CompositeType compositeType_ { HARDWARE_COMPOSITE };
+    ScreenRotation screenRotation_;
+    ScreenRotation firstTimeScreenRotation_;
     uint64_t screenId_;
     int32_t offsetX_;
     int32_t offsetY_;

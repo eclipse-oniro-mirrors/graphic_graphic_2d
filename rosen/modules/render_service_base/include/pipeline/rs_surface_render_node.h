@@ -31,6 +31,8 @@
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_handler.h"
+#include "pipeline/rs_uni_render_judgement.h"
+#include "platform/common/rs_system_properties.h"
 #include "property/rs_properties_painter.h"
 #include "screen_manager/screen_types.h"
 #include "transaction/rs_occlusion_data.h"
@@ -69,7 +71,7 @@ public:
 
 #ifdef OHOS_PLATFORM
     void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID,
-        NodeId firstLevelNodeId = INVALID_NODEID) override;
+        NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID) override;
 #endif
     bool IsAppWindow() const
     {
@@ -91,15 +93,44 @@ public:
         return nodeType_ == RSSurfaceNodeType::LEASH_WINDOW_NODE;
     }
 
+    bool IsRosenWeb() const
+    {
+        return GetName().find("RosenWeb") != std::string::npos;
+    }
+
+    bool IsHardwareEnabledTopSurface() const
+    {
+        return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE && GetName() == "pointer window";
+    }
+
     // indicate if this node type can enable hardware composer
     bool IsHardwareEnabledType() const
     {
-        return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && isHardwareEnabledNode_;
+        if (IsRosenWeb() && !RSSystemProperties::IsPhoneType()) {
+            return false;
+        }
+        return (nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && isHardwareEnabledNode_) ||
+            IsHardwareEnabledTopSurface();
     }
 
     void SetHardwareEnabled(bool isEnabled)
     {
         isHardwareEnabledNode_ = isEnabled;
+    }
+
+    void SetSubNodeShouldPaint()
+    {
+        hasSubNodeShouldPaint_ = true;
+    }
+
+    void ResetSubNodeShouldPaint()
+    {
+        hasSubNodeShouldPaint_ = false;
+    }
+
+    bool HasSubNodeShouldPaint() const
+    {
+        return hasSubNodeShouldPaint_;
     }
 
     // used for hwc node
@@ -303,6 +334,9 @@ public:
 
     void SetSecurityLayer(bool isSecurityLayer);
     bool GetSecurityLayer() const;
+
+    void SetSkipLayer(bool isSkipLayer);
+    bool GetSkipLayer() const;
 
     void SetFingerprint(bool hasFingerprint);
     bool GetFingerprint() const;
@@ -522,11 +556,16 @@ public:
         return visibleRegion_.IsIntersectWith(nodeRect);
     }
 
+    inline bool IsEmptyAppWindow() const
+    {
+        return IsAppWindow() && (GetChildrenCount() == 0 || HasOnlyOneRootNode());
+    }
+
     inline bool IsTransparent() const
     {
         const uint8_t opacity = 255;
         return !(GetAbilityBgAlpha() == opacity && ROSEN_EQ(GetGlobalAlpha(), 1.0f)) ||
-            (IsAppWindow() && GetChildrenCount() == 0);
+            (IsEmptyAppWindow() && RSUniRenderJudgement::IsUniRender());
     }
 
     inline bool IsCurrentNodeInTransparentRegion(const Occlusion::Rect& nodeRect) const
@@ -582,9 +621,8 @@ public:
     const std::vector<RectI>& GetChildrenNeedFilterRects() const;
 
     // manage abilities' nodeid info
-    void ResetAbilityNodeIds();
-    void UpdateAbilityNodeIds(NodeId id);
-    const std::vector<NodeId>& GetAbilityNodeIds() const;
+    void UpdateAbilityNodeIds(NodeId id, bool isAdded);
+    const std::unordered_set<NodeId>& GetAbilityNodeIds() const;
 
     // manage appWindowNode's child hardware enabled nodes info
     void ResetChildHardwareEnabledNodes();
@@ -716,7 +754,7 @@ public:
         return isFilterCacheValid_;
     }
 
-    void SetFilterCacheValid();
+    void CalcFilterCacheValidForOcclusion();
 
     bool IsFilterCacheStatusChanged() const
     {
@@ -733,10 +771,31 @@ public:
     void UpdateFilterCacheStatusIfNodeStatic(const RectI& clipRect);
     void UpdateDrawingCacheNodes(const std::shared_ptr<RSRenderNode>& nodePtr);
     // reset static node's drawing cache status as not changed and get filter rects
-    void ResetDrawingCacheStatusIfNodeStatic(std::unordered_map<NodeId, std::unordered_map<NodeId, RectI>>& allRects);
+    void ResetDrawingCacheStatusIfNodeStatic(std::unordered_map<NodeId, std::unordered_set<NodeId>>& allRects);
 
     void SetNotifyRTBufferAvailable(bool isNotifyRTBufferAvailable);
 
+    // whether the subtree has only one root node
+    bool HasOnlyOneRootNode() const;
+
+    bool GetHasSecurityLayer()
+    {
+        return hasSecurityLayer_;
+    }
+
+    void SetHasSecurityLayer(bool hasSecurityLayer)
+    {
+        hasSecurityLayer_ = hasSecurityLayer;
+    }
+    bool GetHasSkipLayer()
+    {
+        return hasSkipLayer_;
+    }
+
+    void SetHasSkipLayer(bool hasSkipLayer)
+    {
+        hasSkipLayer_ = hasSkipLayer;
+    }
 private:
     void OnResetParent() override;
     void ClearChildrenCache();
@@ -769,6 +828,7 @@ private:
 #endif
 
     bool isSecurityLayer_ = false;
+    bool isSkipLayer_ = false;
     bool hasFingerprint_ = false;
     bool isReportFirstFrame_ = false;
     RectI srcRect_;
@@ -828,7 +888,7 @@ private:
     bool opaqueRegionChanged_ = false;
     // [planning] Remove this after skia is upgraded, the clipRegion is supported
     std::vector<RectI> childrenFilterRects_;
-    std::vector<NodeId> abilityNodeIds_;
+    std::unordered_set<NodeId> abilityNodeIds_;
     // transparent region of the surface, floating window's container window is always treated as transparent
     Occlusion::Region transparentRegion_;
 
@@ -897,6 +957,7 @@ private:
     bool isCurrentFrameHardwareEnabled_ = false;
     bool isLastFrameHardwareEnabled_ = false;
     bool isNewOnTree_ = false;
+    bool hasSubNodeShouldPaint_ = false;
     // mark if this self-drawing node is forced not to use hardware composer
     // in case where this node's parent window node is occluded or is appFreeze, this variable will be marked true
     bool isHardwareForcedDisabled_ = false;
@@ -910,6 +971,8 @@ private:
 
     bool needDrawAnimateProperty_ = false;
     bool prevVisible_ = false;
+    bool hasSecurityLayer_ = false;
+    bool hasSkipLayer_ = false;
 
     // UIFirst
     uint32_t submittedSubThreadIndex_ = INT_MAX;

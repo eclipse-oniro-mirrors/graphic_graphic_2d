@@ -14,6 +14,7 @@
  */
 
 #include "gtest/gtest.h"
+#include "animation/rs_animation.h"
 #include "animation/rs_path_animation.h"
 #include "render/rs_path.h"
 #include "modifier/rs_property.h"
@@ -41,18 +42,38 @@ void RSPathAnimationTest::SetUp() {}
 void RSPathAnimationTest::TearDown() {}
 
 /**
- * @tc.name: SetEndFractionTest
+ * @tc.name: SetEndFractionTest001
  * @tc.desc:
  * @tc.type:FUNC
  */
-HWTEST_F(RSPathAnimationTest, SetEndFractionTest, Level1)
+HWTEST_F(RSPathAnimationTest, SetEndFractionTest001, Level1)
 {
     bool res = true;
     auto prop = nullptr;
     auto animationPath = nullptr;
-    float frac = 1.0f;
+    float frac = 3.0f;
+    RSPathAnimation rsPathAnimation(prop, animationPath);
+    auto per = std::make_shared<RSNode>(true);
+    rsPathAnimation.StartInner(per);
+    rsPathAnimation.SetEndFraction(frac);
+    ASSERT_EQ(res, true);
+}
+
+/**
+ * @tc.name: SetEndFractionTest002
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSPathAnimationTest, SetEndFractionTest002, Level1)
+{
+    bool res = true;
+    auto prop = nullptr;
+    auto animationPath = nullptr;
+    float frac = 3.0f;
     RSPathAnimation rsPathAnimation(prop, animationPath);
     rsPathAnimation.SetEndFraction(frac);
+    rsPathAnimation.SetEndFraction(0.5f);
+    rsPathAnimation.SetEndFraction(-0.5f);
     ASSERT_EQ(res, true);
 }
 
@@ -68,20 +89,60 @@ HWTEST_F(RSPathAnimationTest, SetPathNeedAddOriginTest, Level1)
     auto prop = nullptr;
     auto animationPath = nullptr;
     RSPathAnimation rsPathAnimation(prop, animationPath);
+    auto per = std::make_shared<RSNode>(true);
+    rsPathAnimation.StartInner(per);
     rsPathAnimation.SetPathNeedAddOrigin(needAddOrigin);
     ASSERT_EQ(res, true);
 }
 
 /**
- * @tc.name: SetBeginFractionTest
+ * @tc.name: SetRotationModeTest
  * @tc.desc:
  * @tc.type:FUNC
  */
-HWTEST_F(RSPathAnimationTest, SetBeginFractionTest, Level1)
+HWTEST_F(RSPathAnimationTest, SetRotationModeTest, Level1)
 {
     auto prop = nullptr;
     auto animationPath = nullptr;
-    float frac = 0.0f;
+    auto rotationMode = RotationMode::ROTATE_NONE;
+    RSPathAnimation rsPathAnimation(prop, animationPath);
+    auto per = std::make_shared<RSNode>(true);
+    rsPathAnimation.StartInner(per);
+    rsPathAnimation.SetRotationMode(rotationMode);
+    ASSERT_EQ(prop, nullptr);
+    ASSERT_EQ(animationPath, nullptr);
+}
+
+/**
+ * @tc.name: SetBeginFractionTest001
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSPathAnimationTest, SetBeginFractionTest001, Level1)
+{
+    auto prop = nullptr;
+    auto animationPath = nullptr;
+    float frac = 3.0f;
+    RSPathAnimation rsPathAnimation(prop, animationPath);
+    auto per = std::make_shared<RSNode>(true);
+    rsPathAnimation.StartInner(per);
+    rsPathAnimation.SetBeginFraction(frac);
+    rsPathAnimation.SetBeginFraction(0.5f);
+    rsPathAnimation.SetBeginFraction(-0.5f);
+    ASSERT_EQ(prop, nullptr);
+    ASSERT_EQ(animationPath, nullptr);
+}
+
+/**
+ * @tc.name: SetBeginFractionTest002
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSPathAnimationTest, SetBeginFractionTest002, Level1)
+{
+    auto prop = nullptr;
+    auto animationPath = nullptr;
+    float frac = 3.0f;
     RSPathAnimation rsPathAnimation(prop, animationPath);
     rsPathAnimation.SetBeginFraction(frac);
     ASSERT_EQ(prop, nullptr);

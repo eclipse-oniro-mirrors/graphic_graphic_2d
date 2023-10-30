@@ -23,6 +23,7 @@
 #include "rs_trace.h"
 #include "pipeline/parallel_render/rs_sub_thread_manager.h"
 #include "pipeline/rs_main_thread.h"
+#include "memory/rs_memory_graphic.h"
 #include "memory/rs_memory_manager.h"
 #include "pipeline/rs_uni_render_util.h"
 #include "pipeline/rs_uni_render_visitor.h"
@@ -108,7 +109,11 @@ float RSSubThread::GetAppGpuMemoryInMB()
 {
     float total = 0.f;
     PostSyncTask([&total, this]() {
+#ifndef USE_ROSEN_DRAWING
         total = MemoryManager::GetAppGpuMemoryInMB(grContext_.get());
+#else
+        RS_LOGE("Drawing Unsupport GetAppGpuMemoryInMB");
+#endif
     });
     return total;
 }
@@ -145,7 +150,7 @@ void RSSubThread::DestroyShareEglContext()
 
 void RSSubThread::RenderCache(const std::shared_ptr<RSSuperRenderTask>& threadTask)
 {
-    if (threadTask == nullptr) {
+    if (threadTask == nullptr || threadTask->GetTaskSize() == 0) {
         return;
     }
     if (grContext_ == nullptr) {
@@ -190,14 +195,13 @@ void RSSubThread::RenderCache(const std::shared_ptr<RSSuperRenderTask>& threadTa
                 std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
             surfaceNodePtr->InitCacheSurface(grContext_.get(), func, threadIndex_);
         }
-#ifndef USE_ROSEN_DRAWING
+
         RSTagTracker nodeProcessTracker(grContext_.get(), surfaceNodePtr->GetId(),
             RSTagTracker::TAGTYPE::TAG_SUB_THREAD);
-#endif
         bool needNotify = !surfaceNodePtr->HasCachedTexture();
         node->Process(visitor);
-#ifndef USE_ROSEN_DRAWING
         nodeProcessTracker.SetTagEnd();
+#ifndef USE_ROSEN_DRAWING
 #ifndef NEW_SKIA
         auto skCanvas = surfaceNodePtr->GetCacheSurface(threadIndex_, true) ?
             surfaceNodePtr->GetCacheSurface(threadIndex_, true)->getCanvas() : nullptr;
@@ -208,36 +212,37 @@ void RSSubThread::RenderCache(const std::shared_ptr<RSSuperRenderTask>& threadTa
             RS_LOGE("skCanvas is nullptr, flush failed");
         }
 #else
-        if (surfaceNodePtr && surfaceNodePtr->GetCacheSurface(threadIndex_, true)) {
+        auto cacheSurface = surfaceNodePtr->GetCacheSurface(threadIndex_, true);
+        if (cacheSurface) {
             RS_TRACE_NAME_FMT("Render cache skSurface flush and submit");
             RSTagTracker nodeFlushTracker(grContext_.get(), surfaceNodePtr->GetId(),
                 RSTagTracker::TAGTYPE::TAG_SUB_THREAD);
-            surfaceNodePtr->GetCacheSurface(threadIndex_, true)->flushAndSubmit(true);
+            cacheSurface->flushAndSubmit(true);
             nodeFlushTracker.SetTagEnd();
         }
 #endif
 #else
-        auto canvas = surfaceNodePtr->GetCacheSurface(threadIndex_, true) ?
-            surfaceNodePtr->GetCacheSurface(threadIndex_, true)->GetCanvas() : nullptr;
-        if (canvas) {
-            RS_TRACE_NAME_FMT("render cache flush, %s", surfaceNodePtr->GetName().c_str());
-            canvas->Flush();
-        } else {
-            RS_LOGE("skCanvas is nullptr, flush failed");
+        auto cacheSurface = surfaceNodePtr->GetCacheSurface(threadIndex_, true);
+        if (cacheSurface) {
+            RS_TRACE_NAME_FMT("Render cache skSurface flush and submit");
+            RSTagTracker nodeFlushTracker(grContext_.get(), surfaceNodePtr->GetId(),
+                RSTagTracker::TAGTYPE::TAG_SUB_THREAD);
+            cacheSurface->FlushAndSubmit(true);
+            nodeFlushTracker.SetTagEnd();
         }
 #endif
         surfaceNodePtr->UpdateBackendTexture();
+        RSMainThread::Instance()->PostTask([]() { 
+            RSMainThread::Instance()->SetIsCachedSurfaceUpdated(true);
+        });
         surfaceNodePtr->SetCacheSurfaceProcessedStatus(CacheProcessStatus::DONE);
         surfaceNodePtr->SetCacheSurfaceNeedUpdated(true);
 
         if (needNotify) {
             RSSubThreadManager::Instance()->NodeTaskNotify(node->GetId());
         }
-        if (RSMainThread::Instance()->GetFrameCount() != threadTask->GetFrameCount()) {
-            RSMainThread::Instance()->RequestNextVSync();
-            continue;
-        }
     }
+    RSMainThread::Instance()->RequestNextVSync();
 #endif
 }
 
@@ -308,6 +313,8 @@ void RSSubThread::ResetGrContext()
     }
 #ifndef USE_ROSEN_DRAWING
     grContext_->freeGpuResources();
+#else
+    grContext_->FreeGpuResources();
 #endif
 }
 
@@ -321,9 +328,22 @@ void RSSubThread::ReleaseSurface()
     }
 }
 
+#ifndef USE_ROSEN_DRAWING
 void RSSubThread::AddToReleaseQueue(sk_sp<SkSurface>&& surface)
+#else
+void RSSubThread::AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface)
+#endif
 {
     std::lock_guard<std::mutex> lock(mutex_);
     tmpSurfaces_.push(std::move(surface));
+}
+
+MemoryGraphic RSSubThread::CountSubMem(int pid)
+{
+    MemoryGraphic memoryGraphic;
+    PostSyncTask([&pid, &memoryGraphic, this]() {
+        memoryGraphic = MemoryManager::CountPidMemory(pid, grContext_.get());
+    });
+    return memoryGraphic;
 }
 }

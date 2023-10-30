@@ -60,11 +60,13 @@ ohos_unittest("texgine_unittest_part1") {
     "char_groups_test.cpp",
     "dynamic_file_font_provider_test.cpp",
     "dynamic_font_style_set_test.cpp",
+    "font_features_test.cpp",
     "font_styles_test.cpp",
     "text_converter_test.cpp",
     "text_merger_test.cpp",
     "text_reverser_test.cpp",
     "typography_builder_impl_test.cpp",
+    "typography_style_test.cpp",
     "variant_span_test.cpp",
   ]
 
@@ -173,7 +175,10 @@ ohos_unittest("texgine_unittest_part5") {
 ohos_unittest("texgine_unittest_part6") {
   module_out_path = module_output_path
 
-  sources = [ "font_manager_test.cpp" ]
+  sources = [
+    "font_manager_test.cpp",
+    "font_parser_test.cpp",
+  ]
 
   public_configs = [ ":texgine_test_config" ]
   public_deps = [ ":common_deps" ]

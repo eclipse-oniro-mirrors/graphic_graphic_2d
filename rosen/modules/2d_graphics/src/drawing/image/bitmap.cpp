@@ -33,6 +33,12 @@ void Bitmap::Build(int32_t width, int32_t height, const BitmapFormat& format, in
     bmpImplPtr->Build(width, height, format, stride);
 }
 
+void Bitmap::Build(const ImageInfo& imageInfo, int32_t stride)
+{
+    imageInfo_ = imageInfo;
+    bmpImplPtr->Build(imageInfo_, stride);
+}
+
 int Bitmap::GetWidth() const
 {
     return bmpImplPtr->GetWidth();
@@ -41,6 +47,21 @@ int Bitmap::GetWidth() const
 int Bitmap::GetHeight() const
 {
     return bmpImplPtr->GetHeight();
+}
+
+int Bitmap::GetRowBytes() const
+{
+    return bmpImplPtr->GetRowBytes();
+}
+
+ColorType Bitmap::GetColorType() const
+{
+    return bmpImplPtr->GetColorType();
+}
+
+AlphaType Bitmap::GetAlphaType() const
+{
+    return bmpImplPtr->GetAlphaType();
 }
 
 void Bitmap::SetPixels(void* pixel)
@@ -53,9 +74,19 @@ void* Bitmap::GetPixels() const
     return bmpImplPtr->GetPixels();
 }
 
-void Bitmap::CopyPixels(Bitmap& dst, int srcLeft, int srcTop, int width, int height) const
+void Bitmap::CopyPixels(Bitmap& dst, int srcLeft, int srcTop) const
 {
-    bmpImplPtr->CopyPixels(dst, srcLeft, srcTop, width, height);
+    bmpImplPtr->CopyPixels(dst, srcLeft, srcTop);
+}
+
+bool Bitmap::IsImmutable()
+{
+    return bmpImplPtr->IsImmutable();
+}
+
+void Bitmap::SetImmutable()
+{
+    bmpImplPtr->SetImmutable();
 }
 
 void Bitmap::ClearWithColor(const ColorQuad& color) const
@@ -81,6 +112,11 @@ void Bitmap::Free()
 BitmapFormat Bitmap::GetFormat() const
 {
     return format_;
+}
+
+ImageInfo Bitmap::GetImageInfo() const
+{
+    return imageInfo_;
 }
 } // namespace Drawing
 } // namespace Rosen

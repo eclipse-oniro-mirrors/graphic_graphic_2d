@@ -15,6 +15,8 @@
 
 #include "recording/cmd_list_helper.h"
 
+#include "include/core/SkSerialProcs.h"
+
 #ifdef SUPPORT_OHOS_PIXMAP
 #include "pixel_map.h"
 #endif
@@ -27,9 +29,12 @@
 #include "recording/path_effect_cmd_list.h"
 #include "recording/region_cmd_list.h"
 #include "recording/shader_effect_cmd_list.h"
+#include "skia_adapter/skia_vertices.h"
 #include "utils/log.h"
 
 #include "skia_adapter/skia_picture.h"
+#include "skia_adapter/skia_text_blob.h"
+#include "skia_adapter/skia_typeface.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -92,6 +97,51 @@ std::shared_ptr<Image> CmdListHelper::GetImageFromCmdList(const CmdList& cmdList
     return image;
 }
 
+VerticesHandle CmdListHelper::AddVerticesToCmdList(CmdList& cmdList, const Vertices& vertices)
+{
+    std::shared_ptr<SkiaVertices> skiaVertices = vertices.GetImpl<SkiaVertices>();
+    if (skiaVertices == nullptr) {
+        LOGE("skiaVertices nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return { 0 };
+    }
+
+    auto data = skiaVertices->Serialize();
+    if (data == nullptr || data->GetSize() == 0) {
+        LOGE("vertices is valid!");
+        return { 0 };
+    }
+
+    auto offset = cmdList.AddImageData(data->GetData(), data->GetSize());
+    return { offset, data->GetSize() };
+}
+
+std::shared_ptr<Vertices> CmdListHelper::GetVerticesFromCmdList(
+    const CmdList& cmdList, const VerticesHandle& verticesHandle)
+{
+    const void* ptr = cmdList.GetImageData(verticesHandle.offset);
+
+    if (verticesHandle.size == 0 || ptr == nullptr) {
+        LOGE("get vertices data failed!");
+        return nullptr;
+    }
+
+    auto verticesData = std::make_shared<Data>();
+    verticesData->BuildWithoutCopy(ptr, verticesHandle.size);
+    auto vertices = std::make_shared<Vertices>();
+
+    std::shared_ptr<SkiaVertices> skiaVertices = vertices->GetImpl<SkiaVertices>();
+    if (skiaVertices == nullptr) {
+        LOGE("skiaVertices nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return nullptr;
+    }
+
+    if (skiaVertices->Deserialize(verticesData) == false) {
+        LOGE("vertices deserialize failed!");
+        return nullptr;
+    }
+    return vertices;
+}
+
 ImageHandle CmdListHelper::AddBitmapToCmdList(CmdList& cmdList, const Bitmap& bitmap)
 {
     auto format = bitmap.GetFormat();
@@ -140,6 +190,28 @@ std::shared_ptr<Media::PixelMap> CmdListHelper::GetPixelMapFromCmdList(
         return (const_cast<CmdList&>(cmdList)).GetPixelMap(pixelMapHandle.offset);
 #else
     LOGE("Not support drawing Media::PixelMap");
+    return nullptr;
+#endif
+}
+
+ImageHandle CmdListHelper::AddImageObjectToCmdList(CmdList& cmdList, const std::shared_ptr<ExtendImageObject>& object)
+{
+#ifdef SUPPORT_OHOS_PIXMAP
+    auto index = cmdList.AddImageObject(object);
+    return { index };
+#else
+    LOGE("Not support drawing ExtendImageObject");
+    return { 0 };
+#endif
+}
+
+std::shared_ptr<ExtendImageObject> CmdListHelper::GetImageObjectFromCmdList(
+    const CmdList& cmdList, const ImageHandle& objectHandle)
+{
+#ifdef SUPPORT_OHOS_PIXMAP
+    return (const_cast<CmdList&>(cmdList)).GetImageObject(objectHandle.offset);
+#else
+    LOGE("Not support drawing ExtendImageObject");
     return nullptr;
 #endif
 }
@@ -224,6 +296,75 @@ CmdListHandle CmdListHelper::AddChildToCmdList(CmdList& cmdList, const std::shar
     }
 
     return childHandle;
+}
+
+ImageHandle CmdListHelper::AddTextBlobToCmdList(CmdList& cmdList, const TextBlob* textBlob)
+{
+    if (!textBlob) {
+        LOGE("textBlob nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return { 0 };
+    }
+    std::shared_ptr<SkiaTextBlob> skiaTextBlob = textBlob->GetImpl<SkiaTextBlob>();
+    if (!skiaTextBlob) {
+        LOGE("skiaTextBlob nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return { 0 };
+    }
+    SkSerialProcs serialProcs;
+    serialProcs.fTypefaceProc = &SkiaTypeface::SerializeTypeface;
+    auto data = skiaTextBlob->Serialize(serialProcs);
+    if (!data || data->GetSize() == 0) {
+        LOGE("textBlob serialize invalid, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return { 0 };
+    }
+
+    auto offset = cmdList.AddImageData(data->GetData(), data->GetSize());
+    return { offset, data->GetSize() };
+}
+
+std::shared_ptr<TextBlob> CmdListHelper::GetTextBlobFromCmdList(const CmdList& cmdList,
+    const ImageHandle& textBlobHandle)
+{
+    const void* data = cmdList.GetImageData(textBlobHandle.offset);
+    if (!data) {
+        LOGE("textBlob data nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return nullptr;
+    }
+
+    auto textBlobData = std::make_shared<Data>();
+    textBlobData->BuildWithoutCopy(data, textBlobHandle.size);
+    SkDeserialProcs deserialProcs;
+    deserialProcs.fTypefaceProc = &SkiaTypeface::DeserializeTypeface;
+    return SkiaTextBlob::Deserialize(textBlobData->GetData(), textBlobData->GetSize(), deserialProcs);
+}
+
+ImageHandle CmdListHelper::AddDataToCmdList(CmdList& cmdList, const Data* srcData)
+{
+    if (!srcData) {
+        LOGE("data nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return { 0 };
+    }
+
+    auto data = srcData->Serialize();
+    if (data == nullptr || data->GetSize() == 0) {
+        LOGE("srcData is invalid!");
+        return { 0 };
+    }
+
+    auto offset = cmdList.AddImageData(data->GetData(), data->GetSize());
+    return { offset, data->GetSize() };
+}
+
+std::shared_ptr<Data> CmdListHelper::GetDataFromCmdList(const CmdList& cmdList, const ImageHandle& imageHandle)
+{
+    const void* ptr = cmdList.GetImageData(imageHandle.offset);
+    if (imageHandle.size == 0 || ptr == nullptr) {
+        LOGE("get data failed!");
+        return nullptr;
+    }
+
+    auto imageData = std::make_shared<Data>();
+    imageData->BuildWithoutCopy(ptr, imageHandle.size);
+    return imageData;
 }
 } // namespace Drawing
 } // namespace Rosen

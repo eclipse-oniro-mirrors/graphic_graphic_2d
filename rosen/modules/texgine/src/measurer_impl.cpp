@@ -84,21 +84,6 @@ hb_blob_t *HbFaceReferenceTableTypeface(hb_face_t *face, hb_tag_t tag, void *con
                           tableSize, HB_MEMORY_MODE_WRITABLE, buffer, free);
 }
 
-void InsertMeasuringRun(std::list<struct MeasuringRun>::iterator &runsit, std::list<struct MeasuringRun> &runs,
-    size_t utf16Index, uint32_t cp)
-{
-    auto next = runsit;
-    auto iter = ++next;
-    if (iter != runs.end()) {
-        runs.insert(iter, {
-            .start = utf16Index - U16_LENGTH(cp),
-            .end = runsit->end,
-            .script = runsit->script,
-        });
-        runsit->end = utf16Index - U16_LENGTH(cp);
-    }
-}
-
 std::unique_ptr<Measurer> Measurer::Create(const std::vector<uint16_t> &text, const FontCollection &fontCollection)
 {
     return std::make_unique<MeasurerImpl>(text, fontCollection);
@@ -137,7 +122,11 @@ int MeasurerImpl::Measure(CharGroups &cgs)
         if (it != cache_.end()) {
             cgs = it->second.cgs.Clone();
             boundaries_ = it->second.boundaries;
-            return SUCCESSED;
+            if (detectionName_ != cgs.GetTypefaceName()) {
+                cache_.clear();
+            } else {
+                return SUCCESSED;
+            }
         }
     }
 
@@ -156,6 +145,7 @@ int MeasurerImpl::Measure(CharGroups &cgs)
 
     if (fontFeatures_ == nullptr || fontFeatures_->GetFeatures().size() == 0) {
         if (cgs.CheckCodePoint()) {
+            detectionName_ = cgs.GetTypefaceName();
             cache_[key] = {cgs.Clone(), boundaries_};
         }
     }
@@ -189,7 +179,13 @@ void MeasurerImpl::SeekTypeface(std::list<struct MeasuringRun> &runs)
             if (runsit->typeface) {
                 index--;
                 LOGCEX_DEBUG() << " new";
-                InsertMeasuringRun(runsit, runs, utf16Index, cp);
+                auto next = runsit;
+                runs.insert(++next, {
+                    .start = utf16Index - U16_LENGTH(cp),
+                    .end = runsit->end,
+                    .script = runsit->script,
+                });
+                runsit->end = utf16Index - U16_LENGTH(cp);
                 break;
             }
 
@@ -265,7 +261,9 @@ void MeasurerImpl::DoSeekScript(std::list<struct MeasuringRun> &runs, hb_unicode
                 continue;
             } else {
                 index--;
-                InsertMeasuringRun(it, runs, utf16Index, cp);
+                auto next = it;
+                runs.insert(++next, { .start = utf16Index - U16_LENGTH(cp), .end = it->end });
+                it->end = utf16Index - U16_LENGTH(cp);
                 break;
             }
         }
@@ -304,7 +302,12 @@ int MeasurerImpl::Shape(CharGroups &cgs, std::list<struct MeasuringRun> &runs, s
 
     for (auto &[start, end] : boundaries) {
         const auto &wordcgs = cgs.GetSubFromU16RangeAll(start, end);
-        wordcgs.Get(wordcgs.GetNumberOfCharGroup() - 1).invisibleWidth += wordSpacing_;
+        auto cg = wordcgs.Get(wordcgs.GetNumberOfCharGroup() - 1);
+        bool isWhitespace = (u_isWhitespace(cg.chars[0]) == 1);
+        if (isWhitespace) {
+            cg.invisibleWidth += wordSpacing_;
+        }
+        cg.isWordEnd = true;
     }
     return SUCCESSED;
 }
@@ -323,6 +326,10 @@ int MeasurerImpl::DoShape(CharGroups &cgs, MeasuringRun &run, size_t &index)
         return FAILED;
     }
 
+    if (text_.empty()) {
+        LOGEX_FUNC_LINE(ERROR) << "text is nullptr";
+        return FAILED;
+    }
     hb_buffer_add_utf16(hbuffer, reinterpret_cast<const uint16_t *>(text_.data()),
         INVALID_TEXT_LENGTH, run.start, run.end - run.start);
     hb_buffer_set_direction(hbuffer, rtl_ ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
@@ -430,6 +437,9 @@ void MeasurerImpl::DoCgsByCluster(std::map<uint32_t, TextEngine::CharGroup> &cgs
         }
 
         it->second.chars.insert(it->second.chars.end(), text_.begin() + start, text_.begin() + end);
+        if (it->second.IsHardBreak()) {
+            continue;
+        }
         it->second.visibleWidth = 0;
         for (const auto &glyph : it->second.glyphs) {
             it->second.visibleWidth += glyph.advanceX;

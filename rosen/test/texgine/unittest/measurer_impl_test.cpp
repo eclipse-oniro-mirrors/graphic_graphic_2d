@@ -175,7 +175,7 @@ bool Typeface::Has(uint32_t ch)
 }
 
 std::shared_ptr<Typeface> FontCollection::GetTypefaceForChar(const uint32_t &ch,
-    const FontStyles &style, const std::string &script, const std::string &locale) const
+    FontStyles &style, const std::string &script, const std::string &locale) const
 {
     return g_measurerMockvars.typeface;
 }
@@ -194,7 +194,7 @@ public:
         normalff_.SetFeature("ftag", 1);
     }
 
-    std::vector<uint16_t> text_ = {};
+    std::vector<uint16_t> text_ = {0};
     FontCollection fontCollection_ = std::vector<std::shared_ptr<VariantFontStyleSet>>{};
     FontFeatures emptyff_;
     FontFeatures normalff_;
@@ -655,8 +655,10 @@ HWTEST_F(MeasurerImplTest, Shape12, TestSize.Level1)
     boundaries.emplace_back(0, 2);
     EXPECT_EQ(mi.Shape(charGroups_, runs, boundaries), 0);
     EXPECT_EQ(charGroups_.GetSize(), 2);
+
+    // 5: invisibleWidth, spacing
     EXPECT_EQ(charGroups_.Get(0).invisibleWidth, 5);
-    EXPECT_EQ(charGroups_.Get(1).invisibleWidth, 15);
+    EXPECT_EQ(charGroups_.Get(1).invisibleWidth, 5);
 }
 
 /**

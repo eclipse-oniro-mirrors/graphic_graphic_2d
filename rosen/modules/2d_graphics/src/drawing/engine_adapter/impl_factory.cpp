@@ -15,6 +15,9 @@
 
 #include "impl_factory.h"
 
+#include "src/ports/skia_ohos/FontInfo_ohos.h"
+#include "src/ports/skia_ohos/FontConfig_ohos.h"
+
 #include "skia_adapter/skia_impl_factory.h"
 
 namespace OHOS {
@@ -48,6 +51,11 @@ std::unique_ptr<GPUContextImpl> ImplFactory::CreateGPUContextImpl()
     return EngineImplFactory::CreateGPUContext();
 }
 #endif
+
+std::unique_ptr<TraceMemoryDumpImpl> ImplFactory::CreateTraceMemoryDumpImpl(const char* categoryKey, bool itemizeType)
+{
+    return EngineImplFactory::CreateTraceMemoryDump(categoryKey, itemizeType);
+}
 
 std::unique_ptr<BitmapImpl> ImplFactory::CreateBitmapImpl()
 {
@@ -126,6 +134,52 @@ std::unique_ptr<CameraImpl> ImplFactory::CreateCameraImpl()
 std::unique_ptr<RegionImpl> ImplFactory::CreateRegionImpl()
 {
     return EngineImplFactory::CreateRegion();
+}
+
+std::unique_ptr<VerticesImpl> ImplFactory::CreateVerticesImpl()
+{
+    return EngineImplFactory::CreateVertices();
+}
+
+std::unique_ptr<VerticesImpl::BuilderImpl> ImplFactory::CreateVerticesBuilderImpl()
+{
+    return EngineImplFactory::CreateVerticesBuilder();
+}
+
+std::unique_ptr<FontImpl> ImplFactory::CreateFontImpl()
+{
+    return EngineImplFactory::CreateFont();
+}
+
+std::unique_ptr<TextBlobBuilderImpl> ImplFactory::CreateTextBlobBuilderImpl()
+{
+    return EngineImplFactory::CreateTextBlobBuilder();
+}
+
+std::shared_ptr<FontMgrImpl> ImplFactory::CreateDefaultFontMgrImpl()
+{
+    return EngineImplFactory::CreateDefaultFontMgr();
+}
+
+std::unique_ptr<FontMgrImpl> ImplFactory::CreateDynamicFontMgrImpl()
+{
+    return EngineImplFactory::CreateDynamicFontMgr();
+}
+
+std::unique_ptr<TypefaceImpl> ImplFactory::CreateTypefaceImpl(const std::string& specifiedName, FontInfo& info)
+{
+    return EngineImplFactory::CreateTypeface(specifiedName, info);
+}
+
+std::unique_ptr<FontStyleSetImpl> ImplFactory::CreateTypefaceFontStyleSetImpl()
+{
+    return EngineImplFactory::CreateTypefaceFontStyleSet();
+}
+
+std::unique_ptr<FontStyleSetImpl> ImplFactory::CreateFontStyleSetOhosImpl(
+    const std::shared_ptr<FontConfig_OHOS>& fontConfig, int index, bool isFallback)
+{
+    return EngineImplFactory::CreateFontStyleSetOhos(fontConfig, index, isFallback);
 }
 } // namespace Drawing
 } // namespace Rosen

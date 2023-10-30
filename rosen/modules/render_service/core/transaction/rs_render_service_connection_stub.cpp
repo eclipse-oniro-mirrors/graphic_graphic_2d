@@ -347,6 +347,16 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             reply.WriteUint32(refreshRate);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_CURRENT_REFRESH_RATE_MODE): {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            int32_t refreshRateMode = GetCurrentRefreshRateMode();
+            reply.WriteInt32(refreshRateMode);
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_SUPPORTED_REFRESH_RATES): {
             auto token = data.ReadInterfaceToken();
             if (token != RSIRenderServiceConnection::GetDescriptor()) {
@@ -756,6 +766,25 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             }
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_PIXELMAP): {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            NodeId id = data.ReadUint64();
+            std::shared_ptr<Media::PixelMap> pixelmap =
+                std::shared_ptr<Media::PixelMap>(data.ReadParcelable<Media::PixelMap>());
+#ifndef USE_ROSEN_DRAWING
+            SkRect rect;
+#else
+            Drawing::Rect rect;
+#endif
+            RSMarshallingHelper::Unmarshalling(data, rect);
+            bool result = GetPixelmap(id, pixelmap, &rect);
+            reply.WriteBool(result);
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SKIP_FRAME_INTERVAL): {
             auto token = data.ReadInterfaceToken();
             if (token != RSIRenderServiceConnection::GetDescriptor()) {
@@ -960,6 +989,19 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             SetCacheEnabledForRotation(isEnabled);
             break;
         }
+#ifdef TP_FEATURE_ENABLE
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_TP_FEATURE_CONFIG) : {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            int32_t feature = data.ReadInt32();
+            auto config = data.ReadCString();
+            SetTpFeatureConfig(feature, config);
+            break;
+        }
+#endif
         default: {
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }

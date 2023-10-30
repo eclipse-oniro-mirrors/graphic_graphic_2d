@@ -57,15 +57,13 @@ public:
     static BufferDrawParam CreateLayerBufferDrawParam(const LayerInfoPtr& layer, bool forceCPU);
     static bool IsNeedClient(RSSurfaceRenderNode& node, const ComposeInfo& info);
 #ifndef USE_ROSEN_DRAWING
-    static void DrawCachedImage(RSSurfaceRenderNode& node, RSPaintFilterCanvas& canvas, sk_sp<SkImage> image);
     static Occlusion::Region AlignedDirtyRegion(const Occlusion::Region& dirtyRegion, int32_t alignedBits = 32);
     static int GetRotationFromMatrix(SkMatrix matrix);
 #else
-    static void DrawCachedImage(
-        RSSurfaceRenderNode& node, RSPaintFilterCanvas& canvas, std::shared_ptr<Drawing::Image> image);
     static Occlusion::Region AlignedDirtyRegion(const Occlusion::Region& dirtyRegion, int32_t alignedBits = 32);
     static int GetRotationFromMatrix(Drawing::Matrix matrix);
 #endif
+    static bool Is3DRotation(SkMatrix matrix);
     static void AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNode>& displayNode,
         std::list<std::shared_ptr<RSSurfaceRenderNode>>& mainThreadNodes,
         std::list<std::shared_ptr<RSSurfaceRenderNode>>& subThreadNodes, uint64_t focusNodeId = 0,
@@ -77,8 +75,8 @@ public:
     static void ClearNodeCacheSurface(sk_sp<SkSurface>&& cacheSurface, sk_sp<SkSurface>&& cacheCompletedSurface,
         uint32_t cacheSurfaceThreadIndex, uint32_t completedSurfaceThreadIndex);
 #else
-    static void ClearNodeCacheSurface(std::shared_ptr<Drawing::Surface>& cacheSurface,
-        std::shared_ptr<Drawing::Surface>& cacheCompletedSurface,
+    static void ClearNodeCacheSurface(std::shared_ptr<Drawing::Surface>&& cacheSurface,
+        std::shared_ptr<Drawing::Surface>&& cacheCompletedSurface,
         uint32_t cacheSurfaceThreadIndex, uint32_t completedSurfaceThreadIndex);
 #endif
     static void CacheSubThreadNodes(std::list<std::shared_ptr<RSSurfaceRenderNode>>& oldSubThreadNodes,
@@ -89,7 +87,8 @@ private:
     static void AssignMainThreadNode(std::list<std::shared_ptr<RSSurfaceRenderNode>>& mainThreadNodes,
         const std::shared_ptr<RSSurfaceRenderNode>& node);
     static void AssignSubThreadNode(std::list<std::shared_ptr<RSSurfaceRenderNode>>& subThreadNodes,
-        const std::shared_ptr<RSSurfaceRenderNode>& node, DeviceType deviceType = DeviceType::PHONE);
+        const std::shared_ptr<RSSurfaceRenderNode>& node, DeviceType deviceType = DeviceType::PHONE,
+        uint64_t focusNodeId = 0);
     static void SortSubThreadNodes(std::list<std::shared_ptr<RSSurfaceRenderNode>>& subThreadNodes);
     static void HandleHardwareNode(const std::shared_ptr<RSSurfaceRenderNode>& node);
 #ifndef USE_ROSEN_DRAWING

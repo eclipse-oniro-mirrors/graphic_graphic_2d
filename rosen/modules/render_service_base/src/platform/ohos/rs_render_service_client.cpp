@@ -384,6 +384,17 @@ uint32_t RSRenderServiceClient::GetScreenCurrentRefreshRate(ScreenId id)
     return renderService->GetScreenCurrentRefreshRate(id);
 }
 
+int32_t RSRenderServiceClient::GetCurrentRefreshRateMode()
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        ROSEN_LOGW("RSRenderServiceClient renderService == nullptr!");
+        return RENDER_SERVICE_NULL;
+    }
+
+    return renderService->GetCurrentRefreshRateMode();
+}
+
 std::vector<int32_t> RSRenderServiceClient::GetScreenSupportedRefreshRates(ScreenId id)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
@@ -681,6 +692,21 @@ bool RSRenderServiceClient::GetBitmap(NodeId id, Drawing::Bitmap& bitmap)
     return renderService->GetBitmap(id, bitmap);
 }
 
+#ifndef USE_ROSEN_DRAWING
+bool RSRenderServiceClient::GetPixelmap(NodeId id, const std::shared_ptr<Media::PixelMap> pixelmap, const SkRect* rect)
+#else
+bool RSRenderServiceClient::GetPixelmap(
+    NodeId id, const std::shared_ptr<Media::PixelMap> pixelmap, const Drawing::Rect* rect)
+#endif
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::GetPixelmap: renderService is nullptr");
+        return false;
+    }
+    return renderService->GetPixelmap(id, pixelmap, rect);
+}
+
 int32_t RSRenderServiceClient::SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
@@ -848,5 +874,16 @@ void RSRenderServiceClient::SetCacheEnabledForRotation(bool isEnabled)
         renderService->SetCacheEnabledForRotation(isEnabled);
     }
 }
+
+#ifdef TP_FEATURE_ENABLE
+void RSRenderServiceClient::SetTpFeatureConfig(int32_t feature, const char* config)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return;
+    }
+    renderService->SetTpFeatureConfig(feature, config);
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

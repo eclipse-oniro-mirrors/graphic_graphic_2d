@@ -21,36 +21,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include "ashmem.h"
-#ifndef USE_ROSEN_DRAWING
-#include "include/core/SkDrawable.h"
-#include "include/core/SkImage.h"
-#include "include/core/SkMatrix.h"
-#include "include/core/SkPaint.h"
-#include "include/core/SkPicture.h"
-#include "include/core/SkSerialProcs.h"
-#include "include/core/SkStream.h"
-#include "include/core/SkTextBlob.h"
-#include "include/core/SkTypeface.h"
-#include "include/core/SkVertices.h"
-#ifdef NEW_SKIA
-#include "include/core/SkSamplingOptions.h"
-#include "src/core/SkVerticesPriv.h"
-#endif
-#endif
 #include "memory/rs_memory_track.h"
 #include "pixel_map.h"
-#include "securec.h"
-#ifndef USE_ROSEN_DRAWING
-#include "src/core/SkAutoMalloc.h"
-#include "src/core/SkPaintPriv.h"
-#include "src/core/SkReadBuffer.h"
-#include "src/core/SkWriteBuffer.h"
-#include "src/image/SkImage_Base.h"
-#else
-#include "recording/recording_path.h"
-#include "recording/recording_shader_effect.h"
-#endif
 
 #include "animation/rs_render_curve_animation.h"
 #include "animation/rs_render_interpolating_spring_animation.h"
@@ -65,10 +37,6 @@
 #include "common/rs_matrix3.h"
 #include "common/rs_vector4.h"
 #include "modifier/rs_render_modifier.h"
-#ifndef USE_ROSEN_DRAWING
-#include "pipeline/rs_draw_cmd.h"
-#include "pipeline/rs_draw_cmd_list.h"
-#endif
 #include "platform/common/rs_log.h"
 #include "render/rs_blur_filter.h"
 #include "render/rs_filter.h"
@@ -76,10 +44,40 @@
 #include "render/rs_image.h"
 #include "render/rs_image_base.h"
 #include "render/rs_light_up_effect_filter.h"
+#include "render/rs_mask.h"
 #include "render/rs_material_filter.h"
 #include "render/rs_path.h"
 #include "render/rs_shader.h"
 #include "transaction/rs_ashmem_helper.h"
+#include "pipeline/rs_draw_cmd.h"
+
+#ifndef USE_ROSEN_DRAWING
+#include "include/core/SkDrawable.h"
+#include "include/core/SkImage.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkPaint.h"
+#include "include/core/SkPicture.h"
+#include "include/core/SkSerialProcs.h"
+#include "include/core/SkStream.h"
+#include "include/core/SkTextBlob.h"
+#include "include/core/SkTypeface.h"
+#include "include/core/SkVertices.h"
+#include "src/core/SkReadBuffer.h"
+#include "src/core/SkWriteBuffer.h"
+#include "src/image/SkImage_Base.h"
+
+#include "pipeline/rs_draw_cmd_list.h"
+#ifdef NEW_SKIA
+#include "include/core/SkSamplingOptions.h"
+#include "src/core/SkVerticesPriv.h"
+#endif
+#else
+#include "recording/mask_cmd_list.h"
+#include "recording/recording_path.h"
+#include "recording/recording_shader_effect.h"
+#include "property/rs_properties_def.h"
+#endif
+
 #ifdef RS_ENABLE_RECORDING
 #include "benchmarks/rs_recording_thread.h"
 #endif
@@ -95,6 +93,12 @@
 namespace OHOS {
 namespace Rosen {
 
+namespace {
+    bool g_useSharedMem = true;
+    std::thread::id g_tid = std::thread::id();
+}
+
+ 
 #define MARSHALLING_AND_UNMARSHALLING(TYPE, TYPENAME)                      \
     bool RSMarshallingHelper::Marshalling(Parcel& parcel, const TYPE& val) \
     {                                                                      \
@@ -166,12 +170,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkData>& val)
         ROSEN_LOGE("unirender: failed RSMarshallingHelper::Unmarshalling SkData");
         return false;
     }
-#ifdef RS_ENABLE_RECORDING
-    if (static_cast<uint32_t>(size) < MIN_DATA_SIZE ||
-        parcel.GetMaxCapacity() == RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY) {
-#else
-    if (static_cast<uint32_t>(size) < MIN_DATA_SIZE) {
-#endif
+    if (static_cast<uint32_t>(size) < MIN_DATA_SIZE || (!g_useSharedMem && g_tid == std::this_thread::get_id())) {
         val = SkData::MakeWithoutCopy(data, size);
     } else {
         val = SkData::MakeFromMalloc(data, size);
@@ -191,12 +190,7 @@ bool RSMarshallingHelper::UnmarshallingWithCopy(Parcel& parcel, sk_sp<SkData>& v
 {
     bool success = Unmarshalling(parcel, val);
     if (success) {
-#ifdef RS_ENABLE_RECORDING
-        if (val && (val->size() < MIN_DATA_SIZE ||
-                       parcel.GetMaxCapacity() == RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY)) {
-#else
-        if (val && val->size() < MIN_DATA_SIZE) {
-#endif
+        if (val && (val->size() < MIN_DATA_SIZE || (!g_useSharedMem && g_tid == std::this_thread::get_id()))) {
             val = SkData::MakeWithCopy(val->data(), val->size());
         }
     }
@@ -542,11 +536,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkImage>& val, voi
             }
             colorSpace = SkColorSpace::Deserialize(data, size);
 
-#ifdef RS_ENABLE_RECORDING
-            if (size >= MIN_DATA_SIZE && parcel.GetMaxCapacity() != RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY) {
-#else
-            if (size >= MIN_DATA_SIZE) {
-#endif
+            if (size >= MIN_DATA_SIZE && (g_useSharedMem || g_tid != std::this_thread::get_id())) {
                 free(const_cast<void*>(data));
             }
         }
@@ -554,21 +544,13 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sk_sp<SkImage>& val, voi
         // if pixelmapSize >= MIN_DATA_SIZE(copyFromAshMem). record this memory size
         // use this proc to follow release step
         SkImageInfo imageInfo = SkImageInfo::Make(width, height, colorType, alphaType, colorSpace);
-#ifdef RS_ENABLE_RECORDING
         auto skData =
-            (pixmapSize < MIN_DATA_SIZE || parcel.GetMaxCapacity() == RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY)
+            (pixmapSize < MIN_DATA_SIZE || (!g_useSharedMem && g_tid == std::this_thread::get_id()))
                 ? SkData::MakeWithCopy(addr, pixmapSize)
-#else
-        auto skData = pixmapSize < MIN_DATA_SIZE ? SkData::MakeWithCopy(addr, pixmapSize)
-#endif
                 : SkData::MakeWithProc(addr, pixmapSize, sk_free_releaseproc, nullptr);
         val = SkImage::MakeRasterData(imageInfo, skData, rb);
         // add to MemoryTrack for memoryManager
-#ifdef RS_ENABLE_RECORDING
-        if (pixmapSize >= MIN_DATA_SIZE && parcel.GetMaxCapacity() != RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY) {
-#else
-        if (pixmapSize >= MIN_DATA_SIZE) {
-#endif
+        if (pixmapSize >= MIN_DATA_SIZE && (g_useSharedMem || g_tid != std::this_thread::get_id())) {
             MemoryInfo info = { pixmapSize, 0, 0, MEMORY_TYPE::MEM_SKIMAGE };
             MemoryTrack::Instance().AddPictureRecord(addr, info);
             imagepixelAddr = const_cast<void*>(addr);
@@ -841,18 +823,17 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SkBitmap& val)
         }
         colorSpace = SkColorSpace::Deserialize(data, size);
 
-#ifdef RS_ENABLE_RECORDING
-        if (size >= MIN_DATA_SIZE && parcel.GetMaxCapacity() != RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY) {
-#else
-        if (size >= MIN_DATA_SIZE) {
-#endif
+        if (size >= MIN_DATA_SIZE && (g_useSharedMem || g_tid != std::this_thread::get_id())) {
             free(const_cast<void*>(data));
         }
     }
 
     SkImageInfo imageInfo = SkImageInfo::Make(width, height, colorType, alphaType, colorSpace);
-    val.setInfo(imageInfo, rb);
-    val.setPixels(const_cast<void*>(addr));
+    auto releaseProc = [](void* addr, void* context) -> void {
+        free(const_cast<void*>(addr));
+        addr = nullptr;
+    };
+    val.installPixels(imageInfo, const_cast<void*>(addr), rb, releaseProc, nullptr);
     return true;
 }
 
@@ -1733,16 +1714,17 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<Draw
         }
     }
 
-    std::vector<std::shared_ptr<Media::PixelMap>> pixelMapVec;
-    uint32_t pixelMapSize = val->GetAllPixelMap(pixelMapVec);
-    ret &= parcel.WriteUint32(pixelMapSize);
-    if (pixelMapSize == 0) {
+    std::vector<std::shared_ptr<Drawing::ExtendImageObject>> objectVec;
+    uint32_t objectSize = val->GetAllObject(objectVec);
+    ret &= parcel.WriteUint32(objectSize);
+    if (objectSize == 0) {
         return ret;
     }
-    for (const auto& pixelMap : pixelMapVec) {
-        ret &= RSMarshallingHelper::Marshalling(parcel, pixelMap);
+    for (const auto& object : objectVec) {
+        auto rsObject = std::static_pointer_cast<RSExtendImageObject>(object);
+        ret &= RSMarshallingHelper::Marshalling(parcel, rsObject);
         if (!ret) {
-            ROSEN_LOGE("unirender: failed RSMarshallingHelper::Marshalling Drawing::DrawCmdList pixelMap");
+            ROSEN_LOGE("unirender: failed RSMarshallingHelper::Marshalling Drawing::DrawCmdList imageObject");
             return ret;
         }
     }
@@ -1787,23 +1769,100 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing:
         val->SetUpImageData(imageData, imageSize);
     }
 
-    uint32_t pixelMapSize = parcel.ReadUint32();
-    if (pixelMapSize == 0) {
+    uint32_t objectSize = parcel.ReadUint32();
+    if (objectSize == 0) {
+        val->UnmarshallingOps();
         return true;
     }
     bool ret = true;
-    std::vector<std::shared_ptr<Media::PixelMap>> pixelMapVec;
-    for (uint32_t i = 0; i < pixelMapSize; i++) {
-        std::shared_ptr<Media::PixelMap> pixelMap = std::make_shared<Media::PixelMap>();
-        ret &= RSMarshallingHelper::Unmarshalling(parcel, pixelMap);
+    std::vector<std::shared_ptr<Drawing::ExtendImageObject>> imageObjectVec;
+    for (uint32_t i = 0; i < objectSize; i++) {
+        std::shared_ptr<RSExtendImageObject> object;
+        ret &= RSMarshallingHelper::Unmarshalling(parcel, object);
         if (!ret) {
-            ROSEN_LOGE("unirender: failed RSMarshallingHelper::Unmarshalling DrawCmdList pixelMap: %{public}d", i);
+            ROSEN_LOGE("unirender: failed RSMarshallingHelper::Unmarshalling DrawCmdList imageObject: %{public}d", i);
             return ret;
         }
-        pixelMapVec.emplace_back(pixelMap);
+        imageObjectVec.emplace_back(object);
     }
-    val->SetupPixelMap(pixelMapVec);
+    val->SetupObject(imageObjectVec);
+    val->UnmarshallingOps();
     return ret;
+}
+
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSExtendImageObject>& val)
+{
+    if (!val) {
+        return parcel.WriteInt32(-1);
+    }
+    if (!(parcel.WriteInt32(1) && val->Marshalling(parcel))) {
+        ROSEN_LOGE("failed RSMarshallingHelper::Marshalling imageObject");
+        return false;
+    }
+
+    return true;
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSExtendImageObject>& val)
+{
+    if (parcel.ReadInt32() == -1) {
+        val = nullptr;
+        return true;
+    }
+    val.reset(RSExtendImageObject::Unmarshalling(parcel));
+    if (val == nullptr) {
+        ROSEN_LOGE("failed RSMarshallingHelper::Unmarshalling imageObject");
+        return false;
+    }
+
+    return true;
+}
+
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<Drawing::MaskCmdList>& val)
+{
+    if (!val) {
+        return parcel.WriteInt32(-1);
+    }
+    auto cmdListData = val->GetData();
+    bool ret = parcel.WriteInt32(cmdListData.second);
+
+    if (cmdListData.second == 0) {
+        ROSEN_LOGW("unirender: RSMarshallingHelper::Marshalling Drawing::MaskCmdList, size is 0");
+        return ret;
+    }
+
+    ret &= RSMarshallingHelper::WriteToParcel(parcel, cmdListData.first, cmdListData.second);
+    if (!ret) {
+        ROSEN_LOGE("unirender: failed RSMarshallingHelper::Marshalling Drawing::MaskCmdList");
+        return ret;
+    }
+
+    return ret;
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing::MaskCmdList>& val)
+{
+    int32_t size = parcel.ReadInt32();
+    if (size == -1) {
+        return true;
+    }
+    if (size == 0) {
+        ROSEN_LOGW("unirender: RSMarshallingHelper::Unmarshalling Drawing::MaskCmdList size is 0");
+        return true;
+    }
+
+    const void* data = RSMarshallingHelper::ReadFromParcel(parcel, size);
+    if (data == nullptr) {
+        ROSEN_LOGE("unirender: failed RSMarshallingHelper::Unmarshalling Drawing::MaskCmdList");
+        return false;
+    }
+
+    val = Drawing::MaskCmdList::CreateFromData({ data, size }, true);
+    if (val == nullptr) {
+        ROSEN_LOGE("unirender: failed RSMarshallingHelper::Unmarshalling Drawing::MaskCmdList is nullptr");
+        return false;
+    }
+    return true;
 }
 #endif
 
@@ -2020,11 +2079,7 @@ bool RSMarshallingHelper::WriteToParcel(Parcel& parcel, const void* data, size_t
     if (!parcel.WriteUint32(size)) {
         return false;
     }
-#ifdef RS_ENABLE_RECORDING
-    if (size < MIN_DATA_SIZE || parcel.GetMaxCapacity() == RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY) {
-#else
-    if (size < MIN_DATA_SIZE) {
-#endif
+    if (size < MIN_DATA_SIZE || (!g_useSharedMem && g_tid == std::this_thread::get_id())) {
         return parcel.WriteUnpadBuffer(data, size);
     }
 
@@ -2053,12 +2108,8 @@ const void* RSMarshallingHelper::ReadFromParcel(Parcel& parcel, size_t size)
         ROSEN_LOGE("RSMarshallingHelper::ReadFromParcel size mismatch");
         return nullptr;
     }
-#ifdef RS_ENABLE_RECORDING
-    if (static_cast<unsigned int>(bufferSize) < MIN_DATA_SIZE ||
-        parcel.GetMaxCapacity() == RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY) {
-#else
-    if (static_cast<unsigned int>(bufferSize) < MIN_DATA_SIZE) {
-#endif
+    if (static_cast<unsigned int>(bufferSize) < MIN_DATA_SIZE  ||
+        (!g_useSharedMem && g_tid == std::this_thread::get_id())) {
         return parcel.ReadUnpadBuffer(size);
     }
     // read from ashmem
@@ -2078,12 +2129,8 @@ bool RSMarshallingHelper::SkipFromParcel(Parcel& parcel, size_t size)
         ROSEN_LOGE("RSMarshallingHelper::SkipFromParcel size mismatch");
         return false;
     }
-#ifdef RS_ENABLE_RECORDING
     if (static_cast<unsigned int>(bufferSize) < MIN_DATA_SIZE ||
-        parcel.GetMaxCapacity() == RSRecordingThread::RECORDING_PARCEL_MAX_CAPCITY) {
-#else
-    if (static_cast<unsigned int>(bufferSize) < MIN_DATA_SIZE) {
-#endif
+        (!g_useSharedMem && g_tid == std::this_thread::get_id())) {
         parcel.SkipBytes(size);
         return true;
     }
@@ -2122,5 +2169,21 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::unique_ptr<OpItem>&
     return true;
 }
 #endif
+
+void RSMarshallingHelper::BeginNoSharedMem(std::thread::id tid)
+{
+    g_useSharedMem = false;
+    g_tid = tid;
+}
+void RSMarshallingHelper::EndNoSharedMem()
+{
+    g_useSharedMem = true;
+    g_tid.__reset();
+}
+
+bool RSMarshallingHelper::GetUseSharedMem()
+{
+    return g_useSharedMem;
+}
 } // namespace Rosen
 } // namespace OHOS

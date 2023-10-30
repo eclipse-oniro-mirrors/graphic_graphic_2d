@@ -27,6 +27,7 @@
 #include "platform/common/rs_log.h"
 #include "transaction/rs_application_agent_impl.h"
 #include "transaction/rs_interfaces.h"
+#include "transaction/rs_transaction.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "ui/rs_frame_rate_policy.h"
 #include "ui/rs_root_node.h"
@@ -254,7 +255,7 @@ bool RSUIDirector::RunningCustomAnimation(uint64_t timeStamp)
     {
         auto node = surfaceNode_.lock();
         if (node) {
-            auto range = modifierManager->GetUIFrameRateRange();
+            auto& range = modifierManager->GetUIFrameRateRange();
             if (range.IsValid()) {
                 node->UpdateUIFrameRateRange(range);
             }
@@ -288,13 +289,12 @@ void RSUIDirector::RecvMessages()
         return;
     }
     static const uint32_t pid = static_cast<uint32_t>(GetRealPid());
-    if (!RSMessageProcessor::Instance().HasTransaction(pid)) {
-        return;
-    }
     static std::mutex recvMessagesMutex;
     std::unique_lock<std::mutex> lock(recvMessagesMutex);
-    auto transactionDataPtr = std::make_shared<RSTransactionData>(RSMessageProcessor::Instance().GetTransaction(pid));
-    RecvMessages(transactionDataPtr);
+    if (RSMessageProcessor::Instance().HasTransaction(pid)) {
+        auto transactionDataPtr = RSMessageProcessor::Instance().GetTransaction(pid);
+        RecvMessages(transactionDataPtr);
+    }
 }
 
 void RSUIDirector::RecvMessages(std::shared_ptr<RSTransactionData> cmds)
@@ -306,6 +306,7 @@ void RSUIDirector::RecvMessages(std::shared_ptr<RSTransactionData> cmds)
     PostTask([cmds]() {
         ROSEN_LOGD("RSUIDirector::ProcessMessages success");
         RSUIDirector::ProcessMessages(cmds);
+        RSTransaction::FlushImplicitTransaction();
     });
 }
 

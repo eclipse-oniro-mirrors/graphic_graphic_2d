@@ -19,6 +19,7 @@
 #include "base_impl.h"
 
 #include "draw/color.h"
+#include "image/image_info.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -35,11 +36,17 @@ public:
         return AdapterType::BASE_INTERFACE;
     }
     virtual void Build(int32_t width, int32_t height, const BitmapFormat& format, int32_t stride = 0) = 0;
+    virtual void Build(const ImageInfo& imageInfo, int32_t stride = 0) = 0;
     virtual int GetWidth() const = 0;
     virtual int GetHeight() const = 0;
+    virtual int GetRowBytes() const = 0;
+    virtual ColorType GetColorType() const = 0;
+    virtual AlphaType GetAlphaType() const = 0;
     virtual void* GetPixels() const = 0;
     virtual void SetPixels(void* pixel) = 0;
-    virtual void CopyPixels(Bitmap& dst, int srcLeft, int srcTop, int width, int height) const = 0;
+    virtual void CopyPixels(Bitmap& dst, int srcLeft, int srcTop) const = 0;
+    virtual bool IsImmutable() = 0;
+    virtual void SetImmutable() = 0;
     virtual void ClearWithColor(const ColorQuad& color) const = 0;
     virtual ColorQuad GetColor(int x, int y) const = 0;
     virtual void Free() = 0;

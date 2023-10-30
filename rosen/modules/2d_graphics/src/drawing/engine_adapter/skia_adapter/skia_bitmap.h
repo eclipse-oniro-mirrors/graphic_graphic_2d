@@ -34,12 +34,18 @@ public:
     }
 
     void Build(int32_t width, int32_t height, const BitmapFormat& format, int32_t stride) override;
+    void Build(const ImageInfo& imageInfo, int32_t stride) override;
     int GetWidth() const override;
     int GetHeight() const override;
+    int GetRowBytes() const override;
+    ColorType GetColorType() const override;
+    AlphaType GetAlphaType() const override;
     void* GetPixels() const override;
     void SetPixels(void* pixels) override;
     const SkBitmap& ExportSkiaBitmap() const;
-    void CopyPixels(Bitmap& dst, int srcLeft, int srcTop, int width, int height) const override;
+    void CopyPixels(Bitmap& dst, int srcLeft, int srcTop) const override;
+    bool IsImmutable() override;
+    void SetImmutable() override;
     void ClearWithColor(const ColorQuad& color) const override;
     ColorQuad GetColor(int x, int y) const override;
     void Free() override;

@@ -97,6 +97,8 @@ private:
 
     uint32_t GetScreenCurrentRefreshRate(ScreenId id) override;
 
+    int32_t GetCurrentRefreshRateMode() override;
+
     std::vector<int32_t> GetScreenSupportedRefreshRates(ScreenId id) override;
 
     int32_t SetVirtualScreenResolution(ScreenId id, uint32_t width, uint32_t height) override;
@@ -153,8 +155,10 @@ private:
 
 #ifndef USE_ROSEN_DRAWING
     bool GetBitmap(NodeId id, SkBitmap& bitmap) override;
+    bool GetPixelmap(NodeId id, const std::shared_ptr<Media::PixelMap> pixelmap, const SkRect* rect) override;
 #else
     bool GetBitmap(NodeId id, Drawing::Bitmap& bitmap) override;
+    bool GetPixelmap(NodeId id, const std::shared_ptr<Media::PixelMap> pixelmap, const Drawing::Rect* rect) override;
 #endif
 
     int32_t SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval) override;
@@ -183,6 +187,10 @@ private:
     void SetHardwareEnabled(NodeId id, bool isEnabled) override;
 
     void SetCacheEnabledForRotation(bool isEnabled) override;
+
+#ifdef TP_FEATURE_ENABLE
+    void SetTpFeatureConfig(int32_t feature, const char* config) override;
+#endif
 
     pid_t remotePid_;
     wptr<RSRenderService> renderService_;

@@ -21,8 +21,8 @@
 #include <list>
 #include <memory>
 #include <mutex>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 #include <variant>
 #include <vector>
 
@@ -35,6 +35,7 @@
 #include "pipeline/rs_dirty_region_manager.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "property/rs_properties.h"
+#include "property/rs_property_drawable.h"
 
 #ifndef USE_ROSEN_DRAWING
 #include "include/core/SkRefCnt.h"
@@ -54,7 +55,7 @@ class DrawCmdList;
 class RSContext;
 class RSNodeVisitor;
 class RSCommand;
-
+class RSPropertyDrawable;
 class RSB_EXPORT RSRenderNode : public std::enable_shared_from_this<RSRenderNode>  {
 public:
 
@@ -103,8 +104,15 @@ public:
         return id_;
     }
 
+    inline const std::list<WeakPtr> &GetChildren() const noexcept
+    {
+        return children_;
+    }
+
+    // flag: isOnTheTree; instanceRootNodeId: displaynode or leash/appnode attached to
+    // firstLevelNodeId: surfacenode for uiFirst to assign task; cacheNodeId: drawing cache rootnode attached to
     virtual void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID,
-        NodeId firstLevelNodeId = INVALID_NODEID);
+        NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID);
     bool IsOnTheTree() const;
 
     // return children and disappeared children, not guaranteed to be sorted by z-index
@@ -125,7 +133,7 @@ public:
     template<typename T>
     bool IsInstanceOf() const
     {
-        constexpr uint32_t targetType = static_cast<uint32_t>(T::Type);
+        constexpr auto targetType = static_cast<uint32_t>(T::Type);
         return (static_cast<uint32_t>(GetType()) & targetType) == targetType;
     }
     template<typename T>
@@ -151,6 +159,7 @@ public:
     void SetChildHasFilter(bool childHasFilter);
 
     NodeId GetInstanceRootNodeId() const;
+    const std::shared_ptr<RSRenderNode> GetInstanceRootNode() const;
     NodeId GetFirstLevelNodeId() const;
 
     // accumulate all valid children's area
@@ -162,7 +171,7 @@ public:
         dirtyTypes_.emplace(type);
     }
 
-    std::pair<bool, bool> Animate(int64_t timestamp);
+    std::tuple<bool, bool, bool> Animate(int64_t timestamp);
 
     bool IsClipBound() const;
     // clipRect has value in UniRender when calling PrepareCanvasRenderNode, else it is nullopt
@@ -266,7 +275,7 @@ public:
     sk_sp<SkSurface> GetCacheSurface(uint32_t threadIndex, bool needCheckThread, bool releaseAfterGet = false);
 #else
     std::shared_ptr<Drawing::Surface> GetCacheSurface(uint32_t threadIndex, bool needCheckThread,
-        bool releaseAfterGet) = false);
+        bool releaseAfterGet = false);
 #endif
 
     void UpdateCompletedCacheSurface();
@@ -278,7 +287,9 @@ public:
     std::shared_ptr<Drawing::Surface> GetCompletedCacheSurface(uint32_t threadIndex = UNI_MAIN_THREAD_INDEX,
         bool needCheckThread = true, bool releaseAfterGet = false);
 #endif
+    void ClearCacheSurfaceInThread();
     void ClearCacheSurface(bool isClearCompletedCacheSurface = true);
+    bool IsCacheSurfaceValid() const;
 
 #ifdef RS_ENABLE_GL
     void UpdateBackendTexture();
@@ -305,10 +316,16 @@ public:
 
     void SetDrawingCacheType(RSDrawingCacheType cacheType);
     RSDrawingCacheType GetDrawingCacheType() const;
-    void ResetFilterRectsInCache(const std::unordered_map<NodeId, RectI>& curRects);
-    void GetFilterRectsInCache(std::unordered_map<NodeId, std::unordered_map<NodeId, RectI>>& allRects) const;
+    void ResetFilterRectsInCache(const std::unordered_set<NodeId>& curRects);
+    void GetFilterRectsInCache(std::unordered_map<NodeId, std::unordered_set<NodeId>>& allRects) const;
     void SetDrawingCacheChanged(bool cacheChanged);
     bool GetDrawingCacheChanged() const;
+    void ResetDrawingCacheNeedUpdate();
+    void SetVisitedCacheRootIds(const std::unordered_set<NodeId>& visitedNodes);
+    const std::unordered_set<NodeId>& GetVisitedCacheRootIds() const;
+    // manage cache root nodeid
+    void SetDrawingCacheRootId(NodeId id);
+    NodeId GetDrawingCacheRootId() const;
 
     // driven render ///////////////////////////////////
     void SetIsMarkDriven(bool isMarkDriven);
@@ -355,10 +372,16 @@ public:
     bool IsAncestorDirty() const;
     void SetIsAncestorDirty(bool isAncestorDirty);
 
+    bool IsParentLeashWindow() const;
+    void SetParentLeashWindow();
+
     bool HasCachedTexture() const;
 
     void SetDrawRegion(const std::shared_ptr<RectF>& rect);
     const std::shared_ptr<RectF>& GetDrawRegion() const;
+    
+    void SetOutOfParent(OutOfParentType outOfParent);
+    OutOfParentType GetOutOfParent() const;
 
 #ifndef USE_ROSEN_DRAWING
     void UpdateEffectRegion(std::optional<SkPath>& region);
@@ -393,15 +416,15 @@ public:
     virtual void OnAlphaChanged() {}
 
     void SetRSFrameRateRange(FrameRateRange range);
-    FrameRateRange GetRSFrameRateRange();
-    void UpdateUIFrameRateRange(FrameRateRange range);
-    FrameRateRange GetUIFrameRateRange() const;
+    const FrameRateRange& GetRSFrameRateRange();
+    void UpdateUIFrameRateRange(const FrameRateRange& range);
+    const FrameRateRange& GetUIFrameRateRange() const;
 
     void ResetRSFrameRateRange();
     void ResetUIFrameRateRange();
 
     void MarkNonGeometryChanged();
-    std::vector<HgmModifierProfile> GetHgmModifierProfileList() const;
+    const std::vector<HgmModifierProfile>& GetHgmModifierProfileList();
     void SetRSFrameRateRangeByPreferred(int32_t preferred);
     bool ApplyModifiers();
 
@@ -436,10 +459,13 @@ protected:
 
     bool IsSelfDrawingNode() const;
     bool isOnTheTree_ = false;
+    NodeId drawingCacheRootId_ = INVALID_NODEID;
 
     std::unordered_set<RSModifierType> dirtyTypes_;
     bool isFullChildrenListValid_ = false;
     RSProperties renderProperties_;
+    void IterateOnDrawableRange(Slot::RSPropertyDrawableSlot begin, Slot::RSPropertyDrawableSlot end,
+        RSRenderNode& node, RSPaintFilterCanvas& canvas);
 
 private:
     NodeId id_;
@@ -470,7 +496,6 @@ private:
     bool hasChildrenOutOfRect_ = false;
     RectI childrenRect_;
     bool childHasFilter_ = false;  // only collect children filter status
-    std::unordered_map<NodeId, RectI> curCacheFilterRects_ = {};
 
     void InternalRemoveSelfFromDisappearingChildren();
     void FallbackAnimationsToRoot();
@@ -504,12 +529,15 @@ private:
     std::shared_ptr<Drawing::Surface> cacheSurface_ = nullptr;
     std::shared_ptr<Drawing::Surface> cacheCompletedSurface_ = nullptr;
 #endif
-#ifndef USE_ROSEN_DRAWING
 #ifdef RS_ENABLE_GL
+#ifndef USE_ROSEN_DRAWING
     GrBackendTexture cacheBackendTexture_;
     GrBackendTexture cacheCompletedBackendTexture_;
-    bool isTextureValid_ = false;
+#else
+    Drawing::BackendTexture cacheBackendTexture_;
+    Drawing::BackendTexture cacheCompletedBackendTexture_;
 #endif
+    bool isTextureValid_ = false;
 #endif
     std::atomic<bool> isCacheSurfaceNeedUpdate_ = false;
     std::atomic<bool> isStaticCached_ = false;
@@ -517,6 +545,9 @@ private:
     // drawing group cache
     RSDrawingCacheType drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;
     bool isDrawingCacheChanged_ = false;
+    bool drawingCacheNeedUpdate_ = false;
+    std::unordered_set<NodeId> curCacheFilterRects_ = {};
+    std::unordered_set<NodeId> visitedCacheRoots_ = {};
 
     mutable std::recursive_mutex surfaceMutex_;
     ClearCacheSurfaceFunc clearCacheSurfaceFunc_ = nullptr;
@@ -528,6 +559,7 @@ private:
     bool hasHardwareNode_ = false;
     bool hasAbilityComponent_ = false;
     bool isAncestorDirty_ = false;
+    bool isParentLeashWindow_ = false;
     NodePriorityType priority_ = NodePriorityType::MAIN_PRIORITY;
 
     // driven render
@@ -536,6 +568,7 @@ private:
     bool isMarkDrivenRender_ = false;
     bool paintState_ = false;
     bool isContentChanged_ = false;
+    OutOfParentType outOfParent_ = OutOfParentType::UNKNOWN;
     float globalAlpha_ = 1.0f;
     std::optional<SharedTransitionParam> sharedTransitionParam_;
 
@@ -562,10 +595,16 @@ private:
     std::unordered_map<PropertyId, std::variant<float, Vector2f>> propertyValueMap_;
     std::vector<HgmModifierProfile> hgmModifierProfileList_;
 
+    std::vector<std::unique_ptr<RSPropertyDrawable>> propertyDrawablesVec_;
+    uint8_t drawableVecStatus_ = 0;
+    using DrawableIter = decltype(propertyDrawablesVec_)::iterator;
+
     friend class RSMainThread;
     friend class RSProxyRenderNode;
     friend class RSRenderNodeMap;
     friend class RSRenderTransition;
+    friend class RSAliasDrawable;
+    friend class RSModifierDrawable;
 };
 // backward compatibility
 using RSBaseRenderNode = RSRenderNode;

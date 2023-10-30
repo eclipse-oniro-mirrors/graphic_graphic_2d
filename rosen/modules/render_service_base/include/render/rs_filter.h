@@ -21,6 +21,11 @@
 
 #include "common/rs_color.h"
 #include "common/rs_macros.h"
+#ifndef USE_ROSEN_DRAWING
+#include "include/gpu/GrDirectContext.h"
+#else
+#include "image/gpu_context.h"
+#endif
 
 namespace OHOS {
 namespace Rosen {
@@ -32,6 +37,17 @@ enum BLUR_COLOR_MODE : int {
 
 class RSB_EXPORT RSFilter : public std::enable_shared_from_this<RSFilter> {
 public:
+    class RSFilterTask {
+    public:
+#ifndef USE_ROSEN_DRAWING
+        virtual bool InitSurface(GrRecordingContext* grContext);
+#else
+        virtual bool InitSurface(GrContext* grContext);
+#endif
+        virtual bool Render();
+    };
+    static std::function<void(std::weak_ptr<RSFilter::RSFilterTask>)> postTask;
+
     virtual ~RSFilter();
     RSFilter(const RSFilter&) = delete;
     RSFilter(const RSFilter&&) = delete;
@@ -65,6 +81,11 @@ public:
         return hash_;
     }
 
+    virtual bool IsPartialValid() const
+    {
+        return true;
+    }
+    
 protected:
     FilterType type_;
     uint32_t hash_ = 0;

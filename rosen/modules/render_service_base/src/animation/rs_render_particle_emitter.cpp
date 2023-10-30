@@ -15,7 +15,8 @@
 
 #include "animation/rs_render_particle_emitter.h"
 
-#include <math.h>
+#include <cstdint>
+#include <cmath>
 #include <vector>
 namespace OHOS {
 namespace Rosen {
@@ -23,7 +24,7 @@ RSRenderParticleEmitter::RSRenderParticleEmitter(std::shared_ptr<ParticleRenderP
     : particleParams_(particleParams)
 {}
 
-void RSRenderParticleEmitter::EmitParticle(int64_t deltaTime)
+void RSRenderParticleEmitter::PreEmit()
 {
     auto particleType = particleParams_->GetParticleType();
     auto opacityUpdater = particleParams_->GetOpacityUpdator();
@@ -48,7 +49,6 @@ void RSRenderParticleEmitter::EmitParticle(int64_t deltaTime)
         emitFinish_ = true;
         return;
     }
-
     if (particleType == ParticleType::IMAGES) {
         auto particleImage = particleParams_->GetParticleImage();
         auto imageSize = particleParams_->GetImageSize();
@@ -64,23 +64,37 @@ void RSRenderParticleEmitter::EmitParticle(int64_t deltaTime)
             return;
         }
     }
+}
 
+void RSRenderParticleEmitter::EmitParticle(int64_t deltaTime)
+{
+    PreEmit();
+    if (emitFinish_ == true) {
+        return;
+    }
     auto emitRate = particleParams_->GetEmitRate();
     auto maxParticle = particleParams_->GetParticleCount();
     auto lifeTime = particleParams_->GetParticleLifeTime();
     float last = particleCount_;
-    particleCount_ += static_cast<float>(emitRate * deltaTime) / NS_TO_S;
-    spawnNum_ += particleCount_ - last;
     particles_.clear();
-    if (maxParticle <= 0 || lifeTime == 0) {
+    if (maxParticle == -1) {
+        maxParticle = INT32_MAX;
+    }
+    if (maxParticle <= 0 || lifeTime == 0 || emitRate == 0 || last > static_cast<float>(maxParticle)) {
         emitFinish_ = true;
         return;
     }
+    particleCount_ += static_cast<float>(emitRate * deltaTime) / NS_TO_S;
+    spawnNum_ += particleCount_ - last;
     if (ROSEN_EQ(last, 0.f)) {
-        for (uint32_t i = 0; i <= std::min(static_cast<uint32_t>(spawnNum_), maxParticle); i++) {
+        for (int32_t i = 0; i < std::min(static_cast<int32_t>(spawnNum_), maxParticle); i++) {
             auto particle = std::make_shared<RSRenderParticle>(particleParams_);
             particles_.push_back(particle);
             spawnNum_ -= 1.f;
+        }
+        if (particleCount_ > static_cast<float>(maxParticle)) {
+            emitFinish_ = true;
+            return;
         }
     }
     while (spawnNum_ >= 1.f && std::ceil(last) <= static_cast<float>(maxParticle)) {
@@ -88,9 +102,6 @@ void RSRenderParticleEmitter::EmitParticle(int64_t deltaTime)
         particles_.push_back(particle);
         spawnNum_ -= 1.f;
         last += 1.f;
-    }
-    if (particleCount_ >= static_cast<float>(maxParticle)) {
-        emitFinish_ = true;
     }
 }
 

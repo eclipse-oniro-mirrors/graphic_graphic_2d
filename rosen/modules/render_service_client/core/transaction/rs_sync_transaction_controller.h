@@ -31,14 +31,9 @@ public:
     static RSSyncTransactionController* GetInstance();
 
     void OpenSyncTransaction();
+    void CloseSyncTransaction();
 
-    std::shared_ptr<RSTransaction> GetRSTransaction()
-    {
-        if (!needCloseSync_) {
-            return nullptr;
-        }
-        return rsTransaction_;
-    }
+    std::shared_ptr<RSTransaction> GetRSTransaction();
 
 private:
     RSSyncTransactionController();
@@ -52,16 +47,8 @@ private:
     RSSyncTransactionController& operator=(const RSSyncTransactionController&) = delete;
     RSSyncTransactionController& operator=(const RSSyncTransactionController&&) = delete;
 
-    void CloseSyncTransaction();
-    void CreateTransactionFinished();
-    void StartCreateTransaction();
-
-    int32_t processCount_ { 0 };
-    int32_t transactionCount_ { 0 };
     std::mutex mutex_;
     bool needCloseSync_ { false };
-    std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
-    std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
     std::shared_ptr<RSTransaction> rsTransaction_;
     static std::once_flag flag_;
     static RSSyncTransactionController* instance_;

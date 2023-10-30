@@ -48,7 +48,7 @@ public:
     const std::shared_ptr<RSRenderAnimation> GetAnimation(AnimationId id) const;
     void FilterAnimationByPid(pid_t pid);
 
-    std::pair<bool, bool> Animate(int64_t time, bool nodeIsOnTheTree);
+    std::tuple<bool, bool, bool> Animate(int64_t time, bool nodeIsOnTheTree);
 
     // spring animation related
     void RegisterSpringAnimation(PropertyId propertyId, AnimationId animId);
@@ -58,8 +58,12 @@ public:
     void RegisterPathAnimation(PropertyId propertyId, AnimationId animId);
     void UnregisterPathAnimation(PropertyId propertyId, AnimationId animId);
     std::shared_ptr<RSRenderAnimation> QueryPathAnimation(PropertyId propertyId);
+    // particle animation related
+    void RegisterParticleAnimation(PropertyId propertyId, AnimationId animId);
+    void UnregisterParticleAnimation(PropertyId propertyId, AnimationId animId);
+    std::unordered_map<PropertyId, AnimationId> GetParticleAnimations();
 
-    FrameRateRange GetFrameRateRangeFromRSAnimations();
+    const FrameRateRange& GetFrameRateRangeFromRSAnimations() const;
 
 private:
     void OnAnimationFinished(const std::shared_ptr<RSRenderAnimation>& animation);
@@ -67,6 +71,7 @@ private:
     std::unordered_map<AnimationId, std::shared_ptr<RSRenderAnimation>> animations_;
     std::unordered_map<PropertyId, AnimationId> springAnimations_;
     std::unordered_map<PropertyId, AnimationId> pathAnimations_;
+    std::unordered_map<PropertyId, AnimationId> particleAnimations_;
     friend class RSRenderNode;
 
     FrameRateRange rsRange_ = {0, 0, 0};

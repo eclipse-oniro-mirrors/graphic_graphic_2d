@@ -99,6 +99,8 @@ public:
 
     uint32_t GetScreenCurrentRefreshRate(ScreenId id);
 
+    int32_t GetCurrentRefreshRateMode();
+
     std::vector<int32_t> GetScreenSupportedRefreshRates(ScreenId id);
 
     std::vector<RSScreenModeInfo> GetScreenSupportedModes(ScreenId id);
@@ -161,6 +163,10 @@ public:
     void EnableCacheForRotation();
 
     void DisableCacheForRotation();
+
+#ifdef TP_FEATURE_ENABLE
+    void SetTpFeatureConfig(int32_t feature, const char* config);
+#endif
 private:
     RSInterfaces();
     ~RSInterfaces() noexcept;
@@ -169,8 +175,6 @@ private:
         float scaleX, float scaleY);
 
     std::unique_ptr<RSRenderServiceClient> renderServiceClient_;
-    std::mutex offscreenRenderMutex_;
-    int offscreenRenderNum_ = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

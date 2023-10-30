@@ -40,6 +40,7 @@ enum RSSurfaceNodeCommandType : uint16_t {
     SURFACE_NODE_SET_CONTEXT_ALPHA,
     SURFACE_NODE_SET_CONTEXT_CLIP_REGION,
     SURFACE_NODE_SET_SECURITY_LAYER,
+    SURFACE_NODE_SET_SKIP_LAYER,
     SURFACE_NODE_SET_FINGERPRINT,
     SURFACE_NODE_SET_COLOR_SPACE,
     SURFACE_NODE_UPDATE_SURFACE_SIZE,
@@ -71,6 +72,7 @@ public:
     static void SetContextClipRegion(RSContext& context, NodeId nodeId, const std::optional<Drawing::Rect>& clipRect);
 #endif
     static void SetSecurityLayer(RSContext& context, NodeId nodeId, bool isSecurityLayer);
+    static void SetSkipLayer(RSContext& context, NodeId nodeId, bool isSkipLayer);
     static void SetFingerprint(RSContext& context, NodeId nodeId, bool hasFingerprint);
 #ifndef ROSEN_CROSS_PLATFORM
     static void SetColorSpace(RSContext& context, NodeId nodeId, GraphicColorGamut colorSpace);
@@ -109,6 +111,8 @@ ADD_COMMAND(RSSurfaceNodeSetContextClipRegion, ARG(SURFACE_NODE, SURFACE_NODE_SE
 #endif
 ADD_COMMAND(RSSurfaceNodeSetSecurityLayer,
     ARG(SURFACE_NODE, SURFACE_NODE_SET_SECURITY_LAYER, SurfaceNodeCommandHelper::SetSecurityLayer, NodeId, bool))
+ADD_COMMAND(RSSurfaceNodeSetSkipLayer,
+    ARG(SURFACE_NODE, SURFACE_NODE_SET_SKIP_LAYER, SurfaceNodeCommandHelper::SetSkipLayer, NodeId, bool))
 ADD_COMMAND(RSSurfaceNodeSetFingerprint,
     ARG(SURFACE_NODE, SURFACE_NODE_SET_FINGERPRINT, SurfaceNodeCommandHelper::SetFingerprint, NodeId, bool))
 ADD_COMMAND(RSSurfaceNodeUpdateSurfaceDefaultSize, ARG(SURFACE_NODE, SURFACE_NODE_UPDATE_SURFACE_SIZE,

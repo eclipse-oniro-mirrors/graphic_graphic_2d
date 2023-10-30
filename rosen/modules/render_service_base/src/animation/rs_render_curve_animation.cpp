@@ -95,6 +95,8 @@ void RSRenderCurveAnimation::OnAnimate(float fraction)
 void RSRenderCurveAnimation::OnAnimateInner(float fraction, const std::shared_ptr<RSInterpolator>& interpolator)
 {
     if (GetPropertyId() == 0) {
+        // calculateAnimationValue_ is embedded modify for stat animate frame drop
+        calculateAnimationValue_ = false;
         return;
     }
 

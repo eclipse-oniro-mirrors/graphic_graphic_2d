@@ -16,6 +16,8 @@
 #ifndef SKIA_PATH_H
 #define SKIA_PATH_H
 
+#include <unordered_map>
+
 #include "include/core/SkPath.h"
 
 #include "impl_interface/path_impl.h"
@@ -48,6 +50,12 @@ public:
     void CubicTo(
         scalar ctrlPt1X, scalar ctrlPt1Y, scalar ctrlPt2X, scalar ctrlPt2Y, scalar endPtX, scalar endPtY) override;
     void QuadTo(scalar ctrlPtX, scalar ctrlPtY, scalar endPtX, scalar endPtY) override;
+
+    void RMoveTo(scalar dx, scalar dy) override;
+    void RLineTo(scalar dx, scalar dy) override;
+    void RArcTo(scalar rx, scalar ry, scalar angle, PathDirection direction, scalar dx, scalar dy) override;
+    void RCubicTo(scalar dx1, scalar dy1, scalar dx2, scalar dy2, scalar dx3, scalar dy3) override;
+    void RQuadTo(scalar dx1, scalar dy1, scalar dx2, scalar dy2) override;
 
     void AddRect(scalar left, scalar top, scalar right, scalar bottom, PathDirection dir) override;
     void AddOval(scalar left, scalar top, scalar right, scalar bottom, PathDirection dir) override;
@@ -83,6 +91,20 @@ public:
     scalar GetLength(bool forceClosed) const override;
     bool GetPositionAndTangent(scalar distance, Point& position, Point& tangent, bool forceClosed) const override;
 private:
+    class SkPathSvgCacheManager {
+    public:
+        static SkPathSvgCacheManager& GetInstance();
+        ~SkPathSvgCacheManager() = default;
+        SkPathSvgCacheManager(SkPathSvgCacheManager&&) = delete;
+        SkPathSvgCacheManager(SkPathSvgCacheManager&) = delete;
+        SkPathSvgCacheManager& operator=(SkPathSvgCacheManager&&) = delete;
+        SkPathSvgCacheManager& operator=(SkPathSvgCacheManager&) = delete;
+
+        bool GetPathWithSvgString(const std::string& svgString, SkPath& path);
+    private:
+        SkPathSvgCacheManager() = default;
+        std::unordered_map<std::size_t, SkPath> pathCache_;
+    };
     SkPath path_;
 };
 } // namespace Drawing

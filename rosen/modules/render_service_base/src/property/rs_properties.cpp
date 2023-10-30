@@ -22,7 +22,6 @@
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_vector4.h"
 #include "pipeline/rs_uni_render_judgement.h"
-#include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "render/rs_filter.h"
 
@@ -42,6 +41,7 @@ constexpr int32_t INDEX_14 = 14;
 constexpr int32_t INDEX_18 = 18;
 
 const Vector4f Vector4fZero { 0.f, 0.f, 0.f, 0.f };
+const auto EMPTY_RECT = RectF();
 constexpr float SPHERIZE_VALID_EPSILON = 0.001f; // used to judge if spherize valid
 
 using ResetPropertyFunc = void (*)(RSProperties* prop);
@@ -112,13 +112,16 @@ const std::vector<ResetPropertyFunc> g_propertyResetterLUT = {
     [](RSProperties* prop) { prop->SetHueRotate({}); },                  // HUE_ROTATE,               62
     [](RSProperties* prop) { prop->SetColorBlend({}); },                 // COLOR_BLEND,              63
     [](RSProperties* prop) { prop->SetParticles({}); },                  // PARTICLE,                 64
+    [](RSProperties* prop) { prop->SetShadowIsFilled(false); },          // SHADOW_IS_FILLED,         65
+    [](RSProperties* prop) { prop->SetColorBlendMode(
+        static_cast<int>(RSColorBlendModeType::NONE)); },                // COLOR_BLENDMODE,          66
     nullptr,
 };
 } // namespace
 
 // Only enable filter cache when uni-render is enabled and filter cache is enabled
 
-#if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_GL)
+#if defined(NEW_SKIA) && defined(RS_ENABLE_GL)
 const bool RSProperties::FilterCacheEnabled =
     RSSystemProperties::GetFilterCacheEnabled() && RSUniRenderJudgement::IsUniRender();
 #endif
@@ -734,7 +737,7 @@ void RSProperties::SetBackgroundColor(Color color)
     contentDirty_ = true;
 }
 
-Color RSProperties::GetBackgroundColor() const
+const Color& RSProperties::GetBackgroundColor() const
 {
     return decoration_ ? decoration_->backgroundColor_ : RgbPalette::Transparent();
 }
@@ -1083,9 +1086,22 @@ void RSProperties::SetShadowMask(bool shadowMask)
     contentDirty_ = true;
 }
 
-Color RSProperties::GetShadowColor() const
+void RSProperties::SetShadowIsFilled(bool shadowIsFilled)
 {
-    return shadow_ ? shadow_->GetColor() : Color::FromArgbInt(DEFAULT_SPOT_COLOR);
+    if (!shadow_.has_value()) {
+        shadow_ = std::make_optional<RSShadow>();
+    }
+    shadow_->SetIsFilled(shadowIsFilled);
+    SetDirty();
+    // [planning] if shadow stores as texture and out of node
+    // node content would not be affected
+    contentDirty_ = true;
+}
+
+const Color& RSProperties::GetShadowColor() const
+{
+    static const auto DEFAULT_SPOT_COLOR_VALUE = Color::FromArgbInt(DEFAULT_SPOT_COLOR);
+    return shadow_ ? shadow_->GetColor() : DEFAULT_SPOT_COLOR_VALUE;
 }
 
 float RSProperties::GetShadowOffsetX() const
@@ -1121,6 +1137,16 @@ std::shared_ptr<RSPath> RSProperties::GetShadowPath() const
 bool RSProperties::GetShadowMask() const
 {
     return shadow_ ? shadow_->GetMask() : false;
+}
+
+bool RSProperties::GetShadowIsFilled() const
+{
+    return shadow_ ? shadow_->GetIsFilled() : false;
+}
+
+const std::optional<RSShadow>& RSProperties::GetShadow() const
+{
+    return shadow_;
 }
 
 bool RSProperties::IsShadowValid() const
@@ -1228,20 +1254,20 @@ bool RSProperties::GetClipToFrame() const
 RectF RSProperties::GetBoundsRect() const
 {
     if (boundsGeo_->IsEmpty()) {
-        return RectF(0, 0, GetFrameWidth(), GetFrameHeight());
+        return {0, 0, GetFrameWidth(), GetFrameHeight()};
     } else {
-        return RectF(0, 0, GetBoundsWidth(), GetBoundsHeight());
+        return {0, 0, GetBoundsWidth(), GetBoundsHeight()};
     }
 }
 
 RectF RSProperties::GetFrameRect() const
 {
-    return RectF(0, 0, GetFrameWidth(), GetFrameHeight());
+    return {0, 0, GetFrameWidth(), GetFrameHeight()};
 }
 
-RectF RSProperties::GetBgImageRect() const
+const RectF& RSProperties::GetBgImageRect() const
 {
-    return decoration_ ? decoration_->bgImageRect_ : RectF();
+    return decoration_ ? decoration_->bgImageRect_ : EMPTY_RECT;
 }
 
 void RSProperties::SetVisible(bool visible)
@@ -2073,6 +2099,16 @@ std::string RSProperties::Dump() const
         dumpInfo.append(buffer);
     }
 
+    // ShadowIsFilled
+    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
+    if (ret != EOK) {
+        return "Failed to memset_s for ShadowIsFilled, ret=" + std::to_string(ret);
+    }
+    if (!ROSEN_EQ(GetShadowIsFilled(), false) &&
+        sprintf_s(buffer, UINT8_MAX, ", ShadowIsFilled[%d]", GetShadowIsFilled()) != -1) {
+        dumpInfo.append(buffer);
+    }
+
     // FrameGravity
     ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
     if (ret != EOK) {
@@ -2096,6 +2132,28 @@ std::string RSProperties::Dump() const
     auto grayScale = GetGrayScale();
     if (grayScale.has_value() && !ROSEN_EQ(*grayScale, 0.f) &&
         sprintf_s(buffer, UINT8_MAX, ", GrayScale[%.1f]", *grayScale) != -1) {
+        dumpInfo.append(buffer);
+    }
+
+    // DynamicLightUpRate
+    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
+    if (ret != EOK) {
+        return "Failed to memset_s for DynamicLightUpRate, ret=" + std::to_string(ret);
+    }
+    auto dynamicLightUpRate = GetDynamicLightUpRate();
+    if (dynamicLightUpRate.has_value() && !ROSEN_EQ(*dynamicLightUpRate, 0.f) &&
+        sprintf_s(buffer, UINT8_MAX, ", DynamicLightUpRate[%.1f]", *dynamicLightUpRate) != -1) {
+        dumpInfo.append(buffer);
+    }
+
+    // DynamicLightUpDegree
+    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
+    if (ret != EOK) {
+        return "Failed to memset_s for DynamicLightUpDegree, ret=" + std::to_string(ret);
+    }
+    auto dynamicLightUpDegree = GetDynamicLightUpDegree();
+    if (dynamicLightUpDegree.has_value() && !ROSEN_EQ(*dynamicLightUpDegree, 0.f) &&
+        sprintf_s(buffer, UINT8_MAX, ", DynamicLightUpDegree[%.1f]", *dynamicLightUpDegree) != -1) {
         dumpInfo.append(buffer);
     }
 
@@ -2179,7 +2237,7 @@ std::string RSProperties::Dump() const
     return dumpInfo;
 }
 
-#if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_GL)
+#if defined(NEW_SKIA) && defined(RS_ENABLE_GL)
 void RSProperties::CreateFilterCacheManagerIfNeed()
 {
     if (!FilterCacheEnabled) {
@@ -2213,10 +2271,10 @@ const std::unique_ptr<RSFilterCacheManager>& RSProperties::GetFilterCacheManager
 void RSProperties::ClearFilterCache()
 {
     if (foregroundFilterCacheManager_ != nullptr) {
-        foregroundFilterCacheManager_->InvalidateCache();
+        foregroundFilterCacheManager_->ReleaseCacheOffTree();
     }
     if (backgroundFilterCacheManager_ != nullptr) {
-        backgroundFilterCacheManager_->InvalidateCache();
+        backgroundFilterCacheManager_->ReleaseCacheOffTree();
     }
 }
 #endif
@@ -2230,7 +2288,7 @@ void RSProperties::OnApplyModifiers()
             CalculateFrameOffset();
         }
         // frame and bounds are the same, no need to clip twice
-        if (clipToFrame_ && clipToBounds_ && frameOffsetX_ == 0. && frameOffsetY_ == 0.) {
+        if (clipToFrame_ && clipToBounds_ && frameOffsetX_ == 0 && frameOffsetY_ == 0) {
             clipToFrame_ = false;
         }
     }
@@ -2250,23 +2308,11 @@ void RSProperties::OnApplyModifiers()
         }
         needFilter_ = backgroundFilter_ != nullptr || filter_ != nullptr || useEffect_ || IsLightUpEffectValid() ||
                       IsDynamicLightUpValid();
-#if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_GL)
+#if defined(NEW_SKIA) && defined(RS_ENABLE_GL)
         CreateFilterCacheManagerIfNeed();
 #endif
     }
     GenerateRRect();
-}
-
-inline static int SignBit(float x)
-{
-    constexpr static float eps = 1e-5f;
-    if (x <= -eps) {
-        return -1;
-    } else if (x >= eps) {
-        return 1;
-    } else {
-        return 0;
-    }
 }
 
 void RSProperties::CalculatePixelStretch()
@@ -2285,19 +2331,21 @@ void RSProperties::CalculatePixelStretch()
         }
         pixelStretch_ = *pixelStretchPercent_ * Vector4f(width, height, width, height);
     }
-    // parameter check: non-zero
-    if (pixelStretch_->IsZero()) {
+    constexpr static float EPS = 1e-5f;
+    // parameter check: near zero
+    if (abs(pixelStretch_->x_) < EPS && abs(pixelStretch_->y_) < EPS && abs(pixelStretch_->z_) < EPS &&
+        abs(pixelStretch_->w_) < EPS) {
         pixelStretch_ = std::nullopt;
         return;
     }
-    // parameter check: same sign
-    const auto sign = SignBit(pixelStretch_->x_);
-    if (SignBit(pixelStretch_->y_) != sign || SignBit(pixelStretch_->z_) != sign ||
-        SignBit(pixelStretch_->w_) != sign) {
-        pixelStretch_ = std::nullopt;
+    // parameter check: all >= 0 or all <= 0
+    if ((pixelStretch_->x_ < EPS && pixelStretch_->y_ < EPS && pixelStretch_->z_ < EPS && pixelStretch_->w_ < EPS) ||
+        (pixelStretch_->x_ > -EPS && pixelStretch_->y_ > -EPS && pixelStretch_->z_ > -EPS &&
+            pixelStretch_->w_ > -EPS)) {
+        isDrawn_ = true;
         return;
     }
-    isDrawn_ = true;
+    pixelStretch_ = std::nullopt;
 }
 
 void RSProperties::CalculateFrameOffset()
@@ -2313,6 +2361,19 @@ void RSProperties::CalculateFrameOffset()
     if (frameOffsetX_ != 0. || frameOffsetY_ != 0.) {
         isDrawn_ = true;
     }
+}
+
+// blend with background
+void RSProperties::SetColorBlendMode(int blendMode)
+{
+    blendMode_ = blendMode;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+int RSProperties::GetColorBlendMode() const
+{
+    return blendMode_;
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -34,6 +34,7 @@
 #include "screen_manager/rs_screen_manager.h"
 #include "system/rs_system_parameters.h"
 #include "visitor/rs_node_visitor.h"
+#include "pipeline/rs_recording_canvas.h"
 
 class SkPicture;
 namespace OHOS {
@@ -120,8 +121,9 @@ public:
         drivenInfo_->hasDrivenNodeMarkRender = hasDrivenNodeMarkRender;
     }
 
+    void UpdateHardwareEnabledInfoBeforeCreateLayer();
     void SetHardwareEnabledNodes(const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hardwareEnabledNodes);
-    void AssignGlobalZOrderAndCreateLayer();
+    void AssignGlobalZOrderAndCreateLayer(std::vector<std::shared_ptr<RSSurfaceRenderNode>>& nodesInZOrder);
 
     void CopyForParallelPrepare(std::shared_ptr<RSUniRenderVisitor> visitor);
     // Some properties defined before ProcessSurfaceRenderNode() may be used in
@@ -181,6 +183,7 @@ private:
     void DrawTargetSurfaceDirtyRegionForDFX(RSDisplayRenderNode& node);
     void DrawAllSurfaceOpaqueRegionForDFX(RSDisplayRenderNode& node);
     void DrawSurfaceOpaqueRegionForDFX(RSSurfaceRenderNode& node);
+    void DrawTargetSurfaceVisibleRegionForDFX(RSDisplayRenderNode& node);
     // check if surface name is in dfx target list
     inline bool CheckIfSurfaceTargetedForDFX(std::string nodeName)
     {
@@ -191,6 +194,12 @@ private:
     bool DrawDetailedTypesOfDirtyRegionForDFX(RSSurfaceRenderNode& node);
     void DrawAndTraceSingleDirtyRegionTypeForDFX(RSSurfaceRenderNode& node,
         DirtyRegionType dirtyType, bool isDrawn = true);
+
+    bool IsHardwareEnabledNodeNeedCalcGlobalDirty(std::shared_ptr<RSSurfaceRenderNode>& node) const
+    {
+        return !node->IsHardwareEnabledTopSurface() ||
+            isHardwareForcedDisabled_ || node->HasSubNodeShouldPaint();
+    }
 
     std::vector<RectI> GetDirtyRects(const Occlusion::Region &region);
     /* calculate display/global (between windows) level dirty region, current include:
@@ -245,9 +254,16 @@ private:
     void PrepareTypesOfSurfaceRenderNodeBeforeUpdate(RSSurfaceRenderNode& node);
     void PrepareTypesOfSurfaceRenderNodeAfterUpdate(RSSurfaceRenderNode& node);
     // judge if node's cache changes
-    void UpdateCacheChangeStatus(RSRenderNode& node);
+    // return false if cache static and simplify its subtree traversal
+    bool UpdateCacheChangeStatus(RSRenderNode& node);
+    bool IsDrawingCacheStatic(RSRenderNode& node);
+    // if cache root reuses, update its subtree
+    // [attention] check curSurfaceDirtyManager_ before function calls
+    void UpdateStaticCacheSubTree(const std::shared_ptr<RSRenderNode>& cacheRootNode,
+        const std::list<RSRenderNode::SharedPtr>& children);
     // set node cacheable animation after checking whold child tree
-    void SetNodeCacheChangeStatus(RSRenderNode& node, int markedCachedNodeCnt);
+    void SetNodeCacheChangeStatus(RSRenderNode& node);
+    void DisableNodeCacheInSetting(RSRenderNode& node);
     // update rendernode's cache status and collect valid cache rect
     void UpdateForegroundFilterCacheWithDirty(RSRenderNode& node, RSDirtyRegionManager& dirtyManager);
 
@@ -260,7 +276,6 @@ private:
     void MarkSubHardwareEnableNodeState(RSSurfaceRenderNode& surfaceNode);
     void CollectAppNodeForHwc(std::shared_ptr<RSSurfaceRenderNode> surfaceNode);
 
-    void RecordAppWindowNodeAndPostTask(RSSurfaceRenderNode& node, float width, float height);
     // offscreen render related
     void PrepareOffscreenRender(RSRenderNode& node);
     void FinishOffscreenRender();
@@ -271,6 +286,8 @@ private:
     void ClosePartialRenderWhenAnimatingWindows(std::shared_ptr<RSDisplayRenderNode>& node);
     bool DrawBlurInCache(RSRenderNode& node);
     void UpdateCacheRenderNodeMapWithBlur(RSRenderNode& node);
+    bool IsFirstVisitedCacheForced() const;
+    bool IsRosenWebHardwareDisabled(RSSurfaceRenderNode& node, int rotation) const;
 
 #ifndef USE_ROSEN_DRAWING
     sk_sp<SkSurface> offscreenSurface_;                 // temporary holds offscreen surface
@@ -308,7 +325,8 @@ private:
 #endif
 
     ScreenId currentVisitDisplay_ = INVALID_SCREEN_ID;
-    std::map<ScreenId, int> displayHasSecSurface_;
+    std::map<ScreenId, bool> displayHasSecSurface_;
+    std::map<ScreenId, bool> displayHasSkipSurface_;
     std::set<ScreenId> mirroredDisplays_;
     bool isSecurityDisplay_ = false;
 
@@ -325,17 +343,21 @@ private:
     bool isDirtyRegionDfxEnabled_ = false; // dirtyRegion DFX visualization
     bool isTargetDirtyRegionDfxEnabled_ = false;
     bool isOpaqueRegionDfxEnabled_ = false;
+    bool isVisibleRegionDfxEnabled_ = false;
+    bool isDisplayDirtyDfxEnabled_ = false;
+    bool isCanvasNodeSkipDfxEnabled_ = false;
     bool isQuickSkipPreparationEnabled_ = false;
     bool isOcclusionEnabled_ = false;
     std::vector<std::string> dfxTargetSurfaceNames_;
     PartialRenderType partialRenderType_;
     QuickSkipPrepareType quickSkipPrepareType_;
     DirtyRegionDebugType dirtyRegionDebugType_;
+    SurfaceRegionDebugType surfaceRegionDebugType_;
+    bool isRegionDebugEnabled_ = false;
     bool isDirty_ = false;
     // added for judge if drawing cache changes
     bool isDrawingCacheEnabled_ = false;
     std::stack<bool> isDrawingCacheChanged_ = {};
-    int markedCachedNodes_ = 0;
     std::vector<RectI> accumulatedDirtyRegions_ = {};
 
     bool needFilter_ = false;
@@ -347,8 +369,6 @@ private:
     bool isSubThread_ = false;
     bool isUIFirst_ = false;
     uint32_t threadIndex_ = UNI_MAIN_THREAD_INDEX;
-
-    bool needColdStartThread_ = false; // flag used for cold start app window
 
     bool isDirtyRegionAlignedEnable_ = false;
     std::shared_ptr<std::mutex> surfaceNodePrepareMutex_;
@@ -369,6 +389,8 @@ private:
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
     // vector of all app window nodes with surfaceView, sorted by zOrder
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> appWindowNodesInZOrder_;
+    // vector of hardwareEnabled nodes above displayNodeSurface like pointer window
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledTopNodes_;
     float localZOrder_ = 0.0f; // local zOrder for surfaceView under same app window node
 
     // driven render
@@ -408,7 +430,6 @@ private:
 #endif
     bool resetRotate_ = false;
     bool needCacheImg_ = false;
-    uint32_t captureWindowZorder_ = 0;
 #ifndef USE_ROSEN_DRAWING
     std::optional<SkPath> effectRegion_ = std::nullopt;
 #else
@@ -418,10 +439,16 @@ private:
     bool curContentDirty_ = false;
     bool isPhone_ = false;
 
-    std::unordered_map<NodeId, std::unordered_map<NodeId, RectI>> allCacheFilterRects_ = {};
-    std::stack<std::unordered_map<NodeId, RectI>> curCacheFilterRects_ = {};
+    NodeId firstVisitedCache_ = INVALID_NODEID;
+    std::unordered_set<NodeId> visitedCacheNodeIds_ = {};
+    std::unordered_map<NodeId, std::unordered_set<NodeId>> allCacheFilterRects_ = {};
+    std::stack<std::unordered_set<NodeId>> curCacheFilterRects_ = {};
     bool forceUpdateFlag_ = false;
-    int sharedTransitionNodeCnt_ = 0;
+#ifndef USE_ROSEN_DRAWING
+    void tryCapture(float width, float height);
+    void endCapture() const;
+    std::shared_ptr<RSRecordingCanvas> recordingCanvas_;
+#endif
 };
 } // namespace Rosen
 } // namespace OHOS

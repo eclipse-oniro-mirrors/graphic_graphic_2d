@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -68,7 +68,7 @@ public:
         this->preferred_ = preferred;
     }
 
-    void Merge(FrameRateRange other)
+    void Merge(const FrameRateRange& other)
     {
         if (this->preferred_ < other.preferred_) {
             this->Set(other.min_, other.max_, other.preferred_);

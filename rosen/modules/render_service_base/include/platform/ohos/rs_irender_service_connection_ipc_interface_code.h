@@ -37,6 +37,7 @@ enum class RSIRenderServiceConnectionInterfaceCode : CodeUnderlyingType {
     SET_SCREEN_REFRESH_RATE,
     SET_REFRESH_RATE_MODE,
     GET_SCREEN_CURRENT_REFRESH_RATE,
+    GET_CURRENT_REFRESH_RATE_MODE,
     GET_SCREEN_SUPPORTED_REFRESH_RATES,
     SET_SCREEN_POWER_STATUS,
     SET_SCREEN_BACK_LIGHT,
@@ -69,6 +70,7 @@ enum class RSIRenderServiceConnectionInterfaceCode : CodeUnderlyingType {
     GET_TOTAL_APP_MEM_SIZE,
     REPORT_JANK_STATS,
     GET_BITMAP,
+    GET_PIXELMAP,
     EXECUTE_SYNCHRONOUS_TASK,
     REPORT_EVENT_RESPONSE,
     REPORT_EVENT_COMPLETE,
@@ -78,6 +80,7 @@ enum class RSIRenderServiceConnectionInterfaceCode : CodeUnderlyingType {
     UNREGISTER_SURFACE_OCCLUSION_CHANGE_CALLBACK,
     REGISTER_HGM_CFG_CALLBACK,
     SET_ROTATION_CACHE_ENABLED,
+    SET_TP_FEATURE_CONFIG,
 };
 } // namespace Rosen
 } // namespace OHOS

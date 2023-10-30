@@ -26,6 +26,7 @@
 #include "skia_canvas.h"
 #ifdef ACE_ENABLE_GPU
 #include "skia_gpu_context.h"
+#include "skia_image_info.h"
 #endif
 
 namespace OHOS {
@@ -126,8 +127,49 @@ bool SkiaSurface::Bind(const FrameBuffer& frameBuffer)
     }
     return true;
 }
-#endif
 
+bool SkiaSurface::MakeRenderTarget(GPUContext& gpuContext, bool Budgeted, const ImageInfo& imageInfo)
+{
+    auto grContext = gpuContext.GetImpl<SkiaGPUContext>()->GetGrContext();
+    if (grContext == nullptr) {
+        LOGE("SkiaSurface Make from imageInfo failed: grContext is nullptr");
+        return false;
+    }
+
+    auto skImageInfo = SkiaImageInfo::ConvertToSkImageInfo(imageInfo);
+    skSurface_ = SkSurface::MakeRenderTarget(grContext.get(), static_cast<SkBudgeted>(Budgeted), skImageInfo);
+    if (skSurface_ == nullptr) {
+        LOGE("SkiaSurface Make from imageInfo failed: skSurface is nullptr");
+        return false;
+    }
+    return true;
+}
+
+bool SkiaSurface::MakeRasterN32Premul(int32_t width, int32_t height)
+{
+    if (width == 0 || height == 0) {
+        LOGE("SkiaSurface MakeRasterN32Premul failed: width or height is 0");
+        return false;
+    }
+
+    skSurface_ = SkSurface::MakeRasterN32Premul(width, height);
+    if (skSurface_ == nullptr) {
+        LOGE("SkiaSurface MakeRasterN32Premul failed: skSurface is nullptr");
+        return false;
+    }
+    return true;
+}
+#endif
+bool SkiaSurface::MakeRaster(const ImageInfo& imageInfo)
+{
+    auto skImageInfo = SkiaImageInfo::ConvertToSkImageInfo(imageInfo);
+    skSurface_ = SkSurface::MakeRaster(skImageInfo);
+    if (skSurface_ == nullptr) {
+        LOGE("SkiaSurface make from imageInfo failed: skSurface is nullptr");
+        return false;
+    }
+    return true;
+}
 std::shared_ptr<Canvas> SkiaSurface::GetCanvas() const
 {
     if (skSurface_ == nullptr || skSurface_->getCanvas() == nullptr) {
@@ -177,6 +219,37 @@ std::shared_ptr<Image> SkiaSurface::GetImageSnapshot(const RectI& bounds) const
     return image;
 }
 
+std::shared_ptr<Surface> SkiaSurface::MakeSurface(int width, int height) const
+{
+    if (skSurface_ == nullptr) {
+        LOGE("skSurface is nullptr");
+        return nullptr;
+    }
+    auto surface = skSurface_->makeSurface(width, height);
+    if (surface == nullptr) {
+        LOGE("SkiaSurface::MakeSurface failed");
+        return nullptr;
+    }
+
+    auto drawingSurface = std::make_shared<Surface>();
+    drawingSurface->GetImpl<SkiaSurface>()->SetSkSurface(surface);
+    return drawingSurface;
+}
+
+void SkiaSurface::SetSkSurface(const sk_sp<SkSurface>& skSurface)
+{
+    skSurface_ = skSurface;
+}
+
+void SkiaSurface::FlushAndSubmit(bool syncCpu)
+{
+    if (skSurface_ == nullptr) {
+        LOGE("skSurface is nullptr");
+        return;
+    }
+
+    skSurface_->flushAndSubmit(syncCpu);
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

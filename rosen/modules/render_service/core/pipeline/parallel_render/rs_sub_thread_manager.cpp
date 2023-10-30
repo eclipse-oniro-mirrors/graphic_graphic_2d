@@ -43,22 +43,44 @@ void RSSubThreadManager::Start(RenderContext *context)
             auto curThread = std::make_shared<RSSubThread>(context, i);
             auto tid = curThread->Start();
             threadIndexMap_.emplace(tid, i);
+            reThreadIndexMap_.emplace(i, tid);
             threadList_.push_back(curThread);
-            auto taskDispatchFunc = [tid, this](const RSTaskDispatcher::RSTask& task) {
-                RSSubThreadManager::Instance()->PostTask(task, threadIndexMap_[tid]);
+            auto taskDispatchFunc = [tid, this](const RSTaskDispatcher::RSTask& task, bool isSyncTask = false) {
+                RSSubThreadManager::Instance()->PostTask(task, threadIndexMap_[tid], isSyncTask);
             };
             RSTaskDispatcher::GetInstance().RegisterTaskDispatchFunc(tid, taskDispatchFunc);
         }
     }
 }
+void RSSubThreadManager::StartFilterThread(RenderContext* context)
+{
+#if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_GL)
+    if (!RSSystemProperties::GetFilterPartialRenderEnabled() || !RSUniRenderJudgement::IsUniRender()) {
+        RS_LOGD("Filter thread not run");
+        return;
+    }
+    if (filterThread != nullptr) {
+        return;
+    }
+    renderContext_ = context;
+    if (context) {
+        filterThread = std::make_shared<RSFilterSubThread>(context);
+        filterThread->Start();
+    }
+#endif
+}
 
-void RSSubThreadManager::PostTask(const std::function<void()>& task, uint32_t threadIndex)
+void RSSubThreadManager::PostTask(const std::function<void()>& task, uint32_t threadIndex, bool isSyncTask)
 {
     if (threadIndex >= threadList_.size()) {
         RS_LOGE("taskIndex geq thread num");
         return;
     }
-    threadList_[threadIndex]->PostTask(task);
+    if (isSyncTask) {
+        threadList_[threadIndex]->PostSyncTask(task);
+    } else {
+        threadList_[threadIndex]->PostTask(task);
+    }
 }
 
 void RSSubThreadManager::DumpMem(DfxString& log)
@@ -71,6 +93,9 @@ void RSSubThreadManager::DumpMem(DfxString& log)
             continue;
         }
         subThread->DumpMem(log);
+    }
+    if (filterThread) {
+        filterThread->DumpMem(log);
     }
 }
 
@@ -85,6 +110,9 @@ float RSSubThreadManager::GetAppGpuMemoryInMB()
             continue;
         }
         total += subThread->GetAppGpuMemoryInMB();
+    }
+    if (filterThread) {
+        total += filterThread->GetAppGpuMemoryInMB();
     }
     return total;
 }
@@ -106,6 +134,9 @@ void RSSubThreadManager::SubmitSubThreadTask(const std::shared_ptr<RSDisplayRend
     std::vector<std::unique_ptr<RSRenderTask>> renderTaskList;
     auto cacheSkippedNodeMap = RSMainThread::Instance()->GetCacheCmdSkippedNodes();
     for (const auto& child : subThreadNodes) {
+        if (!child) {
+            continue;
+        }
         if (!child->ShouldPaint()) {
             RS_OPTIONAL_TRACE_NAME_FMT("SubmitTask skip node: [%s, %llu]", child->GetName().c_str(), child->GetId());
             continue;
@@ -242,11 +273,38 @@ void RSSubThreadManager::ReleaseSurface(uint32_t threadIndex) const
     });
 }
 
+#ifndef USE_ROSEN_DRAWING
 void RSSubThreadManager::AddToReleaseQueue(sk_sp<SkSurface>&& surface, uint32_t threadIndex)
+#else
+void RSSubThreadManager::AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface, uint32_t threadIndex)
+#endif
 {
     if (threadList_.size() <= threadIndex) {
         return;
     }
     threadList_[threadIndex]->AddToReleaseQueue(std::move(surface));
+}
+
+std::vector<MemoryGraphic> RSSubThreadManager::CountSubMem(int pid)
+{
+    std::vector<MemoryGraphic> memsContainer;
+    if (threadList_.empty()) {
+        return memsContainer;
+    }
+
+    for (auto& subThread : threadList_) {
+        if (!subThread) {
+            MemoryGraphic memoryGraphic;
+            memsContainer.push_back(memoryGraphic);
+            continue;
+        }
+        memsContainer.push_back(subThread->CountSubMem(pid));
+    }
+    return memsContainer;
+}
+
+std::unordered_map<uint32_t, pid_t> RSSubThreadManager::GetReThreadIndexMap() const
+{
+    return reThreadIndexMap_;
 }
 }

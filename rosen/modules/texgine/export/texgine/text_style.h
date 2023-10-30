@@ -65,8 +65,9 @@ struct TextShadow {
     double offsetX = 0.0;
     double offsetY = 0.0;
     uint32_t color = 0xffcccccc;
-    uint32_t blurLeave = 0;
+    double blurLeave = 0;
 
+    bool HasShadow() const;
     // Implements the equality operator.
     bool operator ==(TextShadow const& rhs) const;
 };
@@ -93,6 +94,7 @@ struct TextStyle {
     uint32_t color = 0xff000000; // black
     TextBaseline baseline = TextBaseline::ALPHABETIC;
     std::string locale = "";
+    bool halfLeading = false;
     bool heightOnly = false; // true means text height is heightScale_ * fontSize_
     double heightScale = 1.0;
     double letterSpacing = 0.0;

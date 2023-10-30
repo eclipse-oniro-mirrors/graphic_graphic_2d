@@ -14,9 +14,8 @@
  */
 #include "rs_transaction.h"
 
-#include "ipc_callbacks/rs_sync_transaction_controller_proxy.h"
 #include "platform/common/rs_log.h"
-#include "rs_process_transaction_controller.h"
+#include "rs_trace.h"
 #include "sandbox_utils.h"
 #include "transaction/rs_transaction_proxy.h"
 
@@ -36,16 +35,18 @@ void RSTransaction::OpenSyncTransaction()
     syncId_ = GenerateSyncId();
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
+        RS_TRACE_NAME("OpenSyncTransaction");
         transactionProxy->StartSyncTransaction();
         transactionProxy->Begin();
     }
 }
 
-void RSTransaction::CloseSyncTransaction(const uint64_t transactionCount)
+void RSTransaction::CloseSyncTransaction()
 {
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
-        transactionProxy->MarkTransactionNeedCloseSync(transactionCount);
+        RS_TRACE_NAME_FMT("CloseSyncTransaction syncId: %lu syncCount: %d", syncId_, transactionCount_);
+        transactionProxy->MarkTransactionNeedCloseSync(transactionCount_);
         transactionProxy->SetSyncId(syncId_);
         transactionProxy->CommitSyncTransaction();
         transactionProxy->CloseSyncTransaction();
@@ -57,6 +58,7 @@ void RSTransaction::Begin()
 {
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
+        RS_TRACE_NAME("BeginSyncTransaction");
         transactionProxy->StartSyncTransaction();
         transactionProxy->Begin();
     }
@@ -64,9 +66,9 @@ void RSTransaction::Begin()
 
 void RSTransaction::Commit()
 {
-    CreateTransactionFinish();
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
+        RS_TRACE_NAME_FMT("CommitSyncTransaction syncId: %lu", syncId_);
         transactionProxy->SetSyncId(syncId_);
         transactionProxy->CommitSyncTransaction();
         transactionProxy->CloseSyncTransaction();
@@ -92,7 +94,7 @@ void RSTransaction::ResetSyncTransactionInfo()
 {
     std::unique_lock<std::mutex> lock(mutex_);
     syncId_ = 0;
-    controllers_.clear();
+    transactionCount_ = 0;
 }
 
 RSTransaction* RSTransaction::Unmarshalling(Parcel& parcel)
@@ -112,6 +114,7 @@ bool RSTransaction::Marshalling(Parcel& parcel) const
         ROSEN_LOGE("RSTransaction marshalling failed");
         return false;
     }
+    transactionCount_++;
     return true;
 }
 
@@ -122,67 +125,6 @@ bool RSTransaction::UnmarshallingParam(Parcel& parcel)
         return false;
     }
     return true;
-}
-
-void RSTransaction::MarshallTransactionSyncController(MessageParcel& parcel)
-{
-    sptr<RSProcessTransactionController> controller = new RSProcessTransactionController();
-    if (!parcel.WriteRemoteObject(controller->AsObject())) {
-        ROSEN_LOGE("RSTransaction Marshall transactionSyncController failed");
-        return;
-    }
-
-    TransactionFinishedCallback callback = [this]() {
-        CallCreateFinishCallback();
-    };
-    controller->SetTransactionFinishedCallback(callback);
-    CallCreateStartCallback();
-    controllers_.emplace_back(controller);
-}
-
-void RSTransaction::UnmarshallTransactionSyncController(MessageParcel& parcel)
-{
-    sptr<IRemoteObject> controllerObject = parcel.ReadRemoteObject();
-    if (controllerObject == nullptr) {
-        ROSEN_LOGE("RSTransaction unmarshalling transactionSyncController failed");
-        return;
-    }
-
-    sptr<RSISyncTransactionController> controller = iface_cast<RSISyncTransactionController>(controllerObject);
-    controllers_.emplace_back(controller);
-}
-
-void RSTransaction::SetCreateStartCallback(const std::function<void()>& callback)
-{
-    createStartCallback_ = callback;
-}
-
-void RSTransaction::SetCreateFinishCallback(const std::function<void()>& callback)
-{
-    createFinishCallback_ = callback;
-}
-
-void RSTransaction::CallCreateStartCallback()
-{
-    if (createStartCallback_) {
-        createStartCallback_();
-    }
-}
-
-void RSTransaction::CallCreateFinishCallback()
-{
-    if (createFinishCallback_) {
-        createFinishCallback_();
-    }
-}
-
-void RSTransaction::CreateTransactionFinish()
-{
-    std::unique_lock<std::mutex> lock(mutex_);
-    if (!controllers_.empty() && controllers_.back()) {
-        controllers_.back()->CreateTransactionFinished();
-    }
-    controllers_.clear();
 }
 } // namespace Rosen
 } // namespace OHOS

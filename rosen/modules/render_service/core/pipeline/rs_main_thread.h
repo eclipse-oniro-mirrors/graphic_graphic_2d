@@ -36,6 +36,7 @@
 #include "ipc_callbacks/iapplication_agent.h"
 #include "ipc_callbacks/rs_iocclusion_change_callback.h"
 #include "ipc_callbacks/rs_isurface_occlusion_change_callback.h"
+#include "memory/rs_app_state_listener.h"
 #include "memory/rs_memory_graphic.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_uni_render_judgement.h"
@@ -120,6 +121,8 @@ public:
      * If its pid is in activeProcessPids_ set, return true
      */
     bool CheckNodeHasToBePreparedByPid(NodeId nodeId, bool isClassifyByRoot);
+    // check if active app has static drawing cache
+    bool IsDrawingGroupChanged(RSRenderNode& cacheRootNode) const;
 
     void RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app);
     void UnRegisterApplicationAgent(sptr<IApplicationAgent> app);
@@ -137,6 +140,9 @@ public:
     bool WaitUntilDisplayNodeBufferReleased(RSDisplayRenderNode& node);
     void NotifyDisplayNodeBufferReleased();
 
+    bool WaitHardwareThreadTaskExcute();
+    void NotifyHardwareThreadCanExcuteTask();
+
     // driven render
     void NotifyDrivenRenderFinish();
     void WaitUtilDrivenRenderFinished();
@@ -151,7 +157,11 @@ public:
     sptr<VSyncDistributor> rsVSyncDistributor_;
 
     void ReleaseSurface();
+#ifndef USE_ROSEN_DRAWING
     void AddToReleaseQueue(sk_sp<SkSurface>&& surface);
+#else
+    void AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface);
+#endif
 
     void SetDirtyFlag();
     void SetAccessibilityConfigChanged();
@@ -179,8 +189,12 @@ public:
     }
 
     DeviceType GetDeviceType() const;
+    bool IsSingleDisplay();
     uint64_t GetFocusNodeId() const;
     uint64_t GetFocusLeashWindowId() const;
+
+    void SubscribeAppState();
+    void HandleOnTrim(Memory::SystemMemoryLevel level);
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -192,7 +206,6 @@ private:
     RSMainThread& operator=(const RSMainThread&) = delete;
     RSMainThread& operator=(const RSMainThread&&) = delete;
 
-    bool IsSingleDisplay();
     void OnVsync(uint64_t timestamp, void* data);
     void ProcessCommand();
     void Animate(uint64_t timestamp);
@@ -237,9 +250,11 @@ private:
     void ProcessCommandForDividedRender();
     void ProcessCommandForUniRender();
     void WaitUntilUnmarshallingTaskFinished();
+#if defined(RS_ENABLE_PARALLEL_UPLOAD) && defined(RS_ENABLE_GL)
+    void WaitUntilUploadTextureTaskFinished();
+#endif
     void MergeToEffectiveTransactionDataMap(TransactionDataMap& cachedTransactionDataMap);
 
-    void CheckColdStartMap();
     void ClearDisplayBuffer();
     void PerfAfterAnim(bool needRequestNextVsync);
     void PerfForBlurIfNeeded();
@@ -256,7 +271,7 @@ private:
     bool NeedReleaseGpuResource(const RSRenderNodeMap& nodeMap);
 
     // UIFirst
-    void CheckParallelSubThreadNodesStatus();
+    bool CheckParallelSubThreadNodesStatus();
     void CacheCommands();
 
     // used for informing hgm the bundle name of SurfaceRenderNodes
@@ -267,6 +282,7 @@ private:
     void ProcessHgmFrameRate(std::shared_ptr<FrameRateRangeData> data, uint64_t timestamp);
     void CollectFrameRateRange(std::shared_ptr<RSRenderNode> node);
     int32_t GetNodePreferred(const std::vector<HgmModifierProfile>& hgmModifierProfileList) const;
+    bool IsLastFrameUIFirstEnabled(NodeId appNodeId) const;
 
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
@@ -305,6 +321,14 @@ private:
     std::mutex unmarshalMutex_;
     int32_t unmarshalFinishedCount_ = 0;
 
+#if defined(RS_ENABLE_PARALLEL_UPLOAD) && defined(RS_ENABLE_GL)
+    RSTaskMessage::RSTask uploadTextureBarrierTask_;
+    std::condition_variable uploadTextureTaskCond_;
+    std::mutex uploadTextureMutex_;
+    int32_t uploadTextureFinishedCount_ = 0;
+    EGLSyncKHR uploadTextureFence;
+#endif
+
     mutable std::mutex uniRenderMutex_;
     bool uniRenderFinished_ = false;
     std::condition_variable uniRenderCond_;
@@ -321,6 +345,10 @@ private:
 
     // Used to refresh the whole display when AccessibilityConfig is changed
     bool isAccessibilityConfigChanged_ = false;
+
+    // used for blocking mainThread when hardwareThread has 2 and more task to excute
+    mutable std::mutex hardwareThreadTaskMutex_;
+    std::condition_variable hardwareThreadTaskCond_;
 
     std::map<uint32_t, bool> lastPidVisMap_;
     VisibleData lastVisVec_;
@@ -386,7 +414,11 @@ private:
     bool forceUpdateUniRenderFlag_ = false;
     // for ui first
     std::mutex mutex_;
+#ifndef USE_ROSEN_DRAWING
     std::queue<sk_sp<SkSurface>> tmpSurfaces_;
+#else
+    std::queue<std::shared_ptr<Drawing::Surface>> tmpSurfaces_;
+#endif
 
     // for surface occlusion change callback
     std::mutex surfaceOcclusionMutex_;
@@ -394,6 +426,8 @@ private:
         std::tuple<pid_t, sptr<RSISurfaceOcclusionChangeCallback>, bool>> surfaceOcclusionListeners_;
     std::unordered_map<NodeId,
         std::pair<std::shared_ptr<RSSurfaceRenderNode>, std::shared_ptr<RSSurfaceRenderNode>>> savedAppWindowNode_;
+
+    std::shared_ptr<RSAppStateListener> rsAppStateListener_;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

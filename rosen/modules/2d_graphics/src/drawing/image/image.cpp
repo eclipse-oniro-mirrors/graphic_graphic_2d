@@ -20,6 +20,27 @@
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
+BackendTexture::BackendTexture() noexcept
+    : isValid_(false), imageImplPtr(ImplFactory::CreateImageImpl()) {}
+
+BackendTexture::BackendTexture(bool isValid) noexcept
+    : isValid_(isValid), imageImplPtr(ImplFactory::CreateImageImpl()) {}
+
+bool BackendTexture::IsValid() const
+{
+    return isValid_;
+}
+
+void BackendTexture::SetTextureInfo(const TextureInfo& textureInfo)
+{
+    textureInfo_ = textureInfo;
+}
+
+const TextureInfo BackendTexture::GetTextureInfo() const
+{
+    return textureInfo_;
+}
+
 Image::Image() noexcept : imageImplPtr(ImplFactory::CreateImageImpl()) {}
 
 Image::Image(void* rawImg) noexcept : imageImplPtr(ImplFactory::CreateImageImpl(rawImg)) {}
@@ -42,6 +63,11 @@ bool Image::BuildFromBitmap(GPUContext& gpuContext, const Bitmap& bitmap)
     return imageImplPtr->BuildFromBitmap(gpuContext, bitmap);
 }
 
+bool Image::MakeFromEncoded(const std::shared_ptr<Data>& data)
+{
+    return imageImplPtr->MakeFromEncoded(data);
+}
+
 bool Image::BuildFromCompressed(GPUContext& gpuContext, const std::shared_ptr<Data>& data, int width, int height,
     CompressedType type)
 {
@@ -52,6 +78,16 @@ bool Image::BuildFromTexture(GPUContext& gpuContext, const TextureInfo& info, Te
     BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace)
 {
     return imageImplPtr->BuildFromTexture(gpuContext, info, origin, bitmapFormat, colorSpace);
+}
+
+BackendTexture Image::GetBackendTexture(bool flushPendingGrContextIO, TextureOrigin* origin) const
+{
+    return imageImplPtr->GetBackendTexture(flushPendingGrContextIO, origin);
+}
+
+bool Image::IsValid(GPUContext* context) const
+{
+    return imageImplPtr->IsValid(context);
 }
 #endif
 
@@ -80,6 +116,11 @@ uint32_t Image::GetUniqueID() const
     return imageImplPtr->GetUniqueID();
 }
 
+ImageInfo Image::GetImageInfo()
+{
+    return imageImplPtr->GetImageInfo();
+}
+
 bool Image::ReadPixels(Bitmap& bitmap, int x, int y)
 {
     return imageImplPtr->ReadPixels(bitmap, x, y);
@@ -88,6 +129,21 @@ bool Image::ReadPixels(Bitmap& bitmap, int x, int y)
 bool Image::IsTextureBacked() const
 {
     return imageImplPtr->IsTextureBacked();
+}
+
+bool Image::ScalePixels(const Bitmap& bitmap, const SamplingOptions& sampling, bool allowCachingHint) const
+{
+    return imageImplPtr->ScalePixels(bitmap, sampling, allowCachingHint);
+}
+
+std::shared_ptr<Data> Image::EncodeToData(EncodedImageFormat& encodedImageFormat, int quality) const
+{
+    return imageImplPtr->EncodeToData(encodedImageFormat, quality);
+}
+
+bool Image::IsLazyGenerated() const
+{
+    return imageImplPtr->IsLazyGenerated();
 }
 
 std::shared_ptr<Data> Image::Serialize() const
