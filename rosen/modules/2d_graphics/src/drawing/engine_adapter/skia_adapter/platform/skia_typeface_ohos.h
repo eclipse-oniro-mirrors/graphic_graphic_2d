@@ -28,8 +28,16 @@ namespace Rosen {
 namespace Drawing {
 class SkiaTypefaceOhos : public SkiaTypeface {
 public:
+    static inline constexpr AdapterType TYPE = AdapterType::SKIA_ADAPTER;
+
     explicit SkiaTypefaceOhos(const std::string& specifiedName, FontInfo& info);
+
     ~SkiaTypefaceOhos() override = default;
+
+    AdapterType GetType() const override
+    {
+        return AdapterType::SKIA_ADAPTER;
+    }
 };
 } // namespace Drawing
 } // namespace Rosen
