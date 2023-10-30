@@ -147,6 +147,8 @@ private:
 
     int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode) override;
 
+    int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation) override;
+
     int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode) override;
 
     int32_t GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability) override;

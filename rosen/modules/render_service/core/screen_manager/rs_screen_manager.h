@@ -101,6 +101,8 @@ public:
 
     virtual void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status) = 0;
 
+    virtual int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation) = 0;
+
     virtual void GetVirtualScreenResolution(ScreenId id, RSVirtualScreenResolution& virtualScreenResolution) const = 0;
 
     virtual void GetScreenActiveMode(ScreenId id, RSScreenModeInfo& screenModeInfo) const = 0;
@@ -110,6 +112,8 @@ public:
     virtual RSScreenCapability GetScreenCapability(ScreenId id) const = 0;
 
     virtual ScreenPowerStatus GetScreenPowerStatus(ScreenId id) const = 0;
+
+    virtual ScreenRotation GetScreenCorrection(ScreenId id) const = 0;
 
     virtual RSScreenData GetScreenData(ScreenId id) const = 0;
 
@@ -218,6 +222,8 @@ public:
 
     ScreenPowerStatus GetScreenPowerStatus(ScreenId id) const override;
 
+    ScreenRotation GetScreenCorrection(ScreenId id) const override;
+
     RSScreenData GetScreenData(ScreenId id) const  override;
 
     ScreenInfo QueryScreenInfo(ScreenId id) const override;
@@ -253,6 +259,8 @@ public:
     int32_t SetScreenColorGamut(ScreenId id, int32_t modeIdx) override;
 
     int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode) override;
+
+    int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation) override;
 
     int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode) const override;
 
@@ -291,6 +299,7 @@ private:
     std::vector<RSScreenModeInfo> GetScreenSupportedModesLocked(ScreenId id) const;
     RSScreenCapability GetScreenCapabilityLocked(ScreenId id) const;
     ScreenPowerStatus GetScreenPowerStatusLocked(ScreenId id) const;
+    ScreenRotation GetScreenCorrectionLocked(ScreenId id) const;
     int32_t GetScreenBacklightLocked(ScreenId id) const;
 
     void RemoveVirtualScreenLocked(ScreenId id);
@@ -304,6 +313,7 @@ private:
     int32_t GetScreenColorGamutLocked(ScreenId id, ScreenColorGamut& mode) const;
     int32_t SetScreenColorGamutLocked(ScreenId id, int32_t modeIdx);
     int32_t SetScreenGamutMapLocked(ScreenId id, ScreenGamutMap mode);
+    int32_t SetScreenCorrectionLocked(ScreenId id, ScreenRotation screenRotation);
     int32_t GetScreenGamutMapLocked(ScreenId id, ScreenGamutMap& mode) const;
     int32_t GetScreenHDRCapabilityLocked(ScreenId id, RSScreenHDRCapability& screenHdrCapability) const;
     int32_t GetScreenTypeLocked(ScreenId id, RSScreenType& type) const;

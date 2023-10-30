@@ -260,6 +260,11 @@ int32_t RSInterfaces::SetScreenGamutMap(ScreenId id, ScreenGamutMap mode)
     return renderServiceClient_->SetScreenGamutMap(id, mode);
 }
 
+int32_t RSInterfaces::SetScreenCorrection(ScreenId id, ScreenRotation screenRotation)
+{
+    return renderServiceClient_->SetScreenCorrection(id, screenRotation);
+}
+
 int32_t RSInterfaces::GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode)
 {
     return renderServiceClient_->GetScreenGamutMap(id, mode);

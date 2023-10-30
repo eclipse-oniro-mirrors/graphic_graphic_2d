@@ -649,6 +649,15 @@ int32_t RSRenderServiceClient::SetScreenGamutMap(ScreenId id, ScreenGamutMap mod
     return renderService->SetScreenGamutMap(id, mode);
 }
 
+int32_t RSRenderServiceClient::SetScreenCorrection(ScreenId id, ScreenRotation screenRotation)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+    return renderService->SetScreenCorrection(id, screenRotation);
+}
+
 int32_t RSRenderServiceClient::GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();

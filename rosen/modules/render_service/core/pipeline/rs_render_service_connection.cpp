@@ -709,6 +709,12 @@ int32_t RSRenderServiceConnection::SetScreenGamutMap(ScreenId id, ScreenGamutMap
     }
 }
 
+int32_t RSRenderServiceConnection::SetScreenCorrection(ScreenId id, ScreenRotation screenRotation)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return screenManager_->SetScreenCorrection(id, screenRotation);
+}
+
 int32_t RSRenderServiceConnection::GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode)
 {
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();

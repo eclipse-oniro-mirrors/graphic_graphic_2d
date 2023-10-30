@@ -572,6 +572,17 @@ ScreenPowerStatus RSScreenManager::GetScreenPowerStatusLocked(ScreenId id) const
     return status;
 }
 
+ScreenRotation RSScreenManager::GetScreenCorrectionLocked(ScreenId id) const
+{
+    if (screens_.count(id) == 0) {
+        RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64 ".", __func__, id);
+        return ScreenRotation::INVALID_SCREEN_ROTATION;
+    }
+
+    ScreenRotation screenRotation = screens_.at(id)->GetScreenCorrection();
+    return screenRotation;
+}
+
 std::vector<ScreenId> RSScreenManager::GetAllScreenIds()
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -789,6 +800,13 @@ ScreenPowerStatus RSScreenManager::GetScreenPowerStatus(ScreenId id) const
     std::lock_guard<std::mutex> lock(mutex_);
 
     return GetScreenPowerStatusLocked(id);
+}
+
+ScreenRotation RSScreenManager::GetScreenCorrection(ScreenId id) const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    return GetScreenCorrectionLocked(id);
 }
 
 RSScreenData RSScreenManager::GetScreenData(ScreenId id) const
@@ -1010,6 +1028,16 @@ int32_t RSScreenManager::SetScreenGamutMapLocked(ScreenId id, ScreenGamutMap mod
     return screens_.at(id)->SetScreenGamutMap(mode);
 }
 
+int32_t RSScreenManager::SetScreenCorrectionLocked(ScreenId id, ScreenRotation screenRotation)
+{
+    if (screens_.count(id) == 0) {
+        RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64 ".", __func__, id);
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    screens_.at(id)->SetScreenCorrection(screenRotation);
+    return StatusCode::SUCCESS;
+}
+
 int32_t RSScreenManager::GetScreenGamutMapLocked(ScreenId id, ScreenGamutMap &mode) const
 {
     if (screens_.count(id) == 0) {
@@ -1097,6 +1125,12 @@ int32_t RSScreenManager::SetScreenGamutMap(ScreenId id, ScreenGamutMap mode)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     return SetScreenGamutMapLocked(id, mode);
+}
+
+int32_t RSScreenManager::SetScreenCorrection(ScreenId id, ScreenRotation screenRotation)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return SetScreenCorrectionLocked(id, screenRotation);
 }
 
 int32_t RSScreenManager::GetScreenGamutMap(ScreenId id, ScreenGamutMap &mode) const

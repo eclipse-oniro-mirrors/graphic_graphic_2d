@@ -28,6 +28,7 @@
 #include "memory/rs_memory_track.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_handler.h"
+#include <screen_manager/screen_types.h>
 #ifdef NEW_RENDER_CONTEXT
 #include "rs_render_surface.h"
 #else
@@ -36,7 +37,6 @@
 
 namespace OHOS {
 namespace Rosen {
-enum class ScreenRotation : uint32_t;
 class RSB_EXPORT RSDisplayRenderNode : public RSRenderNode, public RSSurfaceHandler {
 public:
     enum CompositeType {
@@ -258,8 +258,8 @@ public:
     }
 private:
     CompositeType compositeType_ { HARDWARE_COMPOSITE };
-    ScreenRotation screenRotation_;
-    ScreenRotation firstTimeScreenRotation_;
+    ScreenRotation screenRotation_ = ScreenRotation::ROTATION_0;
+    ScreenRotation firstTimeScreenRotation_ = ScreenRotation::ROTATION_0;
     uint64_t screenId_;
     int32_t offsetX_;
     int32_t offsetY_;
