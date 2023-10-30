@@ -77,7 +77,7 @@ public:
     virtual GSError InvalidateCache() = 0;
 
     // metadata
-    virtual GSError SetMetadata(uint32_t kry, const std::vector<uint8_t>& value) = 0;
+    virtual GSError SetMetadata(uint32_t key, const std::vector<uint8_t>& value) = 0;
     virtual GSError GetMetadata(uint32_t key, std::vector<uint8_t>& value) = 0;
     virtual GSError ListMetadataKeys(std::vector<uint32_t>& keys) = 0;
     virtual GSError EraseMetadataKey(uint32_t key) = 0;

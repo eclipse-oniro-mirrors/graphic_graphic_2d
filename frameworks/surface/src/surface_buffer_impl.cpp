@@ -537,7 +537,7 @@ GSError SurfaceBufferImpl::SetMetadata(uint32_t key, const std::vector<uint8_t>&
     if (dret == GRAPHIC_DISPLAY_SUCCESS) {
         return GSERROR_OK;
     }
-    BLOGW("Failed with ${public}d", dret);
+    BLOGW("Failed with %{public}d", dret);
     return GenerateError(GSERROR_API_FAILED, dret);
 }
 
@@ -550,7 +550,7 @@ GSError SurfaceBufferImpl::GetMetadata(uint32_t key, std::vector<uint8_t>& value
     if (dret == GRAPHIC_DISPLAY_SUCCESS) {
         return GSERROR_OK;
     }
-    BLOGW("Failed with ${public}d", dret);
+    BLOGW("Failed with %{public}d", dret);
     return GenerateError(GSERROR_API_FAILED, dret);
 }
 
@@ -560,11 +560,11 @@ GSError SurfaceBufferImpl::ListMetadataKeys(std::vector<uint32_t>& keys)
         return GSERROR_API_FAILED;
     }
     keys.clear();
-    auto dret = g_displayBuffer->SetMetadata(*handle_, keys);
+    auto dret = g_displayBuffer->ListMetadataKeys(*handle_, keys);
     if (dret == GRAPHIC_DISPLAY_SUCCESS) {
         return GSERROR_OK;
     }
-    BLOGW("Failed with ${public}d", dret);
+    BLOGW("Failed with %{public}d", dret);
     return GenerateError(GSERROR_API_FAILED, dret);
 }
 
@@ -573,11 +573,11 @@ GSError SurfaceBufferImpl::EraseMetadataKey(uint32_t key)
     if (handle_ == nullptr) {
         return GSERROR_API_FAILED;
     }
-    auto dret = g_displayBuffer->SetMetadata(*handle_, key);
+    auto dret = g_displayBuffer->EraseMetadataKey(*handle_, key);
     if (dret == GRAPHIC_DISPLAY_SUCCESS) {
         return GSERROR_OK;
     }
-    BLOGW("Failed with ${public}d", dret);
+    BLOGW("Failed with %{public}d", dret);
     return GenerateError(GSERROR_API_FAILED, dret);
 }
 } // namespace OHOS

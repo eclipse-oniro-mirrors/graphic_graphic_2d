@@ -12,14 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <secure.h>
+#include <securec.h>
 #include <gtest/gtest.h>
 #include <surface.h>
 #include <surface_buffer_impl.h>
 #include <buffer_manager.h>
 #include <buffer_utils.h>
-#include <v1_0/cm_color_spac.h>
+#include <v1_0/cm_color_space.h>
 #include <v1_0/buffer_handle_meta_key_type.h>
+#include <metadata_convertor.h>
 
 using namespace testing;
 using namespace testing::ext;

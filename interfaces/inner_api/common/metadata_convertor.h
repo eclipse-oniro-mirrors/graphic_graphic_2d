@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef METADATA_CONVERTOR_H
-#define METADATA_CONVERTOR_H
+#ifndef INTERFACES_INNERKITS_COMMON_METADATA_CONVERTOR_H
+#define INTERFACES_INNERKITS_COMMON_METADATA_CONVERTOR_H
 
 #include <vector>
 
@@ -48,4 +48,4 @@ static int32_t ConvertVecToMetadata(const std::vector<uint8_t>& data, T& metadat
 } // namespace MetadataManager
 } // namespace OHOS
 
-#endif // METADATA_CONVERTOR_H
+#endif // INTERFACES_INNERKITS_COMMON_METADATA_CONVERTOR_H
