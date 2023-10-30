@@ -1501,7 +1501,7 @@ SkColor RSPropertiesPainter::CalcAverageColor(sk_sp<SkImage> imageSnapshot)
 {
     // create a 1x1 SkPixmap
     uint32_t pixel[1] = { 0 };
-    auto single_pixel_info = SkImageInfo::MakeN32Premul(1, 1);
+    auto single_pixel_info = SkImageInfo::Make(1, 1, kRGBA_8888_SkColorType, kPremul_SkAlphaType);
     SkPixmap single_pixel(single_pixel_info, pixel, single_pixel_info.bytesPerPixel());
 
     // resize snapshot to 1x1 to calculate average color
