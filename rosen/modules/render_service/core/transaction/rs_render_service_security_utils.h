@@ -13,27 +13,26 @@
  * limitations under the License.
  */
 
-#include "ipc_callbacks/buffer_available_callback_ipc_interface_code_access_verifier.h"
+#ifndef ROSEN_RENDER_SERVICE_BASE_TRANSACTION_RS_RENDER_SERVICE_SECURITY_UTILS_H
+#define ROSEN_RENDER_SERVICE_BASE_TRANSACTION_RS_RENDER_SERVICE_SECURITY_UTILS_H
 
+#include <unordered_map>
+
+#include "ipc_security/rs_ipc_interface_code_underlying_type.h"
 namespace OHOS {
 namespace Rosen {
-RSIBufferAvailableCallbackInterfaceCodeAccessVerifier::RSIBufferAvailableCallbackInterfaceCodeAccessVerifier()
-{
-    CheckCodeUnderlyingTypeStandardized<CodeEnumType>(codeEnumTypeName_);
-}
+class RSRenderServiceSecurityUtils {
+public:
+    RSRenderServiceSecurityUtils() = default;
+    ~RSRenderServiceSecurityUtils() noexcept = default;
 
-bool RSIBufferAvailableCallbackInterfaceCodeAccessVerifier::IsExclusiveVerificationPassed(CodeUnderlyingType code)
-{
-    bool hasPermission = true;
-    switch (code) {
-        case static_cast<CodeUnderlyingType>(CodeEnumType::ON_BUFFER_AVAILABLE): {
-            break;
-        }
-        default: {
-            break;
-        }
-    }
-    return hasPermission;
-}
+    uint32_t GetCodeAccessCounter(uint32_t code) const;
+    void IncreaseAccessCounter(uint32_t code);
+
+private:
+    std::unordered_map<uint32_t, uint32_t> accessCounter_;
+};
 } // namespace Rosen
 } // namespace OHOS
+
+#endif // ROSEN_RENDER_SERVICE_BASE_TRANSACTION_RS_RENDER_SERVICE_SECURITY_UTILS_H

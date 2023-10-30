@@ -13,27 +13,20 @@
  * limitations under the License.
  */
 
-#include "ipc_callbacks/buffer_available_callback_ipc_interface_code_access_verifier.h"
+#include "rs_render_service_security_utils.h"
 
 namespace OHOS {
 namespace Rosen {
-RSIBufferAvailableCallbackInterfaceCodeAccessVerifier::RSIBufferAvailableCallbackInterfaceCodeAccessVerifier()
+
+uint32_t RSRenderServiceSecurityUtils::GetCodeAccessCounter(uint32_t code) const
 {
-    CheckCodeUnderlyingTypeStandardized<CodeEnumType>(codeEnumTypeName_);
+    return accessCounter_.count(code) == 0 ? 0 : accessCounter_.at(code);
 }
 
-bool RSIBufferAvailableCallbackInterfaceCodeAccessVerifier::IsExclusiveVerificationPassed(CodeUnderlyingType code)
+void RSRenderServiceSecurityUtils::IncreaseAccessCounter(uint32_t code)
 {
-    bool hasPermission = true;
-    switch (code) {
-        case static_cast<CodeUnderlyingType>(CodeEnumType::ON_BUFFER_AVAILABLE): {
-            break;
-        }
-        default: {
-            break;
-        }
-    }
-    return hasPermission;
+    accessCounter_[code] = accessCounter_.count(code) == 0 ? 1 : accessCounter_[code] + 1;
 }
+
 } // namespace Rosen
 } // namespace OHOS
