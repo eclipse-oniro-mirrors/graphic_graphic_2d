@@ -74,7 +74,7 @@ std::unordered_map<MATERIAL_BLUR_STYLE, MaterialParam> kawaseMaterialParams_ {
 };
 } // namespace
 
-#if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA)
+#if !defined(USE_ROSEN_DRAWING)
 const bool KAWASE_BLUR_ENABLED = RSSystemProperties::GetKawaseEnabled();
 #endif
 
