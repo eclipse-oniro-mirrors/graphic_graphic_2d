@@ -28,6 +28,7 @@ namespace Drawing {
 class SkiaFontStyleSet : public FontStyleSetImpl {
 public:
     static inline constexpr AdapterType TYPE = AdapterType::SKIA_ADAPTER;
+
     explicit SkiaFontStyleSet(std::shared_ptr<SkFontStyleSet> skFontStyleSet);
     virtual ~SkiaFontStyleSet() = default;
 

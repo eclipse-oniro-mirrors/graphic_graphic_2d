@@ -26,8 +26,14 @@ namespace Drawing {
 class SkiaSurface : public SurfaceImpl {
 public:
     static inline constexpr AdapterType TYPE = AdapterType::SKIA_ADAPTER;
+
     SkiaSurface();
     ~SkiaSurface() override = default;
+
+    AdapterType GetType() const override
+    {
+        return AdapterType::SKIA_ADAPTER;
+    }
 
     bool Bind(const Bitmap& bitmap) override;
 #ifdef ACE_ENABLE_GPU

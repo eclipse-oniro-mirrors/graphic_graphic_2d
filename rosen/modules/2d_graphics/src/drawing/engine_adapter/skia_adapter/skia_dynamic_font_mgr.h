@@ -25,8 +25,15 @@ namespace Rosen {
 namespace Drawing {
 class SkiaDynamicFontMgr : public SkiaFontMgr {
 public:
+    static inline constexpr AdapterType TYPE = AdapterType::SKIA_ADAPTER;
+
     explicit SkiaDynamicFontMgr();
     ~SkiaDynamicFontMgr() override = default;
+
+    AdapterType GetType() const override
+    {
+        return AdapterType::SKIA_ADAPTER;
+    }
 };
 } // namespace Drawing
 } // namespace Rosen

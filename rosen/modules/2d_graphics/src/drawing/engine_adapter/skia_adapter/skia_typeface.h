@@ -27,6 +27,7 @@ namespace Drawing {
 class SkiaTypeface : public TypefaceImpl {
 public:
     static inline constexpr AdapterType TYPE = AdapterType::SKIA_ADAPTER;
+
     explicit SkiaTypeface(sk_sp<SkTypeface> skTypeface);
     ~SkiaTypeface() override = default;
 

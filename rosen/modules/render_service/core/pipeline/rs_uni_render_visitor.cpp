@@ -1657,20 +1657,24 @@ void RSUniRenderVisitor::ProcessChildren(RSRenderNode& node)
     if (isSubThread_) {
         node.SetIsUsedBySubThread(true);
         for (auto& child : node.GetSortedChildren(true)) {
-            if (ProcessSharedTransitionNode(*child)) {
-                child->Process(shared_from_this());
-                child->SetDrawingCacheRootId(node.GetDrawingCacheRootId());
-            }
+            ProcessChildInner(node, child);
         }
         // Main thread may invalidate the FullChildrenList, check if we need to clear it.
         node.ClearFullChildrenListIfNeeded(true);
         node.SetIsUsedBySubThread(false);
     } else {
         for (auto& child : node.GetSortedChildren()) {
-            if (ProcessSharedTransitionNode(*child)) {
-                child->Process(shared_from_this());
-                child->SetDrawingCacheRootId(node.GetDrawingCacheRootId());
-            }
+            ProcessChildInner(node, child);
+        }
+    }
+}
+
+void RSUniRenderVisitor::ProcessChildInner(RSRenderNode& node, const RSRenderNode::SharedPtr& child)
+{
+    if (child && ProcessSharedTransitionNode(*child)) {
+        child->Process(shared_from_this());
+        if (node.GetDrawingCacheRootId() != INVALID_NODEID) {
+            child->SetDrawingCacheRootId(node.GetDrawingCacheRootId());
         }
     }
 }
@@ -2591,12 +2595,27 @@ void RSUniRenderVisitor::UpdateHardwareNodeStatusBasedOnFilter(std::shared_ptr<R
     // remove invisible surface since occlusion
     auto visibleRegion = node->GetVisibleRegion();
     for (auto subNode : node->GetChildHardwareEnabledNodes()) {
-        if (auto childNode = subNode.lock()) {
-            // recover disabled state before update
-            childNode->SetHardwareForcedDisabledStateByFilter(false);
-            if (visibleRegion.IsIntersectWith(Occlusion::Rect(childNode->GetOldDirtyInSurface()))) {
-                curHwcEnabledNodes.emplace_back(std::make_pair(subNode, node));
+        auto childNode = subNode.lock();
+        if (!childNode) {
+            continue;
+        }
+        // recover disabled state before update
+        childNode->SetHardwareForcedDisabledStateByFilter(false);
+        if (!visibleRegion.IsIntersectWith(Occlusion::Rect(childNode->GetOldDirtyInSurface()))) {
+            continue;
+        }
+        bool isIntersected = false;
+        if (isPhone_) {
+            for (auto &hwcNode: curHwcEnabledNodes) {
+                if (childNode->GetDstRect().Intersect(hwcNode.first->GetDstRect())) {
+                    childNode->SetHardwareForcedDisabledStateByFilter(true);
+                    isIntersected = true;
+                    break;
+                }
             }
+        }
+        if (!isPhone_ || !isIntersected) {
+            curHwcEnabledNodes.emplace_back(std::make_pair(subNode, node));
         }
     }
     // Within App: disable hwc if intersect with filterRects
@@ -3325,13 +3344,13 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
                     static_cast<uint8_t>(node.GetRenderProperties().GetBackgroundColor().GetAlpha()) < UINT8_MAX;
                 node.SetHardwareForcedDisabledState(
                     (node.IsHardwareForcedDisabledByFilter() || canvas_->GetAlpha() < 1.f || !canvas_->isClipRect() ||
-                    backgroundTransparent || IsRosenWebHardwareDisabled(node, rotation)) &&
+                    backgroundTransparent || IsRosenWebHardwareDisabled(node, rotation) ||
+                    RSUniRenderUtil::GetRotationDegreeFromMatrix(node.GetTotalMatrix()) % ROTATION_90 != 0) &&
                     (!node.IsHardwareEnabledTopSurface() || node.HasSubNodeShouldPaint()));
                 node.SetHardwareDisabledByCache(isUpdateCachedSurface_);
             }
             // if this window is in freeze state, disable hardware composer for its child surfaceView
-            if (IsHardwareComposerEnabled() && !node.IsHardwareForcedDisabled() &&
-                node.IsHardwareEnabledType() && rotation % ROTATION_90 != 0) {
+            if (IsHardwareComposerEnabled() && !node.IsHardwareForcedDisabled() && node.IsHardwareEnabledType()) {
 #ifndef USE_ROSEN_DRAWING
                 if (!node.IsHardwareEnabledTopSurface()) {
                     canvas_->clear(SK_ColorTRANSPARENT);

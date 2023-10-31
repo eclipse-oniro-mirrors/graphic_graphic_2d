@@ -28,13 +28,9 @@ class Bitmap;
 struct BitmapFormat;
 class BitmapImpl : public BaseImpl {
 public:
-    static inline constexpr AdapterType TYPE = AdapterType::BASE_INTERFACE;
     BitmapImpl() {}
     ~BitmapImpl() override {}
-    AdapterType GetType() const override
-    {
-        return AdapterType::BASE_INTERFACE;
-    }
+
     virtual void Build(int32_t width, int32_t height, const BitmapFormat& format, int32_t stride = 0) = 0;
     virtual void Build(const ImageInfo& imageInfo, int32_t stride = 0) = 0;
     virtual int GetWidth() const = 0;
