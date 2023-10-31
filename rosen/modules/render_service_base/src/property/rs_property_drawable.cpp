@@ -166,7 +166,7 @@ const std::vector<RSPropertyDrawable::DrawableGenerator> RSPropertyDrawable::Dra
     RSDynamicLightUpDrawable::Generate,                                   // DYNAMIC_LIGHT_UP,
     CustomModifierAdapter<RSModifierType::ENV_FOREGROUND_COLOR_STRATEGY>, // ENV_FOREGROUND_COLOR_STRATEGY
     nullptr,                                                              // RESTORE_BOUNDS_BEFORE_FRAME,
-    RSSavelayerContentDrawable::Generate,                                       // SAVE_LAYER_CONTENT
+    RSSavelayerContentDrawable::Generate,                                 // SAVE_LAYER_CONTENT
 
     // Frame Geometry
     nullptr,                                                 // SAVE_FRAME,
