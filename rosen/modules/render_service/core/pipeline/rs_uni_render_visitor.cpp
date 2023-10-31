@@ -1969,7 +1969,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             }
             if (needCreateDisplayNodeLayer) {
                 processor_->ProcessDisplaySurface(node);
-                processor_->PostProcess();
+                processor_->PostProcess(&node);
             }
             return;
         }
@@ -2281,7 +2281,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         RSDrivenRenderManager::GetInstance().DoProcessRenderTask(drivenInfo_->processInfo);
     }
 #endif
-    processor_->PostProcess();
+    processor_->PostProcess(&node);
     {
         std::lock_guard<std::mutex> lock(groupedTransitionNodesMutex);
         EraseIf(groupedTransitionNodes, [](auto& iter) -> bool {
@@ -3999,7 +3999,7 @@ bool RSUniRenderVisitor::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> r
     if (!RSMainThread::Instance()->WaitHardwareThreadTaskExcute()) {
         RS_LOGW("RSUniRenderVisitor::DoDirectComposition: hardwareThread task has too many to excute");
     }
-    processor_->PostProcess();
+    processor_->PostProcess(displayNode.get());
     RS_LOGD("RSUniRenderVisitor::DoDirectComposition end");
     return true;
 }
