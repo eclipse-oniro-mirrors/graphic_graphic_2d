@@ -475,9 +475,11 @@ void RSSurfaceRenderNode::SetContextClipRegion(const std::optional<Drawing::Rect
 void RSSurfaceRenderNode::SetSecurityLayer(bool isSecurityLayer)
 {
     isSecurityLayer_ = isSecurityLayer;
+    SetDirty();
     auto parent = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetParent().lock());
-    if (parent != nullptr && parent ->IsLeashWindow()) {
+    if (parent != nullptr && parent->IsLeashWindow()) {
         parent->SetSecurityLayer(isSecurityLayer);
+        parent->SetDirty();
     }
 }
 
@@ -489,9 +491,11 @@ bool RSSurfaceRenderNode::GetSecurityLayer() const
 void RSSurfaceRenderNode::SetSkipLayer(bool isSkipLayer)
 {
     isSkipLayer_ = isSkipLayer;
+    SetDirty();
     auto parent = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetParent().lock());
-    if (parent != nullptr && parent ->IsLeashWindow()) {
+    if (parent != nullptr && parent->IsLeashWindow()) {
         parent->SetSkipLayer(isSkipLayer);
+        parent->SetDirty();
     }
 }
 
