@@ -385,6 +385,10 @@ std::vector<LineMetrics> Shaper::CreatePartlySpan(const bool cutRight, const Typ
     const std::shared_ptr<FontProviders> &fontProviders, const VariantSpan &span, const double exceedWidth)
 {
     auto textSpan = span.TryToTextSpan();
+    if (textSpan == nullptr) {
+        return {};
+    }
+
     int startIndex = textSpan->cgs_.GetRange().start;
     int endIndex = textSpan->cgs_.GetRange().end - 1;  // end - 1 is the index of end
     double deletedWidth = 0.0;
