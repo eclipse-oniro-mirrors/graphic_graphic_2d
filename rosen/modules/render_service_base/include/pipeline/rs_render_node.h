@@ -76,6 +76,11 @@ public:
     virtual ~RSRenderNode();
 
     void AddChild(SharedPtr child, int index = -1);
+    void SetContainBootAnimation(bool isContainBootAnimation);
+    bool GetContainBootAnimation() const;
+    virtual void SetBootAnimation(bool isBootAnimation);
+    virtual bool GetBootAnimation() const;
+
     void MoveChild(SharedPtr child, int index);
     void RemoveChild(SharedPtr child, bool skipTransition = false);
     void ClearChildren();
@@ -230,6 +235,7 @@ public:
     bool IsStaticCached() const;
 
     bool NeedInitCacheSurface() const;
+    bool NeedInitCacheCompletedSurface() const;
     inline bool IsPureContainer() const
     {
         return (drawCmdModifiers_.empty() && !renderProperties_.isDrawn_ && !renderProperties_.alphaNeedApply_);
@@ -379,7 +385,6 @@ public:
 
     void SetDrawRegion(const std::shared_ptr<RectF>& rect);
     const std::shared_ptr<RectF>& GetDrawRegion() const;
-    
     void SetOutOfParent(OutOfParentType outOfParent);
     OutOfParentType GetOutOfParent() const;
 
@@ -463,6 +468,7 @@ protected:
 
     std::unordered_set<RSModifierType> dirtyTypes_;
     bool isFullChildrenListValid_ = false;
+    bool isBootAnimation_ = false;
     RSProperties renderProperties_;
     void IterateOnDrawableRange(Slot::RSPropertyDrawableSlot begin, Slot::RSPropertyDrawableSlot end,
         RSRenderNode& node, RSPaintFilterCanvas& canvas);
@@ -509,6 +515,7 @@ private:
     bool shouldPaint_ = true;
 
     bool isDirtyRegionUpdated_ = false;
+    bool isContainBootAnimation_ = false;
     bool isLastVisible_ = false;
     bool fallbackAnimationOnDestroy_ = true;
     uint32_t disappearingTransitionCount_ = 0;

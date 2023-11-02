@@ -332,6 +332,9 @@ public:
     std::optional<Drawing::Rect> GetContextClipRegion() const override;
 #endif
 
+    void SetBootAnimation(bool isBootAnimation) override;
+    bool GetBootAnimation() const override;
+
     void SetSecurityLayer(bool isSecurityLayer);
     bool GetSecurityLayer() const;
 
@@ -973,6 +976,8 @@ private:
     bool prevVisible_ = false;
     bool hasSecurityLayer_ = false;
     bool hasSkipLayer_ = false;
+
+    uint32_t processZOrder_ = -1;
 
     // UIFirst
     uint32_t submittedSubThreadIndex_ = INT_MAX;

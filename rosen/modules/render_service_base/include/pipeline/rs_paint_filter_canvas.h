@@ -43,6 +43,14 @@ public:
     RSPaintFilterCanvasBase(Drawing::Canvas* canvas);
     ~RSPaintFilterCanvasBase() override = default;
 
+    Drawing::Matrix GetTotalMatrix() const override;
+
+    Drawing::Rect GetLocalClipBounds() const override;
+
+    Drawing::RectI GetDeviceClipBounds() const override;
+
+    uint32_t GetSaveCount() const override;
+
 #ifdef ACE_ENABLE_GPU
     std::shared_ptr<Drawing::GPUContext> GetGPUContext() const override;
 #endif
@@ -260,6 +268,7 @@ public:
 #endif
     bool GetRecordingState() const;
     void SetRecordingState(bool flag);
+    SkCanvas* GetRecordingCanvas() const;
 
 protected:
     using Env = struct {

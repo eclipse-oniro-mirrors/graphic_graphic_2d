@@ -125,6 +125,7 @@ public:
     void UpdateHardwareEnabledInfoBeforeCreateLayer();
     void SetHardwareEnabledNodes(const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hardwareEnabledNodes);
     void AssignGlobalZOrderAndCreateLayer(std::vector<std::shared_ptr<RSSurfaceRenderNode>>& nodesInZOrder);
+    void ScaleMirrorIfNeed(float boundsWidth, float boundsHeight);
 
     void CopyForParallelPrepare(std::shared_ptr<RSUniRenderVisitor> visitor);
     // Some properties defined before ProcessSurfaceRenderNode() may be used in
@@ -328,6 +329,7 @@ private:
     ScreenId currentVisitDisplay_ = INVALID_SCREEN_ID;
     std::map<ScreenId, bool> displayHasSecSurface_;
     std::map<ScreenId, bool> displayHasSkipSurface_;
+    std::map<ScreenId, bool> hasCaptureWindow_;
     std::set<ScreenId> mirroredDisplays_;
     bool isSecurityDisplay_ = false;
 
@@ -424,13 +426,7 @@ private:
     std::optional<Drawing::Matrix> displayNodeMatrix_;
 #endif
     mutable std::mutex copyVisitorInfosMutex_;
-#ifndef USE_ROSEN_DRAWING
-    sk_sp<SkImage> cacheImgForCapture_ = nullptr;
-#else
-    std::shared_ptr<Drawing::Image> cacheImgForCapture_ = nullptr;
-#endif
     bool resetRotate_ = false;
-    bool needCacheImg_ = false;
 #ifndef USE_ROSEN_DRAWING
     std::optional<SkPath> effectRegion_ = std::nullopt;
 #else
