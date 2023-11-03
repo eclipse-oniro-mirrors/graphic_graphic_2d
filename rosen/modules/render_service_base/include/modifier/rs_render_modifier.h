@@ -277,7 +277,9 @@ class RSB_EXPORT RSEnvForegroundColorRenderModifier : public RSForegroundRenderM
 public:
     RSEnvForegroundColorRenderModifier(const std::shared_ptr<RSRenderPropertyBase>& property)
         : RSForegroundRenderModifier(property)
-    {}
+    {
+        property->SetModifierType(RSModifierType::ENV_FOREGROUND_COLOR);
+    }
     ~RSEnvForegroundColorRenderModifier() override = default;
     void Apply(RSModifierContext& context) const override;
     void Update(const std::shared_ptr<RSRenderPropertyBase>& prop, bool isDelta) override;
@@ -292,7 +294,9 @@ class RSB_EXPORT RSEnvForegroundColorStrategyRenderModifier : public RSForegroun
 public:
     RSEnvForegroundColorStrategyRenderModifier(const std::shared_ptr<RSRenderPropertyBase>& property)
         : RSForegroundRenderModifier(property)
-    {}
+    {
+        property->SetModifierType(RSModifierType::ENV_FOREGROUND_COLOR_STRATEGY);
+    }
     ~RSEnvForegroundColorStrategyRenderModifier() override = default;
     void Apply(RSModifierContext& context) const override;
     void Update(const std::shared_ptr<RSRenderPropertyBase>& prop, bool isDelta) override;
