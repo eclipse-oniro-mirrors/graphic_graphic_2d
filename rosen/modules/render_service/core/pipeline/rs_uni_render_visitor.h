@@ -291,6 +291,8 @@ private:
     bool IsFirstVisitedCacheForced() const;
     bool IsRosenWebHardwareDisabled(RSSurfaceRenderNode& node, int rotation) const;
 
+    void SwitchColorFilterDrawing(int currentSaveCount);
+
 #ifndef USE_ROSEN_DRAWING
     sk_sp<SkSurface> offscreenSurface_;                 // temporary holds offscreen surface
 #else
