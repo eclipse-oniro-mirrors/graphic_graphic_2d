@@ -2205,6 +2205,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 // render directly
                 ProcessChildren(node);
             }
+            SwitchColorFilterDrawing(saveCount);
             canvas_->restoreToCount(saveCount);
 #else
             int saveCount = canvas_->GetSaveCount();
@@ -2359,6 +2360,38 @@ void RSUniRenderVisitor::DrawSurfaceLayer(const std::shared_ptr<RSDisplayRenderN
     auto subThreadManager = RSSubThreadManager::Instance();
     subThreadManager->StartFilterThread(renderEngine_->GetRenderContext().get());
     subThreadManager->SubmitSubThreadTask(displayNode, subThreadNodes);
+#endif
+}
+
+void RSUniRenderVisitor::SwitchColorFilterDrawing(int currentSaveCount)
+{
+#ifndef USE_ROSEN_DRAWING
+    ColorFilterMode colorFilterMode = renderEngine_->GetColorFilterMode();
+    if (colorFilterMode >= ColorFilterMode::INVERT_COLOR_ENABLE_MODE &&
+        colorFilterMode <= ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE) {
+        RS_LOGD("RsDebug RSBaseRenderEngine::SetColorFilterModeToPaint mode:%{public}d",
+            static_cast<int32_t>(colorFilterMode));
+        SkPaint paint;
+        RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, paint);
+#ifdef RS_ENABLE_GL
+#ifdef NEW_RENDER_CONTEXT
+        RSTagTracker tagTracker(
+            renderEngine_->GetDrawingContext()->GetDrawingContext(),
+            RSTagTracker::TAG_SAVELAYER_COLOR_FILTER);
+#else
+        RSTagTracker tagTracker(
+            renderEngine_->GetRenderContext()->GetGrContext(),
+            RSTagTracker::TAG_SAVELAYER_COLOR_FILTER);
+#endif
+#endif
+        RSColorFilterCanvas::SaveLayerRec rec;
+        rec.fSaveLayerFlags = SkCanvas::kInitWithPrevious_SaveLayerFlag;
+        rec.fPaint = &paint;
+        canvas_->saveLayer(rec);
+        canvas_->restoreToCount(currentSaveCount);
+    }
+#else
+    // planning: Need implementation
 #endif
 }
 
@@ -3536,32 +3569,18 @@ void RSUniRenderVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
         return;
     }
 
+#ifndef USE_ROSEN_DRAWING
+    int saveCount = canvas_->save();
+    ProcessCanvasRenderNode(node);
+    canvas_->restoreToCount(saveCount);
+#else
     ColorFilterMode colorFilterMode = renderEngine_->GetColorFilterMode();
     int saveCount;
     if (colorFilterMode >= ColorFilterMode::INVERT_COLOR_ENABLE_MODE &&
         colorFilterMode <= ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE) {
         RS_LOGD("RsDebug RSBaseRenderEngine::SetColorFilterModeToPaint mode:%{public}d",
             static_cast<int32_t>(colorFilterMode));
-#ifndef USE_ROSEN_DRAWING
-        SkPaint paint;
-        RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, paint);
-#ifdef RS_ENABLE_GL
-#ifdef NEW_RENDER_CONTEXT
-            RSTagTracker tagTracker(
-                renderEngine_->GetDrawingContext()->GetDrawingContext(),
-                RSTagTracker::TAG_SAVELAYER_COLOR_FILTER);
-#else
-            RSTagTracker tagTracker(
-                renderEngine_->GetRenderContext()->GetGrContext(), RSTagTracker::TAG_SAVELAYER_COLOR_FILTER);
-#endif
-#endif
-        saveCount = canvas_->saveLayer(nullptr, &paint);
-    } else {
-        saveCount = canvas_->save();
-    }
-    ProcessCanvasRenderNode(node);
-    canvas_->restoreToCount(saveCount);
-#else
+
         Drawing::Brush brush;
         RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, brush);
         Drawing::SaveLayerOps saveLayerOps(nullptr, &brush);
@@ -4101,7 +4120,6 @@ void RSUniRenderVisitor::DrawWatermarkIfNeed()
 #endif
     }
 }
-
 
 void RSUniRenderVisitor::SetAppWindowNum(uint32_t num)
 {
