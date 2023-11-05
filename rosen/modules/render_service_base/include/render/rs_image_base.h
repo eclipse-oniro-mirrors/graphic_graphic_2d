@@ -27,6 +27,7 @@
 #include "draw/canvas.h"
 #endif
 #include "memory/rs_dfx_string.h"
+#include "pipeline/rs_paint_filter_canvas.h"
 #include "transaction/rs_marshalling_helper.h"
 
 namespace OHOS {
@@ -41,9 +42,9 @@ public:
 
 #ifndef USE_ROSEN_DRAWING
 #ifdef NEW_SKIA
-    virtual void DrawImage(SkCanvas& canvas, const SkSamplingOptions& samplingOptions, const SkPaint& paint);
+    virtual void DrawImage(RSPaintFilterCanvas& canvas, const SkSamplingOptions& samplingOptions, const SkPaint& paint);
 #else
-    virtual void DrawImage(SkCanvas& canvas, const SkPaint& paint);
+    virtual void DrawImage(RSPaintFilterCanvas& canvas, const SkPaint& paint);
 #endif
     void SetImage(const sk_sp<SkImage> image);
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
