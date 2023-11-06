@@ -1707,6 +1707,7 @@ const std::list<RSRenderNode::SharedPtr>& RSRenderNode::GetSortedChildren(bool i
 
 void RSRenderNode::GenerateFullChildrenList(bool inSubThread)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     // Node is currently used by sub thread, delay the operation
     if (GetIsUsedBySubThread() != inSubThread) {
         return;
@@ -1771,6 +1772,7 @@ void RSRenderNode::SortChildren(bool inSubThread)
         return;
     }
     // sort all children by z-order (note: std::list::sort is stable) if needed
+    std::lock_guard<std::mutex> lock(mutex_);
     fullChildrenList_.sort([](const auto& first, const auto& second) -> bool {
         return first->GetRenderProperties().GetPositionZ() < second->GetRenderProperties().GetPositionZ();
     });
@@ -2163,6 +2165,7 @@ void RSRenderNode::ClearFullChildrenListIfNeeded(bool inSubThread)
     if (!inSubThread) {
         // main thread clears the fullChildrenList only if sub thread is not using it
         if (!GetIsUsedBySubThread()) {
+            std::lock_guard<std::mutex> lock(mutex_);
             fullChildrenList_.clear();
         }
     } else if (auto context = context_.lock()) {
