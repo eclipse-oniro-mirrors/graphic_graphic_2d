@@ -219,11 +219,6 @@ GSError SurfaceBufferImpl::Unmap()
         handle = handle_;
     }
 
-    if (handle->usage & BUFFER_USAGE_PROTECTED) {
-        BLOGD("handle usage is BUFFER_USAGE_PROTECTED, do not UnMap");
-        return GSERROR_OK;
-    }
-
     auto dret = g_displayBuffer->Unmap(*handle);
     if (dret == GRAPHIC_DISPLAY_SUCCESS) {
         handle_->virAddr = nullptr;
