@@ -1432,6 +1432,7 @@ bool RSMainThread::CheckSurfaceNeedProcess(OcclusionRectISet& occlusionSurfaces,
     if (curSurface->IsFocusedNode(focusNodeId_)) {
         needProcess = true;
         if (!curSurface->HasContainerWindow() && !curSurface->IsTransparent() &&
+            !curSurface->GetAnimateState() && // when node animating (i.e. 3d animation), the region cannot be trusted
             curSurface->GetName().find("hisearch") == std::string::npos) {
             occlusionSurfaces.insert(curSurface->GetDstRect());
         }
@@ -1441,7 +1442,9 @@ bool RSMainThread::CheckSurfaceNeedProcess(OcclusionRectISet& occlusionSurfaces,
         bool insertSuccess = occlusionSurfaces.size() > beforeSize ? true : false;
         if (insertSuccess) {
             needProcess = true;
-            if (curSurface->IsTransparent() || curSurface->GetName().find("hisearch") != std::string::npos) {
+            if (curSurface->IsTransparent() ||
+                curSurface->GetAnimateState() || // when node animating(i.e. 3d animation), the region cannot be trusted
+                curSurface->GetName().find("hisearch") != std::string::npos) {
                 auto iter = std::find_if(occlusionSurfaces.begin(), occlusionSurfaces.end(),
                     [&curSurface](RectI r) -> bool {return r == curSurface->GetDstRect();});
                 if (iter != occlusionSurfaces.end()) {
