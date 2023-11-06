@@ -723,10 +723,10 @@ bool RSSurfaceRenderNode::IsSurfaceInStartingWindowStage() const
 
 bool RSSurfaceRenderNode::IsParentLeashWindowInScale() const
 {
-     auto parentPtr = this->GetParent().lock();
+    auto parentPtr = this->GetParent().lock();
     if (parentPtr != nullptr && parentPtr->IsInstanceOf<RSSurfaceRenderNode>()) {
         auto surfaceParentPtr = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(parentPtr);
-        if(surfaceParentPtr->IsLeashWindow() && surfaceParentPtr->IsScale()) {
+        if (surfaceParentPtr->IsLeashWindow() && surfaceParentPtr->IsScale()) {
             return true;
         }
     }
@@ -736,7 +736,7 @@ bool RSSurfaceRenderNode::IsParentLeashWindowInScale() const
 Occlusion::Rect RSSurfaceRenderNode::GetSurfaceOcclusionRect(bool isUniRender)
 {
     Occlusion::Rect occlusionRect;
-    if(isUniRender) {
+    if (isUniRender) {
         occlusionRect = Occlusion::Rect {GetOldDirtyInSurface()};
     } else {
         occlusionRect = Occlusion::Rect {GetDstRect()};
@@ -745,10 +745,10 @@ Occlusion::Rect RSSurfaceRenderNode::GetSurfaceOcclusionRect(bool isUniRender)
 }
 
 void RSSurfaceRenderNode::AccumulateOcclusionRegion(Occlusion::Region& accumulatedRegion,
-        Occlusion::Region& curRegion,
-        bool& hasFilterCacheOcclusion,
-        bool isUniRender,
-        bool filterCacheOcclusionEnabled)
+    Occlusion::Region& curRegion,
+    bool& hasFilterCacheOcclusion,
+    bool isUniRender,
+    bool filterCacheOcclusionEnabled)
 {
     // when surfacenode is in starting window stage, do not occlude other window surfaces
     // fix gray block when directly open app (i.e. setting) from notification center
