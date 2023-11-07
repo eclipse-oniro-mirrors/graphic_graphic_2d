@@ -310,15 +310,15 @@ inline uint8_t RSPropertyDrawable::CalculateDrawableVecStatus(
     }
 
     if (HasPropertyDrawableInRange(drawableVec, RSPropertyDrawableSlot::BACKGROUND_COLOR,
-            RSPropertyDrawableSlot::ENV_FOREGROUND_COLOR_STRATEGY)) {
+        RSPropertyDrawableSlot::ENV_FOREGROUND_COLOR_STRATEGY)) {
         result |= DrawableVecStatus::BOUNDS_PROPERTY_BEFORE;
     }
     if (HasPropertyDrawableInRange(
-            drawableVec, RSPropertyDrawableSlot::LIGHT_UP_EFFECT, RSPropertyDrawableSlot::PARTICLE_EFFECT)) {
+        drawableVec, RSPropertyDrawableSlot::LIGHT_UP_EFFECT, RSPropertyDrawableSlot::PARTICLE_EFFECT)) {
         result |= DrawableVecStatus::BOUNDS_PROPERTY_AFTER;
     }
     if (HasPropertyDrawableInRange(
-            drawableVec, RSPropertyDrawableSlot::FRAME_OFFSET, RSPropertyDrawableSlot::COLOR_FILTER)) {
+        drawableVec, RSPropertyDrawableSlot::FRAME_OFFSET, RSPropertyDrawableSlot::COLOR_FILTER)) {
         result |= DrawableVecStatus::FRAME_PROPERTY;
     }
 

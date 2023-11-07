@@ -81,7 +81,8 @@ void RSClipFrameDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
 #ifndef USE_ROSEN_DRAWING
     canvas.clipRect(RSPropertiesPainter::Rect2SkRect(node.GetRenderProperties().GetFrameRect()));
 #else
-    canvas.ClipRect(RSPropertiesPainter::Rect2DrawingRect(node.GetRenderProperties().GetFrameRect()));, Drawing::ClipOp::INTERSECT, false);
+    canvas.ClipRect(RSPropertiesPainter::Rect2DrawingRect(node.GetRenderProperties().GetFrameRect()),
+        Drawing::ClipOp::INTERSECT, false);
 #endif
 }
 } // namespace OHOS::Rosen
