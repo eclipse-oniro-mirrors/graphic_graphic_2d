@@ -567,9 +567,6 @@ GSError SurfaceBufferImpl::ListMetadataKeys(std::vector<uint32_t>& keys)
     if (handle_ == nullptr) {
         return GSERROR_API_FAILED;
     }
-    if (key >= HDI::Display::Graphic::Common::V1_0::ATTRKEY_END) {
-        return GSERROR_INVALID_ARGUMENTS;
-    }
 
     keys.clear();
     auto dret = g_displayBuffer->ListMetadataKeys(*handle_, keys);
