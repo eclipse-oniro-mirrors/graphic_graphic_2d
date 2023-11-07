@@ -115,89 +115,174 @@ declare namespace colorSpaceManager {
      */
     DCI_P3_LINEAR = 10,
 
+
+    /**
+     * PRIMARIES_DCI_P3 | TRANSFUNC_PQ | RANGE_FULL
+     * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
+     * @since 9
+     */
+    DCI_P3_PQ = 11,
+
+    /**
+     * PRIMARIES_DCI_P3 | TRANSFUNC_HLG | RANGE_FULL
+     * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
+     * @since 9
+     */
+    DCI_P3_HLG = 12,
+
     /**
      * PRIMARIES_DCI_P3 | TRANSFUNC_GAMMA_2_6 | RANGE_LIMIT
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9
      */
-    DCI_P3_LIMIT = 11,
+    DCI_P3_LIMIT = 13,
+
+    /**
+     * PRIMARIES_DCI_P3 | TRANSFUNC_PQ | RANGE_LIMIT
+     * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
+     * @since 9
+     */
+    DCI_P3_PQ_LIMIT = 14,
+
+    /**
+     * PRIMARIES_DCI_P3 | TRANSFUNC_HLG | RANGE_LIMIT
+     * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
+     * @since 9
+     */
+    DCI_P3_HLG_LIMIT = 15,
 
     /**
      * PRIMARIES_DISPLAY_P3 | TRANSFUNC_LINEAR | RANGE_FULL
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9
      */
-    DISPLAY_P3_LINEAR = 12,
+    DISPLAY_P3_LINEAR = 16,
+
+    /**
+     * PRIMARIES_DISPLAY_P3 | TRANSFUNC_PQ | RANGE_FULL
+     * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
+     * @since 9
+     */
+    DISPLAY_P3_PQ = 17,
+
+    /**
+     * PRIMARIES_DISPLAY_P3 | TRANSFUNC_HLG | RANGE_FULL
+     * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
+     * @since 9
+     */
+    DISPLAY_P3_HLG = 18,
 
     /**
      * PRIMARIES_DISPLAY_P3 | TRANSFUNC_SRGB | RANGE_LIMIT
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9
      */
-    DISPLAY_P3_LIMIT = 13,
+    DISPLAY_P3_LIMIT = 19,
+
+    /**
+     * PRIMARIES_DISPLAY_P3 | TRANSFUNC_PQ | RANGE_LIMIT
+     * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
+     * @since 9
+     */
+    DISPLAY_P3_PQ_LIMIT = 20,
+
+    /**
+     * PRIMARIES_DISPLAY_P3 | TRANSFUNC_HLG | RANGE_LIMIT
+     * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
+     * @since 9
+     */
+    DISPLAY_P3_HLG_LIMIT = 21,
 
     /**
      * PRIMARIES_BT709 | TRANSFUNC_LINEAR | RANGE_FULL
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9
      */
-    SRGB_LINEAR = 14,
+    SRGB_LINEAR = 22,
 
     /**
      * PRIMARIES_BT709 | TRANSFUNC_SRGB | RANGE_LIMIT
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9
      */
-    SRGB_LIMIT = 15,
+    SRGB_LIMIT = 23,
 
     /**
      * PRIMARIES_BT709 | TRANSFUNC_BT709 | RANGE_FULL
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9
      */
-    BT709_FULL = 16,
+    BT709_FULL = 24,
 
     /**
      * PRIMARIES_BT601_625 | TRANSFUNC_BT709 | RANGE_FULL
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9
      */
-    BT601_625_FULL = 17,
+    BT601_625_FULL = 25,
 
     /**
      * PRIMARIES_BT601_525 | TRANSFUNC_BT709 | RANGE_FULL
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9
      */
-    BT601_525_FULL = 18,
+    BT601_525_FULL = 26,
 
     /**
      * PRIMARIES_BT2020 | TRANSFUNC_SRGB | RANGE_FULL
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9
      */
-    BT2020_SRGB = 19,
+    BT2020_SRGB = 27,
 
     /**
      * PRIMARIES_BT2020 | TRANSFUNC_LINEAR | RANGE_FULL
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9
      */
-    BT2020_LINEAR = 20,
+    BT2020_LINEAR = 28,
+
+    /**
+     * PRIMARIES_BT2020 | TRANSFUNC_PQ | RANGE_FULL
+     * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
+     * @since 9
+     */
+    BT2020_PQ = 29,
+
+    /**
+     * PRIMARIES_BT2020 | TRANSFUNC_HLG | RANGE_FULL
+     * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
+     * @since 9
+     */
+    BT2020_HLG = 30,
 
     /**
      * PRIMARIES_BT2020 | TRANSFUNC_BT709 | RANGE_LIMIT
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9
      */
-    BT2020_LIMIT = 21,
+    BT2020_LIMIT = 31,
+
+    /**
+     * PRIMARIES_BT2020 | TRANSFUNC_PQ | RANGE_LIMIT
+     * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
+     * @since 9
+     */
+    BT2020_PQ_LIMIT = 32,
+
+    /**
+     * PRIMARIES_BT2020 | TRANSFUNC_HLG | RANGE_LIMIT
+     * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
+     * @since 9
+     */
+    BT2020_HLG_LIMIT = 33,
 
     /**
      * Indicates a customized color space.
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9
      */
-    CUSTOM = 22,
+    CUSTOM = 34,
   }
 
   /**
