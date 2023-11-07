@@ -23,10 +23,10 @@
 #include "common/rs_obj_abs_geometry.h"
 #include "modifier/rs_modifier_type.h"
 #include "pipeline/rs_context.h"
+#include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
-#include "pipeline/rs_display_render_node.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "property/rs_properties_painter.h"
@@ -1054,9 +1054,8 @@ void RSRenderNode::UpdateDrawableVec()
     }
     // Update or regenerate drawable
     bool drawableChanged = RSPropertyDrawable::UpdateDrawableVec(drawableContext, propertyDrawablesVec_, dirtySlots);
-    // if any drawables changed, update save/clip/restore
-    // temporary fix, if CLIP_TO_BOUNDS or similar property changed, we should re-arrange the save/clip/restore
-    if (drawableChanged || dirtySlots.count(RSPropertyDrawableSlot::INVALID)) {
+    // if 1. first initialized or 2. any drawables changed, update save/clip/restore
+    if (drawableChanged || drawableVecStatus_ == 0) {
         RSPropertyDrawable::UpdateSaveRestore(drawableContext, propertyDrawablesVec_, drawableVecStatus_);
     }
 }

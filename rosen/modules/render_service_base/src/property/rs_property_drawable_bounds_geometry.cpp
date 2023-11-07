@@ -103,13 +103,13 @@ RSPropertyDrawable::DrawablePtr RSBorderDrawable::Generate(const RSPropertyDrawa
     SkPaint paint;
     paint.setAntiAlias(true);
     if (border->ApplyFillStyle(paint)) {
-        return std::make_unique<RSBorderDRRectDrawable>(std::move(paint), context);
+        return std::make_unique<RSBorderDRRectDrawable>(std::move(paint), properties);
     } else if (properties.GetCornerRadius().IsZero() && border->ApplyFourLine(paint)) {
-        return std::make_unique<RSBorderFourLineDrawable>(std::move(paint), context);
+        return std::make_unique<RSBorderFourLineDrawable>(std::move(paint), properties);
     } else if (border->ApplyPathStyle(paint)) {
-        return std::make_unique<RSBorderPathDrawable>(std::move(paint), context);
+        return std::make_unique<RSBorderPathDrawable>(std::move(paint), properties);
     } else {
-        return std::make_unique<RSBorderFourLineRoundCornerDrawable>(std::move(paint), context);
+        return std::make_unique<RSBorderFourLineRoundCornerDrawable>(std::move(paint), properties);
     }
 #else
     Drawing::Pen pen;
@@ -117,30 +117,34 @@ RSPropertyDrawable::DrawablePtr RSBorderDrawable::Generate(const RSPropertyDrawa
     pen.SetAntiAlias(true);
     brush.SetAntiAlias(true);
     if (border->ApplyFillStyle(brush)) {
-        return std::make_unique<RSBorderDRRectDrawable>(std::move(brush), std::move(pen), context);
+        return std::make_unique<RSBorderDRRectDrawable>(std::move(brush), std::move(pen), properties);
     } else if (properties.GetCornerRadius().IsZero() && border->ApplyFourLine(pen)) {
-        return std::make_unique<RSBorderFourLineDrawable>(std::move(brush), std::move(pen), context);
+        return std::make_unique<RSBorderFourLineDrawable>(std::move(brush), std::move(pen), properties);
     } else if (border->ApplyPathStyle(pen)) {
-        return std::make_unique<RSBorderPathDrawable>(std::move(brush), std::move(pen), context);
+        return std::make_unique<RSBorderPathDrawable>(std::move(brush), std::move(pen), properties);
     } else {
-        return std::make_unique<RSBorderFourLineRoundCornerDrawable>(std::move(brush), std::move(pen), context);
+        return std::make_unique<RSBorderFourLineRoundCornerDrawable>(std::move(brush), std::move(pen), properties);
     }
 #endif
 }
 #ifndef USE_ROSEN_DRAWING
-RSBorderDRRectDrawable::RSBorderDRRectDrawable(SkPaint&& paint, const RSPropertyDrawableGenerateContext& context)
+RSBorderDRRectDrawable::RSBorderDRRectDrawable(SkPaint&& paint, const RSProperties& properties)
     : RSBorderDrawable(std::move(paint))
 #else
-RSBorderDRRectDrawable::RSBorderDRRectDrawable(
-    Drawing::Brush&& brush, Drawing::Pen&& pen, const RSProperties& properties)
+RSBorderDRRectDrawable::RSBorderDRRectDrawable(Drawing::Brush&& brush, Drawing::Pen&& pen,
+    const RSProperties& properties)
     : RSBorderDrawable(std::move(brush), std::move(pen))
 #endif
 {
-    Update(context);
+    OnBoundsChange(properties);
 }
-bool RSBorderDRRectDrawable::Update(const RSPropertyDrawableGenerateContext& context)
+bool RSBorderDRRectDrawable::Update(const RSPropertyDrawableGenerateContext &context)
 {
-    auto& properties = context.properties_;
+    OnBoundsChange(context.properties_);
+    return true;
+}
+void RSBorderDRRectDrawable::OnBoundsChange(const RSProperties& properties)
+{
 #ifndef USE_ROSEN_DRAWING
     inner_ = RSPropertiesPainter::RRect2SkRRect(properties.GetInnerRRect());
     outer_ = RSPropertiesPainter::RRect2SkRRect(properties.GetRRect());
@@ -148,7 +152,6 @@ bool RSBorderDRRectDrawable::Update(const RSPropertyDrawableGenerateContext& con
     inner_ = RSPropertiesPainter::RRect2DrawingRRect(properties.GetInnerRRect());
     outer_ = RSPropertiesPainter::RRect2DrawingRRect(properties.GetRRect());
 #endif
-    return true;
 }
 void RSBorderDRRectDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
 {
@@ -164,21 +167,24 @@ void RSBorderDRRectDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canva
 }
 
 #ifndef USE_ROSEN_DRAWING
-RSBorderFourLineDrawable::RSBorderFourLineDrawable(SkPaint&& paint, const RSPropertyDrawableGenerateContext& context)
+RSBorderFourLineDrawable::RSBorderFourLineDrawable(SkPaint&& paint, const RSProperties& properties)
     : RSBorderDrawable(std::move(paint))
 #else
-RSBorderFourLineDrawable::RSBorderFourLineDrawable(
-    Drawing::Brush&& brush, Drawing::Pen&& pen, const RSProperties& properties)
+RSBorderFourLineDrawable::RSBorderFourLineDrawable(Drawing::Brush&& brush, Drawing::Pen&& pen,
+    const RSProperties& properties)
     : RSBorderDrawable(std::move(brush), std::move(pen))
 #endif
 {
-    Update(context);
+    OnBoundsChange(properties);
 }
-bool RSBorderFourLineDrawable::Update(const RSPropertyDrawableGenerateContext& context)
+bool RSBorderFourLineDrawable::Update(const RSPropertyDrawableGenerateContext &context)
 {
-    auto& properties = context.properties_;
-    rect_ = properties.GetBoundsRect();
+    OnBoundsChange(context.properties_);
     return true;
+}
+void RSBorderFourLineDrawable::OnBoundsChange(const RSProperties& properties)
+{
+    rect_ = properties.GetBoundsRect();
 }
 void RSBorderFourLineDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
 {
@@ -190,18 +196,23 @@ void RSBorderFourLineDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& can
 }
 
 #ifndef USE_ROSEN_DRAWING
-RSBorderPathDrawable::RSBorderPathDrawable(SkPaint&& paint, const RSPropertyDrawableGenerateContext& context)
+RSBorderPathDrawable::RSBorderPathDrawable(SkPaint&& paint, const RSProperties& properties)
     : RSBorderDrawable(std::move(paint))
 #else
-RSBorderPathDrawable::RSBorderPathDrawable(Drawing::Brush&& brush, Drawing::Pen&& pen, const RSProperties& properties)
+RSBorderPathDrawable::RSBorderPathDrawable(Drawing::Brush&& brush, Drawing::Pen&& pen,
+    const RSProperties& properties)
     : RSBorderDrawable(std::move(brush), std::move(pen))
 #endif
 {
-    Update(context);
+    OnBoundsChange(properties);
 }
-bool RSBorderPathDrawable::Update(const RSPropertyDrawableGenerateContext& context)
+bool RSBorderPathDrawable::Update(const RSPropertyDrawableGenerateContext &context)
 {
-    auto& properties = context.properties_;
+    OnBoundsChange(context.properties_);
+    return true;
+}
+void RSBorderPathDrawable::OnBoundsChange(const RSProperties& properties)
+{
     auto borderWidth = properties.GetBorder()->GetWidth();
     RRect rrect = properties.GetRRect();
     rrect.rect_.width_ -= borderWidth;
@@ -214,7 +225,6 @@ bool RSBorderPathDrawable::Update(const RSPropertyDrawableGenerateContext& conte
     borderPath_.Reset();
     borderPath_.AddRoundRect(RSPropertiesPainter::RRect2DrawingRRect(rrect));
 #endif
-    return true;
 }
 void RSBorderPathDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
 {
@@ -231,22 +241,26 @@ void RSBorderPathDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
 
 #ifndef USE_ROSEN_DRAWING
 RSBorderFourLineRoundCornerDrawable::RSBorderFourLineRoundCornerDrawable(
-    SkPaint&& paint, const RSPropertyDrawableGenerateContext& context)
+    SkPaint&& paint, const RSProperties& properties)
     : RSBorderDrawable(std::move(paint))
 #else
 RSBorderFourLineRoundCornerDrawable::RSBorderFourLineRoundCornerDrawable(
-    Drawing::Brush&& brush, Drawing::Pen&& pen, const RSPropertyDrawableGenerateContext& context)
+    Drawing::Brush&& brush, Drawing::Pen&& pen, const RSProperties& properties)
     : RSBorderDrawable(std::move(brush), std::move(pen))
 #endif
 {
 #ifndef USE_ROSEN_DRAWING
     paint_.setStyle(SkPaint::Style::kStroke_Style);
 #endif
-    Update(context);
+    OnBoundsChange(properties);
 }
-bool RSBorderFourLineRoundCornerDrawable::Update(const RSPropertyDrawableGenerateContext& context)
+bool RSBorderFourLineRoundCornerDrawable::Update(const RSPropertyDrawableGenerateContext &context)
 {
-    auto& properties = context.properties_;
+    OnBoundsChange(context.properties_);
+    return true;
+}
+void RSBorderFourLineRoundCornerDrawable::OnBoundsChange(const RSProperties& properties)
+{
 #ifndef USE_ROSEN_DRAWING
     innerRrect_ = RSPropertiesPainter::RRect2SkRRect(properties.GetInnerRRect());
     rrect_ = RSPropertiesPainter::RRect2SkRRect(properties.GetRRect());
@@ -254,7 +268,6 @@ bool RSBorderFourLineRoundCornerDrawable::Update(const RSPropertyDrawableGenerat
     innerRrect_ = RSPropertiesPainter::RRect2DrawingRRect(properties.GetInnerRRect());
     rrect_ = RSPropertiesPainter::RRect2DrawingRRect(properties.GetRRect());
 #endif
-    return true;
 }
 void RSBorderFourLineRoundCornerDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
 {

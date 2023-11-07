@@ -229,6 +229,7 @@ std::set<RSPropertyDrawableSlot> RSPropertyDrawable::GenerateDirtySlots(
         if (properties.GetBorder() != nullptr) {
             dirtySlots.emplace(RSPropertyDrawableSlot::BORDER);
         }
+        // PLANNING: add other slots: ClipToFrame, ColorFilter
     }
 
     return dirtySlots;

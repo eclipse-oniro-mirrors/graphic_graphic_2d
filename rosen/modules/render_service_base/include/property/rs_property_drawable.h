@@ -88,14 +88,14 @@ enum RSPropertyDrawableSlot : uint8_t {
 };
 
 enum DrawableVecStatus : uint8_t {
-    CLIP_BOUNDS = 1 << 0,
+    CLIP_BOUNDS            = 1 << 0,
     BOUNDS_PROPERTY_BEFORE = 1 << 1,
-    BOUNDS_PROPERTY_AFTER = 1 << 2,
-    CLIP_FRAME = 1 << 3,
-    FRAME_PROPERTY = 1 << 4,
-    HAS_CHILDREN = 1 << 5,
-    BOUNDS_MASK = CLIP_BOUNDS | BOUNDS_PROPERTY_BEFORE | BOUNDS_PROPERTY_AFTER,
-    FRAME_MASK = CLIP_FRAME | FRAME_PROPERTY | HAS_CHILDREN,
+    BOUNDS_PROPERTY_AFTER  = 1 << 2,
+    CLIP_FRAME             = 1 << 3,
+    FRAME_PROPERTY         = 1 << 4,
+    HAS_CHILDREN           = 1 << 5,
+    BOUNDS_MASK            = CLIP_BOUNDS | BOUNDS_PROPERTY_BEFORE | BOUNDS_PROPERTY_AFTER,
+    FRAME_MASK             = CLIP_FRAME | FRAME_PROPERTY | HAS_CHILDREN,
 };
 } // namespace Slot
 

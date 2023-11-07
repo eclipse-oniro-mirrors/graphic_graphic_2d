@@ -18,12 +18,10 @@
 
 #include <utility>
 
-#include "include/core/SkMatrix.h"
 #include "include/core/SkPath.h"
 #include "include/core/SkRRect.h"
 
 #include "property/rs_property_drawable.h"
-#include "render/rs_skia_filter.h"
 
 namespace OHOS::Rosen {
 class RSSkiaFilter;
@@ -72,14 +70,14 @@ protected:
 class RSBorderDRRectDrawable : public RSBorderDrawable {
 public:
 #ifndef USE_ROSEN_DRAWING
-    explicit RSBorderDRRectDrawable(SkPaint&& paint, const RSPropertyDrawableGenerateContext& context);
+    explicit RSBorderDRRectDrawable(SkPaint&& paint, const RSProperties& properties);
 #else
-    explicit RSBorderDRRectDrawable(
-        Drawing::Brush&& brush, Drawing::Pen&& pen, const RSPropertyDrawableGenerateContext& context);
+    explicit RSBorderDRRectDrawable(Drawing::Brush&& brush, Drawing::Pen&& pen, const RSProperties& properties);
 #endif
     ~RSBorderDRRectDrawable() override = default;
-    bool Update(const RSPropertyDrawableGenerateContext& context) override;
     void Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas) override;
+    bool Update(const RSPropertyDrawableGenerateContext& context) override;
+    void OnBoundsChange(const RSProperties& properties);
 
 private:
 #ifndef USE_ROSEN_DRAWING
@@ -94,14 +92,14 @@ private:
 class RSBorderFourLineDrawable : public RSBorderDrawable {
 public:
 #ifndef USE_ROSEN_DRAWING
-    explicit RSBorderFourLineDrawable(SkPaint&& paint, const RSPropertyDrawableGenerateContext& context);
+    explicit RSBorderFourLineDrawable(SkPaint&& paint, const RSProperties& properties);
 #else
-    explicit RSBorderFourLineDrawable(
-        Drawing::Brush&& brush, Drawing::Pen&& pen, const RSPropertyDrawableGenerateContext& context);
+    explicit RSBorderFourLineDrawable(Drawing::Brush&& brush, Drawing::Pen&& pen, const RSProperties& properties);
 #endif
     ~RSBorderFourLineDrawable() override = default;
-    bool Update(const RSPropertyDrawableGenerateContext& context) override;
     void Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas) override;
+    bool Update(const RSPropertyDrawableGenerateContext& context) override;
+    void OnBoundsChange(const RSProperties& properties);
 
 private:
     RectF rect_;
@@ -110,14 +108,14 @@ private:
 class RSBorderPathDrawable : public RSBorderDrawable {
 public:
 #ifndef USE_ROSEN_DRAWING
-    explicit RSBorderPathDrawable(SkPaint&& paint, const RSPropertyDrawableGenerateContext& context);
+    explicit RSBorderPathDrawable(SkPaint&& paint, const RSProperties& properties);
 #else
-    explicit RSBorderPathDrawable(
-        Drawing::Brush&& brush, Drawing::Pen&& pen, const RSPropertyDrawableGenerateContext& context);
+    explicit RSBorderPathDrawable(Drawing::Brush&& brush, Drawing::Pen&& pen, const RSProperties& properties);
 #endif
     ~RSBorderPathDrawable() override = default;
-    bool Update(const RSPropertyDrawableGenerateContext& context) override;
     void Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas) override;
+    bool Update(const RSPropertyDrawableGenerateContext& context) override;
+    void OnBoundsChange(const RSProperties& properties);
 
 private:
 #ifndef USE_ROSEN_DRAWING
@@ -130,14 +128,15 @@ private:
 class RSBorderFourLineRoundCornerDrawable : public RSBorderDrawable {
 public:
 #ifndef USE_ROSEN_DRAWING
-    explicit RSBorderFourLineRoundCornerDrawable(SkPaint&& paint, const RSPropertyDrawableGenerateContext& context);
+    explicit RSBorderFourLineRoundCornerDrawable(SkPaint&& paint, const RSProperties& properties);
 #else
-    explicit RSBorderFourLineRoundCornerDrawable(
-        Drawing::Brush&& brush, Drawing::Pen&& pen, const RSProperties& properties);
+    explicit RSBorderFourLineRoundCornerDrawable(Drawing::Brush&& brush, Drawing::Pen&& pen,
+        const RSProperties& properties);
 #endif
     ~RSBorderFourLineRoundCornerDrawable() override = default;
-    bool Update(const RSPropertyDrawableGenerateContext& context) override;
     void Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas) override;
+    bool Update(const RSPropertyDrawableGenerateContext& context) override;
+    void OnBoundsChange(const RSProperties& properties);
 
 private:
 #ifndef USE_ROSEN_DRAWING
@@ -422,9 +421,9 @@ public:
     explicit RSPixelStretchDrawable() = default;
     ~RSPixelStretchDrawable() override = default;
 
-    bool Update(const RSPropertyDrawableGenerateContext& context) override { return true; };
     void Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas) override;
     static std::unique_ptr<RSPropertyDrawable> Generate(const RSPropertyDrawableGenerateContext& context);
+    bool Update(const RSPropertyDrawableGenerateContext& context) override { return true; };
 };
 
 // ============================================================================
@@ -527,5 +526,5 @@ public:
 private:
     SkPaint blendPaint_;
 };
-};     // namespace OHOS::Rosen
+} // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_PROPERTY_RS_PROPERTY_DRAWABLE_BOUNDS_GEOMETRY_H
