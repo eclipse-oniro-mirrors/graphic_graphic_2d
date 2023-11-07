@@ -31,6 +31,7 @@ class RSRenderModifier;
 class RSRenderNode;
 
 namespace Slot {
+// NOTE: MUST update DrawableGeneratorLut in rs_property_drawable.cpp when new slots are added
 enum RSPropertyDrawableSlot : uint8_t {
     INVALID = 0,
 
@@ -45,6 +46,7 @@ enum RSPropertyDrawableSlot : uint8_t {
     SHADOW,
 
     // In Bounds Clip
+    SAVE_LAYER_BACKGROUND,
     SAVE_BOUNDS,
     CLIP_TO_BOUNDS,
     BACKGROUND_COLOR,
@@ -56,6 +58,7 @@ enum RSPropertyDrawableSlot : uint8_t {
     DYNAMIC_LIGHT_UP,
     ENV_FOREGROUND_COLOR_STRATEGY,
     EXTRA_RESTORE_BOUNDS,
+    SAVE_LAYER_CONTENT,
 
     // Frame Geometry
     SAVE_FRAME,
@@ -118,13 +121,9 @@ public:
     static void UpdateDrawableVec(RSPropertyDrawableGenerateContext& context, DrawableVec& drawableVec,
         uint8_t& drawableVecStatus, const std::unordered_set<RSModifierType>& dirtyTypes);
 
-private:
-    // index = RSModifierType value = RSPropertyDrawableType
-    static const std::vector<Slot::RSPropertyDrawableSlot> PropertyToDrawableLut;
-    // index = RSPropertyDrawableType value = DrawableGenerator
     using DrawableGenerator = std::function<RSPropertyDrawable::DrawablePtr(const RSPropertyDrawableGenerateContext&)>;
-    static const std::vector<DrawableGenerator> DrawableGeneratorLut;
 
+private:
     static inline uint8_t CalculateDrawableVecStatus(
         RSPropertyDrawableGenerateContext& context, DrawableVec& drawableVec);
     static void OptimizeBoundsSaveRestore(
