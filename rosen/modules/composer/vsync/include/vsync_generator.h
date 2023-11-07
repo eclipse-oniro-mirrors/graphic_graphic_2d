@@ -35,7 +35,8 @@ public:
     public:
         virtual void OnVSyncEvent(int64_t now, int64_t period, uint32_t refreshRate, VSyncMode vsyncMode) = 0;
         virtual void OnPhaseOffsetChanged(int64_t phaseOffset) = 0;
-        virtual void OnConnsRefreshRateChanged(std::vector<std::pair<uint64_t, uint32_t>> refreshRates) = 0;
+        /* std::pair<id, refresh rate> */
+        virtual void OnConnsRefreshRateChanged(const std::vector<std::pair<uint64_t, uint32_t>> &refreshRates) = 0;
     };
     struct ListenerRefreshRateData {
         sptr<OHOS::Rosen::VSyncGenerator::Callback> cb = nullptr;
@@ -111,7 +112,7 @@ private:
     bool ChangeListenerRefreshRatesInternal();
     int32_t JudgeRefreshRateLocked(int64_t period);
     bool CheckTimingCorrect(int64_t now, int64_t referenceTime, int64_t nextVSyncTime);
-    bool UpdateChangeDataLocked(int64_t nextVSyncTime);
+    bool UpdateChangeDataLocked(int64_t now, int64_t referenceTime, int64_t nextVSyncTime);
     void UpdateVSyncModeLocked();
 
     int64_t period_;

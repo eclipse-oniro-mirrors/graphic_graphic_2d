@@ -125,7 +125,8 @@ private:
     void ChangeConnsRateLocked();
     void CollectConnectionsLTPO(bool &waitForVSync, int64_t timestamp,
                                 std::vector<sptr<VSyncConnection>> &conns, int64_t vsyncCount);
-    void OnConnsRefreshRateChanged(std::vector<std::pair<uint64_t, uint32_t>> refreshRates);
+    /* std::pair<id, refresh rate> */
+    void OnConnsRefreshRateChanged(const std::vector<std::pair<uint64_t, uint32_t>> &refreshRates);
 
     std::thread threadLoop_;
     sptr<VSyncController> controller_;
@@ -137,7 +138,7 @@ private:
     std::string name_;
     bool vsyncThreadRunning_;
     std::unordered_map<int32_t, int32_t> connectionCounter_;
-    std::vector<std::pair<uint64_t, uint32_t>> changingConnsRefreshRates_; // id, refreshRate
+    std::vector<std::pair<uint64_t, uint32_t>> changingConnsRefreshRates_; // std::pair<id, refresh rate>
     VSyncMode vsyncMode_ = VSYNC_MODE_LTPS; // default LTPS
     std::mutex changingConnsRefreshRatesMtx_;
 };

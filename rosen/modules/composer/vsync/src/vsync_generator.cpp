@@ -115,12 +115,9 @@ void VSyncGenerator::ThreadLoop()
                 }
                 continue;
             } else if (vsyncMode_ == VSYNC_MODE_LTPO) {
-                bool isTimingCorrect = CheckTimingCorrect(occurTimestamp, occurReferenceTime, nextTimeStamp);
-                if (isTimingCorrect) {
-                    bool modelChanged = UpdateChangeDataLocked(nextTimeStamp);
-                    if (modelChanged) {
-                        continue;
-                    }
+                bool modelChanged = UpdateChangeDataLocked(occurTimestamp, occurReferenceTime, nextTimeStamp);
+                if (modelChanged) {
+                    continue;
                 }
             }
         }
@@ -242,8 +239,12 @@ bool VSyncGenerator::CheckTimingCorrect(int64_t now, int64_t referenceTime, int6
     return isTimingCorrect;
 }
 
-bool VSyncGenerator::UpdateChangeDataLocked(int64_t nextVSyncTime)
+bool VSyncGenerator::UpdateChangeDataLocked(int64_t now, int64_t referenceTime, int64_t nextVSyncTime)
 {
+    if (!CheckTimingCorrect(now, referenceTime, nextVSyncTime)) {
+        return false;
+    }
+
     bool modelChanged = false;
 
     // update generate refreshRate

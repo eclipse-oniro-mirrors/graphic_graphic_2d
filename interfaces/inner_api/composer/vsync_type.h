@@ -23,9 +23,9 @@ namespace Rosen {
 } // Rosen
 
 typedef enum {
-    VSYNC_MODE_LTPS,
-    VSYNC_MODE_LTPO,
-    VSYNC_MODE_INVALID
+    VSYNC_MODE_LTPS, /**< VSyncMode for LTPS Screen */
+    VSYNC_MODE_LTPO, /**< VSyncMode for LTPS Screen */
+    VSYNC_MODE_INVALID /**< Invalid VSyncMode */
 } VSyncMode;
 } // OHOS
 

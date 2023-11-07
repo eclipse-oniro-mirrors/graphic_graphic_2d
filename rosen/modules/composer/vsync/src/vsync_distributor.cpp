@@ -358,7 +358,8 @@ void VSyncDistributor::OnVSyncEvent(int64_t now, int64_t period, uint32_t refres
     con_.notify_all();
 }
 
-void VSyncDistributor::OnConnsRefreshRateChanged(std::vector<std::pair<uint64_t, uint32_t>> refreshRates)
+/* std::pair<id, refresh rate> */
+void VSyncDistributor::OnConnsRefreshRateChanged(const std::vector<std::pair<uint64_t, uint32_t>> &refreshRates)
 {
     std::lock_guard<std::mutex> locker(changingConnsRefreshRatesMtx_);
     changingConnsRefreshRates_ = refreshRates;
@@ -399,15 +400,16 @@ void VSyncDistributor::CollectConnectionsLTPO(bool &waitForVSync, int64_t timest
                                               std::vector<sptr<VSyncConnection>> &conns, int64_t vsyncCount)
 {
     for (uint32_t i = 0; i < connections_.size(); i++) {
-        if (connections_[i]->triggerThisTime_) {
-            waitForVSync = true;
-            if (timestamp > 0 &&
-                (vsyncCount - connections_[i]->referencePulseCount_) % connections_[i]->vsyncPulseFreq_ == 0) {
-                conns.push_back(connections_[i]);
-                connections_[i]->triggerThisTime_ = false;
-                if (connections_[i]->rate_ == 0) {
-                    connections_[i]->rate_ = -1;
-                }
+        if (!connections_[i]->triggerThisTime_) {
+            continue;
+        }
+        waitForVSync = true;
+        if (timestamp > 0 &&
+            (vsyncCount - connections_[i]->referencePulseCount_) % connections_[i]->vsyncPulseFreq_ == 0) {
+            conns.push_back(connections_[i]);
+            connections_[i]->triggerThisTime_ = false;
+            if (connections_[i]->rate_ == 0) {
+                connections_[i]->rate_ = -1;
             }
         }
     }

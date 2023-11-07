@@ -106,7 +106,8 @@ void VSyncController::OnPhaseOffsetChanged(int64_t phaseOffset)
     phaseOffset_ = phaseOffset;
 }
 
-void VSyncController::OnConnsRefreshRateChanged(std::vector<std::pair<uint64_t, uint32_t>> refreshRates)
+/* std::pair<id, refresh rate> */
+void VSyncController::OnConnsRefreshRateChanged(const std::vector<std::pair<uint64_t, uint32_t>> &refreshRates)
 {
     Callback *cb = nullptr;
     {
