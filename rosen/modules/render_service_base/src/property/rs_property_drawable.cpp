@@ -189,9 +189,9 @@ static const std::vector<RSPropertyDrawable::DrawableGenerator> g_drawableGenera
     CustomModifierAdapter<RSModifierType::OVERLAY_STYLE>, // OVERLAY
     RSForegroundColorDrawable::Generate,                  // FOREGROUND_COLOR,
     RSParticleDrawable::Generate,                         // PARTICLE_EFFECT,
-    RSPixelStretchDrawable::Generate,                     // PIXEL_STRETCH,
     nullptr,                                              // RESTORE_BOUNDS,
 
+    RSPixelStretchDrawable::Generate,                     // PIXEL_STRETCH,
     nullptr, // RESTORE_ALL,
 };
 
@@ -317,7 +317,7 @@ inline uint8_t RSPropertyDrawable::CalculateDrawableVecStatus(
         result |= DrawableVecStatus::BOUNDS_PROPERTY_BEFORE;
     }
     if (HasPropertyDrawableInRange(
-            drawableVec, RSPropertyDrawableSlot::LIGHT_UP_EFFECT, RSPropertyDrawableSlot::PIXEL_STRETCH)) {
+            drawableVec, RSPropertyDrawableSlot::LIGHT_UP_EFFECT, RSPropertyDrawableSlot::PARTICLE_EFFECT)) {
         result |= DrawableVecStatus::BOUNDS_PROPERTY_AFTER;
     }
     if (HasPropertyDrawableInRange(

@@ -80,9 +80,10 @@ enum RSPropertyDrawableSlot : uint8_t {
     OVERLAY,
     FOREGROUND_COLOR,
     PARTICLE_EFFECT,
-    PIXEL_STRETCH,
     RESTORE_BOUNDS,
 
+    // Without clip
+    PIXEL_STRETCH,
     RESTORE_ALL,
     MAX,
 };
