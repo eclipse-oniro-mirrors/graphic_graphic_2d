@@ -140,7 +140,7 @@ void VSyncGenerator::ThreadLoop()
                 UpdateWakeupDelay(newOccurTimestamp, nextTimeStamp);
             }
             if (vsyncMode_ == VSYNC_MODE_LTPO) {
-                listeners = GetListenerTimeouted(occurTimestamp, occurReferenceTime);
+                listeners = GetListenerTimeoutedLTPO(occurTimestamp, occurReferenceTime);
             } else {
                 listeners = GetListenerTimeouted(newOccurTimestamp, occurReferenceTime);
             }
@@ -315,13 +315,23 @@ int64_t VSyncGenerator::ComputeListenerNextVSyncTimeStamp(const Listener& listen
 std::vector<VSyncGenerator::Listener> VSyncGenerator::GetListenerTimeouted(int64_t now, int64_t referenceTime)
 {
     std::vector<VSyncGenerator::Listener> ret;
-    int64_t nowTimestamp = now;
-    if (vsyncMode_ == VSYNC_MODE_LTPS) {
-        nowTimestamp -= period_;
-    }
+    int64_t onePeriodAgo = now - period_;
 
     for (uint32_t i = 0; i < listeners_.size(); i++) {
-        int64_t t = ComputeListenerNextVSyncTimeStamp(listeners_[i], nowTimestamp, referenceTime);
+        int64_t t = ComputeListenerNextVSyncTimeStamp(listeners_[i], onePeriodAgo, referenceTime);
+        if (t < now || (t - now < errorThreshold)) {
+            listeners_[i].lastTime_ = t;
+            ret.push_back(listeners_[i]);
+        }
+    }
+    return ret;
+}
+
+std::vector<VSyncGenerator::Listener> VSyncGenerator::GetListenerTimeoutedLTPO(int64_t now, int64_t referenceTime)
+{
+    std::vector<VSyncGenerator::Listener> ret;
+    for (uint32_t i = 0; i < listeners_.size(); i++) {
+        int64_t t = ComputeListenerNextVSyncTimeStamp(listeners_[i], now, referenceTime);
         if (t - GetSysTimeNs() < errorThreshold) {
             listeners_[i].lastTime_ = t;
             ret.push_back(listeners_[i]);

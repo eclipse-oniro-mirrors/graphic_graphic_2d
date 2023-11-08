@@ -114,6 +114,7 @@ private:
     bool CheckTimingCorrect(int64_t now, int64_t referenceTime, int64_t nextVSyncTime);
     bool UpdateChangeDataLocked(int64_t now, int64_t referenceTime, int64_t nextVSyncTime);
     void UpdateVSyncModeLocked();
+    std::vector<Listener> GetListenerTimeoutedLTPO(int64_t now, int64_t referenceTime);
 
     int64_t period_;
     int64_t phase_;
