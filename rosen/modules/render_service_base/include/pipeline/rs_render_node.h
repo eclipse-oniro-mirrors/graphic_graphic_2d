@@ -31,6 +31,7 @@
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
 #include "common/rs_rect.h"
+#include "memory/rs_dfx_string.h"
 #include "modifier/rs_render_modifier.h"
 #include "pipeline/rs_dirty_region_manager.h"
 #include "pipeline/rs_paint_filter_canvas.h"
@@ -76,6 +77,11 @@ public:
     virtual ~RSRenderNode();
 
     void AddChild(SharedPtr child, int index = -1);
+    void SetContainBootAnimation(bool isContainBootAnimation);
+    bool GetContainBootAnimation() const;
+    virtual void SetBootAnimation(bool isBootAnimation);
+    virtual bool GetBootAnimation() const;
+
     void MoveChild(SharedPtr child, int index);
     void RemoveChild(SharedPtr child, bool skipTransition = false);
     void ClearChildren();
@@ -123,6 +129,7 @@ public:
     void ClearFullChildrenListIfNeeded(bool inSubThread = false);
 
     void DumpTree(int32_t depth, std::string& ou) const;
+    void DumpNodeInfo(DfxString& log);
 
     virtual bool HasDisappearingTransition(bool recursive = true) const;
 
@@ -230,6 +237,7 @@ public:
     bool IsStaticCached() const;
 
     bool NeedInitCacheSurface() const;
+    bool NeedInitCacheCompletedSurface() const;
     inline bool IsPureContainer() const
     {
         return (drawCmdModifiers_.empty() && !renderProperties_.isDrawn_ && !renderProperties_.alphaNeedApply_);
@@ -379,7 +387,6 @@ public:
 
     void SetDrawRegion(const std::shared_ptr<RectF>& rect);
     const std::shared_ptr<RectF>& GetDrawRegion() const;
-    
     void SetOutOfParent(OutOfParentType outOfParent);
     OutOfParentType GetOutOfParent() const;
 
@@ -463,9 +470,10 @@ protected:
 
     std::unordered_set<RSModifierType> dirtyTypes_;
     bool isFullChildrenListValid_ = false;
+    bool isBootAnimation_ = false;
     RSProperties renderProperties_;
-    void IterateOnDrawableRange(Slot::RSPropertyDrawableSlot begin, Slot::RSPropertyDrawableSlot end,
-        RSRenderNode& node, RSPaintFilterCanvas& canvas);
+    void IterateOnDrawableRange(
+        Slot::RSPropertyDrawableSlot begin, Slot::RSPropertyDrawableSlot end, RSPaintFilterCanvas& canvas);
 
 private:
     NodeId id_;
@@ -509,6 +517,7 @@ private:
     bool shouldPaint_ = true;
 
     bool isDirtyRegionUpdated_ = false;
+    bool isContainBootAnimation_ = false;
     bool isLastVisible_ = false;
     bool fallbackAnimationOnDestroy_ = true;
     uint32_t disappearingTransitionCount_ = 0;
@@ -550,6 +559,7 @@ private:
     std::unordered_set<NodeId> visitedCacheRoots_ = {};
 
     mutable std::recursive_mutex surfaceMutex_;
+    std::mutex mutex_;
     ClearCacheSurfaceFunc clearCacheSurfaceFunc_ = nullptr;
     uint32_t cacheSurfaceThreadIndex_ = UNI_MAIN_THREAD_INDEX;
     uint32_t completedSurfaceThreadIndex_ = UNI_MAIN_THREAD_INDEX;
@@ -595,17 +605,16 @@ private:
     std::unordered_map<PropertyId, std::variant<float, Vector2f>> propertyValueMap_;
     std::vector<HgmModifierProfile> hgmModifierProfileList_;
 
-    std::vector<std::unique_ptr<RSPropertyDrawable>> propertyDrawablesVec_ =
-        std::vector<std::unique_ptr<RSPropertyDrawable>>(Slot::RSPropertyDrawableSlot::MAX);
+    std::vector<std::unique_ptr<RSPropertyDrawable>> propertyDrawablesVec_;
     uint8_t drawableVecStatus_ = 0;
-    using DrawableIter = decltype(propertyDrawablesVec_)::iterator;
+    void UpdateDrawableVec();
 
+    friend class RSAliasDrawable;
     friend class RSMainThread;
+    friend class RSModifierDrawable;
     friend class RSProxyRenderNode;
     friend class RSRenderNodeMap;
     friend class RSRenderTransition;
-    friend class RSAliasDrawable;
-    friend class RSModifierDrawable;
 };
 // backward compatibility
 using RSBaseRenderNode = RSRenderNode;

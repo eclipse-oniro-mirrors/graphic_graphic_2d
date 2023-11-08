@@ -31,6 +31,7 @@ namespace Drawing {
 class SkiaTextBlob : public TextBlobImpl {
 public:
     static inline constexpr AdapterType TYPE = AdapterType::SKIA_ADAPTER;
+
     explicit SkiaTextBlob(sk_sp<SkTextBlob> skTextBlob);
     ~SkiaTextBlob() override = default;
 
@@ -38,6 +39,11 @@ public:
     {
         return AdapterType::SKIA_ADAPTER;
     }
+
+    static std::shared_ptr<TextBlob> MakeFromText(const void* text, size_t byteLength,
+        const Font& font, TextEncoding encoding);
+    static std::shared_ptr<TextBlob> MakeFromRSXform(const void* text, size_t byteLength,
+        const RSXform xform[], const Font& font, TextEncoding encoding);
 
     sk_sp<SkTextBlob> GetTextBlob() const;
 

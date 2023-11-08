@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,25 +13,26 @@
  * limitations under the License.
  */
 
-#ifndef SKIA_TYPEFACE_OHOS_H
-#define SKIA_TYPEFACE_OHOS_H
+#ifndef SKIA_STATIC_FACTORY_H
+#define SKIA_STATIC_FACTORY_H
 
 #include <cstdint>
-#include <string>
 
-#include "src/ports/skia_ohos/FontInfo_ohos.h"
-
-#include "skia_adapter/skia_typeface.h"
+#include "text/text_blob.h"
+#include "text/typeface.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
-class SkiaTypefaceOhos : public SkiaTypeface {
+class SkiaStaticFactory {
 public:
-    explicit SkiaTypefaceOhos(const std::string& specifiedName, FontInfo& info);
-    ~SkiaTypefaceOhos() override = default;
+    static std::shared_ptr<TextBlob> MakeFromText(const void* text, size_t byteLength,
+        const Font& font, TextEncoding encoding);
+    static std::shared_ptr<TextBlob> MakeFromRSXform(const void* text, size_t byteLength,
+        const RSXform xform[], const Font& font, TextEncoding encoding);
+    static std::shared_ptr<Typeface> MakeFromFile(const char path[]);
 };
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
-#endif
+#endif // SKIA_STATIC_FACTORY_H

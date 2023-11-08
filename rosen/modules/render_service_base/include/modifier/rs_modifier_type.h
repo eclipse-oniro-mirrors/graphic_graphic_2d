@@ -20,6 +20,9 @@
 
 namespace OHOS {
 namespace Rosen {
+// NOTE:
+// 1. MUST update g_propertyResetterLUT in rs_properties.cpp when new properties are added
+// 2. property modifier MUST be added before CUSTOM, else wise it will be treated as draw modifier
 enum class RSModifierType : int16_t {
     INVALID = 0,                   // 0
     BOUNDS,                        // 1
@@ -87,17 +90,18 @@ enum class RSModifierType : int16_t {
     COLOR_BLEND,                   // 63
     PARTICLE,                      // 64
     SHADOW_IS_FILLED,              // 65
-    CUSTOM,                        // 66
-    EXTENDED,                      // 67
-    TRANSITION,                    // 68
-    BACKGROUND_STYLE,              // 69
-    CONTENT_STYLE,                 // 70
-    FOREGROUND_STYLE,              // 71
-    OVERLAY_STYLE,                 // 72
-    NODE_MODIFIER,                 // 73
-    ENV_FOREGROUND_COLOR,          // 74
-    ENV_FOREGROUND_COLOR_STRATEGY, // 75
-    GEOMETRYTRANS,                 // 76
+    COLOR_BLENDMODE,               // 66
+    CUSTOM,                        // 67
+    EXTENDED,                      // 68
+    TRANSITION,                    // 69
+    BACKGROUND_STYLE,              // 70
+    CONTENT_STYLE,                 // 71
+    FOREGROUND_STYLE,              // 72
+    OVERLAY_STYLE,                 // 73
+    NODE_MODIFIER,                 // 74
+    ENV_FOREGROUND_COLOR,          // 75
+    ENV_FOREGROUND_COLOR_STRATEGY, // 76
+    GEOMETRYTRANS,                 // 77
 };
 
 enum class RSRenderPropertyType : int16_t {

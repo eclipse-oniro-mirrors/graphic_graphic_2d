@@ -26,6 +26,8 @@
 #include <memory>
 #include "draw/canvas.h"
 #endif
+#include "memory/rs_dfx_string.h"
+#include "pipeline/rs_paint_filter_canvas.h"
 #include "transaction/rs_marshalling_helper.h"
 
 namespace OHOS {
@@ -40,9 +42,9 @@ public:
 
 #ifndef USE_ROSEN_DRAWING
 #ifdef NEW_SKIA
-    virtual void DrawImage(SkCanvas& canvas, const SkSamplingOptions& samplingOptions, const SkPaint& paint);
+    virtual void DrawImage(RSPaintFilterCanvas& canvas, const SkSamplingOptions& samplingOptions, const SkPaint& paint);
 #else
-    virtual void DrawImage(SkCanvas& canvas, const SkPaint& paint);
+    virtual void DrawImage(RSPaintFilterCanvas& canvas, const SkPaint& paint);
 #endif
     void SetImage(const sk_sp<SkImage> image);
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
@@ -62,17 +64,19 @@ public:
     void UpdateNodeIdToPicture(NodeId nodeId);
     void MarkRenderServiceImage();
     std::shared_ptr<Media::PixelMap> GetPixelMap() const;
+    void DumpPicture(DfxString& info) const;
 #ifdef ROSEN_OHOS
     virtual bool Marshalling(Parcel& parcel) const;
     [[nodiscard]] static RSImageBase* Unmarshalling(Parcel& parcel);
 #endif
 
-protected:
 #ifndef USE_ROSEN_DRAWING
     void ConvertPixelMapToSkImage();
 #else
     void ConvertPixelMapToDrawingImage();
 #endif
+
+protected:
     void GenUniqueId(uint32_t id);
 #ifndef USE_ROSEN_DRAWING
     static bool UnmarshallingSkImageAndPixelMap(Parcel& parcel, uint64_t uniqueId, bool& useSkImage,

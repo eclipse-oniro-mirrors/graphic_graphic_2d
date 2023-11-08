@@ -17,10 +17,14 @@
 
 #ifndef USE_ROSEN_DRAWING
 #include "include/core/SkImage.h"
+#include "src/core/SkImagePriv.h"
 #else
 #include "image/image.h"
 #endif
 #include "common/rs_background_thread.h"
+#ifdef RS_ENABLE_PARALLEL_UPLOAD
+#include "common/rs_upload_texture_thread.h"
+#endif
 #include "common/rs_common_def.h"
 #include "platform/common/rs_log.h"
 #include "pipeline/rs_task_dispatcher.h"
@@ -66,9 +70,9 @@ RSImageBase::~RSImageBase()
 
 #ifndef USE_ROSEN_DRAWING
 #ifdef NEW_SKIA
-void RSImageBase::DrawImage(SkCanvas& canvas, const SkSamplingOptions& samplingOptions, const SkPaint& paint)
+void RSImageBase::DrawImage(RSPaintFilterCanvas& canvas, const SkSamplingOptions& samplingOptions, const SkPaint& paint)
 #else
-void RSImageBase::DrawImage(SkCanvas& canvas, const SkPaint& paint)
+void RSImageBase::DrawImage(RSPaintFilterCanvas& canvas, const SkPaint& paint)
 #endif
 {
     ConvertPixelMapToSkImage();
@@ -137,6 +141,15 @@ void RSImageBase::SetPixelMap(const std::shared_ptr<Media::PixelMap>& pixelmap)
         image_ = nullptr;
         GenUniqueId(pixelMap_->GetUniqueId());
     }
+}
+
+void RSImageBase::DumpPicture(DfxString& info) const
+{
+    if (!pixelMap_) {
+        return;
+    }
+    info.AppendFormat("%d    [%d * %d]  %p\n", pixelMap_->GetByteCount(), pixelMap_->GetWidth(), pixelMap_->GetHeight(),
+        pixelMap_.get());
 }
 
 void RSImageBase::SetSrcRect(const RectF& srcRect)
@@ -387,6 +400,19 @@ void RSImageBase::ConvertPixelMapToSkImage()
 #endif
             }
         }
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD)
+#if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_UNI_RENDER)
+        auto image = image_;
+        auto pixelMap = pixelMap_;
+        std::function<void()> uploadTexturetask = [image, pixelMap]() -> void {
+            auto grContext = RSUploadTextureThread::Instance().GetShareGrContext().get();
+            if (grContext && image && pixelMap) {
+                SkImage_pinAsTexture(image.get(), grContext);
+            }
+        };
+        RSUploadTextureThread::Instance().PostTask(uploadTexturetask, std::to_string(uniqueId_));
+#endif
+#endif
     }
 }
 #else

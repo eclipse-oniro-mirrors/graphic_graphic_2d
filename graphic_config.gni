@@ -24,6 +24,7 @@ declare_args() {
   graphic_2d_feature_parallel_render_enable = true
   graphic_2d_feature_enable_vulkan = false
   graphic_2d_feature_enable_filter_cache = true
+  graphic_2d_feature_parallel_upload_enable = true
   enable_text_gine = true
   use_texgine = true
   logger_enable_scope = false
@@ -32,7 +33,7 @@ declare_args() {
   graphic_2d_feature_drivers_interface_display_enable = true
   graphic_2d_feature_tp_switch_enbale = false
 
-  if (defined(build_cross_platform_version) && build_cross_platform_version) {
+  if (defined(is_arkui_x) && is_arkui_x) {
     use_new_render_context = false
     is_cross_platform = true
   } else {
@@ -48,6 +49,7 @@ if (enable_text_gine) {
 }
 if (graphic_2d_feature_ace_enable_gpu) {
   if (graphic_2d_feature_enable_vulkan) {
+    rs_enable_parallel_upload = false
     gpu_defines += [
       "ACE_ENABLE_VK",
       "RS_ENABLE_VK",
@@ -57,6 +59,12 @@ if (graphic_2d_feature_ace_enable_gpu) {
       "ACE_ENABLE_GL",
       "RS_ENABLE_GL",
     ]
+    if (graphic_2d_feature_parallel_upload_enable) {
+      rs_enable_parallel_upload = true
+      gpu_defines += [ "RS_ENABLE_PARALLEL_UPLOAD" ]
+    } else {
+      rs_enable_parallel_upload = false
+    }
   }
   ace_enable_gpu = true
   rs_enable_gpu = true
@@ -164,6 +172,7 @@ safwk_base = "//foundation/systemabilitymgr/safwk"
 skia_root_new = "//third_party/skia"
 memmgr_root = "//foundation/resourceschedule/memmgr"
 memmgr_plugin_root = "//foundation/resourceschedule/memmgr_plugin"
+fuzz_test_output_path = "graphic_2d/graphic_2d"
 
 accessibility_enable = false
 if (defined(global_parts_info) &&

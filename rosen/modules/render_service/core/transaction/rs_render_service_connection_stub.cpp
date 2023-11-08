@@ -110,11 +110,17 @@ std::shared_ptr<MessageParcel> CopyParcelIfNeed(MessageParcel& old)
 int RSRenderServiceConnectionStub::OnRemoteRequest(
     uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
 {
+    if (!securityManager_.IsAccessTimesRestricted(code, securityUtils_.GetCodeAccessCounter(code))) {
+        RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest no permission to access codeID=%{public}u by "
+                "pid=%{public}d with accessTimes = %{public}d.",
+            code, GetCallingPid(), securityUtils_.GetCodeAccessCounter(code));
+        return ERR_INVALID_STATE;
+    }
     if (!securityManager_.IsInterfaceCodeAccessible(code)) {
         RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest no permission to access codeID=%{public}u.", code);
         return ERR_INVALID_STATE;
     }
-
+    securityUtils_.IncreaseAccessCounter(code);
     int ret = ERR_NONE;
     switch (code) {
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::COMMIT_TRANSACTION): {
@@ -675,6 +681,18 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             reply.WriteInt32(result);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_CORRECTION): {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            ScreenId id = data.ReadUint64();
+            ScreenRotation screenRotation = static_cast<ScreenRotation>(data.ReadInt32());
+            int32_t result = SetScreenCorrection(id, screenRotation);
+            reply.WriteInt32(result);
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_GAMUT_MAP): {
             auto token = data.ReadInterfaceToken();
             if (token != RSIRenderServiceConnection::GetDescriptor()) {
@@ -838,7 +856,12 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_NULL_OBJECT;
                 break;
             }
-            int32_t status = RegisterSurfaceOcclusionChangeCallback(id, callback);
+            std::vector<float> partitionPoints;
+            if (!data.ReadFloatVector(&partitionPoints)) {
+                ret = ERR_TRANSACTION_FAILED;
+                break;
+            }
+            int32_t status = RegisterSurfaceOcclusionChangeCallback(id, callback, partitionPoints);
             reply.WriteInt32(status);
             break;
         }

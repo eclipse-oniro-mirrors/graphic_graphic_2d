@@ -145,6 +145,8 @@ public:
 
     virtual int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode) = 0;
 
+    virtual int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation) = 0;
+
     virtual int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode) = 0;
 
     virtual int32_t GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability) = 0;
@@ -165,7 +167,7 @@ public:
     virtual int32_t RegisterOcclusionChangeCallback(sptr<RSIOcclusionChangeCallback> callback) = 0;
 
     virtual int32_t RegisterSurfaceOcclusionChangeCallback(
-        NodeId id, sptr<RSISurfaceOcclusionChangeCallback> callback) = 0;
+        NodeId id, sptr<RSISurfaceOcclusionChangeCallback> callback, std::vector<float>& partitionPoints) = 0;
 
     virtual int32_t UnRegisterSurfaceOcclusionChangeCallback(NodeId id) = 0;
 

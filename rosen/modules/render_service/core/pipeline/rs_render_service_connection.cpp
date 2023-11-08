@@ -381,11 +381,10 @@ void RSRenderServiceConnection::SetRefreshRateMode(int32_t refreshRateMode)
     ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSRenderService::SetRefreshRateMode");
     auto &hgmCore = OHOS::Rosen::HgmCore::Instance();
     int32_t setResult = hgmCore.SetRefreshRateMode(static_cast<RefreshRateMode>(refreshRateMode));
+    RSSystemProperties::SetHgmRefreshRateModesEnabled(std::to_string(refreshRateMode));
     if (setResult != 0) {
         RS_LOGW("SetRefreshRateMode mode %{public}d is not supported", refreshRateMode);
-        return;
     }
-    RSSystemProperties::SetHgmRefreshRateModesEnabled(std::to_string(refreshRateMode));
     ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
 }
 
@@ -709,6 +708,12 @@ int32_t RSRenderServiceConnection::SetScreenGamutMap(ScreenId id, ScreenGamutMap
     }
 }
 
+int32_t RSRenderServiceConnection::SetScreenCorrection(ScreenId id, ScreenRotation screenRotation)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return screenManager_->SetScreenCorrection(id, screenRotation);
+}
+
 int32_t RSRenderServiceConnection::GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode)
 {
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
@@ -781,6 +786,9 @@ bool RSRenderServiceConnection::GetPixelmap(
     auto tid = node->GetTid();
     auto getPixelmapTask = [&node, &pixelmap, rect, &result]() { result = node->GetPixelmap(pixelmap, rect); };
     if (tid == UINT32_MAX) {
+        if (!mainThread_->IsIdle()) {
+            return false;
+        }
         mainThread_->PostSyncTask(getPixelmapTask);
     } else {
         RSTaskDispatcher::GetInstance().PostTask(
@@ -814,14 +822,14 @@ int32_t RSRenderServiceConnection::RegisterOcclusionChangeCallback(sptr<RSIOcclu
 }
 
 int32_t RSRenderServiceConnection::RegisterSurfaceOcclusionChangeCallback(
-    NodeId id, sptr<RSISurfaceOcclusionChangeCallback> callback)
+    NodeId id, sptr<RSISurfaceOcclusionChangeCallback> callback, std::vector<float>& partitionPoints)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!callback) {
         RS_LOGD("RSRenderServiceConnection::RegisterSurfaceOcclusionChangeCallback: callback is nullptr");
         return StatusCode::INVALID_ARGUMENTS;
     }
-    mainThread_->RegisterSurfaceOcclusionChangeCallback(id, remotePid_, callback);
+    mainThread_->RegisterSurfaceOcclusionChangeCallback(id, remotePid_, callback, partitionPoints);
     return StatusCode::SUCCESS;
 }
 

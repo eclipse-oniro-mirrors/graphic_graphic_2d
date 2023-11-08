@@ -13,23 +13,26 @@
  * limitations under the License.
  */
 
-#ifndef SKIA_FONT_MGR_OHOS_H
-#define SKIA_FONT_MGR_OHOS_H
+#ifndef ROSEN_RENDER_SERVICE_BASE_TRANSACTION_RS_RENDER_SERVICE_SECURITY_UTILS_H
+#define ROSEN_RENDER_SERVICE_BASE_TRANSACTION_RS_RENDER_SERVICE_SECURITY_UTILS_H
 
-#include <cstdint>
-#include <string>
+#include <unordered_map>
 
-#include "skia_adapter/skia_font_mgr.h"
-
+#include "ipc_security/rs_ipc_interface_code_underlying_type.h"
 namespace OHOS {
 namespace Rosen {
-namespace Drawing {
-class SkiaFontMgrOhos : public SkiaFontMgr {
+class RSRenderServiceSecurityUtils {
 public:
-    explicit SkiaFontMgrOhos(const char* path);
-    ~SkiaFontMgrOhos() override = default;
+    RSRenderServiceSecurityUtils() = default;
+    ~RSRenderServiceSecurityUtils() noexcept = default;
+
+    uint32_t GetCodeAccessCounter(uint32_t code) const;
+    void IncreaseAccessCounter(uint32_t code);
+
+private:
+    std::unordered_map<uint32_t, uint32_t> accessCounter_;
 };
-} // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
-#endif
+
+#endif // ROSEN_RENDER_SERVICE_BASE_TRANSACTION_RS_RENDER_SERVICE_SECURITY_UTILS_H

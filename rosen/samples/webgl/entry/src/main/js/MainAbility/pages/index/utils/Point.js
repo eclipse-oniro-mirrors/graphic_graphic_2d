@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,14 +13,13 @@
  * limitations under the License.
  */
 
-#include "skia_dynamic_font_mgr.h"
-
-#include "txt/asset_font_manager.h"
-
-namespace OHOS {
-namespace Rosen {
-namespace Drawing {
-SkiaDynamicFontMgr::SkiaDynamicFontMgr() : SkiaFontMgr(std::make_shared<txt::DynamicFontManager>()) {}
-} // namespace Drawing
-} // namespace Rosen
-} // namespace OHOS
+export class Point {
+    x;
+    y;
+    z;
+    constructor(x = 0, y = 0, z = 0) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+}

@@ -70,10 +70,12 @@ public:
     virtual int32_t GetScreenColorGamut(ScreenColorGamut &mode) const = 0;
     virtual int32_t SetScreenColorGamut(int32_t modeIdx) = 0;
     virtual int32_t SetScreenGamutMap(ScreenGamutMap mode) = 0;
+    virtual ScreenRotation GetScreenCorrection() const = 0;
     virtual int32_t GetScreenGamutMap(ScreenGamutMap &mode) const = 0;
     virtual int32_t GetActiveModePosByModeId(int32_t modeId) const = 0;
     virtual const GraphicHDRCapability& GetHDRCapability() = 0;
     virtual const RSScreenType& GetScreenType() const = 0;
+    virtual void SetScreenCorrection(ScreenRotation screenRotation) = 0;
     virtual void SetScreenSkipFrameInterval(uint32_t skipFrameInterval) = 0;
     virtual uint32_t GetScreenSkipFrameInterval() const = 0;
     virtual void SetScreenVsyncEnabled(bool enabled) const = 0;
@@ -122,6 +124,8 @@ public:
     int32_t GetScreenColorGamut(ScreenColorGamut &mode) const override;
     int32_t SetScreenColorGamut(int32_t modeIdx) override;
     int32_t SetScreenGamutMap(ScreenGamutMap mode) override;
+    void SetScreenCorrection(ScreenRotation screenRotation) override;
+    ScreenRotation GetScreenCorrection() const override;
     int32_t GetScreenGamutMap(ScreenGamutMap &mode) const override;
     int32_t GetActiveModePosByModeId(int32_t modeId) const override;
     const GraphicHDRCapability& GetHDRCapability() override;
@@ -171,6 +175,7 @@ private:
     ScreenGamutMap currentVirtualGamutMap_ = GAMUT_MAP_CONSTANT;
     RSScreenType screenType_ = RSScreenType::UNKNOWN_TYPE_SCREEN;
     uint32_t skipFrameInterval_ = DEFAULT_SKIP_FRAME_INTERVAL;
+    ScreenRotation screenRotation_ = ScreenRotation::ROTATION_0;
 };
 } // namespace impl
 } // namespace Rosen

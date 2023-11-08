@@ -172,6 +172,12 @@ int32_t RSInterfaces::SetVirtualScreenResolution(ScreenId id, uint32_t width, ui
     return renderServiceClient_->SetVirtualScreenResolution(id, width, height);
 }
 
+bool RSInterfaces::SetVirtualMirrorScreenBufferRotation(ScreenId id, bool bufferRotation)
+{
+    RS_LOGD("RSInterfaces::SetVirtualMirrorScreenBufferRotation is not supported.");
+    return true;
+}
+
 RSVirtualScreenResolution RSInterfaces::GetVirtualScreenResolution(ScreenId id)
 {
     return renderServiceClient_->GetVirtualScreenResolution(id);
@@ -260,6 +266,11 @@ int32_t RSInterfaces::SetScreenGamutMap(ScreenId id, ScreenGamutMap mode)
     return renderServiceClient_->SetScreenGamutMap(id, mode);
 }
 
+int32_t RSInterfaces::SetScreenCorrection(ScreenId id, ScreenRotation screenRotation)
+{
+    return renderServiceClient_->SetScreenCorrection(id, screenRotation);
+}
+
 int32_t RSInterfaces::GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode)
 {
     return renderServiceClient_->GetScreenGamutMap(id, mode);
@@ -292,9 +303,10 @@ int32_t RSInterfaces::RegisterOcclusionChangeCallback(const OcclusionChangeCallb
     return renderServiceClient_->RegisterOcclusionChangeCallback(callback);
 }
 
-int32_t RSInterfaces::RegisterSurfaceOcclusionChangeCallback(NodeId id, const SurfaceOcclusionChangeCallback& callback)
+int32_t RSInterfaces::RegisterSurfaceOcclusionChangeCallback(
+    NodeId id, const SurfaceOcclusionChangeCallback& callback, std::vector<float>& partitionPoints)
 {
-    return renderServiceClient_->RegisterSurfaceOcclusionChangeCallback(id, callback);
+    return renderServiceClient_->RegisterSurfaceOcclusionChangeCallback(id, callback, partitionPoints);
 }
 
 int32_t RSInterfaces::UnRegisterSurfaceOcclusionChangeCallback(NodeId id)

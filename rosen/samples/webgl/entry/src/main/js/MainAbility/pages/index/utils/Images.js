@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,22 +13,9 @@
  * limitations under the License.
  */
 
-#ifndef SKIA_DYNAMIC_FONT_MGR_H
-#define SKIA_DYNAMIC_FONT_MGR_H
-
-#include <string>
-
-#include "skia_adapter/skia_font_mgr.h"
-
-namespace OHOS {
-namespace Rosen {
-namespace Drawing {
-class SkiaDynamicFontMgr : public SkiaFontMgr {
-public:
-    explicit SkiaDynamicFontMgr();
-    ~SkiaDynamicFontMgr() override = default;
-};
-} // namespace Drawing
-} // namespace Rosen
-} // namespace OHOS
-#endif
+export class Images{
+    static MF_IMG = "/data/storage/el1/bundle/com.example.webgl/assets/entry/resources/rawfile/mf.jpg";
+    static VR_IMG = "/data/storage/el1/bundle/com.example.webgl/assets/entry/resources/rawfile/vr.jpg";
+    static FLOOR = "/data/storage/el1/bundle/com.example.webgl/assets/entry/resources/rawfile/floor.jpg";
+    static BOX = "/data/storage/el1/bundle/com.example.webgl/assets/entry/resources/rawfile/box.jpg";
+}

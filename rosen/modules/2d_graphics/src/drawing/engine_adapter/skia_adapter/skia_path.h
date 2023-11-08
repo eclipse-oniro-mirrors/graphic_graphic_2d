@@ -28,14 +28,17 @@ namespace Drawing {
 class DRAWING_API SkiaPath : public PathImpl {
 public:
     static inline constexpr AdapterType TYPE = AdapterType::SKIA_ADAPTER;
+
     SkiaPath() noexcept;
     ~SkiaPath() override {};
     SkiaPath(const SkiaPath& p) noexcept;
     SkiaPath &operator=(const SkiaPath& p) noexcept;
+
     AdapterType GetType() const override
     {
         return AdapterType::SKIA_ADAPTER;
     }
+
     PathImpl* Clone() override;
 
     bool InitWithSVGString(const std::string& str) override;

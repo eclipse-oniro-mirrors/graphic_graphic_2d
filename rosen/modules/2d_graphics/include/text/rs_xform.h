@@ -13,23 +13,28 @@
  * limitations under the License.
  */
 
-#ifndef SKIA_FONT_STYLE_SET_OHOS_H
-#define SKIA_FONT_STYLE_SET_OHOS_H
+#ifndef RS_XFORM_H
+#define RS_XFORM_H
 
-#include <cstdint>
-#include <string>
+#include <cmath>
+#include <stdint.h>
 
-#include "src/ports/skia_ohos/FontConfig_ohos.h"
-
-#include "skia_adapter/skia_font_style_set.h"
+#include "utils/scalar.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
-class SkiaFontStyleSetOhos : public SkiaFontStyleSet {
-public:
-    explicit SkiaFontStyleSetOhos(const std::shared_ptr<FontConfig_OHOS>& fontConfig, int index, bool isFallback);
-    ~SkiaFontStyleSetOhos() override = default;
+struct RSXform {
+    static RSXform Make(scalar cos, scalar sin, scalar tx, scalar ty)
+    {
+        RSXform xform = { cos, sin, tx, ty };
+        return xform;
+    }
+
+    scalar cos_;
+    scalar sin_;
+    scalar tx_;
+    scalar ty_;
 };
 } // namespace Drawing
 } // namespace Rosen

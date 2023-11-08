@@ -87,6 +87,8 @@ public:
 
     int32_t SetVirtualScreenResolution(ScreenId id, uint32_t width, uint32_t height);
 
+    bool SetVirtualMirrorScreenBufferRotation(ScreenId id, bool bufferRotation);
+
     RSVirtualScreenResolution GetVirtualScreenResolution(ScreenId id);
 
     void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status);
@@ -125,6 +127,8 @@ public:
 
     int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode);
 
+    int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation);
+
     int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode);
 
     int32_t GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability);
@@ -142,7 +146,8 @@ public:
 
     int32_t RegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback);
 
-    int32_t RegisterSurfaceOcclusionChangeCallback(NodeId id, const SurfaceOcclusionChangeCallback& callback);
+    int32_t RegisterSurfaceOcclusionChangeCallback(
+        NodeId id, const SurfaceOcclusionChangeCallback& callback, std::vector<float>& partitionPoints);
 
     int32_t UnRegisterSurfaceOcclusionChangeCallback(NodeId id);
 

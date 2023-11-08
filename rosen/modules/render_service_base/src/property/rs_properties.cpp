@@ -113,6 +113,8 @@ const std::vector<ResetPropertyFunc> g_propertyResetterLUT = {
     [](RSProperties* prop) { prop->SetColorBlend({}); },                 // COLOR_BLEND,              63
     [](RSProperties* prop) { prop->SetParticles({}); },                  // PARTICLE,                 64
     [](RSProperties* prop) { prop->SetShadowIsFilled(false); },          // SHADOW_IS_FILLED,         65
+    [](RSProperties* prop) { prop->SetColorBlendMode(
+        static_cast<int>(RSColorBlendModeType::NONE)); },                // COLOR_BLENDMODE,          66
     nullptr,
 };
 } // namespace
@@ -2289,6 +2291,8 @@ void RSProperties::OnApplyModifiers()
         if (clipToFrame_ && clipToBounds_ && frameOffsetX_ == 0 && frameOffsetY_ == 0) {
             clipToFrame_ = false;
         }
+        frameGeo_->Round();
+        boundsGeo_->Round();
     }
     if (colorFilterNeedUpdate_) {
         GenerateColorFilter();
@@ -2359,6 +2363,22 @@ void RSProperties::CalculateFrameOffset()
     if (frameOffsetX_ != 0. || frameOffsetY_ != 0.) {
         isDrawn_ = true;
     }
+}
+
+// blend with background
+void RSProperties::SetColorBlendMode(int blendMode)
+{
+    blendMode_ = blendMode;
+    if (blendMode != static_cast<int>(RSColorBlendModeType::NONE)) {
+        isDrawn_ = true;
+    }
+    SetDirty();
+    contentDirty_ = true;
+}
+
+int RSProperties::GetColorBlendMode() const
+{
+    return blendMode_;
 }
 } // namespace Rosen
 } // namespace OHOS
