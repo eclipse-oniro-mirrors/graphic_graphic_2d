@@ -79,6 +79,7 @@ enum ColorSpaceName : uint32_t {
     DISPLAY_BT2020_SRGB,
     DISPLAY_BT2020_HLG = BT2020_HLG,
     DISPLAY_BT2020_PQ = BT2020_PQ,
+    BT2020,
     NTSC_1953,
     PRO_PHOTO_RGB,
     ACES,

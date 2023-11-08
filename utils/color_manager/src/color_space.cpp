@@ -46,6 +46,7 @@ const ColorSpace CS_LINEAR_SRGB = {CSP_BT709, TF_LINEAR};
 const ColorSpace CS_LINEAR_P3 = {CSP_P3_D65, TF_LINEAR};
 const ColorSpace CS_LINEAR_BT2020 = {CSP_BT2020, TF_LINEAR};
 const ColorSpace CS_DISPLAY_BT2020_SRGB = {CSP_BT2020, TF_SRGB};
+const ColorSpace CS_BT2020 = {CSP_BT2020, TF_BT709};
 const ColorSpace CS_NTSC_1953 = {CSP_NTSC_1953, TF_BT709};
 const ColorSpace CS_PRO_PHOTO_RGB = {CSP_PRO_PHOTO_RGB, TF_PRO_PHOTO_RGB};
 
@@ -70,6 +71,9 @@ const std::map<ColorSpaceName, ColorSpace> NamedColorSpace = {
     { ColorSpaceName::DISPLAY_SRGB, CS_SRGB },
     { ColorSpaceName::DISPLAY_P3_SRGB, CS_DISPLAY_P3 },
     { ColorSpaceName::DISPLAY_BT2020_SRGB, CS_DISPLAY_BT2020_SRGB },
+    { ColorSpaceName::BT2020, CS_BT2020 },
+    { ColorSpaceName::NTSC_1953, CS_NTSC_1953 },
+    { ColorSpaceName::PRO_PHOTO_RGB, CS_PRO_PHOTO_RGB },
 };
 
 ColorSpace::ColorSpace(ColorSpaceName name)
