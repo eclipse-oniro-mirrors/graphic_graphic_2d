@@ -75,9 +75,7 @@ int TextBreaker::WordBreak(std::vector<VariantSpan> &spans, const TypographyStyl
             widthLimit_ -= GetIndent(widthLimit_, index, indents_);
             spans.push_back(vspan);
             currentWidth_ += vspan.GetWidth();
-            if (currentWidth_ >= widthLimit_) {
-                currentWidth_ = 0;
-            }
+            currentWidth_ = currentWidth_ >= widthLimit_ ? 0 : currentWidth_;
             widthLimit_ = widthLimit;
             continue;
         }
