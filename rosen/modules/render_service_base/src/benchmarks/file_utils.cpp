@@ -112,8 +112,8 @@ bool WriteStringToFile(const std::string& str, const std::string& filePath)
     return result;
 }
 
-bool WriteMessageParcelToFile(std::shared_ptr<MessageParcel> messageParcel, std::string opsDescription
-    , int frameNum, std::string fileDir)
+bool WriteMessageParcelToFile(std::shared_ptr<MessageParcel> messageParcel, std::string opsDescription,
+    int frameNum, std::string fileDir)
 {
     // file name
     std::string drawCmdListFile = fileDir + "/frame" + std::to_string(frameNum) + ".drawing";
@@ -130,8 +130,8 @@ bool WriteMessageParcelToFile(std::shared_ptr<MessageParcel> messageParcel, std:
     RS_LOGD("%{public}s", line.c_str());
     RS_TRACE_NAME(line);
 
-    OHOS::Rosen::Benchmarks::WriteToFile(buf, sz, drawCmdListFile);
-    OHOS::Rosen::Benchmarks::WriteStringToFile(opsDescription, opsFile);
+    return OHOS::Rosen::Benchmarks::WriteToFile(buf, sz, drawCmdListFile) &&
+        OHOS::Rosen::Benchmarks::WriteStringToFile(opsDescription, opsFile);
 }
 }
 } // namespace Rosen

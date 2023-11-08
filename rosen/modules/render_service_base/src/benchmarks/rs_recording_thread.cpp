@@ -223,9 +223,9 @@ void RSRecordingThread::RecordingToFile(const std::shared_ptr<Drawing::DrawCmdLi
     if (curDumpFrame_ < 0) {
         return;
     }
-    if (modeSubThread == RecordingMode::HIGH_SPPED_RECORDING) {
+    if (mode_ == RecordingMode::HIGH_SPPED_RECORDING) {
         drawCmdListVec_.push_back(drawCmdList);
-    } else if (modeSubThread == RecordingMode::LOW_SPEED_RECORDING) {
+    } else if (mode_ == RecordingMode::LOW_SPEED_RECORDING) {
 #ifndef USE_ROSEN_DRAWING
         std::shared_ptr<MessageParcel> messageParcel = std::make_shared<MessageParcel>();
         RSMarshallingHelper::BeginNoSharedMem(std::this_thread::get_id());

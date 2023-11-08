@@ -100,7 +100,6 @@ private:
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
     std::string fileDir_ = "/data/";
-    bool isRecordingEnabled_ = false;
     int dumpFrameNum_ = 0;
     int curDumpFrame_ = 0;
 };
