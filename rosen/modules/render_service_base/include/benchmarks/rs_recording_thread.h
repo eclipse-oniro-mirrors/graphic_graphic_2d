@@ -46,6 +46,7 @@ public:
         LOW_SPEED_RECORDING,
         HIGH_SPPED_RECORDING,
     };
+
     RSRecordingThread(RenderContext* context) : renderContext_(context){};
     ~RSRecordingThread();
     
@@ -82,6 +83,7 @@ private:
     std::shared_ptr<Drawing::GPUContext> CreateShareGrContext();
 #endif
 
+    const static size_t RECORDING_PARCEL_CAPCITY = 234 * 1000 * 1024;
     RenderContext *renderContext_ = nullptr;
     EGLContext eglShareContext_ = EGL_NO_CONTEXT;
 #ifndef USE_ROSEN_DRAWING

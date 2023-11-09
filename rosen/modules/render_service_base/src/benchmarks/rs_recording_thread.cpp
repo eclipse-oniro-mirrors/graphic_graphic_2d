@@ -188,6 +188,7 @@ void RSRecordingThread::FinishRecordingOneFrame()
             std::string opsDescription = "drawing ops no description";
             if (modeSubThread == RecordingMode::HIGH_SPPED_RECORDING) {
                 RS_LOGI("RSRecordingThread::High speed!");
+                messageParcel->SetMaxCapacity(RECORDING_PARCEL_CAPCITY);
                 RSMarshallingHelper::BeginNoSharedMem(std::this_thread::get_id());
                 drawCmdListVec_[curFrameIndex]->Marshalling(*messageParcel);
                 RSMarshallingHelper::EndNoSharedMem();
