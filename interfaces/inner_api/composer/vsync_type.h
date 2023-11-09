@@ -23,9 +23,20 @@ namespace Rosen {
 } // Rosen
 
 typedef enum {
-    VSYNC_MODE_LTPS, /**< VSyncMode for LTPS Screen */
-    VSYNC_MODE_LTPO, /**< VSyncMode for LTPS Screen */
-    VSYNC_MODE_INVALID /**< Invalid VSyncMode */
+    /*
+    * VSync mode for LTPS indicates the refresh rate of software vsync won't change
+    * without the hardware vsync refresh rate changed.
+    */
+    VSYNC_MODE_LTPS,
+    /*
+    * VSync mode for LTPO indicates the refresh rate of software vsync can be switched
+    * without the hardware vsync refresh rate changed.
+    */
+    VSYNC_MODE_LTPO,
+    /*
+    * Invalid VSync mode.
+    */
+    VSYNC_MODE_INVALID
 } VSyncMode;
 } // OHOS
 
