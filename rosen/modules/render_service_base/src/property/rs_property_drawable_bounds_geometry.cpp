@@ -1159,7 +1159,7 @@ void RSBackgroundDrawable::setForceBgAntiAlias(bool forceBgAntiAlias)
 void RSBackgroundDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
 {
 #ifndef USE_ROSEN_DRAWING
-    canvas.drawPaint(paint_);
+    canvas.drawRRect(RSPropertiesPainter::RRect2SkRRect(node.GetMutableRenderProperties().GetInnerRRect()), paint_);
 #else
     canvas.DrawBackGround(brush_);
 #endif
