@@ -319,6 +319,11 @@ void RSRenderServiceClient::ShowWatermark(const std::shared_ptr<Media::PixelMap>
 {
 }
 
+int32_t RSRenderServiceClient::ResizeVirtualScreen(ScreenId id, uint32_t width, uint32_t height)
+{
+    return {};
+}
+
 void RSRenderServiceClient::ReportJankStats()
 {
 }

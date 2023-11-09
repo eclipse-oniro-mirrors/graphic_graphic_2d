@@ -862,6 +862,18 @@ void RSRenderServiceConnection::ShowWatermark(const std::shared_ptr<Media::Pixel
     mainThread_->PostTask(task);
 }
 
+int32_t RSRenderServiceConnection::ResizeVirtualScreen(ScreenId id, uint32_t width, uint32_t height)
+{
+    auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
+    if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
+        return RSHardwareThread::Instance().ScheduleTask(
+            [=]() { return screenManager_->ResizeVirtualScreen(id, width, height); }).get();
+    } else {
+        return mainThread_->ScheduleTask(
+            [=]() { return screenManager_->ResizeVirtualScreen(id, width, height); }).get();
+    }
+}
+
 void RSRenderServiceConnection::ReportJankStats()
 {
     auto task = [this]() -> void { RSJankStats::GetInstance().ReportJankStats(); };

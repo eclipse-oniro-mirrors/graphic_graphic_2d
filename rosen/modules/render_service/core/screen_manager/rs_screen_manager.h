@@ -135,6 +135,8 @@ public:
 
     virtual void ClearFpsDump(std::string& dumpString, std::string& arg) = 0;
 
+    virtual int32_t ResizeVirtualScreen(ScreenId id, uint32_t width, uint32_t height) = 0;
+
     virtual int32_t GetScreenBacklight(ScreenId id) = 0;
 
     virtual void SetScreenBacklight(ScreenId id, uint32_t level) = 0;
@@ -239,6 +241,8 @@ public:
     void FpsDump(std::string& dumpString, std::string& arg) override;
 
     void ClearFpsDump(std::string& dumpString, std::string& arg) override;
+
+    int32_t ResizeVirtualScreen(ScreenId id, uint32_t width, uint32_t height) override;
 
     int32_t GetScreenBacklight(ScreenId id) override;
 
