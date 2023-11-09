@@ -165,16 +165,13 @@ void MeasurerImpl::SeekTypeface(std::list<struct MeasuringRun> &runs)
     for (auto runsit = runs.begin(); runsit != runs.end(); runsit++) {
         if (runsit->end > text_.size()) {
             LOGEX_FUNC_LINE(ERROR) << "runsit->end overflow of text_";
-            throw TEXGINE_EXCEPTION(ERROR_STATUS);
+            break;
         }
         size_t utf16Index = static_cast<size_t>(runsit->start);
         uint32_t cp = 0;
         std::shared_ptr<Typeface> lastTypeface = nullptr;
         while (utf16Index < runsit->end) {
             U16_NEXT(text_.data(), utf16Index, runsit->end, cp);
-            // 2 & 6 means output width，0 means fill with 0
-            LOGEX_FUNC_LINE_DEBUG(Logger::SetToNoReturn) << "[" << std::setw(2) << std::setfill('0') << index++
-                << ": 0x" << std::setw(6) << std::setfill('0') << std::hex << std::uppercase << cp << "]";
             if (lastTypeface && lastTypeface->Has(cp)) {
                 LOGCEX_DEBUG() << " cached";
                 continue;
