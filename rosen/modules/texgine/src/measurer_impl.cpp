@@ -149,7 +149,8 @@ int MeasurerImpl::Measure(CharGroups &cgs)
     if (fontFeatures_ == nullptr || fontFeatures_->GetFeatures().size() == 0) {
         if (cgs.CheckCodePoint()) {
             detectionName_ = cgs.GetTypefaceName();
-            cache_[key] = {cgs.Clone(), boundaries_};
+            struct MeasurerCacheVal value = {cgs.Clone(), boundaries_};
+            cache_[key] = value;
         }
     }
     return SUCCESSED;
@@ -161,7 +162,6 @@ void MeasurerImpl::SeekTypeface(std::list<struct MeasuringRun> &runs)
     ScopedTrace scope("MeasurerImpl::SeekTypeface");
 #endif
     LOGSCOPED(sl, LOGEX_FUNC_LINE_DEBUG(), "typeface");
-    int index = 0;
     for (auto runsit = runs.begin(); runsit != runs.end(); runsit++) {
         if (runsit->end > text_.size()) {
             LOGEX_FUNC_LINE(ERROR) << "runsit->end overflow of text_";
@@ -177,14 +177,11 @@ void MeasurerImpl::SeekTypeface(std::list<struct MeasuringRun> &runs)
                 continue;
             }
             if (runsit->typeface) {
-                index--;
                 LOGCEX_DEBUG() << " new";
                 auto next = runsit;
-                runs.insert(++next, {
-                    .start = utf16Index - U16_LENGTH(cp),
-                    .end = runsit->end,
-                    .script = runsit->script,
-                });
+                struct MeasuringRun run = {.start = utf16Index - U16_LENGTH(cp), .end = runsit->end,
+                    .script = runsit->script}
+                runs.insert(++next, run);
                 runsit->end = utf16Index - U16_LENGTH(cp);
                 break;
             }
@@ -221,7 +218,8 @@ void MeasurerImpl::SeekScript(std::list<struct MeasuringRun> &runs)
         throw TEXGINE_EXCEPTION(API_FAILED);
     }
 
-    runs.push_back({.start = startIndex_, .end = endIndex_});
+    struct MeasuringRun run = {.start = startIndex_, .end = endIndex_};
+    runs.push_back(run);
     DoSeekScript(runs, icuGetUnicodeFuncs);
     hb_unicode_funcs_destroy(icuGetUnicodeFuncs);
 }
@@ -263,7 +261,8 @@ void MeasurerImpl::DoSeekScript(std::list<struct MeasuringRun> &runs, hb_unicode
             } else {
                 index--;
                 auto next = it;
-                runs.insert(++next, { .start = utf16Index - U16_LENGTH(cp), .end = it->end });
+                struct MeasuringRun run = {.start = utf16Index - U16_LENGTH(cp), .end = it->end};
+                runs.insert(++next, run);
                 it->end = utf16Index - U16_LENGTH(cp);
                 break;
             }
@@ -397,13 +396,14 @@ int MeasurerImpl::GetGlyphs(CharGroups &cgs, MeasuringRun &run, size_t &index, h
     std::map<uint32_t, CharGroup> cgsByCluster{{run.end, {}}};
     for (uint32_t i = 0; i < ng; i++) {
         auto &cg = cgsByCluster[hginfos[i].cluster];
-        cg.glyphs.push_back({
+        struct Glyph glyph = {
             .codepoint = hginfos[i].codepoint,
             .advanceX = glyphEm * hgpositions[i].x_advance,
             .advanceY = glyphEm * hgpositions[i].y_advance,
             .offsetX = glyphEm * hgpositions[i].x_offset,
             .offsetY = glyphEm * hgpositions[i].y_offset,
-        });
+        }
+        cg.glyphs.push_back(glyph);
         cg.typeface = typeface;
     }
 
