@@ -2088,7 +2088,7 @@ std::string RSProperties::Dump() const
     }
     auto backgroundFilter_ = GetBackgroundFilter();
     if (backgroundFilter_ && backgroundFilter_->IsValid() &&
-        sprintf_s(buffer, UINT8_MAX, ", Filter[%s]", filter_->GetDescription().c_str()) != -1) {
+        sprintf_s(buffer, UINT8_MAX, ", BackgroundFilter[%s]", backgroundFilter_->GetDescription().c_str()) != -1) {
         dumpInfo.append(buffer);
     }
 
