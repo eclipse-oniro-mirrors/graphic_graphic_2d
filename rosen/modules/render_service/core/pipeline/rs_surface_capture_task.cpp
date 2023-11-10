@@ -291,7 +291,8 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
             auto canvas = std::make_shared<RSPaintFilterCanvas>(surface.get());
             auto tmpImg = std::make_shared<Drawing::Image>();
             Drawing::TextureOrigin origin = Drawing::TextureOrigin::BOTTOM_LEFT;
-            Drawing::BitmapFormat bitmapFormat = Drawing::BitmapFormat{ Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
+            Drawing::BitmapFormat bitmapFormat =
+                Drawing::BitmapFormat{ Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
             bool ret = tmpImg->BuildFromTexture(*canvas->GetGPUContext(), grBackendTexture.GetTextureInfo(),
                 origin, bitmapFormat, nullptr);
             if (!ret) {
