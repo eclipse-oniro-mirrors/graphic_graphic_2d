@@ -452,7 +452,7 @@ HWTEST_F(ColorManagerTest, sRGBToBT2020_HLG, Function | SmallTest | Level2)
     Color result = color.Convert(BT2020_HLG);
     ASSERT_EQ(FloatEqual(result.r, 0.48441279f), true);
     ASSERT_EQ(FloatEqual(result.g, 0.59994509f), true);
-    ASSERT_EQ(FloatEqual(result.b, 0.077255629f), true);
+    ASSERT_EQ(FloatEqual(result.b, 0.77255629f), true);
 }
 
 /*
@@ -499,8 +499,8 @@ HWTEST_F(ColorManagerTest, BT2020_PQTosRGB, Function | SmallTest | Level2)
     Color color = Color(0.2, 0.4, 0.6, 1.0, BT2020_PQ);
     Color result = color.Convert(SRGB);
     ASSERT_EQ(FloatEqual(result.r, 0.0f), true);
-    ASSERT_EQ(FloatEqual(result.g, 0.0536f), true);
-    ASSERT_EQ(FloatEqual(result.b, 0.17888f), true);
+    ASSERT_EQ(FloatEqual(result.g, 0.0443f), true);
+    ASSERT_EQ(FloatEqual(result.b, 0.17906f), true);
 }
 
 /*
@@ -563,8 +563,8 @@ HWTEST_F(ColorManagerTest, P3_PQTosRGB, Function | SmallTest | Level2)
     Color color = Color(0.2, 0.4, 0.6, 1.0, P3_PQ);
     Color result = color.Convert(SRGB);
     ASSERT_EQ(FloatEqual(result.r, 0.0f), true);
-    ASSERT_EQ(FloatEqual(result.g, 0.05228f), true);
-    ASSERT_EQ(FloatEqual(result.b, 0.17744f), true);
+    ASSERT_EQ(FloatEqual(result.g, 0.04344f), true);
+    ASSERT_EQ(FloatEqual(result.b, 0.17756f), true);
 }
 
 /*

@@ -355,7 +355,6 @@ Vector3 ColorSpace::ToNonLinear(Vector3 v) const
             n = n >= p.d * p.c ? (std::pow(n - p.e, 1.0f / p.g) - p.b) / p.a : (n - p.f) / p.c;
         }
     }
-
     return res;
 }
 
