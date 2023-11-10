@@ -655,6 +655,12 @@ void RSSurfaceRenderNode::NotifyUIBufferAvailable()
         if (callbackFromUI_) {
             ROSEN_LOGD("RSSurfaceRenderNode::NotifyUIBufferAvailable nodeId = %{public}" PRIu64, GetId());
             callbackFromUI_->OnBufferAvailable();
+#ifdef OHOS_PLATFORM
+            if (IsAppWindow()) {
+                RSJankStats::GetInstance().SetFirstFrame();
+                RSJankStats::GetInstance().SetPid(ExtractPid(GetId()));
+            }
+#endif
         }
     }
 }
@@ -968,7 +974,7 @@ void RSSurfaceRenderNode::UpdateFilterCacheStatusWithVisible(bool visible)
         return;
     }
     prevVisible_ = visible;
-#if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_GL)
+#if defined(NEW_SKIA) && defined(RS_ENABLE_GL)
     if (!visible && !filterNodes_.empty()) {
         for (auto& node : filterNodes_) {
             node.second->GetMutableRenderProperties().ClearFilterCache();
@@ -982,7 +988,6 @@ void RSSurfaceRenderNode::UpdateFilterCacheStatusIfNodeStatic(const RectI& clipR
     if (!dirtyManager_) {
         return;
     }
-#ifndef USE_ROSEN_DRAWING
     // traversal filter nodes including app window
     EraseIf(filterNodes_, [this](const auto& pair) {
         auto& node = pair.second;
@@ -1000,7 +1005,6 @@ void RSSurfaceRenderNode::UpdateFilterCacheStatusIfNodeStatic(const RectI& clipR
             GetId(), GetName().c_str(), GetOldDirtyInSurface().ToString().c_str());
     }
     CalcFilterCacheValidForOcclusion();
-#endif
 }
 
 Vector4f RSSurfaceRenderNode::GetWindowCornerRadius()
@@ -1466,7 +1470,6 @@ void RSSurfaceRenderNode::UpdateCacheSurfaceDirtyManager(int bufferAge)
     }
 }
 
-#ifdef OHOS_PLATFORM
 void RSSurfaceRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId firstLevelNodeId,
     NodeId cacheNodeId)
 {
@@ -1484,16 +1487,7 @@ void RSSurfaceRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, N
     // if node is marked as cacheRoot, update subtree status when update surface
     // in case prepare stage upper cacheRoot cannot specify dirty subnode
     RSBaseRenderNode::SetIsOnTheTree(flag, instanceRootNodeId, firstLevelNodeId, cacheNodeId);
-    if (flag == isReportFirstFrame_ || !IsAppWindow()) {
-        return;
-    }
-    if (flag) {
-        RSJankStats::GetInstance().SetFirstFrame();
-        RSJankStats::GetInstance().SetPid(ExtractPid(GetId()));
-    }
-    isReportFirstFrame_ = flag;
 }
-#endif
 
 CacheProcessStatus RSSurfaceRenderNode::GetCacheSurfaceProcessedStatus() const
 {

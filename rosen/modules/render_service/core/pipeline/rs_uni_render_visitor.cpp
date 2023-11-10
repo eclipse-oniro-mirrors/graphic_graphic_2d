@@ -69,7 +69,6 @@ constexpr int ROTATION_270 = 270;
 static const std::string CAPTURE_WINDOW_NAME = "CapsuleWindow";
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
 static const std::string BIGFLODER_BUNDLE_NAME = "SCBDesktop2";
-static bool canvasNeedsCached = false;
 static std::map<NodeId, uint32_t> cacheRenderNodeMap = {};
 static uint32_t cacheReuseTimes = 0;
 static std::mutex cacheRenderNodeMapMutex;
@@ -843,7 +842,6 @@ void RSUniRenderVisitor::PrepareTypesOfSurfaceRenderNodeAfterUpdate(RSSurfaceRen
             node.SetHasHardwareNode(hasHardwareNode);
             node.SetHasAbilityComponent(hasAbilityComponent);
         }
-#ifndef USE_ROSEN_DRAWING
         if (node.IsTransparent() &&
             curSurfaceDirtyManager_->IfCacheableFilterRectFullyCover(node.GetOldDirtyInSurface())) {
             node.SetFilterCacheFullyCovered(true);
@@ -851,7 +849,6 @@ void RSUniRenderVisitor::PrepareTypesOfSurfaceRenderNodeAfterUpdate(RSSurfaceRen
                 node.GetId(), node.GetName().c_str());
         }
         node.CalcFilterCacheValidForOcclusion();
-#endif
         RS_OPTIONAL_TRACE_NAME(node.GetName() + " PreparedNodes: " +
             std::to_string(preparedCanvasNodeInCurrentSurface_));
         preparedCanvasNodeInCurrentSurface_ = 0;
@@ -874,10 +871,8 @@ void RSUniRenderVisitor::PrepareTypesOfSurfaceRenderNodeAfterUpdate(RSSurfaceRen
 void RSUniRenderVisitor::UpdateForegroundFilterCacheWithDirty(RSRenderNode& node,
     RSDirtyRegionManager& dirtyManager)
 {
-#ifndef USE_ROSEN_DRAWING
     node.UpdateFilterCacheManagerWithCacheRegion(prepareClipRect_);
     node.UpdateFilterCacheWithDirty(dirtyManager, true);
-#endif
 }
 
 void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
@@ -3879,8 +3874,8 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
         // enable cache for sharingTrans on Desktop
         auto mainThread = RSMainThread::Instance();
         std::string bundleNameFocusNow = mainThread->GetFocusAppBundleName();
-        if(bundleNameFocusNow == BIGFLODER_BUNDLE_NAME) {
-            canvasNeedsCached = true;
+        if (bundleNameFocusNow == BIGFLODER_BUNDLE_NAME) {
+            isTextNeedCached_ = true;
         }
         // draw self and children in sandbox which will not be affected by parent's transition
         const auto& sandboxMatrix = node.GetRenderProperties().GetSandBoxMatrix();
@@ -3892,17 +3887,16 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
 #endif
         }
     }
-    auto preType = canvas_->GetCacheType();
-    if(canvasNeedsCached) {
-        RS_OPTIONAL_TRACE_NAME_FMT("BigFloderCacheEnabled[%s]", BIGFLODER_BUNDLE_NAME.c_str());
-        canvas_->SetCacheType(RSPaintFilterCanvas::CacheType::ENABLED);
-    }
     const auto& property = node.GetRenderProperties();
     if (property.IsSpherizeValid()) {
+        isTextNeedCached_ = false;
         DrawSpherize(node);
-        canvasNeedsCached = false;
-        canvas_->SetCacheType(preType);
         return;
+    }
+    auto preType = canvas_->GetCacheType();
+    if (isTextNeedCached_) {
+        RS_OPTIONAL_TRACE_NAME_FMT("BigFloderCacheEnabled[%s]", BIGFLODER_BUNDLE_NAME.c_str());
+        canvas_->SetCacheType(RSPaintFilterCanvas::CacheType::ENABLED);
     }
     if (auto drawingNode = node.ReinterpretCastTo<RSCanvasDrawingRenderNode>()) {
 #ifndef USE_ROSEN_DRAWING
@@ -3920,7 +3914,7 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
     }
     CheckAndSetNodeCacheType(node);
     DrawChildCanvasRenderNode(node);
-    canvasNeedsCached = false;
+    isTextNeedCached_ = false;
     canvas_->SetCacheType(preType);
 #ifndef USE_ROSEN_DRAWING
     canvas_->restore();
@@ -4336,18 +4330,22 @@ bool RSUniRenderVisitor::ProcessSharedTransitionNode(RSBaseRenderNode& node)
 
 void RSUniRenderVisitor::ProcessUnpairedSharedTransitionNode()
 {
-#ifndef USE_ROSEN_DRAWING
     // Do cleanup for unpaired transition nodes.
     for (auto& [key, params] : unpairedTransitionNodes_) {
         RSAutoCanvasRestore acr(canvas_);
+#ifndef USE_ROSEN_DRAWING
         auto& [node, canvasStatus] = params;
         // restore render context and process the unpaired node.
         canvas_->SetCanvasStatus(canvasStatus);
+#else
+        auto& [node, alpha, matrix] = params;
+        canvas_->SetAlpha(alpha);
+        canvas_->SetMatrix(matrix.value());
+#endif
         node->Process(shared_from_this());
         // clear transition param
         node->SetSharedTransitionParam(std::nullopt);
     }
-#endif
     unpairedTransitionNodes_.clear();
 }
 

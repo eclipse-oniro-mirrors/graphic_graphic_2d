@@ -1098,6 +1098,26 @@ int32_t RSRenderServiceConnectionProxy::SetScreenGamutMap(ScreenId id, ScreenGam
     return result;
 }
 
+int32_t RSRenderServiceConnectionProxy::SetScreenCorrection(ScreenId id, ScreenRotation screenRotation)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return RS_CONNECTION_ERROR;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    data.WriteUint64(id);
+    data.WriteUint32(static_cast<uint32_t>(screenRotation));
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_CORRECTION);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        return RS_CONNECTION_ERROR;
+    }
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
 int32_t RSRenderServiceConnectionProxy::GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode)
 {
     MessageParcel data;
@@ -1445,8 +1465,6 @@ void RSRenderServiceConnectionProxy::ReportDataBaseRs(
     data.WriteInt64(info.inputTime);
     data.WriteInt64(info.beginVsyncTime);
     data.WriteInt64(info.endVsyncTime);
-    data.WriteBool(info.isAnimationTrace);
-    data.WriteBool(info.isReportInteractionEvent);
     data.WriteString(info.sceneId);
     data.WriteString(info.versionName);
     data.WriteString(info.bundleName);

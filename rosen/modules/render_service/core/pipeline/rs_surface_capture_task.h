@@ -149,11 +149,16 @@ private:
 
     bool FindSecurityOrSkipLayer();
 
+    // It is currently only used on folding screen.
+    int32_t ScreenCorrection(ScreenRotation screenRotation);
+
     NodeId nodeId_;
 
     float scaleX_;
 
     float scaleY_;
+
+    ScreenRotation screenCorrection_ = ScreenRotation::ROTATION_0;
 };
 
 } // namespace Rosen

@@ -65,8 +65,6 @@ struct DataBaseRs {
     int64_t inputTime = 0;
     int64_t beginVsyncTime = 0;
     int64_t endVsyncTime = 0;
-    bool isAnimationTrace = false;
-    bool isReportInteractionEvent = true;
     std::string sceneId;
     std::string versionName;
     std::string bundleName;
@@ -187,6 +185,8 @@ public:
     int32_t SetScreenColorGamut(ScreenId id, int32_t modeIdx);
 
     int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode);
+
+    int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation);
 
     int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode);
 

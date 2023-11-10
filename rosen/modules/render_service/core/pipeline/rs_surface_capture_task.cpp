@@ -87,18 +87,10 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
 #if defined(RS_ENABLE_GL)
 #if defined(NEW_RENDER_CONTEXT)
     auto drawingContext = RSMainThread::Instance()->GetRenderEngine()->GetDrawingContext();
-#ifdef NEW_SKIA
     GrDirectContext* grContext = drawingContext != nullptr ? drawingContext->GetDrawingContext() : nullptr;
 #else
-    GrContext* grContext = drawingContext != nullptr ? drawingContext->GetDrawingContext() : nullptr;
-#endif
-#else
     auto renderContext = RSMainThread::Instance()->GetRenderEngine()->GetRenderContext();
-#ifdef NEW_SKIA
     GrDirectContext* grContext = renderContext != nullptr ? renderContext->GetGrContext() : nullptr;
-#else
-    GrContext* grContext = renderContext != nullptr ? renderContext->GetGrContext() : nullptr;
-#endif
 #endif
     RSTagTracker tagTracker(grContext, node->GetId(), RSTagTracker::TAGTYPE::TAG_CAPTURE);
 #endif
@@ -137,10 +129,11 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
             : ScreenRotation::INVALID_SCREEN_ROTATION;
         bool ableRotation = ((displayNode != nullptr) && visitor_->IsUniRender());
         auto id = nodeId_;
+        auto screenCorrection = ScreenCorrection(screenCorrection_)
         auto wrapperSf = std::make_shared<std::tuple<sk_sp<SkSurface>>>();
         std::get<0>(*wrapperSf) = std::move(skSurface);
         std::function<void()> copytask = [wrapper, callback, grBackendTexture, wrapperSf,
-                                             ableRotation, rotation, id]() -> void {
+                                             ableRotation, rotation, id, screenCorrection]() -> void {
             RS_TRACE_NAME("copy and send capture");
             if (!grBackendTexture.isValid()) {
                 RS_LOGE("RSSurfaceCaptureTask: SkiaSurface bind Image failed: BackendTexture is invalid");
@@ -182,8 +175,12 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
                     std::move(std::get<0>(*wrapperSf )), nullptr, UNI_MAIN_THREAD_INDEX, 0);
                 return;
             }
-
             if (ableRotation) {
+                if (screenCorrection != 0) {
+                    pixelmap->rotate(screenCorrection);
+                    RS_LOGD("RSSurfaceCaptureTask::Run: ScreenCorrection: %{public}d", screenCorrection);
+                }
+
                 if (rotation == ScreenRotation::ROTATION_90) {
                     pixelmap->rotate(static_cast<int32_t>(90)); // 90 degrees
                 } else if (rotation == ScreenRotation::ROTATION_180) {
@@ -191,7 +188,7 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
                 } else if (rotation == ScreenRotation::ROTATION_270) {
                     pixelmap->rotate(static_cast<int32_t>(270)); // 270 degrees
                 }
-                RS_LOGD("RSSurfaceCaptureTask: PixelmapRotation: %{public}d", static_cast<int32_t>(rotation));
+                RS_LOGD("RSSurfaceCaptureTask::Run: PixelmapRotation: %{public}d", static_cast<int32_t>(rotation));
             }
             callback->OnSurfaceCapture(id, pixelmap.get());
             RSBackgroundThread::Instance().CleanGrResource();
@@ -256,6 +253,12 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
 #endif
     if (auto displayNode = node->ReinterpretCastTo<RSDisplayRenderNode>()) {
         if (visitor_->IsUniRender()) {
+            if (screenCorrection_ != ScreenRotation::ROTATION_0) {
+                int32_t angle = ScreenCorrection(screenCorrection_);
+                pixelmap->rotate(angle);
+                RS_LOGD("RSSurfaceCaptureTask::Run: ScreenCorrection: %{public}d", angle);
+            }
+
             auto rotation = displayNode->GetScreenRotation();
             if (rotation == ScreenRotation::ROTATION_90) {
                 pixelmap->rotate(static_cast<int32_t>(90)); // 90 degrees
@@ -269,6 +272,18 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
     }
     callback->OnSurfaceCapture(nodeId_, pixelmap.get());
     return true;
+}
+
+int32_t RSSurfaceCaptureTask::ScreenCorrection(ScreenRotation screenCorrection)
+{
+    if (screenCorrection == ScreenRotation::ROTATION_90) {
+        return -90; // -90 degrees
+    } else if (screenCorrection == ScreenRotation::ROTATION_180) {
+        return -180; // -180 degrees
+    } else if (screenCorrection == ScreenRotation::ROTATION_270) {
+        return -270; // -270 degrees
+    }
+    return 0;
 }
 
 std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTask::CreatePixelMapBySurfaceNode(
@@ -309,6 +324,7 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTask::CreatePixelMapByDisplayNo
         return nullptr;
     }
     auto screenInfo = screenManager->QueryScreenInfo(screenId);
+    screenCorrection_ = screenManager->GetScreenCorrection(screenId);
     uint32_t pixmapWidth = screenInfo.width;
     uint32_t pixmapHeight = screenInfo.height;
     if (!isUniRender) {
@@ -424,48 +440,28 @@ std::shared_ptr<Drawing::Surface> RSSurfaceCaptureTask::CreateSurface(const std:
         RS_LOGE("RSSurfaceCaptureTask::CreateSurface: address == nullptr");
         return nullptr;
     }
-    Drawing::BitmapFormat format { Drawing::ColorType::COLORTYPE_RGBA_8888, Drawing::AlphaType::ALPHATYPE_PREMUL };
-    auto bitmap = std::make_shared<Drawing::Bitmap>();
-    bitmap->Build(pixelmap->GetWidth(), pixelmap->GetHeight(), format);
-    bitmap->SetPixels(address);
+    Drawing::ImageInfo info = Drawing::ImageInfo{pixelmap->GetWidth(), pixelmap->GetHeight(),
+        Drawing::ColorType::COLORTYPE_RGBA_8888, Drawing::AlphaType::ALPHATYPE_PREMUL};
 #if (defined RS_ENABLE_GL) && (defined RS_ENABLE_EGLIMAGE)
-    auto renderEngine = RSMainThread::Instance()->GetRenderEngine();
-    if (renderEngine == nullptr) {
-        RS_LOGE("RSSurfaceCaptureTask::CreateSurface: renderEngine is nullptr");
+#if defined(NEW_RENDER_CONTEXT)
+    auto drawingContext = RSMainThread::Instance()->GetRenderEngine()->GetDrawingContext();
+    if (drawingContext == nullptr) {
+        RS_LOGE("RSSurfaceCaptureTask::CreateSurface: renderContext is nullptr");
         return nullptr;
     }
-    auto renderContext = renderEngine->GetRenderContext();
+    drawingContext->SetUpDrawingContext();
+    return Drawing::Surface::MakeRenderTarget(drawingContext->GetDrawingContext, fasle, info);
+#else
+    auto renderContext = RSMainThread::Instance()->GetRenderContext();
     if (renderContext == nullptr) {
         RS_LOGE("RSSurfaceCaptureTask::CreateSurface: renderContext is nullptr");
         return nullptr;
     }
     renderContext->SetUpGpuContext();
-    auto gpuContext = renderContext->GetDrGPUContext();
-    if (gpuContext == nullptr) {
-        RS_LOGE("RSSurfaceCaptureTask::CreateSurface: Drawing::GPUContext is nullptr");
-        return nullptr;
-    }
-    auto image = std::make_shared<Drawing::Image>();
-    if (!image->BuildFromBitmap(*gpuContext, *bitmap)) {
-        RS_LOGE("RSSurfaceCaptureTask::CreateSurface: Drawing::Image is nullptr");
-        return nullptr;
-    }
-    auto surface = std::make_shared<Drawing::Surface>();
-    if (!surface->Bind(*image)) {
-        if (!surface->Bind(*bitmap)) {
-            RS_LOGE("RSSurfaceCaptureTask::CreateSurface: Drawing::Surface is nullptr");
-            return nullptr;
-        }
-    }
-    return surface;
-#else
-    auto surface = std::make_shared<Drawing::Surface>();
-    if (!surface->Bind(*bitmap)) {
-        RS_LOGE("RSSurfaceCaptureTask::CreateSurface: Drawing::Surface is nullptr");
-        return nullptr;
-    }
-    return surface;
+    return Drawing::Surface::MakeRenderTarget(renderContext->GetDrContext, fasle, info);
 #endif
+#endif
+    return Drawing::Surface::MakeRasterDirect(info, address, pixelmap->GetRowBytes());
 }
 #endif
 

@@ -57,6 +57,7 @@ enum class RSIRenderServiceConnectionInterfaceCode : CodeUnderlyingType {
     GET_SCREEN_GAMUT,
     SET_SCREEN_GAMUT,
     SET_SCREEN_GAMUT_MAP,
+    SET_SCREEN_CORRECTION,
     GET_SCREEN_GAMUT_MAP,
     CREATE_VSYNC_CONNECTION,
     GET_SCREEN_HDR_CAPABILITY,
