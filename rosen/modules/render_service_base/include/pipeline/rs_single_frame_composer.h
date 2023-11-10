@@ -34,14 +34,8 @@ public:
     bool SingleFrameModifierAddToList(RSModifierType type, std::list<std::shared_ptr<RSRenderModifier>>& modifierList);
     bool SingleFrameIsNeedSkip(bool needSkip, const std::shared_ptr<RSRenderModifier>& modifier);
     void SingleFrameAddModifier(const std::shared_ptr<RSRenderModifier>& modifier);
-    static void SetSingleFrameFlag(const std::thread::id ipcThreadId)
-    {
-        ipcThreadId_ = ipcThreadId;
-    }
-    static bool IsShouldSingleFrameComposer()
-    {
-        return ipcThreadId_ == std::this_thread::get_id();
-    }
+    static void SetSingleFrameFlag(const std::thread::id ipcThreadId);
+    static bool IsShouldSingleFrameComposer();
 
 private:
     bool FindSingleFrameModifier(std::list<std::shared_ptr<RSRenderModifier>>& modifierList);
@@ -51,7 +45,8 @@ private:
 
     std::map<RSModifierType, std::list<std::shared_ptr<RSRenderModifier>>> singleFrameDrawCmdModifiers_;
     mutable std::mutex singleFrameDrawMutex_;
-    static std::thread::id ipcThreadId_;
+    static std::map<std::thread::id, uint64_t> ipcThreadIdMap_;
+    static std::mutex ipcThreadIdMapMutex_;
 };
 }
 }

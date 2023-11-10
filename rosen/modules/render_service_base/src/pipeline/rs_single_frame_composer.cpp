@@ -17,7 +17,8 @@
 
 namespace OHOS {
 namespace Rosen {
-std::thread::id RSSingleFrameComposer::ipcThreadId_;
+std::map<std::thread::id, uint64_t> RSSingleFrameComposer::ipcThreadIdMap_;
+std::mutex RSSingleFrameComposer::ipcThreadIdMapMutex_;
 bool RSSingleFrameComposer::FindSingleFrameModifier(std::list<std::shared_ptr<RSRenderModifier>>& modifierList)
 {
     for (auto iter = modifierList.begin(); iter != modifierList.end(); ++iter) {
@@ -67,6 +68,31 @@ bool RSSingleFrameComposer::SingleFrameModifierAddToList(RSModifierType type,
     }
 
     return needSkip;
+}
+
+void RSSingleFrameComposer::SetSingleFrameFlag(const std::thread::id ipcThreadId)
+{
+    std::lock_guard<std::mutex> lock(ipcThreadIdMapMutex_);
+    if (ipcThreadIdMap_.find(ipcThreadId) == ipcThreadIdMap_.end()) {
+        ipcThreadIdMap_[ipcThreadId] = 1;
+    } else {
+        ipcThreadIdMap_[ipcThreadId]++;
+    }
+}
+
+bool RSSingleFrameComposer::IsShouldSingleFrameComposer()
+{
+    std::lock_guard<std::mutex> lock(ipcThreadIdMapMutex_);
+    std::thread::id ipcThreadId = std::this_thread::get_id();
+    if (ipcThreadIdMap_.find(ipcThreadId) == ipcThreadIdMap_.end()) {
+        return false;
+    } else {
+        ipcThreadIdMap_[ipcThreadId]--;
+        if (ipcThreadIdMap_[ipcThreadId] == 0) {
+            ipcThreadIdMap_.erase(ipcThreadId);
+        }
+        return true;
+    }
 }
 
 bool RSSingleFrameComposer::SingleFrameIsNeedSkip(bool needSkip, const std::shared_ptr<RSRenderModifier>& modifier)
