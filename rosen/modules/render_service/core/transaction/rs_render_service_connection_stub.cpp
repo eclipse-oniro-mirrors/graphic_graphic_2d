@@ -342,6 +342,18 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             SetRefreshRateMode(mode);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SYNC_FRAME_RATE_RANGE): {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            uint32_t min = data.ReadUint32();
+            uint32_t max = data.ReadUint32();
+            uint32_t preferred = data.ReadUint32();
+            SyncFrameRateRange({min, max, preferred});
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_CURRENT_REFRESH_RATE): {
             auto token = data.ReadInterfaceToken();
             if (token != RSIRenderServiceConnection::GetDescriptor()) {
@@ -712,6 +724,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_VSYNC_CONNECTION): {
             std::string name = data.ReadString();
             auto remoteObj = data.ReadRemoteObject();
+            uint64_t id = data.ReadUint64();
             if (remoteObj == nullptr) {
                 ret = ERR_NULL_OBJECT;
                 break;
@@ -725,7 +738,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_UNKNOWN_OBJECT;
                 break;
             }
-            sptr<IVSyncConnection> conn = CreateVSyncConnection(name, token);
+            sptr<IVSyncConnection> conn = CreateVSyncConnection(name, token, id);
             if (conn == nullptr) {
                 ret = ERR_NULL_OBJECT;
                 break;

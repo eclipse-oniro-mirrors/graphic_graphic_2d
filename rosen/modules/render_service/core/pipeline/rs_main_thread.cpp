@@ -241,6 +241,7 @@ void RSMainThread::Init()
         ProcessCommand();
         Animate(timestamp_);
         ApplyModifiers();
+        ProcessHgmFrameRate(timestamp_);
         CollectInfoForHardwareComposer();
 #if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
         CollectInfoForDrivenRender();
@@ -291,6 +292,8 @@ void RSMainThread::Init()
     InitRSEventDetector();
     sptr<VSyncIConnectionToken> token = new IRemoteStub<VSyncIConnectionToken>();
     sptr<VSyncConnection> conn = new VSyncConnection(rsVSyncDistributor_, "rs", token->AsObject());
+    rsFrameRateLinker_ = std::make_shared<RSRenderFrameRateLinker>();
+    conn->id_ = rsFrameRateLinker_->GetId();
     rsVSyncDistributor_->AddConnection(conn);
     receiver_ = std::make_shared<VSyncReceiver>(conn, token->AsObject(), handler_);
     receiver_->Init();
@@ -375,6 +378,7 @@ void RSMainThread::Init()
     RSOverdrawController::GetInstance().SetDelegate(delegate);
 
     frameRateMgr_ = std::make_unique<HgmFrameRateManager>();
+    frameRateMgr_->Init(rsVSyncController_, appVSyncController_, vsyncGenerator_);
     frameRateMgr_->SetTimerExpiredCallback([]() {
         RSMainThread::Instance()->PostTask([]() {
             RS_OPTIONAL_TRACE_NAME("RSMainThread::TimerExpiredCallback Run");
@@ -1275,21 +1279,20 @@ void RSMainThread::NotifyDrivenRenderFinish()
 #endif
 }
 
-void RSMainThread::ProcessHgmFrameRate(std::shared_ptr<FrameRateRangeData> data, uint64_t timestamp)
+void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
 {
-    if (!data) {
-        return;
+    // Check and processing refresh rate task.
+    auto &hgmCore = OHOS::Rosen::HgmCore::Instance();
+    hgmCore.SetTimestamp(timestamp);
+    auto pendingRefreshRate = frameRateMgr_->GetPendingRefreshRate();
+    if (pendingRefreshRate != nullptr) {
+        hgmCore.SetPendingScreenRefreshRate(*pendingRefreshRate);
+        frameRateMgr_->ResetPendingRefreshRate();
+        RS_TRACE_NAME("RSMainThread::ProcessHgmFrameRate pendingRefreshRate: " + std::to_string(*pendingRefreshRate));
     }
 
-    // 0.[Planning]: The HGM logic here will be processed using sub-threads in the future.
-
-    frameRateMgr_->Reset();
-    // 1.[Planning]: Check and processing software vsync frame rate switching task for RS.
-
-    // 2.Decision-making process for current frame.
-    frameRateMgr_->UniProcessData(*data);
-
-    // 3.[Planning]: Post app and rs switch software vsync rate task.
+    auto appFrameLinkers = GetContext().GetFrameRateLinkerMap().GetFrameRateLinkerMap();
+    frameRateMgr_->UniProcessData(0, timestamp, rsFrameRateLinker_, appFrameLinkers, forceUpdateUniRenderFlag_);
 }
 
 bool RSMainThread::GetParallelCompositionEnabled()
@@ -1341,7 +1344,6 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         SetFocusLeashWindowId();
         uniVisitor->SetFocusedNodeId(focusNodeId_, focusLeashWindowId_);
         rootNode->Prepare(uniVisitor);
-        ProcessHgmFrameRate(frameRateRangeData_, timestamp_);
         CalcOcclusion();
         doParallelComposition_ = RSInnovation::GetParallelCompositionEnabled(isUniRender_) &&
                                  rootNode->GetChildrenCount() > 1;
@@ -2546,39 +2548,23 @@ int32_t RSMainThread::GetNodePreferred(const std::vector<HgmModifierProfile>& hg
     return nodePreferred;
 }
 
-void RSMainThread::CollectFrameRateRange(std::shared_ptr<RSRenderNode> node)
+FrameRateRange RSMainThread::CalcRSFrameRateRange(std::shared_ptr<RSRenderNode> node)
 {
-    if (!frameRateRangeData_) {
-        return;
+    FrameRateRange rsRange;
+    auto preferred = GetNodePreferred(node->GetHgmModifierProfileList());
+    if (preferred > 0) {
+        rsRange = {0, RANGE_MAX_REFRESHRATE, preferred};
     }
-
-    auto nodePreferred = GetNodePreferred(node->GetHgmModifierProfileList());
-    node->SetRSFrameRateRangeByPreferred(nodePreferred);
-    pid_t nodePid = ExtractPid(node->GetId());
-    auto& uiCurrRange = node->GetUIFrameRateRange();
-    if (uiCurrRange.IsValid()) {
-        if (frameRateRangeData_->multiAppRange.count(nodePid)) {
-            frameRateRangeData_->multiAppRange[nodePid].Merge(uiCurrRange);
-        } else {
-            frameRateRangeData_->multiAppRange.insert(std::make_pair(nodePid, uiCurrRange));
-        }
-    }
-
-    auto& rsCurrRange = node->GetRSFrameRateRange();
-    if (rsCurrRange.IsValid()) {
-        frameRateRangeData_->rsRange.Merge(rsCurrRange);
-    }
-    node->ResetUIFrameRateRange();
-    node->ResetRSFrameRateRange();
+    return rsRange;
 }
 
 void RSMainThread::ApplyModifiers()
 {
-    frameRateRangeData_ = std::make_shared<FrameRateRangeData>();
-    //[Planning]: Support multi-display in the future.
-    frameRateRangeData_->screenId = 0;
-    frameRateRangeData_->forceUpdateFlag = forceUpdateUniRenderFlag_;
+    FrameRateRange rsCurrRange;
     if (context_->activeNodesInRoot_.empty()) {
+        if (rsFrameRateLinker_ != nullptr) {
+            rsFrameRateLinker_->SetExpectedRange(rsCurrRange);
+        }
         return;
     }
     RS_TRACE_NAME_FMT("ApplyModifiers (PropertyDrawableEnable %s)",
@@ -2586,7 +2572,7 @@ void RSMainThread::ApplyModifiers()
     for (const auto& [root, nodeSet] : context_->activeNodesInRoot_) {
         for (const auto& [id, nodePtr] : nodeSet) {
             bool isZOrderChanged = nodePtr->ApplyModifiers();
-            CollectFrameRateRange(nodePtr);
+            rsCurrRange.Merge(CalcRSFrameRateRange(nodePtr));
             if (!isZOrderChanged) {
                 continue;
             }
@@ -2594,6 +2580,10 @@ void RSMainThread::ApplyModifiers()
                 parent->isChildrenSorted_ = false;
             }
         }
+    }
+
+    if (rsFrameRateLinker_ != nullptr) {
+        rsFrameRateLinker_->SetExpectedRange(rsCurrRange);
     }
 }
 

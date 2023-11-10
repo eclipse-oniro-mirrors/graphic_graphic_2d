@@ -61,7 +61,8 @@ public:
     virtual sptr<Surface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config) = 0;
 
     virtual sptr<IVSyncConnection> CreateVSyncConnection(const std::string& name,
-                                                         const sptr<VSyncIConnectionToken>& token = nullptr) = 0;
+                                                         const sptr<VSyncIConnectionToken>& token = nullptr,
+                                                         uint64_t id = 0) = 0;
 
     virtual int32_t SetFocusAppInfo(
         int32_t pid, int32_t uid, const std::string &bundleName, const std::string &abilityName,
@@ -91,6 +92,8 @@ public:
     virtual void SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate) = 0;
 
     virtual void SetRefreshRateMode(int32_t refreshRateMode) = 0;
+
+    virtual void SyncFrameRateRange(const FrameRateRange& range) = 0;
 
     virtual uint32_t GetScreenCurrentRefreshRate(ScreenId id) = 0;
 
