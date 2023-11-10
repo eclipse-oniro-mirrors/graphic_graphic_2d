@@ -3625,7 +3625,8 @@ void RSUniRenderVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
 
         Drawing::Brush brush;
         RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, brush);
-        RSTagTracker tagTracker(renderEngine_->GetRenderContext()->GetDrGPUContext(), RSTagTracker::TAG_SAVELAYER_COLOR_FILTER);
+        RSTagTracker tagTracker(renderEngine_->GetRenderContext()->GetDrGPUContext(),
+                                RSTagTracker::TAG_SAVELAYER_COLOR_FILTER);
         Drawing::SaveLayerOps saveLayerOps(nullptr, &brush);
         saveCount = canvas_->GetSaveCount();
         canvas_->SaveLayer(saveLayerOps);
