@@ -442,7 +442,7 @@ void RSPropertyDrawable::UpdateSaveLayerSlots(
         auto backgroundCount = std::make_shared<int>(-1);
         drawableVec[RSPropertyDrawableSlot::SAVE_LAYER_BACKGROUND] =
             std::make_unique<RSSaveLayerBackgroundDrawable>(backgroundCount);
-        drawableVec[RSPropertyDrawableSlot::RESTORE_LAYER_BACKGROUND] =
+        drawableVec[RSPropertyDrawableSlot::RESTORE_BACKGROUND] =
             std::make_unique<RSRestoreDrawable>(backgroundCount);
     } else {
         drawableVec[RSPropertyDrawableSlot::RESTORE_CONTENT] = nullptr;
