@@ -138,11 +138,7 @@ RSBorderDRRectDrawable::RSBorderDRRectDrawable(Drawing::Brush&& brush, Drawing::
 {
     OnBoundsChange(properties);
 }
-bool RSBorderDRRectDrawable::Update(const RSPropertyDrawableGenerateContext &context)
-{
-    OnBoundsChange(context.properties_);
-    return true;
-}
+
 void RSBorderDRRectDrawable::OnBoundsChange(const RSProperties& properties)
 {
 #ifndef USE_ROSEN_DRAWING
@@ -177,11 +173,7 @@ RSBorderFourLineDrawable::RSBorderFourLineDrawable(Drawing::Brush&& brush, Drawi
 {
     OnBoundsChange(properties);
 }
-bool RSBorderFourLineDrawable::Update(const RSPropertyDrawableGenerateContext &context)
-{
-    OnBoundsChange(context.properties_);
-    return true;
-}
+
 void RSBorderFourLineDrawable::OnBoundsChange(const RSProperties& properties)
 {
     rect_ = properties.GetBoundsRect();
@@ -206,11 +198,7 @@ RSBorderPathDrawable::RSBorderPathDrawable(Drawing::Brush&& brush, Drawing::Pen&
 {
     OnBoundsChange(properties);
 }
-bool RSBorderPathDrawable::Update(const RSPropertyDrawableGenerateContext &context)
-{
-    OnBoundsChange(context.properties_);
-    return true;
-}
+
 void RSBorderPathDrawable::OnBoundsChange(const RSProperties& properties)
 {
     auto borderWidth = properties.GetBorder()->GetWidth();
@@ -254,11 +242,7 @@ RSBorderFourLineRoundCornerDrawable::RSBorderFourLineRoundCornerDrawable(
 #endif
     OnBoundsChange(properties);
 }
-bool RSBorderFourLineRoundCornerDrawable::Update(const RSPropertyDrawableGenerateContext &context)
-{
-    OnBoundsChange(context.properties_);
-    return true;
-}
+
 void RSBorderFourLineRoundCornerDrawable::OnBoundsChange(const RSProperties& properties)
 {
 #ifndef USE_ROSEN_DRAWING
@@ -1159,7 +1143,7 @@ void RSBackgroundDrawable::setForceBgAntiAlias(bool forceBgAntiAlias)
 void RSBackgroundDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
 {
 #ifndef USE_ROSEN_DRAWING
-    canvas.drawPaint(paint_);
+    canvas.drawRRect(RSPropertiesPainter::RRect2SkRRect(node.GetMutableRenderProperties().GetInnerRRect()), paint_);
 #else
     canvas.DrawBackGround(brush_);
 #endif

@@ -103,7 +103,8 @@ public:
 
 std::shared_ptr<VSyncReceiver> RSRenderServiceClient::CreateVSyncReceiver(
     const std::string& name,
-    const std::shared_ptr<OHOS::AppExecFwk::EventHandler> &looper)
+    const std::shared_ptr<OHOS::AppExecFwk::EventHandler> &looper,
+    uint64_t id)
 {
     return std::make_shared<VSyncReceiverWindows>();
 }
@@ -148,6 +149,10 @@ void RSRenderServiceClient::SetScreenRefreshRate(ScreenId id, int32_t sceneId, i
 }
 
 void RSRenderServiceClient::SetRefreshRateMode(int32_t refreshRateMode)
+{
+}
+
+void RSRenderServiceClient::SyncFrameRateRange(const FrameRateRange& range)
 {
 }
 

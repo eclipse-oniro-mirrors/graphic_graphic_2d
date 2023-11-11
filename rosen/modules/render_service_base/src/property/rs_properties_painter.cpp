@@ -1245,7 +1245,7 @@ void RSPropertiesPainter::DrawBackgroundEffect(
 }
 #else
 void RSPropertiesPainter::DrawBackgroundEffect(
-    const RSProperties& properties, RSPaintFilterCanvas& canvas, const Drawing::RectI& rect)
+    const RSProperties& properties, RSPaintFilterCanvas& canvas, const Drawing::Rect& rect)
 {
 }
 #endif
@@ -1378,6 +1378,10 @@ void RSPropertiesPainter::DrawPixelStretch(const RSProperties& properties, RSPai
             ROSEN_LOGE("RSPropertiesPainter::DrawPixelStretch get inverse matrix failed.");
         }
         scaleMat.setScale(inverseMat.getScaleX(), inverseMat.getScaleY());
+        scaleMat.setSkewX(inverseMat.getSkewX());
+        scaleMat.setSkewY(inverseMat.getSkewY());
+        scaleMat.preTranslate(-bounds.width() / 2.0, -bounds.height() / 2.0);
+        scaleMat.postTranslate(bounds.width() / 2.0, bounds.height() / 2.0);
     }
 
     canvas.save();
@@ -1394,8 +1398,7 @@ void RSPropertiesPainter::DrawPixelStretch(const RSProperties& properties, RSPai
         canvas.drawRect(
             SkRect::MakeXYWH(-pixelStretch->x_, -pixelStretch->y_, scaledBounds.width(), scaledBounds.height()), paint);
     } else {
-        scaleMat.setScale(scaledBounds.width() / bounds.width() * scaleMat.getScaleX(),
-            scaledBounds.height() / bounds.height() * scaleMat.getScaleY());
+        scaleMat.postScale(scaledBounds.width() / bounds.width(), scaledBounds.height() / bounds.height());
 #ifdef NEW_SKIA
         paint.setShader(image->makeShader(SkTileMode::kClamp, SkTileMode::kClamp, SkSamplingOptions(), &scaleMat));
 #else
@@ -1536,11 +1539,9 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
     bool antiAlias = g_forceBgAntiAlias || !properties.GetCornerRadius().IsZero();
     // clip
 #ifndef USE_ROSEN_DRAWING
-    bool hasClipToBounds = false;
     if (properties.GetClipBounds() != nullptr) {
         canvas.clipPath(properties.GetClipBounds()->GetSkiaPath(), antiAlias);
     } else if (properties.GetClipToBounds()) {
-        hasClipToBounds = true;
         // In NEW_SKIA version, L476 code will cause crash if the second parameter is true.
         // so isAntiAlias is false only the method is called in ProcessAnimatePropertyBeforeChildren().
 #ifdef NEW_SKIA
@@ -1561,11 +1562,7 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
     auto bgColor = properties.GetBackgroundColor();
     if (bgColor != RgbPalette::Transparent()) {
         paint.setColor(bgColor.AsArgbInt());
-        if (hasClipToBounds) {
-            canvas.drawPaint(paint);
-        } else {
-            canvas.drawRRect(RRect2SkRRect(properties.GetInnerRRect()), paint);
-        }
+        canvas.drawRRect(RRect2SkRRect(properties.GetInnerRRect()), paint);
     }
     if (const auto& bgShader = properties.GetBackgroundShader()) {
         SkAutoCanvasRestore acr(&canvas, true);
