@@ -99,6 +99,8 @@ public:
 
     void SetRefreshRateMode(int32_t refreshRateMode);
 
+    void SyncFrameRateRange(const FrameRateRange& range);
+
     uint32_t GetScreenCurrentRefreshRate(ScreenId id);
 
     int32_t GetCurrentRefreshRateMode();
@@ -142,6 +144,11 @@ public:
 
     std::shared_ptr<VSyncReceiver> CreateVSyncReceiver(
         const std::string& name,
+        const std::shared_ptr<OHOS::AppExecFwk::EventHandler> &looper = nullptr);
+
+    std::shared_ptr<VSyncReceiver> CreateVSyncReceiver(
+        const std::string& name,
+        uint64_t id,
         const std::shared_ptr<OHOS::AppExecFwk::EventHandler> &looper = nullptr);
 
     int32_t RegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback);

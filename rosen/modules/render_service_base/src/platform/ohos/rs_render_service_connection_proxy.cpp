@@ -209,7 +209,8 @@ sptr<Surface> RSRenderServiceConnectionProxy::CreateNodeAndSurface(const RSSurfa
 }
 
 sptr<IVSyncConnection> RSRenderServiceConnectionProxy::CreateVSyncConnection(const std::string& name,
-                                                                             const sptr<VSyncIConnectionToken>& token)
+                                                                             const sptr<VSyncIConnectionToken>& token,
+                                                                             uint64_t id)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -217,6 +218,7 @@ sptr<IVSyncConnection> RSRenderServiceConnectionProxy::CreateVSyncConnection(con
 
     data.WriteString(name);
     data.WriteRemoteObject(token->AsObject());
+    data.WriteUint64(id);
     option.SetFlags(MessageOption::TF_SYNC);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_VSYNC_CONNECTION);
     int32_t err = Remote()->SendRequest(code, data, reply, option);
@@ -478,6 +480,27 @@ void RSRenderServiceConnectionProxy::SetRefreshRateMode(int32_t refreshRateMode)
     option.SetFlags(MessageOption::TF_SYNC);
     data.WriteInt32(refreshRateMode);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_REFRESH_RATE_MODE);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceProxy sendrequest error : %{public}d", err);
+    }
+}
+
+void RSRenderServiceConnectionProxy::SyncFrameRateRange(const FrameRateRange& range)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("RSRenderServiceProxy failed to get descriptor");
+    }
+
+    option.SetFlags(MessageOption::TF_SYNC);
+    data.WriteUint32(range.min_);
+    data.WriteUint32(range.max_);
+    data.WriteUint32(range.preferred_);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SYNC_FRAME_RATE_RANGE);
     int32_t err = Remote()->SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RSRenderServiceProxy sendrequest error : %{public}d", err);
