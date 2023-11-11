@@ -17,9 +17,9 @@
 #define BITMAPIMPL_H
 
 #include "base_impl.h"
-#include "utils/data.h"
 #include "draw/color.h"
 #include "image/image_info.h"
+#include "utils/data.h"
 #include "utils/rect.h"
 
 namespace OHOS {

@@ -178,12 +178,18 @@ void ArcToOpItem::Playback(PathPlayer& player, const void* opItem)
 
 void ArcToOpItem::Playback(Path& path) const
 {
-    if (methodIndex_ == FUNCTION_OVERLOADING_1) {
-        path.ArcTo(pt1_, pt2_, startAngle_, sweepAngle_);
-    } else if (methodIndex_ == FUNCTION_OVERLOADING_2) {
-        path.ArcTo(pt1_.GetX(), pt1_.GetY(), startAngle_, direction_, pt2_.GetX(), pt2_.GetY());
-    } else if (methodIndex_ == FUNCTION_OVERLOADING_3) {
-        path.ArcTo(pt1_.GetX(), pt1_.GetY(), pt2_.GetX(), pt2_.GetY(), startAngle_);
+    switch (methodIndex_) {
+        case FUNCTION_OVERLOADING_1:
+            path.ArcTo(pt1_, pt2_, startAngle_, sweepAngle_);
+            break;
+        case FUNCTION_OVERLOADING_2:
+            path.ArcTo(pt1_.GetX(), pt1_.GetY(), startAngle_, direction_, pt2_.GetX(), pt2_.GetY());
+            break;
+        case FUNCTION_OVERLOADING_3:
+            path.ArcTo(pt1_.GetX(), pt1_.GetY(), pt2_.GetX(), pt2_.GetY(), startAngle_);
+            break;
+        default:
+            break;
     }
 }
 

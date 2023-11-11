@@ -770,7 +770,7 @@ void RSEffectDataApplyDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& ca
     canvas.drawImageRect(effectData->cachedImage_, srcRect, dstRect, SkSamplingOptions(), &defaultPaint,
         SkCanvas::kFast_SrcRectConstraint);
 #else
-
+// Drawing is not supported
 #endif
 }
 
@@ -1283,7 +1283,7 @@ void RSEffectDataGenerateDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas&
 #else
 void RSEffectDataGenerateDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
 {
-// Drawing:: need to be adapted furture
+    // Drawing:: need to be adapted furture
     RS_TRACE_NAME("DrawBackgroundEffect " + filter_->GetDescription());
     auto& properties = node.GetMutableRenderProperties();
     auto drawingSurface = canvas.GetSurface();

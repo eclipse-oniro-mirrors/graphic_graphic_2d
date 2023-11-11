@@ -150,7 +150,7 @@ void RSCanvasRenderNode::ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanva
 #ifndef USE_ROSEN_DRAWING
         canvas.saveLayer(nullptr, nullptr);
 #else
-        Drawing::SaveLayerOps slr(nullptr, &brush, Drawing::SaveLayerOps::Flags::INIT_WITH_PREVIOUS);
+        Drawing::SaveLayerOps slr(nullptr, nullptr, Drawing::SaveLayerOps::Flags::INIT_WITH_PREVIOUS);
         canvas.SaveLayer(slr);
 #endif
     }

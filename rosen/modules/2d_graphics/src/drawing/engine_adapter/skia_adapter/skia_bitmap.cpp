@@ -21,11 +21,9 @@
 
 #include "image/bitmap.h"
 
-#ifdef ROSEN_OHOS
+#include "src/core/SkAutoMalloc.h"
 #include "src/core/SkReadBuffer.h"
 #include "src/core/SkWriteBuffer.h"
-#include "src/core/SkAutoMalloc.h"
-#endif
 #include "utils/data.h"
 namespace OHOS {
 namespace Rosen {
@@ -150,7 +148,9 @@ std::shared_ptr<Data> SkiaBitmap::Serialize() const
     size_t pixmapSize = rb * static_cast<size_t>(height);
 
     writer.writeUInt(pixmapSize);
-
+    if (addr == nullptr) {
+        return nullptr;
+    }
     writer.writeByteArray(addr, pixmapSize);
 
     writer.writeUInt(rb);
@@ -179,7 +179,6 @@ std::shared_ptr<Data> SkiaBitmap::Serialize() const
 
 bool SkiaBitmap::Deserialize(std::shared_ptr<Data> data)
 {
-#ifdef ROSEN_OHOS
     if (data == nullptr) {
         return false;
     }
@@ -218,9 +217,6 @@ bool SkiaBitmap::Deserialize(std::shared_ptr<Data> data)
     skiaBitmap_.allocPixels();
     skiaBitmap_.setPixels(const_cast<void*>(pixBuffer.get()));
     return true;
-#else
-    return false;
-#endif
 }
 
 } // namespace Drawing
