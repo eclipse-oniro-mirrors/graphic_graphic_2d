@@ -308,6 +308,21 @@ HWTEST_F(NativeWindowTest, CreateNativeWindowBuffer002, Function | MediumTest | 
 }
 
 /*
+* Function: OH_NativeWindow_CreateNativeWindowBufferFromNativeBuffer
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call OH_NativeWindow_CreateNativeWindowBufferFromNativeBuffer
+*                  2. check ret
+*/
+HWTEST_F(NativeWindowTest, CreateNativeWindowBuffer003, Function | MediumTest | Level2)
+{
+    OH_NativeBuffer* nativeBuffer = reinterpret_cast<OH_NativeBuffer *>(sBuffer);
+    nativeWindowBuffer = OH_NativeWindow_CreateNativeWindowBufferFromNativeBuffer(nativeBuffer);
+    ASSERT_NE(nativeWindowBuffer, nullptr);
+}
+
+/*
 * Function: OH_NativeWindow_NativeWindowRequestBuffer
 * Type: Function
 * Rank: Important(2)
@@ -440,6 +455,21 @@ HWTEST_F(NativeWindowTest, FlushBuffer003, Function | MediumTest | Level2)
               OHOS::GSERROR_OK);
     delete rect;
     delete region;
+}
+
+/*
+* Function: OH_NativeWindow_GetLastFlushedBuffer
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call OH_NativeWindow_GetLastFlushedBuffer
+*                  2. check ret
+ */
+HWTEST_F(NativeWindowTest, GetLastFlushedBuffer001, Function | MediumTest | Level2)
+{
+    NativeWindowBuffer* lastFlushedBuffer = nullptr;
+    ASSERT_EQ(OH_NativeWindow_NativeWindowFlushBuffer(nativeWindow, lastFlushedBuffer), OHOS::GSERROR_OK);
+    ASSERT_EQ(lastFlushedBuffer, nativeWindowBuffer);
 }
 
 /*
