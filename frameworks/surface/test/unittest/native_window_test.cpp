@@ -317,7 +317,7 @@ HWTEST_F(NativeWindowTest, CreateNativeWindowBuffer002, Function | MediumTest | 
 */
 HWTEST_F(NativeWindowTest, CreateNativeWindowBuffer003, Function | MediumTest | Level2)
 {
-    OH_NativeBuffer* nativeBuffer = reinterpret_cast<OH_NativeBuffer *>(sBuffer);
+    OH_NativeBuffer* nativeBuffer = sBuffer->SurfaceBufferToNativeBuffer();
     nativeWindowBuffer = OH_NativeWindow_CreateNativeWindowBufferFromNativeBuffer(nativeBuffer);
     ASSERT_NE(nativeWindowBuffer, nullptr);
 }
@@ -468,7 +468,7 @@ HWTEST_F(NativeWindowTest, FlushBuffer003, Function | MediumTest | Level2)
 HWTEST_F(NativeWindowTest, GetLastFlushedBuffer001, Function | MediumTest | Level2)
 {
     NativeWindowBuffer* lastFlushedBuffer = nullptr;
-    ASSERT_EQ(OH_NativeWindow_NativeWindowFlushBuffer(nativeWindow, lastFlushedBuffer), OHOS::GSERROR_OK);
+    ASSERT_EQ(OH_NativeWindow_GetLastFlushedBuffer(nativeWindow, lastFlushedBuffer), OHOS::GSERROR_OK);
     ASSERT_EQ(lastFlushedBuffer, nativeWindowBuffer);
 }
 
