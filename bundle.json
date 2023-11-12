@@ -185,8 +185,7 @@
             "header": {
               "header_files": [
                 "graphic_common.h",
-                "graphic_common_c.h",
-                "metadata_convertor.h"
+                "graphic_common_c.h"
               ],
               "header_base": "//foundation/graphic/graphic_2d/interfaces/inner_api/common"
             }
@@ -319,6 +318,17 @@
                 "export/color_space_convertor.h"
               ],
               "header_base": "//foundation/graphic/graphic_2d/utils/color_manager"
+            }
+          },
+          {
+            "type": "so",
+            "name": "//foundation/graphic/graphic_2d/utils/metadata_manager:metadata_manager",
+            "header": {
+              "header_files": [
+                "export/metadata_manager.h",
+                "export/hdr_vivid_metadata.h"
+              ],
+              "header_base": "//foundation/graphic/graphic_2d/utils/metadata_manager"
             }
           },
           {
