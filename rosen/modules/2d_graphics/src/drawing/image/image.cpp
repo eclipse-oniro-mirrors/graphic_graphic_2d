@@ -16,6 +16,7 @@
 #include "image/image.h"
 
 #include "impl_factory.h"
+#include "static_factory.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -59,6 +60,12 @@ Image* Image::BuildFromPicture(const Picture& picture, const SizeI& dimensions, 
         imageImplPtr->BuildFromPicture(picture, dimensions, matrix, brush, bitDepth, colorSpace));
 }
 
+std::shared_ptr<Image> MakeFromRaster(const Pixmap& pixmap,
+    RasterReleaseProc rasterReleaseProc, ReleaseContext releaseContext)
+{
+    return StaticFactory::MakeFromRaster(pixmap, rasterReleaseProc, releaseContext);
+}
+
 #ifdef ACE_ENABLE_GPU
 bool Image::BuildFromBitmap(GPUContext& gpuContext, const Bitmap& bitmap)
 {
@@ -98,6 +105,11 @@ bool Image::IsValid(GPUContext* context) const
 }
 #endif
 
+bool Image::AsLegacyBitmap(Bitmap& bitmap) const
+{
+    return imageImplPtr->AsLegacyBitmap(bitmap);
+}
+
 int Image::GetWidth() const
 {
     return imageImplPtr->GetWidth();
@@ -131,6 +143,12 @@ ImageInfo Image::GetImageInfo()
 bool Image::ReadPixels(Bitmap& bitmap, int x, int y)
 {
     return imageImplPtr->ReadPixels(bitmap, x, y);
+}
+
+bool Image::ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+    int srcX, int srcY) const
+{
+    return imageImplPtr->ReadPixels(dstInfo, dstPixels, dstRowBytes, srcX, srcY);
 }
 
 bool Image::IsTextureBacked() const

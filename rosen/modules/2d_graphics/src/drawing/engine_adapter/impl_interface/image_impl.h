@@ -21,6 +21,7 @@
 #include "draw/brush.h"
 #include "effect/color_space.h"
 #include "image/bitmap.h"
+#include "image/pixmap.h"
 #include "image/picture.h"
 #include "image/image_info.h"
 #include "utils/matrix.h"
@@ -38,6 +39,16 @@ enum class CompressedType;
 class BackendTexture;
 #endif
 enum class BitDepth;
+
+/** Caller data passed to RasterReleaseProc; may be nullptr.
+*/
+typedef void* ReleaseContext;
+
+/** Function called when SkImage no longer shares pixels. ReleaseContext is
+    provided by caller when SkImage is created, and may be nullptr.
+*/
+typedef void (*RasterReleaseProc)(const void* pixels, ReleaseContext);
+
 class ImageImpl : public BaseImpl {
 public:
     ImageImpl() noexcept {}
@@ -57,6 +68,7 @@ public:
     virtual BackendTexture GetBackendTexture(bool flushPendingGrContextIO, TextureOrigin* origin) = 0;
     virtual bool IsValid(GPUContext* context) const = 0;
 #endif
+    virtual bool AsLegacyBitmap(Bitmap& bitmap) const = 0;
     virtual int GetWidth() const = 0;
     virtual int GetHeight() const = 0;
     virtual ColorType GetColorType() const = 0;
@@ -64,6 +76,8 @@ public:
     virtual uint32_t GetUniqueID() const = 0;
     virtual ImageInfo GetImageInfo() = 0;
     virtual bool ReadPixels(Bitmap& bitmap, int x, int y) = 0;
+    virtual bool ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+                            int srcX, int srcY) const = 0;
     virtual bool IsTextureBacked() const = 0;
     virtual bool ScalePixels(const Bitmap& bitmap, const SamplingOptions& sampling,
         bool allowCachingHint = true) const = 0;

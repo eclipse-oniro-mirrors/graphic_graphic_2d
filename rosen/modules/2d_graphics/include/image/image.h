@@ -182,6 +182,16 @@ public:
     Image* BuildFromPicture(const Picture& picture, const SizeI& dimensions, const Matrix& matrix, const Brush& brush,
         BitDepth bitDepth, std::shared_ptr<ColorSpace> colorSpace);
 
+    /*
+     * @brief                        Create Image from Pixmap.
+     * @param  pixmap                pixmap.
+     * @param  rasterReleaseProc     function called when pixels can be released; or nullptr.
+     * @param  releaseContext        state passed to rasterReleaseProc; or nullptr.
+     * @return                       Image sharing pixmap.
+     */
+    static std::shared_ptr<Image> MakeFromRaster(const Pixmap& pixmap,
+        RasterReleaseProc rasterReleaseProc, ReleaseContext releaseContext);
+
 #ifdef ACE_ENABLE_GPU
     /*
      * @brief             Create Image from Bitmap. Image is uploaded to GPU back-end using context.
@@ -226,6 +236,11 @@ public:
 #endif
 
     /*
+     * @brief  Creates raster Bitmap with same pixels as Image.
+     */
+    bool AsLegacyBitmap(Bitmap& bitmap) const;
+
+    /*
      * @brief  Gets the width of Image.
      */
     int GetWidth() const;
@@ -263,6 +278,9 @@ public:
      * @return        True of pixels are copied to Bitmap.
      */
     bool ReadPixels(Bitmap& bitmap, int x, int y);
+
+    bool ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+                    int srcX, int srcY) const;
 
     bool ScalePixels(const Bitmap& bitmap, const SamplingOptions& sampling,
         bool allowCachingHint = true) const;

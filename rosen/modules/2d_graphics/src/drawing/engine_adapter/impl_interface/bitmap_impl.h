@@ -27,6 +27,8 @@ namespace Rosen {
 namespace Drawing {
 class Bitmap;
 struct BitmapFormat;
+typedef void (*ReleaseProc)(void* addr, void* context);
+
 class BitmapImpl : public BaseImpl {
 public:
     BitmapImpl() {}
@@ -39,15 +41,21 @@ public:
     virtual int GetRowBytes() const = 0;
     virtual ColorType GetColorType() const = 0;
     virtual AlphaType GetAlphaType() const = 0;
+    virtual bool ExtractSubset(Bitmap& dst, const Rect& subset) const = 0;
+    virtual bool ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+                            int srcX, int srcY) const = 0;
     virtual void* GetPixels() const = 0;
     virtual void SetPixels(void* pixel) = 0;
     virtual void CopyPixels(Bitmap& dst, int srcLeft, int srcTop) const = 0;
+    virtual bool InstallPixels(const ImageInfo& info, void* pixels, size_t rowBytes,
+                               ReleaseProc releaseProc, void* context) = 0;
     virtual bool IsImmutable() = 0;
     virtual void SetImmutable() = 0;
     virtual void ClearWithColor(const ColorQuad& color) const = 0;
     virtual ColorQuad GetColor(int x, int y) const = 0;
     virtual void Free() = 0;
     virtual bool IsValid() const = 0;
+    virtual bool IsEmpty() const = 0;
     virtual std::shared_ptr<Data> Serialize() const = 0;
     virtual bool Deserialize(std::shared_ptr<Data> data) = 0;
 };
