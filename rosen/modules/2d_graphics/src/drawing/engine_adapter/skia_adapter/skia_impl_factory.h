@@ -17,6 +17,7 @@
 #define SKIA_IMPLFACTORY_H
 
 #include "impl_interface/bitmap_impl.h"
+#include "impl_interface/pixmap_impl.h"
 #include "impl_interface/camera_impl.h"
 #include "impl_interface/color_filter_impl.h"
 #include "impl_interface/color_space_impl.h"
@@ -58,6 +59,8 @@ public:
 #endif
     static std::unique_ptr<TraceMemoryDumpImpl> CreateTraceMemoryDump(const char* categoryKey, bool itemizeType);
     static std::unique_ptr<BitmapImpl> CreateBitmap();
+    static std::unique_ptr<PixmapImpl> CreatePixmap();
+    static std::unique_ptr<PixmapImpl> CreatePixmap(const ImageInfo& imageInfo, const void* addr, size_t rowBytes);
     static std::unique_ptr<ImageImpl> CreateImage();
     static std::unique_ptr<ImageImpl> CreateImage(void* rawImg);
     static std::unique_ptr<PictureImpl> CreatePicture();

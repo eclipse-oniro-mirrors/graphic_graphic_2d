@@ -52,6 +52,8 @@ public:
         return AdapterType::SKIA_ADAPTER;
     }
 
+    static std::shared_ptr<Image> MakeFromRaster(const Pixmap& pixmap,
+        RasterReleaseProc rasterReleaseProc, ReleaseContext releaseContext);
     void* BuildFromBitmap(const Bitmap& bitmap) override;
     void* BuildFromPicture(const Picture& picture, const SizeI& dimensions, const Matrix& matrix, const Brush& brush,
         BitDepth bitDepth, std::shared_ptr<ColorSpace> colorSpace) override;
@@ -67,6 +69,7 @@ public:
     void SetGrBackendTexture(const GrBackendTexture& grBackendTexture);
     bool IsValid(GPUContext* context) const override;
 #endif
+    bool AsLegacyBitmap(Bitmap& bitmap) const override;
     int GetWidth() const override;
     int GetHeight() const override;
     ColorType GetColorType() const override;
@@ -74,6 +77,8 @@ public:
     uint32_t GetUniqueID() const override;
     ImageInfo GetImageInfo() override;
     bool ReadPixels(Bitmap& bitmap, int x, int y) override;
+    bool ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+                    int srcX, int srcY) const override;
     bool IsTextureBacked() const override;
 
     bool ScalePixels(const Bitmap& bitmap, const SamplingOptions& sampling,

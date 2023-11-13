@@ -20,6 +20,7 @@
 #endif
 
 #include "skia_bitmap.h"
+#include "skia_pixmap.h"
 #include "skia_data.h"
 #include "skia_image_info.h"
 
@@ -43,6 +44,19 @@ namespace Drawing {
 SkiaImage::SkiaImage() noexcept : skiaImage_(nullptr) {}
 
 SkiaImage::SkiaImage(sk_sp<SkImage> skImg) noexcept : skiaImage_(skImg) {}
+
+std::shared_ptr<Image> SkiaImage::MakeFromRaster(const Pixmap& pixmap,
+    RasterReleaseProc rasterReleaseProc, ReleaseContext releaseContext)
+{
+    auto& skPixmap = pixmap.GetImpl<SkiaPixmap>()->ExportSkiaPixmap();
+    sk_sp<SkImage> skImage = SkImage::MakeFromRaster(skPixmap, rasterReleaseProc, releaseContext);
+    if (skImage == nullptr) {
+        LOGE("SkiaImage::MakeFromRaster failed");
+        return nullptr;
+    }
+    std::shared_ptr<ImageImpl> imageImpl = std::make_shared<SkiaImage>(skImage);
+    return std::make_shared<Image>(imageImpl);
+}
 
 void* SkiaImage::BuildFromBitmap(const Bitmap& bitmap)
 {
@@ -225,6 +239,21 @@ bool SkiaImage::IsValid(GPUContext* context) const
 }
 #endif
 
+bool SkiaImage::AsLegacyBitmap(Bitmap& bitmap) const
+{
+    if (skiaImage_ == nullptr) {
+        LOGE("SkiaImage::IsValid, skiaImage_ is nullptr!");
+        return false;
+    }
+    SkBitmap newBitmap;
+    if (!skiaImage_->asLegacyBitmap(&newBitmap)) {
+        LOGE("SkiaImage::AsLegacyBitmap failed!");
+        return false;
+    }
+    bitmap.GetImpl<SkiaBitmap>()->SetSkBitmap(newBitmap);
+    return true;
+}
+
 int SkiaImage::GetWidth() const
 {
     return (skiaImage_ == nullptr) ? 0 : skiaImage_->width();
@@ -266,6 +295,13 @@ bool SkiaImage::ReadPixels(Bitmap& bitmap, int x, int y)
     const auto& skPixmap = skBitmap.pixmap();
 
     return (skiaImage_ == nullptr) ? false : skiaImage_->readPixels(skPixmap, x, y);
+}
+
+bool SkiaImage::ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+    int srcX, int srcY) const
+{
+    SkImageInfo skImageInfo = SkiaImageInfo::ConvertToSkImageInfo(dstInfo);
+    return skiaImage_->readPixels(skImageInfo, dstPixels, dstRowBytes, srcX, srcY);
 }
 
 bool SkiaImage::IsTextureBacked() const

@@ -16,6 +16,7 @@
 #include "skia_impl_factory.h"
 
 #include "skia_adapter/skia_bitmap.h"
+#include "skia_adapter/skia_pixmap.h"
 #include "skia_adapter/skia_camera.h"
 #include "skia_adapter/skia_canvas.h"
 #include "skia_adapter/skia_color_filter.h"
@@ -81,6 +82,16 @@ std::unique_ptr<TraceMemoryDumpImpl> SkiaImplFactory::CreateTraceMemoryDump(cons
 std::unique_ptr<BitmapImpl> SkiaImplFactory::CreateBitmap()
 {
     return std::make_unique<SkiaBitmap>();
+}
+
+std::unique_ptr<PixmapImpl> SkiaImplFactory::CreatePixmap()
+{
+    return std::make_unique<SkiaPixmap>();
+}
+
+std::unique_ptr<PixmapImpl> SkiaImplFactory::CreatePixmap(const ImageInfo& imageInfo, const void* addr, size_t rowBytes)
+{
+    return std::make_unique<SkiaPixmap>(imageInfo, addr, rowBytes);
 }
 
 std::unique_ptr<ImageImpl> SkiaImplFactory::CreateImage()

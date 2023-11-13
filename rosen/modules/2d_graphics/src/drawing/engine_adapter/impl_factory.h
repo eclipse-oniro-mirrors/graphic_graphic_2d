@@ -17,6 +17,7 @@
 #define IMPLFACTORY_H
 
 #include "impl_interface/bitmap_impl.h"
+#include "impl_interface/pixmap_impl.h"
 #include "impl_interface/camera_impl.h"
 #include "impl_interface/color_filter_impl.h"
 #include "impl_interface/color_space_impl.h"
@@ -58,6 +59,8 @@ public:
 #endif
     static std::unique_ptr<TraceMemoryDumpImpl> CreateTraceMemoryDumpImpl(const char* categoryKey, bool itemizeType);
     static std::unique_ptr<BitmapImpl> CreateBitmapImpl();
+    static std::unique_ptr<PixmapImpl> CreatePixmapImpl();
+    static std::unique_ptr<PixmapImpl> CreatePixmapImpl(const ImageInfo& imageInfo, const void* addr, size_t rowBytes);
     static std::unique_ptr<ImageImpl> CreateImageImpl();
     static std::unique_ptr<ImageImpl> CreateImageImpl(void* rawImage);
     static std::unique_ptr<PathImpl> CreatePathImpl();

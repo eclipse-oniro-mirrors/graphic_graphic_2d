@@ -61,6 +61,16 @@ std::unique_ptr<BitmapImpl> ImplFactory::CreateBitmapImpl()
     return EngineImplFactory::CreateBitmap();
 }
 
+std::unique_ptr<PixmapImpl> ImplFactory::CreatePixmapImpl()
+{
+    return EngineImplFactory::CreatePixmap();
+}
+
+std::unique_ptr<PixmapImpl> ImplFactory::CreatePixmapImpl(const ImageInfo& imageInfo, const void* addr, size_t rowBytes)
+{
+    return EngineImplFactory::CreatePixmap(imageInfo, addr, rowBytes);
+}
+
 std::unique_ptr<ImageImpl> ImplFactory::CreateImageImpl()
 {
     return EngineImplFactory::CreateImage();
