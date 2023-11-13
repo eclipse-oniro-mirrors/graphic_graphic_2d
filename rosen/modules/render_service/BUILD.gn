@@ -202,6 +202,7 @@ ohos_shared_library("librender_service") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "sensor:sensor_interface_native",
     "window_manager:libwsutils",
   ]
 
@@ -247,6 +248,11 @@ ohos_shared_library("librender_service") {
     ]
   }
 
+  if (rosen_is_ohos && defined(enable_ipc_security_access_counter) &&
+      enable_ipc_security_access_counter) {
+    defines += [ "ENABLE_IPC_SECURITY_ACCESS_COUNTER" ]
+  }
+
   if (tp_feature_enable) {
     defines += tp_defines
   }
@@ -275,6 +281,7 @@ ohos_executable("render_service") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "sensor:sensor_interface_native",
   ]
 
   part_name = "graphic_2d"

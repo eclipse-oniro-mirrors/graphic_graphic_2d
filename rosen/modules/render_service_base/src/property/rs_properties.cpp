@@ -1906,6 +1906,17 @@ std::string RSProperties::Dump() const
         dumpInfo.append(buffer);
     }
 
+    // PixelStretch PixelStretchPercent
+    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
+    if (ret != EOK) {
+        return "Failed to memset_s for PixelStretch, ret=" + std::to_string(ret);
+    }
+    if (pixelStretch_.has_value() &&
+        sprintf_s(buffer, UINT8_MAX, ", PixelStretch[left:%.1f top:%.1f right:%.1f bottom:%.1f]",
+            pixelStretch_->x_, pixelStretch_->y_, pixelStretch_->z_, pixelStretch_->w_) != -1) {
+        dumpInfo.append(buffer);
+    }
+
     // Rotation
     ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
     if (ret != EOK) {
@@ -1994,6 +2005,26 @@ std::string RSProperties::Dump() const
         dumpInfo.append(buffer);
     }
 
+    // Spherize
+    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
+    if (ret != EOK) {
+        return "Failed to memset_s for Spherize, ret=" + std::to_string(ret);
+    }
+    if (!ROSEN_EQ(GetSpherize(), 0.f) &&
+        sprintf_s(buffer, UINT8_MAX, ", Spherize[%.1f]", GetSpherize()) != -1) {
+        dumpInfo.append(buffer);
+    }
+
+    // LightUpEffect
+    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
+    if (ret != EOK) {
+        return "Failed to memset_s for LightUpEffect, ret=" + std::to_string(ret);
+    }
+    if (!ROSEN_EQ(GetLightUpEffect(), 1.f) &&
+        sprintf_s(buffer, UINT8_MAX, ", LightUpEffect[%.1f]", GetLightUpEffect()) != -1) {
+        dumpInfo.append(buffer);
+    }
+
     // ForegroundColor
     ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
     if (ret != EOK) {
@@ -2036,6 +2067,28 @@ std::string RSProperties::Dump() const
     }
     if (border_ && border_->HasBorder() &&
         sprintf_s(buffer, UINT8_MAX, ", Border[%s]", border_->ToString().c_str()) != -1) {
+        dumpInfo.append(buffer);
+    }
+
+    // Filter
+    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
+    if (ret != EOK) {
+        return "Failed to memset_s for Filter, ret=" + std::to_string(ret);
+    }
+    auto filter_ = GetFilter();
+    if (filter_ && filter_->IsValid() &&
+        sprintf_s(buffer, UINT8_MAX, ", Filter[%s]", filter_->GetDescription().c_str()) != -1) {
+        dumpInfo.append(buffer);
+    }
+
+    // BackgroundFilter
+    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
+    if (ret != EOK) {
+        return "Failed to memset_s for BackgroundFilter, ret=" + std::to_string(ret);
+    }
+    auto backgroundFilter_ = GetBackgroundFilter();
+    if (backgroundFilter_ && backgroundFilter_->IsValid() &&
+        sprintf_s(buffer, UINT8_MAX, ", BackgroundFilter[%s]", backgroundFilter_->GetDescription().c_str()) != -1) {
         dumpInfo.append(buffer);
     }
 
@@ -2250,6 +2303,9 @@ void RSProperties::CreateFilterCacheManagerIfNeed()
         }
         cacheManager->UpdateCacheStateWithFilterHash(filter);
     } else {
+        if (backgroundFilterCacheManager_ != nullptr) {
+            backgroundFilterCacheManager_->ReleaseCacheOffTree();
+        }
         backgroundFilterCacheManager_.reset();
     }
     if (auto& filter = GetFilter()) {
@@ -2259,6 +2315,9 @@ void RSProperties::CreateFilterCacheManagerIfNeed()
         }
         cacheManager->UpdateCacheStateWithFilterHash(filter);
     } else {
+        if (foregroundFilterCacheManager_ != nullptr) {
+            foregroundFilterCacheManager_->ReleaseCacheOffTree();
+        }
         foregroundFilterCacheManager_.reset();
     }
 }
