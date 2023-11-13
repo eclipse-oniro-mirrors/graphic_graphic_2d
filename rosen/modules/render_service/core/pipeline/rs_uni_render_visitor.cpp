@@ -3329,7 +3329,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 #else
             canvas_->ConcatMatrix(node.contextMatrix_.value_or(Drawing::Matrix()));
             Drawing::Brush brush;
-            brush.SetARGB(0xFF, 0, 0, 0x80); // transparent red
+            brush.SetARGB(0x80, 0xFF, 0, 0); // transparent red
             canvas_->AttachBrush(brush);
             canvas_->DrawRect(node.contextClipRect_.value());
             canvas_->DetachBrush();
@@ -3594,7 +3594,7 @@ void RSUniRenderVisitor::ProcessProxyRenderNode(RSProxyRenderNode& node)
         canvas_->drawRect(node.contextClipRect_.value(), paint);
 #else
         Drawing::Brush brush;
-        brush.SetARGB(0, 0xFF, 0, 0x80); // transparent green
+        brush.SetARGB(0x80, 0, 0xFF, 0); // transparent green
         canvas_->AttachBrush(brush);
         canvas_->DrawRect(node.contextClipRect_.value());
         canvas_->DetachBrush();
@@ -4312,7 +4312,13 @@ bool RSUniRenderVisitor::ProcessSharedTransitionNode(RSBaseRenderNode& node)
         RenderParam value { node.shared_from_this(), canvasStatus };
 #else
         auto& [child, alpha, matrix] = curGroupedNodes_.top();
-        RenderParam value { node.shared_from_this(), canvas_->GetAlpha() / alpha, matrix };
+        auto temAlpha = canvas_->GetAlpha();
+        if (!ROSEN_EQ(alpha, 0.f)) {
+            temAlpha /= alpha;
+        } else {
+            RS_LOGE("RSUniRenderVisitor::ProcessSharedTransitionNode: alpha_ is zero");
+        }
+        RenderParam value { node.shared_from_this(), temAlpha, matrix };
         if (!matrix->Invert(std::get<2>(value).value())) {
             RS_LOGE("RSUniRenderVisitor::ProcessSharedTransitionNode invert failed");
         }
@@ -4341,9 +4347,9 @@ void RSUniRenderVisitor::ProcessUnpairedSharedTransitionNode()
     // Do cleanup for unpaired transition nodes.
     for (auto& [key, params] : unpairedTransitionNodes_) {
         RSAutoCanvasRestore acr(canvas_);
+        // restore render context and process the unpaired node.
 #ifndef USE_ROSEN_DRAWING
         auto& [node, canvasStatus] = params;
-        // restore render context and process the unpaired node.
         canvas_->SetCanvasStatus(canvasStatus);
 #else
         auto& [node, alpha, matrix] = params;
