@@ -141,7 +141,7 @@ private:
         RSPropertyDrawableGenerateContext& context, DrawableVec& drawableVec, uint8_t flags);
     static void OptimizeFrameSaveRestore(
         RSPropertyDrawableGenerateContext& context, DrawableVec& drawableVec, uint8_t flags);
-        static void UpdateSaveLayerSlots(const RSPropertyDrawableGenerateContext& context, DrawableVec& drawableVec);
+    static void UpdateSaveLayerSlots(const RSPropertyDrawableGenerateContext& context, DrawableVec& drawableVec);
 };
 
 class RSPropertyDrawableGenerateContext {
