@@ -102,17 +102,19 @@ const std::vector<ResetPropertyFunc> g_propertyResetterLUT = {
     [](RSProperties* prop) { prop->SetPixelStretch({}); },               // PIXEL_STRETCH,            52
     [](RSProperties* prop) { prop->SetPixelStretchPercent({}); },        // PIXEL_STRETCH_PERCENT,    53
     [](RSProperties* prop) { prop->SetUseEffect(false); },               // USE_EFFECT,               54
-    [](RSProperties* prop) { prop->ResetSandBox(); },                    // SANDBOX,                  55
-    [](RSProperties* prop) { prop->SetGrayScale({}); },                  // GRAY_SCALE,               56
-    [](RSProperties* prop) { prop->SetBrightness({}); },                 // BRIGHTNESS,               57
-    [](RSProperties* prop) { prop->SetContrast({}); },                   // CONTRAST,                 58
-    [](RSProperties* prop) { prop->SetSaturate({}); },                   // SATURATE,                 59
-    [](RSProperties* prop) { prop->SetSepia({}); },                      // SEPIA,                    60
-    [](RSProperties* prop) { prop->SetInvert({}); },                     // INVERT,                   61
-    [](RSProperties* prop) { prop->SetHueRotate({}); },                  // HUE_ROTATE,               62
-    [](RSProperties* prop) { prop->SetColorBlend({}); },                 // COLOR_BLEND,              63
-    [](RSProperties* prop) { prop->SetParticles({}); },                  // PARTICLE,                 64
-    [](RSProperties* prop) { prop->SetShadowIsFilled(false); },          // SHADOW_IS_FILLED,         65
+    [](RSProperties* prop) { prop->SetColorBlendMode(
+        static_cast<int>(RSColorBlendModeType::NONE)); },                // COLOR_BLENDMODE,          55
+    [](RSProperties* prop) { prop->ResetSandBox(); },                    // SANDBOX,                  56
+    [](RSProperties* prop) { prop->SetGrayScale({}); },                  // GRAY_SCALE,               57
+    [](RSProperties* prop) { prop->SetBrightness({}); },                 // BRIGHTNESS,               58
+    [](RSProperties* prop) { prop->SetContrast({}); },                   // CONTRAST,                 59
+    [](RSProperties* prop) { prop->SetSaturate({}); },                   // SATURATE,                 60
+    [](RSProperties* prop) { prop->SetSepia({}); },                      // SEPIA,                    61
+    [](RSProperties* prop) { prop->SetInvert({}); },                     // INVERT,                   62
+    [](RSProperties* prop) { prop->SetHueRotate({}); },                  // HUE_ROTATE,               63
+    [](RSProperties* prop) { prop->SetColorBlend({}); },                 // COLOR_BLEND,              64
+    [](RSProperties* prop) { prop->SetParticles({}); },                  // PARTICLE,                 65
+    [](RSProperties* prop) { prop->SetShadowIsFilled(false); },          // SHADOW_IS_FILLED,         66
     nullptr,
 };
 } // namespace
@@ -1904,6 +1906,17 @@ std::string RSProperties::Dump() const
         dumpInfo.append(buffer);
     }
 
+    // PixelStretch PixelStretchPercent
+    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
+    if (ret != EOK) {
+        return "Failed to memset_s for PixelStretch, ret=" + std::to_string(ret);
+    }
+    if (pixelStretch_.has_value() &&
+        sprintf_s(buffer, UINT8_MAX, ", PixelStretch[left:%.1f top:%.1f right:%.1f bottom:%.1f]",
+            pixelStretch_->x_, pixelStretch_->y_, pixelStretch_->z_, pixelStretch_->w_) != -1) {
+        dumpInfo.append(buffer);
+    }
+
     // Rotation
     ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
     if (ret != EOK) {
@@ -1992,6 +2005,26 @@ std::string RSProperties::Dump() const
         dumpInfo.append(buffer);
     }
 
+    // Spherize
+    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
+    if (ret != EOK) {
+        return "Failed to memset_s for Spherize, ret=" + std::to_string(ret);
+    }
+    if (!ROSEN_EQ(GetSpherize(), 0.f) &&
+        sprintf_s(buffer, UINT8_MAX, ", Spherize[%.1f]", GetSpherize()) != -1) {
+        dumpInfo.append(buffer);
+    }
+
+    // LightUpEffect
+    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
+    if (ret != EOK) {
+        return "Failed to memset_s for LightUpEffect, ret=" + std::to_string(ret);
+    }
+    if (!ROSEN_EQ(GetLightUpEffect(), 1.f) &&
+        sprintf_s(buffer, UINT8_MAX, ", LightUpEffect[%.1f]", GetLightUpEffect()) != -1) {
+        dumpInfo.append(buffer);
+    }
+
     // ForegroundColor
     ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
     if (ret != EOK) {
@@ -2034,6 +2067,28 @@ std::string RSProperties::Dump() const
     }
     if (border_ && border_->HasBorder() &&
         sprintf_s(buffer, UINT8_MAX, ", Border[%s]", border_->ToString().c_str()) != -1) {
+        dumpInfo.append(buffer);
+    }
+
+    // Filter
+    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
+    if (ret != EOK) {
+        return "Failed to memset_s for Filter, ret=" + std::to_string(ret);
+    }
+    auto filter_ = GetFilter();
+    if (filter_ && filter_->IsValid() &&
+        sprintf_s(buffer, UINT8_MAX, ", Filter[%s]", filter_->GetDescription().c_str()) != -1) {
+        dumpInfo.append(buffer);
+    }
+
+    // BackgroundFilter
+    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
+    if (ret != EOK) {
+        return "Failed to memset_s for BackgroundFilter, ret=" + std::to_string(ret);
+    }
+    auto backgroundFilter_ = GetBackgroundFilter();
+    if (backgroundFilter_ && backgroundFilter_->IsValid() &&
+        sprintf_s(buffer, UINT8_MAX, ", BackgroundFilter[%s]", backgroundFilter_->GetDescription().c_str()) != -1) {
         dumpInfo.append(buffer);
     }
 
@@ -2248,6 +2303,9 @@ void RSProperties::CreateFilterCacheManagerIfNeed()
         }
         cacheManager->UpdateCacheStateWithFilterHash(filter);
     } else {
+        if (backgroundFilterCacheManager_ != nullptr) {
+            backgroundFilterCacheManager_->ReleaseCacheOffTree();
+        }
         backgroundFilterCacheManager_.reset();
     }
     if (auto& filter = GetFilter()) {
@@ -2257,6 +2315,9 @@ void RSProperties::CreateFilterCacheManagerIfNeed()
         }
         cacheManager->UpdateCacheStateWithFilterHash(filter);
     } else {
+        if (foregroundFilterCacheManager_ != nullptr) {
+            foregroundFilterCacheManager_->ReleaseCacheOffTree();
+        }
         foregroundFilterCacheManager_.reset();
     }
 }
@@ -2289,6 +2350,8 @@ void RSProperties::OnApplyModifiers()
         if (clipToFrame_ && clipToBounds_ && frameOffsetX_ == 0 && frameOffsetY_ == 0) {
             clipToFrame_ = false;
         }
+        frameGeo_->Round();
+        boundsGeo_->Round();
     }
     if (colorFilterNeedUpdate_) {
         GenerateColorFilter();
@@ -2313,18 +2376,6 @@ void RSProperties::OnApplyModifiers()
     GenerateRRect();
 }
 
-inline static int SignBit(float x)
-{
-    constexpr static float eps = 1e-5f;
-    if (x <= -eps) {
-        return -1;
-    } else if (x >= eps) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
 void RSProperties::CalculatePixelStretch()
 {
     pixelStretchNeedUpdate_ = false;
@@ -2341,14 +2392,21 @@ void RSProperties::CalculatePixelStretch()
         }
         pixelStretch_ = *pixelStretchPercent_ * Vector4f(width, height, width, height);
     }
-    // parameter check: same sign
-    const auto sign = SignBit(pixelStretch_->x_);
-    if (sign == 0 || SignBit(pixelStretch_->y_) != sign || SignBit(pixelStretch_->z_) != sign ||
-        SignBit(pixelStretch_->w_) != sign) {
+    constexpr static float EPS = 1e-5f;
+    // parameter check: near zero
+    if (abs(pixelStretch_->x_) < EPS && abs(pixelStretch_->y_) < EPS && abs(pixelStretch_->z_) < EPS &&
+        abs(pixelStretch_->w_) < EPS) {
         pixelStretch_ = std::nullopt;
         return;
     }
-    isDrawn_ = true;
+    // parameter check: all >= 0 or all <= 0
+    if ((pixelStretch_->x_ < EPS && pixelStretch_->y_ < EPS && pixelStretch_->z_ < EPS && pixelStretch_->w_ < EPS) ||
+        (pixelStretch_->x_ > -EPS && pixelStretch_->y_ > -EPS && pixelStretch_->z_ > -EPS &&
+            pixelStretch_->w_ > -EPS)) {
+        isDrawn_ = true;
+        return;
+    }
+    pixelStretch_ = std::nullopt;
 }
 
 void RSProperties::CalculateFrameOffset()
@@ -2364,6 +2422,22 @@ void RSProperties::CalculateFrameOffset()
     if (frameOffsetX_ != 0. || frameOffsetY_ != 0.) {
         isDrawn_ = true;
     }
+}
+
+// blend with background
+void RSProperties::SetColorBlendMode(int colorBlendMode)
+{
+    colorBlendMode_ = colorBlendMode;
+    if (colorBlendMode_ != static_cast<int>(RSColorBlendModeType::NONE)) {
+        isDrawn_ = true;
+    }
+    SetDirty();
+    contentDirty_ = true;
+}
+
+int RSProperties::GetColorBlendMode() const
+{
+    return colorBlendMode_;
 }
 } // namespace Rosen
 } // namespace OHOS

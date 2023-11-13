@@ -63,12 +63,9 @@ bool RSUniRenderVirtualProcessor::Init(RSDisplayRenderNode& node, int32_t offset
         return false;
     }
     auto mirrorNode = node.GetMirrorSource().lock();
-    if (mirrorNode == nullptr) {
-        return false;
-    }
-    auto rotation = mirrorNode->GetScreenRotation();
     isPhone_ = RSMainThread::Instance()->GetDeviceType() == DeviceType::PHONE;
     if (mirrorNode && node.IsFirstTimeToProcessor()) {
+        auto rotation = mirrorNode->GetScreenRotation();
         if (isPhone_) {
             node.setFirstTimeScreenRotation(rotation);
         } else {
@@ -81,34 +78,45 @@ bool RSUniRenderVirtualProcessor::Init(RSDisplayRenderNode& node, int32_t offset
         RS_LOGD("RSUniRenderVirtualProcessor::Init, Screen(id %{public}" PRIu64 "), Rotation: %d", node.GetScreenId(),
             static_cast<uint32_t>(rotation));
     }
-    if (isPhone_) {
+#ifndef USE_ROSEN_DRAWING
+    if (mirrorNode && isPhone_) {
         if (node.getFirstTimeScreenRotation() == ScreenRotation::ROTATION_90) {
-            canvas_->rotate(90, renderFrameConfig_.height / 2, renderFrameConfig_.height / 2); // 90 degrees
+            canvas_->rotate(90, renderFrameConfig_.height / 2.0f, renderFrameConfig_.height / 2.0f); // 90 degrees
             canvas_->translate(0, renderFrameConfig_.height - renderFrameConfig_.width);
         } else if (node.getFirstTimeScreenRotation() == ScreenRotation::ROTATION_180) {
-            canvas_->rotate(180, renderFrameConfig_.width / 2, renderFrameConfig_.height / 2); // 180 degrees
+            canvas_->rotate(180, renderFrameConfig_.width / 2.0f, renderFrameConfig_.height / 2.0f); // 180 degrees
         } else if (node.getFirstTimeScreenRotation() == ScreenRotation::ROTATION_270) {
-            canvas_->rotate(270, renderFrameConfig_.height / 2, renderFrameConfig_.height / 2); // 270 degrees
+            canvas_->rotate(270, renderFrameConfig_.height / 2.0f, renderFrameConfig_.height / 2.0f); // 270 degrees
         }
     } else {
-#ifndef USE_ROSEN_DRAWING
-    SkMatrix invertMatrix;
-    if (node.GetInitMatrix().invert(&invertMatrix)) {
-        screenTransformMatrix_.postConcat(invertMatrix);
+        SkMatrix invertMatrix;
+        if (node.GetInitMatrix().invert(&invertMatrix)) {
+            screenTransformMatrix_.postConcat(invertMatrix);
+        }
+        canvas_->concat(screenTransformMatrix_);
     }
-    canvas_->concat(screenTransformMatrix_);
 #else
-    Drawing::Matrix invertMatrix;
-    if (node.GetInitMatrix().Invert(invertMatrix)) {
-        screenTransformMatrix_ = screenTransformMatrix_ * invertMatrix;
+    if (mirrorNode && isPhone_) {
+        if (node.getFirstTimeScreenRotation() == ScreenRotation::ROTATION_90) {
+            canvas_->Rotate(90, renderFrameConfig_.height / 2.0f, renderFrameConfig_.height / 2.0f); // 90 degrees
+            canvas_->Translate(0, renderFrameConfig_.height - renderFrameConfig_.width);
+        } else if (node.getFirstTimeScreenRotation() == ScreenRotation::ROTATION_180) {
+            canvas_->Rotate(180, renderFrameConfig_.width / 2.0f, renderFrameConfig_.height / 2.0f); // 180 degrees
+        } else if (node.getFirstTimeScreenRotation() == ScreenRotation::ROTATION_270) {
+            canvas_->Rotate(270, renderFrameConfig_.height / 2.0f, renderFrameConfig_.height / 2.0f); // 270 degrees
+        }
+    } else {
+        Drawing::Matrix invertMatrix;
+        if (node.GetInitMatrix().Invert(invertMatrix)) {
+            screenTransformMatrix_ = screenTransformMatrix_ * invertMatrix;
+        }
+        canvas_->ConcatMatrix(screenTransformMatrix_);
     }
-    canvas_->ConcatMatrix(screenTransformMatrix_);
 #endif
-    }
     return true;
 }
 
-void RSUniRenderVirtualProcessor::PostProcess()
+void RSUniRenderVirtualProcessor::PostProcess(RSDisplayRenderNode* node)
 {
     if (producerSurface_ == nullptr) {
         RS_LOGE("RSUniRenderVirtualProcessor::PostProcess surface is null!");
@@ -137,14 +145,16 @@ void RSUniRenderVirtualProcessor::ProcessDisplaySurface(RSDisplayRenderNode& nod
             return;
         }
 
+#ifndef USE_ROSEN_DRAWING
         canvas_->save();
         canvas_->clear(SK_ColorBLACK);
-#ifndef USE_ROSEN_DRAWING
         SkMatrix invertMatrix;
         if (screenTransformMatrix_.invert(&invertMatrix)) {
             canvas_->concat(invertMatrix);
         }
 #else
+        canvas_->Save();
+        canvas_->Clear(Drawing::Color::COLOR_BLACK);
         Drawing::Matrix invertMatrix;
         if (screenTransformMatrix_.Invert(invertMatrix)) {
             canvas_->ConcatMatrix(invertMatrix);
@@ -157,6 +167,7 @@ void RSUniRenderVirtualProcessor::ProcessDisplaySurface(RSDisplayRenderNode& nod
         float mainHeight = static_cast<float>(mainScreenInfo.height);
         // If the width and height not match the main screen, calculate the dstRect.
         if (mainWidth != boundsWidth_ || mainHeight != boundsHeight_) {
+#ifndef USE_ROSEN_DRAWING
             SkRect mirrorDstRect;
             if ((boundsHeight_ / boundsWidth_) < (mainHeight / mainWidth)) {
                 float mirrorScale = boundsHeight_ / mainHeight;
@@ -168,10 +179,27 @@ void RSUniRenderVirtualProcessor::ProcessDisplaySurface(RSDisplayRenderNode& nod
                     boundsWidth_, mirrorScale * mainHeight);
             }
             params.dstRect = mirrorDstRect;
+#else
+            Drawing::Rect mirrorDstRect;
+            if ((boundsHeight_ / boundsWidth_) < (mainHeight / mainWidth)) {
+                float mirrorScale = boundsHeight_ / mainHeight;
+                mirrorDstRect = Drawing::Rect((boundsWidth_ - (mirrorScale * mainWidth)) / 2, 0, // 2 for calc X
+                    mirrorScale * mainWidth, boundsHeight_);
+            } else if ((boundsHeight_ / boundsWidth_) > (mainHeight / mainWidth)) {
+                float mirrorScale = boundsWidth_ / mainWidth;
+                mirrorDstRect = Drawing::Rect(0, (boundsHeight_ - (mirrorScale * mainHeight)) / 2, // 2 for calc Y
+                    boundsWidth_, mirrorScale * mainHeight);
+            }
+            params.dstRect = mirrorDstRect;
+#endif
         }
 
         renderEngine_->DrawDisplayNodeWithParams(*canvas_, node, params);
+#ifndef USE_ROSEN_DRAWING
         canvas_->restore();
+#else
+        canvas_->Restore();
+#endif
     }
 }
 

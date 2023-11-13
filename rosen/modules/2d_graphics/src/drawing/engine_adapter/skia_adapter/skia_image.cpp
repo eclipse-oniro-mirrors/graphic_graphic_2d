@@ -20,6 +20,7 @@
 #endif
 
 #include "skia_bitmap.h"
+#include "skia_pixmap.h"
 #include "skia_data.h"
 #include "skia_image_info.h"
 
@@ -43,6 +44,19 @@ namespace Drawing {
 SkiaImage::SkiaImage() noexcept : skiaImage_(nullptr) {}
 
 SkiaImage::SkiaImage(sk_sp<SkImage> skImg) noexcept : skiaImage_(skImg) {}
+
+std::shared_ptr<Image> SkiaImage::MakeFromRaster(const Pixmap& pixmap,
+    RasterReleaseProc rasterReleaseProc, ReleaseContext releaseContext)
+{
+    auto& skPixmap = pixmap.GetImpl<SkiaPixmap>()->ExportSkiaPixmap();
+    sk_sp<SkImage> skImage = SkImage::MakeFromRaster(skPixmap, rasterReleaseProc, releaseContext);
+    if (skImage == nullptr) {
+        LOGE("SkiaImage::MakeFromRaster failed");
+        return nullptr;
+    }
+    std::shared_ptr<ImageImpl> imageImpl = std::make_shared<SkiaImage>(skImage);
+    return std::make_shared<Image>(imageImpl);
+}
 
 void* SkiaImage::BuildFromBitmap(const Bitmap& bitmap)
 {
@@ -94,6 +108,19 @@ bool SkiaImage::MakeFromEncoded(const std::shared_ptr<Data>& data)
     auto skData = data->GetImpl<SkiaData>()->GetSkData();
     skiaImage_ = SkImage::MakeFromEncoded(skData);
     return (skiaImage_ != nullptr);
+}
+
+bool SkiaImage::BuildSubset(const std::shared_ptr<Image> image, const RectI& rect, GPUContext& gpuContext)
+{
+    if (image == nullptr) {
+        LOGE("SkiaImage::BuildSubset failed, origin Image is invaild");
+        return false;
+    }
+    auto skiaImage = image->GetImpl<SkiaImage>()->GetImage();
+    auto skiaRect = SkIRect::MakeLTRB(rect.GetLeft(), rect.GetTop(), rect.GetRight(), rect.GetBottom());
+    grContext_ = gpuContext.GetImpl<SkiaGPUContext>()->GetGrContext();
+    skiaImage_ = skiaImage->makeSubset(skiaRect, grContext_.get());
+    return (skiaImage_ != nullptr) ? true : false;
 }
 
 bool SkiaImage::BuildFromCompressed(GPUContext& gpuContext, const std::shared_ptr<Data>& data, int width, int height,
@@ -212,6 +239,21 @@ bool SkiaImage::IsValid(GPUContext* context) const
 }
 #endif
 
+bool SkiaImage::AsLegacyBitmap(Bitmap& bitmap) const
+{
+    if (skiaImage_ == nullptr) {
+        LOGE("SkiaImage::IsValid, skiaImage_ is nullptr!");
+        return false;
+    }
+    SkBitmap newBitmap;
+    if (!skiaImage_->asLegacyBitmap(&newBitmap)) {
+        LOGE("SkiaImage::AsLegacyBitmap failed!");
+        return false;
+    }
+    bitmap.GetImpl<SkiaBitmap>()->SetSkBitmap(newBitmap);
+    return true;
+}
+
 int SkiaImage::GetWidth() const
 {
     return (skiaImage_ == nullptr) ? 0 : skiaImage_->width();
@@ -253,6 +295,13 @@ bool SkiaImage::ReadPixels(Bitmap& bitmap, int x, int y)
     const auto& skPixmap = skBitmap.pixmap();
 
     return (skiaImage_ == nullptr) ? false : skiaImage_->readPixels(skPixmap, x, y);
+}
+
+bool SkiaImage::ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+    int srcX, int srcY) const
+{
+    SkImageInfo skImageInfo = SkiaImageInfo::ConvertToSkImageInfo(dstInfo);
+    return skiaImage_->readPixels(skImageInfo, dstPixels, dstRowBytes, srcX, srcY);
 }
 
 bool SkiaImage::IsTextureBacked() const
@@ -299,6 +348,34 @@ std::shared_ptr<Data> SkiaImage::EncodeToData(EncodedImageFormat& encodedImageFo
 bool SkiaImage::IsLazyGenerated() const
 {
     return (skiaImage_ == nullptr) ? false : skiaImage_->isLazyGenerated();
+}
+
+std::shared_ptr<Image> SkiaImage::MakeRasterImage() const
+{
+    if (skiaImage_ == nullptr) {
+        return nullptr;
+    }
+    sk_sp<SkImage> skImage = skiaImage_->makeRasterImage();
+    if (skImage == nullptr) {
+        LOGE("skImage nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return nullptr;
+    }
+    std::shared_ptr<ImageImpl> imageImpl = std::make_shared<SkiaImage>(skImage);
+    return std::make_shared<Image>(imageImpl);
+}
+
+bool SkiaImage::CanPeekPixels() const
+{
+    SkPixmap pixmap;
+    if (skiaImage_ == nullptr || !skiaImage_->peekPixels(&pixmap)) {
+        return false;
+    }
+    return true;
+}
+
+bool SkiaImage::IsOpaque() const
+{
+    return (skiaImage_ == nullptr) ? false : skiaImage_->isOpaque();
 }
 
 const sk_sp<SkImage> SkiaImage::GetImage() const

@@ -42,7 +42,7 @@ public:
 #ifndef USE_ROSEN_DRAWING
         virtual bool InitSurface(GrRecordingContext* grContext);
 #else
-        virtual bool InitSurface(GrContext* grContext);
+        virtual bool InitSurface(Drawing::GPUContext* grContext);
 #endif
         virtual bool Render();
     };
@@ -81,11 +81,17 @@ public:
         return hash_;
     }
 
-    virtual bool IsPartialValid() const
+    virtual bool IsNearEqual(
+        const std::shared_ptr<RSFilter>& other, float threshold = std::numeric_limits<float>::epsilon()) const
     {
         return true;
     }
-    
+
+    virtual bool IsNearZero(float threshold = std::numeric_limits<float>::epsilon()) const
+    {
+        return true;
+    }
+
 protected:
     FilterType type_;
     uint32_t hash_ = 0;

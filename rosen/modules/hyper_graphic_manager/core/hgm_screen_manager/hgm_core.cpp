@@ -22,9 +22,18 @@
 #include <unistd.h>
 
 #include "hgm_log.h"
+#include "vsync_generator.h"
 #include "platform/common/rs_system_properties.h"
+#include "parameters.h"
 
 namespace OHOS::Rosen {
+static std::map<uint32_t, int64_t> IDEAL_PERIOD = {
+    { 120, 8333333 },
+    { 90, 11111111 },
+    { 72, 13888888 },
+    { 60, 16666666 }
+};
+
 HgmCore& HgmCore::Instance()
 {
     static HgmCore instance;
@@ -72,6 +81,8 @@ bool HgmCore::Init()
         customFrameRateMode_ = static_cast<RefreshRateMode>(newRateMode);
     }
 
+    SetLtpoConfig();
+
     isInit_ = true;
     HGM_LOGI("HgmCore initialization success!!!");
     return isInit_;
@@ -103,6 +114,42 @@ int32_t HgmCore::InitXmlConfig()
     }
 
     return EXEC_SUCCESS;
+}
+
+void HgmCore::SetLtpoConfig()
+{
+    if (mParsedConfigData_->ltpoConfig_.find("switch") != mParsedConfigData_->ltpoConfig_.end()) {
+        ltpoEnabled_ = std::stoi(mParsedConfigData_->ltpoConfig_["switch"]);
+    } else {
+        HGM_LOGW("HgmCore failed to find switch strategy for LTPO");
+    }
+
+    if (mParsedConfigData_->ltpoConfig_.find("maxTE") != mParsedConfigData_->ltpoConfig_.end()) {
+        maxTE_ = std::stoi(mParsedConfigData_->ltpoConfig_["maxTE"]);
+    } else {
+        HGM_LOGW("HgmCore failed to find TE strategy for LTPO");
+    }
+
+    if (mParsedConfigData_->ltpoConfig_.find("alignRate") != mParsedConfigData_->ltpoConfig_.end()) {
+        alignRate_ = std::stoi(mParsedConfigData_->ltpoConfig_["alignRate"]);
+    } else {
+        HGM_LOGW("HgmCore failed to find alignRate strategy for LTPO");
+    }
+
+    if (mParsedConfigData_->ltpoConfig_.find("pipelineOffsetPulseNum") != mParsedConfigData_->ltpoConfig_.end()) {
+        pipelineOffsetPulseNum_ = std::stoi(mParsedConfigData_->ltpoConfig_["pipelineOffsetPulseNum"]);
+        CreateVSyncGenerator()->SetVSyncPhaseByPulseNum(pipelineOffsetPulseNum_);
+    } else {
+        HGM_LOGW("HgmCore failed to find pipelineOffset strategy for LTPO");
+    }
+
+    HGM_LOGI("HgmCore LTPO strategy ltpoEnabled: %{public}d, maxTE: %{public}d, alignRate: %{public}d, " \
+        "pipelineOffsetPulseNum: %{public}d", ltpoEnabled_, maxTE_, alignRate_, pipelineOffsetPulseNum_);
+}
+
+void HgmCore::RegisterRefreshRateModeChangeCallback(const RefreshRateModeChangeCallback& callback)
+{
+    refreshRateModeChangeCallback_ = callback;
 }
 
 int32_t HgmCore::SetCustomRateMode(RefreshRateMode mode)
@@ -191,7 +238,7 @@ int32_t HgmCore::SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate
         HGM_LOGW("HgmCore refuse an illegal framerate: %{public}d", rate);
         return HGM_ERROR;
     }
-    sceneId = screenSceneSet_.size();
+    sceneId = static_cast<int32_t>(screenSceneSet_.size());
     int32_t modeToSwitch = screen->SetActiveRefreshRate(sceneId, static_cast<uint32_t>(rate));
     if (modeToSwitch < 0) {
         return modeToSwitch;
@@ -229,6 +276,9 @@ int32_t HgmCore::SetRefreshRateMode(RefreshRateMode refreshRateMode)
         return HGM_ERROR;
     }
 
+    if (ltpoEnabled_ && refreshRateModeChangeCallback_) {
+        refreshRateModeChangeCallback_(refreshRateMode);
+    }
     return EXEC_SUCCESS;
 }
 
@@ -407,5 +457,13 @@ sptr<HgmScreen> HgmCore::GetActiveScreen() const
         return nullptr;
     }
     return GetScreen(activeScreenId_);
+}
+
+int64_t HgmCore::GetIdealPeriod(uint32_t rate)
+{
+    if (IDEAL_PERIOD.count(rate)) {
+        return IDEAL_PERIOD[rate];
+    }
+    return 0;
 }
 } // namespace OHOS::Rosen

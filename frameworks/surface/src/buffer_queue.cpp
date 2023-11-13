@@ -328,7 +328,7 @@ GSError BufferQueue::ReuseBuffer(const BufferRequestConfig &config, sptr<BufferE
     }
 
     ScopedBytrace bufferName(name_ + ":" + std::to_string(retval.sequence));
-    if (isLocalRender_) {
+    if (IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP) && isLocalRender_) {
         static SyncFenceTracker releaseFenceThread("Release Fence");
         releaseFenceThread.TrackFence(retval.fence);
     }
@@ -480,7 +480,7 @@ GSError BufferQueue::DoFlushBuffer(uint32_t sequence, const sptr<BufferExtraData
 
     bufferQueueCache_[sequence].timestamp = config.timestamp;
 
-    if (isLocalRender_) {
+    if (IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP) && isLocalRender_) {
         static SyncFenceTracker acquireFenceThread("Acquire Fence");
         acquireFenceThread.TrackFence(fence);
     }
@@ -599,6 +599,13 @@ GSError BufferQueue::AllocBuffer(sptr<SurfaceBuffer> &buffer,
         .config = config,
         .fence = SyncFence::INVALID_FENCE,
     };
+
+    if (config.usage & BUFFER_USAGE_PROTECTED) {
+        BLOGD("handle usage is BUFFER_USAGE_PROTECTED, do not Map/UnMap");
+        bufferQueueCache_[sequence] = ele;
+        buffer = bufferImpl;
+        return ret;
+    }
 
     ret = bufferImpl->Map();
     if (ret == GSERROR_OK) {

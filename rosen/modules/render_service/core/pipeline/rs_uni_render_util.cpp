@@ -427,6 +427,20 @@ int RSUniRenderUtil::GetRotationFromMatrix(SkMatrix matrix)
     auto iter = supportedDegrees.find(rAngle);
     return iter != supportedDegrees.end() ? iter->second : 0;
 }
+
+int RSUniRenderUtil::GetRotationDegreeFromMatrix(SkMatrix matrix)
+{
+    float value[9];
+    matrix.get9(value);
+    return static_cast<int>(-round(atan2(value[SkMatrix::kMSkewX], value[SkMatrix::kMScaleX]) * (180 / PI)));
+}
+
+bool RSUniRenderUtil::Is3DRotation(SkMatrix matrix)
+{
+    return !ROSEN_EQ(matrix.getSkewX(), 0.f) || matrix.getScaleX() < 0 ||
+        !ROSEN_EQ(matrix.getSkewY(), 0.f) || matrix.getScaleY() < 0;
+}
+
 #else
 int RSUniRenderUtil::GetRotationFromMatrix(Drawing::Matrix matrix)
 {
@@ -442,6 +456,23 @@ int RSUniRenderUtil::GetRotationFromMatrix(Drawing::Matrix matrix)
     auto iter = supportedDegrees.find(rAngle);
     return iter != supportedDegrees.end() ? iter->second : 0;
 }
+
+int RSUniRenderUtil::GetRotationDegreeFromMatrix(Drawing::Matrix matrix)
+{
+    Drawing::Matrix::Buffer value;
+    matrix.GetAll(value);
+    return static_cast<int>(-round(atan2(value[Drawing::Matrix::Index::SKEW_X],
+        value[Drawing::Matrix::Index::SCALE_X]) * (180 / PI)));
+}
+
+bool RSUniRenderUtil::Is3DRotation(Drawing::Matrix matrix)
+{
+    return !ROSEN_EQ(matrix.Get(Drawing::Matrix::Index::SKEW_X), 0.f) ||
+        matrix.Get(Drawing::Matrix::Index::SCALE_X) < 0 ||
+        !ROSEN_EQ(matrix.Get(Drawing::Matrix::Index::SKEW_Y), 0.f) ||
+        matrix.Get(Drawing::Matrix::Index::SCALE_Y) < 0;
+}
+
 #endif
 
 void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNode>& displayNode,
@@ -453,8 +484,7 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
         return;
     }
     bool isRotation = displayNode->IsRotationChanged();
-    bool rotationCache = RSSystemProperties.GetCacheEnabledForRotation();
-    bool isNeedAssignToSubThread = false;
+    bool rotationCache = RSSystemProperties::GetCacheEnabledForRotation();
     bool isFocusNodeFound = false;
     uint64_t realFocusNodeId = 0;
     std::string logInfo = "";
@@ -531,6 +561,10 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
                 AssignMainThreadNode(mainThreadNodes, node);
             }
         } else { // PC or TABLET
+            if (node->GetId() == realFocusNodeId) {
+                AssignMainThreadNode(mainThreadNodes, node);
+                continue;
+            }
             if (node->QuerySubAssignable(isRotation)) {
                 AssignSubThreadNode(subThreadNodes, node, deviceType, realFocusNodeId);
             } else {

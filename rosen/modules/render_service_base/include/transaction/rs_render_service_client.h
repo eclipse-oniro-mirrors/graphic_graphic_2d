@@ -54,7 +54,7 @@ using ScreenChangeCallback = std::function<void(ScreenId, ScreenEvent)>;
 using BufferAvailableCallback = std::function<void()>;
 using BufferClearCallback = std::function<void()>;
 using OcclusionChangeCallback = std::function<void(std::shared_ptr<RSOcclusionData>)>;
-using SurfaceOcclusionChangeCallback = std::function<void(bool)>;
+using SurfaceOcclusionChangeCallback = std::function<void(float)>;
 using HgmConfigChangeCallback = std::function<void(std::shared_ptr<RSHgmConfigData>)>;
 
 struct DataBaseRs {
@@ -103,7 +103,8 @@ public:
 #endif
     std::shared_ptr<VSyncReceiver> CreateVSyncReceiver(
         const std::string& name,
-        const std::shared_ptr<OHOS::AppExecFwk::EventHandler> &looper = nullptr);
+        const std::shared_ptr<OHOS::AppExecFwk::EventHandler> &looper = nullptr,
+        uint64_t id = 0);
 
     bool TakeSurfaceCapture(
         NodeId id, std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX, float scaleY,
@@ -113,6 +114,7 @@ public:
         uint64_t focusNodeId);
 
     ScreenId GetDefaultScreenId();
+    ScreenId GetActiveScreenId();
 
     std::vector<ScreenId> GetAllScreenIds();
 
@@ -137,6 +139,8 @@ public:
     void SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate);
 
     void SetRefreshRateMode(int32_t refreshRateMode);
+
+    void SyncFrameRateRange(const FrameRateRange& range);
 
     uint32_t GetScreenCurrentRefreshRate(ScreenId id);
 
@@ -186,6 +190,8 @@ public:
 
     int32_t SetScreenGamutMap(ScreenId id, ScreenGamutMap mode);
 
+    int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation);
+
     int32_t GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode);
 
     int32_t GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability);
@@ -204,7 +210,8 @@ public:
 
     int32_t RegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback);
 
-    int32_t RegisterSurfaceOcclusionChangeCallback(NodeId id, const SurfaceOcclusionChangeCallback& callback);
+    int32_t RegisterSurfaceOcclusionChangeCallback(
+        NodeId id, const SurfaceOcclusionChangeCallback& callback, std::vector<float>& partitionPoints);
 
     int32_t UnRegisterSurfaceOcclusionChangeCallback(NodeId id);
 
