@@ -403,6 +403,7 @@ void RSNode::SetProperty(RSModifierType modifierType, T value)
     }
     auto property = std::make_shared<PropertyName>(value);
     auto propertyModifier = std::make_shared<ModifierName>(property);
+    ROSEN_LOGI("RSNode::SetProperty modifier");
     propertyModifiers_.emplace(modifierType, propertyModifier);
     AddModifier(propertyModifier);
 }

@@ -2768,6 +2768,7 @@ void RSMainThread::HandleOnTrim(Memory::SystemMemoryLevel level)
 #endif
                 switch (level) {
                     case Memory::SystemMemoryLevel::MEMORY_LEVEL_CRITICAL:
+                        RS_LOGD("Enter level:%{public}d, OnTrim Success", level);
                         MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(grContext);
                         break;
                     default:
