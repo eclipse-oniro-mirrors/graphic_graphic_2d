@@ -854,7 +854,11 @@ void RSRenderNode::ProcessTransitionAfterChildren(RSPaintFilterCanvas& canvas)
 
 void RSRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 {
-    RSRenderNode::ProcessTransitionAfterChildren(canvas);
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        IterateOnDrawableRange(RSPropertyDrawableSlot::RESTORE_ALL, RSPropertyDrawableSlot::RESTORE_ALL, canvas);
+        return;
+    }
+    canvas.RestoreStatus(renderNodeSaveCount_);
 }
 
 void RSRenderNode::AddModifier(const std::shared_ptr<RSRenderModifier>& modifier)

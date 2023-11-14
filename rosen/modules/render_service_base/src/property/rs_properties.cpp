@@ -46,7 +46,7 @@ constexpr float SPHERIZE_VALID_EPSILON = 0.001f; // used to judge if spherize va
 
 using ResetPropertyFunc = void (*)(RSProperties* prop);
 constexpr uint8_t BORDER_TYPE_NONE = (uint32_t)BorderStyle::NONE;
-const std::vector<ResetPropertyFunc> g_propertyResetterLUT = {
+const std::array<ResetPropertyFunc, static_cast<int>(RSModifierType::CUSTOM)> g_propertyResetterLUT = {
     nullptr,                                                             // INVALID,                  0
     nullptr,                                                             // BOUNDS,                   1
     nullptr,                                                             // FRAME,                    2
@@ -121,7 +121,6 @@ const std::vector<ResetPropertyFunc> g_propertyResetterLUT = {
         prop->SetOuterBorderStyle(BORDER_TYPE_NONE);
     },                                                                   // OUTER_BORDER_STYLE,       69
     [](RSProperties* prop) { prop->SetOuterBorderRadius(0.f); },         // OUTER_BORDER_RADIUS,      70
-    nullptr,
 };
 } // namespace
 
