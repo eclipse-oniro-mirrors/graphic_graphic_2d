@@ -318,8 +318,10 @@ HWTEST_F(NativeWindowTest, CreateNativeWindowBuffer002, Function | MediumTest | 
 HWTEST_F(NativeWindowTest, CreateNativeWindowBuffer003, Function | MediumTest | Level2)
 {
     OH_NativeBuffer* nativeBuffer = sBuffer->SurfaceBufferToNativeBuffer();
-    nativeWindowBuffer = OH_NativeWindow_CreateNativeWindowBufferFromNativeBuffer(nativeBuffer);
-    ASSERT_NE(nativeWindowBuffer, nullptr);
+    ASSERT_NE(nativeBuffer, nullptr);
+    NativeWindowBuffer* nwBuffer = OH_NativeWindow_CreateNativeWindowBufferFromNativeBuffer(nativeBuffer);
+    ASSERT_NE(nwBuffer, nullptr);
+    OH_NativeWindow_DestroyNativeWindowBuffer(nwBuffer);
 }
 
 /*
@@ -462,16 +464,65 @@ HWTEST_F(NativeWindowTest, FlushBuffer003, Function | MediumTest | Level2)
 * Type: Function
 * Rank: Important(2)
 * EnvConditions: N/A
-* CaseDescription: 1. call OH_NativeWindow_GetLastFlushedBuffer
-*                  2. check ret
+* CaseDescription: 1. call OH_NativeWindow_NativeWindowRequestBuffer
+*                  2. call OH_NativeWindow_NativeWindowFlushBuffer
+*                  3. call OH_NativeWindow_GetLastFlushedBuffer
+*                  4. check ret
  */
 HWTEST_F(NativeWindowTest, GetLastFlushedBuffer001, Function | MediumTest | Level2)
 {
+    NativeWindowBuffer* nativeWindowBuffer = nullptr;
+    int fenceFd = -1;
+    int32_t ret = OH_NativeWindow_NativeWindowRequestBuffer(nativeWindow, &nativeWindowBuffer, &fenceFd);
+    ASSERT_EQ(ret, GSERROR_OK);
+
+    struct Region *region = new Region();
+    struct Region::Rect *rect = new Region::Rect();
+    rect->x = 0x100;
+    rect->y = 0x100;
+    rect->w = 0x100;
+    rect->h = 0x100;
+    region->rects = rect;
+    ret = OH_NativeWindow_NativeWindowFlushBuffer(nativeWindow, nativeWindowBuffer, fenceFd, *region);
+    ASSERT_EQ(ret, GSERROR_OK);
     NativeWindowBuffer* lastFlushedBuffer = nullptr;
     ASSERT_EQ(OH_NativeWindow_GetLastFlushedBuffer(nativeWindow, lastFlushedBuffer), OHOS::GSERROR_OK);
-    ASSERT_EQ(lastFlushedBuffer, nativeWindowBuffer);
 }
 
+/*
+* Function: OH_NativeWindow_GetLastFlushedBuffer
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call NativeWindowHandleOpt set BUFFER_USAGE_PROTECTED
+*                  2. call OH_NativeWindow_NativeWindowRequestBuffer
+*                  3. call OH_NativeWindow_NativeWindowFlushBuffer
+*                  4. call OH_NativeWindow_GetLastFlushedBuffer
+*                  5. check ret
+ */
+HWTEST_F(NativeWindowTest, GetLastFlushedBuffer002, Function | MediumTest | Level2)
+{
+    int code = SET_USAGE;
+    uint64_t usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA | BUFFER_USAGE_PROTECTED;
+    ASSERT_EQ(NativeWindowHandleOpt(nativeWindow, code, usage), OHOS::GSERROR_OK);
+
+    NativeWindowBuffer* nativeWindowBuffer = nullptr;
+    int fenceFd = -1;
+    int32_t ret = OH_NativeWindow_NativeWindowRequestBuffer(nativeWindow, &nativeWindowBuffer, &fenceFd);
+    ASSERT_EQ(ret, GSERROR_OK);
+
+    struct Region *region = new Region();
+    struct Region::Rect *rect = new Region::Rect();
+    rect->x = 0x100;
+    rect->y = 0x100;
+    rect->w = 0x100;
+    rect->h = 0x100;
+    region->rects = rect;
+    ret = OH_NativeWindow_NativeWindowFlushBuffer(nativeWindow, nativeWindowBuffer, fenceFd, *region);
+    ASSERT_EQ(ret, GSERROR_OK);
+    NativeWindowBuffer* lastFlushedBuffer = nullptr;
+    ASSERT_EQ(OH_NativeWindow_GetLastFlushedBuffer(nativeWindow, lastFlushedBuffer), OHOS::GSERROR_NO_PERMISSION);
+}
 /*
 * Function: OH_NativeWindow_NativeWindowAbortBuffer
 * Type: Function

@@ -222,5 +222,9 @@ int32_t OH_NativeBuffer_SetColorSpace(OH_NativeBuffer *buffer, OH_NativeBuffer_C
     if (MetadataManager::ConvertMetadataToVec(NATIVE_COLORSPACE_TO_HDI_MAP[colorSpace], setData) != GSERROR_OK) {
         return OHOS::GSERROR_INTERNAL;
     }
-    return sbuffer->SetMetadata(BufferHandleAttrKey::ATTRKEY_COLORSPACE_TYPE, setData);
+    GSError ret = sbuffer->SetMetadata(BufferHandleAttrKey::ATTRKEY_COLORSPACE_TYPE, setData);
+    if (GSErrorStr(ret) == "<500 api call failed>with low error <Not supported>") {
+        return OHOS::GSERROR_NOT_SUPPORT;
+    }
+    return ret;
 }

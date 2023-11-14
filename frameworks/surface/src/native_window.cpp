@@ -82,7 +82,9 @@ OHNativeWindowBuffer* CreateNativeWindowBufferFromNativeBuffer(OH_NativeBuffer* 
         return nullptr;
     }
     OHNativeWindowBuffer *nwBuffer = new OHNativeWindowBuffer();
-    nwBuffer->sfbuffer = *reinterpret_cast<OHOS::sptr<OHOS::SurfaceBuffer> *>(nativeBuffer);
+    OHOS::sptr<OHOS::SurfaceBuffer> surfaceBuffer(reinterpret_cast<OHOS::SurfaceBuffer *>(nativeBuffer));
+    nwBuffer->sfbuffer = surfaceBuffer;
+
     NativeObjectReference(nwBuffer);
     return nwBuffer;
 }
@@ -179,11 +181,17 @@ int32_t GetLastFlushedBuffer(OHNativeWindow *window, OHNativeWindowBuffer *buffe
         BLOGE("parameter error, please check input parameter");
         return OHOS::GSERROR_INVALID_ARGUMENTS;
     }
+
     if (window->bufferCache_.find(window->lastBufferSeqNum) != window->bufferCache_.end()) {
+        if (window->bufferCache_[window->lastBufferSeqNum]->sfbuffer->GetUsage() & BUFFER_USAGE_PROTECTED) {
+            BLOGE("Not allowed to obtain protect surface buffer");
+            return OHOS::GSERROR_NO_PERMISSION;
+        }
         buffer = window->bufferCache_[window->lastBufferSeqNum];
+        return OHOS::GSERROR_OK;
     }
 
-    return buffer == nullptr ? OHOS::GSERROR_NO_BUFFER : OHOS::GSERROR_OK;
+    return OHOS::GSERROR_NO_BUFFER;
 }
 
 int32_t NativeWindowCancelBuffer(OHNativeWindow *window, OHNativeWindowBuffer *buffer)
