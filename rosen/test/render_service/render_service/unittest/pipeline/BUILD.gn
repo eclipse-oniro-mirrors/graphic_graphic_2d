@@ -561,6 +561,7 @@ ohos_unittest("RSRoundCornerDisplayTest") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "sensor:sensor_interface_native",
   ]
   defines = []
   defines += gpu_defines
