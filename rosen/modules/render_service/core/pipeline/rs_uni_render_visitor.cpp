@@ -4383,9 +4383,13 @@ void RSUniRenderVisitor::endCapture() const
 void RSUniRenderVisitor::ScaleMirrorIfNeed(RSDisplayRenderNode& node)
 {
     auto screenManager = CreateOrGetScreenManager();
-    auto mainScreenInfo = screenManager->QueryScreenInfo(screenManager->GetDefaultScreenId());
+    auto mirrorNode = node.GetMirrorSource().lock();
+    auto mainScreenInfo = screenManager->QueryScreenInfo(mirrorNode->GetScreenId());
     float mainWidth = static_cast<float>(mainScreenInfo.width);
     float mainHeight = static_cast<float>(mainScreenInfo.height);
+    if (RSSystemProperties::IsFoldScreenFlag() && mirrorNode->GetScreenId() == 0) {
+        std::swap(mainWidth, mainHeight);
+    }
     float boundsWidth = 0.0f;
     float boundsHeight = 0.0f;
     if (node.getFirstTimeScreenRotation() == ScreenRotation::ROTATION_90 ||

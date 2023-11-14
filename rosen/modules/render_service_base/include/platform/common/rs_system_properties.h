@@ -161,6 +161,7 @@ public:
     static bool GetUIFirstEnabled();
     static bool GetDebugTraceEnabled();
     static bool FindNodeInTargetList(std::string node);
+    static bool IsFoldScreenFlag();
     static bool GetCacheCmdEnabled();
     static bool GetASTCEnabled();
     static bool GetImageGpuResourceCacheEnable(int width, int height);

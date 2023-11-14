@@ -214,6 +214,11 @@ bool RSSystemProperties::FindNodeInTargetList(std::string node)
     return false;
 }
 
+bool RSSystemProperties::IsFoldScreenFlag()
+{
+    return false;
+}
+
 int RSSystemProperties::GetFilterCacheSizeThreshold()
 {
     return 0;
