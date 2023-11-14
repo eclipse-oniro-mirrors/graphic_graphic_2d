@@ -1361,6 +1361,9 @@ void RSRenderNode::DrawCacheSurface(RSPaintFilterCanvas& canvas, uint32_t thread
         return;
     }
     auto samplingOptions = SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone);
+    if (RSSystemProperties::GetRecordingEnabled()) {
+        cacheImage = cacheImage->makeRasterImage();
+    }
     if ((cacheType == CacheType::ANIMATE_PROPERTY && renderProperties_.IsShadowValid()) || isUIFirst) {
         canvas.drawImage(cacheImage, -shadowRectOffsetX_ * scaleX, -shadowRectOffsetY_ * scaleY, samplingOptions);
     } else {
@@ -1405,9 +1408,6 @@ sk_sp<SkImage> RSRenderNode::GetCompletedImage(RSPaintFilterCanvas& canvas, uint
     }
     auto cacheImage = SkImage::MakeFromTexture(canvas.recordingContext(), backendTexture, origin,
         completeImage->colorType(), completeImage->alphaType(), nullptr);
-    if (RSSystemProperties::GetRecordingEnabled()) {
-        cacheImage = cacheImage->makeRasterImage();
-    }
     return cacheImage;
 #else
     return completeImage;
