@@ -2406,6 +2406,7 @@ void RSUniRenderVisitor::DrawSurfaceLayer(const std::shared_ptr<RSDisplayRenderN
 #if defined(RS_ENABLE_GL)
     auto subThreadManager = RSSubThreadManager::Instance();
     subThreadManager->StartFilterThread(renderEngine_->GetRenderContext().get());
+    subThreadManager->StartColorPickerThread(renderEngine_->GetRenderContext().get());
     subThreadManager->SubmitSubThreadTask(displayNode, subThreadNodes);
 #endif
 }
