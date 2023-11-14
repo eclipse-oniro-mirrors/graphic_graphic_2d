@@ -121,6 +121,5 @@ class RsMessageBus : RsNotCopyable {
         std::multimap<std::string, RsAny> m_map;
 
         std::mutex m_map_mutex;
-
 };
 #endif
