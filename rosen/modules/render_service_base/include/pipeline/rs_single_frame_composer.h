@@ -38,7 +38,7 @@ public:
     static bool IsShouldSingleFrameComposer();
 
 private:
-    bool FindSingleFrameModifier(std::list<std::shared_ptr<RSRenderModifier>>& modifierList);
+    bool FindSingleFrameModifier(const std::list<std::shared_ptr<RSRenderModifier>>& modifierList);
     void EraseSingleFrameModifier(std::list<std::shared_ptr<RSRenderModifier>>& modifierList);
     void SingleFrameModifierAdd(std::list<std::shared_ptr<RSRenderModifier>>& singleFrameModifierList,
         std::list<std::shared_ptr<RSRenderModifier>>& modifierList);

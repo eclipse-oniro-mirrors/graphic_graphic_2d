@@ -19,7 +19,7 @@ namespace OHOS {
 namespace Rosen {
 std::map<std::thread::id, uint64_t> RSSingleFrameComposer::ipcThreadIdMap_;
 std::mutex RSSingleFrameComposer::ipcThreadIdMapMutex_;
-bool RSSingleFrameComposer::FindSingleFrameModifier(std::list<std::shared_ptr<RSRenderModifier>>& modifierList)
+bool RSSingleFrameComposer::FindSingleFrameModifier(const std::list<std::shared_ptr<RSRenderModifier>>& modifierList)
 {
     for (auto iter = modifierList.begin(); iter != modifierList.end(); ++iter) {
         if ((*iter)->GetSingleFrameModifier()) {
