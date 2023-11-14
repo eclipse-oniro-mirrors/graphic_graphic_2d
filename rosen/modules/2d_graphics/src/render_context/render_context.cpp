@@ -441,6 +441,8 @@ std::shared_ptr<Drawing::Surface> RenderContext::AcquireSurface(int width, int h
             break;
     }
 
+    RSTagTracker tagTracker(GetDrGPUContext(), RSTagTracker::TAGTYPE::TAG_ACQUIRE_SURFACE);
+
     struct Drawing::FrameBuffer bufferInfo;
     bufferInfo.width = width;
     bufferInfo.height = height;
