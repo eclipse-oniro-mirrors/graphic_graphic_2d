@@ -507,6 +507,12 @@ bool RSSystemProperties::FindNodeInTargetList(std::string node)
     return res;
 }
 
+bool RSSystemProperties::IsFoldScreenFlag()
+{
+    static bool isFoldScreenFlag = system::GetParameter("const.window.foldscreen.type", "") != "";
+    return isFoldScreenFlag;
+}
+
 bool RSSystemProperties::GetCacheCmdEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.cacheCmd.enabled", "1");
