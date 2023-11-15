@@ -143,7 +143,7 @@ int MeasurerImpl::Measure(CharGroups &cgs)
     SeekScript(runs);
     SeekTypeface(runs);
     if (auto ret = Shape(cgs, runs, boundaries_); ret) {
-        LOGEX_FUNC_LINE(ERROR) << "Shape failed";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "Shape failed";
         return ret;
     }
 
@@ -166,7 +166,7 @@ void MeasurerImpl::SeekTypeface(std::list<struct MeasuringRun> &runs)
     LOGSCOPED(sl, LOGEX_FUNC_LINE_DEBUG(), "typeface");
     for (auto runsit = runs.begin(); runsit != runs.end(); runsit++) {
         if (runsit->end > text_.size()) {
-            LOGEX_FUNC_LINE(ERROR) << "runsit->end overflow of text_";
+            LOGEX_FUNC_LINE_DEBUG(ERROR) << "runsit->end overflow of text_";
             break;
         }
         size_t utf16Index = static_cast<size_t>(runsit->start);
@@ -216,7 +216,7 @@ void MeasurerImpl::SeekScript(std::list<struct MeasuringRun> &runs)
     LOGSCOPED(sl, LOGEX_FUNC_LINE_DEBUG(), "script");
     auto icuGetUnicodeFuncs = hb_unicode_funcs_create(hb_icu_get_unicode_funcs());
     if (icuGetUnicodeFuncs == nullptr) {
-        LOGEX_FUNC_LINE(ERROR) << "hb_unicode_funcs_create return nullptr";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "hb_unicode_funcs_create return nullptr";
         throw TEXGINE_EXCEPTION(API_FAILED);
     }
 
@@ -239,7 +239,7 @@ void MeasurerImpl::DoSeekScript(std::list<struct MeasuringRun> &runs, hb_unicode
         auto &script = it->script;
         while (utf16Index < it->end) {
             if (utf16Index >= text_.size()) {
-                LOGEX_FUNC_LINE(ERROR) << "u16index overflow of text_";
+                LOGEX_FUNC_LINE_DEBUG(ERROR) << "u16index overflow of text_";
                 throw TEXGINE_EXCEPTION(ERROR_STATUS);
             }
 
@@ -271,7 +271,7 @@ void MeasurerImpl::DoSeekScript(std::list<struct MeasuringRun> &runs, hb_unicode
         }
 
         if (it->end <= it->start) {
-            LOGEX_FUNC_LINE(ERROR) << "run have error range";
+            LOGEX_FUNC_LINE_DEBUG(ERROR) << "run have error range";
             throw TEXGINE_EXCEPTION(ERROR_STATUS);
         }
 
@@ -289,7 +289,7 @@ int MeasurerImpl::Shape(CharGroups &cgs, std::list<struct MeasuringRun> &runs, s
     size_t index = 0;
     for (auto &run : runs) {
         if (run.end <= run.start) {
-            LOGEX_FUNC_LINE(ERROR) << "run have error range";
+            LOGEX_FUNC_LINE_DEBUG(ERROR) << "run have error range";
             throw TEXGINE_EXCEPTION(ERROR_STATUS);
         }
 
@@ -318,25 +318,25 @@ int MeasurerImpl::DoShape(CharGroups &cgs, MeasuringRun &run, size_t &index)
 {
     auto typeface = run.typeface;
     if (typeface == nullptr) {
-        LOGEX_FUNC_LINE(ERROR) << "there is no typeface";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "there is no typeface";
         return FAILED;
     }
 
     auto hbuffer = hb_buffer_create();
     if (!hbuffer) {
-        LOGEX_FUNC_LINE(ERROR) << "hbuffer is nullptr";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "hbuffer is nullptr";
         return FAILED;
     }
 
     if (text_.empty()) {
-        LOGEX_FUNC_LINE(ERROR) << "text is nullptr";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "text is nullptr";
         return FAILED;
     }
     hb_buffer_add_utf16(hbuffer, text_.data(), INVALID_TEXT_LENGTH, run.start, run.end - run.start);
     hb_buffer_set_direction(hbuffer, rtl_ ? HB_DIRECTION_RTL : HB_DIRECTION_LTR);
     auto icuGetUnicodeFuncs = hb_unicode_funcs_create(hb_icu_get_unicode_funcs());
     if (!icuGetUnicodeFuncs) {
-        LOGEX_FUNC_LINE(ERROR) << "icuGetUnicodeFuncs is nullptr";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "icuGetUnicodeFuncs is nullptr";
         HbDestroy(hbuffer, nullptr, nullptr, nullptr);
         return FAILED;
     }
@@ -347,14 +347,14 @@ int MeasurerImpl::DoShape(CharGroups &cgs, MeasuringRun &run, size_t &index)
 
     auto hface = hb_face_create_for_tables(HbFaceReferenceTableTypeface, typeface->Get()->GetTypeface().get(), 0);
     if (!hface) {
-        LOGEX_FUNC_LINE(ERROR) << "hface is nullptr";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "hface is nullptr";
         HbDestroy(hbuffer, nullptr, nullptr, icuGetUnicodeFuncs);
         return FAILED;
     }
 
     auto hfont = hb_font_create(hface);
     if (!hfont) {
-        LOGEX_FUNC_LINE(ERROR) << "hfont is nullptr";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "hfont is nullptr";
         HbDestroy(hbuffer, nullptr, hface, icuGetUnicodeFuncs);
         return FAILED;
     }
@@ -398,20 +398,20 @@ int MeasurerImpl::GetGlyphs(CharGroups &cgs, MeasuringRun &run, size_t &index, h
     uint32_t ng = 0u;
     auto hginfos = hb_buffer_get_glyph_infos(hbuffer, &ng);
     if (!hginfos) {
-        LOGEX_FUNC_LINE(ERROR) << "hginfos is nullptr";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "hginfos is nullptr";
         return FAILED;
     }
 
     auto hgpositions = hb_buffer_get_glyph_positions(hbuffer, nullptr);
     if (!hgpositions) {
-        LOGEX_FUNC_LINE(ERROR) << "hgpositions is nullptr";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "hgpositions is nullptr";
         return FAILED;
     }
 
     LOGEX_FUNC_LINE_DEBUG() << "ng: " << ng;
     auto upe = typeface->Get()->GetUnitsPerEm();
     if (!upe) {
-        LOGEX_FUNC_LINE(ERROR) << "upe is 0";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "upe is 0";
         return FAILED;
     }
 
@@ -456,7 +456,7 @@ void MeasurerImpl::DoCgsByCluster(std::map<uint32_t, TextEngine::CharGroup> &cgs
 
         auto end = (it--)->first;
         if (start > text_.size() || end > text_.size()) {
-            LOGEX_FUNC_LINE(ERROR) << "cgsByCluster is not align with text_";
+            LOGEX_FUNC_LINE_DEBUG(ERROR) << "cgsByCluster is not align with text_";
             throw TEXGINE_EXCEPTION(ERROR_STATUS);
         }
 

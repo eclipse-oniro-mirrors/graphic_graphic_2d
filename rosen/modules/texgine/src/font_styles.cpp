@@ -49,12 +49,12 @@ TexgineFontStyle::Slant ToTexgineSlant(const FontStyles::Slant slant)
 FontStyles::FontStyles(FontWeight weight, FontStyle style)
 {
     if (!(0 <= static_cast<int>(weight) && weight < FontWeight::MAX)) {
-        LOGEX_FUNC_LINE(ERROR) << "FontWeight Error!";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "FontWeight Error!";
         throw TEXGINE_EXCEPTION(INVALID_ARGUMENT);
     }
 
     if (!(0 <= static_cast<int>(style) && style < FontStyle::MAX)) {
-        LOGEX_FUNC_LINE(ERROR) << "FontStyle Error!";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "FontStyle Error!";
         throw TEXGINE_EXCEPTION(INVALID_ARGUMENT);
     }
 
@@ -65,17 +65,17 @@ FontStyles::FontStyles(FontWeight weight, FontStyle style)
 FontStyles::FontStyles(FontStyles::Weight weight, FontStyles::Width width, FontStyles::Slant slant)
 {
     if (!(0 <= static_cast<int>(weight) && weight < Weight::MAX)) {
-        LOGEX_FUNC_LINE(ERROR) << "Weight Error!";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "Weight Error!";
         throw TEXGINE_EXCEPTION(INVALID_ARGUMENT);
     }
 
     if (!(0 <= static_cast<int>(width) && width < Width::MAX)) {
-        LOGEX_FUNC_LINE(ERROR) << "Width Error!";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "Width Error!";
         throw TEXGINE_EXCEPTION(INVALID_ARGUMENT);
     }
 
     if (!(0 <= static_cast<int>(slant) && slant < FontStyles::Slant::MAX)) {
-        LOGEX_FUNC_LINE(ERROR) << "Slant Error!";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "Slant Error!";
         throw TEXGINE_EXCEPTION(INVALID_ARGUMENT);
     }
 

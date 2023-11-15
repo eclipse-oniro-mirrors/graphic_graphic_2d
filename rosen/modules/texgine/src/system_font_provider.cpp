@@ -40,7 +40,7 @@ std::shared_ptr<VariantFontStyleSet> SystemFontProvider::MatchFamily(const std::
 {
     auto fontMgr = TexgineFontManager::RefDefault();
     if (fontMgr == nullptr || fontMgr->GetFontMgr() == nullptr) {
-        LOGEX_FUNC_LINE(ERROR) << "fontMgr is nullptr!";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "fontMgr is nullptr!";
         return nullptr;
     }
 

@@ -267,10 +267,10 @@ void TypographyImpl::Layout(double maxWidth)
         ScopedTrace scope("TypographyImpl::Layout");
 #endif
         LOGSCOPED(sl, LOGEX_FUNC_LINE_DEBUG(), "TypographyImpl::Layout");
-        LOGEX_FUNC_LINE(INFO) << "Layout maxWidth: " << maxWidth << ", spans.size(): " << spans_.size();
+        LOGEX_FUNC_LINE_DEBUG(INFO) << "Layout maxWidth: " << maxWidth << ", spans.size(): " << spans_.size();
         maxWidth_ = floor(maxWidth);
         if (spans_.empty()) {
-            LOGEX_FUNC_LINE(ERROR) << "Empty spans";
+            LOGEX_FUNC_LINE_DEBUG(ERROR) << "Empty spans";
             return;
         }
 
@@ -278,7 +278,7 @@ void TypographyImpl::Layout(double maxWidth)
         shaper.SetIndents(indents_);
         lineMetrics_ = shaper.DoShape(spans_, typographyStyle_, fontProviders_, maxWidth_);
         if (lineMetrics_.size() == 0) {
-            LOGEX_FUNC_LINE(ERROR) << "Shape failed";
+            LOGEX_FUNC_LINE_DEBUG(ERROR) << "Shape failed";
             return;
         }
 
@@ -289,20 +289,20 @@ void TypographyImpl::Layout(double maxWidth)
 
         auto ret = ComputeStrut();
         if (ret) {
-            LOGEX_FUNC_LINE(ERROR) << "ComputeStrut failed";
+            LOGEX_FUNC_LINE_DEBUG(ERROR) << "ComputeStrut failed";
             return;
         }
 
         ret = UpdateMetrics();
         if (ret) {
-            LOGEX_FUNC_LINE(ERROR) << "UpdateMetrics failed";
+            LOGEX_FUNC_LINE_DEBUG(ERROR) << "UpdateMetrics failed";
             return;
         }
 
         DoLayout();
         ApplyAlignment();
     } catch (struct TexgineException &e) {
-        LOGEX_FUNC_LINE(ERROR) << "catch exception: " << e.message;
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "catch exception: " << e.message;
     }
 }
 
@@ -355,14 +355,14 @@ int TypographyImpl::UpdateMetrics()
 
         for (auto &span : lineMetrics_[i].lineSpans) {
             if (span == nullptr) {
-                LOGEX_FUNC_LINE(ERROR) << "span is nullptr";
+                LOGEX_FUNC_LINE_DEBUG(ERROR) << "span is nullptr";
                 return FAILED;
             }
 
             double coveredAscent = 0;
             auto ret = UpdateSpanMetrics(span, coveredAscent);
             if (ret) {
-                LOGEX_FUNC_LINE(ERROR) << "UpdateMerics is failed";
+                LOGEX_FUNC_LINE_DEBUG(ERROR) << "UpdateMerics is failed";
                 return FAILED;
             }
 
@@ -424,7 +424,7 @@ int TypographyImpl::ComputeStrut()
     auto fontCollection = fontProviders_->GenerateFontCollection(
         typographyStyle_.lineStyle.fontFamilies);
     if (fontCollection == nullptr) {
-        LOGEX_FUNC_LINE(ERROR) << "fontCollection is null";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "fontCollection is null";
         return FAILED;
     }
 
@@ -446,7 +446,7 @@ int TypographyImpl::ComputeStrut()
     if (typographyStyle_.lineStyle.heightOnly) {
         double metricsHeight = -*strutMetrics.fAscent_ + *strutMetrics.fDescent_;
         if (fabs(metricsHeight) < DBL_EPSILON) {
-            LOGEX_FUNC_LINE(ERROR) << "strutMetrics is error";
+            LOGEX_FUNC_LINE_DEBUG(ERROR) << "strutMetrics is error";
             return FAILED;
         }
 
@@ -476,7 +476,7 @@ int TypographyImpl::UpdateSpanMetrics(VariantSpan &span, double &coveredAscent)
         }
         auto fontCollection = fontProviders_->GenerateFontCollection(families);
         if (fontCollection == nullptr) {
-            LOGEX_FUNC_LINE(ERROR) << "fontCollection is nullptr";
+            LOGEX_FUNC_LINE_DEBUG(ERROR) << "fontCollection is nullptr";
             return FAILED;
         }
 
@@ -488,7 +488,7 @@ int TypographyImpl::UpdateSpanMetrics(VariantSpan &span, double &coveredAscent)
             typeface = fontCollection->GetTypefaceForFontStyles(fs, "Latn", style.locale);
         }
         if (typeface == nullptr) {
-            LOGEX_FUNC_LINE(ERROR) << "typeface is nullptr";
+            LOGEX_FUNC_LINE_DEBUG(ERROR) << "typeface is nullptr";
             return FAILED;
         }
 
@@ -499,7 +499,7 @@ int TypographyImpl::UpdateSpanMetrics(VariantSpan &span, double &coveredAscent)
     }
 
     if (DoUpdateSpanMetrics(span, metrics, style, coveredAscent)) {
-        LOGEX_FUNC_LINE(ERROR) << "DoUpdateSpanMetrics is error";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "DoUpdateSpanMetrics is error";
         return FAILED;
     }
 
@@ -518,7 +518,7 @@ int TypographyImpl::DoUpdateSpanMetrics(const VariantSpan &span, const TexgineFo
         if (style.heightOnly) {
             double metricsHeight = -*metrics.fAscent_ + *metrics.fDescent_;
             if (fabs(metricsHeight) < DBL_EPSILON) {
-                LOGEX_FUNC_LINE(ERROR) << "metrics is error";
+                LOGEX_FUNC_LINE_DEBUG(ERROR) << "metrics is error";
                 return FAILED;
             }
 
@@ -585,7 +585,7 @@ std::vector<TextRect> TypographyImpl::GetTextRectsByBoundary(Boundary boundary, 
     TextRectWidthStyle widthStyle) const
 {
     if (boundary.leftIndex > boundary.rightIndex || boundary.leftIndex < 0 || boundary.rightIndex < 0) {
-        LOGEX_FUNC_LINE(ERROR) << "the box range is error";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "the box range is error";
         return {};
     }
     std::vector<TextRect> totalBoxes;
@@ -626,7 +626,7 @@ std::vector<TextRect> TypographyImpl::GetTextRectsByBoundary(Boundary boundary, 
         ComputeSpans(i, baseline, result, lineBoxes);
         if (widthStyle == TextRectWidthStyle::MAX_WIDTH) {
             if (lineBoxes.empty()) {
-                LOGEX_FUNC_LINE(ERROR) << "rects is null";
+                LOGEX_FUNC_LINE_DEBUG(ERROR) << "rects is null";
             } else {
                 *lineBoxes.back().rect.fRight_ += maxLineWidth_ - lineMetrics_[i].width;
             }

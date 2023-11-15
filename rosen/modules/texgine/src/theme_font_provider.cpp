@@ -53,19 +53,19 @@ int ThemeFontProvider::LoadFont(const std::string &familyName, const void *data,
     }
 
     if (datalen == 0) {
-        LOGEX_FUNC_LINE(ERROR) << "datalen is 0!";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "datalen is 0!";
         return PARAMETERERROR;
     }
 
     auto stream = TexgineMemoryStream::MakeCopy(data, datalen);
     if (stream == nullptr) {
-        LOGEX_FUNC_LINE(ERROR) << "stream is nullptr!";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "stream is nullptr!";
         return APIERROR;
     }
 
     auto texgineTypeface = TexgineTypeface::MakeFromStream(std::move(stream));
     if (texgineTypeface == nullptr) {
-        LOGEX_FUNC_LINE(ERROR) << "texgineTypeface is nullptr!";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "texgineTypeface is nullptr!";
         return APIERROR;
     }
 

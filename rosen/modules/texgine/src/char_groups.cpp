@@ -382,7 +382,7 @@ bool CharGroups::CheckCodePoint()
 std::string CharGroups::GetTypefaceName()
 {
     if (!IsValid()) {
-        LOGEX_FUNC_LINE(ERROR) << "pcgs_ is null";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "pcgs_ is null";
         return "";
     }
 
@@ -393,7 +393,7 @@ double CharGroups::GetAllCharWidth() const
 {
     double allCharWidth = 0.0;
     if (!GetSize()) {
-        LOGEX_FUNC_LINE(ERROR) << "pcgs_ is empty";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "pcgs_ is empty";
         return allCharWidth;
     }
 
@@ -406,12 +406,12 @@ double CharGroups::GetAllCharWidth() const
 double CharGroups::GetCharWidth(const size_t index) const
 {
     if (!IsValid()) {
-        LOGEX_FUNC_LINE(ERROR) << "pcgs_ is null";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "pcgs_ is null";
         return 0.0;
     }
     // size - 1 means last index of the array
     if (index > (pcgs_->size() - 1)) {
-        LOGEX_FUNC_LINE(ERROR) << "the index  is out of range, index = " << index << " pcgs_ size = " << pcgs_->size();
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "the index  is out of range, index = " << index << " pcgs_ size = " << pcgs_->size();
         return 0.0;
     }
     return pcgs_->at(index).GetWidth();
@@ -420,13 +420,13 @@ double CharGroups::GetCharWidth(const size_t index) const
 std::vector<uint16_t> CharGroups::GetCharsToU16(size_t start, size_t end, const SpacesModel &spacesModel)
 {
     if (pcgs_ == nullptr) {
-        LOGEX_FUNC_LINE(ERROR) << "pcgs_ is null";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "pcgs_ is null";
         return {};
     }
     // size - 1 means last index of the array
     size_t maxIndex = pcgs_->size() - 1;
     if ((start > end) || (start > maxIndex) || (end > maxIndex)) {
-        LOGEX_FUNC_LINE(ERROR) << "invalid parameter, start = " << start <<
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "invalid parameter, start = " << start <<
             " end = " << end << " size = " << pcgs_->size();
         return {};
     }
@@ -466,7 +466,7 @@ std::vector<uint16_t> CharGroups::GetCharsToU16(size_t start, size_t end, const 
 bool CharGroups::IsSingleWord() const
 {
     if (!IsValid()) {
-        LOGEX_FUNC_LINE(ERROR) << "pcgs_ is null";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "pcgs_ is null";
         return false;
     }
     bool isSingleWord = true;

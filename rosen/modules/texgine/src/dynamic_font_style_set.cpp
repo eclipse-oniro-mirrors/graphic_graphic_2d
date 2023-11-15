@@ -34,7 +34,7 @@ void DynamicFontStyleSet::GetStyle(int index, std::shared_ptr<TexgineFontStyle> 
     std::shared_ptr<TexgineString> name) const
 {
     if (style == nullptr || style->GetFontStyle() == nullptr) {
-        LOGEX_FUNC_LINE(ERROR) << "style is nullptr";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "style is nullptr";
         throw TEXGINE_EXCEPTION(INVALID_ARGUMENT);
     }
 

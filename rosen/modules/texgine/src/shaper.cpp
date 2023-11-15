@@ -170,14 +170,14 @@ std::vector<LineMetrics> Shaper::DoShapeBeforeEllipsis(std::vector<VariantSpan> 
     tb.SetIndents(indents_);
     auto ret = tb.WordBreak(spans, tstyle, fontProviders);
     if (ret) {
-        LOGEX_FUNC_LINE(ERROR) << "word break failed";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "word break failed";
         return {};
     }
 
     BidiProcesser bp;
     auto newSpans = bp.ProcessBidiText(spans, tstyle.direction);
     if (newSpans.empty()) {
-        LOGEX_FUNC_LINE(ERROR) << "Process BidiText failed";
+        LOGEX_FUNC_LINE_DEBUG(ERROR) << "Process BidiText failed";
         return {};
     }
 
