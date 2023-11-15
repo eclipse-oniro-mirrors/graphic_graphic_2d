@@ -121,6 +121,7 @@ constexpr uint64_t PERF_PERIOD = 250000000;
 constexpr uint64_t CLEAN_CACHE_FREQ = 60;
 constexpr uint64_t SKIP_COMMAND_FREQ_LIMIT = 30;
 constexpr uint64_t PERF_PERIOD_BLUR = 80000000;
+constexpr uint64_t SK_RELEASE_RESOURCE_PERIOD = 5000000000;
 constexpr const char* MEM_GPU_TYPE = "gpu";
 constexpr uint64_t PERF_PERIOD_MULTI_WINDOW = 80000000;
 constexpr uint64_t CLEAR_GPU_INTERVAL = 40000;
@@ -232,7 +233,7 @@ RSMainThread::~RSMainThread() noexcept
 void RSMainThread::Init()
 {
     mainLoop_ = [&]() {
-        RenderFrameStart();
+        RenderFrameStart(timestamp_);
         PerfMultiWindow();
         SetRSEventDetectorLoopStartTag();
         ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSMainThread::DoComposition");
@@ -254,7 +255,10 @@ void RSMainThread::Init()
         ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
         SetRSEventDetectorLoopFinishTag();
         rsEventManager_.UpdateParam();
-        SKResourceManager::Instance().ReleaseResource();
+        if (timestamp_ - preSKReleaseResourceTimestamp_ > SK_RELEASE_RESOURCE_PERIOD) {
+            SKResourceManager::Instance().ReleaseResource();
+            preSKReleaseResourceTimestamp_ = timestamp_;
+        }
     };
     isUniRender_ = RSUniRenderJudgement::IsUniRender();
     SetDeviceType();
@@ -913,7 +917,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         }
         if (surfaceNode->IsHardwareEnabledType()
             && CheckSubThreadNodeStatusIsDoing(surfaceNode->GetInstanceRootNodeId())) {
-            RS_LOGD("SubThread is processing %s, skip acquire buffer", surfaceNode->GetName().c_str());
+            RS_LOGD("SubThread is processing %{public}s, skip acquire buffer", surfaceNode->GetName().c_str());
             return;
         }
         auto& surfaceHandler = static_cast<RSSurfaceHandler&>(*surfaceNode);
@@ -2531,10 +2535,10 @@ void RSMainThread::PerfMultiWindow()
     }
 }
 
-void RSMainThread::RenderFrameStart()
+void RSMainThread::RenderFrameStart(uint64_t timestamp)
 {
     if (RsFrameReport::GetInstance().GetEnable()) {
-        RsFrameReport::GetInstance().RenderStart();
+        RsFrameReport::GetInstance().RenderStart(timestamp);
     }
     RenderFrameTrace::GetInstance().RenderStartFrameTrace(RS_INTERVAL_NAME);
 }
@@ -2792,6 +2796,7 @@ void RSMainThread::HandleOnTrim(Memory::SystemMemoryLevel level)
 #endif
                 switch (level) {
                     case Memory::SystemMemoryLevel::MEMORY_LEVEL_CRITICAL:
+                        RS_LOGD("Enter level:%{public}d, OnTrim Success", level);
                         MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(grContext);
                         break;
                     default:
