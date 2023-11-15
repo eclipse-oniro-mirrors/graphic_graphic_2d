@@ -91,7 +91,7 @@ void RSCanvasDrawingRenderNode::ProcessRenderContents(RSPaintFilterCanvas& canva
         }
         if (RSSystemProperties::GetRecordingEnabled()) {
             if (sharedTexture->isTextureBacked()) {
-                RS_LOGI("RSCanvasDrawingRenderNode::ProcessRenderContents convert sharedTexture from texture to raster image");
+                RS_LOGI("RSCanvasDrawingRenderNode::ProcessRenderContents sharedTexture from texture to raster image");
                 sharedTexture = sharedTexture->makeRasterImage();
             }
         }

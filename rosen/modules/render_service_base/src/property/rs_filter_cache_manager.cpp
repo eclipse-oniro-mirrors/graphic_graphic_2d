@@ -556,7 +556,7 @@ void RSFilterCacheManager::DrawCachedFilteredSnapshot(RSPaintFilterCanvas& canva
     paint.setAntiAlias(true);
     if (RSSystemProperties::GetRecordingEnabled()) {
         if (cachedFilteredSnapshot_->cachedImage_->isTextureBacked()) {
-            RS_LOGI("RSFilterCacheManager::DrawCachedFilteredSnapshot convert cachedImage from texture to raster image");
+            RS_LOGI("RSFilterCacheManager::DrawCachedFilteredSnapshot cachedImage from texture to raster image");
             cachedFilteredSnapshot_->cachedImage_ = cachedFilteredSnapshot_->cachedImage_->makeRasterImage();
         }
     }
