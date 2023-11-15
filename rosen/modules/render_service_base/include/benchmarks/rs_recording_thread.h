@@ -85,7 +85,9 @@ private:
 
     const static size_t RECORDING_PARCEL_CAPCITY = 234 * 1000 * 1024;
     RenderContext *renderContext_ = nullptr;
+#ifdef RS_ENABLE_GL
     EGLContext eglShareContext_ = EGL_NO_CONTEXT;
+#endif
 #ifndef USE_ROSEN_DRAWING
 #ifdef NEW_SKIA
     sk_sp<GrDirectContext> grContext_ = nullptr;

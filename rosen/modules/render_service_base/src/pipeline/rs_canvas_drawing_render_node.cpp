@@ -90,7 +90,10 @@ void RSCanvasDrawingRenderNode::ProcessRenderContents(RSPaintFilterCanvas& canva
             return;
         }
         if (RSSystemProperties::GetRecordingEnabled()) {
-            sharedTexture = sharedTexture->makeRasterImage();
+            if (sharedTexture->isTextureBacked()) {
+                RS_LOGI("RSCanvasDrawingRenderNode::ProcessRenderContents convert sharedTexture from texture to raster image");
+                sharedTexture = sharedTexture->makeRasterImage();
+            }
         }
         canvas_->drawImage(sharedTexture, 0.f, 0.f);
 #else

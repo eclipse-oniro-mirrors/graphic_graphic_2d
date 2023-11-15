@@ -159,9 +159,6 @@ bool RSFilterCacheManager::RSFilterCacheTask::Render()
         kBottomLeft_GrSurfaceOrigin, kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
     auto src = SkRect::MakeSize(SkSize::Make(surfaceSize_));
     auto dst = SkRect::MakeSize(SkSize::Make(surfaceSize_));
-    if (RSSystemProperties::GetRecordingEnabled()) {
-        threadImage = threadImage->makeRasterImage();
-    }
 #else
     Drawing::BitmapFormat bitmapFormat = { Drawing::ColorType::COLORTYPE_RGBA_8888,
         Drawing::AlphaType::ALPHATYPE_PREMUL };
@@ -557,6 +554,12 @@ void RSFilterCacheManager::DrawCachedFilteredSnapshot(RSPaintFilterCanvas& canva
 
     SkPaint paint;
     paint.setAntiAlias(true);
+    if (RSSystemProperties::GetRecordingEnabled()) {
+        if (cachedFilteredSnapshot_->cachedImage_->isTextureBacked()) {
+            RS_LOGI("RSFilterCacheManager::DrawCachedFilteredSnapshot convert cachedImage from texture to raster image");
+            cachedFilteredSnapshot_->cachedImage_ = cachedFilteredSnapshot_->cachedImage_->makeRasterImage();
+        }
+    }
     canvas.drawImageRect(cachedFilteredSnapshot_->cachedImage_, src, dst, SkSamplingOptions(), &paint,
         SkCanvas::kFast_SrcRectConstraint);
 }
