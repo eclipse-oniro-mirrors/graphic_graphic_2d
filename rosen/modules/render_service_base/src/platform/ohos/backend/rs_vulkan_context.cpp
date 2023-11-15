@@ -217,14 +217,11 @@ bool RsVulkanContext::GetGraphicsQueueFamilyIndex()
         return false;
     }
     const float priorities[1] = {1.0f};
-    std::vector<VkDeviceQueueCreateInfo> queueCreate { {
-        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .queueFamilyIndex = graphicsQueueFamilyIndex_,
-        .queueCount = 2,
+    std::vector<VkDeviceQueueCreateInfo> queueCreate {{
+        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, .pNext = nullptr,
+        .flags = 0, .queueFamilyIndex = graphicsQueueFamilyIndex_, .queueCount = 2,
         .pQueuePriorities = priorities,
-    } };
+    }};
     ycbcrFeature_.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES,
     ycbcrFeature_.pNext = nullptr;
     physicalDeviceFeatures2_.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;

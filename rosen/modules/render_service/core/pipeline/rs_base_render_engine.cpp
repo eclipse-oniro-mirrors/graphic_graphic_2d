@@ -77,7 +77,7 @@ void RSBaseRenderEngine::Init(bool independentContext)
     skContext_ = RsVulkanContext::GetSingleton().CreateSkContext(independentContext);
     vkImageManager_ = std::make_shared<RSVkImageManager>();
     renderContext_->SetUpGrContext(skContext_);
-#else 
+#else
     renderContext_->SetUpGrContext();
 #endif // RS_ENABLE_VK
 #else

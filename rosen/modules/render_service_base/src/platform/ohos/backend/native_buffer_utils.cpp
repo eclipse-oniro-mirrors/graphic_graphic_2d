@@ -45,7 +45,7 @@ bool GetNativeBufferFormatProperties(const RsVulkanContext& vkContext, VkDevice 
 }
 
 bool CreateVkImage(const RsVulkanContext& vkContext, VkImage* image,
-    const VkNativeBufferFormatPropertiesOHOS& nbFormatProps, int width, int height, VkImageUsageFlags usageFlags)
+    const VkNativeBufferFormatPropertiesOHOS* nbFormatProps, int width, int height)
 {
     VkExternalFormatOHOS externalFormat;
     externalFormat.sType = VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_OHOS;
@@ -149,7 +149,7 @@ bool AllocateDeviceMemory(const RsVulkanContext& vkContext, VkDeviceMemory* memo
 }
 
 
-bool BindImageMemory(VkDevice device, const RsVulkanContext& vkContext, VkImage& image, VkDeviceMemory memory)
+bool BindImageMemory(VkDevice device, const RsVulkanContext& vkContext, VkImage& image, VkDeviceMemory& memory)
 {
     VkBindImageMemoryInfo bindImageInfo;
     bindImageInfo.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
@@ -187,19 +187,13 @@ bool MakeFromNativeWindowBuffer(sk_sp<GrDirectContext> skContext, NativeWindowBu
         return false;
     }
 
-    VkImageUsageFlags usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
-    if (nbFormatProps.format != VK_FORMAT_UNDEFINED) {
-        usageFlags = usageFlags | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    }
-
     VkImage image;
-    if (!CreateVkImage(vkContext, &image, &nbFormatProps, width, height, usageFlags)) {
+    if (!CreateVkImage(vkContext, &image, &nbFormatProps, width, height)) {
         return false;
     }
 
     VkDeviceMemory memory;
-    if (!AllocateDeviceMemory(physicalDevice, &memory, image, nativeBuffer, nbProps)) {
+    if (!AllocateDeviceMemory(vkContext, &memory, image, nativeBuffer, nbProps)) {
         return false;
     }
 
@@ -279,7 +273,7 @@ GrBackendTexture MakeBackendTextureFromNativeBuffer(NativeWindowBuffer* nativeWi
     }
 
     VkDeviceMemory memory;
-    if (!AllocateDeviceMemory(physicalDevice, &memory)) {
+    if (!AllocateDeviceMemory(vkContext, &memory)) {
         return {};
     }
 

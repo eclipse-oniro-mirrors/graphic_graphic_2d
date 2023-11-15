@@ -26,7 +26,7 @@
 #include <unordered_map>
 #include "native_window.h"
 #include "vulkan/vulkan_core.h"
-#include "rs_vulkan_context.h"
+#include "platform/ohos/backend/rs_vulkan_context.h"
 #include "sync_fence.h"
 #include "native_buffer_utils.h"
 #endif // ENABLE_NATIVEBUFFER
@@ -65,12 +65,14 @@ private:
     struct NativeWindow* mNativeWindow = nullptr;
     int mWidth = -1;
     int mHeight = -1;
+    int32_t SetNativeWindowInfo(int32_t width, int32_t height);
 #ifdef ENABLE_NATIVEBUFFER
     uint32_t mPresentCount = 0;
     std::list<NativeWindowBuffer*> mSurfaceList;
     std::unordered_map<NativeWindowBuffer*, NativeBufferUtils::NativeSurfaceInfo> mSurfaceMap;
     sk_sp<GrDirectContext> mSkContext = nullptr;
-    int32_t RequestNativeWindowBuffer(NativeWindowBuffer** nativeWindowBuffer, int32_t width, int32_t height, int& fenceFd);
+    int32_t RequestNativeWindowBuffer(
+        NativeWindowBuffer** nativeWindowBuffer, int32_t width, int32_t height, int& fenceFd);
     void CreateVkSemaphore(VkSemaphore* semaphore,
         const RsVulkanContext& vkContext, NativeBufferUtils::NativeSurfaceInfo& nativeSurface);
 #else // ENABLE_NATIVEBUFFER

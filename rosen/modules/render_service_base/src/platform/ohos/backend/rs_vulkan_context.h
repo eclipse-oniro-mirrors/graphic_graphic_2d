@@ -160,11 +160,13 @@ public:
 
     static VKAPI_ATTR VkResult HookedVkQueueSignalReleaseImageOHOS(VkQueue queue, uint32_t waitSemaphoreCount,
         const VkSemaphore* pWaitSemaphores, VkImage image, int32_t* pNativeFenceFd);
-    sk_sp<GrDirectContext> GetHardWareGrContext() {
+    sk_sp<GrDirectContext> GetHardWareGrContext()
+    {
         return hcontext_;
     }
 
-    VkQueue GetHardwareQueue() {
+    VkQueue GetHardwareQueue()
+    {
         return hbackendContext_.fQueue;
     }
 private:

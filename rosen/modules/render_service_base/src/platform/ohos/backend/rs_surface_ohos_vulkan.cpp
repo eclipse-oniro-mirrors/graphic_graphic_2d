@@ -52,6 +52,27 @@ RSSurfaceOhosVulkan::~RSSurfaceOhosVulkan()
 #endif // ENABLE_NATIVEBUFFER
 }
 
+int32_t RSSurfaceOhosVulkan::SetNativeWindowInfo(int32_t width, int32_t height)
+{
+    NativeWindowHandleOpt(mNativeWindow, SET_FORMAT, pixelFormat_);
+#ifdef RS_ENABLE_AFBC
+    if (RSSystemProperties::GetAFBCEnabled()) {
+        int32_t format = 0;
+        NativeWindowHandleOpt(mNativeWindow, GET_FORMAT, &format);
+        if (format == GRAPHIC_PIXEL_FMT_RGBA_8888 && useAFBC) {
+            bufferUsage_ =
+                (BUFFER_USAGE_HW_RENDER | BUFFER_USAGE_HW_TEXTURE | BUFFER_USAGE_HW_COMPOSER | BUFFER_USAGE_MEM_DMA);
+        }
+    }
+#endif
+
+    NativeWindowHandleOpt(mNativeWindow, SET_USAGE, bufferUsage_);
+    NativeWindowHandleOpt(mNativeWindow, SET_BUFFER_GEOMETRY, width, height);
+    NativeWindowHandleOpt(mNativeWindow, GET_BUFFER_GEOMETRY, &mHeight, &mWidth);
+    NativeWindowHandleOpt(mNativeWindow, SET_COLOR_GAMUT, colorSpace_);
+}
+
+
 #ifdef ENABLE_NATIVEBUFFER
 void RSSurfaceOhosVulkan::CreateVkSemaphore(
     VkSemaphore* semaphore, const RsVulkanContext& vkContext, NativeBufferUtils::NativeSurfaceInfo& nativeSurface)
@@ -75,23 +96,7 @@ void RSSurfaceOhosVulkan::CreateVkSemaphore(
 int32_t RSSurfaceOhosVulkan::RequestNativeWindowBuffer(
     NativeWindowBuffer** nativeWindowBuffer, int32_t width, int32_t height, int& fenceFd)
 {
-    NativeWindowHandleOpt(mNativeWindow, SET_FORMAT, pixelFormat_);
-#ifdef RS_ENABLE_AFBC
-    if (RSSystemProperties::GetAFBCEnabled()) {
-        int32_t format = 0;
-        NativeWindowHandleOpt(mNativeWindow, GET_FORMAT, &format);
-        if (format == GRAPHIC_PIXEL_FMT_RGBA_8888 && useAFBC) {
-            bufferUsage_ =
-                (BUFFER_USAGE_HW_RENDER | BUFFER_USAGE_HW_TEXTURE | BUFFER_USAGE_HW_COMPOSER | BUFFER_USAGE_MEM_DMA);
-        }
-    }
-#endif
-
-    NativeWindowHandleOpt(mNativeWindow, SET_USAGE, bufferUsage_);
-    NativeWindowHandleOpt(mNativeWindow, SET_BUFFER_GEOMETRY, width, height);
-    NativeWindowHandleOpt(mNativeWindow, GET_BUFFER_GEOMETRY, &mHeight, &mWidth);
-    NativeWindowHandleOpt(mNativeWindow, SET_COLOR_GAMUT, colorSpace_);
-
+    SetNativeWindowInfo(width, height);
     struct timespec curTime = {0, 0};
     clock_gettime(CLOCK_MONOTONIC, &curTime);
     // 1000000000 is used for transfer second to nsec
@@ -106,8 +111,8 @@ int32_t RSSurfaceOhosVulkan::RequestNativeWindowBuffer(
     return res;
 }
 
-std::unique_ptr<RSSurfaceFrame> RSSurfaceOhosVulkan::RequestFrame(int32_t width, int32_t height,
-    uint64_t uiTimestamp, bool useAFBC)
+std::unique_ptr<RSSurfaceFrame> RSSurfaceOhosVulkan::RequestFrame(
+    int32_t width, int32_t height, uint64_t uiTimestamp, bool useAFBC)
 {
     if (mNativeWindow == nullptr) {
         mNativeWindow = CreateNativeWindowFromSurface(&producer_);
@@ -130,11 +135,8 @@ std::unique_ptr<RSSurfaceFrame> RSSurfaceOhosVulkan::RequestFrame(int32_t width,
 
     if (nativeSurface.skSurface == nullptr) {
         nativeSurface.window = mNativeWindow;
-        bool suc = NativeBufferUtils::MakeFromNativeWindowBuffer(mSkContext, nativeWindowBuffer, nativeSurface,
-            width, height);
-        if (suc) {
-            ROSEN_LOGI("RSSurfaceOhosVulkan: MakeFromeNativeWindow success");
-        } else {
+        if (!NativeBufferUtils::MakeFromNativeWindowBuffer(
+            mSkContext, nativeWindowBuffer, nativeSurface, width, height)) {
             ROSEN_LOGE("RSSurfaceOhosVulkan: MakeFromeNativeWindow failed");
             NativeWindowCancelBuffer(mNativeWindow, nativeWindowBuffer);
             return nullptr;
@@ -176,22 +178,7 @@ std::unique_ptr<RSSurfaceFrame> RSSurfaceOhosVulkan::RequestFrame(int32_t width,
         ROSEN_LOGD("RSSurfaceOhosVulkan: create native window");
     }
 
-    NativeWindowHandleOpt(mNativeWindow, SET_FORMAT, pixelFormat_);
-#ifdef RS_ENABLE_AFBC
-    if (RSSystemProperties::GetAFBCEnabled()) {
-        int32_t format = 0;
-        NativeWindowHandleOpt(mNativeWindow, GET_FORMAT, &format);
-        if (format == GRAPHIC_PIXEL_FMT_RGBA_8888 && useAFBC) {
-            bufferUsage_ =
-                (BUFFER_USAGE_HW_RENDER | BUFFER_USAGE_HW_TEXTURE | BUFFER_USAGE_HW_COMPOSER | BUFFER_USAGE_MEM_DMA);
-        }
-    }
-#endif
-
-    NativeWindowHandleOpt(mNativeWindow, SET_USAGE, bufferUsage_);
-    NativeWindowHandleOpt(mNativeWindow, SET_BUFFER_GEOMETRY, width, height);
-    NativeWindowHandleOpt(mNativeWindow, GET_BUFFER_GEOMETRY, &mHeight, &mWidth);
-    NativeWindowHandleOpt(mNativeWindow, SET_COLOR_GAMUT, colorSpace_);
+    SetNativeWindowInfo(width, height);
     NativeWindowHandleOpt(mNativeWindow, SET_UI_TIMESTAMP, uiTimestamp);
 
     if (mVulkanWindow == nullptr) {
