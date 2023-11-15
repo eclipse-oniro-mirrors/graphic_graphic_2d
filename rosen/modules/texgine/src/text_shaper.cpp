@@ -38,7 +38,7 @@ int TextShaper::Shape(const VariantSpan &span, const TypographyStyle &ys,
 #endif
     LOGSCOPED(sl, LOGEX_FUNC_LINE_DEBUG(), "TextShaper::ShapeLineSpans");
     if (span == nullptr) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "span is nullptr";
+        LOGEX_FUNC_LINE(ERROR) << "span is nullptr";
         throw TEXGINE_EXCEPTION(INVALID_ARGUMENT);
     }
 
@@ -55,23 +55,23 @@ int TextShaper::Shape(const VariantSpan &span, const TypographyStyle &ys,
 
     auto ret = DoShape(ts, xs, ys, fontProviders);
     if (ret) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "DoShape failed";
+        LOGEX_FUNC_LINE(ERROR) << "DoShape failed";
         // Shape failed
         return 1;
     }
 
     if (!ts->cgs_.IsValid()) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "cgs is inValid";
+        LOGEX_FUNC_LINE(ERROR) << "cgs is inValid";
         throw TEXGINE_EXCEPTION(INVALID_CHAR_GROUPS);
     }
 
     if (ts->cgs_.GetSize() <= 0) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "cgs have no cg";
+        LOGEX_FUNC_LINE(ERROR) << "cgs have no cg";
         return 1;
     }
 
     if (ts->cgs_.Get(0).typeface == nullptr) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "first cgs have no typeface";
+        LOGEX_FUNC_LINE(ERROR) << "first cgs have no typeface";
         throw TEXGINE_EXCEPTION(INVALID_ARGUMENT);
     }
 
@@ -85,7 +85,7 @@ int TextShaper::Shape(const VariantSpan &span, const TypographyStyle &ys,
 
     auto blob = GenerateTextBlob(font, ts->cgs_, ts->width_, ts->glyphWidths_);
     if (blob == nullptr) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "Generate text blob is failed";
+        LOGEX_FUNC_LINE(ERROR) << "Generate text blob is failed";
         return 1;
     }
 
@@ -97,7 +97,7 @@ int TextShaper::DoShape(std::shared_ptr<TextSpan> &span, const TextStyle &xs,
     const TypographyStyle &ys, const std::shared_ptr<FontProviders> &fontProviders)
 {
     if (fontProviders == nullptr || span == nullptr) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "providers or span is nullptr";
+        LOGEX_FUNC_LINE(ERROR) << "providers or span is nullptr";
         throw TEXGINE_EXCEPTION(INVALID_ARGUMENT);
     }
 
@@ -108,7 +108,7 @@ int TextShaper::DoShape(std::shared_ptr<TextSpan> &span, const TextStyle &xs,
 
     auto fontCollection = fontProviders->GenerateFontCollection(families);
     if (fontCollection == nullptr) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "fontCollection is nullptr";
+        LOGEX_FUNC_LINE(ERROR) << "fontCollection is nullptr";
         return 1;
     }
 
@@ -127,7 +127,7 @@ int TextShaper::DoShape(std::shared_ptr<TextSpan> &span, const TextStyle &xs,
     measurer->SetRange(0, span->u16vect_.size());
     measurer->SetSpacing(xs.letterSpacing, xs.wordSpacing);
     if (measurer->Measure(span->cgs_)) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "Measurer::Measure failed";
+        LOGEX_FUNC_LINE(ERROR) << "Measurer::Measure failed";
         return 1;
     }
 
@@ -140,7 +140,7 @@ std::shared_ptr<TexgineTextBlob> TextShaper::GenerateTextBlob(const TexgineFont 
     TexgineTextBlobBuilder builder;
     auto blob = builder.AllocRunPos(font, cgs.GetNumberOfGlyph());
     if (blob == nullptr || blob->glyphs == nullptr || blob->pos == nullptr) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "allocRunPos return unavailable buffer";
+        LOGEX_FUNC_LINE(ERROR) << "allocRunPos return unavailable buffer";
         throw TEXGINE_EXCEPTION(API_FAILED);
     }
 

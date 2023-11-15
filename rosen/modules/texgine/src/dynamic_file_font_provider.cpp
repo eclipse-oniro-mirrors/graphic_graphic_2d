@@ -36,45 +36,45 @@ int DynamicFileFontProvider::LoadFont(const std::string &familyName, const std::
     std::error_code ec;
     auto ret = StdFilesystemExists(path, ec);
     if (ec) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "open file failed: " << ec.message();
+        LOGEX_FUNC_LINE(ERROR) << "open file failed: " << ec.message();
         return FAILED;
     }
 #else
     auto ret = StdFilesystemExists(path);
 #endif
     if (!ret) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "file is not exists";
+        LOGEX_FUNC_LINE(ERROR) << "file is not exists";
         return FAILED;
     }
 
     MockIFStream ifs(path);
     if (!ifs.StdFilesystemIsOpen()) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "file open failed";
+        LOGEX_FUNC_LINE(ERROR) << "file open failed";
         return FAILED;
     }
 
     ifs.StdFilesystemSeekg(0, ifs.end);
     if (!ifs.good()) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "seekg(0, ifs.end) failed!";
+        LOGEX_FUNC_LINE(ERROR) << "seekg(0, ifs.end) failed!";
         return FAILED;
     }
 
     auto size = ifs.StdFilesystemTellg();
     if (ifs.fail()) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "tellg failed!";
+        LOGEX_FUNC_LINE(ERROR) << "tellg failed!";
         return FAILED;
     }
 
     ifs.StdFilesystemSeekg(ifs.beg);
     if (!ifs.good()) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "seekg(ifs.beg) failed!";
+        LOGEX_FUNC_LINE(ERROR) << "seekg(ifs.beg) failed!";
         return FAILED;
     }
 
     std::unique_ptr<char[]> buf = std::make_unique<char[]>(size);
     ifs.StdFilesystemRead(buf.get(), size);
     if (!ifs.good()) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "read failed!";
+        LOGEX_FUNC_LINE(ERROR) << "read failed!";
         return FAILED;
     }
 

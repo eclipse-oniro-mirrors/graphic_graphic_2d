@@ -129,7 +129,7 @@ std::shared_ptr<FontCollection> TextBreaker::GenerateFontCollection(const Typogr
     }
 
     if (fontProviders == nullptr) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "fontProviders is nullptr";
+        LOGEX_FUNC_LINE(ERROR) << "fontProviders is nullptr";
         throw TEXGINE_EXCEPTION(INVALID_ARGUMENT);
     }
 
@@ -142,7 +142,7 @@ int TextBreaker::Measure(const TextStyle &xs, const std::vector<uint16_t> &u16ve
     LOGSCOPED(sl, LOGEX_FUNC_LINE_DEBUG(), "TextBreaker::doMeasure");
     auto measurer = Measurer::Create(u16vect, fontCollection);
     if (measurer == nullptr) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "Measurer::Create return nullptr";
+        LOGEX_FUNC_LINE(ERROR) << "Measurer::Create return nullptr";
         throw TEXGINE_EXCEPTION(API_FAILED);
     }
 
@@ -155,12 +155,12 @@ int TextBreaker::Measure(const TextStyle &xs, const std::vector<uint16_t> &u16ve
     measurer->SetSpacing(xs.letterSpacing, xs.wordSpacing);
     auto ret = measurer->Measure(cgs);
     if (ret != 0) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "Measure failed!";
+        LOGEX_FUNC_LINE(ERROR) << "Measure failed!";
         return ret;
     }
     boundaries = measurer->GetWordBoundary();
     if (boundaries.size() == 0) {
-        LOGEX_FUNC_LINE_DEBUG(ERROR) << "Measurer GetWordBoundary failed!";
+        LOGEX_FUNC_LINE(ERROR) << "Measurer GetWordBoundary failed!";
         return 1;
     }
     return 0;
