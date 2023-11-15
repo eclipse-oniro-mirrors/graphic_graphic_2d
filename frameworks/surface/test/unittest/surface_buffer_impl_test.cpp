@@ -173,7 +173,6 @@ HWTEST_F(SurfaceBufferImplTest, Create001, Function | MediumTest | Level2)
 */
 HWTEST_F(SurfaceBufferImplTest, Metadata001, Function | MediumTest | Level2)
 {
-    using namespace OHOS::MetadataManager;
     using namespace HDI::Display::Graphic::Common::V1_0;
 
     sptr<SurfaceBuffer> sbi = new SurfaceBufferImpl(0);
