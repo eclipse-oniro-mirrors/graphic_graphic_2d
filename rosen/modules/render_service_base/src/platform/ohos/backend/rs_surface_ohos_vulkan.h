@@ -16,8 +16,8 @@
 #ifndef RS_SURFACE_OHOS_VULKAN_H
 #define RS_SURFACE_OHOS_VULKAN_H
 
+#include <cstdint>
 // default enable native buffer
-
 
 #ifndef ENABLE_NATIVEBUFFER
 #include <vulkan_window.h>
@@ -28,6 +28,7 @@
 #include "vulkan/vulkan_core.h"
 #include "rs_vulkan_context.h"
 #include "sync_fence.h"
+#include "native_buffer_utils.h"
 #endif // ENABLE_NATIVEBUFFER
 
 #include <surface.h>
@@ -69,9 +70,12 @@ private:
     std::list<NativeWindowBuffer*> mSurfaceList;
     std::unordered_map<NativeWindowBuffer*, NativeBufferUtils::NativeSurfaceInfo> mSurfaceMap;
     sk_sp<GrDirectContext> mSkContext = nullptr;
+    int32_t RequestNativeWindowBuffer(NativeWindowBuffer** nativeWindowBuffer, int32_t width, int32_t height, int& fenceFd);
+    void CreateVkSemaphore(VkSemaphore* semaphore,
+        const RsVulkanContext& vkContext, NativeBufferUtils::NativeSurfaceInfo& nativeSurface);
 #else // ENABLE_NATIVEBUFFER
     vulkan::VulkanWindow* mVulkanWindow = nullptr;
-#endif  // ENABLE_NATIVEBUFFER
+#endif // ENABLE_NATIVEBUFFER
 };
 
 } // namespace Rosen
