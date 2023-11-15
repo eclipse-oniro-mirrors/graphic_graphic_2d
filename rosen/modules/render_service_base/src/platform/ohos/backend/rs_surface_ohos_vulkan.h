@@ -36,28 +36,6 @@
 
 namespace OHOS {
 namespace Rosen {
-#ifdef ENABLE_NATIVEBUFFER
-struct NativeSurfaceInfo {
-    NativeSurfaceInfo() = default;
-    NativeSurfaceInfo(NativeSurfaceInfo &&) = default;
-    NativeSurfaceInfo &operator=(NativeSurfaceInfo &&) = default;
-    NativeSurfaceInfo(const NativeSurfaceInfo &) = delete;
-    NativeSurfaceInfo &operator=(const NativeSurfaceInfo &) = delete;
-
-    NativeWindow* window = nullptr;
-    NativeWindowBuffer* nativeWindowBuffer = nullptr;
-    VkImage image = VK_NULL_HANDLE; // skia will destroy image
-    std::unique_ptr<SyncFence> fence = nullptr;
-    sk_sp<SkSurface> skSurface = nullptr;
-    uint32_t lastPresentedCount = 0;
-
-    ~NativeSurfaceInfo()
-    {
-        skSurface = nullptr;
-        NativeWindowCancelBuffer(window, nativeWindowBuffer);
-    }
-};
-#endif
 class RSSurfaceOhosVulkan : public RSSurfaceOhos {
 public:
     explicit RSSurfaceOhosVulkan(const sptr<Surface>& producer);
@@ -89,7 +67,7 @@ private:
 #ifdef ENABLE_NATIVEBUFFER
     uint32_t mPresentCount = 0;
     std::list<NativeWindowBuffer*> mSurfaceList;
-    std::unordered_map<NativeWindowBuffer*, NativeSurfaceInfo> mSurfaceMap;
+    std::unordered_map<NativeWindowBuffer*, NativeBufferUtils::NativeSurfaceInfo> mSurfaceMap;
     sk_sp<GrDirectContext> mSkContext = nullptr;
 #else // ENABLE_NATIVEBUFFER
     vulkan::VulkanWindow* mVulkanWindow = nullptr;
