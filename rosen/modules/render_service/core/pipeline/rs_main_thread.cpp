@@ -121,6 +121,7 @@ constexpr uint64_t PERF_PERIOD = 250000000;
 constexpr uint64_t CLEAN_CACHE_FREQ = 60;
 constexpr uint64_t SKIP_COMMAND_FREQ_LIMIT = 30;
 constexpr uint64_t PERF_PERIOD_BLUR = 80000000;
+constexpr uint64_t SK_RELEASE_RESOURCE_PERIOD = 5000000000;
 constexpr const char* MEM_GPU_TYPE = "gpu";
 constexpr uint64_t PERF_PERIOD_MULTI_WINDOW = 80000000;
 constexpr uint64_t CLEAR_GPU_INTERVAL = 40000;
@@ -754,9 +755,9 @@ void RSMainThread::ProcessCommandForUniRender()
         std::lock_guard<std::mutex> lock(transitionDataMutex_);
         cachedSkipTransactionDataMap_.clear();
         for (auto& rsTransactionElem: effectiveTransactionDataIndexMap_) {
-            auto pid = rsTransactionElem.first;
             auto& transactionVec = rsTransactionElem.second.second;
             if (isNeedCacheCmd) {
+                auto pid = rsTransactionElem.first;
                 SkipCommandByNodeId(transactionVec, pid);
             }
             std::sort(transactionVec.begin(), transactionVec.end(), Compare);
@@ -1114,7 +1115,7 @@ void RSMainThread::ReleaseAllNodesBuffer()
         }
         RSBaseRenderUtil::ReleaseBuffer(static_cast<RSSurfaceHandler&>(*surfaceNode));
     });
-#ifdef RS_ENABLE_GL
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     if (NeedReleaseGpuResource(nodeMap)) {
         PostTask([this]() {
 #ifndef USE_ROSEN_DRAWING
@@ -2118,7 +2119,7 @@ void RSMainThread::ClearTransactionDataPidInfo(pid_t remotePid)
     // clear cpu cache when process exit
     // CLEAN_CACHE_FREQ to prevent multiple cleanups in a short period of time
     if ((timestamp_ - lastCleanCacheTimestamp_) / REFRESH_PERIOD > CLEAN_CACHE_FREQ) {
-#ifdef RS_ENABLE_GL
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
         RS_LOGD("RSMainThread: clear cpu cache pid:%{public}d", remotePid);
 #ifndef USE_ROSEN_DRAWING
 #ifdef NEW_RENDER_CONTEXT
@@ -2190,7 +2191,7 @@ void RSMainThread::ReleaseExitSurfaceNodeAllGpuResource(Drawing::GPUContext* gpu
 
 void RSMainThread::TrimMem(std::unordered_set<std::u16string>& argSets, std::string& dumpString)
 {
-#ifdef RS_ENABLE_GL
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     if (!RSUniRenderJudgement::IsUniRender()) {
         dumpString.append("\n---------------\nNot in UniRender and no resource can be released");
         return;
@@ -2324,7 +2325,7 @@ void RSMainThread::DumpNode(std::string& result, uint64_t nodeId) const
 void RSMainThread::DumpMem(std::unordered_set<std::u16string>& argSets, std::string& dumpString,
     std::string& type, int pid)
 {
-#ifdef RS_ENABLE_GL
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     DfxString log;
 #ifndef USE_ROSEN_DRAWING
 #ifdef NEW_RENDER_CONTEXT
@@ -2362,7 +2363,7 @@ void RSMainThread::DumpMem(std::unordered_set<std::u16string>& argSets, std::str
 
 void RSMainThread::CountMem(int pid, MemoryGraphic& mem)
 {
-#ifdef RS_ENABLE_GL
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
 #ifndef USE_ROSEN_DRAWING
 #ifdef NEW_RENDER_CONTEXT
     mem = MemoryManager::CountPidMemory(pid, GetRenderEngine()->GetDrawingContext()->GetDrawingContext());
@@ -2380,7 +2381,7 @@ void RSMainThread::CountMem(int pid, MemoryGraphic& mem)
 
 void RSMainThread::CountMem(std::vector<MemoryGraphic>& mems)
 {
-#ifdef RS_ENABLE_GL
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     if (!context_) {
         RS_LOGE("RSMainThread::CountMem Context is nullptr");
         return;
