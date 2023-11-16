@@ -3479,6 +3479,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 
     canvas_->ConcatMatrix(geoPtr->GetMatrix());
 #endif
+    isNodeSingleFrameComposer_ = node.GetNodeIsSingleFrameComposer();
     bool isSubNodeOfSurfaceInProcess = isSubNodeOfSurfaceInProcess_;
     if (node.IsMainWindowType() || node.IsLeashWindow()) {
         isSubNodeOfSurfaceInProcess_ = true;
@@ -3847,6 +3848,7 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
     if (!node.ShouldPaint()) {
         return;
     }
+    node.MarkNodeSingleFrameComposer(isNodeSingleFrameComposer_);
 #ifdef RS_ENABLE_EGLQUERYSURFACE
     if ((isOpDropped_ && (curSurfaceNode_ != nullptr)) || isCanvasNodeSkipDfxEnabled_) {
         // If all the child nodes have drawing areas that do not exceed the current node, then current node
