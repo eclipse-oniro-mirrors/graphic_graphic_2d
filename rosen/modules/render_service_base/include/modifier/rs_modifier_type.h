@@ -95,17 +95,19 @@ enum class RSModifierType : int16_t {
     OUTER_BORDER_WIDTH,            // 68
     OUTER_BORDER_STYLE,            // 69
     OUTER_BORDER_RADIUS,           // 70
-    CUSTOM,                        // 71
-    EXTENDED,                      // 72
-    TRANSITION,                    // 73
-    BACKGROUND_STYLE,              // 74
-    CONTENT_STYLE,                 // 75
-    FOREGROUND_STYLE,              // 76
-    OVERLAY_STYLE,                 // 77
-    NODE_MODIFIER,                 // 78
-    ENV_FOREGROUND_COLOR,          // 79
-    ENV_FOREGROUND_COLOR_STRATEGY, // 80
-    GEOMETRYTRANS,                 // 81
+    GREY_COEF1,                    // 71
+    GREY_COEF2,                    // 72
+    CUSTOM,                        // 73
+    EXTENDED,                      // 74
+    TRANSITION,                    // 75
+    BACKGROUND_STYLE,              // 76
+    CONTENT_STYLE,                 // 77
+    FOREGROUND_STYLE,              // 78
+    OVERLAY_STYLE,                 // 79
+    NODE_MODIFIER,                 // 80
+    ENV_FOREGROUND_COLOR,          // 81
+    ENV_FOREGROUND_COLOR_STRATEGY, // 82
+    GEOMETRYTRANS,                 // 83
 };
 
 enum class RSRenderPropertyType : int16_t {
