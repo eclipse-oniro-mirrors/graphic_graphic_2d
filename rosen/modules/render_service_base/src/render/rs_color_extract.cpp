@@ -162,8 +162,8 @@ void RSColorExtract::SplitBoxes(std::priority_queue<VBox, std::vector<VBox>, std
 
 bool RSColorExtract::cmp(std::pair<uint32_t, uint32_t>&a, std::pair<uint32_t, uint32_t>&b) {return a.second > b.second;}
 
-std::vector<std::pair<uint32_t, uint32_t>> RSColorExtract::GenerateAverageColors(std::priority_queue<VBox, \
-                                            std::vector<VBox>, std::less<VBox> > &queue)
+std::vector<std::pair<uint32_t, uint32_t>> RSColorExtract::GenerateAverageColors(std::priority_queue<VBox,
+    std::vector<VBox>, std::less<VBox> > &queue)
 {
     std::vector<std::pair<uint32_t, uint32_t>> featureColors;
     while (!queue.empty()) {
@@ -253,7 +253,7 @@ void RSColorExtract::GetNFeatureColors(int colorNum)
         return;
     }
     uint32_t *colorVal = colorVal_.get();
-    uint32_t histLen = (1 << (QUANTIZE_WORD_WIDTH * 3));
+    uint32_t histLen = (1 << (QUANTIZE_WORD_WIDTH * 3)); // 3 means left shift flag
     auto hist = new uint32_t[histLen]();
     std::shared_ptr<uint32_t> histShared(hist, [](uint32_t *ptr) {
         delete[] ptr;
