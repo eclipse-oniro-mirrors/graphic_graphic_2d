@@ -69,7 +69,9 @@
           "accessibility",
           "frame_aware_sched",
           "memmgr",
-          "memmgr_plugin" 
+          "memmgr_plugin",
+          "sensor",
+          "qos_manager"
         ],
         "third_party": [
           "flutter",
@@ -185,7 +187,8 @@
             "header": {
               "header_files": [
                 "graphic_common.h",
-                "graphic_common_c.h"
+                "graphic_common_c.h",
+                "metadata_convertor.h"
               ],
               "header_base": "//foundation/graphic/graphic_2d/interfaces/inner_api/common"
             }
@@ -332,6 +335,7 @@
                 "ifont_provider.h",
                 "system_font_provider.h",
                 "text_style.h",
+                "theme_font_provider.h",
                 "typography_builder.h",
                 "typography_style.h",
                 "typography_types.h",
