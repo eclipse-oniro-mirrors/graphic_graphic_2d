@@ -171,7 +171,7 @@ static const std::array<RSPropertyDrawable::DrawableGenerator, RSPropertyDrawabl
     nullptr,                                                              // BG_RESTORE_BOUNDS,
 
     // Frame Geometry
-    RSSaveLayerContentDrawable::Generate,                    // SAVE_LAYER_CONTENT
+    nullptr,                                                 // SAVE_LAYER_CONTENT
     nullptr,                                                 // SAVE_FRAME,
     nullptr,                                                 // FRAME_OFFSET,
     RSClipFrameDrawable::Generate,                           // CLIP_TO_FRAME,
@@ -190,13 +190,13 @@ static const std::array<RSPropertyDrawable::DrawableGenerator, RSPropertyDrawabl
     RSLinearGradientBlurFilterDrawable::Generate, // LINEAR_GRADIENT_BLUR_FILTER,
     RSForegroundColorDrawable::Generate,          // FOREGROUND_COLOR,
     nullptr,                                      // FG_RESTORE_BOUNDS
+    nullptr,                                      // RESTORE_BACKGROUND
 
     // No clip (unless ClipToBounds is set)
     RSBorderDrawable::Generate,                           // BORDER,
     CustomModifierAdapter<RSModifierType::OVERLAY_STYLE>, // OVERLAY
     RSParticleDrawable::Generate,                         // PARTICLE_EFFECT,
     RSPixelStretchDrawable::Generate,                     // PIXEL_STRETCH,
-    nullptr,                                              // RESTORE_BACKGROUND
 
     nullptr, // RESTORE_ALL,
 };
