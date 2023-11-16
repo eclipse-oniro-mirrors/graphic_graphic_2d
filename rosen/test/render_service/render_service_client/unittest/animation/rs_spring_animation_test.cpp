@@ -62,7 +62,7 @@ HWTEST_F(RSSpringAnimationTest, GetTimingCurveTest001, Level1)
 {
     auto property = std::make_shared<RSPropertyBase>();
     auto byValue = std::make_shared<RSPropertyBase>();
-    RSSpringAnimation rsSpringAnimation(property, byValue);
+    RSSpringAnimation rsSpringAnimation(property, byValue);;
     rsSpringAnimation.GetTimingCurve();
     ASSERT_NE(property, nullptr);
     ASSERT_NE(byValue, nullptr);
