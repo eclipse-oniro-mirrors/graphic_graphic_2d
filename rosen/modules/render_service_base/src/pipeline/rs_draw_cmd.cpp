@@ -559,7 +559,7 @@ void BitmapNineOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
 PixelmapNineOpItem::PixelmapNineOpItem(const std::shared_ptr<Media::PixelMap>& pixelmap, const SkIRect& center,
     const SkRect& rectDst, const SkFilterMode filter, const SkPaint* paint)
     : OpItemWithPaint(sizeof(PixelmapNineOpItem)), center_(center), rectDst_(rectDst), filter_(filter)
-{   
+{
     if (pixelmap) {
         rsImage_ = std::make_shared<RSImageBase>();
         rsImage_->SetPixelMap(pixelmap);
@@ -569,8 +569,8 @@ PixelmapNineOpItem::PixelmapNineOpItem(const std::shared_ptr<Media::PixelMap>& p
     }
 }
 
-PixelmapNineOpItem::PixelmapNineOpItem(const SkIRect& center, const SkRect& rectDst,
-    const SkFilterMode filter, const std::shared_ptr<RSImageBase> rsImage, const SkPaint* paint)
+PixelmapNineOpItem::PixelmapNineOpItem(const std::shared_ptr<RSImageBase> rsImage, const SkIRect& center,
+    const SkRect& rectDst, const SkFilterMode filter, const SkPaint* paint)
     : OpItemWithPaint(sizeof(PixelmapNineOpItem)), center_(center), rectDst_(rectDst), filter_(filter),
     rsImage_(rsImage)
 {
@@ -1723,7 +1723,7 @@ bool PixelmapNineOpItem::Marshalling(Parcel& parcel) const
                    RSMarshallingHelper::Marshalling(parcel, rectDst_) &&
                    RSMarshallingHelper::Marshalling(parcel, static_cast<int32_t>(filter_)) &&
                    RSMarshallingHelper::Marshalling(parcel, rsImage_) &&
-                   RSMarshallingHelper::Marshalling(parcel, paint_) ;
+                   RSMarshallingHelper::Marshalling(parcel, paint_);
     if (!success) {
         ROSEN_LOGE("PixelmapNineOpItem::Marshalling failed!");
         return false;
@@ -1739,16 +1739,15 @@ OpItem* PixelmapNineOpItem::Unmarshalling(Parcel& parcel)
     std::shared_ptr<RSImageBase> rsImage;
     SkPaint paint;
     bool success = RSMarshallingHelper::Unmarshalling(parcel, center) &&
-                   RSMarshallingHelper::Unmarshalling(parcel, rectDst) &&                   
+                   RSMarshallingHelper::Unmarshalling(parcel, rectDst) &&
                    RSMarshallingHelper::Unmarshalling(parcel, filter) &&
                    RSMarshallingHelper::Unmarshalling(parcel, rsImage) &&
                    RSMarshallingHelper::Unmarshalling(parcel, paint);
-
     if (!success) {
         ROSEN_LOGE("PixelmapNineOpItem::Unmarshalling failed!");
         return nullptr;
     }
-    return new PixelmapNineOpItem(center, rectDst, static_cast<SkFilterMode>(filter), rsImage, &paint);
+    return new PixelmapNineOpItem(rsImage, center, rectDst, static_cast<SkFilterMode>(filter), &paint);
 }
 
 // AdaptiveRRectOpItem

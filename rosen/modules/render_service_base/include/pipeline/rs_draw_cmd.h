@@ -1021,8 +1021,8 @@ class PixelmapNineOpItem : public OpItemWithPaint {
 public:
     PixelmapNineOpItem(const std::shared_ptr<Media::PixelMap>& pixelmap, const SkIRect& center,
         const SkRect& rectDst, const SkFilterMode filter, const SkPaint* paint);
-    PixelmapNineOpItem(const SkIRect& center, const SkRect& rectDst, const SkFilterMode filter,
-        const std::shared_ptr<RSImageBase> rsImage, const SkPaint* paint);
+    PixelmapNineOpItem(const std::shared_ptr<RSImageBase> rsImage, const SkIRect& center, const SkRect& rectDst,
+        const SkFilterMode filter, const SkPaint* paint);
     ~PixelmapNineOpItem() override {}
     void Draw(RSPaintFilterCanvas& canvas, const SkRect*) const override;
     
@@ -1041,7 +1041,7 @@ public:
     bool Marshalling(Parcel& parcel) const override;
     [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
 
-private:   
+private:
     SkIRect center_;
     SkRect rectDst_;
     SkFilterMode filter_;

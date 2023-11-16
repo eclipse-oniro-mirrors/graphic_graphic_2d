@@ -221,7 +221,7 @@ void RSRecordingCanvas::onDrawBitmapNine(
 
 void RSRecordingCanvas::drawImageNine(
     const std::shared_ptr<Media::PixelMap>& pixelmap, const SkIRect& center, const SkRect& dst,
-        SkFilterMode filter, const SkPaint* paint)
+    SkFilterMode filter, const SkPaint* paint)
 {
     RS_DRAWOP_TRACE_FUNC();
     std::unique_ptr<OpItem> op = std::make_unique<PixelmapNineOpItem>(pixelmap, center, dst, filter, paint);
