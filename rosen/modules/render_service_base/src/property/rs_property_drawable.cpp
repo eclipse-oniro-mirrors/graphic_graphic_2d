@@ -18,6 +18,7 @@
 #include <set>
 
 #include "pipeline/rs_render_node.h"
+#include "platform/common/rs_log.h"
 #include "property/rs_properties.h"
 #include "property/rs_property_drawable_bounds_geometry.h"
 #include "property/rs_property_drawable_frame_geometry.h"
@@ -172,7 +173,7 @@ static const std::array<RSPropertyDrawable::DrawableGenerator, RSPropertyDrawabl
     nullptr,                                                              // BG_RESTORE_BOUNDS,
 
     // Frame Geometry
-    RSSaveLayerContentDrawable::Generate,                    // SAVE_LAYER_CONTENT
+    nullptr,                                                 // SAVE_LAYER_CONTENT
     nullptr,                                                 // SAVE_FRAME,
     nullptr,                                                 // FRAME_OFFSET,
     RSClipFrameDrawable::Generate,                           // CLIP_TO_FRAME,
@@ -181,6 +182,7 @@ static const std::array<RSPropertyDrawable::DrawableGenerator, RSPropertyDrawabl
     CustomModifierAdapter<RSModifierType::FOREGROUND_STYLE>, // FOREGROUND_STYLE
     RSColorFilterDrawable::Generate,                         // COLOR_FILTER,
     nullptr,                                                 // RESTORE_FRAME,
+    nullptr,                                                 // RESTORE_CONTENT
 
     // FG properties in Bounds clip
     nullptr,                                      // FG_SAVE_BOUNDS,
@@ -190,6 +192,7 @@ static const std::array<RSPropertyDrawable::DrawableGenerator, RSPropertyDrawabl
     RSLinearGradientBlurFilterDrawable::Generate, // LINEAR_GRADIENT_BLUR_FILTER,
     RSForegroundColorDrawable::Generate,          // FOREGROUND_COLOR,
     nullptr,                                      // FG_RESTORE_BOUNDS
+    nullptr,                                      // RESTORE_BACKGROUND
 
     // No clip (unless ClipToBounds is set)
     RSBorderDrawable::Generate,                           // BORDER,
@@ -267,13 +270,8 @@ bool RSPropertyDrawable::UpdateDrawableVec(const RSPropertyDrawableGenerateConte
     }
 
     // Step 2.2: post-generate hooks (PLANNING: refactor this into a separate function)
-    if (drawableSlotChanged && dirtySlots.count(RSPropertyDrawableSlot::SAVE_LAYER_CONTENT)) {
-        if (drawableVec[RSPropertyDrawableSlot::SAVE_LAYER_CONTENT] != nullptr) {
-            drawableVec[RSPropertyDrawableSlot::SAVE_LAYER_BACKGROUND] =
-                RSSaveLayerBackgroundDrawable::Generate(context);
-        } else {
-            drawableVec[RSPropertyDrawableSlot::SAVE_LAYER_BACKGROUND] = nullptr;
-        }
+    if (dirtySlots.count(RSPropertyDrawableSlot::SAVE_LAYER_CONTENT)) {
+        UpdateSaveLayerSlots(context, drawableVec);
     }
 
     // Temporary fix, change of clipToBounds should trigger UpdateSaveRestore
@@ -433,5 +431,45 @@ void RSPropertyDrawable::OptimizeFrameSaveRestore(
 RSPropertyDrawableGenerateContext::RSPropertyDrawableGenerateContext(RSRenderNode& node)
     : node_(node.shared_from_this()), properties_(node.GetRenderProperties()), hasChildren_(!node.GetChildren().empty())
 {}
+
+void ConvertBlendmodeToPaint(const RSPropertyDrawableGenerateContext& context, SkPaint& blendPaint)
+{
+    static const std::unordered_map<int, SkBlendMode> skBlendModeLUT = {
+        { static_cast<int>(RSColorBlendModeType::DST_IN), SkBlendMode::kDstIn },
+        { static_cast<int>(RSColorBlendModeType::SRC_IN), SkBlendMode::kSrcIn }
+    };
+    auto& properties = context.properties_;
+    int blendMode = properties.GetColorBlendMode();
+    auto iter = skBlendModeLUT.find(blendMode);
+    if (iter == skBlendModeLUT.end()) {
+        ROSEN_LOGE("The desired color_blend_mode is undefined, will behave as no blendmode.");
+        return;
+    }
+    blendPaint.setBlendMode(skBlendModeLUT.at(blendMode));
+}
+
+void RSPropertyDrawable::UpdateSaveLayerSlots(
+    const RSPropertyDrawableGenerateContext& context, DrawableVec& drawableVec)
+{
+    SkPaint blendPaint;
+    ConvertBlendmodeToPaint(context, blendPaint);
+    // blendmode value is invalid, clear relative 4 slots
+    if (!blendPaint.asBlendMode().has_value()) {
+        drawableVec[RSPropertyDrawableSlot::SAVE_LAYER_CONTENT] = nullptr;
+        drawableVec[RSPropertyDrawableSlot::RESTORE_CONTENT] = nullptr;
+        drawableVec[RSPropertyDrawableSlot::SAVE_LAYER_BACKGROUND] = nullptr;
+        drawableVec[RSPropertyDrawableSlot::RESTORE_BACKGROUND] = nullptr;
+        return;
+    }
+    // dirty slots COLOR_BLEND changed from none to valid value
+    auto contentCount = std::make_shared<int>(-1);
+    drawableVec[RSPropertyDrawableSlot::SAVE_LAYER_CONTENT] =
+        std::make_unique<RSSaveLayerContentDrawable>(contentCount, std::move(blendPaint));
+    drawableVec[RSPropertyDrawableSlot::RESTORE_CONTENT] = std::make_unique<RSRestoreDrawable>(contentCount);
+    auto backgroundCount = std::make_shared<int>(-1);
+    drawableVec[RSPropertyDrawableSlot::SAVE_LAYER_BACKGROUND] =
+        std::make_unique<RSSaveLayerBackgroundDrawable>(backgroundCount);
+    drawableVec[RSPropertyDrawableSlot::RESTORE_BACKGROUND] = std::make_unique<RSRestoreDrawable>(backgroundCount);
+}
 
 } // namespace OHOS::Rosen

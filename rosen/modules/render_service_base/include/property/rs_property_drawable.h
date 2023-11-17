@@ -68,6 +68,7 @@ enum RSPropertyDrawableSlot : uint8_t {
     FOREGROUND_STYLE,
     COLOR_FILTER,
     RESTORE_FRAME,
+    RESTORE_CONTENT,
 
     // FG properties in Bounds clip
     FG_SAVE_BOUNDS,
@@ -77,6 +78,7 @@ enum RSPropertyDrawableSlot : uint8_t {
     LINEAR_GRADIENT_BLUR_FILTER,
     FOREGROUND_COLOR,
     FG_RESTORE_BOUNDS,
+    RESTORE_BACKGROUND,
 
     // No clip (unless ClipToBounds is set)
     BORDER,
@@ -137,6 +139,7 @@ private:
         RSPropertyDrawableGenerateContext& context, DrawableVec& drawableVec, uint8_t flags);
     static void OptimizeFrameSaveRestore(
         RSPropertyDrawableGenerateContext& context, DrawableVec& drawableVec, uint8_t flags);
+    static void UpdateSaveLayerSlots(const RSPropertyDrawableGenerateContext& context, DrawableVec& drawableVec);
 };
 
 class RSPropertyDrawableGenerateContext {
