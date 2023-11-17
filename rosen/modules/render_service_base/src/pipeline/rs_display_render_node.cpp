@@ -26,7 +26,7 @@ namespace Rosen {
 RSDisplayRenderNode::RSDisplayRenderNode(
     NodeId id, const RSDisplayNodeConfig& config, const std::weak_ptr<RSContext>& context)
     : RSRenderNode(id, context), RSSurfaceHandler(id), screenId_(config.screenId), offsetX_(0), offsetY_(0),
-      isMirroredDisplay_(config.isMirrored), dirtyManager_(std::make_shared<RSDirtyRegionManager>())
+      isMirroredDisplay_(config.isMirrored), dirtyManager_(std::make_shared<RSDirtyRegionManager>(true))
 {
     MemoryInfo info = {sizeof(*this), ExtractPid(id), id, MEMORY_TYPE::MEM_RENDER_NODE};
     MemoryTrack::Instance().AddNodeRecord(id, info);
@@ -63,9 +63,12 @@ void RSDisplayRenderNode::Process(const std::shared_ptr<RSNodeVisitor>& visitor)
     visitor->ProcessDisplayRenderNode(*this);
 }
 
-void RSDisplayRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId firstLevelNodeId)
+void RSDisplayRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId firstLevelNodeId,
+    NodeId cacheNodeId)
 {
-    RSRenderNode::SetIsOnTheTree(flag, GetId(), firstLevelNodeId);
+    // if node is marked as cacheRoot, update subtree status when update surface
+    // in case prepare stage upper cacheRoot cannot specify dirty subnode
+    RSRenderNode::SetIsOnTheTree(flag, GetId(), firstLevelNodeId, cacheNodeId);
 }
 
 RSDisplayRenderNode::CompositeType RSDisplayRenderNode::GetCompositeType() const
@@ -121,6 +124,26 @@ void RSDisplayRenderNode::SetIsMirrorDisplay(bool isMirror)
     isMirroredDisplay_ = isMirror;
     RS_LOGD("RSDisplayRenderNode::SetIsMirrorDisplay, node id:[%{public}" PRIu64 "], isMirrorDisplay: [%{public}s]",
         GetId(), IsMirrorDisplay() ? "true" : "false");
+}
+
+void RSDisplayRenderNode::SetBootAnimation(bool isBootAnimation)
+{
+    ROSEN_LOGD("SetBootAnimation:: id:[%{public}" PRIu64 ", isBootAnimation:%{public}d",
+        GetId(), isBootAnimation);
+    isBootAnimation_ = isBootAnimation;
+
+    auto parent = GetParent().lock();
+    if (parent == nullptr) {
+        return;
+    }
+    if (isBootAnimation) {
+        parent->SetContainBootAnimation(true);
+    }
+}
+
+bool RSDisplayRenderNode::GetBootAnimation() const
+{
+    return isBootAnimation_;
 }
 
 #ifndef ROSEN_CROSS_PLATFORM

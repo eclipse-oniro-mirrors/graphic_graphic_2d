@@ -16,6 +16,7 @@
 #define RENDER_SERVICE_CLIENT_CORE_UI_RS_DISPLAY_NODE_H
 
 #include "ui/rs_node.h"
+#include "screen_manager/screen_types.h"
 
 #ifndef USE_ROSEN_DRAWING
 class SkCanvas;
@@ -39,11 +40,16 @@ public:
 
     static SharedPtr Create(const RSDisplayNodeConfig& displayNodeConfig);
 
+    bool Marshalling(Parcel& parcel) const;
+    static SharedPtr Unmarshalling(Parcel& parcel);
+
     void SetScreenId(uint64_t screenId);
 
     void SetDisplayOffset(int32_t offsetX, int32_t offsetY);
 
     void SetSecurityDisplay(bool isSecurityDisplay);
+
+    void SetScreenRotation(const uint32_t& rotation);
 
     void SetDisplayNodeMirrorConfig(const RSDisplayNodeConfig& displayNodeConfig);
 
@@ -51,8 +57,12 @@ public:
 
     bool IsMirrorDisplay() const;
 
+    void SetBootAnimation(bool isBootAnimation);
+    bool GetBootAnimation() const;
+
 protected:
     explicit RSDisplayNode(const RSDisplayNodeConfig& config);
+    RSDisplayNode(const RSDisplayNodeConfig& config, NodeId id);
     RSDisplayNode(const RSDisplayNode&) = delete;
     RSDisplayNode(const RSDisplayNode&&) = delete;
     RSDisplayNode& operator=(const RSDisplayNode&) = delete;
@@ -64,6 +74,7 @@ private:
     int32_t offsetY_;
     bool isSecurityDisplay_ = false;
     bool isMirroredDisplay_ = false;
+    bool isBootAnimation_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

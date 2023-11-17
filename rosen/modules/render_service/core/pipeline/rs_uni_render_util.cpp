@@ -374,7 +374,7 @@ bool RSUniRenderUtil::HandleSubThreadNode(RSRenderNode& node, RSPaintFilterCanva
     }
     if (!node.HasCachedTexture()) {
         RS_TRACE_NAME_FMT("HandleSubThreadNode wait %" PRIu64 "", node.GetId());
-#if defined(RS_ENABLE_GL)
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
         RSSubThreadManager::Instance()->WaitNodeTask(node.GetId());
         node.UpdateCompletedCacheSurface();
 #endif
@@ -402,7 +402,7 @@ bool RSUniRenderUtil::HandleCaptureNode(RSRenderNode& node, RSPaintFilterCanvas&
         if (curNode->IsOnTheTree()) {
             return HandleSubThreadNode(*curNode, canvas);
         } else {
-#ifdef RS_ENABLE_GL
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
             if (curNode->GetCacheSurfaceProcessedStatus() == CacheProcessStatus::DOING) {
                 RSSubThreadManager::Instance()->WaitNodeTask(curNode->GetId());
             }
@@ -427,6 +427,20 @@ int RSUniRenderUtil::GetRotationFromMatrix(SkMatrix matrix)
     auto iter = supportedDegrees.find(rAngle);
     return iter != supportedDegrees.end() ? iter->second : 0;
 }
+
+int RSUniRenderUtil::GetRotationDegreeFromMatrix(SkMatrix matrix)
+{
+    float value[9];
+    matrix.get9(value);
+    return static_cast<int>(-round(atan2(value[SkMatrix::kMSkewX], value[SkMatrix::kMScaleX]) * (180 / PI)));
+}
+
+bool RSUniRenderUtil::Is3DRotation(SkMatrix matrix)
+{
+    return !ROSEN_EQ(matrix.getSkewX(), 0.f) || matrix.getScaleX() < 0 ||
+        !ROSEN_EQ(matrix.getSkewY(), 0.f) || matrix.getScaleY() < 0;
+}
+
 #else
 int RSUniRenderUtil::GetRotationFromMatrix(Drawing::Matrix matrix)
 {
@@ -442,6 +456,23 @@ int RSUniRenderUtil::GetRotationFromMatrix(Drawing::Matrix matrix)
     auto iter = supportedDegrees.find(rAngle);
     return iter != supportedDegrees.end() ? iter->second : 0;
 }
+
+int RSUniRenderUtil::GetRotationDegreeFromMatrix(Drawing::Matrix matrix)
+{
+    Drawing::Matrix::Buffer value;
+    matrix.GetAll(value);
+    return static_cast<int>(-round(atan2(value[Drawing::Matrix::Index::SKEW_X],
+        value[Drawing::Matrix::Index::SCALE_X]) * (180 / PI)));
+}
+
+bool RSUniRenderUtil::Is3DRotation(Drawing::Matrix matrix)
+{
+    return !ROSEN_EQ(matrix.Get(Drawing::Matrix::Index::SKEW_X), 0.f) ||
+        matrix.Get(Drawing::Matrix::Index::SCALE_X) < 0 ||
+        !ROSEN_EQ(matrix.Get(Drawing::Matrix::Index::SKEW_Y), 0.f) ||
+        matrix.Get(Drawing::Matrix::Index::SCALE_Y) < 0;
+}
+
 #endif
 
 void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNode>& displayNode,
@@ -453,8 +484,7 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
         return;
     }
     bool isRotation = displayNode->IsRotationChanged();
-    bool isScale = false;
-    uint32_t leashWindowCount = 0;
+    bool rotationCache = RSSystemProperties::GetCacheEnabledForRotation();
     bool isFocusNodeFound = false;
     uint64_t realFocusNodeId = 0;
     std::string logInfo = "";
@@ -471,12 +501,6 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
         if (node == nullptr) {
             ROSEN_LOGE("RSUniRenderUtil::AssignWindowNodes nullptr found in sortedChildren, this should not happen");
             continue;
-        }
-        if (node->IsLeashWindow()) {
-            leashWindowCount++;
-        }
-        if (node->IsLeashWindow() && node->IsScale()) {
-            isScale = true;
         }
         if (deviceType != DeviceType::PHONE) {
             if (node->GetId() == focusNodeId) {
@@ -496,8 +520,7 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
     // trace info for assign window nodes
     bool debugTraceEnable = Rosen::RSSystemProperties::GetDebugTraceEnabled();
     if (debugTraceEnable) {
-        logInfo += "{ isScale: " + std::to_string(isScale) + ", " +
-            "leashWindowCount: " + std::to_string(leashWindowCount) + ", " +
+        logInfo += "{ rotationCache: " + std::to_string(rotationCache) + ", " +
             "isRotation: " + std::to_string(isRotation) + " }; " +
             "realFocusNodeId: " + std::to_string(realFocusNodeId) + " ]";
     }
@@ -507,17 +530,22 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
             ROSEN_LOGE("RSUniRenderUtil::AssignWindowNodes nullptr found in sortedChildren, this should not happen");
             continue;
         }
+        bool isNeedAssignToSubThread = !rotationCache && node->IsLeashWindow()
+            && (node->IsScale() || ROSEN_EQ(node->GetGlobalAlpha(), 0.0f))
+            && !node->HasFilter() && !node->HasAbilityComponent();
         // trace info for assign window nodes
         if (debugTraceEnable) {
             logInfo += "node:[ " + node->GetName() + ", " + std::to_string(node->GetId()) + " ]" +
                 "( " + std::to_string(static_cast<uint32_t>(node->GetCacheSurfaceProcessedStatus())) + ", " +
-                std::to_string(node->HasFilter()) + ", " + std::to_string(node->HasAbilityComponent()) + " ); ";
+                std::to_string(node->HasFilter()) + ", " + std::to_string(node->HasAbilityComponent()) +
+                ", " + std::to_string(node->IsScale()) + ", " + std::to_string(isNeedAssignToSubThread) + " ); ";
         }
         std::string surfaceName = node->GetName();
         bool needFilter = surfaceName == ENTRY_VIEW || surfaceName == WALLPAPER_VIEW ||
             surfaceName == SYSUI_STATUS_BAR || surfaceName == SCREENLOCK_WINDOW ||
             surfaceName == SYSUI_DROPDOWN || surfaceName == PRIVACY_INDICATOR;
-        bool needFilterSCB = surfaceName.substr(0, 3) == "SCB";
+        bool needFilterSCB = surfaceName.substr(0, 3) == "SCB" ||
+            surfaceName.substr(0, 13) == "BlurComponent"; // filter BlurComponent, 13 is string len
         if (needFilter || needFilterSCB || node->IsSelfDrawingType()) {
             AssignMainThreadNode(mainThreadNodes, node);
             continue;
@@ -527,16 +555,16 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
             continue;
         }
         if (deviceType == DeviceType::PHONE) {
-            if (isScale) { // app start or close scene
-                if (!node->HasFilter() && !node->HasAbilityComponent() && !isRotation) {
-                    AssignSubThreadNode(subThreadNodes, node);
-                } else {
-                    AssignMainThreadNode(mainThreadNodes, node);
-                }
+            if (isNeedAssignToSubThread) { // app start or close scene
+                AssignSubThreadNode(subThreadNodes, node);
             } else { // other scene
                 AssignMainThreadNode(mainThreadNodes, node);
             }
         } else { // PC or TABLET
+            if (node->GetId() == realFocusNodeId) {
+                AssignMainThreadNode(mainThreadNodes, node);
+                continue;
+            }
             if (node->QuerySubAssignable(isRotation)) {
                 AssignSubThreadNode(subThreadNodes, node, deviceType, realFocusNodeId);
             } else {
@@ -589,7 +617,7 @@ void RSUniRenderUtil::AssignSubThreadNode(std::list<std::shared_ptr<RSSurfaceRen
         node->UpdateCacheSurfaceDirtyManager(2); // 2 means buffer age
     }
     subThreadNodes.emplace_back(node);
-#if defined(RS_ENABLE_GL)
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     if (node->GetCacheSurfaceProcessedStatus() == CacheProcessStatus::DONE &&
         node->GetCacheSurface(UNI_MAIN_THREAD_INDEX, false) && node->GetCacheSurfaceNeedUpdated()) {
         node->UpdateCompletedCacheSurface();
@@ -770,7 +798,7 @@ void RSUniRenderUtil::PostReleaseSurfaceTask(std::shared_ptr<Drawing::Surface>&&
             instance->ReleaseSurface();
         });
     } else {
-#ifdef RS_ENABLE_GL
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
         auto instance = RSSubThreadManager::Instance();
         instance->AddToReleaseQueue(std::move(surface), threadIndex);
         instance->ReleaseSurface(threadIndex);

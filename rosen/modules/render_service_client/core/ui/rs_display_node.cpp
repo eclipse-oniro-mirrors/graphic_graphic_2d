@@ -36,6 +36,34 @@ RSDisplayNode::SharedPtr RSDisplayNode::Create(const RSDisplayNodeConfig& displa
     return node;
 }
 
+bool RSDisplayNode::Marshalling(Parcel& parcel) const
+{
+    return parcel.WriteUint64(GetId()) && parcel.WriteUint64(screenId_) && parcel.WriteBool(isMirroredDisplay_);
+}
+
+RSDisplayNode::SharedPtr RSDisplayNode::Unmarshalling(Parcel& parcel)
+{
+    uint64_t id = UINT64_MAX;
+    uint64_t screenId = UINT64_MAX;
+    bool isMirrored = false;
+    if (!(parcel.ReadUint64(id) && parcel.ReadUint64(screenId) && parcel.ReadBool(isMirrored))) {
+        ROSEN_LOGE("RSDisplayNode::Unmarshalling, read param failed");
+        return nullptr;
+    }
+
+    if (auto prevNode = RSNodeMap::Instance().GetNode(id)) {
+        // if the node id is already in the map, we should not create a new node
+        return prevNode->ReinterpretCastTo<RSDisplayNode>();
+    }
+
+    RSDisplayNodeConfig config { .screenId = screenId, .isMirrored = isMirrored };
+
+    SharedPtr displayNode(new RSDisplayNode(config, id));
+    RSNodeMap::MutableInstance().RegisterNode(displayNode);
+
+    return displayNode;
+}
+
 void RSDisplayNode::ClearChildren()
 {
     auto children = GetChildren();
@@ -95,6 +123,35 @@ void RSDisplayNode::SetDisplayNodeMirrorConfig(const RSDisplayNodeConfig& displa
         " isMirrored:[%{public}s]", GetId(), displayNodeConfig.isMirrored ? "true" : "false");
 }
 
+void RSDisplayNode::SetScreenRotation(const uint32_t& rotation)
+{
+    ScreenRotation screenRotation = ScreenRotation::ROTATION_0;
+    switch (rotation) {
+        case 0: // Rotation::ROTATION_0
+            screenRotation = ScreenRotation::ROTATION_0;
+            break;
+        case 1: // Rotation::ROTATION_90
+            screenRotation = ScreenRotation::ROTATION_90;
+            break;
+        case 2: // Rotation::ROTATION_180
+            screenRotation = ScreenRotation::ROTATION_180;
+            break;
+        case 3: // Rotation::ROTATION_270
+            screenRotation = ScreenRotation::ROTATION_270;
+            break;
+        default:
+            screenRotation = ScreenRotation::INVALID_SCREEN_ROTATION;
+            break;
+    }
+    std::unique_ptr<RSCommand> command = std::make_unique<RSDisplayNodeSetScreenRotation>(GetId(), screenRotation);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, true);
+    }
+    ROSEN_LOGI("RSDisplayNode::SetScreenRotation, displayNodeId:[%{public}" PRIu64 "]"
+               " screenRotation:[%{public}d]", GetId(), rotation);
+}
+
 bool RSDisplayNode::IsMirrorDisplay() const
 {
     return isMirroredDisplay_;
@@ -106,6 +163,25 @@ RSDisplayNode::RSDisplayNode(const RSDisplayNodeConfig& config)
     (void)screenId_;
     (void)offsetX_;
     (void)offsetY_;
+}
+
+RSDisplayNode::RSDisplayNode(const RSDisplayNodeConfig& config, NodeId id)
+    : RSNode(true, id), screenId_(config.screenId), offsetX_(0), offsetY_(0), isMirroredDisplay_(config.isMirrored)
+{}
+
+void RSDisplayNode::SetBootAnimation(bool isBootAnimation)
+{
+    isBootAnimation_ = isBootAnimation;
+    std::unique_ptr<RSCommand> command = std::make_unique<RSDisplayNodeSetBootAnimation>(GetId(), isBootAnimation);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, true);
+    }
+}
+
+bool RSDisplayNode::GetBootAnimation() const
+{
+    return isBootAnimation_;
 }
 
 RSDisplayNode::~RSDisplayNode() = default;

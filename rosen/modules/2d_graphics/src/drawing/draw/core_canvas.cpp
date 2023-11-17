@@ -68,6 +68,12 @@ ImageInfo CoreCanvas::GetImageInfo()
     return impl_->GetImageInfo();
 }
 
+bool CoreCanvas::ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+    int srcX, int srcY)
+{
+    return impl_->ReadPixels(dstInfo, dstPixels, dstRowBytes, srcX, srcY);
+}
+
 void CoreCanvas::DrawPoint(const Point& point)
 {
     impl_->DrawPoint(point);
@@ -155,6 +161,11 @@ void CoreCanvas::DrawEdgeAAQuad(const Rect& rect, const Point clip[4],
     impl_->DrawEdgeAAQuad(rect, clip, aaFlags, color, mode);
 }
 
+void CoreCanvas::DrawVertices(const Vertices& vertices, BlendMode mode)
+{
+    impl_->DrawVertices(vertices, mode);
+}
+
 void CoreCanvas::DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py)
 {
     impl_->DrawBitmap(bitmap, px, py);
@@ -166,7 +177,7 @@ void CoreCanvas::DrawImageNine(const Image* image, const RectI& center, const Re
     impl_->DrawImageNine(image, center, dst, filter, brush);
 }
 
-void CoreCanvas::DrawAnnotation(const Rect& rect, const char* key, const Data& data)
+void CoreCanvas::DrawAnnotation(const Rect& rect, const char* key, const Data* data)
 {
     impl_->DrawAnnotation(rect, key, data);
 }
@@ -208,9 +219,19 @@ void CoreCanvas::DrawSVGDOM(const sk_sp<SkSVGDOM>& svgDom)
     impl_->DrawSVGDOM(svgDom);
 }
 
+void CoreCanvas::DrawTextBlob(const TextBlob* blob, const scalar x, const scalar y)
+{
+    impl_->DrawTextBlob(blob, x, y);
+}
+
 void CoreCanvas::ClipRect(const Rect& rect, ClipOp op, bool doAntiAlias)
 {
     impl_->ClipRect(rect, op, doAntiAlias);
+}
+
+void CoreCanvas::ClipIRect(const RectI& rect, ClipOp op)
+{
+    impl_->ClipIRect(rect, op);
 }
 
 void CoreCanvas::ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias)
@@ -231,6 +252,11 @@ void CoreCanvas::ClipRegion(const Region& region, ClipOp op)
 bool CoreCanvas::IsClipEmpty()
 {
     return impl_->IsClipEmpty();
+}
+
+bool CoreCanvas::IsClipRect()
+{
+    return impl_->IsClipRect();
 }
 
 bool CoreCanvas::QuickReject(const Rect& rect)
@@ -303,6 +329,11 @@ uint32_t CoreCanvas::GetSaveCount() const
     return impl_->GetSaveCount();
 }
 
+void CoreCanvas::Discard()
+{
+    return impl_->Discard();
+}
+
 CoreCanvas& CoreCanvas::AttachPen(const Pen& pen)
 {
     impl_->AttachPen(pen);
@@ -330,6 +361,21 @@ CoreCanvas& CoreCanvas::DetachBrush()
 std::shared_ptr<CoreCanvasImpl> CoreCanvas::GetCanvasData() const
 {
     return impl_;
+}
+
+bool CoreCanvas::isHighContrastEnabled() const
+{
+    return false;
+}
+
+Drawing::CacheType CoreCanvas::GetCacheType() const
+{
+    return Drawing::CacheType::UNDEFINED;
+}
+
+Drawing::Surface* CoreCanvas::GetSurface() const
+{
+    return nullptr;
 }
 } // namespace Drawing
 } // namespace Rosen

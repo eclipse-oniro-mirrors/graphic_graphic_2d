@@ -74,7 +74,7 @@ std::vector<VariantSpan> TextMerger::MergeSpans(const std::vector<VariantSpan> &
         }
 
         if (it == spans.begin()) {
-            throw TEXGINE_EXCEPTION(ERROR_STATUS);
+            return {};
         }
 
         auto &lastSpan = *(it - 1);
@@ -123,6 +123,8 @@ MergeResult TextMerger::MergeSpan(const VariantSpan &span, std::optional<bool> &
     if (!cgs.IsValid()) {
         cgs = ts->cgs_;
     } else if (cgs.Get(0).typeface != ts->typeface_) {
+        return MergeResult::REJECTED;
+    } else if (cgs.GetBack().isWordEnd) {
         return MergeResult::REJECTED;
     } else {
         cgs.Merge(ts->cgs_);

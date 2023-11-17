@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <optional>
+#include <thread>
 #include "common/rs_macros.h"
 #ifdef USE_ROSEN_DRAWING
 #include "image/image.h"
@@ -64,10 +65,13 @@ namespace Rosen {
 class DrawCmdList;
 class OpItem;
 #else
+class RSExtendImageObject;
 namespace Drawing {
 class DrawCmdList;
+class MaskCmdList;
 class Data;
 class Image;
+class Bitmap;
 }
 #endif
 class RSFilter;
@@ -191,6 +195,7 @@ public:
     static bool SkipSkImage(Parcel& parcel);
 #else
     DECLARE_FUNCTION_OVERLOAD(Drawing::Matrix)
+    DECLARE_FUNCTION_OVERLOAD(Drawing::Bitmap)
     static bool SkipData(Parcel& parcel);
     static bool SkipImage(Parcel& parcel);
 #endif
@@ -212,6 +217,8 @@ public:
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<DrawCmdList>)
 #else
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<Drawing::DrawCmdList>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSExtendImageObject>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<Drawing::MaskCmdList>)
 #endif
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<Media::PixelMap>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RectT<float>>)
@@ -346,10 +353,12 @@ public:
     static bool DserializeInternal(Parcel& parcel, sk_sp<SkTextBlob>& val,
         const SkDeserialProcs& procs, sk_sp<SkData>& data);
 #endif
-
+    static void BeginNoSharedMem(std::thread::id tid);
+    static void EndNoSharedMem();
+    static bool GetUseSharedMem();
 private:
     static bool WriteToParcel(Parcel& parcel, const void* data, size_t size);
-    static const void* ReadFromParcel(Parcel& parcel, size_t size);
+    static const void* ReadFromParcel(Parcel& parcel, size_t size, bool& isMalloc);
     static bool SkipFromParcel(Parcel& parcel, size_t size);
 #ifndef USE_ROSEN_DRAWING
     static sk_sp<SkData> SerializeTypeface(SkTypeface* tf, void* ctx);

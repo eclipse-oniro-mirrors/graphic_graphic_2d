@@ -23,6 +23,7 @@
 #include "rs_trace.h"
 #include "pipeline/parallel_render/rs_sub_thread_manager.h"
 #include "pipeline/rs_main_thread.h"
+#include "memory/rs_memory_graphic.h"
 #include "memory/rs_memory_manager.h"
 #include "pipeline/rs_uni_render_util.h"
 #include "pipeline/rs_uni_render_visitor.h"
@@ -30,6 +31,10 @@
 #ifdef RES_SCHED_ENABLE
 #include "res_type.h"
 #include "res_sched_client.h"
+#endif
+
+#ifdef RS_ENABLE_VK
+#include "platform/ohos/backend/rs_vulkan_context.h"
 #endif
 
 namespace OHOS::Rosen {
@@ -108,22 +113,18 @@ float RSSubThread::GetAppGpuMemoryInMB()
 {
     float total = 0.f;
     PostSyncTask([&total, this]() {
-#ifndef USE_ROSEN_DRAWING
         total = MemoryManager::GetAppGpuMemoryInMB(grContext_.get());
-#else
-        RS_LOGE("Drawing Unsupport GetAppGpuMemoryInMB");
-#endif
     });
     return total;
 }
 
 void RSSubThread::CreateShareEglContext()
 {
-#ifdef RS_ENABLE_GL
     if (renderContext_ == nullptr) {
         RS_LOGE("renderContext_ is nullptr");
         return;
     }
+#ifdef RS_ENABLE_GL
     eglShareContext_ = renderContext_->CreateShareContext();
     if (eglShareContext_ == EGL_NO_CONTEXT) {
         RS_LOGE("eglShareContext_ is EGL_NO_CONTEXT");
@@ -149,7 +150,7 @@ void RSSubThread::DestroyShareEglContext()
 
 void RSSubThread::RenderCache(const std::shared_ptr<RSSuperRenderTask>& threadTask)
 {
-    if (threadTask == nullptr) {
+    if (threadTask == nullptr || threadTask->GetTaskSize() == 0) {
         return;
     }
     if (grContext_ == nullptr) {
@@ -163,7 +164,7 @@ void RSSubThread::RenderCache(const std::shared_ptr<RSSuperRenderTask>& threadTa
     visitor->SetSubThreadConfig(threadIndex_);
     visitor->SetFocusedNodeId(RSMainThread::Instance()->GetFocusNodeId(),
         RSMainThread::Instance()->GetFocusLeashWindowId());
-#ifdef RS_ENABLE_GL
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     while (threadTask->GetTaskSize() > 0) {
         auto task = threadTask->GetNextRenderTask();
         if (!task || (task->GetIdx() == 0)) {
@@ -194,14 +195,13 @@ void RSSubThread::RenderCache(const std::shared_ptr<RSSuperRenderTask>& threadTa
                 std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
             surfaceNodePtr->InitCacheSurface(grContext_.get(), func, threadIndex_);
         }
-#ifndef USE_ROSEN_DRAWING
+
         RSTagTracker nodeProcessTracker(grContext_.get(), surfaceNodePtr->GetId(),
             RSTagTracker::TAGTYPE::TAG_SUB_THREAD);
-#endif
         bool needNotify = !surfaceNodePtr->HasCachedTexture();
         node->Process(visitor);
-#ifndef USE_ROSEN_DRAWING
         nodeProcessTracker.SetTagEnd();
+#ifndef USE_ROSEN_DRAWING
 #ifndef NEW_SKIA
         auto skCanvas = surfaceNodePtr->GetCacheSurface(threadIndex_, true) ?
             surfaceNodePtr->GetCacheSurface(threadIndex_, true)->getCanvas() : nullptr;
@@ -212,7 +212,7 @@ void RSSubThread::RenderCache(const std::shared_ptr<RSSuperRenderTask>& threadTa
             RS_LOGE("skCanvas is nullptr, flush failed");
         }
 #else
-        auto cacheSurface = surfaceNodePtr->GetCacheSurface(threadIndex_,true);
+        auto cacheSurface = surfaceNodePtr->GetCacheSurface(threadIndex_, true);
         if (cacheSurface) {
             RS_TRACE_NAME_FMT("Render cache skSurface flush and submit");
             RSTagTracker nodeFlushTracker(grContext_.get(), surfaceNodePtr->GetId(),
@@ -222,27 +222,27 @@ void RSSubThread::RenderCache(const std::shared_ptr<RSSuperRenderTask>& threadTa
         }
 #endif
 #else
-        auto canvas = surfaceNodePtr->GetCacheSurface(threadIndex_, true) ?
-            surfaceNodePtr->GetCacheSurface(threadIndex_, true)->GetCanvas() : nullptr;
-        if (canvas) {
-            RS_TRACE_NAME_FMT("render cache flush, %s", surfaceNodePtr->GetName().c_str());
-            canvas->Flush();
-        } else {
-            RS_LOGE("skCanvas is nullptr, flush failed");
+        auto cacheSurface = surfaceNodePtr->GetCacheSurface(threadIndex_, true);
+        if (cacheSurface) {
+            RS_TRACE_NAME_FMT("Render cache skSurface flush and submit");
+            RSTagTracker nodeFlushTracker(grContext_.get(), surfaceNodePtr->GetId(),
+                RSTagTracker::TAGTYPE::TAG_SUB_THREAD);
+            cacheSurface->FlushAndSubmit(true);
+            nodeFlushTracker.SetTagEnd();
         }
 #endif
         surfaceNodePtr->UpdateBackendTexture();
+        RSMainThread::Instance()->PostTask([]() { 
+            RSMainThread::Instance()->SetIsCachedSurfaceUpdated(true);
+        });
         surfaceNodePtr->SetCacheSurfaceProcessedStatus(CacheProcessStatus::DONE);
         surfaceNodePtr->SetCacheSurfaceNeedUpdated(true);
 
         if (needNotify) {
             RSSubThreadManager::Instance()->NodeTaskNotify(node->GetId());
         }
-        if (RSMainThread::Instance()->GetFrameCount() != threadTask->GetFrameCount()) {
-            RSMainThread::Instance()->RequestNextVSync();
-            continue;
-        }
     }
+    RSMainThread::Instance()->RequestNextVSync();
 #endif
 }
 
@@ -254,6 +254,7 @@ sk_sp<GrContext> RSSubThread::CreateShareGrContext()
 #endif
 {
     RS_TRACE_NAME("CreateShareGrContext");
+#ifdef RS_ENABLE_GL
     CreateShareEglContext();
     const GrGLInterface *grGlInterface = GrGLCreateNativeInterface();
     sk_sp<const GrGLInterface> glInterface(grGlInterface);
@@ -277,6 +278,11 @@ sk_sp<GrContext> RSSubThread::CreateShareGrContext()
     sk_sp<GrDirectContext> grContext = GrDirectContext::MakeGL(std::move(glInterface), options);
 #else
     sk_sp<GrContext> grContext = GrContext::MakeGL(std::move(glInterface), options);
+#endif
+#endif
+
+#ifdef RS_ENABLE_VK
+    sk_sp<GrDirectContext> grContext = GrDirectContext::MakeVulkan(RsVulkanContext::GetSingleton().GetGrVkBackendContext());
 #endif
     if (grContext == nullptr) {
         RS_LOGE("nullptr grContext is null");
@@ -313,6 +319,8 @@ void RSSubThread::ResetGrContext()
     }
 #ifndef USE_ROSEN_DRAWING
     grContext_->freeGpuResources();
+#else
+    grContext_->FreeGpuResources();
 #endif
 }
 
@@ -334,5 +342,14 @@ void RSSubThread::AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     tmpSurfaces_.push(std::move(surface));
+}
+
+MemoryGraphic RSSubThread::CountSubMem(int pid)
+{
+    MemoryGraphic memoryGraphic;
+    PostSyncTask([&pid, &memoryGraphic, this]() {
+        memoryGraphic = MemoryManager::CountPidMemory(pid, grContext_.get());
+    });
+    return memoryGraphic;
 }
 }

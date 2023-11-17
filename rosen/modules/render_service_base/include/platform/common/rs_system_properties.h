@@ -33,6 +33,7 @@ enum class DirtyRegionDebugType {
     CURRENT_SUB_AND_WHOLE,
     CURRENT_WHOLE_AND_MULTI_HISTORY,
     EGL_DAMAGE,
+    DISPLAY_DIRTY,
     CUR_DIRTY_DETAIL_ONLY_TRACE = 10,
     UPDATE_DIRTY_REGION,
     OVERLAY_RECT,
@@ -40,6 +41,14 @@ enum class DirtyRegionDebugType {
     SHADOW_RECT,
     PREPARE_CLIP_RECT,
     REMOVE_CHILD_RECT,
+    RENDER_PROPERTIES_RECT,
+    CANVAS_NODE_SKIP_RECT,
+};
+
+enum class SurfaceRegionDebugType {
+    DISABLED = 0,
+    OPAQUE_REGION,
+    VISIBLE_REGION,
 };
 
 enum class PartialRenderType {
@@ -113,6 +122,8 @@ public:
     static long long int GetDumpSurfaceId();
     static bool GetTargetDirtyRegionDfxEnabled(std::vector<std::string>& dfxTargetSurfaceNames_);
     static bool GetOpaqueRegionDfxEnabled();
+    static bool GetVisibleRegionDfxEnabled();
+    static SurfaceRegionDebugType GetSurfaceRegionDfxType();
     static bool GetDumpLayersEnabled();
     static bool GetHardwareComposerEnabled();
     static bool GetAFBCEnabled();
@@ -133,6 +144,9 @@ public:
     static bool GetFilterCacheEnabled();
     static int GetFilterCacheUpdateInterval();
     static int GetFilterCacheSizeThreshold();
+    static bool GetFilterPartialRenderEnabled();
+    static bool GetColorPickerPartialEnabled();
+    static bool GetMaskLinearBlurEnabled();
     static bool GetKawaseEnabled();
     static float GetKawaseRandomColorFactor();
     static bool GetRandomColorEnabled();
@@ -140,12 +154,16 @@ public:
     static bool GetBlurEnabled();
     static bool GetSkipForAlphaZeroEnabled();
     static bool GetSkipGeometryNotChangeEnabled();
+    static bool GetPropertyDrawableEnable();
+
+    static bool GetAnimationCacheEnabled();
 
     static bool GetBoolSystemProperty(const char* name, bool defaultValue);
     static int WatchSystemProperty(const char* name, OnSystemPropertyChanged func, void* context);
     static bool GetUIFirstEnabled();
     static bool GetDebugTraceEnabled();
     static bool FindNodeInTargetList(std::string node);
+    static bool IsFoldScreenFlag();
     static bool GetCacheCmdEnabled();
     static bool GetASTCEnabled();
     static bool GetImageGpuResourceCacheEnable(int width, int height);
@@ -154,6 +172,10 @@ public:
 #endif
     static bool GetSnapshotWithDMAEnabled();
     static bool IsPhoneType();
+    static bool GetSyncTransactionEnabled();
+    static int GetSyncTransactionWaitDelay();
+    static bool GetUseShadowBatchingEnabled();
+    static bool GetSingleFrameComposerEnabled();
 private:
     RSSystemProperties() = default;
 

@@ -22,9 +22,20 @@
 #include <unistd.h>
 
 #include "hgm_log.h"
+#include "vsync_generator.h"
 #include "platform/common/rs_system_properties.h"
+#include "parameters.h"
+#include "frame_rate_report.h"
+#include "sandbox_utils.h"
 
 namespace OHOS::Rosen {
+static std::map<uint32_t, int64_t> IDEAL_PERIOD = {
+    { 120, 8333333 },
+    { 90, 11111111 },
+    { 72, 13888888 },
+    { 60, 16666666 }
+};
+
 HgmCore& HgmCore::Instance()
 {
     static HgmCore instance;
@@ -58,7 +69,6 @@ bool HgmCore::Init()
         HGM_LOGE("HgmCore falied to parse");
         return false;
     }
-    hgmFrameRateTool_ = HgmFrameRateTool::GetInstance();
 
     int newRateMode = static_cast<int32_t>(RSSystemProperties::GetHgmRefreshRateModesEnabled());
     if (newRateMode == 0) {
@@ -72,6 +82,8 @@ bool HgmCore::Init()
         HGM_LOGI("HgmCore No customer refreshrate mode found: %{public}d", newRateMode);
         customFrameRateMode_ = static_cast<RefreshRateMode>(newRateMode);
     }
+
+    SetLtpoConfig();
 
     isInit_ = true;
     HGM_LOGI("HgmCore initialization success!!!");
@@ -104,6 +116,42 @@ int32_t HgmCore::InitXmlConfig()
     }
 
     return EXEC_SUCCESS;
+}
+
+void HgmCore::SetLtpoConfig()
+{
+    if (mParsedConfigData_->ltpoConfig_.find("switch") != mParsedConfigData_->ltpoConfig_.end()) {
+        ltpoEnabled_ = std::stoi(mParsedConfigData_->ltpoConfig_["switch"]);
+    } else {
+        HGM_LOGW("HgmCore failed to find switch strategy for LTPO");
+    }
+
+    if (mParsedConfigData_->ltpoConfig_.find("maxTE") != mParsedConfigData_->ltpoConfig_.end()) {
+        maxTE_ = std::stoi(mParsedConfigData_->ltpoConfig_["maxTE"]);
+    } else {
+        HGM_LOGW("HgmCore failed to find TE strategy for LTPO");
+    }
+
+    if (mParsedConfigData_->ltpoConfig_.find("alignRate") != mParsedConfigData_->ltpoConfig_.end()) {
+        alignRate_ = std::stoi(mParsedConfigData_->ltpoConfig_["alignRate"]);
+    } else {
+        HGM_LOGW("HgmCore failed to find alignRate strategy for LTPO");
+    }
+
+    if (mParsedConfigData_->ltpoConfig_.find("pipelineOffsetPulseNum") != mParsedConfigData_->ltpoConfig_.end()) {
+        pipelineOffsetPulseNum_ = std::stoi(mParsedConfigData_->ltpoConfig_["pipelineOffsetPulseNum"]);
+        CreateVSyncGenerator()->SetVSyncPhaseByPulseNum(pipelineOffsetPulseNum_);
+    } else {
+        HGM_LOGW("HgmCore failed to find pipelineOffset strategy for LTPO");
+    }
+
+    HGM_LOGI("HgmCore LTPO strategy ltpoEnabled: %{public}d, maxTE: %{public}d, alignRate: %{public}d, " \
+        "pipelineOffsetPulseNum: %{public}d", ltpoEnabled_, maxTE_, alignRate_, pipelineOffsetPulseNum_);
+}
+
+void HgmCore::RegisterRefreshRateModeChangeCallback(const RefreshRateModeChangeCallback& callback)
+{
+    refreshRateModeChangeCallback_ = callback;
 }
 
 int32_t HgmCore::SetCustomRateMode(RefreshRateMode mode)
@@ -146,13 +194,19 @@ int32_t HgmCore::SetModeBySettingConfig()
     for (auto &screen : screenList_) {
         int32_t setRange = screen->SetRefreshRateRange(
             static_cast<uint32_t>(rateFloor), static_cast<uint32_t>(rateToSwitch));
+        if (customFrameRateMode_ == HGM_REFRESHRATE_MODE_AUTO) {
+            rateToSwitch = OLED_60_HZ;
+            HGM_LOGI("HgmCore auto mode, set refreshrate 60HZ");
+        }
         int32_t setThisScreen = SetScreenRefreshRate(screen->GetId(), 0, rateToSwitch);
-        if (setThisScreen != EXEC_SUCCESS || setRange != EXEC_SUCCESS) {
+        if (setThisScreen < EXEC_SUCCESS || setRange != EXEC_SUCCESS) {
             HGM_LOGW("HgmCore failed to apply refreshrate mode to screen : " PUBU64 "", screen->GetId());
             return HGM_ERROR;
         }
     }
-
+    std::unordered_map<pid_t, uint32_t> rates;
+    rates[GetRealPid()] = rateToSwitch;
+    FRAME_TRACE::FrameRateReport::GetInstance().SendFrameRates(rates);
     return EXEC_SUCCESS;
 }
 
@@ -163,18 +217,9 @@ int32_t HgmCore::RequestBundlePermission(int32_t rate)
     }
 
     // black_list conatrol at 90hz, return 60 if in the list
-    if (customFrameRateMode_ == HGM_REFRESHRATE_MODE_MEDIUM) {
+    if (customFrameRateMode_ == HGM_REFRESHRATE_MODE_MEDIUM || customFrameRateMode_ == HGM_REFRESHRATE_MODE_HIGH) {
         auto bundle = mParsedConfigData_->bundle_black_list_.find(currentBundleName_);
         if (bundle != mParsedConfigData_->bundle_black_list_.end()) {
-            return OLED_60_HZ;
-        }
-        return rate;
-    }
-
-    // white_list control at 120hz, return 60 if not in the list
-    if (customFrameRateMode_ == HGM_REFRESHRATE_MODE_HIGH) {
-        auto bundle = mParsedConfigData_->bundle_white_list_.find(currentBundleName_);
-        if (bundle == mParsedConfigData_->bundle_white_list_.end()) {
             return OLED_60_HZ;
         }
         return rate;
@@ -197,7 +242,7 @@ int32_t HgmCore::SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate
         HGM_LOGW("HgmCore refuse an illegal framerate: %{public}d", rate);
         return HGM_ERROR;
     }
-    sceneId = screenSceneSet_.size();
+    sceneId = static_cast<int32_t>(screenSceneSet_.size());
     int32_t modeToSwitch = screen->SetActiveRefreshRate(sceneId, static_cast<uint32_t>(rate));
     if (modeToSwitch < 0) {
         return modeToSwitch;
@@ -235,10 +280,13 @@ int32_t HgmCore::SetRefreshRateMode(RefreshRateMode refreshRateMode)
         return HGM_ERROR;
     }
 
+    if (ltpoEnabled_ && refreshRateModeChangeCallback_) {
+        refreshRateModeChangeCallback_(refreshRateMode);
+    }
     return EXEC_SUCCESS;
 }
 
-int32_t HgmCore::AddScreen(ScreenId id, int32_t defaultMode)
+int32_t HgmCore::AddScreen(ScreenId id, int32_t defaultMode, ScreenSize& screenSize)
 {
     // add a physical screen to hgm during hotplug event
     HGM_LOGI("HgmCore adding screen : " PUBI64 "", id);
@@ -251,7 +299,7 @@ int32_t HgmCore::AddScreen(ScreenId id, int32_t defaultMode)
         }
     }
 
-    sptr<HgmScreen> newScreen = new HgmScreen(id, defaultMode);
+    sptr<HgmScreen> newScreen = new HgmScreen(id, defaultMode, screenSize);
 
     std::lock_guard<std::mutex> lock(listMutex_);
     screenList_.push_back(newScreen);
@@ -383,53 +431,9 @@ std::unique_ptr<std::unordered_map<ScreenId, int32_t>> HgmCore::GetModesToApply(
     return std::move(modeListToApply_);
 }
 
-int32_t HgmCore::AddScreenProfile(ScreenId id, int32_t width, int32_t height, int32_t phyWidth, int32_t phyHeight)
-{
-    if (SetRefreshRateMode(customFrameRateMode_) != EXEC_SUCCESS) {
-        HGM_LOGE("HgmCore failed to apply default refreshrate mode to screen");
-    }
-    return hgmFrameRateTool_->AddScreenProfile(id, width, height, phyWidth, phyHeight);
-}
-
-int32_t HgmCore::RemoveScreenProfile(ScreenId id)
-{
-    return hgmFrameRateTool_->RemoveScreenProfile(id);
-}
-
-int32_t HgmCore::CalModifierPreferred(const HgmModifierProfile &hgmModifierProfile) const
-{
-    return hgmFrameRateTool_->CalModifierPreferred(activeScreenId_, hgmModifierProfile, mParsedConfigData_);
-}
-
 void HgmCore::SetActiveScreenId(ScreenId id)
 {
     activeScreenId_ = id;
-}
-
-std::shared_ptr<HgmOneShotTimer> HgmCore::GetScreenTimer(ScreenId screenId) const
-{
-    if (auto timer = screenTimerMap_.find(screenId); timer != screenTimerMap_.end()) {
-        return timer->second;
-    }
-    return nullptr;
-}
-
-void HgmCore::InsertAndStartScreenTimer(ScreenId screenId, int32_t interval,
-    std::function<void()> resetCallback, std::function<void()> expiredCallback)
-{
-    if (auto oldtimer = GetScreenTimer(screenId); oldtimer == nullptr) {
-        auto newTimer = std::make_shared<HgmOneShotTimer>("idle_timer" + std::to_string(screenId),
-            std::chrono::milliseconds(interval), resetCallback, expiredCallback);
-        screenTimerMap_[screenId] = newTimer;
-        newTimer->Start();
-    }
-}
-
-void HgmCore::ResetScreenTimer(ScreenId screenId) const
-{
-    if (auto timer = GetScreenTimer(screenId); timer != nullptr) {
-        timer->Reset();
-    }
 }
 
 void HgmCore::StartScreenScene(SceneType sceceType)
@@ -446,6 +450,23 @@ int32_t HgmCore::GetScenePreferred() const
 {
     if (screenSceneSet_.find(SceneType::SCREEN_RECORD) != screenSceneSet_.end()) {
         return 60; // 60 means screen record scene preferred
+    }
+    return 0;
+}
+
+sptr<HgmScreen> HgmCore::GetActiveScreen() const
+{
+    if (activeScreenId_ == INVALID_SCREEN_ID) {
+        HGM_LOGE("HgmScreen activeScreenId_ noset");
+        return nullptr;
+    }
+    return GetScreen(activeScreenId_);
+}
+
+int64_t HgmCore::GetIdealPeriod(uint32_t rate)
+{
+    if (IDEAL_PERIOD.count(rate)) {
+        return IDEAL_PERIOD[rate];
     }
     return 0;
 }

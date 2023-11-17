@@ -58,6 +58,12 @@ SurfaceImage::SurfaceImage(uint32_t textureId, uint32_t textureTarget)
 
 SurfaceImage::~SurfaceImage()
 {
+    for (auto it = imageCacheSeqs_.begin(); it != imageCacheSeqs_.end(); it++) {
+        if (it->second.eglImage_ != EGL_NO_IMAGE_KHR) {
+            eglDestroyImageKHR(eglDisplay_, it->second.eglImage_);
+            it->second.eglImage_ = EGL_NO_IMAGE_KHR;
+        }
+    }
 }
 
 void SurfaceImage::InitSurfaceImage()
@@ -189,7 +195,7 @@ SurfaceError SurfaceImage::UpdateSurfaceImage()
         return ret;
     }
     
-    if (seqNum != currentSurfaceImage_) {
+    if (seqNum != currentSurfaceImage_ && currentSurfaceBuffer_ != nullptr) {
         ret = ReleaseBuffer(currentSurfaceBuffer_, -1);
         if (ret != SURFACE_ERROR_OK) {
             BLOGE("release currentSurfaceBuffer_ failed %{public}d", ret);
@@ -360,6 +366,7 @@ EGLImageKHR SurfaceImage::CreateEGLImage(EGLDisplay disp, const sptr<SurfaceBuff
         BLOGE("failed, error %{public}d", error);
         eglTerminate(disp);
     }
+    DestroyNativeWindowBuffer(nBuffer);
     return img;
 }
 
@@ -411,6 +418,27 @@ SurfaceError SurfaceImage::WaitOnFence()
     return SURFACE_ERROR_OK;
 }
 
+SurfaceError SurfaceImage::SetOnBufferAvailableListener(void *context, OnBufferAvailableListener listener)
+{
+    std::lock_guard<std::mutex> lockGuard(opMutex_);
+    if (listener == nullptr) {
+        BLOGE("listener is nullptr");
+        return SURFACE_ERROR_ERROR;
+    }
+
+    listener_ = listener;
+    context_ = context;
+    return SURFACE_ERROR_OK;
+}
+
+SurfaceError SurfaceImage::UnsetOnBufferAvailableListener()
+{
+    std::lock_guard<std::mutex> lockGuard(opMutex_);
+    listener_ = nullptr;
+    context_ = nullptr;
+    return SURFACE_ERROR_OK;
+}
+
 SurfaceImageListener::~SurfaceImageListener()
 {
     BLOGE("~SurfaceImageListener");
@@ -428,5 +456,8 @@ void SurfaceImageListener::OnBufferAvailable()
 
     // check here maybe a messagequeue, flag instead now
     surfaceImage->OnUpdateBufferAvailableState(true);
+    if (surfaceImage->listener_ != nullptr) {
+        surfaceImage->listener_(surfaceImage->context_);
+    }
 }
 } // namespace OHOS

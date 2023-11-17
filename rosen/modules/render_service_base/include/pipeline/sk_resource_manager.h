@@ -15,9 +15,9 @@
 
 #ifndef SK_RESOURCE_MANAGER_H
 #define SK_RESOURCE_MANAGER_H
+#include <list>
 #include <map>
 #include <mutex>
-#include <queue>
 #include <unistd.h>
 
 #include <include/core/SkImage.h>
@@ -35,7 +35,7 @@ private:
     ~SKResourceManager() = default;
 
     std::recursive_mutex mutex_;
-    std::map<pid_t, std::queue<sk_sp<SkImage>>> skImages_;
+    std::map<pid_t, std::list<sk_sp<SkImage>>> skImages_;
 };
 } // OHOS::Rosen
 #endif // SK_RESOURCE_MANAGER_H

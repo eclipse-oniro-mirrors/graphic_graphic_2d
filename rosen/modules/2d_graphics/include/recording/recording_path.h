@@ -41,11 +41,19 @@ public:
     void ArcTo(scalar pt1X, scalar pt1Y, scalar pt2X, scalar pt2Y, scalar startAngle, scalar sweepAngle) override;
     void ArcTo(const Point& pt1, const Point& pt2, scalar startAngle, scalar sweepAngle) override;
     void ArcTo(scalar rx, scalar ry, scalar angle, PathDirection direction, scalar endX, scalar endY) override;
+    void ArcTo(scalar x1, scalar y1, scalar x2, scalar y2, scalar radius) override;
+
     void CubicTo(scalar ctrlPt1X, scalar ctrlPt1Y, scalar ctrlPt2X, scalar ctrlPt2Y,
         scalar endPtX, scalar endPtY) override;
     void CubicTo(const Point& ctrlPt1, const Point& ctrlPt2, const Point& endPt) override;
     void QuadTo(scalar ctrlPtX, scalar ctrlPtY, scalar endPtX, scalar endPtY) override;
     void QuadTo(const Point& ctrlPt, const Point endPt) override;
+
+    void RMoveTo(scalar dx, scalar dy) override;
+    void RLineTo(scalar dx, scalar dy) override;
+    void RArcTo(scalar rx, scalar ry, scalar angle, PathDirection direction, scalar dx, scalar dy) override;
+    void RCubicTo(scalar dx1, scalar dy1, scalar dx2, scalar dy2, scalar dx3, scalar dy3) override;
+    void RQuadTo(scalar dx1, scalar dy1, scalar dx2, scalar dy2) override;
 
     void AddRect(const Rect& rect, PathDirection dir = PathDirection::CW_DIRECTION) override;
     void AddRect(scalar left, scalar top, scalar right, scalar bottom,

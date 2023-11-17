@@ -24,7 +24,7 @@
 #include "rs_trace.h"
 #include "string_utils.h"
 
-#if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
+#if defined(RS_ENABLE_DRIVEN_RENDER)
 #include "pipeline/driven_render/rs_driven_surface_render_node.h"
 #endif
 
@@ -63,7 +63,7 @@ bool RSUniRenderComposerAdapter::Init(const ScreenInfo& screenInfo, int32_t offs
     bool directClientCompEnableStatus = RSSystemProperties::GetDirectClientCompEnableStatus();
     output_->SetDirectClientCompEnableStatus(directClientCompEnableStatus);
 
-#if (defined RS_ENABLE_GL) && (defined RS_ENABLE_EGLIMAGE)
+#if (defined (RS_ENABLE_GL) || defined (RS_ENABLE_VK)) && (defined RS_ENABLE_EGLIMAGE)
     // enable direct GPU composition.
     output_->SetLayerCompCapacity(LAYER_COMPOSITION_CAPACITY);
 #else // (defined RS_ENABLE_GL) && (defined RS_ENABLE_EGLIMAGE)
@@ -122,7 +122,7 @@ ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(RSDisplayRenderNode& no
 
 ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(RSDrivenSurfaceRenderNode& node) const
 {
-#if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
+#if defined(RS_ENABLE_DRIVEN_RENDER)
     const auto& buffer = node.GetBuffer(); // we guarantee the buffer is valid.
     const RectI dstRect = node.GetDstRect();
     const auto& srcRect = node.GetSrcRect();
@@ -230,7 +230,8 @@ void RSUniRenderComposerAdapter::GetComposerInfoSrcRect(ComposeInfo &info, const
         transformType == GraphicTransformType::GRAPHIC_ROTATE_90) {
         std::swap(boundsWidth, boundsHeight);
     }
-    if (bufferWidth != boundsWidth || bufferHeight != boundsHeight) {
+    if ((bufferWidth != boundsWidth || bufferHeight != boundsHeight) &&
+        node.GetRenderProperties().GetFrameGravity() != Gravity::TOP_LEFT) {
         float xScale = (ROSEN_EQ(boundsWidth, 0.0f) ? 1.0f : bufferWidth / boundsWidth);
         float yScale = (ROSEN_EQ(boundsHeight, 0.0f) ? 1.0f : bufferHeight / boundsHeight);
 
@@ -286,7 +287,8 @@ void RSUniRenderComposerAdapter::DealWithNodeGravity(const RSSurfaceRenderNode& 
     const Gravity frameGravity = property.GetFrameGravity();
     info.gravity = static_cast<int32_t>(frameGravity);
     // we do not need to do additional works for Gravity::RESIZE and if frameSize == boundsSize.
-    if (frameGravity == Gravity::RESIZE || (frameWidth == boundsWidth && frameHeight == boundsHeight)) {
+    if (frameGravity == Gravity::RESIZE || frameGravity == Gravity::TOP_LEFT ||
+        (frameWidth == boundsWidth && frameHeight == boundsHeight)) {
         return;
     }
 
@@ -697,7 +699,7 @@ LayerInfoPtr RSUniRenderComposerAdapter::CreateLayer(RSDisplayRenderNode& node)
 
 LayerInfoPtr RSUniRenderComposerAdapter::CreateLayer(RSDrivenSurfaceRenderNode& node)
 {
-#if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
+#if defined(RS_ENABLE_DRIVEN_RENDER)
     if (output_ == nullptr) {
         RS_LOGE("RSUniRenderComposerAdapter::CreateLayer: output is nullptr");
         return nullptr;

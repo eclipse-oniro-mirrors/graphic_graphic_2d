@@ -97,7 +97,9 @@ HWTEST_F(FontCollectionTest, FontCollection, TestSize.Level1)
 HWTEST_F(FontCollectionTest, GetTypefaceForChar1, TestSize.Level1)
 {
     InitFcMockVars({});
-    auto tf = g_fcMockVars.fontCollection->GetTypefaceForChar('a', {}, "", "");
+    FontStyles style;
+    bool fallbackTypeface = false;
+    auto tf = g_fcMockVars.fontCollection->GetTypefaceForChar('a', style, "", "", fallbackTypeface);
     EXPECT_NE(tf, nullptr);
     EXPECT_EQ(tf->Get(), g_fcMockVars.SCRetvalTypeface);
     EXPECT_EQ(g_fcMockVars.catchedSize, 0);
@@ -112,7 +114,9 @@ HWTEST_F(FontCollectionTest, GetTypefaceForChar1, TestSize.Level1)
 HWTEST_F(FontCollectionTest, GetTypefaceForChar2, TestSize.Level1)
 {
     InitFcMockVars({.fontMgr = nullptr});
-    EXPECT_EQ(g_fcMockVars.fontCollection->GetTypefaceForChar('a', {}, "zh_CN", ""), nullptr);
+    FontStyles style;
+    bool fallbackTypeface = false;
+    EXPECT_EQ(g_fcMockVars.fontCollection->GetTypefaceForChar('a', style, "zh_CN", "", fallbackTypeface), nullptr);
     EXPECT_EQ(g_fcMockVars.catchedSize, -1);
 }
 
@@ -125,7 +129,9 @@ HWTEST_F(FontCollectionTest, GetTypefaceForChar2, TestSize.Level1)
 HWTEST_F(FontCollectionTest, GetTypefaceForChar3, TestSize.Level1)
 {
     InitFcMockVars({.SCRetvalTypeface = nullptr});
-    EXPECT_EQ(g_fcMockVars.fontCollection->GetTypefaceForChar('a', {}, "", "zh_CN"), nullptr);
+    FontStyles style;
+    bool fallbackTypeface = false;
+    EXPECT_EQ(g_fcMockVars.fontCollection->GetTypefaceForChar('a', style, "", "zh_CN", fallbackTypeface), nullptr);
     EXPECT_NE(g_fcMockVars.catchedSize, 0);
 }
 
@@ -138,11 +144,13 @@ HWTEST_F(FontCollectionTest, GetTypefaceForChar3, TestSize.Level1)
 HWTEST_F(FontCollectionTest, GetTypefaceForChar4, TestSize.Level1)
 {
     InitFcMockVars({});
-    auto tf1 = g_fcMockVars.fontCollection->GetTypefaceForChar('a', {}, "", "zh_HK");
+    FontStyles style;
+    bool fallbackTypeface = false;
+    auto tf1 = g_fcMockVars.fontCollection->GetTypefaceForChar('a', style, "", "zh_HK", fallbackTypeface);
     EXPECT_NE(tf1, nullptr);
     EXPECT_NE(g_fcMockVars.catchedSize, 0);
     InitFcMockVars({});
-    auto tf2 = g_fcMockVars.fontCollection->GetTypefaceForChar('a', {}, "", "zh_HK");
+    auto tf2 = g_fcMockVars.fontCollection->GetTypefaceForChar('a', style, "", "zh_HK", fallbackTypeface);
     EXPECT_NE(tf2, nullptr);
     EXPECT_EQ(g_fcMockVars.catchedSize, -1);
     EXPECT_EQ(tf1->Get(), tf2->Get());
@@ -157,7 +165,9 @@ HWTEST_F(FontCollectionTest, GetTypefaceForChar4, TestSize.Level1)
 HWTEST_F(FontCollectionTest, GetTypefaceForChar5, TestSize.Level1)
 {
     InitFcMockVars({.fontMgr = nullptr, .styleRetvalTypeface = nullptr, .fontStyleSets = CreateSets()});
-    EXPECT_EQ(g_fcMockVars.fontCollection->GetTypefaceForChar('a', {}, "", "en_US"), nullptr);
+    FontStyles style;
+    bool fallbackTypeface = false;
+    EXPECT_EQ(g_fcMockVars.fontCollection->GetTypefaceForChar('a', style, "", "en_US", fallbackTypeface), nullptr);
 }
 
 /**
@@ -169,7 +179,9 @@ HWTEST_F(FontCollectionTest, GetTypefaceForChar5, TestSize.Level1)
 HWTEST_F(FontCollectionTest, GetTypefaceForChar6, TestSize.Level1)
 {
     InitFcMockVars({.fontMgr = nullptr, .fontStyleSets = CreateSets()});
-    EXPECT_EQ(g_fcMockVars.fontCollection->GetTypefaceForChar('a', {}, "", "en_US"), nullptr);
+    FontStyles style;
+    bool fallbackTypeface = false;
+    EXPECT_EQ(g_fcMockVars.fontCollection->GetTypefaceForChar('a', style, "", "en_US", fallbackTypeface), nullptr);
 }
 
 /**
@@ -181,8 +193,10 @@ HWTEST_F(FontCollectionTest, GetTypefaceForChar6, TestSize.Level1)
 HWTEST_F(FontCollectionTest, GetTypefaceForChar7, TestSize.Level1)
 {
     InitFcMockVars({.hasRetval = true, .fontMgr = nullptr, .fontStyleSets = CreateSets()});
-    auto tf1 = g_fcMockVars.fontCollection->GetTypefaceForChar('a', {}, "", "locale1");
-    auto tf2 = g_fcMockVars.fontCollection->GetTypefaceForChar('a', {}, "", "locale1");
+    FontStyles style;
+    bool fallbackTypeface = false;
+    auto tf1 = g_fcMockVars.fontCollection->GetTypefaceForChar('a', style, "", "locale1", fallbackTypeface);
+    auto tf2 = g_fcMockVars.fontCollection->GetTypefaceForChar('a', style, "", "locale1", fallbackTypeface);
     EXPECT_NE(tf1, nullptr);
     EXPECT_NE(tf2, nullptr);
     EXPECT_EQ(g_fcMockVars.hasCount, 2);

@@ -27,11 +27,12 @@
 #include <event_handler.h>
 
 #include "hgm_screen.h"
-#include "hgm_frame_rate_tool.h"
+#include "vsync_type.h"
 #include "xml_parser.h"
-#include "hgm_one_shot_timer.h"
 
 namespace OHOS::Rosen {
+constexpr float ONE_PULSE_IN_NANO = 2777777.0f;
+using RefreshRateModeChangeCallback = std::function<void(int32_t)>;
 class HgmCore final {
 public:
     static HgmCore& Instance();
@@ -61,34 +62,74 @@ public:
         return activeScreenId_;
     }
 
+    std::shared_ptr<ParsedConfigData> GetParsedConfigData() const
+    {
+        return mParsedConfigData_;
+    }
+
+    void SetPendingScreenRefreshRate(uint32_t rate)
+    {
+        pendingScreenRefreshRate_ = rate;
+    }
+
+    uint32_t GetPendingScreenRefreshRate() const
+    {
+        return pendingScreenRefreshRate_;
+    }
+
+    void SetTimestamp(uint64_t timestamp)
+    {
+        timestamp_ = timestamp;
+    }
+
+    uint64_t GetCurrentTimestamp() const
+    {
+        return timestamp_;
+    }
+
+    bool GetLtpoEnabled() const
+    {
+        return ltpoEnabled_ && (customFrameRateMode_ == HGM_REFRESHRATE_MODE_AUTO) &&
+            (maxTE_ == VSYNC_MAX_REFRESHRATE);
+    }
+
+    uint32_t GetAlignRate() const
+    {
+        return alignRate_;
+    }
+
+    uint64_t GetPipelineOffset() const
+    {
+        return pipelineOffsetPulseNum_ * ONE_PULSE_IN_NANO;
+    }
+
     // set refresh rates
     int32_t SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate);
     static int32_t SetRateAndResolution(ScreenId id, int32_t sceneId, int32_t rate, int32_t width, int32_t height);
     int32_t SetRefreshRateMode(RefreshRateMode refreshRateMode);
 
     // screen interface
-    int32_t AddScreen(ScreenId id, int32_t defaultMode);
+    int32_t AddScreen(ScreenId id, int32_t defaultMode, ScreenSize& screenSize);
     int32_t RemoveScreen(ScreenId id);
     int32_t AddScreenInfo(ScreenId id, int32_t width, int32_t height, uint32_t rate, int32_t mode);
     int32_t RefreshBundleName(const std::string& name);
     uint32_t GetScreenCurrentRefreshRate(ScreenId id) const;
     int32_t GetCurrentRefreshRateMode() const;
     sptr<HgmScreen> GetScreen(ScreenId id) const;
+    sptr<HgmScreen> GetActiveScreen() const;
     std::vector<uint32_t> GetScreenSupportedRefreshRates(ScreenId id);
     std::vector<int32_t> GetScreenComponentRefreshRates(ScreenId id);
     std::unique_ptr<std::unordered_map<ScreenId, int32_t>> GetModesToApply();
-    int32_t AddScreenProfile(ScreenId id, int32_t width, int32_t height, int32_t phyWidth, int32_t phyHeight);
-    int32_t RemoveScreenProfile(ScreenId id);
-    int32_t CalModifierPreferred(const HgmModifierProfile &hgmModifierProfile) const;
     void SetActiveScreenId(ScreenId id);
-    std::shared_ptr<HgmOneShotTimer> GetScreenTimer(ScreenId screenId) const;
-    void ResetScreenTimer(ScreenId screenId) const;
-    void InsertAndStartScreenTimer(ScreenId screenId, int32_t interval,
-        std::function<void()> resetCallback, std::function<void()> expiredCallback);
     void StartScreenScene(SceneType sceceType);
     void StopScreenScene(SceneType sceceType);
     int32_t GetScenePreferred() const;
     int32_t SetModeBySettingConfig();
+
+    // for LTPO
+    void SetLtpoConfig();
+    int64_t GetIdealPeriod(uint32_t rate);
+    void RegisterRefreshRateModeChangeCallback(const RefreshRateModeChangeCallback& callback);
 private:
     HgmCore();
     ~HgmCore() = default;
@@ -117,10 +158,17 @@ private:
     std::unique_ptr<std::unordered_map<ScreenId, int32_t>> modeListToApply_ = nullptr;
 
     std::string currentBundleName_;
-    std::shared_ptr<HgmFrameRateTool> hgmFrameRateTool_ = nullptr;
-    ScreenId activeScreenId_ = 0;
-    std::unordered_map<ScreenId, std::shared_ptr<HgmOneShotTimer>> screenTimerMap_;
+    ScreenId activeScreenId_ = INVALID_SCREEN_ID;
     std::unordered_set<SceneType> screenSceneSet_;
+
+    // for LTPO
+    uint32_t pendingScreenRefreshRate_ = 0;
+    uint64_t timestamp_ = 0;
+    bool ltpoEnabled_ = false;
+    uint32_t maxTE_ = 0;
+    uint32_t alignRate_ = 0;
+    uint32_t pipelineOffsetPulseNum_ = 0;
+    RefreshRateModeChangeCallback refreshRateModeChangeCallback_ = nullptr;
 };
 } // namespace OHOS::Rosen
 #endif // HGM_CORE_H

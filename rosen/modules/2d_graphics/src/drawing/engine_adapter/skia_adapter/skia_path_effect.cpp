@@ -21,9 +21,14 @@
 #include "include/effects/Sk1DPathEffect.h"
 #include "include/effects/SkCornerPathEffect.h"
 #include "include/effects/SkDashPathEffect.h"
+#include "include/effects/SkDiscretePathEffect.h"
+#include "src/core/SkReadBuffer.h"
+#include "src/core/SkWriteBuffer.h"
 #include "skia_path.h"
 
 #include "effect/path_effect.h"
+#include "utils/data.h"
+#include "utils/log.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -47,6 +52,11 @@ void SkiaPathEffect::InitWithPathDash(const Path& path, scalar advance, scalar p
 void SkiaPathEffect::InitWithCorner(scalar radius)
 {
     pathEffect_ = SkCornerPathEffect::Make(radius);
+}
+
+void SkiaPathEffect::InitWithDiscrete(scalar segLength, scalar dev, uint32_t seedAssist)
+{
+    pathEffect_ = SkDiscretePathEffect::Make(segLength, dev, seedAssist);
 }
 
 void SkiaPathEffect::InitWithSum(const PathEffect& e1, const PathEffect& e2)
@@ -76,6 +86,43 @@ void SkiaPathEffect::SetSkPathEffect(const sk_sp<SkPathEffect>& pathEffect)
 {
     pathEffect_ = pathEffect;
 }
+
+std::shared_ptr<Data> SkiaPathEffect::Serialize() const
+{
+#ifdef ROSEN_OHOS
+    if (pathEffect_ == nullptr) {
+        LOGE("SkiaPathEffect::Serialize, pathEffect_ is nullptr!");
+        return nullptr;
+    }
+
+    SkBinaryWriteBuffer writer;
+    writer.writeFlattenable(pathEffect_.get());
+    size_t length = writer.bytesWritten();
+    std::shared_ptr<Data> data = std::make_shared<Data>();
+    data->BuildUninitialized(length);
+    writer.writeToMemory(data->WritableData());
+    return data;
+#else
+    return nullptr;
+#endif
+}
+
+bool SkiaPathEffect::Deserialize(std::shared_ptr<Data> data)
+{
+#ifdef ROSEN_OHOS
+    if (data == nullptr) {
+        LOGE("SkiaPathEffect::Deserialize, data is invalid!");
+        return false;
+    }
+
+    SkReadBuffer reader(data->GetData(), data->GetSize());
+    pathEffect_ = reader.readPathEffect();
+    return pathEffect_ != nullptr;
+#else
+    return false;
+#endif
+}
+
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

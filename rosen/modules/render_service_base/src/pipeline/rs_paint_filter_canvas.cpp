@@ -29,13 +29,26 @@ using namespace Drawing;
 
 RSPaintFilterCanvasBase::RSPaintFilterCanvasBase(Drawing::Canvas* canvas)
     : Canvas(canvas->GetWidth(), canvas->GetHeight()), canvas_(canvas)
+{}
+
+Drawing::Matrix RSPaintFilterCanvasBase::GetTotalMatrix() const
 {
-    if (canvas_) {
-        auto rectI = canvas_->GetDeviceClipBounds();
-        this->ClipRect({ rectI.GetLeft(), rectI.GetTop(), rectI.GetRight(), rectI.GetBottom() },
-            Drawing::ClipOp::INTERSECT, false);
-        this->SetMatrix(canvas_->GetTotalMatrix());
-    }
+    return canvas_->GetTotalMatrix();
+}
+
+Drawing::Rect RSPaintFilterCanvasBase::GetLocalClipBounds() const
+{
+    return canvas_->GetLocalClipBounds();
+}
+
+Drawing::RectI RSPaintFilterCanvasBase::GetDeviceClipBounds() const
+{
+    return canvas_->GetDeviceClipBounds();
+}
+
+uint32_t RSPaintFilterCanvasBase::GetSaveCount() const
+{
+    return canvas_->GetSaveCount();
 }
 
 #ifdef ACE_ENABLE_GPU
@@ -167,6 +180,13 @@ void RSPaintFilterCanvasBase::DrawEdgeAAQuad(const Drawing::Rect& rect, const Dr
     }
 }
 
+void RSPaintFilterCanvasBase::DrawVertices(const Drawing::Vertices& vertices, Drawing::BlendMode mode)
+{
+    if (canvas_ != nullptr && OnFilter()) {
+        canvas_->DrawVertices(vertices, mode);
+    }
+}
+
 void RSPaintFilterCanvasBase::DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py)
 {
     if (canvas_ != nullptr && OnFilter()) {
@@ -182,7 +202,7 @@ void RSPaintFilterCanvasBase::DrawImageNine(const Drawing::Image* image, const D
     }
 }
 
-void RSPaintFilterCanvasBase::DrawAnnotation(const Drawing::Rect& rect, const char* key, const Drawing::Data& data)
+void RSPaintFilterCanvasBase::DrawAnnotation(const Drawing::Rect& rect, const char* key, const Drawing::Data* data)
 {
     if (canvas_ != nullptr && OnFilter()) {
         canvas_->DrawAnnotation(rect, key, data);
@@ -234,17 +254,30 @@ void RSPaintFilterCanvasBase::DrawPicture(const Picture& picture)
     }
 }
 
+void RSPaintFilterCanvasBase::DrawTextBlob(
+    const Drawing::TextBlob* blob, const Drawing::scalar x, const Drawing::scalar y)
+{
+    if (canvas_ != nullptr && OnFilter()) {
+        canvas_->DrawTextBlob(blob, x, y);
+    }
+}
+
 void RSPaintFilterCanvasBase::ClipRect(const Drawing::Rect& rect, Drawing::ClipOp op, bool doAntiAlias)
 {
-    Canvas::ClipRect(rect, op, doAntiAlias);
     if (canvas_ != nullptr) {
         canvas_->ClipRect(rect, op, doAntiAlias);
     }
 }
 
+void RSPaintFilterCanvasBase::ClipIRect(const Drawing::RectI& rect, Drawing::ClipOp op)
+{
+    if (canvas_ != nullptr) {
+        canvas_->ClipIRect(rect, op);
+    }
+}
+
 void RSPaintFilterCanvasBase::ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias)
 {
-    Canvas::ClipRoundRect(roundRect, op, doAntiAlias);
     if (canvas_ != nullptr) {
         canvas_->ClipRoundRect(roundRect, op, doAntiAlias);
     }
@@ -252,7 +285,6 @@ void RSPaintFilterCanvasBase::ClipRoundRect(const RoundRect& roundRect, ClipOp o
 
 void RSPaintFilterCanvasBase::ClipPath(const Path& path, ClipOp op, bool doAntiAlias)
 {
-    Canvas::ClipPath(path, op, doAntiAlias);
     if (canvas_ != nullptr) {
         canvas_->ClipPath(path, op, doAntiAlias);
     }
@@ -260,7 +292,6 @@ void RSPaintFilterCanvasBase::ClipPath(const Path& path, ClipOp op, bool doAntiA
 
 void RSPaintFilterCanvasBase::ClipRegion(const Region& region, ClipOp op)
 {
-    Canvas::ClipRegion(region, op);
     if (canvas_ != nullptr) {
         canvas_->ClipRegion(region, op);
     }
@@ -268,7 +299,6 @@ void RSPaintFilterCanvasBase::ClipRegion(const Region& region, ClipOp op)
 
 void RSPaintFilterCanvasBase::SetMatrix(const Matrix& matrix)
 {
-    Canvas::SetMatrix(matrix);
     if (canvas_ != nullptr) {
         canvas_->SetMatrix(matrix);
     }
@@ -276,7 +306,6 @@ void RSPaintFilterCanvasBase::SetMatrix(const Matrix& matrix)
 
 void RSPaintFilterCanvasBase::ResetMatrix()
 {
-    Canvas::ResetMatrix();
     if (canvas_ != nullptr) {
         canvas_->ResetMatrix();
     }
@@ -284,7 +313,6 @@ void RSPaintFilterCanvasBase::ResetMatrix()
 
 void RSPaintFilterCanvasBase::ConcatMatrix(const Matrix& matrix)
 {
-    Canvas::ConcatMatrix(matrix);
     if (canvas_ != nullptr) {
         canvas_->ConcatMatrix(matrix);
     }
@@ -292,7 +320,6 @@ void RSPaintFilterCanvasBase::ConcatMatrix(const Matrix& matrix)
 
 void RSPaintFilterCanvasBase::Translate(scalar dx, scalar dy)
 {
-    Canvas::Translate(dx, dy);
     if (canvas_ != nullptr) {
         canvas_->Translate(dx, dy);
     }
@@ -300,7 +327,6 @@ void RSPaintFilterCanvasBase::Translate(scalar dx, scalar dy)
 
 void RSPaintFilterCanvasBase::Scale(scalar sx, scalar sy)
 {
-    Canvas::Scale(sx, sy);
     if (canvas_ != nullptr) {
         canvas_->Scale(sx, sy);
     }
@@ -308,7 +334,6 @@ void RSPaintFilterCanvasBase::Scale(scalar sx, scalar sy)
 
 void RSPaintFilterCanvasBase::Rotate(scalar deg, scalar sx, scalar sy)
 {
-    Canvas::Rotate(deg, sx, sy);
     if (canvas_ != nullptr) {
         canvas_->Rotate(deg, sx, sy);
     }
@@ -316,7 +341,6 @@ void RSPaintFilterCanvasBase::Rotate(scalar deg, scalar sx, scalar sy)
 
 void RSPaintFilterCanvasBase::Shear(scalar sx, scalar sy)
 {
-    Canvas::Shear(sx, sy);
     if (canvas_ != nullptr) {
         canvas_->Shear(sx, sy);
     }
@@ -338,7 +362,6 @@ void RSPaintFilterCanvasBase::Clear(ColorQuad color)
 
 void RSPaintFilterCanvasBase::Save()
 {
-    Canvas::Save();
     if (canvas_ != nullptr) {
         canvas_->Save();
     }
@@ -346,7 +369,6 @@ void RSPaintFilterCanvasBase::Save()
 
 void RSPaintFilterCanvasBase::SaveLayer(const SaveLayerOps& saveLayerRec)
 {
-    Canvas::SaveLayer(saveLayerRec);
     if (canvas_ != nullptr) {
         canvas_->SaveLayer(saveLayerRec);
     }
@@ -354,9 +376,15 @@ void RSPaintFilterCanvasBase::SaveLayer(const SaveLayerOps& saveLayerRec)
 
 void RSPaintFilterCanvasBase::Restore()
 {
-    Canvas::Restore();
     if (canvas_ != nullptr) {
         canvas_->Restore();
+    }
+}
+
+void RSPaintFilterCanvasBase::Discard()
+{
+    if (canvas_ != nullptr) {
+        canvas_->Discard();
     }
 }
 
@@ -436,6 +464,22 @@ void RSPaintFilterCanvas::onDrawPicture(const SkPicture* picture, const SkMatrix
         this->SkCanvas::onDrawPicture(picture, matrix, &filteredPaint);
     }
 }
+
+bool RSPaintFilterCanvas::GetRecordingState() const
+{
+    return recordingState_;
+}
+
+void RSPaintFilterCanvas::SetRecordingState(bool flag)
+{
+    recordingState_ = flag;
+}
+
+SkCanvas* RSPaintFilterCanvas::GetRecordingCanvas() const
+{
+    return recordingState_? fList[0] : nullptr;
+}
+
 #else
 RSPaintFilterCanvas::RSPaintFilterCanvas(Drawing::Canvas* canvas, float alpha)
     : RSPaintFilterCanvasBase(canvas), alphaStack_({ std::clamp(alpha, 0.f, 1.f) }), // construct stack with given alpha
@@ -499,6 +543,17 @@ bool RSPaintFilterCanvas::OnFilter() const
 {
     return alphaStack_.top() > 0.f;
 }
+
+bool RSPaintFilterCanvas::GetRecordingState() const
+{
+    return recordingState_;
+}
+
+void RSPaintFilterCanvas::SetDisableFilterCache(bool flag) const
+{
+    recordingState_ = flag;
+}
+
 #endif // USE_ROSEN_DRAWING
 
 void RSPaintFilterCanvas::MultiplyAlpha(float alpha)
@@ -630,12 +685,16 @@ RSPaintFilterCanvas::SaveStatus RSPaintFilterCanvas::Save(SaveType type)
         (RSPaintFilterCanvas::kEnv & type) ? SaveEnv() : GetEnvSaveCount() };
 }
 #else
-RSPaintFilterCanvas::SaveStatus RSPaintFilterCanvas::SaveAllStatus()
+RSPaintFilterCanvas::SaveStatus RSPaintFilterCanvas::SaveAllStatus(SaveType type)
 {
     // simultaneously save canvas and alpha
     int canvasSaveCount = GetSaveCount();
-    Save();
-    return { canvasSaveCount, SaveAlpha(), SaveEnv() };
+    if (RSPaintFilterCanvas::kCanvas & type) {
+        Save();
+    }
+    return { canvasSaveCount,
+        (RSPaintFilterCanvas::kAlpha & type) ? SaveAlpha() : GetAlphaSaveCount(),
+        (RSPaintFilterCanvas::kEnv & type) ? SaveEnv() : GetEnvSaveCount() };
 }
 #endif
 
@@ -759,7 +818,11 @@ void RSPaintFilterCanvas::SetCacheType(CacheType type)
 {
     cacheType_ = type;
 }
+#ifndef USE_ROSEN_DRAWING
 RSPaintFilterCanvas::CacheType RSPaintFilterCanvas::GetCacheType() const
+#else
+Drawing::CacheType RSPaintFilterCanvas::GetCacheType() const
+#endif
 {
     return cacheType_;
 }
@@ -849,7 +912,6 @@ SkCanvas::SaveLayerStrategy RSPaintFilterCanvas::getSaveLayerStrategy(const Save
 }
 #endif
 
-#ifndef USE_ROSEN_DRAWING
 void RSPaintFilterCanvas::SetEffectData(const std::shared_ptr<RSPaintFilterCanvas::CachedEffectData>& effectData)
 {
     envStack_.top().effectData_ = effectData;
@@ -860,6 +922,7 @@ const std::shared_ptr<RSPaintFilterCanvas::CachedEffectData>& RSPaintFilterCanva
     return envStack_.top().effectData_;
 }
 
+#ifndef USE_ROSEN_DRAWING
 void RSPaintFilterCanvas::SetCanvasStatus(const CanvasStatus& status)
 {
     SetAlpha(status.alpha_);
@@ -871,13 +934,28 @@ RSPaintFilterCanvas::CanvasStatus RSPaintFilterCanvas::GetCanvasStatus() const
 {
     return { GetAlpha(), getTotalMatrix(), GetEffectData() };
 }
-#endif
 
 RSPaintFilterCanvas::CachedEffectData::CachedEffectData(sk_sp<SkImage>&& image, const SkIRect& rect)
     : cachedImage_(image), cachedRect_(rect)
 {}
+#else
+void RSPaintFilterCanvas::SetCanvasStatus(const CanvasStatus& status)
+{
+    SetAlpha(status.alpha_);
+    SetMatrix(status.matrix_);
+    SetEffectData(status.effectData_);
+}
 
-RSPaintFilterCanvas::CachedEffectData::~CachedEffectData() = default;
+RSPaintFilterCanvas::CanvasStatus RSPaintFilterCanvas::GetCanvasStatus() const
+{
+    return { GetAlpha(), GetTotalMatrix(), GetEffectData() };
+}
+
+RSPaintFilterCanvas::CachedEffectData::CachedEffectData(std::shared_ptr<Drawing::Image>&& image,
+    const Drawing::RectI& rect)
+    : cachedImage_(image), cachedRect_(rect)
+{}
+#endif
 
 void RSPaintFilterCanvas::SetIsParallelCanvas(bool isParallel)
 {

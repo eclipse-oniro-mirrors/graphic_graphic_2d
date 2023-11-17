@@ -79,6 +79,8 @@ private:
     void ComputeWordBoundary() const;
     void ComputeSpans(int lineIndex, double baseline, const CalcResult &calcResult,
         std::vector<TextRect> &lineBoxes) const;
+    void ProcessHardBreak();
+    std::vector<TextRect> GenTextRects(std::shared_ptr<TextSpan> &ts, double offsetX, double offsetY) const;
 
     TypographyStyle typographyStyle_;
     std::vector<VariantSpan> spans_;
@@ -98,6 +100,7 @@ private:
     std::vector<double> yOffsets_ = {};
     double maxIntrinsicWidth_ = 0.0;
     double minIntrinsicWidth_ = 0.0;
+    std::vector<float> indents_;
 };
 } // namespace TextEngine
 } // namespace Rosen

@@ -169,6 +169,16 @@ bool RSSystemProperties::GetSkipGeometryNotChangeEnabled()
     return {};
 }
 
+bool RSSystemProperties::GetAnimationCacheEnabled()
+{
+    return {};
+}
+
+bool RSSystemProperties::GetPropertyDrawableEnable()
+{
+    return {};
+}
+
 float RSSystemProperties::GetAnimationScale()
 {
     return 1.f;
@@ -194,12 +204,32 @@ int RSSystemProperties::GetFilterCacheSizeThreshold()
     return 0;
 }
 
+bool RSSystemProperties::GetFilterPartialRenderEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetColorPickerPartialEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetMaskLinearBlurEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetDebugTraceEnabled()
 {
     return false;
 }
 
 bool RSSystemProperties::FindNodeInTargetList(std::string node)
+{
+    return false;
+}
+
+bool RSSystemProperties::IsFoldScreenFlag()
 {
     return false;
 }
@@ -250,6 +280,26 @@ bool RSSystemProperties::GetASTCEnabled()
 }
 
 bool RSSystemProperties::GetImageGpuResourceCacheEnable(int width, int height)
+{
+    return false;
+}
+
+bool RSSystemProperties::GetSyncTransactionEnabled()
+{
+    return false;
+}
+
+int RSSystemProperties::GetSyncTransactionWaitDelay()
+{
+    return 0;
+}
+
+bool RSSystemProperties::GetUseShadowBatchingEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetSingleFrameComposerEnabled()
 {
     return false;
 }

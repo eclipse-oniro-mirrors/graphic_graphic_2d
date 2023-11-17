@@ -43,6 +43,7 @@ ohos_systemtest("RSBaseRenderEngineTest") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "sensor:sensor_interface_native",
   ]
   defines = []
   defines += gpu_defines
@@ -56,6 +57,7 @@ ohos_systemtest("RSDropFrameProcessorSystemTest") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "sensor:sensor_interface_native",
   ]
   defines = []
   defines += gpu_defines
@@ -69,6 +71,7 @@ ohos_systemtest("RSRenderServiceTest") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "sensor:sensor_interface_native",
   ]
   defines = []
   defines += gpu_defines
@@ -98,6 +101,10 @@ config("rs_test_common_public_config") {
     "$graphic_2d_root/rosen/modules/render_service_client/core",
     "$graphic_2d_root/rosen/modules/render_service_base/src",
     "$graphic_2d_root/rosen/test/include",
+    "$memmgr_plugin_root/interface/innerkits/include",
+    "$memmgr_plugin_root/services/memmgrservice/include/memory_level_manager",
+    "$memmgr_root/interface/innerkits/include",
+    "$memmgr_root/services/memmgrservice/include/memory_level_manager",
     "//foundation/barrierfree/accessibility/interfaces/innerkits/acfwk/include",
     "//foundation/window/window_manager/interfaces/innerkits",
   ]

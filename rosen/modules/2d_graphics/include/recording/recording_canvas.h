@@ -59,10 +59,11 @@ public:
         const Point texCoords[4], BlendMode mode) override;
     void DrawEdgeAAQuad(const Rect& rect, const Point clip[4],
         QuadAAFlags aaFlags, ColorQuad color, BlendMode mode) override;
+    void DrawVertices(const Vertices& vertices, BlendMode mode) override;
 
     void DrawImageNine(const Image* image, const RectI& center, const Rect& dst,
         FilterMode filterMode, const Brush* brush = nullptr) override;
-    void DrawAnnotation(const Rect& rect, const char* key, const Data& data) override;
+    void DrawAnnotation(const Rect& rect, const char* key, const Data* data) override;
     void DrawImageLattice(const Image* image, const Lattice& lattice, const Rect& dst,
         FilterMode filterMode, const Brush* brush = nullptr) override;
 
@@ -74,8 +75,10 @@ public:
         SrcRectConstraint constraint = SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT) override;
     void DrawImageRect(const Image& image, const Rect& dst, const SamplingOptions& sampling) override;
     void DrawPicture(const Picture& picture) override;
+    void DrawTextBlob(const TextBlob* blob, const scalar x, const scalar y) override;
 
     void ClipRect(const Rect& rect, ClipOp op, bool doAntiAlias) override;
+    void ClipIRect(const RectI& rect, ClipOp op = ClipOp::INTERSECT) override;
     void ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias) override;
     void ClipPath(const Path& path, ClipOp op, bool doAntiAlias) override;
     void ClipRegion(const Region& region, ClipOp op = ClipOp::INTERSECT) override;
@@ -94,6 +97,7 @@ public:
     void SaveLayer(const SaveLayerOps& saveLayerOps) override;
     void Restore() override;
     uint32_t GetSaveCount() const override;
+    void Discard() override;
 
     void ClipAdaptiveRoundRect(const std::vector<Point>& radius);
     void DrawImage(const std::shared_ptr<Image>& image, const std::shared_ptr<Data>& data,
@@ -106,7 +110,10 @@ public:
     CoreCanvas& DetachPen() override;
     CoreCanvas& DetachBrush() override;
 
+    void SetIsCustomTextType(bool isCustomTextType);
+    bool IsCustomTextType() const;
 private:
+    bool isCustomTextType_ = false;
     std::shared_ptr<DrawCmdList> cmdList_ = nullptr;
     int saveCount_ = 0;
 };

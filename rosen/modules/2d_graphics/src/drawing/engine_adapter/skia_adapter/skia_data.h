@@ -25,8 +25,10 @@ namespace Drawing {
 class DRAWING_API SkiaData : public DataImpl {
 public:
     static inline constexpr AdapterType TYPE = AdapterType::SKIA_ADAPTER;
+
     SkiaData() noexcept;
     ~SkiaData() override {}
+
     AdapterType GetType() const override
     {
         return AdapterType::SKIA_ADAPTER;
@@ -34,6 +36,7 @@ public:
 
     bool BuildFromMalloc(const void* data, size_t length) override;
     bool BuildWithCopy(const void* data, size_t length) override;
+    bool BuildWithProc(const void* ptr, size_t length, DataReleaseProc proc, void* ctx) override;
     bool BuildWithoutCopy(const void* data, size_t length) override;
     bool BuildUninitialized(size_t length) override;
 
@@ -50,6 +53,8 @@ public:
      * @brief  Update the member variable to filter, adaptation layer calls.
      */
     void SetSkData(const sk_sp<SkData>& data);
+
+    std::shared_ptr<Data> Serialize() const override;
 private:
     sk_sp<SkData> skData_;
 };

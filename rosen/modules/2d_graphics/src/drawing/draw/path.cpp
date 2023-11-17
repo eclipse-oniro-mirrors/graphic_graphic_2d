@@ -70,6 +70,11 @@ void Path::ArcTo(scalar rx, scalar ry, scalar angle, PathDirection direction, sc
     impl_->ArcTo(rx, ry, angle, direction, endX, endY);
 }
 
+void Path::ArcTo(scalar x1, scalar y1, scalar x2, scalar y2, scalar radius)
+{
+    impl_->ArcTo(x1, y1, x2, y2, radius);
+}
+
 void Path::CubicTo(scalar ctrlPt1X, scalar ctrlPt1Y, scalar ctrlPt2X, scalar ctrlPt2Y, scalar endPtX, scalar endPtY)
 {
     impl_->CubicTo(ctrlPt1X, ctrlPt1Y, ctrlPt2X, ctrlPt2Y, endPtX, endPtY);
@@ -88,6 +93,31 @@ void Path::QuadTo(scalar ctrlPtX, scalar ctrlPtY, scalar endPtX, scalar endPtY)
 void Path::QuadTo(const Point& ctrlPt, const Point endPt)
 {
     impl_->QuadTo(ctrlPt.GetX(), ctrlPt.GetY(), endPt.GetX(), endPt.GetY());
+}
+
+void Path::RMoveTo(scalar dx, scalar dy)
+{
+    impl_->RMoveTo(dx, dy);
+}
+
+void Path::RLineTo(scalar dx, scalar dy)
+{
+    impl_->RLineTo(dx, dy);
+}
+
+void Path::RArcTo(scalar rx, scalar ry, scalar angle, PathDirection direction, scalar dx, scalar dy)
+{
+    impl_->RArcTo(rx, ry, angle, direction, dx, dy);
+}
+
+void Path::RCubicTo(scalar dx1, scalar dy1, scalar dx2, scalar dy2, scalar dx3, scalar dy3)
+{
+    impl_->RCubicTo(dx1, dy1, dx2, dy2, dx3, dy3);
+}
+
+void Path::RQuadTo(scalar dx1, scalar dy1, scalar dx2, scalar dy2)
+{
+    impl_->RQuadTo(dx1, dy1, dx2, dy2);
 }
 
 void Path::AddRect(const Rect& rect, PathDirection dir)

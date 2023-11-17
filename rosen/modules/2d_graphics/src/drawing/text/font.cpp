@@ -23,16 +23,8 @@ namespace Rosen {
 namespace Drawing {
 Font::Font() : fontImpl_(ImplFactory::CreateFontImpl()) {}
 
-Font::Font(const Font& other) noexcept
-{
-    fontImpl_.reset(other.fontImpl_->Clone());
-}
-
-Font& Font::operator=(const Font& other) noexcept
-{
-    fontImpl_.reset(other.fontImpl_->Clone());
-    return *this;
-}
+Font::Font(std::shared_ptr<Typeface> typeface, scalar size, scalar scaleX, scalar skewX)
+    : fontImpl_(ImplFactory::CreateFontImpl(typeface, size, scaleX, skewX)) {}
 
 void Font::SetEdging(FontEdging edging)
 {
@@ -64,6 +56,11 @@ void Font::SetEmbolden(bool isEmbolden)
     fontImpl_->SetEmbolden(isEmbolden);
 }
 
+void Font::SetScaleX(scalar scaleX)
+{
+    fontImpl_->SetScaleX(scaleX);
+}
+
 void Font::SetSkewX(scalar skewX)
 {
     fontImpl_->SetSkewX(skewX);
@@ -87,6 +84,11 @@ void Font::GetWidths(const uint16_t glyphs[], int count, scalar widths[]) const
 void Font::GetWidths(const uint16_t glyphs[], int count, scalar widths[], Rect bounds[]) const
 {
     fontImpl_->GetWidths(glyphs, count, widths, bounds);
+}
+
+scalar Font::MeasureText(const void* text, size_t byteLength, TextEncoding encoding)
+{
+    return fontImpl_->MeasureText(text, byteLength, encoding);
 }
 } // namespace Drawing
 } // namespace Rosen

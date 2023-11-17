@@ -703,7 +703,7 @@ bool RSMarshallingHelper::WriteToParcel(Parcel& parcel, const void* data, size_t
     return {};
 }
 
-const void* RSMarshallingHelper::ReadFromParcel(Parcel& parcel, size_t size)
+const void* RSMarshallingHelper::ReadFromParcel(Parcel& parcel, size_t size, bool& isMalloc)
 {
     return {};
 }
@@ -712,5 +712,8 @@ bool RSMarshallingHelper::SkipFromParcel(Parcel& parcel, size_t size)
 {
     return {};
 }
+void RSMarshallingHelper::BeginNoSharedMem(std::thread::id tid) {}
+void RSMarshallingHelper::EndNoSharedMem() {}
+bool RSMarshallingHelper::GetUseSharedMem() { return true; }
 } // namespace Rosen
 } // namespace OHOS

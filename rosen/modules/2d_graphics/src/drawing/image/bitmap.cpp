@@ -49,9 +49,40 @@ int Bitmap::GetHeight() const
     return bmpImplPtr->GetHeight();
 }
 
+int Bitmap::GetRowBytes() const
+{
+    return bmpImplPtr->GetRowBytes();
+}
+
+ColorType Bitmap::GetColorType() const
+{
+    return bmpImplPtr->GetColorType();
+}
+
+AlphaType Bitmap::GetAlphaType() const
+{
+    return bmpImplPtr->GetAlphaType();
+}
+
+bool Bitmap::PeekPixels(Pixmap& pixmap) const
+{
+    return bmpImplPtr->PeekPixels(pixmap);
+}
+
 void Bitmap::SetPixels(void* pixel)
 {
     bmpImplPtr->SetPixels(pixel);
+}
+
+bool Bitmap::ExtractSubset(Bitmap& dst, const Rect& subset) const
+{
+    return bmpImplPtr->ExtractSubset(dst, subset);
+}
+
+bool Bitmap::ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+    int srcX, int srcY) const
+{
+    return bmpImplPtr->ReadPixels(dstInfo, dstPixels, dstRowBytes, srcX, srcY);
 }
 
 void* Bitmap::GetPixels() const
@@ -59,9 +90,25 @@ void* Bitmap::GetPixels() const
     return bmpImplPtr->GetPixels();
 }
 
-void Bitmap::CopyPixels(Bitmap& dst, int srcLeft, int srcTop, int width, int height) const
+void Bitmap::CopyPixels(Bitmap& dst, int srcLeft, int srcTop) const
 {
-    bmpImplPtr->CopyPixels(dst, srcLeft, srcTop, width, height);
+    bmpImplPtr->CopyPixels(dst, srcLeft, srcTop);
+}
+
+bool Bitmap::InstallPixels(const ImageInfo& info, void* pixels, size_t rowBytes,
+    ReleaseProc releaseProc, void* context)
+{
+    return bmpImplPtr->InstallPixels(info, pixels, rowBytes, releaseProc, context);
+}
+
+bool Bitmap::IsImmutable()
+{
+    return bmpImplPtr->IsImmutable();
+}
+
+void Bitmap::SetImmutable()
+{
+    bmpImplPtr->SetImmutable();
 }
 
 void Bitmap::ClearWithColor(const ColorQuad& color) const
@@ -72,6 +119,11 @@ void Bitmap::ClearWithColor(const ColorQuad& color) const
 bool Bitmap::IsValid() const
 {
     return bmpImplPtr->IsValid();
+}
+
+bool Bitmap::IsEmpty() const
+{
+    return bmpImplPtr->IsEmpty();
 }
 
 ColorQuad Bitmap::GetColor(int x, int y) const
@@ -89,10 +141,27 @@ BitmapFormat Bitmap::GetFormat() const
     return format_;
 }
 
+void Bitmap::SetFormat(const BitmapFormat& format)
+{
+    format_.alphaType = format.alphaType;
+    format_.colorType = format.colorType;
+}
+
 ImageInfo Bitmap::GetImageInfo() const
 {
     return imageInfo_;
 }
+
+std::shared_ptr<Data> Bitmap::Serialize() const
+{
+    return bmpImplPtr->Serialize();
+}
+
+bool Bitmap::Deserialize(std::shared_ptr<Data> data)
+{
+    return bmpImplPtr->Deserialize(data);
+}
+
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

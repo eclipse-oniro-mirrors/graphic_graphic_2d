@@ -18,6 +18,7 @@
 #include <cinttypes>
 
 #include "platform/common/rs_log.h"
+#include "rs_trace.h"
 #include "string_utils.h"
 #include "hisysevent.h"
 
@@ -241,7 +242,8 @@ void RSScreen::SetPowerStatus(uint32_t powerStatus)
         return;
     }
 
-    RS_LOGD("RSScreen %{public}s SetPowerStatus, status is %{public}u", __func__, powerStatus);
+    RS_LOGI("RSScreen_%{public}" PRIu64 " SetPowerStatus, status is %{public}u", id_, powerStatus);
+    RS_TRACE_NAME_FMT("Screen_%llu SetPowerStatus %u", id_, powerStatus);
     if (hdiScreen_->SetScreenPowerStatus(static_cast<GraphicDispPowerStatus>(powerStatus)) < 0) {
         return;
     }
@@ -497,6 +499,16 @@ void RSScreen::ClearFpsDump(int32_t screenIndex, std::string& dumpString, std::s
     hdiOutput_->ClearFpsDump(dumpString, arg);
 }
 
+void RSScreen::ResizeVirtualScreen(uint32_t width, uint32_t height)
+{
+    if (!IsVirtual()) {
+        RS_LOGW("RSScreen %{public}s: physical screen not support ResizeVirtualScreen.", __func__);
+        return;
+    }
+    width_ = static_cast<int32_t>(width);
+    height_ = static_cast<int32_t>(height);
+}
+
 void RSScreen::SetScreenBacklight(uint32_t level)
 {
     if (IsVirtual()) {
@@ -613,6 +625,18 @@ int32_t RSScreen::SetScreenGamutMap(ScreenGamutMap mode)
         return StatusCode::SUCCESS;
     }
     return StatusCode::HDI_ERROR;
+}
+
+void RSScreen::SetScreenCorrection(ScreenRotation screenRotation)
+{
+    RS_LOGD("RSScreen %{public}s: RSScreen(id %{public}" PRIu64 ") ,ScreenRotation: %{public}d.",
+            __func__, id_, static_cast<uint32_t>(screenRotation));
+    screenRotation_ = screenRotation;
+}
+
+ScreenRotation RSScreen::GetScreenCorrection() const
+{
+    return screenRotation_;
 }
 
 int32_t RSScreen::GetScreenGamutMap(ScreenGamutMap &mode) const

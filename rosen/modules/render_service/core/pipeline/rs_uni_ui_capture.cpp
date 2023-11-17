@@ -65,6 +65,7 @@ std::shared_ptr<Media::PixelMap> RSUniUICapture::TakeLocalCapture()
 #ifndef USE_ROSEN_DRAWING
     auto skSurface = CreateSurface(pixelmap);
     if (skSurface == nullptr) {
+        RS_LOGE("RSUniUICapture::TakeLocalCapture: skSurface == nullptr!");
         return nullptr;
     }
     auto canvas = std::make_shared<RSPaintFilterCanvas>(skSurface.get());
@@ -119,13 +120,11 @@ std::shared_ptr<Drawing::Surface> RSUniUICapture::CreateSurface(
         return nullptr;
     }
 
-    Drawing::Bitmap bitmap;
-    Drawing::BitmapFormat format { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
-    bitmap.Build(pixelmap->GetWidth(), pixelmap->GetHeight(), format);
-    bitmap.SetPixels(address);
+    Drawing::ImageInfo info = Drawing::ImageInfo{pixelmap->GetWidth(), pixelmap->GetHeight(),
+        Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL};
+    std::shared_ptr<Drawing::Surface> surface =
+        std::make_shared<Drawing::Surface>(info, address, pixelmap->GetRowBytes());
 
-    std::shared_ptr<Drawing::Surface> surface = std::make_shared<Drawing::Surface>();
-    surface->Bind(bitmap);
     return surface;
 }
 #endif
@@ -184,9 +183,12 @@ void RSUniUICapture::RSUniUICaptureVisitor::SetCanvas(std::shared_ptr<RSRecordin
         RS_LOGE("RSUniUICaptureVisitor::SetCanvas: canvas == nullptr");
         return;
     }
+    auto renderContext = RSMainThread::Instance()->GetRenderEngine()->GetRenderContext();
+    canvas->SetGrRecordingContext(renderContext->GetGrContext());
     canvas_ = std::make_shared<RSPaintFilterCanvas>(canvas.get());
     canvas_->scale(scaleX_, scaleY_);
     canvas_->SetDisableFilterCache(true);
+    canvas_->SetRecordingState(true);
 }
 #else
 void RSUniUICapture::RSUniUICaptureVisitor::SetCanvas(std::shared_ptr<Drawing::RecordingCanvas> canvas)
@@ -197,11 +199,22 @@ void RSUniUICapture::RSUniUICaptureVisitor::SetCanvas(std::shared_ptr<Drawing::R
     }
     canvas_ = std::make_shared<RSPaintFilterCanvas>(canvas.get());
     canvas_->Scale(scaleX_, scaleY_);
+    canvas_->SetDisableFilterCache(true);
+    canvas_->SetRecordingState(true);
 }
 #endif
 
 void RSUniUICapture::RSUniUICaptureVisitor::ProcessChildren(RSRenderNode& node)
 {
+    if (RSSystemProperties::GetUseShadowBatchingEnabled()
+        && (node.GetRenderProperties().GetUseShadowBatching())) {
+        auto& children = node.GetSortedChildren();
+        for (auto& child : children) {
+            if (auto node = child->ReinterpretCastTo<RSCanvasRenderNode>()) {
+                node->ProcessShadowBatching(*canvas_);
+            }
+        }
+    }
     for (auto& child : node.GetSortedChildren()) {
         child->Process(shared_from_this());
     }
@@ -458,7 +471,7 @@ void RSUniUICapture::RSUniUICaptureVisitor::ProcessSurfaceViewWithoutUni(RSSurfa
         canvas_->restoreToCount(saveCnt);
         if (node.GetBuffer() != nullptr) {
             // in node's local coordinate.
-            auto params = RSDividedRenderUtil::CreateBufferDrawParam(node, true, false, false, false);
+            auto params = RSDividedRenderUtil::CreateBufferDrawParam(node, true, false, true, false);
             renderEngine_->DrawSurfaceNodeWithParams(*canvas_, node, params);
         }
     } else {
@@ -468,7 +481,7 @@ void RSUniUICapture::RSUniUICaptureVisitor::ProcessSurfaceViewWithoutUni(RSSurfa
         }
         if (node.GetBuffer() != nullptr) {
             // in node's local coordinate.
-            auto params = RSDividedRenderUtil::CreateBufferDrawParam(node, true, false, false, false);
+            auto params = RSDividedRenderUtil::CreateBufferDrawParam(node, true, false, true, false);
             renderEngine_->DrawSurfaceNodeWithParams(*canvas_, node, params);
         }
         canvas_->restore();

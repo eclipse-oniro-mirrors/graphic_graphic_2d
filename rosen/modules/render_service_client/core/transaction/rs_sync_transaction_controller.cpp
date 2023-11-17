@@ -16,16 +16,11 @@
 #include "rs_sync_transaction_controller.h"
 
 #include "platform/common/rs_log.h"
-#include "rs_process_transaction_controller.h"
+#include "platform/common/rs_system_properties.h"
 #include "rs_transaction.h"
 
 namespace OHOS {
 namespace Rosen {
-namespace {
-    const std::string CLOSE_SYNC_TRANSACTION_TIMEOUT_TASK = "RSCloseSyncTransactionTimeoutTask";
-    constexpr int64_t CLOSE_SYNC_TRANSACTION_TIMEOUT_MILLISECONDS = 100;
-}
-
 std::once_flag RSSyncTransactionController::flag_;
 RSSyncTransactionController* RSSyncTransactionController::instance_ = nullptr;
 
@@ -51,48 +46,23 @@ void RSSyncTransactionController::Destroy()
 
 RSSyncTransactionController::RSSyncTransactionController()
 {
-    runner_ = AppExecFwk::EventRunner::Create("RSSyncTransactionController");
-    handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);
     rsTransaction_ = std::make_shared<RSTransaction>();
-    auto startCallback = [this]() {
-        StartCreateTransaction();
-    };
-    rsTransaction_->SetCreateStartCallback(startCallback);
-    auto finishCallback = [this]() {
-        CreateTransactionFinished();
-    };
-    rsTransaction_->SetCreateFinishCallback(finishCallback);
 }
 
-void RSSyncTransactionController::CreateTransactionFinished()
+std::shared_ptr<RSTransaction> RSSyncTransactionController::GetRSTransaction()
 {
-    {
-        std::unique_lock<std::mutex> lock(mutex_);
-        if (processCount_ == 0) {
-            return;
-        }
-        processCount_--;
-        transactionCount_++;
+    if (!needCloseSync_) {
+        return nullptr;
     }
-    if (processCount_ == 0) {
-        ROSEN_LOGD("RS sync transaction controller CreateTransactionFinished, "
-            "processCount: %{public}d", processCount_);
-        CloseSyncTransaction();
-    }
-}
-
-void RSSyncTransactionController::StartCreateTransaction()
-{
-    std::unique_lock<std::mutex> lock(mutex_);
-    if (processCount_ < 0) {
-        processCount_ = 0;
-    }
-    processCount_++;
-    ROSEN_LOGD("RS sync transaction controller StartCreateTransaction, processCount: %{public}d", processCount_);
+    return rsTransaction_;
 }
 
 void RSSyncTransactionController::OpenSyncTransaction()
 {
+    if (!RSSystemProperties::GetSyncTransactionEnabled()) {
+        return;
+    }
+
     {
         std::unique_lock<std::mutex> lock(mutex_);
         if (needCloseSync_) {
@@ -104,13 +74,6 @@ void RSSyncTransactionController::OpenSyncTransaction()
     if (rsTransaction_) {
         rsTransaction_->OpenSyncTransaction();
     }
-    if (handler_) {
-        auto task = [this]() {
-            ROSEN_LOGD("RS sync transaction controller close timeout task run");
-            CloseSyncTransaction();
-        };
-        handler_->PostTask(task, CLOSE_SYNC_TRANSACTION_TIMEOUT_TASK, CLOSE_SYNC_TRANSACTION_TIMEOUT_MILLISECONDS);
-    }
 }
 
 void RSSyncTransactionController::CloseSyncTransaction()
@@ -121,12 +84,10 @@ void RSSyncTransactionController::CloseSyncTransaction()
 
     ROSEN_LOGD("RS sync transaction controller CloseSyncTransaction");
     if (rsTransaction_) {
-        rsTransaction_->CloseSyncTransaction(transactionCount_);
+        rsTransaction_->CloseSyncTransaction();
     }
     {
         std::unique_lock<std::mutex> lock(mutex_);
-        processCount_ = 0;
-        transactionCount_ = 0;
         needCloseSync_ = false;
     }
 }

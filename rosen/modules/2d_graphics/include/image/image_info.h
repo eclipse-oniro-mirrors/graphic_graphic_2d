@@ -17,10 +17,17 @@
 #define IMAGE_INFO_H
 #include "draw/color.h"
 #include "effect/color_space.h"
-#include "utils/getter_setter.h"
+#include "utils/rect.h"
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
+
+enum class EncodedImageFormat {
+    JPEG,
+    PNG,
+    WEBP,
+    UNKNOWN,
+};
 
 class ImageInfo {
 public:
@@ -28,18 +35,119 @@ public:
     ImageInfo(int width, int height, ColorType colorType, AlphaType alphaType, std::shared_ptr<ColorSpace> colorSpace = nullptr)
         : width_(width), height_(height), colorType_(colorType), alphaType_(alphaType), colorSpace_(colorSpace) {}
     ~ImageInfo() = default;
+    
+    static ImageInfo MakeN32Premul(int32_t width, int32_t height)
+    {
+        return ImageInfo(width, height, COLORTYPE_N32, ALPHATYPE_PREMUL, nullptr);
+    }
+    /*
+     * @brief  Gets the width value of ImageInfo.
+     */
+    int GetWidth() const
+    {
+        return width_;
+    }
 
-    GETTER(GetWidth, int, width_)
-    GETTER(GetHeight, int, height_)
-    GETTER(GetColorType, ColorType, colorType_)
-    GETTER(GetAlphaType, AlphaType, alphaType_)
-    GETTER(GetColorSpace, std::shared_ptr<ColorSpace>, colorSpace_)
+    /*
+     * @brief  Gets the height value of ImageInfo.
+     */
+    int GetHeight() const
+    {
+        return height_;
+    }
 
-    SETTER(SetWidth, int, width_)
-    SETTER(SetHeight, int, height_)
-    SETTER(SetColorType, ColorType, colorType_)
-    SETTER(SetAlphaType, AlphaType, alphaType_)
-    SETTER(SetColorSpace, std::shared_ptr<ColorSpace>, colorSpace_)
+    /*
+     * @brief  Gets the color type value of ImageInfo.
+     */
+    ColorType GetColorType() const
+    {
+        return colorType_;
+    }
+
+    /*
+     * @brief  Gets the alpha type value of ImageInfo.
+     */
+    AlphaType GetAlphaType() const
+    {
+        return alphaType_;
+    }
+
+    /*
+     * @brief  Gets the color space value of ImageInfo.
+     */
+    std::shared_ptr<ColorSpace> GetColorSpace() const
+    {
+        return colorSpace_;
+    }
+
+    /*
+     * @brief  Returns number of bytes per pixel.
+     */
+    int GetBytesPerPixel() const
+    {
+        // returns the number of bytes per pixel: 1byte, 2bytes, 4bytes
+        switch (colorType_) {
+            case COLORTYPE_ALPHA_8:
+                return 1;
+            case COLORTYPE_RGB_565:
+            case COLORTYPE_ARGB_4444:
+                return 2;
+            case COLORTYPE_RGBA_8888:
+            case COLORTYPE_BGRA_8888:
+            case COLORTYPE_N32:
+                return 4;
+            default:
+                return 0;
+        }
+    }
+
+    /*
+     * @brief  Sets the width value of ImageInfo.
+     */
+    void SetWidth(int width)
+    {
+        width_ = width;
+    }
+
+    /*
+     * @brief  Sets the height value of ImageInfo.
+     */
+    void SetHeight(int height)
+    {
+        height_ = height;
+    }
+
+    /*
+     * @brief  Sets the color type value of ImageInfo.
+     */
+    void SetColorType(ColorType colorType)
+    {
+        colorType_ = colorType;
+    }
+
+    /*
+     * @brief  Sets the alpha type value of ImageInfo.
+     */
+    void SetAlphaType(AlphaType alphaType)
+    {
+        alphaType_ = alphaType;
+    }
+
+    /*
+     * @brief  Sets the color space value of ImageInfo.
+     */
+    void SetColorSpace(std::shared_ptr<ColorSpace> colorSpace)
+    {
+        colorSpace_ = colorSpace;
+    }
+
+    /*
+     * @brief  Gets the bounds of ImageInfo.
+     */
+    RectI GetBounds() const
+    {
+        return RectI(0, 0, width_, height_);
+    }
 
 private:
     int width_ = 0;

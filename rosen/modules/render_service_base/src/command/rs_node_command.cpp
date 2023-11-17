@@ -45,11 +45,19 @@ void RSNodeCommandHelper::SetFreeze(RSContext& context, NodeId nodeId, bool isFr
     }
 }
 
-void RSNodeCommandHelper::MarkNodeGroup(RSContext& context, NodeId nodeId, bool isNodeGroup)
+void RSNodeCommandHelper::MarkNodeGroup(RSContext& context, NodeId nodeId, bool isNodeGroup, bool isForced)
 {
     auto& nodeMap = context.GetNodeMap();
     if (auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId)) {
-        node->MarkNodeGroup(RSRenderNode::GROUPED_BY_USER, isNodeGroup);
+        node->MarkNodeGroup(isForced ? RSRenderNode::GROUPED_BY_USER : RSRenderNode::GROUPED_BY_UI, isNodeGroup);
+    }
+}
+
+void RSNodeCommandHelper::MarkNodeSingleFrameComposer(RSContext& context, NodeId nodeId, bool isNodeSingleFrameComposer)
+{
+    auto& nodeMap = context.GetNodeMap();
+    if (auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId)) {
+        node->MarkNodeSingleFrameComposer(isNodeSingleFrameComposer);
     }
 }
 
@@ -100,6 +108,15 @@ void RSNodeCommandHelper::SetDrawRegion(RSContext& context, NodeId nodeId, std::
     }
 }
 
+void RSNodeCommandHelper::SetOutOfParent(RSContext& context, NodeId nodeId, OutOfParentType outOfParent)
+{
+    auto& nodeMap = context.GetNodeMap();
+    auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
+    if (node) {
+        node->SetOutOfParent(outOfParent);
+    }
+}
+
 void RSNodeCommandHelper::RegisterGeometryTransitionPair(RSContext& context, NodeId inNodeId, NodeId outNodeId)
 {
     auto& nodeMap = context.GetNodeMap();
@@ -131,7 +148,7 @@ void RSNodeCommandHelper::UnregisterGeometryTransitionPair(RSContext& context, N
     }
 }
 
-void RSNodeCommandHelper::UpdateUIFrameRateRange(RSContext& context, NodeId nodeId, const FrameRateRange& range)
+void RSNodeCommandHelper::UpdateUIFrameRateRange(RSContext& context, NodeId nodeId, FrameRateRange range)
 {
     auto& nodeMap = context.GetNodeMap();
     if (auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId)) {

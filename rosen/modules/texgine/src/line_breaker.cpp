@@ -29,14 +29,16 @@
 namespace OHOS {
 namespace Rosen {
 namespace TextEngine {
+#define FAILED 1
+
 std::vector<LineMetrics> LineBreaker::BreakLines(std::vector<VariantSpan> &spans,
-    const TypographyStyle &tstyle, const double widthLimit)
+    const TypographyStyle &tstyle, const double widthLimit, const std::vector<float> &indents)
 {
     LOGSCOPED(sl, LOGEX_FUNC_LINE_DEBUG(), "BreakLines");
     auto ss = GenerateScoreSpans(spans);
-    DoBreakLines(ss, widthLimit, tstyle);
-    auto lineBreaks = GenerateBreaks(ss);
-    return GenerateLineMetrics(spans, lineBreaks);
+    DoBreakLines(ss, widthLimit, tstyle, indents);
+    auto lineBreaks = GenerateBreaks(spans, ss);
+    return GenerateLineMetrics(widthLimit, spans, lineBreaks, indents);
 }
 
 std::vector<struct ScoredSpan> LineBreaker::GenerateScoreSpans(const std::vector<VariantSpan> &spans)
@@ -86,17 +88,36 @@ std::vector<struct ScoredSpan> LineBreaker::GenerateScoreSpans(const std::vector
     return scoredSpans;
 }
 
+static double GetIndent(const double widthLimit, const int index, const std::vector<float> &indents)
+{
+    double indent = 0.0;
+    if (indents.size() > 0 && index < indents.size()) {
+        indent = indents[index];
+    } else {
+        indent = indents.size() > 0 ? indents.back() : 0.0;
+    }
+
+    return indent;
+}
+
 void LineBreaker::DoBreakLines(std::vector<struct ScoredSpan> &scoredSpans, const double widthLimit,
-    const TypographyStyle &tstyle)
+    const TypographyStyle &tstyle, const std::vector<float> &indents)
 {
     LOGSCOPED(sl, LOGEX_FUNC_LINE_DEBUG(), "UpadateLineBreaksData");
     scoredSpans.emplace(scoredSpans.cbegin());
+    int index = 0;
     for (size_t i = 1; i < scoredSpans.size(); i++) {
         auto &is = scoredSpans[i];
         is.prev = scoredSpans[i - 1].prev;
+        double newWidthLimit = widthLimit - GetIndent(widthLimit, index, indents);
         LOGEX_FUNC_LINE_DEBUG() << "[" << i << "]: is.preBreak: " << is.preBreak
             << ", prev.postBreak: " << scoredSpans[is.prev].postBreak;
-        if (FLOATING_GT(is.preBreak - scoredSpans[is.prev].postBreak, widthLimit)) {
+        if (scoredSpans[i].span.IsHardBreak()) {
+            is.prev = static_cast<int>(i - 1);
+            index++;
+        }
+
+        if (FLOATING_GT(is.preBreak - scoredSpans[is.prev].postBreak, newWidthLimit)) {
             is.prev = static_cast<int>(i - 1);
             LOGEX_FUNC_LINE_DEBUG() << "  -> [" << is.prev
                 << "]: prev.postBreak: " << scoredSpans[is.prev].postBreak;
@@ -107,7 +128,7 @@ void LineBreaker::DoBreakLines(std::vector<struct ScoredSpan> &scoredSpans, cons
         }
 
         LOGSCOPED(sl1, LOGEX_FUNC_LINE_DEBUG(), "algo");
-        double delta = widthLimit - (is.preBreak - scoredSpans[is.prev].postBreak);
+        double delta = newWidthLimit - (is.preBreak - scoredSpans[is.prev].postBreak);
         is.score = delta * delta + scoredSpans[is.prev].score;
 
         std::stringstream ss;
@@ -115,7 +136,7 @@ void LineBreaker::DoBreakLines(std::vector<struct ScoredSpan> &scoredSpans, cons
         LOGSCOPED(sl, LOGEX_FUNC_LINE_DEBUG(), ss.str());
         for (size_t j = 0; j < i; j++) {
             const auto &js = scoredSpans[j];
-            double jdelta = widthLimit - (is.preBreak - js.postBreak);
+            double jdelta = newWidthLimit - (is.preBreak - js.postBreak);
             if (jdelta < 0) {
                 continue;
             }
@@ -136,7 +157,8 @@ void LineBreaker::DoBreakLines(std::vector<struct ScoredSpan> &scoredSpans, cons
     scoredSpans.erase(scoredSpans.begin());
 }
 
-std::vector<int32_t> LineBreaker::GenerateBreaks(const std::vector<struct ScoredSpan> &scoredSpans)
+std::vector<int32_t> LineBreaker::GenerateBreaks(std::vector<VariantSpan> &spans,
+    const std::vector<struct ScoredSpan> &scoredSpans)
 {
     LOGSCOPED(sl, LOGEX_FUNC_LINE_DEBUG(), "GenerateBreaks");
 
@@ -150,40 +172,61 @@ std::vector<int32_t> LineBreaker::GenerateBreaks(const std::vector<struct Scored
         lineBreaks.push_back(i);
     }
     std::reverse(lineBreaks.begin(), lineBreaks.end());
+    for (size_t i = 0; i < spans.size(); i++) {
+        if (spans[i].IsHardBreak()) {
+            auto it = find(lineBreaks.begin(), lineBreaks.end(), i);
+            if (it == lineBreaks.end()) {
+                lineBreaks.push_back(i);
+            }
+
+            auto next = find(lineBreaks.begin(), lineBreaks.end(), (i + 1));
+            if (next == lineBreaks.end()) {
+                lineBreaks.push_back(i + 1);
+            }
+        }
+    }
+    std::sort(lineBreaks.begin(), lineBreaks.end(), [](int32_t lb1, const int32_t lb2) {
+        return (lb1 < lb2);
+    });
     return lineBreaks;
 }
 
-std::vector<LineMetrics> LineBreaker::GenerateLineMetrics(std::vector<VariantSpan> &spans,
-    std::vector<int32_t> &breaks)
+std::vector<LineMetrics> LineBreaker::GenerateLineMetrics(const double widthLimit, std::vector<VariantSpan> &spans,
+    std::vector<int32_t> &breaks, const std::vector<float> &indents)
 {
     LOGSCOPED(sl, LOGEX_FUNC_LINE_DEBUG(), "GenerateLineMetrics");
     LOGEX_FUNC_LINE_DEBUG() << "breaks.size(): " << breaks.size();
 
     std::vector<LineMetrics> lineMetrics;
-    auto prev = 0;
     if (!breaks.empty() && breaks.back() > static_cast<int>(spans.size())) {
         throw TEXGINE_EXCEPTION(OUT_OF_RANGE);
     }
 
-    for (const auto &lb : breaks) {
-        if (lb <= prev) {
-            throw TEXGINE_EXCEPTION(ERROR_STATUS);
-        }
+    if (breaks.front() != 0) {
+        breaks.insert(breaks.begin(), 0);
+    }
 
-        std::stringstream ss;
-        ss << "[" << prev << ", " << lb << ")";
-        LOGSCOPED(sl, LOGEX_FUNC_LINE_DEBUG(), ss.str());
-
+    int32_t prev = breaks[0];
+    int32_t index = 0;
+    for (size_t i = 1; i < breaks.size(); i++) {
         std::vector<VariantSpan> vss;
-        for (int32_t i = prev; i < lb; i++) {
-            spans[i].Dump();
-            vss.push_back(spans[i]);
+        int32_t next = breaks[i];
+        if (next <= prev) {
+            return {};
         }
 
+        for (; prev < next; prev++) {
+            vss.push_back(spans[prev]);
+            if (spans[prev].IsHardBreak()) {
+                index++;
+            }
+        }
+        double indent = GetIndent(widthLimit, index, indents);
         lineMetrics.push_back({
             .lineSpans = vss,
+            .indent = indent,
         });
-        prev = lb;
+        prev = next;
     }
 
     return lineMetrics;

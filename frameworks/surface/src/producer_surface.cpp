@@ -128,14 +128,14 @@ GSError ProducerSurface::RequestBuffer(sptr<SurfaceBuffer>& buffer,
     }
 
     for (auto it = retval.deletingBuffers.begin(); it != retval.deletingBuffers.end(); it++) {
-        uint32_t seqNum = *it;
+        uint32_t seqNum = static_cast<uint32_t>(*it);
         bufferProducerCache_.erase(seqNum);
         auto spNativeWindow = wpNativeWindow_.promote();
         if (spNativeWindow != nullptr) {
             auto &bufferCache = spNativeWindow->bufferCache_;
             if (bufferCache.find(seqNum) != bufferCache.end()) {
-                bufferCache.erase(seqNum);
                 NativeObjectUnreference(bufferCache[seqNum]);
+                bufferCache.erase(seqNum);
             }
         }
     }
@@ -351,7 +351,11 @@ void ProducerSurface::CleanAllLocked()
     bufferProducerCache_.clear();
     auto spNativeWindow = wpNativeWindow_.promote();
     if (spNativeWindow != nullptr) {
-        spNativeWindow->bufferCache_.clear();
+        auto &bufferCache = spNativeWindow->bufferCache_;
+        for (auto &[seqNum, buffer] : bufferCache) {
+            NativeObjectUnreference(buffer);
+        }
+        bufferCache.clear();
     }
 }
 

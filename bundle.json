@@ -15,6 +15,7 @@
       "syscap": [
         "SystemCapability.Graphic.Graphic2D.ColorManager.Core",
         "SystemCapability.Graphic.Graphic2D.EGL",
+        "SystemCapability.Graphic.Graphic2D.GLES2", 
         "SystemCapability.Graphic.Graphic2D.GLES3",
         "SystemCapability.Graphic.Graphic2D.NativeWindow",
         "SystemCapability.Graphic.Graphic2D.NativeDrawing",
@@ -28,11 +29,13 @@
         "graphic_2d_feature_ace_enable_gpu",
         "graphic_2d_feature_rs_enable_eglimage",
         "graphic_2d_feature_color_gamut_enable",
+        "graphic_2d_feature_use_texgine",
         "graphic_2d_feature_rs_enable_uni_render",
         "graphic_2d_feature_wuji_enable",
         "graphic_2d_feature_enable_afbc",
         "graphic_2d_feature_freemem_enable",
-        "graphic_2d_feature_parallel_render_enable"
+        "graphic_2d_feature_parallel_render_enable",
+        "graphic_2d_feature_tp_switch_enbale"
       ],
       "rom": "10000KB",
       "ram": "10000KB",
@@ -64,7 +67,11 @@
           "resource_schedule_service",
           "soc_perf",
           "accessibility",
-          "frame_aware_sched"
+          "frame_aware_sched",
+          "memmgr",
+          "memmgr_plugin",
+          "sensor",
+          "qos_manager"
         ],
         "third_party": [
           "flutter",
@@ -92,12 +99,12 @@
             "//foundation/graphic/graphic_2d/rosen/modules/composer:libcomposer",
             "//foundation/graphic/graphic_2d/rosen/modules/composer/native_vsync:libnative_vsync",
             "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics",
+            "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics_new",
             "//foundation/graphic/graphic_2d/rosen/modules/effect/effectChain:libeffectchain",
             "//foundation/graphic/graphic_2d/rosen/modules/effect/color_picker:color_picker",
             "//foundation/graphic/graphic_2d/rosen/modules/effect/skia_effectChain:skeffectchain",
             "//foundation/graphic/graphic_2d/frameworks/opengl_wrapper:EGL",
             "//foundation/graphic/graphic_2d/frameworks/opengl_wrapper:GLESv3",
-            "//foundation/graphic/graphic_2d/frameworks/surfaceimage:libnative_image",
             "//foundation/graphic/graphic_2d/rosen/modules/2d_engine/rosen_text:rosen_text",
             "//foundation/graphic/graphic_2d/rosen/modules/effect/egl:libegl_effect",
             "//foundation/graphic/graphic_2d/rosen/modules/texgine:libtexgine",
@@ -128,7 +135,6 @@
                 "external_window.h",
                 "native_buffer.h",
                 "native_buffer_inner.h",
-                "native_image.h",
                 "ibuffer_consumer_listener.h",
                 "ibuffer_producer.h",
                 "iconsumer_surface.h",
@@ -143,6 +149,16 @@
           },
           {
             "type": "so",
+            "name": "//foundation/graphic/graphic_2d/frameworks/bootanimation/utils:libbootanimation_utils",
+            "header": {
+              "header_files": [
+                "boot_animation_utils.h"
+              ],
+              "header_base": "//foundation/graphic/graphic_2d/interfaces/inner_api/bootanimation"
+            }
+          },
+          {
+            "type": "so",
             "name": "//foundation/graphic/graphic_2d/rosen/modules/composer:libcomposer",
             "header": {
               "header_files": [
@@ -153,11 +169,34 @@
           },
           {
             "type": "so",
+            "name": "//foundation/graphic/graphic_2d/frameworks/surfaceimage:libnative_image",
+            "header": {
+              "header_files": [
+                "native_image.h"
+              ],
+              "header_base": "//foundation/graphic/graphic_2d/interfaces/inner_api/surface"
+            }
+          },
+          {
+            "type": "so",
+            "name": "//foundation/graphic/graphic_2d:libgl",
+            "header": {
+              "header_files": [
+              ],
+              "header_base": [
+                  "//third_party/openGLES:libGLES",
+                  "//third_party/EGL:libEGL"
+              ]
+            }
+          },
+          {
+            "type": "so",
             "name": "//foundation/graphic/graphic_2d/utils:libgraphic_utils",
             "header": {
               "header_files": [
                 "graphic_common.h",
-                "graphic_common_c.h"
+                "graphic_common_c.h",
+                "metadata_convertor.h"
               ],
               "header_base": "//foundation/graphic/graphic_2d/interfaces/inner_api/common"
             }
@@ -259,6 +298,18 @@
           },
           {
             "type": "so",
+            "name": "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics_new",
+            "header": {
+              "header_files": [
+                "draw/canvas.h",
+                "draw/pen.h",
+                "image/bitmap.h"
+              ],
+              "header_base": "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics/include"
+            }
+          },
+          {
+            "type": "so",
             "name": "//foundation/graphic/graphic_2d/rosen/modules/effect/color_picker:color_picker",
             "header": {
               "header_files": [
@@ -292,6 +343,7 @@
                 "ifont_provider.h",
                 "system_font_provider.h",
                 "text_style.h",
+                "theme_font_provider.h",
                 "typography_builder.h",
                 "typography_style.h",
                 "typography_types.h",

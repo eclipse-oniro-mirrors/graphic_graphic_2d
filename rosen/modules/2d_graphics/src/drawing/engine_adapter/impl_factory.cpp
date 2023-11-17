@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include "effect/runtime_effect.h"
+
 #include "impl_factory.h"
 
 #include "skia_adapter/skia_impl_factory.h"
@@ -49,9 +51,24 @@ std::unique_ptr<GPUContextImpl> ImplFactory::CreateGPUContextImpl()
 }
 #endif
 
+std::unique_ptr<TraceMemoryDumpImpl> ImplFactory::CreateTraceMemoryDumpImpl(const char* categoryKey, bool itemizeType)
+{
+    return EngineImplFactory::CreateTraceMemoryDump(categoryKey, itemizeType);
+}
+
 std::unique_ptr<BitmapImpl> ImplFactory::CreateBitmapImpl()
 {
     return EngineImplFactory::CreateBitmap();
+}
+
+std::unique_ptr<PixmapImpl> ImplFactory::CreatePixmapImpl()
+{
+    return EngineImplFactory::CreatePixmap();
+}
+
+std::unique_ptr<PixmapImpl> ImplFactory::CreatePixmapImpl(const ImageInfo& imageInfo, const void* addr, size_t rowBytes)
+{
+    return EngineImplFactory::CreatePixmap(imageInfo, addr, rowBytes);
 }
 
 std::unique_ptr<ImageImpl> ImplFactory::CreateImageImpl()
@@ -93,6 +110,17 @@ std::unique_ptr<ShaderEffectImpl> ImplFactory::CreateShaderEffectImpl()
     return EngineImplFactory::CreateShaderEffect();
 }
 
+std::unique_ptr<RuntimeEffectImpl> ImplFactory::CreateRuntimeEffectImpl()
+{
+    return EngineImplFactory::CreateRuntimeEffect();
+}
+
+std::unique_ptr<RuntimeShaderBuilderImpl> ImplFactory::CreateRuntimeShaderBuilderImpl(
+    std::shared_ptr<RuntimeEffect> runtimeEffect)
+{
+    return EngineImplFactory::CreateRuntimeShaderBuilder(runtimeEffect);
+}
+
 std::unique_ptr<SurfaceImpl> ImplFactory::CreateSurfaceImpl()
 {
     return EngineImplFactory::CreateSurface();
@@ -126,6 +154,37 @@ std::unique_ptr<CameraImpl> ImplFactory::CreateCameraImpl()
 std::unique_ptr<RegionImpl> ImplFactory::CreateRegionImpl()
 {
     return EngineImplFactory::CreateRegion();
+}
+
+std::unique_ptr<VerticesImpl> ImplFactory::CreateVerticesImpl()
+{
+    return EngineImplFactory::CreateVertices();
+}
+
+std::unique_ptr<VerticesImpl::BuilderImpl> ImplFactory::CreateVerticesBuilderImpl()
+{
+    return EngineImplFactory::CreateVerticesBuilder();
+}
+
+std::unique_ptr<FontImpl> ImplFactory::CreateFontImpl()
+{
+    return EngineImplFactory::CreateFont();
+}
+
+std::unique_ptr<FontImpl> ImplFactory::CreateFontImpl(std::shared_ptr<Typeface> typeface,
+    scalar size, scalar scaleX, scalar skewX)
+{
+    return EngineImplFactory::CreateFont(typeface, size, scaleX, skewX);
+}
+
+std::unique_ptr<TextBlobBuilderImpl> ImplFactory::CreateTextBlobBuilderImpl()
+{
+    return EngineImplFactory::CreateTextBlobBuilder();
+}
+
+std::shared_ptr<FontMgrImpl> ImplFactory::CreateDefaultFontMgrImpl()
+{
+    return EngineImplFactory::CreateDefaultFontMgr();
 }
 } // namespace Drawing
 } // namespace Rosen

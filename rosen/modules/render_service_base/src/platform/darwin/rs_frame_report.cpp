@@ -47,7 +47,7 @@ void RsFrameReport::AnimateStart()
 {
 }
 
-void RsFrameReport::RenderStart()
+void RsFrameReport::RenderStart(uint64_t timestamp)
 {
 }
 
@@ -56,6 +56,10 @@ void RsFrameReport::RenderEnd()
 }
 
 void RsFrameReport::SendCommandsStart()
+{
+}
+
+void RsFrameReport::SetFrameParam(int requestId, int load, int schedFrameNum, int value)
 {
 }
 } // namespace OHOS::Rosen

@@ -23,6 +23,7 @@ namespace Rosen {
 namespace Drawing {
 static constexpr int32_t FUNCTION_OVERLOADING_1 = 1;
 static constexpr int32_t FUNCTION_OVERLOADING_2 = 2;
+static constexpr int32_t FUNCTION_OVERLOADING_3 = 3;
 
 std::shared_ptr<PathCmdList> PathCmdList::CreateFromData(const CmdListData& data, bool isCopy)
 {
@@ -67,6 +68,11 @@ std::unordered_map<uint32_t, PathPlayer::PathPlaybackFunc> PathPlayer::opPlaybac
     { PathOpItem::ARCTO_OPITEM,                 ArcToOpItem::Playback },
     { PathOpItem::CUBICTO_OPITEM,               CubicToOpItem::Playback },
     { PathOpItem::QUADTO_OPITEM,                QuadToOpItem::Playback },
+    { PathOpItem::RMOVETO_OPITEM,               RMoveToOpItem::Playback },
+    { PathOpItem::RLINETO_OPITEM,               RLineToOpItem::Playback },
+    { PathOpItem::RARCTO_OPITEM,                RArcToOpItem::Playback },
+    { PathOpItem::RCUBICTO_OPITEM,              RCubicToOpItem::Playback },
+    { PathOpItem::RQUADTO_OPITEM,               RQuadToOpItem::Playback },
     { PathOpItem::ADDRECT_OPITEM,               AddRectOpItem::Playback },
     { PathOpItem::ADDOVAL_OPITEM,               AddOvalOpItem::Playback },
     { PathOpItem::ADDARC_OPITEM,                AddArcOpItem::Playback },
@@ -159,6 +165,9 @@ ArcToOpItem::ArcToOpItem(const scalar rx, const scalar ry, const scalar angle, c
     const scalar endX, const scalar endY) : PathOpItem(ARCTO_OPITEM), pt1_(rx, ry), pt2_(endX, endY),
     startAngle_(angle), sweepAngle_(0), direction_(direction), methodIndex_(FUNCTION_OVERLOADING_2) {}
 
+ArcToOpItem::ArcToOpItem(const scalar x1, const scalar y1, const scalar x2, const scalar y2, const scalar radius)
+    : PathOpItem(ARCTO_OPITEM), pt1_(x1, y1), pt2_(x2, y2), startAngle_(radius), methodIndex_(FUNCTION_OVERLOADING_3) {}
+
 void ArcToOpItem::Playback(PathPlayer& player, const void* opItem)
 {
     if (opItem != nullptr) {
@@ -169,10 +178,18 @@ void ArcToOpItem::Playback(PathPlayer& player, const void* opItem)
 
 void ArcToOpItem::Playback(Path& path) const
 {
-    if (methodIndex_ == FUNCTION_OVERLOADING_1) {
-        path.ArcTo(pt1_, pt2_, startAngle_, sweepAngle_);
-    } else if (methodIndex_ == FUNCTION_OVERLOADING_2) {
-        path.ArcTo(pt1_.GetX(), pt1_.GetY(), startAngle_, direction_, pt2_.GetX(), pt2_.GetY());
+    switch (methodIndex_) {
+        case FUNCTION_OVERLOADING_1:
+            path.ArcTo(pt1_, pt2_, startAngle_, sweepAngle_);
+            break;
+        case FUNCTION_OVERLOADING_2:
+            path.ArcTo(pt1_.GetX(), pt1_.GetY(), startAngle_, direction_, pt2_.GetX(), pt2_.GetY());
+            break;
+        case FUNCTION_OVERLOADING_3:
+            path.ArcTo(pt1_.GetX(), pt1_.GetY(), pt2_.GetX(), pt2_.GetY(), startAngle_);
+            break;
+        default:
+            break;
     }
 }
 
@@ -206,6 +223,86 @@ void QuadToOpItem::Playback(PathPlayer& player, const void* opItem)
 void QuadToOpItem::Playback(Path& path) const
 {
     path.QuadTo(ctrlPt_, endPt_);
+}
+
+RMoveToOpItem::RMoveToOpItem(const scalar dx, const scalar dy) : PathOpItem(RMOVETO_OPITEM), dx_(dx), dy_(dy) {}
+
+void RMoveToOpItem::Playback(PathPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const RMoveToOpItem*>(opItem);
+        op->Playback(player.path_);
+    }
+}
+
+void RMoveToOpItem::Playback(Path& path) const
+{
+    path.RMoveTo(dx_, dy_);
+}
+
+RLineToOpItem::RLineToOpItem(const scalar dx, const scalar dy) : PathOpItem(RLINETO_OPITEM), dx_(dx), dy_(dy) {}
+
+void RLineToOpItem::Playback(PathPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const RLineToOpItem*>(opItem);
+        op->Playback(player.path_);
+    }
+}
+
+void RLineToOpItem::Playback(Path& path) const
+{
+    path.RLineTo(dx_, dy_);
+}
+
+RArcToOpItem::RArcToOpItem(const scalar rx, const scalar ry, const scalar angle,
+    const PathDirection direction, const scalar dx, const scalar dy)
+    : PathOpItem(RARCTO_OPITEM), rx_(rx), ry_(ry), angle_(angle), direction_(direction), dx_(dx), dy_(dy) {}
+
+void RArcToOpItem::Playback(PathPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const RArcToOpItem*>(opItem);
+        op->Playback(player.path_);
+    }
+}
+
+void RArcToOpItem::Playback(Path& path) const
+{
+    path.RArcTo(rx_, ry_, angle_, direction_, dx_, dy_);
+}
+
+RCubicToOpItem::RCubicToOpItem(const scalar dx1, const scalar dy1,
+    const scalar dx2, const scalar dy2, const scalar dx3, const scalar dy3)
+    : PathOpItem(RCUBICTO_OPITEM), dx1_(dx1), dy1_(dy1), dx2_(dx2), dy2_(dy2), dx3_(dx3), dy3_(dy3) {}
+
+void RCubicToOpItem::Playback(PathPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const RCubicToOpItem*>(opItem);
+        op->Playback(player.path_);
+    }
+}
+
+void RCubicToOpItem::Playback(Path& path) const
+{
+    path.RCubicTo(dx1_, dy1_, dx2_, dy2_, dx3_, dy3_);
+}
+
+RQuadToOpItem::RQuadToOpItem(const scalar dx1, const scalar dy1, const scalar dx2, const scalar dy2)
+    : PathOpItem(RQUADTO_OPITEM), dx1_(dx1), dy1_(dy1), dx2_(dx2), dy2_(dy2) {}
+
+void RQuadToOpItem::Playback(PathPlayer& player, const void* opItem)
+{
+    if (opItem != nullptr) {
+        const auto* op = static_cast<const RQuadToOpItem*>(opItem);
+        op->Playback(player.path_);
+    }
+}
+
+void RQuadToOpItem::Playback(Path& path) const
+{
+    path.RQuadTo(dx1_, dy1_, dx2_, dy2_);
 }
 
 AddRectOpItem::AddRectOpItem(const Rect& rect, PathDirection dir)

@@ -26,6 +26,7 @@
 #include "skia_canvas.h"
 #ifdef ACE_ENABLE_GPU
 #include "skia_gpu_context.h"
+#include "skia_image_info.h"
 #endif
 
 namespace OHOS {
@@ -126,7 +127,67 @@ bool SkiaSurface::Bind(const FrameBuffer& frameBuffer)
     }
     return true;
 }
+
+std::shared_ptr<Surface> SkiaSurface::MakeRenderTarget(GPUContext* gpuContext,
+    bool budgeted, const ImageInfo& imageInfo)
+{
+    sk_sp<GrDirectContext> grContext = nullptr;
+    if (gpuContext) {
+        std::shared_ptr<SkiaGPUContext> skiaGpuContext = gpuContext->GetImpl<SkiaGPUContext>();
+        if (skiaGpuContext) {
+            grContext = skiaGpuContext->GetGrContext();
+        }
+    }
+    SkImageInfo skImageInfo = SkiaImageInfo::ConvertToSkImageInfo(imageInfo);
+    sk_sp<SkSurface> skSurface =
+        SkSurface::MakeRenderTarget(grContext.get(), static_cast<SkBudgeted>(budgeted), skImageInfo);
+    if (skSurface == nullptr) {
+        LOGE("skSurface nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return nullptr;
+    }
+    std::shared_ptr<Surface> surface = std::make_shared<Surface>();
+    surface->GetImpl<SkiaSurface>()->SetSkSurface(skSurface);
+    return surface;
+}
 #endif
+
+std::shared_ptr<Surface> SkiaSurface::MakeRaster(const ImageInfo& imageInfo)
+{
+    SkImageInfo skImageInfo = SkiaImageInfo::ConvertToSkImageInfo(imageInfo);
+    sk_sp<SkSurface> skSurface = SkSurface::MakeRaster(skImageInfo);
+    if (skSurface == nullptr) {
+        LOGE("skSurface nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return nullptr;
+    }
+    std::shared_ptr<Surface> surface = std::make_shared<Surface>();
+    surface->GetImpl<SkiaSurface>()->SetSkSurface(skSurface);
+    return surface;
+}
+
+std::shared_ptr<Surface> SkiaSurface::MakeRasterDirect(const ImageInfo& imageInfo, void* pixels, size_t rowBytes)
+{
+    SkImageInfo skImageInfo = SkiaImageInfo::ConvertToSkImageInfo(imageInfo);
+    sk_sp<SkSurface> skSurface = SkSurface::MakeRasterDirect(skImageInfo, pixels, rowBytes);
+    if (skSurface == nullptr) {
+        LOGE("skSurface nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return nullptr;
+    }
+    std::shared_ptr<Surface> surface = std::make_shared<Surface>();
+    surface->GetImpl<SkiaSurface>()->SetSkSurface(skSurface);
+    return surface;
+}
+
+std::shared_ptr<Surface> SkiaSurface::MakeRasterN32Premul(int32_t width, int32_t height)
+{
+    sk_sp<SkSurface> skSurface = SkSurface::MakeRasterN32Premul(width, height);
+    if (skSurface == nullptr) {
+        LOGE("skSurface nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return nullptr;
+    }
+    std::shared_ptr<Surface> surface = std::make_shared<Surface>();
+    surface->GetImpl<SkiaSurface>()->SetSkSurface(skSurface);
+    return surface;
+}
 
 std::shared_ptr<Canvas> SkiaSurface::GetCanvas() const
 {
@@ -175,6 +236,48 @@ std::shared_ptr<Image> SkiaSurface::GetImageSnapshot(const RectI& bounds) const
     auto image = std::make_shared<Image>();
     image->GetImpl<SkiaImage>()->SetSkImage(skImage);
     return image;
+}
+
+std::shared_ptr<Surface> SkiaSurface::MakeSurface(int width, int height) const
+{
+    if (skSurface_ == nullptr) {
+        LOGE("skSurface is nullptr");
+        return nullptr;
+    }
+    auto surface = skSurface_->makeSurface(width, height);
+    if (surface == nullptr) {
+        LOGE("SkiaSurface::MakeSurface failed");
+        return nullptr;
+    }
+
+    auto drawingSurface = std::make_shared<Surface>();
+    drawingSurface->GetImpl<SkiaSurface>()->SetSkSurface(surface);
+    return drawingSurface;
+}
+
+void SkiaSurface::SetSkSurface(const sk_sp<SkSurface>& skSurface)
+{
+    skSurface_ = skSurface;
+}
+
+void SkiaSurface::FlushAndSubmit(bool syncCpu)
+{
+    if (skSurface_ == nullptr) {
+        LOGE("skSurface is nullptr");
+        return;
+    }
+
+    skSurface_->flushAndSubmit(syncCpu);
+}
+
+void SkiaSurface::Flush()
+{
+    if (skSurface_ == nullptr) {
+        LOGE("skSurface is nullptr");
+        return;
+    }
+
+    skSurface_->flush();
 }
 
 } // namespace Drawing

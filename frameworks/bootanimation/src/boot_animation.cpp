@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 #include "boot_animation.h"
+
+#include "boot_animation_utils.h"
 #include "event_handler.h"
 #include "rs_trace.h"
 #include "transaction/rs_render_service_client.h"
@@ -22,7 +24,7 @@
 #include "render_context_factory.h"
 #include "rs_surface_factory.h"
 #endif
-#include <display_manager.h>
+#include "parameter.h"
 
 using namespace OHOS;
 
@@ -49,11 +51,7 @@ void BootAnimation::OnDraw(SkCanvas* canvas, int32_t curNo)
     SkPaint paint;
     SkRect rect;
     rect.setXYWH(pointX_, pointY_, realWidth_, realHeight_);
-#ifdef NEW_SKIA
     canvas->drawImageRect(image.get(), rect, SkSamplingOptions(), &paint);
-#else
-    canvas->drawImageRect(image.get(), rect, &paint);
-#endif
     ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
 }
 
@@ -100,6 +98,7 @@ void BootAnimation::Init(Rosen::ScreenId defaultId, int32_t width, int32_t heigh
     LOGI("Init enter, width: %{public}d, height: %{public}d", width, height);
 
     InitPicCoordinates();
+    InitRsDisplayNode();
     InitRsSurfaceNode();
     if (animationConfig_.IsBootVideoEnabled()) {
         LOGI("Init end");
@@ -171,6 +170,8 @@ void BootAnimation::InitRsSurfaceNode()
     rsSurfaceNode_->SetBounds({0, 0, windowWidth_, windowHeight_});
     rsSurfaceNode_->SetBackgroundColor(0xFF000000);
     rsSurfaceNode_->SetFrameGravity(Rosen::Gravity::RESIZE_ASPECT);
+    rsSurfaceNode_->SetBootAnimation(true);
+    OHOS::Rosen::RSTransaction::FlushImplicitTransaction();
     rsSurfaceNode_->AttachToDisplay(defaultId_);
     OHOS::Rosen::RSTransaction::FlushImplicitTransaction();
     system::SetParameter("bootevent.bootanimation.started", "true");
@@ -179,6 +180,7 @@ void BootAnimation::InitRsSurfaceNode()
 
 void BootAnimation::InitRsSurface()
 {
+    LOGI("InitRsSurface");
 #if defined(NEW_RENDER_CONTEXT)
     renderContext_ = Rosen::RenderContextBaseFactory::CreateRenderContext();
     if (renderContext_ == nullptr) {
@@ -217,7 +219,12 @@ void BootAnimation::InitRsSurface()
 
 BootAnimation::~BootAnimation()
 {
-    rsSurfaceNode_->DetachToDisplay(defaultId_);
+    if (rsSurfaceNode_) {
+        rsSurfaceNode_->DetachToDisplay(defaultId_);
+    }
+    if (rsDisplayNode_) {
+        rsDisplayNode_->RemoveFromTree();
+    }
     OHOS::Rosen::RSTransaction::FlushImplicitTransaction();
 }
 
@@ -259,7 +266,7 @@ void BootAnimation::PlaySound()
 {
 #ifdef PLAYER_FRAMEWORK_ENABLE
     LOGI("PlaySound start");
-    bool bootSoundEnabled = system::GetBoolParameter("persist.graphic.bootsound.enabled", true);
+    bool bootSoundEnabled = BootAnimationUtils::GetBootAnimationSoundEnabled();
     if (bootSoundEnabled == true) {
         LOGI("PlaySound read bootSoundEnabled is true");
         if (soundPlayer_ == nullptr) {
@@ -304,4 +311,25 @@ void BootAnimation::CloseVideoPlayer()
         usleep(SLEEP_TIME_US);
     }
     LOGI("Check Exit Animation end.");
+}
+
+void BootAnimation::InitRsDisplayNode()
+{
+    OHOS::Rosen::RSDisplayNodeConfig config = {defaultId_, false, 0};
+
+    rsDisplayNode_ = OHOS::Rosen::RSDisplayNode::Create(config);
+    if (rsDisplayNode_ == nullptr) {
+        LOGE("Failed to init display node!");
+        return;
+    }
+    rsDisplayNode_->SetDisplayOffset(0, 0);
+    rsDisplayNode_->SetFrame(0, 0, windowWidth_, windowHeight_);
+    rsDisplayNode_->SetBounds(0, 0, windowWidth_, windowHeight_);
+    rsDisplayNode_->SetBootAnimation(true);
+    // flush transaction
+    auto transactionProxy = OHOS::Rosen::RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->FlushImplicitTransaction();
+    }
+    LOGD("InitRsDisplayNode success");
 }

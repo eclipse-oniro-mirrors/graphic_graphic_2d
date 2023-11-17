@@ -16,7 +16,6 @@
 #include "utils/data.h"
 
 #include "impl_factory.h"
-#include "utils/log.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -31,6 +30,11 @@ bool Data::BuildFromMalloc(const void* data, size_t length)
 bool Data::BuildWithCopy(const void* data, size_t length)
 {
     return impl_->BuildWithCopy(data, length);
+}
+
+bool Data::BuildWithProc(const void* ptr, size_t length, DataReleaseProc proc, void* ctx)
+{
+    return impl_->BuildWithProc(ptr, length, proc, ctx);
 }
 
 bool Data::BuildWithoutCopy(const void* data, size_t length)
@@ -56,6 +60,11 @@ const void* Data::GetData() const
 void* Data::WritableData()
 {
     return impl_->WritableData();
+}
+
+std::shared_ptr<Data> Data::Serialize() const
+{
+    return impl_->Serialize();
 }
 } // namespace Drawing
 } // namespace Rosen

@@ -22,11 +22,17 @@
 
 #include "rosen_text/font_collection.h"
 #ifndef USE_TEXGINE
-#include "txt/font_collection.h"
+#include "adapter/txt/font_collection.h"
 #else
 #include "texgine/font_collection.h"
 #endif
 #endif
+
+template<typename T1, typename T2>
+inline T1* ConvertToFontCollection(T2* ptr)
+{
+    return reinterpret_cast<T1*>(ptr);
+}
 
 OH_Drawing_FontCollection* OH_Drawing_CreateFontCollection(void)
 {
@@ -43,4 +49,13 @@ OH_Drawing_FontCollection* OH_Drawing_CreateFontCollection(void)
 
 void OH_Drawing_DestroyFontCollection(OH_Drawing_FontCollection* fontCollection)
 {
+#ifndef USE_GRAPHIC_TEXT_GINE
+    delete ConvertToFontCollection<rosen::FontCollection>(fontCollection);
+#else
+#ifndef USE_TEXGINE
+    delete ConvertToFontCollection<OHOS::Rosen::AdapterTxt::FontCollection>(fontCollection);
+#else
+    delete ConvertToFontCollection<OHOS::Rosen::AdapterTextEngine::FontCollection>(fontCollection);
+#endif
+#endif
 }

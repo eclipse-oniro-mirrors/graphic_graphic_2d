@@ -23,6 +23,13 @@ RSDirtyRegionManager::RSDirtyRegionManager()
     debugRegionEnabled_.resize(DebugRegionType::TYPE_MAX);
 }
 
+RSDirtyRegionManager::RSDirtyRegionManager(bool isDisplayDirtyManager)
+{
+    dirtyHistory_.resize(HISTORY_QUEUE_MAX_SIZE);
+    debugRegionEnabled_.resize(DebugRegionType::TYPE_MAX);
+    isDisplayDirtyManager_ = isDisplayDirtyManager;
+}
+
 void RSDirtyRegionManager::MergeDirtyRect(const RectI& rect)
 {
     if (rect.IsEmpty()) {
@@ -32,6 +39,9 @@ void RSDirtyRegionManager::MergeDirtyRect(const RectI& rect)
         currentFrameDirtyRegion_ = rect;
     } else {
         currentFrameDirtyRegion_ = currentFrameDirtyRegion_.JoinRect(rect);
+    }
+    if (isDisplayDirtyManager_) {
+        mergedDirtyRegions_.emplace_back(rect);
     }
 }
 
@@ -126,16 +136,20 @@ RectI RSDirtyRegionManager::GetDirtyRegionFlipWithinSurface() const
     } else {
         glRect = dirtyRegion_;
     }
+#ifndef RS_ENABLE_VK
     // left-top to left-bottom corner(in current surface)
     glRect.top_ = surfaceRect_.height_ - glRect.top_ - glRect.height_;
+#endif
     return glRect;
 }
 
 RectI RSDirtyRegionManager::GetRectFlipWithinSurface(const RectI& rect) const
 {
     RectI glRect = rect;
+#ifndef RS_ENABLE_VK
     // left-top to left-bottom corner(in current surface)
     glRect.top_ = surfaceRect_.height_ - rect.top_ - rect.height_;
+#endif
     return glRect;
 }
 
@@ -165,6 +179,7 @@ void RSDirtyRegionManager::Clear()
     dirtyRegion_.Clear();
     currentFrameDirtyRegion_.Clear();
     visitedDirtyRegions_.clear();
+    mergedDirtyRegions_.clear();
     cacheableFilterRects_.clear();
     dirtyCanvasNodeInfo_.clear();
     dirtyCanvasNodeInfo_.resize(DirtyRegionType::TYPE_AMOUNT);

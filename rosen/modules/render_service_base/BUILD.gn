@@ -93,6 +93,7 @@ ohos_source_set("render_service_base_src") {
     "src/command/rs_command_factory.cpp",
     "src/command/rs_display_node_command.cpp",
     "src/command/rs_effect_node_command.cpp",
+    "src/command/rs_frame_rate_linker_command.cpp",
     "src/command/rs_node_command.cpp",
     "src/command/rs_node_showing_command.cpp",
     "src/command/rs_proxy_node_command.cpp",
@@ -131,14 +132,11 @@ ohos_source_set("render_service_base_src") {
     "src/ipc_callbacks/rs_ihgm_config_change_callback_ipc_interface_code_access_verifier.cpp",
     "src/ipc_callbacks/rs_iocclusion_change_callback_ipc_interface_code_access_verifier.cpp",
     "src/ipc_callbacks/rs_isurface_occlusion_change_callback_ipc_interface_code_access_verifier.cpp",
-    "src/ipc_callbacks/rs_isync_transaction_controller_ipc_interface_code_access_verifier.cpp",
     "src/ipc_callbacks/rs_occlusion_change_callback_proxy.cpp",
     "src/ipc_callbacks/rs_occlusion_change_callback_stub.cpp",
     "src/ipc_callbacks/rs_rt_refresh_callback.cpp",
     "src/ipc_callbacks/rs_surface_occlusion_change_callback_proxy.cpp",
     "src/ipc_callbacks/rs_surface_occlusion_change_callback_stub.cpp",
-    "src/ipc_callbacks/rs_sync_transaction_controller_proxy.cpp",
-    "src/ipc_callbacks/rs_sync_transaction_controller_stub.cpp",
     "src/ipc_callbacks/screen_change_callback_ipc_interface_code_access_verifier.cpp",
     "src/ipc_callbacks/screen_change_callback_proxy.cpp",
     "src/ipc_callbacks/screen_change_callback_stub.cpp",
@@ -167,9 +165,12 @@ ohos_source_set("render_service_base_src") {
     "src/pipeline/rs_paint_filter_canvas.cpp",
     "src/pipeline/rs_proxy_render_node.cpp",
     "src/pipeline/rs_recording_canvas.cpp",
+    "src/pipeline/rs_render_frame_rate_linker.cpp",
+    "src/pipeline/rs_render_frame_rate_linker_map.cpp",
     "src/pipeline/rs_render_node.cpp",
     "src/pipeline/rs_render_node_map.cpp",
     "src/pipeline/rs_root_render_node.cpp",
+    "src/pipeline/rs_single_frame_composer.cpp",
     "src/pipeline/rs_surface_handler.cpp",
     "src/pipeline/rs_surface_render_node.cpp",
     "src/pipeline/rs_task_dispatcher.cpp",
@@ -177,6 +178,7 @@ ohos_source_set("render_service_base_src") {
     "src/pipeline/sk_resource_manager.cpp",
 
     #property
+    "src/property/rs_color_picker_cache_task.cpp",
     "src/property/rs_filter_cache_manager.cpp",
     "src/property/rs_properties.cpp",
     "src/property/rs_properties_painter.cpp",
@@ -189,6 +191,8 @@ ohos_source_set("render_service_base_src") {
     #render
     "src/render/rs_blur_filter.cpp",
     "src/render/rs_border.cpp",
+    "src/render/rs_color_extract.cpp",
+    "src/render/rs_color_picker.cpp",
     "src/render/rs_filter.cpp",
     "src/render/rs_image.cpp",
     "src/render/rs_image_base.cpp",
@@ -228,10 +232,10 @@ ohos_source_set("render_service_base_src") {
   ]
 
   if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
-    cflags += [
-      "-flto=thin",
-      "-fwhole-program-vtables",
-    ]
+    cflags += [ "-flto=thin" ]
+    if (enhanced_opt) {
+      cflags += [ "-fwhole-program-vtables" ]
+    }
   }
 
   cflags_cc = [
@@ -241,6 +245,10 @@ ohos_source_set("render_service_base_src") {
 
   public_configs = [ ":export_config" ]
   public_deps = [ "src/platform:platform" ]
+
+  if (rs_enable_parallel_upload) {
+    sources += [ "src/common/rs_upload_texture_thread.cpp" ]
+  }
 
   if (defined(use_new_render_context) && use_new_render_context) {
     public_deps += [ "src/render_backend:librender_backend" ]
@@ -306,6 +314,11 @@ ohos_source_set("render_service_base_src") {
     ]
   }
 
+  if (rosen_is_ohos && defined(enable_ipc_security_access_counter) &&
+      enable_ipc_security_access_counter) {
+    defines += [ "ENABLE_IPC_SECURITY_ACCESS_COUNTER" ]
+  }
+
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
     defines += [ "USE_ROSEN_DRAWING" ]
     if (ace_enable_gpu) {
@@ -348,8 +361,25 @@ config("render_service_base_all_deps_config") {
   include_dirs = [ "include" ]
 }
 
+config("render_service_base_link_config") {
+  if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
+    ldflags = [
+      "-Wl,--lto-O2",
+      "-Wl,-mllvm",
+      "-Wl,-import-instr-limit=5",
+      "-Wl,-mllvm",
+      "-Wl,-wholeprogramdevirt-check=fallback",
+      "-Wl,-Bsymbolic",
+    ]
+  }
+}
+
 ohos_shared_library("librender_service_base") {
   all_dependent_configs = [ ":render_service_base_all_deps_config" ]
+
+  if (enhanced_opt) {
+    configs = [ ":render_service_base_link_config" ]
+  }
 
   deps = [ "$rosen_root/modules/platform:eventhandler" ]
   public_deps = [
@@ -361,23 +391,9 @@ ohos_shared_library("librender_service_base") {
     public_deps += [ "src/render_backend:librender_backend" ]
   }
 
-  ldflags = []
-
-  if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
-    ldflags += [
-      "-Wl,-mllvm",
-      "-Wl,-wholeprogramdevirt-check=fallback",
-    ]
-  }
-
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "graphic_2d"
   subsystem_name = "graphic"
-
-  #Bisheng control is required in the future
-  if (is_ohos) {
-    ldflags += [ "-Wl,-Bsymbolic" ]
-  }
 }
 
 ohos_source_set("librender_service_base_static") {

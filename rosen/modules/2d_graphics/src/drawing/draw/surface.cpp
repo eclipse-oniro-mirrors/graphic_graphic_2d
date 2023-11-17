@@ -16,6 +16,8 @@
 #include "draw/surface.h"
 
 #include "impl_factory.h"
+#include "static_factory.h"
+#include "utils/log.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -37,7 +39,27 @@ bool Surface::Bind(const FrameBuffer& frameBuffer)
 {
     return impl_->Bind(frameBuffer);
 }
+
+std::shared_ptr<Surface> Surface::MakeRenderTarget(GPUContext* gpuContext, bool budgeted, const ImageInfo& imageInfo)
+{
+    return StaticFactory::MakeRenderTarget(gpuContext, budgeted, imageInfo);
+}
 #endif
+
+std::shared_ptr<Surface> Surface::MakeRaster(const ImageInfo& imageInfo)
+{
+    return StaticFactory::MakeRaster(imageInfo);
+}
+
+std::shared_ptr<Surface> Surface::MakeRasterDirect(const ImageInfo& imageInfo, void* pixels, size_t rowBytes)
+{
+    return StaticFactory::MakeRasterDirect(imageInfo, pixels, rowBytes);
+}
+
+std::shared_ptr<Surface> Surface::MakeRasterN32Premul(int32_t width, int32_t height)
+{
+    return StaticFactory::MakeRasterN32Premul(width, height);
+}
 
 std::shared_ptr<Canvas> Surface::GetCanvas()
 {
@@ -57,9 +79,29 @@ std::shared_ptr<Image> Surface::GetImageSnapshot(const RectI& bounds) const
     return impl_->GetImageSnapshot(bounds);
 }
 
+std::shared_ptr<Surface> Surface::MakeSurface(int width, int height) const
+{
+    return impl_->MakeSurface(width, height);
+}
+
 ImageInfo Surface::GetImageInfo()
 {
-    return GetCanvas()->GetImageInfo();
+    std::shared_ptr<Canvas> canvas = GetCanvas();
+    if (!canvas) {
+        LOGE("canvas nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return ImageInfo{};
+    }
+    return canvas->GetImageInfo();
+}
+
+void Surface::FlushAndSubmit(bool syncCpu)
+{
+    impl_->FlushAndSubmit(syncCpu);
+}
+
+void Surface::Flush()
+{
+    impl_->Flush();
 }
 
 } // namespace Drawing

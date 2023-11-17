@@ -52,6 +52,15 @@ public:
     uint32_t GetScreenId() const;
     void SetLayerCompCapacity(uint32_t layerCompositionCapacity);
     uint32_t GetLayerCompCapacity() const;
+    // only used when composer_host dead
+    void ResetDevice()
+    {
+        device_ = nullptr;
+    }
+    bool IsDeviceValid() const
+    {
+        return device_ != nullptr;
+    }
     /* for RS end */
 
     static std::shared_ptr<HdiOutput> CreateHdiOutput(uint32_t screenId);
@@ -65,6 +74,7 @@ public:
     void ClearFpsDump(std::string &result, const std::string &arg);
     void SetDirectClientCompEnableStatus(bool enableStatus);
     bool GetDirectClientCompEnableStatus() const;
+    GSError ClearFrameBuffer();
 
     RosenError InitDevice();
     /* only used for mock tests */
@@ -77,6 +87,8 @@ public:
     int32_t UpdateInfosAfterCommit(sptr<SyncFence> fbFence);
     int32_t ReleaseFramebuffer(const sptr<SyncFence>& releaseFence);
     std::map<LayerInfoPtr, sptr<SyncFence>> GetLayersReleaseFence();
+    int32_t StartVSyncSampler();
+    void SetPendingPeriod(int64_t period);
 
 private:
     HdiDevice *device_ = nullptr;
@@ -99,7 +111,6 @@ private:
 
     std::vector<sptr<SurfaceBuffer> > bufferCache_;
     uint32_t bufferCacheCountMax_ = 0;
-    uint32_t bufferCacheIndex_ = 0;
 
     int32_t CreateLayer(uint64_t surfaceId, const LayerInfoPtr &layerInfo);
     void DeletePrevLayers();

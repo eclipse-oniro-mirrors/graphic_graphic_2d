@@ -26,163 +26,14 @@ class RectF;
 
 typedef RectF Rect;
 
-class DRAWING_API RectF {
-public:
-    inline RectF() noexcept;
-    inline RectF(const RectF& r) noexcept;
-    inline RectF(const scalar l, const scalar t, const scalar r, const scalar b) noexcept;
+#define DRAWING_MAX_S32_FITS_IN_FLOAT    2147483520
+#define DRAWING_MIN_S32_FITS_IN_FLOAT    (-DRAWING_MAX_S32_FITS_IN_FLOAT)
 
-    ~RectF() {}
-
-    inline bool IsValid() const;
-
-    inline scalar GetLeft() const;
-    inline scalar GetTop() const;
-    inline scalar GetRight() const;
-    inline scalar GetBottom() const;
-
-    inline scalar GetWidth() const;
-    inline scalar GetHeight() const;
-
-    inline void SetLeft(scalar pos);
-    inline void SetTop(scalar pos);
-    inline void SetRight(scalar pos);
-    inline void SetBottom(scalar pos);
-
-    inline void Offset(scalar dx, scalar dy);
-
-    /*
-     * @brief        If RectF intersects other, sets RectF to intersection.
-     * @param other  limit of result.
-     * @return       true if other and RectF have area in common.
-     */
-    inline bool Intersect(const RectF& other);
-
-    /*
-     * @brief        If other is valid, sets RectF to the union of itself and other.
-     * @param other  expansion RectF.
-     * @return       true if other is valid.
-     */
-    inline bool Join(const RectF& other);
-
-    friend inline bool operator==(const RectF& r1, const RectF& r2);
-    friend inline bool operator!=(const RectF& r1, const RectF& r2);
-
-private:
-    scalar left_;
-    scalar right_;
-    scalar top_;
-    scalar bottom_;
-};
-
-inline RectF::RectF() noexcept : left_(0.0), right_(0.0), top_(0.0), bottom_(0.0) {}
-
-inline RectF::RectF(const RectF& r) noexcept
-    : left_(r.GetLeft()), right_(r.GetRight()), top_(r.GetTop()), bottom_(r.GetBottom())
-{}
-
-inline RectF::RectF(const scalar l, const scalar t, const scalar r, const scalar b) noexcept
-    : left_(l), right_(r), top_(t), bottom_(b)
-{}
-
-inline bool RectF::IsValid() const
+static inline int DrawingFloatSaturate2Int(float x)
 {
-    return left_ < right_ && top_ < bottom_;
-}
-
-inline scalar RectF::GetLeft() const
-{
-    return left_;
-}
-
-inline scalar RectF::GetTop() const
-{
-    return top_;
-}
-
-inline scalar RectF::GetRight() const
-{
-    return right_;
-}
-
-inline scalar RectF::GetBottom() const
-{
-    return bottom_;
-}
-
-inline scalar RectF::GetWidth() const
-{
-    return right_ - left_;
-}
-
-inline scalar RectF::GetHeight() const
-{
-    return bottom_ - top_;
-}
-
-inline void RectF::SetLeft(scalar pos)
-{
-    left_ = pos;
-}
-
-inline void RectF::SetTop(scalar pos)
-{
-    top_ = pos;
-}
-
-inline void RectF::SetRight(scalar pos)
-{
-    right_ = pos;
-}
-
-inline void RectF::SetBottom(scalar pos)
-{
-    bottom_ = pos;
-}
-
-inline void RectF::Offset(scalar dx, scalar dy)
-{
-    left_ += dx;
-    right_ += dx;
-    top_ += dy;
-    bottom_ += dy;
-}
-
-inline bool RectF::Intersect(const RectF& other)
-{
-    RectF rectF(left_ > other.left_ ? left_ : other.left_, top_ > other.top_ ? top_ : other.top_,
-                right_ < other.right_ ? right_ : other.right_, bottom_ < other.bottom_ ? bottom_ : other.bottom_);
-    if (!rectF.IsValid()) {
-        return false;
-    }
-    *this = rectF;
-    return true;
-}
-
-inline bool RectF::Join(const RectF& other)
-{
-    if (!other.IsValid()) {
-        return false;
-    }
-    if (!IsValid()) {
-        *this = other;
-    } else {
-        *this = RectF(left_ < other.left_ ? left_ : other.left_, top_ < other.top_ ? top_ : other.top_,
-            right_ > other.right_ ? right_ : other.right_, bottom_ > other.bottom_ ? bottom_ : other.bottom_);
-    }
-    return true;
-}
-
-inline bool operator==(const RectF& r1, const RectF& r2)
-{
-    return IsScalarAlmostEqual(r1.left_, r2.left_) && IsScalarAlmostEqual(r1.right_, r2.right_) &&
-        IsScalarAlmostEqual(r1.top_, r2.top_) && IsScalarAlmostEqual(r1.bottom_, r2.bottom_);
-}
-
-inline bool operator!=(const RectF& r1, const RectF& r2)
-{
-    return !IsScalarAlmostEqual(r1.left_, r2.left_) || !IsScalarAlmostEqual(r1.right_, r2.right_) ||
-        !IsScalarAlmostEqual(r1.top_, r2.top_) || !IsScalarAlmostEqual(r1.bottom_, r2.bottom_);
+    x = x < DRAWING_MAX_S32_FITS_IN_FLOAT ? x : DRAWING_MAX_S32_FITS_IN_FLOAT;
+    x = x > DRAWING_MIN_S32_FITS_IN_FLOAT ? x : DRAWING_MIN_S32_FITS_IN_FLOAT;
+    return (int)x;
 }
 
 class DRAWING_API RectI {
@@ -194,6 +45,7 @@ public:
     ~RectI() {}
 
     inline bool IsValid() const;
+    inline bool IsEmpty() const;
 
     inline int GetLeft() const;
     inline int GetTop() const;
@@ -209,6 +61,7 @@ public:
     inline void SetBottom(int pos);
 
     inline void Offset(int dx, int dy);
+    inline void MakeOutset(int dx, int dy);
 
     /*
      * @brief        If RectI intersects other, sets RectI to intersection.
@@ -228,10 +81,10 @@ public:
     friend inline bool operator!=(const RectI& r1, const RectI& r2);
 
 private:
-    int left_;
-    int right_;
-    int top_;
-    int bottom_;
+    int32_t left_;
+    int32_t right_;
+    int32_t top_;
+    int32_t bottom_;
 };
 
 inline RectI::RectI() noexcept : left_(0), right_(0), top_(0), bottom_(0) {}
@@ -246,7 +99,19 @@ inline RectI::RectI(const int l, const int t, const int r, const int b) noexcept
 
 inline bool RectI::IsValid() const
 {
-    return left_ <= right_ && top_ <= bottom_;
+    return !IsEmpty();
+}
+
+inline bool RectI::IsEmpty() const
+{
+    int64_t w = (int64_t)right_ - (int64_t)left_;
+    int64_t h = (int64_t)bottom_ - (int64_t)top_;
+    if (w <= 0 || h <= 0) {
+        return true;
+    }
+    // Return true if either exceeds int32_t
+    int32_t int32test = (w | h) & 0xFFFFFFFF;
+    return int32test < 0;
 }
 
 inline int RectI::GetLeft() const
@@ -307,6 +172,14 @@ inline void RectI::Offset(int dx, int dy)
     bottom_ += dy;
 }
 
+inline void RectI::MakeOutset(int dx, int dy)
+{
+    left_ -= dx;
+    right_ += dx;
+    top_ -= dy;
+    bottom_ += dy;
+}
+
 inline bool RectI::Intersect(const RectI& other)
 {
     RectI rectI(left_ > other.left_ ? left_ : other.left_, top_ > other.top_ ? top_ : other.top_,
@@ -320,7 +193,9 @@ inline bool RectI::Intersect(const RectI& other)
 
 inline bool RectI::Join(const RectI& other)
 {
-    if (!other.IsValid()) return false;
+    if (!other.IsValid()) {
+        return false;
+    }
     if (!IsValid()) {
         *this = other;
     } else {
@@ -338,6 +213,194 @@ inline bool operator==(const RectI& r1, const RectI& r2)
 inline bool operator!=(const RectI& r1, const RectI& r2)
 {
     return r1.left_ != r2.left_ || r1.right_ != r2.right_ || r1.top_ != r2.top_ || r1.bottom_ != r2.bottom_;
+}
+
+class DRAWING_API RectF {
+public:
+    inline RectF() noexcept;
+    inline RectF(const RectF& r) noexcept;
+    inline RectF(const RectI& r) noexcept;
+    inline RectF(const scalar l, const scalar t, const scalar r, const scalar b) noexcept;
+
+    ~RectF() {}
+
+    inline bool IsValid() const;
+    inline bool IsEmpty() const;
+
+    inline scalar GetLeft() const;
+    inline scalar GetTop() const;
+    inline scalar GetRight() const;
+    inline scalar GetBottom() const;
+
+    inline scalar GetWidth() const;
+    inline scalar GetHeight() const;
+
+    inline void SetLeft(scalar pos);
+    inline void SetTop(scalar pos);
+    inline void SetRight(scalar pos);
+    inline void SetBottom(scalar pos);
+
+    inline void Offset(scalar dx, scalar dy);
+    inline void MakeOutset(scalar dx, scalar dy);
+    inline void Round();
+
+    /*
+     * @brief        If RectF intersects other, sets RectF to intersection.
+     * @param other  limit of result.
+     * @return       true if other and RectF have area in common.
+     */
+    inline bool Intersect(const RectF& other);
+
+    /*
+     * @brief        If other is valid, sets RectF to the union of itself and other.
+     * @param other  expansion RectF.
+     * @return       true if other is valid.
+     */
+    inline bool Join(const RectF& other);
+
+    friend inline bool operator==(const RectF& r1, const RectF& r2);
+    friend inline bool operator!=(const RectF& r1, const RectF& r2);
+
+private:
+    scalar left_;
+    scalar right_;
+    scalar top_;
+    scalar bottom_;
+};
+
+inline RectF::RectF() noexcept : left_(0.0), right_(0.0), top_(0.0), bottom_(0.0) {}
+
+inline RectF::RectF(const RectF& r) noexcept
+    : left_(r.GetLeft()), right_(r.GetRight()), top_(r.GetTop()), bottom_(r.GetBottom())
+{}
+
+inline RectF::RectF(const RectI& r) noexcept
+    : left_(r.GetLeft()), right_(r.GetRight()), top_(r.GetTop()), bottom_(r.GetBottom())
+{}
+
+inline RectF::RectF(const scalar l, const scalar t, const scalar r, const scalar b) noexcept
+    : left_(l), right_(r), top_(t), bottom_(b)
+{}
+
+inline bool RectF::IsValid() const
+{
+    return left_ < right_ && top_ < bottom_;
+}
+
+inline bool RectF::IsEmpty() const
+{
+    return !(left_ < right_ && top_ < bottom_);
+}
+
+inline scalar RectF::GetLeft() const
+{
+    return left_;
+}
+
+inline scalar RectF::GetTop() const
+{
+    return top_;
+}
+
+inline scalar RectF::GetRight() const
+{
+    return right_;
+}
+
+inline scalar RectF::GetBottom() const
+{
+    return bottom_;
+}
+
+inline scalar RectF::GetWidth() const
+{
+    return right_ - left_;
+}
+
+inline scalar RectF::GetHeight() const
+{
+    return bottom_ - top_;
+}
+
+inline void RectF::SetLeft(scalar pos)
+{
+    left_ = pos;
+}
+
+inline void RectF::SetTop(scalar pos)
+{
+    top_ = pos;
+}
+
+inline void RectF::SetRight(scalar pos)
+{
+    right_ = pos;
+}
+
+inline void RectF::SetBottom(scalar pos)
+{
+    bottom_ = pos;
+}
+
+inline void RectF::Offset(scalar dx, scalar dy)
+{
+    left_ += dx;
+    right_ += dx;
+    top_ += dy;
+    bottom_ += dy;
+}
+
+inline void RectF::MakeOutset(scalar dx, scalar dy)
+{
+    left_ -= dx;
+    right_ += dx;
+    top_ -= dy;
+    bottom_ += dy;
+}
+
+inline void RectF::Round()
+{
+    left_ = DrawingFloatSaturate2Int(left_ + 0.5f);
+    right_ = DrawingFloatSaturate2Int(right_ + 0.5f);
+    top_ = DrawingFloatSaturate2Int(top_ + 0.5f);
+    bottom_ = DrawingFloatSaturate2Int(bottom_ + 0.5f);
+}
+
+inline bool RectF::Intersect(const RectF& other)
+{
+    RectF rectF(left_ > other.left_ ? left_ : other.left_, top_ > other.top_ ? top_ : other.top_,
+                right_ < other.right_ ? right_ : other.right_, bottom_ < other.bottom_ ? bottom_ : other.bottom_);
+    if (!rectF.IsValid()) {
+        return false;
+    }
+    *this = rectF;
+    return true;
+}
+
+inline bool RectF::Join(const RectF& other)
+{
+    if (!other.IsValid()) {
+        return false;
+    }
+    if (!IsValid()) {
+        *this = other;
+    } else {
+        *this = RectF(left_ < other.left_ ? left_ : other.left_, top_ < other.top_ ? top_ : other.top_,
+            right_ > other.right_ ? right_ : other.right_, bottom_ > other.bottom_ ? bottom_ : other.bottom_);
+    }
+    return true;
+}
+
+inline bool operator==(const RectF& r1, const RectF& r2)
+{
+    return IsScalarAlmostEqual(r1.left_, r2.left_) && IsScalarAlmostEqual(r1.right_, r2.right_) &&
+        IsScalarAlmostEqual(r1.top_, r2.top_) && IsScalarAlmostEqual(r1.bottom_, r2.bottom_);
+}
+
+inline bool operator!=(const RectF& r1, const RectF& r2)
+{
+    return !IsScalarAlmostEqual(r1.left_, r2.left_) || !IsScalarAlmostEqual(r1.right_, r2.right_) ||
+        !IsScalarAlmostEqual(r1.top_, r2.top_) || !IsScalarAlmostEqual(r1.bottom_, r2.bottom_);
 }
 } // namespace Drawing
 } // namespace Rosen

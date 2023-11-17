@@ -34,6 +34,7 @@
 #include "effect/mask_filter.h"
 #include "effect/path_effect.h"
 #include "effect/shader_effect.h"
+#include "utils/log.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -197,6 +198,12 @@ void RecordingCanvas::DrawEdgeAAQuad(const Rect& rect, const Point clip[4],
     cmdList_->AddOp<DrawEdgeAAQuadOpItem>(rect, clipDataPtr, aaFlags, color, mode);
 }
 
+void RecordingCanvas::DrawVertices(const Vertices& vertices, BlendMode mode)
+{
+    auto verticesHandle = CmdListHelper::AddVerticesToCmdList(*cmdList_, vertices);
+    cmdList_->AddOp<DrawVerticesOpItem>(verticesHandle, mode);
+}
+
 void RecordingCanvas::DrawImageNine(const Image* image, const RectI& center, const Rect& dst,
     FilterMode filterMode, const Brush* brush)
 {
@@ -222,9 +229,10 @@ void RecordingCanvas::DrawImageNine(const Image* image, const RectI& center, con
     cmdList_->AddOp<DrawImageNineOpItem>(imageHandle, center, dst, filterMode, brushHandle, hasBrush);
 }
 
-void RecordingCanvas::DrawAnnotation(const Rect& rect, const char* key, const Data& data)
+void RecordingCanvas::DrawAnnotation(const Rect& rect, const char* key, const Data* data)
 {
-    cmdList_->AddOp<DrawAnnotationOpItem>(rect, key, data);
+    auto dataHandle = CmdListHelper::AddDataToCmdList(*cmdList_, data);
+    cmdList_->AddOp<DrawAnnotationOpItem>(rect, key, dataHandle);
 }
 
 void RecordingCanvas::DrawImageLattice(const Image* image, const Lattice& lattice, const Rect& dst,
@@ -289,9 +297,32 @@ void RecordingCanvas::DrawPicture(const Picture& picture)
     cmdList_->AddOp<DrawPictureOpItem>(pictureHandle);
 }
 
+void RecordingCanvas::DrawTextBlob(const TextBlob* blob, const scalar x, const scalar y)
+{
+    if (!blob) {
+        LOGE("blob nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return;
+    }
+    
+    if (IsCustomTextType()) {
+        LOGD("RecordingCanvas::DrawTextBlob replace drawOpItem with cached one");
+        ImageHandle imageHandle;
+        DrawTextBlobOpItem textOp(imageHandle, x, y);
+        textOp.GenerateCachedOpItem(cmdList_, blob);
+    } else {
+        auto textBlobHandle = CmdListHelper::AddTextBlobToCmdList(*cmdList_, blob);
+        cmdList_->AddOp<DrawTextBlobOpItem>(textBlobHandle, x, y);
+    }
+}
+
 void RecordingCanvas::ClipRect(const Rect& rect, ClipOp op, bool doAntiAlias)
 {
     cmdList_->AddOp<ClipRectOpItem>(rect, op, doAntiAlias);
+}
+
+void RecordingCanvas::ClipIRect(const RectI& rect, ClipOp op)
+{
+    cmdList_->AddOp<ClipIRectOpItem>(rect, op);
 }
 
 void RecordingCanvas::ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias)
@@ -415,6 +446,11 @@ uint32_t RecordingCanvas::GetSaveCount() const
     return saveCount_;
 }
 
+void RecordingCanvas::Discard()
+{
+    cmdList_->AddOp<DiscardOpItem>();
+}
+
 void RecordingCanvas::ClipAdaptiveRoundRect(const std::vector<Point>& radius)
 {
     auto radiusData = CmdListHelper::AddVectorToCmdList<Point>(*cmdList_, radius);
@@ -499,6 +535,16 @@ CoreCanvas& RecordingCanvas::DetachBrush()
 
     return *this;
 }
+void RecordingCanvas::SetIsCustomTextType(bool isCustomTextType)
+{
+    isCustomTextType_ = isCustomTextType;
+}
+
+bool RecordingCanvas::IsCustomTextType() const
+{
+    return isCustomTextType_;
+}
+
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

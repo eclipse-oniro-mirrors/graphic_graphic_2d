@@ -87,6 +87,15 @@ RosenError HdiBackend::RegHwcDeadListener(OnHwcDeadCallback func, void* data)
     return ROSEN_ERROR_OK;
 }
 
+void HdiBackend::SetPendingPeriod(const OutputPtr &output, int64_t period)
+{
+    if (output == nullptr) {
+        HLOGE("output is nullptr.");
+        return;
+    }
+    output->SetPendingPeriod(period);
+}
+
 int32_t HdiBackend::PrepareCompleteIfNeed(const OutputPtr &output, bool needFlush)
 {
     std::vector<LayerPtr> compClientLayers;
@@ -153,11 +162,23 @@ void HdiBackend::Repaint(const OutputPtr &output)
     HLOGD("%{public}s: end", __func__);
 }
 
+void HdiBackend::StartSample(const OutputPtr &output)
+{
+    if (output == nullptr) {
+        HLOGE("output is nullptr.");
+        return;
+    }
+    output->StartVSyncSampler();
+}
+
 void HdiBackend::ResetDevice()
 {
     if (device_) {
         device_->Destroy();
         device_ = nullptr;
+    }
+    for (auto [id, output] : outputs_) {
+        output->ResetDevice();
     }
     outputs_.clear();
 }

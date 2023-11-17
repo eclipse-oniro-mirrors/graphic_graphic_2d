@@ -19,6 +19,7 @@
 
 #include "animation/rs_animation_timing_curve.h"
 #include "animation/rs_animation_timing_protocol.h"
+#include "animation/rs_frame_rate_range.h"
 #include "animation/rs_motion_path_option.h"
 #include "animation/rs_particle_params.h"
 #include "animation/rs_transition_effect.h"
@@ -141,6 +142,7 @@ public:
     static void OpenImplicitAnimation(const RSAnimationTimingProtocol& timingProtocol,
         const RSAnimationTimingCurve& timingCurve, const std::function<void()>& finishCallback = nullptr);
     static std::vector<std::shared_ptr<RSAnimation>> CloseImplicitAnimation();
+    static bool IsImplicitAnimationOpen();
 
     static void ExecuteWithoutAnimation(
         const PropertyCallback& callback, std::shared_ptr<RSImplicitAnimator> implicitAnimator = nullptr);
@@ -239,12 +241,18 @@ public:
     void SetBorderStyle(uint32_t styleValue);
     void SetBorderStyle(uint32_t left, uint32_t top, uint32_t right, uint32_t bottom);
     void SetBorderStyle(const Vector4<BorderStyle>& style);
+    void SetOuterBorderColor(const Vector4<Color>& color);
+    void SetOuterBorderWidth(const Vector4f& width);
+    void SetOuterBorderStyle(const Vector4<BorderStyle>& style);
+    void SetOuterBorderRadius(const Vector4f& radius);
 
     void SetBackgroundFilter(const std::shared_ptr<RSFilter>& backgroundFilter);
     void SetFilter(const std::shared_ptr<RSFilter>& filter);
     void SetLinearGradientBlurPara(const std::shared_ptr<RSLinearGradientBlurPara>& para);
     void SetDynamicLightUpRate(const float rate);
     void SetDynamicLightUpDegree(const float lightUpDegree);
+    void SetGreyCoef1(const float greyCoef1);
+    void SetGreyCoef2(const float greyCoef2);
     void SetCompositingFilter(const std::shared_ptr<RSFilter>& compositingFilter);
 
     void SetShadowColor(uint32_t colorValue);
@@ -256,6 +264,7 @@ public:
     void SetShadowRadius(float radius);
     void SetShadowPath(const std::shared_ptr<RSPath>& shadowPath);
     void SetShadowMask(bool shadowMask);
+    void SetShadowIsFilled(bool shadowIsFilled);
 
     void SetFrameGravity(Gravity gravity);
 
@@ -281,6 +290,10 @@ public:
 
     void SetUseEffect(bool useEffect);
 
+    void SetUseShadowBatching(bool useShadowBatching);
+
+    void SetColorBlendMode(RSColorBlendModeType blendMode);
+
     // driven render
     void MarkDrivenRender(bool flag);
     void MarkDrivenRenderItemIndex(int index);
@@ -297,7 +310,9 @@ public:
     void SetDrawRegion(std::shared_ptr<RectF> rect);
 
     // Mark preferentially draw node and childrens
-    void MarkNodeGroup(bool isNodeGroup);
+    void MarkNodeGroup(bool isNodeGroup, bool isForced = true);
+
+    void MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer);
 
     void SetGrayScale(float grayScale);
 
@@ -321,6 +336,9 @@ public:
 
     void UpdateUIFrameRateRange(const FrameRateRange& range);
 
+    int32_t CalcExpectedFrameRate(const std::string& scene, float speed);
+
+    void SetOutOfParent(OutOfParentType outOfParent);
 protected:
     explicit RSNode(bool isRenderServiceNode);
     explicit RSNode(bool isRenderServiceNode, NodeId id);
@@ -374,11 +392,14 @@ private:
 
     bool isNodeGroup_ = false;
 
+    bool isNodeSingleFrameComposer_ = false;
+
     RSModifierExtractor stagingPropertiesExtractor_;
     RSShowingPropertiesFreezer showingPropertiesFreezer_;
     std::unordered_map<PropertyId, std::shared_ptr<RSModifier>> modifiers_;
     std::unordered_map<RSModifierType, std::shared_ptr<RSModifier>> propertyModifiers_;
     std::shared_ptr<RectF> drawRegion_;
+    OutOfParentType outOfParent_ = OutOfParentType::UNKNOWN;
 
     std::unordered_map<AnimationId, std::shared_ptr<RSAnimation>> animations_;
     std::unordered_map<PropertyId, uint32_t> animatingPropertyNum_;

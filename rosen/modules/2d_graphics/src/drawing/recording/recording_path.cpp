@@ -67,6 +67,11 @@ void RecordingPath::ArcTo(scalar rx, scalar ry, scalar angle, PathDirection dire
     cmdList_->AddOp<ArcToOpItem>(rx, ry, angle, direction, endX, endY);
 }
 
+void RecordingPath::ArcTo(scalar x1, scalar y1, scalar x2, scalar y2, scalar radius)
+{
+    cmdList_->AddOp<ArcToOpItem>(x1, y1, x2, y2, radius);
+}
+
 void RecordingPath::CubicTo(scalar ctrlPt1X, scalar ctrlPt1Y, scalar ctrlPt2X, scalar ctrlPt2Y,
     scalar endPtX, scalar endPtY)
 {
@@ -86,6 +91,31 @@ void RecordingPath::QuadTo(scalar ctrlPtX, scalar ctrlPtY, scalar endPtX, scalar
 void RecordingPath::QuadTo(const Point& ctrlPt, const Point endPt)
 {
     cmdList_->AddOp<QuadToOpItem>(ctrlPt, endPt);
+}
+
+void RecordingPath::RMoveTo(scalar dx, scalar dy)
+{
+    cmdList_->AddOp<RMoveToOpItem>(dx, dy);
+}
+
+void RecordingPath::RLineTo(scalar dx, scalar dy)
+{
+    cmdList_->AddOp<RLineToOpItem>(dx, dy);
+}
+
+void RecordingPath::RArcTo(scalar rx, scalar ry, scalar angle, PathDirection direction, scalar dx, scalar dy)
+{
+    cmdList_->AddOp<RArcToOpItem>(rx, ry, angle, direction, dx, dy);
+}
+
+void RecordingPath::RCubicTo(scalar dx1, scalar dy1, scalar dx2, scalar dy2, scalar dx3, scalar dy3)
+{
+    cmdList_->AddOp<RCubicToOpItem>(dx1, dy1, dx2, dy2, dx3, dy3);
+}
+
+void RecordingPath::RQuadTo(scalar dx1, scalar dy1, scalar dx2, scalar dy2)
+{
+    cmdList_->AddOp<RQuadToOpItem>(dx1, dy1, dx2, dy2);
 }
 
 void RecordingPath::AddRect(const Rect& rect, PathDirection dir)

@@ -40,6 +40,11 @@ public:
 
     inline void SetX(scalar x);
     inline void SetY(scalar y);
+    inline void Set(scalar x, scalar y);
+
+    inline bool IsZero() const;
+
+    inline void Offset(scalar x, scalar y);
 
     inline PointF& operator+=(const PointF& p);
     inline PointF& operator-=(const PointF& p);
@@ -85,6 +90,23 @@ inline void PointF::SetX(scalar x)
 inline void PointF::SetY(scalar y)
 {
     y_ = y;
+}
+
+inline void PointF::Set(scalar x, scalar y)
+{
+    x_ = x;
+    y_ = y;
+}
+
+inline bool PointF::IsZero() const
+{
+    return (0 == x_) && (0 == y_);
+}
+
+inline void PointF::Offset(scalar x, scalar y)
+{
+    x_ += x;
+    y_ += y;
 }
 
 inline PointF& PointF::operator+=(const PointF& p)
@@ -179,6 +201,7 @@ public:
 
     inline void SetX(int x);
     inline void SetY(int y);
+    inline void Set(int x, int y);
 
     inline PointI& operator+=(const PointI& p);
     inline PointI& operator-=(const PointI& p);
@@ -223,6 +246,12 @@ inline void PointI::SetX(int x)
 
 inline void PointI::SetY(int y)
 {
+    y_ = y;
+}
+
+inline void PointI::Set(int x, int y)
+{
+    x_ = x;
     y_ = y;
 }
 

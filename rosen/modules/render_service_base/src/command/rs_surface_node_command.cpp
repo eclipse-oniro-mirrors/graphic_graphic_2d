@@ -71,6 +71,13 @@ void SurfaceNodeCommandHelper::SetSecurityLayer(RSContext& context, NodeId id, b
     }
 }
 
+void SurfaceNodeCommandHelper::SetSkipLayer(RSContext& context, NodeId id, bool isSkipLayer)
+{
+    if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(id)) {
+        node->SetSkipLayer(isSkipLayer);
+    }
+}
+
 void SurfaceNodeCommandHelper::SetFingerprint(RSContext& context, NodeId id, bool hasFingerprint)
 {
     if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(id)) {
@@ -166,9 +173,13 @@ void SurfaceNodeCommandHelper::AttachToDisplay(RSContext& context, NodeId nodeId
 {
     const auto& nodeMap = context.GetNodeMap();
     auto surfaceRenderNode = nodeMap.GetRenderNode<RSSurfaceRenderNode>(nodeId);
+    if (surfaceRenderNode == nullptr) {
+        return;
+    }
     nodeMap.TraverseDisplayNodes(
         [&surfaceRenderNode, &screenId](const std::shared_ptr<RSDisplayRenderNode>& displayRenderNode) {
-            if (displayRenderNode == nullptr || displayRenderNode->GetScreenId() != screenId) {
+            if (displayRenderNode == nullptr || displayRenderNode->GetScreenId() != screenId ||
+                displayRenderNode->GetBootAnimation() != surfaceRenderNode->GetBootAnimation()) {
                 return;
             }
             displayRenderNode->AddChild(surfaceRenderNode);
@@ -179,13 +190,31 @@ void SurfaceNodeCommandHelper::DetachToDisplay(RSContext& context, NodeId nodeId
 {
     const auto& nodeMap = context.GetNodeMap();
     auto surfaceRenderNode = nodeMap.GetRenderNode<RSSurfaceRenderNode>(nodeId);
+    if (surfaceRenderNode == nullptr) {
+        return;
+    }
     nodeMap.TraverseDisplayNodes(
         [&surfaceRenderNode, &screenId](const std::shared_ptr<RSDisplayRenderNode>& displayRenderNode) {
-            if (displayRenderNode == nullptr || displayRenderNode->GetScreenId() != screenId) {
+            if (displayRenderNode == nullptr || displayRenderNode->GetScreenId() != screenId ||
+                displayRenderNode->GetBootAnimation() != surfaceRenderNode->GetBootAnimation()) {
                 return;
             }
             displayRenderNode->RemoveChild(surfaceRenderNode);
         });
+}
+
+void SurfaceNodeCommandHelper::SetBootAnimation(RSContext& context, NodeId nodeId, bool isBootAnimation)
+{
+    if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
+        node->SetBootAnimation(isBootAnimation);
+    }
+}
+
+void SurfaceNodeCommandHelper::SetForeground(RSContext& context, NodeId nodeId, bool isForeground)
+{
+    if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
+        node->SetForeground(isForeground);
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

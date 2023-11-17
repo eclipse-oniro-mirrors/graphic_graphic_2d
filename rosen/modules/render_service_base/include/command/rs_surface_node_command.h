@@ -40,6 +40,7 @@ enum RSSurfaceNodeCommandType : uint16_t {
     SURFACE_NODE_SET_CONTEXT_ALPHA,
     SURFACE_NODE_SET_CONTEXT_CLIP_REGION,
     SURFACE_NODE_SET_SECURITY_LAYER,
+    SURFACE_NODE_SET_SKIP_LAYER,
     SURFACE_NODE_SET_FINGERPRINT,
     SURFACE_NODE_SET_COLOR_SPACE,
     SURFACE_NODE_UPDATE_SURFACE_SIZE,
@@ -54,6 +55,8 @@ enum RSSurfaceNodeCommandType : uint16_t {
     SURFACE_NODE_MARK_UIHIDDEN,
     SURFACE_NODE_ATTACH_TO_DISPLAY,
     SURFACE_NODE_DETACH_TO_DISPLAY,
+    SURFACE_NODE_SET_BOOT_ANIMATION,
+    SURFACE_NODE_SET_FOREGROUND,
 };
 
 class RSB_EXPORT SurfaceNodeCommandHelper {
@@ -71,6 +74,7 @@ public:
     static void SetContextClipRegion(RSContext& context, NodeId nodeId, const std::optional<Drawing::Rect>& clipRect);
 #endif
     static void SetSecurityLayer(RSContext& context, NodeId nodeId, bool isSecurityLayer);
+    static void SetSkipLayer(RSContext& context, NodeId nodeId, bool isSkipLayer);
     static void SetFingerprint(RSContext& context, NodeId nodeId, bool hasFingerprint);
 #ifndef ROSEN_CROSS_PLATFORM
     static void SetColorSpace(RSContext& context, NodeId nodeId, GraphicColorGamut colorSpace);
@@ -87,6 +91,8 @@ public:
     static void SetAnimationFinished(RSContext& context, NodeId nodeId);
     static void AttachToDisplay(RSContext& context, NodeId nodeId, uint64_t screenId);
     static void DetachToDisplay(RSContext& context, NodeId nodeId, uint64_t screenId);
+    static void SetBootAnimation(RSContext& context, NodeId nodeId, bool isBootAnimation);
+    static void SetForeground(RSContext& context, NodeId nodeId, bool isForeground);
 };
 
 ADD_COMMAND(RSSurfaceNodeCreate, ARG(SURFACE_NODE, SURFACE_NODE_CREATE, SurfaceNodeCommandHelper::Create, NodeId))
@@ -107,8 +113,12 @@ ADD_COMMAND(RSSurfaceNodeSetContextClipRegion, ARG(SURFACE_NODE, SURFACE_NODE_SE
 ADD_COMMAND(RSSurfaceNodeSetContextClipRegion, ARG(SURFACE_NODE, SURFACE_NODE_SET_CONTEXT_CLIP_REGION,
     SurfaceNodeCommandHelper::SetContextClipRegion, NodeId, std::optional<Drawing::Rect>))
 #endif
+ADD_COMMAND(RSSurfaceNodeSetBootAnimation,
+    ARG(SURFACE_NODE, SURFACE_NODE_SET_BOOT_ANIMATION, SurfaceNodeCommandHelper::SetBootAnimation, NodeId, bool))
 ADD_COMMAND(RSSurfaceNodeSetSecurityLayer,
     ARG(SURFACE_NODE, SURFACE_NODE_SET_SECURITY_LAYER, SurfaceNodeCommandHelper::SetSecurityLayer, NodeId, bool))
+ADD_COMMAND(RSSurfaceNodeSetSkipLayer,
+    ARG(SURFACE_NODE, SURFACE_NODE_SET_SKIP_LAYER, SurfaceNodeCommandHelper::SetSkipLayer, NodeId, bool))
 ADD_COMMAND(RSSurfaceNodeSetFingerprint,
     ARG(SURFACE_NODE, SURFACE_NODE_SET_FINGERPRINT, SurfaceNodeCommandHelper::SetFingerprint, NodeId, bool))
 ADD_COMMAND(RSSurfaceNodeUpdateSurfaceDefaultSize, ARG(SURFACE_NODE, SURFACE_NODE_UPDATE_SURFACE_SIZE,
@@ -145,6 +155,8 @@ ADD_COMMAND(RSSurfaceNodeDetachToDisplay,
 ADD_COMMAND(RSSurfaceNodeSetColorSpace,
     ARG(SURFACE_NODE, SURFACE_NODE_SET_COLOR_SPACE, SurfaceNodeCommandHelper::SetColorSpace, NodeId, GraphicColorGamut))
 #endif
+ADD_COMMAND(RSSurfaceNodeSetForeground,
+    ARG(SURFACE_NODE, SURFACE_NODE_SET_FOREGROUND, SurfaceNodeCommandHelper::SetForeground, NodeId, bool))
 } // namespace Rosen
 } // namespace OHOS
 #endif // ROSEN_RENDER_SERVICE_BASE_COMMAND_RS_SURFACE_NODE_COMMAND_H

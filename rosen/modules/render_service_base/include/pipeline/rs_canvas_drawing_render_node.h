@@ -23,7 +23,6 @@
 
 namespace OHOS {
 namespace Rosen {
-struct RSModifierContext;
 #ifndef USE_ROSEN_DRAWING
 using ThreadInfo = std::pair<uint64_t, std::function<void(sk_sp<SkSurface>)>>;
 #else
@@ -48,13 +47,20 @@ public:
 
 #ifndef USE_ROSEN_DRAWING
     SkBitmap GetBitmap();
+    bool GetPixelmap(const std::shared_ptr<Media::PixelMap> pixelmap, const SkRect* rect);
 #else
     Drawing::Bitmap GetBitmap();
+    bool GetPixelmap(const std::shared_ptr<Media::PixelMap> pixelmap, const Drawing::Rect* rect);
 #endif
 
     void SetSurfaceClearFunc(ThreadInfo threadInfo)
     {
         curThreadInfo_ = threadInfo;
+    }
+
+    uint64_t GetTid() const
+    {
+        return curThreadInfo_.first;
     }
 
     void AddDirtyType(RSModifierType type) override;
@@ -67,10 +73,12 @@ private:
 
 #ifndef USE_ROSEN_DRAWING
     sk_sp<SkSurface> skSurface_;
+    sk_sp<SkImage> skImage_;
 #else
-    std::shared_ptr<Drawing::Bitmap> bitmap_;
     std::shared_ptr<Drawing::Surface> surface_;
+    std::shared_ptr<Drawing::Image> image_;
 #endif
+    std::mutex mutex_;
     std::unique_ptr<RSPaintFilterCanvas> canvas_;
     ThreadInfo curThreadInfo_ = {};
     ThreadInfo preThreadInfo_ = {};

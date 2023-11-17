@@ -18,7 +18,7 @@ is_ok = true
 
 ## Build libtexgine.so {{{
 config("libtexgine_config") {
-  visibility = [ ":libtexgine" ]
+  visibility = [ ":*" ]
 
   cflags = [
     "-Wall",
@@ -41,7 +41,7 @@ config("libtexgine_public_config") {
   ]
 }
 
-ohos_shared_library("libtexgine") {
+ohos_source_set("libtexgine_source") {
   if (is_ok) {
     sources = [
       "src/bidi_processer.cpp",
@@ -76,6 +76,7 @@ ohos_shared_library("libtexgine") {
       "src/text_shaper.cpp",
       "src/text_span.cpp",
       "src/text_style.cpp",
+      "src/theme_font_provider.cpp",
       "src/typeface.cpp",
       "src/typography_builder_impl.cpp",
       "src/typography_impl.cpp",
@@ -111,13 +112,19 @@ ohos_shared_library("libtexgine") {
     if (enable_text_gine) {
       defines += [ "USE_GRAPHIC_TEXT_GINE" ]
     }
+    deps = [ "//third_party/bounds_checking_function:libsec_static" ]
+    include_dirs = [ "//third_party/bounds_checking_function/include" ]
 
     if (platform == "ohos") {
-      defines += [
-        "BUILD_NON_SDK_VER",
-        "LOGGER_ENABLE_SCOPE",
-        "TEXGINE_ENABLE_DEBUGLOG",
-      ]
+      defines += [ "BUILD_NON_SDK_VER" ]
+
+      if (logger_enable_scope) {
+        defines += [ "LOGGER_ENABLE_SCOPE" ]
+      }
+
+      if (texgine_enable_debug_log) {
+        defines += [ "TEXGINE_ENABLE_DEBUGLOG" ]
+      }
 
       external_deps = [
         "c_utils:utils",
@@ -139,7 +146,26 @@ ohos_shared_library("libtexgine") {
       }
     }
   }
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+}
 
+ohos_shared_library("libtexgine") {
+  public_deps = [ ":libtexgine_source" ]
+
+  platform = current_os
+  if (platform == "mingw") {
+    platform = "windows"
+  }
+
+  #the texengine process is only enabled_ Text_ Engine is valid if it is true
+  if (enable_text_gine) {
+    if (platform == "ohos") {
+      deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
+    } else {
+      deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics_new" ]
+    }
+  }
   innerapi_tags = [ "platformsdk" ]
   part_name = "graphic_2d"
   subsystem_name = "graphic"

@@ -16,11 +16,14 @@
 #ifndef ROSEN_MODULES_TEXGINE_SRC_CHAR_GROUPS_H
 #define ROSEN_MODULES_TEXGINE_SRC_CHAR_GROUPS_H
 
+#include "typeface.h"
+
 #include <array>
 #include <cstdint>
 #include <memory>
 #include <ostream>
 #include <vector>
+#include <unicode/uchar.h>
 
 namespace OHOS {
 namespace Rosen {
@@ -33,13 +36,19 @@ struct Glyph {
     double offsetY;
 };
 
-class Typeface;
+enum SpacesModel : uint8_t {
+    NORMAL = 0, // no handle of spaces
+    LEFT = 1, // handle the whitespace at the end of the string on the left
+    RIGHT = 2, // handle whitespace at the begin of the string on the right
+};
+
 struct CharGroup {
     std::vector<uint16_t> chars;
     std::vector<struct Glyph> glyphs;
     std::shared_ptr<Typeface> typeface;
     double visibleWidth = 0;
     double invisibleWidth = 0;
+    bool isWordEnd = false;
 
     double GetWidth() const
     {
@@ -67,6 +76,38 @@ struct CharGroup {
         }
         return true;
     };
+
+    bool IsHardBreak()
+    {
+        ULineBreak lineBreak = static_cast<ULineBreak>(
+            u_getIntPropertyValue(chars[0], UCHAR_LINE_BREAK));
+        return (lineBreak == U_LB_LINE_FEED || lineBreak == U_LB_MANDATORY_BREAK);
+    }
+
+    bool IsEmoji() const
+    {
+        bool isEmoji = false;
+        for (size_t i = 0; i < chars.size(); i++) {
+            isEmoji = (u_hasBinaryProperty(chars[i], UCHAR_EMOJI) ||
+                u_hasBinaryProperty(chars[i], UCHAR_EMOJI_PRESENTATION) ||
+                u_hasBinaryProperty(chars[i], UCHAR_EMOJI_MODIFIER) ||
+                u_hasBinaryProperty(chars[i], UCHAR_EMOJI_MODIFIER_BASE));
+            if (isEmoji) {
+                return isEmoji;
+            }
+        }
+        return isEmoji;
+    }
+
+    bool HasWhitesSpace() const
+    {
+        for (const auto &ch : chars) {
+            if (u_isWhitespace(ch)) {
+                return true;
+            }
+        }
+        return false;
+    }
 };
 
 struct IndexRange {
@@ -124,6 +165,11 @@ public:
     }
 
     bool CheckCodePoint();
+    std::string GetTypefaceName();
+    double GetAllCharWidth() const;
+    double GetCharWidth(const size_t index) const;
+    std::vector<uint16_t> GetCharsToU16(size_t start, size_t end, const SpacesModel &spacesModel);
+    bool IsSingleWord() const;
 private:
     friend void ReportMemoryUsage(const std::string &member, const CharGroups &that, bool needThis);
 

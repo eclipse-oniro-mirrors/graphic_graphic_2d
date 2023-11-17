@@ -20,6 +20,9 @@
 
 namespace OHOS {
 namespace Rosen {
+// NOTE:
+// 1. MUST update g_propertyResetterLUT in rs_properties.cpp when new properties are added
+// 2. property modifier MUST be added before CUSTOM, else wise it will be treated as draw modifier
 enum class RSModifierType : int16_t {
     INVALID = 0,                   // 0
     BOUNDS,                        // 1
@@ -76,28 +79,37 @@ enum class RSModifierType : int16_t {
     PIXEL_STRETCH,                 // 52
     PIXEL_STRETCH_PERCENT,         // 53
     USE_EFFECT,                    // 54
-    SANDBOX,                       // 55
-    GRAY_SCALE,                    // 56
-    BRIGHTNESS,                    // 57
-    CONTRAST,                      // 58
-    SATURATE,                      // 59
-    SEPIA,                         // 60
-    INVERT,                        // 61
-    AIINVERT,
-    HUE_ROTATE,                    // 62
-    COLOR_BLEND,                   // 63
-    PARTICLE,                      // 64
-    CUSTOM,                        // 65
-    EXTENDED,                      // 66
-    TRANSITION,                    // 67
-    BACKGROUND_STYLE,              // 68
-    CONTENT_STYLE,                 // 69
-    FOREGROUND_STYLE,              // 70
-    OVERLAY_STYLE,                 // 71
-    NODE_MODIFIER,                 // 72
-    ENV_FOREGROUND_COLOR,          // 73
-    ENV_FOREGROUND_COLOR_STRATEGY, // 74
-    GEOMETRYTRANS,                 // 75
+    COLOR_BLEND_MODE,              // 55
+    SANDBOX,                       // 56
+    GRAY_SCALE,                    // 57
+    BRIGHTNESS,                    // 58
+    CONTRAST,                      // 59
+    SATURATE,                      // 60
+    SEPIA,                         // 61
+    INVERT,                        // 62
+    AIINVERT,                      // 63
+    HUE_ROTATE,                    // 64
+    COLOR_BLEND,                   // 65
+    PARTICLE,                      // 66
+    SHADOW_IS_FILLED,              // 67
+    OUTER_BORDER_COLOR,            // 68
+    OUTER_BORDER_WIDTH,            // 69
+    OUTER_BORDER_STYLE,            // 70
+    OUTER_BORDER_RADIUS,           // 71
+    USE_SHADOW_BATCHING,           // 72
+    GREY_COEF1,                    // 73
+    GREY_COEF2,                    // 74
+    CUSTOM,                        // 75
+    EXTENDED,                      // 76
+    TRANSITION,                    // 77
+    BACKGROUND_STYLE,              // 78
+    CONTENT_STYLE,                 // 79
+    FOREGROUND_STYLE,              // 80
+    OVERLAY_STYLE,                 // 81
+    NODE_MODIFIER,                 // 82
+    ENV_FOREGROUND_COLOR,          // 83
+    ENV_FOREGROUND_COLOR_STRATEGY, // 84
+    GEOMETRYTRANS,                 // 85
 };
 
 enum class RSRenderPropertyType : int16_t {

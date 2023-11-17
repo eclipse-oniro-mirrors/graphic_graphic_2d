@@ -16,6 +16,7 @@
 #ifndef RS_HARDWARE_THREAD_H
 #define RS_HARDWARE_THREAD_H
 
+#include <atomic>
 #include <mutex>
 
 #include "event_handler.h"
@@ -33,6 +34,7 @@ public:
     static RSHardwareThread& Instance();
     void Start();
     void PostTask(const std::function<void()>& task);
+    void PostDelayTask(const std::function<void()>& task, int64_t delayTime);
     void CommitAndReleaseLayers(OutputPtr output, const std::vector<LayerInfoPtr>& layers);
     void ReleaseBuffer(sptr<SurfaceBuffer> buffer, sptr<SyncFence> releaseFence, sptr<IConsumerSurface> cSurface);
     template<typename Task, typename Return = std::invoke_result_t<Task>>
@@ -42,6 +44,7 @@ public:
         PostTask([t(std::move(scheduledTask))]() { t->Run(); });
         return std::move(taskFuture);
     }
+    uint32_t GetunExcuteTaskNum();
 private:
     RSHardwareThread() = default;
     ~RSHardwareThread() = default;
@@ -54,7 +57,8 @@ private:
     void Redraw(const sptr<Surface>& surface, const std::vector<LayerInfoPtr>& layers, uint32_t screenId);
     void ReleaseLayers(OutputPtr output, const std::unordered_map<uint32_t, LayerPtr>& layerMap);
     void LayerPresentTimestamp(const LayerInfoPtr& layer, const sptr<IConsumerSurface>& surface) const;
-    void PerformSetActiveMode();
+    void PerformSetActiveMode(OutputPtr output);
+    void ExecuteSwitchRefreshRate(uint32_t rate);
 
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
@@ -62,6 +66,7 @@ private:
     std::shared_ptr<RSBaseRenderEngine> uniRenderEngine_;
     UniFallbackCallback redrawCb_;
     std::mutex mutex_;
+    std::atomic<uint32_t> unExcuteTaskNum_ = 0;
 
     HgmRefreshRates hgmRefreshRates_;
 };

@@ -15,11 +15,13 @@
 #include "drawing_playback.h"
 #include <sstream>
 #include <fcntl.h>
+#include <thread>
 #include <unique_fd.h>
 
 #include "include/core/SkStream.h"
 #include "src/utils/SkMultiPictureDocumentPriv.h"
 #include "src/utils/SkOSPath.h"
+#include "transaction/rs_marshalling_helper.h"
 namespace OHOS {
 namespace Rosen {
 
@@ -235,7 +237,7 @@ bool DrawingDCL::GetDirectionAndStep(std::string command, bool &isMoreOps)
     int dotPostion = -1;
     for (size_t i = 0; i < words[1].size(); ++i) {
         if (words[1][i] == '.' && dotPostion == -1) {
-            dotPostion = i;
+            dotPostion = static_cast<int>(i);
         } else if (words[1][i] >= '0' && words[1][i] <= '9') {
             continue;
         } else {
@@ -408,7 +410,9 @@ int DrawingDCL::LoadDrawCmdList(const std::string& dclFile)
     }
     std::cout << "messageParcel GetDataSize() = " << messageParcel.GetDataSize() << std::endl;
 
+    RSMarshallingHelper::BeginNoSharedMem(std::this_thread::get_id());
     dcl_ = DrawCmdList::Unmarshalling(messageParcel);
+    RSMarshallingHelper::EndNoSharedMem();
     if (dcl_ == nullptr) {
         std::cout << "dcl is nullptr" << std::endl;
         munmap(mapFile, statbuf.st_size);

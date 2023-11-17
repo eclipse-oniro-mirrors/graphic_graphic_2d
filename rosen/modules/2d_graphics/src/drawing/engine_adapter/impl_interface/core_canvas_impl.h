@@ -35,6 +35,7 @@
 #include "image/image.h"
 #include "image/picture.h"
 #include "text/text.h"
+#include "text/text_blob.h"
 #include "utils/matrix.h"
 #include "utils/point.h"
 #include "utils/point3.h"
@@ -43,6 +44,7 @@
 #include "utils/round_rect.h"
 #include "utils/sampling_options.h"
 #include "utils/scalar.h"
+#include "utils/vertices.h"
 
 class SkSVGDOM;
 
@@ -60,13 +62,8 @@ struct Lattice;
 
 class CoreCanvasImpl : public BaseImpl {
 public:
-    static inline constexpr AdapterType TYPE = AdapterType::BASE_INTERFACE;
     CoreCanvasImpl() {};
     ~CoreCanvasImpl() override {};
-    AdapterType GetType() const override
-    {
-        return AdapterType::BASE_INTERFACE;
-    }
 
     virtual void Bind(const Bitmap& bitmap) = 0;
 
@@ -79,6 +76,8 @@ public:
     virtual int32_t GetWidth() const = 0;
     virtual int32_t GetHeight() const = 0;
     virtual ImageInfo GetImageInfo() = 0;
+    virtual bool ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+        int srcX, int srcY) = 0;
 
     // shapes
     virtual void DrawPoint(const Point& point) = 0;
@@ -100,10 +99,11 @@ public:
         const Point texCoords[4], BlendMode mode) = 0;
     virtual void DrawEdgeAAQuad(const Rect& rect, const Point clip[4],
         QuadAAFlags aaFlags, ColorQuad color, BlendMode mode) = 0;
+    virtual void DrawVertices(const Vertices& vertices, BlendMode mode) = 0;
 
     virtual void DrawImageNine(const Image* image, const RectI& center, const Rect& dst,
         FilterMode filter, const Brush* brush = nullptr) = 0;
-    virtual void DrawAnnotation(const Rect& rect, const char* key, const Data& data) = 0;
+    virtual void DrawAnnotation(const Rect& rect, const char* key, const Data* data) = 0;
     virtual void DrawImageLattice(const Image* image, const Lattice& lattice, const Rect& dst,
         FilterMode filter, const Brush* brush = nullptr) = 0;
 
@@ -122,12 +122,17 @@ public:
     // temporary interface. Support drawing of SkSVGDOM
     virtual void DrawSVGDOM(const sk_sp<SkSVGDOM>& svgDom) = 0;
 
+    // text
+    virtual void DrawTextBlob(const TextBlob* blob, const scalar x, const scalar y) = 0;
+
     // clip
     virtual void ClipRect(const Rect& rect, ClipOp op, bool doAntiAlias = false) = 0;
+    virtual void ClipIRect(const RectI& rect, ClipOp op = ClipOp::INTERSECT) = 0;
     virtual void ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias = false) = 0;
     virtual void ClipPath(const Path& path, ClipOp op, bool doAntiAlias = false) = 0;
     virtual void ClipRegion(const Region& region, ClipOp op = ClipOp::INTERSECT) = 0;
     virtual bool IsClipEmpty() = 0;
+    virtual bool IsClipRect() = 0;
     virtual bool QuickReject(const Rect& rect) = 0;
 
     // transform
@@ -146,6 +151,7 @@ public:
     virtual void SaveLayer(const SaveLayerOps& saveLayerOption) = 0;
     virtual void Restore() = 0;
     virtual uint32_t  GetSaveCount() const = 0;
+    virtual void Discard() = 0;
 
     // paint
     virtual void AttachPen(const Pen& pen) = 0;

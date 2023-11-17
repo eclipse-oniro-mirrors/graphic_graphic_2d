@@ -26,8 +26,10 @@ namespace Drawing {
 class SkiaPathEffect : public PathEffectImpl {
 public:
     static inline constexpr AdapterType TYPE = AdapterType::SKIA_ADAPTER;
+
     SkiaPathEffect() noexcept;
     ~SkiaPathEffect() override {};
+
     AdapterType GetType() const override
     {
         return AdapterType::SKIA_ADAPTER;
@@ -36,6 +38,7 @@ public:
     void InitWithDash(const scalar intervals[], int count, scalar phase) override;
     void InitWithPathDash(const Path& path, scalar advance, scalar phase, PathDashStyle style) override;
     void InitWithCorner(scalar radius) override;
+    void InitWithDiscrete(scalar segLength, scalar dev, uint32_t seedAssist) override;
     void InitWithSum(const PathEffect& e1, const PathEffect& e2) override;
     void InitWithCompose(const PathEffect& e1, const PathEffect& e2) override;
     sk_sp<SkPathEffect> GetPathEffect() const;
@@ -44,6 +47,8 @@ public:
      */
     void SetSkPathEffect(const sk_sp<SkPathEffect>& pathEffect);
 
+    std::shared_ptr<Data> Serialize() const override;
+    bool Deserialize(std::shared_ptr<Data> data) override;
 private:
     sk_sp<SkPathEffect> pathEffect_;
 };

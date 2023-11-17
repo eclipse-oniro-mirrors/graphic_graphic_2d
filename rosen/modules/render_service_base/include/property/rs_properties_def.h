@@ -58,6 +58,18 @@ enum class ForegroundColorStrategyType {
     INVERT_BACKGROUNDCOLOR,
 };
 
+enum class OutOfParentType {
+    WITHIN = 0,
+    OUTSIDE,
+    UNKNOWN
+};
+
+enum class RSColorBlendModeType : int16_t {
+    NONE = 0,
+    DST_IN,
+    SRC_IN,
+};
+
 class Decoration final {
 public:
     Decoration() {}

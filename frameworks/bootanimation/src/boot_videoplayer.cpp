@@ -12,8 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "boot_animation.h"
 #include "boot_videoplayer.h"
+
+#include "boot_animation.h"
+#include "boot_animation_utils.h"
 #include "log.h"
 #include "util.h"
 
@@ -26,15 +28,6 @@ void BootVideoPlayer::SetVideoPath(const std::string& path)
         return;
     }
     videopath_ = path;
-}
-
-void BootVideoPlayer::SetPlayerWindow(const OHOS::sptr<OHOS::Rosen::Window>& window)
-{
-    if (window == nullptr) {
-        LOGE("SetPlayerWindow window is nullptr");
-        return;
-    }
-    window_ = window;
 }
 
 void BootVideoPlayer::SetPlayerSurface(const sptr<Surface>& surface)
@@ -80,6 +73,14 @@ bool BootVideoPlayer::PlayVideo()
     if (ret != 0) {
         LOGE("PlayVideo SetVideoSurface fail, errorCode:%{public}d", ret);
         return false;
+    }
+    bool bootSoundEnabled = BootAnimationUtils::GetBootAnimationSoundEnabled();
+    if (!bootSoundEnabled) {
+        ret = mediaPlayer_->SetVolume(0, 0);
+        if (ret !=  0) {
+            LOGE("PlayVideo SetVolume fail, errorCode:%{public}d", ret);
+            return false;
+        }
     }
     ret = mediaPlayer_->Prepare();
     if (ret !=  0) {

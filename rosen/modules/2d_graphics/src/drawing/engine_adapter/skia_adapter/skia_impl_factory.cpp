@@ -16,6 +16,7 @@
 #include "skia_impl_factory.h"
 
 #include "skia_adapter/skia_bitmap.h"
+#include "skia_adapter/skia_pixmap.h"
 #include "skia_adapter/skia_camera.h"
 #include "skia_adapter/skia_canvas.h"
 #include "skia_adapter/skia_color_filter.h"
@@ -24,6 +25,8 @@
 #ifdef ACE_ENABLE_GPU
 #include "skia_adapter/skia_gpu_context.h"
 #endif
+#include "skia_adapter/skia_font.h"
+#include "skia_adapter/skia_font_mgr.h"
 #include "skia_adapter/skia_image.h"
 #include "skia_adapter/skia_image_filter.h"
 #include "skia_adapter/skia_mask_filter.h"
@@ -34,7 +37,11 @@
 #include "skia_adapter/skia_picture.h"
 #include "skia_adapter/skia_region.h"
 #include "skia_adapter/skia_shader_effect.h"
+#include "skia_adapter/skia_runtime_effect.h"
+#include "skia_adapter/skia_runtime_shader_builder.h"
 #include "skia_adapter/skia_surface.h"
+#include "skia_adapter/skia_text_blob_builder.h"
+#include "skia_adapter/skia_trace_memory_dump.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -67,9 +74,24 @@ std::unique_ptr<GPUContextImpl> SkiaImplFactory::CreateGPUContext()
 }
 #endif
 
+std::unique_ptr<TraceMemoryDumpImpl> SkiaImplFactory::CreateTraceMemoryDump(const char* categoryKey, bool itemizeType)
+{
+    return std::make_unique<SkiaTraceMemoryDump>(categoryKey, itemizeType);
+}
+
 std::unique_ptr<BitmapImpl> SkiaImplFactory::CreateBitmap()
 {
     return std::make_unique<SkiaBitmap>();
+}
+
+std::unique_ptr<PixmapImpl> SkiaImplFactory::CreatePixmap()
+{
+    return std::make_unique<SkiaPixmap>();
+}
+
+std::unique_ptr<PixmapImpl> SkiaImplFactory::CreatePixmap(const ImageInfo& imageInfo, const void* addr, size_t rowBytes)
+{
+    return std::make_unique<SkiaPixmap>(imageInfo, addr, rowBytes);
 }
 
 std::unique_ptr<ImageImpl> SkiaImplFactory::CreateImage()
@@ -113,6 +135,17 @@ std::unique_ptr<ShaderEffectImpl> SkiaImplFactory::CreateShaderEffect()
     return std::make_unique<SkiaShaderEffect>();
 }
 
+std::unique_ptr<RuntimeEffectImpl> SkiaImplFactory::CreateRuntimeEffect()
+{
+    return std::make_unique<SkiaRuntimeEffect>();
+}
+
+std::unique_ptr<RuntimeShaderBuilderImpl> SkiaImplFactory::CreateRuntimeShaderBuilder(
+    std::shared_ptr<RuntimeEffect> runtimeEffect)
+{
+    return std::make_unique<SkiaRuntimeShaderBuilder>(runtimeEffect);
+}
+
 std::unique_ptr<SurfaceImpl> SkiaImplFactory::CreateSurface()
 {
     return std::make_unique<SkiaSurface>();
@@ -146,6 +179,37 @@ std::unique_ptr<CameraImpl> SkiaImplFactory::CreateCamera()
 std::unique_ptr<RegionImpl> SkiaImplFactory::CreateRegion()
 {
     return std::make_unique<SkiaRegion>();
+}
+
+std::unique_ptr<VerticesImpl> SkiaImplFactory::CreateVertices()
+{
+    return std::make_unique<SkiaVertices>();
+}
+
+std::unique_ptr<VerticesImpl::BuilderImpl> SkiaImplFactory::CreateVerticesBuilder()
+{
+    return std::make_unique<SkiaVertices::SkiaBuilder>();
+}
+
+std::unique_ptr<FontImpl> SkiaImplFactory::CreateFont()
+{
+    return std::make_unique<SkiaFont>();
+}
+
+std::unique_ptr<FontImpl> SkiaImplFactory::CreateFont(std::shared_ptr<Typeface> typeface,
+    scalar size, scalar scaleX, scalar skewX)
+{
+    return std::make_unique<SkiaFont>(typeface, size, scaleX, skewX);
+}
+
+std::unique_ptr<TextBlobBuilderImpl> SkiaImplFactory::CreateTextBlobBuilder()
+{
+    return std::make_unique<SkiaTextBlobBuilder>();
+}
+
+std::shared_ptr<FontMgrImpl> SkiaImplFactory::CreateDefaultFontMgr()
+{
+    return SkiaFontMgr::CreateDefaultFontMgr();
 }
 } // namespace Drawing
 } // namespace Rosen

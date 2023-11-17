@@ -61,7 +61,40 @@ public:
      * @param info  FrameBuffer object info.
      */
     bool Bind(const FrameBuffer& frameBuffer);
+    
+    /*
+     * @brief              Create Surface from gpuContext and imageInfo.
+     * @param gpuContext   GPU texture.
+     * @param budgeted     Texture count.
+     * @param imageInfo    image Info.
+     * @return             A shared point to Surface.
+     */
+    static std::shared_ptr<Surface> MakeRenderTarget(GPUContext* gpuContext, bool budgeted, const ImageInfo& imageInfo);
 #endif
+
+    /*
+     * @brief              Allocates raster Surface.
+     * @param imageInfo    image info.
+     * @return             A shared point to Surface.
+     */
+    static std::shared_ptr<Surface> MakeRaster(const ImageInfo& imageInfo);
+
+    /*
+     * @brief              Allocates raster direct Surface.
+     * @param imageInfo    image info.
+     * @param pixels       Pointer to destination pixels buffer.
+     * @param rowBytes     Interval from one Surface row to the next.
+     * @return             A shared point to Surface.
+     */
+    static std::shared_ptr<Surface> MakeRasterDirect(const ImageInfo& imageInfo, void* pixels, size_t rowBytes);
+
+    /*
+     * @brief          Create Surface using width and height.
+     * @param width    Pixel column count.
+     * @param height   Pixel row count.
+     * @return         A shared point to Surface.
+     */
+    static std::shared_ptr<Surface> MakeRasterN32Premul(int32_t width, int32_t height);
 
     /*
      * @brief   Gets Canvas that draws into Surface.
@@ -84,9 +117,30 @@ public:
     std::shared_ptr<Image> GetImageSnapshot(const RectI& bounds) const;
 
     /*
+     * @brief   Returns a compatible Surface, with the specified widht and height
+     */
+    std::shared_ptr<Surface> MakeSurface(int width, int height) const;
+
+    /*
      * @brief   Gets ImageInfo of Surface
      */
     ImageInfo GetImageInfo();
+
+    /*
+     * @brief   Call to ensure all reads/writes of surface have been issue to the underlying 3D API.
+     */
+    void FlushAndSubmit(bool syncCpu = false);
+
+    /*
+     * @brief   Call to ensure all reads/writes of surface have been issue to the underlying 3D API.
+     */
+    void Flush();
+
+    template<typename T>
+    const std::shared_ptr<T> GetImpl() const
+    {
+        return impl_->DowncastingTo<T>();
+    }
 
 private:
     std::shared_ptr<SurfaceImpl> impl_;

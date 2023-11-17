@@ -15,8 +15,24 @@ import("//build/ohos.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 import("$graphic_2d_root/rosen/modules/render_service_base/config.gni")
 
+config("render_service_link_config") {
+  if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
+    ldflags = [
+      "-Wl,--lto-O2",
+      "-Wl,-mllvm",
+      "-Wl,-import-instr-limit=5",
+      "-Wl,-mllvm",
+      "-Wl,-wholeprogramdevirt-check=fallback",
+      "-Wl,-Bsymbolic",
+    ]
+  }
+}
+
 ## Build librender_service.so
 ohos_shared_library("librender_service") {
+  if (enhanced_opt) {
+    configs = [ ":render_service_link_config" ]
+  }
   defines = []
   if (graphic_2d_feature_color_gamut_enable) {
     defines += [ "PADDING_HEIGHT_32" ]
@@ -28,15 +44,17 @@ ohos_shared_library("librender_service") {
   }
   defines += gpu_defines
   if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
-    cflags = [
-      "-flto=thin",
-      "-fwhole-program-vtables",
-    ]
+    cflags = [ "-flto=thin" ]
+    if (enhanced_opt) {
+      cflags += [ "-fwhole-program-vtables" ]
+    }
   }
 
   sources = [
     "core/memory/rs_memory_manager.cpp",
-    "core/memory/rs_skia_memory_tracer.cpp",
+    "core/pipeline/round_corner_display/rs_round_corner_config.cpp",
+    "core/pipeline/round_corner_display/rs_round_corner_display.cpp",
+    "core/pipeline/round_corner_display/rs_sub_thread_rcd.cpp",
     "core/pipeline/rs_base_render_engine.cpp",
     "core/pipeline/rs_base_render_util.cpp",
     "core/pipeline/rs_composer_adapter.cpp",
@@ -69,10 +87,11 @@ ohos_shared_library("librender_service") {
     "core/transaction/rs_irender_service_connection_ipc_interface_code_access_verifier.cpp",
     "core/transaction/rs_irender_service_ipc_interface_code_access_verifier.cpp",
     "core/transaction/rs_render_service_connection_stub.cpp",
+    "core/transaction/rs_render_service_security_utils.cpp",
     "core/transaction/rs_render_service_stub.cpp",
   ]
 
-  if (rs_enable_driven_render && rs_enable_gpu) {
+  if (rs_enable_driven_render) {
     sources += [
       "core/pipeline/driven_render/rs_driven_render_ext.cpp",
       "core/pipeline/driven_render/rs_driven_render_listener.cpp",
@@ -86,8 +105,13 @@ ohos_shared_library("librender_service") {
     sources += [ "core/pipeline/rs_egl_image_manager.cpp" ]
   }
 
+  if (graphic_2d_feature_enable_vulkan) {
+    sources += [ "core/pipeline/rs_vk_image_manager.cpp" ]
+  }
+
   if (rs_enable_parallel_render && rs_enable_gpu) {
     sources += [
+      "core/pipeline/parallel_render/rs_filter_sub_thread.cpp",
       "core/pipeline/parallel_render/rs_node_cost_manager.cpp",
       "core/pipeline/parallel_render/rs_parallel_hardware_composer.cpp",
       "core/pipeline/parallel_render/rs_parallel_pack_visitor.cpp",
@@ -100,22 +124,33 @@ ohos_shared_library("librender_service") {
     ]
   }
 
+  if (use_memmgr_plugin || use_memmgr) {
+    sources += [ "core/memory/rs_app_state_listener.cpp" ]
+  }
+
   if (tp_feature_enable) {
     sources += [ "core/touch_screen/touch_screen.cpp" ]
   }
 
   include_dirs = [
     "core",
+    "core/round_corner_display",
     "$graphic_2d_root/frameworks/surface/include",
     "$graphic_2d_root/rosen/include",
+    "$graphic_2d_root/rosen/modules/2d_graphics",
     "$graphic_2d_root/rosen/modules/composer/vsync/include",
     "$graphic_2d_root/rosen/modules/render_frame_trace/include",
+    "$graphic_2d_root/rosen/modules/render_service_base/include",
     "$graphic_2d_root/rosen/modules/render_service_base/src",
     "$graphic_2d_root/rosen/modules/utils",
     "//commonlibrary/c_utils/base/include",
     "//utils/system/safwk/native/include",
     "$graphic_2d_root/utils/log",
     "//foundation/barrierfree/accessibility/interfaces/innerkits/acfwk/include",
+    "$memmgr_root/interface/innerkits/include",
+    "$memmgr_root/services/memmgrservice/include/memory_level_manager",
+    "$memmgr_plugin_root/interface/innerkits/include",
+    "$memmgr_plugin_root/services/memmgrservice/include/memory_level_manager",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/config",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/frame_rate_manager",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/hgm_screen_manager",
@@ -128,9 +163,13 @@ ohos_shared_library("librender_service") {
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager:libhyper_graphic_manager",
     "$graphic_2d_root/rosen/modules/render_frame_trace:render_frame_trace",
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/samples/2d_graphics:drawing_engine_sample",
   ]
 
-  public_deps = [ "//third_party/libpng:libpng" ]
+  public_deps = [
+    "//third_party/libpng:libpng",
+    "//third_party/libxml2:libxml2",
+  ]
 
   if (defined(use_new_skia) && use_new_skia) {
     public_deps += [ "//third_party/skia:skia_ohos" ]
@@ -167,6 +206,7 @@ ohos_shared_library("librender_service") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "sensor:sensor_interface_native",
     "window_manager:libwsutils",
   ]
 
@@ -198,6 +238,12 @@ ohos_shared_library("librender_service") {
     defines += accessibility_defines
   }
 
+  if (use_memmgr_plugin) {
+    external_deps += [ "memmgr_plugin:memmgrclient" ]
+  } else if (use_memmgr) {
+    external_deps += [ "memmgr:memmgrclient" ]
+  }
+
   if (rosen_is_ohos && defined(enable_ipc_security) && enable_ipc_security) {
     defines += [ "ENABLE_IPC_SECURITY" ]
     external_deps += [
@@ -206,22 +252,13 @@ ohos_shared_library("librender_service") {
     ]
   }
 
+  if (rosen_is_ohos && defined(enable_ipc_security_access_counter) &&
+      enable_ipc_security_access_counter) {
+    defines += [ "ENABLE_IPC_SECURITY_ACCESS_COUNTER" ]
+  }
+
   if (tp_feature_enable) {
     defines += tp_defines
-  }
-
-  ldflags = []
-
-  #Bisheng control is required in the future
-  if (is_ohos) {
-    ldflags += [ "-Wl,-Bsymbolic" ]
-  }
-
-  if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
-    ldflags += [
-      "-Wl,-mllvm",
-      "-Wl,-wholeprogramdevirt-check=fallback",
-    ]
   }
 
   part_name = "graphic_2d"
@@ -248,6 +285,7 @@ ohos_executable("render_service") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "sensor:sensor_interface_native",
   ]
 
   part_name = "graphic_2d"

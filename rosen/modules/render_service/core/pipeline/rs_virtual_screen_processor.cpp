@@ -18,6 +18,7 @@
 
 #include <ctime>
 
+#include "draw/color.h"
 #include "platform/common/rs_log.h"
 #ifndef NEW_RENDER_CONTEXT
 #include "platform/ohos/backend/rs_surface_frame_ohos_raster.h"
@@ -77,7 +78,7 @@ bool RSVirtualScreenProcessor::Init(RSDisplayRenderNode& node, int32_t offsetX, 
     return true;
 }
 
-void RSVirtualScreenProcessor::PostProcess()
+void RSVirtualScreenProcessor::PostProcess(RSDisplayRenderNode* node)
 {
     if (producerSurface_ == nullptr) {
         RS_LOGE("RSVirtualScreenProcessor::PostProcess surface is null!");
@@ -87,7 +88,13 @@ void RSVirtualScreenProcessor::PostProcess()
         RS_LOGE("RSVirtualScreenProcessor::PostProcess renderFrame_ is null.");
         return;
     }
-
+    if (isSecurityDisplay_ && displayHasSecSurface_) {
+#ifndef USE_ROSEN_DRAWING
+        canvas_->clear(SK_ColorBLACK);
+#else
+        canvas_->Clear(Drawing::Color::COLOR_BLACK);
+#endif
+    }
     auto surfaceOhos = renderFrame_->GetSurface();
     renderEngine_->SetUiTimeStamp(renderFrame_, surfaceOhos);
     renderFrame_->Flush();
