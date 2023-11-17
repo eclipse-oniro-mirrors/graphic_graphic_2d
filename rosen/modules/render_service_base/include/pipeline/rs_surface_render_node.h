@@ -96,6 +96,11 @@ public:
         return GetName().find("RosenWeb") != std::string::npos;
     }
 
+    bool IsScbScreen() const
+    {
+        return nodeType_ == RSSurfaceNodeType::SCB_SCREEN_NODE;
+    }
+
     bool IsHardwareEnabledTopSurface() const
     {
         return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE && GetName() == "pointer window";

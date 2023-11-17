@@ -2110,6 +2110,14 @@ void RSRenderNode::SetParentLeashWindow()
 {
     isParentLeashWindow_ = true;
 }
+bool RSRenderNode::IsParentScbScreen() const
+{
+    return isParentScbScreen_;
+}
+void RSRenderNode::SetParentScbScreen()
+{
+    isParentScbScreen_ = true;
+}
 bool RSRenderNode::HasCachedTexture() const
 {
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
