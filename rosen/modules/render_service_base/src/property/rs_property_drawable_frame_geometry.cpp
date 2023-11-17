@@ -69,7 +69,7 @@ std::unique_ptr<RSPropertyDrawable> RSColorFilterDrawable::Generate(const RSProp
     paint.setColorFilter(colorFilter);
     return std::make_unique<RSColorFilterDrawable>(std::move(paint));
 #else
-    // Drawing need to be adapted furture
+    // Drawing need to be adapted feature
     return nullptr;
 #endif
 }
@@ -80,7 +80,11 @@ bool RSColorFilterDrawable::Update(const RSPropertyDrawableGenerateContext& cont
     if (colorFilter == nullptr) {
         return false;
     }
+#ifndef USE_ROSEN_DRAWING
     paint_.setColorFilter(colorFilter);
+#else
+    // Drawing need to be adapted feature
+#endif
     return true;
 }
 

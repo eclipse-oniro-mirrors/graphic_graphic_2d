@@ -733,6 +733,11 @@ std::unique_ptr<RSPropertyDrawable> RSDynamicLightUpDrawable::Generate(const RSP
     return std::make_unique<RSDynamicLightUpDrawable>();
 }
 
+bool RSDynamicLightUpDrawable::Update(const RSPropertyDrawableGenerateContext& context)
+{
+    return context.properties_.IsDynamicLightUpValid();
+}
+
 void RSDynamicLightUpDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
 {
     RSPropertiesPainter::DrawDynamicLightUp(node.GetRenderProperties(), canvas);
@@ -780,6 +785,10 @@ std::unique_ptr<RSPropertyDrawable> RSBackgroundFilterDrawable::Generate(
 
 void RSBackgroundFilterDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
 {
+    // fix compatibility with Node Group, copied from RSCanvasRenderNode::ProcessAnimatePropertyBeforeChildren
+    if (canvas.GetCacheType() == RSPaintFilterCanvas::CacheType::OFFSCREEN) {
+        return;
+    }
     RSPropertiesPainter::DrawFilter(node.GetRenderProperties(), canvas, FilterType::BACKGROUND_FILTER);
 }
 
@@ -800,7 +809,7 @@ std::unique_ptr<RSPropertyDrawable> RSForegroundFilterDrawable::Generate(
 
 bool RSForegroundFilterDrawable::Update(const RSPropertyDrawableGenerateContext& context)
 {
-    return context.properties_.GetBackgroundFilter() != nullptr;
+    return context.properties_.GetFilter() != nullptr;
 }
 
 void RSForegroundFilterDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
@@ -845,6 +854,10 @@ bool RSBackgroundFilterDrawable::Update(const RSPropertyDrawableGenerateContext&
 
 void RSEffectDataApplyDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
 {
+    // fix compatibility with Node Group, copied from RSCanvasRenderNode::ProcessAnimatePropertyBeforeChildren
+    if (canvas.GetCacheType() == RSPaintFilterCanvas::CacheType::OFFSCREEN) {
+        return;
+    }
     RSPropertiesPainter::ApplyBackgroundEffect(node.GetRenderProperties(), canvas);
 }
 
@@ -886,20 +899,25 @@ void RSForegroundColorDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& ca
 
 bool RSForegroundColorDrawable::Update(const RSPropertyDrawableGenerateContext& context)
 {
-    auto bgColor = context.properties_.GetForegroundColor();
-    return bgColor != RgbPalette::Transparent();
+    auto fgColor = context.properties_.GetForegroundColor();
+#ifndef USE_ROSEN_DRAWING
+    paint_.setColor(fgColor.AsArgbInt());
+#else
+    brush_.SetColor(fgColor.AsArgbInt());
+#endif
+    return fgColor != RgbPalette::Transparent();
 }
 
 std::unique_ptr<RSPropertyDrawable> RSForegroundColorDrawable::Generate(
     const RSPropertyDrawableGenerateContext& context)
 {
-    auto bgColor = context.properties_.GetForegroundColor();
-    if (bgColor == RgbPalette::Transparent()) {
+    auto fgColor = context.properties_.GetForegroundColor();
+    if (fgColor == RgbPalette::Transparent()) {
         return nullptr;
     }
 #ifndef USE_ROSEN_DRAWING
     SkPaint paint;
-    paint.setColor(bgColor.AsArgbInt());
+    paint.setColor(fgColor.AsArgbInt());
     paint.setAntiAlias(true);
     return std::make_unique<RSForegroundColorDrawable>(std::move(paint));
 #else
@@ -984,7 +1002,11 @@ bool RSBackgroundColorDrawable::Update(const RSPropertyDrawableGenerateContext& 
     if (bgColor == RgbPalette::Transparent()) {
         return false;
     }
+#ifndef USE_ROSEN_DRAWING
     paint_.setColor(bgColor.AsArgbInt());
+#else
+    brush_.SetColor(bgColor.AsArgbInt());
+#endif
     return true;
 }
 

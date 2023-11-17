@@ -255,6 +255,7 @@ public:
     ~RSDynamicLightUpDrawable() override = default;
     static std::unique_ptr<RSPropertyDrawable> Generate(const RSPropertyDrawableGenerateContext& context);
     void Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas) override;
+    bool Update(const RSPropertyDrawableGenerateContext& context) override;
 };
 
 // ============================================================================
