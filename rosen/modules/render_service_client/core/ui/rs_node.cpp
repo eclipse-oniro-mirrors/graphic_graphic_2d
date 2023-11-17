@@ -1097,6 +1097,11 @@ void RSNode::SetUseEffect(bool useEffect)
     SetProperty<RSUseEffectModifier, RSProperty<bool>>(RSModifierType::USE_EFFECT, useEffect);
 }
 
+void RSNode::SetUseShadowBatching(bool useShadowBatching)
+{
+    SetProperty<RSUseShadowBatchingModifier, RSProperty<bool>>(RSModifierType::USE_SHADOW_BATCHING, useShadowBatching);
+}
+
 void RSNode::SetColorBlendMode(RSColorBlendModeType blendMode)
 {
     SetProperty<RSColorBlendModeModifier, RSProperty<int>>(
@@ -1431,6 +1436,18 @@ void RSNode::MarkNodeGroup(bool isNodeGroup, bool isForced)
     }
 }
 
+void RSNode::MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer)
+{
+    if (isNodeSingleFrameComposer_ != isNodeSingleFrameComposer) {
+        isNodeSingleFrameComposer_ = isNodeSingleFrameComposer;
+        std::unique_ptr<RSCommand> command =
+            std::make_unique<RSMarkNodeSingleFrameComposer>(GetId(), isNodeSingleFrameComposer);
+        auto transactionProxy = RSTransactionProxy::GetInstance();
+        if (transactionProxy != nullptr) {
+            transactionProxy->AddCommand(command, IsRenderServiceNode());
+        }
+    }
+}
 
 void RSNode::SetGrayScale(float grayScale)
 {

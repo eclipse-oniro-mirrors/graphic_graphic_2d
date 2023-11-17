@@ -289,6 +289,7 @@ private:
     sk_sp<SkImage> GetCacheImageFromMirrorNode(std::shared_ptr<RSDisplayRenderNode> mirrorNode);
 
     void SwitchColorFilterDrawing(int currentSaveCount);
+    void ProcessShadowFirst(RSRenderNode& node, bool inSubThread);
 
 #ifndef USE_ROSEN_DRAWING
     sk_sp<SkSurface> offscreenSurface_;                 // temporary holds offscreen surface
@@ -350,6 +351,7 @@ private:
     bool isCanvasNodeSkipDfxEnabled_ = false;
     bool isQuickSkipPreparationEnabled_ = false;
     bool isOcclusionEnabled_ = false;
+    bool isScreenRotationAnimating_ = false;
     bool isTextNeedCached_ = false;
     std::vector<std::string> dfxTargetSurfaceNames_;
     PartialRenderType partialRenderType_;
@@ -451,6 +453,7 @@ private:
     void endCapture() const;
     std::shared_ptr<RSRecordingCanvas> recordingCanvas_;
 #endif
+    bool isNodeSingleFrameComposer_ = false;
     sk_sp<SkImage> cacheImgForCapture_ = nullptr;
 };
 } // namespace Rosen

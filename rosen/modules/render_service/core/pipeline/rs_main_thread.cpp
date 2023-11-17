@@ -915,6 +915,11 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         if (surfaceNode == nullptr) {
             return;
         }
+        if (surfaceNode->IsHardwareEnabledType()
+            && CheckSubThreadNodeStatusIsDoing(surfaceNode->GetInstanceRootNodeId())) {
+            RS_LOGD("SubThread is processing %{public}s, skip acquire buffer", surfaceNode->GetName().c_str());
+            return;
+        }
         auto& surfaceHandler = static_cast<RSSurfaceHandler&>(*surfaceNode);
         surfaceHandler.ResetCurrentFrameBufferConsumed();
         if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler)) {
@@ -935,6 +940,25 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         RequestNextVSync();
     }
     RS_OPTIONAL_TRACE_END();
+}
+
+bool RSMainThread::CheckSubThreadNodeStatusIsDoing(NodeId appNodeId) const
+{
+    for (auto& node : subThreadNodes_) {
+        if (node->GetCacheSurfaceProcessedStatus() != CacheProcessStatus::DOING) {
+            continue;
+        }
+        if (node->GetId() == appNodeId) {
+            return true;
+        }
+        for (auto& child : node->GetSortedChildren()) {
+            auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child);
+            if (surfaceNode && surfaceNode->GetId() == appNodeId) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 void RSMainThread::CollectInfoForHardwareComposer()
@@ -1863,6 +1887,19 @@ void RSMainThread::Animate(uint64_t timestamp)
     PerfAfterAnim(needRequestNextVsync);
 }
 
+void RSMainThread::ProcessDataBySingleFrameComposer(std::unique_ptr<RSTransactionData>& rsTransactionData)
+{
+    if (!rsTransactionData || !RSSystemProperties::GetSingleFrameComposerEnabled()) {
+        return;
+    }
+
+    RSSingleFrameComposer::SetSingleFrameFlag(std::this_thread::get_id());
+    if (isUniRender_) {
+        context_->transactionTimestamp_ = rsTransactionData->GetTimestamp();
+        rsTransactionData->ProcessBySingleFrameComposer(*context_);
+    }
+}
+
 void RSMainThread::RecvRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData)
 {
     if (!rsTransactionData) {
@@ -2667,7 +2704,7 @@ bool RSMainThread::IsSingleDisplay()
     return rootNode->GetChildrenCount() == 1;
 }
 
-const uint32_t UIFIRST_MINIMUM_NODE_NUMBER = 20;
+const uint32_t UIFIRST_MINIMUM_NODE_NUMBER = 13; // minimum window number(13) for enabling UIFirst
 void RSMainThread::UpdateUIFirstSwitch()
 {
     if (deviceType_ == DeviceType::PHONE) {
@@ -2770,15 +2807,19 @@ void RSMainThread::HandleOnTrim(Memory::SystemMemoryLevel level)
 #else
                 auto grContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
 #endif
+                RS_LOGD("Enter level:%{public}d, OnTrim Success", level);
                 switch (level) {
                     case Memory::SystemMemoryLevel::MEMORY_LEVEL_CRITICAL:
-                        RS_LOGD("Enter level:%{public}d, OnTrim Success", level);
+                    case Memory::SystemMemoryLevel::MEMORY_LEVEL_LOW:
+                    case Memory::SystemMemoryLevel::MEMORY_LEVEL_MODERATE:
+                    case Memory::SystemMemoryLevel::MEMORY_LEVEL_PURGEABLE:
                         MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(grContext);
                         break;
                     default:
                         break;
                 }
-            }, AppExecFwk::EventQueue::Priority::IDLE);
+            },
+            AppExecFwk::EventQueue::Priority::IDLE);
     }
 }
 

@@ -70,7 +70,8 @@ RSCanvasRenderNode::~RSCanvasRenderNode()
 }
 
 #ifndef USE_ROSEN_DRAWING
-void RSCanvasRenderNode::UpdateRecording(std::shared_ptr<DrawCmdList> drawCmds, RSModifierType type)
+void RSCanvasRenderNode::UpdateRecording(std::shared_ptr<DrawCmdList> drawCmds,
+    RSModifierType type, bool isSingleFrameComposer)
 {
     if (!drawCmds || drawCmds->GetSize() == 0) {
         return;
@@ -78,10 +79,11 @@ void RSCanvasRenderNode::UpdateRecording(std::shared_ptr<DrawCmdList> drawCmds, 
     auto renderProperty = std::make_shared<RSRenderProperty<DrawCmdListPtr>>(drawCmds, ANONYMOUS_MODIFIER_ID);
     auto renderModifier = std::make_shared<RSDrawCmdListRenderModifier>(renderProperty);
     renderModifier->SetType(type);
-    AddModifier(renderModifier);
+    AddModifier(renderModifier, isSingleFrameComposer);
 }
 #else
-void RSCanvasRenderNode::UpdateRecording(std::shared_ptr<Drawing::DrawCmdList> drawCmds, RSModifierType type)
+void RSCanvasRenderNode::UpdateRecording(std::shared_ptr<Drawing::DrawCmdList> drawCmds,
+    RSModifierType type, bool isSingleFrameComposer)
 {
     if (!drawCmds || drawCmds->IsEmpty()) {
         return;
@@ -89,7 +91,7 @@ void RSCanvasRenderNode::UpdateRecording(std::shared_ptr<Drawing::DrawCmdList> d
     auto renderProperty = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>(drawCmds, ANONYMOUS_MODIFIER_ID);
     auto renderModifier = std::make_shared<RSDrawCmdListRenderModifier>(renderProperty);
     renderModifier->SetType(type);
-    AddModifier(renderModifier);
+    AddModifier(renderModifier, isSingleFrameComposer);
 }
 #endif
 
@@ -131,19 +133,58 @@ void RSCanvasRenderNode::Process(const std::shared_ptr<RSNodeVisitor>& visitor)
 
 void RSCanvasRenderNode::ProcessTransitionBeforeChildren(RSPaintFilterCanvas& canvas)
 {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        IterateOnDrawableRange(RSPropertyDrawableSlot::SAVE_ALL, RSPropertyDrawableSlot::MASK, canvas);
+        return;
+    }
     RSRenderNode::ProcessTransitionBeforeChildren(canvas);
+}
+
+void RSCanvasRenderNode::ProcessShadowBatching(RSPaintFilterCanvas& canvas)
+{
+    RSAutoCanvasRestore acr(&canvas);
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        IterateOnDrawableRange(
+            RSPropertyDrawableSlot::BOUNDS_MATRIX, RSPropertyDrawableSlot::TRANSITION, canvas);
+        IterateOnDrawableRange(
+            RSPropertyDrawableSlot::SHADOW, RSPropertyDrawableSlot::SHADOW, canvas);
+        return;
+    }
+    RSModifierContext context = { GetMutableRenderProperties(), &canvas };
+    ApplyBoundsGeometry(canvas);
+    ApplyAlpha(canvas);
+    RSPropertiesPainter::DrawMask(GetRenderProperties(), canvas);
+    RSPropertiesPainter::DrawShadow(GetRenderProperties(), canvas);
 }
 
 void RSCanvasRenderNode::ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanvas& canvas)
 {
     if (RSSystemProperties::GetPropertyDrawableEnable()) {
-        IterateOnDrawableRange(RSPropertyDrawableSlot::TRANSITION, RSPropertyDrawableSlot::CLIP_TO_FRAME, canvas);
+        auto parent = GetParent().lock();
+        if (RSSystemProperties::GetUseShadowBatchingEnabled() &&
+            parent && parent->GetRenderProperties().GetUseShadowBatching()) {
+            IterateOnDrawableRange(
+                RSPropertyDrawableSlot::TRANSITION, RSPropertyDrawableSlot::ENV_FOREGROUND_COLOR, canvas);
+            IterateOnDrawableRange(
+                RSPropertyDrawableSlot::SAVE_LAYER_BACKGROUND, RSPropertyDrawableSlot::CLIP_TO_FRAME, canvas);
+        } else {
+            IterateOnDrawableRange(
+                RSPropertyDrawableSlot::TRANSITION, RSPropertyDrawableSlot::CLIP_TO_FRAME, canvas);
+        }
         return;
     }
     RSModifierContext context = { GetMutableRenderProperties(), &canvas };
     ApplyDrawCmdModifier(context, RSModifierType::TRANSITION);
     ApplyDrawCmdModifier(context, RSModifierType::ENV_FOREGROUND_COLOR);
-    RSPropertiesPainter::DrawShadow(GetRenderProperties(), canvas);
+    
+    if (RSSystemProperties::GetUseShadowBatchingEnabled()) {
+        auto parent = GetParent().lock();
+        if (!(parent && parent->GetRenderProperties().GetUseShadowBatching())) {
+            RSPropertiesPainter::DrawShadow(GetRenderProperties(), canvas);
+        }
+    } else {
+        RSPropertiesPainter::DrawShadow(GetRenderProperties(), canvas);
+    }
     // Inter-UI component blur & blending effect -- An empty layer
     int blendMode = GetRenderProperties().GetColorBlendMode();
     if (blendMode != static_cast<int>(RSColorBlendModeType::NONE)) {
@@ -216,6 +257,10 @@ void RSCanvasRenderNode::ProcessRenderContents(RSPaintFilterCanvas& canvas)
 
 void RSCanvasRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
 {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        IterateOnDrawableRange(RSPropertyDrawableSlot::SAVE_ALL, RSPropertyDrawableSlot::CLIP_TO_FRAME, canvas);
+        return;
+    }
     ProcessTransitionBeforeChildren(canvas);
     ProcessAnimatePropertyBeforeChildren(canvas);
 }
@@ -270,14 +315,28 @@ void RSCanvasRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
     canvas.RestoreEnv();
 }
 
-void RSCanvasRenderNode::ApplyDrawCmdModifier(RSModifierContext& context, RSModifierType type) const
+void RSCanvasRenderNode::ApplyDrawCmdModifier(RSModifierContext& context, RSModifierType type)
 {
     auto itr = drawCmdModifiers_.find(type);
     if (itr == drawCmdModifiers_.end() || itr->second.empty()) {
         return;
     }
-    for (const auto& modifier : itr->second) {
-        modifier->Apply(context);
+
+    if (RSSystemProperties::GetSingleFrameComposerEnabled()) {
+        bool needSkip = false;
+        if (GetNodeIsSingleFrameComposer() && singleFrameComposer_ != nullptr) {
+            needSkip = singleFrameComposer_->SingleFrameModifierAddToList(type, itr->second);
+        }
+        for (const auto& modifier : itr->second) {
+            if (singleFrameComposer_ != nullptr && singleFrameComposer_->SingleFrameIsNeedSkip(needSkip, modifier)) {
+                continue;
+            }
+            modifier->Apply(context);
+        }
+    } else {
+        for (const auto& modifier : itr->second) {
+            modifier->Apply(context);
+        }
     }
 }
 

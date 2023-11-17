@@ -854,12 +854,24 @@ void RSRenderNode::ProcessTransitionAfterChildren(RSPaintFilterCanvas& canvas)
 
 void RSRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 {
-    RSRenderNode::ProcessTransitionAfterChildren(canvas);
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        IterateOnDrawableRange(RSPropertyDrawableSlot::RESTORE_ALL, RSPropertyDrawableSlot::RESTORE_ALL, canvas);
+        return;
+    }
+    canvas.RestoreStatus(renderNodeSaveCount_);
 }
 
-void RSRenderNode::AddModifier(const std::shared_ptr<RSRenderModifier>& modifier)
+void RSRenderNode::AddModifier(const std::shared_ptr<RSRenderModifier>& modifier, bool isSingleFrameComposer)
 {
     if (!modifier) {
+        return;
+    }
+    if (RSSystemProperties::GetSingleFrameComposerEnabled() &&
+        GetNodeIsSingleFrameComposer() && isSingleFrameComposer) {
+        if (singleFrameComposer_ == nullptr) {
+            singleFrameComposer_ = std::make_shared<RSSingleFrameComposer>();
+        }
+        singleFrameComposer_->SingleFrameAddModifier(modifier);
         return;
     }
     if (modifier->GetType() == RSModifierType::BOUNDS || modifier->GetType() == RSModifierType::FRAME) {
@@ -867,6 +879,7 @@ void RSRenderNode::AddModifier(const std::shared_ptr<RSRenderModifier>& modifier
     } else if (modifier->GetType() < RSModifierType::CUSTOM) {
         modifiers_.emplace(modifier->GetPropertyId(), modifier);
     } else {
+        modifier->SetSingleFrameModifier(false);
         drawCmdModifiers_[modifier->GetType()].emplace_back(modifier);
     }
     modifier->GetProperty()->Attach(shared_from_this());
@@ -879,6 +892,8 @@ void RSRenderNode::AddGeometryModifier(const std::shared_ptr<RSRenderModifier>& 
     if (modifier->GetType() == RSModifierType::BOUNDS) {
         if (boundsModifier_ == nullptr) {
             boundsModifier_ = modifier;
+        } else {
+            boundsModifier_->Update(modifier->GetProperty(), false);
         }
         modifiers_.emplace(modifier->GetPropertyId(), boundsModifier_);
     }
@@ -886,6 +901,8 @@ void RSRenderNode::AddGeometryModifier(const std::shared_ptr<RSRenderModifier>& 
     if (modifier->GetType() == RSModifierType::FRAME) {
         if (frameModifier_ == nullptr) {
             frameModifier_ = modifier;
+        } else {
+            frameModifier_->Update(modifier->GetProperty(), false);
         }
         modifiers_.emplace(modifier->GetPropertyId(), frameModifier_);
     }
@@ -1014,7 +1031,7 @@ bool RSRenderNode::ApplyModifiers()
     renderProperties_.OnApplyModifiers();
     OnApplyModifiers();
 
-#if defined(NEW_SKIA) && defined(RS_ENABLE_GL)
+#if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     if (auto& manager = renderProperties_.GetFilterCacheManager(false);
         manager != nullptr &&
         (dirtyTypes_.count(RSModifierType::BACKGROUND_COLOR) || dirtyTypes_.count(RSModifierType::BG_IMAGE))) {
@@ -1578,6 +1595,16 @@ void RSRenderNode::MarkNodeGroup(NodeGroupType type, bool isNodeGroup)
         nodeGroupType_ = isNodeGroup ? type : NodeGroupType::NONE;
         SetDirty();
     }
+}
+
+void RSRenderNode::MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer)
+{
+    isNodeSingleFrameComposer_ = isNodeSingleFrameComposer;
+}
+
+bool RSRenderNode::GetNodeIsSingleFrameComposer() const
+{
+    return isNodeSingleFrameComposer_;
 }
 
 void RSRenderNode::CheckDrawingCacheType()

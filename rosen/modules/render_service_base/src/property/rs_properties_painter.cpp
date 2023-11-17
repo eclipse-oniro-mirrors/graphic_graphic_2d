@@ -1446,7 +1446,7 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
         DrawGreyAdjustment(properties, canvas);
     }
 
-#if defined(RS_ENABLE_GL)
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     // Optional use cacheManager to draw filter
     if (auto& cacheManager = properties.GetFilterCacheManager(filterType == FilterType::FOREGROUND_FILTER);
         cacheManager != nullptr && !canvas.GetDisableFilterCache()) {
@@ -1539,7 +1539,7 @@ void RSPropertiesPainter::DrawBackgroundEffect(
     auto filter = std::static_pointer_cast<RSDrawingFilter>(RSFilter);
 #endif
 
-#if defined(RS_ENABLE_GL)
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     // Optional use cacheManager to draw filter
     if (auto& cacheManager = properties.GetFilterCacheManager(false);
         cacheManager != nullptr && !canvas.GetDisableFilterCache()) {

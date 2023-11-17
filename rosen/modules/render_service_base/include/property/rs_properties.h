@@ -144,6 +144,9 @@ public:
     void SetSublayerTransform(const std::optional<Matrix3f>& sublayerTransform);
     const std::optional<Matrix3f>& GetSublayerTransform() const;
 
+    bool GetUseShadowBatching() const;
+    void SetUseShadowBatching(bool useShadowBatching);
+
     // particle properties
     void SetParticles(const RSRenderParticleVector& particles);
     RSRenderParticleVector GetParticles() const;
@@ -309,7 +312,7 @@ public:
     void SetColorBlendMode(int colorBlendMode);
     int GetColorBlendMode() const;
 
-#if defined(NEW_SKIA) && defined(RS_ENABLE_GL)
+#if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     const std::unique_ptr<RSFilterCacheManager>& GetFilterCacheManager(bool isForeground) const;
     void ClearFilterCache();
 #endif
@@ -345,6 +348,7 @@ private:
 
     bool hasBounds_ = false;
     bool useEffect_ = false;
+    bool useShadowBatching_ = false;
 
     int colorBlendMode_ = 0;
 
@@ -415,7 +419,7 @@ private:
     std::shared_ptr<Drawing::ColorFilter> colorFilter_ = nullptr;
 #endif
 
-#if defined(NEW_SKIA) && defined(RS_ENABLE_GL)
+#if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     void CreateFilterCacheManagerIfNeed();
     std::unique_ptr<RSFilterCacheManager> backgroundFilterCacheManager_;
     std::unique_ptr<RSFilterCacheManager> foregroundFilterCacheManager_;

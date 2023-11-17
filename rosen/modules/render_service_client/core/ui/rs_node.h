@@ -290,6 +290,8 @@ public:
 
     void SetUseEffect(bool useEffect);
 
+    void SetUseShadowBatching(bool useShadowBatching);
+
     void SetColorBlendMode(RSColorBlendModeType blendMode);
 
     // driven render
@@ -309,6 +311,8 @@ public:
 
     // Mark preferentially draw node and childrens
     void MarkNodeGroup(bool isNodeGroup, bool isForced = true);
+
+    void MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer);
 
     void SetGrayScale(float grayScale);
 
@@ -385,6 +389,8 @@ private:
     bool drivenFlag_ = false;
 
     bool isNodeGroup_ = false;
+
+    bool isNodeSingleFrameComposer_ = false;
 
     RSModifierExtractor stagingPropertiesExtractor_;
     RSShowingPropertiesFreezer showingPropertiesFreezer_;
