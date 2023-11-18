@@ -190,6 +190,12 @@ void RSSurfaceRenderNode::CollectSurface(
     const std::shared_ptr<RSBaseRenderNode>& node, std::vector<RSBaseRenderNode::SharedPtr>& vec, bool isUniRender,
     bool onlyFirstLevel)
 {
+    if (IsScbScreen()) {
+        for (auto& child : node->GetSortedChildren()) {
+            child->CollectSurface(child, vec, isUniRender, onlyFirstLevel);
+        }
+        return;
+    }
     if (IsStartingWindow()) {
         if (isUniRender) {
             vec.emplace_back(shared_from_this());

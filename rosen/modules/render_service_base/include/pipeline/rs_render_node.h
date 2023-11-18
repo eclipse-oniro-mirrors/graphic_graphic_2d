@@ -384,6 +384,9 @@ public:
     bool IsParentLeashWindow() const;
     void SetParentLeashWindow();
 
+    bool IsParentScbScreen() const;
+    void SetParentScbScreen();
+
     bool HasCachedTexture() const;
 
     void SetDrawRegion(const std::shared_ptr<RectF>& rect);
@@ -576,6 +579,7 @@ private:
     bool hasAbilityComponent_ = false;
     bool isAncestorDirty_ = false;
     bool isParentLeashWindow_ = false;
+    bool isParentScbScreen_ = false;
     NodePriorityType priority_ = NodePriorityType::MAIN_PRIORITY;
 
     // driven render

@@ -95,9 +95,27 @@ bool CheckRootNodeReadyToDraw(const std::shared_ptr<RSBaseRenderNode>& child)
     return false;
 }
 
+bool CheckScbReadyToDraw(const std::shared_ptr<RSBaseRenderNode>& child)
+{
+    if (child != nullptr && child->IsInstanceOf<RSCanvasRenderNode>()) {
+        auto canvasRenderNode = child->ReinterpretCastTo<RSCanvasRenderNode>();
+        const auto& property = canvasRenderNode->GetRenderProperties();
+        if (property.GetFrameWidth() > 0 && property.GetFrameHeight() > 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool IsFirstFrameReadyToDraw(RSSurfaceRenderNode& node)
 {
     bool result = false;
+    if (node.IsScbScreen()) {
+        for (auto& child : node.GetSortedChildren()) {
+            result = CheckScbReadyToDraw(child);
+        }
+        return result;
+    }
     for (auto& child : node.GetSortedChildren()) {
         result = CheckRootNodeReadyToDraw(child);
         // when appWindow has abilityComponent node
@@ -651,7 +669,7 @@ bool RSUniRenderVisitor::CheckIfSurfaceRenderNodeStatic(RSSurfaceRenderNode& nod
 {
     // dirtyFlag_ includes leashWindow dirty
     // window layout change(e.g. move or zooming) | proxyRenderNode's cmd
-    if (dirtyFlag_ || node.IsDirty() || node.GetSurfaceNodeType() == RSSurfaceNodeType::LEASH_WINDOW_NODE) {
+    if (dirtyFlag_ || node.IsDirty() || node.IsLeashWindow() || node.IsScbScreen()) {
         return false;
     }
     if (curDisplayDirtyManager_) {
@@ -1247,6 +1265,9 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
         auto parentSurfaceNode = nodeParent->ReinterpretCastTo<RSSurfaceRenderNode>();
         if (parentSurfaceNode && parentSurfaceNode->IsLeashWindow()) {
             node.SetParentLeashWindow();
+        }
+        if (parentSurfaceNode && parentSurfaceNode->IsScbScreen()) {
+            node.SetParentScbScreen();
         }
     }
     if (curSurfaceDirtyManager_ == nullptr || curDisplayDirtyManager_ == nullptr) {
@@ -3627,6 +3648,9 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
             }
             CheckAndSetNodeCacheType(node);
             DrawChildRenderNode(node);
+        } else if (node.IsScbScreen() && !node.IsNotifyUIBufferAvailable() && IsFirstFrameReadyToDraw(node)) {
+            node.NotifyUIBufferAvailable();
+            ProcessChildren(node);
         } else {
             ProcessChildren(node);
         }
@@ -3903,7 +3927,8 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
         RectI dirtyRect = node.HasChildrenOutOfRect() ?
             node.GetOldDirtyInSurface().JoinRect(node.GetChildrenRect()) : node.GetOldDirtyInSurface();
         if (isSubNodeOfSurfaceInProcess_ && !dirtyRect.IsEmpty() && !node.IsAncestorDirty() &&
-            !curSurfaceNode_->SubNodeNeedDraw(dirtyRect, partialRenderType_) && !node.IsParentLeashWindow()) {
+            !curSurfaceNode_->SubNodeNeedDraw(dirtyRect, partialRenderType_) && !node.IsParentLeashWindow() &&
+            !node.IsParentScbScreen()) {
             if (isCanvasNodeSkipDfxEnabled_) {
                 curSurfaceNode_->GetDirtyManager()->UpdateDirtyRegionInfoForDfx(
                     node.GetId(), node.GetType(), DirtyRegionType::CANVAS_NODE_SKIP_RECT, dirtyRect);
