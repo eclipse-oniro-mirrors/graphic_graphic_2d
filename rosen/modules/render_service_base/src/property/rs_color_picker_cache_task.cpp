@@ -53,8 +53,10 @@ bool RSColorPickerCacheTask::InitSurface(GrRecordingContext* grContext)
         ROSEN_LOGE("RSColorPickerCacheTask cacheSurface is null");
         return true;
     }
+#ifdef IS_OHOS
     auto runner = AppExecFwk::EventRunner::Current();
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner);
+#endif
     SkImageInfo info = SkImageInfo::MakeN32Premul(imageSnapshotCache_->width(), imageSnapshotCache_->height());
     cacheSurface_ = SkSurface::MakeRenderTarget(grContext, SkBudgeted::kYes, info);
 
@@ -262,9 +264,11 @@ void RSColorPickerCacheTask::ReleaseCacheOffTree()
 {
     SetStatus(CacheProcessStatus::WAITING);
     Reset();
+#ifdef IS_OHOS
     if (handler_ != nullptr) {
         handler_->PostTask([this]() {ResetGrContext();}, AppExecFwk::EventQueue::Priority::IMMEDIATE);
     }
+#endif
 }
 
 std::function<void(std::weak_ptr<RSColorPickerCacheTask>)> RSColorPickerCacheTask::postColorPickerTask = nullptr;
