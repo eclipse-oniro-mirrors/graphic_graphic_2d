@@ -98,36 +98,36 @@ const std::array<ResetPropertyFunc, static_cast<int>(RSModifierType::CUSTOM)> g_
     [](RSProperties* prop) { prop->SetShadowRadius(0.f); },              // SHADOW_RADIUS,            46
     [](RSProperties* prop) { prop->SetShadowPath({}); },                 // SHADOW_PATH,              47
     [](RSProperties* prop) { prop->SetShadowMask(false); },              // SHADOW_MASK,              48
-    [](RSProperties* prop) { prop->SetMask({}); },                       // MASK,                     49
-    [](RSProperties* prop) { prop->SetSpherize(0.f); },                  // SPHERIZE,                 50
-    [](RSProperties* prop) { prop->SetLightUpEffect(1.f); },             // LIGHT_UP_EFFECT,          51
-    [](RSProperties* prop) { prop->SetPixelStretch({}); },               // PIXEL_STRETCH,            52
-    [](RSProperties* prop) { prop->SetPixelStretchPercent({}); },        // PIXEL_STRETCH_PERCENT,    53
-    [](RSProperties* prop) { prop->SetUseEffect(false); },               // USE_EFFECT,               54
+    [](RSProperties* prop) { prop->SetShadowColorStrategy(false); },     // ShadowColorStrategy,      49
+    [](RSProperties* prop) { prop->SetMask({}); },                       // MASK,                     50
+    [](RSProperties* prop) { prop->SetSpherize(0.f); },                  // SPHERIZE,                 51
+    [](RSProperties* prop) { prop->SetLightUpEffect(1.f); },             // LIGHT_UP_EFFECT,          52
+    [](RSProperties* prop) { prop->SetPixelStretch({}); },               // PIXEL_STRETCH,            53
+    [](RSProperties* prop) { prop->SetPixelStretchPercent({}); },        // PIXEL_STRETCH_PERCENT,    54
+    [](RSProperties* prop) { prop->SetUseEffect(false); },               // USE_EFFECT,               55
     [](RSProperties* prop) { prop->SetColorBlendMode(
-        static_cast<int>(RSColorBlendModeType::NONE)); },                // COLOR_BLENDMODE,          55
-    [](RSProperties* prop) { prop->ResetSandBox(); },                    // SANDBOX,                  56
-    [](RSProperties* prop) { prop->SetGrayScale({}); },                  // GRAY_SCALE,               57
-    [](RSProperties* prop) { prop->SetBrightness({}); },                 // BRIGHTNESS,               58
-    [](RSProperties* prop) { prop->SetContrast({}); },                   // CONTRAST,                 59
-    [](RSProperties* prop) { prop->SetSaturate({}); },                   // SATURATE,                 60
-    [](RSProperties* prop) { prop->SetSepia({}); },                      // SEPIA,                    61
-    [](RSProperties* prop) { prop->SetInvert({}); },                     // INVERT,                   62
-    [](RSProperties* prop) { prop->SetAiInvert({}); },                   // AIINVERT,                 63
-    [](RSProperties* prop) { prop->SetHueRotate({}); },                  // HUE_ROTATE,               64
-    [](RSProperties* prop) { prop->SetColorBlend({}); },                 // COLOR_BLEND,              65
-    [](RSProperties* prop) { prop->SetParticles({}); },                  // PARTICLE,                 66
-    [](RSProperties* prop) { prop->SetShadowIsFilled(false); },          // SHADOW_IS_FILLED,         67
-    [](RSProperties* prop) { prop->SetOuterBorderColor(RSColor()); },    // OUTER_BORDER_COLOR,       68
-    [](RSProperties* prop) { prop->SetOuterBorderWidth(0.f); },          // OUTER_BORDER_WIDTH,       69
+        static_cast<int>(RSColorBlendModeType::NONE)); },                // COLOR_BLENDMODE,          56
+    [](RSProperties* prop) { prop->ResetSandBox(); },                    // SANDBOX,                  57
+    [](RSProperties* prop) { prop->SetGrayScale({}); },                  // GRAY_SCALE,               58
+    [](RSProperties* prop) { prop->SetBrightness({}); },                 // BRIGHTNESS,               59
+    [](RSProperties* prop) { prop->SetContrast({}); },                   // CONTRAST,                 60
+    [](RSProperties* prop) { prop->SetSaturate({}); },                   // SATURATE,                 61
+    [](RSProperties* prop) { prop->SetSepia({}); },                      // SEPIA,                    62
+    [](RSProperties* prop) { prop->SetInvert({}); },                     // INVERT,                   63
+    [](RSProperties* prop) { prop->SetAiInvert({}); },                   // AIINVERT,                 64
+    [](RSProperties* prop) { prop->SetHueRotate({}); },                  // HUE_ROTATE,               65
+    [](RSProperties* prop) { prop->SetColorBlend({}); },                 // COLOR_BLEND,              66
+    [](RSProperties* prop) { prop->SetParticles({}); },                  // PARTICLE,                 67
+    [](RSProperties* prop) { prop->SetShadowIsFilled(false); },          // SHADOW_IS_FILLED,         68
+    [](RSProperties* prop) { prop->SetOuterBorderColor(RSColor()); },    // OUTER_BORDER_COLOR,       69
+    [](RSProperties* prop) { prop->SetOuterBorderWidth(0.f); },          // OUTER_BORDER_WIDTH,       70
     [](RSProperties* prop) {
         prop->SetOuterBorderStyle(BORDER_TYPE_NONE);
-    },                                                                   // OUTER_BORDER_STYLE,       70
-    [](RSProperties* prop) { prop->SetOuterBorderRadius(0.f); },         // OUTER_BORDER_RADIUS,      71
-    [](RSProperties* prop) { prop->SetUseShadowBatching(false); },       // USE_SHADOW_BATCHING,      72
-    [](RSProperties* prop) { prop->SetGreyCoef1({0.f}); },               // GREY_COEF1,               73
-    [](RSProperties* prop) { prop->SetGreyCoef2({0.f}); },               // GREY_COEF2,               74
-    [](RSProperties* prop) { prop->SetShadowColorStrategy(false); },     // ShadowColorStrategy,      75
+    },                                                                   // OUTER_BORDER_STYLE,       71
+    [](RSProperties* prop) { prop->SetOuterBorderRadius(0.f); },         // OUTER_BORDER_RADIUS,      72
+    [](RSProperties* prop) { prop->SetUseShadowBatching(false); },       // USE_SHADOW_BATCHING,      73
+    [](RSProperties* prop) { prop->SetGreyCoef1({0.f}); },               // GREY_COEF1,               74
+    [](RSProperties* prop) { prop->SetGreyCoef2({0.f}); },               // GREY_COEF2,               75
 };
 } // namespace
 
