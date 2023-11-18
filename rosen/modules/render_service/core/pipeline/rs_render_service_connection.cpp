@@ -246,6 +246,10 @@ bool RSRenderServiceConnection::CreateNode(const RSSurfaceRenderNodeConfig& conf
 
 sptr<Surface> RSRenderServiceConnection::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config)
 {
+    if (auto preNode = mainThread_->GetContext().GetNodeMap().GetRenderNode(config.id)) {
+        RS_LOGE("CreateNodeAndSurface same id node:%{public}" PRIu64 ", type:%d", config.id, preNode->GetType());
+        usleep(1000);
+    }
     std::shared_ptr<RSSurfaceRenderNode> node =
         std::make_shared<RSSurfaceRenderNode>(config, mainThread_->GetContext().weak_from_this());
     if (node == nullptr) {
@@ -903,6 +907,18 @@ void RSRenderServiceConnection::ShowWatermark(const std::shared_ptr<Media::Pixel
         mainThread_->ShowWatermark(watermarkImg, isShow);
     };
     mainThread_->PostTask(task);
+}
+
+int32_t RSRenderServiceConnection::ResizeVirtualScreen(ScreenId id, uint32_t width, uint32_t height)
+{
+    auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
+    if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
+        return RSHardwareThread::Instance().ScheduleTask(
+            [=]() { return screenManager_->ResizeVirtualScreen(id, width, height); }).get();
+    } else {
+        return mainThread_->ScheduleTask(
+            [=]() { return screenManager_->ResizeVirtualScreen(id, width, height); }).get();
+    }
 }
 
 void RSRenderServiceConnection::ReportJankStats()

@@ -52,6 +52,7 @@ public:
     // Foreground Color filter
     static void DrawColorFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas);
 
+    static void DrawBinarizationShader(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawLightUpEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawDynamicLightUp(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawParticle(const RSProperties& properties, RSPaintFilterCanvas& canvas);
@@ -132,6 +133,7 @@ private:
     static sk_sp<SkShader> MakeVerticalMeanBlurShader(float radiusIn,
                                             sk_sp<SkShader> shader, sk_sp<SkShader> gradientShader);
     static sk_sp<SkShader> MakeLightUpEffectShader(float lightUpDeg, sk_sp<SkShader> imageShader);
+    static sk_sp<SkShader> MakeBinarizationShader(float low, float high, float threshold, sk_sp<SkShader> imageShader);
     static void DrawHorizontalLinearGradientBlur(SkSurface* skSurface, RSPaintFilterCanvas& canvas,
         float radius, sk_sp<SkShader> alphaGradientShader, const SkIRect& clipIPadding);
     static void DrawVerticalLinearGradientBlur(SkSurface* skSurface, RSPaintFilterCanvas& canvas,
@@ -144,6 +146,8 @@ private:
         std::shared_ptr<RSSkiaFilter>& blurFilter, sk_sp<SkShader> alphaGradientShader, const SkIRect& clipIPadding);
     static sk_sp<SkShader> MakeMeanBlurShader(sk_sp<SkShader> srcImageShader,
         sk_sp<SkShader> blurImageShader, sk_sp<SkShader> gradientShader);
+    static sk_sp<SkShader> MakeGreyAdjustmentShader(const float coef1, const float coef2, sk_sp<SkShader> imageShader);
+    static void DrawGreyAdjustment(const RSProperties& properties, RSPaintFilterCanvas& canvas);
 
     static void DrawBorderBase(const RSProperties& properties, SkCanvas& canvas,
                                const std::shared_ptr<RSBorder>& border, Vector4f& outset,

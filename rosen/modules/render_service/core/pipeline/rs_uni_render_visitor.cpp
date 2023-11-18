@@ -122,10 +122,7 @@ RSUniRenderVisitor::RSUniRenderVisitor()
     renderEngine_ = mainThread->GetRenderEngine();
     partialRenderType_ = RSSystemProperties::GetUniPartialRenderEnabled();
     quickSkipPrepareType_ = RSSystemParameters::GetQuickSkipPrepareType();
-    sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
-    auto screenNum = screenManager->GetAllScreenIds().size();
-    isPartialRenderEnabled_ = (screenNum <= 1) && (partialRenderType_ != PartialRenderType::DISABLED) &&
-        mainThread->IsSingleDisplay();
+    isPartialRenderEnabled_ = partialRenderType_ != PartialRenderType::DISABLED;
     dirtyRegionDebugType_ = RSSystemProperties::GetDirtyRegionDebugType();
     surfaceRegionDebugType_ = RSSystemProperties::GetSurfaceRegionDfxType();
     isRegionDebugEnabled_ = (dirtyRegionDebugType_ != DirtyRegionDebugType::DISABLED) ||
@@ -151,6 +148,9 @@ RSUniRenderVisitor::RSUniRenderVisitor()
         drivenInfo_ = std::make_unique<DrivenInfo>();
     }
 #endif
+    if (RSRcdRenderManager::GetInstance().GetRcdRenderEnabled()) {
+        rcdInfo_ = std::make_unique<RcdInfo>();
+    }
     surfaceNodePrepareMutex_ = std::make_shared<std::mutex>();
     parallelRenderType_ = ParallelRenderingType::DISABLE;
 #if defined(RS_ENABLE_PARALLEL_RENDER)
@@ -541,11 +541,13 @@ void RSUniRenderVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
     screenInfo_ = screenManager->QueryScreenInfo(node.GetScreenId());
     prepareClipRect_.SetAll(0, 0, screenInfo_.width, screenInfo_.height);
     // rcd message send
-    using rcd_msg = RSSingleton<RsMessageBus>;
-    rcd_msg::GetInstance().SendMsg<uint32_t, uint32_t>(TOPIC_RCD_DISPLAY_SIZE,
-        screenInfo_.width, screenInfo_.height);
-    rcd_msg::GetInstance().SendMsg<ScreenRotation>(TOPIC_RCD_DISPLAY_ROTATION,
-        node.GetScreenRotation());
+    if (!node.IsMirrorDisplay()) {
+        using rcd_msg = RSSingleton<RsMessageBus>;
+        rcd_msg::GetInstance().SendMsg<uint32_t, uint32_t>(TOPIC_RCD_DISPLAY_SIZE,
+            screenInfo_.width, screenInfo_.height);
+        rcd_msg::GetInstance().SendMsg<ScreenRotation>(TOPIC_RCD_DISPLAY_ROTATION,
+            node.GetScreenRotation());
+    }
 
 #ifndef USE_ROSEN_DRAWING
     parentSurfaceNodeMatrix_ = SkMatrix::I();
@@ -623,6 +625,7 @@ void RSUniRenderVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
         }
     }
 #endif
+    RSRcdRenderManager::GetInstance().DoPrepareRenderTask(rcdInfo_->prepareInfo);
 }
 
 void RSUniRenderVisitor::ParallelPrepareDisplayRenderNodeChildrens(RSDisplayRenderNode& node)
@@ -1678,13 +1681,28 @@ void RSUniRenderVisitor::DrawSurfaceOpaqueRegionForDFX(RSSurfaceRenderNode& node
     }
 }
 
+void RSUniRenderVisitor::ProcessShadowFirst(RSRenderNode& node, bool inSubThread)
+{
+    if (RSSystemProperties::GetUseShadowBatchingEnabled()
+        && (node.GetRenderProperties().GetUseShadowBatching())) {
+        auto& children = node.GetSortedChildren(inSubThread);
+        for (auto& child : children) {
+            if (auto node = child->ReinterpretCastTo<RSCanvasRenderNode>()) {
+                node->ProcessShadowBatching(*canvas_);
+            }
+        }
+    }
+}
+
 void RSUniRenderVisitor::ProcessChildren(RSRenderNode& node)
 {
     if (DrawBlurInCache(node) || node.GetChildrenCount() == 0) {
         return;
     }
+    
     if (isSubThread_) {
         node.SetIsUsedBySubThread(true);
+        ProcessShadowFirst(node, isSubThread_);
         for (auto& child : node.GetSortedChildren(true)) {
             ProcessChildInner(node, child);
         }
@@ -1692,6 +1710,7 @@ void RSUniRenderVisitor::ProcessChildren(RSRenderNode& node)
         node.ClearFullChildrenListIfNeeded(true);
         node.SetIsUsedBySubThread(false);
     } else {
+        ProcessShadowFirst(node, isSubThread_);
         for (auto& child : node.GetSortedChildren()) {
             ProcessChildInner(node, child);
         }
@@ -1848,6 +1867,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode ScreenManager is nullptr");
         return;
     }
+    isPartialRenderEnabled_ &= (node.GetScreenId() == screenManager->GetDefaultScreenId());
     screenInfo_ = screenManager->QueryScreenInfo(node.GetScreenId());
     isSecurityDisplay_ = node.GetSecurityDisplay();
     auto mirrorNode = node.GetMirrorSource().lock();
@@ -2397,6 +2417,19 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         RSDrivenRenderManager::GetInstance().DoProcessRenderTask(drivenInfo_->processInfo);
     }
 #endif
+
+    if (node.IsMirrorDisplay()) {
+        RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode, mirror without roundcornerdisplay");
+    } else {
+        RSSingleton<RoundCornerDisplay>::GetInstance().RunHardwareTask(
+            [this]() {
+                auto hardInfo = RSSingleton<RoundCornerDisplay>::GetInstance().GetHardwareInfo();
+                rcdInfo_->processInfo = {processor_, hardInfo.topLayer, hardInfo.bottomLayer};
+                RSRcdRenderManager::GetInstance().DoProcessRenderTask(rcdInfo_->processInfo);
+            }
+        );
+    }
+
     if (!RSMainThread::Instance()->WaitHardwareThreadTaskExcute()) {
         RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode: hardwareThread task has too many to excute");
     }
