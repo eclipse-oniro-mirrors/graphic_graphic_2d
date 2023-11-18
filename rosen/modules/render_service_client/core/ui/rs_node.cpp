@@ -1050,6 +1050,12 @@ void RSNode::SetShadowIsFilled(bool shadowIsFilled)
     SetProperty<RSShadowIsFilledModifier, RSProperty<bool>>(RSModifierType::SHADOW_IS_FILLED, shadowIsFilled);
 }
 
+void RSNode::SetShadowColorStrategy(bool shadowColorStrategy)
+{
+    SetProperty<RSShadowColorStrategyModifier, RSProperty<bool>>(
+        RSModifierType::SHADOW_COLOR_STRATEGY, shadowColorStrategy);
+}
+
 void RSNode::SetFrameGravity(Gravity gravity)
 {
     ROSEN_LOGI("RSNode::SetFrameGravity, gravity = %{public}d", gravity);

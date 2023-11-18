@@ -265,6 +265,7 @@ public:
     void SetShadowPath(const std::shared_ptr<RSPath>& shadowPath);
     void SetShadowMask(bool shadowMask);
     void SetShadowIsFilled(bool shadowIsFilled);
+    void SetShadowColorStrategy(bool shadowColorStrategy);
 
     void SetFrameGravity(Gravity gravity);
 
