@@ -471,7 +471,7 @@ HWTEST_F(NativeWindowTest, FlushBuffer003, Function | MediumTest | Level2)
  */
 HWTEST_F(NativeWindowTest, GetLastFlushedBuffer001, Function | MediumTest | Level2)
 {
-    NativeWindowBuffer* nativeWindowBuffer = nullptr;
+    NativeWindowBuffer *nativeWindowBuffer = nullptr;
     int fenceFd = -1;
     int32_t ret = OH_NativeWindow_NativeWindowRequestBuffer(nativeWindow, &nativeWindowBuffer, &fenceFd);
     ASSERT_EQ(ret, GSERROR_OK);
@@ -486,7 +486,7 @@ HWTEST_F(NativeWindowTest, GetLastFlushedBuffer001, Function | MediumTest | Leve
     BufferHandle *bufferHanlde = OH_NativeWindow_GetBufferHandleFromNative(nativeWindowBuffer);
     ret = OH_NativeWindow_NativeWindowFlushBuffer(nativeWindow, nativeWindowBuffer, fenceFd, *region);
     ASSERT_EQ(ret, GSERROR_OK);
-    NativeWindowBuffer* lastFlushedBuffer;
+    NativeWindowBuffer *lastFlushedBuffer;
     ASSERT_EQ(OH_NativeWindow_GetLastFlushedBuffer(nativeWindow, &lastFlushedBuffer), OHOS::GSERROR_OK);
     BufferHandle *lastFlushedHanlde = OH_NativeWindow_GetBufferHandleFromNative(lastFlushedBuffer);
     ASSERT_EQ(bufferHanlde->virAddr, lastFlushedHanlde->virAddr);
