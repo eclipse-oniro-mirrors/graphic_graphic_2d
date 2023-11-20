@@ -1425,7 +1425,7 @@ sk_sp<SkShader> RSPropertiesPainter::MakeGreyAdjustmentShader(const float coef1,
             float V = (0.615 * color.r - 0.515 * color.g - 0.100 * color.b) * 255;
 
             Y = calculateGreyAdjustY(Y);
-            color.r = (Y + 1.14 * v) / 255.0;
+            color.r = (Y + 1.14 * V) / 255.0;
             color.g = (Y - 0.39 * U - 0.58 * V) / 255.0;
             color.b = (Y + 2.03 * U) / 255.0;
 
