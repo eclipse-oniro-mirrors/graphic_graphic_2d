@@ -651,7 +651,7 @@ void RSPropertiesPainter::GetDarkColor(RSColor& color)
     }
 }
 
-RSColor RSPropertiesPainter::PickColor(const RSProperties& properties, RSPaintFilterCanvas& canvas, SkPath& skPath,
+void RSPropertiesPainter::PickColor(const RSProperties& properties, RSPaintFilterCanvas& canvas, SkPath& skPath,
     SkMatrix& matrix, SkIRect& deviceClipBounds, RSColor& colorPicked)
 {
     SkRect clipBounds = skPath.getBounds();
@@ -710,7 +710,7 @@ void RSPropertiesPainter::DrawShadowInner(const RSProperties& properties, RSPain
     RSColor colorPicked;
     auto& colorPickerTask = properties.GetColorPickerCacheTaskShadow();
     if (colorPickerTask != nullptr && properties.GetShadowColorStrategy()) {
-        colorPicked = PickColor(properties, canvas, skPath, matrix, deviceClipBounds, colorPicked);
+        PickColor(properties, canvas, skPath, matrix, deviceClipBounds, colorPicked);
         GetDarkColor(colorPicked);
         if (!colorPickerTask->GetFirstGetColorFinished()) {
             shadowAlpha = 0;
