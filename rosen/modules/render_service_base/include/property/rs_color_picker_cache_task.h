@@ -47,7 +47,7 @@ public:
     static std::function<void(std::weak_ptr<RSColorPickerCacheTask>)> postColorPickerTask;
 
     RSColorPickerCacheTask() = default;
-    ~RSColorPickerCacheTask();
+    ~RSColorPickerCacheTask() = default;
 #ifndef USE_ROSEN_DRAWING
     bool InitSurface(GrRecordingContext* grContext);
 #endif
@@ -74,9 +74,6 @@ public:
 
     void ResetGrContext();
 
-
-    void ReleaseCacheOffTree();
-
     void Notify()
     {
         cvParallelRender_.notify_one();
@@ -84,18 +81,25 @@ public:
 
     bool GetColor(RSColor& color);
 
+    bool GpuScaleImage(std::shared_ptr<RSPaintFilterCanvas> cacheCanvas,
+        const sk_sp<SkImage> threadImage, std::shared_ptr<SkPixmap>& dst);
+#ifdef IS_OHOS
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> GetHandler()
+    {
+        return handler_;
+    }
+#endif
     void CalculateColorAverage(RSColor& ColorCur);
 
     void GetColorAverage(RSColor& color);
 
     bool GetFirstGetColorFinished();
 
-    bool GpuScaleImage(const sk_sp<SkImage> threadImage, std::shared_ptr<SkPixmap>& dst);
-
 private:
 #ifndef USE_ROSEN_DRAWING
     sk_sp<SkSurface> cacheSurface_ = nullptr;
     GrBackendTexture cacheBackendTexture_;
+    SkISize surfaceSize_;
 #endif
     bool valid_ = false;
     bool firstGetColorFinished_ = false;
@@ -107,6 +111,7 @@ private:
     std::vector<bool> colorArrayValid_;
     RSColor colorAverage_;
     std::mutex parallelRenderMutex_;
+    std::mutex colorMutex_;
     std::condition_variable cvParallelRender_;
 #ifdef IS_OHOS
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> handler_ = nullptr;
