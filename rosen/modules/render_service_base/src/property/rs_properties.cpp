@@ -26,6 +26,7 @@
 #include "property/rs_point_light_manager.h"
 #include "property/rs_properties_def.h"
 #include "render/rs_filter.h"
+#include "render/rs_material_filter.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -701,7 +702,7 @@ void RSProperties::SetParticles(const RSRenderParticleVector& particles)
     contentDirty_ = true;
 }
 
-RSRenderParticleVector RSProperties::GetParticles() const
+const RSRenderParticleVector& RSProperties::GetParticles() const
 {
     return particles_;
 }
@@ -2645,6 +2646,14 @@ void RSProperties::ClearFilterCache()
     }
     if (backgroundFilterCacheManager_ != nullptr) {
         backgroundFilterCacheManager_->ReleaseCacheOffTree();
+    }
+    if (backgroundFilter_ != nullptr && (backgroundFilter_->GetFilterType() == RSFilter::MATERIAL)) {
+        auto filter = std::static_pointer_cast<RSMaterialFilter>(backgroundFilter_);
+        filter->ReleaseColorPicker();
+    }
+    if (filter_ != nullptr && (filter_->GetFilterType() == RSFilter::MATERIAL)) {
+        auto filter = std::static_pointer_cast<RSMaterialFilter>(filter_);
+        filter->ReleaseColorPicker();
     }
 }
 

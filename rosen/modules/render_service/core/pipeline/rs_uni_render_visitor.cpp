@@ -159,7 +159,7 @@ RSUniRenderVisitor::RSUniRenderVisitor()
         (partialRenderType_ != PartialRenderType::SET_DAMAGE) && !isRegionDebugEnabled_;
     isQuickSkipPreparationEnabled_ = (quickSkipPrepareType_ != QuickSkipPrepareType::DISABLED);
     isDrawingCacheEnabled_ = RSSystemParameters::GetDrawingCacheEnabled();
-    RSTagTracker::UpdateReleaseGpuResourceEnable(RSSystemProperties::GetReleaseGpuResourceEnabled());
+    RSTagTracker::UpdateReleaseResourceEnabled(RSSystemProperties::GetReleaseResourceEnabled());
     isScreenRotationAnimating_ = RSSystemProperties::GetCacheEnabledForRotation();
 #if defined(RS_ENABLE_DRIVEN_RENDER)
     if (RSDrivenRenderManager::GetInstance().GetDrivenRenderEnabled()) {
@@ -1624,6 +1624,21 @@ void RSUniRenderVisitor::DrawTargetSurfaceVisibleRegionForDFX(RSDisplayRenderNod
     }
 }
 
+void RSUniRenderVisitor::DrawCurrentRefreshRate(uint32_t currentRefreshRate)
+{
+    sk_sp<SkTypeface> tf = SkTypeface::MakeFromName("HarmonyOS Sans SC", SkFontStyle::Normal());
+    SkFont font;
+    font.setSize(100);
+    font.setTypeface(tf);
+    std::string info = std::to_string(currentRefreshRate);
+    sk_sp<SkTextBlob> textBlob = SkTextBlob::MakeFromString(info.c_str(), font);
+
+    SkPaint paint;
+    paint.setColor(SK_ColorGREEN);
+    paint.setAntiAlias(true);
+    canvas_->drawTextBlob(textBlob, 100.f, 200.f, paint); //100.f:绘制TextBlob的x标量 200.f:绘制TextBlob的y标量
+}
+
 void RSUniRenderVisitor::DrawAndTraceSingleDirtyRegionTypeForDFX(RSSurfaceRenderNode& node,
     DirtyRegionType dirtyType, bool isDrawn)
 {
@@ -2404,6 +2419,13 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         if (isDrawingCacheEnabled_ && RSSystemParameters::GetDrawingCacheEnabledDfx()) {
             DrawCacheRegionForDFX(cacheRenderNodeMapRects_);
         }
+
+        if (RSSystemParameters::GetShowRefreshRateEnabled()) {
+            RS_TRACE_BEGIN("RSUniRender::DrawCurrentRefreshRate");
+            DrawCurrentRefreshRate(currentRefreshRate_);
+            RS_TRACE_END();
+        }
+
 #ifndef USE_ROSEN_DRAWING
         endCapture();
 #endif
@@ -2412,15 +2434,18 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         } else {
             RSSingleton<RoundCornerDisplay>::GetInstance().DrawRoundCorner(canvas_);
         }
-        RSMainThread::Instance()->RemoveTask(CLEAR_GPU_CACHE);
+        auto mainThread = RSMainThread::Instance();
+        if (!mainThread->GetClearMemoryFinished()) {
+            mainThread->RemoveTask(CLEAR_GPU_CACHE);
+        }
 #ifdef RS_ENABLE_VK
-        canvas_->restoreToCount(saveCountBeforeClip);
+        canvas_->restoreToCount(saveCount_t);
 #endif
         RS_TRACE_BEGIN("RSUniRender:FlushFrame");
         renderFrame_->Flush();
         RS_TRACE_END();
         RS_OPTIONAL_TRACE_BEGIN("RSUniRender:WaitUtilUniRenderFinished");
-        RSMainThread::Instance()->WaitUtilUniRenderFinished();
+        mainThread->WaitUtilUniRenderFinished();
         RS_OPTIONAL_TRACE_END();
         if (cacheImgForCapture_ != nullptr) {
             node.SetCacheImgForCapture(cacheImgForCapture_);
@@ -2469,7 +2494,10 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             return node ? (!node->IsOnTheTree()) : true;
         });
     }
-    RSMainThread::Instance()->ClearGpuCache();
+    auto mainThread = RSMainThread::Instance();
+    if (!mainThread->GetClearMemoryFinished()) {
+        mainThread->ClearMemoryCache();
+    }
     RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode end");
 }
 

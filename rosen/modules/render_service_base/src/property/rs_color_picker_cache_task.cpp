@@ -40,11 +40,6 @@ namespace Rosen {
 const bool RSColorPickerCacheTask::ColorPickerPartialEnabled =
     RSSystemProperties::GetColorPickerPartialEnabled() && RSUniRenderJudgement::IsUniRender();
 
-RSColorPickerCacheTask::~RSColorPickerCacheTask()
-{
-    ReleaseCacheOffTree();
-}
-
 #ifndef USE_ROSEN_DRAWING
 bool RSColorPickerCacheTask::InitSurface(GrRecordingContext* grContext)
 {
@@ -57,7 +52,7 @@ bool RSColorPickerCacheTask::InitSurface(GrRecordingContext* grContext)
     auto runner = AppExecFwk::EventRunner::Current();
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner);
 #endif
-    SkImageInfo info = SkImageInfo::MakeN32Premul(imageSnapshotCache_->width(), imageSnapshotCache_->height());
+    SkImageInfo info = SkImageInfo::MakeN32Premul(surfaceSize_.width(), surfaceSize_.height());
     cacheSurface_ = SkSurface::MakeRenderTarget(grContext, SkBudgeted::kYes, info);
 
     return cacheSurface_ != nullptr;
@@ -76,12 +71,13 @@ bool RSColorPickerCacheTask::InitTask(const sk_sp<SkImage> imageSnapshot)
         return true;
     }
     imageSnapshotCache_ = imageSnapshot;
+    surfaceSize_.set(imageSnapshotCache_->width(), imageSnapshotCache_->height());
     return false;
 }
 
-bool RSColorPickerCacheTask::GpuScaleImage(const sk_sp<SkImage> threadImage, std::shared_ptr<SkPixmap>& dst)
+bool RSColorPickerCacheTask::GpuScaleImage(std::shared_ptr<RSPaintFilterCanvas> cacheCanvas,
+    const sk_sp<SkImage> threadImage, std::shared_ptr<SkPixmap>& dst)
 {
-    auto cacheCanvas = std::make_shared<RSPaintFilterCanvas>(cacheSurface_.get());
     if (cacheCanvas == nullptr) {
         SetStatus(CacheProcessStatus::WAITING);
         ROSEN_LOGE("RSColorPickerCacheTask cacheCanvas is null");
@@ -140,7 +136,7 @@ bool RSColorPickerCacheTask::Render()
         return false;
     }
     CHECK_CACHE_PROCESS_STATUS;
-    auto cacheCanvas = std::make_shared<RSPaintFilterCanvas>(cacheSurface_.get());
+    std::shared_ptr<RSPaintFilterCanvas> cacheCanvas = std::make_shared<RSPaintFilterCanvas>(cacheSurface_.get());
     if (cacheCanvas == nullptr) {
         SetStatus(CacheProcessStatus::WAITING);
         ROSEN_LOGE("RSColorPickerCacheTask cacheCanvas is null");
@@ -152,12 +148,12 @@ bool RSColorPickerCacheTask::Render()
 
     SkColor color;
     std::shared_ptr<SkPixmap> dst;
-    if (GpuScaleImage(threadImage, dst)) {
+    if (GpuScaleImage(cacheCanvas, threadImage, dst)) {
         uint32_t errorCode = 0;
         std::shared_ptr<RSColorPicker> colorPicker = RSColorPicker::CreateColorPicker(dst, errorCode);
         if (errorCode == 0) {
-            colorPicker->GetLargestProportionColor(color);
-            std::unique_lock<std::mutex> lock(parallelRenderMutex_);
+            colorPicker->GetAverageColor(color);
+            std::unique_lock<std::mutex> lock(colorMutex_);
             color_ = RSColor(SkColorGetR(color), SkColorGetG(color), SkColorGetB(color), SkColorGetA(color));
             firstGetColorFinished_ = true;
             valid_ = true;
@@ -181,7 +177,7 @@ bool RSColorPickerCacheTask::Render()
 
 bool RSColorPickerCacheTask::GetColor(RSColor& color)
 {
-    std::unique_lock<std::mutex> lock(parallelRenderMutex_);
+    std::unique_lock<std::mutex> lock(colorMutex_);
     color = color_;
     return valid_;
 }
@@ -255,21 +251,15 @@ bool RSColorPickerCacheTask::GetFirstGetColorFinished()
 void RSColorPickerCacheTask::ResetGrContext()
 {
     if (cacheSurface_ != nullptr) {
-        GrDirectContext* grContext_ = cacheSurface_->recordingContext()->asDirectContext();
-        cacheSurface_ = nullptr;
-        grContext_->freeGpuResources();
+        auto recordingContext = cacheSurface_->recordingContext();
+        if (recordingContext != nullptr) {
+            GrDirectContext* grContext = recordingContext->asDirectContext();
+            if (grContext != nullptr) {
+                cacheSurface_ = nullptr;
+                grContext->freeGpuResources();
+            }
+        }
     }
-}
-
-void RSColorPickerCacheTask::ReleaseCacheOffTree()
-{
-    SetStatus(CacheProcessStatus::WAITING);
-    Reset();
-#ifdef IS_OHOS
-    if (handler_ != nullptr) {
-        handler_->PostTask([this]() {ResetGrContext();}, AppExecFwk::EventQueue::Priority::IMMEDIATE);
-    }
-#endif
 }
 
 std::function<void(std::weak_ptr<RSColorPickerCacheTask>)> RSColorPickerCacheTask::postColorPickerTask = nullptr;
