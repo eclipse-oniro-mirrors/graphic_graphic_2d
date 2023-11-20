@@ -563,7 +563,7 @@ RSColor RSShadowDrawable::GetColorForShadow(RSRenderNode& node, RSPaintFilterCan
     auto shadowAlpha = UINT8_MAX;
     auto& colorPickerTask = properties.GetColorPickerCacheTaskShadow();
     if (colorPickerTask != nullptr && properties.GetShadowColorStrategy()) {
-        colorPicked = RSPropertiesPainter::PickColor(properties, canvas, skPath, matrix, deviceClipBounds, colorPicked);
+        RSPropertiesPainter::PickColor(properties, canvas, skPath, matrix, deviceClipBounds, colorPicked);
         RSPropertiesPainter::GetDarkColor(colorPicked);
         if (!colorPickerTask->GetFirstGetColorFinished()) {
             shadowAlpha = 0;
