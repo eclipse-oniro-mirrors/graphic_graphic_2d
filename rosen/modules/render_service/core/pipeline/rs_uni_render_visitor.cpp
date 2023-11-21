@@ -2523,7 +2523,7 @@ void RSUniRenderVisitor::SwitchColorFilterDrawing(int currentSaveCount)
             static_cast<int32_t>(colorFilterMode));
         SkPaint paint;
         RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, paint);
-#ifdef RS_ENABLE_GL
+#if defined (RS_ENABLE_GL) || defined (RS_ENABLE_VK)
 #ifdef NEW_RENDER_CONTEXT
         RSTagTracker tagTracker(
             renderEngine_->GetDrawingContext()->GetDrawingContext(),
