@@ -1021,7 +1021,7 @@ std::shared_ptr<Drawing::ShaderEffect> RSPropertiesPainter::MakeHorizontalMeanBl
     std::shared_ptr<Drawing::RuntimeEffect> effect = Drawing::RuntimeEffect::CreateForShader(prog);
     std::shared_ptr<Drawing::ShaderEffect> children[] = {shader, gradientShader};
     size_t childCount = 2;
-    std::shared_ptr<Drawing::Data> data = {};
+    std::shared_ptr<Drawing::Data> data = std::make_shared<Drawing::Data>();
     data->BuildWithCopy(&radiusIn, sizeof(radiusIn));
     return effect->MakeShader(data, children, childCount, nullptr, false);
 #endif
@@ -1073,7 +1073,7 @@ std::shared_ptr<Drawing::ShaderEffect> RSPropertiesPainter::MakeVerticalMeanBlur
     std::shared_ptr<Drawing::RuntimeEffect> effect = Drawing::RuntimeEffect::CreateForShader(prog);
     std::shared_ptr<Drawing::ShaderEffect> children[] = {shader, gradientShader};
     size_t childCount = 2;
-    std::shared_ptr<Drawing::Data> data = {};
+    std::shared_ptr<Drawing::Data> data = std::make_shared<Drawing::Data>();
     data->BuildWithCopy(&radiusIn, sizeof(radiusIn));
     return effect->MakeShader(data, children, childCount, nullptr, false);
 #endif

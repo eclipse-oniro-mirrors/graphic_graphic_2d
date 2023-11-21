@@ -112,6 +112,10 @@ void DrawCmdList::UnmarshallingOps()
             LOGE("DrawCmdList::UnmarshallingOps failed, opItem is nullptr");
             break;
         }
+        if (!replacedOpList_.empty() && offset >= replacedOpList_[0].second) {
+            LOGD("DrawCmdList::UnmarshallingOps seek end by cache textOps");
+            break;
+        }
     } while (offset != 0);
 }
 
@@ -179,6 +183,10 @@ void DrawCmdList::GenerateCache(Canvas* canvas, const Rect* rect)
         return;
     }
 
+    if (isCached_) {
+        LOGD("DrawCmdList::GenerateCache Invoke multiple times");
+        return;
+    }
     GenerateCachedOpItemPlayer player = {*this, canvas, rect};
 
     uint32_t maxOffset = opAllocator_.GetSize();
