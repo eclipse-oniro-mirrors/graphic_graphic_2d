@@ -2689,6 +2689,9 @@ void RSProperties::OnApplyModifiers()
     }
     if (filterNeedUpdate_) {
         filterNeedUpdate_ = false;
+        if (IsShadowValid()) {
+            filterNeedUpdate_ = true;
+        }
         if (backgroundFilter_ != nullptr && !backgroundFilter_->IsValid()) {
             backgroundFilter_.reset();
         }

@@ -95,6 +95,13 @@ public:
 
     bool GetFirstGetColorFinished();
 
+    void SetDeviceSize(int& deviceWidth, int& deviceHeight);
+
+    void SetIsShadow(bool isShadow);
+
+    bool GetDeviceSize(int& deviceWidth, int& deviceHeight) const;
+
+
 private:
 #ifndef USE_ROSEN_DRAWING
     sk_sp<SkSurface> cacheSurface_ = nullptr;
@@ -103,6 +110,7 @@ private:
 #endif
     bool valid_ = false;
     bool firstGetColorFinished_ = false;
+    bool isShadow_ = false;
     uint32_t* pixelPtr_ = nullptr;
     std::atomic<CacheProcessStatus> cacheProcessStatus_ = CacheProcessStatus::WAITING;
     sk_sp<SkImage> imageSnapshotCache_ = nullptr;
@@ -113,6 +121,8 @@ private:
     std::mutex parallelRenderMutex_;
     std::mutex colorMutex_;
     std::condition_variable cvParallelRender_;
+    std::optional<int> deviceWidth_;
+    std::optional<int> deviceHeight_;
 #ifdef IS_OHOS
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> handler_ = nullptr;
 #endif
