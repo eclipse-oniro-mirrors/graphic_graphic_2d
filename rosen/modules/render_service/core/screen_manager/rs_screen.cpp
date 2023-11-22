@@ -409,6 +409,10 @@ void RSScreen::PowerStatusDump(std::string& dumpString)
             dumpString += "POWER_STATUS_OFF";
             break;
         }
+        case GRAPHIC_POWER_STATUS_OFF_FAKE: {
+            dumpString += "POWER_STATUS_OFF_FAKE";
+            break;
+        }
         case GRAPHIC_POWER_STATUS_BUTT: {
             dumpString += "POWER_STATUS_BUTT";
             break;

@@ -26,6 +26,7 @@
 #include "property/rs_point_light_manager.h"
 #include "property/rs_properties_def.h"
 #include "render/rs_filter.h"
+#include "render/rs_material_filter.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -128,8 +129,8 @@ const std::array<ResetPropertyFunc, static_cast<int>(RSModifierType::CUSTOM)> g_
     },                                                                   // OUTER_BORDER_STYLE,       71
     [](RSProperties* prop) { prop->SetOuterBorderRadius(0.f); },         // OUTER_BORDER_RADIUS,      72
     [](RSProperties* prop) { prop->SetUseShadowBatching(false); },       // USE_SHADOW_BATCHING,      73
-    [](RSProperties* prop) { prop->SetGreyCoef1({0.f}); },               // GREY_COEF1,               74
-    [](RSProperties* prop) { prop->SetGreyCoef2({0.f}); },               // GREY_COEF2,               75
+    [](RSProperties* prop) { prop->SetGreyCoef1(0.f); },               // GREY_COEF1,                 74
+    [](RSProperties* prop) { prop->SetGreyCoef2(0.f); },               // GREY_COEF2,                 75
     [](RSProperties* prop) { prop->SetLightIntensity(-1.f); },            // LIGHT_INTENSITY           76
     [](RSProperties* prop) { prop->SetLightPosition({}); },               // LIGHT_POSITION            77
     [](RSProperties* prop) { prop->SetIlluminatedType(-1); },             // ILLUMINATED_TYPE          78
@@ -701,7 +702,7 @@ void RSProperties::SetParticles(const RSRenderParticleVector& particles)
     contentDirty_ = true;
 }
 
-RSRenderParticleVector RSProperties::GetParticles() const
+const RSRenderParticleVector& RSProperties::GetParticles() const
 {
     return particles_;
 }
@@ -1044,7 +1045,7 @@ void RSProperties::SetDynamicLightUpDegree(const std::optional<float>& lightUpDe
     contentDirty_ = true;
 }
 
-void RSProperties::SetGreyCoef1(const std::optional<float>& greyCoef1)
+void RSProperties::SetGreyCoef1(float greyCoef1)
 {
     greyCoef1_ = greyCoef1;
     filterNeedUpdate_ = true;
@@ -1052,7 +1053,7 @@ void RSProperties::SetGreyCoef1(const std::optional<float>& greyCoef1)
     contentDirty_ = true;
 }
 
-void RSProperties::SetGreyCoef2(const std::optional<float>& greyCoef2)
+void RSProperties::SetGreyCoef2(float greyCoef2)
 {
     greyCoef2_ = greyCoef2;
     filterNeedUpdate_ = true;
@@ -1091,20 +1092,20 @@ const std::optional<float>& RSProperties::GetDynamicLightUpDegree() const
     return dynamicLightUpDegree_;
 }
 
-const std::optional<float>& RSProperties::GetGreyCoef1() const
+float RSProperties::GetGreyCoef1() const
 {
     return greyCoef1_;
 }
 
-const std::optional<float>& RSProperties::GetGreyCoef2() const
+float RSProperties::GetGreyCoef2() const
 {
     return greyCoef2_;
 }
 
 bool RSProperties::IsGreyAdjustmenValid() const
 {
-    return ROSEN_GNE(*greyCoef1_, 0.0) && ROSEN_LE(*greyCoef1_, 127.0) &&   // 127.0 number
-        ROSEN_GNE(*greyCoef2_, 0.0) && ROSEN_LE(*greyCoef2_, 127.0);        // 127.0 number
+    return ROSEN_GNE(greyCoef1_, 0.0) && ROSEN_LE(greyCoef1_, 127.0) &&   // 127.0 number
+        ROSEN_GNE(greyCoef2_, 0.0) && ROSEN_LE(greyCoef2_, 127.0);        // 127.0 number
 }
 
 const std::shared_ptr<RSFilter>& RSProperties::GetFilter() const
@@ -1708,7 +1709,6 @@ void RSProperties::SetLightIntensity(float lightIntensity)
         lightSourcePtr_ = std::make_shared<RSLightSource>();
     }
     lightSourcePtr_->SetLightIntensity(lightIntensity);
-    colorFilterNeedUpdate_ = true;
     SetDirty();
     contentDirty_ = true;
 
@@ -1732,7 +1732,6 @@ void RSProperties::SetLightPosition(const Vector4f& lightPosition)
         lightSourcePtr_ = std::make_shared<RSLightSource>();
     }
     lightSourcePtr_->SetLightPosition(lightPosition);
-    colorFilterNeedUpdate_ = true;
     SetDirty();
     contentDirty_ = true;
 }
@@ -1744,7 +1743,6 @@ void RSProperties::SetIlluminatedType(int illuminatedType)
     }
     auto curIlluminateType = IlluminatedType(illuminatedType);
     illuminatedPtr_->SetIlluminatedType(curIlluminateType);
-    colorFilterNeedUpdate_ = true;
     isDrawn_ = true;
     SetDirty();
     contentDirty_ = true;
@@ -1769,7 +1767,6 @@ void RSProperties::SetBloom(float bloomIntensity)
         illuminatedPtr_ = std::make_shared<RSIlluminated>();
     }
     illuminatedPtr_->SetBloomIntensity(bloomIntensity);
-    colorFilterNeedUpdate_ = true;
     isDrawn_ = true;
     SetDirty();
     contentDirty_ = true;
@@ -2646,6 +2643,14 @@ void RSProperties::ClearFilterCache()
     if (backgroundFilterCacheManager_ != nullptr) {
         backgroundFilterCacheManager_->ReleaseCacheOffTree();
     }
+    if (backgroundFilter_ != nullptr && (backgroundFilter_->GetFilterType() == RSFilter::MATERIAL)) {
+        auto filter = std::static_pointer_cast<RSMaterialFilter>(backgroundFilter_);
+        filter->ReleaseColorPicker();
+    }
+    if (filter_ != nullptr && (filter_->GetFilterType() == RSFilter::MATERIAL)) {
+        auto filter = std::static_pointer_cast<RSMaterialFilter>(filter_);
+        filter->ReleaseColorPicker();
+    }
 }
 
 void RSProperties::CreateColorPickerTaskForShadow()
@@ -2680,6 +2685,9 @@ void RSProperties::OnApplyModifiers()
     }
     if (filterNeedUpdate_) {
         filterNeedUpdate_ = false;
+        if (IsShadowValid()) {
+            filterNeedUpdate_ = true;
+        }
         if (backgroundFilter_ != nullptr && !backgroundFilter_->IsValid()) {
             backgroundFilter_.reset();
         }

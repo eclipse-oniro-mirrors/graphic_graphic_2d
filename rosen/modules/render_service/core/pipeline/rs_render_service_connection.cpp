@@ -339,8 +339,10 @@ ScreenId RSRenderServiceConnection::CreateVirtualScreen(
     std::lock_guard<std::mutex> lock(mutex_);
     auto newVirtualScreenId = screenManager_->CreateVirtualScreen(name, width, height, surface, mirrorId, flags);
     virtualScreenIds_.insert(newVirtualScreenId);
-    auto& hgmCore = HgmCore::Instance();
-    hgmCore.StartScreenScene(SceneType::SCREEN_RECORD);
+    if (surface != nullptr) {
+        auto& hgmCore = HgmCore::Instance();
+        hgmCore.StartScreenScene(SceneType::SCREEN_RECORD);
+    }
     return newVirtualScreenId;
 }
 
@@ -797,8 +799,14 @@ bool RSRenderServiceConnection::GetBitmap(NodeId id, Drawing::Bitmap& bitmap)
         RS_LOGE("RSRenderServiceConnection::GetBitmap RenderNodeType != RSRenderNodeType::CANVAS_DRAWING_NODE");
         return false;
     }
-    auto getBitmapTask = [&node, &bitmap]() { bitmap = node->GetBitmap(); };
-    mainThread_->PostSyncTask(getBitmapTask);
+    auto tid = node->GetTid();
+    auto getBitmapTask = [&node, &bitmap, tid]() { bitmap = node->GetBitmap(tid); };
+    if (tid == UINT32_MAX) {
+        mainThread_->PostSyncTask(getBitmapTask);
+    } else {
+        RSTaskDispatcher::GetInstance().PostTask(
+            RSSubThreadManager::Instance()->GetReThreadIndexMap()[tid], getBitmapTask, true);
+    }
 #ifndef USE_ROSEN_DRAWING
     return !bitmap.empty();
 #else
@@ -825,7 +833,9 @@ bool RSRenderServiceConnection::GetPixelmap(
     }
     bool result = false;
     auto tid = node->GetTid();
-    auto getPixelmapTask = [&node, &pixelmap, rect, &result]() { result = node->GetPixelmap(pixelmap, rect); };
+    auto getPixelmapTask = [&node, &pixelmap, rect, &result, tid]() {
+        result = node->GetPixelmap(pixelmap, rect, tid);
+    };
     if (tid == UINT32_MAX) {
         if (!mainThread_->IsIdle()) {
             return false;
@@ -835,7 +845,6 @@ bool RSRenderServiceConnection::GetPixelmap(
         RSTaskDispatcher::GetInstance().PostTask(
             RSSubThreadManager::Instance()->GetReThreadIndexMap()[tid], getPixelmapTask, true);
     }
-
     return result;
 }
 
@@ -981,5 +990,19 @@ void RSRenderServiceConnection::SetTpFeatureConfig(int32_t feature, const char* 
     }
 }
 #endif
+
+void RSRenderServiceConnection::SetVirtualScreenUsingStatus(bool isVirtualScreenUsingStatus)
+{
+    if (isVirtualScreenUsingStatus) {
+        auto& hgmCore = HgmCore::Instance();
+        hgmCore.StartScreenScene(SceneType::SCREEN_RECORD);
+        hgmCore.SetModeBySettingConfig();
+    } else {
+        auto& hgmCore = HgmCore::Instance();
+        hgmCore.StopScreenScene(SceneType::SCREEN_RECORD);
+        hgmCore.SetModeBySettingConfig();
+    }
+    return;
+}
 } // namespace Rosen
 } // namespace OHOS
