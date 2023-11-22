@@ -69,7 +69,7 @@ enum class ApiColorSpaceType : uint32_t {
     DISPLAY_P3_HLG = P3_HLG,
     DISPLAY_P3_PQ = P3_PQ,
     CUSTOM = 5,
-    TYPE_END
+    TYPE_END = 26
 };
 
 const std::map<ColorSpaceName, ApiColorSpaceType> NATIVE_TO_JS_COLOR_SPACE_TYPE_MAP {

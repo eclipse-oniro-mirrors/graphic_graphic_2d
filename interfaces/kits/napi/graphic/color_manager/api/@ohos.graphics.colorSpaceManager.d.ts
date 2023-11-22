@@ -39,7 +39,6 @@ declare namespace colorSpaceManager {
 
     /**
      * Indicates the color space based on Adobe RGB (1998).
-     * PRIMARIES_ADOBE_RGB | TRANSFUNC_ADOBE_RGB | RANGE_FULL
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9
      */
@@ -47,7 +46,6 @@ declare namespace colorSpaceManager {
 
     /**
      * Indicates the color space based on SMPTE RP 431-2-2007 and IEC 61966-2.1:1999.
-     * PRIMARIES_P3_DCI | TRANSFUNC_GAMMA_2_6 | RANGE_FULL
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9
      */
@@ -55,7 +53,6 @@ declare namespace colorSpaceManager {
 
     /**
      * Indicates the color space based on SMPTE RP 431-2-2007 and IEC 61966-2.1:1999.
-     * PRIMARIES_P3_D65 | TRANSFUNC_SRGB | RANGE_FULL
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9
      */
@@ -63,7 +60,6 @@ declare namespace colorSpaceManager {
 
     /**
      * Indicates the standard red green blue (SRGB) color space based on IEC 61966-2.1:1999.
-     * PRIMARIES_SRGB | TRANSFUNC_SRGB | RANGE_FULL
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9
      */
