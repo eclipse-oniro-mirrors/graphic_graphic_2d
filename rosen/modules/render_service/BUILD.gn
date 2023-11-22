@@ -207,6 +207,7 @@ ohos_shared_library("librender_service") {
 
   external_deps = [
     "c_utils:utils",
+    "drivers_interface_display:display_commontype_idl_headers",
     "eventhandler:libeventhandler",
     "hicollie:libhicollie",
     "hilog:libhilog",
@@ -287,10 +288,12 @@ ohos_executable("render_service") {
   include_dirs = [
     "core",
     "//commonlibrary/c_utils/base/include",
+    "$graphic_2d_root/frameworks/surface/include",
   ]
 
   deps = [
     ":librender_service",
+    "$graphic_2d_root:libsurface",
     "$graphic_2d_root/rosen/modules/composer:libcomposer",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager:libhyper_graphic_manager",
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
@@ -298,6 +301,7 @@ ohos_executable("render_service") {
 
   external_deps = [
     "c_utils:utils",
+    "drivers_interface_display:display_commontype_idl_headers",
     "hilog:libhilog",
     "ipc:ipc_core",
     "sensor:sensor_interface_native",
