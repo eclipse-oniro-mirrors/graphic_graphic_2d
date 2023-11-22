@@ -172,7 +172,7 @@ const std::map<ApiColorSpaceType, std::string> JS_TO_STRING_MAP = {
     { ApiColorSpaceType::DISPLAY_P3_HLG, "DISPLAY_P3_HLG" },
     { ApiColorSpaceType::DISPLAY_P3_PQ, "DISPLAY_P3_PQ" },
     { ApiColorSpaceType::CUSTOM, "CUSTOM" },
-}
+};
 
 template<class T>
 T* CheckParamsAndGetThis(const napi_env env, napi_callback_info info, const char* name = nullptr)
