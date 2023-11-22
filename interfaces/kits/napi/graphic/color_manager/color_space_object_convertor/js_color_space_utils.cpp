@@ -64,7 +64,7 @@ napi_value ColorSpaceTypeInit(napi_env env)
         return nullptr;
     }
 
-    for (auto& [colorSpace, colorSpaceName] : JS_TO_STRING_MAP.end()) {
+    for (auto& [colorSpace, colorSpaceName] : JS_TO_STRING_MAP) {
         napi_value value = CreateJsValue(env, static_cast<int32_t>(colorSpace));
         napi_set_named_property(env, object, colorSpaceName, value);
     }
