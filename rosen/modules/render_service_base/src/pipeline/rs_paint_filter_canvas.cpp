@@ -547,10 +547,11 @@ bool RSPaintFilterCanvas::OnFilter() const
 
 bool RSPaintFilterCanvas::OnFilterWithBrush(Brush& brush) const
 {
-    if (brush.GetColor() == 0x00000001) {
+    if (brush.GetColor() == 0x00000001) { // foreground color and foreground color strategy identification
         brush.SetColor(envStack_.top().envForegroundColor_.AsArgbInt());
     }
 
+    // use alphaStack_.top() to multiply alpha
     if (alphaStack_.top() < 1 && alphaStack_.top() > 0) {
         brush.SetAlpha(brush.GetAlpha() * alphaStack_.top());
     }
