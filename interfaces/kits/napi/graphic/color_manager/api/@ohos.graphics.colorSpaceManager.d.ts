@@ -250,27 +250,6 @@ declare namespace colorSpaceManager {
     DISPLAY_P3_PQ = P3_PQ,
 
     /**
-     * PRIMARIES_BT2020 | TRANSFUNC_SRGB | RANGE_FULL
-     * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
-     * @since 11
-     */
-    DISPLAY_BT2020_SRGB = 26,
-
-    /**
-     * PRIMARIES_BT2020 | TRANSFUNC_HLG | RANGE_FULL
-     * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
-     * @since 11
-     */
-    DISPLAY_BT2020_HLG = BT2020_HLG,
-
-    /**
-     * PRIMARIES_BT2020 | TRANSFUNC_PQ | RANGE_FULL
-     * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
-     * @since 11
-     */
-    DISPLAY_BT2020_PQ = BT2020_PQ,
-
-    /**
      * Indicates a customized color space.
      * @syscap SystemCapability.Graphic.Graphic2D.ColorManager.Core
      * @since 9

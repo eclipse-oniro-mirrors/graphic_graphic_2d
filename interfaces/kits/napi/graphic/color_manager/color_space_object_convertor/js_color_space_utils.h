@@ -17,6 +17,7 @@
 #define OHOS_JS_COLOR_SPACE_UTILS_H
 
 #include <map>
+#include <string>
 #include <hilog/log.h>
 
 #include "color_space.h"
@@ -67,9 +68,6 @@ enum class ApiColorSpaceType : uint32_t {
     DISPLAY_P3_SRGB = DISPLAY_P3,
     DISPLAY_P3_HLG = P3_HLG,
     DISPLAY_P3_PQ = P3_PQ,
-    DISPLAY_BT2020_SRGB = 26,
-    DISPLAY_BT2020_HLG = BT2020_HLG,
-    DISPLAY_BT2020_PQ = BT2020_PQ,
     CUSTOM = 5,
     TYPE_END
 };
@@ -105,9 +103,6 @@ const std::map<ColorSpaceName, ApiColorSpaceType> NATIVE_TO_JS_COLOR_SPACE_TYPE_
     { ColorSpaceName::DISPLAY_P3_SRGB, ApiColorSpaceType::DISPLAY_P3_SRGB },
     { ColorSpaceName::DISPLAY_P3_HLG, ApiColorSpaceType::DISPLAY_P3_HLG },
     { ColorSpaceName::DISPLAY_P3_PQ, ApiColorSpaceType::DISPLAY_P3_PQ },
-    { ColorSpaceName::DISPLAY_BT2020_SRGB, ApiColorSpaceType::DISPLAY_BT2020_SRGB },
-    { ColorSpaceName::DISPLAY_BT2020_HLG, ApiColorSpaceType::DISPLAY_BT2020_HLG },
-    { ColorSpaceName::DISPLAY_BT2020_PQ, ApiColorSpaceType::DISPLAY_BT2020_PQ },
     { ColorSpaceName::CUSTOM, ApiColorSpaceType::CUSTOM },
 };
 
@@ -142,11 +137,42 @@ const std::map<ApiColorSpaceType, ColorSpaceName> JS_TO_NATIVE_COLOR_SPACE_NAME_
     { ApiColorSpaceType::DISPLAY_P3_SRGB, ColorSpaceName::DISPLAY_P3_SRGB },
     { ApiColorSpaceType::DISPLAY_P3_HLG, ColorSpaceName::DISPLAY_P3_HLG },
     { ApiColorSpaceType::DISPLAY_P3_PQ, ColorSpaceName::DISPLAY_P3_PQ },
-    { ApiColorSpaceType::DISPLAY_BT2020_SRGB, ColorSpaceName::DISPLAY_BT2020_SRGB },
-    { ApiColorSpaceType::DISPLAY_BT2020_HLG, ColorSpaceName::DISPLAY_BT2020_HLG },
-    { ApiColorSpaceType::DISPLAY_BT2020_PQ, ColorSpaceName::DISPLAY_BT2020_PQ },
     { ApiColorSpaceType::CUSTOM, ColorSpaceName::CUSTOM },
 };
+
+const std::map<ApiColorSpaceType, std::string> JS_TO_STRING_MAP = {
+    { ApiColorSpaceType::UNKNOWN, "UNKNOWN" },
+    { ApiColorSpaceType::ADOBE_RGB_1998, "ADOBE_RGB_1998" },
+    { ApiColorSpaceType::DCI_P3, "DCI_P3" },
+    { ApiColorSpaceType::DISPLAY_P3, "DISPLAY_P3" },
+    { ApiColorSpaceType::SRGB, "SRGB" },
+    { ApiColorSpaceType::BT709, "BT709" },
+    { ApiColorSpaceType::BT601_EBU, "BT601_EBU" },
+    { ApiColorSpaceType::BT601_SMPTE_C, "BT601_SMPTE_C" },
+    { ApiColorSpaceType::BT2020_HLG, "BT2020_HLG" },
+    { ApiColorSpaceType::BT2020_PQ, "BT2020_PQ" },
+    { ApiColorSpaceType::P3_HLG, "P3_HLG" },
+    { ApiColorSpaceType::P3_PQ, "P3_PQ" },
+    { ApiColorSpaceType::ADOBE_RGB_1998_LIMIT, "ADOBE_RGB_1998_LIMIT" },
+    { ApiColorSpaceType::DISPLAY_P3_LIMIT, "DISPLAY_P3_LIMIT" },
+    { ApiColorSpaceType::SRGB_LIMIT, "SRGB_LIMIT" },
+    { ApiColorSpaceType::BT709_LIMIT, "BT709_LIMIT" },
+    { ApiColorSpaceType::BT601_EBU_LIMIT, "BT601_EBU_LIMIT" },
+    { ApiColorSpaceType::BT601_SMPTE_C_LIMIT, "BT601_SMPTE_C_LIMIT" },
+    { ApiColorSpaceType::BT2020_HLG_LIMIT, "BT2020_HLG_LIMIT" },
+    { ApiColorSpaceType::BT2020_PQ_LIMIT, "BT2020_PQ_LIMIT" },
+    { ApiColorSpaceType::P3_HLG_LIMIT, "P3_HLG_LIMIT" },
+    { ApiColorSpaceType::P3_PQ_LIMIT, "P3_PQ_LIMIT" },
+    { ApiColorSpaceType::LINEAR_P3, "LINEAR_P3" },
+    { ApiColorSpaceType::LINEAR_SRGB, "LINEAR_SRGB" },
+    { ApiColorSpaceType::LINEAR_BT709, "LINEAR_BT709" },
+    { ApiColorSpaceType::LINEAR_BT2020, "LINEAR_BT2020" },
+    { ApiColorSpaceType::DISPLAY_SRGB, "DISPLAY_SRGB" },
+    { ApiColorSpaceType::DISPLAY_P3_SRGB, "DISPLAY_P3_SRGB" },
+    { ApiColorSpaceType::DISPLAY_P3_HLG, "DISPLAY_P3_HLG" },
+    { ApiColorSpaceType::DISPLAY_P3_PQ, "DISPLAY_P3_PQ" },
+    { ApiColorSpaceType::CUSTOM, "CUSTOM" },
+}
 
 template<class T>
 T* CheckParamsAndGetThis(const napi_env env, napi_callback_info info, const char* name = nullptr)
