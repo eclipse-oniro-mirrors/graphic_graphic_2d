@@ -4370,6 +4370,7 @@ void RSUniRenderVisitor::tryCapture(float width, float height)
 #endif
 #endif
     canvas_->addCanvas(recordingCanvas_.get());
+    canvas_->SetRecordingState(true);
     RSRecordingThread::Instance(renderEngine_->GetRenderContext().get()).CheckAndRecording();
 }
  
@@ -4382,6 +4383,7 @@ void RSUniRenderVisitor::endCapture() const
     RS_TRACE_NAME("RSUniRender:RecordingToFile curFrameNum = " +
         std::to_string(RSRecordingThread::Instance(renderEngine_->GetRenderContext().get()).GetCurDumpFrame()));
     RSRecordingThread::Instance(renderEngine_->GetRenderContext().get()).RecordingToFile(drawCmdList);
+    canvas_->SetRecordingState(false);
 }
 #endif
 
