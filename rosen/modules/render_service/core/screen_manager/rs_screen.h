@@ -22,6 +22,7 @@
 #include <surface_type.h>
 #include <hdi_output.h>
 #include <hdi_screen.h>
+#include <hdi_display_type.h>
 #include <screen_manager/screen_types.h>
 
 namespace OHOS {
@@ -194,13 +195,16 @@ private:
     ScreenGamutMap currentVirtualGamutMap_ = GAMUT_MAP_CONSTANT;
     int32_t currentVirtualHDRFormatIdx_ = 0;
     int32_t currentPhysicalHDRFormatIdx_ = 0;
-    std::vector<ScreenHDRFormat> supportedVirtualHDRFormat_ = {
+    std::vector<ScreenHDRFormat> supportedVirtualHDRFormats_ = {
         NOT_SUPPORT_HDR };
+    std::vector<ScreenHDRFormat> supportedPhysicalHDRFormats_;
     RSScreenType screenType_ = RSScreenType::UNKNOWN_TYPE_SCREEN;
     uint32_t skipFrameInterval_ = DEFAULT_SKIP_FRAME_INTERVAL;
     ScreenRotation screenRotation_ = ScreenRotation::ROTATION_0;
     static std::map<GraphicColorGamut, GraphicCM_ColorSpaceType> RS_TO_COMMON_COLOR_SPACE_TYPE_MAP;
     static std::map<GraphicCM_ColorSpaceType, GraphicColorGamut> COMMON_COLOR_SPACE_TYPE_TO_RS_MAP;
+    static std::map<GraphicHDRFormat, ScreenHDRFormat> HDI_HDR_FORMAT_TO_RS_MAP;
+    static std::map<ScreenHDRFormat, GraphicHDRFormat> RS_TO_HDI_HDR_FORMAT_MAP;
 };
 } // namespace impl
 } // namespace Rosen

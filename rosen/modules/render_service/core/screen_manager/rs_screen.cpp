@@ -49,6 +49,24 @@ std::map<GraphicCM_ColorSpaceType, GraphicColorGamut> RSScreen::COMMON_COLOR_SPA
     {GRAPHIC_CM_BT2020_HLG_FULL, GRAPHIC_COLOR_GAMUT_BT2100_HLG},
     {GRAPHIC_CM_DISPLAY_BT2020_SRGB, GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020},
 };
+std::map<GraphicHDRFormat, ScreenHDRFormat> RSScreen::HDI_HDR_FORMAT_TO_RS_MAP {
+    {GRAPHIC_NOT_SUPPORT_HDR, NOT_SUPPORT_HDR},
+    {GRAPHIC_DOLBY_VISION, NOT_SUPPORT_HDR},
+    {GRAPHIC_HDR10, VIDEO_HDR10},
+    {GRAPHIC_HLG, VIDEO_HLG},
+    {GRAPHIC_HDR10_PLUS, NOT_SUPPORT_HDR},
+    {GRAPHIC_HDR_VIVID, VIDEO_HDR_VIVID},
+};
+std::map<ScreenHDRFormat, GraphicHDRFormat> RSScreen::RS_TO_HDI_HDR_FORMAT_MAP {
+    {NOT_SUPPORT_HDR, GRAPHIC_NOT_SUPPORT_HDR},
+    {VIDEO_HLG, GRAPHIC_HLG},
+    {VIDEO_HDR10, GRAPHIC_HDR10},
+    {VIDEO_HDR_VIVID, GRAPHIC_HDR_VIVID},
+    {IMAGE_HDR_VIVID_DUAL, GRAPHIC_HDR_VIVID},
+    {IMAGE_HDR_VIVID_SINGLE, GRAPHIC_HDR_VIVID},
+    {IMAGE_HDR_ISO_DUAL, GRAPHIC_NOT_SUPPORT_HDR},
+    {IMAGE_HDR_ISO_SINGLE, GRAPHIC_NOT_SUPPORT_HDR},
+};
 
 RSScreen::RSScreen(ScreenId id,
     bool isVirtual,
@@ -88,8 +106,8 @@ RSScreen::~RSScreen() noexcept
 void RSScreen::VirtualScreenInit() noexcept
 {
     hdrCapability_.formatCount = 0;
-    for (auto item : supportedVirtualHDRFormat_) {
-        hdrCapability_.formats.emplace_back(static_cast<GraphicHDRFormat>(item));
+    for (auto item : supportedVirtualHDRFormats_) {
+        hdrCapability_.formats.emplace_back(RS_TO_HDI_HDR_FORMAT_MAP[item]);
         ++hdrCapability_.formatCount;
     }
 }
@@ -112,6 +130,9 @@ void RSScreen::PhysicalScreenInit() noexcept
     if (hdiScreen_->GetHDRCapabilityInfos(hdrCapability_) < 0) {
         RS_LOGE("RSScreen %{public}s: RSScreen(id %{public}" PRIu64 ") failed to GetHDRCapabilityInfos.",
             __func__, id_);
+    }
+    for (auto item : hdrCapability_.formats) {
+        supportedPhysicalHDRFormats_.emplace_back(HDI_HDR_FORMAT_TO_RS_MAP[item]);
     }
     auto status = GraphicDispPowerStatus::GRAPHIC_POWER_STATUS_ON;
     if (hdiScreen_->SetScreenPowerStatus(status) < 0) {
@@ -711,8 +732,10 @@ void RSScreen::SetScreenVsyncEnabled(bool enabled) const
 int32_t RSScreen::GetScreenSupportedHDRFormats(std::vector<ScreenHDRFormat>& hdrFormats) const
 {
     hdrFormats.clear();
-    for (auto item : hdrCapability_.formats) {
-        hdrFormats.emplace_back(static_cast<ScreenHDRFormat>(item));
+    if (IsVirtual()) {
+        hdrFormats = supportedVirtualHDRFormats_;
+    } else {
+        hdrFormats = supportedPhysicalHDRFormats_;
     }
     if (hdrFormats.size() == 0) {
         return StatusCode::HDI_ERROR;
@@ -722,14 +745,14 @@ int32_t RSScreen::GetScreenSupportedHDRFormats(std::vector<ScreenHDRFormat>& hdr
 
 int32_t RSScreen::GetScreenHDRFormat(ScreenHDRFormat& hdrFormat) const
 {
-    if (hdrCapability_.formats.size() == 0) {
-        return StatusCode::HDI_ERROR;
-    }
     if (IsVirtual()) {
-        hdrFormat = supportedVirtualHDRFormat_[currentVirtualHDRFormatIdx_];
+        hdrFormat = supportedVirtualHDRFormats_[currentVirtualHDRFormatIdx_];
         return StatusCode::SUCCESS;
     } else {
-        hdrFormat = static_cast<ScreenHDRFormat>(hdrCapability_.formats[currentPhysicalHDRFormatIdx_]);
+        if (supportedPhysicalHDRFormats_.size() == 0) {
+            return StatusCode::HDI_ERROR;
+        }
+        hdrFormat = supportedPhysicalHDRFormats_[currentPhysicalHDRFormatIdx_];
         return StatusCode::SUCCESS;
     }
     return StatusCode::HDI_ERROR;
@@ -741,16 +764,16 @@ int32_t RSScreen::SetScreenHDRFormat(int32_t modeIdx)
         return StatusCode::INVALID_ARGUMENTS;
     }
     if (IsVirtual()) {
-        if (modeIdx >= static_cast<int32_t>(supportedVirtualHDRFormat_.size())) {
+        if (modeIdx >= static_cast<int32_t>(supportedVirtualHDRFormats_.size())) {
             return StatusCode::INVALID_ARGUMENTS;
         }
         currentVirtualHDRFormatIdx_ = modeIdx;
         return StatusCode::SUCCESS;
     } else {
+        // There should be some hdi operation
         if (modeIdx >= static_cast<int32_t>(hdrCapability_.formats.size())) {
             return StatusCode::INVALID_ARGUMENTS;
         }
-        // Some hdi operation
         currentPhysicalHDRFormatIdx_ = modeIdx;
         return StatusCode::SUCCESS;
     }
