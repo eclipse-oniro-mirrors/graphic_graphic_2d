@@ -347,7 +347,6 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
     std::unordered_map<int32_t, std::unique_ptr<ImageCacheSeq>> imageCacheSeqs;
 #endif // RS_ENABLE_VK
 #endif // RS_ENABLE_EGLIMAGE
-#endif
 
 #ifdef USE_VIDEO_PROCESSING_ENGINE
     using namespace HDI::Display::Graphic::Common::V1_0;

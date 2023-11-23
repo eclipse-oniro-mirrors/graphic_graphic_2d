@@ -491,7 +491,8 @@ bool RSBaseRenderEngine::ConvertColorGamutToSpaceInfo(const GraphicColorGamut& c
 
     GSError ret = MetadataHelper::ConvertColorSpaceTypeToInfo(colorSpaceType, colorSpaceInfo);
     if (ret != GSERROR_OK) {
-        RS_LOGE("RSBaseRenderEngine::ConvertColorGamutToSpaceInfo ConvertColorSpaceTypeToInfo failed with %{public}u.", ret);
+        RS_LOGE("RSBaseRenderEngine::ConvertColorGamutToSpaceInfo ConvertColorSpaceTypeToInfo failed with \
+            %{public}u.", ret);
         return false;
     }
 
