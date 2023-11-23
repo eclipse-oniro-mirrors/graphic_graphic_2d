@@ -53,7 +53,7 @@ ohos_shared_library("libcomposer") {
 
   include_dirs = [
     "$graphic_2d_root/frameworks/surface/include",
-    "$graphic_2d_root/utils/log"
+    "$graphic_2d_root/utils/log",
   ]
 
   configs = [ ":composer_config" ]
