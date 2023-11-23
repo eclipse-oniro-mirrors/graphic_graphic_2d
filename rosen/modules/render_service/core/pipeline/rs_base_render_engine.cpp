@@ -98,7 +98,7 @@ void RSBaseRenderEngine::Init(bool independentContext)
     skContext_ = RsVulkanContext::GetSingleton().CreateSkContext();
     vkImageManager_ = std::make_shared<RSVkImageManager>();
 #endif
-#ifdef USE_VIDEO_PROCESS_ENGINE
+#ifdef USE_VIDEO_PROCESSING_ENGINE
     colorSpaceConverterDisplay_ = Media::VideoProcessingEngine::ColorSpaceConverterDisplay::Create();
 #endif
 }
@@ -124,7 +124,7 @@ bool RSBaseRenderEngine::NeedForceCPU(const std::vector<LayerInfoPtr>& layers)
         }
 #endif
 
-#ifndef USE_VIDEO_PROCESS_ENGINE
+#ifndef USE_VIDEO_PROCESSING_ENGINE
         GraphicColorGamut srcGamut = static_cast<GraphicColorGamut>(buffer->GetSurfaceBufferColorGamut());
         GraphicColorGamut dstGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
         if (srcGamut != dstGamut) {
@@ -463,7 +463,7 @@ void RSBaseRenderEngine::DrawBuffer(RSPaintFilterCanvas& canvas, BufferDrawParam
     RS_OPTIONAL_TRACE_END();
 }
 
-#ifdef USE_VIDEO_PROCESS_ENGINE
+#ifdef USE_VIDEO_PROCESSING_ENGINE
 bool RSBaseRenderEngine::ConvertColorGamutToSpaceInfo(const GraphicColorGamut& colorGamut,
     HDI::Display::Graphic::Common::V1_0::CM_ColorSpaceInfo& colorSpaceInfo)
 {
@@ -603,7 +603,7 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
         return;
     }
 
-#ifdef USE_VIDEO_PROCESS_ENGINE
+#ifdef USE_VIDEO_PROCESSING_ENGINE
     sk_sp<SkShader> imageShader = image->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
     if (imageShader == nullptr) {
         RS_LOGE("RSBaseRenderEngine::DrawImage imageShader is nullptr.");
@@ -615,19 +615,19 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
 
 #ifndef USE_ROSEN_DRAWING
 #ifdef NEW_SKIA
-#ifndef USE_VIDEO_PROCESS_ENGINE
+#ifndef USE_VIDEO_PROCESSING_ENGINE
     canvas.drawImageRect(image, params.srcRect, params.dstRect,
         SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear), &(params.paint),
         SkCanvas::kStrict_SrcRectConstraint);
 #else
     canvas.drawRect(params.dstRect, (params.paint));
-#endif // USE_VIDEO_PROCESS_ENGINE
+#endif // USE_VIDEO_PROCESSING_ENGINE
 #else
-#ifndef USE_VIDEO_PROCESS_ENGINE
+#ifndef USE_VIDEO_PROCESSING_ENGINE
     canvas.drawImageRect(image, params.srcRect, params.dstRect, &(params.paint));
 #else
     canvas.drawRect(params.dstRect, &(params.paint));
-#endif // USE_VIDEO_PROCESS_ENGINE
+#endif // USE_VIDEO_PROCESSING_ENGINE
 #endif
 #else
     canvas.AttachBrush(params.paint);

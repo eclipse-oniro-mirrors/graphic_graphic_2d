@@ -42,7 +42,7 @@
 #ifdef RS_ENABLE_EGLIMAGE
 #include "rs_egl_image_manager.h"
 #endif // RS_ENABLE_EGLIMAGE
-#ifdef USE_VIDEO_PROCESS_ENGINE
+#ifdef USE_VIDEO_PROCESSING_ENGINE
 #include "colorspace_converter_display.h"
 #endif
 
@@ -233,7 +233,7 @@ public:
         return skContext_;
     }
 #endif
-#ifdef USE_VIDEO_PROCESS_ENGINE
+#ifdef USE_VIDEO_PROCESSING_ENGINE
     void ColorSpaceConvertor(sk_sp<SkShader> &inputShader, BufferDrawParam& params);
 #endif
 protected:
@@ -271,7 +271,7 @@ private:
     std::shared_ptr<RSVkImageManager> vkImageManager_ = nullptr;
 #endif
     using SurfaceId = uint64_t;
-#ifdef USE_VIDEO_PROCESS_ENGINE
+#ifdef USE_VIDEO_PROCESSING_ENGINE
     bool SetColorSpaceConverterDisplayParameter(
         const BufferDrawParam& params, Media::VideoProcessingEngine::ColorSpaceConverterDisplayParameter& parameter);
     bool ConvertColorGamutToSpaceInfo(const GraphicColorGamut& colorGamut,

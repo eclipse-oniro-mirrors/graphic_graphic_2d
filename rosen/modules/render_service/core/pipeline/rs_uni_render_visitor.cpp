@@ -3748,7 +3748,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
                 node.SetGlobalAlpha(1.0f);
                 auto params = RSUniRenderUtil::CreateBufferDrawParam(node, false, threadIndex_);
                 params.targetColorGamut = newColorSpace_;
-#ifdef USE_VIDEO_PROCESS_ENGINE
+#ifdef USE_VIDEO_PROCESSING_ENGINE
                 params.screenLightNits = GetScreenLightNits();
 #endif
                 renderEngine_->DrawSurfaceNodeWithParams(*canvas_, node, params);
@@ -4608,7 +4608,7 @@ void RSUniRenderVisitor::ScaleMirrorIfNeed(RSDisplayRenderNode& node)
     }
 }
 
-#ifdef USE_VIDEO_PROCESS_ENGINE
+#ifdef USE_VIDEO_PROCESSING_ENGINE
 float RSUniRenderVisitor::GetScreenLightNits()
 {
     constexpr float DEFAULT_SCREEN_LIGHT_NITS = 500.0;

@@ -468,7 +468,7 @@ private:
     sk_sp<SkImage> cacheImgForCapture_ = nullptr;
 
     uint32_t currentRefreshRate_ = 0;
-#ifdef USE_VIDEO_PROCESS_ENGINE
+#ifdef USE_VIDEO_PROCESSING_ENGINE
     float GetScreenLightNits();
 #endif
 };

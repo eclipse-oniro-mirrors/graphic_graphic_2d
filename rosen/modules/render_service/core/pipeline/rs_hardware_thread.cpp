@@ -342,6 +342,20 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
 #elif defined(RS_ENABLE_EGLIMAGE)
     std::unordered_map<int32_t, std::unique_ptr<ImageCacheSeq>> imageCacheSeqs;
 #endif
+
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    using namespace HDI::Display::Graphic::Common::V1_0;
+    auto colorSpaceType = HdiOutput::ComputeTargetColorSpace(layers);
+    static const std::map<CM_ColorSpaceType, GraphicColorGamut> RS_GAMUT_TO_COLORSPACE_MAP {
+        {CM_SRGB_FULL, GRAPHIC_COLOR_GAMUT_SRGB},
+        {CM_P3_FULL, GRAPHIC_COLOR_GAMUT_DISPLAY_P3},
+    };
+    GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_SRGB;
+    if (RS_TO_COMMON_COLOR_SPACE_TYPE_MAP.find(colorSpaceType) != RS_GAMUT_TO_COLORSPACE_MAP.end()) {
+        colorGamut = RS_GAMUT_TO_COLORSPACE_MAP.at(colorSpaceType);
+    }
+#endif
+
     for (const auto& layer : layers) {
         if (layer == nullptr) {
             continue;
@@ -468,31 +482,32 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
                 return;
             }
 
-#ifdef USE_VIDEO_PROCESS_ENGINE
+#ifdef USE_VIDEO_PROCESSING_ENGINE
             sk_sp<SkShader> imageShader = image->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
             if (imageShader == nullptr) {
                 RS_LOGE("RSHardwareThread::DrawImage imageShader is nullptr.");
             } else {
                 params.paint.setShader(imageShader);
+                params.targetColorGamut = colorGamut;
                 uniRenderEngine_->ColorSpaceConvertor(imageShader, params);
             }
 #endif
 
 #ifdef NEW_SKIA
             RS_TRACE_NAME_FMT("DrawImage(GPU) seqNum: %d", bufferId);
-#ifndef USE_VIDEO_PROCESS_ENGINE
+#ifndef USE_VIDEO_PROCESSING_ENGINE
             canvas->drawImageRect(image, params.srcRect, params.dstRect, SkSamplingOptions(),
                 &(params.paint), SkCanvas::kStrict_SrcRectConstraint);
 #else
             canvas->drawRect(params.dstRect, (params.paint));
-#endif // USE_VIDEO_PROCESS_ENGINE
+#endif // USE_VIDEO_PROCESSING_ENGINE
 #else
             RS_TRACE_NAME_FMT("DrawImage(GPU) seqNum: %d", bufferId);
-#ifndef USE_VIDEO_PROCESS_ENGINE
+#ifndef USE_VIDEO_PROCESSING_ENGINE
             canvas->drawImageRect(image, params.srcRect, params.dstRect, &(params.paint));
 #else
             canvas->drawRect(params.dstRect, &(params.paint));
-#endif // USE_VIDEO_PROCESS_ENGINE
+#endif // USE_VIDEO_PROCESSING_ENGINE
 #endif
 #else // USE_ROSEN_DRAWING
             Drawing::ColorType colorType = (params.buffer->GetFormat() == GRAPHIC_PIXEL_FMT_BGRA_8888) ?

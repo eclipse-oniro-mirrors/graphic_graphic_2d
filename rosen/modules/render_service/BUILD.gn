@@ -43,7 +43,7 @@ ohos_shared_library("librender_service") {
     defines += [ "FRAME_AWARE_TRACE" ]
   }
   if (use_video_processing_engine) {
-    defines += [ "USE_VODEO_PROCESSING_ENGINE" ]
+    defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
   }
   defines += gpu_defines
   if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
@@ -164,7 +164,7 @@ ohos_shared_library("librender_service") {
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/utils",
   ]
   if (use_video_processing_engine) {
-    include_dirs += ["//foundation/multimedia/video_processing_engine/interfaces/inner_api/algorithm"]
+    include_dirs += [ "$video_processing_engine_root/interfaces/inner_api" ]
   }
 
   deps = [
@@ -219,7 +219,6 @@ ohos_shared_library("librender_service") {
     "samgr:samgr_proxy",
     "sensor:sensor_interface_native",
     "window_manager:libwsutils",
-    "drivers_interface_display:display_commontype_idl_headers"
   ]
   if (use_video_processing_engine) {
     external_deps += ["video_processing_engine:videoprocessingengine",
