@@ -613,13 +613,13 @@ std::shared_ptr<Drawing::Surface> RSSurfaceCaptureTask::CreateSurface(const std:
     drawingContext->SetUpDrawingContext();
     return Drawing::Surface::MakeRenderTarget(drawingContext->GetDrawingContext, fasle, info);
 #else
-    auto renderContext = RSMainThread::Instance()->GetRenderContext();
+    auto renderContext = RSMainThread::Instance()->GetRenderEngine()->GetRenderContext();
     if (renderContext == nullptr) {
         RS_LOGE("RSSurfaceCaptureTask::CreateSurface: renderContext is nullptr");
         return nullptr;
     }
     renderContext->SetUpGpuContext();
-    return Drawing::Surface::MakeRenderTarget(renderContext->GetDrContext, fasle, info);
+    return Drawing::Surface::MakeRenderTarget(renderContext->GetDrGPUContext(), false, info);
 #endif
 #endif
     return Drawing::Surface::MakeRasterDirect(info, address, pixelmap->GetRowBytes());
@@ -706,6 +706,13 @@ void RSSurfaceCaptureVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode &node
         if (hasSecurityOrSkipLayer_) {
             RS_LOGD("RSSurfaceCaptureVisitor::ProcessDisplayRenderNode: \
                 process RSDisplayRenderNode(id:[%{public}" PRIu64 "]) Not using UniRender buffer.", node.GetId());
+            
+            // Adding matrix affine transformation logic
+            auto geoPtr = (node.GetRenderProperties().GetBoundsGeometry());
+            if (geoPtr != nullptr) {
+                canvas_->concat(geoPtr->GetMatrix());
+            }
+
             ProcessChildren(node);
             DrawWatermarkIfNeed(node);
         } else {
