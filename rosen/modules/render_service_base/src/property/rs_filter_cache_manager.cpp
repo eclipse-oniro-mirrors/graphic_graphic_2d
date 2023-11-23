@@ -524,9 +524,9 @@ void RSFilterCacheManager::GenerateFilteredSnapshot(
         as_IB(filteredSnapshot)->hintCacheGpuResource();
     }
     if (RSSystemProperties::GetRecordingEnabled()) {
-        if (cachedFilteredSnapshot_->cachedImage_->isTextureBacked()) {
-            RS_LOGI("RSFilterCacheManager::DrawCachedFilteredSnapshot cachedImage from texture to raster image");
-            cachedFilteredSnapshot_->cachedImage_ = cachedFilteredSnapshot_->cachedImage_->makeRasterImage();
+        if (filteredSnapshot->isTextureBacked()) {
+            RS_LOGI("RSFilterCacheManager::GenerateFilteredSnapshot cachedImage from texture to raster image");
+            filteredSnapshot = filteredSnapshot->makeRasterImage();
         }
     }
 #else
