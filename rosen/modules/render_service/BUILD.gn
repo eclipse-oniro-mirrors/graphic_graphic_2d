@@ -223,8 +223,7 @@ ohos_shared_library("librender_service") {
     "window_manager:libwsutils",
   ]
   if (use_video_processing_engine) {
-    external_deps += ["video_processing_engine:videoprocessingengine",
-    ]
+    external_deps += [ "video_processing_engine:videoprocessingengine" ]
   }
 
   if (defined(ddgr_ext_configs)) {
