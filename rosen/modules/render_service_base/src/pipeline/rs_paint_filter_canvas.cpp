@@ -885,31 +885,6 @@ std::stack<RSPaintFilterCanvas::Env> RSPaintFilterCanvas::GetEnvStack()
 }
 #endif
 
-#ifndef USE_ROSEN_DRAWING
-void RSPaintFilterCanvas::onDrawImage2(const SkImage* image, SkScalar left, SkScalar top,
-    const SkSamplingOptions& sampling, const SkPaint* paint) {
-    if (recordingState_) {
-        image = image->makeRasterImage().get();
-    }
-    return SkPaintFilterCanvas::onDrawImage2(image, left, top, sampling, paint);
-}
-
-void RSPaintFilterCanvas::onDrawImageRect2(const SkImage* image, const SkRect& src, const SkRect& dst, 
-    const SkSamplingOptions& sampling, const SkPaint* paint, SrcRectConstraint constraint) {
-    if (recordingState_) {
-        image = image->makeRasterImage().get();
-    }
-    return SkPaintFilterCanvas::onDrawImageRect2(image, src, dst, sampling, paint, constraint);
-}
-
-void RSPaintFilterCanvas::onDrawImageLattice2(const SkImage* image, const Lattice& lattice,
-    const SkRect& dst, SkFilterMode filter, const SkPaint* paint) {
-    if (recordingState_) {
-        image = image->makeRasterImage().get();
-    }
-    return SkPaintFilterCanvas::onDrawImageLattice2(image, lattice, dst, filter, paint);
-}
-#endif
 
 #ifndef USE_ROSEN_DRAWING
 SkCanvas::SaveLayerStrategy RSPaintFilterCanvas::getSaveLayerStrategy(const SaveLayerRec& rec)
