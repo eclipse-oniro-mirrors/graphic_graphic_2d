@@ -433,7 +433,7 @@ public:
 
     bool IsSurfaceInStartingWindowStage() const;
 
-    RS_REGION_VISIBLE_LEVEL GetVisibleLevelForWMS(RSVisibleLevel visibleLevel);
+    WINDOW_LAYER_INFO_TYPE GetVisibleLevelForWMS(RSVisibleLevel visibleLevel);
 
     void SetVisibleRegionRecursive(
         const Occlusion::Region& region,

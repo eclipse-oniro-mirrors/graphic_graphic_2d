@@ -121,6 +121,7 @@ constexpr uint64_t CLEAN_CACHE_FREQ = 60;
 constexpr uint64_t SKIP_COMMAND_FREQ_LIMIT = 30;
 constexpr uint64_t PERF_PERIOD_BLUR = 80000000;
 constexpr uint64_t SK_RELEASE_RESOURCE_PERIOD = 5000000000;
+constexpr uint64_t MAX_DYNAMIC_STATUS_TIME = 5000000000;
 constexpr uint64_t PERF_PERIOD_MULTI_WINDOW = 80000000;
 constexpr uint32_t MULTI_WINDOW_PERF_START_NUM = 2;
 constexpr uint32_t MULTI_WINDOW_PERF_END_NUM = 4;
@@ -1466,8 +1467,44 @@ void RSMainThread::Render()
         rootNode->Process(rsVisitor);
         renderEngine_->ShrinkCachesIfNeeded();
     }
-
+    CallbackDrawContextStatusToWMS();
     PerfForBlurIfNeeded();
+}
+
+void RSMainThread::CallbackDrawContextStatusToWMS()
+{
+    VisibleData drawStatusVec;
+    for (auto dynamicNodeId : curDrawStatusVec_) {
+        if (lastDrawStatusMap_.find(dynamicNodeId) == lastDrawStatusMap_.end()) {
+            drawStatusVec.emplace_back(std::make_pair(dynamicNodeId,
+                WINDOW_LAYER_INFO_TYPE::WINDOW_LAYER_DYNAMIC_STATUS));
+            RS_LOGD("%{public}s nodeId[%{public}" PRIu64 "] status[%{public}d]",
+                __func__, dynamicNodeId, WINDOW_LAYER_INFO_TYPE::WINDOW_LAYER_DYNAMIC_STATUS);
+        }
+        lastDrawStatusMap_[dynamicNodeId] = timestamp_;
+    }
+    auto drawStatusIter = lastDrawStatusMap_.begin();
+    while (drawStatusIter != lastDrawStatusMap_.end()) {
+        if (timestamp_ - drawStatusIter->second > MAX_DYNAMIC_STATUS_TIME) {
+            drawStatusVec.emplace_back(std::make_pair(drawStatusIter->first,
+                WINDOW_LAYER_INFO_TYPE::WINDOW_LAYER_STATIC_STATUS));
+            RS_LOGD("%{public}s nodeId[%{public}" PRIu64 "] status[%{public}d]",
+                __func__, drawStatusIter->first, WINDOW_LAYER_INFO_TYPE::WINDOW_LAYER_STATIC_STATUS);
+            auto tmpIter = drawStatusIter++;
+            lastDrawStatusMap_.erase(tmpIter);
+        } else {
+            drawStatusIter++;
+        }
+    }
+    curDrawStatusVec_.clear();
+    if (!drawStatusVec.empty()) {
+        std::lock_guard<std::mutex> lock(occlusionMutex_);
+        for (auto it = occlusionListeners_.begin(); it != occlusionListeners_.end(); it++) {
+            if (it->second) {
+                it->second->OnOcclusionVisibleChanged(std::make_shared<RSOcclusionData>(drawStatusVec));
+            }
+        }
+    }
 }
 
 bool RSMainThread::CheckSurfaceNeedProcess(OcclusionRectISet& occlusionSurfaces,
