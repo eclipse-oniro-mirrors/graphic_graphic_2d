@@ -201,6 +201,7 @@ static const std::array<RSPropertyDrawable::DrawableGenerator, RSPropertyDrawabl
 };
 } // namespace
 
+#ifndef USE_ROSEN_DRAWING
 std::unordered_set<RSPropertyDrawableSlot> RSPropertyDrawable::GenerateDirtySlots(
     const RSProperties& properties, const std::unordered_set<RSModifierType>& dirtyTypes)
 {
@@ -232,6 +233,42 @@ std::unordered_set<RSPropertyDrawableSlot> RSPropertyDrawable::GenerateDirtySlot
 
     return dirtySlots;
 }
+#else
+std::unordered_set<RSPropertyDrawableSlot> RSPropertyDrawable::GenerateDirtySlots(
+    const RSProperties& properties,
+    std::bitset<static_cast<int>(RSModifierType::MAX_RS_MODIFIER_TYPE)>& dirtyTypes)
+{
+    // Step 1.1: collect dirty slots
+    std::unordered_set<RSPropertyDrawableSlot> dirtySlots;
+    for (uint8_t type = 0; type < static_cast<size_t>(RSModifierType::MAX_RS_MODIFIER_TYPE); type++) {
+        if (dirtyTypes[type]) {
+            auto it = g_propertyToDrawableLut.find(static_cast<RSModifierType>(type));
+            if (it == g_propertyToDrawableLut.end() || it->second == RSPropertyDrawableSlot::INVALID) {
+                continue;
+            }
+            dirtySlots.emplace(it->second);
+        }
+    }
+
+    // Step 1.2: expand dirty slots if needed
+    if (dirtyTypes.test(static_cast<size_t>(RSModifierType::BOUNDS))) {
+        if (properties.GetPixelStretch().has_value()) {
+            dirtySlots.emplace(RSPropertyDrawableSlot::PIXEL_STRETCH);
+        }
+        if (properties.GetBorder() != nullptr) {
+            dirtySlots.emplace(RSPropertyDrawableSlot::BORDER);
+        }
+        // PLANNING: add other slots: ClipToFrame, ColorFilter
+    }
+    if (dirtyTypes.test(static_cast<size_t>(RSModifierType::CORNER_RADIUS))
+        && (properties.GetBorder() != nullptr)) {
+        // border may should be updated with corner radius
+        dirtySlots.emplace(RSPropertyDrawableSlot::BORDER);
+    }
+
+    return dirtySlots;
+}
+#endif
 
 bool RSPropertyDrawable::UpdateDrawableVec(const RSPropertyDrawableGenerateContext& context, DrawableVec& drawableVec,
     std::unordered_set<RSPropertyDrawableSlot>& dirtySlots)

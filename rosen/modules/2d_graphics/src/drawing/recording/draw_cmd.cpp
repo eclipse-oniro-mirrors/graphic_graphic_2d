@@ -1476,7 +1476,7 @@ std::shared_ptr<NoIPCImageOpItem> DrawTextBlobOpItem::GenerateCachedOpItem(CmdLi
         offscreenCanvas->DetachBrush();
     }
 
-    return nullptr;
+    return ipcImageOpItem;
 }
 
 ClipRectOpItem::ClipRectOpItem() : DrawOpItem(CLIP_RECT_OPITEM) {}
