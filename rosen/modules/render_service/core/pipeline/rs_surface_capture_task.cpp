@@ -706,6 +706,13 @@ void RSSurfaceCaptureVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode &node
         if (hasSecurityOrSkipLayer_) {
             RS_LOGD("RSSurfaceCaptureVisitor::ProcessDisplayRenderNode: \
                 process RSDisplayRenderNode(id:[%{public}" PRIu64 "]) Not using UniRender buffer.", node.GetId());
+            
+            // Adding matrix affine transformation logic
+            auto geoPtr = (node.GetRenderProperties().GetBoundsGeometry());
+            if (geoPtr != nullptr) {
+                canvas_->concat(geoPtr->GetMatrix());
+            }
+
             ProcessChildren(node);
             DrawWatermarkIfNeed(node);
         } else {
