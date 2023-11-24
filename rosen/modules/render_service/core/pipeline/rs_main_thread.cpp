@@ -120,6 +120,7 @@ namespace {
 constexpr uint32_t REQUEST_VSYNC_NUMBER_LIMIT = 10;
 constexpr uint64_t REFRESH_PERIOD = 16666667;
 constexpr int32_t PERF_MULTI_WINDOW_REQUESTED_CODE = 10026;
+constexpr int32_t VISIBLEAREARATIO_FORQOS = 3;
 constexpr uint64_t PERF_PERIOD = 250000000;
 constexpr uint64_t CLEAN_CACHE_FREQ = 60;
 constexpr uint64_t SKIP_COMMAND_FREQ_LIMIT = 30;
@@ -266,6 +267,7 @@ void RSMainThread::Init()
     };
     isUniRender_ = RSUniRenderJudgement::IsUniRender();
     SetDeviceType();
+    qosPidCal_ = deviceType_ == DeviceType::PC;
     auto taskDispatchFunc = [](const RSTaskDispatcher::RSTask& task, bool isSyncTask = false) {
         RSMainThread::Instance()->PostTask(task);
     };
@@ -424,7 +426,7 @@ void RSMainThread::InitRSEventDetector()
 void RSMainThread::SetDeviceType()
 {
     auto deviceTypeStr = system::GetParameter("const.product.devicetype", "pc");
-    if (deviceTypeStr == "pc") {
+    if (deviceTypeStr == "pc" || deviceTypeStr == "2in1") {
         deviceType_ = DeviceType::PC;
     } else if (deviceTypeStr == "tablet") {
         deviceType_ = DeviceType::TABLET;
@@ -1506,15 +1508,17 @@ bool RSMainThread::CheckSurfaceNeedProcess(OcclusionRectISet& occlusionSurfaces,
     return needProcess;
 }
 
-RS_REGION_VISIBLE_LEVEL RSMainThread::GetRegionVisibleLevel(const Occlusion::Region& curRegion,
+RSVisibleLevel RSMainThread::GetRegionVisibleLevel(const Occlusion::Region& curRegion,
     const Occlusion::Region& visibleRegion)
 {
     if (visibleRegion.GetSize() == 0) {
-        return RS_REGION_VISIBLE_LEVEL::INVISIBLE;
+        return RSVisibleLevel::RS_INVISIBLE;
     } else if (visibleRegion.Area() == curRegion.Area()) {
-        return RS_REGION_VISIBLE_LEVEL::ALL_VISIBLE;
+        return RSVisibleLevel::RS_ALL_VISIBLE;
+    } else if (visibleRegion.Area() < (curRegion.Area() >> VISIBLEAREARATIO_FORQOS)) {
+        return RSVisibleLevel::RS_SEMI_DEFAULT_VISIBLE;
     }
-    return RS_REGION_VISIBLE_LEVEL::SEMI_VISIBLE;
+    return RSVisibleLevel::RS_SEMI_NONDEFAULT_VISIBLE;
 }
 
 void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::SharedPtr>& curAllSurfaces)
@@ -1522,7 +1526,7 @@ void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::Sha
     Occlusion::Region accumulatedRegion;
     VisibleData curVisVec;
     OcclusionRectISet occlusionSurfaces;
-    std::map<uint32_t, bool> pidVisMap;
+    std::map<uint32_t, RSVisibleLevel> pidVisMap;
     bool hasFilterCacheOcclusion = false;
     bool filterCacheOcclusionEnabled = RSSystemParameters::GetFilterCacheOcculusionEnabled();
     for (auto it = curAllSurfaces.rbegin(); it != curAllSurfaces.rend(); ++it) {
@@ -1535,7 +1539,7 @@ void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::Sha
         if (CheckSurfaceNeedProcess(occlusionSurfaces, curSurface)) {
             Occlusion::Region curRegion { occlusionRect };
             Occlusion::Region subResult = curRegion.Sub(accumulatedRegion);
-            RS_REGION_VISIBLE_LEVEL visibleLevel = GetRegionVisibleLevel(curRegion, subResult);
+            RSVisibleLevel visibleLevel = GetRegionVisibleLevel(curRegion, subResult);
             RS_LOGD("%{public}s nodeId[%{public}" PRIu64 "] visibleLevel[%{public}d]",
                 __func__, curSurface->GetId(), visibleLevel);
             curSurface->SetVisibleRegionRecursive(subResult, curVisVec, pidVisMap, true, visibleLevel);
@@ -1562,7 +1566,7 @@ void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::Sha
             if (CheckSurfaceNeedProcess(occlusionSurfaces, curSurface)) {
                 Occlusion::Region curRegion { occlusionRect };
                 Occlusion::Region subResult = curRegion.Sub(accumulatedRegion);
-                RS_REGION_VISIBLE_LEVEL visibleLevel = GetRegionVisibleLevel(curRegion, subResult);
+                RSVisibleLevel visibleLevel = GetRegionVisibleLevel(curRegion, subResult);
                 curSurface->SetVisibleRegionRecursive(subResult, curVisVec, pidVisMap, false, visibleLevel);
                 curSurface->AccumulateOcclusionRegion(accumulatedRegion, curRegion, hasFilterCacheOcclusion,
                     isUniRender_, false);
@@ -1648,7 +1652,7 @@ void RSMainThread::CalcOcclusion()
     CalcOcclusionImplementation(curAllSurfaces);
 }
 
-bool RSMainThread::CheckQosVisChanged(std::map<uint32_t, bool>& pidVisMap)
+bool RSMainThread::CheckQosVisChanged(std::map<uint32_t, RSVisibleLevel>& pidVisMap)
 {
     bool isVisibleChanged = pidVisMap.size() != lastPidVisMap_.size();
     if (!isVisibleChanged) {
@@ -1663,22 +1667,14 @@ bool RSMainThread::CheckQosVisChanged(std::map<uint32_t, bool>& pidVisMap)
         }
     }
 
-    lastPidVisMap_.clear();
-    std::swap(lastPidVisMap_, pidVisMap);
+    if (isVisibleChanged) {
+        lastPidVisMap_ = pidVisMap;
+    }
     return isVisibleChanged;
 }
 
-void RSMainThread::CallbackToQOS(std::map<uint32_t, bool>& pidVisMap)
+void RSMainThread::CallbackToQOS(std::map<uint32_t, RSVisibleLevel>& pidVisMap)
 {
-    if (!RSInnovation::UpdateQosVsyncEnabled()) {
-        if (qosPidCal_) {
-            qosPidCal_ = false;
-            RSQosThread::ResetQosPid();
-            RSQosThread::GetInstance()->SetQosCal(qosPidCal_);
-        }
-        return;
-    }
-    qosPidCal_ = true;
     RSQosThread::GetInstance()->SetQosCal(qosPidCal_);
     if (!CheckQosVisChanged(pidVisMap)) {
         return;
