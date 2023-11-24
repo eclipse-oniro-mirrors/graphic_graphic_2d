@@ -28,6 +28,12 @@ namespace OHOS {
 namespace Rosen {
 class RSRenderNode;
 
+enum PropertyUpdateType : int8_t {
+    UPDATE_TYPE_OVERWRITE,       // overwrite by given value
+    UPDATE_TYPE_INCREMENTAL,     // incremental update by given value
+    UPDATE_TYPE_FORCE_OVERWRITE, // overwrite and cancel all previous animations
+};
+
 class RSB_EXPORT RSRenderPropertyBase : public std::enable_shared_from_this<RSRenderPropertyBase> {
 public:
     RSRenderPropertyBase() = default;

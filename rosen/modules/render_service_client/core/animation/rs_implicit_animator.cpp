@@ -35,6 +35,10 @@ int RSImplicitAnimator::OpenImplicitAnimation(const RSAnimationTimingProtocol& t
         std::move(repeatCallback) });
     implicitAnimations_.push({});
     keyframeAnimations_.push({});
+    if (timingProtocol.GetDuration() <= 0) {
+        BeginImplicitCancelAnimation();
+        return static_cast<int>(globalImplicitParams_.size()) - 1;
+    }
     switch (timingCurve.type_) {
         case RSAnimationTimingCurve::CurveType::INTERPOLATING:
             BeginImplicitCurveAnimation();
@@ -86,11 +90,26 @@ int RSImplicitAnimator::OpenImplicitAnimation(
     }
 }
 
+void RSImplicitAnimator::CloseImplicitAnimationInner()
+{
+    globalImplicitParams_.pop();
+    implicitAnimations_.pop();
+    keyframeAnimations_.pop();
+    EndImplicitAnimation();
+}
+
 std::vector<std::shared_ptr<RSAnimation>> RSImplicitAnimator::CloseImplicitAnimation()
 {
     if (globalImplicitParams_.empty() || implicitAnimations_.empty() || keyframeAnimations_.empty()) {
         ROSEN_LOGD("Failed to close implicit animation, need to open implicit animation firstly!");
         return {};
+    }
+
+    if (implicitAnimationParams_.top()->GetType() == ImplicitAnimationParamType::CANCEL) {
+        // Cancel animation and call finish callback
+        auto params = std::static_pointer_cast<RSImplicitCancelAnimationParam>(implicitAnimationParams_.top());
+        params->SyncProperties();
+        CloseImplicitAnimationInner();
     }
 
     const auto& finishCallback = std::get<const std::shared_ptr<AnimationFinishCallback>>(globalImplicitParams_.top());
@@ -101,10 +120,7 @@ std::vector<std::shared_ptr<RSAnimation>> RSImplicitAnimator::CloseImplicitAnima
         // If finish callback either 1. is null or 2. is referenced by any animation or implicitly parameters, we don't
         // do anything.
         if (finishCallback.use_count() != 1) {
-            globalImplicitParams_.pop();
-            implicitAnimations_.pop();
-            keyframeAnimations_.pop();
-            EndImplicitAnimation();
+            CloseImplicitAnimationInner();
             return {};
         }
         // we are the only one who holds the finish callback, if the callback is NOT timing sensitive, we need to
@@ -113,10 +129,7 @@ std::vector<std::shared_ptr<RSAnimation>> RSImplicitAnimator::CloseImplicitAnima
             ROSEN_LOGD("RSImplicitAnimator::CloseImplicitAnimation, No implicit animations created, execute finish "
                        "callback asynchronously");
             RSUIDirector::PostTask([finishCallback]() { finishCallback->Execute(); });
-            globalImplicitParams_.pop();
-            implicitAnimations_.pop();
-            keyframeAnimations_.pop();
-            EndImplicitAnimation();
+            CloseImplicitAnimationInner();
             return {};
         }
         // we are the only one who holds the finish callback, and the callback is timing sensitive, we need to create an
@@ -145,10 +158,7 @@ std::vector<std::shared_ptr<RSAnimation>> RSImplicitAnimator::CloseImplicitAnima
         resultAnimations.emplace_back(animation);
     }
 
-    globalImplicitParams_.pop();
-    implicitAnimations_.pop();
-    keyframeAnimations_.pop();
-    EndImplicitAnimation();
+    CloseImplicitAnimationInner();
     return resultAnimations;
 }
 
@@ -259,6 +269,13 @@ void RSImplicitAnimator::BeginImplicitInterpolatingSpringAnimation()
     PushImplicitParam(interpolatingSpringParam);
 }
 
+void RSImplicitAnimator::BeginImplicitCancelAnimation()
+{
+    [[maybe_unused]] const auto& [protocol, curve, unused, unused_repeatCallback] = globalImplicitParams_.top();
+    auto cancelImplicitParam = std::make_shared<RSImplicitCancelAnimationParam>(protocol);
+    PushImplicitParam(cancelImplicitParam);
+}
+
 void RSImplicitAnimator::BeginImplicitTransition(
     const std::shared_ptr<const RSTransitionEffect>& effect, bool isTransitionIn)
 {
@@ -319,6 +336,24 @@ void RSImplicitAnimator::CreateImplicitTransition(RSNode& target)
         target.AddAnimation(transition);
         implicitAnimations_.top().push_back({ transition, target.GetId() });
     }
+    return;
+}
+
+void RSImplicitAnimator::CancelImplicitAnimation(
+    const std::shared_ptr<RSNode>& target, const std::shared_ptr<RSPropertyBase>& property)
+{
+    if (target == nullptr || property == nullptr) {
+        return;
+    }
+    if (!target->HasPropertyAnimation(property->GetId())) {
+        return;
+    }
+    auto params = implicitAnimationParams_.top();
+    if (params->GetType() != ImplicitAnimationParamType::CANCEL) {
+        return;
+    }
+    auto cancelImplicitParam = std::static_pointer_cast<RSImplicitCancelAnimationParam>(params);
+    cancelImplicitParam->AddPropertyToPendingSyncList(property);
     return;
 }
 
