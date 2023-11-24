@@ -294,6 +294,7 @@ sk_sp<GrContext> RSSubThread::CreateShareGrContext()
 std::shared_ptr<Drawing::GPUContext> RSSubThread::CreateShareGrContext()
 {
     RS_TRACE_NAME("CreateShareGrContext");
+#ifdef RS_ENABLE_GL
     CreateShareEglContext();
     auto gpuContext = std::make_shared<Drawing::GPUContext>();
     Drawing::GPUContextOptions options;
@@ -307,6 +308,15 @@ std::shared_ptr<Drawing::GPUContext> RSSubThread::CreateShareGrContext()
         RS_LOGE("nullptr gpuContext is null");
         return nullptr;
     }
+#endif
+
+#ifdef RS_ENABLE_VK
+    auto gpuContext = std::make_shared<Drawing::GPUContext>();
+    if (!gpuContext->BuildFromVK(RsVulkanContext::GetSingleton().GetGrVkBackendContext())) {
+        RS_LOGE("nullptr gpuContext is null");
+        return nullptr;
+    }
+#endif
     return gpuContext;
 }
 #endif

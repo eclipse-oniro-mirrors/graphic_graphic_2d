@@ -41,6 +41,13 @@ std::shared_ptr<Typeface> SkiaStaticFactory::MakeFromFile(const char path[])
 }
 
 #ifdef ACE_ENABLE_GPU
+#ifdef RS_ENABLE_VK
+std::shared_ptr<Surface> SkiaStaticFactory::MakeFromBackendRenderTarget(GPUContext* gpuuContext, const VKTextureInfo& info,
+        TextureOrigin origin, void (*deleteVkImage)(void *), void* cleanHelper)
+{
+    return SkiaSurface::MakeFromBackendRenderTarget(gpuuContext, info, origin, deleteVkImage, cleanHelper);
+}
+#endif
 std::shared_ptr<Surface> SkiaStaticFactory::MakeRenderTarget(GPUContext* gpuContext,
     bool budgeted, const ImageInfo& imageInfo)
 {

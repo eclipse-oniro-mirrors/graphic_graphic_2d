@@ -2271,7 +2271,11 @@ void RSMainThread::TrimMem(std::unordered_set<std::u16string>& argSets, std::str
     }
     dumpString.append("trimMem: " + type + "\n");
 #else
-    auto gpuContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
+#ifdef NEW_RENDER_CONTEXT
+    auto grContext = GetRenderEngine()->GetDrawingContext()->GetDrawingContext();
+#else
+    auto grContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
+#endif
     if (type.empty()) {
         gpuContext->Flush();
         SkGraphics::PurgeAllCaches();

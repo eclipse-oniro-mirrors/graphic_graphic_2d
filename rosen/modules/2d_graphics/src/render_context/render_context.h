@@ -95,7 +95,11 @@ public:
     {
         return surface_;
     }
+#ifdef RS_ENABLE_VK
+    bool SetUpGpuContext(std::shared_ptr<Drawing::GPUContext> drawingContext);
+#else
     bool SetUpGpuContext();
+#endif
 #endif
 
     EGLSurface CreateEGLSurface(EGLNativeWindowType eglNativeWindow);

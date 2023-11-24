@@ -472,6 +472,7 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
             canvas->drawImageRect(image, params.srcRect, params.dstRect, &(params.paint));
 #endif
 #else // USE_ROSEN_DRAWING
+#if defined(RS_ENABLE_GL) && defined(RS_ENABLE_EGLIMAGE)
             Drawing::ColorType colorType = (params.buffer->GetFormat() == GRAPHIC_PIXEL_FMT_BGRA_8888) ?
                 Drawing::ColorType::COLORTYPE_BGRA_8888 : Drawing::ColorType::COLORTYPE_RGBA_8888;
             Drawing::BitmapFormat bitmapFormat = { colorType, Drawing::AlphaType::ALPHATYPE_PREMUL };
@@ -490,6 +491,29 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
                 RS_LOGE("RSHardwareThread::Redraw: image BuildFromTexture failed");
                 return;
             }
+#elif defined RS_ENABLE_VK
+            auto imageCache = uniRenderEngine_->GetVkImageManager()->CreateImageCacheFromBuffer(
+                params.buffer, params.acquireFence);
+            if (!imageCache) {
+                continue;
+            }
+            auto bufferId = params.buffer->GetSeqNum();
+            imageCacheSeqs[bufferId] = imageCache;
+            auto& backendTexture = imageCache->GetBackendTexture();
+
+            Drawing::ColorType colorType = (params.buffer->GetFormat() == GRAPHIC_PIXEL_FMT_BGRA_8888) ?
+                Drawing::ColorType::COLORTYPE_BGRA_8888 : Drawing::ColorType::COLORTYPE_RGBA_8888;
+            Drawing::BitmapFormat bitmapFormat = { colorType, Drawing::AlphaType::ALPHATYPE_PREMUL };
+
+            auto image = std::make_shared<Drawing::Image>();
+            if (!image->BuildFromTexture(*canvas->GetGPUContext(), backendTexture,
+                Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, nullptr,
+                NativeBufferUtils::DeleteVkImage,
+                imageCache->RefCleanupHelper())) {
+                RS_LOGE("RSHardwareThread::Redraw: image BuildFromTexture failed");
+                return;
+            }
+#endif
             canvas->AttachBrush(params.paint);
             RS_TRACE_NAME_FMT("DrawImage(GPU) seqNum: %d", bufferId);
             canvas->DrawImageRect(*image, params.srcRect, params.dstRect,
