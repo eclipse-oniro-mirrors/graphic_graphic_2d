@@ -25,7 +25,6 @@
 #include "texgine_stream.h"
 #include "texgine_string.h"
 
-
 namespace OHOS {
 namespace Rosen {
 namespace TextEngine {
