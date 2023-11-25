@@ -63,6 +63,7 @@ namespace OHOS {
 namespace Rosen {
 namespace Drawing {
 std::unordered_map<uint32_t, CanvasPlayer::PlaybackFunc> CanvasPlayer::opPlaybackFuncLUT_ = {
+    { DrawOpItem::CMD_LIST_OPITEM,          DrawCmdListOpItem::Playback },
     { DrawOpItem::POINT_OPITEM,             DrawPointOpItem::Playback },
     { DrawOpItem::POINTS_OPITEM,            DrawPointsOpItem::Playback },
     { DrawOpItem::LINE_OPITEM,              DrawLineOpItem::Playback },
@@ -110,8 +111,9 @@ std::unordered_map<uint32_t, CanvasPlayer::PlaybackFunc> CanvasPlayer::opPlaybac
     { DrawOpItem::CLIP_ADAPTIVE_ROUND_RECT_OPITEM, ClipAdaptiveRoundRectOpItem::Playback},
     { DrawOpItem::ADAPTIVE_IMAGE_OPITEM,    DrawAdaptiveImageOpItem::Playback},
     { DrawOpItem::ADAPTIVE_PIXELMAP_OPITEM, DrawAdaptivePixelMapOpItem::Playback},
-    { DrawOpItem::EXTEND_PIXELMAP_OPITEM,   DrawExtendPixelMapOpItem::Playback},
     { DrawOpItem::IMAGE_WITH_PARM_OPITEM,   DrawImageWithParmOpItem::Playback},
+    { DrawOpItem::EXTEND_PIXELMAP_OPITEM,   DrawExtendPixelMapOpItem::Playback},
+    { DrawOpItem::PIXELMAP_RECT_OPITEM,     DrawPixelMapRectOpItem::Playback},
     { DrawOpItem::REGION_OPITEM,            DrawRegionOpItem::Playback },
     { DrawOpItem::PATCH_OPITEM,             DrawPatchOpItem::Playback },
     { DrawOpItem::EDGEAAQUAD_OPITEM, DrawEdgeAAQuadOpItem::Playback },
@@ -137,6 +139,20 @@ bool CanvasPlayer::Playback(uint32_t type, void* opItem)
     (*func)(*this, opItem);
 
     return true;
+}
+
+CanvasPlayer::PlaybackFunc CanvasPlayer::GetFuncFromType(uint32_t type)
+{
+    if (type == DrawOpItem::OPITEM_HEAD) {
+        return nullptr;
+    }
+
+    auto it = opPlaybackFuncLUT_.find(type);
+    if (it == opPlaybackFuncLUT_.end() || it->second == nullptr) {
+        return nullptr;
+    }
+
+    return it->second;
 }
 
 GenerateCachedOpItemPlayer::GenerateCachedOpItemPlayer(CmdList &cmdList, Canvas* canvas, const Rect* rect)
@@ -169,6 +185,7 @@ std::shared_ptr<NoIPCImageOpItem> GenerateCachedOpItemPlayer::GenerateCachedOpIt
 }
 
 std::unordered_map<uint32_t, UnmarshallingPlayer::UnmarshallingFunc> UnmarshallingPlayer::opUnmarshallingFuncLUT_ = {
+    { DrawOpItem::CMD_LIST_OPITEM,          DrawCmdListOpItem::Unmarshalling },
     { DrawOpItem::POINT_OPITEM,             DrawPointOpItem::Unmarshalling },
     { DrawOpItem::POINTS_OPITEM,            DrawPointsOpItem::Unmarshalling },
     { DrawOpItem::LINE_OPITEM,              DrawLineOpItem::Unmarshalling },
@@ -216,8 +233,9 @@ std::unordered_map<uint32_t, UnmarshallingPlayer::UnmarshallingFunc> Unmarshalli
     { DrawOpItem::CLIP_ADAPTIVE_ROUND_RECT_OPITEM, ClipAdaptiveRoundRectOpItem::Unmarshalling},
     { DrawOpItem::ADAPTIVE_IMAGE_OPITEM,    DrawAdaptiveImageOpItem::Unmarshalling},
     { DrawOpItem::ADAPTIVE_PIXELMAP_OPITEM, DrawAdaptivePixelMapOpItem::Unmarshalling},
-    { DrawOpItem::EXTEND_PIXELMAP_OPITEM,   DrawExtendPixelMapOpItem::Unmarshalling},
     { DrawOpItem::IMAGE_WITH_PARM_OPITEM,   DrawImageWithParmOpItem::Unmarshalling},
+    { DrawOpItem::EXTEND_PIXELMAP_OPITEM,   DrawExtendPixelMapOpItem::Unmarshalling},
+    { DrawOpItem::PIXELMAP_RECT_OPITEM,     DrawPixelMapRectOpItem::Unmarshalling},
     { DrawOpItem::REGION_OPITEM,            DrawRegionOpItem::Unmarshalling },
     { DrawOpItem::PATCH_OPITEM,             DrawPatchOpItem::Unmarshalling },
     { DrawOpItem::EDGEAAQUAD_OPITEM, DrawEdgeAAQuadOpItem::Unmarshalling },
@@ -243,6 +261,62 @@ std::shared_ptr<OpItem> UnmarshallingPlayer::Unmarshalling(uint32_t type, void* 
 }
 
 /* OpItem */
+DrawCmdListOpItem::DrawCmdListOpItem() : DrawOpItem(CMD_LIST_OPITEM) {}
+DrawCmdListOpItem::DrawCmdListOpItem(const CmdListHandle& handle) : DrawOpItem(CMD_LIST_OPITEM), handle_(handle) {}
+
+std::shared_ptr<OpItem> DrawCmdListOpItem::Unmarshalling(const CmdList& cmdList, void* opItem)
+{
+    CHECK_AND_RETURN_RET_LOG(opItem != nullptr, nullptr, "opItem is nullptr!");
+    auto op = std::make_shared<DrawCmdListOpItem>();
+    COPY_OPITEN_AND_RETURN_RET_LOG(DrawCmdListOpItem, op.get(), opItem, nullptr, "failed to memcpy_s");
+    return op;
+}
+
+void DrawCmdListOpItem::Unmarshalling(const CmdList& cmdList, Canvas* canvas)
+{
+    auto opItems = CmdListHelper::GetDrawOpItemsFromHandle(cmdList,  handle_);
+    if (opItems.size() == 0) {
+        LOGE("opItems is nullptr!");
+        return;
+    }
+
+    Rect tmpRect;
+    CanvasPlayer player = { *canvas, cmdList, tmpRect};
+    if (canvas) {
+        for (auto opItem : opItems) {
+            CanvasPlayer::PlaybackFunc func = (CanvasPlayer::PlaybackFunc)(opItem.second);
+            (*func)(player, opItem.first);
+        }
+    } else {
+        playbackTask_ = [this, opItems](Canvas& canvas) {
+            Rect tmpRect;
+            DrawCmdList cmdList_;
+            CanvasPlayer player = {canvas, cmdList_, tmpRect};
+            for (auto opItem : opItems) {
+                CanvasPlayer::PlaybackFunc func = (CanvasPlayer::PlaybackFunc)(opItem.second);
+                (*func)(player, opItem.first);
+            }
+        };
+    }
+}
+
+void DrawCmdListOpItem::Playback(CanvasPlayer& player, void* opItem)
+{
+    if (opItem != nullptr) {
+        auto* op = static_cast<DrawCmdListOpItem*>(opItem);
+        op->Playback(player.canvas_, player.cmdList_, player.rect_);
+    }
+}
+
+void DrawCmdListOpItem::Playback(Canvas& canvas, const CmdList& cmdList, const Rect& rect)
+{
+    if (playbackTask_) {
+        playbackTask_(canvas);
+    } else {
+        Unmarshalling(cmdList, &canvas);
+    }
+}
+
 DrawPointOpItem::DrawPointOpItem() : DrawOpItem(POINT_OPITEM) {}
 DrawPointOpItem::DrawPointOpItem(const Point& point) : DrawOpItem(POINT_OPITEM), point_(point) {}
 
@@ -550,7 +624,7 @@ void DrawCircleOpItem::Playback(Canvas& canvas)
 }
 
 DrawPathOpItem::DrawPathOpItem() : DrawOpItem(PATH_OPITEM) {}
-DrawPathOpItem::DrawPathOpItem(const CmdListHandle& path) : DrawOpItem(PATH_OPITEM), path_(path) {}
+DrawPathOpItem::DrawPathOpItem(const ImageHandle& path) : DrawOpItem(PATH_OPITEM), path_(path) {}
 
 std::shared_ptr<OpItem> DrawPathOpItem::Unmarshalling(const CmdList& cmdList, void* opItem)
 {
@@ -563,7 +637,7 @@ std::shared_ptr<OpItem> DrawPathOpItem::Unmarshalling(const CmdList& cmdList, vo
 
 void DrawPathOpItem::Unmarshalling(const CmdList& cmdList, Canvas* canvas)
 {
-    auto path = CmdListHelper::GetFromCmdList<PathCmdList, Path>(cmdList, path_);
+    auto path = CmdListHelper::GetPathFromCmdList(cmdList, path_);
     if (path == nullptr) {
         LOGE("path is nullptr!");
         return;
@@ -664,7 +738,7 @@ void DrawBackgroundOpItem::Playback(Canvas& canvas, const CmdList& cmdList)
 }
 
 DrawShadowOpItem::DrawShadowOpItem() : DrawOpItem(SHADOW_OPITEM) {}
-DrawShadowOpItem::DrawShadowOpItem(const CmdListHandle& path, const Point3& planeParams, const Point3& devLightPos,
+DrawShadowOpItem::DrawShadowOpItem(const ImageHandle& path, const Point3& planeParams, const Point3& devLightPos,
     scalar lightRadius, Color ambientColor, Color spotColor, ShadowFlags flag)
     : DrawOpItem(SHADOW_OPITEM), path_(path), planeParams_(planeParams), devLightPos_(devLightPos),
     lightRadius_(lightRadius), ambientColor_(ambientColor), spotColor_(spotColor), flag_(flag) {}
@@ -680,7 +754,7 @@ std::shared_ptr<OpItem> DrawShadowOpItem::Unmarshalling(const CmdList& cmdList, 
 
 void DrawShadowOpItem::Unmarshalling(const CmdList& cmdList, Canvas* canvas)
 {
-    auto path = CmdListHelper::GetFromCmdList<PathCmdList, Path>(cmdList, path_);
+    auto path = CmdListHelper::GetPathFromCmdList(cmdList, path_);
     if (path == nullptr) {
         LOGE("path is nullptr!");
         return;
@@ -1576,7 +1650,7 @@ void ClipRoundRectOpItem::Playback(Canvas& canvas, const CmdList& cmdList)
 }
 
 ClipPathOpItem::ClipPathOpItem() : DrawOpItem(CLIP_PATH_OPITEM) {}
-ClipPathOpItem::ClipPathOpItem(const CmdListHandle& path, ClipOp clipOp, bool doAntiAlias)
+ClipPathOpItem::ClipPathOpItem(const ImageHandle& path, ClipOp clipOp, bool doAntiAlias)
     : DrawOpItem(CLIP_PATH_OPITEM), path_(path), clipOp_(clipOp), doAntiAlias_(doAntiAlias) {}
 
 std::shared_ptr<OpItem> ClipPathOpItem::Unmarshalling(const CmdList& cmdList, void* opItem)
@@ -1590,7 +1664,7 @@ std::shared_ptr<OpItem> ClipPathOpItem::Unmarshalling(const CmdList& cmdList, vo
 
 void ClipPathOpItem::Unmarshalling(const CmdList& cmdList, Canvas* canvas)
 {
-    auto path = CmdListHelper::GetFromCmdList<PathCmdList, Path>(cmdList, path_);
+    auto path = CmdListHelper::GetPathFromCmdList(cmdList, path_);
     if (path == nullptr) {
         LOGE("path is nullptr!");
         return;
@@ -2501,6 +2575,56 @@ void DrawExtendPixelMapOpItem::Playback(Canvas& canvas, const CmdList& cmdList, 
         return;
     }
     extendObject->Playback(canvas, rect, sampling_, false);
+}
+
+DrawPixelMapRectOpItem::DrawPixelMapRectOpItem() : DrawOpItem(PIXELMAP_RECT_OPITEM) {}
+DrawPixelMapRectOpItem::DrawPixelMapRectOpItem(const ImageHandle& objectHandle, const SamplingOptions& sampling)
+    : DrawOpItem(PIXELMAP_RECT_OPITEM), objectHandle_(objectHandle), sampling_(sampling) {}
+
+std::shared_ptr<OpItem> DrawPixelMapRectOpItem::Unmarshalling(const CmdList& cmdList, void* opItem)
+{
+    CHECK_AND_RETURN_RET_LOG(opItem != nullptr, nullptr, "opItem is nullptr!");
+    auto op = std::make_shared<DrawPixelMapRectOpItem>();
+    COPY_OPITEN_AND_RETURN_RET_LOG(DrawPixelMapRectOpItem, op.get(), opItem, nullptr, "failed to memcpy_s");
+    op->Unmarshalling(cmdList);
+    return op;
+}
+
+void DrawPixelMapRectOpItem::Unmarshalling(const CmdList& cmdList)
+{
+    auto extendObject = CmdListHelper::GetImageBaseOjFromCmdList(cmdList, objectHandle_);
+    if (extendObject == nullptr) {
+        LOGE("extendObject is nullptr!");
+        return;
+    }
+
+    playbackTask_ = [this, extendObject](Canvas& canvas, const Rect& rect) {
+        extendObject->Playback(canvas, rect, sampling_);
+    };
+}
+
+
+void DrawPixelMapRectOpItem::Playback(CanvasPlayer& player, void* opItem)
+{
+    if (opItem != nullptr) {
+        auto* op = static_cast<DrawPixelMapRectOpItem*>(opItem);
+        op->Playback(player.canvas_, player.cmdList_, player.rect_);
+    }
+}
+
+void DrawPixelMapRectOpItem::Playback(Canvas& canvas, const CmdList& cmdList, const Rect& rect) const
+{
+    if (playbackTask_) {
+        playbackTask_(canvas, rect);
+        return;
+    }
+
+    auto extendObject = CmdListHelper::GetImageBaseOjFromCmdList(cmdList, objectHandle_);
+    if (extendObject == nullptr) {
+        LOGE("extendObject is nullptr!");
+        return;
+    }
+    extendObject->Playback(canvas, rect, sampling_);
 }
 
 NoIPCImageOpItem::NoIPCImageOpItem(std::shared_ptr<Image> image, const Rect& src, const Rect& dst,

@@ -104,6 +104,10 @@ public:
     // if there is any new dirty op, check it
     bool IsContentDirty() const;
     void SetContentDirty();
+    bool IsOnlyBasicGeoTransfrom() const
+    {
+        return isOnlyBasicGeoTransform_;
+    }
 
     WeakPtr GetParent() const;
 
@@ -115,6 +119,19 @@ public:
     inline const std::list<WeakPtr> &GetChildren() const noexcept
     {
         return children_;
+    }
+
+    inline const std::map<NodeId, std::vector<WeakPtr>> &GetSubSurfaceNodes() const
+    {
+        return subSurfaceNodes_;
+    }
+    bool IsFirstLevelSurfaceNode();
+    bool SubSurfaceNodeNeedDraw(PartialRenderType opDropType);
+    void AddSubSurfaceNode(SharedPtr child, SharedPtr parent);
+    void RemoveSubSurfaceNode(SharedPtr child, SharedPtr parent);
+    inline bool GetSubSurfaceEnabled() const
+    {
+        return isSubSurfaceEnabled_;
     }
 
     // flag: isOnTheTree; instanceRootNodeId: displaynode or leash/appnode attached to
@@ -420,7 +437,7 @@ public:
     void MarkNodeGroup(NodeGroupType type, bool isNodeGroup);
     NodeGroupType GetNodeGroupType();
 
-    void MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer);
+    void MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer, pid_t pid = 0);
     virtual bool GetNodeIsSingleFrameComposer() const;
 
     /////////////////////////////////////////////
@@ -514,6 +531,7 @@ private:
     const std::weak_ptr<RSContext> context_;
     NodeDirty dirtyStatus_ = NodeDirty::CLEAN;
     bool isContentDirty_ = false;
+    bool isOnlyBasicGeoTransform_ = true;
     friend class RSRenderPropertyBase;
     friend class RSRenderTransition;
     std::atomic<bool> isTunnelHandleChange_ = false;
@@ -552,7 +570,8 @@ private:
     sk_sp<SkSurface> cacheSurface_ = nullptr;
     sk_sp<SkSurface> cacheCompletedSurface_ = nullptr;
 #else
-    std::shared_ptr<Drawing::Bitmap> cacheBitmap_ = nullptr;
+    std::shared_ptr<Drawing::Image> GetCompletedImage(
+        RSPaintFilterCanvas& canvas, uint32_t threadIndex, bool isUIFirst);
     std::shared_ptr<Drawing::Surface> cacheSurface_ = nullptr;
     std::shared_ptr<Drawing::Surface> cacheCompletedSurface_ = nullptr;
 #endif
@@ -627,6 +646,10 @@ private:
     std::vector<std::unique_ptr<RSPropertyDrawable>> propertyDrawablesVec_;
     uint8_t drawableVecStatus_ = 0;
     void UpdateDrawableVec();
+
+    bool isSubSurfaceEnabled_ = false;
+    std::map<NodeId, std::vector<WeakPtr>> subSurfaceNodes_;
+    pid_t appPid_ = 0;
 
     friend class RSAliasDrawable;
     friend class RSMainThread;

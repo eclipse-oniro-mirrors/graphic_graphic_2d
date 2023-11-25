@@ -267,11 +267,7 @@ void FlushOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
     canvas.flush();
 }
 
-#ifdef NEW_SKIA
 MatrixOpItem::MatrixOpItem(const SkM44& matrix) : OpItem(sizeof(MatrixOpItem)), matrix_(matrix) {}
-#else
-MatrixOpItem::MatrixOpItem(const SkMatrix& matrix) : OpItem(sizeof(MatrixOpItem)), matrix_(matrix) {}
-#endif
 
 void MatrixOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
 {
@@ -671,11 +667,7 @@ ClipOutsetRectOpItem::ClipOutsetRectOpItem(float dx, float dy)
 void ClipOutsetRectOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect* rect) const
 {
     auto clipRect = canvas.getLocalClipBounds().makeOutset(dx_, dy_);
-#ifdef NEW_SKIA
     canvas.clipRect(clipRect, SkClipOp::kIntersect, true);
-#else
-    canvas.clipRect(clipRect, SkClipOp::kExtraEnumNeedInternallyPleaseIgnoreWillGoAway5, true);
-#endif
 }
 
 PathOpItem::PathOpItem(const SkPath& path, const SkPaint& paint) : OpItemWithPaint(sizeof(PathOpItem))
@@ -708,15 +700,9 @@ void PaintOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
     canvas.drawPaint(paint_);
 }
 
-#ifdef NEW_SKIA
 ImageWithParmOpItem::ImageWithParmOpItem(const sk_sp<SkImage> img, const sk_sp<SkData> data,
     const RsImageInfo& rsimageInfo, const SkSamplingOptions& samplingOptions, const SkPaint& paint)
     : OpItemWithPaint(sizeof(ImageWithParmOpItem)), samplingOptions_(samplingOptions)
-#else
-ImageWithParmOpItem::ImageWithParmOpItem(const sk_sp<SkImage> img, const sk_sp<SkData> data,
-    const RsImageInfo& rsimageInfo, const SkPaint& paint)
-    : OpItemWithPaint(sizeof(ImageWithParmOpItem))
-#endif
 {
     rsImage_ = std::make_shared<RSImage>();
     rsImage_->SetImage(img);
@@ -728,16 +714,10 @@ ImageWithParmOpItem::ImageWithParmOpItem(const sk_sp<SkImage> img, const sk_sp<S
     paint_ = paint;
 }
 
-#ifdef NEW_SKIA
 ImageWithParmOpItem::ImageWithParmOpItem(
     const std::shared_ptr<Media::PixelMap>& pixelmap, const RsImageInfo& rsimageInfo,
     const SkSamplingOptions& samplingOptions, const SkPaint& paint)
     : OpItemWithPaint(sizeof(ImageWithParmOpItem)), samplingOptions_(samplingOptions)
-#else
-ImageWithParmOpItem::ImageWithParmOpItem(
-    const std::shared_ptr<Media::PixelMap>& pixelmap, const RsImageInfo& rsimageInfo, const SkPaint& paint)
-    : OpItemWithPaint(sizeof(ImageWithParmOpItem))
-#endif
 {
     rsImage_ = std::make_shared<RSImage>();
     rsImage_->SetPixelMap(pixelmap);
@@ -748,14 +728,9 @@ ImageWithParmOpItem::ImageWithParmOpItem(
     paint_ = paint;
 }
 
-#ifdef NEW_SKIA
 ImageWithParmOpItem::ImageWithParmOpItem(const std::shared_ptr<RSImage>& rsImage,
     const SkSamplingOptions& samplingOptions, const SkPaint& paint)
     : OpItemWithPaint(sizeof(ImageWithParmOpItem)), rsImage_(rsImage), samplingOptions_(samplingOptions)
-#else
-ImageWithParmOpItem::ImageWithParmOpItem(const std::shared_ptr<RSImage>& rsImage, const SkPaint& paint)
-    : OpItemWithPaint(sizeof(ImageWithParmOpItem)), rsImage_(rsImage)
-#endif
 {
     paint_ = paint;
 }
@@ -836,11 +811,7 @@ void ImageWithParmOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect* rect) 
 #endif
 #endif
 
-#ifdef NEW_SKIA
     rsImage_->CanvasDrawImage(canvas, *rect, samplingOptions_, paint_);
-#else
-    rsImage_->CanvasDrawImage(canvas, *rect, paint_);
-#endif
 }
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
@@ -2473,6 +2444,42 @@ RSExtendImageObject::~RSExtendImageObject()
         }
     });
 #endif
+}
+
+RSExtendImageBaseOj::RSExtendImageBaseOj(const std::shared_ptr<Media::PixelMap>& pixelMap, const Drawing::Rect& src,
+    const Drawing::Rect& dst)
+{
+    if (pixelMap) {
+        rsImage_ = std::make_shared<RSImageBase>();
+        rsImage_->SetPixelMap(pixelMap);
+        rsImage_->SetSrcRect(RectF(src.GetLeft(), src.GetTop(), src.GetWidth(), src.GetHeight()));
+        rsImage_->SetDstRect(RectF(dst.GetLeft(), dst.GetTop(), dst.GetWidth(), dst.GetHeight()));
+    }
+}
+
+void RSExtendImageBaseOj::Playback(Drawing::Canvas& canvas, const Drawing::Rect& rect,
+    const Drawing::SamplingOptions& sampling)
+{
+    if (rsImage_) {
+        rsImage_->DrawImage(canvas, sampling);
+    }
+}
+
+
+bool RSExtendImageBaseOj::Marshalling(Parcel &parcel) const
+{
+    bool ret = RSMarshallingHelper::Marshalling(parcel, rsImage_);
+    return ret;
+}
+
+RSExtendImageBaseOj *RSExtendImageBaseOj::Unmarshalling(Parcel &parcel)
+{
+    auto object = new RSExtendImageBaseOj();
+    bool ret = RSMarshallingHelper::Unmarshalling(parcel, object->rsImage_);
+    if (!ret) {
+        return nullptr;
+    }
+    return object;
 }
 } // namespace Rosen
 } // namespace OHOS

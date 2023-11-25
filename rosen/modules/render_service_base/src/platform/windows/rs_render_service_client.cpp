@@ -271,6 +271,11 @@ int32_t RSRenderServiceClient::SetScreenCorrection(ScreenId id, ScreenRotation s
     return {};
 }
 
+bool RSRenderServiceClient::SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation)
+{
+    return {};
+}
+
 int32_t RSRenderServiceClient::GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode)
 {
     return {};
@@ -336,7 +341,12 @@ bool RSRenderServiceClient::GetBitmap(NodeId id, Drawing::Bitmap& bitmap)
     return {};
 }
 
+#ifndef USE_ROSEN_DRAWING
 bool RSRenderServiceClient::GetPixelmap(NodeId id, const std::shared_ptr<Media::PixelMap> pixelmap, const SkRect* rect)
+#else
+bool RSRenderServiceClient::GetPixelmap(
+    NodeId id, const std::shared_ptr<Media::PixelMap> pixelmap, const Drawing::Rect* rect)
+#endif
 {
     return {};
 }
