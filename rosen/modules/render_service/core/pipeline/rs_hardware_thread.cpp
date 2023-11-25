@@ -221,8 +221,9 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         PostTask(task);
     } else {
         auto period  = CreateVSyncSampler()->GetHardwarePeriod();
-        uint64_t pipelineOffset = hgmCore.GetPipelineOffset();
-        uint64_t expectCommitTime = currTimestamp + pipelineOffset - period;
+        int64_t pipelineOffset = hgmCore.GetPipelineOffset();
+        uint64_t expectCommitTime = static_cast<uint64_t>(currTimestamp + static_cast<uint64_t>(pipelineOffset) -
+            static_cast<uint64_t>(period));
         uint64_t currTime = static_cast<uint64_t>(
             std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::steady_clock::now().time_since_epoch()).count());
@@ -420,7 +421,7 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
             SkColorType colorType = (params.buffer->GetFormat() == GRAPHIC_PIXEL_FMT_BGRA_8888) ?
                 kBGRA_8888_SkColorType : kRGBA_8888_SkColorType;
             GrGLTextureInfo grExternalTextureInfo = { GL_TEXTURE_EXTERNAL_OES, eglTextureId,
-                static_cast<GrGLenum>((params.buffer->GetFormat() == GRAPHIC_PIXEL_FMT_BGRA_8888) ? 
+                static_cast<GrGLenum>((params.buffer->GetFormat() == GRAPHIC_PIXEL_FMT_BGRA_8888) ?
                     GR_GL_BGRA8 : GR_GL_RGBA8)};
             GrBackendTexture backendTexture(params.buffer->GetSurfaceBufferWidth(),
                 params.buffer->GetSurfaceBufferHeight(), GrMipMapped::kNo, grExternalTextureInfo);
