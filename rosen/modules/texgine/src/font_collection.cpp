@@ -78,7 +78,7 @@ void FontCollection::SortTypeface(FontStyles &style) const
 }
 
 std::shared_ptr<Typeface> FontCollection::GetTypefaceForChar(const uint32_t &ch, FontStyles &style,
-    const std::string &script, const std::string &locale, bool &fallbackTypeface) const
+    const std::string &script, const std::string &locale) const
 {
     SortTypeface(style);
     auto fs = std::make_shared<TexgineFontStyle>();
@@ -101,7 +101,6 @@ std::shared_ptr<Typeface> FontCollection::GetTypefaceForChar(const uint32_t &ch,
         }
 
         if (typeface->Has(ch)) {
-            fallbackTypeface = false;
             return typeface;
         }
     }
@@ -112,7 +111,6 @@ std::shared_ptr<Typeface> FontCollection::GetTypefaceForChar(const uint32_t &ch,
     if (typeface == nullptr) {
         typeface = GetTypefaceForFontStyles(style, script, locale);
     }
-    fallbackTypeface = true;
     return typeface;
 }
 
