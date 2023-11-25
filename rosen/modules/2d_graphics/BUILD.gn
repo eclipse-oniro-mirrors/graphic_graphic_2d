@@ -165,6 +165,7 @@ template("graphics2d_source_set") {
       "$drawing_src_dir/utils/data.cpp",
       "$drawing_src_dir/utils/matrix.cpp",
       "$drawing_src_dir/utils/matrix44.cpp",
+      "$drawing_src_dir/utils/object_mgr.cpp",
       "$drawing_src_dir/utils/region.cpp",
       "$drawing_src_dir/utils/vertices.cpp",
     ]
