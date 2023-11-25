@@ -193,7 +193,7 @@ struct VKTextureInfo {
 }
 #endif
 
-class BackendTexture {
+class DRAWING_API BackendTexture {
 public:
     BackendTexture() noexcept;
     BackendTexture(bool isValid) noexcept;

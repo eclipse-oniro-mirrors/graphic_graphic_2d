@@ -33,6 +33,7 @@
 #include "pipeline/rs_surface_handler.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "platform/common/rs_system_properties.h"
+#include "platform/common/rs_surface_ext.h"
 #include "property/rs_properties_painter.h"
 #include "screen_manager/screen_types.h"
 #include "transaction/rs_occlusion_data.h"
@@ -346,6 +347,7 @@ public:
 
     void SetFingerprint(bool hasFingerprint);
     bool GetFingerprint() const;
+    bool IsMultiInstance();
 
     std::shared_ptr<RSDirtyRegionManager> GetDirtyManager() const;
     std::shared_ptr<RSDirtyRegionManager> GetCacheSurfaceDirtyManager() const;
@@ -431,12 +433,14 @@ public:
 
     bool IsSurfaceInStartingWindowStage() const;
 
+    RS_REGION_VISIBLE_LEVEL GetVisibleLevelForWMS(RSVisibleLevel visibleLevel);
+
     void SetVisibleRegionRecursive(
         const Occlusion::Region& region,
         VisibleData& visibleVec,
-        std::map<uint32_t, bool>& pidVisMap,
+        std::map<uint32_t, RSVisibleLevel>& pidVisMap,
         bool needSetVisibleRegion = true,
-        RS_REGION_VISIBLE_LEVEL visibleLevel = UNKNOW_VISIBLE_LEVEL);
+        RSVisibleLevel visibleLevel = RSVisibleLevel::RS_UNKNOW_VISIBLE_LEVEL);
 
     const Occlusion::Region& GetVisibleDirtyRegion() const
     {
@@ -826,6 +830,11 @@ public:
     {
         hasSkipLayer_ = hasSkipLayer;
     }
+
+#ifdef USE_SURFACE_TEXTURE
+    std::shared_ptr<RSSurfaceTexture> GetSurfaceTexture() const { return surfaceTexture_; };
+    void SetSurfaceTexture(const std::shared_ptr<RSSurfaceTexture> &texture) { surfaceTexture_ = texture; }
+#endif
     
     void SetForeground(bool isForeground)
     {
@@ -1028,6 +1037,9 @@ private:
     uint32_t submittedSubThreadIndex_ = INT_MAX;
     std::atomic<CacheProcessStatus> cacheProcessStatus_ = CacheProcessStatus::WAITING;
     std::atomic<bool> isNeedSubmitSubThread_ = true;
+#ifdef USE_SURFACE_TEXTURE
+    std::shared_ptr<RSSurfaceTexture> surfaceTexture_ {};
+#endif
     bool isForeground_ = false;
 
     friend class RSUniRenderVisitor;
