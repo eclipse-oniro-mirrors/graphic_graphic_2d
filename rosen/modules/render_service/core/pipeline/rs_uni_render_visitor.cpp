@@ -2323,7 +2323,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             return;
         }
 
-#ifndef USE_ROSEN_DRAWING
+#ifdef ENABLE_RECORDING_DCL
         tryCapture(node.GetRenderProperties().GetBoundsWidth(), node.GetRenderProperties().GetBoundsHeight());
 #endif
 
@@ -2573,7 +2573,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             RS_TRACE_END();
         }
 
-#ifndef USE_ROSEN_DRAWING
+#ifdef ENABLE_RECORDING_DCL
         endCapture();
 #endif
         if (node.IsMirrorDisplay()) {
@@ -4608,7 +4608,7 @@ void RSUniRenderVisitor::ProcessUnpairedSharedTransitionNode()
     }
     unpairedTransitionNodes_.clear();
 }
-
+#ifdef ENABLE_RECORDING_DCL
 #ifndef USE_ROSEN_DRAWING
 void RSUniRenderVisitor::tryCapture(float width, float height)
 {
@@ -4638,6 +4638,33 @@ void RSUniRenderVisitor::endCapture() const
         std::to_string(RSRecordingThread::Instance(renderEngine_->GetRenderContext().get()).GetCurDumpFrame()));
     RSRecordingThread::Instance(renderEngine_->GetRenderContext().get()).RecordingToFile(drawCmdList);
 }
+#else
+void RSUniRenderVisitor::tryCapture(float width, float height)
+{
+    if (!RSSystemProperties::GetRecordingEnabled()) {
+        return;
+    }
+    recordingCanvas_ = std::make_unique<Drawing::RecordingCanvas>(width, height);
+    RS_TRACE_NAME("RSUniRender:Recording begin");
+#ifdef RS_ENABLE_GL
+    auto renderContext = RSMainThread::Instance()->GetRenderEngine()->GetRenderContext();
+    recordingCanvas_->SetGrRecordingContext(renderContext->GetSharedDrGPUContext());
+#endif
+    canvas_->addCanvas(recordingCanvas_.get());
+    RSRecordingThread::Instance(renderEngine_->GetRenderContext().get()).CheckAndRecording();
+}
+
+void RSUniRenderVisitor::endCapture() const
+{
+    if (!RSRecordingThread::Instance(renderEngine_->GetRenderContext().get()).GetRecordingEnabled()) {
+        return;
+    }
+    auto drawCmdList = recordingCanvas_->GetDrawCmdList();
+    RS_TRACE_NAME("RSUniRender:RecordingToFile curFrameNum = " +
+        std::to_string(RSRecordingThread::Instance(renderEngine_->GetRenderContext().get()).GetCurDumpFrame()));
+    RSRecordingThread::Instance(renderEngine_->GetRenderContext().get()).RecordingToFile(drawCmdList);
+}
+#endif
 #endif
 
 void RSUniRenderVisitor::ScaleMirrorIfNeed(RSDisplayRenderNode& node)
