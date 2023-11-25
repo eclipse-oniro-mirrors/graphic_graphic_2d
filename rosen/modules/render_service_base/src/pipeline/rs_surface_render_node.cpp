@@ -832,20 +832,20 @@ void RSSurfaceRenderNode::AccumulateOcclusionRegion(Occlusion::Region& accumulat
     return;
 }
 
-RS_REGION_VISIBLE_LEVEL RSSurfaceRenderNode::GetVisibleLevelForWMS(RSVisibleLevel visibleLevel)
+WINDOW_LAYER_INFO_TYPE RSSurfaceRenderNode::GetVisibleLevelForWMS(RSVisibleLevel visibleLevel)
 {
     switch (visibleLevel) {
         case RSVisibleLevel::RS_INVISIBLE:
-            return RS_REGION_VISIBLE_LEVEL::INVISIBLE;
+            return WINDOW_LAYER_INFO_TYPE::SEMI_VISIBLE;
         case RSVisibleLevel::RS_ALL_VISIBLE:
-            return RS_REGION_VISIBLE_LEVEL::ALL_VISIBLE;
+            return WINDOW_LAYER_INFO_TYPE::ALL_VISIBLE;
         case RSVisibleLevel::RS_SEMI_NONDEFAULT_VISIBLE:
         case RSVisibleLevel::RS_SEMI_DEFAULT_VISIBLE:
-            return RS_REGION_VISIBLE_LEVEL::SEMI_VISIBLE;
+            return WINDOW_LAYER_INFO_TYPE::SEMI_VISIBLE;
         default:
             break;
     }
-    return RS_REGION_VISIBLE_LEVEL::UNKNOW_VISIBLE_LEVEL;
+    return WINDOW_LAYER_INFO_TYPE::SEMI_VISIBLE;
 }
 
 bool RSSurfaceRenderNode::IsMultiInstance()
