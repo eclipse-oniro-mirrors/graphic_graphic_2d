@@ -344,6 +344,7 @@ int TypographyImpl::UpdateMetrics()
     lineMaxAscent_ = {};
     lineMaxCoveredAscent_ = {};
     lineMaxCoveredDescent_ = {};
+    yOffsets_ = {};
     height_ = 0.0;
     double prevMaxDescent = 0.0;
     double yOffset = 0.0;
