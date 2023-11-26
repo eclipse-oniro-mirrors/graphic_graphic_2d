@@ -253,6 +253,8 @@ private:
     void SetRSEventDetectorLoopFinishTag();
     void CallbackDrawContextStatusToWMS();
     void UpdateUIFirstSwitch();
+    // ROG: Resolution Online Government
+    void UpdateRogSizeIfNeeded();
     uint32_t GetRefreshRate() const;
     void SkipCommandByNodeId(std::vector<std::unique_ptr<RSTransactionData>>& transactionVec, pid_t pid);
 
