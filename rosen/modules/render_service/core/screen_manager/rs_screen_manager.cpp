@@ -861,6 +861,18 @@ int32_t RSScreenManager::SetVirtualScreenResolution(ScreenId id, uint32_t width,
     return SUCCESS;
 }
 
+int32_t RSScreenManager::SetRogScreenResolution(ScreenId id, uint32_t width, uint32_t height)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (screens_.count(id) == 0) {
+        RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64 ".", __func__, id);
+        return SCREEN_NOT_FOUND;
+    }
+    screens_.at(id)->SetRogResolution(width, height);
+    return SUCCESS;
+}
+
 void RSScreenManager::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -1026,6 +1038,8 @@ ScreenInfo RSScreenManager::QueryScreenInfo(ScreenId id) const
     info.id = id;
     info.width = screen->Width();
     info.height = screen->Height();
+    info.phyWidth = screen->PhyWidth();
+    info.phyHeight = screen->PhyHeight();
     auto ret = screen->GetScreenColorGamut(info.colorGamut);
     if (ret != StatusCode::SUCCESS) {
         info.colorGamut = COLOR_GAMUT_SRGB;
