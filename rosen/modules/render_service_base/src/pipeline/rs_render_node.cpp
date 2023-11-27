@@ -860,7 +860,7 @@ void RSRenderNode::UpdateRenderStatus(RectI& dirtyRegion, bool isPartialRenderEn
 
 void RSRenderNode::UpdateParentChildrenRect(std::shared_ptr<RSRenderNode> parentNode) const
 {
-    if (!ShouldPaint() || oldDirty_.IsEmpty()) {
+    if (!ShouldPaint() || (oldDirty_.IsEmpty() && GetChildrenRect().IsEmpty())) {
         return;
     }
     auto renderParent = (parentNode);

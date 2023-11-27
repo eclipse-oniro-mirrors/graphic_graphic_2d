@@ -184,7 +184,7 @@ private:
     std::vector<RectI> dirtyHistory_;
     int historyHead_ = -1;
     unsigned int historySize_ = 0;
-    const unsigned HISTORY_QUEUE_MAX_SIZE = 4;
+    const unsigned HISTORY_QUEUE_MAX_SIZE = 5;
     // may add new set function for bufferAge
     unsigned int bufferAge_ = HISTORY_QUEUE_MAX_SIZE;
     bool isDirtyRegionAlignedEnable_ = false;
