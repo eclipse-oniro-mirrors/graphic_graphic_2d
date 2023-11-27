@@ -221,6 +221,8 @@ public:
     }
 #endif // RS_ENABLE_GL || RS_ENABLE_VK
 #endif
+    void ResetCurrentContext();
+
 #ifdef RS_ENABLE_EGLIMAGE
     const std::shared_ptr<RSEglImageManager>& GetEglImageManager()
     {

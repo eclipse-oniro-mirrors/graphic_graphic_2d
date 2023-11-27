@@ -321,6 +321,18 @@ void RSHardwareThread::OnPrepareComplete(sptr<Surface>& surface,
     }
 }
 
+GSError RSHardwareThread::ClearFrameBuffers(OutputPtr output)
+{
+    if (output == nullptr) {
+        RS_LOGE("Clear frame buffers failed for the output is nullptr");
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    if (uniRenderEngine_ != nullptr) {
+        uniRenderEngine_->ResetCurrentContext();
+    }
+    return output->ClearFrameBuffer();
+}
+
 void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<LayerInfoPtr>& layers, uint32_t screenId)
 {
     RS_TRACE_NAME("RSHardwareThread::Redraw");
