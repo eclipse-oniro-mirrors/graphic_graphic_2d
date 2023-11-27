@@ -736,6 +736,12 @@ bool RSMarshallingHelper::UnmarshallingNoLazyGeneratedImage(Parcel& parcel,
     return val != nullptr;
 }
 
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing::Image>& val)
+{
+    void* addr = nullptr;
+    return Unmarshalling(parcel, val, addr);
+}
+
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing::Image>& val, void*& imagepixelAddr)
 {
     (void)imagepixelAddr;
@@ -2480,9 +2486,12 @@ void RSMarshallingHelper::EndNoSharedMem()
     g_tid.__reset();
 }
 
-bool RSMarshallingHelper::GetUseSharedMem()
+bool RSMarshallingHelper::GetUseSharedMem(std::thread::id tid)
 {
-    return g_useSharedMem;
+    if (tid == g_tid) {
+        return g_useSharedMem;
+    }
+    return true;
 }
 } // namespace Rosen
 } // namespace OHOS

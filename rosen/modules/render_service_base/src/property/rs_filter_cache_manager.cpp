@@ -532,6 +532,12 @@ void RSFilterCacheManager::GenerateFilteredSnapshot(
             filteredSnapshot->width(), filteredSnapshot->height());
         as_IB(filteredSnapshot)->hintCacheGpuResource();
     }
+    if (RSSystemProperties::GetRecordingEnabled()) {
+        if (filteredSnapshot->isTextureBacked()) {
+            RS_LOGI("RSFilterCacheManager::GenerateFilteredSnapshot cachedImage from texture to raster image");
+            filteredSnapshot = filteredSnapshot->makeRasterImage();
+        }
+    }
 #else
     auto filteredSnapshot = offscreenSurface->GetImageSnapshot();
     if (RSSystemProperties::GetImageGpuResourceCacheEnable(filteredSnapshot->GetWidth(),
@@ -608,6 +614,9 @@ void RSFilterCacheManager::InvalidateCache(CacheType cacheType)
     if (cacheType & CacheType::CACHE_TYPE_FILTERED_SNAPSHOT) {
         cachedFilteredSnapshot_.reset();
     }
+    task_->SetStatus(CacheProcessStatus::WAITING);
+    task_->SetCompleted(false);
+    task_->Reset();
 }
 
 void RSFilterCacheManager::ReleaseCacheOffTree()
