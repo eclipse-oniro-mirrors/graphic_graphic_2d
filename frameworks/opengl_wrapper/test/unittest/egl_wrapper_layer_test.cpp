@@ -67,9 +67,9 @@ HWTEST_F(EglWrapperLayerTest, Init003, Level1)
 {
     EglWrapperLayer WrapperLayer;
     EglWrapperDispatchTable *dispatchTable;
-    dispatchTable = nullptr; 
+    dispatchTable = nullptr;
     bool result = WrapperLayer.Init(dispatchTable);
-    ASSERT_EQ(result,false);
+    ASSERT_EQ(result, false);
 }
 
 /**
