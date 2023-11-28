@@ -97,6 +97,4 @@ HWTEST_F(EglWrapperLayerTest, LoadLayers001, Level1)
     bool result = EglWrapperLayer::GetInstance().LoadLayers();
     ASSERT_TRUE(result);
 }
-
-
 } // OHOS::Rosen
