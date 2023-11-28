@@ -40,7 +40,6 @@ ohos_unittest("RSRenderServiceBasePipelineTest") {
     "rs_root_render_node_test.cpp",
   ]
 
-  resource_config_file = "//foundation/graphic/graphic_2d/rosen/test/resource/ohos_test.xml"
 
   cflags = [
     "-Wall",

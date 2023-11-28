@@ -36,8 +36,6 @@ ohos_unittest("RSRenderServiceBaseRenderTest") {
     "rs_skia_filter_test.cpp",
   ]
 
-  resource_config_file = "//foundation/graphic/graphic_2d/rosen/test/resource/ohos_test.xml"
-
   configs = [
     ":render_test",
     "$ace_root:ace_test_config",

@@ -40,7 +40,7 @@ void RSRenderServiceConnectHubTest::TearDown() {}
 
 /**
  * @tc.name: GetRenderService
- * @tc.desc: 
+ * @tc.desc:
  * @tc.type:FUNC
  * @tc.require: I6X9V1
  */

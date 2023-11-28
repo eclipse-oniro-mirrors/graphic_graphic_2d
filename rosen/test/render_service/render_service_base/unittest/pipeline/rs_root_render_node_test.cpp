@@ -18,7 +18,7 @@
 #include "platform/common/rs_log.h"
 using namespace testing;
 using namespace testing::ext;
-namespace OHOS { 
+namespace OHOS {
 namespace Rosen {
 class RSRootRenderNodeTest : public testing::Test {
 public:
@@ -42,7 +42,7 @@ void RSRootRenderNodeTest::TearDown() {}
  * @tc.require:
  */
 HWTEST_F(RSRootRenderNodeTest, settings, TestSize.Level1)
-{   
+{
     NodeId nodeId = 0;
     RSRootRenderNode rsRootRenderNode(nodeId, context);
 

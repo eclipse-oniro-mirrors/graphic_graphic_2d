@@ -48,12 +48,12 @@ static std::shared_ptr<Media::PixelMap> CreatePixelMap(int width, int height)
     }
     SkImageInfo info =
         SkImageInfo::Make(pixelmap->GetWidth(), pixelmap->GetHeight(), kRGBA_8888_SkColorType, kPremul_SkAlphaType);
-    auto surface = SkSurface::MakeRasterDirect(info, address, pixelmap->GetRowBytes());
-    auto canvas = surface->getCanvas();
+    auto skSurface = SkSurface::MakeRasterDirect(info, address, pixelmap->GetRowBytes());
+    auto canvas = skSurface->getCanvas();
     canvas->clear(SK_ColorYELLOW);
     SkPaint paint;
     paint.setColor(SK_ColorRED);
-    canvas->drawRect(SkRect::MakeXYWH(width / 4, height / 4, width / 2, height / 2), paint);
+    canvas->drawRect(SkRect::MakeXYWH(50, 50, 25, 25), paint);
     return pixelmap;
 }
 

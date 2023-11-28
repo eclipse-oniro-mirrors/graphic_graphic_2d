@@ -16,7 +16,7 @@
 #include "gtest/gtest.h"
 
 #include "render/rs_blur_filter.h"
-#include "render/rs_skia_filter.h"
+
 
 using namespace testing;
 using namespace testing::ext;
@@ -43,10 +43,10 @@ void RSSkiaFilterTest::TearDown() {}
  */
 HWTEST_F(RSSkiaFilterTest, ExtractSkImage, TestSize.Level1)
 {
-    RSBlurFilter rsSkiaFilter(0, 1);
-    rsSkiaFilter.GetPaint();
+    RSBlurFilter rsBlurFilter(0, 1);
+    rsBlurFilter.GetPaint();
 
-    rsSkiaFilter.GetImageFilter();
+    rsBlurFilter.GetImageFilter();
 }
 } // namespace Rosen
 } // namespace OHOS
