@@ -143,8 +143,13 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     g_pos = 0;
 
     // test
+#ifndef USE_ROSEN_DRAWING
     SkCanvas inSkcanvs;
     RSCPUOverdrawCanvasListener nowListener(inSkcanvs);
+#else
+    Drawing::Canvas inDrawingcanvs;
+    RSCPUOverdrawCanvasListener nowListener(inDrawingcanvs);
+#endif
     RSCpuOverdrawCanvasListenerFuzzTest0(nowListener);
     RSCpuOverdrawCanvasListenerFuzzTest1(nowListener);
     return true;
