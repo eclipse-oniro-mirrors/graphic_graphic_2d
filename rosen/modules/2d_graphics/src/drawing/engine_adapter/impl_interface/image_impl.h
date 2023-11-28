@@ -33,12 +33,16 @@ namespace Drawing {
 class Data;
 #ifdef ACE_ENABLE_GPU
 class GPUContext;
-class TextureInfo;
-enum class TextureOrigin;
 enum class CompressedType;
 class BackendTexture;
 #endif
+class TextureInfo;
+enum class TextureOrigin;
+#ifdef RS_ENABLE_VK
+struct VKTextureInfo;
+#endif
 enum class BitDepth;
+class Surface;
 
 /** Caller data passed to RasterReleaseProc; may be nullptr.
 */
@@ -65,6 +69,13 @@ public:
         CompressedType type) = 0;
     virtual bool BuildFromTexture(GPUContext& gpuContext, const TextureInfo& info, TextureOrigin origin,
         BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace) = 0;
+    virtual bool BuildFromSurface(GPUContext& gpuContext, Surface& surface, TextureOrigin origin,
+        BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace) = 0;
+#ifdef RS_ENABLE_VK
+    virtual bool BuildFromTexture(GPUContext& gpuContext, const VKTextureInfo& info, TextureOrigin origin,
+        BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace,
+        void (*deleteFunc)(void*), void* cleanupHelper) = 0;
+#endif
     virtual BackendTexture GetBackendTexture(bool flushPendingGrContextIO, TextureOrigin* origin) = 0;
     virtual bool IsValid(GPUContext* context) const = 0;
 #endif

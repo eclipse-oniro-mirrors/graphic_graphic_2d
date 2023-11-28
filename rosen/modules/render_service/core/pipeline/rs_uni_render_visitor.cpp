@@ -2471,7 +2471,12 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         std::vector<RectI> rects;
         bool clipPath = false;
 #ifdef RS_ENABLE_VK
+#ifndef USE_ROSEN_DRAWING
         int saveCountBeforeClip = canvas_->save();
+#else
+        int saveCountBeforeClip = canvas_->GetSaveCout();
+        canvas_->Save();
+#endif
 #endif
 #ifdef RS_ENABLE_EGLQUERYSURFACE
         // Get displayNode buffer age in order to merge visible dirty region for displayNode.
@@ -2719,7 +2724,11 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             mainThread->RemoveTask(CLEAR_GPU_CACHE);
         }
 #ifdef RS_ENABLE_VK
-        canvas_->restoreToCount(saveCount_t);
+#ifndef USE_ROSEN_DRAWING
+        canvas_->restoreToCount(saveCountBeforeClip);
+#else
+        canvas_->RestoreToCount(saveCountBeforeClip);
+#endif
 #endif
         RS_TRACE_BEGIN("RSUniRender:FlushFrame");
         renderFrame_->Flush();
@@ -3750,20 +3759,30 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
 #ifndef USE_ROSEN_DRAWING
 #ifdef NEW_RENDER_CONTEXT
-        auto grContext = renderEngine_->GetDrawingContext()->GetDrawingContext();
+    auto grContext = renderEngine_->GetDrawingContext()->GetDrawingContext();
 #else
-        auto grContext = canvas_ != nullptr ? static_cast<GrDirectContext*>(canvas_->recordingContext()) : nullptr;
+    auto grContext = canvas_ != nullptr ? static_cast<GrDirectContext*>(canvas_->recordingContext()) : nullptr;
 #endif
-        RSTagTracker tagTracker(grContext, node.GetId(), RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE);
-        node.SetGrContext(grContext);
+    RSTagTracker tagTracker(grContext, node.GetId(), RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE);
+    node.SetGrContext(grContext);
 #else
+#ifdef NEW_RENDER_CONTEXT
     Drawing::GPUContext* gpuContext = renderEngine_->GetRenderContext()->GetDrGPUContext();
     RSTagTracker tagTracker(gpuContext, node.GetId(), RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE);
     node.SetDrawingGPUContext(gpuContext);
+#else
+    std::shared_ptr<Drawing::GPUContext> gpuContext = canvas_ != nullptr ? canvas_->GetGPUContext() : nullptr;
+    RSTagTracker tagTracker(gpuContext.get(), node.GetId(), RSTagTracker::TAGTYPE::TAG_DRAW_SURFACENODE);
+    node.SetDrawingGPUContext(gpuContext.get());
+#endif
 #endif
 #endif
 #ifdef RS_ENABLE_VK
-   node.SetGrContext(renderEngine_->GetSkContext().get());
+#ifndef USE_ROSEN_DRAWING
+    node.SetGrContext(renderEngine_->GetSkContext().get());
+#else
+    node.SetDrawingGPUContext(renderEngine_->GetSkContext().get());
+#endif
 #endif
     bool keepFilterCache = false;
     if (!CheckIfSurfaceRenderNodeNeedProcess(node, keepFilterCache)) {

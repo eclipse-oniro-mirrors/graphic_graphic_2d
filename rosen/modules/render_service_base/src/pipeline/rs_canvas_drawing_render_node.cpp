@@ -152,7 +152,7 @@ void RSCanvasDrawingRenderNode::ProcessRenderContents(RSPaintFilterCanvas& canva
         if (!ResetSurface(width, height, canvas)) {
             return;
         }
-#ifdef RS_ENABLE_GL
+#if defined (RS_ENABLE_GL) || defined (RS_ENABLE_VK)
         auto image = preSurface->GetImageSnapshot();
         if (!image) {
             return;
@@ -237,7 +237,7 @@ bool RSCanvasDrawingRenderNode::ResetSurface(int width, int height, RSPaintFilte
     Drawing::ImageInfo info =
         Drawing::ImageInfo{ Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
 
-#if (defined RS_ENABLE_GL) && (defined RS_ENABLE_EGLIMAGE)
+#if (defined (RS_ENABLE_GL) || defined (RS_ENABLE_VK)) && (defined RS_ENABLE_EGLIMAGE)
     auto gpuContext = canvas.GetGPUContext();
     if (gpuContext == nullptr) {
         RS_LOGD("RSCanvasDrawingRenderNode::ResetSurface: gpuContext is nullptr");

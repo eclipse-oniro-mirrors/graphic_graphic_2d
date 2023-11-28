@@ -60,6 +60,8 @@ public:
     bool BuildFromPicture(const Picture& picture, const SizeI& dimensions, const Matrix& matrix, const Brush& brush,
         BitDepth bitDepth, std::shared_ptr<ColorSpace> colorSpace) override;
 #ifdef ACE_ENABLE_GPU
+    bool BuildFromSurface(GPUContext& gpuContext, Surface& surface, TextureOrigin origin,
+        BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace) override;
     bool BuildFromBitmap(GPUContext& gpuContext, const Bitmap& bitmap) override;
     bool MakeFromEncoded(const std::shared_ptr<Data>& data) override;
     bool BuildSubset(const std::shared_ptr<Image> image, const RectI& rect, GPUContext& gpuContext) override;
@@ -70,6 +72,11 @@ public:
     BackendTexture GetBackendTexture(bool flushPendingGrContextIO, TextureOrigin* origin) override;
     void SetGrBackendTexture(const GrBackendTexture& grBackendTexture);
     bool IsValid(GPUContext* context) const override;
+#endif
+#ifdef RS_ENABLE_VK
+    bool BuildFromTexture(GPUContext& gpuContext, const VKTextureInfo& info, TextureOrigin origin,
+        BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace,
+        void (*deleteFunc)(void*), void* cleanupHelper) override;
 #endif
     bool AsLegacyBitmap(Bitmap& bitmap) const override;
     int GetWidth() const override;
@@ -111,6 +118,12 @@ public:
 #endif
 #endif
 
+    static GrBackendTexture ConvertToGrBackendTexture(const TextureInfo& info);
+    static GrSurfaceOrigin ConvertToGrSurfaceOrigin(const TextureOrigin& origin);
+#ifdef RS_ENABLE_VK
+    static GrBackendTexture ConvertToGrBackendTexture(const VKTextureInfo& info);
+    static void ConvertToVKTexture(const GrBackendTexture& backendTexture, VKTextureInfo& info);
+#endif
     std::shared_ptr<Data> Serialize() const override;
     bool Deserialize(std::shared_ptr<Data> data) override;
 

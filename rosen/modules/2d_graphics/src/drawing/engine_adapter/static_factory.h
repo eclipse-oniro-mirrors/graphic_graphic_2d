@@ -40,6 +40,10 @@ public:
     static std::shared_ptr<Typeface> MakeFromFile(const char path[], int index);
     static std::shared_ptr<Typeface> MakeFromStream(std::unique_ptr<MemoryStream> memoryStream, int32_t index);
 #ifdef ACE_ENABLE_GPU
+#ifdef RS_ENABLE_VK
+    static std::shared_ptr<Surface> MakeFromBackendRenderTarget(GPUContext* gpuContext, const VKTextureInfo& info,
+        TextureOrigin origin, void (*deleteVkImage)(void *), void* cleanHelper);
+#endif
     static std::shared_ptr<Surface> MakeRenderTarget(GPUContext* gpuContext, bool budgeted, const ImageInfo& imageInfo);
 #endif
     static std::shared_ptr<Surface> MakeRaster(const ImageInfo& imageInfo);
