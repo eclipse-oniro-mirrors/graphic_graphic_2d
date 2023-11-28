@@ -39,6 +39,10 @@ public:
      */
     void ClearOp();
 
+    size_t GetOpItemSize() const;
+
+    std::string GetOpsWithDesc() const;
+
     /*
      * @brief       Creates a DrawCmdList with contiguous buffers.
      * @param data  A contiguous buffers.

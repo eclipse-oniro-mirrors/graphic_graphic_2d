@@ -244,9 +244,12 @@ void RSRecordingThread::RecordingToFile(const std::shared_ptr<Drawing::DrawCmdLi
         RSMarshallingHelper::EndNoSharedMem();
         opsDescriptionVec_.push_back(drawCmdList->GetOpsWithDesc());
 #else
-        auto cmdListData = drawCmdList->GetData();
-        auto messageParcel = std::make_shared<Drawing::Data>();
-        messageParcel->BuildWithCopy(cmdListData.first, cmdListData.second);
+        std::shared_ptr<MessageParcel> messageParcel = std::make_shared<MessageParcel>();
+        messageParcel->SetMaxCapacity(RECORDING_PARCEL_CAPCITY);
+        RSMarshallingHelper::BeginNoSharedMem(std::this_thread::get_id());
+        RSMarshallingHelper::Marshalling(*messageParcel, drawCmdList);
+        RSMarshallingHelper::EndNoSharedMem();
+        opsDescriptionVec_.push_back(drawCmdList->GetOpsWithDesc());
 #endif
         messageParcelVec_.push_back(messageParcel);
     }
