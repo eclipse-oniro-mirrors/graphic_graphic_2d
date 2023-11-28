@@ -47,6 +47,7 @@ public:
     uint32_t GetunExcuteTaskNum();
     void RefreshRateCounts(std::string& dumpString);
     void ClearRefreshRateCounts(std::string& dumpString);
+    GSError ClearFrameBuffers(OutputPtr output);
 private:
     RSHardwareThread() = default;
     ~RSHardwareThread() = default;

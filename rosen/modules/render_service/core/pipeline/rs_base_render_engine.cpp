@@ -117,6 +117,17 @@ void RSBaseRenderEngine::Init()
 #endif
 }
 
+void RSBaseRenderEngine::ResetCurrentContext()
+{
+#if (defined RS_ENABLE_GL)
+    if (renderContext_ == nullptr) {
+        RS_LOGE("This render context is nullptr.");
+        return;
+    }
+    renderContext_->ShareMakeCurrentNoSurface(EGL_NO_CONTEXT);
+#endif // RS_ENABLE_GL
+}
+
 bool RSBaseRenderEngine::NeedForceCPU(const std::vector<LayerInfoPtr>& layers)
 {
     bool forceCPU = false;

@@ -253,7 +253,7 @@ void RSScreenManager::OnHwcDeadEvent()
             if (screen->IsVirtual()) {
                 continue;
             } else {
-                screen->GetOutput()->GetFrameBufferSurface()->CleanCache();
+                RSHardwareThread::Instance().ClearFrameBuffers(screen->GetOutput());
             }
         }
     }
