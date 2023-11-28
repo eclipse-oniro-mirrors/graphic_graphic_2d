@@ -39,6 +39,11 @@ public:
     bool Has(uint32_t ch);
     std::shared_ptr<TexgineTypeface> Get() const { return typeface_; }
 
+    void ComputeFakeryItalic(bool isItalic);
+    bool DetectionItalic();
+    bool DetectionFakeBold();
+    void ComputeFakery(int wantedWeight);
+
 private:
     friend void ReportMemoryUsage(const std::string &member, const Typeface &str, bool needThis);
 
