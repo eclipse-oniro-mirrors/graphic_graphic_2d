@@ -129,6 +129,7 @@ constexpr uint32_t WAIT_FOR_RELEASED_BUFFER_TIMEOUT = 3000;
 constexpr uint32_t WAIT_FOR_HARDWARE_THREAD_TASK_TIMEOUT = 3000;
 constexpr uint32_t HARDWARE_THREAD_TASK_NUM = 2;
 constexpr uint32_t WAIT_FOR_MEM_MGR_SERVICE = 100;
+constexpr uint32_t CAL_NODE_PREFERRED_LIMIT = 50;
 constexpr const char* WALLPAPER_VIEW = "WallpaperView";
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
 constexpr const char* MEM_MGR = "MemMgr";
@@ -1345,6 +1346,7 @@ bool RSMainThread::GetParallelCompositionEnabled()
 void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
 {
     UpdateUIFirstSwitch();
+    UpdateRogSizeIfNeeded();
     auto uniVisitor = std::make_shared<RSUniRenderVisitor>();
 #if defined(RS_ENABLE_DRIVEN_RENDER)
     uniVisitor->SetDrivenRenderFlag(hasDrivenNodeOnUniTree_, hasDrivenNodeMarkRender_);
@@ -1884,13 +1886,19 @@ void RSMainThread::Animate(uint64_t timestamp)
     // isCalculateAnimationValue is embedded modify for stat animate frame drop
     bool isCalculateAnimationValue = false;
     // iterate and animate all animating nodes, remove if animation finished
+    bool calNodePreferredFlag = true;
+    if (context_->animatingNodeList_.size() > CAL_NODE_PREFERRED_LIMIT) {
+        calNodePreferredFlag = false;
+    }
     EraseIf(context_->animatingNodeList_,
-        [this, timestamp, &curWinAnim, &needRequestNextVsync, &isCalculateAnimationValue](const auto& iter) -> bool {
+        [this, timestamp, calNodePreferredFlag, &curWinAnim, &needRequestNextVsync,
+        &isCalculateAnimationValue](const auto& iter) -> bool {
         auto node = iter.second.lock();
         if (node == nullptr) {
             RS_LOGD("RSMainThread::Animate removing expired animating node");
             return true;
         }
+        node->SetCalPreferredNode(calNodePreferredFlag);
         if (cacheCmdSkippedInfo_.count(ExtractPid(node->GetId())) > 0) {
             RS_LOGD("RSMainThread::Animate skip the cached node");
             return false;
@@ -2286,7 +2294,11 @@ void RSMainThread::TrimMem(std::unordered_set<std::u16string>& argSets, std::str
     }
     dumpString.append("trimMem: " + type + "\n");
 #else
-    auto gpuContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
+#ifdef NEW_RENDER_CONTEXT
+    auto grContext = GetRenderEngine()->GetDrawingContext()->GetDrawingContext();
+#else
+    auto grContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
+#endif
     if (type.empty()) {
         gpuContext->Flush();
         SkGraphics::PurgeAllCaches();
@@ -2617,9 +2629,13 @@ int32_t RSMainThread::GetNodePreferred(const std::vector<HgmModifierProfile>& hg
 FrameRateRange RSMainThread::CalcRSFrameRateRange(std::shared_ptr<RSRenderNode> node)
 {
     FrameRateRange rsRange;
-    auto preferred = GetNodePreferred(node->GetHgmModifierProfileList());
-    if (preferred > 0) {
-        rsRange = {0, RANGE_MAX_REFRESHRATE, preferred};
+    if (!node->IsCalPreferredNode()) {
+        rsRange = {0, RANGE_MAX_REFRESHRATE, OLED_120_HZ};
+    } else if (node->HasAnimation()) {
+        auto preferred = GetNodePreferred(node->GetHgmModifierProfileList());
+        if (preferred > 0) {
+            rsRange = {0, RANGE_MAX_REFRESHRATE, preferred};
+        }
     }
     return rsRange;
 }
@@ -2706,6 +2722,29 @@ bool RSMainThread::IsSingleDisplay()
         return false;
     }
     return rootNode->GetChildrenCount() == 1;
+}
+
+void RSMainThread::UpdateRogSizeIfNeeded()
+{
+    if (!RSSystemProperties::IsPhoneType() || RSSystemProperties::IsFoldScreenFlag()) {
+        return;
+    }
+    const std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
+    if (!rootNode) {
+        return;
+    }
+    std::list<RSBaseRenderNode::SharedPtr> children = rootNode->GetSortedChildren();
+    if (!children.empty()) {
+        auto child = children.front();
+        if (child != nullptr && child->IsInstanceOf<RSDisplayRenderNode>()) {
+            auto displayNode = child->ReinterpretCastTo<RSDisplayRenderNode>();
+            if (displayNode) {
+                auto screenManager_ = CreateOrGetScreenManager();
+                screenManager_->SetRogScreenResolution(displayNode->GetScreenId(),
+                    displayNode->GetRogWidth(), displayNode->GetRogHeight());
+            }
+        }
+    }
 }
 
 const uint32_t UIFIRST_MINIMUM_NODE_NUMBER = 13; // minimum window number(13) for enabling UIFirst

@@ -232,6 +232,8 @@ private:
     void MergeDirtyRectIfNeed(std::shared_ptr<RSSurfaceRenderNode> appNode,
         std::shared_ptr<RSSurfaceRenderNode> hwcNode);
     void AddContainerDirtyToGlobalDirty(std::shared_ptr<RSDisplayRenderNode>& node) const;
+    // merge last childRect as dirty if any child has been removed
+    void MergeRemovedChildDirtyRegion(RSRenderNode& node);
 
     // set global dirty region to each surface node
     void SetSurfaceGlobalDirtyRegion(std::shared_ptr<RSDisplayRenderNode>& node);
@@ -283,6 +285,9 @@ private:
     // mark surfaceNode's child surfaceView nodes hardware forced disabled
     void MarkSubHardwareEnableNodeState(RSSurfaceRenderNode& surfaceNode);
     void CollectAppNodeForHwc(std::shared_ptr<RSSurfaceRenderNode> surfaceNode);
+    void UpdateSecurityAndSkipLayerRecord(RSSurfaceRenderNode& node);
+    void PrepareEffectNodeIfCacheReuse(const std::shared_ptr<RSRenderNode>& cacheRootNode,
+        std::shared_ptr<RSEffectRenderNode> effectNode);
 
     // offscreen render related
     void PrepareOffscreenRender(RSRenderNode& node);

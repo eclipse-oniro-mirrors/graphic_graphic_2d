@@ -270,10 +270,18 @@ std::shared_ptr<Drawing::GPUContext> RSFilterSubThread::CreateShareGrContext()
     auto size = glesVersion ? strlen(glesVersion) : 0;
     handler->ConfigureContext(&options, glesVersion, size, SHADER_CACHE_DIR, true);
 
+#ifdef RS_ENABLE_GL
     if (!gpuContext->BuildFromGL(options)) {
         RS_LOGE("nullptr gpuContext is null");
         return nullptr;
     }
+#endif
+#ifdef RS_ENABLE_VK
+    if (!gpuContext->BuildFromVK(RsVulkanContext::GetSingleton().GetGrVkBackendContext())) {
+        RS_LOGE("nullptr gpuContext is null");
+        return nullptr;
+    }
+#endif
     return gpuContext;
 }
 #endif

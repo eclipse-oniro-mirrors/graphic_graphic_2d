@@ -51,10 +51,13 @@ public:
     virtual const std::string& Name() const = 0;
     virtual uint32_t Width() const = 0;
     virtual uint32_t Height() const = 0;
+    virtual uint32_t PhyWidth() const = 0;
+    virtual uint32_t PhyHeight() const = 0;
     virtual bool IsEnable() const = 0;
     virtual bool IsVirtual() const = 0;
     virtual void SetActiveMode(uint32_t modeId) = 0;
     virtual void SetResolution(uint32_t width, uint32_t height) = 0;
+    virtual void SetRogResolution(uint32_t width, uint32_t height) = 0;
     virtual void SetPowerStatus(uint32_t powerStatus) = 0;
     virtual std::optional<GraphicDisplayModeInfo> GetActiveMode() const = 0;
     virtual const std::vector<GraphicDisplayModeInfo>& GetSupportedModes() const = 0;
@@ -115,12 +118,17 @@ public:
     ScreenId MirrorId() const override;
     void SetMirror(ScreenId mirrorId) override;
     const std::string& Name() const override;
+    // render resolution
     uint32_t Width() const override;
     uint32_t Height() const override;
+    // physical screen resolution
+    uint32_t PhyWidth() const override;
+    uint32_t PhyHeight() const override;
     bool IsEnable() const override;
     bool IsVirtual() const override;
     void SetActiveMode(uint32_t modeId) override;
     void SetResolution(uint32_t width, uint32_t height) override;
+    void SetRogResolution(uint32_t width, uint32_t height) override;
     void SetPowerStatus(uint32_t powerStatus) override;
     std::optional<GraphicDisplayModeInfo> GetActiveMode() const override;
     const std::vector<GraphicDisplayModeInfo>& GetSupportedModes() const override;
@@ -182,8 +190,10 @@ private:
 
     std::string name_;
 
-    int32_t width_ = 0;
-    int32_t height_ = 0;
+    uint32_t width_ = 0;
+    uint32_t height_ = 0;
+    uint32_t phyWidth_ = 0;
+    uint32_t phyHeight_ = 0;
 
     bool isVirtual_ = true;
     std::shared_ptr<HdiOutput> hdiOutput_; // has value if the screen is physical

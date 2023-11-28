@@ -168,8 +168,13 @@ bool BindImageMemory(VkDevice device, const RsVulkanContext& vkContext, VkImage&
     return true;
 }
 
+#ifndef USE_ROSEN_DRAWING
 bool MakeFromNativeWindowBuffer(sk_sp<GrDirectContext> skContext, NativeWindowBuffer* nativeWindowBuffer,
     NativeSurfaceInfo& nativeSurface, int width, int height)
+#else
+bool MakeFromNativeWindowBuffer(std::shared_ptr<Drawing::GPUContext> skContext, NativeWindowBuffer* nativeWindowBuffer,
+    NativeSurfaceInfo& nativeSurface, int width, int height)
+#endif
 {
     OH_NativeBuffer* nativeBuffer = OH_NativeBufferFromNativeWindowBuffer(nativeWindowBuffer);
     if (nativeBuffer == nullptr) {
@@ -207,6 +212,7 @@ bool MakeFromNativeWindowBuffer(sk_sp<GrDirectContext> skContext, NativeWindowBu
         return false;
     }
 
+#ifndef USE_ROSEN_DRAWING
     GrVkImageInfo image_info;
     image_info.fImage = image;
     image_info.fImageTiling = VK_IMAGE_TILING_OPTIMAL;
@@ -223,6 +229,25 @@ bool MakeFromNativeWindowBuffer(sk_sp<GrDirectContext> skContext, NativeWindowBu
         skContext.get(), backend_render_target, kTopLeft_GrSurfaceOrigin, kRGBA_8888_SkColorType,
         SkColorSpace::MakeSRGB(), &props, DeleteVkImage, new VulkanCleanupHelper(RsVulkanContext::GetSingleton(),
         image, memory));
+#else
+    Drawing::VKTextureInfo texture_info;
+    texture_info.width = width;
+    texture_info.height = height;
+    texture_info.vkImage = image;
+    texture_info.imageTiling = VK_IMAGE_TILING_OPTIMAL;
+    texture_info.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    texture_info.format = nbFormatProps.format;
+    texture_info.imageUsageFlags = usageFlags;
+    texture_info.sampleCount = 1;
+    texture_info.levelCount = 1;
+    nativeSurface.drawingSurface_ = Drawing::Surface::MakeFromBackendRenderTarget(
+        skContext.get(),
+        texture_info,
+        Drawing::TextureOrigin::TOP_LEFT,
+        DeleteVkImage,
+        new VulkanCleanupHelper(RsVulkanContext::GetSingleton(),
+            image, memory));
+#endif
 
     nativeSurface.image = image;
     nativeSurface.nativeWindowBuffer = nativeWindowBuffer;
@@ -250,8 +275,13 @@ GrVkYcbcrConversionInfo GetYcbcrInfo(VkNativeBufferFormatPropertiesOHOS& nbForma
     return ycbcrInfo;
 }
 
+#ifndef USE_ROSEN_DRAWING
 GrBackendTexture MakeBackendTextureFromNativeBuffer(NativeWindowBuffer* nativeWindowBuffer,
     int width, int height)
+#else
+Drawing::VKTextureInfo MakeBackendTextureFromNativeBuffer(NativeWindowBuffer* nativeWindowBuffer,
+    int width, int height)
+#endif
 {
     OH_NativeBuffer* nativeBuffer = OH_NativeBufferFromNativeWindowBuffer(nativeWindowBuffer);
     if (!nativeBuffer) {
@@ -287,6 +317,7 @@ GrBackendTexture MakeBackendTextureFromNativeBuffer(NativeWindowBuffer* nativeWi
         return {};
     }
 
+#ifndef USE_ROSEN_DRAWING
     GrVkAlloc alloc;
     alloc.fMemory = memory;
     alloc.fOffset = nbProps.allocationSize;
@@ -304,6 +335,38 @@ GrBackendTexture MakeBackendTextureFromNativeBuffer(NativeWindowBuffer* nativeWi
     imageInfo.fSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     return GrBackendTexture(width, height, imageInfo);
+#else
+    Drawing::VKTextureInfo imageInfo;
+    imageInfo.width = width;
+    imageInfo.height = height;
+
+    imageInfo.vkImage = image;
+
+    imageInfo.vkAlloc.memory = memory;
+    imageInfo.vkAlloc.size = nbProps.allocationSize;
+
+    imageInfo.imageTiling = tiling;
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.format = nbFormatProps.format;
+    imageInfo.imageUsageFlags = usageFlags;
+    imageInfo.levelCount = 1;
+    imageInfo.currentQueueFamily = VK_QUEUE_FAMILY_EXTERNAL;
+
+    imageInfo.ycbcrConversionInfo.format = nbFormatProps.format;
+    imageInfo.ycbcrConversionInfo.externalFormat = nbFormatProps.externalFormat;
+    imageInfo.ycbcrConversionInfo.ycbcrModel = nbFormatProps.suggestedYcbcrModel;
+    imageInfo.ycbcrConversionInfo.ycbcrRange = nbFormatProps.suggestedYcbcrRange;
+    imageInfo.ycbcrConversionInfo.xChromaOffset = nbFormatProps.suggestedXChromaOffset;
+    imageInfo.ycbcrConversionInfo.yChromaOffset = nbFormatProps.suggestedYChromaOffset;
+    imageInfo.ycbcrConversionInfo.chromaFilter = VK_FILTER_NEAREST;
+    imageInfo.ycbcrConversionInfo.forceExplicitReconstruction = VK_FALSE;
+    imageInfo.ycbcrConversionInfo.formatFeatures = nbFormatProps.formatFeatures;
+    if (VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT & nbFormatProps.formatFeatures) {
+        imageInfo.ycbcrConversionInfo.chromaFilter = VK_FILTER_LINEAR;
+    }
+
+    imageInfo.sharingMode = imageCreateInfo.sharingMode;
+#endif
 }
 } // namespace NativeBufferUtils
 } // namespace OHOS::Rosen
