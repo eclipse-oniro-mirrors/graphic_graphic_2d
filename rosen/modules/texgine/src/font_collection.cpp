@@ -116,8 +116,10 @@ std::shared_ptr<Typeface> FontCollection::GetTypefaceForChar(const uint32_t &ch,
         }
     }
     auto typeface = FindThemeTypeface(style);
-    typeface->ComputeFakeryItalic(style.GetFontStyle());
-    typeface->ComputeFakery(style.GetWeight());
+    if (typeface) {
+        typeface->ComputeFakeryItalic(style.GetFontStyle());
+        typeface->ComputeFakery(style.GetWeight());
+    }
     if (typeface == nullptr) {
         typeface = FindFallBackTypeface(ch, style, script, locale);
     }
