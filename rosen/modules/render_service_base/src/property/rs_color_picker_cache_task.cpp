@@ -331,7 +331,7 @@ bool RSColorPickerCacheTask::GetDeviceSize(int& deviceWidth, int& deviceHeight) 
     return false;
 }
 
-bool SColorPickerCacheTask::GetWaitRelease() const
+bool RSColorPickerCacheTask::GetWaitRelease() const
 {
     return waitRelease_;
 }
