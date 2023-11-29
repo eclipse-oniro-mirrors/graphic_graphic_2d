@@ -54,7 +54,8 @@ private:
     hb_blob_t *hblob_ = nullptr;
     std::shared_ptr<CmapParser> cmapParser_ = nullptr;
     std::unique_ptr<char[]> cmapData_ = nullptr;
-
+    bool isFakeItalic_ = false;
+    bool isFakeBold_ = false;
     static inline std::map<std::string, std::shared_ptr<CmapParser>> cmapCache_;
 };
 } // namespace TextEngine
