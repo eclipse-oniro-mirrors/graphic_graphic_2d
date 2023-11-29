@@ -683,7 +683,7 @@ bool RSPropertiesPainter::PickColor(const RSProperties& properties, RSPaintFilte
     if (colorPickerTask->GetWaitRelease()) {
         colorPickerTask->GetColorAverage(colorPicked);
         return;
-    } 
+    }
 
     if (RSColorPickerCacheTask::PostPartialColorPickerTask(colorPickerTask, shadowRegionImage)
         && colorPickerTask->GetColor(colorPicked)) {
