@@ -127,7 +127,7 @@ if (graphic_2d_feature_rs_enable_uni_render) {
   rs_enable_driven_render = false
 }
 
-if (graphic_2d_feature_enable_afbc && !graphic_2d_feature_enable_vulkan) {
+if (graphic_2d_feature_enable_afbc) {
   gpu_defines += [ "RS_ENABLE_AFBC" ]
 }
 
