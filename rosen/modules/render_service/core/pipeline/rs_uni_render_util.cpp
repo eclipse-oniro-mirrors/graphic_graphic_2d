@@ -483,15 +483,17 @@ void RSUniRenderUtil::ReleaseColorPickerResource(std::shared_ptr<RSRenderNode>& 
     if (node == nullptr) {
         return;
     }
-    if (node->GetRenderProperties.GetColorPickerCacheTaskShadow() != nullptr) {
-        auto& colorPickerCacheTaskShadow = node->GetRenderProperties().GetColorPickerCacheTaskShadow();
-        auto mainHandler = colorPickerCacheTaskShadow->GetMainHandler();
-        if (mainHandler != nullptr) {
-            auto task = colorPickerCacheTaskShadow;
-            task->SetWaitRelease(true);
-            mainHandler->PostTask(
-                [task]() { task->ReleaseColorPicker(); }, AppExecFwk::EventQueue::Priority::IMMEDIATE);
-        }
+    if (node->GetRenderProperties().GetColorPickerCacheTaskShadow() != nullptr) {
+        #ifdef IS_OHOS
+            auto& colorPickerCacheTaskShadow = node->GetRenderProperties().GetColorPickerCacheTaskShadow();
+            auto mainHandler = colorPickerCacheTaskShadow->GetMainHandler();
+            if (mainHandler != nullptr) {
+                auto task = colorPickerCacheTaskShadow;
+                task->SetWaitRelease(true);
+                mainHandler->PostTask(
+                    [task]() { task->ReleaseColorPicker(); }, AppExecFwk::EventQueue::Priority::IMMEDIATE);
+            }
+        #endif
     }
     // Recursive to release color picker resource
     for (auto& child : node->GetChildren()) {
@@ -565,7 +567,7 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
         if (isNeedAssignToSubThread != lastIsNeedAssignToSubThread) {
             auto renderNode = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(node);
             ReleaseColorPickerResource(renderNode);
-            node->setLastIsNeedAssignToSubThread(isNeedAssignToSubThread);
+            node->SetLastIsNeedAssignToSubThread(isNeedAssignToSubThread);
         }
 
         // trace info for assign window nodes
