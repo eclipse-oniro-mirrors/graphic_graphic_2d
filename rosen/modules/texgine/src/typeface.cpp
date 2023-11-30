@@ -132,8 +132,8 @@ bool Typeface::DetectionItalic()
 
 void Typeface::ComputeFakery(int wantedWeight)
 {
-  bool isFakeBold = wantedWeight >= DYNAMIC_FONT_WEIGHT;
-  isFakeBold_ = isFakeBold;
+    bool isFakeBold = wantedWeight >= DYNAMIC_FONT_WEIGHT;
+    isFakeBold_ = isFakeBold;
 }
 
 bool Typeface::DetectionFakeBold()
