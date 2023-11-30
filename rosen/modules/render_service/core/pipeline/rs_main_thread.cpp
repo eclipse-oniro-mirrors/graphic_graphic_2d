@@ -1154,7 +1154,7 @@ uint32_t RSMainThread::GetRefreshRate() const
     auto screenManager = CreateOrGetScreenManager();
     if (!screenManager) {
         RS_LOGE("RSMainThread::GetRefreshRate screenManager is nullptr");
-        return 0;
+        return 60; // The default refreshrate is 60
     }
     return OHOS::Rosen::HgmCore::Instance().GetScreenCurrentRefreshRate(screenManager->GetDefaultScreenId());
 }
@@ -1194,7 +1194,8 @@ void RSMainThread::ClearMemoryCache(bool deeply)
 #endif
         grContext->flushAndSubmit(true);
         this->clearMemoryFinished_ = true;
-    }, CLEAR_GPU_CACHE, 3000 / GetRefreshRate()); // The unit is milliseconds
+    },
+    CLEAR_GPU_CACHE, 3000 / GetRefreshRate()); // The unit is milliseconds
 }
 
 void RSMainThread::WaitUtilUniRenderFinished()
@@ -2834,7 +2835,8 @@ void RSMainThread::SubscribeAppState()
                 RS_LOGE("Subscribe Failed 10 times, exiting");
             }
         }
-    }, MEM_MGR, WAIT_FOR_MEM_MGR_SERVICE);
+    },
+    MEM_MGR, WAIT_FOR_MEM_MGR_SERVICE);
 }
 
 void RSMainThread::HandleOnTrim(Memory::SystemMemoryLevel level)
