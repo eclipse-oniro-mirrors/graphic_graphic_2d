@@ -20,7 +20,7 @@
 #include <SkMatrix.h>
 #include <SkCanvas.h>
 #include <mutex>
-#include <parameters.h>
+#include "platform/common/rs_system_properties.h"
 #include "common/rs_singleton.h"
 #include "rs_sub_thread_rcd.h"
 
