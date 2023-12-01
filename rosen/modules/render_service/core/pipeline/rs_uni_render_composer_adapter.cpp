@@ -105,8 +105,8 @@ ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(RSDisplayRenderNode& no
     info.dstRect = GraphicIRect {
         0,
         0,
-        static_cast<int32_t>(static_cast<float>(screenInfo_.GetRotatedWidth()) * mirrorAdaptiveCoefficient_),
-        static_cast<int32_t>(static_cast<float>(screenInfo_.GetRotatedHeight()) * mirrorAdaptiveCoefficient_)
+        static_cast<int32_t>(static_cast<float>(screenInfo_.GetRotatedPhyWidth()) * mirrorAdaptiveCoefficient_),
+        static_cast<int32_t>(static_cast<float>(screenInfo_.GetRotatedPhyHeight()) * mirrorAdaptiveCoefficient_)
     };
     info.boundRect = info.dstRect;
     info.visibleRect = GraphicIRect {info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h};
@@ -157,7 +157,10 @@ ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(RSRcdSurfaceRenderNode&
     const auto& srcRect = node.GetSrcRect();
     ComposeInfo info {};
     info.srcRect = GraphicIRect {srcRect.left_, srcRect.top_, srcRect.width_, srcRect.height_};
-    info.dstRect = GraphicIRect {dstRect.left_, dstRect.top_, dstRect.width_, dstRect.height_};
+    info.dstRect = GraphicIRect {static_cast<int32_t>(dstRect.left_ * screenInfo_.GetRogWidthRatio()),
+        static_cast<int32_t>(dstRect.top_ * screenInfo_.GetRogHeightRatio()),
+        static_cast<int32_t>(dstRect.width_ * screenInfo_.GetRogWidthRatio()),
+        static_cast<int32_t>(dstRect.height_ * screenInfo_.GetRogHeightRatio())};
     info.boundRect = info.dstRect;
     info.visibleRect = info.dstRect;
     info.zOrder = static_cast<int32_t>(node.GetGlobalZOrder());
@@ -381,8 +384,8 @@ void RSUniRenderComposerAdapter::DealWithNodeGravity(const RSSurfaceRenderNode& 
     (void)RSPropertiesPainter::GetGravityMatrix(frameGravity,
         RectF {0.0f, 0.0f, boundsWidth, boundsHeight}, frameWidth, frameHeight, gravityMatrix);
     // create a canvas to calculate new dstRect and new srcRect
-    int32_t screenWidth = screenInfo_.width;
-    int32_t screenHeight = screenInfo_.height;
+    int32_t screenWidth = screenInfo_.phyWidth;
+    int32_t screenHeight = screenInfo_.phyHeight;
     const auto screenRotation = screenInfo_.rotation;
     if (screenRotation == ScreenRotation::ROTATION_90 || screenRotation == ScreenRotation::ROTATION_270) {
         std::swap(screenWidth, screenHeight);
@@ -504,10 +507,14 @@ ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(RSSurfaceRenderNode& no
     ComposeInfo info {};
     info.srcRect = GraphicIRect {srcRect.left_, srcRect.top_, srcRect.width_, srcRect.height_};
     info.dstRect = GraphicIRect {
-        static_cast<int32_t>(static_cast<float>(dstRect.left_) * mirrorAdaptiveCoefficient_),
-        static_cast<int32_t>(static_cast<float>(dstRect.top_) * mirrorAdaptiveCoefficient_),
-        static_cast<int32_t>(static_cast<float>(dstRect.width_) * mirrorAdaptiveCoefficient_),
-        static_cast<int32_t>(static_cast<float>(dstRect.height_) * mirrorAdaptiveCoefficient_)
+        static_cast<int32_t>(static_cast<float>(dstRect.left_) *
+            screenInfo_.GetRogWidthRatio() * mirrorAdaptiveCoefficient_),
+        static_cast<int32_t>(static_cast<float>(dstRect.top_) *
+            screenInfo_.GetRogHeightRatio() * mirrorAdaptiveCoefficient_),
+        static_cast<int32_t>(static_cast<float>(dstRect.width_) *
+            screenInfo_.GetRogWidthRatio() * mirrorAdaptiveCoefficient_),
+        static_cast<int32_t>(static_cast<float>(dstRect.height_) *
+            screenInfo_.GetRogHeightRatio() * mirrorAdaptiveCoefficient_)
     };
     info.zOrder = static_cast<int32_t>(node.GetGlobalZOrder());
     info.alpha.enGlobalAlpha = true;
@@ -580,8 +587,8 @@ void RSUniRenderComposerAdapter::LayerCrop(const LayerInfoPtr& layer) const
     GraphicIRect originSrcRect = srcRect;
 
     RectI dstRectI(dstRect.x, dstRect.y, dstRect.w, dstRect.h);
-    int32_t screenWidth = static_cast<int32_t>(screenInfo_.width);
-    int32_t screenHeight = static_cast<int32_t>(screenInfo_.height);
+    int32_t screenWidth = static_cast<int32_t>(screenInfo_.phyWidth);
+    int32_t screenHeight = static_cast<int32_t>(screenInfo_.phyHeight);
     RectI screenRectI(0, 0, screenWidth, screenHeight);
     RectI resDstRect = dstRectI.IntersectRect(screenRectI);
     if (resDstRect == dstRectI) {
@@ -671,8 +678,8 @@ void RSUniRenderComposerAdapter::LayerScaleDown(const LayerInfoPtr& layer, RSSur
 // private func
 bool RSUniRenderComposerAdapter::IsOutOfScreenRegion(const ComposeInfo& info) const
 {
-    int32_t boundWidth = static_cast<int32_t>(screenInfo_.width);
-    int32_t boundHeight = static_cast<int32_t>(screenInfo_.height);
+    int32_t boundWidth = static_cast<int32_t>(screenInfo_.phyWidth);
+    int32_t boundHeight = static_cast<int32_t>(screenInfo_.phyHeight);
     ScreenRotation rotation = screenInfo_.rotation;
     if (rotation == ScreenRotation::ROTATION_90 || rotation == ScreenRotation::ROTATION_270) {
         std::swap(boundWidth, boundHeight);

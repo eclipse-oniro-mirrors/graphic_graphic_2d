@@ -17,9 +17,11 @@
 #define IMAGE_H
 
 #include "drawing/engine_adapter/impl_interface/image_impl.h"
-#include "utils/drawing_macros.h"
-
 #include "include/core/SkImage.h"
+#include "utils/drawing_macros.h"
+#ifdef RS_ENABLE_VK
+#include "vulkan/vulkan.h"
+#endif
 
 namespace OHOS {
 namespace Rosen {
@@ -38,6 +40,8 @@ enum class TextureOrigin {
     TOP_LEFT,
     BOTTOM_LEFT,
 };
+
+class Surface;
 
 class DRAWING_API TextureInfo {
 public:
@@ -152,6 +156,44 @@ private:
     unsigned int format_ = 0;
 };
 
+#ifdef RS_ENABLE_VK
+struct VKAlloc {
+    VkDeviceMemory memory = VK_NULL_HANDLE;
+    VkDeviceSize offset = 0;
+    VkDeviceSize size = 0;
+    uint32_t flags = 0;
+}
+
+struct VKYcbcrConversionInfo {
+    VkFormat format = VK_FORMAT_UNDEFINED;
+    uint64_t externalFormat = 0;
+    VkSamplerYcbcrModelConversion ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
+    VkSamplerYcbcrRange ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+    VkChromaLocation xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    VkChromaLocation yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    VkFilter chromaFilter = VK_FILTER_NEAREST;
+    VkBool32 forceExplicitReconstruction = false;
+    VkFormatFeatureFlags formatFeatures = 0;
+}
+
+struct VKTextureInfo {
+    int32_t width = 0;
+    int32_t height = 0;
+    VkImage vkImage = VK_NULL_HANDLE;
+    GrVkAlloc vkAlloc;
+    VkImageTiling imageTiling = VK_IMAGE_TILING_OPTIMAL;
+    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkFormat format = VK_FORMAT_UNDEFINED;
+    VkImageUsageFlags imageUsageFlags = 0;
+    uint32_t sampleCount = 1;
+    uint32_t levelCount = 0;
+    uint32_t currentQueueFamily = VK_QUEUE_FAMILY_IGNORED;
+    bool vkProtected = false;
+    VKYcbcrConversionInfo ycbcrConversionInfo;
+    VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+}
+#endif
+
 class DRAWING_API BackendTexture {
 public:
     BackendTexture() noexcept;
@@ -235,6 +277,15 @@ public:
     bool BuildFromTexture(GPUContext& gpuContext, const TextureInfo& info, TextureOrigin origin,
         BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace);
 
+    bool BuildFromSurface(GPUContext& gpuContext, Surface& surface, TextureOrigin origin,
+        BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace);
+
+#ifdef RS_ENABLE_VK
+    bool BuildFromTexture(GPUContext& gpuContext, const VKTextureInfo& info, TextureOrigin origin,
+        BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace,
+        void (*deleteFunc)(void*), void* cleanupHelper);
+#endif
+
     bool BuildSubset(const std::shared_ptr<Image>& image, const RectI& rect, GPUContext& gpuContext);
 
     BackendTexture GetBackendTexture(bool flushPendingGrContextIO, TextureOrigin* origin) const;
@@ -290,6 +341,8 @@ public:
      * @return        True of pixels are copied to Bitmap.
      */
     bool ReadPixels(Bitmap& bitmap, int x, int y);
+
+    bool ReadPixels(Pixmap& pixmap, int x, int y);
 
     bool ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
                     int32_t srcX, int32_t srcY) const;

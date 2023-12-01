@@ -165,11 +165,16 @@ bool RSFilterCacheManager::RSFilterCacheTask::Render()
     auto src = SkRect::MakeSize(SkSize::Make(surfaceSize_));
     auto dst = SkRect::MakeSize(SkSize::Make(surfaceSize_));
 #else
+#ifdef RS_ENABLE_VK
+    auto surfaceOrigin = Drawing::TextureOrigin::TOP_LEFT;
+#else
+    auto surfaceOrigin = Drawing::TextureOrigin::BOTTOM_LEFT;
+#endif
     Drawing::BitmapFormat bitmapFormat = { Drawing::ColorType::COLORTYPE_RGBA_8888,
         Drawing::AlphaType::ALPHATYPE_PREMUL };
     auto threadImage = std::make_shared<Drawing::Image>();
     if (!threadImage->BuildFromTexture(*cacheCanvas->GetGPUContext(), cacheBackendTexture_.GetTextureInfo(),
-        Drawing::TextureOrigin::BOTTOM_LEFT, bitmapFormat, nullptr)) {
+        surfaceOrigin, bitmapFormat, nullptr)) {
         ROSEN_LOGE("RSFilterCacheManager::Render: cacheCanvas is null");
         return false;
     }
@@ -614,6 +619,9 @@ void RSFilterCacheManager::InvalidateCache(CacheType cacheType)
     if (cacheType & CacheType::CACHE_TYPE_FILTERED_SNAPSHOT) {
         cachedFilteredSnapshot_.reset();
     }
+    task_->SetStatus(CacheProcessStatus::WAITING);
+    task_->SetCompleted(false);
+    task_->Reset();
 }
 
 void RSFilterCacheManager::ReleaseCacheOffTree()

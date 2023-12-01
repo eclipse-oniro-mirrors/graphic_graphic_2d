@@ -22,6 +22,7 @@
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
+class DrawOpItem;
 class DRAWING_API DrawCmdList : public CmdList {
 public:
     DrawCmdList() = default;
@@ -37,6 +38,10 @@ public:
      * @brief         Clear Draw Ops Param
      */
     void ClearOp();
+
+    size_t GetOpItemSize() const;
+
+    std::string GetOpsWithDesc() const;
 
     /*
      * @brief       Creates a DrawCmdList with contiguous buffers.
@@ -98,17 +103,17 @@ public:
 
     void SetReplacedOpList(std::vector<std::pair<uint32_t, uint32_t>> replacedOpList);
 
-    std::vector<std::pair<OpItem*, void*>> UnmarshallingCmdList();
+    std::vector<std::shared_ptr<DrawOpItem>> UnmarshallingCmdList();
 
     void AddOpToCmdList(std::shared_ptr<DrawCmdList> cmdList);
 
 private:
     MemAllocator largeObjectAllocator_;
-    std::vector<std::shared_ptr<OpItem>> unmarshalledOpItems_;
+    std::vector<std::shared_ptr<DrawOpItem>> unmarshalledOpItems_;
     int32_t width_;
     int32_t height_;
     std::vector<std::pair<uint32_t, uint32_t>> replacedOpList_;
-    std::vector<std::pair<uint32_t, std::shared_ptr<OpItem>>> opReplacedByDrivenRender_;
+    std::vector<std::pair<uint32_t, std::shared_ptr<DrawOpItem>>> opReplacedByDrivenRender_;
     bool isCached_ = false;
     bool cachedHighContrast_ = false;
 };

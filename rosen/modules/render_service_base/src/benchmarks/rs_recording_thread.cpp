@@ -199,7 +199,9 @@ void RSRecordingThread::FinishRecordingOneFrame()
                 RS_LOGI("RSRecordingThread::High speed!");
                 messageParcel->SetMaxCapacity(RECORDING_PARCEL_CAPCITY);
                 RSMarshallingHelper::BeginNoSharedMem(std::this_thread::get_id());
+#ifndef USE_ROSEN_DRAWING
                 drawCmdListVec_[curFrameIndex]->Marshalling(*messageParcel);
+#endif
                 RSMarshallingHelper::EndNoSharedMem();
 #ifndef USE_ROSEN_DRAWING
                 opsDescription = drawCmdListVec_[curFrameIndex]-> GetOpsWithDesc();
@@ -243,12 +245,15 @@ void RSRecordingThread::RecordingToFile(const std::shared_ptr<Drawing::DrawCmdLi
         drawCmdList->Marshalling(*messageParcel);
         RSMarshallingHelper::EndNoSharedMem();
         opsDescriptionVec_.push_back(drawCmdList->GetOpsWithDesc());
-#else
-        auto cmdListData = drawCmdList->GetData();
-        auto messageParcel = std::make_shared<Drawing::Data>();
-        messageParcel->BuildWithCopy(cmdListData.first, cmdListData.second);
-#endif
         messageParcelVec_.push_back(messageParcel);
+#else
+        std::shared_ptr<MessageParcel> messageParcel = std::make_shared<MessageParcel>();
+        messageParcel->SetMaxCapacity(RECORDING_PARCEL_CAPCITY);
+        RSMarshallingHelper::BeginNoSharedMem(std::this_thread::get_id());
+        RSMarshallingHelper::Marshalling(*messageParcel, drawCmdList);
+        RSMarshallingHelper::EndNoSharedMem();
+        opsDescriptionVec_.push_back(drawCmdList->GetOpsWithDesc());
+#endif
     }
 
     FinishRecordingOneFrame();

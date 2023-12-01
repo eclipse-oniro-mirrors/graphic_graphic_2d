@@ -21,6 +21,8 @@
 #include "property/rs_properties.h"
 #include "property/rs_properties_painter.h"
 
+#include "src/image/SkImage_Base.h"
+
 namespace OHOS::Rosen {
 void RSFrameGeometryDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
 {
@@ -50,12 +52,15 @@ void RSColorFilterDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas
         ROSEN_LOGE("RSColorFilterDrawable::Draw image is null");
         return;
     }
+    as_IB(imageSnapshot)->hintCacheGpuResource();
     SkAutoCanvasRestore acr(&canvas, true);
     canvas.resetMatrix();
     static SkSamplingOptions options(SkFilterMode::kNearest, SkMipmapMode::kNone);
     canvas.drawImageRect(imageSnapshot, SkRect::Make(clipBounds), options, &paint_);
 
 #else
+    canvas.ClipRoundRect(RSPropertiesPainter::RRect2DrawingRRect(node.GetMutableRenderProperties().GetRRect()),
+        Drawing::ClipOp::INTERSECT, true);
     auto drSurface = canvas.GetSurface();
     if (drSurface == nullptr) {
         ROSEN_LOGE("RSColorFilterDrawable::Draw drSurface is null");

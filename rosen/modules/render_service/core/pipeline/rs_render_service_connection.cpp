@@ -334,10 +334,12 @@ ScreenId RSRenderServiceConnection::CreateVirtualScreen(
     uint32_t height,
     sptr<Surface> surface,
     ScreenId mirrorId,
-    int32_t flags)
+    int32_t flags,
+    std::vector<NodeId> filteredAppVector)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto newVirtualScreenId = screenManager_->CreateVirtualScreen(name, width, height, surface, mirrorId, flags);
+    auto newVirtualScreenId = screenManager_->CreateVirtualScreen(
+        name, width, height, surface, mirrorId, flags, filteredAppVector);
     virtualScreenIds_.insert(newVirtualScreenId);
     if (surface != nullptr) {
         auto& hgmCore = HgmCore::Instance();
@@ -939,6 +941,9 @@ bool RSRenderServiceConnection::GetPixelmap(
     auto getPixelmapTask = [&node, &pixelmap, rect, &result, tid]() {
         result = node->GetPixelmap(pixelmap, rect, tid);
     };
+    if (!node->IsOnTheTree()) {
+        node->ClearOp();
+    }
     if (tid == UINT32_MAX) {
         if (!mainThread_->IsIdle()) {
             return false;

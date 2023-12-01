@@ -99,7 +99,8 @@ void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect
             canvas.Save();
             RSPixelMapUtil::TransformDataSetForAstc(pixelMap_, src_, dst_, canvas);
         }
-        canvas.DrawImageRect(image_, src_, dst_, samplingOptions, Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
+        canvas.DrawImageRect(*image_, src_, dst_, samplingOptions,
+            Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
         if (pixelMap_ != nullptr && pixelMap_->IsAstc()) {
             canvas.Restore();
         }
@@ -253,8 +254,10 @@ void RSImage::UploadGpu(RSPaintFilterCanvas& canvas)
             // Need to confirm if kBC1_RGBA8_UNORM and kASTC_CompressionType are the same
             Media::ImageInfo imageInfo;
             pixelMap_->GetImageInfo(imageInfo);
+            Media::Size realSize;
+            pixelMap_->GetAstcRealSize(realSize);
             auto image = SkImage::MakeTextureFromCompressed(GrAsDirectContext(canvas.recordingContext()), compressData_,
-                static_cast<int>(srcRect_.width_), static_cast<int>(srcRect_.height_),
+                static_cast<int>(realSize.width), static_cast<int>(realSize.height),
                 PixelFormatToCompressionType(imageInfo.pixelFormat));
             if (image) {
                 image_ = image;
@@ -288,6 +291,7 @@ void RSImage::UploadGpu(Drawing::Canvas& canvas)
                 static_cast<int>(srcRect_.height_), Drawing::CompressedType::ASTC);
             if (image) {
                 image_ = image;
+                SKResourceManager::Instance().HoldResource(image);
                 RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image, gettid());
             } else {
                 RS_LOGE("make astc image %{public}d (%{public}d, %{public}d) failed",
@@ -366,7 +370,7 @@ void RSImage::DrawImageRepeatRect(const Drawing::SamplingOptions& samplingOption
             if (canvas.GetRecordingState() && image_->isTextureBacked()) {
                 auto recordingCanvas = static_cast<RSRecordingCanvas*>(canvas.GetRecordingCanvas());
                 auto cpuImage = image_->makeRasterImage();
-                recordingCanvas->drawImageRect(cpuImage, src_, dst_, samplingOptions,
+                recordingCanvas->drawImageRect(cpuImage, src_, dst_, SkSamplingOptions(),
                     &paint, SkCanvas::kFast_SrcRectConstraint);
             } else {
                 canvas.drawImageRect(image_, src_, dst_, samplingOptions, &paint, SkCanvas::kFast_SrcRectConstraint);
@@ -381,15 +385,8 @@ void RSImage::DrawImageRepeatRect(const Drawing::SamplingOptions& samplingOption
                 canvas.Save();
                 RSPixelMapUtil::TransformDataSetForAstc(pixelMap_, src_, dst_, canvas);
             }
-            if (canvas.GetRecordingState() && image_->IsTextureBacked()) {
-                auto recordingCanvas = static_cast<RSRecordingCanvas*>(canvas.GetRecordingCanvas());
-                auto cpuImage = image_->MakeRasterImage();
-                recordingCanvas->DrawImageRect(cpuImage, src_, dst_, samplingOptions,
-                    Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
-            } else {
-                canvas.DrawImageRect(image_, src_, dst_, samplingOptions,
-                    Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
-            }
+            canvas.DrawImageRect(*image_, src_, dst_, samplingOptions,
+                Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
             if (isAstc) {
                 canvas.Restore();
             }

@@ -91,11 +91,20 @@ public:
         return drGPUContext_.get();
     }
 
+    std::shared_ptr<Drawing::GPUContext> GetSharedDrGPUContext() const
+    {
+        return drGPUContext_;
+    }
+
     std::shared_ptr<Drawing::Surface> GetSurface() const
     {
         return surface_;
     }
+#ifdef RS_ENABLE_VK
+    bool SetUpGpuContext(std::shared_ptr<Drawing::GPUContext> drawingContext);
+#else
     bool SetUpGpuContext();
+#endif
 #endif
 
     EGLSurface CreateEGLSurface(EGLNativeWindowType eglNativeWindow);

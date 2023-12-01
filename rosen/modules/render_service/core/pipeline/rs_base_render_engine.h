@@ -221,6 +221,8 @@ public:
     }
 #endif // RS_ENABLE_GL || RS_ENABLE_VK
 #endif
+    void ResetCurrentContext();
+
 #ifdef RS_ENABLE_EGLIMAGE
     const std::shared_ptr<RSEglImageManager>& GetEglImageManager()
     {
@@ -232,7 +234,11 @@ public:
     {
         return vkImageManager_;
     }
+#ifndef USE_ROSEN_DRAWING
     const sk_sp<GrDirectContext> GetSkContext()
+#else
+    const std::shared_ptr<Drawing::GPUContext> GetSkContext()
+#endif
     {
         return skContext_;
     }
@@ -271,7 +277,11 @@ private:
     std::shared_ptr<RSEglImageManager> eglImageManager_ = nullptr;
 #endif // RS_ENABLE_EGLIMAGE
 #ifdef RS_ENABLE_VK
+#ifndef USE_ROSEN_DRAWING
     sk_sp<GrDirectContext> skContext_ = nullptr;
+#else
+    std::shared_ptr<Drawing::GPUContext> skContext_ = nullptr;
+#endif
     std::shared_ptr<RSVkImageManager> vkImageManager_ = nullptr;
 #endif
     using SurfaceId = uint64_t;

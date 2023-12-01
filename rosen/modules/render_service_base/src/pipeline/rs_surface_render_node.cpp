@@ -375,7 +375,11 @@ void RSSurfaceRenderNode::ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanv
     }
 #endif
 
+#ifndef ROSEN_CROSS_PLATFORM
+    RSPropertiesPainter::DrawBackground(property, canvas, true, IsSelfDrawingNode() && (GetBuffer() != nullptr));
+#else
     RSPropertiesPainter::DrawBackground(property, canvas);
+#endif
     RSPropertiesPainter::DrawMask(property, canvas);
     RSPropertiesPainter::DrawFilter(property, canvas, FilterType::BACKGROUND_FILTER);
 #ifndef USE_ROSEN_DRAWING
@@ -815,15 +819,17 @@ void RSSurfaceRenderNode::AccumulateOcclusionRegion(Occlusion::Region& accumulat
     if (GetName().find("hisearch") != std::string::npos) {
         return;
     }
+    SetTreatedAsTransparent(false);
     // when a surfacenode is in animation (i.e. 3d animation), its dstrect cannot be trusted, we treated it as a full
     // transparent layer.
     if (GetAnimateState() || IsParentLeashWindowInScale()) {
+        SetTreatedAsTransparent(true);
         ResetAnimateState();
         return;
     }
 
     // full surfacenode valid filter cache can be treated as opaque
-    if (filterCacheOcclusionEnabled && IsTransparent() && GetFilterCacheValid()) {
+    if (filterCacheOcclusionEnabled && IsTransparent() && GetFilterCacheValidForOcclusion()) {
         accumulatedRegion.OrSelf(curRegion);
         hasFilterCacheOcclusion = true;
     } else {
@@ -832,20 +838,20 @@ void RSSurfaceRenderNode::AccumulateOcclusionRegion(Occlusion::Region& accumulat
     return;
 }
 
-RS_REGION_VISIBLE_LEVEL RSSurfaceRenderNode::GetVisibleLevelForWMS(RSVisibleLevel visibleLevel)
+WINDOW_LAYER_INFO_TYPE RSSurfaceRenderNode::GetVisibleLevelForWMS(RSVisibleLevel visibleLevel)
 {
     switch (visibleLevel) {
         case RSVisibleLevel::RS_INVISIBLE:
-            return RS_REGION_VISIBLE_LEVEL::INVISIBLE;
+            return WINDOW_LAYER_INFO_TYPE::SEMI_VISIBLE;
         case RSVisibleLevel::RS_ALL_VISIBLE:
-            return RS_REGION_VISIBLE_LEVEL::ALL_VISIBLE;
+            return WINDOW_LAYER_INFO_TYPE::ALL_VISIBLE;
         case RSVisibleLevel::RS_SEMI_NONDEFAULT_VISIBLE:
         case RSVisibleLevel::RS_SEMI_DEFAULT_VISIBLE:
-            return RS_REGION_VISIBLE_LEVEL::SEMI_VISIBLE;
+            return WINDOW_LAYER_INFO_TYPE::SEMI_VISIBLE;
         default:
             break;
     }
-    return RS_REGION_VISIBLE_LEVEL::UNKNOW_VISIBLE_LEVEL;
+    return WINDOW_LAYER_INFO_TYPE::SEMI_VISIBLE;
 }
 
 bool RSSurfaceRenderNode::IsMultiInstance()
@@ -881,6 +887,8 @@ void RSSurfaceRenderNode::SetVisibleRegionRecursive(const Occlusion::Region& reg
         visibleRegion_ = region;
         SetOcclusionVisible(vis);
     }
+    // when there is filter cache occlusion, also save occlusion status without filter cache
+    SetOcclusionVisibleWithoutFilter(vis);
 
     for (auto& child : GetChildren()) {
         if (auto surfaceChild = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child)) {
@@ -916,7 +924,7 @@ bool RSSurfaceRenderNode::SubNodeIntersectWithDirty(const RectI& r) const
         return true;
     }
     // if current node is transparent
-    if (IsTransparent() || IsCurrentNodeInTransparentRegion(nodeRect)) {
+    if (IsTransparent() || IsCurrentNodeInTransparentRegion(nodeRect) || IsTreatedAsTransparent()) {
         return dirtyRegionBelowCurrentLayer_.IsIntersectWith(nodeRect);
     }
     return false;
@@ -983,9 +991,9 @@ void RSSurfaceRenderNode::CalcFilterCacheValidForOcclusion()
         return;
     }
     isFilterCacheStatusChanged_ = false;
-    bool currentCacheValid = isFilterCacheFullyCovered_ && dirtyManager_->GetSubNodeFilterCacheValid();
-    if (isFilterCacheValid_ != currentCacheValid) {
-        isFilterCacheValid_ = currentCacheValid;
+    bool currentCacheValidForOcclusion = isFilterCacheFullyCovered_ && dirtyManager_->IsFilterCacheRectValid();
+    if (isFilterCacheValidForOcclusion_ != currentCacheValidForOcclusion) {
+        isFilterCacheValidForOcclusion_ = currentCacheValidForOcclusion;
         isFilterCacheStatusChanged_ = true;
     }
 }
@@ -1028,7 +1036,7 @@ void RSSurfaceRenderNode::UpdateFilterCacheStatusWithVisible(bool visible)
     }
     prevVisible_ = visible;
 #if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
-    if (!visible && !filterNodes_.empty()) {
+    if (!visible && !filterNodes_.empty() && !isOcclusionVisibleWithoutFilter_) {
         for (auto& node : filterNodes_) {
             node.second->GetMutableRenderProperties().ClearFilterCache();
         }
