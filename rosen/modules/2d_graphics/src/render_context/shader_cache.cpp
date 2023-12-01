@@ -67,7 +67,7 @@ void ShaderCache::InitShaderCache(const char* identity, const size_t size, bool 
         LOGW("abandon, bad hash value, cleared for future regeneration");
     }
 
-    LOGI("shadercache initiation success");
+    LOGD("shadercache initiation success");
     initialized_ = true;
 }
 
@@ -134,7 +134,7 @@ std::shared_ptr<Drawing::Data> ShaderCache::Load(const Drawing::Data& key)
     }
 
     if (!valueSize || valueSize > bufferSize_) {
-        LOGE("load: failed to get the cache value with the given key");
+        LOGD("load: failed to get the cache value with the given key");
         free(valueBuffer);
         valueBuffer = nullptr;
         return nullptr;

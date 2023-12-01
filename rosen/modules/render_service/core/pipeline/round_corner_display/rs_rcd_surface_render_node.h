@@ -82,9 +82,9 @@ struct RcdSourceInfo {
 
 struct HardwareLayerInfo {
     std::filesystem::path pathBin;
-    int bufferSize;
-    int cldWidth;
-    int cldHeight;
+    int bufferSize = 0;
+    int cldWidth = 0;
+    int cldHeight = 0;
 };
 
 class RSRcdSurfaceRenderNode : public RSRenderNode, public RSSurfaceHandler {
@@ -128,11 +128,16 @@ private:
     float GetSurfaceHeight() const;
     bool FillHardwareResource(HardwareLayerInfo &cldLayerInfo, int height, int width, int stride, uint8_t *img);
     HardwareLayerInfo cldLayerInfo;
+#ifndef USE_ROSEN_DRAWING
     SkBitmap layerBitmap;
+#else
+    Drawing::Bitmap layerBitmap;
+#endif
 
     uint32_t GetRcdBufferWidth() const;
     uint32_t GetRcdBufferHeight() const;
     uint32_t GetRcdBufferSize() const;
+    float rcdGlobalZOrder_ = 0.0f;
 
 #ifdef NEW_RENDER_CONTEXT
     std::shared_ptr<RSRenderSurface> surface_;

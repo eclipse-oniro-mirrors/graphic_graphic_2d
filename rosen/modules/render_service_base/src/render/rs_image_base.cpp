@@ -92,6 +92,10 @@ void RSImageBase::DrawImage(RSPaintFilterCanvas& canvas, const SkPaint& paint)
     ConvertPixelMapToSkImage();
     auto src = RSPropertiesPainter::Rect2SkRect(srcRect_);
     auto dst = RSPropertiesPainter::Rect2SkRect(dstRect_);
+    if (image_ == nullptr) {
+        RS_LOGE("RSImageBase::DrawImage image_ is nullptr");
+        return;
+    }
 #ifdef NEW_SKIA
     canvas.drawImageRect(image_, src, dst, samplingOptions, &paint, SkCanvas::kStrict_SrcRectConstraint);
 #else
@@ -99,8 +103,7 @@ void RSImageBase::DrawImage(RSPaintFilterCanvas& canvas, const SkPaint& paint)
 #endif
 }
 #else
-void RSImageBase::DrawImage(Drawing::Canvas& canvas, const Drawing::SamplingOptions& samplingOptions,
-    const Drawing::Brush& brush)
+void RSImageBase::DrawImage(Drawing::Canvas& canvas, const Drawing::SamplingOptions& samplingOptions)
 {
     ConvertPixelMapToDrawingImage();
     auto src = RSPropertiesPainter::Rect2DrawingRect(srcRect_);
@@ -109,9 +112,7 @@ void RSImageBase::DrawImage(Drawing::Canvas& canvas, const Drawing::SamplingOpti
         RS_LOGE("RSImageBase::DrawImage image_ is nullptr");
         return;
     }
-    canvas.AttachBrush(brush);
     canvas.DrawImageRect(*image_, src, dst, samplingOptions);
-    canvas.DetachBrush();
 }
 #endif
 
@@ -124,12 +125,11 @@ void RSImageBase::SetImage(const std::shared_ptr<Drawing::Image> image)
     isDrawn_ = false;
     image_ = image;
     if (image_) {
-#ifndef USE_ROSEN_DRAWING
         SKResourceManager::Instance().HoldResource(image);
+#ifndef USE_ROSEN_DRAWING
         srcRect_.SetAll(0.0, 0.0, image_->width(), image_->height());
         GenUniqueId(image_->uniqueID());
 #else
-        // Drawing need to be adapted furture
         srcRect_.SetAll(0.0, 0.0, image_->GetWidth(), image_->GetHeight());
         GenUniqueId(image_->GetUniqueID());
 #endif
@@ -145,11 +145,7 @@ void RSImageBase::SetDmaImage(const std::shared_ptr<Drawing::Image> image)
 {
     isDrawn_ = false;
     image_ = image;
-#ifndef USE_ROSEN_DRAWING
     SKResourceManager::Instance().HoldResource(image);
-#else
-    // Drawing need to be adapted furture
-#endif
 }
 #endif
 
@@ -451,6 +447,9 @@ void RSImageBase::ConvertPixelMapToDrawingImage()
         }
         if (!image_) {
             image_ = RSPixelMapUtil::ExtractDrawingImage(pixelMap_);
+            if (image_) {
+                SKResourceManager::Instance().HoldResource(image_);
+            }
             if (!pixelMap_->IsEditable()) {
 #if defined(ROSEN_OHOS)
                 RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image_, gettid());

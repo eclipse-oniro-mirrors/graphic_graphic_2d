@@ -45,6 +45,17 @@ public:
 };
 
 // ============================================================================
+// PointLight
+class RSPointLightDrawable : public RSPropertyDrawable {
+public:
+    explicit RSPointLightDrawable() = default;
+    ~RSPointLightDrawable() override = default;
+    void Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas) override;
+
+    static RSPropertyDrawable::DrawablePtr Generate(const RSPropertyDrawableGenerateContext& context);
+};
+
+// ============================================================================
 // Border
 class RSBorderDrawable : public RSPropertyDrawable {
 public:
@@ -57,6 +68,9 @@ public:
 #endif
     ~RSBorderDrawable() override = default;
     static RSPropertyDrawable::DrawablePtr Generate(const RSPropertyDrawableGenerateContext& context);
+    static RSPropertyDrawable::DrawablePtr GenerateOuter(const RSPropertyDrawableGenerateContext& context);
+    static RSPropertyDrawable::DrawablePtr GenerateCommon(const RSPropertyDrawableGenerateContext& context,
+        const bool& isFirstLayerBorder);
 
 protected:
 #ifndef USE_ROSEN_DRAWING
@@ -70,15 +84,17 @@ protected:
 class RSBorderDRRectDrawable : public RSBorderDrawable {
 public:
 #ifndef USE_ROSEN_DRAWING
-    explicit RSBorderDRRectDrawable(SkPaint&& paint, const RSProperties& properties);
+    explicit RSBorderDRRectDrawable(SkPaint&& paint, const RSProperties& properties, const bool& isFirstLayerBorder);
 #else
-    explicit RSBorderDRRectDrawable(Drawing::Brush&& brush, Drawing::Pen&& pen, const RSProperties& properties);
+    explicit RSBorderDRRectDrawable(Drawing::Brush&& brush, Drawing::Pen&& pen, const RSProperties& properties,
+        const bool& isFirstLayerBorder);
 #endif
     ~RSBorderDRRectDrawable() override = default;
     void Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas) override;
     void OnBoundsChange(const RSProperties& properties);
 
 private:
+    bool isFirstLayerBorder_;
 #ifndef USE_ROSEN_DRAWING
     SkRRect inner_;
     SkRRect outer_;
@@ -91,30 +107,34 @@ private:
 class RSBorderFourLineDrawable : public RSBorderDrawable {
 public:
 #ifndef USE_ROSEN_DRAWING
-    explicit RSBorderFourLineDrawable(SkPaint&& paint, const RSProperties& properties);
+    explicit RSBorderFourLineDrawable(SkPaint&& paint, const RSProperties& properties, const bool& isFirstLayerBorder);
 #else
-    explicit RSBorderFourLineDrawable(Drawing::Brush&& brush, Drawing::Pen&& pen, const RSProperties& properties);
+    explicit RSBorderFourLineDrawable(Drawing::Brush&& brush, Drawing::Pen&& pen, const RSProperties& properties,
+        const bool& isFirstLayerBorder);
 #endif
     ~RSBorderFourLineDrawable() override = default;
     void Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas) override;
     void OnBoundsChange(const RSProperties& properties);
 
 private:
+    bool isFirstLayerBorder_;
     RectF rect_;
 };
 
 class RSBorderPathDrawable : public RSBorderDrawable {
 public:
 #ifndef USE_ROSEN_DRAWING
-    explicit RSBorderPathDrawable(SkPaint&& paint, const RSProperties& properties);
+    explicit RSBorderPathDrawable(SkPaint&& paint, const RSProperties& properties, const bool& isFirstLayerBorder);
 #else
-    explicit RSBorderPathDrawable(Drawing::Brush&& brush, Drawing::Pen&& pen, const RSProperties& properties);
+    explicit RSBorderPathDrawable(Drawing::Brush&& brush, Drawing::Pen&& pen, const RSProperties& properties,
+        const bool& isFirstLayerBorder);
 #endif
     ~RSBorderPathDrawable() override = default;
     void Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas) override;
     void OnBoundsChange(const RSProperties& properties);
 
 private:
+    bool isFirstLayerBorder_;
 #ifndef USE_ROSEN_DRAWING
     SkPath borderPath_;
 #else
@@ -125,16 +145,18 @@ private:
 class RSBorderFourLineRoundCornerDrawable : public RSBorderDrawable {
 public:
 #ifndef USE_ROSEN_DRAWING
-    explicit RSBorderFourLineRoundCornerDrawable(SkPaint&& paint, const RSProperties& properties);
+    explicit RSBorderFourLineRoundCornerDrawable(SkPaint&& paint, const RSProperties& properties,
+        const bool& isFirstLayerBorder);
 #else
     explicit RSBorderFourLineRoundCornerDrawable(Drawing::Brush&& brush, Drawing::Pen&& pen,
-        const RSProperties& properties);
+        const RSProperties& properties, const bool& isFirstLayerBorder);
 #endif
     ~RSBorderFourLineRoundCornerDrawable() override = default;
     void Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas) override;
     void OnBoundsChange(const RSProperties& properties);
 
 private:
+    bool isFirstLayerBorder_;
 #ifndef USE_ROSEN_DRAWING
     SkRRect innerRrect_;
     SkRRect rrect_;
@@ -214,8 +236,13 @@ class RSShadowDrawable : public RSShadowBaseDrawable {
 public:
     explicit RSShadowDrawable(const RSProperties& properties);
     ~RSShadowDrawable() override = default;
+#ifndef USE_ROSEN_DRAWING
     RSColor GetColorForShadow(RSRenderNode& node, RSPaintFilterCanvas& canvas,
         SkPath& skPath, SkMatrix& matrix, SkIRect& deviceClipBounds);
+#else
+    RSColor GetColorForShadow(RSRenderNode& node, RSPaintFilterCanvas& canvas,
+        Drawing::Path& skPath, Drawing::Matrix& matrix, Drawing::RectI& deviceClipBounds);
+#endif
     void Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas) override;
 
 protected:
@@ -363,7 +390,6 @@ public:
     bool Update(const RSPropertyDrawableGenerateContext& context) override;
 };
 
-
 // ============================================================================
 // PixelStretch
 class RSPixelStretchDrawable : public RSPropertyDrawable {
@@ -401,8 +427,7 @@ public:
         paint_.setColor(color);
     }
 #else
-    explicit RSBackgroundColorDrawable(bool hasRoundedCorners, Drawing::Color color)
-        : RSBackgroundDrawable(hasRoundedCorners)
+    explicit RSBackgroundColorDrawable(Drawing::Color color) : RSBackgroundDrawable()
     {
         brush_.SetColor(color);
     }
@@ -420,8 +445,7 @@ public:
         paint_.setShader(std::move(filter));
     }
 #else
-    explicit RSBackgroundShaderDrawable(bool hasRoundedCorners, std::shared_ptr<Drawing::ShaderEffect> filter)
-        : RSBackgroundDrawable(hasRoundedCorners)
+    explicit RSBackgroundShaderDrawable(std::shared_ptr<Drawing::ShaderEffect> filter) : RSBackgroundDrawable()
     {
         brush_.SetShaderEffect(std::move(filter));
     }
@@ -454,14 +478,23 @@ private:
 // SaveLayerContent
 class RSSaveLayerContentDrawable : public RSPropertyDrawable {
 public:
+#ifndef USE_ROSEN_DRAWING
     explicit RSSaveLayerContentDrawable(std::shared_ptr<int> content, SkPaint&& blendPaint)
         : content_(std::move(content)), blendPaint_(std::move(blendPaint)) {}
+#else
+    explicit RSSaveLayerContentDrawable(std::shared_ptr<int> content, Drawing::Brush&& blendBrush)
+        : content_(std::move(content)), blendBrush_(std::move(blendBrush)) {}
+#endif
     ~RSSaveLayerContentDrawable() override = default;
     void Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas) override;
 
 private:
     std::shared_ptr<int> content_;
+#ifndef USE_ROSEN_DRAWING
     SkPaint blendPaint_;
+#else
+    Drawing::Brush blendBrush_;
+#endif
 };
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_PROPERTY_RS_PROPERTY_DRAWABLE_BOUNDS_GEOMETRY_H

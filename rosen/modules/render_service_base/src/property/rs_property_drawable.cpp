@@ -121,7 +121,15 @@ static const std::unordered_map<RSModifierType, RSPropertyDrawableSlot> g_proper
     { RSModifierType::PARTICLE, RSPropertyDrawableSlot::PARTICLE_EFFECT },
     { RSModifierType::SHADOW_IS_FILLED, RSPropertyDrawableSlot::INVALID },
     { RSModifierType::COLOR_BLEND_MODE, RSPropertyDrawableSlot::SAVE_LAYER_CONTENT },
+    { RSModifierType::OUTER_BORDER_COLOR, RSPropertyDrawableSlot::OUTER_BORDER },
+    { RSModifierType::OUTER_BORDER_WIDTH, RSPropertyDrawableSlot::OUTER_BORDER },
+    { RSModifierType::OUTER_BORDER_STYLE, RSPropertyDrawableSlot::OUTER_BORDER },
+    { RSModifierType::OUTER_BORDER_RADIUS, RSPropertyDrawableSlot::OUTER_BORDER },
     { RSModifierType::USE_SHADOW_BATCHING, RSPropertyDrawableSlot::INVALID },
+    { RSModifierType::LIGHT_INTENSITY, RSPropertyDrawableSlot::POINT_LIGHT },
+    { RSModifierType::LIGHT_POSITION, RSPropertyDrawableSlot::POINT_LIGHT },
+    { RSModifierType::ILLUMINATED_TYPE, RSPropertyDrawableSlot::POINT_LIGHT },
+    { RSModifierType::BLOOM, RSPropertyDrawableSlot::POINT_LIGHT },
     { RSModifierType::CUSTOM, RSPropertyDrawableSlot::INVALID },
     { RSModifierType::EXTENDED, RSPropertyDrawableSlot::INVALID },
     { RSModifierType::TRANSITION, RSPropertyDrawableSlot::TRANSITION },
@@ -148,6 +156,7 @@ static const std::array<RSPropertyDrawable::DrawableGenerator, RSPropertyDrawabl
     CustomModifierAdapter<RSModifierType::TRANSITION>,           // TRANSITION,
     CustomModifierAdapter<RSModifierType::ENV_FOREGROUND_COLOR>, // ENV_FOREGROUND_COLOR
     RSShadowDrawable::Generate,                                  // SHADOW,
+    RSBorderDrawable::GenerateOuter,                             // OUTER_BORDER,
 
     // BG properties in Bounds Clip
     nullptr,                                                              // SAVE_LAYER_BACKGROUND
@@ -177,8 +186,8 @@ static const std::array<RSPropertyDrawable::DrawableGenerator, RSPropertyDrawabl
     // FG properties in Bounds clip
     nullptr,                                      // FG_SAVE_BOUNDS,
     nullptr,                                      // EXTRA_CLIP_TO_BOUNDS,
-    RSColorFilterDrawable::Generate,              // COLOR_FILTER,
     RSBinarizationDrawable::Generate,             // BINARIZATION,
+    RSColorFilterDrawable::Generate,              // COLOR_FILTER,
     RSLightUpEffectDrawable::Generate,            // LIGHT_UP_EFFECT,
     RSForegroundFilterDrawable::Generate,         // FOREGROUND_FILTER,
     RSLinearGradientBlurFilterDrawable::Generate, // LINEAR_GRADIENT_BLUR_FILTER,
@@ -187,6 +196,7 @@ static const std::array<RSPropertyDrawable::DrawableGenerator, RSPropertyDrawabl
     nullptr,                                      // RESTORE_BACKGROUND
 
     // No clip (unless ClipToBounds is set)
+    RSPointLightDrawable::Generate,                       // POINT_LIGHT
     RSBorderDrawable::Generate,                           // BORDER,
     CustomModifierAdapter<RSModifierType::OVERLAY_STYLE>, // OVERLAY
     RSParticleDrawable::Generate,                         // PARTICLE_EFFECT,
@@ -196,6 +206,7 @@ static const std::array<RSPropertyDrawable::DrawableGenerator, RSPropertyDrawabl
 };
 } // namespace
 
+#ifndef USE_ROSEN_DRAWING
 std::unordered_set<RSPropertyDrawableSlot> RSPropertyDrawable::GenerateDirtySlots(
     const RSProperties& properties, const std::unordered_set<RSModifierType>& dirtyTypes)
 {
@@ -218,15 +229,61 @@ std::unordered_set<RSPropertyDrawableSlot> RSPropertyDrawable::GenerateDirtySlot
         if (properties.GetBorder() != nullptr) {
             dirtySlots.emplace(RSPropertyDrawableSlot::BORDER);
         }
+
+        if (properties.GetOuterBorder() != nullptr) {
+            dirtySlots.emplace(RSPropertyDrawableSlot::OUTER_BORDER);
+        }
         // PLANNING: add other slots: ClipToFrame, ColorFilter
     }
-    if (dirtyTypes.count(RSModifierType::CORNER_RADIUS) && (properties.GetBorder() != nullptr)) {
+    if (dirtyTypes.count(RSModifierType::CORNER_RADIUS)) {
+        // border may should be updated with corner radius
+        if (properties.GetBorder() != nullptr) {
+            dirtySlots.emplace(RSPropertyDrawableSlot::BORDER);
+        }
+
+        if (properties.GetOuterBorder() != nullptr) {
+            dirtySlots.emplace(RSPropertyDrawableSlot::OUTER_BORDER);
+        }
+    }
+
+    return dirtySlots;
+}
+#else
+std::unordered_set<RSPropertyDrawableSlot> RSPropertyDrawable::GenerateDirtySlots(
+    const RSProperties& properties,
+    std::bitset<static_cast<int>(RSModifierType::MAX_RS_MODIFIER_TYPE)>& dirtyTypes)
+{
+    // Step 1.1: collect dirty slots
+    std::unordered_set<RSPropertyDrawableSlot> dirtySlots;
+    for (uint8_t type = 0; type < static_cast<size_t>(RSModifierType::MAX_RS_MODIFIER_TYPE); type++) {
+        if (dirtyTypes[type]) {
+            auto it = g_propertyToDrawableLut.find(static_cast<RSModifierType>(type));
+            if (it == g_propertyToDrawableLut.end() || it->second == RSPropertyDrawableSlot::INVALID) {
+                continue;
+            }
+            dirtySlots.emplace(it->second);
+        }
+    }
+
+    // Step 1.2: expand dirty slots if needed
+    if (dirtyTypes.test(static_cast<size_t>(RSModifierType::BOUNDS))) {
+        if (properties.GetPixelStretch().has_value()) {
+            dirtySlots.emplace(RSPropertyDrawableSlot::PIXEL_STRETCH);
+        }
+        if (properties.GetBorder() != nullptr) {
+            dirtySlots.emplace(RSPropertyDrawableSlot::BORDER);
+        }
+        // PLANNING: add other slots: ClipToFrame, ColorFilter
+    }
+    if (dirtyTypes.test(static_cast<size_t>(RSModifierType::CORNER_RADIUS))
+        && (properties.GetBorder() != nullptr)) {
         // border may should be updated with corner radius
         dirtySlots.emplace(RSPropertyDrawableSlot::BORDER);
     }
 
     return dirtySlots;
 }
+#endif
 
 bool RSPropertyDrawable::UpdateDrawableVec(const RSPropertyDrawableGenerateContext& context, DrawableVec& drawableVec,
     std::unordered_set<RSPropertyDrawableSlot>& dirtySlots)
@@ -429,6 +486,7 @@ RSPropertyDrawableGenerateContext::RSPropertyDrawableGenerateContext(RSRenderNod
     : node_(node.shared_from_this()), properties_(node.GetRenderProperties()), hasChildren_(!node.GetChildren().empty())
 {}
 
+#ifndef USE_ROSEN_DRAWING
 void ConvertBlendmodeToPaint(const RSPropertyDrawableGenerateContext& context, SkPaint& blendPaint)
 {
     static const std::unordered_map<int, SkBlendMode> skBlendModeLUT = {
@@ -444,24 +502,55 @@ void ConvertBlendmodeToPaint(const RSPropertyDrawableGenerateContext& context, S
     }
     blendPaint.setBlendMode(skBlendModeLUT.at(blendMode));
 }
+#else
+void ConvertBlendmodeToPaint(const RSPropertyDrawableGenerateContext& context, Drawing::Brush& blendBrush)
+{
+    static const std::unordered_map<int, Drawing::BlendMode> BlendModeLUT = {
+        { static_cast<int>(RSColorBlendModeType::DST_IN), Drawing::BlendMode::DST_IN },
+        { static_cast<int>(RSColorBlendModeType::SRC_IN), Drawing::BlendMode::SRC_IN }
+    };
+    auto& properties = context.properties_;
+    int blendMode = properties.GetColorBlendMode();
+    auto iter = BlendModeLUT.find(blendMode);
+    if (iter == BlendModeLUT.end()) {
+        ROSEN_LOGE("The desired color_blend_mode is undefined, will behave as no blendmode.");
+        return;
+    }
+    blendBrush.SetBlendMode(BlendModeLUT.at(blendMode));
+}
+#endif
 
 void RSPropertyDrawable::UpdateSaveLayerSlots(
     const RSPropertyDrawableGenerateContext& context, DrawableVec& drawableVec)
 {
+#ifndef USE_ROSEN_DRAWING
     SkPaint blendPaint;
     ConvertBlendmodeToPaint(context, blendPaint);
     // blendmode value is invalid, clear relative 4 slots
     if (!blendPaint.asBlendMode().has_value()) {
+#else
+    Drawing::Brush blendBrush;
+    ConvertBlendmodeToPaint(context, blendBrush);
+    // blendmode value is invalid, clear relative 4 slots
+    // Drawing need to adapt;
+#endif
         drawableVec[RSPropertyDrawableSlot::SAVE_LAYER_CONTENT] = nullptr;
         drawableVec[RSPropertyDrawableSlot::RESTORE_CONTENT] = nullptr;
         drawableVec[RSPropertyDrawableSlot::SAVE_LAYER_BACKGROUND] = nullptr;
         drawableVec[RSPropertyDrawableSlot::RESTORE_BACKGROUND] = nullptr;
         return;
+#ifndef USE_ROSEN_DRAWING
     }
+#endif
     // dirty slots COLOR_BLEND changed from none to valid value
     auto contentCount = std::make_shared<int>(-1);
+#ifndef USE_ROSEN_DRAWING
     drawableVec[RSPropertyDrawableSlot::SAVE_LAYER_CONTENT] =
         std::make_unique<RSSaveLayerContentDrawable>(contentCount, std::move(blendPaint));
+#else
+    drawableVec[RSPropertyDrawableSlot::SAVE_LAYER_CONTENT] =
+        std::make_unique<RSSaveLayerContentDrawable>(contentCount, std::move(blendBrush));
+#endif
     drawableVec[RSPropertyDrawableSlot::RESTORE_CONTENT] = std::make_unique<RSRestoreDrawable>(contentCount);
     auto backgroundCount = std::make_shared<int>(-1);
     drawableVec[RSPropertyDrawableSlot::SAVE_LAYER_BACKGROUND] =

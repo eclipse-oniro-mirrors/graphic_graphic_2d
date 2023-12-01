@@ -19,7 +19,11 @@
 #pragma once
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#ifndef USE_ROSEN_DRAWING
 #include "include/core/SkBitmap.h"
+#else
+#include "image/bitmap.h"
+#endif
 #include <cstring>
 #include <vector>
 #include <iostream>
@@ -109,12 +113,16 @@ using RoundCornerLayer = struct RoundCornerLayer {
     int cldHeight = 0;
     uint32_t layerWidth = 0;
     uint32_t layerHeight = 0;
+#ifndef USE_ROSEN_DRAWING
     SkBitmap* curBitmap = nullptr;
+#else
+    Drawing::Bitmap* curBitmap = nullptr;
+#endif
     bool ReadXmlNode(const xmlNodePtr& ptr, std::vector<std::string> attrArray);
 };
 
 using RoundCornerHardware = struct RoundCornerHardware {
-    bool supportHardware = false;
+    bool resourceChanged = false;
     RoundCornerLayer* topLayer = nullptr;
     RoundCornerLayer* bottomLayer = nullptr;
 };
