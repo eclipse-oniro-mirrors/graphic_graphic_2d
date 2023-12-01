@@ -141,7 +141,7 @@ public:
         ADAPTIVE_IMAGE_OPITEM,
         ADAPTIVE_PIXELMAP_OPITEM,
         IMAGE_WITH_PARM_OPITEM,
-        EXTEND_PIXELMAP_OPITEM,
+        PIXELMAP_WITH_PARM_OPITEM,
         PIXELMAP_RECT_OPITEM,
         REGION_OPITEM,
         PATCH_OPITEM,
@@ -1178,17 +1178,17 @@ private:
     std::shared_ptr<ExtendImageObject> objectHandle_;
 };
 
-class DrawExtendPixelMapOpItem : public DrawOpItem {
+class DrawPixelMapWithParmOpItem : public DrawOpItem {
 public:
     struct ConstructorHandle : public OpItem {
         ConstructorHandle(const OpDataHandle& objectHandle, const SamplingOptions& sampling)
-            : OpItem(DrawOpItem::EXTEND_PIXELMAP_OPITEM), objectHandle(objectHandle), sampling(sampling) {}
+            : OpItem(DrawOpItem::PIXELMAP_WITH_PARM_OPITEM), objectHandle(objectHandle), sampling(sampling) {}
         ~ConstructorHandle() override = default;
         OpDataHandle objectHandle;
         SamplingOptions sampling;
     };
-    DrawExtendPixelMapOpItem(const CmdList& cmdList, ConstructorHandle* handle);
-    ~DrawExtendPixelMapOpItem() override = default;
+    DrawPixelMapWithParmOpItem(const CmdList& cmdList, ConstructorHandle* handle);
+    ~DrawPixelMapWithParmOpItem() override = default;
 
     static std::shared_ptr<DrawOpItem> Unmarshalling(const CmdList& cmdList, void* handle);
     void Playback(Canvas* canvas, const Rect* rect) override;
@@ -1197,7 +1197,7 @@ private:
     std::shared_ptr<ExtendImageObject> objectHandle_;
 };
 
-class DrawExtendPixelMapRectOpItem : public DrawOpItem {
+class DrawPixelMapRectOpItem : public DrawOpItem {
 public:
     struct ConstructorHandle : public OpItem {
         ConstructorHandle(const OpDataHandle& objectHandle, const SamplingOptions& sampling)
@@ -1206,8 +1206,8 @@ public:
         OpDataHandle objectHandle;
         SamplingOptions sampling;
     };
-    DrawExtendPixelMapRectOpItem(const CmdList& cmdList, ConstructorHandle* handle);
-    ~DrawExtendPixelMapRectOpItem() override = default;
+    DrawPixelMapRectOpItem(const CmdList& cmdList, ConstructorHandle* handle);
+    ~DrawPixelMapRectOpItem() override = default;
 
     static std::shared_ptr<DrawOpItem> Unmarshalling(const CmdList& cmdList, void* handle);
     void Playback(Canvas* canvas, const Rect* rect) override;

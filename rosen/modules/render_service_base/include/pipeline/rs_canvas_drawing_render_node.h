@@ -51,8 +51,9 @@ public:
     bool GetPixelmap(const std::shared_ptr<Media::PixelMap> pixelmap, const SkRect* rect,
         const uint32_t tid = UNI_MAIN_THREAD_INDEX);
 #else
-    Drawing::Bitmap GetBitmap();
-    bool GetPixelmap(const std::shared_ptr<Media::PixelMap> pixelmap, const Drawing::Rect* rect);
+    Drawing::Bitmap GetBitmap(const uint64_t tid = UINT32_MAX);
+    bool GetPixelmap(const std::shared_ptr<Media::PixelMap> pixelmap,
+        const Drawing::Rect* rect, const uint64_t tid = UINT32_MAX);
 #endif
 
     void SetSurfaceClearFunc(ThreadInfo threadInfo)

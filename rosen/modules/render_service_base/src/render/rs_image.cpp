@@ -99,7 +99,8 @@ void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect
             canvas.Save();
             RSPixelMapUtil::TransformDataSetForAstc(pixelMap_, src_, dst_, canvas);
         }
-        canvas.DrawImageRect(image_, src_, dst_, samplingOptions, Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
+        canvas.DrawImageRect(*image_, src_, dst_, samplingOptions,
+            Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
         if (pixelMap_ != nullptr && pixelMap_->IsAstc()) {
             canvas.Restore();
         }
@@ -383,15 +384,8 @@ void RSImage::DrawImageRepeatRect(const Drawing::SamplingOptions& samplingOption
                 canvas.Save();
                 RSPixelMapUtil::TransformDataSetForAstc(pixelMap_, src_, dst_, canvas);
             }
-            if (canvas.GetRecordingState() && image_->IsTextureBacked()) {
-                auto recordingCanvas = static_cast<RSRecordingCanvas*>(canvas.GetRecordingCanvas());
-                auto cpuImage = image_->MakeRasterImage();
-                recordingCanvas->DrawImageRect(cpuImage, src_, dst_, samplingOptions,
-                    Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
-            } else {
-                canvas.DrawImageRect(image_, src_, dst_, samplingOptions,
-                    Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
-            }
+            canvas.DrawImageRect(*image_, src_, dst_, samplingOptions,
+                Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
             if (isAstc) {
                 canvas.Restore();
             }

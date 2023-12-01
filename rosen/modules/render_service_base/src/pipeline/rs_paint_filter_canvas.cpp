@@ -954,7 +954,7 @@ bool RSPaintFilterCanvas::OnFilterWithBrush(Brush& brush) const
     return alphaStack_.top() > 0.f;
 }
 
-void RSPaintFilterCanvas::SetDisableFilterCache(bool flag) const
+void RSPaintFilterCanvas::SetRecordingState(bool flag)
 {
     recordingState_ = flag;
 }
