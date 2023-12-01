@@ -489,7 +489,7 @@ bool SkiaImage::ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dst
     int32_t srcX, int32_t srcY) const
 {
     SkImageInfo skImageInfo = SkiaImageInfo::ConvertToSkImageInfo(dstInfo);
-    return skiaImage_->readPixels(skImageInfo, dstPixels, dstRowBytes, srcX, srcY);
+    return (skiaImage_ == nullptr) ? false : skiaImage_->readPixels(skImageInfo, dstPixels, dstRowBytes, srcX, srcY);
 }
 
 bool SkiaImage::IsTextureBacked() const
@@ -544,6 +544,10 @@ bool SkiaImage::IsLazyGenerated() const
 
 bool SkiaImage::GetROPixels(Bitmap& bitmap) const
 {
+    if (skiaImage_ == nullptr) {
+        LOGE("SkiaImage::GetROPixels, skiaImage_ is null!");
+        return false;
+    }
     auto context = as_IB(skiaImage_.get())->directContext();
     SkBitmap skiaBitmap;
     if (!as_IB(skiaImage_.get())->getROPixels(context, &skiaBitmap)) {

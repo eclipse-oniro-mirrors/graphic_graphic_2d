@@ -2271,13 +2271,7 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
         Drawing::AutoCanvasRestore acr(canvas, true);
         canvas.ClipRoundRect(RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::INTERSECT, antiAlias);
         auto shaderEffect = bgShader->GetDrawingShader();
-        if (shaderEffect && shaderEffect->GetDrawingType() == Drawing::DrawingType::RECORDING) {
-            auto shader =
-                std::static_pointer_cast<Drawing::RecordingShaderEffect>(shaderEffect)->GetCmdList()->Playback();
-            brush.SetShaderEffect(shader);
-        } else {
-            brush.SetShaderEffect(shaderEffect);
-        }
+        brush.SetShaderEffect(shaderEffect);
         canvas.DrawBackground(brush);
     }
     if (const auto& bgImage = properties.GetBgImage()) {

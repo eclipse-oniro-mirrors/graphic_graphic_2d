@@ -2653,6 +2653,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 // render directly
                 ProcessChildren(node);
             }
+            SwitchColorFilterDrawing(saveCount);
             canvas_->RestoreToCount(saveCount);
 #endif
         }
@@ -2830,6 +2831,7 @@ void RSUniRenderVisitor::DrawSurfaceLayer(const std::shared_ptr<RSDisplayRenderN
     subThreadManager->SubmitSubThreadTask(displayNode, subThreadNodes);
 #endif
 }
+
 #ifndef USE_ROSEN_DRAWING
 void RSUniRenderVisitor::SwitchColorFilterDrawing(int currentSaveCount)
 {
@@ -2879,8 +2881,8 @@ void RSUniRenderVisitor::SwitchColorFilterDrawing(int currentSaveCount)
             RSTagTracker::TAG_SAVELAYER_COLOR_FILTER);
 #endif
 #endif
-        Drawing::SaveLayerOps rec(nullptr, &brush, Drawing::SaveLayerOps::INIT_WITH_PREVIOUS);
-        canvas_->SaveLayer(rec);
+        Drawing::SaveLayerOps slr(nullptr, &brush, Drawing::SaveLayerOps::INIT_WITH_PREVIOUS);
+        canvas_->SaveLayer(slr);
         canvas_->RestoreToCount(currentSaveCount);
     }
 }
@@ -4137,24 +4139,9 @@ void RSUniRenderVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     ProcessCanvasRenderNode(node);
     canvas_->restoreToCount(saveCount);
 #else
-    ColorFilterMode colorFilterMode = renderEngine_->GetColorFilterMode();
     int saveCount;
-    if (colorFilterMode >= ColorFilterMode::INVERT_COLOR_ENABLE_MODE &&
-        colorFilterMode <= ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE) {
-        RS_LOGD("RsDebug RSBaseRenderEngine::SetColorFilterModeToPaint mode:%{public}d",
-            static_cast<int32_t>(colorFilterMode));
-
-        Drawing::Brush brush;
-        RSBaseRenderUtil::SetColorFilterModeToPaint(colorFilterMode, brush);
-        RSTagTracker tagTracker(renderEngine_->GetRenderContext()->GetDrGPUContext(),
-                                RSTagTracker::TAG_SAVELAYER_COLOR_FILTER);
-        Drawing::SaveLayerOps saveLayerOps(nullptr, &brush);
-        saveCount = canvas_->GetSaveCount();
-        canvas_->SaveLayer(saveLayerOps);
-    } else {
-        saveCount = canvas_->GetSaveCount();
-        canvas_->Save();
-    }
+    saveCount = canvas_->GetSaveCount();
+    canvas_->Save();
     ProcessCanvasRenderNode(node);
     canvas_->RestoreToCount(saveCount);
 #endif
