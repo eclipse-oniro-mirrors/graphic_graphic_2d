@@ -1231,15 +1231,9 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 
     dirtyFlag_ = dirtyFlag_ || node.GetDstRectChanged();
     parentSurfaceNodeMatrix_ = geoPtr->GetAbsMatrix();
-#ifndef USE_ROSEN_DRAWING
-    if (!(parentSurfaceNodeMatrix_.getSkewX() < std::numeric_limits<float>::epsilon() &&
-        parentSurfaceNodeMatrix_.getSkewY() < std::numeric_limits<float>::epsilon())) {
-#else
-    if (!(parentSurfaceNodeMatrix_.Get(Drawing::Matrix::SKEW_X) < std::numeric_limits<float>::epsilon() &&
-        parentSurfaceNodeMatrix_.Get(Drawing::Matrix::SKEW_Y) < std::numeric_limits<float>::epsilon())) {
-#endif
+    if (RSUniRenderUtil::GetRotationDegreeFromMatrix(parentSurfaceNodeMatrix_) % ROTATION_90 != 0) {
         isSurfaceRotationChanged_ = true;
-        doAnimate_ = doAnimate_ || isSurfaceRotationChanged_;
+        doAnimate_ = true;
         node.SetAnimateState();
     }
 
