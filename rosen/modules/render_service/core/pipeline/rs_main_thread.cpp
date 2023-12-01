@@ -1188,15 +1188,23 @@ void RSMainThread::ClearMemoryCache(bool deeply)
         } else {
             MemoryManager::ReleaseUnlockGpuResource(grContext);
         }
+        grContext->flushAndSubmit(true);
 #else
         auto grContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
-        if (grContext) {
-            RS_LOGD("clear gpu cache");
-            grContext->FlushAndSubmit(true);
-            grContext->PurgeUnlockAndSafeCacheGpuResources();
+        if (!grContext) {
+            return;
         }
+        RS_LOGD("Clear memory cache");
+        RS_TRACE_NAME_FMT("Clear memory cache");
+        grContext->Flush();
+        SkGraphics::PurgeAllCaches(); // clear cpu cache
+        if (deeply) {
+            MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(grContext);
+        } else {
+            MemoryManager::ReleaseUnlockGpuResource(grContext);
+        }
+        grContext->FlushAndSubmit(true);
 #endif
-        grContext->flushAndSubmit(true);
         this->clearMemoryFinished_ = true;
     }, CLEAR_GPU_CACHE, 3000 / GetRefreshRate()); // The unit is milliseconds
 }
