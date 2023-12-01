@@ -1861,6 +1861,14 @@ void RSPropertiesPainter::DrawPixelStretch(const RSProperties& properties, RSPai
     auto boundsGeo = (properties.GetBoundsGeometry());
     if (boundsGeo && !boundsGeo->IsEmpty()) {
         auto transMat = canvas.getTotalMatrix();
+        /* transMat.getSkewY() is the sin of the rotation angle(sin0 = 0,sin90 =1 sin180 = 0,sin270 = -1),
+            if transMat.getSkewY() is not 0 or -1 or 1,the rotation angle is not a multiple of 90,not Stretch*/
+        if (ROSEN_EQ(transMat.getSkewY(), 0.f) || ROSEN_EQ(transMat.getSkewY(), 1.f) ||
+            ROSEN_EQ(transMat.getSkewY(), -1.f)) {
+        } else {
+            ROSEN_LOGD("rotate degree is not 0 or 90 or 180 or 270,return.");
+            return;
+        }
         rotateMat.setScale(transMat.getScaleX(), transMat.getScaleY());
         rotateMat.setSkewX(transMat.getSkewX());
         rotateMat.setSkewY(transMat.getSkewY());
