@@ -1091,9 +1091,13 @@ std::unique_ptr<RSPropertyDrawable> RSPixelStretchDrawable::Generate(const RSPro
 // Background
 void RSBackgroundDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
 {
+    auto& properties = node.GetMutableRenderProperties();
+    bool antiAlias = RSPropertiesPainter::GetBgAntiAlias() || !properties.GetCornerRadius().IsZero();
 #ifndef USE_ROSEN_DRAWING
-    canvas.drawRRect(RSPropertiesPainter::RRect2SkRRect(node.GetMutableRenderProperties().GetRRect()), paint_);
+    paint_.setAntiAlias(antiAlias);
+    canvas.drawRRect(RSPropertiesPainter::RRect2SkRRect(properties.GetRRect()), paint_);
 #else
+    brush_.SetAntiAlias(antiAlias);
     canvas.DrawBackground(brush_);
 #endif
 }
