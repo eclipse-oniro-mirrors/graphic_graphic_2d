@@ -162,14 +162,9 @@ public:
         forceUpdateFlag_ = flag;
     }
 
-    void SetCurrentRefreshRate(uint32_t currentRefreshRate)
-    {
-        currentRefreshRate_ = currentRefreshRate;
-    }
-
     using RenderParam = std::tuple<std::shared_ptr<RSRenderNode>, RSPaintFilterCanvas::CanvasStatus>;
 private:
-    void DrawWatermarkIfNeed();
+    void DrawWatermarkIfNeed(RSDisplayRenderNode& node, bool isMirror = false);
 #ifndef USE_ROSEN_DRAWING
     void DrawDirtyRectForDFX(const RectI& dirtyRect, const SkColor color,
         const SkPaint::Style fillType, float alpha, int edgeWidth);
@@ -200,12 +195,7 @@ private:
     void DrawAndTraceSingleDirtyRegionTypeForDFX(RSSurfaceRenderNode& node,
         DirtyRegionType dirtyType, bool isDrawn = true);
 
-    bool IsHardwareEnabledNodeNeedCalcGlobalDirty(std::shared_ptr<RSSurfaceRenderNode>& node) const
-    {
-        return !node->IsHardwareEnabledTopSurface() ||
-            isHardwareForcedDisabled_ || node->HasSubNodeShouldPaint();
-    }
-
+    bool IsNotDirtyHardwareEnabledTopSurface(std::shared_ptr<RSSurfaceRenderNode>& node) const;
     std::vector<RectI> GetDirtyRects(const Occlusion::Region &region);
     /* calculate display/global (between windows) level dirty region, current include:
      * 1. window move/add/remove 2. transparent dirty region
@@ -501,8 +491,6 @@ private:
     void ProcessChildrenForScreenRecordingOptimization(RSDisplayRenderNode& node, NodeId rootIdOfCaptureWindow);
     NodeId FindInstanceChildOfDisplay(std::shared_ptr<RSRenderNode> node);
     bool CheckIfNeedResetRotate();
-
-    uint32_t currentRefreshRate_ = 0;
 #ifdef USE_VIDEO_PROCESSING_ENGINE
     float GetScreenBrightnessNits();
 #endif

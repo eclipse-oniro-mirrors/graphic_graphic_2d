@@ -543,6 +543,16 @@ void RSRenderNode::DumpNodeType(std::string& out) const
     }
 }
 
+void RSRenderNode::ResetIsOnlyBasicGeoTransfrom()
+{
+    isOnlyBasicGeoTransform_ = true;
+}
+
+bool RSRenderNode::IsOnlyBasicGeoTransfrom() const
+{
+    return isOnlyBasicGeoTransform_;
+}
+
 // attention: current all base node's dirty ops causing content dirty
 void RSRenderNode::SetContentDirty()
 {
@@ -662,35 +672,50 @@ void RSRenderNode::FallbackAnimationsToRoot()
     animationManager_.animations_.clear();
 }
 
-std::tuple<bool, bool, bool> RSRenderNode::Animate(int64_t timestamp)
+void RSRenderNode::ActivateDisplaySync()
 {
+    if (!displaySync_) {
+        displaySync_ = std::make_shared<RSRenderDisplaySync>(GetId());
+    }
+}
+
+void RSRenderNode::InActivateDisplaySync()
+{
+    displaySync_ = nullptr;
+}
+
+FrameRateRange RSRenderNode::CalcExpectedFrameRateRange(int32_t preferredFps)
+{
+    FrameRateRange nodeRange;
+    if (displaySync_ != nullptr) {
+        if (preferredFps > 0) {
+            nodeRange = {0, RANGE_MAX_REFRESHRATE, preferredFps};
+        }
+        auto animationRange = animationManager_.GetFrameRateRange();
+        if (animationRange.IsValid()) {
+            displaySync_->SetExpectedFrameRateRange(animationRange);
+            nodeRange.Merge(animationRange);
+        }
+    }
+    return nodeRange;
+}
+
+std::tuple<bool, bool, bool> RSRenderNode::Animate(int64_t timestamp, int64_t period, bool isDisplaySyncEnabled)
+{
+    if (displaySync_ && displaySync_->OnFrameSkip(timestamp, period, isDisplaySyncEnabled)) {
+        return displaySync_->GetAnimateResult();
+    }
     if (lastTimestamp_ < 0) {
         lastTimestamp_ = timestamp;
     } else {
         timeDelta_ = (static_cast<float>(timestamp - lastTimestamp_)) / NS_TO_S;
         lastTimestamp_ = timestamp;
     }
-    return animationManager_.Animate(timestamp, IsOnTheTree());
-}
-
-const FrameRateRange& RSRenderNode::GetRSFrameRateRange()
-{
-    if (rsRange_.IsValid()) {
-        return rsRange_;
+    auto animateResult = animationManager_.Animate(timestamp, IsOnTheTree());
+    if (displaySync_) {
+        displaySync_->SetAnimateResult(animateResult);
     }
-    auto& animationRsRange = animationManager_.GetFrameRateRangeFromRSAnimations();
-    rsRange_.Set(animationRsRange.min_, animationRsRange.max_, animationRsRange.preferred_);
-    return rsRange_;
-}
-
-void RSRenderNode::ResetRSFrameRateRange()
-{
-    rsRange_.Reset();
-}
-
-void RSRenderNode::ResetUIFrameRateRange()
-{
-    uiRange_.Reset();
+    return animateResult;
 }
 
 bool RSRenderNode::IsClipBound() const
@@ -1070,11 +1095,15 @@ void RSRenderNode::RemoveModifier(const PropertyId& id)
 
 void RSRenderNode::DumpNodeInfo(DfxString& log)
 {
+#ifndef USE_ROSEN_DRAWING
     for (auto& [type, modifiers] : drawCmdModifiers_) {
         for (auto modifier : modifiers) {
             modifier->DumpPicture(log);
         }
     }
+#else
+// Drawing is not supported
+#endif
 }
 
 void RSRenderNode::AddModifierProfile(const std::shared_ptr<RSRenderModifier>& modifier, float width, float height)
@@ -1138,14 +1167,6 @@ void RSRenderNode::AddModifierProfile(const std::shared_ptr<RSRenderModifier>& m
     }
 }
 
-void RSRenderNode::SetRSFrameRateRangeByPreferred(int32_t preferred)
-{
-    if (preferred > 0) {
-        FrameRateRange frameRateRange = {0, RANGE_MAX_REFRESHRATE, preferred};
-        SetRSFrameRateRange(frameRateRange);
-    }
-}
-
 bool RSRenderNode::ApplyModifiers()
 {
     // quick reject test
@@ -1157,7 +1178,6 @@ bool RSRenderNode::ApplyModifiers()
         return false;
     }
     hgmModifierProfileList_.clear();
-    isOnlyBasicGeoTransform_ = !IsContentDirty();
     const auto prevPositionZ = renderProperties_.GetPositionZ();
 
     // Reset and re-apply all modifiers
@@ -1177,7 +1197,7 @@ bool RSRenderNode::ApplyModifiers()
             continue;
         }
         modifier->Apply(context);
-        if (isCalPreferredNode_ && HasAnimation() && ANIMATION_MODIFIER_TYPE.count(modifier->GetType())) {
+        if (isCalcPreferredFps_ && HasAnimation() && ANIMATION_MODIFIER_TYPE.count(modifier->GetType())) {
             animationModifiers.push_back(modifier);
         }
         if (!BASIC_GEOTRANSFROM_ANIMATION_TYPE.count(modifier->GetType())) {
@@ -1629,7 +1649,7 @@ void RSRenderNode::DrawCacheSurface(RSPaintFilterCanvas& canvas, uint32_t thread
     canvas.Restore();
 }
 
-std::shared_ptr<Drawing::Image> GetCompletedImage(
+std::shared_ptr<Drawing::Image> RSRenderNode::GetCompletedImage(
     RSPaintFilterCanvas& canvas, uint32_t threadIndex, bool isUIFirst)
 {
     if (isUIFirst) {
@@ -1874,10 +1894,6 @@ RectI RSRenderNode::GetFilterRect() const
 void RSRenderNode::UpdateFullScreenFilterCacheRect(
     RSDirtyRegionManager& dirtyManager, bool isForeground) const
 {
-    // Skip filter cache occlusion check for RSEffectRenderNode
-    if (IsInstanceOf<RSEffectRenderNode>()) {
-        return;
-    }
     auto& renderProperties = GetRenderProperties();
 #if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     auto& manager = renderProperties.GetFilterCacheManager(isForeground);
@@ -1886,7 +1902,7 @@ void RSRenderNode::UpdateFullScreenFilterCacheRect(
     if (!manager->IsCacheValid() && dirtyManager.IsCacheableFilterRectEmpty()) {
         dirtyManager.InvalidateFilterCacheRect();
     } else if (ROSEN_EQ(GetGlobalAlpha(), 1.0f) && ROSEN_EQ(renderProperties.GetCornerRadius().x_, 0.0f) &&
-        manager->GetCachedImageRegion() == dirtyManager.GetSurfaceRect()) {
+        manager->GetCachedImageRegion() == dirtyManager.GetSurfaceRect() && !IsInstanceOf<RSEffectRenderNode>()) {
         // Only record full screen filter cache for occlusion calculation
         dirtyManager.UpdateCacheableFilterRect(manager->GetCachedImageRegion());
     }
@@ -2432,10 +2448,6 @@ RSRenderNode::NodeGroupType RSRenderNode::GetNodeGroupType()
 {
     return nodeGroupType_;
 }
-void RSRenderNode::SetRSFrameRateRange(FrameRateRange range)
-{
-    rsRange_ = range;
-}
 void RSRenderNode::UpdateUIFrameRateRange(const FrameRateRange& range)
 {
     uiRange_.Merge(range);
@@ -2489,6 +2501,15 @@ bool RSRenderNode::GetIsUsedBySubThread() const
 void RSRenderNode::SetIsUsedBySubThread(bool isUsedBySubThread)
 {
     isUsedBySubThread_.store(isUsedBySubThread);
+}
+
+bool RSRenderNode::GetLastIsNeedAssignToSubThread() const
+{
+    return lastIsNeedAssignToSubThread_;
+}
+void RSRenderNode::SetLastIsNeedAssignToSubThread(bool lastIsNeedAssignToSubThread)
+{
+    lastIsNeedAssignToSubThread_ = lastIsNeedAssignToSubThread;
 }
 
 void RSRenderNode::IterateOnDrawableRange(

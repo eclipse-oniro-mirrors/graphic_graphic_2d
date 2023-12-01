@@ -131,6 +131,7 @@ public:
     // check if active app has static drawing cache
     bool IsDrawingGroupChanged(RSRenderNode& cacheRootNode) const;
     // check if active instance only move or scale it's main window surface without rearrangement
+    // instanceNodeId should be MainWindowType, or it cannot grep correct app's info
     bool CheckIfInstanceOnlySurfaceBasicGeoTransform(NodeId instanceNodeId) const;
 
     void RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app);
@@ -298,8 +299,7 @@ private:
 
     void SetFocusLeashWindowId();
     void ProcessHgmFrameRate(uint64_t timestamp);
-    FrameRateRange CalcRSFrameRateRange(std::shared_ptr<RSRenderNode> node);
-    int32_t GetNodePreferred(const std::vector<HgmModifierProfile>& hgmModifierProfileList) const;
+    FrameRateRange CalcAnimateFrameRateRange(std::shared_ptr<RSRenderNode> node);
     bool IsLastFrameUIFirstEnabled(NodeId appNodeId) const;
     RSVisibleLevel GetRegionVisibleLevel(const Occlusion::Region& curRegion,
         const Occlusion::Region& visibleRegion);
@@ -393,8 +393,6 @@ private:
     uint32_t requestNextVsyncNum_ = 0;
     bool lastFrameHasFilter_ = false;
 
-    uint32_t currentRefreshRate_ = 0;
-
     std::shared_ptr<RSBaseRenderEngine> renderEngine_;
     std::shared_ptr<RSBaseRenderEngine> uniRenderEngine_;
     std::shared_ptr<RSBaseEventDetector> rsCompositionTimeoutDetector_;
@@ -426,6 +424,7 @@ private:
 
     std::shared_ptr<HgmFrameRateManager> frameRateMgr_ = nullptr;
     std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker_ = nullptr;
+    FrameRateRange rsCurrRange_;
 
     // UIFirst
     std::list<std::shared_ptr<RSSurfaceRenderNode>> subThreadNodes_;
@@ -463,6 +462,7 @@ private:
         std::pair<std::shared_ptr<RSSurfaceRenderNode>, std::shared_ptr<RSSurfaceRenderNode>>> savedAppWindowNode_;
 
     std::shared_ptr<RSAppStateListener> rsAppStateListener_;
+    int32_t subscribeFailCount_ = 0;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

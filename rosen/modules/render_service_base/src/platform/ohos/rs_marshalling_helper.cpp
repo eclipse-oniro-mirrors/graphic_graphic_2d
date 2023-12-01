@@ -656,6 +656,10 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<Draw
             return true;
         } else {
             auto data = pixmap.GetColorSpace()->Serialize();
+            if (data == nullptr || data->GetSize() == 0) {
+                parcel.WriteUint32(0);
+                return true;
+            }
             parcel.WriteUint32(data->GetSize());
             if (!WriteToParcel(parcel, data->GetData(), data->GetSize())) {
                 ROSEN_LOGE("RSMarshallingHelper::Unmarshalling data write parcel failed");
@@ -1915,7 +1919,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<Draw
     ret &= parcel.WriteUint32(objectBaseSize);
     if (objectBaseSize > 0) {
         for (const auto& objectBase : objectBaseVec) {
-            auto rsBaseObject = std::static_pointer_cast<RSExtendImageBase>(objectBase);
+            auto rsBaseObject = std::static_pointer_cast<RSExtendImageBaseOj>(objectBase);
             ret &= RSMarshallingHelper::Marshalling(parcel, rsBaseObject);
             if (!ret) {
                 ROSEN_LOGE("unirender: failed RSMarshallingHelper::Marshalling Drawing::DrawCmdList imageBase");

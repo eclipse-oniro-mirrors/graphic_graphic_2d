@@ -56,6 +56,7 @@ namespace OHOS {
 namespace Rosen {
 static std::unordered_map<RSUIDirector*, TaskRunner> g_uiTaskRunners;
 static std::mutex g_uiTaskRunnersVisitorMutex;
+std::function<void()> RSUIDirector::requestVsyncCallback_ = nullptr;
 
 std::shared_ptr<RSUIDirector> RSUIDirector::Create()
 {
@@ -231,6 +232,11 @@ void RSUIDirector::SetAppFreeze(bool isAppFreeze)
     }
 }
 
+void RSUIDirector::SetRequestVsyncCallback(const std::function<void()>& callback)
+{
+    requestVsyncCallback_ = callback;
+}
+
 void RSUIDirector::SetTimeStamp(uint64_t timeStamp, const std::string& abilityName)
 {
     timeStamp_ = timeStamp;
@@ -274,6 +280,15 @@ void RSUIDirector::FlushModifier()
     RSUIDirector::RecvMessages();
 }
 
+bool RSUIDirector::HasUIAnimation()
+{
+    auto modifierManager = RSModifierManagerMap::Instance()->GetModifierManager(gettid());
+    if (modifierManager != nullptr) {
+        return modifierManager->HasUIAnimation();
+    }
+    return false;
+}
+
 void RSUIDirector::SetUITaskRunner(const TaskRunner& uiTaskRunner)
 {
     std::unique_lock<std::mutex> lock(g_uiTaskRunnersVisitorMutex);
@@ -313,7 +328,11 @@ void RSUIDirector::RecvMessages(std::shared_ptr<RSTransactionData> cmds)
     PostTask([cmds]() {
         ROSEN_LOGD("RSUIDirector::ProcessMessages success");
         RSUIDirector::ProcessMessages(cmds);
-        RSTransaction::FlushImplicitTransaction();
+        if (requestVsyncCallback_ != nullptr) {
+            requestVsyncCallback_();
+        } else {
+            RSTransaction::FlushImplicitTransaction();
+        }
     });
 }
 

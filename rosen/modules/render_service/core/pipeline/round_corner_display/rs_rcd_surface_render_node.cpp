@@ -143,8 +143,13 @@ void RSRcdSurfaceRenderNode::PrepareHardwareResourceBuffer(rs_rcd::RoundCornerLa
     }
     layerBitmap = *(layerInfo->curBitmap);
 
-    uint32_t bitmapHeight = layerBitmap.height();
-    uint32_t bitmapWidth = layerBitmap.width();
+#ifndef USE_ROSEN_DRAWING
+    uint32_t bitmapHeight = static_cast<uint32_t>(layerBitmap.height());
+    uint32_t bitmapWidth = static_cast<uint32_t>(layerBitmap.width());
+#else
+    uint32_t bitmapHeight = static_cast<uint32_t>(layerBitmap.GetHeight());
+    uint32_t bitmapWidth = static_cast<uint32_t>(layerBitmap.GetWidth());
+#endif
     SetRcdBufferHeight(bitmapHeight);
     SetRcdBufferWidth(bitmapWidth);
     SetRcdBufferSize(cldLayerInfo.bufferSize);
@@ -163,23 +168,41 @@ void RSRcdSurfaceRenderNode::PrepareHardwareResourceBuffer(rs_rcd::RoundCornerLa
 bool RSRcdSurfaceRenderNode::SetHardwareResourceToBuffer()
 {
     RS_LOGD("RCD: Start RSRcdSurfaceRenderNode::SetHardwareResourceToBuffer");
+#ifndef USE_ROSEN_DRAWING
     if (layerBitmap.drawsNothing()) {
         RS_LOGE("LayerBitmap draws Nothing");
         return false;
     }
+#else
+    if (layerBitmap.IsValid()) {
+        RS_LOGE("LayerBitmap is not valid");
+        return false;
+    }
+#endif
     sptr<SurfaceBuffer> nodeBuffer = GetBuffer();
     if (nodeBuffer == nullptr) {
         RS_LOGE("RSRcdSurfaceRenderNode buffer is nullptr");
         return false;
     }
+#ifndef USE_ROSEN_DRAWING
     SkImageInfo imgInfo = SkImageInfo::MakeN32Premul(nodeBuffer->GetWidth(), nodeBuffer->GetHeight());
     if (!layerBitmap.readPixels(imgInfo, reinterpret_cast<void*>(nodeBuffer->GetVirAddr()),
         nodeBuffer->GetStride(), 0, 0)) {
+#else
+    Drawing::ImageInfo imgInfo = Drawing::ImageInfo::MakeN32Premul(nodeBuffer->GetWidth(), nodeBuffer->GetHeight());
+    if (!layerBitmap.ReadPixels(imgInfo, reinterpret_cast<void*>(nodeBuffer->GetVirAddr()),
+        nodeBuffer->GetStride(), 0, 0)) {
+#endif
         RS_LOGE("RSRcdSurfaceRenderNode:: copy layerBitmap to buffer failed");
         return false;
     }
+#ifndef USE_ROSEN_DRAWING
     if (!FillHardwareResource(cldLayerInfo, layerBitmap.height(), layerBitmap.width(),
         nodeBuffer->GetStride(), static_cast<uint8_t*>(nodeBuffer->GetVirAddr()))) {
+#else
+    if (!FillHardwareResource(cldLayerInfo, layerBitmap.GetHeight(), layerBitmap.GetWidth(),
+        nodeBuffer->GetStride(), static_cast<uint8_t*>(nodeBuffer->GetVirAddr()))) {
+#endif
             RS_LOGE("RSRcdSurfaceRenderNode:: copy hardware resource to buffer failed");
             return false;
     }
@@ -200,20 +223,20 @@ bool RSRcdSurfaceRenderNode::FillHardwareResource(HardwareLayerInfo &cldLayerInf
         uint32_t baseColor = 0;
     };
 
-    const int bytesPerPixel = 4; // 4 means four bytes per pixel
+    const uint32_t bytesPerPixel = 4; // 4 means four bytes per pixel
     CldInfo cldInfo;
-    cldInfo.cldSize = cldLayerInfo.bufferSize;
-    cldInfo.cldWidth = cldLayerInfo.cldWidth;
-    cldInfo.cldHeight = cldLayerInfo.cldHeight;
-    cldInfo.cldStride = cldLayerInfo.cldWidth * bytesPerPixel;
-    cldInfo.exWidth = width;
-    cldInfo.exHeight = height;
+    cldInfo.cldSize = static_cast<uint32_t>(cldLayerInfo.bufferSize);
+    cldInfo.cldWidth = static_cast<uint32_t>(cldLayerInfo.cldWidth);
+    cldInfo.cldHeight = static_cast<uint32_t>(cldLayerInfo.cldHeight);
+    cldInfo.cldStride = static_cast<uint32_t>(cldLayerInfo.cldWidth * bytesPerPixel);
+    cldInfo.exWidth = static_cast<uint32_t>(width);
+    cldInfo.exHeight = static_cast<uint32_t>(height);
     
     int offset = 0;
     int offsetCldInfo = 0;
     offsetCldInfo = height * stride;
     offset = (height + 1) * stride;
-    cldInfo.cldDataOffset = offset;
+    cldInfo.cldDataOffset = static_cast<uint32_t>(offset);
     
     errno_t ret = memcpy_s(reinterpret_cast<void*>(img + offsetCldInfo), sizeof(cldInfo), &cldInfo, sizeof(cldInfo));
     if (ret != EOK) {

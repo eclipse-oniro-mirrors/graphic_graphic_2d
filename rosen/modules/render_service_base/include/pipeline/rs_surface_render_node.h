@@ -102,6 +102,17 @@ public:
         return nodeType_ == RSSurfaceNodeType::SCB_SCREEN_NODE;
     }
 
+    void SetNodeDirty(bool isNodeDirty)
+    {
+        isNodeDirty_ = isNodeDirty || isNodeDirtyInLastFrame_;
+        isNodeDirtyInLastFrame_ = isNodeDirty;
+    }
+
+    bool IsNodeDirty() const
+    {
+        return isNodeDirty_;
+    }
+
     bool IsHardwareEnabledTopSurface() const
     {
         return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE && GetName() == "pointer window";
@@ -402,6 +413,11 @@ public:
     bool GetOcclusionVisible() const
     {
         return isOcclusionVisible_;
+    }
+
+    void SetOcclusionVisibleWithoutFilter(bool visible)
+    {
+        isOcclusionVisibleWithoutFilter_ = visible;
     }
 
     const Occlusion::Region& GetVisibleRegion() const
@@ -934,6 +950,7 @@ private:
     bool isDirtyRegionAlignedEnable_ = false;
     Occlusion::Region alignedVisibleDirtyRegion_;
     bool isOcclusionVisible_ = true;
+    bool isOcclusionVisibleWithoutFilter_ = true;
     std::shared_ptr<RSDirtyRegionManager> dirtyManager_ = nullptr;
     std::shared_ptr<RSDirtyRegionManager> cacheSurfaceDirtyManager_ = nullptr;
     RectI dstRect_;
@@ -1021,8 +1038,9 @@ private:
     std::shared_ptr<Drawing::Image> cachedImage_;
 #endif
 
-    // used for hardware enabled pointer window
-    bool isLastFrameNeedCalcGlobalDirty_ = true;
+    // only used in hardware enabled pointer window, when gpu -> hardware composer
+    bool isNodeDirtyInLastFrame_ = true;
+    bool isNodeDirty_ = true;
     // used for hardware enabled nodes
     bool isHardwareEnabledNode_ = false;
     bool isCurrentFrameHardwareEnabled_ = false;
