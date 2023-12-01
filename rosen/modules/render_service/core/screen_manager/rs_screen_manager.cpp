@@ -215,7 +215,7 @@ float RSScreenManager::GetScreenBrightnessNits(ScreenId id)
 
     RSScreenType screenType;
     if (GetScreenType(id, screenType) != SUCCESS) {
-        RS_LOGW("RSUniRenderVisitor::GetScreenBrightnessNits GetScreenType fail.");
+        RS_LOGW("RSScreenManager::GetScreenBrightnessNits GetScreenType fail.");
         return screenBrightnessNits;
     }
 
@@ -224,7 +224,6 @@ float RSScreenManager::GetScreenBrightnessNits(ScreenId id)
     }
 
     int32_t backLightLevel = GetScreenBacklight(id);
-
     if (backLightLevel <= 0) {
         return screenBrightnessNits;
     }

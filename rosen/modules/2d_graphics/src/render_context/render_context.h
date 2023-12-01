@@ -139,8 +139,7 @@ public:
 #ifndef ROSEN_CROSS_PLATFORM
     void SetColorSpace(GraphicColorGamut colorSpace)
     {
-    colorSpace_ = colorSpace;
-
+        colorSpace_ = colorSpace;
     }
 
     GraphicColorGamut GetColorSpace() const
