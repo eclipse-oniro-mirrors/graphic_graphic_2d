@@ -4053,7 +4053,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
                 params.targetColorGamut = newColorSpace_;
 #ifdef USE_VIDEO_PROCESSING_ENGINE
                 auto screenManager = CreateOrGetScreenManager();
-                params.screenBrightnessNits = screenManager->GetScreenBrightnessNits();
+                params.screenBrightnessNits = screenManager->GetScreenBrightnessNits(currentVisitDisplay_);
 #endif
                 renderEngine_->DrawSurfaceNodeWithParams(*canvas_, node, params);
             }
