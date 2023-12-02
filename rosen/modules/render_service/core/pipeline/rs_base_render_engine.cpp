@@ -542,8 +542,8 @@ bool RSBaseRenderEngine::SetColorSpaceConverterDisplayParameter(
     const BufferDrawParam& params, Media::VideoProcessingEngine::ColorSpaceConverterDisplayParameter& parameter)
 {
     using namespace HDI::Display::Graphic::Common::V1_0;
-    parameter.currentDisplayNits = params.screenBrightnessNits;
     parameter.tmoNits = params.screenBrightnessNits;
+    parameter.currentDisplayNits = params.screenBrightnessNits;
 
     GSError ret = MetadataHelper::GetColorSpaceInfo(params.buffer, parameter.inputColorSpace.colorSpaceInfo);
     if (ret != GSERROR_OK) {
@@ -687,12 +687,8 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
 #endif
     RS_OPTIONAL_TRACE_END();
 #else // RS_ENABLE_VK
-#ifdef USE_VIDEO_PROCESSING_ENGINE
     auto image = CreateEglImageFromBuffer(canvas, params.buffer, params.acquireFence, params.threadIndex,
         params.targetColorGamut);
-#else
-    auto image = CreateEglImageFromBuffer(canvas, params.buffer, params.acquireFence, params.threadIndex);
-#endif
     if (image == nullptr) {
         RS_LOGE("RSBaseRenderEngine::DrawImage: image is nullptr!");
         RS_OPTIONAL_TRACE_END();

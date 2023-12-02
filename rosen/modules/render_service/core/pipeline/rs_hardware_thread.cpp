@@ -344,11 +344,12 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
     bool forceCPU = RSBaseRenderEngine::NeedForceCPU(layers);
     auto screenManager = CreateOrGetScreenManager();
     auto screenInfo = screenManager->QueryScreenInfo(screenId);
+    sk_sp<SkColorSpace> skColorSpace = nullptr;
 #ifdef USE_VIDEO_PROCESSING_ENGINE
     GraphicColorGamut colorGamut = ComputeTargetColorGamut(layers);
     GraphicPixelFormat pixelFormat = ComputeTargetPixelFormat(layers);
     auto renderFrameConfig = RSBaseRenderUtil::GetFrameBufferRequestConfig(screenInfo, true, colorGamut, pixelFormat);
-    auto skColorSpace = RSBaseRenderEngine::ConvertColorGamutToSkColorSpace(colorGamut);
+    skColorSpace = RSBaseRenderEngine::ConvertColorGamutToSkColorSpace(colorGamut);
 #else
     auto renderFrameConfig = RSBaseRenderUtil::GetFrameBufferRequestConfig(screenInfo, true);
 #endif
@@ -459,13 +460,8 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
 #endif
 #ifdef NEW_SKIA
 #if defined(RS_ENABLE_GL) && defined(RS_ENABLE_EGLIMAGE)
-#ifdef USE_VIDEO_PROCESSING_ENGINE
             auto image = SkImage::MakeFromTexture(canvas->recordingContext(), backendTexture,
                 kTopLeft_GrSurfaceOrigin, colorType, kPremul_SkAlphaType, skColorSpace);
-#else
-            auto image = SkImage::MakeFromTexture(canvas->recordingContext(), backendTexture,
-                kTopLeft_GrSurfaceOrigin, colorType, kPremul_SkAlphaType, nullptr);
-#endif
 #elif defined(RS_ENABLE_VK)
             auto imageCache = uniRenderEngine_->GetVkImageManager()->CreateImageCacheFromBuffer(
                 params.buffer, params.acquireFence);
@@ -647,6 +643,7 @@ GraphicColorGamut RSHardwareThread::ComputeTargetColorGamut(const std::vector<La
 
         if (colorSpaceInfo.primaries != COLORPRIMARIES_SRGB) {
             colorGamut = GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
+            break;
         }
     }
 
@@ -672,6 +669,7 @@ GraphicPixelFormat RSHardwareThread::ComputeTargetPixelFormat(const std::vector<
 
         if (metadataType != CM_METADATA_NONE) {
             pixelFormat = GRAPHIC_PIXEL_FMT_RGBA_1010102;
+            break;
         }
     }
 

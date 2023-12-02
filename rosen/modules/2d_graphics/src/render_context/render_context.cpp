@@ -397,13 +397,9 @@ sk_sp<SkSurface> RenderContext::AcquireSurface(int width, int height)
     framebufferInfo.fFormat = GL_RGBA8;
     SkColorType colorType = kRGBA_8888_SkColorType;
 
-    switch (pixelFormat_) {
-        case GRAPHIC_PIXEL_FMT_RGBA_1010102:
-            framebufferInfo.fFormat = GL_RGB10_A2;
-            colorType = kRGBA_1010102_SkColorType;
-            break;
-        default:
-            break;
+    if (pixelFormat_ == GRAPHIC_PIXEL_FMT_RGBA_1010102) {
+        framebufferInfo.fFormat = GL_RGB10_A2;
+        colorType = kRGBA_1010102_SkColorType;
     }
 
     GrBackendRenderTarget backendRenderTarget(width, height, 0, 8, framebufferInfo);
