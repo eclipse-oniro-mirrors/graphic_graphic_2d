@@ -82,7 +82,7 @@ public:
         return hardInfo_;
     }
 
-    bool GetRcdEnabel() const
+    bool GetRcdEnable() const
     {
         return isRcdEnable_;
     }

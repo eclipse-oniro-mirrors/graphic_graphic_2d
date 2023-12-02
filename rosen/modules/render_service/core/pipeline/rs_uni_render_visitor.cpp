@@ -135,7 +135,7 @@ bool IsFirstFrameReadyToDraw(RSSurfaceRenderNode& node)
 
 void DoScreenRcdTask(std::shared_ptr<RSProcessor>& processor, std::unique_ptr<RcdInfo>& rcdInfo)
 {
-    if (RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnabel()) {
+    if (RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {
         RSSingleton<RoundCornerDisplay>::GetInstance().RunHardwareTask(
             [&processor, &rcdInfo]() {
                 auto hardInfo = RSSingleton<RoundCornerDisplay>::GetInstance().GetHardwareInfo();
@@ -779,7 +779,7 @@ void RSUniRenderVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
     screenInfo_ = screenManager->QueryScreenInfo(node.GetScreenId());
     prepareClipRect_.SetAll(0, 0, screenInfo_.width, screenInfo_.height);
     // rcd message send
-    if ((!node.IsMirrorDisplay()) && RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnabel()) {
+    if ((!node.IsMirrorDisplay()) && RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {
         using rcd_msg = RSSingleton<RsMessageBus>;
         rcd_msg::GetInstance().SendMsg<uint32_t, uint32_t>(TOPIC_RCD_DISPLAY_SIZE,
             screenInfo_.width, screenInfo_.height);
@@ -2758,7 +2758,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
 #endif
         if (node.IsMirrorDisplay()) {
             RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode, mirror without roundcornerdisplay");
-        } else if (RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnabel()) {
+        } else if (RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {
             RSSingleton<RoundCornerDisplay>::GetInstance().DrawRoundCorner(canvas_);
         }
         auto mainThread = RSMainThread::Instance();
@@ -2830,7 +2830,7 @@ void RSUniRenderVisitor::DrawSurfaceLayer(const std::shared_ptr<RSDisplayRenderN
     const std::list<std::shared_ptr<RSSurfaceRenderNode>>& subThreadNodes) const
 {
     auto subThreadManager = RSSubThreadManager::Instance();
-    if (RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnabel()) {
+    if (RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {
         subThreadManager->StartRCDThread(renderEngine_->GetRenderContext().get());
     }
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
