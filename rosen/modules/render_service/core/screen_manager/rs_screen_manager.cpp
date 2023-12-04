@@ -390,7 +390,6 @@ void RSScreenManager::AddScreenToHgm(std::shared_ptr<HdiOutput> &output)
         }
         modeId++;
     }
-    hgmCore.SetModeBySettingConfig();
 }
 
 void RSScreenManager::RemoveScreenFromHgm(std::shared_ptr<HdiOutput> &output)
