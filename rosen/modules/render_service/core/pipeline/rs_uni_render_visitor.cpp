@@ -779,7 +779,7 @@ void RSUniRenderVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
     screenInfo_ = screenManager->QueryScreenInfo(node.GetScreenId());
     prepareClipRect_.SetAll(0, 0, screenInfo_.width, screenInfo_.height);
     // rcd message send
-    if ((!node.IsMirrorDisplay()) && RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {
+    if ((screenInfo_.state == ScreenState::HDI_OUTPUT_ENABLE) && RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {
         using rcd_msg = RSSingleton<RsMessageBus>;
         rcd_msg::GetInstance().SendMsg<uint32_t, uint32_t>(TOPIC_RCD_DISPLAY_SIZE,
             screenInfo_.width, screenInfo_.height);
@@ -2756,9 +2756,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
 #ifdef ENABLE_RECORDING_DCL
         endCapture();
 #endif
-        if (node.IsMirrorDisplay()) {
-            RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode, mirror without roundcornerdisplay");
-        } else if (RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {
+        if ((screenInfo_.state == ScreenState::HDI_OUTPUT_ENABLE) && RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {
             RSSingleton<RoundCornerDisplay>::GetInstance().DrawRoundCorner(canvas_);
         }
         auto mainThread = RSMainThread::Instance();
@@ -2797,9 +2795,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
     }
 #endif
 
-    if (node.IsMirrorDisplay()) {
-        RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode, mirror without roundcornerdisplay");
-    } else {
+    if (screenInfo_.state == ScreenState::HDI_OUTPUT_ENABLE) {
         DoScreenRcdTask(processor_, rcdInfo_);
     }
 
