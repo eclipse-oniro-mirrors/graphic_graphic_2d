@@ -34,6 +34,7 @@ namespace Rosen {
 using AnimationId = uint64_t;
 using NodeId = uint64_t;
 using PropertyId = uint64_t;
+using FrameRateLinkerId = uint64_t;
 constexpr uint32_t UNI_MAIN_THREAD_INDEX = UINT32_MAX;
 constexpr uint64_t INVALID_NODEID = 0;
 
@@ -105,6 +106,14 @@ enum class NodePriorityType : uint8_t {
     SUB_LOW_PRIORITY, // node render in sub thread with low priority
 };
 
+enum class RSVisibleLevel : uint32_t {
+    RS_ALL_VISIBLE = 0,
+    RS_SEMI_NONDEFAULT_VISIBLE,
+    RS_SEMI_DEFAULT_VISIBLE,
+    RS_INVISIBLE,
+    RS_UNKNOW_VISIBLE_LEVEL,
+};
+
 // status for sub thread node
 enum class CacheProcessStatus : uint8_t {
     WAITING = 0, // waiting for process
@@ -134,6 +143,9 @@ enum class RSSurfaceNodeType : uint8_t {
     STARTING_WINDOW_NODE,     // starting window, surfacenode created by wms
     LEASH_WINDOW_NODE,        // leashwindow
     SELF_DRAWING_WINDOW_NODE, // create by wms, such as pointer window and bootanimation
+    SURFACE_TEXTURE_NODE,      // create by video
+    FOREGROUND_SURFACE,
+    SCB_SCREEN_NODE,          // surfacenode created as sceneboard
 };
 
 struct RSSurfaceRenderNodeConfig {
@@ -143,6 +155,20 @@ struct RSSurfaceRenderNodeConfig {
     RSSurfaceNodeType nodeType = RSSurfaceNodeType::DEFAULT;
     void* additionalData = nullptr;
 };
+
+// types for RSSurfaceExt
+enum class RSSurfaceExtType : uint8_t {
+    NONE,
+    SURFACE_TEXTURE,
+};
+
+struct RSSurfaceExtConfig {
+    RSSurfaceExtType type = RSSurfaceExtType::NONE;
+    void* additionalData = nullptr;
+};
+using RSSurfaceTextureConfig = RSSurfaceExtConfig;
+using RSSurfaceTextureAttachCallBack = std::function<void(int64_t textureId, bool attach)>;
+using RSSurfaceTextureUpdateCallBack = std::function<void(std::vector<float>&)>;
 
 struct RSDisplayNodeConfig {
     uint64_t screenId = 0;

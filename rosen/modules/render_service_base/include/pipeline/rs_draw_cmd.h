@@ -55,6 +55,11 @@
 #include "transaction/rs_marshalling_helper.h"
 #include <optional>
 
+#ifdef RS_ENABLE_VK
+#include "include/gpu/GrBackendSurface.h"
+#include "platform/ohos/backend/native_buffer_utils.h"
+#endif
+
 namespace OHOS {
 namespace Rosen {
 class RSPaintFilterCanvas;
@@ -82,6 +87,7 @@ enum RSOpType : uint16_t {
     COLOR_FILTER_BITMAP_OPITEM,
     BITMAP_RECT_OPITEM,
     BITMAP_NINE_OPITEM,
+    PIXELMAP_NINE_OPITEM,
     PIXELMAP_OPITEM,
     PIXELMAP_RECT_OPITEM,
     ADAPTIVE_RRECT_OPITEM,
@@ -131,6 +137,7 @@ namespace {
             GETOPTYPESTRING(COLOR_FILTER_BITMAP_OPITEM);
             GETOPTYPESTRING(BITMAP_RECT_OPITEM);
             GETOPTYPESTRING(BITMAP_NINE_OPITEM);
+            GETOPTYPESTRING(PIXELMAP_NINE_OPITEM);
             GETOPTYPESTRING(PIXELMAP_OPITEM);
             GETOPTYPESTRING(PIXELMAP_RECT_OPITEM);
             GETOPTYPESTRING(ADAPTIVE_RRECT_OPITEM);
@@ -368,17 +375,23 @@ public:
 
     bool Marshalling(Parcel& parcel) const override;
     [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 #ifndef USE_ROSEN_DRAWING
     sk_sp<SkImage> GetSkImageFromSurfaceBuffer(SkCanvas& canvas, SurfaceBuffer* surfaceBuffer) const;
 #endif
 #endif
 private:
     std::shared_ptr<RSImage> rsImage_;
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 #ifndef USE_ROSEN_DRAWING
+#ifdef RS_ENABLE_GL
     mutable EGLImageKHR eglImage_ = EGL_NO_IMAGE_KHR;
     mutable GLuint texId_ = 0;
+#endif
+#ifdef RS_ENABLE_VK
+    mutable GrBackendTexture backendTexture_ = {};
+    mutable NativeBufferUtils::VulkanCleanupHelper* cleanupHelper_ = nullptr;
+#endif
     mutable OHNativeWindowBuffer* nativeWindowBuffer_ = nullptr;
     mutable pid_t tid_ = 0;
 #endif
@@ -1015,6 +1028,37 @@ private:
 #endif
 };
 
+class PixelmapNineOpItem : public OpItemWithPaint {
+public:
+    PixelmapNineOpItem(const std::shared_ptr<Media::PixelMap>& pixelmap, const SkIRect& center,
+        const SkRect& rectDst, const SkFilterMode filter, const SkPaint* paint);
+    PixelmapNineOpItem(const std::shared_ptr<RSImageBase> rsImage, const SkIRect& center, const SkRect& rectDst,
+        const SkFilterMode filter, const SkPaint* paint);
+    ~PixelmapNineOpItem() override {}
+    void Draw(RSPaintFilterCanvas& canvas, const SkRect*) const override;
+    
+    std::string GetTypeWithDesc() const override
+    {
+        std::string desc = "{OpType: " + GetOpTypeString(GetType()) +", Description:{";
+        desc += "}, \n";
+        return desc;
+    }
+
+    RSOpType GetType() const override
+    {
+        return RSOpType::PIXELMAP_NINE_OPITEM;
+    }
+
+    bool Marshalling(Parcel& parcel) const override;
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
+
+private:
+    SkIRect center_;
+    SkRect rectDst_;
+    SkFilterMode filter_;
+    std::shared_ptr<RSImageBase> rsImage_;
+};
+
 class AdaptiveRRectOpItem : public OpItemWithPaint {
 public:
     AdaptiveRRectOpItem(float radius, const SkPaint& paint);
@@ -1569,10 +1613,15 @@ private:
     void Clear() const noexcept;
 
     mutable RSSurfaceBufferInfo surfaceBufferInfo_;
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
+    mutable OHNativeWindowBuffer* nativeWindowBuffer_ = nullptr;
+#endif
+#ifdef RS_ENABLE_VK
+    mutable sk_sp<SkImage> skImage_ = nullptr;
+#endif
 #ifdef RS_ENABLE_GL
     mutable EGLImageKHR eglImage_ = EGL_NO_IMAGE_KHR;
     mutable GLuint texId_ = 0;
-    mutable OHNativeWindowBuffer* nativeWindowBuffer_ = nullptr;
 #endif
 };
 #endif
@@ -1585,6 +1634,10 @@ private:
 #include "recording/adaptive_image_helper.h"
 #include "draw/canvas.h"
 #include "parcel.h"
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
+#include <native_window.h>
+#include "surface_buffer.h"
+#endif
 
 namespace OHOS {
 namespace Rosen {
@@ -1594,13 +1647,38 @@ public:
     RSExtendImageObject(const std::shared_ptr<Drawing::Image>& image, const std::shared_ptr<Drawing::Data>& data,
         const Drawing::AdaptiveImageInfo& imageInfo);
     RSExtendImageObject(const std::shared_ptr<Media::PixelMap>& pixelMap, const Drawing::AdaptiveImageInfo& imageInfo);
-    ~RSExtendImageObject() override = default;
+    ~RSExtendImageObject() override;
     void Playback(Drawing::Canvas& canvas, const Drawing::Rect& rect,
         const Drawing::SamplingOptions& sampling, bool isBackground = false) override;
     bool Marshalling(Parcel &parcel) const;
     static RSExtendImageObject *Unmarshalling(Parcel &parcel);
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
+    std::shared_ptr<Drawing::Image> GetDrawingImageFromSurfaceBuffer(
+        Drawing::Canvas& canvas, SurfaceBuffer* surfaceBuffer) const;
+#endif
 protected:
     std::shared_ptr<RSImage> rsImage_;
+private:
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
+    mutable EGLImageKHR eglImage_ = EGL_NO_IMAGE_KHR;
+    mutable GLuint texId_ = 0;
+    mutable OHNativeWindowBuffer* nativeWindowBuffer_ = nullptr;
+    mutable pid_t tid_ = 0;
+#endif
+};
+
+class RSB_EXPORT RSExtendImageBaseOj : public Drawing::ExtendImageBaseOj {
+public:
+    RSExtendImageBaseOj() = default;
+    RSExtendImageBaseOj(const std::shared_ptr<Media::PixelMap>& pixelMap, const Drawing::Rect& src,
+        const Drawing::Rect& dst);
+    ~RSExtendImageBaseOj() override = default;
+    void Playback(Drawing::Canvas& canvas, const Drawing::Rect& rect,
+        const Drawing::SamplingOptions& sampling) override;
+    bool Marshalling(Parcel &parcel) const;
+    static RSExtendImageBaseOj *Unmarshalling(Parcel &parcel);
+protected:
+    std::shared_ptr<RSImageBase> rsImage_;
 };
 } // namespace Rosen
 } // namespace OHOS

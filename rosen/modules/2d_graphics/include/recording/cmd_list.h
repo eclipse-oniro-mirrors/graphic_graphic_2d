@@ -24,6 +24,9 @@
 #include "recording/mem_allocator.h"
 #include "recording/adaptive_image_helper.h"
 #include "utils/drawing_macros.h"
+#ifdef ROSEN_OHOS
+#include "surface_buffer.h"
+#endif
 
 namespace OHOS {
 namespace Media {
@@ -40,9 +43,15 @@ struct ImageHandle {
     AlphaType alphaType;
 };
 
-struct VerticesHandle {
+struct OpDataHandle {
     uint32_t offset;
     size_t size;
+};
+
+struct FlattenableHandle {
+    uint32_t offset;
+    size_t size;
+    uint32_t type;
 };
 
 struct CmdListHandle {
@@ -60,6 +69,13 @@ public:
     virtual ~ExtendImageObject() = default;
     virtual void Playback(Canvas& canvas, const Rect& rect,
         const SamplingOptions& sampling, bool isBackground = false) = 0;
+};
+
+class DRAWING_API ExtendImageBaseOj {
+public:
+    virtual ~ExtendImageBaseOj() = default;
+    virtual void Playback(Canvas& canvas, const Rect& rect,
+        const SamplingOptions& sampling) = 0;
 };
 
 class DRAWING_API CmdList {
@@ -170,11 +186,58 @@ public:
      * @brief  return real setup imageObject size.
      */
     uint32_t SetupObject(const std::vector<std::shared_ptr<ExtendImageObject>>& objectList);
+    
+     /*
+     * @brief  return imageBaseOj index, negative is error.
+     */
+    uint32_t AddImageBaseOj(const std::shared_ptr<ExtendImageBaseOj>& object);
+
+    /*
+     * @brief  get imageBaseOj by index.
+     */
+    std::shared_ptr<ExtendImageBaseOj> GetImageBaseOj(uint32_t id);
+
+    /*
+     * @brief  return imageBaseOj size, 0 is no imageBaseOj.
+     */
+    uint32_t GetAllBaseOj(std::vector<std::shared_ptr<ExtendImageBaseOj>>& objectList);
+
+    /*
+     * @brief  return real setup imageBaseOj size.
+     */
+    uint32_t SetupBaseOj(const std::vector<std::shared_ptr<ExtendImageBaseOj>>& objectList);
+
+    /*
+     * @brief  copy object vec to another CmdList.
+     */
+    void CopyObjectTo(CmdList& other) const;
 
     CmdList(CmdList&&) = delete;
     CmdList(const CmdList&) = delete;
     CmdList& operator=(CmdList&&) = delete;
     CmdList& operator=(const CmdList&) = delete;
+
+#ifdef ROSEN_OHOS
+    /*
+     * @brief  return surfaceBuffer index, negative is error.
+     */
+    uint32_t AddSurfaceBuffer(const sptr<SurfaceBuffer>& surfaceBuffer);
+
+    /*
+     * @brief  get surfaceBuffer by index.
+     */
+    sptr<SurfaceBuffer> GetSurfaceBuffer(uint32_t id);
+
+    /*
+     * @brief  return surfaceBuffer size, 0 is no surfaceBuffer.
+     */
+    uint32_t GetAllSurfaceBuffer(std::vector<sptr<SurfaceBuffer>>& objectList);
+
+    /*
+     * @brief  return real setup surfaceBuffer size.
+     */
+    uint32_t SetupSurfaceBuffer(const std::vector<sptr<SurfaceBuffer>>& objectList);
+#endif
 
 protected:
     MemAllocator opAllocator_;
@@ -186,6 +249,12 @@ protected:
     std::mutex pixelMapMutex_;
     std::vector<std::shared_ptr<ExtendImageObject>> imageObjectVec_;
     std::mutex imageObjectMutex_;
+#endif
+    std::vector<std::shared_ptr<ExtendImageBaseOj>> imageBaseOjVec_;
+    std::mutex imageBaseOjMutex_;
+#ifdef ROSEN_OHOS
+    std::vector<sptr<SurfaceBuffer>> surfaceBufferVec_;
+    std::mutex surfaceBufferMutex_;
 #endif
 };
 } // namespace Drawing

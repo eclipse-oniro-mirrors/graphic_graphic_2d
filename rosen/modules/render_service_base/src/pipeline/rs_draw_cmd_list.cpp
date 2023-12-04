@@ -63,6 +63,7 @@ static std::unordered_map<RSOpType, OpUnmarshallingFunc> opUnmarshallingFuncLUT 
     { COLOR_FILTER_BITMAP_OPITEM,  ColorFilterBitmapOpItem::Unmarshalling },
     { BITMAP_RECT_OPITEM,          BitmapRectOpItem::Unmarshalling },
     { BITMAP_NINE_OPITEM,          BitmapNineOpItem::Unmarshalling },
+    { PIXELMAP_NINE_OPITEM,        PixelmapNineOpItem::Unmarshalling },
     { PIXELMAP_OPITEM,             PixelMapOpItem::Unmarshalling },
     { PIXELMAP_RECT_OPITEM,        PixelMapRectOpItem::Unmarshalling },
     { ADAPTIVE_RRECT_OPITEM,       AdaptiveRRectOpItem::Unmarshalling },
@@ -285,7 +286,7 @@ bool DrawCmdList::Marshalling(Parcel& parcel) const
         return false;
     }
 
-    if (ops_.size() > 1000 && RSMarshallingHelper::GetUseSharedMem()) {  // OPsize > 1000
+    if (ops_.size() > 1000 && RSMarshallingHelper::GetUseSharedMem(std::this_thread::get_id())) {  // OPsize > 1000
         parcel.WriteUint32(1); // 1: use shared mem
         auto position = parcel.GetWritePosition();
         parcel.WriteUint32(0); // shmem count
@@ -465,7 +466,7 @@ void DrawCmdList::ClearCache()
 #endif
 }
 
-#if defined(RS_ENABLE_DRIVEN_RENDER) && defined(RS_ENABLE_GL)
+#if defined(RS_ENABLE_DRIVEN_RENDER)
 void DrawCmdList::CheckClipRect(SkRect& rect)
 {
     std::lock_guard<std::mutex> lock(mutex_);

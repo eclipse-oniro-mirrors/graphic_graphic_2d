@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "text_span.h"
 
 #include <iomanip>
@@ -43,6 +42,8 @@ namespace TextEngine {
 #define MAXALPHA 255
 #define OFFSETY 3
 #define HALF 0.5f
+#define DEFAULT_FONT_SIZE 14.0f
+#define SCALE 0.7f
 #define WIDTH_SCALAR 5.0f
 #define HEIGHT_SCALAR 5.0f
 #define DOTTED_ADVANCE 10.0f
@@ -197,7 +198,8 @@ void TextSpan::PaintDecoration(TexgineCanvas &canvas, double offsetX, double off
         PaintDecorationStyle(canvas, left, right, y, xs);
     }
     if ((xs.decoration & TextDecoration::LINE_THROUGH) == TextDecoration::LINE_THROUGH) {
-        double y = offsetY - (*tmetrics_.fCapHeight_ * HALF);
+        double y = offsetY - (*tmetrics_.fCapHeight_ * HALF) +
+            (xs.fontSize / DEFAULT_FONT_SIZE * xs.decorationThicknessScale * HALF);
         PaintDecorationStyle(canvas, left, right, y, xs);
     }
     if ((xs.decoration & TextDecoration::BASELINE) == TextDecoration::BASELINE) {
@@ -212,7 +214,7 @@ void TextSpan::PaintDecorationStyle(TexgineCanvas &canvas, double left, double r
     paint.SetAntiAlias(true);
     paint.SetARGB(MAXRGB, MAXRGB, 0, 0);
     paint.SetColor(xs.decorationColor.value_or(xs.color));
-    paint.SetStrokeWidth(xs.decorationThicknessScale);
+    paint.SetStrokeWidth(xs.fontSize / DEFAULT_FONT_SIZE * xs.decorationThicknessScale * SCALE);
 
     switch (xs.decorationStyle) {
         case TextDecorationStyle::SOLID:

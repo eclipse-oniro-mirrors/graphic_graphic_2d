@@ -15,8 +15,13 @@
 
 #include "common/rs_background_thread.h"
 #include "platform/common/rs_log.h"
-#if defined(RS_ENABLE_UNI_RENDER) && defined(RS_ENABLE_GL)
+#if defined(RS_ENABLE_UNI_RENDER)
+#ifdef RS_ENABLE_GL
 #include "render_context/render_context.h"
+#endif
+#ifdef RS_ENABLE_VK
+#include "platform/ohos/backend/rs_vulkan_context.h"
+#endif
 #endif
 #include "rs_trace.h"
 
@@ -39,7 +44,8 @@ void RSBackgroundThread::PostTask(const std::function<void()>& task)
         handler_->PostTask(task, AppExecFwk::EventQueue::Priority::IMMEDIATE);
     }
 }
-#if defined(RS_ENABLE_UNI_RENDER) && defined(RS_ENABLE_GL)
+#if defined(RS_ENABLE_UNI_RENDER) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+#ifdef RS_ENABLE_GL
 void RSBackgroundThread::CreateShareEglContext()
 {
     if (renderContext_ == nullptr) {
@@ -56,6 +62,7 @@ void RSBackgroundThread::CreateShareEglContext()
         return;
     }
 }
+#endif
 #ifndef USE_ROSEN_DRAWING
 void RSBackgroundThread::InitRenderContext(RenderContext* context)
 {
@@ -73,6 +80,7 @@ sk_sp<GrDirectContext> RSBackgroundThread::GetShareGrContext() const
 sk_sp<GrDirectContext> RSBackgroundThread::CreateShareGrContext()
 {
     RS_TRACE_NAME("CreateShareGrContext");
+#ifdef RS_ENABLE_GL
     CreateShareEglContext();
     const GrGLInterface* glGlInterface = GrGLCreateNativeInterface();
     sk_sp<const GrGLInterface> glInterface(glGlInterface);
@@ -93,6 +101,10 @@ sk_sp<GrDirectContext> RSBackgroundThread::CreateShareGrContext()
     handler->ConfigureContext(&options, glesVersion, size, "/data/service/el0/render_service", true);
 
     sk_sp<GrDirectContext> grContext = GrDirectContext::MakeGL(std::move(glInterface), options);
+#endif
+#ifdef RS_ENABLE_VK
+    sk_sp<GrDirectContext> grContext = RsVulkanContext::GetSingleton().CreateSkContext();
+#endif
     if (grContext == nullptr) {
         RS_LOGE("nullptr grContext is null");
         return nullptr;
@@ -129,6 +141,8 @@ std::shared_ptr<Drawing::GPUContext> RSBackgroundThread::GetShareGPUContext() co
 std::shared_ptr<Drawing::GPUContext> RSBackgroundThread::CreateShareGPUContext()
 {
     RS_TRACE_NAME("CreateShareGrContext");
+#ifdef RS_ENABLE_GL
+    auto gpuContext = std::make_shared<Drawing::GPUContext>();
     CreateShareEglContext();
 
     Drawing::GPUContextOptions options = {};
@@ -137,13 +151,18 @@ std::shared_ptr<Drawing::GPUContext> RSBackgroundThread::CreateShareGPUContext()
     auto size = glesVersion ? strlen(glesVersion) : 0;
     /* /data/service/el0/render_service is shader cache dir*/
     handler->ConfigureContext(&options, glesVersion, size, "/data/service/el0/render_service", true);
-
-    auto gpuContext = std::make_shared<Drawing::GPUContext>();
     if (!gpuContext->BuildFromGL(options)) {
         RS_LOGE("BuildFromGL fail");
         return nullptr;
     }
-
+#endif
+#ifdef RS_ENABLE_VK
+    auto gpuContext = RsVulkanContext::GetSingleton().CreateDrawingContext();
+#endif
+    if (gpuContext == nullptr) {
+        RS_LOGE("BuildFromVK fail")
+        return nullptr;
+    }
     return gpuContext;
 }
 

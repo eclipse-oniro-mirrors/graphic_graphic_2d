@@ -586,7 +586,10 @@ GSError BufferQueue::AllocBuffer(sptr<SurfaceBuffer> &buffer,
     sptr<SurfaceBuffer> bufferImpl = new SurfaceBufferImpl();
     uint32_t sequence = bufferImpl->GetSeqNum();
 
-    GSError ret = bufferImpl->Alloc(config);
+    BufferRequestConfig updateConfig = config;
+    updateConfig.usage |= defaultUsage;
+
+    GSError ret = bufferImpl->Alloc(updateConfig);
     if (ret != GSERROR_OK) {
         BLOGN_FAILURE_ID_API(sequence, Alloc, ret);
         return ret;
@@ -599,6 +602,13 @@ GSError BufferQueue::AllocBuffer(sptr<SurfaceBuffer> &buffer,
         .config = config,
         .fence = SyncFence::INVALID_FENCE,
     };
+
+    if (config.usage & BUFFER_USAGE_PROTECTED) {
+        BLOGD("handle usage is BUFFER_USAGE_PROTECTED, do not Map/UnMap");
+        bufferQueueCache_[sequence] = ele;
+        buffer = bufferImpl;
+        return ret;
+    }
 
     ret = bufferImpl->Map();
     if (ret == GSERROR_OK) {
@@ -872,13 +882,13 @@ int32_t BufferQueue::GetDefaultHeight()
     return defaultHeight;
 }
 
-GSError BufferQueue::SetDefaultUsage(uint32_t usage)
+GSError BufferQueue::SetDefaultUsage(uint64_t usage)
 {
     defaultUsage = usage;
     return GSERROR_OK;
 }
 
-uint32_t BufferQueue::GetDefaultUsage()
+uint64_t BufferQueue::GetDefaultUsage()
 {
     return defaultUsage;
 }

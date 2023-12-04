@@ -16,6 +16,8 @@
 #include "image/image.h"
 
 #include "impl_factory.h"
+#include "skia_adapter/skia_image.h"
+#include "static_factory.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -43,18 +45,31 @@ const TextureInfo BackendTexture::GetTextureInfo() const
 
 Image::Image() noexcept : imageImplPtr(ImplFactory::CreateImageImpl()) {}
 
+Image::Image(std::shared_ptr<ImageImpl> imageImpl) : imageImplPtr(imageImpl) {}
+
 Image::Image(void* rawImg) noexcept : imageImplPtr(ImplFactory::CreateImageImpl(rawImg)) {}
 
-Image* Image::BuildFromBitmap(const Bitmap& bitmap)
+bool Image::BuildFromBitmap(const Bitmap& bitmap)
 {
-    return static_cast<Image*>(imageImplPtr->BuildFromBitmap(bitmap));
+    return imageImplPtr->BuildFromBitmap(bitmap);
 }
 
-Image* Image::BuildFromPicture(const Picture& picture, const SizeI& dimensions, const Matrix& matrix,
+bool Image::BuildFromPicture(const Picture& picture, const SizeI& dimensions, const Matrix& matrix,
     const Brush& brush, BitDepth bitDepth, std::shared_ptr<ColorSpace> colorSpace)
 {
-    return static_cast<Image*>(
-        imageImplPtr->BuildFromPicture(picture, dimensions, matrix, brush, bitDepth, colorSpace));
+    return imageImplPtr->BuildFromPicture(picture, dimensions, matrix, brush, bitDepth, colorSpace);
+}
+
+std::shared_ptr<Image> Image::MakeFromRaster(const Pixmap& pixmap,
+    RasterReleaseProc rasterReleaseProc, ReleaseContext releaseContext)
+{
+    return StaticFactory::MakeFromRaster(pixmap, rasterReleaseProc, releaseContext);
+}
+
+std::shared_ptr<Image> Image::MakeRasterData(const ImageInfo& info, std::shared_ptr<Data> pixels,
+    size_t rowBytes)
+{
+    return StaticFactory::MakeRasterData(info, pixels, rowBytes);
 }
 
 #ifdef ACE_ENABLE_GPU
@@ -79,6 +94,26 @@ bool Image::BuildFromTexture(GPUContext& gpuContext, const TextureInfo& info, Te
 {
     return imageImplPtr->BuildFromTexture(gpuContext, info, origin, bitmapFormat, colorSpace);
 }
+bool Image::BuildFromSurface(GPUContext& gpuContext, Surface& surface, TextureOrigin origin,
+    BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace)
+{
+    return imageImplPtr->BuildFromSurface(gpuContext, surface, origin, bitmapFormat, colorSpace);
+}
+
+#ifdef RS_ENABLE_VK
+bool Image::BuildFromTexture(GPUContext& gpuContext, const VKTextureInfo& info, TextureOrigin origin,
+    BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace,
+    void (*deleteFunc)(void*), void* cleanupHelper)
+{
+    return imageImplPtr->BuildFromTexture(gpuContext, info, origin, bitmapFormat,
+        colorSpace, deleteFunc, cleanupHelper);
+}
+#endif
+
+bool Image::BuildSubset(const std::shared_ptr<Image>& image, const RectI& rect, GPUContext& gpuContext)
+{
+    return imageImplPtr->BuildSubset(image, rect, gpuContext);
+}
 
 BackendTexture Image::GetBackendTexture(bool flushPendingGrContextIO, TextureOrigin* origin) const
 {
@@ -90,6 +125,11 @@ bool Image::IsValid(GPUContext* context) const
     return imageImplPtr->IsValid(context);
 }
 #endif
+
+bool Image::AsLegacyBitmap(Bitmap& bitmap) const
+{
+    return imageImplPtr->AsLegacyBitmap(bitmap);
+}
 
 int Image::GetWidth() const
 {
@@ -111,6 +151,11 @@ AlphaType Image::GetAlphaType() const
     return imageImplPtr->GetAlphaType();
 }
 
+std::shared_ptr<ColorSpace> Image::GetColorSpace() const
+{
+    return imageImplPtr->GetColorSpace();
+}
+
 uint32_t Image::GetUniqueID() const
 {
     return imageImplPtr->GetUniqueID();
@@ -126,6 +171,17 @@ bool Image::ReadPixels(Bitmap& bitmap, int x, int y)
     return imageImplPtr->ReadPixels(bitmap, x, y);
 }
 
+bool Image::ReadPixels(Pixmap& pixmap, int x, int y)
+{
+    return imageImplPtr->ReadPixels(pixmap, x, y);
+}
+
+bool Image::ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+    int32_t srcX, int32_t srcY) const
+{
+    return imageImplPtr->ReadPixels(dstInfo, dstPixels, dstRowBytes, srcX, srcY);
+}
+
 bool Image::IsTextureBacked() const
 {
     return imageImplPtr->IsTextureBacked();
@@ -136,7 +192,7 @@ bool Image::ScalePixels(const Bitmap& bitmap, const SamplingOptions& sampling, b
     return imageImplPtr->ScalePixels(bitmap, sampling, allowCachingHint);
 }
 
-std::shared_ptr<Data> Image::EncodeToData(EncodedImageFormat& encodedImageFormat, int quality) const
+std::shared_ptr<Data> Image::EncodeToData(EncodedImageFormat encodedImageFormat, int quality) const
 {
     return imageImplPtr->EncodeToData(encodedImageFormat, quality);
 }
@@ -144,6 +200,26 @@ std::shared_ptr<Data> Image::EncodeToData(EncodedImageFormat& encodedImageFormat
 bool Image::IsLazyGenerated() const
 {
     return imageImplPtr->IsLazyGenerated();
+}
+
+bool Image::GetROPixels(Bitmap& bitmap) const
+{
+    return imageImplPtr->GetROPixels(bitmap);
+}
+
+std::shared_ptr<Image> Image::MakeRasterImage() const
+{
+    return imageImplPtr->MakeRasterImage();
+}
+
+bool Image::CanPeekPixels() const
+{
+    return imageImplPtr->CanPeekPixels();
+}
+
+bool Image::IsOpaque() const
+{
+    return imageImplPtr->IsOpaque();
 }
 
 std::shared_ptr<Data> Image::Serialize() const
@@ -154,6 +230,11 @@ std::shared_ptr<Data> Image::Serialize() const
 bool Image::Deserialize(std::shared_ptr<Data> data)
 {
     return imageImplPtr->Deserialize(data);
+}
+
+const sk_sp<SkImage> Image::ExportSkImage()
+{
+    return GetImpl<SkiaImage>()->GetImage();
 }
 
 } // namespace Drawing

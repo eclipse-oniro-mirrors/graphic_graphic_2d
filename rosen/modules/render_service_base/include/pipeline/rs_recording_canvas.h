@@ -111,6 +111,8 @@ public:
     void onDrawBitmapLattice(const SkBitmap& bm, const SkCanvas::Lattice& lattice, const SkRect& dst,
         const SkPaint* paint) override;
     void onDrawBitmapNine(const SkBitmap& bm, const SkIRect& center, const SkRect& dst, const SkPaint* paint) override;
+    void drawImageNine(const std::shared_ptr<Media::PixelMap>& pixelmap, const SkIRect& center,
+        const SkRect& dst, SkFilterMode filter, const SkPaint* paint);
     void onDrawBitmapRect(const SkBitmap& bm, const SkRect* src, const SkRect& dst,
         const SkPaint* paint, SrcRectConstraint constraint) override;
     void onDrawImage(const SkImage* img, SkScalar x, SkScalar y, const SkPaint* paint)override;
@@ -217,8 +219,11 @@ public:
     ~ExtendRecordingCanvas() override = default;
     void DrawImageWithParm(const std::shared_ptr<Drawing::Image>& image, const std::shared_ptr<Drawing::Data>& data,
         const Drawing::AdaptiveImageInfo& rsImageInfo, const Drawing::SamplingOptions& sampling);
-    void DrawExtendPixelMap(const std::shared_ptr<Media::PixelMap>& pixelMap,
+    void DrawPixelMapWithParm(const std::shared_ptr<Media::PixelMap>& pixelMap,
         const Drawing::AdaptiveImageInfo& rsImageInfo, const Drawing::SamplingOptions& sampling);
+    void DrawPixelMapRect(const std::shared_ptr<Media::PixelMap>& pixelMap, const Drawing::Rect& src,
+        const Drawing::Rect& dst, const Drawing::SamplingOptions& sampling,
+        Drawing::SrcRectConstraint constraint = Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
 };
 } // namespace Rosen
 } // namespace OHOS

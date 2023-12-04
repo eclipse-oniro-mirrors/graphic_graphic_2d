@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-
 #include "animation/rs_render_particle.h"
 #include "animation/rs_render_particle_animation.h"
 #include "common/rs_vector2.h"
@@ -36,7 +35,9 @@ public:
     void TearDown() override;
     static constexpr uint64_t ANIMATION_ID = 12345;
     static constexpr uint64_t PROPERTY_ID = 54321;
+    std::shared_ptr<ParticleRenderParams> params;
     std::vector<std::shared_ptr<ParticleRenderParams>> particlesRenderParams;
+    std::shared_ptr<RSRenderParticleSystem> particleSystem_;
 };
 
 void RSRenderParticleAnimationTest::SetUpTestCase() {}
@@ -50,7 +51,7 @@ void RSRenderParticleAnimationTest::SetUp()
     int particleCount = 20;
     int lifeTime = 3000;
     ParticleType type = ParticleType::POINTS;
-    float radius = 1;
+    float radius = 10.f;
     std::shared_ptr<RSImage> image;
     Vector2f imageSize = Vector2f(1.f, 1.f);
     EmitterConfig emitterConfig = EmitterConfig(
@@ -62,11 +63,32 @@ void RSRenderParticleAnimationTest::SetUp()
     RenderParticleParaType<float> opacity;
     RenderParticleParaType<float> scale;
     RenderParticleParaType<float> spin;
-    std::shared_ptr<ParticleRenderParams> params =
-        std::make_shared<ParticleRenderParams>(emitterConfig, velocity, acceleration, color, opacity, scale, spin);
-    particlesRenderParams.push_back(params);
+    params = std::make_shared<ParticleRenderParams>(emitterConfig, velocity, acceleration, color, opacity, scale, spin);
 }
 void RSRenderParticleAnimationTest::TearDown() {}
+
+/**
+ * @tc.name: Animate001
+ * @tc.desc: Verify the Animate
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderParticleAnimationTest, Animate001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest Animate001 start";
+    auto renderParticleAnimation = std::make_shared<RSRenderParticleAnimation>(ANIMATION_ID, PROPERTY_ID, particlesRenderParams);
+    auto particleAnimate = renderParticleAnimation->Animate(NS_TO_S);
+    particlesRenderParams.push_back(params);
+    renderParticleAnimation =
+        std::make_shared<RSRenderParticleAnimation>(ANIMATION_ID, PROPERTY_ID, particlesRenderParams);
+    particleSystem_ = std::make_shared<RSRenderParticleSystem>(particlesRenderParams);
+    EXPECT_TRUE(particleSystem_ != nullptr);
+    particleSystem_->CreateEmitter();
+    particleSystem_->Emit(NS_TO_S);
+    particleSystem_->UpdateParticle(NS_TO_S);
+    particleAnimate = renderParticleAnimation->Animate(NS_TO_S);
+    EXPECT_TRUE(particleAnimate);
+    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest Animate001 end";
+}
 
 /**
  * @tc.name: Marshalling001

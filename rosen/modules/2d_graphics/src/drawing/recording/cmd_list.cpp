@@ -37,6 +37,9 @@ CmdList::~CmdList()
 #ifdef SUPPORT_OHOS_PIXMAP
     pixelMapVec_.clear();
 #endif
+#ifdef ROSEN_OHOS
+    surfaceBufferVec_.clear();
+#endif
 }
 
 uint32_t CmdList::AddCmdListData(const CmdListData& data)
@@ -193,6 +196,84 @@ uint32_t CmdList::SetupObject(const std::vector<std::shared_ptr<ExtendImageObjec
     return 0;
 #endif
 }
+
+uint32_t CmdList::AddImageBaseOj(const std::shared_ptr<ExtendImageBaseOj>& object)
+{
+    std::lock_guard<std::mutex> lock(imageBaseOjMutex_);
+    imageBaseOjVec_.emplace_back(object);
+    return static_cast<uint32_t>(imageBaseOjVec_.size()) - 1;
+}
+
+std::shared_ptr<ExtendImageBaseOj> CmdList::GetImageBaseOj(uint32_t id)
+{
+    std::lock_guard<std::mutex> lock(imageBaseOjMutex_);
+    if (id >= imageBaseOjVec_.size()) {
+        return nullptr;
+    }
+    return imageBaseOjVec_[id];
+}
+
+uint32_t CmdList::GetAllBaseOj(std::vector<std::shared_ptr<ExtendImageBaseOj>>& objectList)
+{
+    std::lock_guard<std::mutex> lock(imageBaseOjMutex_);
+    for (const auto &object : imageBaseOjVec_) {
+        objectList.emplace_back(object);
+    }
+    return objectList.size();
+}
+
+uint32_t CmdList::SetupBaseOj(const std::vector<std::shared_ptr<ExtendImageBaseOj>>& objectList)
+{
+    std::lock_guard<std::mutex> lock(imageBaseOjMutex_);
+    for (const auto &object : objectList) {
+        imageBaseOjVec_.emplace_back(object);
+    }
+    return imageBaseOjVec_.size();
+}
+
+void CmdList::CopyObjectTo(CmdList& other) const
+{
+#ifdef SUPPORT_OHOS_PIXMAP
+    other.imageObjectVec_ = imageObjectVec_;
+#endif
+    other.imageBaseOjVec_ = imageBaseOjVec_;
+}
+
+#ifdef ROSEN_OHOS
+uint32_t CmdList::AddSurfaceBuffer(const sptr<SurfaceBuffer>& surfaceBuffer)
+{
+    std::lock_guard<std::mutex> lock(surfaceBufferMutex_);
+    surfaceBufferVec_.emplace_back(surfaceBuffer);
+    return static_cast<uint32_t>(surfaceBufferVec_.size()) - 1;
+}
+
+sptr<SurfaceBuffer> CmdList::GetSurfaceBuffer(uint32_t id)
+{
+    std::lock_guard<std::mutex> lock(surfaceBufferMutex_);
+    if (id >= surfaceBufferVec_.size()) {
+        return nullptr;
+    }
+    return surfaceBufferVec_[id];
+}
+
+uint32_t CmdList::GetAllSurfaceBuffer(std::vector<sptr<SurfaceBuffer>>& objectList)
+{
+    std::lock_guard<std::mutex> lock(surfaceBufferMutex_);
+    for (const auto &object : surfaceBufferVec_) {
+        objectList.emplace_back(object);
+    }
+    return static_cast<uint32_t>(objectList.size());
+}
+
+uint32_t CmdList::SetupSurfaceBuffer(const std::vector<sptr<SurfaceBuffer>>& objectList)
+{
+    std::lock_guard<std::mutex> lock(surfaceBufferMutex_);
+    for (const auto &object : objectList) {
+        surfaceBufferVec_.emplace_back(object);
+    }
+    return static_cast<uint32_t>(surfaceBufferVec_.size());
+}
+#endif
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

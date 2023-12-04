@@ -28,6 +28,7 @@
 #include "memory/rs_memory_track.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_handler.h"
+#include <screen_manager/screen_types.h>
 #ifdef NEW_RENDER_CONTEXT
 #include "rs_render_surface.h"
 #else
@@ -36,7 +37,6 @@
 
 namespace OHOS {
 namespace Rosen {
-enum class ScreenRotation : uint32_t;
 class RSB_EXPORT RSDisplayRenderNode : public RSRenderNode, public RSSurfaceHandler {
 public:
     enum CompositeType {
@@ -64,6 +64,22 @@ public:
     uint64_t GetScreenId() const
     {
         return screenId_;
+    }
+
+    void SetRogSize(uint32_t rogWidth, uint32_t rogHeight)
+    {
+        rogWidth_ = rogWidth;
+        rogHeight_ = rogHeight;
+    }
+
+    uint32_t GetRogWidth() const
+    {
+        return rogWidth_;
+    }
+
+    uint32_t GetRogHeight() const
+    {
+        return rogHeight_;
     }
 
     void SetDisplayOffset(int32_t offsetX, int32_t offsetY)
@@ -275,20 +291,22 @@ public:
         cacheImgForCapture_ = cacheImgForCapture;
     }
 #endif
-    uint32_t GetCaptureWindowZOrder() {
-        return captureWindowZOrder_;
+    NodeId GetRootIdOfCaptureWindow() {
+        return rootIdOfCaptureWindow_;
     }
-    void SetCaptureWindowZOrder(uint32_t captureWindowZOrder) {
-        captureWindowZOrder_ = captureWindowZOrder;
+    void SetRootIdOfCaptureWindow(NodeId rootIdOfCaptureWindow) {
+        rootIdOfCaptureWindow_ = rootIdOfCaptureWindow;
     }
 
 private:
     CompositeType compositeType_ { HARDWARE_COMPOSITE };
-    ScreenRotation screenRotation_;
-    ScreenRotation firstTimeScreenRotation_;
+    ScreenRotation screenRotation_ = ScreenRotation::ROTATION_0;
+    ScreenRotation firstTimeScreenRotation_ = ScreenRotation::ROTATION_0;
     uint64_t screenId_;
     int32_t offsetX_;
     int32_t offsetY_;
+    uint32_t rogWidth_;
+    uint32_t rogHeight_;
     bool forceSoftComposite_ { false };
     bool isMirroredDisplay_ = false;
     bool isSecurityDisplay_ = false;
@@ -325,7 +343,7 @@ private:
 #else
     std::shared_ptr<Drawing::Image> cacheImgForCapture_ = nullptr;
 #endif
-    uint32_t captureWindowZOrder_ = -1;
+    NodeId rootIdOfCaptureWindow_ = INVALID_NODEID;
 
     // Use in vulkan parallel rendering
     bool isParallelDisplayNode_ = false;

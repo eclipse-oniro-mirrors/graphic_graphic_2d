@@ -35,11 +35,7 @@ bool FontFeatures::operator ==(const FontFeatures &rhs) const
 
 bool TextShadow::HasShadow() const
 {
-    if ((offsetX == 0 && offsetY == 0) || blurLeave <= 0.5) {
-        return false;
-    }
-
-    return true;
+    return blurLeave > 0 || offsetX != 0 || offsetY != 0;
 }
 
 bool TextShadow::operator ==(TextShadow const &rhs) const
@@ -63,13 +59,13 @@ bool TextStyle::operator ==(TextStyle const &rhs) const
            decorationStyle == rhs.decorationStyle &&
            decorationThicknessScale == rhs.decorationThicknessScale &&
            shadows == rhs.shadows &&
-           foreground == rhs.foreground &&
-           background == rhs.background &&
            fontWeight == rhs.fontWeight &&
            fontStyle == rhs.fontStyle &&
            fontFeature == rhs.fontFeature &&
            letterSpacing == rhs.letterSpacing &&
-           wordSpacing == rhs.wordSpacing;
+           wordSpacing == rhs.wordSpacing &&
+           foreground == rhs.foreground &&
+           background == rhs.background;
 }
 } // namespace TextEngine
 } // namespace Rosen

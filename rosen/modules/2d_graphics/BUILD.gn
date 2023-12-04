@@ -28,6 +28,7 @@ config("2d_graphics_config") {
     "$drawing_src_dir/engine_adapter",
     "$platform_dir/image_native",
     "$rosen_root/modules/render_service_base/include",
+    "$rosen_root/modules/texgine/texgine_drawing/src",
   ]
 }
 
@@ -38,6 +39,7 @@ config("export_config") {
     "$drawing_src_dir",
     "$drawing_src_dir/engine_adapter",
     "$rosen_root/modules/render_service_base/include",
+    "$rosen_root/modules/texgine/texgine_drawing/src",
   ]
 
   if (ace_enable_gpu) {
@@ -59,10 +61,11 @@ template("graphics2d_source_set") {
       defines += [ "USE_TEXGINE" ]
     }
 
-    if (is_cross_platform_build) {
+    if (is_arkui_x) {
       defines += [ "CROSS_PLATFORM" ]
     }
 
+    public_deps = []
     sources = [
       "$drawing_src_dir/c/drawing_bitmap.cpp",
       "$drawing_src_dir/c/drawing_brush.cpp",
@@ -86,6 +89,8 @@ template("graphics2d_source_set") {
       "$drawing_src_dir/effect/image_filter.cpp",
       "$drawing_src_dir/effect/mask_filter.cpp",
       "$drawing_src_dir/effect/path_effect.cpp",
+      "$drawing_src_dir/effect/runtime_effect.cpp",
+      "$drawing_src_dir/effect/runtime_shader_builder.cpp",
       "$drawing_src_dir/effect/shader_effect.cpp",
       "$drawing_src_dir/engine_adapter/impl_factory.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/rs_skia_memory_tracer.cpp",
@@ -99,17 +104,22 @@ template("graphics2d_source_set") {
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_font_mgr.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_font_style_set.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_graphics.cpp",
+      "$drawing_src_dir/engine_adapter/skia_adapter/skia_helper.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_image.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_image_filter.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_impl_factory.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_mask_filter.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_matrix.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_matrix44.cpp",
+      "$drawing_src_dir/engine_adapter/skia_adapter/skia_memory_stream.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_paint.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_path.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_path_effect.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_picture.cpp",
+      "$drawing_src_dir/engine_adapter/skia_adapter/skia_pixmap.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_region.cpp",
+      "$drawing_src_dir/engine_adapter/skia_adapter/skia_runtime_effect.cpp",
+      "$drawing_src_dir/engine_adapter/skia_adapter/skia_runtime_shader_builder.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_shader_effect.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_static_factory.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_surface.cpp",
@@ -122,6 +132,7 @@ template("graphics2d_source_set") {
       "$drawing_src_dir/image/bitmap.cpp",
       "$drawing_src_dir/image/image.cpp",
       "$drawing_src_dir/image/picture.cpp",
+      "$drawing_src_dir/image/pixmap.cpp",
       "$drawing_src_dir/image/trace_memory_dump.cpp",
       "$drawing_src_dir/recording/adaptive_image_helper.cpp",
       "$drawing_src_dir/recording/cmd_list.cpp",
@@ -158,7 +169,10 @@ template("graphics2d_source_set") {
       "$drawing_src_dir/utils/data.cpp",
       "$drawing_src_dir/utils/matrix.cpp",
       "$drawing_src_dir/utils/matrix44.cpp",
+      "$drawing_src_dir/utils/memory_stream.cpp",
+      "$drawing_src_dir/utils/object_mgr.cpp",
       "$drawing_src_dir/utils/region.cpp",
+      "$drawing_src_dir/utils/round_rect.cpp",
       "$drawing_src_dir/utils/vertices.cpp",
     ]
 
@@ -183,6 +197,7 @@ template("graphics2d_source_set") {
       "//third_party/skia/include/private",
       "//third_party/skia/src/core",
       "//third_party/skia/src/ports",
+      "$rosen_root/modules/texgine/texgine_drawing/src",
     ]
 
     configs = [ "//third_party/jsoncpp:jsoncpp_public_config" ]
@@ -223,7 +238,11 @@ template("graphics2d_source_set") {
         "$rosen_2d_engine_root",
       ]
     }
-
+    if (graphic_2d_feature_enable_vulkan) {
+      defines += [ "RS_ENABLE_VK" ]
+      include_dirs += [ "//third_party/vulkan-headers/include" ]
+      public_deps += [ "//third_party/vulkan-headers:vulkan_headers" ]
+    }
     if (platform == "ohos" || platform == "ohos_ng") {
       external_deps = [
         "hilog:libhilog",
@@ -293,7 +312,7 @@ template("graphics2d_source_set") {
             [ "$ace_flutter_engine_root/libtxt:thirdparty_lib_txt_$platform" ]
       }
 
-      if (!is_cross_platform_build) {
+      if (!is_arkui_x) {
         deps += [ "$rosen_root/modules/platform:hilog" ]
       }
 
@@ -336,6 +355,21 @@ template("graphics2d_source_set") {
       deps += [ "$rosen_root/modules/2d_engine/rosen_text:rosen_text_inner" ]
       defines += [ "USE_GRAPHIC_TEXT_GINE" ]
     }
+    if (rosen_is_ohos) {
+      defines += gpu_defines
+      if (rs_enable_gpu) {
+        defines += [
+          "GL_GLEXT_PROTOTYPES",
+          "EGL_EGLEXT_PROTOTYPES",
+        ]
+      }
+      include_dirs += [ "$graphic_2d_root/interfaces/inner_api/surface" ]
+      public_deps += [
+        "$graphic_2d_root:libgl",
+        "$graphic_2d_root/frameworks/surface:surface",
+      ]
+      external_deps += [ "c_utils:utils" ]
+    }
 
     part_name = "graphic_2d"
     subsystem_name = "graphic"
@@ -366,7 +400,7 @@ foreach(item, ace_platforms) {
   }
 }
 
-if (!is_cross_platform_build) {
+if (!is_arkui_x) {
   ## Build 2d_graphics.so
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
     ohos_shared_library("2d_graphics") {
@@ -405,7 +439,10 @@ if (enable_text_gine) {
     if (platform == "mingw") {
       platform = "windows"
     }
-    deps = [ ":2d_graphics_source_$platform" ]
+    deps = [
+      ":2d_graphics_source_$platform",
+      "$rosen_root/modules/texgine/texgine_drawing:libtexgine_drawing",
+    ]
     public_deps = [ "//third_party/bounds_checking_function:libsec_static" ]
     defines += [ "USE_GRAPHIC_TEXT_GINE" ]
     public_configs = [ ":2d_graphics_config" ]
@@ -429,6 +466,8 @@ ohos_shared_library("2d_graphics_canvaskit0310") {
     "$drawing_src_dir/effect/image_filter.cpp",
     "$drawing_src_dir/effect/mask_filter.cpp",
     "$drawing_src_dir/effect/path_effect.cpp",
+    "$drawing_src_dir/effect/runtime_effect.cpp",
+    "$drawing_src_dir/effect/runtime_shader_builder.cpp",
     "$drawing_src_dir/effect/shader_effect.cpp",
     "$drawing_src_dir/engine_adapter/impl_factory.cpp",
     "$drawing_src_dir/engine_adapter/skia_adapter/skia_bitmap.cpp",
@@ -437,6 +476,7 @@ ohos_shared_library("2d_graphics_canvaskit0310") {
     "$drawing_src_dir/engine_adapter/skia_adapter/skia_color_filter.cpp",
     "$drawing_src_dir/engine_adapter/skia_adapter/skia_color_space.cpp",
     "$drawing_src_dir/engine_adapter/skia_adapter/skia_graphics.cpp",
+    "$drawing_src_dir/engine_adapter/skia_adapter/skia_helper.cpp",
     "$drawing_src_dir/engine_adapter/skia_adapter/skia_image.cpp",
     "$drawing_src_dir/engine_adapter/skia_adapter/skia_image_filter.cpp",
     "$drawing_src_dir/engine_adapter/skia_adapter/skia_impl_factory.cpp",
@@ -446,10 +486,14 @@ ohos_shared_library("2d_graphics_canvaskit0310") {
     "$drawing_src_dir/engine_adapter/skia_adapter/skia_path.cpp",
     "$drawing_src_dir/engine_adapter/skia_adapter/skia_path_effect.cpp",
     "$drawing_src_dir/engine_adapter/skia_adapter/skia_picture.cpp",
+    "$drawing_src_dir/engine_adapter/skia_adapter/skia_pixmap.cpp",
+    "$drawing_src_dir/engine_adapter/skia_adapter/skia_runtime_effect.cpp",
+    "$drawing_src_dir/engine_adapter/skia_adapter/skia_runtime_shader_builder.cpp",
     "$drawing_src_dir/engine_adapter/skia_adapter/skia_shader_effect.cpp",
     "$drawing_src_dir/image/bitmap.cpp",
     "$drawing_src_dir/image/image.cpp",
     "$drawing_src_dir/image/picture.cpp",
+    "$drawing_src_dir/image/pixmap.cpp",
     "$drawing_src_dir/text/text.cpp",
     "$drawing_src_dir/utils/camera3d.cpp",
     "$drawing_src_dir/utils/matrix.cpp",
@@ -468,7 +512,7 @@ ohos_shared_library("2d_graphics_canvaskit0310") {
     "$drawing_src_dir/engine_adapter",
   ]
 
-  if (!is_cross_platform_build) {
+  if (!is_arkui_x) {
     deps = [
       "$graphic_2d_root:libsurface",
       # "//third_party/skia_canvaskit0310:skia",

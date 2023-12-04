@@ -47,7 +47,7 @@ public:
      * make sure this function is called after merge dirty history
      */
     static Occlusion::Region MergeVisibleDirtyRegion(std::shared_ptr<RSDisplayRenderNode>& node,
-        bool useAlignedDirtyRegion = false);
+        std::vector<NodeId>& hasVisibleDirtyRegionSurfaceVec, bool useAlignedDirtyRegion = false);
     static bool HandleSubThreadNode(RSRenderNode& node, RSPaintFilterCanvas& canvas);
     static bool HandleCaptureNode(RSRenderNode& node, RSPaintFilterCanvas& canvas);
     static void SrcRectScaleDown(BufferDrawParam& params, const RSSurfaceRenderNode& node);
@@ -60,12 +60,15 @@ public:
     static Occlusion::Region AlignedDirtyRegion(const Occlusion::Region& dirtyRegion, int32_t alignedBits = 32);
     static int GetRotationFromMatrix(SkMatrix matrix);
     static int GetRotationDegreeFromMatrix(SkMatrix matrix);
+    static bool Is3DRotation(SkMatrix matrix);
 #else
     static Occlusion::Region AlignedDirtyRegion(const Occlusion::Region& dirtyRegion, int32_t alignedBits = 32);
     static int GetRotationFromMatrix(Drawing::Matrix matrix);
     static int GetRotationDegreeFromMatrix(Drawing::Matrix matrix);
+    static bool Is3DRotation(Drawing::Matrix matrix);
 #endif
-    static bool Is3DRotation(SkMatrix matrix);
+
+    static void ReleaseColorPickerResource(std::shared_ptr<RSRenderNode>& node);
     static void AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNode>& displayNode,
         std::list<std::shared_ptr<RSSurfaceRenderNode>>& mainThreadNodes,
         std::list<std::shared_ptr<RSSurfaceRenderNode>>& subThreadNodes, uint64_t focusNodeId = 0,

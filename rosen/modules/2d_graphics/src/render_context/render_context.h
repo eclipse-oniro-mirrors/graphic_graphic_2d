@@ -80,19 +80,31 @@ public:
     {
         return skSurface_;
     }
-
+#ifdef RS_ENABLE_VK
+    bool SetUpGrContext(sk_sp<GrDirectContext> skContext);
+#else
     bool SetUpGrContext();
+#endif
 #else
     Drawing::GPUContext* GetDrGPUContext() const
     {
         return drGPUContext_.get();
     }
 
+    std::shared_ptr<Drawing::GPUContext> GetSharedDrGPUContext() const
+    {
+        return drGPUContext_;
+    }
+
     std::shared_ptr<Drawing::Surface> GetSurface() const
     {
         return surface_;
     }
+#ifdef RS_ENABLE_VK
+    bool SetUpGpuContext(std::shared_ptr<Drawing::GPUContext> drawingContext);
+#else
     bool SetUpGpuContext();
+#endif
 #endif
 
     EGLSurface CreateEGLSurface(EGLNativeWindowType eglNativeWindow);
@@ -146,7 +158,7 @@ public:
     {
         isUniRenderMode_ = isUni;
     }
-#ifdef RS_ENABLE_GL
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     std::string GetShaderCacheSize() const
     {
         return mHandler_->QuerryShader();

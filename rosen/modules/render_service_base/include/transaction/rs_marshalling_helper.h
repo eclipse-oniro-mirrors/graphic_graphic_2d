@@ -66,11 +66,13 @@ class DrawCmdList;
 class OpItem;
 #else
 class RSExtendImageObject;
+class RSExtendImageBaseOj;
 namespace Drawing {
 class DrawCmdList;
 class MaskCmdList;
 class Data;
 class Image;
+class Bitmap;
 }
 #endif
 class RSFilter;
@@ -158,6 +160,9 @@ public:
     static RSB_EXPORT bool Marshalling(Parcel& parcel, const std::shared_ptr<Drawing::Image>& val);
     static RSB_EXPORT bool Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing::Image>& val);
     static RSB_EXPORT bool Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing::Image>& val, void*& imagepixelAddr);
+    static RSB_EXPORT bool UnmarshallingNoLazyGeneratedImage(Parcel& parcel,
+    std::shared_ptr<Drawing::Image>& val, void*& imagepixelAddr);
+    static RSB_EXPORT bool ReadColorSpaceFromParcel(Parcel& parcel, std::shared_ptr<Drawing::ColorSpace>& colorSpace);
 #endif
 
     // reloaded marshalling & unmarshalling function for types
@@ -194,6 +199,7 @@ public:
     static bool SkipSkImage(Parcel& parcel);
 #else
     DECLARE_FUNCTION_OVERLOAD(Drawing::Matrix)
+    DECLARE_FUNCTION_OVERLOAD(Drawing::Bitmap)
     static bool SkipData(Parcel& parcel);
     static bool SkipImage(Parcel& parcel);
 #endif
@@ -216,6 +222,7 @@ public:
 #else
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<Drawing::DrawCmdList>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSExtendImageObject>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSExtendImageBaseOj>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<Drawing::MaskCmdList>)
 #endif
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<Media::PixelMap>)
@@ -353,10 +360,10 @@ public:
 #endif
     static void BeginNoSharedMem(std::thread::id tid);
     static void EndNoSharedMem();
-    static bool GetUseSharedMem();
+    static bool GetUseSharedMem(std::thread::id tid);
 private:
     static bool WriteToParcel(Parcel& parcel, const void* data, size_t size);
-    static const void* ReadFromParcel(Parcel& parcel, size_t size);
+    static const void* ReadFromParcel(Parcel& parcel, size_t size, bool& isMalloc);
     static bool SkipFromParcel(Parcel& parcel, size_t size);
 #ifndef USE_ROSEN_DRAWING
     static sk_sp<SkData> SerializeTypeface(SkTypeface* tf, void* ctx);
