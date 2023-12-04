@@ -45,9 +45,7 @@
 #include "image/gpu_context.h"
 #endif
 #include "memory_handler.h"
-#ifndef ROSEN_CROSS_PLATFORM
 #include "surface_type.h"
-#endif
 
 #define GLES_VERSION 2
 namespace OHOS {
