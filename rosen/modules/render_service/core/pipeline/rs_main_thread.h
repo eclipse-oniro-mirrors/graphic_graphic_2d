@@ -291,8 +291,6 @@ private:
     bool IsNeedSkip(NodeId instanceRootNodeId, pid_t pid);
 
     // UIFirst
-    void ResetSubThreadGrContext();
-    void CheckParallelSubThreadNodesStatusImplementation();
     bool CheckParallelSubThreadNodesStatus();
     void CacheCommands();
     bool CheckSubThreadNodeStatusIsDoing(NodeId appNodeId) const;
@@ -439,10 +437,6 @@ private:
     DeviceType deviceType_ = DeviceType::PHONE;
     bool isCachedSurfaceUpdated_ = false;
     bool isUiFirstOn_ = false;
-#ifdef RS_ENABLE_VK
-    bool needResetSubThreadGrContext_ = false;
-    uint64_t frameCountForResetSubThreadGrContext_ = 0;
-#endif
 
     // used for informing hgm the bundle name of SurfaceRenderNodes
     bool noBundle_ = false;
