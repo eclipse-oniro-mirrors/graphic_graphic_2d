@@ -15,7 +15,7 @@
 
 #include "pipeline/rs_uni_render_visitor.h"
 
-#ifdef RS_ENABLE_VK
+#ifdef RS_ENABLE_OLD_VK
 #include <vulkan_window.h>
 #endif
 
@@ -2425,7 +2425,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         }
 #endif
 
-#if defined(RS_ENABLE_PARALLEL_RENDER) && defined(RS_ENABLE_VK)
+#if defined(RS_ENABLE_PARALLEL_RENDER) && defined(RS_ENABLE_OLD_VK)
         if (isParallel_ &&!isPartialRenderEnabled_) {
             auto parallelRenderManager = RSParallelRenderManager::Instance();
             vulkan::VulkanWindow::InitializeVulkan(
