@@ -134,7 +134,6 @@ public:
         return eglDisplay_;
     }
 
-#ifndef ROSEN_CROSS_PLATFORM
     void SetColorSpace(GraphicColorGamut colorSpace)
     {
         colorSpace_ = colorSpace;
@@ -145,6 +144,7 @@ public:
         return colorSpace_;
     }
 
+#ifndef ROSEN_CROSS_PLATFORM
     void SetPixelFormat(int32_t pixelFormat)
     {
         pixelFormat_ = pixelFormat;
@@ -218,8 +218,8 @@ private:
     bool valid_ = false;
 #endif   
     EGLConfig config_;
-#ifndef ROSEN_CROSS_PLATFORM
     GraphicColorGamut colorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+#ifndef ROSEN_CROSS_PLATFORM
     int32_t pixelFormat_ = GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888;
 #endif
 

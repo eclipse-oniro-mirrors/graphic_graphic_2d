@@ -559,7 +559,6 @@ bool RSSurfaceRenderNode::GetFingerprint() const
     return hasFingerprint_;
 }
 
-#ifndef ROSEN_CROSS_PLATFORM
 void RSSurfaceRenderNode::SetColorSpace(GraphicColorGamut colorSpace)
 {
     colorSpace_ = colorSpace;
@@ -569,7 +568,6 @@ GraphicColorGamut RSSurfaceRenderNode::GetColorSpace() const
 {
     return colorSpace_;
 }
-#endif
 
 void RSSurfaceRenderNode::UpdateSurfaceDefaultSize(float width, float height)
 {
