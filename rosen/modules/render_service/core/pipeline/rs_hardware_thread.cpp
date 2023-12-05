@@ -25,9 +25,11 @@
 #include "pipeline/rs_uni_render_util.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_uni_render_engine.h"
+#include "pipeline/round_corner_display/rs_round_corner_display.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "screen_manager/rs_screen_manager.h"
+#include "common/rs_singleton.h"
 #include "rs_trace.h"
 #include "hdi_backend.h"
 #include "vsync_sampler.h"
@@ -367,15 +369,22 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
     GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_SRGB;
     colorGamut = ComputeTargetColorGamut(layers);
 #endif
-
+    bool softDrawFlag = false;
     for (const auto& layer : layers) {
         if (layer == nullptr) {
             continue;
         }
+        
+        if (layer->GetSurface()->GetName() == "RCDSurfaceNode") {
+            softDrawFlag = true;
+            continue;
+        }
+
         if (layer->GetCompositionType() == GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE ||
             layer->GetCompositionType() == GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE_CLEAR) {
             continue;
         }
+
 #ifndef USE_ROSEN_DRAWING
         auto saveCount = canvas->getSaveCount();
 
@@ -582,6 +591,11 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
         canvas->RestoreToCount(saveCount);
 #endif
     }
+
+    if (softDrawFlag && RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {
+        RSSingleton<RoundCornerDisplay>::GetInstance().DrawRoundCorner(canvas);
+    }
+
     renderFrame->Flush();
 #ifdef RS_ENABLE_EGLIMAGE
     imageCacheSeqs.clear();
