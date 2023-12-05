@@ -217,6 +217,10 @@ public:
     bool IsSingleDisplay();
     uint64_t GetFocusNodeId() const;
     uint64_t GetFocusLeashWindowId() const;
+    bool GetClearMemDeeply() const
+    {
+        return clearMemDeeply_;
+    }
 
     void SubscribeAppState();
     void HandleOnTrim(Memory::SystemMemoryLevel level);
@@ -364,6 +368,7 @@ private:
     std::condition_variable displayNodeBufferReleasedCond_;
 
     bool clearMemoryFinished_ = true;
+    bool clearMemDeeply_ = false;
 
     // driven render
     mutable std::mutex drivenRenderMutex_;

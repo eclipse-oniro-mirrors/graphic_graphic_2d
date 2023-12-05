@@ -1171,6 +1171,7 @@ void RSMainThread::ClearMemoryCache(bool deeply)
         return;
     }
     this->clearMemoryFinished_ = false;
+    this->clearMemDeeply_ = this->clearMemDeeply_ || deeply;
     PostTask([this, deeply]() {
 #ifndef USE_ROSEN_DRAWING
 #ifdef NEW_RENDER_CONTEXT
@@ -1208,6 +1209,7 @@ void RSMainThread::ClearMemoryCache(bool deeply)
         grContext->FlushAndSubmit(true);
 #endif
         this->clearMemoryFinished_ = true;
+        this->clearMemDeeply_ = false;
     },
     CLEAR_GPU_CACHE, 3000 / GetRefreshRate()); // The unit is milliseconds
 }
