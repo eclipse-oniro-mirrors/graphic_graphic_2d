@@ -20,11 +20,12 @@
 #include <cstdint>
 
 #include "impl_interface/memory_stream_impl.h"
+#include "utils/drawing_macros.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
-class MemoryStream {
+class DRAWING_API MemoryStream {
 public:
     MemoryStream();
     MemoryStream(const void* data, size_t length, bool copyData = false);

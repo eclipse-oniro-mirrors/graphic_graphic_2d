@@ -764,7 +764,7 @@ ohos_static_library("rs_test_common") {
   ]
 
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
-    public_deps += [ "$graphic_2d_root/rosen/modules/2d_graphics::2d_graphics" ]
+    public_deps += [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
   }
 
   external_deps = [
