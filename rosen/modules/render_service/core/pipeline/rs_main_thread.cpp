@@ -1183,7 +1183,7 @@ void RSMainThread::ClearMemoryCache(bool deeply)
         RS_TRACE_NAME_FMT("Clear memory cache");
         grContext->flush();
         SkGraphics::PurgeAllCaches(); // clear cpu cache
-        if (deeply) {
+        if (deeply || this->deviceType_ != DeviceType::PHONE) {
             MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(grContext);
         } else {
             MemoryManager::ReleaseUnlockGpuResource(grContext);
@@ -1208,7 +1208,7 @@ void RSMainThread::ClearMemoryCache(bool deeply)
         this->clearMemoryFinished_ = true;
         this->clearMemDeeply_ = false;
     },
-    CLEAR_GPU_CACHE, 3000 / GetRefreshRate()); // The unit is milliseconds
+    CLEAR_GPU_CACHE, this->deviceType_ == DeviceType::PHONE ? 3000 : 0 / GetRefreshRate());
 }
 
 void RSMainThread::WaitUtilUniRenderFinished()
