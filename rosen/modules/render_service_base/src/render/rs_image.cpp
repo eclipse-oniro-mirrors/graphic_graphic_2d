@@ -239,7 +239,7 @@ static SkImage::CompressionType PixelFormatToCompressionType(Media::PixelFormat 
 
 void RSImage::UploadGpu(RSPaintFilterCanvas& canvas)
 {
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     if (compressData_) {
         auto cache = RSImageCache::Instance().GetRenderSkiaImageCacheByPixelMapId(uniqueId_, gettid());
         std::lock_guard<std::mutex> lock(mutex_);
