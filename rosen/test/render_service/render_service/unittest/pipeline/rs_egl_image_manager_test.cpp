@@ -40,7 +40,11 @@ std::shared_ptr<RSEglImageManager> RSEglImageManagerTest::eglImageManager_ = nul
 void RSEglImageManagerTest::SetUpTestCase()
 {
     renderContext_->InitializeEglContext();
+#ifndef USE_ROSEN_DRAWING
     renderContext_->SetUpGrContext();
+#else
+    renderContext_->SetUpGpuContext();
+#endif
     eglImageManager_ = std::make_shared<RSEglImageManager>(renderContext_->GetEGLDisplay());
 }
 
