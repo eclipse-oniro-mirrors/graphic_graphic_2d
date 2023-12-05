@@ -268,15 +268,15 @@ bool RsVulkanContext::CreateSkiaBackendContext(GrVkBackendContext* context, bool
     VkPhysicalDeviceFeatures features;
     vkGetPhysicalDeviceFeatures(physicalDevice_, &features);
 
-    uint32_t features = 0;
+    uint32_t skia_features = 0;
     if (features.geometryShader) {
-        features |= kGeometryShader_GrVkFeatureFlag;
+        skia_features |= kGeometryShader_GrVkFeatureFlag;
     }
     if (features.dualSrcBlend) {
-        features |= kDualSrcBlend_GrVkFeatureFlag;
+        skia_features |= kDualSrcBlend_GrVkFeatureFlag;
     }
     if (features.sampleRateShading) {
-        features |= kSampleRateShading_GrVkFeatureFlag;
+        skia_features |= kSampleRateShading_GrVkFeatureFlag;
     }
 
     context->fInstance = instance_;
@@ -301,7 +301,7 @@ bool RsVulkanContext::CreateSkiaBackendContext(GrVkBackendContext* context, bool
 
     context->fVkExtensions = &skVkExtensions_;
     context->fDeviceFeatures2 = &physicalDeviceFeatures2_;
-    context->fFeatures = features;
+    context->fFeatures = skia_features;
     context->fGetProc = std::move(getProc);
     context->fOwnsInstanceAndDevice = false;
 
