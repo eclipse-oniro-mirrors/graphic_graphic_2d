@@ -89,8 +89,13 @@ private:
     bool isGpuSurface_ = true;
 #endif
     std::unique_ptr<RSPaintFilterCanvas> canvas_;
+#ifndef USE_ROSEN_DRAWING
     ThreadInfo curThreadInfo_ = { UNI_MAIN_THREAD_INDEX, std::function<void(sk_sp<SkSurface>)>() };
     ThreadInfo preThreadInfo_ = { UNI_MAIN_THREAD_INDEX, std::function<void(sk_sp<SkSurface>)>() };
+#else
+    ThreadInfo curThreadInfo_ = { UNI_MAIN_THREAD_INDEX, std::function<void(std::shared_ptr<Drawing::Surface>)>() };
+    ThreadInfo preThreadInfo_ = { UNI_MAIN_THREAD_INDEX, std::function<void(std::shared_ptr<Drawing::Surface>)>() };
+#endif
     std::mutex drawCmdListsMutex_;
 #ifndef USE_ROSEN_DRAWING
     std::map<RSModifierType, std::list<DrawCmdListPtr>> drawCmdLists_;

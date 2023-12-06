@@ -42,7 +42,7 @@ static sk_sp<SkColorSpace> ColorSpaceToSkColorSpace(ColorSpace colorSpace)
     }
 }
 #else
-static std::shared_ptr<Drawing::ColorSpace> ColorSpaceToDrawingColorSpace(Drawing::ColorSpace colorSpace)
+static std::shared_ptr<Drawing::ColorSpace> ColorSpaceToDrawingColorSpace(ColorSpace colorSpace)
 {
     switch (colorSpace) {
         case ColorSpace::LINEAR_SRGB:
@@ -194,7 +194,7 @@ std::shared_ptr<Drawing::Image> RSPixelMapUtil::ExtractDrawingImage(
     Drawing::ImageInfo drawingImageInfo { imageInfo.size.width, imageInfo.size.height,
         PixelFormatToDrawingColorType(imageInfo.pixelFormat),
 	AlphaTypeToDrawingAlphaType(imageInfo.alphaType),
-	ColorSpaceToDrawingColorSpace(ImageInfo.colorSpace) };
+	ColorSpaceToDrawingColorSpace(imageInfo.colorSpace) };
     Drawing::Pixmap imagePixmap(drawingImageInfo, reinterpret_cast<const void*>(pixelMap->GetPixels()), pixelMap->GetRowStride());
     return Drawing::Image::MakeFromRaster(imagePixmap, PixelMapReleaseProc, new PixelMapReleaseContext(pixelMap));
 }

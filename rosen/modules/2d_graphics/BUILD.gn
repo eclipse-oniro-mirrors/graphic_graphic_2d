@@ -40,6 +40,7 @@ config("export_config") {
     "$drawing_src_dir/engine_adapter",
     "$rosen_root/modules/render_service_base/include",
     "$rosen_root/modules/texgine/texgine_drawing/src",
+    "$rosen_root/modules/2d_engine/rosen_text/export",
   ]
 
   if (ace_enable_gpu) {

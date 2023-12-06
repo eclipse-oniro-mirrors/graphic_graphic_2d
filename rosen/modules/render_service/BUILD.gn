@@ -221,8 +221,6 @@ ohos_shared_library("librender_service") {
 
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
     defines += [ "USE_ROSEN_DRAWING" ]
-    deps -=
-        [ "$graphic_2d_root/rosen/samples/2d_graphics:drawing_engine_sample" ]
     deps += [ "$rosen_root/modules/2d_graphics:2d_graphics" ]
   }
 

@@ -16,6 +16,9 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_PROPERTY_RS_PROPERTIES_H
 #define RENDER_SERVICE_CLIENT_CORE_PROPERTY_RS_PROPERTIES_H
 
+#ifdef USE_ROSEN_DRAWING
+#include <bitset>
+#endif
 #include <optional>
 #include <tuple>
 #include <vector>

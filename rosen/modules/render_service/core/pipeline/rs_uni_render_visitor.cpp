@@ -4171,8 +4171,7 @@ void RSUniRenderVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     ProcessCanvasRenderNode(node);
     canvas_->restoreToCount(saveCount);
 #else
-    int saveCount;
-    saveCount = canvas_->GetSaveCount();
+    int saveCount = canvas_->GetSaveCount();
     canvas_->Save();
     ProcessCanvasRenderNode(node);
     canvas_->RestoreToCount(saveCount);
@@ -4358,7 +4357,12 @@ void RSUniRenderVisitor::UpdateCacheRenderNodeMap(RSRenderNode& node)
 void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
 {
     processedCanvasNodeInCurrentSurface_++;
-    if (!node.ShouldPaint() || (canvas_ && canvas_->getDeviceClipBounds().isEmpty())) {
+    if (!node.ShouldPaint() ||
+#ifndef USE_ROSEN_DRAWING
+        (canvas_ && canvas_->getDeviceClipBounds().isEmpty())) {
+#else
+        (canvas_ && canvas_->GetDeviceClipBounds().IsEmpty())) {
+#endif
         return;
     }
     node.MarkNodeSingleFrameComposer(isNodeSingleFrameComposer_);

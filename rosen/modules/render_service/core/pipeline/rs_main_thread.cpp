@@ -2332,9 +2332,9 @@ void RSMainThread::TrimMem(std::unordered_set<std::u16string>& argSets, std::str
     dumpString.append("trimMem: " + type + "\n");
 #else
 #ifdef NEW_RENDER_CONTEXT
-    auto grContext = GetRenderEngine()->GetDrawingContext()->GetDrawingContext();
+    auto gpuContext = GetRenderEngine()->GetDrawingContext()->GetDrawingContext();
 #else
-    auto grContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
+    auto gpuContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
 #endif
     if (type.empty()) {
         gpuContext->Flush();

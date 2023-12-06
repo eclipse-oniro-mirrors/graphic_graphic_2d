@@ -48,6 +48,7 @@ public:
     void SetChild(const std::string& name, std::shared_ptr<ShaderEffect> shader) override;
     void SetUniform(const std::string& name, float val) override;
     void SetUniform(const std::string& name, float x, float y) override;
+    void SetUniform(const std::string& name, float x, float y, float z) override;
     void SetUniform(const std::string& name, float x, float y, float width, float height) override;
 
 private:
