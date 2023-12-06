@@ -522,3 +522,343 @@ double OH_Drawing_TypographyGetIdeographicBaseline(OH_Drawing_Typography* typogr
 {
     return ConvertToOriginalText<Typography>(typography)->GetIdeographicBaseline();
 }
+
+bool OH_Drawing_TypographyDidExceedMaxLines(OH_Drawing_Typography* typography)
+{
+    return ConvertToOriginalText<Typography>(typography)->DidExceedMaxLines();
+}
+
+OH_Drawing_TextBox* OH_Drawing_TypographyGetRectsForRange(OH_Drawing_Typography* typography,
+    size_t start, size_t end, OH_Drawing_RectHeightStyle heightStyle, OH_Drawing_RectWidthStyle widthStyle)
+{
+    int vectorLen = 0;
+#ifndef USE_GRAPHIC_TEXT_GINE
+    auto originalRectHeightStyle = ConvertToOriginalText<TypographyProperties::RectHeightStyle>(&heightStyle);
+    auto originalRectWidthStyle = ConvertToOriginalText<TypographyProperties::RectWidthStyle>(&widthStyle);
+    auto originalVector = ConvertToOriginalText<Typography>(typography)->GetRectsForRange(start, end,
+        *originalRectHeightStyle, *originalRectWidthStyle);
+    OH_Drawing_TextBox *textBoxGroup = new OH_Drawing_TextBox[originalVector.size()];
+    for (auto it = originalVector.begin(); it != originalVector.end(); ++it) {
+        auto drawingRect = ConvertToNDKText<OH_Drawing_Rect>(&(it->rect_));
+        auto drawingDirection = ConvertToNDKText<OH_Drawing_TextDirection>(&(it->direction_));
+        OH_Drawing_TextBox drawingTextBox = {*drawingRect, *drawingDirection};
+        *(textBoxGroup + vectorLen) = drawingTextBox;
+        vectorLen++;
+    }
+#else
+    auto originalRectHeightStyle = ConvertToOriginalText<TextRectHeightStyle>(&heightStyle);
+    auto originalRectWidthStyle = ConvertToOriginalText<TextRectWidthStyle>(&widthStyle);
+    auto originalVector = ConvertToOriginalText<Typography>(typography)->GetTextRectsByBoundary(start, end,
+        *originalRectHeightStyle, *originalRectWidthStyle);
+    OH_Drawing_TextBox *textBoxGroup = new OH_Drawing_TextBox[originalVector.size()];
+    for (auto it = originalVector.begin(); it != originalVector.end(); ++it) {
+        auto drawingRect = ConvertToNDKText<OH_Drawing_Rect>(&(it->rect));
+        auto drawingDirection = ConvertToNDKText<OH_Drawing_TextDirection>(&(it->direction));
+        OH_Drawing_TextBox drawingTextBox = {*drawingRect, *drawingDirection};
+        *(textBoxGroup + vectorLen) = drawingTextBox;
+        vectorLen++;
+    }
+#endif
+    return textBoxGroup;
+}
+
+OH_Drawing_TextBox* OH_Drawing_TypographyGetRectsForPlaceholders(OH_Drawing_Typography* typography)
+{
+    int vectorLen = 0;
+#ifndef USE_GRAPHIC_TEXT_GINE
+    auto originalVector = ConvertToOriginalText<Typography>(typography)->GetRectsForPlaceholders();
+    OH_Drawing_TextBox *textBoxGroup = new OH_Drawing_TextBox[originalVector.size()];
+    for (auto it = originalVector.begin(); it != originalVector.end(); ++it) {
+        auto drawingRect = ConvertToNDKText<OH_Drawing_Rect>(&(it->rect_));
+        auto drawingDirection = ConvertToNDKText<OH_Drawing_TextDirection>(&(it->direction_));
+        OH_Drawing_TextBox drawingTextBox = {*drawingRect, *drawingDirection};
+        *(textBoxGroup + vectorLen) = drawingTextBox;
+        vectorLen++;
+    }
+#else
+    auto originalVector = ConvertToOriginalText<Typography>(typography)->GetTextRectsOfPlaceholders();
+    OH_Drawing_TextBox *textBoxGroup = new OH_Drawing_TextBox[originalVector.size()];
+    for (auto it = originalVector.begin(); it != originalVector.end(); ++it) {
+        auto drawingRect = ConvertToNDKText<OH_Drawing_Rect>(&(it->rect));
+        auto drawingDirection = ConvertToNDKText<OH_Drawing_TextDirection>(&(it->direction));
+        OH_Drawing_TextBox drawingTextBox = {*drawingRect, *drawingDirection};
+        *(textBoxGroup + vectorLen) = drawingTextBox;
+        vectorLen++;
+    }
+#endif
+    return textBoxGroup;
+}
+
+OH_Drawing_PositionAndAffinity OH_Drawing_TypographyGetGlyphPositionAtCoordinate(OH_Drawing_Typography* typography,
+    double dx, double dy)
+{
+#ifndef USE_GRAPHIC_TEXT_GINE
+    auto originalPositionAndAffinity =
+        ConvertToOriginalText<Typography>(typography)->GetGlyphPositionAtCoordinate(dx, dy);
+    auto drawingAffinity = ConvertToNDKText<OH_Drawing_Affinity>(&originalPositionAndAffinity.affinity_);
+    OH_Drawing_PositionAndAffinity drawingPositionAndAffinity =
+        {originalPositionAndAffinity.pos_, *drawingAffinity};
+#else
+    auto originalPositionAndAffinity =
+        ConvertToOriginalText<Typography>(typography)->GetGlyphIndexByCoordinate(dx, dy);
+    auto drawingAffinity = ConvertToNDKText<OH_Drawing_Affinity>(&originalPositionAndAffinity.affinity);
+    OH_Drawing_PositionAndAffinity drawingPositionAndAffinity =
+        {originalPositionAndAffinity.index, *drawingAffinity};
+#endif
+    return drawingPositionAndAffinity;
+}
+
+OH_Drawing_PositionAndAffinity OH_Drawing_TypographyGetGlyphPositionAtCoordinateWithCluster(
+    OH_Drawing_Typography* typography, double dx, double dy)
+{
+#ifndef USE_GRAPHIC_TEXT_GINE
+    auto originalPositionAndAffinity =
+        ConvertToOriginalText<Typography>(typography)->GetGlyphPositionAtCoordinateWithCluster(dx, dy);
+    auto drawingAffinity =
+        ConvertToNDKText<OH_Drawing_Affinity>(&originalPositionAndAffinity.affinity_);
+    OH_Drawing_PositionAndAffinity drawingPositionAndAffinity =
+        {originalPositionAndAffinity.pos_, *drawingAffinity};
+#else
+    OH_Drawing_Affinity drawingAffinity = AFFINITY_UPSTREAM;
+    OH_Drawing_PositionAndAffinity drawingPositionAndAffinity = {0, drawingAffinity};
+#endif
+    return drawingPositionAndAffinity;
+}
+
+OH_Drawing_Range OH_Drawing_TypographyGetWordBoundary(OH_Drawing_Typography* typography, size_t offset)
+{
+#ifndef USE_GRAPHIC_TEXT_GINE
+    auto originalRange = ConvertToOriginalText<Typography>(typography)->GetWordBoundary(offset);
+    OH_Drawing_Range drawingRange = {originalRange.start_, originalRange.end_};
+#else
+    auto originalRange = ConvertToOriginalText<Typography>(typography)->GetWordBoundaryByIndex(offset);
+    OH_Drawing_Range drawingRange = {originalRange.leftIndex, originalRange.rightIndex};
+#endif
+    return drawingRange;
+}
+
+size_t OH_Drawing_TypographyGetLineCount(OH_Drawing_Typography* typography)
+{
+    return ConvertToOriginalText<Typography>(typography)->GetLineCount();
+}
+
+void OH_Drawing_SetTextStyleDecorationStyle(OH_Drawing_TextStyle* style, int decorationStyle)
+{
+    TextDecorationStyle rosenDecorationStyle;
+    switch (decorationStyle) {
+        case TEXT_DECORATION_STYLE_SOLID: {
+            rosenDecorationStyle = TextDecorationStyle::SOLID;
+            break;
+        }
+        case TEXT_DECORATION_STYLE_DOUBLE: {
+            rosenDecorationStyle = TextDecorationStyle::DOUBLE;
+            break;
+        }
+        case TEXT_DECORATION_STYLE_DOTTED: {
+            rosenDecorationStyle = TextDecorationStyle::DOTTED;
+            break;
+        }
+        case TEXT_DECORATION_STYLE_DASHED: {
+            rosenDecorationStyle = TextDecorationStyle::DASHED;
+            break;
+        }
+        case TEXT_DECORATION_STYLE_WAVY: {
+            rosenDecorationStyle = TextDecorationStyle::WAVY;
+            break;
+        }
+        default: {
+            rosenDecorationStyle = TextDecorationStyle::SOLID;
+        }
+    }
+    #ifndef USE_GRAPHIC_TEXT_GINE
+        ConvertToOriginalText<TextStyle>(style)->decorationStyle_ = rosenDecorationStyle;
+    #else
+        ConvertToOriginalText<TextStyle>(style)->decorationStyle = rosenDecorationStyle;
+    #endif
+}
+
+void OH_Drawing_SetTextStyleDecorationThicknessScale(OH_Drawing_TextStyle* style, double decorationThicknessScale)
+{
+    #ifndef USE_GRAPHIC_TEXT_GINE
+        ConvertToOriginalText<TextStyle>(style)->decorationThicknessMultiplier_ = decorationThicknessScale;
+    #else
+        ConvertToOriginalText<TextStyle>(style)->decorationThicknessScale = decorationThicknessScale;
+    #endif
+}
+
+void OH_Drawing_SetTextStyleLetterSpacing(OH_Drawing_TextStyle* style, double letterSpacing)
+{
+    #ifndef USE_GRAPHIC_TEXT_GINE
+        ConvertToOriginalText<TextStyle>(style)->letterSpacing_ = letterSpacing;
+    #else
+        ConvertToOriginalText<TextStyle>(style)->letterSpacing = letterSpacing;
+    #endif
+}
+
+void OH_Drawing_SetTextStyleWordSpacing(OH_Drawing_TextStyle* style, double wordSpacing)
+{
+    #ifndef USE_GRAPHIC_TEXT_GINE
+        ConvertToOriginalText<TextStyle>(style)->wordSpacing_ = wordSpacing;
+    #else
+        ConvertToOriginalText<TextStyle>(style)->wordSpacing = wordSpacing;
+    #endif
+}
+
+void OH_Drawing_SetTextStyleHalfLeading(OH_Drawing_TextStyle* style, bool halfLeading)
+{
+    #ifndef USE_GRAPHIC_TEXT_GINE
+    #else
+        ConvertToOriginalText<TextStyle>(style)->halfLeading = halfLeading;
+    #endif
+}
+
+void OH_Drawing_SetTextStyleEllipsis(OH_Drawing_TextStyle* style, std::u16string ellipsis)
+{
+    #ifndef USE_GRAPHIC_TEXT_GINE
+        ConvertToOriginalText<TextStyle>(style)->ellipsis_ = ellipsis;
+    #else
+        ConvertToOriginalText<TextStyle>(style)->ellipsis = ellipsis;
+    #endif
+}
+
+void OH_Drawing_SetTextStyleEllipsisModal(OH_Drawing_TextStyle* style, int ellipsisModal)
+{
+    EllipsisModal rosenEllipsisModal;
+    switch (ellipsisModal) {
+        case ELLIPSIS_MODAL_HEAD: {
+            rosenEllipsisModal = EllipsisModal::HEAD;
+            break;
+        }
+        case ELLIPSIS_MODAL_MIDDLE: {
+            rosenEllipsisModal = EllipsisModal::MIDDLE;
+            break;
+        }
+        case ELLIPSIS_MODAL_TAIL: {
+            rosenEllipsisModal = EllipsisModal::TAIL;
+            break;
+        }
+        default: {
+            rosenEllipsisModal = EllipsisModal::TAIL;
+        }
+    }
+    #ifndef USE_GRAPHIC_TEXT_GINE
+        ConvertToOriginalText<TextStyle>(style)->ellipsisModal_ = rosenEllipsisModal;
+    #else
+        ConvertToOriginalText<TextStyle>(style)->ellipsisModal = rosenEllipsisModal;
+    #endif
+}
+
+void OH_Drawing_SetTypographyTextBreakStrategy(OH_Drawing_TypographyStyle* style, int breakStrategy)
+{
+    BreakStrategy rosenBreakStrategy;
+    #ifndef USE_GRAPHIC_TEXT_GINE
+        switch (breakStrategy) {
+            case BREAK_STRATEGY_GREEDY: {
+                rosenBreakStrategy = BreakStrategy::BreakStrategyGreedy;
+                break;
+            }
+            case BREAK_STRATEGY_HIGH_QUALITY: {
+                rosenBreakStrategy = BreakStrategy::BreakStrategyHighQuality;
+                break;
+            }
+            case BREAK_STRATEGY_BALANCED: {
+                rosenBreakStrategy = BreakStrategy::BreakStrategyBalanced;
+                break;
+            }
+            default: {
+                rosenBreakStrategy = BreakStrategy::BreakStrategyGreedy;
+            }
+        }
+        ConvertToOriginalText<TypographyStyle>(style)->breakStrategy_ = rosenBreakStrategy;
+    #else
+        switch (breakStrategy) {
+            case BREAK_STRATEGY_GREEDY: {
+                rosenBreakStrategy = BreakStrategy::GREEDY;
+                break;
+            }
+            case BREAK_STRATEGY_HIGH_QUALITY: {
+                rosenBreakStrategy = BreakStrategy::HIGH_QUALITY;
+                break;
+            }
+            case BREAK_STRATEGY_BALANCED: {
+                rosenBreakStrategy = BreakStrategy::BALANCED;
+                break;
+            }
+            default: {
+                rosenBreakStrategy = BreakStrategy::GREEDY;
+            }
+        }
+        ConvertToOriginalText<TypographyStyle>(style)->breakStrategy = rosenBreakStrategy;
+    #endif
+}
+
+void OH_Drawing_SetTypographyTextWordBreakType(OH_Drawing_TypographyStyle* style, int wordBreakType)
+{
+    WordBreakType rosenWordBreakType;
+    #ifndef USE_GRAPHIC_TEXT_GINE
+        switch (wordBreakType) {
+            case WORD_BREAK_TYPE_NORMAL: {
+                rosenWordBreakType = WordBreakType::WordBreakTypeNormal;
+                break;
+            }
+            case WORD_BREAK_TYPE_BREAK_ALL: {
+                rosenWordBreakType = WordBreakType::WordBreakTypeBreakAll;
+                break;
+            }
+            case WORD_BREAK_TYPE_BREAK_WORD: {
+                rosenWordBreakType = WordBreakType::WordBreakTypeBreakWord;
+                break;
+            }
+            default: {
+                rosenWordBreakType = WordBreakType::WordBreakTypeBreakWord;
+            }
+        }
+        ConvertToOriginalText<TypographyStyle>(style)->wordBreakType_ = rosenWordBreakType;
+    #else
+        switch (wordBreakType) {
+            case WORD_BREAK_TYPE_NORMAL: {
+                rosenWordBreakType = WordBreakType::NORMAL;
+                break;
+            }
+            case WORD_BREAK_TYPE_BREAK_ALL: {
+                rosenWordBreakType = WordBreakType::BREAK_ALL;
+                break;
+            }
+            case WORD_BREAK_TYPE_BREAK_WORD: {
+                rosenWordBreakType = WordBreakType::BREAK_WORD;
+                break;
+            }
+            default: {
+                rosenWordBreakType = WordBreakType::BREAK_WORD;
+            }
+        }
+        ConvertToOriginalText<TypographyStyle>(style)->wordBreakType = rosenWordBreakType;
+    #endif
+}
+
+void OH_Drawing_SetTypographyTextEllipsisModal(OH_Drawing_TypographyStyle* style, int ellipsisModal)
+{
+    EllipsisModal rosenEllipsisModal;
+    switch (ellipsisModal) {
+        case ELLIPSIS_MODAL_HEAD: {
+            rosenEllipsisModal = EllipsisModal::HEAD;
+            break;
+        }
+        case ELLIPSIS_MODAL_MIDDLE: {
+            rosenEllipsisModal = EllipsisModal::MIDDLE;
+            break;
+        }
+        case ELLIPSIS_MODAL_TAIL: {
+            rosenEllipsisModal = EllipsisModal::TAIL;
+            break;
+        }
+        default: {
+            rosenEllipsisModal = EllipsisModal::TAIL;
+        }
+    }
+    #ifndef USE_GRAPHIC_TEXT_GINE
+        ConvertToOriginalText<TypographyStyle>(style)->ellipsisModal_ = rosenEllipsisModal;
+    #else
+        ConvertToOriginalText<TypographyStyle>(style)->ellipsisModal = rosenEllipsisModal;
+    #endif
+}

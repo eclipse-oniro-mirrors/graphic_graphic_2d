@@ -44,6 +44,7 @@
 #include "drawing_types.h"
 
 #include "stdint.h"
+#include <string>
 
 #ifdef __cplusplus
 extern "C" {
@@ -147,6 +148,94 @@ enum OH_Drawing_FontStyle {
     /** Italic style */
     FONT_STYLE_ITALIC,
 };
+
+/**
+ * @brief Enumerates text decoration style.
+ */
+enum OH_Drawing_TextDecorationStyle {
+    TEXT_DECORATION_STYLE_SOLID,
+    TEXT_DECORATION_STYLE_DOUBLE,
+    TEXT_DECORATION_STYLE_DOTTED,
+    TEXT_DECORATION_STYLE_DASHED,
+    TEXT_DECORATION_STYLE_WAVY,
+};
+
+/**
+ * @brief Enumerates ellipsis modal.
+ */
+enum OH_Drawing_EllipsisModal {
+    ELLIPSIS_MODAL_HEAD = 0,
+    ELLIPSIS_MODAL_MIDDLE = 1,
+    ELLIPSIS_MODAL_TAIL = 2,
+};
+
+/**
+ * @brief Enumerates break strategy.
+ */
+enum OH_Drawing_BreakStrategy {
+    BREAK_STRATEGY_GREEDY = 0,
+    BREAK_STRATEGY_HIGH_QUALITY = 1,
+    BREAK_STRATEGY_BALANCED = 2,
+};
+
+/**
+ * @brief Enumerates word break type.
+ */
+enum OH_Drawing_WordBreakType {
+    WORD_BREAK_TYPE_NORMAL = 0,
+    WORD_BREAK_TYPE_BREAK_ALL = 1,
+    WORD_BREAK_TYPE_BREAK_WORD = 2,
+};
+
+/**
+ * @brief Enumerates rect height style.
+ */
+enum OH_Drawing_RectHeightStyle {
+    RECT_HEIGHT_STYLE_TIGHT,
+    RECT_HEIGHT_STYLE_MAX,
+    RECT_HEIGHT_STYLE_INCLUDELINESPACEMIDDLE,
+    RECT_HEIGHT_STYLE_INCLUDELINESPACETOP,
+    RECT_HEIGHT_STYLE_INCLUDELINESPACEBOTTOM,
+    RECT_HEIGHT_STYLE_STRUCT,
+};
+
+/**
+ * @brief Enumerates rect Width style.
+ */
+enum OH_Drawing_RectWidthStyle {
+    RECT_WIDTH_STYLE_TIGHT,
+    RECT_WIDTH_STYLE_MAX,
+};
+
+typedef struct {
+    float left_;
+    float right_;
+    float top_;
+    float bottom_;
+} OH_Drawing_Rect;
+
+typedef struct {
+    OH_Drawing_Rect rect_;
+    OH_Drawing_TextDirection direction_;
+} OH_Drawing_TextBox;
+
+/**
+ * @brief Enumerates affinity.
+ */
+enum OH_Drawing_Affinity {
+    AFFINITY_UPSTREAM,
+    AFFINITY_DOWNSTREAM,
+};
+
+typedef struct {
+    size_t pos_;
+    OH_Drawing_Affinity affinity_;
+} OH_Drawing_PositionAndAffinity;
+
+typedef struct {
+    size_t start_;
+    size_t end_;
+} OH_Drawing_Range;
 
 /**
  * @brief Creates an <b>OH_Drawing_TypographyStyle</b> object.
@@ -510,6 +599,186 @@ double OH_Drawing_TypographyGetAlphabeticBaseline(OH_Drawing_Typography*);
  * @version 1.1
  */
 double OH_Drawing_TypographyGetIdeographicBaseline(OH_Drawing_Typography*);
+
+/**
+ * @brief Gets the exceed maxLines.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Typography Indicates the pointer to an <b>OH_Drawing_Typography</b> object.
+ * @return Returns the exceed maxLines.
+ * @since 11
+ * @version 1.0
+ */
+bool OH_Drawing_TypographyDidExceedMaxLines(OH_Drawing_Typography*);
+
+/**
+ * @brief Gets the rects for range.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Typography Indicates the pointer to an <b>OH_Drawing_Typography</b> object.
+ * @return Returns the rects for range.
+ * @since 11
+ * @version 1.0
+ */
+OH_Drawing_TextBox* OH_Drawing_TypographyGetRectsForRange(OH_Drawing_Typography*,
+    size_t, size_t, OH_Drawing_RectHeightStyle, OH_Drawing_RectWidthStyle);
+
+/**
+ * @brief Gets the rects for placeholders.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Typography Indicates the pointer to an <b>OH_Drawing_Typography</b> object.
+ * @return Returns the rects for placeholders.
+ * @since 11
+ * @version 1.0
+ */
+OH_Drawing_TextBox* OH_Drawing_TypographyGetRectsForPlaceholders(OH_Drawing_Typography*);
+
+/**
+ * @brief Gets the glyphposition at coordinate.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Typography Indicates the pointer to an <b>OH_Drawing_Typography</b> object.
+ * @return Returns the glyphposition at coordinate.
+ * @since 11
+ * @version 1.0
+ */
+OH_Drawing_PositionAndAffinity OH_Drawing_TypographyGetGlyphPositionAtCoordinate(OH_Drawing_Typography*,
+    double, double);
+
+/**
+ * @brief Gets the glyphposition at coordinate with cluster.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Typography Indicates the pointer to an <b>OH_Drawing_Typography</b> object.
+ * @return Returns the glyphposition at coordinate with cluster.
+ * @since 11
+ * @version 1.0
+ */
+OH_Drawing_PositionAndAffinity OH_Drawing_TypographyGetGlyphPositionAtCoordinateWithCluster(OH_Drawing_Typography*,
+    double, double);
+
+/**
+ * @brief Gets the word boundary.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Typography Indicates the pointer to an <b>OH_Drawing_Typography</b> object.
+ * @return Returns the word boundary.
+ * @since 11
+ * @version 1.0
+ */
+OH_Drawing_Range OH_Drawing_TypographyGetWordBoundary(OH_Drawing_Typography*, size_t);
+
+/**
+ * @brief Gets the line count.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Typography Indicates the pointer to an <b>OH_Drawing_Typography</b> object.
+ * @return Returns the line count.
+ * @since 11
+ * @version 1.0
+ */
+size_t OH_Drawing_TypographyGetLineCount(OH_Drawing_Typography*);
+
+/**
+ * @brief Sets the decoration style.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @since 11
+ * @version 1.0
+ */
+void OH_Drawing_SetTextStyleDecorationStyle(OH_Drawing_TextStyle*, int);
+
+/**
+ * @brief Sets the decoration thickness scale.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @since 11
+ * @version 1.0
+ */
+void OH_Drawing_SetTextStyleDecorationThicknessScale(OH_Drawing_TextStyle*, double);
+
+/**
+ * @brief Sets the letter spacing.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @since 11
+ * @version 1.0
+ */
+void OH_Drawing_SetTextStyleLetterSpacing(OH_Drawing_TextStyle*, double);
+
+/**
+ * @brief Sets the word spacing.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @since 11
+ * @version 1.0
+ */
+void OH_Drawing_SetTextStyleWordSpacing(OH_Drawing_TextStyle*, double);
+
+/**
+ * @brief Sets the half leading.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @since 11
+ * @version 1.0
+ */
+void OH_Drawing_SetTextStyleHalfLeading(OH_Drawing_TextStyle*, bool);
+
+/**
+ * @brief Sets the ellipsis.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @since 11
+ * @version 1.0
+ */
+void OH_Drawing_SetTextStyleEllipsis(OH_Drawing_TextStyle*, std::u16string);
+
+/**
+ * @brief Sets the ellipsis modal.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @since 11
+ * @version 1.0
+ */
+void OH_Drawing_SetTextStyleEllipsisModal(OH_Drawing_TextStyle*, int);
+
+/**
+ * @brief Sets the break strategy.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TypographyStyle Indicates the pointer to an <b>OH_Drawing_TypographyStyle</b> object.
+ * @since 11
+ * @version 1.0
+ */
+void OH_Drawing_SetTypographyTextBreakStrategy(OH_Drawing_TypographyStyle*, int);
+
+/**
+ * @brief Sets the word break type.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TypographyStyle Indicates the pointer to an <b>OH_Drawing_TypographyStyle</b> object.
+ * @since 11
+ * @version 1.0
+ */
+void OH_Drawing_SetTypographyTextWordBreakType(OH_Drawing_TypographyStyle*, int);
+
+/**
+ * @brief Sets the ellipsis modal.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TypographyStyle Indicates the pointer to an <b>OH_Drawing_TypographyStyle</b> object.
+ * @since 11
+ * @version 1.0
+ */
+void OH_Drawing_SetTypographyTextEllipsisModal(OH_Drawing_TypographyStyle*, int);
 
 #ifdef __cplusplus
 }
