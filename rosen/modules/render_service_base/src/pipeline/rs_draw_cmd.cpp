@@ -359,7 +359,7 @@ SymbolOpItem::SymbolOpItem(const HMSymbolData& symbol, SkPoint locate, const SkP
 void SymbolOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
 {
     SkPath path(symbol_.path_);
-    RS_LOGI("[%{public}lu] SymbolOpItem::Draw at %{public}d, %{public}d", nodeId_,
+    RS_LOGD("[%{public}llu] SymbolOpItem::Draw at %{public}d, %{public}d", nodeId_,
         static_cast<int>(locate_.x()), static_cast<int>(locate_.y()));
     // 1.0 move path
     path.offset(locate_.x(), locate_.y());
@@ -379,7 +379,7 @@ void SymbolOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
 
     // draw path
     std::vector<RenderGroup> groups = symbol_.symbolInfo_.renderGroups;
-    RS_LOGI("SymbolOpItem::Draw RenderGroup size %{public}d", static_cast<int>(groups.size()));
+    RS_LOGD("SymbolOpItem::Draw RenderGroup size %{public}d", static_cast<int>(groups.size()));
     if (groups.size() == 0) {
         canvas.drawPath(path, paintCopy);
     }
@@ -414,7 +414,7 @@ void SymbolOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
 
 bool SymbolOpItem::Marshalling(Parcel& parcel) const
 {
-    RS_LOGI("SymbolOpItem::Marshalling at %{public}d, %{public}d",
+    RS_LOGD("SymbolOpItem::Marshalling at %{public}d, %{public}d",
         static_cast<int>(locate_.x()), static_cast<int>(locate_.y()));
     bool success = RSMarshallingHelper::Marshalling(parcel, symbol_) &&
         RSMarshallingHelper::Marshalling(parcel, locate_) &&

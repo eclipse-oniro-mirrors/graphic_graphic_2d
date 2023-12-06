@@ -48,6 +48,8 @@ config("libtexgine_public_config") {
 ohos_source_set("libtexgine_source") {
   if (is_ok) {
     sources = [
+      "export/symbol_engine/hm_symbol_run.cpp",
+      "export/symbol_engine/hm_symbol_txt.cpp",
       "src/bidi_processer.cpp",
       "src/char_groups.cpp",
       "src/dynamic_file_font_provider.cpp",
@@ -70,8 +72,6 @@ ohos_source_set("libtexgine_source") {
       "src/opentype_parser/opentype_basic_type.cpp",
       "src/opentype_parser/post_table_parser.cpp",
       "src/opentype_parser/ranges.cpp",
-      "export/symbol_engine/hm_symbol_txt.cpp",
-      "export/symbol_engine/hm_symbol_run.cpp",
       "src/shaper.cpp",
       "src/system_font_provider.cpp",
       "src/texgine_exception.cpp",

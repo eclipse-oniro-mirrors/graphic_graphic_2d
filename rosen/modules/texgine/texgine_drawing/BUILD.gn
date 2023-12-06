@@ -20,7 +20,7 @@ config("texgine_drawing_public_config") {
   include_dirs = [
     "./src",
     "../export",
-   ]
+  ]
   cflags = [
     "-Wall",
     "-Werror",
