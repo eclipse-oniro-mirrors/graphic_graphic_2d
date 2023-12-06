@@ -336,7 +336,6 @@ private:
     uint64_t lastDeferedCleanCacheTimestamp_ = 0;
     uint64_t deferedCleanCount_ = 0;
 
-    uint64_t preSKReleaseResourceTimestamp_ = 0;
     std::unordered_map<uint32_t, sptr<IApplicationAgent>> applicationAgentMap_;
 
     std::shared_ptr<RSContext> context_;
