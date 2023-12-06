@@ -32,7 +32,8 @@ Quaternion RSValueEstimator::Estimate(float fraction,
 std::shared_ptr<RSFilter> RSValueEstimator::Estimate(
     float fraction, const std::shared_ptr<RSFilter>& startValue, const std::shared_ptr<RSFilter>& endValue)
 {
-    if ((startValue == nullptr || !startValue->RSFilter::IsValid()) && (endValue == nullptr || !endValue->RSFilter::IsValid())) {
+    if ((startValue == nullptr || !startValue->RSFilter::IsValid()) &&
+        (endValue == nullptr || !endValue->RSFilter::IsValid())) {
         return endValue;
     }
 
