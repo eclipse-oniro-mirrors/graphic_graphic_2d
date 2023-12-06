@@ -638,5 +638,13 @@ bool RSSystemProperties::GetSubSurfaceEnabled()
         std::atoi((system::GetParameter("persist.sys.graphic.subSurface", "0")).c_str());
     return subSurfaceEnabled;
 }
+
+bool RSSystemProperties::GetHMSymbolEnable()
+{
+    static bool hmSymbolEnabled =
+        (std::atoi((system::GetParameter("persist.sys.graphic.hmsymbol", "1")).c_str()) != 0);
+    return hmSymbolEnabled;
+}
+
 } // namespace Rosen
 } // namespace OHOS
