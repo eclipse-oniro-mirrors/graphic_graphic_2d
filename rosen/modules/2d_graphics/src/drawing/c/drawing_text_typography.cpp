@@ -397,7 +397,8 @@ void OH_Drawing_TypographyHandlerPushTextStyle(OH_Drawing_TypographyCreate* hand
     ConvertToOriginalText<TypographyCreate>(handler)->PushStyle(*rosenTextStyle);
 }
 
-static bool IsUtf8(const char* text) {
+static bool IsUtf8(const char* text)
+{
     int len = strlen(text);
     int n;
     for (int i = 0; i < len; i++) {
@@ -410,9 +411,9 @@ static bool IsUtf8(const char* text) {
             (text[i + 1] & 0xA0) == 0xA0) { // 0xA0 and 0xED is the range of utf-8
             return false;
         } else if ((c & 0xF0) == 0xE0) { // 0xE0 and 0xF0 is the range of utf-8
-            n = 2;
+            n = 2; // 2 means the size of range
         } else if ((c & 0xF8) == 0xF0) { // 0xF0 and 0xF8 is the range of utf-8
-            n = 3;
+            n = 3; // 3 means the size of range
         } else {
             return false;
         }
