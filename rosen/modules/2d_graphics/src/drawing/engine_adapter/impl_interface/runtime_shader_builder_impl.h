@@ -42,6 +42,7 @@ public:
     virtual void SetChild(const std::string& name, std::shared_ptr<ShaderEffect> shader) = 0;
     virtual void SetUniform(const std::string& name, float val) = 0;
     virtual void SetUniform(const std::string& name, float x, float y) = 0;
+    virtual void SetUniform(const std::string& name, float x, float y, float z) = 0;
     virtual void SetUniform(const std::string& name, float x, float y, float width, float height) = 0;
 };
 } // namespace Drawing

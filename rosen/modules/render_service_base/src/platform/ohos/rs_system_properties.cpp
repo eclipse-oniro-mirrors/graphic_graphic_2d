@@ -160,22 +160,9 @@ PartialRenderType RSSystemProperties::GetPartialRenderEnabled()
 PartialRenderType RSSystemProperties::GetUniPartialRenderEnabled()
 {
     int changed = 0;
-#if defined(RS_ENABLE_PARALLEL_RENDER) && defined(RS_ENABLE_VK)
-    if (RSSystemProperties::GetRsVulkanEnabled()) {
-        static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.partialrender.enabled", "0"); // 0 means disable
-        const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-        return static_cast<PartialRenderType>(ConvertToInt(enable, 0));
-    } else {
-        // 4 means Occlusion removal and Non-dirty arae removal in control level based on cpu
-        static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.partialrender.enabled", "4");
-        const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-        return static_cast<PartialRenderType>(ConvertToInt(enable, DEFAULT_UNI_PARTIAL_RENDER_ENABLED_VALUE));
-    }
-#else
     static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.partialrender.enabled", "4");
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return static_cast<PartialRenderType>(ConvertToInt(enable, DEFAULT_UNI_PARTIAL_RENDER_ENABLED_VALUE));
-#endif
 }
 
 bool RSSystemProperties::GetReleaseResourceEnabled()
@@ -438,7 +425,7 @@ bool RSSystemProperties::GetFilterPartialRenderEnabled()
     // Determine whether the filter partial render should be enabled. The default value is 0,
     // which means that it is unenabled.
     static bool enabled =
-        std::atoi((system::GetParameter("persist.sys.graphic.filterPartialRenderEnabled", "1")).c_str()) != 0;
+        std::atoi((system::GetParameter("persist.sys.graphic.filterPartialRenderEnabled", "0")).c_str()) != 0;
     return enabled;
 }
 

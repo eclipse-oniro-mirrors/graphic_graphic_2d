@@ -13,6 +13,7 @@
 
 import("//build/test.gni")
 import("//foundation/arkui/ace_engine/ace_config.gni")
+import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
 module_output_path = "graphic/rosen_engine/render_service_base/command"
 
@@ -57,7 +58,7 @@ ohos_unittest("RSNodeCommandTest") {
     deps += [ "//third_party/flutter/build/skia:ace_skia_ohos" ]
   }
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
-    public_deps = [ "$graphic_2d_root/rosen/modules/2d_graphics::2d_graphics" ]
+    public_deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
   }
   external_deps = [
     "c_utils:utils",

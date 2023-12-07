@@ -35,6 +35,7 @@ public:
     void SetChild(const std::string& name, std::shared_ptr<ShaderEffect> shader);
     void SetUniform(const std::string& name, float val);
     void SetUniform(const std::string& name, float x, float y);
+    void SetUniform(const std::string& name, float x, float y, float z);
     void SetUniform(const std::string& name, float x, float y, float width, float height);
 
 private:

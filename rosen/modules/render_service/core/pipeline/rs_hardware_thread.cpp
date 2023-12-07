@@ -25,10 +25,13 @@
 #include "pipeline/rs_uni_render_util.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_uni_render_engine.h"
+#include "pipeline/round_corner_display/rs_round_corner_display.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "screen_manager/rs_screen_manager.h"
+#include "common/rs_singleton.h"
 #include "rs_trace.h"
+#include "common/rs_optional_trace.h"
 #include "hdi_backend.h"
 #include "vsync_sampler.h"
 #include "parameters.h"
@@ -288,11 +291,8 @@ void RSHardwareThread::PerformSetActiveMode(OutputPtr output)
 
         auto supportedModes = screenManager->GetScreenSupportedModes(id);
         for (auto mode : supportedModes) {
-            std::string temp = "RSHardwareThread check modes w: " + std::to_string(mode.GetScreenWidth()) +
-                ", h: " + std::to_string(mode.GetScreenHeight()) +
-                ", rate: " + std::to_string(mode.GetScreenRefreshRate()) +
-                ", id: " + std::to_string(mode.GetScreenModeId());
-            RS_LOGD("%{public}s", temp.c_str());
+            RS_OPTIONAL_TRACE_NAME_FMT("RSHardwareThread check modes w: %d, h: %d, rate: %d, id: %d",
+                mode.GetScreenWidth(), mode.GetScreenHeight(), mode.GetScreenRefreshRate(), mode.GetScreenModeId());
         }
 
         screenManager->SetScreenActiveMode(id, modeId);
@@ -370,15 +370,22 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
     std::unordered_map<int32_t, std::unique_ptr<ImageCacheSeq>> imageCacheSeqs;
 #endif // RS_ENABLE_VK
 #endif // RS_ENABLE_EGLIMAGE
-
+    bool softDrawFlag = false;
     for (const auto& layer : layers) {
         if (layer == nullptr) {
             continue;
         }
+        
+        if (layer->GetSurface()->GetName() == "RCDSurfaceNode") {
+            softDrawFlag = true;
+            continue;
+        }
+
         if (layer->GetCompositionType() == GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE ||
             layer->GetCompositionType() == GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE_CLEAR) {
             continue;
         }
+
 #ifndef USE_ROSEN_DRAWING
         auto saveCount = canvas->getSaveCount();
 
@@ -567,7 +574,7 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
             Drawing::BitmapFormat bitmapFormat = { colorType, Drawing::AlphaType::ALPHATYPE_PREMUL };
 
             auto image = std::make_shared<Drawing::Image>();
-            if (!image->BuildFromTexture(*canvas->GetGPUContext(), backendTexture,
+            if (!image->BuildFromTexture(*canvas->GetGPUContext(), backendTexture.GetTextureInfo(),
                 Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, nullptr,
                 NativeBufferUtils::DeleteVkImage,
                 imageCache->RefCleanupHelper())) {
@@ -593,6 +600,11 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
         canvas->RestoreToCount(saveCount);
 #endif
     }
+
+    if (softDrawFlag && RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {
+        RSSingleton<RoundCornerDisplay>::GetInstance().DrawRoundCorner(canvas);
+    }
+
     renderFrame->Flush();
 #ifdef RS_ENABLE_EGLIMAGE
     imageCacheSeqs.clear();

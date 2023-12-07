@@ -2624,13 +2624,14 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
 #endif
         }
 #endif
-
 #ifdef RS_ENABLE_VK
+        else {
 #ifndef USE_ROSEN_DRAWING
-        canvas_->clear(SK_ColorTRANSPARENT);
+            canvas_->clear(SK_ColorTRANSPARENT);
 #else
-        canvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
+            canvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
 #endif
+        }
 #endif
         RSPropertiesPainter::SetBgAntiAlias(true);
         if (!isParallel_ || isUIFirst_) {
@@ -4171,8 +4172,7 @@ void RSUniRenderVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     ProcessCanvasRenderNode(node);
     canvas_->restoreToCount(saveCount);
 #else
-    int saveCount;
-    saveCount = canvas_->GetSaveCount();
+    int saveCount = canvas_->GetSaveCount();
     canvas_->Save();
     ProcessCanvasRenderNode(node);
     canvas_->RestoreToCount(saveCount);
@@ -4358,7 +4358,12 @@ void RSUniRenderVisitor::UpdateCacheRenderNodeMap(RSRenderNode& node)
 void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
 {
     processedCanvasNodeInCurrentSurface_++;
-    if (!node.ShouldPaint() || (canvas_ && canvas_->getDeviceClipBounds().isEmpty())) {
+    if (!node.ShouldPaint() ||
+#ifndef USE_ROSEN_DRAWING
+        (canvas_ && canvas_->getDeviceClipBounds().isEmpty())) {
+#else
+        (canvas_ && canvas_->GetDeviceClipBounds().IsEmpty())) {
+#endif
         return;
     }
     node.MarkNodeSingleFrameComposer(isNodeSingleFrameComposer_);

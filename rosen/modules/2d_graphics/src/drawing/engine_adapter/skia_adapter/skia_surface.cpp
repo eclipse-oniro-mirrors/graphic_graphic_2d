@@ -130,7 +130,7 @@ bool SkiaSurface::Bind(const FrameBuffer& frameBuffer)
 }
 
 #ifdef RS_ENABLE_VK
-std::shared_ptr<Surface> SkiaSurface::MakeFromBackendRenderTarget(GPUContext* gpuContext, const VKTextureInfo& info,
+std::shared_ptr<Surface> SkiaSurface::MakeFromBackendRenderTarget(GPUContext* gpuContext, TextureInfo& info,
     TextureOrigin origin, void (*deleteVkImage)(void *), void* cleanHelper)
 {
     if (!SystemProperties::GetRsVulkanEnabled()) {
@@ -145,7 +145,7 @@ std::shared_ptr<Surface> SkiaSurface::MakeFromBackendRenderTarget(GPUContext* gp
     }
     GrVkImageInfo image_info;
     SkiaTextureInfo::ConvertToGrBackendTexture(info).getVkImageInfo(&image_info);
-    GrBackendRenderTarget backendRenderTarget(info.width, info.height, 0, image_info);
+    GrBackendRenderTarget backendRenderTarget(info.GetWidth(), info.GetHeight(), 0, image_info);
     SkSurfaceProps surfaceProps(0, SkPixelGeometry::kUnknown_SkPixelGeometry);
 
     sk_sp<SkSurface> skSurface =
@@ -379,6 +379,15 @@ void SkiaSurface::SetDrawingArea(const std::vector<RectI>& rects)
         skIRects.push_back(skIRect);
     }
     skSurface_->setDrawingArea(skIRects);
+}
+
+void SkiaSurface::ClearDrawingArea()
+{
+    if (skSurface_ == nullptr) {
+        LOGE("skSurface is nullptr");
+        return;
+    }
+    skSurface_->clearDrawingArea();
 }
 #endif
 

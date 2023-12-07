@@ -69,7 +69,7 @@ public:
     bool Bind(const FrameBuffer& frameBuffer);
 
 #ifdef RS_ENABLE_VK
-    static std::shared_ptr<Surface> MakeFromBackendRenderTarget(GPUContext* gpuContext, const VKTextureInfo& info,
+    static std::shared_ptr<Surface> MakeFromBackendRenderTarget(GPUContext* gpuContext, const TextureInfo& info,
         TextureOrigin origin, void (*deleteVkImage)(void *), void* cleanHelper);
 #endif
 
@@ -161,6 +161,7 @@ public:
 #ifdef RS_ENABLE_VK
     void Wait(int32_t time, const VkSemaphore& semaphore);
     void SetDrawingArea(const std::vector<RectI>& rects);
+    void ClearDrawingArea();
 #endif
 
 private:

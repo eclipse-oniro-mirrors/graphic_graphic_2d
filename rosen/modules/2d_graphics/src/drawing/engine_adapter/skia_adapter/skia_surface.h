@@ -41,7 +41,7 @@ public:
     bool Bind(const Image& image) override;
     bool Bind(const FrameBuffer& frameBuffer) override;
 #ifdef RS_ENABLE_VK
-    static std::shared_ptr<Surface> MakeFromBackendRenderTarget(GPUContext* gpuContext, const VKTextureInfo& info,
+    static std::shared_ptr<Surface> MakeFromBackendRenderTarget(GPUContext* gpuContext, TextureInfo& info,
         TextureOrigin origin, void (*deleteVkImage)(void *), void* cleanHelper);
 #endif
     static std::shared_ptr<Surface> MakeRenderTarget(GPUContext* gpuContext, bool budgeted, const ImageInfo& imageInfo);
@@ -61,6 +61,7 @@ public:
 #ifdef RS_ENABLE_VK
     void Wait(int32_t time, const VkSemaphore& semaphore) override;
     void SetDrawingArea(const std::vector<RectI>& rects) override;
+    void ClearDrawingArea() override;
 #endif
     sk_sp<SkSurface> GetSkSurface() const;
 private:

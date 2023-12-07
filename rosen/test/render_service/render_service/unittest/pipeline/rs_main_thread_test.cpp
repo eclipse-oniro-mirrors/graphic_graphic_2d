@@ -581,6 +581,7 @@ HWTEST_F(RSMainThreadTest, CheckIfInstanceOnlySurfaceBasicGeoTransform02, TestSi
     auto node = std::make_shared<RSRenderNode>(id, mainThread->context_);
     ASSERT_NE(node, nullptr);
     node->SetIsOnTheTree(true, id, id);
+    node->SetContentDirty();
     mainThread->context_->AddActiveNode(node);
     ASSERT_EQ(static_cast<int>(mainThread->context_->activeNodesInRoot_.size()), 1);
 
@@ -735,5 +736,17 @@ HWTEST_F(RSMainThreadTest, DoParallelComposition, TestSize.Level1)
     if (RSInnovation::GetParallelCompositionEnabled(mainThread->isUniRender_)) {
         mainThread->DoParallelComposition(node);
     }
+}
+
+/**
+ * @tc.name: SetIdleTimerExpiredFlag
+ * @tc.desc: SetIdleTimerExpiredFlag test
+ * @tc.type: FUNC
+ * @tc.require: issueI7HDVG
+ */
+HWTEST_F(RSMainThreadTest, SetIdleTimerExpiredFlag, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    mainThread->SetIdleTimerExpiredFlag(true);
 }
 } // namespace OHOS::Rosen

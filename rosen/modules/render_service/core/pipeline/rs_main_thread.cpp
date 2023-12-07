@@ -95,6 +95,9 @@
 #if defined(RS_ENABLE_DRIVEN_RENDER)
 #include "pipeline/driven_render/rs_driven_render_manager.h"
 #endif
+#if defined(ROSEN_OHOS) && defined(USE_ROSEN_DRAWING) && defined(RS_ENABLE_VK)
+#include "include/recording/draw_cmd.h"
+#endif
 
 #include "pipeline/round_corner_display/rs_rcd_render_manager.h"
 #include "scene_board_judgement.h"
@@ -120,7 +123,6 @@ constexpr uint64_t PERF_PERIOD = 250000000;
 constexpr uint64_t CLEAN_CACHE_FREQ = 60;
 constexpr uint64_t SKIP_COMMAND_FREQ_LIMIT = 30;
 constexpr uint64_t PERF_PERIOD_BLUR = 80000000;
-constexpr uint64_t SK_RELEASE_RESOURCE_PERIOD = 5000000000;
 constexpr uint64_t MAX_DYNAMIC_STATUS_TIME = 5000000000;
 constexpr uint64_t PERF_PERIOD_MULTI_WINDOW = 80000000;
 constexpr uint32_t MULTI_WINDOW_PERF_START_NUM = 2;
@@ -264,11 +266,15 @@ void RSMainThread::Init()
         ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
         SetRSEventDetectorLoopFinishTag();
         rsEventManager_.UpdateParam();
-        if (timestamp_ - preSKReleaseResourceTimestamp_ > SK_RELEASE_RESOURCE_PERIOD) {
-            SKResourceManager::Instance().ReleaseResource();
-            preSKReleaseResourceTimestamp_ = timestamp_;
-        }
+        SKResourceManager::Instance().ReleaseResource();
     };
+#if defined(ROSEN_OHOS) && defined(USE_ROSEN_DRAWING) && defined(RS_ENABLE_VK)
+    std::function<void*(VkImage, VkDeviceMemory)> createCleanup = [] (VkImage image, VkDeviceMemory memory) -> void* {
+        return new NativeBufferUtils::VulkanCleanupHelper(RsVulkanContext::GetSingleton(), image, memory);
+    };
+    Drawing::DrawSurfaceBufferOpItem::SetBaseCallback(NativeBufferUtils::MakeBackendTextureFromNativeBuffer,
+        NativeBufferUtils::DeleteVkImage, createCleanup);
+#endif
     isUniRender_ = RSUniRenderJudgement::IsUniRender();
     SetDeviceType();
     qosPidCal_ = deviceType_ == DeviceType::PC;
@@ -1181,9 +1187,10 @@ void RSMainThread::ClearMemoryCache(bool deeply)
         }
         RS_LOGD("Clear memory cache");
         RS_TRACE_NAME_FMT("Clear memory cache");
+        SKResourceManager::Instance().ReleaseResource();
         grContext->flush();
         SkGraphics::PurgeAllCaches(); // clear cpu cache
-        if (deeply) {
+        if (deeply || this->deviceType_ != DeviceType::PHONE) {
             MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(grContext);
         } else {
             MemoryManager::ReleaseUnlockGpuResource(grContext);
@@ -1208,7 +1215,7 @@ void RSMainThread::ClearMemoryCache(bool deeply)
         this->clearMemoryFinished_ = true;
         this->clearMemDeeply_ = false;
     },
-    CLEAR_GPU_CACHE, 3000 / GetRefreshRate()); // The unit is milliseconds
+    CLEAR_GPU_CACHE, (this->deviceType_ == DeviceType::PHONE ? 3000 : 0) / GetRefreshRate());
 }
 
 void RSMainThread::WaitUtilUniRenderFinished()
@@ -2322,9 +2329,9 @@ void RSMainThread::TrimMem(std::unordered_set<std::u16string>& argSets, std::str
     dumpString.append("trimMem: " + type + "\n");
 #else
 #ifdef NEW_RENDER_CONTEXT
-    auto grContext = GetRenderEngine()->GetDrawingContext()->GetDrawingContext();
+    auto gpuContext = GetRenderEngine()->GetDrawingContext()->GetDrawingContext();
 #else
-    auto grContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
+    auto gpuContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
 #endif
     if (type.empty()) {
         gpuContext->Flush();
@@ -2581,6 +2588,22 @@ void RSMainThread::SetAppWindowNum(uint32_t num)
     appWindowNum_ = num;
 }
 
+bool RSMainThread::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes)
+{
+    if (systemAnimatedScenes < SystemAnimatedScenes::ENTER_MISSION_CENTER ||
+            systemAnimatedScenes > SystemAnimatedScenes::OTHERS) {
+        RS_LOGD("RSMainThread::SetSystemAnimatedScenes Out of range.");
+        return false;
+    }
+    systemAnimatedScenes_ = systemAnimatedScenes;
+    return true;
+}
+
+SystemAnimatedScenes RSMainThread::GetSystemAnimatedScenes()
+{
+    return systemAnimatedScenes_;
+}
+
 bool RSMainThread::CheckNodeHasToBePreparedByPid(NodeId nodeId, bool isClassifyByRoot)
 {
     if (context_->activeNodesInRoot_.empty() || nodeId == INVALID_NODEID) {
@@ -2753,7 +2776,7 @@ void RSMainThread::UpdateRogSizeIfNeeded()
     }
 }
 
-const uint32_t UIFIRST_MINIMUM_NODE_NUMBER = 12; // minimum window number(12) for enabling UIFirst
+const uint32_t UIFIRST_MINIMUM_NODE_NUMBER = 4; // minimum window number(4) for enabling UIFirst
 
 void RSMainThread::UpdateUIFirstSwitch()
 {
@@ -2767,16 +2790,22 @@ void RSMainThread::UpdateUIFirstSwitch()
         auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(
             rootNode->GetSortedChildren().front());
         if (displayNode) {
-            uint32_t childrenCount = 0;
-            if (Rosen::SceneBoardJudgement::IsSceneBoardEnabled()) {
-                std::vector<RSBaseRenderNode::SharedPtr> curAllSurfacesVec;
-                displayNode->CollectSurface(displayNode, curAllSurfacesVec, true, true);
-                childrenCount = curAllSurfacesVec.size();
-            } else {
-                childrenCount = displayNode->GetChildrenCount();
+            uint32_t childrenLeashWindowCount = 0;
+            bool isUIFirstMiniWindowNumSatisfied = false;
+            std::vector<RSBaseRenderNode::SharedPtr> curAllSurfacesVec;
+            displayNode->CollectSurface(displayNode, curAllSurfacesVec, true, true);
+            for (auto it = curAllSurfacesVec.begin(); it != curAllSurfacesVec.end(); it++) {
+                if (auto surfaceNode = (*it)->ReinterpretCastTo<RSSurfaceRenderNode>()) {
+                    if (surfaceNode->IsLeashWindow()) {
+                        childrenLeashWindowCount++;
+                    }
+                }
+                if (childrenLeashWindowCount >= UIFIRST_MINIMUM_NODE_NUMBER) {
+                    isUIFirstMiniWindowNumSatisfied = true;
+                    break;
+                }
             }
-            isUiFirstOn_ = RSSystemProperties::GetUIFirstEnabled() &&
-                (childrenCount >= UIFIRST_MINIMUM_NODE_NUMBER);
+            isUiFirstOn_ = RSSystemProperties::GetUIFirstEnabled() && isUIFirstMiniWindowNumSatisfied;
         }
     }
 }

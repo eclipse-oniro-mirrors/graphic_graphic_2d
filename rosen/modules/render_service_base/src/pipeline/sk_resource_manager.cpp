@@ -50,7 +50,7 @@ void SKResourceManager::HoldResource(const std::shared_ptr<Drawing::Image> &img)
         return;
     }
     std::scoped_lock<std::recursive_mutex> lock(mutex_);
-    if (std::any_of(images_[tid].cbegin(), images[tid].cend(), 
+    if (std::any_of(images_[tid].cbegin(), images_[tid].cend(),
         [&img](const std::shared_ptr<Drawing::Image>& image) {
             return image.get() == img.get();
         })) {

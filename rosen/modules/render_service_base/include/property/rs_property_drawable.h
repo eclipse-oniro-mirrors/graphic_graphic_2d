@@ -16,6 +16,9 @@
 #ifndef RENDER_SERVICE_BASE_PROPERTY_RS_PROPERTY_DRAWABLE_H
 #define RENDER_SERVICE_BASE_PROPERTY_RS_PROPERTY_DRAWABLE_H
 
+#ifdef USE_ROSEN_DRAWING
+#include <bitset>
+#endif
 #include <memory>
 #include <set>
 #include <vector>

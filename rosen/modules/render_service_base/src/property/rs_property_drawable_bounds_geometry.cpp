@@ -361,7 +361,7 @@ void RSBorderFourLineRoundCornerDrawable::Draw(RSRenderNode& node, RSPaintFilter
 #else
     Drawing::AutoCanvasRestore acr(canvas, true);
     auto& properties = node.GetMutableRenderProperties();
-    canvas.ClipRoundRect(rrect_, true);
+    canvas.ClipRoundRect(rrect_,Drawing::ClipOp::INTERSECT, true);
     canvas.ClipRoundRect(innerRrect_, Drawing::ClipOp::DIFFERENCE, true);
     properties.GetBorder()->PaintTopPath(canvas, pen_, rrect_);
     properties.GetBorder()->PaintRightPath(canvas, pen_, rrect_);

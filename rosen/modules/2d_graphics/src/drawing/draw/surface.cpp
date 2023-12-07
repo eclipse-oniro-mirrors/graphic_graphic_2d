@@ -42,7 +42,7 @@ bool Surface::Bind(const FrameBuffer& frameBuffer)
 }
 
 #ifdef RS_ENABLE_VK
-std::shared_ptr<Surface> Surface::MakeFromBackendRenderTarget(GPUContext* gpuContext, const VKTextureInfo& info,
+std::shared_ptr<Surface> Surface::MakeFromBackendRenderTarget(GPUContext* gpuContext, TextureInfo& info,
     TextureOrigin origin, void (*deleteFunc)(void*), void* cleanupHelper)
 {
     if (!SystemProperties::GetRsVulkanEnabled()) {
@@ -146,6 +146,17 @@ void Surface::SetDrawingArea(const std::vector<RectI>& rects)
     }
     impl_->SetDrawingArea(rects);
 }
+
+void Surface::ClearDrawingArea()
+{
+    if (!impl_) {
+        LOGE("surfaceImpl ClearDrawingArea failed impl nullptr");
+        return;
+    }
+    impl_->ClearDrawingArea();
+}
+
+
 #endif
 
 } // namespace Drawing
