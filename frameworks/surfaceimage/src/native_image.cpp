@@ -51,6 +51,7 @@ OHNativeWindow* OH_NativeImage_AcquireNativeWindow(OH_NativeImage* image)
         if (image->pSurface == nullptr) {
             image->pSurface = Surface::CreateSurfaceAsProducer(image->producer);
         }
+        BLOGE_CHECK_AND_RETURN_RET(image->pSurface != nullptr, nullptr, "pSurface is null");
         image->nativeWindow = CreateNativeWindowFromSurface(&(image->pSurface));
     }
 
@@ -113,6 +114,7 @@ int32_t OH_NativeImage_GetSurfaceId(OH_NativeImage* image, uint64_t* surfaceId)
     if (image->pSurface == nullptr) {
         image->pSurface = Surface::CreateSurfaceAsProducer(image->producer);
     }
+    BLOGE_CHECK_AND_RETURN_RET(image->pSurface != nullptr, SURFACE_ERROR_ERROR, "pSurface is null");
     SurfaceUtils* utils = SurfaceUtils::GetInstance();
     utils->Add(*surfaceId, image->pSurface);
     return SURFACE_ERROR_OK;
