@@ -33,6 +33,22 @@ constexpr int DEFAULT_PARTIAL_RENDER_ENABLED_VALUE = 2;
 constexpr int DEFAULT_UNI_PARTIAL_RENDER_ENABLED_VALUE = 4;
 constexpr int DEFAULT_CORRECTION_MODE_VALUE = 999;
 
+#if defined (ACE_ENABLE_GL) && defined (ACE_ENABLE_VK)
+const bool RSSystemProperties::aceVulkanEnabled_ = false;
+#elif defined (ACE_ENABLE_GL)
+const bool RSSystemProperties::aceVulkanEnabled_ = false;
+#else
+const bool RSSystemProperties::aceVulkanEnabled_ = true;
+#endif
+
+#if defined (RS_ENABLE_GL) && defined (RS_ENABLE_VK)
+const bool RSSystemProperties::rsVulkanEnabled_ = false;
+#elif defined (RS_ENABLE_GL)
+const bool RSSystemProperties::rsVulkanEnabled_ = false;
+#else
+const bool RSSystemProperties::rsVulkanEnabled_ = true;
+#endif
+
 int ConvertToInt(const char *originValue, int defaultValue)
 {
     return originValue == nullptr ? defaultValue : std::atoi(originValue);
@@ -144,15 +160,9 @@ PartialRenderType RSSystemProperties::GetPartialRenderEnabled()
 PartialRenderType RSSystemProperties::GetUniPartialRenderEnabled()
 {
     int changed = 0;
-#if defined(RS_ENABLE_PARALLEL_RENDER) && defined(RS_ENABLE_VK)
-    static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.partialrender.enabled", "0");
-    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return static_cast<PartialRenderType>(ConvertToInt(enable, 0));
-#else
     static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.partialrender.enabled", "4");
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return static_cast<PartialRenderType>(ConvertToInt(enable, DEFAULT_UNI_PARTIAL_RENDER_ENABLED_VALUE));
-#endif
 }
 
 bool RSSystemProperties::GetReleaseResourceEnabled()
@@ -638,13 +648,5 @@ bool RSSystemProperties::GetSubSurfaceEnabled()
         std::atoi((system::GetParameter("persist.sys.graphic.subSurface", "0")).c_str());
     return subSurfaceEnabled;
 }
-
-bool RSSystemProperties::GetHMSymbolEnable()
-{
-    static bool hmSymbolEnabled =
-        (std::atoi((system::GetParameter("persist.sys.graphic.hmsymbol", "1")).c_str()) != 0);
-    return hmSymbolEnabled;
-}
-
 } // namespace Rosen
 } // namespace OHOS
