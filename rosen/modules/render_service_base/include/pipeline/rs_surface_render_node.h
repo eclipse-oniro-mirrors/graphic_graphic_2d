@@ -231,7 +231,7 @@ public:
     }
 
     // used to determine whether the layer-1 surfacenodes can be skipped in the subthread of focus-first framework
-    bool IsCurrentFrameStatic();
+    bool IsCurrentFrameStatic(DeviceType deviceType);
     void UpdateCacheSurfaceDirtyManager(int bufferAge = 2);
 
     bool GetNeedSubmitSubThread() const
@@ -868,7 +868,17 @@ public:
         surfaceCacheContentStatic_ = contentStatic;
     }
 
-    bool IsUIFirstCacheReusable();
+    size_t GetLastFrameChildrenCnt()
+    {
+        return lastFrameChildrenCnt_;
+    }
+
+    void SetLastFrameChildrenCnt(size_t childrenCnt)
+    {
+        lastFrameChildrenCnt_ = childrenCnt;
+    }
+
+    bool IsUIFirstCacheReusable(DeviceType deviceType);
 
 #ifdef USE_SURFACE_TEXTURE
     std::shared_ptr<RSSurfaceTexture> GetSurfaceTexture() const { return surfaceTexture_; };
@@ -1086,7 +1096,6 @@ private:
     bool prevVisible_ = false;
     bool hasSecurityLayer_ = false;
     bool hasSkipLayer_ = false;
-    bool surfaceCacheContentStatic_ = false;
 
     uint32_t processZOrder_ = -1;
 
@@ -1101,6 +1110,9 @@ private:
 
     RSBaseRenderNode::WeakPtr ancestorDisplayNode_;
     bool hasSharedTransitionNode_ = false;
+    size_t lastFrameChildrenCnt_ = 0;
+    // node only have translate and scale changes
+    bool surfaceCacheContentStatic_ = false;
 
     friend class RSUniRenderVisitor;
     friend class RSRenderNode;

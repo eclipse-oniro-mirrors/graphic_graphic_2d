@@ -1491,9 +1491,12 @@ std::vector<std::shared_ptr<RSSurfaceRenderNode>> RSSurfaceRenderNode::GetLeashW
     return res;
 }
 
-bool RSSurfaceRenderNode::IsCurrentFrameStatic()
+bool RSSurfaceRenderNode::IsCurrentFrameStatic(DeviceType deviceType)
 {
-    if (IsMainWindowType() && !surfaceCacheContentStatic_) {
+    bool isDirty = deviceType == DeviceType::PHONE ?
+        (dirtyManager_ == nullptr || !dirtyManager_->GetCurrentFrameDirtyRegion().IsEmpty()) :
+        (IsMainWindowType() && !surfaceCacheContentStatic_);
+    if (isDirty) {
         return false;
     }
     if (IsAppWindow()) {
@@ -1508,17 +1511,16 @@ bool RSSurfaceRenderNode::IsCurrentFrameStatic()
     if (IsMainWindowType()) {
         return true;
     } else if (IsLeashWindow()) {
+        auto nestedSurfaceNodes = GetLeashWindowNestedSurfaces();
+        // leashwindow children changed or has other type node except surfacenode
+        if (deviceType == DeviceType::PC && (lastFrameChildrenCnt_ != GetChildren().size() ||
+            nestedSurfaceNodes.size() != GetChildren().size())) {
+            return false;
+        }
         // leashwindow subthread cache considered static if and only if all nested surfacenode static
         // (include appwindow and starting window)
-        auto nestedSurfaceNodes = GetLeashWindowNestedSurfaces();
-        if (nestedSurfaceNodes.size() > 0) {
-            for (auto& nestedSurface: nestedSurfaceNodes) {
-                if (nestedSurface && !nestedSurface->IsCurrentFrameStatic()) {
-                    return false;
-                }
-            }
-        } else {
-            if (dirtyManager_ == nullptr || !dirtyManager_->GetCurrentFrameDirtyRegion().IsEmpty()) {
+        for (auto& nestedSurface: nestedSurfaceNodes) {
+            if (nestedSurface && !nestedSurface->IsCurrentFrameStatic(deviceType)) {
                 return false;
             }
         }
@@ -1530,10 +1532,10 @@ bool RSSurfaceRenderNode::IsCurrentFrameStatic()
     }
 }
 
-bool RSSurfaceRenderNode::IsUIFirstCacheReusable()
+bool RSSurfaceRenderNode::IsUIFirstCacheReusable(DeviceType deviceType)
 {
     return GetCacheSurfaceProcessedStatus() == CacheProcessStatus::DONE &&
-        IsCurrentFrameStatic() && HasCachedTexture();
+        IsCurrentFrameStatic(deviceType) && HasCachedTexture();
 }
 
 void RSSurfaceRenderNode::UpdateCacheSurfaceDirtyManager(int bufferAge)

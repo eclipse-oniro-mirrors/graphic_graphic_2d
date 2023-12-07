@@ -421,7 +421,7 @@ void RSUniRenderVisitor::PrepareChildren(RSRenderNode& node)
 
 void RSUniRenderVisitor::MergeRemovedChildDirtyRegion(RSRenderNode& node)
 {
-    if (curSurfaceDirtyManager_ && node.HasRemovedChild()) {
+    if (curSurfaceDirtyManager_ && curSurfaceNode_ && node.HasRemovedChild()) {
         RectI dirtyRect = prepareClipRect_.IntersectRect(node.GetChildrenRect());
         if (isSubNodeOfSurfaceInPrepare_) {
             curSurfaceDirtyManager_->MergeDirtyRect(dirtyRect);
@@ -1059,20 +1059,20 @@ bool RSUniRenderVisitor::CheckIfUIFirstSurfaceContentReusable(std::shared_ptr<RS
         return false;
     }
     auto directParent = node->GetParent().lock();
+    auto deviceType = RSMainThread::Instance()->GetDeviceType();
     if (directParent) {
         auto surfaceParent = directParent->ReinterpretCastTo<RSSurfaceRenderNode>();
         if (surfaceParent && surfaceParent->IsLeashWindow()) {
             RS_OPTIONAL_TRACE_NAME(surfaceParent->GetName() + " leashwindow CheckIfUIFirstSurfaceContentReusable: " +
-                std::to_string(surfaceParent->IsUIFirstCacheReusable()));
-                
+                std::to_string(surfaceParent->IsUIFirstCacheReusable(deviceType)));
             return RSUniRenderUtil::IsNodeAssignSubThread(surfaceParent, curDisplayNode_->IsRotationChanged()) &&
-                surfaceParent->IsUIFirstCacheReusable();
+                surfaceParent->IsUIFirstCacheReusable(deviceType);
         }
     }
     RS_OPTIONAL_TRACE_NAME(node->GetName() + " mainwindow CheckIfUIFirstSurfaceContentReusable: " +
-        std::to_string(node->IsUIFirstCacheReusable()));
+        std::to_string(node->IsUIFirstCacheReusable(deviceType)));
     return RSUniRenderUtil::IsNodeAssignSubThread(node, curDisplayNode_->IsRotationChanged()) &&
-        node->IsUIFirstCacheReusable();
+        node->IsUIFirstCacheReusable(deviceType);
 }
 
 void RSUniRenderVisitor::PrepareTypesOfSurfaceRenderNodeAfterUpdate(RSSurfaceRenderNode& node)
