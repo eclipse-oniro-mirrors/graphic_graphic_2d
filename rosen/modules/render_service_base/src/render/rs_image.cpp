@@ -226,7 +226,8 @@ void RSImage::ApplyCanvasClip(Drawing::Canvas& canvas)
 #ifndef USE_ROSEN_DRAWING
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
-static SkImage::CompressionType PixelFormatToCompressionType(Media::PixelFormat pixelFormat) {
+static SkImage::CompressionType PixelFormatToCompressionType(Media::PixelFormat pixelFormat)
+{
     switch (pixelFormat) {
         case Media::PixelFormat::ASTC_4x4: return SkImage::CompressionType::kASTC_RGBA8_4x4;
         case Media::PixelFormat::ASTC_6x6: return SkImage::CompressionType::kASTC_RGBA8_6x6;
@@ -239,7 +240,7 @@ static SkImage::CompressionType PixelFormatToCompressionType(Media::PixelFormat 
 
 void RSImage::UploadGpu(RSPaintFilterCanvas& canvas)
 {
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     if (compressData_) {
         auto cache = RSImageCache::Instance().GetRenderSkiaImageCacheByPixelMapId(uniqueId_, gettid());
         std::lock_guard<std::mutex> lock(mutex_);
