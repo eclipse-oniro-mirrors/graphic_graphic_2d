@@ -55,6 +55,10 @@ void HMSymbolRun::SetSymbolRenderColor(const SymbolRenderingStrategy& renderMode
     switch (renderMode) {
         // SINGLE and HIERARCHICAL: Supports single color setting
         case SymbolRenderingStrategy::SINGLE:
+            for (size_t i = 0; i < symbolInfo.renderGroups.size(); ++i) {
+                symbolInfo.renderGroups[i].color = colors[0]; // the 0 indicates the the first color is used
+            }
+            break;
         case SymbolRenderingStrategy::MULTIPLE_OPACITY:
             for (size_t i = 0; i < symbolInfo.renderGroups.size(); ++i) {
                 symbolInfo.renderGroups[i].color.r = colors[0].r; // the 0 indicates the the first color is used
