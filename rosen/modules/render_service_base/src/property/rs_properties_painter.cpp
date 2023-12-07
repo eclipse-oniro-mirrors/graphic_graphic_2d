@@ -1968,7 +1968,9 @@ void RSPropertiesPainter::ApplyBackgroundEffect(const RSProperties& properties, 
         SkCanvas::kFast_SrcRectConstraint);
 #else
     Drawing::AutoCanvasRestore acr(canvas, true);
-    if (properties.GetClipBounds() != nullptr) {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        // do nothing
+    } else if (properties.GetClipBounds() != nullptr) {
         canvas.ClipPath(properties.GetClipBounds()->GetDrawingPath(), Drawing::ClipOp::INTERSECT, true);
     } else { // we always do clip for ApplyBackgroundEffect, even if ClipToBounds is false
         canvas.ClipRoundRect(RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::INTERSECT, true);
@@ -3509,7 +3511,9 @@ void RSPropertiesPainter::DrawDynamicLightUp(const RSProperties& properties, RSP
         return;
     }
     Drawing::AutoCanvasRestore acr(canvas, true);
-    if (properties.GetClipBounds() != nullptr) {
+    if (RSSystemProperties::GetPropertyDrawableEnable()) {
+        // do nothing
+    } else if (properties.GetClipBounds() != nullptr) {
         canvas.ClipPath(properties.GetClipBounds()->GetDrawingPath(), Drawing::ClipOp::INTERSECT, true);
     } else {
         canvas.ClipRoundRect(RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::INTERSECT, true);
