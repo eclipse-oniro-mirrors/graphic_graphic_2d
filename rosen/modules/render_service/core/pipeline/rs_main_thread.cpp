@@ -294,9 +294,11 @@ void RSMainThread::Init()
             }
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD)
+            if (!RSSystemProperties::GetRsVulkanEnabled()) {
 #if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_UNI_RENDER)
-            RSUploadTextureThread::Instance().PostTask(uploadTextureBarrierTask_);
+                RSUploadTextureThread::Instance().PostTask(uploadTextureBarrierTask_);
 #endif
+            }
 #endif
             unmarshalTaskCond_.notify_all();
         };
@@ -325,41 +327,43 @@ void RSMainThread::Init()
         renderEngine_->Init();
     }
 #ifdef RS_ENABLE_GL
-    int cacheLimitsTimes = 3;
+    if (!RSSystemProperties::GetRsVulkanEnabled()) {
+        int cacheLimitsTimes = 3;
 #ifndef USE_ROSEN_DRAWING
 #ifdef NEW_RENDER_CONTEXT
-    auto grContext = isUniRender_? uniRenderEngine_->GetDrawingContext()->GetDrawingContext() :
-        renderEngine_->GetDrawingContext()->GetDrawingContext();
+        auto grContext = isUniRender_? uniRenderEngine_->GetDrawingContext()->GetDrawingContext() :
+            renderEngine_->GetDrawingContext()->GetDrawingContext();
 #else
-    auto grContext = isUniRender_? uniRenderEngine_->GetRenderContext()->GetGrContext() :
-        renderEngine_->GetRenderContext()->GetGrContext();
+        auto grContext = isUniRender_? uniRenderEngine_->GetRenderContext()->GetGrContext() :
+            renderEngine_->GetRenderContext()->GetGrContext();
 #endif
-    int maxResources = 0;
-    size_t maxResourcesSize = 0;
-    grContext->getResourceCacheLimits(&maxResources, &maxResourcesSize);
-    if (maxResourcesSize > 0) {
-        grContext->setResourceCacheLimits(cacheLimitsTimes * maxResources, cacheLimitsTimes *
-            std::fmin(maxResourcesSize, DEFAULT_SKIA_CACHE_SIZE));
-    } else {
-        grContext->setResourceCacheLimits(DEFAULT_SKIA_CACHE_COUNT, DEFAULT_SKIA_CACHE_SIZE);
-    }
+        int maxResources = 0;
+        size_t maxResourcesSize = 0;
+        grContext->getResourceCacheLimits(&maxResources, &maxResourcesSize);
+        if (maxResourcesSize > 0) {
+            grContext->setResourceCacheLimits(cacheLimitsTimes * maxResources, cacheLimitsTimes *
+                std::fmin(maxResourcesSize, DEFAULT_SKIA_CACHE_SIZE));
+        } else {
+            grContext->setResourceCacheLimits(DEFAULT_SKIA_CACHE_COUNT, DEFAULT_SKIA_CACHE_SIZE);
+        }
 #else
-    auto gpuContext = isUniRender_? uniRenderEngine_->GetRenderContext()->GetDrGPUContext() :
-        renderEngine_->GetRenderContext()->GetDrGPUContext();
-    if (gpuContext == nullptr) {
-        RS_LOGE("RSMainThread::Init gpuContext is nullptr!");
-        return;
-    }
-    int32_t maxResources = 0;
-    size_t maxResourcesSize = 0;
-    gpuContext->GetResourceCacheLimits(&maxResources, &maxResourcesSize);
-    if (maxResourcesSize > 0) {
-        gpuContext->SetResourceCacheLimits(cacheLimitsTimes * maxResources, cacheLimitsTimes *
-            std::fmin(maxResourcesSize, DEFAULT_SKIA_CACHE_SIZE));
-    } else {
-        gpuContext->SetResourceCacheLimits(DEFAULT_SKIA_CACHE_COUNT, DEFAULT_SKIA_CACHE_SIZE);
-    }
+        auto gpuContext = isUniRender_? uniRenderEngine_->GetRenderContext()->GetDrGPUContext() :
+            renderEngine_->GetRenderContext()->GetDrGPUContext();
+        if (gpuContext == nullptr) {
+            RS_LOGE("RSMainThread::Init gpuContext is nullptr!");
+            return;
+        }
+        int32_t maxResources = 0;
+        size_t maxResourcesSize = 0;
+        gpuContext->GetResourceCacheLimits(&maxResources, &maxResourcesSize);
+        if (maxResourcesSize > 0) {
+            gpuContext->SetResourceCacheLimits(cacheLimitsTimes * maxResources, cacheLimitsTimes *
+                std::fmin(maxResourcesSize, DEFAULT_SKIA_CACHE_SIZE));
+        } else {
+            gpuContext->SetResourceCacheLimits(DEFAULT_SKIA_CACHE_COUNT, DEFAULT_SKIA_CACHE_SIZE);
+        }
 #endif
+    }
 #endif
     RSInnovation::OpenInnovationSo();
 #if defined(RS_ENABLE_DRIVEN_RENDER)
@@ -370,18 +374,20 @@ void RSMainThread::Init()
     RSRcdRenderManager::InitInstance();
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD)
+    if (!RSSystemProperties::GetRsVulkanEnabled()) {
 #if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_UNI_RENDER)
-    uploadTextureBarrierTask_ = [this]() {
-        auto renderContext = GetRenderEngine()->GetRenderContext().get();
-        uploadTextureFence = eglCreateSyncKHR(renderContext->GetEGLDisplay(), EGL_SYNC_FENCE_KHR, nullptr);
-        {
-            std::lock_guard<std::mutex> lock(uploadTextureMutex_);
-            ++uploadTextureFinishedCount_;
-        }
-        uploadTextureTaskCond_.notify_all();
-    };
-    RSUploadTextureThread::Instance().InitRenderContext(GetRenderEngine()->GetRenderContext().get());
+        uploadTextureBarrierTask_ = [this]() {
+            auto renderContext = GetRenderEngine()->GetRenderContext().get();
+            uploadTextureFence = eglCreateSyncKHR(renderContext->GetEGLDisplay(), EGL_SYNC_FENCE_KHR, nullptr);
+            {
+                std::lock_guard<std::mutex> lock(uploadTextureMutex_);
+                ++uploadTextureFinishedCount_;
+            }
+            uploadTextureTaskCond_.notify_all();
+        };
+        RSUploadTextureThread::Instance().InitRenderContext(GetRenderEngine()->GetRenderContext().get());
 #endif
+    }
 #endif
 
 #if defined(ACCESSIBILITY_ENABLE)
@@ -1255,6 +1261,9 @@ void RSMainThread::WaitUtilDrivenRenderFinished()
 #if defined(RS_ENABLE_PARALLEL_UPLOAD) && defined(RS_ENABLE_GL)
 void RSMainThread::WaitUntilUploadTextureTaskFinished()
 {
+    if (RSSystemProperties::GetRsVulkanEnabled()) {
+        return;
+    }
     if (!isUniRender_) {
         return;
     }
@@ -1400,9 +1409,11 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
                 }
             }
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD)
+            if (!RSSystemProperties::GetRsVulkanEnabled()) {
 #if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_UNI_RENDER)
-            WaitUntilUploadTextureTaskFinished();
+                WaitUntilUploadTextureTaskFinished();
 #endif
+            }
 #endif
             return;
         }
@@ -1426,17 +1437,21 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
                 isDirty_ = false;
                 PerfForBlurIfNeeded();
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD)
+                if (!RSSystemProperties::GetRsVulkanEnabled()) {
 #if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_UNI_RENDER)
-                WaitUntilUploadTextureTaskFinished();
+                    WaitUntilUploadTextureTaskFinished();
 #endif
+                }
 #endif
                 return;
             }
         }
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD)
+        if (!RSSystemProperties::GetRsVulkanEnabled()) {
 #if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_UNI_RENDER)
-        WaitUntilUploadTextureTaskFinished();
+            WaitUntilUploadTextureTaskFinished();
 #endif
+        }
 #endif
         if (IsUIFirstOn()) {
             auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(
@@ -1452,9 +1467,11 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         rootNode->Process(uniVisitor);
     } else {
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD)
+        if (!RSSystemProperties::GetRsVulkanEnabled()) {
 #if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_UNI_RENDER)
-        WaitUntilUploadTextureTaskFinished();
+            WaitUntilUploadTextureTaskFinished();
 #endif
+        }
 #endif
     }
     isDirty_ = false;
@@ -1467,9 +1484,11 @@ void RSMainThread::Render()
     const std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
     if (rootNode == nullptr) {
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD)
+        if (!RSSystemProperties::GetRsVulkanEnabled()) {
 #if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_UNI_RENDER)
-        WaitUntilUploadTextureTaskFinished();
+            WaitUntilUploadTextureTaskFinished();
 #endif
+        }
 #endif
         RS_LOGE("RSMainThread::Render GetGlobalRootRenderNode fail");
         return;
