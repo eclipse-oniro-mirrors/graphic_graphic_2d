@@ -142,11 +142,6 @@ constexpr int DEFAULT_SKIA_CACHE_COUNT          = 2 * (1 << 12);
 #if (defined RS_ENABLE_GL) || (defined RS_ENABLE_VK)
 constexpr const char* MEM_GPU_TYPE = "gpu";
 #endif
-#ifdef RS_ENABLE_VK
-constexpr uint32_t DEFERRED_RELEASE_TIME_INTERVAL_MS = 200;
-constexpr uint32_t DEFERRED_RELEASE_TIME_INTERVAL_NS = 200000000;
-constexpr uint32_t DEFERRED_RELEASE_FRAME_COUNT = 50;
-#endif
 const std::map<int, int32_t> BLUR_CNT_TO_BLUR_CODE {
     { 1, 10021 },
     { 2, 10022 },
@@ -411,6 +406,7 @@ void RSMainThread::Init()
         });
     });
     SubscribeAppState();
+    PrintCurrentStatus();
 }
 
 void RSMainThread::RsEventParamDump(std::string& dumpString)
@@ -547,29 +543,35 @@ void RSMainThread::ProcessCommand()
             ClearMemoryCache(true);
             break;
         default:
-#ifdef RS_ENABLE_VK
-#ifdef NEW_RENDER_CONTEXT
-            auto grContext = GetRenderEngine()->GetDrawingContext()->GetDrawingContext();
-#else
-            auto grContext = GetRenderEngine()->GetRenderContext()->GetGrContext();
-#endif
-            // deferred release gpu resource
-            if (timestamp_ - lastDeferedCleanCacheTimestamp_ > DEFERRED_RELEASE_TIME_INTERVAL_NS) {
-                deferedCleanCount_ = 0;
-            } else if (deferedCleanCount_ > DEFERRED_RELEASE_FRAME_COUNT) {
-                MemoryManager::PerformDeferedCleanup(grContext,
-                    std::chrono::milliseconds(DEFERRED_RELEASE_TIME_INTERVAL_MS));
-            } else {
-                deferedCleanCount_++;
-            }
-            lastDeferedCleanCacheTimestamp_ = timestamp_;
-#endif
             break;
     }
     context_->purgeType_ = RSContext::PurgeType::NONE;
     if (RsFrameReport::GetInstance().GetEnable()) {
         RsFrameReport::GetInstance().AnimateStart();
     }
+}
+
+void RSMainThread::PrintCurrentStatus()
+{
+#ifndef USE_ROSEN_DRAWING
+    RS_LOGE("RSMainThread::PrintCurrentStatus: drawing is closed");
+#else
+    std::string gpuType = "";
+    switch (OHOS::Rosen::RSSystemProperties::GetGpuApiType()) {
+        case OHOS::Rosen::GpuApiType::OPENGL:
+            gpuType = "opengl";
+            break;
+        case OHOS::Rosen::GpuApiType::VULKAN:
+            gpuType = "vulkan";
+            break;
+        case OHOS::Rosen::GpuApiType::DDGR:
+            gpuType = "ddgr";
+            break;
+        default:
+            break;
+    }
+    RS_LOGE("RSMainThread::PrintCurrentStatus:  drawing is opened, gpu type is %{public}s", gpuType.c_str());
+#endif
 }
 
 void RSMainThread::CacheCommands()
