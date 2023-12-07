@@ -52,7 +52,7 @@ void HMSymbolRun::SetSymbolRenderColor(const SymbolRenderingStrategy& renderMode
     if (colors.empty()) {
         return;
     }
-    switch(renderMode) {
+    switch (renderMode) {
         // SINGLE and HIERARCHICAL: Supports single color setting
         case SymbolRenderingStrategy::SINGLE:
         case SymbolRenderingStrategy::MULTIPLE_OPACITY:
@@ -75,8 +75,8 @@ void HMSymbolRun::SetSymbolRenderColor(const SymbolRenderingStrategy& renderMode
     }
 }
 
-void HMSymbolRun::DrawSymbol(TexgineCanvas &canvas, const std::shared_ptr<TexgineTextBlob> &blob, const std::pair<double, double>& offset,
-    const TexginePaint &paint, const TextStyle &style)
+void HMSymbolRun::DrawSymbol(TexgineCanvas &canvas, const std::shared_ptr<TexgineTextBlob> &blob,
+    const std::pair<double, double>& offset, const TexginePaint &paint, const TextStyle &style)
 {
     if (blob == nullptr) {
         return;
@@ -96,7 +96,7 @@ void HMSymbolRun::DrawSymbol(TexgineCanvas &canvas, const std::shared_ptr<Texgin
         symbolData.path_ = path;
         SkPoint offsetLocal = SkPoint::Make(offset.first, offset.second);
         canvas.DrawSymbol(symbolData, offsetLocal, paint);
-    }else {
+    } else {
         canvas.DrawTextBlob(blob, offset.first, offset.second, paint);
     }
 }

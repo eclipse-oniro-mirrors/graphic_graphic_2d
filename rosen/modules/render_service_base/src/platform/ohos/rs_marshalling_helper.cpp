@@ -239,7 +239,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const SymbolLayersGroups& 
     }
     Marshalling(parcel, size);
     for (auto it = val.renderModeGroups.begin(); it != val.renderModeGroups.end(); it++) {
-        bool isOk = Marshalling(parcel, it->first) && 
+        bool isOk = Marshalling(parcel, it->first) &&
             MarshallingVec(parcel, it->second);
         if (!isOk) {
             RS_LOGE("[%{public}s] failed SymbolLayersGroups layers_", __func__);

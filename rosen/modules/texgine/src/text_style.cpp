@@ -67,7 +67,7 @@ bool TextStyle::operator ==(TextStyle const &rhs) const
            foreground == rhs.foreground &&
            background == rhs.background &&
            isSymbolGlyph == rhs.isSymbolGlyph &&
-           symbol == rhs.symbol;       
+           symbol == rhs.symbol;
 }
 } // namespace TextEngine
 } // namespace Rosen

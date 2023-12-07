@@ -27,43 +27,43 @@ namespace TextEngine {
 
 class HMSymbolTxt {
 public:
-    HMSymbolTxt(){};
-    ~HMSymbolTxt(){};
+    HMSymbolTxt(){}
+    ~HMSymbolTxt(){}
 
     void SetRenderColor(const std::vector<SColor>& colorList)
     {
         colorList_ = colorList;
-    };
+    }
 
-     void SetRenderColor(const SColor& colorList)
+    void SetRenderColor(const SColor& colorList)
     {
         colorList_ = {colorList};
-    };
+    }
 
     void SetRenderMode(SymbolRenderingStrategy renderMode)
     {
         renderMode_ = renderMode;
-    };
+    }
 
     void SetSymbolEffect(const EffectStrategy& effectStrategy)
     {
         effectStrategy_ = effectStrategy;
-    };
+    }
 
     std::vector<SColor> GetRenderColor() const
     {
         return colorList_;
-    };
+    }
 
     SymbolRenderingStrategy GetRenderMode() const
     {
         return renderMode_;
-    };
+    }
 
     EffectStrategy GetEffectStrategy() const
     {
         return effectStrategy_;
-    };
+    }
 
     bool operator ==(HMSymbolTxt const &sym) const;
      

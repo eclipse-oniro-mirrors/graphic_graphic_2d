@@ -356,6 +356,30 @@ SymbolOpItem::SymbolOpItem(const HMSymbolData& symbol, SkPoint locate, const SkP
 {
 }
 
+static void MergePath(SkPath& multPath, RenderGroup& group, std::vector<SkPath>& pathLayers)
+{
+    for (auto groupInfo : group.groupInfos) {
+        SkPath pathStemp;
+        for (auto k : groupInfo.layerIndexes) {
+            if (k >= pathLayers.size()) {
+                continue;
+            }
+            pathStemp.addPath(pathLayers[k]);
+        }
+        for (size_t h : groupInfo.maskIndexes) {
+            if (h >= pathLayers.size()) {
+                continue;
+            }
+            SkPath outPath;
+            auto isOk = Op(pathStemp, pathLayers[h], SkPathOp::kDifference_SkPathOp, &outPath);
+            if (isOk) {
+                pathStemp = outPath;
+            }
+        }
+        multPath.addPath(pathStemp);
+    }
+}
+
 void SymbolOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
 {
     SkPath path(symbol_.path_);
@@ -384,26 +408,7 @@ void SymbolOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
     }
     for (auto group : groups) {
         SkPath multPath;
-        for (auto groupInfo : group.groupInfos) {
-            SkPath pathStemp;
-            for (auto k : groupInfo.layerIndexes) {
-                if (k >= pathLayers.size()) {
-                    continue;
-                }
-                pathStemp.addPath(pathLayers[k]);
-            }
-            for (size_t h : groupInfo.maskIndexes) {
-                if (h >= pathLayers.size()) {
-                    continue;
-                }
-                SkPath outPath;
-                auto isOk = Op(pathStemp, pathLayers[h], SkPathOp::kDifference_SkPathOp, &outPath);
-                if (isOk) {
-                    pathStemp = outPath;
-                }
-            }
-            multPath.addPath(pathStemp);
-        }
+        MergePath(multPath, group, pathLayers);
         // color
         paintCopy.setColor(SkColorSetRGB(group.color.r, group.color.g, group.color.b));
         paintCopy.setAlphaf(group.color.a);

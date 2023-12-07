@@ -34,13 +34,13 @@ namespace Rosen {
 
 class RS_EXPORT HMSymbolTxt {
 public:
-    HMSymbolTxt(){};
-    ~HMSymbolTxt(){};
+    HMSymbolTxt(){}
+    ~HMSymbolTxt(){}
 
     void SetRenderColor(const std::vector<SColor>& colorList)
     {
         colorList_ = colorList;
-    };
+    }
 
     void SetRenderColor(const std::vector<Drawing::Color>& colorList)
     {
@@ -49,18 +49,18 @@ public:
             SColor colorIt = {color.GetAlphaF(), color.GetRed(), color.GetGreen(), color.GetBlue()};
             colorList_.push_back(colorIt);
         }
-    };
+    }
 
     void SetRenderColor(const Drawing::Color& color)
     {
         SColor colorIt = {color.GetAlphaF(), color.GetRed(), color.GetGreen(), color.GetBlue()};
         colorList_ = {colorIt};
-    };
+    }
 
     void SetRenderColor(const SColor& colorList)
     {
         colorList_ = {colorList};
-    };
+    }
 
     void SetRenderMode(const uint32_t& renderMode)
     {
@@ -77,7 +77,7 @@ public:
             default:
                 break;
         }
-    };
+    }
 
     void SetSymbolEffect(const uint32_t& effectStrategy)
     {
@@ -94,22 +94,22 @@ public:
             default:
                 break;
         }
-    };
+    }
 
     std::vector<SColor> GetRenderColor() const
     {
         return colorList_;
-    };
+    }
 
     SymbolRenderingStrategy GetRenderMode() const
     {
         return renderMode_;
-    };
+    }
 
     EffectStrategy GetEffectStrategy() const
     {
         return effectStrategy_;
-    };
+    }
 
 private:
     std::vector<SColor> colorList_;

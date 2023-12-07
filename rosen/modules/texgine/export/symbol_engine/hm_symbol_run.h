@@ -36,16 +36,16 @@ namespace Rosen {
 namespace TextEngine {
 class HMSymbolRun {
 public:
-    HMSymbolRun(){};
-    ~HMSymbolRun(){};
+    HMSymbolRun(){}
+    ~HMSymbolRun(){}
 
     static SymbolLayers GetSymbolLayers(const SkGlyphID& glyphId, const HMSymbolTxt& symbolText);
 
     static void SetSymbolRenderColor(const SymbolRenderingStrategy& renderMode, const std::vector<SColor>& colors,
         SymbolLayers& symbolInfo);
 
-    static void DrawSymbol(TexgineCanvas &canvas, const std::shared_ptr<TexgineTextBlob> &blob, const std::pair<double, double>& offset,
-        const TexginePaint &paint, const TextStyle &style);
+    static void DrawSymbol(TexgineCanvas &canvas, const std::shared_ptr<TexgineTextBlob> &blob,
+        const std::pair<double, double>& offset, const TexginePaint &paint, const TextStyle &style);
 };
 
 }
