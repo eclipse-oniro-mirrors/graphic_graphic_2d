@@ -188,6 +188,8 @@ public:
     void CountMem(int pid, MemoryGraphic& mem);
     void CountMem(std::vector<MemoryGraphic>& mems);
     void SetAppWindowNum(uint32_t num);
+    bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes);
+    SystemAnimatedScenes GetSystemAnimatedScenes();
     void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow);
     void SetIsCachedSurfaceUpdated(bool isCachedSurfaceUpdated);
     void SetForceUpdateUniRenderFlag(bool flag)
@@ -336,7 +338,6 @@ private:
     uint64_t lastDeferedCleanCacheTimestamp_ = 0;
     uint64_t deferedCleanCount_ = 0;
 
-    uint64_t preSKReleaseResourceTimestamp_ = 0;
     std::unordered_map<uint32_t, sptr<IApplicationAgent>> applicationAgentMap_;
 
     std::shared_ptr<RSContext> context_;
@@ -470,6 +471,7 @@ private:
 
     std::shared_ptr<RSAppStateListener> rsAppStateListener_;
     int32_t subscribeFailCount_ = 0;
+    SystemAnimatedScenes systemAnimatedScenes_ = SystemAnimatedScenes::OTHERS;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

@@ -37,7 +37,7 @@ public:
 #ifndef USE_ROSEN_DRAWING
     NativeVkImageRes(NativeWindowBuffer* nativeWindowBuffer, GrBackendTexture backendTexture,
 #else
-    NativeVkImageRes(NativeWindowBuffer* nativeWindowBuffer, Drawing::VKTextureInfo backendTexture,
+    NativeVkImageRes(NativeWindowBuffer* nativeWindowBuffer, Drawing::BackendTexture backendTexture,
 #endif
         NativeBufferUtils::VulkanCleanupHelper* vulkanCleanupHelper)
         : mNativeWindowBuffer(nativeWindowBuffer),
@@ -51,7 +51,7 @@ public:
 #ifndef USE_ROSEN_DRAWING
     const GrBackendTexture& GetBackendTexture() const
 #else
-    const Drawing::VKTextureInfo& GetBackendTexture() const
+    const Drawing::BackendTexture& GetBackendTexture() const
 #endif
     {
         return mBackendTexture_;
@@ -66,7 +66,7 @@ public:
 
     uint32_t GetThreadIndex() const
     {
-        return threadIndex;
+        return threadIndex_;
     }
 
     void SetThreadIndex(const uint32_t threadIndex = UNI_MAIN_THREAD_INDEX)
@@ -79,11 +79,11 @@ private:
 #ifndef USE_ROSEN_DRAWING
     GrBackendTexture mBackendTexture_;
 #else
-    Drawing::VKTextureInfo mBackendTexture_;
+    Drawing::BackendTexture mBackendTexture_;
 #endif
     NativeBufferUtils::VulkanCleanupHelper* mVulkanCleanupHelper;
     uint32_t threadIndex_ = UNI_MAIN_THREAD_INDEX;
-}
+};
 
 class RSVkImageManager {
 public:
@@ -100,14 +100,14 @@ public:
 
 private:
     void WaitAcquireFence(const sptr<SyncFence>& acquireFence);
-    static std::shared_ptr<NativeVkImageRes> NewImageCacheFromBuffer(
+    std::shared_ptr<NativeVkImageRes> NewImageCacheFromBuffer(
         const sptr<OHOS::SurfaceBuffer>& buffer, uint32_t threadIndex);
 
     mutable std::mutex opMutex_;
     static constexpr size_t MAX_CACHE_SIZE = 16;
     std::queue<int32_t> cacheQueue_; // fifo, size restricted by MAX_CACHE_SIZE
     std::unordered_map<int32_t, std::shared_ptr<NativeVkImageRes>> imageCacheSeqs_; // guarded by opMutex_
-}
+};
 
 } // namespace Rosen
 } // namespace OHOS

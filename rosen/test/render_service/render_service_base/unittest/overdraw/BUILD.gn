@@ -40,7 +40,7 @@ ohos_unittest("overdraw_test") {
     "//third_party/googletest:gmock",
   ]
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
-    public_deps = [ "$graphic_2d_root/rosen/modules/2d_graphics::2d_graphics" ]
+    public_deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
   }
   external_deps = [ "hilog:libhilog" ]
   if (defined(use_new_skia) && use_new_skia) {

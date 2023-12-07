@@ -22,7 +22,7 @@ namespace Rosen {
 namespace Drawing {
 Matrix::Matrix() : matrixImplPtr(ImplFactory::CreateMatrixImpl()) {}
 
-Matrix::Matrix(const Matrix& other) : matrixImplPtr(ImplFactory::CreateMatrixImpl()) {}
+Matrix::Matrix(const Matrix& other) : matrixImplPtr(ImplFactory::CreateMatrixImpl(other)) {}
 
 Matrix& Matrix::operator=(const Matrix& matrix)
 {

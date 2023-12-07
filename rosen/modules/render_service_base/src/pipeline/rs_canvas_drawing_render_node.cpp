@@ -52,6 +52,7 @@ RSCanvasDrawingRenderNode::~RSCanvasDrawingRenderNode()
 }
 
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+#ifndef USE_ROSEN_DRAWING
 bool RSCanvasDrawingRenderNode::ResetSurfaceWithTexture(int width, int height, RSPaintFilterCanvas& canvas)
 {
     auto preMatrix = canvas_->getTotalMatrix();
@@ -89,6 +90,47 @@ bool RSCanvasDrawingRenderNode::ResetSurfaceWithTexture(int width, int height, R
     canvas_->setMatrix(preMatrix);
     return true;
 }
+#else
+bool RSCanvasDrawingRenderNode::ResetSurfaceWithTexture(int width, int height, RSPaintFilterCanvas& canvas)
+{
+    auto preMatrix = canvas_->GetTotalMatrix();
+    auto preSurface = surface_;
+    if (!ResetSurface(width, height, canvas)) {
+        return false;
+    }
+    auto image = preSurface->GetImageSnapshot();
+    if (!image) {
+        return false;
+    }
+    Drawing::TextureOrigin origin = Drawing::TextureOrigin::BOTTOM_LEFT;
+    auto sharedBackendTexture = image->GetBackendTexture(false, &origin);
+    if (!sharedBackendTexture.IsValid()) {
+        RS_LOGE("RSCanvasDrawingRenderNode::ResetSurfaceWithTexture sharedBackendTexture is nullptr");
+        return false;
+    }
+
+    Drawing::BitmapFormat bitmapFormat = { image->GetColorType(), image->GetAlphaType() };
+    auto sharedTexture = std::make_shared<Drawing::Image>();
+    if (!sharedTexture->BuildFromTexture(*canvas.GetGPUContext(), sharedBackendTexture.GetTextureInfo(),
+        origin, bitmapFormat, nullptr)) {
+        RS_LOGE("RSCanvasDrawingRenderNode::ResetSurfaceWithTexture sharedTexture is nullptr");
+        return false;
+    }
+    if (RSSystemProperties::GetRecordingEnabled()) {
+        if (sharedTexture->IsTextureBacked()) {
+            RS_LOGI("RSCanvasDrawingRenderNode::ResetSurfaceWithTexture sharedTexture from texture to raster image");
+            sharedTexture = sharedTexture->MakeRasterImage();
+        }
+    }
+    canvas_->DrawImage(*sharedTexture, 0.f, 0.f, Drawing::SamplingOptions());
+    if (preThreadInfo_.second && preSurface) {
+        preThreadInfo_.second(std::move(preSurface));
+    }
+    preThreadInfo_ = curThreadInfo_;
+    canvas_->SetMatrix(preMatrix);
+    return true;
+}
+#endif
 #endif
 
 #ifndef USE_ROSEN_DRAWING
@@ -158,7 +200,7 @@ void RSCanvasDrawingRenderNode::ProcessRenderContents(RSPaintFilterCanvas& canva
             return;
         }
         preThreadInfo_ = curThreadInfo_;
-    } else if (preThreadInfo_.first != curThreadInfo_.first) {
+    } else if ((isGpuSurface_) && (preThreadInfo_.first != curThreadInfo_.first)) {
         auto preMatrix = canvas_->GetTotalMatrix();
         auto preSurface = surface_;
         if (!ResetSurface(width, height, canvas)) {
@@ -256,12 +298,15 @@ bool RSCanvasDrawingRenderNode::ResetSurface(int width, int height, RSPaintFilte
 
 #if (defined (RS_ENABLE_GL) || defined (RS_ENABLE_VK)) && (defined RS_ENABLE_EGLIMAGE)
     auto gpuContext = canvas.GetGPUContext();
+    isGpuSurface_ = true;
     if (gpuContext == nullptr) {
         RS_LOGD("RSCanvasDrawingRenderNode::ResetSurface: gpuContext is nullptr");
+        isGpuSurface_ = false;
         surface_ = Drawing::Surface::MakeRaster(info);
     } else {
         surface_ = Drawing::Surface::MakeRenderTarget(gpuContext.get(), false, info);
         if (!surface_) {
+            isGpuSurface_ = false;
             surface_ = Drawing::Surface::MakeRaster(info);
         }
     }
@@ -348,7 +393,7 @@ bool RSCanvasDrawingRenderNode::GetPixelmap(
 Drawing::Bitmap RSCanvasDrawingRenderNode::GetBitmap(const uint64_t tid)
 {
     Drawing::Bitmap bitmap;
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(drawingMutex_);
     if (!image_) {
         RS_LOGE("RSCanvasDrawingRenderNode::GetBitmap: image_ is nullptr");
         return bitmap;
@@ -366,7 +411,8 @@ Drawing::Bitmap RSCanvasDrawingRenderNode::GetBitmap(const uint64_t tid)
 bool RSCanvasDrawingRenderNode::GetPixelmap(
     const std::shared_ptr<Media::PixelMap> pixelmap, const Drawing::Rect* rect, const uint64_t tid)
 {
-    if (!pixelmap) {
+    std::lock_guard<std::mutex> lock(drawingMutex_);
+    if (!pixelmap || !rect) {
         RS_LOGE("RSCanvasDrawingRenderNode::GetPixelmap: pixelmap is nullptr");
         return false;
     }
@@ -457,6 +503,9 @@ void RSCanvasDrawingRenderNode::AddDirtyType(RSModifierType type)
 #else
     dirtyTypes_.set(static_cast<int>(type), true);
 #endif
+    if (!IsOnTheTree()) {
+        ClearOp();
+    }
     for (auto drawCmdModifier : drawCmdModifiers_) {
         if (drawCmdModifier.second.empty()) {
             continue;
@@ -478,9 +527,6 @@ void RSCanvasDrawingRenderNode::AddDirtyType(RSModifierType type)
                 drawCmdLists_[drawCmdModifier.first].emplace_back(cmd);
             }
         }
-    }
-    if (!IsOnTheTree()) {
-        ClearOp();
     }
 }
 

@@ -1254,7 +1254,7 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
 {
     const auto& para = properties.GetLinearGradientBlurPara();
     if (para == nullptr || para->blurRadius_ <= 0) {
-        ROSEN_LOGE("RSPropertiesPainter::DrawLinearGradientBlurFilter para invalid");
+        ROSEN_LOGD("RSPropertiesPainter::DrawLinearGradientBlurFilter para invalid");
         return;
     }
     RS_TRACE_NAME("DrawLinearGradientBlurFilter");
@@ -2050,6 +2050,14 @@ void RSPropertiesPainter::DrawPixelStretch(const RSProperties& properties, RSPai
     auto boundsGeo = (properties.GetBoundsGeometry());
     if (boundsGeo && !boundsGeo->IsEmpty()) {
         auto transMat = canvas.getTotalMatrix();
+        /* transMat.getSkewY() is the sin of the rotation angle(sin0 = 0,sin90 =1 sin180 = 0,sin270 = -1),
+            if transMat.getSkewY() is not 0 or -1 or 1,the rotation angle is not a multiple of 90,not Stretch*/
+        if (ROSEN_EQ(transMat.getSkewY(), 0.f) || ROSEN_EQ(transMat.getSkewY(), 1.f) ||
+            ROSEN_EQ(transMat.getSkewY(), -1.f)) {
+        } else {
+            ROSEN_LOGD("rotate degree is not 0 or 90 or 180 or 270,return.");
+            return;
+        }
         rotateMat.setScale(transMat.getScaleX(), transMat.getScaleY());
         rotateMat.setSkewX(transMat.getSkewX());
         rotateMat.setSkewY(transMat.getSkewY());
@@ -2130,30 +2138,40 @@ void RSPropertiesPainter::DrawPixelStretch(const RSProperties& properties, RSPai
     }
 
     Drawing::Brush brush;
-    Drawing::Matrix inverseMat, scaleMat;
+    Drawing::Matrix inverseMat, rotateMat;
     auto boundsGeo = (properties.GetBoundsGeometry());
     if (boundsGeo && !boundsGeo->IsEmpty()) {
-        if (!canvas.GetTotalMatrix().Invert(inverseMat)) {
-            ROSEN_LOGE("RSPropertiesPainter::DrawPixelStretch get inverse matrix failed.");
+        auto transMat = canvas.GetTotalMatrix();
+        rotateMat.SetScale(transMat.Get(Drawing::Matrix::SCALE_X), transMat.Get(Drawing::Matrix::SCALE_Y));
+        rotateMat.Set(Drawing::Matrix::SKEW_X, transMat.Get(Drawing::Matrix::SKEW_X));
+        rotateMat.Set(Drawing::Matrix::SKEW_Y, transMat.Get(Drawing::Matrix::SKEW_Y));
+        rotateMat.PreTranslate(-bounds.GetLeft(), -bounds.GetTop());
+        rotateMat.PostTranslate(bounds.GetLeft(), bounds.GetTop());
+
+        Drawing::Rect transBounds;
+        rotateMat.MapRect(transBounds, bounds);
+        rotateMat.Set(Drawing::Matrix::TRANS_X, bounds.GetLeft() - transBounds.GetLeft());
+        rotateMat.Set(Drawing::Matrix::TRANS_Y, bounds.GetTop() - transBounds.GetTop());
+        if (!rotateMat.Invert(inverseMat)) {
+            ROSEN_LOGE("RSPropertiesPainter::DrawPixelStretch get invert matrix failed.");
         }
-        scaleMat.Set(Drawing::Matrix::SCALE_X, inverseMat.Get(Drawing::Matrix::SCALE_X));
-        scaleMat.Set(Drawing::Matrix::SCALE_Y, inverseMat.Get(Drawing::Matrix::SCALE_Y));
     }
 
     canvas.Save();
     canvas.Translate(bounds.GetLeft(), bounds.GetTop());
     Drawing::SamplingOptions samplingOptions;
-    if (pixelStretch->x_ > 0) {
+    constexpr static float EPS = 1e-5f;
+    if (pixelStretch->x_ > EPS || pixelStretch->y_ > EPS || pixelStretch->z_ > EPS || pixelStretch->w_ > EPS) {
         brush.SetShaderEffect(Drawing::ShaderEffect::CreateImageShader(
-            *image, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, samplingOptions, scaleMat));
+            *image, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, samplingOptions, inverseMat));
         canvas.AttachBrush(brush);
         canvas.DrawRect(Drawing::Rect(-pixelStretch->x_, -pixelStretch->y_,
             -pixelStretch->x_ + scaledBounds.GetWidth(), -pixelStretch->y_ + scaledBounds.GetHeight()));
         canvas.DetachBrush();
     } else {
-        scaleMat.PostScale(scaledBounds.GetWidth() / bounds.GetWidth(), scaledBounds.GetHeight() / bounds.GetHeight());
+        inverseMat.PostScale(scaledBounds.GetWidth() / bounds.GetWidth(), scaledBounds.GetHeight() / bounds.GetHeight());
         brush.SetShaderEffect(Drawing::ShaderEffect::CreateImageShader(
-            *image, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, samplingOptions, scaleMat));
+            *image, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, samplingOptions, inverseMat));
 
         canvas.Translate(-pixelStretch->x_, -pixelStretch->y_);
         canvas.AttachBrush(brush);
@@ -2261,7 +2279,7 @@ void RSPropertiesPainter::DrawBackground(const RSProperties& properties, RSPaint
     Drawing::Brush brush;
     brush.SetAntiAlias(antiAlias);
     auto bgColor = properties.GetBackgroundColor();
-    if (bgColor != RgbPalette::Transparent()) {
+    if (bgColor != RgbPalette::Transparent() && !isSurfaceView) {
         brush.SetColor(Drawing::Color(bgColor.AsArgbInt()));
         canvas.AttachBrush(brush);
         canvas.DrawRoundRect(RRect2DrawingRRect(properties.GetRRect()));
@@ -2397,7 +2415,61 @@ const std::shared_ptr<SkRuntimeShaderBuilder>& RSPropertiesPainter::GetPhongShad
     phongShaderBuilder = std::make_shared<SkRuntimeShaderBuilder>(lightEffect_);
     return phongShaderBuilder;
 }
+#else
+static std::shared_ptr<Drawing::RuntimeShaderBuilder> phongShaderBuilder;
+
+const std::shared_ptr<Drawing::RuntimeShaderBuilder>& RSPropertiesPainter::GetPhongShaderBuilder()
+{
+    if (phongShaderBuilder) {
+        return phongShaderBuilder;
+    }
+    std::shared_ptr<Drawing::RuntimeEffect> lightEffect_;
+    std::string lightString(R"(
+        uniform vec3 lightPos;
+        uniform vec3 viewPos;
+        uniform vec3 specularStrength;
+
+        half4 main(float2 fragCoord) {
+            vec3 lightColor = vec3(1.0, 1.0, 1.0);
+            float ambientStrength = 0.0;
+            vec3 diffuseColor = vec3(1.0, 1.0, 1.0);
+            float diffuseStrength = 0.0;
+            vec3 specularColor = vec3(1.0, 1.0, 1.0);
+            float shininess = 8.0;
+            half4 fragColor;
+            vec4 NormalMap = vec4(0.0, 0.0, 1.0, 0.0);
+            // ambient
+            vec4 ambient = lightColor.rgb1 * ambientStrength;
+            vec3 norm = normalize(NormalMap.rgb);
+            vec3 lightDir = normalize(vec3(lightPos.xy - fragCoord, lightPos.z));
+            // diffuse
+            float diff = max(dot(norm, lightDir), 0.0);
+            vec4 diffuse = diff * lightColor.rgb1;
+            vec3 viewDir = normalize(vec3(viewPos.xy - fragCoord, viewPos.z)); // view vector
+            vec3 halfwayDir = normalize(lightDir + viewDir); // half vector
+            float spec = pow(max(dot(norm, halfwayDir), 0.0), shininess); // exponential relationship of angle
+            vec4 specular = lightColor.rgb1 * spec; // multiply color of incident light
+            vec4 o = ambient + diffuse * diffuseStrength * diffuseColor.rgb1; // diffuse reflection
+            fragColor = o + specular * specularStrength.r * specularColor.rgb1; // specular reflection
+            return half4(fragColor);
+        }
+    )");
+    std::shared_ptr<Drawing::RuntimeEffect> lightEffect = Drawing::RuntimeEffect::CreateForShader(lightString);
+    if (!lightEffect) {
+        ROSEN_LOGE("light effect error");
+        return phongShaderBuilder;
+    }
+    lightEffect_ = std::move(lightEffect);
+    phongShaderBuilder = std::make_shared<Drawing::RuntimeShaderBuilder>(lightEffect_);
+    return phongShaderBuilder;
+}
+#endif
+
+#ifndef USE_ROSEN_DRAWING
 void RSPropertiesPainter::DrawLight(const RSProperties& properties, SkCanvas& canvas)
+#else
+void RSPropertiesPainter::DrawLight(const RSProperties& properties, Drawing::Canvas& canvas)
+#endif
 {
     auto lightBuilder = GetPhongShaderBuilder();
     if (!lightBuilder) {
@@ -2425,12 +2497,22 @@ void RSPropertiesPainter::DrawLight(const RSProperties& properties, SkCanvas& ca
     auto lightX = lightPosition[0] - contentAbsRect.left_;
     auto lightY = lightPosition[1] - contentAbsRect.top_;
     auto lightZ = lightPosition[2];
+#ifndef USE_ROSEN_DRAWING
     lightBuilder->uniform("lightPos") = SkV3 { lightX, lightY, lightZ };
     lightBuilder->uniform("viewPos") = SkV3 { lightX, lightY, 300 };
     SkPaint paint;
     paint.setAntiAlias(true);
+#else
+    lightBuilder->SetUniform("lightPos", lightX, lightY, lightZ);
+    lightBuilder->SetUniform("viewPos", lightX, lightY, 300);
+    Drawing::Pen pen;
+    Drawing::Brush brush;
+    pen.SetAntiAlias(true);
+    brush.SetAntiAlias(true);
+#endif
     auto illuminatedType = properties.GetIlluminated()->GetIlluminatedType();
     ROSEN_LOGD("RSPropertiesPainter::DrawLight illuminatedType:%{public}d", illuminatedType);
+#ifndef USE_ROSEN_DRAWING
     if (illuminatedType == IlluminatedType::CONTENT) {
         DrawContentLight(properties, canvas, lightBuilder, paint, lightIntensity);
     } else if (illuminatedType == IlluminatedType::BORDER) {
@@ -2439,44 +2521,98 @@ void RSPropertiesPainter::DrawLight(const RSProperties& properties, SkCanvas& ca
         DrawContentLight(properties, canvas, lightBuilder, paint, lightIntensity);
         DrawBorderLight(properties, canvas, lightBuilder, paint, lightIntensity);
     }
+#else
+    if (illuminatedType == IlluminatedType::CONTENT) {
+        DrawContentLight(properties, canvas, lightBuilder, brush, lightIntensity);
+    } else if (illuminatedType == IlluminatedType::BORDER) {
+        DrawBorderLight(properties, canvas, lightBuilder, pen, lightIntensity);
+    } else if (illuminatedType == IlluminatedType::BORDER_CONTENT) {
+        DrawContentLight(properties, canvas, lightBuilder, brush, lightIntensity);
+        DrawBorderLight(properties, canvas, lightBuilder, pen, lightIntensity);
+    }
+#endif
 }
 
+#ifndef USE_ROSEN_DRAWING
 void RSPropertiesPainter::DrawContentLight(const RSProperties& properties, SkCanvas& canvas,
     std::shared_ptr<SkRuntimeShaderBuilder> lightBuilder, SkPaint& paint, float lightIntensity)
+#else
+void RSPropertiesPainter::DrawContentLight(const RSProperties& properties, Drawing::Canvas& canvas,
+    std::shared_ptr<Drawing::RuntimeShaderBuilder> lightBuilder, Drawing::Brush& brush, float lightIntensity)
+#endif
 {
     // content light
+#ifndef USE_ROSEN_DRAWING
     sk_sp<SkShader> shader;
+#else
+    std::shared_ptr<Drawing::ShaderEffect> shader;
+#endif
     auto contentStrength = lightIntensity * 0.3;
+#ifndef USE_ROSEN_DRAWING
     lightBuilder->uniform("specularStrength") = SkV3 { contentStrength, 0, 0 };
     shader = lightBuilder->makeShader(nullptr, false);
     paint.setShader(shader);
     canvas.drawRRect(RRect2SkRRect(properties.GetRRect()), paint);
+#else
+    lightBuilder->SetUniform("specularStrength", contentStrength, 0, 0);
+    shader = lightBuilder->MakeShader(nullptr, false);
+    brush.SetShaderEffect(shader);
+    canvas.AttachBrush(brush);
+    canvas.DrawRoundRect(RRect2DrawingRRect(properties.GetRRect()));
+    canvas.DetachBrush();
+#endif
 }
+
+#ifndef USE_ROSEN_DRAWING
 void RSPropertiesPainter::DrawBorderLight(const RSProperties& properties, SkCanvas& canvas,
     std::shared_ptr<SkRuntimeShaderBuilder> lightBuilder, SkPaint& paint, float lightIntensity)
+#else
+void RSPropertiesPainter::DrawBorderLight(const RSProperties& properties, Drawing::Canvas& canvas,
+    std::shared_ptr<Drawing::RuntimeShaderBuilder> lightBuilder, Drawing::Pen& pen, float lightIntensity)
+#endif
 {
     // border light
+#ifndef USE_ROSEN_DRAWING
     sk_sp<SkShader> shader;
+#else
+    std::shared_ptr<Drawing::ShaderEffect> shader;
+#endif
     auto strength = lightIntensity;
+#ifndef USE_ROSEN_DRAWING
     lightBuilder->uniform("specularStrength") = SkV3 { strength, 0, 0 };
     shader = lightBuilder->makeShader(nullptr, false);
     paint.setShader(shader);
-    float borderWidth = std::ceil(properties.GetIlluminatedBorderWidth());
-    paint.setStrokeWidth(borderWidth);
+    paint.setStrokeWidth(6);
     paint.setStyle(SkPaint::Style::kStroke_Style);
+#else
+    lightBuilder->SetUniform("specularStrength", strength, 0, 0);
+    shader = lightBuilder->MakeShader(nullptr, false);
+    pen.SetShaderEffect(shader);
+    pen.SetWidth(6);
+#endif
     auto borderRect = properties.GetRRect().rect_;
     float borderRadius = properties.GetRRect().radius_[0].x_;
-    auto borderRRect = RRect(RectF(borderRect.left_ + borderWidth / 2.0f, borderRect.top_ + borderWidth / 2.0f,
-                                 borderRect.width_ - borderWidth, borderRect.height_ - borderWidth),
-        borderRadius - borderWidth / 2.0f, borderRadius - borderWidth / 2.0f);
+    auto borderRRect =
+        RRect(RectF(borderRect.left_ + 3, borderRect.top_ + 3, borderRect.width_ - 6, borderRect.height_ - 6),
+            borderRadius - 3, borderRadius - 3);
+#ifndef USE_ROSEN_DRAWING
     canvas.drawRRect(RRect2SkRRect(borderRRect), paint);
-}
+#else
+    canvas.AttachPen(pen);
+    canvas.DrawRoundRect(RRect2DrawingRRect(borderRRect));
+    canvas.DetachPen();
 #endif
+}
 
 #ifndef USE_ROSEN_DRAWING
 void RSPropertiesPainter::DrawBorderBase(const RSProperties& properties, SkCanvas& canvas,
                                          const std::shared_ptr<RSBorder>& border, Vector4f& outset,
                                          Vector4f& innerOutset, const bool isFirstLayerBorder)
+#else
+void RSPropertiesPainter::DrawBorderBase(const RSProperties& properties, Drawing::Canvas& canvas,
+                                         const std::shared_ptr<RSBorder>& border, Vector4f& outset,
+                                         Vector4f& innerOutset, const bool isFirstLayerBorder)
+#endif
 {
     if (!border || !border->HasBorder()) {
         return;
@@ -2485,6 +2621,7 @@ void RSPropertiesPainter::DrawBorderBase(const RSProperties& properties, SkCanva
     if (!isFirstLayerBorder) {
         outset = outset + border->GetWidthFour();
     }
+#ifndef USE_ROSEN_DRAWING
     SkPaint paint;
     paint.setAntiAlias(true);
     if (border->ApplyFillStyle(paint)) {
@@ -2522,11 +2659,59 @@ void RSPropertiesPainter::DrawBorderBase(const RSProperties& properties, SkCanva
             border->PaintLeftPath(canvas, paint, rrect);
         }
     }
+#else
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    brush.SetAntiAlias(true);
+    pen.SetAntiAlias(true);
+    if (border->ApplyFillStyle(brush)) {
+        auto roundRect = RRect2DrawingRRect(GetRRectForDrawingBorder(
+            properties.GetRRect(), border, outset, isFirstLayerBorder));
+        auto innerRoundRect = RRect2DrawingRRect(GetInnerRRectForDrawingBorder(
+            properties, border, innerOutset, isFirstLayerBorder));
+        canvas.AttachBrush(brush);
+        canvas.DrawNestedRoundRect(roundRect, innerRoundRect);
+        canvas.DetachBrush();
+    } else {
+        bool isZero = isFirstLayerBorder ? properties.GetCornerRadius().IsZero() : border->GetRadiusFour().IsZero();
+        if (isZero && border->ApplyFourLine(pen)) {
+            RectF rectf = properties.GetBoundsRect();
+            border->PaintFourLine(canvas, pen, rectf.MakeOutset(outset));
+        } else if (border->ApplyPathStyle(pen)) {
+            auto borderWidth = border->GetWidth();
+            RRect rrect = GetRRectForDrawingBorder(properties.GetRRect(), border, outset, isFirstLayerBorder);
+            rrect.rect_.width_ -= borderWidth;
+            rrect.rect_.height_ -= borderWidth;
+            rrect.rect_.Move(borderWidth / PARAM_DOUBLE, borderWidth / PARAM_DOUBLE);
+            Drawing::Path borderPath;
+            borderPath.AddRoundRect(RRect2DrawingRRect(rrect));
+            canvas.AttachPen(pen);
+            canvas.DrawPath(borderPath);
+            canvas.DetachPen();
+        } else {
+            Drawing::AutoCanvasRestore acr(canvas, true);
+            auto rrect = RRect2DrawingRRect(GetRRectForDrawingBorder(
+                properties.GetRRect(), border, outset, isFirstLayerBorder));
+            canvas.ClipRoundRect(rrect, Drawing::ClipOp::INTERSECT, true);
+            auto innerRoundRect = RRect2DrawingRRect(GetInnerRRectForDrawingBorder(
+                properties, border, innerOutset, isFirstLayerBorder));
+            canvas.ClipRoundRect(innerRoundRect, Drawing::ClipOp::DIFFERENCE, true);
+            border->PaintTopPath(canvas, pen, rrect);
+            border->PaintRightPath(canvas, pen, rrect);
+            border->PaintBottomPath(canvas, pen, rrect);
+            border->PaintLeftPath(canvas, pen, rrect);
+        }
+    }
+#endif
 
     innerOutset = innerOutset + border->GetWidthFour();
 }
 
+#ifndef USE_ROSEN_DRAWING
 void RSPropertiesPainter::DrawBorder(const RSProperties& properties, SkCanvas& canvas)
+#else
+void RSPropertiesPainter::DrawBorder(const RSProperties& properties, Drawing::Canvas& canvas)
+#endif
 {
     Vector4f outset, innerOutset;
     auto innerBorder = properties.GetBorder();
@@ -2539,47 +2724,6 @@ void RSPropertiesPainter::DrawBorder(const RSProperties& properties, SkCanvas& c
         DrawBorderBase(properties, canvas, outerBorder, outset, innerOutset, false);
     }
 }
-#else
-void RSPropertiesPainter::DrawBorder(const RSProperties& properties, Drawing::Canvas& canvas)
-{
-    auto border = properties.GetBorder();
-    if (!border || !border->HasBorder()) {
-        return;
-    }
-    Drawing::Pen pen;
-    Drawing::Brush brush;
-    pen.SetAntiAlias(true);
-    brush.SetAntiAlias(true);
-    if (border->ApplyFillStyle(brush)) {
-        canvas.AttachBrush(brush);
-        canvas.DrawNestedRoundRect(
-            RRect2DrawingRRect(properties.GetRRect()), RRect2DrawingRRect(properties.GetInnerRRect()));
-        canvas.DetachBrush();
-    } else if (properties.GetCornerRadius().IsZero() && border->ApplyFourLine(pen)) {
-        RectF rect = properties.GetBoundsRect();
-        border->PaintFourLine(canvas, pen, rect);
-    } else if (border->ApplyPathStyle(pen)) {
-        auto borderWidth = border->GetWidth();
-        RRect rrect = properties.GetRRect();
-        rrect.rect_.width_ -= borderWidth;
-        rrect.rect_.height_ -= borderWidth;
-        rrect.rect_.Move(borderWidth / PARAM_DOUBLE, borderWidth / PARAM_DOUBLE);
-        Drawing::Path borderPath;
-        borderPath.AddRoundRect(RRect2DrawingRRect(rrect));
-        canvas.AttachPen(pen);
-        canvas.DrawPath(borderPath);
-        canvas.DetachPen();
-    } else {
-        Drawing::AutoCanvasRestore acr(canvas, true);
-        canvas.ClipRoundRect(RRect2DrawingRRect(properties.GetInnerRRect()), Drawing::ClipOp::DIFFERENCE, true);
-        Drawing::RoundRect rrect = RRect2DrawingRRect(properties.GetRRect());
-        border->PaintTopPath(canvas, pen, rrect);
-        border->PaintRightPath(canvas, pen, rrect);
-        border->PaintBottomPath(canvas, pen, rrect);
-        border->PaintLeftPath(canvas, pen, rrect);
-    }
-}
-#endif
 
 #ifndef USE_ROSEN_DRAWING
 void RSPropertiesPainter::DrawForegroundColor(const RSProperties& properties, SkCanvas& canvas)

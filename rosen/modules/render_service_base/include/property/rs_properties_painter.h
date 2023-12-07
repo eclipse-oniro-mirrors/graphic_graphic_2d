@@ -24,6 +24,7 @@
 #else
 #include "recording/draw_cmd_list.h"
 #include "draw/surface.h"
+#include "effect/runtime_shader_builder.h"
 #endif
 
 namespace OHOS {
@@ -94,6 +95,7 @@ public:
 #else // USE_ROSEN_DRAWING
     static void Clip(Drawing::Canvas& canvas, RectF rect, bool isAntiAlias = true);
     static void DrawBorder(const RSProperties& properties, Drawing::Canvas& canvas);
+    static void DrawLight(const RSProperties& properties, Drawing::Canvas& canvas);
     static void DrawFrame(
         const RSProperties& properties, RSPaintFilterCanvas& canvas, Drawing::DrawCmdListPtr& drawCmdList);
     static void DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas, FilterType filterType,
@@ -173,6 +175,10 @@ private:
     static void DrawColorfulShadowInner(
         const RSProperties& properties, RSPaintFilterCanvas& canvas, Drawing::Path& path);
     static void DrawShadowInner(const RSProperties& properties, RSPaintFilterCanvas& canvas, Drawing::Path& path);
+    static void DrawContentLight(const RSProperties& properties, Drawing::Canvas& canvas,
+        std::shared_ptr<Drawing::RuntimeShaderBuilder> lightBuilder, Drawing::Brush& brush, float lightIntensity);
+    static void DrawBorderLight(const RSProperties& properties, Drawing::Canvas& canvas,
+        std::shared_ptr<Drawing::RuntimeShaderBuilder> lightBuilder, Drawing::Pen& pen, float lightIntensity);
     static bool GetGradientDirectionPoints(
         Drawing::Point (&pts)[2], const Drawing::Rect& clipBounds, GradientDirection direction);
     static std::shared_ptr<Drawing::ShaderEffect> MakeAlphaGradientShader(const Drawing::Rect& clipBounds,
@@ -202,6 +208,11 @@ private:
         std::shared_ptr<Drawing::ShaderEffect> gradientShader);
     static std::shared_ptr<Drawing::ShaderEffect> MakeGreyAdjustmentShader(const float coef1, const float coef2,
         std::shared_ptr<Drawing::ShaderEffect> imageShader);
+
+    static void DrawBorderBase(const RSProperties& properties, Drawing::Canvas& canvas,
+                               const std::shared_ptr<RSBorder>& border, Vector4f& outset,
+                               Vector4f& innerOutset, const bool isFirstLayerBorder);
+    static const std::shared_ptr<Drawing::RuntimeShaderBuilder>& GetPhongShaderBuilder();
 #endif // USE_ROSEN_DRAWING
     inline static int g_blurCnt = 0;
 };

@@ -424,7 +424,7 @@ void RSRenderServiceConnection::SetRefreshRateMode(int32_t refreshRateMode)
 void RSRenderServiceConnection::SyncFrameRateRange(const FrameRateRange& range)
 {
     auto& context = mainThread_->GetContext();
-    auto& frameRateLikerMap = context.GetFrameRateLinkerMap().GetFrameRateLinkerMap();
+    auto& frameRateLikerMap = context.GetFrameRateLinkerMap().Get();
     auto iter = std::find_if(frameRateLikerMap.begin(), frameRateLikerMap.end(), [this](const auto& pair) {
         return ExtractPid(pair.first) == remotePid_;
     });
@@ -1016,6 +1016,12 @@ void RSRenderServiceConnection::SetAppWindowNum(uint32_t num)
         mainThread_->SetAppWindowNum(num);
     };
     mainThread_->PostTask(task);
+}
+
+bool RSRenderServiceConnection::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return mainThread_->SetSystemAnimatedScenes(systemAnimatedScenes);
 }
 
 void RSRenderServiceConnection::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow)

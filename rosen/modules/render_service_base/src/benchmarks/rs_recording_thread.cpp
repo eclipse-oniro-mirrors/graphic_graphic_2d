@@ -42,7 +42,7 @@ RSRecordingThread &RSRecordingThread::Instance(RenderContext* context)
 
 void RSRecordingThread::Start()
 {
-    runner_ = AppExecFwk::EventRunner::Create("RRecordingThread");
+    runner_ = AppExecFwk::EventRunner::Create("RSRecordingThread");
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);
     PostTask([this]() {
         grContext_ = CreateShareGrContext();
@@ -116,11 +116,11 @@ std::shared_ptr<Drawing::GPUContext> RSRecordingThread::CreateShareGrContext()
 
 void RSRecordingThread::CreateShareEglContext()
 {
-#ifdef RS_ENABLE_GL
     if (renderContext_ == nullptr) {
         RS_LOGE("renderContext_ is nullptr");
         return;
     }
+#ifdef RS_ENABLE_GL
     eglShareContext_ = renderContext_->CreateShareContext();
     if (eglShareContext_ == EGL_NO_CONTEXT) {
         RS_LOGE("eglShareContext_ is EGL_NO_CONTEXT");
@@ -191,7 +191,9 @@ void RSRecordingThread::FinishRecordingOneFrame()
     }
     auto modeSubThread = mode_;
     mode_ = RecordingMode::STOP_RECORDING;
+#ifdef RS_ENABLE_GL
     RSTaskMessage::RSTask task = [this, modeSubThread]() {
+#endif
         for (int curFrameIndex = 0; curFrameIndex < dumpFrameNum_; curFrameIndex++) {
             std::shared_ptr<MessageParcel> messageParcel = std::make_shared<MessageParcel>();
             std::string opsDescription = "drawing ops no description";
@@ -222,8 +224,10 @@ void RSRecordingThread::FinishRecordingOneFrame()
         fileDir_ = "";
         RSSystemProperties::SetRecordingDisenabled();
         RS_LOGD("RSRecordingThread::FinishRecordingOneFrame isRecordingEnabled = false");
+#ifdef RS_ENABLE_GL
     };
     PostTask(task);
+#endif
 }
 
 #ifndef USE_ROSEN_DRAWING

@@ -299,7 +299,6 @@ protected:
     const std::stack<float>& GetAlphaStack();
     const std::stack<Env>& GetEnvStack();
     bool OnFilter() const override;
-    bool OnFilterWithBrush(Drawing::Brush& brush) const override;
     inline bool OnFilterWithBrush(Drawing::Brush& brush) const override
     {
         float alpha = alphaStack_.top();
