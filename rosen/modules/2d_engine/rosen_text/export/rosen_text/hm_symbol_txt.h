@@ -34,8 +34,8 @@ namespace Rosen {
 
 class RS_EXPORT HMSymbolTxt {
 public:
-    HMSymbolTxt(){}
-    ~HMSymbolTxt(){}
+    HMSymbolTxt() {}
+    ~HMSymbolTxt() {}
 
     void SetRenderColor(const std::vector<SColor>& colorList)
     {
