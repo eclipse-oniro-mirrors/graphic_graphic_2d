@@ -53,6 +53,7 @@ TextEngine::TypographyStyle Convert(const TypographyStyle &style)
             .fontSize = style.lineStyleFontSize,
             .heightScale = style.lineStyleHeightScale,
         },
+        .textSplitRatio = style.textSplitRatio,
     };
     if (style.lineStyleSpacingScale >= 0) {
         ys.lineStyle.spacingScale = style.lineStyleSpacingScale;
