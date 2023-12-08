@@ -22,7 +22,6 @@
 #include <vector>
 #include <utility>
 
-#include <include/core/SkTextBlob.h>
 #include <include/core/SkHMSymbol.h>
 
 #include "hm_symbol_txt.h"
