@@ -17,8 +17,8 @@
 #define SHADER_EFFECT_H
 
 #include "drawing/engine_adapter/impl_interface/shader_effect_impl.h"
-#include "utils/drawing_macros.h"
 #include "include/core/SkShader.h"
+#include "utils/drawing_macros.h"
 
 namespace OHOS {
 namespace Rosen {

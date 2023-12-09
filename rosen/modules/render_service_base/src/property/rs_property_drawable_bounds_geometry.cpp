@@ -738,7 +738,6 @@ void RSShadowDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
     canvas.SetMatrix(matrix);
     RSColor colorPicked = GetColorForShadow(node, canvas, path, matrix, deviceClipBounds);
     Drawing::Brush brush;
-    brush.SetColor(color_.AsArgbInt());
     brush.SetColor(Drawing::Color::ColorQuadSetARGB(
         colorPicked.GetAlpha(), colorPicked.GetRed(), colorPicked.GetGreen(), colorPicked.GetBlue()));
     brush.SetAntiAlias(true);

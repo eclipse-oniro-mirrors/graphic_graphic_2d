@@ -432,7 +432,7 @@ bool SkiaImage::GetROPixels(Bitmap& bitmap) const
         return false;
     }
     bitmap.GetImpl<SkiaBitmap>()->SetSkBitmap(skiaBitmap);
-    return false;
+    return true;
 }
 
 std::shared_ptr<Image> SkiaImage::MakeRasterImage() const
