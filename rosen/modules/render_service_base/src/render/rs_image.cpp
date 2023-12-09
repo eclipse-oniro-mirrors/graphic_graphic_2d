@@ -379,12 +379,20 @@ void RSImage::DrawImageRepeatRect(const Drawing::SamplingOptions& samplingOption
                 canvas.save();
                 RSPixelMapUtil::TransformDataSetForAstc(pixelMap_, src_, dst_, canvas);
             }
-            if (canvas.GetRecordingState()) {
+            if (canvas.GetRecordingState() && image_->isTextureBacked()) {
                 auto recordingCanvas = static_cast<RSRecordingCanvas*>(canvas.GetRecordingCanvas());
-                recordingCanvas->drawImageRect(image_, src_, dst_, SkSamplingOptions(),
+                auto cpuImage = image_->makeRasterImage();
+                recordingCanvas->drawImageRect(cpuImage, src_, dst_, SkSamplingOptions(),
                     &paint, SkCanvas::kFast_SrcRectConstraint);
             } else {
-                canvas.drawImageRect(image_, src_, dst_, samplingOptions, &paint, SkCanvas::kFast_SrcRectConstraint);
+                if (canvas.GetRecordingState()) {
+                    auto recordingCanvas = static_cast<RSRecordingCanvas*>(canvas.GetRecordingCanvas());
+                    recordingCanvas->drawImageRect(image_, src_, dst_, SkSamplingOptions(),
+                        &paint, SkCanvas::kFast_SrcRectConstraint);
+                } else {
+                    canvas.drawImageRect(image_, src_, dst_, samplingOptions, &paint,
+                        SkCanvas::kFast_SrcRectConstraint);
+                }
             }
             if (isAstc) {
                 canvas.restore();
