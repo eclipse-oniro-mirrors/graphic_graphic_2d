@@ -239,10 +239,12 @@ void RoundCornerDisplay::UpdateDisplayParameter(uint32_t width, uint32_t height)
     RS_LOGD("[%{public}s] displayWidth_ updated from %{public}u -> %{public}u,"
         "displayHeight_ updated from %{public}u -> %{public}u \n", __func__,
         displayWidth_, width, displayHeight_, height);
-
-    RSSingleton<RSSubThreadRCD>::GetInstance().PostTask([this, &width, &height]() {
-        updateFlag_["display"] = LoadImgsbyResolution(width, height);
-        if (updateFlag_["display"]) {
+    // the width, height do not use reference,which is local var
+    RSSingleton<RSSubThreadRCD>::GetInstance().PostTask([this, width, height]() {
+        bool isOk = LoadImgsbyResolution(width, height);
+        if (isOk) {
+            std::lock_guard<std::mutex> lock(resourceMut_);
+            updateFlag_["display"] = isOk;
             displayWidth_ = width;
             displayHeight_ = height;
         }
