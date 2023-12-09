@@ -158,7 +158,7 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
                 RS_LOGE("RSSurfaceCaptureTask: pixelmap == nullptr");
                 callback->OnSurfaceCapture(id, nullptr);
                 RSUniRenderUtil::ClearNodeCacheSurface(
-                    std::move(std::get<0>(*wrapperSf )), nullptr, UNI_MAIN_THREAD_INDEX, 0);
+                    std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
                 return;
             }
 
@@ -1310,6 +1310,12 @@ void RSSurfaceCaptureVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
         return;
     }
 
+    const auto& property = node.GetRenderProperties();
+    if (property.IsSpherizeValid()) {
+        DrawSpherize(node);
+        return;
+    }
+
     node.ProcessRenderBeforeChildren(*canvas_);
     if (node.GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
         auto canvasDrawingNode = node.ReinterpretCastTo<RSCanvasDrawingRenderNode>();
@@ -1509,5 +1515,18 @@ void RSSurfaceCaptureVisitor::DrawWatermarkIfNeed(RSDisplayRenderNode& node)
 #endif
     }
 }
+
+void RSSurfaceCaptureVisitor::DrawSpherize(RSRenderNode& node)
+{
+    if (!canvas_) {
+        RS_LOGE("RSSurfaceCaptureVisitor::ProcessCanvasRenderNode, canvas is nullptr");
+        return;
+    }
+    node.ProcessTransitionBeforeChildren(*canvas_);
+    RSPropertiesPainter::DrawSpherize(
+        node.GetRenderProperties(), *canvas_, node.GetCompletedCacheSurface(UNI_MAIN_THREAD_INDEX, true));
+    node.ProcessTransitionAfterChildren(*canvas_);
+}
+
 } // namespace Rosen
 } // namespace OHOS
