@@ -530,8 +530,16 @@ void RSUniUICapture::RSUniUICaptureVisitor::ProcessSurfaceViewWithUni(RSSurfaceR
     canvas_->Restore();
 #endif
     if (node.GetBuffer() != nullptr) {
-        auto params = RSUniRenderUtil::CreateBufferDrawParam(node, false);
-        renderEngine_->DrawSurfaceNodeWithParams(*canvas_, node, params);
+        if (auto recordingCanvas = static_cast<RSRecordingCanvas*>(canvas_->GetRecordingCanvas())) {
+            auto params = RSUniRenderUtil::CreateBufferDrawParam(node, false);
+            auto buffer = node.GetBuffer();
+            RSSurfaceBufferInfo rsSurfaceBufferInfo(buffer, params.dstRect.left(), params.dstRect.top(),
+                params.dstRect.width(), params.dstRect.height());
+            recordingCanvas->DrawSurfaceBuffer(rsSurfaceBufferInfo);
+        } else {
+            auto params = RSUniRenderUtil::CreateBufferDrawParam(node, false);
+            renderEngine_->DrawSurfaceNodeWithParams(*canvas_, node, params);
+        }
     }
     if (isSelfDrawingSurface) {
         RSPropertiesPainter::DrawFilter(property, *canvas_, FilterType::FOREGROUND_FILTER);
