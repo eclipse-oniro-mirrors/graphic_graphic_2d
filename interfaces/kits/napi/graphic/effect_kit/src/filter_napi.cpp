@@ -12,8 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <atomic>
 #include <cstddef>
 #include <mutex>
+#include <shared_mutex>
+#include <unordered_map>
 #include "filter_napi.h"
 #include "effect_errors.h"
 #include "effect_utils.h"
@@ -49,7 +52,11 @@ struct FilterAsyncContext {
     // param
     FilterNapi* filterNapi = nullptr;
     bool forceCPU = false;
+    std::shared_ptr<Media::PixelMap> dstPixelMap_;
 };
+
+static std::shared_mutex filterNapiManagerMutex;
+static std::unordered_map<FilterNapi*, std::atomic_bool> filterNapiManager;
 
 static const std::string CLASS_NAME = "Filter";
 
@@ -90,6 +97,20 @@ static void FilterAsyncCommonComplete(napi_env env, const FilterAsyncContext* ct
     }
 
     napi_delete_async_work(env, ctx->work);
+
+    {
+        std::unique_lock<std::shared_mutex> lock(filterNapiManagerMutex);
+        auto manager = filterNapiManager.find(ctx->filterNapi);
+        if (manager != filterNapiManager.end()) {
+            if ((*manager).second.load()) {
+                delete ctx->filterNapi;
+            }
+            filterNapiManager.erase(manager);
+        }
+    }
+
+    delete ctx;
+    ctx = nullptr;
 }
 
 FilterNapi::FilterNapi() : env_(nullptr), wrapper_(nullptr) {}
@@ -104,7 +125,14 @@ void FilterNapi::Destructor(napi_env env,
                             void* finalize_hint)
 {
     FilterNapi* obj = static_cast<FilterNapi *>(nativeObject);
-    delete obj;
+
+    std::shared_lock<std::shared_mutex> lock(filterNapiManagerMutex);
+    auto manager = filterNapiManager.find(obj);
+    if (manager == filterNapiManager.end()) {
+        delete obj;
+    } else {
+        (*manager).second.store(true);
+    }
 }
 
 thread_local napi_ref FilterNapi::sConstructor_ = nullptr;
@@ -287,18 +315,33 @@ void FilterNapi::GetPixelMapAsyncComplete(napi_env env, napi_status status, void
 {
     auto ctx = static_cast<FilterAsyncContext*>(data);
     napi_value value = nullptr;
-    {
+    if (ctx->dstPixelMap_ == nullptr) {
+        ctx->status = ERROR;
+        napi_create_string_utf8(env, "FilterNapi dst pixel map is null", NAPI_AUTO_LENGTH, &(ctx->errorMsg));
+    } else {
         std::lock_guard<std::mutex> lock(getPixelMapAsyncCompleteMutex_);
-        value = Media::PixelMapNapi::CreatePixelMap(env, ctx->filterNapi->GetDstPixelMap());
+        value = Media::PixelMapNapi::CreatePixelMap(env, ctx->dstPixelMap_);
     }
     FilterAsyncCommonComplete(env, ctx, value);
 }
 
 void FilterNapi::GetPixelMapAsyncExecute(napi_env env, void* data)
 {
-    std::lock_guard<std::mutex> lock(getPixelMapAsyncExecuteMutex_);
     auto ctx = static_cast<FilterAsyncContext*>(data);
-    ctx->filterNapi->Render(ctx->forceCPU);
+
+    std::shared_lock<std::shared_mutex> lock(filterNapiManagerMutex);
+    auto manager = filterNapiManager.find(ctx->filterNapi);
+    if (manager == filterNapiManager.end()) {
+        ctx->status = ERROR;
+        napi_create_string_utf8(env, "FilterNapi filterNapi not found in manager", NAPI_AUTO_LENGTH, &(ctx->errorMsg));
+        return;
+    }
+    
+    if (!(*manager).second.load()) {
+        std::lock_guard<std::mutex> lock2(getPixelMapAsyncExecuteMutex_);
+        ctx->filterNapi->Render(ctx->forceCPU);
+        ctx->dstPixelMap_ = ctx->filterNapi->GetDstPixelMap();
+    }
 }
 
 static void GetPixelMapAsyncErrorCompelte(napi_env env, napi_status status, void* data)
@@ -340,6 +383,11 @@ napi_value FilterNapi::GetPixelMapAsync(napi_env env, napi_callback_info info)
 
     if (ctx->callback == nullptr) {
         napi_create_promise(env, &(ctx->deferred), &result);
+    }
+
+    {
+        std::unique_lock<std::shared_mutex> lock(filterNapiManagerMutex);
+        filterNapiManager[ctx->filterNapi].store(false);
     }
 
     if (ctx->errorMsg != nullptr) {
