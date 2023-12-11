@@ -877,7 +877,7 @@ int32_t RSScreen::GetScreenColorSpace(GraphicCM_ColorSpaceType& colorSpace) cons
     return result;
 }
 
-int32_t RSScreen::SetScreenColorSpace(GraphicCM_ColorSpaceType colorSpace) 
+int32_t RSScreen::SetScreenColorSpace(GraphicCM_ColorSpaceType colorSpace)
 {
     auto iter = COMMON_COLOR_SPACE_TYPE_TO_RS_MAP.find(colorSpace);
     if (iter == COMMON_COLOR_SPACE_TYPE_TO_RS_MAP.end()) {
