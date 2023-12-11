@@ -1239,6 +1239,7 @@ void RSRenderServiceConnectionStub::ReadDataBaseRs(DataBaseRs& info, MessageParc
     info.inputTime = data.ReadInt64();
     info.beginVsyncTime = data.ReadInt64();
     info.endVsyncTime = data.ReadInt64();
+    info.isDisplayAnimator = data.ReadBool();
     info.sceneId = data.ReadString();
     info.versionName = data.ReadString();
     info.bundleName = data.ReadString();

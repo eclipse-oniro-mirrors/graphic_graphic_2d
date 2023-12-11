@@ -1771,6 +1771,7 @@ void RSRenderServiceConnectionProxy::ReportDataBaseRs(
     data.WriteInt64(info.inputTime);
     data.WriteInt64(info.beginVsyncTime);
     data.WriteInt64(info.endVsyncTime);
+    data.WriteBool(info.isDisplayAnimator);
     data.WriteString(info.sceneId);
     data.WriteString(info.versionName);
     data.WriteString(info.bundleName);

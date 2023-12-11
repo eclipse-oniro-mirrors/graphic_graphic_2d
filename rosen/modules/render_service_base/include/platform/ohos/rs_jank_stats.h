@@ -65,6 +65,7 @@ struct JankFrameRecordStats {
 struct AnimationTraceStats {
     std::string traceName_;
     int64_t traceCreateTimeSteady_ = TIMESTAMP_INITIAL;
+    bool isDisplayAnimator_ = false;
 };
 
 struct TraceIdRemainderStats {
@@ -90,7 +91,7 @@ private:
     DISALLOW_COPY_AND_MOVE(RSJankStats);
 
     void UpdateEndTime();
-    void SetRSJankStats(int64_t missedVsync);
+    void SetRSJankStats();
     void UpdateJankFrame(JankFrames& jankFrames);
     void ReportEventResponse(const JankFrames& jankFrames) const;
     void ReportEventComplete(const JankFrames& jankFrames) const;
@@ -98,7 +99,7 @@ private:
     void ReportEventFirstFrame();
     void ReportEventFirstFrameByPid(pid_t appPid) const;
     void RecordJankFrameInit();
-    void RecordJankFrame(int64_t missedFrames);
+    void RecordJankFrame();
     void RecordJankFrameSingle(int64_t missedFrames, JankFrameRecordStats& recordStats);
     void RecordAnimationDynamicFrameRate(const JankFrames& jankFrames) const;
     void SetAnimationTraceBegin(const JankFrames& jankFrames);
@@ -117,7 +118,8 @@ private:
     static constexpr int64_t TRACE_ID_SCALE_PARAM = 10;
     static constexpr bool IS_FOLD_DISP = false;
     static inline const std::string JANK_FRAME_6F_COUNT_TRACE_NAME = "JANK_FRAME_6F";
-    std::vector<JankFrameRecordStats> jankAnimatorFrameRecorder_{ {"JANK_ANIMATOR_FRAME_2F", 2} };
+    std::vector<JankFrameRecordStats> jankExplicitAnimatorFrameRecorder_{ {"JANK_EXPLICIT_ANIMATOR_FRAME_2F", 2} };
+    std::vector<JankFrameRecordStats> jankImplicitAnimatorFrameRecorder_{ {"JANK_IMPLICIT_ANIMATOR_FRAME_2F", 2} };
     bool isFirstSetStart_ = true;
     bool isFirstSetEnd_ = true;
     bool isNeedReportJankStats_ = false;
@@ -130,6 +132,8 @@ private:
     int64_t lastReportTime_ = TIMESTAMP_INITIAL;
     int64_t lastReportTimeSteady_ = TIMESTAMP_INITIAL;
     int64_t lastJankFrame6FreqTimeSteady_ = TIMESTAMP_INITIAL;
+    int32_t explicitAnimationTotal_ = 0;
+    int32_t implicitAnimationTotal_ = 0;
     uint16_t animationTraceCheckCnt_ = 0;
     std::vector<uint16_t> rsJankStats_ = std::vector<uint16_t>(JANK_STATS_SIZE, 0);
     std::queue<pid_t> firstFrameAppPids_;
