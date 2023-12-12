@@ -35,7 +35,9 @@
 #include "memory/rs_dfx_string.h"
 #include "modifier/rs_render_modifier.h"
 #include "pipeline/rs_dirty_region_manager.h"
+#include "pipeline/rs_render_display_sync.h"
 #include "pipeline/rs_paint_filter_canvas.h"
+#include "pipeline/rs_render_content.h"
 #include "pipeline/rs_single_frame_composer.h"
 #include "property/rs_properties.h"
 #include "property/rs_property_drawable.h"
@@ -59,6 +61,9 @@ class RSContext;
 class RSNodeVisitor;
 class RSCommand;
 class RSPropertyDrawable;
+namespace NativeBufferUtils {
+class VulkanCleanupHelper;
+}
 class RSB_EXPORT RSRenderNode : public std::enable_shared_from_this<RSRenderNode>  {
 public:
 
@@ -104,10 +109,8 @@ public:
     // if there is any new dirty op, check it
     bool IsContentDirty() const;
     void SetContentDirty();
-    bool IsOnlyBasicGeoTransfrom() const
-    {
-        return isOnlyBasicGeoTransform_;
-    }
+    void ResetIsOnlyBasicGeoTransfrom();
+    bool IsOnlyBasicGeoTransfrom() const;
 
     WeakPtr GetParent() const;
 
@@ -201,7 +204,7 @@ public:
 #endif
     }
 
-    std::tuple<bool, bool, bool> Animate(int64_t timestamp);
+    std::tuple<bool, bool, bool> Animate(int64_t timestamp, int64_t period = 0, bool isDisplaySyncEnabled = false);
 
     bool IsClipBound() const;
     // clipRect has value in UniRender when calling PrepareCanvasRenderNode, else it is nullopt
@@ -243,6 +246,7 @@ public:
 
     void AddModifier(const std::shared_ptr<RSRenderModifier>& modifier, bool isSingleFrameComposer = false);
     void RemoveModifier(const PropertyId& id);
+    void RemoveModifierInternal(const PropertyId& id);
     std::shared_ptr<RSRenderModifier> GetModifier(const PropertyId& id);
     void ApplyChildrenModifiers();
 
@@ -254,7 +258,8 @@ public:
 
     // update parent's children rect including childRect and itself
     void UpdateParentChildrenRect(std::shared_ptr<RSRenderNode> parentNode) const;
-    void UpdateFilterCacheManagerWithCacheRegion(const std::optional<RectI>& clipRect = std::nullopt) const;
+    void UpdateFilterCacheManagerWithCacheRegion(
+        RSDirtyRegionManager& dirtyManager, const std::optional<RectI>& clipRect = std::nullopt) const;
 
     void SetStaticCached(bool isStaticCached);
     bool IsStaticCached() const;
@@ -263,13 +268,13 @@ public:
     bool NeedInitCacheCompletedSurface() const;
     inline bool IsPureContainer() const
     {
-        return (drawCmdModifiers_.empty() && !renderProperties_.isDrawn_ && !renderProperties_.alphaNeedApply_);
+        return (drawCmdModifiers_.empty() && !GetRenderProperties().isDrawn_ && !GetRenderProperties().alphaNeedApply_);
     }
 
     bool IsContentNode() const
     {
         return ((drawCmdModifiers_.size() == 1 && drawCmdModifiers_.count(RSModifierType::CONTENT_STYLE)) ||
-            drawCmdModifiers_.empty()) && !renderProperties_.isDrawn_;
+            drawCmdModifiers_.empty()) && !GetRenderProperties().isDrawn_;
     }
 
 #ifndef USE_ROSEN_DRAWING
@@ -357,6 +362,10 @@ public:
     // manage cache root nodeid
     void SetDrawingCacheRootId(NodeId id);
     NodeId GetDrawingCacheRootId() const;
+    // record cache geodirty for preparation optimization
+    void SetCacheGeoPreparationDelay(bool val);
+    void ResetCacheGeoPreparationDelay();
+    bool GetCacheGeoPreparationDelay() const;
 
     // driven render ///////////////////////////////////
     void SetIsMarkDriven(bool isMarkDriven);
@@ -437,7 +446,7 @@ public:
     void MarkNodeGroup(NodeGroupType type, bool isNodeGroup);
     NodeGroupType GetNodeGroupType();
 
-    void MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer);
+    void MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer, pid_t pid = 0);
     virtual bool GetNodeIsSingleFrameComposer() const;
 
     /////////////////////////////////////////////
@@ -451,23 +460,44 @@ public:
     float GetGlobalAlpha() const;
     virtual void OnAlphaChanged() {}
 
-    void SetRSFrameRateRange(FrameRateRange range);
-    const FrameRateRange& GetRSFrameRateRange();
+    inline const Vector4f& GetGlobalCornerRadius() noexcept
+    {
+        return globalCornerRadius_;
+    }
+
+    inline void SetGlobalCornerRadius(const Vector4f& globalCornerRadius) noexcept
+    {
+        globalCornerRadius_ = globalCornerRadius;
+    }
+
     void UpdateUIFrameRateRange(const FrameRateRange& range);
     const FrameRateRange& GetUIFrameRateRange() const;
 
-    void ResetRSFrameRateRange();
-    void ResetUIFrameRateRange();
+    void ActivateDisplaySync();
+    void InActivateDisplaySync();
+    FrameRateRange CalcExpectedFrameRateRange(int32_t preferredFps);
 
     void MarkNonGeometryChanged();
     const std::vector<HgmModifierProfile>& GetHgmModifierProfileList();
-    void SetRSFrameRateRangeByPreferred(int32_t preferred);
     bool ApplyModifiers();
 
     virtual RectI GetFilterRect() const;
     void SetIsUsedBySubThread(bool isUsedBySubThread);
     bool GetIsUsedBySubThread() const;
 
+    void SetLastIsNeedAssignToSubThread(bool lastIsNeedAssignToSubThread);
+    bool GetLastIsNeedAssignToSubThread() const;
+
+    bool IsCalcPreferredFps() const
+    {
+        return isCalcPreferredFps_;
+    }
+    void SetIsCalcPreferredFps(bool isCalcPreferredFps)
+    {
+        isCalcPreferredFps_ = isCalcPreferredFps;
+    }
+
+    const std::shared_ptr<RSRenderContent> GetRenderContent() const;
 protected:
     virtual void OnApplyModifiers() {}
 
@@ -506,7 +536,6 @@ protected:
 #endif
     bool isFullChildrenListValid_ = false;
     bool isBootAnimation_ = false;
-    RSProperties renderProperties_;
     void IterateOnDrawableRange(
         Slot::RSPropertyDrawableSlot begin, Slot::RSPropertyDrawableSlot end, RSPaintFilterCanvas& canvas);
 
@@ -548,6 +577,7 @@ private:
 
     void UpdateDirtyRegion(RSDirtyRegionManager& dirtyManager, bool geoDirty, std::optional<RectI> clipRect);
     void AddModifierProfile(const std::shared_ptr<RSRenderModifier>& modifier, float width, float height);
+    void UpdateFullScreenFilterCacheRect(RSDirtyRegionManager& dirtyManager, bool isForeground) const;
 
     void UpdateShouldPaint(); // update node should paint state in apply modifier stage
     bool shouldPaint_ = true;
@@ -579,6 +609,10 @@ private:
 #ifndef USE_ROSEN_DRAWING
     GrBackendTexture cacheBackendTexture_;
     GrBackendTexture cacheCompletedBackendTexture_;
+#ifdef RS_ENABLE_VK
+    NativeBufferUtils::VulkanCleanupHelper* cacheCleanupHelper_ = nullptr;
+    NativeBufferUtils::VulkanCleanupHelper* cacheCompletedCleanupHelper_ = nullptr;
+#endif
 #else
     Drawing::BackendTexture cacheBackendTexture_;
     Drawing::BackendTexture cacheCompletedBackendTexture_;
@@ -592,6 +626,10 @@ private:
     RSDrawingCacheType drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;
     bool isDrawingCacheChanged_ = false;
     bool drawingCacheNeedUpdate_ = false;
+    // since cache preparation optimization would skip child's dirtyFlag(geoDirty) update
+    // it should be recorded and update if marked dirty again
+    bool cacheGeoPreparationDelay_ = false;
+
     std::unordered_set<NodeId> curCacheFilterRects_ = {};
     std::unordered_set<NodeId> visitedCacheRoots_ = {};
 
@@ -618,6 +656,7 @@ private:
     bool isContentChanged_ = false;
     OutOfParentType outOfParent_ = OutOfParentType::UNKNOWN;
     float globalAlpha_ = 1.0f;
+    Vector4f globalCornerRadius_{ 0.f, 0.f, 0.f, 0.f };
     std::optional<SharedTransitionParam> sharedTransitionParam_;
 
     std::shared_ptr<RectF> drawRegion_ = nullptr;
@@ -633,22 +672,26 @@ private:
     bool geometryChangeNotPerceived_ = false;
 
     std::atomic_bool isUsedBySubThread_ = false;
+    bool lastIsNeedAssignToSubThread_ = false;
 
-    FrameRateRange rsRange_ = {0, 0, 0};
     FrameRateRange uiRange_ = {0, 0, 0};
 
     int64_t lastTimestamp_ = -1;
     int64_t lastApplyTimestamp_ = -1;
     float timeDelta_ = -1;
-    std::unordered_map<PropertyId, std::variant<float, Vector2f>> propertyValueMap_;
+    std::unordered_map<PropertyId, std::variant<float, Vector2f, Vector4f>> propertyValueMap_;
     std::vector<HgmModifierProfile> hgmModifierProfileList_;
+    std::shared_ptr<RSRenderDisplaySync> displaySync_ = nullptr;
 
-    std::vector<std::unique_ptr<RSPropertyDrawable>> propertyDrawablesVec_;
     uint8_t drawableVecStatus_ = 0;
     void UpdateDrawableVec();
+    bool isCalcPreferredFps_ = true;
 
     bool isSubSurfaceEnabled_ = false;
     std::map<NodeId, std::vector<WeakPtr>> subSurfaceNodes_;
+    pid_t appPid_ = 0;
+
+    const std::shared_ptr<RSRenderContent> renderContent_ = std::make_shared<RSRenderContent>();
 
     friend class RSAliasDrawable;
     friend class RSMainThread;

@@ -42,8 +42,8 @@ constexpr uint32_t DEBUG_MODIFIER_SIZE = 20;
             return std::static_pointer_cast<RSProperty<T>>(iter->second->GetProperty())->Get();                     \
         }                                                                                                           \
         T value = defaultValue;                                                                                     \
-        if (node->modifiers_.size() > DEBUG_MODIFIER_SIZE) {                                                          \
-            ROSEN_LOGD("RSModifierExtractor modifier size is %zu", node->modifiers_.size());                        \
+        if (node->modifiers_.size() > DEBUG_MODIFIER_SIZE) {                                                        \
+            ROSEN_LOGD("RSModifierExtractor modifier size is %{public}zu", node->modifiers_.size());                \
         }                                                                                                           \
         for (auto& [_, modifier] : node->modifiers_) {                                                              \
             if (modifier->GetModifierType() == RSModifierType::propertyType) {                                      \
@@ -270,9 +270,9 @@ bool RSModifierExtractor::GetShadowIsFilled() const
     GET_PROPERTY_FROM_MODIFIERS(bool, SHADOW_IS_FILLED, false, =);
 }
 
-bool RSModifierExtractor::GetShadowColorStrategy() const
+int RSModifierExtractor::GetShadowColorStrategy() const
 {
-    GET_PROPERTY_FROM_MODIFIERS(bool, SHADOW_COLOR_STRATEGY, false, =);
+    GET_PROPERTY_FROM_MODIFIERS(int, SHADOW_COLOR_STRATEGY, SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE, =);
 }
 
 Gravity RSModifierExtractor::GetFrameGravity() const
@@ -323,6 +323,11 @@ float RSModifierExtractor::GetLightIntensity() const
 Vector4f RSModifierExtractor::GetLightPosition() const
 {
     GET_PROPERTY_FROM_MODIFIERS(Vector4f, LIGHT_POSITION, Vector4f(0.f), =);
+}
+
+float RSModifierExtractor::GetIlluminatedBorderWidth() const
+{
+    GET_PROPERTY_FROM_MODIFIERS(float, ILLUMINATED_BORDER_WIDTH, 0.f, =);
 }
 
 int RSModifierExtractor::GetIlluminatedType() const

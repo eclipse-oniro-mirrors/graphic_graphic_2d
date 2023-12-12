@@ -16,6 +16,9 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_PROPERTY_RS_PROPERTIES_H
 #define RENDER_SERVICE_CLIENT_CORE_PROPERTY_RS_PROPERTIES_H
 
+#ifdef USE_ROSEN_DRAWING
+#include <bitset>
+#endif
 #include <optional>
 #include <tuple>
 #include <vector>
@@ -213,7 +216,7 @@ public:
     void SetShadowPath(std::shared_ptr<RSPath> shadowPath);
     void SetShadowMask(bool shadowMask);
     void SetShadowIsFilled(bool shadowIsFilled);
-    void SetShadowColorStrategy(bool shadowColorStrategy);
+    void SetShadowColorStrategy(int shadowColorStrategy);
     const Color& GetShadowColor() const;
     float GetShadowOffsetX() const;
     float GetShadowOffsetY() const;
@@ -227,7 +230,7 @@ public:
     std::shared_ptr<RSPath> GetShadowPath() const;
     bool GetShadowMask() const;
     bool GetShadowIsFilled() const;
-    bool GetShadowColorStrategy() const;
+    int GetShadowColorStrategy() const;
     const std::optional<RSShadow>& GetShadow() const;
     bool IsShadowValid() const;
 
@@ -313,10 +316,12 @@ public:
 
     void SetLightIntensity(float lightIntensity);
     void SetLightPosition(const Vector4f& lightPosition);
+    void SetIlluminatedBorderWidth(float illuminatedBorderWidth);
     void SetIlluminatedType(int illuminatedType);
     void SetBloom(float bloomIntensity);
     float GetLightIntensity() const;
     Vector4f GetLightPosition() const;
+    float GetIlluminatedBorderWidth() const;
     int GetIlluminatedType() const;
     float GetBloom() const;
     void CalculateAbsLightPosition();

@@ -75,11 +75,7 @@ static const std::unordered_map<MATERIAL_BLUR_STYLE, MaterialParam> KAWASE_MATER
 };
 } // namespace
 
-#ifndef USE_ROSEN_DRAWING
 const bool KAWASE_BLUR_ENABLED = RSSystemProperties::GetKawaseEnabled();
-#else
-const bool KAWASE_BLUR_ENABLED = false;
-#endif
 
 RSMaterialFilter::RSMaterialFilter(int style, float dipScale, BLUR_COLOR_MODE mode, float ratio)
 #ifndef USE_ROSEN_DRAWING
@@ -205,7 +201,6 @@ sk_sp<SkImageFilter> RSMaterialFilter::CreateMaterialFilter(float radius, float 
 std::shared_ptr<Drawing::ImageFilter> RSMaterialFilter::CreateMaterialFilter(float radius, float sat, float brightness)
 {
     colorFilter_ = GetColorFilter(sat, brightness);
-    useKawase_ = RSSystemProperties::GetKawaseEnabled();
     std::shared_ptr<Drawing::ImageFilter> blurFilter =
         Drawing::ImageFilter::CreateBlurImageFilter(radius, radius, Drawing::TileMode::CLAMP, nullptr);
     
@@ -259,6 +254,14 @@ void RSMaterialFilter::PreProcess(std::shared_ptr<Drawing::Image> imageSnapshot)
         auto colorPicker = RSPropertiesPainter::CalcAverageColor(imageSnapshot);
         maskColor_ = RSColor(Drawing::Color::ColorQuadGetR(colorPicker), Drawing::Color::ColorQuadGetG(colorPicker),
             Drawing::Color::ColorQuadGetB(colorPicker), maskColor_.GetAlpha());
+    } else if (colorMode_ == FASTAVERAGE) {
+        RSColor color;
+        if (RSColorPickerCacheTask::PostPartialColorPickerTask(colorPickerTask_, imageSnapshot)) {
+            if (colorPickerTask_->GetColor(color)) {
+                maskColor_ = RSColor(color.GetRed(), color.GetGreen(), color.GetBlue(), maskColor_.GetAlpha());
+            }
+            colorPickerTask_->SetStatus(CacheProcessStatus::WAITING);
+        }
     }
 }
 #endif
@@ -366,7 +369,7 @@ void RSMaterialFilter::DrawImageRect(Drawing::Canvas& canvas, const std::shared_
     auto brush = GetBrush();
     // if kawase blur failed, use gauss blur
     KawaseParameter param = KawaseParameter(src, dst, radius_, colorFilter_, brush.GetColor().GetAlphaF());
-    if (useKawase_ && KawaseBlurFilter::GetKawaseBlurFilter()->ApplyKawaseBlur(canvas, image, param)) {
+    if (KAWASE_BLUR_ENABLED && KawaseBlurFilter::GetKawaseBlurFilter()->ApplyKawaseBlur(canvas, image, param)) {
         return;
     }
     canvas.AttachBrush(brush);

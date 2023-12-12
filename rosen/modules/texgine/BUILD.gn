@@ -38,12 +38,18 @@ config("libtexgine_public_config") {
     "export",
     "texgine_drawing",
     "//third_party/skia/third_party/externals/harfbuzz/src",
+    "$graphic_2d_root/rosen/modules/render_service_base/include",
+    "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter",
+    "$graphic_2d_root/rosen/modules/2d_graphics/include",
+    "$graphic_2d_root/rosen/modules/2d_graphics/src",
   ]
 }
 
 ohos_source_set("libtexgine_source") {
   if (is_ok) {
     sources = [
+      "export/symbol_engine/hm_symbol_run.cpp",
+      "export/symbol_engine/hm_symbol_txt.cpp",
       "src/bidi_processer.cpp",
       "src/char_groups.cpp",
       "src/dynamic_file_font_provider.cpp",
@@ -109,6 +115,12 @@ ohos_source_set("libtexgine_source") {
     ]
 
     defines = []
+    if (defined(use_rosen_drawing) && use_rosen_drawing) {
+      defines += [ "USE_ROSEN_DRAWING" ]
+      if (ace_enable_gpu) {
+        defines += [ "ACE_ENABLE_GPU" ]
+      }
+    }
     if (enable_text_gine) {
       defines += [ "USE_GRAPHIC_TEXT_GINE" ]
     }

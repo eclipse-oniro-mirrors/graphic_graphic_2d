@@ -89,10 +89,40 @@ public:
             modifier->Update(prop, isDelta);
         }
     }
+#ifndef USE_ROSEN_DRAWING
+    static void UpdateModifierDrawCmdList(
+        RSContext& context, NodeId nodeId, DrawCmdListPtr value, PropertyId id, bool isDelta)
+    {
+        std::shared_ptr<RSRenderPropertyBase> prop = std::make_shared<RSRenderProperty<DrawCmdListPtr>>(value, id);
+#else
+    static void UpdateModifierDrawCmdList(
+        RSContext& context, NodeId nodeId, Drawing::DrawCmdListPtr value, PropertyId id, bool isDelta)
+    {
+        std::shared_ptr<RSRenderPropertyBase> prop =
+            std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>(value, id);
+#endif
+        auto& nodeMap = context.GetNodeMap();
+        auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
+        if (!node) {
+            return;
+        }
+        auto modifier = node->GetModifier(id);
+        if (!modifier) {
+            return;
+        }
+        modifier->Update(prop, isDelta);
+        if (value) {
+#ifndef USE_ROSEN_DRAWING
+            value->UpdateNodeIdToPicture(nodeId);
+#else
+            // Drawing need to be adapted furture
+#endif
+        }
+    }
 
     static void SetFreeze(RSContext& context, NodeId nodeId, bool isFreeze);
     static void MarkNodeGroup(RSContext& context, NodeId nodeId, bool isNodeGroup, bool isForced);
-    static void MarkNodeSingleFrameComposer(RSContext& context, NodeId nodeId, bool isNodeFasterDraw);
+    static void MarkNodeSingleFrameComposer(RSContext& context, NodeId nodeId, bool isNodeFasterDraw, pid_t pid);
 
     static void MarkDrivenRender(RSContext& context, NodeId nodeId, bool flag);
     static void MarkDrivenRenderItemIndex(RSContext& context, NodeId nodeId, int32_t index);
@@ -168,7 +198,7 @@ ADD_COMMAND(RSUpdatePropertyRRect,
         NodeId, RRect, PropertyId, bool))
 #ifndef USE_ROSEN_DRAWING
 ADD_COMMAND(RSUpdatePropertyDrawCmdList,
-    ARG(RS_NODE, UPDATE_MODIFIER_DRAW_CMD_LIST, RSNodeCommandHelper::UpdateModifier<DrawCmdListPtr>,
+    ARG(RS_NODE, UPDATE_MODIFIER_DRAW_CMD_LIST, RSNodeCommandHelper::UpdateModifierDrawCmdList,
         NodeId, DrawCmdListPtr, PropertyId, bool))
 ADD_COMMAND(RSUpdatePropertySkMatrix,
     ARG(RS_NODE, UPDATE_MODIFIER_SKMATRIX, RSNodeCommandHelper::UpdateModifier<SkMatrix>,
@@ -187,7 +217,8 @@ ADD_COMMAND(RSSetFreeze,
 ADD_COMMAND(RSMarkNodeGroup,
     ARG(RS_NODE, MARK_NODE_GROUP, RSNodeCommandHelper::MarkNodeGroup, NodeId, bool, bool))
 ADD_COMMAND(RSMarkNodeSingleFrameComposer,
-    ARG(RS_NODE, MARK_NODE_SINGLE_FRAME_COMPOSER, RSNodeCommandHelper::MarkNodeSingleFrameComposer, NodeId, bool))
+    ARG(RS_NODE, MARK_NODE_SINGLE_FRAME_COMPOSER, RSNodeCommandHelper::MarkNodeSingleFrameComposer,
+        NodeId, bool, pid_t))
 
 ADD_COMMAND(RSMarkDrivenRender,
     ARG(RS_NODE, MARK_DRIVEN_RENDER, RSNodeCommandHelper::MarkDrivenRender, NodeId, bool))

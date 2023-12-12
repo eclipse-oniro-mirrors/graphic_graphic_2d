@@ -20,6 +20,7 @@
 #include <SkMatrix.h>
 #include <SkCanvas.h>
 #include <mutex>
+#include "platform/common/rs_system_properties.h"
 #include "common/rs_singleton.h"
 #include "rs_sub_thread_rcd.h"
 
@@ -41,6 +42,7 @@ bool RoundCornerDisplay::Init()
     LoadConfigFile();
     SeletedLcdModel(rs_rcd::ATTR_DEFAULT);
     LoadImgsbyResolution(displayWidth_, displayHeight_);
+    isRcdEnable_ = RSSystemProperties::GetRSScreenRoundCornerEnable();
     RS_LOGD("[%{public}s] RoundCornerDisplay init \n", __func__);
     return true;
 }
@@ -69,6 +71,7 @@ bool RoundCornerDisplay::LoadConfigFile()
     return rcdCfg.Load(rs_rcd::PATH_CONFIG_FILE);
 }
 
+#ifndef USE_ROSEN_DRAWING
 bool RoundCornerDisplay::LoadImg(const char* path, sk_sp<SkImage>& img)
 {
     std::string filePath = std::string(rs_rcd::PATH_CONFIG_DIR) + "/" + path;
@@ -98,6 +101,38 @@ bool RoundCornerDisplay::DecodeBitmap(sk_sp<SkImage> image, SkBitmap &bitmap)
     }
     return true;
 }
+#else
+bool RoundCornerDisplay::LoadImg(const char* path, std::shared_ptr<Drawing::Image>& img)
+{
+    std::string filePath = std::string(rs_rcd::PATH_CONFIG_DIR) + "/" + path;
+    RS_LOGD("[%{public}s] Read Img(%{public}s) \n", __func__, filePath.c_str());
+    std::shared_ptr<Drawing::Data> drData = Drawing::Data::MakeFromFileName(filePath.c_str());
+    if (drData == nullptr) {
+        RS_LOGE("[%{public}s] Open picture file failed! \n", __func__);
+        return false;
+    }
+    img = std::make_shared<Drawing::Image>();
+    if (!img->MakeFromEncoded(drData)) {
+        img = nullptr;
+        RS_LOGE("[%{public}s] Decode picture file failed! \n", __func__);
+        return false;
+    }
+    return true;
+}
+
+bool RoundCornerDisplay::DecodeBitmap(std::shared_ptr<Drawing::Image> image, Drawing::Bitmap &bitmap)
+{
+    if (image == nullptr) {
+        RS_LOGE("[%{public}s] No image found \n", __func__);
+        return false;
+    }
+    if (!image->AsLegacyBitmap(bitmap)) {
+        RS_LOGE("[%{public}s] Create bitmap from drImage failed \n", __func__);
+        return false;
+    }
+    return true;
+}
+#endif
 
 bool RoundCornerDisplay::SetHardwareLayerSize()
 {
@@ -206,12 +241,15 @@ void RoundCornerDisplay::UpdateDisplayParameter(uint32_t width, uint32_t height)
     RS_LOGD("[%{public}s] displayWidth_ updated from %{public}u -> %{public}u,"
         "displayHeight_ updated from %{public}u -> %{public}u \n", __func__,
         displayWidth_, width, displayHeight_, height);
-    displayWidth_ = width;
-    displayHeight_ = height;
-    updateFlag_["display"] = true;
-
-    RSSingleton<RSSubThreadRCD>::GetInstance().PostTask([this]() {
-        LoadImgsbyResolution(displayWidth_, displayHeight_);
+    // the width, height do not use reference,which is local var
+    RSSingleton<RSSubThreadRCD>::GetInstance().PostTask([this, width, height]() {
+        bool isOk = LoadImgsbyResolution(width, height);
+        if (isOk) {
+            std::lock_guard<std::mutex> lock(resourceMut_);
+            updateFlag_["display"] = isOk;
+            displayWidth_ = width;
+            displayHeight_ = height;
+        }
     });
 }
 
@@ -368,7 +406,7 @@ void RoundCornerDisplay::RcdChooseHardwareResource()
     hardInfo_.bottomLayer->curBitmap = &bitmapBottomPortrait_;
 }
 
-void RoundCornerDisplay::DrawRoundCorner(std::shared_ptr<RSPaintFilterCanvas> canvas)
+void RoundCornerDisplay::DrawRoundCorner(std::shared_ptr<RSPaintFilterCanvas>& canvas)
 {
     std::lock_guard<std::mutex> lock(resourceMut_);
     if (supportHardware_) {
@@ -382,14 +420,69 @@ void RoundCornerDisplay::DrawRoundCorner(std::shared_ptr<RSPaintFilterCanvas> ca
     if (supportTopSurface_) {
         RS_LOGD("[%{public}s] TopSurface supported \n", __func__);
         if (curTop_ != nullptr) {
+#ifndef USE_ROSEN_DRAWING
             canvas->drawImage(curTop_, 0, 0);
+#else
+            Drawing::Brush brush;
+            canvas->AttachBrush(brush);
+            canvas->DrawImage(*curTop_, 0, 0, Drawing::SamplingOptions());
+            canvas->DetachBrush();
+#endif
             RS_LOGD("[%{public}s] Draw top \n", __func__);
         }
     }
     if (supportBottomSurface_) {
         RS_LOGD("[%{public}s] BottomSurface supported \n", __func__);
         if (curBottom_ != nullptr) {
+#ifndef USE_ROSEN_DRAWING
             canvas->drawImage(curBottom_, 0, displayHeight_ - curBottom_->height());
+#else
+            Drawing::Brush brush;
+            canvas->AttachBrush(brush);
+            canvas->DrawImage(*curBottom_, 0, displayHeight_ - curBottom_->GetHeight(), Drawing::SamplingOptions());
+            canvas->DetachBrush();
+#endif
+            RS_LOGD("[%{public}s] Draw Bottom \n", __func__);
+        }
+    }
+}
+
+void RoundCornerDisplay::DrawRoundCorner(std::unique_ptr<RSPaintFilterCanvas>& canvas)
+{
+    std::lock_guard<std::mutex> lock(resourceMut_);
+    if (supportHardware_) {
+        return;
+    }
+    if (canvas == nullptr) {
+        RS_LOGE("[%{public}s] Canvas is null \n", __func__);
+        return;
+    }
+    UpdateParameter(updateFlag_);
+    if (supportTopSurface_) {
+        RS_LOGD("[%{public}s] TopSurface supported \n", __func__);
+        if (curTop_ != nullptr) {
+#ifndef USE_ROSEN_DRAWING
+            canvas->drawImage(curTop_, 0, 0);
+#else
+            Drawing::Brush brush;
+            canvas->AttachBrush(brush);
+            canvas->DrawImage(*curTop_, 0, 0, Drawing::SamplingOptions());
+            canvas->DetachBrush();
+#endif
+            RS_LOGD("[%{public}s] Draw top \n", __func__);
+        }
+    }
+    if (supportBottomSurface_) {
+        RS_LOGD("[%{public}s] BottomSurface supported \n", __func__);
+        if (curBottom_ != nullptr) {
+#ifndef USE_ROSEN_DRAWING
+            canvas->drawImage(curBottom_, 0, displayHeight_ - curBottom_->height());
+#else
+            Drawing::Brush brush;
+            canvas->AttachBrush(brush);
+            canvas->DrawImage(*curBottom_, 0, displayHeight_ - curBottom_->GetHeight(), Drawing::SamplingOptions());
+            canvas->DetachBrush();
+#endif
             RS_LOGD("[%{public}s] Draw Bottom \n", __func__);
         }
     }

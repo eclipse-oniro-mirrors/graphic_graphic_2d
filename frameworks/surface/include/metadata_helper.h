@@ -24,6 +24,7 @@
 #include "surface_buffer.h"
 #include "v1_0/cm_color_space.h"
 #include "v1_0/hdr_static_metadata.h"
+#include "buffer_log.h"
 
 namespace OHOS {
 class MetadataHelper {
@@ -34,6 +35,7 @@ public:
     {
         data.resize(sizeof(T));
         if (memcpy_s(data.data(), data.size(), &metadata, sizeof(T)) != EOK) {
+            BLOGW("MetadataHelper::ConvertMetadataToVec memcpy_s failed");
             return GSERROR_API_FAILED;
         }
         return GSERROR_OK;
@@ -43,10 +45,12 @@ public:
     static GSError ConvertVecToMetadata(const std::vector<uint8_t>& data, T& metadata)
     {
         if (data.size() != sizeof(T)) {
+            BLOGW("MetadataHelper::ConvertMetadataToVec metadata size doesn't match");
             return GSERROR_NOT_SUPPORT;
         }
 
         if (memcpy_s(&metadata, sizeof(T), data.data(), data.size()) != EOK) {
+            BLOGW("MetadataHelper::ConvertMetadataToVec memcpy_s failed");
             return GSERROR_API_FAILED;
         }
         return GSERROR_OK;
@@ -82,7 +86,18 @@ public:
     static GSError SetHDRDynamicMetadata(sptr<SurfaceBuffer>& buffer, const std::vector<uint8_t>& hdrDynamicMetadata);
     static GSError GetHDRDynamicMetadata(const sptr<SurfaceBuffer>& buffer, std::vector<uint8_t>& hdrDynamicMetadata);
 
+    static GSError SetHDRStaticMetadata(sptr<SurfaceBuffer>& buffer, const std::vector<uint8_t>& hdrStaticMetadata);
+    static GSError GetHDRStaticMetadata(const sptr<SurfaceBuffer>& buffer, std::vector<uint8_t>& hdrStaticMetadata);
+
 private:
+    static constexpr uint32_t PRIMARIES_MASK =
+        static_cast<uint32_t>(HDI::Display::Graphic::Common::V1_0::CM_PRIMARIES_MASK);
+    static constexpr uint32_t TRANSFUNC_MASK =
+        static_cast<uint32_t>(HDI::Display::Graphic::Common::V1_0::CM_TRANSFUNC_MASK);
+    static constexpr uint32_t MATRIX_MASK =
+        static_cast<uint32_t>(HDI::Display::Graphic::Common::V1_0::CM_MATRIX_MASK);
+    static constexpr uint32_t RANGE_MASK =
+        static_cast<uint32_t>(HDI::Display::Graphic::Common::V1_0::CM_RANGE_MASK);
     static constexpr uint32_t TRANSFUNC_OFFSET = 8;
     static constexpr uint32_t MATRIX_OFFSET = 16;
     static constexpr uint32_t RANGE_OFFSET = 21;

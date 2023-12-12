@@ -408,9 +408,7 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
 
     curDirtyManager_ = node.GetDirtyManager();
 
-#ifndef ROSEN_CROSS_PLATFORM
     auto surfaceNodeColorSpace = ptr->GetColorSpace();
-#endif
 #ifdef NEW_RENDER_CONTEXT
     std::shared_ptr<RSRenderSurface> rsSurface = RSSurfaceExtractor::ExtractRSSurface(ptr);
 #else
@@ -423,23 +421,23 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     // Update queue size for each process loop in case it dynamically changes
     queueSize_ = rsSurface->GetQueueSize();
 
-#ifndef ROSEN_CROSS_PLATFORM
     auto rsSurfaceColorSpace = rsSurface->GetColorSpace();
     if (surfaceNodeColorSpace != rsSurfaceColorSpace) {
         ROSEN_LOGD("Set new colorspace %{public}d to rsSurface", surfaceNodeColorSpace);
         rsSurface->SetColorSpace(surfaceNodeColorSpace);
     }
-#endif
 
 #if defined(ACE_ENABLE_GL)
+    if (!RSSystemProperties::GetAceVulkanEnabled()) {
 #if defined(NEW_RENDER_CONTEXT)
-    std::shared_ptr<RenderContextBase> rc = RSRenderThread::Instance().GetRenderContext();
-    std::shared_ptr<DrawingContext> dc = RSRenderThread::Instance().GetDrawingContext();
-    rsSurface->SetDrawingContext(dc);
+        std::shared_ptr<RenderContextBase> rc = RSRenderThread::Instance().GetRenderContext();
+        std::shared_ptr<DrawingContext> dc = RSRenderThread::Instance().GetDrawingContext();
+        rsSurface->SetDrawingContext(dc);
 #else
-    RenderContext* rc = RSRenderThread::Instance().GetRenderContext();
+        RenderContext* rc = RSRenderThread::Instance().GetRenderContext();
 #endif
-    rsSurface->SetRenderContext(rc);
+        rsSurface->SetRenderContext(rc);
+    }
 #endif
     uiTimestamp_ = RSRenderThread::Instance().GetUITimestamp();
     RS_TRACE_BEGIN(ptr->GetName() + " rsSurface->RequestFrame");
@@ -917,11 +915,11 @@ void RSRenderThreadVisitor::ClipHoleForSurfaceNode(RSSurfaceRenderNode& node)
     Drawing::Rect originRect = Drawing::Rect(x, y, width + x, height + y);
     canvas_->ClipRect(originRect, Drawing::ClipOp::INTERSECT, false);
     if (node.IsNotifyRTBufferAvailable() == true) {
-        ROSEN_LOGI("RSRenderThreadVisitor::ClipHoleForSurfaceNode node : %{public}lu,"
+        ROSEN_LOGI("RSRenderThreadVisitor::ClipHoleForSurfaceNode node : %{public}" PRIu64 ","
             "clip [%{public}f, %{public}f, %{public}f, %{public}f]", node.GetId(), x, y, width, height);
         canvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
     } else {
-        ROSEN_LOGI("RSRenderThreadVisitor::ClipHoleForSurfaceNode node : %{public}lu,"
+        ROSEN_LOGI("RSRenderThreadVisitor::ClipHoleForSurfaceNode node : %{public}" PRIu64 ","
             "not clip [%{public}f, %{public}f, %{public}f, %{public}f]", node.GetId(), x, y, width, height);
         auto backgroundColor = node.GetRenderProperties().GetBackgroundColor();
         if (backgroundColor != RgbPalette::Transparent()) {
@@ -1010,7 +1008,12 @@ void RSRenderThreadVisitor::ProcessOtherSurfaceRenderNode(RSSurfaceRenderNode& n
         auto height = std::floor(node.GetRenderProperties().GetBoundsHeight() - (2 * pixel)); // height decrease 2 pixels
         auto iter = surfaceCallbacks_.find(node.GetId());
         if (iter != surfaceCallbacks_.end()) {
+#ifndef USE_ROSEN_DRAWING
             (iter->second)(canvas_->getTotalMatrix().getTranslateX(), canvas_->getTotalMatrix().getTranslateY(), width, height);
+#else
+            (iter->second)(canvas_->GetTotalMatrix().Get(Drawing::Matrix::TRANS_X),
+                canvas_->GetTotalMatrix().Get(Drawing::Matrix::TRANS_Y), width, height);
+#endif
         }
         return;
     }

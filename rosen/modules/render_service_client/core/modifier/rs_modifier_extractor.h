@@ -79,7 +79,7 @@ public:
     std::shared_ptr<RSPath> GetShadowPath() const;
     bool GetShadowMask() const;
     bool GetShadowIsFilled() const;
-    bool GetShadowColorStrategy() const;
+    int GetShadowColorStrategy() const;
 
     Gravity GetFrameGravity() const;
 
@@ -94,6 +94,7 @@ public:
 
     float GetLightIntensity() const;
     Vector4f GetLightPosition() const;
+    float GetIlluminatedBorderWidth() const;
     int GetIlluminatedType() const;
     float GetBloom() const;
 

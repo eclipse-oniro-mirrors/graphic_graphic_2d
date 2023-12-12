@@ -155,21 +155,31 @@ bool RSFilterCacheManager::RSFilterCacheTask::Render()
         return false;
     }
 #ifndef USE_ROSEN_DRAWING
+    GrSurfaceOrigin surfaceOrigin = kTopLeft_GrSurfaceOrigin;
 #ifdef RS_ENABLE_VK
-    auto surfaceOrigin = kTopLeft_GrSurfaceOrigin;
+    if (RSSystemProperties::GetRsVulkanEnabled()) {
+        surfaceOrigin = kTopLeft_GrSurfaceOrigin;
+    } else {
+        surfaceOrigin = kBottomLeft_GrSurfaceOrigin;
+    }
 #else
-    auto surfaceOrigin = kBottomLeft_GrSurfaceOrigin;
+    surfaceOrigin = kBottomLeft_GrSurfaceOrigin;
 #endif
     auto threadImage = SkImage::MakeFromTexture(cacheCanvas->recordingContext(), cacheBackendTexture_,
         surfaceOrigin, kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
     auto src = SkRect::MakeSize(SkSize::Make(surfaceSize_));
     auto dst = SkRect::MakeSize(SkSize::Make(surfaceSize_));
 #else
+#ifdef RS_ENABLE_VK
+    auto surfaceOrigin = Drawing::TextureOrigin::TOP_LEFT;
+#else
+    auto surfaceOrigin = Drawing::TextureOrigin::BOTTOM_LEFT;
+#endif
     Drawing::BitmapFormat bitmapFormat = { Drawing::ColorType::COLORTYPE_RGBA_8888,
         Drawing::AlphaType::ALPHATYPE_PREMUL };
     auto threadImage = std::make_shared<Drawing::Image>();
     if (!threadImage->BuildFromTexture(*cacheCanvas->GetGPUContext(), cacheBackendTexture_.GetTextureInfo(),
-        Drawing::TextureOrigin::BOTTOM_LEFT, bitmapFormat, nullptr)) {
+        surfaceOrigin, bitmapFormat, nullptr)) {
         ROSEN_LOGE("RSFilterCacheManager::Render: cacheCanvas is null");
         return false;
     }
@@ -532,6 +542,12 @@ void RSFilterCacheManager::GenerateFilteredSnapshot(
             filteredSnapshot->width(), filteredSnapshot->height());
         as_IB(filteredSnapshot)->hintCacheGpuResource();
     }
+    if (RSSystemProperties::GetRecordingEnabled()) {
+        if (filteredSnapshot->isTextureBacked()) {
+            RS_LOGI("RSFilterCacheManager::GenerateFilteredSnapshot cachedImage from texture to raster image");
+            filteredSnapshot = filteredSnapshot->makeRasterImage();
+        }
+    }
 #else
     auto filteredSnapshot = offscreenSurface->GetImageSnapshot();
     if (RSSystemProperties::GetImageGpuResourceCacheEnable(filteredSnapshot->GetWidth(),
@@ -608,6 +624,9 @@ void RSFilterCacheManager::InvalidateCache(CacheType cacheType)
     if (cacheType & CacheType::CACHE_TYPE_FILTERED_SNAPSHOT) {
         cachedFilteredSnapshot_.reset();
     }
+    task_->SetStatus(CacheProcessStatus::WAITING);
+    task_->SetCompleted(false);
+    task_->Reset();
 }
 
 void RSFilterCacheManager::ReleaseCacheOffTree()

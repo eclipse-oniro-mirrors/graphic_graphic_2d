@@ -25,6 +25,7 @@
 #include "rs_surface_factory.h"
 #endif
 #include "parameter.h"
+#include "platform/common/rs_system_properties.h"
 
 using namespace OHOS;
 
@@ -144,9 +145,8 @@ void BootAnimation::Run(Rosen::ScreenId id, int screenWidth, int screenHeight)
 {
     LOGI("Run enter");
     animationConfig_.ParserCustomCfgFile();
-
+    Rosen::RSInterfaces& interface = Rosen::RSInterfaces::GetInstance();
     if (animationConfig_.GetRotateScreenId() >= 0) {
-        Rosen::RSInterfaces& interface = Rosen::RSInterfaces::GetInstance();
         id = interface.GetActiveScreenId();
         Rosen::RSScreenModeInfo modeinfo = interface.GetScreenActiveMode(id);
         screenWidth = modeinfo.GetScreenWidth();
@@ -157,6 +157,8 @@ void BootAnimation::Run(Rosen::ScreenId id, int screenWidth, int screenHeight)
             LOGI("SetScreenPowerStatus POWER_STATUS_ON: %{public}llu", id);
             interface.SetScreenPowerStatus(id, Rosen::ScreenPowerStatus::POWER_STATUS_ON);
         }
+    } else if (interface.GetScreenPowerStatus(id) != Rosen::ScreenPowerStatus::POWER_STATUS_ON) {
+        interface.SetScreenPowerStatus(id, Rosen::ScreenPowerStatus::POWER_STATUS_ON);
     }
 
     runner_ = AppExecFwk::EventRunner::Create(false);
@@ -221,14 +223,16 @@ void BootAnimation::InitRsSurface()
         return;
     }
 #ifdef ACE_ENABLE_GL
-    rc_ = OHOS::Rosen::RenderContextFactory::GetInstance().CreateEngine();
-    if (rc_ == nullptr) {
-        LOGE("InitilizeEglContext failed");
-        return;
-    } else {
-        LOGI("init egl context");
-        rc_->InitializeEglContext();
-        rsSurface_->SetRenderContext(rc_);
+    if (!Rosen::RSSystemProperties::GetAceVulkanEnabled()) {
+        rc_ = OHOS::Rosen::RenderContextFactory::GetInstance().CreateEngine();
+        if (rc_ == nullptr) {
+            LOGE("InitilizeEglContext failed");
+            return;
+        } else {
+            LOGI("init egl context");
+            rc_->InitializeEglContext();
+            rsSurface_->SetRenderContext(rc_);
+        }
     }
 #endif
     if (rc_ == nullptr) {

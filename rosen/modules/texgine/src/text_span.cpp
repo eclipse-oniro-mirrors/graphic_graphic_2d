@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "text_span.h"
 
 #include <iomanip>
 #include <stack>
+#include <utility>
 
 #include <hb-icu.h>
 #include <unicode/ubidi.h>
@@ -35,6 +35,7 @@
 #endif
 #include "text_converter.h"
 #include "word_breaker.h"
+#include "symbol_engine/hm_symbol_run.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -181,7 +182,13 @@ void TextSpan::Paint(TexgineCanvas &canvas, double offsetX, double offsetY, cons
     }
 
     PaintShadow(canvas, offsetX, offsetY, xs.shadows);
-    canvas.DrawTextBlob(textBlob_, offsetX, offsetY, paint);
+    if (xs.isSymbolGlyph) {
+        std::pair<double, double> offset(offsetX, offsetY);
+        HMSymbolRun::DrawSymbol(canvas, textBlob_, offset, paint, xs);
+    } else {
+        canvas.DrawTextBlob(textBlob_, offsetX, offsetY, paint);
+    }
+    
     PaintDecoration(canvas, offsetX, offsetY, xs);
 }
 

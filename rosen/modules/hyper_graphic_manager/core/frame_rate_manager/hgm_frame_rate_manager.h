@@ -39,16 +39,16 @@ public:
 
     void UniProcessData(ScreenId screenId, uint64_t timestamp,
         std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker,
-        const FrameRateLinkerMap& appFrameRateLinkers, bool forceUpdateFlag);
+        const FrameRateLinkerMap& appFrameRateLinkers, bool idleTimerExpired);
     int32_t CalModifierPreferred(const HgmModifierProfile &hgmModifierProfile);
     std::shared_ptr<HgmOneShotTimer> GetScreenTimer(ScreenId screenId) const;
     void ResetScreenTimer(ScreenId screenId) const;
     void StartScreenTimer(ScreenId screenId, int32_t interval,
         std::function<void()> resetCallback, std::function<void()> expiredCallback);
     void StopScreenTimer(ScreenId screenId);
-    void SetTimerExpiredCallback(std::function<void()> expiredCallback)
+    void SetForceUpdateCallback(std::function<void(bool, bool)> forceUpdateCallback)
     {
-        expiredCallback_ = expiredCallback;
+        forceUpdateCallback_ = forceUpdateCallback;
     }
 
     void Init(sptr<VSyncController> rsController,
@@ -56,7 +56,7 @@ public:
     std::shared_ptr<uint32_t> GetPendingRefreshRate();
     void ResetPendingRefreshRate();
 private:
-    void UpdateVSyncMode(sptr<VSyncController> rsController, sptr<VSyncController> appController);
+    static void UpdateVSyncMode(sptr<VSyncController> rsController, sptr<VSyncController> appController);
     void Reset();
     bool CollectFrameRateChange(FrameRateRange finalRange, std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker,
         const FrameRateLinkerMap& appFrameRateLinkers);
@@ -72,7 +72,7 @@ private:
     std::shared_ptr<HgmVSyncGeneratorController> controller_;
     std::vector<std::pair<FrameRateLinkerId, uint32_t>> appChangeData_;
 
-    std::function<void()> expiredCallback_;
+    std::function<void(bool, bool)> forceUpdateCallback_;
     std::unordered_map<ScreenId, std::shared_ptr<HgmOneShotTimer>> screenTimerMap_;
 };
 } // namespace Rosen

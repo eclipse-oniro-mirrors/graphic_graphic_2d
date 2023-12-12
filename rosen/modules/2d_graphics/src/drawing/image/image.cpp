@@ -18,6 +18,7 @@
 #include "impl_factory.h"
 #include "skia_adapter/skia_image.h"
 #include "static_factory.h"
+#include "utils/system_properties.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -60,13 +61,13 @@ bool Image::BuildFromPicture(const Picture& picture, const SizeI& dimensions, co
     return imageImplPtr->BuildFromPicture(picture, dimensions, matrix, brush, bitDepth, colorSpace);
 }
 
-std::shared_ptr<Image> MakeFromRaster(const Pixmap& pixmap,
+std::shared_ptr<Image> Image::MakeFromRaster(const Pixmap& pixmap,
     RasterReleaseProc rasterReleaseProc, ReleaseContext releaseContext)
 {
     return StaticFactory::MakeFromRaster(pixmap, rasterReleaseProc, releaseContext);
 }
 
-std::shared_ptr<Image> MakeRasterData(const ImageInfo& info, std::shared_ptr<Data> pixels,
+std::shared_ptr<Image> Image::MakeRasterData(const ImageInfo& info, std::shared_ptr<Data> pixels,
     size_t rowBytes)
 {
     return StaticFactory::MakeRasterData(info, pixels, rowBytes);
@@ -89,10 +90,18 @@ bool Image::BuildFromCompressed(GPUContext& gpuContext, const std::shared_ptr<Da
     return imageImplPtr->BuildFromCompressed(gpuContext, data, width, height, type);
 }
 
-bool Image::BuildFromTexture(GPUContext& gpuContext, const TextureInfo& info, TextureOrigin origin,
+bool Image::BuildFromSurface(GPUContext& gpuContext, Surface& surface, TextureOrigin origin,
     BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace)
 {
-    return imageImplPtr->BuildFromTexture(gpuContext, info, origin, bitmapFormat, colorSpace);
+    return imageImplPtr->BuildFromSurface(gpuContext, surface, origin, bitmapFormat, colorSpace);
+}
+
+bool Image::BuildFromTexture(GPUContext& gpuContext, const TextureInfo& info, TextureOrigin origin,
+    BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace,
+    void (*deleteFunc)(void*), void* cleanupHelper)
+{
+    return imageImplPtr->BuildFromTexture(gpuContext, info, origin, bitmapFormat,
+        colorSpace, deleteFunc, cleanupHelper);
 }
 
 bool Image::BuildSubset(const std::shared_ptr<Image>& image, const RectI& rect, GPUContext& gpuContext)
@@ -154,6 +163,11 @@ ImageInfo Image::GetImageInfo()
 bool Image::ReadPixels(Bitmap& bitmap, int x, int y)
 {
     return imageImplPtr->ReadPixels(bitmap, x, y);
+}
+
+bool Image::ReadPixels(Pixmap& pixmap, int x, int y)
+{
+    return imageImplPtr->ReadPixels(pixmap, x, y);
 }
 
 bool Image::ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,

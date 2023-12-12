@@ -55,6 +55,11 @@
 #include "transaction/rs_marshalling_helper.h"
 #include <optional>
 
+#ifdef RS_ENABLE_VK
+#include "include/gpu/GrBackendSurface.h"
+#include "platform/ohos/backend/native_buffer_utils.h"
+#endif
+
 namespace OHOS {
 namespace Rosen {
 class RSPaintFilterCanvas;
@@ -104,6 +109,7 @@ enum RSOpType : uint16_t {
     RESTORE_ALPHA_OPITEM,
     SURFACEBUFFER_OPITEM,
     SCALE_OPITEM,
+    HM_SYMBOL_OPITEM,
 };
 namespace {
     std::string GetOpTypeString(RSOpType type)
@@ -154,6 +160,7 @@ namespace {
             GETOPTYPESTRING(RESTORE_ALPHA_OPITEM);
             GETOPTYPESTRING(SURFACEBUFFER_OPITEM);
             GETOPTYPESTRING(SCALE_OPITEM);
+            GETOPTYPESTRING(HM_SYMBOL_OPITEM);
             default:
                 break;
         }
@@ -370,7 +377,7 @@ public:
 
     bool Marshalling(Parcel& parcel) const override;
     [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 #ifndef USE_ROSEN_DRAWING
     sk_sp<SkImage> GetSkImageFromSurfaceBuffer(SkCanvas& canvas, SurfaceBuffer* surfaceBuffer) const;
 #endif
@@ -384,7 +391,8 @@ private:
     mutable GLuint texId_ = 0;
 #endif
 #ifdef RS_ENABLE_VK
-    mutable sk_sp<SkImage> skImage_ = nullptr;
+    mutable GrBackendTexture backendTexture_ = {};
+    mutable NativeBufferUtils::VulkanCleanupHelper* cleanupHelper_ = nullptr;
 #endif
     mutable OHNativeWindowBuffer* nativeWindowBuffer_ = nullptr;
     mutable pid_t tid_ = 0;
@@ -804,6 +812,47 @@ private:
     sk_sp<SkTextBlob> textBlob_;
     float x_;
     float y_;
+};
+
+class SymbolOpItem : public OpItemWithPaint {
+public:
+    SymbolOpItem(const HMSymbolData& symbol, SkPoint locate, const SkPaint& paint);
+    ~SymbolOpItem() override {};
+    void Draw(RSPaintFilterCanvas& canvas, const SkRect*) const override;
+    std::optional<SkRect> GetCacheBounds() const override
+    {
+        return symbol_.path_.getBounds().makeOffset(locate_.x(), locate_.y());
+    }
+
+    std::string GetTypeWithDesc() const override
+    {
+        std::string desc = "{Optype: " + GetOpTypeString(GetType()) + ", Description: { ";
+        desc += "\tSymbolID = " + std::to_string(symbol_.symbolInfo_.symbolGlyphId) + "\n";
+        desc += "\tlocatex_ : " + std::to_string(locate_.x()) + "\n";
+        desc += "\tlocatey_ : " + std::to_string(locate_.y()) + "\n";
+        desc += "}, \n";
+        return desc;
+    }
+
+    RSOpType GetType() const override
+    {
+        return RSOpType::HM_SYMBOL_OPITEM;
+    }
+
+    void SetNodeId(NodeId id) override
+    {
+        nodeId_ = id;
+    }
+
+    bool Marshalling(Parcel& parcel) const override;
+    [[nodiscard]] static OpItem* Unmarshalling(Parcel& parcel);
+
+private:
+    HMSymbolData symbol_;
+    SkPoint locate_;
+    SkPaint paint_;
+
+    NodeId nodeId_;
 };
 
 class BitmapOpItem : public OpItemWithRSImage {
@@ -1628,7 +1677,7 @@ private:
 #include "recording/adaptive_image_helper.h"
 #include "draw/canvas.h"
 #include "parcel.h"
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 #include <native_window.h>
 #include "surface_buffer.h"
 #endif
@@ -1650,14 +1699,23 @@ public:
     std::shared_ptr<Drawing::Image> GetDrawingImageFromSurfaceBuffer(
         Drawing::Canvas& canvas, SurfaceBuffer* surfaceBuffer) const;
 #endif
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+    std::shared_ptr<Drawing::Image> MakeFromTextureForVK(Drawing::Canvas& canvas, SurfaceBuffer *surfaceBuffer);
+#endif
 protected:
     std::shared_ptr<RSImage> rsImage_;
 private:
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+#ifdef RS_ENABLE_GL
     mutable EGLImageKHR eglImage_ = EGL_NO_IMAGE_KHR;
     mutable GLuint texId_ = 0;
+#endif
     mutable OHNativeWindowBuffer* nativeWindowBuffer_ = nullptr;
     mutable pid_t tid_ = 0;
+#endif
+#ifdef RS_ENABLE_VK
+    mutable Drawing::BackendTexture backendTexture_ = {};
+    mutable NativeBufferUtils::VulkanCleanupHelper* cleanUpHelper_ = nullptr;
 #endif
 };
 

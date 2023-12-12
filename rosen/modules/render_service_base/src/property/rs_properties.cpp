@@ -101,7 +101,8 @@ const std::array<ResetPropertyFunc, static_cast<int>(RSModifierType::CUSTOM)> g_
     [](RSProperties* prop) { prop->SetShadowRadius(0.f); },              // SHADOW_RADIUS,            46
     [](RSProperties* prop) { prop->SetShadowPath({}); },                 // SHADOW_PATH,              47
     [](RSProperties* prop) { prop->SetShadowMask(false); },              // SHADOW_MASK,              48
-    [](RSProperties* prop) { prop->SetShadowColorStrategy(false); },     // ShadowColorStrategy,      49
+    [](RSProperties* prop) { prop->SetShadowColorStrategy(               // ShadowColorStrategy,      49
+        SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE); },
     [](RSProperties* prop) { prop->SetMask({}); },                       // MASK,                     50
     [](RSProperties* prop) { prop->SetSpherize(0.f); },                  // SPHERIZE,                 51
     [](RSProperties* prop) { prop->SetLightUpEffect(1.f); },             // LIGHT_UP_EFFECT,          52
@@ -133,8 +134,9 @@ const std::array<ResetPropertyFunc, static_cast<int>(RSModifierType::CUSTOM)> g_
     [](RSProperties* prop) { prop->SetGreyCoef2(0.f); },               // GREY_COEF2,                 75
     [](RSProperties* prop) { prop->SetLightIntensity(-1.f); },            // LIGHT_INTENSITY           76
     [](RSProperties* prop) { prop->SetLightPosition({}); },               // LIGHT_POSITION            77
-    [](RSProperties* prop) { prop->SetIlluminatedType(-1); },             // ILLUMINATED_TYPE          78
-    [](RSProperties* prop) { prop->SetBloom({}); },                       // BLOOM                     79
+    [](RSProperties* prop) { prop->SetIlluminatedBorderWidth({}); },      // ILLUMINATED_BORDER_WIDTH  78
+    [](RSProperties* prop) { prop->SetIlluminatedType(-1); },             // ILLUMINATED_TYPE          79
+    [](RSProperties* prop) { prop->SetBloom({}); },                       // BLOOM                     80
 };
 } // namespace
 
@@ -475,8 +477,7 @@ void RSProperties::UpdateSandBoxMatrix(const std::optional<Drawing::Matrix>& roo
 #ifndef USE_ROSEN_DRAWING
     sandbox_->matrix_ = rootMat.preTranslate(sandbox_->position_->x_, sandbox_->position_->y_);
 #else
-    Drawing::Matrix matrix;
-    matrix.DeepCopy(rootMatrix.value());
+    Drawing::Matrix matrix = rootMatrix.value();
     matrix.PreTranslate(sandbox_->position_->x_, sandbox_->position_->y_);
     sandbox_->matrix_ = matrix;
 #endif
@@ -1132,7 +1133,7 @@ const std::shared_ptr<RSFilter>& RSProperties::GetFilter() const
 bool RSProperties::IsDynamicLightUpValid() const
 {
     return dynamicLightUpRate_.has_value() && dynamicLightUpDegree_.has_value() &&
-           ROSEN_GNE(*dynamicLightUpRate_, 0.0) && ROSEN_GE(*dynamicLightUpDegree_, 0.0) &&
+           ROSEN_GNE(*dynamicLightUpRate_, 0.0) && ROSEN_GE(*dynamicLightUpDegree_, -1.0) &&
            ROSEN_LE(*dynamicLightUpDegree_, 1.0);
 }
 
@@ -1254,7 +1255,7 @@ void RSProperties::SetShadowIsFilled(bool shadowIsFilled)
     contentDirty_ = true;
 }
 
-void RSProperties::SetShadowColorStrategy(bool shadowColorStrategy)
+void RSProperties::SetShadowColorStrategy(int shadowColorStrategy)
 {
     if (!shadow_.has_value()) {
         shadow_ = std::make_optional<RSShadow>();
@@ -1265,8 +1266,9 @@ void RSProperties::SetShadowColorStrategy(bool shadowColorStrategy)
     // [planning] if shadow stores as texture and out of node
     // node content would not be affected
     contentDirty_ = true;
-    if (shadowColorStrategy && colorPickerTaskShadow_ == nullptr) {
+    if (shadowColorStrategy != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE && colorPickerTaskShadow_ == nullptr) {
         CreateColorPickerTaskForShadow();
+        colorPickerTaskShadow_->SetShadowColorStrategy(shadowColorStrategy);
     }
 }
 
@@ -1317,9 +1319,9 @@ bool RSProperties::GetShadowIsFilled() const
     return shadow_ ? shadow_->GetIsFilled() : false;
 }
 
-bool RSProperties::GetShadowColorStrategy() const
+int RSProperties::GetShadowColorStrategy() const
 {
-    return shadow_ ? shadow_->GetColorStrategy() : false;
+    return shadow_ ? shadow_->GetColorStrategy() : SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE;
 }
 
 const std::optional<RSShadow>& RSProperties::GetShadow() const
@@ -1752,6 +1754,16 @@ void RSProperties::SetLightPosition(const Vector4f& lightPosition)
     contentDirty_ = true;
 }
 
+void RSProperties::SetIlluminatedBorderWidth(float illuminatedBorderWidth)
+{
+    if (!illuminatedPtr_) {
+        illuminatedPtr_ = std::make_shared<RSIlluminated>();
+    }
+    illuminatedPtr_->SetIlluminatedBorderWidth(illuminatedBorderWidth);
+    SetDirty();
+    contentDirty_ = true;
+}
+
 void RSProperties::SetIlluminatedType(int illuminatedType)
 {
     if (!illuminatedPtr_) {
@@ -1806,6 +1818,11 @@ int RSProperties::GetIlluminatedType() const
 float RSProperties::GetBloom() const
 {
     return illuminatedPtr_ ? illuminatedPtr_->GetBloomIntensity() : 0.f;
+}
+
+float RSProperties::GetIlluminatedBorderWidth() const
+{
+    return illuminatedPtr_ ? illuminatedPtr_->GetIlluminatedBorderWidth() : 0.f;
 }
 
 void RSProperties::CalculateAbsLightPosition()
@@ -2166,7 +2183,7 @@ void RSProperties::GenerateColorFilter()
         colorFilter_ = filter->makeComposed(colorFilter_);
 #else
         filter = Drawing::ColorFilter::CreateBlendModeColorFilter(Drawing::Color::ColorQuadSetARGB(
-            colorBlend.GetRed(), colorBlend.GetGreen(), colorBlend.GetBlue(), colorBlend.GetAlpha()),
+            colorBlend.GetAlpha(), colorBlend.GetRed(), colorBlend.GetGreen(), colorBlend.GetBlue()),
             Drawing::BlendMode::PLUS);
         if (colorFilter_) {
             filter->Compose(*colorFilter_);
@@ -2699,7 +2716,7 @@ void RSProperties::OnApplyModifiers()
     }
     if (filterNeedUpdate_) {
         filterNeedUpdate_ = false;
-        if (IsShadowValid()) {
+        if (GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE) {
             filterNeedUpdate_ = true;
         }
         if (backgroundFilter_ != nullptr && !backgroundFilter_->IsValid()) {
@@ -2709,7 +2726,8 @@ void RSProperties::OnApplyModifiers()
             filter_.reset();
         }
         needFilter_ = backgroundFilter_ != nullptr || filter_ != nullptr || useEffect_ || IsLightUpEffectValid() ||
-                        IsDynamicLightUpValid() || IsShadowValid() || IsGreyAdjustmenValid();
+                        IsDynamicLightUpValid() || IsGreyAdjustmenValid() ||
+                        GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE;
 #if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
         CreateFilterCacheManagerIfNeed();
 #endif

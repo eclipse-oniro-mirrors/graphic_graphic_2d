@@ -45,7 +45,7 @@ RSImageBase::~RSImageBase()
             if (renderServiceImage_) {
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD)
 #if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_UNI_RENDER)
-                if (isPinImage_) {
+                if (!RSSystemProperties::GetRsVulkanEnabled() && isPinImage_) {
                     RSUploadTextureThread::Instance().RemoveTask(std::to_string(uniqueId_));
                     auto unpinTask = [image = image_]() {
                         auto grContext = RSUploadTextureThread::Instance().GetShareGrContext().get();
@@ -56,7 +56,7 @@ RSImageBase::~RSImageBase()
                     RSUploadTextureThread::Instance().PostSyncTask(unpinTask);
                 }
 #endif
-#endif                
+#endif
                 auto task = [uniqueId = uniqueId_]() {
                     RSImageCache::Instance().ReleasePixelMapCache(uniqueId);
                 };
@@ -97,7 +97,14 @@ void RSImageBase::DrawImage(RSPaintFilterCanvas& canvas, const SkPaint& paint)
         return;
     }
 #ifdef NEW_SKIA
-    canvas.drawImageRect(image_, src, dst, samplingOptions, &paint, SkCanvas::kStrict_SrcRectConstraint);
+    auto texture = image_->getBackendTexture(true);
+    auto image = SkImage::MakeFromTexture(canvas.recordingContext(), texture, kBottomLeft_GrSurfaceOrigin,
+        kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr);
+    if (image == nullptr) {
+        canvas.drawImageRect(image_, src, dst, samplingOptions, &paint, SkCanvas::kStrict_SrcRectConstraint);
+        return;
+    }
+    canvas.drawImageRect(image, src, dst, samplingOptions, &paint, SkCanvas::kStrict_SrcRectConstraint);
 #else
     canvas.drawImageRect(image_, src, dst, &paint);
 #endif
@@ -125,12 +132,11 @@ void RSImageBase::SetImage(const std::shared_ptr<Drawing::Image> image)
     isDrawn_ = false;
     image_ = image;
     if (image_) {
-#ifndef USE_ROSEN_DRAWING
         SKResourceManager::Instance().HoldResource(image);
+#ifndef USE_ROSEN_DRAWING
         srcRect_.SetAll(0.0, 0.0, image_->width(), image_->height());
         GenUniqueId(image_->uniqueID());
 #else
-        // Drawing need to be adapted furture
         srcRect_.SetAll(0.0, 0.0, image_->GetWidth(), image_->GetHeight());
         GenUniqueId(image_->GetUniqueID());
 #endif
@@ -146,11 +152,7 @@ void RSImageBase::SetDmaImage(const std::shared_ptr<Drawing::Image> image)
 {
     isDrawn_ = false;
     image_ = image;
-#ifndef USE_ROSEN_DRAWING
     SKResourceManager::Instance().HoldResource(image);
-#else
-    // Drawing need to be adapted furture
-#endif
 }
 #endif
 
@@ -422,7 +424,7 @@ void RSImageBase::ConvertPixelMapToSkImage()
             }
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD)
 #if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_UNI_RENDER)
-            if (renderServiceImage_) {
+            if (!RSSystemProperties::GetRsVulkanEnabled() && renderServiceImage_) {
                 auto image = image_;
                 auto pixelMap = pixelMap_;
                 std::function<void()> uploadTexturetask = [image, pixelMap]() -> void {
@@ -452,6 +454,9 @@ void RSImageBase::ConvertPixelMapToDrawingImage()
         }
         if (!image_) {
             image_ = RSPixelMapUtil::ExtractDrawingImage(pixelMap_);
+            if (image_) {
+                SKResourceManager::Instance().HoldResource(image_);
+            }
             if (!pixelMap_->IsEditable()) {
 #if defined(ROSEN_OHOS)
                 RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image_, gettid());

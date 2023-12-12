@@ -264,7 +264,9 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
 
             ScreenId mirrorId = data.ReadUint64();
             int32_t flags = data.ReadInt32();
-            ScreenId id = CreateVirtualScreen(name, width, height, surface, mirrorId, flags);
+            std::vector<NodeId> filteredAppVector;
+            data.ReadUInt64Vector(&filteredAppVector);
+            ScreenId id = CreateVirtualScreen(name, width, height, surface, mirrorId, flags, filteredAppVector);
             reply.WriteUint64(id);
             break;
         }
@@ -1048,6 +1050,18 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             SetAppWindowNum(num);
             break;
         }
+        case static_cast<uint32_t>(
+            RSIRenderServiceConnectionInterfaceCode::SET_SYSTEM_ANIMATED_SCENES): {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            uint32_t systemAnimatedScenes = data.ReadUint32();
+            bool result = SetSystemAnimatedScenes(static_cast<SystemAnimatedScenes>(systemAnimatedScenes));
+            reply.WriteBool(result);
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SHOW_WATERMARK): {
             auto token = data.ReadInterfaceToken();
             if (token != RSIRenderServiceConnection::GetDescriptor()) {
@@ -1225,6 +1239,7 @@ void RSRenderServiceConnectionStub::ReadDataBaseRs(DataBaseRs& info, MessageParc
     info.inputTime = data.ReadInt64();
     info.beginVsyncTime = data.ReadInt64();
     info.endVsyncTime = data.ReadInt64();
+    info.isDisplayAnimator = data.ReadBool();
     info.sceneId = data.ReadString();
     info.versionName = data.ReadString();
     info.bundleName = data.ReadString();

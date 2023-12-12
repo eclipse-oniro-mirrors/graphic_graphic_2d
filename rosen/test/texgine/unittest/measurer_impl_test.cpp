@@ -149,6 +149,7 @@ U_CAPI UBool U_EXPORT2 u_isWhitespace(UChar32 c)
 namespace OHOS {
 namespace Rosen {
 namespace TextEngine {
+#ifndef USE_ROSEN_DRAWING
 size_t TexgineTypeface::GetTableSize(uint32_t tag) const
 {
     return g_measurerMockvars.retvalGetTableSize;
@@ -163,6 +164,7 @@ int TexgineTypeface::GetUnitsPerEm() const
 {
     return g_measurerMockvars.retvalGetUnitsPerEm;
 }
+#endif
 
 std::vector<Boundary> WordBreaker::GetBoundary(const std::vector<uint16_t> &u16str, bool)
 {
@@ -175,7 +177,7 @@ bool Typeface::Has(uint32_t ch)
 }
 
 std::shared_ptr<Typeface> FontCollection::GetTypefaceForChar(const uint32_t &ch,
-    FontStyles &style, const std::string &script, const std::string &locale, bool &fallbackTypeface) const
+    FontStyles &style, const std::string &script, const std::string &locale) const
 {
     return g_measurerMockvars.typeface;
 }

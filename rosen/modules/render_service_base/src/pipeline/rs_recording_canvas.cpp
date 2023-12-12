@@ -381,6 +381,13 @@ void RSRecordingCanvas::onDrawTextBlob(const SkTextBlob* blob, SkScalar x, SkSca
     AddOp(std::move(op));
 }
 
+void RSRecordingCanvas::onDrawSymbol(const HMSymbolData& symbol, SkPoint locate, const SkPaint& paint)
+{
+    RS_DRAWOP_TRACE_FUNC();
+    std::unique_ptr<OpItem> op = std::make_unique<SymbolOpItem>(symbol, locate, paint);
+    AddOp(std::move(op));
+}
+
 void RSRecordingCanvas::DrawAdaptiveRRect(float radius, const SkPaint& paint)
 {
     RS_DRAWOP_TRACE_FUNC();
@@ -480,16 +487,18 @@ void ExtendRecordingCanvas::DrawImageWithParm(
     auto object = std::make_shared<RSExtendImageObject>(image, data, rsImageInfo);
     auto objectHandle =
         Drawing::CmdListHelper::AddImageObjectToCmdList(*Drawing::RecordingCanvas::GetDrawCmdList(), object);
-    Drawing::RecordingCanvas::GetDrawCmdList()->AddOp<Drawing::DrawImageWithParmOpItem>(objectHandle, sampling);
+    Drawing::RecordingCanvas::GetDrawCmdList()->AddOp<Drawing::DrawImageWithParmOpItem::ConstructorHandle>(
+        objectHandle, sampling);
 }
 
-void ExtendRecordingCanvas::DrawExtendPixelMap(const std::shared_ptr<Media::PixelMap>& pixelMap,
+void ExtendRecordingCanvas::DrawPixelMapWithParm(const std::shared_ptr<Media::PixelMap>& pixelMap,
     const Drawing::AdaptiveImageInfo& rsImageInfo, const Drawing::SamplingOptions& sampling)
 {
     auto object = std::make_shared<RSExtendImageObject>(pixelMap, rsImageInfo);
     auto objectHandle =
         Drawing::CmdListHelper::AddImageObjectToCmdList(*Drawing::RecordingCanvas::GetDrawCmdList(), object);
-    Drawing::RecordingCanvas::GetDrawCmdList()->AddOp<Drawing::DrawExtendPixelMapOpItem>(objectHandle, sampling);
+    Drawing::RecordingCanvas::GetDrawCmdList()->AddOp<Drawing::DrawPixelMapWithParmOpItem::ConstructorHandle>(
+        objectHandle, sampling);
 }
 
 void ExtendRecordingCanvas::DrawPixelMapRect(const std::shared_ptr<Media::PixelMap>& pixelMap, const Drawing::Rect& src,
@@ -499,7 +508,8 @@ void ExtendRecordingCanvas::DrawPixelMapRect(const std::shared_ptr<Media::PixelM
     auto object = std::make_shared<RSExtendImageBaseOj>(pixelMap, src, dst);
     auto objectHandle =
         Drawing::CmdListHelper::AddImageBaseOjToCmdList(*Drawing::RecordingCanvas::GetDrawCmdList(), object);
-    Drawing::RecordingCanvas::GetDrawCmdList()->AddOp<Drawing::DrawPixelMapRectOpItem>(objectHandle, sampling);
+    Drawing::RecordingCanvas::GetDrawCmdList()->AddOp<Drawing::DrawPixelMapRectOpItem::ConstructorHandle>(
+        objectHandle, sampling);
 }
 } // namespace Rosen
 } // namespace OHOS

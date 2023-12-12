@@ -16,6 +16,7 @@
 #include "static_factory.h"
 
 #include "skia_adapter/skia_static_factory.h"
+#include "utils/system_properties.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -34,12 +35,37 @@ std::shared_ptr<TextBlob> StaticFactory::MakeFromRSXform(const void* text, size_
     return EngineStaticFactory::MakeFromRSXform(text, byteLength, xform, font, encoding);
 }
 
-std::shared_ptr<Typeface> StaticFactory::MakeFromFile(const char path[])
+std::shared_ptr<Typeface> StaticFactory::MakeDefault()
 {
-    return EngineStaticFactory::MakeFromFile(path);
+    return EngineStaticFactory::MakeDefault();
+}
+
+std::shared_ptr<Typeface> StaticFactory::MakeFromFile(const char path[], int index)
+{
+    return EngineStaticFactory::MakeFromFile(path, index);
+}
+
+std::shared_ptr<Typeface> StaticFactory::MakeFromStream(std::unique_ptr<MemoryStream> memoryStream, int32_t index)
+{
+    return EngineStaticFactory::MakeFromStream(std::move(memoryStream), index);
+}
+
+std::shared_ptr<Typeface> StaticFactory::MakeFromName(const char familyName[], FontStyle fontStyle)
+{
+    return EngineStaticFactory::MakeFromName(familyName, fontStyle);
 }
 
 #ifdef ACE_ENABLE_GPU
+#ifdef RS_ENABLE_VK
+std::shared_ptr<Surface> StaticFactory::MakeFromBackendRenderTarget(GPUContext* gpuContext, TextureInfo& info,
+    TextureOrigin origin, void (*deleteVkImage)(void *), void* cleanHelper)
+{
+    if (!SystemProperties::GetRsVulkanEnabled()) {
+        return nullptr;
+    }
+    return EngineStaticFactory::MakeFromBackendRenderTarget(gpuContext, info, origin, deleteVkImage, cleanHelper);
+}
+#endif
 std::shared_ptr<Surface> StaticFactory::MakeRenderTarget(GPUContext* gpuContext,
     bool budgeted, const ImageInfo& imageInfo)
 {
@@ -87,6 +113,15 @@ bool StaticFactory::CanComputeFastBounds(const Brush& brush)
 const Rect& StaticFactory::ComputeFastBounds(const Brush& brush, const Rect& orig, Rect* storage)
 {
     return EngineStaticFactory::ComputeFastBounds(brush, orig, storage);
+}
+
+bool StaticFactory::AsBlendMode(const Brush& brush)
+{
+    return EngineStaticFactory::AsBlendMode(brush);
+}
+std::shared_ptr<Data> StaticFactory::MakeDataFromFileName(const char path[])
+{
+    return EngineStaticFactory::MakeDataFromFileName(path);
 }
 } // namespace Drawing
 } // namespace Rosen

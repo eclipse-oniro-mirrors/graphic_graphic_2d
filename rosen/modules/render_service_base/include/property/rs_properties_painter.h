@@ -24,6 +24,7 @@
 #else
 #include "recording/draw_cmd_list.h"
 #include "draw/surface.h"
+#include "effect/runtime_shader_builder.h"
 #endif
 
 namespace OHOS {
@@ -37,13 +38,19 @@ class RSB_EXPORT RSPropertiesPainter {
 public:
     static void SetBgAntiAlias(bool forceBgAntiAlias);
     static bool GetBgAntiAlias();
-    static void DrawBackground(const RSProperties& properties, RSPaintFilterCanvas& canvas, bool isAntiAlias = true);
+    static void DrawBackground(const RSProperties& properties, RSPaintFilterCanvas& canvas,
+        bool isAntiAlias = true, bool isSurfaceView = false);
     static void GetShadowDirtyRect(RectI& dirtyShadow, const RSProperties& properties,
-        const RRect* rrect = nullptr, bool isAbsCoordinate = true);
+        const RRect* rrect = nullptr, bool isAbsCoordinate = true, bool radiusInclude = true);
     static void DrawShadow(const RSProperties& properties, RSPaintFilterCanvas& canvas, const RRect* rrect = nullptr);
     static int GetAndResetBlurCnt();
-    static void PickColor(const RSProperties& properties, RSPaintFilterCanvas& canvas, SkPath& skPath,
+#ifndef USE_ROSEN_DRAWING
+    static bool PickColor(const RSProperties& properties, RSPaintFilterCanvas& canvas, SkPath& skPath,
         SkMatrix& matrix, SkIRect& deviceClipBounds, RSColor& colorPicked);
+#else
+    static bool PickColor(const RSProperties& properties, RSPaintFilterCanvas& canvas, Drawing::Path& drPath,
+    Drawing::Matrix& matrix, Drawing::RectI& deviceClipBounds, RSColor& colorPicked);
+#endif
     static void GetDarkColor(RSColor& color);
 
     static void DrawPixelStretch(const RSProperties& properties, RSPaintFilterCanvas& canvas);
@@ -81,13 +88,14 @@ public:
     static void DrawSpherize(const RSProperties& properties, RSPaintFilterCanvas& canvas,
         const sk_sp<SkSurface>& spherizeSurface);
     // EffectView and useEffect
-    static void DrawBackgroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas, const SkRect& rect);
-    static sk_sp<SkShader> MakeDynamicLightUpShader(
-        float dynamicLightUpRate, float dynamicLightUpDeg, sk_sp<SkShader> imageShader);
+    static void DrawBackgroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas, const SkIRect& rect);
+    static sk_sp<SkBlender> MakeDynamicLightUpBlender(
+        float dynamicLightUpRate, float dynamicLightUpDeg);
     static void DrawGreyAdjustment(const RSProperties& properties, RSPaintFilterCanvas& canvas);
 #else // USE_ROSEN_DRAWING
     static void Clip(Drawing::Canvas& canvas, RectF rect, bool isAntiAlias = true);
     static void DrawBorder(const RSProperties& properties, Drawing::Canvas& canvas);
+    static void DrawLight(const RSProperties& properties, Drawing::Canvas& canvas);
     static void DrawFrame(
         const RSProperties& properties, RSPaintFilterCanvas& canvas, Drawing::DrawCmdListPtr& drawCmdList);
     static void DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas, FilterType filterType,
@@ -111,9 +119,10 @@ public:
         const std::shared_ptr<Drawing::Surface>& spherizeSurface);
     // EffectView and useEffect
     static void DrawBackgroundEffect(
-        const RSProperties& properties, RSPaintFilterCanvas& canvas, const Drawing::Rect& rect);
+        const RSProperties& properties, RSPaintFilterCanvas& canvas, const Drawing::RectI& rect);
     static std::shared_ptr<Drawing::ShaderEffect> MakeDynamicLightUpShader(
         float dynamicLightUpRate, float dynamicLightUpDeg, std::shared_ptr<Drawing::ShaderEffect> imageShader);
+    static void DrawGreyAdjustment(const RSProperties& properties, RSPaintFilterCanvas& canvas);
 #endif // USE_ROSEN_DRAWING
 
     static const bool BLUR_ENABLED;
@@ -129,10 +138,14 @@ private:
 #ifndef USE_ROSEN_DRAWING
     static void DrawColorfulShadowInner(const RSProperties& properties, RSPaintFilterCanvas& canvas, SkPath& path);
     static void DrawShadowInner(const RSProperties& properties, RSPaintFilterCanvas& canvas, SkPath& path);
+    static void DrawLightInner(const RSProperties& properties, SkCanvas& canvas,
+        std::shared_ptr<SkRuntimeShaderBuilder>& lightBuilder,
+        const std::unordered_set<std::shared_ptr<RSLightSource>>& lightSources,
+        const std::shared_ptr<RSObjAbsGeometry>& geoPtr);
     static void DrawContentLight(const RSProperties& properties, SkCanvas& canvas,
-        std::shared_ptr<SkRuntimeShaderBuilder> lightBuilder, SkPaint& paint, float lightIntensity);
+        std::shared_ptr<SkRuntimeShaderBuilder>& lightBuilder, SkPaint& paint, SkV4& lightIntensity);
     static void DrawBorderLight(const RSProperties& properties, SkCanvas& canvas,
-        std::shared_ptr<SkRuntimeShaderBuilder> lightBuilder, SkPaint& paint, float lightIntensity);
+        std::shared_ptr<SkRuntimeShaderBuilder>& lightBuilder, SkPaint& paint, SkV4& lightIntensity);
     static bool GetGradientDirectionPoints(SkPoint (&pts)[2],
                                 const SkRect& clipBounds, GradientDirection direction);
     static sk_sp<SkShader> MakeAlphaGradientShader(const SkRect& clipBounds,
@@ -142,7 +155,8 @@ private:
     static sk_sp<SkShader> MakeVerticalMeanBlurShader(float radiusIn,
                                             sk_sp<SkShader> shader, sk_sp<SkShader> gradientShader);
     static sk_sp<SkShader> MakeLightUpEffectShader(float lightUpDeg, sk_sp<SkShader> imageShader);
-    static sk_sp<SkShader> MakeBinarizationShader(float low, float high, float threshold, sk_sp<SkShader> imageShader);
+    static sk_sp<SkShader> MakeBinarizationShader(float low, float high, float threshold,
+        float thresholdLow, float thresholdHigh, float imageWidth, float imageHeight, sk_sp<SkShader> imageShader);
     static void DrawHorizontalLinearGradientBlur(SkSurface* skSurface, RSPaintFilterCanvas& canvas,
         float radius, sk_sp<SkShader> alphaGradientShader, const SkIRect& clipIPadding);
     static void DrawVerticalLinearGradientBlur(SkSurface* skSurface, RSPaintFilterCanvas& canvas,
@@ -165,6 +179,14 @@ private:
     static void DrawColorfulShadowInner(
         const RSProperties& properties, RSPaintFilterCanvas& canvas, Drawing::Path& path);
     static void DrawShadowInner(const RSProperties& properties, RSPaintFilterCanvas& canvas, Drawing::Path& path);
+    static void DrawLightInner(const RSProperties& properties, Drawing::Canvas& canvas,
+        std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder,
+        const std::unordered_set<std::shared_ptr<RSLightSource>>& lightSources,
+        const std::shared_ptr<RSObjAbsGeometry>& geoPtr);
+    static void DrawContentLight(const RSProperties& properties, Drawing::Canvas& canvas,
+        std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Brush& brush, Vector4f& lightIntensity);
+    static void DrawBorderLight(const RSProperties& properties, Drawing::Canvas& canvas,
+        std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Pen& pen, Vector4f& lightIntensity);
     static bool GetGradientDirectionPoints(
         Drawing::Point (&pts)[2], const Drawing::Rect& clipBounds, GradientDirection direction);
     static std::shared_ptr<Drawing::ShaderEffect> MakeAlphaGradientShader(const Drawing::Rect& clipBounds,
@@ -175,6 +197,9 @@ private:
         std::shared_ptr<Drawing::ShaderEffect> shader, std::shared_ptr<Drawing::ShaderEffect> gradientShader);
     static std::shared_ptr<Drawing::ShaderEffect> MakeLightUpEffectShader(
         float lightUpDeg, std::shared_ptr<Drawing::ShaderEffect> imageShader);
+    static std::shared_ptr<Drawing::ShaderEffect> MakeBinarizationShader(float low, float high, float threshold,
+        float thresholdLow, float thresholdHigh, float imageWidth, float imageHeight,
+        std::shared_ptr<Drawing::ShaderEffect> imageShader);
     static void DrawHorizontalLinearGradientBlur(Drawing::Surface* surface, RSPaintFilterCanvas& canvas,
         float radius, std::shared_ptr<Drawing::ShaderEffect> alphaGradientShader, const Drawing::RectI& clipIPadding);
     static void DrawVerticalLinearGradientBlur(Drawing::Surface* surface, RSPaintFilterCanvas& canvas,
@@ -183,12 +208,19 @@ private:
     static void DrawLinearGradientBlur(Drawing::Surface* surface, RSPaintFilterCanvas& canvas,
         const std::shared_ptr<RSLinearGradientBlurPara>& para,
         std::shared_ptr<Drawing::ShaderEffect> alphaGradientShader, const Drawing::RectI& clipIPadding);
-    static void DrawMaskLinearGradientBlur(Drawing::Surface* surface, RSPaintFilterCanvas& canvas,
+    static void DrawMaskLinearGradientBlur(Drawing::Surface* drSurface, RSPaintFilterCanvas& canvas,
         std::shared_ptr<RSDrawingFilter>& blurFilter, std::shared_ptr<Drawing::ShaderEffect> alphaGradientShader,
         const Drawing::RectI& clipIPadding);
     static std::shared_ptr<Drawing::ShaderEffect> MakeMeanBlurShader(
         std::shared_ptr<Drawing::ShaderEffect> srcImageShader, std::shared_ptr<Drawing::ShaderEffect> blurImageShader,
         std::shared_ptr<Drawing::ShaderEffect> gradientShader);
+    static std::shared_ptr<Drawing::ShaderEffect> MakeGreyAdjustmentShader(const float coef1, const float coef2,
+        std::shared_ptr<Drawing::ShaderEffect> imageShader);
+
+    static void DrawBorderBase(const RSProperties& properties, Drawing::Canvas& canvas,
+                               const std::shared_ptr<RSBorder>& border, Vector4f& outset,
+                               Vector4f& innerOutset, const bool isFirstLayerBorder);
+    static const std::shared_ptr<Drawing::RuntimeShaderBuilder>& GetPhongShaderBuilder();
 #endif // USE_ROSEN_DRAWING
     inline static int g_blurCnt = 0;
 };

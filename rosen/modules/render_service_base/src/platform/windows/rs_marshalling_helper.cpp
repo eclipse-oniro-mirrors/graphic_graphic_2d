@@ -42,6 +42,7 @@
 #include "src/core/SkReadBuffer.h"
 #include "src/core/SkWriteBuffer.h"
 #include "src/image/SkImage_Base.h"
+#include "include/core/SkHMSymbol.h"
 #else
 #include "recording/recording_shader_effect.h"
 #include "recording/recording_path.h"
@@ -113,6 +114,63 @@ static inline sk_sp<T> sk_reinterpret_cast(sk_sp<P> ptr)
     return sk_sp<T>(static_cast<T*>(SkSafeRef(ptr.get())));
 }
 } // namespace
+
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const GroupInfo& val)
+{
+    return {};
+}
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, GroupInfo& val)
+{
+    return {};
+}
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const RenderGroup& val)
+{
+    return {};
+}
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, RenderGroup& val)
+{
+    return {};
+}
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const SymbolLayers& val)
+{
+    return {};
+}
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SymbolLayers& val)
+{
+    return {};
+}
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const SymbolLayersGroups& val)
+{
+    return {};
+}
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SymbolLayersGroups& val)
+{
+    return {};
+}
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const HMSymbolData& val)
+{
+    return {};
+}
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, HMSymbolData& val)
+{
+    return {};
+}
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const SkPoint& val)
+{
+    return {};
+}
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SkPoint& val)
+{
+    return {};
+}
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const SColor& val)
+{
+    return {};
+}
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SColor& val)
+{
+    return {};
+}
 
 #ifndef USE_ROSEN_DRAWING
 // SkData
@@ -662,6 +720,7 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSPath>)      \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSShader>)    \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSLinearGradientBlurPara>)    \
+    EXPLICIT_INSTANTIATION(TEMPLATE, RSRenderParticleVector)       \
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector2f)                     \
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector4<uint32_t>)            \
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector4<Color>)               \
@@ -718,6 +777,9 @@ bool RSMarshallingHelper::SkipFromParcel(Parcel& parcel, size_t size)
 }
 void RSMarshallingHelper::BeginNoSharedMem(std::thread::id tid) {}
 void RSMarshallingHelper::EndNoSharedMem() {}
-bool RSMarshallingHelper::GetUseSharedMem() { return true; }
+bool RSMarshallingHelper::GetUseSharedMem(std::thread::id tid)
+{
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS

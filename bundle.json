@@ -25,12 +25,16 @@
       ],
       "adapted_system_type": [ "standard" ],
       "features": [
+        "graphic_2d_feature_product",
+        "graphic_2d_feature_enable_pgo",
+        "graphic_2d_feature_pgo_path",
         "graphic_2d_feature_bootanimation_enable",
         "graphic_2d_feature_ace_enable_gpu",
         "graphic_2d_feature_rs_enable_eglimage",
         "graphic_2d_feature_color_gamut_enable",
         "graphic_2d_feature_use_texgine",
         "graphic_2d_feature_rs_enable_uni_render",
+        "graphic_2d_feature_use_video_processing_engine",
         "graphic_2d_feature_wuji_enable",
         "graphic_2d_feature_enable_afbc",
         "graphic_2d_feature_freemem_enable",
@@ -71,7 +75,8 @@
           "memmgr",
           "memmgr_plugin",
           "sensor",
-          "qos_manager"
+          "qos_manager",
+          "video_processing_engine"
         ],
         "third_party": [
           "flutter",

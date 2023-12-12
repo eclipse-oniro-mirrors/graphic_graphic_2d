@@ -16,6 +16,9 @@
 #ifndef RENDER_SERVICE_BASE_PROPERTY_RS_PROPERTY_DRAWABLE_H
 #define RENDER_SERVICE_BASE_PROPERTY_RS_PROPERTY_DRAWABLE_H
 
+#ifdef USE_ROSEN_DRAWING
+#include <bitset>
+#endif
 #include <memory>
 #include <set>
 #include <vector>
@@ -95,7 +98,7 @@ enum RSPropertyDrawableSlot : uint8_t {
     BG_PROPERTIES_END        = ENV_FOREGROUND_COLOR_STRATEGY + 1,
     CONTENT_PROPERTIES_BEGIN = FRAME_OFFSET,
     CONTENT_PROPERTIES_END   = FOREGROUND_STYLE + 1,
-    FG_PROPERTIES_BEGIN      = COLOR_FILTER,
+    FG_PROPERTIES_BEGIN      = BINARIZATION,
     FG_PROPERTIES_END        = FOREGROUND_COLOR + 1,
     MAX                      = RESTORE_ALL + 1,
 };

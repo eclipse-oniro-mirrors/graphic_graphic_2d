@@ -88,6 +88,12 @@ enum class HgmRefreshRateModes {
     SET_RATE_MODE_HIGH = 3
 };
 
+enum class GpuApiType {
+    OPENGL = 0,
+    VULKAN,
+    DDGR,
+};
+
 using OnSystemPropertyChanged = void(*)(const char*, const char*, void*);
 
 class RSB_EXPORT RSSystemProperties final {
@@ -99,7 +105,7 @@ public:
     static bool IsSceneBoardEnabled();
     static int GetDumpFrameNum();
     static void SetRecordingDisenabled();
-    static bool GetRecordingEnabled();
+    static int GetRecordingEnabled();
 
     static bool GetUniRenderEnabled();
     static bool GetRenderNodeTraceEnabled();
@@ -122,6 +128,7 @@ public:
     static bool GetHardwareComposerEnabled();
     static bool GetAFBCEnabled();
     static bool GetReleaseResourceEnabled();
+    static bool GetRSScreenRoundCornerEnable();
 
     static void SetDrawTextAsBitmap(bool flag);
     static bool GetDrawTextAsBitmap();
@@ -173,12 +180,36 @@ public:
     static bool GetSingleFrameComposerCanvasNodeEnabled();
     static bool GetSubSurfaceEnabled();
     static bool GetSecurityPermissionCheckEnabled();
+
+    static inline GpuApiType GetGpuApiType()
+    {
+        return RSSystemProperties::systemGpuApiType_;
+    }
+
+    static inline GpuApiType GetDefaultHiGpuV200Platform()
+    {
+        return RSSystemProperties::DefaultHiGpuV200Platform_;
+    }
+
+    static inline bool GetAceVulkanEnabled() noexcept
+    {
+        return aceVulkanEnabled_;
+    }
+
+    static inline bool GetRsVulkanEnabled() noexcept
+    {
+        return rsVulkanEnabled_;
+    }
 private:
     RSSystemProperties() = default;
 
     static inline bool isUniRenderEnabled_ = false;
     inline static bool isDrawTextAsBitmap_ = false;
     inline static bool cacheEnabledForRotation_ = false;
+    static const GpuApiType systemGpuApiType_;
+    static const GpuApiType DefaultHiGpuV200Platform_ = GpuApiType::OPENGL;
+    static const bool aceVulkanEnabled_;
+    static const bool rsVulkanEnabled_;
 };
 
 } // namespace Rosen

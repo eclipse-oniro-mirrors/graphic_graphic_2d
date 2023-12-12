@@ -73,7 +73,13 @@ void RSImage::CanvasDrawImage(RSPaintFilterCanvas& canvas, const SkRect& rect, c
             canvas.save();
             RSPixelMapUtil::TransformDataSetForAstc(pixelMap_, src_, dst_, canvas);
         }
-        canvas.drawImageRect(image_, src_, dst_, samplingOptions, &paint, SkCanvas::kFast_SrcRectConstraint);
+        if (canvas.GetRecordingState()) {
+            auto recordingCanvas = static_cast<RSRecordingCanvas*>(canvas.GetRecordingCanvas());
+            recordingCanvas->drawImageRect(image_, src_, dst_, SkSamplingOptions(),
+                &paint, SkCanvas::kFast_SrcRectConstraint);
+        } else {
+            canvas.drawImageRect(image_, src_, dst_, samplingOptions, &paint, SkCanvas::kFast_SrcRectConstraint);
+        }
         if (pixelMap_ != nullptr && pixelMap_->IsAstc()) {
             canvas.restore();
         }
@@ -99,7 +105,8 @@ void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect
             canvas.Save();
             RSPixelMapUtil::TransformDataSetForAstc(pixelMap_, src_, dst_, canvas);
         }
-        canvas.DrawImageRect(image_, src_, dst_, samplingOptions, Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
+        canvas.DrawImageRect(*image_, src_, dst_, samplingOptions,
+            Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
         if (pixelMap_ != nullptr && pixelMap_->IsAstc()) {
             canvas.Restore();
         }
@@ -190,7 +197,7 @@ void RSImage::ApplyImageFit()
     imageParameter.frameH = frameH;
     imageParameter.dstW = dstW;
     imageParameter.dstH = dstH;
-    RectF tempRectF = dstRect_; 
+    RectF tempRectF = dstRect_;
     dstRect_ = ApplyImageFitSwitch(imageParameter, imageFit_, tempRectF);
 }
 
@@ -224,8 +231,9 @@ void RSImage::ApplyCanvasClip(Drawing::Canvas& canvas)
 
 #ifndef USE_ROSEN_DRAWING
 
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
-static SkImage::CompressionType PixelFormatToCompressionType(Media::PixelFormat pixelFormat) {
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+static SkImage::CompressionType PixelFormatToCompressionType(Media::PixelFormat pixelFormat)
+{
     switch (pixelFormat) {
         case Media::PixelFormat::ASTC_4x4: return SkImage::CompressionType::kASTC_RGBA8_4x4;
         case Media::PixelFormat::ASTC_6x6: return SkImage::CompressionType::kASTC_RGBA8_6x6;
@@ -238,7 +246,7 @@ static SkImage::CompressionType PixelFormatToCompressionType(Media::PixelFormat 
 
 void RSImage::UploadGpu(RSPaintFilterCanvas& canvas)
 {
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     if (compressData_) {
         auto cache = RSImageCache::Instance().GetRenderSkiaImageCacheByPixelMapId(uniqueId_, gettid());
         std::lock_guard<std::mutex> lock(mutex_);
@@ -253,8 +261,10 @@ void RSImage::UploadGpu(RSPaintFilterCanvas& canvas)
             // Need to confirm if kBC1_RGBA8_UNORM and kASTC_CompressionType are the same
             Media::ImageInfo imageInfo;
             pixelMap_->GetImageInfo(imageInfo);
+            Media::Size realSize;
+            pixelMap_->GetAstcRealSize(realSize);
             auto image = SkImage::MakeTextureFromCompressed(GrAsDirectContext(canvas.recordingContext()), compressData_,
-                static_cast<int>(srcRect_.width_), static_cast<int>(srcRect_.height_),
+                static_cast<int>(realSize.width), static_cast<int>(realSize.height),
                 PixelFormatToCompressionType(imageInfo.pixelFormat));
             if (image) {
                 image_ = image;
@@ -288,6 +298,7 @@ void RSImage::UploadGpu(Drawing::Canvas& canvas)
                 static_cast<int>(srcRect_.height_), Drawing::CompressedType::ASTC);
             if (image) {
                 image_ = image;
+                SKResourceManager::Instance().HoldResource(image);
                 RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image, gettid());
             } else {
                 RS_LOGE("make astc image %{public}d (%{public}d, %{public}d) failed",
@@ -301,7 +312,8 @@ void RSImage::UploadGpu(Drawing::Canvas& canvas)
 #endif
 
 #ifndef USE_ROSEN_DRAWING
-void RSImage::DrawImageRepeatRect(const SkSamplingOptions& samplingOptions, const SkPaint& paint, RSPaintFilterCanvas& canvas)
+void RSImage::DrawImageRepeatRect(const SkSamplingOptions& samplingOptions, const SkPaint& paint,
+	RSPaintFilterCanvas& canvas)
 #else
 void RSImage::DrawImageRepeatRect(const Drawing::SamplingOptions& samplingOptions, Drawing::Canvas& canvas)
 #endif
@@ -335,7 +347,7 @@ void RSImage::DrawImageRepeatRect(const Drawing::SamplingOptions& samplingOption
 
     // draw repeat rect
 #ifndef USE_ROSEN_DRAWING
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined (RS_ENABLE_VK))
 #if !defined(RS_ENABLE_PARALLEL_UPLOAD) || !defined(RS_ENABLE_UNI_RENDER)
     if (pixelMap_ != nullptr && image_ == nullptr) {
         ConvertPixelMapToSkImage();
@@ -363,10 +375,9 @@ void RSImage::DrawImageRepeatRect(const Drawing::SamplingOptions& samplingOption
                 canvas.save();
                 RSPixelMapUtil::TransformDataSetForAstc(pixelMap_, src_, dst_, canvas);
             }
-            if (canvas.GetRecordingState() && image_->isTextureBacked()) {
+            if (canvas.GetRecordingState()) {
                 auto recordingCanvas = static_cast<RSRecordingCanvas*>(canvas.GetRecordingCanvas());
-                auto cpuImage = image_->makeRasterImage();
-                recordingCanvas->drawImageRect(cpuImage, src_, dst_, samplingOptions,
+                recordingCanvas->drawImageRect(image_, src_, dst_, SkSamplingOptions(),
                     &paint, SkCanvas::kFast_SrcRectConstraint);
             } else {
                 canvas.drawImageRect(image_, src_, dst_, samplingOptions, &paint, SkCanvas::kFast_SrcRectConstraint);
@@ -381,15 +392,8 @@ void RSImage::DrawImageRepeatRect(const Drawing::SamplingOptions& samplingOption
                 canvas.Save();
                 RSPixelMapUtil::TransformDataSetForAstc(pixelMap_, src_, dst_, canvas);
             }
-            if (canvas.GetRecordingState() && image_->IsTextureBacked()) {
-                auto recordingCanvas = static_cast<RSRecordingCanvas*>(canvas.GetRecordingCanvas());
-                auto cpuImage = image_->MakeRasterImage();
-                recordingCanvas->DrawImageRect(cpuImage, src_, dst_, samplingOptions,
-                    Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
-            } else {
-                canvas.DrawImageRect(image_, src_, dst_, samplingOptions,
-                    Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
-            }
+            canvas.DrawImageRect(*image_, src_, dst_, samplingOptions,
+                Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
             if (isAstc) {
                 canvas.Restore();
             }
@@ -409,6 +413,9 @@ void RSImage::SetCompressData(
 #endif
 {
 #ifdef RS_ENABLE_GL
+    if (RSSystemProperties::GetRsVulkanEnabled()) {
+        return;
+    }
     compressData_ = data;
     if (compressData_) {
         srcRect_.SetAll(0.0, 0.0, width, height);
@@ -423,7 +430,7 @@ void RSImage::SetCompressData(
 }
 
 #ifndef USE_ROSEN_DRAWING
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined (RS_ENABLE_VK))
 void RSImage::SetCompressData(const sk_sp<SkData> compressData)
 {
     isDrawn_ = false;
@@ -650,11 +657,13 @@ RSImage* RSImage::Unmarshalling(Parcel& parcel)
     rsImage->MarkRenderServiceImage();
     RSImageBase::IncreaseCacheRefCount(uniqueId, useSkImage, pixelMap);
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD)
+    if (!RSSystemProperties::GetRsVulkanEnabled()) {
 #if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_UNI_RENDER)
-    if (pixelMap != nullptr) {
-        rsImage->ConvertPixelMapToSkImage();
-    }
+        if (pixelMap != nullptr) {
+            rsImage->ConvertPixelMapToSkImage();
+        }
 #endif
+    }
 #endif
     return rsImage;
 }

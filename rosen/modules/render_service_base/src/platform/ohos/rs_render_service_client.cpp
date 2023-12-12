@@ -134,17 +134,18 @@ std::shared_ptr<RSRenderSurface> RSRenderServiceClient::CreateRSSurface(const sp
 #else
 std::shared_ptr<RSSurface> RSRenderServiceClient::CreateRSSurface(const sptr<Surface> &surface)
 {
-#if defined(ACE_ENABLE_VK)
-    // GPU render
-    std::shared_ptr<RSSurface> producer = std::make_shared<RSSurfaceOhosVulkan>(surface);
-#elif defined(ACE_ENABLE_GL)
-    // GPU render
-    std::shared_ptr<RSSurface> producer = std::make_shared<RSSurfaceOhosGl>(surface);
-#else
-    // CPU render
-    std::shared_ptr<RSSurface> producer = std::make_shared<RSSurfaceOhosRaster>(surface);
+#if defined (ACE_ENABLE_VK)
+    if (RSSystemProperties::GetAceVulkanEnabled()) {
+        return std::make_shared<RSSurfaceOhosVulkan>(surface); // GPU render
+    }
 #endif
-    return producer;
+
+#if defined (ACE_ENABLE_GL)
+    if (!RSSystemProperties::GetAceVulkanEnabled()) {
+        return std::make_shared<RSSurfaceOhosGl>(surface); // GPU render
+    }
+#endif
+    return std::make_shared<RSSurfaceOhosRaster>(surface); // CPU render
 }
 #endif
 
@@ -294,14 +295,15 @@ ScreenId RSRenderServiceClient::CreateVirtualScreen(
     uint32_t height,
     sptr<Surface> surface,
     ScreenId mirrorId,
-    int32_t flags)
+    int32_t flags,
+    std::vector<NodeId> filteredAppVector)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
         return INVALID_SCREEN_ID;
     }
 
-    return renderService->CreateVirtualScreen(name, width, height, surface, mirrorId, flags);
+    return renderService->CreateVirtualScreen(name, width, height, surface, mirrorId, flags, filteredAppVector);
 }
 
 int32_t RSRenderServiceClient::SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface)
@@ -934,6 +936,16 @@ void RSRenderServiceClient::SetAppWindowNum(uint32_t num)
     if (renderService != nullptr) {
         renderService->SetAppWindowNum(num);
     }
+}
+
+bool RSRenderServiceClient::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::SetSystemAnimatedScenes renderService == nullptr!");
+        return false;
+    }
+    return renderService->SetSystemAnimatedScenes(systemAnimatedScenes);
 }
 
 void RSRenderServiceClient::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow)

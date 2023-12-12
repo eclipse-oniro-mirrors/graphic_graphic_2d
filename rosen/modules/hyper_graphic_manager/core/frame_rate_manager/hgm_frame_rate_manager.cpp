@@ -65,7 +65,7 @@ void HgmFrameRateManager::UpdateVSyncMode(sptr<VSyncController> rsController, sp
 
 void HgmFrameRateManager::UniProcessData(ScreenId screenId, uint64_t timestamp,
                                          std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker,
-                                         const FrameRateLinkerMap& appFrameRateLinkers, bool forceUpdateFlag)
+                                         const FrameRateLinkerMap& appFrameRateLinkers, bool idleTimerExpired)
 {
     if (screenId == INVALID_SCREEN_ID) {
         return;
@@ -84,11 +84,13 @@ void HgmFrameRateManager::UniProcessData(ScreenId screenId, uint64_t timestamp,
         }
 
         if (!finalRange.IsValid()) {
-            if (forceUpdateFlag) {
+            if (idleTimerExpired) {
                 finalRange.max_ = RANGE_MAX_REFRESHRATE;
                 finalRange.preferred_ = DEFAULT_PREFERRED;
             } else {
-                StartScreenTimer(screenId, IDLE_TIMER_EXPIRED, nullptr, expiredCallback_);
+                StartScreenTimer(screenId, IDLE_TIMER_EXPIRED, nullptr, [this]() {
+                    forceUpdateCallback_(true, false);
+                });
                 return;
             }
         } else {
@@ -101,14 +103,17 @@ void HgmFrameRateManager::UniProcessData(ScreenId screenId, uint64_t timestamp,
     bool frameRateChanged = CollectFrameRateChange(finalRange, rsFrameRateLinker, appFrameRateLinkers);
     if (!hgmCore.GetLtpoEnabled()) {
         pendingRefreshRate_ = std::make_shared<uint32_t>(currRefreshRate_);
-    } else if (frameRateChanged) {
-        auto oldRefreshRate = hgmCore.GetScreenCurrentRefreshRate(screenId);
-        HandleFrameRateChangeForLTPO(timestamp);
-        if (currRefreshRate_ != oldRefreshRate) {
-            std::unordered_map<pid_t, uint32_t> rates;
-            rates[GetRealPid()] = currRefreshRate_;
-            FRAME_TRACE::FrameRateReport::GetInstance().SendFrameRates(rates);
+        if (currRefreshRate_ != hgmCore.GetPendingScreenRefreshRate()) {
+            forceUpdateCallback_(false, true);
         }
+    } else if (frameRateChanged) {
+        HandleFrameRateChangeForLTPO(timestamp);
+        std::unordered_map<pid_t, uint32_t> rates;
+        rates[GetRealPid()] = currRefreshRate_;
+        if (auto alignRate = hgmCore.GetAlignRate(); alignRate != 0) {
+            rates[UNI_APP_PID] = alignRate;
+        }
+        FRAME_TRACE::FrameRateReport::GetInstance().SendFrameRates(rates);
     }
 }
 
@@ -150,9 +155,12 @@ void HgmFrameRateManager::HandleFrameRateChangeForLTPO(uint64_t timestamp)
     RSTaskMessage::RSTask task = [this]() {
         controller_->ChangeGeneratorRate(controllerRate_, appChangeData_);
         pendingRefreshRate_ = std::make_shared<uint32_t>(currRefreshRate_);
+        if (currRefreshRate_ != HgmCore::Instance().GetPendingScreenRefreshRate()) {
+            forceUpdateCallback_(false, true);
+        }
     };
 
-    auto expectTime = timestamp + controller_->GetCurrentOffset();
+    uint64_t expectTime = timestamp + static_cast<uint64_t>(controller_->GetCurrentOffset());
     uint64_t currTime = static_cast<uint64_t>(
         std::chrono::duration_cast<std::chrono::nanoseconds>(
             std::chrono::steady_clock::now().time_since_epoch()).count());
@@ -294,9 +302,6 @@ int32_t HgmFrameRateManager::CalModifierPreferred(const HgmModifierProfile &hgmM
 
     auto dynamicSettingMap = parsedConfigData->GetAnimationDynamicSettingMap(hgmModifierProfile.hgmModifierType);
     for (const auto &iter: dynamicSettingMap) {
-        if (mixSpeed == 0) {
-            return DEFAULT_PREFERRED;
-        }
         if (mixSpeed >= iter.second.min && (mixSpeed < iter.second.max || iter.second.max == -1)) {
             return iter.second.preferred_fps;
         }

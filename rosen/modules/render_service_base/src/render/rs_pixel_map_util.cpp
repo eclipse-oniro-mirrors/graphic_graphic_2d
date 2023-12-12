@@ -41,6 +41,18 @@ static sk_sp<SkColorSpace> ColorSpaceToSkColorSpace(ColorSpace colorSpace)
             return SkColorSpace::MakeSRGB();
     }
 }
+#else
+static std::shared_ptr<Drawing::ColorSpace> ColorSpaceToDrawingColorSpace(ColorSpace colorSpace)
+{
+    switch (colorSpace) {
+        case ColorSpace::LINEAR_SRGB:
+            return Drawing::ColorSpace::CreateSRGBLinear();
+        case ColorSpace::SRGB:
+            return Drawing::ColorSpace::CreateSRGB();
+        default:
+            return Drawing::ColorSpace::CreateSRGB();
+    }
+}
 #endif
 
 #ifndef USE_ROSEN_DRAWING
@@ -182,8 +194,7 @@ std::shared_ptr<Drawing::Image> RSPixelMapUtil::ExtractDrawingImage(
     Drawing::ImageInfo drawingImageInfo { imageInfo.size.width, imageInfo.size.height,
         PixelFormatToDrawingColorType(imageInfo.pixelFormat),
 	AlphaTypeToDrawingAlphaType(imageInfo.alphaType),
-	// Drawing ColorSpace is not supported
-	nullptr };
+	ColorSpaceToDrawingColorSpace(imageInfo.colorSpace) };
     Drawing::Pixmap imagePixmap(drawingImageInfo, reinterpret_cast<const void*>(pixelMap->GetPixels()), pixelMap->GetRowStride());
     return Drawing::Image::MakeFromRaster(imagePixmap, PixelMapReleaseProc, new PixelMapReleaseContext(pixelMap));
 }
@@ -196,6 +207,16 @@ void RSPixelMapUtil::TransformDataSetForAstc(std::shared_ptr<Media::PixelMap> pi
 {
     TransformData transformData;
     pixelMap->GetTransformData(transformData);
+    Size realSize;
+    pixelMap->GetAstcRealSize(realSize);
+    dst.fLeft -= (realSize.width - src.fRight) / HALF_F;
+    dst.fTop -= (realSize.height - src.fBottom) / HALF_F;
+    dst.fRight += (realSize.width - src.fRight) / HALF_F;
+    dst.fBottom += (realSize.height - src.fBottom) / HALF_F;
+    if (transformData.scaleX != 0 && transformData.scaleY != 0) {
+        src.fRight = src.fRight / abs(transformData.scaleX);
+        src.fBottom = src.fBottom / abs(transformData.scaleY);
+    }
     SkMatrix matrix;
     matrix.postScale(transformData.scaleX, transformData.scaleY, dst.fLeft / HALF_F + dst.fRight / HALF_F,
                      dst.fTop / HALF_F + dst.fBottom / HALF_F);
@@ -210,27 +231,24 @@ void RSPixelMapUtil::TransformDataSetForAstc(std::shared_ptr<Media::PixelMap> pi
                          dst.fTop / HALF_F + dst.fBottom / HALF_F);
     }
     canvas.concat(matrix);
-
-    //crop
-    if (transformData.cropLeft >= 0 && transformData.cropTop >= 0 &&
-        transformData.cropWidth >= 0 && transformData.cropHeight >= 0) {
-        float rightMinus = src.fRight - transformData.cropLeft - transformData.cropWidth;
-        float bottomMinus = src.fBottom - transformData.cropTop - transformData.cropHeight;
+    if (transformData.cropLeft >= 0 && transformData.cropTop >= 0 && transformData.cropWidth > 0 &&
+        transformData.cropHeight > 0 && transformData.cropLeft + transformData.cropWidth <= realSize.width &&
+        transformData.cropTop + transformData.cropHeight <= realSize.height) {
         src.fLeft += transformData.cropLeft;
         src.fTop += transformData.cropTop;
-        src.fRight -= rightMinus;
-        src.fBottom -= bottomMinus;
-        dst.fLeft += (transformData.cropLeft + rightMinus) / HALF_F;
-        dst.fTop += (transformData.cropTop + bottomMinus) / HALF_F;
-        dst.fRight -= (transformData.cropLeft + rightMinus) / HALF_F;
-        dst.fBottom -= (transformData.cropTop + bottomMinus) / HALF_F;
+        src.fRight -= src.fRight - transformData.cropLeft - transformData.cropWidth;
+        src.fBottom -= src.fBottom - transformData.cropTop - transformData.cropHeight;
+        dst.fLeft += (realSize.width - transformData.cropWidth) / HALF_F;
+        dst.fTop += (realSize.height - transformData.cropHeight) / HALF_F;
+        dst.fRight -= (realSize.width - transformData.cropWidth) / HALF_F;
+        dst.fBottom -= (realSize.height - transformData.cropHeight) / HALF_F;
     }
-
-    //translate
-    dst.fLeft += transformData.translateX / HALF_F;
-    dst.fTop += transformData.translateY / HALF_F;
-    dst.fRight += transformData.translateX / HALF_F;
-    dst.fBottom += transformData.translateY / HALF_F;
+    if (transformData.scaleX != 0 && transformData.scaleY != 0) {
+        dst.fLeft += transformData.translateX / HALF_F / abs(transformData.scaleX);
+        dst.fTop += transformData.translateY / HALF_F / abs(transformData.scaleY);
+        dst.fRight += transformData.translateX / HALF_F / abs(transformData.scaleX);
+        dst.fBottom += transformData.translateY / HALF_F / abs(transformData.scaleY);
+    }
 }
 #else
 void RSPixelMapUtil::TransformDataSetForAstc(std::shared_ptr<Media::PixelMap> pixelMap,

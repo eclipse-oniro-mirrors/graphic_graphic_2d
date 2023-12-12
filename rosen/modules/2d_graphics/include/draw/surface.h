@@ -38,6 +38,12 @@ struct FrameBuffer {
 };
 #endif
 
+struct FlushInfo {
+    bool backendSurfaceAccess = false;
+    size_t numSemaphores = 0;
+    void *backendSemaphore = nullptr;
+};
+
 class DRAWING_API Surface {
 public:
     Surface();
@@ -61,7 +67,12 @@ public:
      * @param info  FrameBuffer object info.
      */
     bool Bind(const FrameBuffer& frameBuffer);
-    
+
+#ifdef RS_ENABLE_VK
+    static std::shared_ptr<Surface> MakeFromBackendRenderTarget(GPUContext* gpuContext, TextureInfo& info,
+        TextureOrigin origin, void (*deleteVkImage)(void *), void* cleanHelper);
+#endif
+
     /*
      * @brief              Create Surface from gpuContext and imageInfo.
      * @param gpuContext   GPU texture.
@@ -127,6 +138,11 @@ public:
     ImageInfo GetImageInfo();
 
     /*
+     * @brief   Gets BackendTexture of Surface
+     */
+    BackendTexture GetBackendTexture() const;
+
+    /*
      * @brief   Call to ensure all reads/writes of surface have been issue to the underlying 3D API.
      */
     void FlushAndSubmit(bool syncCpu = false);
@@ -134,13 +150,19 @@ public:
     /*
      * @brief   Call to ensure all reads/writes of surface have been issue to the underlying 3D API.
      */
-    void Flush();
+    void Flush(FlushInfo *drawingflushInfo = nullptr);
 
     template<typename T>
     const std::shared_ptr<T> GetImpl() const
     {
         return impl_->DowncastingTo<T>();
     }
+
+#ifdef RS_ENABLE_VK
+    void Wait(int32_t time, const VkSemaphore& semaphore);
+    void SetDrawingArea(const std::vector<RectI>& rects);
+    void ClearDrawingArea();
+#endif
 
 private:
     std::shared_ptr<SurfaceImpl> impl_;

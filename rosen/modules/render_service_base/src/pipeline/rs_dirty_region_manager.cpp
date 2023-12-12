@@ -136,20 +136,22 @@ RectI RSDirtyRegionManager::GetDirtyRegionFlipWithinSurface() const
     } else {
         glRect = dirtyRegion_;
     }
-#ifndef RS_ENABLE_VK
-    // left-top to left-bottom corner(in current surface)
-    glRect.top_ = surfaceRect_.height_ - glRect.top_ - glRect.height_;
-#endif
+
+    if (!RSSystemProperties::GetRsVulkanEnabled()) {
+        // left-top to left-bottom corner(in current surface)
+        glRect.top_ = surfaceRect_.height_ - glRect.top_ - glRect.height_;
+    }
     return glRect;
 }
 
 RectI RSDirtyRegionManager::GetRectFlipWithinSurface(const RectI& rect) const
 {
     RectI glRect = rect;
-#ifndef RS_ENABLE_VK
-    // left-top to left-bottom corner(in current surface)
-    glRect.top_ = surfaceRect_.height_ - rect.top_ - rect.height_;
-#endif
+
+    if (!RSSystemProperties::GetRsVulkanEnabled()) {
+        // left-top to left-bottom corner(in current surface)
+        glRect.top_ = surfaceRect_.height_ - rect.top_ - rect.height_;
+    }
     return glRect;
 }
 
@@ -186,7 +188,7 @@ void RSDirtyRegionManager::Clear()
     dirtySurfaceNodeInfo_.clear();
     dirtySurfaceNodeInfo_.resize(DirtyRegionType::TYPE_AMOUNT);
     isDfxTarget_ = false;
-    isSubNodeFilterCacheValid_ = true;
+    isFilterCacheRectValid_ = true;
 }
 
 bool RSDirtyRegionManager::IsCurrentFrameDirty() const

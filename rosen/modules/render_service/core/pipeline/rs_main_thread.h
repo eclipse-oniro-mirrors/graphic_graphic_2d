@@ -131,6 +131,7 @@ public:
     // check if active app has static drawing cache
     bool IsDrawingGroupChanged(RSRenderNode& cacheRootNode) const;
     // check if active instance only move or scale it's main window surface without rearrangement
+    // instanceNodeId should be MainWindowType, or it cannot grep correct app's info
     bool CheckIfInstanceOnlySurfaceBasicGeoTransform(NodeId instanceNodeId) const;
 
     void RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app);
@@ -179,6 +180,8 @@ public:
 #endif
 
     void SetDirtyFlag();
+    void SetColorPickerForceRequestVsync(bool colorPickerForceRequestVsync);
+    void SetNoNeedToPostTask(bool noNeedToPostTask);
     void SetAccessibilityConfigChanged();
     void ForceRefreshForUni();
     void TrimMem(std::unordered_set<std::u16string>& argSets, std::string& result);
@@ -187,11 +190,17 @@ public:
     void CountMem(int pid, MemoryGraphic& mem);
     void CountMem(std::vector<MemoryGraphic>& mems);
     void SetAppWindowNum(uint32_t num);
+    bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes);
+    SystemAnimatedScenes GetSystemAnimatedScenes();
     void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow);
     void SetIsCachedSurfaceUpdated(bool isCachedSurfaceUpdated);
     void SetForceUpdateUniRenderFlag(bool flag)
     {
         forceUpdateUniRenderFlag_ = flag;
+    }
+    void SetIdleTimerExpiredFlag(bool flag)
+    {
+        idleTimerExpiredFlag_ = flag;
     }
 #ifndef USE_ROSEN_DRAWING
     sk_sp<SkImage> GetWatermarkImg();
@@ -203,11 +212,20 @@ public:
     {
         return frameCount_;
     }
+    std::vector<NodeId>& GetDrawStatusVec()
+    {
+        return curDrawStatusVec_;
+    }
 
     DeviceType GetDeviceType() const;
     bool IsSingleDisplay();
+    bool GetNoNeedToPostTask();
     uint64_t GetFocusNodeId() const;
     uint64_t GetFocusLeashWindowId() const;
+    bool GetClearMemDeeply() const
+    {
+        return clearMemDeeply_;
+    }
 
     void SubscribeAppState();
     void HandleOnTrim(Memory::SystemMemoryLevel level);
@@ -234,6 +252,7 @@ private:
     void ReleaseAllNodesBuffer();
     void Render();
     void SetDeviceType();
+    void ColorPickerRequestVsyncIfNeed();
     void UniRender(std::shared_ptr<RSBaseRenderNode> rootNode);
     bool CheckSurfaceNeedProcess(OcclusionRectISet& occlusionSurfaces, std::shared_ptr<RSSurfaceRenderNode> curSurface);
     void CalcOcclusionImplementation(std::vector<RSBaseRenderNode::SharedPtr>& curAllSurfaces);
@@ -247,7 +266,10 @@ private:
     void RemoveRSEventDetector();
     void SetRSEventDetectorLoopStartTag();
     void SetRSEventDetectorLoopFinishTag();
+    void CallbackDrawContextStatusToWMS();
     void UpdateUIFirstSwitch();
+    // ROG: Resolution Online Government
+    void UpdateRogSizeIfNeeded();
     uint32_t GetRefreshRate() const;
     void SkipCommandByNodeId(std::vector<std::unique_ptr<RSTransactionData>>& transactionVec, pid_t pid);
 
@@ -279,8 +301,6 @@ private:
     bool IsNeedSkip(NodeId instanceRootNodeId, pid_t pid);
 
     // UIFirst
-    void ResetSubThreadGrContext();
-    void CheckParallelSubThreadNodesStatusImplementation();
     bool CheckParallelSubThreadNodesStatus();
     void CacheCommands();
     bool CheckSubThreadNodeStatusIsDoing(NodeId appNodeId) const;
@@ -291,11 +311,11 @@ private:
 
     void SetFocusLeashWindowId();
     void ProcessHgmFrameRate(uint64_t timestamp);
-    FrameRateRange CalcRSFrameRateRange(std::shared_ptr<RSRenderNode> node);
-    int32_t GetNodePreferred(const std::vector<HgmModifierProfile>& hgmModifierProfileList) const;
+    FrameRateRange CalcAnimateFrameRateRange(std::shared_ptr<RSRenderNode> node);
     bool IsLastFrameUIFirstEnabled(NodeId appNodeId) const;
     RSVisibleLevel GetRegionVisibleLevel(const Occlusion::Region& curRegion,
         const Occlusion::Region& visibleRegion);
+    void PrintCurrentStatus();
 
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
@@ -320,7 +340,6 @@ private:
     uint64_t lastAnimateTimestamp_ = 0;
     uint64_t prePerfTimestamp_ = 0;
     uint64_t lastCleanCacheTimestamp_ = 0;
-    uint64_t preSKReleaseResourceTimestamp_ = 0;
     std::unordered_map<uint32_t, sptr<IApplicationAgent>> applicationAgentMap_;
 
     std::shared_ptr<RSContext> context_;
@@ -353,6 +372,7 @@ private:
     std::condition_variable displayNodeBufferReleasedCond_;
 
     bool clearMemoryFinished_ = true;
+    bool clearMemDeeply_ = false;
 
     // driven render
     mutable std::mutex drivenRenderMutex_;
@@ -368,6 +388,8 @@ private:
 
     std::map<uint32_t, RSVisibleLevel> lastPidVisMap_;
     VisibleData lastVisVec_;
+    std::map<NodeId, uint64_t> lastDrawStatusMap_;
+    std::vector<NodeId> curDrawStatusVec_;
     bool qosPidCal_ = false;
     bool isDirty_ = false;
     std::atomic_bool doWindowAnimate_ = false;
@@ -384,7 +406,9 @@ private:
     uint32_t requestNextVsyncNum_ = 0;
     bool lastFrameHasFilter_ = false;
 
-    uint32_t currentRefreshRate_ = 0;
+    bool colorPickerForceRequestVsync_ = false;
+    std::atomic_bool noNeedToPostTask_ = false;
+    std::atomic_int colorPickerRequestFrameNum_ = 15;
 
     std::shared_ptr<RSBaseRenderEngine> renderEngine_;
     std::shared_ptr<RSBaseRenderEngine> uniRenderEngine_;
@@ -417,6 +441,7 @@ private:
 
     std::shared_ptr<HgmFrameRateManager> frameRateMgr_ = nullptr;
     std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker_ = nullptr;
+    FrameRateRange rsCurrRange_;
 
     // UIFirst
     std::list<std::shared_ptr<RSSurfaceRenderNode>> subThreadNodes_;
@@ -427,15 +452,12 @@ private:
     DeviceType deviceType_ = DeviceType::PHONE;
     bool isCachedSurfaceUpdated_ = false;
     bool isUiFirstOn_ = false;
-#ifdef RS_ENABLE_VK
-    bool needResetSubThreadGrContext_ = false;
-    uint64_t frameCountForResetSubThreadGrContext_ = 0;
-#endif
 
     // used for informing hgm the bundle name of SurfaceRenderNodes
     bool noBundle_ = false;
     std::string currentBundleName_ = "";
     bool forceUpdateUniRenderFlag_ = false;
+    bool idleTimerExpiredFlag_ = false;
     // for ui first
     std::mutex mutex_;
 #ifndef USE_ROSEN_DRAWING
@@ -454,6 +476,8 @@ private:
         std::pair<std::shared_ptr<RSSurfaceRenderNode>, std::shared_ptr<RSSurfaceRenderNode>>> savedAppWindowNode_;
 
     std::shared_ptr<RSAppStateListener> rsAppStateListener_;
+    int32_t subscribeFailCount_ = 0;
+    SystemAnimatedScenes systemAnimatedScenes_ = SystemAnimatedScenes::OTHERS;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

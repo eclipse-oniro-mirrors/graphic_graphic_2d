@@ -21,6 +21,8 @@
 #include "property/rs_properties.h"
 #include "property/rs_properties_painter.h"
 
+#include "src/image/SkImage_Base.h"
+
 namespace OHOS::Rosen {
 void RSFrameGeometryDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas)
 {
@@ -50,12 +52,15 @@ void RSColorFilterDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas
         ROSEN_LOGE("RSColorFilterDrawable::Draw image is null");
         return;
     }
+    as_IB(imageSnapshot)->hintCacheGpuResource();
     SkAutoCanvasRestore acr(&canvas, true);
     canvas.resetMatrix();
     static SkSamplingOptions options(SkFilterMode::kNearest, SkMipmapMode::kNone);
     canvas.drawImageRect(imageSnapshot, SkRect::Make(clipBounds), options, &paint_);
 
 #else
+    canvas.ClipRoundRect(RSPropertiesPainter::RRect2DrawingRRect(node.GetMutableRenderProperties().GetRRect()),
+        Drawing::ClipOp::INTERSECT, true);
     auto drSurface = canvas.GetSurface();
     if (drSurface == nullptr) {
         ROSEN_LOGE("RSColorFilterDrawable::Draw drSurface is null");
@@ -67,9 +72,10 @@ void RSColorFilterDrawable::Draw(RSRenderNode& node, RSPaintFilterCanvas& canvas
         ROSEN_LOGE("RSColorFilterDrawable::Draw image is null");
         return;
     }
+    as_IB(imageSnapshot->ExportSkImage().get())->hintCacheGpuResource();
     Drawing::AutoCanvasRestore acr(canvas, true);
     canvas.ResetMatrix();
-    static Drawing::SamplingOptions options(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    static Drawing::SamplingOptions options(Drawing::FilterMode::NEAREST, Drawing::MipmapMode::NONE);
     canvas.AttachBrush(brush_);
     Drawing::Rect clipBoundsRect = {clipBounds.GetLeft(), clipBounds.GetTop(),
         clipBounds.GetRight(), clipBounds.GetBottom()};

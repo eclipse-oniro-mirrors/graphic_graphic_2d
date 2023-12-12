@@ -45,9 +45,7 @@
 #include "image/gpu_context.h"
 #endif
 #include "memory_handler.h"
-#ifndef ROSEN_CROSS_PLATFORM
 #include "surface_type.h"
-#endif
 
 #define GLES_VERSION 2
 namespace OHOS {
@@ -81,21 +79,29 @@ public:
         return skSurface_;
     }
 #ifdef RS_ENABLE_VK
-    bool SetUpGrContext(sk_sp<GrDirectContext> skContext);
-#else
-    bool SetUpGrContext();
+    void AbandonContext();
 #endif
+    bool SetUpGrContext(sk_sp<GrDirectContext> skContext = nullptr);
 #else
     Drawing::GPUContext* GetDrGPUContext() const
     {
         return drGPUContext_.get();
     }
 
+    std::shared_ptr<Drawing::GPUContext> GetSharedDrGPUContext() const
+    {
+        return drGPUContext_;
+    }
+
     std::shared_ptr<Drawing::Surface> GetSurface() const
     {
         return surface_;
     }
+#ifdef RS_ENABLE_VK
+    bool SetUpGpuContext(std::shared_ptr<Drawing::GPUContext> drawingContext);
+#else
     bool SetUpGpuContext();
+#endif
 #endif
 
     EGLSurface CreateEGLSurface(EGLNativeWindowType eglNativeWindow);
@@ -127,11 +133,25 @@ public:
         return eglDisplay_;
     }
 
-#ifndef ROSEN_CROSS_PLATFORM
-    void SetColorSpace(GraphicColorGamut colorSpace);
+    void SetColorSpace(GraphicColorGamut colorSpace)
+    {
+        colorSpace_ = colorSpace;
+    }
+
     GraphicColorGamut GetColorSpace() const
     {
         return colorSpace_;
+    }
+
+#ifndef ROSEN_CROSS_PLATFORM
+    void SetPixelFormat(int32_t pixelFormat)
+    {
+        pixelFormat_ = pixelFormat;
+    }
+
+    int32_t GetPixelFormat() const
+    {
+        return pixelFormat_;
     }
 #endif
 
@@ -161,11 +181,11 @@ public:
     }
 #endif
     EGLContext CreateShareContext();
-#ifdef ROSEN_IOS    
+#ifdef ROSEN_IOS
     sk_sp<SkColorSpace> ColorSpace() const { return color_space_; }
     bool UpdateStorageSizeIfNecessary();
     bool ResourceMakeCurrent();
-#endif    
+#endif
 
 private:
 #ifndef USE_ROSEN_DRAWING
@@ -195,10 +215,11 @@ private:
     int32_t storage_width_ = 0;
     int32_t storage_height_ = 0;
     bool valid_ = false;
-#endif   
+#endif
     EGLConfig config_;
-#ifndef ROSEN_CROSS_PLATFORM
     GraphicColorGamut colorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+#ifndef ROSEN_CROSS_PLATFORM
+    int32_t pixelFormat_ = GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888;
 #endif
 
     bool isUniRenderMode_ = false;
@@ -206,6 +227,8 @@ private:
     std::string cacheDir_;
     std::shared_ptr<MemoryHandler> mHandler_;
     std::mutex shareContextMutex_;
+
+    sk_sp<SkColorSpace> ConvertColorGamutToSkColorSpace(GraphicColorGamut colorGamut) const;
 };
 
 class RenderContextFactory {

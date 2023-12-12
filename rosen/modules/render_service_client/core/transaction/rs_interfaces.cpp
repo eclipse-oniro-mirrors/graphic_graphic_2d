@@ -73,9 +73,10 @@ ScreenId RSInterfaces::CreateVirtualScreen(
     uint32_t height,
     sptr<Surface> surface,
     ScreenId mirrorId,
-    int flags)
+    int flags,
+    std::vector<NodeId> filteredAppVector)
 {
-    return renderServiceClient_->CreateVirtualScreen(name, width, height, surface, mirrorId, flags);
+    return renderServiceClient_->CreateVirtualScreen(name, width, height, surface, mirrorId, flags, filteredAppVector);
 }
 
 int32_t RSInterfaces::SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface)
@@ -358,6 +359,11 @@ int32_t RSInterfaces::GetScreenType(ScreenId id, RSScreenType& screenType)
 int32_t RSInterfaces::SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval)
 {
     return renderServiceClient_->SetScreenSkipFrameInterval(id, skipFrameInterval);
+}
+
+bool RSInterfaces::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes)
+{
+    return renderServiceClient_->SetSystemAnimatedScenes(systemAnimatedScenes);
 }
 
 int32_t RSInterfaces::RegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback)

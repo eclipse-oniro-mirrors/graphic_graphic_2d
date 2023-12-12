@@ -146,7 +146,7 @@ int32_t VSyncConnection::PostEvent(int64_t now, int64_t period, int64_t vsyncCou
     // 1, 2: index of array data.
     data[1] = now + period;
     data[2] = vsyncCount;
-    if ((CreateVSyncGenerator()->GetVSyncMode()) && info_.name_ == "rs") {
+    if ((CreateVSyncGenerator()->GetVSyncMode() == VSYNC_MODE_LTPS) && info_.name_ == "rs") {
         // 5000000 is the vsync offset.
         data[1] += period - 5000000;
     }
@@ -353,7 +353,7 @@ void VSyncDistributor::OnVSyncEvent(int64_t now, int64_t period, uint32_t refres
     event_.vsyncCount++;
     event_.period = period;
     if (refreshRate > 0) {
-        event_.vsyncPulseCount += (VSYNC_MAX_REFRESHRATE / refreshRate);
+        event_.vsyncPulseCount += static_cast<int64_t>(VSYNC_MAX_REFRESHRATE / refreshRate);
     }
     vsyncMode_ = vsyncMode;
     ChangeConnsRateLocked();
@@ -406,8 +406,9 @@ void VSyncDistributor::CollectConnectionsLTPO(bool &waitForVSync, int64_t timest
             continue;
         }
         waitForVSync = true;
+        int64_t vsyncPulseFreq = static_cast<int64_t>(connections_[i]->vsyncPulseFreq_);
         if (timestamp > 0 &&
-            (vsyncCount - connections_[i]->referencePulseCount_) % connections_[i]->vsyncPulseFreq_ == 0) {
+            (vsyncCount - connections_[i]->referencePulseCount_) % vsyncPulseFreq == 0) {
             conns.push_back(connections_[i]);
             connections_[i]->triggerThisTime_ = false;
             if (connections_[i]->rate_ == 0) {
