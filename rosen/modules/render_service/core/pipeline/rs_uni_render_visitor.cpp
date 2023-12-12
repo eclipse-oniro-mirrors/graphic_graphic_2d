@@ -193,7 +193,7 @@ void RSUniRenderVisitor::PartialRenderOptionInit()
     sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
     auto screenNum = screenManager->GetAllScreenIds().size();
     isPartialRenderEnabled_ = (screenNum <= 1) && (partialRenderType_ != PartialRenderType::DISABLED) &&
-        mainThread->IsSingleDisplay();
+        RSMainThread::Instance()->IsSingleDisplay();
     dirtyRegionDebugType_ = RSSystemProperties::GetDirtyRegionDebugType();
     surfaceRegionDebugType_ = RSSystemProperties::GetSurfaceRegionDfxType();
     isRegionDebugEnabled_ = (dirtyRegionDebugType_ != DirtyRegionDebugType::DISABLED) ||
@@ -3432,6 +3432,36 @@ void RSUniRenderVisitor::CalcDirtyRegionForFilterNode(const RectI& filterRect,
     }
 }
 
+void RSUniRenderVisitor::CalcChildFilterNodeDirtyRegion(std::shared_ptr<RSSurfaceRenderNode>& currentSurfaceNode,
+    std::shared_ptr<RSDisplayRenderNode>& displayNode)
+{
+    auto filterRects = currentSurfaceNode->GetChildrenNeedFilterRects();
+    auto filterNodes = currentSurfaceNode->GetChildrenFilterNodes();
+    if (currentSurfaceNode->IsAppWindow() && !filterRects.empty()) {
+        needFilter_ = needFilter_ || !currentSurfaceNode->IsStaticCached();
+        for (size_t i = 0; i < filterNodes.size(); i++) {
+            auto filterRectsCacheValidNow = filterNodes[i]->IsBackgroundFilterCacheValid();
+            // if child filter node has filter cache, no need to be added into dirtyregion
+            // only support background filter cache valid and no pixelstretch node now
+            if (isCacheBlurPartialRenderEnabled_ && filterRectsCacheValidNow &&
+                !filterNodes[i]->GetRenderProperties().GetPixelStretch().has_value()) {
+                continue;
+            }
+            CalcDirtyRegionForFilterNode(filterRects[i], currentSurfaceNode, displayNode);
+        }
+    }
+}
+
+void RSUniRenderVisitor::CalcSurfaceFilterNodeDirtyRegion(std::shared_ptr<RSSurfaceRenderNode>& currentSurfaceNode,
+    std::shared_ptr<RSDisplayRenderNode>& displayNode)
+{
+    if (currentSurfaceNode->GetRenderProperties().NeedFilter()) {
+        needFilter_ = needFilter_ || !currentSurfaceNode->IsStaticCached();
+        CalcDirtyRegionForFilterNode(
+            currentSurfaceNode->GetOldDirtyInSurface(), currentSurfaceNode, displayNode);
+    }
+}
+
 void RSUniRenderVisitor::CalcDirtyFilterRegion(std::shared_ptr<RSDisplayRenderNode>& displayNode)
 {
     if (displayNode == nullptr || displayNode->GetDirtyManager() == nullptr) {
@@ -3452,25 +3482,10 @@ void RSUniRenderVisitor::CalcDirtyFilterRegion(std::shared_ptr<RSDisplayRenderNo
             continue;
         }
         // child node (component) has filter
-        auto filterRects = currentSurfaceNode->GetChildrenNeedFilterRects();
-        auto filterNodes = currentSurfaceNode->GetChildrenFilterNodes();
-        if (currentSurfaceNode->IsAppWindow() && !filterRects.empty()) {
-            needFilter_ = needFilter_ || !currentSurfaceNode->IsStaticCached();
-            for (size_t i = 0; i < filterNodes.size(); i++) {
-                auto filterRectsCacheValidNow = filterNodes[i]->IsBackgroundFilterCacheValid();
-                if (isCacheBlurPartialRenderEnabled_ && filterRectsCacheValidNow &&
-                    !filterNodes[i]->GetRenderProperties().GetPixelStretch().has_value()) {
-                    continue;
-                }
-                CalcDirtyRegionForFilterNode(filterRects[i], currentSurfaceNode, displayNode);
-            }
-        }
+        CalcChildFilterNodeDirtyRegion(currentSurfaceNode, displayNode);
+
         // surfaceNode self has filter
-        if (currentSurfaceNode->GetRenderProperties().NeedFilter()) {
-            needFilter_ = needFilter_ || !currentSurfaceNode->IsStaticCached();
-            CalcDirtyRegionForFilterNode(
-                currentSurfaceNode->GetOldDirtyInSurface(), currentSurfaceNode, displayNode);
-        }
+        CalcSurfaceFilterNodeDirtyRegion(currentSurfaceNode, displayNode);
     }
 }
 
