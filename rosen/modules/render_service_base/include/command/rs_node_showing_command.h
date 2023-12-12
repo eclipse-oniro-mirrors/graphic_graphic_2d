@@ -82,8 +82,19 @@ public:
     static RSCommandRegister<commandType, commandSubType, Unmarshalling> registry;
     void Process(RSContext& context) override;
 
+    void SetProperties(std::map<std::pair<NodeId, PropertyId>,
+        std::shared_ptr<RSRenderPropertyBase>>& properties) { this->properties_ = properties; }
+    std::map<std::pair<NodeId, PropertyId>, std::shared_ptr<RSRenderPropertyBase>>&
+        GetProperties() { return this->properties_; }
+
+    bool IsTimeout() const
+    {
+        return isTimeout_;
+    }
+
 private:
-    std::unordered_map<std::pair<NodeId, PropertyId>, std::shared_ptr<RSRenderPropertyBase>> properties_;
+    std::map<std::pair<NodeId, PropertyId>, std::shared_ptr<RSRenderPropertyBase>> properties_;
+    bool isTimeout_ = true;
 };
 
 } // namespace Rosen

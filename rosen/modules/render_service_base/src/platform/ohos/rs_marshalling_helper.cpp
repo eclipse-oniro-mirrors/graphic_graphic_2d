@@ -16,10 +16,12 @@
 #include "transaction/rs_marshalling_helper.h"
 
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <message_parcel.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <utility>
 
 #include "memory/rs_memory_track.h"
 #include "pixel_map.h"
@@ -74,9 +76,6 @@
 #include "src/core/SkVerticesPriv.h"
 #endif
 #else
-#ifdef ROSEN_OHOS
-#include "buffer_utils.h"
-#endif
 #include "recording/mask_cmd_list.h"
 #include "recording/recording_path.h"
 #include "recording/recording_shader_effect.h"
@@ -561,6 +560,59 @@ bool RSMarshallingHelper::DserializeInternal(Parcel& parcel, sk_sp<SkTextBlob>& 
     return val != nullptr;
 }
 #endif
+
+// reloaded marshalling & unmarshalling function for std::map
+template<typename T, typename P>
+static bool Marshalling(Parcel& parcel, const std::map<T, P>& val)
+{
+    bool success = parcel.WriteUint32(val.size());
+    for (const auto& [key, value] : val) {
+        success = success && Marshalling(parcel, key);
+        success = success && Marshalling(parcel, value);
+    }
+    return success;
+}
+
+template<typename T, typename P>
+static bool Unmarshalling(Parcel& parcel, std::map<T, P>& val)
+{
+    uint32_t size = parcel.ReadUint32();
+    val.clear();
+    for (uint32_t i = 0; i < size; ++i) {
+        T key;
+        P value;
+        if (!Unmarshalling(parcel, key) || !Unmarshalling(parcel, value)) {
+            return false;
+        }
+        val.emplace(key, value);
+    }
+    return true;
+}
+
+// reloaded marshalling & unmarshalling function for std::pair
+template<typename T, typename P>
+static bool Marshalling(Parcel& parcel, const std::pair<T, P>& val)
+{
+    bool success = false;
+    success = success && Marshalling(parcel, val.first);
+    success = success && Marshalling(parcel, val.second);
+    return success;
+}
+
+template<typename T, typename P>
+static bool Unmarshalling(Parcel& parcel, std::pair<T, P>& val)
+{
+    val.clear();
+
+    T first;
+    P second;
+    if (!Unmarshalling(parcel, first) || !Unmarshalling(parcel, second)) {
+        return false;
+    }
+    val.first = first;
+    val.second = second;
+    return true;
+}
 
 // SkTextBlob
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const sk_sp<SkTextBlob>& val)

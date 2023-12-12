@@ -119,6 +119,7 @@ public:
         return 0.0f;
     }
 
+    virtual void SetValueFromRender(std::shared_ptr<RSRenderPropertyBase>& rsRenderPropertyBase) {};
 protected:
     virtual void SetIsCustom(bool isCustom) {}
 
@@ -456,6 +457,15 @@ public:
         RSProperty<T>::stagingValue_ = renderProperty->Get();
         node->CancelAnimationByProperty(this->id_);
         return true;
+    }
+
+    void SetValueFromRender(std::shared_ptr<RSRenderPropertyBase>& rsRenderPropertyBase) override {
+        auto renderProperty = std::static_pointer_cast<RSRenderAnimatableProperty<T>>(rsRenderPropertyBase);
+        if (!renderProperty) {
+            return;
+        }
+        RSProperty<T>::stagingValue_ = renderProperty->Get();
+        // this->SetValue(renderProperty->Get());
     }
 
     void SetUpdateCallback(const std::function<void(T)>& updateCallback)

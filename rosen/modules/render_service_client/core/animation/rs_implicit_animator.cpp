@@ -36,6 +36,7 @@ int RSImplicitAnimator::OpenImplicitAnimation(const RSAnimationTimingProtocol& t
     implicitAnimations_.push({});
     keyframeAnimations_.push({});
     if (timingProtocol.GetDuration() <= 0) {
+        ROSEN_LOGE("zouwei, BeginImplicitCancelAnimation++++++++++++++++");
         BeginImplicitCancelAnimation();
         return static_cast<int>(globalImplicitParams_.size()) - 1;
     }
@@ -100,12 +101,14 @@ void RSImplicitAnimator::CloseImplicitAnimationInner()
 
 std::vector<std::shared_ptr<RSAnimation>> RSImplicitAnimator::CloseImplicitAnimation()
 {
+    ROSEN_LOGE("zouwei, ++++++++++++++++++++++++++++++RSImplicitAnimator::CloseImplicitAnimation");
     if (globalImplicitParams_.empty() || implicitAnimations_.empty() || keyframeAnimations_.empty()) {
         ROSEN_LOGD("Failed to close implicit animation, need to open implicit animation firstly!");
         return {};
     }
 
     if (implicitAnimationParams_.top()->GetType() == ImplicitAnimationParamType::CANCEL) {
+        ROSEN_LOGE("zouwei, RSImplicitAnimator::CloseImplicitAnimation, type is cancel");
         // Cancel animation and call finish callback
         auto params = std::static_pointer_cast<RSImplicitCancelAnimationParam>(implicitAnimationParams_.top());
         params->SyncProperties();
