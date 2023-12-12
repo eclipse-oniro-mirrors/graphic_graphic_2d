@@ -179,6 +179,7 @@ public:
     static bool GetSingleFrameComposerEnabled();
     static bool GetSingleFrameComposerCanvasNodeEnabled();
     static bool GetSubSurfaceEnabled();
+    static bool GetSecurityPermissionCheckEnabled();
 
     static inline GpuApiType GetGpuApiType()
     {
