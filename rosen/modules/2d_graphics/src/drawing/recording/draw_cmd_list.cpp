@@ -211,8 +211,13 @@ void DrawCmdList::UnmarshallingOps()
                 break;
             }
             auto* replaceOpItemPtr = static_cast<OpItem*>(replacePtr);
-            unmarshalledOpItems_.emplace_back(player.Unmarshalling(replaceOpItemPtr->GetType(), replacePtr));
-            opReplacedByDrivenRender_.emplace_back((unmarshalledOpItems_.size() - 1), op);
+            auto replaceOp = player.Unmarshalling(replaceOpItemPtr->GetType(), replacePtr);
+            if (replaceOp) {
+                unmarshalledOpItems_.emplace_back(replaceOp);
+                opReplacedByDrivenRender_.emplace_back((unmarshalledOpItems_.size() - 1), op);
+            } else {
+                unmarshalledOpItems_.emplace_back(op);
+            }
             opReplaceIndex++;
         } else {
             unmarshalledOpItems_.emplace_back(op);
@@ -303,7 +308,9 @@ void DrawCmdList::Playback(Canvas& canvas, const Rect* rect)
         lastOpGenSize_ = opAllocator_.GetSize();
     } else {
         for (auto op : unmarshalledOpItems_) {
-            op->Playback(&canvas, &tmpRect);
+            if (op) {
+                op->Playback(&canvas, &tmpRect);
+            }
         }
     }
 }
@@ -354,6 +361,9 @@ void DrawCmdList::GenerateCacheInRenderService(Canvas* canvas, const Rect* rect)
 
     for (int i = 0; i < unmarshalledOpItems_.size(); ++i) {
         auto opItem = unmarshalledOpItems_[i];
+        if (!opItem) {
+            continue;
+        }
         uint32_t type = opItem->GetType();
         switch (type) {
             case DrawOpItem::ATTACH_PEN_OPITEM:

@@ -47,9 +47,12 @@ RectI CoreCanvas::GetDeviceClipBounds() const
 }
 
 #ifdef ACE_ENABLE_GPU
-std::shared_ptr<GPUContext> CoreCanvas::GetGPUContext() const
+std::shared_ptr<GPUContext> CoreCanvas::GetGPUContext()
 {
-    return impl_->GetGPUContext();
+    if (!gpuContext_) {
+        gpuContext_ = impl_->GetGPUContext();
+    }
+    return gpuContext_;
 }
 #endif
 

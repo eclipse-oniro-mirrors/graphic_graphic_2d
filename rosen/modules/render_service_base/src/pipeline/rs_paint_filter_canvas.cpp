@@ -58,7 +58,7 @@ uint32_t RSPaintFilterCanvasBase::GetSaveCount() const
 }
 
 #ifdef ACE_ENABLE_GPU
-std::shared_ptr<Drawing::GPUContext> RSPaintFilterCanvasBase::GetGPUContext() const
+std::shared_ptr<Drawing::GPUContext> RSPaintFilterCanvasBase::GetGPUContext()
 {
     return canvas_ != nullptr ? canvas_->GetGPUContext() : nullptr;
 }

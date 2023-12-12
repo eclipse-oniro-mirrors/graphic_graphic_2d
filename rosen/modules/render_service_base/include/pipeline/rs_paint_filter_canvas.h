@@ -52,7 +52,7 @@ public:
     uint32_t GetSaveCount() const override;
 
 #ifdef ACE_ENABLE_GPU
-    std::shared_ptr<Drawing::GPUContext> GetGPUContext() const override;
+    std::shared_ptr<Drawing::GPUContext> GetGPUContext() override;
 #endif
 
     void DrawPoint(const Drawing::Point& point) override;

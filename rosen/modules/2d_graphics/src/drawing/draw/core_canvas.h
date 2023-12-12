@@ -177,7 +177,7 @@ public:
      * @brief  Gets GPU context of the GPU surface associated with Canvas.
      */
 #ifdef ACE_ENABLE_GPU
-    virtual std::shared_ptr<GPUContext> GetGPUContext() const;
+    virtual std::shared_ptr<GPUContext> GetGPUContext();
 #endif
 
     /*

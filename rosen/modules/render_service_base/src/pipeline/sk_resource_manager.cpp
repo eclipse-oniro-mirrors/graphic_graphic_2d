@@ -50,13 +50,11 @@ void SKResourceManager::HoldResource(const std::shared_ptr<Drawing::Image> &img)
         return;
     }
     std::scoped_lock<std::recursive_mutex> lock(mutex_);
-    if (std::any_of(images_[tid].cbegin(), images_[tid].cend(),
-        [&img](const std::shared_ptr<Drawing::Image>& image) {
-            return image.get() == img.get();
-        })) {
+    std::set<std::shared_ptr<Drawing::Image>>& imageSet = images_[tid];
+    if (imageSet.find(img) != imageSet.end()) {
         return;
     }
-    images_[tid].push_back(img);
+    imageSet.insert(img);
 #endif
 }
 #endif
@@ -93,17 +91,14 @@ void SKResourceManager::ReleaseResource()
             RSTaskDispatcher::GetInstance().PostTask(images.first, [this]() {
                 auto tid = gettid();
                 std::scoped_lock<std::recursive_mutex> lock(mutex_);
-                size_t size = images_[tid].size();
-                while (size-- > 0) {
-                    auto image = images_[tid].front();
-                    images_[tid].pop_front();
-                    if (image == nullptr) {
-                        continue;
-                    }
-                    if (image.use_count() == 1) {
-                        image = nullptr;
+                std::set<std::shared_ptr<Drawing::Image>>& imageSet = images_[tid];
+                auto iter = imageSet.begin();
+                while (iter != imageSet.end()) {
+                    if (iter->use_count() == 1) {
+                        auto tmp = iter++;
+                        imageSet.erase(tmp);
                     } else {
-                        images_[tid].push_back(image);
+                        iter++;
                     }
                 }
             });

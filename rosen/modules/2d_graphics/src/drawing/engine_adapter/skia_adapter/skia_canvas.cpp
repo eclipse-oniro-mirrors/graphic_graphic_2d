@@ -958,7 +958,7 @@ void SkiaCanvas::SetMatrix(const Matrix& matrix)
         LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
         return;
     }
-    auto m = matrix.GetImpl<SkiaMatrix>();
+    auto m = matrix.GetImplPtr<SkiaMatrix>();
     if (m != nullptr) {
         skCanvas_->setMatrix(m->ExportSkiaMatrix());
     }
@@ -979,7 +979,7 @@ void SkiaCanvas::ConcatMatrix(const Matrix& matrix)
         LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
         return;
     }
-    auto m = matrix.GetImpl<SkiaMatrix>();
+    auto m = matrix.GetImplPtr<SkiaMatrix>();
     if (m != nullptr) {
         skCanvas_->concat(m->ExportSkiaMatrix());
     }
