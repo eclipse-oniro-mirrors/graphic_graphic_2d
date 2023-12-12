@@ -204,6 +204,7 @@ RSUniRenderVisitor::RSUniRenderVisitor()
 #endif
     isUIFirst_ = RSMainThread::Instance()->IsUIFirstOn();
     isPhone_ = RSMainThread::Instance()->GetDeviceType() == DeviceType::PHONE;
+    isCacheBlurPartialRenderEnabled_ = RSSystemProperties::GetCachedBlurPartialRenderEnabled();
 }
 
 RSUniRenderVisitor::RSUniRenderVisitor(std::shared_ptr<RSPaintFilterCanvas> canvas, uint32_t surfaceIndex)
@@ -333,7 +334,7 @@ void RSUniRenderVisitor::UpdateStaticCacheSubTree(const std::shared_ptr<RSRender
         if (child->GetRenderProperties().NeedFilter()) {
             UpdateForegroundFilterCacheWithDirty(*child, *curSurfaceDirtyManager_);
             if (curSurfaceNode_ && curSurfaceNode_->GetId() == child->GetInstanceRootNodeId()) {
-                curSurfaceNode_->UpdateChildrenFilterRects(child->GetOldDirtyInSurface());
+                curSurfaceNode_->UpdateChildrenFilterRects(child, child->GetOldDirtyInSurface(), child->IsBackgroundFilterCacheValid());
             }
         }
         UpdateStaticCacheSubTree(child, child->GetSortedChildren());
@@ -356,7 +357,8 @@ void RSUniRenderVisitor::PrepareEffectNodeIfCacheReuse(const std::shared_ptr<RSR
     if (effectNode->GetRenderProperties().NeedFilter()) {
         UpdateForegroundFilterCacheWithDirty(*effectNode, *curSurfaceDirtyManager_);
         if (curSurfaceNode_ && curSurfaceNode_->GetId() == effectNode->GetInstanceRootNodeId()) {
-            curSurfaceNode_->UpdateChildrenFilterRects(effectNode->GetOldDirtyInSurface());
+            curSurfaceNode_->UpdateChildrenFilterRects(effectNode, effectNode->GetOldDirtyInSurface(),
+                effectNode->IsBackgroundFilterCacheValid());
         }
     }
     UpdateStaticCacheSubTree(effectNode, effectNode->GetSortedChildren());
@@ -1655,7 +1657,8 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
                 DirtyRegionType::FILTER_RECT, node.GetOldDirtyInSurface());
         }
         if (curSurfaceNode_) {
-            curSurfaceNode_->UpdateChildrenFilterRects(node.GetOldDirtyInSurface());
+            curSurfaceNode_->UpdateChildrenFilterRects(node.shared_from_this(), node.GetOldDirtyInSurface(),
+                node.IsBackgroundFilterCacheValid());
             curSurfaceNode_->UpdateFilterNodes(node.shared_from_this());
         }
         UpdateForegroundFilterCacheWithDirty(node, *dirtyManager);
@@ -1704,7 +1707,8 @@ void RSUniRenderVisitor::PrepareEffectRenderNode(RSEffectRenderNode& node)
                 DirtyRegionType::FILTER_RECT, node.GetOldDirtyInSurface());
         }
         if (curSurfaceNode_) {
-            curSurfaceNode_->UpdateChildrenFilterRects(node.GetOldDirtyInSurface());
+            curSurfaceNode_->UpdateChildrenFilterRects(node.shared_from_this(), node.GetOldDirtyInSurface(),
+                node.IsBackgroundFilterCacheValid());
             curSurfaceNode_->UpdateFilterNodes(node.shared_from_this());
         }
         UpdateForegroundFilterCacheWithDirty(node, *curSurfaceDirtyManager_);
@@ -3443,11 +3447,16 @@ void RSUniRenderVisitor::CalcDirtyFilterRegion(std::shared_ptr<RSDisplayRenderNo
         }
         // child node (component) has filter
         auto filterRects = currentSurfaceNode->GetChildrenNeedFilterRects();
+        auto filterNodes = currentSurfaceNode->GetChildrenFilterNodes();
         if (currentSurfaceNode->IsAppWindow() && !filterRects.empty()) {
             needFilter_ = needFilter_ || !currentSurfaceNode->IsStaticCached();
-            for (auto& filterRect : filterRects) {
-                CalcDirtyRegionForFilterNode(
-                    filterRect, currentSurfaceNode, displayNode);
+            for (size_t i = 0; i < filterNodes.size(); i++) {
+                auto filterRectsCacheValidNow = filterNodes[i]->IsBackgroundFilterCacheValid();
+                if (isCacheBlurPartialRenderEnabled_ && filterRectsCacheValidNow &&
+                    !filterNodes[i]->GetRenderProperties().GetPixelStretch().has_value()) {
+                    continue;
+                }
+                CalcDirtyRegionForFilterNode(filterRects[i], currentSurfaceNode, displayNode);
             }
         }
         // surfaceNode self has filter
