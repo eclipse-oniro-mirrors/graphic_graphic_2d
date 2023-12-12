@@ -344,6 +344,7 @@ void RSCanvasDrawingRenderNode::ApplyDrawCmdModifier(RSModifierContext& context,
 #ifndef USE_ROSEN_DRAWING
 SkBitmap RSCanvasDrawingRenderNode::GetBitmap(const uint32_t tid)
 {
+    RS_LOGD("RSCanvasDrawingRenderNode::GetBitmap");
     SkBitmap bitmap;
     std::lock_guard<std::mutex> lock(drawingMutex_);
     if (!skImage_) {
@@ -363,6 +364,7 @@ SkBitmap RSCanvasDrawingRenderNode::GetBitmap(const uint32_t tid)
 bool RSCanvasDrawingRenderNode::GetPixelmap(
     const std::shared_ptr<Media::PixelMap> pixelmap, const SkRect* rect, const uint32_t tid)
 {
+    RS_LOGD("RSCanvasDrawingRenderNode::GetPixelmap");
     std::lock_guard<std::mutex> lock(drawingMutex_);
     if (!pixelmap || !rect) {
         RS_LOGE("RSCanvasDrawingRenderNode::GetPixelmap: pixelmap or rect is nullptr");
