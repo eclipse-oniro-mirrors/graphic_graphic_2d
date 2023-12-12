@@ -1858,8 +1858,9 @@ void RSPropertiesPainter::DrawBackgroundImageAsEffect(const RSProperties& proper
 {
     RS_TRACE_FUNC();
     auto boundsRect = properties.GetBoundsRect();
-#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
+
     // Optional use cacheManager to draw filter, cache is valid, skip drawing background image
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     if (auto& cacheManager = properties.GetFilterCacheManager(false);
         cacheManager != nullptr && !canvas.GetDisableFilterCache() && cacheManager->IsCacheValid()) {
         // no need to validate parameters, the caller already do it
@@ -1871,6 +1872,7 @@ void RSPropertiesPainter::DrawBackgroundImageAsEffect(const RSProperties& proper
         return;
     }
 #endif
+
     auto surface = canvas.GetSurface();
     if (!surface) {
         ROSEN_LOGE("RSPropertiesPainter::DrawBackgroundImageAsEffect surface null");
