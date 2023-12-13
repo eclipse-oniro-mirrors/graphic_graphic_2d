@@ -81,6 +81,7 @@ template("graphics2d_source_set") {
       "$drawing_src_dir/draw/brush.cpp",
       "$drawing_src_dir/draw/color.cpp",
       "$drawing_src_dir/draw/core_canvas.cpp",
+      "$drawing_src_dir/draw/paint.cpp",
       "$drawing_src_dir/draw/path.cpp",
       "$drawing_src_dir/draw/pen.cpp",
       "$drawing_src_dir/draw/surface.cpp",
@@ -175,6 +176,7 @@ template("graphics2d_source_set") {
       "$drawing_src_dir/utils/memory_stream.cpp",
       "$drawing_src_dir/utils/object_mgr.cpp",
       "$drawing_src_dir/utils/region.cpp",
+      "$drawing_src_dir/utils/resource_holder.cpp",
       "$drawing_src_dir/utils/round_rect.cpp",
       "$drawing_src_dir/utils/vertices.cpp",
     ]

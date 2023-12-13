@@ -105,11 +105,17 @@ void Brush::SetBlendMode(const BlendMode& mode)
 void Brush::SetFilter(const Filter& filter)
 {
     filter_ = filter;
+    hasFilter_ = true;
 }
 
 const Filter& Brush::GetFilter() const
 {
     return filter_;
+}
+
+bool Brush::HasFilter() const
+{
+    return hasFilter_;
 }
 
 void Brush::SetShaderEffect(std::shared_ptr<ShaderEffect> e)

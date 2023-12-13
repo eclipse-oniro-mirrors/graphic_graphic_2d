@@ -354,8 +354,10 @@ public:
     // paint
     virtual CoreCanvas& AttachPen(const Pen& pen);
     virtual CoreCanvas& AttachBrush(const Brush& brush);
+    virtual CoreCanvas& AttachPaint(const Paint& paint);
     virtual CoreCanvas& DetachPen();
     virtual CoreCanvas& DetachBrush();
+    virtual CoreCanvas& DetachPaint();
 
     virtual bool isHighContrastEnabled() const;
     virtual Drawing::CacheType GetCacheType() const;

@@ -148,8 +148,10 @@ public:
     // paint
     void AttachPen(const Pen& pen) override;
     void AttachBrush(const Brush& brush) override;
+    void AttachPaint(const Paint& paint) override {}
     void DetachPen() override;
     void DetachBrush() override;
+    void DetachPaint() override {}
 
     SkCanvas* ExportSkCanvas() const;
     void ImportSkCanvas(SkCanvas* skCanvas);

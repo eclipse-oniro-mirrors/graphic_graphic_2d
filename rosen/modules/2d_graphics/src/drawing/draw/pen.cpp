@@ -174,6 +174,11 @@ Filter Pen::GetFilter() const
     return brush_.GetFilter();
 }
 
+bool Pen::HasFilter() const
+{
+    return brush_.HasFilter();
+}
+
 void Pen::SetShaderEffect(std::shared_ptr<ShaderEffect> e)
 {
     brush_.SetShaderEffect(e);

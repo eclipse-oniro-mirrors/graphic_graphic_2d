@@ -208,6 +208,11 @@ std::shared_ptr<MemoryStreamImpl> ImplFactory::CreateMemoryStreamImpl(const void
 {
     return EngineImplFactory::CreateMemoryStream(data, length, copyData);
 }
+
+std::shared_ptr<ResourceHolderImpl> ImplFactory::CreateResourceHolderImpl()
+{
+    return EngineImplFactory::CreateResourceHolder();
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

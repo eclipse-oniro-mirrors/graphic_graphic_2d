@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,23 +13,29 @@
  * limitations under the License.
  */
 
-#ifndef CLIP_H
-#define CLIP_H
+#include "utils/resource_holder.h"
 
-#ifdef WINDOWS_PLATFORM
-#ifdef DIFFERENCE
-#undef DIFFERENCE
-#endif
-#endif
+#include "impl_factory.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
-enum class ClipOp {
-    DIFFERENCE,
-    INTERSECT,
-};
+ResourceHolder::ResourceHolder() : impl_(ImplFactory::CreateResourceHolderImpl()) {}
+
+void ResourceHolder::HoldResource(const std::shared_ptr<Drawing::Image>& img)
+{
+    impl_->HoldResource(img);
+}
+
+void ResourceHolder::ReleaseResource()
+{
+    impl_->ReleaseResource();
+}
+
+bool ResourceHolder::IsEmpty()
+{
+    return impl_->IsEmpty();
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
-#endif

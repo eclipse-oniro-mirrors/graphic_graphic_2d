@@ -795,6 +795,22 @@ CoreCanvas& RSPaintFilterCanvasBase::AttachBrush(const Brush& brush)
     return *this;
 }
 
+CoreCanvas& RSPaintFilterCanvasBase::AttachPaint(const Paint& paint)
+{
+#ifdef ENABLE_RECORDING_DCL
+    for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
+        if ((*iter) != nullptr) {
+            (*iter)->AttachPaint(brush);
+        }
+    }
+#else
+    if (canvas_ != nullptr) {
+        canvas_->AttachPaint(paint);
+    }
+#endif
+    return *this;
+}
+
 CoreCanvas& RSPaintFilterCanvasBase::DetachPen()
 {
 #ifdef ENABLE_RECORDING_DCL
@@ -822,6 +838,22 @@ CoreCanvas& RSPaintFilterCanvasBase::DetachBrush()
 #else
     if (canvas_ != nullptr) {
         canvas_->DetachBrush();
+    }
+#endif
+    return *this;
+}
+
+CoreCanvas& RSPaintFilterCanvasBase::DetachPaint()
+{
+#ifdef ENABLE_RECORDING_DCL
+    for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
+        if ((*iter) != nullptr) {
+            (*iter)->DetachPaint();
+        }
+    }
+#else
+    if (canvas_ != nullptr) {
+        canvas_->DetachPaint();
     }
 #endif
     return *this;
@@ -933,6 +965,26 @@ CoreCanvas& RSPaintFilterCanvas::AttachBrush(const Brush& brush)
     }
 
     canvas_->AttachBrush(b);
+    return *this;
+}
+
+CoreCanvas& RSPaintFilterCanvas::AttachPaint(const Paint& paint)
+{
+    if (canvas_ == nullptr) {
+        return *this;
+    }
+
+    Paint p(paint);
+    if (p.GetColor() == 0x00000001) { // foreground color and foreground color strategy identification
+        p.SetColor(envStack_.top().envForegroundColor_.AsArgbInt());
+    }
+
+    // use alphaStack_.top() to multiply alpha
+    if (alphaStack_.top() < 1 && alphaStack_.top() > 0) {
+        p.SetAlpha(p.GetAlpha() * alphaStack_.top());
+    }
+
+    canvas_->AttachPaint(p);
     return *this;
 }
 
