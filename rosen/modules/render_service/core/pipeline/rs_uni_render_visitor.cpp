@@ -3435,6 +3435,9 @@ void RSUniRenderVisitor::CalcDirtyRegionForFilterNode(const RectI& filterRect,
 void RSUniRenderVisitor::CalcChildFilterNodeDirtyRegion(std::shared_ptr<RSSurfaceRenderNode>& currentSurfaceNode,
     std::shared_ptr<RSDisplayRenderNode>& displayNode)
 {
+    if (currentSurfaceNode == nullptr || displayNode == nullptr) {
+        return;
+    }
     auto filterRects = currentSurfaceNode->GetChildrenNeedFilterRects();
     auto filterNodes = currentSurfaceNode->GetChildrenFilterNodes();
     if (currentSurfaceNode->IsAppWindow() && !filterRects.empty()) {
@@ -3455,6 +3458,9 @@ void RSUniRenderVisitor::CalcChildFilterNodeDirtyRegion(std::shared_ptr<RSSurfac
 void RSUniRenderVisitor::CalcSurfaceFilterNodeDirtyRegion(std::shared_ptr<RSSurfaceRenderNode>& currentSurfaceNode,
     std::shared_ptr<RSDisplayRenderNode>& displayNode)
 {
+    if (currentSurfaceNode == nullptr || displayNode == nullptr) {
+        return;
+    }
     if (currentSurfaceNode->GetRenderProperties().NeedFilter()) {
         needFilter_ = needFilter_ || !currentSurfaceNode->IsStaticCached();
         CalcDirtyRegionForFilterNode(
