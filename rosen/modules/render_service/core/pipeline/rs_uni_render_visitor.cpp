@@ -2608,7 +2608,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
 #ifndef USE_ROSEN_DRAWING
             saveCountBeforeClip = canvas_->save();
 #else
-            saveCountBeforeClip = canvas_->GetSaveCout();
+            saveCountBeforeClip = canvas_->GetSaveCount();
             canvas_->Save();
 #endif
         }

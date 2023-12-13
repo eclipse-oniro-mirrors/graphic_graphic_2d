@@ -247,6 +247,11 @@ void CoreCanvas::ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAnt
     impl_->ClipRoundRect(roundRect, op, doAntiAlias);
 }
 
+void CoreCanvas::ClipRoundRect(const Rect& rect, std::vector<Point>& pts, bool doAntiAlias)
+{
+    impl_->ClipRoundRect(rect, pts, doAntiAlias);
+}
+
 void CoreCanvas::ClipPath(const Path& path, ClipOp op, bool doAntiAlias)
 {
     impl_->ClipPath(path, op, doAntiAlias);

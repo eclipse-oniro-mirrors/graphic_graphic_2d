@@ -212,7 +212,7 @@ public:
      * @return  Adaptation Layer instance.
      */
     template<typename T>
-    const std::shared_ptr<T> GetImpl() const
+    T* GetImpl() const
     {
         return impl_->DowncastingTo<T>();
     }

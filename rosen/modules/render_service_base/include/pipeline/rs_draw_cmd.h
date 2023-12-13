@@ -1681,6 +1681,9 @@ private:
 #include <native_window.h>
 #include "surface_buffer.h"
 #endif
+#ifdef RS_ENABLE_VK
+#include "platform/ohos/backend/native_buffer_utils.h"
+#endif
 
 namespace OHOS {
 namespace Rosen {

@@ -84,7 +84,7 @@ struct NativeSurfaceInfo {
 #ifndef USE_ROSEN_DRAWING
     sk_sp<SkSurface> skSurface = nullptr;
 #else
-    std::shared_ptr<Drawing::Surface> drawingSurface_ = nullptr;
+    std::shared_ptr<Drawing::Surface> drawingSurface = nullptr;
 #endif
     uint32_t lastPresentedCount = -1;
 
@@ -93,7 +93,7 @@ struct NativeSurfaceInfo {
 #ifndef USE_ROSEN_DRAWING
         skSurface = nullptr;
 #else
-        drawingSurface_ = nullptr;
+        drawingSurface = nullptr;
 #endif
         NativeWindowCancelBuffer(window, nativeWindowBuffer);
     }

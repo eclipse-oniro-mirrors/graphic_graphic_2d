@@ -825,7 +825,7 @@ void SkiaCanvas::DrawTextBlob(const TextBlob* blob, const scalar x, const scalar
         LOGE("blob is null, return on line %{public}d", __LINE__);
         return;
     }
-    std::shared_ptr<SkiaTextBlob> skiaTextBlob = blob->GetImpl<SkiaTextBlob>();
+    auto skiaTextBlob = blob->GetImpl<SkiaTextBlob>();
     if (!skiaTextBlob) {
         LOGE("skiaTextBlob is null, return on line %{public}d", __LINE__);
         return;
@@ -896,6 +896,18 @@ void SkiaCanvas::ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAnt
     RoundRectCastToSkRRect(roundRect, rRect);
     SkClipOp clipOp = static_cast<SkClipOp>(op);
     skCanvas_->clipRRect(rRect, clipOp, doAntiAlias);
+}
+
+void SkiaCanvas::ClipRoundRect(const Rect& rect, std::vector<Point>& pts, bool doAntiAlias)
+{
+    if (!skCanvas_) {
+        LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
+        return;
+    }
+    SkRRect rRect;
+    rRect.setRectRadii(SkRect::MakeLTRB(rect.GetLeft(), rect.GetTop(), recr.GetRight(), rect.GetBottom()),
+        reinterpret_cast<const SkVector *>(pts.data()));
+    skCanvas_->clipRRect(rRect, doAntiAlias);
 }
 
 void SkiaCanvas::ClipPath(const Path& path, ClipOp op, bool doAntiAlias)

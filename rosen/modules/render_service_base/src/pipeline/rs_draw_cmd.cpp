@@ -2671,21 +2671,21 @@ std::shared_ptr<Drawing::Image> RSExtendImageObject::MakeFromTextureForVK(Drawin
             surfaceBuffer->GetWidth(), surfaceBuffer->GetHeight());
         if (backendTexture_.IsValid()) {
             auto vkTextureInfo = backendTexture_.GetTextureInfo().GetVKTextureInfo();
-            cleanupHelper_ = new NativeBufferUtils::VulkanCleanupHelper(RsVulkanContext::GetSingleton(),
+            cleanUpHelper_ = new NativeBufferUtils::VulkanCleanupHelper(RsVulkanContext::GetSingleton(),
                 vkTextureInfo->vkImage, vkTextureInfo->vkAlloc.memory);
         } else {
             return nullptr;
         }
         tid_ = gettid();
     }
-    auto imageInfo = std::make_shared<Draiwng::Image>();
+    auto imageInfo = std::make_shared<Drawing::Image>();
     auto vkTextureInfo = backendTexture_.GetTextureInfo().GetVKTextureInfo();
     Drawing::ColorType colorType = GetColorTypeFromVKFormat(vkTextureInfo->format);
     Drawing::BitmapFormat bitmapFormat = { colorType, Drawing::AlphaType::ALPHATYPE_PREMUL };
     if (!imageInfo->BuildFromTexture(*canvas.GetGPUContext(), backendTexture_.GetTextureInfo(),
         Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, nullptr,
         NativeBufferUtils::DeleteVkImage,
-        cleanupHelper_->Ref())) {
+        cleanUpHelper_->Ref())) {
         RS_LOGE("MakeFromTextureForVK build image failed");
         return nullptr;
     }

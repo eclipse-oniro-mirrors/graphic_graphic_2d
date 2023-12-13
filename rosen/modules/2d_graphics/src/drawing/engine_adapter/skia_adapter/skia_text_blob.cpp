@@ -39,7 +39,7 @@ sk_sp<SkTextBlob> SkiaTextBlob::GetTextBlob() const
 std::shared_ptr<TextBlob> SkiaTextBlob::MakeFromText(const void* text, size_t byteLength,
     const Font& font, TextEncoding encoding)
 {
-    std::shared_ptr<SkiaFont> skiaFont = font.GetImpl<SkiaFont>();
+    auto skiaFont = font.GetImpl<SkiaFont>();
     if (!skiaFont) {
         LOGE("skiaFont nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
         return nullptr;
@@ -57,7 +57,7 @@ std::shared_ptr<TextBlob> SkiaTextBlob::MakeFromText(const void* text, size_t by
 std::shared_ptr<TextBlob> SkiaTextBlob::MakeFromRSXform(const void* text, size_t byteLength,
     const RSXform xform[], const Font& font, TextEncoding encoding)
 {
-    std::shared_ptr<SkiaFont> skiaFont = font.GetImpl<SkiaFont>();
+    auto skiaFont = font.GetImpl<SkiaFont>();
     if (!skiaFont) {
         LOGE("skiaFont nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
         return nullptr;

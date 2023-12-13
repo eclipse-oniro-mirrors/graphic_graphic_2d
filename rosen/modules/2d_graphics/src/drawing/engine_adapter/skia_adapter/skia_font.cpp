@@ -32,7 +32,7 @@ SkiaFont::SkiaFont(std::shared_ptr<Typeface> typeface, scalar size, scalar scale
         LOGE("typeface nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
         return;
     }
-    std::shared_ptr<SkiaTypeface> skiaTypeface = typeface->GetImpl<SkiaTypeface>();
+    auto skiaTypeface = typeface->GetImpl<SkiaTypeface>();
     if (!skiaTypeface) {
         skFont_ = SkFont(nullptr, size, scaleX, skewX);
         LOGE("skiaTypeface nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
@@ -62,7 +62,7 @@ void SkiaFont::SetTypeface(std::shared_ptr<Typeface> typeface)
         LOGE("typeface nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
         return;
     }
-    std::shared_ptr<SkiaTypeface> skiaTypeface = typeface->GetImpl<SkiaTypeface>();
+    auto skiaTypeface = typeface->GetImpl<SkiaTypeface>();
     if (!skiaTypeface) {
         LOGE("skiaTypeface nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
         return;

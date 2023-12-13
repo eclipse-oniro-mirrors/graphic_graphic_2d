@@ -281,6 +281,8 @@ public:
      */
     virtual void ClipRoundRect(const RoundRect& roundRect, ClipOp op = ClipOp::INTERSECT, bool doAntiAlias = false);
 
+    virtual void ClipRoundRect(const Rect& rect, std::vector<Point>& pts, bool doAntiAlias = false);
+
     /*
      * @brief              Replace the clipping area with the intersection or difference of the
                            current clipping area and Path, and use a clipping edge that is aliased or anti-aliased.
@@ -365,7 +367,7 @@ public:
     virtual Drawing::Surface* GetSurface() const;
 
     template<typename T>
-    const std::shared_ptr<T> GetImpl() const
+    T* GetImpl() const
     {
         return impl_->DowncastingTo<T>();
     }
@@ -376,7 +378,9 @@ protected:
 
 private:
     std::shared_ptr<CoreCanvasImpl> impl_;
+#ifdef ACE_ENABLE_GPU
     std::shared_ptr<GPUContext> gpuContext_;
+#endif
 };
 } // namespace Drawing
 } // namespace Rosen

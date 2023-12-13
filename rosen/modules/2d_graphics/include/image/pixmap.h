@@ -38,7 +38,7 @@ public:
     bool ScalePixels(const Pixmap& dst, const SamplingOptions& options) const;
 
     template<typename T>
-    const std::shared_ptr<T> GetImpl() const
+    T* GetImpl() const
     {
         return pixmapImplPtr_->DowncastingTo<T>();
     }

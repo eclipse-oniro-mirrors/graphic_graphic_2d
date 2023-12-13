@@ -78,9 +78,6 @@ public:
     {
         return skSurface_;
     }
-#ifdef RS_ENABLE_VK
-    void AbandonContext();
-#endif
     bool SetUpGrContext(sk_sp<GrDirectContext> skContext = nullptr);
 #else
     Drawing::GPUContext* GetDrGPUContext() const
@@ -98,6 +95,10 @@ public:
         return surface_;
     }
     bool SetUpGpuContext(std::shared_ptr<Drawing::GPUContext> drawingContext = nullptr);
+#endif
+
+#ifdef RS_ENABLE_VK
+    void AbandonContext();
 #endif
 
     EGLSurface CreateEGLSurface(EGLNativeWindowType eglNativeWindow);

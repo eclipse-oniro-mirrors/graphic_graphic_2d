@@ -139,7 +139,7 @@ std::shared_ptr<Surface> SkiaSurface::MakeFromBackendRenderTarget(GPUContext* gp
     }
     sk_sp<GrDirectContext> grContext = nullptr;
     if (gpuContext) {
-        std::shared_ptr<SkiaGPUContext> skiaGpuContext = gpuContext->GetImpl<SkiaGPUContext>();
+        auto skiaGpuContext = gpuContext->GetImpl<SkiaGPUContext>();
         if (skiaGpuContext) {
             grContext = skiaGpuContext->GetGrContext();
         }
@@ -169,7 +169,7 @@ std::shared_ptr<Surface> SkiaSurface::MakeRenderTarget(GPUContext* gpuContext,
 {
     sk_sp<GrDirectContext> grContext = nullptr;
     if (gpuContext) {
-        std::shared_ptr<SkiaGPUContext> skiaGpuContext = gpuContext->GetImpl<SkiaGPUContext>();
+        auto skiaGpuContext = gpuContext->GetImpl<SkiaGPUContext>();
         if (skiaGpuContext) {
             grContext = skiaGpuContext->GetGrContext();
         }

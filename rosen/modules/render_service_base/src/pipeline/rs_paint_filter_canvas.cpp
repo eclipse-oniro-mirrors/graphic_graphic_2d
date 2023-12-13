@@ -538,6 +538,21 @@ void RSPaintFilterCanvasBase::ClipRoundRect(const RoundRect& roundRect, ClipOp o
 #endif
 }
 
+void RSPaintFilterCanvasBase::ClipRoundRect(const Drawing::Rect& rect, std::vector<Drawing::Point>& pts, bool doAntiAlias)
+{
+#ifdef ENABLE_RECORDING_DCL
+    for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
+        if ((*iter) != nullptr) {
+            (*iter)->ClipRoundRect(rect, pts, doAntiAlias);
+        }
+    }
+#else
+    if (canvas_ != nullptr) {
+        canvas_->ClipRoundRect(rect, pts, doAntiAlias);
+    }
+#endif
+}
+
 void RSPaintFilterCanvasBase::ClipPath(const Path& path, ClipOp op, bool doAntiAlias)
 {
 #ifdef ENABLE_RECORDING_DCL

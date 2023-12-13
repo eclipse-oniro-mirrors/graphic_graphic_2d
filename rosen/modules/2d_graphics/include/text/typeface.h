@@ -80,7 +80,7 @@ public:
     int32_t GetUnitsPerEm() const;
 
     template<typename T>
-    const std::shared_ptr<T> GetImpl() const
+    T* GetImpl() const
     {
         if (typefaceImpl_) {
             return typefaceImpl_->DowncastingTo<T>();

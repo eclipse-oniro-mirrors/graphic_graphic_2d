@@ -230,7 +230,7 @@ public:
     const TextureInfo& GetTextureInfo() const;
 
     template<typename T>
-    const std::shared_ptr<T> GetImpl() const
+    T* GetImpl() const
     {
         return imageImplPtr->DowncastingTo<T>();
     }
@@ -393,7 +393,7 @@ public:
     bool IsOpaque() const;
 
     template<typename T>
-    const std::shared_ptr<T> GetImpl() const
+    T* GetImpl() const
     {
         return imageImplPtr->DowncastingTo<T>();
     }
