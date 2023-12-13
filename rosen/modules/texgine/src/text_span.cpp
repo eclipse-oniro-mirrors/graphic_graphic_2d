@@ -65,7 +65,12 @@ namespace TextEngine {
 #define POINTY2 2
 #define POINTY4 4
 #define POINTY6 6
+
+#ifdef BUILD_NON_SDK_VER
 const bool G_IS_HMSYMBOL_ENABLE = Drawing::SystemProperties::GetHMSymbolEnable();
+#else
+const bool G_IS_HMSYMBOL_ENABLE = false;
+#endif
 
 std::shared_ptr<TextSpan> TextSpan::MakeEmpty()
 {
