@@ -259,6 +259,24 @@ Boundary TypographyImpl::GetWordBoundaryByIndex(size_t index) const
     return {right, right};
 }
 
+double TypographyImpl::GetLineHeight(int lineNumber)
+{
+    if (lineNumber >= 0 && lineNumber < lineMetrics_.size()) {
+        return lineMetrics_[lineNumber].GetMaxHeight();
+    } else {
+        return 0.0;
+    }
+}
+
+double TypographyImpl::GetLineWidth(int lineNumber)
+{
+    if (lineNumber >= 0 && lineNumber < lineMetrics_.size()) {
+        return lineMetrics_[lineNumber].width;
+    } else {
+        return 0.0;
+    }
+}
+
 void TypographyImpl::Layout(double maxWidth)
 {
     boundariesCache_ = {};

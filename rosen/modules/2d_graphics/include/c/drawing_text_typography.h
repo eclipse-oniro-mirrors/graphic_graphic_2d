@@ -149,6 +149,46 @@ enum OH_Drawing_FontStyle {
 };
 
 /**
+ * @brief Enumerates placeholder vertical alignment.
+ * 
+ * @since 11
+ * @version 1.0
+ */
+typedef enum {
+    /** Offset At Baseline */
+    ALIGNMENT_OFFSET_AT_BASELINE,
+    /** Above Baseline */
+    ALIGNMENT_ABOVE_BASELINE,
+    /** Below Baseline */
+    ALIGNMENT_BELOW_BASELINE,
+    /** Top of Row Box */
+    ALIGNMENT_TOP_OF_ROW_BOX,
+    /** Bottom of Row Box */
+    ALIGNMENT_BOTTOM_OF_ROW_BOX,
+    /** Center of Row Box */
+    ALIGNMENT_CENTER_OF_ROW_BOX,
+} OH_Drawing_PlaceholderVerticalAlignment;
+
+/**
+ * @brief Defines the placeholder span.
+ * 
+ * @since 11
+ * @version 1.0
+ */
+typedef struct {
+    /** width of placeholder */
+    double width;
+    /** height of placeholder */
+    double height;
+    /** alignment of placeholder */
+    OH_Drawing_PlaceholderVerticalAlignment alignment;
+    /** baseline of placeholder */
+    OH_Drawing_TextBaseline baseline;
+    /** baselineoffset of placeholder */
+    double baselineOffset;
+} OH_Drawing_PlaceholderSpan;
+
+/**
  * @brief Enumerates text decoration style.
  * 
  * @since 11
@@ -245,75 +285,6 @@ typedef enum {
     /** Max style */
     RECT_WIDTH_STYLE_MAX,
 } OH_Drawing_RectWidthStyle;
-
-/**
- * @brief Defines the rect of a textbox, including the left, right, top and bottom.
- * 
- * @since 11
- * @version 1.0
- */
-typedef struct {
-    /** left of textbox */
-    float left_;
-    /** right of textbox */
-    float right_;
-    /** top of textbox */
-    float top_;
-    /** bottom of textbox */
-    float bottom_;
-} OH_Drawing_Rect;
-
-/**
- * @brief Defines the textbox of typography, including the rect and direction.
- * 
- * @since 11
- * @version 1.0
- */
-typedef struct {
-    /** rect of textBox */
-    OH_Drawing_Rect rect_;
-    /** direction of textBox */
-    OH_Drawing_TextDirection direction_;
-} OH_Drawing_TextBox;
-
-/**
- * @brief Enumerates affinity.
- * 
- * @since 11
- * @version 1.0
- */
-typedef enum {
-    /** upstream affinity */
-    AFFINITY_UPSTREAM,
-    /** downstream affinity */
-    AFFINITY_DOWNSTREAM,
-} OH_Drawing_Affinity;
-
-/**
- * @brief Defines the position and affinity of typography, including the position and affinity.
- * 
- * @since 11
- * @version 1.0
- */
-typedef struct {
-    /** position of typography */
-    size_t pos_;
-    /** affinity of typography */
-    OH_Drawing_Affinity affinity_;
-} OH_Drawing_PositionAndAffinity;
-
-/**
- * @brief Defines the range of typography, including the start and end.
- * 
- * @since 11
- * @version 1.0
- */
-typedef struct {
-    /** start of range */
-    size_t start_;
-    /** end of range */
-    size_t end_;
-} OH_Drawing_Range;
 
 /**
  * @brief Creates an <b>OH_Drawing_TypographyStyle</b> object.
@@ -679,6 +650,17 @@ double OH_Drawing_TypographyGetAlphabeticBaseline(OH_Drawing_Typography*);
 double OH_Drawing_TypographyGetIdeographicBaseline(OH_Drawing_Typography*);
 
 /**
+ * @brief Sets the placeholder.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TypographyCreate Indicates the pointer to an <b>OH_Drawing_TypographyCreate</b> object.
+ * @param OH_Drawing_PlaceholderSpan Indicates the pointer to an <b>OH_Drawing_PlaceholderSpan</b> object.
+ * @since 11
+ * @version 1.0
+ */
+void OH_Drawing_TypographyHandlerAddPlaceholder(OH_Drawing_TypographyCreate*, OH_Drawing_PlaceholderSpan*);
+
+/**
  * @brief Gets the exceed maxLines.
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
@@ -719,6 +701,66 @@ OH_Drawing_TextBox* OH_Drawing_TypographyGetRectsForRange(OH_Drawing_Typography*
 OH_Drawing_TextBox* OH_Drawing_TypographyGetRectsForPlaceholders(OH_Drawing_Typography*);
 
 /**
+ * @brief Gets left from textbox.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextBox Indicates the pointer to an <b>OH_Drawing_TextBox</b> object.
+ * @param int Indicates the index of textbox.
+ * @return Returns left from textbox.
+ * @since 11
+ * @version 1.0
+ */
+float OH_Drawing_GetLeftFromTextBox(OH_Drawing_TextBox*, int);
+
+/**
+ * @brief Gets right from textbox.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextBox Indicates the pointer to an <b>OH_Drawing_TextBox</b> object.
+ * @param int Indicates the index of textbox.
+ * @return Returns right from textbox.
+ * @since 11
+ * @version 1.0
+ */
+float OH_Drawing_GetRightFromTextBox(OH_Drawing_TextBox*, int);
+
+/**
+ * @brief Gets top from textbox.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextBox Indicates the pointer to an <b>OH_Drawing_TextBox</b> object.
+ * @param int Indicates the index of textbox.
+ * @return Returns top from textbox.
+ * @since 11
+ * @version 1.0
+ */
+float OH_Drawing_GetTopFromTextBox(OH_Drawing_TextBox*, int);
+
+/**
+ * @brief Gets bottom from textbox.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextBox Indicates the pointer to an <b>OH_Drawing_TextBox</b> object.
+ * @param int Indicates the index of textbox.
+ * @return Returns bottom from textbox.
+ * @since 11
+ * @version 1.0
+ */
+float OH_Drawing_GetBottomFromTextBox(OH_Drawing_TextBox*, int);
+
+/**
+ * @brief Gets direction from textbox.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextBox Indicates the pointer to an <b>OH_Drawing_TextBox</b> object.
+ * @param int Indicates the index of textbox.
+ * @return Returns direction from textbox.
+ * @since 11
+ * @version 1.0
+ */
+int OH_Drawing_GetTextDirectionFromTextBox(OH_Drawing_TextBox*, int);
+
+/**
  * @brief Gets the glyphposition at coordinate.
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
@@ -729,7 +771,7 @@ OH_Drawing_TextBox* OH_Drawing_TypographyGetRectsForPlaceholders(OH_Drawing_Typo
  * @since 11
  * @version 1.0
  */
-OH_Drawing_PositionAndAffinity OH_Drawing_TypographyGetGlyphPositionAtCoordinate(OH_Drawing_Typography*,
+OH_Drawing_PositionAndAffinity* OH_Drawing_TypographyGetGlyphPositionAtCoordinate(OH_Drawing_Typography*,
     double, double);
 
 /**
@@ -743,8 +785,30 @@ OH_Drawing_PositionAndAffinity OH_Drawing_TypographyGetGlyphPositionAtCoordinate
  * @since 11
  * @version 1.0
  */
-OH_Drawing_PositionAndAffinity OH_Drawing_TypographyGetGlyphPositionAtCoordinateWithCluster(OH_Drawing_Typography*,
+OH_Drawing_PositionAndAffinity* OH_Drawing_TypographyGetGlyphPositionAtCoordinateWithCluster(OH_Drawing_Typography*,
     double, double);
+
+/**
+ * @brief Gets position from positionandaffinity.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_PositionAndAffinity Indicates the pointer to an <b>OH_Drawing_PositionAndAffinity</b> object.
+ * @return Returns position from positionandaffinity.
+ * @since 11
+ * @version 1.0
+ */
+size_t OH_Drawing_GetPositionFromPositionAndAffinity(OH_Drawing_PositionAndAffinity*);
+
+/**
+ * @brief Gets affinity from positionandaffinity.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_PositionAndAffinity Indicates the pointer to an <b>OH_Drawing_PositionAndAffinity</b> object.
+ * @return Returns affinity from positionandaffinity.
+ * @since 11
+ * @version 1.0
+ */
+int OH_Drawing_GetAffinityFromPositionAndAffinity(OH_Drawing_PositionAndAffinity*);
 
 /**
  * @brief Gets the word boundary.
@@ -756,7 +820,29 @@ OH_Drawing_PositionAndAffinity OH_Drawing_TypographyGetGlyphPositionAtCoordinate
  * @since 11
  * @version 1.0
  */
-OH_Drawing_Range OH_Drawing_TypographyGetWordBoundary(OH_Drawing_Typography*, size_t);
+OH_Drawing_Range* OH_Drawing_TypographyGetWordBoundary(OH_Drawing_Typography*, size_t);
+
+/**
+ * @brief Gets start from range.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Range Indicates the pointer to an <b>OH_Drawing_Range</b> object.
+ * @return Returns start from range.
+ * @since 11
+ * @version 1.0
+ */
+size_t OH_Drawing_GetStartFromRange(OH_Drawing_Range*);
+
+/**
+ * @brief Gets end from range.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Range Indicates the pointer to an <b>OH_Drawing_Range</b> object.
+ * @return Returns end from range.
+ * @since 11
+ * @version 1.0
+ */
+size_t OH_Drawing_GetEndFromRange(OH_Drawing_Range*);
 
 /**
  * @brief Gets the line count.
@@ -834,7 +920,7 @@ void OH_Drawing_SetTextStyleHalfLeading(OH_Drawing_TextStyle*, bool);
  * @since 11
  * @version 1.0
  */
-void OH_Drawing_SetTextStyleEllipsis(OH_Drawing_TextStyle*, char*);
+void OH_Drawing_SetTextStyleEllipsis(OH_Drawing_TextStyle*, const char*);
 
 /**
  * @brief Sets the ellipsis modal.
@@ -879,6 +965,30 @@ void OH_Drawing_SetTypographyTextWordBreakType(OH_Drawing_TypographyStyle*, int)
  * @version 1.0
  */
 void OH_Drawing_SetTypographyTextEllipsisModal(OH_Drawing_TypographyStyle*, int);
+
+/**
+ * @brief get line height.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Typography Indicates the pointer to an <b>OH_Drawing_Typography</b> object.
+ * @param int Indicates the line number.
+ * @return Returns line height.
+ * @since 11
+ * @version 1.0
+ */
+double OH_Drawing_TypographyGetLineHeight(OH_Drawing_Typography*, int);
+
+/**
+ * @brief get line width.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Typography Indicates the pointer to an <b>OH_Drawing_Typography</b> object.
+ * @param int Indicates the line number.
+ * @return Returns line width.
+ * @since 11
+ * @version 1.0
+ */
+double OH_Drawing_TypographyGetLineWidth(OH_Drawing_Typography*, int);
 
 #ifdef __cplusplus
 }
