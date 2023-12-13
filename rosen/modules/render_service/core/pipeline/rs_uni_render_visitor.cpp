@@ -4476,9 +4476,9 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
     processedCanvasNodeInCurrentSurface_++;
     if (!node.ShouldPaint() ||
 #ifndef USE_ROSEN_DRAWING
-        (canvas_ && canvas_->getDeviceClipBounds().isEmpty())) {
+        (canvas_ && canvas_->getDeviceClipBounds().isEmpty() && hardwareEnabledNodes_.empty())) {
 #else
-        (canvas_ && canvas_->GetDeviceClipBounds().IsEmpty())) {
+        (canvas_ && canvas_->GetDeviceClipBounds().IsEmpty() && hardwareEnabledNodes_.empty())) {
 #endif
         return;
     }
