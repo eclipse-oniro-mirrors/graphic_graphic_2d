@@ -1953,7 +1953,8 @@ void RSRenderNode::CheckGroupableAnimation(const PropertyId& id, bool isAnimAdd)
         return;
     }
     auto context = GetContext().lock();
-    if (!context || !context->GetNodeMap().IsResidentProcessNode(GetId())) {
+    if (!RSSystemProperties::GetAnimationCacheEnabled() ||
+        !context || !context->GetNodeMap().IsResidentProcessNode(GetId())) {
         return;
     }
     auto target = modifiers_.find(id);
@@ -1997,8 +1998,16 @@ bool RSRenderNode::IsSuggestedDrawInGroup() const
 void RSRenderNode::MarkNodeGroup(NodeGroupType type, bool isNodeGroup)
 {
     if (type >= nodeGroupType_) {
-        nodeGroupType_ = isNodeGroup ? type : NodeGroupType::NONE;
-        SetDirty();
+        if (isNodeGroup && type == NodeGroupType::GROUPED_BY_UI) {
+            auto context = GetContext().lock();
+            if (context && context->GetNodeMap().IsResidentProcessNode(GetId())) {
+                nodeGroupType_ = type;
+                SetDirty();
+            }
+        } else {
+            nodeGroupType_ = isNodeGroup ? type : NodeGroupType::NONE;
+            SetDirty();
+        }
     }
 }
 
