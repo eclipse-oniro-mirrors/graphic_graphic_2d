@@ -2124,10 +2124,6 @@ void RSRenderNode::OnTreeStateChanged()
         // attempt to clear FullChildrenList, to avoid memory leak
         isFullChildrenListValid_ = false;
         ClearFullChildrenListIfNeeded();
-
-        if (UNLIKELY(GetSharedTransitionParam().has_value())) {
-            SetSharedTransitionParam(std::nullopt);
-        }
     } else {
         SetDirty();
     }
