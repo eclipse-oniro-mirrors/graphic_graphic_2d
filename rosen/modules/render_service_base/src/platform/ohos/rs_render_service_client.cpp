@@ -154,6 +154,7 @@ std::shared_ptr<VSyncReceiver> RSRenderServiceClient::CreateVSyncReceiver(
     const std::shared_ptr<OHOS::AppExecFwk::EventHandler> &looper,
     uint64_t id)
 {
+    ROSEN_LOGD("RSRenderServiceClient::CreateVSyncReceiver Start");
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
         return nullptr;
