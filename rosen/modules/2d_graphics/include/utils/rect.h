@@ -62,7 +62,7 @@ public:
 
     inline void Offset(int dx, int dy);
     inline void MakeOutset(int dx, int dy);
-
+    inline bool Contains(const RectI& rect);
     /*
      * @brief        If RectI intersects other, sets RectI to intersection.
      * @param other  limit of result.
@@ -204,6 +204,13 @@ inline bool RectI::Join(const RectI& other)
     return true;
 }
 
+inline bool RectI::Contains(const RectI& rect)
+{
+    return !rect.IsEmpty() && !this->IsEmpty() &&
+        left_ <= rect.left_ && top_ <= rect.top_ &&
+        right_ >= rect.right_ && bottom_ >= rect.bottom_;
+}
+
 inline bool operator==(const RectI& r1, const RectI& r2)
 {
     return r1.left_ == r2.left_ && r1.right_ == r2.right_ && r1.top_ == r2.top_ && r1.bottom_ == r2.bottom_;
@@ -242,6 +249,7 @@ public:
     inline void Offset(scalar dx, scalar dy);
     inline void MakeOutset(scalar dx, scalar dy);
     inline void Round();
+    inline RectI RoundOut();
 
     /*
      * @brief        If RectF intersects other, sets RectF to intersection.
@@ -362,6 +370,15 @@ inline void RectF::Round()
     right_ = DrawingFloatSaturate2Int(right_ + 0.5f);
     top_ = DrawingFloatSaturate2Int(top_ + 0.5f);
     bottom_ = DrawingFloatSaturate2Int(bottom_ + 0.5f);
+}
+
+inline RectI RectF::RoundOut()
+{
+    int32_t left = DrawingFloatSaturate2Int(left_);
+    int32_t right = DrawingFloatSaturate2Int(right_);
+    int32_t top = DrawingFloatSaturate2Int(top_);
+    int32_t bottom = DrawingFloatSaturate2Int(bottom_);
+    return RectI(left, top, right, bottom);
 }
 
 inline bool RectF::Intersect(const RectF& other)

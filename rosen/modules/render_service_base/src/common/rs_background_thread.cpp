@@ -164,7 +164,7 @@ std::shared_ptr<Drawing::GPUContext> RSBackgroundThread::CreateShareGPUContext()
         RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
         auto gpuContext = std::make_shared<Drawing::GPUContext>();
         if (gpuContext == nullptr) {
-            RS_LOGE("BuildFromVK fail")
+            RS_LOGE("BuildFromVK fail");
             return nullptr;
         }
         CreateShareEglContext();
@@ -188,7 +188,7 @@ std::shared_ptr<Drawing::GPUContext> RSBackgroundThread::CreateShareGPUContext()
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
         auto gpuContext = RsVulkanContext::GetSingleton().CreateDrawingContext();
         if (gpuContext == nullptr) {
-            RS_LOGE("BuildFromVK fail")
+            RS_LOGE("BuildFromVK fail");
             return nullptr;
         }
         return gpuContext;

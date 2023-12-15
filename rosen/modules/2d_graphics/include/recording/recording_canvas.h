@@ -65,7 +65,7 @@ public:
         gpuContext_ = gpuContext;
     }
 
-    std::shared_ptr<GPUContext> GetGPUContext() const override
+    std::shared_ptr<GPUContext> GetGPUContext() override
     {
         return gpuContext_;
     }

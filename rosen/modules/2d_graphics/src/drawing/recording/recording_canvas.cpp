@@ -326,18 +326,21 @@ void RecordingCanvas::ClipRect(const Rect& rect, ClipOp op, bool doAntiAlias)
 {
     CheckForLazySave();
     cmdList_->AddOp<ClipRectOpItem::ConstructorHandle>(rect, op, doAntiAlias);
+    Canvas::ClipRect(rect, op, doAntiAlias);
 }
 
 void RecordingCanvas::ClipIRect(const RectI& rect, ClipOp op)
 {
     CheckForLazySave();
     cmdList_->AddOp<ClipIRectOpItem::ConstructorHandle>(rect, op);
+    Canvas::ClipIRect(rect, op);
 }
 
 void RecordingCanvas::ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias)
 {
     CheckForLazySave();
     cmdList_->AddOp<ClipRoundRectOpItem::ConstructorHandle>(roundRect, op, doAntiAlias);
+    Canvas::ClipRoundRect(roundRect, op, doAntiAlias);
 }
 
 void RecordingCanvas::ClipPath(const Path& path, ClipOp op, bool doAntiAlias)
@@ -345,6 +348,7 @@ void RecordingCanvas::ClipPath(const Path& path, ClipOp op, bool doAntiAlias)
     CheckForLazySave();
     auto pathHandle = CmdListHelper::AddPathToCmdList(*cmdList_, path);
     cmdList_->AddOp<ClipPathOpItem::ConstructorHandle>(pathHandle, op, doAntiAlias);
+    Canvas::ClipPath(path, op, doAntiAlias);
 }
 
 void RecordingCanvas::ClipRegion(const Region& region, ClipOp op)
@@ -352,6 +356,7 @@ void RecordingCanvas::ClipRegion(const Region& region, ClipOp op)
     CheckForLazySave();
     auto regionHandle = CmdListHelper::AddRecordedToCmdList<RecordingRegion>(*cmdList_, region);
     cmdList_->AddOp<ClipRegionOpItem::ConstructorHandle>(regionHandle, op);
+    Canvas::ClipRegion(region, op);
 }
 
 void RecordingCanvas::SetMatrix(const Matrix& matrix)
@@ -360,12 +365,14 @@ void RecordingCanvas::SetMatrix(const Matrix& matrix)
     Matrix::Buffer matrixBuffer;
     matrix.GetAll(matrixBuffer);
     cmdList_->AddOp<SetMatrixOpItem::ConstructorHandle>(matrixBuffer);
+    Canvas::SetMatrix(matrix);
 }
 
 void RecordingCanvas::ResetMatrix()
 {
     CheckForLazySave();
     cmdList_->AddOp<ResetMatrixOpItem::ConstructorHandle>();
+    Canvas::ResetMatrix();
 }
 
 void RecordingCanvas::ConcatMatrix(const Matrix& matrix)
@@ -375,6 +382,7 @@ void RecordingCanvas::ConcatMatrix(const Matrix& matrix)
         Matrix::Buffer matrixBuffer;
         matrix.GetAll(matrixBuffer);
         cmdList_->AddOp<ConcatMatrixOpItem::ConstructorHandle>(matrixBuffer);
+        Canvas::ConcatMatrix(matrix);
     }
 }
 
@@ -383,6 +391,7 @@ void RecordingCanvas::Translate(scalar dx, scalar dy)
     if (dx || dy) {
         CheckForLazySave();
         cmdList_->AddOp<TranslateOpItem::ConstructorHandle>(dx, dy);
+        Canvas::Translate(dx, dy);
     }
 }
 
@@ -391,6 +400,7 @@ void RecordingCanvas::Scale(scalar sx, scalar sy)
     if (sx != 1 || sy != 1) {
         CheckForLazySave();
         cmdList_->AddOp<ScaleOpItem::ConstructorHandle>(sx, sy);
+        Canvas::Scale(sx, sy);
     }
 }
 
@@ -399,6 +409,7 @@ void RecordingCanvas::Rotate(scalar deg, scalar sx, scalar sy)
     if (deg) {
         CheckForLazySave();
         cmdList_->AddOp<RotateOpItem::ConstructorHandle>(deg, sx, sy);
+        Canvas::Rotate(deg, sx, sy);
     }
 }
 
@@ -407,6 +418,7 @@ void RecordingCanvas::Shear(scalar sx, scalar sy)
     if (sx || sy) {
         CheckForLazySave();
         cmdList_->AddOp<ShearOpItem::ConstructorHandle>(sx, sy);
+        Canvas::Shear(sx, sy);
     }
 }
 
@@ -456,6 +468,7 @@ void RecordingCanvas::SaveLayer(const SaveLayerOps& saveLayerOps)
     cmdList_->AddOp<SaveLayerOpItem::ConstructorHandle>(rect, hasBrush, brushHandle,
         imageFilterHandle, saveLayerOps.GetSaveLayerFlags());
     saveOpStateStack_.push(RealSaveOp);
+    Canvas::SaveLayer(saveLayerOps);
 }
 
 void RecordingCanvas::Restore()
@@ -468,6 +481,7 @@ void RecordingCanvas::Restore()
     saveOpStateStack_.pop();
     if (state == RealSaveOp) {
         cmdList_->AddOp<RestoreOpItem::ConstructorHandle>();
+        Canvas::Restore();
     }
 }
 
@@ -483,7 +497,6 @@ void RecordingCanvas::Discard()
 
 void RecordingCanvas::ClipAdaptiveRoundRect(const std::vector<Point>& radius)
 {
-    CheckForLazySave();
     auto radiusData = CmdListHelper::AddVectorToCmdList<Point>(*cmdList_, radius);
     cmdList_->AddOp<ClipAdaptiveRoundRectOpItem::ConstructorHandle>(radiusData);
 }
@@ -597,6 +610,7 @@ void RecordingCanvas::CheckForLazySave()
     if (!saveOpStateStack_.empty() && saveOpStateStack_.top() == LazySaveOp) {
         cmdList_->AddOp<SaveOpItem::ConstructorHandle>();
         saveOpStateStack_.top() = RealSaveOp;
+        Canvas::Save();
     }
 }
 } // namespace Drawing

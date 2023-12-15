@@ -172,7 +172,7 @@ public:
     void SetAll(Buffer& buffer);
 
     template<typename T>
-    const std::shared_ptr<T> GetImpl() const
+    T* GetImpl() const
     {
         return matrixImplPtr->DowncastingTo<T>();
     }

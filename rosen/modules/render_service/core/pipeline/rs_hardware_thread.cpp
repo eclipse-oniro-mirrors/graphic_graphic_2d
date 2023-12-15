@@ -360,19 +360,23 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
 #endif
     auto renderFrame = uniRenderEngine_->RequestFrame(surface, renderFrameConfig, forceCPU);
     if (renderFrame == nullptr) {
-        RS_LOGE("RsDebug RSHardwareThread::Redraw：failed to request frame.");
+        RS_LOGE("RsDebug RSHardwareThread::Redraw failed to request frame.");
         return;
     }
     auto canvas = renderFrame->GetCanvas();
     if (canvas == nullptr) {
-        RS_LOGE("RsDebug RSHardwareThread::Redraw：canvas is nullptr.");
+        RS_LOGE("RsDebug RSHardwareThread::Redraw canvas is nullptr.");
         return;
     }
 #ifdef RS_ENABLE_EGLIMAGE
 #ifdef RS_ENABLE_VK
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+#ifndef USE_ROSEN_DRAWING
         canvas->clear(SK_ColorTRANSPARENT);
+#else
+        canvas->Clear(Drawing::Color::COLOR_TRANSPARENT);
+#endif
     }
     std::unordered_map<int32_t, std::shared_ptr<NativeVkImageRes>> imageCacheSeqsVK;
 #endif

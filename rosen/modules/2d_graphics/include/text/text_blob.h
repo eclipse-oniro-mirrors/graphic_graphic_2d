@@ -58,7 +58,7 @@ public:
     static Path GetDrawingPathforTextBlob(uint16_t glyphId, const TextBlob* blob);
 
     template<typename T>
-    const std::shared_ptr<T> GetImpl() const
+    T* GetImpl() const
     {
         if (textBlobImpl_) {
             return textBlobImpl_->DowncastingTo<T>();

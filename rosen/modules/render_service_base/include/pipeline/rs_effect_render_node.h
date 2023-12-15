@@ -59,6 +59,7 @@ private:
     void UpdateEffectRegion(const std::optional<SkIRect>& region);
 #else
     std::optional<Drawing::RectI> effectRegion_ = std::nullopt;
+    void UpdateEffectRegion(const std::optional<Drawing::RectI>& region);
 #endif
     friend class RSEffectDataGenerateDrawable;
 };

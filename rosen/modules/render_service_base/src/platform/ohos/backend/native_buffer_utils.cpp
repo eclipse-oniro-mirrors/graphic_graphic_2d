@@ -249,7 +249,7 @@ bool MakeFromNativeWindowBuffer(std::shared_ptr<Drawing::GPUContext> skContext, 
     vkTextureInfo->levelCount = 1;
     texture_info.SetVKTextureInfo(vkTextureInfo);
     
-    nativeSurface.drawingSurface_ = Drawing::Surface::MakeFromBackendRenderTarget(
+    nativeSurface.drawingSurface = Drawing::Surface::MakeFromBackendRenderTarget(
         skContext.get(),
         texture_info,
         Drawing::TextureOrigin::TOP_LEFT,
@@ -376,7 +376,7 @@ Drawing::BackendTexture MakeBackendTextureFromNativeBuffer(NativeWindowBuffer* n
 
     textureInfo.SetVKTextureInfo(imageInfo);
     backendTexture.SetTextureInfo(textureInfo);
-    reurn backendTexture;
+    return backendTexture;
 #endif
 }
 } // namespace NativeBufferUtils

@@ -52,7 +52,7 @@ public:
     uint32_t GetSaveCount() const override;
 
 #ifdef ACE_ENABLE_GPU
-    std::shared_ptr<Drawing::GPUContext> GetGPUContext() const override;
+    std::shared_ptr<Drawing::GPUContext> GetGPUContext() override;
 #endif
 
     void DrawPoint(const Drawing::Point& point) override;
@@ -100,6 +100,7 @@ public:
     void ClipIRect(const Drawing::RectI& rect, Drawing::ClipOp op = Drawing::ClipOp::INTERSECT) override;
     void ClipRoundRect(const Drawing::RoundRect& roundRect, Drawing::ClipOp op = Drawing::ClipOp::INTERSECT,
         bool doAntiAlias = false) override;
+    void ClipRoundRect(const Drawing::Rect& rect, std::vector<Drawing::Point>& pts, bool doAntiAlias = false) override;
     void ClipPath(const Drawing::Path& path, Drawing::ClipOp op = Drawing::ClipOp::INTERSECT,
         bool doAntiAlias = false) override;
     void ClipRegion(const Drawing::Region& region, Drawing::ClipOp op = Drawing::ClipOp::INTERSECT) override;

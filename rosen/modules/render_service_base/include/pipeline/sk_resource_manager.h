@@ -46,7 +46,7 @@ private:
 #ifndef USE_ROSEN_DRAWING
     std::map<pid_t, std::list<sk_sp<SkImage>>> skImages_;
 #else
-    std::map<pid_t, std::list<std::shared_ptr<Drawing::Image>>> images_;
+    std::map<pid_t, std::set<std::shared_ptr<Drawing::Image>>> images_;
 #endif
 };
 } // OHOS::Rosen

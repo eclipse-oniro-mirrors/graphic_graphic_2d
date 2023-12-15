@@ -47,9 +47,12 @@ RectI CoreCanvas::GetDeviceClipBounds() const
 }
 
 #ifdef ACE_ENABLE_GPU
-std::shared_ptr<GPUContext> CoreCanvas::GetGPUContext() const
+std::shared_ptr<GPUContext> CoreCanvas::GetGPUContext()
 {
-    return impl_->GetGPUContext();
+    if (!gpuContext_) {
+        gpuContext_ = impl_->GetGPUContext();
+    }
+    return gpuContext_;
 }
 #endif
 
@@ -242,6 +245,11 @@ void CoreCanvas::ClipIRect(const RectI& rect, ClipOp op)
 void CoreCanvas::ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias)
 {
     impl_->ClipRoundRect(roundRect, op, doAntiAlias);
+}
+
+void CoreCanvas::ClipRoundRect(const Rect& rect, std::vector<Point>& pts, bool doAntiAlias)
+{
+    impl_->ClipRoundRect(rect, pts, doAntiAlias);
 }
 
 void CoreCanvas::ClipPath(const Path& path, ClipOp op, bool doAntiAlias)

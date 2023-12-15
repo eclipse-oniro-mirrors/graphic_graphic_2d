@@ -2608,7 +2608,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
 #ifndef USE_ROSEN_DRAWING
             saveCountBeforeClip = canvas_->save();
 #else
-            saveCountBeforeClip = canvas_->GetSaveCout();
+            saveCountBeforeClip = canvas_->GetSaveCount();
             canvas_->Save();
 #endif
         }
@@ -4186,7 +4186,9 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
                     canvas_->clear(SK_ColorTRANSPARENT);
                 }
 #else
-                canvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
+                if (!node.IsHardwareEnabledTopSurface()) {
+                    canvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
+                }
 #endif
                 node.SetGlobalAlpha(canvas_->GetAlpha());
                 ParallelRenderEnableHardwareComposer(node);

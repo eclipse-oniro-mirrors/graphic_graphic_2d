@@ -1347,8 +1347,7 @@ std::shared_ptr<DrawOpItem> ClipAdaptiveRoundRectOpItem::Unmarshalling(const Cmd
 
 void ClipAdaptiveRoundRectOpItem::Playback(Canvas* canvas, const Rect* rect)
 {
-    auto roundRect = RoundRect(*rect, radiusData_);
-    canvas->ClipRoundRect(roundRect, ClipOp::INTERSECT, true);
+    canvas->ClipRoundRect(*rect, radiusData_, true);
 }
 
 /* DrawAdaptiveImageOpItem */

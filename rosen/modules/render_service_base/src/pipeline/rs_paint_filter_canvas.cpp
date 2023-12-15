@@ -58,7 +58,7 @@ uint32_t RSPaintFilterCanvasBase::GetSaveCount() const
 }
 
 #ifdef ACE_ENABLE_GPU
-std::shared_ptr<Drawing::GPUContext> RSPaintFilterCanvasBase::GetGPUContext() const
+std::shared_ptr<Drawing::GPUContext> RSPaintFilterCanvasBase::GetGPUContext()
 {
     return canvas_ != nullptr ? canvas_->GetGPUContext() : nullptr;
 }
@@ -534,6 +534,22 @@ void RSPaintFilterCanvasBase::ClipRoundRect(const RoundRect& roundRect, ClipOp o
 #else
     if (canvas_ != nullptr) {
         canvas_->ClipRoundRect(roundRect, op, doAntiAlias);
+    }
+#endif
+}
+
+void RSPaintFilterCanvasBase::ClipRoundRect(const Drawing::Rect& rect,
+    std::vector<Drawing::Point>& pts, bool doAntiAlias)
+{
+#ifdef ENABLE_RECORDING_DCL
+    for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
+        if ((*iter) != nullptr) {
+            (*iter)->ClipRoundRect(rect, pts, doAntiAlias);
+        }
+    }
+#else
+    if (canvas_ != nullptr) {
+        canvas_->ClipRoundRect(rect, pts, doAntiAlias);
     }
 #endif
 }

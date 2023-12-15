@@ -291,22 +291,6 @@ EGLSurface RenderContext::CreateEGLSurface(EGLNativeWindowType eglNativeWindow)
 }
 
 #ifndef USE_ROSEN_DRAWING
-#ifdef RS_ENABLE_VK
-void RenderContext::AbandonContext()
-{
-    if (RSSystemProperties::GetGpuApiType() != GpuApiType::VULKAN &&
-        RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
-        return;
-    }
-    if (grContext_ == nullptr) {
-        LOGD("grContext is nullptr.");
-        return;
-    }
-    grContext_->flushAndSubmit(true);
-    grContext_->purgeUnlockAndSafeCacheGpuResources();
-}
-#endif
-
 #ifdef RS_ENABLE_GL
 void RenderContext::InitGrContextOptions(GrContextOptions &options)
 {
@@ -418,6 +402,31 @@ bool RenderContext::SetUpGpuContext(std::shared_ptr<Drawing::GPUContext> drawing
     }
 #endif
     return false;
+}
+#endif
+
+#ifdef RS_ENABLE_VK
+void RenderContext::AbandonContext()
+{
+    if (RSSystemProperties::GetGpuApiType() != GpuApiType::VULKAN &&
+        RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
+        return;
+    }
+#ifndef USE_ROSEN_DRAWING
+    if (grContext_ == nullptr) {
+#else
+    if (drGPUContext_ == nullptr) {
+#endif
+        LOGD("grContext is nullptr.");
+        return;
+    }
+#ifndef USE_ROSEN_DRAWING
+    grContext_->flushAndSubmit(true);
+    grContext_->purgeUnlockAndSafeCacheGpuResources();
+#else
+    drGPUContext_->FlushAndSubmit(true);
+    drGPUContext_->PurgeUnlockAndSafeCacheGpuResources();
+#endif
 }
 #endif
 
