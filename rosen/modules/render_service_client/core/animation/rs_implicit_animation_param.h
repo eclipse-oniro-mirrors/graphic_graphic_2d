@@ -39,12 +39,6 @@ public:
     virtual ~RSImplicitAnimationParam() = default;
     ImplicitAnimationParamType GetType() const;
 
-    std::shared_ptr<RSAnimation> CreateAnimation(std::shared_ptr<RSPropertyBase> property,
-        const std::shared_ptr<RSPropertyBase>& startValue, const std::shared_ptr<RSPropertyBase>& endValue) const
-    {
-        return nullptr;
-    }
-
 protected:
     void ApplyTimingProtocol(const std::shared_ptr<RSAnimation>& animation) const;
     ImplicitAnimationParamType animationType_ { ImplicitAnimationParamType::NONE };
@@ -59,14 +53,12 @@ public:
 
     ~RSImplicitCancelAnimationParam() override = default;
 
-    // Reuse the CreateAnimation entry, what we actually do is cancel all existing animation and set ui value
-    std::shared_ptr<RSAnimation> CreateAnimation(std::shared_ptr<RSPropertyBase> property,
-        const std::shared_ptr<RSPropertyBase>& startValue, const std::shared_ptr<RSPropertyBase>& endValue) const;
-
     void AddPropertyToPendingSyncList(const std::shared_ptr<RSPropertyBase>& property);
     void SyncProperties();
 
 private:
+    void ExecuteSyncPropertiesTask(
+        RSNodeGetShowingPropertiesAndCancelAnimation::PropertiesMap&& propertiesMap, bool isRenderService);
     std::vector<std::shared_ptr<RSPropertyBase>> pendingSyncList_;
 };
 

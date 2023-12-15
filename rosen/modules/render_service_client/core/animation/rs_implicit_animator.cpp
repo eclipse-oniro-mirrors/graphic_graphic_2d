@@ -469,6 +469,13 @@ void RSImplicitAnimator::CreateImplicitAnimation(const std::shared_ptr<RSNode>& 
             // this will create custom transition animation, there is no need to add it to target.
             return;
         }
+        case ImplicitAnimationParamType::CANCEL: {
+            // Create animation with CANCEL type will cancel all running animations of the target.
+            property->SetValue(endValue);                         // force set ui value
+            property->UpdateOnAllAnimationFinish();               // force sync RS value and cancel all RS animations
+            target->CancelAnimationByProperty(property->GetId()); // remove all ui animation
+            return;
+        }
         default:
             ROSEN_LOGE("Failed to create animation, unknow type!");
             break;

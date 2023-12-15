@@ -28,6 +28,7 @@ bool RSNodeGetShowingPropertyAndCancelAnimation::Marshalling(Parcel& parcel) con
            RSMarshallingHelper::Marshalling(parcel, commandSubType) &&
            RSMarshallingHelper::Marshalling(parcel, targetId_) &&
            RSMarshallingHelper::Marshalling(parcel, timeoutNS_) &&
+           RSMarshallingHelper::Marshalling(parcel, isTimeout_) &&
            RSMarshallingHelper::Marshalling(parcel, success_) &&
            (property_ == nullptr || RSRenderPropertyBase::Marshalling(parcel, property_));
 }
@@ -156,8 +157,7 @@ void RSNodeGetShowingPropertiesAndCancelAnimation::Process(RSContext& context)
         if (!value) {
             continue;
         }
-        auto& animationManager = node->GetAnimationManager();
-        animationManager.CancelAnimationByPropertyId(propertyId);
+        node->GetAnimationManager().CancelAnimationByPropertyId(propertyId);
     }
 }
 } // namespace Rosen

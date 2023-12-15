@@ -57,22 +57,6 @@ RSImplicitCancelAnimationParam::RSImplicitCancelAnimationParam(const RSAnimation
     : RSImplicitAnimationParam(timingProtocol, ImplicitAnimationParamType::CANCEL)
 {}
 
-std::shared_ptr<RSAnimation> RSImplicitCancelAnimationParam::CreateAnimation(std::shared_ptr<RSPropertyBase> property,
-    const std::shared_ptr<RSPropertyBase>& startValue, const std::shared_ptr<RSPropertyBase>& endValue) const
-{
-    if (property == nullptr) {
-        return nullptr;
-    }
-    auto node = property->target_.lock();
-    if (node == nullptr) {
-        return nullptr;
-    }
-    node->CancelAnimationByProperty(property->GetId()); // remove all ui animation
-    property->SetValue(endValue);                       // force set ui value
-    property->UpdateOnAllAnimationFinish();             // force update RS value and remove all animation
-    return nullptr;
-}
-
 void RSImplicitCancelAnimationParam::AddPropertyToPendingSyncList(const std::shared_ptr<RSPropertyBase>& property)
 {
     pendingSyncList_.emplace_back(property);
@@ -85,7 +69,8 @@ void RSImplicitCancelAnimationParam::SyncProperties()
     }
 
     // Create sync map
-    RSNodeGetShowingPropertiesAndCancelAnimation::PropertiesMap propertiesMap;
+    RSNodeGetShowingPropertiesAndCancelAnimation::PropertiesMap RSpropertiesMap;
+    RSNodeGetShowingPropertiesAndCancelAnimation::PropertiesMap RTpropertiesMap;
     for (auto& rsProperty : pendingSyncList_) {
         auto node = rsProperty->target_.lock();
         if (node == nullptr) {
@@ -94,13 +79,25 @@ void RSImplicitCancelAnimationParam::SyncProperties()
         if (!node->HasPropertyAnimation(rsProperty->GetId()) || rsProperty->GetIsCustom()) {
             continue;
         }
+        auto& propertiesMap = node->IsRenderServiceNode() ? RSpropertiesMap : RTpropertiesMap;
         propertiesMap.emplace(std::make_pair<NodeId, PropertyId>(node->GetId(), rsProperty->GetId()), nullptr);
     }
     pendingSyncList_.clear();
 
+    if (!RSpropertiesMap.empty()) {
+        ExecuteSyncPropertiesTask(std::move(RSpropertiesMap), true);
+    }
+    if (!RTpropertiesMap.empty()) {
+        ExecuteSyncPropertiesTask(std::move(RTpropertiesMap), false);
+    }
+}
+
+void RSImplicitCancelAnimationParam::ExecuteSyncPropertiesTask(
+    RSNodeGetShowingPropertiesAndCancelAnimation::PropertiesMap&& propertiesMap, bool isRenderService)
+{
     // create task and execute it in RS
     auto task = std::make_shared<RSNodeGetShowingPropertiesAndCancelAnimation>(1e10, std::move(propertiesMap));
-    RSTransactionProxy::GetInstance()->ExecuteSynchronousTask(task, true);
+    RSTransactionProxy::GetInstance()->ExecuteSynchronousTask(task, isRenderService);
 
     // Test if the task is executed successfully
     if (!task || !task->IsSuccess()) {

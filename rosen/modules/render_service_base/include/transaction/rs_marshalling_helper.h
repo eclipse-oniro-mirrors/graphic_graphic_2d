@@ -356,7 +356,7 @@ public:
 
     // reloaded marshalling & unmarshalling function for std::map
     template<typename T, typename P>
-    static bool Marshalling(Parcel& parcel, const std::unordered_map<T, P>& val)
+    static bool Marshalling(Parcel& parcel, const std::map<T, P>& val)
     {
         if (!parcel.WriteUint32(val.size())) {
             return false;
@@ -369,7 +369,7 @@ public:
         return true;
     }
     template<typename T, typename P>
-    static bool Unmarshalling(Parcel& parcel, std::unordered_map<T, P>& val)
+    static bool Unmarshalling(Parcel& parcel, std::map<T, P>& val)
     {
         uint32_t size = 0;
         if (!Unmarshalling(parcel, size)) {

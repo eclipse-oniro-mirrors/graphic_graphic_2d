@@ -20,7 +20,6 @@
 #include <message_parcel.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <utility>
 
 #include "memory/rs_memory_track.h"
 #include "pixel_map.h"
@@ -75,6 +74,9 @@
 #include "src/core/SkVerticesPriv.h"
 #endif
 #else
+#ifdef ROSEN_OHOS
+#include "buffer_utils.h"
+#endif
 #include "recording/mask_cmd_list.h"
 #include "recording/recording_path.h"
 #include "recording/recording_shader_effect.h"
