@@ -96,7 +96,7 @@ void RSImplicitAnimator::CloseImplicitAnimationInner()
     globalImplicitParams_.pop();
     implicitAnimations_.pop();
     keyframeAnimations_.pop();
-    EndImplicitAnimation();
+    implicitAnimationParams_.pop();
 }
 
 std::vector<std::shared_ptr<RSAnimation>> RSImplicitAnimator::CloseImplicitAnimation()
@@ -213,19 +213,6 @@ void RSImplicitAnimator::BeginImplicitCurveAnimation()
     [[maybe_unused]] const auto& [protocol, curve, unused, unused_repeatCallback] = globalImplicitParams_.top();
     auto curveAnimationParam = std::make_shared<RSImplicitCurveAnimationParam>(protocol, curve);
     PushImplicitParam(curveAnimationParam);
-}
-
-void RSImplicitAnimator::EndImplicitAnimation()
-{
-    if (implicitAnimationParams_.empty() ||
-        (implicitAnimationParams_.top()->GetType() != ImplicitAnimationParamType::CURVE &&
-            implicitAnimationParams_.top()->GetType() != ImplicitAnimationParamType::SPRING &&
-            implicitAnimationParams_.top()->GetType() != ImplicitAnimationParamType::INTERPOLATING_SPRING)) {
-        ROSEN_LOGE("Failed to end implicit animation, need to begin implicit animation firstly!");
-        return;
-    }
-
-    PopImplicitParam();
 }
 
 void RSImplicitAnimator::BeginImplicitPathAnimation(const std::shared_ptr<RSMotionPathOption>& motionPathOption)

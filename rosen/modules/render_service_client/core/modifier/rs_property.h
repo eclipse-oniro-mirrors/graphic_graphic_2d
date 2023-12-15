@@ -379,8 +379,7 @@ public:
         }
         RSProperty<T>::stagingValue_ = value;
         if (RSProperty<T>::isCustom_) {
-            UpdateExtendedAnimatableProperty(
-                sendValue, hasPropertyAnimation ? UPDATE_TYPE_INCREMENTAL : UPDATE_TYPE_OVERWRITE);
+            UpdateExtendedAnimatableProperty(sendValue, hasPropertyAnimation);
         } else {
             RSProperty<T>::UpdateToRender(
                 sendValue, hasPropertyAnimation ? UPDATE_TYPE_INCREMENTAL : UPDATE_TYPE_OVERWRITE);
@@ -414,7 +413,6 @@ public:
 
     bool GetShowingValueAndCancelAnimation() override
     {
-        // return false;
         auto node = RSProperty<T>::target_.lock();
         if (node == nullptr) {
             return false;
@@ -528,27 +526,20 @@ protected:
         RSProperty<T>::UpdateToRender(RSProperty<T>::stagingValue_, UPDATE_TYPE_FORCE_OVERWRITE);
     }
 
-    void UpdateExtendedAnimatableProperty(const T& value, PropertyUpdateType type)
+    void UpdateExtendedAnimatableProperty(const T& value, bool isDelta)
     {
-        switch (type) {
-            case UPDATE_TYPE_OVERWRITE:
-                showingValue_ = value;
-                RSProperty<T>::MarkModifierDirty();
-                if (renderProperty_ != nullptr) {
-                    renderProperty_->Set(value);
-                } else {
-                    NotifyPropertyChange();
-                }
-                break;
-            case UPDATE_TYPE_INCREMENTAL:
-                if (renderProperty_ != nullptr) {
-                    renderProperty_->Set(renderProperty_->Get() + value);
-                }
-                break;
-            case UPDATE_TYPE_FORCE_OVERWRITE:
-                break;
-            default:
-                break;
+        if (isDelta) {
+            if (renderProperty_ != nullptr) {
+                renderProperty_->Set(renderProperty_->Get() + value);
+            }
+        } else {
+            showingValue_ = value;
+            RSProperty<T>::MarkModifierDirty();
+            if (renderProperty_ != nullptr) {
+                renderProperty_->Set(value);
+            } else {
+                NotifyPropertyChange();
+            }
         }
     }
 

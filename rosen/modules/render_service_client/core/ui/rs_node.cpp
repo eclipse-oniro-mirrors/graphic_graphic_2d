@@ -302,15 +302,6 @@ void RSNode::RemoveAnimationInner(const std::shared_ptr<RSAnimation>& animation)
     animations_.erase(animation->GetId());
 }
 
-void RSNode::FinishAnimationByProperty(const PropertyId& id)
-{
-    for (const auto& [animationId, animation] : animations_) {
-        if (animation->GetPropertyId() == id) {
-            animation->Finish();
-        }
-    }
-}
-
 void RSNode::CancelAnimationByProperty(const PropertyId& id)
 {
     std::unique_lock<std::mutex> lock(animationMutex_);
@@ -342,10 +333,6 @@ void RSNode::AddAnimation(const std::shared_ptr<RSAnimation>& animation)
             ROSEN_LOGE("Failed to add animation, animation already exists!");
             return;
         }
-    }
-
-    if (animation->GetDuration() <= 0) {
-        FinishAnimationByProperty(animation->GetPropertyId());
     }
 
     AddAnimationInner(animation);

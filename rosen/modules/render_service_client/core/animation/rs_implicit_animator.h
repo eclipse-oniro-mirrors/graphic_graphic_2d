@@ -86,7 +86,6 @@ private:
     void BeginImplicitInterpolatingSpringAnimation();
     void BeginImplicitCancelAnimation();
 
-    void EndImplicitAnimation();
     void CloseImplicitAnimationInner();
     
     void PushImplicitParam(const std::shared_ptr<RSImplicitAnimationParam>& implicitParam);

@@ -97,7 +97,7 @@ public:
                 break;
             case UPDATE_TYPE_FORCE_OVERWRITE:
                 modifier->Update(prop, false);
-                node->GetAnimationManager().CancelAnimationByPropertyId(modifier->GetPropertyId());
+                node->GetAnimationManager().CancelAnimationByPropertyId(id);
                 break;
             default:
                 break;

@@ -35,11 +35,11 @@ class RSTransitionEffect;
 
 class RSImplicitAnimationParam {
 public:
-    explicit RSImplicitAnimationParam(const RSAnimationTimingProtocol& timingProtocol, ImplicitAnimationParamType type);
     virtual ~RSImplicitAnimationParam() = default;
     ImplicitAnimationParamType GetType() const;
 
 protected:
+    explicit RSImplicitAnimationParam(const RSAnimationTimingProtocol& timingProtocol, ImplicitAnimationParamType type);
     void ApplyTimingProtocol(const std::shared_ptr<RSAnimation>& animation) const;
     ImplicitAnimationParamType animationType_ { ImplicitAnimationParamType::NONE };
 
