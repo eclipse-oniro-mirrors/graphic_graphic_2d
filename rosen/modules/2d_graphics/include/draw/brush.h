@@ -62,6 +62,7 @@ public:
 
     void SetFilter(const Filter& filter);
     const Filter& GetFilter() const;
+    bool HasFilter() const;
 
     void SetShaderEffect(std::shared_ptr<ShaderEffect> e);
     std::shared_ptr<ShaderEffect> GetShaderEffect() const;
@@ -86,6 +87,7 @@ private:
     std::shared_ptr<ShaderEffect> shaderEffect_;
 
     bool antiAlias_;
+    bool hasFilter_ = false;
 };
 } // namespace Drawing
 } // namespace Rosen

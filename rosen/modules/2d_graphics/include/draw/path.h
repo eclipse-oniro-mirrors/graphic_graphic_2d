@@ -26,14 +26,12 @@
 #include "utils/point.h"
 #include "utils/rect.h"
 
-#ifdef USE_ROSEN_DRAWING
 #ifdef WINDOWS_PLATFORM
 #ifdef DIFFERENCE
 #undef DIFFERENCE
 #endif
 #ifdef WINDING
 #undef WINDING
-#endif
 #endif
 #endif
 

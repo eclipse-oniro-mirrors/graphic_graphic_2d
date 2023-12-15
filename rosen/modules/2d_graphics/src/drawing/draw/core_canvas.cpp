@@ -359,6 +359,11 @@ CoreCanvas& CoreCanvas::AttachBrush(const Brush& brush)
     return *this;
 }
 
+CoreCanvas& CoreCanvas::AttachPaint(const Paint& paint)
+{
+    return *this;
+}
+
 CoreCanvas& CoreCanvas::DetachPen()
 {
     impl_->DetachPen();
@@ -368,6 +373,11 @@ CoreCanvas& CoreCanvas::DetachPen()
 CoreCanvas& CoreCanvas::DetachBrush()
 {
     impl_->DetachBrush();
+    return *this;
+}
+
+CoreCanvas& CoreCanvas::DetachPaint()
+{
     return *this;
 }
 

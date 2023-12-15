@@ -31,12 +31,14 @@ public:
         MITER_JOIN,
         ROUND_JOIN,
         BEVEL_JOIN,
+        DEFAULT_JOIN = MITER_JOIN
     };
 
     enum class CapStyle {
         FLAT_CAP,
         SQUARE_CAP,
         ROUND_CAP,
+        DEFAULT_CAP = FLAT_CAP
     };
 
     Pen() noexcept;
@@ -82,6 +84,7 @@ public:
 
     void SetFilter(const Filter& filter);
     Filter GetFilter() const;
+    bool HasFilter() const;
 
     void SetShaderEffect(std::shared_ptr<ShaderEffect> e);
     std::shared_ptr<ShaderEffect> GetShaderEffect() const;

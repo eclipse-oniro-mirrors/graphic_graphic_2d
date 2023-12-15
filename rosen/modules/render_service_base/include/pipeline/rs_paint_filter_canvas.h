@@ -122,8 +122,10 @@ public:
 
     CoreCanvas& AttachPen(const Drawing::Pen& pen) override;
     CoreCanvas& AttachBrush(const Drawing::Brush& brush) override;
+    CoreCanvas& AttachPaint(const Paint& paint) override;
     CoreCanvas& DetachPen() override;
     CoreCanvas& DetachBrush() override;
+    CoreCanvas& DetachPaint() override;
 
 protected:
     virtual bool OnFilter() const = 0;
@@ -235,6 +237,7 @@ public:
 
     CoreCanvas& AttachPen(const Drawing::Pen& pen) override;
     CoreCanvas& AttachBrush(const Drawing::Brush& brush) override;
+    CoreCanvas& AttachPaint(const Paint& paint) override;
 #endif
     void SetIsParallelCanvas(bool isParallel);
     bool GetIsParallelCanvas() const;

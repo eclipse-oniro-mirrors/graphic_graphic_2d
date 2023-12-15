@@ -15,16 +15,14 @@
 
 #ifndef CORECANVASIMPL_H
 #define CORECANVASIMPL_H
-
 #include "base_impl.h"
 #include "securec.h"
 
 #include "include/core/SkRefCnt.h"
 
-#include "draw/brush.h"
 #include "draw/clip.h"
 #include "draw/path.h"
-#include "draw/pen.h"
+#include "draw/paint.h"
 #include "draw/shadow.h"
 #include "effect/filter.h"
 #include "image/bitmap.h"
@@ -161,8 +159,10 @@ public:
     // paint
     virtual void AttachPen(const Pen& pen) = 0;
     virtual void AttachBrush(const Brush& brush) = 0;
+    virtual void AttachPaint(const Paint& paint) = 0;
     virtual void DetachPen() = 0;
     virtual void DetachBrush() = 0;
+    virtual void DetachPaint() = 0;
 };
 } // namespace Drawing
 } // namespace Rosen
