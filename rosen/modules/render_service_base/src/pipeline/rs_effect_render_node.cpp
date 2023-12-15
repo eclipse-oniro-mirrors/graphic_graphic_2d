@@ -75,7 +75,7 @@ void RSEffectRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas
 RectI RSEffectRenderNode::GetFilterRect() const
 {
     if (!effectRegion_.has_value()) {
-        ROSEN_LOGE("RSEffectRenderNode::GetFilterRect: effectRegion has no value");
+        ROSEN_LOGD("RSEffectRenderNode::GetFilterRect: effectRegion has no value");
         return {};
     }
 #ifndef USE_ROSEN_DRAWING
