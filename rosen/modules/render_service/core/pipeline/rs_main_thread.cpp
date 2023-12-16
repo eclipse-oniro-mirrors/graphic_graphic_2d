@@ -1657,7 +1657,7 @@ void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::Sha
     bool filterCacheOcclusionEnabled = RSSystemParameters::GetFilterCacheOcculusionEnabled();
     for (auto it = curAllSurfaces.rbegin(); it != curAllSurfaces.rend(); ++it) {
         auto curSurface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
-        if (curSurface == nullptr || curSurface->GetDstRect().IsEmpty() || curSurface->IsLeashWindow()) {
+        if (curSurface == nullptr || curSurface->IsLeashWindow()) {
             continue;
         }
         Occlusion::Rect occlusionRect = curSurface->GetSurfaceOcclusionRect(isUniRender_);
@@ -1686,7 +1686,7 @@ void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::Sha
         accumulatedRegion = {};
         for (auto it = curAllSurfaces.rbegin(); it != curAllSurfaces.rend(); ++it) {
             auto curSurface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
-            if (curSurface == nullptr || curSurface->GetDstRect().IsEmpty() || curSurface->IsLeashWindow()) {
+            if (curSurface == nullptr || curSurface->IsLeashWindow()) {
                 continue;
             }
             Occlusion::Rect occlusionRect = curSurface->GetSurfaceOcclusionRect(isUniRender_);
