@@ -18,6 +18,7 @@
 #include <list>
 #include <map>
 #include <mutex>
+#include <set>
 #include <unistd.h>
 
 #ifndef USE_ROSEN_DRAWING
