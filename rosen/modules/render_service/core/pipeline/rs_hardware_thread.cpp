@@ -602,10 +602,15 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
 #endif
 #else // USE_ROSEN_DRAWING
             std::shared_ptr<Drawing::Image> image = nullptr;
+            Drawing::ColorType colorType = Drawing::ColorType::COLORTYPE_RGBA_8888;
+            auto pixelFmt = params.buffer->GetFormat();
+            if (pixelFmt == GRAPHIC_PIXEL_FMT_BGRA_8888) {
+                colorType = Drawing::ColorType::COLORTYPE_BGRA_8888;
+            } else if (pixelFmt == GRAPHIC_PIXEL_FMT_YCBCR_P010 || pixelFmt == GRAPHIC_PIXEL_FMT_YCRCB_P010) {
+                colorType = Drawing::ColorType::COLORTYPE_RGBA_1010102;
+            }
 #if defined(RS_ENABLE_GL) && defined(RS_ENABLE_EGLIMAGE)
             if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
-                Drawing::ColorType colorType = (params.buffer->GetFormat() == GRAPHIC_PIXEL_FMT_BGRA_8888) ?
-                    Drawing::ColorType::COLORTYPE_BGRA_8888 : Drawing::ColorType::COLORTYPE_RGBA_8888;
                 Drawing::BitmapFormat bitmapFormat = { colorType, Drawing::AlphaType::ALPHATYPE_PREMUL };
 
                 Drawing::TextureInfo externalTextureInfo;
@@ -636,13 +641,11 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
                 imageCacheSeqsVK[bufferId] = imageCache;
                 auto& backendTexture = imageCache->GetBackendTexture();
 
-                Drawing::ColorType colorType = (params.buffer->GetFormat() == GRAPHIC_PIXEL_FMT_BGRA_8888) ?
-                    Drawing::ColorType::COLORTYPE_BGRA_8888 : Drawing::ColorType::COLORTYPE_RGBA_8888;
                 Drawing::BitmapFormat bitmapFormat = { colorType, Drawing::AlphaType::ALPHATYPE_PREMUL };
 
                 image = std::make_shared<Drawing::Image>();
                 if (!image->BuildFromTexture(*canvas->GetGPUContext(), backendTexture.GetTextureInfo(),
-                    Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, nullptr,
+                    Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, drawingColorSpace,
                     NativeBufferUtils::DeleteVkImage,
                     imageCache->RefCleanupHelper())) {
                     RS_LOGE("RSHardwareThread::Redraw: image BuildFromTexture failed");

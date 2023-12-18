@@ -331,7 +331,7 @@ std::shared_ptr<Drawing::Image> RSBaseRenderEngine::CreateEglImageFromBuffer(RSP
         }
         externalTextureInfo.SetFormat(glType);
         if (!image->BuildFromTexture(*canvas.GetGPUContext(), externalTextureInfo,
-            surfaceOrigin, bitmapFormat, nullptr, nullptr, nullptr)) {
+            surfaceOrigin, bitmapFormat, drawingColorSpace, nullptr, nullptr)) {
             RS_LOGE("RSBaseRenderEngine::CreateEglImageFromBuffer image BuildFromTexture failed");
             return nullptr;
         }
@@ -342,7 +342,7 @@ std::shared_ptr<Drawing::Image> RSBaseRenderEngine::CreateEglImageFromBuffer(RSP
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR &&
         !image->BuildFromTexture(*renderContext_->GetDrGPUContext(), externalTextureInfo,
-        surfaceOrigin, bitmapFormat, nullptr, nullptr, nullptr)) {
+        surfaceOrigin, bitmapFormat, drawingColorSpace, nullptr, nullptr)) {
         RS_LOGE("RSBaseRenderEngine::CreateEglImageFromBuffer image BuildFromTexture failed");
         return nullptr;
     }
@@ -790,7 +790,12 @@ void RSBaseRenderEngine::ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEffe
 void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam& params)
 {
     RS_OPTIONAL_TRACE_BEGIN("RSBaseRenderEngine::DrawImage(GPU)");
+#ifndef USE_ROSEN_DRAWING
     sk_sp<SkImage> image = nullptr;
+#else
+    auto image = std::make_shared<Drawing::Image>();
+#endif
+
 #ifdef RS_ENABLE_VK
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
@@ -827,18 +832,25 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
         canvas.drawImageRect(image, params.srcRect, params.dstRect,
             SkSamplingOptions(), &(params.paint), SkCanvas::kStrict_SrcRectConstraint);
 #else
-        // TODO : fix colorType and ColorSpace for HDR
-        Drawing::ColorType colorType = (params.buffer->GetFormat() == GRAPHIC_PIXEL_FMT_BGRA_8888) ?
-            Drawing::ColorType::COLORTYPE_BGRA_8888 : Drawing::ColorType::COLORTYPE_RGBA_8888;
-        Drawing::BitmapFormat bitmapFormat = { colorType, Drawing::AlphaType::ALPHATYPE_PREMUL };
-        auto image = std::make_shared<Drawing::Image>();
+        std::shared_ptr<Drawing::ColorSpace> drawingColorSpace = Drawing::ColorType::CreateSRGB();
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+        drawingColorSpace = ConvertColorGamutToDrawingColorSpace(params.targetColorGamut);
+#endif
+        Drawing::ColorType drawingColorType = Drawing::ColorType::COLORTYPE_RGBA_8888;
+        auto pixelFmt = params.buffer->GetFormat();
+        if (pixelFmt == GRAPHIC_PIXEL_FMT_BGRA_8888) {
+            drawingColorType = Drawing::ColorType::COLORTYPE_BGRA_8888;
+        } else if (pixelFmt == GRAPHIC_PIXEL_FMT_YCBCR_P010 || pixelFmt == GRAPHIC_PIXEL_FMT_YCRCB_P010) {
+            drawingColorType = Drawing::ColorType::COLORTYPE_RGBA_1010102;
+        }
+        Drawing::BitmapFormat bitmapFormat = { drawingColorType, Drawing::AlphaType::ALPHATYPE_PREMUL };
 #ifndef ROSEN_EMULATOR
         auto surfaceOrigin = Drawing::TextureOrigin::TOP_LEFT;
 #else
         auto surfaceOrigin = Drawing::TextureOrigin::BOTTOM_LEFT;
 #endif
         if (!image->BuildFromTexture(*canvas.GetGPUContext(), backendTexture.GetTextureInfo(),
-            surfaceOrigin, bitmapFormat, nullptr,
+            surfaceOrigin, bitmapFormat, drawingColorSpace,
             NativeBufferUtils::DeleteVkImage, imageCache->RefCleanupHelper())) {
             ROSEN_LOGE("RSBaseRenderEngine::DrawImage: backendTexture is not valid!!!");
             RS_OPTIONAL_TRACE_END();
