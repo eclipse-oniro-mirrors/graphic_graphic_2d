@@ -95,6 +95,9 @@ bool RSUniRenderVirtualProcessor::Init(RSDisplayRenderNode& node, int32_t offset
 #else
     if (mirrorNode && isPhone_) {
         CanvasRotation(node.getFirstTimeScreenRotation(), renderFrameConfig_.width, renderFrameConfig_.height);
+        if (node.getFirstTimeScreenRotation() != ScreenRotation::ROTATION_0) {
+            canvas_->translate(-(renderFrameConfig_.height / 2.0f), -(renderFrameConfig_.width / 2.0f));
+        }
     } else {
         Drawing::Matrix invertMatrix;
         if (node.GetInitMatrix().Invert(invertMatrix)) {
