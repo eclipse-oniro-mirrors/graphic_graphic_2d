@@ -242,10 +242,10 @@ public:
 #ifdef USE_VIDEO_PROCESSING_ENGINE
 #ifndef USE_ROSEN_DRAWING
     static sk_sp<SkColorSpace> ConvertColorGamutToSkColorSpace(GraphicColorGamut colorGamut);
-    static void ColorSpaceConvertor(sk_sp<SkShader> &inputShader, BufferDrawParam& params);
+    void ColorSpaceConvertor(sk_sp<SkShader> &inputShader, BufferDrawParam& params);
 #else
     static std::shared_ptr<Drawing::ColorSpace> ConvertColorGamutToDrawingColorSpace(GraphicColorGamut colorGamut);
-    static void ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEffect> &inputShader, BufferDrawParam& params);
+    void ColorSpaceConvertor(std::shared_ptr<Drawing::ShaderEffect> &inputShader, BufferDrawParam& params);
 #endif
 #endif
 protected:
