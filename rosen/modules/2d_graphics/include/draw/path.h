@@ -26,14 +26,12 @@
 #include "utils/point.h"
 #include "utils/rect.h"
 
-#ifdef USE_ROSEN_DRAWING
 #ifdef WINDOWS_PLATFORM
 #ifdef DIFFERENCE
 #undef DIFFERENCE
 #endif
 #ifdef WINDING
 #undef WINDING
-#endif
 #endif
 #endif
 
@@ -175,7 +173,7 @@ public:
     bool Deserialize(std::shared_ptr<Data> data);
 
     template<typename T>
-    const std::shared_ptr<T> GetImpl() const
+    T* GetImpl() const
     {
         return impl_->DowncastingTo<T>();
     }

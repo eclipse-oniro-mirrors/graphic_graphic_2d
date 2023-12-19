@@ -105,6 +105,7 @@ void Brush::SetBlendMode(const BlendMode& mode)
 void Brush::SetFilter(const Filter& filter)
 {
     filter_ = filter;
+    hasFilter_ = true;
 }
 
 const Filter& Brush::GetFilter() const

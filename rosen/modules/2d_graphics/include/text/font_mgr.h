@@ -84,6 +84,12 @@ public:
      */
     FontStyleSet* MatchFamily(const char familyName[]) const;
 
+    template<typename T>
+    T* GetImpl() const
+    {
+        return fontMgrImpl_->DowncastingTo<T>();
+    }
+
 private:
     std::shared_ptr<FontMgrImpl> fontMgrImpl_;
 };

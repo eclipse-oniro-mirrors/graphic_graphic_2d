@@ -51,7 +51,7 @@ bool SkiaRegion::GetBoundaryPath(Path* path) const
     if (!path) {
         return skRegion_->getBoundaryPath(nullptr);
     }
-    std::shared_ptr<SkiaPath> skiaPath = path->GetImpl<SkiaPath>();
+    auto skiaPath = path->GetImpl<SkiaPath>();
     if (!skiaPath) {
         LOGE("SkiaRegion::GetBoundaryPath, skiaPath is nullptr");
         return skRegion_->getBoundaryPath(nullptr);

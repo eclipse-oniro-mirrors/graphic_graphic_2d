@@ -78,9 +78,6 @@ public:
     {
         return skSurface_;
     }
-#ifdef RS_ENABLE_VK
-    void AbandonContext();
-#endif
     bool SetUpGrContext(sk_sp<GrDirectContext> skContext = nullptr);
 #else
     Drawing::GPUContext* GetDrGPUContext() const
@@ -97,11 +94,11 @@ public:
     {
         return surface_;
     }
-#ifdef RS_ENABLE_VK
-    bool SetUpGpuContext(std::shared_ptr<Drawing::GPUContext> drawingContext);
-#else
-    bool SetUpGpuContext();
+    bool SetUpGpuContext(std::shared_ptr<Drawing::GPUContext> drawingContext = nullptr);
 #endif
+
+#ifdef RS_ENABLE_VK
+    void AbandonContext();
 #endif
 
     EGLSurface CreateEGLSurface(EGLNativeWindowType eglNativeWindow);
@@ -229,6 +226,11 @@ private:
     std::mutex shareContextMutex_;
 
     sk_sp<SkColorSpace> ConvertColorGamutToSkColorSpace(GraphicColorGamut colorGamut) const;
+#ifndef USE_ROSEN_DRAWING
+#ifdef RS_ENABLE_GL
+    void InitGrContextOptions(GrContextOptions &options);
+#endif
+#endif
 };
 
 class RenderContextFactory {

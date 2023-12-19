@@ -27,6 +27,7 @@
 #endif
 #include "skia_adapter/skia_font.h"
 #include "skia_adapter/skia_font_mgr.h"
+#include "skia_adapter/skia_hm_symbol_config_ohos.h"
 #include "skia_adapter/skia_image.h"
 #include "skia_adapter/skia_image_filter.h"
 #include "skia_adapter/skia_mask_filter.h"
@@ -36,6 +37,7 @@
 #include "skia_adapter/skia_path_effect.h"
 #include "skia_adapter/skia_picture.h"
 #include "skia_adapter/skia_region.h"
+#include "skia_adapter/skia_resourece_holder.h"
 #include "skia_adapter/skia_shader_effect.h"
 #include "skia_adapter/skia_runtime_effect.h"
 #include "skia_adapter/skia_runtime_shader_builder.h"
@@ -233,6 +235,11 @@ std::shared_ptr<MemoryStreamImpl> SkiaImplFactory::CreateMemoryStream()
 std::shared_ptr<MemoryStreamImpl> SkiaImplFactory::CreateMemoryStream(const void* data, size_t length, bool copyData)
 {
     return std::make_shared<SkiaMemoryStream>(data, length, copyData);
+}
+
+std::shared_ptr<ResourceHolderImpl> SkiaImplFactory::CreateResourceHolder()
+{
+    return std::make_shared<SkiaResourceHolder>();
 }
 } // namespace Drawing
 } // namespace Rosen

@@ -158,7 +158,7 @@ public:
     sk_sp<GrDirectContext> GetSkContext();
 #else
     std::shared_ptr<Drawing::GPUContext> CreateDrawingContext(bool independentContext = false);
-    std::shared_ptr<Drawing::GPUContext> CreateNewDrawingContext();
+    std::shared_ptr<Drawing::GPUContext> GetDrawingContext();
 #endif
 
     static VKAPI_ATTR VkResult HookedVkQueueSubmit(VkQueue queue, uint32_t submitCount,

@@ -16,6 +16,7 @@
 #include "core_canvas.h"
 
 #include "impl_factory.h"
+#include "utils/log.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -47,9 +48,12 @@ RectI CoreCanvas::GetDeviceClipBounds() const
 }
 
 #ifdef ACE_ENABLE_GPU
-std::shared_ptr<GPUContext> CoreCanvas::GetGPUContext() const
+std::shared_ptr<GPUContext> CoreCanvas::GetGPUContext()
 {
-    return impl_->GetGPUContext();
+    if (!gpuContext_) {
+        gpuContext_ = impl_->GetGPUContext();
+    }
+    return gpuContext_;
 }
 #endif
 
@@ -76,56 +80,67 @@ bool CoreCanvas::ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t ds
 
 void CoreCanvas::DrawPoint(const Point& point)
 {
+    AttachPaint();
     impl_->DrawPoint(point);
 }
 
 void CoreCanvas::DrawPoints(PointMode mode, size_t count, const Point pts[])
 {
+    AttachPaint();
     impl_->DrawPoints(mode, count, pts);
 }
 
 void CoreCanvas::DrawLine(const Point& startPt, const Point& endPt)
 {
+    AttachPaint();
     impl_->DrawLine(startPt, endPt);
 }
 
 void CoreCanvas::DrawRect(const Rect& rect)
 {
+    AttachPaint();
     impl_->DrawRect(rect);
 }
 
 void CoreCanvas::DrawRoundRect(const RoundRect& roundRect)
 {
+    AttachPaint();
     impl_->DrawRoundRect(roundRect);
 }
 
 void CoreCanvas::DrawNestedRoundRect(const RoundRect& outer, const RoundRect& inner)
 {
+    AttachPaint();
     impl_->DrawNestedRoundRect(outer, inner);
 }
 
 void CoreCanvas::DrawArc(const Rect& oval, scalar startAngle, scalar sweepAngle)
 {
+    AttachPaint();
     impl_->DrawArc(oval, startAngle, sweepAngle);
 }
 
 void CoreCanvas::DrawPie(const Rect& oval, scalar startAngle, scalar sweepAngle)
 {
+    AttachPaint();
     impl_->DrawPie(oval, startAngle, sweepAngle);
 }
 
 void CoreCanvas::DrawOval(const Rect& oval)
 {
+    AttachPaint();
     impl_->DrawOval(oval);
 }
 
 void CoreCanvas::DrawCircle(const Point& centerPt, scalar radius)
 {
+    AttachPaint();
     impl_->DrawCircle(centerPt, radius);
 }
 
 void CoreCanvas::DrawPath(const Path& path)
 {
+    AttachPaint();
     impl_->DrawPath(path);
 }
 
@@ -147,11 +162,13 @@ void CoreCanvas::DrawColor(ColorQuad color, BlendMode mode)
 
 void CoreCanvas::DrawRegion(const Region& region)
 {
+    AttachPaint();
     impl_->DrawRegion(region);
 }
 
 void CoreCanvas::DrawPatch(const Point cubics[12], const ColorQuad colors[4], const Point texCoords[4], BlendMode mode)
 {
+    AttachPaint();
     impl_->DrawPatch(cubics, colors, texCoords, mode);
 }
 
@@ -163,11 +180,13 @@ void CoreCanvas::DrawEdgeAAQuad(const Rect& rect, const Point clip[4],
 
 void CoreCanvas::DrawVertices(const Vertices& vertices, BlendMode mode)
 {
+    AttachPaint();
     impl_->DrawVertices(vertices, mode);
 }
 
 void CoreCanvas::DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py)
 {
+    AttachPaint();
     impl_->DrawBitmap(bitmap, px, py);
 }
 
@@ -190,22 +209,26 @@ void CoreCanvas::DrawImageLattice(const Image* image, const Lattice& lattice, co
 
 void CoreCanvas::DrawBitmap(Media::PixelMap& pixelMap, const scalar px, const scalar py)
 {
+    AttachPaint();
     impl_->DrawBitmap(pixelMap, px, py);
 }
 
 void CoreCanvas::DrawImage(const Image& image, const scalar px, const scalar py, const SamplingOptions& sampling)
 {
+    AttachPaint();
     impl_->DrawImage(image, px, py, sampling);
 }
 
 void CoreCanvas::DrawImageRect(
     const Image& image, const Rect& src, const Rect& dst, const SamplingOptions& sampling, SrcRectConstraint constraint)
 {
+    AttachPaint();
     impl_->DrawImageRect(image, src, dst, sampling, constraint);
 }
 
 void CoreCanvas::DrawImageRect(const Image& image, const Rect& dst, const SamplingOptions& sampling)
 {
+    AttachPaint();
     impl_->DrawImageRect(image, dst, sampling);
 }
 
@@ -221,7 +244,14 @@ void CoreCanvas::DrawSVGDOM(const sk_sp<SkSVGDOM>& svgDom)
 
 void CoreCanvas::DrawTextBlob(const TextBlob* blob, const scalar x, const scalar y)
 {
+    AttachPaint();
     impl_->DrawTextBlob(blob, x, y);
+}
+
+void CoreCanvas::DrawSymbol(const DrawingHMSymbolData& symbol, Point locate)
+{
+    AttachPaint();
+    impl_->DrawSymbol(symbol, locate);
 }
 
 void CoreCanvas::ClipRect(const Rect& rect, ClipOp op, bool doAntiAlias)
@@ -237,6 +267,11 @@ void CoreCanvas::ClipIRect(const RectI& rect, ClipOp op)
 void CoreCanvas::ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias)
 {
     impl_->ClipRoundRect(roundRect, op, doAntiAlias);
+}
+
+void CoreCanvas::ClipRoundRect(const Rect& rect, std::vector<Point>& pts, bool doAntiAlias)
+{
+    impl_->ClipRoundRect(rect, pts, doAntiAlias);
 }
 
 void CoreCanvas::ClipPath(const Path& path, ClipOp op, bool doAntiAlias)
@@ -336,25 +371,38 @@ void CoreCanvas::Discard()
 
 CoreCanvas& CoreCanvas::AttachPen(const Pen& pen)
 {
-    impl_->AttachPen(pen);
+    paintPen_.AttachPen(pen);
     return *this;
 }
 
 CoreCanvas& CoreCanvas::AttachBrush(const Brush& brush)
 {
-    impl_->AttachBrush(brush);
+    paintBrush_.AttachBrush(brush);
+    return *this;
+}
+
+CoreCanvas& CoreCanvas::AttachPaint(const Paint& paint)
+{
+    paintBrush_.Disable();
+    paintPen_ = paint;
     return *this;
 }
 
 CoreCanvas& CoreCanvas::DetachPen()
 {
-    impl_->DetachPen();
+    paintPen_.Disable();
     return *this;
 }
 
 CoreCanvas& CoreCanvas::DetachBrush()
 {
-    impl_->DetachBrush();
+    paintBrush_.Disable();
+    return *this;
+}
+
+CoreCanvas& CoreCanvas::DetachPaint()
+{
+    paintPen_.Disable();
     return *this;
 }
 
@@ -376,6 +424,31 @@ Drawing::CacheType CoreCanvas::GetCacheType() const
 Drawing::Surface* CoreCanvas::GetSurface() const
 {
     return nullptr;
+}
+
+void CoreCanvas::AttachPaint()
+{
+    bool brushValid = paintBrush_.IsValid();
+    bool penValid = paintPen_.IsValid();
+    if (!brushValid && !penValid) {
+        LOGE("Drawing CoreCanvas AttachPaint with Invalid Paint");
+        return;
+    }
+
+    if (brushValid && penValid && Paint::CanCombinePaint(paintBrush_, paintPen_)) {
+        paintPen_.SetStyle(Paint::PaintStyle::PAINT_FILL_STROKE);
+        impl_->AttachPaint(paintPen_);
+        paintPen_.SetStyle(Paint::PaintStyle::PAINT_STROKE);
+        return;
+    }
+
+    if (brushValid) {
+        impl_->AttachPaint(paintBrush_);
+    }
+
+    if (penValid) {
+        impl_->AttachPaint(paintPen_);
+    }
 }
 } // namespace Drawing
 } // namespace Rosen

@@ -16,6 +16,7 @@
 #ifndef RECT_H
 #define RECT_H
 
+#include <cmath>
 #include "utils/drawing_macros.h"
 #include "utils/scalar.h"
 
@@ -62,7 +63,7 @@ public:
 
     inline void Offset(int dx, int dy);
     inline void MakeOutset(int dx, int dy);
-
+    inline bool Contains(const RectI& other);
     /*
      * @brief        If RectI intersects other, sets RectI to intersection.
      * @param other  limit of result.
@@ -204,6 +205,13 @@ inline bool RectI::Join(const RectI& other)
     return true;
 }
 
+inline bool RectI::Contains(const RectI& other)
+{
+    return !other.IsEmpty() && !this->IsEmpty() &&
+        left_ <= other.left_ && top_ <= other.top_ &&
+        right_ >= other.right_ && bottom_ >= other.bottom_;
+}
+
 inline bool operator==(const RectI& r1, const RectI& r2)
 {
     return r1.left_ == r2.left_ && r1.right_ == r2.right_ && r1.top_ == r2.top_ && r1.bottom_ == r2.bottom_;
@@ -242,6 +250,7 @@ public:
     inline void Offset(scalar dx, scalar dy);
     inline void MakeOutset(scalar dx, scalar dy);
     inline void Round();
+    inline RectI RoundOut();
 
     /*
      * @brief        If RectF intersects other, sets RectF to intersection.
@@ -362,6 +371,15 @@ inline void RectF::Round()
     right_ = DrawingFloatSaturate2Int(right_ + 0.5f);
     top_ = DrawingFloatSaturate2Int(top_ + 0.5f);
     bottom_ = DrawingFloatSaturate2Int(bottom_ + 0.5f);
+}
+
+inline RectI RectF::RoundOut()
+{
+    int32_t left = DrawingFloatSaturate2Int(floorf(left_));
+    int32_t right = DrawingFloatSaturate2Int(ceilf(right_));
+    int32_t top = DrawingFloatSaturate2Int(floorf(top_));
+    int32_t bottom = DrawingFloatSaturate2Int(ceilf(bottom_));
+    return RectI(left, top, right, bottom);
 }
 
 inline bool RectF::Intersect(const RectF& other)

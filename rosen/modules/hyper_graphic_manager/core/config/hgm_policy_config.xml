@@ -45,7 +45,7 @@
         <Setting name="switch" value="1"/>
         <Setting name="maxTE" value="360"/>
         <Setting name="alignRate" value="120"/>
-        <Setting name="pipelineOffsetNum" value="8"/>
+        <Setting name="pipelineOffsetPulseNum" value="8"/>
     </Params>
 
     <!-- bundle name black_list to be applied on mode 2 -->
@@ -100,6 +100,16 @@
             <SpeedThresholds name="3" min="0" max="46" preferred_fps="60"/>
         </DynamicSettings>
         <DynamicSettings name="split_drag_scene">
+            <SpeedThresholds name="1" min="77" max="-1" preferred_fps="120"/>
+            <SpeedThresholds name="2" min="46" max="77" preferred_fps="90"/>
+            <SpeedThresholds name="3" min="0" max="46" preferred_fps="60"/>
+        </DynamicSettings>
+        <DynamicSettings name="scrollable_motion_scene">
+            <SpeedThresholds name="1" min="77" max="-1" preferred_fps="120"/>
+            <SpeedThresholds name="2" min="46" max="77" preferred_fps="90"/>
+            <SpeedThresholds name="3" min="0" max="46" preferred_fps="60"/>
+        </DynamicSettings>
+        <DynamicSettings name="scrollable_multi_task_scene">
             <SpeedThresholds name="1" min="77" max="-1" preferred_fps="120"/>
             <SpeedThresholds name="2" min="46" max="77" preferred_fps="90"/>
             <SpeedThresholds name="3" min="0" max="46" preferred_fps="60"/>

@@ -167,14 +167,21 @@ const std::set<RSModifierType> BASIC_GEOTRANSFROM_ANIMATION_TYPE = {
 };
 }
 
-RSRenderNode::RSRenderNode(NodeId id, const std::weak_ptr<RSContext>& context) : id_(id), context_(context)
+RSRenderNode::RSRenderNode(NodeId id, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
+    : id_(id), context_(context), isTextureExportNode_(isTextureExportNode)
 {
     isSubSurfaceEnabled_ = RSSystemProperties::GetSubSurfaceEnabled();
 }
-RSRenderNode::RSRenderNode(NodeId id, bool isOnTheTree, const std::weak_ptr<RSContext>& context)
-    : isOnTheTree_(isOnTheTree), id_(id), context_(context)
+RSRenderNode::RSRenderNode(NodeId id, bool isOnTheTree, const std::weak_ptr<RSContext>& context,
+    bool isTextureExportNode) 
+    : isOnTheTree_(isOnTheTree), id_(id), context_(context),isTextureExportNode_(isTextureExportNode)
 {
     isSubSurfaceEnabled_ = RSSystemProperties::GetSubSurfaceEnabled();
+}
+
+bool RSRenderNode::GetIsTextureExportNode() const
+{
+    return isTextureExportNode_;
 }
 
 void RSRenderNode::AddChild(SharedPtr child, int index)
@@ -1007,6 +1014,16 @@ void RSRenderNode::UpdateParentChildrenRect(std::shared_ptr<RSRenderNode> parent
     }
 }
 
+bool RSRenderNode::IsBackgroundFilterCacheValid() const
+{
+    auto& manager = GetRenderProperties().GetFilterCacheManager(false);
+    if (manager == nullptr) {
+        return false;
+    }
+    bool backgroundFilterCacheValid = manager->IsCacheValid();
+    return backgroundFilterCacheValid;
+}
+
 void RSRenderNode::UpdateFilterCacheWithDirty(RSDirtyRegionManager& dirtyManager, bool isForeground) const
 {
 #if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
@@ -1326,10 +1343,10 @@ bool RSRenderNode::ApplyModifiers()
         (dirtyTypes_.test(static_cast<size_t>(RSModifierType::BACKGROUND_COLOR)) ||
         dirtyTypes_.test(static_cast<size_t>(RSModifierType::BG_IMAGE)))) {
 #endif
-        manager->UpdateCacheStateWithDirtyRegion();
+        manager->InvalidateCache();
     }
     if (auto& manager = GetRenderProperties().GetFilterCacheManager(true)) {
-        manager->UpdateCacheStateWithDirtyRegion();
+        manager->InvalidateCache();
     }
 
     if (RSSystemProperties::GetPropertyDrawableEnable()) {
@@ -2114,10 +2131,6 @@ void RSRenderNode::OnTreeStateChanged()
         // attempt to clear FullChildrenList, to avoid memory leak
         isFullChildrenListValid_ = false;
         ClearFullChildrenListIfNeeded();
-
-        if (UNLIKELY(GetSharedTransitionParam().has_value())) {
-            SetSharedTransitionParam(std::nullopt);
-        }
     } else {
         SetDirty();
     }
@@ -2539,7 +2552,7 @@ uint32_t RSRenderNode::GetCacheSurfaceThreadIndex() const
 }
 bool RSRenderNode::QuerySubAssignable(bool isRotation) const
 {
-    return !hasFilter_ && !hasAbilityComponent_ && !isRotation && !hasHardwareNode_;
+    return !childHasFilter_ && !hasFilter_ && !hasAbilityComponent_ && !isRotation && !hasHardwareNode_;
 }
 uint32_t RSRenderNode::GetCompletedSurfaceThreadIndex() const
 {

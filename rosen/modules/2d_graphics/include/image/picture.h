@@ -26,7 +26,7 @@ public:
     Picture() noexcept;
     virtual ~Picture() {};
     template<typename T>
-    const std::shared_ptr<T> GetImpl() const
+    T* GetImpl() const
     {
         return pictureImplPtr->DowncastingTo<T>();
     }

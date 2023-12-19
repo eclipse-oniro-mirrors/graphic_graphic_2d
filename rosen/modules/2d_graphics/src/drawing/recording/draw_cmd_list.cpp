@@ -49,6 +49,7 @@ std::unordered_map<uint32_t, std::string> typeOpDes = {
     { DrawOpItem::IMAGE_RECT_OPITEM,        "IMAGE_RECT_OPITEM" },
     { DrawOpItem::PICTURE_OPITEM,           "PICTURE_OPITEM" },
     { DrawOpItem::TEXT_BLOB_OPITEM,         "TEXT_BLOB_OPITEM" },
+    { DrawOpItem::SYMBOL_OPITEM,            "SYMBOL_OPITEM" },
     { DrawOpItem::CLIP_RECT_OPITEM,         "CLIP_RECT_OPITEM" },
     { DrawOpItem::CLIP_IRECT_OPITEM,        "CLIP_IRECT_OPITEM" },
     { DrawOpItem::CLIP_ROUND_RECT_OPITEM,   "CLIP_ROUND_RECT_OPITEM" },
@@ -210,8 +211,13 @@ void DrawCmdList::UnmarshallingOps()
                 break;
             }
             auto* replaceOpItemPtr = static_cast<OpItem*>(replacePtr);
-            unmarshalledOpItems_.emplace_back(player.Unmarshalling(replaceOpItemPtr->GetType(), replacePtr));
-            opReplacedByDrivenRender_.emplace_back((unmarshalledOpItems_.size() - 1), op);
+            auto replaceOp = player.Unmarshalling(replaceOpItemPtr->GetType(), replacePtr);
+            if (replaceOp) {
+                unmarshalledOpItems_.emplace_back(replaceOp);
+                opReplacedByDrivenRender_.emplace_back((unmarshalledOpItems_.size() - 1), op);
+            } else {
+                unmarshalledOpItems_.emplace_back(op);
+            }
             opReplaceIndex++;
         } else {
             unmarshalledOpItems_.emplace_back(op);
@@ -302,9 +308,12 @@ void DrawCmdList::Playback(Canvas& canvas, const Rect* rect)
         lastOpGenSize_ = opAllocator_.GetSize();
     } else {
         for (auto op : unmarshalledOpItems_) {
-            op->Playback(&canvas, &tmpRect);
+            if (op) {
+                op->Playback(&canvas, &tmpRect);
+            }
         }
     }
+    canvas.DetachPaint();
 }
 
 void DrawCmdList::GenerateCache(Canvas* canvas, const Rect* rect)
@@ -348,37 +357,19 @@ void DrawCmdList::GenerateCacheInRenderService(Canvas* canvas, const Rect* rect)
         return;
     }
 
-    DrawOpItem* brushOp = nullptr;
-    DrawOpItem* penOp = nullptr;
-
     for (int i = 0; i < unmarshalledOpItems_.size(); ++i) {
         auto opItem = unmarshalledOpItems_[i];
+        if (!opItem) {
+            continue;
+        }
         uint32_t type = opItem->GetType();
-        switch (type) {
-            case DrawOpItem::ATTACH_PEN_OPITEM:
-                penOp = opItem.get();
-                break;
-            case DrawOpItem::ATTACH_BRUSH_OPITEM:
-                brushOp = opItem.get();
-                break;
-            case DrawOpItem::DETACH_PEN_OPITEM:
-                penOp = nullptr;
-                break;
-            case DrawOpItem::DETACH_BRUSH_OPITEM:
-                brushOp = nullptr;
-                break;
-            case DrawOpItem::TEXT_BLOB_OPITEM: {
-                DrawTextBlobOpItem* textBlobOp = static_cast<DrawTextBlobOpItem*>(opItem.get());
-                auto replaceCache = textBlobOp->GenerateCachedOpItem(
-                    canvas, static_cast<AttachPenOpItem*>(penOp), static_cast<AttachBrushOpItem*>(brushOp));
-                if (replaceCache) {
-                    opReplacedByDrivenRender_.emplace_back(i, unmarshalledOpItems_[i]);
-                    unmarshalledOpItems_[i] = replaceCache;
-                }
-                break;
+        if (type == DrawOpItem::TEXT_BLOB_OPITEM) {
+            DrawTextBlobOpItem* textBlobOp = static_cast<DrawTextBlobOpItem*>(opItem.get());
+            auto replaceCache = textBlobOp->GenerateCachedOpItem(canvas);
+            if (replaceCache) {
+                opReplacedByDrivenRender_.emplace_back(i, unmarshalledOpItems_[i]);
+                unmarshalledOpItems_[i] = replaceCache;
             }
-            default:
-                break;
         }
     }
 

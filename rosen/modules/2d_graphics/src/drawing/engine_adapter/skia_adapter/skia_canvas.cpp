@@ -825,7 +825,7 @@ void SkiaCanvas::DrawTextBlob(const TextBlob* blob, const scalar x, const scalar
         LOGE("blob is null, return on line %{public}d", __LINE__);
         return;
     }
-    std::shared_ptr<SkiaTextBlob> skiaTextBlob = blob->GetImpl<SkiaTextBlob>();
+    auto skiaTextBlob = blob->GetImpl<SkiaTextBlob>();
     if (!skiaTextBlob) {
         LOGE("skiaTextBlob is null, return on line %{public}d", __LINE__);
         return;
@@ -839,6 +839,28 @@ void SkiaCanvas::DrawTextBlob(const TextBlob* blob, const scalar x, const scalar
     for (int i = 0; i < paints.count_; i++) {
         SkPaint* paint = paints.paints_[i];
         skCanvas_->drawTextBlob(skTextBlob, x, y, *paint);
+    }
+}
+
+void SkiaCanvas::DrawSymbol(const DrawingHMSymbolData& symbol, Point locate)
+{
+    if (!skCanvas_) {
+        LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
+        return;
+    }
+
+    HMSymbolData skSymbol;
+    if (!ConvertToHMSymbolData(symbol, skSymbol)) {
+        LOGE("ConvertToHMSymbolData failed, return on line %{public}d", __LINE__);
+        return;
+    }
+
+    SkPoint skLocate = SkPoint::Make(locate.GetX(), locate.GetY());
+
+    SortedPaints& paints = skiaPaint_.GetSortedPaints();
+    for (int i = 0; i < paints.count_; i++) {
+        SkPaint* paint = paints.paints_[i];
+        skCanvas_->drawSymbol(skSymbol, skLocate, *paint);
     }
 }
 
@@ -874,6 +896,18 @@ void SkiaCanvas::ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAnt
     RoundRectCastToSkRRect(roundRect, rRect);
     SkClipOp clipOp = static_cast<SkClipOp>(op);
     skCanvas_->clipRRect(rRect, clipOp, doAntiAlias);
+}
+
+void SkiaCanvas::ClipRoundRect(const Rect& rect, std::vector<Point>& pts, bool doAntiAlias)
+{
+    if (!skCanvas_) {
+        LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
+        return;
+    }
+    SkRRect rRect;
+    rRect.setRectRadii(SkRect::MakeLTRB(rect.GetLeft(), rect.GetTop(), rect.GetRight(), rect.GetBottom()),
+        reinterpret_cast<const SkVector *>(pts.data()));
+    skCanvas_->clipRRect(rRect, doAntiAlias);
 }
 
 void SkiaCanvas::ClipPath(const Path& path, ClipOp op, bool doAntiAlias)
@@ -936,7 +970,7 @@ void SkiaCanvas::SetMatrix(const Matrix& matrix)
         LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
         return;
     }
-    auto m = matrix.GetImpl<SkiaMatrix>();
+    auto m = matrix.GetImplPtr<SkiaMatrix>();
     if (m != nullptr) {
         skCanvas_->setMatrix(m->ExportSkiaMatrix());
     }
@@ -957,7 +991,7 @@ void SkiaCanvas::ConcatMatrix(const Matrix& matrix)
         LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
         return;
     }
-    auto m = matrix.GetImpl<SkiaMatrix>();
+    auto m = matrix.GetImplPtr<SkiaMatrix>();
     if (m != nullptr) {
         skCanvas_->concat(m->ExportSkiaMatrix());
     }
@@ -1075,24 +1109,9 @@ void SkiaCanvas::Discard()
     skCanvas_->discard();
 }
 
-void SkiaCanvas::AttachPen(const Pen& pen)
+void SkiaCanvas::AttachPaint(const Paint& paint)
 {
-    skiaPaint_.ApplyPenToStroke(pen);
-}
-
-void SkiaCanvas::AttachBrush(const Brush& brush)
-{
-    skiaPaint_.ApplyBrushToFill(brush);
-}
-
-void SkiaCanvas::DetachPen()
-{
-    skiaPaint_.DisableStroke();
-}
-
-void SkiaCanvas::DetachBrush()
-{
-    skiaPaint_.DisableFill();
+    skiaPaint_.ApplyPaint(paint);
 }
 
 void SkiaCanvas::RoundRectCastToSkRRect(const RoundRect& roundRect, SkRRect& skRRect) const
@@ -1113,6 +1132,41 @@ void SkiaCanvas::RoundRectCastToSkRRect(const RoundRect& roundRect, SkRRect& skR
     radii[SkRRect::kLowerLeft_Corner] = { p.GetX(), p.GetY() };
 
     skRRect.setRectRadii(outer, radii);
+}
+
+bool SkiaCanvas::ConvertToHMSymbolData(const DrawingHMSymbolData& symbol, HMSymbolData& skSymbol)
+{
+    Path path = symbol.path_;
+    auto skPathImpl = path.GetImpl<SkiaPath>();
+    if (skPathImpl == nullptr) {
+        return false;
+    }
+    skSymbol.path_ = skPathImpl->GetPath();
+
+    skSymbol.symbolInfo_.symbolGlyphId = symbol.symbolInfo_.symbolGlyphId;
+    skSymbol.symbolInfo_.layers = symbol.symbolInfo_.layers;
+
+    std::vector<RenderGroup> groups;
+    auto drawingGroup = symbol.symbolInfo_.renderGroups;
+    for (size_t i = 0; i < drawingGroup.size(); i++) {
+        RenderGroup group;
+        group.color.a = drawingGroup.at(i).color.a;
+        group.color.r = drawingGroup.at(i).color.r;
+        group.color.g = drawingGroup.at(i).color.g;
+        group.color.b = drawingGroup.at(i).color.b;
+        auto drawingGroupInfos = drawingGroup.at(i).groupInfos;
+        std::vector<GroupInfo> infos;
+        for (size_t j = 0; j < drawingGroupInfos.size(); j++) {
+            GroupInfo info;
+            info.layerIndexes = drawingGroupInfos.at(j).layerIndexes;
+            info.maskIndexes = drawingGroupInfos.at(j).maskIndexes;
+            infos.push_back(info);
+        }
+        group.groupInfos = infos;
+        groups.push_back(group);
+    }
+    skSymbol.symbolInfo_.renderGroups = groups;
+    return true;
 }
 } // namespace Drawing
 } // namespace Rosen

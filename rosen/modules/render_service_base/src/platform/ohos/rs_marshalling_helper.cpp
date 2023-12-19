@@ -138,6 +138,7 @@ static inline sk_sp<T> sk_reinterpret_cast(sk_sp<P> ptr)
 }
 } // namespace
 
+#ifndef USE_ROSEN_DRAWING
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const GroupInfo& val)
 {
     if (!MarshallingVec(parcel, val.layerIndexes)) {
@@ -346,6 +347,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SColor& val)
         Unmarshalling(parcel, val.b);
     return isok;
 }
+#endif
 
 #ifndef USE_ROSEN_DRAWING
 // SkData
@@ -2779,6 +2781,16 @@ bool RSMarshallingHelper::GetUseSharedMem(std::thread::id tid)
         return g_useSharedMem;
     }
     return true;
+}
+
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSRenderPropertyBase>& val)
+{
+    return RSRenderPropertyBase::Marshalling(parcel, val);
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSRenderPropertyBase>& val)
+{
+    return RSRenderPropertyBase::Unmarshalling(parcel, val);
 }
 } // namespace Rosen
 } // namespace OHOS

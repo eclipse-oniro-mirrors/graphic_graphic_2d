@@ -73,7 +73,7 @@ public:
     Pixmap GetPixmap() const;
     bool TryAllocPixels(const ImageInfo& info);
     template<typename T>
-    const std::shared_ptr<T> GetImpl() const
+    T* GetImpl() const
     {
         return bmpImplPtr->DowncastingTo<T>();
     }

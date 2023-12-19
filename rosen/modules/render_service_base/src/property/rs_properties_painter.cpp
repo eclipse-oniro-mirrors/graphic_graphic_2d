@@ -1079,7 +1079,7 @@ std::shared_ptr<Drawing::ShaderEffect> RSPropertiesPainter::MakeHorizontalMeanBl
         {
             half4 sum = vec4(0.0);
             half div = 0;
-            for (half x = -30.0; x < 30.0; x += 1.0) {
+            for (half x = -50.0; x < 50.0; x += 1.0) {
                 if (x > radius) {
                     break;
                 }
@@ -1131,7 +1131,7 @@ std::shared_ptr<Drawing::ShaderEffect> RSPropertiesPainter::MakeVerticalMeanBlur
         {
             half4 sum = vec4(0.0);
             half div = 0;
-            for (half y = -30.0; y < 30.0; y += 1.0) {
+            for (half y = -50.0; y < 50.0; y += 1.0) {
                 if (y > radius) {
                     break;
                 }
@@ -1367,7 +1367,7 @@ void RSPropertiesPainter::DrawLinearGradientBlur(Drawing::Surface* surface, RSPa
         return;
     }
 
-    if (RSSystemProperties::GetMaskLinearBlurEnabled()) {
+    if (RSSystemProperties::GetMaskLinearBlurEnabled() && para->useMaskAlgorithm) {
         // use faster LinearGradientBlur if valid
         RS_OPTIONAL_TRACE_NAME("DrawLinearGradientBlur_mask");
         if (para->LinearGradientBlurFilter_ == nullptr) {
@@ -1854,6 +1854,63 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
     filter->PostProcess(canvas);
 }
 
+void RSPropertiesPainter::DrawBackgroundImageAsEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas)
+{
+    RS_TRACE_FUNC();
+    auto boundsRect = properties.GetBoundsRect();
+
+    // Optional use cacheManager to draw filter, cache is valid, skip drawing background image
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
+    if (auto& cacheManager = properties.GetFilterCacheManager(false);
+        cacheManager != nullptr && !canvas.GetDisableFilterCache() && cacheManager->IsCacheValid()) {
+        // no need to validate parameters, the caller already do it
+#ifndef USE_ROSEN_DRAWING
+        canvas.clipRect(RSPropertiesPainter::Rect2SkRect(boundsRect));
+        auto filter = std::static_pointer_cast<RSSkiaFilter>(properties.GetBackgroundFilter());
+#else
+        canvas.ClipRect(RSPropertiesPainter::Rect2DrawingRect(boundsRect));
+        auto filter = std::static_pointer_cast<RSDrawingFilter>(properties.GetBackgroundFilter());
+#endif
+        // extract cache data from cacheManager
+        auto&& data = cacheManager->GeneratedCachedEffectData(canvas, filter);
+        canvas.SetEffectData(data);
+        return;
+    }
+#endif
+
+    auto surface = canvas.GetSurface();
+    if (!surface) {
+        ROSEN_LOGE("RSPropertiesPainter::DrawBackgroundImageAsEffect surface null");
+        return;
+    }
+    // create offscreen surface with same size as current surface (PLANNING: use bounds size instead)
+#ifndef USE_ROSEN_DRAWING
+    auto offscreenSurface = surface->makeSurface(surface->width(), surface->height());
+#else
+    auto offscreenSurface = surface->MakeSurface(canvas.GetWidth(), canvas.GetHeight());
+#endif
+    auto offscreenCanvas = std::make_shared<RSPaintFilterCanvas>(offscreenSurface.get());
+    // copy matrix and other properties to offscreen canvas
+#ifndef USE_ROSEN_DRAWING
+    offscreenCanvas->setMatrix(canvas.getTotalMatrix());
+#else
+    offscreenCanvas->SetMatrix(canvas.GetTotalMatrix());
+#endif
+    offscreenCanvas->CopyConfiguration(canvas);
+    // draw background onto offscreen canvas
+    RSPropertiesPainter::DrawBackground(properties, *offscreenCanvas);
+    // generate effect data
+#ifndef USE_ROSEN_DRAWING
+    RSPropertiesPainter::DrawBackgroundEffect(
+        properties, *offscreenCanvas, SkIRect::MakeWH(boundsRect.GetWidth(), boundsRect.GetHeight()));
+#else
+    RSPropertiesPainter::DrawBackgroundEffect(
+        properties, *offscreenCanvas, Drawing::RectI(0, 0, boundsRect.GetWidth(), boundsRect.GetHeight()));
+#endif
+    // extract effect data from offscreen canvas and set to canvas
+    canvas.SetEffectData(offscreenCanvas->GetEffectData());
+}
+
 #ifndef USE_ROSEN_DRAWING
 void RSPropertiesPainter::DrawBackgroundEffect(
     const RSProperties& properties, RSPaintFilterCanvas& canvas, const SkIRect& rect)
@@ -1945,6 +2002,7 @@ void RSPropertiesPainter::DrawBackgroundEffect(
 
 void RSPropertiesPainter::ApplyBackgroundEffectFallback(const RSProperties& properties, RSPaintFilterCanvas& canvas)
 {
+    RS_TRACE_FUNC();
     auto parentNode = properties.backref_.lock();
     while (parentNode && !parentNode->IsInstanceOf<RSEffectRenderNode>()) {
         parentNode = parentNode->GetParent().lock();
@@ -1971,7 +2029,7 @@ void RSPropertiesPainter::ApplyBackgroundEffect(const RSProperties& properties, 
         ApplyBackgroundEffectFallback(properties, canvas);
         return;
     }
-    RS_TRACE_NAME("ApplyBackgroundEffect");
+    RS_TRACE_FUNC();
 #ifndef USE_ROSEN_DRAWING
     SkAutoCanvasRestore acr(&canvas, true);
     if (RSSystemProperties::GetPropertyDrawableEnable()) {

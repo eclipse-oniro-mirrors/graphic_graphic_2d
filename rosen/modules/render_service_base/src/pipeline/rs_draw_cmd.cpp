@@ -1186,8 +1186,7 @@ void SurfaceBufferOpItem::Clear() const noexcept
     }
 #endif
 #ifdef RS_ENABLE_GL
-    if (RSSystemProperties::GetGpuApiType() != GpuApiType::VULKAN &&
-        RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
         if (texId_ != 0U) {
             glDeleteTextures(1, &texId_);
         }
@@ -2534,22 +2533,21 @@ void RSExtendImageObject::Playback(Drawing::Canvas& canvas, const Drawing::Rect&
 #if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     std::shared_ptr<Media::PixelMap> pixelmap = rsImage_->GetPixelMap();
     if (pixelmap != nullptr && pixelmap->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC) {
-        std::shared_ptr<Drawing::Image> dmaImage = nullptr;
 #if defined(RS_ENABLE_GL)
-        if (RSSystemProperties::GetGpuApiType() != GpuApiType::VULKAN &&
-            RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
-            dmaImage = GetDrawingImageFromSurfaceBuffer(canvas,
-                reinterpret_cast<SurfaceBuffer*>(pixelmap->GetFd()));
+        if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
+            if (GetDrawingImageFromSurfaceBuffer(canvas, reinterpret_cast<SurfaceBuffer*>(pixelmap->GetFd()))) {
+                rsImage_->SetDmaImage(image_);
+            }
         }
 #endif
 #if defined(RS_ENABLE_VK)
         if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
             RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
-            dmaImage = MakeFromTextureForVK(canvas,
-                reinterpret_cast<SurfaceBuffer*>(pixelmap->GetFd()));
+            if (MakeFromTextureForVK(canvas, reinterpret_cast<SurfaceBuffer*>(pixelmap->GetFd()))) {
+                rsImage_->SetDmaImage(image_);
+            }
         }
 #endif
-        rsImage_->SetDmaImage(dmaImage);
     } else {
         if (pixelmap && pixelmap->IsAstc()) {
             const void* data = pixelmap->GetWritablePixels();
@@ -2582,23 +2580,21 @@ RSExtendImageObject *RSExtendImageObject::Unmarshalling(Parcel &parcel)
 }
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
-std::shared_ptr<Drawing::Image> RSExtendImageObject::GetDrawingImageFromSurfaceBuffer(
-    Drawing::Canvas& canvas, SurfaceBuffer* surfaceBuffer) const
+bool RSExtendImageObject::GetDrawingImageFromSurfaceBuffer(Drawing::Canvas& canvas, SurfaceBuffer* surfaceBuffer)
 {
-    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
-        return nullptr;
+    if (RSSystemProperties::GetGpuApiType() != GpuApiType::OPENGL) {
+        return false;
     }
     if (surfaceBuffer == nullptr) {
         RS_LOGE("GetDrawingImageFromSurfaceBuffer surfaceBuffer is nullptr");
-        return nullptr;
+        return false;
     }
     if (nativeWindowBuffer_ == nullptr) {
         sptr<SurfaceBuffer> sfBuffer(surfaceBuffer);
         nativeWindowBuffer_ = CreateNativeWindowBufferFromSurfaceBuffer(&sfBuffer);
         if (!nativeWindowBuffer_) {
             RS_LOGE("GetDrawingImageFromSurfaceBuffer create native window buffer fail");
-            return nullptr;
+            return false;
         }
     }
     EGLint attrs[] = {
@@ -2612,7 +2608,7 @@ std::shared_ptr<Drawing::Image> RSExtendImageObject::GetDrawingImageFromSurfaceB
         eglImage_ = eglCreateImageKHR(disp, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_OHOS, nativeWindowBuffer_, attrs);
         if (eglImage_ == EGL_NO_IMAGE_KHR) {
             RS_LOGE("%{public}s create egl image fail %{public}d", __func__, eglGetError());
-            return nullptr;
+            return false;
         }
         tid_ = gettid();
     }
@@ -2638,31 +2634,36 @@ std::shared_ptr<Drawing::Image> RSExtendImageObject::GetDrawingImageFromSurfaceB
 
     Drawing::BitmapFormat bitmapFormat = {
         Drawing::ColorType::COLORTYPE_RGBA_8888, Drawing::AlphaType::ALPHATYPE_PREMUL };
-    auto image = std::make_shared<Drawing::Image>();
-    if (!image->BuildFromTexture(*(canvas.GetGPUContext()), externalTextureInfo,
+    if (!image_) {
+        image_ = std::make_shared<Drawing::Image>();
+    }
+    if (!image_->BuildFromTexture(*(canvas.GetGPUContext()), externalTextureInfo,
         Drawing::TextureOrigin::TOP_LEFT, bitmapFormat,
         std::make_shared<Drawing::ColorSpace>(Drawing::ColorSpace::ColorSpaceType::SRGB))) {
         RS_LOGE("BuildFromTexture failed");
-        return nullptr;
+        return false;
     }
-    return image;
+    return true;
 }
 #endif
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-std::shared_ptr<Drawing::Image> RSExtendImageObject::MakeFromTextureForVK(Drawing::Canvas& canvas,
-    SurfaceBuffer *surfaceBuffer)
+bool RSExtendImageObject::MakeFromTextureForVK(Drawing::Canvas& canvas, SurfaceBuffer *surfaceBuffer)
 {
+    if (RSSystemProperties::GetGpuApiType() != GpuApiType::VULKAN &&
+        RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
+        return false;
+    }
     if (surfaceBuffer == nullptr) {
         RS_LOGE("MakeFromTextureForVK surfaceBuffer is nullptr");
-        return nullptr;
+        return false;
     }
     if (nativeWindowBuffer_ == nullptr) {
         sptr<SurfaceBuffer> sfBuffer(surfaceBuffer);
         nativeWindowBuffer_ = CreateNativeWindowBufferFromSurfaceBuffer(&sfBuffer);
         if (!nativeWindowBuffer_) {
             RS_LOGE("MakeFromTextureForVK create native window buffer fail");
-            return nullptr;
+            return false;
         }
     }
     if (!backendTexture_.IsValid()) {
@@ -2670,61 +2671,64 @@ std::shared_ptr<Drawing::Image> RSExtendImageObject::MakeFromTextureForVK(Drawin
             surfaceBuffer->GetWidth(), surfaceBuffer->GetHeight());
         if (backendTexture_.IsValid()) {
             auto vkTextureInfo = backendTexture_.GetTextureInfo().GetVKTextureInfo();
-            cleanupHelper_ = new NativeBufferUtils::VulkanCleanupHelper(RsVulkanContext::GetSingleton(),
+            cleanUpHelper_ = new NativeBufferUtils::VulkanCleanupHelper(RsVulkanContext::GetSingleton(),
                 vkTextureInfo->vkImage, vkTextureInfo->vkAlloc.memory);
         } else {
-            return nullptr;
+            return false;
         }
         tid_ = gettid();
     }
-    auto imageInfo = std::make_shared<Draiwng::Image>();
+    if (!image_) {
+        image_ = std::make_shared<Drawing::Image>();
+    }
     auto vkTextureInfo = backendTexture_.GetTextureInfo().GetVKTextureInfo();
     Drawing::ColorType colorType = GetColorTypeFromVKFormat(vkTextureInfo->format);
     Drawing::BitmapFormat bitmapFormat = { colorType, Drawing::AlphaType::ALPHATYPE_PREMUL };
-    if (!imageInfo->BuildFromTexture(*canvas.GetGPUContext(), backendTexture_.GetTextureInfo(),
+    if (!image_->BuildFromTexture(*canvas.GetGPUContext(), backendTexture_.GetTextureInfo(),
         Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, nullptr,
         NativeBufferUtils::DeleteVkImage,
-        cleanupHelper_->Ref())) {
+        cleanUpHelper_->Ref())) {
         RS_LOGE("MakeFromTextureForVK build image failed");
-        return nullptr;
+        return false;
     }
-    return imageInfo;
+    return true;
 }
 #endif
 
 RSExtendImageObject::~RSExtendImageObject()
 {
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL)
-    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
-        return;
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
+        RSTaskDispatcher::GetInstance().PostTask(tid_, [texId = texId_,
+                                                        nativeWindowBuffer = nativeWindowBuffer_,
+                                                        eglImage = eglImage_]() {
+            if (texId != 0U) {
+                glBindTexture(GL_TEXTURE_2D, 0);
+                glDeleteTextures(1, &texId);
+            }
+            if (nativeWindowBuffer != nullptr) {
+                DestroyNativeWindowBuffer(nativeWindowBuffer);
+            }
+            if (eglImage != EGL_NO_IMAGE_KHR) {
+                auto disp = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+                eglDestroyImageKHR(disp, eglImage);
+            }
+        });
     }
-    RSTaskDispatcher::GetInstance().PostTask(tid_, [texId = texId_,
-                                                    nativeWindowBuffer = nativeWindowBuffer_,
-                                                    eglImage = eglImage_]() {
-        if (texId != 0U) {
-            glBindTexture(GL_TEXTURE_2D, 0);
-            glDeleteTextures(1, &texId);
-        }
-        if (nativeWindowBuffer != nullptr) {
-            DestroyNativeWindowBuffer(nativeWindowBuffer);
-        }
-        if (eglImage != EGL_NO_IMAGE_KHR) {
-            auto disp = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-            eglDestroyImageKHR(disp, eglImage);
-        }
-    });
 #endif
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-    RSTaskDispatcher::GetInstance().PostTask(tid_, [nativeWindowBuffer = nativeWindowBuffer_,
-        cleanupHelper = cleanupHelper_]() {
-        if (nativeWindowBuffer != nullptr) {
-            DestroyNativeWindowBuffer(nativeWindowBuffer);
-        }
-        if (cleanupHelper != nullptr) {
-            NativeBufferUtils::DeleteVkImage(cleanupHelper);
-        }
-    });
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+        RSTaskDispatcher::GetInstance().PostTask(tid_, [nativeWindowBuffer = nativeWindowBuffer_,
+            cleanupHelper = cleanupHelper_]() {
+            if (nativeWindowBuffer != nullptr) {
+                DestroyNativeWindowBuffer(nativeWindowBuffer);
+            }
+            if (cleanupHelper != nullptr) {
+                NativeBufferUtils::DeleteVkImage(cleanupHelper);
+            }
+        });
+    }
 #endif
 }
 

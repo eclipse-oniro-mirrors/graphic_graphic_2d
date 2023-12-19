@@ -50,6 +50,36 @@ void RSRenderModifierTest::SetUp() {}
 void RSRenderModifierTest::TearDown() {}
 
 /**
+ * @tc.name: RSGeometryTransRenderModifier
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderModifierTest, RSGeometryTransRenderModifier, TestSize.Level1)
+{
+#ifndef USE_ROSEN_DRAWING
+    auto prop = std::make_shared<RSRenderProperty<SkMatrix>>();
+#else
+    auto prop = std::make_shared<RSRenderProperty<Drawing::Matrix>>();
+#endif
+    auto modifier = std::make_shared<RSGeometryTransRenderModifier>(prop);
+    RSProperties properties;
+    RSModifierContext context(properties);
+    PropertyId id = 1;
+    auto rsRenderPropertyBase = std::make_shared<RSRenderPropertyBase>(id);
+    ASSERT_TRUE(modifier != nullptr);
+    modifier->Apply(context);
+    modifier->Update(rsRenderPropertyBase, false);
+    ASSERT_TRUE(modifier->GetProperty() == prop);
+    ASSERT_TRUE(modifier->GetPropertyId() == 0);
+    modifier->SetType(RSModifierType::BOUNDS);
+    ASSERT_TRUE(modifier->GetType() == RSModifierType::BOUNDS);
+
+    MessageParcel parcel;
+    ASSERT_TRUE(modifier->Marshalling(parcel));
+    ASSERT_TRUE(RSGeometryTransRenderModifier::Unmarshalling(parcel) != nullptr);
+}
+
+/**
  * @tc.name: LifeCycle001
  * @tc.desc:
  * @tc.type:FUNC

@@ -177,7 +177,7 @@ public:
      * @brief  Gets GPU context of the GPU surface associated with Canvas.
      */
 #ifdef ACE_ENABLE_GPU
-    virtual std::shared_ptr<GPUContext> GetGPUContext() const;
+    virtual std::shared_ptr<GPUContext> GetGPUContext();
 #endif
 
     /*
@@ -250,6 +250,9 @@ public:
     // text
     virtual void DrawTextBlob(const TextBlob* blob, const scalar x, const scalar y);
 
+    // symbol
+    virtual void DrawSymbol(const DrawingHMSymbolData& symbol, Point locate);
+
     // clip
     /*
      * @brief              Replace the clipping area with the intersection or difference between the
@@ -277,6 +280,8 @@ public:
      * @param doAntiAlias  true if clip is to be anti-aliased. The default value is false.
      */
     virtual void ClipRoundRect(const RoundRect& roundRect, ClipOp op = ClipOp::INTERSECT, bool doAntiAlias = false);
+
+    virtual void ClipRoundRect(const Rect& rect, std::vector<Point>& pts, bool doAntiAlias = false);
 
     /*
      * @brief              Replace the clipping area with the intersection or difference of the
@@ -354,15 +359,17 @@ public:
     // paint
     virtual CoreCanvas& AttachPen(const Pen& pen);
     virtual CoreCanvas& AttachBrush(const Brush& brush);
+    virtual CoreCanvas& AttachPaint(const Paint& paint);
     virtual CoreCanvas& DetachPen();
     virtual CoreCanvas& DetachBrush();
+    virtual CoreCanvas& DetachPaint();
 
     virtual bool isHighContrastEnabled() const;
     virtual Drawing::CacheType GetCacheType() const;
     virtual Drawing::Surface* GetSurface() const;
 
     template<typename T>
-    const std::shared_ptr<T> GetImpl() const
+    T* GetImpl() const
     {
         return impl_->DowncastingTo<T>();
     }
@@ -370,9 +377,15 @@ public:
 
 protected:
     CoreCanvas(int32_t width, int32_t height);
+    Paint paintBrush_;
+    Paint paintPen_;
 
 private:
+    void AttachPaint();
     std::shared_ptr<CoreCanvasImpl> impl_;
+#ifdef ACE_ENABLE_GPU
+    std::shared_ptr<GPUContext> gpuContext_;
+#endif
 };
 } // namespace Drawing
 } // namespace Rosen

@@ -15,16 +15,14 @@
 
 #ifndef CORECANVASIMPL_H
 #define CORECANVASIMPL_H
-
 #include "base_impl.h"
 #include "securec.h"
 
 #include "include/core/SkRefCnt.h"
 
-#include "draw/brush.h"
 #include "draw/clip.h"
 #include "draw/path.h"
-#include "draw/pen.h"
+#include "draw/paint.h"
 #include "draw/shadow.h"
 #include "effect/filter.h"
 #include "image/bitmap.h"
@@ -34,6 +32,7 @@
 #endif
 #include "image/image.h"
 #include "image/picture.h"
+#include "text/hm_symbol.h"
 #include "text/text.h"
 #include "text/text_blob.h"
 #include "utils/matrix.h"
@@ -125,10 +124,14 @@ public:
     // text
     virtual void DrawTextBlob(const TextBlob* blob, const scalar x, const scalar y) = 0;
 
+    // symbol
+    virtual void DrawSymbol(const DrawingHMSymbolData& symbol, Point locate) = 0;
+
     // clip
     virtual void ClipRect(const Rect& rect, ClipOp op, bool doAntiAlias = false) = 0;
     virtual void ClipIRect(const RectI& rect, ClipOp op = ClipOp::INTERSECT) = 0;
     virtual void ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias = false) = 0;
+    virtual void ClipRoundRect(const Rect& rect, std::vector<Point>& pts, bool doAntiAlias = false) = 0;
     virtual void ClipPath(const Path& path, ClipOp op, bool doAntiAlias = false) = 0;
     virtual void ClipRegion(const Region& region, ClipOp op = ClipOp::INTERSECT) = 0;
     virtual bool IsClipEmpty() = 0;
@@ -154,10 +157,7 @@ public:
     virtual void Discard() = 0;
 
     // paint
-    virtual void AttachPen(const Pen& pen) = 0;
-    virtual void AttachBrush(const Brush& brush) = 0;
-    virtual void DetachPen() = 0;
-    virtual void DetachBrush() = 0;
+    virtual void AttachPaint(const Paint& paint) = 0;
 };
 } // namespace Drawing
 } // namespace Rosen

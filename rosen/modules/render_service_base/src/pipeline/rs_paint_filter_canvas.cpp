@@ -58,7 +58,7 @@ uint32_t RSPaintFilterCanvasBase::GetSaveCount() const
 }
 
 #ifdef ACE_ENABLE_GPU
-std::shared_ptr<Drawing::GPUContext> RSPaintFilterCanvasBase::GetGPUContext() const
+std::shared_ptr<Drawing::GPUContext> RSPaintFilterCanvasBase::GetGPUContext()
 {
     return canvas_ != nullptr ? canvas_->GetGPUContext() : nullptr;
 }
@@ -538,6 +538,22 @@ void RSPaintFilterCanvasBase::ClipRoundRect(const RoundRect& roundRect, ClipOp o
 #endif
 }
 
+void RSPaintFilterCanvasBase::ClipRoundRect(const Drawing::Rect& rect,
+    std::vector<Drawing::Point>& pts, bool doAntiAlias)
+{
+#ifdef ENABLE_RECORDING_DCL
+    for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
+        if ((*iter) != nullptr) {
+            (*iter)->ClipRoundRect(rect, pts, doAntiAlias);
+        }
+    }
+#else
+    if (canvas_ != nullptr) {
+        canvas_->ClipRoundRect(rect, pts, doAntiAlias);
+    }
+#endif
+}
+
 void RSPaintFilterCanvasBase::ClipPath(const Path& path, ClipOp op, bool doAntiAlias)
 {
 #ifdef ENABLE_RECORDING_DCL
@@ -728,7 +744,14 @@ void RSPaintFilterCanvasBase::SaveLayer(const SaveLayerOps& saveLayerRec)
     }
 #else
     if (canvas_ != nullptr) {
-        canvas_->SaveLayer(saveLayerRec);
+        Brush brush;
+        if (saveLayerRec.GetBrush() != nullptr) {
+            brush = *saveLayerRec.GetBrush();
+            OnFilterWithBrush(brush);
+        }
+        SaveLayerOps slo(saveLayerRec.GetBounds(), &brush,
+            saveLayerRec.GetImageFilter(), saveLayerRec.GetSaveLayerFlags());
+        canvas_->SaveLayer(slo);
     }
 #endif
 }
@@ -795,6 +818,22 @@ CoreCanvas& RSPaintFilterCanvasBase::AttachBrush(const Brush& brush)
     return *this;
 }
 
+CoreCanvas& RSPaintFilterCanvasBase::AttachPaint(const Drawing::Paint& paint)
+{
+#ifdef ENABLE_RECORDING_DCL
+    for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
+        if ((*iter) != nullptr) {
+            (*iter)->AttachPaint(brush);
+        }
+    }
+#else
+    if (canvas_ != nullptr) {
+        canvas_->AttachPaint(paint);
+    }
+#endif
+    return *this;
+}
+
 CoreCanvas& RSPaintFilterCanvasBase::DetachPen()
 {
 #ifdef ENABLE_RECORDING_DCL
@@ -822,6 +861,22 @@ CoreCanvas& RSPaintFilterCanvasBase::DetachBrush()
 #else
     if (canvas_ != nullptr) {
         canvas_->DetachBrush();
+    }
+#endif
+    return *this;
+}
+
+CoreCanvas& RSPaintFilterCanvasBase::DetachPaint()
+{
+#ifdef ENABLE_RECORDING_DCL
+    for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
+        if ((*iter) != nullptr) {
+            (*iter)->DetachPaint();
+        }
+    }
+#else
+    if (canvas_ != nullptr) {
+        canvas_->DetachPaint();
     }
 #endif
     return *this;
@@ -936,9 +991,34 @@ CoreCanvas& RSPaintFilterCanvas::AttachBrush(const Brush& brush)
     return *this;
 }
 
+CoreCanvas& RSPaintFilterCanvas::AttachPaint(const Drawing::Paint& paint)
+{
+    if (canvas_ == nullptr) {
+        return *this;
+    }
+
+    Paint p(paint);
+    if (p.GetColor() == 0x00000001) { // foreground color and foreground color strategy identification
+        p.SetColor(envStack_.top().envForegroundColor_.AsArgbInt());
+    }
+
+    // use alphaStack_.top() to multiply alpha
+    if (alphaStack_.top() < 1 && alphaStack_.top() > 0) {
+        p.SetAlpha(p.GetAlpha() * alphaStack_.top());
+    }
+
+    canvas_->AttachPaint(p);
+    return *this;
+}
+
 bool RSPaintFilterCanvas::OnFilter() const
 {
     return alphaStack_.top() > 0.f;
+}
+
+Drawing::Canvas* RSPaintFilterCanvas::GetRecordingCanvas() const
+{
+    return recordingState_ ? canvas_ : nullptr;
 }
 
 #endif // USE_ROSEN_DRAWING

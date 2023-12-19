@@ -352,11 +352,14 @@ public:
     int32_t CalcExpectedFrameRate(const std::string& scene, float speed);
 
     void SetOutOfParent(OutOfParentType outOfParent);
+    using BoundsChangedCallback = std::function<void (const Rosen::Vector4f&)>;
+    virtual void SetBoundsChangedCallback(BoundsChangedCallback callback){};
 protected:
-    explicit RSNode(bool isRenderServiceNode);
-    explicit RSNode(bool isRenderServiceNode, NodeId id);
+    explicit RSNode(bool isRenderServiceNode, bool isTextureExportNode = false);
+    explicit RSNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode = false);
 
     bool isRenderServiceNode_;
+    bool isTextureExportNode_ = false;
     bool skipDestroyCommandInDestructor_ = false;
 
     bool drawContentLast_ = false;
@@ -386,7 +389,6 @@ private:
     void FallbackAnimationsToRoot();
     void AddAnimationInner(const std::shared_ptr<RSAnimation>& animation);
     void RemoveAnimationInner(const std::shared_ptr<RSAnimation>& animation);
-    void FinishAnimationByProperty(const PropertyId& id);
     void CancelAnimationByProperty(const PropertyId& id);
     const std::shared_ptr<RSModifier> GetModifier(const PropertyId& propertyId);
     virtual void OnBoundsSizeChanged() const {};
@@ -423,22 +425,23 @@ private:
     FrameRateRange nodeRange_ = { 0, 0, 0 };
     std::mutex animationMutex_;
 
-    friend class RSAnimation;
-    friend class RSCurveAnimation;
-    friend class RSExtendedModifier;
-    friend class RSGeometryTransModifier;
-    friend class RSImplicitAnimator;
-    friend class RSInterpolatingSpringAnimation;
-    friend class RSKeyframeAnimation;
-    friend class RSModifier;
-    friend class RSModifierExtractor;
-    friend class RSPathAnimation;
-    friend class RSPropertyAnimation;
-    friend class RSPropertyBase;
-    friend class RSShowingPropertiesFreezer;
-    friend class RSSpringAnimation;
-    friend class RSTransition;
     friend class RSUIDirector;
+    friend class RSTransition;
+    friend class RSSpringAnimation;
+    friend class RSShowingPropertiesFreezer;
+    friend class RSPropertyBase;
+    friend class RSPropertyAnimation;
+    friend class RSPathAnimation;
+    friend class RSModifierExtractor;
+    friend class RSModifier;
+    friend class RSKeyframeAnimation;
+    friend class RSInterpolatingSpringAnimation;
+    friend class RSImplicitCancelAnimationParam;
+    friend class RSImplicitAnimator;
+    friend class RSGeometryTransModifier;
+    friend class RSExtendedModifier;
+    friend class RSCurveAnimation;
+    friend class RSAnimation;
     template<typename T>
     friend class RSProperty;
     template<typename T>

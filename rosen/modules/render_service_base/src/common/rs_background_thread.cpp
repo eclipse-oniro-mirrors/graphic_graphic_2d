@@ -15,6 +15,7 @@
 
 #include "common/rs_background_thread.h"
 #include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
 #if defined(RS_ENABLE_UNI_RENDER)
 #ifdef RS_ENABLE_GL
 #include "render_context/render_context.h"
@@ -163,7 +164,7 @@ std::shared_ptr<Drawing::GPUContext> RSBackgroundThread::CreateShareGPUContext()
         RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
         auto gpuContext = std::make_shared<Drawing::GPUContext>();
         if (gpuContext == nullptr) {
-            RS_LOGE("BuildFromVK fail")
+            RS_LOGE("BuildFromVK fail");
             return nullptr;
         }
         CreateShareEglContext();
@@ -187,7 +188,7 @@ std::shared_ptr<Drawing::GPUContext> RSBackgroundThread::CreateShareGPUContext()
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
         auto gpuContext = RsVulkanContext::GetSingleton().CreateDrawingContext();
         if (gpuContext == nullptr) {
-            RS_LOGE("BuildFromVK fail")
+            RS_LOGE("BuildFromVK fail");
             return nullptr;
         }
         return gpuContext;

@@ -75,12 +75,20 @@ RSParallelSubThread::~RSParallelSubThread()
     RS_LOGI("~RSParallelSubThread():%{public}d", threadIndex_);
 }
 
+void RSParallelSubThread::MainLoopHandlePrepareTask()
+{
+    RS_TRACE_BEGIN("SubThreadCostPrepare[" + std::to_string(threadIndex_) + "]");
+    StartPrepare();
+    Prepare();
+    RSParallelRenderManager::Instance()->SubMainThreadNotify(threadIndex_);
+    RS_TRACE_END();
+}
+
 void RSParallelSubThread::MainLoop()
 {
     InitSubThread();
 #ifdef RS_ENABLE_GL
-    if (RSSystemProperties::GetGpuApiType() != GpuApiType::VULKAN &&
-        RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
         CreateShareEglContext();
     }
 #endif
@@ -93,11 +101,7 @@ void RSParallelSubThread::MainLoop()
         RSParallelRenderManager::Instance()->CommitSurfaceNum(50);
         switch (RSParallelRenderManager::Instance()->GetTaskType()) {
             case TaskType::PREPARE_TASK: {
-                RS_TRACE_BEGIN("SubThreadCostPrepare[" + std::to_string(threadIndex_) + "]");
-                StartPrepare();
-                Prepare();
-                RSParallelRenderManager::Instance()->SubMainThreadNotify(threadIndex_);
-                RS_TRACE_END();
+                MainLoopHandlePrepareTask();
                 break;
             }
             case TaskType::CALC_COST_TASK: {
@@ -155,8 +159,7 @@ void RSParallelSubThread::InitSubThread()
 void RSParallelSubThread::CreateShareEglContext()
 {
 #ifdef RS_ENABLE_GL
-    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+    if (RSSystemProperties::GetGpuApiType() != GpuApiType::OPENGL) {
         return;
     }
     if (renderContext_ == nullptr) {
@@ -281,8 +284,7 @@ void RSParallelSubThread::Render()
     auto physicalGeoPtr = (
         physicalDisplayNode->GetRenderProperties().GetBoundsGeometry());
 #ifdef RS_ENABLE_GL
-    if (RSSystemProperties::GetGpuApiType() != GpuApiType::VULKAN &&
-        RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
         if (canvas_ == nullptr) {
             RS_LOGE("Canvas is nullptr");
             return;
@@ -491,8 +493,7 @@ bool RSParallelSubThread::WaitReleaseFence()
 void RSParallelSubThread::CreateResource()
 {
 #ifdef RS_ENABLE_GL
-    if (RSSystemProperties::GetGpuApiType() != GpuApiType::VULKAN &&
-        RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
         int width, height;
         RSParallelRenderManager::Instance()->GetFrameSize(width, height);
         if (width != surfaceWidth_ || height != surfaceHeight_) {

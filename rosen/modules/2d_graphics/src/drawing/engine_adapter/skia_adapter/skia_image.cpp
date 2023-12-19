@@ -194,11 +194,13 @@ bool SkiaImage::BuildFromTexture(GPUContext& gpuContext, const TextureInfo& info
         }
 
         skiaImage_ = SkImage::MakeFromTexture(grContext_.get(), backendTexture,
-            SkiaTextureInfo::ConvertToGrSurfaceOrigin(origin), SkiaImageInfo::ConvertToSkColorType(bitmapFormat.colorType),
+            SkiaTextureInfo::ConvertToGrSurfaceOrigin(origin),
+            SkiaImageInfo::ConvertToSkColorType(bitmapFormat.colorType),
             SkiaImageInfo::ConvertToSkAlphaType(bitmapFormat.alphaType), skColorSpace, deleteFunc, cleanupHelper);
     } else {
         skiaImage_ = SkImage::MakeFromTexture(grContext_.get(),  SkiaTextureInfo::ConvertToGrBackendTexture(info),
-            SkiaTextureInfo::ConvertToGrSurfaceOrigin(origin), SkiaImageInfo::ConvertToSkColorType(bitmapFormat.colorType),
+            SkiaTextureInfo::ConvertToGrSurfaceOrigin(origin),
+            SkiaImageInfo::ConvertToSkColorType(bitmapFormat.colorType),
             SkiaImageInfo::ConvertToSkAlphaType(bitmapFormat.alphaType), skColorSpace);
     }
 #else
@@ -266,9 +268,14 @@ BackendTexture SkiaImage::GetBackendTexture(bool flushPendingGrContextIO, Textur
     auto backendTexture = BackendTexture(true);
     SetGrBackendTexture(skBackendTexture);
 #ifdef RS_ENABLE_VK
-    TextureInfo info;
-    SkiaTextureInfo::ConvertToVKTexture(skBackendTexture, info);
-    backendTexture.SetTextureInfo(info);
+    if (SystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        SystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+        TextureInfo info;
+        SkiaTextureInfo::ConvertToVKTexture(skBackendTexture, info);
+        backendTexture.SetTextureInfo(info);
+    } else {
+        backendTexture.SetTextureInfo(SkiaTextureInfo::ConvertToTextureInfo(skBackendTexture));
+    }
 #else
     backendTexture.SetTextureInfo(SkiaTextureInfo::ConvertToTextureInfo(skBackendTexture));
 #endif

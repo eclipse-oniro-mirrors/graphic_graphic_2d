@@ -52,7 +52,7 @@ public:
     uint32_t GetSaveCount() const override;
 
 #ifdef ACE_ENABLE_GPU
-    std::shared_ptr<Drawing::GPUContext> GetGPUContext() const override;
+    std::shared_ptr<Drawing::GPUContext> GetGPUContext() override;
 #endif
 
     void DrawPoint(const Drawing::Point& point) override;
@@ -100,6 +100,7 @@ public:
     void ClipIRect(const Drawing::RectI& rect, Drawing::ClipOp op = Drawing::ClipOp::INTERSECT) override;
     void ClipRoundRect(const Drawing::RoundRect& roundRect, Drawing::ClipOp op = Drawing::ClipOp::INTERSECT,
         bool doAntiAlias = false) override;
+    void ClipRoundRect(const Drawing::Rect& rect, std::vector<Drawing::Point>& pts, bool doAntiAlias = false) override;
     void ClipPath(const Drawing::Path& path, Drawing::ClipOp op = Drawing::ClipOp::INTERSECT,
         bool doAntiAlias = false) override;
     void ClipRegion(const Drawing::Region& region, Drawing::ClipOp op = Drawing::ClipOp::INTERSECT) override;
@@ -121,8 +122,10 @@ public:
 
     CoreCanvas& AttachPen(const Drawing::Pen& pen) override;
     CoreCanvas& AttachBrush(const Drawing::Brush& brush) override;
+    CoreCanvas& AttachPaint(const Drawing::Paint& paint) override;
     CoreCanvas& DetachPen() override;
     CoreCanvas& DetachBrush() override;
+    CoreCanvas& DetachPaint() override;
 
 protected:
     virtual bool OnFilter() const = 0;
@@ -234,6 +237,7 @@ public:
 
     CoreCanvas& AttachPen(const Drawing::Pen& pen) override;
     CoreCanvas& AttachBrush(const Drawing::Brush& brush) override;
+    CoreCanvas& AttachPaint(const Drawing::Paint& paint) override;
 #endif
     void SetIsParallelCanvas(bool isParallel);
     bool GetIsParallelCanvas() const;
@@ -282,6 +286,7 @@ public:
     };
     CanvasStatus GetCanvasStatus() const;
     void SetCanvasStatus(const CanvasStatus& status);
+    Drawing::Canvas* GetRecordingCanvas() const;
 #endif
     bool GetRecordingState() const;
     void SetRecordingState(bool flag);

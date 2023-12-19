@@ -38,6 +38,7 @@
 #include "impl_interface/path_impl.h"
 #include "impl_interface/picture_impl.h"
 #include "impl_interface/region_impl.h"
+#include "impl_interface/resource_holder_impl.h"
 #include "impl_interface/runtime_effect_impl.h"
 #include "impl_interface/runtime_shader_builder_impl.h"
 #include "impl_interface/shader_effect_impl.h"
@@ -93,6 +94,7 @@ public:
 #endif
     static std::shared_ptr<MemoryStreamImpl> CreateMemoryStreamImpl();
     static std::shared_ptr<MemoryStreamImpl> CreateMemoryStreamImpl(const void* data, size_t length, bool copyData);
+    static std::shared_ptr<ResourceHolderImpl> CreateResourceHolderImpl();
 };
 } // namespace Drawing
 } // namespace Rosen
