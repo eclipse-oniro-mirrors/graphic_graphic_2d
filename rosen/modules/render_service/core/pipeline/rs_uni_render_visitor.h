@@ -526,13 +526,11 @@ private:
     std::stack<std::unordered_set<NodeId>> curCacheFilterRects_ = {};
     bool forceUpdateFlag_ = false;
 #ifdef ENABLE_RECORDING_DCL
-#ifndef USE_ROSEN_DRAWING
     void tryCapture(float width, float height);
     void endCapture() const;
+#ifndef USE_ROSEN_DRAWING
     std::shared_ptr<RSRecordingCanvas> recordingCanvas_;
 #else
-    void tryCapture(float width, float height);
-    void endCapture() const;
     std::shared_ptr<Drawing::RecordingCanvas> recordingCanvas_;
 #endif
 #endif

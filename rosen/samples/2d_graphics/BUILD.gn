@@ -61,7 +61,8 @@ ohos_executable("drawing_engine_sample") {
         "drawing_engine/drawing_surface/surface_ohos_vulkan.cpp",
         "drawing_engine/vulkan_render_backend.cpp",
       ]
-    } else {
+    }
+    if (graphic_2d_feature_enable_opengl) {
       sources += [
         "drawing_engine/drawing_surface/surface_frame_ohos_gl.cpp",
         "drawing_engine/drawing_surface/surface_ohos_gl.cpp",

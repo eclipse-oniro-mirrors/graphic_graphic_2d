@@ -2824,16 +2824,16 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             }
             if (!isDirtyRegionAlignedEnable_) {
                 for (auto& r : rects) {
-                    uint32_t topAfterFlip = 0;
+                    int32_t topAfterFlip = 0;
 #ifdef RS_ENABLE_VK
                     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
                         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
                         topAfterFlip = r.top_;
                     } else {
-                        topAfterFlip = screenInfo_.GetRotatedHeight() - r.GetBottom();
+                        topAfterFlip = static_cast<int32_t>(screenInfo_.GetRotatedHeight()) - r.GetBottom();
                     }
 #else
-                    topAfterFlip = screenInfo_.GetRotatedHeight() - r.GetBottom();
+                    topAfterFlip = static_cast<int32_t>(screenInfo_.GetRotatedHeight()) - r.GetBottom();
 #endif
 #ifndef USE_ROSEN_DRAWING
                     region.op(SkIRect::MakeXYWH(r.left_, topAfterFlip, r.width_, r.height_), SkRegion::kUnion_Op);
@@ -5411,7 +5411,7 @@ void RSUniRenderVisitor::tryCapture(float width, float height)
     auto renderContext = RSMainThread::Instance()->GetRenderEngine()->GetRenderContext();
     recordingCanvas_->SetGrRecordingContext(renderContext->GetSharedDrGPUContext());
 #endif
-    canvas_->addCanvas(recordingCanvas_.get());
+    canvas_->AddCanvas(recordingCanvas_.get());
     RSRecordingThread::Instance(renderEngine_->GetRenderContext().get()).CheckAndRecording();
 }
 
