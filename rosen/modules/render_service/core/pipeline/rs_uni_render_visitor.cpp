@@ -2431,6 +2431,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 bool parallelComposition = RSMainThread::Instance()->GetParallelCompositionEnabled();
                 if (!parallelComposition) {
                     auto saveCount = canvas_->GetSaveCount();
+                    canvas_->Save();
                     ProcessChildrenForScreenRecordingOptimization(
                         *mirrorNode, mirrorNode->GetRootIdOfCaptureWindow());
                     canvas_->RestoreToCount(saveCount);
@@ -2703,9 +2704,20 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             } else {
                 RS_TRACE_NAME("RSUniRenderVisitor: clipPath");
                 clipPath = true;
+#ifdef RS_ENABLE_VK
+                if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+                    RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+                    canvas_->ClipRegion(region);
+                } else {
+                    Drawing::Path dirtyPath;
+                    region.GetBoundaryPath(&dirtyPath);
+                    canvas_->ClipPath(dirtyPath, Drawing::ClipOp::INTERSECT, true);
+                }
+#else
                 Drawing::Path dirtyPath;
                 region.GetBoundaryPath(&dirtyPath);
                 canvas_->ClipPath(dirtyPath, Drawing::ClipOp::INTERSECT, true);
+#endif
             }
 #endif
         }

@@ -873,7 +873,7 @@ ImageWithParmOpItem::~ImageWithParmOpItem()
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
         RSTaskDispatcher::GetInstance().PostTask(tid_, [nativeWindowBuffer = nativeWindowBuffer_,
-            cleanupHelper = cleanupHelper_]() {
+            cleanupHelper = cleanUpHelper_]() {
             if (nativeWindowBuffer) {
                 DestroyNativeWindowBuffer(nativeWindowBuffer);
             }
@@ -987,7 +987,7 @@ sk_sp<SkImage> ImageWithParmOpItem::GetSkImageFromSurfaceBuffer(SkCanvas& canvas
             if (backendTexture_.isValid()) {
                 GrVkImageInfo imageInfo;
                 backendTexture_.getVkImageInfo(&imageInfo);
-                cleanupHelper_ = new NativeBufferUtils::VulkanCleanupHelper(RsVulkanContext::GetSingleton(),
+                cleanUpHelper_ = new NativeBufferUtils::VulkanCleanupHelper(RsVulkanContext::GetSingleton(),
                     imageInfo.fImage, imageInfo.fAlloc.fMemory);
             } else {
                 return nullptr;
@@ -1000,7 +1000,7 @@ sk_sp<SkImage> ImageWithParmOpItem::GetSkImageFromSurfaceBuffer(SkCanvas& canvas
         auto skImage = SkImage::MakeFromTexture(
             canvas.recordingContext(), backendTexture_, kTopLeft_GrSurfaceOrigin,
             GetSkColorTypeFromVkFormat(imageInfo.fFormat), kPremul_SkAlphaType, SkColorSpace::MakeSRGB(),
-            NativeBufferUtils::DeleteVkImage, cleanupHelper_->Ref());
+            NativeBufferUtils::DeleteVkImage, cleanUpHelper_->Ref());
         return skImage;
     }
 #endif
@@ -2487,6 +2487,10 @@ constexpr int32_t CORNER_SIZE = 4;
 #ifdef RS_ENABLE_VK
 Drawing::ColorType GetColorTypeFromVKFormat(VkFormat vkFormat)
 {
+    if (RSSystemProperties::GetGpuApiType() != GpuApiType::VULKAN &&
+        RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
+        return Drawing::COLORTYPE_RGBA_8888;
+    }
     switch (vkFormat) {
         case VK_FORMAT_R8G8B8A8_UNORM:
             return Drawing::COLORTYPE_RGBA_8888;
@@ -2720,7 +2724,7 @@ RSExtendImageObject::~RSExtendImageObject()
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
         RSTaskDispatcher::GetInstance().PostTask(tid_, [nativeWindowBuffer = nativeWindowBuffer_,
-            cleanupHelper = cleanupHelper_]() {
+            cleanupHelper = cleanUpHelper_]() {
             if (nativeWindowBuffer != nullptr) {
                 DestroyNativeWindowBuffer(nativeWindowBuffer);
             }

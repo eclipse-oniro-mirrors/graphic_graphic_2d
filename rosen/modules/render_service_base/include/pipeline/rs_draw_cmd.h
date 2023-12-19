@@ -392,7 +392,7 @@ private:
 #endif
 #ifdef RS_ENABLE_VK
     mutable GrBackendTexture backendTexture_ = {};
-    mutable NativeBufferUtils::VulkanCleanupHelper* cleanupHelper_ = nullptr;
+    mutable NativeBufferUtils::VulkanCleanupHelper* cleanUpHelper_ = nullptr;
 #endif
     mutable OHNativeWindowBuffer* nativeWindowBuffer_ = nullptr;
     mutable pid_t tid_ = 0;

@@ -450,7 +450,7 @@ void RSPropertiesPainter::GetShadowDirtyRect(RectI& dirtyShadow, const RSPropert
         filter.SetMaskFilter(
             Drawing::MaskFilter::CreateBlurMaskFilter(Drawing::BlurType::NORMAL, properties.GetShadowRadius()));
         brush.SetFilter(filter);
-        if (brush.CanComputeFastBounds()) {
+        if (brush.CanComputeFastBounds() && radiusInclude) {
             brush.ComputeFastBounds(shadowRect, &shadowRect);
         }
     }
@@ -1325,8 +1325,8 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     }
 
     auto clipBounds = canvas.GetDeviceClipBounds();
-    auto clipIPadding = clipBounds;
     clipBounds.MakeOutset(-1, -1);
+    auto clipIPadding = clipBounds;
     Drawing::Matrix mat = canvas.GetTotalMatrix();
 #endif
     uint8_t directionBias = CalcDirectionBias(mat);
@@ -2690,8 +2690,8 @@ void RSPropertiesPainter::DrawContentLight(const RSProperties& properties, Drawi
     paint.setShader(shader);
     canvas.drawRRect(RRect2SkRRect(properties.GetRRect()), paint);
 #else
-    lightBuilder->SetUniformVec4("specularStrength", lightIntensity.x_,
-        lightIntensity.y_, lightIntensity.z_, lightIntensity.w_);
+    lightBuilder->SetUniformVec4("specularStrength", contentStrength.x_,
+        contentStrength.y_, contentStrength.z_, contentStrength.w_);
     shader = lightBuilder->MakeShader(nullptr, false);
     brush.SetShaderEffect(shader);
     canvas.AttachBrush(brush);
@@ -3647,7 +3647,8 @@ void RSPropertiesPainter::DrawDynamicLightUp(const RSProperties& properties, RSP
         *image, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP,
         Drawing::SamplingOptions(Drawing::FilterMode::LINEAR), scaleMat);
     auto shader = MakeDynamicLightUpShader(
-        properties.GetDynamicLightUpRate().value(), properties.GetDynamicLightUpDegree().value(), imageShader);
+        properties.GetDynamicLightUpRate().value() * canvas.GetAlpha(),
+        properties.GetDynamicLightUpDegree().value() * canvas.GetAlpha(), imageShader);
     Drawing::Brush brush;
     brush.SetShaderEffect(shader);
     canvas.ResetMatrix();

@@ -682,10 +682,15 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
     renderFrame->Flush();
 #ifdef RS_ENABLE_EGLIMAGE
 #ifdef RS_ENABLE_VK
-    imageCacheSeqsVK.clear();
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+        imageCacheSeqsVK.clear();
+    }
 #endif
 #ifdef RS_ENABLE_GL
-    imageCacheSeqs.clear();
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
+        imageCacheSeqs.clear();
+    }
 #endif
 #endif
     RS_LOGD("RsDebug RSHardwareThread::Redraw flush frame buffer end");

@@ -411,6 +411,11 @@ std::shared_ptr<CoreCanvasImpl> CoreCanvas::GetCanvasData() const
     return impl_;
 }
 
+ColorQuad CoreCanvas::GetEnvForegroundColor() const
+{
+    return Color::COLOR_BLACK;
+}
+
 bool CoreCanvas::isHighContrastEnabled() const
 {
     return false;

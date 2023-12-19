@@ -258,11 +258,11 @@ void RSUniRenderVirtualProcessor::ProcessDisplaySurface(RSDisplayRenderNode& nod
                 float mainScale = mainHeight / mainWidth;
                 if (canvasRotation_) {
                     if (screenCorrection == ScreenRotation::ROTATION_270) {
-                        mirrorDstRect = SkRect::MakeXYWH(-(mirrorHeight_ / 2.0f),
-                            -(mirrorScale * mainWidth * mainScale) / 2.0f, 0,
+                        mirrorDstRect = Drawing::Rect(-(mirrorHeight_ / 2.0f),
+                            -(mirrorScale * mainWidth * mainScale) / 2.0f, mirrorHeight_ / 2.0f,
                             (mirrorScale * mainWidth * mainScale) / 2.0f);
                     } else {
-                        mirrorDstRect = SkRect::MakeXYWH(-(mirrorHeight_ / 2.0f), -(mirrorScale * mainWidth) / 2.0f,
+                        mirrorDstRect = Drawing::Rect(-(mirrorHeight_ / 2.0f), -(mirrorScale * mainWidth) / 2.0f,
                             mirrorHeight_ / 2.0f, (mirrorScale * mainWidth) / 2.0f);
                     }
                 } else {
