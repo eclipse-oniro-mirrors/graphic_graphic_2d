@@ -142,6 +142,10 @@ void Surface::Wait(int32_t time, const VkSemaphore& semaphore)
 
 void Surface::SetDrawingArea(const std::vector<RectI>& rects)
 {
+    if (SystemProperties::GetGpuApiType() != GpuApiType::VULKAN &&
+        SystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
+        return;
+    }
     if (!impl_) {
         LOGE("surfaceImpl SetDrawingArea failed impl nullptr");
         return;
@@ -151,6 +155,10 @@ void Surface::SetDrawingArea(const std::vector<RectI>& rects)
 
 void Surface::ClearDrawingArea()
 {
+    if (SystemProperties::GetGpuApiType() != GpuApiType::VULKAN &&
+        SystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
+        return;
+    }
     if (!impl_) {
         LOGE("surfaceImpl ClearDrawingArea failed impl nullptr");
         return;

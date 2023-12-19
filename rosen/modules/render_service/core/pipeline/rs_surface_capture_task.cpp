@@ -777,7 +777,7 @@ std::shared_ptr<Drawing::Surface> RSSurfaceCaptureTask::CreateSurface(const std:
 #endif
 #ifdef RS_ENABLE_VK
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR)
+        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
         return Drawing::Surface::MakeRenderTarget(
             RSMainThread::Instance()->GetRenderEngine()->GetSkContext().get(), false, info);
     }

@@ -280,6 +280,19 @@ void RSImage::UploadGpu(RSPaintFilterCanvas& canvas)
 #endif
 }
 #else
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+static Drawing::CompressedType PixelFormatToCompressedType(Media::PixelFormat pixelFormat)
+{
+    switch (pixelFormat) {
+        case Media::PixelFormat::ASTC_4x4: return Drawing::CompressedType::ASTC_RGBA8_4x4;
+        case Media::PixelFormat::ASTC_6x6: return Drawing::CompressedType::ASTC_RGBA8_6x6;
+        case Media::PixelFormat::ASTC_8x8: return Drawing::CompressedType::ASTC_RGBA8_8x8;
+        case Media::PixelFormat::UNKNOWN:
+        default: return Drawing::CompressedType::NoneType;
+    }
+}
+#endif
+
 void RSImage::UploadGpu(Drawing::Canvas& canvas)
 {
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
@@ -293,9 +306,14 @@ void RSImage::UploadGpu(Drawing::Canvas& canvas)
                 return;
             }
             RS_TRACE_NAME("make compress img");
+            Media::ImageInfo imageInfo;
+            pixelMap_->GetImageInfo(imageInfo);
+            Media::Size realSize;
+            pixelMap_->GetAstcRealSize(realSize);
             auto image = std::make_shared<Drawing::Image>();
-            image->BuildFromCompressed(*canvas.GetGPUContext(), compressData_, static_cast<int>(srcRect_.width_),
-                static_cast<int>(srcRect_.height_), Drawing::CompressedType::ASTC);
+            image->BuildFromCompressed(*canvas.GetGPUContext(), compressData_,
+                static_cast<int>(realSize.width), static_cast<int>(realSize.height),
+                PixelFormatToCompressedType(imageInfo.pixelFormat));
             if (image) {
                 image_ = image;
                 SKResourceManager::Instance().HoldResource(image);
@@ -356,7 +374,7 @@ void RSImage::DrawImageRepeatRect(const Drawing::SamplingOptions& samplingOption
         }
 #endif
     }
-#endif
+#endif // RS_ENABLE_GL
 
 #if defined(RS_ENABLE_VK)
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
@@ -365,12 +383,18 @@ void RSImage::DrawImageRepeatRect(const Drawing::SamplingOptions& samplingOption
             ConvertPixelMapToSkImage();
         }
     }
-#endif
+#endif // RS_ENABLE_VK
 #else
     ConvertPixelMapToSkImage();
 #endif
 #else
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined (RS_ENABLE_VK))
+    if (pixelMap_ != nullptr && image_ == nullptr) {
+        ConvertPixelMapToDrawingImage();
+    }
+#else
     ConvertPixelMapToDrawingImage();
+#endif
 #endif
     UploadGpu(canvas);
 #ifndef USE_ROSEN_DRAWING
@@ -442,20 +466,20 @@ void RSImage::SetCompressData(
 #endif
 }
 
-#ifndef USE_ROSEN_DRAWING
 #if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined (RS_ENABLE_VK))
+#ifndef USE_ROSEN_DRAWING
 void RSImage::SetCompressData(const sk_sp<SkData> compressData)
 {
     isDrawn_ = false;
     compressData_ = compressData;
 }
-#endif
 #else
 void RSImage::SetCompressData(const std::shared_ptr<Drawing::Data> compressData)
 {
     isDrawn_ = false;
     compressData_ = compressData;
 }
+#endif
 #endif
 
 void RSImage::SetImageFit(int fitNum)
@@ -671,9 +695,13 @@ RSImage* RSImage::Unmarshalling(Parcel& parcel)
     RSImageBase::IncreaseCacheRefCount(uniqueId, useSkImage, pixelMap);
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD)
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
-#if !defined(USE_ROSEN_DRAWING) && defined(NEW_SKIA) && defined(RS_ENABLE_UNI_RENDER)
+#if defined(RS_ENABLE_UNI_RENDER)
         if (pixelMap != nullptr) {
+#ifndef USE_ROSEN_DRAWING
             rsImage->ConvertPixelMapToSkImage();
+#else
+            rsImage->ConvertPixelMapToDrawingImage();
+#endif
         }
 #endif
     }

@@ -229,8 +229,16 @@ std::shared_ptr<Drawing::Surface> RSUniUICapture::CreateSurface(
 
     Drawing::ImageInfo info = Drawing::ImageInfo{pixelmap->GetWidth(), pixelmap->GetHeight(),
         Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL};
-
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)) && defined(RS_ENABLE_EGLIMAGE)
+    auto renderContext = RSOffscreenRenderThread::Instance().GetRenderContext();
+    if (renderContext == nullptr) {
+        RS_LOGE("RSUniUICapture::CreateSurface: renderContext is nullptr");
+        return nullptr;
+    }
+    return Drawing::Surface::MakeRenderTarget(renderContext->GetDrGPUContext(), false, info);
+#else
     return Drawing::Surface::MakeRasterDirect(info, address, pixelmap->GetRowBytes());
+#endif
 }
 #endif
 

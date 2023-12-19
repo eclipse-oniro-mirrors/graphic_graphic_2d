@@ -43,11 +43,7 @@ RSOffscreenRenderThread::RSOffscreenRenderThread()
 #ifndef USE_ROSEN_DRAWING
         renderContext_->SetUpGrContext(nullptr);
 #else
-#ifdef RS_ENABLE_VK
         renderContext_->SetUpGpuContext(nullptr);
-#else
-        renderContext_->SetUpGpuContext();
-#endif
 #endif // USE_ROSEN_DRAWING
     });
 #endif

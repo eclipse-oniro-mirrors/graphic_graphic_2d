@@ -46,6 +46,7 @@
 
 #ifdef RS_ENABLE_VK
 namespace {
+#ifndef USE_ROSEN_DRAWING
 uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
     if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() != OHOS::Rosen::GpuApiType::VULKAN &&
@@ -137,6 +138,7 @@ GrBackendTexture MakeBackendTexture(uint32_t width, uint32_t height, VkFormat fo
 
     return GrBackendTexture(width, height, skImageInfo);
 }
+#endif
 } // un-named
 #endif
 
@@ -1090,7 +1092,7 @@ void RSRenderNode::ApplyAlpha(RSPaintFilterCanvas& canvas)
 #else
             auto rect = RSPropertiesPainter::Rect2DrawingRect(GetRenderProperties().GetBoundsRect());
             Drawing::Brush brush;
-            brush.SetAlphaF(std::clamp(alpha, 0.f, 1.f) * UINT8_MAX);
+            brush.SetAlpha(std::clamp(alpha, 0.f, 1.f) * UINT8_MAX);
             Drawing::SaveLayerOps slr(&rect, &brush);
             canvas.SaveLayer(slr);
 #endif
@@ -1818,7 +1820,7 @@ void RSRenderNode::DrawCacheSurface(RSPaintFilterCanvas& canvas, uint32_t thread
         canvas.DrawImage(*cacheImage, -shadowRectOffsetX_ * scaleX,
             -shadowRectOffsetY_ * scaleY, samplingOptions);
     } else {
-        canvas.DrawImage(*cacheImage, 0.0, 0.0, Drawing::SamplingOptions());
+        canvas.DrawImage(*cacheImage, 0.0, 0.0, samplingOptions);
     }
     canvas.DetachBrush();
     canvas.Restore();

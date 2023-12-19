@@ -162,7 +162,11 @@ public:
 
     // env related
     void SetEnvForegroundColor(Color color);
+#ifndef USE_ROSEN_DRAWING
     Color GetEnvForegroundColor() const;
+#else
+    Drawing::ColorQuad GetEnvForegroundColor() const override;
+#endif
     int SaveEnv();
     void RestoreEnv();
     int GetEnvSaveCount() const;

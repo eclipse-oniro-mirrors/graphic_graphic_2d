@@ -364,6 +364,7 @@ public:
     virtual CoreCanvas& DetachBrush();
     virtual CoreCanvas& DetachPaint();
 
+    virtual ColorQuad GetEnvForegroundColor() const;
     virtual bool isHighContrastEnabled() const;
     virtual Drawing::CacheType GetCacheType() const;
     virtual Drawing::Surface* GetSurface() const;

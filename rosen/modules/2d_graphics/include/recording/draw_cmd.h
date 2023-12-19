@@ -93,10 +93,6 @@ public:
         SAVE_LAYER_OPITEM,
         RESTORE_OPITEM,
         DISCARD_OPITEM,
-        ATTACH_PEN_OPITEM,
-        ATTACH_BRUSH_OPITEM,
-        DETACH_PEN_OPITEM,
-        DETACH_BRUSH_OPITEM,
         CLIP_ADAPTIVE_ROUND_RECT_OPITEM,
         ADAPTIVE_IMAGE_OPITEM,
         ADAPTIVE_PIXELMAP_OPITEM,
@@ -683,9 +679,9 @@ class DrawImageRectOpItem : public DrawWithPaintOpItem {
 public:
     struct ConstructorHandle : public OpItem {
         ConstructorHandle(const OpDataHandle& image, const Rect& src, const Rect& dst, const SamplingOptions& sampling,
-            SrcRectConstraint constraint, const PaintHandle& paintHandle)
+            SrcRectConstraint constraint, const PaintHandle& paintHandle, bool isForeground = false)
             : OpItem(DrawOpItem::IMAGE_RECT_OPITEM), image(image), src(src), dst(dst),
-              sampling(sampling), constraint(constraint), paintHandle(paintHandle) {}
+              sampling(sampling), constraint(constraint), paintHandle(paintHandle), isForeground(isForeground) {}
         ~ConstructorHandle() override = default;
         OpDataHandle image;
         Rect src;
@@ -693,6 +689,7 @@ public:
         SamplingOptions sampling;
         SrcRectConstraint constraint;
         PaintHandle paintHandle;
+        bool isForeground;
     };
     DrawImageRectOpItem(const CmdList& cmdList, ConstructorHandle* handle);
     ~DrawImageRectOpItem() override = default;
@@ -705,6 +702,7 @@ private:
     SamplingOptions sampling_;
     SrcRectConstraint constraint_;
     std::shared_ptr<Image> image_;
+    bool isForeground_ = false;
 };
 
 class DrawPictureOpItem : public DrawOpItem {
@@ -836,7 +834,7 @@ class ClipPathOpItem : public DrawOpItem {
 public:
     struct ConstructorHandle : public OpItem {
         ConstructorHandle(const OpDataHandle& path, ClipOp clipOp, bool doAntiAlias)
-            : OpItem(DrawOpItem::PATH_OPITEM), path(path), clipOp(clipOp), doAntiAlias(doAntiAlias) {}
+            : OpItem(DrawOpItem::CLIP_PATH_OPITEM), path(path), clipOp(clipOp), doAntiAlias(doAntiAlias) {}
         ~ConstructorHandle() override = default;
         OpDataHandle path;
         ClipOp clipOp;

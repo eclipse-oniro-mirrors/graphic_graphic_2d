@@ -1143,13 +1143,13 @@ Color RSPaintFilterCanvas::GetEnvForegroundColor() const
     return envStack_.top().envForegroundColor_;
 }
 #else
-RSColor RSPaintFilterCanvas::GetEnvForegroundColor() const
+Drawing::ColorQuad RSPaintFilterCanvas::GetEnvForegroundColor() const
 {
     // sanity check, stack should not be empty
     if (envStack_.empty()) {
-        return RSColor { 0xFF000000 }; // 0xFF000000 is default value -- black
+        return Drawing::Color::COLOR_BLACK; // 0xFF000000 is default value -- black
     }
-    return envStack_.top().envForegroundColor_;
+    return envStack_.top().envForegroundColor_.AsArgbInt();
 }
 #endif
 
