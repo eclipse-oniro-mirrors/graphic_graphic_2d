@@ -594,8 +594,8 @@ void RSScreen::ResizeVirtualScreen(uint32_t width, uint32_t height)
         RS_LOGW("RSScreen %{public}s: physical screen not support ResizeVirtualScreen.", __func__);
         return;
     }
-    width_ = static_cast<int32_t>(width);
-    height_ = static_cast<int32_t>(height);
+    width_ = width;
+    height_ = height;
 }
 
 void RSScreen::SetScreenBacklight(uint32_t level)
