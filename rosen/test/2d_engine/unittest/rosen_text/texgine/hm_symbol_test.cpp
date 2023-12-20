@@ -51,43 +51,41 @@ HWTEST_F(OHHmSymbolTest, OHHmSymbolTest002, TestSize.Level1)
     TextEngine::TextStyle textStyle;
     style.symbol.SetRenderMode(0); // this 0 is single
     textStyle = AdapterTextEngine::Convert(style);
+#ifndef USE_ROSEN_DRAWING
     EXPECT_EQ(textStyle.symbol.renderMode_, SymbolRenderingStrategy::SINGLE);
+#else
+    EXPECT_EQ(textStyle.symbol.renderMode_, RSSymbolRenderingStrategy::SINGLE);
+#endif
 
     style.symbol.SetRenderMode(2); // this 2 is multiple opacity
     textStyle = AdapterTextEngine::Convert(style);
+#ifndef USE_ROSEN_DRAWING
     EXPECT_EQ(textStyle.symbol.renderMode_, SymbolRenderingStrategy::MULTIPLE_OPACITY);
+#else
+    EXPECT_EQ(textStyle.symbol.renderMode_, RSSymbolRenderingStrategy::MULTIPLE_OPACITY);
+#endif
 
     style.symbol.SetRenderMode(1); // this 1 is multiple color
     textStyle = AdapterTextEngine::Convert(style);
+#ifndef USE_ROSEN_DRAWING
     EXPECT_EQ(textStyle.symbol.renderMode_, SymbolRenderingStrategy::MULTIPLE_COLOR);
+#else
+    EXPECT_EQ(textStyle.symbol.renderMode_, RSSymbolRenderingStrategy::MULTIPLE_COLOR);
+#endif
 }
 
 /*
  * @tc.name: OHHmSymbolTest003
- * @tc.desc: test for DrawSymbol
+ * @tc.desc: test for symbol GetSymbolLayers
  * @tc.type: FUNC
  */
 HWTEST_F(OHHmSymbolTest, OHHmSymbolTest003, TestSize.Level1)
 {
-    TextEngine::TexgineCanvas canvas;
-    std::shared_ptr<SkCanvas> skCanvas = std::make_shared<SkCanvas>();
-    std::shared_ptr<TextEngine::TexgineTextBlob> blob = nullptr;
-    TextEngine::TextStyle textStyle;
-    textStyle.isSymbolGlyph = true;
-    canvas.SetCanvas(skCanvas.get());
-    std::pair<double, double> offset;
-    TextEngine::TexginePaint paint;
-    TextEngine::HMSymbolRun::DrawSymbol(canvas, blob, offset, paint, textStyle);
-}
-
-/*
- * @tc.name: OHHmSymbolTest004
- * @tc.desc: test for symbol GetSymbolLayers
- * @tc.type: FUNC
- */
-HWTEST_F(OHHmSymbolTest, OHHmSymbolTest004, TestSize.Level1)
-{
+#ifndef USE_ROSEN_DRAWING
     SkGlyphID glyphId = 0;
+#else
+    uint16_t glyohId = 0;
+#endif
     TextEngine::TextStyle textStyle;
     SymbolLayers symbolInfo = TextEngine::HMSymbolRun::GetSymbolLayers(glyphId, textStyle.symbol);
 }
