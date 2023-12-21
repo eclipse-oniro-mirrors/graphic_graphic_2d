@@ -193,7 +193,7 @@ HWTEST_F(RSRenderPropertyTest, PropertyIPC001, TestSize.Level1)
     auto intProp = std::make_shared<RSRenderAnimatableProperty<int>>();
     std::shared_ptr<RSRenderPropertyBase> tmpProp;
     ASSERT_FALSE(RSRenderPropertyBase::Marshalling(parcel1, intProp));
-    RSRenderPropertyBase::Unmarshalling(parcel1, tmpProp);
+    bool unmarsh = RSRenderPropertyBase::Unmarshalling(parcel1, tmpProp);
 
     MessageParcel parcel2;
     int data = 0;
@@ -229,7 +229,7 @@ HWTEST_F(RSRenderPropertyTest, PropertyIPC002, TestSize.Level1)
     for (auto& prop : props) {
         MessageParcel parcel;
         ASSERT_FALSE(RSRenderPropertyBase::Marshalling(parcel, prop));
-        RSRenderPropertyBase::Unmarshalling(parcel, prop);
+        bool unmarsh = RSRenderPropertyBase::Unmarshalling(parcel, prop);
     }
 }
 }
