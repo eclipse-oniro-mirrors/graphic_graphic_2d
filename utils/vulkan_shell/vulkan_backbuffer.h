@@ -71,10 +71,10 @@ private:
     static const size_t SEMAPHORE_SIZE = 2;
     static const size_t FENCE_SIZE = 2;
     std::array<RSVulkanHandle<VkSemaphore>, SEMAPHORE_SIZE> semaphores_;
-    std::array<RSVulkanHandle<VkFence>, SEMAPHORE_SIZE> useFences_;
+    std::array<RSVulkanHandle<VkFence>, FENCE_SIZE> useFences_;
     RSVulkanCommandBuffer usageCommandBuffer_;
     RSVulkanCommandBuffer renderCommandBuffer_;
-    bool valid_;
+    bool valid_ = false;
 
     bool CreateSemaphores();
 

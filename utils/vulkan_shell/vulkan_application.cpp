@@ -84,7 +84,7 @@ RSVulkanApplication::RSVulkanApplication(RSVulkanProcTable& procVk, const std::s
     }
 
     instance_ = { instance, [this](VkInstance i) {
-        LOGE("Destroying Vulkan instance");
+        LOGI("Destroying Vulkan instance");
         vk_.DestroyInstance(i, nullptr);
     } };
 
@@ -94,7 +94,7 @@ RSVulkanApplication::RSVulkanApplication(RSVulkanProcTable& procVk, const std::s
             LOGE("Vulkan debugging was enabled but could not be setup for this instance.");
         } else {
             debugReport_ = std::move(debug_report);
-            LOGE("Debug reporting is enabled.");
+            LOGI("Debug reporting is enabled.");
         }
     }
 

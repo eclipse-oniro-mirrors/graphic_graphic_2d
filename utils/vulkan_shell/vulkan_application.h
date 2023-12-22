@@ -51,9 +51,9 @@ public:
 private:
     RSVulkanProcTable& vk_;
     RSVulkanHandle<VkInstance> instance_;
-    uint32_t apiVersion_;
+    uint32_t apiVersion_ = 0;
     std::unique_ptr<RSVulkanDebugReport> debugReport_;
-    bool valid_;
+    bool valid_ = false;
 
     std::vector<VkPhysicalDevice> GetPhysicalDevices() const;
     std::vector<VkExtensionProperties> GetSupportedInstanceExtensions(const RSVulkanProcTable& vk) const;
