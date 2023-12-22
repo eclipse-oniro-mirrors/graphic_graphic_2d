@@ -65,17 +65,17 @@ public:
     static VkPhysicalDevice GetPhysicalDevice();
     static RSVulkanProcTable& GetVkProcTable();
 
-    static std::unique_ptr<RSVulkanDevice> logicalDevice_;
-    static RSVulkanProcTable* vk;
 
 public:
-    bool valid_ = false;
-    static std::unique_ptr<RSVulkanApplication> application_;
-    bool isOffscreen_ = false;
-    static std::thread::id deviceThread_;
-    static std::vector<RSVulkanHandle<VkFence>> sharedFences_;
-    static uint32_t sharedFenceIndex_;
+    static RSVulkanProcTable* vk;
+    static std::unique_ptr<RSVulkanApplication> application;
+    static std::unique_ptr<RSVulkanDevice> logicalDevice;
+    static std::thread::id deviceThread;
+    static std::vector<RSVulkanHandle<VkFence>> sharedFences;
+    static uint32_t sharedFenceIndex;
     static bool presenting_;
+    bool valid_ = false;
+    bool isOffscreen_ = false;
     std::unique_ptr<RSVulkanSurface> surface_;
     std::unique_ptr<RSVulkanSwapchain> swapchain_;
     sk_sp<GrDirectContext> skiaGrContext_;
