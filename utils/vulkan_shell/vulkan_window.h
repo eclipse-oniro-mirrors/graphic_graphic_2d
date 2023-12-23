@@ -65,7 +65,6 @@ public:
     static VkPhysicalDevice GetPhysicalDevice();
     static RSVulkanProcTable& GetVkProcTable();
 
-
 public:
     static RSVulkanProcTable* vk;
     static std::unique_ptr<RSVulkanApplication> application;
