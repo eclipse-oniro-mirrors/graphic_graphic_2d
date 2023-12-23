@@ -162,6 +162,11 @@ public:
         forceUpdateFlag_ = flag;
     }
 
+    void SetScreenInfo(ScreenInfo screenInfo)
+    {
+        screenInfo_ = screenInfo;
+    }
+
     using RenderParam = std::tuple<std::shared_ptr<RSRenderNode>, RSPaintFilterCanvas::CanvasStatus>;
 private:
     void PartialRenderOptionInit();
@@ -328,6 +333,7 @@ private:
 
     // Use in vulkan parallel rendering
     void ProcessParallelDisplayRenderNode(RSDisplayRenderNode& node);
+    bool IsOutOfScreenRegion(RectI rect);
 
     ScreenInfo screenInfo_;
     std::shared_ptr<RSDirtyRegionManager> curSurfaceDirtyManager_;
@@ -382,6 +388,7 @@ private:
     bool isCanvasNodeSkipDfxEnabled_ = false;
     bool isQuickSkipPreparationEnabled_ = false;
     bool isOcclusionEnabled_ = false;
+    bool isSkipCanvasNodeOutOfScreen_ = false;
     bool isScreenRotationAnimating_ = false;
     bool isTextNeedCached_ = false;
     std::vector<std::string> dfxTargetSurfaceNames_;
@@ -479,6 +486,7 @@ private:
     bool curDirty_ = false;
     bool curContentDirty_ = false;
     bool isPhone_ = false;
+    bool isPc_ = false;
     bool isCacheBlurPartialRenderEnabled_ = false;
 
     NodeId firstVisitedCache_ = INVALID_NODEID;
