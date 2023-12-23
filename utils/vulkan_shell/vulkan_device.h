@@ -62,14 +62,14 @@ public:
 
     bool WaitIdle() const;
     RSVulkanProcTable& vk;
-    RSVulkanHandle<VkPhysicalDevice> physicalDevice_;
-    RSVulkanHandle<VkDevice> device_;
+    RSVulkanHandle<VkPhysicalDevice> physicalDevice_ = VK_NULL_HANDLE;
+    RSVulkanHandle<VkDevice> device_ = VK_NULL_HANDLE;
 
 private:
-    RSVulkanHandle<VkQueue> queue_;
-    RSVulkanHandle<VkCommandPool> commandPool_;
-    uint32_t graphicQueueIndex_;
-    uint32_t computeQueueIndex_;
+    RSVulkanHandle<VkQueue> queue_ = VK_NULL_HANDLE;
+    RSVulkanHandle<VkCommandPool> commandPool_ = VK_NULL_HANDLE;
+    uint32_t graphicQueueIndex_ = 0;
+    uint32_t computeQueueIndex_ = 0;
     bool valid_ = false;
 
     std::vector<VkQueueFamilyProperties> GetQueueFamilyProperties() const;
