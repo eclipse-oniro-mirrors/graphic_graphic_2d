@@ -142,10 +142,10 @@ public:
 #undef VK_DEFINE_PROC
 
 private:
-    void* vkHandle_;
-    bool acquiredMandatoryProcAddresses_;
-    RSVulkanHandle<VkInstance> instance_;
-    RSVulkanHandle<VkDevice> device_;
+    void* vkHandle_ = nullptr;
+    bool acquiredMandatoryProcAddresses_ = false;
+    RSVulkanHandle<VkInstance> instance_ = VK_NULL_HANDLE;
+    RSVulkanHandle<VkDevice> device_ = VK_NULL_HANDLE;
 
     bool OpenLibraryHandle();
     bool SetupLoaderProcAddresses();

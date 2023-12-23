@@ -64,7 +64,7 @@ bool RSVulkanProcTable::SetupLoaderProcAddresses()
 
     GetInstanceProcAddr =
 #if VULKAN_LINK_STATICALLY
-        GetInstanceProcAddr = &vkGetInstanceProcAddr;
+        &vkGetInstanceProcAddr;
 #else
         reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(vkHandle_, "vkGetInstanceProcAddr"));
     GetDeviceProcAddr = reinterpret_cast<PFN_vkGetDeviceProcAddr>(dlsym(vkHandle_, "vkGetDeviceProcAddr"));
@@ -181,8 +181,7 @@ bool RSVulkanProcTable::CloseLibraryHandle()
     if (vkHandle_ != nullptr) {
         dlerror(); // clear existing errors on thread.
         if (dlclose(vkHandle_) != 0) {
-            LOGE("Could not close the vulkan library handle. This indicates a leak.");
-            LOGE("%s", dlerror());
+            LOGE("Could not close the vulkan library handle. This indicates a leak. %s", dlerror());
         }
         vkHandle_ = nullptr;
     }
