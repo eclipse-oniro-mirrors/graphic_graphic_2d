@@ -155,6 +155,9 @@ void DrawCmdList::Playback(RSPaintFilterCanvas& canvas, const SkRect* rect)
         if (it == nullptr) {
             continue;
         }
+        if (it->GetType() == RSOpType::HM_SYMBOL_OPITEM) {
+            it->SetSymbol();
+        }
         it->Draw(canvas, rect);
     }
 }

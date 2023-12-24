@@ -71,5 +71,8 @@ using RSSymbolRenderingStrategy = RSDrawing::DrawingSymbolRenderingStrategy;
 using RSEffectStrategy = RSDrawing::DrawingEffectStrategy;
 using RSHMSymbolData = RSDrawing::DrawingHMSymbolData;
 using RSHmSymbolConfig_OHOS = RSDrawing::HmSymbolConfigOhos;
+using RSAnimationSetting = RSDrawing::DrawingAnimationSetting;
+using RSAnimationType = RSDrawing::DrawingAnimationType;
+using RSAnimationSubType = RSDrawing::DrawingAnimationSubType;
 
 #endif // ROSEN_MODULES_TEXGINE_SRC_TEXGINE_DRAWING_DRAWING_H
