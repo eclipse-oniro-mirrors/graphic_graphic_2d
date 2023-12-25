@@ -365,6 +365,7 @@ void RSSurfaceRenderNode::ProcessAnimatePropertyBeforeChildren(RSPaintFilterCanv
     const RectF absBounds = {0, 0, property.GetBoundsWidth(), property.GetBoundsHeight()};
     RRect absClipRRect = RRect(absBounds, property.GetCornerRadius());
     RSPropertiesPainter::DrawShadow(property, canvas, &absClipRRect);
+    RSPropertiesPainter::DrawOutline(property, canvas);
 
 #ifndef USE_ROSEN_DRAWING
     if (!property.GetCornerRadius().IsZero()) {
@@ -417,6 +418,7 @@ void RSSurfaceRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanva
         auto geoPtr = (property.GetBoundsGeometry());
         canvas.concat(geoPtr->GetMatrix());
     }
+    RSPropertiesPainter::DrawOutline(property, canvas);
     RSPropertiesPainter::DrawBorder(property, canvas);
     canvas.restore();
 #else
@@ -425,6 +427,7 @@ void RSSurfaceRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanva
         auto geoPtr = (property.GetBoundsGeometry());
         canvas.ConcatMatrix(geoPtr->GetMatrix());
     }
+    RSPropertiesPainter::DrawOutline(property, canvas);
     RSPropertiesPainter::DrawBorder(property, canvas);
     canvas.Restore();
 #endif
