@@ -115,7 +115,6 @@ std::shared_ptr<Typeface> FontCollection::GetTypefaceForChar(const uint32_t &ch,
     const std::string &script, const std::string &locale) const
 {
     std::string newScript(script);
-    LOGE("----Ziruo FontCollection::GetTypefaceForChar [begin], ch = %d", ch);
     if (DetectChinesePointUnicode(ch) == SUPPORTFILE) {
         newScript = "Hani";
     }
