@@ -201,11 +201,7 @@ ohos_shared_library("librender_service") {
     "//third_party/libxml2:libxml2",
   ]
 
-  if (defined(use_new_skia) && use_new_skia) {
-    public_deps += [ "//third_party/skia:skia_ohos" ]
-  } else {
-    public_deps += [ "//third_party/flutter/build/skia:ace_skia_ohos" ]
-  }
+  public_deps += [ "//third_party/skia:skia_ohos" ]
 
   if (defined(use_new_render_context) && use_new_render_context) {
     include_dirs += [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
@@ -213,10 +209,6 @@ ohos_shared_library("librender_service") {
   }
 
   if (rs_enable_gpu) {
-    if (graphic_2d_feature_enable_flutter_vulkan) {
-      include_dirs += [ "//third_party/flutter/engine/flutter/vulkan" ]
-    }
-
     public_deps += [ "$graphic_2d_root:libvulkan" ]
   }
 
