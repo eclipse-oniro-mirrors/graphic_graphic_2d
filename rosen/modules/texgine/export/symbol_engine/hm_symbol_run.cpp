@@ -42,7 +42,7 @@ RSSymbolLayers HMSymbolRun::GetSymbolLayers(const uint16_t& glyphId, const HMSym
 #ifndef USE_ROSEN_DRAWING
     SymbolLayersGroups* symbolInfoOrign = HmSymbolConfig_OHOS::getInstance()->getSymbolLayersGroups(symbolId);
 #else
-    RSSymbolLayersGroups* symbolInfoOrign = RSHmSymbolConfig_OHOS::GetSymbolLayersGroups(symbolId);
+    std::shared_ptr<RSSymbolLayersGroups> symbolInfoOrign = RSHmSymbolConfig_OHOS::GetSymbolLayersGroups(symbolId);
 #endif
     if (symbolInfoOrign == nullptr) {
         return symbolInfo;
@@ -240,7 +240,7 @@ bool HMSymbolRun::GetAnimationGroups(const uint32_t glyohId, const EffectStrateg
 bool HMSymbolRun::GetAnimationGroups(const uint32_t glyohId, const RSEffectStrategy effectStrategy,
     RSAnimationSetting& animationOut)
 {
-    RSSymbolLayersGroups* symbolInfoOrigin = RSHmSymbolConfig_OHOS::GetSymbolLayersGroups(glyohId);
+    auto symbolInfoOrigin = RSHmSymbolConfig_OHOS::GetSymbolLayersGroups(glyohId);
     std::vector<RSAnimationSetting> animationSettings = symbolInfoOrigin->animationSettings;
 
     RSAnimationType animationType = RSAnimationType::INVALID_ANIMATION_TYPE;
