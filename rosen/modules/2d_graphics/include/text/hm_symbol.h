@@ -95,7 +95,6 @@ struct DrawingRenderGroup {
     DrawingSColor color;
 };
 
-
 enum DrawingEffectStrategy {
     INVALID_EFFECT_STRATEGY = 0,
     NONE = 1,
@@ -108,6 +107,7 @@ struct DrawingSymbolLayers {
     std::vector<std::vector<size_t>> layers;
     std::vector<DrawingRenderGroup> renderGroups;
     DrawingEffectStrategy effect;
+    DrawingAnimationSetting animationSetting;
 };
 
 enum DrawingSymbolRenderingStrategy {

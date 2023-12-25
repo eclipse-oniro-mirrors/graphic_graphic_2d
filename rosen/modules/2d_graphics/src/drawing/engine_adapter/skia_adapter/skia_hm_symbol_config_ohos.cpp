@@ -51,7 +51,6 @@ std::shared_ptr<DrawingSymbolLayersGroups> SkiaHmSymbolConfigOhos::GetSymbolLaye
         iter++;
     }
 
-
     drawingGroups->animationSettings = drawingSettings;
     drawingGroups->renderModeGroups = drawingRenderModeGroups;
 
