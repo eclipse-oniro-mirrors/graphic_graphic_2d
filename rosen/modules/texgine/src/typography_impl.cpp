@@ -235,6 +235,9 @@ void TypographyImpl::ComputeWordBoundary() const
             wb.SetLocale(icu::Locale::createFromName(span.GetTextStyle().locale.c_str()));
             wb.SetRange(0, ts->u16vect_.size());
             auto boundaries = wb.GetBoundary(ts->u16vect_, true);
+            if (boundaries.empty()) {
+                continue;
+            }
             for (const auto &[left, right] : boundaries) {
                 boundariesCache_.emplace_back(left + offset, right + offset);
             }
