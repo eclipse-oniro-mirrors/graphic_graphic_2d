@@ -111,13 +111,17 @@ static inline void EnableColorBlendModeMaskLayer(RSPaintFilterCanvas& canvas, in
 RSCanvasRenderNode::RSCanvasRenderNode(NodeId id, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
     : RSRenderNode(id, context, isTextureExportNode)
 {
+#ifndef ROSEN_ARKUI_X
     MemoryInfo info = {sizeof(*this), ExtractPid(id), id, MEMORY_TYPE::MEM_RENDER_NODE};
     MemoryTrack::Instance().AddNodeRecord(id, info);
+#endif
 }
 
 RSCanvasRenderNode::~RSCanvasRenderNode()
 {
+#ifndef ROSEN_ARKUI_X
     MemoryTrack::Instance().RemoveNodeRecord(GetId());
+#endif
 }
 
 #ifndef USE_ROSEN_DRAWING
@@ -199,6 +203,8 @@ void RSCanvasRenderNode::ProcessShadowBatching(RSPaintFilterCanvas& canvas)
             RSPropertyDrawableSlot::BOUNDS_MATRIX, RSPropertyDrawableSlot::TRANSITION, canvas);
         IterateOnDrawableRange(
             RSPropertyDrawableSlot::SHADOW, RSPropertyDrawableSlot::SHADOW, canvas);
+        IterateOnDrawableRange(
+            RSPropertyDrawableSlot::OUTLINE, RSPropertyDrawableSlot::OUTLINE, canvas);
         return;
     }
     RSModifierContext context = { GetMutableRenderProperties(), &canvas };
@@ -206,6 +212,7 @@ void RSCanvasRenderNode::ProcessShadowBatching(RSPaintFilterCanvas& canvas)
     ApplyAlpha(canvas);
     RSPropertiesPainter::DrawMask(GetRenderProperties(), canvas);
     RSPropertiesPainter::DrawShadow(GetRenderProperties(), canvas);
+    RSPropertiesPainter::DrawOutline(GetRenderProperties(), canvas);
 }
 
 void RSCanvasRenderNode::DrawShadow(RSModifierContext& context, RSPaintFilterCanvas& canvas)
@@ -217,9 +224,11 @@ void RSCanvasRenderNode::DrawShadow(RSModifierContext& context, RSPaintFilterCan
         auto parent = GetParent().lock();
         if (!(parent && parent->GetRenderProperties().GetUseShadowBatching())) {
             RSPropertiesPainter::DrawShadow(GetRenderProperties(), canvas);
+            RSPropertiesPainter::DrawOutline(GetRenderProperties(), canvas);
         }
     } else {
         RSPropertiesPainter::DrawShadow(GetRenderProperties(), canvas);
+        RSPropertiesPainter::DrawOutline(GetRenderProperties(), canvas);
     }
 }
 
@@ -350,6 +359,7 @@ void RSCanvasRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas
     if (illuminatedPtr_ && illuminatedPtr_->IsIlluminated()) {
         RSPropertiesPainter::DrawLight(GetRenderProperties(), canvas);
     }
+    RSPropertiesPainter::DrawOutline(GetRenderProperties(), canvas);
     RSPropertiesPainter::DrawBorder(GetRenderProperties(), canvas);
     ApplyDrawCmdModifier(context, RSModifierType::OVERLAY_STYLE);
     RSPropertiesPainter::DrawForegroundColor(GetRenderProperties(), canvas);
@@ -433,6 +443,7 @@ void RSCanvasRenderNode::ProcessDrivenBackgroundRender(RSPaintFilterCanvas& canv
     ApplyDrawCmdModifier(context, RSModifierType::ENV_FOREGROUND_COLOR);
 
     RSPropertiesPainter::DrawShadow(GetRenderProperties(), canvas);
+    RSPropertiesPainter::DrawOutline(GetRenderProperties(), canvas);
     RSPropertiesPainter::DrawBackground(GetRenderProperties(), canvas);
     RSPropertiesPainter::DrawFilter(GetRenderProperties(), canvas, FilterType::BACKGROUND_FILTER);
     ApplyDrawCmdModifier(context, RSModifierType::BACKGROUND_STYLE);

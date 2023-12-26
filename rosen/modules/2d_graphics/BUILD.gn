@@ -66,10 +66,6 @@ template("graphics2d_source_set") {
       defines += [ "USE_TEXGINE" ]
     }
 
-    if (is_arkui_x) {
-      defines += [ "CROSS_PLATFORM" ]
-    }
-
     public_deps = []
     external_deps = []
     sources = [
@@ -77,11 +73,22 @@ template("graphics2d_source_set") {
       "$drawing_src_dir/c/drawing_brush.cpp",
       "$drawing_src_dir/c/drawing_canvas.cpp",
       "$drawing_src_dir/c/drawing_color.cpp",
+      "$drawing_src_dir/c/drawing_color_filter.cpp",
+      "$drawing_src_dir/c/drawing_filter.cpp",
+      "$drawing_src_dir/c/drawing_font.cpp",
       "$drawing_src_dir/c/drawing_font_collection.cpp",
+      "$drawing_src_dir/c/drawing_mask_filter.cpp",
+      "$drawing_src_dir/c/drawing_matrix.cpp",
       "$drawing_src_dir/c/drawing_path.cpp",
       "$drawing_src_dir/c/drawing_pen.cpp",
+      "$drawing_src_dir/c/drawing_point.cpp",
+      "$drawing_src_dir/c/drawing_rect.cpp",
       "$drawing_src_dir/c/drawing_register_font.cpp",
+      "$drawing_src_dir/c/drawing_round_rect.cpp",
+      "$drawing_src_dir/c/drawing_shader_effect.cpp",
+      "$drawing_src_dir/c/drawing_text_blob.cpp",
       "$drawing_src_dir/c/drawing_text_typography.cpp",
+      "$drawing_src_dir/c/drawing_typeface.cpp",
       "$drawing_src_dir/draw/OpListHandle.cpp",
       "$drawing_src_dir/draw/brush.cpp",
       "$drawing_src_dir/draw/color.cpp",
@@ -90,6 +97,7 @@ template("graphics2d_source_set") {
       "$drawing_src_dir/draw/path.cpp",
       "$drawing_src_dir/draw/pen.cpp",
       "$drawing_src_dir/draw/surface.cpp",
+      "$drawing_src_dir/effect/blender.cpp",
       "$drawing_src_dir/effect/color_filter.cpp",
       "$drawing_src_dir/effect/color_matrix.cpp",
       "$drawing_src_dir/effect/color_space.cpp",
@@ -97,12 +105,14 @@ template("graphics2d_source_set") {
       "$drawing_src_dir/effect/image_filter.cpp",
       "$drawing_src_dir/effect/mask_filter.cpp",
       "$drawing_src_dir/effect/path_effect.cpp",
+      "$drawing_src_dir/effect/runtime_blender_builder.cpp",
       "$drawing_src_dir/effect/runtime_effect.cpp",
       "$drawing_src_dir/effect/runtime_shader_builder.cpp",
       "$drawing_src_dir/effect/shader_effect.cpp",
       "$drawing_src_dir/engine_adapter/impl_factory.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/rs_skia_memory_tracer.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_bitmap.cpp",
+      "$drawing_src_dir/engine_adapter/skia_adapter/skia_blender.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_camera.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_canvas.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_color_filter.cpp",
@@ -128,6 +138,7 @@ template("graphics2d_source_set") {
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_picture.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_pixmap.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_region.cpp",
+      "$drawing_src_dir/engine_adapter/skia_adapter/skia_runtime_blender_builder.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_runtime_effect.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_runtime_shader_builder.cpp",
       "$drawing_src_dir/engine_adapter/skia_adapter/skia_shader_effect.cpp",
@@ -195,6 +206,22 @@ template("graphics2d_source_set") {
       sources += [ "$drawing_src_dir/utils/system_properties.cpp" ]
     }
 
+    if (is_arkui_x) {
+      defines += [ "CROSS_PLATFORM" ]
+
+      #not needed for arkuix on current version,may need next version
+      sources -= [
+        "$drawing_src_dir/c/drawing_bitmap.cpp",
+        "$drawing_src_dir/c/drawing_brush.cpp",
+        "$drawing_src_dir/c/drawing_canvas.cpp",
+        "$drawing_src_dir/c/drawing_color.cpp",
+        "$drawing_src_dir/c/drawing_font_collection.cpp",
+        "$drawing_src_dir/c/drawing_path.cpp",
+        "$drawing_src_dir/c/drawing_pen.cpp",
+        "$drawing_src_dir/c/drawing_text_typography.cpp",
+        "$drawing_src_dir/engine_adapter/skia_adapter/rs_skia_memory_tracer.cpp",
+      ]
+    }
     if (ace_enable_gpu) {
       sources += [
         "$drawing_src_dir/engine_adapter/skia_adapter/skia_gpu_context.cpp",

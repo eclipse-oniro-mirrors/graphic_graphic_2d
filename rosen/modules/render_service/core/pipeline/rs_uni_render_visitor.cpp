@@ -416,9 +416,11 @@ void RSUniRenderVisitor::PrepareChildren(RSRenderNode& node)
     curAlpha_ *= node.GetRenderProperties().GetAlpha();
     node.SetGlobalAlpha(curAlpha_);
     auto children = node.GetSortedChildren();
-    // check curSurfaceDirtyManager_ for UpdateStaticCacheSubTree calls
-    if ((isCachedSurfaceReuse_ || !UpdateCacheChangeStatus(node)) && curSurfaceDirtyManager_ != nullptr) {
-        RS_OPTIONAL_TRACE_NAME_FMT("UpdateCacheChangeStatus quick skip node %llu, isCachedSurfaceReuse_ %d",
+    // check curSurfaceDirtyManager_ for SubTree updates
+    if (curSurfaceDirtyManager_ != nullptr && isCachedSurfaceReuse_ && !node.HasMustRenewedInfo()) {
+        RS_OPTIONAL_TRACE_NAME_FMT("CachedSurfaceReuse node %llu quickSkip subtree", node.GetId());
+    } else if (curSurfaceDirtyManager_ != nullptr && (isCachedSurfaceReuse_ || !UpdateCacheChangeStatus(node))) {
+        RS_OPTIONAL_TRACE_NAME_FMT("UpdateCacheChangeStatus node %llu simply update subtree, isCachedSurfaceReuse_ %d",
             node.GetId(), isCachedSurfaceReuse_);
         UpdateStaticCacheSubTree(node.ReinterpretCastTo<RSRenderNode>(), children);
     } else {
@@ -521,7 +523,7 @@ bool RSUniRenderVisitor::UpdateCacheChangeStatus(RSRenderNode& node)
     if (node.GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE) {
         // if firstVisitedCache_ valid, upper cache should be updated so sub cache shouldn't skip
         // [planning] static subcache could be skip and reuse
-        if (isPhone_ && (quickSkipPrepareType_ >= QuickSkipPrepareType::STATIC_CACHE) &&
+        if ((quickSkipPrepareType_ >= QuickSkipPrepareType::STATIC_CACHE) &&
             (firstVisitedCache_ == INVALID_NODEID) && IsDrawingCacheStatic(node)) {
             return false;
         }
@@ -1064,6 +1066,8 @@ void RSUniRenderVisitor::PrepareTypesOfSurfaceRenderNodeBeforeUpdate(RSSurfaceRe
     if (node.IsMainWindowType() || node.IsLeashWindow()) {
         node.SetFilterCacheFullyCovered(false);
         node.ResetFilterNodes();
+        effectNodeNum_ = 0;
+        node.SetUseEffectNodes(0);
         node.SetSurfaceCacheContentStatic(
             RSMainThread::Instance()->CheckIfInstanceOnlySurfaceBasicGeoTransform(node.GetId()));
         // [planning] check if it is not reset recursively
@@ -1140,6 +1144,7 @@ void RSUniRenderVisitor::PrepareTypesOfSurfaceRenderNodeAfterUpdate(RSSurfaceRen
     }
     if (node.IsMainWindowType()) {
         isCachedSurfaceReuse_ = false;
+        node.SetUseEffectNodes(effectNodeNum_);
         bool hasFilter = node.IsTransparent() && properties.NeedFilter();
         bool hasHardwareNode = !node.GetChildHardwareEnabledNodes().empty();
         bool hasAbilityComponent = !node.GetAbilityNodeIds().empty();
@@ -1246,6 +1251,8 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
         PrepareSubSurfaceNodes(node);
         return;
     }
+    // Attension: Updateinfo before info reset
+    node.StoreMustRenewedInfo();
     node.SetHasSharedTransitionNode(false);
     // reset HasSecurityLayer
     node.SetHasSecurityLayer(false);
@@ -1735,6 +1742,9 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
     PrepareChildren(node);
     // attention: accumulate direct parent's childrenRect
     node.UpdateParentChildrenRect(logicParentNode_.lock());
+    if (node.GetRenderProperties().GetUseEffect()) {
+        effectNodeNum_++;
+    }
     node.UpdateEffectRegion(effectRegion_);
     if (property.NeedFilter()) {
         // filterRects_ is used in RSUniRenderVisitor::CalcDirtyFilterRegion
@@ -2117,6 +2127,7 @@ bool RSUniRenderVisitor::DrawDetailedTypesOfDirtyRegionForDFX(RSSurfaceRenderNod
         { DirtyRegionDebugType::REMOVE_CHILD_RECT, DirtyRegionType::REMOVE_CHILD_RECT },
         { DirtyRegionDebugType::RENDER_PROPERTIES_RECT, DirtyRegionType::RENDER_PROPERTIES_RECT },
         { DirtyRegionDebugType::CANVAS_NODE_SKIP_RECT, DirtyRegionType::CANVAS_NODE_SKIP_RECT },
+        { DirtyRegionDebugType::OUTLINE_RECT, DirtyRegionType::OUTLINE_RECT },
     };
     auto matchType = DIRTY_REGION_DEBUG_TYPE_MAP.find(dirtyRegionDebugType_);
     if (matchType != DIRTY_REGION_DEBUG_TYPE_MAP.end()) {
@@ -2790,16 +2801,16 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             }
             if (!isDirtyRegionAlignedEnable_) {
                 for (auto& r : rects) {
-                    uint32_t topAfterFlip = 0;
+                    int32_t topAfterFlip = 0;
 #ifdef RS_ENABLE_VK
                     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
                         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
                         topAfterFlip = r.top_;
                     } else {
-                        topAfterFlip = screenInfo_.GetRotatedHeight() - r.GetBottom();
+                        topAfterFlip = static_cast<int32_t>(screenInfo_.GetRotatedHeight()) - r.GetBottom();
                     }
 #else
-                    topAfterFlip = screenInfo_.GetRotatedHeight() - r.GetBottom();
+                    topAfterFlip = static_cast<int32_t>(screenInfo_.GetRotatedHeight()) - r.GetBottom();
 #endif
 #ifndef USE_ROSEN_DRAWING
                     region.op(SkIRect::MakeXYWH(r.left_, topAfterFlip, r.width_, r.height_), SkRegion::kUnion_Op);
@@ -5377,7 +5388,7 @@ void RSUniRenderVisitor::tryCapture(float width, float height)
     auto renderContext = RSMainThread::Instance()->GetRenderEngine()->GetRenderContext();
     recordingCanvas_->SetGrRecordingContext(renderContext->GetSharedDrGPUContext());
 #endif
-    canvas_->addCanvas(recordingCanvas_.get());
+    canvas_->AddCanvas(recordingCanvas_.get());
     RSRecordingThread::Instance(renderEngine_->GetRenderContext().get()).CheckAndRecording();
 }
 

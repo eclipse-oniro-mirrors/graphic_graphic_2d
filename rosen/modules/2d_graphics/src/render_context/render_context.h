@@ -225,10 +225,14 @@ private:
     std::shared_ptr<MemoryHandler> mHandler_;
     std::mutex shareContextMutex_;
 
-    sk_sp<SkColorSpace> ConvertColorGamutToSkColorSpace(GraphicColorGamut colorGamut) const;
+    static sk_sp<SkColorSpace> ConvertColorGamutToSkColorSpace(GraphicColorGamut colorGamut);
 #ifndef USE_ROSEN_DRAWING
 #ifdef RS_ENABLE_GL
     void InitGrContextOptions(GrContextOptions &options);
+#endif
+#else
+#ifdef RS_ENABLE_GL
+    void InitGrContextOptions(Drawing::GPUContextOptions &options);
 #endif
 #endif
 };

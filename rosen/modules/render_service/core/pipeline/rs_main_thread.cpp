@@ -1215,9 +1215,10 @@ void RSMainThread::ClearMemoryCache(bool deeply)
         }
         RS_LOGD("Clear memory cache");
         RS_TRACE_NAME_FMT("Clear memory cache");
+        SKResourceManager::Instance().ReleaseResource();
         grContext->Flush();
         SkGraphics::PurgeAllCaches(); // clear cpu cache
-        if (deeply) {
+        if (deeply || this->deviceType_ != DeviceType::PHONE) {
             MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(grContext);
         } else {
             MemoryManager::ReleaseUnlockGpuResource(grContext);
@@ -2366,7 +2367,7 @@ void RSMainThread::TrimMem(std::unordered_set<std::u16string>& argSets, std::str
         grContext->flushAndSubmit(true);
     } else if (type == "uihidden") {
         grContext->flush();
-        grContext->purgeUnlockedResources(true);
+        grContext->purgeUnlockAndSafeCacheGpuResources();
         grContext->flushAndSubmit(true);
     } else if (type == "shader") {
 #ifdef NEW_RENDER_CONTEXT
