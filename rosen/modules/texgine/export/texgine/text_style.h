@@ -104,6 +104,13 @@ struct RectStyle {
     }
 };
 
+enum class RoundRectType {
+    NONE,
+    LEFT_ONLY,
+    RIGHT_ONLY,
+    ALL,
+};
+
 /*
  * @brief TextStyle is a collection of parameters that control how text is displayed,
  *        including parameters for fonts, decorations, and text.

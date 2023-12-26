@@ -260,7 +260,7 @@ void VariantSpan::Paint(TexgineCanvas &canvas, double offsetX, double offsetY) n
     }
 
     if (ts_) {
-        ts_->Paint(canvas, offsetX, offsetY, xs_);
+        ts_->Paint(canvas, offsetX, offsetY, xs_, roundRectType_);
     }
 }
 
@@ -307,6 +307,21 @@ void VariantSpan::CheckPointer(bool nullable) const noexcept(false)
     if (as_ != nullptr && ts_ != nullptr) {
         throw TEXGINE_EXCEPTION(ERROR_STATUS);
     }
+}
+
+bool VariantSpan::HasBackgroundRect() const noexcept(true)
+{
+    return xs_.backgroundRect.color != 0;
+}
+
+RoundRectType VariantSpan::GetRoundRectType() const noexcept(true)
+{
+    return roundRectType_;
+}
+
+void VariantSpan::SetRoundRectType(RoundRectType type) noexcept(true)
+{
+    roundRectType_ = type;
 }
 } // namespace TextEngine
 } // namespace Rosen

@@ -577,8 +577,34 @@ void TypographyImpl::UpadateAnySpanMetrics(std::shared_ptr<AnySpan> &span, doubl
 void TypographyImpl::Paint(TexgineCanvas &canvas, double offsetX, double offsetY)
 {
     for (auto &metric : lineMetrics_) {
+        int spanCount = metric.lineSpans.size();
+        int index = 0;
+        int preIndex = -1; // Init preIndex to -1
+        bool leftRound = false;
+        bool rightRound = false;
         for (auto &span : metric.lineSpans) {
+            if (span.HasBackgroundRect()) {
+                // index - preIndex > 1 means the left span has no background rect
+                if (preIndex < 0 || index - preIndex > 1) {
+                    leftRound = true;
+                }
+                // spanCount - 1 is the last span index, index + 1 is next span index
+                if (index == spanCount - 1 || !metric.lineSpans[index + 1].HasBackgroundRect()) {
+                    rightRound = true;
+                }
+                preIndex = index;
+            }
+            if (leftRound && rightRound) {
+                span.SetRoundRectType(RoundRectType::ALL);
+            } else if (leftRound) {
+                span.SetRoundRectType(RoundRectType::LEFT_ONLY);
+            } else if (rightRound) {
+                span.SetRoundRectType(RoundRectType::RIGHT_ONLY);
+            } else {
+                span.SetRoundRectType(RoundRectType::NONE);
+            }
             span.Paint(canvas, offsetX + span.GetOffsetX(), offsetY + span.GetOffsetY());
+            index++;
         }
     }
 }
