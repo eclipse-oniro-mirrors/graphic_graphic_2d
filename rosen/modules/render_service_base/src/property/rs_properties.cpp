@@ -2849,6 +2849,11 @@ bool RSProperties::GetHaveEffectRegion() const
 
 void RSProperties::SetHaveEffectRegion(bool haveEffectRegion)
 {
+    // clear cache if new region is null or outside current region
+    if (auto& manager = GetFilterCacheManager(false);
+        manager && manager->IsCacheValid() && haveEffectRegion == false) {
+        manager->UpdateCacheStateWithFilterRegion();
+    }
     haveEffectRegion_ = haveEffectRegion;
 }
 } // namespace Rosen
