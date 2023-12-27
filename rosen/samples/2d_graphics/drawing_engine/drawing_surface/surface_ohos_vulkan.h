@@ -57,7 +57,7 @@ private:
 #endif
     std::unique_ptr<SurfaceFrameOhosVulkan> frame_;
     struct NativeWindow *mNativeWindow_ = nullptr;
-    vulkan::RSVulkanWindow *mVulkanWindow_ = nullptr;
+    vulkan::VulkanWindow *mVulkanWindow_ = nullptr;
 #ifdef ENABLE_NATIVEBUFFER
     std::list<NativeWindowBuffer*> surfaceList_;
     std::unordered_map<NativeWindowBuffer*, NativeBufferUtils::NativeSurfaceInfo> surfaceMap_;
