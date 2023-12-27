@@ -31,7 +31,6 @@
 namespace OHOS {
 namespace Rosen {
 namespace TextEngine {
-static std::string detectionName_;
 struct MeasuringRun {
     size_t start;
     size_t end;
@@ -143,7 +142,7 @@ private:
     void DoCgsByCluster(std::map<uint32_t, TextEngine::CharGroup> &cgsByCluster);
     void HbDestroy(hb_buffer_t* hbuffer, hb_font_t* hfont, hb_face_t* hface, hb_unicode_funcs_t* icuGetUnicodeFuncs);
     void UpdateCache();
-
+    void GetInitKey(struct MeasurerCacheKey &key);
     static inline std::mutex mutex_;
     static inline std::map<struct MeasurerCacheKey, struct MeasurerCacheVal> cache_;
     std::vector<Boundary> boundaries_ = {};

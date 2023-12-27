@@ -87,6 +87,17 @@ std::vector<LineMetrics> Shaper::CreateEllipsisSpan(const TypographyStyle &ys, c
     return DoShapeBeforeEllipsis(spans, ys2, fontProviders, MAXWIDTH);
 }
 
+void Shaper::SetEllipsisProperty(std::vector<VariantSpan> &ellipsisSpans,
+    std::vector<LineMetrics> &ellipsisMertics, double &ellipsisWidth)
+{
+    for (auto &metric : ellipsisMertics) {
+        for (auto &es : metric.lineSpans) {
+            ellipsisWidth += es.GetWidth();
+            ellipsisSpans.push_back(es);
+        }
+    }
+}
+
 void Shaper::ConsiderEllipsis(const TypographyStyle &tstyle,
     const std::shared_ptr<FontProviders> &fontProviders, const double widthLimit)
 {
@@ -109,12 +120,7 @@ void Shaper::ConsiderEllipsis(const TypographyStyle &tstyle,
     std::vector<LineMetrics> ellipsisMertics = CreateEllipsisSpan(tstyle, textStyle, fontProviders);
     double ellipsisWidth = 0.0;
     std::vector<VariantSpan> ellipsisSpans;
-    for (auto &metric : ellipsisMertics) {
-        for (auto &es : metric.lineSpans) {
-            ellipsisWidth += es.GetWidth();
-            ellipsisSpans.push_back(es);
-        }
-    }
+    SetEllipsisProperty(ellipsisSpans, ellipsisMertics, ellipsisWidth);
 
     EllipsisParams params{ellipsisSpans, ellipsisWidth, maxLines, widthLimit};
     if (maxLines == 1) { // single line

@@ -36,7 +36,6 @@ namespace TextEngine {
 #define CN_LEFT_QUOTE 0x201C
 #define CN_RIGHT_QUOTE 0x201D
 #define EN_QUOTE 0x22
-#define EXISTING_CRITICAL_VALUE 50000
 #define CUSTOM_MAX_WIDTH_LIMIT 1e9
 
 void TextBreaker::SetWidthLimit(const double widthLimit)
@@ -59,13 +58,6 @@ static double GetIndent(const double widthLimit, const int index, const std::vec
     }
 
     return indent;
-}
-
-void TextBreaker::DataWatch(std::vector<uint16_t> &u16vect)
-{
-    if (u16vect.size() > EXISTING_CRITICAL_VALUE) {
-        u16vect.erase(u16vect.begin()+EXISTING_CRITICAL_VALUE-1, u16vect.end());
-    }
 }
 
 void TextBreaker::CreateNewBoundary(CharGroups &cgs, std::vector<Boundary> &boundaries,
@@ -106,7 +98,6 @@ int TextBreaker::WordBreak(std::vector<VariantSpan> &spans, const TypographyStyl
         if (!u16vect.size()) {
             continue;
         }
-        DataWatch(u16vect);
         widthLimit_ -= GetIndent(widthLimit_, index, indents_);
         if (ys.ellipsis.length() && ys.maxLines == std::numeric_limits<size_t>::max() &&
             widthLimit_ != CUSTOM_MAX_WIDTH_LIMIT && widthLimit_ && u16vect.size() > widthLimit_) {

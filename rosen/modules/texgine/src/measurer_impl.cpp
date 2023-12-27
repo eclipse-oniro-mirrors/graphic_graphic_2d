@@ -33,6 +33,7 @@ namespace TextEngine {
 constexpr static uint8_t FIRST_BYTE = 24;
 constexpr static uint8_t SECOND_BYTE = 16;
 constexpr static uint8_t THIRD_BYTE = 8;
+static std::string detectionName_;
 
 namespace {
 void DumpCharGroup(int32_t index, const CharGroup &cg, double glyphEm,
@@ -107,9 +108,22 @@ const std::vector<Boundary> &MeasurerImpl::GetWordBoundary() const
 void MeasurerImpl::UpdateCache()
 {
     auto iter = cache_.begin();
-    for(size_t index = 0; index < POLL_NUM; index++) {
+    for (size_t index = 0; index < POLL_NUM; index++) {
         cache_.erase(iter++);
     }
+}
+
+void MeasurerImpl::GetInitKey(struct MeasurerCacheKey &key)
+{
+    key.text = text_;
+    key.style = style_;
+    key.locale = locale_;
+    key.rtl = rtl_;
+    key.size = size_;
+    key.startIndex = startIndex_;
+    key.endIndex = endIndex_;
+    key.letterSpacing = letterSpacing_;
+    key.wordSpacing = wordSpacing_;
 }
 
 int MeasurerImpl::Measure(CharGroups &cgs)
@@ -118,18 +132,8 @@ int MeasurerImpl::Measure(CharGroups &cgs)
     ScopedTrace scope("MeasurerImpl::Measure");
 #endif
     LOGSCOPED(sl, LOGEX_FUNC_LINE_DEBUG(), "MeasurerImpl::Measure");
-    struct MeasurerCacheKey key = {
-        .text = text_,
-        .style = style_,
-        .locale = locale_,
-        .rtl = rtl_,
-        .size = size_,
-        .startIndex = startIndex_,
-        .endIndex = endIndex_,
-        .letterSpacing = letterSpacing_,
-        .wordSpacing = wordSpacing_,
-    };
-
+    MeasurerCacheKey key;
+    GetInitKey(key);
     if (fontFeatures_ == nullptr || fontFeatures_->GetFeatures().size() == 0) {
         std::lock_guard<std::mutex> lock(mutex_);
         auto it = cache_.find(key);
@@ -138,8 +142,7 @@ int MeasurerImpl::Measure(CharGroups &cgs)
             boundaries_ = it->second.boundaries;
             if (detectionName_ != cgs.GetTypefaceName()) {
                 cache_.erase(key);
-            } 
-            else if(cache_.size() > POLL_MECHANISM){
+            } else if (cache_.size() > POLL_MECHANISM) {
                 UpdateCache();
             }
             return SUCCESSED;
