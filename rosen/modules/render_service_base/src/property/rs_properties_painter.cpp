@@ -1897,11 +1897,12 @@ void RSPropertiesPainter::DrawBackgroundEffect(
     }
 
     auto& matrix = properties.GetBoundsGeometry()->GetAbsMatrix();
-    auto boundsRect = Rect2DrawingRect(properties.GetBoundsRect()).RoundOut();
 #ifndef USE_ROSEN_DRAWING
+    auto boundsRect = Rect2SkRect(properties.GetBoundsRect());
     auto bounds = matrix.mapRect(boundsRect).roundOut();
     auto filter = std::static_pointer_cast<RSSkiaFilter>(RSFilter);
 #else
+    auto boundsRect = Rect2DrawingRect(properties.GetBoundsRect());
     Drawing::Rect dst;
     matrix.MapRect(dst, boundsRect);
     auto bounds = dst.RoundOut();
