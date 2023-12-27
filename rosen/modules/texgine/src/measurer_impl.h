@@ -31,6 +31,7 @@
 namespace OHOS {
 namespace Rosen {
 namespace TextEngine {
+static std::string detectionName_;
 struct MeasuringRun {
     size_t start;
     size_t end;
@@ -146,7 +147,6 @@ private:
     static inline std::mutex mutex_;
     static inline std::map<struct MeasurerCacheKey, struct MeasurerCacheVal> cache_;
     std::vector<Boundary> boundaries_ = {};
-    std::string defaultFallbackName_ = "HarmonyOS Sans SC";
 };
 
 hb_blob_t* HbFaceReferenceTableTypeface(hb_face_t* face, hb_tag_t tag, void* context);
