@@ -411,7 +411,7 @@ RSImageBase* RSImageBase::Unmarshalling(Parcel& parcel)
 #ifndef USE_ROSEN_DRAWING
 void RSImageBase::ConvertPixelMapToSkImage()
 {
-    if (!image_ && pixelMap_) {
+    if (!image_ && pixelMap_ && !pixelMap_->IsAstc()) {
         if (!pixelMap_->IsEditable()) {
 #if defined(ROSEN_OHOS)
             image_ = RSImageCache::Instance().GetRenderSkiaImageCacheByPixelMapId(uniqueId_, gettid());
@@ -456,7 +456,7 @@ void RSImageBase::ConvertPixelMapToSkImage()
 #else
 void RSImageBase::ConvertPixelMapToDrawingImage()
 {
-    if (!image_ && pixelMap_) {
+    if (!image_ && pixelMap_ && !pixelMap_->IsAstc()) {
         if (!pixelMap_->IsEditable()) {
 #if defined(ROSEN_OHOS)
             image_ = RSImageCache::Instance().GetRenderDrawingImageCacheByPixelMapId(uniqueId_, gettid());
