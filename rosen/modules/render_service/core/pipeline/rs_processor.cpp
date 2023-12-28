@@ -38,7 +38,7 @@ constexpr int32_t PERF_LEVEL_2_REQUESTED_CODE = 10014;
 constexpr int32_t PERF_LEVEL_3_REQUESTED_CODE = 10015;
 constexpr int64_t PERF_TIME_OUT = 950;
 constexpr uint32_t PERF_LEVEL_INTERVAL = 10;
-constexpr uint32_t PERF_LAYER_START_NUM = 7;
+constexpr uint32_t PERF_LAYER_START_NUM = 12;
 #ifdef FRAME_AWARE_TRACE
 constexpr uint32_t FRAME_TRACE_LAYER_NUM_1 = 11;
 constexpr uint32_t FRAME_TRACE_LAYER_NUM_2 = 13;
@@ -62,7 +62,7 @@ bool RSProcessor::FrameAwareTraceBoost(size_t layerNum)
         if (ft.RenderFrameTraceIsOpen()) {
             ft.RenderFrameTraceClose();
             PerfRequest(FRAME_TRACE_PERF_REQUESTED_CODE, false);
-            RS_LOGI("RsDebug RSProcessor::Perf: FrameTrace 0");
+            RS_LOGD("RsDebug RSProcessor::Perf: FrameTrace 0");
         }
         return false;
     }
@@ -76,7 +76,7 @@ bool RSProcessor::FrameAwareTraceBoost(size_t layerNum)
             return false;
         }
         PerfRequest(FRAME_TRACE_PERF_REQUESTED_CODE, true);
-        RS_LOGI("RsDebug RSProcessor::Perf: FrameTrace 1");
+        RS_LOGD("RsDebug RSProcessor::Perf: FrameTrace 1");
         lastRequestPerfTime = currentTime;
     }
     return true;
@@ -88,7 +88,7 @@ void RSProcessor::RequestPerf(uint32_t layerLevel, bool onOffTag)
     switch (layerLevel) {
         case PERF_LEVEL_0: {
             // do nothing
-            RS_LOGD("RsDebug RSProcessor::Perf: do nothing");
+            RS_LOGD("RsDebug RSProcessor::Perf: perf do nothing");
             break;
         }
         case PERF_LEVEL_1: {

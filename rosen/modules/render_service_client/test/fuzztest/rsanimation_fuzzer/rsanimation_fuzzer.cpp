@@ -381,9 +381,6 @@ namespace OHOS {
         const RSAnimationTimingProtocol timingProtocol = {};
 
         RSImplicitAnimatorMap::Instance().GetAnimator(animatorId);
-        auto testParam = std::make_shared<RSImplicitAnimationParam>(timingProtocol);
-        testParam->GetType();
-        testParam->CreateAnimation(firstProperty, secondProperty, thirdProperty);
         auto testKeyframeParam = std::make_shared<RSImplicitKeyframeAnimationParam>(timingProtocol,
             RSAnimationTimingCurve::DEFAULT, fraction);
         testKeyframeParam->GetType();

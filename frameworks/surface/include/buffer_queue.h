@@ -76,6 +76,8 @@ public:
     GSError DoFlushBuffer(uint32_t sequence, const sptr<BufferExtraData> &bedata,
                           const sptr<SyncFence>& fence, const BufferFlushConfigWithDamages &config);
 
+    GSError GetLastFlushedBuffer(sptr<SurfaceBuffer>& buffer, sptr<SyncFence>& fence, float matrix[16]);
+
     GSError AcquireBuffer(sptr<SurfaceBuffer>& buffer, sptr<SyncFence>& fence,
                           int64_t &timestamp, std::vector<Rect> &damages);
     GSError ReleaseBuffer(sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& fence);
@@ -102,8 +104,8 @@ public:
     GSError SetDefaultWidthAndHeight(int32_t width, int32_t height);
     int32_t GetDefaultWidth();
     int32_t GetDefaultHeight();
-    GSError SetDefaultUsage(uint32_t usage);
-    uint32_t GetDefaultUsage();
+    GSError SetDefaultUsage(uint64_t usage);
+    uint64_t GetDefaultUsage();
 
     GSError CleanCache();
     GSError GoBackground();
@@ -144,7 +146,7 @@ private:
     void DumpToFile(uint32_t sequence);
 
     uint32_t GetUsedSize();
-    void DeleteBuffers(int32_t count);
+    void DeleteBuffersLocked(int32_t count);
 
     GSError PopFromFreeList(sptr<SurfaceBuffer>& buffer, const BufferRequestConfig &config);
     GSError PopFromDirtyList(sptr<SurfaceBuffer>& buffer);
@@ -158,9 +160,10 @@ private:
 
     int32_t defaultWidth = 0;
     int32_t defaultHeight = 0;
-    uint32_t defaultUsage = 0;
+    uint64_t defaultUsage = 0;
     uint32_t queueSize_ = SURFACE_DEFAULT_QUEUE_SIZE;
     GraphicTransformType transform_ = GraphicTransformType::GRAPHIC_ROTATE_NONE;
+    GraphicTransformType lastFlushedTransform_ = GraphicTransformType::GRAPHIC_ROTATE_NONE;
     std::string name_;
     std::list<uint32_t> freeList_;
     std::list<uint32_t> dirtyList_;
@@ -184,6 +187,8 @@ private:
     std::atomic_bool isValidStatus_ = true;
     std::atomic_bool producerCacheClean_ = false;
     const bool isLocalRender_;
+    uint32_t lastFlusedSequence_;
+    sptr<SyncFence> lastFlusedFence_;
 };
 }; // namespace OHOS
 

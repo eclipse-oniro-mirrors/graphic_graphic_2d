@@ -72,13 +72,22 @@ public:
         std::shared_ptr<RSPropertyBase> property, const std::shared_ptr<RSPropertyBase>& startValue,
         const std::shared_ptr<RSPropertyBase>& endValue);
 
+    void CreateImplicitAnimationWithInitialVelocity(const std::shared_ptr<RSNode>& target,
+        const std::shared_ptr<RSPropertyBase>& property, const std::shared_ptr<RSPropertyBase>& startValue,
+        const std::shared_ptr<RSPropertyBase>& endValue, const std::shared_ptr<RSPropertyBase>& velocity);
+
     void CreateImplicitTransition(RSNode& target);
+    void CancelImplicitAnimation(
+        const std::shared_ptr<RSNode>& target, const std::shared_ptr<RSPropertyBase>& property);
 
 private:
     void EndImplicitAnimation();
     void BeginImplicitCurveAnimation();
     void BeginImplicitSpringAnimation();
     void BeginImplicitInterpolatingSpringAnimation();
+    void BeginImplicitCancelAnimation();
+
+    void CloseImplicitAnimationInner();
     
     void PushImplicitParam(const std::shared_ptr<RSImplicitAnimationParam>& implicitParam);
     void PopImplicitParam();

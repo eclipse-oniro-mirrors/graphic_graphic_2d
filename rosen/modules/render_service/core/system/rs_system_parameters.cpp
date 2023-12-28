@@ -52,9 +52,17 @@ bool RSSystemParameters::GetDrawingCacheEnabledDfx()
     return ConvertToInt(enabledDfx, 0) != 0;
 }
 
+bool RSSystemParameters::GetShowRefreshRateEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.showRefreshRate.enabled", "0");
+    int changed = 0;
+    const char *enabled = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enabled, 0) != 0;
+}
+
 QuickSkipPrepareType RSSystemParameters::GetQuickSkipPrepareType()
 {
-    static CachedHandle g_Handle = CachedParameterCreate("rosen.quickskipprepare.enabled", "3");
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.quickskipprepare.enabled", "4");
     int changed = 0;
     const char *type = CachedParameterGetChanged(g_Handle, &changed);
     return static_cast<QuickSkipPrepareType>(ConvertToInt(type, DEFAULT_QUICK_SKIP_PREPARE_TYPE_VALUE));
@@ -65,6 +73,14 @@ bool RSSystemParameters::GetFilterCacheOcculusionEnabled()
     static bool filterCacheOcclusionEnabled =
         std::atoi((system::GetParameter("persist.sys.graphic.filterCacheOcclusionEnabled", "1")).c_str()) != 0;
     return filterCacheOcclusionEnabled;
+}
+
+bool RSSystemParameters::GetSkipCanvasNodeOutofScreenEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.skipCanvasNodeOutofScreen.enabled", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 1) != 0;
 }
 } // namespace Rosen
 } // namespace OHOS

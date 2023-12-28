@@ -37,7 +37,7 @@ public:
 
     ~RSCanvasNode() override;
 
-    static SharedPtr Create(bool isRenderServiceNode = false);
+    static SharedPtr Create(bool isRenderServiceNode = false, bool isTextureExportNode = false);
 
 #ifndef USE_ROSEN_DRAWING
     SkCanvas* BeginRecording(int width, int height);
@@ -51,13 +51,17 @@ public:
     void DrawOnNode(RSModifierType type, DrawFunc func) override;
 
     void SetFreeze(bool isFreeze) override;
+    
+    using BoundsChangedCallback = std::function<void(const Rosen::Vector4f&)>;
+    void SetBoundsChangedCallback(BoundsChangedCallback callback) override;
 
 protected:
-    RSCanvasNode(bool isRenderServiceNode);
+    RSCanvasNode(bool isRenderServiceNode, bool isTextureExportNode = false);
     RSCanvasNode(const RSCanvasNode&) = delete;
     RSCanvasNode(const RSCanvasNode&&) = delete;
     RSCanvasNode& operator=(const RSCanvasNode&) = delete;
     RSCanvasNode& operator=(const RSCanvasNode&&) = delete;
+    BoundsChangedCallback boundsChangedCallback_;
 
 private:
 #ifndef USE_ROSEN_DRAWING
@@ -66,12 +70,14 @@ private:
     Drawing::RecordingCanvas* recordingCanvas_ = nullptr;
 #endif
     bool recordingUpdated_ = false;
+    mutable std::mutex mutex_;
 
     friend class RSUIDirector;
     friend class RSAnimation;
     friend class RSPathAnimation;
     friend class RSPropertyAnimation;
     friend class RSNodeMap;
+    void OnBoundsSizeChanged() const override;
 };
 } // namespace Rosen
 } // namespace OHOS

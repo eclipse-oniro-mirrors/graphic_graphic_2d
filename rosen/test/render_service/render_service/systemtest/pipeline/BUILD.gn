@@ -38,11 +38,13 @@ config("pipeline_test") {
 ## Build RSBaseRenderEngineTest
 ohos_systemtest("RSBaseRenderEngineTest") {
   module_out_path = module_output_path
+  include_dirs = [ "$graphic_2d_root/frameworks/surface/include" ]
   sources = [ "rs_base_render_engine_test.cpp" ]
   deps = [ ":rs_test_common" ]
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "sensor:sensor_interface_native",
   ]
   defines = []
   defines += gpu_defines
@@ -56,6 +58,7 @@ ohos_systemtest("RSDropFrameProcessorSystemTest") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "sensor:sensor_interface_native",
   ]
   defines = []
   defines += gpu_defines
@@ -69,6 +72,7 @@ ohos_systemtest("RSRenderServiceTest") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "sensor:sensor_interface_native",
   ]
   defines = []
   defines += gpu_defines
@@ -87,6 +91,9 @@ if (graphic_2d_feature_rs_enable_uni_render) {
     ]
     defines = []
     defines += gpu_defines
+    if (defined(use_rosen_drawing) && use_rosen_drawing) {
+      defines += [ "USE_ROSEN_DRAWING" ]
+    }
   }
 }
 
@@ -132,6 +139,8 @@ ohos_static_library("rs_test_common") {
     "//foundation/window/window_manager/wmserver:libwms",
     "//third_party/googletest:gtest_main",
   ]
+
+  public_deps += [ "../../../../../modules/2d_graphics:2d_graphics" ]
 
   external_deps = [
     "c_utils:utils",

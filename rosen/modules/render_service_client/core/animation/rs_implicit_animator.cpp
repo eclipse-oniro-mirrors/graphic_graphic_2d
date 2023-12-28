@@ -37,7 +37,13 @@ int RSImplicitAnimator::OpenImplicitAnimation(const RSAnimationTimingProtocol& t
     keyframeAnimations_.push({});
     switch (timingCurve.type_) {
         case RSAnimationTimingCurve::CurveType::INTERPOLATING:
-            BeginImplicitCurveAnimation();
+            if (timingProtocol.GetDuration() <= 0) {
+                // Special case: if duration is 0, we need to cancel existing implicit animations
+                BeginImplicitCancelAnimation();
+            } else {
+                // Begin default curve animation
+                BeginImplicitCurveAnimation();
+            }
             break;
         case RSAnimationTimingCurve::CurveType::SPRING:
             BeginImplicitSpringAnimation();
@@ -86,6 +92,14 @@ int RSImplicitAnimator::OpenImplicitAnimation(
     }
 }
 
+void RSImplicitAnimator::CloseImplicitAnimationInner()
+{
+    globalImplicitParams_.pop();
+    implicitAnimations_.pop();
+    keyframeAnimations_.pop();
+    EndImplicitAnimation();
+}
+
 std::vector<std::shared_ptr<RSAnimation>> RSImplicitAnimator::CloseImplicitAnimation()
 {
     if (globalImplicitParams_.empty() || implicitAnimations_.empty() || keyframeAnimations_.empty()) {
@@ -96,27 +110,28 @@ std::vector<std::shared_ptr<RSAnimation>> RSImplicitAnimator::CloseImplicitAnima
     const auto& finishCallback = std::get<const std::shared_ptr<AnimationFinishCallback>>(globalImplicitParams_.top());
     auto& currentAnimations = implicitAnimations_.top();
     auto& currentKeyframeAnimations = keyframeAnimations_.top();
-    // if no implicit animation created
+
+    // Special case: if implicit animation param type is CANCEL, we need to cancel all implicit animations
+    if (implicitAnimationParams_.top()->GetType() == ImplicitAnimationParamType::CANCEL) {
+        std::static_pointer_cast<RSImplicitCancelAnimationParam>(implicitAnimationParams_.top())->SyncProperties();
+    }
+
+    // if no implicit animation created by current implicit animation param, we need to take care of finish callback
     if (currentAnimations.empty() && currentKeyframeAnimations.empty()) {
         // If finish callback either 1. is null or 2. is referenced by any animation or implicitly parameters, we don't
         // do anything.
         if (finishCallback.use_count() != 1) {
-            globalImplicitParams_.pop();
-            implicitAnimations_.pop();
-            keyframeAnimations_.pop();
-            EndImplicitAnimation();
+            CloseImplicitAnimationInner();
             return {};
         }
-        // we are the only one who holds the finish callback, if the callback is NOT timing sensitive, we need to
-        // execute it asynchronously, in order to avoid timing issues.
-        if (finishCallback->finishCallbackType_ == FinishCallbackType::TIME_INSENSITIVE) {
+        // we are the only one who holds the finish callback, if the callback is NOT timing sensitive, or if implicit
+        // animation param type is CANCEL, we need to execute it asynchronously, in order to avoid timing issues.
+        if (finishCallback->finishCallbackType_ == FinishCallbackType::TIME_INSENSITIVE ||
+            implicitAnimationParams_.top()->GetType() == ImplicitAnimationParamType::CANCEL) {
             ROSEN_LOGD("RSImplicitAnimator::CloseImplicitAnimation, No implicit animations created, execute finish "
                        "callback asynchronously");
             RSUIDirector::PostTask([finishCallback]() { finishCallback->Execute(); });
-            globalImplicitParams_.pop();
-            implicitAnimations_.pop();
-            keyframeAnimations_.pop();
-            EndImplicitAnimation();
+            CloseImplicitAnimationInner();
             return {};
         }
         // we are the only one who holds the finish callback, and the callback is timing sensitive, we need to create an
@@ -145,10 +160,7 @@ std::vector<std::shared_ptr<RSAnimation>> RSImplicitAnimator::CloseImplicitAnima
         resultAnimations.emplace_back(animation);
     }
 
-    globalImplicitParams_.pop();
-    implicitAnimations_.pop();
-    keyframeAnimations_.pop();
-    EndImplicitAnimation();
+    CloseImplicitAnimationInner();
     return resultAnimations;
 }
 
@@ -192,7 +204,8 @@ void RSImplicitAnimator::EndImplicitKeyFrameAnimation()
 
 bool RSImplicitAnimator::NeedImplicitAnimation()
 {
-    return !implicitAnimationDisabled_ && !implicitAnimationParams_.empty();
+    return !implicitAnimationDisabled_ && !implicitAnimationParams_.empty() &&
+           implicitAnimationParams_.top()->GetType() != ImplicitAnimationParamType::INVALID;
 }
 
 void RSImplicitAnimator::BeginImplicitCurveAnimation()
@@ -206,9 +219,10 @@ void RSImplicitAnimator::BeginImplicitCurveAnimation()
 void RSImplicitAnimator::EndImplicitAnimation()
 {
     if (implicitAnimationParams_.empty() ||
-        (implicitAnimationParams_.top()->GetType() != ImplicitAnimationParamType::CURVE &&
-            implicitAnimationParams_.top()->GetType() != ImplicitAnimationParamType::SPRING &&
-            implicitAnimationParams_.top()->GetType() != ImplicitAnimationParamType::INTERPOLATING_SPRING)) {
+        (implicitAnimationParams_.top()->GetType() != ImplicitAnimationParamType::CANCEL &&
+        implicitAnimationParams_.top()->GetType() != ImplicitAnimationParamType::CURVE &&
+        implicitAnimationParams_.top()->GetType() != ImplicitAnimationParamType::SPRING &&
+        implicitAnimationParams_.top()->GetType() != ImplicitAnimationParamType::INTERPOLATING_SPRING)) {
         ROSEN_LOGE("Failed to end implicit animation, need to begin implicit animation firstly!");
         return;
     }
@@ -257,6 +271,13 @@ void RSImplicitAnimator::BeginImplicitInterpolatingSpringAnimation()
     [[maybe_unused]] const auto& [protocol, curve, unused, unused_repeatCallback] = globalImplicitParams_.top();
     auto interpolatingSpringParam = std::make_shared<RSImplicitInterpolatingSpringAnimationParam>(protocol, curve);
     PushImplicitParam(interpolatingSpringParam);
+}
+
+void RSImplicitAnimator::BeginImplicitCancelAnimation()
+{
+    [[maybe_unused]] const auto& [protocol, curve, unused, unused_repeatCallback] = globalImplicitParams_.top();
+    auto cancelImplicitParam = std::make_shared<RSImplicitCancelAnimationParam>(protocol);
+    PushImplicitParam(cancelImplicitParam);
 }
 
 void RSImplicitAnimator::BeginImplicitTransition(
@@ -319,6 +340,24 @@ void RSImplicitAnimator::CreateImplicitTransition(RSNode& target)
         target.AddAnimation(transition);
         implicitAnimations_.top().push_back({ transition, target.GetId() });
     }
+    return;
+}
+
+void RSImplicitAnimator::CancelImplicitAnimation(
+    const std::shared_ptr<RSNode>& target, const std::shared_ptr<RSPropertyBase>& property)
+{
+    if (target == nullptr || property == nullptr) {
+        return;
+    }
+    if (!target->HasPropertyAnimation(property->GetId())) {
+        return;
+    }
+    auto params = implicitAnimationParams_.top();
+    if (params->GetType() != ImplicitAnimationParamType::CANCEL) {
+        return;
+    }
+    auto cancelImplicitParam = std::static_pointer_cast<RSImplicitCancelAnimationParam>(params);
+    cancelImplicitParam->AddPropertyToPendingSyncList(property);
     return;
 }
 
@@ -432,6 +471,17 @@ void RSImplicitAnimator::CreateImplicitAnimation(const std::shared_ptr<RSNode>& 
             // this will create custom transition animation, there is no need to add it to target.
             return;
         }
+        case ImplicitAnimationParamType::CANCEL: {
+            // Create animation with CANCEL type will cancel all running animations of the target.
+            property->SetValue(endValue);                         // force set ui value
+            property->UpdateOnAllAnimationFinish();               // force sync RS value and cancel all RS animations
+            // Note: The callbacks of the canceled animations will be executed within the current implicit animation
+            // context, consistent with previous behavior. However, this may cause issues and may be changed in the
+            // future.
+            target->CancelAnimationByProperty(property->GetId()); // remove all ui animation
+            return;
+            return;
+        }
         default:
             ROSEN_LOGE("Failed to create animation, unknow type!");
             break;
@@ -461,6 +511,59 @@ void RSImplicitAnimator::ExecuteWithoutAnimation(const std::function<void()>& ca
     implicitAnimationDisabled_ = true;
     callback();
     implicitAnimationDisabled_ = implicitAnimationDisabled;
+}
+
+void RSImplicitAnimator::CreateImplicitAnimationWithInitialVelocity(const std::shared_ptr<RSNode>& target,
+    const std::shared_ptr<RSPropertyBase>& property, const std::shared_ptr<RSPropertyBase>& startValue,
+    const std::shared_ptr<RSPropertyBase>& endValue, const std::shared_ptr<RSPropertyBase>& velocity)
+{
+    if (globalImplicitParams_.empty() || implicitAnimations_.empty() || keyframeAnimations_.empty()) {
+        ROSEN_LOGE("RSImplicitAnimator::CreateImplicitAnimationWithInitialVelocity:Failed to create implicit "
+                   "animation, need to open implicit animation firstly!");
+        return;
+    }
+
+    if (target == nullptr || property == nullptr) {
+        ROSEN_LOGE(
+            "RSImplicitAnimator::CreateImplicitAnimationWithInitialVelocity:target node or property is a nullptr.");
+        return;
+    }
+
+    std::shared_ptr<RSAnimation> animation;
+    auto params = implicitAnimationParams_.top();
+    if (!params || params->GetType() != ImplicitAnimationParamType::SPRING) {
+        ROSEN_LOGE(
+            "RSImplicitAnimator::CreateImplicitAnimationWithInitialVelocity:the parameters of animations are invalid.");
+        return;
+    }
+
+    auto springImplicitParam = static_cast<RSImplicitSpringAnimationParam*>(params.get());
+    if (!springImplicitParam) {
+        ROSEN_LOGE("RSImplicitAnimator::CreateImplicitAnimationWithInitialVelocity:the parameter of spring animations "
+                   "is null.");
+        return;
+    }
+
+    animation = springImplicitParam->CreateAnimation(property, startValue, endValue);
+    if (!animation) {
+        ROSEN_LOGE("RSImplicitAnimator::CreateImplicitAnimationWithInitialVelocity: failed to create animation.");
+        return;
+    }
+
+    animation->SetInitialVelocity(velocity);
+    const auto& finishCallback = std::get<const std::shared_ptr<AnimationFinishCallback>>(globalImplicitParams_.top());
+    if (finishCallback && finishCallback->finishCallbackType_ == FinishCallbackType::LOGICALLY) {
+        animation->SetZeroThreshold(property->GetThreshold());
+    }
+
+    auto& repeatCallback = std::get<std::shared_ptr<AnimationRepeatCallback>>(globalImplicitParams_.top());
+    if (repeatCallback) {
+        animation->SetRepeatCallback(std::move(repeatCallback));
+        repeatCallback.reset();
+    }
+
+    target->AddAnimation(animation);
+    implicitAnimations_.top().emplace_back(animation, target->GetId());
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -51,7 +51,7 @@ bool SkiaRegion::GetBoundaryPath(Path* path) const
     if (!path) {
         return skRegion_->getBoundaryPath(nullptr);
     }
-    std::shared_ptr<SkiaPath> skiaPath = path->GetImpl<SkiaPath>();
+    auto skiaPath = path->GetImpl<SkiaPath>();
     if (!skiaPath) {
         LOGE("SkiaRegion::GetBoundaryPath, skiaPath is nullptr");
         return skRegion_->getBoundaryPath(nullptr);
@@ -91,6 +91,16 @@ bool SkiaRegion::Op(const Region& region, RegionOp op)
         return false;
     }
     return skRegion_->op(*skRegion, static_cast<SkRegion::Op>(op));
+}
+
+void SkiaRegion::Clone(const Region& other)
+{
+    auto skRegion = other.GetImpl<SkiaRegion>()->GetSkRegion();
+    if (skRegion == nullptr) {
+        LOGE("SkiaRegion::Clone, skRegion is nullptr");
+        return;
+    }
+    *skRegion_ = *skRegion;
 }
 
 std::shared_ptr<SkRegion> SkiaRegion::GetSkRegion() const

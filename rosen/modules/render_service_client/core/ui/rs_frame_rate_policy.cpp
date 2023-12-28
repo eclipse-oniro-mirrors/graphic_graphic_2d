@@ -15,6 +15,7 @@
 
 #include "rs_frame_rate_policy.h"
 
+#include <mutex>
 #include <unordered_map>
 
 #include "platform/common/rs_log.h"
@@ -32,6 +33,7 @@ struct AnimDynamicAttribute {
 };
 static std::unordered_map<std::string, std::unordered_map<std::string,
     AnimDynamicAttribute>> animAttributes;
+std::mutex g_animAttributesMutex;
 }
 
 RSFrameRatePolicy* RSFrameRatePolicy::GetInstance()
@@ -56,6 +58,13 @@ void RSFrameRatePolicy::RegisterHgmConfigChangeCallback()
     if (RSInterfaces::GetInstance().RegisterHgmConfigChangeCallback(callback) != NO_ERROR) {
         ROSEN_LOGE("RegisterHgmConfigChangeCallback failed");
     }
+
+    auto refreshRateModeChangeCallback = std::bind(&RSFrameRatePolicy::HgmRefreshRateModeChangeCallback, this,
+        std::placeholders::_1);
+    if (RSInterfaces::GetInstance().RegisterHgmRefreshRateModeChangeCallback(
+        refreshRateModeChangeCallback) != NO_ERROR) {
+        ROSEN_LOGE("RegisterHgmRefreshRateModeChangeCallback failed");
+    }
 }
 
 void RSFrameRatePolicy::HgmConfigChangeCallback(std::shared_ptr<RSHgmConfigData> configData)
@@ -77,9 +86,11 @@ void RSFrameRatePolicy::HgmConfigChangeCallback(std::shared_ptr<RSHgmConfigData>
             if (item.animType.empty() || item.animName.empty()) {
                 return;
             }
+            std::lock_guard<std::mutex> lock(g_animAttributesMutex);
             animAttributes[item.animType][item.animName] = {item.minSpeed, item.maxSpeed, item.preferredFps};
-            ROSEN_LOGD("RSFrameRatePolicy: config item type = %s, name = %s, minSpeed = %d, maxSpeed = %d, \
-                preferredFps = %d", item.animType.c_str(), item.animName.c_str(), static_cast<int>(item.minSpeed),
+            ROSEN_LOGD("RSFrameRatePolicy: config item type = %{public}s, name = %{public}s, "\
+                "minSpeed = %{public}d, maxSpeed = %{public}d, preferredFps = %{public}d",
+                item.animType.c_str(), item.animName.c_str(), static_cast<int>(item.minSpeed),
                 static_cast<int>(item.maxSpeed), static_cast<int>(item.preferredFps));
         }
         ppi_ = ppi;
@@ -88,8 +99,24 @@ void RSFrameRatePolicy::HgmConfigChangeCallback(std::shared_ptr<RSHgmConfigData>
     });
 }
 
+void RSFrameRatePolicy::HgmRefreshRateModeChangeCallback(int32_t refreshRateMode)
+{
+    SetRefreshRateMode(refreshRateMode);
+}
+
+void RSFrameRatePolicy::SetRefreshRateMode(int32_t refreshRateMode)
+{
+    currentRefreshRateMode_ = refreshRateMode;
+}
+
+int32_t RSFrameRatePolicy::GetRefreshRateMode()
+{
+    return currentRefreshRateMode_;
+}
+
 int RSFrameRatePolicy::GetPreferredFps(const std::string& scene, float speed)
 {
+    std::lock_guard<std::mutex> lock(g_animAttributesMutex);
     if (animAttributes.count(scene) == 0 || ppi_ == 0) {
         return 0;
     }

@@ -15,10 +15,12 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_UI_RS_NODE_H
 #define RENDER_SERVICE_CLIENT_CORE_UI_RS_NODE_H
 
+#include <optional>
 #include <unordered_map>
 
 #include "animation/rs_animation_timing_curve.h"
 #include "animation/rs_animation_timing_protocol.h"
+#include "animation/rs_frame_rate_range.h"
 #include "animation/rs_motion_path_option.h"
 #include "animation/rs_particle_params.h"
 #include "animation/rs_transition_effect.h"
@@ -78,12 +80,15 @@ public:
     virtual void AddChild(SharedPtr child, int index = -1);
     void MoveChild(SharedPtr child, int index);
     virtual void RemoveChild(SharedPtr child);
+    void RemoveChildByNodeId(NodeId childId);
     void RemoveFromTree();
     virtual void ClearChildren();
     const std::vector<NodeId>& GetChildren() const
     {
         return children_;
     }
+    // ONLY support index in [0, childrenTotal) or index = -1, otherwise return std::nullopt
+    const std::optional<NodeId> GetChildIdByIndex(int index) const;
 
     // Add/RemoveCrossParentChild only used as: the child is under multiple parents(e.g. a window cross multi-screens)
     void AddCrossParentChild(SharedPtr child, int index);
@@ -240,12 +245,22 @@ public:
     void SetBorderStyle(uint32_t styleValue);
     void SetBorderStyle(uint32_t left, uint32_t top, uint32_t right, uint32_t bottom);
     void SetBorderStyle(const Vector4<BorderStyle>& style);
+    void SetOuterBorderColor(const Vector4<Color>& color);
+    void SetOuterBorderWidth(const Vector4f& width);
+    void SetOuterBorderStyle(const Vector4<BorderStyle>& style);
+    void SetOuterBorderRadius(const Vector4f& radius);
+    void SetOutlineColor(const Vector4<Color>& color);
+    void SetOutlineWidth(const Vector4f& width);
+    void SetOutlineStyle(const Vector4<BorderStyle>& style);
+    void SetOutlineRadius(const Vector4f& radius);
 
     void SetBackgroundFilter(const std::shared_ptr<RSFilter>& backgroundFilter);
     void SetFilter(const std::shared_ptr<RSFilter>& filter);
     void SetLinearGradientBlurPara(const std::shared_ptr<RSLinearGradientBlurPara>& para);
     void SetDynamicLightUpRate(const float rate);
     void SetDynamicLightUpDegree(const float lightUpDegree);
+    void SetGreyCoef1(const float greyCoef1);
+    void SetGreyCoef2(const float greyCoef2);
     void SetCompositingFilter(const std::shared_ptr<RSFilter>& compositingFilter);
 
     void SetShadowColor(uint32_t colorValue);
@@ -258,6 +273,7 @@ public:
     void SetShadowPath(const std::shared_ptr<RSPath>& shadowPath);
     void SetShadowMask(bool shadowMask);
     void SetShadowIsFilled(bool shadowIsFilled);
+    void SetShadowColorStrategy(int shadowColorStrategy);
 
     void SetFrameGravity(Gravity gravity);
 
@@ -283,6 +299,10 @@ public:
 
     void SetUseEffect(bool useEffect);
 
+    void SetUseShadowBatching(bool useShadowBatching);
+
+    void SetColorBlendMode(RSColorBlendModeType blendMode);
+
     // driven render
     void MarkDrivenRender(bool flag);
     void MarkDrivenRenderItemIndex(int index);
@@ -301,7 +321,21 @@ public:
     // Mark preferentially draw node and childrens
     void MarkNodeGroup(bool isNodeGroup, bool isForced = true);
 
+    void MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer);
+
     void SetGrayScale(float grayScale);
+
+    void SetLightIntensity(float lightIntensity);
+
+    void SetLightPosition(const Vector4f& lightPosition);
+
+    void SetLightPosition(float positionX, float positionY, float positionZ);
+
+    void SetIlluminatedBorderWidth(float illuminatedBorderWidth);
+
+    void SetIlluminatedType(uint32_t illuminatedType);
+
+    void SetBloom(float bloomIntensity);
 
     void SetBrightness(float brightness);
 
@@ -313,6 +347,8 @@ public:
 
     void SetInvert(float invert);
 
+    void SetAiInvert(const Vector4f& aiInvert);
+
     void SetHueRotate(float hueRotate);
 
     void SetColorBlend(uint32_t colorValue);
@@ -321,14 +357,21 @@ public:
 
     void UpdateUIFrameRateRange(const FrameRateRange& range);
 
-    void SetOutOfParent(OutOfParentType outOfParent);
+    int32_t CalcExpectedFrameRate(const std::string& scene, float speed);
 
-    void SetColorBlendMode(RSColorBlendModeType blendMode);
+    void SetOutOfParent(OutOfParentType outOfParent);
+    using BoundsChangedCallback = std::function<void (const Rosen::Vector4f&)>;
+    virtual void SetBoundsChangedCallback(BoundsChangedCallback callback){};
+    bool IsTextureExportNode() const
+    {
+        return isTextureExportNode_;
+    }
 protected:
-    explicit RSNode(bool isRenderServiceNode);
-    explicit RSNode(bool isRenderServiceNode, NodeId id);
+    explicit RSNode(bool isRenderServiceNode, bool isTextureExportNode = false);
+    explicit RSNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode = false);
 
     bool isRenderServiceNode_;
+    bool isTextureExportNode_ = false;
     bool skipDestroyCommandInDestructor_ = false;
 
     bool drawContentLast_ = false;
@@ -340,6 +383,8 @@ protected:
     {
         return false;
     }
+
+    void DoFlushModifier();
 
     std::vector<PropertyId> GetModifierIds() const;
     bool isCustomTextType_ = false;
@@ -357,8 +402,8 @@ private:
     bool HasPropertyAnimation(const PropertyId& id);
     void FallbackAnimationsToRoot();
     void AddAnimationInner(const std::shared_ptr<RSAnimation>& animation);
-    void RemoveAnimationInner(const std::shared_ptr<RSAnimation>& animation);
     void FinishAnimationByProperty(const PropertyId& id);
+    void RemoveAnimationInner(const std::shared_ptr<RSAnimation>& animation);
     void CancelAnimationByProperty(const PropertyId& id);
     const std::shared_ptr<RSModifier> GetModifier(const PropertyId& propertyId);
     virtual void OnBoundsSizeChanged() const {};
@@ -377,6 +422,8 @@ private:
 
     bool isNodeGroup_ = false;
 
+    bool isNodeSingleFrameComposer_ = false;
+
     RSModifierExtractor stagingPropertiesExtractor_;
     RSShowingPropertiesFreezer showingPropertiesFreezer_;
     std::unordered_map<PropertyId, std::shared_ptr<RSModifier>> modifiers_;
@@ -393,22 +440,23 @@ private:
     FrameRateRange nodeRange_ = { 0, 0, 0 };
     std::mutex animationMutex_;
 
-    friend class RSAnimation;
-    friend class RSCurveAnimation;
-    friend class RSExtendedModifier;
-    friend class RSGeometryTransModifier;
-    friend class RSImplicitAnimator;
-    friend class RSInterpolatingSpringAnimation;
-    friend class RSKeyframeAnimation;
-    friend class RSModifier;
-    friend class RSModifierExtractor;
-    friend class RSPathAnimation;
-    friend class RSPropertyAnimation;
-    friend class RSPropertyBase;
-    friend class RSShowingPropertiesFreezer;
-    friend class RSSpringAnimation;
-    friend class RSTransition;
     friend class RSUIDirector;
+    friend class RSTransition;
+    friend class RSSpringAnimation;
+    friend class RSShowingPropertiesFreezer;
+    friend class RSPropertyBase;
+    friend class RSPropertyAnimation;
+    friend class RSPathAnimation;
+    friend class RSModifierExtractor;
+    friend class RSModifier;
+    friend class RSKeyframeAnimation;
+    friend class RSInterpolatingSpringAnimation;
+    friend class RSImplicitCancelAnimationParam;
+    friend class RSImplicitAnimator;
+    friend class RSGeometryTransModifier;
+    friend class RSExtendedModifier;
+    friend class RSCurveAnimation;
+    friend class RSAnimation;
     template<typename T>
     friend class RSProperty;
     template<typename T>

@@ -35,7 +35,7 @@ enum class FontEdging {
     SUBPIXEL_ANTI_ALIAS,
 };
 
-class Font {
+class DRAWING_API Font {
 public:
     Font();
     Font(std::shared_ptr<Typeface> typeface, scalar size, scalar scaleX, scalar skewX);
@@ -129,7 +129,7 @@ public:
     scalar MeasureText(const void* text, size_t byteLength, TextEncoding encoding);
 
     template<typename T>
-    const std::shared_ptr<T> GetImpl() const
+    T* GetImpl() const
     {
         return fontImpl_->DowncastingTo<T>();
     }

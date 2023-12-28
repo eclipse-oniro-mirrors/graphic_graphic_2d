@@ -31,6 +31,13 @@ config("render_service_client_config") {
 
 template("render_service_client_source_set") {
   ohos_source_set(target_name) {
+    branch_protector_ret = "pac_ret"
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      debug = false
+      blocklist = "./rs_client_blocklist.txt"
+    }
     defines = []
     defines += gpu_defines
     defines += [ "MODULE_RSC" ]
@@ -92,15 +99,22 @@ template("render_service_client_source_set") {
       "core/ui/rs_canvas_node.cpp",
       "core/ui/rs_display_node.cpp",
       "core/ui/rs_effect_node.cpp",
+      "core/ui/rs_frame_rate_linker.cpp",
       "core/ui/rs_frame_rate_policy.cpp",
       "core/ui/rs_node.cpp",
       "core/ui/rs_proxy_node.cpp",
       "core/ui/rs_root_node.cpp",
       "core/ui/rs_surface_extractor.cpp",
       "core/ui/rs_surface_node.cpp",
+      "core/ui/rs_texture_export.cpp",
       "core/ui/rs_ui_director.cpp",
       "core/ui/rs_ui_share_context.cpp",
     ]
+
+    if (is_cross_platform) {
+      #ui
+      sources -= [ "core/ui/rs_display_node.cpp" ]
+    }
 
     if (defined(graphic_2d_ext_configs.vendor_root)) {
       sources += graphic_2d_ext_configs.librender_service_client_ext_sources
@@ -215,22 +229,30 @@ render_service_client_source_set("render_service_client_src_static") {
   is_static_lib = true
 }
 
+config("render_service_client_link_config") {
+  if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
+    ldflags = [
+      "-Wl,--lto-O2",
+      "-Wl,-mllvm",
+      "-Wl,-wholeprogramdevirt-check=fallback",
+      "-Wl,-Bsymbolic",
+    ]
+  }
+}
+
 ohos_shared_library("librender_service_client") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "./rs_client_blocklist.txt"
+  }
   public_deps = [ ":render_service_client_src" ]
   innerapi_tags = [ "platformsdk" ]
 
-  ldflags = []
-
-  if (is_ohos && enhanced_opt) {
-    ldflags += [ "-Wl,-Bsymbolic" ]
-  }
-
-  if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64") &&
-      enhanced_opt) {
-    ldflags += [
-      "-Wl,-mllvm",
-      "-Wl,-wholeprogramdevirt-check=fallback",
-    ]
+  if (enhanced_opt) {
+    configs = [ ":render_service_client_link_config" ]
   }
 
   part_name = "graphic_2d"
@@ -238,6 +260,13 @@ ohos_shared_library("librender_service_client") {
 }
 
 ohos_source_set("librender_service_client_static") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    blocklist = "./rs_client_blocklist.txt"
+  }
   public_deps = [ ":render_service_client_src_static" ]
   deps = [ "$rosen_root/modules/platform:eventhandler" ]
   part_name = "graphic_2d"

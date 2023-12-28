@@ -16,12 +16,33 @@
 #ifndef RECORDING_CANVAS_H
 #define RECORDING_CANVAS_H
 
+#include <optional>
+#include <stack>
+
 #include "draw/canvas.h"
 #include "recording/adaptive_image_helper.h"
 #include "recording/draw_cmd_list.h"
+#include "recording/recording_handle.h"
+#ifdef ROSEN_OHOS
+#include "surface_buffer.h"
+#endif
 
 namespace OHOS {
 namespace Rosen {
+#ifdef ROSEN_OHOS
+struct DrawingSurfaceBufferInfo {
+    DrawingSurfaceBufferInfo() = default;
+    DrawingSurfaceBufferInfo(
+        const sptr<SurfaceBuffer>& surfaceBuffer, int offSetX, int offSetY, int width, int height)
+        : surfaceBuffer_(surfaceBuffer), offSetX_(offSetX), offSetY_(offSetY), width_(width), height_(height)
+    {}
+    sptr<SurfaceBuffer> surfaceBuffer_ = nullptr;
+    int offSetX_ = 0;
+    int offSetY_ = 0;
+    int width_ = 0;
+    int height_ = 0;
+};
+#endif
 namespace Drawing {
 /*
  * @brief  RecordingCanvas is an empty canvas, which does not act on any surface,
@@ -39,6 +60,18 @@ public:
     {
         return DrawingType::RECORDING;
     }
+
+    void SetGrRecordingContext(std::shared_ptr<GPUContext> gpuContext)
+    {
+        gpuContext_ = gpuContext;
+    }
+
+    std::shared_ptr<GPUContext> GetGPUContext() override
+    {
+        return gpuContext_;
+    }
+
+    void Clear() const;
 
     void DrawPoint(const Point& point) override;
     void DrawPoints(PointMode mode, size_t count, const Point pts[]) override;
@@ -76,10 +109,12 @@ public:
     void DrawImageRect(const Image& image, const Rect& dst, const SamplingOptions& sampling) override;
     void DrawPicture(const Picture& picture) override;
     void DrawTextBlob(const TextBlob* blob, const scalar x, const scalar y) override;
+    void DrawSymbol(const DrawingHMSymbolData& symbol, Point locate) override;
 
     void ClipRect(const Rect& rect, ClipOp op, bool doAntiAlias) override;
     void ClipIRect(const RectI& rect, ClipOp op = ClipOp::INTERSECT) override;
     void ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias) override;
+    void ClipRoundRect(const Rect& rect, std::vector<Point>& pts, bool doAntiAlias) override;
     void ClipPath(const Path& path, ClipOp op, bool doAntiAlias) override;
     void ClipRegion(const Region& region, ClipOp op = ClipOp::INTERSECT) override;
 
@@ -93,7 +128,7 @@ public:
 
     void Flush() override;
     void Clear(ColorQuad color) override;
-    void Save() override;
+    uint32_t Save() override;
     void SaveLayer(const SaveLayerOps& saveLayerOps) override;
     void Restore() override;
     uint32_t GetSaveCount() const override;
@@ -105,14 +140,29 @@ public:
     void DrawPixelMap(const std::shared_ptr<Media::PixelMap>& pixelMap,
         const AdaptiveImageInfo& rsImageInfo, const SamplingOptions& smapling);
 
-    CoreCanvas& AttachPen(const Pen& pen) override;
-    CoreCanvas& AttachBrush(const Brush& brush) override;
-    CoreCanvas& DetachPen() override;
-    CoreCanvas& DetachBrush() override;
-
-private:
+    void SetIsCustomTextType(bool isCustomTextType);
+    bool IsCustomTextType() const;
+#ifdef ROSEN_OHOS
+    void DrawSurfaceBuffer(const DrawingSurfaceBufferInfo& surfaceBufferInfo);
+#endif
+protected:
+    static void GenerateHandleFromPaint(CmdList& cmdList, const Paint& paint, PaintHandle& paintHandle);
     std::shared_ptr<DrawCmdList> cmdList_ = nullptr;
-    int saveCount_ = 0;
+private:
+    template<typename T, typename... Args>
+    void AddOp(Args&&... args);
+
+    enum SaveOpState {
+        LazySaveOp,
+        RealSaveOp
+    };
+    void CheckForLazySave();
+    void GenerateCachedOpForTextblob(const TextBlob* blob, const scalar x, const scalar y);
+    bool isCustomTextType_ = false;
+    std::optional<Brush> customTextBrush_ = std::nullopt;
+    std::optional<Pen> customTextPen_ = std::nullopt;
+    std::stack<SaveOpState> saveOpStateStack_;
+    std::shared_ptr<GPUContext> gpuContext_ = nullptr;
 };
 } // namespace Drawing
 } // namespace Rosen

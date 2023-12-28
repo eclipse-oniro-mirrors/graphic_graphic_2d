@@ -35,10 +35,12 @@ config("pipeline_test") {
 ohos_unittest("RSRenderServiceConnectionStubTest") {
   module_out_path = module_output_path
   sources = [ "rs_render_service_connection_stub_test.cpp" ]
+  include_dirs = [ "$graphic_2d_root/frameworks/surface/include" ]
   deps = [ ":rs_test_common" ]
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "sensor:sensor_interface_native",
   ]
   defines = []
   defines += gpu_defines
@@ -52,6 +54,7 @@ ohos_unittest("RSRenderServiceStubTest") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "sensor:sensor_interface_native",
   ]
   defines = []
   defines += gpu_defines

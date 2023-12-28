@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "text_span.h"
 
 #include <iomanip>
 #include <stack>
+#include <utility>
 
 #include <hb-icu.h>
 #include <unicode/ubidi.h>
@@ -35,6 +35,8 @@
 #endif
 #include "text_converter.h"
 #include "word_breaker.h"
+#include "symbol_engine/hm_symbol_run.h"
+#include "utils/system_properties.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -43,6 +45,8 @@ namespace TextEngine {
 #define MAXALPHA 255
 #define OFFSETY 3
 #define HALF 0.5f
+#define DEFAULT_FONT_SIZE 14.0f
+#define SCALE 0.7f
 #define WIDTH_SCALAR 5.0f
 #define HEIGHT_SCALAR 5.0f
 #define DOTTED_ADVANCE 10.0f
@@ -61,6 +65,12 @@ namespace TextEngine {
 #define POINTY2 2
 #define POINTY4 4
 #define POINTY6 6
+
+#ifdef BUILD_NON_SDK_VER
+const bool G_IS_HMSYMBOL_ENABLE = Drawing::SystemProperties::GetHMSymbolEnable();
+#else
+const bool G_IS_HMSYMBOL_ENABLE = true;
+#endif
 
 std::shared_ptr<TextSpan> TextSpan::MakeEmpty()
 {
@@ -135,7 +145,7 @@ std::shared_ptr<TextSpan> TextSpan::CloneWithCharGroups(const CharGroups &cgs)
 
 double TextSpan::GetHeight() const
 {
-    return *tmetrics_.fDescent_ - *tmetrics_.fAscent_;
+    return *tmetrics_->fDescent_ - *tmetrics_->fAscent_;
 }
 
 double TextSpan::GetWidth() const
@@ -158,7 +168,8 @@ bool TextSpan::IsRTL() const
     return rtl_;
 }
 
-void TextSpan::Paint(TexgineCanvas &canvas, double offsetX, double offsetY, const TextStyle &xs)
+void TextSpan::Paint(TexgineCanvas &canvas, double offsetX, double offsetY, const TextStyle &xs,
+    const RoundRectType &rType)
 {
     TexginePaint paint;
     paint.SetAntiAlias(true);
@@ -167,19 +178,45 @@ void TextSpan::Paint(TexgineCanvas &canvas, double offsetX, double offsetY, cons
 #else
     paint.SetAlpha(MAXALPHA);
 #endif
-    paint.SetColor(xs.color);
     if (xs.background.has_value()) {
-        auto rect = TexgineRect::MakeXYWH(offsetX, offsetY + *tmetrics_.fAscent_, width_,
-            *tmetrics_.fDescent_ - *tmetrics_.fAscent_);
+        auto rect = TexgineRect::MakeXYWH(offsetX, offsetY + *tmetrics_->fAscent_, width_,
+            *tmetrics_->fDescent_ - *tmetrics_->fAscent_);
         canvas.DrawRect(rect, xs.background.value());
     }
 
+    if (xs.backgroundRect.color != 0) {
+        paint.SetColor(xs.backgroundRect.color);
+        double ltRadius = 0.0;
+        double rtRadius = 0.0;
+        double rbRadius = 0.0;
+        double lbRadius = 0.0;
+        if (rType == RoundRectType::ALL || rType == RoundRectType::LEFT_ONLY) {
+            ltRadius = xs.backgroundRect.leftTopRadius;
+            lbRadius = xs.backgroundRect.leftBottomRadius;
+        }
+        if (rType == RoundRectType::ALL || rType == RoundRectType::RIGHT_ONLY) {
+            rtRadius = xs.backgroundRect.rightTopRadius;
+            rbRadius = xs.backgroundRect.rightBottomRadius;
+        }
+        const SkVector fRadii[4] = {{ltRadius, ltRadius}, {rtRadius, rtRadius}, {rbRadius, rbRadius},
+            {lbRadius, lbRadius}};
+        auto rect = TexgineRect::MakeRRect(offsetX, absLineY_, width_, lineHeight_, fRadii);
+        canvas.DrawRRect(rect, paint);
+    }
+
+    paint.SetColor(xs.color);
     if (xs.foreground.has_value()) {
         paint = xs.foreground.value();
     }
 
     PaintShadow(canvas, offsetX, offsetY, xs.shadows);
-    canvas.DrawTextBlob(textBlob_, offsetX, offsetY, paint);
+    if (xs.isSymbolGlyph && G_IS_HMSYMBOL_ENABLE) {
+        std::pair<double, double> offset(offsetX, offsetY);
+        HMSymbolRun::DrawSymbol(canvas, textBlob_, offset, paint, xs);
+    } else {
+        canvas.DrawTextBlob(textBlob_, offsetX, offsetY, paint);
+    }
+
     PaintDecoration(canvas, offsetX, offsetY, xs);
 }
 
@@ -189,15 +226,16 @@ void TextSpan::PaintDecoration(TexgineCanvas &canvas, double offsetX, double off
     double right = left + GetWidth();
 
     if ((xs.decoration & TextDecoration::UNDERLINE) == TextDecoration::UNDERLINE) {
-        double y = offsetY + *tmetrics_.fUnderlinePosition_;
+        double y = offsetY + *tmetrics_->fUnderlinePosition_;
         PaintDecorationStyle(canvas, left, right, y, xs);
     }
     if ((xs.decoration & TextDecoration::OVERLINE) == TextDecoration::OVERLINE) {
-        double y = offsetY - abs(*tmetrics_.fAscent_);
+        double y = offsetY - abs(*tmetrics_->fAscent_);
         PaintDecorationStyle(canvas, left, right, y, xs);
     }
     if ((xs.decoration & TextDecoration::LINE_THROUGH) == TextDecoration::LINE_THROUGH) {
-        double y = offsetY - (*tmetrics_.fCapHeight_ * HALF);
+        double y = offsetY - (*tmetrics_->fCapHeight_ * HALF) +
+            (xs.fontSize / DEFAULT_FONT_SIZE * xs.decorationThicknessScale * HALF);
         PaintDecorationStyle(canvas, left, right, y, xs);
     }
     if ((xs.decoration & TextDecoration::BASELINE) == TextDecoration::BASELINE) {
@@ -212,7 +250,7 @@ void TextSpan::PaintDecorationStyle(TexgineCanvas &canvas, double left, double r
     paint.SetAntiAlias(true);
     paint.SetARGB(MAXRGB, MAXRGB, 0, 0);
     paint.SetColor(xs.decorationColor.value_or(xs.color));
-    paint.SetStrokeWidth(xs.decorationThicknessScale);
+    paint.SetStrokeWidth(xs.fontSize / DEFAULT_FONT_SIZE * xs.decorationThicknessScale * SCALE);
 
     switch (xs.decorationStyle) {
         case TextDecorationStyle::SOLID:

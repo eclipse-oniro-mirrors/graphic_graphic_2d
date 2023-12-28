@@ -73,6 +73,8 @@ private:
         void SetCanvas(std::shared_ptr<Drawing::RecordingCanvas> canvas);
 #endif
 
+        void SetPaintFilterCanvas(std::shared_ptr<RSPaintFilterCanvas> canvas);
+
     private:
         std::shared_ptr<RSPaintFilterCanvas> canvas_ = nullptr;
 

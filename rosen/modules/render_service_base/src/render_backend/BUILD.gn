@@ -25,6 +25,12 @@ config("export_config") {
 }
 
 ohos_static_library("librender_backend") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   public_configs = [ ":export_config" ]
 
   include_dirs = [
@@ -72,7 +78,7 @@ ohos_static_library("librender_backend") {
       include_dirs += [ "//third_party/flutter/skia" ]
     }
 
-    if (graphic_2d_feature_enable_vulkan) {
+    if (graphic_2d_feature_enable_flutter_vulkan) {
       include_dirs += [ "//third_party/flutter/engine/flutter/vulkan" ]
       sources += [ "ohos/render_context_ohos_vk.cpp" ]
     }

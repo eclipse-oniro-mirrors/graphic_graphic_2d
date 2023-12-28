@@ -22,6 +22,7 @@
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
+class DrawOpItem;
 class DRAWING_API DrawCmdList : public CmdList {
 public:
     DrawCmdList() = default;
@@ -34,6 +35,15 @@ public:
     }
 
     /*
+     * @brief         Clear Draw Ops Param
+     */
+    void ClearOp();
+
+    size_t GetOpItemSize() const;
+
+    std::string GetOpsWithDesc() const;
+
+    /*
      * @brief       Creates a DrawCmdList with contiguous buffers.
      * @param data  A contiguous buffers.
      */
@@ -43,6 +53,9 @@ public:
      * @brief         Unmarshalling Draw Ops Param from contiguous buffers
      */
     void UnmarshallingOps();
+    bool IsCmdListOpitem(uint32_t& type);
+    void UnmarshallingOpsReset();
+    void UnmarshallingOpsEnd();
 
     /*
      * @brief         Draw cmd is empty or not.
@@ -53,7 +66,7 @@ public:
      * @brief         Calls the corresponding operations of all opitems in DrawCmdList to the canvas.
      * @param canvas  Implements the playback action of the DrawCmdList in the Canvas.
      */
-    void Playback(Canvas& canvas, const Rect* rect = nullptr) const;
+    void Playback(Canvas& canvas, const Rect* rect = nullptr);
 
     /*
      * @brief  Gets the width of the DrawCmdList.
@@ -75,10 +88,45 @@ public:
      */
     void SetHeight(int32_t height);
 
+#ifdef DDGR_ENABLE_FEATURE_OPINC
+    size_t GetSize() const;
+#endif
+
+    void GenerateCache(Canvas* canvas = nullptr, const Rect* rect = nullptr);
+
+    void GenerateCacheInRenderService(Canvas* canvas, const Rect* rect);
+
+    void ClearCache();
+
+    bool GetIsCache();
+
+    void SetIsCache(bool isCached);
+
+    bool GetCachedHighContrast();
+
+    void SetCachedHighContrast(bool cachedHighContrast);
+
+    std::vector<std::pair<uint32_t, uint32_t>> GetReplacedOpList();
+
+    void SetReplacedOpList(std::vector<std::pair<uint32_t, uint32_t>> replacedOpList);
+
+    std::vector<std::shared_ptr<DrawOpItem>> UnmarshallingCmdList();
+
+    void AddOpToCmdList(std::shared_ptr<DrawCmdList> cmdList);
+
 private:
     MemAllocator largeObjectAllocator_;
+    std::vector<std::shared_ptr<DrawOpItem>> unmarshalledOpItems_;
+    size_t lastOpGenSize_ = 0;
     int32_t width_;
     int32_t height_;
+#ifdef DDGR_ENABLE_FEATURE_OPINC
+    int opIncItemCnt_ = 0;
+#endif
+    std::vector<std::pair<uint32_t, uint32_t>> replacedOpList_;
+    std::vector<std::pair<uint32_t, std::shared_ptr<DrawOpItem>>> opReplacedByDrivenRender_;
+    bool isCached_ = false;
+    bool cachedHighContrast_ = false;
 };
 
 using DrawCmdListPtr = std::shared_ptr<DrawCmdList>;
