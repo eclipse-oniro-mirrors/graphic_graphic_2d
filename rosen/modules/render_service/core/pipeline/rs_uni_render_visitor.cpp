@@ -1573,7 +1573,7 @@ void RSUniRenderVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
         RS_LOGE("RSUniRenderVisitor::PrepareRootRenderNode curSurfaceDirtyManager is nullptr");
         return;
     }
-    dirtyFlag_ = node.Update(*curSurfaceDirtyManager_, rsParent, dirtyFlag_);
+    dirtyFlag_ = node.Update(*curSurfaceDirtyManager_, rsParent, dirtyFlag_, prepareClipRect_);
 #if defined(RS_ENABLE_DRIVEN_RENDER)
     if (drivenInfo_) {
         drivenInfo_->currentRootNode = node.shared_from_this();
