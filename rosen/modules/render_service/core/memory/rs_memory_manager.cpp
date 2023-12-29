@@ -660,7 +660,7 @@ void MemoryManager::DumpDrawingGpuMemory(DfxString& log, const Drawing::GPUConte
     gpuContext->DumpGpuStats(stat);
 
     log.AppendFormat("%s\n", stat.c_str());
-#endif // RS_ENABLE_GL
+#endif
 }
 #endif // USE_ROSEN_DRAWING
 
