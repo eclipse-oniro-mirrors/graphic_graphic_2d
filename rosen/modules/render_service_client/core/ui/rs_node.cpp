@@ -277,6 +277,7 @@ void RSNode::FallbackAnimationsToRoot()
         if (animation && animation->GetRepeatCount() == -1) {
             continue;
         }
+        std::unique_lock<std::mutex> lock(animationMutex_);
         target->AddAnimationInner(std::move(animation));
     }
     std::unique_lock<std::mutex> lock(animationMutex_);
@@ -285,7 +286,6 @@ void RSNode::FallbackAnimationsToRoot()
 
 void RSNode::AddAnimationInner(const std::shared_ptr<RSAnimation>& animation)
 {
-    std::unique_lock<std::mutex> lock(animationMutex_);
     animations_.emplace(animation->GetId(), animation);
     animatingPropertyNum_[animation->GetPropertyId()]++;
 }
@@ -362,7 +362,10 @@ void RSNode::AddAnimation(const std::shared_ptr<RSAnimation>& animation)
         FinishAnimationByProperty(animation->GetPropertyId());
     }
 
-    AddAnimationInner(animation);
+    {
+        std::unique_lock<std::mutex> lock(animationMutex_);
+        AddAnimationInner(animation);
+    }
     animation->StartInner(shared_from_this());
 }
 
