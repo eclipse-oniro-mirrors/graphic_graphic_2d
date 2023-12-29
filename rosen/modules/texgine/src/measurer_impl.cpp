@@ -33,7 +33,7 @@ namespace TextEngine {
 constexpr static uint8_t FIRST_BYTE = 24;
 constexpr static uint8_t SECOND_BYTE = 16;
 constexpr static uint8_t THIRD_BYTE = 8;
-static std::string detectionName_;
+static std::string g_detectionName;
 
 namespace {
 void DumpCharGroup(int32_t index, const CharGroup &cg, double glyphEm,
@@ -140,7 +140,7 @@ int MeasurerImpl::Measure(CharGroups &cgs)
         if (it != cache_.end()) {
             cgs = it->second.cgs.Clone();
             boundaries_ = it->second.boundaries;
-            if (detectionName_ != cgs.GetTypefaceName()) {
+            if (g_detectionName != cgs.GetTypefaceName()) {
                 cache_.erase(key);
             } else if (cache_.size() > POLL_MECHANISM) {
                 UpdateCache();
@@ -164,7 +164,7 @@ int MeasurerImpl::Measure(CharGroups &cgs)
 
     if (fontFeatures_ == nullptr || fontFeatures_->GetFeatures().size() == 0) {
         if (cgs.CheckCodePoint()) {
-            detectionName_ = cgs.GetTypefaceName();
+            g_detectionName = cgs.GetTypefaceName();
             struct MeasurerCacheVal value = {cgs.Clone(), boundaries_};
             std::lock_guard<std::mutex> lock(mutex_);
             cache_[key] = value;
