@@ -96,10 +96,6 @@ if (graphic_2d_feature_ace_enable_gpu) {
   if (graphic_2d_feature_enable_vulkan) {
     libvulkan += [ "//third_party/vulkan-loader/openharmony:vulkan_loader" ]
   }
-  if (graphic_2d_feature_enable_flutter_vulkan) {
-    libvulkan +=
-        [ "//third_party/flutter/engine/flutter/vulkan:vulkan_flutter" ]
-  }
 } else {
   gpu_defines = [ "ACE_DISABLE_GL" ]
   ace_enable_gpu = false
