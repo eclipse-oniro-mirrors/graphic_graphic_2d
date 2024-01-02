@@ -175,36 +175,27 @@ std::shared_ptr<Media::PixelMap> CmdListHelper::GetPixelMapFromCmdList(
 
 OpDataHandle CmdListHelper::AddImageObjectToCmdList(CmdList& cmdList, const std::shared_ptr<ExtendImageObject>& object)
 {
-#ifdef SUPPORT_OHOS_PIXMAP
     auto index = cmdList.AddImageObject(object);
     return { index };
-#else
-    LOGE("Not support drawing ExtendImageObject");
-    return { 0 };
-#endif
 }
 
 std::shared_ptr<ExtendImageObject> CmdListHelper::GetImageObjectFromCmdList(
     const CmdList& cmdList, const OpDataHandle& objectHandle)
 {
-#ifdef SUPPORT_OHOS_PIXMAP
     return (const_cast<CmdList&>(cmdList)).GetImageObject(objectHandle.offset);
-#else
-    LOGE("Not support drawing ExtendImageObject");
-    return nullptr;
-#endif
 }
 
-OpDataHandle CmdListHelper::AddImageBaseOjToCmdList(CmdList& cmdList, const std::shared_ptr<ExtendImageBaseOj>& object)
+OpDataHandle CmdListHelper::AddImageBaseObjToCmdList(
+    CmdList& cmdList, const std::shared_ptr<ExtendImageBaseObj>& object)
 {
-    auto index = cmdList.AddImageBaseOj(object);
+    auto index = cmdList.AddImageBaseObj(object);
     return { index };
 }
 
-std::shared_ptr<ExtendImageBaseOj> CmdListHelper::GetImageBaseOjFromCmdList(
+std::shared_ptr<ExtendImageBaseObj> CmdListHelper::GetImageBaseObjFromCmdList(
     const CmdList& cmdList, const OpDataHandle& objectHandle)
 {
-    return (const_cast<CmdList&>(cmdList)).GetImageBaseOj(objectHandle.offset);
+    return (const_cast<CmdList&>(cmdList)).GetImageBaseObj(objectHandle.offset);
 }
 
 OpDataHandle CmdListHelper::AddPictureToCmdList(CmdList& cmdList, const Picture& picture)

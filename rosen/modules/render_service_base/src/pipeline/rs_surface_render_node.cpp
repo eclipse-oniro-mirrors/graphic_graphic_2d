@@ -251,7 +251,7 @@ void RSSurfaceRenderNode::CollectSurface(
 #endif
     }
 
-    if (GetSubSurfaceEnabled()) {
+    if (isSubSurfaceEnabled_) {
         if (onlyFirstLevel) {
             return;
         }
@@ -264,6 +264,14 @@ void RSSurfaceRenderNode::CollectSurface(
             }
         }
     }
+}
+
+void RSSurfaceRenderNode::CollectSurfaceForUIFirstSwitch(uint32_t& leashWindowCount, uint32_t minNodeNum)
+{
+    if (IsLeashWindow() || IsStartingWindow()) {
+        leashWindowCount++;
+    }
+    return;
 }
 
 void RSSurfaceRenderNode::ClearChildrenCache()
@@ -838,7 +846,6 @@ void RSSurfaceRenderNode::AccumulateOcclusionRegion(Occlusion::Region& accumulat
     // transparent layer.
     if (GetAnimateState() || IsParentLeashWindowInScale()) {
         SetTreatedAsTransparent(true);
-        ResetAnimateState();
         return;
     }
 

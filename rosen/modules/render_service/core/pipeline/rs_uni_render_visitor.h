@@ -36,9 +36,6 @@
 #include "system/rs_system_parameters.h"
 #include "visitor/rs_node_visitor.h"
 #include "pipeline/rs_recording_canvas.h"
-#ifdef DDGR_ENABLE_FEATURE_OPINC
-#include "rs_auto_cache.h"
-#endif
 
 class SkPicture;
 namespace OHOS {
@@ -127,14 +124,10 @@ public:
         drivenInfo_->hasDrivenNodeMarkRender = hasDrivenNodeMarkRender;
     }
 
-#ifdef DDGR_ENABLE_FEATURE_OPINC
-    void OpincSetRectChangeState(RSCanvasRenderNode& node, RectI& boundsRect);
-#endif
-
     void UpdateHardwareEnabledInfoBeforeCreateLayer();
     void SetHardwareEnabledNodes(const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hardwareEnabledNodes);
     void AssignGlobalZOrderAndCreateLayer(std::vector<std::shared_ptr<RSSurfaceRenderNode>>& nodesInZOrder);
-    void ScaleMirrorIfNeed(RSDisplayRenderNode& node);
+    void ScaleMirrorIfNeed(RSDisplayRenderNode& node, bool canvasRotation = false);
 
     void CopyForParallelPrepare(std::shared_ptr<RSUniRenderVisitor> visitor);
     // Some properties defined before ProcessSurfaceRenderNode() may be used in
@@ -196,9 +189,6 @@ private:
 #endif
     void DrawDirtyRegionForDFX(std::vector<RectI> dirtyRects);
     void DrawCacheRegionForDFX(std::vector<RectI> cacheRects);
-#ifdef DDGR_ENABLE_FEATURE_OPINC
-    void DrawAutoCacheRegionForDFX(std::vector<RectI, std::string> cacheRegionInfo);
-#endif
     void DrawAllSurfaceDirtyRegionForDFX(RSDisplayRenderNode& node, const Occlusion::Region& region);
     void DrawTargetSurfaceDirtyRegionForDFX(RSDisplayRenderNode& node);
     void DrawAllSurfaceOpaqueRegionForDFX(RSDisplayRenderNode& node);
@@ -299,8 +289,6 @@ private:
     // [attention] check curSurfaceDirtyManager_ before function calls
     void UpdateStaticCacheSubTree(const std::shared_ptr<RSRenderNode>& cacheRootNode,
         const std::list<RSRenderNode::SharedPtr>& children);
-    void UpdateStaticCacheSubTreeSetState(const std::shared_ptr<RSRenderNode>& child);
-    void UpdateStaticCacheSubTreeFilter(const std::shared_ptr<RSRenderNode>& child);
     // set node cacheable animation after checking whold child tree
     void SetNodeCacheChangeStatus(RSRenderNode& node);
     void DisableNodeCacheInSetting(RSRenderNode& node);
@@ -427,18 +415,6 @@ private:
     std::stack<bool> isDrawingCacheChanged_ = {};
     std::vector<RectI> accumulatedDirtyRegions_ = {};
     bool isSubSurfaceEnabled_ = false;
-#ifdef DDGR_ENABLE_FEATURE_OPINC
-    bool autoCacheEnable_ = false;
-    bool autoCacheChildDisable_ = false;
-    bool autoCacheDrawingEnable_ = false;
-    RSRenderNode::RSAutoCache::NodeStragyType nodeCacheType_ = RSRenderNode::RSAutoCache::CACHE_NONE;
-    bool unchangeMark_ = false;
-    bool isDiscardSurface_ = true;
-    std::vector<std::pair<RectI, std::string>> autoCacheRenderNodeInfos_;
-    int opNodeDepth_ = 0;
-    bool opIncSubtreePropDirty_ = false;
-    Drawing::Rect opincRootRect_;
-#endif
 
     bool needFilter_ = false;
     GraphicColorGamut newColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
@@ -516,9 +492,9 @@ private:
     mutable std::mutex copyVisitorInfosMutex_;
     bool resetRotate_ = false;
 #ifndef USE_ROSEN_DRAWING
-    std::optional<SkPath> effectRegion_ = std::nullopt;
+    std::optional<SkIRect> effectRegion_ = std::nullopt;
 #else
-    std::optional<Drawing::Path> effectRegion_ = std::nullopt;
+    std::optional<Drawing::RectI> effectRegion_ = std::nullopt;
 #endif
     bool curDirty_ = false;
     bool curContentDirty_ = false;
@@ -552,10 +528,14 @@ private:
 #else
     std::shared_ptr<Drawing::Image> cacheImgForCapture_ = nullptr;
 #endif
+
+    void SetHasSharedTransitionNode(RSSurfaceRenderNode& surfaceNode, bool hasSharedTransitionNode);
+
     // attention: please synchronize the change of RSUniRenderVisitor::ProcessChildren to this func
     void ProcessChildrenForScreenRecordingOptimization(RSDisplayRenderNode& node, NodeId rootIdOfCaptureWindow);
     NodeId FindInstanceChildOfDisplay(std::shared_ptr<RSRenderNode> node);
     bool CheckIfNeedResetRotate();
+    void UpdateSurfaceRenderNodeScale(RSSurfaceRenderNode& node);
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -206,6 +206,9 @@ void RSUniRenderVirtualProcessor::ProcessDisplaySurface(RSDisplayRenderNode& nod
                 canvas_->Rotate(-270, mirrorWidth_ / 2.0f, mirrorHeight_ / 2.0f);
 #endif
             }
+            if (mainScreenRotation_ == ScreenRotation::ROTATION_180) {
+                std::swap(mainWidth, mainHeight);
+            }
             if (canvasRotation_) {
                 CanvasRotation(mainScreenRotation_, mirrorWidth_, mirrorHeight_);
             }
@@ -218,7 +221,8 @@ void RSUniRenderVirtualProcessor::ProcessDisplaySurface(RSDisplayRenderNode& nod
             if ((mirrorHeight_ / mirrorWidth_) < (mainHeight / mainWidth)) {
                 float mirrorScale = mirrorHeight_ / mainHeight;
                 float mainScale = mainHeight / mainWidth;
-                if (canvasRotation_) {
+                if (mainScreenRotation_ == ScreenRotation::ROTATION_90 ||
+                    mainScreenRotation_ == ScreenRotation::ROTATION_270) {
                     if (screenCorrection == ScreenRotation::ROTATION_270) {
                         mirrorDstRect = SkRect::MakeXYWH(-(mirrorHeight_ / 2.0f),
                             -(mirrorScale * mainWidth * mainScale) / 2.0f,
@@ -239,7 +243,8 @@ void RSUniRenderVirtualProcessor::ProcessDisplaySurface(RSDisplayRenderNode& nod
                 }
             } else if ((mirrorHeight_ / mirrorWidth_) > (mainHeight / mainWidth)) {
                 float mirrorScale = mirrorWidth_ / mainWidth;
-                if (canvasRotation_) {
+                if (mainScreenRotation_ == ScreenRotation::ROTATION_90 ||
+                    mainScreenRotation_ == ScreenRotation::ROTATION_270) {
                     mirrorDstRect = SkRect::MakeXYWH((mirrorHeight_ / 2.0f) -
                         ((mirrorScale * mainHeight) / 2.0f), -(mirrorWidth_ / 2.0f),
                         mirrorScale * mainHeight, mirrorWidth_);
@@ -255,7 +260,8 @@ void RSUniRenderVirtualProcessor::ProcessDisplaySurface(RSDisplayRenderNode& nod
             if ((mirrorHeight_ / mirrorWidth_) < (mainHeight / mainWidth)) {
                 float mirrorScale = mirrorHeight_ / mainHeight;
                 float mainScale = mainHeight / mainWidth;
-                if (canvasRotation_) {
+                if (mainScreenRotation_ == ScreenRotation::ROTATION_90 ||
+                    mainScreenRotation_ == ScreenRotation::ROTATION_270) {
                     if (screenCorrection == ScreenRotation::ROTATION_270) {
                         mirrorDstRect = Drawing::Rect(-(mirrorHeight_ / 2.0f),
                             -(mirrorScale * mainWidth * mainScale) / 2.0f, mirrorHeight_ / 2.0f,
@@ -275,7 +281,8 @@ void RSUniRenderVirtualProcessor::ProcessDisplaySurface(RSDisplayRenderNode& nod
                 }
             } else if ((mirrorHeight_ / mirrorWidth_) > (mainHeight / mainWidth)) {
                 float mirrorScale = mirrorWidth_ / mainWidth;
-                if (canvasRotation_) {
+                if (mainScreenRotation_ == ScreenRotation::ROTATION_90 ||
+                    mainScreenRotation_ == ScreenRotation::ROTATION_270) {
                     mirrorDstRect = Drawing::Rect((mirrorHeight_ / 2.0f) - ((mirrorScale * mainHeight) / 2.0f),
                         -(mirrorWidth_ / 2.0f), (mirrorHeight_ / 2.0f) + ((mirrorScale * mainHeight) / 2.0f),
                         (mirrorWidth_ / 2.0f));
@@ -287,7 +294,8 @@ void RSUniRenderVirtualProcessor::ProcessDisplaySurface(RSDisplayRenderNode& nod
             params.dstRect = mirrorDstRect;
 #endif
         } else {
-            if (canvasRotation_) {
+            if (mainScreenRotation_ == ScreenRotation::ROTATION_90 ||
+                mainScreenRotation_ == ScreenRotation::ROTATION_270) {
 #ifndef USE_ROSEN_DRAWING
                 canvas_->translate(-(mirrorHeight_ / 2.0f), -(mirrorWidth_ / 2.0f));
 #else

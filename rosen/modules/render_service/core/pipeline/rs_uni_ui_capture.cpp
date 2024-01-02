@@ -69,7 +69,7 @@ std::shared_ptr<Media::PixelMap> RSUniUICapture::TakeLocalCapture()
         RS_LOGE("RSUniUICapture::TakeLocalCapture: pixelmap == nullptr!");
         return nullptr;
     }
-    RS_LOGD("RSUniUICapture::TakeLocalCapture: PixelMap: (%{public}d, %{public}d)", pixelmap->GetWidth(),
+    RS_LOGI("RSUniUICapture::TakeLocalCapture: PixelMap: (%{public}d, %{public}d)", pixelmap->GetWidth(),
         pixelmap->GetHeight());
 #ifndef USE_ROSEN_DRAWING
     auto skSurface = CreateSurface(pixelmap);
@@ -87,6 +87,7 @@ std::shared_ptr<Media::PixelMap> RSUniUICapture::TakeLocalCapture()
 #endif
     PostTaskToRSRecord(recordingCanvas, node, visitor);
     auto drawCallList = recordingCanvas->GetDrawCmdList();
+    RS_LOGI("RSUniUICapture::TakeLocalCapture: drawCallList size is %{public}d", drawCallList->GetOpCnt());
     drawCallList->Playback(*canvas);
     if (!isUniRender_) {
         return pixelmap;
@@ -663,8 +664,7 @@ void RSUniUICapture::RSUniUICaptureVisitor::ProcessSurfaceViewWithoutUni(RSSurfa
         if (node.GetId() != nodeId_) {
             canvas_->ConcatMatrix(translateMatrix);
         }
-        const auto saveCnt = canvas_->GetSaveCount();
-        canvas_->Save();
+        const auto saveCnt = canvas_->Save();
         ProcessChildren(node);
         canvas_->RestoreToCount(saveCnt);
         if (node.GetBuffer() != nullptr) {

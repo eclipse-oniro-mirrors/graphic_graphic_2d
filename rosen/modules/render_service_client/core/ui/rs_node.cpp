@@ -166,6 +166,20 @@ void RSNode::AddKeyFrame(float fraction, const PropertyCallback& propertyCallbac
     implicitAnimator->EndImplicitKeyFrameAnimation();
 }
 
+void RSNode::AddDurationKeyFrame(
+    int duration, const RSAnimationTimingCurve& timingCurve, const PropertyCallback& propertyCallback)
+{
+    auto implicitAnimator = RSImplicitAnimatorMap::Instance().GetAnimator(gettid());
+    if (implicitAnimator == nullptr) {
+        ROSEN_LOGE("Failed to add keyframe, implicit animator is null!");
+        return;
+    }
+
+    implicitAnimator->BeginImplicitDurationKeyFrameAnimation(duration, timingCurve);
+    propertyCallback();
+    implicitAnimator->EndImplicitDurationKeyFrameAnimation();
+}
+
 bool RSNode::IsImplicitAnimationOpen()
 {
     auto implicitAnimator = RSImplicitAnimatorMap::Instance().GetAnimator(gettid());
@@ -277,6 +291,7 @@ void RSNode::FallbackAnimationsToRoot()
         if (animation && animation->GetRepeatCount() == -1) {
             continue;
         }
+        std::unique_lock<std::mutex> lock(animationMutex_);
         target->AddAnimationInner(std::move(animation));
     }
     std::unique_lock<std::mutex> lock(animationMutex_);
@@ -285,7 +300,6 @@ void RSNode::FallbackAnimationsToRoot()
 
 void RSNode::AddAnimationInner(const std::shared_ptr<RSAnimation>& animation)
 {
-    std::unique_lock<std::mutex> lock(animationMutex_);
     animations_.emplace(animation->GetId(), animation);
     animatingPropertyNum_[animation->GetPropertyId()]++;
 }
@@ -317,7 +331,13 @@ void RSNode::CancelAnimationByProperty(const PropertyId& id)
     animatingPropertyNum_.erase(id);
     std::vector<std::shared_ptr<RSAnimation>> toBeRemoved;
     {
-        std::unique_lock<std::mutex> lock(animationMutex_);
+        std::unique_lock<std::mutex> lock(animationMutex_, std::defer_lock);
+        if (!lock.try_lock()) {
+            // The Arkui component has logic to cancel animation within the callback of another animation. However, this
+            // approach may cause a deadlock. Although it is a dirty workaround, it currently works as intended.
+            FinishAnimationByProperty(id);
+            return;
+        }
         EraseIf(animations_, [id, &toBeRemoved](const auto& pair) {
             if (pair.second && (pair.second->GetPropertyId() == id)) {
                 toBeRemoved.emplace_back(pair.second);
@@ -326,6 +346,8 @@ void RSNode::CancelAnimationByProperty(const PropertyId& id)
             return false;
         });
     }
+    // Destroy the cancelled animations outside the lock, since destroying them may trigger OnFinish callbacks, and
+    // callbacks may add/remove other animations, doing this with the lock would cause a deadlock.
     toBeRemoved.clear();
 }
 
@@ -362,7 +384,10 @@ void RSNode::AddAnimation(const std::shared_ptr<RSAnimation>& animation)
         FinishAnimationByProperty(animation->GetPropertyId());
     }
 
-    AddAnimationInner(animation);
+    {
+        std::unique_lock<std::mutex> lock(animationMutex_);
+        AddAnimationInner(animation);
+    }
     animation->StartInner(shared_from_this());
 }
 
@@ -1865,6 +1890,7 @@ const std::optional<NodeId> RSNode::GetChildIdByIndex(int index) const
 {
     int childrenTotal = static_cast<int>(children_.size());
     if (childrenTotal <= 0 || index < -1 || index >= childrenTotal) {
+        ROSEN_LOGE("RSNode::GetChildIdByIndex, index out of bound");
         return std::nullopt;
     }
     if (index == -1) {

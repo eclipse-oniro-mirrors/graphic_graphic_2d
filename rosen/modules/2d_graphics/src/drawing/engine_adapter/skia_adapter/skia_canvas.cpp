@@ -563,32 +563,6 @@ void SkiaCanvas::DrawImageLattice(const Image* image, const Lattice& lattice, co
     skCanvas_->drawImageLattice(img.get(), skLattice, skDst, skFilterMode, paint.get());
 }
 
-// opinc_begin
-bool SkiaCanvas::BeginOpRecording(const Rect* bound, bool isDynamic)
-{
-    LOGD("SkiaCanvas! %{public}s, %{public}d", __FUNCTION__, __LINE__);
-    return false;
-}
-
-Drawing::OpListHandle SkiaCanvas::EndOpRecording()
-{
-    LOGD("SkiaCanvas! %{public}s, %{public}d", __FUNCTION__, __LINE__);
-    return {};
-}
-
-void SkiaCanvas::DrawOpList(Drawing::OpListHandle handle)
-{
-    LOGD("SkiaCanvas! %{public}s, %{public}d", __FUNCTION__, __LINE__);
-    return;
-}
-
-int SkiaCanvas::CanDrawOpList(Drawing::OpListHandle handle)
-{
-    LOGD("SkiaCanvas! %{public}s, %{public}d", __FUNCTION__, __LINE__);
-    return -1;
-}
-// opinc_end
-
 void SkiaCanvas::DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py)
 {
     if (!skCanvas_) {
@@ -1077,13 +1051,13 @@ void SkiaCanvas::Clear(ColorQuad color)
     skCanvas_->clear(color);
 }
 
-void SkiaCanvas::Save()
+uint32_t SkiaCanvas::Save()
 {
     if (!skCanvas_) {
         LOGE("skCanvas_ is null, return on line %{public}d", __LINE__);
-        return;
+        return 0;
     }
-    skCanvas_->save();
+    return static_cast<uint32_t>(skCanvas_->save());
 }
 
 void SkiaCanvas::SaveLayer(const SaveLayerOps& saveLayerOps)

@@ -18,7 +18,7 @@
 
 #include "include/core/SkBitmap.h"
 #include "include/core/SkCanvas.h"
-#include "include/core/SkHMSymbol.h"
+#include "include/core/HMSymbol.h"
 #include "include/core/SkImage.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPaint.h"
@@ -104,13 +104,6 @@ public:
     // color
     void DrawColor(ColorQuad color, BlendMode mode) override;
 
-    // opinc_begin
-    bool BeginOpRecording(const Rect* bound = nullptr, bool isDynamic = false) override;
-    Drawing::OpListHandle EndOpRecording() override;
-    void DrawOpList(Drawing::OpListHandle handle) override;
-    int CanDrawOpList(Drawing::OpListHandle handle) override;
-    // opinc_end
-
     // image
     void DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py) override;
     void DrawBitmap(Media::PixelMap& pixelMap, const scalar px, const scalar py) override;
@@ -151,7 +144,7 @@ public:
     // state
     void Flush() override;
     void Clear(ColorQuad color) override;
-    void Save() override;
+    uint32_t Save() override;
     void SaveLayer(const SaveLayerOps& saveLayerOps) override;
     void Restore() override;
     uint32_t GetSaveCount() const override;

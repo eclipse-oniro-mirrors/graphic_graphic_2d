@@ -338,39 +338,6 @@ void RSPaintFilterCanvasBase::DrawVertices(const Drawing::Vertices& vertices, Dr
 #endif
 }
 
-// opinc_begin
-bool RSPaintFilterCanvasBase::BeginOpRecording(const Drawing::Rect* bound, bool isDynamic)
-{
-    if (canvas_ != nullptr && OnFilter()) {
-        return canvas_->BeginOpRecording(bound, isDynamic);
-    }
-    return false;
-}
-
-Drawing::OpListHandle RSPaintFilterCanvasBase::EndOpRecording()
-{
-    if (canvas_ != nullptr && OnFilter()) {
-        return canvas_->EndOpRecording();
-    }
-    return {};
-}
-
-void RSPaintFilterCanvasBase::DrawOpList(Drawing::OpListHandle handle)
-{
-    if (canvas_ != nullptr && OnFilter()) {
-        canvas_->DrawOpList(handle);
-    }
-}
-
-int RSPaintFilterCanvasBase::CanDrawOpList(Drawing::OpListHandle handle)
-{
-    if (canvas_ != nullptr && OnFilter()) {
-        return canvas_->CanDrawOpList(handle);
-    }
-    return -1;
-}
-// opinc_end
-
 void RSPaintFilterCanvasBase::DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py)
 {
 #ifdef ENABLE_RECORDING_DCL
@@ -752,18 +719,21 @@ void RSPaintFilterCanvasBase::Clear(ColorQuad color)
 #endif
 }
 
-void RSPaintFilterCanvasBase::Save()
+uint32_t RSPaintFilterCanvasBase::Save()
 {
 #ifdef ENABLE_RECORDING_DCL
+    uint32_t count = 0U;
     for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
         if ((*iter) != nullptr) {
-            (*iter)->Save();
+            count = (*iter)->Save();
         }
     }
+    return count;
 #else
     if (canvas_ != nullptr) {
-        canvas_->Save();
+        return canvas_->Save();
     }
+    return 0;
 #endif
 }
 

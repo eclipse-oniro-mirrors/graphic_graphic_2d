@@ -26,6 +26,7 @@
 #include "render/rs_blur_filter.h"
 #include "render/rs_skia_filter.h"
 #include "render/rs_material_filter.h"
+#include "platform/common/rs_system_properties.h"
 
 #ifdef USE_ROSEN_DRAWING
 #include <cstdint>
@@ -76,6 +77,17 @@ constexpr static uint8_t DIRECTION_NUM = 4;
 } // namespace
 
 const bool RSPropertiesPainter::BLUR_ENABLED = RSSystemProperties::GetBlurEnabled();
+
+#ifndef USE_ROSEN_DRAWING
+#else
+std::shared_ptr<Drawing::RuntimeEffect> RSPropertiesPainter::horizontalMeanBlurShaderEffect_ = nullptr;
+std::shared_ptr<Drawing::RuntimeEffect> RSPropertiesPainter::verticalMeanBlurShaderEffect_ = nullptr;
+std::shared_ptr<Drawing::RuntimeEffect> RSPropertiesPainter::meanBlurShaderEffect_ = nullptr;
+std::shared_ptr<Drawing::RuntimeEffect> RSPropertiesPainter::greyAdjustEffect_ = nullptr;
+std::shared_ptr<Drawing::RuntimeEffect> RSPropertiesPainter::binarizationShaderEffect_ = nullptr;
+std::shared_ptr<Drawing::RuntimeEffect> RSPropertiesPainter::lightUpEffectShaderEffect_ = nullptr;
+std::shared_ptr<Drawing::RuntimeEffect> RSPropertiesPainter::dynamicLightUpBlenderEffect_ = nullptr;
+#endif
 
 #ifndef USE_ROSEN_DRAWING
 SkRect RSPropertiesPainter::Rect2SkRect(const RectF& r)
@@ -1072,7 +1084,7 @@ std::shared_ptr<Drawing::ShaderEffect> RSPropertiesPainter::MakeHorizontalMeanBl
     std::shared_ptr<Drawing::ShaderEffect> shader, std::shared_ptr<Drawing::ShaderEffect> gradientShader)
 #endif
 {
-    const char* prog = R"(
+    static const char* prog = R"(
         uniform half r;
         uniform shader imageShader;
         uniform shader gradientShader;
@@ -1107,12 +1119,17 @@ std::shared_ptr<Drawing::ShaderEffect> RSPropertiesPainter::MakeHorizontalMeanBl
     return effect->makeShader(SkData::MakeWithCopy(
         &radiusIn, sizeof(radiusIn)), children, childCount, nullptr, false);
 #else
-    std::shared_ptr<Drawing::RuntimeEffect> effect = Drawing::RuntimeEffect::CreateForShader(prog);
+    if (horizontalMeanBlurShaderEffect_ == nullptr) {
+        horizontalMeanBlurShaderEffect_ = Drawing::RuntimeEffect::CreateForShader(prog);
+        if (horizontalMeanBlurShaderEffect_ == nullptr) {
+            return nullptr;
+        }
+    }
     std::shared_ptr<Drawing::ShaderEffect> children[] = {shader, gradientShader};
     size_t childCount = 2;
     std::shared_ptr<Drawing::Data> data = std::make_shared<Drawing::Data>();
     data->BuildWithCopy(&radiusIn, sizeof(radiusIn));
-    return effect->MakeShader(data, children, childCount, nullptr, false);
+    return horizontalMeanBlurShaderEffect_->MakeShader(data, children, childCount, nullptr, false);
 #endif
 }
 
@@ -1124,7 +1141,7 @@ std::shared_ptr<Drawing::ShaderEffect> RSPropertiesPainter::MakeVerticalMeanBlur
     std::shared_ptr<Drawing::ShaderEffect> shader, std::shared_ptr<Drawing::ShaderEffect> gradientShader)
 #endif
 {
-    const char* prog = R"(
+    static const char* prog = R"(
         uniform half r;
         uniform shader imageShader;
         uniform shader gradientShader;
@@ -1159,12 +1176,17 @@ std::shared_ptr<Drawing::ShaderEffect> RSPropertiesPainter::MakeVerticalMeanBlur
     return effect->makeShader(SkData::MakeWithCopy(
         &radiusIn, sizeof(radiusIn)), children, childCount, nullptr, false);
 #else
-    std::shared_ptr<Drawing::RuntimeEffect> effect = Drawing::RuntimeEffect::CreateForShader(prog);
+    if (verticalMeanBlurShaderEffect_ == nullptr) {
+        verticalMeanBlurShaderEffect_ = Drawing::RuntimeEffect::CreateForShader(prog);
+        if (verticalMeanBlurShaderEffect_ == nullptr) {
+            return nullptr;
+        }
+    }
     std::shared_ptr<Drawing::ShaderEffect> children[] = {shader, gradientShader};
     size_t childCount = 2;
     std::shared_ptr<Drawing::Data> data = std::make_shared<Drawing::Data>();
     data->BuildWithCopy(&radiusIn, sizeof(radiusIn));
-    return effect->MakeShader(data, children, childCount, nullptr, false);
+    return verticalMeanBlurShaderEffect_->MakeShader(data, children, childCount, nullptr, false);
 #endif
 }
 
@@ -1468,7 +1490,7 @@ std::shared_ptr<Drawing::ShaderEffect> RSPropertiesPainter::MakeMeanBlurShader(
     std::shared_ptr<Drawing::ShaderEffect> gradientShader)
 #endif
 {
-    const char* prog = R"(
+    static const char* prog = R"(
         uniform shader srcImageShader;
         uniform shader blurImageShader;
         uniform shader gradientShader;
@@ -1510,13 +1532,15 @@ std::shared_ptr<Drawing::ShaderEffect> RSPropertiesPainter::MakeMeanBlurShader(
     builder.child("gradientShader") = gradientShader;
     return builder.makeShader(nullptr, false);
 #else
-    std::shared_ptr<Drawing::RuntimeEffect> effect = Drawing::RuntimeEffect::CreateForShader(prog);
-    if (!effect) {
-        ROSEN_LOGE("MakeMeanBlurShader::RuntimeShader effect error\n");
-        return nullptr;
+    if (meanBlurShaderEffect_ == nullptr) {
+        meanBlurShaderEffect_ = Drawing::RuntimeEffect::CreateForShader(prog);
+        if (meanBlurShaderEffect_ == nullptr) {
+            return nullptr;
+        }
     }
 
-    std::shared_ptr<Drawing::RuntimeShaderBuilder> builder = std::make_shared<Drawing::RuntimeShaderBuilder>(effect);
+    std::shared_ptr<Drawing::RuntimeShaderBuilder> builder =
+        std::make_shared<Drawing::RuntimeShaderBuilder>(meanBlurShaderEffect_);
     builder->SetChild("srcImageShader", srcImageShader);
     builder->SetChild("blurImageShader", blurImageShader);
     builder->SetChild("gradientShader", gradientShader);
@@ -1587,7 +1611,7 @@ sk_sp<SkImage> RSPropertiesPainter::MakeGreyAdjustmentImage(SkCanvas& canvas, co
 std::shared_ptr<Drawing::Image> RSPropertiesPainter::MakeGreyAdjustmentImage(Drawing::Canvas& canvas,
     const std::shared_ptr<Drawing::Image>& image, const float greyCoef1, const float greyCoef2)
 {
-    std::string GreyGradationString(R"(
+    static const std::string GreyGradationString(R"(
         uniform shader imageShader;
         uniform float coefficient1;
         uniform float coefficient2;
@@ -1633,14 +1657,15 @@ std::shared_ptr<Drawing::Image> RSPropertiesPainter::MakeGreyAdjustmentImage(Dra
             return vec4(color, 1.0);
         }
     )");
-    std::shared_ptr<Drawing::RuntimeEffect> GreyAdjustEffect =
-        Drawing::RuntimeEffect::CreateForShader(GreyGradationString);
-    if (!GreyAdjustEffect) {
-        ROSEN_LOGE("MakeGreyAdjustmentShader::RuntimeShader effect error\n");
-        return nullptr;
+    if (greyAdjustEffect_ == nullptr) {
+        greyAdjustEffect_ = Drawing::RuntimeEffect::CreateForShader(GreyGradationString);
+        if (greyAdjustEffect_ == nullptr) {
+            ROSEN_LOGE("MakeGreyAdjustmentShader::RuntimeShader effect error\n");
+            return nullptr;
+        }
     }
     std::shared_ptr<Drawing::RuntimeShaderBuilder> builder =
-        std::make_shared<Drawing::RuntimeShaderBuilder>(GreyAdjustEffect);
+        std::make_shared<Drawing::RuntimeShaderBuilder>(greyAdjustEffect_);
     Drawing::Matrix matrix;
     auto imageShader = Drawing::ShaderEffect::CreateImageShader(*image, Drawing::TileMode::CLAMP,
         Drawing::TileMode::CLAMP, Drawing::SamplingOptions(Drawing::FilterMode::LINEAR), matrix);
@@ -1721,9 +1746,9 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
     }
 
     auto filter = std::static_pointer_cast<RSSkiaFilter>(RSFilter);
-    if (properties.IsGreyAdjustmenValid()) {
+    if (properties.IsGreyAdjustmentValid()) {
         // Set grey coef to filter
-        filter->SetGreyCoef(properties.GetGreyCoef1(), properties.GetGreyCoef2(), properties.IsGreyAdjustmenValid());
+        filter->SetGreyCoef(properties.GetGreyCoef1(), properties.GetGreyCoef2(), properties.IsGreyAdjustmentValid());
     }
     auto skSurface = canvas.GetSurface();
     if (skSurface == nullptr) {
@@ -1875,24 +1900,13 @@ void RSPropertiesPainter::DrawBackgroundImageAsEffect(const RSProperties& proper
     // draw background onto offscreen canvas
     RSPropertiesPainter::DrawBackground(properties, *offscreenCanvas);
     // generate effect data
-#ifndef USE_ROSEN_DRAWING
-    RSPropertiesPainter::DrawBackgroundEffect(
-        properties, *offscreenCanvas, SkIRect::MakeWH(boundsRect.GetWidth(), boundsRect.GetHeight()));
-#else
-    RSPropertiesPainter::DrawBackgroundEffect(
-        properties, *offscreenCanvas, Drawing::RectI(0, 0, boundsRect.GetWidth(), boundsRect.GetHeight()));
-#endif
+    RSPropertiesPainter::DrawBackgroundEffect(properties, *offscreenCanvas);
     // extract effect data from offscreen canvas and set to canvas
     canvas.SetEffectData(offscreenCanvas->GetEffectData());
 }
 
-#ifndef USE_ROSEN_DRAWING
 void RSPropertiesPainter::DrawBackgroundEffect(
-    const RSProperties& properties, RSPaintFilterCanvas& canvas, const SkIRect& rect)
-#else
-void RSPropertiesPainter::DrawBackgroundEffect(
-    const RSProperties& properties, RSPaintFilterCanvas& canvas, const Drawing::RectI& rect)
-#endif
+    const RSProperties& properties, RSPaintFilterCanvas& canvas)
 {
     auto& RSFilter = properties.GetBackgroundFilter();
     if (RSFilter == nullptr) {
@@ -1906,13 +1920,16 @@ void RSPropertiesPainter::DrawBackgroundEffect(
         return;
     }
 
+    auto& matrix = properties.GetBoundsGeometry()->GetAbsMatrix();
 #ifndef USE_ROSEN_DRAWING
-    SkAutoCanvasRestore acr(&canvas, true);
-    canvas.clipIRect(rect);
+    auto boundsRect = Rect2SkRect(properties.GetBoundsRect());
+    auto bounds = matrix.mapRect(boundsRect).roundOut();
     auto filter = std::static_pointer_cast<RSSkiaFilter>(RSFilter);
 #else
-    Drawing::AutoCanvasRestore acr(canvas, true);
-    canvas.ClipIRect(rect, Drawing::ClipOp::INTERSECT);
+    auto boundsRect = Rect2DrawingRect(properties.GetBoundsRect());
+    Drawing::Rect dst;
+    matrix.MapRect(dst, boundsRect);
+    auto bounds = dst.RoundOut();
     auto filter = std::static_pointer_cast<RSDrawingFilter>(RSFilter);
 #endif
 
@@ -1920,17 +1937,16 @@ void RSPropertiesPainter::DrawBackgroundEffect(
     // Optional use cacheManager to draw filter
     if (auto& cacheManager = properties.GetFilterCacheManager(false);
         cacheManager != nullptr && !canvas.GetDisableFilterCache()) {
-        auto&& data = cacheManager->GeneratedCachedEffectData(canvas, filter);
+        auto&& data = cacheManager->GeneratedCachedEffectData(canvas, filter, bounds, bounds);
         canvas.SetEffectData(data);
         return;
     }
 #endif
 
+    auto imageRect = bounds;
 #ifndef USE_ROSEN_DRAWING
-    auto imageRect = canvas.getDeviceClipBounds();
     auto imageSnapshot = surface->makeImageSnapshot(imageRect);
 #else
-    auto imageRect = canvas.GetDeviceClipBounds();
     auto imageSnapshot = surface->GetImageSnapshot(imageRect);
 #endif
     if (imageSnapshot == nullptr) {
@@ -1995,18 +2011,9 @@ void RSPropertiesPainter::ApplyBackgroundEffectFallback(const RSProperties& prop
     DrawFilter(properties, canvas, FilterType::BACKGROUND_FILTER, std::nullopt, filter);
 }
 
-void RSPropertiesPainter::ApplyBackgroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas)
+void RSPropertiesPainter::ClipVisibleCanvas(const RSProperties& properties, RSPaintFilterCanvas& canvas)
 {
-    const auto& effectData = canvas.GetEffectData();
-    if (effectData == nullptr || effectData->cachedImage_ == nullptr) {
-        // no effectData available, draw background filter in fallback method
-        ROSEN_LOGD("RSPropertiesPainter::ApplyBackgroundEffect: effectData null, try fallback method.");
-        ApplyBackgroundEffectFallback(properties, canvas);
-        return;
-    }
-    RS_TRACE_FUNC();
 #ifndef USE_ROSEN_DRAWING
-    SkAutoCanvasRestore acr(&canvas, true);
     if (RSSystemProperties::GetPropertyDrawableEnable()) {
         // do nothing
     } else if (properties.GetClipBounds() != nullptr) {
@@ -2019,16 +2026,7 @@ void RSPropertiesPainter::ApplyBackgroundEffect(const RSProperties& properties, 
     if (!visibleIRect.isEmpty()) {
         canvas.clipIRect(visibleIRect);
     }
-
-    SkPaint defaultPaint;
-    // dstRect: canvas clip region
-    auto dstRect = SkRect::Make(canvas.getDeviceClipBounds());
-    // srcRect: map dstRect onto cache coordinate
-    auto srcRect = dstRect.makeOffset(-effectData->cachedRect_.left(), -effectData->cachedRect_.top());
-    canvas.drawImageRect(effectData->cachedImage_, srcRect, dstRect, SkSamplingOptions(), &defaultPaint,
-        SkCanvas::kFast_SrcRectConstraint);
 #else
-    Drawing::AutoCanvasRestore acr(canvas, true);
     if (RSSystemProperties::GetPropertyDrawableEnable()) {
         // do nothing
     } else if (properties.GetClipBounds() != nullptr) {
@@ -2045,7 +2043,33 @@ void RSPropertiesPainter::ApplyBackgroundEffect(const RSProperties& properties, 
     if (!visibleIRect.IsEmpty()) {
         canvas.ClipIRect(visibleIRect, Drawing::ClipOp::INTERSECT);
     }
+#endif
+}
 
+void RSPropertiesPainter::ApplyBackgroundEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas)
+{
+    const auto& effectData = canvas.GetEffectData();
+    if (effectData == nullptr || effectData->cachedImage_ == nullptr
+        || !RSSystemProperties::GetEffectMergeEnabled()) {
+        // no effectData available, draw background filter in fallback method
+        ROSEN_LOGD("RSPropertiesPainter::ApplyBackgroundEffect: effectData null, try fallback method.");
+        ApplyBackgroundEffectFallback(properties, canvas);
+        return;
+    }
+    RS_TRACE_FUNC();
+#ifndef USE_ROSEN_DRAWING
+    SkAutoCanvasRestore acr(&canvas, true);
+    ClipVisibleCanvas(properties, canvas);
+    SkPaint defaultPaint;
+    // dstRect: canvas clip region
+    auto dstRect = SkRect::Make(canvas.getDeviceClipBounds());
+    // srcRect: map dstRect onto cache coordinate
+    auto srcRect = dstRect.makeOffset(-effectData->cachedRect_.left(), -effectData->cachedRect_.top());
+    canvas.drawImageRect(effectData->cachedImage_, srcRect, dstRect, SkSamplingOptions(), &defaultPaint,
+        SkCanvas::kFast_SrcRectConstraint);
+#else
+    Drawing::AutoCanvasRestore acr(canvas, true);
+    ClipVisibleCanvas(properties, canvas);
     Drawing::Brush brush;
     canvas.AttachBrush(brush);
     // dstRect: canvas clip region
@@ -2491,7 +2515,7 @@ const std::shared_ptr<SkRuntimeShaderBuilder>& RSPropertiesPainter::GetPhongShad
     return phongShaderBuilder;
 }
 #else
-static std::shared_ptr<Drawing::RuntimeShaderBuilder> phongShaderBuilder;
+static std::shared_ptr<Drawing::RuntimeShaderBuilder> phongShaderBuilder = nullptr;
 
 const std::shared_ptr<Drawing::RuntimeShaderBuilder>& RSPropertiesPainter::GetPhongShaderBuilder()
 {
@@ -3487,12 +3511,15 @@ std::shared_ptr<Drawing::ShaderEffect> RSPropertiesPainter::MakeBinarizationShad
     builder.uniform("imageHeight") = imageHeight;
     return builder.makeShader(nullptr, false);
 #else
-    std::shared_ptr<Drawing::RuntimeEffect> effect = Drawing::RuntimeEffect::CreateForShader(prog);
-    if (!effect) {
-        ROSEN_LOGE("MakeBinarizationShader::RuntimeShader effect error\n");
-        return nullptr;
+    if (binarizationShaderEffect_ == nullptr) {
+        binarizationShaderEffect_ = Drawing::RuntimeEffect::CreateForShader(prog);
+        if (binarizationShaderEffect_ == nullptr) {
+            ROSEN_LOGE("MakeBinarizationShader::RuntimeShader effect error\n");
+            return nullptr;
+        }
     }
-    std::shared_ptr<Drawing::RuntimeShaderBuilder> builder = std::make_shared<Drawing::RuntimeShaderBuilder>(effect);
+    std::shared_ptr<Drawing::RuntimeShaderBuilder> builder =
+        std::make_shared<Drawing::RuntimeShaderBuilder>(binarizationShaderEffect_);
     builder->SetChild("imageShader", imageShader);
     builder->SetUniform("low", low);
     builder->SetUniform("high", high);
@@ -3605,12 +3632,17 @@ std::shared_ptr<Drawing::ShaderEffect> RSPropertiesPainter::MakeLightUpEffectSha
     return effect->makeShader(SkData::MakeWithCopy(
         &lightUpDeg, sizeof(lightUpDeg)), children, childCount, nullptr, false);
 #else
-    std::shared_ptr<Drawing::RuntimeEffect> effect = Drawing::RuntimeEffect::CreateForShader(prog);
+    if (lightUpEffectShaderEffect_ == nullptr) {
+        lightUpEffectShaderEffect_ = Drawing::RuntimeEffect::CreateForShader(prog);
+        if (lightUpEffectShaderEffect_ == nullptr) {
+            return nullptr;
+        }
+    }
     std::shared_ptr<Drawing::ShaderEffect> children[] = {imageShader};
     size_t childCount = 1;
     auto data = std::make_shared<Drawing::Data>();
     data->BuildWithCopy(&lightUpDeg, sizeof(lightUpDeg));
-    return effect->MakeShader(data, children, childCount, nullptr, false);
+    return lightUpEffectShaderEffect_->MakeShader(data, children, childCount, nullptr, false);
 #endif
 }
 
@@ -3701,12 +3733,15 @@ std::shared_ptr<Drawing::Blender> RSPropertiesPainter::MakeDynamicLightUpBlender
             return vec4(R, G, B, 1.0);
         }
     )";
-    std::shared_ptr<Drawing::RuntimeEffect> effect = Drawing::RuntimeEffect::CreateForBlender(prog);
-    if (!effect) {
-        ROSEN_LOGE("MakeDynamicLightUpBlender::MakeDynamicLightUpBlender effect error!\n");
-        return nullptr;
+    if (dynamicLightUpBlenderEffect_ == nullptr) {
+        dynamicLightUpBlenderEffect_ = Drawing::RuntimeEffect::CreateForBlender(prog);
+        if (dynamicLightUpBlenderEffect_ == nullptr) {
+            ROSEN_LOGE("MakeDynamicLightUpBlender::MakeDynamicLightUpBlender effect error!\n");
+            return nullptr;
+        }
     }
-    std::shared_ptr<Drawing::RuntimeBlenderBuilder> builder = std::make_shared<Drawing::RuntimeBlenderBuilder>(effect);
+    std::shared_ptr<Drawing::RuntimeBlenderBuilder> builder =
+        std::make_shared<Drawing::RuntimeBlenderBuilder>(dynamicLightUpBlenderEffect_);
     builder->SetUniform("dynamicLightUpRate", dynamicLightUpRate);
     builder->SetUniform("dynamicLightUpDeg", dynamicLightUpDeg);
     return builder->MakeBlender();

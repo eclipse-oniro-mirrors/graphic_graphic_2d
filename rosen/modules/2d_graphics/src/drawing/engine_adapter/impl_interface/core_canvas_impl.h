@@ -24,9 +24,6 @@
 #include "draw/path.h"
 #include "draw/paint.h"
 #include "draw/shadow.h"
-// opinc_begin
-#include "draw/OpListHandle.h"
-// opinc_end
 #include "effect/filter.h"
 #include "image/bitmap.h"
 #include "image/image_info.h"
@@ -112,13 +109,6 @@ public:
     // color
     virtual void DrawColor(ColorQuad color, BlendMode mode) = 0;
 
-    // opinc_begin
-    virtual bool BeginOpRecording(const Rect* bound = nullptr, bool isDynamic = false) = 0;
-    virtual Drawing::OpListHandle EndOpRecording() = 0;
-    virtual void DrawOpList(Drawing::OpListHandle handle) = 0;
-    virtual int CanDrawOpList(Drawing::OpListHandle handle) = 0;
-    // opinc_end
-
     // image
     virtual void DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py) = 0;
     virtual void DrawBitmap(Media::PixelMap& pixelMap, const scalar px, const scalar py) = 0;
@@ -160,7 +150,7 @@ public:
     // state
     virtual void Flush() = 0;
     virtual void Clear(ColorQuad color) = 0;
-    virtual void Save() = 0;
+    virtual uint32_t Save() = 0;
     virtual void SaveLayer(const SaveLayerOps& saveLayerOption) = 0;
     virtual void Restore() = 0;
     virtual uint32_t  GetSaveCount() const = 0;

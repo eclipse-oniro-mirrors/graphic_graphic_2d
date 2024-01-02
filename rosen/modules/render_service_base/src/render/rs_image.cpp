@@ -78,6 +78,9 @@ void RSImage::CanvasDrawImage(RSPaintFilterCanvas& canvas, const SkRect& rect, c
             recordingCanvas->drawImageRect(image_, src_, dst_, SkSamplingOptions(),
                 &paint, SkCanvas::kFast_SrcRectConstraint);
         } else {
+            if (!isBackground) {
+                ApplyCanvasClip(canvas);
+            }
             canvas.drawImageRect(image_, src_, dst_, samplingOptions, &paint, SkCanvas::kFast_SrcRectConstraint);
         }
         if (pixelMap_ != nullptr && pixelMap_->IsAstc()) {
@@ -106,6 +109,9 @@ void RSImage::CanvasDrawImage(Drawing::Canvas& canvas, const Drawing::Rect& rect
             RSPixelMapUtil::TransformDataSetForAstc(pixelMap_, src_, dst_, canvas);
         }
         if (image_) {
+            if (!isBackground) {
+                ApplyCanvasClip(canvas);
+            }
             canvas.DrawImageRect(*image_, src_, dst_, samplingOptions,
                 Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
         }
@@ -367,51 +373,9 @@ void RSImage::DrawImageRepeatRect(const Drawing::SamplingOptions& samplingOption
 
     // draw repeat rect
 #ifndef USE_ROSEN_DRAWING
-#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined (RS_ENABLE_VK))
-#if defined(RS_ENABLE_GL)
-    if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
-#if !defined(RS_ENABLE_PARALLEL_UPLOAD) || !defined(RS_ENABLE_UNI_RENDER)
-        if (pixelMap_ != nullptr && image_ == nullptr) {
-            ConvertPixelMapToSkImage();
-        }
-#endif
-    }
-#endif // RS_ENABLE_GL
-
-#if defined(RS_ENABLE_VK)
-    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
-        if (pixelMap_ != nullptr && image_ == nullptr) {
-            ConvertPixelMapToSkImage();
-        }
-    }
-#endif // RS_ENABLE_VK
-#else
     ConvertPixelMapToSkImage();
-#endif
-#else
-#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined (RS_ENABLE_VK))
-#if defined(RS_ENABLE_GL)
-    if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
-#if !defined(RS_ENABLE_PARALLEL_UPLOAD) || !defined(RS_ENABLE_UNI_RENDER)
-        if (pixelMap_ != nullptr && image_ == nullptr) {
-            ConvertPixelMapToDrawingImage();
-        }
-#endif
-    }
-#endif // RS_ENABLE_GL
-
-#if defined(RS_ENABLE_VK)
-    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
-        if (pixelMap_ != nullptr && image_ == nullptr) {
-            ConvertPixelMapToDrawingImage();
-        }
-    }
-#endif // RS_ENABLE_VK
 #else
     ConvertPixelMapToDrawingImage();
-#endif
 #endif
     UploadGpu(canvas);
 #ifndef USE_ROSEN_DRAWING
@@ -715,11 +679,11 @@ RSImage* RSImage::Unmarshalling(Parcel& parcel)
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_GL) && defined(RS_ENABLE_PARALLEL_UPLOAD)
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
 #if defined(RS_ENABLE_UNI_RENDER)
-        if (pixelMap != nullptr) {
+        if (pixelMap != nullptr && pixelMap->GetAllocatorType() != Media::AllocatorType::DMA_ALLOC) {
 #ifndef USE_ROSEN_DRAWING
-            rsImage->ConvertPixelMapToSkImage();
+            rsImage->ConvertPixelMapToSkImage(true);
 #else
-            rsImage->ConvertPixelMapToDrawingImage();
+            rsImage->ConvertPixelMapToDrawingImage(true);
 #endif
         }
 #endif
