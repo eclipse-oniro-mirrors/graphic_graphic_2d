@@ -13,12 +13,9 @@
 
 import("//build/ohos.gni")
 import("//foundation/arkui/ace_engine/ace_config.gni")
+import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
-if (defined(use_new_skia) && use_new_skia) {
-  skia_root = "//third_party/skia"
-} else {
-  skia_root = "$flutter_root/skia"
-}
+skia_root = "//third_party/skia"
 
 config("libharfbuzz_compile_flags") {
   cflags_cc = [
@@ -136,7 +133,7 @@ template("rosen_libharfbuzz") {
       ]
     }
 
-    deps = [ "//foundation/graphic/graphic_2d/rosen/build/flutter/icu:rosen_libicu_$platform" ]
+    deps = [ "$graphic_2d_root/rosen/build/icu:rosen_libicu_$platform" ]
 
     part_name = "graphic_2d"
     subsystem_name = "graphic"

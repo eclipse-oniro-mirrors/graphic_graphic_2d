@@ -208,11 +208,7 @@ ohos_shared_library("librender_service") {
     "//third_party/libxml2:libxml2",
   ]
 
-  if (defined(use_new_skia) && use_new_skia) {
-    public_deps += [ "//third_party/skia:skia_ohos" ]
-  } else {
-    public_deps += [ "//third_party/flutter/build/skia:ace_skia_ohos" ]
-  }
+  public_deps += [ "//third_party/skia:skia_ohos" ]
 
   if (defined(use_new_render_context) && use_new_render_context) {
     include_dirs += [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
@@ -236,10 +232,6 @@ ohos_shared_library("librender_service") {
   }
 
   if (rs_enable_gpu) {
-    if (graphic_2d_feature_enable_flutter_vulkan) {
-      include_dirs += [ "//third_party/flutter/engine/flutter/vulkan" ]
-    }
-
     public_deps += [ "$graphic_2d_root:libvulkan" ]
   }
 
@@ -260,7 +252,6 @@ ohos_shared_library("librender_service") {
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "sensor:sensor_interface_native",
     "window_manager:libwsutils",
   ]
   if (use_video_processing_engine) {
@@ -288,6 +279,10 @@ ohos_shared_library("librender_service") {
       defined(global_parts_info.resourceschedule_resource_schedule_service)) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
     defines += [ "RES_SCHED_ENABLE" ]
+  }
+
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
   }
 
   if (accessibility_enable) {
@@ -351,8 +346,11 @@ ohos_executable("render_service") {
     "drivers_interface_display:display_commontype_idl_headers",
     "hilog:libhilog",
     "ipc:ipc_core",
-    "sensor:sensor_interface_native",
   ]
+
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
 
   part_name = "graphic_2d"
   subsystem_name = "graphic"

@@ -1098,11 +1098,16 @@ sk_sp<SkImage> ImageWithParmOpItem::GetSkImageFromSurfaceBuffer(SkCanvas& canvas
 
         GrBackendTexture backendTexture(
             surfaceBuffer->GetWidth(), surfaceBuffer->GetHeight(), GrMipMapped::kNo, textureInfo);
+#ifndef ROSEN_EMULATOR
+    auto surfaceOrigin = kTopLeft_GrSurfaceOrigin;
+#else
+    auto surfaceOrigin = kBottomLeft_GrSurfaceOrigin;
+#endif
 #ifdef NEW_SKIA
-        auto skImage = SkImage::MakeFromTexture(canvas.recordingContext(), backendTexture, kTopLeft_GrSurfaceOrigin,
+        auto skImage = SkImage::MakeFromTexture(canvas.recordingContext(), backendTexture, surfaceOrigin,
             kRGBA_8888_SkColorType, kPremul_SkAlphaType, SkColorSpace::MakeSRGB());
 #else
-        auto skImage = SkImage::MakeFromTexture(canvas.getGrContext(), backendTexture, kTopLeft_GrSurfaceOrigin,
+        auto skImage = SkImage::MakeFromTexture(canvas.getGrContext(), backendTexture, surfaceOrigin,
             kRGBA_8888_SkColorType, kPremul_SkAlphaType, SkColorSpace::MakeSRGB());
 #endif
         return skImage;
@@ -1426,11 +1431,17 @@ void SurfaceBufferOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
 
     GrBackendTexture backendTexture(
         surfaceBufferInfo_.width_, surfaceBufferInfo_.height_, GrMipMapped::kNo, textureInfo);
+
+#ifndef ROSEN_EMULATOR
+    auto surfaceOrigin = kTopLeft_GrSurfaceOrigin;
+#else
+    auto surfaceOrigin = kBottomLeft_GrSurfaceOrigin;
+#endif
 #ifdef NEW_SKIA
-    auto skImage = SkImage::MakeFromTexture(canvas.recordingContext(), backendTexture, kTopLeft_GrSurfaceOrigin,
+    auto skImage = SkImage::MakeFromTexture(canvas.recordingContext(), backendTexture, surfaceOrigin,
         kRGBA_8888_SkColorType, kPremul_SkAlphaType, SkColorSpace::MakeSRGB());
 #else
-    auto skImage = SkImage::MakeFromTexture(canvas.getGrContext(), backendTexture, kTopLeft_GrSurfaceOrigin,
+    auto skImage = SkImage::MakeFromTexture(canvas.getGrContext(), backendTexture, surfaceOrigin,
         kRGBA_8888_SkColorType, kPremul_SkAlphaType, SkColorSpace::MakeSRGB());
 #endif
     auto samplingOptions = SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear);
@@ -2585,6 +2596,15 @@ void ImageWithParmOpItem::SetNodeId(NodeId id)
         rsImage_->UpdateNodeIdToPicture(id);
     }
 }
+
+void DrawFuncOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect* rect) const
+{
+    func(canvas, rect);
+}
+
+DrawFuncOpItem::DrawFuncOpItem(DrawFunc&& func)
+    : OpItem(sizeof(DrawFuncOpItem)), func_(std::move(func))
+{}
 } // namespace Rosen
 } // namespace OHOS
 
@@ -2862,7 +2882,7 @@ RSExtendImageObject::~RSExtendImageObject()
 #endif
 }
 
-RSExtendImageBaseOj::RSExtendImageBaseOj(const std::shared_ptr<Media::PixelMap>& pixelMap, const Drawing::Rect& src,
+RSExtendImageBaseObj::RSExtendImageBaseObj(const std::shared_ptr<Media::PixelMap>& pixelMap, const Drawing::Rect& src,
     const Drawing::Rect& dst)
 {
     if (pixelMap) {
@@ -2873,7 +2893,7 @@ RSExtendImageBaseOj::RSExtendImageBaseOj(const std::shared_ptr<Media::PixelMap>&
     }
 }
 
-void RSExtendImageBaseOj::Playback(Drawing::Canvas& canvas, const Drawing::Rect& rect,
+void RSExtendImageBaseObj::Playback(Drawing::Canvas& canvas, const Drawing::Rect& rect,
     const Drawing::SamplingOptions& sampling)
 {
     if (rsImage_) {
@@ -2881,16 +2901,15 @@ void RSExtendImageBaseOj::Playback(Drawing::Canvas& canvas, const Drawing::Rect&
     }
 }
 
-
-bool RSExtendImageBaseOj::Marshalling(Parcel &parcel) const
+bool RSExtendImageBaseObj::Marshalling(Parcel &parcel) const
 {
     bool ret = RSMarshallingHelper::Marshalling(parcel, rsImage_);
     return ret;
 }
 
-RSExtendImageBaseOj *RSExtendImageBaseOj::Unmarshalling(Parcel &parcel)
+RSExtendImageBaseObj *RSExtendImageBaseObj::Unmarshalling(Parcel &parcel)
 {
-    auto object = new RSExtendImageBaseOj();
+    auto object = new RSExtendImageBaseObj();
     bool ret = RSMarshallingHelper::Unmarshalling(parcel, object->rsImage_);
     if (!ret) {
         return nullptr;

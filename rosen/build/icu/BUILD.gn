@@ -15,11 +15,7 @@ import("//build/ohos.gni")
 import("//foundation/arkui/ace_engine/ace_config.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
-if (defined(use_new_skia) && use_new_skia) {
-  skia_root = "//third_party/skia"
-} else {
-  skia_root = "$flutter_root/skia"
-}
+skia_root = "//third_party/skia"
 
 external_icu_include_dirs = [
   "//third_party/icu/icu4c/source/common",
@@ -28,7 +24,7 @@ external_icu_include_dirs = [
   "//third_party/icu/icu4c/source",
 ]
 
-flutter_icu_include_dirs = [
+icu_include_dirs = [
   "$skia_root/third_party/externals/icu/source/common",
   "$skia_root/third_party/externals/icu/source/i18n",
   "$skia_root/third_party/externals/icu/source",
@@ -43,7 +39,7 @@ template("icu_config") {
     if (defined(config.use_external_icu)) {
       include_dirs = external_icu_include_dirs
     } else {
-      include_dirs = flutter_icu_include_dirs
+      include_dirs = icu_include_dirs
     }
   }
 }
