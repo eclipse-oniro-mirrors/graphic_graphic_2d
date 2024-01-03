@@ -34,6 +34,7 @@ constexpr float VSYNC_PERIOD = 16.6f;                // 16.6ms
 constexpr float S_TO_MS = 1000.f;                    // s to ms
 constexpr int64_t ANIMATION_TIMEOUT = 5000;          // 5s
 constexpr int64_t S_TO_NS = 1000000000;              // s to ns
+constexpr int64_t VSYNC_JANK_LOG_THRESHOLED = 6;     // 6 times vsync
 }
 
 RSJankStats& RSJankStats::GetInstance()
@@ -126,6 +127,9 @@ void RSJankStats::SetRSJankStats()
     const int64_t missedVsync = static_cast<int64_t>((endTimeSteady_ - startTimeSteady_) / VSYNC_PERIOD);
     if (missedVsync <= 0) {
         return;
+    }
+    if (missedVsync >= VSYNC_JANK_LOG_THRESHOLED) {
+        ROSEN_LOGI("RSJankStats::SetJankStats jank frames %{public}lld", missedVsync);
     }
     size_t type = JANK_FRAME_INVALID;
     if (missedVsync < 6) {                                       // JANK_FRAME_6_FREQ   : (0,6)
