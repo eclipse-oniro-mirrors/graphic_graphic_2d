@@ -100,6 +100,11 @@ public:
         return ltpoEnabled_;
     }
 
+    void SetLtpoEnabled(bool ltpoEnabled)
+    {
+        ltpoEnabled_ = ltpoEnabled;
+    }
+
     uint32_t GetAlignRate() const
     {
         return alignRate_;
@@ -114,6 +119,11 @@ public:
     uint32_t GetSupportedMaxTE() const
     {
         return maxTE_;
+    }
+
+    void SetSupportedMaxTE(uint32_t maxTE)
+    {
+        maxTE_ = maxTE;
     }
 
     // set refresh rates
@@ -142,6 +152,10 @@ public:
     void SetLtpoConfig();
     int64_t GetIdealPeriod(uint32_t rate);
     void RegisterRefreshRateModeChangeCallback(const RefreshRateModeChangeCallback& callback);
+    RefreshRateModeChangeCallback GetRefreshRateModeChangeCallback() const
+    {
+        return refreshRateModeChangeCallback_;
+    }
 private:
     HgmCore();
     ~HgmCore() = default;
