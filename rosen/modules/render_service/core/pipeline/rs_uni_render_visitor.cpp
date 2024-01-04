@@ -2125,11 +2125,11 @@ void RSUniRenderVisitor::ProcessChildrenForScreenRecordingOptimization(
         // just process child above the root of capture window
         bool startVisit = false;
         for (auto& child : node.GetSortedChildren()) {
-            if (startVisit) {
-                ProcessChildInner(node, child);
-            }
             if (child->GetId() == rootIdOfCaptureWindow) {
                 startVisit = true;
+            }
+            if (startVisit) {
+                ProcessChildInner(node, child);
             }
         }
         // Main thread may invalidate the FullChildrenList, check if we need to clear it.
@@ -2139,11 +2139,11 @@ void RSUniRenderVisitor::ProcessChildrenForScreenRecordingOptimization(
         // just process child above the root of capture window
         bool startVisit = false;
         for (auto& child : node.GetSortedChildren()) {
-            if (startVisit) {
-                ProcessChildInner(node, child);
-            }
             if (child->GetId() == rootIdOfCaptureWindow) {
                 startVisit = true;
+            }
+            if (startVisit) {
+                ProcessChildInner(node, child);
             }
         }
     }
