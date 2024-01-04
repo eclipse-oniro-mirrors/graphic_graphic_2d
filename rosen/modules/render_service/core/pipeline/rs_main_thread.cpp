@@ -296,6 +296,7 @@ void RSMainThread::Init()
     isUniRender_ = RSUniRenderJudgement::IsUniRender();
     SetDeviceType();
     qosPidCal_ = deviceType_ == DeviceType::PC;
+    isFoldScreenDevice_ = system::GetParameter("const.window.foldscreen.type", "") == "true";
     auto taskDispatchFunc = [](const RSTaskDispatcher::RSTask& task, bool isSyncTask = false) {
         RSMainThread::Instance()->PostTask(task);
     };
@@ -2872,23 +2873,37 @@ void RSMainThread::UpdateRogSizeIfNeeded()
 }
 
 const uint32_t UIFIRST_MINIMUM_NODE_NUMBER = 4; // minimum window number(4) for enabling UIFirst
+const uint32_t FOLD_DEVICE_SCREEN_NUMBER = 2; // alt device has two screens
 
 void RSMainThread::UpdateUIFirstSwitch()
 {
+    const std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
+    if (!rootNode) {
+        return;
+    }
+    auto sortedChildren = rootNode->GetSortedChildren();
+    if (sortedChildren.empty()) {
+        return;
+    }
+    auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(sortedChildren.front());
+    if (!displayNode) {
+        return;
+    }
+    auto screenManager_ = CreateOrGetScreenManager();
+    uint32_t actualScreensNum = screenManager_->GetActualScreensNum();
     if (deviceType_ == DeviceType::PHONE) {
-        isUiFirstOn_ = (RSSystemProperties::GetUIFirstEnabled() && IsSingleDisplay());
+        if (isFoldScreenDevice_) {
+            isUiFirstOn_ = (RSSystemProperties::GetUIFirstEnabled() && actualScreensNum == FOLD_DEVICE_SCREEN_NUMBER);
+        } else {
+            isUiFirstOn_ = (RSSystemProperties::GetUIFirstEnabled() && actualScreensNum == 1);
+        }
         return;
     }
     isUiFirstOn_ = false;
-    const std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
-    if (rootNode && IsSingleDisplay()) {
-        auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(
-            rootNode->GetSortedChildren().front());
-        if (displayNode) {
-            LeashWindowCount_ = 0;
-            displayNode->CollectSurfaceForUIFirstSwitch(LeashWindowCount_, UIFIRST_MINIMUM_NODE_NUMBER);
-            isUiFirstOn_ = RSSystemProperties::GetUIFirstEnabled() && LeashWindowCount_ >= UIFIRST_MINIMUM_NODE_NUMBER;
-        }
+    if (IsSingleDisplay()) {
+        uint32_t LeashWindowCount = 0;
+        displayNode->CollectSurfaceForUIFirstSwitch(LeashWindowCount, UIFIRST_MINIMUM_NODE_NUMBER);
+        isUiFirstOn_ = RSSystemProperties::GetUIFirstEnabled() && LeashWindowCount >=  UIFIRST_MINIMUM_NODE_NUMBER;
     }
 }
 
