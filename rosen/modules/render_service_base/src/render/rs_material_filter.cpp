@@ -285,7 +285,7 @@ std::shared_ptr<RSFilter> RSMaterialFilter::TransformFilter(float fraction) cons
 
 bool RSMaterialFilter::IsValid() const
 {
-    constexpr float epsilon = 0.05f;
+    constexpr float epsilon = 0.999f;
     return radius_ > epsilon;
 }
 

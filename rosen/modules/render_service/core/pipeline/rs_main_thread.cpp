@@ -272,6 +272,8 @@ void RSMainThread::Init()
         Render();
         InformHgmNodeInfo();
         ReleaseAllNodesBuffer();
+        auto subThreadManager = RSSubThreadManager::Instance();
+        subThreadManager->SubmitFilterSubThreadTask();
         SendCommands();
         context_->activeNodesInRoot_.clear();
         ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
