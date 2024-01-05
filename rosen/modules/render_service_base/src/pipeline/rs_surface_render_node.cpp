@@ -1457,6 +1457,33 @@ void RSSurfaceRenderNode::ResetAbilityNodeIds()
     abilityNodeIds_.clear();
 }
 
+void RSSurfaceRenderNode::UpdateSurfaceCacheContentStatic(
+    const std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>>& activeNodeIds)
+{
+    dirtyContentNodeNum_ = 0;
+    dirtyGeoNodeNum_ = 0;
+    dirtynodeNum_ = activeNodeIds.size();
+    surfaceCacheContentStatic_ = IsOnlyBasicGeoTransform();
+    if (dirtynodeNum_ == 0) {
+        RS_LOGD("Clear surface %{public}" PRIu64 " dirtynodes surfaceCacheContentStatic_:%{public}d",
+            GetId(), surfaceCacheContentStatic_);
+        return;
+    }
+    for (auto [id, subNode] : activeNodeIds) {
+        auto node = subNode.lock();
+        if (node == nullptr || (id == GetId() && surfaceCacheContentStatic_)) {
+            continue;
+        }
+        // classify active nodes except instance surface itself
+        if (node->IsContentDirty()) {
+            dirtyContentNodeNum_++;
+        } else {
+            dirtyGeoNodeNum_++;
+        }
+    }
+    surfaceCacheContentStatic_ = surfaceCacheContentStatic_ && !(dirtyContentNodeNum_ == 0 || dirtyGeoNodeNum_ == 0);
+}
+
 const std::unordered_set<NodeId>& RSSurfaceRenderNode::GetAbilityNodeIds() const
 {
     return abilityNodeIds_;

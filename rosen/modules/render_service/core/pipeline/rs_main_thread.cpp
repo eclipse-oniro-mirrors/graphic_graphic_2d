@@ -2730,27 +2730,18 @@ bool RSMainThread::IsDrawingGroupChanged(RSRenderNode& cacheRootNode) const
     return false;
 }
 
-bool RSMainThread::CheckIfInstanceOnlySurfaceBasicGeoTransform(NodeId instanceNodeId) const
+void RSMainThread::CheckAndUpdateInstanceContentStaticStatus(std::shared_ptr<RSSurfaceRenderNode> instanceNode) const
 {
-    if (instanceNodeId == INVALID_NODEID) {
-        RS_LOGE("CheckIfInstanceOnlySurfaceBasicGeoTransform instanceNodeId invalid.");
-        return false;
+    if (instanceNode == nullptr) {
+        RS_LOGE("CheckAndUpdateInstanceContentStaticStatus instanceNode invalid.");
+        return ;
     }
-    auto iter = context_->activeNodesInRoot_.find(instanceNodeId);
+    auto iter = context_->activeNodesInRoot_.find(instanceNode->GetId());
     if (iter != context_->activeNodesInRoot_.end()) {
-        const auto& activeNodeIds = iter->second;
-        for (auto [id, subNode] : activeNodeIds) {
-            auto node = subNode.lock();
-            if (node == nullptr) {
-                continue;
-            }
-            // filter active nodes except instance surface itself
-            if (id != instanceNodeId || !node->IsOnlyBasicGeoTransform()) {
-                return false;
-            }
-        }
+        instanceNode->UpdateSurfaceCacheContentStatic(iter->second);
+    } else {
+        instanceNode->UpdateSurfaceCacheContentStatic({});
     }
-    return true;
 }
 
 FrameRateRange RSMainThread::CalcAnimateFrameRateRange(std::shared_ptr<RSRenderNode> node)
