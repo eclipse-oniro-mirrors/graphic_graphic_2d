@@ -65,7 +65,6 @@ public:
     {
         if (animationFunc == nullptr) {
             RS_LOGE("HmSymbolcheck adapter texgine animationFunc null");
-
         } else {
             typography_->SetAnimation(animationFunc);
             RS_LOGD("HmSymbolcheck adapter texgine SetAnimation success");

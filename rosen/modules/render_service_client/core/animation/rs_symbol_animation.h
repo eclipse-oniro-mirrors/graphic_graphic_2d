@@ -31,7 +31,7 @@
 namespace OHOS {
 namespace Rosen {
 
-const Vector2f CENTER_NODE_COORDINATE = {0.5f,0.5f}; //scale center node
+const Vector2f CENTER_NODE_COORDINATE = {0.5f, 0.5f}; //scale center node
 const int SCALE_ANIMATION_INTERVAL = 1000; // the interval between two animation
 const unsigned int UNIT_GROUP = 0;  // AnimationSubType is UNIT
 const unsigned int UNIT_PERIOD = 0;  // AnimationSubType is UNIT
@@ -61,8 +61,10 @@ private:
     std::shared_ptr<RSNode> rsNode_ = nullptr;
 
     std::shared_ptr<RSAnimation> ScaleSymbolAnimation(const std::shared_ptr<RSNode>& rsNode,
-        const Vector2f& scaleValueBegin=Vector2f{0.f,0.f}, const Vector2f& scaleValue=Vector2f{0.f,0.f},
-        const Vector2f& scaleValueEnd=Vector2f{0.f,0.f}, const int delay = 0);
+        const Vector2f& scaleValueBegin = Vector2f{0.f, 0.f},
+        const Vector2f& scaleValue = Vector2f{0.f, 0.f},
+        const Vector2f& scaleValueEnd = Vector2f{0.f, 0.f},
+        const int delay = 0);
 
     bool isEqual(const Vector2f val1, const Vector2f val2);
     RSAnimationTimingCurve SetScaleSpringTimingCurve();

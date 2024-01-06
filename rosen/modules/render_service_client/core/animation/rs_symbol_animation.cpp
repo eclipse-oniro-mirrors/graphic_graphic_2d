@@ -32,7 +32,8 @@ RSSymbolAnimation::~RSSymbolAnimation()
     ROSEN_LOGD("[%{public}s] Destroy \n", __func__);
 }
 
-bool RSSymbolAnimation::SetSymbolAnimation(const std::shared_ptr<TextEngine::SymbolAnimationConfig>& symbolAnimationConfig)
+bool RSSymbolAnimation::SetSymbolAnimation(
+    const std::shared_ptr<TextEngine::SymbolAnimationConfig>& symbolAnimationConfig)
 {
     if (rsNode_) {
         ROSEN_LOGD("HmSymbol RSSymbolAnimation::SetNode get ID rsnodeid = %{public}lu", rsNode_->GetId());
@@ -81,7 +82,8 @@ bool RSSymbolAnimation::SetScaleUnitAnimation(const std::shared_ptr<RSNode>& rsN
     return true;
 }
 
-std::shared_ptr<RSAnimation> RSSymbolAnimation::ScaleSymbolAnimation(const std::shared_ptr<RSNode>& rsNode, const Vector2f& scaleValueBegin,
+std::shared_ptr<RSAnimation> RSSymbolAnimation::ScaleSymbolAnimation(
+    const std::shared_ptr<RSNode>& rsNode, const Vector2f& scaleValueBegin,
     const Vector2f& scaleValue, const Vector2f& scaleValueEnd, int delay)
 {
     bool isCreate = CreateOrSetModifierValue(scaleStartProperty_, scaleValueBegin);
@@ -91,10 +93,8 @@ std::shared_ptr<RSAnimation> RSSymbolAnimation::ScaleSymbolAnimation(const std::
     }
     CreateOrSetModifierValue(scaleProperty_, scaleValue);
     CreateOrSetModifierValue(scaleEndProperty_, scaleValueEnd);
-
-
-    Vector2f curNodePivot= rsNode->GetStagingProperties().GetPivot();
-    if (!isEqual(curNodePivot,CENTER_NODE_COORDINATE)) {
+    Vector2f curNodePivot = rsNode->GetStagingProperties().GetPivot();
+    if (!isEqual(curNodePivot,CENTER_NODE_COORDINATE)){
         bool isCreate = CreateOrSetModifierValue(pivotProperty_, CENTER_NODE_COORDINATE);
         if (isCreate) {
             auto pivotModifier = std::make_shared<RSPivotModifier>(pivotProperty_);

@@ -78,8 +78,10 @@ public:
     double lineHeight_ = 0.0;
     double lineY_ = 0.0;
     double absLineY_ = 0.0;
-    void SetAnimation(std::function<bool(const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)> animationFunc)
-    {   
+    void SetAnimation(
+        std::function<bool(
+            const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)> animationFunc)
+    {
         if (!animationFunc) {
             RS_LOGE(" HmSymbol text_span get SetAnimation failed");
         } else {
@@ -90,7 +92,7 @@ public:
 private:
 
     std::function<bool(
-        const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)> animationFunc_ =nullptr;
+        const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)> animationFunc_ = nullptr;
 
     friend class TextBreaker;
     friend class BidiProcesser;
@@ -102,9 +104,6 @@ private:
     friend class TextShaper;
     friend class TextReverser;
     friend void ReportMemoryUsage(std::string const &member, TextSpan const &that, bool needThis);
-
-
-
 };
 } // namespace TextEngine
 } // namespace Rosen
