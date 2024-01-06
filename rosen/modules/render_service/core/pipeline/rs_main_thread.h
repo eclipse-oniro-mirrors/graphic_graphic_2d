@@ -137,7 +137,7 @@ public:
     bool IsDrawingGroupChanged(RSRenderNode& cacheRootNode) const;
     // check if active instance only move or scale it's main window surface without rearrangement
     // instanceNodeId should be MainWindowType, or it cannot grep correct app's info
-    bool CheckIfInstanceOnlySurfaceBasicGeoTransform(NodeId instanceNodeId) const;
+    void CheckAndUpdateInstanceContentStaticStatus(std::shared_ptr<RSSurfaceRenderNode> instanceNode) const;
 
     void RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app);
     void UnRegisterApplicationAgent(sptr<IApplicationAgent> app);

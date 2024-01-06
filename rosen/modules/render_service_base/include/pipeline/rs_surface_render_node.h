@@ -876,9 +876,14 @@ public:
         return surfaceCacheContentStatic_;
     }
 
-    void SetSurfaceCacheContentStatic(bool contentStatic)
+    void UpdateSurfaceCacheContentStatic(
+        const std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>>& activeNodeIds);
+    // temperory limit situation:
+    // subtree no drawingcache and geodirty
+    // contentdirty 1 specifically for buffer update
+    bool IsContentDirtyNodeLimited() const
     {
-        surfaceCacheContentStatic_ = contentStatic;
+        return drawingCacheNodes_.empty() && dirtyGeoNodeNum_ == 0 && dirtyContentNodeNum_ <= 1;
     }
 
     size_t GetLastFrameChildrenCnt()
@@ -1046,6 +1051,9 @@ private:
     std::vector<bool> childrenFilterRectsCacheValid_;
     std::vector<std::shared_ptr<RSRenderNode>> childrenFilterNodes_;
     std::unordered_set<NodeId> abilityNodeIds_;
+    size_t dirtyContentNodeNum_ = 0;
+    size_t dirtyGeoNodeNum_ = 0;
+    size_t dirtynodeNum_ = 0;
     // transparent region of the surface, floating window's container window is always treated as transparent
     Occlusion::Region transparentRegion_;
 
