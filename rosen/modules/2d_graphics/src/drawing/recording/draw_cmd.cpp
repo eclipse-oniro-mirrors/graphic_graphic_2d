@@ -1139,11 +1139,6 @@ void DrawSymbolOpItem::Playback(Canvas* canvas, const Rect* rect)
 
     Path path(symbol_.path_);
 
-    // if (startAnimation_ && symbol_.symbolInfo_.effect == DrawingEffectStrategy::SCALE &&
-    //         !animation_.empty()) {
-    //     UpdateScale(animation_[0].curValue, path);
-    // }
-
     // 1.0 move path
     path.Offset(locate_.GetX(), locate_.GetY());
 

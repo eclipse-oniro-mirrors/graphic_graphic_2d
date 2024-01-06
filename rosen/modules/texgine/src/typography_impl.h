@@ -68,19 +68,20 @@ public:
     double GetLineHeight(int lineNumber);
     double GetLineWidth(int lineNumber);
 
-    void SetAnimation(std::function<bool(const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)> animationFunc) override {
-        if(animationFunc == nullptr){
+    void SetAnimation(
+        std::function<bool(
+            const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)> animationFunc) override
+    {
+        if (animationFunc == nullptr) {
             RS_LOGE("HmSymbol typography_impl::SetAnimation null ");
-
-        }else{
+        } else {
             animationFunc_ = animationFunc;
             RS_LOGD("HmSymbol typography_impl::SetAnimation success ");
-
         }
     }
 private:
 
-    std::function<bool(const std::shared_ptr<SymbolAnimationConfig>&)> animationFunc_ = nullptr ;
+    std::function<bool(const std::shared_ptr<SymbolAnimationConfig>&)> animationFunc_ = nullptr;
 
     void ReportMemoryUsage(const std::string &member, bool needThis) const override;
 

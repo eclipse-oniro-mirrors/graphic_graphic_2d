@@ -545,11 +545,6 @@ void SymbolOpItem::Draw(RSPaintFilterCanvas& canvas, const SkRect*) const
 {
     SkPath path(symbol_.path_);
 
-    // if (startAnimation_ && symbol_.symbolInfo_.effect == EffectStrategy::SCALE &&
-    //         !animation_.empty()) {
-    //     UpdateScale(animation_[0].curValue, path);
-    // }
-
     // 1.0 move path
     path.offset(locate_.x(), locate_.y());
 

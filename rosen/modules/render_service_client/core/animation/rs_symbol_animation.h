@@ -28,18 +28,14 @@
 #include "symbol_animation_config.h"
 #include "platform/common/rs_log.h"
 
-// #include "rosen_text/export/rosen_text/symbol_animation_config.h"
-
-// #include "SkHMSymbol.h"
-
 namespace OHOS {
 namespace Rosen {
 
-const Vector2f CENTER_NODE_COORDINATE = {0.5f,0.5f}; //scale from the center of the node
-const int SCALE_ANIMATION_INTERVAL = 1000; // scale animation consists of two animation, the interval between two animation is 1000
-const unsigned int UNIT_GROUP = 0;  // the number of group is 0 when AnimationSubType is UNIT
-const unsigned int UNIT_PERIOD = 0;  // the number of time period is 0 when AnimationSubType is UNIT
-const unsigned int UNIT_NODE = 0;  // the number of node is 0 when AnimationSubType is UNIT
+const Vector2f CENTER_NODE_COORDINATE = {0.5f,0.5f}; //scale center node
+const int SCALE_ANIMATION_INTERVAL = 1000; // the interval between two animation
+const unsigned int UNIT_GROUP = 0;  // AnimationSubType is UNIT
+const unsigned int UNIT_PERIOD = 0;  // AnimationSubType is UNIT
+const unsigned int UNIT_NODE = 0;  // AnimationSubType is UNIT
 
 
 class RSC_EXPORT RSSymbolAnimation {
@@ -48,18 +44,17 @@ public:
     virtual ~RSSymbolAnimation();
 
     bool SetScaleUnitAnimation(const std::shared_ptr<RSNode>& rsNode);
-    bool SetSymbolAnimation(const std::shared_ptr<TextEngine::SymbolAnimationConfig>& symbolAnimationConfig);
+    bool SetSymbolAnimation(
+        const std::shared_ptr<TextEngine::SymbolAnimationConfig>& symbolAnimationConfig);
 
-    void SetNode(std::shared_ptr<RSNode>& rsNode){
+    void SetNode(std::shared_ptr<RSNode>& rsNode)
+    {
         rsNode_ = rsNode;
-
-        if(rsNode_){
+        if (rsNode_) {
             RS_LOGD("HmSymbol RSSymbolAnimation::SetNode get ID rsnodeid = %{public}lu", rsNode_->GetId());
-
-        }else{
+        } else {
             RS_LOGE("HmSymbol RSSymbolAnimation::SetNode :failed");
         }
-
     }
 
 private:
@@ -79,15 +74,11 @@ private:
     std::shared_ptr<RSAnimatableProperty<Vector2f>> scaleStartProperty_;
     std::shared_ptr<RSAnimatableProperty<Vector2f>> scaleProperty_;
     std::shared_ptr<RSAnimatableProperty<Vector2f>> scaleEndProperty_;
-
-
-
     std::shared_ptr<RSAnimatableProperty<Vector2f>> pivotProperty_;
     std::shared_ptr<RSAnimatableProperty<float>> alphaProperty_;
     std::shared_ptr<RSAnimatableProperty<float>> alphaProperty1_;
     std::shared_ptr<RSAnimatableProperty<float>> alphaProperty2_;
     std::shared_ptr<RSAnimatableProperty<float>> alphaProperty3_;
-
 
 };
 } // namespace Rosen

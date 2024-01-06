@@ -59,15 +59,16 @@ public:
     {
         return 0.0;
     }
-    void SetAnimation(std::function<bool(const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)> animationFunc) override {
-        RS_LOGE("HmSymbolcheck adapter texgine animationFunc");
-        if(animationFunc == nullptr){
-            RS_LOGE("HmSymbolcheck adapter texgine animationFunc null ");
 
-        }else{
+    void SetAnimation(
+        std::function<bool(const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)> animationFunc) override
+    {
+        if (animationFunc == nullptr) {
+            RS_LOGE("HmSymbolcheck adapter texgine animationFunc null");
+
+        } else {
             typography_->SetAnimation(animationFunc);
-            RS_LOGD("HmSymbolcheck adapter texgine SetAnimation success ");
-
+            RS_LOGD("HmSymbolcheck adapter texgine SetAnimation success");
         }
     }
 

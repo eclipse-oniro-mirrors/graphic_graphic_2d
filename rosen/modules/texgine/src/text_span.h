@@ -54,6 +54,7 @@ public:
     void PaintDecorationStyle(TexgineCanvas &canvas, double left, double right, double y, const TextStyle &xs);
     void Paint(TexgineCanvas &canvas, double offsetX, double offsetY, const TextStyle &xs, const RoundRectType &rType);
     void PaintShadow(TexgineCanvas &canvas, double offsetX, double offsetY, const std::vector<TextShadow> &shadows);
+    void SymbolAnimation(const TextStyle &xs);
 
     std::shared_ptr<TextSpan> CloneWithCharGroups(CharGroups const &cgs);
 
@@ -77,19 +78,19 @@ public:
     double lineHeight_ = 0.0;
     double lineY_ = 0.0;
     double absLineY_ = 0.0;
-    void SetAnimation(std::function<bool(const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)> animationFunc) 
+    void SetAnimation(std::function<bool(const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)> animationFunc)
     {   
-        if(!animationFunc) {
+        if (!animationFunc) {
             RS_LOGE(" HmSymbol text_span get SetAnimation failed");
-        }else{
+        } else {
             animationFunc_ = animationFunc;
             RS_LOGD(" HmSymbol text_span get SetAnimation success");
         }
     }
 private:
 
-    std::function<bool(const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)> animationFunc_ =nullptr;
-
+    std::function<bool(
+        const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)> animationFunc_ =nullptr;
 
     friend class TextBreaker;
     friend class BidiProcesser;

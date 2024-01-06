@@ -93,14 +93,14 @@ public:
     bool operator ==(const VariantSpan &rhs) const noexcept(false);
     bool operator !=(std::nullptr_t) const noexcept(false);
     bool operator !=(const VariantSpan &rhs) const noexcept(false);
-    void SetAnimation(std::function<bool(const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)> animationFunc) {
-        if(animationFunc == nullptr){
+    void SetAnimation(std::function<bool(
+        const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)> animationFunc)
+    {
+        if (animationFunc == nullptr) {
             RS_LOGE("HmSymbol variant_span.h null ");
-
-        }else{
+        } else {
             ts_->SetAnimation(animationFunc);
-            RS_LOGD("HmSymbol variant_span.h success ");
-
+            RS_LOGD("HmSymbol variant_span.h success");
         }
     }
 private:
