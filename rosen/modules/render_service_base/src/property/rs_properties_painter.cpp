@@ -1328,7 +1328,7 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     }
 
     auto clipBounds = canvas.getDeviceClipBounds();
-    auto clipIPadding = clipBounds.makeOutset(-1, -1);
+    auto clipIPadding = clipBounds;
     SkMatrix mat = canvas.getTotalMatrix();
 #else
     Drawing::Surface* surface = canvas.GetSurface();
@@ -1347,7 +1347,6 @@ void RSPropertiesPainter::DrawLinearGradientBlurFilter(
     }
 
     auto clipBounds = canvas.GetDeviceClipBounds();
-    clipBounds.MakeOutset(-1, -1);
     auto clipIPadding = clipBounds;
     Drawing::Matrix mat = canvas.GetTotalMatrix();
 #endif
