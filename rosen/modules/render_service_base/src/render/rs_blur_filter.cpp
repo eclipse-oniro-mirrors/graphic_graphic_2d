@@ -91,7 +91,7 @@ std::string RSBlurFilter::GetDescription()
 
 bool RSBlurFilter::IsValid() const
 {
-    constexpr float epsilon = 0.05f;
+    constexpr float epsilon = 0.999f;
     return blurRadiusX_ > epsilon || blurRadiusY_ > epsilon;
 }
 

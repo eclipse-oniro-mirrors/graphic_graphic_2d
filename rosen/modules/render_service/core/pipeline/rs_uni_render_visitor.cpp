@@ -3084,6 +3084,10 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         AssignGlobalZOrderAndCreateLayer(appWindowNodesInZOrder_);
         node.SetGlobalZOrder(globalZOrder_++);
         processor_->ProcessDisplaySurface(node);
+        auto& surfaceHandler = static_cast<RSSurfaceHandler&>(node);
+        auto& fence = surfaceHandler.GetAcquireFence();
+        auto subThreadManager = RSSubThreadManager::Instance();
+        subThreadManager->SetFenceSubThread(fence);
         AssignGlobalZOrderAndCreateLayer(hardwareEnabledTopNodes_);
     }
 
