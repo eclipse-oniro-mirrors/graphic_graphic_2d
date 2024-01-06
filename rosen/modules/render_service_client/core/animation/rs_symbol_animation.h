@@ -26,7 +26,6 @@
 #include "modifier/rs_property_modifier.h"
 #include "animation/rs_animation_timing_curve.h"
 #include "symbol_animation_config.h"
-#include "platform/common/rs_log.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -50,11 +49,6 @@ public:
     void SetNode(std::shared_ptr<RSNode>& rsNode)
     {
         rsNode_ = rsNode;
-        if (rsNode_) {
-            RS_LOGD("HmSymbol RSSymbolAnimation::SetNode get ID rsnodeid = %{public}lu", rsNode_->GetId());
-        } else {
-            RS_LOGE("HmSymbol RSSymbolAnimation::SetNode :failed");
-        }
     }
 
 private:
