@@ -588,7 +588,8 @@ void BufferQueue::ListenerBufferReleasedCb(sptr<SurfaceBuffer> &buffer, const sp
             BLOGN_FAILURE_ID(buffer->GetSeqNum(), "OnBufferReleased failed, Queue id: %{public}" PRIu64 "", uniqueId_);
         }
         if (listener->OnBufferReleasedWithFence(buffer, fence) != GSERROR_OK) {
-            BLOGN_FAILURE_ID(buffer->GetSeqNum(), "OnBufferReleasedWithFence failed, Queue id: %{public}" PRIu64, uniqueId_);
+            BLOGN_FAILURE_ID(buffer->GetSeqNum(), "OnBufferReleasedWithFence failed, Queue id: %{public}" PRIu64 "",
+                             uniqueId_);
         }
     }
 }

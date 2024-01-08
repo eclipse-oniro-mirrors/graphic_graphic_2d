@@ -31,10 +31,10 @@ group("unittest") {
     ":native_buffer_test",
     ":native_image_test",
     ":native_window_test",
+    ":producer_surface_delegator_test",
     ":producer_surface_test",
     ":surface_buffer_impl_test",
     ":surface_utils_test",
-    ":producer_surface_delegator_test",
     ":transact_surface_delegator_stub_test",
   ]
 }
