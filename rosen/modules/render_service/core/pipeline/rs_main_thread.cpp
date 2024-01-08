@@ -1600,7 +1600,7 @@ bool RSMainThread::CheckSurfaceNeedProcess(OcclusionRectISet& occlusionSurfaces,
 RSVisibleLevel RSMainThread::GetRegionVisibleLevel(const Occlusion::Region& curRegion,
     const Occlusion::Region& visibleRegion)
 {
-    if (visibleRegion.GetSize() == 0) {
+    if (visibleRegion.IsEmpty()) {
         return RSVisibleLevel::RS_INVISIBLE;
     } else if (visibleRegion.Area() == curRegion.Area()) {
         return RSVisibleLevel::RS_ALL_VISIBLE;
