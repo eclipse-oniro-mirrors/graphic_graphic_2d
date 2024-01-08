@@ -93,7 +93,7 @@ public:
     bool operator !=(std::nullptr_t) const noexcept(false);
     bool operator !=(const VariantSpan &rhs) const noexcept(false);
     void SetAnimation(std::function<bool(
-        const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)> animationFunc)
+        const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)>& animationFunc)
     {
         if (animationFunc) {
             ts_->SetAnimation(animationFunc);

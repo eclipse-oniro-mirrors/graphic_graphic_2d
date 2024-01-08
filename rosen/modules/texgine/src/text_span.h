@@ -79,7 +79,7 @@ public:
     double absLineY_ = 0.0;
     void SetAnimation(
         std::function<bool(
-            const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)> animationFunc)
+            const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)>& animationFunc)
     {
         if (animationFunc) {
             animationFunc_ = animationFunc;

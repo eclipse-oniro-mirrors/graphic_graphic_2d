@@ -103,7 +103,7 @@ std::shared_ptr<RSAnimation> RSSymbolAnimation::ScaleSymbolAnimation(
     RSAnimationTimingCurve scaleCurve = SetScaleSpringTimingCurve();
 
     auto keyframeAnimation = std::make_shared<RSKeyframeAnimation>(scaleStartProperty_);
-    keyframeAnimation->SetDuration(2000); //duration is 2000s
+    keyframeAnimation->SetDuration(2000); //duration is 2000ms
     keyframeAnimation->AddKeyFrame(0.25f, scaleProperty_, scaleCurve);
     keyframeAnimation->AddKeyFrame(0.75f, scaleProperty_, scaleCurve);
     keyframeAnimation->AddKeyFrame(1.f, scaleEndProperty_, scaleCurve);

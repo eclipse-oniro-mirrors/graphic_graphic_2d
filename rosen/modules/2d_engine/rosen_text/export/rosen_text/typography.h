@@ -96,7 +96,7 @@ public:
     virtual double GetLineHeight(int lineNumber) = 0;
     virtual double GetLineWidth(int lineNumber) = 0;
     virtual void SetAnimation(
-        std::function<bool(const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)> animationFunc)= 0;
+        std::function<bool(const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)>& animationFunc)= 0;
 };
 } // namespace Rosen
 } // namespace OHOS

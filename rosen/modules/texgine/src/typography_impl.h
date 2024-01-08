@@ -69,7 +69,7 @@ public:
 
     void SetAnimation(
         std::function<bool(
-            const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)> animationFunc) override
+            const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)>& animationFunc) override
     {
         if (animationFunc) {
             animationFunc_ = animationFunc;

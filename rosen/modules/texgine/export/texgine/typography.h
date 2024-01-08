@@ -205,7 +205,7 @@ public:
      */
     virtual Boundary GetWordBoundaryByIndex(size_t index) const = 0;
     virtual void SetAnimation(
-        std::function<bool(const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)> animationFunc)= 0;
+        std::function<bool(const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)>& animationFunc)= 0;
 
 private:
     friend void ReportMemoryUsage(const std::string& member, const Typography& that, const bool needThis);
