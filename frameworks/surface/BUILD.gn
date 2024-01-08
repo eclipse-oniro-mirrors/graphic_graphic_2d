@@ -40,6 +40,10 @@ config("surface_public_config") {
     include_dirs += graphic_2d_ext_configs.libsurface_ext_include_dirs
   }
 
+  if (defined(graphic_2d_delegator_configs.vendor_root)) {
+    include_dirs += graphic_2d_delegator_configs.libsurface_ext_delegator_include_dirs
+  }
+
   defines = []
   if (ace_enable_gpu) {
     defines = [ "ACE_ENABLE_GPU" ]
@@ -123,6 +127,11 @@ ohos_shared_library("surface") {
     public_deps += [ "//foundation/graphic/graphic_2d_ext/ohcore/graphic_compat_layer:libgraphic_compat_layer" ]
 
     public_deps -= [ "//drivers/peripheral/display/hdi_service/gralloc/client:hdi_gralloc_client" ]
+  }
+
+  if (defined(graphic_2d_delegator_configs.vendor_root)) {
+    sources += graphic_2d_delegator_configs.libsurface_ext_delegator_sources
+    sources -= graphic_2d_delegator_configs.libsurface_ext_delegator_sources_del
   }
 
   innerapi_tags = [

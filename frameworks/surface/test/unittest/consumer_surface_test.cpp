@@ -920,7 +920,7 @@ HWTEST_F(ConsumerSurfaceTest, AttachBuffer003, Function | MediumTest | Level2)
     GSError ret = bq->Init();
     ASSERT_EQ(ret, GSERROR_OK);
     int32_t timeOut = 1;
-    GSError ret = cs->AttachBuffer(buffer, timeOut);
+    ret = cs->AttachBuffer(buffer, timeOut);
     ASSERT_NE(ret, GSERROR_OK);
 }
 
@@ -936,7 +936,7 @@ HWTEST_F(ConsumerSurfaceTest, RegisterSurfaceDelegator001, Function | MediumTest
 {
     GSError ret = bq->Init();
     ASSERT_EQ(ret, GSERROR_OK);
-    GSError ret = cs->RegisterSurfaceDelegator(surfaceDelegator->AsObject());
+    ret = cs->RegisterSurfaceDelegator(surfaceDelegator->AsObject());
     ASSERT_EQ(ret, GSERROR_OK);
 }
 

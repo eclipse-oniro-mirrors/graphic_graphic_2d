@@ -22,6 +22,7 @@
 #include <message_option.h>
 #include <message_parcel.h>
 #include "transact_surface_delegator_stub.h"
+#include "consumer_surface.h"
 #include "producer_surface_delegator.h"
 #include "buffer_queue_producer.h"
 
@@ -292,7 +293,7 @@ HWTEST_F(ProducerSurfaceDelegatorTest, OnRemoteRequest001, Function | MediumTest
     MessageParcel dataQueue;
     dataQueue.WriteInt32(10);
     dataQueue.WriteFileDescriptor(20);
-    GSError ret2 = qwe->OnRemoteRequest(code, dataQueue, reply, option);
+    int ret2 = qwe->OnRemoteRequest(code, dataQueue, reply, option);
     ASSERT_EQ(ret2, ERR_NONE);
 }
 } // namespace OHOS::Rosen

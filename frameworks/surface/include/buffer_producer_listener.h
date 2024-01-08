@@ -47,7 +47,7 @@ public:
             return GSERROR_BINDER;
         }
         return GSERROR_OK;
-    };
+    }
 
     GSError OnBufferReleasedWithFence(const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& fence) override
     {
@@ -70,7 +70,7 @@ public:
             return GSERROR_BINDER;
         }
         return GSERROR_OK;
-    };
+    }
 private:
     static inline BrokerDelegator<ProducerListenerProxy> delegator_;
 };
@@ -106,7 +106,7 @@ public:
             }
         }
         return ret;
-    };
+    }
 private:
     GSError OnBufferReleasedWithFenceRemote(MessageParcel& arguments)
     {

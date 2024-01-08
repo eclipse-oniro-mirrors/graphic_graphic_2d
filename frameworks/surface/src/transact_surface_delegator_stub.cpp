@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Huawei Device Co., Ltd. 2024. All rights reserved.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,7 +14,7 @@
  */
 
 #include <message_option.h>
-#include <iremote_parcel.h>
+#include <message_parcel.h>
 #include "transact_surface_delegator_stub.h"
 #include "buffer_log.h"
 #include "sync_fence.h"
@@ -35,7 +35,8 @@ int32_t TransactSurfaceDelegatorStub::SendSelfProxy()
     return ERR_NONE;
 }
 
-int32_t TransactSurfaceDelegatorStub::SendMessage(int32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+int32_t TransactSurfaceDelegatorStub::SendMessage(int32_t code, MessageParcel &data, MessageParcel &reply,
+    MessageOption &option)
 {
     return ERR_NONE;
 }

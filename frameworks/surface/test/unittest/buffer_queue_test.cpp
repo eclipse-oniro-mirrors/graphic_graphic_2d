@@ -670,7 +670,9 @@ HWTEST_F(BufferQueueTest, AttachBufferUpdateStatus, Function | MediumTest | Leve
 {
     uint32_t sequence = 2;
     int32_t timeOut = 6;
-    GSError ret = bq->AttachBufferUpdateStatus(sequence, timeOut);
+    std::mutex mutex_;
+    std::unique_lock<std::mutex> lock(mutex_);
+    GSError ret = bq->AttachBufferUpdateStatus(lock, sequence, timeOut);
     ASSERT_EQ(ret, GSERROR_OK);
 }
 

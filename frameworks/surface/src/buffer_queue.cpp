@@ -724,7 +724,7 @@ GSError BufferQueue::AttachBufferUpdateStatus(std::unique_lock<std::mutex> &lock
         bufferQueueCache_[sequence].state = BUFFER_STATE_ATTACHED;
     } else {
         waitAttachCon_.wait_for(lock, std::chrono::milliseconds(timeOut),
-            [this, sequence](){ return (bufferQueueCache_[sequence].state == BUFFER_STATE_RELEASED); });
+            [this, sequence]() { return (bufferQueueCache_[sequence].state == BUFFER_STATE_RELEASED); });
         if (bufferQueueCache_[sequence].state == BUFFER_STATE_RELEASED) {
             bufferQueueCache_[sequence].state = BUFFER_STATE_ATTACHED;
         } else {
