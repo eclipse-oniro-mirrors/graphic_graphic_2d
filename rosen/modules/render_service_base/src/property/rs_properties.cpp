@@ -2831,7 +2831,7 @@ void RSProperties::CalculateFrameOffset()
 // blend with background
 void RSProperties::SetColorBlendMode(int colorBlendMode)
 {
-    colorBlendMode_ = colorBlendMode;
+    colorBlendMode_ = std::clamp<int>(colorBlendMode, 0, static_cast<int>(RSColorBlendMode::MAX));
     if (colorBlendMode_ != static_cast<int>(RSColorBlendMode::NONE)) {
         isDrawn_ = true;
     }
@@ -2846,7 +2846,7 @@ int RSProperties::GetColorBlendMode() const
 
 void RSProperties::SetColorBlendApplyType(int colorBlendApplyType)
 {
-    colorBlendApplyType_ = colorBlendApplyType;
+    colorBlendApplyType_ = std::clamp<int>(colorBlendApplyType, 0, static_cast<int>(RSColorBlendApplyType::MAX));
     isDrawn_ = true;
     SetDirty();
     contentDirty_ = true;

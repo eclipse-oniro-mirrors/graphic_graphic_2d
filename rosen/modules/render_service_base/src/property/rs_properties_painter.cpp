@@ -3830,32 +3830,23 @@ void RSPropertiesPainter::DrawParticle(const RSProperties& properties, RSPaintFi
     }
 }
 
-bool RSPropertiesPainter::CheckBlendParameters(int blendMode, int blendModeApplyType)
-{
-    if (blendMode == 0) {
-        // 0 means no blend
-        return false;
-    }
-    if (blendMode < 0 || blendMode > static_cast<int>(RSColorBlendMode::MAX)) {
-        ROSEN_LOGE("CheckBlendParameters: blendMode invalid, won't apply any blend mode");
-        return false;
-    }
-    if (blendModeApplyType < 0 || blendModeApplyType > static_cast<int>(RSColorBlendApplyType::MAX)) {
-        ROSEN_LOGE("CheckBlendParameters: blendModeApplyType invalid, won't apply any blend mode");
-        return false;
-    }
-    return true;
-}
-
 void RSPropertiesPainter::BeginBlendMode(RSPaintFilterCanvas& canvas, const RSProperties& properties)
 {
     auto blendMode = properties.GetColorBlendMode();
     int blendModeApplyType = properties.GetColorBlendApplyType();
 
-    if (!RSPropertiesPainter::CheckBlendParameters(blendMode, blendModeApplyType)) {
-        // no blend or param check failed
+    if (blendMode == 0) {
+        // no blend
         return;
     }
+
+#ifndef USE_ROSEN_DRAWING
+    canvas.save();
+    canvas.clipRRect(RRect2SkRRect(properties.GetRRect()), true);
+#else
+    canvas.Save();
+    canvas.ClipRoundRect(RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::INTERSECT, true);
+#endif
 
     // fast blend mode
     if (blendModeApplyType == static_cast<int>(RSColorBlendApplyType::FAST)) {
@@ -3886,8 +3877,8 @@ void RSPropertiesPainter::EndBlendMode(RSPaintFilterCanvas& canvas, const RSProp
     auto blendMode = properties.GetColorBlendMode();
     int blendModeApplyType = properties.GetColorBlendApplyType();
 
-    if (!RSPropertiesPainter::CheckBlendParameters(blendMode, blendModeApplyType)) {
-        // no blend or param check failed
+    if (blendMode == 0) {
+        // no blend
         return;
     }
 
@@ -3902,6 +3893,11 @@ void RSPropertiesPainter::EndBlendMode(RSPaintFilterCanvas& canvas, const RSProp
         canvas.Restore();
 #endif
     }
+#ifndef USE_ROSEN_DRAWING
+        canvas.restore();
+#else
+        canvas.Restore();
+#endif
 }
 } // namespace Rosen
 } // namespace OHOS
