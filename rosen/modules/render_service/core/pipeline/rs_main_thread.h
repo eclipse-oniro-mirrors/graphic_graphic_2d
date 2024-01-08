@@ -434,6 +434,7 @@ private:
     bool lastFrameHasFilter_ = false;
     bool vsyncControlEnabled_ = true;
     bool systemAnimatedScenesEnabled_ = false;
+    bool isFoldScreenDevice_ = false;
 
     bool colorPickerForceRequestVsync_ = false;
     std::atomic_bool noNeedToPostTask_ = false;
