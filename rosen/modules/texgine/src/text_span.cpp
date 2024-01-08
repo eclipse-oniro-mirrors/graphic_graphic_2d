@@ -225,15 +225,13 @@ void TextSpan::Paint(TexgineCanvas &canvas, double offsetX, double offsetY, cons
 
 void TextSpan::SymbolAnimation(const TextStyle &xs)
 {
-    int effect = xs.symbol.GetEffectStrategy();
-
     auto spanSymbolAnimationConfig = std::make_shared<SymbolAnimationConfig>();
     spanSymbolAnimationConfig->effectStrategy = SymbolAnimationEffectStrategy(
         xs.symbol.GetEffectStrategy());
     if (spanSymbolAnimationConfig->effectStrategy == SymbolAnimationEffectStrategy::SYMBOL_SCALE) {
         if (animationFunc_) {
             animationFunc_(spanSymbolAnimationConfig);
-        } 
+        }
     }
 }
 
