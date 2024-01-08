@@ -93,6 +93,10 @@ public:
 
     void SetCurrentGpuResourceTag(const GPUResourceTag &tag) override;
 
+#ifdef RS_ENABLE_VK
+    void StoreVkPipelineCacheData() override;
+#endif
+
 #ifdef NEW_SKIA
     sk_sp<GrDirectContext> GetGrContext() const;
     void SetGrContext(const sk_sp<GrDirectContext>& grContext);

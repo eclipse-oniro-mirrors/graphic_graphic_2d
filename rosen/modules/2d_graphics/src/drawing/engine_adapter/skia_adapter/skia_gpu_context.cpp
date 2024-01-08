@@ -308,6 +308,17 @@ void SkiaGPUContext::SetGrContext(const sk_sp<GrContext>& grContext)
 {
     grContext_ = grContext;
 }
+
+#ifdef RS_ENABLE_VK
+void SkiaGPUContext::StoreVkPipelineCacheData()
+{
+    if (!grContext_) {
+        LOGE("SkiaGPUContext::StoreVkPipelineCacheData, grContext_ is nullptr");
+        return;
+    }
+    grContext_->storeVkPipelineCacheData();
+}
+#endif
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

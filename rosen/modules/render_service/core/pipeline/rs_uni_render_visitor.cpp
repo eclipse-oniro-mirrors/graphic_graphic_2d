@@ -3136,6 +3136,13 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         mainThread->ClearMemoryCache(mainThread->GetClearMoment(), mainThread->GetClearMemDeeply());
     }
     RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode end");
+#ifdef RS_ENABLE_VK
+        if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN) {
+#ifdef USE_ROSEN_DRAWING
+            renderEngine_->GetRenderContext()->GetDrGPUContext()->StoreVkPipelineCacheData();
+#endif
+        }
+#endif
 }
 
 void RSUniRenderVisitor::DrawSurfaceLayer(const std::shared_ptr<RSDisplayRenderNode>& displayNode,
