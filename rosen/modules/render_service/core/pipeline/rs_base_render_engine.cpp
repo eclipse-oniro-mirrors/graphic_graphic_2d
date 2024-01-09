@@ -637,7 +637,7 @@ bool RSBaseRenderEngine::SetColorSpaceConverterDisplayParameter(
 
     GSError ret = MetadataHelper::GetColorSpaceInfo(params.buffer, parameter.inputColorSpace.colorSpaceInfo);
     if (ret != GSERROR_OK) {
-        RS_LOGE("RSBaseRenderEngine::ColorSpaceConvertor GetColorSpaceInfo failed with %{public}u.", ret);
+        RS_LOGD("RSBaseRenderEngine::ColorSpaceConvertor GetColorSpaceInfo failed with %{public}u.", ret);
         return false;
     }
 
@@ -648,7 +648,7 @@ bool RSBaseRenderEngine::SetColorSpaceConverterDisplayParameter(
     CM_HDR_Metadata_Type hdrMetadataType = CM_METADATA_NONE;
     ret = MetadataHelper::GetHDRMetadataType(params.buffer, hdrMetadataType);
     if (ret != GSERROR_OK) {
-        RS_LOGW("RSBaseRenderEngine::ColorSpaceConvertor GetHDRMetadataType failed with %{public}u.", ret);
+        RS_LOGD("RSBaseRenderEngine::ColorSpaceConvertor GetHDRMetadataType failed with %{public}u.", ret);
     }
 
     parameter.inputColorSpace.metadataType = hdrMetadataType;
@@ -656,11 +656,11 @@ bool RSBaseRenderEngine::SetColorSpaceConverterDisplayParameter(
 
     ret = MetadataHelper::GetHDRStaticMetadata(params.buffer, parameter.staticMetadata);
     if (ret != GSERROR_OK) {
-        RS_LOGW("RSBaseRenderEngine::ColorSpaceConvertor GetHDRStaticMetadata failed with %{public}u.", ret);
+        RS_LOGD("RSBaseRenderEngine::ColorSpaceConvertor GetHDRStaticMetadata failed with %{public}u.", ret);
     }
     ret = MetadataHelper::GetHDRDynamicMetadata(params.buffer, parameter.dynamicMetadata);
     if (ret != GSERROR_OK) {
-        RS_LOGW("RSBaseRenderEngine::ColorSpaceConvertor GetHDRDynamicMetadata failed with %{public}u.", ret);
+        RS_LOGD("RSBaseRenderEngine::ColorSpaceConvertor GetHDRDynamicMetadata failed with %{public}u.", ret);
     }
 
     // Set brightness to screen brightness when HDR Vivid, otherwise 500 nits
