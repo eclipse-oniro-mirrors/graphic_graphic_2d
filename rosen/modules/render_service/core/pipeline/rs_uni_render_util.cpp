@@ -505,8 +505,9 @@ void RSUniRenderUtil::ReleaseColorPickerResource(std::shared_ptr<RSRenderNode>& 
 
 bool RSUniRenderUtil::IsNodeAssignSubThread(std::shared_ptr<RSSurfaceRenderNode> node, bool isDisplayRotation)
 {
+    bool isPhoneType = RSMainThread::Instance()->GetDeviceType() == DeviceType::PHONE;
     bool isNeedAssignToSubThread = false;
-    if (node->IsLeashWindow()) {
+    if (isPhoneType && node->IsLeashWindow()) {
         isNeedAssignToSubThread = (node->IsScale() || ROSEN_EQ(node->GetGlobalAlpha(), 0.0f)) && !node->HasFilter();
         std::string logInfo = "[ " + node->GetName() + ", " + std::to_string(node->GetId()) + " ]"
             + "( " + std::to_string(static_cast<uint32_t>(node->GetCacheSurfaceProcessedStatus())) + ", "
@@ -526,7 +527,7 @@ bool RSUniRenderUtil::IsNodeAssignSubThread(std::shared_ptr<RSSurfaceRenderNode>
     if (node->GetCacheSurfaceProcessedStatus() == CacheProcessStatus::DOING) { // node exceed one vsync
         return true;
     }
-    if (RSMainThread::Instance()->GetDeviceType() == DeviceType::PHONE) {
+    if (isPhoneType) {
         return isNeedAssignToSubThread;
     } else { // PC or TABLET
         if ((node->IsFocusedNode(RSMainThread::Instance()->GetFocusNodeId()) ||
