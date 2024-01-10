@@ -744,7 +744,7 @@ GraphicColorGamut RSHardwareThread::ComputeTargetColorGamut(const std::vector<La
 
         CM_ColorSpaceInfo colorSpaceInfo;
         if (MetadataHelper::GetColorSpaceInfo(buffer, colorSpaceInfo) != GSERROR_OK) {
-            RS_LOGW("RSHardwareThread::ComputeTargetColorGamut Get color space from surface buffer failed");
+            RS_LOGD("RSHardwareThread::ComputeTargetColorGamut Get color space failed");
             continue;
         }
 
