@@ -382,10 +382,10 @@ ohos_source_set("render_service_base_src") {
   ]
   include_dirs += [ "//third_party/skia/src" ]
   deps = [
+    "$graphic_2d_root/utils/color_manager:color_manager",
     "$graphic_2d_root/utils/sandbox:sandbox_utils",
     "$rosen_root/modules/platform:hilog",
     "$rosen_root/modules/platform:ipc_core",
-    "$graphic_2d_root/utils/color_manager:color_manager",
   ]
   external_deps = [ "hilog:libhilog" ]
 
