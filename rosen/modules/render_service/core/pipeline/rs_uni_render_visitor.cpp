@@ -2976,6 +2976,9 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             }
 
             bool needOffscreen = clipPath;
+            if (needOffscreen) {
+                ClearTransparentBeforeSaveLayer(); // clear transparent before concat display node's matrix
+            }
             if (geoPtr != nullptr) {
                 canvas_->concat(geoPtr->GetMatrix());
             }
@@ -3002,6 +3005,9 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             }
 
             bool needOffscreen = clipPath;
+            if (needOffscreen) {
+                ClearTransparentBeforeSaveLayer(); // clear transparent before concat display node's matrix
+            }
             if (geoPtr != nullptr) {
                 canvas_->ConcatMatrix(geoPtr->GetMatrix());
             }
