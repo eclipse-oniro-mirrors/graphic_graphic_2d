@@ -682,14 +682,14 @@ void RSUniRenderVisitor::HandleColorGamuts(RSDisplayRenderNode& node, const sptr
 {
     RSScreenType screenType = BUILT_IN_TYPE_SCREEN;
     if (screenManager->GetScreenType(node.GetScreenId(), screenType) != SUCCESS) {
-        RS_LOGE("RSUniRenderVisitor::HandleColorGamuts get screen type failed.");
+        RS_LOGD("RSUniRenderVisitor::HandleColorGamuts get screen type failed.");
         return;
     }
 
     if (screenType == VIRTUAL_TYPE_SCREEN) {
         ScreenColorGamut screenColorGamut;
         if (screenManager->GetScreenColorGamut(node.GetScreenId(), screenColorGamut) != SUCCESS) {
-            RS_LOGE("RSUniRenderVisitor::HandleColorGamuts get screen color gamut failed.");
+            RS_LOGD("RSUniRenderVisitor::HandleColorGamuts get screen color gamut failed.");
             return;
         }
         newColorSpace_ = static_cast<GraphicColorGamut>(screenColorGamut);
@@ -728,13 +728,13 @@ void RSUniRenderVisitor::HandlePixelFormat(RSDisplayRenderNode& node, const sptr
 {
     RSScreenType screenType = BUILT_IN_TYPE_SCREEN;
     if (screenManager->GetScreenType(node.GetScreenId(), screenType) != SUCCESS) {
-        RS_LOGE("RSUniRenderVisitor::HandlePixelFormat get screen type failed.");
+        RS_LOGD("RSUniRenderVisitor::HandlePixelFormat get screen type failed.");
         return;
     }
 
     if (screenType == VIRTUAL_TYPE_SCREEN) {
         if (screenManager->GetPixelFormat(node.GetScreenId(), newPixelFormat_) != SUCCESS) {
-            RS_LOGE("RSUniRenderVisitor::HandlePixelFormat get screen color gamut failed.");
+            RS_LOGD("RSUniRenderVisitor::HandlePixelFormat get screen color gamut failed.");
         }
     }
 }
