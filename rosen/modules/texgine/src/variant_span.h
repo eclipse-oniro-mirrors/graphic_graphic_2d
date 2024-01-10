@@ -81,11 +81,17 @@ public:
     RoundRectType GetRoundRectType() const noexcept(true);
     void SetRoundRectType(RoundRectType type) noexcept(true);
 
-    void SetLineHeight(double lineHeight) noexcept(true);
-    double GetLineHeight() const noexcept(true);
+    void SetTopInGroup(double top) noexcept(true);
+    double GetTopInGroup() const noexcept(true);
 
-    void SetLineY(double lineY) noexcept(true);
-    double GetLineY() const noexcept(true);
+    void SetBottomInGroup(double bottom) noexcept(true);
+    double GetBottomInGroup() const noexcept(true);
+
+    void SetMaxRoundRectRadius(double radius) noexcept(true);
+    double GetMaxRoundRectRadius() const noexcept(true);
+
+    double GetTop() const noexcept(true);
+    double GetBottom() const noexcept(true);
 
     operator bool() const noexcept(false);
     bool operator ==(std::nullptr_t) const noexcept(false);

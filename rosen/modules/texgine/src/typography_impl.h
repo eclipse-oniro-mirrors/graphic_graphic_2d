@@ -97,6 +97,8 @@ private:
         std::vector<TextRect> &lineBoxes) const;
     std::vector<TextRect> GenTextRects(std::shared_ptr<TextSpan> &ts, double offsetX, double offsetY,
         double spanGapWidth) const;
+    void ComputeRoundRect(VariantSpan& span, int& index, int& preIndex, LineMetrics& metrics,
+        std::vector<VariantSpan>& groupSpans);
     TypographyStyle typographyStyle_;
     std::vector<VariantSpan> spans_;
     std::shared_ptr<FontProviders> fontProviders_;
