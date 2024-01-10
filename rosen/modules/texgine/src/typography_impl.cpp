@@ -370,8 +370,7 @@ int TypographyImpl::UpdateMetrics()
             }
         }
 
-        lineMetrics_[i].height = ceil(lineMaxCoveredAscent_.back() + lineMaxCoveredDescent_.back());
-        height_ += lineMetrics_[i].height;
+        height_ += ceil(lineMaxCoveredAscent_.back() + lineMaxCoveredDescent_.back());
         baselines_.push_back(height_ - lineMaxCoveredDescent_.back());
         yOffset += ceil(lineMaxCoveredAscent_.back() + prevMaxDescent);
         yOffsets_.push_back(yOffset);
@@ -400,21 +399,69 @@ void TypographyImpl::DoLayout()
     }
 
     for (auto i = 0; i < static_cast<int>(lineMetrics_.size()); i++) {
+        std::vector<VariantSpan> groupSpans;
         double offsetX = 0;
-        lineMetrics_[i].lineY = lineMetrics_[i].lineSpans.size() == 0 ? 0.0 : MAX_INT_VALUE;
+        int index = 0;
+        int preIndex = -1; // Init preIndex to -1
         for (auto &vs : lineMetrics_[i].lineSpans) {
             vs.AdjustOffsetY(yOffsets_[i]);
             vs.AdjustOffsetX(offsetX + HALF(vs.GetTextStyle().letterSpacing));
             offsetX += vs.GetWidth();
             lineMetrics_[i].width = offsetX;
-            if (auto textSpan = vs.TryToTextSpan(); textSpan != nullptr) {
-                lineMetrics_[i].lineY = std::fmin(lineMetrics_[i].lineY,
-                    vs.GetOffsetY() + *(textSpan->tmetrics_->fAscent_));
-            } else {
-                lineMetrics_[i].lineY = std::fmin(lineMetrics_[i].lineY, vs.GetOffsetY());
-            }
+            ComputeRoundRect(vs, index, preIndex, lineMetrics_[i], groupSpans);
         }
         maxLineWidth_ = std::max(maxLineWidth_, lineMetrics_[i].width);
+    }
+}
+
+void TypographyImpl::ComputeRoundRect(VariantSpan& span, int& index, int& preIndex, LineMetrics& metric,
+    std::vector<VariantSpan>& groupSpans)
+{
+    bool leftRound = false;
+    bool rightRound = false;
+    if (span.HasBackgroundRect()) {
+        int lineSpanCount = metric.lineSpans.size();
+        int styleId = span.GetTextStyle().styleId;
+        // index - 1 is previous index, -1 is the invalid styleId
+        int preStyleId = index == 0 ? -1 : metric.lineSpans[index - 1].GetTextStyle().styleId;
+        // lineSpanCount - 1 is the last span index, index + 1 is next span index, -1 is the invalid styleId
+        int nextStyleId = index == lineSpanCount - 1 ? -1 : metric.lineSpans[index + 1].GetTextStyle().styleId;
+        // index - preIndex > 1 means the left span has no background rect
+        leftRound = (preIndex < 0 || index - preIndex > 1 || preStyleId != styleId);
+        // lineSpanCount - 1 is the last span index, index + 1 is next span index
+        rightRound = (index == lineSpanCount - 1 || !metric.lineSpans[index + 1].HasBackgroundRect() ||
+            nextStyleId != styleId);
+        preIndex = index;
+        groupSpans.push_back(span);
+    } else if (!groupSpans.empty()) {
+        groupSpans.erase(groupSpans.begin(), groupSpans.end());
+    }
+    if (leftRound && rightRound) {
+        span.SetRoundRectType(RoundRectType::ALL);
+    } else if (leftRound) {
+        span.SetRoundRectType(RoundRectType::LEFT_ONLY);
+    } else if (rightRound) {
+        span.SetRoundRectType(RoundRectType::RIGHT_ONLY);
+    } else {
+        span.SetRoundRectType(RoundRectType::NONE);
+    }
+    index++;
+
+    if (rightRound && !groupSpans.empty()) {
+        double maxRoundRectRadius = MAX_INT_VALUE;
+        double minTop = MAX_INT_VALUE;
+        double maxBottom = 0;
+        for (auto &gSpan : groupSpans) {
+            maxRoundRectRadius = std::fmin(std::fmin(gSpan.GetWidth(), gSpan.GetHeight()), maxRoundRectRadius);
+            minTop = std::fmin(minTop, gSpan.GetTop());
+            maxBottom = std::fmax(maxBottom, gSpan.GetBottom());
+        }
+        for (auto &gSpan : groupSpans) {
+            gSpan.SetMaxRoundRectRadius(maxRoundRectRadius);
+            gSpan.SetTopInGroup(minTop - gSpan.GetOffsetY());
+            gSpan.SetBottomInGroup(maxBottom - gSpan.GetOffsetY());
+        }
+        groupSpans.erase(groupSpans.begin(), groupSpans.end());
     }
 }
 
@@ -585,39 +632,11 @@ void TypographyImpl::UpadateAnySpanMetrics(std::shared_ptr<AnySpan> &span, doubl
 void TypographyImpl::Paint(TexgineCanvas &canvas, double offsetX, double offsetY)
 {
     for (auto &metric : lineMetrics_) {
-        int spanCount = metric.lineSpans.size();
-        int index = 0;
-        int preIndex = -1; // Init preIndex to -1
-        bool leftRound = false;
-        bool rightRound = false;
         for (auto &span : metric.lineSpans) {
             if (animationFunc_) {
                 span.SetAnimation(animationFunc_);
             }
-            if (span.HasBackgroundRect()) {
-                int styleId = span.GetTextStyle().styleId;
-                // index - 1 is previous index, -1 is the invalid styleId
-                int preStyleId = index == 0 ? -1 : metric.lineSpans[index - 1].GetTextStyle().styleId;
-                // spanCount - 1 is the last span index, index + 1 is next span index, -1 is the invalid styleId
-                int nextStyleId = index == spanCount - 1 ? -1 : metric.lineSpans[index + 1].GetTextStyle().styleId;
-                // index - preIndex > 1 means the left span has no background rect
-                leftRound = (preIndex < 0 || index - preIndex > 1 || preStyleId != styleId);
-                // spanCount - 1 is the last span index, index + 1 is next span index
-                rightRound = (index == spanCount - 1 || !metric.lineSpans[index + 1].HasBackgroundRect() ||
-                    nextStyleId != styleId);
-                preIndex = index;
-            }
-            if (leftRound && rightRound) {
-                span.SetRoundRectType(RoundRectType::ALL);
-            } else if (leftRound) {
-                span.SetRoundRectType(RoundRectType::LEFT_ONLY);
-            } else if (rightRound) {
-                span.SetRoundRectType(RoundRectType::RIGHT_ONLY);
-            } else {
-                span.SetRoundRectType(RoundRectType::NONE);
-            }
             span.Paint(canvas, offsetX + span.GetOffsetX(), offsetY + span.GetOffsetY());
-            index++;
         }
     }
 }
@@ -830,8 +849,6 @@ void TypographyImpl::ApplyAlignment()
         for (auto &span : line.lineSpans) {
             span.AdjustOffsetX(typographyOffsetX + spanGapWidth * spanIndex);
             span.SetJustifyGap(spanIndex > 0 && isJustify ? spanGapWidth : 0.0);
-            span.SetLineHeight(line.height);
-            span.SetLineY(line.lineY);
             spanIndex++;
         }
         line.indent = typographyOffsetX;

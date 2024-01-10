@@ -191,16 +191,17 @@ void TextSpan::Paint(TexgineCanvas &canvas, double offsetX, double offsetY, cons
         double rbRadius = 0.0;
         double lbRadius = 0.0;
         if (rType == RoundRectType::ALL || rType == RoundRectType::LEFT_ONLY) {
-            ltRadius = xs.backgroundRect.leftTopRadius;
-            lbRadius = xs.backgroundRect.leftBottomRadius;
+            ltRadius = std::fmin(xs.backgroundRect.leftTopRadius, maxRoundRectRadius_);
+            lbRadius = std::fmin(xs.backgroundRect.leftBottomRadius, maxRoundRectRadius_);
         }
         if (rType == RoundRectType::ALL || rType == RoundRectType::RIGHT_ONLY) {
-            rtRadius = xs.backgroundRect.rightTopRadius;
-            rbRadius = xs.backgroundRect.rightBottomRadius;
+            rtRadius = std::fmin(xs.backgroundRect.rightTopRadius, maxRoundRectRadius_);
+            rbRadius = std::fmin(xs.backgroundRect.rightBottomRadius, maxRoundRectRadius_);
         }
         const SkVector fRadii[4] = {{ltRadius, ltRadius}, {rtRadius, rtRadius}, {rbRadius, rbRadius},
             {lbRadius, lbRadius}};
-        auto rect = TexgineRect::MakeRRect(offsetX, absLineY_, width_, lineHeight_, fRadii);
+        auto rect = TexgineRect::MakeRRect(offsetX, offsetY + topInGroup_, width_,
+            bottomInGroup_ - topInGroup_, fRadii);
         paint.SetAntiAlias(false);
         canvas.DrawRRect(rect, paint);
     }
