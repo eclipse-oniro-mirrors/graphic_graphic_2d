@@ -71,6 +71,9 @@ public:
     static void DrawDynamicLightUp(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawParticle(const RSProperties& properties, RSPaintFilterCanvas& canvas);
 
+    static void BeginBlendMode(RSPaintFilterCanvas& canvas, const RSProperties& properties);
+    static void EndBlendMode(RSPaintFilterCanvas& canvas, const RSProperties& properties);
+
 #ifndef USE_ROSEN_DRAWING
     static void Clip(SkCanvas& canvas, RectF rect, bool isAntiAlias = true);
     static void DrawBorder(const RSProperties& properties, SkCanvas& canvas);
@@ -176,12 +179,13 @@ private:
         std::shared_ptr<RSSkiaFilter>& blurFilter, sk_sp<SkShader> alphaGradientShader, const SkIRect& clipIPadding);
     static sk_sp<SkShader> MakeMeanBlurShader(sk_sp<SkShader> srcImageShader,
         sk_sp<SkShader> blurImageShader, sk_sp<SkShader> gradientShader);
-    static sk_sp<SkImage> MakeGreyAdjustmentImage(SkCanvas& canvas, const sk_sp<SkImage>& image,
-        const float greyCoef1, const float greyCoef2);
+    static sk_sp<SkRuntimeEffect> MakeGreyAdjustmentEffect();
 
     static void DrawBorderBase(const RSProperties& properties, SkCanvas& canvas,
         const std::shared_ptr<RSBorder>& border, const bool& isOutline);
     static const std::shared_ptr<SkRuntimeShaderBuilder>& GetPhongShaderBuilder();
+
+    static sk_sp<SkRuntimeEffect> greyAdjustEffect_;
 #else // USE_ROSEN_DRAWING
     static void DrawColorfulShadowInner(
         const RSProperties& properties, RSPaintFilterCanvas& canvas, Drawing::Path& path);
@@ -218,8 +222,7 @@ private:
     static std::shared_ptr<Drawing::ShaderEffect> MakeMeanBlurShader(
         std::shared_ptr<Drawing::ShaderEffect> srcImageShader, std::shared_ptr<Drawing::ShaderEffect> blurImageShader,
         std::shared_ptr<Drawing::ShaderEffect> gradientShader);
-    static std::shared_ptr<Drawing::Image> MakeGreyAdjustmentImage(Drawing::Canvas& canvas,
-        const std::shared_ptr<Drawing::Image>& image, const float greyCoef1, const float greyCoef2);
+    static std::shared_ptr<Drawing::RuntimeEffect> MakeGreyAdjustmentEffect();
 
     static void DrawBorderBase(const RSProperties& properties, Drawing::Canvas& canvas,
         const std::shared_ptr<RSBorder>& border, const bool& isOutline);

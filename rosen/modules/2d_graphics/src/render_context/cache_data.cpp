@@ -184,30 +184,31 @@ void CacheData::Rewrite(const void *key, const size_t keySize, const void *value
     cleanThreshold_ = 0;
 }
 
-size_t CacheData::Get(const void *key, const size_t keySize, void *value, const size_t valueSize)
+std::tuple<CacheData::ErrorCode, size_t> CacheData::Get(const void *key, const size_t keySize,
+    void *value, const size_t valueSize)
 {
     if (maxKeySize_ < keySize) {
         LOGE("abandon, because the key is too large");
-        return 0;
+        return {ErrorCode::VALUE_SIZE_OVER_MAX_SIZE, 0};
     }
     std::shared_ptr<DataPointer> fakeDataPointer(std::make_shared<DataPointer>(key, keySize, false));
     ShaderPointer fakeShaderPointer(fakeDataPointer, nullptr);
     auto index = std::lower_bound(shaderPointers_.begin(), shaderPointers_.end(), fakeShaderPointer);
     if (index == shaderPointers_.end() || fakeShaderPointer < *index) {
         LOGD("abandon, because no key is found");
-        return 0;
+        return {ErrorCode::KEY_NOT_FOUND, 0};
     }
     std::shared_ptr <DataPointer> valuePointer(index->GetValuePointer());
     size_t valuePointerSize = valuePointer->GetSize();
     if (valuePointerSize > valueSize) {
         LOGE("abandon, because of insufficient buffer space");
-        return 0;
+        return {ErrorCode::VALUE_SIZE_TOO_SAMLL, valuePointerSize};
     }
     if (memcpy_s(value, valueSize, valuePointer->GetData(), valuePointerSize)) {
         LOGE("abandon, failed to copy content");
-        return 0;
+        return {ErrorCode::COPY_FAILED, 0};
     }
-    return valuePointerSize;
+    return {ErrorCode::NO_ERR, valuePointerSize};
 }
 
 size_t CacheData::SerializedSize() const
