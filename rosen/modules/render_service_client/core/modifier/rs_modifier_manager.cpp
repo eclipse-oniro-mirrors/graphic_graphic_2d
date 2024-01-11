@@ -135,6 +135,7 @@ void RSModifierManager::OnAnimationFinished(const std::shared_ptr<RSRenderAnimat
 {
     NodeId targetId = animation->GetTargetId();
     AnimationId animationId = animation->GetAnimationId();
+    displaySyncs_.erase(animationId);
 
     std::unique_ptr<RSCommand> command = std::make_unique<RSAnimationCallback>(targetId, animationId, FINISHED);
     RSMessageProcessor::Instance().AddUIMessage(ExtractPid(animationId), command);
