@@ -1816,5 +1816,33 @@ void RSSurfaceRenderNode::SetHasSharedTransitionNode(bool hasSharedTransitionNod
 {
     hasSharedTransitionNode_ = hasSharedTransitionNode;
 }
+
+Vector2f RSSurfaceRenderNode::GetGravityTranslate(float imgWidth, float imgHeight)
+{
+    Gravity gravity = GetRenderProperties().GetFrameGravity();
+    if (IsLeashWindow()) {
+        for (auto child : GetSortedChildren()) {
+            auto childSurfaceNode = child ? child->ReinterpretCastTo<RSSurfaceRenderNode>() : nullptr;
+            if (childSurfaceNode) {
+                gravity = childSurfaceNode->GetRenderProperties().GetFrameGravity();
+                break;
+            }
+        }
+    }
+
+    float boundsWidth = GetRenderProperties().GetBoundsWidth();
+    float boundsHeight = GetRenderProperties().GetBoundsHeight();
+#ifndef USE_ROSEN_DRAWING
+    SkMatrix gravityMatrix;
+    RSPropertiesPainter::GetGravityMatrix(gravity, RectF {0.0f, 0.0f, boundsWidth, boundsHeight},
+        imgWidth, imgHeight, gravityMatrix);
+    return {gravityMatrix.getTranslateX(), gravityMatrix.getTranslateY()};
+#else
+    Drawing::Matrix gravityMatrix;
+    RSPropertiesPainter::GetGravityMatrix(gravity, RectF {0.0f, 0.0f, boundsWidth, boundsHeight},
+        imgWidth, imgHeight, gravityMatrix);
+    return {gravityMatrix.Get(Drawing::Matrix::TRANS_X), gravityMatrix.Get(Drawing::Matrix::TRANS_Y)};
+#endif
+}
 } // namespace Rosen
 } // namespace OHOS

@@ -937,6 +937,7 @@ public:
     bool QueryIfAllHwcChildrenForceDisabledByFilter();
     bool GetHasSharedTransitionNode() const;
     void SetHasSharedTransitionNode(bool hasSharedTransitionNode);
+    Vector2f GetGravityTranslate(float imgWidth, float imgHeight);
 
     bool HasWindowCorner()
     {
