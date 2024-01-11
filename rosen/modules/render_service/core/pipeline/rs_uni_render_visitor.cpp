@@ -3810,21 +3810,34 @@ void RSUniRenderVisitor::CalcDirtyFilterRegion(std::shared_ptr<RSDisplayRenderNo
     std::vector<SurfaceDirtyMgrPair> prevHwcEnabledNodes;
     for (auto it = displayNode->GetCurAllSurfaces().begin(); it != displayNode->GetCurAllSurfaces().end(); ++it) {
         auto currentSurfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
+        if (currentSurfaceNode) {
+            // [planning] Update hwc surface dirty status at the same time
+            UpdateHardwareNodeStatusBasedOnFilter(currentSurfaceNode, prevHwcEnabledNodes, displayDirtyManager);
+        }
+    }
+    
+    for (auto it = displayNode->GetCurAllSurfaces().begin(); it != displayNode->GetCurAllSurfaces().end();) {
+        auto currentSurfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
         if (currentSurfaceNode == nullptr) {
+            ++it;
             continue;
         }
-        auto currentSurfaceDirtyManager = currentSurfaceNode->GetDirtyManager();
-        // [planning] Update hwc surface dirty status at the same time
-        UpdateHardwareNodeStatusBasedOnFilter(currentSurfaceNode, prevHwcEnabledNodes, displayDirtyManager);
-
         if (currentSurfaceNode->GetVisibleRegion().IsEmpty()) {
+            ++it;
             continue;
         }
+        auto lastDisplayDirtyRegion = displayDirtyManager->GetCurrentFrameDirtyRegion();
         // child node (component) has filter
         CalcChildFilterNodeDirtyRegion(currentSurfaceNode, displayNode);
-
         // surfaceNode self has filter
         CalcSurfaceFilterNodeDirtyRegion(currentSurfaceNode, displayNode);
+        if (lastDisplayDirtyRegion != displayDirtyManager->GetCurrentFrameDirtyRegion()) {
+            // When DisplayDirtyRegion is changed, collect dirty filter region from begin.
+            // After all filter region is added, the cycle will definitely stop. there is no risk of a dead cycle.
+            it = displayNode->GetCurAllSurfaces().begin();
+        } else {
+            ++it;
+        }
     }
 }
 
