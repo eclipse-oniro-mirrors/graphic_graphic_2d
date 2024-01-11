@@ -33,6 +33,7 @@ napi_value JsFont::Init(napi_env env, napi_value exportObj)
         DECLARE_NAPI_FUNCTION("getTypeface", JsFont::GetTypeface),
         DECLARE_NAPI_FUNCTION("getSize", JsFont::GetSize),
         DECLARE_NAPI_FUNCTION("getMetrics", JsFont::GetMetrics),
+        DECLARE_NAPI_FUNCTION("measureText", JsFont::MeasureText),
     };
 
     napi_value constructor = nullptr;
@@ -167,6 +168,12 @@ napi_value JsFont::GetMetrics(napi_env env, napi_callback_info info)
 {
     JsFont* me = CheckParamsAndGetThis<JsFont>(env, info);
     return (me != nullptr) ? me->OnGetMetrics(env, info) : nullptr;
+}
+
+napi_value JsFont::MeasureText(napi_env env, napi_callback_info info)
+{
+    JsFont* me = CheckParamsAndGetThis<JsFont>(env, info);
+    return (me != nullptr) ? me->OnMeasureText(env, info) : nullptr;
 }
 
 napi_value JsFont::OnEnableSubpixel(napi_env env, napi_callback_info info)
@@ -314,6 +321,36 @@ napi_value JsFont::OnGetTypeface(napi_env env, napi_callback_info info)
     }
     std::shared_ptr<Typeface> typeface = m_font->GetTypeface();
     return JsTypeface::CreateJsTypeface(env, typeface);
+}
+
+napi_value JsFont::OnMeasureText(napi_env env, napi_callback_info info)
+{
+    if (m_font == nullptr) {
+        ROSEN_LOGE("JsFont::OnMeasureText font is null");
+        return NapiThrowError(env, DrawingError::DRAWING_ERROR_NULLPTR);
+    }
+
+    size_t argc = ARGC_TWO;
+    napi_value argv[ARGC_TWO] = {nullptr};
+    napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (status != napi_ok || argc < ARGC_TWO) {
+        ROSEN_LOGE("JsFont::OnMeasureText Argc is invalid: %{public}zu", argc);
+        return NapiThrowError(env, DrawingError::DRAWING_ERROR_INVALID_PARAM);
+    }
+
+    std::string text = "";
+    if (!ConvertFromJsValue(env, argv[0], text)) {
+        ROSEN_LOGE("JsFont::OnMeasureText Failed to convert parameter to string");
+        return NapiThrowError(env, DrawingError::DRAWING_ERROR_INVALID_PARAM);
+    }
+
+    TextEncoding TextEncoding = TextEncoding::UTF8;
+    if (!ConvertFromJsTextEncoding(env, TextEncoding, argv[1])) {
+        ROSEN_LOGE("JsFont::OnMeasureText ConvertFromJsTextEncoding failed");
+        return NapiThrowError(env, DrawingError::DRAWING_ERROR_INVALID_PARAM);
+    }
+    double textSize = m_font->MeasureText(text.c_str(), text.length(), TextEncoding);
+    return GetDoubleAndConvertToJsValue(env, textSize);
 }
 
 std::shared_ptr<Font> JsFont::GetFont()

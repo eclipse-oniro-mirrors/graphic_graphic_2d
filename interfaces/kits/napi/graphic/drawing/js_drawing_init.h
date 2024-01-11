@@ -17,7 +17,6 @@
 #define OHOS_JS_DRAWING_INIT_H
 
 #include <map>
-#include <hilog/log.h>
 
 #include "native_engine/native_engine.h"
 #include "native_engine/native_value.h"

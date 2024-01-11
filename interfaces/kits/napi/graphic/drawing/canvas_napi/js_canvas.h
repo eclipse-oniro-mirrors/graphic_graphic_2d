@@ -16,7 +16,7 @@
 #ifndef OHOS_ROSEN_JS_CANVAS_H
 #define OHOS_ROSEN_JS_CANVAS_H
 
-#include <hilog/log.h>
+#include "hilog/log.h"
 #include <native_engine/native_engine.h>
 #include <native_engine/native_value.h>
 
@@ -35,12 +35,12 @@ namespace OHOS::Rosen {
 namespace Drawing {
 class JsCanvas final {
 public:
-    explicit JsCanvas(Canvas* canvas) : m_canvas(canvas) {};
+    explicit JsCanvas(Canvas* canvas, bool owned = false) : m_canvas(canvas), owned_(owned) {};
     ~JsCanvas();
 
     static napi_value Constructor(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void *nativeObject, void *finalize);
-    static napi_value CreateJsCanvas(napi_env env, Canvas* canvas);
+    static napi_value CreateJsCanvas(napi_env env, Canvas* canvas, float width, float height);
 
     static napi_value Init(napi_env env, napi_value exportObj);
 
@@ -58,6 +58,7 @@ public:
     static napi_value DetachBrush(napi_env env, napi_callback_info info);
 
     Canvas* GetCanvas();
+    void ResetCanvas();
 
 private:
     napi_value OnDrawRect(napi_env env, napi_callback_info info);
@@ -72,6 +73,7 @@ private:
     static bool DeclareFuncAndCreateConstructor(napi_env env);
     static thread_local napi_ref constructor_;
     Canvas* m_canvas = nullptr;
+    bool owned_ = false;
 };
 } // namespace Drawing
 } // namespace OHOS::Rosen
