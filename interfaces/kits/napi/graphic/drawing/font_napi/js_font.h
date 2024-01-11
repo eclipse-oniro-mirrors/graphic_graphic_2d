@@ -17,7 +17,7 @@
 #define OHOS_ROSEN_JS_FONT_H
 
 #include <memory>
-#include <hilog/log.h>
+#include "hilog/log.h"
 #include <native_engine/native_engine.h>
 #include <native_engine/native_value.h>
 
@@ -44,6 +44,7 @@ public:
     static napi_value GetTypeface(napi_env env, napi_callback_info info);
     static napi_value GetSize(napi_env env, napi_callback_info info);
     static napi_value GetMetrics(napi_env env, napi_callback_info info);
+    static napi_value MeasureText(napi_env env, napi_callback_info info);
 
     std::shared_ptr<Font> GetFont();
 
@@ -56,6 +57,7 @@ private:
     napi_value OnGetTypeface(napi_env env, napi_callback_info info);
     napi_value OnGetSize(napi_env env, napi_callback_info info);
     napi_value OnGetMetrics(napi_env env, napi_callback_info info);
+    napi_value OnMeasureText(napi_env env, napi_callback_info info);
 
     static thread_local napi_ref constructor_;
     std::shared_ptr<Font> m_font = nullptr;

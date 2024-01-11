@@ -17,7 +17,7 @@
 #define OHOS_ROSEN_JS_ENUM_NAPI_H
 
 #include <memory>
-#include <hilog/log.h>
+#include "hilog/log.h"
 #include <native_engine/native_engine.h>
 #include <native_engine/native_value.h>
 
