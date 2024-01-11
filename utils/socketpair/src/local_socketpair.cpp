@@ -45,11 +45,11 @@ LocalSocketPair::~LocalSocketPair()
 {
     HiLog::Debug(LABEL, "%{public}s close socketpair, sendFd : %{public}d, receiveFd : %{public}d",
                  __func__, sendFd_, receiveFd_);
-    CloseFd(sendFd_);
-    CloseFd(receiveFd_);
     if ((sendFd_ != INVALID_FD) || (receiveFd_ != INVALID_FD)) {
         g_fdCnt--;
     }
+    CloseFd(sendFd_);
+    CloseFd(receiveFd_);
 }
 
 int32_t LocalSocketPair::SetSockopt(size_t sendSize, size_t receiveSize, int32_t* socketPair, int32_t socketPairSize)
