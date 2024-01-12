@@ -898,7 +898,8 @@ WINDOW_LAYER_INFO_TYPE RSSurfaceRenderNode::GetVisibleLevelForWMS(RSVisibleLevel
 
 bool RSSurfaceRenderNode::IsMultiInstance()
 {
-    return GetName().find("filemanager") != std::string::npos || GetName().find("browser") != std::string::npos;
+    return GetName().find("filemanager") != std::string::npos || GetName().find("browser") != std::string::npos ||
+        GetName().find("shell_assistant") != std::string::npos;
 }
 
 void RSSurfaceRenderNode::SetVisibleRegionRecursive(const Occlusion::Region& region,
