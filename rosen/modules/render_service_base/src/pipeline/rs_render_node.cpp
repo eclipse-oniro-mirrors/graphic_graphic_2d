@@ -1806,7 +1806,11 @@ void RSRenderNode::DrawCacheSurface(RSPaintFilterCanvas& canvas, uint32_t thread
         }
     }
     if ((cacheType == CacheType::ANIMATE_PROPERTY && GetRenderProperties().IsShadowValid()) || isUIFirst) {
-        canvas.drawImage(cacheImage, -shadowRectOffsetX_ * scaleX, -shadowRectOffsetY_ * scaleY, samplingOptions);
+        auto surfaceNode = ReinterpretCastTo<RSSurfaceRenderNode>();
+        Vector2f gravityTranslate = surfaceNode ?
+            surfaceNode->GetGravityTranslate(cacheImage->Width(), cacheImage->Height()) : Vector2f(0.0f, 0.0f);
+        canvas.drawImage(cacheImage, -shadowRectOffsetX_ * scaleX + gravityTranslate.x_,
+            -shadowRectOffsetY_ * scaleY + gravityTranslate.y_, samplingOptions);
     } else {
         canvas.drawImage(cacheImage, 0.f, 0.f, samplingOptions);
     }
@@ -1904,8 +1908,11 @@ void RSRenderNode::DrawCacheSurface(RSPaintFilterCanvas& canvas, uint32_t thread
     Drawing::Brush brush;
     canvas.AttachBrush(brush);
     if ((cacheType == CacheType::ANIMATE_PROPERTY && GetRenderProperties().IsShadowValid()) || isUIFirst) {
-        canvas.DrawImage(*cacheImage, -shadowRectOffsetX_ * scaleX,
-            -shadowRectOffsetY_ * scaleY, samplingOptions);
+        auto surfaceNode = ReinterpretCastTo<RSSurfaceRenderNode>();
+        Vector2f gravityTranslate = surfaceNode ?
+            surfaceNode->GetGravityTranslate(cacheImage->GetWidth(), cacheImage->GetHeight()) : Vector2f(0.0f, 0.0f);
+        canvas.DrawImage(*cacheImage, -shadowRectOffsetX_ * scaleX + gravityTranslate.x_,
+            -shadowRectOffsetY_ * scaleY + gravityTranslate.y_, samplingOptions);
     } else {
         canvas.DrawImage(*cacheImage, 0.0, 0.0, samplingOptions);
     }
