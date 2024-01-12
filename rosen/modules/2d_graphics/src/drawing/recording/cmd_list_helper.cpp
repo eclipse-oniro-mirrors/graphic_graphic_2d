@@ -633,7 +633,6 @@ FlattenableHandle CmdListHelper::AddMaskFilterToCmdList(CmdList& cmdList,
     MaskFilter::FilterType type = maskFilter->GetType();
     auto data = maskFilter->Serialize();
     if (data == nullptr || data->GetSize() == 0) {
-        LOGE("maskFilter is invalid, %{public}s, %{public}d", __FUNCTION__, __LINE__);
         return { 0 };
     }
     auto offset = cmdList.AddImageData(data->GetData(), data->GetSize());
@@ -713,7 +712,6 @@ FlattenableHandle CmdListHelper::AddImageFilterToCmdList(CmdList& cmdList,
     ImageFilter::FilterType type = imageFilter->GetType();
     auto data = imageFilter->Serialize();
     if (data == nullptr || data->GetSize() == 0) {
-        LOGE("imageFilter is invalid, %{public}s, %{public}d", __FUNCTION__, __LINE__);
         return { 0 };
     }
     auto offset = cmdList.AddImageData(data->GetData(), data->GetSize());
@@ -785,6 +783,18 @@ sptr<SurfaceBuffer> CmdListHelper::GetSurfaceBufferFromCmdList(
     return (const_cast<CmdList&>(cmdList)).GetSurfaceBuffer(surfaceBufferHandle);
 }
 #endif
+
+OpDataHandle CmdListHelper::AddDrawFuncObjToCmdList(CmdList &cmdList, const std::shared_ptr<ExtendDrawFuncObj> &object)
+{
+    auto index = cmdList.AddDrawFuncOjb(object);
+    return { index };
+}
+
+std::shared_ptr<ExtendDrawFuncObj> CmdListHelper::GetDrawFuncObjFromCmdList(
+    const CmdList& cmdList, const OpDataHandle& objectHandle)
+{
+    return (const_cast<CmdList&>(cmdList)).GetDrawFuncObj(objectHandle.offset);
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

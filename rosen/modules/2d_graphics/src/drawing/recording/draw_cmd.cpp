@@ -145,6 +145,22 @@ void GeneratePaintFromHandle(const PaintHandle& paintHandle, const CmdList& cmdL
         paint.SetPathEffect(pathEffect);
     }
 }
+
+bool GetOffScreenSurfaceAndCanvas(const Canvas& canvas,
+    std::shared_ptr<Drawing::Surface>& offScreenSurface, std::shared_ptr<Canvas>& offScreenCanvas)
+{
+    auto surface = canvas.GetSurface();
+    if (!surface) {
+        return false;
+    }
+    offScreenSurface = surface->MakeSurface(surface->Width(), surface->Height());
+    if (!offScreenSurface) {
+        return false;
+    }
+    offScreenCanvas = offScreenSurface->GetCanvas();
+    return true;
+}
+
 }
 
 GenerateCachedOpItemPlayer::GenerateCachedOpItemPlayer(CmdList &cmdList, Canvas* canvas, const Rect* rect)
@@ -814,30 +830,52 @@ void DrawTextBlobOpItem::Playback(Canvas* canvas, const Rect* rect)
     if (canvas->isHighContrastEnabled()) {
         LOGD("DrawTextBlobOpItem::Playback highContrastEnabled, %{public}s, %{public}d", __FUNCTION__, __LINE__);
         ColorQuad colorQuad = paint_.GetColor().CastToColorQuad();
-        if (Color::ColorQuadGetA(colorQuad) == 0) {
+        if (Color::ColorQuadGetA(colorQuad) == 0 || paint_.HasFilter()) {
             canvas->AttachPaint(paint_);
             canvas->DrawTextBlob(textBlob_.get(), x_, y_);
             return;
         }
-        uint32_t channelSum = Color::ColorQuadGetR(colorQuad) + Color::ColorQuadGetG(colorQuad) +
-            Color::ColorQuadGetB(colorQuad);
-        bool flag = channelSum < 594; // 594 is empirical value
-
-        Paint outlinePaint(paint_);
-        SimplifyPaint(flag ? Color::COLOR_WHITE : Color::COLOR_BLACK, outlinePaint);
-        outlinePaint.SetStyle(Paint::PAINT_FILL_STROKE);
-        canvas->AttachPaint(outlinePaint);
-        canvas->DrawTextBlob(textBlob_.get(), x_, y_);
-
-        Paint innerPaint(paint_);
-        SimplifyPaint(flag ? Color::COLOR_BLACK : Color::COLOR_WHITE, innerPaint);
-        innerPaint.SetStyle(Paint::PAINT_FILL);
-        canvas->AttachPaint(innerPaint);
-        canvas->DrawTextBlob(textBlob_.get(), x_, y_);
+        if (canvas->GetAlphaSaveCount() > 0 && canvas->GetAlpha() < 1.0f) {
+            std::shared_ptr<Drawing::Surface> offScreenSurface;
+            std::shared_ptr<Canvas> offScreenCanvas;
+            if (GetOffScreenSurfaceAndCanvas(*canvas, offScreenSurface, offScreenCanvas)) {
+                DrawHighContrast(offScreenCanvas.get());
+                offScreenCanvas->Flush();
+                Drawing::Brush paint;
+                paint.SetAntiAlias(true);
+                canvas->AttachBrush(paint);
+                Drawing::SamplingOptions sampling =
+                    Drawing::SamplingOptions(Drawing::FilterMode::NEAREST, Drawing::MipmapMode::NEAREST);
+                canvas->DrawImage(*offScreenSurface->GetImageSnapshot().get(), 0, 0, sampling);
+                canvas->DetachBrush();
+                return;
+            }
+        }
+        DrawHighContrast(canvas);
     } else {
         canvas->AttachPaint(paint_);
         canvas->DrawTextBlob(textBlob_.get(), x_, y_);
     }
+}
+
+void DrawTextBlobOpItem::DrawHighContrast(Canvas* canvas) const
+{
+    ColorQuad colorQuad = paint_.GetColor().CastToColorQuad();
+    uint32_t channelSum = Color::ColorQuadGetR(colorQuad) + Color::ColorQuadGetG(colorQuad) +
+        Color::ColorQuadGetB(colorQuad);
+    bool flag = channelSum < 594; // 594 is empirical value
+
+    Paint outlinePaint(paint_);
+    SimplifyPaint(flag ? Color::COLOR_WHITE : Color::COLOR_BLACK, outlinePaint);
+    outlinePaint.SetStyle(Paint::PAINT_FILL_STROKE);
+    canvas->AttachPaint(outlinePaint);
+    canvas->DrawTextBlob(textBlob_.get(), x_, y_);
+
+    Paint innerPaint(paint_);
+    SimplifyPaint(flag ? Color::COLOR_BLACK : Color::COLOR_WHITE, innerPaint);
+    innerPaint.SetStyle(Paint::PAINT_FILL);
+    canvas->AttachPaint(innerPaint);
+    canvas->DrawTextBlob(textBlob_.get(), x_, y_);
 }
 
 bool DrawTextBlobOpItem::ConstructorHandle::GenerateCachedOpItem(
@@ -1006,13 +1044,7 @@ std::shared_ptr<DrawOpItem> DrawSymbolOpItem::Unmarshalling(const CmdList& cmdLi
 
 void DrawSymbolOpItem::SetSymbol()
 {
-    LOGD("SymbolOpItem::SetSymbol GlyphId %{public}d", static_cast<int>(symbol_.symbolInfo_.symbolGlyphId));
-    if (symbol_.symbolInfo_.effect == DrawingEffectStrategy::SCALE) {
-        if (!startAnimation_) {
-            InitialScale();
-        }
-        SetScale(0); // scale animation only has one element
-    } else if (symbol_.symbolInfo_.effect == DrawingEffectStrategy::HIERARCHICAL) {
+    if (symbol_.symbolInfo_.effect == DrawingEffectStrategy::HIERARCHICAL) {
         if (!startAnimation_) {
             InitialVariableColor();
         }
@@ -1144,11 +1176,6 @@ void DrawSymbolOpItem::Playback(Canvas* canvas, const Rect* rect)
     }
 
     Path path(symbol_.path_);
-
-    if (startAnimation_ && symbol_.symbolInfo_.effect == DrawingEffectStrategy::SCALE &&
-            !animation_.empty()) {
-        UpdateScale(animation_[0].curValue, path);
-    }
 
     // 1.0 move path
     path.Offset(locate_.GetX(), locate_.GetY());
@@ -1589,6 +1616,15 @@ void DrawImageWithParmOpItem::Playback(Canvas* canvas, const Rect* rect)
     objectHandle_->Playback(*canvas, *rect, sampling_, false);
 }
 
+void DrawImageWithParmOpItem::SetNodeId(NodeId id)
+{
+    if (objectHandle_ == nullptr) {
+        LOGE("DrawImageWithParmOpItem objectHandle is nullptr!");
+        return;
+    }
+    objectHandle_->SetNodeId(id);
+}
+
 /* DrawPixelMapWithParmOpItem */
 DrawPixelMapWithParmOpItem::DrawPixelMapWithParmOpItem(
     const CmdList& cmdList, DrawPixelMapWithParmOpItem::ConstructorHandle* handle)
@@ -1611,6 +1647,15 @@ void DrawPixelMapWithParmOpItem::Playback(Canvas* canvas, const Rect* rect)
     }
     canvas->AttachPaint(paint_);
     objectHandle_->Playback(*canvas, *rect, sampling_, false);
+}
+
+void DrawPixelMapWithParmOpItem::SetNodeId(NodeId id)
+{
+    if (objectHandle_ == nullptr) {
+        LOGE("DrawPixelMapWithParmOpItem objectHandle is nullptr!");
+        return;
+    }
+    objectHandle_->SetNodeId(id);
 }
 
 /* DrawPixelMapRectOpItem */
@@ -1637,6 +1682,15 @@ void DrawPixelMapRectOpItem::Playback(Canvas* canvas, const Rect* rect)
     objectHandle_->Playback(*canvas, *rect, sampling_);
 }
 
+void DrawPixelMapRectOpItem::SetNodeId(NodeId id)
+{
+    if (objectHandle_ == nullptr) {
+        LOGE("DrawPixelMapRectOpItem objectHandle is nullptr!");
+        return;
+    }
+    objectHandle_->SetNodeId(id);
+}
+
 ImageSnapshotOpItem::ImageSnapshotOpItem(std::shared_ptr<Image> image, const Rect& src, const Rect& dst)
     : DrawOpItem(IMAGE_SNAPSHOT_OPITEM), image_(image), src_(src), dst_(dst)
 {
@@ -1654,25 +1708,22 @@ void ImageSnapshotOpItem::Playback(Canvas* canvas, const Rect* rect)
 }
 
 /* DrawFuncOpItem */
-DrawFuncOpItem::DrawFuncOpItem(DrawFuncOpItem::ConstructorHandle* handle)
-    : DrawOpItem(DRAW_FUNC_OPITEM), func_(handle->func_)
-{}
+DrawFuncOpItem::DrawFuncOpItem(const CmdList& cmdList, DrawFuncOpItem::ConstructorHandle* handle)
+    : DrawOpItem(DRAW_FUNC_OPITEM)
+{
+    objectHandle_ = CmdListHelper::GetDrawFuncObjFromCmdList(cmdList, handle->objectHandle);
+}
 
 std::shared_ptr<DrawOpItem> DrawFuncOpItem::Unmarshalling(const CmdList& cmdList, void* handle)
 {
-    auto constructorHandle = static_cast<DrawFuncOpItem::ConstructorHandle*>(handle);
-    if (constructorHandle == nullptr || constructorHandle->func_ == nullptr) {
-        return nullptr;
-    }
-    return std::make_shared<DrawFuncOpItem>(constructorHandle);
+    return std::make_shared<DrawFuncOpItem>(cmdList, static_cast<DrawFuncOpItem::ConstructorHandle*>(handle));
 }
 
 void DrawFuncOpItem::Playback(Canvas* canvas, const Rect* rect)
 {
-    if (func_ == nullptr) {
-        return;
+    if (objectHandle_) {
+        objectHandle_->Playback(canvas, rect);
     }
-    func_(canvas, rect);
 }
 
 #ifdef ROSEN_OHOS
@@ -1860,9 +1911,14 @@ void DrawSurfaceBufferOpItem::Draw(Canvas* canvas)
         LOGE("DrawSurfaceBufferOpItem::Draw: gpu context is nullptr");
         return;
     }
+#ifndef ROSEN_EMULATOR
+        auto surfaceOrigin = Drawing::TextureOrigin::TOP_LEFT;
+#else
+        auto surfaceOrigin = Drawing::TextureOrigin::BOTTOM_LEFT;
+#endif
     auto newImage = std::make_shared<Drawing::Image>();
     if (!newImage->BuildFromTexture(*canvas->GetGPUContext(), externalTextureInfo,
-        Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, nullptr)) {
+        surfaceOrigin, bitmapFormat, nullptr)) {
         LOGE("DrawSurfaceBufferOpItem::Draw: image BuildFromTexture failed");
         return;
     }

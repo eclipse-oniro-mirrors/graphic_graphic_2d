@@ -27,8 +27,8 @@
 #include "surface_type.h"
 #include <buffer_manager.h>
 #include <surface_tunnel_handle.h>
-
 #include "surface_buffer.h"
+#include "consumer_surface_delegator.h"
 
 namespace OHOS {
 enum BufferState {
@@ -82,9 +82,11 @@ public:
                           int64_t &timestamp, std::vector<Rect> &damages);
     GSError ReleaseBuffer(sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& fence);
 
-    GSError AttachBuffer(sptr<SurfaceBuffer>& buffer);
+    GSError AttachBuffer(sptr<SurfaceBuffer>& buffer, int32_t timeOut);
 
     GSError DetachBuffer(sptr<SurfaceBuffer>& buffer);
+
+    GSError RegisterSurfaceDelegator(sptr<IRemoteObject> client, sptr<Surface> cSurface);
 
     bool QueryIfBufferAvailable();
 
@@ -157,6 +159,11 @@ private:
     void ClearLocked();
     bool CheckProducerCacheList();
     GSError SetProducerCacheCleanFlagLocked(bool flag);
+    GSError AttachBufferUpdateStatus(std::unique_lock<std::mutex> &lock, uint32_t sequence, int32_t timeOut);
+    void AttachBufferUpdateBufferInfo(sptr<SurfaceBuffer>& buffer);
+    void ListenerBufferReleasedCb(sptr<SurfaceBuffer> &buffer, const sptr<SyncFence> &fence);
+    GSError CheckBufferQueueCache(uint32_t sequence);
+    GSError ReallocBuffer(const BufferRequestConfig &config, struct IBufferProducer::RequestBufferReturnValue &retval);
 
     int32_t defaultWidth = 0;
     int32_t defaultHeight = 0;
@@ -177,18 +184,21 @@ private:
     std::mutex producerListenerMutex_;
     const uint64_t uniqueId_;
     sptr<BufferManager> bufferManager_ = nullptr;
-    OnReleaseFunc onBufferRelease = nullptr;
+    OnReleaseFunc onBufferRelease_ = nullptr;
+    std::mutex onBufferReleaseMutex_;
     sptr<IProducerListener> producerListener_ = nullptr;
     OnDeleteBufferFunc onBufferDeleteForRSMainThread_;
     OnDeleteBufferFunc onBufferDeleteForRSHardwareThread_;
     bool isShared_ = false;
     std::condition_variable waitReqCon_;
+    std::condition_variable waitAttachCon_;
     sptr<SurfaceTunnelHandle> tunnelHandle_ = nullptr;
     std::atomic_bool isValidStatus_ = true;
     std::atomic_bool producerCacheClean_ = false;
     const bool isLocalRender_;
-    uint32_t lastFlusedSequence_;
+    uint32_t lastFlusedSequence_ = 0;
     sptr<SyncFence> lastFlusedFence_;
+    wptr<ConsumerSurfaceDelegator> wpCSurfaceDelegator_;
 };
 }; // namespace OHOS
 

@@ -15,6 +15,7 @@
 
 #include "buffer_client_producer.h"
 
+#include <iremote_stub.h>
 #include "buffer_log.h"
 #include "buffer_manager.h"
 #include "buffer_utils.h"
@@ -159,6 +160,17 @@ GSError BufferClientProducer::FlushBuffer(uint32_t sequence, const sptr<BufferEx
 GSError BufferClientProducer::AttachBuffer(sptr<SurfaceBuffer>& buffer)
 {
     return GSERROR_NOT_SUPPORT;
+}
+
+GSError BufferClientProducer::AttachBuffer(sptr<SurfaceBuffer>& buffer, int32_t timeOut)
+{
+    DEFINE_MESSAGE_VARIABLES(arguments, reply, option, BLOGE);
+    int32_t sequence = buffer->GetSeqNum();
+    WriteSurfaceBufferImpl(arguments, sequence, buffer);
+    arguments.WriteInt32(timeOut);
+    SEND_REQUEST_WITH_SEQ(BUFFER_PRODUCER_ATTACH_BUFFER, arguments, reply, option, sequence);
+    CHECK_RETVAL_WITH_SEQ(reply, sequence);
+    return GSERROR_OK;
 }
 
 GSError BufferClientProducer::DetachBuffer(sptr<SurfaceBuffer>& buffer)
@@ -485,5 +497,20 @@ sptr<NativeSurface> BufferClientProducer::GetNativeSurface()
 {
     BLOGND("BufferClientProducer::GetNativeSurface not support.");
     return nullptr;
+}
+
+GSError BufferClientProducer::SendDeathRecipientObject()
+{
+    DEFINE_MESSAGE_VARIABLES(arguments, reply, option, BLOGE);
+    token_ = new IRemoteStub<IBufferProducerToken>();
+    arguments.WriteRemoteObject(token_->AsObject());
+    SEND_REQUEST(BUFFER_PRODUCER_REGISTER_DEATH_RECIPIENT, arguments, reply, option);
+
+    int32_t ret = reply.ReadInt32();
+    if (ret != GSERROR_OK) {
+        BLOGN_FAILURE("Remote return %{public}d", ret);
+        return static_cast<GSError>(ret);
+    }
+    return GSERROR_OK;
 }
 }; // namespace OHOS

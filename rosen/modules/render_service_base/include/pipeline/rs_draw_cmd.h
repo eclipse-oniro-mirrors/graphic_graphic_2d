@@ -1730,11 +1730,13 @@ private:
 } // namespace OHOS
 
 #else
-#include "render/rs_image.h"
-#include "recording/draw_cmd_list.h"
-#include "recording/adaptive_image_helper.h"
-#include "draw/canvas.h"
 #include "parcel.h"
+#include "recording/adaptive_image_helper.h"
+#include "recording/cmd_list.h"
+#include "recording/recording_canvas.h"
+
+#include "draw/canvas.h"
+#include "render/rs_image.h"
 #if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 #include <native_window.h>
 #include "surface_buffer.h"
@@ -1762,6 +1764,7 @@ public:
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     bool MakeFromTextureForVK(Drawing::Canvas& canvas, SurfaceBuffer *surfaceBuffer);
 #endif
+    void SetNodeId(NodeId id) override;
 protected:
     std::shared_ptr<RSImage> rsImage_;
 private:
@@ -1790,9 +1793,23 @@ public:
         const Drawing::SamplingOptions& sampling) override;
     bool Marshalling(Parcel &parcel) const;
     static RSExtendImageBaseObj *Unmarshalling(Parcel &parcel);
+    void SetNodeId(NodeId id) override;
 protected:
     std::shared_ptr<RSImageBase> rsImage_;
 };
+
+class RSB_EXPORT RSExtendDrawFuncObj : public Drawing::ExtendDrawFuncObj {
+public:
+    explicit RSExtendDrawFuncObj(Drawing::RecordingCanvas::DrawFunc&& drawFunc) : drawFunc_(std::move(drawFunc)) {}
+    ~RSExtendDrawFuncObj() override = default;
+    void Playback(Drawing::Canvas* canvas, const Drawing::Rect* rect) override;
+    bool Marshalling(Parcel& parcel) const;
+    static RSExtendDrawFuncObj* Unmarshalling(Parcel& parcel);
+
+private:
+    Drawing::RecordingCanvas::DrawFunc drawFunc_;
+};
+
 } // namespace Rosen
 } // namespace OHOS
 #endif // USE_ROSEN_DRAWING

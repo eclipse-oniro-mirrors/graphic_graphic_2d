@@ -26,8 +26,8 @@
 
 namespace OHOS {
 namespace Rosen {
-constexpr int DEFAULT_CACHE_WIDTH = 1344;
-constexpr int DEFAULT_CACHE_HEIGHT = 2772;
+constexpr int DEFAULT_CACHE_WIDTH = 1250;
+constexpr int DEFAULT_CACHE_HEIGHT = 2710;
 constexpr int DEFAULT_PARTIAL_RENDER_ENABLED_VALUE = 2;
 constexpr int DEFAULT_UNI_PARTIAL_RENDER_ENABLED_VALUE = 4;
 constexpr int DEFAULT_CORRECTION_MODE_VALUE = 999;
@@ -436,7 +436,7 @@ bool RSSystemProperties::GetFilterPartialRenderEnabled()
     // Determine whether the filter partial render should be enabled. The default value is 0,
     // which means that it is unenabled.
     static bool enabled =
-        std::atoi((system::GetParameter("persist.sys.graphic.filterPartialRenderEnabled", "0")).c_str()) != 0;
+        std::atoi((system::GetParameter("persist.sys.graphic.filterPartialRenderEnabled", "1")).c_str()) != 0;
     return enabled;
 }
 
@@ -491,6 +491,35 @@ bool RSSystemProperties::GetBlurEnabled()
     static bool blurEnabled =
         std::atoi((system::GetParameter("persist.sys.graphic.blurEnabled", "1")).c_str()) != 0;
     return blurEnabled;
+}
+
+const std::vector<float>& RSSystemProperties::GetAiInvertCoef()
+{
+    // Configure AiInvertCoef: Low, High, Threshold, Opacity, Saturation, Filter Radius.
+    static std::vector<float> aiInvertCoef = {0.0, 1.0, 0.55, 0.4, 1.6, 45.0};
+    static bool initialized = false;
+    if (!initialized) {
+        initialized = true;
+        // Configure AiInvertCoef0: Low
+        aiInvertCoef[0] =
+            std::atof((system::GetParameter("persist.sys.graphic.aiInvertLow", "0")).c_str());
+        // Configure AiInvertCoef1: High.
+        aiInvertCoef[1] =
+            std::atof((system::GetParameter("persist.sys.graphic.aiInvertHigh", "1")).c_str());
+        // Configure AiInvertCoef2: Threshold.
+        aiInvertCoef[2] =
+            std::atof((system::GetParameter("persist.sys.graphic.aiInvertThreshold", "0.55")).c_str());
+        // Configure AiInvertCoef3: Opacity.
+        aiInvertCoef[3] =
+            std::atof((system::GetParameter("persist.sys.graphic.aiInvertOpacity", "0.4")).c_str());
+        // Configure AiInvertCoef4: Saturation.
+        aiInvertCoef[4] =
+            std::atof((system::GetParameter("persist.sys.graphic.aiInvertSaturation", "1.6")).c_str());
+        // Configure AiInvertCoef5: Filter Radius.
+        aiInvertCoef[5] =
+            std::atof((system::GetParameter("persist.sys.graphic.aiInvertFilterRadius", "45")).c_str());
+    }
+    return aiInvertCoef;
 }
 
 bool RSSystemProperties::GetProxyNodeDebugEnabled()
@@ -658,7 +687,7 @@ bool RSSystemProperties::GetSyncTransactionEnabled()
 int RSSystemProperties::GetSyncTransactionWaitDelay()
 {
     static int syncTransactionWaitDelay =
-        std::atoi((system::GetParameter("persist.sys.graphic.syncTransactionWaitDelay", "500")).c_str());
+        std::atoi((system::GetParameter("persist.sys.graphic.syncTransactionWaitDelay", "1500")).c_str());
     return syncTransactionWaitDelay;
 }
 

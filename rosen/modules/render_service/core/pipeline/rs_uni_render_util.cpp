@@ -370,10 +370,12 @@ Occlusion::Region RSUniRenderUtil::AlignedDirtyRegion(const Occlusion::Region& d
     return alignedRegion;
 }
 
-bool RSUniRenderUtil::HandleSubThreadNode(RSRenderNode& node, RSPaintFilterCanvas& canvas)
+bool RSUniRenderUtil::HandleSubThreadNode(RSSurfaceRenderNode& node, RSPaintFilterCanvas& canvas)
 {
     if (node.IsMainThreadNode()) {
         return false;
+    } else if (!node.QueryIfAllHwcChildrenForceDisabledByFilter()) {
+        return false; // this node should do DSS composition in mainThread although it is assigned to subThread
     }
     if (!node.HasCachedTexture()) {
         RS_TRACE_NAME_FMT("HandleSubThreadNode wait %" PRIu64 "", node.GetId());
@@ -505,8 +507,9 @@ void RSUniRenderUtil::ReleaseColorPickerResource(std::shared_ptr<RSRenderNode>& 
 
 bool RSUniRenderUtil::IsNodeAssignSubThread(std::shared_ptr<RSSurfaceRenderNode> node, bool isDisplayRotation)
 {
+    bool isPhoneType = RSMainThread::Instance()->GetDeviceType() == DeviceType::PHONE;
     bool isNeedAssignToSubThread = false;
-    if (node->IsLeashWindow()) {
+    if (isPhoneType && node->IsLeashWindow()) {
         isNeedAssignToSubThread = (node->IsScale() || ROSEN_EQ(node->GetGlobalAlpha(), 0.0f)) && !node->HasFilter();
         std::string logInfo = "[ " + node->GetName() + ", " + std::to_string(node->GetId()) + " ]"
             + "( " + std::to_string(static_cast<uint32_t>(node->GetCacheSurfaceProcessedStatus())) + ", "
@@ -526,7 +529,7 @@ bool RSUniRenderUtil::IsNodeAssignSubThread(std::shared_ptr<RSSurfaceRenderNode>
     if (node->GetCacheSurfaceProcessedStatus() == CacheProcessStatus::DOING) { // node exceed one vsync
         return true;
     }
-    if (RSMainThread::Instance()->GetDeviceType() == DeviceType::PHONE) {
+    if (isPhoneType) {
         return isNeedAssignToSubThread;
     } else { // PC or TABLET
         if ((node->IsFocusedNode(RSMainThread::Instance()->GetFocusNodeId()) ||
@@ -586,6 +589,7 @@ void RSUniRenderUtil::AssignMainThreadNode(std::list<std::shared_ptr<RSSurfaceRe
         ROSEN_LOGW("RSUniRenderUtil::AssignMainThreadNode node is nullptr");
         return;
     }
+    RS_TRACE_NAME_FMT("AssignMainThread: %s", node->GetName().c_str());
     mainThreadNodes.emplace_back(node);
     bool changeThread = !node->IsMainThreadNode();
     node->SetIsMainThreadNode(true);

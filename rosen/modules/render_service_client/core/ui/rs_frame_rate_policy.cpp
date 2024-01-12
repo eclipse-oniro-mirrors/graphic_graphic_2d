@@ -18,6 +18,7 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "rs_trace.h"
 #include "platform/common/rs_log.h"
 #include "transaction/rs_interfaces.h"
 #include "ui/rs_ui_director.h"
@@ -40,10 +41,6 @@ RSFrameRatePolicy* RSFrameRatePolicy::GetInstance()
 {
     static RSFrameRatePolicy instance;
     return &instance;
-}
-
-RSFrameRatePolicy::RSFrameRatePolicy()
-{
 }
 
 RSFrameRatePolicy::~RSFrameRatePolicy()
@@ -101,20 +98,17 @@ void RSFrameRatePolicy::HgmConfigChangeCallback(std::shared_ptr<RSHgmConfigData>
 
 void RSFrameRatePolicy::HgmRefreshRateModeChangeCallback(int32_t refreshRateMode)
 {
-    SetRefreshRateMode(refreshRateMode);
+    RSUIDirector::PostFrameRateTask([this, refreshRateMode]() {
+        currentRefreshRateMode_ = refreshRateMode;
+    });
 }
 
-void RSFrameRatePolicy::SetRefreshRateMode(int32_t refreshRateMode)
-{
-    currentRefreshRateMode_ = refreshRateMode;
-}
-
-int32_t RSFrameRatePolicy::GetRefreshRateMode()
+int32_t RSFrameRatePolicy::GetRefreshRateMode() const
 {
     return currentRefreshRateMode_;
 }
 
-int RSFrameRatePolicy::GetPreferredFps(const std::string& scene, float speed)
+int32_t RSFrameRatePolicy::GetPreferredFps(const std::string& scene, float speed)
 {
     std::lock_guard<std::mutex> lock(g_animAttributesMutex);
     if (animAttributes.count(scene) == 0 || ppi_ == 0) {
@@ -127,6 +121,8 @@ int RSFrameRatePolicy::GetPreferredFps(const std::string& scene, float speed)
             pair.second.maxSpeed == -1);
     });
     if (iter != attributes.end()) {
+        RS_TRACE_NAME_FMT("GetPreferredFps: scene: %s, speed: %f, rate: %d",
+            scene.c_str(), speedMM, iter->second.preferredFps);
         return iter->second.preferredFps;
     }
     return 0;

@@ -140,6 +140,7 @@ constexpr uint32_t CAL_NODE_PREFERRED_FPS_LIMIT = 50;
 constexpr const char* WALLPAPER_VIEW = "WallpaperView";
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
 constexpr const char* MEM_MGR = "MemMgr";
+constexpr const char* DESKTOP_NAME_FOR_ROTATION = "SCBDesktop2";
 #ifdef RS_ENABLE_GL
 constexpr size_t DEFAULT_SKIA_CACHE_SIZE        = 96 * (1 << 20);
 constexpr int DEFAULT_SKIA_CACHE_COUNT          = 2 * (1 << 12);
@@ -273,6 +274,8 @@ void RSMainThread::Init()
         Render();
         InformHgmNodeInfo();
         ReleaseAllNodesBuffer();
+        auto subThreadManager = RSSubThreadManager::Instance();
+        subThreadManager->SubmitFilterSubThreadTask();
         SendCommands();
         context_->activeNodesInRoot_.clear();
         ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
@@ -296,6 +299,7 @@ void RSMainThread::Init()
     isUniRender_ = RSUniRenderJudgement::IsUniRender();
     SetDeviceType();
     qosPidCal_ = deviceType_ == DeviceType::PC;
+    isFoldScreenDevice_ = system::GetParameter("const.window.foldscreen.type", "") == "true";
     auto taskDispatchFunc = [](const RSTaskDispatcher::RSTask& task, bool isSyncTask = false) {
         RSMainThread::Instance()->PostTask(task);
     };
@@ -987,6 +991,13 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
                 surfaceNode->SetContentDirty();
                 doDirectComposition_ = false;
             }
+            if (deviceType_ == DeviceType::PC && isUiFirstOn_ && surfaceNode->IsCurrentFrameBufferConsumed()
+                && surfaceNode->IsHardwareEnabledType() && surfaceNode->IsHardwareForcedDisabledByFilter()) {
+                    RS_OPTIONAL_TRACE_NAME(surfaceNode->GetName() +
+                        " SetContentDirty for UIFirst assigning to subthread");
+                    surfaceNode->SetContentDirty();
+                    doDirectComposition_ = false;
+                }
         }
 
         // still have buffer(s) to consume.
@@ -1488,6 +1499,11 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     idleTimerExpiredFlag_ = false;
 }
 
+pid_t RSMainThread::GetDesktopPidForRotationScene() const
+{
+    return desktopPidForRotationScene_;
+}
+
 void RSMainThread::Render()
 {
     const std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
@@ -1500,6 +1516,9 @@ void RSMainThread::Render()
     }
     if (RSSystemProperties::GetRenderNodeTraceEnabled()) {
         RSPropertyTrace::GetInstance().RefreshNodeTraceInfo();
+    }
+    if (focusAppBundleName_ == DESKTOP_NAME_FOR_ROTATION) {
+        desktopPidForRotationScene_ = focusAppPid_;
     }
 
     if (isUniRender_) {
@@ -1600,11 +1619,12 @@ bool RSMainThread::CheckSurfaceNeedProcess(OcclusionRectISet& occlusionSurfaces,
 RSVisibleLevel RSMainThread::GetRegionVisibleLevel(const Occlusion::Region& curRegion,
     const Occlusion::Region& visibleRegion)
 {
-    if (visibleRegion.GetSize() == 0) {
+    if (visibleRegion.IsEmpty()) {
         return RSVisibleLevel::RS_INVISIBLE;
     } else if (visibleRegion.Area() == curRegion.Area()) {
         return RSVisibleLevel::RS_ALL_VISIBLE;
-    } else if (visibleRegion.Area() < (static_cast<uint>(curRegion.Area()) >> VISIBLEAREARATIO_FORQOS)) {
+    } else if (static_cast<uint>(visibleRegion.Area()) <
+        (static_cast<uint>(curRegion.Area()) >> VISIBLEAREARATIO_FORQOS)) {
         return RSVisibleLevel::RS_SEMI_DEFAULT_VISIBLE;
     }
     return RSVisibleLevel::RS_SEMI_NONDEFAULT_VISIBLE;
@@ -2677,7 +2697,9 @@ bool RSMainThread::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedSc
             --systemAnimatedScenesCnt_;
         } else {
             if (systemAnimatedScenes == SystemAnimatedScenes::ENTER_TFS_WINDOW ||
-                systemAnimatedScenes == SystemAnimatedScenes::EXIT_TFU_WINDOW) {
+                systemAnimatedScenes == SystemAnimatedScenes::EXIT_TFU_WINDOW ||
+                systemAnimatedScenes == SystemAnimatedScenes::ENTER_WIND_CLEAR ||
+                systemAnimatedScenes == SystemAnimatedScenes::ENTER_WIND_RECOVER) {
                 ++threeFingerCnt_;
             }
             if (systemAnimatedScenes != SystemAnimatedScenes::APPEAR_MISSION_CENTER) {
@@ -2730,27 +2752,18 @@ bool RSMainThread::IsDrawingGroupChanged(RSRenderNode& cacheRootNode) const
     return false;
 }
 
-bool RSMainThread::CheckIfInstanceOnlySurfaceBasicGeoTransform(NodeId instanceNodeId) const
+void RSMainThread::CheckAndUpdateInstanceContentStaticStatus(std::shared_ptr<RSSurfaceRenderNode> instanceNode) const
 {
-    if (instanceNodeId == INVALID_NODEID) {
-        RS_LOGE("CheckIfInstanceOnlySurfaceBasicGeoTransform instanceNodeId invalid.");
-        return false;
+    if (instanceNode == nullptr) {
+        RS_LOGE("CheckAndUpdateInstanceContentStaticStatus instanceNode invalid.");
+        return ;
     }
-    auto iter = context_->activeNodesInRoot_.find(instanceNodeId);
+    auto iter = context_->activeNodesInRoot_.find(instanceNode->GetId());
     if (iter != context_->activeNodesInRoot_.end()) {
-        const auto& activeNodeIds = iter->second;
-        for (auto [id, subNode] : activeNodeIds) {
-            auto node = subNode.lock();
-            if (node == nullptr) {
-                continue;
-            }
-            // filter active nodes except instance surface itself
-            if (id != instanceNodeId || !node->IsOnlyBasicGeoTransform()) {
-                return false;
-            }
-        }
+        instanceNode->UpdateSurfaceCacheContentStatic(iter->second);
+    } else {
+        instanceNode->UpdateSurfaceCacheContentStatic({});
     }
-    return true;
 }
 
 FrameRateRange RSMainThread::CalcAnimateFrameRateRange(std::shared_ptr<RSRenderNode> node)
@@ -2872,23 +2885,37 @@ void RSMainThread::UpdateRogSizeIfNeeded()
 }
 
 const uint32_t UIFIRST_MINIMUM_NODE_NUMBER = 4; // minimum window number(4) for enabling UIFirst
+const uint32_t FOLD_DEVICE_SCREEN_NUMBER = 2; // alt device has two screens
 
 void RSMainThread::UpdateUIFirstSwitch()
 {
+    const std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
+    if (!rootNode) {
+        return;
+    }
+    auto sortedChildren = rootNode->GetSortedChildren();
+    if (sortedChildren.empty()) {
+        return;
+    }
+    auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(sortedChildren.front());
+    if (!displayNode) {
+        return;
+    }
+    auto screenManager_ = CreateOrGetScreenManager();
+    uint32_t actualScreensNum = screenManager_->GetActualScreensNum();
     if (deviceType_ == DeviceType::PHONE) {
-        isUiFirstOn_ = (RSSystemProperties::GetUIFirstEnabled() && IsSingleDisplay());
+        if (isFoldScreenDevice_) {
+            isUiFirstOn_ = (RSSystemProperties::GetUIFirstEnabled() && actualScreensNum == FOLD_DEVICE_SCREEN_NUMBER);
+        } else {
+            isUiFirstOn_ = (RSSystemProperties::GetUIFirstEnabled() && actualScreensNum == 1);
+        }
         return;
     }
     isUiFirstOn_ = false;
-    const std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
-    if (rootNode && IsSingleDisplay()) {
-        auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(
-            rootNode->GetSortedChildren().front());
-        if (displayNode) {
-            LeashWindowCount_ = 0;
-            displayNode->CollectSurfaceForUIFirstSwitch(LeashWindowCount_, UIFIRST_MINIMUM_NODE_NUMBER);
-            isUiFirstOn_ = RSSystemProperties::GetUIFirstEnabled() && LeashWindowCount_ >= UIFIRST_MINIMUM_NODE_NUMBER;
-        }
+    if (IsSingleDisplay()) {
+        uint32_t LeashWindowCount = 0;
+        displayNode->CollectSurfaceForUIFirstSwitch(LeashWindowCount, UIFIRST_MINIMUM_NODE_NUMBER);
+        isUiFirstOn_ = RSSystemProperties::GetUIFirstEnabled() && LeashWindowCount >=  UIFIRST_MINIMUM_NODE_NUMBER;
     }
 }
 
@@ -2959,22 +2986,15 @@ void RSMainThread::HandleOnTrim(Memory::SystemMemoryLevel level)
     if (handler_) {
         handler_->PostTask(
             [level, this]() {
-#ifndef USE_ROSEN_DRAWING
-#ifdef NEW_RENDER_CONTEXT
-                auto grContext = GetRenderEngine()->GetDrawingContext()->GetDrawingContext();
-#else
-                auto grContext = GetRenderEngine()->GetRenderContext()->GetGrContext();
-#endif
-#else
-                auto grContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
-#endif
                 RS_LOGD("Enter level:%{public}d, OnTrim Success", level);
+                RS_TRACE_NAME_FMT("System is low memory, HandleOnTrim Enter level:%d", level);
                 switch (level) {
                     case Memory::SystemMemoryLevel::MEMORY_LEVEL_CRITICAL:
+                        ClearMemoryCache(ClearMemoryMoment::LOW_MEMORY, true);
+                        break;
                     case Memory::SystemMemoryLevel::MEMORY_LEVEL_LOW:
                     case Memory::SystemMemoryLevel::MEMORY_LEVEL_MODERATE:
                     case Memory::SystemMemoryLevel::MEMORY_LEVEL_PURGEABLE:
-                        MemoryManager::ReleaseUnlockAndSafeCacheGpuResource(grContext);
                         break;
                     default:
                         break;

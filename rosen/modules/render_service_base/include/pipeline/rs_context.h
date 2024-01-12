@@ -28,6 +28,7 @@ enum ClearMemoryMoment : uint32_t {
     PROCESS_EXIT,
     COMMON_SURFACE_NODE_HIDE,
     SCENEBOARD_SURFACE_NODE_HIDE,
+    LOW_MEMORY,
     NO_CLEAR,
 };
 
@@ -85,6 +86,7 @@ public:
     }
     // add node info after cmd data process
     void AddActiveNode(const std::shared_ptr<RSRenderNode>& node);
+    bool HasActiveNode(const std::shared_ptr<RSRenderNode>& node);
 
     void MarkNeedPurge(ClearMemoryMoment moment, PurgeType purgeType);
 
