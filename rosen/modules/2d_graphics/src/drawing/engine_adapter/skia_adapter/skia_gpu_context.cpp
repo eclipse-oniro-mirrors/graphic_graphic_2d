@@ -34,7 +34,7 @@ sk_sp<SkData> SkiaPersistentCache::load(const SkData& key)
 {
     Data keyData;
     if (!cache_) {
-        LOGE("SkiaPersistentCache::load, failed! cache or key invalid");
+        LOGD("SkiaPersistentCache::load, failed! cache or key invalid");
         return nullptr;
     }
     auto skiaKeyDataImpl = keyData.GetImpl<SkiaData>();
@@ -42,7 +42,7 @@ sk_sp<SkData> SkiaPersistentCache::load(const SkData& key)
 
     auto retData = cache_->Load(keyData);
     if (retData == nullptr) {
-        LOGE("SkiaPersistentCache::load, failed! load data invalid");
+        LOGD("SkiaPersistentCache::load, failed! load data invalid");
         return nullptr;
     }
 
@@ -54,7 +54,7 @@ void SkiaPersistentCache::store(const SkData& key, const SkData& data)
     Data keyData;
     Data storeData;
     if (!cache_) {
-        LOGE("SkiaPersistentCache::store, failed! cache or {key,data} invalid");
+        LOGD("SkiaPersistentCache::store, failed! cache or {key,data} invalid");
         return;
     }
 
