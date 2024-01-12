@@ -350,6 +350,7 @@ void RSUniRenderVisitor::PrepareEffectNodeIfCacheReuse(const std::shared_ptr<RSR
     }
     auto effectRegion = effectRegion_;
     effectRegion_ = effectNode->InitializeEffectRegion();
+    effectNode->SetVisitedFilterCacheStatus(curSurfaceDirtyManager_->IsCacheableFilterRectEmpty());
     effectNode->Update(*curSurfaceDirtyManager_, cacheRootNode, dirtyFlag_, prepareClipRect_);
     UpdateSubTreeInCache(effectNode, effectNode->GetSortedChildren());
     effectNode->SetEffectRegion(effectRegion_);
@@ -359,10 +360,6 @@ void RSUniRenderVisitor::PrepareEffectNodeIfCacheReuse(const std::shared_ptr<RSR
             curSurfaceNode_->UpdateChildrenFilterRects(effectNode, effectNode->GetOldDirtyInSurface(),
                 effectNode->IsBackgroundFilterCacheValid());
         }
-    }
-    if (!effectNode->IsBackgroundFilterCacheValid()) {
-        RS_OPTIONAL_TRACE_NAME("InvalidateFilterCacheRect by EffectRenderNode");
-        curSurfaceDirtyManager_->InvalidateFilterCacheRect();
     }
     effectRegion_ = effectRegion;
 }
@@ -1740,7 +1737,7 @@ void RSUniRenderVisitor::PrepareEffectRenderNode(RSEffectRenderNode& node)
 
     effectRegion_ = node.InitializeEffectRegion();
     auto parentNode = node.GetParent().lock();
-    bool isOcclusionFilterCacheEmptyBefore = curSurfaceDirtyManager_->IsCacheableFilterRectEmpty();
+    node.SetVisitedFilterCacheStatus(curSurfaceDirtyManager_->IsCacheableFilterRectEmpty());
     dirtyFlag_ = node.Update(*curSurfaceDirtyManager_, parentNode, dirtyFlag_, prepareClipRect_);
 
     node.UpdateChildrenOutOfRectFlag(false);
@@ -1774,12 +1771,6 @@ void RSUniRenderVisitor::PrepareEffectRenderNode(RSEffectRenderNode& node)
             curSurfaceNode_->UpdateFilterNodes(node.shared_from_this());
         }
         UpdateForegroundFilterCacheWithDirty(node, *curSurfaceDirtyManager_);
-    }
-
-    if (!node.IsBackgroundFilterCacheValid() && isOcclusionFilterCacheEmptyBefore &&
-        !curSurfaceDirtyManager_->IsCacheableFilterRectEmpty()) {
-        RS_OPTIONAL_TRACE_NAME("InvalidateFilterCacheRect by EffectRenderNode");
-        curSurfaceDirtyManager_->InvalidateFilterCacheRect();
     }
 
     effectRegion_ = effectRegion;
