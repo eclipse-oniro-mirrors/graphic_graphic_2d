@@ -63,7 +63,7 @@ static const std::vector<struct JsEnumInt> g_blendMode = {
     { "EXCLUSION", static_cast<int32_t>(BlendMode::EXCLUSION) },
     { "MULTIPLY", static_cast<int32_t>(BlendMode::MULTIPLY) },
     { "HUE", static_cast<int32_t>(BlendMode::HUE) },
-    { "STATURATION", static_cast<int32_t>(BlendMode::STATURATION) },
+    { "SATURATION", static_cast<int32_t>(BlendMode::STATURATION) },
     { "COLOR", static_cast<int32_t>(BlendMode::COLOR_MODE) },
     { "LUMINOSITY", static_cast<int32_t>(BlendMode::LUMINOSITY) },
 };
