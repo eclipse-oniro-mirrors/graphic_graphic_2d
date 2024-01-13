@@ -81,17 +81,6 @@ void RSFilterSubThread::Start()
     };
 
     RSFilter::clearGpuContext = [this]() { ResetGrContext(); };
-
-    RSFilter::setRelease = [this](std::weak_ptr<RSFilter::RSFilterTask> task) {
-        PostTask([this, task]() {
-            auto workTask = task.lock();
-            if (!workTask) {
-                RS_LOGE("Color picker task is null");
-                return;
-            }
-            workTask->SetTaskRelease();
-        });
-    };
 }
 
 void RSFilterSubThread::StartColorPicker()

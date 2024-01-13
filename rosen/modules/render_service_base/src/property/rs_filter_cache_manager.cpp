@@ -255,7 +255,13 @@ bool RSFilterCacheManager::RSFilterCacheTask::SaveFilteredImage()
     resultBackendTexture_ =
         cacheSurface_->getBackendTexture(SkSurface::BackendHandleAccess::kFlushRead_BackendHandleAccess);
 #else
-    resultBackendTexture_ = cacheSurface_->GetBackendTexture();
+    if (cacheSurface_) {
+        resultBackendTexture_ = cacheSurface_->GetBackendTexture();
+    } else {
+        SetStatus(CacheProcessStatus::WAITING);
+        ROSEN_LOGE("RSFilterCacheManager::SaveFilteredImage: cacheSurface_ is null");
+        return false;
+    }
 #endif
     CHECK_CACHE_PROCESS_STATUS;
     return true;
@@ -275,11 +281,6 @@ void RSFilterCacheManager::RSFilterCacheTask::SwapInit()
         cacheBackendTexture_ = cachedSnapshotInTask_->cachedImage_->GetBackendTexture(false, nullptr);
 #endif
     }
-}
-
-void RSFilterCacheManager::RSFilterCacheTask::SetTaskRelease()
-{
-    isTaskRelease_.store(false);
 }
 
 bool RSFilterCacheManager::RSFilterCacheTask::SetDone()
@@ -751,9 +752,6 @@ void RSFilterCacheManager::ReleaseCacheOffTree()
         auto task_tmp = task_;
         task_->GetHandler()->PostTask(
             [task_tmp]() { task_tmp->ResetGrContext(); }, AppExecFwk::EventQueue::Priority::IMMEDIATE);
-    }
-    if (RSFilter::setRelease != nullptr) {
-        RSFilter::setRelease(task_);
     }
 }
 

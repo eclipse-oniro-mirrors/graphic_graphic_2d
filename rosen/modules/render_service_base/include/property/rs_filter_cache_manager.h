@@ -141,7 +141,6 @@ private:
         bool SaveFilteredImage() override;
         void SwapInit() override;
         bool SetDone() override;
-        void SetTaskRelease() override;
         CacheProcessStatus GetStatus() const
         {
             return cacheProcessStatus_.load();
@@ -213,6 +212,7 @@ private:
             cacheSurface_ = nullptr;
             cacheCompletedSurface_ = nullptr;
             RSFilter::clearGpuContext();
+            isTaskRelease_.store(false);
         }
 
         void Notify()
