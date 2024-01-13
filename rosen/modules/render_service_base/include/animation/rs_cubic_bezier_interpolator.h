@@ -30,6 +30,9 @@ public:
 
     float Interpolate(float input) const override
     {
+        if (std::abs(input - 1.0f) <= 1e-6) {
+            return 1.0f;
+        }
         return GetCubicBezierValue(SEARCH_STEP * BinarySearch(input), controlly1_, controlly2_);
     }
     bool Marshalling(Parcel& parcel) const override
