@@ -49,10 +49,8 @@ public:
         virtual bool SaveFilteredImage();
         virtual void SwapInit();
         virtual bool SetDone();
-        virtual void SetTaskRelease();
     };
     static std::function<void(std::weak_ptr<RSFilter::RSFilterTask>)> postTask;
-    static std::function<void(std::weak_ptr<RSFilter::RSFilterTask>)> setRelease;
     static std::function<void()> clearGpuContext;
 
     virtual ~RSFilter();

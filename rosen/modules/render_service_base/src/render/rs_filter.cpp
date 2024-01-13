@@ -29,7 +29,6 @@ RSFilter::RSFilter()
 RSFilter::~RSFilter() {}
 
 std::function<void(std::weak_ptr<RSFilter::RSFilterTask>)> RSFilter::postTask = nullptr;
-std::function<void(std::weak_ptr<RSFilter::RSFilterTask>)> RSFilter::setRelease = nullptr;
 std::function<void()> RSFilter::clearGpuContext = nullptr;
 
 std::string RSFilter::GetDescription()
