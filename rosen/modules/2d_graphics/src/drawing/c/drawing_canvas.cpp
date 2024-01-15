@@ -351,3 +351,97 @@ void OH_Drawing_CanvasClear(OH_Drawing_Canvas* cCanvas, uint32_t color)
     }
     canvas->Clear(color);
 }
+
+int32_t OH_Drawing_CanvasGetWidth(OH_Drawing_Canvas* cCanvas)
+{
+    Canvas* canvas = CastToCanvas(cCanvas);
+    if (canvas == nullptr) {
+        return 0;
+    }
+    return canvas->GetWidth();
+}
+
+int32_t OH_Drawing_CanvasGetWidth(OH_Drawing_Canvas* cCanvas)
+{
+    Canvas* canvas = CastToCanvas(cCanvas);
+    if (canvas == nullptr) {
+        return 0;
+    }
+    return canvas->GetWidth();
+}
+
+int32_t OH_Drawing_CanvasGetHeight(OH_Drawing_Canvas* cCanvas)
+{
+    Canvas* canvas = CastToCanvas(cCanvas);
+    if (canvas == nullptr) {
+        return 0;
+    }
+    return canvas->GetHeight();
+}
+
+OH_Drawing_Rect* OH_Drawing_CanvasGetLocalClipBounds(OH_Drawing_Canvas* cCanvas)
+{
+    Canvas* canvas = CastToCanvas(cCanvas);
+    if (canvas == nullptr) {
+        return nullptr;
+    }
+    OHOS::Rosen::Drawing::Rect rect = canvas->GetLocalClipBounds();
+    OH_Drawing_Rect* cRect = (OH_Drawing_Rect*)new Rect(rect);
+    return cRect;
+}
+
+OH_Drawing_Matrix* OH_Drawing_CanvasGetLocalToDevice(OH_Drawing_Canvas* cCanvas)
+{
+    Canvas* canvas = CastToCanvas(cCanvas);
+    if (canvas == nullptr) {
+        return nullptr;
+    }
+    OHOS::Rosen::Drawing::Matrix matrix = canvas->GetTotalMatrix();
+    OH_Drawing_Matrix* cMatrix = (OH_Drawing_Matrix*)new Matrix(matrix);
+    return cMatrix;
+}
+
+void OH_Drawing_CanvasConcatMatrix(OH_Drawing_Canvas* cCanvas, OH_Drawing_Matrix* cMatrix)
+{
+    Canvas* canvas = CastToCanvas(cCanvas);
+    if (canvas == nullptr) {
+        return;
+    }
+    canvas->ConcatMatrix(*reinterpret_cast<OHOS::Rosen::Drawing::Matrix*>(cMatrix));
+}
+
+static ShadowFlags CClipOpCastToClipOp(OH_Drawing_CanvasShadowFlags cFlag)
+{
+    ShadowFlags shadowFlags = ShadowFlags::NONE;
+    switch (cFlag)
+    {
+    case OH_Drawing_CanvasShadowFlags::NONE:
+        shadowFlags = ShadowFlags::NONE;
+        break;
+    case OH_Drawing_CanvasShadowFlags::TRANSPARENT_OCCLUDER:
+        shadowFlags = ShadowFlags::TRANSPARENT_OCCLUDER;
+        break;
+    case OH_Drawing_CanvasShadowFlags::GEOMETRIC_ONLY:
+        shadowFlags = ShadowFlags::GEOMETRIC_ONLY;
+        break;
+    case OH_Drawing_CanvasShadowFlags::ALL:
+        shadowFlags = ShadowFlags::ALL;
+        break;
+    default:
+        break;
+    }
+    return shadowFlags;
+}
+
+void OH_Drawing_CanvasDrawShadow(OH_Drawing_Canvas* cCanvas, OH_Drawing_Path* cPath, OH_Drawing_Point3* planeParams,
+    OH_Drawing_Point3* devLightPos, float lightRadius, uint32_t ambientColor, uint32_t spotColor,
+    OH_Drawing_CanvasShadowFlags flag)
+{
+    Canvas* canvas = CastToCanvas(cCanvas);
+    if (canvas == nullptr) {
+        return;
+    }
+    canvas->DrawShadow(*reinterpret_cast<Path*>(cPath), *reinterpret_cast<Point3*>(planeParams),
+        *reinterpret_cast<Point3*>(devLightPos), lightRadius, Color(ambientColor), Color(spotColor),
+        CClipOpCastToClipOp(flag));
+}

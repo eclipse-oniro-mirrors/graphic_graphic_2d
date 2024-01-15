@@ -363,6 +363,29 @@ void OH_Drawing_CanvasScale(OH_Drawing_Canvas*, float sx, float sy);
  */
 void OH_Drawing_CanvasClear(OH_Drawing_Canvas*, uint32_t color);
 
+int32_t OH_Drawing_CanvasGetWidth(OH_Drawing_Canvas*);
+
+int32_t OH_Drawing_CanvasGetWidth(OH_Drawing_Canvas*);
+
+int32_t OH_Drawing_CanvasGetHeight(OH_Drawing_Canvas*);
+
+OH_Drawing_Rect* OH_Drawing_CanvasGetLocalClipBounds(OH_Drawing_Canvas*);
+
+OH_Drawing_Matrix* OH_Drawing_CanvasGetLocalToDevice(OH_Drawing_Canvas*);
+
+void OH_Drawing_CanvasConcatMatrix(OH_Drawing_Canvas*, OH_Drawing_Matrix* cMatrix);
+
+typedef enum {
+    NONE,
+    TRANSPARENT_OCCLUDER,
+    GEOMETRIC_ONLY,
+    ALL,
+} OH_Drawing_CanvasShadowFlags;
+
+void OH_Drawing_CanvasDrawShadow(OH_Drawing_Canvas*, OH_Drawing_Path* cPath, OH_Drawing_Point3* planeParams,
+    OH_Drawing_Point3* devLightPos, float lightRadius, uint32_t ambientColor, uint32_t spotColor,
+    OH_Drawing_CanvasShadowFlags flag);
+
 #ifdef __cplusplus
 }
 #endif

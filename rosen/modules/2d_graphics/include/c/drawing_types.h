@@ -92,6 +92,10 @@ typedef struct OH_Drawing_Bitmap OH_Drawing_Bitmap;
  */
 typedef struct OH_Drawing_Point OH_Drawing_Point;
 
+typedef struct OH_Drawing_Point3 OH_Drawing_Point3;
+
+typedef struct OH_Drawing_PathEffect OH_Drawing_PathEffect;
+
 /**
  * @brief Defines a rect, which is used to describe the rectangle.
  *

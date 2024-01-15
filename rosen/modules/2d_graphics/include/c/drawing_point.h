@@ -65,6 +65,10 @@ OH_Drawing_Point* OH_Drawing_PointCreate(float x, float y);
  */
 void OH_Drawing_PointDestroy(OH_Drawing_Point*);
 
+OH_Drawing_Point3* OH_Drawing_Point3Create(float x, float y, float z);
+
+void OH_Drawing_Point3Destroy(OH_Drawing_Point3*);
+
 #ifdef __cplusplus
 }
 #endif
