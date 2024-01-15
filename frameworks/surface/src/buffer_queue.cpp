@@ -360,7 +360,6 @@ GSError BufferQueue::CancelBuffer(uint32_t sequence, const sptr<BufferExtraData>
 
     if (bufferQueueCache_[sequence].state != BUFFER_STATE_REQUESTED &&
         bufferQueueCache_[sequence].state != BUFFER_STATE_ATTACHED) {
-        BLOGN_FAILURE_ID(sequence, "state is neither BUFFER_STATE_REQUESTED nor BUFFER_STATE_ATTACHED");
         return GSERROR_INVALID_OPERATING;
     }
     bufferQueueCache_[sequence].state = BUFFER_STATE_RELEASED;
@@ -605,14 +604,13 @@ GSError BufferQueue::ReleaseBuffer(sptr<SurfaceBuffer> &buffer, const sptr<SyncF
     {
         std::lock_guard<std::mutex> lockGuard(mutex_);
         if (bufferQueueCache_.find(sequence) == bufferQueueCache_.end()) {
-            BLOGN_FAILURE_ID(sequence, "not find in cache, Queue id: %{public}" PRIu64, uniqueId_);
             return GSERROR_NO_ENTRY;
         }
 
         if (isShared_ == false) {
             const auto &state = bufferQueueCache_[sequence].state;
             if (state != BUFFER_STATE_ACQUIRED && state != BUFFER_STATE_ATTACHED) {
-                BLOGN_FAILURE_ID(sequence, "invalid state");
+                BLOGND("invalid state");
                 return GSERROR_NO_ENTRY;
             }
         }
