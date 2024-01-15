@@ -146,9 +146,10 @@ void OH_NativeImage_Destroy(OH_NativeImage** image)
     }
     if ((*image)->consumer != nullptr) {
         (void)(*image)->consumer->UnsetOnBufferAvailableListener();
+        SurfaceUtils* utils = SurfaceUtils::GetInstance();
+        utils->Remove((*image)->consumer->GetUniqueId());
     }
-    SurfaceUtils* utils = SurfaceUtils::GetInstance();
-    utils->Remove((*image)->consumer->GetUniqueId());
+    
     if ((*image)->nativeWindow != nullptr) {
         DestoryNativeWindow((*image)->nativeWindow);
         (*image)->nativeWindow = nullptr;
