@@ -21,6 +21,7 @@
 #include "rs_trace.h"
 #else // ENABLE_NATIVEBUFFER
 #include <memory>
+#include "memory/rs_tag_tracker.h"
 #include "SkColor.h"
 #include "native_buffer_inner.h"
 #include "native_window.h"
@@ -290,6 +291,8 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
     backendSemaphore.initVulkan(semaphore);
 
     auto& surface = mSurfaceMap[mSurfaceList.front()];
+
+    RSTagTracker tagTracker(mSkContext.get(), RSTagTracker::TAGTYPE::TAG_ACQUIRE_SURFACE);
 
 #ifndef USE_ROSEN_DRAWING
     GrFlushInfo flushInfo;
