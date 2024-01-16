@@ -126,6 +126,7 @@ void VSyncGenerator::ThreadLoop()
             UpdateVSyncModeLocked();
             occurReferenceTime = referenceTime_;
             if (period_ == 0) {
+                ScopedBytrace func("VSyncGenerator: period not valid");
                 if (vsyncThreadRunning_ == true) {
                     con_.wait(locker);
                 }
@@ -134,6 +135,7 @@ void VSyncGenerator::ThreadLoop()
             occurTimestamp = GetSysTimeNs();
             nextTimeStamp = ComputeNextVSyncTimeStamp(occurTimestamp, occurReferenceTime);
             if (nextTimeStamp == INT64_MAX) {
+                ScopedBytrace func("VSyncGenerator: there has no listener");
                 if (vsyncThreadRunning_ == true) {
                     con_.wait(locker);
                 }
@@ -141,6 +143,7 @@ void VSyncGenerator::ThreadLoop()
             } else if (vsyncMode_ == VSYNC_MODE_LTPO) {
                 bool modelChanged = UpdateChangeDataLocked(occurTimestamp, occurReferenceTime, nextTimeStamp);
                 if (modelChanged) {
+                    ScopedBytrace func("VSyncGenerator: LTPO mode change");
                     continue;
                 }
             }
@@ -153,7 +156,7 @@ void VSyncGenerator::ThreadLoop()
             if (err == std::cv_status::timeout) {
                 isWakeup = true;
             } else {
-                ScopedDebugTrace func("VSyncGenerator::ThreadLoop::Continue");
+                ScopedBytrace func("VSyncGenerator::ThreadLoop::Continue");
                 continue;
             }
         }
@@ -415,7 +418,7 @@ VsyncError VSyncGenerator::UpdateMode(int64_t period, int64_t phase, int64_t ref
 
 VsyncError VSyncGenerator::AddListener(int64_t phase, const sptr<OHOS::Rosen::VSyncGenerator::Callback>& cb)
 {
-    ScopedDebugTrace func("AddListener");
+    ScopedBytrace func("AddListener");
     std::lock_guard<std::mutex> locker(mutex_);
     if (cb == nullptr) {
         return VSYNC_ERROR_INVALID_ARGUMENTS;
@@ -572,7 +575,7 @@ VsyncError VSyncGenerator::CheckAndUpdateRefereceTime(int64_t hardwareVsyncInter
 
 VsyncError VSyncGenerator::RemoveListener(const sptr<OHOS::Rosen::VSyncGenerator::Callback>& cb)
 {
-    ScopedDebugTrace func("RemoveListener");
+    ScopedBytrace func("RemoveListener");
     std::lock_guard<std::mutex> locker(mutex_);
     if (cb == nullptr) {
         return VSYNC_ERROR_INVALID_ARGUMENTS;

@@ -131,12 +131,14 @@ int32_t VSyncConnection::PostEvent(int64_t now, int64_t period, int64_t vsyncCou
     {
         std::unique_lock<std::mutex> locker(mutex_);
         if (isDead_) {
+            ScopedBytrace func("Vsync Client Connection is dead, conn: " + info_.name_);
             VLOGE("%{public}s VSync Client Connection is dead, name:%{public}s.", __func__, info_.name_.c_str());
             return ERRNO_OTHER;
         }
         socketPair = socketPair_;
     }
     if (socketPair == nullptr) {
+        ScopedBytrace func("socketPair is null, conn: " + info_.name_);
         return ERRNO_OTHER;
     }
     ScopedBytrace func("SendVsyncTo conn: " + info_.name_ + ", now:" + std::to_string(now));
@@ -332,9 +334,12 @@ void VSyncDistributor::ThreadMain()
                         con_.wait(locker);
                     }
                 }
+                ScopedBytrace func(name_ + "_continue: waitForVSync " + std::to_string(waitForVSync) +
+                    ", vsyncEnabled " + std::to_string(vsyncEnabled_));
                 continue;
             } else if ((timestamp > 0) && (waitForVSync == false)) {
                 // if there is a vsync signal but no vaild connections, we should disable vsync
+                ScopedBytrace func(name_ + "_DisableVSync, there is no valid connections");
                 DisableVSync();
                 continue;
             }
