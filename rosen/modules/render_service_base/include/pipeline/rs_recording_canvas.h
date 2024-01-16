@@ -106,7 +106,7 @@ public:
     void DrawPixelMapWithParm(
         const std::shared_ptr<Media::PixelMap>& pixelmap,
         const Rosen::RsImageInfo& rsImageInfo, const SkSamplingOptions& samplingOptions, const SkPaint& paint);
-    void drawImageNine(const std::shared_ptr<Media::PixelMap>& pixelmap, const SkIRect& center,
+    void DrawImageNine(const std::shared_ptr<Media::PixelMap>& pixelmap, const SkIRect& center,
         const SkRect& dst, SkFilterMode filter, const SkPaint* paint);
     using DrawFunc  = std::function<void(RSPaintFilterCanvas& canvas, const SkRect*)>;
     void DrawDrawFunc(DrawFunc && drawFunc);
@@ -228,6 +228,8 @@ public:
         const Drawing::AdaptiveImageInfo& rsImageInfo, const Drawing::SamplingOptions& sampling);
     void DrawPixelMapWithParm(const std::shared_ptr<Media::PixelMap>& pixelMap,
         const Drawing::AdaptiveImageInfo& rsImageInfo, const Drawing::SamplingOptions& sampling);
+    void DrawImageNineWithPixelMap(const std::shared_ptr<Media::PixelMap>& pixelmap, const Drawing::RectI& center,
+        const Drawing::Rect& dst, Drawing::FilterMode filter, const Drawing::Brush* brush);
     void DrawPixelMapRect(const std::shared_ptr<Media::PixelMap>& pixelMap, const Drawing::Rect& src,
         const Drawing::Rect& dst, const Drawing::SamplingOptions& sampling,
         Drawing::SrcRectConstraint constraint = Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);

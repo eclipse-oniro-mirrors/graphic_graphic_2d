@@ -172,7 +172,7 @@ void RSRecordingCanvas::DrawPixelMapWithParm(const std::shared_ptr<Media::PixelM
     AddOp(std::move(op));
 }
 
-void RSRecordingCanvas::drawImageNine(
+void RSRecordingCanvas::DrawImageNine(
     const std::shared_ptr<Media::PixelMap>& pixelmap, const SkIRect& center, const SkRect& dst,
     SkFilterMode filter, const SkPaint* paint)
 {
@@ -490,6 +490,7 @@ void RSRecordingCanvas::DrawDrawFunc(DrawFunc && drawFunc)
 #include "pipeline/rs_recording_canvas.h"
 #include "pipeline/rs_draw_cmd.h"
 #include "recording/cmd_list_helper.h"
+#include "render/rs_pixel_map_util.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -624,6 +625,13 @@ void ExtendRecordingCanvas::AddDrawOpDeferred(Args&&... args)
     if (penValid) {
         cmdList_->AddDrawOp(std::make_shared<T>(std::forward<Args>(args)..., paintPen_));
     }
+}
+
+void ExtendRecordingCanvas::DrawImageNineWithPixelMap(const std::shared_ptr<Media::PixelMap>& pixelmap,
+    const Drawing::RectI& center, const Drawing::Rect& dst, Drawing::FilterMode filter, const Drawing::Brush* brush)
+{
+    auto image = RSPixelMapUtil::ExtractDrawingImage(pixelmap);
+    Drawing::RecordingCanvas::DrawImageNine(image.get(), center, dst, filter, brush);
 }
 } // namespace Rosen
 } // namespace OHOS
