@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "memory/rs_tag_tracker.h"
 #include "native_buffer_utils.h"
 #include "platform/common/rs_log.h"
 
@@ -228,6 +229,8 @@ bool MakeFromNativeWindowBuffer(std::shared_ptr<Drawing::GPUContext> skContext, 
     if (nbFormatProps.format == VK_FORMAT_A2B10G10R10_UNORM_PACK32) {
         colorType = kRGBA_1010102_SkColorType;
     }
+
+    RSTagTracker tagTracker(skContext.get(), RSTagTracker::TAGTYPE::TAG_ACQUIRE_SURFACE);
 
     nativeSurface.skSurface = SkSurface::MakeFromBackendRenderTarget(
         skContext.get(), backend_render_target, kTopLeft_GrSurfaceOrigin, colorType,

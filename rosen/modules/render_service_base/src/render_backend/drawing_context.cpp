@@ -176,9 +176,7 @@ sk_sp<SkSurface> DrawingContext::AcquireSurfaceInGLES(const std::shared_ptr<RSRe
 #endif
 
     sk_sp<SkColorSpace> skColorSpace = GetSkColorSpace(frame);
-#if !defined(NEW_SKIA)
     RSTagTracker tagTracker(grContext, RSTagTracker::TAGTYPE::TAG_ACQUIRE_SURFACE);
-#endif
     sk_sp<SkSurface> skSurface = SkSurface::MakeFromBackendRenderTarget(
         grContext, backendRenderTarget, kBottomLeft_GrSurfaceOrigin, colorType,
         skColorSpace, &surfaceProps);
