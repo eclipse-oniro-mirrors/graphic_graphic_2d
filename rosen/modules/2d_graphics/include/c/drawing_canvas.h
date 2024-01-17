@@ -419,7 +419,7 @@ OH_Drawing_Matrix* OH_Drawing_CanvasGetLocalToDevice(OH_Drawing_Canvas*);
 void OH_Drawing_CanvasConcatMatrix(OH_Drawing_Canvas*, OH_Drawing_Matrix*);
 
 /**
- * @brief Enumerates clip op.
+ * @brief Enumerates of shadow flags.
  *
  * @since 12
  * @version 1.0
