@@ -668,7 +668,7 @@ GSError BufferQueue::AllocBuffer(sptr<SurfaceBuffer> &buffer,
 
     ret = bufferImpl->Map();
     if (ret == GSERROR_OK) {
-        BLOGN_SUCCESS_ID(sequence, "Map");
+        BLOGND("Success seq:%{public}d Map", sequence);
         bufferQueueCache_[sequence] = ele;
         buffer = bufferImpl;
     } else {
@@ -898,7 +898,7 @@ GSError BufferQueue::SetQueueSize(uint32_t queueSize)
         queueSize_ = queueSize;
     }
 
-    BLOGN_SUCCESS("queue size: %{public}d, Queue id: %{public}" PRIu64, queueSize_, uniqueId_);
+    BLOGND("queue size: %{public}d, Queue id: %{public}" PRIu64, queueSize_, uniqueId_);
     return GSERROR_OK;
 }
 
