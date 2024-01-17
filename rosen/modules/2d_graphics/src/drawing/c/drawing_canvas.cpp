@@ -361,15 +361,6 @@ int32_t OH_Drawing_CanvasGetWidth(OH_Drawing_Canvas* cCanvas)
     return canvas->GetWidth();
 }
 
-int32_t OH_Drawing_CanvasGetWidth(OH_Drawing_Canvas* cCanvas)
-{
-    Canvas* canvas = CastToCanvas(cCanvas);
-    if (canvas == nullptr) {
-        return 0;
-    }
-    return canvas->GetWidth();
-}
-
 int32_t OH_Drawing_CanvasGetHeight(OH_Drawing_Canvas* cCanvas)
 {
     Canvas* canvas = CastToCanvas(cCanvas);
@@ -413,22 +404,21 @@ void OH_Drawing_CanvasConcatMatrix(OH_Drawing_Canvas* cCanvas, OH_Drawing_Matrix
 static ShadowFlags CClipOpCastToClipOp(OH_Drawing_CanvasShadowFlags cFlag)
 {
     ShadowFlags shadowFlags = ShadowFlags::NONE;
-    switch (cFlag)
-    {
-    case OH_Drawing_CanvasShadowFlags::SHADOW_FLAGS_NONE:
-        shadowFlags = ShadowFlags::NONE;
-        break;
-    case OH_Drawing_CanvasShadowFlags::SHADOW_FLAGS_TRANSPARENT_OCCLUDER:
-        shadowFlags = ShadowFlags::TRANSPARENT_OCCLUDER;
-        break;
-    case OH_Drawing_CanvasShadowFlags::SHADOW_FLAGS_GEOMETRIC_ONLY:
-        shadowFlags = ShadowFlags::GEOMETRIC_ONLY;
-        break;
-    case OH_Drawing_CanvasShadowFlags::SHADOW_FLAGS_ALL:
-        shadowFlags = ShadowFlags::ALL;
-        break;
-    default:
-        break;
+    switch (cFlag) {
+        case OH_Drawing_CanvasShadowFlags::SHADOW_FLAGS_NONE:
+            shadowFlags = ShadowFlags::NONE;
+            break;
+        case OH_Drawing_CanvasShadowFlags::SHADOW_FLAGS_TRANSPARENT_OCCLUDER:
+            shadowFlags = ShadowFlags::TRANSPARENT_OCCLUDER;
+            break;
+        case OH_Drawing_CanvasShadowFlags::SHADOW_FLAGS_GEOMETRIC_ONLY:
+            shadowFlags = ShadowFlags::GEOMETRIC_ONLY;
+            break;
+        case OH_Drawing_CanvasShadowFlags::SHADOW_FLAGS_ALL:
+            shadowFlags = ShadowFlags::ALL;
+            break;
+        default:
+            break;
     }
     return shadowFlags;
 }
