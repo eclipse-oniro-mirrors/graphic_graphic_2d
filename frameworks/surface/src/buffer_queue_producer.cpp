@@ -729,7 +729,7 @@ void BufferQueueProducer::OnBufferProducerRemoteDied()
     {
         std::lock_guard<std::mutex> lock(mutex_);
         if (connectedPid_ == 0) {
-            BLOGNI("this bufferQueue has no connections");
+            BLOGND("this bufferQueue has no connections");
             return;
         }
         connectedPid_ = 0;
@@ -760,7 +760,7 @@ void BufferQueueProducer::ProducerSurfaceDeathRecipient::OnRemoteDied(const wptr
         BLOGNI("token doesn't match, ignore it.");
         return;
     }
-    BLOGNW("remote object died.");
+    BLOGND("remote object died.");
     producer->OnBufferProducerRemoteDied();
 }
 }; // namespace OHOS
