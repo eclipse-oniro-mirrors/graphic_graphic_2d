@@ -555,7 +555,7 @@ bool RSCanvasDrawingRenderNode::GetPixelmap(std::shared_ptr<Media::PixelMap> pix
         return false;
     }
 
-    Drawing::ImageInfo info = Drawing::ImageInfo{ image->GetWidth(), image->GetHeight(),
+    Drawing::ImageInfo info = Drawing::ImageInfo{ pixelmap->GetWidth(), pixelmap->GetHeight(),
         Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
     if (!drawCmdList) {
         if (!WriteSkImageToPixelmap(image, info, pixelmap, rect)) {
