@@ -1285,10 +1285,18 @@ RSBlendSaveLayerDrawable::RSBlendSaveLayerDrawable(int blendMode)
 void RSBlendSaveLayerDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
 {
 #ifndef USE_ROSEN_DRAWING
+    auto matrix = canvas.getTotalMatrix();
+    matrix.setTranslateX(std::ceil(matrix.getTranslateX()));
+    matrix.setTranslateY(std::ceil(matrix.getTranslateY()));
+    canvas.setMatrix(matrix);
     auto paint = blendPaint_;
     paint.setAlphaf(canvas.GetAlpha());
     canvas.saveLayer(nullptr, &paint);
 #else
+    auto matrix = canvas.GetTotalMatrix();
+    matrix.Set(Drawing::Matrix::TRANS_X, std::ceil(matrix.Get(Drawing::Matrix::TRANS_X)));
+    matrix.Set(Drawing::Matrix::TRANS_Y, std::ceil(matrix.Get(Drawing::Matrix::TRANS_Y)));
+    canvas.SetMatrix(matrix);
     auto brush = blendBrush_;
     brush.SetAlphaF(canvas.GetAlpha());
     Drawing::SaveLayerOps maskLayerRec(nullptr, &brush, nullptr, 0);
