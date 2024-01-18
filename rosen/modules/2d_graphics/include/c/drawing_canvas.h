@@ -363,6 +363,107 @@ void OH_Drawing_CanvasScale(OH_Drawing_Canvas*, float sx, float sy);
  */
 void OH_Drawing_CanvasClear(OH_Drawing_Canvas*, uint32_t color);
 
+/**
+ * @brief Get the width of a canvas.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Canvas Indicates the pointer to an <b>OH_Drawing_Canvas</b> object.
+ * @since 12
+ * @version 1.0
+ */
+int32_t OH_Drawing_CanvasGetWidth(OH_Drawing_Canvas*);
+
+/**
+ * @brief Get the height of a canvas.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Canvas Indicates the pointer to an <b>OH_Drawing_Canvas</b> object.
+ * @since 12
+ * @version 1.0
+ */
+int32_t OH_Drawing_CanvasGetHeight(OH_Drawing_Canvas*);
+
+/**
+ * @brief Get the bounds of clip of a canvas.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Canvas Indicates the pointer to an <b>OH_Drawing_Canvas</b> object.
+ * @return The pointer to an <b>OH_Drawing_Rect</b> object, represents the boundar of clip,
+ * transformed by inverse of matrix.
+ * @since 12
+ * @version 1.0
+ */
+OH_Drawing_Rect* OH_Drawing_CanvasGetLocalClipBounds(OH_Drawing_Canvas*);
+
+/**
+ * @brief Get a 3x3 matrix of the transform from local coordinates to 'device'
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Canvas Indicates the pointer to an <b>OH_Drawing_Canvas</b> object.
+ * @return The pointer to an <b>OH_Drawing_Matrix</b> object.
+ * @since 12
+ * @version 1.0
+ */
+OH_Drawing_Matrix* OH_Drawing_CanvasGetLocalToDevice(OH_Drawing_Canvas*);
+
+/**
+ * @brief Use the passed matrix to transforming the geometry, then use existing matrix.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Canvas Indicates the pointer to an <b>OH_Drawing_Canvas</b> object.
+ * @param OH_Drawing_Matrix Indicates the pointer to an <b>OH_Drawing_Matrix</b> object,
+ * represents the matrix which is passed.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_CanvasConcatMatrix(OH_Drawing_Canvas*, OH_Drawing_Matrix*);
+
+/**
+ * @brief Enumerates of shadow flags.
+ *
+ * @since 12
+ * @version 1.0
+ */
+typedef enum {
+    /**
+     * Use no shadow flags.
+     */
+    SHADOW_FLAGS_NONE,
+    /**
+     * The occluding object is transparent.
+     */
+    SHADOW_FLAGS_TRANSPARENT_OCCLUDER,
+    /**
+     * No need to analyze shadows.
+     */
+    SHADOW_FLAGS_GEOMETRIC_ONLY,
+    /**
+     * Use all shadow falgs.
+     */
+    SHADOW_FLAGS_ALL,
+} OH_Drawing_CanvasShadowFlags;
+
+/**
+ * @brief Use circular light to draw an offset spot shadow and outlining ambient shadow for the given path.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Canvas Indicates the pointer to an <b>OH_Drawing_Canvas</b> object.
+ * @param OH_Drawing_Path Indicates the pointer to an <b>OH_Drawing_Path</b> object, use to generate shadows.
+ * @param OH_Drawing_Point3 Indicates the pointer to an <b>OH_Drawing_Point3</b> object.
+ * represents the value of the function which returns Z offset of the occluder from the canvas based on x and y.
+ * @param OH_Drawing_Point3 Indicates the pointer to an <b>OH_Drawing_Point3</b> object.
+ * represents the position of the light relative to the canvas.
+ * @param lightRadius The radius of the circular light.
+ * @param ambientColor Ambient shadow's color.
+ * @param spotColor Spot shadow's color.
+ * @param flag Indicates the flag to control opaque occluder, shadow, and light position.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_CanvasDrawShadow(OH_Drawing_Canvas*, OH_Drawing_Path*, OH_Drawing_Point3*,
+    OH_Drawing_Point3*, float lightRadius, uint32_t ambientColor, uint32_t spotColor,
+    OH_Drawing_CanvasShadowFlags flag);
+
 #ifdef __cplusplus
 }
 #endif

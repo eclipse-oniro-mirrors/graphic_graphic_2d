@@ -16,6 +16,7 @@
 #include "c/drawing_point.h"
 
 #include "utils/point.h"
+#include "utils/point3.h"
 
 using namespace OHOS;
 using namespace Rosen;
@@ -34,4 +35,19 @@ OH_Drawing_Point* OH_Drawing_PointCreate(float x, float y)
 void OH_Drawing_PointDestroy(OH_Drawing_Point* cPoint)
 {
     delete CastToPoint(cPoint);
+}
+
+static Point3* CastToPoint3(OH_Drawing_Point3* cPoint3)
+{
+    return reinterpret_cast<Point3*>(cPoint3);
+}
+
+OH_Drawing_Point3* OH_Drawing_Point3Create(float x, float y, float z)
+{
+    return (OH_Drawing_Point3*)new Point3(x, y, z);
+}
+
+void OH_Drawing_Point3Destroy(OH_Drawing_Point3* cPoint3)
+{
+    delete CastToPoint3(cPoint3);
 }
