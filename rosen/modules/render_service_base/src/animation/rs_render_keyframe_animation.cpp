@@ -158,21 +158,7 @@ bool RSRenderKeyframeAnimation::ParseParam(Parcel& parcel)
     keyframes_.clear();
     durationKeyframes_.clear();
     if (isDurationKeyframe_) {
-        float startFraction = 0;
-        float endFraction = 0;
-        for (uint32_t i = 0; i < size; i++) {
-            if (!(parcel.ReadFloat(startFraction)) || !(parcel.ReadFloat(endFraction))) {
-                ROSEN_LOGE("RSRenderKeyframeAnimation::ParseParam, Unmarshalling duration value failed");
-                return false;
-            }
-            std::shared_ptr<RSRenderPropertyBase> tupValue1;
-            if (!RSRenderPropertyBase::Unmarshalling(parcel, tupValue1)) {
-                return false;
-            }
-            std::shared_ptr<RSInterpolator> interpolator(RSInterpolator::Unmarshalling(parcel));
-            durationKeyframes_.emplace_back(std::make_tuple(startFraction, endFraction, tupValue1, interpolator));
-        }
-        return true;
+        return ParseDurationKeyframesParam(parcel, size);
     }
     float tupValue0 = 0;
     for (uint32_t i = 0; i < size; i++) {
@@ -186,6 +172,25 @@ bool RSRenderKeyframeAnimation::ParseParam(Parcel& parcel)
         }
         std::shared_ptr<RSInterpolator> interpolator(RSInterpolator::Unmarshalling(parcel));
         keyframes_.emplace_back(std::make_tuple(tupValue0, tupValue1, interpolator));
+    }
+    return true;
+}
+
+bool RSRenderKeyframeAnimation::ParseDurationKeyframesParam(Parcel& parcel, int keyframeSize)
+{
+    float startFraction = 0;
+    float endFraction = 0;
+    for (uint32_t i = 0; i < keyframeSize; i++) {
+        if (!(parcel.ReadFloat(startFraction)) || !(parcel.ReadFloat(endFraction))) {
+            ROSEN_LOGE("RSRenderKeyframeAnimation::ParseParam, Unmarshalling duration value failed");
+            return false;
+        }
+        std::shared_ptr<RSRenderPropertyBase> tupValue1;
+        if (!RSRenderPropertyBase::Unmarshalling(parcel, tupValue1)) {
+            return false;
+        }
+        std::shared_ptr<RSInterpolator> interpolator(RSInterpolator::Unmarshalling(parcel));
+        durationKeyframes_.emplace_back(std::make_tuple(startFraction, endFraction, tupValue1, interpolator));
     }
     return true;
 }
