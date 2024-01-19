@@ -14,7 +14,7 @@
 */
 
 #include "memory_handler.h"
-#include "renser_context_log.h"
+#include "render_context_log.h"
 #include <set>
 #include <cmath>
 
