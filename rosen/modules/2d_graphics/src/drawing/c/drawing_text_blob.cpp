@@ -40,9 +40,72 @@ static const Rect* CastToRect(const OH_Drawing_Rect* cRect)
     return reinterpret_cast<const Rect*>(cRect);
 }
 
+static const Point* CastToPoint(const OH_Drawing_Point* cPoint)
+{
+    return reinterpret_cast<const Point*>(cPoint);
+}
+
 OH_Drawing_TextBlobBuilder* OH_Drawing_TextBlobBuilderCreate()
 {
     return (OH_Drawing_TextBlobBuilder*)new TextBlobBuilder;
+}
+
+OH_Drawing_TextBlob* OH_Drawing_TextBlobCreateFromText(const void* text, size_t byteLength,
+    const OH_Drawing_Font* cFont, OH_Drawing_TextEncoding cTextEncoding)
+{
+    if (cFont == nullptr) {
+        return nullptr;
+    }
+    const Font font = CastToFont(*cFont);
+    std::shared_ptr<TextBlob> textBlob = TextBlob::MakeFromText(text,
+        byteLength, font, static_cast<TextEncoding>(cTextEncoding));
+    g_textBlobMap.insert({textBlob.get(), textBlob});
+    return (OH_Drawing_TextBlob*)textBlob.get();
+}
+
+OH_Drawing_TextBlob* OH_Drawing_TextBlobCreateFromPosText(const void* text, size_t byteLength,
+    OH_Drawing_Point* cPoints, const OH_Drawing_Font* cFont, OH_Drawing_TextEncoding cTextEncoding)
+{
+    if (cFont == nullptr || cPoints == nullptr) {
+        return nullptr;
+    }
+    const Font font = CastToFont(*cFont);
+    const Point* points = CastToPoint(cPoints);
+    std::shared_ptr<TextBlob> textBlob = TextBlob::MakeFromPosText(text, byteLength,
+        points, font, static_cast<TextEncoding>(cTextEncoding));
+    g_textBlobMap.insert({textBlob.get(), textBlob});
+    return (OH_Drawing_TextBlob*)textBlob.get();
+}
+
+OH_Drawing_TextBlob* OH_Drawing_TextBlobCreateFromString(const char* str,
+    const OH_Drawing_Font* cFont, OH_Drawing_TextEncoding cTextEncoding)
+{
+    if (cFont == nullptr) {
+        return nullptr;
+    }
+    const Font font = CastToFont(*cFont);
+    std::shared_ptr<TextBlob> textBlob = TextBlob::MakeFromString(str,
+        font, static_cast<TextEncoding>(cTextEncoding));
+    g_textBlobMap.insert({textBlob.get(), textBlob});
+    return (OH_Drawing_TextBlob*)textBlob.get();
+}
+
+void OH_Drawing_TextBlobGetBounds(OH_Drawing_TextBlob* cTextBlob, OH_Drawing_Rect* cRect)
+{
+    auto it = g_textBlobMap.find(cTextBlob);
+    if (it == g_textBlobMap.end()) {
+        return;
+    }
+    std::shared_ptr<TextBlob> textblob = it->second;
+    if (textblob == nullptr) {
+        return;
+    }
+    std::shared_ptr<Rect> rect = textblob->Bounds();
+    if (cRect != nullptr) {
+        Rect* outRect = const_cast<Rect*>(CastToRect(cRect));
+        *outRect = Rect(rect->GetLeft(), rect->GetTop(),
+            rect->GetRight(), rect->GetBottom());
+    }
 }
 
 const OH_Drawing_RunBuffer* OH_Drawing_TextBlobBuilderAllocRunPos(OH_Drawing_TextBlobBuilder* cTextBlobBuilder,

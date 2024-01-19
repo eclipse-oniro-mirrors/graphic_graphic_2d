@@ -91,7 +91,7 @@ scalar Font::GetSize() const
     return fontImpl_->GetSize();
 }
 
-std::shared_ptr<Typeface> Font::GetTypeface() const
+std::shared_ptr<Typeface> Font::GetTypeface()
 {
     return fontImpl_->GetTypeface();
 }
