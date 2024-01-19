@@ -121,7 +121,7 @@ GSError BufferClientProducer::GetLastFlushedBuffer(sptr<SurfaceBuffer>& buffer,
     std::vector<float> readMatrixVector;
     reply.ReadFloatVector(&readMatrixVector);
     if (memcpy_s(matrix, matrixSize * sizeof(float),
-        &readMatrixVector, readMatrixVector.size() * sizeof(float)) != EOK) {
+        readMatrixVector.data(), readMatrixVector.size() * sizeof(float)) != EOK) {
         BLOGN_FAILURE("memcpy_s fail");
         return GSERROR_API_FAILED;
     }
