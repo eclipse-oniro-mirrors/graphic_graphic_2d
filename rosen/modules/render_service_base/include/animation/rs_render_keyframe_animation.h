@@ -48,6 +48,7 @@ protected:
 private:
     RSRenderKeyframeAnimation() = default;
     bool ParseParam(Parcel& parcel) override;
+    bool ParseDurationKeyframesParam(Parcel& parcel, int keyframeSize);
     std::vector<std::tuple<float, std::shared_ptr<RSRenderPropertyBase>, std::shared_ptr<RSInterpolator>>> keyframes_;
     std::vector<std::tuple<float, float, std::shared_ptr<RSRenderPropertyBase>,
         std::shared_ptr<RSInterpolator>>> durationKeyframes_;

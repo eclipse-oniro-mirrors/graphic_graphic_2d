@@ -185,30 +185,7 @@ public:
     T GetAnimationValue(const float fraction, const bool isAdditive)
     {
         if (!(durationKeyframes_.empty())) {
-            auto preKeyframeValue = std::get<2>(durationKeyframes_.front());
-            for (const auto& keyframe : durationKeyframes_) {
-                float startFraction = std::get<0>(keyframe);
-                float endFraction = std::get<1>(keyframe);
-                auto keyframeValue = std::get<2>(keyframe);
-                auto keyframeInterpolator = std::get<3>(keyframe);
-                if (fraction < startFraction) {
-                    break;
-                }
-                if ((fraction > startFraction) && (fraction <= endFraction)) {
-                    float intervalFraction = (fraction - startFraction) / (endFraction - startFraction);
-                    auto interpolationValue = RSValueEstimator::Estimate(
-                        keyframeInterpolator->Interpolate(intervalFraction), preKeyframeValue, keyframeValue);
-                    auto animationValue = interpolationValue;
-                    if (isAdditive && property_ != nullptr) {
-                        animationValue = property_->Get() + interpolationValue - lastValue_;
-                    }
-                    lastValue_ = interpolationValue;
-                    preKeyframeValue = animationValue;
-                    continue;
-                }
-                preKeyframeValue = keyframeValue;
-            }
-            return preKeyframeValue;
+            return GetDurationKeyframeAnimationValue(fraction, isAdditive);
         }
         float preKeyframeFraction = std::get<0>(keyframes_.front());
         auto preKeyframeValue = std::get<1>(keyframes_.front());
@@ -234,6 +211,34 @@ public:
             }
 
             preKeyframeFraction = keyframeFraction;
+            preKeyframeValue = keyframeValue;
+        }
+        return preKeyframeValue;
+    }
+
+    T GetDurationKeyframeAnimationValue(const float fraction, const bool isAdditive)
+    {
+        auto preKeyframeValue = std::get<2>(durationKeyframes_.front());
+        for (const auto& keyframe : durationKeyframes_) {
+            float startFraction = std::get<0>(keyframe);
+            float endFraction = std::get<1>(keyframe);
+            auto keyframeValue = std::get<2>(keyframe);
+            auto keyframeInterpolator = std::get<3>(keyframe);
+            if (fraction < startFraction) {
+                break;
+            }
+            if ((fraction > startFraction) && (fraction <= endFraction)) {
+                float intervalFraction = (fraction - startFraction) / (endFraction - startFraction);
+                auto interpolationValue = RSValueEstimator::Estimate(
+                    keyframeInterpolator->Interpolate(intervalFraction), preKeyframeValue, keyframeValue);
+                auto animationValue = interpolationValue;
+                if (isAdditive && property_ != nullptr) {
+                    animationValue = property_->Get() + interpolationValue - lastValue_;
+                }
+                lastValue_ = interpolationValue;
+                preKeyframeValue = animationValue;
+                continue;
+            }
             preKeyframeValue = keyframeValue;
         }
         return preKeyframeValue;

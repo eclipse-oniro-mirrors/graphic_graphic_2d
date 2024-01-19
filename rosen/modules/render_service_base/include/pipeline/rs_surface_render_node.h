@@ -401,6 +401,11 @@ public:
         return transparentRegion_;
     }
 
+    const Occlusion::Region& GetOpaqueRegion() const
+    {
+        return opaqueRegion_;
+    }
+
     Occlusion::Region& GetOpaqueRegion()
     {
         return opaqueRegion_;
@@ -877,6 +882,16 @@ public:
         hasSkipLayer_ = hasSkipLayer;
     }
 
+    bool GetHwcDelayDirtyFlag() const noexcept
+    {
+        return hwcDelayDirtyFlag_;
+    }
+
+    void SetHwcDelayDirtyFlag(bool hwcDelayDirtyFlag)
+    {
+        hwcDelayDirtyFlag_ = hwcDelayDirtyFlag;
+    }
+
     bool GetSurfaceCacheContentStatic()
     {
         return surfaceCacheContentStatic_;
@@ -944,6 +959,7 @@ public:
     bool GetHasSharedTransitionNode() const;
     void SetHasSharedTransitionNode(bool hasSharedTransitionNode);
     Vector2f GetGravityTranslate(float imgWidth, float imgHeight);
+    bool GetHasTransparentSurface() const;
 
     bool HasWindowCorner()
     {
@@ -1155,6 +1171,9 @@ private:
 
     uint32_t processZOrder_ = -1;
 
+    // mark if this self-drawing node do not consume buffer when gpu -> hwc
+    bool hwcDelayDirtyFlag_ = false;
+
     // UIFirst
     uint32_t submittedSubThreadIndex_ = INT_MAX;
     std::atomic<CacheProcessStatus> cacheProcessStatus_ = CacheProcessStatus::WAITING;
@@ -1172,6 +1191,7 @@ private:
 
     std::atomic<bool> hasUnSubmittedOccludedDirtyRegion_ = false;
     RectI historyUnSubmittedOccludedDirtyRegion_;
+    bool hasTransparentSurface_ = false;
 
     friend class RSUniRenderVisitor;
     friend class RSRenderNode;

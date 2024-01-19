@@ -21,6 +21,7 @@
 #include "rs_trace.h"
 #else // ENABLE_NATIVEBUFFER
 #include <memory>
+#include "memory/rs_tag_tracker.h"
 #include "SkColor.h"
 #include "native_buffer_inner.h"
 #include "native_window.h"
@@ -291,6 +292,10 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
 
     auto& surface = mSurfaceMap[mSurfaceList.front()];
 
+    DestroySemaphoreInfo* destroyInfo =
+        new DestroySemaphoreInfo(vkContext.vkDestroySemaphore, vkContext.GetDevice(), semaphore);
+    RSTagTracker tagTracker(mSkContext.get(), RSTagTracker::TAGTYPE::TAG_ACQUIRE_SURFACE);
+
 #ifndef USE_ROSEN_DRAWING
     GrFlushInfo flushInfo;
     flushInfo.fNumSemaphores = 1;
@@ -302,6 +307,8 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
     drawingFlushInfo.backendSurfaceAccess = true;
     drawingFlushInfo.numSemaphores = 1;
     drawingFlushInfo.backendSemaphore = static_cast<void*>(&backendSemaphore);
+    drawingFlushInfo.finishedProc = destroy_semaphore;
+    drawingFlushInfo.finishedContext = destroyInfo;
     surface.drawingSurface->Flush(&drawingFlushInfo);
     mSkContext->Submit();
 #endif
@@ -314,6 +321,8 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
     auto err = RsVulkanContext::HookedVkQueueSignalReleaseImageOHOS(
         queue, 1, &semaphore, surface.image, &fenceFd);
     if (err != VK_SUCCESS) {
+        destroy_semaphore(destroyInfo);
+        destroyInfo = nullptr;
         ROSEN_LOGE("RSSurfaceOhosVulkan QueueSignalReleaseImageOHOS failed %{public}d", err);
         return false;
     }
@@ -324,7 +333,7 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
         return false;
     }
     mSurfaceList.pop_front();
-    vkContext.vkDestroySemaphore(vkContext.GetDevice(), semaphore, nullptr);
+    destroy_semaphore(destroyInfo);
     surface.fence.reset();
     surface.lastPresentedCount = mPresentCount;
     mPresentCount++;

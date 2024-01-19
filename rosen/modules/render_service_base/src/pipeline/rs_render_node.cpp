@@ -634,7 +634,8 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
         std::string propertyAlpha = std::to_string(surfaceNode->GetRenderProperties().GetAlpha());
         out += ", Alpha: " + propertyAlpha + " (include ContextAlpha: " + contextAlpha + ")";
         out += ", Visible: " + std::to_string(surfaceNode->GetRenderProperties().GetVisible());
-        out += ", " + surfaceNode->GetVisibleRegion().GetRegionInfo();
+        out += ", Visible " + surfaceNode->GetVisibleRegion().GetRegionInfo();
+        out += ", Opaque " + surfaceNode->GetOpaqueRegion().GetRegionInfo();
         out += ", OcclusionBg: " + std::to_string(surfaceNode->GetAbilityBgAlpha());
         out += ", SecurityLayer: " + std::to_string(surfaceNode->GetSecurityLayer());
         out += ", skipLayer: " + std::to_string(surfaceNode->GetSkipLayer());
@@ -1529,6 +1530,7 @@ void RSRenderNode::UpdateShouldPaint()
     if (!shouldPaint_) {
         // clear filter cache when node is not visible
         GetMutableRenderProperties().ClearFilterCache();
+        GetMutableRenderProperties().ReleaseColorPickerTaskShadow();
     }
 #endif
 }
@@ -2262,6 +2264,7 @@ void RSRenderNode::OnTreeStateChanged()
     if (!isOnTheTree_) {
         // clear filter cache when node is removed from tree
         GetMutableRenderProperties().ClearFilterCache();
+        GetMutableRenderProperties().ReleaseColorPickerTaskShadow();
     }
 #endif
 }
