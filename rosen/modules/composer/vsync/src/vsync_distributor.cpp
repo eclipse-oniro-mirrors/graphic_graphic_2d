@@ -179,20 +179,6 @@ VsyncError VSyncConnection::SetVSyncRate(int32_t rate)
     return distributor->SetVSyncRate(rate, this);
 }
 
-VsyncError VSyncConnection::GetVSyncPeriod(int64_t &period)
-{
-    std::unique_lock<std::mutex> locker(mutex_);
-    if (isDead_) {
-        VLOGE("%{public}s VSync Client Connection is dead, name:%{public}s.", __func__, info_.name_.c_str());
-        return VSYNC_ERROR_API_FAILED;
-    }
-    const sptr<VSyncDistributor> distributor = distributor_.promote();
-    if (distributor == nullptr) {
-        return VSYNC_ERROR_NULLPTR;
-    }
-    return distributor->GetVSyncPeriod(period);
-}
-
 VsyncError VSyncConnection::CleanAllLocked()
 {
     socketPair_ = nullptr;
@@ -403,6 +389,13 @@ void VSyncDistributor::CollectConnections(bool &waitForVSync, int64_t timestamp,
                 connections_[i]->triggerThisTime_ = false;
             }
         } else if (rate > 0) {
+            ScopedBytrace trace("CollectConnections name:" + connections_[i]->info_.name_ +
+                                ", proxyPid:" + std::to_string(connections_[i]->proxyPid_) +
+                                ", highPriorityState_:" + std::to_string(connections_[i]->highPriorityState_) +
+                                ", highPriorityRate_:" + std::to_string(connections_[i]->highPriorityRate_) +
+                                ", rate_:" + std::to_string(connections_[i]->rate_) +
+                                ", timestamp:" + std::to_string(timestamp) +
+                                ", vsyncCount:" + std::to_string(vsyncCount));
             if (connections_[i]->rate_ == 0) {  // for SetHighPriorityVSyncRate with RequestNextVSync
                 waitForVSync = true;
                 if (timestamp > 0 && (vsyncCount % rate == 0)) {
@@ -591,13 +584,6 @@ VsyncError VSyncDistributor::GetQosVSyncRateInfos(std::vector<std::pair<uint32_t
         int32_t tmpRate = connection->highPriorityState_ ? connection->highPriorityRate_ : connection->rate_;
         vsyncRateInfos.push_back(std::make_pair(tmpPid, tmpRate));
     }
-    return VSYNC_ERROR_OK;
-}
-
-VsyncError VSyncDistributor::GetVSyncPeriod(int64_t &period)
-{
-    std::lock_guard<std::mutex> locker(mutex_);
-    period = event_.period;
     return VSYNC_ERROR_OK;
 }
 

@@ -32,8 +32,6 @@ public:
     // if rate > 0, we will continue to send Vsync signals at a frequency of FREQ / rate
     virtual VsyncError SetVSyncRate(int32_t rate) = 0;
 
-    virtual VsyncError GetVSyncPeriod(int64_t &period) = 0;
-
     virtual VsyncError Destroy() = 0;
 
     DECLARE_INTERFACE_DESCRIPTOR(u"IVSyncConnection");
@@ -43,7 +41,6 @@ protected:
         IVSYNC_CONNECTION_REQUEST_NEXT_VSYNC,
         IVSYNC_CONNECTION_GET_RECEIVE_FD,
         IVSYNC_CONNECTION_SET_RATE,
-        IVSYNC_CONNECTION_GET_PERIOD,
         IVSYNC_CONNECTION_DESTROY,
     };
 };
