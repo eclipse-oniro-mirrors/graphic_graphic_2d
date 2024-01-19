@@ -528,10 +528,30 @@ void RSImplicitAnimator::CreateImplicitAnimation(const std::shared_ptr<RSNode>& 
             return;
         }
         case ImplicitAnimationParamType::CANCEL: {
+            // CreateEmptyAnimation
+            if (property->id_ == 0) {
+                auto curveImplicitParam = static_cast<RSImplicitCancelAnimationParam*>(params.get());
+                animation = curveImplicitParam->CreateEmptyAnimation(property, startValue, endValue);
+                break;
+            }
+
             // Create animation with CANCEL type will cancel all running animations of the given property and target.
-            auto curveImplicitParam = static_cast<RSImplicitCancelAnimationParam*>(params.get());
-            animation = curveImplicitParam->CreateEmptyAnimation(property, startValue, endValue);
-            break;
+            // Note: We are currently in the process of refactoring and accidentally changed the order of animation
+            // callbacks. Originally, the order was OnChange before OnFinish, but we mistakenly changed it to OnFinish
+            // before OnChange. This change has caused some issues, and we need to revert it back to the original order.
+            // However, before fixing this, we discovered that there are some changes in arkui that rely on this 'bug'.
+            // If we change it back to the original order, it will break the list swipe animation. Therefore, we need
+            // to carefully consider the implications of this change before proceeding.
+            if (property->GetIsCustom()) {
+                property->SetValue(endValue);                         // update set ui value
+                property->UpdateCustomAnimation();                    // force sync RS value for custom property
+                target->CancelAnimationByProperty(property->GetId()); // finish all ui animation
+            } else {
+                target->FinishAnimationByProperty(property->GetId()); // finish all ui animation
+                property->SetValue(endValue);                         // update set ui value
+                property->UpdateOnAllAnimationFinish();               // force sync RS value for native property
+            }
+            return;
         }
         default:
             ROSEN_LOGE("Failed to create animation, unknow type!");

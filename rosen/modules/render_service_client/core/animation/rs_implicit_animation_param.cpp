@@ -134,8 +134,9 @@ void RSImplicitCancelAnimationParam::ExecuteSyncPropertiesTask(
     }
 }
 
-std::shared_ptr<RSAnimation> RSImplicitCancelAnimationParam::CreateEmptyAnimation(std::shared_ptr<RSPropertyBase> property,
-    const std::shared_ptr<RSPropertyBase>& startValue, const std::shared_ptr<RSPropertyBase>& endValue) const
+std::shared_ptr<RSAnimation> RSImplicitCancelAnimationParam::CreateEmptyAnimation(
+    std::shared_ptr<RSPropertyBase> property, const std::shared_ptr<RSPropertyBase>& startValue,
+    const std::shared_ptr<RSPropertyBase>& endValue) const
 {
     auto curveAnimation = std::make_shared<RSCurveAnimation>(property, endValue - startValue);
     curveAnimation->SetDuration(0);
