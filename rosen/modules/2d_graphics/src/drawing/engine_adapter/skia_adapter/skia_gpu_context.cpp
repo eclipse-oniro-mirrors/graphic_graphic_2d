@@ -14,9 +14,7 @@
  */
 
 #include "skia_gpu_context.h"
-#ifdef RS_ENABLE_VK
 #include <mutex>
-#endif
 #include "include/gpu/gl/GrGLInterface.h"
 #include "src/gpu/GrDirectContextPriv.h"
 #include "include/core/SkTypes.h"
@@ -67,6 +65,17 @@ void SkiaPersistentCache::store(const SkData& key, const SkData& data)
 
 SkiaGPUContext::SkiaGPUContext() : grContext_(nullptr), skiaPersistentCache_(nullptr) {}
 
+std::unique_ptr<SkExecutor> SkiaGPUContext::threadPool = nullptr;
+void SkiaGPUContext::InitSkExecutor()
+{
+    static std::mutex mtx;
+    mtx.lock();
+    if (threadPool == nullptr) {
+        threadPool = SkExecutor::MakeFIFOThreadPool(3); // 3 threads async task
+    }
+    mtx.unlock();
+}
+
 bool SkiaGPUContext::BuildFromGL(const GPUContextOptions& options)
 {
     sk_sp<const GrGLInterface> glInterface(GrGLCreateNativeInterface());
@@ -74,12 +83,14 @@ bool SkiaGPUContext::BuildFromGL(const GPUContextOptions& options)
         skiaPersistentCache_ = std::make_shared<SkiaPersistentCache>(options.GetPersistentCache());
     }
 
+    InitSkExecutor();
     GrContextOptions grOptions;
     grOptions.fGpuPathRenderers &= ~GpuPathRenderers::kCoverageCounting;
     grOptions.fPreferExternalImagesOverES3 = true;
     grOptions.fDisableDistanceFieldPaths = true;
     grOptions.fAllowPathMaskCaching = options.GetAllowPathMaskCaching();
     grOptions.fPersistentCache = skiaPersistentCache_.get();
+    grOptions.fExecutor = threadPool.get();
 #ifdef NEW_SKIA
     grContext_ = GrDirectContext::MakeGL(std::move(glInterface), grOptions);
 #else
@@ -89,16 +100,6 @@ bool SkiaGPUContext::BuildFromGL(const GPUContextOptions& options)
 }
 
 #ifdef RS_ENABLE_VK
-std::unique_ptr<SkExecutor> SkiaGPUContext::threadPool = nullptr;
-void SkiaGPUContext::InitSkExecutor()
-{
-    static std::mutex mtx;
-    mtx.lock();
-    if (threadPool == nullptr) {
-        threadPool = SkExecutor::MakeFIFOThreadPool(2); // 2 threads async task
-    }
-    mtx.unlock();
-}
 bool SkiaGPUContext::BuildFromVK(const GrVkBackendContext& context)
 {
     if (SystemProperties::GetGpuApiType() != GpuApiType::VULKAN &&

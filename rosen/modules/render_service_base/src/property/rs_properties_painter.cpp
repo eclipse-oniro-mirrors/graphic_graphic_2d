@@ -356,10 +356,7 @@ void RSPropertiesPainter::GetShadowDirtyRect(RectI& dirtyShadow, const RSPropert
     skPath.offset(properties.GetShadowOffsetX(), properties.GetShadowOffsetY());
 
     SkRect shadowRect = skPath.getBounds();
-    if (properties.shadow_->GetHardwareAcceleration()) {
-        if (properties.GetShadowElevation() <= 0.f) {
-            return;
-        }
+    if (properties.GetShadowElevation() > 0.f) {
         float elevation = properties.GetShadowElevation() + DEFAULT_TRANSLATION_Z;
 
         float userTransRatio =
@@ -423,10 +420,7 @@ void RSPropertiesPainter::GetShadowDirtyRect(RectI& dirtyShadow, const RSPropert
     path.Offset(properties.GetShadowOffsetX(), properties.GetShadowOffsetY());
 
     Drawing::Rect shadowRect = path.GetBounds();
-    if (properties.shadow_->GetHardwareAcceleration()) {
-        if (properties.GetShadowElevation() <= 0.f) {
-            return;
-        }
+    if (properties.GetShadowElevation() > 0.f) {
         float elevation = properties.GetShadowElevation() + DEFAULT_TRANSLATION_Z;
 
         float userTransRatio =
@@ -559,7 +553,7 @@ void RSPropertiesPainter::DrawColorfulShadowInner(
 {
     // blurRadius calculation is based on the formula in SkShadowUtils::DrawShadow, 0.25f and 128.0f are constants
     const SkScalar blurRadius =
-        properties.shadow_->GetHardwareAcceleration()
+        properties.GetShadowElevation() > 0.f
             ? 0.25f * properties.GetShadowElevation() * (1 + properties.GetShadowElevation() / 128.0f)
             : properties.GetShadowRadius();
 
@@ -583,7 +577,7 @@ void RSPropertiesPainter::DrawColorfulShadowInner(
 {
     // blurRadius calculation is based on the formula in Canvas::DrawShadow, 0.25f and 128.0f are constants
     const Drawing::scalar blurRadius =
-        properties.shadow_->GetHardwareAcceleration()
+        properties.GetShadowElevation() > 0.f
             ? 0.25f * properties.GetShadowElevation() * (1 + properties.GetShadowElevation() / 128.0f)
             : properties.GetShadowRadius();
 
@@ -792,10 +786,7 @@ void RSPropertiesPainter::DrawShadowInner(const RSProperties& properties, RSPain
         colorPicked = spotColor;
     }
 
-    if (properties.shadow_->GetHardwareAcceleration()) {
-        if (properties.GetShadowElevation() <= 0.f) {
-            return;
-        }
+    if (properties.GetShadowElevation() > 0.f) {
         SkPoint3 planeParams = { 0.0f, 0.0f, properties.GetShadowElevation() };
         SkPoint pt = { skPath.getBounds().centerX(), skPath.getBounds().centerY() };
         canvas.getTotalMatrix().mapPoints(&pt, 1);
@@ -849,10 +840,7 @@ void RSPropertiesPainter::DrawShadowInner(
         colorPicked = spotColor;
     }
 
-    if (properties.shadow_->GetHardwareAcceleration()) {
-        if (properties.GetShadowElevation() <= 0.f) {
-            return;
-        }
+    if (properties.GetShadowElevation() > 0.f) {
         Drawing::Point3 planeParams = { 0.0f, 0.0f, properties.GetShadowElevation() };
         std::vector<Drawing::Point> pt{{path.GetBounds().GetLeft() + path.GetBounds().GetWidth() / 2,
             path.GetBounds().GetTop() + path.GetBounds().GetHeight() / 2}};
@@ -3027,11 +3015,21 @@ void RSPropertiesPainter::BeginBlendMode(RSPaintFilterCanvas& canvas, const RSPr
 
     // save layer mode
 #ifndef USE_ROSEN_DRAWING
+    auto matrix = canvas.getTotalMatrix();
+    matrix.setTranslateX(std::ceil(matrix.getTranslateX()));
+    matrix.setTranslateY(std::ceil(matrix.getTranslateY()));
+    canvas.setMatrix(matrix);
     SkPaint blendPaint_;
+    blendPaint_.setAlphaf(canvas.GetAlpha());
     blendPaint_.setBlendMode(static_cast<SkBlendMode>(blendMode - 1)); // map blendMode to SkBlendMode
     canvas.saveLayer(nullptr, &blendPaint_);
 #else
+    auto matrix = canvas.GetTotalMatrix();
+    matrix.Set(Drawing::Matrix::TRANS_X, std::ceil(matrix.Get(Drawing::Matrix::TRANS_X)));
+    matrix.Set(Drawing::Matrix::TRANS_Y, std::ceil(matrix.Get(Drawing::Matrix::TRANS_Y)));
+    canvas.SetMatrix(matrix);
     Drawing::Brush blendBrush_;
+    blendBrush_.SetAlphaF(canvas.GetAlpha());
     blendBrush_.SetBlendMode(static_cast<Drawing::BlendMode>(blendMode - 1)); // map blendMode to Drawing::BlendMode
     Drawing::SaveLayerOps maskLayerRec(nullptr, &blendBrush_, nullptr, 0);
     canvas.SaveLayer(maskLayerRec);

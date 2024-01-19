@@ -306,7 +306,7 @@ public:
     };
     CanvasStatus GetCanvasStatus() const;
     void SetCanvasStatus(const CanvasStatus& status);
-    Drawing::Canvas* GetRecordingCanvas() const;
+    Drawing::Canvas* GetRecordingCanvas() const override;
 #endif
     bool GetRecordingState() const;
     void SetRecordingState(bool flag);
@@ -383,7 +383,7 @@ public:
 #else
     RSAutoCanvasRestore(
         RSPaintFilterCanvas* canvas, RSPaintFilterCanvas::SaveType type = RSPaintFilterCanvas::SaveType::kAll)
-        : canvas_(canvas), saveCount_(canvas ? canvas->SaveAllStatus() : RSPaintFilterCanvas::SaveStatus())
+        : canvas_(canvas), saveCount_(canvas ? canvas->SaveAllStatus(type) : RSPaintFilterCanvas::SaveStatus())
     {}
 #endif
 

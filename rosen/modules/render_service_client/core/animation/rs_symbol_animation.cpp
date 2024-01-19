@@ -21,15 +21,12 @@
 
 namespace OHOS {
 namespace Rosen {
-
 RSSymbolAnimation::RSSymbolAnimation()
 {
-    ROSEN_LOGD("[%{public}s] Created \n", __func__);
 }
 
 RSSymbolAnimation::~RSSymbolAnimation()
 {
-    ROSEN_LOGD("[%{public}s] Destroy \n", __func__);
 }
 
 bool RSSymbolAnimation::SetSymbolAnimation(

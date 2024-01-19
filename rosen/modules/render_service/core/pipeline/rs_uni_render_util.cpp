@@ -22,6 +22,8 @@
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_base_render_util.h"
 #include "platform/common/rs_log.h"
+#include "property/rs_properties.h"
+#include "render/rs_material_filter.h"
 #include "render/rs_path.h"
 #include "rs_trace.h"
 #include "common/rs_optional_trace.h"
@@ -482,22 +484,31 @@ bool RSUniRenderUtil::Is3DRotation(Drawing::Matrix matrix)
 
 #endif
 
+void RSUniRenderUtil::ReleaseColorPickerFilter(std::shared_ptr<RSFilter> RSFilter)
+{
+    auto materialFilter = std::static_pointer_cast<RSMaterialFilter>(RSFilter);
+    if (materialFilter->GetColorPickerCacheTask() == nullptr) {
+        return;
+    }
+    materialFilter->ReleaseColorPickerFilter();
+}
+
 void RSUniRenderUtil::ReleaseColorPickerResource(std::shared_ptr<RSRenderNode>& node)
 {
     if (node == nullptr) {
         return;
     }
-    if (node->GetRenderProperties().GetColorPickerCacheTaskShadow() != nullptr) {
-        #ifdef IS_OHOS
-            auto& colorPickerCacheTaskShadow = node->GetRenderProperties().GetColorPickerCacheTaskShadow();
-            auto mainHandler = colorPickerCacheTaskShadow->GetMainHandler();
-            if (mainHandler != nullptr) {
-                auto task = colorPickerCacheTaskShadow;
-                task->SetWaitRelease(true);
-                mainHandler->PostTask(
-                    [task]() { task->ReleaseColorPicker(); }, AppExecFwk::EventQueue::Priority::IMMEDIATE);
-            }
-        #endif
+    auto& properties = node->GetRenderProperties();
+    if (properties.GetColorPickerCacheTaskShadow() != nullptr) {
+        properties.ReleaseColorPickerTaskShadow();
+    }
+    if ((properties.GetFilter() != nullptr &&
+        properties.GetFilter()->GetFilterType() == RSFilter::MATERIAL)) {
+        ReleaseColorPickerFilter(properties.GetFilter());
+    }
+    if (properties.GetBackgroundFilter() != nullptr &&
+        properties.GetBackgroundFilter()->GetFilterType() == RSFilter::MATERIAL) {
+        ReleaseColorPickerFilter(properties.GetBackgroundFilter());
     }
     // Recursive to release color picker resource
     for (auto& child : node->GetChildren()) {
@@ -591,7 +602,6 @@ void RSUniRenderUtil::AssignMainThreadNode(std::list<std::shared_ptr<RSSurfaceRe
         ROSEN_LOGW("RSUniRenderUtil::AssignMainThreadNode node is nullptr");
         return;
     }
-    RS_TRACE_NAME_FMT("AssignMainThread: %s", node->GetName().c_str());
     mainThreadNodes.emplace_back(node);
     bool changeThread = !node->IsMainThreadNode();
     node->SetIsMainThreadNode(true);
@@ -603,6 +613,13 @@ void RSUniRenderUtil::AssignMainThreadNode(std::list<std::shared_ptr<RSSurfaceRe
         ClearCacheSurface(*node, UNI_MAIN_THREAD_INDEX);
         node->SetIsMainThreadNode(true);
         node->SetTextureValidFlag(false);
+    }
+    if (RSMainThread::Instance()->GetDeviceType() == DeviceType::PC) {
+        RS_TRACE_NAME_FMT("AssignMainThread: name: %s, id: %lu, [HasTransparentSurface: %d, ChildHasFilter: %d,"
+            "HasFilter: %d, HasAbilityComponent: %d, QueryIfAllHwcChildrenForceDisabledByFilter: %d]",
+            node->GetName().c_str(), node->GetId(), node->GetHasTransparentSurface(),
+            node->ChildHasFilter(), node->HasFilter(), node->HasAbilityComponent(),
+            node->QueryIfAllHwcChildrenForceDisabledByFilter());
     }
 }
 

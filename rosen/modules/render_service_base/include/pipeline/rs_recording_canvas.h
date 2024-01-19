@@ -106,7 +106,7 @@ public:
     void DrawPixelMapWithParm(
         const std::shared_ptr<Media::PixelMap>& pixelmap,
         const Rosen::RsImageInfo& rsImageInfo, const SkSamplingOptions& samplingOptions, const SkPaint& paint);
-    void drawImageNine(const std::shared_ptr<Media::PixelMap>& pixelmap, const SkIRect& center,
+    void DrawImageNine(const std::shared_ptr<Media::PixelMap>& pixelmap, const SkIRect& center,
         const SkRect& dst, SkFilterMode filter, const SkPaint* paint);
     using DrawFunc  = std::function<void(RSPaintFilterCanvas& canvas, const SkRect*)>;
     void DrawDrawFunc(DrawFunc && drawFunc);
@@ -222,12 +222,14 @@ class PixelMap;
 namespace Rosen {
 class RSB_EXPORT ExtendRecordingCanvas : public Drawing::RecordingCanvas {
 public:
-    ExtendRecordingCanvas(int width, int weight);
+    ExtendRecordingCanvas(int width, int weight, bool addDrawOpImmediate = true);
     ~ExtendRecordingCanvas() override = default;
     void DrawImageWithParm(const std::shared_ptr<Drawing::Image>& image, const std::shared_ptr<Drawing::Data>& data,
         const Drawing::AdaptiveImageInfo& rsImageInfo, const Drawing::SamplingOptions& sampling);
     void DrawPixelMapWithParm(const std::shared_ptr<Media::PixelMap>& pixelMap,
         const Drawing::AdaptiveImageInfo& rsImageInfo, const Drawing::SamplingOptions& sampling);
+    void DrawImageNineWithPixelMap(const std::shared_ptr<Media::PixelMap>& pixelmap, const Drawing::RectI& center,
+        const Drawing::Rect& dst, Drawing::FilterMode filter, const Drawing::Brush* brush);
     void DrawPixelMapRect(const std::shared_ptr<Media::PixelMap>& pixelMap, const Drawing::Rect& src,
         const Drawing::Rect& dst, const Drawing::SamplingOptions& sampling,
         Drawing::SrcRectConstraint constraint = Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
@@ -237,7 +239,9 @@ public:
 #endif
 private:
     template<typename T, typename... Args>
-    void AddOp(Args&&... args);
+    void AddDrawOpImmediate(Args&&... args);
+    template<typename T, typename... Args>
+    void AddDrawOpDeferred(Args&&... args);
 };
 } // namespace Rosen
 } // namespace OHOS

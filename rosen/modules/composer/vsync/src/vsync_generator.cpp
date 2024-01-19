@@ -126,6 +126,7 @@ void VSyncGenerator::ThreadLoop()
             UpdateVSyncModeLocked();
             occurReferenceTime = referenceTime_;
             if (period_ == 0) {
+                ScopedBytrace func("VSyncGenerator: period not valid");
                 if (vsyncThreadRunning_ == true) {
                     con_.wait(locker);
                 }
@@ -134,6 +135,7 @@ void VSyncGenerator::ThreadLoop()
             occurTimestamp = GetSysTimeNs();
             nextTimeStamp = ComputeNextVSyncTimeStamp(occurTimestamp, occurReferenceTime);
             if (nextTimeStamp == INT64_MAX) {
+                ScopedBytrace func("VSyncGenerator: there has no listener");
                 if (vsyncThreadRunning_ == true) {
                     con_.wait(locker);
                 }
@@ -141,6 +143,7 @@ void VSyncGenerator::ThreadLoop()
             } else if (vsyncMode_ == VSYNC_MODE_LTPO) {
                 bool modelChanged = UpdateChangeDataLocked(occurTimestamp, occurReferenceTime, nextTimeStamp);
                 if (modelChanged) {
+                    ScopedBytrace func("VSyncGenerator: LTPO mode change");
                     continue;
                 }
             }
@@ -153,7 +156,7 @@ void VSyncGenerator::ThreadLoop()
             if (err == std::cv_status::timeout) {
                 isWakeup = true;
             } else {
-                ScopedDebugTrace func("VSyncGenerator::ThreadLoop::Continue");
+                ScopedBytrace func("VSyncGenerator::ThreadLoop::Continue");
                 continue;
             }
         }
@@ -409,13 +412,14 @@ VsyncError VSyncGenerator::UpdateMode(int64_t period, int64_t phase, int64_t ref
         UpdatePeriodLocked(period);
     }
     UpdateReferenceTimeLocked(referenceTime);
+    startRefresh_ = false;
     con_.notify_all();
     return VSYNC_ERROR_OK;
 }
 
 VsyncError VSyncGenerator::AddListener(int64_t phase, const sptr<OHOS::Rosen::VSyncGenerator::Callback>& cb)
 {
-    ScopedDebugTrace func("AddListener");
+    ScopedBytrace func("AddListener");
     std::lock_guard<std::mutex> locker(mutex_);
     if (cb == nullptr) {
         return VSYNC_ERROR_INVALID_ARGUMENTS;
@@ -536,9 +540,10 @@ VsyncError VSyncGenerator::SetReferenceTimeOffset(int32_t offsetByPulseNum)
     return VSYNC_ERROR_OK;
 }
 
-VsyncError VSyncGenerator::ResetReferenceTimeOffset()
+VsyncError VSyncGenerator::StartRefresh()
 {
-    std::lock_guard<std::mutex> locker(mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
+    startRefresh_ = true;
     referenceTimeOffsetPulseNum_ = defaultReferenceTimeOffsetPulseNum_;
     return VSYNC_ERROR_OK;
 }
@@ -551,28 +556,38 @@ VsyncError VSyncGenerator::CheckAndUpdateRefereceTime(int64_t hardwareVsyncInter
         return VSYNC_ERROR_INVALID_ARGUMENTS;
     }
     std::lock_guard<std::mutex> locker(mutex_);
-    if (abs(hardwareVsyncInterval - period_) < MAX_TIMESTAMP_THRESHOLD) {
+    if (pendingPeriod_ <= 0) {
+        return VSYNC_ERROR_API_FAILED;
+    }
+    if ((abs(pendingReferenceTime_ - referenceTime_) < MAX_TIMESTAMP_THRESHOLD) &&
+        (abs(hardwareVsyncInterval - pendingPeriod_) < MAX_TIMESTAMP_THRESHOLD)) {
         // framerate has changed
         frameRateChanging_ = false;
-        int64_t actualOffset = referenceTime - referenceTime_;
+        pendingPeriod_ = 0;
+        int64_t actualOffset = referenceTime - pendingReferenceTime_;
         if (pulse_ == 0) {
             VLOGI("[%{public}s] pulse is not ready.", __func__);
             return VSYNC_ERROR_API_FAILED;
         }
         int32_t actualOffsetPulseNum = round((double)actualOffset/(double)pulse_);
-        if (actualOffsetPulseNum > defaultReferenceTimeOffsetPulseNum_) {
-            referenceTimeOffsetPulseNum_ = actualOffsetPulseNum;
+        if (startRefresh_) {
+            referenceTimeOffsetPulseNum_ = defaultReferenceTimeOffsetPulseNum_;
+        } else {
+            referenceTimeOffsetPulseNum_ = std::max(actualOffsetPulseNum, defaultReferenceTimeOffsetPulseNum_);
         }
         ScopedBytrace func("UpdateMode, referenceTime:" + std::to_string((referenceTime)) +
-                        ", referenceTimeOffsetPulseNum_:" + std::to_string(referenceTimeOffsetPulseNum_));
+                        ", actualOffsetPulseNum:" + std::to_string((actualOffsetPulseNum)) +
+                        ", referenceTimeOffsetPulseNum_:" + std::to_string(referenceTimeOffsetPulseNum_) +
+                        ", startRefresh_:" + std::to_string(startRefresh_));
         UpdateReferenceTimeLocked(referenceTime);
+        startRefresh_ = false;
     }
     return VSYNC_ERROR_OK;
 }
 
 VsyncError VSyncGenerator::RemoveListener(const sptr<OHOS::Rosen::VSyncGenerator::Callback>& cb)
 {
-    ScopedDebugTrace func("RemoveListener");
+    ScopedBytrace func("RemoveListener");
     std::lock_guard<std::mutex> locker(mutex_);
     if (cb == nullptr) {
         return VSYNC_ERROR_INVALID_ARGUMENTS;
@@ -623,6 +638,16 @@ bool VSyncGenerator::GetFrameRateChaingStatus()
 {
     std::lock_guard<std::mutex> locker(mutex_);
     return frameRateChanging_;
+}
+
+void VSyncGenerator::SetPendingMode(int64_t period, int64_t timestamp)
+{
+    if (period <= 0) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(mutex_);
+    pendingPeriod_ = period;
+    pendingReferenceTime_ = timestamp;
 }
 
 void VSyncGenerator::Dump(std::string &result)

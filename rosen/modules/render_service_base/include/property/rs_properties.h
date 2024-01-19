@@ -267,6 +267,8 @@ public:
     const std::optional<Vector4f>& GetPixelStretchPercent() const;
     void SetAiInvert(const std::optional<Vector4f>& aiInvert);
     const std::optional<Vector4f>& GetAiInvert() const;
+    void SetSystemBarEffect(bool systemBarEffect);
+    bool GetSystemBarEffect() const;
     RectI GetPixelStretchDirtyRect() const;
 
     const std::shared_ptr<RSObjAbsGeometry>& GetBoundsGeometry() const;
@@ -341,6 +343,7 @@ public:
 #if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     const std::unique_ptr<RSFilterCacheManager>& GetFilterCacheManager(bool isForeground) const;
     const std::shared_ptr<RSColorPickerCacheTask>& GetColorPickerCacheTaskShadow() const;
+    void ReleaseColorPickerTaskShadow() const;
     void ClearFilterCache();
 #endif
 
@@ -379,6 +382,7 @@ private:
     bool contentDirty_ = false;
     bool isDrawn_ = false;
     bool alphaNeedApply_ = false;
+    bool systemBarEffect_ = false;
 
     bool hasBounds_ = false;
     bool useEffect_ = false;

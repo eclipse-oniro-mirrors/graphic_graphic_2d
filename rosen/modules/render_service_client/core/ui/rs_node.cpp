@@ -139,6 +139,22 @@ std::vector<std::shared_ptr<RSAnimation>> RSNode::CloseImplicitAnimation()
     return implicitAnimator->CloseImplicitAnimation();
 }
 
+void RSNode::SetFrameNodeInfo(int32_t id, std::string tag)
+{
+    frameNodeId_ = id;
+    frameNodeTag_ = tag;
+}
+
+int32_t RSNode::GetFrameNodeId()
+{
+    return frameNodeId_;
+}
+
+std::string RSNode::GetFrameNodeTag()
+{
+    return frameNodeTag_;
+}
+
 void RSNode::AddKeyFrame(
     float fraction, const RSAnimationTimingCurve& timingCurve, const PropertyCallback& propertyCallback)
 {
@@ -1109,11 +1125,13 @@ void RSNode::SetShadowAlpha(float alpha)
 
 void RSNode::SetShadowElevation(float elevation)
 {
+    SetProperty<RSShadowRadiusModifier, RSAnimatableProperty<float>>(RSModifierType::SHADOW_RADIUS, 0);
     SetProperty<RSShadowElevationModifier, RSAnimatableProperty<float>>(RSModifierType::SHADOW_ELEVATION, elevation);
 }
 
 void RSNode::SetShadowRadius(float radius)
 {
+    SetProperty<RSShadowElevationModifier, RSAnimatableProperty<float>>(RSModifierType::SHADOW_ELEVATION, 0);
     SetProperty<RSShadowRadiusModifier, RSAnimatableProperty<float>>(RSModifierType::SHADOW_RADIUS, radius);
 }
 
@@ -1637,6 +1655,7 @@ void RSNode::SetAiInvert(const Vector4f& aiInvert)
 
 void RSNode::SetSystemBarEffect()
 {
+    SetProperty<RSSystemBarEffectModifier, RSAnimatableProperty<bool>>(RSModifierType::SYSTEMBAREFFECT, true);
 }
 
 void RSNode::SetHueRotate(float hueRotate)

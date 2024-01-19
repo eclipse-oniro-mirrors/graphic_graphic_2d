@@ -89,13 +89,13 @@ RosenError HdiBackend::RegHwcDeadListener(OnHwcDeadCallback func, void* data)
     return ROSEN_ERROR_OK;
 }
 
-void HdiBackend::SetPendingPeriod(const OutputPtr &output, int64_t period)
+void HdiBackend::SetPendingMode(const OutputPtr &output, int64_t period, int64_t timestamp)
 {
     if (output == nullptr) {
         HLOGE("output is nullptr.");
         return;
     }
-    output->SetPendingPeriod(period);
+    output->SetPendingMode(period, timestamp);
 }
 
 int32_t HdiBackend::PrepareCompleteIfNeed(const OutputPtr &output, bool needFlush)
@@ -105,6 +105,9 @@ int32_t HdiBackend::PrepareCompleteIfNeed(const OutputPtr &output, bool needFlus
     const std::unordered_map<uint32_t, LayerPtr> &layersMap = output->GetLayers();
     for (auto iter = layersMap.begin(); iter != layersMap.end(); ++iter) {
         const LayerPtr &layer = iter->second;
+        if (layer == nullptr) {
+            continue;
+        }
         newLayerInfos.emplace_back(layer->GetLayerInfo());
         if (layer->GetLayerInfo()->GetCompositionType() == GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT ||
             layer->GetLayerInfo()->GetCompositionType() == GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT_CLEAR ||
