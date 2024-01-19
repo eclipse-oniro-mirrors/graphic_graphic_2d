@@ -1196,8 +1196,8 @@ void RSUniRenderVisitor::UpdateForegroundFilterCacheWithDirty(RSRenderNode& node
 
 void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 {
-    RS_OPTIONAL_TRACE_NAME("RSUniRender::Prepare:[" + node.GetName() + "] pid: " +
-        std::to_string(ExtractPid(node.GetId())) +
+    RS_OPTIONAL_TRACE_NAME("RSUniRender::Prepare:[" + node.GetName() + "] nodeid: " +
+        std::to_string(node.GetId()) +  " pid: " + std::to_string(ExtractPid(node.GetId())) +
         ", nodeType " + std::to_string(static_cast<uint>(node.GetSurfaceNodeType())));
     if (curDisplayNode_ == nullptr) {
         ROSEN_LOGE("RSUniRenderVisitor::PrepareSurfaceRenderNode, curDisplayNode_ is nullptr.");
@@ -4283,7 +4283,7 @@ bool RSUniRenderVisitor::CheckIfSurfaceRenderNodeNeedProcess(RSSurfaceRenderNode
         return true;
     }
     if (isSecurityDisplay_ && node.GetSkipLayer()) {
-        RS_PROCESS_TRACE(isPhone_, false, node.GetName() + " SkipLayer Skip");
+        RS_PROCESS_TRACE(isPhone_, node.GetName() + " SkipLayer Skip");
         return false;
     }
     if (!node.ShouldPaint()) {
@@ -4298,11 +4298,11 @@ bool RSUniRenderVisitor::CheckIfSurfaceRenderNodeNeedProcess(RSSurfaceRenderNode
         if (!node.GetVisibleRegionForCallBack().IsEmpty()) {
             keepFilterCache = true;
         }
-        RS_PROCESS_TRACE(isPhone_, false, node.GetName() + " Occlusion Skip");
+        RS_PROCESS_TRACE(isPhone_, node.GetName() + " Occlusion Skip");
         return false;
     }
     if (node.IsAbilityComponent() && node.GetDstRect().IsEmpty() && curGroupedNodes_.empty()) {
-        RS_PROCESS_TRACE(isPhone_, false, node.GetName() + " Empty AbilityComponent Skip");
+        RS_PROCESS_TRACE(isPhone_, node.GetName() + " Empty AbilityComponent Skip");
         return false;
     }
     std::shared_ptr<RSSurfaceRenderNode> appNode;
@@ -4310,12 +4310,12 @@ bool RSUniRenderVisitor::CheckIfSurfaceRenderNodeNeedProcess(RSSurfaceRenderNode
         if (appNode != nullptr) {
             MarkSubHardwareEnableNodeState(*appNode);
         }
-        RS_PROCESS_TRACE(isPhone_, false, node.GetName() + " App Occluded Leashwindow Skip");
+        RS_PROCESS_TRACE(isPhone_, node.GetName() + " App Occluded Leashwindow Skip");
         return false;
     }
     if (!screenInfo_.filteredAppSet.empty() &&
         screenInfo_.filteredAppSet.find(node.GetId()) == screenInfo_.filteredAppSet.end()) {
-        RS_PROCESS_TRACE(isPhone_, false, node.GetName() + " skip because it isn't filtered App");
+        RS_PROCESS_TRACE(isPhone_, node.GetName() + " skip because it isn't filtered App");
         RS_LOGD("RSUniRenderVisitor::CheckIfSurfaceRenderNodeNeedProcess:\
             %{public}s skip because it isn't filtered App", node.GetName().c_str());
         return false;
@@ -4369,8 +4369,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         // make this node context transparent
         canvas_->MultiplyAlpha(0.5);
     }
-    RS_PROCESS_TRACE(isPhone_,
-        node.IsFocusedNode(currentFocusedNodeId_) || node.IsFocusedNode(focusedLeashWindowId_),
+    RS_PROCESS_TRACE(isPhone_ || (!isSubThread_ && node.IsMainThreadNode()),
         "RSUniRender::Process:[" + node.GetName() + "] " +
         node.GetDstRect().ToString() + " Alpha: " + std::to_string(node.GetGlobalAlpha()));
     RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode node:%{public}" PRIu64 ",child size:%{public}u,"
@@ -4425,7 +4424,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     // skip clean surface node
     if (isOpDropped_ && node.IsAppWindow() &&
         !node.SubNodeNeedDraw(node.GetOldDirtyInSurface(), partialRenderType_)) {
-        RS_PROCESS_TRACE(isPhone_, false, node.GetName() + " QuickReject Skip");
+        RS_PROCESS_TRACE(isPhone_, node.GetName() + " QuickReject Skip");
         RS_LOGD("RSUniRenderVisitor::ProcessSurfaceRenderNode skip: %{public}s", node.GetName().c_str());
         ProcessSubSurfaceNodes(node);
         return;
