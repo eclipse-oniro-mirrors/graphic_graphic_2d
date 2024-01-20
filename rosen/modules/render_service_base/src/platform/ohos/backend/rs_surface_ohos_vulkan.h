@@ -49,15 +49,6 @@ struct DestroySemaphoreInfo {
         : mDestroyFunction(destroyFunction), mDevice(deivce), mSemaphore(semaphore) {}
 };
 
-[[maybe_unused]] static void destroy_semaphore(void *context) {
-    DestroySemaphoreInfo* info = reinterpret_cast<DestroySemaphoreInfo*>(context);
-    --info->mRefs;
-    if (!info->mRefs) {
-        info->mDestroyFunction(info->mDevice, info->mSemaphore, nullptr);
-        delete info;
-    }
-}
-
 class RSSurfaceOhosVulkan : public RSSurfaceOhos {
 public:
     explicit RSSurfaceOhosVulkan(const sptr<Surface>& producer);

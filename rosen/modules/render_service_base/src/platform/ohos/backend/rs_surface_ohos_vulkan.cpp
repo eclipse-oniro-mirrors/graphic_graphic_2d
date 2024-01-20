@@ -38,6 +38,19 @@
 #endif
 namespace OHOS {
 namespace Rosen {
+[[maybe_unused]] static void DestroySemaphore(void *context)
+{
+    if (context == nullptr) {
+        return;
+    }
+    DestroySemaphoreInfo* info = reinterpret_cast<DestroySemaphoreInfo*>(context);
+    --info->mRefs;
+    if (!info->mRefs) {
+        info->mDestroyFunction(info->mDevice, info->mSemaphore, nullptr);
+        delete info;
+    }
+}
+
 RSSurfaceOhosVulkan::RSSurfaceOhosVulkan(const sptr<Surface>& producer) : RSSurfaceOhos(producer)
 {
     bufferUsage_ = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_MEM_DMA;
@@ -307,7 +320,7 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
     drawingFlushInfo.backendSurfaceAccess = true;
     drawingFlushInfo.numSemaphores = 1;
     drawingFlushInfo.backendSemaphore = static_cast<void*>(&backendSemaphore);
-    drawingFlushInfo.finishedProc = destroy_semaphore;
+    drawingFlushInfo.finishedProc = DestroySemaphore;
     drawingFlushInfo.finishedContext = destroyInfo;
     surface.drawingSurface->Flush(&drawingFlushInfo);
     mSkContext->Submit();
@@ -321,7 +334,7 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
     auto err = RsVulkanContext::HookedVkQueueSignalReleaseImageOHOS(
         queue, 1, &semaphore, surface.image, &fenceFd);
     if (err != VK_SUCCESS) {
-        destroy_semaphore(destroyInfo);
+        DestroySemaphore(destroyInfo);
         destroyInfo = nullptr;
         ROSEN_LOGE("RSSurfaceOhosVulkan QueueSignalReleaseImageOHOS failed %{public}d", err);
         return false;
@@ -333,7 +346,7 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
         return false;
     }
     mSurfaceList.pop_front();
-    destroy_semaphore(destroyInfo);
+    DestroySemaphore(destroyInfo);
     surface.fence.reset();
     surface.lastPresentedCount = mPresentCount;
     mPresentCount++;
