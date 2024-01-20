@@ -14,8 +14,8 @@
  */
 
 #include "c/drawing_memory_stream.h"
-#include <unordered_map>
 #include <cstddef>
+#include <unordered_map>
 #include "utils/memory_stream.h"
 
 using namespace OHOS;
