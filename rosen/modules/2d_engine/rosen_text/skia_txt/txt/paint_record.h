@@ -16,6 +16,8 @@
 #ifndef ROSEN_MODULES_SPTEXT_PAINT_RECORD_H
 #define ROSEN_MODULES_SPTEXT_PAINT_RECORD_H
 
+#include <optional>
+
 #include "include/core/SkColor.h"
 
 #include "draw/brush.h"
@@ -29,16 +31,17 @@ struct PaintRecord {
     using RSPen = OHOS::Rosen::Drawing::Pen;
     using RSColor = OHOS::Rosen::Drawing::Color;
 
-    RSBrush brush;
-    RSPen pen;
+    RSColor color;
+    std::optional<RSBrush> brush;
+    std::optional<RSPen> pen;
 
     PaintRecord() {}
     PaintRecord(RSBrush brush, RSPen pen) : brush(brush), pen(pen) {}
+    PaintRecord(std::optional<RSBrush> brush, std::optional<RSPen> pen) : brush(brush), pen(pen) {}
 
     void SetColor(const RSColor& c)
     {
-        brush.SetColor(c);
-        pen.SetColor(c);
+        color = c;
     }
 
     void SetColor(SkColor c)

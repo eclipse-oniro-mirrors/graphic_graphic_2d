@@ -114,13 +114,11 @@ SPText::TextStyle Convert(const TextStyle& style)
     textStyle.heightOverride = style.heightOnly;
     textStyle.locale = style.locale;
 
-    if (style.backgroundPen.has_value() || style.backgroundBrush.has_value()) {
-        textStyle.background = SPText::PaintRecord(style.backgroundBrush.value_or(Drawing::Brush()),
-            style.backgroundPen.value_or(Drawing::Pen()));
+    if (style.backgroundBrush.has_value() || style.backgroundPen.has_value()) {
+        textStyle.background = SPText::PaintRecord(style.backgroundBrush, style.backgroundPen);
     }
-    if (style.backgroundPen.has_value() || style.backgroundBrush.has_value()) {
-        textStyle.foreground = SPText::PaintRecord(style.foregroundBrush.value_or(Drawing::Brush()),
-            style.foregroundPen.value_or(Drawing::Pen()));
+    if (style.foregroundBrush.has_value() || style.foregroundPen.has_value()) {
+        textStyle.foreground = SPText::PaintRecord(style.foregroundBrush, style.foregroundPen);
     }
 
     for (const auto& [color, offset, radius] : style.shadows) {

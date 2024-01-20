@@ -62,11 +62,28 @@ void RSCanvasParagraphPainter::drawTextBlob(
     auto textBlobImpl = std::make_shared<Drawing::SkiaTextBlob>(blob);
     auto textBlob = std::make_shared<Drawing::TextBlob>(textBlobImpl);
 
-    canvas_->AttachBrush(pr.brush);
-    canvas_->AttachPen(pr.pen);
-    canvas_->DrawTextBlob(textBlob.get(), x, y);
-    canvas_->DetachPen();
-    canvas_->DetachBrush();
+    if (pr.pen.has_value() && pr.brush.has_value()) {
+        canvas_->AttachPen(pr.pen.value());
+        canvas_->DrawTextBlob(textBlob.get(), x, y);
+        canvas_->DetachPen();
+        canvas_->AttachBrush(pr.brush.value());
+        canvas_->DrawTextBlob(textBlob.get(), x, y);
+        canvas_->DetachBrush();
+    } else if (pr.pen.has_value() && !pr.brush.has_value()) {
+        canvas_->AttachPen(pr.pen.value());
+        canvas_->DrawTextBlob(textBlob.get(), x, y);
+        canvas_->DetachPen();
+    } else if (!pr.pen.has_value() && pr.brush.has_value()) {
+        canvas_->AttachBrush(pr.brush.value());
+        canvas_->DrawTextBlob(textBlob.get(), x, y);
+        canvas_->DetachBrush();
+    } else {
+        Drawing::Brush brush;
+        brush.SetColor(pr.color);
+        canvas_->AttachBrush(brush);
+        canvas_->DrawTextBlob(textBlob.get(), x, y);
+        canvas_->DetachBrush();
+    }
 }
 
 void RSCanvasParagraphPainter::drawTextShadow(
@@ -94,11 +111,16 @@ void RSCanvasParagraphPainter::drawRect(const SkRect& rect, const SkPaintOrID& p
     const PaintRecord& pr = paints_[std::get<PaintID>(paint)];
     Drawing::Rect rsRect = ToDrawingRect(rect);
 
-    canvas_->AttachBrush(pr.brush);
-    canvas_->AttachPen(pr.pen);
-    canvas_->DrawRect(rsRect);
-    canvas_->DetachPen();
-    canvas_->DetachBrush();
+    if (pr.pen.has_value()) {
+        canvas_->AttachPen(pr.pen.value());
+        canvas_->DrawRect(rsRect);
+        canvas_->DetachPen();
+    }
+    if (pr.brush.has_value()) {
+        canvas_->AttachBrush(pr.brush.value());
+        canvas_->DrawRect(rsRect);
+        canvas_->DetachBrush();
+    }
 }
 
 void RSCanvasParagraphPainter::drawFilledRect(const SkRect& rect, const DecorationStyle& decorStyle)
