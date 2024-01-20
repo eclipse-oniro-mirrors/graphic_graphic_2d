@@ -130,9 +130,10 @@ public:
             IsHardwareEnabledTopSurface();
     }
 
-    void SetHardwareEnabled(bool isEnabled)
+    void SetHardwareEnabled(bool isEnabled, SelfDrawingNodeType selfDrawingType = SelfDrawingNodeType::DEFAULT)
     {
         isHardwareEnabledNode_ = isEnabled;
+        selfDrawingType_ = selfDrawingType;
     }
 
     bool NeedBilinearInterpolation() const
@@ -1149,6 +1150,7 @@ private:
     bool isNodeDirty_ = true;
     // used for hardware enabled nodes
     bool isHardwareEnabledNode_ = false;
+    SelfDrawingNodeType selfDrawingType_ = SelfDrawingNodeType::DEFAULT;
     bool isCurrentFrameHardwareEnabled_ = false;
     bool isLastFrameHardwareEnabled_ = false;
     bool isNewOnTree_ = false;
