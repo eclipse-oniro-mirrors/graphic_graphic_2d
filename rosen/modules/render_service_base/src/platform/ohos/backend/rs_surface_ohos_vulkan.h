@@ -38,6 +38,17 @@
 
 namespace OHOS {
 namespace Rosen {
+struct DestroySemaphoreInfo {
+    PFN_vkDestroySemaphore mDestroyFunction;
+    VkDevice mDevice;
+    VkSemaphore mSemaphore;
+
+    int mRefs = 2;
+    DestroySemaphoreInfo(PFN_vkDestroySemaphore destroyFunction, VkDevice device,
+                        VkSemaphore semaphore):
+        : mDestroyFunction(destroyFunction), mDevice(deivce), mSemaphore(semaphore) {}
+};
+
 class RSSurfaceOhosVulkan : public RSSurfaceOhos {
 public:
     explicit RSSurfaceOhosVulkan(const sptr<Surface>& producer);
