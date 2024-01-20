@@ -53,7 +53,7 @@ OH_Drawing_TextBlobBuilder* OH_Drawing_TextBlobBuilderCreate()
 OH_Drawing_TextBlob* OH_Drawing_TextBlobCreateFromText(const void* text, size_t byteLength,
     const OH_Drawing_Font* cFont, OH_Drawing_TextEncoding cTextEncoding)
 {
-    if (cFont == nullptr) {
+    if (text == nullptr || cFont == nullptr) {
         return nullptr;
     }
     const Font font = CastToFont(*cFont);
@@ -66,7 +66,7 @@ OH_Drawing_TextBlob* OH_Drawing_TextBlobCreateFromText(const void* text, size_t 
 OH_Drawing_TextBlob* OH_Drawing_TextBlobCreateFromPosText(const void* text, size_t byteLength,
     OH_Drawing_Point* cPoints, const OH_Drawing_Font* cFont, OH_Drawing_TextEncoding cTextEncoding)
 {
-    if (cFont == nullptr || cPoints == nullptr) {
+    if (text == nullptr || cFont == nullptr || cPoints == nullptr) {
         return nullptr;
     }
     const Font font = CastToFont(*cFont);
@@ -80,7 +80,7 @@ OH_Drawing_TextBlob* OH_Drawing_TextBlobCreateFromPosText(const void* text, size
 OH_Drawing_TextBlob* OH_Drawing_TextBlobCreateFromString(const char* str,
     const OH_Drawing_Font* cFont, OH_Drawing_TextEncoding cTextEncoding)
 {
-    if (cFont == nullptr) {
+    if (str == nullptr || cFont == nullptr) {
         return nullptr;
     }
     const Font font = CastToFont(*cFont);
