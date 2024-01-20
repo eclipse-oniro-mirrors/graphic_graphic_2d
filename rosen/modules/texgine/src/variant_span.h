@@ -108,7 +108,9 @@ public:
 
     void SetSymbolId(const uint64_t& id)
     {
-        ts_->SetSymbolId(id);
+        if (ts_ != nullptr) {
+            ts_->SetSymbolId(id);
+        }
     }
 private:
     void CheckPointer(bool nullable = false) const noexcept(false);
