@@ -129,7 +129,7 @@ public:
      * @brief         Returns Typeface if set, or nullptr.
      * @return        Typeface if previously set, nullptr otherwise.
      */
-    std::shared_ptr<Typeface> GetTypeface() const;
+    std::shared_ptr<Typeface> GetTypeface();
 
     /*
      * @brief             Measure the width of text.

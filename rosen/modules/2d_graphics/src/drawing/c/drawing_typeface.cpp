@@ -25,9 +25,38 @@ using namespace Drawing;
 
 static std::unordered_map<void*, std::shared_ptr<Typeface>> g_typefaceMap;
 
+static MemoryStream* CastToMemoryStream(OH_Drawing_MemoryStream* cCanvas)
+{
+    return reinterpret_cast<MemoryStream*>(cCanvas);
+}
+
 OH_Drawing_Typeface* OH_Drawing_TypefaceCreateDefault()
 {
     std::shared_ptr<Typeface> typeface = Typeface::MakeDefault();
+    g_typefaceMap.insert({typeface.get(), typeface});
+    return (OH_Drawing_Typeface*)typeface.get();
+}
+
+OH_Drawing_Typeface* OH_Drawing_TypefaceCreateFromFile(const char* path, int index)
+{
+    std::shared_ptr<Typeface> typeface = Typeface::MakeFromFile(path, index);
+    if (typeface == nullptr) {
+        return nullptr;
+    }
+    g_typefaceMap.insert({typeface.get(), typeface});
+    return (OH_Drawing_Typeface*)typeface.get();
+}
+
+OH_Drawing_Typeface* OH_Drawing_TypefaceCreateFromStream(OH_Drawing_MemoryStream* cMemoryStream, int32_t index)
+{
+    if (cMemoryStream == nullptr) {
+        return nullptr;
+    }
+    std::unique_ptr<MemoryStream> memoryStream(CastToMemoryStream(cMemoryStream));
+    std::shared_ptr<Typeface> typeface = Typeface::MakeFromStream(std::move(memoryStream), index);
+    if (typeface == nullptr) {
+        return nullptr;
+    }
     g_typefaceMap.insert({typeface.get(), typeface});
     return (OH_Drawing_Typeface*)typeface.get();
 }

@@ -52,7 +52,7 @@ public:
     void GetWidths(const uint16_t glyphs[], int count, scalar widths[]) const override;
     void GetWidths(const uint16_t glyphs[], int count, scalar widths[], Rect bounds[]) const override;
     scalar GetSize() const override;
-    std::shared_ptr<Typeface> GetTypeface() const override;
+    std::shared_ptr<Typeface> GetTypeface() override;
 
     scalar MeasureText(const void* text, size_t byteLength, TextEncoding encoding) override;
 
@@ -60,6 +60,7 @@ public:
 
 private:
     SkFont skFont_;
+    std::shared_ptr<Typeface> typeface_ = nullptr;
 };
 } // namespace Drawing
 } // namespace Rosen

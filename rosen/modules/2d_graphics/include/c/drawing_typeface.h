@@ -54,6 +54,32 @@ extern "C" {
 OH_Drawing_Typeface* OH_Drawing_TypefaceCreateDefault(void);
 
 /**
+ * @brief Creates a <b>OH_Drawing_Typeface</b> object by file.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param path  file path.
+ * @param index  file index.
+ * @return Returns the pointer to the <b>OH_Drawing_Typeface</b> object created.
+ * @since 12
+ * @version 1.0
+ */
+OH_Drawing_Typeface* OH_Drawing_TypefaceCreateFromFile(const char* path, int index);
+
+/**
+ * @brief Creates a <b>OH_Drawing_Typeface</b> object by given a stream. If the stream is not a valid
+ * font file, returns nullptr. Ownership of the stream is transferred, so the caller must not reference
+ * it or free it again.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_MemoryStream Indicates the pointer to an <b>OH_Drawing_MemoryStream</b> object.
+ * @param index  memory stream index.
+ * @return Returns the pointer to the <b>OH_Drawing_Typeface</b> object created.
+ * @since 12
+ * @version 1.0
+ */
+OH_Drawing_Typeface* OH_Drawing_TypefaceCreateFromStream(OH_Drawing_MemoryStream*, int32_t index);
+
+/**
  * @brief Destroys an <b>OH_Drawing_Typeface</b> object and reclaims the memory occupied by the object.
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing

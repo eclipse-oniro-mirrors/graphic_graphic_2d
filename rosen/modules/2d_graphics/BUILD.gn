@@ -77,6 +77,7 @@ template("graphics2d_source_set") {
       "$drawing_src_dir/c/drawing_image.cpp",
       "$drawing_src_dir/c/drawing_mask_filter.cpp",
       "$drawing_src_dir/c/drawing_matrix.cpp",
+      "$drawing_src_dir/c/drawing_memory_stream.cpp",
       "$drawing_src_dir/c/drawing_path.cpp",
       "$drawing_src_dir/c/drawing_path_effect.cpp",
       "$drawing_src_dir/c/drawing_pen.cpp",

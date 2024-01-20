@@ -65,6 +65,28 @@ OH_Drawing_Font* OH_Drawing_FontCreate(void);
 void OH_Drawing_FontSetTypeface(OH_Drawing_Font*, OH_Drawing_Typeface*);
 
 /**
+ * @brief Gets an <b>OH_Drawing_Typeface</b> object from the <b>OH_Drawing_Typeface</b> object.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Font Indicates the pointer to an <b>OH_Drawing_Font</b> object.
+ * @return OH_Drawing_Typeface Indicates the pointer to an <b>OH_Drawing_Typeface</b> object.
+ * @since 12
+ * @version 1.0
+ */
+OH_Drawing_Typeface* OH_Drawing_FontGetTypeface(OH_Drawing_Font*);
+
+/**
+ * @brief Set Font and glyph metrics should ignore hinting and rounding.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Font Indicates the pointer to an <b>OH_Drawing_Font</b> object.
+ * @param bool Should ignore hinting and rounding.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_FontSetLinearMetrics(OH_Drawing_Font*, bool);
+
+/**
  * @brief Sets text size for an <b>OH_Drawing_Font</b> object.
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
