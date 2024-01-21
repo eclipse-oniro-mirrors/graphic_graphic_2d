@@ -19,7 +19,7 @@ module_output_path = "graphic_2d/rosen/modules/2d_engine/rosen_text/properties"
 
 ohos_unittest("2d_engine_rosen_text_prop_test") {
   module_out_path = module_output_path
-  if (!use_texgine) {
+  if (!use_texgine && !use_skia_txt) {
     sources = [
       "rosen_coverter_txt_test.cpp",
       "text_style_test.cpp",
