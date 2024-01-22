@@ -104,6 +104,7 @@ if (enable_text_gine) {
     include_dirs = [
       "$flutter_root/engine",
       "$rosen_root/modules/render_service_base/include",
+
     ]
 
     defines += [
@@ -150,6 +151,7 @@ if (enable_text_gine) {
     include_dirs = [
       "$rosen_root/modules/render_service_base/include",
       "$rosen_root/modules/2d_engine/rosen_text/skia_txt",
+      "$rosen_root/modules/2d_engine/rosen_text/skia_txt/txt/src",
     ]
 
     defines += [
@@ -183,6 +185,9 @@ if (enable_text_gine) {
       "$graphic_2d_root/rosen/modules/texgine:libtexgine_source",
       "$skia_root_new:skia_$platform",
       "./skia_txt:skia_libtxt_$platform",
+    ]
+    external_deps = [
+      "hilog:libhilog",
     ]
 
     part_name = "graphic_2d"
