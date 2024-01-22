@@ -1364,18 +1364,13 @@ void DrawSymbolOpItem::Playback(Canvas* canvas, const Rect* rect)
         canvas->AttachPaint(paintCopy);
         canvas->DrawPath(path);
     }
-    Paint paintNew;
-    paintNew.SetAntiAlias(true);
-    paintNew.SetStyle(Paint::PaintStyle::PAINT_FILL_STROKE);
-    paintNew.SetWidth(0.0f);
-    paintNew.SetJoinStyle(Pen::JoinStyle::ROUND_JOIN);
     for (auto group : groups) {
         Path multPath;
         MergeDrawingPath(multPath, group, pathLayers);
         // color
-        paintNew.SetColor(Color::ColorQuadSetARGB(0xFF, group.color.r, group.color.g, group.color.b));
-        paintNew.SetAlphaF(group.color.a);
-        canvas->AttachPaint(paintNew);
+        paintCopy.SetColor(Color::ColorQuadSetARGB(0xFF, group.color.r, group.color.g, group.color.b));
+        paintCopy.SetAlphaF(group.color.a);
+        canvas->AttachPaint(paintCopy);
         canvas->DrawPath(multPath);
     }
 }
