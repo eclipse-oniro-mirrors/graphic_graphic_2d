@@ -195,7 +195,7 @@ int32_t BufferQueueProducer::GetLastFlushedBufferRemote(MessageParcel &arguments
     sptr<SurfaceBuffer> buffer;
     sptr<SyncFence> fence;
     float matrix[BUFFER_MATRIX_SIZE];
-    GSError sret = GetLastFlushedBuffer(buffer, fence, matrix, BUFFER_MATRIX_SIZE);
+    GSError sret = GetLastFlushedBuffer(buffer, fence, matrix);
     reply.WriteInt32(sret);
     if (sret == GSERROR_OK) {
         uint32_t sequence = buffer->GetSeqNum();
@@ -470,12 +470,12 @@ GSError BufferQueueProducer::FlushBuffer(uint32_t sequence, const sptr<BufferExt
 }
 
 GSError BufferQueueProducer::GetLastFlushedBuffer(sptr<SurfaceBuffer>& buffer,
-    sptr<SyncFence>& fence, float matrix[16], int32_t matrixSize)
+    sptr<SyncFence>& fence, float matrix[16])
 {
     if (bufferQueue_ == nullptr) {
         return GSERROR_INVALID_ARGUMENTS;
     }
-    return bufferQueue_->GetLastFlushedBuffer(buffer, fence, matrix, matrixSize);
+    return bufferQueue_->GetLastFlushedBuffer(buffer, fence, matrix);
 }
 
 GSError BufferQueueProducer::AttachBuffer(sptr<SurfaceBuffer>& buffer)
