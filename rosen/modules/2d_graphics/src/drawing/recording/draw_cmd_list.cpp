@@ -205,7 +205,7 @@ void DrawCmdList::MarshallingDrawOps()
     }
     std::vector<uint32_t> opIndexForCache(replacedOpListForVector_.size());
     uint32_t opReplaceIndex = 0;
-    for (auto index = 0u; index < drawOpItems_.size(); index++) {
+    for (size_t index = 0; index < drawOpItems_.size(); index++) {
         drawOpItems_[index]->Marshalling(*this);
         if (index == replacedOpListForVector_[opReplaceIndex].first) {
             opIndexForCache[opReplaceIndex] = lastOpItemOffset_.value();
@@ -361,7 +361,7 @@ void DrawCmdList::UpdateNodeIdToPicture(NodeId nodeId)
     if (drawOpItems_.size() == 0) {
         return;
     }
-    for (int i = 0; i < drawOpItems_.size(); ++i) {
+    for (size_t i = 0; i < drawOpItems_.size(); ++i) {
         auto opItem = drawOpItems_[i];
         if (!opItem) {
             continue;
