@@ -42,7 +42,7 @@ sptr<RSRenderServiceConnectHub> RSRenderServiceConnectHub::GetInstance()
 
 void RSRenderServiceConnectHub::Init()
 {
-    RS_LOGI("RSRenderServiceConnectHub::Init");
+    RS_LOGD("RSRenderServiceConnectHub::Init");
     instance_ = new RSRenderServiceConnectHub();
     ::atexit(&RSRenderServiceConnectHub::Destroy);
 }
@@ -55,7 +55,7 @@ void RSRenderServiceConnectHub::Destroy()
 
 RSRenderServiceConnectHub::RSRenderServiceConnectHub()
 {
-    RS_LOGI("RSRenderServiceConnectHub: ctor");
+    RS_LOGD("RSRenderServiceConnectHub: ctor");
 }
 
 RSRenderServiceConnectHub::~RSRenderServiceConnectHub() noexcept
@@ -89,7 +89,7 @@ sptr<RSIRenderServiceConnection> RSRenderServiceConnectHub::GetRenderServiceConn
 
 bool RSRenderServiceConnectHub::Connect()
 {
-    RS_LOGI("RSRenderServiceConnectHub::Connect");
+    RS_LOGD("RSRenderServiceConnectHub::Connect");
     int tryCnt = 0;
     sptr<RSIRenderService> renderService = nullptr;
     do {
