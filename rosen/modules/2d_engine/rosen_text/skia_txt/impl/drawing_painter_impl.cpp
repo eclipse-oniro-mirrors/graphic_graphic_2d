@@ -98,8 +98,15 @@ void RSCanvasParagraphPainter::drawTextBlob(
     auto textBlob = std::make_shared<Drawing::TextBlob>(textBlobImpl);
 
     if (pr.isSymbolGlyph && G_IS_HM_SYMBOL_TXT_ENABLE) {
+        std::vector<SkPoint> points;
+        GetTextSymbolOffset(blob.get(), points);
+        RSPoint offset;
+        if (points.size() > 0) {
+            offset = RSPoint{ x + points[0].x(), y + points[0].y() };
+        } else {
+            offset = RSPoint{ x, y };
+        }
         SymbolAnimation(pr);
-        RSPoint offset = RSPoint{ x, y};
         drawSymbolSkiaTxt(textBlob.get(), offset, pr);
     } else if (pr.pen.has_value() && pr.brush.has_value()) {
         canvas_->AttachPen(pr.pen.value());
