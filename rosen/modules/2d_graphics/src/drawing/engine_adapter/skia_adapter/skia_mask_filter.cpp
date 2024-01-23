@@ -41,20 +41,15 @@ void SkiaMaskFilter::SetSkMaskFilter(const sk_sp<SkMaskFilter>& filter)
 
 std::shared_ptr<Data> SkiaMaskFilter::Serialize() const
 {
-#ifdef ROSEN_OHOS
     if (filter_ == nullptr) {
         return nullptr;
     }
 
     return SkiaHelper::FlattenableSerialize(filter_.get());
-#else
-    return nullptr;
-#endif
 }
 
 bool SkiaMaskFilter::Deserialize(std::shared_ptr<Data> data)
 {
-#ifdef ROSEN_OHOS
     if (data == nullptr) {
         LOGE("SkiaMaskFilter::Deserialize, data is invalid!");
         return false;
@@ -62,9 +57,6 @@ bool SkiaMaskFilter::Deserialize(std::shared_ptr<Data> data)
 
     filter_ = SkiaHelper::FlattenableDeserialize<SkMaskFilterBase>(data);
     return true;
-#else
-    return false;
-#endif
 }
 
 } // namespace Drawing
