@@ -178,7 +178,7 @@ double Typography::GetLineWidth(int lineNumber)
 }
 
 void Typography::SetAnimation(
-    std::function<bool(const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)>& animationFunc
+    std::function<bool(const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)>& animationFunc
 )
 {
     if (animationFunc != nullptr) {
