@@ -70,11 +70,9 @@ void TypographyCreate::AppendSymbol(const uint32_t& symbolId)
 {
     std::vector<uint32_t> symbolUnicode = {symbolId};
     std::vector<uint16_t> symbolUnicode16 = SymbolToUTF16(symbolUnicode);
-    std::vector<uint16_t> text;
-    text.insert(text.begin(), symbolUnicode16.begin(), symbolUnicode16.end());
-    std::u16string t;
-    std::copy(text.begin(), text.end(), std::back_inserter(t));
-    builder_->AddText(t);
+    std::u16string text;
+    std::copy(symbolUnicode16.begin(), symbolUnicode16.end(), std::back_inserter(text));
+    builder_->AddText(text);
 }
 
 void TypographyCreate::AppendPlaceholder(const PlaceholderSpan& span)
