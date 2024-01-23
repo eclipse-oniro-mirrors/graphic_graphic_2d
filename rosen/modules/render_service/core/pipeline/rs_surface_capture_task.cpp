@@ -196,7 +196,7 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
                 } else if (rotation == ScreenRotation::ROTATION_270) {
                     pixelmap->rotate(static_cast<int32_t>(270)); // 270 degrees
                 }
-                RS_LOGI("RSSurfaceCaptureTask::Run: PixelmapRotation: %{public}d", static_cast<int32_t>(rotation));
+                RS_LOGD("RSSurfaceCaptureTask::Run: PixelmapRotation: %{public}d", static_cast<int32_t>(rotation));
             }
             // To get dump image
             // execute "param set rosen.dumpsurfacetype.enabled 3 && setenforce 0"
@@ -309,7 +309,7 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
                 } else if (rotation == ScreenRotation::ROTATION_270) {
                     pixelmap->rotate(static_cast<int32_t>(270)); // 270 degrees
                 }
-                RS_LOGI("RSSurfaceCaptureTask::Run: PixelmapRotation: %{public}d", static_cast<int32_t>(rotation));
+                RS_LOGD("RSSurfaceCaptureTask::Run: PixelmapRotation: %{public}d", static_cast<int32_t>(rotation));
             }
             // To get dump image
             // execute "param set rosen.dumpsurfacetype.enabled 3 && setenforce 0"
@@ -361,7 +361,7 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
             } else if (rotation == ScreenRotation::ROTATION_270) {
                 pixelmap->rotate(static_cast<int32_t>(270)); // 270 degrees
             }
-            RS_LOGI("RSSurfaceCaptureTask::Run: PixelmapRotation: %{public}d", static_cast<int32_t>(rotation));
+            RS_LOGD("RSSurfaceCaptureTask::Run: PixelmapRotation: %{public}d", static_cast<int32_t>(rotation));
         }
     }
     // To get dump image
@@ -434,7 +434,7 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTask::CreatePixelMapByDisplayNo
     Media::InitializationOptions opts;
     opts.size.width = ceil(pixmapWidth * scaleX_);
     opts.size.height = ceil(pixmapHeight * scaleY_);
-    RS_LOGI("RSSurfaceCaptureTask::CreatePixelMapByDisplayNode: NodeId:[%{public}" PRIu64 "],"
+    RS_LOGD("RSSurfaceCaptureTask::CreatePixelMapByDisplayNode: NodeId:[%{public}" PRIu64 "],"
         " origin pixelmap width is [%{public}u], height is [%{public}u],"
         " created pixelmap width is [%{public}u], height is [%{public}u],"
         " the scale is scaleY:[%{public}f], scaleY:[%{public}f]",

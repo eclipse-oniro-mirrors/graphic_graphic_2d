@@ -1158,7 +1158,7 @@ void RSNode::SetShadowColorStrategy(int shadowColorStrategy)
 
 void RSNode::SetFrameGravity(Gravity gravity)
 {
-    ROSEN_LOGI("RSNode::SetFrameGravity, gravity = %{public}d", gravity);
+    ROSEN_LOGD("RSNode::SetFrameGravity, gravity = %{public}d", gravity);
     SetProperty<RSFrameGravityModifier, RSProperty<Gravity>>(RSModifierType::FRAME_GRAVITY, gravity);
 }
 
@@ -1736,7 +1736,7 @@ void RSNode::AddChild(SharedPtr child, int index)
         return;
     }
     if (child->parent_ == id_) {
-        ROSEN_LOGI("RSNode::AddChild, child already exist");
+        ROSEN_LOGD("RSNode::AddChild, child already exist");
         return;
     }
     if (child->GetType() == RSUINodeType::DISPLAY_NODE) {

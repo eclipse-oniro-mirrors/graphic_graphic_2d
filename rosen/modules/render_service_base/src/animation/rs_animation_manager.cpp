@@ -65,7 +65,7 @@ void RSAnimationManager::CancelAnimationByPropertyId(PropertyId id)
 
 void RSAnimationManager::FilterAnimationByPid(pid_t pid)
 {
-    ROSEN_LOGI("RSAnimationManager::FilterAnimationByPid removing all animations belong to pid %{public}llu",
+    ROSEN_LOGD("RSAnimationManager::FilterAnimationByPid removing all animations belong to pid %{public}llu",
         (unsigned long long)pid);
     // remove all animations belong to given pid (by matching higher 32 bits of animation id)
     EraseIf(animations_, [pid, this](const auto& pair) -> bool {
