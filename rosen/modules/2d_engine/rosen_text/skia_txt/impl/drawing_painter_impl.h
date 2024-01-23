@@ -40,7 +40,7 @@ public:
     void drawPath(const SkPath& path, const DecorationStyle& decorStyle) override;
     void drawLine(SkScalar x0, SkScalar y0, SkScalar x1, SkScalar y1, const DecorationStyle& decorStyle) override;
     void SymbolAnimation(const PaintRecord &pr);
-    void drawSymbolSkiaTxt(RSTextBlob* blob, const RSPoint& offset, const PaintRecord &pr);
+    void DrawSymbolSkiaTxt(RSTextBlob* blob, const RSPoint& offset, const PaintRecord &pr);
 
     void clipRect(const SkRect& rect) override;
     void translate(SkScalar dx, SkScalar dy) override;
