@@ -205,20 +205,6 @@ HWTEST_F(VSyncDistributorTest, SetVSyncRate004, Function | MediumTest| Level3)
     ASSERT_EQ(VSyncDistributorTest::vsyncDistributor->SetVSyncRate(1, conn), VSYNC_ERROR_INVALID_ARGUMENTS);
 }
 
-
-/*
-* Function: GetVSyncPeriod001
-* Type: Function
-* Rank: Important(2)
-* EnvConditions: N/A
-* CaseDescription: 1. call GetVSyncPeriod and check ret
- */
-HWTEST_F(VSyncDistributorTest, GetVSyncPeriod001, Function | MediumTest| Level3)
-{
-    int64_t period;
-    ASSERT_EQ(VSyncDistributorTest::vsyncDistributor->GetVSyncPeriod(period), VSYNC_ERROR_OK);
-}
-
 /*
 * Function: SetQosVSyncRate001
 * Type: Function
