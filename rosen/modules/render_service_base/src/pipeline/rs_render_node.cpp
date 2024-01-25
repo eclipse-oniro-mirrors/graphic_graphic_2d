@@ -744,7 +744,7 @@ void RSRenderNode::DumpDrawCmdModifiers(std::string& out) const
                 propertyDesc += "ENV_FOREGROUND_COLOR:[Rgba-";
                 auto propertyValue = std::static_pointer_cast<RSRenderAnimatableProperty<Color>>
                     (modifier->GetProperty())->Get();
-                propertyDesc += std::to_string(propertyValue.AsRgbaint());
+                propertyDesc += std::to_string(propertyValue.AsRgbaInt());
             } else if (type == RSModifierType::ENV_FOREGROUND_COLOR_STRATEGY) {
                 propertyDesc += "ENV_FOREGROUND_COLOR_STRATEGY:[";
                 auto propertyValue = std::static_pointer_cast<RSRenderProperty<ForegroundColorStrategyType>>

@@ -35,7 +35,7 @@ void RSAnimationManager::DumpAnimations(std::string& out) const
     if (animations_.empty()) {
         return;
     }
-    out += ", RSAnimationManager:[";
+    out += ", RSAnimationManager: [";
     for (auto[id, animation]: animations_) {
         if (!animation) {
             continue;
