@@ -214,7 +214,9 @@ HWTEST_F(VSyncDistributorTest, SetVSyncRate004, Function | MediumTest| Level3)
  */
 HWTEST_F(VSyncDistributorTest, SetQosVSyncRate001, Function | MediumTest| Level3)
 {
-    ASSERT_EQ(VSyncDistributorTest::vsyncDistributor->SetQosVSyncRate(1, 1), VSYNC_ERROR_OK);
+    sptr<VSyncConnection> conn = new VSyncConnection(vsyncDistributor, "WM_123");
+    ASSERT_EQ(VSyncDistributorTest::vsyncDistributor->AddConnection(conn), VSYNC_ERROR_OK);
+    ASSERT_EQ(VSyncDistributorTest::vsyncDistributor->SetQosVSyncRate(123, 1), VSYNC_ERROR_OK);
 }
 
 /*
