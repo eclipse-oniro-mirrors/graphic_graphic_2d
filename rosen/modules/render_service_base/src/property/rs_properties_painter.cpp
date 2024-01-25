@@ -1807,7 +1807,7 @@ const std::shared_ptr<SkRuntimeShaderBuilder>& RSPropertiesPainter::GetPhongShad
             float diffuseStrength = 0.0;
             vec3 specularColor = vec3(1.0, 1.0, 1.0);
             float shininess = 8.0;
-            half4 fragColor;
+            half4 fragColor = half4(0.0, 0.0, 0.0, 0.0);
             vec4 NormalMap = vec4(0.0, 0.0, 1.0, 0.0);
             // ambient
             vec4 ambient = lightColor.rgb1 * ambientStrength;
@@ -1859,7 +1859,7 @@ const std::shared_ptr<Drawing::RuntimeShaderBuilder>& RSPropertiesPainter::GetPh
             float diffuseStrength = 0.0;
             vec3 specularColor = vec3(1.0, 1.0, 1.0);
             float shininess = 8.0;
-            half4 fragColor;
+            half4 fragColor = half4(0.0, 0.0, 0.0, 0.0);
             vec4 NormalMap = vec4(0.0, 0.0, 1.0, 0.0);
             // ambient
             vec4 ambient = lightColor.rgb1 * ambientStrength;
