@@ -677,6 +677,7 @@ void RSCanvasDrawingRenderNode::ClearOp()
 void RSCanvasDrawingRenderNode::ResetSurface()
 {
     surface_ = nullptr;
+    recordingCanvas_ = nullptr;
 }
 } // namespace Rosen
 } // namespace OHOS
