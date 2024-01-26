@@ -262,6 +262,11 @@ GSError ConsumerSurface::SetUserData(const std::string &key, const std::string &
         return GSERROR_OUT_OF_RANGE;
     }
     userData_[key] = val;
+    std::lock_guard<std::mutex> lockGuard(onUserDataChangeMutex_);
+    if (onUserDataChange_ != nullptr) {
+        onUserDataChange_(key, val);
+    }
+
     return GSERROR_OK;
 }
 
@@ -307,6 +312,20 @@ GSError ConsumerSurface::RegisterDeleteBufferListener(OnDeleteBufferFunc func, b
 GSError ConsumerSurface::UnregisterConsumerListener()
 {
     return consumer_->UnregisterConsumerListener();
+}
+
+GSError ConsumerSurface::RegisterUserDataChangeListener(OnUserDataChangeFunc func)
+{
+    std::lock_guard<std::mutex> lockGuard(onUserDataChangeMutex_);
+    onUserDataChange_ = func;
+    return GSERROR_OK;
+}
+
+GSError ConsumerSurface::UnRegisterUserDataChangeListener()
+{
+    std::lock_guard<std::mutex> lockGuard(onUserDataChangeMutex_);
+    onUserDataChange_ = nullptr;
+    return GSERROR_OK;
 }
 
 GSError ConsumerSurface::CleanCache()

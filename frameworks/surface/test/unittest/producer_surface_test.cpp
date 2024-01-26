@@ -341,6 +341,30 @@ HWTEST_F(ProducerSurfaceTest, UserData001, Function | MediumTest | Level2)
 }
 
 /*
+* Function: UserDataChangeListen
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. RegisterUserDataChangeListen
+*                  2. SetUserData
+*                  3. check ret
+ */
+HWTEST_F(ProducerSurfaceTest, UserDataChangeListen001, Function | MediumTest | Level2)
+{
+    GSError ret = OHOS::GSERROR_INVALID_ARGUMENTS;
+    pSurface->RegisterUserDataChangeListener([&ret](const std::string& key, const std::string& value) {
+        ret = OHOS::GSERROR_OK;
+    });
+    
+    pSurface->SetUserData("Regist", "OK");
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    ret = OHOS::GSERROR_INVALID_ARGUMENTS;
+    pSurface->UnRegisterUserDataChangeListener();
+    pSurface->SetUserData("UnRegist", "INVALID");
+    ASSERT_EQ(ret, OHOS::GSERROR_INVALID_ARGUMENTS);
+}
+
+/*
 * Function: GetUniqueId
 * Type: Function
 * Rank: Important(2)

@@ -93,6 +93,8 @@ public:
     GSError UnRegisterReleaseListener() override;
     GSError RegisterDeleteBufferListener(OnDeleteBufferFunc func, bool isForUniRedraw = false) override;
     GSError UnregisterConsumerListener() override;
+    GSError RegisterUserDataChangeListener(OnUserDataChangeFunc func) override;
+    GSError UnRegisterUserDataChangeListener() override;
 
     void Dump(std::string &result) const override {};
 
@@ -141,6 +143,8 @@ private:
     sptr<IProducerListener> listener_;
     wptr<NativeWindow> wpNativeWindow_ = nullptr;
     wptr<ProducerSurfaceDelegator> wpPSurfaceDelegator_ = nullptr;
+    OnUserDataChangeFunc onUserDataChange_ = nullptr;
+    std::mutex onUserDataChangeMutex_;
 };
 } // namespace OHOS
 

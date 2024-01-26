@@ -87,6 +87,8 @@ public:
     GSError UnRegisterReleaseListener() override;
     GSError RegisterDeleteBufferListener(OnDeleteBufferFunc func, bool isForUniRedraw = false) override;
     GSError UnregisterConsumerListener() override;
+    GSError RegisterUserDataChangeListener(OnUserDataChangeFunc func) override;
+    GSError UnRegisterUserDataChangeListener() override;
 
     uint64_t GetUniqueId() const override;
 
@@ -130,6 +132,8 @@ private:
     sptr<BufferQueueConsumer> consumer_ = nullptr;
     std::string name_ = "not init";
     bool isShared_ = false;
+    OnUserDataChangeFunc onUserDataChange_ = nullptr;
+    std::mutex onUserDataChangeMutex_;
 };
 } // namespace OHOS
 

@@ -80,6 +80,8 @@ public:
     virtual GSError RegisterReleaseListener(OnReleaseFunc func) = 0;
     virtual GSError RegisterDeleteBufferListener(OnDeleteBufferFunc func, bool isForUniRedraw = false) = 0;
     virtual GSError UnregisterConsumerListener() = 0;
+    virtual GSError RegisterUserDataChangeListener(OnUserDataChangeFunc func) = 0;
+    virtual GSError UnRegisterUserDataChangeListener() = 0;
 
     // Call carefully. This interface will empty all caches of the current process
     virtual GSError CleanCache() = 0;
