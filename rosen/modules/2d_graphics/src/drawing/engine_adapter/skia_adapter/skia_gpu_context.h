@@ -55,6 +55,9 @@ public:
 
     bool BuildFromGL(const GPUContextOptions& options) override;
 
+    static std::unique_ptr<SkExecutor> threadPool;
+    void InitSkExecutor();
+
 #ifdef RS_ENABLE_VK
     bool BuildFromVK(const GrVkBackendContext& context) override;
     bool BuildFromVK(const GrVkBackendContext& context, const GPUContextOptions& options) override;
