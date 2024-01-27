@@ -26,12 +26,13 @@ namespace OHOS {
 namespace Rosen {
 namespace SPText {
 namespace {
-SkFontStyle::Weight ConvertToSkFontWeight(FontWeight fontWeight)
+int ConvertToSkFontWeight(FontWeight fontWeight)
 {
     constexpr int weightBase = 100;
-    return static_cast<SkFontStyle::Weight>(static_cast<int>(fontWeight) * weightBase + weightBase);
+    return static_cast<int>(fontWeight) * weightBase + weightBase;
 }
 
+#ifndef USE_ROSEN_DRAWING
 SkFontStyle MakeFontStyle(FontWeight fontWeight, FontStyle fontStyle)
 {
     auto weight = ConvertToSkFontWeight(fontWeight);
@@ -39,6 +40,15 @@ SkFontStyle MakeFontStyle(FontWeight fontWeight, FontStyle fontStyle)
         SkFontStyle::Slant::kUpright_Slant : SkFontStyle::Slant::kItalic_Slant;
     return SkFontStyle(weight, SkFontStyle::Width::kNormal_Width, slant);
 }
+#else
+RSFontStyle MakeFontStyle(FontWeight fontWeight, FontStyle fontStyle)
+{
+    auto weight = ConvertToSkFontWeight(fontWeight);
+    auto slant = fontStyle == FontStyle::NORMAL ?
+        RSFontStyle::Slant::UPRIGHT_SLANT : RSFontStyle::Slant::ITALIC_SLANT;
+    return RSFontStyle(weight, SkFontStyle::Width::kNormal_Width, slant);
+}
+#endif
 
 SkFontArguments MakeFontArguments(const FontVariations& fontVariations)
 {
