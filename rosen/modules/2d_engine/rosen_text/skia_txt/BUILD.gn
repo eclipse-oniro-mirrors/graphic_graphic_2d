@@ -157,7 +157,10 @@ ohos_source_set("skia_paragraph") {
   ]
 
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
-    defines += [ "USE_ROSEN_DRAWING", "USE_SKIA_TXT" ]
+    defines += [
+      "USE_ROSEN_DRAWING",
+      "USE_SKIA_TXT",
+    ]
     if (ace_enable_gpu) {
       defines += [ "ACE_ENABLE_GPU" ]
     }
@@ -222,7 +225,10 @@ ohos_source_set("skia_shaper") {
   defines = []
 
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
-    defines += [ "USE_ROSEN_DRAWING", "USE_SKIA_TXT" ]
+    defines += [
+      "USE_ROSEN_DRAWING",
+      "USE_SKIA_TXT",
+    ]
     if (ace_enable_gpu) {
       defines += [ "ACE_ENABLE_GPU" ]
     }

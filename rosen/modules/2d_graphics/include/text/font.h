@@ -176,7 +176,7 @@ public:
      * @param maxGlyphCount Storage capacity.
      * @return              Number of glyphs represented by text of length byteLength.
      */
-    int TextToGlyphs(const void* text, size_t byteLength, TextEncoding encoding, 
+    int TextToGlyphs(const void* text, size_t byteLength, TextEncoding encoding,
         uint16_t glyphs[], int maxGlyphCount) const;
 
     /*

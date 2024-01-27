@@ -30,11 +30,11 @@ public:
     explicit RunMetrics(const TextStyle* style) : textStyle(style) {}
 
 #ifndef USE_ROSEN_DRAWING
-    RunMetrics(const TextStyle* style, const SkFontMetrics& metrics) :
-        textStyle(style), fontMetrics(metrics) {}
+    RunMetrics(const TextStyle* style, const SkFontMetrics& metrics)
+        : textStyle(style), fontMetrics(metrics) {}
 #else
-    RunMetrics(const TextStyle* style, const Drawing::FontMetrics& metrics) :
-        textStyle(style), fontMetrics(metrics) {}
+    RunMetrics(const TextStyle* style, const Drawing::FontMetrics& metrics)
+        : textStyle(style), fontMetrics(metrics) {}
 #endif
 
     const TextStyle* textStyle;

@@ -126,7 +126,7 @@ uint16_t Font::UnicharToGlyph(int32_t uni) const
     return fontImpl_->UnicharToGlyph(uni);
 }
 
-int Font::TextToGlyphs(const void* text, size_t byteLength, TextEncoding encoding, 
+int Font::TextToGlyphs(const void* text, size_t byteLength, TextEncoding encoding,
     uint16_t glyphs[], int maxGlyphCount) const
 {
     return fontImpl_->TextToGlyphs(text, byteLength, encoding, glyphs, maxGlyphCount);

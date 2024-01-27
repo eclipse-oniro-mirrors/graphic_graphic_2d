@@ -174,7 +174,7 @@ uint16_t SkiaFont::UnicharToGlyph(int32_t uni) const
     return skFont_.unicharToGlyph(uni);
 }
 
-int SkiaFont::TextToGlyphs(const void* text, size_t byteLength, TextEncoding encoding, 
+int SkiaFont::TextToGlyphs(const void* text, size_t byteLength, TextEncoding encoding,
     uint16_t glyphs[], int maxGlyphCount) const
 {
     SkTextEncoding skEncoding = static_cast<SkTextEncoding>(encoding);

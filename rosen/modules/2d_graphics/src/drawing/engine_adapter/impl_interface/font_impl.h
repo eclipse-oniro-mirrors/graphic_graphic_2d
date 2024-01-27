@@ -57,7 +57,7 @@ public:
     virtual bool IsSubpixel() const = 0;
 
     virtual uint16_t UnicharToGlyph(int32_t uni) const = 0;
-    virtual int TextToGlyphs(const void* text, size_t byteLength, TextEncoding encoding, 
+    virtual int TextToGlyphs(const void* text, size_t byteLength, TextEncoding encoding,
         uint16_t glyphs[], int maxGlyphCount) const = 0;
 
     virtual scalar MeasureText(const void* text, size_t byteLength, TextEncoding encoding) = 0;
