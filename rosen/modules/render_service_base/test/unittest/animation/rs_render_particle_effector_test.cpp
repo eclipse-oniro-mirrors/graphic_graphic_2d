@@ -106,7 +106,6 @@ void RSRenderParticleEffectorTest::SetOpacity()
     opacityChangeOverLife.push_back(change1);
     opacityChangeOverLife.push_back(change2);
     opacity_ = RenderParticleParaType(opacityVal, opacityUpdator, opacityRandom, opacityChangeOverLife);
-
 }
 
 void RSRenderParticleEffectorTest::SetUp()
@@ -121,7 +120,8 @@ void RSRenderParticleEffectorTest::SetUp()
     scale_ = RenderParticleParaType(scaleVal, scaleUpdator, scaleRandom, scaleChangeOverLife);
     Range<float> spinRandom = Range<float>(1.f, 0.1f);
     spin_ = RenderParticleParaType(scaleVal, scaleUpdator, spinRandom, scaleChangeOverLife);
-    params = std::make_shared<ParticleRenderParams>(emitterConfig_, velocity_, acceleration_, color_, opacity_, scale_, spin_);
+    params = std::make_shared<ParticleRenderParams>(
+        emitterConfig_, velocity_, acceleration_, color_, opacity_, scale_, spin_);
     particle = std::make_shared<RSRenderParticle>(params);
     effector = std::make_shared<RSRenderParticleEffector>(params);
 }
@@ -218,7 +218,8 @@ HWTEST_F(RSRenderParticleEffectorTest, UpdateEffect001, TestSize.Level1)
     Range<float> spinRandom = Range<float>(1.f, 0.1f);
     RenderParticleParaType<float> spin =
         RenderParticleParaType(opacityVal, curveUpdator, randomSpeed, valChangeOverLife);
-    params = std::make_shared<ParticleRenderParams>(emitterConfig_, velocity_, acceleration_, color, opacity, scale, spin);
+    params = std::make_shared<ParticleRenderParams>(
+        emitterConfig_, velocity_, acceleration_, color, opacity, scale, spin);
     particle = std::make_shared<RSRenderParticle>(params);
     effector = std::make_shared<RSRenderParticleEffector>(params);
     effector->UpdateColor(particle, deltaTime, 16666667);
