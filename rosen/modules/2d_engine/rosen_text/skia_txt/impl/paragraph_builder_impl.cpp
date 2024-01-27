@@ -113,7 +113,6 @@ skt::ParagraphStyle ParagraphBuilderImpl::TextStyleToSkStyle(const ParagraphStyl
     textStyle.setFontFamilies({ SkString(txt.fontFamily.c_str()) });
     textStyle.setLocale(SkString(txt.locale.c_str()));
     skStyle.setTextStyle(textStyle);
-
     skt::StrutStyle strutStyle;
     strutStyle.setFontStyle(MakeSkFontStyle(txt.strutFontWeight, txt.strutFontStyle));
     strutStyle.setFontSize(SkDoubleToScalar(txt.strutFontSize));
@@ -132,6 +131,10 @@ skt::ParagraphStyle ParagraphBuilderImpl::TextStyleToSkStyle(const ParagraphStyl
 
     skStyle.setTextAlign(static_cast<skt::TextAlign>(txt.textAlign));
     skStyle.setTextDirection(static_cast<skt::TextDirection>(txt.textDirection));
+    skStyle.setEllipsisMod(static_cast<skt::EllipsisModal>(txt.ellipsisModal));
+    if (txt.ellipsisModal != EllipsisModal::TAIL) {
+        skStyle.setEllipsis(txt.ellipsis);
+    }
     skStyle.setMaxLines(txt.maxLines);
     skStyle.setEllipsis(txt.ellipsis);
     skStyle.setTextHeightBehavior(static_cast<skt::TextHeightBehavior>(txt.textHeightBehavior));
@@ -168,6 +171,11 @@ skt::TextStyle ParagraphBuilderImpl::TextStyleToSkStyle(const TextStyle& txt)
     skStyle.setHalfLeading(txt.halfLeading);
 
     skStyle.setLocale(SkString(txt.locale.c_str()));
+    skStyle.setStyleId(txt.styleId);
+    skStyle.setBackgroundRect({ txt.backgroundRect.color, txt.backgroundRect.leftTopRadius,
+        txt.backgroundRect.rightTopRadius, txt.backgroundRect.rightBottomRadius,
+        txt.backgroundRect.leftBottomRadius });
+
     if (txt.background.has_value()) {
         skStyle.setBackgroundPaintID(AllocPaintID(txt.background.value()));
     }

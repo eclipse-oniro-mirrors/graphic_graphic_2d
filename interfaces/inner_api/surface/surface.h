@@ -80,8 +80,6 @@ public:
     virtual GSError RegisterReleaseListener(OnReleaseFunc func) = 0;
     virtual GSError RegisterDeleteBufferListener(OnDeleteBufferFunc func, bool isForUniRedraw = false) = 0;
     virtual GSError UnregisterConsumerListener() = 0;
-    virtual GSError RegisterUserDataChangeListener(OnUserDataChangeFunc func) = 0;
-    virtual GSError UnRegisterUserDataChangeListener() = 0;
 
     // Call carefully. This interface will empty all caches of the current process
     virtual GSError CleanCache() = 0;
@@ -127,6 +125,9 @@ public:
     virtual GSError AttachBuffer(sptr<SurfaceBuffer>& buffer, int32_t timeOut) = 0;
     virtual GSError RegisterSurfaceDelegator(sptr<IRemoteObject> client) = 0;
     virtual GSError RegisterReleaseListener(OnReleaseFuncWithFence func) = 0;
+    virtual GSError RegisterUserDataChangeListener(const std::string &funcName, OnUserDataChangeFunc func) = 0;
+    virtual GSError UnRegisterUserDataChangeListener(const std::string &funcName) = 0;
+    virtual GSError ClearUserDataChangeListener() = 0;
 
 protected:
     Surface() = default;

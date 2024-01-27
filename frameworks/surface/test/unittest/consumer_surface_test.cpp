@@ -281,17 +281,42 @@ HWTEST_F(ConsumerSurfaceTest, UserData001, Function | MediumTest | Level2)
  */
 HWTEST_F(ConsumerSurfaceTest, UserDataChangeListen001, Function | MediumTest | Level2)
 {
-    GSError ret = OHOS::GSERROR_INVALID_ARGUMENTS;
-    cs->RegisterUserDataChangeListener([&ret](const std::string& key, const std::string& value) {
-        ret = OHOS::GSERROR_OK;
-    });
-    
-    cs->SetUserData("Regist", "OK");
-    ASSERT_EQ(ret, OHOS::GSERROR_OK);
-    ret = OHOS::GSERROR_INVALID_ARGUMENTS;
-    cs->UnRegisterUserDataChangeListener();
-    cs->SetUserData("UnRegist", "INVALID");
-    ASSERT_EQ(ret, OHOS::GSERROR_INVALID_ARGUMENTS);
+    sptr<IConsumerSurface> csTestUserData = IConsumerSurface::Create();
+    GSError ret1 = OHOS::GSERROR_INVALID_ARGUMENTS;
+    GSError ret2 = OHOS::GSERROR_INVALID_ARGUMENTS;
+    auto func1 = [&ret1](const std::string& key, const std::string& value) {
+        ret1 = OHOS::GSERROR_OK;
+    };
+    auto func2 = [&ret2](const std::string& key, const std::string& value) {
+        ret2 = OHOS::GSERROR_OK;
+    };
+    csTestUserData->RegisterUserDataChangeListener("func1", func1);
+    csTestUserData->RegisterUserDataChangeListener("func2", func2);
+    ASSERT_EQ(csTestUserData->RegisterUserDataChangeListener("func2", func2), OHOS::GSERROR_INVALID_ARGUMENTS);
+
+    if (csTestUserData->SetUserData("Regist", "OK") == OHOS::GSERROR_OK) {
+        ASSERT_EQ(ret1, OHOS::GSERROR_OK);
+        ASSERT_EQ(ret2, OHOS::GSERROR_OK);
+    }
+
+    ret1 = OHOS::GSERROR_INVALID_ARGUMENTS;
+    ret2 = OHOS::GSERROR_INVALID_ARGUMENTS;
+    csTestUserData->UnRegisterUserDataChangeListener("func1");
+    ASSERT_EQ(csTestUserData->UnRegisterUserDataChangeListener("func1"), OHOS::GSERROR_INVALID_ARGUMENTS);
+
+    if (csTestUserData->SetUserData("UnRegist", "INVALID") == OHOS::GSERROR_OK) {
+        ASSERT_EQ(ret1, OHOS::GSERROR_INVALID_ARGUMENTS);
+        ASSERT_EQ(ret2, OHOS::GSERROR_OK);
+    }
+
+    ret1 = OHOS::GSERROR_INVALID_ARGUMENTS;
+    ret2 = OHOS::GSERROR_INVALID_ARGUMENTS;
+    csTestUserData->ClearUserDataChangeListener();
+    csTestUserData->RegisterUserDataChangeListener("func1", func1);
+    if (csTestUserData->SetUserData("Clear", "OK") == OHOS::GSERROR_OK) {
+        ASSERT_EQ(ret1, OHOS::GSERROR_OK);
+        ASSERT_EQ(ret2, OHOS::GSERROR_INVALID_ARGUMENTS);
+    }
 }
 
 /*

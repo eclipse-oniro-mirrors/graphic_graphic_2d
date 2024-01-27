@@ -93,8 +93,6 @@ public:
     GSError UnRegisterReleaseListener() override;
     GSError RegisterDeleteBufferListener(OnDeleteBufferFunc func, bool isForUniRedraw = false) override;
     GSError UnregisterConsumerListener() override;
-    GSError RegisterUserDataChangeListener(OnUserDataChangeFunc func) override;
-    GSError UnRegisterUserDataChangeListener() override;
 
     void Dump(std::string &result) const override {};
 
@@ -128,6 +126,9 @@ public:
     sptr<NativeSurface> GetNativeSurface() override;
     GSError SetWptrNativeWindowToPSurface(void* nativeWindow) override;
     virtual GSError RegisterSurfaceDelegator(sptr<IRemoteObject> client) override;
+    GSError RegisterUserDataChangeListener(const std::string &funcName, OnUserDataChangeFunc func) override;
+    GSError UnRegisterUserDataChangeListener(const std::string &funcName) override;
+    GSError ClearUserDataChangeListener() override;
 private:
     bool IsRemote();
     void CleanAllLocked();
@@ -143,8 +144,8 @@ private:
     sptr<IProducerListener> listener_;
     wptr<NativeWindow> wpNativeWindow_ = nullptr;
     wptr<ProducerSurfaceDelegator> wpPSurfaceDelegator_ = nullptr;
-    OnUserDataChangeFunc onUserDataChange_ = nullptr;
-    std::mutex onUserDataChangeMutex_;
+    std::map<std::string, OnUserDataChangeFunc> onUserDataChange_;
+    std::mutex lockMutex_;
 };
 } // namespace OHOS
 

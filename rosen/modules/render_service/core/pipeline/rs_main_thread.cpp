@@ -341,8 +341,7 @@ void RSMainThread::Init()
     }
 #ifdef RS_ENABLE_GL
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
-        int cacheLimitsTimes = ((system::GetParameter("const.product.devicetype", "") == "ALT") ||
-            deviceType_ == DeviceType::PC) ? 6 : 3;
+        int cacheLimitsTimes = 3;
 #ifndef USE_ROSEN_DRAWING
 #ifdef NEW_RENDER_CONTEXT
         auto grContext = isUniRender_? uniRenderEngine_->GetDrawingContext()->GetDrawingContext() :
@@ -1424,6 +1423,9 @@ void RSMainThread::WaitUntilUploadTextureTaskFinishedForGL()
 
 void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
 {
+    if (isAccessibilityConfigChanged_) {
+        RSUniRenderVisitor::ClearRenderGroupCache();
+    }
     UpdateUIFirstSwitch();
     UpdateRogSizeIfNeeded();
     auto uniVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -2264,7 +2266,7 @@ void RSMainThread::SendCommands()
         RSMessageProcessor::Instance().GetAllTransactions());
     RSMessageProcessor::Instance().ReInitializeMovedMap();
     PostTask([this, transactionMapPtr]() {
-        for (auto& transactionIter : *transactionMapPtr) {
+        for (const auto& transactionIter : *transactionMapPtr) {
             auto pid = transactionIter.first;
             auto appIter = applicationAgentMap_.find(pid);
             if (appIter == applicationAgentMap_.end()) {

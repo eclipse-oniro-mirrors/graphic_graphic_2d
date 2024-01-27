@@ -74,6 +74,7 @@ SPText::ParagraphStyle Convert(const TypographyStyle& style)
         .forceStrutHeight = style.lineStyleOnly,
         .textAlign = static_cast<SPText::TextAlign>(style.textAlign),
         .textDirection = static_cast<SPText::TextDirection>(style.textDirection),
+        .ellipsisModal = static_cast<SPText::EllipsisModal>(style.ellipsisModal),
         .maxLines = style.maxLines,
         .ellipsis = style.ellipsis,
         .locale = style.locale,
@@ -115,6 +116,10 @@ SPText::TextStyle Convert(const TextStyle& style)
     textStyle.height = style.heightScale;
     textStyle.heightOverride = style.heightOnly;
     textStyle.locale = style.locale;
+    textStyle.backgroundRect = { style.backgroundRect.color, style.backgroundRect.leftTopRadius,
+        style.backgroundRect.rightTopRadius, style.backgroundRect.rightBottomRadius,
+        style.backgroundRect.leftBottomRadius };
+    textStyle.styleId = style.styleId;
     textStyle.isSymbolGlyph = style.isSymbolGlyph;
 
     if (style.isSymbolGlyph) {

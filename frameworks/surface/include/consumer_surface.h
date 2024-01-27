@@ -87,8 +87,6 @@ public:
     GSError UnRegisterReleaseListener() override;
     GSError RegisterDeleteBufferListener(OnDeleteBufferFunc func, bool isForUniRedraw = false) override;
     GSError UnregisterConsumerListener() override;
-    GSError RegisterUserDataChangeListener(OnUserDataChangeFunc func) override;
-    GSError UnRegisterUserDataChangeListener() override;
 
     uint64_t GetUniqueId() const override;
 
@@ -125,6 +123,9 @@ public:
     GSError AttachBuffer(sptr<SurfaceBuffer>& buffer, int32_t timeOut) override;
     GSError RegisterSurfaceDelegator(sptr<IRemoteObject> client) override;
     GSError RegisterReleaseListener(OnReleaseFuncWithFence func) override;
+    GSError RegisterUserDataChangeListener(const std::string &funcName, OnUserDataChangeFunc func) override;
+    GSError UnRegisterUserDataChangeListener(const std::string &funcName) override;
+    GSError ClearUserDataChangeListener() override;
 
 private:
     std::map<std::string, std::string> userData_;
@@ -132,8 +133,8 @@ private:
     sptr<BufferQueueConsumer> consumer_ = nullptr;
     std::string name_ = "not init";
     bool isShared_ = false;
-    OnUserDataChangeFunc onUserDataChange_ = nullptr;
-    std::mutex onUserDataChangeMutex_;
+    std::map<std::string, OnUserDataChangeFunc> onUserDataChange_;
+    std::mutex lockMutex_;
 };
 } // namespace OHOS
 
