@@ -715,7 +715,7 @@ HWTEST_F(CmdListHelperTest, AddCmdListData, TestSize.Level1)
  * @tc.require: I7SO7X
  */
 HWTEST_F(CmdListHelperTest, AddImageData, TestSize.Level1)
-{   
+{
     auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
     EXPECT_EQ(cmdList->AddImageData(nullptr, 0), 0);
 }
@@ -727,7 +727,7 @@ HWTEST_F(CmdListHelperTest, AddImageData, TestSize.Level1)
  * @tc.require: I7SO7X
  */
 HWTEST_F(CmdListHelperTest, AddBitmapData, TestSize.Level1)
-{   
+{
     auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
     EXPECT_EQ(cmdList->AddBitmapData(nullptr, 0), 0);
 }
@@ -739,7 +739,7 @@ HWTEST_F(CmdListHelperTest, AddBitmapData, TestSize.Level1)
  * @tc.require: I7SO7X
  */
 HWTEST_F(CmdListHelperTest, GetImageObject, TestSize.Level1)
-{   
+{
     auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
     EXPECT_EQ(cmdList->GetImageObject(TEST_INVALIED_ID), nullptr);
 }
