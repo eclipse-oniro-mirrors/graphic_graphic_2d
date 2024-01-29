@@ -81,7 +81,10 @@ template("skia_libtxt") {
     }
 
     if (defined(use_rosen_drawing) && use_rosen_drawing) {
-      defines += [ "USE_ROSEN_DRAWING" ]
+      defines += [
+        "USE_ROSEN_DRAWING",
+        "USE_SKIA_TXT",
+      ]
       if (ace_enable_gpu) {
         defines += [ "ACE_ENABLE_GPU" ]
       }
