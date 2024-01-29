@@ -252,6 +252,7 @@ HWTEST_F(CmdListHelperTest, ImageBaseObj, TestSize.Level1)
     std::shared_ptr<ExtendImageBaseObj> object = std::make_shared<ImageBaseObj>();
     auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
     auto handle = CmdListHelper::AddImageBaseObjToCmdList(*cmdList, object);
+    EXPECT_EQ(cmdList->GetImageBaseObj(TEST_INVALIED_ID), nullptr);
     std::shared_ptr<ExtendImageBaseObj> obj = CmdListHelper::GetImageBaseObjFromCmdList(*cmdList, handle);
     EXPECT_NE(obj, nullptr);
 }
@@ -495,6 +496,7 @@ HWTEST_F(CmdListHelperTest, DrawFuncObj, TestSize.Level1)
 {
     auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
     OpDataHandle handle = CmdListHelper::AddDrawFuncObjToCmdList(*cmdList, nullptr);
+    EXPECT_EQ(cmdList->GetDrawFuncObj(TEST_INVALIED_ID), nullptr);
     auto sptr = CmdListHelper::GetDrawFuncObjFromCmdList(*cmdList, handle);
     EXPECT_EQ(sptr, nullptr);
 }
@@ -591,6 +593,9 @@ HWTEST_F(CmdListHelperTest, Image, TestSize.Level1)
     Image image;
     OpDataHandle handle = cmdList->AddImage(image);
     auto sptr = cmdList->GetImage(handle);
+    EXPECT_EQ(sptr, nullptr);
+    handle.offset = TEST_INVALIED_ID;
+    sptr = cmdList->GetImage(handle);
     EXPECT_EQ(sptr, nullptr);
     
     Bitmap bmp;
