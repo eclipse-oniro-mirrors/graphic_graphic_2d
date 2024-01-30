@@ -901,15 +901,9 @@ WINDOW_LAYER_INFO_TYPE RSSurfaceRenderNode::GetVisibleLevelForWMS(RSVisibleLevel
     return WINDOW_LAYER_INFO_TYPE::SEMI_VISIBLE;
 }
 
-bool RSSurfaceRenderNode::IsMultiInstance()
-{
-    return GetName().find("filemanager") != std::string::npos || GetName().find("browser") != std::string::npos ||
-        GetName().find("shell_assistant") != std::string::npos;
-}
-
 bool RSSurfaceRenderNode::IsNeedSetVSync()
 {
-    return GetName().substr(0, SCB_NODE_NAME_PREFIX_LENGTH) != "SCB" && !IsMultiInstance();
+    return GetName().substr(0, SCB_NODE_NAME_PREFIX_LENGTH) != "SCB";
 }
 
 void RSSurfaceRenderNode::SetVisibleRegionRecursive(const Occlusion::Region& region,
@@ -1605,7 +1599,7 @@ bool RSSurfaceRenderNode::IsHistoryOccludedDirtyRegionNeedSubmit()
     return (hasUnSubmittedOccludedDirtyRegion_ &&
         !historyUnSubmittedOccludedDirtyRegion_.IsEmpty() &&
         !visibleRegion_.IsEmpty() &&
-        !visibleRegion_.IsIntersectWith(historyUnSubmittedOccludedDirtyRegion_));
+        visibleRegion_.IsIntersectWith(historyUnSubmittedOccludedDirtyRegion_));
 }
 
 void RSSurfaceRenderNode::ClearHistoryUnSubmittedDirtyInfo()
@@ -1653,8 +1647,7 @@ bool RSSurfaceRenderNode::IsUIFirstSelfDrawCheck()
 
 bool RSSurfaceRenderNode::IsCurFrameStatic(DeviceType deviceType)
 {
-    bool isDirty = deviceType == DeviceType::PC ?
-        (IsMainWindowType() && !surfaceCacheContentStatic_) :
+    bool isDirty = deviceType == DeviceType::PC ? !surfaceCacheContentStatic_ :
         (dirtyManager_ == nullptr || !dirtyManager_->GetCurrentFrameDirtyRegion().IsEmpty());
     if (isDirty) {
         return false;
@@ -1664,8 +1657,7 @@ bool RSSurfaceRenderNode::IsCurFrameStatic(DeviceType deviceType)
     } else if (IsLeashWindow()) {
         auto nestedSurfaceNodes = GetLeashWindowNestedSurfaces();
         // leashwindow children changed or has other type node except surfacenode
-        if (deviceType == DeviceType::PC && (lastFrameChildrenCnt_ != GetChildren().size() ||
-            nestedSurfaceNodes.size() != GetChildren().size())) {
+        if (deviceType == DeviceType::PC && lastFrameChildrenCnt_ != GetChildren().size()) {
             return false;
         }
         for (auto& nestedSurface: nestedSurfaceNodes) {
@@ -1710,6 +1702,9 @@ bool RSSurfaceRenderNode::IsVisibleDirtyEmpty(DeviceType deviceType)
         return true;
     } else if (IsLeashWindow()) {
         auto nestedSurfaceNodes = GetLeashWindowNestedSurfaces();
+        if (nestedSurfaceNodes.empty()) {
+            return false;
+        }
         for (auto& nestedSurface: nestedSurfaceNodes) {
             if (nestedSurface && !nestedSurface->IsVisibleDirtyEmpty(deviceType)) {
                 return false;
