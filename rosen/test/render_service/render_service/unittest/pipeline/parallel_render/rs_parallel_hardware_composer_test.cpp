@@ -87,8 +87,8 @@ HWTEST_F(RSParallelHardwareComposerTest, HardwareComposerGetRRectTest, TestSize.
 {
     RectF rect = {0.f, 0.f, 8.f, 8.f};
     Vector4f radius = {0.f, 0.f, 0.f, 0.f};
-    auto shape1 = std::make_unique<RSParallelSelfDrawingSurfaceShape>(false, rect, radius);
-    Drawing::RoundRect rrect = shape1->GetRRect();
+    auto shape = std::make_unique<RSParallelSelfDrawingSurfaceShape>(false, rect, radius);
+    Drawing::RoundRect rrect = shape->GetRRect();
     EXPECT_EQ(rrect.GetRect().right_, 8.f);
 }
 } // namespace OHOS::Rosen

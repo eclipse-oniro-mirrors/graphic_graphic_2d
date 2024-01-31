@@ -129,7 +129,6 @@ HWTEST_F(RsSubThreadTest, AddToReleaseQueue, TestSize.Level1)
     const Drawing::ImageInfo info =
     Drawing::ImageInfo{200, 200, Drawing::COLORTYPE_N32, Drawing::ALPHATYPE_OPAQUE };
     auto surface(Drawing::Surface::MakeRaster(info));
-
     auto curThread = std::make_shared<RSSubThread>(nullptr, 0);
     ASSERT_TRUE(curThread != nullptr);
     curThread->AddToReleaseQueue(std::move(surface));

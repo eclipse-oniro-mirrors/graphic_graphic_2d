@@ -94,7 +94,7 @@ HWTEST_F(RsSubThreadManagerTest, AddToReleaseQueue, TestSize.Level1)
 {
 #ifdef USE_ROSEN_DRAWING
     const Drawing::ImageInfo info =
-    Drawing::ImageInfo{200, 200, Drawing::COLORTYPE_N32, Drawing::ALPHATYPE_OPAQUE };
+    Drawing::ImageInfo{200, 200, Drawing::COLORTYPE_N32, Drawing::ALPHATYPE_OPAQUE }; // image size 200*200
     auto surface(Drawing::Surface::MakeRaster(info));
     auto rsSubThreadManager = RSSubThreadManager::Instance();
     ASSERT_NE(rsSubThreadManager, nullptr);

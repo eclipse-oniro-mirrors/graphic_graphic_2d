@@ -356,7 +356,7 @@ HWTEST_F(RSParallelSubThreadTest, FlushForRosenDrawing001, TestSize.Level1)
 HWTEST_F(RSParallelSubThreadTest, FlushForRosenDrawing002, TestSize.Level1)
 {
     auto curThread1 = std::make_unique<RSParallelSubThread>(nullptr, ParallelRenderType::FLUSH_ONE_BUFFER, 0);
-    curThread1->AcquireSubDrawingSurface(100, 100);  // size 100
+    curThread1->AcquireSubDrawingSurface(100, 100);  // surface size 100 * 100
     ASSERT_FALSE(curThread1->FlushForRosenDrawing());
 }
 
