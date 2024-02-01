@@ -72,8 +72,8 @@ HWTEST_F(RSCanvasRenderNodeTest, UpdateRecording001, TestSize.Level1)
  */
 HWTEST_F(RSCanvasRenderNodeTest, UpdateRecording002, TestSize.Level1)
 {
-    int w;
-    int h;
+    int32_t w;
+    int32_t h;
     auto canvasRenderNode = std::make_shared<RSCanvasRenderNode>(id + 1);
 #ifndef USE_ROSEN_DRAWING
     auto drawCmds = std::make_shared<DrawCmdList>(w, h);
@@ -198,7 +198,7 @@ HWTEST_F(RSCanvasRenderNodeTest, ColorBlendModeTest, TestSize.Level1)
     Drawing::BlendMode drawingBlendMode = convertToBlendMode();
     Drawing::Brush maskBrush;
     maskBrush.SetBlendMode(drawingBlendMode);
-    Drawing::SaveLayerOps maskLayerRec(nullptr, &maskBrush, nullptr, 0);
+    Drawing::SaveLayerOps maskLayerRec(nullptr, &maskBrush, 0);
     canvas_->SaveLayer(maskLayerRec);
 
     canvas_->Restore();

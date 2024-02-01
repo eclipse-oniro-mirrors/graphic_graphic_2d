@@ -431,7 +431,7 @@ void RSRenderServiceClient::ReportGameStateData(GameStateData info)
 {
 }
 
-void RSRenderServiceClient::SetHardwareEnabled(NodeId id, bool isEnabled)
+void RSRenderServiceClient::SetHardwareEnabled(NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType)
 {
 }
 
@@ -459,6 +459,10 @@ void RSRenderServiceClient::SetOnRemoteDiedCallback(const OnRemoteDiedCallback& 
 {
 }
 
+GpuDirtyRegionInfo RSRenderServiceClient::GetCurrentDirtyRegionInfo(ScreenId id)
+{
+    return GpuDirtyRegionInfo {};
+}
 
 #ifdef TP_FEATURE_ENABLE
 void RSRenderServiceClient::SetTpFeatureConfig(int32_t feature, const char* config)

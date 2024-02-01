@@ -199,7 +199,7 @@ int32_t GetLastFlushedBuffer(OHNativeWindow *window, OHNativeWindowBuffer **buff
 int32_t NativeWindowCancelBuffer(OHNativeWindow *window, OHNativeWindowBuffer *buffer)
 {
     if (window == nullptr || buffer == nullptr) {
-        BLOGE("parameter error, please check input parameter");
+        BLOGD("parameter error, please check input parameter");
         return OHOS::GSERROR_INVALID_ARGUMENTS;
     }
     BLOGE_CHECK_AND_RETURN_RET(window->surface != nullptr, SURFACE_ERROR_ERROR, "window surface is null");
@@ -249,6 +249,7 @@ static void HandleNativeWindowSetTransform(OHNativeWindow *window, va_list args)
 {
     int32_t transform = va_arg(args, int32_t);
     window->config.transform = static_cast<GraphicTransformType>(transform);
+    window->surface->SetTransform(static_cast<GraphicTransformType>(transform));
 }
 
 static void HandleNativeWindowSetUiTimestamp(OHNativeWindow *window, va_list args)
@@ -299,7 +300,7 @@ static void HandleNativeWindowGetColorGamut(OHNativeWindow *window, va_list args
 static void HandleNativeWindowGetTransform(OHNativeWindow *window, va_list args)
 {
     int32_t *transform = va_arg(args, int32_t*);
-    *transform = static_cast<int32_t>(window->config.transform);
+    *transform = static_cast<int32_t>(window->surface->GetTransform());
 }
 
 static std::map<int, std::function<void(OHNativeWindow*, va_list)>> operationMap = {
@@ -332,7 +333,7 @@ static int32_t InternalHandleNativeWindowOpt(OHNativeWindow *window, int code, v
 int32_t NativeWindowHandleOpt(OHNativeWindow *window, int code, ...)
 {
     if (window == nullptr) {
-        BLOGE("parameter error, please check input parameter");
+        BLOGD("parameter error, please check input parameter");
         return OHOS::GSERROR_INVALID_ARGUMENTS;
     }
     va_list args;
@@ -364,7 +365,7 @@ int32_t GetNativeObjectMagic(void *obj)
 int32_t NativeObjectReference(void *obj)
 {
     if (obj == nullptr) {
-        BLOGE("parameter error, please check input parameter");
+        BLOGD("parameter error, please check input parameter");
         return OHOS::GSERROR_INVALID_ARGUMENTS;
     }
     switch (GetNativeObjectMagic(obj)) {
@@ -382,7 +383,7 @@ int32_t NativeObjectReference(void *obj)
 int32_t NativeObjectUnreference(void *obj)
 {
     if (obj == nullptr) {
-        BLOGE("parameter error, please check input parameter");
+        BLOGD("parameter error, please check input parameter");
         return OHOS::GSERROR_INVALID_ARGUMENTS;
     }
     switch (GetNativeObjectMagic(obj)) {

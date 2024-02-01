@@ -211,26 +211,21 @@ const std::set<RSModifierType> CACHEABLE_ANIMATION_TYPE = {
     RSModifierType::BOUNDS,
     RSModifierType::FRAME,
 };
-const std::unordered_set<RSModifierType> ANIMATION_MODIFIER_TYPE  = {
-    RSModifierType::TRANSLATE,
-    RSModifierType::SCALE,
-    RSModifierType::ROTATION_X,
-    RSModifierType::ROTATION_Y,
-    RSModifierType::ROTATION,
-    RSModifierType::FRAME,
-};
 const std::set<RSModifierType> BASIC_GEOTRANSFORM_ANIMATION_TYPE = {
     RSModifierType::TRANSLATE,
     RSModifierType::SCALE,
 };
+static const auto emptyChildrenList = std::make_shared<const std::vector<std::shared_ptr<RSRenderNode>>>();
 }
 
 RSRenderNode::RSRenderNode(NodeId id, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
-    : id_(id), context_(context), isTextureExportNode_(isTextureExportNode)
+    : id_(id), fullChildrenList_(emptyChildrenList), context_(context), isTextureExportNode_(isTextureExportNode)
 {}
+
 RSRenderNode::RSRenderNode(
     NodeId id, bool isOnTheTree, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
-    : isOnTheTree_(isOnTheTree), id_(id), context_(context), isTextureExportNode_(isTextureExportNode)
+    : isOnTheTree_(isOnTheTree), id_(id), fullChildrenList_(emptyChildrenList), context_(context),
+      isTextureExportNode_(isTextureExportNode)
 {}
 
 bool RSRenderNode::GetIsTextureExportNode() const
@@ -335,10 +330,17 @@ void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId f
     if (flag == isOnTheTree_) {
         return;
     }
-    instanceRootNodeId_ = instanceRootNodeId;
-    firstLevelNodeId_ = firstLevelNodeId;
+    isNewOnTree_ = flag && !isOnTheTree_;
     isOnTheTree_ = flag;
-    OnTreeStateChanged();
+    if (isOnTheTree_) {
+        instanceRootNodeId_ = instanceRootNodeId;
+        firstLevelNodeId_ = firstLevelNodeId;
+        OnTreeStateChanged();
+    } else {
+        OnTreeStateChanged();
+        instanceRootNodeId_ = instanceRootNodeId;
+        firstLevelNodeId_ = firstLevelNodeId;
+    }
     // if node is marked as cacheRoot, update subtree status when update surface
     // in case prepare stage upper cacheRoot cannot specify dirty subnode
     if (cacheNodeId != INVALID_NODEID) {
@@ -657,10 +659,8 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
     out += ", isContainBootAnimation_: " + std::to_string(isContainBootAnimation_);
     out += "\n";
 
-    for (auto& child : children_) {
-        if (auto c = child.lock()) {
-            c->DumpTree(depth + 1, out);
-        }
+    for (auto& child : *GetSortedChildren()) {
+        child->DumpTree(depth + 1, out);
     }
     for (auto& [child, pos] : disappearingChildren_) {
         child->DumpTree(depth + 1, out);
@@ -738,6 +738,7 @@ void RSRenderNode::SetDirty()
 
 void RSRenderNode::SetClean()
 {
+    isNewOnTree_ = false;
     isContentDirty_ = false;
     dirtyStatus_ = NodeDirty::CLEAN;
 }
@@ -746,14 +747,14 @@ void RSRenderNode::CollectSurface(
     const std::shared_ptr<RSRenderNode>& node, std::vector<RSRenderNode::SharedPtr>& vec, bool isUniRender,
     bool onlyFirstLevel)
 {
-    for (auto& child : node->GetSortedChildren()) {
+    for (auto& child : *node->GetSortedChildren()) {
         child->CollectSurface(child, vec, isUniRender, onlyFirstLevel);
     }
 }
 
 void RSRenderNode::CollectSurfaceForUIFirstSwitch(uint32_t& leashWindowCount, uint32_t minNodeNum)
 {
-    for (auto& child : GetSortedChildren()) {
+    for (auto& child : *GetSortedChildren()) {
         child->CollectSurfaceForUIFirstSwitch(leashWindowCount, minNodeNum);
         if (leashWindowCount >= minNodeNum) {
             return;
@@ -856,32 +857,21 @@ void RSRenderNode::InActivateDisplaySync()
     displaySync_ = nullptr;
 }
 
-FrameRateRange RSRenderNode::CalcExpectedFrameRateRange(int32_t preferredFps)
+void RSRenderNode::UpdateDisplaySyncRange()
 {
-    FrameRateRange nodeRange;
-    if (displaySync_ != nullptr) {
-        if (preferredFps > 0) {
-            nodeRange = {0, RANGE_MAX_REFRESHRATE, preferredFps};
-        }
-        auto animationRange = animationManager_.GetFrameRateRange();
-        if (animationRange.IsValid()) {
-            displaySync_->SetExpectedFrameRateRange(animationRange);
-            nodeRange.Merge(animationRange);
-        }
+    if (!displaySync_) {
+        return;
     }
-    return nodeRange;
+    auto animationRange = animationManager_.GetFrameRateRange();
+    if (animationRange.IsValid()) {
+        displaySync_->SetExpectedFrameRateRange(animationRange);
+    }
 }
 
 std::tuple<bool, bool, bool> RSRenderNode::Animate(int64_t timestamp, int64_t period, bool isDisplaySyncEnabled)
 {
     if (displaySync_ && displaySync_->OnFrameSkip(timestamp, period, isDisplaySyncEnabled)) {
         return displaySync_->GetAnimateResult();
-    }
-    if (lastTimestamp_ < 0) {
-        lastTimestamp_ = timestamp;
-    } else {
-        timeDelta_ = (static_cast<float>(timestamp - lastTimestamp_)) / NS_TO_S;
-        lastTimestamp_ = timestamp;
     }
     auto animateResult = animationManager_.Animate(timestamp, IsOnTheTree());
     if (displaySync_) {
@@ -1142,7 +1132,7 @@ void RSRenderNode::ApplyBoundsGeometry(RSPaintFilterCanvas& canvas)
     renderNodeSaveCount_ = canvas.SaveAllStatus();
 #endif
     auto boundsGeo = (GetRenderProperties().GetBoundsGeometry());
-    if (boundsGeo && !boundsGeo->IsEmpty()) {
+    if (boundsGeo && (!boundsGeo->IsEmpty() || boundsGeo->IsValidOffset())) {
 #ifndef USE_ROSEN_DRAWING
         canvas.concat(boundsGeo->GetMatrix());
 #else
@@ -1257,7 +1247,7 @@ void RSRenderNode::AddGeometryModifier(const std::shared_ptr<RSRenderModifier>& 
     }
 }
 
-void RSRenderNode::RemoveModifierInternal(const PropertyId& id)
+void RSRenderNode::RemoveModifier(const PropertyId& id)
 {
     auto it = modifiers_.find(id);
     if (it != modifiers_.end()) {
@@ -1274,25 +1264,6 @@ void RSRenderNode::RemoveModifierInternal(const PropertyId& id)
     }
 }
 
-void RSRenderNode::RemoveModifier(const PropertyId& id)
-{
-    SetDirty();
-    if (!GetIsUsedBySubThread()) {
-        RemoveModifierInternal(id);
-    } else if (auto context = context_.lock()) {
-        context->PostTask([weakThis = weak_from_this(), id]() {
-            if (auto node = weakThis.lock()) {
-                node->SetDirty();
-                node->RemoveModifierInternal(id);
-            }
-        });
-    } else {
-        ROSEN_LOGE("%{public}s GetIsUsedBySubThread[%{public}d] nodeId[%{public}" PRIu64 "]"
-            "PropertyId[%{public}" PRIu64 "]", __func__, GetIsUsedBySubThread(), GetId(), id);
-        RemoveModifierInternal(id);
-    }
-}
-
 void RSRenderNode::DumpNodeInfo(DfxString& log)
 {
 #ifndef USE_ROSEN_DRAWING
@@ -1306,67 +1277,6 @@ void RSRenderNode::DumpNodeInfo(DfxString& log)
 #endif
 }
 
-void RSRenderNode::AddModifierProfile(const std::shared_ptr<RSRenderModifier>& modifier, float width, float height)
-{
-    if (timeDelta_ < 0 || ROSEN_EQ(timeDelta_, 0.f) || lastApplyTimestamp_ == lastTimestamp_) {
-        return;
-    }
-    auto propertyId = modifier->GetPropertyId();
-    auto oldPropertyValue = propertyValueMap_.find(propertyId);
-    auto newProperty = modifier->GetProperty();
-    switch (modifier->GetType()) {
-        case RSModifierType::TRANSLATE: {
-            auto newPosition = std::static_pointer_cast<RSRenderAnimatableProperty<Vector2f>>(newProperty)->Get();
-            if (oldPropertyValue != propertyValueMap_.end()) {
-                auto oldPosition = std::get<Vector2f>(oldPropertyValue->second);
-                auto xSpeed = (newPosition[0] - oldPosition[0]) / timeDelta_;
-                auto ySpeed = (newPosition[1] - oldPosition[1]) / timeDelta_;
-                HgmModifierProfile hgmModifierProfile = {xSpeed, ySpeed, HgmModifierType::TRANSLATE};
-                hgmModifierProfileList_.emplace_back(std::move(hgmModifierProfile));
-            }
-            propertyValueMap_[propertyId] = newPosition;
-            break;
-        }
-        case RSModifierType::SCALE: {
-            auto newPosition = std::static_pointer_cast<RSRenderAnimatableProperty<Vector2f>>(newProperty)->Get();
-            if (oldPropertyValue != propertyValueMap_.end()) {
-                auto oldPosition = std::get<Vector2f>(oldPropertyValue->second);
-                auto xSpeed = (newPosition[0] - oldPosition[0]) * width / timeDelta_;
-                auto ySpeed = (newPosition[1] - oldPosition[1]) * height / timeDelta_;
-                HgmModifierProfile hgmModifierProfile = {xSpeed, ySpeed, HgmModifierType::SCALE};
-                hgmModifierProfileList_.emplace_back(std::move(hgmModifierProfile));
-            }
-            propertyValueMap_[propertyId] = newPosition;
-            break;
-        }
-        case RSModifierType::ROTATION_X:
-        case RSModifierType::ROTATION_Y:
-        case RSModifierType::ROTATION: {
-            HgmModifierProfile hgmModifierProfile = {0, 0, HgmModifierType::ROTATION};
-            hgmModifierProfileList_.emplace_back(hgmModifierProfile);
-            break;
-        }
-        case RSModifierType::FRAME: {
-            auto newPosition = std::static_pointer_cast<RSRenderAnimatableProperty<Vector4f>>(newProperty)->Get();
-            if (oldPropertyValue != propertyValueMap_.end()) {
-                auto oldPosition = std::get<Vector4f>(oldPropertyValue->second);
-                auto xPositionSpeed = (newPosition[0] - oldPosition[0]) / timeDelta_;
-                auto yPositionSpeed = (newPosition[1] - oldPosition[1]) / timeDelta_;
-                auto widthSpeed = (newPosition[2] - oldPosition[2]) / timeDelta_;
-                auto heightSpeed = (newPosition[3] - oldPosition[3]) / timeDelta_;
-                HgmModifierProfile translateProfile = {xPositionSpeed, yPositionSpeed, HgmModifierType::TRANSLATE};
-                hgmModifierProfileList_.emplace_back(std::move(translateProfile));
-                HgmModifierProfile scaleProfile = {widthSpeed, heightSpeed, HgmModifierType::SCALE};
-                hgmModifierProfileList_.emplace_back(std::move(scaleProfile));
-            }
-            propertyValueMap_[propertyId] = newPosition;
-            break;
-        }
-        default:
-            break;
-    }
-}
-
 bool RSRenderNode::ApplyModifiers()
 {
     // quick reject test
@@ -1377,12 +1287,10 @@ bool RSRenderNode::ApplyModifiers()
 #endif
         return false;
     }
-    hgmModifierProfileList_.clear();
     const auto prevPositionZ = GetRenderProperties().GetPositionZ();
 
     // Reset and re-apply all modifiers
     RSModifierContext context = { GetMutableRenderProperties() };
-    std::vector<std::shared_ptr<RSRenderModifier>> animationModifiers;
 
     // Reset before apply modifiers
     GetMutableRenderProperties().ResetProperty(dirtyTypes_);
@@ -1397,16 +1305,9 @@ bool RSRenderNode::ApplyModifiers()
             continue;
         }
         modifier->Apply(context);
-        if (isCalcPreferredFps_ && HasAnimation() && ANIMATION_MODIFIER_TYPE.count(modifier->GetType())) {
-            animationModifiers.push_back(modifier);
-        }
         if (!BASIC_GEOTRANSFORM_ANIMATION_TYPE.count(modifier->GetType())) {
             isOnlyBasicGeoTransform_ = false;
         }
-    }
-
-    for (auto &modifier : animationModifiers) {
-        AddModifierProfile(modifier, context.properties_.GetBoundsWidth(), context.properties_.GetBoundsHeight());
     }
     // execute hooks
     GetMutableRenderProperties().OnApplyModifiers();
@@ -1439,8 +1340,11 @@ bool RSRenderNode::ApplyModifiers()
 #else
     dirtyTypes_.reset();
 #endif
-    lastApplyTimestamp_ = lastTimestamp_;
     UpdateShouldPaint();
+
+    // update rate decider scale reference size.
+    animationManager_.SetRateDeciderScaleSize(GetRenderProperties().GetBoundsWidth(),
+        GetRenderProperties().GetBoundsHeight());
 
     // return true if positionZ changed
     return GetRenderProperties().GetPositionZ() != prevPositionZ;
@@ -1916,7 +1820,14 @@ void RSRenderNode::DrawCacheSurface(RSPaintFilterCanvas& canvas, uint32_t thread
         canvas.DrawImage(*cacheImage, -shadowRectOffsetX_ * scaleX + gravityTranslate.x_,
             -shadowRectOffsetY_ * scaleY + gravityTranslate.y_, samplingOptions);
     } else {
-        canvas.DrawImage(*cacheImage, 0.0, 0.0, samplingOptions);
+        if (canvas.GetTotalMatrix().HasPerspective()) {
+            // In case of perspective transformation, make dstRect 1px outset to anti-alias
+            Drawing::Rect dst(0, 0, cacheImage->GetWidth(), cacheImage->GetHeight());
+            dst.MakeOutset(1, 1);
+            canvas.DrawImageRect(*cacheImage, dst, samplingOptions);
+        } else {
+            canvas.DrawImage(*cacheImage, 0.0, 0.0, samplingOptions);
+        }
     }
     canvas.DetachBrush();
     canvas.Restore();
@@ -2130,6 +2041,9 @@ void RSRenderNode::MarkNodeGroup(NodeGroupType type, bool isNodeGroup)
             nodeGroupType_ = isNodeGroup ? type : NodeGroupType::NONE;
             SetDirty();
         }
+        if (type == NodeGroupType::GROUPED_BY_USER) {
+            GetMutableRenderProperties().SetAlphaOffscreen(isNodeGroup);
+        }
     }
 }
 
@@ -2254,9 +2168,13 @@ void RSRenderNode::UpdateFilterCacheManagerWithCacheRegion(
 void RSRenderNode::OnTreeStateChanged()
 {
     if (!isOnTheTree_) {
+        // Keep a reference to fullChildrenList_ to prevent its deletion when swapping it
+        auto prevFullChildrenList = fullChildrenList_;
+
         // attempt to clear FullChildrenList, to avoid memory leak
         isFullChildrenListValid_ = false;
-        ClearFullChildrenListIfNeeded();
+        isChildrenSorted_ = false;
+        std::atomic_store_explicit(&fullChildrenList_, emptyChildrenList, std::memory_order_release);
     } else {
         SetDirty();
     }
@@ -2284,43 +2202,46 @@ bool RSRenderNode::HasDisappearingTransition(bool recursive) const
     return parent->HasDisappearingTransition(true);
 }
 
-const std::list<RSRenderNode::SharedPtr>& RSRenderNode::GetChildren(bool inSubThread)
+RSRenderNode::ChildrenListSharedPtr RSRenderNode::GetChildren() const
 {
-    if (!isFullChildrenListValid_) {
-        GenerateFullChildrenList(inSubThread);
-    }
-    return fullChildrenList_;
+    return std::atomic_load_explicit(&fullChildrenList_, std::memory_order_acquire);
 }
 
-const std::list<RSRenderNode::SharedPtr>& RSRenderNode::GetSortedChildren(bool inSubThread)
+RSRenderNode::ChildrenListSharedPtr RSRenderNode::GetSortedChildren() const
 {
-    if (!isFullChildrenListValid_) {
-        GenerateFullChildrenList(inSubThread);
-    }
-    if (!isChildrenSorted_) {
-        SortChildren(inSubThread);
-    }
-    return fullChildrenList_;
+    return std::atomic_load_explicit(&fullChildrenList_, std::memory_order_acquire);
 }
 
-void RSRenderNode::GenerateFullChildrenList(bool inSubThread)
+std::shared_ptr<RSRenderNode> RSRenderNode::GetFirstChild() const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    // Node is currently used by sub thread, delay the operation
-    if (GetIsUsedBySubThread() != inSubThread) {
-        return;
+    return children_.empty() ? nullptr : children_.front().lock();
+}
+
+void RSRenderNode::UpdateFullChildrenListIfNeeded()
+{
+    if (!isFullChildrenListValid_) {
+        GenerateFullChildrenList();
+    } else if (!isChildrenSorted_) {
+        ResortChildren();
     }
-    // maybe unnecessary, but just in case
-    fullChildrenList_.clear();
+}
+
+void RSRenderNode::GenerateFullChildrenList()
+{
     // both children_ and disappearingChildren_ are empty, no need to generate fullChildrenList_
     if (children_.empty() && disappearingChildren_.empty()) {
+        auto prevFullChildrenList = fullChildrenList_;
         isFullChildrenListValid_ = true;
         isChildrenSorted_ = true;
+        std::atomic_store_explicit(&fullChildrenList_, emptyChildrenList, std::memory_order_release);
         return;
     }
 
+    // Step 0: Initialize
+    auto fullChildrenList = std::make_shared<std::vector<std::shared_ptr<RSRenderNode>>>();
+
     // Step 1: Copy all children into sortedChildren while checking and removing expired children.
-    children_.remove_if([this](const auto& child) -> bool {
+    children_.remove_if([&](const auto& child) -> bool {
         auto existingChild = child.lock();
         if (existingChild == nullptr) {
             ROSEN_LOGI("RSRenderNode::GenerateSortedChildren removing expired child, this is rare but possible.");
@@ -2332,7 +2253,7 @@ void RSRenderNode::GenerateFullChildrenList(bool inSubThread)
             "child(id %{public}" PRIu64 ")"" into children_", GetId(), existingChild->GetId());
             return false;
         }
-        fullChildrenList_.emplace_back(std::move(existingChild));
+        fullChildrenList->emplace_back(std::move(existingChild));
         return false;
     });
 
@@ -2342,7 +2263,7 @@ void RSRenderNode::GenerateFullChildrenList(bool inSubThread)
     //     RSRenderTransition::OnDetach.
     //     2. We don't need to check if the disappearing child is expired; it's already been checked when moving from
     //     children_ to disappearingChildren_. We hold ownership of the shared_ptr of the child after that.
-    std::for_each(disappearingChildren_.begin(), disappearingChildren_.end(), [this](const auto& pair) -> void {
+    std::for_each(disappearingChildren_.begin(), disappearingChildren_.end(), [&](const auto& pair) -> void {
         auto& disappearingChild = pair.first;
         if (isContainBootAnimation_ && !disappearingChild->GetBootAnimation()) {
             ROSEN_LOGD("RSRenderNode::GenerateSortedChildren %{public}" PRIu64 " skip"
@@ -2351,41 +2272,51 @@ void RSRenderNode::GenerateFullChildrenList(bool inSubThread)
             return;
         }
         const auto& origPos = pair.second;
-        if (origPos < fullChildrenList_.size()) {
-            fullChildrenList_.emplace(std::next(fullChildrenList_.begin(), origPos), disappearingChild);
+        if (origPos < fullChildrenList->size()) {
+            fullChildrenList->emplace(std::next(fullChildrenList->begin(), origPos), disappearingChild);
         } else {
-            fullChildrenList_.emplace_back(disappearingChild);
+            fullChildrenList->emplace_back(disappearingChild);
         }
     });
-
-    // update flags
-    isFullChildrenListValid_ = true;
-    isChildrenSorted_ = false;
-}
-
-void RSRenderNode::SortChildren(bool inSubThread)
-{
-    // Node is currently used by sub thread, delay the operation
-    if (GetIsUsedBySubThread() != inSubThread) {
-        return;
-    }
-    // sort all children by z-order (note: std::list::sort is stable) if needed
-    std::lock_guard<std::mutex> lock(mutex_);
-    fullChildrenList_.sort([](const auto& first, const auto& second) -> bool {
+    
+    // Step 3: Sort all children by z-order
+    std::stable_sort(
+        fullChildrenList->begin(), fullChildrenList->end(), [](const auto& first, const auto& second) -> bool {
         return first->GetRenderProperties().GetPositionZ() < second->GetRenderProperties().GetPositionZ();
     });
+
+    // Keep a reference to fullChildrenList_ to prevent its deletion when swapping it
+    auto prevFullChildrenList = fullChildrenList_;
+
+    // Update the flag to indicate that children are now valid and sorted
+    isFullChildrenListValid_ = true;
     isChildrenSorted_ = true;
+
+    // Move the fullChildrenList to fullChildrenList_ atomically
+    ChildrenListSharedPtr constFullChildrenList = std::move(fullChildrenList);
+    std::atomic_store_explicit(&fullChildrenList_, constFullChildrenList, std::memory_order_release);
 }
 
-void RSRenderNode::ApplyChildrenModifiers()
+void RSRenderNode::ResortChildren()
 {
-    bool anyChildZOrderChanged = false;
-    for (auto& child : GetChildren()) {
-        anyChildZOrderChanged = child->ApplyModifiers() || anyChildZOrderChanged;
-    }
-    if (anyChildZOrderChanged) {
-        isChildrenSorted_ = false;
-    }
+    // Make a copy of the fullChildrenList for sorting
+    auto fullChildrenList = std::make_shared<std::vector<std::shared_ptr<RSRenderNode>>>(*fullChildrenList_);
+
+    // Sort the children by their z-order
+    std::stable_sort(
+        fullChildrenList->begin(), fullChildrenList->end(), [](const auto& first, const auto& second) -> bool {
+        return first->GetRenderProperties().GetPositionZ() < second->GetRenderProperties().GetPositionZ();
+    });
+
+    // Keep a reference to fullChildrenList_ to prevent its deletion when swapping it
+    auto prevFullChildrenList = fullChildrenList_;
+
+    // Update the flag to indicate that children are now sorted
+    isChildrenSorted_ = true;
+
+    // Move the fullChildrenList to fullChildrenList_ atomically
+    ChildrenListSharedPtr constFullChildrenList = std::move(fullChildrenList);
+    std::atomic_store_explicit(&fullChildrenList_, constFullChildrenList, std::memory_order_release);
 }
 
 uint32_t RSRenderNode::GetChildrenCount() const
@@ -2407,6 +2338,9 @@ bool RSRenderNode::GetTunnelHandleChange() const
 }
 bool RSRenderNode::HasChildrenOutOfRect() const
 {
+    if (GetRenderProperties().GetClipToBounds() || GetRenderProperties().GetClipToFrame()) {
+        return false;
+    }
     return hasChildrenOutOfRect_;
 }
 void RSRenderNode::UpdateChildrenOutOfRectFlag(bool flag)
@@ -2801,37 +2735,11 @@ void RSRenderNode::MarkNonGeometryChanged()
 {
     geometryChangeNotPerceived_ = true;
 }
-const std::vector<HgmModifierProfile>& RSRenderNode::GetHgmModifierProfileList()
-{
-    return hgmModifierProfileList_;
-}
 
 inline void RSRenderNode::AddActiveNode()
 {
     if (auto context = GetContext().lock()) {
         context->AddActiveNode(shared_from_this());
-    }
-}
-
-void RSRenderNode::ClearFullChildrenListIfNeeded(bool inSubThread)
-{
-    // fullChildrenList is valid
-    if (LIKELY(isFullChildrenListValid_) || fullChildrenList_.empty()) {
-        return;
-    }
-    if (!inSubThread) {
-        // main thread clears the fullChildrenList only if sub thread is not using it
-        if (!GetIsUsedBySubThread()) {
-            std::lock_guard<std::mutex> lock(mutex_);
-            fullChildrenList_.clear();
-        }
-    } else if (auto context = context_.lock()) {
-        // sub thread should not clear the fullChildrenList directly, post task to main thread to do that
-        context->PostTask([weakThis = weak_from_this()]() {
-            if (auto node = weakThis.lock()) {
-                node->ClearFullChildrenListIfNeeded();
-            }
-        });
     }
 }
 

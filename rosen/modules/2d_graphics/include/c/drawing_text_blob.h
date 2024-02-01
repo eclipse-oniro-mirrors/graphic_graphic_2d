@@ -54,6 +54,62 @@ extern "C" {
 OH_Drawing_TextBlobBuilder* OH_Drawing_TextBlobBuilderCreate(void);
 
 /**
+ * @brief Creates an <b>OH_Drawing_TextBlob</b> object from text.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param text Indicates the the pointer to text.
+ * @param byteLength Indicates the text length.
+ * @param OH_Drawing_Font Indicates the pointer to an <b>OH_Drawing_Font</b> object.
+ * @param OH_Drawing_TextEncoding Indicates the pointer to an <b>OH_Drawing_TextEncoding</b> object.
+ * @return Returns the pointer to the <b>OH_Drawing_TextBlob</b> object created.
+ * @since 12
+ * @version 1.0
+ */
+OH_Drawing_TextBlob* OH_Drawing_TextBlobCreateFromText(const void* text, size_t byteLength,
+    const OH_Drawing_Font*, OH_Drawing_TextEncoding);
+
+/**
+ * @brief Creates an <b>OH_Drawing_TextBlob</b> object from pos text.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param text Indicates the the pointer to text.
+ * @param byteLength Indicates the text length.
+ * @param OH_Drawing_Point2D Indicates the pointer to an <b>OH_Drawing_Point2D</b> array object.
+ * @param OH_Drawing_Font Indicates the pointer to an <b>OH_Drawing_Font</b> object.
+ * @param OH_Drawing_TextEncoding Indicates the pointer to an <b>OH_Drawing_TextEncoding</b> object.
+ * @return Returns the pointer to the <b>OH_Drawing_TextBlob</b> object created.
+ * @since 12
+ * @version 1.0
+ */
+OH_Drawing_TextBlob* OH_Drawing_TextBlobCreateFromPosText(const void* text, size_t byteLength,
+    OH_Drawing_Point2D*, const OH_Drawing_Font*, OH_Drawing_TextEncoding);
+
+/**
+ * @brief Creates an <b>OH_Drawing_TextBlob</b> object from pos text.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param str Indicates the the pointer to text.
+ * @param OH_Drawing_Font Indicates the pointer to an <b>OH_Drawing_Font</b> object.
+ * @param OH_Drawing_TextEncoding Indicates the pointer to an <b>OH_Drawing_TextEncoding</b> object.
+ * @return Returns the pointer to the <b>OH_Drawing_TextBlob</b> object created.
+ * @since 12
+ * @version 1.0
+ */
+OH_Drawing_TextBlob* OH_Drawing_TextBlobCreateFromString(const char* str,
+    const OH_Drawing_Font*, OH_Drawing_TextEncoding);
+
+/**
+ * @brief Gets the bounds of textblob, assigned to the pointer to an <b>OH_Drawing_Rect</b> object.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextBlob Indicates the pointer to an <b>OH_Drawing_TextBlob</b> object.
+ * @param OH_Drawing_Rect Indicates the pointer to an <b>OH_Drawing_Rect</b> object.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_TextBlobGetBounds(OH_Drawing_TextBlob*, OH_Drawing_Rect*);
+
+/**
  * @brief Defines a run, supplies storage for glyphs and positions.
  *
  * @since 11

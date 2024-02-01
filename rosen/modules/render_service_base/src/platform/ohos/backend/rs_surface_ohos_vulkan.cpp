@@ -38,6 +38,19 @@
 #endif
 namespace OHOS {
 namespace Rosen {
+[[maybe_unused]] static void DestroySemaphore(void *context)
+{
+    if (context == nullptr) {
+        return;
+    }
+    DestroySemaphoreInfo* info = reinterpret_cast<DestroySemaphoreInfo*>(context);
+    --info->mRefs;
+    if (!info->mRefs) {
+        info->mDestroyFunction(info->mDevice, info->mSemaphore, nullptr);
+        delete info;
+    }
+}
+
 RSSurfaceOhosVulkan::RSSurfaceOhosVulkan(const sptr<Surface>& producer) : RSSurfaceOhos(producer)
 {
     bufferUsage_ = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_MEM_DMA;
@@ -151,6 +164,7 @@ std::unique_ptr<RSSurfaceFrame> RSSurfaceOhosVulkan::RequestFrame(
 #endif
         NativeObjectReference(mNativeWindow);
         nativeSurface.window = mNativeWindow;
+        nativeSurface.graphicColorGamut = colorSpace_;
         if (!NativeBufferUtils::MakeFromNativeWindowBuffer(
             mSkContext, nativeWindowBuffer, nativeSurface, width, height)) {
             ROSEN_LOGE("RSSurfaceOhosVulkan: MakeFromeNativeWindow failed");
@@ -292,6 +306,8 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
 
     auto& surface = mSurfaceMap[mSurfaceList.front()];
 
+    DestroySemaphoreInfo* destroyInfo =
+        new DestroySemaphoreInfo(vkContext.vkDestroySemaphore, vkContext.GetDevice(), semaphore);
     RSTagTracker tagTracker(mSkContext.get(), RSTagTracker::TAGTYPE::TAG_ACQUIRE_SURFACE);
 
 #ifndef USE_ROSEN_DRAWING
@@ -305,6 +321,8 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
     drawingFlushInfo.backendSurfaceAccess = true;
     drawingFlushInfo.numSemaphores = 1;
     drawingFlushInfo.backendSemaphore = static_cast<void*>(&backendSemaphore);
+    drawingFlushInfo.finishedProc = DestroySemaphore;
+    drawingFlushInfo.finishedContext = destroyInfo;
     surface.drawingSurface->Flush(&drawingFlushInfo);
     mSkContext->Submit();
 #endif
@@ -317,6 +335,8 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
     auto err = RsVulkanContext::HookedVkQueueSignalReleaseImageOHOS(
         queue, 1, &semaphore, surface.image, &fenceFd);
     if (err != VK_SUCCESS) {
+        DestroySemaphore(destroyInfo);
+        destroyInfo = nullptr;
         ROSEN_LOGE("RSSurfaceOhosVulkan QueueSignalReleaseImageOHOS failed %{public}d", err);
         return false;
     }
@@ -327,7 +347,7 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
         return false;
     }
     mSurfaceList.pop_front();
-    vkContext.vkDestroySemaphore(vkContext.GetDevice(), semaphore, nullptr);
+    DestroySemaphore(destroyInfo);
     surface.fence.reset();
     surface.lastPresentedCount = mPresentCount;
     mPresentCount++;
@@ -366,6 +386,12 @@ void RSSurfaceOhosVulkan::SetSurfaceBufferUsage(uint64_t usage)
 
 void RSSurfaceOhosVulkan::SetSurfacePixelFormat(int32_t pixelFormat)
 {
+    if (pixelFormat != pixelFormat_) {
+        for (auto &[key, val] : mSurfaceMap) {
+            NativeWindowCancelBuffer(mNativeWindow, key);
+        }
+        mSurfaceMap.clear();
+    }
     pixelFormat_ = pixelFormat;
 }
 

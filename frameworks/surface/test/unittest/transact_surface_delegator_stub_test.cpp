@@ -91,12 +91,6 @@ HWTEST_F(TransactSurfaceDelegatorStubTest, SendSelfProxy001, Function | MediumTe
 HWTEST_F(TransactSurfaceDelegatorStubTest, ReadNativeHandle001, Function | MediumTest | Level2)
 {
     MessageParcel input;
-    int32_t version = 3;
-    int32_t numFds = 5;
-    int32_t numInts = 6;
-    input.WriteInt32(version);
-    input.WriteInt32(numFds);
-    input.WriteInt32(numInts);
     NativeHandleT* buffer = tsd->ReadNativeHandle(input);
     EXPECT_EQ(buffer, nullptr);
 }

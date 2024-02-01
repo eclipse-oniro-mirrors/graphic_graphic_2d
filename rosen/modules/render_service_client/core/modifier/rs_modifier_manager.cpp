@@ -111,6 +111,16 @@ bool RSModifierManager::Animate(int64_t time, int64_t vsyncPeriod)
     return hasRunningAnimation;
 }
 
+void RSModifierManager::FlushStartAnimation(int64_t time)
+{
+    for (auto& iter : animations_) {
+        auto animation = iter.second.lock();
+        if (animation && animation->GetNeedUpdateStartTime()) {
+            animation->SetStartTime(time);
+        }
+    }
+}
+
 bool RSModifierManager::JudgeAnimateWhetherSkip(AnimationId animId, int64_t time, int64_t vsyncPeriod)
 {
     bool isSkip = false;
@@ -165,7 +175,7 @@ std::shared_ptr<RSRenderAnimation> RSModifierManager::QuerySpringAnimation(Prope
 {
     auto it = springAnimations_.find(propertyId);
     if (it == springAnimations_.end() || it->second == 0) {
-        ROSEN_LOGI("RSModifierManager::QuerySpringAnimation: there is no spring animation on the current property.");
+        ROSEN_LOGD("RSModifierManager::QuerySpringAnimation: there is no spring animation on the current property.");
         return nullptr;
     }
     return GetAnimation(it->second);
@@ -175,7 +185,7 @@ const std::shared_ptr<RSRenderAnimation> RSModifierManager::GetAnimation(Animati
 {
     auto animationItr = animations_.find(id);
     if (animationItr == animations_.end()) {
-        ROSEN_LOGE("RSModifierManager::GetAnimation, animation [%{public}" PRIu64 "] not found", id);
+        ROSEN_LOGD("RSModifierManager::GetAnimation, animation [%{public}" PRIu64 "] not found", id);
         return nullptr;
     }
     return animationItr->second.lock();

@@ -98,6 +98,34 @@ void RSRenderServiceConnection::CleanRenderNodes() noexcept
     nodeMap.FilterNodeByPid(remotePid_);
 }
 
+void RSRenderServiceConnection::MoveRenderNodeMap(
+    std::shared_ptr<std::unordered_map<NodeId, std::shared_ptr<RSBaseRenderNode>>> subRenderNodeMap) noexcept
+{
+    auto& context = mainThread_->GetContext();
+    auto& nodeMap = context.GetMutableNodeMap();
+
+    nodeMap.MoveRenderNodeMap(subRenderNodeMap, remotePid_);
+}
+
+void RSRenderServiceConnection::RemoveRenderNodeMap(
+    std::shared_ptr<std::unordered_map<NodeId, std::shared_ptr<RSBaseRenderNode>>> subRenderNodeMap) noexcept
+{
+    auto iter = subRenderNodeMap->begin();
+    for (; iter != subRenderNodeMap->end();) {
+        iter = subRenderNodeMap->erase(iter);
+    }
+}
+
+void RSRenderServiceConnection::CleanRenderNodeMap() noexcept
+{
+    auto subRenderNodeMap = std::make_shared<std::unordered_map<NodeId, std::shared_ptr<RSBaseRenderNode>>>();
+    MoveRenderNodeMap(subRenderNodeMap);
+    RSBackgroundThread::Instance().PostTask(
+        [this, subRenderNodeMap]() {
+            RSRenderServiceConnection::RemoveRenderNodeMap(subRenderNodeMap);
+        });
+}
+
 void RSRenderServiceConnection::CleanFrameRateLinkers() noexcept
 {
     auto& context = mainThread_->GetContext();
@@ -125,6 +153,7 @@ void RSRenderServiceConnection::CleanAll(bool toDelete) noexcept
             RS_TRACE_NAME_FMT("CleanRenderNodes %d", remotePid_);
             CleanRenderNodes();
             CleanFrameRateLinkers();
+            CleanRenderNodeMap();
         }).wait();
     mainThread_->ScheduleTask(
         [this]() {
@@ -205,7 +234,7 @@ void RSRenderServiceConnection::RSApplicationRenderThreadDeathRecipient::OnRemot
         return;
     }
 
-    RS_LOGI("RSApplicationRenderThreadDeathRecipient::OnRemoteDied: Unregister.");
+    RS_LOGD("RSApplicationRenderThreadDeathRecipient::OnRemoteDied: Unregister.");
     auto app = iface_cast<IApplicationAgent>(tokenSptr);
     rsConn->UnRegisterApplicationAgent(app);
 }
@@ -270,7 +299,7 @@ sptr<Surface> RSRenderServiceConnection::CreateNodeAndSurface(const RSSurfaceRen
         return nullptr;
     }
     const std::string& surfaceName = surface->GetName();
-    RS_LOGI("RsDebug RSRenderService::CreateNodeAndSurface node" \
+    RS_LOGD("RsDebug RSRenderService::CreateNodeAndSurface node" \
         "id:%{public}" PRIu64 " name:%{public}s bundleName:%{public}s surface id:%{public}" PRIu64 " name:%{public}s",
         node->GetId(), node->GetName().c_str(), node->GetBundleName().c_str(),
         surface->GetUniqueId(), surfaceName.c_str());
@@ -278,7 +307,11 @@ sptr<Surface> RSRenderServiceConnection::CreateNodeAndSurface(const RSSurfaceRen
     std::function<void()> registerNode = [node, this]() -> void {
         this->mainThread_->GetContext().GetMutableNodeMap().RegisterRenderNode(node);
     };
-    mainThread_->PostTask(registerNode);
+    if (config.isSync) {
+        mainThread_->PostSyncTask(registerNode);
+    } else {
+        mainThread_->PostTask(registerNode);
+    }
     std::weak_ptr<RSSurfaceRenderNode> surfaceRenderNode(node);
     sptr<IBufferConsumerListener> listener = new RSRenderServiceListener(surfaceRenderNode);
     SurfaceError ret = surface->RegisterConsumerListener(listener);
@@ -707,7 +740,7 @@ void RSRenderServiceConnection::RegisterBufferAvailableListener(
         return false;
     };
     if (!registerBufferAvailableListener()) {
-        RS_LOGI("RegisterBufferAvailableListener: node not found, post task to retry");
+        RS_LOGD("RegisterBufferAvailableListener: node not found, post task to retry");
         mainThread_->PostTask(registerBufferAvailableListener);
     }
 }
@@ -948,7 +981,7 @@ bool RSRenderServiceConnection::GetPixelmap(NodeId id, const std::shared_ptr<Med
 {
     auto node = mainThread_->GetContext().GetNodeMap().GetRenderNode<RSCanvasDrawingRenderNode>(id);
     if (node == nullptr) {
-        RS_LOGE("RSRenderServiceConnection::GetPixelmap: cannot find NodeId: [%{public}" PRIu64 "]", id);
+        RS_LOGD("RSRenderServiceConnection::GetPixelmap: cannot find NodeId: [%{public}" PRIu64 "]", id);
         return false;
     }
     if (node->GetType() != RSRenderNodeType::CANVAS_DRAWING_NODE) {
@@ -964,7 +997,7 @@ bool RSRenderServiceConnection::GetPixelmap(NodeId id, const std::shared_ptr<Med
         node->ClearOp();
     }
     if (tid == UINT32_MAX) {
-        if (!mainThread_->IsIdle()) {
+        if (!mainThread_->IsIdle() && mainThread_->GetContext().HasActiveNode(node)) {
             return false;
         }
         mainThread_->PostSyncTask(getPixelmapTask);
@@ -1120,8 +1153,9 @@ void RSRenderServiceConnection::ReportEventComplete(DataBaseRs info)
 
 void RSRenderServiceConnection::ReportEventJankFrame(DataBaseRs info)
 {
-    auto task = [this, info]() -> void {
-        RSJankStats::GetInstance().SetReportEventJankFrame(info);
+    bool isReportTaskDelayed = mainThread_->IsMainLooping();
+    auto task = [this, info, isReportTaskDelayed]() -> void {
+        RSJankStats::GetInstance().SetReportEventJankFrame(info, isReportTaskDelayed);
     };
     mainThread_->PostTask(task);
 }
@@ -1139,13 +1173,13 @@ void RSRenderServiceConnection::ReportGameStateData(GameStateData info)
     }
 }
 
-void RSRenderServiceConnection::SetHardwareEnabled(NodeId id, bool isEnabled)
+void RSRenderServiceConnection::SetHardwareEnabled(NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType)
 {
-    auto task = [this, id, isEnabled]() -> void {
+    auto task = [this, id, isEnabled, selfDrawingType]() -> void {
         auto& context = mainThread_->GetContext();
         auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(id);
         if (node) {
-            node->SetHardwareEnabled(isEnabled);
+            node->SetHardwareEnabled(isEnabled, selfDrawingType);
         }
     };
     mainThread_->PostTask(task);
@@ -1154,6 +1188,13 @@ void RSRenderServiceConnection::SetHardwareEnabled(NodeId id, bool isEnabled)
 void RSRenderServiceConnection::SetCacheEnabledForRotation(bool isEnabled)
 {
     RSSystemProperties::SetCacheEnabledForRotation(isEnabled);
+}
+
+GpuDirtyRegionInfo RSRenderServiceConnection::GetCurrentDirtyRegionInfo(ScreenId id)
+{
+    GpuDirtyRegionInfo gpuDirtyRegionInfo = GpuDirtyRegion::GetInstance().GetGpuDirtyRegionInfo(id);
+    GpuDirtyRegion::GetInstance().ResetDirtyRegionInfo();
+    return gpuDirtyRegionInfo;
 }
 
 #ifdef TP_FEATURE_ENABLE

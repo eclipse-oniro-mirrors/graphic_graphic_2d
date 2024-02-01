@@ -27,6 +27,7 @@
 #include "property/rs_properties_def.h"
 #include "render/rs_filter.h"
 #include "render/rs_material_filter.h"
+#include "render/rs_linear_gradient_blur_filter.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -467,10 +468,21 @@ void RSProperties::UpdateSandBoxMatrix(const std::optional<Drawing::Matrix>& roo
         return;
     }
     auto rootMat = rootMatrix.value();
+    bool hasScale = false;
 #ifndef USE_ROSEN_DRAWING
-    bool hasScale = rootMat.getScaleX() != 1.0f || rootMat.getScaleY() != 1.0f;
+    // skScaleFactors[0]-minimum scaling factor, skScaleFactors[1]-maximum scaling factor
+    SkScalar skScaleFactors[2];
+    bool getMinMaxScales = rootMat.getMinMaxScales(skScaleFactors);
+    if (getMinMaxScales) {
+        hasScale = !ROSEN_EQ(skScaleFactors[0], 1.f) || !ROSEN_EQ(skScaleFactors[1], 1.f);
+    }
 #else
-    bool hasScale = rootMat.Get(Drawing::Matrix::SCALE_X) != 1.0f || rootMat.Get(Drawing::Matrix::SCALE_Y) != 1.0f;
+    // scaleFactors[0]-minimum scaling factor, scaleFactors[1]-maximum scaling factor
+    Drawing::scalar scaleFactors[2];
+    bool getMinMaxScales = rootMat.GetMinMaxScales(scaleFactors);
+    if (getMinMaxScales) {
+        hasScale = !ROSEN_EQ(scaleFactors[0], 1.f) || !ROSEN_EQ(scaleFactors[1], 1.f);
+    }
 #endif
     if (hasScale) {
         sandbox_->matrix_ = std::nullopt;
@@ -1687,6 +1699,16 @@ bool RSProperties::GetUseShadowBatching() const
     return useShadowBatching_;
 }
 
+void RSProperties::SetNeedSkipShadow(bool needSkipShadow)
+{
+    needSkipShadow_ = needSkipShadow;
+}
+
+bool RSProperties::GetNeedSkipShadow() const
+{
+    return needSkipShadow_;
+}
+
 void RSProperties::SetPixelStretch(const std::optional<Vector4f>& stretchSize)
 {
     pixelStretch_ = stretchSize;
@@ -1961,7 +1983,6 @@ void RSProperties::SetAiInvert(const std::optional<Vector4f>& aiInvert)
 {
     aiInvert_ = aiInvert;
     colorFilterNeedUpdate_ = true;
-    filterNeedUpdate_ = true;
     SetDirty();
     contentDirty_ = true;
     isDrawn_ = true;
@@ -2263,7 +2284,7 @@ std::string RSProperties::Dump() const
         sprintf_s(buffer, UINT8_MAX, ", PositionZ[%.1f]", GetPositionZ()) != -1) {
         dumpInfo.append(buffer);
     }
-    
+
     // blendmode
     ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
     if (ret != EOK) {
@@ -2788,25 +2809,21 @@ void RSProperties::OnApplyModifiers()
         if (GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE) {
             filterNeedUpdate_ = true;
         }
-        if (aiInvert_.has_value() || systemBarEffect_) {
+        if (systemBarEffect_) {
             auto aiBarFilter = std::make_shared<RSAIBarFilter>();
             backgroundFilter_ = aiBarFilter;
         }
         if (backgroundFilter_ != nullptr && !backgroundFilter_->IsValid()) {
-            if (backgroundFilter_->GetFilterType() == RSFilter::MATERIAL) {
-                auto filter = std::static_pointer_cast<RSMaterialFilter>(backgroundFilter_);
-                filter->ReleaseColorPickerFilter();
-            }
             backgroundFilter_.reset();
         }
         if (filter_ != nullptr && !filter_->IsValid()) {
-            if (filter_->GetFilterType() == RSFilter::MATERIAL) {
-                auto filter = std::static_pointer_cast<RSMaterialFilter>(filter_);
-                filter->ReleaseColorPickerFilter();
-            }
             filter_.reset();
         }
         IfLinearGradientBlurInvalid();
+        if (linearGradientBlurPara_) {
+            auto linearBlurFilter = std::make_shared<RSLinearGradientBlurFilter>(linearGradientBlurPara_);
+            filter_ = linearBlurFilter;
+        }
         needFilter_ = backgroundFilter_ != nullptr || filter_ != nullptr || useEffect_ || IsLightUpEffectValid() ||
                         IsDynamicLightUpValid() || IsGreyAdjustmentValid() || linearGradientBlurPara_ != nullptr ||
                         GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE;
@@ -2904,16 +2921,9 @@ void RSProperties::ReleaseColorPickerTaskShadow() const
     if (colorPickerTaskShadow_ == nullptr) {
         return;
     }
-    #ifdef IS_OHOS
-    auto initHandler = colorPickerTaskShadow_->GetInitHandler();
-        if (initHandler != nullptr) {
-            auto task = colorPickerTaskShadow_;
-            task->SetWaitRelease(true);
-            initHandler->PostTask(
-                [task]() { task->ReleaseColorPicker(); }, AppExecFwk::EventQueue::Priority::IMMEDIATE);
-        }
-    #endif
+    colorPickerTaskShadow_->ReleaseColorPicker();
 }
+
 
 bool RSProperties::GetHaveEffectRegion() const
 {

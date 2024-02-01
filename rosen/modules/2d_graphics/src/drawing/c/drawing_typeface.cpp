@@ -14,7 +14,7 @@
  */
 
 #include "c/drawing_typeface.h"
-
+#include <mutex>
 #include <unordered_map>
 
 #include "text/typeface.h"
@@ -23,17 +23,51 @@ using namespace OHOS;
 using namespace Rosen;
 using namespace Drawing;
 
+static std::mutex g_typefaceLockMutex;
 static std::unordered_map<void*, std::shared_ptr<Typeface>> g_typefaceMap;
+
+static MemoryStream* CastToMemoryStream(OH_Drawing_MemoryStream* cCanvas)
+{
+    return reinterpret_cast<MemoryStream*>(cCanvas);
+}
 
 OH_Drawing_Typeface* OH_Drawing_TypefaceCreateDefault()
 {
     std::shared_ptr<Typeface> typeface = Typeface::MakeDefault();
+    std::lock_guard<std::mutex> lock(g_typefaceLockMutex);
+    g_typefaceMap.insert({typeface.get(), typeface});
+    return (OH_Drawing_Typeface*)typeface.get();
+}
+
+OH_Drawing_Typeface* OH_Drawing_TypefaceCreateFromFile(const char* path, int index)
+{
+    std::shared_ptr<Typeface> typeface = Typeface::MakeFromFile(path, index);
+    if (typeface == nullptr) {
+        return nullptr;
+    }
+    std::lock_guard<std::mutex> lock(g_typefaceLockMutex);
+    g_typefaceMap.insert({typeface.get(), typeface});
+    return (OH_Drawing_Typeface*)typeface.get();
+}
+
+OH_Drawing_Typeface* OH_Drawing_TypefaceCreateFromStream(OH_Drawing_MemoryStream* cMemoryStream, int32_t index)
+{
+    if (cMemoryStream == nullptr) {
+        return nullptr;
+    }
+    std::unique_ptr<MemoryStream> memoryStream(CastToMemoryStream(cMemoryStream));
+    std::shared_ptr<Typeface> typeface = Typeface::MakeFromStream(std::move(memoryStream), index);
+    if (typeface == nullptr) {
+        return nullptr;
+    }
+    std::lock_guard<std::mutex> lock(g_typefaceLockMutex);
     g_typefaceMap.insert({typeface.get(), typeface});
     return (OH_Drawing_Typeface*)typeface.get();
 }
 
 void OH_Drawing_TypefaceDestroy(OH_Drawing_Typeface* cTypeface)
 {
+    std::lock_guard<std::mutex> lock(g_typefaceLockMutex);
     auto it = g_typefaceMap.find(cTypeface);
     if (it == g_typefaceMap.end()) {
         return;

@@ -261,6 +261,10 @@ void RSCanvasRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas
     RSModifierContext context = { GetMutableRenderProperties(), &canvas };
     ApplyDrawCmdModifier(context, RSModifierType::FOREGROUND_STYLE);
 
+    auto& aiInvert = GetRenderProperties().GetAiInvert();
+    if (aiInvert.has_value()) {
+        RSPropertiesPainter::DrawBinarizationShader(GetRenderProperties(), canvas);
+    }
     RSPropertiesPainter::DrawColorFilter(GetRenderProperties(), canvas);
 
     canvas.RestoreStatus(canvasNodeSaveCount_);
@@ -269,8 +273,6 @@ void RSCanvasRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas
         RSPropertiesPainter::DrawLightUpEffect(GetRenderProperties(), canvas);
     }
     RSPropertiesPainter::DrawFilter(GetRenderProperties(), canvas, FilterType::FOREGROUND_FILTER);
-    auto para = GetRenderProperties().GetLinearGradientBlurPara();
-    RSPropertiesPainter::DrawLinearGradientBlurFilter(GetRenderProperties(), canvas);
 
     auto illuminatedPtr_ = GetRenderProperties().GetIlluminated();
     if (illuminatedPtr_ && illuminatedPtr_->IsIlluminated()) {
@@ -350,7 +352,7 @@ void RSCanvasRenderNode::InternalDrawContent(RSPaintFilterCanvas& canvas)
     ApplyDrawCmdModifier(context, RSModifierType::CONTENT_STYLE);
 
     // temporary solution for drawing children
-    for (auto& child : GetSortedChildren()) {
+    for (auto& child : *GetSortedChildren()) {
         if (auto canvasChild = ReinterpretCast<RSCanvasRenderNode>(child)) {
             canvasChild->InternalDrawContent(canvas);
         }

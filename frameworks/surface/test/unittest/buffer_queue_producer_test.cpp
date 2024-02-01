@@ -202,7 +202,6 @@ HWTEST_F(BufferQueueProducerTest, ReqFlu001, Function | MediumTest | Level2)
 {
     Rosen::FrameReport::GetInstance().SetGameScene(true);
     IBufferProducer::RequestBufferReturnValue retval;
-    std::cout << "start flu001" << std::endl;
     GSError ret = bqp_->RequestBuffer(requestConfig, bedata_, retval);
     EXPECT_EQ(ret, OHOS::GSERROR_OK);
 

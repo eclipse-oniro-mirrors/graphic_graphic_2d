@@ -426,13 +426,7 @@ HWTEST_F(RSPropertiesPainterTest, DrawLinearGradientBlurFilter001, TestSize.Leve
     RSProperties properties;
     properties.SetLinearGradientBlurPara(linearGradientBlurPara);
 
-#ifndef USE_ROSEN_DRAWING
-    RSPropertiesPainter::DrawLinearGradientBlurFilter(
-        properties, canvas, SkRect::MakeXYWH(0.f, 0.f, 1.f, 1.f));
-#else
-    RSPropertiesPainter::DrawLinearGradientBlurFilter(
-        properties, canvas, Drawing::Rect(0.f, 0.f, 1.f, 1.f));
-#endif
+    RSPropertiesPainter::DrawFilter(properties, canvas, FilterType::FOREGROUND_FILTER);
 }
 
 /**
@@ -470,8 +464,8 @@ HWTEST_F(RSPropertiesPainterTest, DrawFrame001, TestSize.Level1)
     Drawing::Canvas drawingCanvas;
     RSPaintFilterCanvas canvas(&drawingCanvas);
 #endif
-    int w;
-    int h;
+    int32_t w;
+    int32_t h;
 #ifndef USE_ROSEN_DRAWING
     auto cmds = std::make_shared<DrawCmdList>(w, h);
 #else

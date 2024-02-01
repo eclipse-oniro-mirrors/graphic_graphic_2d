@@ -129,7 +129,7 @@ bool RSSystemProperties::GetUniRenderEnabled()
     isUniRenderEnabled_ = std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient())
         ->GetUniRenderEnabled();
     inited = true;
-    ROSEN_LOGI("RSSystemProperties::GetUniRenderEnabled:%{public}d", isUniRenderEnabled_);
+    ROSEN_LOGD("RSSystemProperties::GetUniRenderEnabled:%{public}d", isUniRenderEnabled_);
     return isUniRenderEnabled_;
 }
 
@@ -436,7 +436,7 @@ bool RSSystemProperties::GetFilterPartialRenderEnabled()
     // Determine whether the filter partial render should be enabled. The default value is 0,
     // which means that it is unenabled.
     static bool enabled =
-        std::atoi((system::GetParameter("persist.sys.graphic.filterPartialRenderEnabled", "1")).c_str()) != 0;
+        std::atoi((system::GetParameter("persist.sys.graphic.filterPartialRenderEnabled", "0")).c_str()) != 0;
     return enabled;
 }
 
@@ -724,6 +724,20 @@ bool RSSystemProperties::GetEffectMergeEnabled()
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 1) != 0;
+}
+
+bool RSSystemProperties::GetDumpUICaptureEnabled()
+{
+    bool dumpUICaptureEnabled =
+        std::atoi((system::GetParameter("rosen.dumpUICaptureEnabled.enabled", "0")).c_str()) != 0;
+    return dumpUICaptureEnabled;
+}
+
+bool RSSystemProperties::GetDumpUIPixelmapEnabled()
+{
+    bool dumpUIPixelmapEnabled =
+        std::atoi((system::GetParameter("rosen.dumpUIPixelmapEnabled.enabled", "0")).c_str()) != 0;
+    return dumpUIPixelmapEnabled;
 }
 } // namespace Rosen
 } // namespace OHOS

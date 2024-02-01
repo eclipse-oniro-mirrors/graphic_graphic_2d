@@ -52,6 +52,11 @@ public:
 private:
     void CleanVirtualScreens() noexcept;
     void CleanRenderNodes() noexcept;
+    void MoveRenderNodeMap(
+        std::shared_ptr<std::unordered_map<NodeId, std::shared_ptr<RSBaseRenderNode>>> subRenderNodeMap) noexcept;
+    static void RemoveRenderNodeMap(
+        std::shared_ptr<std::unordered_map<NodeId, std::shared_ptr<RSBaseRenderNode>>> subRenderNodeMap) noexcept;
+    void CleanRenderNodeMap() noexcept;
     void CleanFrameRateLinkers() noexcept;
     void CleanAll(bool toDelete = false) noexcept;
 
@@ -226,7 +231,7 @@ private:
 
     void ReportGameStateData(GameStateData info) override;
 
-    void SetHardwareEnabled(NodeId id, bool isEnabled) override;
+    void SetHardwareEnabled(NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType) override;
 
     void NotifyLightFactorStatus(bool isSafe) override;
 
@@ -237,6 +242,8 @@ private:
     void NotifyTouchEvent(int32_t touchStatus) override;
 
     void SetCacheEnabledForRotation(bool isEnabled) override;
+
+    GpuDirtyRegionInfo GetCurrentDirtyRegionInfo(ScreenId id) override;
 #ifdef TP_FEATURE_ENABLE
     void SetTpFeatureConfig(int32_t feature, const char* config) override;
 #endif

@@ -58,6 +58,10 @@
     } while (0)
 
 namespace OHOS {
+namespace {
+    int32_t g_CancelBufferConsecutiveFailedCount  = 0;
+    constexpr int32_t MAX_COUNT = 2;
+}
 BufferClientProducer::BufferClientProducer(const sptr<IRemoteObject>& impl)
     : IRemoteProxy<IBufferProducer>(impl)
 {
@@ -99,7 +103,7 @@ GSError BufferClientProducer::RequestBuffer(const BufferRequestConfig &config, s
 }
 
 GSError BufferClientProducer::GetLastFlushedBuffer(sptr<SurfaceBuffer>& buffer,
-    sptr<SyncFence>& fence, float matrix[16], int32_t matrixSize)
+    sptr<SyncFence>& fence, float matrix[16])
 {
     DEFINE_MESSAGE_VARIABLES(arguments, reply, option, BLOGE);
 
@@ -119,8 +123,8 @@ GSError BufferClientProducer::GetLastFlushedBuffer(sptr<SurfaceBuffer>& buffer,
     fence = SyncFence::ReadFromMessageParcel(reply);
     std::vector<float> readMatrixVector;
     reply.ReadFloatVector(&readMatrixVector);
-    if (memcpy_s(matrix, matrixSize * sizeof(float),
-        &readMatrixVector, readMatrixVector.size() * sizeof(float)) != EOK) {
+    if (memcpy_s(matrix, readMatrixVector.size() * sizeof(float),
+        readMatrixVector.data(), readMatrixVector.size() * sizeof(float)) != EOK) {
         BLOGN_FAILURE("memcpy_s fail");
         return GSERROR_API_FAILED;
     }
@@ -135,8 +139,15 @@ GSError BufferClientProducer::CancelBuffer(uint32_t sequence, const sptr<BufferE
     bedata->WriteToParcel(arguments);
 
     SEND_REQUEST_WITH_SEQ(BUFFER_PRODUCER_CANCEL_BUFFER, arguments, reply, option, sequence);
-    CHECK_RETVAL_WITH_SEQ(reply, sequence);
-
+    int32_t ret = reply.ReadInt32();
+    if (ret != GSERROR_OK) {
+        g_CancelBufferConsecutiveFailedCount++;
+        if (g_CancelBufferConsecutiveFailedCount < MAX_COUNT) {
+            BLOGN_FAILURE_ID(sequence, "Remote return %{public}d", ret);
+        }
+        return (GSError)ret;
+    }
+    g_CancelBufferConsecutiveFailedCount = 0;
     return GSERROR_OK;
 }
 
@@ -164,7 +175,7 @@ GSError BufferClientProducer::AttachBuffer(sptr<SurfaceBuffer>& buffer)
 GSError BufferClientProducer::AttachBuffer(sptr<SurfaceBuffer>& buffer, int32_t timeOut)
 {
     DEFINE_MESSAGE_VARIABLES(arguments, reply, option, BLOGE);
-    int32_t sequence = buffer->GetSeqNum();
+    uint32_t sequence = buffer->GetSeqNum();
     WriteSurfaceBufferImpl(arguments, sequence, buffer);
     arguments.WriteInt32(timeOut);
     SEND_REQUEST_WITH_SEQ(BUFFER_PRODUCER_ATTACH_BUFFER, arguments, reply, option, sequence);
@@ -510,6 +521,20 @@ GSError BufferClientProducer::SendDeathRecipientObject()
         BLOGN_FAILURE("Remote return %{public}d", ret);
         return static_cast<GSError>(ret);
     }
+    return GSERROR_OK;
+}
+
+GSError BufferClientProducer::GetTransform(GraphicTransformType &transform)
+{
+    DEFINE_MESSAGE_VARIABLES(arguments, reply, option, BLOGE);
+    SEND_REQUEST(BUFFER_PRODUCER_GET_TRANSFORM, arguments, reply, option);
+
+    auto ret = static_cast<GSError>(reply.ReadInt32());
+    if (ret != GSERROR_OK) {
+        BLOGN_FAILURE("Remote return %{public}d", static_cast<int>(ret));
+        return ret;
+    }
+    transform = static_cast<GraphicTransformType>(reply.ReadUint32());
     return GSERROR_OK;
 }
 }; // namespace OHOS

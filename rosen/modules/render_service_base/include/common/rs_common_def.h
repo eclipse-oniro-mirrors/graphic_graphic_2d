@@ -25,7 +25,6 @@
 #include <unistd.h>
 
 #include "common/rs_macros.h"
-#include "modifier/rs_modifier_type.h"
 
 namespace OHOS {
 class Surface;
@@ -170,6 +169,11 @@ enum class RSSurfaceNodeType : uint8_t {
     SCB_SCREEN_NODE,          // surfacenode created as sceneboard
 };
 
+enum class SelfDrawingNodeType : uint8_t {
+    DEFAULT,
+    VIDEO,
+};
+
 struct RSSurfaceRenderNodeConfig {
     NodeId id = 0;
     std::string name = "SurfaceNode";
@@ -177,6 +181,7 @@ struct RSSurfaceRenderNodeConfig {
     RSSurfaceNodeType nodeType = RSSurfaceNodeType::DEFAULT;
     void* additionalData = nullptr;
     bool isTextureExportNode = false;
+    bool isSync = false;
 };
 
 // types for RSSurfaceExt

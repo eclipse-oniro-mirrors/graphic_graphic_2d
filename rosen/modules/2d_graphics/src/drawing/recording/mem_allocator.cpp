@@ -16,11 +16,14 @@
 #include "recording/mem_allocator.h"
 
 #include "securec.h"
+#include "utils/log.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
-
+namespace {
+constexpr size_t LARGE_MALLOC = 200000000;
+}
 static constexpr size_t MEM_SIZE_MAX = SIZE_MAX;
 
 MemAllocator::MemAllocator() : isReadOnly_(false), capacity_(0), size_(0), startPtr_(nullptr) {}
@@ -84,7 +87,9 @@ bool MemAllocator::Resize(size_t size)
     if (isReadOnly_ || size == 0 || size > MEM_SIZE_MAX || size < size_) {
         return false;
     }
-
+    if (size > LARGE_MALLOC) {
+        LOGW("MemAllocator::Resize this time malloc large memory, size:%{public}zu", size);
+    }
     char* newData = new char[size];
     if (!newData) {
         return false;
@@ -109,7 +114,7 @@ void* MemAllocator::Add(const void* data, size_t size)
         return nullptr;
     }
 
-    if (capacity_ - size_ < size) {
+    if (capacity_ == 0 || capacity_ - size_ < size) {
         // The capacity is not enough, expand the capacity
         if (Resize((capacity_ + size) * MEMORY_EXPANSION_FACTOR) == false) {
             return nullptr;

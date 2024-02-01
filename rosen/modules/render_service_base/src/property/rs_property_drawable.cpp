@@ -91,7 +91,7 @@ static const std::unordered_map<RSModifierType, RSPropertyDrawableSlot> g_proper
     { RSModifierType::BORDER_STYLE, RSPropertyDrawableSlot::BORDER },
     { RSModifierType::FILTER, RSPropertyDrawableSlot::FOREGROUND_FILTER },
     { RSModifierType::BACKGROUND_FILTER, RSPropertyDrawableSlot::BACKGROUND_FILTER },
-    { RSModifierType::LINEAR_GRADIENT_BLUR_PARA, RSPropertyDrawableSlot::LINEAR_GRADIENT_BLUR_FILTER },
+    { RSModifierType::LINEAR_GRADIENT_BLUR_PARA, RSPropertyDrawableSlot::FOREGROUND_FILTER },
     { RSModifierType::DYNAMIC_LIGHT_UP_RATE, RSPropertyDrawableSlot::DYNAMIC_LIGHT_UP },
     { RSModifierType::DYNAMIC_LIGHT_UP_DEGREE, RSPropertyDrawableSlot::DYNAMIC_LIGHT_UP },
     { RSModifierType::FRAME_GRAVITY, RSPropertyDrawableSlot::FRAME_OFFSET },
@@ -111,7 +111,7 @@ static const std::unordered_map<RSModifierType, RSPropertyDrawableSlot> g_proper
     { RSModifierType::MASK, RSPropertyDrawableSlot::MASK },
     { RSModifierType::SPHERIZE, RSPropertyDrawableSlot::INVALID },
     { RSModifierType::LIGHT_UP_EFFECT, RSPropertyDrawableSlot::LIGHT_UP_EFFECT },
-    { RSModifierType::AIINVERT, RSPropertyDrawableSlot::BACKGROUND_FILTER },
+    { RSModifierType::AIINVERT, RSPropertyDrawableSlot::BINARIZATION },
     { RSModifierType::SYSTEMBAREFFECT, RSPropertyDrawableSlot::BACKGROUND_FILTER },
     { RSModifierType::PIXEL_STRETCH, RSPropertyDrawableSlot::PIXEL_STRETCH },
     { RSModifierType::PIXEL_STRETCH_PERCENT, RSPropertyDrawableSlot::PIXEL_STRETCH },
@@ -165,6 +165,7 @@ static const std::array<RSPropertyDrawable::DrawableGenerator, LUT_SIZE> g_drawa
     CustomModifierAdapter<RSModifierType::TRANSITION>,           // TRANSITION
     CustomModifierAdapter<RSModifierType::ENV_FOREGROUND_COLOR>, // ENV_FOREGROUND_COLOR
     RSShadowDrawable::Generate,                                  // SHADOW
+    RSOutlineDrawable::Generate,                                 // OUTLINE
 
     // BG properties in Bounds Clip
     nullptr,                                                              // BG_SAVE_BOUNDS
@@ -192,17 +193,16 @@ static const std::array<RSPropertyDrawable::DrawableGenerator, LUT_SIZE> g_drawa
     // FG properties in Bounds clip
     nullptr,                                      // FG_SAVE_BOUNDS
     nullptr,                                      // EXTRA_CLIP_TO_BOUNDS
+    RSBinarizationDrawable::Generate,             // BINARIZATION,
     RSColorFilterDrawable::Generate,              // COLOR_FILTER
     RSLightUpEffectDrawable::Generate,            // LIGHT_UP_EFFECT
     RSForegroundFilterDrawable::Generate,         // FOREGROUND_FILTER
-    RSLinearGradientBlurFilterDrawable::Generate, // LINEAR_GRADIENT_BLUR_FILTER
     RSForegroundColorDrawable::Generate,          // FOREGROUND_COLOR
     nullptr,                                      // FG_RESTORE_BOUNDS
 
     // No clip (unless ClipToBounds is set)
     RSPointLightDrawable::Generate,                       // POINT_LIGHT
     RSBorderDrawable::Generate,                           // BORDER
-    RSOutlineDrawable::Generate,                          // OUTLINE
     CustomModifierAdapter<RSModifierType::OVERLAY_STYLE>, // OVERLAY
     RSParticleDrawable::Generate,                         // PARTICLE_EFFECT
     RSPixelStretchDrawable::Generate,                     // PIXEL_STRETCH
@@ -357,7 +357,7 @@ inline bool HasPropertyDrawableInRange(
         [](const auto& drawablePtr) { return drawablePtr != nullptr; });
 }
 
-inline uint8_t CalculateDrawableVecStatus(RSRenderContent& content, RSPropertyDrawable::DrawableVec& drawableVec)
+uint8_t CalculateDrawableVecStatus(RSRenderContent& content, const RSPropertyDrawable::DrawableVec& drawableVec)
 {
     uint8_t result = 0;
     auto& properties = content.GetRenderProperties();

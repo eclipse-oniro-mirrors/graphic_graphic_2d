@@ -102,6 +102,31 @@ void RSImplicitAnimator::CloseImplicitAnimationInner()
     EndImplicitAnimation();
 }
 
+bool RSImplicitAnimator::ProcessEmptyAnimations(const std::shared_ptr<AnimationFinishCallback>& finishCallback)
+{
+    // If finish callback either 1. is null or 2. is referenced by any animation or implicitly parameters, we don't
+    // do anything.
+    if (finishCallback.use_count() != 1) {
+        CloseImplicitAnimationInner();
+        return false;
+    }
+    // we are the only one who holds the finish callback, if the callback is NOT timing sensitive, we need to
+    // execute it asynchronously, in order to avoid timing issues.
+    if (finishCallback->finishCallbackType_ == FinishCallbackType::TIME_INSENSITIVE) {
+        ROSEN_LOGD("RSImplicitAnimator::CloseImplicitAnimation, No implicit animations created, execute finish "
+                   "callback asynchronously");
+        RSUIDirector::PostTask([finishCallback]() { finishCallback->Execute(); });
+        CloseImplicitAnimationInner();
+        return false;
+    }
+    // we are the only one who holds the finish callback, and the callback is timing sensitive, we need to create an
+    // empty animation that act like a timer, in order to execute it on the right time.
+    ROSEN_LOGD("RSImplicitAnimator::CloseImplicitAnimation, No implicit animations created, creating empty 'timer' "
+               "animation.");
+    CreateEmptyAnimation();
+    return true;
+}
+
 std::vector<std::shared_ptr<RSAnimation>> RSImplicitAnimator::CloseImplicitAnimation()
 {
     if (globalImplicitParams_.empty() || implicitAnimations_.empty() || keyframeAnimations_.empty()) {
@@ -109,44 +134,19 @@ std::vector<std::shared_ptr<RSAnimation>> RSImplicitAnimator::CloseImplicitAnima
         return {};
     }
 
-    const auto& finishCallback = std::get<const std::shared_ptr<AnimationFinishCallback>>(globalImplicitParams_.top());
-
     // Special case: if implicit animation param type is CANCEL, we need to cancel all implicit animations
     if (implicitAnimationParams_.top()->GetType() == ImplicitAnimationParamType::CANCEL) {
         std::static_pointer_cast<RSImplicitCancelAnimationParam>(implicitAnimationParams_.top())->SyncProperties();
-        if (finishCallback.use_count() == 1) {
-            ROSEN_LOGD("RSImplicitAnimator::CloseImplicitAnimation Should not use finish callback when CANCELLING "
-                "animation, timing cannot be guaranteed.");
-            RSUIDirector::PostTask([finishCallback]() { finishCallback->Execute(); });
-        }
-        CloseImplicitAnimationInner();
-        return {};
     }
 
+    const auto& finishCallback = std::get<const std::shared_ptr<AnimationFinishCallback>>(globalImplicitParams_.top());
     auto& currentAnimations = implicitAnimations_.top();
     auto& currentKeyframeAnimations = keyframeAnimations_.top();
     // if no implicit animation created by current implicit animation param, we need to take care of finish callback
     if (currentAnimations.empty() && currentKeyframeAnimations.empty()) {
-        // If finish callback either 1. is null or 2. is referenced by any animation or implicitly parameters, we don't
-        // do anything.
-        if (finishCallback.use_count() != 1) {
-            CloseImplicitAnimationInner();
+        if (!ProcessEmptyAnimations(finishCallback)) {
             return {};
         }
-        // we are the only one who holds the finish callback, if the callback is NOT timing sensitive, we need to
-        // execute it asynchronously, in order to avoid timing issues.
-        if (finishCallback->finishCallbackType_ == FinishCallbackType::TIME_INSENSITIVE) {
-            ROSEN_LOGD("RSImplicitAnimator::CloseImplicitAnimation, No implicit animations created, execute finish "
-                       "callback asynchronously");
-            RSUIDirector::PostTask([finishCallback]() { finishCallback->Execute(); });
-            CloseImplicitAnimationInner();
-            return {};
-        }
-        // we are the only one who holds the finish callback, and the callback is timing sensitive, we need to create an
-        // empty animation that act like a timer, in order to execute it on the right time.
-        ROSEN_LOGD("RSImplicitAnimator::CloseImplicitAnimation, No implicit animations created, creating empty 'timer' "
-                   "animation.");
-        CreateEmptyAnimation();
     }
     std::vector<std::shared_ptr<RSAnimation>> resultAnimations;
     [[maybe_unused]] auto& [isDurationKeyframe, totalDuration, currentDuration] = durationKeyframeParams_.top();
@@ -210,7 +210,7 @@ void RSImplicitAnimator::EndImplicitKeyFrameAnimation()
 {
     if (implicitAnimationParams_.empty() ||
         implicitAnimationParams_.top()->GetType() != ImplicitAnimationParamType::KEYFRAME) {
-        ROSEN_LOGE("Failed to end keyframe implicit animation, need to begin keyframe implicit animation firstly!");
+        ROSEN_LOGD("Failed to end keyframe implicit animation, need to begin keyframe implicit animation firstly!");
         return;
     }
 
@@ -536,8 +536,14 @@ void RSImplicitAnimator::CreateImplicitAnimation(const std::shared_ptr<RSNode>& 
             return;
         }
         case ImplicitAnimationParamType::CANCEL: {
-            // Create animation with CANCEL type will cancel all running animations of the given property and target.
+            // CreateEmptyAnimation
+            if (property->id_ == 0) {
+                auto curveImplicitParam = static_cast<RSImplicitCancelAnimationParam*>(params.get());
+                animation = curveImplicitParam->CreateEmptyAnimation(property, startValue, endValue);
+                break;
+            }
 
+            // Create animation with CANCEL type will cancel all running animations of the given property and target.
             // Note: We are currently in the process of refactoring and accidentally changed the order of animation
             // callbacks. Originally, the order was OnChange before OnFinish, but we mistakenly changed it to OnFinish
             // before OnChange. This change has caused some issues, and we need to revert it back to the original order.

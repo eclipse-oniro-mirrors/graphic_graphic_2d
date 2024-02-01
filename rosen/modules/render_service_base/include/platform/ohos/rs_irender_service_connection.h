@@ -230,7 +230,7 @@ public:
 
     virtual void ReportGameStateData(GameStateData info) = 0;
 
-    virtual void SetHardwareEnabled(NodeId id, bool isEnabled) = 0;
+    virtual void SetHardwareEnabled(NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType) = 0;
 
     virtual void SetCacheEnabledForRotation(bool isEnabled) = 0;
 
@@ -239,6 +239,8 @@ public:
     virtual void RunOnRemoteDiedCallback() = 0;
 
     virtual void SetVirtualScreenUsingStatus(bool isVirtualScreenUsingStatus) = 0;
+
+    virtual GpuDirtyRegionInfo GetCurrentDirtyRegionInfo(ScreenId id) = 0;
 
 #ifdef TP_FEATURE_ENABLE
     virtual void SetTpFeatureConfig(int32_t feature, const char* config) = 0;

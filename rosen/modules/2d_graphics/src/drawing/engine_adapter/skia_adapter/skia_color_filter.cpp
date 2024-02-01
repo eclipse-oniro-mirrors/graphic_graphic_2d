@@ -95,21 +95,16 @@ void SkiaColorFilter::SetColorFilter(const sk_sp<SkColorFilter>& filter)
 
 std::shared_ptr<Data> SkiaColorFilter::Serialize() const
 {
-#ifdef ROSEN_OHOS
     if (filter_ == nullptr) {
         LOGE("SkiaColorFilter::Serialize, filter_ is nullptr!");
         return nullptr;
     }
 
     return SkiaHelper::FlattenableSerialize(filter_.get());
-#else
-    return nullptr;
-#endif
 }
 
 bool SkiaColorFilter::Deserialize(std::shared_ptr<Data> data)
 {
-#ifdef ROSEN_OHOS
     if (data == nullptr) {
         LOGE("SkiaColorFilter::Deserialize, data is invalid!");
         return false;
@@ -117,9 +112,6 @@ bool SkiaColorFilter::Deserialize(std::shared_ptr<Data> data)
 
     filter_ = SkiaHelper::FlattenableDeserialize<SkColorFilterBase>(data);
     return true;
-#else
-    return false;
-#endif
 }
 
 bool SkiaColorFilter::AsAColorMatrix(scalar matrix[MATRIX_SIZE]) const

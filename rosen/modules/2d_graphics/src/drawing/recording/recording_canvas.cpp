@@ -194,12 +194,6 @@ void RecordingCanvas::DrawPatch(const Point cubics[12], const ColorQuad colors[4
     LOGE("RecordingCanvas::DrawPatch not support yet");
 }
 
-void RecordingCanvas::DrawEdgeAAQuad(const Rect& rect, const Point clip[4],
-    QuadAAFlags aaFlags, ColorQuad color, BlendMode mode)
-{
-    LOGE("RecordingCanvas::DrawEdgeAAQuad not support yet");
-}
-
 void RecordingCanvas::DrawVertices(const Vertices& vertices, BlendMode mode)
 {
     if (!addDrawOpImmediate_) {
@@ -228,11 +222,6 @@ void RecordingCanvas::DrawImageNine(const Image* image, const RectI& center, con
 
     cmdList_->AddDrawOp<DrawImageNineOpItem::ConstructorHandle>(
         imageHandle, center, dst, filterMode, brushHandle, hasBrush);
-}
-
-void RecordingCanvas::DrawAnnotation(const Rect& rect, const char* key, const Data* data)
-{
-    LOGE("RecordingCanvas::DrawAnnotation not support yet");
 }
 
 void RecordingCanvas::DrawImageLattice(const Image* image, const Lattice& lattice, const Rect& dst,
@@ -324,7 +313,6 @@ void RecordingCanvas::DrawTextBlob(const TextBlob* blob, const scalar x, const s
         LOGE("blob nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
         return;
     }
-
 #ifdef ROSEN_OHOS
     if (IsCustomTextType()) {
         LOGD("RecordingCanvas::DrawTextBlob replace drawOpItem with cached one");
@@ -538,6 +526,7 @@ uint32_t RecordingCanvas::Save()
 void RecordingCanvas::SaveLayer(const SaveLayerOps& saveLayerOps)
 {
     Canvas::SaveLayer(saveLayerOps);
+    saveOpStateStack_.push(RealSaveOp);
     if (!addDrawOpImmediate_) {
         cmdList_->AddDrawOp(std::make_shared<SaveLayerOpItem>(saveLayerOps));
         return;
@@ -555,12 +544,9 @@ void RecordingCanvas::SaveLayer(const SaveLayerOps& saveLayerOps)
         hasBrush = true;
         DrawOpItem::BrushToBrushHandle(*brush, *cmdList_, brushHandle);
     }
-    FlattenableHandle imageFilterHandle = CmdListHelper::AddImageFilterToCmdList(
-        *cmdList_, saveLayerOps.GetImageFilter());
 
     cmdList_->AddDrawOp<SaveLayerOpItem::ConstructorHandle>(rect, hasBrush, brushHandle,
-        imageFilterHandle, saveLayerOps.GetSaveLayerFlags());
-    saveOpStateStack_.push(RealSaveOp);
+        saveLayerOps.GetSaveLayerFlags());
 }
 
 void RecordingCanvas::Restore()

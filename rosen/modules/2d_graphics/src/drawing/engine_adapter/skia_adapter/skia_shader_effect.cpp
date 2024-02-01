@@ -211,21 +211,16 @@ void SkiaShaderEffect::SetSkShader(const sk_sp<SkShader>& skShader)
 
 std::shared_ptr<Data> SkiaShaderEffect::Serialize() const
 {
-#ifdef ROSEN_OHOS
     if (shader_ == nullptr) {
         LOGE("SkiaShaderEffect::Serialize, shader_ is nullptr!");
         return nullptr;
     }
 
     return SkiaHelper::FlattenableSerialize(shader_.get());
-#else
-    return nullptr;
-#endif
 }
 
 bool SkiaShaderEffect::Deserialize(std::shared_ptr<Data> data)
 {
-#ifdef ROSEN_OHOS
     if (data == nullptr) {
         LOGE("SkiaShaderEffect::Deserialize, data is invalid!");
         return false;
@@ -233,9 +228,6 @@ bool SkiaShaderEffect::Deserialize(std::shared_ptr<Data> data)
 
     shader_ = SkiaHelper::FlattenableDeserialize<SkShaderBase>(data);
     return true;
-#else
-    return false;
-#endif
 }
 
 } // namespace Drawing

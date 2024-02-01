@@ -253,7 +253,7 @@ void RSUniRenderComposerAdapter::SetMetaDataInfoToLayer(const LayerInfoPtr& laye
 {
     HDRMetaDataType type;
     if (surface->QueryMetaDataType(info.buffer->GetSeqNum(), type) != GSERROR_OK) {
-        RS_LOGE("RSUniRenderComposerAdapter::SetComposeInfoToLayer: QueryMetaDataType failed");
+        RS_LOGD("RSUniRenderComposerAdapter::SetComposeInfoToLayer: QueryMetaDataType failed");
         return;
     }
     switch (type) {
@@ -326,8 +326,8 @@ void RSUniRenderComposerAdapter::GetComposerInfoSrcRect(ComposeInfo &info, const
             } else {
                 info.srcRect.x = info.srcRect.x * xScale;
                 info.srcRect.y = info.srcRect.y * yScale;
-                info.srcRect.w = std::min(static_cast<int32_t>(info.srcRect.w * xScale), bufferWidth);
-                info.srcRect.h = std::min(static_cast<int32_t>(info.srcRect.h * yScale), bufferHeight);
+                info.srcRect.w = std::min(static_cast<int32_t>(std::ceil(info.srcRect.w * xScale)), bufferWidth);
+                info.srcRect.h = std::min(static_cast<int32_t>(std::ceil(info.srcRect.h * yScale)), bufferHeight);
             }
         }
     }

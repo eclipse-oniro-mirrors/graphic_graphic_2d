@@ -91,7 +91,7 @@ scalar Font::GetSize() const
     return fontImpl_->GetSize();
 }
 
-std::shared_ptr<Typeface> Font::GetTypeface() const
+std::shared_ptr<Typeface> Font::GetTypeface()
 {
     return fontImpl_->GetTypeface();
 }
@@ -99,6 +99,11 @@ std::shared_ptr<Typeface> Font::GetTypeface() const
 scalar Font::MeasureText(const void* text, size_t byteLength, TextEncoding encoding)
 {
     return fontImpl_->MeasureText(text, byteLength, encoding);
+}
+
+int Font::CountText(const void* text, size_t byteLength, TextEncoding encoding) const
+{
+    return fontImpl_->CountText(text, byteLength, encoding);
 }
 } // namespace Drawing
 } // namespace Rosen

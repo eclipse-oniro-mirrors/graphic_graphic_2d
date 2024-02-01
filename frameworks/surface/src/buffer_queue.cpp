@@ -187,9 +187,48 @@ bool BufferQueue::QueryIfBufferAvailable()
     return ret;
 }
 
+static GSError DelegatorDequeueBuffer(wptr<ConsumerSurfaceDelegator>& delegator,
+                                      const BufferRequestConfig& config,
+                                      sptr<BufferExtraData>& bedata,
+                                      struct IBufferProducer::RequestBufferReturnValue& retval)
+{
+    auto consumerDelegator = delegator.promote();
+    if (consumerDelegator == nullptr) {
+        BLOGE("Consumer surface delegator has been expired");
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    auto ret = consumerDelegator->DequeueBuffer(config, bedata, retval);
+    if (ret != GSERROR_OK) {
+        BLOGE("Consumer surface delegator failed to dequeuebuffer, err: %{public}d", ret);
+        return ret;
+    }
+
+    ret = retval.buffer->Map();
+    if (ret != GSERROR_OK) {
+        BLOGE("Buffer map failed, err: %{public}d", ret);
+        return ret;
+    }
+    retval.buffer->SetSurfaceBufferWidth(retval.buffer->GetWidth());
+    retval.buffer->SetSurfaceBufferHeight(retval.buffer->GetHeight());
+
+    return GSERROR_OK;
+}
+
+static void SetReturnValue(sptr<SurfaceBuffer>& buffer, sptr<BufferExtraData>& bedata,
+                           struct IBufferProducer::RequestBufferReturnValue& retval)
+{
+    retval.sequence = buffer->GetSeqNum();
+    bedata = buffer->GetExtraData();
+    retval.fence = SyncFence::INVALID_FENCE;
+}
+
 GSError BufferQueue::RequestBuffer(const BufferRequestConfig &config, sptr<BufferExtraData> &bedata,
     struct IBufferProducer::RequestBufferReturnValue &retval)
 {
+    if (wpCSurfaceDelegator_ != nullptr) {
+        return DelegatorDequeueBuffer(wpCSurfaceDelegator_, config, bedata, retval);
+    }
+
     ScopedBytrace func(__func__);
     if (!GetStatus()) {
         BLOGN_FAILURE_RET(GSERROR_NO_CONSUMER);
@@ -235,9 +274,7 @@ GSError BufferQueue::RequestBuffer(const BufferRequestConfig &config, sptr<Buffe
 
     ret = AllocBuffer(buffer, config);
     if (ret == GSERROR_OK) {
-        retval.sequence = buffer->GetSeqNum();
-        bedata = buffer->GetExtraData();
-        retval.fence = SyncFence::INVALID_FENCE;
+        SetReturnValue(buffer, bedata, retval);
         BLOGND("Success alloc Buffer[%{public}d %{public}d] id: %{public}d id: %{public}" PRIu64, config.width,
             config.height, retval.sequence, uniqueId_);
     } else {
@@ -375,7 +412,6 @@ GSError BufferQueue::CheckBufferQueueCache(uint32_t sequence)
 {
     std::lock_guard<std::mutex> lockGuard(mutex_);
     if (bufferQueueCache_.find(sequence) == bufferQueueCache_.end()) {
-        BLOGN_FAILURE_ID(sequence, "not found in cache");
         return GSERROR_NO_ENTRY;
     }
 
@@ -431,14 +467,26 @@ GSError BufferQueue::FlushBuffer(uint32_t sequence, const sptr<BufferExtraData> 
     }
     BLOGND("Success Buffer seq id: %{public}d Queue id: %{public}" PRIu64 " AcquireFence:%{public}d",
         sequence, uniqueId_, fence->Get());
+
+    if (wpCSurfaceDelegator_ != nullptr) {
+        auto consumerDelegator = wpCSurfaceDelegator_.promote();
+        if (consumerDelegator == nullptr) {
+            BLOGE("Consumer surface delegator has been expired");
+            return GSERROR_INVALID_ARGUMENTS;
+        }
+        sret = consumerDelegator->QueueBuffer(bufferQueueCache_[sequence].buffer, fence->Get());
+        if (sret != GSERROR_OK) {
+            BLOGNE("Consumer surface delegator failed to dequeuebuffer");
+        }
+    }
     return sret;
 }
 
 GSError BufferQueue::GetLastFlushedBuffer(sptr<SurfaceBuffer>& buffer,
-    sptr<SyncFence>& fence, float matrix[16], int32_t matrixSize)
+    sptr<SyncFence>& fence, float matrix[16])
 {
+    std::lock_guard<std::mutex> lockGuard(mutex_);
     if (bufferQueueCache_.find(lastFlusedSequence_) == bufferQueueCache_.end()) {
-        BLOGN_FAILURE_ID(lastFlusedSequence_, "not found in cache");
         return GSERROR_NO_ENTRY;
     }
     auto &state = bufferQueueCache_[lastFlusedSequence_].state;
@@ -453,8 +501,12 @@ GSError BufferQueue::GetLastFlushedBuffer(sptr<SurfaceBuffer>& buffer,
     buffer = bufferQueueCache_[lastFlusedSequence_].buffer;
     fence = lastFlusedFence_;
     Rect damage = {};
+    if (buffer != nullptr) {
+        damage.w = buffer->GetWidth();
+        damage.h = buffer->GetHeight();
+    }
     auto utils = SurfaceUtils::GetInstance();
-    utils->ComputeTransformMatrix(matrix, matrixSize, buffer, lastFlushedTransform_, damage);
+    utils->ComputeTransformMatrix(matrix, buffer, lastFlushedTransform_, damage);
     return GSERROR_OK;
 }
 
@@ -493,7 +545,6 @@ GSError BufferQueue::DoFlushBuffer(uint32_t sequence, const sptr<BufferExtraData
     ScopedBytrace bufferName(name_ + ":" + std::to_string(sequence));
     std::lock_guard<std::mutex> lockGuard(mutex_);
     if (bufferQueueCache_.find(sequence) == bufferQueueCache_.end()) {
-        BLOGN_FAILURE_ID(sequence, "not found in cache");
         return GSERROR_NO_ENTRY;
     }
     if (bufferQueueCache_[sequence].isDeleting) {
@@ -552,7 +603,7 @@ GSError BufferQueue::AcquireBuffer(sptr<SurfaceBuffer> &buffer,
         BLOGND("Success Buffer seq id: %{public}d Queue id: %{public}" PRIu64 " AcquireFence:%{public}d",
             sequence, uniqueId_, fence->Get());
     } else if (ret == GSERROR_NO_BUFFER) {
-        BLOGN_FAILURE("there is no dirty buffer");
+        BLOGND("there is no dirty buffer");
     }
 
     CountTrace(HITRACE_TAG_GRAPHIC_AGP, name_, static_cast<int32_t>(dirtyList_.size()));
@@ -594,7 +645,6 @@ void BufferQueue::ListenerBufferReleasedCb(sptr<SurfaceBuffer> &buffer, const sp
 GSError BufferQueue::ReleaseBuffer(sptr<SurfaceBuffer> &buffer, const sptr<SyncFence>& fence)
 {
     if (buffer == nullptr) {
-        BLOGE("invalid parameter: buffer is null, please check");
         return GSERROR_INVALID_ARGUMENTS;
     }
 
@@ -776,12 +826,11 @@ GSError BufferQueue::AttachBuffer(sptr<SurfaceBuffer> &buffer, int32_t timeOut)
     }
 
     uint32_t sequence = buffer->GetSeqNum();
-    {
-        std::unique_lock<std::mutex> lock(mutex_);
-        if (bufferQueueCache_.find(sequence) != bufferQueueCache_.end()) {
-            return AttachBufferUpdateStatus(lock, sequence, timeOut);
-        }
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (bufferQueueCache_.find(sequence) != bufferQueueCache_.end()) {
+        return AttachBufferUpdateStatus(lock, sequence, timeOut);
     }
+
     BufferElement ele = {
         .buffer = buffer,
         .state = BUFFER_STATE_ATTACHED,
@@ -829,7 +878,6 @@ GSError BufferQueue::DetachBuffer(sptr<SurfaceBuffer> &buffer)
     std::lock_guard<std::mutex> lockGuard(mutex_);
     uint32_t sequence = buffer->GetSeqNum();
     if (bufferQueueCache_.find(sequence) == bufferQueueCache_.end()) {
-        BLOGN_FAILURE_ID(sequence, "not find in cache");
         return GSERROR_NO_ENTRY;
     }
 
@@ -854,11 +902,15 @@ GSError BufferQueue::RegisterSurfaceDelegator(sptr<IRemoteObject> client, sptr<S
 {
     sptr<ConsumerSurfaceDelegator> surfaceDelegator = ConsumerSurfaceDelegator::Create();
     if (surfaceDelegator == nullptr) {
-        BLOGE("RegisterSurfaceDelegator failed for the surface delegator is nullptr");
+        BLOGE("Failed to register consumer delegator because the surface delegator is nullptr");
         return GSERROR_INVALID_ARGUMENTS;
     }
     if (!surfaceDelegator->SetClient(client)) {
-        BLOGE("set the surface delegator client failed");
+        BLOGE("Failed to set client");
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    if (!surfaceDelegator->SetBufferQueue(this)) {
+        BLOGE("Failed to set bufferqueue");
         return GSERROR_INVALID_ARGUMENTS;
     }
 
@@ -1101,7 +1153,6 @@ GSError BufferQueue::SetScalingMode(uint32_t sequence, ScalingMode scalingMode)
 {
     std::lock_guard<std::mutex> lockGuard(mutex_);
     if (bufferQueueCache_.find(sequence) == bufferQueueCache_.end()) {
-        BLOGN_FAILURE_ID(sequence, "not find in cache");
         return GSERROR_NO_ENTRY;
     }
     bufferQueueCache_[sequence].scalingMode = scalingMode;

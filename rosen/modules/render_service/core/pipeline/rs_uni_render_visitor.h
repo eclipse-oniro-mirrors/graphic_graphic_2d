@@ -58,7 +58,7 @@ public:
     void PrepareEffectRenderNode(RSEffectRenderNode& node) override;
 
     void ProcessChildren(RSRenderNode& node) override;
-    void ProcessChildInner(RSRenderNode& node, const RSRenderNode::SharedPtr& child);
+    void ProcessChildInner(RSRenderNode& node, const RSRenderNode::SharedPtr child);
     void ProcessCanvasRenderNode(RSCanvasRenderNode& node) override;
     void ProcessDisplayRenderNode(RSDisplayRenderNode& node) override;
     void ProcessProxyRenderNode(RSProxyRenderNode& node) override;
@@ -74,6 +74,7 @@ public:
     bool InitNodeCache(RSRenderNode& node);
     void CopyVisitorInfos(std::shared_ptr<RSUniRenderVisitor> visitor);
     void CheckSkipRepeatShadow(RSRenderNode& node, const bool resetStatus);
+    void SetNodeSkipShadow(std::shared_ptr<RSRenderNode> node, const bool resetStatus);
     void SetProcessorRenderEngine(std::shared_ptr<RSBaseRenderEngine> renderEngine)
     {
         renderEngine_ = renderEngine;
@@ -167,6 +168,8 @@ public:
     {
         screenInfo_ = screenInfo;
     }
+
+    static void ClearRenderGroupCache();
 
     using RenderParam = std::tuple<std::shared_ptr<RSRenderNode>, RSPaintFilterCanvas::CanvasStatus>;
 private:
@@ -290,7 +293,7 @@ private:
     // if cache root reuses, update its subtree
     // [attention] check curSurfaceDirtyManager_ before function calls
     void UpdateSubTreeInCache(const std::shared_ptr<RSRenderNode>& cacheRootNode,
-        const std::list<RSRenderNode::SharedPtr>& children);
+        const std::vector<RSRenderNode::SharedPtr>& children);
     // set node cacheable animation after checking whold child tree
     void SetNodeCacheChangeStatus(RSRenderNode& node);
     void DisableNodeCacheInSetting(RSRenderNode& node);
@@ -538,8 +541,13 @@ private:
     void ProcessChildrenForScreenRecordingOptimization(RSDisplayRenderNode& node, NodeId rootIdOfCaptureWindow);
     NodeId FindInstanceChildOfDisplay(std::shared_ptr<RSRenderNode> node);
     bool CheckIfNeedResetRotate();
-    void UpdateSurfaceRenderNodeScale(RSSurfaceRenderNode& node);
 
+    // use for virtual screen app/window filtering ability
+    NodeId virtualScreenFilterAppRootId_ = INVALID_NODEID;
+    void UpdateVirtualScreenFilterAppRootId(const RSRenderNode::SharedPtr& node);
+
+    void UpdateSurfaceRenderNodeScale(RSSurfaceRenderNode& node);
+    
     // dfx for effect render node
     void DrawEffectRenderNodeForDFX();
     std::vector<RectI> nodesUseEffectFallbackForDfx_;

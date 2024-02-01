@@ -2642,6 +2642,7 @@ DrawFuncOpItem::DrawFuncOpItem(DrawFunc&& func)
 } // namespace OHOS
 
 #else
+#include "common/rs_common_tools.h"
 #include "pipeline/rs_draw_cmd.h"
 #include "pipeline/rs_recording_canvas.h"
 #include "platform/common/rs_log.h"
@@ -2704,6 +2705,9 @@ RSExtendImageObject::RSExtendImageObject(const std::shared_ptr<Media::PixelMap>&
     const Drawing::AdaptiveImageInfo& imageInfo)
 {
     if (pixelMap) {
+        if (RSSystemProperties::GetDumpUIPixelmapEnabled()) {
+            CommonTools::SavePixelmapToFile(pixelMap, "/data/storage/el1/base/imageObject_");
+        }
         rsImage_ = std::make_shared<RSImage>();
         rsImage_->SetPixelMap(pixelMap);
         rsImage_->SetImageFit(imageInfo.fitNum);
@@ -2726,6 +2730,14 @@ void RSExtendImageObject::Playback(Drawing::Canvas& canvas, const Drawing::Rect&
 {
 #if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     std::shared_ptr<Media::PixelMap> pixelmap = rsImage_->GetPixelMap();
+    if (canvas.GetRecordingCanvas()) {
+        image_ = RSPixelMapUtil::ExtractDrawingImage(pixelmap);
+        if (image_) {
+            rsImage_->SetDmaImage(image_);
+        }
+        rsImage_->CanvasDrawImage(canvas, rect, sampling, isBackground);
+        return;
+    }
     if (pixelmap != nullptr && pixelmap->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC) {
 #if defined(RS_ENABLE_GL)
         if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
@@ -3281,7 +3293,7 @@ void DrawSurfaceBufferOpItem::DrawWithVulkan(Canvas* canvas)
 {
 #ifdef RS_ENABLE_VK
     auto backendTexture = NativeBufferUtils::MakeBackendTextureFromNativeBuffer(nativeWindowBuffer_,
-        surfaceBufferInfo_.width_, surfaceBufferInfo_.height_);
+        surfaceBufferInfo_.surfaceBuffer_->GetWidth(), surfaceBufferInfo_.surfaceBuffer_->GetHeight());
     if (!backendTexture.IsValid()) {
         LOGE("DrawSurfaceBufferOpItem::Draw backendTexture is not valid");
         return;
@@ -3304,7 +3316,11 @@ void DrawSurfaceBufferOpItem::DrawWithVulkan(Canvas* canvas)
         return;
     }
     auto samplingOptions = Drawing::SamplingOptions(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::LINEAR);
-    canvas->DrawImage(*image_, surfaceBufferInfo_.offSetX_, surfaceBufferInfo_.offSetY_, samplingOptions);
+    canvas->DrawImageRect(*image_, Rect{
+        surfaceBufferInfo_.offSetX_, surfaceBufferInfo_.offSetY_,
+        surfaceBufferInfo_.offSetX_ + surfaceBufferInfo_.width_,
+        surfaceBufferInfo_.offSetY_ + surfaceBufferInfo_.height_},
+        samplingOptions);
 #endif
 }
 
@@ -3332,9 +3348,14 @@ void DrawSurfaceBufferOpItem::DrawWithGles(Canvas* canvas)
         LOGE("DrawSurfaceBufferOpItem::Draw: gpu context is nullptr");
         return;
     }
+#ifndef ROSEN_EMULATOR
+    auto surfaceOrigin = Drawing::TextureOrigin::TOP_LEFT;
+#else
+    auto surfaceOrigin = Drawing::TextureOrigin::BOTTOM_LEFT;
+#endif
     auto newImage = std::make_shared<Drawing::Image>();
     if (!newImage->BuildFromTexture(*canvas->GetGPUContext(), externalTextureInfo,
-        Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, nullptr)) {
+        surfaceOrigin, bitmapFormat, nullptr)) {
         LOGE("DrawSurfaceBufferOpItem::Draw: image BuildFromTexture failed");
         return;
     }

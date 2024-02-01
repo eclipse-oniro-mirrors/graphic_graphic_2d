@@ -172,7 +172,7 @@ std::shared_ptr<VSyncReceiver> RSRenderServiceClient::CreateVSyncReceiver(
 
 void RSRenderServiceClient::TriggerSurfaceCaptureCallback(NodeId id, Media::PixelMap* pixelmap)
 {
-    ROSEN_LOGI("RSRenderServiceClient::Into TriggerSurfaceCaptureCallback nodeId:[%{public}" PRIu64 "]", id);
+    ROSEN_LOGD("RSRenderServiceClient::Into TriggerSurfaceCaptureCallback nodeId:[%{public}" PRIu64 "]", id);
     std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector;
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -1070,11 +1070,11 @@ void RSRenderServiceClient::ReportGameStateData(GameStateData info)
     }
 }
 
-void RSRenderServiceClient::SetHardwareEnabled(NodeId id, bool isEnabled)
+void RSRenderServiceClient::SetHardwareEnabled(NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService != nullptr) {
-        renderService->SetHardwareEnabled(id, isEnabled);
+        renderService->SetHardwareEnabled(id, isEnabled, selfDrawingType);
     }
 }
 
@@ -1124,6 +1124,15 @@ void RSRenderServiceClient::SetOnRemoteDiedCallback(const OnRemoteDiedCallback& 
     if (renderService != nullptr) {
         renderService->SetOnRemoteDiedCallback(callback);
     }
+}
+
+GpuDirtyRegionInfo RSRenderServiceClient::GetCurrentDirtyRegionInfo(ScreenId id)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return GpuDirtyRegionInfo {};
+    }
+    return renderService->GetCurrentDirtyRegionInfo(id);
 }
 
 #ifdef TP_FEATURE_ENABLE

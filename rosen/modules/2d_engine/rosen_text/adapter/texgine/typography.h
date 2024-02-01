@@ -48,6 +48,7 @@ public:
     std::vector<TextRect> GetTextRectsOfPlaceholders() override;
     IndexAndAffinity GetGlyphIndexByCoordinate(double x, double y) override;
     Boundary GetWordBoundaryByIndex(size_t index) override;
+    Boundary GetActualTextRange(int lineNumber, bool includeSpaces) override;
 
     double GetLineHeight(int lineNumber) override
     {
@@ -62,7 +63,7 @@ public:
     void SetAnimation(
         std::function<bool(const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)>& animationFunc) override
     {
-        if (animationFunc) {
+        if (animationFunc != nullptr && typography_ != nullptr) {
             typography_->SetAnimation(animationFunc);
         }
     }

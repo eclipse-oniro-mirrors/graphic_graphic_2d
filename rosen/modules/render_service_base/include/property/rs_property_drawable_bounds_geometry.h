@@ -298,6 +298,16 @@ public:
 };
 
 // ============================================================================
+// Binarization
+class RSBinarizationDrawable : public RSPropertyDrawable {
+public:
+    explicit RSBinarizationDrawable() = default;
+    ~RSBinarizationDrawable() override = default;
+    void Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const override;
+    static RSPropertyDrawable::DrawablePtr Generate(const RSRenderContent& content);
+};
+
+// ============================================================================
 // LightUpEffect
 class RSLightUpEffectDrawable : public RSPropertyDrawable {
 public:
@@ -345,17 +355,6 @@ public:
     ~RSEffectDataApplyDrawable() override = default;
     static RSPropertyDrawable::DrawablePtr Generate(const RSRenderContent& content);
     void Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const override;
-    bool Update(const RSRenderContent& content) override;
-};
-
-// ============================================================================
-// LinearGradientBlurFilter
-class RSLinearGradientBlurFilterDrawable : public RSPropertyDrawable {
-public:
-    explicit RSLinearGradientBlurFilterDrawable() = default;
-    ~RSLinearGradientBlurFilterDrawable() override = default;
-    void Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const override;
-    static RSPropertyDrawable::DrawablePtr Generate(const RSRenderContent& content);
     bool Update(const RSRenderContent& content) override;
 };
 

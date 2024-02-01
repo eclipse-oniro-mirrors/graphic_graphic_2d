@@ -14,11 +14,13 @@
  */
 
 #include "skia_font.h"
+#include <memory>
 
 #include "include/core/SkFontTypes.h"
 
 #include "skia_adapter/skia_convert_utils.h"
 #include "skia_adapter/skia_typeface.h"
+#include "skia_typeface.h"
 #include "text/font.h"
 #include "utils/log.h"
 
@@ -134,18 +136,24 @@ scalar SkiaFont::GetSize() const
     return skFont_.getSize();
 }
 
-std::shared_ptr<Typeface> SkiaFont::GetTypeface() const
+std::shared_ptr<Typeface> SkiaFont::GetTypeface()
 {
     sk_sp<SkTypeface> skTypeface = sk_ref_sp(skFont_.getTypeface());
     auto skiaTypeface = std::make_shared<SkiaTypeface>(skTypeface);
-    auto typeface = std::make_shared<Typeface>(skiaTypeface);
-    return typeface;
+    typeface_ = std::make_shared<Typeface>(skiaTypeface);
+    return typeface_;
 }
 
 scalar SkiaFont::MeasureText(const void* text, size_t byteLength, TextEncoding encoding)
 {
     SkTextEncoding skEncoding = static_cast<SkTextEncoding>(encoding);
     return skFont_.measureText(text, byteLength, skEncoding);
+}
+
+int SkiaFont::CountText(const void* text, size_t byteLength, TextEncoding encoding) const
+{
+    SkTextEncoding skEncoding = static_cast<SkTextEncoding>(encoding);
+    return skFont_.countText(text, byteLength, skEncoding);
 }
 
 const SkFont& SkiaFont::GetFont() const

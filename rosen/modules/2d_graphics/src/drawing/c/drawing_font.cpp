@@ -45,6 +45,15 @@ void OH_Drawing_FontSetTypeface(OH_Drawing_Font* cFont, OH_Drawing_Typeface* cTy
     font->SetTypeface(std::shared_ptr<Typeface>{CastToTypeface(cTypeface), [](auto p) {}});
 }
 
+OH_Drawing_Typeface* OH_Drawing_FontGetTypeface(OH_Drawing_Font* cFont)
+{
+    Font* font = CastToFont(cFont);
+    if (font == nullptr) {
+        return nullptr;
+    }
+    return (OH_Drawing_Typeface*)(font->GetTypeface().get());
+}
+
 void OH_Drawing_FontSetTextSize(OH_Drawing_Font* cFont, float textSize)
 {
     Font* font = CastToFont(cFont);
@@ -52,6 +61,16 @@ void OH_Drawing_FontSetTextSize(OH_Drawing_Font* cFont, float textSize)
         return;
     }
     font->SetSize(textSize);
+}
+
+int OH_Drawing_FontCountText(OH_Drawing_Font* cFont, const void* text, size_t byteLength,
+    OH_Drawing_TextEncoding encoding)
+{
+    if (cFont == nullptr || text == nullptr) {
+        return 0;
+    }
+    Font* font = CastToFont(cFont);
+    return font->CountText(text, byteLength, static_cast<TextEncoding>(encoding));
 }
 
 void OH_Drawing_FontSetLinearText(OH_Drawing_Font* cFont, bool isLinearText)

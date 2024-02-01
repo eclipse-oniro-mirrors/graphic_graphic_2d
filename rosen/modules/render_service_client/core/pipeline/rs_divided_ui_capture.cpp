@@ -64,6 +64,8 @@ std::shared_ptr<Media::PixelMap> RSDividedUICapture::TakeLocalCapture()
 #else
     auto recordingCanvas = std::make_shared<ExtendRecordingCanvas>(FAKE_WIDTH, FAKE_HEIGHT);
 #endif
+    PostTaskToRTRecord(recordingCanvas, node, visitor);
+    auto drawCallList = recordingCanvas->GetDrawCmdList();
     std::shared_ptr<Media::PixelMap> pixelmap = CreatePixelMapByNode(node);
     if (pixelmap == nullptr) {
         ROSEN_LOGE("RSDividedUICapture::TakeLocalCapture: pixelmap == nullptr!");
@@ -83,8 +85,6 @@ std::shared_ptr<Media::PixelMap> RSDividedUICapture::TakeLocalCapture()
     }
     auto canvas = std::make_shared<RSPaintFilterCanvas>(drSurface.get());
 #endif
-    PostTaskToRTRecord(recordingCanvas, node, visitor);
-    auto drawCallList = recordingCanvas->GetDrawCmdList();
     drawCallList->Playback(*canvas);
     return pixelmap;
 }
@@ -190,7 +190,7 @@ void RSDividedUICapture::PostTaskToRTRecord(std::shared_ptr<ExtendRecordingCanva
 
 void RSDividedUICapture::RSDividedUICaptureVisitor::ProcessChildren(RSRenderNode& node)
 {
-    for (auto& child : node.GetSortedChildren()) {
+    for (auto& child : *node.GetSortedChildren()) {
         child->Process(shared_from_this());
     }
 }
@@ -357,8 +357,7 @@ void RSDividedUICapture::RSDividedUICaptureVisitor::ProcessSurfaceRenderNode(RSS
 
 void RSDividedUICapture::RSDividedUICaptureVisitor::PrepareChildren(RSRenderNode& node)
 {
-    node.ApplyChildrenModifiers();
-    for (auto& child : node.GetSortedChildren()) {
+    for (auto& child : *node.GetSortedChildren()) {
         child->Prepare(shared_from_this());
     }
 }

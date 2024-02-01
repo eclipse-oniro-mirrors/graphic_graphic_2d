@@ -200,6 +200,9 @@ sptr<Surface> RSRenderServiceConnectionProxy::CreateNodeAndSurface(const RSSurfa
     if (!data.WriteBool(config.isTextureExportNode)) {
         return nullptr;
     }
+    if (!data.WriteBool(config.isSync)) {
+        return nullptr;
+    }
     option.SetFlags(MessageOption::TF_SYNC);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_NODE_AND_SURFACE);
     int32_t err = Remote()->SendRequest(code, data, reply, option);
@@ -1538,7 +1541,7 @@ bool RSRenderServiceConnectionProxy::GetPixelmap(NodeId id, std::shared_ptr<Medi
     }
     bool result = reply.ReadBool();
     if (!result || !RSMarshallingHelper::Unmarshalling(reply, pixelmap)) {
-        RS_LOGE("RSRenderServiceConnectionProxy::GetPixelmap: GetPixelmap failed");
+        RS_LOGD("RSRenderServiceConnectionProxy::GetPixelmap: GetPixelmap failed");
         return false;
     }
     return true;
@@ -1874,7 +1877,7 @@ void RSRenderServiceConnectionProxy::ReportGameStateData(GameStateData info)
     }
 }
 
-void RSRenderServiceConnectionProxy::SetHardwareEnabled(NodeId id, bool isEnabled)
+void RSRenderServiceConnectionProxy::SetHardwareEnabled(NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1886,6 +1889,9 @@ void RSRenderServiceConnectionProxy::SetHardwareEnabled(NodeId id, bool isEnable
         return;
     }
     if (!data.WriteBool(isEnabled)) {
+        return;
+    }
+    if (!data.WriteUint8(static_cast<uint8_t>(selfDrawingType))) {
         return;
     }
     option.SetFlags(MessageOption::TF_ASYNC);
@@ -2018,6 +2024,32 @@ void RSRenderServiceConnectionProxy::RunOnRemoteDiedCallback()
     if (OnRemoteDiedCallback_) {
         OnRemoteDiedCallback_();
     }
+}
+
+GpuDirtyRegionInfo RSRenderServiceConnectionProxy::GetCurrentDirtyRegionInfo(ScreenId id)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    GpuDirtyRegionInfo gpuDirtyRegionInfo;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return gpuDirtyRegionInfo;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    data.WriteUint64(id);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_CURRENT_DIRTY_REGION_INFO);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::GetCurrentDirtyRegionInfo: Send Request err.");
+        return gpuDirtyRegionInfo;
+    }
+    gpuDirtyRegionInfo.activeGpuDirtyRegionAreas = reply.ReadInt64();
+    gpuDirtyRegionInfo.globalGpuDirtyRegionAreas = reply.ReadInt64();
+    gpuDirtyRegionInfo.skipProcessFramesNumber = reply.ReadInt32();
+    gpuDirtyRegionInfo.activeFramesNumber = reply.ReadInt32();
+    gpuDirtyRegionInfo.globalFramesNumber = reply.ReadInt32();
+    gpuDirtyRegionInfo.windowName = reply.ReadString();
+    return gpuDirtyRegionInfo;
 }
 
 #ifdef TP_FEATURE_ENABLE

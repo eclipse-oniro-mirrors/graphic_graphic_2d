@@ -130,9 +130,15 @@ public:
             IsHardwareEnabledTopSurface();
     }
 
-    void SetHardwareEnabled(bool isEnabled)
+    void SetHardwareEnabled(bool isEnabled, SelfDrawingNodeType selfDrawingType = SelfDrawingNodeType::DEFAULT)
     {
         isHardwareEnabledNode_ = isEnabled;
+        selfDrawingType_ = selfDrawingType;
+    }
+
+    SelfDrawingNodeType GetSelfDrawingNodeType() const
+    {
+        return selfDrawingType_;
     }
 
     bool NeedBilinearInterpolation() const
@@ -154,17 +160,6 @@ public:
     bool HasSubNodeShouldPaint() const
     {
         return hasSubNodeShouldPaint_;
-    }
-
-    // used for hwc node
-    bool IsNewOnTree() const
-    {
-        return isNewOnTree_;
-    }
-
-    void ResetIsNewOnTree()
-    {
-        isNewOnTree_ = false;
     }
 
     bool IsLastFrameHardwareEnabled() const
@@ -317,6 +312,7 @@ public:
     void ProcessTransitionAfterChildren(RSPaintFilterCanvas& canvas) override {}
     void ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas& canvas) override;
     void ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas) override;
+    bool IsNeedSetVSync();
 
     void SetContextBounds(const Vector4f bounds);
 
@@ -368,7 +364,6 @@ public:
 
     void SetFingerprint(bool hasFingerprint);
     bool GetFingerprint() const;
-    bool IsMultiInstance();
 
     std::shared_ptr<RSDirtyRegionManager> GetDirtyManager() const;
     std::shared_ptr<RSDirtyRegionManager> GetCacheSurfaceDirtyManager() const;
@@ -1149,9 +1144,9 @@ private:
     bool isNodeDirty_ = true;
     // used for hardware enabled nodes
     bool isHardwareEnabledNode_ = false;
+    SelfDrawingNodeType selfDrawingType_ = SelfDrawingNodeType::DEFAULT;
     bool isCurrentFrameHardwareEnabled_ = false;
     bool isLastFrameHardwareEnabled_ = false;
-    bool isNewOnTree_ = false;
     bool hasSubNodeShouldPaint_ = false;
     // mark if this self-drawing node is forced not to use hardware composer
     // in case where this node's parent window node is occluded or is appFreeze, this variable will be marked true

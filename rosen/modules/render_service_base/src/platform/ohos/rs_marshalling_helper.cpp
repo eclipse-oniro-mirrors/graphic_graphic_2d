@@ -303,6 +303,10 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SymbolLayersGroups& val)
 
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const HMSymbolData& val)
 {
+    if (!Marshalling(parcel, val.symbolId_)) {
+        RS_LOGE("[%{public}s] failed HMSymbolData symbolId_", __func__);
+        return false;
+    }
     if (!Marshalling(parcel, val.symbolInfo_)) {
         RS_LOGE("[%{public}s] failed HMSymbolData symbolInfo_", __func__);
         return false;
@@ -316,6 +320,10 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const HMSymbolData& val)
 
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, HMSymbolData& val)
 {
+    if (!Unmarshalling(parcel, val.symbolId_)) {
+        RS_LOGE("[%{public}s] failed HMSymbolData symbolId_", __func__);
+        return false;
+    }
     if (!Unmarshalling(parcel, val.symbolInfo_)) {
         RS_LOGE("[%{public}s] failed HMSymbolData symbolInfo_", __func__);
         return false;
@@ -1442,7 +1450,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSSh
     std::shared_ptr<Drawing::Data> data = shaderEffect->Serialize();
     if (!data) {
         ROSEN_LOGE("unirender: RSMarshallingHelper::Marshalling RSShader, data is nullptr");
-        return false;
+        return parcel.WriteInt32(-1);
     }
     return parcel.WriteInt32(type) && Marshalling(parcel, data);
 }

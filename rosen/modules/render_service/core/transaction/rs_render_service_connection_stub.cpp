@@ -184,9 +184,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             auto type = static_cast<RSSurfaceNodeType>(data.ReadUint8());
             auto bundleName = data.ReadString();
             bool isTextureExportNode = data.ReadBool();
+            bool isSync = data.ReadBool();
             RSSurfaceRenderNodeConfig config = {
                 .id = nodeId, .name = surfaceName, .bundleName = bundleName, .nodeType = type,
-                .isTextureExportNode = isTextureExportNode};
+                .isTextureExportNode = isTextureExportNode, .isSync = isSync};
             sptr<Surface> surface = CreateNodeAndSurface(config);
             if (surface == nullptr) {
                 ret = ERR_NULL_OBJECT;
@@ -1215,7 +1216,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             }
             auto id = data.ReadUint64();
             auto isEnabled = data.ReadBool();
-            SetHardwareEnabled(id, isEnabled);
+            auto selfDrawingType = static_cast<SelfDrawingNodeType>(data.ReadUint8());
+            SetHardwareEnabled(id, isEnabled, selfDrawingType);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_LIGHT_FACTOR_STATUS) : {
@@ -1235,6 +1237,11 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             auto listSize = data.ReadUint32();
+            const uint32_t MAX_LIST_SIZE = 30;
+            if (listSize > MAX_LIST_SIZE) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
             std::vector<std::string> packageList;
             for (auto i = 0; i < listSize; i++) {
                 packageList.push_back(data.ReadString());
@@ -1313,6 +1320,22 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             }
             auto isEnabled = data.ReadBool();
             SetCacheEnabledForRotation(isEnabled);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_CURRENT_DIRTY_REGION_INFO) : {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            ScreenId id = data.ReadUint64();
+            GpuDirtyRegionInfo gpuDirtyRegionInfo = GetCurrentDirtyRegionInfo(id);
+            reply.WriteInt64(gpuDirtyRegionInfo.activeGpuDirtyRegionAreas);
+            reply.WriteInt64(gpuDirtyRegionInfo.globalGpuDirtyRegionAreas);
+            reply.WriteInt32(gpuDirtyRegionInfo.skipProcessFramesNumber);
+            reply.WriteInt32(gpuDirtyRegionInfo.activeFramesNumber);
+            reply.WriteInt32(gpuDirtyRegionInfo.globalFramesNumber);
+            reply.WriteString("");
             break;
         }
 #ifdef TP_FEATURE_ENABLE

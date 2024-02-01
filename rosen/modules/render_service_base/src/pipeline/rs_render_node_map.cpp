@@ -24,10 +24,10 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
-constexpr const char* ENTRY_VIEW = "SCBDesktop2";
-constexpr const char* WALLPAPER_VIEW = "SCBWallpaper1";
-constexpr const char* SCREENLOCK_WINDOW = "SCBScreenLock11";
-constexpr const char* SYSUI_DROPDOWN = "SCBDropdownPanel12";
+constexpr const char* ENTRY_VIEW = "SCBDesktop";
+constexpr const char* WALLPAPER_VIEW = "SCBWallpaper";
+constexpr const char* SCREENLOCK_WINDOW = "SCBScreenLock";
+constexpr const char* SYSUI_DROPDOWN = "SCBDropdownPanel";
 };
 RSRenderNodeMap::RSRenderNodeMap()
 {
@@ -40,10 +40,10 @@ void RSRenderNodeMap::ObtainLauncherNodeId(const std::shared_ptr<RSSurfaceRender
     if (surfaceNode == nullptr) {
         return;
     }
-    if (surfaceNode->GetName() == ENTRY_VIEW) {
+    if (surfaceNode->GetName().find(ENTRY_VIEW) != std::string::npos) {
         entryViewNodeId_ = surfaceNode->GetId();
     }
-    if (surfaceNode->GetName() == WALLPAPER_VIEW) {
+    if (surfaceNode->GetName().find(WALLPAPER_VIEW) != std::string::npos) {
         wallpaperViewNodeId_ = surfaceNode->GetId();
     }
 }
@@ -53,7 +53,7 @@ void RSRenderNodeMap::ObtainScreenLockWindowNodeId(const std::shared_ptr<RSSurfa
     if (surfaceNode == nullptr) {
         return;
     }
-    if (surfaceNode->GetName() == SCREENLOCK_WINDOW) {
+    if (surfaceNode->GetName().find(SCREENLOCK_WINDOW) != std::string::npos) {
         screenLockWindowNodeId_ = surfaceNode->GetId();
     }
 }
@@ -75,8 +75,10 @@ NodeId RSRenderNodeMap::GetScreenLockWindowNodeId() const
 
 static bool IsResidentProcess(const std::shared_ptr<RSSurfaceRenderNode> surfaceNode)
 {
-    return surfaceNode->GetName() == ENTRY_VIEW || surfaceNode->GetName() == SYSUI_DROPDOWN ||
-           surfaceNode->GetName() == SCREENLOCK_WINDOW || surfaceNode->GetName() == WALLPAPER_VIEW;
+    return surfaceNode->GetName().find(ENTRY_VIEW) != std::string::npos ||
+           surfaceNode->GetName().find(SYSUI_DROPDOWN) != std::string::npos ||
+           surfaceNode->GetName().find(SCREENLOCK_WINDOW) != std::string::npos ||
+           surfaceNode->GetName().find(WALLPAPER_VIEW) != std::string::npos;
 }
 
 bool RSRenderNodeMap::IsResidentProcessNode(NodeId id) const
@@ -140,21 +142,29 @@ void RSRenderNodeMap::RemoveDrivenRenderNode(NodeId id)
     drivenRenderNodeMap_.erase(id);
 }
 
+void RSRenderNodeMap::MoveRenderNodeMap(
+    std::shared_ptr<std::unordered_map<NodeId, std::shared_ptr<RSBaseRenderNode>>> subRenderNodeMap, pid_t pid)
+{
+    std::unordered_map<NodeId, std::shared_ptr<RSBaseRenderNode>>::iterator iter = renderNodeMap_.begin();
+    for (; iter != renderNodeMap_.end();) {
+        if (ExtractPid(iter->first) != pid) {
+            ++iter;
+            continue;
+        }
+        // update node flag to avoid animation fallback
+        iter->second->fallbackAnimationOnDestroy_ = false;
+        // remove node from tree
+        iter->second->RemoveFromTree(false);
+        subRenderNodeMap->emplace(iter->first, iter->second);
+        iter = renderNodeMap_.erase(iter);
+    }
+}
+
 void RSRenderNodeMap::FilterNodeByPid(pid_t pid)
 {
     ROSEN_LOGD("RSRenderNodeMap::FilterNodeByPid removing all nodes belong to pid %{public}llu",
         (unsigned long long)pid);
     // remove all nodes belong to given pid (by matching higher 32 bits of node id)
-    EraseIf(renderNodeMap_, [pid](const auto& pair) -> bool {
-        if (ExtractPid(pair.first) != pid) {
-            return false;
-        }
-        // update node flag to avoid animation fallback
-        pair.second->fallbackAnimationOnDestroy_ = false;
-        // remove node from tree
-        pair.second->RemoveFromTree(false);
-        return true;
-    });
 
     EraseIf(surfaceNodeMap_, [pid](const auto& pair) -> bool {
         return ExtractPid(pair.first) == pid;
@@ -170,7 +180,7 @@ void RSRenderNodeMap::FilterNodeByPid(pid_t pid)
 
     EraseIf(displayNodeMap_, [pid](const auto& pair) -> bool {
         if (ExtractPid(pair.first) != pid && pair.second) {
-            ROSEN_LOGI("RSRenderNodeMap::FilterNodeByPid removing all nodes belong to pid %{public}llu",
+            ROSEN_LOGD("RSRenderNodeMap::FilterNodeByPid removing all nodes belong to pid %{public}llu",
                 (unsigned long long)pid);
             pair.second->FilterModifiersByPid(pid);
         }

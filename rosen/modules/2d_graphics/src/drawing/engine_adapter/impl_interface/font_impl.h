@@ -48,9 +48,10 @@ public:
     virtual void GetWidths(const uint16_t glyphs[], int count, scalar widths[]) const = 0;
     virtual void GetWidths(const uint16_t glyphs[], int count, scalar widths[], Rect bounds[]) const = 0;
     virtual scalar GetSize() const = 0;
-    virtual std::shared_ptr<Typeface> GetTypeface() const = 0;
+    virtual std::shared_ptr<Typeface> GetTypeface() = 0;
 
     virtual scalar MeasureText(const void* text, size_t byteLength, TextEncoding encoding) = 0;
+    virtual int CountText(const void* text, size_t byteLength, TextEncoding encoding) const = 0;
 
 protected:
     FontImpl() noexcept = default;

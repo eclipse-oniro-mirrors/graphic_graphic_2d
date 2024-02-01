@@ -544,6 +544,8 @@ public:
         if (brush) {
             hasBrush_ = true;
             brush_ = *brush;
+        } else {
+            hasBrush_ = false;
         }
         image_ = std::make_shared<Image>(*image);
     }
@@ -583,6 +585,8 @@ public:
         if (brush) {
             hasBrush_ = true;
             brush_ = *brush;
+        } else {
+            hasBrush_ = false;
         }
         image_ = std::make_shared<Image>(*image);
     }
@@ -614,7 +618,7 @@ public:
     DrawBitmapOpItem(const DrawCmdList& cmdList, ConstructorHandle* handle);
     DrawBitmapOpItem(const Bitmap& bitmap, const scalar px, const scalar py, const Paint& paint)
         : DrawWithPaintOpItem(paint, DrawOpItem::BITMAP_OPITEM), px_(px), py_(py),
-          bitmap_(std::make_shared<Bitmap>()) {}
+          bitmap_(std::make_shared<Bitmap>(bitmap)) {}
     ~DrawBitmapOpItem() override = default;
 
     static std::shared_ptr<DrawOpItem> Unmarshalling(const DrawCmdList& cmdList, void* handle);
@@ -691,6 +695,7 @@ private:
     SrcRectConstraint constraint_;
     std::shared_ptr<Image> image_;
     bool isForeground_ = false;
+    BackendTexture texture_;
 };
 
 class DrawPictureOpItem : public DrawOpItem {
@@ -1100,15 +1105,13 @@ public:
 class SaveLayerOpItem : public DrawOpItem {
 public:
     struct ConstructorHandle : public OpItem {
-        ConstructorHandle(const Rect& rect, bool hasBrush, const BrushHandle& brushHandle,
-            const FlattenableHandle& imageFilter, uint32_t saveLayerFlags) : OpItem(DrawOpItem::SAVE_LAYER_OPITEM),
-            rect(rect), hasBrush(hasBrush), brushHandle(brushHandle), imageFilter(imageFilter),
-            saveLayerFlags(saveLayerFlags) {}
+        ConstructorHandle(const Rect& rect, bool hasBrush, const BrushHandle& brushHandle, uint32_t saveLayerFlags)
+            : OpItem(DrawOpItem::SAVE_LAYER_OPITEM), rect(rect), hasBrush(hasBrush), brushHandle(brushHandle),
+              saveLayerFlags(saveLayerFlags) {}
         ~ConstructorHandle() override = default;
         Rect rect;
         bool hasBrush;
         BrushHandle brushHandle;
-        FlattenableHandle imageFilter;
         uint32_t saveLayerFlags;
     };
     SaveLayerOpItem(const DrawCmdList& cmdList, ConstructorHandle* handle);
@@ -1123,7 +1126,6 @@ public:
             hasBrush_ = true;
             brush_ = *brush;
         }
-        imageFilter_ = saveLayerOps.GetImageFilter();
     }
     ~SaveLayerOpItem() override = default;
 
@@ -1135,7 +1137,6 @@ private:
     Rect rect_;
     bool hasBrush_ = false;
     Brush brush_;
-    std::shared_ptr<ImageFilter> imageFilter_;
 };
 
 class RestoreOpItem : public DrawOpItem {
@@ -1208,6 +1209,8 @@ public:
         } else if (image != nullptr) {
             image_ = image;
             isImage_ = true;
+        } else {
+            isImage_ = false;
         }
     }
     ~DrawAdaptiveImageOpItem() override = default;

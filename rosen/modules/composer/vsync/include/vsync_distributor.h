@@ -50,7 +50,6 @@ public:
     virtual VsyncError RequestNextVSync() override;
     virtual VsyncError GetReceiveFd(int32_t &fd) override;
     virtual VsyncError SetVSyncRate(int32_t rate) override;
-    virtual VsyncError GetVSyncPeriod(int64_t &period) override;
     virtual VsyncError Destroy() override;
 
     int32_t PostEvent(int64_t now, int64_t period, int64_t vsyncCount);
@@ -103,7 +102,6 @@ public:
     VsyncError GetVSyncConnectionInfos(std::vector<ConnectionInfo>& infos);
     VsyncError GetQosVSyncRateInfos(std::vector<std::pair<uint32_t, int32_t>>& vsyncRateInfos);
     VsyncError SetQosVSyncRate(uint32_t pid, int32_t rate);
-    VsyncError GetVSyncPeriod(int64_t &period);
 
 private:
 

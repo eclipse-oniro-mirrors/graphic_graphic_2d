@@ -78,6 +78,11 @@ bool CoreCanvas::ReadPixels(const ImageInfo& dstInfo, void* dstPixels, size_t ds
     return impl_->ReadPixels(dstInfo, dstPixels, dstRowBytes, srcX, srcY);
 }
 
+bool CoreCanvas::ReadPixels(const Bitmap& dstBitmap, int srcX, int srcY)
+{
+    return impl_->ReadPixels(dstBitmap, srcX, srcY);
+}
+
 void CoreCanvas::DrawPoint(const Point& point)
 {
     AttachPaint();
@@ -172,12 +177,6 @@ void CoreCanvas::DrawPatch(const Point cubics[12], const ColorQuad colors[4], co
     impl_->DrawPatch(cubics, colors, texCoords, mode);
 }
 
-void CoreCanvas::DrawEdgeAAQuad(const Rect& rect, const Point clip[4],
-    QuadAAFlags aaFlags, ColorQuad color, BlendMode mode)
-{
-    impl_->DrawEdgeAAQuad(rect, clip, aaFlags, color, mode);
-}
-
 void CoreCanvas::DrawVertices(const Vertices& vertices, BlendMode mode)
 {
     AttachPaint();
@@ -190,15 +189,26 @@ void CoreCanvas::DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar 
     impl_->DrawBitmap(bitmap, px, py);
 }
 
+void CoreCanvas::DrawBitmap(const Bitmap& bitmap, const Rect& src, const Rect& dst, const SamplingOptions& sampling)
+{
+    AttachPaint();
+    Image img;
+    img.BuildFromBitmap(bitmap);
+    impl_->DrawImageRect(img, src, dst, sampling, SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
+}
+
+void CoreCanvas::DrawBitmap(const Bitmap& bitmap, const Rect& dst, const SamplingOptions& sampling)
+{
+    AttachPaint();
+    Image img;
+    img.BuildFromBitmap(bitmap);
+    impl_->DrawImageRect(img, dst, sampling);
+}
+
 void CoreCanvas::DrawImageNine(const Image* image, const RectI& center, const Rect& dst,
     FilterMode filter, const Brush* brush)
 {
     impl_->DrawImageNine(image, center, dst, filter, brush);
-}
-
-void CoreCanvas::DrawAnnotation(const Rect& rect, const char* key, const Data* data)
-{
-    impl_->DrawAnnotation(rect, key, data);
 }
 
 void CoreCanvas::DrawImageLattice(const Image* image, const Lattice& lattice, const Rect& dst,
@@ -446,7 +456,7 @@ void CoreCanvas::AttachPaint()
     bool brushValid = paintBrush_.IsValid();
     bool penValid = paintPen_.IsValid();
     if (!brushValid && !penValid) {
-        LOGE("Drawing CoreCanvas AttachPaint with Invalid Paint");
+        LOGD("Drawing CoreCanvas AttachPaint with Invalid Paint");
         return;
     }
 

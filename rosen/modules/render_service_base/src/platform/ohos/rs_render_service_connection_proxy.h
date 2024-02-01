@@ -204,13 +204,15 @@ public:
 
     void ReportGameStateData(GameStateData info) override;
 
-    void SetHardwareEnabled(NodeId id, bool isEnabled) override;
+    void SetHardwareEnabled(NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType) override;
 
     void SetCacheEnabledForRotation(bool isEnabled) override;
 
     void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback) override;
 
     void RunOnRemoteDiedCallback() override;
+
+    GpuDirtyRegionInfo GetCurrentDirtyRegionInfo(ScreenId id) override;
 
 #ifdef TP_FEATURE_ENABLE
     void SetTpFeatureConfig(int32_t feature, const char* config) override;

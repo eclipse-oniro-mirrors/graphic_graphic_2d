@@ -356,6 +356,9 @@ void RSBorderFourLineRoundCornerDrawable::Draw(const RSRenderContent& content, R
     Drawing::scalar centerX = innerRrect_.GetRect().GetLeft() + innerRrect_.GetRect().GetWidth() / 2;
     Drawing::scalar centerY = innerRrect_.GetRect().GetTop() + innerRrect_.GetRect().GetHeight() / 2;
     Drawing::Point center = { centerX, centerY };
+    auto rect = rrect_.GetRect();
+    Drawing::SaveLayerOps slr(&rect, nullptr);
+    canvas.SaveLayer(slr);
     if (drawBorder_) {
         properties.GetBorder()->PaintTopPath(canvas, pen, rrect_, center);
         properties.GetBorder()->PaintRightPath(canvas, pen, rrect_, center);
@@ -608,8 +611,10 @@ void RSPathMaskDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanva
         Drawing::AutoCanvasRestore acr(canvas, true);
         canvas.Translate(bounds.GetLeft(), bounds.GetTop());
         canvas.AttachBrush(mask_->GetMaskBrush());
+        canvas.AttachPen(mask_->GetMaskPen());
         canvas.DrawPath(*mask_->GetMaskPath());
         canvas.DetachBrush();
+        canvas.DetachPen();
     }
     canvas.RestoreToCount(tmpLayer);
     Drawing::SaveLayerOps slrContent(&bounds, &maskBrush_);
@@ -726,6 +731,10 @@ RSColor RSShadowDrawable::GetColorForShadow(const RSRenderContent& content, RSPa
 
 void RSShadowDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
 {
+    if (content.GetRenderProperties().GetNeedSkipShadow()) {
+        RS_TRACE_NAME("RSShadowDrawable::Draw NeedSkipShadow");
+        return;
+    }
     if (canvas.GetCacheType() == RSPaintFilterCanvas::CacheType::ENABLED) {
         return;
     }
@@ -910,6 +919,22 @@ bool RSLightUpEffectDrawable::Update(const RSRenderContent& content)
 }
 
 // ============================================================================
+// Binarization
+void RSBinarizationDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
+{
+    RSPropertiesPainter::DrawBinarizationShader(content.GetRenderProperties(), canvas);
+}
+ 
+RSPropertyDrawable::DrawablePtr RSBinarizationDrawable::Generate(const RSRenderContent& content)
+{
+    auto& aiInvert = content.GetRenderProperties().GetAiInvert();
+    if (!aiInvert.has_value()) {
+        return nullptr;
+    }
+    return std::make_unique<RSBinarizationDrawable>();
+}
+
+// ============================================================================
 // LightUpEffect
 void RSLightUpEffectDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
 {
@@ -1009,27 +1034,6 @@ void RSEffectDataApplyDrawable::Draw(const RSRenderContent& content, RSPaintFilt
         return;
     }
     RSPropertiesPainter::ApplyBackgroundEffect(content.GetRenderProperties(), canvas);
-}
-
-// ============================================================================
-// LinearGradientBlurFilter
-RSPropertyDrawable::DrawablePtr RSLinearGradientBlurFilterDrawable::Generate(const RSRenderContent& content)
-{
-    const auto& para = content.GetRenderProperties().GetLinearGradientBlurPara();
-    if (para == nullptr || para->blurRadius_ <= 0) {
-        return nullptr;
-    }
-    return std::make_unique<RSLinearGradientBlurFilterDrawable>();
-}
-
-bool RSLinearGradientBlurFilterDrawable::Update(const RSRenderContent& content)
-{
-    return content.GetRenderProperties().GetLinearGradientBlurPara() != nullptr;
-}
-
-void RSLinearGradientBlurFilterDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
-{
-    RSPropertiesPainter::DrawLinearGradientBlurFilter(content.GetRenderProperties(), canvas);
 }
 
 // ============================================================================
@@ -1299,7 +1303,7 @@ void RSBlendSaveLayerDrawable::Draw(const RSRenderContent& content, RSPaintFilte
     canvas.SetMatrix(matrix);
     auto brush = blendBrush_;
     brush.SetAlphaF(canvas.GetAlpha());
-    Drawing::SaveLayerOps maskLayerRec(nullptr, &brush, nullptr, 0);
+    Drawing::SaveLayerOps maskLayerRec(nullptr, &brush, 0);
     canvas.SaveLayer(maskLayerRec);
 #endif
     canvas.SaveBlendMode();

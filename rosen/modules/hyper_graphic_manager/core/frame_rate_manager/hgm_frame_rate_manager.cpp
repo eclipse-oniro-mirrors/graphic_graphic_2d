@@ -358,51 +358,48 @@ void HgmFrameRateManager::Reset()
     appChangeData_.clear();
 }
 
-int32_t HgmFrameRateManager::CalModifierPreferred(const HgmModifierProfile &hgmModifierProfile)
+int32_t HgmFrameRateManager::GetExpectedFrameRate(const RSPropertyUnit unit, float velocity) const
 {
-    auto& hgmCore = HgmCore::Instance();
-    sptr<HgmScreen> hgmScreen = hgmCore.GetScreen(hgmCore.GetActiveScreenId());
-    auto configData = hgmCore.GetPolicyConfigData();
-    if (!hgmScreen || configData == nullptr) {
-        return HGM_ERROR;
+    switch (unit) {
+        case RSPropertyUnit::PIXEL_POSITION:
+            return GetPreferredFps("translate", PixelToMM(velocity));
+        case RSPropertyUnit::PIXEL_SIZE:
+        case RSPropertyUnit::RATIO_SCALE:
+            return GetPreferredFps("scale", PixelToMM(velocity));
+        case RSPropertyUnit::ANGLE_ROTATION:
+            return GetPreferredFps("rotation", velocity);
+        default:
+            return 0;
     }
-    auto [xSpeed, ySpeed] = applyDimension(
-        SpeedTransType::TRANS_PIXEL_TO_MM, hgmModifierProfile.xSpeed, hgmModifierProfile.ySpeed, hgmScreen);
-    auto mixSpeed = sqrt(xSpeed * xSpeed + ySpeed * ySpeed);
-
-    auto dynamicSetting = configData->GetAnimationDynamicSetting(
-        curScreenStrategyId_, std::to_string(curRefreshRateMode_), hgmModifierProfile.hgmModifierType);
-    auto iter = std::find_if(dynamicSetting.begin(), dynamicSetting.end(),
-        [&mixSpeed](auto iter) {
-            return mixSpeed >= iter.second.min && (mixSpeed < iter.second.max || iter.second.max == -1);
-        });
-    if (iter != dynamicSetting.end()) {
-        RS_OPTIONAL_TRACE_NAME_FMT("CalModifierPreferred: ModifierType: %s, speed: %f, rate: %d",
-            HGM_MODIFIER_TYPE_MAP.at(static_cast<int>(hgmModifierProfile.hgmModifierType)).c_str(),
-            mixSpeed, iter->second.preferred_fps);
-        return iter->second.preferred_fps;
-    }
-    return HGM_ERROR;
 }
 
-std::pair<float, float> HgmFrameRateManager::applyDimension(
-    SpeedTransType speedTransType, float xSpeed, float ySpeed, sptr<HgmScreen> hgmScreen)
+int32_t HgmFrameRateManager::GetPreferredFps(const std::string& type, float velocity) const
 {
-    auto xDpi = hgmScreen->GetXDpi();
-    auto yDpi = hgmScreen->GetYDpi();
-    if (xDpi < MARGIN || yDpi < MARGIN) {
-        return std::pair<float, float>(0, 0);
+    auto configData = HgmCore::Instance().GetPolicyConfigData();
+    if (!configData) {
+        return 0;
     }
-    switch (speedTransType) {
-        case SpeedTransType::TRANS_MM_TO_PIXEL:
-            return std::pair<float, float>(
-                xSpeed * xDpi / INCH_2_MM, ySpeed * yDpi / INCH_2_MM);
-        case SpeedTransType::TRANS_PIXEL_TO_MM:
-            return std::pair<float, float>(
-                xSpeed / xDpi * INCH_2_MM, ySpeed / yDpi * INCH_2_MM);
-        default:
-            return std::pair<float, float>(0, 0);
+    auto config = configData->GetRSAnimateRateConfig(curScreenStrategyId_, std::to_string(curRefreshRateMode_), type);
+    auto iter = std::find_if(config.begin(), config.end(), [&velocity](const auto& pair) {
+        return velocity >= pair.second.min && (velocity < pair.second.max || pair.second.max == -1);
+    });
+    if (iter != config.end()) {
+        RS_OPTIONAL_TRACE_NAME_FMT("GetPreferredFps: type: %d, speed: %f, rate: %d",
+            type.c_str(), velocity, iter->second.preferred_fps);
+        return iter->second.preferred_fps;
     }
+    return 0;
+}
+
+float HgmFrameRateManager::PixelToMM(float velocity) const
+{
+    float velocityMM = 0.0f;
+    auto& hgmCore = HgmCore::Instance();
+    sptr<HgmScreen> hgmScreen = hgmCore.GetScreen(hgmCore.GetActiveScreenId());
+    if (hgmScreen && hgmScreen->GetPpi() > 0.f) {
+        velocityMM = velocity / hgmScreen->GetPpi() * INCH_2_MM;
+    }
+    return velocityMM;
 }
 
 std::shared_ptr<HgmOneShotTimer> HgmFrameRateManager::GetScreenTimer(ScreenId screenId) const
@@ -449,12 +446,6 @@ void HgmFrameRateManager::HandlePackageEvent(uint32_t listSize, const std::vecto
 {
     // the focus app agreed at the front of packageList
     std::lock_guard<std::mutex> locker(pkgSceneMutex_);
-    if (listSize > 1) {
-        // hgm warning: strategy for multi app
-        DeliverRefreshRateVote(0, "VOTER_MULTI_APP", ADD_VOTE, OLED_60_HZ, OLED_60_HZ);
-    } else {
-        DeliverRefreshRateVote(0, "VOTER_MULTI_APP", REMOVE_VOTE);
-    }
 
     std::string curPkgName = packageList.front();
     HGM_LOGI("HandlePackageEvent curPkg:[%{public}s] pkgNum:[%{public}d]", curPkgName.c_str(), listSize);
@@ -628,7 +619,7 @@ void HgmFrameRateManager::SyncAppVote()
 
     isTouchEnable_ = (configData->strategyConfigs_[curXmlStrategy].dynamicMode != 0);
     touchFps_ = configData->strategyConfigs_[curXmlStrategy].max;
-    idleFps_ = std::min(configData->strategyConfigs_[curXmlStrategy].min, static_cast<int32_t>(OLED_60_HZ));
+    idleFps_ = std::max(configData->strategyConfigs_[curXmlStrategy].min, static_cast<int32_t>(OLED_60_HZ));
 }
 
 void HgmFrameRateManager::MarkVoteChange()
@@ -652,6 +643,8 @@ void HgmFrameRateManager::DeliverRefreshRateVote(pid_t pid, std::string eventNam
 
     std::lock_guard<std::mutex> lock(voteMutex_);
     auto& vec = voteRecord_[eventName];
+
+    // clear
     if ((pid == 0) && (eventStatus == REMOVE_VOTE)) {
         if (!vec.empty()) {
             vec.clear();
@@ -666,18 +659,22 @@ void HgmFrameRateManager::DeliverRefreshRateVote(pid_t pid, std::string eventNam
         }
 
         if (eventStatus == REMOVE_VOTE) {
+            // remove
             it = vec.erase(it);
             MarkVoteChange();
             return;
         } else {
             if ((*it).second.first != min || (*it).second.second != max) {
-                (*it).second = std::make_pair(min, max);
+                // modify
+                vec.erase(it);
+                vec.push_back(std::make_pair(pid, std::make_pair(min, max)));
                 MarkVoteChange();
             }
             return;
         }
     }
 
+    // add
     if (eventStatus == ADD_VOTE) {
         pidRecord_.insert(pid);
         vec.push_back(std::make_pair(pid, std::make_pair(min, max)));

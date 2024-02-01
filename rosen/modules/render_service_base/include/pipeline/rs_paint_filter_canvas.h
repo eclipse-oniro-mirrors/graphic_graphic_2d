@@ -74,13 +74,10 @@ public:
     void DrawRegion(const Drawing::Region& region) override;
     void DrawPatch(const Drawing::Point cubics[12], const Drawing::ColorQuad colors[4],
         const Drawing::Point texCoords[4], Drawing::BlendMode mode) override;
-    void DrawEdgeAAQuad(const Drawing::Rect& rect, const Drawing::Point clip[4],
-        Drawing::QuadAAFlags aaFlags, Drawing::ColorQuad color, Drawing::BlendMode mode) override;
     void DrawVertices(const Drawing::Vertices& vertices, Drawing::BlendMode mode) override;
 
     void DrawImageNine(const Drawing::Image* image, const Drawing::RectI& center, const Drawing::Rect& dst,
         Drawing::FilterMode filter, const Drawing::Brush* brush = nullptr) override;
-    void DrawAnnotation(const Drawing::Rect& rect, const char* key, const Drawing::Data* data) override;
     void DrawImageLattice(const Drawing::Image* image, const Drawing::Lattice& lattice, const Drawing::Rect& dst,
         Drawing::FilterMode filter, const Drawing::Brush* brush = nullptr) override;
 
@@ -307,9 +304,9 @@ public:
     CanvasStatus GetCanvasStatus() const;
     void SetCanvasStatus(const CanvasStatus& status);
     Drawing::Canvas* GetRecordingCanvas() const override;
+    bool GetRecordingState() const override;
+    void SetRecordingState(bool flag) override;
 #endif
-    bool GetRecordingState() const;
-    void SetRecordingState(bool flag);
 
 protected:
     using Env = struct {
