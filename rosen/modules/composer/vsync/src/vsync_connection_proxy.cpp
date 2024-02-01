@@ -23,7 +23,7 @@ VSyncConnectionProxy::VSyncConnectionProxy(const sptr<IRemoteObject>& impl)
 {
 }
 
-VsyncError VSyncConnectionProxy::RequestNextVSync()
+VsyncError VSyncConnectionProxy::RequestNextVSync(const std::string& fromWhom, int64_t lastVSyncTS)
 {
     MessageOption opt;
     MessageParcel arg;

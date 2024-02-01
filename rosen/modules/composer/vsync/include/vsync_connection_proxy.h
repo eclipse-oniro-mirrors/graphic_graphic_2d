@@ -28,7 +28,7 @@ public:
     explicit VSyncConnectionProxy(const sptr<IRemoteObject>& impl);
     virtual ~VSyncConnectionProxy() = default;
 
-    virtual VsyncError RequestNextVSync() override;
+    virtual VsyncError RequestNextVSync(const std::string& fromWhom = "unknown", int64_t lastVSyncTS = 0) override;
     virtual VsyncError GetReceiveFd(int32_t &fd) override;
     virtual VsyncError SetVSyncRate(int32_t rate) override;
     virtual VsyncError Destroy() override;

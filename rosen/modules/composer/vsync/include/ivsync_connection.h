@@ -23,7 +23,7 @@ namespace OHOS {
 namespace Rosen {
 class IVSyncConnection : public IRemoteBroker {
 public:
-    virtual VsyncError RequestNextVSync() = 0;
+    virtual VsyncError RequestNextVSync(const std::string& fromWhom = "unknown", int64_t lastVSyncTS = 0) = 0;
 
     virtual VsyncError GetReceiveFd(int32_t &fd) = 0;
 

@@ -28,6 +28,10 @@
 #include "vsync_controller.h"
 #include "vsync_connection_stub.h"
 
+#if defined(RS_ENABLE_DVSYNC)
+#include "dvsync.h"
+#endif
+
 namespace OHOS {
 namespace Rosen {
 class VSyncDistributor;
@@ -47,7 +51,7 @@ public:
                     const sptr<IRemoteObject>& token = nullptr, uint64_t id = 0);
     ~VSyncConnection();
 
-    virtual VsyncError RequestNextVSync() override;
+    virtual VsyncError RequestNextVSync(const std::string &fromWhom = "unknown", int64_t lastVSyncTS = 0) override;
     virtual VsyncError GetReceiveFd(int32_t &fd) override;
     virtual VsyncError SetVSyncRate(int32_t rate) override;
     virtual VsyncError Destroy() override;
@@ -96,12 +100,18 @@ public:
 
     VsyncError AddConnection(const sptr<VSyncConnection>& connection);
     VsyncError RemoveConnection(const sptr<VSyncConnection> &connection);
-    VsyncError RequestNextVSync(const sptr<VSyncConnection>& connection);
+    VsyncError RequestNextVSync(const sptr<VSyncConnection> &connection, const std::string &fromWhom = "unknown",
+                                int64_t lastVSyncTS = 0);
     VsyncError SetVSyncRate(int32_t rate, const sptr<VSyncConnection>& connection);
     VsyncError SetHighPriorityVSyncRate(int32_t highPriorityRate, const sptr<VSyncConnection>& connection);
     VsyncError GetVSyncConnectionInfos(std::vector<ConnectionInfo>& infos);
     VsyncError GetQosVSyncRateInfos(std::vector<std::pair<uint32_t, int32_t>>& vsyncRateInfos);
     VsyncError SetQosVSyncRate(uint32_t pid, int32_t rate);
+
+    // used by DVSync
+    bool DVSyncIsOn();
+    void MarkRSNotRendering();
+    void UnmarkRSNotRendering();
 
 private:
 
@@ -126,6 +136,7 @@ private:
                                 std::vector<sptr<VSyncConnection>> &conns, int64_t vsyncCount);
     /* std::pair<id, refresh rate> */
     void OnConnsRefreshRateChanged(const std::vector<std::pair<uint64_t, uint32_t>> &refreshRates);
+    void WaitForVsyncOrRequest(std::unique_lock<std::mutex> &locker);
 
     std::thread threadLoop_;
     sptr<VSyncController> controller_;
@@ -142,6 +153,10 @@ private:
     VSyncMode vsyncMode_ = VSYNC_MODE_LTPS; // default LTPS
     std::mutex changingConnsRefreshRatesMtx_;
     uint32_t generatorRefreshRate_ = 0;
+#if defined(RS_ENABLE_DVSYNC)
+    sptr<DVsync> dvsync_ = nullptr;
+#endif
+    bool isRs_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS
