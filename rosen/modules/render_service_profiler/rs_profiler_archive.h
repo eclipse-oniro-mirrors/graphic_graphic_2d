@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,20 +13,22 @@
  * limitations under the License.
  */
 
-#pragma once
+#ifndef RENDER_SERVICE_PROFILER_ARCHIVE_H
+#define RENDER_SERVICE_PROFILER_ARCHIVE_H
 
 #include <cstring>
 #include <iostream>
 #include <string>
 #include <vector>
+#include <securec.h>
 
 namespace OHOS::Rosen {
 
 class Archive {
 public:
-    virtual bool IsReading() const
+    bool IsReading() const
     {
-        return true;
+        return isReading_;
     }
 
     void Serialize(float& value);
@@ -63,7 +65,10 @@ public:
     virtual void Serialize(void* data, size_t size) = 0;
 
 protected:
-    Archive() = default;
+    explicit Archive(bool reader)
+        : isReading_(reader)
+    {}
+
     virtual ~Archive() = default;
 
     template<typename T>
@@ -75,15 +80,25 @@ protected:
         if (IsReading())
             vector.resize(size);
     }
+
+private:
+
+    bool isReading_ = true;
 };
 
 // Data archives
 
 class DataArchive : public Archive {
 public:
-    DataArchive(size_t offset = 0) : offset_(offset) {}
 
-    virtual ~DataArchive() = default;
+    ~DataArchive() = default;
+
+protected:
+
+    explicit DataArchive(bool reader, size_t offset = 0)
+        : Archive(reader)
+        , offset_(offset)
+    {}
 
 protected:
     size_t offset_ = 0;
@@ -91,13 +106,16 @@ protected:
 
 class DataReader final : public DataArchive {
 public:
-    DataReader(const std::vector<char>& data, size_t offset = 0) : DataArchive(offset), data_(data) {}
+    DataReader(const std::vector<char>& data, size_t offset = 0)
+        : DataArchive(true, offset)
+        , data_(data)
+    {}
 
-    virtual void Serialize(void* data, size_t size) override
+    void Serialize(void* data, size_t size) override
     {
         if (data && (size > 0) && (offset_ + size <= data_.size())) {
-            std::memmove(data, data_.data() + offset_, size);
-            offset_ += size;
+            if (::memmove_s(data, size, data_.data() + offset_, size) == 0)
+                offset_ += size;
         }
     }
 
@@ -107,19 +125,17 @@ protected:
 
 class DataWriter final : public DataArchive {
 public:
-    DataWriter(std::vector<char>& data, size_t offset = 0) : DataArchive(offset), data_(data) {}
+    DataWriter(std::vector<char>& data, size_t offset = 0)
+        : DataArchive(false, offset)
+        , data_(data)
+    {}
 
-    virtual bool IsReading() const override
-    {
-        return false;
-    }
-
-    virtual void Serialize(void* data, size_t size) override
+    void Serialize(void* data, size_t size) override
     {
         if (data && (size > 0)) {
             data_.resize(data_.size() + size);
-            std::memmove(data_.data() + offset_, data, size);
-            offset_ += size;
+            if(::memmove_s(data_.data() + offset_, data_.size(), data, size) == 0)
+                offset_ += size;
         }
     }
 
@@ -129,25 +145,28 @@ protected:
 
 // File archives
 
-template<bool Reader = true>
-class FileArchive : public Archive {
+template<bool reader = true>
+class FileArchive final : public Archive {
 public:
-    FileArchive(FILE* file) : file_(file), external_(true) {}
+    explicit FileArchive(FILE* file)
+        : Archive(reader) 
+        , file_(file)
+        , external_(true)
+    {}
 
-    FileArchive(const std::string& path) : file_(fopen(path.data(), Reader ? "rb" : "wb")), external_(false) {}
+    explicit FileArchive(const std::string& path)
+        : Archive(reader) 
+        , file_(fopen(path.data(), reader ? "rb" : "wb"))
+        , external_(false)
+    {}
 
-    virtual ~FileArchive()
+    ~FileArchive()
     {
         if (file_ && !external_)
             fclose(file_);
     }
 
-    virtual bool IsReading() const
-    {
-        return Reader;
-    }
-
-    virtual void Serialize(void* data, size_t size) override
+    void Serialize(void* data, size_t size) override
     {
         if (file_ && data && (size > 0)) {
             if (IsReading())
@@ -166,3 +185,5 @@ using FileReader = FileArchive<true>;
 using FileWriter = FileArchive<false>;
 
 } // namespace OHOS::Rosen
+
+#endif // RENDER_SERVICE_PROFILER_ARCHIVE_H
