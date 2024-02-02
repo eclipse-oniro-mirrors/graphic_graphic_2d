@@ -51,7 +51,8 @@ public:
                     const sptr<IRemoteObject>& token = nullptr, uint64_t id = 0);
     ~VSyncConnection();
 
-    virtual VsyncError RequestNextVSync(const std::string &fromWhom = "unknown", int64_t lastVSyncTS = 0) override;
+    virtual VsyncError RequestNextVSync() override;
+    virtual VsyncError RequestNextVSync(const std::string &fromWhom, int64_t lastVSyncTS) override;
     virtual VsyncError GetReceiveFd(int32_t &fd) override;
     virtual VsyncError SetVSyncRate(int32_t rate) override;
     virtual VsyncError Destroy() override;
@@ -100,6 +101,9 @@ public:
 
     VsyncError AddConnection(const sptr<VSyncConnection>& connection);
     VsyncError RemoveConnection(const sptr<VSyncConnection> &connection);
+
+    // fromWhom indicates whether the source is animate or non-animate
+    // lastVSyncTS indicates last vsync time, 0 when non-animate
     VsyncError RequestNextVSync(const sptr<VSyncConnection> &connection, const std::string &fromWhom = "unknown",
                                 int64_t lastVSyncTS = 0);
     VsyncError SetVSyncRate(int32_t rate, const sptr<VSyncConnection>& connection);
@@ -109,7 +113,7 @@ public:
     VsyncError SetQosVSyncRate(uint32_t pid, int32_t rate);
 
     // used by DVSync
-    bool DVSyncIsOn();
+    bool IsDVsyncOn();
     void MarkRSNotRendering();
     void UnmarkRSNotRendering();
 

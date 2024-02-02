@@ -127,7 +127,12 @@ VSyncReceiver::~VSyncReceiver()
     }
 }
 
-VsyncError VSyncReceiver::RequestNextVSync(FrameCallback callback, const std::string& fromWhom, int64_t lastVSyncTS)
+VsyncError VSyncReceiver::RequestNextVSync(FrameCallback callback)
+{
+    return RequestNextVSync(callback, "unknown", 0);
+}
+
+VsyncError VSyncReceiver::RequestNextVSync(FrameCallback callback, const std::string &fromWhom, int64_t lastVSyncTS)
 {
     std::lock_guard<std::mutex> locker(initMutex_);
     if (!init_) {
