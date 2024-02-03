@@ -353,7 +353,7 @@ public:
 
 #ifdef DDGR_ENABLE_FEATURE_OPINC
     bool IsOnTreeDirty();
-    void SetDirtyByOnTree();
+    void SetDirtyByOnTree(bool forceAddToActiveList = false);
     Vector4f GetOptionBufferBound() const;
     Vector2f GetOpincBufferSize() const;
 #ifdef USE_ROSEN_DRAWING
