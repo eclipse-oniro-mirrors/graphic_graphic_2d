@@ -31,6 +31,8 @@ public:
     float pivotZ_ { 0.0f };
     float scaleX_ { 1.0f };
     float scaleY_ { 1.0f };
+    float skewX_ {0.0f};
+    float skewY_ {0.0f};
     float rotation_ { 0.0f };
     float rotationX_ { 0.0f };
     float rotationY_ { 0.0f };
@@ -126,6 +128,25 @@ public:
     {
         SetScaleX(x);
         SetScaleY(y);
+    }
+    void SetSkewX(float x)
+    {
+        if (!trans_) {
+            trans_ = std::make_optional<Transform>();
+        }
+        trans_->skewX_ = x;
+    }
+    void SetSkewY(float y)
+    {
+        if (!trans_) {
+            trans_ = std::make_optional<Transform>();
+        }
+        trans_->skewY_ = y;
+    }
+    void SetSkew(float x, float y)
+    {
+        SetSkewX(x);
+        SetSkewY(y);
     }
     void SetRotation(float rotation)
     {
@@ -225,6 +246,14 @@ public:
     float GetScaleY() const
     {
         return trans_ ? trans_->scaleY_ : 1.f;
+    }
+    float GetSkewX() const
+    {
+        return trans_ ? trans_->skewX_ : 0.f;
+    }
+    float GetSkewY() const
+    {
+        return trans_ ? trans_->skewY_ : 0.f;
     }
     float GetRotation() const
     {

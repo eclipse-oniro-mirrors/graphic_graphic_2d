@@ -103,6 +103,7 @@ void RSNodeFuzzTestInner01(std::shared_ptr<RSSurfaceNode> surfaceNode)
     Quaternion quaternion(GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>());
     Vector2f translate(GetData<float>(), GetData<float>());
     Vector2f scale(GetData<float>(), GetData<float>());
+    Vector2f skew(GetData<float>(), GetData<float>());
 
     surfaceNode->SetBounds(bounds);
     surfaceNode->SetBounds(GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>());
@@ -141,6 +142,12 @@ void RSNodeFuzzTestInner01(std::shared_ptr<RSSurfaceNode> surfaceNode)
     surfaceNode->SetScale(scale);
     surfaceNode->SetScaleX(GetData<float>());
     surfaceNode->SetScaleY(GetData<float>());
+
+    surfaceNode->SetSkew(GetData<float>());
+    surfaceNode->SetSkew(GetData<float>(), GetData<float>());
+    surfaceNode->SetSkew(skew);
+    surfaceNode->SetSkewX(GetData<float>());
+    surfaceNode->SetSkewY(GetData<float>());
 
     surfaceNode->SetAlpha(GetData<float>());
     surfaceNode->SetAlphaOffscreen(GetData<float>());

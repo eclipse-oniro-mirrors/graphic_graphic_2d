@@ -144,6 +144,13 @@ public:
     float GetScaleX() const;
     float GetScaleY() const;
 
+    void SetSkew(Vector2f skew);
+    void SetSkewX(float skewX);
+    void SetSkewY(float skewY);
+    Vector2f GetSkew() const;
+    float GetSkewX() const;
+    float GetSkewY() const;
+
     void SetAlpha(float alpha);
     float GetAlpha() const;
     void SetAlphaOffscreen(bool alphaOffscreen);
