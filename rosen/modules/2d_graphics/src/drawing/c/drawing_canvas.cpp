@@ -16,6 +16,7 @@
 #include "c/drawing_canvas.h"
 
 #include "draw/canvas.h"
+#include "recording/recording_canvas.h"
 
 using namespace OHOS;
 using namespace Rosen;
@@ -46,9 +47,9 @@ static const Bitmap& CastToBitmap(const OH_Drawing_Bitmap& cBitmap)
     return reinterpret_cast<const Bitmap&>(cBitmap);
 }
 
-static const Rect& CastToRect(const OH_Drawing_Rect& cRect)
+static const Drawing::Rect& CastToRect(const OH_Drawing_Rect& cRect)
 {
-    return reinterpret_cast<const Rect&>(cRect);
+    return reinterpret_cast<const Drawing::Rect&>(cRect);
 }
 
 static const Point& CastToPoint(const OH_Drawing_Point& cPoint)
@@ -167,10 +168,10 @@ void OH_Drawing_CanvasSaveLayer(OH_Drawing_Canvas* cCanvas,
         return;
     }
 
-    std::unique_ptr<Rect> bounds = nullptr;
+    std::unique_ptr<Drawing::Rect> bounds = nullptr;
     std::unique_ptr<Brush> brush = nullptr;
     if (cRect != nullptr) {
-        bounds = std::make_unique<Rect>();
+        bounds = std::make_unique<Drawing::Rect>();
         *bounds = CastToRect(*cRect);
     }
     if (cBrush != nullptr) {
@@ -329,6 +330,9 @@ void OH_Drawing_CanvasDrawTextBlob(OH_Drawing_Canvas* cCanvas, const OH_Drawing_
     if (canvas == nullptr) {
         return;
     }
+    if (canvas->GetDrawingType() == DrawingType::RECORDING) {
+        (static_cast<RecordingCanvas*>(canvas))->SetIsCustomTextType(true);
+    }
     canvas->DrawTextBlob(CastToTextBlob(cTextBlob), x, y);
 }
 
@@ -437,8 +441,8 @@ void OH_Drawing_CanvasGetLocalClipBounds(OH_Drawing_Canvas* cCanvas, OH_Drawing_
     if (canvas == nullptr) {
         return;
     }
-    Rect rect = canvas->GetLocalClipBounds();
-    Rect* outRect = reinterpret_cast<Rect*>(cRect);
+    Drawing::Rect rect = canvas->GetLocalClipBounds();
+    Drawing::Rect* outRect = reinterpret_cast<Drawing::Rect*>(cRect);
     *outRect = rect;
 }
 
