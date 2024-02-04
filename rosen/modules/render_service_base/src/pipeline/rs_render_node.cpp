@@ -734,9 +734,9 @@ void RSRenderNode::SetDirty(bool forceAddToActiveList)
 #endif
     // TO avoid redundant add, only add if both: 1. on-tree node 2. newly dirty node (or forceAddToActiveList = true)
 #ifdef DDGR_ENABLE_FEATURE_OPINC
-    if (isOnTheTree_ && (dirtyStatus_ < NodeDirty::DIRTY || dirtyEmpty || forceAddToActiveList)) {
+    if (dirtyStatus_ < NodeDirty::DIRTY || dirtyEmpty || forceAddToActiveList) {
 #else
-    if (isOnTheTree_ && (dirtyStatus_ == NodeDirty::CLEAN || dirtyEmpty || forceAddToActiveList)) {
+    if (dirtyStatus_ == NodeDirty::CLEAN || dirtyEmpty || forceAddToActiveList) {
 #endif
         if (auto context = GetContext().lock()) {
             context->AddActiveNode(shared_from_this());
