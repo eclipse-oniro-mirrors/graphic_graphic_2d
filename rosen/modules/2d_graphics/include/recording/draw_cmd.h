@@ -691,7 +691,6 @@ private:
     SrcRectConstraint constraint_;
     std::shared_ptr<Image> image_;
     bool isForeground_ = false;
-    BackendTexture texture_;
 };
 
 class DrawPictureOpItem : public DrawOpItem {
