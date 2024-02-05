@@ -21,8 +21,14 @@
 #ifndef USE_ROSEN_DRAWING
 #include "include/core/SkMatrix.h"
 #include "include/core/SkPoint.h"
+#ifdef NEW_SKIA
+#include "include/core/SkM44.h"
+#else
+#include "include/core/SkMatrix44.h"
+#endif
 #else
 #include "utils/matrix.h"
+#include "utils/matrix44.h"
 #include "utils/point.h"
 #endif
 
@@ -85,6 +91,13 @@ public:
     }
 
 private:
+#ifndef USE_ROSEN_DRAWING
+    void ApplySkewToMatrix(SkMatrix& m, bool preConcat = true);
+    void ApplySkewToMatrix44(SkM44& m44, bool preConcat = true);
+#else
+    void ApplySkewToMatrix(Drawing::Matrix& m, bool preConcat = true);
+    void ApplySkewToMatrix44(Drawing::Matrix44& m44, bool preConcat = true);
+#endif
     void UpdateAbsMatrix2D();
     void UpdateAbsMatrix3D();
     void SetAbsRect();

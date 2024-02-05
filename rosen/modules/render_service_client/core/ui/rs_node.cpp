@@ -826,6 +826,56 @@ void RSNode::SetScaleY(float scaleY)
     scale.y_ = scaleY;
     property->Set(scale);
 }
+
+void RSNode::SetSkew(float skew)
+{
+    SetSkew({ skew, skew });
+}
+
+void RSNode::SetSkew(float skewX, float skewY)
+{
+    SetSkew({ skewX, skewY });
+}
+
+void RSNode::SetSkew(const Vector2f& skew)
+{
+    SetProperty<RSSkewModifier, RSAnimatableProperty<Vector2f>>(RSModifierType::SKEW, skew);
+}
+
+void RSNode::SetSkewX(float skewX)
+{
+    auto iter = propertyModifiers_.find(RSModifierType::SKEW);
+    if (iter == propertyModifiers_.end()) {
+        SetSkew(skewX, 0.f);
+        return;
+    }
+
+    auto property = std::static_pointer_cast<RSAnimatableProperty<Vector2f>>(iter->second->GetProperty());
+    if (property == nullptr) {
+        return;
+    }
+    auto skew = property->Get();
+    skew.x_ = skewX;
+    property->Set(skew);
+}
+
+void RSNode::SetSkewY(float skewY)
+{
+    auto iter = propertyModifiers_.find(RSModifierType::SKEW);
+    if (iter == propertyModifiers_.end()) {
+        SetSkew(0.f, skewY);
+        return;
+    }
+
+    auto property = std::static_pointer_cast<RSAnimatableProperty<Vector2f>>(iter->second->GetProperty());
+    if (property == nullptr) {
+        return;
+    }
+    auto skew = property->Get();
+    skew.y_ = skewY;
+    property->Set(skew);
+}
+
 // Set the foreground color of the control
 void RSNode::SetEnvForegroundColor(uint32_t colorValue)
 {

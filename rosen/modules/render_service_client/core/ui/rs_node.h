@@ -217,6 +217,12 @@ public:
     void SetScaleX(float scaleX);
     void SetScaleY(float scaleY);
 
+    void SetSkew(float skew);
+    void SetSkew(float skewX, float skewY);
+    void SetSkew(const Vector2f& skew);
+    void SetSkewX(float skewX);
+    void SetSkewY(float skewY);
+
     void SetAlpha(float alpha);
     void SetAlphaOffscreen(bool alphaOffscreen);
 

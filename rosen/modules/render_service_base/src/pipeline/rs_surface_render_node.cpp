@@ -523,6 +523,7 @@ void RSSurfaceRenderNode::SetContextMatrix(const std::optional<Drawing::Matrix>&
     contextMatrix_ = matrix;
     SetContentDirty();
     AddDirtyType(RSModifierType::SCALE);
+    AddDirtyType(RSModifierType::SKEW);
     AddDirtyType(RSModifierType::TRANSLATE);
     if (!sendMsg) {
         return;

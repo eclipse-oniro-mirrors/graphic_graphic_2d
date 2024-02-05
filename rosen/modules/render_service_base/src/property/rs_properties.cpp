@@ -65,6 +65,7 @@ const std::array<ResetPropertyFunc, static_cast<int>(RSModifierType::CUSTOM)> g_
     [](RSProperties* prop) { prop->SetRotationY(0.f); },                 // ROTATION_Y
     [](RSProperties* prop) { prop->SetCameraDistance(0.f); },            // CAMERA_DISTANCE
     [](RSProperties* prop) { prop->SetScale(Vector2f(1.f, 1.f)); },      // SCALE
+    [](RSProperties* prop) { prop->SetSkew(Vector2f(0.f, 0.f)); },       // SKEW
     [](RSProperties* prop) { prop->SetTranslate(Vector2f(0.f, 0.f)); },  // TRANSLATE
     [](RSProperties* prop) { prop->SetTranslateZ(0.f); },                // TRANSLATE_Z
     [](RSProperties* prop) { prop->SetSublayerTransform({}); },          // SUBLAYER_TRANSFORM
@@ -664,6 +665,27 @@ void RSProperties::SetScaleY(float sy)
     SetDirty();
 }
 
+void RSProperties::SetSkew(Vector2f skew)
+{
+    boundsGeo_->SetSkew(skew.x_, skew.y_);
+    geoDirty_ = true;
+    SetDirty();
+}
+
+void RSProperties::SetSkewX(float skewX)
+{
+    boundsGeo_->SetSkewX(skewX);
+    geoDirty_ = true;
+    SetDirty();
+}
+
+void RSProperties::SetSkewY(float skewY)
+{
+    boundsGeo_->SetSkewY(skewY);
+    geoDirty_ = true;
+    SetDirty();
+}
+
 #ifdef DDGR_ENABLE_FEATURE_OPINC
 bool RSProperties::GetOpincPropDirty() const
 {
@@ -747,6 +769,21 @@ float RSProperties::GetScaleY() const
 Vector2f RSProperties::GetScale() const
 {
     return { boundsGeo_->GetScaleX(), boundsGeo_->GetScaleY() };
+}
+
+float RSProperties::GetSkewX() const
+{
+    return boundsGeo_->GetSkewX();
+}
+
+float RSProperties::GetSkewY() const
+{
+    return boundsGeo_->GetSkewY();
+}
+
+Vector2f RSProperties::GetSkew() const
+{
+    return { boundsGeo_->GetSkewX(), boundsGeo_->GetSkewY() };
 }
 
 Vector2f RSProperties::GetTranslate() const

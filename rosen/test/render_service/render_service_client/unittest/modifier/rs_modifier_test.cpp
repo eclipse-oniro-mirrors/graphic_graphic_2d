@@ -494,6 +494,48 @@ HWTEST_F(RSModifierTest, ScaleModifier002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SkewModifier001
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSModifierTest, SkewModifier001, TestSize.Level1)
+{
+    auto value = Vector2f(2.f, 2.f);
+    auto prop = std::make_shared<RSAnimatableProperty<Vector2f>>(value);
+    auto modifier = std::make_shared<RSSkewModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetSkew(), value);
+
+    node->RemoveModifier(modifier);
+    auto node1 = RSCanvasNode::Create();
+    ASSERT_EQ(node->GetStagingProperties().GetSkew(), node1->GetStagingProperties().GetSkew());
+}
+
+/**
+ * @tc.name: SkewModifier002
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSModifierTest, SkewModifier002, TestSize.Level1)
+{
+    auto value = Vector2f();
+    auto prop = std::make_shared<RSAnimatableProperty<Vector2f>>(value);
+    auto modifier = std::make_shared<RSSkewModifier>(prop);
+
+    auto node = RSCanvasNode::Create();
+    node->AddModifier(modifier);
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_EQ(node->GetStagingProperties().GetSkew(), value);
+
+    value = Vector2f(0.5f, 0.5f);
+    prop->Set(value);
+    ASSERT_EQ(node->GetStagingProperties().GetSkew(), value);
+}
+
+/**
  * @tc.name: TranslateModifier001
  * @tc.desc:
  * @tc.type:FUNC
