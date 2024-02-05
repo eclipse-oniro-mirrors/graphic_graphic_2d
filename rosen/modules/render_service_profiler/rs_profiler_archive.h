@@ -17,6 +17,7 @@
 #define RENDER_SERVICE_PROFILER_ARCHIVE_H
 
 #include <cstring>
+#include <filesystem>
 #include <iostream>
 #include <securec.h>
 #include <string>
@@ -42,24 +43,27 @@ public:
     void Serialize(std::vector<T>& vector)
     {
         SerializeVectorBase(vector);
-        for (T& value : vector)
+        for (T& value : vector) {
             Serialize(value);
+        }
     }
 
     template<typename T>
     void Serialize(std::vector<T>& vector, void (*serializer)(Archive&, T&))
     {
         SerializeVectorBase(vector);
-        for (T& value : vector)
+        for (T& value : vector) {
             serializer(*this, value);
+        }
     }
 
     template<typename T>
     void SerializeNonFlat(std::vector<T>& vector)
     {
         SerializeVectorBase(vector);
-        for (T& value : vector)
+        for (T& value : vector) {
             value.Serialize(*this);
+        }
     }
 
     virtual void Serialize(void* data, size_t size) = 0;
@@ -75,8 +79,9 @@ protected:
         size_t size = vector.size();
         Serialize(size);
 
-        if (IsReading())
+        if (IsReading()) {
             vector.resize(size);
+        }
     }
 
 private:
@@ -100,8 +105,9 @@ public:
     void Serialize(void* data, size_t size) override
     {
         if (data && (size > 0) && (offset_ + size <= data_.size())) {
-            if (::memmove_s(data, size, data_.data() + offset_, size) == 0)
+            if (::memmove_s(data, size, data_.data() + offset_, size) == 0) {
                 offset_ += size;
+            }
         }
     }
 
@@ -117,8 +123,9 @@ public:
     {
         if (data && (size > 0)) {
             data_.resize(data_.size() + size);
-            if (::memmove_s(data_.data() + offset_, data_.size(), data, size) == 0)
+            if (::memmove_s(data_.data() + offset_, data_.size(), data, size) == 0) {
                 offset_ += size;
+            }
         }
     }
 
@@ -135,24 +142,33 @@ public:
 
     explicit FileArchive(const std::string& path) : Archive(reader)
     {
-        file_ = fopen(path.data(), reader ? "rb" : "wb");
+        // NOTE: weakly_canonical does not throw an exception if path does not exsist
+        const std::filesystem::path canonicalPath = std::filesystem::weakly_canonical(std::filesystem::path(path));
+        if (std::filesystem::exists(canonicalPath)) {
+            file_ = fopen(canonicalPath.c_str(), reader ? "rb" : "wb");
+        }
+
         if (!file_) {
+            std::cout << "FileArchive: File " << canonicalPath << " cannot be opened for "
+                      << (reader ? "reading" : "writing");
         }
     }
 
     ~FileArchive() override
     {
-        if (file_ && !external_)
+        if (file_ && !external_) {
             fclose(file_);
+        }
     }
 
     void Serialize(void* data, size_t size) override
     {
         if (file_ && data && (size > 0)) {
-            if (IsReading())
+            if (IsReading()) {
                 fread(data, size, 1, file_);
-            else
+            } else {
                 fwrite(data, size, 1, file_);
+            }
         }
     }
 

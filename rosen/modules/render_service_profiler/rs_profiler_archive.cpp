@@ -47,8 +47,9 @@ void Archive::Serialize(std::string& value)
     size_t size = value.size();
     Serialize(size);
 
-    if (IsReading())
+    if (IsReading()) {
         value.resize(size);
+    }
 
     Serialize(const_cast<char*>(value.data()), size);
 }
