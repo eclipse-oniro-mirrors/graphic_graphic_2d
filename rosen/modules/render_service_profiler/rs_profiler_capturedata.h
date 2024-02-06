@@ -72,7 +72,7 @@ public:
     uint64_t GetPropertyUint64(const std::string& name) const;
 
 protected:
-    void Serialize(class Archive && archive);
+    void Serialize(class Archive& archive);
 
 private:
     float time_ = 0.0F;

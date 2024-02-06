@@ -104,16 +104,18 @@ uint64_t RSCaptureData::GetPropertyUint64(const std::string& name) const
 
 void RSCaptureData::Serialize(std::vector<char>& out)
 {
-    Serialize(std::move(DataWriter(out)));
+    DataWriter archive(out);
+    Serialize(archive);
 }
 
 void RSCaptureData::Deserialize(const std::vector<char>& in)
 {
     Reset();
-    Serialize(std::move(DataReader(in)));
+    DataReader archive(in);
+    Serialize(archive);
 }
 
-void RSCaptureData::Serialize(Archive && archive)
+void RSCaptureData::Serialize(Archive& archive)
 {
     archive.Serialize(time_);
 
