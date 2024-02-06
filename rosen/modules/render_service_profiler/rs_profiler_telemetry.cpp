@@ -22,9 +22,6 @@
 #include "developtools/profiler/host/smartperf/client/client_command/include/sp_utils.h"
 #include "rs_profiler_utils.h"
 
-#define ToGHz(X) (X) * 1e-6f
-#define ToGB(X) (X) * 1e-6
-
 namespace OHOS::Rosen {
 
 static std::string GetMetric(const std::string& name)
@@ -58,17 +55,17 @@ static std::string GetCPUTemperatureMetric()
 static void GetCPUTemperature(CPUInfo& cpu)
 {
     static const std::string TEMPERATURE_METRIC = GetCPUTemperatureMetric();
-    cpu.temperature_ = GetMetricFloat(TEMPERATURE_METRIC) * 1e-3F;
+    cpu.temperature = GetMetricFloat(TEMPERATURE_METRIC) * 1e-3f;
 }
 
 static void GetCPUCurrent(CPUInfo& cpu)
 {
-    cpu.current_ = GetMetricFloat("/sys/class/power_supply/Battery/current_now") * 1e-6F;
+    cpu.current = GetMetricFloat("/sys/class/power_supply/Battery/current_now") * 1e-6f;
 }
 
 static void GetCPUVoltage(CPUInfo& cpu)
 {
-    cpu.voltage_ = GetMetricFloat("/sys/class/power_supply/Battery/voltage_now") * 1e-6F;
+    cpu.voltage = GetMetricFloat("/sys/class/power_supply/Battery/voltage_now") * 1e-6f;
 }
 
 static void GetCPUMemory(CPUInfo& cpu)
@@ -79,11 +76,11 @@ static void GetCPUMemory(CPUInfo& cpu)
     }
 
     struct {
-        const char* name_;
-        uint64_t& value_;
+        const char* name;
+        uint64_t& value;
     } properties[] = {
-        { "MemTotal", cpu.ramTotal_ },
-        { "MemFree", cpu.ramFree_ },
+        { "MemTotal", cpu.ramTotal },
+        { "MemFree", cpu.ramFree },
     };
 
     const size_t propertyCount = sizeof(properties) / sizeof(properties[0]);
@@ -91,8 +88,8 @@ static void GetCPUMemory(CPUInfo& cpu)
     size_t found = 0U;
     std::string line;
     while (getline(memoryFile, line, '\n') && (found < propertyCount)) {
-        if (line.find(properties[found].name_) != std::string::npos) {
-            properties[found].value_ = std::stoull(SmartPerf::SPUtils::ExtractNumber(line));
+        if (line.find(properties[found].name) != std::string::npos) {
+            properties[found].value = std::stoull(SmartPerf::SPUtils::ExtractNumber(line));
             found++;
         }
     }
@@ -105,17 +102,17 @@ static void GetCPUCores(CPUInfo& cpu)
     const std::vector<SmartPerf::CpuFreqs> frequency = cpuPerf.GetCpuFreq();
     const std::vector<SmartPerf::CpuUsageInfos> usage = cpuPerf.GetCpuUsage();
 
-    cpu.cores_ = std::min(CPUInfo::MAX_CORE_COUNT, static_cast<uint32_t>(frequency.size()));
+    cpu.cores = std::min(CPUInfo::MAX_CORE_COUNT, static_cast<uint32_t>(frequency.size()));
 
-    for (uint32_t i = 0; i < cpu.cores_; i++) {
+    for (uint32_t i = 0; i < cpu.cores; i++) {
         // Frequency
-        const uint32_t frequencyCpuId = std::min(static_cast<uint32_t>(frequency[i].cpuId), cpu.cores_ - 1U);
-        cpu.coreFrequency_[frequencyCpuId] = frequency[i].curFreq * 1e-6F;
+        const uint32_t frequencyCpuId = std::min(static_cast<uint32_t>(frequency[i].cpuId), cpu.cores - 1u);
+        cpu.coreFrequency[frequencyCpuId] = frequency[i].curFreq * 1e-6f;
 
         // Load
-        const uint32_t loadCpuId = std::min(static_cast<uint32_t>(std::atoi(usage[i].cpuId.data())), cpu.cores_ - 1U);
-        cpu.coreLoad_[loadCpuId] = usage[i].userUsage + usage[i].niceUsage + usage[i].systemUsage + usage[i].idleUsage +
-                                   usage[i].ioWaitUsage + usage[i].irqUsage + usage[i].softIrqUsage;
+        const uint32_t loadCpuId = std::min(static_cast<uint32_t>(std::atoi(usage[i].cpuId.data())), cpu.cores - 1u);
+        cpu.coreLoad[loadCpuId] = usage[i].userUsage + usage[i].niceUsage + usage[i].systemUsage + usage[i].idleUsage +
+                                  usage[i].ioWaitUsage + usage[i].irqUsage + usage[i].softIrqUsage;
     }
 }
 
@@ -133,7 +130,7 @@ static void GetGPUFrequency(GPUInfo& gpu)
         }
     }
 
-    gpu.frequency_ = std::stof(frequency) * 1e-9F;
+    gpu.frequency = std::stof(frequency) * 1e-9f;
 }
 
 static void GetGPULoad(GPUInfo& gpu)
@@ -153,7 +150,7 @@ static void GetGPULoad(GPUInfo& gpu)
     std::vector<std::string> splits;
     SmartPerf::SPUtils::StrSplit(load, "@", splits);
 
-    gpu.load_ = std::stof(splits.empty() ? load : splits[0]);
+    gpu.load = std::stof(splits.empty() ? load : splits[0]);
 }
 
 const DeviceInfo& Telemetry::GetDeviceInfo()
@@ -161,15 +158,15 @@ const DeviceInfo& Telemetry::GetDeviceInfo()
     static DeviceInfo info;
 
     // cpu
-    GetCPUTemperature(info.cpu_);
-    GetCPUCurrent(info.cpu_);
-    GetCPUVoltage(info.cpu_);
-    GetCPUMemory(info.cpu_);
-    GetCPUCores(info.cpu_);
+    GetCPUTemperature(info.cpu);
+    GetCPUCurrent(info.cpu);
+    GetCPUVoltage(info.cpu);
+    GetCPUMemory(info.cpu);
+    GetCPUCores(info.cpu);
 
     // gpu
-    GetGPUFrequency(info.gpu_);
-    GetGPULoad(info.gpu_);
+    GetGPUFrequency(info.gpu);
+    GetGPULoad(info.gpu);
 
     return info;
 }
@@ -204,16 +201,16 @@ std::string Telemetry::GetDeviceInfoString()
     const DeviceInfo info = GetDeviceInfo();
 
     std::string string;
-    for (size_t i = 0; i < info.cpu_.cores_; i++) {
+    for (size_t i = 0; i < info.cpu.cores; i++) {
         string += +"\nCPU" + std::to_string(i) + ": " +
-                  FrequencyLoadToString(info.cpu_.coreFrequency_[i], info.cpu_.coreLoad_[i]);
+                  FrequencyLoadToString(info.cpu.coreFrequency[i], info.cpu.coreLoad[i]);
     }
 
     string +=
-        "\nTemperature: " + TemperatureToString(info.cpu_.temperature_) +
-        "\nCurrent: " + CurrentToString(info.cpu_.current_) + "\nVoltage: " + VoltageToString(info.cpu_.voltage_) +
-        "\nRAM Total: " + MemoryToString(info.cpu_.ramTotal_) + "\nRAM Free: " + MemoryToString(info.cpu_.ramFree_) +
-        "\nGPU: " + FrequencyLoadToString(info.gpu_.frequency_, info.gpu_.load_);
+        "\nTemperature: " + TemperatureToString(info.cpu.temperature) +
+        "\nCurrent: " + CurrentToString(info.cpu.current) + "\nVoltage: " + VoltageToString(info.cpu.voltage) +
+        "\nRAM Total: " + MemoryToString(info.cpu.ramTotal) + "\nRAM Free: " + MemoryToString(info.cpu.ramFree) +
+        "\nGPU: " + FrequencyLoadToString(info.gpu.frequency, info.gpu.load);
 
     return string;
 }
