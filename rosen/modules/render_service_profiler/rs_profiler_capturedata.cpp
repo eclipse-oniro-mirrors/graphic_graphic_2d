@@ -113,7 +113,7 @@ void RSCaptureData::Deserialize(const std::vector<char>& in)
     Serialize(std::move(DataReader(in)));
 }
 
-void RSCaptureData::Serialize(Archive&& archive)
+void RSCaptureData::Serialize(Archive && archive)
 {
     archive.Serialize(time_);
 
