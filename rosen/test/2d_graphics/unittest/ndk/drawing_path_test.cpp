@@ -13,9 +13,13 @@
  * limitations under the License.
  */
 
+#include <cstdio>
 #include "gtest/gtest.h"
 
 #include "c/drawing_path.h"
+#include "c/drawing_matrix.h"
+#include "c/drawing_rect.h"
+#include "c/drawing_round_rect.h"
 #include "draw/path.h"
 #include "utils/scalar.h"
 
@@ -162,6 +166,146 @@ HWTEST_F(NativeDrawingPathTest, NativeDrawingPathTest_path009, TestSize.Level1)
     EXPECT_TRUE(IsScalarAlmostEqual(reinterpret_cast<Path*>(path7)->GetBounds().GetHeight(), 40.0));
     OH_Drawing_PathDestroy(path7);
 }
+
+/*
+ * @tc.name: NativeDrawingPathTest_path010
+ * @tc.desc: test for PathCopy func.
+ * @tc.type: FUNC
+ * @tc.require: SR000S9F0C
+ */
+HWTEST_F(NativeDrawingPathTest, NativeDrawingPathTest_path010, TestSize.Level1)
+{
+    OH_Drawing_Path* path7 = OH_Drawing_PathCreate();
+    // line point x = 50, y = 40
+    OH_Drawing_PathLineTo(path7, 50, 40);
+    OH_Drawing_PathClose(path7);
+    EXPECT_EQ(OH_Drawing_PathCopy(nullptr), nullptr);
+    OH_Drawing_Path* pathCopy = OH_Drawing_PathCopy(path7);
+    EXPECT_TRUE(IsScalarAlmostEqual(reinterpret_cast<Path*>(pathCopy)->GetBounds().GetWidth(), 50.0));
+    EXPECT_TRUE(IsScalarAlmostEqual(reinterpret_cast<Path*>(pathCopy)->GetBounds().GetHeight(), 40.0));
+    OH_Drawing_PathDestroy(path7);
+    OH_Drawing_PathDestroy(pathCopy);
+}
+
+/*
+ * @tc.name: NativeDrawingPathTest_path011
+ * @tc.desc: test for AddRect func.
+ * @tc.type: FUNC
+ * @tc.require: SR000S9F0C
+ */
+HWTEST_F(NativeDrawingPathTest, NativeDrawingPathTest_path011, TestSize.Level1)
+{
+    OH_Drawing_Path* path = OH_Drawing_PathCreate();
+    // rect left[50], top[50],right[250], bottom[250]
+    OH_Drawing_PathAddRect(nullptr, 50, 50, 250, 250, OH_Drawing_PathDirection::PATH_DIRECTION_CW);
+    OH_Drawing_PathAddRect(path, 50, 50, 250, 250, OH_Drawing_PathDirection::PATH_DIRECTION_CW);
+    EXPECT_TRUE(IsScalarAlmostEqual(reinterpret_cast<Path*>(path)->GetBounds().GetWidth(), 200.0));
+    EXPECT_TRUE(IsScalarAlmostEqual(reinterpret_cast<Path*>(path)->GetBounds().GetHeight(), 200.0));
+    OH_Drawing_PathDestroy(path);
+}
+
+/*
+ * @tc.name: NativeDrawingPathTest_path012
+ * @tc.desc: test for AddRoundRect func.
+ * @tc.type: FUNC
+ * @tc.require: SR000S9F0C
+ */
+HWTEST_F(NativeDrawingPathTest, NativeDrawingPathTest_path012, TestSize.Level1)
+{
+    OH_Drawing_Path* path = OH_Drawing_PathCreate();
+    // rect left[50], top[50],right[250], bottom[250]
+    OH_Drawing_PathAddRect(nullptr, 50, 50, 250, 250, OH_Drawing_PathDirection::PATH_DIRECTION_CW);
+    OH_Drawing_Rect* rect = OH_Drawing_RectCreate(50, 50, 250, 250);
+    OH_Drawing_RoundRect* roundRect = OH_Drawing_RoundRectCreate(rect, 20, 20);
+    OH_Drawing_PathAddRoundRect(path, roundRect, OH_Drawing_PathDirection::PATH_DIRECTION_CW);
+    EXPECT_TRUE(IsScalarAlmostEqual(reinterpret_cast<Path*>(path)->GetBounds().GetWidth(), 200.0));
+    EXPECT_TRUE(IsScalarAlmostEqual(reinterpret_cast<Path*>(path)->GetBounds().GetHeight(), 200.0));
+    OH_Drawing_PathDestroy(path);
+    OH_Drawing_RoundRectDestroy(roundRect);
+    OH_Drawing_RectDestroy(rect);
+}
+
+/*
+ * @tc.name: NativeDrawingPathTest_path013
+ * @tc.desc: test for AddArc func.
+ * @tc.type: FUNC
+ * @tc.require: SR000S9F0C
+ */
+HWTEST_F(NativeDrawingPathTest, NativeDrawingPathTest_path013, TestSize.Level1)
+{
+    OH_Drawing_Path* path = OH_Drawing_PathCreate();
+    // rect left[50], top[50],right[250], bottom[250]
+    OH_Drawing_Rect* rect = OH_Drawing_RectCreate(50, 50, 250, 250);
+    OH_Drawing_PathAddArc(nullptr, rect, 0, 180);
+    OH_Drawing_PathAddArc(path, nullptr, 0, 180);
+    OH_Drawing_PathAddArc(path, rect, 0, 180);
+    EXPECT_TRUE(IsScalarAlmostEqual(reinterpret_cast<Path*>(path)->GetBounds().GetWidth(), 200.0));
+    EXPECT_TRUE(IsScalarAlmostEqual(reinterpret_cast<Path*>(path)->GetBounds().GetHeight(), 100.0));
+    OH_Drawing_PathDestroy(path);
+    OH_Drawing_RectDestroy(rect);
+}
+
+/*
+ * @tc.name: NativeDrawingPathTest_path014
+ * @tc.desc: test for Contains func.
+ * @tc.type: FUNC
+ * @tc.require: SR000S9F0C
+ */
+HWTEST_F(NativeDrawingPathTest, NativeDrawingPathTest_path014, TestSize.Level1)
+{
+    OH_Drawing_Path* path = OH_Drawing_PathCreate();
+    // rect left[50], top[50],right[250], bottom[250]
+    OH_Drawing_PathAddRect(path, 50, 50, 250, 250, OH_Drawing_PathDirection::PATH_DIRECTION_CW);
+    OH_Drawing_PathContains(nullptr, 0, 0);
+    bool ret = OH_Drawing_PathContains(path, 0, 0);
+    EXPECT_EQ(ret, false);
+    ret = OH_Drawing_PathContains(path, 60, 60);
+    EXPECT_EQ(ret, true);
+    OH_Drawing_PathDestroy(path);
+}
+
+/*
+ * @tc.name: NativeDrawingPathTest_path015
+ * @tc.desc: test for Transfrom func.
+ * @tc.type: FUNC
+ * @tc.require: SR000S9F0C
+ */
+HWTEST_F(NativeDrawingPathTest, NativeDrawingPathTest_path016, TestSize.Level1)
+{
+    OH_Drawing_Path* path = OH_Drawing_PathCreate();
+    // rect left[50], top[50],right[250], bottom[250]
+    OH_Drawing_PathAddRect(path, 50, 50, 250, 250, OH_Drawing_PathDirection::PATH_DIRECTION_CW);
+    OH_Drawing_Matrix* matrix = OH_Drawing_MatrixCreateTranslation(1, 1);
+    OH_Drawing_PathTransform(nullptr, matrix);
+    OH_Drawing_PathTransform(path, nullptr);
+
+    bool ret = OH_Drawing_PathContains(path, 50, 50);
+    EXPECT_EQ(ret, true);
+    OH_Drawing_PathTransform(path, matrix);
+    ret = OH_Drawing_PathContains(path, 50, 50);
+    EXPECT_EQ(ret, false);
+    OH_Drawing_PathDestroy(path);
+}
+
+/*
+ * @tc.name: NativeDrawingPathTest_path016
+ * @tc.desc: test for SetFilltype func.
+ * @tc.type: FUNC
+ * @tc.require: SR000S9F0C
+ */
+HWTEST_F(NativeDrawingPathTest, NativeDrawingPathTest_path017, TestSize.Level1)
+{
+    OH_Drawing_Path* path7 = OH_Drawing_PathCreate();
+    OH_Drawing_PathSetFillType(nullptr, PATH_FILL_TYPE_WINDING);
+    OH_Drawing_PathSetFillType(path7, PATH_FILL_TYPE_WINDING);
+    // line point x = 50, y = 40
+    OH_Drawing_PathLineTo(path7, 50, 40);
+    OH_Drawing_PathClose(path7);
+    EXPECT_TRUE(IsScalarAlmostEqual(reinterpret_cast<Path*>(path7)->GetBounds().GetWidth(), 50.0));
+    EXPECT_TRUE(IsScalarAlmostEqual(reinterpret_cast<Path*>(path7)->GetBounds().GetHeight(), 40.0));
+    OH_Drawing_PathDestroy(path7);
+}
+
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
