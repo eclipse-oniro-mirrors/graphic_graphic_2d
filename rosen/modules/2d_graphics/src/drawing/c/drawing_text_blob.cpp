@@ -70,13 +70,19 @@ OH_Drawing_TextBlob* OH_Drawing_TextBlobCreateFromText(const void* text, size_t 
 OH_Drawing_TextBlob* OH_Drawing_TextBlobCreateFromPosText(const void* text, size_t byteLength,
     OH_Drawing_Point2D* cPoints, const OH_Drawing_Font* cFont, OH_Drawing_TextEncoding cTextEncoding)
 {
-    if (text == nullptr || cFont == nullptr || cPoints == nullptr ||
+    if (text == nullptr || cFont == nullptr || cPoints == nullptr || byteLength == 0 ||
         cTextEncoding < TEXT_ENCODING_UTF8 || cTextEncoding > TEXT_ENCODING_GLYPH_ID) {
         return nullptr;
     }
     const Font font = CastToFont(*cFont);
     const int count = font.CountText(text, byteLength, static_cast<TextEncoding>(cTextEncoding));
-    Point pts[count];
+    if (count <= 0) {
+        return nullptr;
+    }
+    Point* pts = new Point[count];
+    if (pts == nullptr) {
+        return nullptr;
+    }
     for (int i = 0; i < count; ++i) {
         pts[i] = CastToPoint(cPoints[i]);
     }
@@ -84,6 +90,7 @@ OH_Drawing_TextBlob* OH_Drawing_TextBlobCreateFromPosText(const void* text, size
         pts, font, static_cast<TextEncoding>(cTextEncoding));
     std::lock_guard<std::mutex> lock(g_textBlobLockMutex);
     g_textBlobMap.insert({textBlob.get(), textBlob});
+    delete [] pts;
     return (OH_Drawing_TextBlob*)textBlob.get();
 }
 

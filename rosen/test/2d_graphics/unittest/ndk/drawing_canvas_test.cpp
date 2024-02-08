@@ -31,6 +31,7 @@
 #include "c/drawing_shader_effect.h"
 #include "c/drawing_text_blob.h"
 #include "c/drawing_typeface.h"
+#include "c/drawing_memory_stream.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -549,6 +550,142 @@ HWTEST_F(NativeDrawingCanvasTest, NativeDrawingCanvasTest_DrawTextBlob, TestSize
     OH_Drawing_TextBlobBuilderDestroy(nullptr);
     OH_Drawing_FontDestroy(nullptr);
     OH_Drawing_TypefaceDestroy(nullptr);
+}
+
+/*
+ * @tc.name: NativeDrawingCanvasTest_DrawTextBlob2
+ * @tc.desc: test for DrawTextBlob2
+ * @tc.type: FUNC
+ * @tc.require: SR000S9F0C
+ */
+HWTEST_F(NativeDrawingCanvasTest, NativeDrawingCanvasTest_DrawTextBlob2, TestSize.Level1)
+{
+    OH_Drawing_Rect *rect = OH_Drawing_RectCreate(0, 0, 0, 0);
+    EXPECT_NE(rect, nullptr);
+    OH_Drawing_Font *font = OH_Drawing_FontCreate();
+    EXPECT_NE(font, nullptr);
+    const char* str = "123456";
+    EXPECT_EQ(nullptr, OH_Drawing_TextBlobCreateFromString(nullptr,
+        font, OH_Drawing_TextEncoding::TEXT_ENCODING_UTF8));
+    EXPECT_EQ(nullptr, OH_Drawing_TextBlobCreateFromString(str,
+        nullptr, OH_Drawing_TextEncoding::TEXT_ENCODING_UTF8));
+    OH_Drawing_TextBlob *textBlob = OH_Drawing_TextBlobCreateFromString(str,
+        font, OH_Drawing_TextEncoding::TEXT_ENCODING_UTF8);
+    EXPECT_NE(textBlob, nullptr);
+    OH_Drawing_CanvasDrawTextBlob(canvas_, textBlob, 0, 0);
+    OH_Drawing_TextBlobGetBounds(textBlob, nullptr);
+    OH_Drawing_TextBlobGetBounds(textBlob, rect);
+    OH_Drawing_CanvasDrawRect(canvas_, rect);
+    OH_Drawing_TextBlobDestroy(textBlob);
+    OH_Drawing_FontDestroy(font);
+    OH_Drawing_RectDestroy(rect);
+}
+
+/*
+ * @tc.name: NativeDrawingCanvasTest_DrawTextBlob3
+ * @tc.desc: test for DrawTextBlob3
+ * @tc.type: FUNC
+ * @tc.require: SR000S9F0C
+ */
+HWTEST_F(NativeDrawingCanvasTest, NativeDrawingCanvasTest_DrawTextBlob3, TestSize.Level1)
+{
+    OH_Drawing_Rect *rect = OH_Drawing_RectCreate(0, 0, 0, 0);
+    EXPECT_NE(rect, nullptr);
+    OH_Drawing_Font *font = OH_Drawing_FontCreate();
+    EXPECT_NE(font, nullptr);
+    OH_Drawing_Typeface* typeface = OH_Drawing_TypefaceCreateFromFile(nullptr, 0);
+    EXPECT_EQ(nullptr, typeface);
+    // sub test 1, OH_Drawing_FontGetTypeface
+    OH_Drawing_FontGetTypeface(nullptr);
+    EXPECT_EQ(nullptr, typeface);
+    OH_Drawing_Typeface *typeSurface = OH_Drawing_TypefaceCreateDefault();
+    OH_Drawing_FontSetTypeface(font, typeSurface);
+    EXPECT_NE(nullptr, OH_Drawing_FontGetTypeface(font));
+    // sub test 2, OH_Drawing_FontCountText
+    const char* str = "123456";
+    int count = 0;
+    count = OH_Drawing_FontCountText(nullptr, str, strlen(str),
+        OH_Drawing_TextEncoding::TEXT_ENCODING_UTF8);
+    EXPECT_EQ(0, count);
+    count = OH_Drawing_FontCountText(font, nullptr, strlen(str),
+        OH_Drawing_TextEncoding::TEXT_ENCODING_UTF8);
+    EXPECT_EQ(0, count);
+    count = OH_Drawing_FontCountText(font, str, strlen(str),
+        OH_Drawing_TextEncoding::TEXT_ENCODING_UTF8);
+    EXPECT_EQ(strlen(str), count);
+    // sub test 3, OH_Drawing_TextBlobCreateFromText
+    EXPECT_EQ(nullptr, OH_Drawing_TextBlobCreateFromText(nullptr, strlen(str),
+        font, OH_Drawing_TextEncoding::TEXT_ENCODING_UTF8));
+    EXPECT_EQ(nullptr, OH_Drawing_TextBlobCreateFromText(str, strlen(str),
+        nullptr, OH_Drawing_TextEncoding::TEXT_ENCODING_UTF8));
+    OH_Drawing_TextBlob *textBlob = OH_Drawing_TextBlobCreateFromText(str, strlen(str),
+        font, OH_Drawing_TextEncoding::TEXT_ENCODING_UTF8);
+    EXPECT_NE(textBlob, nullptr);
+    // draw textblob
+    OH_Drawing_CanvasDrawTextBlob(canvas_, textBlob, 0, 0);
+
+    OH_Drawing_TextBlobDestroy(textBlob);
+    OH_Drawing_FontDestroy(font);
+    OH_Drawing_TypefaceDestroy(typeSurface);
+}
+
+/*
+ * @tc.name: NativeDrawingCanvasTest_DrawTextBlob4
+ * @tc.desc: test for DrawTextBlob4
+ * @tc.type: FUNC
+ * @tc.require: SR000S9F0C
+ */
+HWTEST_F(NativeDrawingCanvasTest, NativeDrawingCanvasTest_DrawTextBlob4, TestSize.Level1)
+{
+    size_t length = 1;
+    OH_Drawing_Font *font = OH_Drawing_FontCreate();
+    EXPECT_NE(font, nullptr);
+    OH_Drawing_MemoryStream* memoryStream = OH_Drawing_MemoryStreamCreate(nullptr,
+        length, false);
+    OH_Drawing_MemoryStreamDestroy(memoryStream);
+    EXPECT_EQ(nullptr, memoryStream);
+    OH_Drawing_Typeface* typeface = OH_Drawing_TypefaceCreateFromStream(
+        memoryStream, 0);
+    EXPECT_EQ(nullptr, typeface);
+    OH_Drawing_Typeface *typeSurface = OH_Drawing_TypefaceCreateDefault();
+    OH_Drawing_FontSetTypeface(font, typeSurface);
+    EXPECT_NE(nullptr, OH_Drawing_FontGetTypeface(font));
+    const char* str = "123456";
+    int count = strlen(str);
+    OH_Drawing_Point2D pts[count];
+    EXPECT_EQ(nullptr, OH_Drawing_TextBlobCreateFromPosText(nullptr, count, &pts[0],
+        font, OH_Drawing_TextEncoding::TEXT_ENCODING_UTF8));
+    EXPECT_EQ(nullptr, OH_Drawing_TextBlobCreateFromPosText(str, count, nullptr,
+        font, OH_Drawing_TextEncoding::TEXT_ENCODING_UTF8));
+    EXPECT_EQ(nullptr, OH_Drawing_TextBlobCreateFromPosText(str, count, &pts[0],
+        nullptr, OH_Drawing_TextEncoding::TEXT_ENCODING_UTF8));
+    OH_Drawing_TextBlob *textBlob = OH_Drawing_TextBlobCreateFromPosText(str, count, &pts[0],
+        font, OH_Drawing_TextEncoding::TEXT_ENCODING_UTF8);
+    EXPECT_NE(textBlob, nullptr);
+    OH_Drawing_CanvasDrawTextBlob(canvas_, textBlob, 0, 0);
+
+    OH_Drawing_TextBlobDestroy(textBlob);
+    OH_Drawing_FontDestroy(font);
+    OH_Drawing_TypefaceDestroy(typeSurface);
+}
+
+/*
+ * @tc.name: NativeDrawingCanvasTest_SaveLayer
+ * @tc.desc: test for SaveLayer
+ * @tc.type: FUNC
+ * @tc.require: SR000S9F0C
+ */
+HWTEST_F(NativeDrawingCanvasTest, NativeDrawingCanvasTest_SaveLayer, TestSize.Level1)
+{
+    OH_Drawing_Rect *rect = OH_Drawing_RectCreate(200, 500, 300, 600);
+    EXPECT_NE(rect, nullptr);
+    OH_Drawing_Brush* brush = OH_Drawing_BrushCreate();
+    EXPECT_NE(brush, nullptr);
+    // test exception
+    OH_Drawing_CanvasSaveLayer(nullptr, rect, brush);
+    OH_Drawing_CanvasSaveLayer(canvas_, rect, brush);
+    OH_Drawing_CanvasRestore(canvas_);
+    OH_Drawing_RectDestroy(rect);
 }
 } // namespace Drawing
 } // namespace Rosen
