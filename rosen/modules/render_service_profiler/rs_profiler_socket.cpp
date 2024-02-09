@@ -48,6 +48,8 @@ void Socket::Shutdown()
     close(socket_);
     shutdown(clientSocket_, SHUT_RDWR);
     close(clientSocket_);
+    socket_ = -1;
+    clientSocket_ = -1;
     state_ = SocketState::SHUTDOWN;
 }
 
@@ -69,7 +71,6 @@ void Socket::Open(uint16_t port)
 
     if (bind(socket_, reinterpret_cast<sockaddr*>(&address), addressSize) == -1) {
         Shutdown();
-        usleep(1000000);
         return;
     }
 
@@ -88,9 +89,15 @@ void Socket::Open(uint16_t port)
 
 void Socket::AcceptClient()
 {
-    clientSocket_ = accept4(socket_, NULL, NULL, SOCK_CLOEXEC);
+    clientSocket_ = accept4(socket_, nullptr, nullptr, SOCK_CLOEXEC);
 
-    if (clientSocket_ != -1) {
+    if (clientSocket_ == -1) {
+        const int err = errno;
+        if (err != EWOULDBLOCK && err != EAGAIN && err != EINTR) {
+            Shutdown();
+        }
+
+    } else {
         int flags = fcntl(clientSocket_, F_GETFL, 0);
         fcntl(clientSocket_, F_SETFL, flags | O_NONBLOCK);
         flags = fcntl(clientSocket_, F_GETFD, 0);
@@ -98,12 +105,6 @@ void Socket::AcceptClient()
         int nodelay = 1;
         setsockopt(clientSocket_, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>(&nodelay), sizeof(nodelay));
         state_ = SocketState::ACCEPT_STATE;
-        return;
-    }
-
-    const int err = errno;
-    if (err != EWOULDBLOCK && err != EAGAIN && err != EINTR) {
-        Shutdown();
     }
 }
 
@@ -119,10 +120,11 @@ void Socket::SendWhenReady(const void* data, uint32_t size)
     socklen_t len = sizeof(oldtimeout);
     getsockopt(clientSocket_, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<char*>(&oldtimeout), &len);
 
-    const int timeoutMS = 40;
+    const int timeoutMilliseconds = 40;
+    const int milliseconds = 1000;
     timeval timeout = { 0 };
-    timeout.tv_sec = (timeoutMS / 1000);
-    timeout.tv_usec = (timeoutMS % 1000) * 1000;
+    timeout.tv_sec = (timeoutMilliseconds / milliseconds);
+    timeout.tv_usec = (timeoutMilliseconds % milliseconds) * milliseconds;
     setsockopt(clientSocket_, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<const char*>(&timeout), sizeof(timeout));
 
     const char* bytes = reinterpret_cast<const char*>(data);
@@ -182,34 +184,25 @@ bool Socket::ReceiveWhenReady(void* data, uint32_t size)
     timeval oldtimeout = { 0 };
     socklen_t len = sizeof(oldtimeout);
     getsockopt(clientSocket_, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<char*>(&oldtimeout), &len);
+
+    const int bandwitdth = 10000; // KB/ms
+    const int timeoutPad = 100;
+    const int timeoutMilliseconds = size / bandwitdth + timeoutPad;
+    constexpr int milliseconds = 1000;
     timeval timeout = { 0 };
-    const int timeoutMS = size / 10000 /*  kb/ms */ + 100;
-    timeout.tv_sec = (timeoutMS / 1000);
-    timeout.tv_usec = (timeoutMS % 1000) * 1000;
+    timeout.tv_sec = (timeoutMilliseconds / milliseconds);
+    timeout.tv_usec = (timeoutMilliseconds % milliseconds) * milliseconds;
     setsockopt(clientSocket_, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&timeout), sizeof(timeout));
 
     while (received < size) {
-        const ssize_t ret = recv(clientSocket_, dst, size - received, 0);
-        if (ret == 0) {
+        const ssize_t receivedBytes = recv(clientSocket_, dst, size - received, 0);
+        if ((receivedBytes == -1) && (errno != EINTR)) {
             Shutdown();
             return false;
         }
-        if (ret <= 0) {
-            const int err = errno;
-            if (err == EINTR) {
-                continue;
-            }
-            if (err == EWOULDBLOCK || err == EAGAIN) {
-                Shutdown();
-                return false;
-            } else {
-                Shutdown();
-                return false;
-            }
-        }
 
-        received += ret;
-        dst += ret;
+        received += receivedBytes;
+        dst += receivedBytes;
     }
 
     flags = fcntl(clientSocket_, F_GETFL, 0);
