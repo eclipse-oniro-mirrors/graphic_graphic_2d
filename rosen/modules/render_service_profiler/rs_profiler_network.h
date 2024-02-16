@@ -34,9 +34,10 @@ struct NetworkStats {
 class Network {
 public:
     static void Run();
+    static void Stop();
 
     static std::vector<NetworkStats> GetStats(const std::string& interface);
-    static void SendBinary(void* data, int size);
+    static void SendBinary(const void* data, size_t size);
     static void SendMessage(const std::string& message);
 
     static void PopCommand(std::string& command, std::vector<std::string>& args);
@@ -53,6 +54,8 @@ public:
     static std::vector<std::string> commandData_;
 
 private:
+    static bool isRunning_;
+
     static std::mutex outgoingMutex_;
     static std::list<std::vector<char>> outgoing_;
 };

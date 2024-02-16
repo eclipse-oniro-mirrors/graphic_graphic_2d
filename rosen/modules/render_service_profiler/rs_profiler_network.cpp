@@ -16,6 +16,7 @@
 #include "rs_profiler_network.h"
 
 #include <fstream>
+#include <memory>
 #include <thread>
 
 #include "rs_profiler_base.h"
@@ -27,6 +28,8 @@
 #include "pipeline/rs_main_thread.h"
 
 namespace OHOS::Rosen {
+
+bool Network::isRunning_ = false;
 
 std::mutex Network::commandMutex_ {};
 std::vector<std::string> Network::commandData_ {};
@@ -40,6 +43,48 @@ static void AwakeRenderServiceThread()
         RSMainThread::Instance()->SetAccessibilityConfigChanged();
         RSMainThread::Instance()->RequestNextVSync();
     });
+}
+
+void Network::Run()
+{
+    const uint16_t port = 5050;
+    const uint32_t sleepTimeout = 500000u;
+
+    Socket* socket = nullptr;
+
+    isRunning_ = true;
+
+    while (isRunning_) {
+        if (!socket) {
+            socket = new Socket();
+        }
+
+        const SocketState state = socket->GetState();
+        if (state == SocketState::BEFORE_START) {
+            socket->Open(port);
+        } else if (state == SocketState::CREATE_SOCKET) {
+            socket->AcceptClient();
+            usleep(sleepTimeout);
+        } else if (state == SocketState::ACCEPT_STATE) {
+            const int32_t status = socket->Select();
+            if (Socket::IsReceiveEnabled(status)) {
+                ProcessIncoming(*socket);
+            }
+            if (Socket::IsSendEnabled(status)) {
+                ProcessOutgoing(*socket);
+            }
+        } else if (state == SocketState::SHUTDOWN) {
+            delete socket;
+            socket = nullptr;
+        }
+    }
+
+    delete socket;
+}
+
+void Network::Stop()
+{
+    isRunning_ = false;
 }
 
 std::vector<NetworkStats> Network::GetStats(const std::string& interface)
@@ -82,7 +127,7 @@ std::vector<NetworkStats> Network::GetStats(const std::string& interface)
     return results;
 }
 
-void Network::SendBinary(void* data, int size)
+void Network::SendBinary(const void* data, size_t size)
 {
     if (data && (size > 0)) {
         Packet packet { Packet::BINARY };
@@ -125,7 +170,6 @@ void Network::PopCommand(std::string& command, std::vector<std::string>& args)
 
 void Network::ProcessCommand(const char* data, size_t size)
 {
-    // TODO(user): Refactor
     std::vector<std::string> args;
     int32_t end = size;
     bool quote = false;
@@ -146,12 +190,11 @@ void Network::ProcessCommand(const char* data, size_t size)
         args.emplace_back(&data[index + 1], &data[end]);
     }
 
-    std::reverse(args.begin(), args.end());
-    // END TODO
-
     if (args.empty()) {
         return;
     }
+
+    std::reverse(args.begin(), args.end());
 
     PushCommand(args);
     AwakeRenderServiceThread();
@@ -163,7 +206,6 @@ void Network::ProcessOutgoing(Socket& socket)
 
     bool nothingToSend = false;
     while (!nothingToSend) {
-        // pop data
         {
             const std::lock_guard<std::mutex> guard(outgoingMutex_);
             nothingToSend = outgoing_.empty();
@@ -173,77 +215,99 @@ void Network::ProcessOutgoing(Socket& socket)
             }
         }
 
-        // send data
         if (!nothingToSend) {
             socket.SendWhenReady(data.data(), data.size());
         }
     }
 }
 
+static uint32_t OnBinaryPrepare(RSFile& file, const char* data, size_t size)
+{
+    file.Create(RSFile::GetDefaultPath());
+    return BinaryHelper::BinaryCount(data);
+}
+
+static void OnBinaryHeader(RSFile& file, const char* data, size_t size)
+{
+    if (!file.IsOpen()) {
+        return;
+    }
+
+    std::stringstream stream(std::ios::in | std::ios::out | std::ios::binary);
+    stream.write(reinterpret_cast<const char*>(data + 1), size - 1);
+    stream.seekg(0);
+
+    double writeStartTime = 0.0;
+    stream.read(reinterpret_cast<char*>(&writeStartTime), sizeof(writeStartTime));
+    file.SetWriteTime(writeStartTime);
+
+    uint32_t pidCount = 0u;
+    stream.read(reinterpret_cast<char*>(&pidCount), sizeof(pidCount));
+    for (uint32_t i = 0; i < pidCount; i++) {
+        pid_t pid = 0u;
+        stream.read(reinterpret_cast<char*>(&pid), sizeof(pid));
+        file.AddHeaderPID(pid);
+    }
+    file.AddLayer();
+
+    std::map<uint64_t, ReplayImageCacheRecord>& imageMap = RSProfilerBase::ImageMapGet();
+    imageMap.clear();
+
+    uint32_t imageCount = 0u;
+    stream.read(reinterpret_cast<char*>(&imageCount), sizeof(imageCount));
+    for (uint32_t i = 0; i < imageCount; i++) {
+        ReplayImageCacheRecord record;
+        uint64_t key = 0u;
+
+        stream.read(reinterpret_cast<char*>(&key), sizeof(key));
+        stream.read(reinterpret_cast<char*>(&record.skipBytes), sizeof(record.skipBytes));
+        stream.read(reinterpret_cast<char*>(&record.imageSize), sizeof(record.imageSize));
+
+        std::shared_ptr<uint8_t[]> image = std::make_unique<uint8_t[]>(record.imageSize);
+        stream.read(reinterpret_cast<char*>(image.get()), record.imageSize);
+        record.image = image;
+        imageMap.insert({ key, record });
+    }
+}
+
+static void OnBinaryChunk(RSFile& file, const char* data, size_t size)
+{
+    if (file.IsOpen() && (size > 0)) {
+        constexpr size_t timeOffset = 8 + 1;
+        const double time = *(reinterpret_cast<const double*>(data + 1));
+        file.WriteRSData(time, const_cast<char*>(data) + timeOffset, size - timeOffset);
+    }
+}
+
+static void OnBinaryFinish(RSFile& file, const char* data, size_t size)
+{
+    auto imageMap = reinterpret_cast<std::map<uint64_t, ReplayImageCacheRecordFile>*>(&RSProfilerBase::ImageMapGet());
+    file.SetImageMapPtr(imageMap);
+    file.Close();
+}
+
 void Network::ProcessBinary(const char* data, size_t size)
 {
-    static int32_t pendingBinary = 0;
+    static uint32_t chunks = 0u;
     static RSFile file;
 
     const PackageID id = BinaryHelper::Type(data);
     if (id == PackageID::RS_PROFILER_PREPARE) {
         // ping/pong for connection speed measurement
-        char type = static_cast<char>(PackageID::RS_PROFILER_PREPARE);
-        SendBinary((void*)&type, 1);
+        const char type = static_cast<char>(PackageID::RS_PROFILER_PREPARE);
+        SendBinary(&type, sizeof(type));
         // amount of binary packages will be sent
-        pendingBinary = BinaryHelper::BinaryCount(data);
-        file.Create(RSFile::GetDefaultPath());
+        chunks = OnBinaryPrepare(file, data, size);
     } else if (id == PackageID::RS_PROFILER_HEADER) {
-        if (file.IsOpen()) {
-            std::stringstream stream(std::ios::in | std::ios::out | std::ios::binary);
-            stream.write(reinterpret_cast<const char*>(data + 1), size - 1);
-            stream.seekg(0);
-
-            double writeStartTime = 0.0;
-            stream.read(reinterpret_cast<char*>(&writeStartTime), sizeof(writeStartTime));
-            file.SetWriteTime(writeStartTime);
-
-            uint32_t pidCount = 0u;
-            stream.read(reinterpret_cast<char*>(&pidCount), sizeof(pidCount));
-            for (uint32_t i = 0; i < pidCount; i++) {
-                pid_t pid = 0u;
-                stream.read(reinterpret_cast<char*>(&pid), sizeof(pid));
-                file.AddHeaderPID(pid);
-            }
-            file.AddLayer();
-
-            std::map<uint64_t, ReplayImageCacheRecord>& imageMap = RSProfilerBase::ImageMapGet();
-            imageMap.clear();
-
-            uint32_t imageCount = 0u;
-            stream.read(reinterpret_cast<char*>(&imageCount), sizeof(imageCount));
-            for (uint32_t i = 0; i < imageCount; i++) {
-                ReplayImageCacheRecord record;
-                uint64_t key = 0u;
-
-                stream.read(reinterpret_cast<char*>(&key), sizeof(key));
-                stream.read(reinterpret_cast<char*>(&record.skipBytes), sizeof(record.skipBytes));
-                stream.read(reinterpret_cast<char*>(&record.imageSize), sizeof(record.imageSize));
-
-                std::shared_ptr<uint8_t> image(new uint8_t[record.imageSize]);
-                stream.read(reinterpret_cast<char*>(image.get()), record.imageSize);
-                record.image = image;
-                imageMap.insert({ key, record });
-            }
-        }
+        OnBinaryHeader(file, data, size);
     } else if (id == PackageID::RS_PROFILER_BINARY) {
-        if (file.IsOpen() && (size > 0)) {
-            const double time = *(reinterpret_cast<const double*>(data + 1));
-            file.WriteRSData(time, const_cast<char*>(data) + (8 + 1), size - (8 + 1));
-        }
+        OnBinaryChunk(file, data, size);
 
-        pendingBinary--;
-        if (pendingBinary == 0) {
-            file.SetImageMapPtr(
-                reinterpret_cast<std::map<uint64_t, ReplayImageCacheRecordFile>*>(&RSProfilerBase::ImageMapGet()));
-            char type = static_cast<char>(PackageID::RS_PROFILER_PREPARE_DONE);
-            SendBinary((void*)&type, 1);
-            file.Close();
+        chunks--;
+        if (chunks == 0) {
+            OnBinaryFinish(file, data, size);
+            const char type = static_cast<char>(PackageID::RS_PROFILER_PREPARE_DONE);
+            SendBinary(&type, sizeof(type));
         }
     }
 }
@@ -268,55 +332,21 @@ void Network::ProcessIncoming(Socket& socket)
     }
 
     std::string data;
-    data.resize(size + 2); // WTF?
+    constexpr size_t extraSpace = 2;
+    data.resize(size + extraSpace);
     socket.ReceiveWhenReady(data.data(), size);
     data[size] = 0;
 
     if (packetIncoming.IsBinary()) {
         ProcessBinary(data.data(), size);
     } else if (packetIncoming.IsCommand()) {
-        ProcessCommand(data.data(), size + 1); // WTF?
+        ProcessCommand(data.data(), size + 1);
 
-        // DEPRECATED: REMOVE THIS!
         errno = EWOULDBLOCK;
-        Packet packetReply { Packet::COMMAND_ACKNOWLEDGED };
-        packetReply.Write(std::string(" "));
+        Packet acknowledgement { Packet::COMMAND_ACKNOWLEDGED };
+        acknowledgement.Write(std::string(" "));
         const std::lock_guard<std::mutex> guard(outgoingMutex_);
-        outgoing_.emplace_back(packetReply.Release());
-        // DEPRECATED
-    }
-}
-
-void Network::Run()
-{
-    const uint16_t port = 5050;
-    const uint32_t sleepTimeout = 500000u;
-
-    while (true) {
-        static Socket* socket = nullptr;
-        if (socket == nullptr) {
-            socket = new Socket();
-        }
-
-        const SocketState state = socket->GetState();
-        if (state == SocketState::BEFORE_START) {
-            socket->Open(port);
-        } else if (state == SocketState::CREATE_SOCKET) {
-            socket->AcceptClient();
-            usleep(sleepTimeout);
-        } else if (state == SocketState::ACCEPT_STATE) {
-            const int32_t status = socket->Select();
-            if (Socket::IsReceiveEnabled(status)) {
-                ProcessIncoming(*socket);
-            }
-            if (Socket::IsSendEnabled(status)) {
-                ProcessOutgoing(*socket);
-            }
-        } else if (state == SocketState::SHUTDOWN) {
-            socket->SetState(SocketState::BEFORE_START);
-            delete socket;
-            socket = nullptr;
-        }
+        outgoing_.emplace_back(acknowledgement.Release());
     }
 }
 
