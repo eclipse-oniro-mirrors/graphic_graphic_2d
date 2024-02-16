@@ -263,8 +263,9 @@ void RSFile::LayerWriteHeader(uint32_t layer)
     // SAVE LAYER PROPERTY
     uint32_t recordSize = propertyData.size();
     Utils::FileWrite(&recordSize, sizeof(recordSize), 1, file_);
+    const int fileOffset = ftell(file_);
     ROSEN_LOGD("RSMainThread::MainLoop Server REPLAY WRITE Layer " // NOLINT
-               "prop_data_size=%d foff=%d", (int)recordSize, (int)ftell(file_));
+               "prop_data_size=%d foff=%d", (int)recordSize, fileOffset);
     Utils::FileWrite(propertyData.data(), propertyData.size(), 1, file_);
 
     LayerWriteHeaderOfTrack(layerData.rsData);
