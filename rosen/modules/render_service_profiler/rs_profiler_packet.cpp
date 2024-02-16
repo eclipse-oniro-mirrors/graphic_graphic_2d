@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-
 #include "rs_profiler_packet.h"
 
 namespace OHOS::Rosen {
@@ -63,7 +62,8 @@ uint32_t Packet::GetPayloadLength() const
     return GetLength() - Packet::headerSize;
 }
 
-std::vector<char> Packet::Release() {
+std::vector<char> Packet::Release()
+{
     auto res = std::move(data_);
     InitData(UNKNOWN);
     return res;

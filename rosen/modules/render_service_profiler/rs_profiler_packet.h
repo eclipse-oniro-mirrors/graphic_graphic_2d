@@ -65,9 +65,7 @@ public:
 
 class Packet {
 public:
-
-    enum PacketType : uint8_t
-    {
+    enum PacketType : uint8_t {
         BINARY,
         COMMAND_ACKNOWLEDGED,
         COMMAND,
@@ -120,7 +118,7 @@ public:
 
 private:
     void SetLength(uint32_t length);
-    
+
     template<typename T>
     bool WriteTrivial(const T& value);
 
@@ -128,7 +126,6 @@ private:
     constexpr const T* GetHeaderFieldPtr() const
     {
         return const_cast<Packet*>(this)->GetHeaderFieldPtr<T, Offset>();
-        
     }
     template<typename T, Header Offset>
     constexpr T* GetHeaderFieldPtr()
@@ -141,7 +138,7 @@ private:
 private:
     size_t readPointer_ = headerSize;
     size_t writePointer_ = headerSize;
-    std::vector<char> data_ = {0, 0, 0, 0, 0};
+    std::vector<char> data_ = { 0, 0, 0, 0, 0 };
 };
 
 template<typename T, typename>
