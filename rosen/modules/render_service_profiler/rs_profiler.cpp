@@ -22,7 +22,6 @@
 #include "rs_profiler_capturedata.h"
 #include "rs_profiler_file.h"
 #include "rs_profiler_network.h"
-#include "rs_profiler_packet.h"
 #include "rs_profiler_telemetry.h"
 #include "rs_profiler_utils.h"
 
@@ -62,8 +61,8 @@ static pid_t GetPid(const std::shared_ptr<RSBaseRenderNode>& node)
 
 static NodeId GetNodeId(uint64_t id)
 {
-    constexpr uint32_t MASK = 0xFFFFFFFF;
-    return (id & MASK);
+    constexpr uint32_t mask = 0xFFFFFFFF;
+    return (id & mask);
 }
 
 static NodeId GetNodeId(const std::shared_ptr<RSBaseRenderNode>& node)
@@ -73,8 +72,8 @@ static NodeId GetNodeId(const std::shared_ptr<RSBaseRenderNode>& node)
 
 static NodeId GetRootNodeId(uint64_t id)
 {
-    constexpr uint32_t BITS = 32u;
-    return ((static_cast<NodeId>(id) << BITS) | 1);
+    constexpr uint32_t bits = 32u;
+    return ((static_cast<NodeId>(id) << bits) | 1);
 }
 
 /*
@@ -84,54 +83,44 @@ static NodeId GetRootNodeId(uint64_t id)
 static double GetDirtyRegionRelative(RSContext& context)
 {
     const std::shared_ptr<RSBaseRenderNode>& rootNode = context.GetGlobalRootRenderNode();
-    // otherwise without these checks device might get stuck on startup
-    if (rootNode && (rootNode->GetChildrenCount() == 1)) {
-        auto displayNode =
-            RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(rootNode->GetSortedChildren().front());
-        if (displayNode) {
-            const std::shared_ptr<RSBaseRenderNode> nodePtr = displayNode->shared_from_this();
-            auto displayNodePtr = nodePtr->ReinterpretCastTo<RSDisplayRenderNode>();
-            if (!displayNodePtr) {
-                RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode ReinterpretCastTo fail");
-                return -1.0;
-            }
-
-            const RectI displayResolution = displayNodePtr->GetDirtyManager()->GetSurfaceRect();
-            const double displayWidth = displayResolution.GetWidth();
-            const double displayHeight = displayResolution.GetHeight();
-            {
-                RS_TRACE_NAME(
-                    "TWO_D: Display resolution: Width/Height= " + std::to_string(displayResolution.GetWidth()) + ", " +
-                    std::to_string(displayResolution.GetHeight()));
-            }
-            const unsigned int bufferAge = 3;
-            // not to update the RSRenderFrame/DirtyManager and just calculate dirty region
-            const bool isAlignedDirtyRegion = false;
-            RSUniRenderUtil::MergeDirtyHistory(displayNodePtr, bufferAge, isAlignedDirtyRegion);
-            std::vector<NodeId> hasVisibleDirtyRegionSurfaceVec;
-            Occlusion::Region const dirtyRegion = RSUniRenderUtil::MergeVisibleDirtyRegion(
-                displayNodePtr, hasVisibleDirtyRegionSurfaceVec, isAlignedDirtyRegion);
-
-            const auto& visibleDirtyRects = dirtyRegion.GetRegionRects();
-            double accumulatedArea = 0.0;
-            for (auto& rect : visibleDirtyRects) {
-                auto width = rect.right_ - rect.left_;
-                auto height = rect.bottom_ - rect.top_;
-                accumulatedArea += width * height;
-                RS_TRACE_NAME("TWO_D: DirtyRegion: Left/Bott= " + std::to_string(rect.left_) + ", " +
-                              std::to_string(rect.bottom_) + "; Right/Top= " + std::to_string(rect.right_) + ", " +
-                              std::to_string(rect.top_) + ", Width/Height= " + std::to_string(width) + ", " +
-                              std::to_string(height));
-            }
-
-            const double dirtyRegionPercentage = accumulatedArea / (displayWidth * displayHeight);
-            {
-                RS_TRACE_NAME("TWO_D: Dirty Region Area(%)= " + std::to_string(dirtyRegionPercentage));
-            }
-            return dirtyRegionPercentage;
-        }
+    // without these checks device might get stuck on startup
+    if (!rootNode || (rootNode->GetChildrenCount() != 1)) {
+        return -1.0;
     }
-    return -1.0;
+
+    std::shared_ptr<RSDisplayRenderNode> displayNode =
+        RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(rootNode->GetSortedChildren().front());
+    if (!displayNode) {
+        return -1.0;
+    }
+
+    std::shared_ptr<RSBaseRenderNode> nodePtr = displayNode->shared_from_this();
+    std::shared_ptr<RSDisplayRenderNode> displayNodePtr = nodePtr->ReinterpretCastTo<RSDisplayRenderNode>();
+    if (!displayNodePtr) {
+        return -1.0;
+    }
+
+    const RectI displayResolution = displayNodePtr->GetDirtyManager()->GetSurfaceRect();
+    const double displayWidth = displayResolution.GetWidth();
+    const double displayHeight = displayResolution.GetHeight();
+    const uint32_t bufferAge = 3;
+    // not to update the RSRenderFrame/DirtyManager and just calculate dirty region
+    const bool isAlignedDirtyRegion = false;
+    RSUniRenderUtil::MergeDirtyHistory(displayNodePtr, bufferAge, isAlignedDirtyRegion);
+    std::vector<NodeId> hasVisibleDirtyRegionSurfaceVec;
+    const Occlusion::Region dirtyRegion =
+        RSUniRenderUtil::MergeVisibleDirtyRegion(displayNodePtr, hasVisibleDirtyRegionSurfaceVec, isAlignedDirtyRegion);
+
+    const std::vector<Occlusion::Rect>& visibleDirtyRects = dirtyRegion.GetRegionRects();
+    double accumulatedArea = 0.0;
+    for (const Occlusion::Rect& rect : visibleDirtyRects) {
+        const int width = rect.right_ - rect.left_;
+        const int height = rect.bottom_ - rect.top_;
+        accumulatedArea += width * height;
+    }
+
+    const double dirtyRegionPercentage = accumulatedArea / (displayWidth * displayHeight);
+    return dirtyRegionPercentage;
 }
 
 void RSProfiler::Init(RSRenderService* renderService)
@@ -146,38 +135,22 @@ void RSProfiler::Init(RSRenderService* renderService)
     static std::thread const THREAD(Network::Run);
 }
 
-RSRenderService* RSProfiler::GetRenderService()
-{
-    return renderService_;
-}
-
-RSMainThread* RSProfiler::GetRenderServiceThread()
-{
-    return renderServiceThread_;
-}
-
 void RSProfiler::RenderServiceOnCreateConnection(pid_t remotePid)
 {
-    if (recordFile_.IsOpen()) {
+    if (IsRecording()) {
         if (recordStartTime_ == 0.0) {
             recordStartTime_ = Utils::Now();
         }
 
         recordFile_.AddHeaderPID(remotePid);
-
-        const std::vector<pid_t>& pidList = recordFile_.GetHeaderPIDList();
-        std::stringstream ss;
-        for (auto itemPid : pidList) {
-            ss << itemPid << " ";
-        }
     }
 }
 
 void RSProfiler::RenderServiceConnectionOnRemoteRequest(RSRenderServiceConnection* connection, uint32_t code,
     MessageParcel& data, MessageParcel& /*reply*/, MessageOption& option)
 {
-    if (recordFile_.IsOpen() && (recordStartTime_ > 0.0)) {
-        pid_t connectionPid = GetRenderService()->GetConnectionPID(connection);
+    if (IsRecording() && (recordStartTime_ > 0.0)) {
+        pid_t connectionPid = renderService_->GetConnectionPID(connection);
         const auto& pidList = recordFile_.GetHeaderPIDList();
         if (std::find(std::begin(pidList), std::end(pidList), connectionPid) != std::end(pidList)) {
             int writeInt = 0;
@@ -216,7 +189,7 @@ void RSProfiler::RenderServiceConnectionOnRemoteRequest(RSRenderServiceConnectio
     if (playbackFile_.IsOpen()) {
         RSProfilerBase::SpecParseModeSet(SpecParseMode::READ);
         RSProfilerBase::SpecParseReplacePIDSet(playbackFile_.GetHeaderPIDList(), playbackPid_, playbackParentNodeId_);
-    } else if (recordFile_.IsOpen()) {
+    } else if (IsRecording()) {
         RSProfilerBase::SpecParseModeSet(SpecParseMode::WRITE);
     } else {
         RSProfilerBase::SpecParseModeSet(SpecParseMode::NONE);
@@ -225,13 +198,9 @@ void RSProfiler::RenderServiceConnectionOnRemoteRequest(RSRenderServiceConnectio
 
 void RSProfiler::UnmarshalThreadOnRecvParcel(const MessageParcel* parcel, RSTransactionData* data)
 {
-    if (playbackFile_.IsOpen()) {
-        const volatile auto intPtr =
-            reinterpret_cast<intptr_t>(parcel); // gcc C++ optimization error, not working without volatile
-        if ((intPtr & 1) != 0) {
-            constexpr int bits30 = 30;
-            data->SetSendingPid(data->GetSendingPid() | (1 << bits30));
-        }
+    if (parcel && RSProfilerBase::IsParcelMock(*parcel)) {
+        constexpr uint32_t bits = 30u;
+        data->SetSendingPid(data->GetSendingPid() | (1 << bits));
     }
 }
 
@@ -242,15 +211,17 @@ uint64_t RSProfiler::TimePauseApply(uint64_t time)
 
 void RSProfiler::MainThreadOnProcessCommand()
 {
-    if (playbackFile_.IsOpen()) {
-        RSMainThread::Instance()->ResetAnimationStamp();
+    if (IsPlaying()) {
+        renderServiceThread_->ResetAnimationStamp();
     }
 }
 
 void RSProfiler::MainThreadOnRenderBegin()
 {
-    constexpr double RATIO_TO_PERCENT = 100.0;
-    dirtyRegionPercentage_ = GetDirtyRegionRelative(GetRenderServiceThread()->GetContext()) * RATIO_TO_PERCENT;
+    if (IsRecording()) {
+        constexpr double ratioToPercent = 100.0;
+        dirtyRegionPercentage_ = GetDirtyRegionRelative(*renderServiceContext_) * ratioToPercent;
+    }
 }
 
 void RSProfiler::MainThreadOnRenderEnd() {}
@@ -265,17 +236,21 @@ void RSProfiler::MainThreadOnFrameEnd()
     ProcessCommands();
     ProcessSendingRdc();
     ProcessRecording();
-    ProbeNetwork();
+}
+
+bool RSProfiler::IsEnabled()
+{
+    return renderService_&& renderServiceThread_ && renderServiceContext_;
 }
 
 bool RSProfiler::IsRecording()
 {
-    return recordFile_.IsOpen();
+    return IsEnabled() && recordFile_.IsOpen();
 }
 
 bool RSProfiler::IsPlaying()
 {
-    return playbackFile_.IsOpen();
+    return IsEnabled() && playbackFile_.IsOpen();
 }
 
 void RSProfiler::AwakeRenderServiceThread()
@@ -304,7 +279,7 @@ void RSProfiler::ProcessSendingRdc()
 
     AwakeRenderServiceThread();
 
-    const std::string path = "/data/storage/el2/base/temp/HuaweiGraphicsProfiler";
+    const std::string path("/data/storage/el2/base/temp/HuaweiGraphicsProfiler");
     if (!std::filesystem::exists(path)) {
         return;
     }
@@ -320,14 +295,8 @@ void RSProfiler::ProcessSendingRdc()
     const size_t filesRequired = 3;
     if (files.size() == filesRequired) {
         std::sort(files.begin(), files.end());
-
-        std::string out;
-        out += static_cast<char>(PackageID::RS_PROFILER_RDC_BINARY);
-        out += files[1];
-        Network::SendBinary(out.data(), out.size());
-
+        Network::SendRdc(files[1]);
         RSSystemProperties::SetSaveRDC(false);
-
         rdcSent_ = true;
     }
 }
@@ -338,7 +307,7 @@ void RSProfiler::ProcessRecording()
     const uint64_t framelenNanosecs = Utils::RawNowNano() - frameStartTime;
     const double dirtyPercent = dirtyRegionPercentage_;
 
-    if (renderService_ && recordFile_.IsOpen() && recordStartTime_ > 0.0) {
+    if (renderService_ && IsRecording() && recordStartTime_ > 0.0) {
         const double curTime = frameStartTime * 1e-9; // Utils::Now();
         const double timeSinceRecordStart = curTime - recordStartTime_;
         if (timeSinceRecordStart > 0.0) {
@@ -359,19 +328,6 @@ void RSProfiler::ProcessRecording()
             Network::SendBinary((void*)cdData.data(), cdData.size());
             recordFile_.WriteRSMetrics(0, timeSinceRecordStart, (void*)cdData.data(), cdData.size());
         }
-    }
-}
-
-void RSProfiler::ProbeNetwork()
-{
-    // Test parsing of /proc/net/dev
-    // Need to check which interfaces are used and which we are mostly interested in
-    // Also need to get the difference from frame to frame
-    const std::string interface("wlan0");
-    const std::vector<NetworkStats> stats = Network::GetStats(interface);
-    for (const NetworkStats& stat : stats) {
-        RS_LOGD("RSProfiler: Interface: %s; Transmitted: %lu; Received: %lu", interface.data(),
-            stat.transmittedBytes * 8u, stat.receivedBytes * 8u);
     }
 }
 
@@ -645,14 +601,14 @@ void RSProfiler::RecordStart()
         reinterpret_cast<std::map<uint64_t, ReplayImageCacheRecordFile>*>(&RSProfilerBase::ImageMapGet()));
     recordFile_.AddLayer(); // add 0 layer
 
-    auto& nodeMap = RSProfiler::GetRenderServiceThread()->GetContext().GetMutableNodeMap();
+    auto& nodeMap = renderServiceContext_->GetMutableNodeMap();
     nodeMap.FilterNodeReplayed();
 
     recordStartTime_ = 0.0f;
 
     std::thread thread([]() {
         if (renderService_) {
-            while (recordFile_.IsOpen()) {
+            while (IsRecording()) {
                 if (recordStartTime_ > 0.0) {
                     SendTelemetry(recordStartTime_);
                 }
@@ -671,7 +627,7 @@ void RSProfiler::RecordStop()
 
     recordStartTime_ = 0.0;
 
-    if (recordFile_.IsOpen()) {
+    if (IsRecording()) {
         recordFile_.SetWriteTime(writeStartTime);
 
         std::stringstream ss(std::ios::in | std::ios::out | std::ios::binary);
@@ -709,18 +665,6 @@ void RSProfiler::RecordStop()
         }
 
         recordFile_.Close();
-
-        uint32_t fileSize = 0;
-        FILE* f = fopen(RSFile::GetDefaultPath().data(), "rbe");
-        if (f != NULL) {
-            fseek(f, 0, SEEK_END);
-            fileSize = ftell(f);
-            fclose(f);
-        }
-
-        // return "OK size=" + std::to_string(fileSize) + " pids=" + ss2.str() +
-        //        " header_size=" + std::to_string(ss.str().size()) + " ImageMapCount=" + std::to_string(imageMapCount)
-        //        + " " + ss3.str();
     }
 
     Respond("Network: Record stop");
@@ -756,7 +700,7 @@ void RSProfiler::PlaybackStart(pid_t pid, double pauseTime)
     ss << "READ START: infile_pid=[";
     for (size_t i = 0; i < pidList.size(); i++) {
         ss << pidList[i] << " ";
-        RSProfiler::GetRenderService()->CreateMockConnection((1 << 30) | pidList[i]);
+        renderService_->CreateMockConnection((1 << 30) | pidList[i]);
     }
     ss << "] ";
 
@@ -884,7 +828,6 @@ void RSProfiler::PlaybackUpdate()
         for (auto value : playbackFile_.GetHeaderPIDList()) {
             ss2 << value << " ";
         }
-        RS_LOGD("RSMainThread::MainLoop Server REPLAY READTIME=%lf recorded_pid=[%s]", readTime, ss2.str().c_str());
     }
 
     if (playbackShouldBeTerminated_ || playbackFile_.RSDataEOF()) {
@@ -892,8 +835,6 @@ void RSProfiler::PlaybackUpdate()
         playbackFile_.Close();
         playbackPid_ = 0;
         RSProfilerBase::TimePauseClear();
-
-        RS_LOGD("RSMainThread::MainLoop Server REPLAY *******END*********");
     }
 }
 

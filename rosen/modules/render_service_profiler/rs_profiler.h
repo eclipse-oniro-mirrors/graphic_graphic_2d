@@ -33,6 +33,7 @@ class RSTransactionData;
 class RSProfiler {
 public:
     static void Init(RSRenderService* renderService);
+    static bool IsEnabled();
 
     static void MainThreadOnFrameBegin();
     static void MainThreadOnFrameEnd();
@@ -46,20 +47,16 @@ public:
 
     static void UnmarshalThreadOnRecvParcel(const MessageParcel* parcel, RSTransactionData* data);
 
-    static RSRenderService* GetRenderService();
-    static RSMainThread* GetRenderServiceThread();
     static const char* GetProcessNameByPID(int pid);
 
     static uint64_t TimePauseApply(uint64_t time);
 
+private:
     static bool IsRecording();
     static bool IsPlaying();
 
-private:
-
     static void ProcessCommands();
     static void ProcessRecording();
-    static void ProbeNetwork();
 
     static void AwakeRenderServiceThread();
 
