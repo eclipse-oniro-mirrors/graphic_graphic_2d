@@ -26,20 +26,17 @@
 
 namespace OHOS::Rosen {
 
-#define PACKAGEID_ENUM(XX)       \
-    XX(RS_PROFILER_HEADER)       \
-    XX(RS_PROFILER_BINARY)       \
-    XX(RS_PROFILER_RS_METRICS)   \
-    XX(RS_PROFILER_GFX_METRICS)  \
-    XX(RS_PROFILER_PREPARE)      \
-    XX(RS_PROFILER_PREPARE_DONE) \
-    XX(RS_PROFILER_SKP_BINARY)   \
-    XX(RS_PROFILER_RDC_BINARY)   \
-    XX(RS_PROFILER_DCL_BINARY)
-
-DEFINE_ENUM(PackageID, PACKAGEID_ENUM);
-#undef PACKAGEID_ENUM
-
+enum class PackageID {
+    RS_PROFILER_HEADER,
+    RS_PROFILER_BINARY,
+    RS_PROFILER_RS_METRICS,
+    RS_PROFILER_GFX_METRICS,
+    RS_PROFILER_PREPARE,
+    RS_PROFILER_PREPARE_DONE,
+    RS_PROFILER_SKP_BINARY,
+    RS_PROFILER_RDC_BINARY,
+    RS_PROFILER_DCL_BINARY,
+};
 class BinaryHelper {
 public:
     BinaryHelper() = delete;
@@ -58,25 +55,25 @@ public:
     }
     static uint32_t BinaryCount(const char* data)
     {
-        return *(uint32_t*)(data + 1);
+        return *reinterpret_cast<const uint32_t*>(data + 1);
     }
     static uint16_t Pid(const char* data)
     {
-        return *(uint16_t*)(data + 1 + sizeof(uint32_t));
+        return *reinterpret_cast<const uint16_t*>(data + 1 + sizeof(uint32_t));
     }
 };
 
 class Packet {
 public:
-#define PACKET_TYPE_ENUM(XX) \
-    XX(BINARY)               \
-    XX(COMMAND_ACKNOWLEDGED) \
-    XX(COMMAND)              \
-    XX(LOG)                  \
-    XX(UNKNOWN)
-    DEFINE_ENUM_WITH_TYPE(PacketType, uint8_t, PACKET_TYPE_ENUM);
-#undef PACKET_TYPE_ENUM
 
+    enum PacketType : uint8_t
+    {
+        BINARY,
+        COMMAND_ACKNOWLEDGED,
+        COMMAND,
+        LOG,
+        UNKNOWN,
+    };
     enum class Header { TYPE = 0, LENGTH = 1 };
 
     static constexpr size_t headerSize = sizeof(uint32_t) + sizeof(uint8_t);
@@ -162,7 +159,7 @@ template<typename T, typename>
 [[maybe_unused]] inline bool Packet::Read(T& value, size_t size)
 {
     value.resize(size);
-    return Read((void*)value.data(), size * sizeof(typename T::value_type));
+    return Read(reinterpret_cast<void*>(value.data()), size * sizeof(typename T::value_type));
 }
 
 [[maybe_unused]] inline bool Packet::Read(void* value, size_t size)
@@ -170,7 +167,7 @@ template<typename T, typename>
     if (readPointer_ + size > data_.size()) {
         return false;
     }
-    if (::memcpy_s((void*)value, size, (void*)(data_.data() + readPointer_), size) != 0) {
+    if (::memcpy_s(reinterpret_cast<void*>(value), size, (void*)(data_.data() + readPointer_), size) != 0) {
         return false;
     }
     readPointer_ += size;
@@ -199,7 +196,7 @@ template<typename T>
     if constexpr (std::is_trivially_copyable_v<T>) {
         return WriteTrivial(value);
     } else if constexpr (std::is_member_function_pointer_v<decltype(&T::size)>) {
-        return Write((const void*)value.data(), value.size() * sizeof(typename T::value_type));
+        return Write(reinterpret_cast<const void*>(value.data()), value.size() * sizeof(typename T::value_type));
     }
     return false;
 }
@@ -207,7 +204,7 @@ template<typename T>
 [[maybe_unused]] inline bool Packet::Write(const void* value, size_t size)
 {
     data_.resize(data_.size() + size);
-    if (memcpy_s((void*)(data_.data() + writePointer_), size, value, size) != 0) {
+    if (memcpy_s(reinterpret_cast<void*>(data_.data() + writePointer_), size, value, size) != 0) {
         data_.resize(data_.size() - size);
         return false;
     }
