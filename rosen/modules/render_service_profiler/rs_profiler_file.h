@@ -19,6 +19,7 @@
 #include <mutex>
 
 #include "rs_profiler_capturedata.h"
+#include "rs_profiler_utils.h"
 
 #ifdef REPLAY_TOOL_CLIENT
 #include <memory>
@@ -54,7 +55,7 @@ public:
 
 class RSFile final {
 private:
-    FILE* f_ = nullptr;
+    FILE* file_ = nullptr;
 
     double writeStartTime_ = 0.0;
 
@@ -122,9 +123,34 @@ private:
     void WriteHeader();
     void LayerWriteHeader(uint32_t layer);
 
+    template<typename Track>
+    void LayerWriteHeaderOfTrack(const Track& track)
+    {
+        uint32_t recordSize = track.size();
+        Utils::FileWrite(&recordSize, sizeof(recordSize), 1, file_);
+        for (auto item : track) {
+            Utils::FileWrite(&item.first, sizeof(item.first), 1, file_);
+            Utils::FileWrite(&item.second, sizeof(item.second), 1, file_);
+        }
+    }
+
     void ReadHeaders();
     void ReadHeader();
     void LayerReadHeader(uint32_t layer);
+
+    template<typename Track>
+    void LayerReadHeaderOfTrack(Track& track)
+    {
+        uint32_t recordSize;
+        Utils::FileRead(&recordSize, sizeof(recordSize), 1, file_);
+        track.resize(recordSize);
+        for (size_t i = 0; i < recordSize; i++) {
+            Utils::FileRead(&track[i].first, sizeof(track[i].first), 1, file_);
+            Utils::FileRead(&track[i].second, sizeof(track[i].second), 1, file_);
+        }
+    }
+
+    void ReadTextureFromFile();
 };
 
 } // namespace OHOS::Rosen
