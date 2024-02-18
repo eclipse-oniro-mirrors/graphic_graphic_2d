@@ -29,6 +29,9 @@ static MemoryStream* CastToMemoryStream(OH_Drawing_MemoryStream* cCanvas)
 
 OH_Drawing_MemoryStream* OH_Drawing_MemoryStreamCreate(const void* data, size_t length, bool copyData)
 {
+    if (data == nullptr || length == 0) {
+        return nullptr;
+    }
     return (OH_Drawing_MemoryStream*)new MemoryStream(data, length, copyData);
 }
 
