@@ -201,6 +201,13 @@ bool RSSystemProperties::GetHardwareComposerEnabled()
     return hardwareComposerEnabled;
 }
 
+bool RSSystemProperties::GetHwcRegionDfxEnabled()
+{
+    static bool hwcRegionDfxEnabled = system::GetParameter(
+        "persist.rosen.hwcRegionDfx.enabled", "0") != "0";
+    return hwcRegionDfxEnabled;
+}
+
 bool RSSystemProperties::GetUseShadowBatchingEnabled()
 {
     static bool useShadowBatching =

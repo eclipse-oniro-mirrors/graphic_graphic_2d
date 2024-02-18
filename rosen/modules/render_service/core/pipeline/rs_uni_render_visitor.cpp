@@ -1918,6 +1918,20 @@ void RSUniRenderVisitor::DrawCacheRegionForDFX(std::vector<RectI> cacheRects)
     }
 }
 
+void RSUniRenderVisitor::DrawHwcRegionForDFX(std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hwcNodes)
+{
+    const float fillAlpha = 0.3f;
+    for (const auto& node : hwcNodes) {
+        if (node->IsHardwareForcedDisabled() || !IsHardwareComposerEnabled()) {
+            RSUniRenderUtil::DrawRectForDfx(*canvas_, node->GetDstRect(), Drawing::Color::COLOR_RED, fillAlpha,
+                node->GetName());
+        } else {
+            RSUniRenderUtil::DrawRectForDfx(*canvas_, node->GetDstRect(), Drawing::Color::COLOR_BLUE, fillAlpha,
+                node->GetName());
+        }
+    }
+}
+
 #ifdef DDGR_ENABLE_FEATURE_OPINC
 constexpr uint32_t DRAW_DFX_EDGE_WIDTH = 6;
 void RSUniRenderVisitor::DrawAutoCacheRegionForDFX(std::vector<RectI, std::string> cacheRegionInfo)
@@ -2930,6 +2944,10 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
 
         if (isDrawingCacheEnabled_ && RSSystemParameters::GetDrawingCacheEnabledDfx()) {
             DrawCacheRegionForDFX(cacheRenderNodeMapRects_);
+        }
+
+        if (RSSystemProperties::GetHwcRegionDfxEnabled()) {
+            DrawHwcRegionForDFX(hardwareEnabledNodes_);
         }
 
 #ifdef DDGR_ENABLE_FEATURE_OPINC
