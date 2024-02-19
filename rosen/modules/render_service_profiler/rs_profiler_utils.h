@@ -24,6 +24,93 @@
 #define HGM_CPRINTF(func, fmt, ...) func({ LOG_CORE, 0xD001400, "RRI2D" }, fmt, ##__VA_ARGS__)
 #define HGM_LOGE(fmt, ...) HGM_CPRINTF(HGM_EFUNC, fmt, ##__VA_ARGS__)
 
+namespace OHOS::Rosen {
+class ArgList final {
+public:
+    explicit ArgList() = default;
+    explicit ArgList(std::vector<std::string> args) : args_(std::move(args)) {}
+
+    size_t Count() const
+    {
+        return args_.size();
+    }
+
+    bool Empty() const
+    {
+        return args_.empty();
+    }
+
+    void Clear()
+    {
+        args_.clear();
+    }
+
+    template<typename T>
+    T Arg(uint32_t index = 0u) const
+    {
+        const std::string& string = String(index);
+        const char* start = string.data();
+        char* end = const_cast<char*>(start) + string.size();
+        return static_cast<T>(std::strtod(start, &end));
+    }
+
+    template<>
+    const std::string& Arg(uint32_t index) const
+    {
+        return String(index);
+    }
+
+    const std::string& String(uint32_t index = 0u) const
+    {
+        static const std::string EMPTY;
+        return index < Count() ? args_[index] : EMPTY;
+    }
+
+    int32_t Int32(uint32_t index = 0u) const
+    {
+        return Arg<int32_t>(index);
+    }
+
+    uint32_t Uint32(uint32_t index = 0u) const
+    {
+        return Arg<uint32_t>(index);
+    }
+
+    int64_t Int64(uint32_t index = 0u) const
+    {
+        return Arg<int64_t>(index);
+    }
+
+    uint64_t Uint64(uint32_t index = 0u) const
+    {
+        return Arg<uint64_t>(index);
+    }
+
+    float Fp32(uint32_t index = 0u) const
+    {
+        return Arg<float>(index);
+    }
+
+    double Fp64(uint32_t index = 0u) const
+    {
+        return Arg<double>(index);
+    }
+
+    pid_t Pid(uint32_t index = 0u) const
+    {
+        return Uint32(index);
+    }
+
+    uint64_t Node(uint32_t index = 0u) const
+    {
+        return Uint64(index);
+    }
+
+protected:
+    std::vector<std::string> args_;
+};
+} // namespace OHOS::Rosen
+
 namespace OHOS::Rosen::Utils {
 
 uint64_t RawNowNano();
@@ -33,7 +120,7 @@ std::vector<std::string> Split(const std::string& input);
 
 constexpr float MILLI = 1e-3f; // NOLINT
 constexpr float MICRO = 1e-6f; // NOLINT
-constexpr float NANO = 1e-9f; // NOLINT
+constexpr float NANO = 1e-9f;  // NOLINT
 
 void FileRead(void* data, size_t size, size_t count, FILE* file);
 
