@@ -31,6 +31,8 @@
 
 namespace OHOS::Rosen {
 
+constexpr int nanosecsInSec = 1'000'000'000;
+
 // (user): Move to RSProfiler
 static RSRenderService* renderService_ = nullptr;
 static RSMainThread* renderServiceThread_ = nullptr;
@@ -48,33 +50,18 @@ static NodeId playbackParentNodeId_ = 0;
 static int playbackPid_ = 0;
 static bool playbackShouldBeTerminated_ = false;
 
-static pid_t GetPid(uint64_t id)
+namespace {
+pid_t GetPid(const std::shared_ptr<RSRenderNode>& node)
 {
-    constexpr uint32_t BITS = 32u;
-    return (id >> BITS);
+    return node ? RSProfiler::ExtractPid(node->GetId()) : 0;
 }
 
-static pid_t GetPid(const std::shared_ptr<RSBaseRenderNode>& node)
+NodeId GetNodeId(const std::shared_ptr<RSRenderNode>& node)
 {
-    return node ? GetPid(node->GetId()) : 0;
+    return node ? RSProfiler::ExtractNodeLocalID(node->GetId()) : 0;
 }
 
-static NodeId GetNodeId(uint64_t id)
-{
-    constexpr uint32_t mask = 0xFFFFFFFF;
-    return (id & mask);
-}
-
-static NodeId GetNodeId(const std::shared_ptr<RSBaseRenderNode>& node)
-{
-    return node ? GetNodeId(node->GetId()) : 0;
-}
-
-static NodeId GetRootNodeId(uint64_t id)
-{
-    constexpr uint32_t bits = 32u;
-    return ((static_cast<NodeId>(id) << bits) | 1);
-}
+} // namespace
 
 /*
     To visualize the damage region (as it's set for KHR_partial_update), you can set the following variable:
@@ -235,12 +222,12 @@ void RSProfiler::MainThreadOnFrameEnd()
 {
     ProcessCommands();
     ProcessSendingRdc();
-    ProcessRecording();
+    RecordUpdate();
 }
 
 bool RSProfiler::IsEnabled()
 {
-    return renderService_&& renderServiceThread_ && renderServiceContext_;
+    return renderService_ && renderServiceThread_ && renderServiceContext_;
 }
 
 bool RSProfiler::IsRecording()
@@ -263,7 +250,12 @@ void RSProfiler::AwakeRenderServiceThread()
     }
 }
 
-void RSProfiler::SaveRdc()
+std::shared_ptr<RSRenderNode> RSProfiler::GetRenderNode(uint64_t id)
+{
+    return renderServiceContext_ ? renderServiceContext_->GetMutableNodeMap().GetRenderNode(id) : nullptr;
+}
+
+void RSProfiler::SaveRdc(const ArgList& /*args*/)
 {
     rdcSent_ = false;
     RSSystemProperties::SetSaveRDC(true);
@@ -301,33 +293,32 @@ void RSProfiler::ProcessSendingRdc()
     }
 }
 
-void RSProfiler::ProcessRecording()
+void RSProfiler::RecordUpdate()
 {
-    const uint64_t frameStartTime = frameBeginTimestamp_;
-    const uint64_t framelenNanosecs = Utils::RawNowNano() - frameStartTime;
-    const double dirtyPercent = dirtyRegionPercentage_;
+    if (!IsRecording() || (recordStartTime_ <= 0.0)) {
+        return;
+    }
 
-    if (renderService_ && IsRecording() && recordStartTime_ > 0.0) {
-        const double curTime = frameStartTime * 1e-9; // Utils::Now();
-        const double timeSinceRecordStart = curTime - recordStartTime_;
-        if (timeSinceRecordStart > 0.0) {
-            RSCaptureData cd;
-            cd.SetTime(timeSinceRecordStart);
-            cd.SetProperty(RSCaptureData::KEY_RS_FRAME_LEN, framelenNanosecs);
-            cd.SetProperty(RSCaptureData::KEY_RS_CMD_COUNT, RSProfilerBase::ParsedCmdCountGet());
-            cd.SetProperty(RSCaptureData::KEY_RS_PIXEL_IMAGE_ADDED, RSProfilerBase::ImagesAddedCountGet());
-            constexpr double d10 = 10.0;
-            cd.SetProperty(RSCaptureData::KEY_RS_DIRTY_REGION, floor(dirtyPercent * d10) / d10);
+    const uint64_t frameLengthNanosecs = Utils::RawNowNano() - frameBeginTimestamp_;
 
-            std::vector<char> cdData;
-            cd.Serialize(cdData);
+    const double currentTime = frameBeginTimestamp_ * 1e-9; // Utils::Now();
+    const double timeSinceRecordStart = currentTime - recordStartTime_;
+    if (timeSinceRecordStart > 0.0) {
+        RSCaptureData captureData;
+        captureData.SetTime(timeSinceRecordStart);
+        captureData.SetProperty(RSCaptureData::KEY_RS_FRAME_LEN, frameLengthNanosecs);
+        captureData.SetProperty(RSCaptureData::KEY_RS_CMD_COUNT, RSProfilerBase::ParsedCmdCountGet());
+        captureData.SetProperty(RSCaptureData::KEY_RS_PIXEL_IMAGE_ADDED, RSProfilerBase::ImagesAddedCountGet());
+        captureData.SetProperty(RSCaptureData::KEY_RS_DIRTY_REGION, floor(dirtyRegionPercentage_ * 10.0) / 10.0);
 
-            const char headerType = 2; // TYPE: RS METRICS
-            cdData.insert(cdData.begin(), headerType);
+        std::vector<char> out;
+        captureData.Serialize(out);
 
-            Network::SendBinary((void*)cdData.data(), cdData.size());
-            recordFile_.WriteRSMetrics(0, timeSinceRecordStart, (void*)cdData.data(), cdData.size());
-        }
+        const char headerType = 2; // TYPE: RS METRICS
+        out.insert(out.begin(), headerType);
+
+        Network::SendBinary(out.data(), out.size());
+        recordFile_.WriteRSMetrics(0, timeSinceRecordStart, out.data(), out.size());
     }
 }
 
@@ -336,7 +327,7 @@ void RSProfiler::Respond(const std::string& message)
     Network::SendMessage(message);
 }
 
-void RSProfiler::DumpConnections()
+void RSProfiler::DumpConnections(const ArgList& /*args*/)
 {
     if (renderService_) {
         std::string out;
@@ -345,35 +336,25 @@ void RSProfiler::DumpConnections()
     }
 }
 
-void RSProfiler::DumpNodeModifiers(uint64_t id)
+void RSProfiler::DumpNodeModifiers(const ArgList& args)
 {
-    if (!renderServiceContext_) {
-        return;
-    }
-
-    const RSRenderNodeMap& nodeMap = renderServiceContext_->GetMutableNodeMap();
-    if (const std::shared_ptr<RSBaseRenderNode> node = nodeMap.GetRenderNode(id)) {
+    if (const auto node = GetRenderNode(args.Node())) {
         std::string out;
         node->DumpModifiers(out);
         Respond("Modifiers=" + out);
     }
 }
 
-void RSProfiler::DumpNodeProperties(uint64_t id)
+void RSProfiler::DumpNodeProperties(const ArgList& args)
 {
-    if (!renderServiceContext_) {
-        return;
-    }
-
-    const RSRenderNodeMap& nodeMap = renderServiceContext_->GetMutableNodeMap();
-    if (const std::shared_ptr<RSBaseRenderNode> node = nodeMap.GetRenderNode(id)) {
+    if (const auto node = GetRenderNode(args.Node())) {
         std::string out;
         node->DumpRenderProperties(out);
         Respond("RenderProperties=" + out);
     }
 }
 
-void RSProfiler::DumpTree(const std::string& node)
+void RSProfiler::DumpTree(const ArgList& args)
 {
     if (!renderServiceContext_) {
         return;
@@ -387,18 +368,19 @@ void RSProfiler::DumpTree(const std::string& node)
     std::string out = "Tree: count=" + std::to_string(static_cast<int>(nodeMap.GetRenderNodeCount())) +
                       " time=" + std::to_string(Utils::Now()) + "\n";
 
+    const std::string& node = args.String();
     for (const auto& item : list) {
         if (std::strstr(item.first.data(), node.data())) {
-            out += "*** " + item.first + " pid=" + std::to_string(GetPid(std::get<0>(item.second))) +
-                   " lowId=" + std::to_string(GetNodeId(std::get<0>(item.second))) + "\n" + std::get<1>(item.second) +
-                   "\n";
+            out += "*** " + item.first + " pid=" + std::to_string(ExtractPid(std::get<0>(item.second))) +
+                   " lowId=" + std::to_string(ExtractNodeLocalID(std::get<0>(item.second))) + "\n" +
+                   std::get<1>(item.second) + "\n";
         }
     }
 
     Respond(out);
 }
 
-void RSProfiler::DumpSurfaces(uint32_t pid)
+void RSProfiler::DumpSurfaces(const ArgList& args)
 {
     if (!renderServiceContext_) {
         return;
@@ -407,12 +389,12 @@ void RSProfiler::DumpSurfaces(uint32_t pid)
     const RSRenderNodeMap& nodeMap = renderServiceContext_->GetMutableNodeMap();
 
     std::map<NodeId, std::string> surfaces;
-    nodeMap.GetSurfacesTreesByPid(pid, surfaces);
+    nodeMap.GetSurfacesTreesByPid(args.Pid(), surfaces);
 
     std::string out;
     for (const auto& item : surfaces) {
-        out += "*** " + std::to_string(item.first) + " pid=" + std::to_string(GetPid(item.first)) +
-               " lowId=" + std::to_string(GetNodeId(item.first)) + "\n" + item.second + "\n";
+        out += "*** " + std::to_string(item.first) + " pid=" + std::to_string(ExtractPid(item.first)) +
+               " lowId=" + std::to_string(ExtractNodeLocalID(item.first)) + "\n" + item.second + "\n";
     }
 
     out += "TREE: count=" + std::to_string(static_cast<int32_t>(nodeMap.GetRenderNodeCount())) +
@@ -421,23 +403,18 @@ void RSProfiler::DumpSurfaces(uint32_t pid)
     Respond(out);
 }
 
-void RSProfiler::DumpNodeSurface(uint64_t id)
+void RSProfiler::DumpNodeSurface(const ArgList& args)
 {
     if (renderService_) {
         std::string out;
-        renderService_->DumpSurfaceNode(out, GetRootNodeId(id));
+        renderService_->DumpSurfaceNode(out, GetRootNodeId(args.Node()));
         Respond(out);
     }
 }
 
-void RSProfiler::PatchNode(uint64_t id)
+void RSProfiler::PatchNode(const ArgList& args)
 {
-    if (!renderServiceContext_) {
-        return;
-    }
-
-    const RSRenderNodeMap& nodeMap = renderServiceContext_->GetMutableNodeMap();
-    std::shared_ptr<RSBaseRenderNode> node = nodeMap.GetRenderNode(id);
+    const auto node = GetRenderNode(args.Node());
     if (!node) {
         return;
     }
@@ -450,37 +427,27 @@ void RSProfiler::PatchNode(uint64_t id)
         region = Occlusion::Region({ screenRect.x_, screenRect.y_, screenRect.z_, screenRect.w_ });
     }
 
-    auto* renderNode = static_cast<RSRenderNode*>(node.get());
-    {
-        RSProperties& properties = renderNode->GetMutableRenderProperties();
-        properties.SetBounds(screenRect);
-        properties.SetFrame(screenRect);
-        properties.SetDrawRegion(std::make_shared<RectF>(screenRect));
-    }
+    RSProperties& properties = node->GetMutableRenderProperties();
+    properties.SetBounds(screenRect);
+    properties.SetFrame(screenRect);
+    properties.SetDrawRegion(std::make_shared<RectF>(screenRect));
 
     AwakeRenderServiceThread();
 }
 
-void RSProfiler::KillNode(uint64_t id)
+void RSProfiler::KillNode(const ArgList& args)
 {
-    if (!renderServiceContext_) {
-        return;
-    }
-
-    const RSRenderNodeMap& nodeMap = renderServiceContext_->GetMutableNodeMap();
-    if (const std::shared_ptr<RSBaseRenderNode> node = nodeMap.GetRenderNode(id)) {
+    if (const auto node = GetRenderNode(args.Node())) {
         node->RemoveFromTree(false);
         AwakeRenderServiceThread();
         Respond("OK");
     }
 }
 
-void RSProfiler::AttachChild(uint64_t parentPid, uint64_t parentNodeId, uint64_t childPid, uint64_t childNodeId)
+void RSProfiler::AttachChild(const ArgList& args)
 {
-    const RSRenderNodeMap& nodeMap = renderServiceThread_->GetContext().GetMutableNodeMap();
-
-    std::shared_ptr<RSBaseRenderNode> parent = nodeMap.GetRenderNode((parentPid << 32) | parentNodeId);
-    std::shared_ptr<RSBaseRenderNode> child = nodeMap.GetRenderNode((childPid << 32) | childNodeId);
+    auto parent = GetRenderNode(ComposeNodeID(args.Pid(0), args.Node(1)));
+    auto child = GetRenderNode(ComposeNodeID(args.Pid(2), args.Node(3)));
 
     if (parent && child) {
         parent->AddChild(child);
@@ -489,26 +456,21 @@ void RSProfiler::AttachChild(uint64_t parentPid, uint64_t parentNodeId, uint64_t
     }
 }
 
-void RSProfiler::KillPid(uint32_t pid)
+void RSProfiler::KillPid(const ArgList& args)
 {
-    if (!renderServiceContext_) {
-        return;
+    const uint32_t pid = args.Pid();
+    if (const auto node = GetRenderNode(GetRootNodeId(pid))) {
+        const auto parent = node->GetParent().lock();
+        const std::string out =
+            "parentPid=" + std::to_string(GetPid(parent)) + " parentNode=" + std::to_string(GetNodeId(parent));
+
+        renderServiceContext_->GetMutableNodeMap().FilterNodeByPid(pid);
+        AwakeRenderServiceThread();
+        Respond(out);
     }
-
-    RSRenderNodeMap& nodeMap = renderServiceContext_->GetMutableNodeMap();
-    const NodeId rootNodeId = GetRootNodeId(pid);
-    std::shared_ptr<RSBaseRenderNode> node = nodeMap.GetRenderNode(rootNodeId);
-    std::shared_ptr<RSBaseRenderNode> parent = node ? node->GetParent().lock() : nullptr;
-    const NodeId parentNodeId = parent ? parent->GetId() : 0;
-
-    nodeMap.FilterNodeByPid(pid);
-    AwakeRenderServiceThread();
-
-    Respond(
-        "parentPid=" + std::to_string(GetPid(parentNodeId)) + " parentNode=" + std::to_string(GetNodeId(parentNodeId)));
 }
 
-void RSProfiler::GetRoot()
+void RSProfiler::GetRoot(const ArgList& /*args*/)
 {
     if (!renderServiceContext_) {
         return;
@@ -552,7 +514,7 @@ void RSProfiler::GetRoot()
     Respond(out);
 }
 
-void RSProfiler::GetDeviceInfo()
+void RSProfiler::GetDeviceInfo(const ArgList& /*args*/)
 {
     Respond(RSTelemetry::GetDeviceInfoString());
 }
@@ -591,7 +553,7 @@ void RSProfiler::SendTelemetry(double startTime)
     Network::SendBinary(out.data(), out.size());
 }
 
-void RSProfiler::RecordStart()
+void RSProfiler::RecordStart(const ArgList& /*args*/)
 {
     auto& imageMap = RSProfilerBase::ImageMapGet();
     imageMap.clear();
@@ -612,7 +574,7 @@ void RSProfiler::RecordStart()
                 if (recordStartTime_ > 0.0) {
                     SendTelemetry(recordStartTime_);
                 }
-                std::this_thread::sleep_for(std::chrono::milliseconds(8));
+                std::this_thread::sleep_for(std::chrono::milliseconds(gfxMetricsSendInterval));
             }
         }
     });
@@ -621,7 +583,7 @@ void RSProfiler::RecordStart()
     Respond("Network: Record start");
 }
 
-void RSProfiler::RecordStop()
+void RSProfiler::RecordStop(const ArgList& /*args*/)
 {
     double writeStartTime = recordStartTime_;
 
@@ -670,15 +632,15 @@ void RSProfiler::RecordStop()
     Respond("Network: Record stop");
 }
 
-void RSProfiler::PlaybackStart(pid_t pid, double pauseTime)
+void RSProfiler::PlaybackStart(const ArgList& args)
 {
-    playbackPid_ = pid;
+    playbackPid_ = args.Pid(0);
 
     auto& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
     nodeMap.FilterForReplay(playbackPid_);
     nodeMap.FilterNodeReplayed();
 
-    NodeId processRootNodeId = (((NodeId)playbackPid_) << 32) | 1;
+    NodeId processRootNodeId = GetRootNodeId(playbackPid_);
     playbackParentNodeId_ = 0;
     auto processRootNode = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(nodeMap.GetRenderNode(processRootNodeId));
     if (processRootNode != nullptr) {
@@ -700,28 +662,29 @@ void RSProfiler::PlaybackStart(pid_t pid, double pauseTime)
     ss << "READ START: infile_pid=[";
     for (size_t i = 0; i < pidList.size(); i++) {
         ss << pidList[i] << " ";
-        renderService_->CreateMockConnection((1 << 30) | pidList[i]);
+        renderService_->CreateMockConnection(GetMockPid(pidList[i]));
     }
     ss << "] ";
 
     ss << "new_assigned_pid=[";
     for (size_t i = 0; i < pidList.size(); i++) {
-        ss << (pidList[i] + (1 << 30)) << " ";
+        ss << GetMockPid(pidList[i]) << " ";
     }
     ss << "] ";
 
     auto table = RSProfilerBase::ImageMapGet();
     ss << "image_count=" << table.size() << " ";
 
-    ss << "cur_parend_pid=" << (playbackParentNodeId_ >> 32)
-       << " cur_parent_node=" << (playbackParentNodeId_ & 0xFFffFFff);
+    ss << "cur_parend_pid=" << ExtractPid(playbackParentNodeId_)
+       << " cur_parent_node=" << ExtractNodeLocalID(playbackParentNodeId_);
 
     playbackStartTime_ = Utils::Now();
 
     const double recordPlayTime = 0.0;
+    const double pauseTime = args.Fp64(1);
     if (pauseTime > 0.0) {
         uint64_t curTimeRaw = Utils::RawNowNano();
-        const uint64_t pauseTimeStart = curTimeRaw + (pauseTime - recordPlayTime) * 1'000'000'000;
+        const uint64_t pauseTimeStart = curTimeRaw + (pauseTime - recordPlayTime) * nanosecsInSec;
         RSProfilerBase::TimePauseAt(curTimeRaw, pauseTimeStart);
     }
 
@@ -754,10 +717,10 @@ void RSProfiler::PlaybackStart(pid_t pid, double pauseTime)
     Respond("Playback start");
 }
 
-void RSProfiler::PlaybackStop()
+void RSProfiler::PlaybackStop(const ArgList& /*args*/)
 {
     if (playbackPid_ > 0) {
-        auto& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
+        auto& nodeMap = renderServiceContext_->GetMutableNodeMap();
         nodeMap.FilterForReplay(playbackPid_);
         nodeMap.FilterNodeReplayed();
     }
@@ -785,10 +748,10 @@ void RSProfiler::PlaybackUpdate()
         pid_t sendingPid;
         ss.read(reinterpret_cast<char*>(&sendingPid), sizeof(sendingPid));
 
-        RSRenderServiceConnection* connection = renderService_->GetConnectionByPID((1 << 30) | sendingPid);
+        RSRenderServiceConnection* connection = renderService_->GetConnectionByPID(GetMockPid(sendingPid));
         std::vector<pid_t>& pidList = playbackFile_.GetHeaderPIDList();
         if (!connection) {
-            connection = renderService_->GetConnectionByPID((1 << 30) | pidList[0]);
+            connection = renderService_->GetConnectionByPID(GetMockPid(pidList[0]));
         }
         if (!connection) {
             continue;
@@ -838,8 +801,9 @@ void RSProfiler::PlaybackUpdate()
     }
 }
 
-void RSProfiler::PlaybackPrepare(uint32_t pid)
+void RSProfiler::PlaybackPrepare(const ArgList& args)
 {
+    const uint32_t pid = args.Pid();
     if (!renderServiceContext_ || (pid == 0)) {
         return;
     }
@@ -849,7 +813,7 @@ void RSProfiler::PlaybackPrepare(uint32_t pid)
     Respond("OK");
 }
 
-void RSProfiler::PlaybackPause()
+void RSProfiler::PlaybackPause(const ArgList& /*args*/)
 {
     if (!playbackFile_.IsOpen()) {
         return;
@@ -865,7 +829,7 @@ void RSProfiler::PlaybackPause()
     Respond("OK: " + std::to_string(recordPlayTime));
 }
 
-void RSProfiler::PlaybackPauseAt(double time)
+void RSProfiler::PlaybackPauseAt(const ArgList& args)
 {
     if (!playbackFile_.IsOpen()) {
         return;
@@ -874,16 +838,14 @@ void RSProfiler::PlaybackPauseAt(double time)
         return;
     }
 
+    const double pauseTime = args.Fp64();
     const double recordPlayTime = Utils::Now() - playbackStartTime_;
-
-    if (recordPlayTime > time) {
+    if (recordPlayTime > pauseTime) {
         return;
     }
 
-    RS_LOGD("RSMainThread::MainLoop Server REPLAY record_play_time=%lf record_pause_time=%lf", recordPlayTime, time);
-
     const uint64_t curTimeRaw = Utils::RawNowNano();
-    const uint64_t pauseTimeStart = curTimeRaw + (time - recordPlayTime) * 1'000'000'000;
+    const uint64_t pauseTimeStart = curTimeRaw + (pauseTime - recordPlayTime) * nanosecsInSec;
 
     RSProfilerBase::TimePauseAt(curTimeRaw, pauseTimeStart);
 
@@ -892,13 +854,13 @@ void RSProfiler::PlaybackPauseAt(double time)
     Respond("OK");
 }
 
-void RSProfiler::PlaybackPauseClear()
+void RSProfiler::PlaybackPauseClear(const ArgList& /*args*/)
 {
     RSProfilerBase::TimePauseClear();
     Respond("OK");
 }
 
-void RSProfiler::PlaybackResume()
+void RSProfiler::PlaybackResume(const ArgList& /*args*/)
 {
     if (!playbackFile_.IsOpen()) {
         return;
@@ -918,94 +880,58 @@ void RSProfiler::PlaybackResume()
     Respond("OK");
 }
 
+RSProfiler::Command RSProfiler::GetCommand(const std::string& command)
+{
+    static const std::map<std::string, Command> COMMANDS = {
+        { "rstree_contains", DumpTree },
+        { "rstree_fix", PatchNode },
+        { "rstree_kill_node", KillNode },
+        { "rstree_setparent", AttachChild },
+        { "rstree_getroot", GetRoot },
+        { "rstree_node_mod", DumpNodeModifiers },
+        { "rstree_node_prop", DumpNodeProperties },
+        { "rstree_pid", DumpSurfaces },
+        { "rstree_kill_pid", KillPid },
+        { "rstree_prepare_replay", PlaybackPrepare },
+        { "rsrecord_start", RecordStart },
+        { "rsrecord_stop", RecordStop },
+        { "rsrecord_replay", PlaybackStart },
+        { "rsrecord_replay_stop", PlaybackStop },
+        { "rsrecord_pause_now", PlaybackPause },
+        { "rsrecord_pause_at", PlaybackPauseAt },
+        { "rsrecord_pause_resume", PlaybackResume },
+        { "rsrecord_pause_clear", PlaybackPauseClear },
+        { "rssurface_pid", DumpNodeSurface },
+        { "rscon_print", DumpConnections },
+        { "save_rdc", SaveRdc },
+        { "info", GetDeviceInfo },
+    };
+
+    if (command.empty()) {
+        return nullptr;
+    }
+
+    const auto delegate = COMMANDS.find(command);
+    return (delegate != COMMANDS.end()) ? delegate->second : nullptr;
+}
+
 void RSProfiler::ProcessCommands()
 {
-    const std::lock_guard<std::mutex> guard(Network::commandMutex_);
-    if (Network::commandData_.empty()) {
+    const std::lock_guard<std::mutex> guard(Network::incomingMutex_);
+    auto& commandData = Network::incoming_;
+    if (commandData.empty()) {
         return;
     }
+    
+    const std::string command = commandData[0];
+    const ArgList args = (commandData.size() > 1) ? ArgList({ commandData.begin() + 1, commandData.end() }) : ArgList();
+    commandData.clear();
 
-    const std::string command = Network::commandData_[0];
-
-    constexpr int minCmdLen = 2;
-    if (command == "info") {
-        GetDeviceInfo();
-    } else if (command == "rsrecord_replay") {
-        if (Network::commandData_.size() > 2) {
-            const pid_t pid = std::atoi(Network::commandData_[1].data());
-            const double pauseTime =
-                (Network::commandData_.size() > 3) ? std::atof(Network::commandData_[2].data()) : 0.0;
-            PlaybackStart(pid, pauseTime);
-        }
-    } else if (command == "rsrecord_replay_stop") {
-        PlaybackStop();
-    } else if (command == "rsrecord_start") {
-        RecordStart();
-    } else if (command == "rsrecord_stop") {
-        RecordStop();
-    } else if (command == "rstree_contains") {
-        if (Network::commandData_.size() >= minCmdLen) {
-            DumpTree(Network::commandData_[1]);
-        }
-    } else if (command == "rsrecord_pause_at") {
-        if (Network::commandData_.size() >= minCmdLen) {
-            PlaybackPauseAt(std::atof(Network::commandData_[1].data()));
-        }
-    } else if (command == "rsrecord_pause_now") {
-        PlaybackPause();
-    } else if (command == "rsrecord_pause_resume") {
-        PlaybackResume();
-    } else if (command == "rsrecord_pause_clear") {
-        PlaybackPauseClear();
-    } else if (command == "rstree_fix") {
-        if (Network::commandData_.size() >= minCmdLen) {
-            PatchNode(std::atoll(Network::commandData_[1].data()));
-        }
-    } else if (command == "rstree_kill_node") {
-        if (Network::commandData_.size() >= minCmdLen) {
-            KillNode(std::atoll(Network::commandData_[1].data()));
-        }
-    } else if (command == "rstree_setparent") {
-        constexpr int rstreeSetparentCmdMinLen = 5;
-        if (Network::commandData_.size() >= rstreeSetparentCmdMinLen) {
-            AttachChild(std::atoll(Network::commandData_[1].data()), std::atoll(Network::commandData_[2].data()),
-                std::atoll(Network::commandData_[3].data()), std::atoll(Network::commandData_[4].data()));
-        }
-    } else if (command == "rstree_getroot") {
-        GetRoot();
-    } else if (command == "rstree_node_mod") {
-        if (Network::commandData_.size() >= minCmdLen && !Network::commandData_[1].empty()) {
-            DumpNodeModifiers(std::atoll(Network::commandData_[1].data()));
-        }
-    } else if (command == "rstree_node_prop") {
-        if (Network::commandData_.size() >= minCmdLen && !Network::commandData_[1].empty()) {
-            DumpNodeProperties(std::atoll(Network::commandData_[1].data()));
-        }
-    } else if (command == "rstree_pid") {
-        if (Network::commandData_.size() >= minCmdLen && !Network::commandData_[1].empty()) {
-            DumpSurfaces(std::atoi(Network::commandData_[1].data()));
-        }
-    } else if (command == "rssurface_pid") {
-        if (Network::commandData_.size() >= minCmdLen && !Network::commandData_[1].empty()) {
-            DumpNodeSurface(std::atoi(Network::commandData_[1].data()));
-        }
-    } else if (command == "rstree_kill_pid") {
-        if (Network::commandData_.size() >= minCmdLen && !Network::commandData_[1].empty()) {
-            KillPid(std::atoi(Network::commandData_[1].data()));
-        }
-    } else if (command == "rstree_prepare_replay") {
-        if (Network::commandData_.size() >= minCmdLen && !Network::commandData_[1].empty()) {
-            PlaybackPrepare(std::atoi(Network::commandData_[1].data()));
-        }
-    } else if (command == "rscon_print") {
-        DumpConnections();
-    } else if (command == "save_rdc") {
-        SaveRdc();
-    } else {
-        Respond("Unknown command");
+    if (const Command delegate = GetCommand(command)) {
+        delegate(args);
+    } else if (!command.empty()) {
+        Respond("Command has not been found: " + command);
     }
-
-    Network::commandData_.clear();
 }
 
 } // namespace OHOS::Rosen
