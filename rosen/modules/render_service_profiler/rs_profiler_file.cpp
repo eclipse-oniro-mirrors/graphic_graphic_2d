@@ -137,7 +137,7 @@ void RSFile::WriteHeader()
 {
     const std::lock_guard<std::mutex> lgMutex(writeMutex_);
 
-    if (file_ == NULL) {
+    if (!file_) {
         return;
     }
 
@@ -181,7 +181,7 @@ void RSFile::WriteHeader()
 
 void RSFile::ReadHeader()
 {
-    if (file_ == NULL) {
+    if (!file_) {
         return;
     }
 
@@ -244,11 +244,7 @@ void RSFile::LayerWriteHeader(uint32_t layer)
 {
     const std::lock_guard<std::mutex> lgMutex(writeMutex_);
 
-    if (file_ == NULL) {
-        return;
-    }
-
-    if (layer >= layerData_.size()) {
+    if (!file_ || layer >= layerData_.size()) {
         return;
     }
 
@@ -264,8 +260,12 @@ void RSFile::LayerWriteHeader(uint32_t layer)
     uint32_t recordSize = propertyData.size();
     Utils::FileWrite(&recordSize, sizeof(recordSize), 1, file_);
     const int fileOffset = ftell(file_);
+    if (fileOffset < 0) {
+        ROSEN_LOGD("RSMainThread::MainLoop Server REPLAY WRITE Layer negative file offset"); // NOLINT
+    }
     ROSEN_LOGD("RSMainThread::MainLoop Server REPLAY WRITE Layer " // NOLINT
-               "prop_data_size=%d foff=%d", (int)recordSize, fileOffset);
+               "prop_data_size=%d foff=%d",
+        (int)recordSize, fileOffset);
     Utils::FileWrite(propertyData.data(), propertyData.size(), 1, file_);
 
     LayerWriteHeaderOfTrack(layerData.rsData);
@@ -276,7 +276,7 @@ void RSFile::LayerWriteHeader(uint32_t layer)
 
     const int layerLen = ftell(file_) - layerHeaderOff;
     ROSEN_LOGD("RSMainThread::MainLoop Server REPLAY WRITE Layer offset=%d len=%d", // NOLINT
-               (int)layerHeaderOff, layerLen);
+        (int)layerHeaderOff, layerLen);
     layerData.layerHeader = { layerHeaderOff, ftell(file_) - layerHeaderOff }; // position of layer table
 
     writeDataOff_ = ftell(file_);
@@ -284,11 +284,7 @@ void RSFile::LayerWriteHeader(uint32_t layer)
 
 void RSFile::LayerReadHeader(uint32_t layer)
 {
-    if (file_ == NULL) {
-        return;
-    }
-
-    if (layer >= layerData_.size()) {
+    if (!file_ || layer >= layerData_.size()) {
         return;
     }
 
@@ -351,10 +347,7 @@ void RSFile::WriteRSData(double time, void* data, int dataLen)
 {
     const std::lock_guard<std::mutex> lgMutex(writeMutex_);
 
-    if (file_ == NULL) {
-        return;
-    }
-    if (layerData_.empty()) {
+    if (!file_ || layerData_.empty()) {
         return;
     }
 
@@ -371,10 +364,7 @@ void RSFile::WriteOGLData(uint32_t layer, double time, void* data, int dataLen)
 {
     const std::lock_guard<std::mutex> lgMutex(writeMutex_);
 
-    if (file_ == NULL) {
-        return;
-    }
-    if (layer >= layerData_.size()) {
+    if (!file_ || layer >= layerData_.size()) {
         return;
     }
 
@@ -391,10 +381,7 @@ void RSFile::WriteRSMetrics(uint32_t layer, double time, void* data, int dataLen
 {
     const std::lock_guard<std::mutex> lgMutex(writeMutex_);
 
-    if (file_ == NULL) {
-        return;
-    }
-    if (layer >= layerData_.size()) {
+    if (!file_ || layer >= layerData_.size()) {
         return;
     }
 
@@ -411,10 +398,7 @@ void RSFile::WriteOGLMetrics(uint32_t layer, double time, uint32_t /*frame*/, vo
 {
     const std::lock_guard<std::mutex> lgMutex(writeMutex_);
 
-    if (file_ == NULL) {
-        return;
-    }
-    if (layer >= layerData_.size()) {
+    if (!file_ || layer >= layerData_.size()) {
         return;
     }
 
@@ -431,10 +415,7 @@ void RSFile::WriteGFXMetrics(uint32_t layer, double time, uint32_t /*frame*/, vo
 {
     const std::lock_guard<std::mutex> lgMutex(writeMutex_);
 
-    if (file_ == NULL) {
-        return;
-    }
-    if (layer >= layerData_.size()) {
+    if (!file_ || layer >= layerData_.size()) {
         return;
     }
 
@@ -502,10 +483,7 @@ void RSFile::ReadGFXMetricsRestart(uint32_t layer)
 
 bool RSFile::RSDataEOF()
 {
-    if (file_ == NULL) {
-        return true;
-    }
-    if (layerData_.empty()) {
+    if (!file_ || layerData_.empty()) {
         return true;
     }
 
@@ -515,13 +493,7 @@ bool RSFile::RSDataEOF()
 
 bool RSFile::OGLDataEOF(uint32_t layer)
 {
-    if (file_ == NULL) {
-        return true;
-    }
-    if (layerData_.empty()) {
-        return true;
-    }
-    if (layer >= layerData_.size()) {
+    if (!file_ || layerData_.empty() || layer >= layerData_.size()) {
         return true;
     }
 
@@ -531,13 +503,7 @@ bool RSFile::OGLDataEOF(uint32_t layer)
 
 bool RSFile::RSMetricsEOF(uint32_t layer)
 {
-    if (file_ == NULL) {
-        return true;
-    }
-    if (layerData_.empty()) {
-        return true;
-    }
-    if (layer >= layerData_.size()) {
+    if (!file_ || layerData_.empty() || layer >= layerData_.size()) {
         return true;
     }
 
@@ -547,13 +513,7 @@ bool RSFile::RSMetricsEOF(uint32_t layer)
 
 bool RSFile::OGLMetricsEOF(uint32_t layer)
 {
-    if (file_ == NULL) {
-        return true;
-    }
-    if (layerData_.empty()) {
-        return true;
-    }
-    if (layer >= layerData_.size()) {
+    if (!file_ || layerData_.empty() || layer >= layerData_.size()) {
         return true;
     }
 
@@ -563,13 +523,7 @@ bool RSFile::OGLMetricsEOF(uint32_t layer)
 
 bool RSFile::GFXMetricsEOF(uint32_t layer)
 {
-    if (file_ == NULL) {
-        return true;
-    }
-    if (layerData_.empty()) {
-        return true;
-    }
-    if (layer >= layerData_.size()) {
+    if (!file_ || layerData_.empty() || layer >= layerData_.size()) {
         return true;
     }
 
@@ -579,10 +533,7 @@ bool RSFile::GFXMetricsEOF(uint32_t layer)
 
 bool RSFile::ReadRSData(double untilTime, std::vector<uint8_t>& data, double& readTime)
 {
-    if (file_ == NULL) {
-        return false;
-    }
-    if (layerData_.empty()) {
+    if (!file_ || layerData_.empty()) {
         return false;
     }
 
@@ -614,13 +565,7 @@ bool RSFile::ReadRSData(double untilTime, std::vector<uint8_t>& data, double& re
 
 bool RSFile::ReadOGLData(double untilTime, uint32_t layer, std::vector<uint8_t>& data, double& readTime)
 {
-    if (file_ == NULL) {
-        return false;
-    }
-    if (layerData_.empty()) {
-        return false;
-    }
-    if (layer >= layerData_.size()) {
+    if (!file_ || layerData_.empty() || layer >= layerData_.size()) {
         return false;
     }
 
@@ -646,13 +591,7 @@ bool RSFile::ReadOGLData(double untilTime, uint32_t layer, std::vector<uint8_t>&
 
 bool RSFile::ReadRSMetrics(double untilTime, uint32_t layer, std::vector<uint8_t>& data, double& readTime)
 {
-    if (file_ == NULL) {
-        return false;
-    }
-    if (layerData_.empty()) {
-        return false;
-    }
-    if (layer >= layerData_.size()) {
+    if (!file_ || layerData_.empty() || layer >= layerData_.size()) {
         return false;
     }
 
@@ -678,13 +617,7 @@ bool RSFile::ReadRSMetrics(double untilTime, uint32_t layer, std::vector<uint8_t
 
 bool RSFile::ReadOGLMetrics(double untilTime, uint32_t layer, std::vector<uint8_t>& data, double& readTime)
 {
-    if (file_ == NULL) {
-        return false;
-    }
-    if (layerData_.empty()) {
-        return false;
-    }
-    if (layer >= layerData_.size()) {
+    if (!file_ || layerData_.empty() || layer >= layerData_.size()) {
         return false;
     }
 
@@ -710,13 +643,7 @@ bool RSFile::ReadOGLMetrics(double untilTime, uint32_t layer, std::vector<uint8_
 
 bool RSFile::ReadGFXMetrics(double untilTime, uint32_t layer, std::vector<uint8_t>& data, double& readTime)
 {
-    if (file_ == NULL) {
-        return false;
-    }
-    if (layerData_.empty()) {
-        return false;
-    }
-    if (layer >= layerData_.size()) {
+    if (!file_ || layerData_.empty() || layer >= layerData_.size()) {
         return false;
     }
 
@@ -761,7 +688,7 @@ void RSFile::ReadHeaders()
 
 void RSFile::Close()
 {
-    if (file_ == NULL) {
+    if (!file_) {
         return;
     }
 
