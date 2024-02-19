@@ -85,14 +85,12 @@ Vector4f RSSymbolAnimation::CalculateOffset(const Drawing::Path &path, const flo
     float left = rect.GetLeft();
     float top = rect.GetTop();
 #endif
-    float newOffsetX = offsetX + left;
-    float newOffsetY = offsetY + top;
+    // the nodeTranslation is offset of new node to the father node;
+    // the newOffset is offset of path on new node;
+    Vector2f nodeTranslation = {offsetX + left, offsetY + top};
+    Vector2f newOffset = {-left, -top};
     
-    // the 'newOffsetX, newOffsetY' is offset of new node;
-    // the '-left, -top' is offset of path on new node;
-    Vector4f nodeOffsets = Vector4f(newOffsetX, newOffsetY, -left, -top);
-    
-    return nodeOffsets;
+    return Vector4f(nodeTranslation[0], nodeTranslation[1], newOffset[0], newOffset[1]);
 }
 
 bool RSSymbolAnimation::SetScaleUnitAnimation(const std::shared_ptr<TextEngine::SymbolAnimationConfig>&
@@ -219,10 +217,11 @@ bool RSSymbolAnimation::SetVariableColorAnimation(const std::shared_ptr<TextEngi
     }
 
     auto symbolSpanId = symbolAnimationConfig->symbolSpanId;
+    auto& symbolFistNode = symbolAnimationConfig->SymbolNodes[0];
+    Vector4f offsets = CalculateOffset(symbolFistNode.symbolData.path_,
+        symbolFistNode.nodeBoundary[0], symbolFistNode.nodeBoundary[1]); //index 0 offsetX and 1 offsetY of layout
     for (uint32_t n = 0; n < nodeNum; n++) {
         auto& symbolNode = symbolAnimationConfig->SymbolNodes[n];
-        Vector4f offsets = CalculateOffset(symbolNode.symbolData.path_,
-            symbolNode.nodeBoundary[0], symbolNode.nodeBoundary[1]); //index 0 offsetX of layout, 1 offsetY of layout
         auto canvasNode = RSCanvasNode::Create();
         if (rsNode_->canvasNodesListMap.count(symbolSpanId) > 0) {
             rsNode_->canvasNodesListMap[symbolSpanId].emplace_back(canvasNode);
