@@ -16,8 +16,8 @@
 #ifndef RS_PROFILER_SOCKET_H
 #define RS_PROFILER_SOCKET_H
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 namespace OHOS::Rosen {
 
@@ -33,7 +33,6 @@ enum class SocketState : int32_t {
 
 class Socket final {
 public:
-    
     Socket() = default;
     Socket(const Socket& other) = delete;
     Socket(Socket&& other) = delete;
@@ -46,7 +45,7 @@ public:
     void Shutdown();
     void Open(uint16_t port);
     void AcceptClient();
-    
+
     int32_t Select();
     static bool IsReceiveEnabled(int32_t status);
     static bool IsSendEnabled(int32_t status);

@@ -266,12 +266,14 @@ int32_t Socket::Select()
 
 bool Socket::IsReceiveEnabled(int32_t status)
 {
-    return ((status & static_cast<int32_t>(SocketState::READ_ENABLE)) == static_cast<int32_t>(SocketState::READ_ENABLE));
+    return (
+        (status & static_cast<int32_t>(SocketState::READ_ENABLE)) == static_cast<int32_t>(SocketState::READ_ENABLE));
 }
 
 bool Socket::IsSendEnabled(int32_t status)
 {
-    return ((status & static_cast<int32_t>(SocketState::WRITE_ENABLE)) == static_cast<int32_t>(SocketState::WRITE_ENABLE));
+    return (
+        (status & static_cast<int32_t>(SocketState::WRITE_ENABLE)) == static_cast<int32_t>(SocketState::WRITE_ENABLE));
 }
 
 } // namespace OHOS::Rosen
