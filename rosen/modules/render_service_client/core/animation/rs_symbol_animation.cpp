@@ -23,6 +23,8 @@
 
 namespace OHOS {
 namespace Rosen {
+static const Vector2f CENTER_NODE_COORDINATE = {0.5f, 0.5f}; //scale center node
+
 RSSymbolAnimation::RSSymbolAnimation()
 {
 }
@@ -85,14 +87,12 @@ Vector4f RSSymbolAnimation::CalculateOffset(const Drawing::Path &path, const flo
     float left = rect.GetLeft();
     float top = rect.GetTop();
 #endif
-    float newOffsetX = offsetX + left;
-    float newOffsetY = offsetY + top;
-    
-    // the 'newOffsetX, newOffsetY' is offset of new node;
-    // the '-left, -top' is offset of path on new node;
-    Vector4f nodeOffsets = Vector4f(newOffsetX, newOffsetY, -left, -top);
-    
-    return nodeOffsets;
+    // the nodeTranslation is offset of new node to the father node;
+    // the newOffset is offset of path on new node;
+    Vector2f nodeTranslation = {offsetX + left, offsetY + top};
+    Vector2f newOffset = {-left, -top};
+
+    return Vector4f(nodeTranslation[0], nodeTranslation[1], newOffset[0], newOffset[1]);
 }
 
 bool RSSymbolAnimation::SetScaleUnitAnimation(const std::shared_ptr<TextEngine::SymbolAnimationConfig>&
@@ -112,11 +112,11 @@ bool RSSymbolAnimation::SetScaleUnitAnimation(const std::shared_ptr<TextEngine::
 
     auto& symbolNode = symbolAnimationConfig->SymbolNodes[0];
     Vector4f offsets = CalculateOffset(symbolNode.symbolData.path_,
-        symbolNode.nodeBoundary[0], symbolNode.nodeBoundary[1]); //index 0 offsetX of layout, 1 offsetY of layout
-    SetSymbolGeometry(canvasNode, Vector4f(offsets[0], offsets[1], //index 0 offsetX of newNode, 1 offsetY of newNode
+        symbolNode.nodeBoundary[0], symbolNode.nodeBoundary[1]); // index 0 offsetX of layout, 1 offsetY of layout
+    SetSymbolGeometry(canvasNode, Vector4f(offsets[0], offsets[1], // index 0 offsetX of newNode, 1 offsetY of newNode
         symbolNode.nodeBoundary[2], symbolNode.nodeBoundary[3])); // index 2 width 3 height
     const Vector2f scaleValueBegin = {1.0f, 1.0f}; // 1.0 scale
-    const Vector2f scaleValue = {1.15f, 1.15f};    // 1.5 scale
+    const Vector2f scaleValue = {1.15f, 1.15f}; // 1.5 scale
     const Vector2f scaleValueEnd = scaleValueBegin;
     auto animation = ScaleSymbolAnimation(canvasNode, scaleValueBegin, scaleValue, scaleValueEnd);
     if (!animation) {
@@ -219,10 +219,11 @@ bool RSSymbolAnimation::SetVariableColorAnimation(const std::shared_ptr<TextEngi
     }
 
     auto symbolSpanId = symbolAnimationConfig->symbolSpanId;
+    auto& symbolFistNode = symbolAnimationConfig->SymbolNodes[0];
+    Vector4f offsets = CalculateOffset(symbolFistNode.symbolData.path_,
+        symbolFistNode.nodeBoundary[0], symbolFistNode.nodeBoundary[1]); // index 0 offsetX and 1 offsetY of layout
     for (uint32_t n = 0; n < nodeNum; n++) {
         auto& symbolNode = symbolAnimationConfig->SymbolNodes[n];
-        Vector4f offsets = CalculateOffset(symbolNode.symbolData.path_,
-            symbolNode.nodeBoundary[0], symbolNode.nodeBoundary[1]); //index 0 offsetX of layout, 1 offsetY of layout
         auto canvasNode = RSCanvasNode::Create();
         if (rsNode_->canvasNodesListMap.count(symbolSpanId) > 0) {
             rsNode_->canvasNodesListMap[symbolSpanId].emplace_back(canvasNode);
