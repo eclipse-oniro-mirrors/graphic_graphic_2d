@@ -31,7 +31,6 @@ class MessageParcel;
 
 namespace OHOS::Media {
 class PixelMap;
-struct PixelMapError;
 } // namespace OHOS::Media
 
 namespace OHOS::Rosen {
@@ -98,11 +97,6 @@ public:
 protected:
     static NodeId PatchPlainNodeId(const Parcel& parcel, NodeId id);
     static pid_t PatchPlainProcessId(const Parcel& parcel, pid_t pid);
-
-private:
-    static OHOS::Media::PixelMap* PixelMapUnmarshallingLo(uint64_t replayUniqueId, Parcel& parcel);
-    static OHOS::Media::PixelMap* PixelMapUnmarshallingLoWithErrCode(
-        uint64_t replayUniqueId, Parcel& parcel, OHOS::Media::PixelMapError& error);
 };
 
 } // namespace OHOS::Rosen
