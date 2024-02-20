@@ -133,7 +133,7 @@ void Socket::AcceptClient()
 {
     clientSocket_ = accept4(socket_, nullptr, nullptr, SOCK_CLOEXEC);
     if (clientSocket_ == -1) {
-        const int err = errno;
+        const auto err = errno;
         if ((err != EWOULDBLOCK) && (err != EAGAIN) && (err != EINTR)) {
             Shutdown();
         }
@@ -141,7 +141,7 @@ void Socket::AcceptClient()
         SetBlocking(clientSocket_, false);
         SetCloseOnExec(clientSocket_, true);
 
-        int nodelay = 1;
+        int32_t nodelay = 1;
         setsockopt(clientSocket_, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>(&nodelay), sizeof(nodelay));
 
         state_ = SocketState::ACCEPT_STATE;
@@ -232,7 +232,7 @@ bool Socket::ReceiveWhenReady(void* data, size_t size)
     return true;
 }
 
-int Socket::Select()
+int32_t Socket::Select()
 {
     int32_t status = 0;
     if (clientSocket_ == -1) {
@@ -250,28 +250,28 @@ int Socket::Select()
     const uint32_t timeoutMilliseconds = 10;
     timeval timeout = GetTimeoutDesc(timeoutMilliseconds);
     if (select(clientSocket_ + 1, &read, &write, nullptr, &timeout) == 0) {
-        status |= static_cast<int>(SocketState::TIMEOUT);
+        status |= static_cast<int32_t>(SocketState::TIMEOUT);
     }
 
     if (FD_ISSET(clientSocket_, &read)) {
-        status |= static_cast<int>(SocketState::READ_ENABLE);
+        status |= static_cast<int32_t>(SocketState::READ_ENABLE);
     }
 
     if (FD_ISSET(clientSocket_, &write)) {
-        status |= static_cast<int>(SocketState::WRITE_ENABLE);
+        status |= static_cast<int32_t>(SocketState::WRITE_ENABLE);
     }
 
     return status;
 }
 
-bool Socket::IsReceiveEnabled(int status)
+bool Socket::IsReceiveEnabled(int32_t status)
 {
-    return ((status & static_cast<int>(SocketState::READ_ENABLE)) == static_cast<int>(SocketState::READ_ENABLE));
+    return ((status & static_cast<int32_t>(SocketState::READ_ENABLE)) == static_cast<int32_t>(SocketState::READ_ENABLE));
 }
 
-bool Socket::IsSendEnabled(int status)
+bool Socket::IsSendEnabled(int32_t status)
 {
-    return ((status & static_cast<int>(SocketState::WRITE_ENABLE)) == static_cast<int>(SocketState::WRITE_ENABLE));
+    return ((status & static_cast<int32_t>(SocketState::WRITE_ENABLE)) == static_cast<int32_t>(SocketState::WRITE_ENABLE));
 }
 
 } // namespace OHOS::Rosen

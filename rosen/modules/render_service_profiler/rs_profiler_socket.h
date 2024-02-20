@@ -21,7 +21,7 @@
 
 namespace OHOS::Rosen {
 
-enum class SocketState : int {
+enum class SocketState : int32_t {
     BEFORE_START = 0,
     CREATE_SOCKET = 1,
     ACCEPT_STATE = 2,
@@ -47,9 +47,9 @@ public:
     void Open(uint16_t port);
     void AcceptClient();
     
-    int Select();
-    static bool IsReceiveEnabled(int status);
-    static bool IsSendEnabled(int status);
+    int32_t Select();
+    static bool IsReceiveEnabled(int32_t status);
+    static bool IsSendEnabled(int32_t status);
 
     void SendWhenReady(const void* data, size_t size);
     bool Receive(void* data, size_t& size);
