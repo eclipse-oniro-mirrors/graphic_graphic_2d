@@ -24,7 +24,7 @@
 
 #include "platform/common/rs_log.h"
 #else
-#include "../rs_log.h"
+#include "../rs_adapt.h"
 #endif
 
 namespace OHOS::Rosen::Utils {
