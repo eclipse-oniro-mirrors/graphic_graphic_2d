@@ -21,9 +21,10 @@
 #include "rs_profiler_capturedata.h"
 #include "rs_profiler_utils.h"
 
-#ifdef REPLAY_TOOL_CLIENT
+#ifdef REPLAY_TOOL_CLIENT // adapt to windows on client side
 #include <memory>
-using pid_t = int;
+
+#include "../rs_adapt.h"
 #endif
 
 namespace OHOS::Rosen {
@@ -34,17 +35,19 @@ struct ReplayImageCacheRecordFile {
     uint32_t skipBytes = 0u;
 };
 
-class RSFileLayer final {
-public:
+struct RSFileLayer final {
     std::pair<uint32_t, uint32_t> layerHeader; // to put in GLOBAL HEADER
 
     RSCaptureData property;
 
-    std::vector<std::pair<uint32_t, uint32_t>> rsData;
-    std::vector<std::pair<uint32_t, uint32_t>> oglData;
-    std::vector<std::pair<uint32_t, uint32_t>> rsMetrics;
-    std::vector<std::pair<uint32_t, uint32_t>> oglMetrics;
-    std::vector<std::pair<uint32_t, uint32_t>> gfxMetrics;
+    using TrackMarkup = std::vector<std::pair<uint32_t, uint32_t>>;
+    static constexpr size_t MARKUP_SIZE = sizeof(TrackMarkup::value_type);
+
+    TrackMarkup rsData;
+    TrackMarkup oglData;
+    TrackMarkup rsMetrics;
+    TrackMarkup oglMetrics;
+    TrackMarkup gfxMetrics;
 
     uint32_t readindexRsData = 0;
     uint32_t readindexOglData = 0;
@@ -54,37 +57,19 @@ public:
 };
 
 class RSFile final {
-private:
-    FILE* file_ = nullptr;
-
-    double writeStartTime_ = 0.0;
-
-    uint32_t headerOff_ = 0u;
-    std::vector<pid_t> headerPidList_;
-
-    std::vector<RSFileLayer> layerData_;
-
-    uint32_t writeDataOff_ = 0u; // last byte of file where we can continue writing
-
-    std::map<uint64_t, ReplayImageCacheRecordFile>* imageMapPtr_ = nullptr;
-
-    std::mutex writeMutex_;
-
-    bool wasChanged_ = false;
-
 public:
     RSFile();
 
     void Create(const std::string& fname);
     bool Open(const std::string& fname);
 
-    bool IsOpen();
+    bool IsOpen() const;
 
     void SetWriteTime(double time);
-    double GetWriteTime();
+    double GetWriteTime() const;
 
     void AddHeaderPID(pid_t pid);
-    std::vector<pid_t>& GetHeaderPIDList();
+    const std::vector<pid_t>& GetHeaderPIDList() const;
     void SetImageMapPtr(std::map<uint64_t, ReplayImageCacheRecordFile>* imageMapPtr);
 
     uint32_t AddLayer();
@@ -102,17 +87,19 @@ public:
     void ReadOGLMetricsRestart(uint32_t layer);
     void ReadGFXMetricsRestart(uint32_t layer);
 
-    bool RSDataEOF();
-    bool OGLDataEOF(uint32_t layer);
-    bool RSMetricsEOF(uint32_t layer);
-    bool OGLMetricsEOF(uint32_t layer);
-    bool GFXMetricsEOF(uint32_t layer);
+    bool RSDataEOF() const;
+    bool OGLDataEOF(uint32_t layer) const;
+    bool RSMetricsEOF(uint32_t layer) const;
+    bool OGLMetricsEOF(uint32_t layer) const;
+    bool GFXMetricsEOF(uint32_t layer) const;
 
     bool ReadRSData(double untilTime, std::vector<uint8_t>& data, double& readTime);
     bool ReadOGLData(double untilTime, uint32_t layer, std::vector<uint8_t>& data, double& readTime);
     bool ReadRSMetrics(double untilTime, uint32_t layer, std::vector<uint8_t>& data, double& readTime);
     bool ReadOGLMetrics(double untilTime, uint32_t layer, std::vector<uint8_t>& data, double& readTime);
     bool ReadGFXMetrics(double untilTime, uint32_t layer, std::vector<uint8_t>& data, double& readTime);
+
+    bool HasLayer(uint32_t layer) const;
 
     void Close();
 
@@ -151,6 +138,37 @@ private:
     }
 
     void ReadTextureFromFile();
+
+    using LayerTrackIndexPtr = uint32_t RSFileLayer::*;
+    using LayerTrackMarkupPtr = RSFileLayer::TrackMarkup RSFileLayer::*;
+    struct LayerTrackPtr {
+        LayerTrackIndexPtr index;
+        LayerTrackMarkupPtr markup;
+    };
+
+    void WriteTrackData(LayerTrackMarkupPtr trackMarkup, uint32_t layer, double time, const void* data, size_t size);
+    bool ReadTrackData(
+        LayerTrackPtr track, double untilTime, uint32_t layer, std::vector<uint8_t>& data, double& readTime);
+    void ReadTrackDataRestart(LayerTrackIndexPtr trackIndex, uint32_t layer);
+    bool TrackEOF(LayerTrackPtr track, uint32_t layer) const;
+
+private:
+    FILE* file_ = nullptr;
+
+    double writeStartTime_ = 0.0;
+
+    uint32_t headerOff_ = 0u;
+    std::vector<pid_t> headerPidList_;
+
+    std::vector<RSFileLayer> layerData_;
+
+    uint32_t writeDataOff_ = 0u; // last byte of file where we can continue writing
+
+    std::map<uint64_t, ReplayImageCacheRecordFile>* imageMapPtr_ = nullptr;
+
+    std::mutex writeMutex_;
+
+    bool wasChanged_ = false;
 };
 
 } // namespace OHOS::Rosen
