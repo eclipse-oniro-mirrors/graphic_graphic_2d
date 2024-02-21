@@ -21,14 +21,11 @@
 
 namespace OHOS::Rosen {
 
-enum class SocketState : int32_t {
-    BEFORE_START = 0,
-    CREATE_SOCKET = 1,
-    ACCEPT_STATE = 2,
-    SHUTDOWN = 4,
-    READ_ENABLE = 8,
-    WRITE_ENABLE = 16,
-    TIMEOUT = 32,
+enum class SocketState {
+    INITIAL,
+    CREATE,
+    ACCEPT,
+    SHUTDOWN
 };
 
 class Socket final {
@@ -46,18 +43,16 @@ public:
     void Open(uint16_t port);
     void AcceptClient();
 
-    int32_t Select();
-    static bool IsReceiveEnabled(int32_t status);
-    static bool IsSendEnabled(int32_t status);
+    void GetStatus(bool& readyToReceive, bool& readyToSend) const;
 
     void SendWhenReady(const void* data, size_t size);
     bool Receive(void* data, size_t& size);
     bool ReceiveWhenReady(void* data, size_t size);
 
 private:
-    int socket_ = -1;
-    int clientSocket_ = -1;
-    SocketState state_ = SocketState::BEFORE_START;
+    int32_t socket_ = -1;
+    int32_t client_ = -1;
+    SocketState state_ = SocketState::INITIAL;
 };
 
 } // namespace OHOS::Rosen

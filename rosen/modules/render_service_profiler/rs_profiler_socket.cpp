@@ -13,15 +13,17 @@
  * limitations under the License.
  */
 
+#include "rs_profiler_socket.h"
+
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <securec.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
 
-#include "rs_profiler_socket.h"
 #include "rs_profiler_utils.h"
 
 namespace OHOS::Rosen {
@@ -69,6 +71,19 @@ static void SetCloseOnExec(int32_t socket, bool enable)
     fcntl(socket, F_SETFD, ToggleFlag(fcntl(socket, F_GETFD, 0), FD_CLOEXEC, enable));
 }
 
+static fd_set GetFdSet(int32_t socket)
+{
+    fd_set set;
+    FD_ZERO(&set);
+    FD_SET(socket, &set);
+    return set;
+}
+
+static bool IsFdSet(int32_t socket, const fd_set& set)
+{
+    return FD_ISSET(socket, &set);
+}
+
 Socket::~Socket()
 {
     Shutdown();
@@ -90,9 +105,9 @@ void Socket::Shutdown()
     close(socket_);
     socket_ = -1;
 
-    shutdown(clientSocket_, SHUT_RDWR);
-    close(clientSocket_);
-    clientSocket_ = -1;
+    shutdown(client_, SHUT_RDWR);
+    close(client_);
+    client_ = -1;
 
     state_ = SocketState::SHUTDOWN;
 }
@@ -126,45 +141,44 @@ void Socket::Open(uint16_t port)
     SetBlocking(socket_, false);
     SetCloseOnExec(socket_, true);
 
-    state_ = SocketState::CREATE_SOCKET;
+    state_ = SocketState::CREATE;
 }
 
 void Socket::AcceptClient()
 {
-    clientSocket_ = accept4(socket_, nullptr, nullptr, SOCK_CLOEXEC);
-    if (clientSocket_ == -1) {
-        const auto err = errno;
-        if ((err != EWOULDBLOCK) && (err != EAGAIN) && (err != EINTR)) {
+    client_ = accept4(socket_, nullptr, nullptr, SOCK_CLOEXEC);
+    if (client_ == -1) {
+        if ((errno != EWOULDBLOCK) && (errno != EAGAIN) && (errno != EINTR)) {
             Shutdown();
         }
     } else {
-        SetBlocking(clientSocket_, false);
-        SetCloseOnExec(clientSocket_, true);
+        SetBlocking(client_, false);
+        SetCloseOnExec(client_, true);
 
         int32_t nodelay = 1;
-        setsockopt(clientSocket_, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>(&nodelay), sizeof(nodelay));
+        setsockopt(client_, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>(&nodelay), sizeof(nodelay));
 
-        state_ = SocketState::ACCEPT_STATE;
+        state_ = SocketState::ACCEPT;
     }
 }
 
 void Socket::SendWhenReady(const void* data, size_t size)
 {
-    if (size == 0) {
+    if (!data || (size == 0)) {
         return;
     }
 
-    SetBlocking(clientSocket_, true);
+    SetBlocking(client_, true);
 
-    const timeval previousTimeout = GetTimeout(clientSocket_);
+    const timeval previousTimeout = GetTimeout(client_);
 
     const uint32_t timeoutMilliseconds = 40;
-    SetTimeout(clientSocket_, timeoutMilliseconds);
+    SetTimeout(client_, timeoutMilliseconds);
 
     const char* bytes = reinterpret_cast<const char*>(data);
-    uint32_t sent = 0;
+    size_t sent = 0;
     while (sent < size) {
-        const ssize_t sentBytes = send(clientSocket_, bytes, size - sent, 0);
+        const size_t sentBytes = send(client_, bytes, size - sent, 0);
         if ((sentBytes <= 0) && (errno != EINTR)) {
             Shutdown();
             return;
@@ -173,8 +187,8 @@ void Socket::SendWhenReady(const void* data, size_t size)
         bytes += sentBytes;
     }
 
-    SetTimeout(clientSocket_, previousTimeout);
-    SetBlocking(clientSocket_, false);
+    SetTimeout(client_, previousTimeout);
+    SetBlocking(client_, false);
 }
 
 bool Socket::Receive(void* data, size_t& size)
@@ -183,15 +197,14 @@ bool Socket::Receive(void* data, size_t& size)
         return true;
     }
 
-    SetBlocking(clientSocket_, false);
+    SetBlocking(client_, false);
 
-    const ssize_t receivedBytes = recv(clientSocket_, static_cast<char*>(data), size, 0);
+    const size_t receivedBytes = recv(client_, static_cast<char*>(data), size, 0);
     if (receivedBytes > 0) {
-        size = static_cast<uint32_t>(receivedBytes);
+        size = receivedBytes;
     } else {
         size = 0;
-        const int err = errno;
-        if (err == EWOULDBLOCK || err == EAGAIN || err == EINTR) {
+        if ((errno == EWOULDBLOCK) || (errno == EAGAIN) || (errno == EINTR)) {
             return true;
         }
         Shutdown();
@@ -202,22 +215,22 @@ bool Socket::Receive(void* data, size_t& size)
 
 bool Socket::ReceiveWhenReady(void* data, size_t size)
 {
-    if (size == 0) {
+    if (!data || (size == 0)) {
         return true;
     }
 
-    const timeval previousTimeout = GetTimeout(clientSocket_);
+    const timeval previousTimeout = GetTimeout(client_);
     const uint32_t bandwitdth = 10000; // KB/ms
     const uint32_t timeoutPad = 100;
     const uint32_t timeout = size / bandwitdth + timeoutPad;
 
-    SetBlocking(clientSocket_, true);
-    SetTimeout(clientSocket_, timeout);
+    SetBlocking(client_, true);
+    SetTimeout(client_, timeout);
 
     uint32_t received = 0;
     char* bytes = static_cast<char*>(data);
     while (received < size) {
-        const ssize_t receivedBytes = recv(clientSocket_, bytes, size - received, 0);
+        const ssize_t receivedBytes = recv(client_, bytes, size - received, 0);
         if ((receivedBytes == -1) && (errno != EINTR)) {
             Shutdown();
             return false;
@@ -227,53 +240,31 @@ bool Socket::ReceiveWhenReady(void* data, size_t size)
         bytes += receivedBytes;
     }
 
-    SetTimeout(clientSocket_, previousTimeout);
-    SetBlocking(clientSocket_, false);
+    SetTimeout(client_, previousTimeout);
+    SetBlocking(client_, false);
     return true;
 }
 
-int32_t Socket::Select()
+void Socket::GetStatus(bool& readyToReceive, bool& readyToSend) const
 {
-    int32_t status = 0;
-    if (clientSocket_ == -1) {
-        return status;
+    readyToReceive = false;
+    readyToSend = false;
+
+    if (client_ == -1) {
+        return;
     }
 
-    fd_set write;
-    FD_ZERO(&write);
-    FD_SET(clientSocket_, &write);
+    fd_set send = GetFdSet(client_);
+    fd_set receive = GetFdSet(client_);
 
-    fd_set read;
-    FD_ZERO(&read);
-    FD_SET(clientSocket_, &read);
-
-    const uint32_t timeoutMilliseconds = 10;
+    constexpr uint32_t timeoutMilliseconds = 10;
     timeval timeout = GetTimeoutDesc(timeoutMilliseconds);
-    if (select(clientSocket_ + 1, &read, &write, nullptr, &timeout) == 0) {
-        status |= static_cast<int32_t>(SocketState::TIMEOUT);
+    if (select(client_ + 1, &receive, &send, nullptr, &timeout) == 0) {
+        return;
     }
 
-    if (FD_ISSET(clientSocket_, &read)) {
-        status |= static_cast<int32_t>(SocketState::READ_ENABLE);
-    }
-
-    if (FD_ISSET(clientSocket_, &write)) {
-        status |= static_cast<int32_t>(SocketState::WRITE_ENABLE);
-    }
-
-    return status;
-}
-
-bool Socket::IsReceiveEnabled(int32_t status)
-{
-    return (
-        (status & static_cast<int32_t>(SocketState::READ_ENABLE)) == static_cast<int32_t>(SocketState::READ_ENABLE));
-}
-
-bool Socket::IsSendEnabled(int32_t status)
-{
-    return (
-        (status & static_cast<int32_t>(SocketState::WRITE_ENABLE)) == static_cast<int32_t>(SocketState::WRITE_ENABLE));
+    readyToReceive = IsFdSet(client_, receive);
+    readyToSend = IsFdSet(client_, send);
 }
 
 } // namespace OHOS::Rosen
