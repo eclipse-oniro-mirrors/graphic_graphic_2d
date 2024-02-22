@@ -16,7 +16,7 @@
 #ifndef RS_PROFILER_NETWORK_H
 #define RS_PROFILER_NETWORK_H
 
-#include <list>
+#include <queue>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -62,7 +62,7 @@ private:
     static bool isRunning_;
 
     static std::mutex outgoingMutex_;
-    static std::list<std::vector<char>> outgoing_;
+    static std::queue<std::vector<char>> outgoing_;
 };
 
 } // namespace OHOS::Rosen

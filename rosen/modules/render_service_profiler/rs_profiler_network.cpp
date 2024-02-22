@@ -36,7 +36,7 @@ std::mutex Network::incomingMutex_ {};
 std::vector<std::string> Network::incoming_ {};
 
 std::mutex Network::outgoingMutex_ {};
-std::list<std::vector<char>> Network::outgoing_ {};
+std::queue<std::vector<char>> Network::outgoing_ {};
 
 static void AwakeRenderServiceThread()
 {
@@ -44,6 +44,71 @@ static void AwakeRenderServiceThread()
         RSMainThread::Instance()->SetAccessibilityConfigChanged();
         RSMainThread::Instance()->RequestNextVSync();
     });
+}
+
+static uint32_t OnBinaryPrepare(RSFile& file, const char* data, size_t size)
+{
+    file.Create(RSFile::GetDefaultPath());
+    return BinaryHelper::BinaryCount(data);
+}
+
+static void OnBinaryHeader(RSFile& file, const char* data, size_t size)
+{
+    if (!file.IsOpen()) {
+        return;
+    }
+
+    std::stringstream stream(std::ios::in | std::ios::out | std::ios::binary);
+    stream.write(reinterpret_cast<const char*>(data + 1), size - 1);
+    stream.seekg(0);
+
+    double writeStartTime = 0.0;
+    stream.read(reinterpret_cast<char*>(&writeStartTime), sizeof(writeStartTime));
+    file.SetWriteTime(writeStartTime);
+
+    uint32_t pidCount = 0u;
+    stream.read(reinterpret_cast<char*>(&pidCount), sizeof(pidCount));
+    for (uint32_t i = 0; i < pidCount; i++) {
+        pid_t pid = 0u;
+        stream.read(reinterpret_cast<char*>(&pid), sizeof(pid));
+        file.AddHeaderPID(pid);
+    }
+    file.AddLayer();
+
+    std::map<uint64_t, ImageCacheRecord>& imageMap = RSProfilerBase::GetImageCache();
+    imageMap.clear();
+
+    uint32_t imageCount = 0u;
+    stream.read(reinterpret_cast<char*>(&imageCount), sizeof(imageCount));
+    for (uint32_t i = 0; i < imageCount; i++) {
+        uint64_t key = 0u;
+        stream.read(reinterpret_cast<char*>(&key), sizeof(key));
+
+        ImageCacheRecord record;
+        stream.read(reinterpret_cast<char*>(&record.skipBytes), sizeof(record.skipBytes));
+        stream.read(reinterpret_cast<char*>(&record.imageSize), sizeof(record.imageSize));
+
+        std::shared_ptr<uint8_t[]> image = std::make_unique<uint8_t[]>(record.imageSize);
+        stream.read(reinterpret_cast<char*>(image.get()), record.imageSize);
+        record.image = image;
+        imageMap.insert({ key, record });
+    }
+}
+
+static void OnBinaryChunk(RSFile& file, const char* data, size_t size)
+{
+    constexpr size_t timeOffset = 8 + 1;
+    if (file.IsOpen() && (size >= timeOffset)) {
+        const double time = *(reinterpret_cast<const double*>(data + 1));
+        file.WriteRSData(time, const_cast<char*>(data) + timeOffset, size - timeOffset);
+    }
+}
+
+static void OnBinaryFinish(RSFile& file, const char* data, size_t size)
+{
+    auto imageMap = reinterpret_cast<std::map<uint64_t, ReplayImageCacheRecordFile>*>(&RSProfilerBase::GetImageCache());
+    file.SetImageMapPtr(imageMap);
+    file.Close();
 }
 
 void Network::Run()
@@ -143,6 +208,10 @@ void Network::SendRdc(const std::string& path)
 
 void Network::SendTelemetry(double startTime)
 {
+    if (startTime < 0.0) {
+        return;
+    }
+
     const DeviceInfo deviceInfo = RSTelemetry::GetDeviceInfo();
 
     std::stringstream load;
@@ -180,7 +249,7 @@ void Network::SendBinary(const void* data, size_t size)
         Packet packet { Packet::BINARY };
         packet.Write(data, size);
         const std::lock_guard<std::mutex> guard(outgoingMutex_);
-        outgoing_.emplace_back(packet.Release());
+        outgoing_.emplace(packet.Release());
     }
 }
 
@@ -190,7 +259,7 @@ void Network::SendMessage(const std::string& message)
         Packet packet { Packet::LOG };
         packet.Write(message);
         const std::lock_guard<std::mutex> guard(outgoingMutex_);
-        outgoing_.emplace_back(packet.Release());
+        outgoing_.emplace(packet.Release());
     }
 }
 
@@ -237,7 +306,7 @@ void Network::ProcessOutgoing(Socket& socket)
             nothingToSend = outgoing_.empty();
             if (!nothingToSend) {
                 data.swap(outgoing_.front());
-                outgoing_.pop_front();
+                outgoing_.pop();
             }
         }
 
@@ -245,71 +314,6 @@ void Network::ProcessOutgoing(Socket& socket)
             socket.SendWhenReady(data.data(), data.size());
         }
     }
-}
-
-static uint32_t OnBinaryPrepare(RSFile& file, const char* data, size_t size)
-{
-    file.Create(RSFile::GetDefaultPath());
-    return BinaryHelper::BinaryCount(data);
-}
-
-static void OnBinaryHeader(RSFile& file, const char* data, size_t size)
-{
-    if (!file.IsOpen()) {
-        return;
-    }
-
-    std::stringstream stream(std::ios::in | std::ios::out | std::ios::binary);
-    stream.write(reinterpret_cast<const char*>(data + 1), size - 1);
-    stream.seekg(0);
-
-    double writeStartTime = 0.0;
-    stream.read(reinterpret_cast<char*>(&writeStartTime), sizeof(writeStartTime));
-    file.SetWriteTime(writeStartTime);
-
-    uint32_t pidCount = 0u;
-    stream.read(reinterpret_cast<char*>(&pidCount), sizeof(pidCount));
-    for (uint32_t i = 0; i < pidCount; i++) {
-        pid_t pid = 0u;
-        stream.read(reinterpret_cast<char*>(&pid), sizeof(pid));
-        file.AddHeaderPID(pid);
-    }
-    file.AddLayer();
-
-    std::map<uint64_t, ImageCacheRecord>& imageMap = RSProfilerBase::GetImageCache();
-    imageMap.clear();
-
-    uint32_t imageCount = 0u;
-    stream.read(reinterpret_cast<char*>(&imageCount), sizeof(imageCount));
-    for (uint32_t i = 0; i < imageCount; i++) {
-        uint64_t key = 0u;
-        stream.read(reinterpret_cast<char*>(&key), sizeof(key));
-        
-        ImageCacheRecord record;
-        stream.read(reinterpret_cast<char*>(&record.skipBytes), sizeof(record.skipBytes));
-        stream.read(reinterpret_cast<char*>(&record.imageSize), sizeof(record.imageSize));
-
-        std::shared_ptr<uint8_t[]> image = std::make_unique<uint8_t[]>(record.imageSize);
-        stream.read(reinterpret_cast<char*>(image.get()), record.imageSize);
-        record.image = image;
-        imageMap.insert({ key, record });
-    }
-}
-
-static void OnBinaryChunk(RSFile& file, const char* data, size_t size)
-{
-    constexpr size_t timeOffset = 8 + 1;
-    if (file.IsOpen() && (size >= timeOffset)) {
-        const double time = *(reinterpret_cast<const double*>(data + 1));
-        file.WriteRSData(time, const_cast<char*>(data) + timeOffset, size - timeOffset);
-    }
-}
-
-static void OnBinaryFinish(RSFile& file, const char* data, size_t size)
-{
-    auto imageMap = reinterpret_cast<std::map<uint64_t, ReplayImageCacheRecordFile>*>(&RSProfilerBase::GetImageCache());
-    file.SetImageMapPtr(imageMap);
-    file.Close();
 }
 
 void Network::ProcessBinary(const char* data, size_t size)
@@ -372,7 +376,7 @@ void Network::ProcessIncoming(Socket& socket)
         Packet acknowledgement { Packet::COMMAND_ACKNOWLEDGED };
         acknowledgement.Write(std::string(" "));
         const std::lock_guard<std::mutex> guard(outgoingMutex_);
-        outgoing_.emplace_back(acknowledgement.Release());
+        outgoing_.emplace(acknowledgement.Release());
     }
 }
 
