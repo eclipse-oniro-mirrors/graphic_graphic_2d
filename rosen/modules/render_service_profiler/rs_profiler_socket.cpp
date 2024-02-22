@@ -227,15 +227,18 @@ bool Socket::ReceiveWhenReady(void* data, size_t size)
     SetBlocking(client_, true);
     SetTimeout(client_, timeout);
 
-    uint32_t received = 0;
+    size_t received = 0;
     char* bytes = static_cast<char*>(data);
     while (received < size) {
+        // receivedBytes can only be -1 or [0, size - received] (from recv man)
         const ssize_t receivedBytes = recv(client_, bytes, size - received, 0);
         if ((receivedBytes == -1) && (errno != EINTR)) {
             Shutdown();
             return false;
         }
 
+        // so receivedBytes here always [0, size - received]
+        // then received can't be > `size` and it can't be overflowed
         received += receivedBytes;
         bytes += receivedBytes;
     }
