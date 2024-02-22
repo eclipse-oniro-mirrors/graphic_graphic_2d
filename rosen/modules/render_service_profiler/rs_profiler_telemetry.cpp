@@ -37,30 +37,25 @@ static inline std::string IncludePathDelimiter(const std::string& path)
 
 static void IterateDirFiles(const std::string& path, std::vector<std::string>& files)
 {
-    std::string pathStringWithDelimiter;
-    DIR* dir = opendir(path.c_str());
-    if (!dir) {
+    DIR* directory = opendir(path.data());
+    if (!directory) {
         return;
     }
 
-    while (true) {
-        struct dirent* ptr = readdir(dir);
-        if (!ptr) {
-            break;
-        }
-
+    while (const struct dirent* entry = readdir(directory)) {
         // current dir OR parent dir
-        if ((strcmp(ptr->d_name, ".") == 0) || (strcmp(ptr->d_name, "..") == 0)) {
+        if ((strcmp(entry->d_name, ".") == 0) || (strcmp(entry->d_name, "..") == 0)) {
             continue;
         }
-        if (ptr->d_type == DT_DIR) {
-            pathStringWithDelimiter = IncludePathDelimiter(path) + std::string(ptr->d_name);
-            IterateDirFiles(pathStringWithDelimiter, files);
+
+        const std::string pathWithDelimiter = IncludePathDelimiter(path) + std::string(entry->d_name);
+        if (entry->d_type == DT_DIR) {
+            IterateDirFiles(pathWithDelimiter, files);
         } else {
-            files.push_back(IncludePathDelimiter(path) + std::string(ptr->d_name));
+            files.push_back(pathWithDelimiter);
         }
     }
-    closedir(dir);
+    closedir(directory);
 }
 
 static void GetCPUTemperature(CPUInfo& cpu)
