@@ -23,6 +23,7 @@
 #include "rs_profiler_file.h"
 #include "rs_profiler_packet.h"
 #include "rs_profiler_socket.h"
+#include "rs_profiler_telemetry.h"
 #include "rs_profiler_utils.h"
 
 #include "pipeline/rs_main_thread.h"
@@ -60,17 +61,20 @@ void Network::Run()
         }
 
         const SocketState state = socket->GetState();
-        if (state == SocketState::BEFORE_START) {
+        if (state == SocketState::INITIAL) {
             socket->Open(port);
-        } else if (state == SocketState::CREATE_SOCKET) {
+        } else if (state == SocketState::CREATE) {
             socket->AcceptClient();
             usleep(sleepTimeout);
-        } else if (state == SocketState::ACCEPT_STATE) {
-            const int32_t status = socket->Select();
-            if (Socket::IsReceiveEnabled(status)) {
+        } else if (state == SocketState::ACCEPT) {
+            bool readyToReceive = false;
+            bool readyToSend = false;
+            socket->GetStatus(readyToReceive, readyToSend);
+
+            if (readyToReceive) {
                 ProcessIncoming(*socket);
             }
-            if (Socket::IsSendEnabled(status)) {
+            if (readyToSend) {
                 ProcessOutgoing(*socket);
             }
         } else if (state == SocketState::SHUTDOWN) {
@@ -135,6 +139,40 @@ void Network::SendRdc(const std::string& path)
         out += path;
         SendBinary(out.data(), out.size());
     }
+}
+
+void Network::SendTelemetry(double startTime)
+{
+    const DeviceInfo deviceInfo = RSTelemetry::GetDeviceInfo();
+
+    std::stringstream load;
+    std::stringstream frequency;
+    for (uint32_t i = 0; i < deviceInfo.cpu.cores; i++) {
+        load << deviceInfo.cpu.coreLoad[i];
+        if (i + 1 < deviceInfo.cpu.cores) {
+            load << ";";
+        }
+        frequency << deviceInfo.cpu.coreFrequency[i];
+        if (i + 1 < deviceInfo.cpu.cores) {
+            frequency << ";";
+        }
+    }
+
+    const double deltaTime = Utils::Now() - startTime;
+    RSCaptureData captureData;
+    captureData.SetTime(deltaTime);
+    captureData.SetProperty(RSCaptureData::KEY_CPU_TEMP, deviceInfo.cpu.temperature);
+    captureData.SetProperty(RSCaptureData::KEY_CPU_CURRENT, deviceInfo.cpu.current);
+    captureData.SetProperty(RSCaptureData::KEY_CPU_LOAD, load.str());
+    captureData.SetProperty(RSCaptureData::KEY_CPU_FREQ, frequency.str());
+    captureData.SetProperty(RSCaptureData::KEY_GPU_LOAD, deviceInfo.gpu.load);
+    captureData.SetProperty(RSCaptureData::KEY_GPU_FREQ, deviceInfo.gpu.frequency);
+
+    std::vector<char> out;
+    const char headerType = 3; // TYPE: GFX METRICS
+    captureData.Serialize(out);
+    out.insert(out.begin(), headerType);
+    SendBinary(out.data(), out.size());
 }
 
 void Network::SendBinary(const void* data, size_t size)
@@ -260,13 +298,13 @@ static void OnBinaryHeader(RSFile& file, const char* data, size_t size)
     }
     file.AddLayer();
 
-    std::map<uint64_t, ReplayImageCacheRecord>& imageMap = RSProfilerBase::ImageMapGet();
+    std::map<uint64_t, ImageCacheRecord>& imageMap = RSProfilerBase::GetImageCache();
     imageMap.clear();
 
     uint32_t imageCount = 0u;
     stream.read(reinterpret_cast<char*>(&imageCount), sizeof(imageCount));
     for (uint32_t i = 0; i < imageCount; i++) {
-        ReplayImageCacheRecord record;
+        ImageCacheRecord record;
         uint64_t key = 0u;
 
         stream.read(reinterpret_cast<char*>(&key), sizeof(key));
@@ -291,7 +329,7 @@ static void OnBinaryChunk(RSFile& file, const char* data, size_t size)
 
 static void OnBinaryFinish(RSFile& file, const char* data, size_t size)
 {
-    auto imageMap = reinterpret_cast<std::map<uint64_t, ReplayImageCacheRecordFile>*>(&RSProfilerBase::ImageMapGet());
+    auto imageMap = reinterpret_cast<std::map<uint64_t, ReplayImageCacheRecordFile>*>(&RSProfilerBase::GetImageCache());
     file.SetImageMapPtr(imageMap);
     file.Close();
 }
@@ -327,7 +365,7 @@ void Network::ProcessIncoming(Socket& socket)
     const uint32_t sleepTimeout = 500000u;
 
     Packet packetIncoming { Packet::UNKNOWN };
-    auto wannaReceive = Packet::headerSize;
+    auto wannaReceive = Packet::HEADER_SIZE;
     socket.Receive(packetIncoming.Begin(), wannaReceive);
 
     if (wannaReceive == 0) {

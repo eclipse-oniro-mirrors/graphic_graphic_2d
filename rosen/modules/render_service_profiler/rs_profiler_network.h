@@ -37,7 +37,10 @@ public:
     static void Stop();
 
     static std::vector<NetworkStats> GetStats(const std::string& interface);
+
     static void SendRdc(const std::string& path);
+    static void SendTelemetry(double startTime);
+
     static void SendBinary(const void* data, size_t size);
     static void SendMessage(const std::string& message);
 
