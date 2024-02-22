@@ -39,11 +39,13 @@ class RSContext;
 
 enum class SpecParseMode { NONE = 0, READ = 1, WRITE = 2 };
 
-struct ReplayImageCacheRecord {
+struct ImageCacheRecord {
     std::shared_ptr<void> image;
-    uint32_t imageSize {};
-    uint32_t skipBytes {};
+    uint32_t imageSize = 0u;
+    uint32_t skipBytes = 0u;
 };
+
+using ImageCache = std::map<uint64_t, ImageCacheRecord>;
 
 class RSB_EXPORT RSProfilerBase {
 public:
@@ -80,8 +82,8 @@ public:
     }
 
     static void ReplayImageAdd(uint64_t uniqueId, void* image, uint32_t imageSize, uint32_t skipBytes);
-    static ReplayImageCacheRecord* ReplayImageGet(uint64_t uniqueId);
-    static std::map<uint64_t, ReplayImageCacheRecord>& ImageMapGet();
+    static ImageCacheRecord* ReplayImageGet(uint64_t uniqueId);
+    static ImageCache& GetImageCache();
     static std::string ReplayImagePrintList();
 
     static uint64_t TimePauseApply(uint64_t time);

@@ -14,7 +14,6 @@
  */
 
 #include "rs_profiler_base.h"
-#include "rs_profiler_pixelmap.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -24,6 +23,7 @@
 #include <vector>
 
 #include "message_parcel.h"
+#include "rs_profiler_utils.h"
 
 #include "command/rs_base_node_command.h"
 
@@ -33,17 +33,14 @@ static SpecParseMode g_mode;
 static std::vector<pid_t> g_pidList;
 static pid_t g_pidValue = 0;
 static NodeId g_parentNode = 0;
-static std::map<uint64_t, ReplayImageCacheRecord> g_imageMap;
+static std::map<uint64_t, ImageCacheRecord> g_imageMap;
 static std::atomic<uint32_t> g_parsedCmdCount = 0;
 static std::atomic<uint32_t> g_lastImagemapCount = 0;
 
 static uint64_t g_pauseAfterTime = 0;
 static uint64_t g_pauseCumulativeTime = 0;
 
-constexpr uint32_t bits32 = 32;
-constexpr uint32_t bits30 = 30;
-
-std::map<uint64_t, ReplayImageCacheRecord>& RSProfilerBase::ImageMapGet()
+ImageCache& RSProfilerBase::GetImageCache()
 {
     return g_imageMap;
 }
@@ -111,7 +108,7 @@ NodeId RSProfilerBase::PatchPlainNodeId(const Parcel& parcel, NodeId id)
         return id;
     }
 
-    return id | (static_cast<uint64_t>(1) << (bits30 + bits32));
+    return Utils::PatchNodeId(id);
 }
 
 pid_t RSProfilerBase::PatchPlainProcessId(const Parcel& parcel, pid_t pid)
@@ -120,7 +117,7 @@ pid_t RSProfilerBase::PatchPlainProcessId(const Parcel& parcel, pid_t pid)
         return pid;
     }
 
-    return pid | (1 << bits30);
+    return Utils::GetMockPid(pid);
 }
 
 void RSProfilerBase::SpecParseModeSet(SpecParseMode mode)
@@ -173,7 +170,7 @@ void RSProfilerBase::ReplayImageAdd(uint64_t uniqueId, void* image, uint32_t ima
     const std::shared_ptr<void> imageSaveData(new uint8_t[imageSize]);
     memmove(imageSaveData.get(), image, imageSize);
 
-    ReplayImageCacheRecord record;
+    ImageCacheRecord record;
     record.image = imageSaveData;
     record.imageSize = imageSize;
     record.skipBytes = skipBytes;
@@ -181,7 +178,7 @@ void RSProfilerBase::ReplayImageAdd(uint64_t uniqueId, void* image, uint32_t ima
     g_imageMap.insert({ uniqueId, record });
 }
 
-ReplayImageCacheRecord* RSProfilerBase::ReplayImageGet(uint64_t uniqueId)
+ImageCacheRecord* RSProfilerBase::ReplayImageGet(uint64_t uniqueId)
 {
     if (g_mode != SpecParseMode::READ) {
         return nullptr;
@@ -201,9 +198,8 @@ std::string RSProfilerBase::ReplayImagePrintList()
     }
 
     std::string out;
-    constexpr uint64_t mask32Bits = 0xFFffFFff;
     for (const auto& it : g_imageMap) {
-        out += std::to_string(it.first >> bits32) + ":" + std::to_string(it.first & mask32Bits) + " ";
+        out += std::to_string(Utils::ExtractPid(it.first)) + ":" + std::to_string(Utils::ExtractNodeId(it.first)) + " ";
     }
 
     return out;
@@ -260,11 +256,6 @@ Vector4f RSProfilerBase::GetScreenRect()
     return SCREEN_RECT;
 }
 
-OHOS::Media::PixelMap* RSProfilerBase::PixelMapUnmarshalling(Parcel& parcel)
-{
-    return RSProfilerPixelMap::Unmarshalling(parcel);
-}
-
 void RSProfilerBase::TransactionDataOnProcess(RSContext& context)
 {
     if (RSProfilerBase::SpecParseModeGet() != SpecParseMode::READ) { 
@@ -276,7 +267,7 @@ void RSProfilerBase::TransactionDataOnProcess(RSContext& context)
     NodeId baseNodeId = 0;
     const Vector4f screenRect = RSProfilerBase::GetScreenRect();
     for (auto item : RSProfilerBase::SpecParsePidListGet()) {
-        const NodeId nodeId = (static_cast<NodeId>(item) << bits32) | 1 | (static_cast<NodeId>(1) << (bits30 + bits32));
+        const NodeId nodeId = Utils::PatchNodeId(Utils::GetRootNodeId(item));
         auto node = nodeMap.GetRenderNode(nodeId);
         if (node) {
             baseNode = node;
