@@ -132,8 +132,7 @@ const std::vector<pid_t>& RSFile::GetHeaderPIDList() const
 
 void RSFile::WriteHeader()
 {
-    const std::lock_guard<std::mutex> lgMutex(writeMutex_);
-
+    // WARNING removed redundant mutex
     if (!file_) {
         return;
     }
@@ -315,14 +314,17 @@ void RSFile::ReadTextureFromFile()
     Utils::FileRead(&key, sizeof(key), 1, file_);
     Utils::FileRead(&skipBytes, sizeof(skipBytes), 1, file_);
     Utils::FileRead(&dataSize, sizeof(dataSize), 1, file_);
+
     constexpr size_t maxPictureSize = 600 * 1024 * 1024; // OHOS::MEDIA::PIXEL_MAP_MAX_RAM_SIZE
-    if (dataSize > 0 && dataSize <= maxPictureSize) {
-        data = new uint8_t[dataSize];
-        if (data == nullptr) {
-            RS_LOGE("Can't allocate %d bytes", dataSize); // NOLINT
-        }
-    } else {
+    if (dataSize == 0 || dataSize > maxPictureSize) {
         RS_LOGE("Invalid dataSize read: %d", dataSize); // NOLINT
+        return;
+    }
+
+    data = new uint8_t[dataSize];
+    if (data == nullptr) {
+        RS_LOGE("Can't allocate %d bytes", dataSize); // NOLINT
+        return;
     }
 
     Utils::FileRead(data, dataSize, 1, file_);
