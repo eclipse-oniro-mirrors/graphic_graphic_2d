@@ -46,7 +46,7 @@ public:
     void Dealloc(void *data) override { }
 };
 
-class DrawingSampleReplayer{
+class DrawingSampleReplayer {
 public:
     DrawingSampleReplayer() = default;
     ~DrawingSampleReplayer();

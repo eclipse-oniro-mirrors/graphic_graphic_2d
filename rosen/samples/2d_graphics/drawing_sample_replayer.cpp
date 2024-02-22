@@ -30,12 +30,14 @@ namespace fs = std::filesystem;
 
 namespace OHOS::Rosen {
 
-DrawingSampleReplayer::~DrawingSampleReplayer(){
+DrawingSampleReplayer::~DrawingSampleReplayer()
+{
     DestoryNativeWindow(nativeWindow_);
     surfaceNode_->DetachToDisplay(DEFAULT_DISPLAY_ID);
 }
 
-int DrawingSampleReplayer::ReadCmds(const std::string path){
+int DrawingSampleReplayer::ReadCmds(const std::string path)
+{
     int32_t fd = open(path.c_str(), O_RDONLY);
     if (fd <= 0) {
         return -1;
@@ -44,7 +46,7 @@ int DrawingSampleReplayer::ReadCmds(const std::string path){
     if (fstat(fd, &statbuf) < 0) {
         return -1;
     }
-    auto mapFile = static_cast<uint8_t*>(mmap(NULL, statbuf.st_size, PROT_READ, MAP_PRIVATE, fd, 0));
+    auto mapFile = static_cast<uint8_t*>(mmap(nullptr, statbuf.st_size, PROT_READ, MAP_PRIVATE, fd, 0));
     if (mapFile == MAP_FAILED) {
         close(fd);
         return -1;
@@ -63,27 +65,21 @@ int DrawingSampleReplayer::ReadCmds(const std::string path){
         munmap(mapFile, statbuf.st_size);
         return -1;
     }
-    //std::cout << dcl_->GetOpsWithDesc() << std::endl;
     munmap(mapFile, statbuf.st_size);
     return 0;
 }
 
-void DrawingSampleReplayer::PrepareFrame(Drawing::Canvas* canvas){
+void DrawingSampleReplayer::PrepareFrame(Drawing::Canvas* canvas)
+{
     if (canvas == nullptr) {
         return;
     }
 
 #if (defined RS_ENABLE_GL) || (defined RS_ENABLE_VK)
-    if(captureMode_ == CaptureMode::SKP){
-        // skia recording canvas adding to nwaycanvas
-        std::cout << "DrawingDCL::Test skia" << std::endl;
+    if (captureMode_ == CaptureMode::SKP) {
         orgSkiaCanvas_ = canvas->GetImpl<Drawing::SkiaCanvas>()->ExportSkCanvas();
-        
-        std::cout << "DrawingDCL::Test skia begin capture+" << std::endl;
-        //skiaCanvas_ = skiaRecording.BeginCapture(orgSkiaCanvas_, width, height);
         recorder_ = std::make_unique<SkPictureRecorder>();
         pictureCanvas_ = recorder_->beginRecording(drawingWidth_, drawingHeight_);
-        // Setting up an nway canvas is common to any kind of capture.
         if (nwayCanvas_ == nullptr) {
             nwayCanvas_ = std::make_unique<SkNWayCanvas>(drawingWidth_, drawingHeight_);
         }
@@ -101,18 +97,16 @@ void DrawingSampleReplayer::PrepareFrame(Drawing::Canvas* canvas){
     dcl_->Playback(*canvas);
 
 #if (defined RS_ENABLE_GL) || (defined RS_ENABLE_VK)
-    if(captureMode_ == CaptureMode::SKP){
+    if (captureMode_ == CaptureMode::SKP) {
         // finishing capturing and saving skp
         nwayCanvas_->removeAll();
         sk_sp<SkPicture> picture = recorder_->finishRecordingAsPicture();
-
-        if(picture->approximateOpCount() > 0) {
+        if (picture->approximateOpCount() > 0) {
             SkSerialProcs procs;
             procs.fTypefaceProc = [](SkTypeface* tf, void* ctx) {
                 return tf->serialize(SkTypeface::SerializeBehavior::kDoIncludeData);
             };
             auto data = picture->serialize(&procs);
-
             // to save locally
             std::string outputFile = "/data/default.skp";
             SkFILEWStream stream(outputFile.c_str());
@@ -129,40 +123,41 @@ void DrawingSampleReplayer::PrepareFrame(Drawing::Canvas* canvas){
 #endif
 }
 
-void DrawingSampleReplayer::RenderLoop(){
+void DrawingSampleReplayer::RenderLoop()
+{
     PrepareNativeEGLSetup();
-    int maxIter = (captureMode_ == CaptureMode::RDC) ? MAX_RENDERED_FRAMES : 1; 
+    int maxIter = (captureMode_ == CaptureMode::RDC) ? MAX_RENDERED_FRAMES : 1;
 
-    for(int i = 0; i < maxIter; ++i){
-        auto surface = renderContext_->AcquireSurface(drawingWidth_, drawingHeight_);
-        Drawing::Canvas* canvas = surface->GetCanvas().get();
+    for (int i = 0; i < maxIter; ++i) {
+        std::shared_ptr<Drawing::Surface> drawingSurface = renderContext_->AcquireSurface(drawingWidth_, drawingHeight_);
+        Drawing::Canvas* canvas = drawingSurface->GetCanvas().get();
 
         std::cout << i << "\t >> new iteration" << std::endl;
 
         PrepareFrame(canvas);
 
-        renderContext_->RenderFrame(); // which involves surface->flush()
+        renderContext_->RenderFrame(); // which involves flush()
         renderContext_->SwapBuffers(eglSurface_);
 
         int rdcnum = 0;
         std::string path = "/data/autocaps";
         // Checks if the folder exists
-        if(fs::exists(path)){
-            for (const auto & entry : fs::directory_iterator(path)) {
-                std::string filestr = entry.path();                
-                if(filestr.substr( filestr.length() - 3 ) == "rdc"){
+        if (fs::exists(path)) {
+            for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(path)) {
+                const std::filesystem::path& path = entry.path();
+                if (path.extension() == ".rdc") {
                     rdcnum++;
                 }
             }
-            if(rdcnum > 0){
+            if (rdcnum > 0) {
                 return;
             }
         }
-
     }
 }
 
-void DrawingSampleReplayer::PrepareNativeEGLSetup(){
+void DrawingSampleReplayer::PrepareNativeEGLSetup()
+{
     renderContext_ = std::make_shared<RenderContext>();
     renderContext_->InitializeEglContext();
 
@@ -171,7 +166,6 @@ void DrawingSampleReplayer::PrepareNativeEGLSetup(){
     drawingHeight_ = defaultDisplay->GetHeight();
 
     std::cout << "Width: " << drawingWidth_ << "  -  Height: " << drawingHeight_ << std::endl;
-
 
     RSSurfaceNodeConfig surfaceNodeConfig = {"DrawingEngineSample"};
     RSSurfaceNodeType surfaceNodeType = RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE;
@@ -209,11 +203,10 @@ void DrawingSampleReplayer::PrepareNativeEGLSetup(){
         return;
     }
     NativeWindowHandleOpt(nativeWindow_, SET_BUFFER_GEOMETRY, drawingWidth_, drawingHeight_);
-
-    //renderContext->SwapBuffers(eglSurface); 
 }
 
-void DrawingSampleReplayer::SetCaptureMode(CaptureMode mode){
+void DrawingSampleReplayer::SetCaptureMode(CaptureMode mode)
+{
     captureMode_ = mode;
 }
 
@@ -222,21 +215,16 @@ void DrawingSampleReplayer::SetCaptureMode(CaptureMode mode){
 int32_t main(int32_t argc, char *argv[])
 {
     OHOS::Rosen::DrawingSampleReplayer replayer;
-    
     std::string replayType = "default";
-    if(argc > 1){
+    if (argc > 1) {
         replayType = std::string(argv[1]);
-        if(replayType == "skp"){
+        if (replayType == "skp") {
             replayer.SetCaptureMode(OHOS::Rosen::CaptureMode::SKP);
-        }
-        else if(replayType == "rdc"){
+        } else if (replayType == "rdc") {
             replayer.SetCaptureMode(OHOS::Rosen::CaptureMode::RDC);
         }
     }
     std::cout << "Mode: " << replayType << std::endl;
-
     replayer.RenderLoop();
-    //replayer.ReadCmds("/data/default.drawing");
-
     return 0;
 }
