@@ -488,19 +488,17 @@ void RSProfiler::GetRoot(const ArgList& /*args*/)
         std::string type;
         const RSRenderNodeType nodeType = node->GetType();
         if (nodeType == RSRenderNodeType::UNKNOW) {
-            type = "RS_UNKNOWN";
+            type = "UNKNOWN";
         } else if (nodeType == RSRenderNodeType::RS_NODE) {
-            type = "RS_NONE";
+            type = "NONE";
         } else if (nodeType == RSRenderNodeType::DISPLAY_NODE) {
-            type = "RS_DISPLAY_NODE";
-        } else if (nodeType == RSRenderNodeType::SURFACE_NODE) {
-            type = "RS_SURFACE_NODE";
+            type = "DISPLAY_NODE";
         } else if (nodeType == RSRenderNodeType::EFFECT_NODE) {
-            type = "RS_EFFECT_NODE";
+            type = "EFFECT_NODE";
         } else if (nodeType == RSRenderNodeType::ROOT_NODE) {
-            type = "RS_ROOT_NODE";
+            type = "ROOT_NODE";
         } else if (nodeType == RSRenderNodeType::CANVAS_DRAWING_NODE) {
-            type = "RS_CANVAS_DRAWING_NODE";
+            type = "CANVAS_DRAWING_NODE";
         }
 
         if (!type.empty()) {
