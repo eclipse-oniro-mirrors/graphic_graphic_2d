@@ -47,9 +47,9 @@ public:
     static void MainThreadOnRenderEnd();
     static void MainThreadOnProcessCommand();
 
-    static void RenderServiceOnCreateConnection(pid_t remotePid);
+    static void RenderServiceOnCreateConnection(pid_t pid);
     static void RenderServiceConnectionOnRemoteRequest(RSRenderServiceConnection* connection, uint32_t code,
-        MessageParcel& data, MessageParcel& reply, MessageOption& option);
+        MessageParcel& parcel, MessageParcel& reply, MessageOption& option);
 
     static void UnmarshalThreadOnRecvParcel(const MessageParcel* parcel, RSTransactionData* data);
 
@@ -59,14 +59,12 @@ public:
 
 private:
     using Command = void (*)(const ArgList&);
-    static constexpr int gfxMetricsSendInterval = 8;
 
     static bool IsRecording();
     static bool IsPlaying();
 
     static void AwakeRenderServiceThread();
     static std::shared_ptr<RSRenderNode> GetRenderNode(uint64_t id);
-    static void SendTelemetry(double startTime);
     static void ProcessSendingRdc();
 
     static Command GetCommand(const std::string& command);
@@ -100,41 +98,6 @@ private:
     static void PlaybackPauseAt(const ArgList& args);
     static void PlaybackPauseClear(const ArgList& args);
     static void PlaybackResume(const ArgList& args);
-
-    static constexpr uint32_t shift32 = 32;
-public:
-    inline static constexpr pid_t ExtractPid(NodeId id)
-    {
-        // extract high 32 bits of nodeid/animationId/propertyId as pid
-        return static_cast<pid_t>(id >> shift32);
-    }
-
-    inline static constexpr pid_t GetMockPid(pid_t pid)
-    {
-        constexpr uint32_t shift30 = 30;
-        return (1 << shift30) | pid;
-    }
-
-    inline static constexpr NodeId ExtractNodeLocalID(NodeId id)
-    {
-        constexpr uint32_t maskU32 = 0xFFffFFff;
-        return (id & maskU32);
-    }
-
-    inline static constexpr NodeId ComposeNodeID( uint64_t pid, uint64_t nodeLocalID)
-    {
-        return (static_cast<NodeId>(pid) << shift32) | nodeLocalID;
-    }
-
-    inline static constexpr NodeId ComposeMockNodeID(uint64_t id, uint64_t nodeLocalID)
-    {
-        return ComposeNodeID(GetMockPid(id), nodeLocalID);
-    }
-
-    inline static constexpr NodeId GetRootNodeId(NodeId id)
-    {
-        return ((static_cast<NodeId>(id) << shift32) | 1);
-    }
 };
 
 } // namespace OHOS::Rosen
