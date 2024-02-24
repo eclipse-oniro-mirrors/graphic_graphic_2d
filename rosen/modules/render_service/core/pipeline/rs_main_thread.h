@@ -170,7 +170,6 @@ public:
     void SetFocusAppInfo(
         int32_t pid, int32_t uid, const std::string &bundleName, const std::string &abilityName, uint64_t focusNodeId);
     std::unordered_map<NodeId, bool> GetCacheCmdSkippedNodes() const;
-    std::string GetFocusAppBundleName() const;
 
     sptr<VSyncDistributor> rsVSyncDistributor_;
     sptr<VSyncController> rsVSyncController_;

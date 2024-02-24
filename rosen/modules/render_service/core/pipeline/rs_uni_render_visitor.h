@@ -426,7 +426,6 @@ private:
     bool isOcclusionEnabled_ = false;
     bool isSkipCanvasNodeOutOfScreen_ = false;
     bool isScreenRotationAnimating_ = false;
-    bool isTextNeedCached_ = false;
     std::vector<std::string> dfxTargetSurfaceNames_;
     PartialRenderType partialRenderType_;
     QuickSkipPrepareType quickSkipPrepareType_;

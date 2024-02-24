@@ -86,7 +86,6 @@ constexpr int ROTATION_270 = 270;
 constexpr float EPSILON_SCALE = 0.00001f;
 static const std::string CAPTURE_WINDOW_NAME = "CapsuleWindow";
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
-static const std::string BIGFLODER_BUNDLE_NAME = "SCBDesktop2";
 static std::map<NodeId, uint32_t> cacheRenderNodeMap = {};
 static uint32_t cacheReuseTimes = 0;
 static std::mutex cacheRenderNodeMapMutex;
@@ -5150,12 +5149,6 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
     }
 
     if (node.GetSharedTransitionParam().has_value()) {
-        // enable cache for sharingTrans on Desktop
-        auto mainThread = RSMainThread::Instance();
-        std::string bundleNameFocusNow = mainThread->GetFocusAppBundleName();
-        if (bundleNameFocusNow == BIGFLODER_BUNDLE_NAME) {
-            isTextNeedCached_ = true;
-        }
         // draw self and children in sandbox which will not be affected by parent's transition
         const auto& sandboxMatrix = node.GetRenderProperties().GetSandBoxMatrix();
         if (sandboxMatrix) {
@@ -5177,7 +5170,6 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
     }
     const auto& property = node.GetRenderProperties();
     if (property.IsSpherizeValid()) {
-        isTextNeedCached_ = false;
         DrawSpherize(node);
 #ifdef DDGR_ENABLE_FEATURE_OPINC
         if (autoCacheEnable_) {
@@ -5185,11 +5177,6 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
         }
 #endif
         return;
-    }
-    auto preType = canvas_->GetCacheType();
-    if (isTextNeedCached_) {
-        RS_OPTIONAL_TRACE_NAME_FMT("BigFloderCacheEnabled[%s]", BIGFLODER_BUNDLE_NAME.c_str());
-        canvas_->SetCacheType(RSPaintFilterCanvas::CacheType::ENABLED);
     }
     if (auto drawingNode = node.ReinterpretCastTo<RSCanvasDrawingRenderNode>()) {
         std::lock_guard<std::mutex> lock(drawingMutex_);
@@ -5219,8 +5206,6 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
         }
 #endif
     notRunCheckAndSetNodeCacheType_ = false;
-    isTextNeedCached_ = false;
-    canvas_->SetCacheType(preType);
 #ifndef USE_ROSEN_DRAWING
     canvas_->restore();
 #else

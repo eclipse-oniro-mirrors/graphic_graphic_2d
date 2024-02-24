@@ -552,11 +552,6 @@ void RSMainThread::SetFocusAppInfo(
     focusNodeId_ = focusNodeId;
 }
 
-std::string RSMainThread::GetFocusAppBundleName() const
-{
-    return focusAppBundleName_;
-}
-
 void RSMainThread::Start()
 {
     if (runner_) {
