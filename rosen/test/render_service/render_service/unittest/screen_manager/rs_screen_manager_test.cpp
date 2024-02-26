@@ -17,6 +17,7 @@
 #include "limit_number.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "transaction/rs_interfaces.h"
+#include "../pipeline/mock/mock_hdi_device.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -28,9 +29,21 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
+
+    static inline ScreenId mockScreenId_;
+    static inline Mock::HdiDeviceMock* hdiDeviceMock_;
 };
 
-void RSScreenManagerTest::SetUpTestCase() {}
+void RSScreenManagerTest::SetUpTestCase()
+{
+    mockScreenId_ = 0xFFFF;
+    hdiDeviceMock_ = Mock::HdiDeviceMock::GetInstance();
+    EXPECT_CALL(*hdiDeviceMock_, SetScreenPowerStatus(mockScreenId_, _)).WillRepeatedly(
+        DoAll(SaveArg<1>(&Mock::HdiDeviceMock::powerStatusMock_), testing::Return(0)));
+    EXPECT_CALL(*hdiDeviceMock_, GetScreenPowerStatus(mockScreenId_, _)).WillRepeatedly(
+        DoAll(SetArgReferee<1>(ByRef(Mock::HdiDeviceMock::powerStatusMock_)), testing::Return(0)));
+}
+
 void RSScreenManagerTest::TearDownTestCase() {}
 void RSScreenManagerTest::SetUp() {}
 void RSScreenManagerTest::TearDown() {}
@@ -703,6 +716,42 @@ HWTEST_F(RSScreenManagerTest, SetScreenPowerStatus_001, TestSize.Level1)
     ScreenId screenId = INVALID_SCREEN_ID;
     screenManager->SetScreenPowerStatus(screenId, ScreenPowerStatus::POWER_STATUS_ON);
     ASSERT_EQ(screenManager->GetScreenPowerStatus(screenId), INVALID_POWER_STATUS);
+}
+
+/*
+ * @tc.name: SetScreenPowerStatus_002
+ * @tc.desc: Test SetScreenPowerStatus, test POWER_STATUS_ON_ADVANCED with mock HDI device
+ * @tc.type: FUNC
+ * @tc.require: issueI7AABN
+ */
+HWTEST_F(RSScreenManagerTest, SetScreenPowerStatus_002, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+    auto hdiOutput = HdiOutput::CreateHdiOutput(mockScreenId_);
+    auto rsScreen = std::make_unique<impl::RSScreen>(mockScreenId_, false, hdiOutput, nullptr);
+    rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
+    screenManager->MockHdiScreenConnected(rsScreen);
+    screenManager->SetScreenPowerStatus(mockScreenId_, ScreenPowerStatus::POWER_STATUS_ON_ADVANCED);
+    ASSERT_EQ(screenManager->GetScreenPowerStatus(mockScreenId_), POWER_STATUS_ON_ADVANCED);
+}
+
+/*
+ * @tc.name: SetScreenPowerStatus_003
+ * @tc.desc: Test SetScreenPowerStatus, test POWER_STATUS_OFF_ADVANCED with mock HDI device
+ * @tc.type: FUNC
+ * @tc.require: issueI7AABN
+ */
+HWTEST_F(RSScreenManagerTest, SetScreenPowerStatus_003, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+    auto hdiOutput = HdiOutput::CreateHdiOutput(mockScreenId_);
+    auto rsScreen = std::make_unique<impl::RSScreen>(mockScreenId_, false, hdiOutput, nullptr);
+    rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
+    screenManager->MockHdiScreenConnected(rsScreen);
+    screenManager->SetScreenPowerStatus(mockScreenId_, ScreenPowerStatus::POWER_STATUS_OFF_ADVANCED);
+    ASSERT_EQ(screenManager->GetScreenPowerStatus(mockScreenId_), POWER_STATUS_OFF_ADVANCED);
 }
 
 /*
