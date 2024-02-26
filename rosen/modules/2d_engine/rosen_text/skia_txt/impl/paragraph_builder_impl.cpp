@@ -191,6 +191,13 @@ skt::ParagraphStyle ParagraphBuilderImpl::TextStyleToSkStyle(const ParagraphStyl
 
 skt::TextStyle ParagraphBuilderImpl::TextStyleToSkStyle(const TextStyle& txt)
 {
+    auto skStyle = ConvertTextStyleToSkStyle(txt);
+    CopyTextStylePaint(txt, skStyle);
+    return skStyle;
+}
+
+skt::TextStyle ParagraphBuilderImpl::ConvertTextStyleToSkStyle(const TextStyle& txt)
+{
     skt::TextStyle skStyle;
 
     skStyle.setColor(txt.color);
@@ -218,8 +225,6 @@ skt::TextStyle ParagraphBuilderImpl::TextStyleToSkStyle(const TextStyle& txt)
     skStyle.setBackgroundRect({ txt.backgroundRect.color, txt.backgroundRect.leftTopRadius,
         txt.backgroundRect.rightTopRadius, txt.backgroundRect.rightBottomRadius,
         txt.backgroundRect.leftBottomRadius });
-
-    CopyTextStylePaint(txt, skStyle);
 
     skStyle.resetFontFeatures();
     for (const auto& ff : txt.fontFeatures.GetFontFeatures()) {
