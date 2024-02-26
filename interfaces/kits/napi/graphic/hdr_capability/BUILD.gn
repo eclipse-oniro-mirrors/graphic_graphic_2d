@@ -21,6 +21,13 @@ config("hdr_capability_object_config") {
 }
 
 ohos_shared_library("hdr_capability_utils") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   sources = [ "hdr_capability_utils/js_hdr_format_utils.cpp" ]
 
   configs = [ ":hdr_capability_object_config" ]
@@ -48,6 +55,13 @@ config("hdr_capability_napi_config") {
 }
 
 ohos_shared_library("hdrcapability_napi") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   sources = [
     "hdr_capability_napi/hdr_capability_module.cpp",
     "hdr_capability_napi/js_hdr_capability.cpp",
