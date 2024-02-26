@@ -62,6 +62,10 @@ struct TypographyStyle {
     TextAlign GetEffectiveAlign() const;
     bool IsUnlimitedLines() const;
     bool IsEllipsized() const;
+    bool Ellipsized() const
+    {
+        return !ellipsis.empty();
+    }
     TextStyle insideTextStyle;
     bool customTextStyle = false;
 };

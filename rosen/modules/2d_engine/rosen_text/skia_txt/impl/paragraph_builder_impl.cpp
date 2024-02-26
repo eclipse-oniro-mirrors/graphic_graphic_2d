@@ -146,6 +146,7 @@ skt::ParagraphStyle ParagraphBuilderImpl::TextStyleToSkStyle(const ParagraphStyl
     }
 
     skStyle.setTextStyle(textStyle);
+    skStyle.setTextOverflower(txt.textOverflower);
     skt::StrutStyle strutStyle;
     strutStyle.setFontStyle(MakeFontStyle(txt.strutFontWeight, txt.strutFontStyle));
     strutStyle.setFontSize(SkDoubleToScalar(txt.strutFontSize));
