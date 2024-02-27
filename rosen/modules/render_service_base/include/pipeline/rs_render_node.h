@@ -518,6 +518,8 @@ public:
 #endif
 
     const std::shared_ptr<RSRenderContent> GetRenderContent() const;
+
+    void MarkParentNeedRegenerateChildren() const;
 protected:
     virtual void OnApplyModifiers() {}
 

@@ -890,6 +890,7 @@ void RSRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)
     if (!visitor) {
         return;
     }
+    ApplyModifiers();
     visitor->PrepareChildren(*this);
 }
 
@@ -1405,6 +1406,9 @@ void RSRenderNode::DumpNodeInfo(DfxString& log)
 
 bool RSRenderNode::ApplyModifiers()
 {
+    if (!isFullChildrenListValid_ || !isChildrenSorted_) {
+        UpdateFullChildrenListIfNeeded();
+    }
     // quick reject test
 #ifndef USE_ROSEN_DRAWING
     if (!RSRenderNode::IsDirty() || dirtyTypes_.empty()) {
@@ -1473,7 +1477,25 @@ bool RSRenderNode::ApplyModifiers()
         GetRenderProperties().GetBoundsHeight());
 
     // return true if positionZ changed
-    return GetRenderProperties().GetPositionZ() != prevPositionZ;
+    bool positionZChanged = GetRenderProperties().GetPositionZ() != prevPositionZ;
+    if (positionZChanged) {
+        auto parent = GetParent().lock();
+        if (parent == nullptr) {
+            return positionZChanged;
+        }
+        parent->isChildrenSorted_ = false;
+        parent->UpdateFullChildrenListIfNeeded();
+    }
+    return positionZChanged;
+}
+
+void RSRenderNode::MarkParentNeedRegenerateChildren() const
+{
+    auto parent = GetParent().lock();
+    if (parent == nullptr) {
+        return;
+    }
+    parent->isChildrenSorted_ = false;
 }
 
 void RSRenderNode::UpdateDrawableVec()
