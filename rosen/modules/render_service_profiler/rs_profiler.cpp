@@ -257,7 +257,7 @@ std::shared_ptr<RSRenderNode> RSProfiler::GetRenderNode(uint64_t id)
     return g_renderServiceContext ? g_renderServiceContext->GetMutableNodeMap().GetRenderNode(id) : nullptr;
 }
 
-void RSProfiler::SaveRdc(const ArgList& /*args*/)
+void RSProfiler::SaveRdc(const ArgList&)
 {
     g_rdcSent = false;
     RSSystemProperties::SetSaveRDC(true);
