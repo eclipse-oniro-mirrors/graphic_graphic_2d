@@ -106,8 +106,9 @@ public:
 
     static bool IsNearlyFullScreen(Drawing::RectI imageSize, int32_t canvasWidth, int32_t canvasHeight);
     void PostPartialFilterRenderTask(const std::shared_ptr<RSDrawingFilter>& filter, const Drawing::RectI& dstRect);
-    void PostPartialFilterRenderInit(const std::shared_ptr<RSDrawingFilter>& filter, const Drawing::RectI& dstRect,
-        int32_t canvasWidth, int32_t canvasHeight, bool& shouldClearFilteredCache);
+    void PostPartialFilterRenderInit(RSPaintFilterCanvas& canvas, const std::shared_ptr<RSDrawingFilter>& filter,
+        const Drawing::RectI& dstRect, bool& shouldClearFilteredCache);
+    uint8_t CalcDirectionBias(const Drawing::Matrix& mat);
 #endif
     enum CacheType : uint8_t {
         CACHE_TYPE_NONE              = 0,
@@ -120,6 +121,7 @@ public:
     // cache.
     void InvalidateCache(CacheType cacheType = CacheType::CACHE_TYPE_BOTH);
     void ReleaseCacheOffTree();
+    void StopFilterPartialRender();
 
     inline bool IsCacheValid() const
     {
@@ -133,6 +135,7 @@ private:
         bool isFirstInit_ = true;
         bool needClearSurface_ = false;
         bool isLastRender_ = false;
+        int surfaceFlag = -1;
         std::atomic<bool> isTaskRelease_ = false;
         std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> cachedFirstFilter_ = nullptr;
         std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> cachedSnapshotInTask_ = nullptr;
