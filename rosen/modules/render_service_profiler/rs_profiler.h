@@ -64,6 +64,7 @@ private:
     static bool IsPlaying();
 
     static void AwakeRenderServiceThread();
+
     static std::shared_ptr<RSRenderNode> GetRenderNode(uint64_t id);
     static void ProcessSendingRdc();
 
@@ -83,6 +84,7 @@ private:
     static void GetRoot(const ArgList& args);
     static void GetDeviceInfo(const ArgList& args);
 
+    static void SaveSkp(const ArgList& args);
     static void SaveRdc(const ArgList& args);
 
     static void RecordStart(const ArgList& args);

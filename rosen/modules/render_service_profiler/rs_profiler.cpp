@@ -24,6 +24,7 @@
 #include "rs_profiler_network.h"
 #include "rs_profiler_telemetry.h"
 #include "rs_profiler_utils.h"
+#include "rs_profiler_capture_recorder.h"
 
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_render_service_connection.h"
@@ -260,8 +261,17 @@ void RSProfiler::SaveRdc(const ArgList& /*args*/)
 {
     g_rdcSent = false;
     RSSystemProperties::SetSaveRDC(true);
+    RSSystemProperties::SetInstantRecording(true);
+
     AwakeRenderServiceThread();
     Respond("Recording current frame cmds (for .rdc) into : /data/default.drawing");
+}
+
+void RSProfiler::SaveSkp(const ArgList& /*args*/)
+{
+    RSSystemProperties::SetInstantRecording(true);
+    AwakeRenderServiceThread();
+    Respond("Recording current frame cmds into : /data/default.skp");
 }
 
 void RSProfiler::ProcessSendingRdc()
@@ -269,29 +279,13 @@ void RSProfiler::ProcessSendingRdc()
     if (!RSSystemProperties::GetSaveRDC() || g_rdcSent) {
         return;
     }
-
     AwakeRenderServiceThread();
 
-    const std::string path("/data/storage/el2/base/temp/HuaweiGraphicsProfiler");
-    if (!std::filesystem::exists(path)) {
+    if (!RSCaptureRecorder::PullAndSendRdc()) {
         return;
     }
-
-    std::vector<std::string> files;
-    for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(path)) {
-        const std::filesystem::path& path = entry.path();
-        if (path.extension() == "rdc") {
-            files.emplace_back(path.c_str());
-        }
-    }
-
-    const size_t filesRequired = 3;
-    if (files.size() == filesRequired) {
-        std::sort(files.begin(), files.end());
-        Network::SendRdc(files[1]);
-        RSSystemProperties::SetSaveRDC(false);
-        g_rdcSent = true;
-    }
+    RSSystemProperties::SetSaveRDC(false);
+    g_rdcSent = true;
 }
 
 void RSProfiler::RecordUpdate()
@@ -533,7 +527,7 @@ void RSProfiler::RecordStart(const ArgList& /*args*/)
     auto& nodeMap = g_renderServiceContext->GetMutableNodeMap();
     nodeMap.FilterNodeReplayed();
 
-    g_recordStartTime = 0.0f;
+    g_recordStartTime = 0.0;
 
     std::thread thread([]() {
         while (IsRecording()) {
@@ -682,7 +676,9 @@ void RSProfiler::PlaybackUpdate()
         RSRenderServiceConnection* connection = g_renderService->GetConnectionByPID(Utils::GetMockPid(pid));
         if (!connection) {
             const std::vector<pid_t>& pids = g_playbackFile.GetHeaderPIDList();
-            connection = g_renderService->GetConnectionByPID(Utils::GetMockPid(pids[0]));
+            if (!pids.empty()) {
+                connection = g_renderService->GetConnectionByPID(Utils::GetMockPid(pids[0]));
+            }
         }
         if (!connection) {
             continue;
@@ -752,10 +748,7 @@ void RSProfiler::PlaybackPause(const ArgList& /*args*/)
 
 void RSProfiler::PlaybackPauseAt(const ArgList& args)
 {
-    if (!g_playbackFile.IsOpen()) {
-        return;
-    }
-    if (g_playbackStartTime <= 0.0) {
+    if (!IsPlaying()) {
         return;
     }
 
@@ -783,10 +776,7 @@ void RSProfiler::PlaybackPauseClear(const ArgList& /*args*/)
 
 void RSProfiler::PlaybackResume(const ArgList& /*args*/)
 {
-    if (!g_playbackFile.IsOpen()) {
-        return;
-    }
-    if (g_playbackStartTime <= 0.0) {
+    if (!IsPlaying()) {
         return;
     }
 
@@ -825,6 +815,7 @@ RSProfiler::Command RSProfiler::GetCommand(const std::string& command)
         { "rssurface_pid", DumpNodeSurface },
         { "rscon_print", DumpConnections },
         { "save_rdc", SaveRdc },
+        { "save_skp", SaveSkp },
         { "info", GetDeviceInfo },
     };
 
