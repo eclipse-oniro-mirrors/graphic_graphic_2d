@@ -257,7 +257,7 @@ std::shared_ptr<RSRenderNode> RSProfiler::GetRenderNode(uint64_t id)
     return g_renderServiceContext ? g_renderServiceContext->GetMutableNodeMap().GetRenderNode(id) : nullptr;
 }
 
-void RSProfiler::SaveRdc(const ArgList&)
+void RSProfiler::SaveRdc(const ArgList& args)
 {
     g_rdcSent = false;
     RSSystemProperties::SetSaveRDC(true);
@@ -267,7 +267,7 @@ void RSProfiler::SaveRdc(const ArgList&)
     Respond("Recording current frame cmds (for .rdc) into : /data/default.drawing");
 }
 
-void RSProfiler::SaveSkp(const ArgList& /*args*/)
+void RSProfiler::SaveSkp(const ArgList& args)
 {
     RSSystemProperties::SetInstantRecording(true);
     AwakeRenderServiceThread();
@@ -323,7 +323,7 @@ void RSProfiler::Respond(const std::string& message)
     Network::SendMessage(message);
 }
 
-void RSProfiler::DumpConnections(const ArgList& /*args*/)
+void RSProfiler::DumpConnections(const ArgList& args)
 {
     if (g_renderService) {
         std::string out;
@@ -468,7 +468,7 @@ void RSProfiler::KillPid(const ArgList& args)
     }
 }
 
-void RSProfiler::GetRoot(const ArgList& /*args*/)
+void RSProfiler::GetRoot(const ArgList& args)
 {
     if (!g_renderServiceContext) {
         return;
@@ -510,12 +510,12 @@ void RSProfiler::GetRoot(const ArgList& /*args*/)
     Respond(out);
 }
 
-void RSProfiler::GetDeviceInfo(const ArgList& /*args*/)
+void RSProfiler::GetDeviceInfo(const ArgList& args)
 {
     Respond(RSTelemetry::GetDeviceInfoString());
 }
 
-void RSProfiler::RecordStart(const ArgList& /*args*/)
+void RSProfiler::RecordStart(const ArgList& args)
 {
     auto& imageMap = RSProfilerBase::GetImageCache();
     imageMap.clear();
@@ -541,7 +541,7 @@ void RSProfiler::RecordStart(const ArgList& /*args*/)
     Respond("Network: Record start");
 }
 
-void RSProfiler::RecordStop(const ArgList& /*args*/)
+void RSProfiler::RecordStop(const ArgList& args)
 {
     if (!IsRecording()) {
         return;
@@ -643,7 +643,7 @@ void RSProfiler::PlaybackStart(const ArgList& args)
     Respond("Playback start");
 }
 
-void RSProfiler::PlaybackStop(const ArgList& /*args*/)
+void RSProfiler::PlaybackStop(const ArgList& args)
 {
     if (g_playbackPid > 0) {
         auto& nodeMap = g_renderServiceContext->GetMutableNodeMap();
@@ -730,7 +730,7 @@ void RSProfiler::PlaybackPrepare(const ArgList& args)
     Respond("OK");
 }
 
-void RSProfiler::PlaybackPause(const ArgList& /*args*/)
+void RSProfiler::PlaybackPause(const ArgList& args)
 {
     if (!g_playbackFile.IsOpen()) {
         return;
@@ -768,13 +768,13 @@ void RSProfiler::PlaybackPauseAt(const ArgList& args)
     Respond("OK");
 }
 
-void RSProfiler::PlaybackPauseClear(const ArgList& /*args*/)
+void RSProfiler::PlaybackPauseClear(const ArgList& args)
 {
     RSProfilerBase::TimePauseClear();
     Respond("OK");
 }
 
-void RSProfiler::PlaybackResume(const ArgList& /*args*/)
+void RSProfiler::PlaybackResume(const ArgList& args)
 {
     if (!IsPlaying()) {
         return;
