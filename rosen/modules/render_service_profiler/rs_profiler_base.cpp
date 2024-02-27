@@ -28,6 +28,7 @@
 #include "rs_profiler_utils.h"
 
 #include "command/rs_base_node_command.h"
+#include "pipeline/rs_display_render_node.h"
 
 namespace OHOS::Rosen {
 
@@ -69,8 +70,8 @@ void RSProfilerBase::ParsedCmdCountAdd(uint32_t addon)
 bool RSProfilerBase::IsParcelMock(const Parcel& parcel)
 {
     // gcc C++ optimization error (?): this is not working without volatile
-    const volatile auto address = reinterpret_cast<intptr_t>(&parcel);
-    return ((address & 1) != 0);
+    const volatile auto address = reinterpret_cast<uint64_t>(&parcel);
+    return ((address & 1u) != 0);
 }
 
 std::shared_ptr<MessageParcel> RSProfilerBase::CopyParcel(const MessageParcel& parcel)
@@ -126,6 +127,12 @@ void RSProfilerBase::SpecParseModeSet(SpecParseMode mode)
 {
     g_mode = mode;
     if (g_mode == SpecParseMode::NONE) {
+        g_pidList.clear();
+        g_imageMap.clear();
+        g_pidValue = 0;
+        g_parentNode = 0;
+        g_parsedCmdCount = 0;
+        g_lastImagemapCount = 0;
         g_pauseAfterTime = 0;
         g_pauseCumulativeTime = 0;
     }
@@ -165,11 +172,8 @@ void RSProfilerBase::ReplayImageAdd(uint64_t uniqueId, void* image, uint32_t ima
         return;
     }
 
-    if (!image || !imageSize) {
-        return;
-    }
-
-    if (auto imageData = new uint8_t[imageSize]) {
+    if (image && (imageSize > 0)) {
+        auto imageData = new uint8_t[imageSize];
         memmove_s(imageData, imageSize, image, imageSize);
 
         ImageCacheRecord record;
@@ -252,24 +256,35 @@ uint32_t RSProfilerBase::GenerateUniqueImageId()
     return uniqueImageId++;
 }
 
-Vector4f RSProfilerBase::GetScreenRect()
+Vector4f RSProfilerBase::GetScreenRect(RSContext& context)
 {
-    // (user): Make it relevant via a display info request
-    static const Vector4f SCREEN_RECT(0.0, 0.0, 1344.0, 2772.0);
-    return SCREEN_RECT;
+    const std::shared_ptr<RSBaseRenderNode>& rootNode = context.GetGlobalRootRenderNode();
+    // without these checks device might get stuck on startup
+    if (!rootNode || (rootNode->GetChildrenCount() != 1)) {
+        return {};
+    }
+
+    std::shared_ptr<RSDisplayRenderNode> displayNode =
+        RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(rootNode->GetSortedChildren().front());
+    if (!displayNode) {
+        return {};
+    }
+
+    const RectI rect = displayNode->GetDirtyManager()->GetSurfaceRect();
+    return { rect.GetLeft(), rect.GetTop(), rect.GetRight(), rect.GetBottom() };
 }
 
 void RSProfilerBase::TransactionDataOnProcess(RSContext& context)
 {
-    if (RSProfilerBase::SpecParseModeGet() != SpecParseMode::READ) {
+    if (SpecParseModeGet() != SpecParseMode::READ) {
         return;
     }
 
     auto& nodeMap = context.GetNodeMap();
     std::shared_ptr<RSRenderNode> baseNode = nullptr;
     NodeId baseNodeId = 0;
-    const Vector4f screenRect = RSProfilerBase::GetScreenRect();
-    for (auto item : RSProfilerBase::SpecParsePidListGet()) {
+    const Vector4f screenRect = GetScreenRect(context);
+    for (auto item : SpecParsePidListGet()) {
         const NodeId nodeId = Utils::PatchNodeId(Utils::GetRootNodeId(item));
         auto node = nodeMap.GetRenderNode(nodeId);
         if (node) {
@@ -278,7 +293,7 @@ void RSProfilerBase::TransactionDataOnProcess(RSContext& context)
             RSProperties& properties = node->GetMutableRenderProperties();
             properties.SetBounds(screenRect);
             properties.SetFrame(screenRect);
-            auto parentNode = nodeMap.GetRenderNode(RSProfilerBase::SpecParseParentNodeGet());
+            auto parentNode = nodeMap.GetRenderNode(SpecParseParentNodeGet());
             if (parentNode) {
                 RSProperties& parentProperties = parentNode->GetMutableRenderProperties();
                 parentProperties.SetBounds(screenRect);
@@ -288,8 +303,8 @@ void RSProfilerBase::TransactionDataOnProcess(RSContext& context)
     }
 
     if (baseNode) {
-        BaseNodeCommandHelper::ClearChildren(context, RSProfilerBase::SpecParseParentNodeGet());
-        BaseNodeCommandHelper::AddChild(context, RSProfilerBase::SpecParseParentNodeGet(), baseNodeId, 0);
+        BaseNodeCommandHelper::ClearChildren(context, SpecParseParentNodeGet());
+        BaseNodeCommandHelper::AddChild(context, SpecParseParentNodeGet(), baseNodeId, 0);
     }
 }
 

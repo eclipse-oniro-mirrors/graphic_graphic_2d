@@ -93,7 +93,7 @@ public:
 
     static uint32_t GenerateUniqueImageId();
     static OHOS::Media::PixelMap* PixelMapUnmarshalling(Parcel& parcel);
-    static Vector4f GetScreenRect();
+    static Vector4f GetScreenRect(RSContext& context);
     static void TransactionDataOnProcess(RSContext& context);
 
 protected:
