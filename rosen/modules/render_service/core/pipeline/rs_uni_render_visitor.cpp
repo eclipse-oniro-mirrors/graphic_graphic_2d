@@ -376,7 +376,14 @@ void RSUniRenderVisitor::PrepareEffectNodeIfCacheReuse(const std::shared_ptr<RSR
     if (effectNode == nullptr || curSurfaceDirtyManager_ == nullptr) {
         return;
     }
-    effectNode->SetRotationChanged(curDisplayNode_->IsRotationChanged());
+    // set rotationChanged true when screen is rotating or folding/expanding screen.
+    if (curDisplayNode_->IsRotationChanged() || (!curDisplayNode_->IsRotationChanged() && doAnimate_)) {
+        effectNode->SetRotationChanged(true);
+        int invalidateTimes = 2; // node call invalidate cache 3 times in one frame.
+        effectNode->SetInvalidateTimesForRotation(invalidateTimes);
+    } else {
+        effectNode->SetRotationChanged(false);
+    }
     effectNode->SetVisitedFilterCacheStatus(curSurfaceDirtyManager_->IsCacheableFilterRectEmpty());
     effectNode->Update(*curSurfaceDirtyManager_, cacheRootNode, dirtyFlag_, prepareClipRect_);
     UpdateSubTreeInCache(effectNode, *effectNode->GetSortedChildren());
@@ -1828,14 +1835,17 @@ void RSUniRenderVisitor::PrepareEffectRenderNode(RSEffectRenderNode& node)
     bool dirtyFlag = dirtyFlag_;
     RectI prepareClipRect = prepareClipRect_;
     auto effectRegion = effectRegion_;
-
     effectRegion_ = node.InitializeEffectRegion();
-    auto parentNode = node.GetParent().lock();
-    node.SetRotationChanged(curDisplayNode_->IsRotationChanged());
-    if (curDisplayNode_->IsRotationChanged()) {
+    
+    // set rotationChanged true when screen is rotating or folding/expanding screen.
+    if (curDisplayNode_->IsRotationChanged() || (!curDisplayNode_->IsRotationChanged() && doAnimate_)) {
+        node.SetRotationChanged(true);
         int invalidateTimes = 2; // node call invalidate cache 3 times in one frame.
         node.SetInvalidateTimesForRotation(invalidateTimes);
+    } else {
+        node.SetRotationChanged(false);
     }
+    auto parentNode = node.GetParent().lock();
     node.SetVisitedFilterCacheStatus(curSurfaceDirtyManager_->IsCacheableFilterRectEmpty());
     dirtyFlag_ = node.Update(*curSurfaceDirtyManager_, parentNode, dirtyFlag_, prepareClipRect_);
 
@@ -2709,6 +2719,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode failed to get canvas.");
                 return;
             }
+            canvas_->SetDisableFilterCache(true);
             if (displayHasSecSurface_[mirrorNode->GetScreenId()]) {
 #ifndef USE_ROSEN_DRAWING
                 canvas_->clear(SK_ColorBLACK);
@@ -2717,6 +2728,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
 #endif
                 processor_->PostProcess();
                 RS_LOGI("RSUniRenderVisitor::ProcessDisplayRenderNode, set canvas to black because of security layer.");
+                canvas_->SetDisableFilterCache(false);
                 return;
             }
 #ifndef USE_ROSEN_DRAWING
@@ -2815,6 +2827,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 canvas_->RestoreToCount(saveCount);
             }
 #endif
+            canvas_->SetDisableFilterCache(false);
         } else {
             mirrorNode->SetOriginScreenRotation(node.GetOriginScreenRotation());
             processor_->ProcessDisplaySurface(*mirrorNode);
@@ -5908,17 +5921,16 @@ bool RSUniRenderVisitor::CheckIfNeedResetRotate()
 
 bool RSUniRenderVisitor::IsOutOfScreenRegion(RectI rect)
 {
-    int32_t boundWidth = static_cast<int32_t>(screenInfo_.width);
-    int32_t boundHeight = static_cast<int32_t>(screenInfo_.height);
-    ScreenRotation rotation = screenInfo_.rotation;
-    if (rotation == ScreenRotation::ROTATION_90 || rotation == ScreenRotation::ROTATION_270) {
-        std::swap(boundWidth, boundHeight);
+    if (!canvas_) {
+        return false;
     }
 
-    if (rect.GetRight() <= 0 ||
-        rect.GetLeft() >= boundWidth ||
-        rect.GetBottom() <= 0 ||
-        rect.GetTop() >= boundHeight) {
+    auto deviceClipBounds = canvas_->GetDeviceClipBounds();
+
+    if (rect.GetRight() <= deviceClipBounds.GetLeft() ||
+        rect.GetLeft() >= deviceClipBounds.GetRight() ||
+        rect.GetBottom() <= deviceClipBounds.GetTop() ||
+        rect.GetTop() >= deviceClipBounds.GetBottom()) {
         return true;
     }
 

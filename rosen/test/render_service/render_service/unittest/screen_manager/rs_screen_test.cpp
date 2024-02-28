@@ -213,8 +213,9 @@ HWTEST_F(RSScreenTest, SetPowerStatus_002, testing::ext::TestSize.Level1)
  */
 HWTEST_F(RSScreenTest, SetPowerStatus_003, testing::ext::TestSize.Level1)
 {
-    auto hdiOutput = HdiOutput::CreateHdiOutput(mockScreenId_);
-    auto rsScreen = std::make_unique<impl::RSScreen>(mockScreenId_, false, hdiOutput, nullptr);
+    ScreenId screenId = mockScreenId_;
+    auto hdiOutput = HdiOutput::CreateHdiOutput(screenId);
+    auto rsScreen = std::make_unique<impl::RSScreen>(screenId, false, hdiOutput, nullptr);
     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
     uint32_t status = GraphicDispPowerStatus::GRAPHIC_POWER_STATUS_ON_ADVANCED;
     rsScreen->SetPowerStatus(status);
@@ -229,8 +230,9 @@ HWTEST_F(RSScreenTest, SetPowerStatus_003, testing::ext::TestSize.Level1)
  */
 HWTEST_F(RSScreenTest, SetPowerStatus_004, testing::ext::TestSize.Level1)
 {
-    auto hdiOutput = HdiOutput::CreateHdiOutput(mockScreenId_);
-    auto rsScreen = std::make_unique<impl::RSScreen>(mockScreenId_, false, hdiOutput, nullptr);
+    ScreenId screenId = mockScreenId_;
+    auto hdiOutput = HdiOutput::CreateHdiOutput(screenId);
+    auto rsScreen = std::make_unique<impl::RSScreen>(screenId, false, hdiOutput, nullptr);
     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
     uint32_t status = GraphicDispPowerStatus::GRAPHIC_POWER_STATUS_OFF_ADVANCED;
     rsScreen->SetPowerStatus(status);
