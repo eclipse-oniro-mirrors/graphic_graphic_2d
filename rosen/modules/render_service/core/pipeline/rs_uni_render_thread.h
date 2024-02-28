@@ -17,6 +17,7 @@
 #define RENDER_SERVICE_PIPELINE_RS_UNI_RENDER_THREAD_H
 
 #include <memory>
+
 #include "common/rs_thread_handler.h"
 #include "common/rs_thread_looper.h"
 #include "drawable/rs_render_node_drawable.h"
@@ -29,6 +30,12 @@ class RSUniRenderThread {
 public:
     static RSUniRenderThread* Instance();
 
+    // disable copy and move
+    RSUniRenderThread(const RSUniRenderThread&) = delete;
+    RSUniRenderThread& operator=(const RSUniRenderThread&) = delete;
+    RSUniRenderThread(RSUniRenderThread&&) = delete;
+    RSUniRenderThread& operator=(RSUniRenderThread&&) = delete;
+
     void Init();
     void Start();
     void InitGrContext();
@@ -37,22 +44,19 @@ public:
     void PostTask(const std::function<void()>& task);
     void Render();
     const std::shared_ptr<RSBaseRenderEngine> GetRenderEngine() const;
+
 private:
     RSUniRenderThread();
     ~RSUniRenderThread() noexcept;
-    RSUniRenderThread(const RSUniRenderThread&) = delete;
-    RSUniRenderThread(const RSUniRenderThread&&) = delete;
-    RSUniRenderThread& operator=(const RSUniRenderThread&) = delete;
-    RSUniRenderThread& operator=(const RSUniRenderThread&&) = delete;
 
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
-    
+
     std::shared_ptr<RSBaseRenderEngine> uniRenderEngine_;
     std::shared_ptr<RSContext> context_;
-    std::shared_ptr<RSRenderNodeDrawable> rootNodeDrawable_;
+    std::unique_ptr<RSRenderNodeDrawable> rootNodeDrawable_;
     std::shared_ptr<RSPaintFilterCanvas> canvas_;
 };
-} // namespace OHOS
 } // namespace Rosen
+} // namespace OHOS
 #endif // RENDER_SERVICE_PIPELINE_RS_UNI_RENDER_THREAD_H

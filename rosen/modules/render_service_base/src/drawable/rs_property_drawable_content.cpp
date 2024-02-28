@@ -13,22 +13,29 @@
  * limitations under the License.
  */
 
-#include "drawable/rs_property_draw_cmd_list.h"
+#include "drawable/rs_property_drawable_content.h"
 
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_recording_canvas.h"
-#include "pipeline/rs_render_content.h"
+#include "pipeline/rs_render_node.h"
 #include "platform/common/rs_log.h"
 #include "property/rs_properties_painter.h"
 
 namespace OHOS::Rosen {
 
-void RSPropertyDrawCmdList::OnSync()
+void RSPropertyDrawableContent::OnSync()
 {
-    if (!needSyncDisplayList_) {
+    if (!needSync_) {
         return;
     }
     drawCmdList_ = std::move(stagingDrawCmdList_);
+    needSync_ = false;
+}
+
+RSDrawable::Ptr RSPropertyDrawableContent::CreateDrawable() const
+{
+    auto ptr = std::static_pointer_cast<const RSPropertyDrawableContent>(shared_from_this());
+    return std::make_shared<RSPropertyDrawableNG>(ptr);
 }
 
 class RSPropertyDrawCmdListRecorder {
@@ -79,89 +86,50 @@ protected:
 
 class RSPropertyDrawCmdListUpdater : public RSPropertyDrawCmdListRecorder {
 public:
-    explicit RSPropertyDrawCmdListUpdater(int width, int height, RSPropertyDrawCmdList* target)
+    explicit RSPropertyDrawCmdListUpdater(int width, int height, RSPropertyDrawableContent* target)
         : RSPropertyDrawCmdListRecorder(width, height), target_(target)
     {}
     ~RSPropertyDrawCmdListUpdater() override
     {
         if (recordingCanvas_) {
             target_->stagingDrawCmdList_ = EndRecordingAndReturnRecordingList();
-            target_->needSyncDisplayList_ = true;
+            target_->needSync_ = true;
         } else {
             ROSEN_LOGE("Update failed, recording canvas is null!");
         }
     }
 
 private:
-    RSPropertyDrawCmdList* target_;
+    RSPropertyDrawableContent* target_;
 };
 
-RSPropertyDrawCmdList::Ptr RSCustomModifierDrawCmdList::OnGenerate(
-    const RSRenderContent& content, RSModifierType type)
+RSDrawableContent::Ptr RSBackgroundContent::OnGenerate(const RSRenderNode& node)
 {
-    auto& drawCmdModifiers = content.drawCmdModifiers_;
-    auto itr = drawCmdModifiers.find(type);
-    if (itr == drawCmdModifiers.end() || itr->second.empty()) {
-        return nullptr;
-    }
     RSPropertyDrawCmdListRecorder generator(0, 0);
-    auto& recordingCanvas = generator.GetRecordingCanvas();
-    for (const auto& modifier : itr->second) {
-        // TODO: re-record content of modifier onto new canvas
-        if (auto property =
-                std::static_pointer_cast<RSRenderProperty<Drawing::DrawCmdListPtr>>(modifier->GetProperty())) {
-            auto& drawCmdList = property->GetRef();
-            recordingCanvas->DrawDrawFunc([drawCmdList](Drawing::Canvas* canvas, const Drawing::Rect* rect) -> void {
-                drawCmdList->Playback(*canvas, rect);
-            });
-        }
-    }
-    return std::make_shared<RSCustomModifierDrawCmdList>(generator.EndRecordingAndReturnRecordingList(), type);
-}
+    RSPropertiesPainter::DrawBackground(node.GetRenderProperties(), *generator.GetPaintFilterCanvas());
+    return std::make_unique<RSBackgroundContent>(generator.EndRecordingAndReturnRecordingList());
+};
 
-bool RSCustomModifierDrawCmdList::OnUpdate(const RSRenderContent& content)
+bool RSBackgroundContent::OnUpdate(const RSRenderNode& node)
 {
-    auto& drawCmdModifiers = content.drawCmdModifiers_;
-    auto itr = drawCmdModifiers.find(type_);
-    if (itr == drawCmdModifiers.end() || itr->second.empty()) {
-        return false;
-    }
     // regenerate stagingDrawCmdList_
     RSPropertyDrawCmdListUpdater updater(0, 0, this);
-    for (const auto& modifier : itr->second) {
-        // TODO: re-record content of modifier onto new canvas
-        (void)modifier;
-    }
+    RSPropertiesPainter::DrawBackground(node.GetRenderProperties(), *updater.GetPaintFilterCanvas());
     return true;
 }
 
-RSPropertyDrawCmdList::Ptr RSBackgroundDrawCmdList::OnGenerate(const RSRenderContent& content)
+RSDrawableContent::Ptr RSBorderContent::OnGenerate(const RSRenderNode& node)
 {
     RSPropertyDrawCmdListRecorder generator(0, 0);
-    RSPropertiesPainter::DrawBackground(content.GetRenderProperties(), *generator.GetPaintFilterCanvas());
-    return std::make_shared<RSPropertyDrawCmdList>(generator.EndRecordingAndReturnRecordingList());
+    RSPropertiesPainter::DrawBorder(node.GetRenderProperties(), *generator.GetPaintFilterCanvas());
+    return std::make_unique<RSBorderContent>(generator.EndRecordingAndReturnRecordingList());
 };
 
-bool RSBackgroundDrawCmdList::OnUpdate(const RSRenderContent& content)
+bool RSBorderContent::OnUpdate(const RSRenderNode& node)
 {
     // regenerate stagingDrawCmdList_
     RSPropertyDrawCmdListUpdater updater(0, 0, this);
-    RSPropertiesPainter::DrawBackground(content.GetRenderProperties(), *updater.GetPaintFilterCanvas());
-    return true;
-}
-
-RSPropertyDrawCmdList::Ptr RSBorderDrawCmdList::OnGenerate(const RSRenderContent& content)
-{
-    RSPropertyDrawCmdListRecorder generator(0, 0);
-    RSPropertiesPainter::DrawBorder(content.GetRenderProperties(), *generator.GetPaintFilterCanvas());
-    return std::make_shared<RSPropertyDrawCmdList>(generator.EndRecordingAndReturnRecordingList());
-};
-
-bool RSBorderDrawCmdList::OnUpdate(const RSRenderContent& content)
-{
-    // regenerate stagingDrawCmdList_
-    RSPropertyDrawCmdListUpdater updater(0, 0, this);
-    RSPropertiesPainter::DrawBorder(content.GetRenderProperties(), *updater.GetPaintFilterCanvas());
+    RSPropertiesPainter::DrawBorder(node.GetRenderProperties(), *updater.GetPaintFilterCanvas());
     return true;
 }
 

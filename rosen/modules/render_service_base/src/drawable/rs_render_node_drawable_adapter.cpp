@@ -13,12 +13,15 @@
  * limitations under the License.
  */
 
-#include "drawable/rs_drawable.h"
-
-#include "pipeline/rs_paint_filter_canvas.h"
-#include "pipeline/rs_recording_canvas.h"
+#include "drawable/rs_render_node_drawable_adapter.h"
 
 namespace OHOS::Rosen {
 
+// TODO: add dependency injection from render_service.so
+RSRenderNodeDrawableAdapter::Ptr RSRenderNodeDrawableAdapter::OnGenerate(std::shared_ptr<const RSRenderNode> node)
+{
+    // TODO: add adapter
+    return nullptr;
+}
 
 } // namespace OHOS::Rosen

@@ -25,14 +25,13 @@ class RSRootRenderNode;
 
 class RSRootRenderNodeDrawable : public RSRenderNodeDrawable {
 public:
-    explicit RSRootRenderNodeDrawable(const std::shared_ptr<RSRenderNode>& renderNode);    
+    explicit RSRootRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
     ~RSRootRenderNodeDrawable() override = default;
 
-    static std::shared_ptr<RSRenderNodeDrawable> OnGenerate(std::shared_ptr<RSRenderNode> node);
+    // static RSRenderNodeDrawable::Ptr OnGenerate(std::shared_ptr<const RSRenderNode>&& node);
     void OnDraw(RSPaintFilterCanvas& canvas) const override;
 
 private:
-    
 };
 
 } // namespace OHOS::Rosen

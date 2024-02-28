@@ -13,26 +13,27 @@
  * limitations under the License.
  */
 
-#ifndef RENDER_SERVICE_BASE_DRAWABLE_RS_PROPERTY_DRAWABLE_H
-#define RENDER_SERVICE_BASE_DRAWABLE_RS_PROPERTY_DRAWABLE_H
+#include "drawable/rs_property_drawable_ng.h"
 
-#include <memory>
-
-#include "drawable/rs_drawable.h"
+#include "drawable/rs_property_drawable_content.h"
+#include "pipeline/rs_paint_filter_canvas.h"
 
 namespace OHOS::Rosen {
-class RSPropertyDrawCmdList;
 
-class RSPropertyDrawableNG : RSDrawable {
-public:
-    RSPropertyDrawableNG(std::shared_ptr<RSPropertyDrawCmdList> cmdList);
-    ~RSPropertyDrawableNG() override = default;
+RSPropertyDrawableNG::RSPropertyDrawableNG(std::shared_ptr<const RSPropertyDrawableContent> cmdList)
+    : cmdList_(std::move(cmdList))
+{}
 
-    void OnDraw(RSPaintFilterCanvas& canvas) const override;
-
-protected:
-    std::shared_ptr<RSPropertyDrawCmdList> cmdList_;
-};
+void RSPropertyDrawableNG::OnDraw(RSPaintFilterCanvas& canvas) const
+{
+    if (cmdList_ == nullptr) {
+        return;
+    }
+    const auto& drawCmdList = cmdList_->drawCmdList_;
+    if (drawCmdList == nullptr) {
+        return;
+    }
+    drawCmdList->Playback(canvas);
+}
 
 } // namespace OHOS::Rosen
-#endif // RENDER_SERVICE_BASE_DRAWABLE_RS_PROPERTY_DRAWABLE_H
