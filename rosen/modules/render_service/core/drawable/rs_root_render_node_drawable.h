@@ -28,10 +28,12 @@ public:
     explicit RSRootRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
     ~RSRootRenderNodeDrawable() override = default;
 
-    // static RSRenderNodeDrawable::Ptr OnGenerate(std::shared_ptr<const RSRenderNode>&& node);
+    static RSRenderNodeDrawable::Ptr OnGenerate(std::shared_ptr<const RSRenderNode> node);
     void OnDraw(RSPaintFilterCanvas& canvas) const override;
 
 private:
+    using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::ROOT_NODE, OnGenerate>;
+    static Registrar instance_;
 };
 
 } // namespace OHOS::Rosen
