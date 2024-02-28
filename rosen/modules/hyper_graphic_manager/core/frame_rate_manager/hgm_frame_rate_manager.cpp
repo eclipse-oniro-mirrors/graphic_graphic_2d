@@ -689,9 +689,8 @@ VoteRange HgmFrameRateManager::ProcessRefreshRateVote()
         RS_TRACE_NAME_FMT("Process nothing, lastRate:[%d]", lastPendingRate);
         return std::make_pair(lastPendingRate, lastPendingRate);
     }
-    UpdateVoteRule();
     std::lock_guard<std::mutex> lock(voteMutex_);
-
+    UpdateVoteRule();
     uint32_t min = OLED_MIN_HZ;
     uint32_t max = OLED_MAX_HZ;
 
