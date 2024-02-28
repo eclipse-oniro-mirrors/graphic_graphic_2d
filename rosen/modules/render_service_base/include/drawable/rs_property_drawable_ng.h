@@ -21,24 +21,17 @@
 #include "drawable/rs_drawable.h"
 
 namespace OHOS::Rosen {
-class RSPropertyDrawCmdList;
+class RSPropertyDrawableContent;
 
-class RSPropertyDrawableNG : RSDrawable {
+class RSPropertyDrawableNG : public RSDrawable {
 public:
-    RSPropertyDrawableNG(std::unique_ptr<RSPropertyDrawCmdList> cmdList);
+    RSPropertyDrawableNG(std::shared_ptr<const RSPropertyDrawableContent> cmdList);
     ~RSPropertyDrawableNG() override = default;
 
     void OnDraw(RSPaintFilterCanvas& canvas) const override;
 
-    template<typename T>
-    RSDrawable::Ptr OnGenerate(const RSRenderNode& node)
-    {
-        return std::make_shared<RSPropertyDrawableNG>(T::OnGenerate(node));
-    }
-
 protected:
-    std::unique_ptr <RSPropertyDrawCmdList> cmdList_;
+    std::shared_ptr<const RSPropertyDrawableContent> cmdList_;
 };
-
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_DRAWABLE_RS_PROPERTY_DRAWABLE_H

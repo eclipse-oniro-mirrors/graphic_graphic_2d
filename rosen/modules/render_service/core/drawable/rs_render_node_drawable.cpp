@@ -28,29 +28,29 @@ RSRenderNodeDrawable::RSRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&&
     : renderNode_(std::move(node))
 {}
 
-RSRenderNodeDrawable::Ptr RSRenderNodeDrawable::OnGenerate(std::shared_ptr<const RSRenderNode> node)
-{
-    if (node == nullptr) {
-        return nullptr;
-    }
-    switch (node->GetType()) {
-        case RSRenderNodeType::RS_NODE:
-            return std::make_unique<RSRenderNodeDrawable>(std::move(node));
-        case RSRenderNodeType::DISPLAY_NODE:
-            return RSDisplayRenderNodeDrawable::OnGenerate(std::move(node));
-        case RSRenderNodeType::SURFACE_NODE:
-            return RSSurfaceRenderNodeDrawable::OnGenerate(std::move(node));
-        case RSRenderNodeType::CANVAS_NODE:
-        case RSRenderNodeType::CANVAS_DRAWING_NODE:
-            return RSCanvasRenderNodeDrawable::OnGenerate(std::move(node));
-        case RSRenderNodeType::EFFECT_NODE:
-            return RSEffectRenderNodeDrawable::OnGenerate(std::move(node));
-        case RSRenderNodeType::ROOT_NODE:
-            return RSRootRenderNodeDrawable::OnGenerate(std::move(node));
-        default:
-            return nullptr;
-    }
-}
+// RSRenderNodeDrawable::Ptr RSRenderNodeDrawable::OnGenerate(std::shared_ptr<const RSRenderNode> node)
+// {
+//     if (node == nullptr) {
+//         return nullptr;
+//     }
+//     switch (node->GetType()) {
+//         case RSRenderNodeType::RS_NODE:
+//             return std::make_unique<RSRenderNodeDrawable>(std::move(node));
+//         case RSRenderNodeType::DISPLAY_NODE:
+//             return RSDisplayRenderNodeDrawable::OnGenerate(std::move(node));
+//         case RSRenderNodeType::SURFACE_NODE:
+//             return RSSurfaceRenderNodeDrawable::OnGenerate(std::move(node));
+//         case RSRenderNodeType::CANVAS_NODE:
+//         case RSRenderNodeType::CANVAS_DRAWING_NODE:
+//             return RSCanvasRenderNodeDrawable::OnGenerate(std::move(node));
+//         case RSRenderNodeType::EFFECT_NODE:
+//             return RSEffectRenderNodeDrawable::OnGenerate(std::move(node));
+//         case RSRenderNodeType::ROOT_NODE:
+//             return RSRootRenderNodeDrawable::OnGenerate(std::move(node));
+//         default:
+//             return nullptr;
+//     }
+// }
 
 void RSRenderNodeDrawable::OnDraw(RSPaintFilterCanvas& canvas) const
 {

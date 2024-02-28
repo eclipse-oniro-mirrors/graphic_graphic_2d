@@ -13,25 +13,23 @@
  * limitations under the License.
  */
 
-#include "drawable/rs_drawable.h"
+#include "drawable/rs_drawable_content.h"
 
-#include "drawable/rs_render_node_drawable.h"
-#include "pipeline/rs_paint_filter_canvas.h"
-#include "pipeline/rs_recording_canvas.h"
+#include "drawable/rs_render_node_drawable_adapter.h"
 #include "pipeline/rs_render_node.h"
 
 namespace OHOS::Rosen {
 
-// ==================== RSChildrenDrawable =====================
-std::shared_ptr<RSDrawable> RSChildrenDrawable::OnGenerate(const RSRenderNode& node)
+// ==================== RSChildrenDrawableContent =====================
+RSDrawableContent::Ptr RSChildrenDrawableContent::OnGenerate(const RSRenderNode& node)
 {
-    if (auto ret = std::make_shared<RSChildrenDrawable>(); ret->OnUpdate(node)) {
+    if (auto ret = std::make_shared<RSChildrenDrawableContent>(); ret->OnUpdate(node)) {
         return ret;
     }
     return nullptr;
 }
 
-bool RSChildrenDrawable::OnUpdate(const RSRenderNode& node)
+bool RSChildrenDrawableContent::OnUpdate(const RSRenderNode& node)
 {
     needSync_ = true;
     stagingChildrenDrawables_.clear();
@@ -42,12 +40,12 @@ bool RSChildrenDrawable::OnUpdate(const RSRenderNode& node)
     }
     stagingChildrenDrawables_.clear();
     for (auto& child : *children) {
-        stagingChildrenDrawables_.push_back(RSRenderNodeDrawable::OnGenerate(child));
+        stagingChildrenDrawables_.push_back(RSRenderNodeDrawableAdapter::OnGenerate(child));
     }
     return true;
 }
 
-void RSChildrenDrawable::OnSync()
+void RSChildrenDrawableContent::OnSync()
 {
     if (!needSync_) {
         return;
@@ -56,28 +54,27 @@ void RSChildrenDrawable::OnSync()
     needSync_ = false;
 }
 
-void RSChildrenDrawable::OnDraw(RSPaintFilterCanvas& canvas) const
+RSDrawable::Ptr RSChildrenDrawableContent::CreateDrawable() const
 {
-    for (auto& drawable : childrenDrawables_) {
-        drawable->OnDraw(canvas);
-    }
+    auto ptr = std::static_pointer_cast<const RSChildrenDrawableContent>(shared_from_this());
+    return std::make_shared<RSChildrenDrawable>(ptr);
 }
 
-// ==================== RSCustomModifierDrawable ===================
-RSDrawable::Ptr RSCustomModifierDrawable::OnGenerate(const RSRenderNode& node, RSModifierType type)
+// ==================== RSCustomModifierDrawableContent ===================
+RSDrawableContent::Ptr RSCustomModifierDrawableContent::OnGenerate(const RSRenderNode& node, RSModifierType type)
 {
     const auto& drawCmdModifiers = node.GetDrawCmdModifiers();
     auto itr = drawCmdModifiers.find(type);
     if (itr == drawCmdModifiers.end() || itr->second.empty()) {
         return nullptr;
     }
-    if (auto ret = std::make_shared<RSCustomModifierDrawable>(type); ret->OnUpdate(node)) {
+    if (auto ret = std::make_shared<RSCustomModifierDrawableContent>(type); ret->OnUpdate(node)) {
         return ret;
     }
     return nullptr;
 }
 
-bool RSCustomModifierDrawable::OnUpdate(const RSRenderNode& node)
+bool RSCustomModifierDrawableContent::OnUpdate(const RSRenderNode& node)
 {
     stagingDrawCmdList_.clear();
     needSync_ = true;
@@ -100,7 +97,7 @@ bool RSCustomModifierDrawable::OnUpdate(const RSRenderNode& node)
     return true;
 }
 
-void RSCustomModifierDrawable::OnSync()
+void RSCustomModifierDrawableContent::OnSync()
 {
     if (!needSync_) {
         return;
@@ -109,10 +106,9 @@ void RSCustomModifierDrawable::OnSync()
     needSync_ = false;
 }
 
-void RSCustomModifierDrawable::OnDraw(RSPaintFilterCanvas& canvas) const
+RSDrawable::Ptr RSCustomModifierDrawableContent::CreateDrawable() const
 {
-    for (auto& drawCmdList : drawCmdList_) {
-        drawCmdList->Playback(canvas);
-    }
+    auto ptr = std::static_pointer_cast<const RSCustomModifierDrawableContent>(shared_from_this());
+    return std::make_shared<RSCustomModifierDrawable>(ptr);
 }
 } // namespace OHOS::Rosen

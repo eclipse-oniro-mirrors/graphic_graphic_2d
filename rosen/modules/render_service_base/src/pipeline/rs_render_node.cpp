@@ -2974,9 +2974,9 @@ void RSRenderNode::OnSync()
     // Sync drawCmdList
     drawCmdList_ = std::move(stagingDrawCmdList_);
     // Sync each drawable. PLANNING: use dirty mask to only sync changed properties
-    std::for_each(drawableVec_.begin(), drawableVec_.end(), [](auto& displayList) {
-        if (displayList) {
-            displayList->OnSync();
+    std::for_each(contentVec_.begin(), contentVec_.end(), [](auto& drawableContent) {
+        if (drawableContent) {
+            drawableContent->OnSync();
         }
     });
     needSync_ = false;

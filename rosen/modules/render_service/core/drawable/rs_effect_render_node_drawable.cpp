@@ -23,10 +23,10 @@ RSEffectRenderNodeDrawable::RSEffectRenderNodeDrawable(std::shared_ptr<const RSR
     : RSRenderNodeDrawable(std::move(node))
 {}
 
-RSRenderNodeDrawable::Ptr RSEffectRenderNodeDrawable::OnGenerate(std::shared_ptr<const RSRenderNode>&& node)
-{
-    return std::make_unique<RSEffectRenderNodeDrawable>(std::move(node));
-}
+// RSRenderNodeDrawable::Ptr RSEffectRenderNodeDrawable::OnGenerate(std::shared_ptr<const RSRenderNode>&& node)
+// {
+//     return std::make_unique<RSEffectRenderNodeDrawable>(std::move(node));
+// }
 
 void RSEffectRenderNodeDrawable::OnDraw(RSPaintFilterCanvas& canvas) const
 {

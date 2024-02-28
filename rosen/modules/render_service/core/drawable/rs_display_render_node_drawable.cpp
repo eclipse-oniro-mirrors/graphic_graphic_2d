@@ -23,10 +23,10 @@ RSDisplayRenderNodeDrawable::RSDisplayRenderNodeDrawable(std::shared_ptr<const R
     : RSRenderNodeDrawable(std::move(node))
 {}
 
-RSRenderNodeDrawable::Ptr RSDisplayRenderNodeDrawable::OnGenerate(std::shared_ptr<const RSRenderNode>&& node)
-{
-    return std::make_unique<RSDisplayRenderNodeDrawable>(std::move(node));
-}
+// RSRenderNodeDrawable::Ptr RSDisplayRenderNodeDrawable::OnGenerate(std::shared_ptr<const RSRenderNode>&& node)
+// {
+//     return std::make_unique<RSDisplayRenderNodeDrawable>(std::move(node));
+// }
 
 void RSDisplayRenderNodeDrawable::OnDraw(RSPaintFilterCanvas& canvas) const
 {

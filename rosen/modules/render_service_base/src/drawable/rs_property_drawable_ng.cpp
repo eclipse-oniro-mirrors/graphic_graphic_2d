@@ -15,13 +15,12 @@
 
 #include "drawable/rs_property_drawable_ng.h"
 
-#include "drawable/rs_property_draw_cmd_list.h"
-
+#include "drawable/rs_property_drawable_content.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 
 namespace OHOS::Rosen {
 
-RSPropertyDrawableNG::RSPropertyDrawableNG(std::unique_ptr<RSPropertyDrawCmdList> cmdList)
+RSPropertyDrawableNG::RSPropertyDrawableNG(std::shared_ptr<const RSPropertyDrawableContent> cmdList)
     : cmdList_(std::move(cmdList))
 {}
 

@@ -13,19 +13,16 @@
  * limitations under the License.
  */
 
-#ifndef RENDER_SERVICE_BASE_DRAWABLE_RS_DRAWABLE_H
-#define RENDER_SERVICE_BASE_DRAWABLE_RS_DRAWABLE_H
+#ifndef RENDER_SERVICE_BASE_DRAWABLE_RS_DRAWABLE_CONTENT_H
+#define RENDER_SERVICE_BASE_DRAWABLE_RS_DRAWABLE_CONTENT_H
 
 #include <functional>
-#include <memory>
-#include <vector>
+#include <drawable/rs_drawable.h>
 
 namespace OHOS::Rosen {
 class RSRenderNode;
-class RSPaintFilterCanvas;
-
 // NOTE: MUST update DrawableGeneratorLut in rs_property_drawable.cpp when new slots are added
-enum class RSDrawableSlot : uint8_t {
+enum class RSDrawableContentSlot : uint8_t {
     INVALID = 0,
     SAVE_ALL,
 
@@ -92,15 +89,16 @@ enum class RSDrawableSlot : uint8_t {
     MAX                      = RESTORE_ALL + 1,
 };
 
-// Pure virtual base class
-class RSDrawable {
+
+// pure virtual base class
+class RSDrawableContent : public std::enable_shared_from_this<RSDrawableContent> {
 public:
-    RSDrawable() = default;
-    virtual ~RSDrawable() = default;
+    RSDrawableContent() = default;
+    virtual ~RSDrawableContent() = default;
 
     // type definition
-    using Ptr = std::shared_ptr<RSDrawable>;
-    using Vec = std::array<Ptr, static_cast<size_t>(RSDrawableSlot::MAX)>;
+    using Ptr = std::shared_ptr<RSDrawableContent>;
+    using Vec = std::array<Ptr, static_cast<size_t>(RSDrawableContentSlot::MAX)>;
     using Generator = std::function<Ptr(const RSRenderNode&)>;
 
     // Call on first create, return nullptr if no need to create
@@ -113,46 +111,48 @@ public:
     }
 
     // Call on thread sync
-    virtual void OnSync() {}
+    virtual void OnSync() = 0;
 
-    // Call in RenderThread during drawing
-    virtual void OnDraw(RSPaintFilterCanvas& canvas) const = 0;
+    virtual RSDrawable::Ptr CreateDrawable() const = 0;
 
     // not copyable and moveable
-    RSDrawable(const RSDrawable&) = delete;
-    RSDrawable(const RSDrawable&&) = delete;
-    RSDrawable& operator=(const RSDrawable&) = delete;
-    RSDrawable& operator=(const RSDrawable&&) = delete;
+    RSDrawableContent(const RSDrawableContent&) = delete;
+    RSDrawableContent(const RSDrawableContent&&) = delete;
+    RSDrawableContent& operator=(const RSDrawableContent&) = delete;
+    RSDrawableContent& operator=(const RSDrawableContent&&) = delete;
 };
 
-class RSRenderNodeDrawable;
-class RSChildrenDrawable : public RSDrawable {
+// RSChildrenDrawable, for drawing children of RSRenderNode, updates on child add/remove
+class RSRenderNodeDrawableAdapter;
+class RSChildrenDrawableContent : public RSDrawableContent {
 public:
-    RSChildrenDrawable() = default;
-    ~RSChildrenDrawable() override = default;
+    RSChildrenDrawableContent() = default;
+    ~RSChildrenDrawableContent() override = default;
 
-    static std::shared_ptr<RSDrawable> OnGenerate(const RSRenderNode& node);
+    static RSDrawableContent::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& content) override;
     void OnSync() override;
-    void OnDraw(RSPaintFilterCanvas& canvas) const override;
+    RSDrawable::Ptr CreateDrawable() const override;
 
 private:
     bool needSync_ = false;
-    std::vector<std::unique_ptr<RSRenderNodeDrawable>> childrenDrawables_;
-    std::vector<std::unique_ptr<RSRenderNodeDrawable>> stagingChildrenDrawables_;
+    std::vector<std::unique_ptr<RSRenderNodeDrawableAdapter>> childrenDrawables_;
+    std::vector<std::unique_ptr<RSRenderNodeDrawableAdapter>> stagingChildrenDrawables_;
+    friend class RSChildrenDrawable;
 };
 
+// RSChildrenDrawable, for drawing custom modifiers
 enum class RSModifierType : int16_t;
 namespace Drawing {
 class DrawCmdList;
 }
-class RSCustomModifierDrawable : public RSDrawable {
+class RSCustomModifierDrawableContent : public RSDrawableContent {
 public:
-    RSCustomModifierDrawable(RSModifierType type) : type_(type) {}
-    static RSDrawable::Ptr OnGenerate(const RSRenderNode& content, RSModifierType type);
+    RSCustomModifierDrawableContent(RSModifierType type) : type_(type) {}
+    static RSDrawableContent::Ptr OnGenerate(const RSRenderNode& content, RSModifierType type);
     bool OnUpdate(const RSRenderNode& node) override;
     void OnSync() override;
-    void OnDraw(RSPaintFilterCanvas& canvas) const override;
+    RSDrawable::Ptr CreateDrawable() const override;
 
 private:
     RSModifierType type_;
@@ -160,7 +160,7 @@ private:
     bool needSync_ = false;
     std::vector<std::shared_ptr<Drawing::DrawCmdList>> drawCmdList_;
     std::vector<std::shared_ptr<Drawing::DrawCmdList>> stagingDrawCmdList_;
+    friend class RSCustomModifierDrawable;
 };
-
 } // namespace OHOS::Rosen
-#endif // RENDER_SERVICE_BASE_DRAWABLE_RS_DRAWABLE_H
+#endif // RENDER_SERVICE_BASE_DRAWABLE_RS_DRAWABLE_CONTENT_H

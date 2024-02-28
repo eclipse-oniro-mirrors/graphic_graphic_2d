@@ -32,7 +32,7 @@
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
 #include "common/rs_rect.h"
-#include "drawable/rs_drawable.h"
+#include "drawable/rs_drawable_content.h"
 #include "memory/rs_dfx_string.h"
 #include "modifier/rs_render_modifier.h"
 #include "pipeline/rs_dirty_region_manager.h"
@@ -743,7 +743,7 @@ private:
     bool needSync_ = false;
     std::shared_ptr<Drawing::DrawCmdList> drawCmdList_;
     std::shared_ptr<Drawing::DrawCmdList> stagingDrawCmdList_;
-    RSDrawable::Vec drawableVec_;
+    RSDrawableContent::Vec contentVec_;
 
     void OnSync();
 
