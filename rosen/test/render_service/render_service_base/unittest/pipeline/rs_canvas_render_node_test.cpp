@@ -49,6 +49,7 @@ void RSCanvasRenderNodeTest::SetUpTestCase()
 void RSCanvasRenderNodeTest::TearDownTestCase()
 {
     delete canvas_;
+    canvas_ = nullptr;
 }
 void RSCanvasRenderNodeTest::SetUp() {}
 void RSCanvasRenderNodeTest::TearDown() {}
