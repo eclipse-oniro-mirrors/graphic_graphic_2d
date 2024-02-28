@@ -25,10 +25,10 @@ class RSEffectRenderNode;
 
 class RSEffectRenderNodeDrawable : public RSRenderNodeDrawable {
 public:
-    explicit RSEffectRenderNodeDrawable(const std::shared_ptr<RSRenderNode>& renderNode);    
+    explicit RSEffectRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);    
     ~RSEffectRenderNodeDrawable() override = default;
 
-    static std::shared_ptr<RSRenderNodeDrawable> OnGenerate(std::shared_ptr<RSRenderNode> node);
+    static RSRenderNodeDrawable::Ptr OnGenerate(std::shared_ptr<const RSRenderNode>&& node);
     void OnDraw(RSPaintFilterCanvas& canvas) const override;
 
 private:

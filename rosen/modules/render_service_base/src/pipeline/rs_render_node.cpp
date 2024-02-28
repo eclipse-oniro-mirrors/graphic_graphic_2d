@@ -2967,15 +2967,19 @@ void RSRenderNode::SetLastIsNeedAssignToSubThread(bool lastIsNeedAssignToSubThre
 
 void RSRenderNode::OnSync()
 {
-    if (needSyncDisplayList_) {
-        drawCmdList_ = std::move(stagingDrawCmdList_);
+    // PLANNING: distinguish drawCmdList need sync and drawable need sync
+    if (!needSync_) {
+        return;
     }
-    // PLANNING: use dirty mask to only sync changed properties
-    std::for_each(displayListVec_.begin(), displayListVec_.end(), [](auto& displayList) {
+    // Sync drawCmdList
+    drawCmdList_ = std::move(stagingDrawCmdList_);
+    // Sync each drawable. PLANNING: use dirty mask to only sync changed properties
+    std::for_each(drawableVec_.begin(), drawableVec_.end(), [](auto& displayList) {
         if (displayList) {
             displayList->OnSync();
         }
     });
+    needSync_ = false;
 }
 } // namespace Rosen
 } // namespace OHOS

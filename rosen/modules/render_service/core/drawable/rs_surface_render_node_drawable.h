@@ -25,10 +25,10 @@ class RSSurfaceRenderNode;
 
 class RSSurfaceRenderNodeDrawable : public RSRenderNodeDrawable {
 public:
-    explicit RSSurfaceRenderNodeDrawable(const std::shared_ptr<RSRenderNode>& renderNode);    
+    explicit RSSurfaceRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);    
     ~RSSurfaceRenderNodeDrawable() override = default;
 
-    static std::shared_ptr<RSRenderNodeDrawable> OnGenerate(std::shared_ptr<RSRenderNode> node);
+    static RSRenderNodeDrawable::Ptr OnGenerate(std::shared_ptr<const RSRenderNode>&& node);
     void OnDraw(RSPaintFilterCanvas& canvas) const override;
 
 private:

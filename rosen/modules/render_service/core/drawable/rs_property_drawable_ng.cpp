@@ -21,7 +21,7 @@
 
 namespace OHOS::Rosen {
 
-RSPropertyDrawableNG::RSPropertyDrawableNG(std::shared_ptr<RSPropertyDrawCmdList> cmdList)
+RSPropertyDrawableNG::RSPropertyDrawableNG(std::unique_ptr<RSPropertyDrawCmdList> cmdList)
     : cmdList_(std::move(cmdList))
 {}
 

@@ -27,13 +27,9 @@ RSUniRenderThread* RSUniRenderThread::Instance()
     return &instance;
 }
 
-RSUniRenderThread::RSUniRenderThread()
-{
-}
+RSUniRenderThread::RSUniRenderThread() {}
 
-RSUniRenderThread::~RSUniRenderThread() noexcept
-{
-}
+RSUniRenderThread::~RSUniRenderThread() noexcept {}
 
 void RSUniRenderThread::Start()
 {
@@ -50,7 +46,7 @@ void RSUniRenderThread::Init()
             RS_LOGE("rootNode is nullptr");
             return;
         }
-        rootNodeDrawable_ = RSRenderNodeDrawable::OnGenerate(rootNode);
+        rootNodeDrawable_ = std::make_unique<RSRenderNodeDrawable>(rootNode);
     }
     InitGrContext();
 }

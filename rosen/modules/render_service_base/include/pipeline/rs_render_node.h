@@ -27,14 +27,13 @@
 #include <variant>
 #include <vector>
 
-#include "drawable/rs_property_draw_cmd_list.h"
-#include "memory/rs_dfx_string.h"
-
 #include "animation/rs_animation_manager.h"
 #include "animation/rs_frame_rate_range.h"
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
 #include "common/rs_rect.h"
+#include "drawable/rs_drawable.h"
+#include "memory/rs_dfx_string.h"
 #include "modifier/rs_render_modifier.h"
 #include "pipeline/rs_dirty_region_manager.h"
 #include "pipeline/rs_paint_filter_canvas.h"
@@ -58,7 +57,9 @@ class SkCanvas;
 #endif
 namespace OHOS {
 namespace Rosen {
+namespace Drawing {
 class DrawCmdList;
+}
 class RSContext;
 class RSNodeVisitor;
 class RSCommand;
@@ -68,7 +69,6 @@ class VulkanCleanupHelper;
 }
 class RSB_EXPORT RSRenderNode : public std::enable_shared_from_this<RSRenderNode>  {
 public:
-
     using WeakPtr = std::weak_ptr<RSRenderNode>;
     using SharedPtr = std::shared_ptr<RSRenderNode>;
     static inline constexpr RSRenderNodeType Type = RSRenderNodeType::RS_NODE;
@@ -740,10 +740,10 @@ private:
     void OnRegister(const std::weak_ptr<RSContext>& context);
 
     // Test pipeline
-    bool needSyncDisplayList_ = false;
+    bool needSync_ = false;
     std::shared_ptr<Drawing::DrawCmdList> drawCmdList_;
     std::shared_ptr<Drawing::DrawCmdList> stagingDrawCmdList_;
-    RSPropertyDrawCmdList::Vec displayListVec_;
+    RSDrawable::Vec drawableVec_;
 
     void OnSync();
 

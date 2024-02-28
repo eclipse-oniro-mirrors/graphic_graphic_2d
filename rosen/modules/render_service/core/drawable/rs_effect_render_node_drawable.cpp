@@ -19,13 +19,13 @@
 #include "pipeline/rs_paint_filter_canvas.h"
 
 namespace OHOS::Rosen {
-RSEffectRenderNodeDrawable::RSEffectRenderNodeDrawable(const std::shared_ptr<RSRenderNode>& renderNode)
-    : RSRenderNodeDrawable(renderNode)
+RSEffectRenderNodeDrawable::RSEffectRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node)
+    : RSRenderNodeDrawable(std::move(node))
 {}
 
-std::shared_ptr<RSRenderNodeDrawable> RSEffectRenderNodeDrawable::OnGenerate(std::shared_ptr<RSRenderNode> node)
+RSRenderNodeDrawable::Ptr RSEffectRenderNodeDrawable::OnGenerate(std::shared_ptr<const RSRenderNode>&& node)
 {
-    return std::make_shared<RSEffectRenderNodeDrawable>(std::move(node));
+    return std::make_unique<RSEffectRenderNodeDrawable>(std::move(node));
 }
 
 void RSEffectRenderNodeDrawable::OnDraw(RSPaintFilterCanvas& canvas) const

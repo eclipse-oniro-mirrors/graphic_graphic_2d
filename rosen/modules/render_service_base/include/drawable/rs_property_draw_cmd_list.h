@@ -16,84 +16,12 @@
 #ifndef RENDER_SERVICE_BASE_DRAWABLE_RS_PROPERTY_DRAW_CMD_LIST_H
 #define RENDER_SERVICE_BASE_DRAWABLE_RS_PROPERTY_DRAW_CMD_LIST_H
 
-#include <bitset>
 #include <memory>
-#include <set>
-#include <vector>
 
 #include "recording/draw_cmd_list.h"
 
 namespace OHOS::Rosen {
-class RSRenderContent;
-enum class RSModifierType : int16_t;
-
-// NOTE: MUST update DrawableGeneratorLut in rs_property_drawable.cpp when new slots are added
-enum class RSPropertyDrawCmdListSlot : uint8_t {
-    INVALID = 0,
-    SAVE_ALL,
-
-    // Bounds Geometry
-    BOUNDS_MATRIX,
-    ALPHA,
-    MASK,
-    TRANSITION,
-    ENV_FOREGROUND_COLOR,
-    SHADOW,
-    OUTLINE,
-
-    // BG properties in Bounds Clip
-    BG_SAVE_BOUNDS,
-    CLIP_TO_BOUNDS,
-    BLEND_MODE,
-    BACKGROUND_COLOR,
-    BACKGROUND_SHADER,
-    BACKGROUND_IMAGE,
-    BACKGROUND_FILTER,
-    USE_EFFECT,
-    BACKGROUND_STYLE,
-    DYNAMIC_LIGHT_UP,
-    ENV_FOREGROUND_COLOR_STRATEGY,
-    BG_RESTORE_BOUNDS,
-
-    // Frame Geometry
-    SAVE_FRAME,
-    FRAME_OFFSET,
-    CLIP_TO_FRAME,
-    CONTENT_STYLE,
-    CHILDREN,
-    FOREGROUND_STYLE,
-    RESTORE_FRAME,
-
-    // FG properties in Bounds clip
-    FG_SAVE_BOUNDS,
-    FG_CLIP_TO_BOUNDS,
-    BINARIZATION,
-    COLOR_FILTER,
-    LIGHT_UP_EFFECT,
-    FOREGROUND_FILTER,
-    FOREGROUND_COLOR,
-    FG_RESTORE_BOUNDS,
-
-    // No clip (unless ClipToBounds is set)
-    POINT_LIGHT,
-    BORDER,
-    OVERLAY,
-    PARTICLE_EFFECT,
-    PIXEL_STRETCH,
-
-    RESTORE_BLEND_MODE,
-    RESTORE_ALL,
-
-    // Annotations: Please remember to update this when new slots are added.
-    // NOTE: MAX and *_END enums are using the one-past-the-end style.
-    BG_PROPERTIES_BEGIN      = BACKGROUND_COLOR,
-    BG_PROPERTIES_END        = ENV_FOREGROUND_COLOR_STRATEGY + 1,
-    CONTENT_PROPERTIES_BEGIN = FRAME_OFFSET,
-    CONTENT_PROPERTIES_END   = FOREGROUND_STYLE + 1,
-    FG_PROPERTIES_BEGIN      = BINARIZATION,
-    FG_PROPERTIES_END        = FOREGROUND_COLOR + 1,
-    MAX                      = RESTORE_ALL + 1,
-};
+class RSRenderNode;
 
 class RSPropertyDrawCmdList {
 public:
@@ -101,21 +29,24 @@ public:
     virtual ~RSPropertyDrawCmdList() = default;
 
     // type definition
-    using Ptr = std::shared_ptr<RSPropertyDrawCmdList>;
-    using Vec = std::array<Ptr, static_cast<size_t>(RSPropertyDrawCmdListSlot::MAX)>;
-    using Generator = std::function<Ptr(const RSRenderContent&)>;
+    using Ptr = std::unique_ptr<RSPropertyDrawCmdList>;
+    // using Vec = std::array<Ptr, static_cast<size_t>(RSPropertyDrawCmdListSlot::MAX)>;
+    // using Generator = std::function<Ptr(const RSRenderContent&)>;
 
     // every child class should have this
-    // static RSPropertyDrawCmdList::Ptr OnGenerate(const RSRenderContent& content) { return nullptr; };
+    // static RSPropertyDrawCmdList::Ptr OnGenerate(const RSRenderNode& node) { return nullptr; };
 
     // return true if this drawable can be updated thus not need to recreate, default to false
-    virtual bool OnUpdate(const RSRenderContent& content) { return false; }
+    virtual bool OnUpdate(const RSRenderNode& node)
+    {
+        return false;
+    }
 
     //
     void OnSync();
 
 protected:
-    bool needSyncDisplayList_ = false;
+    bool needSync_ = false;
     std::shared_ptr<Drawing::DrawCmdList> drawCmdList_;
     std::shared_ptr<Drawing::DrawCmdList> stagingDrawCmdList_;
 
@@ -123,30 +54,18 @@ protected:
     friend class RSPropertyDrawableNG;
 };
 
-class RSCustomModifierDrawCmdList : public RSPropertyDrawCmdList {
-public:
-    RSCustomModifierDrawCmdList(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList, RSModifierType type)
-        : RSPropertyDrawCmdList(std::move(drawCmdList)), type_(type)
-    {}
-    static RSPropertyDrawCmdList::Ptr OnGenerate(const RSRenderContent& content, RSModifierType type);
-    bool OnUpdate(const RSRenderContent& content) override;
-
-private:
-    RSModifierType type_;
-};
-
 // DEMO
 class RSBackgroundDrawCmdList : public RSPropertyDrawCmdList {
 public:
-    static RSPropertyDrawCmdList::Ptr OnGenerate(const RSRenderContent& content);
-    bool OnUpdate(const RSRenderContent& content) override;
+    static RSPropertyDrawCmdList::Ptr OnGenerate(const RSRenderNode& node);
+    bool OnUpdate(const RSRenderNode& node) override;
 };
 
 // DEMO
 class RSBorderDrawCmdList : public RSPropertyDrawCmdList {
 public:
-    static RSPropertyDrawCmdList::Ptr OnGenerate(const RSRenderContent& content);
-    bool OnUpdate(const RSRenderContent& content) override;
+    static RSPropertyDrawCmdList::Ptr OnGenerate(const RSRenderNode& node);
+    bool OnUpdate(const RSRenderNode& node) override;
 };
 
 } // namespace OHOS::Rosen

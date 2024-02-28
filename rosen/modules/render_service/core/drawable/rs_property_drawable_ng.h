@@ -25,13 +25,19 @@ class RSPropertyDrawCmdList;
 
 class RSPropertyDrawableNG : RSDrawable {
 public:
-    RSPropertyDrawableNG(std::shared_ptr<RSPropertyDrawCmdList> cmdList);
+    RSPropertyDrawableNG(std::unique_ptr<RSPropertyDrawCmdList> cmdList);
     ~RSPropertyDrawableNG() override = default;
 
     void OnDraw(RSPaintFilterCanvas& canvas) const override;
 
+    template<typename T>
+    RSDrawable::Ptr OnGenerate(const RSRenderNode& node)
+    {
+        return std::make_shared<RSPropertyDrawableNG>(T::OnGenerate(node));
+    }
+
 protected:
-    std::shared_ptr<RSPropertyDrawCmdList> cmdList_;
+    std::unique_ptr <RSPropertyDrawCmdList> cmdList_;
 };
 
 } // namespace OHOS::Rosen
