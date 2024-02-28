@@ -17,6 +17,8 @@
 
 namespace OHOS::Rosen {
 
+std::unordered_map<RSRenderNodeType, RSRenderNodeDrawableAdapter::Generator> RSRenderNodeDrawableAdapter::GeneratorMap;
+
 // TODO: add dependency injection from render_service.so
 RSRenderNodeDrawableAdapter::Ptr RSRenderNodeDrawableAdapter::OnGenerate(std::shared_ptr<const RSRenderNode> node)
 {

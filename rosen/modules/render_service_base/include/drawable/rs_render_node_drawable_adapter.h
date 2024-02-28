@@ -16,9 +16,13 @@
 #ifndef RENDER_SERVICE_BASE_DRAWABLE_RS_RENDER_NODE_DRAWABLE_ADAPTER_H
 #define RENDER_SERVICE_BASE_DRAWABLE_RS_RENDER_NODE_DRAWABLE_ADAPTER_H
 
+#include <functional>
 #include <memory>
+#include <unordered_map>
 
 #include "common/rs_macros.h"
+#include "common/rs_common_def.h"
+#include "drawable/rs_render_node_drawable_adapter.h"
 
 namespace OHOS::Rosen {
 class RSRenderNode;
@@ -36,10 +40,22 @@ public:
     RSRenderNodeDrawableAdapter& operator=(const RSRenderNodeDrawableAdapter&&) = delete;
 
     // This method can only be called in RenderThread
-    virtual void OnDraw(RSPaintFilterCanvas& canvas) const {};
+    virtual void OnDraw(RSPaintFilterCanvas& canvas) const = 0;
 
     using Ptr = std::unique_ptr<RSRenderNodeDrawableAdapter>;
     static Ptr OnGenerate(std::shared_ptr<const RSRenderNode> node);
+
+protected:
+    using Generator = Ptr (*)(std::shared_ptr<const RSRenderNode>);
+    static std::unordered_map<RSRenderNodeType, Generator> GeneratorMap;
+
+    template <RSRenderNodeType type, Generator generator>
+    class RenderNodeDrawableRegistrar {
+    public:
+        RenderNodeDrawableRegistrar() {
+            RSRenderNodeDrawableAdapter::GeneratorMap.emplace(type, generator);
+        }
+    };
 };
 }
 #endif // RENDER_SERVICE_BASE_DRAWABLE_RS_RENDER_NODE_DRAWABLE_ADAPTER_H

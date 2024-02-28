@@ -17,7 +17,8 @@
 #define RENDER_SERVICE_BASE_DRAWABLE_RS_RENDER_NODE_DRAWABLE_H
 
 #include <memory>
-#include <drawable/rs_render_node_drawable_adapter.h>
+
+#include "drawable/rs_render_node_drawable_adapter.h"
 
 namespace OHOS::Rosen {
 class RSRenderNode;
@@ -29,9 +30,13 @@ public:
     explicit RSRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
     ~RSRenderNodeDrawable() override = default;
 
+    static RSRenderNodeDrawable::Ptr OnGenerate(std::shared_ptr<const RSRenderNode> node);
     void OnDraw(RSPaintFilterCanvas& canvas) const override;
 
 protected:
+    using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::RS_NODE, OnGenerate>;
+    static Registrar instance_;
+
     std::shared_ptr<const RSRenderNode> renderNode_;
 };
 } // namespace OHOS::Rosen
