@@ -1330,7 +1330,7 @@ void RSBlendSaveLayerDrawable::Draw(const RSRenderContent& content, RSPaintFilte
         Drawing::SaveLayerOps maskLayerRec(nullptr, nullptr, 0);
         canvas.SaveLayer(maskLayerRec);
         canvas.AddBlendOffscreenLayer(true);
-        ROSEN_LOGW("Dangerous offscreen blendmode may produce transparent pixels, add extra offscreen here.");
+        ROSEN_LOGD("Dangerous offscreen blendmode may produce transparent pixels, add extra offscreen here.");
     }
 #ifndef USE_ROSEN_DRAWING
     auto matrix = canvas.getTotalMatrix();
@@ -1363,7 +1363,7 @@ void RSBlendFastDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanv
         Drawing::SaveLayerOps maskLayerRec(nullptr, nullptr, 0);
         canvas.SaveLayer(maskLayerRec);
         canvas.AddBlendOffscreenLayer(true);
-        ROSEN_LOGW("Dangerous fast blendmode may produce transparent pixels, add extra offscreen here.");
+        ROSEN_LOGD("Dangerous fast blendmode may produce transparent pixels, add extra offscreen here.");
     }
     canvas.SaveBlendMode();
     canvas.SetBlendMode({ blendMode_ - 1 }); // map blendMode to SkBlendMode
