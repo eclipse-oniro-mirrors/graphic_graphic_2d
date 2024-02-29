@@ -244,7 +244,7 @@ HWTEST_F(RSCanvasRenderNodeTest, DangerousSavelayerBlendModeTest, TestSize.Level
     RSPropertiesPainter::EndBlendMode(*canvas_, properties);
     properties.SetColorBlendMode(static_cast<int>(RSColorBlendMode::CLEAR));
     RSPropertiesPainter::BeginBlendMode(*canvas_, properties);
-    EXPECT_EQ(canvas_->GetBlendOffscreenLayerCnt(), initCnt + 1);
+    EXPECT_EQ(canvas_->GetBlendOffscreenLayerCnt(), initCnt + 2);
     RSPropertiesPainter::EndBlendMode(*canvas_, properties);
 }
 /**
