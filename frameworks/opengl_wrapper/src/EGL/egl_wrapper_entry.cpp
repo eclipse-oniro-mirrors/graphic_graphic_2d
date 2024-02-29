@@ -30,6 +30,11 @@
 
 using namespace OHOS;
 namespace OHOS {
+static inline void ClearError()
+{
+    ThreadPrivateDataCtl::ClearError();
+}
+
 static EglWrapperDisplay *ValidateDisplay(EGLDisplay dpy)
 {
     EglWrapperDisplay *display = EglWrapperDisplay::GetWrapperDisplay(dpy);
@@ -50,6 +55,7 @@ static EglWrapperDisplay *ValidateDisplay(EGLDisplay dpy)
 EGLBoolean EglChooseConfigImpl(EGLDisplay dpy, const EGLint *attribList,
     EGLConfig *configs, EGLint configSize, EGLint *numConfig)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -78,6 +84,7 @@ EGLBoolean EglChooseConfigImpl(EGLDisplay dpy, const EGLint *attribList,
 
 EGLBoolean EglCopyBuffersImpl(EGLDisplay dpy, EGLSurface surf, NativePixmapType target)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -90,6 +97,7 @@ EGLBoolean EglCopyBuffersImpl(EGLDisplay dpy, EGLSurface surf, NativePixmapType 
 EGLContext EglCreateContextImpl(EGLDisplay dpy, EGLConfig config,
     EGLContext shareList, const EGLint *attribList)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -102,6 +110,7 @@ EGLContext EglCreateContextImpl(EGLDisplay dpy, EGLConfig config,
 EGLSurface EglCreatePbufferSurfaceImpl(EGLDisplay dpy, EGLConfig config,
     const EGLint* attribList)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -114,6 +123,7 @@ EGLSurface EglCreatePbufferSurfaceImpl(EGLDisplay dpy, EGLConfig config,
 EGLSurface EglCreatePixmapSurfaceImpl(EGLDisplay dpy, EGLConfig config,
     EGLNativePixmapType pixmap, const EGLint* attribList)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -126,6 +136,7 @@ EGLSurface EglCreatePixmapSurfaceImpl(EGLDisplay dpy, EGLConfig config,
 EGLSurface EglCreateWindowSurfaceImpl(EGLDisplay dpy,
     EGLConfig config, NativeWindowType window, const EGLint* attribList)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -137,6 +148,7 @@ EGLSurface EglCreateWindowSurfaceImpl(EGLDisplay dpy,
 
 EGLBoolean EglDestroyContextImpl(EGLDisplay dpy, EGLContext ctx)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -148,6 +160,7 @@ EGLBoolean EglDestroyContextImpl(EGLDisplay dpy, EGLContext ctx)
 
 EGLBoolean EglDestroySurfaceImpl(EGLDisplay dpy, EGLSurface surf)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -160,6 +173,7 @@ EGLBoolean EglDestroySurfaceImpl(EGLDisplay dpy, EGLSurface surf)
 EGLBoolean EglGetConfigAttribImpl(EGLDisplay dpy, EGLConfig config,
     EGLint attribute, EGLint *value)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -179,6 +193,7 @@ EGLBoolean EglGetConfigAttribImpl(EGLDisplay dpy, EGLConfig config,
 EGLBoolean EglGetConfigsImpl(EGLDisplay dpy, EGLConfig *configs,
     EGLint configSize, EGLint *numConfig)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -203,6 +218,7 @@ EGLBoolean EglGetConfigsImpl(EGLDisplay dpy, EGLConfig *configs,
 
 EGLDisplay EglGetCurrentDisplayImpl(void)
 {
+    ClearError();
     EGLContext ctx = ThreadPrivateDataCtl::GetContext();
     if (ctx) {
         EglWrapperContext *ctxPtr = EglWrapperContext::GetWrapperContext(ctx);
@@ -218,6 +234,7 @@ EGLDisplay EglGetCurrentDisplayImpl(void)
 
 EGLSurface EglGetCurrentSurfaceImpl(EGLint type)
 {
+    ClearError();
     EGLContext ctx = ThreadPrivateDataCtl::GetContext();
     if (ctx) {
         EglWrapperContext *ctxPtr = EglWrapperContext::GetWrapperContext(ctx);
@@ -252,6 +269,7 @@ static EGLDisplay EglGetPlatformDisplayInternal(EGLenum platform,
 
 EGLDisplay EglGetDisplayImpl(EGLNativeDisplayType type)
 {
+    ClearError();
     WLOGD("");
     return EglGetPlatformDisplayInternal(EGL_PLATFORM_OHOS_KHR, type, nullptr);
 }
@@ -276,6 +294,7 @@ EGLint EglGetErrorImpl(void)
 
 __eglMustCastToProperFunctionPointerType EglGetProcAddressImpl(const char *procname)
 {
+    ClearError();
     WLOGD("");
     if (gExtensionMap.find(procname) != gExtensionMap.end()) {
         return gExtensionMap.at(procname);
@@ -315,6 +334,7 @@ EGLBoolean EglInitializeImpl(EGLDisplay dpy, EGLint *major, EGLint *minor)
 EGLBoolean EglMakeCurrentImpl(EGLDisplay dpy, EGLSurface draw,
     EGLSurface read, EGLContext ctx)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -327,6 +347,7 @@ EGLBoolean EglMakeCurrentImpl(EGLDisplay dpy, EGLSurface draw,
 EGLBoolean EglQueryContextImpl(EGLDisplay dpy, EGLContext ctx,
     EGLint attribute, EGLint *value)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -344,6 +365,7 @@ EGLBoolean EglQueryContextImpl(EGLDisplay dpy, EGLContext ctx,
 
 const char *EglQueryStringImpl(EGLDisplay dpy, EGLint name)
 {
+    ClearError();
     WLOGD("");
     EGLDisplay actualDpy = EGL_NO_DISPLAY;
     if (dpy != EGL_NO_DISPLAY) {
@@ -367,6 +389,7 @@ const char *EglQueryStringImpl(EGLDisplay dpy, EGLint name)
 EGLBoolean EglQuerySurfaceImpl(EGLDisplay dpy, EGLSurface surf,
     EGLint attribute, EGLint* value)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -384,6 +407,7 @@ EGLBoolean EglQuerySurfaceImpl(EGLDisplay dpy, EGLSurface surf,
 
 EGLBoolean EglSwapBuffersImpl(EGLDisplay dpy, EGLSurface surf)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -395,6 +419,7 @@ EGLBoolean EglSwapBuffersImpl(EGLDisplay dpy, EGLSurface surf)
 
 EGLBoolean EglTerminateImpl(EGLDisplay dpy)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -406,6 +431,7 @@ EGLBoolean EglTerminateImpl(EGLDisplay dpy)
 
 EGLBoolean EglWaitGLImpl(void)
 {
+    ClearError();
     WLOGD("");
     EGLBoolean ret = EGL_FALSE;
     EglWrapperDispatchTablePtr table = &gWrapperHook;
@@ -419,6 +445,7 @@ EGLBoolean EglWaitGLImpl(void)
 
 EGLBoolean EglWaitNativeImpl(EGLint engine)
 {
+    ClearError();
     WLOGD("");
     EGLBoolean ret = EGL_FALSE;
     EglWrapperDispatchTablePtr table = &gWrapperHook;
@@ -432,6 +459,7 @@ EGLBoolean EglWaitNativeImpl(EGLint engine)
 
 EGLBoolean EglBindTexImageImpl(EGLDisplay dpy, EGLSurface surf, EGLint buffer)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -443,6 +471,7 @@ EGLBoolean EglBindTexImageImpl(EGLDisplay dpy, EGLSurface surf, EGLint buffer)
 
 EGLBoolean EglReleaseTexImageImpl(EGLDisplay dpy, EGLSurface surf, EGLint buffer)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -455,6 +484,7 @@ EGLBoolean EglReleaseTexImageImpl(EGLDisplay dpy, EGLSurface surf, EGLint buffer
 EGLBoolean EglSurfaceAttribImpl(EGLDisplay dpy, EGLSurface surf,
     EGLint attribute, EGLint value)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -466,6 +496,7 @@ EGLBoolean EglSurfaceAttribImpl(EGLDisplay dpy, EGLSurface surf,
 
 EGLBoolean EglSwapIntervalImpl(EGLDisplay dpy, EGLint interval)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -485,6 +516,7 @@ EGLBoolean EglSwapIntervalImpl(EGLDisplay dpy, EGLint interval)
 
 EGLBoolean EglBindAPIImpl(EGLenum api)
 {
+    ClearError();
     WLOGD("");
     EGLBoolean ret = EGL_FALSE;
     EglWrapperDispatchTablePtr table = &gWrapperHook;
@@ -498,6 +530,7 @@ EGLBoolean EglBindAPIImpl(EGLenum api)
 
 EGLBoolean EglQueryAPIImpl(void)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglQueryAPI) {
@@ -513,6 +546,7 @@ EGLSurface EglCreatePbufferFromClientBufferImpl(EGLDisplay dpy,
     EGLenum buftype, EGLClientBuffer buffer,
     EGLConfig config, const EGLint *attribList)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -524,6 +558,7 @@ EGLSurface EglCreatePbufferFromClientBufferImpl(EGLDisplay dpy,
 
 EGLBoolean EglReleaseThreadImpl(void)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglReleaseThread) {
@@ -538,6 +573,7 @@ EGLBoolean EglReleaseThreadImpl(void)
 
 EGLBoolean EglWaitClientImpl(void)
 {
+    ClearError();
     WLOGD("");
     EGLBoolean ret = EGL_FALSE;
     EglWrapperDispatchTablePtr table = &gWrapperHook;
@@ -551,12 +587,14 @@ EGLBoolean EglWaitClientImpl(void)
 
 EGLContext EglGetCurrentContextImpl(void)
 {
+    ClearError();
     EGLContext ctx = ThreadPrivateDataCtl::GetContext();
     return ctx;
 }
 
 EGLSync EglCreateSyncImpl(EGLDisplay dpy, EGLenum type, const EGLAttrib *attribList)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -576,6 +614,7 @@ EGLSync EglCreateSyncImpl(EGLDisplay dpy, EGLenum type, const EGLAttrib *attribL
 
 EGLBoolean EglDestroySyncImpl(EGLDisplay dpy, EGLSync sync)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -596,6 +635,7 @@ EGLBoolean EglDestroySyncImpl(EGLDisplay dpy, EGLSync sync)
 EGLint EglClientWaitSyncImpl(EGLDisplay dpy, EGLSync sync,
     EGLint flags, EGLTimeKHR timeout)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -617,6 +657,7 @@ EGLint EglClientWaitSyncImpl(EGLDisplay dpy, EGLSync sync,
 EGLBoolean EglGetSyncAttribImpl(EGLDisplay dpy, EGLSync sync,
     EGLint attribute, EGLAttrib *value)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -644,6 +685,7 @@ EGLBoolean EglGetSyncAttribImpl(EGLDisplay dpy, EGLSync sync,
 EGLImage EglCreateImageImpl(EGLDisplay dpy, EGLContext ctx,
     EGLenum target, EGLClientBuffer buffer, const EGLAttrib *attribList)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -655,6 +697,7 @@ EGLImage EglCreateImageImpl(EGLDisplay dpy, EGLContext ctx,
 
 EGLBoolean EglDestroyImageImpl(EGLDisplay dpy, EGLImage img)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -667,6 +710,7 @@ EGLBoolean EglDestroyImageImpl(EGLDisplay dpy, EGLImage img)
 EGLDisplay EglGetPlatformDisplayImpl(EGLenum platform,
     void *nativeDisplay, const EGLAttrib *attribList)
 {
+    ClearError();
     return EglGetPlatformDisplayInternal(platform,
         static_cast<EGLNativeDisplayType>(nativeDisplay), attribList);
 }
@@ -674,6 +718,7 @@ EGLDisplay EglGetPlatformDisplayImpl(EGLenum platform,
 EGLSurface EglCreatePlatformWindowSurfaceImpl(EGLDisplay dpy,
     EGLConfig config, void *nativeWindow, const EGLAttrib *attribList)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -687,6 +732,7 @@ EGLSurface EglCreatePlatformWindowSurfaceImpl(EGLDisplay dpy,
 EGLSurface EglCreatePlatformPixmapSurfaceImpl(EGLDisplay dpy,
     EGLConfig config, void *nativePixmap, const EGLAttrib *attribList)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -698,6 +744,7 @@ EGLSurface EglCreatePlatformPixmapSurfaceImpl(EGLDisplay dpy,
 
 EGLBoolean EglWaitSyncImpl(EGLDisplay dpy, EGLSync sync, EGLint flags)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -718,6 +765,7 @@ EGLBoolean EglWaitSyncImpl(EGLDisplay dpy, EGLSync sync, EGLint flags)
 EGLBoolean EglLockSurfaceKHRImpl(EGLDisplay dpy, EGLSurface surf,
     const EGLint *attribList)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -729,6 +777,7 @@ EGLBoolean EglLockSurfaceKHRImpl(EGLDisplay dpy, EGLSurface surf,
 
 EGLBoolean EglUnlockSurfaceKHRImpl(EGLDisplay dpy, EGLSurface surf)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -741,6 +790,7 @@ EGLBoolean EglUnlockSurfaceKHRImpl(EGLDisplay dpy, EGLSurface surf)
 EGLImageKHR EglCreateImageKHRImpl(EGLDisplay dpy, EGLContext ctx,
     EGLenum target, EGLClientBuffer buffer, const EGLint *attribList)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -752,6 +802,7 @@ EGLImageKHR EglCreateImageKHRImpl(EGLDisplay dpy, EGLContext ctx,
 
 EGLBoolean EglDestroyImageKHRImpl(EGLDisplay dpy, EGLImageKHR img)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -763,6 +814,7 @@ EGLBoolean EglDestroyImageKHRImpl(EGLDisplay dpy, EGLImageKHR img)
 
 EGLSyncKHR EglCreateSyncKHRImpl(EGLDisplay dpy, EGLenum type, const EGLint* attribList)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -782,6 +834,7 @@ EGLSyncKHR EglCreateSyncKHRImpl(EGLDisplay dpy, EGLenum type, const EGLint* attr
 
 EGLBoolean EglDestroySyncKHRImpl(EGLDisplay dpy, EGLSyncKHR sync)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -802,6 +855,7 @@ EGLBoolean EglDestroySyncKHRImpl(EGLDisplay dpy, EGLSyncKHR sync)
 EGLint EglClientWaitSyncKHRImpl(EGLDisplay dpy, EGLSyncKHR sync,
     EGLint flags, EGLTimeKHR timeout)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -823,6 +877,7 @@ EGLint EglClientWaitSyncKHRImpl(EGLDisplay dpy, EGLSyncKHR sync,
 EGLBoolean EglGetSyncAttribKHRImpl(EGLDisplay dpy, EGLSyncKHR sync,
     EGLint attribute, EGLint *value)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -849,6 +904,7 @@ EGLBoolean EglGetSyncAttribKHRImpl(EGLDisplay dpy, EGLSyncKHR sync,
 
 EGLBoolean EglSignalSyncKHRImpl(EGLDisplay dpy, EGLSyncKHR sync, EGLenum mode)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -868,6 +924,7 @@ EGLBoolean EglSignalSyncKHRImpl(EGLDisplay dpy, EGLSyncKHR sync, EGLenum mode)
 
 EGLStreamKHR EglCreateStreamKHRImpl(EGLDisplay dpy, const EGLint *attribList)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -887,6 +944,7 @@ EGLStreamKHR EglCreateStreamKHRImpl(EGLDisplay dpy, const EGLint *attribList)
 
 EGLBoolean EglDestroyStreamKHRImpl(EGLDisplay dpy, EGLStreamKHR stream)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -907,6 +965,7 @@ EGLBoolean EglDestroyStreamKHRImpl(EGLDisplay dpy, EGLStreamKHR stream)
 EGLBoolean EglStreamAttribKHRImpl(EGLDisplay dpy, EGLStreamKHR stream,
     EGLenum attribute, EGLint value)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -928,6 +987,7 @@ EGLBoolean EglStreamAttribKHRImpl(EGLDisplay dpy, EGLStreamKHR stream,
 EGLBoolean EglQueryStreamKHRImpl(EGLDisplay dpy, EGLStreamKHR stream,
     EGLenum attribute, EGLint *value)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -955,6 +1015,7 @@ EGLBoolean EglQueryStreamKHRImpl(EGLDisplay dpy, EGLStreamKHR stream,
 EGLBoolean EglQueryStreamu64KHRImpl(EGLDisplay dpy, EGLStreamKHR stream,
     EGLenum attribute, EGLuint64KHR *value)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -982,6 +1043,7 @@ EGLBoolean EglQueryStreamu64KHRImpl(EGLDisplay dpy, EGLStreamKHR stream,
 EGLBoolean EglStreamConsumerGLTextureExternalKHRImpl(EGLDisplay dpy,
     EGLStreamKHR stream)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -1002,6 +1064,7 @@ EGLBoolean EglStreamConsumerGLTextureExternalKHRImpl(EGLDisplay dpy,
 
 EGLBoolean EglStreamConsumerAcquireKHRImpl(EGLDisplay dpy, EGLStreamKHR stream)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -1022,6 +1085,7 @@ EGLBoolean EglStreamConsumerAcquireKHRImpl(EGLDisplay dpy, EGLStreamKHR stream)
 
 EGLBoolean EglStreamConsumerReleaseKHRImpl(EGLDisplay dpy, EGLStreamKHR stream)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -1043,6 +1107,7 @@ EGLBoolean EglStreamConsumerReleaseKHRImpl(EGLDisplay dpy, EGLStreamKHR stream)
 EGLSurface EglCreateStreamProducerSurfaceKHRImpl(EGLDisplay dpy, EGLConfig config,
     EGLStreamKHR stream, const EGLint *attribList)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -1055,6 +1120,7 @@ EGLSurface EglCreateStreamProducerSurfaceKHRImpl(EGLDisplay dpy, EGLConfig confi
 EGLBoolean EglQueryStreamTimeKHRImpl(EGLDisplay dpy, EGLStreamKHR stream,
     EGLenum attribute, EGLTimeKHR *value)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -1103,6 +1169,7 @@ EGLNativeFileDescriptorKHR EglGetStreamFileDescriptorKHRImpl(
 EGLStreamKHR EglCreateStreamFromFileDescriptorKHRImpl(
     EGLDisplay dpy, EGLNativeFileDescriptorKHR fd)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -1123,6 +1190,7 @@ EGLStreamKHR EglCreateStreamFromFileDescriptorKHRImpl(
 
 EGLBoolean EglWaitSyncKHRImpl(EGLDisplay dpy, EGLSyncKHR sync, EGLint flags)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -1162,6 +1230,7 @@ EGLDisplay EglGetPlatformDisplayEXTImpl(EGLenum platform,
 EGLBoolean EglSwapBuffersWithDamageKHRImpl(EGLDisplay dpy, EGLSurface draw,
     EGLint *rects, EGLint nRects)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -1174,6 +1243,7 @@ EGLBoolean EglSwapBuffersWithDamageKHRImpl(EGLDisplay dpy, EGLSurface draw,
 EGLBoolean EglSetDamageRegionKHRImpl(EGLDisplay dpy, EGLSurface surf,
     EGLint *rects, EGLint nRects)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
@@ -1185,6 +1255,7 @@ EGLBoolean EglSetDamageRegionKHRImpl(EGLDisplay dpy, EGLSurface surf,
 
 EGLint EglDupNativeFenceFDANDROIDImpl(EGLDisplay dpy, EGLSyncKHR sync)
 {
+    ClearError();
     WLOGD("");
     EglWrapperDisplay *display = ValidateDisplay(dpy);
     if (!display) {
