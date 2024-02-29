@@ -89,6 +89,7 @@ public:
     void AddChild(SharedPtr child, int index = -1);
     void SetContainBootAnimation(bool isContainBootAnimation);
     bool GetContainBootAnimation() const;
+
     virtual void SetBootAnimation(bool isBootAnimation);
     virtual bool GetBootAnimation() const;
 
@@ -106,9 +107,13 @@ public:
                                 bool isUniRender,
                                 bool onlyFirstLevel);
     virtual void CollectSurfaceForUIFirstSwitch(uint32_t& leashWindowCount, uint32_t minNodeNum);
+    virtual void QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor);
     virtual void Prepare(const std::shared_ptr<RSNodeVisitor>& visitor);
     virtual void Process(const std::shared_ptr<RSNodeVisitor>& visitor);
     bool IsDirty() const;
+    bool IsSubTreeDirty() const;
+    void SetSubTreeDirty(bool val);
+    void SetParentSubTreeDirty();
     // attention: current all base node's dirty ops causing content dirty
     // if there is any new dirty op, check it
     bool IsContentDirty() const;
@@ -521,7 +526,7 @@ public:
 
     void MarkParentNeedRegenerateChildren() const;
 
-    const std::shared_ptr<RSRenderParams> GetRenderParams() const;
+    const RSRenderParams GetRenderParams() const;
 
 protected:
     virtual void OnApplyModifiers() {}
@@ -628,6 +633,7 @@ private:
 
     void UpdateShouldPaint(); // update node should paint state in apply modifier stage
     bool shouldPaint_ = true;
+    bool isSubTreeDirty_ = false;
 
     bool isDirtyRegionUpdated_ = false;
     bool isContainBootAnimation_ = false;

@@ -21,6 +21,7 @@
 #include "pipeline/rs_processor_factory.h"
 #include "pipeline/rs_uni_render_listener.h"
 #include "pipeline/rs_uni_render_thread.h"
+#include "rs_trace.h"
 #include "screen_manager/rs_screen_manager.h"
 
 namespace OHOS::Rosen {
@@ -48,7 +49,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(RSPaintFilterCanvas& canvas) const
     RS_TRACE_NAME("RSDisplayRenderNodeDrawable[" + std::to_string(displayNodeSp->GetScreenId()) + "]" +
         displayNodeSp->GetDirtyManager()->GetDirtyRegion().ToString().c_str());
     RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode node: %{public}" PRIu64 ", child size:%{public}u",
-        displayNodeSp->GetId(), rdisplayNodeSp->GetChildrenCount());
+        displayNodeSp->GetId(), displayNodeSp->GetChildrenCount());
 
     auto screenManager = CreateOrGetScreenManager();
     if (!screenManager) {
@@ -70,15 +71,15 @@ void RSDisplayRenderNodeDrawable::OnDraw(RSPaintFilterCanvas& canvas) const
         return;
     }
 
-    if (!processor->Init(*displayNode, displayNodeSp->GetDisplayOffsetX(), displayNodeSp->GetDisplayOffsetY(),
-        INVALID_SCREEN_ID, renderEngine_)) {
+    if (!processor->Init(*displayNodeSp, displayNodeSp->GetDisplayOffsetX(), displayNodeSp->GetDisplayOffsetY(),
+        INVALID_SCREEN_ID, renderEngine)) {
         RS_LOGE("RSDisplayRenderNodeDrawable::OnDraw processor init failed!");
-        return false;
+        return;
     }
 
-    if (!node.IsSurfaceCreated()) {
-        sptr<IBufferConsumerListener> listener = new RSUniRenderListener(displayNodePtr);
-        if (!node.CreateSurface(listener)) {
+    if (!displayNodeSp->IsSurfaceCreated()) {
+        sptr<IBufferConsumerListener> listener = new RSUniRenderListener(displayNodeSp);
+        if (!displayNodeSp->CreateSurface(listener)) {
             RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode CreateSurface failed");
             return;
         }
@@ -92,7 +93,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(RSPaintFilterCanvas& canvas) const
 
     auto screenInfo = screenManager->QueryScreenInfo(displayNodeSp->GetScreenId());
     auto bufferConfig = RSBaseRenderUtil::GetFrameBufferRequestConfig(screenInfo, true);
-    auto renderFrame = renderEngine->RequestFrame(std::static_pointer_cast<RSSurfraceOhos>(rsSurface), bufferConfig);
+    auto renderFrame = renderEngine->RequestFrame(std::static_pointer_cast<RSSurfaceOhos>(rsSurface), bufferConfig);
     if (!renderFrame) {
         RS_LOGE("RSDisplayRenderNodeDrawable::OnDraw RequestFrame is null");
         return;
