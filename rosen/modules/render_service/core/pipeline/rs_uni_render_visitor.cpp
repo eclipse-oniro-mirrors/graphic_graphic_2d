@@ -2953,7 +2953,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         processor_->ProcessDisplaySurface(node);
 #endif
     } else {
-#ifdef RS_ENABLE_EGLQUERYSURFACE
         curDisplayDirtyManager_->SetSurfaceSize(screenInfo_.width, screenInfo_.height);
         if (isSurfaceRotationChanged_) {
             curDisplayDirtyManager_->MergeSurfaceRect();
@@ -3016,7 +3015,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             }
             return;
         }
-#endif
 
 #if defined(RS_ENABLE_PARALLEL_RENDER) && defined(RS_ENABLE_OLD_VK)
         if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
@@ -3112,7 +3110,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
 #endif
         }
 #endif
-#ifdef RS_ENABLE_EGLQUERYSURFACE
         // Get displayNode buffer age in order to merge visible dirty region for displayNode.
         // And then set egl damage region to improve uni_render efficiency.
         if (isPartialRenderEnabled_) {
@@ -3231,7 +3228,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             canvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
 #endif
         }
-#endif
 
         RSPropertiesPainter::SetBgAntiAlias(true);
         if (!isParallel_ || isUIFirst_) {
@@ -4264,7 +4260,6 @@ void RSUniRenderVisitor::AlignGlobalAndSurfaceDirtyRegions(std::shared_ptr<RSDis
     }
 }
 
-#ifdef RS_ENABLE_EGLQUERYSURFACE
 std::vector<RectI> RSUniRenderVisitor::GetDirtyRects(const Occlusion::Region &region)
 {
     const std::vector<Occlusion::Rect>& rects = region.GetRegionRects();
@@ -4288,7 +4283,6 @@ std::vector<RectI> RSUniRenderVisitor::GetDirtyRects(const Occlusion::Region &re
     RS_LOGD("GetDirtyRects size %{public}d %{public}s", region.GetSize(), region.GetRegionInfo().c_str());
     return retRects;
 }
-#endif
 
 void RSUniRenderVisitor::CheckAndSetNodeCacheType(RSRenderNode& node)
 {
@@ -4755,7 +4749,6 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     } else {
         node.UpdateFilterCacheStatusWithVisible(true);
     }
-#ifdef RS_ENABLE_EGLQUERYSURFACE
     if (node.IsMainWindowType()) {
         curSurfaceNode_ = node.ReinterpretCastTo<RSSurfaceRenderNode>();
         CollectAppNodeForHwc(curSurfaceNode_);
@@ -4768,7 +4761,6 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         ProcessSubSurfaceNodes(node);
         return;
     }
-#endif
     if (!canvas_) {
         RS_LOGE("RSUniRenderVisitor::ProcessSurfaceRenderNode, canvas is nullptr");
         return;
@@ -4781,7 +4773,6 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         return;
     }
 
-#ifdef RS_ENABLE_EGLQUERYSURFACE
     // when display is in rotation state, occlusion relationship will be ruined,
     // hence visibleRegions cannot be used.
     if (isOpDropped_ && node.IsAppWindow()) {
@@ -4796,7 +4787,6 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 #endif
         }
     }
-#endif
 
     // when surfacenode named "CapsuleWindow", cache the current canvas as SkImage for screen recording
     if (!isSecurityDisplay_ && canvas_->GetSurface() != nullptr &&
@@ -5231,7 +5221,6 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
         return;
     }
     node.MarkNodeSingleFrameComposer(isNodeSingleFrameComposer_);
-#ifdef RS_ENABLE_EGLQUERYSURFACE
     if ((isOpDropped_ && (curSurfaceNode_ != nullptr)) || isCanvasNodeSkipDfxEnabled_) {
         // If all the child nodes have drawing areas that do not exceed the current node, then current node
         // can be directly skipped if not intersect with any dirtyregion.
@@ -5261,7 +5250,6 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
             }
         }
     }
-#endif
     if (!canvas_) {
         RS_LOGE("RSUniRenderVisitor::ProcessCanvasRenderNode, canvas is nullptr");
         return;
