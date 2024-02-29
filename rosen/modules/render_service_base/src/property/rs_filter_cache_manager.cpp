@@ -28,6 +28,7 @@
 
 namespace OHOS {
 namespace Rosen {
+constexpr static float FLOAT_ZERO_THRESHOLD = 0.001f;
 constexpr float PARALLEL_FILTER_RATIO_THRESHOLD = 0.8f;
 constexpr int AIBAR_CACHE_UPDATE_INTERVAL = 5;
 const char* RSFilterCacheManager::GetCacheState() const
@@ -94,11 +95,26 @@ void RSFilterCacheManager::UpdateCacheStateWithFilterHash(const std::shared_ptr<
 void RSFilterCacheManager::PostPartialFilterRenderInit(
     const std::shared_ptr<RSSkiaFilter>& filter, const SkIRect& dstRect, int32_t canvasWidth, int32_t canvasHeight)
 #else
-void RSFilterCacheManager::PostPartialFilterRenderInit(const std::shared_ptr<RSDrawingFilter>& filter,
-    const Drawing::RectI& dstRect, int32_t canvasWidth, int32_t canvasHeight, bool& shouldClearFilteredCache)
+void RSFilterCacheManager::PostPartialFilterRenderInit(RSPaintFilterCanvas& canvas,
+    const std::shared_ptr<RSDrawingFilter>& filter, const Drawing::RectI& dstRect, bool& shouldClearFilteredCache)
 #endif
 {
     RS_OPTIONAL_TRACE_FUNC();
+#ifdef USE_ROSEN_DRAWING
+    auto surface = canvas.GetSurface();
+    auto width = surface->Width();
+    auto height = surface->Height();
+    Drawing::Matrix mat = canvas.GetTotalMatrix();
+    if (filter->GetFilterType() == RSFilter::LINEAR_GRADIENT_BLUR) {
+        filter->SetCanvasChange(mat, width, height);
+    }
+    auto directionBias = CalcDirectionBias(mat);
+#endif
+    auto previousSurfaceFlag = task_->surfaceFlag;
+    task_->surfaceFlag = directionBias;
+    if (previousSurfaceFlag != -1 && previousSurfaceFlag != task_->surfaceFlag) {
+        StopFilterPartialRender();
+    }
     task_->SetCompleted(task_->GetStatus() == CacheProcessStatus::DONE);
     if (task_->GetStatus() == CacheProcessStatus::DOING) {
         task_->SetCompleted(!task_->isFirstInit_);
@@ -123,9 +139,9 @@ void RSFilterCacheManager::PostPartialFilterRenderInit(const std::shared_ptr<RSD
         (cachedSnapshot_ != nullptr && cachedSnapshot_->cachedImage_ != nullptr) &&
         (cachedFilteredSnapshot_ == nullptr || cachedFilteredSnapshot_->cachedImage_ == nullptr) &&
 #ifndef USE_ROSEN_DRAWING
-        IsNearlyFullScreen(cachedSnapshot_->cachedRect_.size(), canvasWidth, canvasHeight)) {
+        IsNearlyFullScreen(cachedSnapshot_->cachedRect_.size(), width, height)) {
 #else
-        IsNearlyFullScreen(cachedSnapshot_->cachedRect_, canvasWidth, canvasHeight)) {
+        IsNearlyFullScreen(cachedSnapshot_->cachedRect_, width, height)) {
 #endif
         task_->isLastRender_ = false;
         PostPartialFilterRenderTask(filter, dstRect);
@@ -389,25 +405,8 @@ void RSFilterCacheManager::DrawFilter(RSPaintFilterCanvas& canvas, const std::sh
     } else {
         --cacheUpdateInterval_;
     }
-#ifndef USE_ROSEN_DRAWING
-    auto surface = canvas.getSurface();
-    auto width = surface->width();
-    auto height = surface->height();
-    if (filter->GetFilterType() == RSFilter::LINEAR_GRADIENT_BLUR) {
-        SkMatrix mat = canvas.getTotalMatrix();
-        filter->SetCanvasChange(mat, width, height);
-    }
-#else
-    auto surface = canvas.GetSurface();
-    auto width = surface->Width();
-    auto height = surface->Height();
-    if (filter->GetFilterType() == RSFilter::LINEAR_GRADIENT_BLUR) {
-        Drawing::Matrix mat = canvas.GetTotalMatrix();
-        filter->SetCanvasChange(mat, width, height);
-    }
-#endif
     bool shouldClearFilteredCache = false;
-    PostPartialFilterRenderInit(filter, dst, width, height, shouldClearFilteredCache);
+    PostPartialFilterRenderInit(canvas, filter, dst, shouldClearFilteredCache);
     if (cachedFilteredSnapshot_ == nullptr || cachedFilteredSnapshot_->cachedImage_ == nullptr) {
         if (RSFilterCacheTask::FilterPartialRenderEnabled && task_->IsCompleted()) {
             FilterPartialRender(canvas, filter, dst);
@@ -441,6 +440,24 @@ void RSFilterCacheManager::DrawFilter(RSPaintFilterCanvas& canvas, const std::sh
     // To reduce the memory consumption, we only keep either the cached snapshot or the filtered image.
     CompactCache(shouldClearFilteredCache);
 }
+
+#ifdef USE_ROSEN_DRAWING
+uint8_t RSFilterCacheManager::CalcDirectionBias(const Drawing::Matrix& mat)
+{
+    uint8_t directionBias = 0;
+    // 1 and 3 represents rotate matrix's index
+    if ((mat.Get(1) > FLOAT_ZERO_THRESHOLD) && (mat.Get(3) < (0 - FLOAT_ZERO_THRESHOLD))) {
+        directionBias = 1; // 1 represents rotate 90 degree
+        // 0 and 4 represents rotate matrix's index
+    } else if ((mat.Get(0) < (0 - FLOAT_ZERO_THRESHOLD)) && (mat.Get(4) < (0 - FLOAT_ZERO_THRESHOLD))) {
+        directionBias = 2; // 2 represents rotate 180 degree
+        // 1 and 3 represents rotate matrix's index
+    } else if ((mat.Get(1) < (0 - FLOAT_ZERO_THRESHOLD)) && (mat.Get(3) > FLOAT_ZERO_THRESHOLD)) {
+        directionBias = 3; // 3 represents rotate 270 degree
+    }
+    return directionBias;
+}
+#endif
 
 #ifndef USE_ROSEN_DRAWING
 const std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> RSFilterCacheManager::GeneratedCachedEffectData(
@@ -805,16 +822,24 @@ void RSFilterCacheManager::InvalidateCache(CacheType cacheType)
 void RSFilterCacheManager::ReleaseCacheOffTree()
 {
     RS_OPTIONAL_TRACE_FUNC();
-    ROSEN_LOGD("RSFilterCacheManager::ReleaseCacheOffTree task_:%{public}p", task_.get());
-    std::unique_lock<std::mutex> lock(task_->grBackendTextureMutex_);
     cachedSnapshot_.reset();
     cachedFilteredSnapshot_.reset();
+    StopFilterPartialRender();
+}
+
+void RSFilterCacheManager::StopFilterPartialRender()
+{
+    RS_OPTIONAL_TRACE_FUNC();
+    std::unique_lock<std::mutex> lock(task_->grBackendTextureMutex_);
     newCache_ = false;
     task_->isTaskRelease_.store(true);
     task_->cachedFirstFilter_ = nullptr;
     task_->ResetInTask();
     task_->SetCompleted(false);
     task_->isFirstInit_ = true;
+    task_->needClearSurface_ = false;
+    task_->isLastRender_ = false;
+    task_->surfaceFlag = -1;
     task_->SetStatus(CacheProcessStatus::WAITING);
     task_->Reset();
     if (task_->GetHandler() != nullptr) {
