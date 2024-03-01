@@ -276,7 +276,6 @@ EGLDisplay EglGetDisplayImpl(EGLNativeDisplayType type)
 
 EGLint EglGetErrorImpl(void)
 {
-    WLOGD("");
     EGLint ret = EGL_SUCCESS;
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglGetError) {
