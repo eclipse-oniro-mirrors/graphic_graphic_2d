@@ -2783,6 +2783,9 @@ void RSProperties::OnApplyModifiers()
         if (clipToFrame_ && clipToBounds_ && frameOffsetX_ == 0 && frameOffsetY_ == 0) {
             clipToFrame_ = false;
         }
+        // TODO: temporary fix to calculate relative matrix in OnApplyModifiers, later RSRenderNode::Update will
+        // overwrite it.
+        boundsGeo_->UpdateByMatrixFromSelf();
         if (RSSystemProperties::IsPcType()) {
             frameGeo_->Round();
             boundsGeo_->Round();

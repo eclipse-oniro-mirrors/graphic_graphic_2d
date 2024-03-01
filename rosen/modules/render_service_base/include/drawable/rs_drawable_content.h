@@ -32,7 +32,6 @@ class RSRenderContent;
 // NOTE: MUST update DrawableGeneratorLut in rs_property_drawable.cpp when new slots are added
 enum class RSDrawableContentSlot : uint8_t {
     INVALID = 0,
-    SAVE_ALL,
 
     // Bounds Geometry
     BOUNDS_MATRIX,
@@ -84,7 +83,6 @@ enum class RSDrawableContentSlot : uint8_t {
     PIXEL_STRETCH,
 
     RESTORE_BLEND_MODE,
-    RESTORE_ALL,
 
     // Annotations: Please remember to update this when new slots are added.
     // NOTE: MAX and *_END enums are using the one-past-the-end style.
@@ -94,7 +92,7 @@ enum class RSDrawableContentSlot : uint8_t {
     CONTENT_PROPERTIES_END   = FOREGROUND_STYLE + 1,
     FG_PROPERTIES_BEGIN      = BINARIZATION,
     FG_PROPERTIES_END        = FOREGROUND_COLOR + 1,
-    MAX                      = RESTORE_ALL + 1,
+    MAX                      = RESTORE_BLEND_MODE + 1,
 };
 
 // pure virtual base class
@@ -129,12 +127,10 @@ public:
     RSDrawableContent& operator=(const RSDrawableContent&&) = delete;
 
 
-#ifdef USE_ROSEN_DRAWING
     // Step 1, generate DirtySlots from dirty Modifiers
     using ModifierDirtyTypes = std::bitset<static_cast<int>(RSModifierType::MAX_RS_MODIFIER_TYPE)>;
     static std::unordered_set<RSDrawableContentSlot> GenerateDirtySlots(
         ModifierDirtyTypes& dirtyTypes, const Vec& drawableVec);
-#endif
     // Step 2, for every DirtySlot, generate DrawableContent
     static bool UpdateDrawableVec(
         const RSRenderNode& node, Vec& drawableVec, std::unordered_set<RSDrawableContentSlot>& dirtySlots);

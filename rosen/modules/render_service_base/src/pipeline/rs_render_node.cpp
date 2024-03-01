@@ -1404,6 +1404,9 @@ void RSRenderNode::ApplyModifiers()
     GetMutableRenderProperties().OnApplyModifiers();
     OnApplyModifiers();
 
+    // Temporary code, copy matrix into render params
+    UpdateRenderParams();
+
 #if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     if (auto& manager = GetRenderProperties().GetFilterCacheManager(false);
         manager != nullptr &&
@@ -1415,10 +1418,13 @@ void RSRenderNode::ApplyModifiers()
         manager->InvalidateCache();
     }
 
-    if (RSSystemProperties::GetPropertyDrawableEnable()) {
-        // Generate drawable
-        UpdateDrawableVec();
-    }
+    // if (RSSystemProperties::GetPropertyDrawableEnable()) {
+    //     // Generate drawable
+    //     UpdateDrawableVec();
+    // }
+
+    UpdateDrawableContentVec();
+
 #endif
 
     // update state
@@ -1437,6 +1443,26 @@ void RSRenderNode::MarkParentNeedRegenerateChildren() const
         return;
     }
     parent->isChildrenSorted_ = false;
+}
+
+void RSRenderNode::UpdateDrawableContentVec()
+{
+#ifndef ROSEN_ARKUI_X
+    // Collect dirty slots
+    auto dirtySlots = RSDrawableContent::GenerateDirtySlots(dirtyTypes_, contentVec_);
+
+    //  // initialize necessary save/clip/restore
+    // if (drawableVecStatus_ == 0) {
+    //     RSDrawableContent::InitializeSaveRestore(*renderContent_, renderContent_->propertyDrawablesVec_);
+    // }
+    // Update or regenerate drawable
+    bool drawableChanged =
+        RSDrawableContent::UpdateDrawableVec(*this, contentVec_, dirtySlots);
+    // if 1. first initialized or 2. any drawables changed, update save/clip/restore
+    if (drawableChanged || drawableVecStatus_ == 0) {
+        RSDrawableContent::UpdateSaveRestore(*renderContent_, contentVec_, drawableVecStatus_);
+    }
+#endif
 }
 
 void RSRenderNode::UpdateDrawableVec()

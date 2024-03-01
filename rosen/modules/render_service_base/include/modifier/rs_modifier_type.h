@@ -21,8 +21,10 @@
 namespace OHOS {
 namespace Rosen {
 // NOTE:
-// 1. MUST update g_propertyResetterLUT in rs_properties.cpp when new properties are added
-// 2. property modifier MUST be added before CUSTOM, else wise it will be treated as draw modifier
+// 1. Following LUTs must be updated according when this enum is updated :
+//    a. g_propertyResetterLUT in rs_properties.cpp
+//    b. g_propertyToDrawableLut in rs_drawable_content.cpp
+// 2. Property modifier(i.e. to be applied to RSProperties) MUST be added before CUSTOM enum, else wise it will not work
 enum class RSModifierType : int16_t {
     INVALID = 0,                   // 0
     BOUNDS,                        // 1

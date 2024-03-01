@@ -667,6 +667,7 @@ private:
     std::shared_ptr<RSRenderDisplaySync> displaySync_ = nullptr;
 
     uint8_t drawableVecStatus_ = 0;
+    void UpdateDrawableContentVec();
     void UpdateDrawableVec();
     void UpdateDrawableVecInternal(std::unordered_set<RSPropertyDrawableSlot> dirtySlots);
     std::map<NodeId, std::vector<WeakPtr>> subSurfaceNodes_;
