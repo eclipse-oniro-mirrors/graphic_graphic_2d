@@ -11,17 +11,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-group("fuzztest") {
-  testonly = true
-
-  deps = [
-    "brush_fuzzer:fuzztest",
-    "color_fuzzer:fuzztest",
-    "colorfilter_fuzzer:fuzztest",
-    "colorspace_fuzzer:fuzztest",
-    "hmsymbol_fuzzer:fuzztest",
-    "imagefilter_fuzzer:fuzztest",
-    "path_fuzzer:fuzztest",
-    "pen_fuzzer:fuzztest",
-  ]
-}
+FUZZ
