@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef COLOR_PICKER_NAPI_H_
-#define COLOR_PICKER_NAPI_H_
+#ifndef COLOR_PICKER_NAPI_H
+#define COLOR_PICKER_NAPI_H
 
 #include "effect_type.h"
 #include "napi/native_api.h"
