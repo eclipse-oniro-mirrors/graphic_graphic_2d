@@ -188,11 +188,7 @@ BufferDrawParam RSUniRenderUtil::CreateBufferDrawParam(const RSSurfaceRenderNode
     BufferDrawParam params;
     params.threadIndex = threadIndex;
     params.useBilinearInterpolation = node.NeedBilinearInterpolation();
-#ifdef RS_ENABLE_EGLIMAGE
     params.useCPU = forceCPU;
-#else // RS_ENABLE_EGLIMAGE
-    params.useCPU = true;
-#endif // RS_ENABLE_EGLIMAGE
 #ifndef USE_ROSEN_DRAWING
     params.paint.setAntiAlias(true);
 #ifndef NEW_SKIA
@@ -238,11 +234,7 @@ BufferDrawParam RSUniRenderUtil::CreateBufferDrawParam(const RSSurfaceRenderNode
 BufferDrawParam RSUniRenderUtil::CreateBufferDrawParam(const RSDisplayRenderNode& node, bool forceCPU)
 {
     BufferDrawParam params;
-#ifdef RS_ENABLE_EGLIMAGE
     params.useCPU = forceCPU;
-#else // RS_ENABLE_EGLIMAGE
-    params.useCPU = true;
-#endif // RS_ENABLE_EGLIMAGE
 #ifndef USE_ROSEN_DRAWING
     params.paint.setAntiAlias(true);
 #ifndef NEW_SKIA
@@ -272,11 +264,7 @@ BufferDrawParam RSUniRenderUtil::CreateBufferDrawParam(const RSDisplayRenderNode
 BufferDrawParam RSUniRenderUtil::CreateLayerBufferDrawParam(const LayerInfoPtr& layer, bool forceCPU)
 {
     BufferDrawParam params;
-#ifdef RS_ENABLE_EGLIMAGE
     params.useCPU = forceCPU;
-#else // RS_ENABLE_EGLIMAGE
-    params.useCPU = true;
-#endif // RS_ENABLE_EGLIMAGE
 #ifndef USE_ROSEN_DRAWING
     params.paint.setAntiAlias(true);
 #ifndef NEW_SKIA
