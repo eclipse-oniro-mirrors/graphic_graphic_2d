@@ -28,6 +28,7 @@
 #include "pipeline/round_corner_display/rs_rcd_render_manager.h"
 #include "pipeline/rs_dirty_region_manager.h"
 #include "pipeline/rs_processor.h"
+#include "pipeline/rs_recording_canvas.h"
 #include "platform/ohos/overdraw/rs_cpu_overdraw_canvas_listener.h"
 #include "platform/ohos/overdraw/rs_gpu_overdraw_canvas_listener.h"
 #include "platform/ohos/overdraw/rs_overdraw_controller.h"
@@ -332,6 +333,7 @@ private:
     bool IsRosenWebHardwareDisabled(RSSurfaceRenderNode& node, int rotation) const;
     bool ForceHardwareComposer(RSSurfaceRenderNode& node) const;
     bool UpdateSrcRectForHwcNode(RSSurfaceRenderNode& node); // return if srcRect is allowed by dss restriction
+    void RecordDrawCmdList(RSRenderNode& node);
 #ifndef USE_ROSEN_DRAWING
     sk_sp<SkImage> GetCacheImageFromMirrorNode(std::shared_ptr<RSDisplayRenderNode> mirrorNode);
 #else
@@ -479,6 +481,10 @@ private:
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> appWindowNodesInZOrder_;
     // vector of hardwareEnabled nodes above displayNodeSurface like pointer window
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledTopNodes_;
+    // vector of Appwindow nodes ids not contain subAppWindow nodes ids in current frame
+    std::queue<NodeId> curMainAppWindowNodesIds_;
+    // vector of sufacenodes will records dirtyregions by itself
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> curMainSurfaceNodes_;
     float localZOrder_ = 0.0f; // local zOrder for surfaceView under same app window node
 
     std::unique_ptr<RcdInfo> rcdInfo_ = nullptr;
@@ -519,14 +525,18 @@ private:
 #else
     std::optional<Drawing::RectI> effectRegion_ = std::nullopt;
 #endif
+    // variable for occlusion 
+    bool needRecalculateOcclusion_ = false;
+    Occlusion::Region accumulatedRegion_;
+
     bool curDirty_ = false;
     bool curContentDirty_ = false;
     bool isPhone_ = false;
     bool isPc_ = false;
     bool isCacheBlurPartialRenderEnabled_ = false;
     bool drawCacheWithBlur_ = false;
-    bool noNeedTodrawShadowAgain_ = false;
     bool notRunCheckAndSetNodeCacheType_ = false;
+    bool noNeedTodrawShadowAgain_ = false;
     int updateCacheProcessCnt_ = 0;
 
     NodeId firstVisitedCache_ = INVALID_NODEID;
