@@ -44,24 +44,24 @@ public:
 
     static RRect GetRRectForDrawingBorder(const RSProperties& properties, const std::shared_ptr<RSBorder>& border,
         const bool& isOutline)
-	{
-	    if (!border) {
-	        return RRect();
-	    }
+    {
+        if (!border) {
+            return RRect();
+        }
 
-	    return isOutline ?
-	        RRect(properties.GetRRect().rect_.MakeOutset(border->GetWidthFour()), border->GetRadiusFour()) :
-	        properties.GetRRect();
-	}
+        return isOutline ?
+            RRect(properties.GetRRect().rect_.MakeOutset(border->GetWidthFour()), border->GetRadiusFour()) :
+            properties.GetRRect();
+    }
 
     static RRect GetInnerRRectForDrawingBorder(const RSProperties& properties, const std::shared_ptr<RSBorder>& border,
         const bool& isOutline)
-	{
-	    if (!border) {
-	        return RRect();
-	    }
-	    return isOutline ? properties.GetRRect() : properties.GetInnerRRect();
-	}
+    {
+        if (!border) {
+            return RRect();
+        }
+        return isOutline ? properties.GetRRect() : properties.GetInnerRRect();
+    }
 };
 } // namespace Rosen
 } // namespace OHOS
