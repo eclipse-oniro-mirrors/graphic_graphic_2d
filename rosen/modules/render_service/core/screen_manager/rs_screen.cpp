@@ -342,7 +342,8 @@ void RSScreen::SetPowerStatus(uint32_t powerStatus)
         return;
     }
 
-    if (powerStatus == GraphicDispPowerStatus::GRAPHIC_POWER_STATUS_ON) {
+    if (powerStatus == GraphicDispPowerStatus::GRAPHIC_POWER_STATUS_ON ||
+        powerStatus == GraphicDispPowerStatus::GRAPHIC_POWER_STATUS_ON_ADVANCED) {
         RS_LOGD("RSScreen %{public}s Enable hardware vsync", __func__);
         if (hdiScreen_->SetScreenVsyncEnabled(true) != GRAPHIC_DISPLAY_SUCCESS) {
             RS_LOGE("RSScreen %{public}s SetScreenVsyncEnabled failed", __func__);
@@ -486,7 +487,7 @@ void RSScreen::PropDump(std::string& dumpString)
 void RSScreen::PowerStatusDump(std::string& dumpString)
 {
     dumpString += "powerstatus=";
-    switch (powerStatus_) {
+    switch (GetPowerStatus()) {
         case GRAPHIC_POWER_STATUS_ON: {
             dumpString += "POWER_STATUS_ON";
             break;
@@ -509,6 +510,14 @@ void RSScreen::PowerStatusDump(std::string& dumpString)
         }
         case GRAPHIC_POWER_STATUS_BUTT: {
             dumpString += "POWER_STATUS_BUTT";
+            break;
+        }
+        case GRAPHIC_POWER_STATUS_ON_ADVANCED: {
+            dumpString += "POWER_STATUS_ON_ADVANCED";
+            break;
+        }
+        case GRAPHIC_POWER_STATUS_OFF_ADVANCED: {
+            dumpString += "POWER_STATUS_OFF_ADVANCED";
             break;
         }
         default: {
