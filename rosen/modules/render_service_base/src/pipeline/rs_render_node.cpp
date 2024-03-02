@@ -2332,14 +2332,6 @@ RectI RSRenderNode::GetChildrenRect() const
 {
     return childrenRect_;
 }
-bool RSRenderNode::ChildHasFilter() const
-{
-    return childHasFilter_;
-}
-void RSRenderNode::SetChildHasFilter(bool childHasFilter)
-{
-    childHasFilter_ = childHasFilter;
-}
 bool RSRenderNode::ChildHasVisibleFilter() const
 {
     return childHasVisibleFilter_;

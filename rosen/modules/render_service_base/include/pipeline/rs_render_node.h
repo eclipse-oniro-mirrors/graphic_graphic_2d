@@ -185,8 +185,6 @@ public:
     void ResetChildrenRect();
     RectI GetChildrenRect() const;
 
-    bool ChildHasFilter() const;
-    void SetChildHasFilter(bool childHasFilter);
     bool ChildHasVisibleFilter() const;
     void SetChildHasVisibleFilter(bool val);
 
@@ -562,7 +560,6 @@ private:
     bool hasRemovedChild_ = false;
     bool hasChildrenOutOfRect_ = false;
     RectI childrenRect_;
-    bool childHasFilter_ = false;  // only collect children filter status
     bool childHasVisibleFilter_ = false;  // only collect visible children filter status
 
     void InternalRemoveSelfFromDisappearingChildren();
