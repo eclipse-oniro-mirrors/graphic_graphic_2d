@@ -38,15 +38,7 @@ struct OffsetInfo {
 // Advanced Filter
 static bool IsAdvancedFilterUsable()
 {
-    std::string gpuVersion = RSSystemProperties::GetRSEventProperty(PROPERTY_HIGPU_VERSION);
-    // The AF Feature is only enabled on higpu v200 platform
-    if (gpuVersion.compare("higpu.v200") != 0) {
-        return false;
-    }
-
-    // If persist.sys.graphic.supports_af=0
-    // we will not use it
-    return RSSystemProperties::GetBoolSystemProperty(PROPERTY_DEBUG_SUPPORT_AF, false);
+    return false;
 }
 
 static const bool IS_ADVANCED_FILTER_USABLE_CHECK_ONCE = IsAdvancedFilterUsable();
