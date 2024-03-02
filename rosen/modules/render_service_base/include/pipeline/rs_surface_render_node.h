@@ -596,7 +596,8 @@ public:
         return visibleRegion_.IsIntersectWith(nodeRect);
     }
 
-    bool CheckNeedRecalculateOcclusion();
+    bool CheckIfOcclusionReusable(std::queue<NodeId>& surfaceNodesIds) const;
+    bool CheckIfOcclusionChanged() const;
 
     void SetVisibleRegion(Occlusion::Region region)
     {

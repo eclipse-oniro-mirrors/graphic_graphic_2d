@@ -1395,7 +1395,20 @@ void RSSurfaceRenderNode::ResetSurfaceContainerRegion(const RectI& screeninfo, c
     containerRegion_ = absRegion.Sub(innerRectRegion);
 }
 
-bool RSSurfaceRenderNode::CheckNeedRecalculateOcclusion()
+bool RSSurfaceRenderNode::CheckIfOcclusionReusable(std::queue<NodeId>& surfaceNodesIds) const
+{
+    if (surfaceNodesIds.empty()) {
+        return true;
+    }
+    auto lastFrameSurfaceNodeId = surfaceNodesIds.front();
+    surfaceNodesIds.pop();
+    if (lastFrameSurfaceNodeId != GetId()) {
+        return true; 
+    }
+    return false;
+}
+
+bool RSSurfaceRenderNode::CheckIfOcclusionChanged() const
 {
     // TODO
    return GetZorderChanged() ||
