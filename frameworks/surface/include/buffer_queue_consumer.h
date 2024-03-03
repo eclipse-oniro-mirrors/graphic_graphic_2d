@@ -67,9 +67,6 @@ public:
         bufferQueue_->ConsumerRequestCpuAccess(on);
     }
 
-    GSError AttachBufferToQueue(sptr<SurfaceBuffer>& buffer);
-    GSError DetachBufferFromQueue(sptr<SurfaceBuffer>& buffer);
-
 private:
     sptr<BufferQueue> bufferQueue_ = nullptr;
     std::string name_ = "not init";

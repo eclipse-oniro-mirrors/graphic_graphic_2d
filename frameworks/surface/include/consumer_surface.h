@@ -127,8 +127,6 @@ public:
     GSError UnRegisterUserDataChangeListener(const std::string &funcName) override;
     GSError ClearUserDataChangeListener() override;
     void ConsumerRequestCpuAccess(bool on) override;
-    GSError AttachBufferToQueue(sptr<SurfaceBuffer>& buffer) override;
-    GSError DetachBufferFromQueue(sptr<SurfaceBuffer>& buffer) override;
 
 private:
     std::map<std::string, std::string> userData_;
