@@ -41,7 +41,6 @@
 #include "pipeline/rs_render_display_sync.h"
 #include "pipeline/rs_single_frame_composer.h"
 #include "property/rs_properties.h"
-#include "property/rs_property_drawable.h"
 
 #include "draw/surface.h"
 #include "image/gpu_context.h"
@@ -54,7 +53,6 @@ class DrawCmdList;
 class RSContext;
 class RSNodeVisitor;
 class RSCommand;
-class RSPropertyDrawable;
 namespace NativeBufferUtils {
 class VulkanCleanupHelper;
 }
@@ -518,17 +516,8 @@ protected:
     NodeId drawingCacheRootId_ = INVALID_NODEID;
     bool mustRenewedInfo_ = false;
 
-    std::bitset<static_cast<int>(RSModifierType::MAX_RS_MODIFIER_TYPE)> dirtyTypes_;
+    ModifierDirtyTypes dirtyTypes_;
     bool isBootAnimation_ = false;
-    inline void DrawPropertyDrawable(RSPropertyDrawableSlot slot, RSPaintFilterCanvas& canvas)
-    {
-        renderContent_->DrawPropertyDrawable(slot, canvas);
-    }
-    inline void DrawPropertyDrawableRange(
-        RSPropertyDrawableSlot begin, RSPropertyDrawableSlot end, RSPaintFilterCanvas& canvas)
-    {
-        renderContent_->DrawPropertyDrawableRange(begin, end, canvas);
-    }
 
 private:
     NodeId id_;
@@ -667,8 +656,7 @@ private:
     std::shared_ptr<RSRenderDisplaySync> displaySync_ = nullptr;
 
     uint8_t drawableVecStatus_ = 0;
-    void UpdateDrawableVec();
-    void UpdateDrawableVecInternal(std::unordered_set<RSPropertyDrawableSlot> dirtySlots);
+    void UpdateDrawableContentVec();
     std::map<NodeId, std::vector<WeakPtr>> subSurfaceNodes_;
     pid_t appPid_ = 0;
 

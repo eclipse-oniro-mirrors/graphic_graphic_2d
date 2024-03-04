@@ -37,7 +37,7 @@
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "property/rs_properties_painter.h"
-#include "property/rs_property_drawable.h"
+// #include "property/rs_property_drawable.h"
 #include "property/rs_property_trace.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "visitor/rs_node_visitor.h"
@@ -1229,10 +1229,10 @@ void RSRenderNode::RenderTraceDebug() const
 
 void RSRenderNode::ApplyBoundsGeometry(RSPaintFilterCanvas& canvas)
 {
-    if (RSSystemProperties::GetPropertyDrawableEnable()) {
-        DrawPropertyDrawableRange(RSPropertyDrawableSlot::SAVE_ALL, RSPropertyDrawableSlot::BOUNDS_MATRIX, canvas);
-        return;
-    }
+    // if (RSSystemProperties::GetPropertyDrawableEnable()) {
+    //     DrawPropertyDrawableRange(RSPropertyDrawableSlot::SAVE_ALL, RSPropertyDrawableSlot::BOUNDS_MATRIX, canvas);
+    //     return;
+    // }
     renderNodeSaveCount_ = canvas.SaveAllStatus();
     auto boundsGeo = (GetRenderProperties().GetBoundsGeometry());
     if (boundsGeo && (!boundsGeo->IsEmpty() || boundsGeo->IsValidOffset())) {
@@ -1242,10 +1242,10 @@ void RSRenderNode::ApplyBoundsGeometry(RSPaintFilterCanvas& canvas)
 
 void RSRenderNode::ApplyAlpha(RSPaintFilterCanvas& canvas)
 {
-    if (RSSystemProperties::GetPropertyDrawableEnable()) {
-        DrawPropertyDrawable(RSPropertyDrawableSlot::ALPHA, canvas);
-        return;
-    }
+    // if (RSSystemProperties::GetPropertyDrawableEnable()) {
+    //     DrawPropertyDrawable(RSPropertyDrawableSlot::ALPHA, canvas);
+    //     return;
+    // }
     auto alpha = GetRenderProperties().GetAlpha();
     if (alpha < 1.f) {
         if (!(GetRenderProperties().GetAlphaOffscreen() || IsForcedDrawInGroup())) {
@@ -1262,10 +1262,10 @@ void RSRenderNode::ApplyAlpha(RSPaintFilterCanvas& canvas)
 
 void RSRenderNode::ProcessTransitionBeforeChildren(RSPaintFilterCanvas& canvas)
 {
-    if (RSSystemProperties::GetPropertyDrawableEnable()) {
-        DrawPropertyDrawableRange(RSPropertyDrawableSlot::SAVE_ALL, RSPropertyDrawableSlot::MASK, canvas);
-        return;
-    }
+    // if (RSSystemProperties::GetPropertyDrawableEnable()) {
+    //     DrawPropertyDrawableRange(RSPropertyDrawableSlot::SAVE_ALL, RSPropertyDrawableSlot::MASK, canvas);
+    //     return;
+    // }
     ApplyBoundsGeometry(canvas);
     ApplyAlpha(canvas);
     RSPropertiesPainter::DrawMask(GetRenderProperties(), canvas);
@@ -1278,19 +1278,19 @@ void RSRenderNode::ProcessRenderBeforeChildren(RSPaintFilterCanvas& canvas)
 
 void RSRenderNode::ProcessTransitionAfterChildren(RSPaintFilterCanvas& canvas)
 {
-    if (RSSystemProperties::GetPropertyDrawableEnable()) {
-        DrawPropertyDrawable(RSPropertyDrawableSlot::RESTORE_ALL, canvas);
-        return;
-    }
+    // if (RSSystemProperties::GetPropertyDrawableEnable()) {
+    //     DrawPropertyDrawable(RSPropertyDrawableSlot::RESTORE_ALL, canvas);
+    //     return;
+    // }
     canvas.RestoreStatus(renderNodeSaveCount_);
 }
 
 void RSRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas)
 {
-    if (RSSystemProperties::GetPropertyDrawableEnable()) {
-        DrawPropertyDrawable(RSPropertyDrawableSlot::RESTORE_ALL, canvas);
-        return;
-    }
+    // if (RSSystemProperties::GetPropertyDrawableEnable()) {
+    //     DrawPropertyDrawable(RSPropertyDrawableSlot::RESTORE_ALL, canvas);
+    //     return;
+    // }
     canvas.RestoreStatus(renderNodeSaveCount_);
 }
 
@@ -1404,6 +1404,9 @@ void RSRenderNode::ApplyModifiers()
     GetMutableRenderProperties().OnApplyModifiers();
     OnApplyModifiers();
 
+    // Temporary code, copy matrix into render params
+    UpdateRenderParams();
+
 #if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     if (auto& manager = GetRenderProperties().GetFilterCacheManager(false);
         manager != nullptr &&
@@ -1415,10 +1418,13 @@ void RSRenderNode::ApplyModifiers()
         manager->InvalidateCache();
     }
 
-    if (RSSystemProperties::GetPropertyDrawableEnable()) {
-        // Generate drawable
-        UpdateDrawableVec();
-    }
+    // if (RSSystemProperties::GetPropertyDrawableEnable()) {
+    //     // Generate drawable
+    //     UpdateDrawableVec();
+    // }
+
+    UpdateDrawableContentVec();
+
 #endif
 
     // update state
@@ -1439,43 +1445,74 @@ void RSRenderNode::MarkParentNeedRegenerateChildren() const
     parent->isChildrenSorted_ = false;
 }
 
-void RSRenderNode::UpdateDrawableVec()
+void RSRenderNode::UpdateDrawableContentVec()
 {
 #ifndef ROSEN_ARKUI_X
-    // Collect dirty slots
-    auto dirtySlots = RSPropertyDrawable::GenerateDirtySlots(GetRenderProperties(), dirtyTypes_);
-    if (!GetIsUsedBySubThread()) {
-        UpdateDrawableVecInternal(dirtySlots);
-    } else if (auto context = context_.lock()) {
-        context->PostTask([weakPtr = weak_from_this(), dirtySlots]() {
-            if (auto node = weakPtr.lock()) {
-                node->UpdateDrawableVecInternal(dirtySlots);
+    // Step 1: Collect dirty slots
+    auto dirtySlots = RSDrawableContent::CalculateDirtySlots(dirtyTypes_, contentVec_);
+
+    if (dirtySlots.empty()) {
+        return;
+    }
+
+    // Step 2: Update or regenerate drawable if needed
+    bool drawableChanged = RSDrawableContent::UpdateDirtySlots(*this, contentVec_, dirtySlots);
+
+    if (drawableChanged || drawableVecStatus_ == 0) {
+        // Step 3: if any drawables changed, update save/clip/restore
+        RSDrawableContent::UpdateSaveRestore(*renderContent_, contentVec_, drawableVecStatus_);
+
+        // Step 4: Generate drawCmdList from drawables
+        // TODO: use correct W/H instead of 0
+        auto recordingCanvas_ = std::make_unique<ExtendRecordingCanvas>(0, 0, true);
+        for (const auto& drawable : contentVec_) {
+            if (drawable) {
+                recordingCanvas_->DrawDrawFunc(drawable->CreateDrawFunc());
             }
-        });
-    } else {
-        ROSEN_LOGI("%{public}s GetIsUsedBySubThread[%{public}d].", __func__, GetIsUsedBySubThread());
-        UpdateDrawableVecInternal(dirtySlots);
+        }
+        stagingDrawCmdList_ = recordingCanvas_->GetDrawCmdList();
+        needSync_ = true;
     }
 #endif
 }
 
-void RSRenderNode::UpdateDrawableVecInternal(std::unordered_set<RSPropertyDrawableSlot> dirtySlots)
-{
-#ifndef ROSEN_ARKUI_X
-     // initialize necessary save/clip/restore
-    if (drawableVecStatus_ == 0) {
-        RSPropertyDrawable::InitializeSaveRestore(*renderContent_, renderContent_->propertyDrawablesVec_);
-    }
-    // Update or regenerate drawable
-    bool drawableChanged =
-        RSPropertyDrawable::UpdateDrawableVec(*renderContent_, renderContent_->propertyDrawablesVec_, dirtySlots);
-    // if 1. first initialized or 2. any drawables changed, update save/clip/restore
-    if (drawableChanged || drawableVecStatus_ == 0) {
-        RSPropertyDrawable::UpdateSaveRestore(
-            *renderContent_, renderContent_->propertyDrawablesVec_, drawableVecStatus_);
-    }
-#endif
-}
+// void RSRenderNode::UpdateDrawableVec()
+// {
+// #ifndef ROSEN_ARKUI_X
+//     // Collect dirty slots
+//     auto dirtySlots = RSPropertyDrawable::GenerateDirtySlots(GetRenderProperties(), dirtyTypes_);
+//     if (!GetIsUsedBySubThread()) {
+//         UpdateDrawableVecInternal(dirtySlots);
+//     } else if (auto context = context_.lock()) {
+//         context->PostTask([weakPtr = weak_from_this(), dirtySlots]() {
+//             if (auto node = weakPtr.lock()) {
+//                 node->UpdateDrawableVecInternal(dirtySlots);
+//             }
+//         });
+//     } else {
+//         ROSEN_LOGI("%{public}s GetIsUsedBySubThread[%{public}d].", __func__, GetIsUsedBySubThread());
+//         UpdateDrawableVecInternal(dirtySlots);
+//     }
+// #endif
+// }
+
+// void RSRenderNode::UpdateDrawableVecInternal(std::unordered_set<RSPropertyDrawableSlot> dirtySlots)
+// {
+// #ifndef ROSEN_ARKUI_X
+//      // initialize necessary save/clip/restore
+//     if (drawableVecStatus_ == 0) {
+//         RSPropertyDrawable::InitializeSaveRestore(*renderContent_, renderContent_->propertyDrawablesVec_);
+//     }
+//     // Update or regenerate drawable
+//     bool drawableChanged =
+//         RSPropertyDrawable::UpdateDrawableVec(*renderContent_, renderContent_->propertyDrawablesVec_, dirtySlots);
+//     // if 1. first initialized or 2. any drawables changed, update save/clip/restore
+//     if (drawableChanged || drawableVecStatus_ == 0) {
+//         RSPropertyDrawable::UpdateSaveRestore(
+//             *renderContent_, renderContent_->propertyDrawablesVec_, drawableVecStatus_);
+//     }
+// #endif
+// }
 
 void RSRenderNode::UpdateEffectRegion(std::optional<Drawing::RectI>& region, bool isForced)
 {
