@@ -516,6 +516,12 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
             uniRenderEngine_->DrawBuffer(*canvas, params);
         }
 #endif
+        // Dfx for redraw region
+        if (RSSystemProperties::GetHwcRegionDfxEnabled()) {
+            RectI dst(dstRect.x, dstRect.y, dstRect.w, dstRect.h);
+            RSUniRenderUtil::DrawRectForDfx(*canvas, dst, Drawing::Color::COLOR_YELLOW, 0.4f,
+                layer->GetSurface()->GetName());
+        }
     }
 
     if (isTopGpuDraw && RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {

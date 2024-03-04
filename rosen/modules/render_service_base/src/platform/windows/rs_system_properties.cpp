@@ -372,5 +372,10 @@ bool RSSystemProperties::GetDumpUIPixelmapEnabled()
 {
     return false;
 }
+
+bool RSSystemProperties::GetHwcRegionDfxEnabled()
+{
+    return false;
+}
 } // namespace Rosen
 } // namespace OHOS
