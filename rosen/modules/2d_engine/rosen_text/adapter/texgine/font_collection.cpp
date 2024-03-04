@@ -14,7 +14,7 @@
  */
 
 #include "font_collection.h"
-
+#include "utils/log.h"
 #include "texgine/dynamic_font_provider.h"
 #include "texgine/font_providers.h"
 #include "texgine/system_font_provider.h"

@@ -186,6 +186,9 @@ if (enable_text_gine) {
       "./skia_txt:skia_libtxt_$platform",
     ]
 
+    external_deps = [
+      "hilog:libhilog",
+    ]
     part_name = "graphic_2d"
     subsystem_name = "graphic"
   }
