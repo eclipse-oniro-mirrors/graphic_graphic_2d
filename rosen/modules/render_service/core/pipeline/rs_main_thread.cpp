@@ -271,6 +271,7 @@ void RSMainThread::Init()
         ProcessHgmFrameRate(timestamp_);
         // may mark rsnotrendering
         Render(); // now render is traverse tree to prepare
+        drawFrame_.SetRenderThreadParams(renderThreadParams_);
         drawFrame_.PostAndWait();
 
         // move rnv after mark rsnotrendring
@@ -1426,6 +1427,7 @@ void RSMainThread::Render()
         RS_LOGE("RSMainThread::Render GetGlobalRootRenderNode fail");
         return;
     }
+    renderThreadParams_ = std::make_unique<RSRenderThreadParams>(); // fill the params, and sync to render thread later
     if (RSSystemProperties::GetRenderNodeTraceEnabled()) {
         RSPropertyTrace::GetInstance().RefreshNodeTraceInfo();
     }

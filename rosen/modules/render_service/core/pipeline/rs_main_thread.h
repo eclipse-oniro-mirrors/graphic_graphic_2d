@@ -45,6 +45,7 @@
 #include "platform/drawing/rs_vsync_client.h"
 #include "platform/common/rs_event_manager.h"
 #include "transaction/rs_transaction_data.h"
+#include "params/rs_render_thread_params.h"
 
 namespace OHOS::Rosen {
 #if defined(ACCESSIBILITY_ENABLE)
@@ -520,6 +521,7 @@ private:
     std::atomic_bool discardJankFrames_ = false;
     bool forceUIFirstChanged_ = false;
     RSDrawFrame drawFrame_;
+    std::unique_ptr<RSRenderThreadParams> renderThreadParams_ = nullptr; // sync to render thread
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

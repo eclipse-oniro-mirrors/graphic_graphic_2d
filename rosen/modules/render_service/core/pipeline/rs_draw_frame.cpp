@@ -30,6 +30,11 @@ RSDrawFrame::~RSDrawFrame() noexcept
 
 }
 
+void RSDrawFrame::SetRenderThreadParams(std::unique_ptr<RSRenderThreadParams>& stagingRenderThreadParams)
+{
+    stagingRenderThreadParams_ = std::move(stagingRenderThreadParams);
+}
+
 void RSDrawFrame::RenderFrame()
 {
     RS_TRACE_NAME_FMT("RenderFrame");
@@ -58,6 +63,8 @@ void RSDrawFrame::Sync()
         }
         node->Sync();
     }
+
+    unirenderInstance_.Sync(stagingRenderThreadParams_);
 }
 
 void RSDrawFrame::UnblockMainThread()

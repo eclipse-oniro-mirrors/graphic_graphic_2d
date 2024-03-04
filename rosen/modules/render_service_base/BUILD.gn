@@ -172,6 +172,7 @@ ohos_source_set("render_service_base_src") {
 
     #params
     "src/params/rs_render_params.cpp",
+    "src/params/rs_render_thread_params.cpp",
 
     #pipeline
     "src/pipeline/rs_canvas_drawing_render_node.cpp",

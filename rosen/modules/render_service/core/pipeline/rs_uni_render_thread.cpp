@@ -90,6 +90,11 @@ void RSUniRenderThread::PostSyncTask(const std::function<void()>& task)
     handler_->PostSyncTask(task, AppExecFwk::EventQueue::Priority::IMMEDIATE);
 }
 
+void RSUniRenderThread::Sync(std::unique_ptr<RSRenderThreadParams>& stagingRenderThreadParams)
+{
+    renderThreadParams_ = std::move(stagingRenderThreadParams);
+}
+
 void RSUniRenderThread::Render()
 {
     if (!rootNodeDrawable_) {
