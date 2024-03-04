@@ -88,7 +88,7 @@ static uint32_t cacheReuseTimes = 0;
 static std::mutex cacheRenderNodeMapMutex;
 static std::mutex groupedTransitionNodesMutex;
 // vector of Appwindow nodes ids not contain subAppWindow nodes ids in last frame
-static std::queue<NodeId> preMainAppWindowNodesIds_;
+static std::queue<NodeId> preMainAndLeashWindowNodesIds_;;
 using groupedTransitionNodesType = std::unordered_map<NodeId, std::pair<RSUniRenderVisitor::RenderParam,
     std::unordered_map<NodeId, RSUniRenderVisitor::RenderParam>>>;
 static std::unordered_map<NodeId, std::pair<RSUniRenderVisitor::RenderParam,
@@ -1222,6 +1222,12 @@ bool RSUniRenderVisitor::IsSubTreeNeedPrepare(RSRenderNode& node, std::shared_pt
 bool RSUniRenderVisitor::IsSubTreeOccluded(RSRenderNode& node) const
 {
     // step1. apply occlusion info for surfacenode and skip fully covered subtree
+    if (node.GetType() == RSRenderNodeType::SURFACE_NODE) {
+        auto& surfaceNode = static_cast<RSSurfaceRenderNode&>(node);
+        if (surfaceNode.IsMainWindowType()) {
+            return surfaceNode.GetVisibleRegion().IsEmpty();
+        }
+    }
     // step2.1 For partial visible surface, intersected region->rects in surface
     // step2.2 check if clean subtree in occlusion rects
     return false;
@@ -1248,9 +1254,9 @@ void RSUniRenderVisitor::QuickPrepareDisplayRenderNode(RSDisplayRenderNode& node
     // todo: update rotation based on screenInfo
     dirtyFlag_ = isDirty_ || node.IsRotationChanged();
     needRecalculateOcclusion_ = false;
-    accumulatedRegion_.Reset();
-    while (!curMainAppWindowNodesIds_.empty()) {
-        curMainAppWindowNodesIds_.pop();
+    accumulatedOcclusionRegion_.Reset();
+    while (!curMainAndLeashWindowNodesIds_.empty()) {
+        curMainAndLeashWindowNodesIds_.pop();
     }
 
     // TODO: Occulusion check whether to applymodifiers.
@@ -1266,7 +1272,7 @@ void RSUniRenderVisitor::QuickPrepareDisplayRenderNode(RSDisplayRenderNode& node
     if (IsSubTreeNeedPrepare(node)) {
         QuickPrepareChildren(node);
     }
-    std::swap(preMainAppWindowNodesIds_, curMainAppWindowNodesIds_);
+    std::swap(preMainAndLeashWindowNodesIds_, curMainAndLeashWindowNodesIds_);
 }
 
 void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
@@ -1286,19 +1292,10 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
         filterInGlobal_ = curSurfaceNode_->IsTransparent();
     }
     bool dirtyFlag = dirtyFlag_;
-    curMainAppWindowNodesIds_.push(node.GetId());
-    curMainSurfaceNodes_.push_back(std::shared_ptr<RSSurfaceRenderNode>(&node));
-    if (!needRecalculateOcclusion_) {
-        if (preMainAppWindowNodesIds_.empty()) {
-            needRecalculateOcclusion_ = true;
-        } else {
-            auto lastFrameSurfaceNodeId = preMainAppWindowNodesIds_.front();
-            preMainAppWindowNodesIds_.pop();
-            if (lastFrameSurfaceNodeId != node.GetId()) {
-                needRecalculateOcclusion_ = true;   
-            }
-        }
-    }
+    curMainAndLeashWindowNodesIds_.push(node.GetId());
+    curMainAndLeashSurfaceNodes_.push_back(std::shared_ptr<RSSurfaceRenderNode>(&node));
+    needRecalculateOcclusion_ = needRecalculateOcclusion_ ||
+        node.CheckIfOcclusionReusable(preMainAndLeashWindowNodesIds_);
 
     //1. Update matrix and collect dirty region
     RectI prepareClipRect = prepareClipRect_;
@@ -1317,31 +1314,35 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     node.SetDstRect(dstRect);
     node.UpdatePositionZ();
     // 2. Recursively traverse child nodes
-    if (node.IsAppWindow()) {
+    if (node.IsMainWindowType()) {
         prepareClipRect_ = prepareClipRect;
-        // CheckAndUpdateOpaqueRegion only in appWindow
+        // CheckAndUpdateOpaqueRegion only in mainWindow
         auto screenRect = RectI(0, 0, screenInfo_.width, screenInfo_.height);
         node.CheckAndUpdateOpaqueRegion(screenRect, dstRect, curDisplayNode_->GetRotation());
         if (!needRecalculateOcclusion_) {
-            needRecalculateOcclusion_ |= node.CheckNeedRecalculateOcclusion();
+            needRecalculateOcclusion_ = node.CheckIfOcclusionChanged();
         }
-
         // Update node visbleRegion
         if (needRecalculateOcclusion_) {
             Occlusion::Rect occlusionRect = node.GetSurfaceOcclusionRect(true);
             Occlusion::Region curRegion { occlusionRect };    
-            Occlusion::Region subResult = curRegion.Sub(accumulatedRegion_);
+            Occlusion::Region subResult = curRegion.Sub(accumulatedOcclusionRegion_);
             node.SetVisibleRegion(curRegion);
         } 
         //4. TODO::prepare nodes in app
-        PrepareChildren(node);
-        accumulatedRegion_.OrSelf(node.GetOpaqueRegion());
+        if (!IsSubTreeOccluded(node)) {
+            PrepareChildren(node);
+        }
+
+        ResetCurSurfaceInfoAsUpperSurfaceParent(node);
+        accumulatedOcclusionRegion_.OrSelf(node.GetOpaqueRegion());
         return;
     }
 
     if (IsSubTreeNeedPrepare(node, nodeParent) || !IsSubTreeOccluded(node)) {
         QuickPrepareChildren(node);
     }
+
     prepareClipRect_ = prepareClipRect;
     dirtyFlag_ = dirtyFlag;
     ResetCurSurfaceInfoAsUpperSurfaceParent(node);
@@ -1413,15 +1414,6 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
     // Record the whole drawcmdlist of this node
     RecordDrawCmdList(node);
 
-    // Record the whole drawcmdlist of this node
-    RecordDrawCmdList(node);
-
-    auto rsSurfaceParent = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(rsParent);
-    if (rsSurfaceParent->IsLeashWindow()) {
-        // TODO: record node to be prepare int next prepare stage.
-        return;
-    }
-
     // 1. Recursively traverse child nodes
     if (!curSurfaceNode_ || IsSubTreeNeedPrepare(node, nodeParent)) {
         QuickPrepareChildren(node);
@@ -1437,7 +1429,7 @@ void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
     std::for_each((*children).rbegin(), (*children).rend(),
         [this](const std::shared_ptr<RSRenderNode>& node) {
         curDirty_ = node->IsDirty();
-        node->Prepare(shared_from_this());
+        node->QuickPrepare(shared_from_this());
     });
     PrepareChildrenAfter(node);
 }
@@ -1774,7 +1766,13 @@ void RSUniRenderVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
         RS_LOGE("RSUniRenderVisitor::PrepareRootRenderNode curSurfaceDirtyManager is nullptr");
         return;
     }
-    dirtyFlag_ = node.Update(*curSurfaceDirtyManager_, rsParent, dirtyFlag_, prepareClipRect_);
+
+    if (RSSystemParameters::GetQuickPrepareEnabled()) {
+        dirtyFlag_ = node.Update(*curSurfaceDirtyManager_, nullptr, dirtyFlag_, prepareClipRect_);
+    } else {
+        dirtyFlag_ = node.Update(*curSurfaceDirtyManager_, rsParent, dirtyFlag_, prepareClipRect_);
+    }
+
     if (rsParent == curSurfaceNode_) {
         const float rootWidth = property.GetFrameWidth() * property.GetScaleX();
         const float rootHeight = property.GetFrameHeight() * property.GetScaleY();
