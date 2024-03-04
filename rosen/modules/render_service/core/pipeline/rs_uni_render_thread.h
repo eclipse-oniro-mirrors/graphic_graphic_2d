@@ -23,6 +23,7 @@
 #include "drawable/rs_render_node_drawable.h"
 #include "pipeline/rs_base_render_engine.h"
 #include "pipeline/rs_context.h"
+#include "params/rs_render_thread_params.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -39,7 +40,7 @@ public:
     void Start();
     void InitGrContext();
     void RenderFrames();
-    void Sync(std::list<std::shared_ptr<RSRenderNode>> nodes);
+    void Sync(std::unique_ptr<RSRenderThreadParams>& stagingRenderThreadParams);
     void PostTask(const std::function<void()>& task);
     void PostSyncTask(const std::function<void()>& task);
     void Render();
@@ -55,6 +56,8 @@ private:
     std::shared_ptr<RSBaseRenderEngine> uniRenderEngine_;
     std::shared_ptr<RSContext> context_;
     std::unique_ptr<RSRenderNodeDrawable> rootNodeDrawable_;
+
+    std::unique_ptr<RSRenderThreadParams> renderThreadParams_ = nullptr; // sync from main thread
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -21,6 +21,7 @@
 
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_uni_render_thread.h"
+#include "params/rs_render_thread_params.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -34,19 +35,22 @@ public:
     RSDrawFrame& operator=(const RSDrawFrame&) = delete;
     RSDrawFrame& operator=(const RSDrawFrame&&) = delete;
 
+    void SetRenderThreadParams(std::unique_ptr<RSRenderThreadParams>& stagingRenderThreadParams);
     void PostAndWait();
+
+private:
     void RenderFrame();
     void UnblockMainThread();
     void Sync();
     void Render();
 
-private:
     RSUniRenderThread& unirenderInstance_;
 
     std::mutex frameMutex_;
     std::condition_variable frameCV_;
     std::list<std::shared_ptr<RSRenderNode>> nodes;
     bool canUnblockMainThread = false;
+    std::unique_ptr<RSRenderThreadParams> stagingRenderThreadParams_ = nullptr;
 };
 } // Rosen
 } // OHOS
