@@ -24,6 +24,7 @@
 
 #include "drawable/rs_drawable.h"
 #include "modifier/rs_modifier_type.h"
+#include "pipeline/rs_paint_filter_canvas.h"
 
 namespace OHOS::Rosen {
 // RSChildrenDrawable, for drawing children of RSRenderNode, updates on child add/remove
@@ -67,11 +68,83 @@ private:
     friend class RSCustomModifierDrawable;
 };
 
-// Save/Restore
+// ============================================================================
+// Save and Restore
+class RSSaveDrawable : public RSDrawable {
+public:
+    explicit RSSaveDrawable(std::shared_ptr<uint32_t> content);
+    ~RSSaveDrawable() override = default;
 
-// Clip
+    // no need to sync, content_ only used in render thread
+    void OnSync() override {};
+    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
 
-// Alpha & restore
+private:
+    std::shared_ptr<uint32_t> content_;
+};
 
+class RSRestoreDrawable : public RSDrawable {
+public:
+    explicit RSRestoreDrawable(std::shared_ptr<uint32_t> content);
+    ~RSRestoreDrawable() override = default;
+
+    // no need to sync, content_ only used in render thread
+    void OnSync() override {};
+    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+
+private:
+    std::shared_ptr<uint32_t> content_;
+};
+
+class RSCustomSaveDrawable : public RSDrawable {
+public:
+    explicit RSCustomSaveDrawable(
+        std::shared_ptr<RSPaintFilterCanvas::SaveStatus> content, RSPaintFilterCanvas::SaveType type);
+    ~RSCustomSaveDrawable() override = default;
+
+    // no need to sync, content_ only used in render thread
+    void OnSync() override {};
+    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+
+private:
+    std::shared_ptr<RSPaintFilterCanvas::SaveStatus> content_;
+    RSPaintFilterCanvas::SaveType type_;
+};
+
+class RSCustomRestoreDrawable : public RSDrawable {
+public:
+    explicit RSCustomRestoreDrawable(std::shared_ptr<RSPaintFilterCanvas::SaveStatus> content);
+    ~RSCustomRestoreDrawable() override = default;
+
+    // no need to sync, content_ only used in render thread
+    void OnSync() override {};
+    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+
+private:
+    std::shared_ptr<RSPaintFilterCanvas::SaveStatus> content_;
+};
+
+// ============================================================================
+// Alpha
+class RSAlphaDrawable : public RSDrawable {
+public:
+    explicit RSAlphaDrawable() = default;
+    ~RSAlphaDrawable() override = default;
+
+    static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
+    bool OnUpdate(const RSRenderNode& node) override;
+    void OnSync() override;
+
+    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+
+protected:
+    bool needSync_ = false;
+    // Render properties
+    float alpha_ = 0.0f;
+    bool offscreen_ = false;
+    // Staging properties
+    float stagingAlpha_ = 0.0f;
+    bool stagingOffscreen_ = false;
+};
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_DRAWABLE_RS_UTILITIES_DRAWABLE_H

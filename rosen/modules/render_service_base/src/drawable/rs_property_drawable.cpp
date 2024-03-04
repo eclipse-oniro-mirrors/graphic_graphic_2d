@@ -108,6 +108,82 @@ private:
     RSPropertyDrawable* target_;
 };
 
+// ============================================================================
+RSDrawable::Ptr RSFrameOffsetDrawable::OnGenerate(const RSRenderNode& node)
+{
+    if (auto ret = std::make_shared<RSFrameOffsetDrawable>(); ret->OnUpdate(node)) {
+        return ret;
+    }
+    return nullptr;
+};
+
+bool RSFrameOffsetDrawable::OnUpdate(const RSRenderNode& node)
+{
+    const RSProperties& properties = node.GetRenderProperties();
+    auto frameOffsetX = properties.GetFrameOffsetX();
+    auto frameOffsetY = properties.GetFrameOffsetY();
+    if (frameOffsetX == 0 && frameOffsetY == 0) {
+        return false;
+    }
+
+    // regenerate stagingDrawCmdList_
+    RSPropertyDrawCmdListUpdater updater(0, 0, this);
+    updater.GetRecordingCanvas()->Translate(frameOffsetX, frameOffsetY);
+    return true;
+}
+
+// ============================================================================
+RSDrawable::Ptr RSClipToBoundsDrawable::OnGenerate(const RSRenderNode& node)
+{
+    if (auto ret = std::make_shared<RSClipToBoundsDrawable>(); ret->OnUpdate(node)) {
+        return ret;
+    }
+    return nullptr;
+};
+
+bool RSClipToBoundsDrawable::OnUpdate(const RSRenderNode &node)
+{
+    const RSProperties& properties = node.GetRenderProperties();
+    RSPropertyDrawCmdListUpdater updater(0, 0, this);
+    auto& canvas = *updater.GetRecordingCanvas();
+    if (properties.GetClipBounds() != nullptr) {
+        canvas.ClipPath(properties.GetClipBounds()->GetDrawingPath(), Drawing::ClipOp::INTERSECT, true);
+    } else if (properties.GetClipToRRect()) {
+        canvas.ClipRoundRect(
+            RSPropertiesPainter::RRect2DrawingRRect(properties.GetClipRRect()), Drawing::ClipOp::INTERSECT, false);
+    } else if (!properties.GetCornerRadius().IsZero()) {
+        canvas.ClipRoundRect(
+            RSPropertiesPainter::RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::INTERSECT, true);
+    } else {
+        canvas.ClipRect(
+            RSPropertiesPainter::Rect2DrawingRect(properties.GetBoundsRect()), Drawing::ClipOp::INTERSECT, true);
+    }
+    return true;
+}
+
+RSDrawable::Ptr RSClipToFrameDrawable::OnGenerate(const RSRenderNode &node)
+{
+    if (auto ret = std::make_shared<RSClipToFrameDrawable>(); ret->OnUpdate(node)) {
+        return ret;
+    }
+    return nullptr;
+}
+
+bool RSClipToFrameDrawable::OnUpdate(const RSRenderNode &node)
+{
+    const RSProperties& properties = node.GetRenderProperties();
+    if (!properties.GetClipToFrame()) {
+        return false;
+    }
+
+    RSPropertyDrawCmdListUpdater updater(0, 0, this);
+    updater.GetRecordingCanvas()->ClipRect(
+        RSPropertiesPainter::Rect2DrawingRect(properties.GetFrameRect()), Drawing::ClipOp::INTERSECT, false);
+    return true;
+}
+
+// ============================================================================
+// Background
 RSDrawable::Ptr RSBackgroundColorDrawable::OnGenerate(const RSRenderNode& node)
 {
     if (auto ret = std::make_shared<RSBackgroundColorDrawable>(); ret->OnUpdate(node)) {

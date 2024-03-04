@@ -1462,7 +1462,7 @@ void RSRenderNode::UpdateDrawableVec()
 
     if (drawableChanged || drawableVecStatus_ == 0) {
         // Step 3: if any drawables changed, update save/clip/restore
-        RSDrawable::UpdateSaveRestore(*renderContent_, drawableVec_, drawableVecStatus_);
+        RSDrawable::UpdateSaveRestore(*this, drawableVec_, drawableVecStatus_);
 
         // Step 4: Generate drawCmdList from drawables
         // TODO: use correct W/H instead of 0

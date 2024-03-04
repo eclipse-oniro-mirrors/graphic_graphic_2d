@@ -15,7 +15,6 @@
 
 #include "drawable/rs_utilities_drawable.h"
 
-#include "drawable/rs_property_drawable.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
 #include "pipeline/rs_render_node.h"
 
@@ -114,6 +113,90 @@ Drawing::RecordingCanvas::DrawFunc RSCustomModifierDrawableContent::CreateDrawFu
         for (const auto& drawCmdList : ptr->drawCmdList_) {
             drawCmdList->Playback(*canvas);
         }
+    };
+}
+
+// ============================================================================
+// Alpha
+RSDrawable::Ptr RSAlphaDrawable::OnGenerate(const RSRenderNode& node)
+{
+    if (auto ret = std::make_shared<RSAlphaDrawable>(); ret->OnUpdate(node)) {
+        return ret;
+    }
+    return nullptr;
+}
+bool RSAlphaDrawable::OnUpdate(const RSRenderNode& node)
+{
+    auto alpha = node.GetRenderProperties().GetAlpha();
+    if (alpha == 1) {
+        return false;
+    }
+    stagingAlpha_ = alpha;
+    stagingOffscreen_ = node.GetRenderProperties().GetAlphaOffscreen();
+    needSync_ = true;
+    return true;
+}
+void RSAlphaDrawable::OnSync()
+{
+    if (!needSync_) {
+        return;
+    }
+    alpha_ = stagingAlpha_;
+    offscreen_ = stagingOffscreen_;
+    needSync_ = false;
+}
+Drawing::RecordingCanvas::DrawFunc RSAlphaDrawable::CreateDrawFunc() const
+{
+    auto ptr = std::static_pointer_cast<const RSAlphaDrawable>(shared_from_this());
+    return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
+        auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
+        // TODO: implement alpha offscreen
+        paintFilterCanvas->MultiplyAlpha(ptr->alpha_);
+    };
+}
+
+// ============================================================================
+// Save and Restore
+RSSaveDrawable::RSSaveDrawable(std::shared_ptr<uint32_t> content) : content_(std::move(content)) {}
+Drawing::RecordingCanvas::DrawFunc RSSaveDrawable::CreateDrawFunc() const
+{
+    return [content = content_](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
+        // Save and return save count
+        *content = canvas->Save();
+    };
+}
+
+RSRestoreDrawable::RSRestoreDrawable(std::shared_ptr<uint32_t> content) : content_(std::move(content)) {}
+Drawing::RecordingCanvas::DrawFunc RSRestoreDrawable::CreateDrawFunc() const
+{
+    return [content = content_](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
+        // return to previous save count
+        canvas->RestoreToCount(*content);
+    };
+}
+
+RSCustomSaveDrawable::RSCustomSaveDrawable(
+    std::shared_ptr<RSPaintFilterCanvas::SaveStatus> content, RSPaintFilterCanvas::SaveType type)
+    : content_(std::move(content)), type_(type)
+{}
+Drawing::RecordingCanvas::DrawFunc RSCustomSaveDrawable::CreateDrawFunc() const
+{
+    return [content = content_, type = type_](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
+        auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
+        // Save and return save count
+        *content = paintFilterCanvas->SaveAllStatus(type);
+    };
+}
+
+RSCustomRestoreDrawable::RSCustomRestoreDrawable(std::shared_ptr<RSPaintFilterCanvas::SaveStatus> content)
+    : content_(std::move(content))
+{}
+Drawing::RecordingCanvas::DrawFunc RSCustomRestoreDrawable::CreateDrawFunc() const
+{
+    return [content = content_](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
+        auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
+        // return to previous save count
+        paintFilterCanvas->RestoreStatus(*content);
     };
 }
 } // namespace OHOS::Rosen

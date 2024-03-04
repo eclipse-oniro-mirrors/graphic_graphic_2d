@@ -32,6 +32,8 @@ class RSRenderContent;
 
 // NOTE: MUST update DrawableGeneratorLut in rs_drawable_content.cpp when new slots are added
 enum class RSDrawableSlot : uint8_t {
+    SAVE_ALL,
+
     // Bounds Geometry
     ALPHA,
     MASK,
@@ -82,7 +84,7 @@ enum class RSDrawableSlot : uint8_t {
 
     // Restore state
     RESTORE_BLEND_MODE,
-    RESTORE_ALPHA,
+    RESTORE_ALL,
 
     // Invalid
     INVALID,
@@ -142,7 +144,7 @@ public:
     static bool UpdateDirtySlots(
         const RSRenderNode& node, Vec& drawableVec, std::unordered_set<RSDrawableSlot>& dirtySlots);
     // Step 3, add necessary Clip/Save/Restore
-    static void UpdateSaveRestore(RSRenderContent& content, Vec& drawableVec, uint8_t& drawableVecStatus);
+    static void UpdateSaveRestore(RSRenderNode& node, Vec& drawableVec, uint8_t& drawableVecStatus);
 };
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_DRAWABLE_RS_DRAWABLE_H

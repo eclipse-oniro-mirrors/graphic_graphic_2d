@@ -43,13 +43,48 @@ protected:
     friend class RSPropertyDrawableNG;
 };
 
+// ============================================================================
+// Frame offset
+class RSFrameOffsetDrawable : public RSPropertyDrawable {
+public:
+    RSFrameOffsetDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
+        : RSPropertyDrawable(std::move(drawCmdList))
+    {}
+    RSFrameOffsetDrawable() = default;
+    static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
+    bool OnUpdate(const RSRenderNode& node) override;
+};
+
+// ============================================================================
+// Clip To Bounds and Clip To Frame
+class RSClipToBoundsDrawable : public RSPropertyDrawable {
+public:
+    RSClipToBoundsDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
+        : RSPropertyDrawable(std::move(drawCmdList))
+    {}
+    RSClipToBoundsDrawable() = default;
+    static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
+    bool OnUpdate(const RSRenderNode& node) override;
+};
+
+class RSClipToFrameDrawable : public RSPropertyDrawable {
+public:
+    RSClipToFrameDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
+        : RSPropertyDrawable(std::move(drawCmdList))
+    {}
+    RSClipToFrameDrawable() = default;
+    static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
+    bool OnUpdate(const RSRenderNode& node) override;
+};
+
+// ============================================================================
+// Background
 class RSBackgroundColorDrawable : public RSPropertyDrawable {
 public:
     RSBackgroundColorDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
         : RSPropertyDrawable(std::move(drawCmdList))
     {}
-    RSBackgroundColorDrawable() : RSPropertyDrawable()
-    {}
+    RSBackgroundColorDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 };
@@ -59,8 +94,7 @@ public:
     RSBackgroundShaderDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
         : RSPropertyDrawable(std::move(drawCmdList))
     {}
-    RSBackgroundShaderDrawable() : RSPropertyDrawable()
-    {}
+    RSBackgroundShaderDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 };
@@ -70,8 +104,7 @@ public:
     RSBackgroundImageDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
         : RSPropertyDrawable(std::move(drawCmdList))
     {}
-    RSBackgroundImageDrawable() : RSPropertyDrawable()
-    {}
+    RSBackgroundImageDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 };
@@ -81,20 +114,18 @@ public:
     RSBackgroundFilterDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
         : RSPropertyDrawable(std::move(drawCmdList))
     {}
-    RSBackgroundFilterDrawable() : RSPropertyDrawable()
-    {}
+    RSBackgroundFilterDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 };
 
 class RSBorderDrawable : public RSPropertyDrawable {
-friend class RSOutlineDrawable;
+    friend class RSOutlineDrawable;
+
 public:
-    RSBorderDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
-        : RSPropertyDrawable(std::move(drawCmdList))
+    RSBorderDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList) : RSPropertyDrawable(std::move(drawCmdList))
     {}
-    RSBorderDrawable() : RSPropertyDrawable()
-    {}
+    RSBorderDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 
@@ -105,22 +136,18 @@ private:
 
 class RSOutlineDrawable : public RSPropertyDrawable {
 public:
-    RSOutlineDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
-        : RSPropertyDrawable(std::move(drawCmdList))
+    RSOutlineDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList) : RSPropertyDrawable(std::move(drawCmdList))
     {}
-    RSOutlineDrawable() : RSPropertyDrawable()
-    {}
+    RSOutlineDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 };
 
 class RSShadowDrawable : public RSPropertyDrawable {
 public:
-    RSShadowDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
-        : RSPropertyDrawable(std::move(drawCmdList))
+    RSShadowDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList) : RSPropertyDrawable(std::move(drawCmdList))
     {}
-    RSShadowDrawable() : RSPropertyDrawable()
-    {}
+    RSShadowDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 
@@ -134,8 +161,7 @@ public:
     RSForegroundColorDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
         : RSPropertyDrawable(std::move(drawCmdList))
     {}
-    RSForegroundColorDrawable() : RSPropertyDrawable()
-    {}
+    RSForegroundColorDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 };
@@ -145,8 +171,7 @@ public:
     RSPixelStretchDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
         : RSPropertyDrawable(std::move(drawCmdList))
     {}
-    RSPixelStretchDrawable() : RSPropertyDrawable()
-    {}
+    RSPixelStretchDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 };
@@ -156,16 +181,14 @@ public:
     RSDynamicLightUpDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
         : RSPropertyDrawable(std::move(drawCmdList))
     {}
-    RSDynamicLightUpDrawable() : RSPropertyDrawable()
-    {}
+    RSDynamicLightUpDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 
 private:
     static std::shared_ptr<Drawing::RuntimeEffect> dynamicLightUpBlenderEffect_;
-
-    static std::shared_ptr<Drawing::Blender> MakeDynamicLightUpBlender(float dynamicLightUpRate,
-        float dynamicLightUpDeg);
+    static std::shared_ptr<Drawing::Blender> MakeDynamicLightUpBlender(
+        float dynamicLightUpRate, float dynamicLightUpDeg);
 };
 
 class RSLightUpEffectDrawable : public RSPropertyDrawable {
@@ -173,8 +196,7 @@ public:
     RSLightUpEffectDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
         : RSPropertyDrawable(std::move(drawCmdList))
     {}
-    RSLightUpEffectDrawable() : RSPropertyDrawable()
-    {}
+    RSLightUpEffectDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 };
@@ -184,19 +206,15 @@ public:
     RSColorFilterDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
         : RSPropertyDrawable(std::move(drawCmdList))
     {}
-    RSColorFilterDrawable() : RSPropertyDrawable()
-    {}
+    RSColorFilterDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 };
 
 class RSMaskDrawable : public RSPropertyDrawable {
 public:
-    RSMaskDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
-        : RSPropertyDrawable(std::move(drawCmdList))
-    {}
-    RSMaskDrawable() : RSPropertyDrawable()
-    {}
+    RSMaskDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList) : RSPropertyDrawable(std::move(drawCmdList)) {}
+    RSMaskDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 };
@@ -206,25 +224,21 @@ public:
     RSBinarizationDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
         : RSPropertyDrawable(std::move(drawCmdList))
     {}
-    RSBinarizationDrawable() : RSPropertyDrawable()
-    {}
+    RSBinarizationDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 
 private:
     static std::shared_ptr<Drawing::RuntimeEffect> binarizationShaderEffect_;
-
-    static std::shared_ptr<Drawing::ShaderEffect> MakeBinarizationShader(float low, float high,
-        float thresholdLow, float thresholdHigh, std::shared_ptr<Drawing::ShaderEffect> imageShader);
+    static std::shared_ptr<Drawing::ShaderEffect> MakeBinarizationShader(float low, float high, float thresholdLow,
+        float thresholdHigh, std::shared_ptr<Drawing::ShaderEffect> imageShader);
 };
 
 class RSParticleDrawable : public RSPropertyDrawable {
 public:
-    RSParticleDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList)
-        : RSPropertyDrawable(std::move(drawCmdList))
+    RSParticleDrawable(std::shared_ptr<Drawing::DrawCmdList>&& drawCmdList) : RSPropertyDrawable(std::move(drawCmdList))
     {}
-    RSParticleDrawable() : RSPropertyDrawable()
-    {}
+    RSParticleDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 };
