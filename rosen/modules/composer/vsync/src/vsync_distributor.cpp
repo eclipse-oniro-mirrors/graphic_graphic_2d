@@ -36,8 +36,10 @@ constexpr int32_t THREAD_PRIORTY = -6;
 constexpr int32_t SCHED_PRIORITY = 2;
 constexpr uint32_t SOCKET_CHANNEL_SIZE = 1024;
 constexpr int32_t VSYNC_CONNECTION_MAX_SIZE = 128;
+#if defined(RS_ENABLE_DVSYNC)
 constexpr int64_t DVSYNC_ON_RERIOD = 8333333;
 constexpr int64_t MAX_PERIOD_BIAS = 500000;
+#endif
 }
 
 VSyncConnection::VSyncConnectionDeathRecipient::VSyncConnectionDeathRecipient(

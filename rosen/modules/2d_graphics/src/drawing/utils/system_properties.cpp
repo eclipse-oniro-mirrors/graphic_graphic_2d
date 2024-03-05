@@ -15,7 +15,6 @@
 
 #include <parameter.h>
 #include <parameters.h>
-#include <set>
 #include "utils/system_properties.h"
 
 namespace OHOS {

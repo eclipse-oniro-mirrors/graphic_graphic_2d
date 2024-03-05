@@ -18,7 +18,6 @@
 #include <cstdlib>
 #include <parameter.h>
 #include <parameters.h>
-#include <set>
 #include "param/sys_param.h"
 #include "platform/common/rs_log.h"
 #include "transaction/rs_render_service_client.h"
