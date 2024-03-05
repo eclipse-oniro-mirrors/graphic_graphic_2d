@@ -59,6 +59,7 @@ public:
     void HandlePackageEvent(uint32_t listSize, const std::vector<std::string>& packageList);
     void HandleRefreshRateEvent(pid_t pid, const EventInfo& eventInfo);
     void HandleTouchEvent(int32_t touchStatus);
+    void HandleTempEvent(std::string tempEventName, bool eventStatus, uint32_t min, uint32_t max);
 
     void CleanVote(pid_t pid);
     RefreshRateMode GetCurRefreshRateMode() const { return curRefreshRateMode_; };
@@ -120,6 +121,7 @@ private:
 
     std::mutex pkgSceneMutex_;
     std::mutex voteMutex_;
+    std::mutex voteNameMutex_;
     std::vector<std::string> voters_;
     // FORMAT: <sceneName, pid>
     std::vector<std::pair<std::string, pid_t>> sceneStack_;

@@ -193,6 +193,7 @@ private:
         const RSPaintStyle fillType, float alpha, int edgeWidth, std::string extra = "");
     void DrawDirtyRegionForDFX(std::vector<RectI> dirtyRects);
     void DrawCacheRegionForDFX(std::vector<RectI> cacheRects);
+    void DrawHwcRegionForDFX(std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hwcNodes);
 #ifdef DDGR_ENABLE_FEATURE_OPINC
     void DrawAutoCacheRegionForDFX(std::vector<RectI, std::string> cacheRegionInfo);
 #endif

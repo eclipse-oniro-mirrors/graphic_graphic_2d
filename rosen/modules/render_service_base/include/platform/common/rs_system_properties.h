@@ -146,6 +146,7 @@ public:
     static SurfaceRegionDebugType GetSurfaceRegionDfxType();
     static bool GetDumpLayersEnabled();
     static bool GetHardwareComposerEnabled();
+    static bool GetHwcRegionDfxEnabled();
     static bool GetAFBCEnabled();
     static bool GetReleaseResourceEnabled();
     static bool GetRSScreenRoundCornerEnable();

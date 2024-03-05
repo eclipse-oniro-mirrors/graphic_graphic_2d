@@ -516,9 +516,11 @@ bool RSUniRenderVisitor::UpdateCacheChangeStatus(RSRenderNode& node)
         return true;
     }
     // subroot's dirty and cached filter should be count for parent root
-    if (!isDrawingCacheChanged_.empty()) {
+    if (!isDrawingCacheChanged_.empty() &&
+        (curDirty_ && !node.IsVisibleChanged() && node.ShouldPaint() && !ROSEN_EQ(node.GetGlobalAlpha(), 0.f))) {
         // Any child node dirty causes cache change
-        isDrawingCacheChanged_.top() = isDrawingCacheChanged_.top() || curDirty_;
+        RS_OPTIONAL_TRACE_NAME_FMT("UpdateCacheChangeStatus child:%" PRIu64 "", node.GetId());
+        isDrawingCacheChanged_.top() = true;
     }
     if (!curCacheFilterRects_.empty() && !node.IsInstanceOf<RSEffectRenderNode>() &&
         (node.GetRenderProperties().GetBackgroundFilter() || node.GetRenderProperties().GetUseEffect() ||
@@ -534,7 +536,8 @@ bool RSUniRenderVisitor::UpdateCacheChangeStatus(RSRenderNode& node)
             return false;
         }
         // For rootnode, init drawing changes only if there is any content dirty
-        isDrawingCacheChanged_.push(curContentDirty_);
+        isDrawingCacheChanged_.push(curContentDirty_ &&
+            !node.IsVisibleChanged() && node.ShouldPaint() && !ROSEN_EQ(node.GetGlobalAlpha(), 0.f));
         RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderVisitor::UpdateCacheChangeStatus: cachable node %" PRIu64 ""
             "contentDirty(cacheChanged): %d", node.GetId(), static_cast<int>(isDrawingCacheChanged_.top()));
         curCacheFilterRects_.push({});
@@ -1918,6 +1921,20 @@ void RSUniRenderVisitor::DrawCacheRegionForDFX(std::vector<RectI> cacheRects)
     }
 }
 
+void RSUniRenderVisitor::DrawHwcRegionForDFX(std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hwcNodes)
+{
+    const float fillAlpha = 0.3f;
+    for (const auto& node : hwcNodes) {
+        if (node->IsHardwareForcedDisabled() || !IsHardwareComposerEnabled()) {
+            RSUniRenderUtil::DrawRectForDfx(*canvas_, node->GetDstRect(), Drawing::Color::COLOR_RED, fillAlpha,
+                node->GetName());
+        } else {
+            RSUniRenderUtil::DrawRectForDfx(*canvas_, node->GetDstRect(), Drawing::Color::COLOR_BLUE, fillAlpha,
+                node->GetName());
+        }
+    }
+}
+
 #ifdef DDGR_ENABLE_FEATURE_OPINC
 constexpr uint32_t DRAW_DFX_EDGE_WIDTH = 6;
 void RSUniRenderVisitor::DrawAutoCacheRegionForDFX(std::vector<RectI, std::string> cacheRegionInfo)
@@ -2926,6 +2943,10 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
 
         if (isDrawingCacheEnabled_ && RSSystemParameters::GetDrawingCacheEnabledDfx()) {
             DrawCacheRegionForDFX(cacheRenderNodeMapRects_);
+        }
+
+        if (RSSystemProperties::GetHwcRegionDfxEnabled()) {
+            DrawHwcRegionForDFX(hardwareEnabledNodes_);
         }
 
 #ifdef DDGR_ENABLE_FEATURE_OPINC
