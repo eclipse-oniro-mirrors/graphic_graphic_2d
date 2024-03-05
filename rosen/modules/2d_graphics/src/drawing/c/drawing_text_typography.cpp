@@ -1251,7 +1251,7 @@ static bool CopyStrData(char** destination, const std::string& source)
     }
     auto retCopy = strcpy_s(*destination, destinationSize, source.c_str());
     if (retCopy != 0) {
-        delete[] * destination;
+        delete[] *destination;
         return false;
     }
     return true;
