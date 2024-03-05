@@ -269,7 +269,7 @@ void RSMainThread::Init()
 #endif
         PerfMultiWindow();
         SetRSEventDetectorLoopStartTag();
-        ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSMainThread::DoComposition");
+        ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSMainThread::DoComposition: " + std::to_string(curTime_));
         ConsumeAndUpdateAllNodes();
         WaitUntilUnmarshallingTaskFinished();
         ProcessCommand();
@@ -1059,9 +1059,8 @@ void RSMainThread::CollectInfoForHardwareComposer()
                 return;
             }
 
-            if (surfaceNode->GetName().find("RosenWeb") != std::string::npos) {
-                RS_TRACE_NAME_FMT("find RosenWeb");
-                rsCurrRange_ = {OLED_120_HZ, OLED_120_HZ, OLED_120_HZ};
+            if (surfaceNode->IsRosenWeb()) {
+                hasRosenWebNode_ = true;
             }
 
             // if hwc node is set on the tree this frame, mark its parent app node to be prepared
@@ -1405,6 +1404,7 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
         RS_TRACE_NAME_FMT("RSMainThread::ProcessHgmFrameRate pendingRefreshRate: %d", *pendingRefreshRate);
     }
 
+    frameRateMgr_-> HandleTempEvent("ROSEN_WEB", hasRosenWebNode_, OLED_120_HZ, OLED_120_HZ);
     // hgm warning: use IsLtpo instead after GetDisplaySupportedModes ready
     if (frameRateMgr_->GetCurScreenStrategyId().find("LTPO") == std::string::npos) {
         frameRateMgr_->UniProcessDataForLtps(idleTimerExpiredFlag_);
@@ -1540,6 +1540,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     isDirty_ = false;
     forceUpdateUniRenderFlag_ = false;
     idleTimerExpiredFlag_ = false;
+    hasRosenWebNode_ = false;
 }
 
 pid_t RSMainThread::GetDesktopPidForRotationScene() const
@@ -2829,8 +2830,7 @@ void RSMainThread::ApplyModifiers()
     if (context_->activeNodesInRoot_.empty()) {
         return;
     }
-    RS_TRACE_NAME_FMT("ApplyModifiers (PropertyDrawableEnable %s)",
-        RSSystemProperties::GetPropertyDrawableEnable() ? "TRUE" : "FALSE");
+    RS_TRACE_NAME("RSMainThread::ApplyModifiers (PropertyDrawableEnable TRUE)");
     std::unordered_map<NodeId, std::shared_ptr<RSRenderNode>> nodesThatNeedsRegenerateChildren;
     for (const auto& [root, nodeSet] : context_->activeNodesInRoot_) {
         for (const auto& [id, nodePtr] : nodeSet) {

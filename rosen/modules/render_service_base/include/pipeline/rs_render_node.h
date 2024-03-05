@@ -224,6 +224,7 @@ public:
 
     void RenderTraceDebug() const;
     bool ShouldPaint() const;
+    bool IsVisibleChanged() const { return isVisibleChanged_; }
 
     RectI GetOldDirty() const;
     RectI GetOldDirtyInSurface() const;
@@ -247,6 +248,8 @@ public:
 
     void SetStaticCached(bool isStaticCached);
     bool IsStaticCached() const;
+    void SetNodeName(const std::string& nodeName);
+    const std::string& GetNodeName() const;
     // store prev surface subtree's must-renewed info that need prepare
     virtual void StoreMustRenewedInfo();
     bool HasMustRenewedInfo() const;
@@ -577,6 +580,7 @@ private:
     bool isDirtyRegionUpdated_ = false;
     bool isContainBootAnimation_ = false;
     bool isLastVisible_ = false;
+    bool isVisibleChanged_ = false;
     bool fallbackAnimationOnDestroy_ = true;
     uint32_t disappearingTransitionCount_ = 0;
     RectI oldDirty_;
@@ -605,6 +609,7 @@ private:
 #endif
     std::atomic<bool> isCacheSurfaceNeedUpdate_ = false;
     std::atomic<bool> isStaticCached_ = false;
+    std::string nodeName_ = "";
     CacheType cacheType_ = CacheType::NONE;
     // drawing group cache
     RSDrawingCacheType drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;

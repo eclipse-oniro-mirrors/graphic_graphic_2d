@@ -192,11 +192,6 @@ bool RSSystemProperties::GetAnimationCacheEnabled()
     return {};
 }
 
-bool RSSystemProperties::GetPropertyDrawableEnable()
-{
-    return {};
-}
-
 float RSSystemProperties::GetAnimationScale()
 {
     return 1.f;
@@ -369,6 +364,11 @@ bool RSSystemProperties::GetDumpUICaptureEnabled()
 }
 
 bool RSSystemProperties::GetDumpUIPixelmapEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetHwcRegionDfxEnabled()
 {
     return false;
 }

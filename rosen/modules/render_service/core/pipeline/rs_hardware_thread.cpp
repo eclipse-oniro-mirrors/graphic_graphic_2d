@@ -84,7 +84,7 @@ void RSHardwareThread::Start()
     hdiBackend_ = HdiBackend::GetInstance();
     runner_ = AppExecFwk::EventRunner::Create("RSHardwareThread");
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);
-    redrawCb_ = std::bind(&RSHardwareThread::Redraw, this,std::placeholders::_1, std::placeholders::_2,
+    redrawCb_ = std::bind(&RSHardwareThread::Redraw, this, std::placeholders::_1, std::placeholders::_2,
         std::placeholders::_3);
     if (handler_) {
         ScheduleTask(
@@ -516,6 +516,12 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
             uniRenderEngine_->DrawBuffer(*canvas, params);
         }
 #endif
+        // Dfx for redraw region
+        if (RSSystemProperties::GetHwcRegionDfxEnabled()) {
+            RectI dst(dstRect.x, dstRect.y, dstRect.w, dstRect.h);
+            RSUniRenderUtil::DrawRectForDfx(*canvas, dst, Drawing::Color::COLOR_YELLOW, 0.4f,
+                layer->GetSurface()->GetName());
+        }
     }
 
     if (isTopGpuDraw && RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {

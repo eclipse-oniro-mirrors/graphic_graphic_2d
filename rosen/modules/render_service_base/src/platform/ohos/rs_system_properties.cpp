@@ -36,23 +36,7 @@ constexpr int DEFAULT_CORRECTION_MODE_VALUE = 999;
 #if (defined (ACE_ENABLE_GL) && defined (ACE_ENABLE_VK)) || (defined (RS_ENABLE_GL) && defined (RS_ENABLE_VK))
 static GpuApiType SystemGpuApiType()
 {
-    static std::set<std::string> mSupportedDevices = {"ALN", "ALT"};
-    if (!((system::GetParameter("const.gpu.vendor", "0").compare("higpu.v200") == 0) &&
-          mSupportedDevices.count(system::GetParameter("const.build.product", "0")))) {
-        return GpuApiType::OPENGL;
-    }
-
-    if (std::atoi(system::GetParameter(
-        "persist.sys.graphic.GpuApitype", "-1").c_str()) == (-1)) { // -1 is invalid type
-        return GpuApiType::VULKAN;
-    }
-    if (std::atoi(system::GetParameter("persist.sys.graphic.GpuApitype", "-1").c_str()) == 0) {
-        return GpuApiType::OPENGL;
-    }
-    if (std::atoi(system::GetParameter("persist.sys.graphic.GpuApitype", "-1").c_str()) == 2) { // 2 is ddgr type
-        return GpuApiType::DDGR;
-    }
-    return GpuApiType::VULKAN;
+    return GpuApiType::OPENGL;
 }
 #endif
 
@@ -201,6 +185,13 @@ bool RSSystemProperties::GetHardwareComposerEnabled()
     static bool hardwareComposerEnabled = system::GetParameter(
         "persist.rosen.hardwarecomposer.enabled", "1") != "0";
     return hardwareComposerEnabled;
+}
+
+bool RSSystemProperties::GetHwcRegionDfxEnabled()
+{
+    static bool hwcRegionDfxEnabled = system::GetParameter(
+        "persist.rosen.hwcRegionDfx.enabled", "0") != "0";
+    return hwcRegionDfxEnabled;
 }
 
 bool RSSystemProperties::GetUseShadowBatchingEnabled()
@@ -406,14 +397,6 @@ bool RSSystemProperties::GetAnimationCacheEnabled()
     static bool animationCacheEnabled =
         std::atoi((system::GetParameter("persist.animation.cache.enabled", "0")).c_str()) != 0;
     return animationCacheEnabled;
-}
-
-bool RSSystemProperties::GetPropertyDrawableEnable()
-{
-    static bool propertyDrawableEnable =
-        std::atoi((system::GetParameter("persist.propertyDrawableGenerate.enabled", "1")).c_str()) != 0 &&
-        RSUniRenderJudgement::IsUniRender();
-    return propertyDrawableEnable;
 }
 
 float RSSystemProperties::GetAnimationScale()
