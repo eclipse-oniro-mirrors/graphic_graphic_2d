@@ -571,7 +571,8 @@ VsyncError VSyncGenerator::CheckAndUpdateRefereceTime(int64_t hardwareVsyncInter
     }
     if (rsVSyncDistributor_->IsDVsyncOn() ||
         ((abs(pendingReferenceTime_ - referenceTime_) < MAX_TIMESTAMP_THRESHOLD) &&
-        (abs(hardwareVsyncInterval - pendingPeriod_) < MAX_TIMESTAMP_THRESHOLD))) {
+        (abs(hardwareVsyncInterval - pendingPeriod_) < MAX_TIMESTAMP_THRESHOLD)))
+    {
         // framerate has changed
         frameRateChanging_ = false;
         pendingPeriod_ = 0;

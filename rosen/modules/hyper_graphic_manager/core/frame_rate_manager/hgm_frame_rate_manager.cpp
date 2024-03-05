@@ -232,6 +232,7 @@ void HgmFrameRateManager::HandleFrameRateChangeForLTPO(uint64_t timestamp, bool 
 
     if (isDvsyncOn) {
         HgmTaskHandleThread::Instance().PostTask(task);
+        return;
     }
     uint64_t expectTime = timestamp + static_cast<uint64_t>(controller_->GetCurrentOffset());
     uint64_t currTime = static_cast<uint64_t>(
