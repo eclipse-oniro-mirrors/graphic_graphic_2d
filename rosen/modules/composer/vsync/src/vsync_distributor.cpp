@@ -457,19 +457,20 @@ void VSyncDistributor::OnVSyncEvent(int64_t now, int64_t period, uint32_t refres
     ChangeConnsRateLocked();
 
 #if defined(RS_ENABLE_DVSYNC)
-    ScopedBytrace func("pendingRNVInVsync: " + std::to_string(pendingRNVInVsync_) + " DVSyncOn: " + std::to_string(IsDVsyncOn()));
+    ScopedBytrace func("pendingRNVInVsync: " + std::to_string(pendingRNVInVsync_) + " DVSyncOn: " +
+        std::to_string(IsDVsyncOn()));
     if (!IsDVsyncOn() || pendingRNVInVsync_) {
         con_.notify_all();
         pendingRNVInVsync_ = false;
     } else {
-        // When Dvsync on, if the RequestNextVsync is not invoked within three period and SetVSyncRate is not invoked either,
-        // execute DisableVSync.
+        // When Dvsync on, if the RequestNextVsync is not invoked within three period and SetVSyncRate
+        // is not invoked either, execute DisableVSync.
         for (uint32_t i = 0; i < connections_.size(); i++) {
             if (connections_[i]->triggerThisTime_ || connections_[i]->rate_ >= 0) {
                 return;
             }
         }
-        if (now - dvsync_->GetLastRnvTS() > 3 * period) {
+        if (now - dvsync_->GetLastRnvTS() > 3 * period) {  // 3 period
             ScopedBytrace func(name_ + "_DisableVsync");
             DisableVSync();
         }
