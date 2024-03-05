@@ -19,36 +19,55 @@
 #include "property/rs_properties.h"
 
 namespace OHOS::Rosen {
+void RSRenderParams::SetMatrix(Drawing::Matrix matrix)
+{
+    if (matrix_ == matrix) {
+        return;
+    }
+    matrix_ = matrix;
+    needSync_ = true;
+}
 const Drawing::Matrix RSRenderParams::GetMatrix() const
 {
     return matrix_;
 }
 
+void RSRenderParams::SetBoundsRect(Drawing::RectF boundsRect)
+{
+    if (boundsRect_ == boundsRect) {
+        return;
+    }
+    boundsRect_ = boundsRect;
+    needSync_ = true;
+}
 const Drawing::Rect RSRenderParams::GetBounds() const
 {
     return boundsRect_;
 }
 
-void RSRenderParams::SetMatrix(Drawing::Matrix matrix)
-{
-    matrix_ = matrix;
-}
-
-void RSRenderParams::SetBoundsRect(Drawing::RectF boundsRect)
-{
-    boundsRect_ = boundsRect;
-}
-
 void RSRenderParams::SetShouldPaint(bool shouldPaint)
 {
+    if (shouldPaint_ == shouldPaint) {
+        return;
+    }
     shouldPaint_ = shouldPaint;
+    needSync_ = true;
+}
+bool RSRenderParams::GetShouldPaint() const
+{
+    return shouldPaint_;
 }
 
+bool RSRenderParams::NeedSync() const
+{
+    return needSync_;
+}
 void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
 {
     target->SetMatrix(matrix_);
     target->SetBoundsRect(boundsRect_);
     target->shouldPaint_ = shouldPaint_;
+    needSync_ = false;
 }
 
 } // namespace OHOS::Rosen

@@ -1406,15 +1406,6 @@ void RSRenderNode::ApplyModifiers()
     GetMutableRenderProperties().OnApplyModifiers();
     OnApplyModifiers();
 
-    // Temporary code, copy matrix into render params
-    // TODO: only run UpdateRenderParams on matrix change
-    UpdateRenderParams();
-    UpdateDrawableVec();
-
-    if (auto context = GetContext().lock()) {
-        context->AddPendingSyncNode(shared_from_this());
-    }
-
 #if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     if (auto& manager = GetRenderProperties().GetFilterCacheManager(false);
         manager != nullptr &&
@@ -1427,9 +1418,20 @@ void RSRenderNode::ApplyModifiers()
     }
 #endif
 
+    UpdateShouldPaint();
+    // Temporary code, copy matrix into render params
+    // TODO: only run UpdateRenderParams on matrix change
+    UpdateRenderParams();
+    UpdateDrawableVec();
+
+    if (renderParamNeedSync_ || drawCmdListNeedSync_ || !dirtySlots_.empty()) {
+        if (auto context = GetContext().lock()) {
+            context->AddPendingSyncNode(shared_from_this());
+        }
+    }
+
     // update state
     dirtyTypes_.reset();
-    UpdateShouldPaint();
 
     // update rate decider scale reference size.
     animationManager_.SetRateDeciderScaleSize(GetRenderProperties().GetBoundsWidth(),
@@ -2761,7 +2763,7 @@ void RSRenderNode::UpdateRenderParams()
     stagingRenderParams_->SetBoundsRect({ boundGeo->GetX(), boundGeo->GetY(), boundGeo->GetWidth(), boundGeo->GetHeight() });
     stagingRenderParams_->SetShouldPaint(shouldPaint_);
 
-    renderParamNeedSync_ = true;
+    renderParamNeedSync_ |= stagingRenderParams_->NeedSync();
 }
 
 void RSRenderNode::OnSync()

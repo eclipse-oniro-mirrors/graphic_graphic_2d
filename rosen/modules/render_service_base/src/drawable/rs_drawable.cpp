@@ -126,7 +126,7 @@ static const std::array<RSDrawableSlot, DIRTY_LUT_SIZE> g_propertyToDrawableLut 
 template<RSModifierType type>
 static inline RSDrawable::Ptr ModifierGenerator(const RSRenderNode& node)
 {
-    return RSCustomModifierDrawableContent::OnGenerate(node, type);
+    return RSCustomModifierDrawable::OnGenerate(node, type);
 }
 
 // NOTE: This LUT should always the same size as RSDrawableSlot

@@ -25,11 +25,17 @@ class RSB_EXPORT RSRenderParams {
 public:
     RSRenderParams() = default;
     virtual ~RSRenderParams() = default;
-    const Drawing::Matrix GetMatrix() const;
-    const Drawing::Rect GetBounds() const;
+
     virtual void SetMatrix(Drawing::Matrix matrix);
+    const Drawing::Matrix GetMatrix() const;
+
     virtual void SetBoundsRect(Drawing::RectF boundsRect);
+    const Drawing::Rect GetBounds() const;
+
+    bool GetShouldPaint() const;
     void SetShouldPaint(bool shouldPaint);
+
+    bool NeedSync() const;
 
     // disable copy and move
     RSRenderParams(const RSRenderParams&) = delete;
@@ -40,6 +46,7 @@ public:
     virtual void OnSync(const std::unique_ptr<RSRenderParams>& target);
 
 private:
+    bool needSync_ = false;
     Drawing::Matrix matrix_;
     Drawing::RectF boundsRect_;
     bool shouldPaint_;
