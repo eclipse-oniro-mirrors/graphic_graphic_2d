@@ -1529,6 +1529,9 @@ pid_t RSMainThread::GetDesktopPidForRotationScene() const
 
 void RSMainThread::Render()
 {
+    if (RSSystemParameters::GetRenderStop()) {
+        return;
+    }
     const std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
     if (rootNode == nullptr) {
         if (RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
