@@ -199,14 +199,14 @@ const std::set<RSModifierType> BASIC_GEOTRANSFORM_ANIMATION_TYPE = {
 RSRenderNode::RSRenderNode(NodeId id, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
     : id_(id), context_(context), isTextureExportNode_(isTextureExportNode)
 {
-    OnInitRenderParams();
+    InitRenderParams();
 }
 
 RSRenderNode::RSRenderNode(
     NodeId id, bool isOnTheTree, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
     : isOnTheTree_(isOnTheTree), id_(id), context_(context), isTextureExportNode_(isTextureExportNode)
 {
-    OnInitRenderParams();
+    InitRenderParams();
 }
 
 bool RSRenderNode::GetIsTextureExportNode() const
@@ -2751,7 +2751,7 @@ void RSRenderNode::SetLastIsNeedAssignToSubThread(bool lastIsNeedAssignToSubThre
     lastIsNeedAssignToSubThread_ = lastIsNeedAssignToSubThread;
 }
 
-void RSRenderNode::OnInitRenderParams()
+void RSRenderNode::InitRenderParams()
 {
     stagingRenderParams_ = std::make_unique<RSRenderParams>();
     renderParams_ = std::make_unique<RSRenderParams>();
