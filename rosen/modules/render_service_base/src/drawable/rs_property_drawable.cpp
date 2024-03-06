@@ -311,7 +311,7 @@ Drawing::RecordingCanvas::DrawFunc RSBackgroundFilterDrawable::CreateDrawFunc() 
 {
     auto ptr = std::static_pointer_cast<const RSBackgroundFilterDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (ptr->filter_) {
+        if (canvas && ptr->filter_) {
             RSPropertyDrawableUtils::DrawFilter(canvas, ptr->filter_, false);
         }
     };
@@ -603,7 +603,7 @@ Drawing::RecordingCanvas::DrawFunc RSForegroundFilterDrawable::CreateDrawFunc() 
 {
     auto ptr = std::static_pointer_cast<const RSForegroundFilterDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (ptr->filter_) {
+        if (canvas && ptr->filter_) {
             RSPropertyDrawableUtils::DrawFilter(canvas, ptr->filter_, true);
         }
     };
@@ -648,7 +648,7 @@ Drawing::RecordingCanvas::DrawFunc RSPixelStretchDrawable::CreateDrawFunc() cons
 {
     auto ptr = std::static_pointer_cast<const RSPixelStretchDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (ptr->pixelStretch_.has_value()) {
+        if (canvas && ptr->pixelStretch_.has_value()) {
             RSPropertyDrawableUtils::DrawPixelStretch(canvas, ptr->pixelStretch_, ptr->boundsRect_,
                 ptr->boundsGeoValid_);
         }
@@ -743,7 +743,9 @@ Drawing::RecordingCanvas::DrawFunc RSLightUpEffectDrawable::CreateDrawFunc() con
 {
     auto ptr = std::static_pointer_cast<const RSLightUpEffectDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        RSPropertyDrawableUtils::DrawLightUpEffect(canvas, ptr->lightUpEffectDegree_);
+        if (canvas) {
+            RSPropertyDrawableUtils::DrawLightUpEffect(canvas, ptr->lightUpEffectDegree_);
+        }
     };
 }
 
@@ -779,7 +781,7 @@ Drawing::RecordingCanvas::DrawFunc RSColorFilterDrawable::CreateDrawFunc() const
 {
     auto ptr = std::static_pointer_cast<const RSColorFilterDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (ptr->filter_) {
+        if (canvas && ptr->filter_) {
             RSPropertyDrawableUtils::DrawColorFilter(canvas, ptr->filter_);
         }
     };
@@ -891,7 +893,7 @@ Drawing::RecordingCanvas::DrawFunc RSBinarizationDrawable::CreateDrawFunc() cons
 {
     auto ptr = std::static_pointer_cast<const RSBinarizationDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (ptr->aiInvert_.has_value()) {
+        if (canvas && ptr->aiInvert_.has_value()) {
             RSPropertyDrawableUtils::DrawBinarization(canvas, ptr->aiInvert_);
         }
     };

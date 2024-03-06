@@ -198,12 +198,16 @@ const std::set<RSModifierType> BASIC_GEOTRANSFORM_ANIMATION_TYPE = {
 
 RSRenderNode::RSRenderNode(NodeId id, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
     : id_(id), context_(context), isTextureExportNode_(isTextureExportNode)
-{}
+{
+    OnInitRenderParams();
+}
 
 RSRenderNode::RSRenderNode(
     NodeId id, bool isOnTheTree, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
     : isOnTheTree_(isOnTheTree), id_(id), context_(context), isTextureExportNode_(isTextureExportNode)
-{}
+{
+    OnInitRenderParams();
+}
 
 bool RSRenderNode::GetIsTextureExportNode() const
 {
