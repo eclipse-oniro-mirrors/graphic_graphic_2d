@@ -76,7 +76,6 @@ void OH_Drawing_DisableFontCollectionFallback(OH_Drawing_FontCollection* fontCol
 {
     if (!fontCollection) {
         return;
-    } else {
     }
     ConvertToFontCollection<OHOS::Rosen::AdapterTxt::FontCollection>(fontCollection)->DisableFallback();
 }
