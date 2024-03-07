@@ -97,10 +97,23 @@ void OH_Drawing_DestroyFontCollection(OH_Drawing_FontCollection* fontCollection)
 #endif
 }
 
-void  OH_Drawing_DisableFontCollectionFallback(OH_Drawing_FontCollection* fontCollection)
+void OH_Drawing_DisableFontCollectionFallback(OH_Drawing_FontCollection* fontCollection)
 {
+    if (!fontCollection) {
+        return;
+    }
+    ConvertToFontCollection<OHOS::Rosen::AdapterTxt::FontCollection>(fontCollection)->DisableFallback();
 }
 
-void  OH_Drawing_DisableFontCollectionSystemFont(OH_Drawing_FontCollection* fontCollection)
+void OH_Drawing_DisableFontCollectionSystemFont(OH_Drawing_FontCollection* fontCollection)
 {
+#ifndef USE_GRAPHIC_TEXT_GINE
+    ConvertToFontCollection<rosen::FontCollection>(fontCollection)->DisableSystemFont();
+#else
+#ifndef USE_TEXGINE
+    ConvertToFontCollection<OHOS::Rosen::AdapterTxt::FontCollection>(fontCollection)->DisableSystemFont();
+#else
+    ConvertToFontCollection<OHOS::Rosen::AdapterTextEngine::FontCollection>(fontCollection)->DisableSystemFont();
+#endif
+#endif
 }
