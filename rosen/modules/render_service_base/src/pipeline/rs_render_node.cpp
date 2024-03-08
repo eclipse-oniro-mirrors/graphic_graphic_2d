@@ -1432,6 +1432,10 @@ void RSRenderNode::ApplyModifiers()
     if (renderParamNeedSync_ || drawCmdListNeedSync_ || !dirtySlots_.empty()) {
         if (auto context = GetContext().lock()) {
             context->AddPendingSyncNode(shared_from_this());
+        } else {
+            ROSEN_LOGE("RSRenderNode::ApplyModifiers context is null");
+            // Temporary code
+            OnSync();
         }
     }
 
