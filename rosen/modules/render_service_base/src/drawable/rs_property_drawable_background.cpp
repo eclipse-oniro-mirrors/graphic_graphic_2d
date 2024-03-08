@@ -78,16 +78,20 @@ bool RSShadowDrawable::OnUpdate(const RSRenderNode& node)
 
 Drawing::RecordingCanvas::DrawFunc RSShadowDrawable::CreateDrawFunc() const
 {
-    return [](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (canvas) {
-            // The translation of the matrix is rounded to improve the hit ratio of skia blurfilter cache,
-            // the function <compute_key_and_clip_bounds> in <skia/src/gpu/GrBlurUtil.cpp> for more details.
-            Drawing::AutoCanvasRestore rst(*canvas, true);
-            auto matrix = canvas->GetTotalMatrix();
-            matrix.Set(Drawing::Matrix::TRANS_X, std::ceil(matrix.Get(Drawing::Matrix::TRANS_X)));
-            matrix.Set(Drawing::Matrix::TRANS_Y, std::ceil(matrix.Get(Drawing::Matrix::TRANS_Y)));
-            canvas->SetMatrix(matrix);
+    auto ptr = std::static_pointer_cast<const RSShadowDrawable>(shared_from_this());
+    return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
+        const auto& drawCmdList = ptr->drawCmdList_;
+        if (canvas == nullptr || drawCmdList == nullptr) {
+            return;
         }
+        // The translation of the matrix is rounded to improve the hit ratio of skia blurfilter cache,
+        // the function <compute_key_and_clip_bounds> in <skia/src/gpu/GrBlurUtil.cpp> for more details.
+        Drawing::AutoCanvasRestore rst(*canvas, true);
+        auto matrix = canvas->GetTotalMatrix();
+        matrix.Set(Drawing::Matrix::TRANS_X, std::ceil(matrix.Get(Drawing::Matrix::TRANS_X)));
+        matrix.Set(Drawing::Matrix::TRANS_Y, std::ceil(matrix.Get(Drawing::Matrix::TRANS_Y)));
+        canvas->SetMatrix(matrix);
+        drawCmdList->Playback(*canvas);
     };
 }
 
