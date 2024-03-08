@@ -721,12 +721,15 @@ private:
 class DrawTextBlobOpItem : public DrawWithPaintOpItem {
 public:
     struct ConstructorHandle : public OpItem {
-        ConstructorHandle(const OpDataHandle& textBlob, scalar x, scalar y, const PaintHandle& paintHandle)
-            : OpItem(DrawOpItem::TEXT_BLOB_OPITEM), textBlob(textBlob), x(x), y(y), paintHandle(paintHandle) {}
+        ConstructorHandle(const OpDataHandle& textBlob, const OpDataHandle& typeface,
+            scalar x, scalar y, const PaintHandle& paintHandle)
+            : OpItem(DrawOpItem::TEXT_BLOB_OPITEM), textBlob(textBlob), typeface(typeface),
+            x(x), y(y), paintHandle(paintHandle) {}
         ~ConstructorHandle() override = default;
         static bool GenerateCachedOpItem(DrawCmdList& cmdList, const TextBlob* textBlob, scalar x, scalar y, Paint& p);
         bool GenerateCachedOpItem(DrawCmdList& cmdList, Canvas* canvas);
         OpDataHandle textBlob;
+        OpDataHandle typeface;
         scalar x;
         scalar y;
         PaintHandle paintHandle;

@@ -321,8 +321,13 @@ void RecordingCanvas::DrawTextBlob(const TextBlob* blob, const scalar x, const s
         AddDrawOpDeferred<DrawTextBlobOpItem>(blob, x, y);
         return;
     }
-    auto textBlobHandle = CmdListHelper::AddTextBlobToCmdList(*cmdList_, blob);
-    AddDrawOpImmediate<DrawTextBlobOpItem::ConstructorHandle>(textBlobHandle, x, y);
+    TextBlob::Context ctx {nullptr, IsCustomTypeface()};
+    auto textBlobHandle = CmdListHelper::AddTextBlobToCmdList(*cmdList_, blob, &ctx);
+    OpDataHandle typefaceHandle { 0 };
+    if (IsCustomTypeface()) {
+        typefaceHandle = CmdListHelper::AddTypefaceToCmdList(*cmdList_, ctx.GetTypeface());
+    }
+    AddDrawOpImmediate<DrawTextBlobOpItem::ConstructorHandle>(textBlobHandle, typefaceHandle, x, y);
 }
 
 void RecordingCanvas::DrawSymbol(const DrawingHMSymbolData& symbol, Point locate)
@@ -626,6 +631,16 @@ void RecordingCanvas::SetIsCustomTextType(bool isCustomTextType)
 bool RecordingCanvas::IsCustomTextType() const
 {
     return isCustomTextType_;
+}
+
+void RecordingCanvas::SetIsCustomTypeface(bool isCustomTypeface)
+{
+    isCustomTypeface_ = isCustomTypeface;
+}
+
+bool RecordingCanvas::IsCustomTypeface() const
+{
+    return isCustomTypeface_;
 }
 
 void RecordingCanvas::CheckForLazySave()
