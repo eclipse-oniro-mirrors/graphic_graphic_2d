@@ -32,6 +32,7 @@ RSRenderNodeDrawableAdapter::Ptr RSRenderNodeDrawableAdapter::OnGenerate(
     if (const auto it = GeneratorMap.find(node->GetType()); it != GeneratorMap.end()) {
         return it->second(node);
     }
+    ROSEN_LOGE("RSRenderNodeDrawableAdapter::OnGenerate, node type %d is not supported", node->GetType());
     return nullptr;
 }
 

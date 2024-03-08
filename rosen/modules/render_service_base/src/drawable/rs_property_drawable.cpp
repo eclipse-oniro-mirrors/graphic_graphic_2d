@@ -45,6 +45,7 @@ Drawing::RecordingCanvas::DrawFunc RSPropertyDrawable::CreateDrawFunc() const
 // ============================================================================
 // Updater
 RSPropertyDrawCmdListUpdater::RSPropertyDrawCmdListUpdater(int width, int height, RSPropertyDrawable* target)
+    : target_(target)
 {
     // PLANNING: use RSRenderNode to determine the correct recording canvas size
     recordingCanvas_ = std::make_unique<ExtendRecordingCanvas>(10, 10, false);

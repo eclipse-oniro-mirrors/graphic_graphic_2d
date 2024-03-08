@@ -152,10 +152,10 @@ static const std::array<RSDrawable::Generator, GEN_LUT_SIZE> g_drawableGenerator
     RSBackgroundColorDrawable::OnGenerate,               // BACKGROUND_COLOR,
     RSBackgroundShaderDrawable::OnGenerate,              // BACKGROUND_SHADER,
     RSBackgroundImageDrawable::OnGenerate,               // BACKGROUND_IMAGE,
-    RSBackgroundFilterDrawable::OnGenerate,              // BACKGROUND_FILTER,
+    nullptr,                                             // BACKGROUND_FILTER,
     nullptr,                                             // USE_EFFECT,
     ModifierGenerator<RSModifierType::BACKGROUND_STYLE>, // BACKGROUND_STYLE,
-    RSDynamicLightUpDrawable::OnGenerate,                // DYNAMIC_LIGHT_UP,
+    nullptr,                                             // DYNAMIC_LIGHT_UP,
     nullptr,                                             // ENV_FOREGROUND_COLOR_STRATEGY,
     nullptr,                                             // BG_RESTORE_BOUNDS,
 
@@ -171,9 +171,9 @@ static const std::array<RSDrawable::Generator, GEN_LUT_SIZE> g_drawableGenerator
     // FG properties in Bounds clip
     nullptr,                               // FG_SAVE_BOUNDS,
     nullptr,                               // FG_CLIP_TO_BOUNDS,
-    RSBinarizationDrawable::OnGenerate,    // BINARIZATION,
-    RSColorFilterDrawable::OnGenerate,     // COLOR_FILTER,
-    RSLightUpEffectDrawable::OnGenerate,   // LIGHT_UP_EFFECT,
+    nullptr,                               // BINARIZATION,
+    nullptr,                               // COLOR_FILTER,
+    nullptr,                               // LIGHT_UP_EFFECT,
     nullptr,                               // FOREGROUND_FILTER,
     RSForegroundColorDrawable::OnGenerate, // FOREGROUND_COLOR,
     nullptr,                               // FG_RESTORE_BOUNDS,
@@ -183,7 +183,7 @@ static const std::array<RSDrawable::Generator, GEN_LUT_SIZE> g_drawableGenerator
     RSBorderDrawable::OnGenerate,                     // BORDER,
     ModifierGenerator<RSModifierType::OVERLAY_STYLE>, // OVERLAY,
     RSParticleDrawable::OnGenerate,                   // PARTICLE_EFFECT,
-    RSPixelStretchDrawable::OnGenerate,               // PIXEL_STRETCH,
+    nullptr,                                          // PIXEL_STRETCH,
 
     // Restore state
     nullptr, // RESTORE_BLEND_MODE,
