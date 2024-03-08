@@ -4004,9 +4004,8 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 #ifdef USE_VIDEO_PROCESSING_ENGINE
                 auto screenManager = CreateOrGetScreenManager();
                 std::shared_ptr<RSDisplayRenderNode> ancestor = nullptr;
-                auto ancestorDisplayNode = node.GetAncestorDisplayNode().lock();
-                if (ancestorDisplayNode != nullptr) {
-                    ancestor = ancestorDisplayNode->ReinterpretCastTo<RSDisplayRenderNode>();
+                if (node.GetAncestorDisplayNode().lock() != nullptr) {
+                    ancestor = node.GetAncestorDisplayNode().lock()->ReinterpretCastTo<RSDisplayRenderNode>();
                 }
                 if (ancestor != nullptr) {
                     params.screenBrightnessNits = screenManager->GetScreenBrightnessNits(ancestor->GetScreenId());
