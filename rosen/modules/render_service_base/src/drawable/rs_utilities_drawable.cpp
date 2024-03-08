@@ -40,7 +40,9 @@ bool RSChildrenDrawableContent::OnUpdate(const RSRenderNode& node)
     needSync_ = true;
     stagingChildrenDrawableVec_.clear();
     for (const auto& child : *children) {
-        stagingChildrenDrawableVec_.push_back(RSRenderNodeDrawableAdapter::OnGenerate(child));
+        if (auto childDrawable = RSRenderNodeDrawableAdapter::OnGenerate(child)) {
+            stagingChildrenDrawableVec_.push_back(std::move(childDrawable));
+        }
     }
     return true;
 }

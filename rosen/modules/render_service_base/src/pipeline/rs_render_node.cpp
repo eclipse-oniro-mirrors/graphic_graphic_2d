@@ -2764,8 +2764,12 @@ void RSRenderNode::UpdateRenderParams()
     if (!boundGeo) {
         return;
     }
+    // TODO: Temporary fix, we should split RSRenderNode::Update into two steps: 1. Calculate own relative matrix, 2.
+    // Accumulate total matrix
+    boundGeo->UpdateByMatrixFromSelf();
+
     stagingRenderParams_->SetMatrix(boundGeo->GetMatrix());
-    stagingRenderParams_->SetBoundsRect({ boundGeo->GetX(), boundGeo->GetY(), boundGeo->GetWidth(), boundGeo->GetHeight() });
+    stagingRenderParams_->SetBoundsRect({ 0, 0, boundGeo->GetWidth(), boundGeo->GetHeight() });
     stagingRenderParams_->SetShouldPaint(shouldPaint_);
 
     renderParamNeedSync_ |= stagingRenderParams_->NeedSync();
