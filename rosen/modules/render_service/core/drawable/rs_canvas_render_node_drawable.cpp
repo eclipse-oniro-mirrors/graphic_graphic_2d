@@ -47,13 +47,12 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas* canvas) const
         RS_LOGE("params is nullptr");
         return;
     }
+    Drawing::AutoCanvasRestore acr(*canvas, true);
     canvas->ConcatMatrix(params->GetMatrix());
     bool quickjected = canvas->QuickReject(params->GetBounds());
     if (quickjected) {
         RS_LOGE("this drawable has quickjected");
     }
-    canvas->Save();
     RSRenderNodeDrawable::OnDraw(canvas);
-    canvas->Restore();
 }
 } // namespace OHOS::Rosen
