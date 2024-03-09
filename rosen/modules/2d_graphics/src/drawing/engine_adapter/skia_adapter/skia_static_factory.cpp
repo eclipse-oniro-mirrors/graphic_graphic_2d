@@ -125,9 +125,14 @@ std::shared_ptr<Image> SkiaStaticFactory::MakeRasterData(const ImageInfo& info, 
     return SkiaImage::MakeRasterData(info, pixels, rowBytes);
 }
 
-std::shared_ptr<TextBlob> SkiaStaticFactory::DeserializeTextBlob(const void* data, size_t size)
+std::shared_ptr<TextBlob> SkiaStaticFactory::DeserializeTextBlob(const void* data, size_t size, void* ctx)
 {
-    return SkiaTextBlob::Deserialize(data, size);
+    return SkiaTextBlob::Deserialize(data, size, ctx);
+}
+
+std::shared_ptr<Typeface> SkiaStaticFactory::DeserializeTypeface(const void* data, size_t size)
+{
+    return SkiaTypeface::Deserialize(data, size);
 }
 
 bool SkiaStaticFactory::CanComputeFastBounds(const Brush& brush)

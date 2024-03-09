@@ -959,7 +959,12 @@ void SimplifyPaint(ColorQuad colorQuad, Paint& paint)
 DrawTextBlobOpItem::DrawTextBlobOpItem(const DrawCmdList& cmdList, DrawTextBlobOpItem::ConstructorHandle* handle)
     : DrawWithPaintOpItem(cmdList, handle->paintHandle, TEXT_BLOB_OPITEM), x_(handle->x), y_(handle->y)
 {
-    textBlob_ = CmdListHelper::GetTextBlobFromCmdList(cmdList, handle->textBlob);
+    auto typeface = CmdListHelper::GetTypefaceFromCmdList(cmdList, handle->typeface);
+    TextBlob::Context ctx {typeface, false};
+    if (typeface != nullptr) {
+        ctx.SetIsCustomTypeface(true);
+    }
+    textBlob_ = CmdListHelper::GetTextBlobFromCmdList(cmdList, handle->textBlob, &ctx);
 }
 
 std::shared_ptr<DrawOpItem> DrawTextBlobOpItem::Unmarshalling(const DrawCmdList& cmdList, void* handle)
@@ -971,8 +976,10 @@ void DrawTextBlobOpItem::Marshalling(DrawCmdList& cmdList)
 {
     PaintHandle paintHandle;
     GenerateHandleFromPaint(cmdList, paint_, paintHandle);
+    TextBlob::Context ctx {nullptr, false};
     auto textBlobHandle = CmdListHelper::AddTextBlobToCmdList(cmdList, textBlob_.get());
-    cmdList.AddOp<ConstructorHandle>(textBlobHandle, x_, y_, paintHandle);
+    auto typefaceHandle = CmdListHelper::AddTypefaceToCmdList(cmdList, ctx.GetTypeface());
+    cmdList.AddOp<ConstructorHandle>(textBlobHandle, typefaceHandle, x_, y_, paintHandle);
 }
 
 void DrawTextBlobOpItem::Playback(Canvas* canvas, const Rect* rect)

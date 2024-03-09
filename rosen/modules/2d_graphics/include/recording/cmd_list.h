@@ -134,6 +134,9 @@ public:
     OpDataHandle AddImage(const Image& image);
     std::shared_ptr<Image> GetImage(const OpDataHandle& imageHandle);
 
+    OpDataHandle AddTypeface(const std::shared_ptr<Typeface>& typeface);
+    std::shared_ptr<Typeface> GetTypeface(const OpDataHandle& typefaceHandle);
+
     uint32_t AddBitmapData(const void* data, size_t size);
     const void* GetBitmapData(uint32_t offset) const;
     bool SetUpBitmapData(const void* data, size_t size);
@@ -253,7 +256,9 @@ protected:
     std::optional<uint32_t> lastOpItemOffset_ = std::nullopt;
     std::recursive_mutex mutex_;
     std::map<uint32_t, std::shared_ptr<Image>> imageMap_;
+    std::map<uint32_t, std::shared_ptr<Typeface>> typefaceMap_;
     std::vector<std::pair<uint32_t, OpDataHandle>> imageHandleVec_;
+    std::vector<std::pair<uint32_t, OpDataHandle>> typefaceHandleVec_;
     uint32_t opCnt_ = 0;
 
 #ifdef SUPPORT_OHOS_PIXMAP

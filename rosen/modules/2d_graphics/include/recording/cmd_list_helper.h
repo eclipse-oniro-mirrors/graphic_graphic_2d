@@ -186,8 +186,14 @@ public:
         return childCmdList;
     }
 
-    static OpDataHandle AddTextBlobToCmdList(CmdList& cmdList, const TextBlob* textBlob);
-    static std::shared_ptr<TextBlob> GetTextBlobFromCmdList(const CmdList& cmdList, const OpDataHandle& textBlobHandle);
+    static OpDataHandle AddTypefaceToCmdList(CmdList& cmdList,
+        const std::shared_ptr<Typeface>& typeface);
+    static std::shared_ptr<Typeface> GetTypefaceFromCmdList(const CmdList& cmdList,
+        const OpDataHandle& typefaceHandle);
+
+    static OpDataHandle AddTextBlobToCmdList(CmdList& cmdList, const TextBlob* textBlob, void* ctx = nullptr);
+    static std::shared_ptr<TextBlob> GetTextBlobFromCmdList(const CmdList& cmdList,
+        const OpDataHandle& textBlobHandle, void* ctx = nullptr);
 
     static OpDataHandle AddDataToCmdList(CmdList& cmdList, const Data* data);
     static std::shared_ptr<Data> GetDataFromCmdList(const CmdList& cmdList, const OpDataHandle& imageHandle);

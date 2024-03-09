@@ -394,12 +394,27 @@ DrawingGroupInfo CmdListHelper::GetGroupInfoFromCmdList(const CmdList& cmdList, 
     return groupInfo;
 }
 
-OpDataHandle CmdListHelper::AddTextBlobToCmdList(CmdList& cmdList, const TextBlob* textBlob)
+OpDataHandle CmdListHelper::AddTypefaceToCmdList(CmdList& cmdList, const std::shared_ptr<Typeface>& typeface)
+{
+    if (typeface == nullptr) {
+        LOGD("typeface nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
+        return { 0 };
+    }
+    return cmdList.AddTypeface(typeface);
+}
+
+std::shared_ptr<Typeface> CmdListHelper::GetTypefaceFromCmdList(const CmdList& cmdList,
+    const OpDataHandle& opDataHandle)
+{
+    return (const_cast<CmdList&>(cmdList)).GetTypeface(opDataHandle);
+}
+
+OpDataHandle CmdListHelper::AddTextBlobToCmdList(CmdList& cmdList, const TextBlob* textBlob, void* ctx)
 {
     if (!textBlob) {
         return { 0 };
     }
-    auto data = textBlob->Serialize();
+    auto data = textBlob->Serialize(ctx);
     if (!data || data->GetSize() == 0) {
         LOGD("textBlob serialize invalid, %{public}s, %{public}d", __FUNCTION__, __LINE__);
         return { 0 };
@@ -410,7 +425,7 @@ OpDataHandle CmdListHelper::AddTextBlobToCmdList(CmdList& cmdList, const TextBlo
 }
 
 std::shared_ptr<TextBlob> CmdListHelper::GetTextBlobFromCmdList(const CmdList& cmdList,
-    const OpDataHandle& textBlobHandle)
+    const OpDataHandle& textBlobHandle, void* ctx)
 {
     if (textBlobHandle.size == 0) {
         return nullptr;
@@ -424,7 +439,7 @@ std::shared_ptr<TextBlob> CmdListHelper::GetTextBlobFromCmdList(const CmdList& c
 
     auto textBlobData = std::make_shared<Data>();
     textBlobData->BuildWithoutCopy(data, textBlobHandle.size);
-    return TextBlob::Deserialize(textBlobData->GetData(), textBlobData->GetSize());
+    return TextBlob::Deserialize(textBlobData->GetData(), textBlobData->GetSize(), ctx);
 }
 
 OpDataHandle CmdListHelper::AddDataToCmdList(CmdList& cmdList, const Data* srcData)
