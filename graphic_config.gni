@@ -195,6 +195,11 @@ check_delegator_ext_file_args = [
   "--filename",
   rebase_path("//foundation/graphic/graphic_2d_ext/delegator/config.gni"),
 ]
+check_broker_ext_file_args = [
+  "--filename",
+  rebase_path("//foundation/graphic/graphic_2d_ext/ohcore/build/broker_config.gni"),
+]
+
 if (exec_script(check_graphic_ext_file_script,
                 check_graphic_ext_file_args,
                 "string") == "True" && "${product_name}" == "ohcore") {
@@ -224,6 +229,16 @@ if (exec_script(check_graphic_ext_file_script,
                 "string") == "True") {
   graphic_2d_delegator_configs = {
     import("//foundation/graphic/graphic_2d_ext/delegator/config.gni")
+  }
+}
+
+graphic_2d_broker_configs = {
+}
+if (exec_script(check_graphic_ext_file_script,
+                check_broker_ext_file_args,
+                "string") == "True") {
+  graphic_2d_broker_configs = {
+    import("//foundation/graphic/graphic_2d_ext/ohcore/build/broker_config.gni")
   }
 }
 
