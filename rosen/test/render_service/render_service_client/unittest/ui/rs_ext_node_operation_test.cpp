@@ -14,12 +14,12 @@
  */
 
 #include "gtest/gtest.h"
-#include "ui/rs_surface_node_operation.h"
+#include "ui/rs_ext_node_operation.h"
 using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
-class RSSurfaceNodeOperationTest : public testing::Test {
+class RSExtNodeOperationTest : public testing::Test {
 public:
     static void SetUpTestCase() {}
     static void TearDownTestCase() {}
@@ -32,9 +32,9 @@ public:
  * @tc.desc:
  * @tc.type:FUNC
  */
-HWTEST_F(RSSurfaceNodeOperationTest, GetInstance001, TestSize.Level1)
+HWTEST_F(RSExtNodeOperationTest, GetInstance001, TestSize.Level1)
 {
-    auto& rs = RSSurfaceNodeOperation::GetInstance();
+    auto& rs = RSExtNodeOperation::GetInstance();
     (void)(rs);
 }
 
@@ -43,8 +43,8 @@ HWTEST_F(RSSurfaceNodeOperationTest, GetInstance001, TestSize.Level1)
  * @tc.desc:
  * @tc.type:FUNC
  */
-HWTEST_F(RSSurfaceNodeOperationTest, ProcessRSSurfaceNode001, TestSize.Level1)
+HWTEST_F(RSExtNodeOperationTest, ProcessRSSurfaceNode001, TestSize.Level1)
 {
-    RSSurfaceNodeOperation::GetInstance().ProcessRSSurfaceNode("test_id", 0x5555, 1.0f, 1.0f, nullptr);
+    RSExtNodeOperation::GetInstance().ProcessRSExtNode("test_id", 0x5555, 1.0f, 1.0f, nullptr);
 }
 } // namespace OHOS::Rosen

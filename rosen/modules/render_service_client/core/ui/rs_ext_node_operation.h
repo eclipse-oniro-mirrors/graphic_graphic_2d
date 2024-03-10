@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef RENDER_SERVICE_CLIENT_CORE_UI_RS_SURFACE_NODE_OPERATION_H
-#define RENDER_SERVICE_CLIENT_CORE_UI_RS_SURFACE_NODE_OPERATION_H
+#ifndef RENDER_SERVICE_CLIENT_CORE_UI_RS_EXT_NODE_OPERATION_H
+#define RENDER_SERVICE_CLIENT_CORE_UI_RS_EXT_NODE_OPERATION_H
 
 #include <string>
 
@@ -22,18 +22,18 @@
 
 namespace OHOS {
 namespace Rosen {
-class RSC_EXPORT RSSurfaceNodeOperation final {
+class RSC_EXPORT RSExtNodeOperation final {
 public:
-    static RSSurfaceNodeOperation& GetInstance();
-    ~RSSurfaceNodeOperation() = default;
-    void ProcessRSSurfaceNode(std::string xcomponentId,
+    static RSExtNodeOperation& GetInstance();
+    ~RSExtNodeOperation() = default;
+    void ProcessRSExtNode(std::string xcomponentId,
         uint64_t nodeId, float x, float y, std::shared_ptr<RSSurfaceNode> surfaceNode);
 
 private:
-    RSSurfaceNodeOperation() = default;
-    RSSurfaceNodeOperation(const RSSurfaceNodeOperation&) = delete;
-    RSSurfaceNodeOperation& operator=(const RSSurfaceNodeOperation&) = delete;
+    RSExtNodeOperation() = default;
+    RSExtNodeOperation(const RSExtNodeOperation&) = delete;
+    RSExtNodeOperation& operator=(const RSExtNodeOperation&) = delete;
 };
 } // namespace Rosen
 } // namespace OHOS
-#endif // RENDER_SERVICE_CLIENT_CORE_UI_RS_SURFACE_NODE_OPERATION_H
+#endif // RENDER_SERVICE_CLIENT_CORE_UI_RS_EXT_NODE_OPERATION_H

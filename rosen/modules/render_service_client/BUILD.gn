@@ -116,7 +116,7 @@ template("render_service_client_source_set") {
       "core/ui/rs_texture_export.cpp",
       "core/ui/rs_ui_director.cpp",
       "core/ui/rs_ui_share_context.cpp",
-      "core/ui/rs_surface_node_operation.cpp",
+      "core/ui/rs_ext_node_operation.cpp",
     ]
 
     if (is_cross_platform) {

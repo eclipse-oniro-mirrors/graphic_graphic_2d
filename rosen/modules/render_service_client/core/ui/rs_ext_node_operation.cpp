@@ -12,17 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "ui/rs_surface_node_operation.h"
+#include "ui/rs_ext_node_operation.h"
 
 namespace OHOS {
 namespace Rosen {
-RSSurfaceNodeOperation& RSSurfaceNodeOperation::GetInstance()
+RSExtNodeOperation& RSExtNodeOperation::GetInstance()
 {
-    static RSSurfaceNodeOperation singleton;
+    static RSExtNodeOperation singleton;
     return singleton;
 }
 
-void RSSurfaceNodeOperation::ProcessRSSurfaceNode(std::string xcomponentId,
+void RSExtNodeOperation::ProcessRSExtNode(std::string xcomponentId,
     uint64_t nodeId, float x, float y, std::shared_ptr<RSSurfaceNode> surfaceNode)
 {
     (void)xcomponentId;
