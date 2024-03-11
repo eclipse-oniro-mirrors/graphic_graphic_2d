@@ -197,7 +197,8 @@ check_delegator_ext_file_args = [
 ]
 check_broker_ext_file_args = [
   "--filename",
-  rebase_path("//foundation/graphic/graphic_2d_ext/ohcore/build/broker_config.gni"),
+  rebase_path(
+      "//foundation/graphic/graphic_2d_ext/ohcore/build/broker_config.gni"),
 ]
 
 if (exec_script(check_graphic_ext_file_script,
