@@ -44,6 +44,12 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas* canvas) const
 
     RS_LOGD("RSSurfaceRenderNodeDrawable::OnDraw node: %{public}" PRIu64, renderNode_->GetId());
 
+    auto surfaceNode = renderNode_->ReinterpretCastTo<RSSurfaceRenderNode>();
+    if (surfaceNode != nullptr && !surfaceNode->IsNotifyUIBufferAvailable()) {
+        // Notify UI buffer available, temporarily fix
+        auto mutableSurfaceNode = std::const_pointer_cast<RSSurfaceRenderNode>(surfaceNode);
+        mutableSurfaceNode->NotifyUIBufferAvailable();
+    }
     RSRenderNodeDrawable::OnDraw(canvas);
 }
 } // namespace OHOS::Rosen
