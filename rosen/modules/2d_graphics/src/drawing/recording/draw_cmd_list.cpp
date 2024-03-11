@@ -43,7 +43,6 @@ std::unordered_map<uint32_t, std::string> typeOpDes = {
     { DrawOpItem::SHADOW_OPITEM,            "SHADOW_OPITEM" },
     { DrawOpItem::COLOR_OPITEM,             "COLOR_OPITEM" },
     { DrawOpItem::IMAGE_NINE_OPITEM,        "IMAGE_NINE_OPITEM" },
-    { DrawOpItem::IMAGE_ANNOTATION_OPITEM,  "IMAGE_ANNOTATION_OPITEM" },
     { DrawOpItem::IMAGE_LATTICE_OPITEM,     "IMAGE_LATTICE_OPITEM" },
     { DrawOpItem::BITMAP_OPITEM,            "BITMAP_OPITEM" },
     { DrawOpItem::IMAGE_OPITEM,             "IMAGE_OPITEM" },
@@ -70,8 +69,6 @@ std::unordered_map<uint32_t, std::string> typeOpDes = {
     { DrawOpItem::RESTORE_OPITEM,           "RESTORE_OPITEM" },
     { DrawOpItem::DISCARD_OPITEM,           "DISCARD_OPITEM" },
     { DrawOpItem::CLIP_ADAPTIVE_ROUND_RECT_OPITEM,  "CLIP_ADAPTIVE_ROUND_RECT_OPITEM" },
-    { DrawOpItem::ADAPTIVE_IMAGE_OPITEM,    "ADAPTIVE_IMAGE_OPITEM" },
-    { DrawOpItem::ADAPTIVE_PIXELMAP_OPITEM, "ADAPTIVE_PIXELMAP_OPITEM" },
     { DrawOpItem::IMAGE_WITH_PARM_OPITEM,   "IMAGE_WITH_PARM_OPITEM" },
     { DrawOpItem::PIXELMAP_WITH_PARM_OPITEM, "PIXELMAP_WITH_PARM_OPITEM" },
     { DrawOpItem::PIXELMAP_RECT_OPITEM,     "PIXELMAP_RECT_OPITEM" },
@@ -376,11 +373,7 @@ void DrawCmdList::UpdateNodeIdToPicture(NodeId nodeId)
         if (!opItem) {
             continue;
         }
-        if (opItem->GetType() == DrawOpItem::PIXELMAP_WITH_PARM_OPITEM ||
-            opItem->GetType() == DrawOpItem::IMAGE_WITH_PARM_OPITEM ||
-            opItem->GetType() == DrawOpItem::PIXELMAP_RECT_OPITEM) {
-            opItem->SetNodeId(nodeId);
-        }
+        opItem->SetNodeId(nodeId);
     }
 }
 

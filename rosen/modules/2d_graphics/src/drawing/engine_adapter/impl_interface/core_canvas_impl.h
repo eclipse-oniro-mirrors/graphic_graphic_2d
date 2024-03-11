@@ -51,9 +51,6 @@
 class SkSVGDOM;
 
 namespace OHOS {
-namespace Media {
-class PixelMap;
-}
 namespace Rosen {
 namespace Drawing {
 enum class SrcRectConstraint;
@@ -124,7 +121,6 @@ public:
 
     // image
     virtual void DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py) = 0;
-    virtual void DrawBitmap(Media::PixelMap& pixelMap, const scalar px, const scalar py) = 0;
     virtual void DrawImage(const Image& image, const scalar px, const scalar p, const SamplingOptions& sampling) = 0;
     virtual void DrawImageRect(const Image& image, const Rect& src, const Rect& dst, const SamplingOptions& sampling,
         SrcRectConstraint constraint) = 0;

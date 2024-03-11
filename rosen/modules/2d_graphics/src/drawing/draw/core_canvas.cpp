@@ -189,22 +189,6 @@ void CoreCanvas::DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar 
     impl_->DrawBitmap(bitmap, px, py);
 }
 
-void CoreCanvas::DrawBitmap(const Bitmap& bitmap, const Rect& src, const Rect& dst, const SamplingOptions& sampling)
-{
-    AttachPaint();
-    Image img;
-    img.BuildFromBitmap(bitmap);
-    impl_->DrawImageRect(img, src, dst, sampling, SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
-}
-
-void CoreCanvas::DrawBitmap(const Bitmap& bitmap, const Rect& dst, const SamplingOptions& sampling)
-{
-    AttachPaint();
-    Image img;
-    img.BuildFromBitmap(bitmap);
-    impl_->DrawImageRect(img, dst, sampling);
-}
-
 void CoreCanvas::DrawImageNine(const Image* image, const RectI& center, const Rect& dst,
     FilterMode filter, const Brush* brush)
 {
@@ -259,12 +243,6 @@ void CoreCanvas::OpincDrawImageRect(const Image& image, Drawing::OpListHandle dr
     impl_->OpincDrawImageRect(image, drawAreas, sampling, constraint);
 }
 // opinc_end
-
-void CoreCanvas::DrawBitmap(Media::PixelMap& pixelMap, const scalar px, const scalar py)
-{
-    AttachPaint();
-    impl_->DrawBitmap(pixelMap, px, py);
-}
 
 void CoreCanvas::DrawImage(const Image& image, const scalar px, const scalar py, const SamplingOptions& sampling)
 {

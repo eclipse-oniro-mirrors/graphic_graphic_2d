@@ -70,13 +70,8 @@ HWTEST_F(DrawCmdTest, DrawCmdList001, TestSize.Level1)
     EXPECT_EQ(newDrawCmdList->GetHeight(), 0.f);
 
     auto imageData = drawCmdList->GetAllImageData();
-    std::vector<std::shared_ptr<Media::PixelMap>> pixelMapVec;
-    drawCmdList->GetAllPixelMap(pixelMapVec);
     auto cmdList = DrawCmdList::CreateFromData(cmdData, false);
     cmdList->SetUpImageData(imageData.first, imageData.second);
-    cmdList->SetupPixelMap(pixelMapVec);
-    auto pixelMap = cmdList->GetPixelMap(0);
-    EXPECT_TRUE(pixelMap == nullptr);
 }
 
 /**
@@ -288,55 +283,6 @@ HWTEST_F(DrawCmdTest, DrawSymbolOpItem001, TestSize.Level1)
     opItem2.SetScale(0);
     opItem2.InitialScale();
     opItem2.SetScale(0);
-}
-
-/**
- * @tc.name: DrawAdaptiveImageOpItem001
- * @tc.desc: Test DrawAdaptiveImageOpItem
- * @tc.type: FUNC
- * @tc.require: I9120P
- */
-HWTEST_F(DrawCmdTest, DrawAdaptiveImageOpItem001, TestSize.Level1)
-{
-    auto drawCmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
-    AdaptiveImageInfo adaptiveImageInfo;
-    SamplingOptions samplingOptions;
-    Paint paint;
-    DrawAdaptiveImageOpItem opItem{nullptr, nullptr, adaptiveImageInfo, samplingOptions, paint};
-    opItem.Marshalling(*drawCmdList);
-    auto recordingCanvas = std::make_shared<RecordingCanvas>(10, 10); // 10: width, height
-    Rect rect;
-    opItem.Playback(recordingCanvas.get(), &rect);
-
-    std::shared_ptr<Image> image = std::make_shared<Image>();
-    DrawAdaptiveImageOpItem opItem2{image, nullptr, adaptiveImageInfo, samplingOptions, paint};
-    opItem2.Marshalling(*drawCmdList);
-    opItem.Playback(recordingCanvas.get(), &rect);
-}
-
-/**
- * @tc.name: DrawAdaptivePixelMapOpItem001
- * @tc.desc: Test DrawAdaptivePixelMapOpItem
- * @tc.type: FUNC
- * @tc.require: I9120P
- */
-HWTEST_F(DrawCmdTest, DrawAdaptivePixelMapOpItem001, TestSize.Level1)
-{
-    OHOS::Media::InitializationOptions options;
-    options.scaleMode = OHOS::Media::ScaleMode::FIT_TARGET_SIZE;
-    options.size.width = 1;
-    options.size.height = 1;
-    options.editable = true;
-    std::unique_ptr<Media::PixelMap> newPixelMap = Media::PixelMap::Create(options);
-    auto drawCmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
-    AdaptiveImageInfo adaptiveImageInfo;
-    SamplingOptions samplingOptions;
-    Paint paint;
-    DrawAdaptivePixelMapOpItem opItem{std::move(newPixelMap), adaptiveImageInfo, samplingOptions, paint};
-    opItem.Marshalling(*drawCmdList);
-    auto recordingCanvas = std::make_shared<RecordingCanvas>(10, 10); // 10: width, height
-    Rect rect;
-    opItem.Playback(recordingCanvas.get(), &rect);
 }
 
 /**

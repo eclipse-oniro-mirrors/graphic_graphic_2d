@@ -112,7 +112,6 @@ public:
 
     // image
     void DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py) override;
-    void DrawBitmap(Media::PixelMap& pixelMap, const scalar px, const scalar py) override;
     void DrawImage(const Image& image, const scalar px, const scalar py, const SamplingOptions& sampling) override;
     void DrawImageRect(const Image& image, const Rect& src, const Rect& dst, const SamplingOptions& sampling,
         SrcRectConstraint constraint) override;

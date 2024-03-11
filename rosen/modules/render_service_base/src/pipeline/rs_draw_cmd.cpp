@@ -536,7 +536,7 @@ REGISTER_UNMARSHALLING_FUNC(DrawFunc, DrawOpItem::DRAW_FUNC_OPITEM, DrawFuncOpIt
 DrawFuncOpItem::DrawFuncOpItem(const DrawCmdList& cmdList, DrawFuncOpItem::ConstructorHandle* handle)
     : DrawOpItem(DRAW_FUNC_OPITEM)
 {
-    objectHandle_ = CmdListHelper::GetDrawFuncObjFromCmdList(cmdList, handle->objectHandle);
+    objectHandle_ = CmdListHelper::GetDrawFuncObjFromCmdList(cmdList, handle->funcObjectId);
 }
 
 DrawFuncOpItem::DrawFuncOpItem(RecordingCanvas::DrawFunc&& drawFunc) : DrawOpItem(DRAW_FUNC_OPITEM)

@@ -163,7 +163,6 @@ template("graphics2d_source_set") {
       "$drawing_src_dir/image/picture.cpp",
       "$drawing_src_dir/image/pixmap.cpp",
       "$drawing_src_dir/image/trace_memory_dump.cpp",
-      "$drawing_src_dir/recording/adaptive_image_helper.cpp",
       "$drawing_src_dir/recording/cmd_list.cpp",
       "$drawing_src_dir/recording/cmd_list_helper.cpp",
       "$drawing_src_dir/recording/draw_cmd.cpp",
@@ -296,10 +295,7 @@ template("graphics2d_source_set") {
       public_deps += [ "//third_party/vulkan-headers:vulkan_headers" ]
     }
     if (platform == "ohos" || platform == "ohos_ng") {
-      external_deps += [
-        "hilog:libhilog",
-        "image_framework:image_native",
-      ]
+      external_deps += [ "hilog:libhilog" ]
       deps = [
         "//third_party/bounds_checking_function:libsec_static",
         "//third_party/skia:skia_$platform",
@@ -520,13 +516,9 @@ ohos_shared_library("2d_graphics_canvaskit0310") {
     ]
   }
 
-  external_deps = [
-    "hilog:libhilog",
-    "image_framework:image_native",
-  ]
+  external_deps = [ "hilog:libhilog" ]
 
   if (enable_text_gine) {
-    external_deps -= [ "image_framework:image_native" ]
     defines += [ "USE_GRAPHIC_TEXT_GINE" ]
   }
 

@@ -428,21 +428,6 @@ void RSPaintFilterCanvasBase::DrawImageLattice(const Drawing::Image* image, cons
 #endif
 }
 
-void RSPaintFilterCanvasBase::DrawBitmap(Media::PixelMap& pixelMap, const scalar px, const scalar py)
-{
-#ifdef ENABLE_RECORDING_DCL
-    for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
-        if ((*iter) != nullptr && OnFilter()) {
-            (*iter)->DrawBitmap(pixelMap, px, py);
-        }
-    }
-#else
-    if (canvas_ != nullptr && OnFilter()) {
-        canvas_->DrawBitmap(pixelMap, px, py);
-    }
-#endif
-}
-
 void RSPaintFilterCanvasBase::DrawImage(
     const Image& image, const scalar px, const scalar py, const SamplingOptions& sampling)
 {
