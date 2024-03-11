@@ -217,11 +217,11 @@ template("render_service_client_source_set") {
       deps += [ "$rosen_root/modules/platform:eventhandler" ]
     }
 
-    if (defined(graphic_2d_broker_configs.vendor_root)) {
+    if (defined(graphic_2d_broker_configs.vendor_root) && !rosen_preview) {
       sources +=
           graphic_2d_broker_configs.librender_service_client_ext_broker_sources
       sources -= graphic_2d_broker_configs.librender_service_client_ext_broker_sources_del
-      external_deps += [ "ipc:ipc_single" ]
+      external_deps += [ "ipc:ipc_core" ]
       external_deps += [ "samgr:samgr_proxy" ]
     }
 
