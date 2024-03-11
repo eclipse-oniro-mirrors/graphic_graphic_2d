@@ -174,6 +174,11 @@ public:
     {
         return (IsInstanceOf<T>()) ? std::static_pointer_cast<T>(shared_from_this()) : nullptr;
     }
+    template<typename T>
+    std::shared_ptr<const T> ReinterpretCastTo() const
+    {
+        return (IsInstanceOf<T>()) ? std::static_pointer_cast<const T>(shared_from_this()) : nullptr;
+    }
 
     bool HasChildrenOutOfRect() const;
     void UpdateChildrenOutOfRectFlag(bool flag);
@@ -540,7 +545,6 @@ private:
     bool isChildrenSorted_ = true;
 
     void UpdateFullChildrenListIfNeeded();
-    void ClearFullChildrenListInternal();
     void GenerateFullChildrenList();
     void ResortChildren();
 

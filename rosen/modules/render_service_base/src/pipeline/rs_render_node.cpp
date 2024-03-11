@@ -298,11 +298,8 @@ void RSRenderNode::RemoveChild(SharedPtr child, bool skipTransition)
     if (child->GetBootAnimation()) {
         SetContainBootAnimation(false);
     }
-    if (!children_.empty() || !disappearingChildren_.empty()) {
-        isFullChildrenListValid_ = false;
-    } else { // directly clear children list
-        ClearFullChildrenListInternal();
-    }
+    SetContentDirty();
+    isFullChildrenListValid_ = false;
 }
 
 void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId firstLevelNodeId, NodeId cacheNodeId)
@@ -414,11 +411,7 @@ void RSRenderNode::RemoveCrossParentChild(const SharedPtr& child, const WeakPtr&
     }
     children_.erase(it);
     SetContentDirty();
-    if (!children_.empty() || !disappearingChildren_.empty()) {
-        isFullChildrenListValid_ = false;
-    } else { // directly clear children list
-        ClearFullChildrenListInternal();
-    }
+    isFullChildrenListValid_ = false;
 }
 
 void RSRenderNode::RemoveFromTree(bool skipTransition)
@@ -464,11 +457,7 @@ void RSRenderNode::ClearChildren()
     }
     children_.clear();
     SetContentDirty();
-    if (!disappearingChildren_.empty()) {
-        isFullChildrenListValid_ = false;
-    } else { // directly clear children list
-        ClearFullChildrenListInternal();
-    }
+    isFullChildrenListValid_ = false;
 }
 
 void RSRenderNode::SetParent(WeakPtr parent)
@@ -2253,20 +2242,14 @@ void RSRenderNode::UpdateFullChildrenListIfNeeded()
     }
 }
 
-void RSRenderNode::ClearFullChildrenListInternal()
-{
-    std::atomic_store_explicit(&fullChildrenList_, EmptyChildrenList, std::memory_order_release);
-    isFullChildrenListValid_ = true;
-    isChildrenSorted_ = true;
-    AddDirtyType(RSModifierType::CHILDREN);
-}
-
 void RSRenderNode::GenerateFullChildrenList()
 {
     // both children_ and disappearingChildren_ are empty, no need to generate fullChildrenList_
     if (children_.empty() && disappearingChildren_.empty()) {
         auto prevFullChildrenList = fullChildrenList_;
-        ClearFullChildrenListInternal();
+        isFullChildrenListValid_ = true;
+        isChildrenSorted_ = true;
+        std::atomic_store_explicit(&fullChildrenList_, EmptyChildrenList, std::memory_order_release);
         return;
     }
 
