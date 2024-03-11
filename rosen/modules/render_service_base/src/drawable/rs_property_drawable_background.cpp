@@ -49,6 +49,7 @@ bool RSShadowDrawable::OnUpdate(const RSRenderNode& node)
     if (!properties.IsShadowValid()) {
         return false;
     }
+    needSync_ = true;
     stagingShadowParam_ = {properties.GetShadowColor(), properties.GetShadowColorStrategy(),
         properties.GetShadowElevation(), properties.GetShadowRadius(), properties.GetShadowOffsetX(),
         properties.GetShadowOffsetY(), properties.GetShadowIsFilled(), properties.GetRRect(),
