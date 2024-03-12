@@ -528,7 +528,8 @@ Drawing::Path RSPropertyDrawableUtils::CreateShadowPath(Drawing::Canvas& canvas,
     return path;
 }
 
-void RSPropertyDrawableUtils::DrawShadow(Drawing::Canvas* canvas, const ShadowParam& shadowParam)
+void RSPropertyDrawableUtils::DrawShadow(Drawing::Canvas* canvas, const std::optional<RSShadow>& rsShadow,
+    const RRect& rrect, const std::shared_ptr<RSPath>& clipBounds)
 {
     // skip shadow if cache is enabled
     if (canvas->GetCacheType() == Drawing::CacheType::ENABLED) {
@@ -544,21 +545,20 @@ void RSPropertyDrawableUtils::DrawShadow(Drawing::Canvas* canvas, const ShadowPa
     matrix.Set(Drawing::Matrix::TRANS_Y, std::ceil(matrix.Get(Drawing::Matrix::TRANS_Y)));
     canvas->SetMatrix(matrix);
 
-    Drawing::Path path = CreateShadowPath(*canvas, shadowParam.isFilled, shadowParam.shadowPath,
-        shadowParam.clipBounds, shadowParam.rrect);
-    path.Offset(shadowParam.offsetX, shadowParam.offsetY);
-    Color spotColor = shadowParam.color;
+    Drawing::Path path = CreateShadowPath(*canvas, rsShadow->GetIsFilled(), rsShadow->GetPath(), clipBounds, rrect);
+    path.Offset(rsShadow->GetOffsetX(), rsShadow->GetOffsetY());
+    Color spotColor = rsShadow->GetColor();
     // shadow alpha follow setting
     auto shadowAlpha = spotColor.GetAlpha();
     RSColor colorPicked;
-    if (shadowParam.colorPickerTask != nullptr &&
-        shadowParam.colorStrategy != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE) {
-        // if (PickColor(*canvas, shadowParam.colorPickerTask, path, matrix, colorPicked)) {
+    if (rsShadow->GetColorPickerCacheTask() != nullptr &&
+        rsShadow->GetColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE) {
+        // if (PickColor(*canvas, rsShadow->GetColorPickerCacheTask(), path, matrix, colorPicked)) {
         //     GetDarkColor(colorPicked);
         // } else {
         //     shadowAlpha = 0;
         // }
-        if (!shadowParam.colorPickerTask->GetFirstGetColorFinished()) {
+        if (!rsShadow->GetColorPickerCacheTask()->GetFirstGetColorFinished()) {
             shadowAlpha = 0;
         }
     } else {
@@ -566,8 +566,8 @@ void RSPropertyDrawableUtils::DrawShadow(Drawing::Canvas* canvas, const ShadowPa
         colorPicked = spotColor;
     }
 
-    if (shadowParam.elevation > 0.f) {
-        Drawing::Point3 planeParams = { 0.0f, 0.0f, shadowParam.elevation };
+    if (rsShadow->GetElevation() > 0.f) {
+        Drawing::Point3 planeParams = { 0.0f, 0.0f, rsShadow->GetElevation() };
         std::vector<Drawing::Point> pt{{path.GetBounds().GetLeft() + path.GetBounds().GetWidth() / 2,
             path.GetBounds().GetTop() + path.GetBounds().GetHeight() / 2}};
         canvas->GetTotalMatrix().MapPoints(pt, pt, 1);
@@ -585,7 +585,7 @@ void RSPropertyDrawableUtils::DrawShadow(Drawing::Canvas* canvas, const ShadowPa
         brush.SetAntiAlias(true);
         Drawing::Filter filter;
         filter.SetMaskFilter(
-            Drawing::MaskFilter::CreateBlurMaskFilter(Drawing::BlurType::NORMAL, shadowParam.radius));
+            Drawing::MaskFilter::CreateBlurMaskFilter(Drawing::BlurType::NORMAL, rsShadow->GetRadius()));
         brush.SetFilter(filter);
         canvas->AttachBrush(brush);
         canvas->DrawPath(path);

@@ -30,6 +30,10 @@ std::shared_ptr<Drawing::RuntimeEffect> RSDynamicLightUpDrawable::dynamicLightUp
 
 RSDrawable::Ptr RSShadowDrawable::OnGenerate(const RSRenderNode& node)
 {
+    // skip shadow if not valid
+    if (!node.GetRenderProperties().IsShadowValid()) {
+        return nullptr;
+    }
     RSDrawable::Ptr ret = nullptr;
     if (node.GetRenderProperties().GetShadowMask()) {
         ret = std::make_shared<RSColorfulShadowDrawable>();
@@ -44,16 +48,11 @@ RSDrawable::Ptr RSShadowDrawable::OnGenerate(const RSRenderNode& node)
 
 bool RSShadowDrawable::OnUpdate(const RSRenderNode& node)
 {
-    const RSProperties& properties = node.GetRenderProperties();
-    // skip shadow if not valid
-    if (!properties.IsShadowValid()) {
-        return false;
-    }
     needSync_ = true;
-    stagingShadowParam_ = {properties.GetShadowColor(), properties.GetShadowColorStrategy(),
-        properties.GetShadowElevation(), properties.GetShadowRadius(), properties.GetShadowOffsetX(),
-        properties.GetShadowOffsetY(), properties.GetShadowIsFilled(), properties.GetRRect(),
-        properties.GetColorPickerCacheTaskShadow(), properties.GetShadowPath(), properties.GetClipBounds()};
+    const RSProperties& properties = node.GetRenderProperties();
+    stagingShadow_ = properties.GetShadow();
+    stagingRRect_ = properties.GetRRect();
+    stagingClipBounds_ = properties.GetClipBounds();
     return true;
 }
 
@@ -62,7 +61,9 @@ void RSShadowDrawable::OnSync()
     if (!needSync_) {
         return;
     }
-    shadowParam_ = std::move(stagingShadowParam_);
+    shadow_ = std::move(stagingShadow_);
+    clipBounds_ = std::move(stagingClipBounds_);
+    rrect_ = std::move(stagingRRect_);
     needSync_ = false;
 }
 
@@ -70,8 +71,8 @@ Drawing::RecordingCanvas::DrawFunc RSShadowDrawable::CreateDrawFunc() const
 {
     auto ptr = std::static_pointer_cast<const RSShadowDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (canvas) {
-            RSPropertyDrawableUtils::DrawShadow(canvas, ptr->shadowParam_);
+        if (canvas && ptr->shadow_.has_value()) {
+            RSPropertyDrawableUtils::DrawShadow(canvas, ptr->shadow_, ptr->rrect_, ptr->clipBounds_);
         }
     };
 }

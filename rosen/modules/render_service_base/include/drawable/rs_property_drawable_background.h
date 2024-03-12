@@ -27,20 +27,6 @@ namespace Drawing {
 class RuntimeEffect;
 }
 
-struct ShadowParam {
-    Color color;
-    int colorStrategy;
-    float elevation;
-    float radius;
-    float offsetX;
-    float offsetY;
-    bool isFilled;
-    RRect rrect;
-    std::shared_ptr<RSColorPickerCacheTask> colorPickerTask;
-    std::shared_ptr<RSPath> shadowPath;
-    std::shared_ptr<RSPath> clipBounds;
-};
-
 class RSShadowDrawable : public RSDrawable {
 public:
     RSShadowDrawable() = default;
@@ -52,8 +38,12 @@ public:
 
 private:
     bool needSync_ = false;
-    ShadowParam shadowParam_;
-    ShadowParam stagingShadowParam_;
+    std::optional<RSShadow> shadow_;
+    std::optional<RSShadow> stagingShadow_;
+    RRect rrect_;
+    RRect stagingRRect_;
+    std::shared_ptr<RSPath> clipBounds_;
+    std::shared_ptr<RSPath> stagingClipBounds_;
 };
 
 class RSColorfulShadowDrawable : public RSPropertyDrawable {
