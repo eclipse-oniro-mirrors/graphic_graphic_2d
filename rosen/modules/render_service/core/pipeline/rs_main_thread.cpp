@@ -284,8 +284,7 @@ void RSMainThread::Init()
         Render();
 
         // move rnv after mark rsnotrendring
-        if (rsVSyncDistributor_->IsDVsyncOn() &&
-            (needRequestNextVsyncAnimate_ || rsVSyncDistributor_->HasPendingUIRNV())) {
+        if (needRequestNextVsyncAnimate_ || rsVSyncDistributor_->HasPendingUIRNV()) {
             rsVSyncDistributor_->MarkRSAnimate();
             RequestNextVSync("animate", timestamp_);
         } else {
@@ -2157,9 +2156,12 @@ void RSMainThread::Animate(uint64_t timestamp)
         if (!rsVSyncDistributor_->IsDVsyncOn()) {
             RequestNextVSync("animate", timestamp_);
         }
-        RS_TRACE_NAME("rs_RequestNextVSync");
+        // call real RequestNextVSync later for dvsync on
+        else {
+            needRequestNextVsyncAnimate_ = true;  // set the member variable instead of directly calling rnv
+            RS_TRACE_NAME("rs_RequestNextVSync");
+        }
     }
-    needRequestNextVsyncAnimate_ = needRequestNextVsync;
 
     PerfAfterAnim(needRequestNextVsync);
 }

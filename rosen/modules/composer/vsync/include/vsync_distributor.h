@@ -163,6 +163,7 @@ private:
 #if defined(RS_ENABLE_DVSYNC)
     sptr<DVsync> dvsync_ = nullptr;
     bool pendingRNVInVsync_ = false;
+    std::atomic<int64_t> lastDVsyncTS_ = 0;  // for dvsync switch to vsync
 #endif
     bool isRs_ = false;
 };

@@ -2422,6 +2422,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             RSMainThread::Instance()->rsVSyncDistributor_->MarkRSNotRendering();
             resetRotate_ = CheckIfNeedResetRotate();
             if (!IsHardwareComposerEnabled()) {
+                RSMainThread::Instance()->rsVSyncDistributor_->MarkRSNotRendering();
                 return;
             }
             if (!RSMainThread::Instance()->WaitHardwareThreadTaskExcute()) {
@@ -2434,6 +2435,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                     }
                 }
                 RS_TRACE_NAME("DisplayNodeSkip skip commit");
+                RSMainThread::Instance()->rsVSyncDistributor_->MarkRSNotRendering();
                 return;
             }
             bool needCreateDisplayNodeLayer = false;
@@ -2448,6 +2450,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 DoScreenRcdTask(processor_, rcdInfo_, screenInfo_);
                 processor_->PostProcess(&node);
             }
+            RSMainThread::Instance()->rsVSyncDistributor_->UnmarkRSNotRendering();
             return;
         } else {
             RSMainThread::Instance()->rsVSyncDistributor_->UnmarkRSNotRendering();
