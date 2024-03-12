@@ -21,7 +21,6 @@
 
 #include "draw/canvas.h"
 #include "image/gpu_context.h"
-#include "recording/adaptive_image_helper.h"
 #include "recording/draw_cmd_list.h"
 #include "recording/recording_handle.h"
 #ifdef ROSEN_OHOS
@@ -121,10 +120,6 @@ public:
     void Discard() override;
 
     void ClipAdaptiveRoundRect(const std::vector<Point>& radius);
-    void DrawImage(const std::shared_ptr<Image>& image, const std::shared_ptr<Data>& data,
-        const AdaptiveImageInfo& rsImageInfo, const SamplingOptions& sampling);
-    void DrawPixelMap(const std::shared_ptr<Media::PixelMap>& pixelMap,
-        const AdaptiveImageInfo& rsImageInfo, const SamplingOptions& sampling);
 
     void SetIsCustomTextType(bool isCustomTextType);
     bool IsCustomTextType() const;

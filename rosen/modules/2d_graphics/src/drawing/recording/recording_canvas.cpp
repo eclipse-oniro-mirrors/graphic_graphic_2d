@@ -593,36 +593,6 @@ void RecordingCanvas::ClipAdaptiveRoundRect(const std::vector<Point>& radius)
     cmdList_->AddDrawOp<ClipAdaptiveRoundRectOpItem::ConstructorHandle>(radiusData);
 }
 
-void RecordingCanvas::DrawImage(const std::shared_ptr<Image>& image, const std::shared_ptr<Data>& data,
-    const AdaptiveImageInfo& rsImageInfo, const SamplingOptions& sampling)
-{
-    if (!addDrawOpImmediate_) {
-        AddDrawOpDeferred<DrawAdaptiveImageOpItem>(image, data, rsImageInfo, sampling);
-        return;
-    }
-    OpDataHandle imageHandle;
-    if (data != nullptr) {
-        imageHandle = CmdListHelper::AddCompressDataToCmdList(*cmdList_, data);
-        AddDrawOpImmediate<DrawAdaptiveImageOpItem::ConstructorHandle>(imageHandle, rsImageInfo, sampling, false);
-        return;
-    }
-    if (image != nullptr) {
-        imageHandle = CmdListHelper::AddImageToCmdList(*cmdList_, image);
-        AddDrawOpImmediate<DrawAdaptiveImageOpItem::ConstructorHandle>(imageHandle, rsImageInfo, sampling, true);
-    }
-}
-
-void RecordingCanvas::DrawPixelMap(const std::shared_ptr<Media::PixelMap>& pixelMap,
-    const AdaptiveImageInfo& rsImageInfo, const SamplingOptions& sampling)
-{
-    if (!addDrawOpImmediate_) {
-        AddDrawOpDeferred<DrawAdaptivePixelMapOpItem>(pixelMap, rsImageInfo, sampling);
-        return;
-    }
-    auto pixelmapHandle = CmdListHelper::AddPixelMapToCmdList(*cmdList_, pixelMap);
-    AddDrawOpImmediate<DrawAdaptivePixelMapOpItem::ConstructorHandle>(pixelmapHandle, rsImageInfo, sampling);
-}
-
 void RecordingCanvas::SetIsCustomTextType(bool isCustomTextType)
 {
     isCustomTextType_ = isCustomTextType;
