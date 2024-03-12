@@ -49,6 +49,11 @@ public:
     FontStyleSet* MatchFamily(const char familyName[]) const override;
 
     Typeface* MatchFamilyStyle(const char familyName[], const FontStyle& fontStyle) const override;
+
+    int CountFamilies() const override;
+    char* GetFamilyName(int index, int* len) const override;
+    FontStyleSet* CreateStyleSet(int index) const override;
+
 private:
     sk_sp<SkFontMgr> skFontMgr_;
 };

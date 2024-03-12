@@ -39,6 +39,10 @@ public:
     virtual FontStyleSet* MatchFamily(const char familyName[]) const = 0;
 
     virtual Typeface* MatchFamilyStyle(const char familyName[], const FontStyle& fontStyle) const = 0;
+
+    virtual int CountFamilies() const = 0;
+    virtual char* GetFamilyName(int index, int* len) const = 0;
+    virtual FontStyleSet* CreateStyleSet(int index) const = 0;
 protected:
     FontMgrImpl() noexcept = default;
 };

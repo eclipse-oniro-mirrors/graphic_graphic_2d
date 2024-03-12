@@ -15,6 +15,7 @@
 
 #include "skia_font_mgr.h"
 
+#include "include/core/SkString.h"
 #include "include/core/SkTypeface.h"
 #ifndef USE_TEXGINE
 #include "txt/asset_font_manager.h"
@@ -23,6 +24,7 @@
 #include "skia_adapter/skia_convert_utils.h"
 #include "skia_adapter/skia_font_style_set.h"
 #include "skia_adapter/skia_typeface.h"
+#include <securec.h>
 
 namespace OHOS {
 namespace Rosen {
@@ -105,6 +107,46 @@ Typeface* SkiaFontMgr::MatchFamilyStyle(const char familyName[], const FontStyle
     std::shared_ptr<TypefaceImpl> typefaceImpl = std::make_shared<SkiaTypeface>(sk_sp(skTypeface));
     return new Typeface(typefaceImpl);
 }
+
+int SkiaFontMgr::CountFamilies() const
+{
+    if (skFontMgr_ == nullptr) {
+        return 0;
+    }
+    return skFontMgr_->countFamilies();
+}
+
+char* SkiaFontMgr::GetFamilyName(int index, int* len) const
+{
+    if (index < 0 || len == nullptr || skFontMgr_ == nullptr) {
+        return nullptr;
+    }
+    SkString* skName = new SkString();
+    skFontMgr_->getFamilyName(index, skName);
+    *len = skName->size();
+    char* familyName = new char[skName->size() + 1];
+    auto retCopy = strcpy_s(familyName, skName->size() + 1, skName->c_str());
+    delete skName;
+    if (retCopy != 0) {
+        return nullptr;
+    }
+    return familyName;
+}
+
+FontStyleSet* SkiaFontMgr::CreateStyleSet(int index) const
+{ 
+    if (index < 0 || skFontMgr_ == nullptr) {
+        return nullptr;
+    }
+    SkFontStyleSet* skFontStyleSetPtr = skFontMgr_->createStyleSet(index);
+    if (!skFontStyleSetPtr) {
+        return nullptr;
+    }
+    sk_sp<SkFontStyleSet> skFontStyleSet{skFontStyleSetPtr};
+    std::shared_ptr<FontStyleSetImpl> fontStyleSetImpl = std::make_shared<SkiaFontStyleSet>(skFontStyleSet);
+    return new FontStyleSet(fontStyleSetImpl);
+}
+
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

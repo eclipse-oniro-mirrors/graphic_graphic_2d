@@ -290,5 +290,16 @@
     { "name": "OH_Drawing_TypographyGetTextStyle" },
     { "name": "OH_Drawing_TypographyGetEffectiveAlignment" },
     { "name": "OH_Drawing_TypographyIsLineUnlimited" },
-    { "name": "OH_Drawing_TypographyIsEllipsized" }
+    { "name": "OH_Drawing_TypographyIsEllipsized" },
+    { "name": "OH_Drawing_FontMgrCreate" },
+    { "name": "OH_Drawing_FontMgrDestroy" },
+    { "name": "OH_Drawing_FontMgrGetFamiliesCount" },
+    { "name": "OH_Drawing_FontMgrGetFamilyName" },
+    { "name": "OH_Drawing_DestroyFamilyName" },
+    { "name": "OH_Drawing_FontStyleSetCreate" },
+    { "name": "OH_Drawing_DestroyFontStyleSet" },
+    { "name": "OH_Drawing_FontMgrMatchFamily" },
+    { "name": "OH_Drawing_FontMgrMatchFamilyStyle" },
+    { "name": "OH_Drawing_FontMgrMatchFamilyStyleCharacter" }
+
 ]

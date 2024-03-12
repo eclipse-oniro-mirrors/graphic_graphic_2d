@@ -400,6 +400,21 @@ typedef enum {
     TEXT_ENCODING_GLYPH_ID,
 } OH_Drawing_TextEncoding;
 
+/**
+ * @brief Defines a OH_Drawing_FontMgr, which is used to manage font family.
+ *
+ * @since 12
+ * @version 1.0
+ */
+typedef struct OH_Drawing_FontMgr OH_Drawing_FontMgr;
+
+/**
+ * @brief Defines a OH_Drawing_FontStyleSet, which is used to manage font style.
+ *
+ * @since 12
+ * @version 1.0
+ */
+typedef struct OH_Drawing_FontStyleSet OH_Drawing_FontStyleSet;
 #ifdef __cplusplus
 }
 #endif
