@@ -639,7 +639,9 @@ EGLBoolean EglWrapperDisplay::SwapBuffers(EGLSurface surf)
 
     EglWrapperSurface *surfPtr = EglWrapperSurface::GetWrapperSurface(surf);
     if (!CheckObject(surfPtr)) {
-        WLOGE("EGLSurface is invalid.");
+        if (surfPtr->GetEglSurface() == nullptr) {
+            WLOGE("EGLSurface is invalid.");
+        }
         ThreadPrivateDataCtl::SetError(EGL_BAD_SURFACE);
         return EGL_FALSE;
     }
