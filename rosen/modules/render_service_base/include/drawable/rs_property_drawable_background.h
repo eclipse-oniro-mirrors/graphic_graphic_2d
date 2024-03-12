@@ -16,7 +16,6 @@
 #ifndef RENDER_SERVICE_BASE_DRAWABLE_RS_PROPERTY_DRAWABLE_BACKGROUND_H
 #define RENDER_SERVICE_BASE_DRAWABLE_RS_PROPERTY_DRAWABLE_BACKGROUND_H
 
-#include "common/rs_color.h"
 #include "drawable/rs_property_drawable.h"
 #include "render/rs_shadow.h"
 
