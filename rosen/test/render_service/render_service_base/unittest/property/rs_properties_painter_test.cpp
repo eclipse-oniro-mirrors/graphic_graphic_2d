@@ -17,6 +17,7 @@
 
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "property/rs_properties_painter.h"
+#include "property/rs_point_light_manager.h"
 #include "render/rs_skia_filter.h"
 #include "render/rs_shadow.h"
 #include "pipeline/rs_render_node.h"
@@ -723,7 +724,8 @@ HWTEST_F(RSPropertiesPainterTest, DrawLight001, TestSize.Level1)
 
     auto lightSourcePtr = std::make_shared<RSLightSource>();
     RSIlluminated rsIlluminated;
-    rsIlluminated.AddLightSource(lightSourcePtr);
+    Vector4f lightPos;
+    rsIlluminated.AddLightSourcesAndPos(lightSourcePtr, lightPos);
     RSPropertiesPainter::DrawLight(properties, canvas);
     EXPECT_TRUE(true);
 
@@ -744,27 +746,29 @@ HWTEST_F(RSPropertiesPainterTest, DrawLightInner001, TestSize.Level1)
     properties.SetIlluminatedType(-1);
     auto lightBuilder = RSPropertiesPainter::GetPhongShaderBuilder();
     std::shared_ptr<RSLightSource> newLightSource = std::make_shared<RSLightSource>();
-    std::unordered_set<std::shared_ptr<RSLightSource>> lightSources;
-    lightSources.insert(newLightSource);
+    std::vector<std::pair<std::shared_ptr<RSLightSource>, Vector4f>> lightSourcesAndPosVec;
     std::shared_ptr<RSObjAbsGeometry> geoPtr;
-    RSPropertiesPainter::DrawLightInner(properties, canvas, lightBuilder, lightSources, geoPtr);
+    auto instance = RSPointLightManager::Instance();
+    auto lightPos = instance->CalculateLightPosForIlluminated(newLightSource, geoPtr);
+    lightSourcesAndPosVec.push_back(std::make_pair(newLightSource, lightPos));
+    RSPropertiesPainter::DrawLightInner(properties, canvas, lightBuilder, lightSourcesAndPosVec, geoPtr);
     EXPECT_TRUE(true);
 
     properties.SetIlluminatedBorderWidth(0.f);
     IlluminatedType illuminatedType = IlluminatedType::CONTENT;
     RSIlluminated rsIlluminated;
     rsIlluminated.SetIlluminatedType(illuminatedType);
-    RSPropertiesPainter::DrawLightInner(properties, canvas, lightBuilder, lightSources, geoPtr);
+    RSPropertiesPainter::DrawLightInner(properties, canvas, lightBuilder, lightSourcesAndPosVec, geoPtr);
     EXPECT_TRUE(true);
 
     illuminatedType = IlluminatedType::BORDER;
     rsIlluminated.SetIlluminatedType(illuminatedType);
-    RSPropertiesPainter::DrawLightInner(properties, canvas, lightBuilder, lightSources, geoPtr);
+    RSPropertiesPainter::DrawLightInner(properties, canvas, lightBuilder, lightSourcesAndPosVec, geoPtr);
     EXPECT_TRUE(true);
 
     illuminatedType = IlluminatedType::BORDER_CONTENT;
     rsIlluminated.SetIlluminatedType(illuminatedType);
-    RSPropertiesPainter::DrawLightInner(properties, canvas, lightBuilder, lightSources, geoPtr);
+    RSPropertiesPainter::DrawLightInner(properties, canvas, lightBuilder, lightSourcesAndPosVec, geoPtr);
     EXPECT_TRUE(true);
 }
 
