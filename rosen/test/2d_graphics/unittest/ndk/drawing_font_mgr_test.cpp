@@ -73,7 +73,7 @@ HWTEST_F(OH_Drawing_FontMgrTest, OH_Drawing_FontMgrTest002, TestSize.Level1)
 
     const char *bcp47[] = {"zh-Hans"};
     OH_Drawing_Typeface *CharTypeface = OH_Drawing_FontMgrMatchFamilyStyleCharacter(
-	    mgr, matchFamilyName, &normalForm, bcp47, 1, ' ');
+        mgr, matchFamilyName, &normalForm, bcp47, 1, ' ');
     EXPECT_NE(CharTypeface, nullptr);
     OH_Drawing_TypefaceDestroy(CharTypeface);
 
