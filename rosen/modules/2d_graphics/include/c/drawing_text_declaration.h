@@ -122,14 +122,6 @@ typedef struct OH_Drawing_FontParser OH_Drawing_FontParser;
  */
 typedef struct OH_Drawing_TextShadow OH_Drawing_TextShadow;
 
-/**
- * @brief Defines an <b>OH_Drawing_RectStyle</b>, which is used to create an <b>OH_Drawing_RectStyle</b> object.
- *
- * @since 12
- * @version 1.0
- */
-typedef struct OH_Drawing_RectStyle OH_Drawing_RectStyle;
-
 #ifdef __cplusplus
 }
 #endif

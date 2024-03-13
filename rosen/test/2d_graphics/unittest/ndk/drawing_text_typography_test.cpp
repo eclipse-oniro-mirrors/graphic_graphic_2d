@@ -1625,14 +1625,12 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest049, TestSize.Level
 HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest050, TestSize.Level1)
 {
     OH_Drawing_TextStyle* txtStyle = OH_Drawing_CreateTextStyle();
-    OH_Drawing_RectStyle* rectStyle = OH_Drawing_CreateRectStyle();
     OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
     OH_Drawing_TypographyCreate* handler = OH_Drawing_CreateTypographyHandler(typoStyle,
         OH_Drawing_CreateFontCollection());
-    EXPECT_EQ(rectStyle == nullptr, false);
+    OH_Drawing_RectStyle_Info rectStyleInfo = {1, 1.5, 1.5, 1.5, 1.5};
     int styleId = 1;
-    OH_Drawing_TextStyleSetBackgroundRect(txtStyle, rectStyle, styleId);
-    OH_Drawing_DestroyRectStyle(rectStyle);
+    OH_Drawing_TextStyleSetBackgroundRect(txtStyle, &rectStyleInfo, styleId);
     uint32_t symbol = 2;
     OH_Drawing_TypographyHandlerAddSymbol(handler, symbol);
     const char* key1 = "宋体";
@@ -1646,8 +1644,10 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest050, TestSize.Level
     OH_Drawing_TextStyleSetFeature(txtStyle, key3, value3);
     EXPECT_EQ(OH_Drawing_TextStyleGetFeaturesSize(txtStyle), 3);
     EXPECT_EQ(OH_Drawing_TextStyleGetFeature(txtStyle, "宋体"), 1);
-    char* strFeature = OH_Drawing_TextStyleGetFeatures(txtStyle);
-    EXPECT_EQ(strFeature != nullptr, true);
+    char* strFeature = new char[256];
+    EXPECT_EQ((OH_Drawing_TextStyleGetFeatures(txtStyle, strFeature, 256)) != nullptr, true);
+    delete[] strFeature;
+    strFeature = nullptr;
     OH_Drawing_TextStyleClearFeatures(txtStyle);
     EXPECT_EQ(OH_Drawing_TextStyleGetFeaturesSize(txtStyle), 0);
     double lineShift = 1.5;

@@ -38,6 +38,7 @@ public:
     std::string GetFeatureSettings() const;
     const std::map<std::string, int> &GetFontFeatures() const;
     bool operator ==(const FontFeatures& rhs) const;
+    void ClearFeature();
 
 private:
     std::map<std::string, int> featureMap_;
