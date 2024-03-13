@@ -616,11 +616,11 @@ static void DestroySwapchainInternal(VkDevice device, VkSwapchainKHR swapchainHa
 
     if (active) {
         swapchain->surface.swapchainHandle = VK_NULL_HANDLE;
+        window->surface->CleanCache();
     }
     if (allocator == nullptr) {
         allocator = &GetDefaultAllocator();
     }
-    window->surface->CleanCache();
     swapchain->~Swapchain();
     allocator->pfnFree(allocator->pUserData, swapchain);
 }
