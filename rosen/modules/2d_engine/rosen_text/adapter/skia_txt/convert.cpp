@@ -122,6 +122,7 @@ SPText::TextStyle Convert(const TextStyle& style)
         style.backgroundRect.leftBottomRadius };
     textStyle.styleId = style.styleId;
     textStyle.isSymbolGlyph = style.isSymbolGlyph;
+    textStyle.lineShift = style.lineShift;
 
     if (style.isSymbolGlyph) {
         textStyle.symbol.SetRenderColor(style.symbol.GetRenderColor());

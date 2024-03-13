@@ -1680,6 +1680,127 @@ bool  OH_Drawing_TypographyIsLineUnlimited(OH_Drawing_TypographyStyle*);
  */
 bool  OH_Drawing_TypographyIsEllipsized(OH_Drawing_TypographyStyle*);
 
+/**
+ * @brief Creates an <b>OH_Drawing_RectStyle</b> object.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @return Returns the pointer to the <b>OH_Drawing_RectStyle</b> object created.
+ * @since 12
+ * @version 1.0
+ */
+OH_Drawing_RectStyle* OH_Drawing_CreateRectStyle(void);
+
+/**
+ * @brief Releases the memory occupied by an <b>OH_Drawing_RectStyle</b> object.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_RectStyle Indicates the pointer to an <b>OH_Drawing_RectStyle</b> object.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_DestroyRectStyle(OH_Drawing_RectStyle*);
+
+/**
+ * @brief Sets the background rect and styleId.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @param OH_Drawing_RectStyle Indicates the pointer to an <b>OH_Drawing_RectStyle</b> object.
+ * @param int Indicates the styleId to set.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_TextStyleSetBackgroundRect(OH_Drawing_TextStyle*, OH_Drawing_RectStyle*, int);
+
+/**
+ * @brief Adds the symbol.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TypographyCreate Indicates the pointer to an <b>OH_Drawing_TypographyCreate</b> object.
+ * @param uint32_t Indicates the symbol to add.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_TypographyHandlerAddSymbol(OH_Drawing_TypographyCreate*, uint32_t);
+
+/**
+ * @brief Sets features in fontfeatures of textstyle.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @param char Indicates the pointer to the tag to set.
+ * @param int Indicates the value to set.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_TextStyleSetFeature(OH_Drawing_TextStyle*, const char*, int);
+
+/**
+ * @brief Gets value with key in fontfeatures.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @param char Indicates the pointer to the key of fontfeature in map.
+ * @return Returns the value of the key in map.
+ * @since 12
+ * @version 1.0
+ */
+int OH_Drawing_TextStyleGetFeature(OH_Drawing_TextStyle*, const char*);
+
+/**
+ * @brief Gets all elements in fontfeatures map.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @return char Indicates the pointer to the string in Json of all elements in fontfeatures map.
+ * @since 12
+ * @version 1.0
+ */
+char* OH_Drawing_TextStyleGetFeatures(OH_Drawing_TextStyle*);
+
+/**
+ * @brief Gets size of fontfeatures map.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @return Returns the size of fontfeatures map.
+ * @since 12
+ * @version 1.0
+ */
+int OH_Drawing_TextStyleGetFeaturesSize(OH_Drawing_TextStyle*);
+
+/**
+ * @brief Clear elements in fontfeatures map.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_TextStyleClearFeatures(OH_Drawing_TextStyle*);
+
+/**
+ * @brief Sets the base line shift.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @param double Indicates the baseline shift to set.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_TextStyleSetBaseLineShift(OH_Drawing_TextStyle*, double);
+
+/**
+ * @brief Gets the base line shift.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @return Returns the baseline shift.
+ * @since 12
+ * @version 1.0
+ */
+double OH_Drawing_TextStyleGetBaseLineShift(OH_Drawing_TextStyle*);
+
 #ifdef __cplusplus
 }
 #endif

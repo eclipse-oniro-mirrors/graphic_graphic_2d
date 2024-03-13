@@ -99,6 +99,7 @@ struct TextStyle {
     // symbol glyph
     bool isSymbolGlyph = false;
     HMSymbolTxt symbol;
+    double lineShift = 0.0;
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -1616,4 +1616,42 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest049, TestSize.Level
     bool linestyleOnly = false;
     OH_Drawing_SetTypographyTextLineStyleOnly(typoStyle, linestyleOnly);
 }
+
+/*
+ * @tc.name: OH_Drawing_TypographyTest050
+ * @tc.desc: test for getting line info for text typography
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest050, TestSize.Level1)
+{
+    OH_Drawing_TextStyle* txtStyle = OH_Drawing_CreateTextStyle();
+    OH_Drawing_RectStyle* rectStyle = OH_Drawing_CreateRectStyle();
+    OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
+    OH_Drawing_TypographyCreate* handler = OH_Drawing_CreateTypographyHandler(typoStyle,
+        OH_Drawing_CreateFontCollection());
+    EXPECT_EQ(rectStyle == nullptr, false);
+    int styleId = 1;
+    OH_Drawing_TextStyleSetBackgroundRect(txtStyle, rectStyle, styleId);
+    OH_Drawing_DestroyRectStyle(rectStyle);
+    uint32_t symbol = 2;
+    OH_Drawing_TypographyHandlerAddSymbol(handler, symbol);
+    const char* key1 = "宋体";
+    int value1 = 1;
+    OH_Drawing_TextStyleSetFeature(txtStyle, key1, value1);
+    const char* key2 = "斜体";
+    int value2 = 2;
+    OH_Drawing_TextStyleSetFeature(txtStyle, key2, value2);
+    const char* key3 = "方体";
+    int value3 = 3;
+    OH_Drawing_TextStyleSetFeature(txtStyle, key3, value3);
+    EXPECT_EQ(OH_Drawing_TextStyleGetFeaturesSize(txtStyle), 3);
+    EXPECT_EQ(OH_Drawing_TextStyleGetFeature(txtStyle, "宋体"), 1);
+    char* strFeature = OH_Drawing_TextStyleGetFeatures(txtStyle);
+    EXPECT_EQ(strFeature != nullptr, true);
+    OH_Drawing_TextStyleClearFeatures(txtStyle);
+    EXPECT_EQ(OH_Drawing_TextStyleGetFeaturesSize(txtStyle), 0);
+    double lineShift = 1.5;
+    OH_Drawing_TextStyleSetBaseLineShift(txtStyle, lineShift);
+    EXPECT_EQ(OH_Drawing_TextStyleGetBaseLineShift(txtStyle), 1.5);
+}
 }

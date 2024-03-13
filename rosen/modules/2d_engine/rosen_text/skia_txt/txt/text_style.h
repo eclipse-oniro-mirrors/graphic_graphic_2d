@@ -141,6 +141,7 @@ public:
     // symbol glyph
     bool isSymbolGlyph = false;
     HMSymbolTxt symbol;
+    double lineShift = 0.0;
 };
 
 } // namespace SPText

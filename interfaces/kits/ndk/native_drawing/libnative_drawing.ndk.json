@@ -290,5 +290,16 @@
     { "name": "OH_Drawing_TypographyGetTextStyle" },
     { "name": "OH_Drawing_TypographyGetEffectiveAlignment" },
     { "name": "OH_Drawing_TypographyIsLineUnlimited" },
-    { "name": "OH_Drawing_TypographyIsEllipsized" }
+    { "name": "OH_Drawing_TypographyIsEllipsized" },
+    { "name": "OH_Drawing_CreateRectStyle" },
+    { "name": "OH_Drawing_DestroyRectStyle" },
+    { "name": "OH_Drawing_TextStyleSetBackgroundRect" },
+    { "name": "OH_Drawing_TextStyleSetFeature" },
+    { "name": "OH_Drawing_TypographyHandlerAddSymbol" },
+    { "name": "OH_Drawing_TextStyleGetFeature" },
+    { "name": "OH_Drawing_TextStyleGetFeaturesSize" },
+    { "name": "OH_Drawing_TextStyleClearFeatures" },
+    { "name": "OH_Drawing_TextStyleGetFeatures" },
+    { "name": "OH_Drawing_TextStyleSetBaseLineShift" },
+    { "name": "OH_Drawing_TextStyleGetBaseLineShift" }
 ]

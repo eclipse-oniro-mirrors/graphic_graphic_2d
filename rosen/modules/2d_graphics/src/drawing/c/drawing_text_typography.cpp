@@ -1788,3 +1788,171 @@ void OH_Drawing_SetTypographyTextEllipsis(OH_Drawing_TypographyStyle* style, con
     ConvertToOriginalText<TypographyStyle>(style)->ellipsis = u16Ellipsis;
 #endif
 }
+
+OH_Drawing_RectStyle* OH_Drawing_CreateRectStyle(void)
+{
+    return (OH_Drawing_RectStyle*)new RectStyle;
+}
+
+void OH_Drawing_DestroyRectStyle(OH_Drawing_RectStyle* rectStyle)
+{
+    if (rectStyle == nullptr) {
+        return;
+    }
+
+    if (ConvertToOriginalText<RectStyle>(rectStyle) == nullptr) {
+        return;
+    }
+    
+    delete ConvertToOriginalText<RectStyle>(rectStyle);
+    rectStyle = nullptr;
+}
+
+void OH_Drawing_TextStyleSetBackgroundRect(OH_Drawing_TextStyle* style, OH_Drawing_RectStyle* rectStyle, int styleId)
+{
+    if (style == nullptr || rectStyle == nullptr) {
+        return;
+    }
+
+    if (ConvertToOriginalText<TextStyle>(style) == nullptr || ConvertToOriginalText<RectStyle>(rectStyle) == nullptr) {
+        return;
+    }
+    
+    RectStyle* originRectStyle = new RectStyle;
+    originRectStyle = ConvertToOriginalText<RectStyle>(rectStyle);
+    ConvertToOriginalText<TextStyle>(style)->backgroundRect = *originRectStyle;
+    ConvertToOriginalText<TextStyle>(style)->styleId = styleId;
+}
+
+void OH_Drawing_TypographyHandlerAddSymbol(OH_Drawing_TypographyCreate* handler, uint32_t symbol)
+{
+    if (!handler || (symbol < 0)) {
+        return;
+    }
+
+    if (ConvertToOriginalText<TypographyCreate>(handler)) {
+        ConvertToOriginalText<TypographyCreate>(handler)->AppendSymbol(symbol);
+    }
+}
+
+void OH_Drawing_TextStyleSetFeature(OH_Drawing_TextStyle* style, const char* tag, int value)
+{
+    if (style == nullptr || tag == nullptr) {
+        return; 
+    }
+
+    if (ConvertToOriginalText<TextStyle>(style)) {
+        ConvertToOriginalText<TextStyle>(style)->fontFeatures.SetFeature(tag, value);
+    }   
+}
+
+int OH_Drawing_TextStyleGetFeature(OH_Drawing_TextStyle* style, const char* tag)
+{
+    if (style == nullptr || tag == nullptr) {
+        return 0; 
+    }
+
+    if (ConvertToOriginalText<TextStyle>(style)) {
+        std::string originString = ConvertToOriginalText<TextStyle>(style)->fontFeatures.GetFeatureSettings();
+        std::map<std::string, int> *originMap = new std::map<std::string, int>;	
+        std::stringstream stream(originString);
+        std::string stringMap;
+
+        while(getline(stream, stringMap, ',')) {
+		    int pos = stringMap.find('=');
+		    (*originMap)[stringMap.substr(0,pos)] = atoi((stringMap.substr(pos+1)).c_str());
+	    }
+
+        for(const auto& kv1 : (*originMap)) {
+		    if(tag == kv1.first) {
+			    return kv1.second;
+		    }
+	    }
+    }
+
+    return 0;
+}
+
+int OH_Drawing_TextStyleGetFeaturesSize(OH_Drawing_TextStyle* style)
+{
+    if (style == nullptr) {
+        return 0; 
+    }
+
+    if (ConvertToOriginalText<TextStyle>(style)) {
+        return (ConvertToOriginalText<TextStyle>(style)->fontFeatures.GetFontFeatures()).size();
+    }
+
+    return 0;
+}
+
+void OH_Drawing_TextStyleClearFeatures(OH_Drawing_TextStyle* style)
+{
+    if (style == nullptr) {
+        return; 
+    }
+
+    if (ConvertToOriginalText<TextStyle>(style)) {
+        auto& originMap = ConvertToOriginalText<TextStyle>(style)->fontFeatures.GetFontFeatures();
+        (const_cast<std::map<std::string, int> &>(originMap)).clear();
+    }
+}
+
+char* OH_Drawing_TextStyleGetFeatures(OH_Drawing_TextStyle* style)
+{
+    if (style == nullptr) {
+        return nullptr; 
+    }
+
+    if (ConvertToOriginalText<TextStyle>(style) == nullptr) {
+        return nullptr;
+    }
+    auto& originMap = ConvertToOriginalText<TextStyle>(style)->fontFeatures.GetFontFeatures();
+    char* str = (char*)malloc(256 * sizeof(char));
+	strcpy(str, "{");
+	int flag = 1;
+        
+    for(auto & kv : originMap) {
+		std::string tempstring = kv.first;
+		const char *temp = tempstring.c_str();
+		const char *temp1 = (std::to_string(kv.second)).c_str();
+		strcat(str, "\"");
+		strcat(str, temp);
+		strcat(str, "\"");
+		strcat(str, ":");
+		strcat(str, "\"");
+		strcat(str, temp1);
+		strcat(str, "\"");
+		if(flag < originMap.size()) {
+            strcat(str, ",");
+        }
+		flag++;
+	}
+    strcat(str, "}");
+        
+    return str;
+}
+
+void OH_Drawing_TextStyleSetBaseLineShift(OH_Drawing_TextStyle* style, double lineShift)
+{
+    if (style == nullptr) {
+        return;
+    }
+
+    if (ConvertToOriginalText<TextStyle>(style)) {
+        ConvertToOriginalText<TextStyle>(style)->lineShift = lineShift;
+    }
+}
+
+double OH_Drawing_TextStyleGetBaseLineShift(OH_Drawing_TextStyle* style)
+{
+    if (style == nullptr) {
+        return 0.0;
+    }
+
+    if (ConvertToOriginalText<TextStyle>(style) == nullptr) {
+        return 0.0;
+    }
+    
+    return ConvertToOriginalText<TextStyle>(style)->lineShift;
+}
