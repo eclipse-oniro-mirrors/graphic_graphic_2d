@@ -116,18 +116,39 @@ int SkiaFontMgr::CountFamilies() const
     return skFontMgr_->countFamilies();
 }
 
+static bool CopySkStrData(char** destination, const SkString& source)
+{
+    if (destination == nullptr || source.isEmpty()) {
+        return false;
+    }
+    size_t destinationSize = source.size() + 1;
+    *destination = new char[destinationSize];
+    if (*destination == nullptr) {
+        return false;
+    }
+    auto retCopy = strcpy_s(*destination, destinationSize, source.c_str());
+    if (retCopy != 0) {
+        delete[] *destination;
+        return false;
+    }
+    return true;
+}
+
 char* SkiaFontMgr::GetFamilyName(int index, int* len) const
 {
     if (index < 0 || len == nullptr || skFontMgr_ == nullptr) {
         return nullptr;
     }
     SkString* skName = new SkString();
+    if (skName == nullptr) {
+        return nullptr;
+    }
     skFontMgr_->getFamilyName(index, skName);
     *len = skName->size();
-    char* familyName = new char[skName->size() + 1];
-    auto retCopy = strcpy_s(familyName, skName->size() + 1, skName->c_str());
+    char* familyName = nullptr;
+    auto retCopy = CopySkStrData(&familyName, *skName);
     delete skName;
-    if (retCopy != 0) {
+    if (!retCopy) {
         return nullptr;
     }
     return familyName;
