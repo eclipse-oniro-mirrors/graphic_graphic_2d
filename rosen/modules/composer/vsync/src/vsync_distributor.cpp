@@ -458,7 +458,7 @@ void VSyncDistributor::OnVSyncEvent(int64_t now, int64_t period, uint32_t refres
 
     int64_t lastDVsyncTS = lastDVsyncTS_.load()
     // when dvsync switch to vsync, skip all vsync events within one period from the pre-rendered timestamp
-    if (!IsDVsyncOn() && now < lastDVsyncTS + DVSYNC_ON_PERIOD - MAX_PERIOD_BIAS) {
+    if (!IsDVsyncOn() && now < (lastDVsyncTS + DVSYNC_ON_PERIOD - MAX_PERIOD_BIAS)) {
         ScopedBytrace func("skip DVSync prerendered frame, now: " + std::to_string(now) +
             ",lastDVsyncTS: " + std::to_string(lastDVsyncTS));
         return;
