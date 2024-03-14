@@ -401,7 +401,7 @@ void VSyncDistributor::ThreadMain()
             {
                 std::unique_lock<std::mutex> locker(mutex_);
                 dvsync_->MarkDistributorSleep(true);
-                dvsync_->DelayBeforePostEvent(timestamp,locker);
+                dvsync_->DelayBeforePostEvent(timestamp, locker);
                 dvsync_->MarkDistributorSleep(false);
             }
             // if getting switched into vsync mode after sleep
