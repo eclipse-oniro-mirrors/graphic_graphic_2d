@@ -917,6 +917,7 @@ public:
     Vector2f GetGravityTranslate(float imgWidth, float imgHeight);
     bool GetHasTransparentSurface() const;
     void UpdatePartialRenderParams();
+    void UpdateAncestorDisplayNodeInRenderParams();
 
     bool HasWindowCorner()
     {

@@ -1225,6 +1225,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     }
     // set for boot animation
     node.SetAncestorDisplayNode(curDisplayNode_);
+    node.UpdateAncestorDisplayNodeInRenderParams();
     bool dirtyFlag = dirtyFlag_;
     needRecalculateOcclusion_ = needRecalculateOcclusion_ ||
         node.CheckIfOcclusionReusable(preMainAndLeashWindowNodesIds_);
@@ -1474,6 +1475,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
 
     node.SetAncestorDisplayNode(curDisplayNode_);
+    node.UpdateAncestorDisplayNodeInRenderParams();
     CheckColorSpace(node);
     CheckPixelFormat(node);
 

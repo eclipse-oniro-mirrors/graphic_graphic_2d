@@ -1956,5 +1956,14 @@ void RSSurfaceRenderNode::InitRenderParams()
     stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>();
     renderParams_ = std::make_unique<RSSurfaceRenderParams>();
 }
+void RSSurfaceRenderNode::UpdateAncestorDisplayNodeInRenderParams()
+{
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams == nullptr) {
+        RS_LOGE("RSSurfaceRenderNode::UpdateAncestorDisplayNodeInRenderParams surfaceParams is null");
+        return;
+    }
+    surfaceParams->SetAncestorDisplayNode(ancestorDisplayNode_);
+}
 } // namespace Rosen
 } // namespace OHOS

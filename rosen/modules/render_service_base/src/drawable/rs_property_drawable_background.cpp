@@ -20,6 +20,7 @@
 #include "pipeline/rs_effect_render_node.h"
 #include "pipeline/rs_recording_canvas.h"
 #include "pipeline/rs_render_node.h"
+#include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 
 namespace OHOS::Rosen {
@@ -243,6 +244,9 @@ bool RSMaskDrawable::OnUpdate(const RSRenderNode& node)
 // Background
 RSDrawable::Ptr RSBackgroundColorDrawable::OnGenerate(const RSRenderNode& node)
 {
+    if (node.IsInstanceOf<RSSurfaceRenderNode>()) {
+        return nullptr; 
+    }
     if (auto ret = std::make_shared<RSBackgroundColorDrawable>(); ret->OnUpdate(node)) {
         return std::move(ret);
     }
