@@ -179,6 +179,7 @@ void SkiaCanvas::DrawPoint(const Point& point)
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     SortedPaints& paints = skiaPaint_.GetSortedPaints();
@@ -192,6 +193,7 @@ void SkiaCanvas::DrawPoints(PointMode mode, size_t count, const Point pts[])
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
 
@@ -211,6 +213,7 @@ void SkiaCanvas::DrawLine(const Point& startPt, const Point& endPt)
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     SortedPaints& paints = skiaPaint_.GetSortedPaints();
@@ -225,6 +228,7 @@ void SkiaCanvas::DrawRect(const Rect& rect)
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     SkRect r = SkRect::MakeLTRB(rect.GetLeft(), rect.GetTop(), rect.GetRight(), rect.GetBottom());
@@ -239,6 +243,7 @@ void SkiaCanvas::DrawRoundRect(const RoundRect& roundRect)
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     SkRRect rRect;
@@ -254,6 +259,7 @@ void SkiaCanvas::DrawNestedRoundRect(const RoundRect& outer, const RoundRect& in
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     SkRRect outerRRect;
@@ -273,6 +279,7 @@ void SkiaCanvas::DrawArc(const Rect& oval, scalar startAngle, scalar sweepAngle)
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     SkRect arcRect = SkRect::MakeLTRB(oval.GetLeft(), oval.GetTop(), oval.GetRight(), oval.GetBottom());
@@ -287,6 +294,7 @@ void SkiaCanvas::DrawPie(const Rect& oval, scalar startAngle, scalar sweepAngle)
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     SkRect pieRect = SkRect::MakeLTRB(oval.GetLeft(), oval.GetTop(), oval.GetRight(), oval.GetBottom());
@@ -301,6 +309,7 @@ void SkiaCanvas::DrawOval(const Rect& oval)
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     SkRect ovalRect = SkRect::MakeLTRB(oval.GetLeft(), oval.GetTop(), oval.GetRight(), oval.GetBottom());
@@ -315,6 +324,7 @@ void SkiaCanvas::DrawCircle(const Point& centerPt, scalar radius)
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     SortedPaints& paints = skiaPaint_.GetSortedPaints();
@@ -328,10 +338,12 @@ void SkiaCanvas::DrawPath(const Path& path)
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     auto skPathImpl = path.GetImpl<SkiaPath>();
     if (skPathImpl == nullptr) {
+        skiaPaint_.Reset();
         return;
     }
     SortedPaints& paints = skiaPaint_.GetSortedPaints();
@@ -384,6 +396,7 @@ void SkiaCanvas::DrawRegion(const Region& region)
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
 
@@ -399,6 +412,7 @@ void SkiaCanvas::DrawPatch(const Point cubics[12], const ColorQuad colors[4],
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
 
@@ -440,13 +454,13 @@ void SkiaCanvas::DrawPatch(const Point cubics[12], const ColorQuad colors[4],
             skiaTexCoords.empty() ? nullptr : skiaTexCoords.data(),
             static_cast<SkBlendMode>(mode), *paint);
     }
-    return;
 }
 
 void SkiaCanvas::DrawVertices(const Vertices& vertices, BlendMode mode)
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
 
@@ -584,6 +598,7 @@ void SkiaCanvas::DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar 
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     SkBitmap bmp;
@@ -609,6 +624,7 @@ void SkiaCanvas::DrawImage(const Image& image, const scalar px, const scalar py,
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     sk_sp<SkImage> img;
@@ -618,6 +634,7 @@ void SkiaCanvas::DrawImage(const Image& image, const scalar px, const scalar py,
         img = skImageImpl->GetImage();
         if (img == nullptr) {
             LOGD("img is null, return on line %{public}d", __LINE__);
+            skiaPaint_.Reset();
             return;
         }
     }
@@ -646,6 +663,7 @@ void SkiaCanvas::DrawImageRect(
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     sk_sp<SkImage> img;
@@ -654,6 +672,7 @@ void SkiaCanvas::DrawImageRect(
         img = skImageImpl->GetImage();
         if (img == nullptr) {
             LOGD("img is null, return on line %{public}d", __LINE__);
+            skiaPaint_.Reset();
             return;
         }
     }
@@ -686,6 +705,7 @@ void SkiaCanvas::DrawImageRect(const Image& image, const Rect& dst, const Sampli
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     sk_sp<SkImage> img;
@@ -694,6 +714,7 @@ void SkiaCanvas::DrawImageRect(const Image& image, const Rect& dst, const Sampli
         img = skImageImpl->GetImage();
         if (img == nullptr) {
             LOGD("img is null, return on line %{public}d", __LINE__);
+            skiaPaint_.Reset();
             return;
         }
     }
@@ -751,19 +772,23 @@ void SkiaCanvas::DrawTextBlob(const TextBlob* blob, const scalar x, const scalar
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     if (!blob) {
         LOGD("blob is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     auto skiaTextBlob = blob->GetImpl<SkiaTextBlob>();
     if (!skiaTextBlob) {
         LOGD("skiaTextBlob is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
     SkTextBlob* skTextBlob = skiaTextBlob->GetTextBlob().get();
     if (!skTextBlob) {
+        skiaPaint_.Reset();
         LOGD("skTextBlob is null, return on line %{public}d", __LINE__);
         return;
     }
@@ -778,12 +803,14 @@ void SkiaCanvas::DrawSymbol(const DrawingHMSymbolData& symbol, Point locate)
 {
     if (!skCanvas_) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
 
     HMSymbolData skSymbol;
     if (!ConvertToHMSymbolData(symbol, skSymbol)) {
         LOGD("ConvertToHMSymbolData failed, return on line %{public}d", __LINE__);
+        skiaPaint_.Reset();
         return;
     }
 
