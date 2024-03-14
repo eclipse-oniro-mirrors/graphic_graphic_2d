@@ -39,7 +39,6 @@ constexpr int32_t VSYNC_CONNECTION_MAX_SIZE = 128;
 #if defined(RS_ENABLE_DVSYNC)
 constexpr int64_t DVSYNC_ON_PERIOD = 8333333;
 constexpr int64_t MAX_PERIOD_BIAS = 500000;
-constexpr int64_t DVSYNC_LTPO_OFFSET = 1000000;
 #endif
 }
 
@@ -402,10 +401,7 @@ void VSyncDistributor::ThreadMain()
             {
                 std::unique_lock<std::mutex> locker(mutex_);
                 dvsync_->MarkDistributorSleep(true);
-            }
-            dvsync_->DelayBeforePostEvent(timestamp, vsyncMode_ == VSYNC_MODE_LTPO ? DVSYNC_LTPO_OFFSET : 0);
-            {
-                std::unique_lock<std::mutex> locker(mutex_);
+                dvsync_->DelayBeforePostEvent(timestamp,locker);
                 dvsync_->MarkDistributorSleep(false);
             }
             // if getting switched into vsync mode after sleep
@@ -457,6 +453,8 @@ void VSyncDistributor::OnVSyncEvent(int64_t now, int64_t period, uint32_t refres
     if (IsDVsyncOn()) {
         dvsync_->RecordVSync(now, period);
     }
+
+    dvsync_->NotifyPreexecuteWait();
 
     int64_t lastDVsyncTS = lastDVsyncTS_.load()
     // when dvsync switch to vsync, skip all vsync events within one period from the pre-rendered timestamp
@@ -764,7 +762,7 @@ void VSyncDistributor::ChangeConnsRateLocked()
 bool VSyncDistributor::IsDVsyncOn()
 {
 #if defined(RS_ENABLE_DVSYNC)
-    return isRs_ && dvsync_->IsEnabled() &&
+    return isRs_ && dvsync_->IsEnabled() && vsyncMode_ != VSYNC_MODE_LTPO &&
         (abs(event_.period - DVSYNC_ON_PERIOD) < MAX_PERIOD_BIAS);
 #else
     return false;
