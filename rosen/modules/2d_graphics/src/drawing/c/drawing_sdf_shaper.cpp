@@ -14,21 +14,21 @@
  */
 
 #include "c/drawing_sdf_shaper.h"
-#include "draw/sdf_shaper_impl.h"
+#include "draw/sdf_shaper_base.h"
 #include <unordered_map>
 
 using namespace OHOS;
 using namespace Rosen;
 using namespace Drawing;
 
-static SDFShapeImpl* CastToSdfShape(OH_Drawing_Sdf* cShape)
+static SDFShapeBase* CastToSdfShape(OH_Drawing_Sdf* cShape)
 {
-    return reinterpret_cast<SDFShapeImpl*>(cShape);
+    return reinterpret_cast<SDFShapeBase*>(cShape);
 }
 
 OH_Drawing_Sdf* OH_Drawing_SdfCreate()
 {
-    return (OH_Drawing_Sdf*)new SDFShapeImpl
+    return (OH_Drawing_Sdf*)new SDFShapeBase;
 }
 
 void OH_Drawing_SdfDestroy(OH_Drawing_Sdf* cShape)
@@ -38,6 +38,6 @@ void OH_Drawing_SdfDestroy(OH_Drawing_Sdf* cShape)
 
 void OH_Drawing_SdfBuildShader(OH_Drawing_Sdf* cShape)
 {
-    SDFShapeImpl* shape = CastToSdfShape(cShaper);
+    SDFShapeBase* shape = CastToSdfShape(cShaper);
     shape->BuildShader();
 }

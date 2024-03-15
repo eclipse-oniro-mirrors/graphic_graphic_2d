@@ -195,7 +195,7 @@ public:
      * @brief Describing a graph by combining directed vector fields.
      * @param shape describes the combination of a group of sdf entities.
      */
-    virtual void DrawSdf(const SDFShapeImpl& shape);
+    virtual void DrawSdf(const SDFShapeBase& shape);
 
     /**
      * @brief If mode is LINES_POINTMODE, each pair of points draws a line segment. One line

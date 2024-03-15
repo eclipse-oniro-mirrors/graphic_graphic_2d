@@ -82,9 +82,9 @@ static const Image& CastToImage(const OH_Drawing_Image& cImage)
     return reinterpret_cast<const Image&>(cImage);
 }
 
-static const SDFShapeImpl& CastToSdfShape(const OH_Drawing_Sdf& cSDFShape)
+static const SDFShapeBase& CastToSdfShape(const OH_Drawing_Sdf& cSDFShape)
 {
-    return reinterpret_cast<const SDFShapeImpl&>(cSDFShape);
+    return reinterpret_cast<const SDFShapeBase&>(cSDFShape);
 }
 
 static const SamplingOptions& CastToSamplingOptions(const OH_Drawing_SamplingOptions& cSamplingOptions)

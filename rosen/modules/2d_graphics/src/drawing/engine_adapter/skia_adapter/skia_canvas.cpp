@@ -177,11 +177,16 @@ bool SkiaCanvas::ReadPixels(const Bitmap& dstBitmap, int srcX, int srcY)
     return skCanvas_->readPixels(skBitmap, srcX, srcY);
 }
 
-void SkiaCanvas::DrawSdf(const SDFShapeImpl& shape)
+void SkiaCanvas::DrawSdf(const SDFShapeBase& shape)
 {
     SkSurface* skSurface = skCanvas_->getSurface();
     if (skSurface == nullptr) {
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        return;
+    }
+    std::string shader = shape.Getshader();
+    if (shader.size() == 0) {
+        LOGD("sdf shape is empty, return on line %{public}d", __LINE__);
         return;
     }
     SkAutoCanvasRestore acr(skCanvas_, true);
@@ -189,9 +194,6 @@ void SkiaCanvas::DrawSdf(const SDFShapeImpl& shape)
     auto image = skSurface->makeImageSnapshot(clipBounds);
     auto imageShader = image->makeShader(SkSamplingOptions(SkFilterMode::kLinear));
     auto [effect, err] = SkRuntimeEffect::MakeForShader(static_cast<SkString>(shape.Getshader()));
-    if (effect == nullptr) {
-        LOGD("add shader err %{public}d", __LINE__);
-    }
     float width = skCanvas_->imageInfo().width();
     SkRuntimeShaderBuilder builder(effect);
     if (shape.GetParaNum() > 0) {

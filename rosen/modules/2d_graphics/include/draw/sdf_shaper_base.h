@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef SDF_SHAPER_IMPL_H
-#define SDF_SHAPER_IMPL_H
+#ifndef SDF_SHAPER_BASE_H
+#define SDF_SHAPER_BASE_H
 
 #include "common/rs_macros.h"
 #include "utils/drawing_macros.h"
@@ -24,11 +24,11 @@ namespace OHOS {
 namespace Rosen {
 namespace Drawing {
 
-class DRAWING_API SDFShapeImpl
+class DRAWING_API SDFShapeBase
 {
 public:
-    SDFShapeImpl() {};
-    ~SDFShapeImpl() {};
+    SDFShapeBase() {};
+    ~SDFShapeBase() {};
 
     virtual std::string Getshader() const = 0;
     virtual float GetSize() const = 0;
@@ -51,4 +51,4 @@ private:
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // RENDER_SERVICE_CLIENT_CORE_PROPERTY_RS_SDF_SHAPER_IMPL_H
+#endif // RENDER_SERVICE_CLIENT_CORE_PROPERTY_RS_SDF_SHAPER_BASE_H
