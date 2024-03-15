@@ -31,8 +31,8 @@
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
-RecordingCanvas::RecordingCanvas(int width, int height, bool addDrawOpImmediate)
-    : Canvas(width, height), addDrawOpImmediate_(addDrawOpImmediate)
+RecordingCanvas::RecordingCanvas(int32_t width, int32_t height, bool addDrawOpImmediate)
+    : NoDrawCanvas(width, height), addDrawOpImmediate_(addDrawOpImmediate)
 {
     DrawCmdList::UnmarshalMode mode =
         addDrawOpImmediate ? DrawCmdList::UnmarshalMode::IMMEDIATE : DrawCmdList::UnmarshalMode::DEFERRED;
@@ -50,6 +50,23 @@ void RecordingCanvas::Clear() const
         return;
     }
     cmdList_->ClearOp();
+}
+
+void RecordingCanvas::Reset(int32_t width, int32_t height, bool addDrawOpImmediate)
+{
+    DrawCmdList::UnmarshalMode mode =
+        addDrawOpImmediate ? DrawCmdList::UnmarshalMode::IMMEDIATE : DrawCmdList::UnmarshalMode::DEFERRED;
+    cmdList_ = std::make_shared<DrawCmdList>(width, height, mode);
+    addDrawOpImmediate_ = addDrawOpImmediate;
+    isCustomTextType_ = false;
+    customTextBrush_ = std::nullopt;
+    customTextPen_ = std::nullopt;
+    saveOpStateStack_ = std::stack<SaveOpState>();
+    gpuContext_ = nullptr;
+    RemoveAll();
+    DetachBrush();
+    DetachPen();
+    NoDrawCanvas::Reset(width, height);
 }
 
 void RecordingCanvas::DrawPoint(const Point& point)
