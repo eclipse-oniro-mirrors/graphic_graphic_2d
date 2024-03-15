@@ -2437,6 +2437,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 RSMainThread::Instance()->rsVSyncDistributor_->MarkRSNotRendering();
                 return;
             }
+            RSMainThread::Instance()->rsVSyncDistributor_->UnmarkRSNotRendering();
             bool needCreateDisplayNodeLayer = false;
             for (auto& surfaceNode: hardwareEnabledNodes_) {
                 if (!surfaceNode->IsHardwareForcedDisabled()) {
@@ -2449,7 +2450,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 DoScreenRcdTask(processor_, rcdInfo_, screenInfo_);
                 processor_->PostProcess(&node);
             }
-            RSMainThread::Instance()->rsVSyncDistributor_->UnmarkRSNotRendering();
             return;
         } else {
             RSMainThread::Instance()->rsVSyncDistributor_->UnmarkRSNotRendering();
