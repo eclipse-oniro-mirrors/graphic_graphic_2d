@@ -119,7 +119,7 @@ private:
     };
 
     VSyncGenerator();
-    ~VSyncGenerator()  override;
+    ~VSyncGenerator() override;
 
     int64_t ComputeNextVSyncTimeStamp(int64_t now, int64_t referenceTime);
     std::vector<Listener> GetListenerTimeouted(int64_t now, int64_t occurTimestamp, int64_t referenceTime);

@@ -25,7 +25,6 @@ public:
     VSyncSystemAbilityListener(const std::string& threadName, const std::string& uid, const std::string& pid,
         const std::string& tid) : threadName_(threadName), uid_(uid), pid_(pid), tid_(tid) {}
     virtual ~VSyncSystemAbilityListener() = default;
-
     virtual void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
     virtual void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
