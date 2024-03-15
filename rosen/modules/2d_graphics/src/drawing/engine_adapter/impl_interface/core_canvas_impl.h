@@ -82,7 +82,7 @@ public:
     virtual bool ReadPixels(const Bitmap& dstBitmap, int srcX, int srcY) = 0;
     // shapes
     virtual void DrawPoint(const Point& point) = 0;
-    virtual void DrawSDF(const SDFShapeImpl& shape) = 0;
+    virtual void DrawSdf(const SDFShapeImpl& shape) = 0;
     virtual void DrawPoints(PointMode mode, size_t count, const Point pts[]) = 0;
     virtual void DrawLine(const Point& startPt, const Point& endPt) = 0;
     virtual void DrawRect(const Rect& rect) = 0;

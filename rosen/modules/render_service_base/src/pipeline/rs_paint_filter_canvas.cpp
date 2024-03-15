@@ -74,17 +74,17 @@ void RSPaintFilterCanvasBase::DrawPoint(const Point& point)
 #endif
 }
 
-void RSPaintFilterCanvasBase::DrawSDF(const SDFShapeImpl& shape)
+void RSPaintFilterCanvasBase::DrawSdf(const SDFShapeImpl& shape)
 {
 #ifdef ENABLE_RECORDING_DCL
     for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
         if ((*iter) != nullptr && OnFilter()) {
-            (*iter)->DrawSDF(shape);
+            (*iter)->DrawSdf(shape);
         }
     }
 #else
     if (canvas_ != nullptr && OnFilter()) {
-        canvas_->DrawSDF(shape);
+        canvas_->DrawSdf(shape);
     }
 #endif
 }

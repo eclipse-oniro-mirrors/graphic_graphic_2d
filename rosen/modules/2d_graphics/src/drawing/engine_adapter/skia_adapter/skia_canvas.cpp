@@ -29,6 +29,8 @@
 #include "skia_image_info.h"
 #include "skia_data.h"
 #include "skia_text_blob.h"
+#include "skia_surface.h"
+#include "include/effects/SkRuntimeEffect.h"
 
 #include "draw/core_canvas.h"
 #include "draw/canvas.h"
@@ -199,12 +201,12 @@ void SkiaCanvas::DrawSdf(const SDFShapeImpl& shape)
         int num = para.size();
         for (int i = 1; i <= num; i++) {
             char buf[10] = {0}; // maximum length of string needed is 10.
-            (void)sprintf_s(buf, 10, "para%d", i); // maximum length of string needed is 10.
+            (void)sprintf_s(buf, sizeof(buf), "para%d", i);
             builder.uniform(buf) = para[i-1];
         }
         for (int i = 1; i <= num1; i++) {
             char buf[15] = {0}; // maximum length of string needed is 15.
-            (void)sprintf_s(buf, 15, "transpara%d", i); // maximum length of string needed is 15.
+            (void)sprintf_s(buf, sizeof(buf), "transpara%d", i);
             builder.uniform(buf) = para1[i-1];
         }
         std::vector<float> color = shape.GetColorPara();
