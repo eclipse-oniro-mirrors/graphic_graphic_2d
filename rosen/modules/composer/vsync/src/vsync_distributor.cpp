@@ -762,8 +762,7 @@ void VSyncDistributor::ChangeConnsRateLocked()
 bool VSyncDistributor::IsDVsyncOn()
 {
 #if defined(RS_ENABLE_DVSYNC)
-    return isRs_ && dvsync_->IsEnabled() && vsyncMode_ != VSYNC_MODE_LTPO &&
-        (abs(event_.period - DVSYNC_ON_PERIOD) < MAX_PERIOD_BIAS);
+    return isRs_ && dvsync_->IsEnabled();
 #else
     return false;
 #endif
