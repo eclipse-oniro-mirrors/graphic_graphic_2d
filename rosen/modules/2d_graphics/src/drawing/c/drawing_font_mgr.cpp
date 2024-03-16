@@ -164,8 +164,8 @@ OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyle(OH_Drawing_FontMgr* draw
     return drawingTypeface;
 }
 
-OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyleCharacter(OH_Drawing_FontMgr* drawingFontMgr, const char familyName[],
-    OH_Drawing_FontForm* fontForm, const char* bcp47[], int bcp47Count, int32_t character)
+OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyleCharacter(OH_Drawing_FontMgr* drawingFontMgr,
+    const char familyName[], OH_Drawing_FontForm* fontForm, const char* bcp47[], int bcp47Count, int32_t character)
 {
     if (drawingFontMgr == nullptr || fontForm == nullptr) {
         return nullptr;
