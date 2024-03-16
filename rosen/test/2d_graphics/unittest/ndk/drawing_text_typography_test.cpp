@@ -484,7 +484,7 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest016, TestSize.Level
     OH_Drawing_TypographyCreate* handler = OH_Drawing_CreateTypographyHandler(typoStyle,
         OH_Drawing_CreateFontCollection());
     EXPECT_TRUE(handler != nullptr);
-    
+
     OH_Drawing_SetTextStyleColor(txtStyle, OH_Drawing_ColorSetArgb(0xFF, 0x00, 0x00, 0x00));
     double fontSize = 30;
     OH_Drawing_SetTextStyleFontSize(txtStyle, fontSize);
@@ -1635,21 +1635,20 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest050, TestSize.Level
     OH_Drawing_TypographyHandlerAddSymbol(handler, symbol);
     const char* key1 = "宋体";
     int value1 = 1;
-    OH_Drawing_TextStyleSetFeature(txtStyle, key1, value1);
+    OH_Drawing_TextStyleAddFontFeature(txtStyle, key1, value1);
     const char* key2 = "斜体";
     int value2 = 2;
-    OH_Drawing_TextStyleSetFeature(txtStyle, key2, value2);
+    OH_Drawing_TextStyleAddFontFeature(txtStyle, key2, value2);
     const char* key3 = "方体";
     int value3 = 3;
-    OH_Drawing_TextStyleSetFeature(txtStyle, key3, value3);
-    EXPECT_EQ(OH_Drawing_TextStyleGetFeaturesSize(txtStyle), 3);
-    EXPECT_EQ(OH_Drawing_TextStyleGetFeature(txtStyle, "宋体"), 1);
-    char* strFeature = new char[256];
-    EXPECT_EQ((OH_Drawing_TextStyleGetFeatures(txtStyle, strFeature, 256)) != nullptr, true);
-    delete[] strFeature;
-    strFeature = nullptr;
-    OH_Drawing_TextStyleClearFeatures(txtStyle);
-    EXPECT_EQ(OH_Drawing_TextStyleGetFeaturesSize(txtStyle), 0);
+    OH_Drawing_TextStyleAddFontFeature(txtStyle, key3, value3);
+    EXPECT_EQ(OH_Drawing_TextStyleGetFontFeatureSize(txtStyle), 3);
+    EXPECT_EQ(OH_Drawing_TextStyleGetFontFeature(txtStyle, "宋体"), 1);
+    char* strFeature = OH_Drawing_TextStyleGetFontFeatures(txtStyle);
+    EXPECT_EQ(strFeature != nullptr, true);
+    OH_Drawing_DestroyFontFeature(strFeature);
+    OH_Drawing_TextStyleClearFontFeature(txtStyle);
+    EXPECT_EQ(OH_Drawing_TextStyleGetFeatureSize(txtStyle), 0);
     double lineShift = 1.5;
     OH_Drawing_TextStyleSetBaseLineShift(txtStyle, lineShift);
     EXPECT_EQ(OH_Drawing_TextStyleGetBaseLineShift(txtStyle), 1.5);

@@ -1690,7 +1690,7 @@ bool  OH_Drawing_TypographyIsEllipsized(OH_Drawing_TypographyStyle*);
  * @since 12
  * @version 1.0
  */
-void OH_Drawing_TextStyleSetBackgroundRect(OH_Drawing_TextStyle*, OH_Drawing_RectStyle_Info*, int styleId);
+void OH_Drawing_TextStyleSetBackgroundRect(OH_Drawing_TextStyle*, const OH_Drawing_RectStyle_Info*, int styleId);
 
 /**
  * @brief Set symbols in creating typography.
@@ -1704,7 +1704,7 @@ void OH_Drawing_TextStyleSetBackgroundRect(OH_Drawing_TextStyle*, OH_Drawing_Rec
 void OH_Drawing_TypographyHandlerAddSymbol(OH_Drawing_TypographyCreate*, uint32_t symbol);
 
 /**
- * @brief Set features in fontfeatures of text.
+ * @brief Set features of font features.
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
  * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
@@ -1713,10 +1713,10 @@ void OH_Drawing_TypographyHandlerAddSymbol(OH_Drawing_TypographyCreate*, uint32_
  * @since 12
  * @version 1.0
  */
-void OH_Drawing_TextStyleSetFeature(OH_Drawing_TextStyle*, const char* tag, int value);
+void OH_Drawing_TextStyleAddFontFeature(OH_Drawing_TextStyle*, const char* tag, int value);
 
 /**
- * @brief Get value with key in fontfeatures.
+ * @brief Get value with key of font features.
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
  * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
@@ -1725,23 +1725,31 @@ void OH_Drawing_TextStyleSetFeature(OH_Drawing_TextStyle*, const char* tag, int 
  * @since 12
  * @version 1.0
  */
-int OH_Drawing_TextStyleGetFeature(OH_Drawing_TextStyle*, const char* tag);
+int OH_Drawing_TextStyleGetFontFeature(OH_Drawing_TextStyle*, const char* tag);
 
 /**
- * @brief Get all elements in fontfeatures map.
+ * @brief Get all elements of font features.
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
  * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
- * @param destinationStr Indicates the pointer to an destination string.
- * @param destinationSize Indicates the length of destination string.
  * @return char Indicates the pointer to the string in Json of all elements in fontfeatures map.
  * @since 12
  * @version 1.0
  */
-char* OH_Drawing_TextStyleGetFeatures(OH_Drawing_TextStyle*, char* destinationStr, size_t destinationSize);
+char* OH_Drawing_TextStyleGetFontFeatures(OH_Drawing_TextStyle*);
 
 /**
- * @brief Get size of fontfeatures map.
+ * @brief Releases the memory occupied by string of font features.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_DestroyFontFeature(char* fontFeatureStr);
+
+/**
+ * @brief Get size of font features.
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
  * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
@@ -1749,17 +1757,17 @@ char* OH_Drawing_TextStyleGetFeatures(OH_Drawing_TextStyle*, char* destinationSt
  * @since 12
  * @version 1.0
  */
-int OH_Drawing_TextStyleGetFeaturesSize(OH_Drawing_TextStyle*);
+int OH_Drawing_TextStyleGetFontFeatureSize(OH_Drawing_TextStyle*);
 
 /**
- * @brief Clear elements in fontfeatures map.
+ * @brief Clear elements of font features.
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
  * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
  * @since 12
  * @version 1.0
  */
-void OH_Drawing_TextStyleClearFeatures(OH_Drawing_TextStyle*);
+void OH_Drawing_TextStyleClearFontFeature(OH_Drawing_TextStyle*);
 
 /**
  * @brief Set baseline shift of text.
