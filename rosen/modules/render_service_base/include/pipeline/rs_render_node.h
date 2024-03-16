@@ -184,6 +184,7 @@ public:
     NodeId GetInstanceRootNodeId() const;
     const std::shared_ptr<RSRenderNode> GetInstanceRootNode() const;
     NodeId GetFirstLevelNodeId() const;
+    const std::shared_ptr<RSRenderNode> GetFirstLevelNode() const;
 
     // accumulate all valid children's area
     void UpdateChildrenRect(const RectI& subRect);
@@ -472,6 +473,17 @@ public:
     class RSAutoCache;
     const std::shared_ptr<RSAutoCache>& GetAutoCache();
     bool isOpincRectOutParent_ = false;
+#endif
+
+#ifdef RS_ENABLE_STACK_CULLING
+    void SetFullSurfaceOpaqueMarks(const std::shared_ptr<RSRenderNode> curSurfaceNodeParam);
+    void SetSubNodesCovered();
+    void ResetSubNodesCovered();
+    bool isFullSurfaceOpaquCanvasNode_ = false;
+    bool hasChildFullSurfaceOpaquCanvasNode_ = false;
+    bool isCoveredByOtherNode_ = false;
+#define MAX_COLD_DOWN_NUM 20
+    int32_t coldDownCounter_ = 0;
 #endif
 
     const std::shared_ptr<RSRenderContent> GetRenderContent() const;

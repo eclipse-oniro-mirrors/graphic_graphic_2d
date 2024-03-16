@@ -46,6 +46,7 @@ public:
     std::shared_ptr<Drawing::GPUContext> GetGPUContext() override;
 #endif
 
+    void DrawSdf(const Drawing::SDFShapeBase& shape) override;
     void DrawPoint(const Drawing::Point& point) override;
     void DrawPoints(Drawing::PointMode mode, size_t count, const Drawing::Point pts[]) override;
     void DrawLine(const Drawing::Point& startPt, const Drawing::Point& endPt) override;
@@ -85,7 +86,6 @@ public:
     // opinc_end
 
     void DrawBitmap(const Drawing::Bitmap& bitmap, const Drawing::scalar px, const Drawing::scalar py) override;
-    void DrawBitmap(Media::PixelMap& pixelMap, const Drawing::scalar px, const Drawing::scalar py) override;
     void DrawImage(const Drawing::Image& image,
         const Drawing::scalar px, const Drawing::scalar py, const Drawing::SamplingOptions& sampling) override;
     void DrawImageRect(const Drawing::Image& image, const Drawing::Rect& src, const Drawing::Rect& dst,

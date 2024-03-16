@@ -52,6 +52,7 @@
 #include "platform/ohos/overdraw/rs_overdraw_controller.h"
 #include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_base_render_util.h"
+#include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_divided_render_util.h"
 #include "pipeline/rs_frame_report.h"
 #include "pipeline/rs_render_engine.h"
@@ -181,6 +182,9 @@ void PerfRequest(int32_t perfRequestCode, bool onOffTag)
     RS_LOGD("RSMainThread::soc perf info [%{public}d %{public}d]", perfRequestCode, onOffTag);
 #endif
 }
+std::string g_dumpStr = "";
+std::mutex g_dumpMutex;
+std::condition_variable g_dumpCond_;
 }
 
 #if defined(ACCESSIBILITY_ENABLE)
@@ -284,8 +288,12 @@ void RSMainThread::Init()
         Render();
 
         // move rnv after mark rsnotrendring
-        if (needRequestNextVsyncAnimate_ && rsVSyncDistributor_->IsDVsyncOn()) {
+        if (rsVSyncDistributor_->IsDVsyncOn() &&
+            (needRequestNextVsyncAnimate_ || rsVSyncDistributor_->HasPendingUIRNV())) {
+            rsVSyncDistributor_->MarkRSAnimate();
             RequestNextVSync("animate", timestamp_);
+        } else {
+            rsVSyncDistributor_->UnmarkRSAnimate();
         }
 
         InformHgmNodeInfo();
@@ -419,13 +427,16 @@ void RSMainThread::Init()
     RSOverdrawController::GetInstance().SetDelegate(delegate);
 
     frameRateMgr_ = OHOS::Rosen::HgmCore::Instance().GetFrameRateMgr();
-    frameRateMgr_->SetForceUpdateCallback([](bool idleTimerExpired, bool forceUpdate) {
-        RSMainThread::Instance()->PostTask([idleTimerExpired, forceUpdate]() {
+    frameRateMgr_->SetForceUpdateCallback([this](bool idleTimerExpired, bool forceUpdate) {
+        RSMainThread::Instance()->PostTask([this, idleTimerExpired, forceUpdate]() {
             RS_TRACE_NAME_FMT("RSMainThread::TimerExpiredCallback Run idleTimerExpiredFlag: %s  forceUpdateFlag: %s",
                 idleTimerExpired? "True":"False", forceUpdate? "True": "False");
             RSMainThread::Instance()->SetForceUpdateUniRenderFlag(forceUpdate);
             RSMainThread::Instance()->SetIdleTimerExpiredFlag(idleTimerExpired);
-            RSMainThread::Instance()->RequestNextVSync();
+            RS_TRACE_NAME_FMT("DVSyncIsOn: %d", this->rsVSyncDistributor_->IsDVsyncOn());
+            if (!this->rsVSyncDistributor_->IsDVsyncOn()) {
+                RSMainThread::Instance()->RequestNextVSync();
+            }
         });
     });
     frameRateMgr_->Init(rsVSyncController_, appVSyncController_, vsyncGenerator_);
@@ -1403,7 +1414,8 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
         frameRateMgr_->UniProcessDataForLtps(idleTimerExpiredFlag_);
     } else {
         auto appFrameLinkers = GetContext().GetFrameRateLinkerMap().Get();
-        frameRateMgr_->UniProcessDataForLtpo(timestamp, rsFrameRateLinker_, appFrameLinkers, idleTimerExpiredFlag_);
+        frameRateMgr_->UniProcessDataForLtpo(timestamp, rsFrameRateLinker_, appFrameLinkers,
+            idleTimerExpiredFlag_, rsVSyncDistributor_->IsDVsyncOn());
     }
 }
 
@@ -1516,6 +1528,15 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     } else if (RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
             WaitUntilUploadTextureTaskFinished(isUniRender_);
     }
+    const auto& nodeMap = context_->GetNodeMap();
+    nodeMap.TraverseCanvasDrawingNodes([](const std::shared_ptr<RSCanvasDrawingRenderNode>& canvasDrawingNode) {
+        if (canvasDrawingNode == nullptr) {
+            return;
+        }
+        if (canvasDrawingNode->IsNeedProcess()) {
+            canvasDrawingNode->PlaybackInCorrespondThread();
+        }
+    });
     isDirty_ = false;
     forceUpdateUniRenderFlag_ = false;
     idleTimerExpiredFlag_ = false;
@@ -1546,18 +1567,11 @@ void RSMainThread::Render()
     if (focusAppBundleName_.find(DESKTOP_NAME_FOR_ROTATION) != std::string::npos) {
         desktopPidForRotationScene_ = focusAppPid_;
     }
-    if (RSSystemProperties::GetDumpRSTreeCount()) {
-        std::string rsTreeStr;
-        RenderServiceTreeDump(rsTreeStr);
-        RS_TRACE_NAME("WriteDumpTree");
-        std::string dumpFilePath = "/data/RSTree";
-        if (access(dumpFilePath.c_str(), F_OK) != 0) {
-            constexpr int directoryPermission = 0755; // drwxr-xr-x
-            mkdir(dumpFilePath.c_str(), directoryPermission);
-        }
-        dumpFilePath += "/rsTree_" + std::to_string(frameCount_) + ".txt";
-        OHOS::Rosen::Benchmarks::WriteStringToFile(rsTreeStr, dumpFilePath);
-        RSSystemProperties::SetDumpRSTreeCount(RSSystemProperties::GetDumpRSTreeCount() - 1);
+    int dumpTreeCount = RSSystemParameters::GetDumpRSTreeCount();
+    if (UNLIKELY(dumpTreeCount)) {
+        RS_TRACE_NAME("dump rstree");
+        RenderServiceTreeDump(g_dumpStr);
+        RSSystemParameters::SetDumpRSTreeCount(dumpTreeCount - 1);
     }
     if (isUniRender_) {
         UniRender(rootNode);
@@ -2096,10 +2110,17 @@ void RSMainThread::Animate(uint64_t timestamp)
     RSRenderAnimation::isCalcAnimateVelocity_ = isRateDeciderEnabled;
     uint32_t totalAnimationSize = 0;
     uint32_t animatingNodeSize = context_->animatingNodeList_.size();
+    bool needPrintAnimationDFX = false;
+    std::set<pid_t> animationPids;
+    if (IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP)) {
+        auto screenManager = CreateOrGetScreenManager();
+        needPrintAnimationDFX = screenManager != nullptr && screenManager->IsAllScreensPowerOff();
+    }
     // iterate and animate all animating nodes, remove if animation finished
     EraseIf(context_->animatingNodeList_,
         [this, timestamp, period, isDisplaySyncEnabled, isRateDeciderEnabled, &totalAnimationSize,
-        &curWinAnim, &needRequestNextVsync, &isCalculateAnimationValue](const auto& iter) -> bool {
+        &curWinAnim, &needRequestNextVsync, &isCalculateAnimationValue, &needPrintAnimationDFX,
+        &animationPids](const auto& iter) -> bool {
         auto node = iter.second.lock();
         if (node == nullptr) {
             RS_LOGD("RSMainThread::Animate removing expired animating node");
@@ -2134,8 +2155,19 @@ void RSMainThread::Animate(uint64_t timestamp)
             }
             curWinAnim = true;
         }
+        if (needPrintAnimationDFX && needRequestNextVsync && node->animationManager_.GetAnimationsSize() > 0) {
+            animationPids.insert(node->animationManager_.GetAnimationPid());
+        }
         return !hasRunningAnimation;
     });
+    if (needPrintAnimationDFX && needRequestNextVsync && animationPids.size() > 0) {
+        std::string pidList;
+        for (auto& pid : animationPids) {
+            pidList += "[" + std::to_string(pid) + "]";
+        }
+        RS_TRACE_NAME_FMT("Animate from pid %s", pidList.c_str());
+    }
+
     RS_TRACE_NAME_FMT("Animate [nodeSize, totalAnimationSize] is [%lu, %lu]", animatingNodeSize, totalAnimationSize);
     if (!isCalculateAnimationValue && needRequestNextVsync) {
         RS_TRACE_NAME("Animation running empty");
@@ -2347,20 +2379,25 @@ void RSMainThread::SendCommands()
     });
 }
 
-void RSMainThread::RenderServiceTreeDump(std::string& dumpString)
+void RSMainThread::RenderServiceTreeDump(std::string& dumpString, bool forceDumpSingleFrame)
 {
-    RS_TRACE_NAME("GetDumpTree");
-    dumpString.append("Animating Node: [");
-    for (auto& [nodeId, _]: context_->animatingNodeList_) {
-        dumpString.append(std::to_string(nodeId) + ", ");
+    if (LIKELY(forceDumpSingleFrame)) {
+        RS_TRACE_NAME("GetDumpTree");
+        dumpString.append("Animating Node: [");
+        for (auto& [nodeId, _]: context_->animatingNodeList_) {
+            dumpString.append(std::to_string(nodeId) + ", ");
+        }
+        dumpString.append("];\n");
+        const std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
+        if (rootNode == nullptr) {
+            dumpString.append("rootNode is null\n");
+            return;
+        }
+        rootNode->DumpTree(0, dumpString);
+    } else {
+        dumpString += g_dumpStr;
+        g_dumpStr = "";
     }
-    dumpString.append("];\n");
-    const std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
-    if (rootNode == nullptr) {
-        dumpString.append("rootNode is null\n");
-        return;
-    }
-    rootNode->DumpTree(0, dumpString);
 }
 
 bool RSMainThread::DoParallelComposition(std::shared_ptr<RSBaseRenderNode> rootNode)

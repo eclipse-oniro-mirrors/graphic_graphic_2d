@@ -134,6 +134,10 @@ OHOS::Rosen::Drawing::BackendTexture MakeBackendTexture(uint32_t width, uint32_t
 
     vkContext.vkBindImageMemory(device, image, memory, 0);
 
+    OHOS::Rosen::RsVulkanMemStat& memStat = vkContext.GetRsVkMemStat();
+    auto time = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::system_clock::now());
+    std::string timeStamp = std::to_string(static_cast<uint64_t>(time.time_since_epoch().count()));
+    memStat.InsertResource(timeStamp, static_cast<uint64_t>(memRequirements.size));
     OHOS::Rosen::Drawing::BackendTexture backendTexture(true);
     OHOS::Rosen::Drawing::TextureInfo textureInfo;
     textureInfo.SetWidth(width);
@@ -144,6 +148,7 @@ OHOS::Rosen::Drawing::BackendTexture MakeBackendTexture(uint32_t width, uint32_t
     vkImageInfo->vkImage = image;
     vkImageInfo->vkAlloc.memory = memory;
     vkImageInfo->vkAlloc.size = memRequirements.size;
+    vkImageInfo->vkAlloc.statName = timeStamp;
 
     SetVkImageInfo(vkImageInfo, imageInfo);
     textureInfo.SetVKTextureInfo(vkImageInfo);
@@ -159,7 +164,7 @@ void RSRenderNode::OnRegister(const std::weak_ptr<RSContext>& context)
 {
     context_ = context;
     renderContent_->type_ = GetType();
-    renderContent_->renderProperties_.backref_ = weak_from_this();
+    renderContent_->GetMutableRenderProperties().backref_ = weak_from_this();
     SetDirty(true);
 }
 
@@ -687,7 +692,8 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
         std::string propertyAlpha = std::to_string(surfaceNode->GetRenderProperties().GetAlpha());
         out += ", Alpha: " + propertyAlpha + " (include ContextAlpha: " + contextAlpha + ")";
         out += ", Visible: " + std::to_string(surfaceNode->GetRenderProperties().GetVisible());
-        out += ", " + surfaceNode->GetVisibleRegion().GetRegionInfo();
+        out += ", Visible" + surfaceNode->GetVisibleRegion().GetRegionInfo();
+        out += ", Opaque" + surfaceNode->GetOpaqueRegion().GetRegionInfo();
         out += ", OcclusionBg: " + std::to_string(surfaceNode->GetAbilityBgAlpha());
         out += ", SecurityLayer: " + std::to_string(surfaceNode->GetSecurityLayer());
         out += ", skipLayer: " + std::to_string(surfaceNode->GetSkipLayer());
@@ -1598,7 +1604,7 @@ void RSRenderNode::InitCacheSurface(Drawing::GPUContext* gpuContext, ClearCacheS
             return;
         }
         cacheCleanupHelper_ = new NativeBufferUtils::VulkanCleanupHelper(RsVulkanContext::GetSingleton(),
-            vkTextureInfo->vkImage, vkTextureInfo->vkAlloc.memory);
+            vkTextureInfo->vkImage, vkTextureInfo->vkAlloc.memory, vkTextureInfo->vkAlloc.statName);
         cacheSurface_ = Drawing::Surface::MakeFromBackendTexture(
             gpuContext, cacheBackendTexture_.GetTextureInfo(), Drawing::TextureOrigin::BOTTOM_LEFT,
             1, Drawing::ColorType::COLORTYPE_RGBA_8888, nullptr,
@@ -1674,6 +1680,11 @@ void RSRenderNode::DrawCacheSurface(RSPaintFilterCanvas& canvas, uint32_t thread
         if (cacheImage->IsTextureBacked()) {
             RS_LOGI("RSRenderNode::DrawCacheSurface convert cacheImage from texture to raster image");
             cacheImage = cacheImage->MakeRasterImage();
+            if (!cacheImage) {
+                RS_LOGE("RSRenderNode::DrawCacheSurface: MakeRasterImage failed");
+                canvas.Restore();
+                return;
+            }
         }
     }
     Drawing::Brush brush;
@@ -1718,9 +1729,6 @@ std::shared_ptr<Drawing::Image> RSRenderNode::GetCompletedImage(
 #endif
         auto image = std::make_shared<Drawing::Image>();
         Drawing::TextureOrigin origin = Drawing::TextureOrigin::BOTTOM_LEFT;
-        if (Rosen::RSSystemProperties::GetGpuApiType() == Rosen::GpuApiType::DDGR) {
-            origin = Drawing::TextureOrigin::TOP_LEFT;
-        }
         Drawing::BitmapFormat info = Drawing::BitmapFormat{ Drawing::COLORTYPE_RGBA_8888,
             Drawing::ALPHATYPE_PREMUL };
 #ifdef RS_ENABLE_GL
@@ -1951,6 +1959,81 @@ const std::shared_ptr<RSRenderNode::RSAutoCache>& RSRenderNode::GetAutoCache()
         autoCache_ = std::make_shared<RSRenderNode::RSAutoCache>(*this);
     }
     return autoCache_;
+}
+#endif
+
+#ifdef RS_ENABLE_STACK_CULLING
+void RSRenderNode::SetFullSurfaceOpaqueMarks(const std::shared_ptr<RSRenderNode> curSurfaceNodeParam)
+{
+    if (!isFullSurfaceOpaquCanvasNode_) {
+        int32_t tempValue = coldDownCounter_;
+        coldDownCounter_ = (coldDownCounter_ + 1) % MAX_COLD_DOWN_NUM;
+        if (tempValue != 0) {
+            return;
+        }
+    } else {
+        coldDownCounter_ = 0;
+    }
+
+    isFullSurfaceOpaquCanvasNode_ = false;
+    if (!ROSEN_EQ(GetGlobalAlpha(), 1.0f) || HasFilter()) {
+        return;
+    }
+
+    if (GetRenderProperties().GetBackgroundColor().GetAlpha() < 255) {
+        return;
+    }
+
+    if (!curSurfaceNodeParam) {
+        return;
+    }
+
+    auto curSurfaceNode = (static_cast<const RSSurfaceRenderNode*>(curSurfaceNodeParam.get()));
+    auto surfaceNodeAbsRect = curSurfaceNode->GetOldDirty();
+    auto absRect = GetRenderProperties().GetBoundsGeometry()->GetAbsRect();
+    if (surfaceNodeAbsRect.IsInsideOf(absRect)) {
+        isFullSurfaceOpaquCanvasNode_ = true;
+
+        auto rsParent = GetParent().lock();
+        while (rsParent) {
+            //skip whern another child has set its parent or reach rootnode
+            if (rsParent->hasChildFullSurfaceOpaquCanvasNode_) {
+                break;
+            }
+
+            rsParent->hasChildFullSurfaceOpaquCanvasNode_ = true;
+            if (rsParent->IsInstanceOf<RSRootRenderNode>()) {
+                break;
+            }
+
+            rsParent = rsParent->GetParent().lock();
+        }
+    }
+}
+
+void RSRenderNode::SetSubNodesCovered()
+{
+    if (hasChildFullSurfaceOpaquCanvasNode_) {
+        auto sortedChildren_ = GetSortedChildren();
+        if (sortedChildren_->size() <= 1) {
+            return;
+        }
+
+        bool found = false;
+        for (auto child = sortedChildren_->rbegin(); child != sortedChildren_->rend(); child++) {
+            if (!found && ((*child)->isFullSurfaceOpaquCanvasNode_ || (*child)->hasChildFullSurfaceOpaquCanvasNode_)) {
+                found = true;
+                continue;
+            }
+            if (found) {
+                (*child)->isCoveredByOtherNode_ = true;
+            }
+        }
+    }
+}
+void RSRenderNode::ResetSubNodesCovered()
+{
+    hasChildFullSurfaceOpaquCanvasNode_ = false;
 }
 #endif
 
@@ -2268,6 +2351,15 @@ const std::shared_ptr<RSRenderNode> RSRenderNode::GetInstanceRootNode() const
 NodeId RSRenderNode::GetFirstLevelNodeId() const
 {
     return firstLevelNodeId_;
+}
+const std::shared_ptr<RSRenderNode> RSRenderNode::GetFirstLevelNode() const
+{
+    auto context = GetContext().lock();
+    if (!context) {
+        ROSEN_LOGE("Invalid context");
+        return nullptr;
+    }
+    return context->GetNodeMap().GetRenderNode(firstLevelNodeId_);
 }
 bool RSRenderNode::IsRenderUpdateIgnored() const
 {

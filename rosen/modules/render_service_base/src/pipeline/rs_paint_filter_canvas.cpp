@@ -74,6 +74,21 @@ void RSPaintFilterCanvasBase::DrawPoint(const Point& point)
 #endif
 }
 
+void RSPaintFilterCanvasBase::DrawSdf(const SDFShapeBase& shape)
+{
+#ifdef ENABLE_RECORDING_DCL
+    for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
+        if ((*iter) != nullptr && OnFilter()) {
+            (*iter)->DrawSdf(shape);
+        }
+    }
+#else
+    if (canvas_ != nullptr && OnFilter()) {
+        canvas_->DrawSdf(shape);
+    }
+#endif
+}
+
 void RSPaintFilterCanvasBase::DrawPoints(PointMode mode, size_t count, const Point pts[])
 {
 #ifdef ENABLE_RECORDING_DCL
@@ -424,21 +439,6 @@ void RSPaintFilterCanvasBase::DrawImageLattice(const Drawing::Image* image, cons
 #else
     if (canvas_ != nullptr && OnFilter()) {
         canvas_->DrawImageLattice(image, lattice, dst, filter, brush);
-    }
-#endif
-}
-
-void RSPaintFilterCanvasBase::DrawBitmap(Media::PixelMap& pixelMap, const scalar px, const scalar py)
-{
-#ifdef ENABLE_RECORDING_DCL
-    for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
-        if ((*iter) != nullptr && OnFilter()) {
-            (*iter)->DrawBitmap(pixelMap, px, py);
-        }
-    }
-#else
-    if (canvas_ != nullptr && OnFilter()) {
-        canvas_->DrawBitmap(pixelMap, px, py);
     }
 #endif
 }

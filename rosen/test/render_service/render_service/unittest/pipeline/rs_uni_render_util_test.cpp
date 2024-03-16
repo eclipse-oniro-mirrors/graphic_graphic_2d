@@ -95,7 +95,8 @@ HWTEST_F(RSUniRenderUtilTest, SrcRectScaleDown_001, Function | SmallTest | Level
     ASSERT_NE(rsSurfaceRenderNode, nullptr);
     RSSurfaceRenderNode& node = static_cast<RSSurfaceRenderNode&>(*(rsSurfaceRenderNode.get()));
     BufferDrawParam params;
-    RSUniRenderUtil::SrcRectScaleDown(params, node);
+    RectF localBounds;
+    RSUniRenderUtil::SrcRectScaleDown(params, node.GetBuffer(), node.GetConsumer(), localBounds);
 }
 
 /*
@@ -110,7 +111,8 @@ HWTEST_F(RSUniRenderUtilTest, SrcRectScaleDown_002, Function | SmallTest | Level
     ASSERT_NE(rsSurfaceRenderNode, nullptr);
     RSSurfaceRenderNode& node = static_cast<RSSurfaceRenderNode&>(*(rsSurfaceRenderNode.get()));
     BufferDrawParam params;
-    RSUniRenderUtil::SrcRectScaleDown(params, node);
+    RectF localBounds;
+    RSUniRenderUtil::SrcRectScaleDown(params, node.GetBuffer(), node.GetConsumer(), localBounds);
 }
 
 /*

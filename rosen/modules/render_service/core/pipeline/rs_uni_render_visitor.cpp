@@ -297,7 +297,6 @@ void RSUniRenderVisitor::UpdateSubTreeInCache(const std::shared_ptr<RSRenderNode
                 PrepareSurfaceRenderNode(*surfaceNode);
                 return;
             }
-            UpdateSecurityAndSkipLayerRecord(*surfaceNode);
         } else if (auto effectNode = child->ReinterpretCastTo<RSEffectRenderNode>()) {
             // effectNode need to update effectRegion so effectNode and use-effect child should be updated
             PrepareEffectNodeIfCacheReuse(cacheRootNode, effectNode);
@@ -1022,10 +1021,6 @@ void RSUniRenderVisitor::PrepareTypesOfSurfaceRenderNodeBeforeUpdate(RSSurfaceRe
         curSurfaceNode_->AddChildHardwareEnabledNode(node.ReinterpretCastTo<RSSurfaceRenderNode>());
         node.SetLocalZOrder(localZOrder_++);
     }
-
-    // record whether child node is security or skip layer
-    // it should be call after reset to false for each loop
-    UpdateSecurityAndSkipLayerRecord(node);
 }
 
 void RSUniRenderVisitor::ClassifyUIFirstSurfaceDirtyStatus(RSSurfaceRenderNode& node)
@@ -1135,16 +1130,10 @@ void RSUniRenderVisitor::PrepareTypesOfSurfaceRenderNodeAfterUpdate(RSSurfaceRen
 
 void RSUniRenderVisitor::UpdateSecurityAndSkipLayerRecord(RSSurfaceRenderNode& node)
 {
-    if (curSurfaceNode_ == nullptr) {
-        return;
-    }
-    if (node.GetSecurityLayer() && curSurfaceNode_->GetId() == node.GetInstanceRootNodeId()) {
-        curSurfaceNode_->SetHasSecurityLayer(true);
+    if (node.GetHasSecurityLayer()) {
         displayHasSecSurface_[currentVisitDisplay_] = true;
     }
-    if (node.GetSkipLayer() && curSurfaceNode_->GetId() == node.GetInstanceRootNodeId() &&
-        node.GetName().find(CAPTURE_WINDOW_NAME) == std::string::npos) {
-        curSurfaceNode_->SetHasSkipLayer(true);
+    if (node.GetHasSkipLayer() && node.GetName().find(CAPTURE_WINDOW_NAME) == std::string::npos) {
         displayHasSkipSurface_[currentVisitDisplay_] = true;
     }
 }
@@ -1187,26 +1176,19 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     node.SetAncestorDisplayNode(curDisplayNode_);
     CheckColorSpace(node);
     CheckPixelFormat(node);
-
+    // only need collect first level node's security & skip layer info
+    if (node.GetId() == node.GetFirstLevelNodeId()) {
+        UpdateSecurityAndSkipLayerRecord(node);
+    }
     // stop traversal if node keeps static
     if (isQuickSkipPreparationEnabled_ && CheckIfSurfaceRenderNodeStatic(node)) {
         // node type is mainwindow.
-        if (node.GetHasSecurityLayer() && node.GetId() == node.GetInstanceRootNodeId()) {
-            displayHasSecSurface_[currentVisitDisplay_] = true;
-        }
-        if (node.GetHasSkipLayer() && node.GetId() == node.GetInstanceRootNodeId() &&
-            node.GetName().find(CAPTURE_WINDOW_NAME) == std::string::npos) {
-            displayHasSkipSurface_[currentVisitDisplay_] = true;
-        }
         PrepareSubSurfaceNodes(node);
         return;
     }
     // Attension: Updateinfo before info reset
     node.StoreMustRenewedInfo();
     SetHasSharedTransitionNode(node, false);
-    // reset HasSecurityLayer
-    node.SetHasSecurityLayer(false);
-    node.SetHasSkipLayer(false);
     node.CleanDstRectChanged();
     if (node.IsHardwareEnabledTopSurface()) {
         node.ResetSubNodeShouldPaint();
@@ -1406,7 +1388,7 @@ void RSUniRenderVisitor::UpdateSurfaceRenderNodeScale(RSSurfaceRenderNode& node)
         Drawing::scalar scaleFactors[2];
         getMinMaxScales = absMatrix.GetMinMaxScales(scaleFactors);
         if (getMinMaxScales) {
-            isScale = !ROSEN_EQ(scaleFactors[0], 1.f) || !ROSEN_EQ(scaleFactors[1], 1.f);
+            isScale = !ROSEN_EQ(scaleFactors[0], 1.f, EPSILON_SCALE) || !ROSEN_EQ(scaleFactors[1], 1.f, EPSILON_SCALE);
         }
         if (!getMinMaxScales) {
             RS_LOGD("getMinMaxScales fail, node:%{public}s %{public}" PRIu64 "", node.GetName().c_str(), node.GetId());
@@ -1415,8 +1397,9 @@ void RSUniRenderVisitor::UpdateSurfaceRenderNodeScale(RSSurfaceRenderNode& node)
             float dstRectHeight = dstRect.GetHeight();
             float boundsWidth = property.GetBoundsWidth();
             float boundsHeight = property.GetBoundsHeight();
-            isScale = !ROSEN_EQ(std::min(dstRectWidth, dstRectHeight), std::min(boundsWidth, boundsHeight))
-                || !ROSEN_EQ(std::max(dstRectWidth, dstRectHeight), std::max(boundsWidth, boundsHeight));
+            isScale =
+                !ROSEN_EQ(std::min(dstRectWidth, dstRectHeight), std::min(boundsWidth, boundsHeight), EPSILON_SCALE)
+                || !ROSEN_EQ(std::max(dstRectWidth, dstRectHeight), std::max(boundsWidth, boundsHeight), EPSILON_SCALE);
         }
     }
     node.SetIsScale(isScale);
@@ -1677,6 +1660,12 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
     if (drivenInfo_ && isContentCanvasNode) {
         drivenInfo_->prepareInfo.dirtyInfo.nonContentDirty = isBeforeContentNodeDirty;
         drivenInfo_->drivenUniTreePrepareMode = DrivenUniTreePrepareMode::PREPARE_DRIVEN_NODE_AFTER;
+    }
+#endif
+
+#ifdef RS_ENABLE_STACK_CULLING
+    if (RSSystemProperties::GetViewOcclusionCullingEnabled()) {
+        node.SetFullSurfaceOpaqueMarks(curSurfaceNode_);
     }
 #endif
 }
@@ -2084,6 +2073,12 @@ void RSUniRenderVisitor::ProcessChildren(RSRenderNode& node)
         return;
     }
 
+#ifdef RS_ENABLE_STACK_CULLING
+    if (RSSystemProperties::GetViewOcclusionCullingEnabled()) {
+        node.SetSubNodesCovered();
+    }
+#endif
+
     CheckSkipRepeatShadow(node, false);
     const auto children = node.GetSortedChildren();
 
@@ -2104,6 +2099,11 @@ void RSUniRenderVisitor::ProcessChildren(RSRenderNode& node)
     }
 
     CheckSkipRepeatShadow(node, true);
+#ifdef RS_ENABLE_STACK_CULLING
+    if (RSSystemProperties::GetViewOcclusionCullingEnabled()) {
+        node.ResetSubNodesCovered();
+    }
+#endif
 }
 
 void RSUniRenderVisitor::ProcessChildrenForScreenRecordingOptimization(
@@ -2432,11 +2432,11 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             && !curDisplayDirtyManager_->IsCurrentFrameDirty()) {
             RS_LOGD("DisplayNode skip");
             RS_TRACE_NAME("DisplayNode skip");
-            RSMainThread::Instance()->rsVSyncDistributor_->MarkRSNotRendering();
             GpuDirtyRegion::GetInstance().AddSkipProcessFramesNumberForXpower(node.GetScreenId());
 #ifdef OHOS_PLATFORM
             RSJankStats::GetInstance().SetSkipDisplayNode();
 #endif
+            RSMainThread::Instance()->rsVSyncDistributor_->MarkRSNotRendering();
             resetRotate_ = CheckIfNeedResetRotate();
             if (!IsHardwareComposerEnabled()) {
                 return;
@@ -2466,6 +2466,8 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 processor_->PostProcess(&node);
             }
             return;
+        } else {
+            RSMainThread::Instance()->rsVSyncDistributor_->UnmarkRSNotRendering();
         }
 
         auto rsSurface = node.GetRSSurface();
@@ -2517,8 +2519,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         bool clipPath = false;
 #ifdef RS_ENABLE_VK
         int saveCountBeforeClip = 0;
-        if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-            RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+        if (RSSystemProperties::IsUseVulkan()) {
             saveCountBeforeClip = canvas_->Save();
         }
 #endif
@@ -2557,8 +2558,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 for (auto& r : rects) {
                     int32_t topAfterFlip = 0;
 #ifdef RS_ENABLE_VK
-                    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-                        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+                    if (RSSystemProperties::IsUseVulkan()) {
                         topAfterFlip = r.top_;
                     } else {
                         topAfterFlip = static_cast<int32_t>(screenInfo_.GetRotatedHeight()) - r.GetBottom();
@@ -2588,8 +2588,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 RS_TRACE_NAME("RSUniRenderVisitor: clipPath");
                 clipPath = true;
 #ifdef RS_ENABLE_VK
-                if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-                    RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+                if (RSSystemProperties::IsUseVulkan()) {
                     canvas_->ClipRegion(region);
                 } else {
                     Drawing::Path dirtyPath;
@@ -2720,8 +2719,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             mainThread->RemoveTask(CLEAR_GPU_CACHE);
         }
 #ifdef RS_ENABLE_VK
-        if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-            RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+        if (RSSystemProperties::IsUseVulkan()) {
             canvas_->RestoreToCount(saveCountBeforeClip);
         }
 #endif
@@ -3460,8 +3458,7 @@ std::vector<RectI> RSUniRenderVisitor::GetDirtyRects(const Occlusion::Region &re
     for (const Occlusion::Rect& rect : rects) {
         // origin transformation
 #ifdef RS_ENABLE_VK
-        if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-            RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+        if (RSSystemProperties::IsUseVulkan()) {
             retRects.emplace_back(RectI(rect.left_, rect.top_,
                 rect.right_ - rect.left_, rect.bottom_ - rect.top_));
         } else {
@@ -3851,8 +3848,7 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
 #endif
 #endif
 #ifdef RS_ENABLE_VK
-    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+    if (RSSystemProperties::IsUseVulkan()) {
         node.SetDrawingGPUContext(renderEngine_->GetSkContext().get());
     }
 #endif
@@ -4001,8 +3997,13 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
                 params.targetColorGamut = newColorSpace_;
 #ifdef USE_VIDEO_PROCESSING_ENGINE
                 auto screenManager = CreateOrGetScreenManager();
-                auto ancestor = node.GetAncestorDisplayNode().lock()->ReinterpretCastTo<RSDisplayRenderNode>();
-                params.screenBrightnessNits = screenManager->GetScreenBrightnessNits(ancestor->GetScreenId());
+                std::shared_ptr<RSDisplayRenderNode> ancestor = nullptr;
+                if (node.GetAncestorDisplayNode().lock() != nullptr) {
+                    ancestor = node.GetAncestorDisplayNode().lock()->ReinterpretCastTo<RSDisplayRenderNode>();
+                }
+                if (ancestor != nullptr) {
+                    params.screenBrightnessNits = screenManager->GetScreenBrightnessNits(ancestor->GetScreenId());
+                }
 #endif
                 auto bgColor = property.GetBackgroundColor();
                 if ((node.GetSelfDrawingNodeType() != SelfDrawingNodeType::VIDEO) &&
@@ -4283,6 +4284,27 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
         return;
     }
     node.MarkNodeSingleFrameComposer(isNodeSingleFrameComposer_);
+
+#ifdef RS_ENABLE_STACK_CULLING
+    if (RSSystemProperties::GetViewOcclusionCullingEnabled()) {
+        if (node.isCoveredByOtherNode_ && isSubNodeOfSurfaceInProcess_) {
+            RS_LOGD("%lu [%d %d %d] is coverd by other node SKIP, curSurface %lu %s. %s",
+                node.GetId(), node.isFullSurfaceOpaquCanvasNode_, node.hasChildFullSurfaceOpaquCanvasNode_,
+                node.isCoveredByOtherNode_, (curSurfaceNode_ ? curSurfaceNode_->GetId() : 0),
+                (curSurfaceNode_ ? curSurfaceNode_->GetName() : "N/A"),
+                (node.GetRenderProperties().GetBoundsGeometry()->GetAbsRect()).ToString().c_str());
+            RS_OPTIONAL_TRACE_NAME_FMT("%lu [%d %d %d] is coverd by other node SKIP, curSurface %lu %s. %s",
+                node.GetId(), node.isFullSurfaceOpaquCanvasNode_, node.hasChildFullSurfaceOpaquCanvasNode_,
+                node.isCoveredByOtherNode_, (curSurfaceNode_ ? curSurfaceNode_->GetId() : 0),
+                (curSurfaceNode_ ? curSurfaceNode_->GetName() : "N/A"),
+                (node.GetRenderProperties().GetBoundsGeometry()->GetAbsRect()).ToString().c_str());
+
+            node.isCoveredByOtherNode_ = false;
+            return;
+        }
+    }
+#endif
+
     if ((isOpDropped_ && (curSurfaceNode_ != nullptr)) || isCanvasNodeSkipDfxEnabled_) {
         // If all the child nodes have drawing areas that do not exceed the current node, then current node
         // can be directly skipped if not intersect with any dirtyregion.
@@ -4372,7 +4394,8 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
             // The second param is null, 0 is an invalid value.
             RSUniRenderUtil::ClearNodeCacheSurface(std::move(surface), nullptr, id, 0);
         };
-        drawingNode->SetSurfaceClearFunc({ threadIndex_, clearFunc });
+        auto threadId = RSSubThreadManager::Instance()->GetReThreadIndexMap()[threadIndex_];
+        drawingNode->SetSurfaceClearFunc({ threadIndex_, clearFunc }, threadId);
     }
     CheckAndSetNodeCacheType(node);
 #ifdef DDGR_ENABLE_FEATURE_OPINC

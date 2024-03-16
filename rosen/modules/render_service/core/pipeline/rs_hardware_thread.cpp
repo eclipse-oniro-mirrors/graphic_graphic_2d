@@ -198,7 +198,7 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
     };
     unExcuteTaskNum_++;
 
-    if (!hgmCore.GetLtpoEnabled()) {
+    if (!hgmCore.GetLtpoEnabled() || RSMainThread::Instance()->rsVSyncDistributor_->IsDVsyncOn()) {
         PostTask(task);
     } else {
         auto period  = CreateVSyncSampler()->GetHardwarePeriod();
@@ -348,8 +348,7 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
     }
 #ifdef RS_ENABLE_EGLIMAGE
 #ifdef RS_ENABLE_VK
-    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+    if (RSSystemProperties::IsUseVulkan()) {
         canvas->Clear(Drawing::Color::COLOR_TRANSPARENT);
     }
     std::unordered_map<int32_t, std::shared_ptr<NativeVkImageRes>> imageCacheSeqsVK;
@@ -388,6 +387,7 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
 
         // prepare BufferDrawParam
         auto params = RSUniRenderUtil::CreateLayerBufferDrawParam(layer, forceCPU);
+        params.matrix.PostScale(screenInfo.GetRogWidthRatio(), screenInfo.GetRogHeightRatio());
         canvas->ConcatMatrix(params.matrix);
 #ifndef RS_ENABLE_EGLIMAGE
         uniRenderEngine_->DrawBuffer(*canvas, params);
@@ -457,8 +457,7 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
             }
 #endif
 #ifdef RS_ENABLE_VK
-            if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-                RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+            if (RSSystemProperties::IsUseVulkan()) {
                 Drawing::ColorType colorType = GetColorTypeFromBufferFormat(params.buffer->GetFormat());
                 auto imageCache = uniRenderEngine_->GetVkImageManager()->CreateImageCacheFromBuffer(
                     params.buffer, params.acquireFence);
@@ -489,7 +488,9 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
             Drawing::Matrix matrix;
             auto sx = params.dstRect.GetWidth() / params.srcRect.GetWidth();
             auto sy = params.dstRect.GetHeight() / params.srcRect.GetHeight();
-            matrix.SetScaleTranslate(sx, sy, params.dstRect.GetLeft(), params.dstRect.GetTop());
+            auto tx = params.dstRect.GetLeft() - params.srcRect.GetLeft() * sx;
+            auto ty = params.dstRect.GetTop() - params.srcRect.GetTop() * sy;
+            matrix.SetScaleTranslate(sx, sy, tx, ty);
             auto imageShader = Drawing::ShaderEffect::CreateImageShader(
                 *image, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, Drawing::SamplingOptions(), matrix);
             if (imageShader == nullptr) {
@@ -534,8 +535,7 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
     renderFrame->Flush();
 #ifdef RS_ENABLE_EGLIMAGE
 #ifdef RS_ENABLE_VK
-    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+    if (RSSystemProperties::IsUseVulkan()) {
         imageCacheSeqsVK.clear();
     }
 #endif
