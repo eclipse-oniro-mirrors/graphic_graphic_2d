@@ -84,15 +84,15 @@ int FontMgr::CountFamilies() const
     return fontMgrImpl_->CountFamilies();
 }
 
-char* FontMgr::GetFamilyName(int index, int* len) const
+void FontMgr::GetFamilyName(int index, std::string& str) const
 {
     if (fontMgrImpl_ == nullptr) {
-        return nullptr;
+        return;
     }
-    return fontMgrImpl_->GetFamilyName(index, len);
+    fontMgrImpl_->GetFamilyName(index, str);
 }
 
-FontStyleSet* FontMgr::CreateStyleSet(int index) const
+std::shared_ptr<FontStyleSet> FontMgr::CreateStyleSet(int index) const
 {
     if (fontMgrImpl_ == nullptr) {
         return nullptr;

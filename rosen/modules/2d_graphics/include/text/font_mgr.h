@@ -100,9 +100,9 @@ public:
 
     int CountFamilies() const;
 
-    char* GetFamilyName(int index, int* len) const;
+    void GetFamilyName(int index, std::string& str) const;
 
-    FontStyleSet* CreateStyleSet(int index) const;
+    std::shared_ptr<FontStyleSet> CreateStyleSet(int index) const;
 
 private:
     std::shared_ptr<FontMgrImpl> fontMgrImpl_;
