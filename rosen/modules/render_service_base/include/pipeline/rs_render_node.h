@@ -698,6 +698,9 @@ private:
     friend class RSRenderNodeMap;
     friend class RSRenderThread;
     friend class RSRenderTransition;
+#ifdef RS_PROFILER_ENABLED
+    friend class RSProfiler;
+#endif
 };
 // backward compatibility
 using RSBaseRenderNode = RSRenderNode;

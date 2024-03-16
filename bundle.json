@@ -80,7 +80,10 @@
           "memmgr_plugin",
           "sensor",
           "qos_manager",
-          "video_processing_engine"
+          "video_processing_engine",
+          "vulkan-headers",
+          "hiview",
+          "battery_manager"
         ],
         "third_party": [
           "flutter",
