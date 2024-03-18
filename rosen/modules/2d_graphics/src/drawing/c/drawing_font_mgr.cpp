@@ -87,7 +87,7 @@ static bool CopyStrData(char** destination, const std::string& source)
     return true;
 }
 
-char* OH_Drawing_FontMgrGetFamilyName(OH_Drawing_FontMgr* drawingFontMgr, int index, int* len)
+char* OH_Drawing_FontMgrGetFamilyName(OH_Drawing_FontMgr* drawingFontMgr, int index)
 {
     FontMgr* fontMgr = CastToFontMgr(drawingFontMgr);
     if (fontMgr == nullptr) {
@@ -96,9 +96,10 @@ char* OH_Drawing_FontMgrGetFamilyName(OH_Drawing_FontMgr* drawingFontMgr, int in
     std::string strFamilyName = "";
     fontMgr->GetFamilyName(index, strFamilyName);
     char* familyName = nullptr;
-    CopyStrData(&familyName, strFamilyName);
-    *len = strFamilyName.size();
-
+    auto ret = CopyStrData(&familyName, strFamilyName);
+    if (!ret) {
+        return nullptr;
+    }
     return familyName;
 }
 
@@ -155,7 +156,7 @@ OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyle(OH_Drawing_FontMgr* draw
     if (fontMgr == nullptr) {
         return nullptr;
     }
-    Typeface* typeface = fontMgr->MatchFamilyStyle(familyName, 
+    Typeface* typeface = fontMgr->MatchFamilyStyle(familyName,
         FontStyle(fontForm->weight, fontForm->width, static_cast<FontStyle::Slant>(fontForm->slant)));
     std::shared_ptr<Typeface> sharedTypeface(typeface);
     OH_Drawing_Typeface* drawingTypeface = reinterpret_cast<OH_Drawing_Typeface*>(sharedTypeface.get());
@@ -164,7 +165,7 @@ OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyle(OH_Drawing_FontMgr* draw
 }
 
 OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyleCharacter(OH_Drawing_FontMgr* drawingFontMgr,
-    const char familyName[], OH_Drawing_FontForm* fontForm, const char* bcp47[], int bcp47Count, int32_t character)
+    const char* familyName, OH_Drawing_FontForm* fontForm, const char* bcp47[], int bcp47Count, int32_t character)
 {
     if (drawingFontMgr == nullptr || fontForm == nullptr) {
         return nullptr;

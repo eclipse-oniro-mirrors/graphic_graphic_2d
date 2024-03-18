@@ -38,8 +38,7 @@ HWTEST_F(OH_Drawing_FontMgrTest, OH_Drawing_FontMgrTest001, TestSize.Level1)
     int count = OH_Drawing_FontMgrGetFamiliesCount(mgr);
     EXPECT_TRUE(count > 0);
 
-    int familyNameSize = 0;
-    char *familyName = OH_Drawing_FontMgrGetFamilyName(mgr, 0, &familyNameSize);
+    char *familyName = OH_Drawing_FontMgrGetFamilyName(mgr, 0);
     OH_Drawing_DestroyFamilyName(familyName);
 
     OH_Drawing_FontStyleSet* fontStyleSet = OH_Drawing_FontStyleSetCreate(mgr, 0);
