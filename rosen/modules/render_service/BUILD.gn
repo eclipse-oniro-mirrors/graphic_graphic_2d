@@ -197,13 +197,14 @@ ohos_shared_library("librender_service") {
   if (rs_enable_recording_dcl && defined(use_rosen_drawing) &&
       use_rosen_drawing) {
     deps += [
-          "$graphic_2d_root/rosen/samples/2d_graphics:drawing_engine_sample",
-          "$graphic_2d_root/rosen/samples/2d_graphics:drawing_sample_replayer",
-        ]
+      "$graphic_2d_root/rosen/samples/2d_graphics:drawing_engine_sample",
+      "$graphic_2d_root/rosen/samples/2d_graphics:drawing_sample_replayer",
+    ]
   }
 
   #profiler
-  if (rosen_is_ohos && graphic_2d_feature_rs_enable_profiler && player_framework_enable) {
+  if (rosen_is_ohos && graphic_2d_feature_rs_enable_profiler &&
+      player_framework_enable) {
     defines += [ "RS_PROFILER_ENABLED" ]
     sources += [
       "$rosen_root/modules/render_service_profiler/rs_profiler.cpp",
