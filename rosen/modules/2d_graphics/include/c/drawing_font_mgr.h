@@ -240,9 +240,9 @@ OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyle(OH_Drawing_FontMgr*,
  * @param OH_Drawing_FontMgr Indicates the pointer to an <b>OH_Drawing_FontMgr</b> object.
  * @param familyName Indicates the family name of a font style set to be matched.
  * @param OH_Drawing_FontForm Indicates the pointer to an <b>OH_Drawing_FontForm</b> object.
- * @param bcp47 An array of languages which indicate the language of character.
- * @param bcp47Count The array size of bcp47.
- * @param character A UTF8 value to be matched.
+ * @param bcp47 Indicates an array of languages which indicate the language of character.
+ * @param bcp47Count Indicates the array size of bcp47.
+ * @param character Indicates a UTF8 value to be matched.
  * @return Returns the pointer to the <b>OH_Drawing_Typeface</b> object matched.
  * @since 12
  * @version 1.0
