@@ -310,7 +310,10 @@ template("graphics2d_source_set") {
       public_deps += [ "//third_party/vulkan-headers:vulkan_headers" ]
     }
     if (platform == "ohos" || platform == "ohos_ng") {
-      external_deps += [ "hilog:libhilog" ]
+      external_deps += [
+        "hilog:libhilog",
+        "hitrace:hitrace_meter",
+      ]
       deps = [
         "//third_party/bounds_checking_function:libsec_static",
         "//third_party/skia:skia_$platform",
@@ -421,6 +424,7 @@ if (!is_arkui_x) {
         platform = "windows"
       }
       deps = [ ":2d_graphics_source_$platform" ]
+      external_deps = [ "hilog:libhilog" ]
       public_configs = [ ":export_config" ]
 
       if (platform == "ohos") {
@@ -455,6 +459,7 @@ if (enable_text_gine) {
       ":2d_graphics_source_$platform",
       "$rosen_root/modules/texgine/texgine_drawing:libtexgine_drawing",
     ]
+    external_deps = [ "hilog:libhilog" ]
     public_deps = [ "//third_party/bounds_checking_function:libsec_static" ]
     defines += [ "USE_GRAPHIC_TEXT_GINE" ]
     public_configs = [ ":2d_graphics_config" ]
@@ -588,6 +593,7 @@ if (enable_text_gine) {
       platform = "windows"
     }
     deps = [ "$rosen_root/modules/2d_engine/rosen_text:rosen_text_inner" ]
+    external_deps = [ "hilog:libhilog" ]
 
     part_name = "graphic_2d"
     subsystem_name = "graphic"
