@@ -63,9 +63,7 @@ Drawing::RecordingCanvas::DrawFunc RSBinarizationDrawable::CreateDrawFunc() cons
 {
     auto ptr = std::static_pointer_cast<const RSBinarizationDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (canvas && ptr->aiInvert_.has_value()) {
-            RSPropertyDrawableUtils::DrawBinarization(canvas, ptr->aiInvert_);
-        }
+        RSPropertyDrawableUtils::DrawBinarization(canvas, ptr->aiInvert_);
     };
 }
 
@@ -101,9 +99,7 @@ Drawing::RecordingCanvas::DrawFunc RSColorFilterDrawable::CreateDrawFunc() const
 {
     auto ptr = std::static_pointer_cast<const RSColorFilterDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (canvas && ptr->filter_) {
-            RSPropertyDrawableUtils::DrawColorFilter(canvas, ptr->filter_);
-        }
+        RSPropertyDrawableUtils::DrawColorFilter(canvas, ptr->filter_);
     };
 }
 RSDrawable::Ptr RSLightUpEffectDrawable::OnGenerate(const RSRenderNode& node)
@@ -201,9 +197,7 @@ Drawing::RecordingCanvas::DrawFunc RSForegroundFilterDrawable::CreateDrawFunc() 
 {
     auto ptr = std::static_pointer_cast<const RSForegroundFilterDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (canvas && ptr->filter_) {
-            RSPropertyDrawableUtils::DrawFilter(canvas, ptr->filter_, true);
-        }
+        RSPropertyDrawableUtils::DrawFilter(canvas, ptr->filter_, true);
     };
 }
 
@@ -246,10 +240,7 @@ Drawing::RecordingCanvas::DrawFunc RSPixelStretchDrawable::CreateDrawFunc() cons
 {
     auto ptr = std::static_pointer_cast<const RSPixelStretchDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (canvas && ptr->pixelStretch_.has_value()) {
-            RSPropertyDrawableUtils::DrawPixelStretch(
-                canvas, ptr->pixelStretch_, ptr->boundsRect_, ptr->boundsGeoValid_);
-        }
+        RSPropertyDrawableUtils::DrawPixelStretch(canvas, ptr->pixelStretch_, ptr->boundsRect_, ptr->boundsGeoValid_);
     };
 }
 

@@ -406,9 +406,7 @@ Drawing::RecordingCanvas::DrawFunc RSBackgroundFilterDrawable::CreateDrawFunc() 
 {
     auto ptr = std::static_pointer_cast<const RSBackgroundFilterDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (canvas && ptr->filter_) {
-            RSPropertyDrawableUtils::DrawFilter(canvas, ptr->filter_, false);
-        }
+        RSPropertyDrawableUtils::DrawFilter(canvas, ptr->filter_, false);
     };
 }
 
@@ -436,10 +434,8 @@ Drawing::RecordingCanvas::DrawFunc RSBackgroundEffectDrawable::CreateDrawFunc() 
 {
     auto ptr = std::static_pointer_cast<const RSBackgroundEffectDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (canvas && ptr->filter_) {
-            auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
-            RSPropertyDrawableUtils::DrawBackgroundEffect(paintFilterCanvas, ptr->filter_);
-        }
+        auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
+        RSPropertyDrawableUtils::DrawBackgroundEffect(paintFilterCanvas, ptr->filter_);
     };
 }
 
@@ -463,10 +459,8 @@ Drawing::RecordingCanvas::DrawFunc RSUseEffectDrawable::CreateDrawFunc() const
 {
     auto ptr = std::static_pointer_cast<const RSUseEffectDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (canvas) {
-            auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
-            RSPropertyDrawableUtils::DrawUseEffect(paintFilterCanvas);
-        }
+        auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
+        RSPropertyDrawableUtils::DrawUseEffect(paintFilterCanvas);
     };
 }
 
