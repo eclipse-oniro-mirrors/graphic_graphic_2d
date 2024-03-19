@@ -24,7 +24,7 @@ using namespace OHOS::HiviewDFX;
 #define LOG_DOMAIN 0xD001400
 
 #undef LOG_TAG
-#define LOG_TAG "OHOS::OS"
+#define LOG_TAG "OHOS::RS"
 
 SyncFenceTracker::SyncFenceTracker(const std::string threadName)
     : threadName_(threadName),
