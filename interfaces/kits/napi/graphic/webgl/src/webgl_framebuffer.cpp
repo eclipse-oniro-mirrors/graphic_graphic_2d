@@ -241,6 +241,7 @@ bool WebGLFramebuffer::GetWebGLAttachmentInfo(napi_env env, Impl::WebGLRendering
     if (attachedObject == nullptr) {
         return false;
     }
+    
     LOGD("GetWebGLAttachmentInfo %{public}u %{public}d %{public}lu", 
          static_cast<unsigned int>(attachedObject->type), attachedObject->attachment,
          static_cast<unsigned long>(attachedObject->id));
