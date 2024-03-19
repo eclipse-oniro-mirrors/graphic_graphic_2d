@@ -35,11 +35,7 @@ void RSPropertyDrawable::OnSync()
 Drawing::RecordingCanvas::DrawFunc RSPropertyDrawable::CreateDrawFunc() const
 {
     auto ptr = std::static_pointer_cast<const RSPropertyDrawable>(shared_from_this());
-    return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (const auto& drawCmdList = ptr->drawCmdList_) {
-            drawCmdList->Playback(*canvas);
-        }
-    };
+    return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) { ptr->drawCmdList_->Playback(*canvas); };
 }
 
 // ============================================================================
