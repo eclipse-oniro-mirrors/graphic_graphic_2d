@@ -1632,7 +1632,7 @@ void RSRenderNode::UpdateDrawableVec()
     // Step 2: Update or regenerate drawable if needed
     bool drawableChanged = RSDrawable::UpdateDirtySlots(*this, drawableVec_, dirtySlots);
 
-    if (drawableChanged || drawableVecStatus_ == 0) {
+    if (drawableChanged || drawableVecStatus_ == 0 || dirtySlots.count(RSDrawableSlot::CLIP_TO_BOUNDS)) {
         // Step 3: if any drawables changed, update save/clip/restore
         RSDrawable::UpdateSaveRestore(*this, drawableVec_, drawableVecStatus_);
 
