@@ -201,6 +201,12 @@ ohos_executable("drawing_sample_replayer") {
 
   sources = [ "drawing_sample_replayer.cpp" ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   include_dirs = [
     "include",
     "$graphic_2d_root/rosen/include/common",
