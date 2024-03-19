@@ -1111,7 +1111,8 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManag
     if (parent && parent->GetGeoUpdateDelay()) {
         accumGeoDirty = true;
     }
-    if (accumGeoDirty || GetRenderProperties().geoDirty_ || (dirtyStatus_ != NodeDirty::CLEAN)) {
+    if (accumGeoDirty || GetRenderProperties().NeedClip() ||
+        GetRenderProperties().geoDirty_ || (dirtyStatus_ != NodeDirty::CLEAN)) {
         accumGeoDirty = GetMutableRenderProperties().UpdateGeometryByParent(parent,
             !IsInstanceOf<RSSurfaceRenderNode>(), GetContextClipRegion());
         // TODO double check if it would be covered by updateself without geo update

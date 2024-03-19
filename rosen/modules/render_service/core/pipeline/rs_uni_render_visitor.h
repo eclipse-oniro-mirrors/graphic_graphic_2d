@@ -221,6 +221,8 @@ private:
     void UpdateSurfaceDirtyAndGlobalDirty();
     void UpdateDirtysAndRedordInfoByFilter(RSRenderNode& node);
 
+    void UpdatePrepareclip(RSRenderNode& node);
+
     void CheckMergeSurfaceDirtysForDisplay(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) const;
     void CheckMergeTransparentDirtysForDisplay(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) const;
 

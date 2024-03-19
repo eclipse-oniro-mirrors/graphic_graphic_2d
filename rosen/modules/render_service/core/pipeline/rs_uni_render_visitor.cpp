@@ -1313,6 +1313,8 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
     if (dirtyFlag_ || node.IsDirty()) {
         dirtyFlag_ = node.Update(*dirtyManager, nodeParent, dirtyFlag_, prepareClipRect_);
     }
+    // update prepareclip before children
+    UpdatePrepareclip(node);
 
     // 1. Recursively traverse child nodes if above curSurfaceNode and subnode need draw
     bool IsSubTreeNeedPrepare = !curSurfaceNode_ || node.IsSubTreeNeedPrepare(dirtyFlag_, filterInGlobal_);
@@ -1321,6 +1323,29 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
     PrepareChildrenAfter(node);
     prepareClipRect_ = prepareClipRect;
     dirtyFlag_ = dirtyFlag;
+}
+
+void RSUniRenderVisitor::UpdatePrepareclip(RSRenderNode& node)
+{
+    const auto& property = node.GetRenderProperties();
+    auto geoPtr = property.GetBoundsGeometry();
+    if (geoPtr == nullptr) {
+        return;
+    }
+    // Dirty Region use abstract coordinate, property of node use relative coordinate
+    // BoundsRect(if exists) is mapped to absRect_ of RSObjAbsGeometry.
+    if (property.GetClipToBounds()) {
+        prepareClipRect_ = prepareClipRect_.IntersectRect(geoPtr->GetAbsRect());
+    }
+    // FrameRect(if exists) is mapped to rect using abstract coordinate explicitly by calling MapAbsRect.
+    if (property.GetClipToFrame()) {
+        // MapAbsRect do not handle the translation of OffsetX and OffsetY
+        RectF frameRect{
+            property.GetFrameOffsetX() * geoPtr->GetAbsMatrix().Get(Drawing::Matrix::SCALE_X),
+            property.GetFrameOffsetY() * geoPtr->GetAbsMatrix().Get(Drawing::Matrix::SCALE_Y),
+            property.GetFrameWidth(), property.GetFrameHeight()};
+        prepareClipRect_ = prepareClipRect_.IntersectRect(geoPtr->MapAbsRect(frameRect));
+    }
 }
 
 void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)

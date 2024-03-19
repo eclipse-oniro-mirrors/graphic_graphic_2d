@@ -97,7 +97,7 @@ std::string RSRenderParams::ToString() const
 {
     std::string ret = "\nRSRenderParams:";
     ret += RENDER_BASIC_PARAM_TO_STRING(id_);
-    ret += RENDER_RECT_PARAM_TO_STRING(absDrawRect_);
+    ret += RENDER_RECT_PARAM_TO_STRING(localDrawRect_);
     ret += RENDER_BASIC_PARAM_TO_STRING(shouldPaint_);
     return ret;
 }
