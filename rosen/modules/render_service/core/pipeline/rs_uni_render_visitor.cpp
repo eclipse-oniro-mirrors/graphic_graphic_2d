@@ -385,7 +385,7 @@ void RSUniRenderVisitor::PrepareChildren(RSRenderNode& node)
     float alpha = curAlpha_;
     curAlpha_ *= node.GetRenderProperties().GetAlpha();
     node.SetGlobalAlpha(curAlpha_);
-    auto children = node.GetSortedChildren();
+    const auto& children = node.GetSortedChildren();
     // check curSurfaceDirtyManager_ for SubTree updates
     if (curSurfaceDirtyManager_ != nullptr && isCachedSurfaceReuse_ && !node.HasMustRenewedInfo()) {
         RS_OPTIONAL_TRACE_NAME_FMT("CachedSurfaceReuse node %llu quickSkip subtree", node.GetId());
@@ -884,7 +884,7 @@ bool RSUniRenderVisitor::CheckIfSurfaceRenderNodeStatic(RSSurfaceRenderNode& nod
     RS_OPTIONAL_TRACE_NAME("Skip static surface " + node.GetName() + " nodeid - pid: " +
         std::to_string(node.GetId()) + " - " + std::to_string(ExtractPid(node.GetId())));
     // static node's dirty region is empty
-    auto dirtyManager = node.GetDirtyManager();
+    auto& dirtyManager = node.GetDirtyManager();
     if (dirtyManager) {
         dirtyManager->Clear();
         if (node.IsTransparent()) {
@@ -1558,7 +1558,7 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
     }
 #endif
     // if canvasNode is not sub node of surfaceNode, merge the dirtyRegion to curDisplayDirtyManager_
-    auto dirtyManager = isSubNodeOfSurfaceInPrepare_ ? curSurfaceDirtyManager_ : curDisplayDirtyManager_;
+    auto& dirtyManager = isSubNodeOfSurfaceInPrepare_ ? curSurfaceDirtyManager_ : curDisplayDirtyManager_;
     dirtyFlag_ = node.Update(*dirtyManager, nodeParent, dirtyFlag_, prepareClipRect_);
 
 #if defined(RS_ENABLE_DRIVEN_RENDER)
@@ -1604,7 +1604,7 @@ void RSUniRenderVisitor::PrepareCanvasRenderNode(RSCanvasRenderNode &node)
     }
 #endif
     const auto& property = node.GetRenderProperties();
-    auto geoPtr = (property.GetBoundsGeometry());
+    auto& geoPtr = (property.GetBoundsGeometry());
     if (geoPtr == nullptr) {
         return;
     }
@@ -2849,7 +2849,8 @@ void RSUniRenderVisitor::AssignGlobalZOrderAndCreateLayer(
     }
     for (auto& appWindowNode : nodesInZOrder) {
         // first, sort app window node's child surfaceView by local zOrder
-        auto childHardwareEnabledNodes = appWindowNode->GetChildHardwareEnabledNodes();
+        auto& childHardwareEnabledNodes =
+            const_cast<std::vector<std::weak_ptr<RSSurfaceRenderNode>>&>(appWindowNode->GetChildHardwareEnabledNodes());
         for (auto iter = childHardwareEnabledNodes.begin(); iter != childHardwareEnabledNodes.end();) {
             auto childNode = iter->lock();
             if (!childNode || !childNode->IsOnTheTree()) {
@@ -4321,7 +4322,7 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
         return;
 #endif
     }
-    auto geoPtr = (node.GetRenderProperties().GetBoundsGeometry());
+    auto& geoPtr = (node.GetRenderProperties().GetBoundsGeometry());
     if (isSkipCanvasNodeOutOfScreen_ && !isSubNodeOfSurfaceInProcess_ && !node.HasSubSurface() &&
         geoPtr && IsOutOfScreenRegion(geoPtr->GetAbsRect()) && !isSubThread_) {
 #ifdef DDGR_ENABLE_FEATURE_OPINC

@@ -133,7 +133,17 @@ const std::shared_ptr<RSRenderPropertyBase>& RSRenderPropertyAnimation::GetLastV
 
 void RSRenderPropertyAnimation::SetAnimationValue(const std::shared_ptr<RSRenderPropertyBase>& value)
 {
-    SetPropertyValue(GetAnimationValue(value));
+    std::shared_ptr<RSRenderPropertyBase> animationValue;
+    if (GetAdditive() && (property_ != nullptr)) {
+        animationValue = property_->Clone();
+        animationValue += value;
+        animationValue -= lastValue_;
+        lastValue_ = value->Clone();
+    } else {
+        animationValue = value->Clone();
+        lastValue_ = value->Clone();
+    }
+    SetPropertyValue(animationValue);
 }
 
 const std::shared_ptr<RSRenderPropertyBase> RSRenderPropertyAnimation::GetAnimationValue(
@@ -141,7 +151,9 @@ const std::shared_ptr<RSRenderPropertyBase> RSRenderPropertyAnimation::GetAnimat
 {
     std::shared_ptr<RSRenderPropertyBase> animationValue;
     if (GetAdditive()) {
-        animationValue = GetPropertyValue() + (value - lastValue_);
+        animationValue = GetPropertyValue();
+        animationValue += value;
+        animationValue -= lastValue_;
     } else {
         animationValue = value->Clone();
     }
@@ -154,7 +166,9 @@ void RSRenderPropertyAnimation::OnRemoveOnCompletion()
 {
     std::shared_ptr<RSRenderPropertyBase> backwardValue;
     if (GetAdditive()) {
-        backwardValue = GetPropertyValue() + (GetOriginValue() - lastValue_);
+        backwardValue = GetPropertyValue();
+        backwardValue += GetOriginValue();
+        backwardValue -= lastValue_;
     } else {
         backwardValue = GetOriginValue();
     }
