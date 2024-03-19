@@ -454,6 +454,7 @@ private:
     float frameOffsetY_ = 0.f;
     bool needFilter_ = false;
     RRect rrect_ = RRect{};
+    Drawing::Matrix prevAbsMatrix_;
 
     RSRenderParticleVector particles_;
     std::shared_ptr<Drawing::ColorFilter> colorFilter_ = nullptr;
