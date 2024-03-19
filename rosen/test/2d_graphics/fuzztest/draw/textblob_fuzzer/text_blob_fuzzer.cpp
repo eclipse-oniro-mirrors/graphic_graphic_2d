@@ -37,8 +37,8 @@ bool TextBlobFuzzTest(const uint8_t* data, size_t size)
     Font font;
     auto textblob = TextBlob::MakeFromText(str, strlen(str), font, TextEncoding::UTF8);
     textblob->Bounds();
-    textblob->Serialize();
-    textblob->Deserialize(nullptr, 0);
+    textblob->Serialize(nullptr);
+    textblob->Deserialize(nullptr, 0, nullptr);
 
     std::vector<uint16_t> glyphIds = {};
     TextBlob::GetDrawingGlyphIDforTextBlob(textblob.get(), glyphIds);
