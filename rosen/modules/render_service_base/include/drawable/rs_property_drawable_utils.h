@@ -31,6 +31,7 @@ public:
     static bool PickColor(Drawing::Canvas& canvas, const std::shared_ptr<RSColorPickerCacheTask>& colorPickerTask,
         Drawing::Path& drPath, Drawing::Matrix& matrix, RSColor& colorPicked);
     static void GetDarkColor(RSColor& color);
+    static void CeilMatrixTrans(Drawing::Canvas* canvas);
     static void DrawFilter(
         Drawing::Canvas* canvas, const std::shared_ptr<RSFilter>& rsFilter, const bool isForegroundFilter);
     static void DrawBackgroundEffect(RSPaintFilterCanvas* canvas, const std::shared_ptr<RSFilter>& rsFilter);
@@ -43,6 +44,8 @@ public:
         const RectF& boundsRect, const bool boundsGeoValid);
     static Drawing::Path CreateShadowPath(Drawing::Canvas& canvas, bool shadowIsFilled,
         const std::shared_ptr<RSPath> shadowPath, const std::shared_ptr<RSPath>& clipBounds, const RRect& rrect);
+    static void DrawShadow(Drawing::Canvas* canvas, const RSShadow& shadow, const RRect& rrect,
+        const std::shared_ptr<RSPath>& clipBounds);
     static void DrawUseEffect(RSPaintFilterCanvas* canvas);
 
     static void BeginBlendMode(RSPaintFilterCanvas& canvas, int blendMode, int blendModeApplyType);
