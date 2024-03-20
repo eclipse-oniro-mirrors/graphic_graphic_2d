@@ -361,9 +361,9 @@ typedef enum {
  */
 typedef struct {
     /** key of fontfeature */
-    char* fontFeatureKey;
+    char* tag;
     /** value of fontfeature */
-    int fontFeatureValue;
+    int value;
 } OH_Drawing_FontFeature;
 
 /**
@@ -1734,6 +1734,7 @@ void OH_Drawing_TextStyleAddFontFeature(OH_Drawing_TextStyle*, const char* tag, 
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
  * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
  * @return OH_Drawing_FontFeature Indicates the pointer to an array of structures of OH_Drawing_FontFeature.
+ * Get size of font feature by OH_Drawing_TextStyleGetFontFeatureSize.
  * @since 12
  * @version 1.0
  */
