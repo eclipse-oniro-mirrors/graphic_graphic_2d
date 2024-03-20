@@ -24,11 +24,9 @@
 
 namespace OHOS {
 namespace Rosen {
-const bool KAWASE_BLUR_ENABLED = RSSystemProperties::GetKawaseEnabled();
-const auto BLUR_TYPE = KAWASE_BLUR_ENABLED ? Drawing::ImageBlurType::KAWASE : Drawing::ImageBlurType::GAUSS;
 RSBlurFilter::RSBlurFilter(float blurRadiusX, float blurRadiusY) : RSDrawingFilter(
     Drawing::ImageFilter::CreateBlurImageFilter(blurRadiusX, blurRadiusY, Drawing::TileMode::CLAMP, nullptr,
-        BLUR_TYPE)),
+        Drawing::ImageBlurType::KAWASE)),
     blurRadiusX_(blurRadiusX),
     blurRadiusY_(blurRadiusY)
 {
@@ -37,6 +35,7 @@ RSBlurFilter::RSBlurFilter(float blurRadiusX, float blurRadiusY) : RSDrawingFilt
     hash_ = SkOpts::hash(&type_, sizeof(type_), 0);
     hash_ = SkOpts::hash(&blurRadiusX, sizeof(blurRadiusX), hash_);
     hash_ = SkOpts::hash(&blurRadiusY, sizeof(blurRadiusY), hash_);
+    useKawase_ = RSSystemProperties::GetKawaseEnabled();
 }
 
 RSBlurFilter::~RSBlurFilter() = default;
@@ -128,11 +127,13 @@ void RSBlurFilter::DrawImageRect(Drawing::Canvas& canvas, const std::shared_ptr<
     if (greyImage == nullptr) {
         greyImage = image;
     }
-    auto param = Drawing::KawaseParameters{src, dst, blurRadiusX_, nullptr, brush.GetColor().GetAlphaF()};
-    if (KAWASE_BLUR_ENABLED && KawaseBlurFilter::ApplyDrawingKawaseBlur(canvas, brush, greyImage, param)) {
+    // if kawase blur failed, use gauss blur
+    static bool DDGR_ENABLED = RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR;
+    KawaseParameter param = KawaseParameter(src, dst, blurRadiusX_, nullptr, brush.GetColor().GetAlphaF());
+    if (!DDGR_ENABLED && useKawase_ &&
+        KawaseBlurFilter::GetKawaseBlurFilter()->ApplyKawaseBlur(canvas, greyImage, param)) {
         return;
     }
-    // if kawase blur failed, use gauss blur
     canvas.AttachBrush(brush);
     canvas.DrawImageRect(*greyImage, src, dst, Drawing::SamplingOptions());
     canvas.DetachBrush();
