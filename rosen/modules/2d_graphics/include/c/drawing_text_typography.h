@@ -1792,6 +1792,8 @@ void OH_Drawing_TextStyleSetBaseLineShift(OH_Drawing_TextStyle*, double lineShif
  * @version 1.0
  */
 double OH_Drawing_TextStyleGetBaseLineShift(OH_Drawing_TextStyle*);
+
+/**
  * @brief Gets the text color.
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
