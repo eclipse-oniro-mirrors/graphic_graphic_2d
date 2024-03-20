@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -1654,5 +1654,20 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest050, TestSize.Level
     EXPECT_EQ(OH_Drawing_TextStyleGetHalfLeading(txtStyle), true);
     OH_Drawing_SetTextStyleLocale(txtStyle, "en");
     EXPECT_EQ(std::strcmp(OH_Drawing_TextStyleGetLocale(txtStyle), "en"), 0);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyTest051
+ * @tc.desc: test for create and releases the memory occupied by system font configuration information
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest051, TestSize.Level1)
+{
+    OH_Drawing_FontConfigJsonInfoCode code = FONT_DIR_SET_ERROR;
+    OH_Drawing_FontConfigJsonInfo* configJsonInfo = OH_Drawing_CreateFontConfigJsonInfo(&code);
+    EXPECT_EQ(code, FONT_CONFIG_JSON_INFO_SUC);
+    EXPECT_EQ(configJsonInfo != nullptr, true);
+    OH_Drawing_DestroyFontConfigJsonInfo(configJsonInfo, &code);
+    EXPECT_EQ(code, FONT_DIR_SET_ERROR);
 }
 }

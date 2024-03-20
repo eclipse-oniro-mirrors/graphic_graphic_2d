@@ -305,5 +305,7 @@
     { "name": "OH_Drawing_TextStyleGetWordSpacing" },
     { "name": "OH_Drawing_TextStyleGetFontHeight" },
     { "name": "OH_Drawing_TextStyleGetHalfLeading" },
-    { "name": "OH_Drawing_TextStyleGetLocale" }
+    { "name": "OH_Drawing_TextStyleGetLocale" },
+    { "name": "OH_Drawing_CreateFontConfigJsonInfo" },
+    { "name": "OH_Drawing_DestroyFontConfigJsonInfo" }
 ]
