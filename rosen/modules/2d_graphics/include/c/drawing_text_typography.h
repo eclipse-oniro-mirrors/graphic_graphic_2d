@@ -1717,7 +1717,7 @@ void OH_Drawing_TextStyleSetBackgroundRect(OH_Drawing_TextStyle*, const OH_Drawi
 void OH_Drawing_TypographyHandlerAddSymbol(OH_Drawing_TypographyCreate*, uint32_t symbol);
 
 /**
- * @brief Add features of font features.
+ * @brief Add font feature.
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
  * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
