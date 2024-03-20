@@ -1409,7 +1409,7 @@ void RSSurfaceRenderNode::ResetSurfaceContainerRegion(const RectI& screeninfo, c
 void RSSurfaceRenderNode::OnSync()
 {
     dirtyManager_->OnSync();
-    if (this->IsMainWindowType()) {
+    if (IsMainWindowType() || IsLeashWindow()) {
         auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
         if (surfaceParams == nullptr) {
             RS_LOGE("RSSurfaceRenderNode::OnSync surfaceParams is null");

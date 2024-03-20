@@ -1150,7 +1150,7 @@ bool RSUniRenderVisitor::IsSubTreeOccluded(RSRenderNode& node) const
 void RSUniRenderVisitor::QuickPrepareDisplayRenderNode(RSDisplayRenderNode& node)
 {
     // 0. init display info
-    RS_TRACE_NAME("RSUniRender:PrepareDisplay " + std::to_string(node.GetScreenId()));
+    RS_TRACE_NAME("RSUniRender:QuickPrepareDisplayRenderNode " + std::to_string(node.GetScreenId()));
     if (!InitDisplayInfo(node)) {
         RS_LOGE("RSUniRenderVisitor::QuickPrepareDisplayRenderNode InitDisplayInfo fail");
         return;
@@ -1454,7 +1454,8 @@ bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
     node.SetAncestorDisplayNode(curDisplayNode_); // set for boot animation
     node.UpdateAncestorDisplayNodeInRenderParams();
     node.CleanDstRectChanged();
-    needRecalculateOcclusion_ = needRecalculateOcclusion_ ||
+    // [planning] check node isDirty can be optimized.
+    needRecalculateOcclusion_ = needRecalculateOcclusion_ || node.IsDirty() ||
         node.CheckIfOcclusionReusable(preMainAndLeashWindowNodesIds_);
     return true;
 }
@@ -1626,14 +1627,14 @@ void RSUniRenderVisitor::CheckMergeTransparentFilterForDisplay(
     if (filterVecIter != transparentCleanFilter_.end()) {
         RS_LOGD("RSUniRenderVisitor::CheckMergeTransparentFilterForDisplay surface:%{public}s "
             "has transparentCleanFilter", surfaceNode->GetName().c_str());
-        // check accumulatedDirtyRegion influence filter nodes which in the current surface 
+        // check accumulatedDirtyRegion influence filter nodes which in the current surface
         for (auto it = filterVecIter->second.begin(); it != filterVecIter->second.end(); ++it) {
             auto filterRegion = Occlusion::Region{ Occlusion::Rect{ *it } };
             auto filterDirtyRegion = filterRegion.And(accumulatedDirtyRegion);
-            if (!filterDirtyRegion.IsEmpty()) {     
-                const auto& rect = filterDirtyRegion.GetBoundRef();  
+            if (!filterDirtyRegion.IsEmpty()) {
+                const auto& rect = filterDirtyRegion.GetBoundRef();
                 curDisplayNode_->GetDirtyManager()->MergeDirtyRect(
-                RectI{ rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_ });       
+                RectI{ rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_ });
             } else {
                 globalFilter_.insert(*it);
             }
@@ -1712,7 +1713,7 @@ void RSUniRenderVisitor::UpdateDirtysAndRedordInfoByFilter(RSRenderNode& node)
         }
         bool isIntersect = curDirtyManager->GetCurrentFrameDirtyRegion().Intersect(globalFilterRect);
         if (isIntersect) {
-            curDirtyManager->MergeDirtyRect(globalFilterRect);  
+            curDirtyManager->MergeDirtyRect(globalFilterRect);
         }
         if (curSurfaceNode_->IsTransparent()) {
             globalFilterRects_.emplace_back(globalFilterRect);
@@ -1729,7 +1730,7 @@ void RSUniRenderVisitor::UpdateDirtysAndRedordInfoByFilter(RSRenderNode& node)
     } else {
         globalFilterRects_.emplace_back(globalFilterRect);
         // record container nodes which need filter
-        containerFilter_.insert(globalFilterRect);  
+        containerFilter_.insert(globalFilterRect);
     }
 }
 
@@ -4956,6 +4957,9 @@ void RSUniRenderVisitor::SetUniRenderThreadParam(std::unique_ptr<RSRenderThreadP
         RS_LOGE("RSUniRenderVisitor::SetUniRenderThreadParam renderThreadParams is nullptr");
         return;
     }
+    auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
+    renderThreadParams->timestamp_ = hgmCore.GetCurrentTimestamp();
+
     renderThreadParams->isPartialRenderEnabled_ = isPartialRenderEnabled_;
     renderThreadParams->isRegionDebugEnabled_ = isRegionDebugEnabled_;
     renderThreadParams->isDirtyRegionDfxEnabled_ = isDirtyRegionDfxEnabled_;
