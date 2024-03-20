@@ -1150,7 +1150,7 @@ bool RSUniRenderVisitor::IsSubTreeOccluded(RSRenderNode& node) const
 void RSUniRenderVisitor::QuickPrepareDisplayRenderNode(RSDisplayRenderNode& node)
 {
     // 0. init display info
-    RS_TRACE_NAME("RSUniRender:PrepareDisplay " + std::to_string(node.GetScreenId()));
+    RS_TRACE_NAME("RSUniRender:QuickPrepareDisplayRenderNode " + std::to_string(node.GetScreenId()));
     if (!InitDisplayInfo(node)) {
         RS_LOGE("RSUniRenderVisitor::QuickPrepareDisplayRenderNode InitDisplayInfo fail");
         return;
@@ -1452,7 +1452,8 @@ bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
     node.SetAncestorDisplayNode(curDisplayNode_); // set for boot animation
     node.UpdateAncestorDisplayNodeInRenderParams();
     node.CleanDstRectChanged();
-    needRecalculateOcclusion_ = needRecalculateOcclusion_ ||
+    // [planning] check node isDirty can be optimized.
+    needRecalculateOcclusion_ = needRecalculateOcclusion_ || node.IsDirty() ||
         node.CheckIfOcclusionReusable(preMainAndLeashWindowNodesIds_);
     return true;
 }
