@@ -65,10 +65,10 @@ ohos_source_set("windows") {
     defines += [ "USE_ROSEN_DRAWING" ]
     public_deps += [ "$rosen_root/modules/2d_graphics:2d_graphics" ]
   }
-  external_deps = [
-    "graphic_surface:surface",
-    "hilog:libhilog",
-  ]
+  external_deps = [ "hilog:libhilog" ]
+  if (rosen_is_ohos) {
+    external_deps += [ "graphic_surface:surface" ]
+  }
   part_name = "graphic_2d"
   subsystem_name = "graphic"
 }
