@@ -318,7 +318,8 @@ private:
     void SetNodeCacheChangeStatus(RSRenderNode& node);
     void DisableNodeCacheInSetting(RSRenderNode& node);
     // update rendernode's cache status and collect valid cache rect
-    void UpdateForegroundFilterCacheWithDirty(RSRenderNode& node, RSDirtyRegionManager& dirtyManager);
+    void UpdateForegroundFilterCacheWithDirty(RSRenderNode& node,
+        RSDirtyRegionManager& dirtyManager, bool isForeground = true);
 
     bool IsHardwareComposerEnabled();
 
@@ -361,6 +362,11 @@ private:
 
     // Use in vulkan parallel rendering
     bool IsOutOfScreenRegion(RectI rect);
+
+    bool IsInTransparentSurfaceNode() const
+    {
+        return curSurfaceNode_ && curSurfaceNode_->IsTransparent();
+    }
 
     sptr<RSScreenManager> screenManager_;
     ScreenInfo screenInfo_;
