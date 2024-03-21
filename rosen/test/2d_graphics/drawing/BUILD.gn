@@ -17,7 +17,8 @@ import("//foundation/graphic/graphic_2d/graphic_config.gni")
 ohos_systemtest("drawing_demo") {
   module_out_path = "graphic_2d/drawing"
   defines = []
-  include_dirs = [ "../../../../../../window/window_manager/interfaces/innerkits" ]
+  include_dirs =
+      [ "../../../../../../window/window_manager/interfaces/innerkits" ]
 
   sources = [
     "drawing_demo.cpp",
