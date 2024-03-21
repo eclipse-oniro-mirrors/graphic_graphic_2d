@@ -134,7 +134,7 @@ ohos_shared_library("librender_service") {
 
   #dfx
   sources += [
-    "core/drawable/dfx/rs_drity_rects_dfx.cpp",
+    "core/drawable/dfx/rs_dirty_rects_dfx.cpp",
     "core/drawable/dfx/rs_skp_capture_dfx.cpp",
   ]
 

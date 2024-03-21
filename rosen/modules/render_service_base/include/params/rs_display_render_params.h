@@ -78,11 +78,11 @@ public:
     {
         return displayHasSkipSurface_;
     }
-    std::vector<std::shared_ptr<RSSurfaceRenderNode>>& GetHardwareEnabledNodes_() const
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>>& GetHardwareEnabledNodes()
     {
         return hardwareEnabledNodes_;
     }
-    std::vector<std::shared_ptr<RSSurfaceRenderNode>>& GetHardwareEnabledTopNodes_() const
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>>& GetHardwareEnabledTopNodes()
     {
         return hardwareEnabledTopNodes_;
     }

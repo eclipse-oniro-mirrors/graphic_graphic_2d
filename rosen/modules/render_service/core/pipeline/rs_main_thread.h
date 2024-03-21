@@ -109,7 +109,7 @@ public:
 
     const std::shared_ptr<RSBaseRenderEngine>& GetRenderEngine() const
     {
-        RS_LOGE("You'd better to call GetRenderEngine from RSUniRenderThread directly");
+        RS_LOGD("You'd better to call GetRenderEngine from RSUniRenderThread directly");
         return std::move(RSUniRenderThread::Instance().GetRenderEngine());
         // return isUniRender_ ? uniRenderEngine_ : renderEngine_;
     }

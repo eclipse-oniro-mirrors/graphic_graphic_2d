@@ -200,7 +200,7 @@ void RSDirtyRectsDfx::DrawAllSurfaceDirtyRegionForDFX() const
     // draw display dirtyregion with red color
     RectI dirtySurfaceRect = targetNode_->GetDirtyManager()->GetDirtyRegion();
     const float fillAlpha = 0.2;
-    DrawDirtyRectForDFX(dirtySurfaceRect, Drawing::Color::COLOR_RED, RSPaintStyle::FILL, fillAlpha);
+    DrawDirtyRectForDFX(dirtySurfaceRect, Drawing::Color::COLOR_RED, RSPaintStyle::STROKE, fillAlpha);
 }
 
 void RSDirtyRectsDfx::DrawAllSurfaceOpaqueRegionForDFX() const
