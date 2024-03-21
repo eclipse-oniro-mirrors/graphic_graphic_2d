@@ -268,6 +268,8 @@ public:
     virtual void UpdateFilterCacheManagerWithCacheRegion(RSDirtyRegionManager& dirtyManager,
         const std::optional<RectI>& clipRect = std::nullopt, bool isForground = false);
 
+    void UpdateFilterWithFilterCacheClear();
+
     void SetStaticCached(bool isStaticCached);
     bool IsStaticCached() const;
     // store prev surface subtree's must-renewed info that need prepare
