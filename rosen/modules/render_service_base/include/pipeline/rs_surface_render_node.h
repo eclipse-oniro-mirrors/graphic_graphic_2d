@@ -212,7 +212,7 @@ public:
 
     bool IsLeashOrMainWindow() const
     {
-        return nodeType_ <= RSSurfaceNodeType::LEASH_WINDOW_NODE
+        return nodeType_ <= RSSurfaceNodeType::LEASH_WINDOW_NODE;
     }
 
     bool IsMainWindowType() const
