@@ -403,7 +403,7 @@ void RSSurfaceRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& vis
     }
 }
 
-bool RSSurfaceRenderNode::IsSubTreeNeedPrepare(bool needMap, bool filterInGlobal, bool isOccluded)
+bool RSSurfaceRenderNode::IsSubTreeNeedPrepare(bool filterInGlobal, bool isOccluded)
 {
     // force preparation case
     if (IsLeashWindow()) {
@@ -411,7 +411,7 @@ bool RSSurfaceRenderNode::IsSubTreeNeedPrepare(bool needMap, bool filterInGlobal
         UpdateChildrenOutOfRectFlag(false); // collect again
         return true;
     }
-    return RSRenderNode::IsSubTreeNeedPrepare(needMap, filterInGlobal, isOccluded);
+    return RSRenderNode::IsSubTreeNeedPrepare(filterInGlobal, isOccluded);
 }
 
 void RSSurfaceRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)
@@ -1501,6 +1501,10 @@ bool RSSurfaceRenderNode::CheckIfOcclusionChanged() const
 bool RSSurfaceRenderNode::CheckParticipateInOcclusion() const
 {
     // TODO: Need consider others situation
+    auto nodeParent = GetParent().lock();
+    if (nodeParent && nodeParent->IsScale()) {
+        return false;
+    }
     if (IsTransparent() || GetAnimateState()) {
         return false;
     }
