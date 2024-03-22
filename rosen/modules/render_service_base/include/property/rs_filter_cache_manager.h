@@ -19,10 +19,7 @@
 #if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 #include <condition_variable>
 
-<<<<<<< HEAD
 #include "event_handler.h"
-=======
->>>>>>> zhangpeng/master
 #include "draw/canvas.h"
 #include "draw/surface.h"
 #include "utils/rect.h"
@@ -73,15 +70,12 @@ public:
         const std::shared_ptr<RSDrawingFilter>& filter, const std::optional<Drawing::RectI>& srcRect = std::nullopt,
         const std::optional<Drawing::RectI>& dstRect = std::nullopt,
         const std::tuple<bool, bool>& forceCacheFlags = std::make_tuple(false, false));
-<<<<<<< HEAD
 
     static bool IsNearlyFullScreen(Drawing::RectI imageSize, int32_t canvasWidth, int32_t canvasHeight);
     void PostPartialFilterRenderTask(const std::shared_ptr<RSDrawingFilter>& filter, const Drawing::RectI& dstRect);
     void PostPartialFilterRenderInit(RSPaintFilterCanvas& canvas, const std::shared_ptr<RSDrawingFilter>& filter,
         const Drawing::RectI& dstRect, bool& shouldClearFilteredCache);
     uint8_t CalcDirectionBias(const Drawing::Matrix& mat);
-=======
->>>>>>> zhangpeng/master
     enum CacheType : uint8_t {
         CACHE_TYPE_NONE              = 0,
         CACHE_TYPE_SNAPSHOT          = 1,
@@ -101,7 +95,6 @@ public:
     }
 
 private:
-<<<<<<< HEAD
     class RSFilterCacheTask : public RSFilter::RSFilterTask {
     public:
         static const bool FilterPartialRenderEnabled;
@@ -217,8 +210,6 @@ private:
         bool isCompleted_ = false;
     };
 
-=======
->>>>>>> zhangpeng/master
     void TakeSnapshot(RSPaintFilterCanvas& canvas, const std::shared_ptr<RSDrawingFilter>& filter,
         const Drawing::RectI& srcRect, const bool needSnapshotOutset = true);
     void GenerateFilteredSnapshot(
@@ -228,10 +219,7 @@ private:
     std::tuple<Drawing::RectI, Drawing::RectI> ValidateParams(RSPaintFilterCanvas& canvas,
         const std::optional<Drawing::RectI>& srcRect, const std::optional<Drawing::RectI>& dstRect,
         const std::tuple<bool, bool>& forceCacheFlags = std::make_tuple(false, false));
-<<<<<<< HEAD
     inline bool IsClearFilteredCache(const std::shared_ptr<RSDrawingFilter>& filter, const Drawing::RectI& dst);
-=======
->>>>>>> zhangpeng/master
     inline static void ClipVisibleRect(RSPaintFilterCanvas& canvas);
     // Check if the cache is valid in current GrContext, since FilterCache will never be used in multi-thread
     // environment, we don't need to attempt to reattach SkImages.

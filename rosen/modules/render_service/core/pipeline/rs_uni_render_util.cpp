@@ -113,10 +113,6 @@ Occlusion::Region RSUniRenderUtil::MergeVisibleDirtyRegion(std::vector<RSBaseRen
     return allSurfaceVisibleDirtyRegion;
 }
 
-<<<<<<< HEAD
-void RSUniRenderUtil::SrcRectScaleDown(BufferDrawParam& params, const sptr<SurfaceBuffer>& buffer,
-    const sptr<IConsumerSurface>& surface, RectF& localBounds)
-=======
 void RSUniRenderUtil::SetAllSurfaceGlobalDityRegion(
     std::vector<RSBaseRenderNode::SharedPtr>& allSurfaces, const RectI& globalDirtyRegion)
 {
@@ -167,8 +163,9 @@ std::vector<RectI> RSUniRenderUtil::ScreenIntersectDirtyRects(const Occlusion::R
     return retRects;
 }
 
-void RSUniRenderUtil::SrcRectScaleDown(BufferDrawParam& params, const RSSurfaceRenderNode& node)
->>>>>>> zhangpeng/master
+
+void RSUniRenderUtil::SrcRectScaleDown(BufferDrawParam& params, const sptr<SurfaceBuffer>& buffer,
+    const sptr<IConsumerSurface>& surface, RectF& localBounds)
 {
     ScalingMode scalingMode = ScalingMode::SCALING_MODE_SCALE_TO_WINDOW;
     if (buffer == nullptr || surface == nullptr) {
@@ -176,10 +173,6 @@ void RSUniRenderUtil::SrcRectScaleDown(BufferDrawParam& params, const RSSurfaceR
     }
     if (surface->GetScalingMode(buffer->GetSeqNum(), scalingMode) == GSERROR_OK &&
         scalingMode == ScalingMode::SCALING_MODE_SCALE_CROP) {
-<<<<<<< HEAD
-=======
-        const RSProperties& property = node.GetRenderProperties();
->>>>>>> zhangpeng/master
         uint32_t newWidth = static_cast<uint32_t>(params.srcRect.GetWidth());
         uint32_t newHeight = static_cast<uint32_t>(params.srcRect.GetHeight());
         // Canvas is able to handle the situation when the window is out of screen, using bounds instead of dst.
@@ -227,15 +220,9 @@ void RSUniRenderUtil::SrcRectScaleDown(BufferDrawParam& params, const RSSurfaceR
                     params.srcRect.GetLeft() + params.srcRect.GetWidth(),
                     params.srcRect.GetTop() + static_cast<int32_t>(halfdh) + static_cast<int32_t>(newHeight));
         }
-<<<<<<< HEAD
         RS_LOGD("RsDebug RSUniRenderUtil::SrcRectScaleDown name:%{public}s,"
             " srcRect [%{public}f %{public}f %{public}f %{public}f]",
             surface->GetName().c_str(), params.srcRect.GetLeft(), params.srcRect.GetTop(),
-=======
-        RS_LOGD("RsDebug RSUniRenderUtil::SrcRectScaleDown surfaceNode id:%{public}" PRIu64 ","
-            " srcRect [%{public}f %{public}f %{public}f %{public}f]",
-            node.GetId(), params.srcRect.GetLeft(), params.srcRect.GetTop(),
->>>>>>> zhangpeng/master
             params.srcRect.GetWidth(), params.srcRect.GetHeight());
     }
 }
@@ -244,10 +231,6 @@ BufferDrawParam RSUniRenderUtil::CreateBufferDrawParam(const RSSurfaceRenderNode
     bool forceCPU, uint32_t threadIndex, bool isRenderThread)
 {
     BufferDrawParam params;
-<<<<<<< HEAD
-    params.threadIndex = threadIndex;
-    params.useBilinearInterpolation = node.NeedBilinearInterpolation();
-=======
     const auto nodeParams = static_cast<RSSurfaceRenderParams*>(node.GetRenderParams().get());
     if (isRenderThread && !nodeParams) {
         RS_LOGE("RSUniRenderUtil::CreateBufferDrawParam RenderThread nodeParams is nullptr");
@@ -257,21 +240,15 @@ BufferDrawParam RSUniRenderUtil::CreateBufferDrawParam(const RSSurfaceRenderNode
 
     params.threadIndex = threadIndex;
     params.useBilinearInterpolation = nodeParams->NeedBilinearInterpolation(); // TO-DO
->>>>>>> zhangpeng/master
     params.useCPU = forceCPU;
     params.paint.SetAntiAlias(true);
     Drawing::Filter filter;
     filter.SetFilterQuality(Drawing::Filter::FilterQuality::LOW);
     params.paint.SetFilter(filter);
 
-<<<<<<< HEAD
-    const RSProperties& property = node.GetRenderProperties();
-    params.dstRect = Drawing::Rect(0, 0, property.GetBoundsWidth(), property.GetBoundsHeight());
-=======
     auto buoundWidth = isRenderThread ? nodeParams->GetBounds().GetWidth() : property.GetBoundsWidth();
     auto buoundHeight = isRenderThread ? nodeParams->GetBounds().GetHeight() : property.GetBoundsHeight();
     params.dstRect = Drawing::Rect(0, 0, buoundWidth, buoundHeight);
->>>>>>> zhangpeng/master
 
     const sptr<SurfaceBuffer> buffer = node.GetBuffer();
     if (buffer == nullptr) {
@@ -320,10 +297,6 @@ BufferDrawParam RSUniRenderUtil::CreateLayerBufferDrawParam(const LayerInfoPtr& 
     filter.SetFilterQuality(Drawing::Filter::FilterQuality::LOW);
     params.paint.SetFilter(filter);
     params.paint.SetAlphaF(layer->GetAlpha().gAlpha);
-<<<<<<< HEAD
-=======
-
->>>>>>> zhangpeng/master
     sptr<SurfaceBuffer> buffer = layer->GetBuffer();
     if (buffer == nullptr) {
         return params;

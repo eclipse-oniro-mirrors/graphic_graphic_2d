@@ -169,11 +169,8 @@ public:
     static const std::vector<float>& GetAiInvertCoef();
     static bool GetSkipForAlphaZeroEnabled();
     static bool GetSkipGeometryNotChangeEnabled();
-<<<<<<< HEAD
-=======
     static bool GetQuickPrepareEnabled();
     static bool GetPropertyDrawableEnable();
->>>>>>> zhangpeng/master
 
     static bool GetAnimationCacheEnabled();
 
