@@ -1619,6 +1619,7 @@ void RSNode::UpdateImplicitAnimator()
 
 std::vector<PropertyId> RSNode::GetModifierIds() const
 {
+    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
     std::vector<PropertyId> ids;
     for (const auto& [id, _] : modifiers_) {
         ids.push_back(id);
