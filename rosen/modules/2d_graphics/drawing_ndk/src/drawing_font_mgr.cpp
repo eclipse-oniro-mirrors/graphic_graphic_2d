@@ -103,7 +103,7 @@ char* OH_Drawing_FontMgrGetFamilyName(OH_Drawing_FontMgr* drawingFontMgr, int in
     return familyName;
 }
 
-void OH_Drawing_DestroyFamilyName(char* familyName)
+void OH_Drawing_FontMgrDestroyFamilyName(char* familyName)
 {
     if (familyName == nullptr) {
         return;

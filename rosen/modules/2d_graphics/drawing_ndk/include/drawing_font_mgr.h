@@ -183,7 +183,7 @@ char* OH_Drawing_FontMgrGetFamilyName(OH_Drawing_FontMgr*, int index);
  * @since 12
  * @version 1.0
  */
-void OH_Drawing_DestroyFamilyName(char* familyName);
+void OH_Drawing_FontMgrDestroyFamilyName(char* familyName);
 
 /**
  * @brief Creates an <b>OH_Drawing_FontStyleSet</b> object by <b>OH_Drawing_FontMgr</b> object.
