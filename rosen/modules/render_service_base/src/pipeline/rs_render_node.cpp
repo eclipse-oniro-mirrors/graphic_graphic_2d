@@ -1039,7 +1039,7 @@ void RSRenderNode::UpdateDirtyRegion(
             }
         }
 
-        auto outline = GetRenderProperties().GetOutline();
+        auto& outline = GetRenderProperties().GetOutline();
         RectI outlineRect;
         if (outline && outline->HasBorder()) {
             RSPropertiesPainter::GetOutlineDirtyRect(outlineRect, GetRenderProperties());
