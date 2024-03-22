@@ -19,10 +19,7 @@
 #define GL_GLEXT_PROTOTYPES
 
 #include "common/rs_common_def.h"
-<<<<<<< HEAD
-=======
 #include "system/rs_system_parameters.h"
->>>>>>> zhangpeng/master
 #include "draw/canvas.h"
 #include "draw/surface.h"
 #include "utils/matrix.h"

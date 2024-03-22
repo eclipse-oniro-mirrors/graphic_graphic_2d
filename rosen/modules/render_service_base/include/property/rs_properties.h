@@ -278,11 +278,8 @@ public:
     const std::shared_ptr<RSObjGeometry>& GetFrameGeometry() const;
     bool UpdateGeometry(const RSProperties* parent, bool dirtyFlag, const std::optional<Drawing::Point>& offset,
         const std::optional<Drawing::Rect>& clipRect);
-<<<<<<< HEAD
-=======
     bool UpdateGeometryByParent(const std::shared_ptr<RSRenderNode>& parent,
         bool needParentOffset, const std::optional<Drawing::Rect>& clipRect);
->>>>>>> zhangpeng/master
     RectF GetBoundsRect() const;
 
     bool IsGeoDirty() const;
@@ -356,11 +353,7 @@ public:
     void OnApplyModifiers();
 
 private:
-<<<<<<< HEAD
     void ResetProperty(const std::bitset<static_cast<int>(RSModifierType::MAX_RS_MODIFIER_TYPE)>& dirtyTypes);
-=======
-    void ResetProperty(const ModifierDirtyTypes& dirtyTypes);
->>>>>>> zhangpeng/master
     void SetDirty();
     void ResetDirty();
     bool IsDirty() const;

@@ -431,13 +431,7 @@ std::shared_ptr<Drawing::Surface> RSSurfaceCaptureTask::CreateSurface(const std:
         }
 #endif
 #ifdef RS_ENABLE_VK
-<<<<<<< HEAD
         if (RSSystemProperties::IsUseVulkan()) {
-            return Drawing::Surface::MakeRenderTarget(
-                RSMainThread::Instance()->GetRenderEngine()->GetSkContext().get(), false, info);
-=======
-        if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-            RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
             if (rsParallelType_ == RsParallelType::RS_PARALLEL_TYPE_SINGLE_THREAD) {
                 return Drawing::Surface::MakeRenderTarget(
                     RSMainThread::Instance()->GetRenderEngine()->GetSkContext().get(), false, info);
@@ -446,7 +440,6 @@ std::shared_ptr<Drawing::Surface> RSSurfaceCaptureTask::CreateSurface(const std:
                 return Drawing::Surface::MakeRenderTarget(
                     RSMainThread::Instance()->GetRenderEngine()->GetCaptureSkContext().get(), false, info);
             }
->>>>>>> zhangpeng/master
         }
 #endif
     }
@@ -987,16 +980,10 @@ void RSSurfaceCaptureVisitor::DrawChildRenderNode(RSRenderNode& node)
         case CacheType::NONE: {
             node.ProcessRenderBeforeChildren(*canvas_);
             if (node.GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
-<<<<<<< HEAD
-                auto canvasDrawingNode = node.ReinterpretCastTo<RSCanvasDrawingRenderNode>();
-                Drawing::Bitmap bitmap = canvasDrawingNode->GetBitmap();
-                canvas_->DrawBitmap(bitmap, 0, 0);
-=======
                 // TODO canvasDrawingNode->GetBitmap() crash
                 // auto canvasDrawingNode = node.ReinterpretCastTo<RSCanvasDrawingRenderNode>();
                 // Drawing::Bitmap bitmap = canvasDrawingNode->GetBitmap();
                 // canvas_->DrawBitmap(bitmap, 0, 0);
->>>>>>> zhangpeng/master
             } else {
                 node.ProcessRenderContents(*canvas_);
             }

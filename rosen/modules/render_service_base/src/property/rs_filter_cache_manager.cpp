@@ -28,11 +28,8 @@
 
 namespace OHOS {
 namespace Rosen {
-<<<<<<< HEAD
 constexpr static float FLOAT_ZERO_THRESHOLD = 0.001f;
 constexpr float PARALLEL_FILTER_RATIO_THRESHOLD = 0.8f;
-=======
->>>>>>> zhangpeng/master
 constexpr int AIBAR_CACHE_UPDATE_INTERVAL = 5;
 const char* RSFilterCacheManager::GetCacheState() const
 {
@@ -73,7 +70,6 @@ void RSFilterCacheManager::UpdateCacheStateWithFilterHash(const std::shared_ptr<
         cachedFilterHash_, filterHash);
     cachedFilteredSnapshot_.reset();
 }
-<<<<<<< HEAD
 void RSFilterCacheManager::PostPartialFilterRenderInit(RSPaintFilterCanvas& canvas,
     const std::shared_ptr<RSDrawingFilter>& filter, const Drawing::RectI& dstRect, bool& shouldClearFilteredCache)
 {
@@ -119,8 +115,6 @@ void RSFilterCacheManager::PostPartialFilterRenderInit(RSPaintFilterCanvas& canv
         PostPartialFilterRenderTask(filter, dstRect);
     }
 }
-=======
->>>>>>> zhangpeng/master
 
 void RSFilterCacheManager::UpdateCacheStateWithFilterRegion()
 {
@@ -182,7 +176,6 @@ bool RSFilterCacheManager::UpdateCacheStateWithDirtyRegion(const RSDirtyRegionMa
     }
 }
 
-<<<<<<< HEAD
 bool RSFilterCacheManager::RSFilterCacheTask::InitSurface(Drawing::GPUContext* grContext)
 {
     RS_OPTIONAL_TRACE_FUNC();
@@ -309,8 +302,6 @@ void RSFilterCacheManager::PostPartialFilterRenderTask(
     }
 }
 
-=======
->>>>>>> zhangpeng/master
 void RSFilterCacheManager::DrawFilter(RSPaintFilterCanvas& canvas, const std::shared_ptr<RSDrawingFilter>& filter,
     const bool needSnapshotOutset, const std::optional<Drawing::RectI>& srcRect,
     const std::optional<Drawing::RectI>& dstRect)
@@ -333,7 +324,6 @@ void RSFilterCacheManager::DrawFilter(RSPaintFilterCanvas& canvas, const std::sh
     bool shouldClearFilteredCache = false;
     PostPartialFilterRenderInit(canvas, filter, dst, shouldClearFilteredCache);
     if (cachedFilteredSnapshot_ == nullptr || cachedFilteredSnapshot_->cachedImage_ == nullptr) {
-<<<<<<< HEAD
         if (RSFilterCacheTask::FilterPartialRenderEnabled && task_->IsCompleted()) {
             FilterPartialRender(canvas, filter, dst);
         } else {
@@ -357,13 +347,6 @@ void RSFilterCacheManager::DrawFilter(RSPaintFilterCanvas& canvas, const std::sh
     if (task_->GetStatus() == CacheProcessStatus::DOING && task_->isFirstInit_ &&
         task_->cachedFirstFilter_ == nullptr) {
         task_->cachedFirstFilter_ = cachedFilteredSnapshot_;
-=======
-        auto previousFilterHash = cachedFilterHash_;
-        GenerateFilteredSnapshot(canvas, filter, dst);
-        // If 1. the filter hash matches, 2. the filter region is whole snapshot region, we can safely clear original
-        // snapshot, else we need to clear the filtered snapshot.
-        shouldClearFilteredCache = previousFilterHash != cachedFilterHash_ || !isEqualRect(dst, snapshotRegion_);
->>>>>>> zhangpeng/master
     }
     DrawCachedFilteredSnapshot(canvas, dst);
     if (filter->GetFilterType() == RSFilter::AIBAR) {
@@ -373,7 +356,6 @@ void RSFilterCacheManager::DrawFilter(RSPaintFilterCanvas& canvas, const std::sh
     CompactCache(shouldClearFilteredCache);
 }
 
-<<<<<<< HEAD
 uint8_t RSFilterCacheManager::CalcDirectionBias(const Drawing::Matrix& mat)
 {
     uint8_t directionBias = 0;
@@ -390,8 +372,6 @@ uint8_t RSFilterCacheManager::CalcDirectionBias(const Drawing::Matrix& mat)
     return directionBias;
 }
 
-=======
->>>>>>> zhangpeng/master
 const std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> RSFilterCacheManager::GeneratedCachedEffectData(
     RSPaintFilterCanvas& canvas, const std::shared_ptr<RSDrawingFilter>& filter,
     const std::optional<Drawing::RectI>& srcRect, const std::optional<Drawing::RectI>& dstRect,
@@ -480,7 +460,6 @@ void RSFilterCacheManager::TakeSnapshot(RSPaintFilterCanvas& canvas, const std::
     pendingPurge_ = false;
 }
 
-<<<<<<< HEAD
 void RSFilterCacheManager::FilterPartialRender(
     RSPaintFilterCanvas& canvas, const std::shared_ptr<RSDrawingFilter>& filter, const Drawing::RectI& dstRect)
 {
@@ -505,8 +484,6 @@ void RSFilterCacheManager::FilterPartialRender(
     }
 }
 
-=======
->>>>>>> zhangpeng/master
 void RSFilterCacheManager::GenerateFilteredSnapshot(
     RSPaintFilterCanvas& canvas, const std::shared_ptr<RSDrawingFilter>& filter, const Drawing::RectI& dstRect)
 {
@@ -592,7 +569,6 @@ void RSFilterCacheManager::ReleaseCacheOffTree()
     RS_OPTIONAL_TRACE_FUNC();
     cachedSnapshot_.reset();
     cachedFilteredSnapshot_.reset();
-<<<<<<< HEAD
     StopFilterPartialRender();
 }
 
@@ -616,8 +592,6 @@ void RSFilterCacheManager::StopFilterPartialRender()
         task_->GetHandler()->PostTask(
             [task_tmp]() { task_tmp->ResetGrContext(); }, AppExecFwk::EventQueue::Priority::IMMEDIATE);
     }
-=======
->>>>>>> zhangpeng/master
 }
 
 inline void RSFilterCacheManager::ClipVisibleRect(RSPaintFilterCanvas& canvas)
@@ -685,7 +659,6 @@ std::tuple<Drawing::RectI, Drawing::RectI> RSFilterCacheManager::ValidateParams(
     }
     return { src, dst };
 }
-<<<<<<< HEAD
 
 inline bool RSFilterCacheManager::IsClearFilteredCache(
     const std::shared_ptr<RSDrawingFilter>& filter, const Drawing::RectI& dst)
@@ -695,8 +668,6 @@ inline bool RSFilterCacheManager::IsClearFilteredCache(
     cachedFilterHash_ = filter->Hash();
     return previousFilterHash != cachedFilterHash_ || !isEqualRect(dst, snapshotRegion_);
 }
-=======
->>>>>>> zhangpeng/master
 
 inline void RSFilterCacheManager::CompactCache(bool shouldClearFilteredCache)
 {

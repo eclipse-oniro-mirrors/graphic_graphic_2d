@@ -561,7 +561,7 @@ protected:
     NodeId drawingCacheRootId_ = INVALID_NODEID;
     bool mustRenewedInfo_ = false;
 
-    ModifierDirtyTypes dirtyTypes_;
+    std::bitset<static_cast<int>(RSModifierType::MAX_RS_MODIFIER_TYPE)> dirtyTypes_;
     bool isBootAnimation_ = false;
 
 private:

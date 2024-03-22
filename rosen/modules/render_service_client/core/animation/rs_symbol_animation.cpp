@@ -105,9 +105,6 @@ bool RSSymbolAnimation::SetSymbolAnimation(
     return false;
 }
 
-<<<<<<< HEAD
-Vector4f RSSymbolAnimation::CalculateOffset(const Drawing::Path& path, const float& offsetX, const float& offsetY)
-=======
 template<typename T>
 bool RSSymbolAnimation::CreateOrSetModifierValue(std::shared_ptr<RSAnimatableProperty<T>>& property, const T& value)
 {
@@ -124,8 +121,7 @@ bool RSSymbolAnimation::isEqual(const Vector2f val1, const Vector2f val2)
     return(val1.x_ == val2.x_ && val1.y_ == val2.y_);
 }
 
-Vector4f RSSymbolAnimation::CalculateOffset(const Drawing::Path &path, const float &offsetX, const float &offsetY)
->>>>>>> zhangpeng/master
+Vector4f RSSymbolAnimation::CalculateOffset(const Drawing::Path& path, const float& offsetX, const float& offsetY)
 {
     auto rect = path.GetBounds();
     float left = rect.GetLeft();
@@ -240,21 +236,7 @@ bool RSSymbolAnimation::SetScaleUnitAnimation(const std::shared_ptr<TextEngine::
     }
     animation->Start(canvasNode);
     auto recordingCanvas = canvasNode->BeginRecording(symbolNode.nodeBoundary[2], symbolNode.nodeBoundary[3]);
-<<<<<<< HEAD
     DrawSymbolOnCanvas(recordingCanvas, symbolNode, offsets);
-=======
-
-        Drawing::Brush brush;
-        Drawing::Pen pen;
-        SetIconProperty(brush, pen, symbolNode);
-        Drawing::Point offsetLocal = Drawing::Point{offsets[2], offsets[3]}; // index 2 offsetX 3 offsetY
-        recordingCanvas->AttachBrush(brush);
-        recordingCanvas->DrawSymbol(symbolNode.symbolData, offsetLocal);
-        recordingCanvas->DetachBrush();
-        recordingCanvas->AttachPen(pen);
-        recordingCanvas->DrawSymbol(symbolNode.symbolData, offsetLocal);
-        recordingCanvas->DetachPen();
->>>>>>> zhangpeng/master
     canvasNode->FinishRecording();
     rsNode_->AddChild(canvasNode, -1);
     return true;
@@ -378,19 +360,7 @@ bool RSSymbolAnimation::SetVariableColorAnimation(const std::shared_ptr<TextEngi
         }
         animation->Start(canvasNode);
         auto recordingCanvas = canvasNode->BeginRecording(symbolNode.nodeBoundary[2], symbolNode.nodeBoundary[3]);
-<<<<<<< HEAD
         DrawPathOnCanvas(recordingCanvas, symbolNode, offsets);
-=======
-            Drawing::Brush brush;
-            Drawing::Pen pen;
-            SetIconProperty(brush, pen, symbolNode);
-            symbolNode.path.Offset(offsets[2], offsets[3]); // index 2 offsetX 3 offsetY
-            recordingCanvas->AttachBrush(brush);
-            recordingCanvas->AttachPen(pen);
-            recordingCanvas->DrawPath(symbolNode.path);
-            recordingCanvas->DetachBrush();
-            recordingCanvas->DetachPen();
->>>>>>> zhangpeng/master
         canvasNode->FinishRecording();
         rsNode_->AddChild(canvasNode, -1);
     }
