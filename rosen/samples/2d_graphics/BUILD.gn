@@ -218,10 +218,7 @@ ohos_executable("drawing_sample_replayer") {
     "$graphic_2d_root/rosen/modules/render_service_client/core",
   ]
 
-  deps = [
-    "$graphic_2d_root:libsurface",
-    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
-  ]
+  deps = [ "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client" ]
 
   public_deps = libgl
   defines = gpu_defines
@@ -247,6 +244,7 @@ ohos_executable("drawing_sample_replayer") {
   ]
   external_deps = [
     "c_utils:utils",
+    "graphic_surface:surface",
     "ipc:ipc_core",
     "window_manager:libdm",
   ]
