@@ -249,7 +249,6 @@ OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyle(OH_Drawing_FontMgr*,
  */
 OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyleCharacter(OH_Drawing_FontMgr*, const char* familyName,
     OH_Drawing_FontStyleStruct*, const char* bcp47[], int bcp47Count, int32_t character);
-
 #ifdef __cplusplus
 }
 #endif
