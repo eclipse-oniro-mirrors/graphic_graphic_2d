@@ -2011,7 +2011,7 @@ OH_Drawing_FontStyle OH_Drawing_TypographyTextlineStyleGetFontStyle(OH_Drawing_T
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
  * @param OH_Drawing_TypographyStyle Indicates the pointer to a typography style object <b>OH_Drawing_TypographyStyle</b>.
- * @param num The number of obtained system font names.
+ * @param num The number of obtained font names.
  * @return Return the font families of line style for text typography.
  * @since 12
  * @version 1.0
