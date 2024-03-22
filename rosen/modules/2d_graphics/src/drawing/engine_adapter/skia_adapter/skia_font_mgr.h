@@ -52,8 +52,7 @@ public:
 
     int CountFamilies() const override;
     void GetFamilyName(int index, std::string& str) const override;
-    std::shared_ptr<FontStyleSet> CreateStyleSet(int index) const override;
-
+    FontStyleSet* CreateStyleSet(int index) const override;
 private:
     sk_sp<SkFontMgr> skFontMgr_;
 };

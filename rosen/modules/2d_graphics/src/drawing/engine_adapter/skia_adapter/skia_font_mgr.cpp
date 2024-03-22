@@ -125,7 +125,7 @@ void SkiaFontMgr::GetFamilyName(int index, std::string& str) const
     str.assign(skName.c_str());
 }
 
-std::shared_ptr<FontStyleSet> SkiaFontMgr::CreateStyleSet(int index) const
+FontStyleSet* SkiaFontMgr::CreateStyleSet(int index) const
 {
     if (index < 0 || skFontMgr_ == nullptr) {
         return nullptr;
@@ -136,7 +136,7 @@ std::shared_ptr<FontStyleSet> SkiaFontMgr::CreateStyleSet(int index) const
     }
     sk_sp<SkFontStyleSet> skFontStyleSet{skFontStyleSetPtr};
     std::shared_ptr<FontStyleSetImpl> fontStyleSetImpl = std::make_shared<SkiaFontStyleSet>(skFontStyleSet);
-    return std::make_shared<FontStyleSet>(FontStyleSet(fontStyleSetImpl));
+    return new FontStyleSet(fontStyleSetImpl);
 }
 
 } // namespace Drawing

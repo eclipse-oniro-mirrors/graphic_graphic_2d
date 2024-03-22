@@ -298,10 +298,9 @@
     { "name": "OH_Drawing_FontMgrGetFamiliesCount" },
     { "name": "OH_Drawing_FontMgrGetFamilyName" },
     { "name": "OH_Drawing_DestroyFamilyName" },
-    { "name": "OH_Drawing_FontStyleSetCreate" },
-    { "name": "OH_Drawing_DestroyFontStyleSet" },
+    { "name": "OH_Drawing_FontMgrCreateFontStyleSet" },
+    { "name": "OH_Drawing_FontMgrDestroyFontStyleSet" },
     { "name": "OH_Drawing_FontMgrMatchFamily" },
     { "name": "OH_Drawing_FontMgrMatchFamilyStyle" },
     { "name": "OH_Drawing_FontMgrMatchFamilyStyleCharacter" }
-
 ]

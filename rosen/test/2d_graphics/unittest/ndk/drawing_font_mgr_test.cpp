@@ -28,10 +28,22 @@ class OH_Drawing_FontMgrTest : public testing::Test {
 
 /*
  * @tc.name: OH_Drawing_FontMgrTest001
- * @tc.desc: test for font manager.
+ * @tc.desc: test for creating and destroying font manager.
  * @tc.type: FUNC
  */
 HWTEST_F(OH_Drawing_FontMgrTest, OH_Drawing_FontMgrTest001, TestSize.Level1)
+{
+    OH_Drawing_FontMgr *mgr = OH_Drawing_FontMgrCreate();
+    EXPECT_NE(mgr, nullptr);
+    OH_Drawing_FontMgrDestroy(mgr);
+}
+
+/*
+ * @tc.name: OH_Drawing_FontMgrTest002
+ * @tc.desc: test for getting family name.
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_FontMgrTest, OH_Drawing_FontMgrTest002, TestSize.Level1)
 {
     OH_Drawing_FontMgr *mgr = OH_Drawing_FontMgrCreate();
     EXPECT_NE(mgr, nullptr);
@@ -41,38 +53,83 @@ HWTEST_F(OH_Drawing_FontMgrTest, OH_Drawing_FontMgrTest001, TestSize.Level1)
     char *familyName = OH_Drawing_FontMgrGetFamilyName(mgr, 0);
     OH_Drawing_DestroyFamilyName(familyName);
 
-    OH_Drawing_FontStyleSet* fontStyleSet = OH_Drawing_FontStyleSetCreate(mgr, 0);
+    OH_Drawing_FontMgrDestroy(mgr);
+}
+
+/*
+ * @tc.name: OH_Drawing_FontMgrTest003
+ * @tc.desc: test for creating and destroying font style set by font mannager.
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_FontMgrTest, OH_Drawing_FontMgrTest003, TestSize.Level1)
+{
+    OH_Drawing_FontMgr *mgr = OH_Drawing_FontMgrCreate();
+    EXPECT_NE(mgr, nullptr);
+
+    OH_Drawing_FontStyleSet* fontStyleSet = OH_Drawing_FontMgrCreateFontStyleSet(mgr, 0);
     EXPECT_NE(fontStyleSet, nullptr);
-    OH_Drawing_DestroyFontStyleSet(fontStyleSet);
+    OH_Drawing_FontMgrDestroyFontStyleSet(fontStyleSet);
 
     OH_Drawing_FontMgrDestroy(mgr);
 }
 
 /*
- * @tc.name: OH_Drawing_FontMgrTest002
- * @tc.desc: test for font manager match family.
+ * @tc.name: OH_Drawing_FontMgrTest004
+ * @tc.desc: test for matching font family by family name.
  * @tc.type: FUNC
  */
-HWTEST_F(OH_Drawing_FontMgrTest, OH_Drawing_FontMgrTest002, TestSize.Level1)
+HWTEST_F(OH_Drawing_FontMgrTest, OH_Drawing_FontMgrTest004, TestSize.Level1)
 {
     OH_Drawing_FontMgr *mgr = OH_Drawing_FontMgrCreate();
     EXPECT_NE(mgr, nullptr);
     const char* matchFamilyName = "HarmonyOS-Sans";
     OH_Drawing_FontStyleSet* fontStyleSet = OH_Drawing_FontMgrMatchFamily(mgr, matchFamilyName);
     EXPECT_NE(fontStyleSet, nullptr);
-    OH_Drawing_DestroyFontStyleSet(fontStyleSet);
+    OH_Drawing_FontMgrDestroyFontStyleSet(fontStyleSet);
 
-    OH_Drawing_FontForm normalForm;
-    normalForm.weight = NORMAL_WEIGHT;
-    normalForm.width = NORMAL_WIDTH;
-    normalForm.slant = UPRIGHT_SLANT;
-    OH_Drawing_Typeface *typeface = OH_Drawing_FontMgrMatchFamilyStyle(mgr, matchFamilyName, &normalForm);
+    OH_Drawing_FontMgrDestroy(mgr);
+}
+
+
+/*
+ * @tc.name: OH_Drawing_FontMgrTest005
+ * @tc.desc: test for matching font typeface by family name and font style.
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_FontMgrTest, OH_Drawing_FontMgrTest005, TestSize.Level1)
+{
+    OH_Drawing_FontMgr *mgr = OH_Drawing_FontMgrCreate();
+    EXPECT_NE(mgr, nullptr);
+    const char* matchFamilyName = "HarmonyOS-Sans";
+    OH_Drawing_FontStyleStruct normalStyle;
+    normalStyle.weight = NORMAL_WEIGHT;
+    normalStyle.width = NORMAL_WIDTH;
+    normalStyle.slant = UPRIGHT_SLANT;
+    OH_Drawing_Typeface *typeface = OH_Drawing_FontMgrMatchFamilyStyle(mgr, matchFamilyName, &normalStyle);
     EXPECT_NE(typeface, nullptr);
     OH_Drawing_TypefaceDestroy(typeface);
 
-    const char *bcp47[] = {"zh-Hans"};
-    OH_Drawing_Typeface *CharTypeface = OH_Drawing_FontMgrMatchFamilyStyleCharacter(
-        mgr, matchFamilyName, &normalForm, bcp47, 1, ' ');
+    OH_Drawing_FontMgrDestroy(mgr);
+}
+
+/*
+ * @tc.name: OH_Drawing_FontMgrTest006
+ * @tc.desc: test for matching font typeface by family name, font style and specific character.
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_FontMgrTest, OH_Drawing_FontMgrTest006, TestSize.Level1)
+{
+    OH_Drawing_FontMgr *mgr = OH_Drawing_FontMgrCreate();
+    EXPECT_NE(mgr, nullptr);
+
+    const char* matchFamilyName = "HarmonyOS-Sans";
+    OH_Drawing_FontStyleStruct normalStyle;
+    normalStyle.weight = NORMAL_WEIGHT;
+    normalStyle.width = NORMAL_WIDTH;
+    normalStyle.slant = UPRIGHT_SLANT;
+
+    const char *bcp47[] = {"zh-Hans"};//"zh-CN", 
+    OH_Drawing_Typeface *CharTypeface = OH_Drawing_FontMgrMatchFamilyStyleCharacter(mgr, matchFamilyName, &normalStyle, bcp47, 1, ' ');
     EXPECT_NE(CharTypeface, nullptr);
     OH_Drawing_TypefaceDestroy(CharTypeface);
 

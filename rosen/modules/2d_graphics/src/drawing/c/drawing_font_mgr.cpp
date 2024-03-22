@@ -111,19 +111,20 @@ void OH_Drawing_DestroyFamilyName(char* familyName)
     delete[] familyName;
 }
 
-OH_Drawing_FontStyleSet* OH_Drawing_FontStyleSetCreate(OH_Drawing_FontMgr* drawingFontMgr, int index)
+OH_Drawing_FontStyleSet* OH_Drawing_FontMgrCreateFontStyleSet(OH_Drawing_FontMgr* drawingFontMgr, int index)
 {
     FontMgr* fontMgr = CastToFontMgr(drawingFontMgr);
     if (fontMgr == nullptr) {
         return nullptr;
     }
-    std::shared_ptr<FontStyleSet> fontStyleSet = fontMgr->CreateStyleSet(index);
+    FontStyleSet* fontStyleSet = fontMgr->CreateStyleSet(index);
+    std::shared_ptr<FontStyleSet> sharedFontStyleSet(fontStyleSet);
     std::lock_guard<std::mutex> lock(g_fontStyleSetLockMutex);
-    g_fontStyleSetMap.insert({fontStyleSet.get(), fontStyleSet});
-    return (OH_Drawing_FontStyleSet*)fontStyleSet.get();
+    g_fontStyleSetMap.insert({sharedFontStyleSet.get(), sharedFontStyleSet});
+    return (OH_Drawing_FontStyleSet*)sharedFontStyleSet.get();
 }
 
-void OH_Drawing_DestroyFontStyleSet(OH_Drawing_FontStyleSet* drawingFontStyleSet)
+void OH_Drawing_FontMgrDestroyFontStyleSet(OH_Drawing_FontStyleSet* drawingFontStyleSet)
 {
     std::lock_guard<std::mutex> lock(g_fontStyleSetLockMutex);
     auto it = g_fontStyleSetMap.find(drawingFontStyleSet);
@@ -140,6 +141,9 @@ OH_Drawing_FontStyleSet* OH_Drawing_FontMgrMatchFamily(OH_Drawing_FontMgr* drawi
         return nullptr;
     }
     FontStyleSet* fontStyleSet = fontMgr->MatchFamily(familyName);
+    if (fontStyleSet == nullptr) {
+        return nullptr;
+    }
     std::shared_ptr<FontStyleSet> sharedFontStyleSet(fontStyleSet);
     std::lock_guard<std::mutex> lock(g_fontStyleSetLockMutex);
     g_fontStyleSetMap.insert({sharedFontStyleSet.get(), sharedFontStyleSet});
@@ -147,7 +151,7 @@ OH_Drawing_FontStyleSet* OH_Drawing_FontMgrMatchFamily(OH_Drawing_FontMgr* drawi
 }
 
 OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyle(OH_Drawing_FontMgr* drawingFontMgr, const char* familyName,
-    OH_Drawing_FontForm* fontForm)
+    OH_Drawing_FontStyleStruct* fontStyle)
 {
     if (drawingFontMgr == nullptr|| fontForm == nullptr) {
         return nullptr;
@@ -157,7 +161,10 @@ OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyle(OH_Drawing_FontMgr* draw
         return nullptr;
     }
     Typeface* typeface = fontMgr->MatchFamilyStyle(familyName,
-        FontStyle(fontForm->weight, fontForm->width, static_cast<FontStyle::Slant>(fontForm->slant)));
+        FontStyle(fontStyle->weight, fontStyle->width, static_cast<FontStyle::Slant>(fontStyle->slant)));
+    if (typeface == nullptr) {
+        return nullptr;
+    }
     std::shared_ptr<Typeface> sharedTypeface(typeface);
     OH_Drawing_Typeface* drawingTypeface = reinterpret_cast<OH_Drawing_Typeface*>(sharedTypeface.get());
     TypefaceMgr::GetInstance().Insert(drawingTypeface, sharedTypeface);
@@ -165,7 +172,7 @@ OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyle(OH_Drawing_FontMgr* draw
 }
 
 OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyleCharacter(OH_Drawing_FontMgr* drawingFontMgr,
-    const char* familyName, OH_Drawing_FontForm* fontForm, const char* bcp47[], int bcp47Count, int32_t character)
+    const char* familyName, OH_Drawing_FontStyleStruct* fontStyle, const char* bcp47[], int bcp47Count, int32_t character)
 {
     if (drawingFontMgr == nullptr || fontForm == nullptr) {
         return nullptr;
@@ -175,8 +182,11 @@ OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyleCharacter(OH_Drawing_Font
         return nullptr;
     }
     Typeface* typeface = fontMgr->MatchFamilyStyleCharacter(familyName,
-        FontStyle(fontForm->weight, fontForm->width, static_cast<FontStyle::Slant>(fontForm->slant)),
+        FontStyle(fontStyle->weight, fontStyle->width, static_cast<FontStyle::Slant>(fontStyle->slant)),
         bcp47, bcp47Count, character);
+    if (typeface == nullptr) {
+        return nullptr;
+    }
     std::shared_ptr<Typeface> sharedTypeface(typeface);
     OH_Drawing_Typeface* drawingTypeface = reinterpret_cast<OH_Drawing_Typeface*>(sharedTypeface.get());
     TypefaceMgr::GetInstance().Insert(drawingTypeface, sharedTypeface);

@@ -92,7 +92,7 @@ void FontMgr::GetFamilyName(int index, std::string& str) const
     fontMgrImpl_->GetFamilyName(index, str);
 }
 
-std::shared_ptr<FontStyleSet> FontMgr::CreateStyleSet(int index) const
+FontStyleSet* FontMgr::CreateStyleSet(int index) const
 {
     if (fontMgrImpl_ == nullptr) {
         return nullptr;
