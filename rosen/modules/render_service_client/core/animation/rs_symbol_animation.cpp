@@ -105,22 +105,6 @@ bool RSSymbolAnimation::SetSymbolAnimation(
     return false;
 }
 
-template<typename T>
-bool RSSymbolAnimation::CreateOrSetModifierValue(std::shared_ptr<RSAnimatableProperty<T>>& property, const T& value)
-{
-    if (property == nullptr) {
-        property = std::make_shared<RSAnimatableProperty<T>>(value);
-        return true;
-    }
-    property->Set(value);
-    return false;
-}
-
-bool RSSymbolAnimation::isEqual(const Vector2f val1, const Vector2f val2)
-{
-    return(val1.x_ == val2.x_ && val1.y_ == val2.y_);
-}
-
 Vector4f RSSymbolAnimation::CalculateOffset(const Drawing::Path& path, const float& offsetX, const float& offsetY)
 {
     auto rect = path.GetBounds();
@@ -362,19 +346,7 @@ bool RSSymbolAnimation::SetVariableColorAnimation(const std::shared_ptr<TextEngi
         auto recordingCanvas = canvasNode->BeginRecording(symbolNode.nodeBoundary[2], symbolNode.nodeBoundary[3]);
         DrawPathOnCanvas(recordingCanvas, symbolNode, offsets);
         canvasNode->FinishRecording();
-        rsNode_->AddChild(canvasNode, -1);
     }
-    return true;
-}
-
-bool RSSymbolAnimation::GetVariableColorAnimationParas(const uint32_t index, uint32_t& totalDuration, int& delay,
-    std::vector<float>& timePercents)
-{
-    auto multiGroupParas = Drawing::HmSymbolConfigOhos::GetGroupParameters(Drawing::VARIABLE_COLOR,
-                                                                           Drawing::VARIABLE_3_GROUP, 1);
-    if (multiGroupParas == nullptr || multiGroupParas->size() <= index || multiGroupParas->at(index).empty()) {
-        ROSEN_LOGD("[%{public}s] can not get multiGroupParas \n", __func__);
-        return false;
     }
     auto oneGroupParas = (*multiGroupParas)[index]; // index means the sequence number of node or animation layer
     if (oneGroupParas.empty()) {
