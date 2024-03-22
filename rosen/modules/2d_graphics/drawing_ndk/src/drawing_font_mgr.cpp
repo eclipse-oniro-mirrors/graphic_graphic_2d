@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "c/drawing_typeface.h"
-#include "c/drawing_font_mgr.h"
+#include "drawing_typeface.h"
+#include "drawing_font_mgr.h"
 #include <mutex>
 #include <unordered_map>
 #include <securec.h>
