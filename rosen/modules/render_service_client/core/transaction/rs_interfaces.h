@@ -79,7 +79,7 @@ public:
         std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX = 1.0f, float scaleY = 1.0f);
 
     bool TakeSurfaceCaptureForUI(std::shared_ptr<RSNode> node,
-        std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX = 1.f, float scaleY = 1.f);
+        std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX = 1.f, float scaleY = 1.f, bool isSync = false);
 
 #ifndef ROSEN_ARKUI_X
     void SetScreenActiveMode(ScreenId id, uint32_t modeId);
