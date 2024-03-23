@@ -2103,11 +2103,11 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest071, TestSize.Level
 }
 
 /*
- * @tc.name: OH_Drawing_TypographyTest052
+ * @tc.name: OH_Drawing_TypographyTest072
  * @tc.desc: test for create and releases the memory occupied by system font configuration information
  * @tc.type: FUNC
  */
-HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest052, TestSize.Level1)
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest072, TestSize.Level1)
 {
     OH_Drawing_FontConfigInfoErrorCode code = UNKNOWN_ERROR;
     OH_Drawing_FontConfigInfo* configJsonInfo = OH_Drawing_GetSystemFontConfigInfo(&code);
