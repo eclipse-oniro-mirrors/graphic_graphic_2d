@@ -1231,7 +1231,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     auto skipNodeMap = RSMainThread::Instance()->GetCacheCmdSkippedNodes();
     // Update node properties, including position (dstrect), OldDirty()
     auto parentNode = node.GetParent().lock();
-    auto rsParent = parentNode;
+    auto rsParent = (parentNode);
     if (skipNodeMap.count(node.GetId()) != 0) {
         dirtyFlag_ = node.Update(*curSurfaceDirtyManager_, rsParent, dirtyFlag_, prepareClipRect_);
         dirtyFlag_ = dirtyFlag;
