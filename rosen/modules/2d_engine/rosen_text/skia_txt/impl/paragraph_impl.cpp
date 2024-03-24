@@ -317,7 +317,7 @@ Drawing::FontMetrics ParagraphImpl::GetFontMetricsResult(const SPText::TextStyle
 }
 
 bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
-        std::vector<Drawing::FontMetrics>& fontMetrics)
+    std::vector<Drawing::FontMetrics>& fontMetrics)
 {
     if (!paragraph_) {
         return false;
