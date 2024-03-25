@@ -3059,3 +3059,35 @@ void OH_Drawing_TurnHintingOff(OH_Drawing_TypographyStyle* style)
     }
     typographyStyle->hintingIsOn = false;
 }
+OH_Drawing_Font_Metrics* OH_Drawing_TypographyGetLineFontMetrics(OH_Drawing_Typography* typography,
+    size_t lineNumber, size_t* fontMetricsSize)
+{
+    if (!typography || !fontMetricsSize || !lineNumber) {
+        return nullptr;
+    }
+
+    auto txtSKTypograph = ConvertToOriginalText<Typography>(typography);
+    std::vector<Drawing::FontMetrics> grabFontMetrics;
+    if (!txtSKTypograph->GetLineFontMetrics(lineNumber, *fontMetricsSize, grabFontMetrics)) {
+        return nullptr;
+    }
+
+    OH_Drawing_Font_Metrics* fontMetrics = new OH_Drawing_Font_Metrics[grabFontMetrics.size()];
+    if (fontMetrics == nullptr || !grabFontMetrics.size()) {
+        return nullptr;
+    }
+
+    for (size_t further = 0; further < grabFontMetrics.size(); further++) {
+        ConvertFontMetrics(grabFontMetrics[further], fontMetrics[further]);
+    }
+    return fontMetrics;
+}
+
+void OH_Drawing_TypographyDestroyLineFontMetrics(OH_Drawing_Font_Metrics* lineFontMetric)
+{
+    if (!lineFontMetric) {
+        return;
+    }
+    delete[] lineFontMetric;
+    lineFontMetric = nullptr;
+}
