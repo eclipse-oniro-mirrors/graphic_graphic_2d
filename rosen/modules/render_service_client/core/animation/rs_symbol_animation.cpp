@@ -158,7 +158,7 @@ bool RSSymbolAnimation::GetScaleUnitAnimationParas(Drawing::DrawingPiecewisePara
     Vector2f& scaleValueBegin, Vector2f& scaleValue)
 {
     // AnimationType, AnimationSubType, animation_mode; animation_mode is 1 when AnimationSubTpe is Unit
-    auto scaleParas = Drawing::HmSymbolConfigOhos::GetGroupParameters(Drawing::SCALE_EFFECT, UNIT, 1);
+    auto scaleParas = Drawing::HmSymbolConfigOhos::GetGroupParameters(Drawing::SCALE_TYPE, UNIT, 1);
     if (scaleParas == nullptr || scaleParas->empty() || scaleParas->at(UNIT_GROUP).empty()) {
         ROSEN_LOGD("[%{public}s] can not get scaleParas \n", __func__);
         return false;
