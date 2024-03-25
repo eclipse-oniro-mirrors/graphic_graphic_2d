@@ -1637,9 +1637,7 @@ void RSUniRenderVisitor::CheckMergeTransparentFilterForDisplay(
                 if (filterNode) { // backgroundfilter affected by below dirty
                     filterNode->UpdateFilterCacheWithDirty(*(curDisplayNode_->GetDirtyManager()));
                 }
-                const auto& rect = filterDirtyRegion.GetBoundRef();
-                curDisplayNode_->GetDirtyManager()->MergeDirtyRect(
-                RectI{ rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_ });
+                curDisplayNode_->GetDirtyManager()->MergeDirtyRect(it->second);
                 if (filterNode) { // foregroundfilter affected by below dirty
                     filterNode->UpdateFilterCacheWithDirty(*(curDisplayNode_->GetDirtyManager()), true);
                 }
@@ -1661,9 +1659,7 @@ void RSUniRenderVisitor::CheckMergeGlobalFilterForDisplay(Occlusion::Region& acc
         auto filterRegion = Occlusion::Region{ Occlusion::Rect{ *it } };
         auto filterDirtyRegion = filterRegion.And(accumulatedDirtyRegion);
         if (!filterDirtyRegion.IsEmpty()) {
-            const auto& rect = filterDirtyRegion.GetBoundRef();
-            curDisplayNode_->GetDirtyManager()->MergeDirtyRect(
-                RectI{ rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_ });
+            curDisplayNode_->GetDirtyManager()->MergeDirtyRect(*it);
         } else {
             globalFilter_.insert(*it);
         }
@@ -1676,9 +1672,7 @@ void RSUniRenderVisitor::CheckMergeGlobalFilterForDisplay(Occlusion::Region& acc
         auto lastGlobalDirtyRegion = Occlusion::Region{ Occlusion::Rect{ lastGlobalDirtyRect } };
         auto filterDirtyRegion = filterRegion.And(lastGlobalDirtyRegion);
         if (!filterDirtyRegion.IsEmpty()) {
-            const auto& rect = filterDirtyRegion.GetBoundRef();
-            curDisplayNode_->GetDirtyManager()->MergeDirtyRect(
-                RectI{ rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_ });
+            curDisplayNode_->GetDirtyManager()->MergeDirtyRect(*it);
             it = globalFilter_.erase(it);
             if (lastGlobalDirtyRect != curDisplayNode_->GetDirtyManager()->GetCurrentFrameDirtyRegion()) {
                 // When DisplayDirtyRegion is changed, collect dirty filter region from begin.
