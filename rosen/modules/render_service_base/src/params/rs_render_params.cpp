@@ -78,6 +78,20 @@ const RectI RSRenderParams::GetLocalDrawRect() const
     return localDrawRect_;
 }
 
+void RSRenderParams::SetHasSharedTransition(bool hasSharedTransition)
+{
+    if (hasSharedTransition_ == hasSharedTransition) {
+        return;
+    }
+    hasSharedTransition_ = hasSharedTransition;
+    needSync_ = true;
+}
+
+bool RSRenderParams::HasSharedTransition() const
+{
+    return hasSharedTransition_;
+}
+
 void RSRenderParams::SetShouldPaint(bool shouldPaint)
 {
     if (shouldPaint_ == shouldPaint) {
@@ -208,6 +222,7 @@ void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     target->SetBoundsRect(boundsRect_);
     target->SetFrameRect(frameRect_);
     target->shouldPaint_ = shouldPaint_;
+    target->hasSharedTransition_ = hasSharedTransition_;
     target->SetLocalDrawRect(localDrawRect_);
     target->id_ = id_;
     target->cacheSize_ = cacheSize_;

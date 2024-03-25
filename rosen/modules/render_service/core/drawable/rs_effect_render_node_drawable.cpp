@@ -40,7 +40,13 @@ void RSEffectRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
     Drawing::AutoCanvasRestore acr(canvas, true);
-    canvas.ConcatMatrix(params->GetMatrix());
+    if (params->HasSharedTransition()) {
+        canvas.SetMatrix(params->GetMatrix());
+        auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
+        paintFilterCanvas->SetAlpha(1.0f);
+    } else {
+        canvas.ConcatMatrix(params->GetMatrix());
+    }
 
     auto uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams().get();
     if ((!uniParam || uniParam->IsOpDropped()) && static_cast<RSPaintFilterCanvas*>(&canvas)->GetDirtyFlag() &&
@@ -60,7 +66,13 @@ void RSEffectRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
         return;
     }
     Drawing::AutoCanvasRestore acr(canvas, true);
-    canvas.ConcatMatrix(params->GetMatrix());
+    if (params->HasSharedTransition()) {
+        canvas.SetMatrix(params->GetMatrix());
+        auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
+        paintFilterCanvas->SetAlpha(1.0f);
+    } else {
+        canvas.ConcatMatrix(params->GetMatrix());
+    }
     RSRenderNodeDrawable::OnCapture(canvas);
 }
 } // namespace OHOS::Rosen::DrawableV2

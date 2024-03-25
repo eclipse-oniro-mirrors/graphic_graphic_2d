@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <set>
 #include <unordered_set>
 
 #include "drawable/rs_drawable.h"
@@ -52,6 +53,8 @@ private:
     // Staging properties
     bool stagingUseShadowBatch_ = false;
     std::vector<std::shared_ptr<RSRenderNodeDrawableAdapter>> stagingChildrenDrawableVec_;
+    // static inline std::set<NodeId> pendingSharedTransitionSet_;
+    bool OnSharedTransition(const std::shared_ptr<RSRenderNode>& node);
 
     bool needSync_ = false;
     friend class RSRenderNodeDrawable;

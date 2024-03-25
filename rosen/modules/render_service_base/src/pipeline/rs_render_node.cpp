@@ -1935,17 +1935,22 @@ void RSRenderNode::UpdateShouldPaint()
 // #endif
 }
 
-void RSRenderNode::SetSharedTransitionParam(const std::optional<SharedTransitionParam>&& sharedTransitionParam)
+void RSRenderNode::SetSharedTransitionParam(const std::shared_ptr<SharedTransitionParam>& sharedTransitionParam)
 {
-    if (!sharedTransitionParam_.has_value() && !sharedTransitionParam.has_value()) {
+    if (!sharedTransitionParam_ && !sharedTransitionParam) {
         // both are empty, do nothing
         return;
     }
     sharedTransitionParam_ = sharedTransitionParam;
     SetDirty();
+    // tell parent to regenerate children drawable
+    if (auto parent = parent_.lock()) {
+        parent->AddDirtyType(RSModifierType::CHILDREN);
+        parent->SetDirty();
+    }
 }
 
-const std::optional<RSRenderNode::SharedTransitionParam>& RSRenderNode::GetSharedTransitionParam() const
+const std::shared_ptr<SharedTransitionParam>& RSRenderNode::GetSharedTransitionParam() const
 {
     return sharedTransitionParam_;
 }
@@ -2682,6 +2687,12 @@ void RSRenderNode::OnTreeStateChanged()
         // Set dirty and force add to active node list, re-generate children list if needed
         SetDirty(true);
         SetParentSubTreeDirty();
+    } else if (sharedTransitionParam_) {
+        // clear shared transition param
+        if (auto pairedNode = sharedTransitionParam_->GetPairedNode(id_)) {
+            pairedNode->SetSharedTransitionParam(nullptr);
+        }
+        sharedTransitionParam_ = nullptr;
     }
 // #if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 //     if (!isOnTheTree_) {
@@ -3278,11 +3289,13 @@ void RSRenderNode::UpdateRenderParams()
     // Accumulate total matrix
     boundGeo->UpdateByMatrixFromSelf();
 
-    stagingRenderParams_->SetMatrix(boundGeo->GetMatrix());
+    stagingRenderParams_->SetMatrix(
+        GetSharedTransitionParam() != nullptr ? boundGeo->GetAbsMatrix() : boundGeo->GetMatrix());
     stagingRenderParams_->SetBoundsRect({ 0, 0, boundGeo->GetWidth(), boundGeo->GetHeight() });
     stagingRenderParams_->SetFrameRect({ 0, 0, GetRenderProperties().GetFrameWidth(), GetRenderProperties().GetFrameHeight() });
     stagingRenderParams_->SetShouldPaint(shouldPaint_);
     stagingRenderParams_->SetCacheSize(GetOptionalBufferSize());
+    stagingRenderParams_->SetHasSharedTransition(GetSharedTransitionParam() != nullptr);
 }
 
 bool RSRenderNode::UpdateLocalDrawRect()
@@ -3300,7 +3313,7 @@ void RSRenderNode::OnSync()
         drawCmdListNeedSync_ = false;
     }
 
-    if (stagingRenderParams_ && stagingRenderParams_->NeedSync()) {
+    if (stagingRenderParams_->NeedSync()) {
         stagingRenderParams_->OnSync(renderParams_);
     }
 
@@ -3338,6 +3351,42 @@ void RSRenderNode::ValidateLightResources()
 void RSRenderNode::UpdatePointLightDirtySlot()
 {
     UpdateDirtySlotsAndPendingNodes(RSDrawableSlot::POINT_LIGHT);
+}
+
+SharedTransitionParam::SharedTransitionParam(RSRenderNode::SharedPtr inNode, RSRenderNode::SharedPtr outNode)
+    : inNode_(inNode), outNode_(outNode), inNodeId_(inNode->GetId()), outNodeId_(outNode->GetId()),
+      crossApplication_(inNode->GetInstanceRootNodeId() != outNode->GetInstanceRootNodeId())
+{}
+
+RSRenderNode::SharedPtr SharedTransitionParam::GetPairedNode(const NodeId nodeId) const
+{
+    if (inNodeId_ == nodeId) {
+        return outNode_.lock();
+    }
+    if (outNodeId_ == nodeId) {
+        return inNode_.lock();
+    }
+    return nullptr;
+}
+
+bool SharedTransitionParam::UpdateHierarchyAndReturnIsLower(const NodeId nodeId)
+{
+    // We already know which node is the lower one.
+    if (relation_ != NodeHierarchyRelation::UNKNOWN) {
+        return relation_ == NodeHierarchyRelation::IN_NODE_BELOW_OUT_NODE ? inNodeId_ == nodeId : outNodeId_ == nodeId;
+    }
+
+    bool visitingInNode = (nodeId == inNodeId_);
+    if (!visitingInNode && nodeId != outNodeId_) {
+        return false;
+    }
+    // Nodes in the same application will be traversed by order (first visited node has lower hierarchy), while
+    // applications will be traversed by reverse order. If visitingInNode matches crossApplication_, inNode is above
+    // outNode. Otherwise, inNode is below outNode.
+    relation_ = (visitingInNode == crossApplication_) ? NodeHierarchyRelation::IN_NODE_ABOVE_OUT_NODE
+                                                      : NodeHierarchyRelation::IN_NODE_BELOW_OUT_NODE;
+    // If crossApplication_ is true, first visited node (this node) has higher hierarchy. and vice versa.
+    return !crossApplication_;
 }
 } // namespace Rosen
 } // namespace OHOS

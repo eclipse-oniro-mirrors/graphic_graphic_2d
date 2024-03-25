@@ -40,12 +40,43 @@ bool RSChildrenDrawable::OnUpdate(const RSRenderNode& node)
     needSync_ = true;
     stagingChildrenDrawableVec_.clear();
     for (const auto& child : *children) {
+        if (UNLIKELY(child->GetSharedTransitionParam()) && OnSharedTransition(child)) {
+            continue;
+        }
         if (auto childDrawable = RSRenderNodeDrawableAdapter::OnGenerate(child)) {
             stagingChildrenDrawableVec_.push_back(std::move(childDrawable));
         }
     }
     stagingUseShadowBatch_ = node.GetRenderProperties().GetUseShadowBatching();
     return true;
+}
+
+bool RSChildrenDrawable::OnSharedTransition(const RSRenderNode::SharedPtr& node)
+{
+    auto nodeId = node->GetId();
+    const auto& sharedTransitionParam = node->GetSharedTransitionParam();
+    // Test if this node is lower in the hierarchy
+    bool isLower = sharedTransitionParam->UpdateHierarchyAndReturnIsLower(nodeId);
+
+    auto pairedNode = sharedTransitionParam->GetPairedNode(nodeId);
+    if (!pairedNode) {
+        // clear invalid shared transition param
+        node->SetSharedTransitionParam(nullptr);
+        return false;
+    }
+    if (!pairedNode->IsOnTheTree()) {
+        // clear invalid shared transition param
+        node->SetSharedTransitionParam(nullptr);
+        pairedNode->SetSharedTransitionParam(nullptr);
+        return false;
+    }
+    if (!isLower) {
+        // for higher hierarchy node, we Draw paired node (lower in hierarchy) first, then Draw this node
+        if (auto childDrawable = RSRenderNodeDrawableAdapter::OnGenerate(pairedNode)) {
+            stagingChildrenDrawableVec_.push_back(std::move(childDrawable));
+        }
+    }
+    return isLower;
 }
 
 void RSChildrenDrawable::OnSync()

@@ -134,7 +134,13 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         rscanvas->SetDirtyFlag(true);
     }
 
-    rscanvas->ConcatMatrix(surfaceParams->GetMatrix());
+    if (surfaceParams->HasSharedTransition()) {
+        canvas.SetMatrix(surfaceParams->GetMatrix());
+        auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
+        paintFilterCanvas->SetAlpha(1.0f);
+    } else {
+        canvas.ConcatMatrix(surfaceParams->GetMatrix());
+    }
 
     if (isSelfDrawingSurface) {
         RSUniRenderUtil::FloorTransXYInCanvasMatrix(*rscanvas);

@@ -512,11 +512,6 @@ private:
 
     std::unordered_map<NodeId, RenderParam> unpairedTransitionNodes_;
     std::stack<RenderParam> curGroupedNodes_;
-    // return true if we should prepare/process, false if we should skip.
-    void PrepareSharedTransitionNode(RSBaseRenderNode& node);
-    bool ProcessSharedTransitionNode(RSBaseRenderNode& node);
-    void ProcessUnpairedSharedTransitionNode();
-
     std::weak_ptr<RSBaseRenderNode> logicParentNode_;
 
     // adapt to sceneboard, mark if the canvasNode within the scope of surfaceNode

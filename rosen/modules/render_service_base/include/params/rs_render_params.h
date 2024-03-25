@@ -40,18 +40,21 @@ public:
     RSRenderParams() = default;
     virtual ~RSRenderParams() = default;
 
-    virtual void SetMatrix(Drawing::Matrix matrix);
+    void SetMatrix(Drawing::Matrix matrix);
     const Drawing::Matrix GetMatrix() const;
 
-    virtual void SetBoundsRect(Drawing::RectF boundsRect);
+    void SetBoundsRect(Drawing::RectF boundsRect);
     const Drawing::Rect GetBounds() const;
 
-    virtual void SetFrameRect(Drawing::RectF frameRect);
+    void SetFrameRect(Drawing::RectF frameRect);
     const Drawing::Rect GetFrameRect() const;
 
     // return to add some dirtynode does not mark pending
-    virtual bool SetLocalDrawRect(RectI localDrawRect);
+    bool SetLocalDrawRect(RectI localDrawRect);
     const RectI GetLocalDrawRect() const;
+
+    void SetHasSharedTransition(bool hasSharedTransition);
+    bool HasSharedTransition() const;
 
     bool GetShouldPaint() const;
     void SetShouldPaint(bool shouldPaint);
@@ -115,14 +118,15 @@ private:
     Drawing::RectF frameRect_;
     // this rect should map display coordination
     RectI localDrawRect_;
-    bool shouldPaint_;
+    Vector2f cacheSize_;
+
+    bool childHasVisibleEffect_ = false;
+    bool childHasVisibleFilter_ = false;
+    bool hasSharedTransition_ = false;
+    bool isDrawingCacheChanged_ = false;
     bool isSecurityLayer_ = false; // TODO
     bool isSkipLayer_ = false; // TODO
-
-    Vector2f cacheSize_;
-    bool childHasVisibleFilter_ = false;
-    bool childHasVisibleEffect_ = false;
-    bool isDrawingCacheChanged_ = false;
+    bool shouldPaint_ = false;
     Drawing::Rect shadowRect_;
     RSDrawingCacheType drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;
     DirtyRegionInfoForDFX dirtyRegionInfoForDFX_;

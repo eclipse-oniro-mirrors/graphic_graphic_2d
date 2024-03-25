@@ -49,7 +49,13 @@ void RSCanvasDrawingRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
 
     Drawing::AutoCanvasRestore acr(canvas, true);
-    canvas.ConcatMatrix(params->GetMatrix());
+    if (params->HasSharedTransition()) {
+        canvas.SetMatrix(params->GetMatrix());
+        auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
+        paintFilterCanvas->SetAlpha(1.0f);
+    } else {
+        canvas.ConcatMatrix(params->GetMatrix());
+    }
 
     auto uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams().get();
     if ((!uniParam || uniParam->IsOpDropped()) && static_cast<RSPaintFilterCanvas*>(&canvas)->GetDirtyFlag() &&
