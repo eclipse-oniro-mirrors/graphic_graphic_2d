@@ -83,6 +83,7 @@ SPText::ParagraphStyle Convert(const TypographyStyle& style)
         .spTextStyle = Convert(style.insideTextStyle),
         .customSpTextStyle = style.customTextStyle,
         .textHeightBehavior = static_cast<SPText::TextHeightBehavior>(style.textHeightBehavior),
+        .hintingIsOn = style.hintingIsOn,
     };
 }
 
@@ -134,6 +135,7 @@ SPText::TextStyle Convert(const TextStyle& style)
     textStyle.styleId = style.styleId;
     textStyle.isSymbolGlyph = style.isSymbolGlyph;
     textStyle.baseLineShift = style.baseLineShift;
+    textStyle.isPlaceholder = style.isPlaceholder;
 
     if (style.isSymbolGlyph) {
         textStyle.symbol.SetRenderColor(style.symbol.GetRenderColor());

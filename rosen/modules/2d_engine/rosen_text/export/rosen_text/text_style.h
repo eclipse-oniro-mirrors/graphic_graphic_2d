@@ -101,6 +101,7 @@ struct TextStyle {
     bool isSymbolGlyph = false;
     HMSymbolTxt symbol;
     double baseLineShift = 0.0;
+    bool isPlaceholder = false;
 };
 } // namespace Rosen
 } // namespace OHOS

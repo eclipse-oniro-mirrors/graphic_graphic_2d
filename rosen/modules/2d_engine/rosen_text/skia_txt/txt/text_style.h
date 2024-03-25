@@ -142,6 +142,7 @@ public:
     bool isSymbolGlyph = false;
     HMSymbolTxt symbol;
     double baseLineShift = 0.0;
+    bool isPlaceholder = false;
 };
 
 } // namespace SPText
