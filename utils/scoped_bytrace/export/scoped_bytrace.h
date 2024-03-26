@@ -35,6 +35,11 @@ public:
     ScopedDebugTrace(const std::string &traceStr);
     ~ScopedDebugTrace();
 
+    static bool isEnabled()
+    {
+        return debugTraceEnabled_;
+    }
+
 private:
     static bool debugTraceEnabled_;
 };
