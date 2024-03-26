@@ -484,7 +484,7 @@ typedef struct {
     OH_Drawing_FontWeight Weight;
     /** The font style to use when calculating the strut */
     OH_Drawing_FontStyle Style;
-    /** The size of text to use when obtaining metrics from the font */
+    /** The size of the ascent plus descent in logical pixels */
     double Size;
     /** The minimum height of the strut, as a multiple of fontSize */
     double HeightScale;
