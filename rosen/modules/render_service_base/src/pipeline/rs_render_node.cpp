@@ -1910,6 +1910,7 @@ void RSRenderNode::MarkNodeGroup(NodeGroupType type, bool isNodeGroup, bool incl
     }
     nodeGroupIncludeProperty_ = includeProperty;
     if (type == NodeGroupType::GROUPED_BY_USER) {
+        dirtyTypes_.set(static_cast<int>(RSModifierType::ALPHA), true);
         GetMutableRenderProperties().SetAlphaOffscreen(isNodeGroup);
     }
 }
