@@ -38,12 +38,17 @@ public:
     bool GetPixelmap(const std::shared_ptr<Media::PixelMap> pixelmap, const Drawing::Rect* rect,
         const uint64_t tid = UINT32_MAX, std::shared_ptr<Drawing::DrawCmdList> drawCmdList = nullptr);
 
-private:
+    void SetSurfaceClearFunc(ThreadInfo threadInfo)
+    {
+        curThreadInfo_ = threadInfo;
+    }
+
     uint32_t GetTid() const
     {
         return curThreadInfo_.first;
     }
 
+private:
     bool ResetSurface(int width, int height, RSPaintFilterCanvas& canvas);
     bool IsNeedResetSurface() const;
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
@@ -57,8 +62,8 @@ private:
     bool isGpuSurface_ = true;
 #endif
     std::shared_ptr<RSPaintFilterCanvas> canvas_;
-    ThreadInfo curThreadInfo_ = { UNI_MAIN_THREAD_INDEX, std::function<void(std::shared_ptr<Drawing::Surface>)>() };
-    ThreadInfo preThreadInfo_ = { UNI_MAIN_THREAD_INDEX, std::function<void(std::shared_ptr<Drawing::Surface>)>() };
+    ThreadInfo curThreadInfo_ = { UNI_RENDER_THREAD_INDEX, std::function<void(std::shared_ptr<Drawing::Surface>)>() };
+    ThreadInfo preThreadInfo_ = { UNI_RENDER_THREAD_INDEX, std::function<void(std::shared_ptr<Drawing::Surface>)>() };
 };
 } // namespace OHOS::Rosen
 

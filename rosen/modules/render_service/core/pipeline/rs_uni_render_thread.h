@@ -81,6 +81,8 @@ public:
     static bool GetIsInCapture();
 
     void RenderServiceTreeDump(std::string& dumpString) const;
+    void ReleaseSurface();
+    void AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface);
 
 private:
     RSUniRenderThread();
@@ -109,6 +111,9 @@ private:
     bool clearMemDeeply_ = false;
     DeviceType deviceType_ = DeviceType::PHONE;
     static thread_local bool isInCaptureFlag_; // true if in capture mode
+
+    std::mutex mutex_;
+    std::queue<std::shared_ptr<Drawing::Surface>> tmpSurfaces_;
 };
 } // namespace Rosen
 } // namespace OHOS
