@@ -15,6 +15,7 @@
 
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
 
+#include "pipeline/rs_uni_render_util.h"
 #include "pipeline/sk_resource_manager.h"
 #include "platform/common/rs_log.h"
 
@@ -64,6 +65,11 @@ void RSCanvasDrawingRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
 
+    auto clearFunc = [](std::shared_ptr<Drawing::Surface> surface) {
+        // The second param is null, 0 is an invalid value.
+        RSUniRenderUtil::ClearNodeCacheSurface(std::move(surface), nullptr, UNI_RENDER_THREAD_INDEX, 0);
+    };
+    canvasDrawingNodeRenderContent->SetSurfaceClearFunc({ UNI_RENDER_THREAD_INDEX, clearFunc });
     if (!canvasDrawingNodeRenderContent->InitSurface(bounds.GetWidth(), bounds.GetHeight(), *paintFilterCanvas)) {
         RS_LOGE("Failed to init surface!");
         return;
