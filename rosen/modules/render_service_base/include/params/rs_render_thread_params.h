@@ -16,6 +16,9 @@
 #ifndef RENDER_SERVICE_BASE_PARAMS_RS_RENDER_THREAD_PARAMS_H
 #define RENDER_SERVICE_BASE_PARAMS_RS_RENDER_THREAD_PARAMS_H
 
+#include <memory>
+#include <vector>
+#include "pipeline/rs_surface_render_node.h"
 #include "property/rs_properties.h"
 
 namespace OHOS::Rosen {
@@ -39,6 +42,11 @@ public:
     {
         return timestamp_;
     }
+
+    const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& GetSelfDrawingNodes() const
+    {
+        return selfDrawingNodes_;
+    }
 private:
     // Used by hardware thred
     uint64_t timestamp_ = 0;
@@ -52,7 +60,9 @@ private:
     bool isOpaqueRegionDfxEnabled_ = false;
     bool isVisibleRegionDfxEnabled_ = false;
     DirtyRegionDebugType dirtyRegionDebugType_ = DirtyRegionDebugType::DISABLED;
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> selfDrawingNodes_;
 
+    friend class RSMainThread;
     friend class RSUniRenderVisitor;
     friend class RSDirtyRectsDfx;
 };
