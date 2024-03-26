@@ -533,7 +533,7 @@ enum OH_Drawing_FontWidth {
 };
 
 /**
- * @brief Defines the font form.
+ * @brief Defines the font style struct.
  *
  * @since 12
  * @version 1.0
