@@ -40,7 +40,7 @@ using SymbolNode = struct SymbolNode {
     Drawing::DrawingSColor color;
     Vector4f nodeBoundary;
     Drawing::DrawingHMSymbolData symbolData;
-    uint32_t animationIndex = 0;
+    int animationIndex = 0;
     bool isMask = false;
 };
 using SymbolAnimationConfig = struct SymbolAnimationConfig {
