@@ -52,7 +52,8 @@ public:
         return Type;
     }
 
-    Drawing::Bitmap GetBitmap(const uint64_t tid = UINT32_MAX);
+    Drawing::Bitmap GetBitmap();
+    Drawing::Bitmap GetBitmap(const uint64_t tid);
     bool GetPixelmap(const std::shared_ptr<Media::PixelMap> pixelmap, const Drawing::Rect* rect,
         const uint64_t tid = UINT32_MAX, std::shared_ptr<Drawing::DrawCmdList> drawCmdList = nullptr);
 
@@ -62,10 +63,7 @@ public:
         threadId_ = threadId;
     }
 
-    uint32_t GetTid() const
-    {
-        return curThreadInfo_.first;
-    }
+    uint32_t GetTid() const;
 
     void AddDirtyType(RSModifierType type) override;
     void ClearOp();

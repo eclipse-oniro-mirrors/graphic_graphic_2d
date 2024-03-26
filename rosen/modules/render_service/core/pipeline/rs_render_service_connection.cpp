@@ -986,8 +986,10 @@ bool RSRenderServiceConnection::GetBitmap(NodeId id, Drawing::Bitmap& bitmap)
     }
     auto tid = node->GetTid();
     auto getBitmapTask = [&node, &bitmap, tid]() { bitmap = node->GetBitmap(tid); };
-    if (tid == UINT32_MAX) {
+    if (tid == UNI_MAIN_THREAD_INDEX) {
         mainThread_->PostSyncTask(getBitmapTask);
+    } else if (tid == UNI_RENDER_THREAD_INDEX) {
+        renderThread_.PostSyncTask(getBitmapTask);
     } else {
         RSTaskDispatcher::GetInstance().PostTask(
             RSSubThreadManager::Instance()->GetReThreadIndexMap()[tid], getBitmapTask, true);
@@ -1015,11 +1017,13 @@ bool RSRenderServiceConnection::GetPixelmap(NodeId id, const std::shared_ptr<Med
     if (!node->IsOnTheTree()) {
         node->ClearOp();
     }
-    if (tid == UINT32_MAX) {
+    if (tid == UNI_MAIN_THREAD_INDEX) {
         if (!mainThread_->IsIdle() && mainThread_->GetContext().HasActiveNode(node)) {
             return false;
         }
         mainThread_->PostSyncTask(getPixelmapTask);
+    } else if (tid == UNI_RENDER_THREAD_INDEX) {
+        renderThread_.PostSyncTask(getPixelmapTask);
     } else {
         RSTaskDispatcher::GetInstance().PostTask(
             RSSubThreadManager::Instance()->GetReThreadIndexMap()[tid], getPixelmapTask, true);

@@ -192,6 +192,22 @@ void RSUniRenderThread::ReleaseSelfDrawingNodeBuffer()
     }
 }
 
+void RSUniRenderThread::ReleaseSurface()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    while (tmpSurfaces_.size() > 0) {
+        auto tmp = tmpSurfaces_.front();
+        tmpSurfaces_.pop();
+        tmp = nullptr;
+    }
+}
+
+void RSUniRenderThread::AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    tmpSurfaces_.push(std::move(surface));
+}
+
 uint64_t RSUniRenderThread::GetTimestamp()
 {
     return renderThreadParams_->GetTimestamp();

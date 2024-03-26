@@ -982,7 +982,7 @@ void RSSurfaceCaptureVisitor::DrawChildRenderNode(RSRenderNode& node)
             if (node.GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
                 // TODO canvasDrawingNode->GetBitmap() crash
                 // auto canvasDrawingNode = node.ReinterpretCastTo<RSCanvasDrawingRenderNode>();
-                // Drawing::Bitmap bitmap = canvasDrawingNode->GetBitmap();
+                // Drawing::Bitmap bitmap = canvasDrawingNode->GetBitmap((UNI_MAIN_THREAD_INDEX););
                 // canvas_->DrawBitmap(bitmap, 0, 0);
             } else {
                 node.ProcessRenderContents(*canvas_);

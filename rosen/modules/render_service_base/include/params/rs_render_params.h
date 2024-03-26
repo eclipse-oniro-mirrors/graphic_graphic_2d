@@ -25,6 +25,16 @@ namespace OHOS::Rosen {
 #define RENDER_BASIC_PARAM_TO_STRING(basicType) (std::string("param[") + #basicType + "]:" + std::to_string(basicType) + " \n")
 #define RENDER_RECT_PARAM_TO_STRING(rect) (std::string("param[") + #rect + "]:" + rect.ToString() + " \n")
 #define RENDER_PARAM_TO_STRING(param) (std::string("param[") + #param + "]:" + param.ToString() + " \n")
+
+struct DirtyRegionInfoForDFX {
+    RectI oldDirty;
+    RectI oldDirtyInSurface;
+    bool operator==(const DirtyRegionInfoForDFX& rhs) const
+    {
+        return oldDirty == rhs.oldDirty && oldDirtyInSurface == rhs.oldDirtyInSurface;
+    }
+};
+
 class RSB_EXPORT RSRenderParams {
 public:
     RSRenderParams() = default;
@@ -35,6 +45,9 @@ public:
 
     virtual void SetBoundsRect(Drawing::RectF boundsRect);
     const Drawing::Rect GetBounds() const;
+
+    virtual void SetFrameRect(Drawing::RectF frameRect);
+    const Drawing::Rect GetFrameRect() const;
 
     // return to add some dirtynode does not mark pending
     virtual bool SetLocalDrawRect(RectI localDrawRect);
@@ -68,6 +81,9 @@ public:
     void SetShadowRect(Drawing::Rect rect);
     Drawing::Rect GetShadowRect() const;
 
+    void SetDirtyRegionInfoForDFX(DirtyRegionInfoForDFX dirtyRegionInfo);
+    DirtyRegionInfoForDFX GetDirtyRegionInfoForDFX() const;
+    
     // disable copy and move
     RSRenderParams(const RSRenderParams&) = delete;
     RSRenderParams(RSRenderParams&&) = delete;
@@ -86,6 +102,7 @@ private:
     NodeId id_;
     Drawing::Matrix matrix_;
     Drawing::RectF boundsRect_;
+    Drawing::RectF frameRect_;
     // this rect should map display coordination
     RectI localDrawRect_;
     bool shouldPaint_;
@@ -96,6 +113,7 @@ private:
     bool isDrawingCacheChanged_ = false;
     Drawing::Rect shadowRect_;
     RSDrawingCacheType drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;
+    DirtyRegionInfoForDFX dirtyRegionInfoForDFX_;
 };
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_PARAMS_RS_RENDER_PARAMS_H

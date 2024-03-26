@@ -296,6 +296,22 @@ void RSCanvasDrawingRenderNode::ApplyDrawCmdModifier(RSModifierContext& context,
     it->second.clear();
 }
 
+uint32_t RSCanvasDrawingRenderNode::GetTid() const
+{
+    if (canvasDrawingNodeRenderContent_ != nullptr) {
+        return canvasDrawingNodeRenderContent_->GetTid();
+    }
+    return curThreadInfo_.first;
+}
+
+Drawing::Bitmap RSCanvasDrawingRenderNode::GetBitmap()
+{
+    if (canvasDrawingNodeRenderContent_ != nullptr) {
+        return GetBitmap(UNI_RENDER_THREAD_INDEX);
+    }
+    return GetBitmap(UNI_MAIN_THREAD_INDEX);
+}
+
 bool WriteSkImageToPixelmap(std::shared_ptr<Drawing::Image> image, Drawing::ImageInfo info,
     std::shared_ptr<Media::PixelMap> pixelmap, const Drawing::Rect* rect)
 {

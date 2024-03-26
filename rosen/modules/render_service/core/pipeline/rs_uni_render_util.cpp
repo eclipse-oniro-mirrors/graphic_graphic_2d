@@ -768,6 +768,12 @@ void RSUniRenderUtil::PostReleaseSurfaceTask(std::shared_ptr<Drawing::Surface>&&
         instance->PostTask([instance] () {
             instance->ReleaseSurface();
         });
+    } else if (threadIndex == UNI_RENDER_THREAD_INDEX) {
+        auto instance = &(RSUniRenderThread::Instance());
+        instance->AddToReleaseQueue(std::move(surface));
+        instance->PostTask([instance] () {
+            instance->ReleaseSurface();
+        });
     } else {
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
         auto instance = RSSubThreadManager::Instance();
