@@ -46,7 +46,6 @@
 #include "render/rs_image.h"
 #include "render/rs_image_base.h"
 #include "render/rs_light_up_effect_filter.h"
-#include "render/rs_dynamic_dim_filter.h"
 #include "render/rs_mask.h"
 #include "render/rs_material_filter.h"
 #include "render/rs_path.h"
@@ -927,11 +926,6 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSFi
             success = success && parcel.WriteFloat(lightUp->lightUpDegree_);
             break;
         }
-        case RSFilter::DYNAMIC_DIM: {
-            auto dynamicdim = std::static_pointer_cast<RSDynamicDimFilter>(val);
-            success = success && parcel.WriteFloat(dynamicdim->dynamicDimDegree_);
-            break;
-        }
         default:
             break;
     }
@@ -968,14 +962,6 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSFilter
             success = success && parcel.ReadFloat(lightUpDegree);
             if (success) {
                 val = RSFilter::CreateLightUpEffectFilter(lightUpDegree);
-            }
-            break;
-        }
-        case RSFilter::DYNAMIC_DIM: {
-            float dynamicDimDegree;
-            success = success && parcel.ReadFloat(dynamicDimDegree);
-            if (success) {
-                val = RSFilter::CreateDynamicDimFilter(dynamicDimDegree);
             }
             break;
         }

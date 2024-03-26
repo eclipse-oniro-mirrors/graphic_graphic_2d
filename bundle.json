@@ -261,7 +261,6 @@
                 "common/rs_rect.h",
                 "common/rs_vector3.h",
                 "common/rs_vector4.h",
-                "render/rs_dynamic_dim_filter.h",
                 "render/rs_image.h",
                 "render/rs_light_up_effect_filter.h",
                 "render/rs_pixel_map_util.h",

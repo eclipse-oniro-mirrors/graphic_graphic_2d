@@ -19,7 +19,6 @@
 #include "render/rs_blur_filter.h"
 #include "render/rs_material_filter.h"
 #include "render/rs_light_up_effect_filter.h"
-#include "render/rs_dynamic_dim_filter.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -62,11 +61,6 @@ std::shared_ptr<RSFilter> RSFilter::CreateMaterialFilter(float radius, float sat
 std::shared_ptr<RSFilter> RSFilter::CreateLightUpEffectFilter(float lightUpDegree)
 {
     return std::make_shared<RSLightUpEffectFilter>(lightUpDegree);
-}
-
-std::shared_ptr<RSFilter> RSFilter::CreateDynamicDimFilter(float dynamicDimDegree)
-{
-    return std::make_shared<RSDynamicDimFilter>(dynamicDimDegree);
 }
 
 std::shared_ptr<RSFilter> operator+(const std::shared_ptr<RSFilter>& lhs, const std::shared_ptr<RSFilter>& rhs)

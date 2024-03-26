@@ -68,7 +68,6 @@ public:
         LIGHT_UP_EFFECT,
         AIBAR,
         LINEAR_GRADIENT_BLUR,
-        DYNAMIC_DIM,
     };
     FilterType GetFilterType() const
     {
