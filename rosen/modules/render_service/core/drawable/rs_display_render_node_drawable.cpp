@@ -84,7 +84,7 @@ std::unique_ptr<RSRenderFrame> RSDisplayRenderNodeDrawable::RequestFrame(
     std::shared_ptr<RSDisplayRenderNode> displayNodeSp, RSDisplayRenderParams& params,
     std::shared_ptr<RSProcessor> processor) const
 {
-    RS_TRACE_NAME("RSDisplayRenderNodeDrawable::RequestFrame");
+    RS_TRACE_NAME("RSDisplayRenderNodeDrawable:RequestFrame");
     auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
     if (renderEngine == nullptr) {
         RS_LOGE("RSDisplayRenderNodeDrawable::RequestFrame RenderEngine is null!");
