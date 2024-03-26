@@ -101,7 +101,7 @@ bool RSSymbolAnimation::SetSymbolAnimation(
     if (symbolAnimationConfig->effectStrategy == TextEngine::SymbolAnimationEffectStrategy::SYMBOL_SCALE) {
         return SetScaleUnitAnimation(symbolAnimationConfig);
     } else if (symbolAnimationConfig->effectStrategy ==
-        TextEngine::SymbolAnimationEffectStrategy::SYMBOL_HIERARCHICAL) {
+        TextEngine::SymbolAnimationEffectStrategy::SYMBOL_VARIABLE_COLOR) {
         return SetVariableColorAnimation(symbolAnimationConfig);
     }
     return false;
@@ -157,8 +157,8 @@ void RSSymbolAnimation::DrawPathOnCanvas(ExtendRecordingCanvas* recordingCanvas,
 bool RSSymbolAnimation::GetScaleUnitAnimationParas(Drawing::DrawingPiecewiseParameter& scaleUnitParas,
     Vector2f& scaleValueBegin, Vector2f& scaleValue)
 {
-    // AnimationType, AnimationSubType, animation_mode; animation_mode is 1 when AnimationSubTpe is Unit
-    auto scaleParas = Drawing::HmSymbolConfigOhos::GetGroupParameters(Drawing::SCALE_EFFECT, Drawing::UNIT, 1);
+    // AnimationType, Animation groups, animation_mode; animation_mode is 1 when Animation groups is 1
+    auto scaleParas = Drawing::HmSymbolConfigOhos::GetGroupParameters(Drawing::SCALE_TYPE, 1, 1);
     if (scaleParas == nullptr || scaleParas->empty() || scaleParas->at(UNIT_GROUP).empty()) {
         ROSEN_LOGD("[%{public}s] can not get scaleParas \n", __func__);
         return false;
@@ -245,6 +245,8 @@ bool RSSymbolAnimation::SetSymbolGeometry(const std::shared_ptr<RSNode>& rsNode,
         auto boundsModifier = std::make_shared<RSBoundsModifier>(boundsProperty);
         rsNode->AddModifier(boundsModifier);
     }
+    rsNode_->SetClipToBounds(false);
+    rsNode_->SetClipToFrame(false);
     return true;
 }
 
@@ -359,8 +361,8 @@ bool RSSymbolAnimation::SetVariableColorAnimation(const std::shared_ptr<TextEngi
 bool RSSymbolAnimation::GetVariableColorAnimationParas(const uint32_t index, uint32_t& totalDuration, int& delay,
     std::vector<float>& timePercents)
 {
-    auto multiGroupParas = Drawing::HmSymbolConfigOhos::GetGroupParameters(Drawing::VARIABLE_COLOR,
-                                                                           Drawing::VARIABLE_3_GROUP, 1);
+    // AnimationType, Animation groups, animation_mode; the variable color groups is 3 , animation_mode is 1
+    auto multiGroupParas = Drawing::HmSymbolConfigOhos::GetGroupParameters(Drawing::VARIABLE_COLOR_TYPE, 3, 1);
     if (multiGroupParas == nullptr || multiGroupParas->size() <= index || multiGroupParas->at(index).empty()) {
         ROSEN_LOGD("[%{public}s] can not get multiGroupParas \n", __func__);
         return false;
