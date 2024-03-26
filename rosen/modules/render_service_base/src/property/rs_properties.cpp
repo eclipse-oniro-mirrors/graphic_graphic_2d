@@ -1136,6 +1136,11 @@ const std::optional<float>& RSProperties::GetDynamicLightUpDegree() const
     return dynamicLightUpDegree_;
 }
 
+const std::optional<float>& RSProperties::GetDynamicDimDegree() const
+{
+    return dynamicDimDegree_;
+}
+
 const std::optional<Vector2f>& RSProperties::GetGreyCoef() const
 {
     return greyCoef_;

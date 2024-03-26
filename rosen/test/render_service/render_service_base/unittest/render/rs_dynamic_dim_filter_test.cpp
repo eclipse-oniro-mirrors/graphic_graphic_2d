@@ -41,14 +41,14 @@ void RSDynamicDimFilterTest::TearDown() {}
  */
 HWTEST_F(RSDynamicDimFilterTest, RSDynamicDimFilterTest001, TestSize.Level1)
 {
-    float lightUpDegree = 1.0f;
-    auto filter = std::make_shared<RSDynamicDimFilter>(lightUpDegree);
+    float dynamicDimDegree = 1.0f;
+    auto filter = std::make_shared<RSDynamicDimFilter>(dynamicDimDegree);
     EXPECT_TRUE(filter != nullptr);
 
-    EXPECT_TRUE(filter->GetLightUpDegree() == 1.0f);
+    EXPECT_TRUE(filter->GetDynamicDimDegree() == 1.0f);
     filter->GetDescription();
 
-    auto filter2 = std::make_shared<RSDynamicDimFilter>(lightUpDegree);
+    auto filter2 = std::make_shared<RSDynamicDimFilter>(dynamicDimDegree);
     auto result = filter->Compose(filter2);
     EXPECT_TRUE(result != nullptr);
 }
@@ -60,11 +60,11 @@ HWTEST_F(RSDynamicDimFilterTest, RSDynamicDimFilterTest001, TestSize.Level1)
  */
 HWTEST_F(RSDynamicDimFilterTest, RSDynamicDimFilterTest002, TestSize.Level1)
 {
-    float lightUpDegree = 1.0f;
-    auto filter = std::make_shared<RSDynamicDimFilter>(lightUpDegree);
+    float dynamicDimDegree = 1.0f;
+    auto filter = std::make_shared<RSDynamicDimFilter>(dynamicDimDegree);
     EXPECT_TRUE(filter != nullptr);
 
-    auto filter2 = std::make_shared<RSDynamicDimFilter>(lightUpDegree);
+    auto filter2 = std::make_shared<RSDynamicDimFilter>(dynamicDimDegree);
     EXPECT_TRUE(filter2 != nullptr);
 
     auto result = filter->Add(filter2);
