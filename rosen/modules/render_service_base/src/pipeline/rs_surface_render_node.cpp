@@ -727,6 +727,24 @@ void RSSurfaceRenderNode::UpdateSurfaceDefaultSize(float width, float height)
 #endif
 }
 
+void RSSurfaceRenderNode::UpdateBufferInfo(const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence,
+    const sptr<SurfaceBuffer>& preBuffer)
+{
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    surfaceParams->SetBuffer(buffer);
+    surfaceParams->SetAcquireFence(acquireFence);
+    surfaceParams->SetPreBuffer(preBuffer);
+    // TODO remove code below if hwc enabled
+    if (stagingRenderParams_->NeedSync()) {
+        if (auto context = GetContext().lock()) {
+            context->AddPendingSyncNode(shared_from_this());
+        } else {
+            RS_LOGE("RSSurfaceRenderNode::SetOcclusionVisible context is null");
+            OnSync();
+        }
+    }
+}
+
 #ifndef ROSEN_CROSS_PLATFORM
 GraphicBlendType RSSurfaceRenderNode::GetBlendType()
 {

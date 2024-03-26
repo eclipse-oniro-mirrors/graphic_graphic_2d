@@ -2828,7 +2828,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         mirrorAutoRotate_ = false;
         renderFrame_->Flush();
         processor_->ProcessDisplaySurface(node);
-        processor_->PostProcess(&node);
+        processor_->PostProcess();
         return;
     }
 
@@ -2972,7 +2972,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             if (needCreateDisplayNodeLayer || forceUpdateFlag_) {
                 processor_->ProcessDisplaySurface(node);
                 DoScreenRcdTask(processor_, rcdInfo_, screenInfo_);
-                processor_->PostProcess(&node);
+                processor_->PostProcess();
             }
             return;
         } else {
@@ -3255,7 +3255,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
     if (!RSMainThread::Instance()->WaitHardwareThreadTaskExcute()) {
         RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode: hardwareThread task has too many to excute");
     }
-    processor_->PostProcess(&node);
+    processor_->PostProcess();
     {
         std::lock_guard<std::mutex> lock(groupedTransitionNodesMutex);
         EraseIf(groupedTransitionNodes, [](auto& iter) -> bool {
@@ -5169,7 +5169,7 @@ bool RSUniRenderVisitor::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> r
         }
     }
     DoScreenRcdTask(processor_, rcdInfo_, screenInfo_);
-    processor_->PostProcess(displayNode.get());
+    processor_->PostProcess();
     RS_LOGD("RSUniRenderVisitor::DoDirectComposition end");
     return true;
 }

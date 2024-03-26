@@ -36,7 +36,9 @@
 #include "platform/common/rs_surface_ext.h"
 #include "property/rs_properties_painter.h"
 #include "screen_manager/screen_types.h"
+#include "surface_buffer.h"
 #include "surface_type.h"
+#include "sync_fence.h"
 #include "transaction/rs_occlusion_data.h"
 
 
@@ -151,6 +153,9 @@ public:
     {
         return hasSubNodeShouldPaint_;
     }
+
+    void UpdateBufferInfo(const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence,
+        const sptr<SurfaceBuffer>& preBuffer);
 
     bool IsLastFrameHardwareEnabled() const
     {

@@ -1653,9 +1653,6 @@ void RSRenderNode::ApplyModifiers()
         UpdateFullChildrenListIfNeeded();
         AddDirtyType(RSModifierType::CHILDREN);
     }
-    if (stagingRenderParams_ == nullptr) {
-        InitRenderParams();
-    }
     // quick reject test
     if (!RSRenderNode::IsDirty() || dirtyTypes_.none()) {
         return;
