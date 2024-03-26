@@ -43,7 +43,7 @@
 #ifdef ROSEN_TRACE_DISABLE
 #define RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(Level, fmt, ...)                   \
     do {                                                                    \
-        ROSEN_LOGD("TRACE_LEVEL_TWO = %{public}d", TRACE_LEVEL_TWO);        \
+        (void)TRACE_LEVEL_TWO;                                              \
     } while (0)
 #else
 #define RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(Level, fmt, ...)                   \
