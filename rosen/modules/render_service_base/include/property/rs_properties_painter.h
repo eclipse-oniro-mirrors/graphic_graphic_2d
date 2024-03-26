@@ -56,6 +56,7 @@ public:
     static void DrawBinarizationShader(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawLightUpEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawDynamicLightUp(const RSProperties& properties, RSPaintFilterCanvas& canvas);
+    static void DrawDynamicDim(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawParticle(const RSProperties& properties, RSPaintFilterCanvas& canvas);
 
     static void BeginBlendMode(RSPaintFilterCanvas& canvas, const RSProperties& properties);
@@ -116,6 +117,8 @@ private:
         std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Pen& pen, Vector4f& lightIntensity);
     static std::shared_ptr<Drawing::ShaderEffect> MakeLightUpEffectShader(
         float lightUpDeg, std::shared_ptr<Drawing::ShaderEffect> imageShader);
+    static std::shared_ptr<Drawing::ShaderEffect> MakeDynamicDimShader(
+        float dynamicDimDeg, std::shared_ptr<Drawing::ShaderEffect> imageShader);
     static std::shared_ptr<Drawing::ShaderEffect> MakeBinarizationShader(float low, float high,
         float thresholdLow, float thresholdHigh, std::shared_ptr<Drawing::ShaderEffect> imageShader);
     static std::shared_ptr<Drawing::RuntimeEffect> MakeGreyAdjustmentEffect();
