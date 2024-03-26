@@ -2760,6 +2760,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         }
         AssignGlobalZOrderAndCreateLayer(appWindowNodesInZOrder_);
         node.SetGlobalZOrder(globalZOrder_++);
+        node.SetRenderWindowsName(windowsName_);
         processor_->ProcessDisplaySurface(node);
         auto& surfaceHandler = static_cast<RSSurfaceHandler&>(node);
         auto& fence = surfaceHandler.GetAcquireFence();
@@ -3929,6 +3930,10 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         RS_LOGE("RSUniRenderVisitor::ProcessSurfaceRenderNode node:%{public}" PRIu64 ", get geoPtr failed",
             node.GetId());
         return;
+    }
+
+    if (node.IsAppWindow()) {
+        windowsName_.emplace_back(node.GetName());
     }
 
     // when display is in rotation state, occlusion relationship will be ruined,
