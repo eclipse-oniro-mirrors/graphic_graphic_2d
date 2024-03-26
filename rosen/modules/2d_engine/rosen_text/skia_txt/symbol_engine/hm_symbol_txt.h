@@ -68,7 +68,7 @@ public:
     bool operator ==(HMSymbolTxt const &sym) const;
 
     void SetAnimationMode(const uint16_t animationMode) {
-        animationMode_ = animationMode;
+        animationMode_ = animationMode > 0 ? 1: 0; // 1 is whole or add, 0 is hierarchical or iterate
     }
 
     void SetRepeatCount(const int repeatCount) {

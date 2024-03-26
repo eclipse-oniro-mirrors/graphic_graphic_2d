@@ -18,6 +18,15 @@
 namespace OHOS {
 namespace Rosen {
 namespace SPText {
+
+static const std::map<RSEffectStrategy, TextEngine::SymbolAnimationEffectStrategy> ANIMATION_TYPES = {
+    {RSEffectStrategy::NONE, TextEngine::SymbolAnimationEffectStrategy::SYMBOL_NONE},
+    {RSEffectStrategy::SCALE, TextEngine::SymbolAnimationEffectStrategy::SYMBOL_SCALE},
+    {RSEffectStrategy::VARIABLE_COLOR, TextEngine::SymbolAnimationEffectStrategy::SYMBOL_VARIABLE_COLOR},
+    {RSEffectStrategy::APPEAR, TextEngine::SymbolAnimationEffectStrategy::SYMBOL_APPEAR},
+    {RSEffectStrategy::DISAPPEAR, TextEngine::SymbolAnimationEffectStrategy::SYMBOL_DISAPPEAR},
+    {RSEffectStrategy::BOUNCE, TextEngine::SymbolAnimationEffectStrategy::SYMBOL_BOUNCE}};
+
 static void MergePath(RSPath& multPath, const std::vector<RSGroupInfo>& groupInfos, std::vector<RSPath>& pathLayers)
 {
     for (const auto& groupInfo : groupInfos) {
@@ -123,7 +132,10 @@ bool SymbolNodeBuild::DecomposeSymbolAndDraw()
         AddWholeAnimation(symbolData_, nodeBounds, symbolAnimationConfig);
     }
 
-    symbolAnimationConfig->effectStrategy = static_cast<TextEngine::SymbolAnimationEffectStrategy>(effectStrategy_);
+    auto iter = ANIMATION_TYPES.find(effectStrategy_);
+    if (iter != ANIMATION_TYPES.end()) {
+        symbolAnimationConfig->effectStrategy = iter->second;
+    }
     symbolAnimationConfig->repeatCount = repeatCount_;
     symbolAnimationConfig->animationMode = animationMode_;
     symbolAnimationConfig->aminationStart = aminationStart_;
