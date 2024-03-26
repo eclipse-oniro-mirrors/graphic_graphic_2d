@@ -1441,6 +1441,10 @@ void RSRenderNode::MapAndUpdateChildrenRect()
     childRect = geoPtr->MapRect(childRect.ConvertTo<float>(), geoPtr->GetMatrix());
     if (auto parentNode = parent_.lock()) {
         parentNode->UpdateChildrenRect(childRect);
+        // check each child is inside of parent
+        if (!childRect.IsInsideOf(parentNode->GetSelfDrawRect())) {
+            parentNode->UpdateChildrenOutOfRectFlag(true);
+        }
     }
 }
 

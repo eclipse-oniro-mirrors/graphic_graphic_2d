@@ -1358,6 +1358,8 @@ void RSUniRenderVisitor::UpdatePrepareclip(RSRenderNode& node)
 void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
 {
     MergeRemovedChildDirtyRegion(node);
+    bool alpha = curAlpha_;
+    curAlpha_ *= std::clamp(node.GetRenderProperties().GetAlpha(), 0.f, 1.f);
     node.ResetChildRelevantFlags();
     auto children = node.GetSortedChildren();
     // leashwindow should not include multi mainwindow
@@ -1373,6 +1375,7 @@ void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
         });
     }
     node.ResetGeoUpdateDelay();
+    curAlpha_ = alpha;
 }
 
 bool RSUniRenderVisitor::InitDisplayInfo(RSDisplayRenderNode& node)
@@ -1690,7 +1693,7 @@ void RSUniRenderVisitor::CheckMergeGlobalFilterForDisplay(Occlusion::Region& acc
 void RSUniRenderVisitor::PrepareChildrenAfter(RSRenderNode& node)
 {
     if (node.GetRenderProperties().NeedFilter()) {
-        UpdateDirtysAndRedordInfoByFilter(node);
+        CollectFilterInfoAndUpdateDirty(node);
     }
 
     if (auto nodeParent = node.GetParent().lock()) {
@@ -1710,7 +1713,7 @@ void RSUniRenderVisitor::PrepareChildrenAfter(RSRenderNode& node)
     }
 }
 
-void RSUniRenderVisitor::UpdateDirtysAndRedordInfoByFilter(RSRenderNode& node)
+void RSUniRenderVisitor::CollectFilterInfoAndUpdateDirty(RSRenderNode& node)
 {
     auto curDirtyManager = curSurfaceNode_ ? curSurfaceDirtyManager_ : curDisplayDirtyManager_;
     auto globalFilterRect = node.GetOldDirtyInSurface();

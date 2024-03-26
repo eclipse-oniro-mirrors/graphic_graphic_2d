@@ -217,7 +217,7 @@ private:
     bool BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node);
     bool AfterUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node);
     void UpdateSurfaceDirtyAndGlobalDirty();
-    void UpdateDirtysAndRedordInfoByFilter(RSRenderNode& node);
+    void CollectFilterInfoAndUpdateDirty(RSRenderNode& node);
 
     void UpdatePrepareclip(RSRenderNode& node);
 
