@@ -488,6 +488,7 @@ private:
     bool noNeedTodrawShadowAgain_ = false;
     bool notRunCheckAndSetNodeCacheType_ = false;
     int updateCacheProcessCnt_ = 0;
+    std::vector<std::string> windowsName_;
 
     NodeId firstVisitedCache_ = INVALID_NODEID;
     std::unordered_set<NodeId> visitedCacheNodeIds_ = {};
