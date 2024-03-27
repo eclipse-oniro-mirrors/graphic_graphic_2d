@@ -57,6 +57,13 @@ public:
 
     void SetContextMatrix(const std::optional<Drawing::Matrix>& matrix);
 
+    void Reset() override
+    {
+        RSObjGeometry::Reset();
+        absMatrix_.reset();
+        contextMatrix_.reset();
+    }
+
 private:
     void UpdateAbsMatrix2D();
     void UpdateAbsMatrix3D();

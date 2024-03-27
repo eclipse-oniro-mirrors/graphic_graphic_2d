@@ -63,7 +63,7 @@ public:
     // considering occlusion info for app surface as well as widget
     bool IsSubTreeOccluded(RSRenderNode& node) const;
     // restore node's flag and filter dirty collection
-    void PostPrepare(RSRenderNode& node);
+    void PrepareChildrenAfter(RSRenderNode& node);
     void CalculateOcclusion(RSSurfaceRenderNode& node);
 
     void PrepareChildren(RSRenderNode& node) override;
@@ -236,7 +236,7 @@ private:
     void UpdateHwcNodeDirtyRegionForApp(std::shared_ptr<RSSurfaceRenderNode>& appNode,
         std::shared_ptr<RSSurfaceRenderNode>& hwcNode);
 
-    void UpdatePrepareClip(RSRenderNode& node);
+    void UpdatePrepareclip(RSRenderNode& node);
 
     void CheckMergeSurfaceDirtysForDisplay(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) const;
     void CheckMergeTransparentDirtysForDisplay(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) const;
@@ -515,6 +515,11 @@ private:
 
     std::unordered_map<NodeId, RenderParam> unpairedTransitionNodes_;
     std::stack<RenderParam> curGroupedNodes_;
+    // return true if we should prepare/process, false if we should skip.
+    void PrepareSharedTransitionNode(RSBaseRenderNode& node);
+    bool ProcessSharedTransitionNode(RSBaseRenderNode& node);
+    void ProcessUnpairedSharedTransitionNode();
+
     std::weak_ptr<RSBaseRenderNode> logicParentNode_;
 
     // adapt to sceneboard, mark if the canvasNode within the scope of surfaceNode

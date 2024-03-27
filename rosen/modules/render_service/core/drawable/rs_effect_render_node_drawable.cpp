@@ -39,10 +39,9 @@ void RSEffectRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RS_LOGE("params is nullptr");
         return;
     }
-    auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
-    RSAutoCanvasRestore acr(paintFilterCanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
+    Drawing::AutoCanvasRestore acr(canvas, true);
+    canvas.ConcatMatrix(params->GetMatrix());
 
-    params->ApplyAlphaAndMatrixToCanvas(*paintFilterCanvas);
     auto uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams().get();
     if ((!uniParam || uniParam->IsOpDropped()) && static_cast<RSPaintFilterCanvas*>(&canvas)->GetDirtyFlag() &&
         QuickReject(canvas, params->GetLocalDrawRect())) {
@@ -60,9 +59,8 @@ void RSEffectRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
         RS_LOGE("params is nullptr");
         return;
     }
-    auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
-    RSAutoCanvasRestore acr(paintFilterCanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
-    params->ApplyAlphaAndMatrixToCanvas(*paintFilterCanvas);
+    Drawing::AutoCanvasRestore acr(canvas, true);
+    canvas.ConcatMatrix(params->GetMatrix());
     RSRenderNodeDrawable::OnCapture(canvas);
 }
 } // namespace OHOS::Rosen::DrawableV2
