@@ -176,6 +176,7 @@ public:
     static bool GetSkipForAlphaZeroEnabled();
     static bool GetSkipGeometryNotChangeEnabled();
     static bool GetQuickPrepareEnabled();
+    static bool GetRenderParallelEnabled();
     static bool GetPropertyDrawableEnable();
 
     static bool GetAnimationCacheEnabled();
