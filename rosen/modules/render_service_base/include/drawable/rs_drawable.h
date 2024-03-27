@@ -36,6 +36,7 @@ enum class RSDrawableSlot : int8_t {
     SAVE_ALL = 0,
 
     // Bounds Geometry
+    ALPHA,
     MASK,
     TRANSITION,
     ENV_FOREGROUND_COLOR,

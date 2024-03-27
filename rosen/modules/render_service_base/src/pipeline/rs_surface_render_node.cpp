@@ -103,6 +103,7 @@ RSSurfaceRenderNode::RSSurfaceRenderNode(
     MemoryInfo info = {sizeof(*this), ExtractPid(config.id), config.id, MEMORY_TYPE::MEM_RENDER_NODE};
     MemoryTrack::Instance().AddNodeRecord(config.id, info);
 #endif
+    syncDirtyManager_ = RSSystemProperties::GetRenderParallelEnabled() ? std::make_shared<RSDirtyRegionManager>() : dirtyManager_;
 }
 
 RSSurfaceRenderNode::RSSurfaceRenderNode(NodeId id, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
@@ -422,7 +423,7 @@ void RSSurfaceRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& vis
     if (!visitor) {
         return;
     }
-    ApplyModifiers();
+    RSRenderNode::ApplyModifiers();
     visitor->QuickPrepareSurfaceRenderNode(*this);
 
     if ((IsAppWindow() || IsScbScreen()) && !IsNotifyUIBufferAvailable() && IsFirstFrameReadyToDraw(*this)) {
@@ -446,7 +447,7 @@ void RSSurfaceRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)
     if (!visitor) {
         return;
     }
-    ApplyModifiers();
+    RSRenderNode::ApplyModifiers();
     visitor->PrepareSurfaceRenderNode(*this);
 }
 
@@ -529,6 +530,11 @@ void RSSurfaceRenderNode::SetContextBounds(const Vector4f bounds)
 std::shared_ptr<RSDirtyRegionManager> RSSurfaceRenderNode::GetDirtyManager() const
 {
     return dirtyManager_;
+}
+
+std::shared_ptr<RSDirtyRegionManager> RSSurfaceRenderNode::GetSyncDirtyManager() const
+{
+    return syncDirtyManager_;
 }
 
 std::shared_ptr<RSDirtyRegionManager> RSSurfaceRenderNode::GetCacheSurfaceDirtyManager() const
@@ -1614,9 +1620,14 @@ void RSSurfaceRenderNode::ResetSurfaceContainerRegion(const RectI& screeninfo, c
 
 void RSSurfaceRenderNode::OnSync()
 {
-    dirtyManager_->OnSync();
+    dirtyManager_->OnSync(syncDirtyManager_);
     if (IsMainWindowType() || IsLeashWindow()) {
-        stagingRenderParams_->SetNeedSync(true);
+        auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+        if (surfaceParams == nullptr) {
+            RS_LOGE("RSSurfaceRenderNode::OnSync surfaceParams is null");
+            return;
+        }
+        surfaceParams->SetNeedSync(true);
     }
     RSRenderNode::OnSync();
 }
@@ -1812,6 +1823,17 @@ void RSSurfaceRenderNode::UpdateChildHardwareEnabledNode(NodeId id, bool isOnTre
 const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& RSSurfaceRenderNode::GetChildHardwareEnabledNodes() const
 {
     return childHardwareEnabledNodes_;
+}
+
+void RSSurfaceRenderNode::SetGlobalDirtyRegion(const RectI& rect, bool renderParallel)
+{
+    auto visibleRegion = renderParallel
+        ? static_cast<RSSurfaceRenderParams*>(renderParams_.get())->GetVisibleRegion()
+        : visibleRegion_;
+    Occlusion::Rect tmpRect { rect.left_, rect.top_, rect.GetRight(), rect.GetBottom() };
+    Occlusion::Region region { tmpRect };
+    globalDirtyRegion_ = visibleRegion.And(region);
+    globalDirtyRegionIsEmpty_ = globalDirtyRegion_.IsEmpty();
 }
 
 void RSSurfaceRenderNode::SetLocalZOrder(float localZOrder)
@@ -2132,14 +2154,14 @@ void RSSurfaceRenderNode::SetOcclusionVisible(bool visible)
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (stagingSurfaceParams) {
         stagingSurfaceParams->SetOcclusionVisible(visible);
-        // if (stagingRenderParams_->NeedSync()) {
-        //     if (auto context = GetContext().lock()) {
-        //         context->AddPendingSyncNode(shared_from_this());
-        //     } else {
-        //         RS_LOGE("RSSurfaceRenderNode::SetOcclusionVisible context is null");
-        //         OnSync();
-        //     }
-        // }
+        if (stagingRenderParams_->NeedSync()) {
+            if (auto context = GetContext().lock()) {
+                context->AddPendingSyncNode(shared_from_this());
+            } else {
+                RS_LOGE("RSSurfaceRenderNode::SetOcclusionVisible context is null");
+                OnSync();
+            }
+        }
     } else {
         RS_LOGE("RSSurfaceRenderNode::SetOcclusionVisible stagingSurfaceParams is null");
     }
@@ -2185,8 +2207,6 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->SetAncestorDisplayNode(ancestorDisplayNode_);
     surfaceParams->frameGravity_ = properties.GetFrameGravity();
 
-    surfaceParams->SetNeedSync(true);
-
     RSRenderNode::UpdateRenderParams();
 }
 
@@ -2198,7 +2218,6 @@ void RSSurfaceRenderNode::UpdateAncestorDisplayNodeInRenderParams()
         return;
     }
     surfaceParams->SetAncestorDisplayNode(ancestorDisplayNode_);
-    surfaceParams->SetNeedSync(true);
 }
 } // namespace Rosen
 } // namespace OHOS

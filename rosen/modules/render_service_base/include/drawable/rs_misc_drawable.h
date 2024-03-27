@@ -20,7 +20,6 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <set>
 #include <unordered_set>
 
 #include "drawable/rs_drawable.h"
@@ -53,8 +52,6 @@ private:
     // Staging properties
     bool stagingUseShadowBatch_ = false;
     std::vector<std::shared_ptr<RSRenderNodeDrawableAdapter>> stagingChildrenDrawableVec_;
-    // static inline std::set<NodeId> pendingSharedTransitionSet_;
-    bool OnSharedTransition(const std::shared_ptr<RSRenderNode>& node);
 
     bool needSync_ = false;
     friend class RSRenderNodeDrawable;
@@ -132,6 +129,29 @@ public:
 
 private:
     std::shared_ptr<RSPaintFilterCanvas::SaveStatus> content_;
+};
+
+// ============================================================================
+// Alpha
+class RSAlphaDrawable : public RSDrawable {
+public:
+    explicit RSAlphaDrawable() = default;
+    ~RSAlphaDrawable() override = default;
+
+    static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
+    bool OnUpdate(const RSRenderNode& node) override;
+    void OnSync() override;
+
+    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+
+protected:
+    bool needSync_ = false;
+    // Render properties
+    float alpha_ = 0.0f;
+    bool offscreen_ = false;
+    // Staging properties
+    float stagingAlpha_ = 0.0f;
+    bool stagingOffscreen_ = false;
 };
 
 // ============================================================================

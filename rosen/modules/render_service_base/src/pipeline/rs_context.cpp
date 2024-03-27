@@ -41,6 +41,7 @@ void RSContext::AddActiveNode(const std::shared_ptr<RSRenderNode>& node)
     auto rootNodeId = node->GetInstanceRootNodeId();
     std::unique_lock<std::mutex> lock(activeNodesInRootMutex_);
     activeNodesInRoot_[rootNodeId].emplace(node->GetId(), node);
+    node->SetParentSubTreeDirty();
 }
 
 bool RSContext::HasActiveNode(const std::shared_ptr<RSRenderNode>& node)
@@ -59,6 +60,11 @@ void RSContext::AddPendingSyncNode(const std::shared_ptr<RSRenderNode> &node)
         return;
     }
     pendingSyncNodes_.emplace(node->GetId(), node);
+}
+
+bool RSContext::HasPendingSyncNode(NodeId nodeId)
+{
+    return pendingSyncNodes_.count(nodeId) > 0;
 }
 
 void RSContext::MarkNeedPurge(ClearMemoryMoment moment, PurgeType purgeType)

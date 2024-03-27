@@ -61,7 +61,7 @@ static inline std::vector<RectI> MergeDirtyHistory(std::shared_ptr<RSDisplayRend
         return {};
     }
     auto& curAllSurfaces = params->GetAllMainAndLeashSurfaces();
-    auto dirtyManager = displayNodeSp->GetDirtyManager();
+    auto dirtyManager = displayNodeSp->GetSyncDirtyManager();
 
     RSUniRenderUtil::MergeDirtyHistory(displayNodeSp, bufferAge, false, true);
     Occlusion::Region dirtyRegion = RSUniRenderUtil::MergeVisibleDirtyRegion(
@@ -213,7 +213,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     auto nodeSp = std::const_pointer_cast<RSRenderNode>(renderNode_);
     auto displayNodeSp = std::static_pointer_cast<RSDisplayRenderNode>(nodeSp);
     RS_TRACE_NAME("RSDisplayRenderNodeDrawable[" + std::to_string(params->GetScreenId()) + "]" +
-                  displayNodeSp->GetDirtyManager()->GetSyncCurrentFrameDirtyRegion().ToString().c_str());
+                  displayNodeSp->GetSyncDirtyManager()->GetCurrentFrameDirtyRegion().ToString().c_str());
     RS_LOGD("RSDisplayRenderNodeDrawable::OnDraw node: %{public}" PRIu64 ", child size:%{public}u", params->GetId(),
         displayNodeSp->GetChildrenCount());
 
