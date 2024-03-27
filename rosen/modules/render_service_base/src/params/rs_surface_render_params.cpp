@@ -32,6 +32,26 @@ bool RSSurfaceRenderParams::GetOcclusionVisible() const
     return occlusionVisible_;
 }
 
+void RSSurfaceRenderParams::SetIsTransparent(bool isTransparent)
+{
+    isTransparent_ = isTransparent;
+}
+
+bool RSSurfaceRenderParams::GetIsTransparent() const
+{
+    return isTransparent_;
+}
+
+void RSSurfaceRenderParams::SetOldDirtyInSurface(const RectI& oldDirtyInSurface)
+{
+    oldDirtyInSurface_ = oldDirtyInSurface;
+}
+
+RectI RSSurfaceRenderParams::GetOldDirtyInSurface() const
+{
+    return oldDirtyInSurface_;
+}
+
 Occlusion::Region RSSurfaceRenderParams::GetVisibleRegion() const
 {
     return visibleRegion_;
@@ -161,6 +181,8 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->rrect_ = rrect_;
     targetSurfaceParams->occlusionVisible_ = occlusionVisible_;
     targetSurfaceParams->visibleRegion_ = visibleRegion_;
+    targetSurfaceParams->isTransparent_ = isTransparent_;
+    targetSurfaceParams->oldDirtyInSurface_ = oldDirtyInSurface_;
     targetSurfaceParams->layerInfo_ = layerInfo_;
     targetSurfaceParams->isHardwareEnabled_ = isHardwareEnabled_;
     targetSurfaceParams->isLastFrameHardwareEnabled_ = isLastFrameHardwareEnabled_;

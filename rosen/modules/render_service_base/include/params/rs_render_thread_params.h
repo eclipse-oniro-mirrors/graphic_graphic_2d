@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <vector>
+#include "common/rs_occlusion_region.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "property/rs_properties.h"
 
@@ -78,6 +79,17 @@ public:
     {
         return pendingScreenRefreshRate_;
     }
+
+    Occlusion::Region& GetAccumulatedDirtyRegion()
+    {
+        return accumulatedDirtyRegion_;
+    }
+
+    bool Reset()
+    {
+        accumulatedDirtyRegion_.Reset();
+        return true;
+    }
 private:
     // Used by hardware thred
     uint64_t timestamp_ = 0;
@@ -94,6 +106,8 @@ private:
     bool isOpDropped_ = false;
     DirtyRegionDebugType dirtyRegionDebugType_ = DirtyRegionDebugType::DISABLED;
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> selfDrawingNodes_;
+    // accumulatedDirtyRegion to decide whether to skip tranasparent nodes.
+    Occlusion::Region accumulatedDirtyRegion_;
 
     friend class RSMainThread;
     friend class RSUniRenderVisitor;
