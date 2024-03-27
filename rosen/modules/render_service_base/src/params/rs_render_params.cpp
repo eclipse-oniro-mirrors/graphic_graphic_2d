@@ -20,20 +20,7 @@
 #include "property/rs_properties.h"
 
 namespace OHOS::Rosen {
-void RSRenderParams::SetAlpha(float alpha)
-{
-    if (alpha_ == alpha) {
-        return;
-    }
-    alpha_ = alpha;
-    needSync_ = true;
-}
-float RSRenderParams::GetAlpha() const
-{
-    return alpha_;
-}
-
-void RSRenderParams::SetMatrix(const Drawing::Matrix& matrix)
+void RSRenderParams::SetMatrix(Drawing::Matrix matrix)
 {
     if (matrix_ == matrix) {
         return;
@@ -41,23 +28,13 @@ void RSRenderParams::SetMatrix(const Drawing::Matrix& matrix)
     matrix_ = matrix;
     needSync_ = true;
 }
-const Drawing::Matrix& RSRenderParams::GetMatrix() const
+
+const Drawing::Matrix RSRenderParams::GetMatrix() const
 {
     return matrix_;
 }
 
-void RSRenderParams::ApplyAlphaAndMatrixToCanvas(RSPaintFilterCanvas& canvas) const
-{
-    if (HasSharedTransition()) {
-        canvas.SetMatrix(matrix_);
-        canvas.SetAlpha(alpha_);
-    } else {
-        canvas.ConcatMatrix(matrix_);
-        canvas.MultiplyAlpha(alpha_);
-    }
-}
-
-void RSRenderParams::SetBoundsRect(const Drawing::RectF& boundsRect)
+void RSRenderParams::SetBoundsRect(Drawing::RectF boundsRect)
 {
     if (boundsRect_ == boundsRect) {
         return;
@@ -66,12 +43,12 @@ void RSRenderParams::SetBoundsRect(const Drawing::RectF& boundsRect)
     needSync_ = true;
 }
 
-const Drawing::Rect& RSRenderParams::GetBounds() const
+const Drawing::Rect RSRenderParams::GetBounds() const
 {
     return boundsRect_;
 }
 
-void RSRenderParams::SetFrameRect(const Drawing::RectF& frameRect)
+void RSRenderParams::SetFrameRect(Drawing::RectF frameRect)
 {
     if (frameRect_ == frameRect) {
         return;
@@ -81,12 +58,12 @@ void RSRenderParams::SetFrameRect(const Drawing::RectF& frameRect)
     needSync_ = true;
 }
 
-const Drawing::Rect& RSRenderParams::GetFrameRect() const
+const Drawing::Rect RSRenderParams::GetFrameRect() const
 {
     return frameRect_;
 }
 
-bool RSRenderParams::SetLocalDrawRect(const RectI& localDrawRect)
+bool RSRenderParams::SetLocalDrawRect(RectI localDrawRect)
 {
     if (localDrawRect_ == localDrawRect) {
         return false;
@@ -96,23 +73,9 @@ bool RSRenderParams::SetLocalDrawRect(const RectI& localDrawRect)
     return true;
 }
 
-const RectI& RSRenderParams::GetLocalDrawRect() const
+const RectI RSRenderParams::GetLocalDrawRect() const
 {
     return localDrawRect_;
-}
-
-void RSRenderParams::SetHasSharedTransition(bool hasSharedTransition)
-{
-    if (hasSharedTransition_ == hasSharedTransition) {
-        return;
-    }
-    hasSharedTransition_ = hasSharedTransition;
-    needSync_ = true;
-}
-
-bool RSRenderParams::HasSharedTransition() const
-{
-    return hasSharedTransition_;
 }
 
 void RSRenderParams::SetShouldPaint(bool shouldPaint)
@@ -241,12 +204,10 @@ bool RSRenderParams::NeedSync() const
 }
 void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
 {
-    target->alpha_ = alpha_;
     target->SetMatrix(matrix_);
     target->SetBoundsRect(boundsRect_);
     target->SetFrameRect(frameRect_);
     target->shouldPaint_ = shouldPaint_;
-    target->hasSharedTransition_ = hasSharedTransition_;
     target->SetLocalDrawRect(localDrawRect_);
     target->id_ = id_;
     target->cacheSize_ = cacheSize_;
@@ -262,14 +223,8 @@ void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
 
 std::string RSRenderParams::ToString() const
 {
-    std::string ret = "RSRenderParams:";
+    std::string ret = "\nRSRenderParams:";
     ret += RENDER_BASIC_PARAM_TO_STRING(id_);
-    if (alpha_ != 1.0f) {
-        ret += RENDER_BASIC_PARAM_TO_STRING(alpha_);
-    }
-    if (hasSharedTransition_) {
-        ret += RENDER_BASIC_PARAM_TO_STRING(hasSharedTransition_);
-    }
     ret += RENDER_RECT_PARAM_TO_STRING(localDrawRect_);
     ret += RENDER_BASIC_PARAM_TO_STRING(shouldPaint_);
     return ret;

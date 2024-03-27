@@ -1,0 +1,104 @@
+/*
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef RS_UIFIRST_MANAGER_H
+#define RS_UIFIRST_MANAGER_H
+
+#include <map>
+#include <vector>
+#include <set>
+#include "drawable/rs_surface_render_node_drawable.h"
+#include "pipeline/rs_surface_render_node.h"
+
+namespace OHOS::Rosen {
+#ifdef RS_PARALLEL
+class RSUifirstManager {
+public:
+    // TODO: move to display node
+    static RSUifirstManager& Instance();
+
+    // record RSSurfaceRenderNodeDrawable ptr for postTask
+    void AddSurfaceDrawable(NodeId id, DrawableV2::RSSurfaceRenderNodeDrawable* drawable);
+    void DeleSurfaceDrawable(NodeId id);
+    DrawableV2::RSSurfaceRenderNodeDrawable* GetSurfaceDrawableByID(NodeId id);
+
+    // ref RSChildrenDrawable to ref RSSurfaceRenderNodeDrawable in it
+    // ref in RT when post
+    void RefChildrenDrawable(NodeId id, Drawing::RecordingCanvas::DrawFunc& func);
+    // unref in sub when cache done
+    void UnrefChildrenDrawable(NodeId id);
+
+    void AddPendingPostNode(NodeId id);
+    void AddPendingResetNode(NodeId id);
+    void AddReuseNode(NodeId id);
+
+    CacheProcessStatus GetNodeStatus(NodeId id);
+    void PostUifistSubTasks();
+    void ProcessSubDoneNode();
+    bool CollectSkipSyncNode(const std::shared_ptr<RSRenderNode> &node);
+
+    void PrepareUifirstNode(RSSurfaceRenderNode& node, bool animation);
+    void DisableUifirstNode(RSSurfaceRenderNode& node);
+
+    static bool IsUifirstNode(RSSurfaceRenderNode& node, bool animation);
+    
+    void SetUiFirstSwitch(bool uiFirstSwitch)
+    {
+        isUiFirstOn_ = uiFirstSwitch;
+    }
+private:
+    RSUifirstManager() = default;
+    ~RSUifirstManager() = default;
+    RSUifirstManager(const RSUifirstManager&);
+    RSUifirstManager(const RSUifirstManager&&);
+    RSUifirstManager& operator=(const RSUifirstManager&);
+    RSUifirstManager& operator=(const RSUifirstManager&&);
+
+    void PostSubTask(NodeId id);
+    void UpdateCompletedSurface(NodeId id);
+
+    void ProcessResetNode();
+    void ProcessDoneNode();
+    void UpdateSkipSyncNode();
+    void RestoreSkipSyncNode();
+    void ClearSubthreadRes();
+
+    void UifirstStateChange(RSSurfaceRenderNode& node, bool currentFrameIsUifirstNode);
+    void CheckIfParentUifirstNodeEnable(RSSurfaceRenderNode& node, bool parentUifirstNodeEnable);
+    // only use in mainThread; keep ref by subthreadProcessingNode_
+    std::unordered_map<NodeId, DrawableV2::RSSurfaceRenderNodeDrawable*> curAllSurface_; //TODO: lock
+
+    // only use in RT
+    std::unordered_map<NodeId, Drawing::RecordingCanvas::DrawFunc> subthreadProcessingNode_;
+    std::set<NodeId> processingNodeSkipSync_;
+    std::set<NodeId> processingNodePartialSync_;
+    std::unordered_map<NodeId, std::vector<std::shared_ptr<RSRenderNode>>> pendingSyncForSkipBefore_; // (instanceId, vector<needsync_node>)
+
+    // use in RT & subThread
+    std::mutex childernDrawableMutex_;
+    std::vector<NodeId> subthreadProcessDoneNode_;
+
+    // pending post node: collect in main, use&clear in RT
+    std::set<NodeId> pendingPostNodes_;
+    std::set<NodeId> pendingResetNodes_;
+
+    std::set<NodeId> reuseNodes_;
+    int lastFrameDoingNum_ = -1;
+    int currentFrameDoingNum_ = -1;
+    bool isUiFirstOn_ = false;
+};
+#endif
+}
+#endif // RS_UIFIRST_MANAGER_H

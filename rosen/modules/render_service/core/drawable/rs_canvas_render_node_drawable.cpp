@@ -49,9 +49,9 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     if (!params->GetShouldPaint()) {
         return;
     }
-    auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
-    RSAutoCanvasRestore acr(paintFilterCanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
-    params->ApplyAlphaAndMatrixToCanvas(*paintFilterCanvas);
+    Drawing::AutoCanvasRestore acr(canvas, true);
+    canvas.ConcatMatrix(params->GetMatrix());
+
     auto uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams().get();
     if ((!uniParam || uniParam->IsOpDropped()) && static_cast<RSPaintFilterCanvas*>(&canvas)->GetDirtyFlag() &&
         QuickReject(canvas, params->GetLocalDrawRect())) {
@@ -75,9 +75,8 @@ void RSCanvasRenderNodeDrawable::DrawShadow(Drawing::Canvas& canvas)
         RS_LOGE("params is nullptr");
         return;
     }
-    auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
-    RSAutoCanvasRestore acr(paintFilterCanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
-    params->ApplyAlphaAndMatrixToCanvas(*paintFilterCanvas);
+    Drawing::AutoCanvasRestore acr(canvas, true);
+    canvas.ConcatMatrix(params->GetMatrix());
     bool quickRejected = canvas.QuickReject(params->GetBounds());
     if (quickRejected) {
         RS_LOGD("this drawable has quickRejected");
@@ -97,9 +96,8 @@ void RSCanvasRenderNodeDrawable::DrawWithoutShadow(Drawing::Canvas& canvas)
         RS_LOGE("params is nullptr");
         return;
     }
-    auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
-    RSAutoCanvasRestore acr(paintFilterCanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
-    params->ApplyAlphaAndMatrixToCanvas(*paintFilterCanvas);
+    Drawing::AutoCanvasRestore acr(canvas, true);
+    canvas.ConcatMatrix(params->GetMatrix());
     bool quickRejected = canvas.QuickReject(params->GetBounds());
     if (quickRejected) {
         RS_LOGD("this drawable has quickRejected");
@@ -119,9 +117,8 @@ void RSCanvasRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     if (!params->GetShouldPaint()) {
         return;
     }
-    auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
-    RSAutoCanvasRestore acr(paintFilterCanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
-    params->ApplyAlphaAndMatrixToCanvas(*paintFilterCanvas);
+    Drawing::AutoCanvasRestore acr(canvas, true);
+    canvas.ConcatMatrix(params->GetMatrix());
 
     CheckCacheTypeAndDraw(canvas, *params);
 }

@@ -16,6 +16,9 @@
 #include "drawable/rs_surface_render_node_drawable.h"
 
 #include <memory>
+#include "common/rs_color.h"
+#include "common/rs_common_def.h"
+#include "draw/brush.h"
 #include "rs_trace.h"
 
 #include "common/rs_obj_abs_geometry.h"
@@ -26,19 +29,47 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_uni_render_thread.h"
 #include "pipeline/rs_uni_render_util.h"
+
+#ifdef RS_PARALLEL
+#include "common/rs_color.h"
+#include "common/rs_common_def.h"
+#include "draw/brush.h"
+
 #include "platform/common/rs_log.h"
 #include "utils/rect.h"
 #include "utils/region.h"
+
+#include "pipeline/rs_uifisrt_manager.h"
+#include "pipeline/parallel_render/rs_sub_thread_manager.h"
+#include "pipeline/rs_main_thread.h"
+#ifdef RS_ENABLE_VK
+#include "include/gpu/GrBackendSurface.h"
+#include "platform/ohos/backend/native_buffer_utils.h"
+#include "platform/ohos/backend/rs_vulkan_context.h"
+#endif
+#endif
 
 namespace OHOS::Rosen::DrawableV2 {
 RSSurfaceRenderNodeDrawable::Registrar RSSurfaceRenderNodeDrawable::instance_;
 
 RSSurfaceRenderNodeDrawable::RSSurfaceRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node)
     : RSRenderNodeDrawable(std::move(node))
-{}
+{
+#ifdef RS_PARALLEL
+    RSUifirstManager::Instance().AddSurfaceDrawable(renderNode_->GetId(), this);
+#endif
+}
+
+RSSurfaceRenderNodeDrawable::~RSSurfaceRenderNodeDrawable()
+{
+#ifdef RS_PARALLEL    
+    RSUifirstManager::Instance().DeleSurfaceDrawable(renderNode_->GetId());
+#endif
+}
 
 RSRenderNodeDrawable::Ptr RSSurfaceRenderNodeDrawable::OnGenerate(std::shared_ptr<const RSRenderNode> node)
 {
+    RS_TRACE_NAME("RSRenderNodeDrawable::Ptr RSSurfaceRenderNodeDrawable::OnGenerate");
     return new RSSurfaceRenderNodeDrawable(std::move(node));
 }
 
@@ -51,7 +82,7 @@ Drawing::Region RSSurfaceRenderNodeDrawable::CalculateVisibleRegion(RSSurfaceRen
     }
 
     // The region is dirty region of this SurfaceNode.
-    Occlusion::Region surfaceNodeDirtyRegion(surfaceNode->GetDirtyManager()->GetDirtyRegion());
+    Occlusion::Region surfaceNodeDirtyRegion(surfaceNode->GetSyncDirtyManager()->GetDirtyRegion());
     // The region is the result of global dirty region AND occlusion region.
     Occlusion::Region globalDirtyRegion = surfaceNode->GetGlobalDirtyRegion();
     // This include dirty region and occlusion region when surfaceNode is mainWindow.
@@ -98,10 +129,30 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
 
+    auto rscanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
+    if (!rscanvas) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw, rscanvas us nullptr");
+        return;
+    }
+#ifdef RS_PARALLEL
+    if (surfaceParams->GetUifirstNodeEnableParam()) { // TODO: reuse cache type ?
+        RS_TRACE_NAME_FMT("DrawUIFirstCache %s %lx", surfaceNode->GetName().c_str(), surfaceParams->GetId());
+        RSUifirstManager::Instance().AddReuseNode(surfaceParams->GetId());
+        auto& renderParams = renderNode_->GetRenderParams();
+        Drawing::Rect bounds = renderParams ? renderParams->GetBounds() : Drawing::Rect(0, 0, 0, 0);
+        RSAutoCanvasRestore acr(rscanvas);
+        rscanvas->MultiplyAlpha(surfaceParams->GetAlpha());
+        rscanvas->ConcatMatrix(surfaceParams->GetMatrix());
+        DrawBackground(*rscanvas, bounds);
+        DrawUIFirstCache(*rscanvas);
+        DrawForeground(*rscanvas, bounds);
+        return;
+    }
+#endif
+
 
     // TO-DO [UI First] Check UpdateCacheSurface
     // TO-DO [DFX] Draw Context ClipRect
-
     RS_TRACE_NAME("RSSurfaceRenderNodeDrawable::OnDraw:[" + surfaceNode->GetName() + "] " +
                   surfaceParams->GetAbsDrawRect().ToString() + "Alpha: " + std::to_string(surfaceNode->GetGlobalAlpha()));
 
@@ -120,8 +171,9 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     // TO-DO [Sub Thread] CheckFilterCache
 
-    auto rscanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
-    RSAutoCanvasRestore acr(rscanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
+    RSAutoCanvasRestore acr(rscanvas);
+
+    rscanvas->MultiplyAlpha(surfaceParams->GetAlpha());
 
     bool isSelfDrawingSurface = surfaceParams->GetSurfaceNodeType() == RSSurfaceNodeType::SELF_DRAWING_NODE;
     if (isSelfDrawingSurface && !surfaceParams->IsSpherizeValid()) {
@@ -133,13 +185,11 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         rscanvas->SetDirtyFlag(true);
     }
 
-    surfaceParams->ApplyAlphaAndMatrixToCanvas(*rscanvas);
+    rscanvas->ConcatMatrix(surfaceParams->GetMatrix());
 
     if (isSelfDrawingSurface) {
         RSUniRenderUtil::FloorTransXYInCanvasMatrix(*rscanvas);
     }
-
-    nodeSp->ProcessRenderBeforeChildren(*rscanvas);
 
     if (surfaceParams->GetBuffer() != nullptr) {
         DealWithSelfDrawingNodeBuffer(*surfaceNode, *rscanvas, *surfaceParams);

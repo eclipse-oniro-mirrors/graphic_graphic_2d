@@ -32,6 +32,7 @@ RSDisplayRenderNode::RSDisplayRenderNode(
     RS_LOGI("RSDisplayRenderNode ctor id:%{public}" PRIu64 "", id);
     MemoryInfo info = {sizeof(*this), ExtractPid(id), id, MEMORY_TYPE::MEM_RENDER_NODE};
     MemoryTrack::Instance().AddNodeRecord(id, info);
+    syncDirtyManager_ = RSSystemProperties::GetRenderParallelEnabled() ? std::make_shared<RSDirtyRegionManager>(true) : dirtyManager_;
 }
 
 RSDisplayRenderNode::~RSDisplayRenderNode()
@@ -54,7 +55,7 @@ void RSDisplayRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& vis
     if (!visitor) {
         return;
     }
-    ApplyModifiers();
+    RSRenderNode::ApplyModifiers();
     visitor->QuickPrepareDisplayRenderNode(*this);
 }
 
@@ -63,7 +64,7 @@ void RSDisplayRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)
     if (!visitor) {
         return;
     }
-    ApplyModifiers();
+    RSRenderNode::ApplyModifiers();
     visitor->PrepareDisplayRenderNode(*this);
 }
 
@@ -172,7 +173,7 @@ void RSDisplayRenderNode::OnSync()
         RS_LOGE("RSDisplayRenderNode::OnSync displayParams is null");
         return;
     }
-    dirtyManager_->OnSync();
+    dirtyManager_->OnSync(syncDirtyManager_);
     displayParams->SetNeedSync(true);
     RSRenderNode::OnSync();
     curMainAndLeashSurfaceNodes_.clear();
@@ -294,10 +295,11 @@ void RSDisplayRenderNode::UpdateRotation()
     lastRotation_ = boundsGeoPtr->GetRotation();
 }
 
-void RSDisplayRenderNode::UpdateDisplayDirtyManager(int32_t bufferage, bool useAlignedDirtyRegion)
+void RSDisplayRenderNode::UpdateDisplayDirtyManager(int32_t bufferage, bool useAlignedDirtyRegion, bool renderParallel)
 {
-    dirtyManager_->SetBufferAge(bufferage);
-    dirtyManager_->UpdateDirty(useAlignedDirtyRegion);
+    auto dirtyManager = renderParallel ? syncDirtyManager_ : dirtyManager_;
+    dirtyManager->SetBufferAge(bufferage);
+    dirtyManager->UpdateDirty(useAlignedDirtyRegion);
 }
 
 void RSDisplayRenderNode::ClearCurrentSurfacePos()
