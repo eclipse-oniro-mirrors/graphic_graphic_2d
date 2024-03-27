@@ -1617,6 +1617,9 @@ void RSMainThread::Render()
         RS_LOGE("RSMainThread::Render GetGlobalRootRenderNode fail");
         return;
     }
+    auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
+    renderThreadParams_->SetTimestamp(hgmCore.GetCurrentTimestamp());
+    renderThreadParams_->SetPendingScreenRefreshRate(hgmCore.GetPendingScreenRefreshRate());
     if (RSSystemProperties::GetRenderNodeTraceEnabled()) {
         RSPropertyTrace::GetInstance().RefreshNodeTraceInfo();
     }
