@@ -322,7 +322,7 @@
     { "name": "OH_Drawing_TypographyTextlineStyleGetFontStyle" },
     { "name": "OH_Drawing_TypographyTextlineStyleGetFontWeight" },
     { "name": "OH_Drawing_TypographyTextlineStyleGetFontFamilies" },
-    { "name": "OH_Drawing_DestroyFontFamilies" },
+    { "name": "OH_Drawing_TypographyTextlineStyleDestroyFontFamilies" },
     { "name": "OH_Drawing_TypographyTextlineStyleGetFontSize" },
     { "name": "OH_Drawing_TypographyTextlineStyleGetHeightOnly" },
     { "name": "OH_Drawing_TypographyTextlineStyleGetHeightScale" },
@@ -333,6 +333,6 @@
     { "name": "OH_Drawing_TypographyGetTextDirection" },
     { "name": "OH_Drawing_TypographyGetTextMaxLines" },
     { "name": "OH_Drawing_TypographyGetTextEllipsis" },
-    { "name": "OH_Drawing_DestroyEllipsis" },
+    { "name": "OH_Drawing_TypographyDestroyEllipsis" },
     { "name": "OH_Drawing_TypographyStyleEquals" }
 ]

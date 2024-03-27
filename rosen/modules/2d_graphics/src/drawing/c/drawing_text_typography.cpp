@@ -2180,7 +2180,7 @@ char** OH_Drawing_TypographyTextlineStyleGetFontFamilies(OH_Drawing_TypographySt
     return fontFamilie;
 }
 
-void OH_Drawing_DestroyFontFamilies(char** fontFamilies, size_t num)
+void OH_Drawing_TypographyTextlineStyleDestroyFontFamilies(char** fontFamilies, size_t num)
 {
     if (fontFamilies == nullptr) {
         return;
@@ -2282,7 +2282,7 @@ char* OH_Drawing_TypographyGetTextEllipsis(OH_Drawing_TypographyStyle* style)
     return result;
 }
 
-void OH_Drawing_DestroyEllipsis(char* ellipsis)
+void OH_Drawing_TypographyDestroyEllipsis(char* ellipsis)
 {
     if (ellipsis == nullptr) {
         return;
