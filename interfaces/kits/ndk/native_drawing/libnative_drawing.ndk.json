@@ -352,6 +352,7 @@
     { "name": "OH_Drawing_GetSystemFontConfigInfo" },
     { "name": "OH_Drawing_DestroySystemFontConfigInfo" },
     { "name": "OH_Drawing_SetTypographyStyleTextStrutStyle" },
+    { "name": "OH_Drawing_TypographyStyleDestroyStrutStyle"},
     { "name": "OH_Drawing_TypographyStyleGetStrutStyle" },
     { "name": "OH_Drawing_TypographyStyleStrutStyleEquals" },
     { "name": "OH_Drawing_TypographyStyleSetHintingOn" },

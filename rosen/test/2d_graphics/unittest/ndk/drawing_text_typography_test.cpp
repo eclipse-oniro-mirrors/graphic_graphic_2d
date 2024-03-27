@@ -2123,7 +2123,7 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest072, TestSize.Level
     configJsonInfo = nullptr;
 }
 
-/**
+/*
  * @tc.name: OH_Drawing_TypographyTest073
  * @tc.desc: test for getting all font metrics array from current line
  * @tc.type: FUNC
@@ -2175,18 +2175,14 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest074, TestSize.Level
     strutstyle->familiesSize = 4;
     strutstyle->families = (char**)malloc(strutstyle->familiesSize*sizeof(char*));
     const char *temp[] = {"1", "2", "3", "4"};
-    for(int i = 0; i < strutstyle->familiesSize; i++) {
+    for (int i = 0; i < strutstyle->familiesSize; i++) {
         // 2 For families member size
         strutstyle->families[i] = (char*)malloc(2*sizeof(char));
         strcpy_s(strutstyle->families[i], 2, temp[i]);
     }
     OH_Drawing_SetTypographyStyleTextStrutStyle(typoStyle, strutstyle);
     EXPECT_EQ(OH_Drawing_TypographyStyleGetStrutStyle(typoStyle) != nullptr, true);
-    for(int i = 0; i < strutstyle->familiesSize; i++) {
-        free(strutstyle->families[i]);
-    }
-    free(strutstyle->families);
-    free(strutstyle);
+    OH_Drawing_TypographyStyleDestroyStrutStyle(strutstyle);
     OH_Drawing_DestroyTypographyStyle(typoStyle);
 }
 
@@ -2205,10 +2201,8 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest075, TestSize.Level
     EXPECT_TRUE(result == false);
     result = OH_Drawing_TypographyStyleStrutStyleEquals(from, nullptr);
     EXPECT_TRUE(result == false);
-    delete from;
-    delete to;
-    from = nullptr;
-    to = nullptr;
+    OH_Drawing_TypographyStyleDestroyStrutStyle(from);
+    OH_Drawing_TypographyStyleDestroyStrutStyle(to);
     EXPECT_TRUE(from == nullptr);
     EXPECT_TRUE(to == nullptr);
 }
