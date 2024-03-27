@@ -47,16 +47,16 @@
 namespace OHOS {
 namespace Rosen {
 void RSUniRenderUtil::MergeDirtyHistory(std::shared_ptr<RSDisplayRenderNode>& node, int32_t bufferAge,
-    bool useAlignedDirtyRegion, bool quickPrepare)
+    bool useAlignedDirtyRegion, bool renderParallel)
 {
     auto params = static_cast<RSDisplayRenderParams*>(node->GetRenderParams().get());
-    if (!params && quickPrepare) {
+    if (!params && renderParallel) {
         RS_LOGE("RSUniRenderUtil::MergeDirtyHistory params is nullptr");
         return;
     }
 
     // TO-DO curAllSurfaces will use surface node ptr vector
-    auto& curAllSurfaces = quickPrepare ? params->GetAllMainAndLeashSurfaces() : node->GetCurAllSurfaces();
+    auto& curAllSurfaces = renderParallel ? params->GetAllMainAndLeashSurfaces() : node->GetCurAllSurfaces();
     // update all child surfacenode history
     for (auto it = curAllSurfaces.rbegin(); it != curAllSurfaces.rend(); ++it) {
         auto surfaceNode = RSRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
@@ -64,7 +64,7 @@ void RSUniRenderUtil::MergeDirtyHistory(std::shared_ptr<RSDisplayRenderNode>& no
             continue;
         }
         RS_TRACE_NAME_FMT("RSUniRenderUtil::MergeDirtyHistory for surfaceNode %lu", surfaceNode->GetId());
-        auto surfaceDirtyManager = surfaceNode->GetDirtyManager();
+        auto surfaceDirtyManager = renderParallel ? surfaceNode->GetSyncDirtyManager() : surfaceNode->GetDirtyManager();
         if (!surfaceDirtyManager->SetBufferAge(bufferAge)) {
             ROSEN_LOGE("RSUniRenderUtil::MergeDirtyHistory with invalid buffer age %{public}d", bufferAge);
         }
@@ -73,11 +73,11 @@ void RSUniRenderUtil::MergeDirtyHistory(std::shared_ptr<RSDisplayRenderNode>& no
     }
 
     // update display dirtymanager
-    node->UpdateDisplayDirtyManager(bufferAge, useAlignedDirtyRegion);
+    node->UpdateDisplayDirtyManager(bufferAge, useAlignedDirtyRegion, renderParallel);
 }
 
 Occlusion::Region RSUniRenderUtil::MergeVisibleDirtyRegion(std::vector<RSBaseRenderNode::SharedPtr>& allSurfaceNodes,
-    std::vector<NodeId>& hasVisibleDirtyRegionSurfaceVec, bool useAlignedDirtyRegion, bool quickPrepare)
+    std::vector<NodeId>& hasVisibleDirtyRegionSurfaceVec, bool useAlignedDirtyRegion, bool renderParallel)
 {
     Occlusion::Region allSurfaceVisibleDirtyRegion;
     for (auto it = allSurfaceNodes.rbegin(); it != allSurfaceNodes.rend(); ++it) {
@@ -87,15 +87,15 @@ Occlusion::Region RSUniRenderUtil::MergeVisibleDirtyRegion(std::vector<RSBaseRen
         }
         auto surfaceParams =
             static_cast<RSSurfaceRenderParams*>(surfaceNode->GetRenderParams().get());
-        if (!surfaceParams && quickPrepare) {
+        if (!surfaceParams && renderParallel) {
             RS_LOGE("RSUniRenderUtil::MergeVisibleDirtyRegion surface params is nullptr");
             continue;
         }
-        auto surfaceDirtyManager = surfaceNode->GetDirtyManager();
+        auto surfaceDirtyManager = renderParallel ? surfaceNode->GetSyncDirtyManager() : surfaceNode->GetDirtyManager();
         auto surfaceDirtyRect = surfaceDirtyManager->GetDirtyRegion();
         Occlusion::Rect dirtyRect { surfaceDirtyRect.left_, surfaceDirtyRect.top_,
             surfaceDirtyRect.GetRight(), surfaceDirtyRect.GetBottom() };
-        auto visibleRegion =  quickPrepare ? surfaceParams->GetVisibleRegion() : surfaceNode->GetVisibleRegion();
+        auto visibleRegion =  renderParallel ? surfaceParams->GetVisibleRegion() : surfaceNode->GetVisibleRegion();
         Occlusion::Region surfaceDirtyRegion { dirtyRect };
         Occlusion::Region surfaceVisibleDirtyRegion = surfaceDirtyRegion.And(visibleRegion);
         surfaceNode->SetVisibleDirtyRegion(surfaceVisibleDirtyRegion);
@@ -123,7 +123,7 @@ void RSUniRenderUtil::SetAllSurfaceGlobalDityRegion(
             continue;
         }
         // set display dirty region to surfaceNode
-        surfaceNode->SetGlobalDirtyRegion(globalDirtyRegion);
+        surfaceNode->SetGlobalDirtyRegion(globalDirtyRegion, true);
         surfaceNode->SetDirtyRegionAlignedEnable(false);
     }
     Occlusion::Region curVisibleDirtyRegion;

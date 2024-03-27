@@ -51,7 +51,7 @@ Drawing::Region RSSurfaceRenderNodeDrawable::CalculateVisibleRegion(RSSurfaceRen
     }
 
     // The region is dirty region of this SurfaceNode.
-    Occlusion::Region surfaceNodeDirtyRegion(surfaceNode->GetDirtyManager()->GetDirtyRegion());
+    Occlusion::Region surfaceNodeDirtyRegion(surfaceNode->GetSyncDirtyManager()->GetDirtyRegion());
     // The region is the result of global dirty region AND occlusion region.
     Occlusion::Region globalDirtyRegion = surfaceNode->GetGlobalDirtyRegion();
     // This include dirty region and occlusion region when surfaceNode is mainWindow.

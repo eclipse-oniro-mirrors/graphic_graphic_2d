@@ -405,6 +405,7 @@ public:
     bool GetForceUIFirstChanged();
 
     std::shared_ptr<RSDirtyRegionManager> GetDirtyManager() const;
+    std::shared_ptr<RSDirtyRegionManager> GetSyncDirtyManager() const;
     std::shared_ptr<RSDirtyRegionManager> GetCacheSurfaceDirtyManager() const;
 
     void SetSrcRect(const RectI& rect)
@@ -576,13 +577,7 @@ public:
         alphaChanged_ = false;
     }
 
-    void SetGlobalDirtyRegion(const RectI& rect)
-    {
-        Occlusion::Rect tmpRect { rect.left_, rect.top_, rect.GetRight(), rect.GetBottom() };
-        Occlusion::Region region { tmpRect };
-        globalDirtyRegion_ = visibleRegion_.And(region);
-        globalDirtyRegionIsEmpty_ = globalDirtyRegion_.IsEmpty();
-    }
+    void SetGlobalDirtyRegion(const RectI& rect, bool renderParallel = false);
 
     const Occlusion::Region& GetGlobalDirtyRegion() const
     {
@@ -1035,6 +1030,7 @@ private:
     bool isOcclusionVisibleWithoutFilter_ = true;
     bool isOcclusionInSpecificScenes_ = false;
     std::shared_ptr<RSDirtyRegionManager> dirtyManager_ = nullptr;
+    std::shared_ptr<RSDirtyRegionManager> syncDirtyManager_ = nullptr;
     std::shared_ptr<RSDirtyRegionManager> cacheSurfaceDirtyManager_ = nullptr;
     RectI dstRect_;
     bool dstRectChanged_ = false;

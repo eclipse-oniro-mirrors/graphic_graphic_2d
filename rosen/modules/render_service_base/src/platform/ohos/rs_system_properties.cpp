@@ -458,6 +458,13 @@ bool RSSystemProperties::GetQuickPrepareEnabled()
     return quickPrepareEnabled;
 }
 
+bool RSSystemProperties::GetRenderParallelEnabled()
+{
+    static bool enable =
+        std::atoi((system::GetParameter("persist.sys.graphic.renderParallel", "1")).c_str()) != 0;
+    return enable;
+}
+
 bool RSSystemProperties::GetBlurEnabled()
 {
     static bool blurEnabled =

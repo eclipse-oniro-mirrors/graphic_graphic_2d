@@ -87,8 +87,6 @@ public:
         return isFilterCacheRectValid_;
     }
 
-    // return sync frame dirtyregion, witch can only be changed in render thread
-    const RectI& GetSyncCurrentFrameDirtyRegion();
     // return current frame dirtyregion, can be changed in prepare and process (displaynode) stage
     const RectI& GetCurrentFrameDirtyRegion();
     // return merged historical region
@@ -134,7 +132,7 @@ public:
         return false;
     }
     // OnSync must be excuted after UpdateDirty API
-    void OnSync();
+    void OnSync(std::shared_ptr<RSDirtyRegionManager> targetManager);
 
     // added for dirty region dfx
     void UpdateDirtyRegionInfoForDfx(NodeId id, RSRenderNodeType nodeType = RSRenderNodeType::CANVAS_NODE,
@@ -171,7 +169,6 @@ private:
     RectI surfaceRect_;             // dirtyregion clipbounds
     RectI dirtyRegion_;             // dirtyregion after merge history
     RectI currentFrameDirtyRegion_; // dirtyRegion in current frame
-    RectI syncCurrentFrameDirtyRegion_; // sync currentFrameDirtyRegion_ for replay.
     std::vector<RectI> visitedDirtyRegions_ = {};  // visited app's dirtyRegion
     std::vector<RectI> cacheableFilterRects_ = {};  // node's region if filter cachable
     std::vector<RectI> mergedDirtyRegions_ = {};

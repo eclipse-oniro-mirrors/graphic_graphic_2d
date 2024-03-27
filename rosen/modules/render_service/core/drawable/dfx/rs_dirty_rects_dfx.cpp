@@ -57,7 +57,7 @@ void RSDirtyRectsDfx::OnDraw(std::shared_ptr<RSPaintFilterCanvas> canvas)
             DrawTargetSurfaceDirtyRegionForDFX();
         }
         if (renderThreadParams->isDisplayDirtyDfxEnabled_) {
-            DrawDirtyRegionForDFX(targetNode_->GetDirtyManager()->GetMergedDirtyRegions());
+            DrawDirtyRegionForDFX(targetNode_->GetSyncDirtyManager()->GetMergedDirtyRegions());
         }
     }
 
@@ -120,7 +120,7 @@ void RSDirtyRectsDfx::DrawDirtyRegionForDFX(std::vector<RectI> dirtyRects) const
 void RSDirtyRectsDfx::DrawAndTraceSingleDirtyRegionTypeForDFX(
     RSSurfaceRenderNode& node, DirtyRegionType dirtyType, bool isDrawn) const
 {
-    auto dirtyManager = node.GetDirtyManager();
+    auto dirtyManager = node.GetSyncDirtyManager();
     auto matchType = DIRTY_REGION_TYPE_MAP.find(dirtyType);
     if (dirtyManager == nullptr || matchType == DIRTY_REGION_TYPE_MAP.end()) {
         return;
@@ -198,7 +198,7 @@ void RSDirtyRectsDfx::DrawAllSurfaceDirtyRegionForDFX() const
     DrawDirtyRegionForDFX(rects);
 
     // draw display dirtyregion with red color
-    RectI dirtySurfaceRect = targetNode_->GetDirtyManager()->GetDirtyRegion();
+    RectI dirtySurfaceRect = targetNode_->GetSyncDirtyManager()->GetDirtyRegion();
     const float fillAlpha = 0.2;
     DrawDirtyRectForDFX(dirtySurfaceRect, Drawing::Color::COLOR_RED, RSPaintStyle::STROKE, fillAlpha);
 }
@@ -231,7 +231,7 @@ void RSDirtyRectsDfx::DrawTargetSurfaceDirtyRegionForDFX() const
                 rects.emplace_back(rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_);
             }
             const auto& visibleRegions = surfaceNode->GetVisibleRegion().GetRegionRects();
-            auto displayDirtyRegion = targetNode_->GetDirtyManager()->GetDirtyRegion();
+            auto displayDirtyRegion = targetNode_->GetSyncDirtyManager()->GetDirtyRegion();
             for (auto& rect : visibleRegions) {
                 auto visibleRect = RectI(rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_);
                 auto intersectRegion = displayDirtyRegion.IntersectRect(visibleRect);
