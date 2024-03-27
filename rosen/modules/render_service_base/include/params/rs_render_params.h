@@ -116,8 +116,8 @@ private:
     // this rect should map display coordination
     RectI localDrawRect_;
     bool shouldPaint_;
-    bool isSecurityLayer_;
-    bool isSkipLayer_;
+    bool isSecurityLayer_ = false; // TODO
+    bool isSkipLayer_ = false; // TODO
 
     Vector2f cacheSize_;
     bool childHasVisibleFilter_ = false;

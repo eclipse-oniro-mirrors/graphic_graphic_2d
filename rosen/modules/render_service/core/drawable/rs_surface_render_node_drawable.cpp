@@ -226,7 +226,8 @@ void RSSurfaceRenderNodeDrawable::CaptureSingleSurfaceNode(RSSurfaceRenderNode& 
         RSUniRenderUtil::FloorTransXYInCanvasMatrix(canvas);
     }
 
-    nodeSp->ProcessRenderBeforeChildren(canvas);
+    RSRenderNodeDrawable::DrawBackground(canvas, surfaceParams.GetBounds());
+    RSRenderNodeDrawable::DrawContent(canvas, surfaceParams.GetBounds());
 
     if (surfaceParams.IsSecurityLayer() || surfaceParams.IsSkipLayer()) {
         RS_LOGD("RSSurfaceRenderNodeDrawable::CaptureSingleSurfaceNode: \
@@ -288,7 +289,8 @@ void RSSurfaceRenderNodeDrawable::CaptureSurfaceInDisplay(RSSurfaceRenderNode& s
         RSUniRenderUtil::FloorTransXYInCanvasMatrix(canvas);
     }
 
-    nodeSp->ProcessRenderBeforeChildren(canvas);
+    RSRenderNodeDrawable::DrawBackground(canvas, surfaceParams.GetBounds());
+    RSRenderNodeDrawable::DrawContent(canvas, surfaceParams.GetBounds());
 
     if (isSelfDrawingSurface) {
         canvas.Restore();

@@ -102,7 +102,7 @@ private:
     RSDisplayRenderNode::CompositeType compositeType_ = RSDisplayRenderNode::CompositeType::HARDWARE_COMPOSITE;
     friend class RSUniRenderVisitor;
     friend class RSDisplayRenderNode;
-    bool displayHasSecSurface_ = false; // TODO
+    bool displayHasSecSurface_ = true; // Enforce process children when doing snapshot
     bool displayHasSkipSurface_ = false; // TODO
     
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_; // TODO
