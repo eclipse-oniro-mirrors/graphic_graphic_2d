@@ -62,7 +62,7 @@ RSSurfaceRenderNodeDrawable::RSSurfaceRenderNodeDrawable(std::shared_ptr<const R
 
 RSSurfaceRenderNodeDrawable::~RSSurfaceRenderNodeDrawable()
 {
-#ifdef RS_PARALLEL    
+#ifdef RS_PARALLEL
     RSUifirstManager::Instance().DeleSurfaceDrawable(renderNode_->GetId());
 #endif
 }
@@ -121,9 +121,15 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             surfaceNode->GetName().c_str(), surfaceParams->GetId());
         return;
     }
-    Drawing::Region resultRegion = CalculateVisibleRegion(surfaceParams, surfaceNode);
+    Drawing::Region curSurfaceDrawRegion = CalculateVisibleRegion(surfaceParams, surfaceNode);
     auto uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams().get();
-    if ((!uniParam || uniParam->IsOpDropped()) && surfaceParams->IsMainWindowType() && resultRegion.IsEmpty()) {
+    if (!uniParam) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw uniParam is nullptr");
+        return;
+    }
+    MergeDirtyRegionBelowCurSurface(uniParam, surfaceParams, surfaceNode, curSurfaceDrawRegion);
+
+    if (uniParam->IsOpDropped() && surfaceParams->IsMainWindowType() && curSurfaceDrawRegion.IsEmpty()) {
         RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::OnDraw occlusion skip SurfaceName:%s NodeId:%" PRIu64 "",
             surfaceNode->GetName().c_str(), surfaceParams->GetId());
         return;
@@ -181,7 +187,7 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
 
     if (surfaceParams->IsMainWindowType()) {
-        rscanvas->UpdateDirtyRegion(resultRegion);
+        rscanvas->UpdateDirtyRegion(curSurfaceDrawRegion);
         rscanvas->SetDirtyFlag(true);
     }
 
@@ -201,6 +207,36 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     RSRenderNodeDrawable::OnDraw(canvas);
     rscanvas->SetDirtyFlag(false);
+}
+
+void RSSurfaceRenderNodeDrawable::MergeDirtyRegionBelowCurSurface(RSRenderThreadParams* uniParam,
+    RSSurfaceRenderParams* surfaceParams,
+    std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
+    Drawing::Region& region)
+{
+    if (surfaceNode->IsMainWindowType() && surfaceParams->GetVisibleRegion().IsEmpty()) {
+        return;
+    }
+    if (surfaceNode->IsMainWindowType() || surfaceNode->IsLeashWindow()) {
+        auto& accumulatedDirtyRegion = uniParam->GetAccumulatedDirtyRegion();
+        if (surfaceParams->GetIsTransparent()) {
+            auto OldDirtyInSurface = Occlusion::Region{
+                Occlusion::Rect{ surfaceParams->GetOldDirtyInSurface() } };
+            auto dirtyRegion = OldDirtyInSurface.And(accumulatedDirtyRegion);
+            if (!dirtyRegion.IsEmpty()) {
+                for (auto& rect : dirtyRegion.GetRegionRects()) {
+                    Drawing::Region tempRegion;
+                    tempRegion.SetRect(Drawing::RectI(
+                        rect.left_, rect.top_, rect.right_, rect.bottom_));
+                    region.Op(tempRegion, Drawing::RegionOp::UNION);
+                }
+            }
+        }
+        // [planing] surfaceDirtyRegion can be optimized by visibleDirtyRegion in some case.
+        auto surfaceDirtyRegion = Occlusion::Region{
+            Occlusion::Rect{ surfaceNode->GetSyncDirtyManager()->GetDirtyRegion() } };
+        accumulatedDirtyRegion.OrSelf(surfaceDirtyRegion);
+    }
 }
 
 void RSSurfaceRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
@@ -232,7 +268,7 @@ void RSSurfaceRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
             surfaceParams->GetId());
         return;
     }
-    
+
     if (RSUniRenderThread::GetCaptureParam().isCaptureDisplay_) {
         CaptureSurfaceInDisplay(*surfaceNode, *rscanvas, *surfaceParams);
     } else {
@@ -260,7 +296,7 @@ void RSSurfaceRenderNodeDrawable::CaptureSingleSurfaceNode(RSSurfaceRenderNode& 
         // when we calculate the position of self-drawing surfaceNode.
         auto scaleX = RSUniRenderThread::GetCaptureParam().scaleX_;
         auto scaleY = RSUniRenderThread::GetCaptureParam().scaleY_;
-        
+
         captureMatrix.Set(Drawing::Matrix::Index::SCALE_X, scaleX);
         captureMatrix.Set(Drawing::Matrix::Index::SCALE_Y, scaleY);
         Drawing::Matrix invertMatrix;

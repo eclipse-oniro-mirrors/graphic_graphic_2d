@@ -93,7 +93,7 @@ public:
 
     void SetDirtyRegionInfoForDFX(DirtyRegionInfoForDFX dirtyRegionInfo);
     DirtyRegionInfoForDFX GetDirtyRegionInfoForDFX() const;
-    
+
     // disable copy and move
     RSRenderParams(const RSRenderParams&) = delete;
     RSRenderParams(RSRenderParams&&) = delete;

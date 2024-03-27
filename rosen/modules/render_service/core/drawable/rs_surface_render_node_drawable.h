@@ -22,6 +22,7 @@
 #include "pipeline/rs_surface_render_node.h"
 
 namespace OHOS::Rosen {
+class RSRenderThreadParams;
 class RSSurfaceRenderNode;
 class RSSurfaceRenderParams;
 namespace DrawableV2 {
@@ -64,12 +65,12 @@ public:
         return uiFirstParams.submittedSubThreadIndex_;
     }
 
-    std::string GetDebugInfo() 
+    std::string GetDebugInfo()
     {
         std::string res="pid_";
         res.append("_name_");
         res.append(std::static_pointer_cast<const RSSurfaceRenderNode>(renderNode_)->GetName());
-        
+
         return res;
     }
 
@@ -82,26 +83,26 @@ public:
         std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
         return cacheSurface_;
     }
-    
+
     std::shared_ptr<Drawing::Surface> GetCacheSurface(uint32_t threadIndex, bool needCheckThread, bool releaseAfterGet = false);
     bool NeedInitCacheSurface() const;
     bool NeedInitCacheCompletedSurface() const;
     bool IsCacheSurfaceValid() const;
     std::shared_ptr<Drawing::Image> GetCompletedImage(RSPaintFilterCanvas& canvas, uint32_t threadIndex, bool isUIFirst);
     std::shared_ptr<Drawing::Surface> GetCompletedCacheSurface(uint32_t threadIndex, bool needCheckThread,bool releaseAfterGet);
-    
+
 
     using ClearCacheSurfaceFunc =
         std::function<void(std::shared_ptr<Drawing::Surface>&&,
         std::shared_ptr<Drawing::Surface>&&, uint32_t, uint32_t)>;
     void InitCacheSurface(Drawing::GPUContext* grContext, ClearCacheSurfaceFunc func = nullptr,
         uint32_t threadIndex = UNI_MAIN_THREAD_INDEX);
-    
+
     void ResetUifirst()
     {
         ClearCacheSurfaceInThread();
     }
-    
+
     bool HasCachedTexture() const;
 
 
@@ -143,6 +144,10 @@ private:
     void CaptureSurfaceInDisplay(RSSurfaceRenderNode& surfaceNode,
         RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
 
+    void MergeDirtyRegionBelowCurSurface(RSRenderThreadParams* uniParam,
+        RSSurfaceRenderParams* surfaceParams,
+        std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
+        Drawing::Region& region);
     Drawing::Region CalculateVisibleRegion(RSSurfaceRenderParams* surfaceParams,
         std::shared_ptr<RSSurfaceRenderNode> surfaceNode) const;
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::SURFACE_NODE, OnGenerate>;
@@ -151,7 +156,7 @@ private:
     std::string name_;
 
     bool DrawUIFirstCache(RSPaintFilterCanvas& rscanvas);
-    
+
 
     UIFirstParams uiFirstParams;
     ClearCacheSurfaceFunc clearCacheSurfaceFunc_ = nullptr;

@@ -104,6 +104,12 @@ public:
     void SetOcclusionVisible(bool visible);
     bool GetOcclusionVisible() const;
 
+    void SetIsTransparent(bool isTransparent);
+    bool GetIsTransparent() const;
+
+    void SetOldDirtyInSurface(const RectI& oldDirtyInSurface);
+    RectI GetOldDirtyInSurface() const;
+
     void SetVisibleRegion(const Occlusion::Region& visibleRegion);
     Occlusion::Region GetVisibleRegion() const;
 
@@ -137,11 +143,13 @@ private:
     RSRenderNode::WeakPtr ancestorDisplayNode_;
 
     float alpha_ = 0;
+    bool isTransparent_ = false;
     bool isSpherizeValid_ = false;
     bool needBilinearInterpolation_ = false;
     Gravity frameGravity_ = Gravity::CENTER;
     Color backgroundColor_ = RgbPalette::Transparent();
 
+    RectI oldDirtyInSurface_;
     RectI absDrawRect_;
     RRect rrect_;
 

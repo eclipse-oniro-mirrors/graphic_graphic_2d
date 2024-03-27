@@ -254,7 +254,12 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     RSDirtyRectsDfx rsDirtyRectsDfx(displayNodeSp);
     auto rects = MergeDirtyHistory(displayNodeSp, renderFrame->GetBufferAge(), screenInfo, rsDirtyRectsDfx);
     auto uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams().get();
-    if (!uniParam || (uniParam->IsPartialRenderEnabled() && !uniParam->IsRegionDebugEnabled())) {
+    if (!uniParam) {
+        RS_LOGE("RSDisplayRenderNodeDrawable::OnDraw uniParam is null");
+        return;
+    }
+    uniParam->Reset();
+    if (uniParam->IsPartialRenderEnabled() && !uniParam->IsRegionDebugEnabled()) {
         renderFrame->SetDamageRegion(rects);
     }
 
