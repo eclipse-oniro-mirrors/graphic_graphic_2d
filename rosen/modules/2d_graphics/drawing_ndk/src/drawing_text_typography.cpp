@@ -3026,9 +3026,6 @@ void OH_Drawing_TypographyStyleDestroyStrutStyle(OH_Drawing_StrutStyle* strutsty
 
 OH_Drawing_StrutStyle* OH_Drawing_TypographyStyleGetStrutStyle(OH_Drawing_TypographyStyle* style)
 {
-    if (style == nullptr) {
-        return nullptr;
-    }
     TypographyStyle* typographyStyle = ConvertToOriginalText<TypographyStyle>(style);
     if (typographyStyle == nullptr) {
         return nullptr;
@@ -3086,9 +3083,6 @@ bool OH_Drawing_TypographyStyleStrutStyleEquals(OH_Drawing_StrutStyle* from, OH_
 
 void OH_Drawing_TypographyStyleSetHintingEnable(OH_Drawing_TypographyStyle* style, bool hintingEnable)
 {
-    if (style == nullptr) {
-        return;
-    }
     TypographyStyle* typographyStyle = ConvertToOriginalText<TypographyStyle>(style);
     if (typographyStyle == nullptr) {
         return;
