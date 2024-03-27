@@ -347,10 +347,7 @@ void RSDisplayRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
             params->ToString().c_str(), params->GetId());
 
         // Adding matrix affine transformation logic
-        auto geoPtr = (displayNodeSp->GetRenderProperties().GetBoundsGeometry());
-        if (geoPtr != nullptr) {
-            rscanvas->ConcatMatrix(params->GetMatrix());
-        }
+        rscanvas->ConcatMatrix(params->GetMatrix());
 
         RSRenderNodeDrawable::OnCapture(canvas);
         DrawWatermarkIfNeed(*displayNodeSp, *rscanvas);
