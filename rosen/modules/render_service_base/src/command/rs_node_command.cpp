@@ -97,12 +97,14 @@ void RSNodeCommandHelper::RegisterGeometryTransitionPair(RSContext& context, Nod
     auto& nodeMap = context.GetNodeMap();
     auto inNode = nodeMap.GetRenderNode<RSRenderNode>(inNodeId);
     auto outNode = nodeMap.GetRenderNode<RSRenderNode>(outNodeId);
-    if (inNode == nullptr || outNode == nullptr) {
-        return;
+    if (inNode && outNode) {
+        // used inNode id as transition key
+        RSRenderNode::SharedTransitionParam inNodeParam { inNode->GetId(), outNode };
+        inNode->SetSharedTransitionParam(std::move(inNodeParam));
+
+        RSRenderNode::SharedTransitionParam outNodeParam { inNode->GetId(), inNode };
+        outNode->SetSharedTransitionParam(std::move(outNodeParam));
     }
-    auto sharedTransitionParam = std::make_shared<SharedTransitionParam>(inNode, outNode);
-    inNode->SetSharedTransitionParam(sharedTransitionParam);
-    outNode->SetSharedTransitionParam(sharedTransitionParam);
 }
 
 void RSNodeCommandHelper::UnregisterGeometryTransitionPair(RSContext& context, NodeId inNodeId, NodeId outNodeId)
@@ -111,9 +113,13 @@ void RSNodeCommandHelper::UnregisterGeometryTransitionPair(RSContext& context, N
     auto inNode = nodeMap.GetRenderNode<RSRenderNode>(inNodeId);
     auto outNode = nodeMap.GetRenderNode<RSRenderNode>(outNodeId);
     // Sanity check, if any check failed, RSUniRenderVisitor will auto unregister the pair, we do nothing here.
-    if (inNode && outNode && inNode->GetSharedTransitionParam() == outNode->GetSharedTransitionParam()) {
-        inNode->SetSharedTransitionParam(nullptr);
-        outNode->SetSharedTransitionParam(nullptr);
+    if (inNode && outNode &&
+        inNode->GetSharedTransitionParam().has_value() &&
+        inNode->GetSharedTransitionParam()->first == inNode->GetId() &&
+        outNode->GetSharedTransitionParam().has_value() &&
+        outNode->GetSharedTransitionParam()->first == inNode->GetId()) {
+        inNode->SetSharedTransitionParam(std::nullopt);
+        outNode->SetSharedTransitionParam(std::nullopt);
     }
 }
 } // namespace Rosen

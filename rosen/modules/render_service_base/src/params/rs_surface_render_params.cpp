@@ -40,7 +40,6 @@ Occlusion::Region RSSurfaceRenderParams::GetVisibleRegion() const
 void RSSurfaceRenderParams::SetVisibleRegion(const Occlusion::Region& visibleRegion)
 {
     visibleRegion_ = visibleRegion;
-    needSync_ = true;
 }
 
 void RSSurfaceRenderParams::SetOccludedByFilterCache(bool val)
@@ -171,7 +170,7 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
 
 std::string RSSurfaceRenderParams::ToString() const
 {
-    std::string ret = RSRenderParams::ToString() + ", RSSurfaceRenderParams: {";
+    std::string ret = RSRenderParams::ToString() + "\nRSSurfaceRenderParams: {\n";
     ret += RENDER_BASIC_PARAM_TO_STRING(int(rsSurfaceNodeType_));
     ret += RENDER_BASIC_PARAM_TO_STRING(int(selfDrawingType_));
     ret += RENDER_BASIC_PARAM_TO_STRING(alpha_);

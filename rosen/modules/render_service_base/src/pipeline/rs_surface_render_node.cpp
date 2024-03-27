@@ -422,7 +422,7 @@ void RSSurfaceRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& vis
     if (!visitor) {
         return;
     }
-    ApplyModifiers();
+    RSRenderNode::ApplyModifiers();
     visitor->QuickPrepareSurfaceRenderNode(*this);
 
     if ((IsAppWindow() || IsScbScreen()) && !IsNotifyUIBufferAvailable() && IsFirstFrameReadyToDraw(*this)) {
@@ -446,7 +446,7 @@ void RSSurfaceRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)
     if (!visitor) {
         return;
     }
-    ApplyModifiers();
+    RSRenderNode::ApplyModifiers();
     visitor->PrepareSurfaceRenderNode(*this);
 }
 
@@ -1616,7 +1616,12 @@ void RSSurfaceRenderNode::OnSync()
 {
     dirtyManager_->OnSync();
     if (IsMainWindowType() || IsLeashWindow()) {
-        stagingRenderParams_->SetNeedSync(true);
+        auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+        if (surfaceParams == nullptr) {
+            RS_LOGE("RSSurfaceRenderNode::OnSync surfaceParams is null");
+            return;
+        }
+        surfaceParams->SetNeedSync(true);
     }
     RSRenderNode::OnSync();
 }
@@ -2132,14 +2137,14 @@ void RSSurfaceRenderNode::SetOcclusionVisible(bool visible)
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (stagingSurfaceParams) {
         stagingSurfaceParams->SetOcclusionVisible(visible);
-        // if (stagingRenderParams_->NeedSync()) {
-        //     if (auto context = GetContext().lock()) {
-        //         context->AddPendingSyncNode(shared_from_this());
-        //     } else {
-        //         RS_LOGE("RSSurfaceRenderNode::SetOcclusionVisible context is null");
-        //         OnSync();
-        //     }
-        // }
+        if (stagingRenderParams_->NeedSync()) {
+            if (auto context = GetContext().lock()) {
+                context->AddPendingSyncNode(shared_from_this());
+            } else {
+                RS_LOGE("RSSurfaceRenderNode::SetOcclusionVisible context is null");
+                OnSync();
+            }
+        }
     } else {
         RS_LOGE("RSSurfaceRenderNode::SetOcclusionVisible stagingSurfaceParams is null");
     }
@@ -2185,8 +2190,6 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->SetAncestorDisplayNode(ancestorDisplayNode_);
     surfaceParams->frameGravity_ = properties.GetFrameGravity();
 
-    surfaceParams->SetNeedSync(true);
-
     RSRenderNode::UpdateRenderParams();
 }
 
@@ -2198,7 +2201,6 @@ void RSSurfaceRenderNode::UpdateAncestorDisplayNodeInRenderParams()
         return;
     }
     surfaceParams->SetAncestorDisplayNode(ancestorDisplayNode_);
-    surfaceParams->SetNeedSync(true);
 }
 } // namespace Rosen
 } // namespace OHOS

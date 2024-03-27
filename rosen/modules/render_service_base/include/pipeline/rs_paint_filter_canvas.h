@@ -181,12 +181,11 @@ public:
         int envSaveCount = -1;
     };
     enum SaveType : uint8_t {
-        kNone           = 0x0,
-        kCanvas         = 0x1,
-        kAlpha          = 0x2,
-        kEnv            = 0x4,
-        kCanvasAndAlpha = kCanvas | kAlpha,
-        kAll            = kCanvas | kAlpha | kEnv,
+        kNone   = 0x0,
+        kCanvas = 0x1,
+        kAlpha  = 0x2,
+        kEnv    = 0x4,
+        kAll    = kCanvas | kAlpha | kEnv,
     };
 
     SaveStatus SaveAllStatus(SaveType type = kAll);

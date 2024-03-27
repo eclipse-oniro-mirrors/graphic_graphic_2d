@@ -98,6 +98,11 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
 
+    auto rscanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
+    if (!rscanvas) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw, rscanvas us nullptr");
+        return;
+    }
 
     // TO-DO [UI First] Check UpdateCacheSurface
     // TO-DO [DFX] Draw Context ClipRect
@@ -120,8 +125,9 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     // TO-DO [Sub Thread] CheckFilterCache
 
-    auto rscanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
-    RSAutoCanvasRestore acr(rscanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
+    RSAutoCanvasRestore acr(rscanvas);
+
+    rscanvas->MultiplyAlpha(surfaceParams->GetAlpha());
 
     bool isSelfDrawingSurface = surfaceParams->GetSurfaceNodeType() == RSSurfaceNodeType::SELF_DRAWING_NODE;
     if (isSelfDrawingSurface && !surfaceParams->IsSpherizeValid()) {
@@ -133,7 +139,7 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         rscanvas->SetDirtyFlag(true);
     }
 
-    surfaceParams->ApplyAlphaAndMatrixToCanvas(*rscanvas);
+    rscanvas->ConcatMatrix(surfaceParams->GetMatrix());
 
     if (isSelfDrawingSurface) {
         RSUniRenderUtil::FloorTransXYInCanvasMatrix(*rscanvas);
