@@ -1267,7 +1267,7 @@ bool RSRenderNode::Update(RSDirtyRegionManager& dirtyManager,
     // 'dirty region of all the nodes drawn before this node', and foreground filter cache manager should use 'dirty
     // region of all the nodes drawn before this node, this node, and the children of this node'
     // 2. Filter must be valid when filter cache manager is valid, we make sure that in RSRenderNode::ApplyModifiers().
-    if (GetRenderProperties().GetBackgroundFilter() && !isInTransparentSurfaceNode) {
+    if (GetRenderProperties().GetBackgroundFilter()) {
         UpdateFilterCacheWithDirty(dirtyManager);
     }
     UpdateDirtyRegion(dirtyManager, dirty, clipRect);

@@ -158,13 +158,13 @@ void RSFilterDrawable::OnSync()
     }
 
     ClearFilterCache();
-    clearFilterredCache_ = stagingClearFilterredCache_;
+    clearFilteredCache_ = stagingClearFilteredCache_;
     
     filterHashChanged_ = false;
     filterRegionChanged_ = false;
     filterInteractWithDirty_ = false;
  
-    stagingClearFilterredCache_ = false;
+    stagingClearFilteredCache_ = false;
     clearType_ = CACHE_TYPE_BOTH;
     isLargeArea_ = false;
     isFilterCacheValid_ = false;
@@ -177,7 +177,7 @@ Drawing::RecordingCanvas::DrawFunc RSFilterDrawable::CreateDrawFunc() const
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
         if (canvas && ptr->filter_) {
             RSPropertyDrawableUtils::DrawFilter(canvas, ptr->filter_,
-                ptr->cacheManager_, ptr->clearFilterredCache_, ptr->IsForeground());
+                ptr->cacheManager_, ptr->clearFilteredCache_, ptr->IsForeground());
         }
     };
 }
@@ -199,35 +199,35 @@ void RSFilterDrawable::MarkFilterRegionIsLargeArea()
  
 void RSFilterDrawable::MarkNeedClearFilterCache()
 {
-    bool clearFilterredCacheAfterDrawing = IsClearFilterredSnapshotCacheAferDrawing();
-    stagingClearFilterredCache_ = clearFilterredCacheAfterDrawing;
+    bool clearFilteredCacheAfterDrawing = IsClearFilteredSnapshotCacheAfterDrawing();
+    stagingClearFilteredCache_ = clearFilteredCacheAfterDrawing;
  
     RS_OPTIONAL_TRACE_NAME_FMT("RSFilterDrawable::MarkNeedClearFilterCache hashChanged:%d, regionChanged_:%d, "
-        "belowDirty_:%d, isLastClearFilterredCahe:%d, isCrrentClearFilterredCahe:%d, "
+        "belowDirty_:%d, isLastClearFilteredCache:%d, isCurrentClearFilteredCache:%d, "
         "cacheUpdateInterval_:%d, canSkip:%d, isLargeArea:%d", filterHashChanged_, filterRegionChanged_,
-        filterInteractWithDirty_, lastClearIsFilterredCache_, clearFilterredCacheAfterDrawing,
+        filterInteractWithDirty_, lastClearIsFilteredCache_, clearFilteredCacheAfterDrawing,
         cacheUpdateInterval_, canSkipFrame_, isLargeArea_);
  
     // clear both two type cache: 1. filter region changed
     // 2. background changed and skip frame unenalbled
     // 3. background changed and last frame when skip-frame enabled
-    // 4.clear snapshot cache last frame and clear filterred cache current frame
+    // 4.clear snapshot cache last frame and clear filtered cache current frame
     if (filterRegionChanged_ || (filterInteractWithDirty_ && cacheUpdateInterval_ <= 0) ||
-        (!lastClearIsFilterredCache_ && filterHashChanged_)) {
+        (!lastClearIsFilteredCache_ && filterHashChanged_)) {
         if (filterInteractWithDirty_ && cacheUpdateInterval_ <= 0) {
             cacheUpdateInterval_ =filterType_ == RSFilter::AIBAR ? AIBAR_CACHE_UPDATE_INTERVAL : 
             (isLargeArea_ && canSkipFrame_ ? RSSystemProperties::GetFilterCacheUpdateInterval() : 0);
         }
         clearType_ = FilterCacheType::CACHE_TYPE_BOTH;
-        lastClearIsFilterredCache_ = clearFilterredCacheAfterDrawing;
+        lastClearIsFilteredCache_ = clearFilteredCacheAfterDrawing;
         isFilterCacheValid_ = false;
         return;
     }
  
-    // when blur filter changes, we need to clear filterred cache if it valid.
+    // when blur filter changes, we need to clear filtered cache if it valid.
     clearType_ = filterHashChanged_ ?
         FilterCacheType::CACHE_TYPE_FILTERED_SNAPSHOT : FilterCacheType::CACHE_TYPE_NONE;
-    lastClearIsFilterredCache_ = clearFilterredCacheAfterDrawing;
+    lastClearIsFilteredCache_ = clearFilteredCacheAfterDrawing;
     isFilterCacheValid_ = true;
     cacheUpdateInterval_--;
 }
@@ -259,7 +259,7 @@ void RSFilterDrawable::ClearFilterCache()
     cacheManager_->InvalidateFilterCache(clearType_);
 }
  
-bool RSFilterDrawable::IsClearFilterredSnapshotCacheAferDrawing()
+bool RSFilterDrawable::IsClearFilteredSnapshotCacheAfterDrawing()
 {
     if (filterHashChanged_ && !filterRegionChanged_) {
         return true;

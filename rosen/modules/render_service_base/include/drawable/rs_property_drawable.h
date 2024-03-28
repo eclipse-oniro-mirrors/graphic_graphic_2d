@@ -132,9 +132,13 @@ public:
  
 private:
     void ClearFilterCache();
-    bool IsClearFilterredSnapshotCacheAferDrawing();
+    bool IsClearFilteredSnapshotCacheAfterDrawing();
  
 protected:
+    bool needSync_ = false;
+    std::shared_ptr<RSFilter> filter_;
+    std::shared_ptr<RSFilter> stagingFilter_;
+
     void RecordFilterInfos(const std::shared_ptr<RSFilter>& rsFilter);
 
     // flags for clearing filter cache
@@ -142,10 +146,10 @@ protected:
     bool filterRegionChanged_ = false;
     bool filterInteractWithDirty_ = false;
  
-    // clear one of snapshot cache and filterred cache after drawing 
-    bool stagingClearFilterredCache_ = false;
-    bool clearFilterredCache_ = false;
-    bool lastClearIsFilterredCache_ = false;
+    // clear one of snapshot cache and filtered cache after drawing 
+    bool stagingClearFilteredCache_ = false;
+    bool clearFilteredCache_ = false;
+    bool lastClearIsFilteredCache_ = false;
  
     // the type cache needed clear before drawing
     FilterCacheType clearType_ = CACHE_TYPE_BOTH;

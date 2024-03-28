@@ -188,10 +188,9 @@ void RSPropertyDrawableUtils::CeilMatrixTrans(Drawing::Canvas* canvas)
     canvas->SetMatrix(matrix);
 }
 
-void RSPropertyDrawableUtils::DrawFilter(
-    Drawing::Canvas* canvas, const std::shared_ptr<RSFilter>& rsFilter,
-    const std::unique_ptr<RSFilterCacheManager>& cacheManager,
-    const bool isClearFilterredCache, const bool isForegroundFilter))
+void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas, const std::shared_ptr<RSFilter>& rsFilter,
+    const std::unique_ptr<RSFilterCacheManager>& cacheManager, const bool isClearFilteredCache,
+    const bool isForegroundFilter)
 {
     if (!RSSystemProperties::GetBlurEnabled()) {
         ROSEN_LOGD("RSPropertyDrawableUtils::DrawFilter close blur.");
@@ -230,14 +229,14 @@ void RSPropertyDrawableUtils::DrawFilter(
 
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     // Optional use cacheManager to draw filter
-    if (auto painterFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
-        !painterFilterCanvas->GetDisableFilterCache() && cacheManager != nullptr) {
+    if (auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
+        !paintFilterCanvas->GetDisableFilterCache() && cacheManager != nullptr) {
         // if (filter->GetFilterType() == RSFilter::LINEAR_GRADIENT_BLUR) {
         //     filter->SetBoundsGeometry(properties.GetFrameWidth(), properties.GetFrameHeight());
-        //     filter->SetCanvasChange(*painterFilterCanvas);
+        //     filter->SetCanvasChange(*paintFilterCanvas);
         // }
         cacheManager->DrawFilter(*paintFilterCanvas, filter, needSnapshotOutset);
-        cacheManager->CompactFilterCache(isClearFilterredCache);
+        cacheManager->CompactFilterCache(isClearFilteredCache);
         return;
     }
 #endif
@@ -304,7 +303,7 @@ void RSPropertyDrawableUtils::DrawBackgroundEffect(RSPaintFilterCanvas* canvas, 
 //         if (effectNode == nullptr) {
 //             ROSEN_LOGE("DrawBackgroundEffect::node reinterpret cast failed.");
 //         }
-//         // node is freeze or screen rotating, force cache filterred snapshot.
+//         // node is freeze or screen rotating, force cache filtered snapshot.
 //         auto forceCacheFlags = std::make_tuple(effectNode->IsStaticCached(), effectNode->GetRotationChanged());
 //         auto&& data = cacheManager->GeneratedCachedEffectData(canvas, filter, bounds, bounds, forceCacheFlags);
 //         canvas.SetEffectData(data);
