@@ -771,6 +771,7 @@ private:
     RSDrawable::Vec drawableVec_;
 
     // for blur cache
+    void UpdateDirtySlotsAndPendingNodes(RSDrawableSlot slot);
     RectI lastFilterRegion_;
     bool backgroundFilterRegionChanged_ = false;
     bool backgroundFilterInteractWithDirty_ = false;
