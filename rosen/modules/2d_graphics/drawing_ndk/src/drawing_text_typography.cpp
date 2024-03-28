@@ -3059,7 +3059,7 @@ OH_Drawing_StrutStyle* OH_Drawing_TypographyStyleGetStrutStyle(OH_Drawing_Typogr
     strutstyle->families = new char* [strutstyle->familiesSize];
     if (strutstyle->families == nullptr) {
         delete strutstyle;
-		return nullptr;
+        return nullptr;
     }
     for (size_t i = 0; i < strutstyle->familiesSize; i++) {
         int size = typographyStyle->lineStyleFontFamilies[i].size() + 1;
@@ -3079,7 +3079,7 @@ OH_Drawing_StrutStyle* OH_Drawing_TypographyStyleGetStrutStyle(OH_Drawing_Typogr
             delete[] strutstyle->families;
             delete strutstyle;
             return nullptr;
-	    }
+        }
     }
     return strutstyle;
 }
