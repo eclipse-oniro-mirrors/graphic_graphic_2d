@@ -118,6 +118,9 @@ public:
     virtual double GetGlyphsBoundsRight() = 0;
     virtual bool DidExceedMaxLines() const = 0;
     virtual int GetLineCount() const = 0;
+    virtual void MarkDirty() = 0;
+    virtual int32_t GetUnresolvedGlyphsCount() = 0;
+    virtual void UpdateFontSize(size_t from, size_t to, float fontSize) = 0;
 
     virtual void SetIndents(const std::vector<float>& indents) = 0;
     virtual float DetectIndents(size_t index) = 0;
@@ -141,6 +144,8 @@ public:
     virtual std::vector<LineMetrics> GetLineMetrics() = 0;
     virtual bool GetLineMetricsAt(int lineNumber, LineMetrics* lineMetrics) = 0;
     virtual Drawing::FontMetrics GetFontMetrics(const OHOS::Rosen::TextStyle& textStyle) = 0;
+    virtual bool GetLineFontMetrics(const size_t lineNumber,
+        size_t& charNumber, std::vector<Drawing::FontMetrics>& fontMetrics) = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

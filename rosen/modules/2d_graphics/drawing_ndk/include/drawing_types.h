@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -238,14 +238,6 @@ typedef struct OH_Drawing_Image OH_Drawing_Image;
 typedef struct OH_Drawing_SamplingOptions OH_Drawing_SamplingOptions;
 
 /**
- * @brief Defines a sdf shape, which is used to describe directed vector dield.
- *
- * @since 12
- * @version 1.0
- */
-typedef struct OH_Drawing_Sdf OH_Drawing_Sdf;
-
-/**
  * @brief Defines a textBlobBuilder, which is used to build the textBlob.
  *
  * @since 11
@@ -435,6 +427,21 @@ typedef enum {
     TEXT_ENCODING_GLYPH_ID,
 } OH_Drawing_TextEncoding;
 
+/**
+ * @brief Defines a OH_Drawing_FontMgr, which is used to manage font family.
+ *
+ * @since 12
+ * @version 1.0
+ */
+typedef struct OH_Drawing_FontMgr OH_Drawing_FontMgr;
+
+/**
+ * @brief Defines a OH_Drawing_FontStyleSet, which is used to manage font style.
+ *
+ * @since 12
+ * @version 1.0
+ */
+typedef struct OH_Drawing_FontStyleSet OH_Drawing_FontStyleSet;
 #ifdef __cplusplus
 }
 #endif

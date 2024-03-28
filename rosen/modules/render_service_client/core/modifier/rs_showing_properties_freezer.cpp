@@ -34,6 +34,7 @@ std::optional<T> RSShowingPropertiesFreezer::GetPropertyImpl() const
     if (node == nullptr) {
         return std::nullopt;
     }
+    std::unique_lock<std::recursive_mutex> lock(node->propertyMutex_);
     auto iter = node->propertyModifiers_.find(Type);
     if (iter == node->propertyModifiers_.end()) {
         ROSEN_LOGE(
@@ -230,6 +231,11 @@ std::optional<float> RSShowingPropertiesFreezer::GetSpherizeDegree() const
 std::optional<float> RSShowingPropertiesFreezer::GetLightUpEffectDegree() const
 {
     return GetPropertyImpl<float, RSModifierType::LIGHT_UP_EFFECT>();
+}
+
+std::optional<float> RSShowingPropertiesFreezer::GetDynamicDimDegree() const
+{
+    return GetPropertyImpl<float, RSModifierType::DYNAMIC_DIM_DEGREE>();
 }
 } // namespace Rosen
 } // namespace OHOS

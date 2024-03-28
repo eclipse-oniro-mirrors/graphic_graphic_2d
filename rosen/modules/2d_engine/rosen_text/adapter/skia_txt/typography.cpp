@@ -143,6 +143,30 @@ Drawing::FontMetrics Typography::MeasureText()
     return paragraph_->MeasureText();
 }
 
+void Typography::MarkDirty()
+{
+    if (paragraph_ == nullptr) {
+        return;
+    }
+    paragraph_->MarkDirty();
+}
+
+int32_t Typography::GetUnresolvedGlyphsCount()
+{
+    if (paragraph_ == nullptr) {
+        return 0;
+    }
+    return paragraph_->GetUnresolvedGlyphsCount();
+}
+
+void Typography::UpdateFontSize(size_t from, size_t to, float fontSize)
+{
+    if (paragraph_ == nullptr) {
+        return;
+    }
+    paragraph_->UpdateFontSize(from, to, fontSize);
+}
+
 void Typography::Paint(SkCanvas *canvas, double x, double y)
 {
     return paragraph_->Paint(canvas, x, y);
@@ -244,7 +268,8 @@ bool Typography::GetLineInfo(int lineNumber, bool oneLine, bool includeWhitespac
         return false;
     }
 
-    if (!sklineMetrics.fLineMetrics.empty()) {
+    if (!sklineMetrics.fLineMetrics.empty() &&
+        sklineMetrics.fLineMetrics.find(sklineMetrics.fStartIndex) != sklineMetrics.fLineMetrics.end()) {
         const auto &skFontMetrics = sklineMetrics.fLineMetrics.at(sklineMetrics.fStartIndex).font_metrics;
         lineMetrics->firstCharMetrics = skFontMetrics;
         if (oneLine) {
@@ -288,7 +313,8 @@ std::vector<LineMetrics> Typography::GetLineMetrics()
         auto metrics = paragraph_->GetLineMetrics();
         for (SPText::LineMetrics& spLineMetrics : metrics) {
             LineMetrics& line = lineMetrics.emplace_back();
-            if (!spLineMetrics.runMetrics.empty()) {
+            if (!spLineMetrics.runMetrics.empty() &&
+                spLineMetrics.runMetrics.find(spLineMetrics.startIndex) != spLineMetrics.runMetrics.end()) {
                 auto &spFontMetrics = spLineMetrics.runMetrics.at(spLineMetrics.startIndex).fontMetrics;
                 line.firstCharMetrics = spFontMetrics;
                 line.capHeight = spFontMetrics.fCapHeight;
@@ -323,7 +349,8 @@ bool Typography::GetLineMetricsAt(int lineNumber, LineMetrics* lineMetrics)
         return false;
     }
 
-    if (!skLineMetrics.fLineMetrics.empty()) {
+    if (!skLineMetrics.fLineMetrics.empty() &&
+        skLineMetrics.fLineMetrics.find(skLineMetrics.fStartIndex) != skLineMetrics.fLineMetrics.end()) {
         const auto &skFontMetrics = skLineMetrics.fLineMetrics.at(skLineMetrics.fStartIndex).font_metrics;
         lineMetrics->firstCharMetrics = skFontMetrics;
         lineMetrics->capHeight = skFontMetrics.fCapHeight;
@@ -350,6 +377,15 @@ Drawing::FontMetrics Typography::GetFontMetrics(const OHOS::Rosen::TextStyle& te
 {
     auto spTextStyle = Convert(textStyle);
     return paragraph_->GetFontMetricsResult(spTextStyle);
+}
+
+bool Typography::GetLineFontMetrics(const size_t lineNumber,
+    size_t& charNumber, std::vector<Drawing::FontMetrics>& fontMetrics)
+{
+    if (!paragraph_) {
+        return false;
+    }
+    return paragraph_->GetLineFontMetrics(lineNumber, charNumber, fontMetrics);
 }
 } // namespace AdapterTxt
 } // namespace Rosen

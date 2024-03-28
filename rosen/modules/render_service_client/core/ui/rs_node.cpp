@@ -1193,6 +1193,12 @@ void RSNode::SetDynamicLightUpDegree(const float lightUpDegree)
         RSAnimatableProperty<float>>(RSModifierType::DYNAMIC_LIGHT_UP_DEGREE, lightUpDegree);
 }
 
+void RSNode::SetDynamicDimDegree(const float dimDegree)
+{
+    SetProperty<RSDynamicDimDegreeModifier,
+        RSAnimatableProperty<float>>(RSModifierType::DYNAMIC_DIM_DEGREE, dimDegree);
+}
+
 void RSNode::SetGreyCoef(const Vector2f greyCoef)
 {
     SetProperty<RSGreyCoefModifier, RSAnimatableProperty<Vector2f>>(RSModifierType::GREY_COEF, greyCoef);
@@ -1352,6 +1358,15 @@ void RSNode::SetNodeName(const std::string& nodeName)
     }
 }
 
+void RSNode::SetTakeSurfaceForUIFlag()
+{
+    std::unique_ptr<RSCommand> command = std::make_unique<RSSetTakeSurfaceForUIFlag>(GetId());
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, IsRenderServiceNode());
+    }
+}
+
 void RSNode::SetSpherizeDegree(float spherizeDegree)
 {
     SetProperty<RSSpherizeModifier, RSAnimatableProperty<float>>(RSModifierType::SPHERIZE, spherizeDegree);
@@ -1504,17 +1519,19 @@ void RSNode::ClearAllModifiers()
 
 void RSNode::AddModifier(const std::shared_ptr<RSModifier> modifier)
 {
-    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
-    if (!modifier || modifiers_.count(modifier->GetPropertyId())) {
-        return;
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        if (!modifier || modifiers_.count(modifier->GetPropertyId())) {
+            return;
+        }
+        if (motionPathOption_ != nullptr && IsPathAnimatableModifier(modifier->GetModifierType())) {
+            modifier->SetMotionPathOption(motionPathOption_);
+        }
+        auto rsnode = std::static_pointer_cast<RSNode>(shared_from_this());
+        modifier->AttachToNode(rsnode);
+        modifiers_.emplace(modifier->GetPropertyId(), modifier);
+        modifiersTypeMap_[(int16_t)modifier->GetModifierType()] = modifier;
     }
-    if (motionPathOption_ != nullptr && IsPathAnimatableModifier(modifier->GetModifierType())) {
-        modifier->SetMotionPathOption(motionPathOption_);
-    }
-    auto rsnode = std::static_pointer_cast<RSNode>(shared_from_this());
-    modifier->AttachToNode(rsnode);
-    modifiers_.emplace(modifier->GetPropertyId(), modifier);
-    modifiersTypeMap_[(int16_t)modifier->GetModifierType()] = modifier;
     if (modifier->GetModifierType() == RSModifierType::NODE_MODIFIER) {
         return;
     }
@@ -1547,26 +1564,28 @@ void RSNode::DoFlushModifier()
 
 void RSNode::RemoveModifier(const std::shared_ptr<RSModifier> modifier)
 {
-    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
-    if (!modifier) {
-        return;
-    }
-    auto iter = modifiers_.find(modifier->GetPropertyId());
-    if (iter == modifiers_.end()) {
-        return;
-    }
-    auto deleteType = modifier->GetModifierType();
-    modifiers_.erase(iter);
-    bool isExist = false;
-    for (auto [id, value] : modifiers_) {
-        if (value && value->GetModifierType() == deleteType) {
-            modifiersTypeMap_[(int16_t)deleteType] = value;
-            isExist = true;
-            break;
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        if (!modifier) {
+            return;
         }
-    }
-    if (isExist) {
-        modifiersTypeMap_[(int16_t)deleteType] = nullptr;
+        auto iter = modifiers_.find(modifier->GetPropertyId());
+        if (iter == modifiers_.end()) {
+            return;
+        }
+        auto deleteType = modifier->GetModifierType();
+        modifiers_.erase(iter);
+        bool isExist = false;
+        for (auto [id, value] : modifiers_) {
+            if (value && value->GetModifierType() == deleteType) {
+                modifiersTypeMap_[(int16_t)deleteType] = value;
+                isExist = true;
+                break;
+            }
+        }
+        if (isExist) {
+            modifiersTypeMap_[(int16_t)deleteType] = nullptr;
+        }
     }
     modifier->DetachFromNode();
     std::unique_ptr<RSCommand> command = std::make_unique<RSRemoveModifier>(GetId(), modifier->GetPropertyId());
@@ -1619,6 +1638,7 @@ void RSNode::UpdateImplicitAnimator()
 
 std::vector<PropertyId> RSNode::GetModifierIds() const
 {
+    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
     std::vector<PropertyId> ids;
     for (const auto& [id, _] : modifiers_) {
         ids.push_back(id);
@@ -1884,6 +1904,9 @@ void RSNode::AddChild(SharedPtr child, int index)
         children_.insert(children_.begin() + index, childId);
     }
     child->SetParent(id_);
+    if (isTextureExportNode_) {
+        child->SyncTextureExport(isTextureExportNode_);
+    }
     child->OnAddChildren();
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy == nullptr) {
@@ -2059,6 +2082,38 @@ void RSNode::ClearChildren()
     auto nodeId = GetHierarchyCommandNodeId();
     std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeClearChild>(nodeId);
     transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), nodeId);
+}
+
+void RSNode::SetTextureExport(bool isTextureExportNode)
+{
+    if (isTextureExportNode == isTextureExportNode_) {
+        return;
+    }
+    isTextureExportNode_ = isTextureExportNode;
+    if (!isTextureExportNode_) {
+        DoFlushModifier();
+        return;
+    }
+    CreateTextureExportRenderNodeInRT();
+    DoFlushModifier();
+}
+
+void RSNode::SyncTextureExport(bool isTextureExportNode)
+{
+    if (isTextureExportNode == isTextureExportNode_) {
+        return;
+    }
+    SetTextureExport(isTextureExportNode);
+    for (uint32_t index = 0; index < children_.size(); index++) {
+        if (auto childPtr = RSNodeMap::Instance().GetNode(children_[index])) {
+            childPtr->SyncTextureExport(isTextureExportNode);
+            if (auto transactionProxy = RSTransactionProxy::GetInstance()) {
+                std::unique_ptr<RSCommand> command =
+                    std::make_unique<RSBaseNodeAddChild>(id_, childPtr->GetHierarchyCommandNodeId(), index);
+                transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), id_);
+            }
+        }
+    }
 }
 
 const std::optional<NodeId> RSNode::GetChildIdByIndex(int index) const

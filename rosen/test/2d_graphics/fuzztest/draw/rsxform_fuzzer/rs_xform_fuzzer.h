@@ -13,31 +13,14 @@
  * limitations under the License.
  */
 
-#include "drawing_sdf_shaper.h"
-#include "draw/sdf_shaper_base.h"
-#include <unordered_map>
+#ifndef TEST_FUZZTEST_RSFORM_FUZZER_H
+#define TEST_FUZZTEST_RSFORM_FUZZER_H
 
-using namespace OHOS;
-using namespace Rosen;
-using namespace Drawing;
+#include <climits>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 
-static SDFShapeBase* CastToSdfShape(OH_Drawing_Sdf* cShape)
-{
-    return reinterpret_cast<SDFShapeBase*>(cShape);
-}
+#define FUZZ_PROJECT_NAME "rsxform_fuzzer"
 
-OH_Drawing_Sdf* OH_Drawing_SdfCreate()
-{
-    return (OH_Drawing_Sdf*)new SDFShapeBase;
-}
-
-void OH_Drawing_SdfDestroy(OH_Drawing_Sdf* cShape)
-{
-    delete CastToSdfShape(cShape);
-}
-
-void OH_Drawing_SdfBuildShader(OH_Drawing_Sdf* cShape)
-{
-    SDFShapeBase* shape = CastToSdfShape(cShaper);
-    shape->BuildShader();
-}
+#endif // TEST_FUZZTEST_RSFORM_FUZZER_H

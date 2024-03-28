@@ -105,6 +105,30 @@ size_t ParagraphImpl::GetLineCount() const
     return paragraph_->lineNumber();
 }
 
+void ParagraphImpl::MarkDirty()
+{
+    if (paragraph_ == nullptr) {
+        return;
+    }
+    paragraph_->markDirty();
+}
+
+int32_t ParagraphImpl::GetUnresolvedGlyphsCount()
+{
+    if (paragraph_ == nullptr) {
+        return 0;
+    }
+    return paragraph_->unresolvedGlyphs();
+}
+
+void ParagraphImpl::UpdateFontSize(size_t from, size_t to, float fontSize)
+{
+    if (paragraph_ == nullptr) {
+        return;
+    }
+    paragraph_->updateFontSize(from, to, fontSize);
+}
+
 void ParagraphImpl::SetIndents(const std::vector<float>& indents)
 {
     paragraph_->setIndents(indents);
@@ -290,6 +314,15 @@ Drawing::FontMetrics ParagraphImpl::GetFontMetricsResult(const SPText::TextStyle
     OHOS::Rosen::Drawing::FontMetrics fontMetrics;
     skTextStyle.getFontMetrics(&fontMetrics);
     return fontMetrics;
+}
+
+bool ParagraphImpl::GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+    std::vector<Drawing::FontMetrics>& fontMetrics)
+{
+    if (!paragraph_) {
+        return false;
+    }
+    return paragraph_->GetLineFontMetrics(lineNumber, charNumber, fontMetrics);
 }
 } // namespace SPText
 } // namespace Rosen

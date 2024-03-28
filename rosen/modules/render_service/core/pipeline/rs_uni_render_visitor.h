@@ -185,7 +185,7 @@ private:
     void DrawDirtyRectForDFX(const RectI& dirtyRect, const Drawing::Color color,
         const RSPaintStyle fillType, float alpha, int edgeWidth, std::string extra = "");
     void DrawDirtyRegionForDFX(std::vector<RectI> dirtyRects);
-    void DrawCacheRegionForDFX(std::vector<RectI> cacheRects);
+    void DrawCacheRegionForDFX(std::map<NodeId, RectI>& cacheRects);
     void DrawHwcRegionForDFX(std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hwcNodes);
 #ifdef DDGR_ENABLE_FEATURE_OPINC
     void DrawAutoCacheRegionForDFX(std::vector<RectI, std::string> cacheRegionInfo);
@@ -195,7 +195,7 @@ private:
     void DrawAllSurfaceOpaqueRegionForDFX(RSDisplayRenderNode& node);
     void DrawSurfaceOpaqueRegionForDFX(RSSurfaceRenderNode& node);
     void DrawTargetSurfaceVisibleRegionForDFX(RSDisplayRenderNode& node);
-    void DrawCurrentRefreshRate(uint32_t currentRefreshRate, uint32_t realtimeRefreshRate);
+    void DrawCurrentRefreshRate(uint32_t currentRefreshRate, uint32_t realtimeRefreshRate, RSDisplayRenderNode& node);
     // check if surface name is in dfx target list
     inline bool CheckIfSurfaceTargetedForDFX(std::string nodeName)
     {
@@ -358,7 +358,8 @@ private:
     std::unique_ptr<RSRenderFrame> renderFrame_;
     std::shared_ptr<RSPaintFilterCanvas> canvas_;
     std::map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> dirtySurfaceNodeMap_;
-    std::vector<RectI> cacheRenderNodeMapRects_;
+    std::map<NodeId, RectI> cacheRenderNodeMapRects_;
+    std::map<NodeId, bool> cacheRenderNodeIsUpdateMap_;
     Drawing::Rect boundsRect_ {};
     Gravity frameGravity_ = Gravity::DEFAULT;
 
@@ -487,6 +488,7 @@ private:
     bool noNeedTodrawShadowAgain_ = false;
     bool notRunCheckAndSetNodeCacheType_ = false;
     int updateCacheProcessCnt_ = 0;
+    std::vector<std::string> windowsName_;
 
     NodeId firstVisitedCache_ = INVALID_NODEID;
     std::unordered_set<NodeId> visitedCacheNodeIds_ = {};
@@ -524,6 +526,10 @@ private:
     std::vector<RectI> nodesUseEffectForDfx_;
     // pair<ApplyBackgroundEffectNodeList, ApplyBackgroundEffectFallbackNodeList>
     std::unordered_map<NodeId, std::pair<std::vector<RectI>, std::vector<RectI>>> effectNodeMapForDfx_;
+
+    // use for curtain screen
+    void DrawCurtainScreen();
+    bool isCurtainScreenOn_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

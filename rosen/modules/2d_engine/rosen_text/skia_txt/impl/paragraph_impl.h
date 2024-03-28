@@ -60,6 +60,12 @@ public:
 
     void SetIndents(const std::vector<float>& indents) override;
 
+    void MarkDirty() override;
+
+    int32_t GetUnresolvedGlyphsCount() override;
+
+    void UpdateFontSize(size_t from, size_t to, float fontSize) override;
+
     float DetectIndents(size_t index) override;
 
     void Layout(double width) override;
@@ -101,6 +107,8 @@ public:
 
     Drawing::FontMetrics GetFontMetricsResult(const SPText::TextStyle& textStyle) override;
 
+    bool GetLineFontMetrics(const size_t lineNumber, size_t& charNumber,
+        std::vector<Drawing::FontMetrics>& fontMetrics) override;
 private:
     TextStyle SkStyleToTextStyle(const skia::textlayout::TextStyle& skStyle);
 
