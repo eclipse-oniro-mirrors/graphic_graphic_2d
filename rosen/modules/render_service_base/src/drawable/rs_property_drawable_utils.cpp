@@ -230,7 +230,7 @@ void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas, const std::sha
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     // Optional use cacheManager to draw filter
     if (auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
-        !paintFilterCanvas->GetDisableFilterCache() && cacheManager != nullptr) {
+        !paintFilterCanvas->GetDisableFilterCache() && cacheManager != nullptr && RSProperties::FilterCacheEnabled) {
         // if (filter->GetFilterType() == RSFilter::LINEAR_GRADIENT_BLUR) {
         //     filter->SetBoundsGeometry(properties.GetFrameWidth(), properties.GetFrameHeight());
         //     filter->SetCanvasChange(*paintFilterCanvas);
@@ -271,7 +271,8 @@ void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas, const std::sha
     filter->PostProcess(*canvas);
 }
 
-void RSPropertyDrawableUtils::DrawBackgroundEffect(RSPaintFilterCanvas* canvas, const std::shared_ptr<RSFilter>& rsFilter)
+void RSPropertyDrawableUtils::DrawBackgroundEffect(RSPaintFilterCanvas* canvas, const std::shared_ptr<RSFilter>& rsFilter,
+    const std::unique_ptr<RSFilterCacheManager>& cacheManager)
 {
     if (rsFilter == nullptr) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawBackgroundEffect null filter");
@@ -282,34 +283,35 @@ void RSPropertyDrawableUtils::DrawBackgroundEffect(RSPaintFilterCanvas* canvas, 
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawBackgroundEffect surface null");
         return;
     }
-    auto imageRect = canvas->GetDeviceClipBounds();
+    auto clipIBounds = canvas->GetDeviceClipBounds();
+    auto filter = std::static_pointer_cast<RSDrawingFilter>(rsFilter);
+#if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
+     // Optional use cacheManager to draw filter
+     if (RSProperties::FilterCacheEnabled && cacheManager != nullptr && !canvas->GetDisableFilterCache()) {
+         /* TODO adapte freeze and ratation flag
+         auto node = properties.backref_.lock();
+         if (node == nullptr) {
+             ROSEN_LOGE("DrawBackgroundEffect::node is null");
+             return;
+         }
+         auto effectNode = node->ReinterpretCastTo<RSEffectRenderNode>();
+         if (effectNode == nullptr) {
+             ROSEN_LOGE("DrawBackgroundEffect::node reinterpret cast failed.");
+         }
+         // node is freeze or screen rotating, force cache filterred snapshot.
+         auto forceCacheFlags = std::make_tuple(effectNode->IsStaticCached(), effectNode->GetRotationChanged());
+         */
+         auto&& data = cacheManager->GeneratedCachedEffectData(*canvas, filter, clipIBounds, clipIBounds);
+         canvas->SetEffectData(data);
+         return;
+     }
+#endif
+    auto imageRect = clipIBounds;
     auto imageSnapshot = surface->GetImageSnapshot(imageRect);
     if (imageSnapshot == nullptr) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawBackgroundEffect image snapshot null");
         return;
     }
-
-    auto filter = std::static_pointer_cast<RSDrawingFilter>(rsFilter);
-// #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
-//     // Optional use cacheManager to draw filter
-//     if (auto& cacheManager = properties.GetFilterCacheManager(false);
-//         cacheManager != nullptr && !canvas.GetDisableFilterCache()) {
-//         auto node = properties.backref_.lock();
-//         if (node == nullptr) {
-//             ROSEN_LOGE("DrawBackgroundEffect::node is null");
-//             return;
-//         }
-//         auto effectNode = node->ReinterpretCastTo<RSEffectRenderNode>();
-//         if (effectNode == nullptr) {
-//             ROSEN_LOGE("DrawBackgroundEffect::node reinterpret cast failed.");
-//         }
-//         // node is freeze or screen rotating, force cache filtered snapshot.
-//         auto forceCacheFlags = std::make_tuple(effectNode->IsStaticCached(), effectNode->GetRotationChanged());
-//         auto&& data = cacheManager->GeneratedCachedEffectData(canvas, filter, bounds, bounds, forceCacheFlags);
-//         canvas.SetEffectData(data);
-//         return;
-//     }
-// #endif
     filter->PreProcess(imageSnapshot);
     // create a offscreen skSurface
     std::shared_ptr<Drawing::Surface> offscreenSurface =

@@ -126,9 +126,9 @@ void RSEffectRenderNode::SetEffectRegion(const std::optional<Drawing::RectI>& ef
 void RSEffectRenderNode::UpdateFilterCacheManagerWithCacheRegion(
     RSDirtyRegionManager& dirtyManager, const std::optional<RectI>& clipRect, bool isForeground)
 {
-    if (NeedForceCache()) {
-        return;
-    }
+    //if (NeedForceCache()) {
+    //    return;
+    //}
 
     // We need to check cache validity by comparing the cached image region with the filter rect
     // PLANNING: the last != condition should be reconsidered
@@ -153,9 +153,9 @@ void RSEffectRenderNode::UpdateFilterCacheManagerWithCacheRegion(
 void RSEffectRenderNode::UpdateFilterCacheWithDirty(RSDirtyRegionManager& dirtyManager, bool isForeground)
 {
     // No need to invalidate cache if background image is not null
-    if (NeedForceCache()) {
-        return;
-    }
+    //if (NeedForceCache()) {
+    //    return;
+    //}
     RSRenderNode::UpdateFilterCacheWithDirty(dirtyManager, isForeground);
 }
 

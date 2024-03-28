@@ -182,6 +182,11 @@ Drawing::RecordingCanvas::DrawFunc RSFilterDrawable::CreateDrawFunc() const
     };
 }
 
+const RectI RSFilterDrawable::GetFilterCachedRegion() const
+{
+    return cacheManager_ == nullptr ? RectI() : cacheManager_->GetCachedImageRegion();
+}
+
 void RSFilterDrawable::MarkFilterRegionChanged()
 {
     filterRegionChanged_ = true;

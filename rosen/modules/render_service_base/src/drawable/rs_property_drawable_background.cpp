@@ -415,11 +415,8 @@ bool RSBackgroundEffectDrawable::OnUpdate(const RSRenderNode& node)
 
 void RSBackgroundEffectDrawable::OnSync()
 {
-    if (!needSync_) {
-        return;
-    }
-    filter_ = std::move(stagingFilter_);
-    needSync_ = false;
+    // TODO : adapte freeze and rotation logic
+    RSFilterDrawable::OnSync();
 }
 
 Drawing::RecordingCanvas::DrawFunc RSBackgroundEffectDrawable::CreateDrawFunc() const
@@ -427,7 +424,7 @@ Drawing::RecordingCanvas::DrawFunc RSBackgroundEffectDrawable::CreateDrawFunc() 
     auto ptr = std::static_pointer_cast<const RSBackgroundEffectDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
         auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
-        RSPropertyDrawableUtils::DrawBackgroundEffect(paintFilterCanvas, ptr->filter_);
+        RSPropertyDrawableUtils::DrawBackgroundEffect(paintFilterCanvas, ptr->filter_, ptr->cacheManager_);
     };
 }
 
