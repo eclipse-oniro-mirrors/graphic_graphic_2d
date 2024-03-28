@@ -615,6 +615,9 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
     DumpNodeType(out);
     out += "[" + std::to_string(GetId()) + "], instanceRootNodeId" + "[" +
         std::to_string(GetInstanceRootNodeId()) + "]";
+    if (sharedTransitionParam_) {
+        out += sharedTransitionParam_->Dump();
+    }
     if (IsSuggestedDrawInGroup()) {
         out += ", [node group" + std::to_string(nodeGroupType_) + "]";
     }
@@ -817,6 +820,7 @@ void RSRenderNode::SetDirty(bool forceAddToActiveList)
         if (auto context = GetContext().lock()) {
             context->AddActiveNode(shared_from_this());
         }
+        SetParentSubTreeDirty();
     }
     dirtyStatus_ = NodeDirty::DIRTY;
 }
@@ -829,6 +833,7 @@ void RSRenderNode::SetDirtyByOnTree(bool forceAddToActiveList)
         if (auto context = GetContext().lock()) {
             context->AddActiveNode(shared_from_this());
         }
+        SetParentSubTreeDirty();
     }
     dirtyStatus_ = NodeDirty::ON_TREE_DIRTY;
 }
@@ -881,6 +886,10 @@ void RSRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor)
     }
     ApplyModifiers();
     visitor->QuickPrepareChildren(*this);
+    
+    // fallback for global root node
+    UpdateRenderParams();
+    AddToPendingSyncList();
 }
 
 bool RSRenderNode::IsSubTreeNeedPrepare(bool filterInGlobal, bool isOccluded)
@@ -940,15 +949,6 @@ void RSRenderNode::UpdateDrawingCacheInfoAfterChildren()
         RS_OPTIONAL_TRACE_NAME_FMT("DrawingCacheInfoAfter id:%llu cacheType:%d childHasVisibleFilter:%d " \
             "childHasVisibleEffect:%d",
             GetId(), GetDrawingCacheType(), childHasVisibleFilter_, childHasVisibleEffect_);
-    }
-
-    if (stagingRenderParams_->NeedSync()) {
-        if (auto context = GetContext().lock()) {
-            context->AddPendingSyncNode(shared_from_this());
-        } else {
-            RS_LOGE("RSRenderNode::UpdateDrawingCacheInfoAfterChildren context is null");
-            OnSync();
-        }
     }
 }
 
@@ -1492,17 +1492,16 @@ void RSRenderNode::UpdateFilterCacheWithDirty(RSDirtyRegionManager& dirtyManager
     auto slot = isForeground ? RSDrawableSlot::FOREGROUND_FILTER : RSDrawableSlot::BACKGROUND_FILTER;
     auto& flag = isForeground ? foregroundFilterInteractWithDirty_ : backgroundFilterInteractWithDirty_;
 
-if (auto& drawable = drawableVec_[static_cast<uint32_t>(slot)]) {
-        auto filterDrawable = std::static_pointer_cast<DrawableV2::RSFilterDrawable>(drawable);
-        if (filterDrawable == nullptr) {
-            return;
-        }
-        if (!dirtyManager.GetCurrentFrameDirtyRegion().Intersect(filterDrawable->GetFilterCachedRegion())) {
-            return;
-        }
-        flag = true;
-        filterDrawable->MarkFilterRegionInteractWithDirty();
+    auto& drawable = drawableVec_[static_cast<uint32_t>(slot)];
+    if (drawable == nullptr) {
+        return;
     }
+    auto filterDrawable = std::static_pointer_cast<DrawableV2::RSFilterDrawable>(drawable);
+    if (!dirtyManager.GetCurrentFrameDirtyRegion().Intersect(filterDrawable->GetFilterCachedRegion())) {
+        return;
+    }
+    filterDrawable->MarkFilterRegionInteractWithDirty();
+    flag = true;
 #endif
 }
 
@@ -1542,15 +1541,11 @@ bool RSRenderNode::IsBackgroundInAppOrNodeSelfDirty() const
 
 void RSRenderNode::UpdateDirtySlotsAndPendingNodes(RSDrawableSlot slot)
 {
-    if (dirtySlots_.find(slot) == dirtySlots_.end()) {
-        dirtySlots_.emplace(slot);
-    }
-    if (auto context = GetContext().lock(); !context->HasPendingSyncNode(GetId())) {
-        context->AddPendingSyncNode(shared_from_this());
-    }
+    dirtySlots_.emplace(slot);
+    AddToPendingSyncList();
 }
 
-bool RSRenderNode::IsLargeArea(int width, int height)
+inline static bool IsLargeArea(int width, int height)
 {
     static const auto threshold = RSSystemProperties::GetFilterCacheSizeThreshold();
     return width > threshold && height > threshold;
@@ -1558,6 +1553,10 @@ bool RSRenderNode::IsLargeArea(int width, int height)
 
 void RSRenderNode::MarkAndUpdateFilterNodeDirtySlotsAfterPrepare()
 {
+    if (!RSProperties::FilterCacheEnabled) {
+        ROSEN_LOGE("RSRenderNode::MarkAndUpdateFilterNodeDirtySlotsAfterPrepare filter cache is disabled.");
+        return;
+    }
     if (GetRenderProperties().GetBackgroundFilter()) {
        MarkFilterCacheFlagsAfterPrepare(false);
     }
@@ -1568,22 +1567,17 @@ void RSRenderNode::MarkAndUpdateFilterNodeDirtySlotsAfterPrepare()
  
 void RSRenderNode::MarkFilterCacheFlagsAfterPrepare(bool isForeground)
 {
-    if (!RSProperties::FilterCacheEnabled) {
-        ROSEN_LOGE("RSRenderNode::MarkClearFilterCacheAfterPrepare filter cache is disabled.");
+    auto slot = isForeground ? RSDrawableSlot::FOREGROUND_FILTER : RSDrawableSlot::BACKGROUND_FILTER;
+    auto& drawable = drawableVec_[static_cast<uint32_t>(slot)];
+    if (drawable == nullptr) {
         return;
     }
-    auto slot = isForeground ? RSDrawableSlot::FOREGROUND_FILTER : RSDrawableSlot::BACKGROUND_FILTER;
-    if (auto& drawable = drawableVec_[static_cast<uint32_t>(slot)]) {
-        auto filterDrawable = std::static_pointer_cast<DrawableV2::RSFilterDrawable>(drawable);
-        if (filterDrawable == nullptr) {
-            return;
-        }
-        if (IsLargeArea(oldDirty_.GetWidth(), oldDirty_.GetHeight())) {
-            filterDrawable->MarkFilterRegionIsLargeArea();
-        }
-        filterDrawable->MarkNeedClearFilterCache();
-        UpdateDirtySlotsAndPendingNodes(slot);
+    auto filterDrawable = std::static_pointer_cast<DrawableV2::RSFilterDrawable>(drawable);
+    if (IsLargeArea(oldDirty_.GetWidth(), oldDirty_.GetHeight())) {
+        filterDrawable->MarkFilterRegionIsLargeArea();
     }
+    filterDrawable->MarkNeedClearFilterCache();
+    UpdateDirtySlotsAndPendingNodes(slot);
 }
 
 void RSRenderNode::RenderTraceDebug() const
@@ -1752,35 +1746,11 @@ void RSRenderNode::ApplyModifiers()
     // execute hooks
     GetMutableRenderProperties().OnApplyModifiers();
     OnApplyModifiers();
-
-// #if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
-//     if (auto& manager = GetRenderProperties().GetFilterCacheManager(false);
-//         manager != nullptr &&
-//         (dirtyTypes_.test(static_cast<size_t>(RSModifierType::BACKGROUND_COLOR)) ||
-//         dirtyTypes_.test(static_cast<size_t>(RSModifierType::BG_IMAGE)))) {
-//         manager->InvalidateCache();
-//     }
-//     if (auto& manager = GetRenderProperties().GetFilterCacheManager(true)) {
-//         manager->InvalidateCache();
-//     }
-// #endif
-
     UpdateShouldPaint();
+
     // Temporary code, copy matrix into render params
-    // TODO: only run UpdateRenderParams on matrix change
-    UpdateRenderParams();
     UpdateDrawableVec();
     UpdateDrawableVecV2();
-
-    if (stagingRenderParams_->NeedSync() || drawCmdListNeedSync_ || !dirtySlots_.empty()) {
-        if (auto context = GetContext().lock()) {
-            context->AddPendingSyncNode(shared_from_this());
-        } else {
-            ROSEN_LOGE("RSRenderNode::ApplyModifiers context is null");
-            // Temporary code
-            OnSync();
-        }
-    }
 
     // update state
     dirtyTypes_.reset();
@@ -1990,17 +1960,22 @@ void RSRenderNode::UpdateShouldPaint()
 // #endif
 }
 
-void RSRenderNode::SetSharedTransitionParam(const std::optional<SharedTransitionParam>&& sharedTransitionParam)
+void RSRenderNode::SetSharedTransitionParam(const std::shared_ptr<SharedTransitionParam>& sharedTransitionParam)
 {
-    if (!sharedTransitionParam_.has_value() && !sharedTransitionParam.has_value()) {
+    if (!sharedTransitionParam_ && !sharedTransitionParam) {
         // both are empty, do nothing
         return;
     }
     sharedTransitionParam_ = sharedTransitionParam;
     SetDirty();
+    // tell parent to regenerate children drawable
+    if (auto parent = parent_.lock()) {
+        parent->AddDirtyType(RSModifierType::CHILDREN);
+        parent->SetDirty();
+    }
 }
 
-const std::optional<RSRenderNode::SharedTransitionParam>& RSRenderNode::GetSharedTransitionParam() const
+const std::shared_ptr<SharedTransitionParam>& RSRenderNode::GetSharedTransitionParam() const
 {
     return sharedTransitionParam_;
 }
@@ -2755,6 +2730,12 @@ void RSRenderNode::OnTreeStateChanged()
         // Set dirty and force add to active node list, re-generate children list if needed
         SetDirty(true);
         SetParentSubTreeDirty();
+    } else if (sharedTransitionParam_) {
+        // clear shared transition param
+        if (auto pairedNode = sharedTransitionParam_->GetPairedNode(id_)) {
+            pairedNode->SetSharedTransitionParam(nullptr);
+        }
+        SetSharedTransitionParam(nullptr);
     }
 // #if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 //     if (!isOnTheTree_) {
@@ -3347,15 +3328,14 @@ void RSRenderNode::UpdateRenderParams()
     if (!boundGeo) {
         return;
     }
-    // TODO: Temporary fix, we should split RSRenderNode::Update into two steps: 1. Calculate own relative matrix, 2.
-    // Accumulate total matrix
-    boundGeo->UpdateByMatrixFromSelf();
 
-    stagingRenderParams_->SetMatrix(boundGeo->GetMatrix());
+    stagingRenderParams_->SetMatrix(
+        GetSharedTransitionParam() != nullptr ? boundGeo->GetAbsMatrix() : boundGeo->GetMatrix());
     stagingRenderParams_->SetBoundsRect({ 0, 0, boundGeo->GetWidth(), boundGeo->GetHeight() });
     stagingRenderParams_->SetFrameRect({ 0, 0, GetRenderProperties().GetFrameWidth(), GetRenderProperties().GetFrameHeight() });
     stagingRenderParams_->SetShouldPaint(shouldPaint_);
     stagingRenderParams_->SetCacheSize(GetOptionalBufferSize());
+    stagingRenderParams_->SetHasSharedTransition(GetSharedTransitionParam() != nullptr);
 }
 
 bool RSRenderNode::UpdateLocalDrawRect()
@@ -3366,6 +3346,8 @@ bool RSRenderNode::UpdateLocalDrawRect()
 
 void RSRenderNode::OnSync()
 {
+    addedToPendingSyncList_ = false;
+
     if (drawCmdListNeedSync_) {
         std::swap(stagingDrawCmdList_, drawCmdList_ );
         stagingDrawCmdList_.clear();
@@ -3373,7 +3355,7 @@ void RSRenderNode::OnSync()
         drawCmdListNeedSync_ = false;
     }
 
-    if (stagingRenderParams_ && stagingRenderParams_->NeedSync()) {
+    if (stagingRenderParams_->NeedSync()) {
         stagingRenderParams_->OnSync(renderParams_);
     }
 
@@ -3385,11 +3367,7 @@ void RSRenderNode::OnSync()
         }
         dirtySlots_.clear();
     }
-    ResetFilterCacheClearFlags();
-}
-
-void RSRenderNode::ResetFilterCacheClearFlags()
-{
+    // Reset FilterCache Flags
     backgroundFilterRegionChanged_ = false;
     backgroundFilterInteractWithDirty_ = false;
     foregroundFilterRegionChanged_ = false;
@@ -3411,6 +3389,62 @@ void RSRenderNode::ValidateLightResources()
 void RSRenderNode::UpdatePointLightDirtySlot()
 {
     UpdateDirtySlotsAndPendingNodes(RSDrawableSlot::POINT_LIGHT);
+}
+
+void RSRenderNode::AddToPendingSyncList()
+{
+    if (addedToPendingSyncList_) {
+        return;
+    }
+
+    if (auto context = GetContext().lock()) {
+        context->AddPendingSyncNode(shared_from_this());
+        addedToPendingSyncList_ = true;
+    } else {
+        ROSEN_LOGE("RSRenderNode::AddToPendingSyncList context is null");
+        OnSync();
+    }
+}
+
+SharedTransitionParam::SharedTransitionParam(RSRenderNode::SharedPtr inNode, RSRenderNode::SharedPtr outNode)
+    : inNode_(inNode), outNode_(outNode), inNodeId_(inNode->GetId()), outNodeId_(outNode->GetId()),
+      crossApplication_(inNode->GetInstanceRootNodeId() != outNode->GetInstanceRootNodeId())
+{}
+
+RSRenderNode::SharedPtr SharedTransitionParam::GetPairedNode(const NodeId nodeId) const
+{
+    if (inNodeId_ == nodeId) {
+        return outNode_.lock();
+    }
+    if (outNodeId_ == nodeId) {
+        return inNode_.lock();
+    }
+    return nullptr;
+}
+
+bool SharedTransitionParam::UpdateHierarchyAndReturnIsLower(const NodeId nodeId)
+{
+    // We already know which node is the lower one.
+    if (relation_ != NodeHierarchyRelation::UNKNOWN) {
+        return relation_ == NodeHierarchyRelation::IN_NODE_BELOW_OUT_NODE ? inNodeId_ == nodeId : outNodeId_ == nodeId;
+    }
+
+    bool visitingInNode = (nodeId == inNodeId_);
+    if (!visitingInNode && nodeId != outNodeId_) {
+        return false;
+    }
+    // Nodes in the same application will be traversed by order (first visited node has lower hierarchy), while
+    // applications will be traversed by reverse order. If visitingInNode matches crossApplication_, inNode is above
+    // outNode. Otherwise, inNode is below outNode.
+    relation_ = (visitingInNode == crossApplication_) ? NodeHierarchyRelation::IN_NODE_ABOVE_OUT_NODE
+                                                      : NodeHierarchyRelation::IN_NODE_BELOW_OUT_NODE;
+    // If crossApplication_ is true, first visited node (this node) has higher hierarchy. and vice versa.
+    return !crossApplication_;
+}
+
+std::string SharedTransitionParam::Dump() const
+{
+    return ", SharedTransitionParam: [" + std::to_string(inNodeId_) + " -> " + std::to_string(outNodeId_) + "]";
 }
 } // namespace Rosen
 } // namespace OHOS
