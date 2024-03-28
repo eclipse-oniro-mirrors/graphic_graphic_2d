@@ -3146,7 +3146,6 @@ static FontWidth GetFontWidth(OH_Drawing_FontWidth width)
     }
     return fontWidth;
 }
-
 void OH_Drawing_SetTextStyleFontStyleStruct(OH_Drawing_TextStyle* drawingTextStyle,
     OH_Drawing_FontStyleStruct fontStyle)
 {
@@ -3164,7 +3163,10 @@ OH_Drawing_FontStyleStruct OH_Drawing_TextStyleGetFontStyleStruct(OH_Drawing_Tex
     OH_Drawing_FontStyleStruct fontStyle;
     TextStyle* style = ConvertToOriginalText<TextStyle>(drawingTextStyle);
     if (style == nullptr) {
-        return;
+        fontStyle.weight = FONT_WEIGHT_400;
+        fontStyle.width = FONT_WIDTH_NORMAL;
+        fontStyle.slant = FONT_STYLE_NORMAL;
+        return fontStyle;
     }
     fontStyle.weight = static_cast<OH_Drawing_FontWeight>(style->fontWeight);
     fontStyle.width = static_cast<OH_Drawing_FontWidth>(style->fontWidth);
@@ -3189,7 +3191,10 @@ OH_Drawing_FontStyleStruct OH_Drawing_TypographyStyleGetFontStyleStruct(OH_Drawi
     OH_Drawing_FontStyleStruct fontStyle;
     TypographyStyle* style = ConvertToOriginalText<TypographyStyle>(drawingStyle);
     if (style == nullptr) {
-        return;
+        fontStyle.weight = FONT_WEIGHT_400;
+        fontStyle.width = FONT_WIDTH_NORMAL;
+        fontStyle.slant = FONT_STYLE_NORMAL;
+        return fontStyle;
     }
     fontStyle.weight = static_cast<OH_Drawing_FontWeight>(style->fontWeight);
     fontStyle.width = static_cast<OH_Drawing_FontWidth>(style->fontWidth);
