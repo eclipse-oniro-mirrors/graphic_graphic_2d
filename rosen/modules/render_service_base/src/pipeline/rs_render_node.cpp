@@ -1489,10 +1489,6 @@ void RSRenderNode::UpdateFilterCacheWithDirty(RSDirtyRegionManager& dirtyManager
         return;
     }
 
-    if (!dirtyManager.GetCurrentFrameDirtyRegion().Intersect(lastFilterRegion_)) {
-        return;
-    }
-
     auto slot = isForeground ? RSDrawableSlot::FOREGROUND_FILTER : RSDrawableSlot::BACKGROUND_FILTER;
     auto& flag = isForeground ? foregroundFilterInteractWithDirty_ : backgroundFilterInteractWithDirty_;
 
@@ -1501,8 +1497,11 @@ if (auto& drawable = drawableVec_[static_cast<uint32_t>(slot)]) {
         if (filterDrawable == nullptr) {
             return;
         }
-        filterDrawable->MarkFilterRegionInteractWithDirty();
+        if (!dirtyManager.GetCurrentFrameDirtyRegion().Intersect(filterDrawable->GetFilterCachedRegion())) {
+            return;
+        }
         flag = true;
+        filterDrawable->MarkFilterRegionInteractWithDirty();
     }
 #endif
 }
@@ -1515,9 +1514,6 @@ void RSRenderNode::UpdateFilterCacheManagerWithCacheRegion(
         ROSEN_LOGE("RSRenderNode::UpdateFilterCacheManagerWithCacheRegion filter cache is disabled.");
         return;
     }
-    if (oldDirty_.IsInsideOf(lastFilterRegion_)) {
-        return;
-    }
     auto slot = isForeground ? RSDrawableSlot::FOREGROUND_FILTER : RSDrawableSlot::BACKGROUND_FILTER;
     auto& flag = isForeground ? foregroundFilterRegionChanged_ : backgroundFilterRegionChanged_;
 
@@ -1526,8 +1522,15 @@ void RSRenderNode::UpdateFilterCacheManagerWithCacheRegion(
         if (filterDrawable == nullptr) {
             return;
         }
-        filterDrawable->MarkFilterRegionChanged();
+        auto absRect = GetRenderProperties().GetBoundsGeometry()->GetAbsRect();
+        if (clipRect.has_value()) {
+            absRect.IntersectRect(*clipRect);
+        }
+        if (absRect.IsInsideOf(filterDrawable->GetFilterCachedRegion())) {
+            return;
+        }
         flag = true;
+        filterDrawable->MarkFilterRegionChanged();
     }
 #endif
 }

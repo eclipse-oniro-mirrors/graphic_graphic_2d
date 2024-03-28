@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "common/rs_common_def.h"
+#include "common/rs_rect.h"
 #include "render/rs_filter.h"
 #include "recording/draw_cmd_list.h"
 
@@ -129,7 +130,8 @@ public:
  
     void OnSync() override;
     Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
- 
+    const RectI GetFilterCachedRegion() const;
+
 private:
     void ClearFilterCache();
     bool IsClearFilteredSnapshotCacheAfterDrawing();

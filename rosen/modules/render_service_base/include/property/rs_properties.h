@@ -473,6 +473,7 @@ private:
     friend class RSModifierDrawable;
     friend class RSPropertiesPainter;
     friend class RSRenderNode;
+    friend class RSPropertyDrawableUtils;
 
     friend class DrawableV2::RSBackgroundImageDrawable;
     friend class DrawableV2::RSBackgroundFilterDrawable;
