@@ -3015,12 +3015,18 @@ void OH_Drawing_SetTypographyStyleTextStrutStyle(OH_Drawing_TypographyStyle* sty
 
 void OH_Drawing_TypographyStyleDestroyStrutStyle(OH_Drawing_StrutStyle* strutstyle)
 {
-    if (strutstyle->families != 0) {
-        for (size_t i = 0; i < strutstyle->familiesSize; i++) {
+    if (strutstyle == nullptr) {
+        return;
+    }
+    if (strutstyle->familiesSize == 0 || strutstyle->families == nullptr) {
+        return;
+    }
+    for (size_t i = 0; i < strutstyle->familiesSize; i++) {
+        if (strutstyle->families[i] != nullptr) {
             delete[] strutstyle->families[i];
         }
-        delete[] strutstyle->families;
     }
+    delete[] strutstyle->families;
     delete strutstyle;
     strutstyle = nullptr;
 }
@@ -3050,6 +3056,9 @@ OH_Drawing_StrutStyle* OH_Drawing_TypographyStyleGetStrutStyle(OH_Drawing_Typogr
             int size = typographyStyle->lineStyleFontFamilies[i].size() + 1;
             strutstyle->families[i] = new char[size];
             if (strcpy_s(strutstyle->families[i], size, typographyStyle->lineStyleFontFamilies[i].c_str()) != 0) {
+                if (strutstyle->families[i] != nullptr) {
+                    delete[] strutstyle->families[i];
+                }
                 return nullptr;
             }
         }
