@@ -191,7 +191,7 @@ OH_Drawing_FontStyleStruct OH_Drawing_FontStyleSetGetStyle(OH_Drawing_FontStyleS
     char** styleName);
 
  /**
- * @brief Releases the memory  styleName string.
+ * @brief Releases the memory styleName string.
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
  * @param styleName Indicates the pointer to a string type.

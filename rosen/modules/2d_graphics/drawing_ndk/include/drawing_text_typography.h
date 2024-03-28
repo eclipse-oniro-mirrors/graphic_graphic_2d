@@ -476,6 +476,35 @@ enum OH_Drawing_FontConfigInfoErrorCode {
 };
 
 /**
+ * @brief Defines StrutStyle info struct.
+ *
+ * @since 12
+ * @version 1.0
+ */
+typedef struct {
+    /** The font weight to use when calculating the strut */
+    OH_Drawing_FontWeight weight;
+    /** The font style to use when calculating the strut */
+    OH_Drawing_FontStyle style;
+    /** The size of the ascent plus descent in logical pixels */
+    double size;
+    /** The minimum height of the strut, as a multiple of fontSize */
+    double heightScale;
+    /** Whether the height is override */
+    bool heightOverride;
+    /** Whether the halfleading is enable */
+    bool halfLeading;
+    /** The additional leading to apply to the strut as a multiple of Size */
+    double leading;
+    /** Whether the strut height should be forced */
+    bool forceStrutHeight;
+    /** The size of font families */
+    size_t familiesSize;
+    /** The families of the font to use when calculating the strut */
+    char** families;
+} OH_Drawing_StrutStyle;
+
+/**
  * @brief Defines the fontfeature.
  *
  * @since 12
@@ -2416,6 +2445,132 @@ OH_Drawing_FontConfigInfo* OH_Drawing_GetSystemFontConfigInfo(OH_Drawing_FontCon
 void OH_Drawing_DestroySystemFontConfigInfo(OH_Drawing_FontConfigInfo*);
 
 /**
+ * @brief Sets the strut style for text typography.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TypographyStyle Indicates the pointer to an <b>OH_Drawing_TypographyStyle</b> object.
+ * @param OH_Drawing_StrutStyle Indicates the pointer of <b>OH_Drawing_StrutStyle</b> object.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_SetTypographyStyleTextStrutStyle(OH_Drawing_TypographyStyle*, OH_Drawing_StrutStyle*);
+
+/**
+ * @brief Releases the memory occupied by an <b>OH_Drawing_StrutStyle</b> object.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_StrutStyle Indicates the pointer of <b>OH_Drawing_StrutStyle</b> object.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_TypographyStyleDestroyStrutStyle(OH_Drawing_StrutStyle*);
+
+/**
+ * @brief Gets the strut style for text typography.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TypographyStyle Indicates the pointer to an <b>OH_Drawing_TypographyStyle</b> object.
+ * @return Returns the pointer of <b>OH_Drawing_StrutStyle</b> object.
+ * @since 12
+ * @version 1.0
+ */
+OH_Drawing_StrutStyle* OH_Drawing_TypographyStyleGetStrutStyle(OH_Drawing_TypographyStyle*);
+
+/**
+ * @brief Overriding the struct StrutStyle equals operator.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param from Indicates source of comparison object.
+ * @param to Indicates comparison object.
+ * @since 12
+ * @version 1.0
+ */
+bool OH_Drawing_TypographyStyleStrutStyleEquals(OH_Drawing_StrutStyle* from, OH_Drawing_StrutStyle* to);
+
+/**
+ * @brief Sets the hinting of text typography.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TypographyStyle Indicates the pointer to an <b>OH_Drawing_TypographyStyle</b> object.
+ * @param hintingEnable Indicates the hinting of text typography..
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_TypographyStyleSetHintingEnable(OH_Drawing_TypographyStyle* style, bool hintingEnable);
+
+/**
+ * @brief Getting all font metrics from target row.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Typography Indicates a pointer to a typesetting object.
+ * @param lineNumber Indicates specifies the number of rows.
+ * @param fontMetricsSize Indicates the return size of font metrics struct from current line.
+ * @return Returns all character measures for the current row.
+ * @since 12
+ * @version 1.0
+ */
+OH_Drawing_Font_Metrics* OH_Drawing_TypographyGetLineFontMetrics(OH_Drawing_Typography*,
+    size_t lineNumber, size_t* fontMetricsSize);
+
+/**
+ * @brief Free up all the space taken up by the lineFontMetric.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_Font_Metrics Indicates the first address of the lineFontMetric gather to be destroyed.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_TypographyDestroyLineFontMetrics(OH_Drawing_Font_Metrics*);
+
+/**
+ * @brief Sets the text style, including font weight, font width and font slant.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @param OH_Drawing_FontStyleStruct Indicates an <b>OH_Drawing_FontStyleStruct</b> object.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_SetTextStyleFontStyleStruct(OH_Drawing_TextStyle* drawingTextStyle,
+    OH_Drawing_FontStyleStruct fontStyle);
+
+/**
+ * @brief Gets the text style, including font weight, font width and font slant.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
+ * @param OH_Drawing_FontStyleStruct Indicates the pointer to an <b>OH_Drawing_FontStyleStruct</b> object.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_TextStyleGetFontStyleStruct(OH_Drawing_TextStyle* drawingTextStyle,
+    OH_Drawing_FontStyleStruct* fontStyle);
+
+/**
+ * @brief Sets the typography style, including font weight, font width and font slant.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TypographyStyle Indicates the pointer to an <b>OH_Drawing_TypographyStyle</b> object.
+ * @param OH_Drawing_FontStyleStruct Indicates an <b>OH_Drawing_FontStyleStruct</b> object.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_SetTypographyStyleFontStyleStruct(OH_Drawing_TypographyStyle* drawingStyle,
+    OH_Drawing_FontStyleStruct fontStyle);
+
+/**
+ * @brief Gets the typography style, including font weight, font width and font slant.
+ *
+ * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
+ * @param OH_Drawing_TypographyStyle Indicates the pointer to an <b>OH_Drawing_TypographyStyle</b> object.
+ * @param OH_Drawing_FontStyleStruct Indicates the pointer to an <b>OH_Drawing_FontStyleStruct</b> object.
+ * @since 12
+ * @version 1.0
+ */
+void OH_Drawing_TypographyStyleGetFontStyleStruct(OH_Drawing_TypographyStyle* drawingStyle,
+    OH_Drawing_FontStyleStruct* fontStyle);
+
+/**
  * @brief Gets whether the two TextStyle objects are equal.
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
@@ -2495,78 +2650,6 @@ OH_Drawing_TextAlign OH_Drawing_TypographyStyleGetEffectiveAlignment(OH_Drawing_
  * @version 1.0
  */
 bool OH_Drawing_TypographyStyleIsHintingEnabled(OH_Drawing_TypographyStyle* style);
-
-/**
- * @brief Getting all font metrics from target row.
- *
- * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
- * @param OH_Drawing_Typography Indicates a pointer to a typesetting object.
- * @param lineNumber Indicates specifies the number of rows.
- * @param fontMetricsSize Indicates the return size of font metrics struct from current line.
- * @return Returns all character measures for the current row.
- * @since 12
- * @version 1.0
- */
-OH_Drawing_Font_Metrics* OH_Drawing_TypographyGetLineFontMetrics(OH_Drawing_Typography*,
-    size_t lineNumber, size_t* fontMetricsSize);
-
-/**
- * @brief Free up all the space taken up by the lineFontMetric.
- *
- * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
- * @param OH_Drawing_Font_Metrics Indicates the first address of the lineFontMetric gather to be destroyed.
- * @since 12
- * @version 1.0
- */
-void OH_Drawing_TypographyDestroyLineFontMetrics(OH_Drawing_Font_Metrics*);
-
-/**
- * @brief Sets the text style, including font weight, font width and font slant.
- *
- * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
- * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
- * @param OH_Drawing_FontStyleStruct Indicates an <b>OH_Drawing_FontStyleStruct</b> object.
- * @since 12
- * @version 1.0
- */
-void OH_Drawing_SetTextStyleFontStyleStruct(OH_Drawing_TextStyle* drawingTextStyle,
-    OH_Drawing_FontStyleStruct fontStyle);
-
-/**
- * @brief Gets the text style, including font weight, font width and font slant.
- *
- * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
- * @param OH_Drawing_TextStyle Indicates the pointer to an <b>OH_Drawing_TextStyle</b> object.
- * @param OH_Drawing_FontStyleStruct Indicates the pointer to an <b>OH_Drawing_FontStyleStruct</b> object.
- * @since 12
- * @version 1.0
- */
-void OH_Drawing_TextStyleGetFontStyleStruct(OH_Drawing_TextStyle* drawingTextStyle,
-    OH_Drawing_FontStyleStruct* fontStyle);
-
-/**
- * @brief Sets the typography style, including font weight, font width and font slant.
- *
- * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
- * @param OH_Drawing_TypographyStyle Indicates the pointer to an <b>OH_Drawing_TypographyStyle</b> object.
- * @param OH_Drawing_FontStyleStruct Indicates an <b>OH_Drawing_FontStyleStruct</b> object.
- * @since 12
- * @version 1.0
- */
-void OH_Drawing_SetTypographyStyleFontStyleStruct(OH_Drawing_TypographyStyle* drawingStyle,
-    OH_Drawing_FontStyleStruct fontStyle);
-
-/**
- * @brief Gets the typography style, including font weight, font width and font slant.
- *
- * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
- * @param OH_Drawing_TypographyStyle Indicates the pointer to an <b>OH_Drawing_TypographyStyle</b> object.
- * @param OH_Drawing_FontStyleStruct Indicates the pointer to an <b>OH_Drawing_FontStyleStruct</b> object.
- * @since 12
- * @version 1.0
- */
-void OH_Drawing_TypographyStyleGetFontStyleStruct(OH_Drawing_TypographyStyle* drawingStyle,
-    OH_Drawing_FontStyleStruct* fontStyle);
 
 #ifdef __cplusplus
 }

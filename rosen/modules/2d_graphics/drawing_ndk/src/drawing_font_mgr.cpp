@@ -213,6 +213,9 @@ OH_Drawing_FontStyleStruct OH_Drawing_FontStyleSetGetStyle(OH_Drawing_FontStyleS
     char** styleName)
 {
     OH_Drawing_FontStyleStruct fontStyleStruct;
+    fontStyleStruct.weight = FONT_WEIGHT_400;
+    fontStyleStruct.width = FONT_WIDTH_NORMAL;
+    fontStyleStruct.slant = FONT_STYLE_NORMAL;
     FontStyleSet* converFontStyleSet = reinterpret_cast<FontStyleSet*>(fontStyleSet);
     if (converFontStyleSet == nullptr) {
         return fontStyleStruct;
@@ -235,6 +238,7 @@ OH_Drawing_FontStyleStruct OH_Drawing_FontStyleSetGetStyle(OH_Drawing_FontStyleS
     fontStyleStruct.weight = static_cast<OH_Drawing_FontWeight>(tempFontStyle.GetWeight());
     fontStyleStruct.width = static_cast<OH_Drawing_FontWidth>(tempFontStyle.GetWidth());
     fontStyleStruct.slant = static_cast<OH_Drawing_FontStyle>(tempFontStyle.GetSlant());
+    return fontStyleStruct;
 }
 
 void OH_Drawing_FontStyleSetFreeStyleName(char** styleName)
@@ -255,7 +259,7 @@ OH_Drawing_Typeface* OH_Drawing_FontStyleSetMatchStyle(OH_Drawing_FontStyleSet* 
     }
     auto drawingTypeface = converFontStyleSet->MatchStyle(
         FontStyle(fontStyleStruct.weight, fontStyleStruct.width,
-        static_cast<FontStyle::Slant>(fontStyleStruct->slant)));
+        static_cast<FontStyle::Slant>(fontStyleStruct.slant)));
     if (!drawingTypeface) {
         return nullptr;
     }
