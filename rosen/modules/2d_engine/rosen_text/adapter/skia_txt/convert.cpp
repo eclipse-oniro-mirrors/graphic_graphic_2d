@@ -104,9 +104,9 @@ static std::string RemoveQuotes(const std::string& str)
     if (str.empty() || str.front() != '\"' || str.back() != '\"') {
         return str;
     }
-    auto first = str.find_first_of('\"');
-    auto end = str.find_last_of('\"');
-    return str.substr(first + 1, end - first - 1);
+    const int start = 1; // The starting position of string.
+    const int end = str.size() - 2; // End position of string.
+    return str.substr(start, end); // Remove quotation marks from both ends.
 }
 
 SPText::TextStyle Convert(const TextStyle& style)
