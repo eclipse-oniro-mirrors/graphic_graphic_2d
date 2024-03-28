@@ -400,10 +400,10 @@ void RSFilterCacheManager::InvalidateFilterCache(FilterCacheType clearType)
         cachedSnapshot_.reset();
     }
     if (clearType & FilterCacheType::CACHE_TYPE_FILTERED_SNAPSHOT) {
-        RS_OPTIONAL_TRACE_NAME_FMT("RSFilterCacheManager::InvalidateFilterCache filterred snapshot");
+        RS_OPTIONAL_TRACE_NAME_FMT("RSFilterCacheManager::InvalidateFilterCache filtered snapshot");
         cachedFilteredSnapshot_.reset();
     }
-
+}
 
 void RSFilterCacheManager::ReleaseCacheOffTree()
 {
