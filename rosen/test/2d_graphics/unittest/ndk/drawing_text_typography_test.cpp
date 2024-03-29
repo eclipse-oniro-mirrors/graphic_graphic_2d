@@ -2248,6 +2248,8 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest077, TestSize.Level
     EXPECT_TRUE(result == false);
     OH_Drawing_TypographyStyleDestroyStrutStyle(from);
     OH_Drawing_TypographyStyleDestroyStrutStyle(to);
+    from = nullptr;
+    to = nullptr;
     EXPECT_TRUE(from == nullptr);
     EXPECT_TRUE(to == nullptr);
 }
