@@ -3117,7 +3117,7 @@ RSDrawingCacheType RSRenderNode::GetDrawingCacheType() const
 }
 void RSRenderNode::SetDrawingCacheChanged(bool cacheChanged)
 {
-    stagingRenderParams_->SetDrawingCacheChanged(cacheChanged);
+    stagingRenderParams_->SetDrawingCacheChanged(cacheChanged, lastFrameSynced_);
 }
 bool RSRenderNode::GetDrawingCacheChanged() const
 {
@@ -3426,6 +3426,8 @@ void RSRenderNode::OnSync()
     backgroundFilterInteractWithDirty_ = false;
     foregroundFilterRegionChanged_ = false;
     foregroundFilterInteractWithDirty_ = false;
+
+    lastFrameSynced_ = true;
 }
 
 void RSRenderNode::ValidateLightResources()

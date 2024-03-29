@@ -92,6 +92,8 @@ void RSDrawFrame::Sync()
         if (auto node = weakPtr.lock()) {
             if (!RSUifirstManager::Instance().CollectSkipSyncNode(node)) {
                 node->Sync();
+            } else {
+                node->SkipSync();
             }
         }
     }
