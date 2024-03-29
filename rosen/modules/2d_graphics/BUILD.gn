@@ -469,17 +469,17 @@ ohos_shared_library("2d_graphics_canvaskit0310") {
     "$drawing_core_src_dir/engine_adapter",
   ]
 
+  external_deps = [
+    "hilog:libhilog",
+    "image_framework:image_native",
+  ]
+
   if (!is_arkui_x) {
     deps = [
       # "//third_party/skia_canvaskit0310:skia",
     ]
+    external_deps += [ "graphic_surface:surface" ]
   }
-
-  external_deps = [
-    "graphic_surface:surface",
-    "hilog:libhilog",
-    "image_framework:image_native",
-  ]
 
   if (enable_text_gine) {
     defines += [ "USE_GRAPHIC_TEXT_GINE" ]
