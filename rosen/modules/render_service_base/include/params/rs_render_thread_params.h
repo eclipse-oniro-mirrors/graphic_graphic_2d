@@ -90,6 +90,22 @@ public:
         accumulatedDirtyRegion_.Reset();
         return true;
     }
+
+    bool GetWatermarkFlag() const
+    {
+        return watermarkFlag_;
+    }
+
+    std::shared_ptr<Drawing::Image> GetWatermarkImg() const
+    {
+        return watermarkImg_;
+    }
+
+    void SetWatermark(bool watermarkFlag, const std::shared_ptr<Drawing::Image>& watermarkImg)
+    {
+        watermarkFlag_ = watermarkFlag;
+        watermarkImg_ = std::move(watermarkImg);
+    }
 private:
     // Used by hardware thred
     uint64_t timestamp_ = 0;
@@ -108,6 +124,8 @@ private:
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> selfDrawingNodes_;
     // accumulatedDirtyRegion to decide whether to skip tranasparent nodes.
     Occlusion::Region accumulatedDirtyRegion_;
+    bool watermarkFlag_ = false;
+    std::shared_ptr<Drawing::Image> watermarkImg_ = nullptr;
 
     friend class RSMainThread;
     friend class RSUniRenderVisitor;

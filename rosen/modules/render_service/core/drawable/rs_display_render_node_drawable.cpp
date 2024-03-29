@@ -285,6 +285,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         }
         SetHighContrastIfEnabled(*curCanvas_);
         RSRenderNodeDrawable::OnDraw(*curCanvas_);
+        DrawWatermarkIfNeed(*displayNodeSp, *curCanvas_);
     }
     rsDirtyRectsDfx.OnDraw(curCanvas_);
 

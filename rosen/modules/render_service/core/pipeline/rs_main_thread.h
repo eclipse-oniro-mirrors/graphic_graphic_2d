@@ -197,7 +197,7 @@ public:
         std::vector<RSBaseRenderNode::SharedPtr>& curAllSurfaces);
     bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes);
     SystemAnimatedScenes GetSystemAnimatedScenes();
-    void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow);
+    void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool flag);
     void SetIsCachedSurfaceUpdated(bool isCachedSurfaceUpdated);
     pid_t GetDesktopPidForRotationScene() const;
     void SetForceUpdateUniRenderFlag(bool flag)
@@ -488,7 +488,7 @@ private:
     // used for watermark
     std::mutex watermarkMutex_;
     std::shared_ptr<Drawing::Image> watermarkImg_ = nullptr;
-    bool isShow_ = false;
+    bool watermarkFlag_ = false;
     bool doParallelComposition_ = false;
 
     std::shared_ptr<HgmFrameRateManager> frameRateMgr_ = nullptr;

@@ -1616,6 +1616,7 @@ void RSMainThread::Render()
         RenderServiceTreeDump(g_dumpStr);
         RSSystemParameters::SetDumpRSTreeCount(dumpTreeCount - 1);
     }
+    renderThreadParams_->SetWatermark(watermarkFlag_, watermarkImg_);
     if (isUniRender_) {
         UniRender(rootNode);
     } else {
@@ -2870,11 +2871,11 @@ void RSMainThread::ResetHardwareEnabledState()
     selfDrawingNodes_.clear();
 }
 
-void RSMainThread::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow)
+void RSMainThread::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool flag)
 {
     std::lock_guard<std::mutex> lock(watermarkMutex_);
-    isShow_ = isShow;
-    if (isShow_) {
+    watermarkFlag_ = flag;
+    if (flag) {
         watermarkImg_ = RSPixelMapUtil::ExtractDrawingImage(std::move(watermarkImg));
     } else {
         watermarkImg_ = nullptr;
@@ -2890,7 +2891,7 @@ std::shared_ptr<Drawing::Image> RSMainThread::GetWatermarkImg()
 
 bool RSMainThread::GetWatermarkFlag()
 {
-    return isShow_;
+    return watermarkFlag_;
 }
 
 bool RSMainThread::IsSingleDisplay()
