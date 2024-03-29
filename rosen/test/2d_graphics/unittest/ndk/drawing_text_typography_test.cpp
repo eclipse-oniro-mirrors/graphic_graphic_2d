@@ -2274,13 +2274,13 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest079, TestSize.Level
 {
     OH_Drawing_TextStyle *txtStyle = OH_Drawing_CreateTextStyle();
     OH_Drawing_TextStyle *txtStyleCompare = OH_Drawing_CreateTextStyle();
-    bool result = OH_Drawing_TextStyleIsEquals(txtStyle, txtStyleCompare);
+    bool result = OH_Drawing_TextStyleIsEqual(txtStyle, txtStyleCompare);
     EXPECT_TRUE(result == true);
     OH_Drawing_SetTextStyleColor(txtStyle, 1);
-    result = OH_Drawing_TextStyleIsEquals(txtStyle, txtStyleCompare);
+    result = OH_Drawing_TextStyleIsEqual(txtStyle, txtStyleCompare);
     EXPECT_TRUE(result == false);
     OH_Drawing_SetTextStyleColor(txtStyleCompare, 1);
-    result = OH_Drawing_TextStyleIsEquals(txtStyle, txtStyleCompare);
+    result = OH_Drawing_TextStyleIsEqual(txtStyle, txtStyleCompare);
     EXPECT_TRUE(result == true);
     OH_Drawing_DestroyTextStyle(txtStyle);
     OH_Drawing_DestroyTextStyle(txtStyleCompare);
@@ -2297,10 +2297,10 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest080, TestSize.Level
     OH_Drawing_TextStyle *txtStyleCompare = OH_Drawing_CreateTextStyle();
     OH_Drawing_SetTextStyleLocale(txtStyle, "en");
     OH_Drawing_SetTextStyleLocale(txtStyleCompare, "en");
-    bool result = OH_Drawing_TextStyleIsEqualsByFonts(txtStyle, txtStyleCompare);
+    bool result = OH_Drawing_TextStyleIsEqualByFont(txtStyle, txtStyleCompare);
     EXPECT_TRUE(result == true);
     OH_Drawing_SetTextStyleLocale(txtStyle, "ch");
-    result = OH_Drawing_TextStyleIsEqualsByFonts(txtStyle, txtStyleCompare);
+    result = OH_Drawing_TextStyleIsEqualByFont(txtStyle, txtStyleCompare);
     EXPECT_TRUE(result == false);
     OH_Drawing_DestroyTextStyle(txtStyle);
     OH_Drawing_DestroyTextStyle(txtStyleCompare);
@@ -2315,10 +2315,10 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest081, TestSize.Level
 {
     OH_Drawing_TextStyle *txtStyle = OH_Drawing_CreateTextStyle();
     OH_Drawing_TextStyle *txtStyleCompare = OH_Drawing_CreateTextStyle();
-    bool result = OH_Drawing_TextStyleIsMatchOneAttribute(txtStyle, txtStyleCompare, TextStyle_ALL_ATTRIBUTES);
+    bool result = OH_Drawing_TextStyleIsAttributeMatched(txtStyle, txtStyleCompare, TEXT_STYLE_ALL_ATTRIBUTES);
     EXPECT_TRUE(result == true);
     OH_Drawing_SetTextStyleLocale(txtStyle, "en");
-    result = OH_Drawing_TextStyleIsMatchOneAttribute(txtStyle, txtStyleCompare, TextStyle_ALL_ATTRIBUTES);
+    result = OH_Drawing_TextStyleIsAttributeMatched(txtStyle, txtStyleCompare, TEXT_STYLE_ALL_ATTRIBUTES);
     EXPECT_TRUE(result == false);
     OH_Drawing_DestroyTextStyle(txtStyle);
     OH_Drawing_DestroyTextStyle(txtStyleCompare);
@@ -2347,7 +2347,7 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest083, TestSize.Level
 {
     OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
     EXPECT_EQ(OH_Drawing_TypographyStyleGetEffectiveAlignment(typoStyle), TEXT_ALIGN_LEFT);
-    EXPECT_EQ(OH_Drawing_TypographyStyleIsHintingEnabled(typoStyle), false);
+    EXPECT_EQ(OH_Drawing_TypographyStyleIsHintEnabled(typoStyle), false);
     OH_Drawing_DestroyTypographyStyle(typoStyle);
 }
 }
