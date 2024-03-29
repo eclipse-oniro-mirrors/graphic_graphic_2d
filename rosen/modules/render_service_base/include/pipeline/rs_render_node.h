@@ -212,7 +212,7 @@ public:
     void UpdateChildrenRect(const RectI& subRect);
     void SetDirty(bool forceAddToActiveList = false);
 
-    virtual void AddDirtyType(RSModifierType type)
+    inline void AddDirtyType(RSModifierType type)
     {
         dirtyTypes_.set(static_cast<int>(type), true);
     }
