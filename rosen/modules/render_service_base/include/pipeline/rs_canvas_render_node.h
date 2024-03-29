@@ -62,10 +62,6 @@ public:
     {
         return RSRenderNodeType::CANVAS_NODE;
     }
-    bool GetUifirstSupportFlag() override
-    {
-        return isChildSupportUifirst_;
-    }
 
     void OnTreeStateChanged() override;
 private:

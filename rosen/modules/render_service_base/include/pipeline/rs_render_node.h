@@ -521,7 +521,7 @@ public:
 
     virtual bool GetUifirstSupportFlag()
     {
-        return isChildSupportUifirst_;
+        return !GetSharedTransitionParam() && isChildSupportUifirst_;
     }
 
     virtual void MergeOldDirtyRect()
@@ -545,6 +545,10 @@ public:
         uifirstSkipPartialSync_ = skip;
     }
 
+    void SkipSync()
+    {
+        lastFrameSynced_ = false;
+    }
     void Sync()
     {
         OnSync();
@@ -610,6 +614,7 @@ protected:
         renderContent_->DrawPropertyDrawableRange(begin, end, canvas);
     }
     bool isChildSupportUifirst_ = true;
+    bool lastFrameSynced_ = true;
 
 private:
     NodeId id_;

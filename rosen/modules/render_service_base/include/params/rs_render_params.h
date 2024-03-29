@@ -90,7 +90,7 @@ public:
     void SetCacheSize(Vector2f size);
     Vector2f GetCacheSize() const;
 
-    void SetDrawingCacheChanged(bool isChanged);
+    void SetDrawingCacheChanged(bool isChanged, bool lastFrameSynced);
     bool GetDrawingCacheChanged() const;
 
     void SetDrawingCacheType(RSDrawingCacheType cacheType);

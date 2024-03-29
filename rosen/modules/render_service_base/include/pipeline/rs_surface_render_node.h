@@ -912,7 +912,7 @@ public:
 
     bool GetUifirstSupportFlag() override
     {
-        return !IsSelfDrawingType() && isChildSupportUifirst_;
+        return !IsSelfDrawingType() && RSRenderNode::GetUifirstSupportFlag();
     }
 
     void MergeOldDirtyRect() override

@@ -171,16 +171,21 @@ Vector2f RSRenderParams::GetCacheSize() const
     return cacheSize_;
 }
 
-void RSRenderParams::SetDrawingCacheChanged(bool isChanged)
+void RSRenderParams::SetDrawingCacheChanged(bool isChanged, bool lastFrameSynced)
 {
-    if (isDrawingCacheChanged_) { // force sync if cache changed
+    if (lastFrameSynced) {
+        if (isDrawingCacheChanged_) { // force sync if cache changed
+            needSync_ = true;
+        }
+        if (isDrawingCacheChanged_ == isChanged) {
+            return;
+        }
+        isDrawingCacheChanged_ = isChanged;
         needSync_ = true;
+    } else {
+        needSync_ = needSync_ || (isDrawingCacheChanged_ || (isDrawingCacheChanged_ != isChanged));
+        isDrawingCacheChanged_ = isDrawingCacheChanged_ || isChanged;
     }
-    if (isDrawingCacheChanged_ == isChanged) {
-        return;
-    }
-    isDrawingCacheChanged_ = isChanged;
-    needSync_ = true;
 }
 
 bool RSRenderParams::GetDrawingCacheChanged() const

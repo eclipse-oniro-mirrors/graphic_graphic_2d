@@ -579,7 +579,7 @@ bool RSRenderNodeDrawable::CheckIfNeedUpdateCache(RSRenderParams& params)
     }
 
     if (updateTimes == 0 || params.GetDrawingCacheChanged()) {
-        params.SetDrawingCacheChanged(false);
+        params.SetDrawingCacheChanged(false, true);
         return true;
     }
     return false;
