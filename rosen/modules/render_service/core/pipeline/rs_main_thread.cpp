@@ -1627,6 +1627,7 @@ void RSMainThread::Render()
     auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
     renderThreadParams_->SetTimestamp(hgmCore.GetCurrentTimestamp());
     renderThreadParams_->SetPendingScreenRefreshRate(hgmCore.GetPendingScreenRefreshRate());
+    renderThreadParams_->SetForceCommitLayer(isHardwareEnabledBufferUpdated_ || forceUpdateUniRenderFlag_);
     if (RSSystemProperties::GetRenderNodeTraceEnabled()) {
         RSPropertyTrace::GetInstance().RefreshNodeTraceInfo();
     }
