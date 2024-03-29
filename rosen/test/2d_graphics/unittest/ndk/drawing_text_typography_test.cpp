@@ -2079,7 +2079,7 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest070, TestSize.Level
     EXPECT_TRUE(result != nullptr);
     result = OH_Drawing_TypographyGetTextEllipsis(nullptr);
     EXPECT_TRUE(result == nullptr);
-    OH_Drawing_TypographyStyleDestroyEllipsis(result);
+    OH_Drawing_TypographyDestroyEllipsis(result);
     OH_Drawing_DestroyTypographyStyle(typoStyle);
     typoStyle = nullptr;
     EXPECT_TRUE(typoStyle == nullptr);
@@ -2349,23 +2349,5 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest083, TestSize.Level
     EXPECT_EQ(OH_Drawing_TypographyStyleGetEffectiveAlignment(typoStyle), TEXT_ALIGN_LEFT);
     EXPECT_EQ(OH_Drawing_TypographyStyleIsHintingEnabled(typoStyle), false);
     OH_Drawing_DestroyTypographyStyle(typoStyle);
-}
-
-/*
- * @tc.name: OH_Drawing_TypographyTest084
- * @tc.desc: test for halfleading, uselinestyle linestyleonly of text typography
- * @tc.type: FUNC
- */
-HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest084, TestSize.Level1)
-{
-    OH_Drawing_TypographyStyle* typoStyle = OH_Drawing_CreateTypographyStyle();
-    char* result = OH_Drawing_TypographyGetTextEllipsis(typoStyle);
-    EXPECT_TRUE(result != nullptr);
-    result = OH_Drawing_TypographyGetTextEllipsis(nullptr);
-    EXPECT_TRUE(result == nullptr);
-    OH_Drawing_TypographyDestroyEllipsis(result);
-    OH_Drawing_DestroyTypographyStyle(typoStyle);
-    typoStyle = nullptr;
-    EXPECT_TRUE(typoStyle == nullptr);
 }
 }
