@@ -82,6 +82,14 @@
     { "name": "OH_Drawing_FontSetTypeface" },
     { "name": "OH_Drawing_FontGetTypeface" },
     { "name": "OH_Drawing_FontGetMetrics" },
+    {
+        "first_introduced": "12",
+        "name": "OH_Drawing_GpuContextCreateFromGL"
+    },
+    {
+        "first_introduced": "12",
+        "name": "OH_Drawing_GpuContextDestroy"
+    },
     { "name": "OH_Drawing_MaskFilterCreateBlur" },
     { "name": "OH_Drawing_MaskFilterDestroy" },
     { "name": "OH_Drawing_MatrixCreate" },
@@ -166,6 +174,18 @@
     { "name": "OH_Drawing_ShaderEffectCreateRadialGradient" },
     { "name": "OH_Drawing_ShaderEffectCreateSweepGradient" },
     { "name": "OH_Drawing_ShaderEffectDestroy" },
+    {
+        "first_introduced": "12",
+        "name": "OH_Drawing_SurfaceCreateFromGpuContext"
+    },
+    {
+        "first_introduced": "12",
+        "name": "OH_Drawing_SurfaceGetCanvas"
+    },
+    {
+        "first_introduced": "12",
+        "name": "OH_Drawing_SurfaceDestroy"
+    },
     { "name": "OH_Drawing_TextBlobCreateFromText" },
     { "name": "OH_Drawing_TextBlobCreateFromPosText" },
     { "name": "OH_Drawing_TextBlobCreateFromString" },
