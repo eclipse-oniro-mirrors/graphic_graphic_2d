@@ -3327,7 +3327,7 @@ void OH_Drawing_TypographyStyleGetFontStyleStruct(OH_Drawing_TypographyStyle* dr
     fontStyle->slant = static_cast<OH_Drawing_FontStyle>(style->fontStyle);
 }
 
-bool OH_Drawing_TextStyleIsEquals(const OH_Drawing_TextStyle* style, const OH_Drawing_TextStyle* comparedStyle)
+bool OH_Drawing_TextStyleIsEqual(const OH_Drawing_TextStyle* style, const OH_Drawing_TextStyle* comparedStyle)
 {
     auto convertStyle = ConvertToOriginalText<const OHOS::Rosen::TextStyle>(style);
     auto convertComparedStyle = ConvertToOriginalText<const OHOS::Rosen::TextStyle>(comparedStyle);
@@ -3340,7 +3340,7 @@ bool OH_Drawing_TextStyleIsEquals(const OH_Drawing_TextStyle* style, const OH_Dr
     return convertStyle == convertComparedStyle || *convertStyle == *convertComparedStyle;
 }
 
-bool OH_Drawing_TextStyleIsEqualsByFonts(const OH_Drawing_TextStyle* style, const OH_Drawing_TextStyle* comparedStyle)
+bool OH_Drawing_TextStyleIsEqualByFont(const OH_Drawing_TextStyle* style, const OH_Drawing_TextStyle* comparedStyle)
 {
     auto convertStyle = ConvertToOriginalText<const OHOS::Rosen::TextStyle>(style);
     auto convertComparedStyle = ConvertToOriginalText<const OHOS::Rosen::TextStyle>(comparedStyle);
@@ -3350,7 +3350,7 @@ bool OH_Drawing_TextStyleIsEqualsByFonts(const OH_Drawing_TextStyle* style, cons
     return convertStyle->EqualByFonts(*convertComparedStyle);
 }
 
-bool OH_Drawing_TextStyleIsMatchOneAttribute(const OH_Drawing_TextStyle* style,
+bool OH_Drawing_TextStyleIsAttributeMatched(const OH_Drawing_TextStyle* style,
     const OH_Drawing_TextStyle* comparedStyle, OH_Drawing_TextStyleType textStyleType)
 {
     auto convertStyle = ConvertToOriginalText<const OHOS::Rosen::TextStyle>(style);
@@ -3388,7 +3388,7 @@ OH_Drawing_TextAlign OH_Drawing_TypographyStyleGetEffectiveAlignment(OH_Drawing_
     return static_cast<OH_Drawing_TextAlign>(typographyStyle->GetEffectiveAlign());
 }
 
-bool OH_Drawing_TypographyStyleIsHintingEnabled(OH_Drawing_TypographyStyle* style)
+bool OH_Drawing_TypographyStyleIsHintEnabled(OH_Drawing_TypographyStyle* style)
 {
     TypographyStyle* typographyStyle = ConvertToOriginalText<TypographyStyle>(style);
     if (typographyStyle == nullptr) {
