@@ -312,12 +312,14 @@ uint32_t RSUniRenderThread::GetRefreshRate() const
 
 std::shared_ptr<Drawing::Image> RSUniRenderThread::GetWatermarkImg()
 {
-    return nullptr; // TODO
+    auto& renderThreadParams = GetRSRenderThreadParams();
+    return renderThreadParams->GetWatermarkImg();
 }
 
 bool RSUniRenderThread::GetWatermarkFlag()
 {
-    return false; // TODO
+    auto& renderThreadParams = GetRSRenderThreadParams();
+    return renderThreadParams->GetWatermarkFlag();
 }
 
 void RSUniRenderThread::TrimMem(std::string& dumpString, std::string& type)
