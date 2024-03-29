@@ -2409,16 +2409,6 @@ char* OH_Drawing_TypographyGetTextEllipsis(OH_Drawing_TypographyStyle*);
 void OH_Drawing_TypographyDestroyEllipsis(char* ellipsis);
 
 /**
- * @brief Releases the memory occupied by a list of Ellipsis names.
- *
- * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
- * @param ellipsis Indicates the pointer to a list of Ellipsis names.
- * @since 12
- * @version 1.0
- */
-void OH_Drawing_TypographyStyleDestroyEllipsis(char* ellipsis);
-
-/**
  * @brief Overriding the class ParagraphStyle equals operator.
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
