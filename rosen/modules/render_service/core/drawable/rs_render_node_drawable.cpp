@@ -21,7 +21,7 @@
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_task_dispatcher.h"
 #include "pipeline/rs_uni_render_thread.h"
-// #include "pipeline/rs_uni_render_util.h"
+#include "pipeline/rs_uni_render_util.h"
 #include "platform/common/rs_log.h"
 
 namespace OHOS::Rosen::DrawableV2 {

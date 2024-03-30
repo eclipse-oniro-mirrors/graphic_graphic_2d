@@ -107,6 +107,7 @@ void RSRenderNodeDrawableAdapter::DrawRangeImpl(
     Drawing::Canvas& canvas, const Drawing::Rect& rect, int8_t start, int8_t end) const
 {
     const auto& drawCmdList_ = renderNode_->drawCmdList_;
+
     if (UNLIKELY(skipShadow_)) {
         auto shadowIndex = renderNode_->drawCmdIndex_.shadowIndex_;
         if (shadowIndex != -1 || start <= shadowIndex || end > shadowIndex) {
@@ -118,6 +119,7 @@ void RSRenderNodeDrawableAdapter::DrawRangeImpl(
             }
         }
     }
+
     for (auto i = start; i < end; i++) {
         drawCmdList_[i](&canvas, &rect);
     }
