@@ -38,12 +38,30 @@
 #include "property/rs_point_light_manager.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "system/rs_system_parameters.h"
+#include "common/rs_singleton.h"
+#include "pipeline/round_corner_display/rs_round_corner_display.h"
+#include "pipeline/round_corner_display/rs_rcd_render_manager.h"
 // dfx
 #include "drawable/dfx/rs_dirty_rects_dfx.h"
 #include "drawable/dfx/rs_skp_capture_dfx.h"
 #include "drawable/rs_surface_render_node_drawable.h"
 
 namespace OHOS::Rosen::DrawableV2 {
+void DoScreenRcdProcessTask(std::shared_ptr<RSProcessor>& processor, ScreenInfo& screenInfo_)
+{
+    if (screenInfo_.state != ScreenState::HDI_OUTPUT_ENABLE) {
+        RS_LOGD("DoScreenRcdProcessTask is not at HDI_OUPUT mode");
+        return;
+    }
+    if (RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {
+        RSSingleton<RoundCornerDisplay>::GetInstance().RunHardwareTask(
+            [&processor]() {
+                RSRcdRenderManager::GetInstance().DoProcessRenderTask(processor);
+            }
+        );
+    }
+}
+
 RSDisplayRenderNodeDrawable::Registrar RSDisplayRenderNodeDrawable::instance_;
 
 RSDisplayRenderNodeDrawable::RSDisplayRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node)
@@ -354,6 +372,9 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     RS_TRACE_BEGIN("RSDisplayRenderNodeDrawable Flush");
     renderFrame->Flush();
     RS_TRACE_END();
+
+    // process round corner display
+    DoScreenRcdProcessTask(processor, screenInfo);
 
     RS_TRACE_BEGIN("RSDisplayRenderNodeDrawable CommitLayer");
     auto& selfDrawingNodes = RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetSelfDrawingNodes();
