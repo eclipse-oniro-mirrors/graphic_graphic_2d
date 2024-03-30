@@ -380,6 +380,8 @@ private:
     void StartOverDraw();
     void FinishOverDraw();
 
+    void SendRcdMessage(RSDisplayRenderNode& node);
+
     bool ForcePrepareSubTree()
     {
         return curSurfaceNode_ && curSurfaceNode_->GetNeedCollectHwcNode();

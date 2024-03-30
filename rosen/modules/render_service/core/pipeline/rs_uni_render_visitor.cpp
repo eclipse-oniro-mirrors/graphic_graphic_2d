@@ -151,20 +151,38 @@ bool IsFirstFrameReadyToDraw(RSSurfaceRenderNode& node)
 }
 }
 
-void DoScreenRcdTask(std::shared_ptr<RSProcessor>& processor, std::unique_ptr<RcdInfo>& rcdInfo,
-    ScreenInfo& screenInfo_)
+void DoScreenRcdPrepareTask(std::unique_ptr<RcdInfo>& rcdInfo, ScreenInfo& screenInfo)
 {
-    if (screenInfo_.state != ScreenState::HDI_OUTPUT_ENABLE) {
-        RS_LOGD("DoScreenRcdTask is not at HDI_OUPUT mode");
+    if (screenInfo.state != ScreenState::HDI_OUTPUT_ENABLE) {
+        RS_LOGD("DoScreenRcdPrepareTask is not at HDI_OUPUT mode");
+        return;
+    }
+    if (rcdInfo == nullptr) {
+        RS_LOGD("DoScreenRcdPrepareTask rcdInfo is nullptr");
         return;
     }
     if (RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {
         RSSingleton<RoundCornerDisplay>::GetInstance().RunHardwareTask(
-            [&processor, &rcdInfo]() {
+            [&rcdInfo]() {
                 auto hardInfo = RSSingleton<RoundCornerDisplay>::GetInstance().GetHardwareInfo();
-                rcdInfo->processInfo = {processor, hardInfo.topLayer, hardInfo.bottomLayer,
-                    hardInfo.resourceChanged};
-                RSRcdRenderManager::GetInstance().DoProcessRenderTask(rcdInfo->processInfo);
+                rcdInfo->processInfo = {nullptr, hardInfo.topLayer, hardInfo.bottomLayer,
+                     hardInfo.resourceChanged};
+                RSRcdRenderManager::GetInstance().DoPrepareRenderTask(rcdInfo->processInfo);
+            }
+        );
+    }
+}
+
+void DoScreenRcdProcessTask(std::shared_ptr<RSProcessor>& processor, ScreenInfo& screenInfo)
+{
+    if (screenInfo.state != ScreenState::HDI_OUTPUT_ENABLE) {
+        RS_LOGD("DoScreenRcdProcessTask is not at HDI_OUPUT mode");
+        return;
+    }
+    if (RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {
+        RSSingleton<RoundCornerDisplay>::GetInstance().RunHardwareTask(
+            [&processor]() {
+                RSRcdRenderManager::GetInstance().DoProcessRenderTask(processor);
             }
         );
     }
@@ -784,16 +802,7 @@ void RSUniRenderVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
     }
     screenInfo_ = screenManager->QueryScreenInfo(node.GetScreenId());
     prepareClipRect_.SetAll(0, 0, screenInfo_.width, screenInfo_.height);
-    // rcd message send
-    if ((screenInfo_.state == ScreenState::HDI_OUTPUT_ENABLE) &&
-        RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {
-        using rcd_msg = RSSingleton<RsMessageBus>;
-        rcd_msg::GetInstance().SendMsg<uint32_t, uint32_t>(TOPIC_RCD_DISPLAY_SIZE,
-            screenInfo_.width, screenInfo_.height);
-        rcd_msg::GetInstance().SendMsg<ScreenRotation>(TOPIC_RCD_DISPLAY_ROTATION,
-            node.GetScreenRotation());
-    }
-
+    SendRcdMessage(node);
     parentSurfaceNodeMatrix_ = Drawing::Matrix();
     auto geoPtr = (node.GetRenderProperties().GetBoundsGeometry());
     if (geoPtr != nullptr) {
@@ -826,7 +835,6 @@ void RSUniRenderVisitor::PrepareDisplayRenderNode(RSDisplayRenderNode& node)
 
     HandleColorGamuts(node, screenManager);
     HandlePixelFormat(node, screenManager);
-    RSRcdRenderManager::GetInstance().DoPrepareRenderTask(rcdInfo_->prepareInfo);
 }
 
 bool RSUniRenderVisitor::CheckIfSurfaceRenderNodeStatic(RSSurfaceRenderNode& node)
@@ -1178,6 +1186,7 @@ void RSUniRenderVisitor::QuickPrepareDisplayRenderNode(RSDisplayRenderNode& node
         RS_LOGE("RSUniRenderVisitor::QuickPrepareDisplayRenderNode InitDisplayInfo fail");
         return;
     }
+    SendRcdMessage(node);
     ancestorNodeHasAnimation_ = false;
 
     dirtyFlag_ = isDirty_ || node.IsRotationChanged();
@@ -1189,7 +1198,7 @@ void RSUniRenderVisitor::QuickPrepareDisplayRenderNode(RSDisplayRenderNode& node
         QuickPrepareChildren(node);
     }
     PostPrepare(node);
-
+    DoScreenRcdPrepareTask(rcdInfo_, screenInfo_);
     UpdateSurfaceDirtyAndGlobalDirty();
     SurfaceOcclusionCallbackToWMS();
     curDisplayNode_->UpdatePartialRenderParams();
@@ -3439,7 +3448,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             }
             if (needCreateDisplayNodeLayer || forceUpdateFlag_) {
                 processor_->ProcessDisplaySurface(node);
-                DoScreenRcdTask(processor_, rcdInfo_, screenInfo_);
+                DoScreenRcdProcessTask(processor_, screenInfo_);
                 processor_->PostProcess();
             }
             return;
@@ -3714,7 +3723,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         processor_->ProcessDisplaySurface(node);
         AssignGlobalZOrderAndCreateLayer(hardwareEnabledTopNodes_);
     }
-    DoScreenRcdTask(processor_, rcdInfo_, screenInfo_);
+    DoScreenRcdProcessTask(processor_, screenInfo_);
 
     if (!RSMainThread::Instance()->WaitHardwareThreadTaskExcute()) {
         RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode: hardwareThread task has too many to excute");
@@ -3738,9 +3747,6 @@ void RSUniRenderVisitor::DrawSurfaceLayer(const std::shared_ptr<RSDisplayRenderN
 {
     RS_TRACE_NAME_FMT("RSUniRenderVisitor::DrawSurfaceLayer displayNode:%p subThreadNodes:%d", displayNode.get(), int(subThreadNodes.size()));
     auto subThreadManager = RSSubThreadManager::Instance();
-    if (RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {
-        subThreadManager->StartRCDThread(renderEngine_->GetRenderContext().get());
-    }
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     subThreadManager->StartColorPickerThread(renderEngine_->GetRenderContext().get());
     subThreadManager->SubmitSubThreadTask(displayNode, subThreadNodes);
@@ -5598,7 +5604,7 @@ bool RSUniRenderVisitor::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> r
             processor_->ProcessSurface(*node);
         }
     }
-    DoScreenRcdTask(processor_, rcdInfo_, screenInfo_);
+    DoScreenRcdProcessTask(processor_, screenInfo_);
     processor_->PostProcess();
     RS_LOGD("RSUniRenderVisitor::DoDirectComposition end");
     return true;
@@ -5736,6 +5742,18 @@ void RSUniRenderVisitor::ScaleMirrorIfNeed(RSDisplayRenderNode& node, bool canva
         } else if (scaleMode == ScreenScaleMode::UNISCALE_MODE) {
             processor->UniScale(*canvas_, mainWidth, mainHeight, mirrorWidth, mirrorHeight);
         }
+    }
+}
+
+void RSUniRenderVisitor::SendRcdMessage(RSDisplayRenderNode& node)
+{
+    if ((screenInfo_.state == ScreenState::HDI_OUTPUT_ENABLE) &&
+        RSSingleton<RoundCornerDisplay>::GetInstance().GetRcdEnable()) {
+        using rcd_msg = RSSingleton<RsMessageBus>;
+        rcd_msg::GetInstance().SendMsg<uint32_t, uint32_t>(TOPIC_RCD_DISPLAY_SIZE,
+            screenInfo_.width, screenInfo_.height);
+        rcd_msg::GetInstance().SendMsg<ScreenRotation>(TOPIC_RCD_DISPLAY_ROTATION,
+            node.GetScreenRotation());
     }
 }
 

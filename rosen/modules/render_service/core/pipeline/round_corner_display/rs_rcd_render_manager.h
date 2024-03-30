@@ -56,9 +56,8 @@ public:
         return bottomSurfaceNode_;
     }
 
-    void DoPrepareRenderTask(const RcdPrepareInfo& info);
-    void DoProcessRenderTask(const RcdProcessInfo& info);
-    static bool IsRcdProcessInfoValid(const RcdProcessInfo& info);
+    void DoPrepareRenderTask(const RcdProcessInfo& info);
+    void DoProcessRenderTask(std::shared_ptr<RSProcessor>& uniProcessor);
 
     RSRcdRenderManager() = default;
     virtual ~RSRcdRenderManager() = default;
@@ -72,7 +71,6 @@ private:
         std::make_shared<RSRcdSurfaceRenderNode>(0, RCDSurfaceType::TOP);
     std::shared_ptr<RSRcdSurfaceRenderNode> bottomSurfaceNode_ =
         std::make_shared<RSRcdSurfaceRenderNode>(0, RCDSurfaceType::BOTTOM);
-    bool isBufferCacheClear_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

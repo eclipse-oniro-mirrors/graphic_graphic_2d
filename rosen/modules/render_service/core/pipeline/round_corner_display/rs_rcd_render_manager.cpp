@@ -38,39 +38,33 @@ bool RSRcdRenderManager::GetRcdRenderEnabled() const
     return rcdRenderEnabled_;
 }
 
-void RSRcdRenderManager::DoPrepareRenderTask(const RcdPrepareInfo& info)
+void RSRcdRenderManager::DoPrepareRenderTask(const RcdProcessInfo& info)
 {
-    if (!isBufferCacheClear_) {
-        topSurfaceNode_->ClearBufferCache();
-        bottomSurfaceNode_->ClearBufferCache();
-        isBufferCacheClear_ = true;
+    RS_LOGD("RCD: Start Do Rcd Render prepare");
+    RS_TRACE_BEGIN("RSUniRender:DoRCDPrepareTask");
+    if (info.topLayer == nullptr || info.bottomLayer == nullptr) {
+        RS_LOGE("RCD: info toplayer or bottomlayer resource is nullptr");
+        return;
     }
+    auto visitor = std::make_shared<RSRcdRenderVisitor>();
+    visitor->PrepareRcdSurfaceRenderNode(*bottomSurfaceNode_, info.bottomLayer, info.resourceChanged);
+    visitor->PrepareRcdSurfaceRenderNode(*topSurfaceNode_, info.topLayer, info.resourceChanged);
+    RS_TRACE_END();
+    RS_LOGD("RCD: Finish Do Rcd Render prepare");
 }
 
-bool RSRcdRenderManager::IsRcdProcessInfoValid(const RcdProcessInfo& info)
-{
-    if (info.uniProcessor == nullptr) {
-        RS_LOGE("info uniProcessor is nullptr");
-        return false;
-    } else if (info.topLayer == nullptr || info.bottomLayer == nullptr) {
-        RS_LOGE("info toplayer or bottomlayer resource is nullptr");
-        return false;
-    }
-    return true;
-}
-
-void RSRcdRenderManager::DoProcessRenderTask(const RcdProcessInfo& info)
+void RSRcdRenderManager::DoProcessRenderTask(std::shared_ptr<RSProcessor>& uniProcessor)
 {
     RS_LOGD("RCD: Start Do Rcd Render process");
     RS_TRACE_BEGIN("RSUniRender:DoRCDProcessTask");
-    if (!IsRcdProcessInfoValid(info)) {
+    if (uniProcessor == nullptr) {
         RS_LOGE("RCD: RcdProcessInfo is incorrect");
         return;
     }
     auto visitor = std::make_shared<RSRcdRenderVisitor>();
-    visitor->SetUniProcessor(info.uniProcessor);
-    visitor->ProcessRcdSurfaceRenderNode(*bottomSurfaceNode_, info.bottomLayer, info.resourceChanged);
-    visitor->ProcessRcdSurfaceRenderNode(*topSurfaceNode_, info.topLayer, info.resourceChanged);
+    visitor->SetUniProcessor(uniProcessor);
+    visitor->ProcessRcdSurfaceRenderNode(*bottomSurfaceNode_);
+    visitor->ProcessRcdSurfaceRenderNode(*topSurfaceNode_);
     RS_TRACE_END();
     RS_LOGD("RCD: Finish Do Rcd Render process");
 }
