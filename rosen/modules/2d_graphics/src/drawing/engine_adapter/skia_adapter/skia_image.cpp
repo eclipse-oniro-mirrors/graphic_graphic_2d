@@ -46,6 +46,22 @@ SkiaImage::SkiaImage() noexcept : skiaImage_(nullptr) {}
 
 SkiaImage::SkiaImage(sk_sp<SkImage> skImg) noexcept : skiaImage_(skImg) {}
 
+SkiaImage::~SkiaImage() {
+    PostSkImgToTargetThread();
+}
+
+void SkiaImage::PostSkImgToTargetThread()
+{
+    if (skiaImage_ == nullptr) {
+        return;
+    }
+    auto func = SkiaGPUContext::GetPostFunc(grContext_);
+    if (func) {
+        auto image = skiaImage_;
+        func([image]() {});
+    }
+}
+
 std::shared_ptr<Image> SkiaImage::MakeFromRaster(const Pixmap& pixmap,
     RasterReleaseProc rasterReleaseProc, ReleaseContext releaseContext)
 {
@@ -83,6 +99,7 @@ bool SkiaImage::BuildFromBitmap(const Bitmap& bitmap)
     auto skBitmapImpl = bitmap.GetImpl<SkiaBitmap>();
     if (skBitmapImpl != nullptr) {
         const SkBitmap skBitmap = skBitmapImpl->ExportSkiaBitmap();
+        PostSkImgToTargetThread();
         skiaImage_ = SkImage::MakeFromBitmap(skBitmap);
         return skiaImage_ != nullptr;
     }
@@ -92,9 +109,9 @@ bool SkiaImage::BuildFromBitmap(const Bitmap& bitmap)
 #ifdef ACE_ENABLE_GPU
 bool SkiaImage::BuildFromBitmap(GPUContext& gpuContext, const Bitmap& bitmap)
 {
+    PostSkImgToTargetThread();
     grContext_ = gpuContext.GetImpl<SkiaGPUContext>()->GetGrContext();
     auto& skBitmap = bitmap.GetImpl<SkiaBitmap>()->ExportSkiaBitmap();
-
     skiaImage_ = SkImage::MakeCrossContextFromPixmap(grContext_.get(), skBitmap.pixmap(), false);
 
     return (skiaImage_ != nullptr) ? true : false;
@@ -108,6 +125,7 @@ bool SkiaImage::MakeFromEncoded(const std::shared_ptr<Data>& data)
     }
 
     auto skData = data->GetImpl<SkiaData>()->GetSkData();
+    PostSkImgToTargetThread();
     skiaImage_ = SkImage::MakeFromEncoded(skData);
     return (skiaImage_ != nullptr);
 }
@@ -120,6 +138,7 @@ bool SkiaImage::BuildSubset(const std::shared_ptr<Image> image, const RectI& rec
     }
     auto skiaImage = image->GetImpl<SkiaImage>()->GetImage();
     auto skiaRect = SkIRect::MakeLTRB(rect.GetLeft(), rect.GetTop(), rect.GetRight(), rect.GetBottom());
+    PostSkImgToTargetThread();
     grContext_ = gpuContext.GetImpl<SkiaGPUContext>()->GetGrContext();
     skiaImage_ = skiaImage->makeSubset(skiaRect, grContext_.get());
     return (skiaImage_ != nullptr) ? true : false;
@@ -132,7 +151,7 @@ bool SkiaImage::BuildFromCompressed(GPUContext& gpuContext, const std::shared_pt
         LOGD("SkiaImage::BuildFromCompressed, build failed, data is invalid");
         return false;
     }
-
+    PostSkImgToTargetThread();
     grContext_ = gpuContext.GetImpl<SkiaGPUContext>()->GetGrContext();
     auto skData = data->GetImpl<SkiaData>()->GetSkData();
 #ifdef NEW_SKIA
@@ -149,6 +168,7 @@ bool SkiaImage::BuildFromTexture(GPUContext& gpuContext, const TextureInfo& info
     BitmapFormat bitmapFormat, const std::shared_ptr<ColorSpace>& colorSpace,
     void (*deleteFunc)(void*), void* cleanupHelper)
 {
+    PostSkImgToTargetThread();
     grContext_ = gpuContext.GetImpl<SkiaGPUContext>()->GetGrContext();
     if (!grContext_) {
         LOGD("SkiaImage BuildFromTexture grContext_ is null");
@@ -204,7 +224,7 @@ bool SkiaImage::BuildFromSurface(GPUContext& gpuContext, Surface& surface, Textu
         LOGD("SkiaImage::BuildFromSurface grBackendTexture is invalid");
         return false;
     }
-
+    PostSkImgToTargetThread();
     grContext_ = gpuContext.GetImpl<SkiaGPUContext>()->GetGrContext();
 
     sk_sp<SkColorSpace> skColorSpace = nullptr;
@@ -462,6 +482,7 @@ const sk_sp<SkImage> SkiaImage::GetImage() const
 
 void SkiaImage::SetSkImage(const sk_sp<SkImage>& skImage)
 {
+    PostSkImgToTargetThread();
     skiaImage_ = skImage;
 }
 
@@ -475,6 +496,11 @@ sk_sp<GrContext> SkiaImage::GetGrContext() const
     return grContext_;
 }
 #endif
+
+void SkiaImage::SetGrContext(sk_sp<GrDirectContext> grContext)
+{
+    grContext_ = grContext;
+}
 
 std::shared_ptr<Data> SkiaImage::Serialize() const
 {

@@ -112,7 +112,9 @@ public:
     {
         return grContext_;
     }
+    void RegisterPostFunc(const std::function<void(const std::function<void()>& task)>& func) override;
 
+    static std::function<void(const std::function<void()>& task)> GetPostFunc(sk_sp<GrDirectContext> grContext);
 private:
 #ifdef NEW_SKIA
     sk_sp<GrDirectContext> grContext_;
@@ -120,6 +122,7 @@ private:
     sk_sp<GrContext> grContext_;
 #endif
     std::shared_ptr<SkiaPersistentCache> skiaPersistentCache_;
+    static std::unordered_map<uintptr_t, std::function<void(const std::function<void()>& task)>> contextPostMap_;
 };
 } // namespace Drawing
 } // namespace Rosen

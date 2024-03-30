@@ -82,6 +82,12 @@ pid_t RSSubThread::Start()
         OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, value, mapPayload);
 #endif
         grContext_ = CreateShareGrContext();
+        if (grContext_ == nullptr) {
+            return;
+        }
+        grContext_->RegisterPostFunc([this](const std::function<void()>& task) {
+            PostTask(task);
+        });
     });
     return tid;
 }

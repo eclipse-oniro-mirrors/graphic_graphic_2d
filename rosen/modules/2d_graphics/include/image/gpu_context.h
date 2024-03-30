@@ -229,6 +229,8 @@ public:
     {
         return impl_->DowncastingTo<T>();
     }
+
+    void RegisterPostFunc(const std::function<void(const std::function<void()>& task)>& func);
 private:
     std::shared_ptr<GPUContextImpl> impl_;
 };

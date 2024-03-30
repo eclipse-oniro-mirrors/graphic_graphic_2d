@@ -45,7 +45,7 @@ public:
 
     SkiaImage() noexcept;
     explicit SkiaImage(sk_sp<SkImage> skImg) noexcept;
-    ~SkiaImage() override {}
+    ~SkiaImage() override;
 
     AdapterType GetType() const override
     {
@@ -117,6 +117,8 @@ public:
     std::shared_ptr<Data> Serialize() const override;
     bool Deserialize(std::shared_ptr<Data> data) override;
 
+    void SetGrContext(sk_sp<GrDirectContext> grContext);
+    void PostSkImgToTargetThread();
 private:
 #ifdef ACE_ENABLE_GPU
 #ifdef NEW_SKIA
@@ -127,6 +129,7 @@ private:
 #endif
     sk_sp<SkImage> skiaImage_;
     GrBackendTexture grBackendTexture_;
+    std::function<void(const std::function<void()>& task)> func_ = nullptr;
 };
 } // namespace Drawing
 } // namespace Rosen
