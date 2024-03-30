@@ -53,6 +53,7 @@ private:
     void ScaleMirrorIfNeed(RSDisplayRenderNode& node, bool canvasRotation,
         std::shared_ptr<RSProcessor> processor);
     void RotateMirrorCanvasIfNeed(RSDisplayRenderNode& node, bool canvasRotation);
+    void DrawCurtainScreen(RSDisplayRenderNode& node, RSPaintFilterCanvas& canvas) const;
 
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::DISPLAY_NODE, OnGenerate>;
     static Registrar instance_;

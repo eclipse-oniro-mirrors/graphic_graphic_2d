@@ -278,6 +278,9 @@ public:
 
     bool GetParallelCompositionEnabled();
     std::shared_ptr<HgmFrameRateManager> GetFrameRateMgr() { return frameRateMgr_; };
+    
+    void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
+    bool IsCurtainScreenOn() const;
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -546,6 +549,7 @@ private:
     RSDrawFrame drawFrame_;
     std::unique_ptr<RSRenderThreadParams> renderThreadParams_ = nullptr; // sync to render thread
     RsParallelType rsParallelType_;
+    bool isCurtainScreenOn_ = false;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

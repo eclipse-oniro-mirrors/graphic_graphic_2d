@@ -227,6 +227,8 @@ public:
 
     void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback);
 
+    void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
+
     GpuDirtyRegionInfo GetCurrentDirtyRegionInfo(ScreenId id);
 
 #ifdef TP_FEATURE_ENABLE
