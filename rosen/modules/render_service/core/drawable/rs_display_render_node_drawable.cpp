@@ -357,6 +357,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         SetHighContrastIfEnabled(*curCanvas_);
         RSRenderNodeDrawable::OnDraw(*curCanvas_);
         DrawWatermarkIfNeed(*displayNodeSp, *curCanvas_);
+        DrawCurtainScreen(*displayNodeSp, *curCanvas_);
     }
     rsDirtyRectsDfx.OnDraw(curCanvas_);
 
@@ -405,7 +406,8 @@ void RSDisplayRenderNodeDrawable::ProcessVirtualScreen(RSDisplayRenderNode& disp
     auto hasCaptureWindow = mirroredParams->GethasCaptureWindow();
     auto mirroredProcessor = std::static_pointer_cast<RSUniRenderVirtualProcessor>(processor);
     bool hasSpicalLayer = (hasSecSurface[mirroredNode->GetScreenId()] || hasSkipSurface[mirroredNode->GetScreenId()] ||
-        hasCaptureWindow[mirroredNode->GetScreenId()] || !params.GetScreenInfo().filteredAppSet.empty());
+        hasCaptureWindow[mirroredNode->GetScreenId()] || !params.GetScreenInfo().filteredAppSet.empty() ||
+        RSMainThread::Instance()->IsCurtainScreenOn());
     if (mirroredNode->GetSecurityDisplay() != displayNodeSp.GetSecurityDisplay() &&
         mirroredProcessor && hasSpicalLayer) {
         curCanvas_ = mirroredProcessor->GetCanvas();
@@ -549,7 +551,8 @@ void RSDisplayRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
         std::to_string(params->GetId()));
     Drawing::AutoCanvasRestore acr(canvas, true);
 
-    if (!params->GetDisplayHasSecSurface().empty() || !params->GetDisplayHasSkipSurface().empty()) {
+    if (!params->GetDisplayHasSecSurface().empty() || !params->GetDisplayHasSkipSurface().empty()
+        || RSMainThread::Instance()->IsCurtainScreenOn()) {
         RS_LOGD("RSDisplayRenderNodeDrawable::OnCapture: params %{public}s \
             process RSDisplayRenderNode(id:[%{public}" PRIu64 "]) Not using UniRender buffer.",
             params->ToString().c_str(), params->GetId());
@@ -722,5 +725,23 @@ void RSDisplayRenderNodeDrawable::DrawWatermarkIfNeed(
             Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
         canvas.DetachBrush();
     }
+}
+
+void RSDisplayRenderNodeDrawable::DrawCurtainScreen(
+    RSDisplayRenderNode& node, RSPaintFilterCanvas& canvas) const
+{
+    if (!RSMainThread::Instance()->IsCurtainScreenOn()) {
+        return;
+    }
+    sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
+    auto screenInfo = screenManager->QueryScreenInfo(node.GetScreenId());
+    float screenWidth = static_cast<float>(screenInfo.width);
+    float screenHeight = static_cast<float>(screenInfo.height);
+    Drawing::Brush brush;
+    int maxAlpha = 255;
+    brush.SetARGB(maxAlpha, 0, 0, 0); // not transparent black
+    canvas.AttachBrush(brush);
+    canvas.DrawRect(Drawing::Rect(0, 0, screenWidth, screenHeight));
+    canvas.DetachBrush();
 }
 } // namespace OHOS::Rosen::DrawableV2
