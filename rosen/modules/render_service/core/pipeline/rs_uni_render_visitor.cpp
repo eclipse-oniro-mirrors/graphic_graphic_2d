@@ -1199,6 +1199,7 @@ void RSUniRenderVisitor::QuickPrepareDisplayRenderNode(RSDisplayRenderNode& node
     }
     PostPrepare(node);
     DoScreenRcdPrepareTask(rcdInfo_, screenInfo_);
+    UpdateHwcNodeEnable();
     UpdateSurfaceDirtyAndGlobalDirty();
     SurfaceOcclusionCallbackToWMS();
     curDisplayNode_->UpdatePartialRenderParams();
@@ -1428,6 +1429,8 @@ bool RSUniRenderVisitor::InitDisplayInfo(RSDisplayRenderNode& node)
         return false;
     }
     curDisplayDirtyManager_->Clear();
+    transparentCleanFilter_.clear();
+    transparentDirtyFilter_.clear();
 
     // 2 init screenManager info
     screenManager_ = CreateOrGetScreenManager();
@@ -1682,6 +1685,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSS
         UpdateDstRect(*hwcNode, rect, RectI());
         UpdateSrcRect(*hwcNode, totalMatrix, rect);
         UpdateHwcNodeByTransform(*hwcNode);
+        UpdateHwcNodeEnableBySrcRect(*hwcNode);
     }
     hwcNode->SetTotalMatrix(totalMatrix);
 }
@@ -1707,19 +1711,41 @@ void RSUniRenderVisitor::AccumulateMatrixAndAlpha(std::shared_ptr<RSSurfaceRende
     matrix.PostConcat(parentProperty.GetBoundsGeometry()->GetMatrix());
 }
 
+void RSUniRenderVisitor::UpdateHwcNodeEnable()
+{
+    auto& curMainAndLeashSurfaces = curDisplayNode_->GetAllMainAndLeashSurfaces();
+    std::for_each(curMainAndLeashSurfaces.rbegin(), curMainAndLeashSurfaces.rend(),
+        [this](RSBaseRenderNode::SharedPtr& nodePtr) {
+        auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(nodePtr);
+        if (!surfaceNode) {
+            return;
+        }
+        UpdateHwcNodeEnableByGlobalFilter(surfaceNode);
+        surfaceNode->ResetNeedCollectHwcNode();
+        const auto& hwcNodes = surfaceNode->GetChildHardwareEnabledNodes();
+        if (hwcNodes.empty()) {
+            return;
+        }
+        std::vector<RectI> hwcRects;
+        for(auto hwcNode : hwcNodes) {
+            auto hwcNodePtr = hwcNode.lock();
+            if (!hwcNodePtr || !hwcNodePtr->IsOnTheTree()) {
+                continue;
+            }
+            UpdateHwcNodeEnableByRotateAndAlpha(hwcNodePtr);
+            UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, hwcNodePtr);
+            hwcNodePtr->SetGlobalZOrder(hwcNodePtr->IsHardwareForcedDisabled() ? -1.f : globalZOrder_++);
+        }
+    });
+}
+
 void RSUniRenderVisitor::UpdateHwcNodeEnableAndCreateLayer(std::shared_ptr<RSSurfaceRenderNode>& node)
 {
-    if (!node) {
-        return;
-    }
-    UpdateHwcNodeEnableByGlobalFilter(node);
-    node->ResetNeedCollectHwcNode();
     const auto& hwcNodes = node->GetChildHardwareEnabledNodes();
     if (hwcNodes.empty()) {
         return;
     }
     std::shared_ptr<RSSurfaceRenderNode> pointWindow;
-    std::vector<RectI> hwcRects;
     for(auto hwcNode : hwcNodes) {
         auto hwcNodePtr = hwcNode.lock();
         if (!hwcNodePtr || !hwcNodePtr->IsOnTheTree()) {
@@ -1729,13 +1755,10 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableAndCreateLayer(std::shared_ptr<RSSur
             pointWindow = hwcNodePtr;
             continue;
         }
-        UpdateHwcNodeEnableByRotateAndAlpha(hwcNodePtr);
-        UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, hwcNodePtr);
         UpdateHwcNodeDirtyRegionForApp(node, hwcNodePtr);
         hwcNodePtr->SetIntersectByFilterInApp(false);
         hwcNodePtr->SetCalcRectInPrepare(false);
         auto transform = RSUniRenderUtil::GetLayerTransform(*hwcNodePtr, screenInfo_);
-        hwcNodePtr->SetGlobalZOrder(hwcNodePtr->IsHardwareForcedDisabled() ? -1.f : globalZOrder_++);
         hwcNodePtr->UpdateHwcNodeLayerInfo(transform);
     }
     if (pointWindow) {
@@ -2093,10 +2116,8 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByFilterRect(
 
 void RSUniRenderVisitor::UpdateHwcNodeEnableByGlobalFilter(std::shared_ptr<RSSurfaceRenderNode>& node)
 {
-    auto filterVecIter = transparentCleanFilter_.find(node->GetId());
-    if (filterVecIter == transparentCleanFilter_.end()) {
-        return;
-    }
+    auto cleanFilter = transparentCleanFilter_.find(node->GetId());
+    auto dirtyFilter = transparentDirtyFilter_.find(node->GetId());
     auto& curMainAndLeashSurfaces = curDisplayNode_->GetAllMainAndLeashSurfaces();
     for(auto it = curMainAndLeashSurfaces.rbegin(); it != curMainAndLeashSurfaces.rend(); ++it) {
         auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
@@ -2115,10 +2136,23 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByGlobalFilter(std::shared_ptr<RSSur
             if (!hwcNodePtr || hwcNodePtr->IsHardwareForcedDisabled()) {
                 continue;
             }
-            for (auto filter = filterVecIter->second.begin(); filter != filterVecIter->second.end(); ++filter) {
-                if (hwcNodePtr->GetDstRect().Intersect(filter->second)) {
-                    hwcNodePtr->SetHardwareForcedDisabledState(true);
-                    break;
+            if (cleanFilter != transparentCleanFilter_.end()) {
+                for (auto filter = cleanFilter->second.begin(); filter != cleanFilter->second.end(); ++filter) {
+                    if (hwcNodePtr->GetDstRect().Intersect(filter->second)) {
+                        hwcNodePtr->SetHardwareForcedDisabledState(true);
+                        break;
+                    }
+                }
+                if (hwcNodePtr->IsHardwareForcedDisabled()) {
+                    continue;
+                }
+            }
+            if (dirtyFilter != transparentDirtyFilter_.end()) {
+                for (auto filter = dirtyFilter->second.begin(); filter != dirtyFilter->second.end(); ++filter) {
+                    if (hwcNodePtr->GetDstRect().Intersect(filter->second)) {
+                        hwcNodePtr->SetHardwareForcedDisabledState(true);
+                        break;
+                    }
                 }
             }
         }
@@ -2158,6 +2192,7 @@ void RSUniRenderVisitor::CollectFilterInfoAndUpdateDirty(RSRenderNode& node)
                 isNodeAddedToTransparentCleanFilters = true;
             }
             if (isIntersect) {
+                transparentDirtyFilter_[curSurfaceNode_->GetId()].push_back({node.GetId(), globalFilterRect});
                 curDisplayDirtyManager_->MergeDirtyRect(globalFilterRect);
             }
         } else {
