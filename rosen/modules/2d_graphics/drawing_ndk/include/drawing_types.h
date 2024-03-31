@@ -262,6 +262,22 @@ typedef struct OH_Drawing_SamplingOptions OH_Drawing_SamplingOptions;
 typedef struct OH_Drawing_TextBlobBuilder OH_Drawing_TextBlobBuilder;
 
 /**
+ * @brief Defines a GPU context, which is used to describe the GPU backend context.
+ *
+ * @since 12
+ * @version 1.0
+ */
+typedef struct OH_Drawing_GpuContext OH_Drawing_GpuContext;
+
+/**
+ * @brief Defines a surface, which is used to manage the pixels that a canvas draws into.
+ *
+ * @since 12
+ * @version 1.0
+ */
+typedef struct OH_Drawing_Surface OH_Drawing_Surface;
+
+/**
  * @brief Enumerates storage formats of bitmap pixels.
  *
  * @since 8
