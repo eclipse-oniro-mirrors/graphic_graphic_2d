@@ -557,15 +557,14 @@ void RSDisplayRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
         return;
     }
 
-    RS_TRACE_NAME("RSDisplayRenderNodeDrawable::OnCapture:" +
-        std::to_string(params->GetId()));
     Drawing::AutoCanvasRestore acr(canvas, true);
 
-    if (!params->GetDisplayHasSecSurface().empty() || !params->GetDisplayHasSkipSurface().empty()
-        || RSMainThread::Instance()->IsCurtainScreenOn()) {
+    if (params->HasSecurityLayer() || params->HasSkipLayer()) {
         RS_LOGD("RSDisplayRenderNodeDrawable::OnCapture: params %{public}s \
             process RSDisplayRenderNode(id:[%{public}" PRIu64 "]) Not using UniRender buffer.",
             params->ToString().c_str(), params->GetId());
+        RS_TRACE_NAME("RSDisplayRenderNodeDrawable::OnCapture: processRSDisplayRenderNodeDrawable[" +
+            std::to_string(params->GetScreenId()) + "] Not using UniRender buffer.");
 
         // Adding matrix affine transformation logic
         if (!UNLIKELY(RSUniRenderThread::GetCaptureParam().isMirror_)) {
@@ -583,13 +582,6 @@ void RSDisplayRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
 
         FindHardwareEnabledNodes();
 
-        // displayNodeSp to get rsSurface witch only used in renderThread
-        auto renderFrame = RequestFrame(displayNodeSp, *params, processor);
-        if (!renderFrame) {
-            RS_LOGE("RSDisplayRenderNodeDrawable::OnCapture failed to request frame");
-            return;
-        }
-
         if (displayNodeSp->GetBuffer() == nullptr) {
             RS_LOGE("RSDisplayRenderNodeDrawable::OnCapture: buffer is null!");
             return;
@@ -598,6 +590,8 @@ void RSDisplayRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
         RS_LOGD("RSDisplayRenderNodeDrawable::OnCapture: params %{public}s \
             process RSDisplayRenderNode(id:[%{public}" PRIu64 "]) using UniRender buffer.",
             params->ToString().c_str(), params->GetId());
+        RS_TRACE_NAME("RSDisplayRenderNodeDrawable::OnCapture: processRSDisplayRenderNodeDrawable[" +
+            std::to_string(params->GetScreenId()) + "] using UniRender buffer.");
 
         if (params->GetHardwareEnabledNodes().size() != 0) {
             AdjustZOrderAndDrawSurfaceNode(params->GetHardwareEnabledNodes(), canvas);
