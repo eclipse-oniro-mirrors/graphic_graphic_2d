@@ -1945,6 +1945,7 @@ void RSUniRenderVisitor::CheckMergeTransparentFilterForDisplay(
     }
     surfaceNode->SetFilterCacheFullyCovered(false);
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
+    bool dirtyBelowContainsFilterNode = false;
     auto filterVecIter = transparentCleanFilter_.find(surfaceNode->GetId());
     if (filterVecIter != transparentCleanFilter_.end()) {
         RS_LOGD("RSUniRenderVisitor::CheckMergeTransparentFilterForDisplay surface:%{public}s "
@@ -1960,7 +1961,7 @@ void RSUniRenderVisitor::CheckMergeTransparentFilterForDisplay(
             if (!filterDirtyRegion.IsEmpty()) {
                 if (filterNode->GetRenderProperties().GetBackgroundFilter()) {
                     // backgroundfilter affected by below dirty
-                    filterNode->MarkFilterStatusChanged(false, true);
+                    filterNode->MarkFilterStatusChanged(false, false);
                 }
                 RS_LOGD("RSUniRenderVisitor::CheckMergeTransparentFilterForDisplay merge "
                     "filterRegion %{public}s region %{public}s",
@@ -1968,12 +1969,17 @@ void RSUniRenderVisitor::CheckMergeTransparentFilterForDisplay(
                 curDisplayNode_->GetDirtyManager()->MergeDirtyRect(it->second);
                 if (filterNode->GetRenderProperties().GetFilter()) {
                     // foregroundfilter affected by below dirty
-                    filterNode->MarkFilterStatusChanged(true, true);
+                    filterNode->MarkFilterStatusChanged(true, false);
                 }
             } else {
                 globalFilter_.insert(it->second);
             }
-            filterNode->MarkAndUpdateFilterNodeDirtySlotsAfterPrepare();
+            filterNode->MarkAndUpdateFilterNodeDirtySlotsAfterPrepare(dirtyBelowContainsFilterNode);
+            if (!filterNode->IsBackgroundFilterCacheValid() &&
+                (filterNode->GetRenderProperties().GetBackgroundFilter() ||
+                filterNode->GetRenderProperties().GetFilter())) {
+                dirtyBelowContainsFilterNode = true;
+            }
             // [attention] make sure filter valid check useful
             surfaceNode->CheckValidFilterCacheFullyCoverTarget(*filterNode, screenRect_);
         }
