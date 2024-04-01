@@ -14,31 +14,37 @@
  */
 
 #define EGL_EGLEXT_PROTOTYPES
+
 #include "rs_sub_thread.h"
-#include "platform/ohos/backend/rs_surface_ohos_vulkan.h"
+
 #include <string>
+
 #include "GLES3/gl3.h"
 #include "include/core/SkCanvas.h"
-#include "memory/rs_tag_tracker.h"
 #include "rs_trace.h"
-#include "pipeline/parallel_render/rs_sub_thread_manager.h"
-#include "pipeline/rs_main_thread.h"
+
 #include "memory/rs_memory_graphic.h"
 #include "memory/rs_memory_manager.h"
+#include "memory/rs_tag_tracker.h"
+#include "pipeline/parallel_render/rs_sub_thread_manager.h"
+#include "pipeline/rs_main_thread.h"
+#include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_uni_render_util.h"
 #include "pipeline/rs_uni_render_visitor.h"
-#include "pipeline/rs_surface_render_node.h"
+
 #ifdef RS_PARALLEL
 #include "pipeline/rs_uifirst_manager.h"
 #include "drawable/rs_render_node_drawable.h"
 #include "drawable/rs_surface_render_node_drawable.h"
 #endif
+
 #ifdef RES_SCHED_ENABLE
 #include "res_type.h"
 #include "res_sched_client.h"
 #endif
 
 #ifdef RS_ENABLE_VK
+#include "platform/ohos/backend/rs_surface_ohos_vulkan.h"
 #include "platform/ohos/backend/rs_vulkan_context.h"
 #endif
 
