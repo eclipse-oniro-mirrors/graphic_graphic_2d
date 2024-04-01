@@ -133,6 +133,14 @@
     { "name": "OH_Drawing_FontSetTypeface" },
     { "name": "OH_Drawing_FontGetTypeface" },
     { "name": "OH_Drawing_FontGetMetrics" },
+    {
+        "first_introduced": "12",
+        "name": "OH_Drawing_GpuContextCreateFromGL"
+    },
+    {
+        "first_introduced": "12",
+        "name": "OH_Drawing_GpuContextDestroy"
+    },
     { "name": "OH_Drawing_MaskFilterCreateBlur" },
     { "name": "OH_Drawing_MaskFilterDestroy" },
     { "name": "OH_Drawing_MatrixCreate" },
@@ -381,6 +389,18 @@
         "name": "OH_Drawing_ShaderEffectCreateImageShader"
     },
     { "name": "OH_Drawing_ShaderEffectDestroy" },
+    {
+        "first_introduced": "12",
+        "name": "OH_Drawing_SurfaceCreateFromGpuContext"
+    },
+    {
+        "first_introduced": "12",
+        "name": "OH_Drawing_SurfaceGetCanvas"
+    },
+    {
+        "first_introduced": "12",
+        "name": "OH_Drawing_SurfaceDestroy"
+    },
     { "name": "OH_Drawing_TextBlobCreateFromText" },
     { "name": "OH_Drawing_TextBlobCreateFromPosText" },
     { "name": "OH_Drawing_TextBlobCreateFromString" },
@@ -582,20 +602,20 @@
     { "name": "OH_Drawing_TypographyStyleDestroyStrutStyle"},
     { "name": "OH_Drawing_TypographyStyleGetStrutStyle" },
     { "name": "OH_Drawing_TypographyStyleStrutStyleEquals" },
-    { "name": "OH_Drawing_TypographyStyleSetHintingEnable" },
+    { "name": "OH_Drawing_TypographyStyleSetHintsEnabled" },
     { "name": "OH_Drawing_TypographyGetLineFontMetrics" },
     { "name": "OH_Drawing_TypographyDestroyLineFontMetrics" },
     { "name": "OH_Drawing_SetTextStyleFontStyleStruct" },
     { "name": "OH_Drawing_TextStyleGetFontStyleStruct" },
     { "name": "OH_Drawing_SetTypographyStyleFontStyleStruct" },
     { "name": "OH_Drawing_TypographyStyleGetFontStyleStruct" },
-    { "name": "OH_Drawing_TextStyleIsEquals" },
-    { "name": "OH_Drawing_TextStyleIsEqualsByFonts" },
-    { "name": "OH_Drawing_TextStyleIsMatchOneAttribute" },
+    { "name": "OH_Drawing_TextStyleIsEqual" },
+    { "name": "OH_Drawing_TextStyleIsEqualByFont" },
+    { "name": "OH_Drawing_TextStyleIsAttributeMatched" },
     { "name": "OH_Drawing_TextStyleSetPlaceholder" },
     { "name": "OH_Drawing_TextStyleIsPlaceholder" },
     { "name": "OH_Drawing_TypographyStyleGetEffectiveAlignment" },
-    { "name": "OH_Drawing_TypographyStyleIsHintingEnabled" },
+    { "name": "OH_Drawing_TypographyStyleIsHintEnabled" },
     { "name": "OH_Drawing_FontStyleSetCreateTypeface" },
     { "name": "OH_Drawing_FontStyleSetGetStyle" },
     { "name": "OH_Drawing_FontStyleSetFreeStyleName" },

@@ -584,23 +584,23 @@ typedef struct OH_Drawing_FontStyleStruct {
  */
 enum OH_Drawing_TextStyleType {
     /** None style */
-    TextStyle_NONE,
+    TEXT_STYLE_NONE,
     /** All attributes style */
-    TextStyle_ALL_ATTRIBUTES,
+    TEXT_STYLE_ALL_ATTRIBUTES,
     /** Font style */
-    TextStyle_FONT,
+    TEXT_STYLE_FONT,
     /** Foreground style */
-    TextStyle_FOREGROUND,
+    TEXT_STYLE_FOREGROUND,
     /** Background style */
-    TextStyle_BACKGROUND,
+    TEXT_STYLE_BACKGROUND,
     /** Shadow style */
-    TextStyle_SHADOW,
+    TEXT_STYLE_SHADOW,
     /** Decorations style */
-    TextStyle_DECORATIONS,
+    TEXT_STYLE_DECORATIONS,
     /** Letter spacing style */
-    TextStyle_LETTER_SPACING,
+    TEXT_STYLE_LETTER_SPACING,
     /** Word spacing style */
-    TextStyle_WORD_SPACING
+    TEXT_STYLE_WORD_SPACING
 };
 
 /**
@@ -2492,11 +2492,11 @@ bool OH_Drawing_TypographyStyleStrutStyleEquals(OH_Drawing_StrutStyle* from, OH_
  *
  * @syscap SystemCapability.Graphic.Graphic2D.NativeDrawing
  * @param OH_Drawing_TypographyStyle Indicates the pointer to an <b>OH_Drawing_TypographyStyle</b> object.
- * @param hintingEnable Indicates the hinting of text typography..
+ * @param hintsEnabled Indicates the hinting of text typography..
  * @since 12
  * @version 1.0
  */
-void OH_Drawing_TypographyStyleSetHintingEnable(OH_Drawing_TypographyStyle* style, bool hintingEnable);
+void OH_Drawing_TypographyStyleSetHintsEnabled(OH_Drawing_TypographyStyle* style, bool hintsEnabled);
 
 /**
  * @brief Getting all font metrics from target row.
@@ -2580,7 +2580,7 @@ void OH_Drawing_TypographyStyleGetFontStyleStruct(OH_Drawing_TypographyStyle* dr
  * @since 12
  * @version 1.0
  */
-bool OH_Drawing_TextStyleIsEquals(const OH_Drawing_TextStyle* style, const OH_Drawing_TextStyle* comparedStyle);
+bool OH_Drawing_TextStyleIsEqual(const OH_Drawing_TextStyle* style, const OH_Drawing_TextStyle* comparedStyle);
 
 /**
  * @brief Gets whether the font properties of two TextStyle objects are equal.
@@ -2592,7 +2592,7 @@ bool OH_Drawing_TextStyleIsEquals(const OH_Drawing_TextStyle* style, const OH_Dr
  * @since 12
  * @version 1.0
  */
-bool OH_Drawing_TextStyleIsEqualsByFonts(const OH_Drawing_TextStyle* style, const OH_Drawing_TextStyle* comparedStyle);
+bool OH_Drawing_TextStyleIsEqualByFont(const OH_Drawing_TextStyle* style, const OH_Drawing_TextStyle* comparedStyle);
 
 /**
  * @brief Gets whether two TextStyle objects match attributes
@@ -2605,7 +2605,7 @@ bool OH_Drawing_TextStyleIsEqualsByFonts(const OH_Drawing_TextStyle* style, cons
  * @since 12
  * @version 1.0
  */
-bool OH_Drawing_TextStyleIsMatchOneAttribute(const OH_Drawing_TextStyle* style,
+bool OH_Drawing_TextStyleIsAttributeMatched(const OH_Drawing_TextStyle* style,
     const OH_Drawing_TextStyle* comparedStyle, OH_Drawing_TextStyleType textStyleType);
 
 /**
@@ -2649,7 +2649,7 @@ OH_Drawing_TextAlign OH_Drawing_TypographyStyleGetEffectiveAlignment(OH_Drawing_
  * @since 12
  * @version 1.0
  */
-bool OH_Drawing_TypographyStyleIsHintingEnabled(OH_Drawing_TypographyStyle* style);
+bool OH_Drawing_TypographyStyleIsHintEnabled(OH_Drawing_TypographyStyle* style);
 
 #ifdef __cplusplus
 }

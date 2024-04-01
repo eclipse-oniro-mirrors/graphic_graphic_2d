@@ -216,6 +216,9 @@ OH_Drawing_FontStyleStruct OH_Drawing_FontStyleSetGetStyle(OH_Drawing_FontStyleS
     fontStyleStruct.weight = FONT_WEIGHT_400;
     fontStyleStruct.width = FONT_WIDTH_NORMAL;
     fontStyleStruct.slant = FONT_STYLE_NORMAL;
+    if (styleName == nullptr) {
+        return fontStyleStruct;
+    }
     FontStyleSet* converFontStyleSet = reinterpret_cast<FontStyleSet*>(fontStyleSet);
     if (converFontStyleSet == nullptr) {
         return fontStyleStruct;
@@ -243,6 +246,9 @@ OH_Drawing_FontStyleStruct OH_Drawing_FontStyleSetGetStyle(OH_Drawing_FontStyleS
 
 void OH_Drawing_FontStyleSetFreeStyleName(char** styleName)
 {
+    if (styleName == nullptr) {
+        return;
+    }
     if (*styleName != nullptr) {
         free(*styleName);
         *styleName = nullptr;
