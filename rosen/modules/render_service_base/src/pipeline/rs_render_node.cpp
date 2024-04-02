@@ -1566,8 +1566,8 @@ void RSRenderNode::InitCacheSurface(Drawing::GPUContext* gpuContext, ClearCacheS
             height = boundsHeight_;
         }
 #else
-        width = boundsWidth_;
-        height = boundsHeight_;
+        width = std::ceil(boundsWidth_);
+        height = std::ceil(boundsHeight_);
 #endif
     }
 #if (defined (RS_ENABLE_GL) || defined (RS_ENABLE_VK)) && (defined RS_ENABLE_EGLIMAGE)
