@@ -181,7 +181,6 @@ void RSPropertyDrawableUtils::CeilMatrixTrans(Drawing::Canvas* canvas)
 {
     // The translation of the matrix is rounded to improve the hit ratio of skia blurfilter cache,
     // the function <compute_key_and_clip_bounds> in <skia/src/gpu/GrBlurUtil.cpp> for more details.
-    Drawing::AutoCanvasRestore rst(*canvas, true);
     auto matrix = canvas->GetTotalMatrix();
     matrix.Set(Drawing::Matrix::TRANS_X, std::ceil(matrix.Get(Drawing::Matrix::TRANS_X)));
     matrix.Set(Drawing::Matrix::TRANS_Y, std::ceil(matrix.Get(Drawing::Matrix::TRANS_Y)));
@@ -576,8 +575,8 @@ Drawing::Path RSPropertyDrawableUtils::CreateShadowPath(const std::shared_ptr<RS
 void RSPropertyDrawableUtils::DrawShadow(Drawing::Canvas* canvas, Drawing::Path& path, const float& offsetX,
     const float& offsetY, const float& elevation, const bool& isFilled, Color spotColor)
 {
-    CeilMatrixTrans(canvas);
     Drawing::AutoCanvasRestore acr(*canvas, true);
+    CeilMatrixTrans(canvas);
     if (!isFilled) {
         canvas->ClipPath(path, Drawing::ClipOp::DIFFERENCE, true);
     }
