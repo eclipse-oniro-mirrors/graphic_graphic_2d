@@ -31,11 +31,11 @@
 #include "pipeline/rs_effect_render_node.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
 #include "property/rs_properties.h"
 #include "property/rs_properties_def.h"
 #include "property/rs_properties_painter.h"
 #include "render/rs_skia_filter.h"
-#include "platform/common/rs_system_properties.h"
 
 namespace {
 constexpr int PARAM_DOUBLE = 2;
@@ -982,8 +982,14 @@ void RSBlendFastDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanv
     canvas.SetBlendMode({ blendMode_ - 1 }); // map blendMode to SkBlendMode
 }
 
-void RSBlendSaveLayerRestoreDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const {}
+void RSBlendSaveLayerRestoreDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
+{
+    // SAVE_ALL slot will do all necessary restore
+}
 
-void RSBlendFastRestoreDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const {}
+void RSBlendFastRestoreDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
+{
+    // SAVE_ALL slot will do all necessary restore
+}
 
 } // namespace OHOS::Rosen

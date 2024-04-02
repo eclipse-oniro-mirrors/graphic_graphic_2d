@@ -135,8 +135,8 @@ protected:
 // color.
 class RSB_EXPORT RSPaintFilterCanvas : public RSPaintFilterCanvasBase {
 public:
-    RSPaintFilterCanvas(Drawing::Canvas* canvas, float alpha = 1.0f);
-    RSPaintFilterCanvas(Drawing::Surface* surface, float alpha = 1.0f);
+    RSPaintFilterCanvas(Drawing::Canvas* canvas);
+    RSPaintFilterCanvas(Drawing::Surface* surface);
     ~RSPaintFilterCanvas() override {};
 
     void CopyConfiguration(const RSPaintFilterCanvas& other);

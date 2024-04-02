@@ -17,8 +17,8 @@
 
 #include "common/rs_optional_trace.h"
 #include "platform/common/rs_log.h"
-#include "render/rs_material_filter.h"
 #include "property/rs_properties_painter.h"
+#include "render/rs_material_filter.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -625,7 +625,7 @@ void RSPropertyDrawableUtils::DrawUseEffect(RSPaintFilterCanvas* canvas)
 
 void RSPropertyDrawableUtils::BeginBlendMode(RSPaintFilterCanvas& canvas, int blendMode, int blendModeApplyType)
 {
-    if (!canvas.HasOffscreenLayer() && RSPropertiesPainter::IsDangerousBlendMode(blendMode, blendModeApplyType)) {
+    if (!canvas.HasOffscreenLayer() && RSPropertiesPainter::IsDangerousBlendMode(blendMode - 1, blendModeApplyType)) {
         Drawing::SaveLayerOps maskLayerRec(nullptr, nullptr, 0);
         canvas.SaveLayer(maskLayerRec);
         ROSEN_LOGD("Dangerous offscreen blendmode may produce transparent pixels, add extra offscreen here.");
@@ -652,6 +652,7 @@ void RSPropertyDrawableUtils::BeginBlendMode(RSPaintFilterCanvas& canvas, int bl
 
 void RSPropertyDrawableUtils::EndBlendMode(RSPaintFilterCanvas& canvas, int blendModeApplyType)
 {
+    // RSRenderNodeDrawable will do other necessary work (restore canvas & env), we only need to restore alpha
     if (blendModeApplyType != static_cast<int>(RSColorBlendApplyType::FAST)) {
         canvas.RestoreAlpha();
     }
