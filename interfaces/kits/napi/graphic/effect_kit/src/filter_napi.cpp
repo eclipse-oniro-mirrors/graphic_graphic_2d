@@ -529,7 +529,6 @@ static uint32_t ParseColorMatrix(napi_env env, napi_value val, PixelColorMatrix 
         EFFECT_LOG_E("Parse color matrix napi_get_array_length failed %{public}u", len);
         return ERR_INVALID_PARAM;
     }
-    EFFECT_LOG_E("Parse color matrix len %{public}u", len);
 
     for (size_t i = 0; i < len; i++) {
         double itemVal;
