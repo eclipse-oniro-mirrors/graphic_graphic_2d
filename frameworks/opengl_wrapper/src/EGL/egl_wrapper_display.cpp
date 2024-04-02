@@ -24,6 +24,9 @@
 #include "thread_private_data_ctl.h"
 #include "wrapper_log.h"
 #include "egl_blob_cache.h"
+#if USE_APS_FUNC
+#include "aps_game_fps_controller.h"
+#endif // USE_APS_FUNC
 namespace OHOS {
 EglWrapperDisplay EglWrapperDisplay::wrapperDisp_;
 
@@ -636,7 +639,9 @@ EGLBoolean EglWrapperDisplay::SwapBuffers(EGLSurface surf)
 {
     WLOGD("");
     std::lock_guard<std::mutex> lock(refLockMutex_);
-
+#if USE_APS_FUNC
+    OHOS::Rosen::ApsGameFpsController::GetInstance().PowerCtrllofEglswapbuffer();
+#endif // USE_APS_FUNC
     EglWrapperSurface *surfPtr = EglWrapperSurface::GetWrapperSurface(surf);
     if (!CheckObject(surfPtr)) {
         if (surfPtr->GetEglSurface() == nullptr) {

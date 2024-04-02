@@ -25,6 +25,11 @@ config("egl_config") {
   } else {
     defines += [ "USE_IGRAPHICS_EXTENDS_HOOKS=0" ]
   }
+  if (graphic_2d_feature_use_aps_extend_func) {
+    defines += [ "USE_APS_FUNC=1" ]
+  } else {
+    defines += [ "USE_APS_FUNC=0" ]
+  }
 
   cflags = [
     "-Wall",
@@ -37,6 +42,9 @@ config("egl_public_config") {
   include_dirs = [ "include" ]
   if (graphic_2d_feature_use_igraphics_extend_hooks) {
     include_dirs += egl_igraphics_extend_hooks_include_dirs
+  }
+  if (graphic_2d_feature_use_aps_extend_func) {
+    include_dirs += aps_client_include_dirs
   }
 }
 
@@ -64,6 +72,9 @@ if (current_os != "ohos") {
     if (graphic_2d_feature_use_igraphics_extend_hooks) {
       sources += egl_igraphics_extend_hooks_sources
     }
+    if (graphic_2d_feature_use_aps_extend_func) {
+      sources += aps_client_sources
+    }
     configs = [ ":egl_config" ]
 
     public_configs = [ ":egl_public_config" ]
@@ -76,6 +87,10 @@ if (current_os != "ohos") {
       "init:libbeget_proxy",
       "init:libbegetutil",
     ]
+    
+    if (graphic_2d_feature_use_aps_extend_func) {
+      external_deps += aps_client_external_deps
+    }
 
     if (defined(graphic_2d_ext_configs.vendor_root)) {
       install_enable = false
