@@ -2248,6 +2248,13 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode ScreenManager is nullptr");
         return;
     }
+    ScreenInfo curScreenInfo = screenManager->QueryScreenInfo(node.GetScreenId());
+    // skip frame according to skipFrameInterval value of SetScreenSkipFrameInterval interface
+    if (node.SkipFrame(curScreenInfo.skipFrameInterval)) {
+        RS_TRACE_NAME("SkipFrame, screenId:" + std::to_string(node.GetScreenId()));
+        return;
+    }
+
     constexpr int ROTATION_NUM = 4;
     auto screenRotation = node.GetScreenRotation();
     if (RSSystemProperties::IsFoldScreenFlag() && node.GetScreenId() == 0) {
