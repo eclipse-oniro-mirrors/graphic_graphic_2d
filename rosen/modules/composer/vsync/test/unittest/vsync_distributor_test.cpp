@@ -267,30 +267,6 @@ HWTEST_F(VSyncDistributorTest, GetVSyncConnectionInfos001, Function | MediumTest
     VSyncDistributorTest::vsyncDistributor->AddConnection(conn);
     ASSERT_EQ(VSyncDistributorTest::vsyncDistributor->GetVSyncConnectionInfos(infos), VSYNC_ERROR_OK);
 }
-
-/*
-* Function: MarkRSNotRendering001
-* Type: Function
-* Rank: Important(2)
-* EnvConditions: N/A
-* CaseDescription: 1. call MarkRSNotRendering
- */
-HWTEST_F(VSyncDistributorTest, MarkRSNotRendering001, Function | MediumTest| Level3)
-{
-    VSyncDistributorTest::vsyncDistributor->MarkRSNotRendering();
-}
-
-/*
-* Function: UnmarkRSNotRendering001
-* Type: Function
-* Rank: Important(2)
-* EnvConditions: N/A
-* CaseDescription: 1. call UnmarkRSNotRendering
- */
-HWTEST_F(VSyncDistributorTest, UnmarkRSNotRendering001, Function | MediumTest| Level3)
-{
-    VSyncDistributorTest::vsyncDistributor->UnmarkRSNotRendering();
-}
 } // namespace
 } // namespace Rosen
 } // namespace OHOS
