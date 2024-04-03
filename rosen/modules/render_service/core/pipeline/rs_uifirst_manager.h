@@ -35,6 +35,8 @@ public:
     void AddReuseNode(NodeId id);
 
     CacheProcessStatus GetNodeStatus(NodeId id);
+    // judge if surfacenode satisfies async subthread rendering condtions for Uifirst
+    void UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancestorNodeHasAnimation);
     void PostUifistSubTasks();
     void ProcessSubDoneNode();
     bool CollectSkipSyncNode(const std::shared_ptr<RSRenderNode> &node);

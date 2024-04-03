@@ -2905,6 +2905,7 @@ void RSMainThread::CheckAndUpdateInstanceContentStaticStatus(std::shared_ptr<RSS
     } else {
         instanceNode->UpdateSurfaceCacheContentStatic({});
     }
+    
 }
 
 void RSMainThread::ResetHardwareEnabledState()

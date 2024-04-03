@@ -415,6 +415,7 @@ void RSSubThreadManager::ScheduleRenderNodeDrawable(DrawableV2::RSSurfaceRenderN
         nodeDrawable->SetLastFrameUsedThreadIndex(tid);
         subThread->DrawableCache(nodeDrawable);
     });
+    subThread->IncreaseDoingCacheProcessNum();
     needResetContext_ = true;    
 }
 }

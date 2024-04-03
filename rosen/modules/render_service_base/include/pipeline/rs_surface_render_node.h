@@ -940,6 +940,10 @@ public:
         return RSRenderNode::GetUifirstSupportFlag();
     }
 
+    void UpdateSurfaceCacheContentStaticFlag();
+
+    void UpdateSurfaceSubTreeDirtyFlag();
+
     void MergeOldDirtyRect() override
     {
         if (IsAppWindow()) {

@@ -1282,6 +1282,36 @@ void RSSurfaceRenderNode::UpdateOccludedByFilterCache(bool val)
     surfaceParams->SetOccludedByFilterCache(isOccludedByFilterCache_);
 }
 
+void RSSurfaceRenderNode::UpdateSurfaceCacheContentStaticFlag()
+{
+    auto contentStatic = false;
+    if (IsLeashWindow()) {
+        contentStatic = !IsSubTreeDirty() && !HasRemovedChild();
+    } else {
+        contentStatic = surfaceCacheContentStatic_;
+    }
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (stagingSurfaceParams) {
+        stagingSurfaceParams->SetSurfaceCacheContentStatic(contentStatic);
+    }
+    if (stagingRenderParams_->NeedSync()) {
+        AddToPendingSyncList();
+    }
+    RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceRenderNode::UpdateSurfaceCacheContentStaticFlag: [%d] name [%s] Id:%" PRIu64 "",
+        contentStatic, GetName().c_str(), GetId());
+}
+
+void RSSurfaceRenderNode::UpdateSurfaceSubTreeDirtyFlag()
+{
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (stagingSurfaceParams) {
+        stagingSurfaceParams->SetSurfaceSubTreeDirty(IsSubTreeDirty());
+    }
+    if (stagingRenderParams_->NeedSync()) {
+        AddToPendingSyncList();
+    }
+}
+
 void RSSurfaceRenderNode::UpdateDrawingCacheNodes(const std::shared_ptr<RSRenderNode>& nodePtr)
 {
     if (nodePtr == nullptr) {
@@ -2243,7 +2273,7 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->skipLayerIds_= skipLayerIds_;
     surfaceParams->securityLayerIds_= securityLayerIds_;
     surfaceParams->name_= name_;
-
+    surfaceParams->positionZ_ = properties.GetPositionZ();
     surfaceParams->SetNeedSync(true);
 
     RSRenderNode::UpdateRenderParams();
@@ -2276,6 +2306,7 @@ void RSSurfaceRenderNode::SetUifirstChildrenDirtyRectParam(RectI rect)
     } else {
         RS_LOGE("RSSurfaceRenderNode::SetUifirstFlag stagingSurfaceParams is null");
     }
+
 }
 
 void RSSurfaceRenderNode::SetUifirstNodeEnableParam(bool b)

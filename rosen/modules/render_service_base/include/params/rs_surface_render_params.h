@@ -165,6 +165,13 @@ public:
     {
         return childrenDirtyRect_;
     }
+    void SetSurfaceCacheContentStatic(bool contentStatic);
+    bool GetSurfaceCacheContentStatic() const;
+
+    float GetPositionZ() const;
+
+    void SetSurfaceSubTreeDirty(bool isSubTreeDirty);
+    bool GetSurfaceSubTreeDirty() const;
 
     bool GetParentUifirstNodeEnableParam()
     {
@@ -226,6 +233,9 @@ private:
     RectI absDrawRect_;
     RRect rrect_;
 
+    bool surfaceCacheContentStatic_ = false;
+    bool isSubTreeDirty_ = false;
+    float positionZ_ = 0.0f;
     bool occlusionVisible_ = false;
     Occlusion::Region visibleRegion_;
     bool isOccludedByFilterCache_ = false;

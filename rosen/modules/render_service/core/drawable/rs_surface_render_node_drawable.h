@@ -102,6 +102,8 @@ public:
         ClearCacheSurfaceInThread();
     }
 
+    bool IsCurFrameStatic(DeviceType deviceType);
+
     bool HasCachedTexture() const;
 
 

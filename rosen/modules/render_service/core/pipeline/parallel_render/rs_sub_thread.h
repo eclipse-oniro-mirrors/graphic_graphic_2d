@@ -57,7 +57,11 @@ public:
     unsigned int GetDoingCacheProcessNum()
     {
         return doingCacheProcessNum.load();
-    };
+    }
+    void IncreaseDoingCacheProcessNum()
+    {
+        doingCacheProcessNum++;
+    }
 #endif
 private:
     void CreateShareEglContext();
