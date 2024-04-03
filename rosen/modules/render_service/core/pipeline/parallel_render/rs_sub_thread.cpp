@@ -255,7 +255,6 @@ void RSSubThread::RenderCache(const std::shared_ptr<RSSuperRenderTask>& threadTa
 #ifdef RS_PARALLEL
 void RSSubThread::DrawableCache(DrawableV2::RSSurfaceRenderNodeDrawable* nodeDrawable)
 {
-    doingCacheProcessNum++;
     RS_TRACE_NAME_FMT("RSSubThread::DrawableCache");
 
     if (grContext_ == nullptr) {

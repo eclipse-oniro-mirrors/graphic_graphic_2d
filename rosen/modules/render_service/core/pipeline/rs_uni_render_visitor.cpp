@@ -1242,20 +1242,11 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     PostPrepare(node, !isSubTreeNeedPrepare);
     prepareClipRect_ = prepareClipRect;
     dirtyFlag_ = dirtyFlag;
+
+    RSUifirstManager::Instance().UpdateUifirstNodes(node, ancestorNodeHasAnimation_);
+
     ResetCurSurfaceInfoAsUpperSurfaceParent(node);
     curAlpha_ = prevAlpha;
-}
-
-void RSUniRenderVisitor::UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancestorNodeHasAnimation)
-{
-    RS_TRACE_NAME_FMT("RSUniRender UpdateUifirstNodes: node[%llu] name[%s] FirstLevelNodeId[%llu] ",
-        node.GetId(), node.GetName().c_str(), node.GetFirstLevelNodeId());
-    // UIFirst Enable state is signed only when node's firstLevelNode is itself
-    if (node.GetFirstLevelNodeId() == node.GetId() && node.GetUifirstSupportFlag()) {
-        RSUifirstManager::Instance().PrepareUifirstNode(node, ancestorNodeHasAnimation_);
-    } else {
-        RSUifirstManager::Instance().DisableUifirstNode(node);
-    }
 }
 
 void RSUniRenderVisitor::CalculateOcclusion(RSSurfaceRenderNode& node)
@@ -1500,6 +1491,10 @@ bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
         curSurfaceDirtyManager_->Clear();
         curSurfaceDirtyManager_->SetSurfaceSize(screenInfo_.width, screenInfo_.height);
         filterInGlobal_ = curSurfaceNode_->IsTransparent();
+        // update surfaceNode contentDirty and subTreeDirty flag for UIFirst purging policy
+        RSMainThread::Instance()->CheckAndUpdateInstanceContentStaticStatus(curSurfaceNode_);
+        curSurfaceNode_->UpdateSurfaceCacheContentStaticFlag();
+        curSurfaceNode_->UpdateSurfaceSubTreeDirtyFlag();
     }
     // 2. update surface info and CheckIfOcclusionReusable
     node.SetAncestorDisplayNode(curDisplayNode_); // set for boot animation

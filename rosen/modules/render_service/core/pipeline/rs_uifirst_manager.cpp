@@ -120,15 +120,22 @@ void RSUifirstManager::ProcessDoneNode()
 
 void RSUifirstManager::PurgePendingPostNodes()
 {
+    RS_TRACE_NAME_FMT("PurgePendingPostNodes");
     auto deviceType = RSMainThread::Instance()->GetDeviceType();
-    for (auto it = pendingPostNodes_.begin(); it != pendingPostNodes_.end();) {
+    for (auto it = pendingPostNodes_.begin(); it != pendingPostNodes_.end();)
+    {
         auto id = it->first;
-        auto surfaceNode = it->second;
         DrawableV2::RSSurfaceRenderNodeDrawable* drawable = GetSurfaceDrawableByID(id);
-        if (drawable && surfaceNode) {
-            if (drawable->HasCachedTexture() && surfaceNode->IsUIFirstSelfDrawCheck() &&
-                (surfaceNode->IsCurFrameStatic(deviceType) || surfaceNode->IsVisibleDirtyEmpty(deviceType))) {
-                RS_TRACE_NAME_FMT("Purge node name %s", surfaceNode->GetName().c_str());
+        if (drawable) {
+            if (drawable->HasCachedTexture() && drawable->IsCurFrameStatic(deviceType) ) {
+                auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderNode()->GetRenderParams().get());
+                if (!surfaceParams) {
+                    RS_LOGE("PurgePendingPostNodes params is nullptr");
+                    ++it;
+                    continue;
+                }
+                RS_TRACE_NAME_FMT("Purge node name %s", surfaceParams->GetName().c_str());
+                AddProcessDoneNode(id);
                 it = pendingPostNodes_.erase(it);
             } else {
                 ++it;
@@ -137,7 +144,18 @@ void RSUifirstManager::PurgePendingPostNodes()
             ++it;
         }
     }
-    RS_TRACE_NAME_FMT("PurgePendingPostNodes leftNode num %d", pendingPostNodes_.size());
+}
+
+void RSUifirstManager::UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancestorNodeHasAnimation)
+{
+    RS_TRACE_NAME_FMT("UpdateUifirstNodes: node[%llu] name[%s] FirstLevelNodeId[%llu] ",
+        node.GetId(), node.GetName().c_str(), node.GetFirstLevelNodeId());
+    // UIFirst Enable state is signed only when node's firstLevelNode is itself 
+    if (node.GetFirstLevelNodeId() == node.GetId() && node.GetUifirstSupportFlag()) {
+        RSUifirstManager::Instance().PrepareUifirstNode(node, ancestorNodeHasAnimation);
+    } else {
+        RSUifirstManager::Instance().DisableUifirstNode(node);
+    }
 }
 
 void RSUifirstManager::PostSubTask(NodeId id)
@@ -259,14 +277,13 @@ void RSUifirstManager::SortSubThreadNodesPriority()
     sortedSubThreadNodeIds_.clear();
     for (auto& item : pendingPostNodes_) {
         auto const& [id, value] = item;
-        auto surfaceNode = value;
         DrawableV2::RSSurfaceRenderNodeDrawable* drawable = GetSurfaceDrawableByID(id);
-        if (!drawable || !surfaceNode) {
+        if (!drawable) {
             continue;
         }
         if (!isFocusNodeFound) {
-            bool isFocus = surfaceNode->IsFocusedNode(RSMainThread::Instance()->GetFocusNodeId()) ||
-            surfaceNode->IsFocusedNode(RSMainThread::Instance()->GetFocusLeashWindowId());
+            bool isFocus = ( (id == RSMainThread::Instance()->GetFocusNodeId()) ||
+                (id == RSMainThread::Instance()->GetFocusLeashWindowId()));
             if (isFocus) {
                 // for resolving response latency
                 drawable->SetRenderCachePriority(NodePriorityType::SUB_FOCUSNODE_PRIORITY);
@@ -288,9 +305,18 @@ void RSUifirstManager::SortSubThreadNodesPriority()
                 "this should not happen");
             return false;
         }
+        auto surfaceParams1 = static_cast<RSSurfaceRenderParams*>(drawable1->GetRenderNode()->GetRenderParams().get());
+        if (!surfaceParams1) {
+            RS_LOGE("RSSurfaceRenderNodeDrawable::sortsubthread params1 is nullptr");
+            return false;
+        }
+        auto surfaceParams2 = static_cast<RSSurfaceRenderParams*>(drawable2->GetRenderNode()->GetRenderParams().get());
+        if (!surfaceParams2) {
+            RS_LOGE("RSSurfaceRenderNodeDrawable::sortsubthread params2 is nullptr");
+            return false;
+        }
         if (drawable1->GetRenderCachePriority() == drawable2->GetRenderCachePriority()) {
-            return drawable2->GetRenderNode()->GetRenderProperties().GetPositionZ() <
-                drawable1->GetRenderNode()->GetRenderProperties().GetPositionZ();
+            return surfaceParams2->GetPositionZ() < surfaceParams1->GetPositionZ();
         } else {
             return drawable1->GetRenderCachePriority() < drawable2->GetRenderCachePriority();
         }
@@ -300,11 +326,12 @@ void RSUifirstManager::SortSubThreadNodesPriority()
 // post in drawframe sync time
 void RSUifirstManager::PostUifistSubTasks()
 {
-    // SortSubThreadNodesPriority()
+    PurgePendingPostNodes();
+    SortSubThreadNodesPriority();
     //RS_TRACE_NAME_FMT("PostUifistSubTasks num%d", sortedSubThreadNodeIds_.size());
-    if (pendingPostNodes_.size() > 0) {
-        for (auto& item : pendingPostNodes_) {
-            PostSubTask(item.first);
+    if (sortedSubThreadNodeIds_.size() > 0) {
+        for (auto& id : sortedSubThreadNodeIds_) {
+            PostSubTask(id);
         }
         pendingPostNodes_.clear();
     } else {

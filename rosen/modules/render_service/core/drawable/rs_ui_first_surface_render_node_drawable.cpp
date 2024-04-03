@@ -514,6 +514,18 @@ void RSSurfaceRenderNodeDrawable::ClearCacheSurface(bool isClearCompletedCacheSu
     }
 }
 
+bool RSSurfaceRenderNodeDrawable::IsCurFrameStatic(DeviceType deviceType)
+{
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(GetRenderNode()->GetRenderParams().get());
+    if (!surfaceParams) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw params is nullptr");
+        return false;
+    }
+    RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::GetSurfaceCacheContentStatic: [%d] name [%s] Id:%" PRIu64 "",
+        surfaceParams->GetSurfaceCacheContentStatic(),surfaceParams->GetName().c_str(), surfaceParams->GetId());
+    return surfaceParams->GetSurfaceCacheContentStatic();
+}
+
 void RSSurfaceRenderNodeDrawable::SubDraw(Drawing::Canvas& canvas)
 {
     auto nodeSp = std::const_pointer_cast<RSRenderNode>(renderNode_);
