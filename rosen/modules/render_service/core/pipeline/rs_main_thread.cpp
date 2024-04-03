@@ -2564,7 +2564,7 @@ void RSMainThread::ClearTransactionDataPidInfo(pid_t remotePid)
             if (isUniRender_) {
                 RSUniRenderThread::Instance().ClearMemoryCache(ClearMemoryMoment::PROCESS_EXIT, true);
             } else {
-                ClearMemoryCache(ClearMemoryMoment::PROCESS_EXIT, true, remotePid);
+                ClearMemoryCache(ClearMemoryMoment::PROCESS_EXIT, true);
             }
         }
         lastCleanCacheTimestamp_ = timestamp_;

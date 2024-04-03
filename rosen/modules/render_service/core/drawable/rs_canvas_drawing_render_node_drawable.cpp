@@ -231,8 +231,7 @@ void RSCanvasDrawingRenderNodeDrawable::Flush(float width, float height, std::sh
             image_ = surface_->GetImageSnapshot(); // TODO: return image_
             backendTexture_ = surface_->GetBackendTexture();
             if (!backendTexture_.IsValid()) {
-                RS_LOGE("RSCanvasDrawingRenderNodeDrawable::ResetSurfaceWithTexture !backendTexture_.IsValid() %d",
-                    __LINE__);
+                RS_LOGE("RSCanvasDrawingRenderNodeDrawable::Flush !backendTexture_.IsValid() %d", __LINE__);
             }
         }
 
@@ -466,7 +465,7 @@ bool RSCanvasDrawingRenderNodeDrawable::ResetSurfaceWithTexture(int width, int h
     }
     if (RSSystemProperties::GetRecordingEnabled()) {
         if (preImageInNewContext->IsTextureBacked()) {
-            RS_LOGI("RSCanvasDrawingRenderNodeDrawable::ResetSurfaceWithTexture sharedTexture "
+            RS_LOGI("RSCanvasDrawingRenderNodeDrawable::ResetSurfaceWithTexture preImageInNewContext "
                 "from texture to raster image");
             preImageInNewContext = preImageInNewContext->MakeRasterImage();
         }
