@@ -206,8 +206,7 @@ check_igraphics_core_file_args = [
 ]
 check_aps_core_file_args = [
   "--filename",
-  rebase_path(
-      "//foundation/graphic/graphic_2d_ext/aps_manager/config.gni"),
+  rebase_path("//foundation/graphic/graphic_2d_ext/aps_manager/config.gni"),
 ]
 check_delegator_ext_file_args = [
   "--filename",
