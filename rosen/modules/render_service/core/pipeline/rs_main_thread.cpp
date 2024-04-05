@@ -1936,7 +1936,7 @@ void RSMainThread::SetMultiInstancePidVSyncRate(std::map<uint32_t, RSVisibleLeve
         uint32_t tmpPid = ExtractPid(curSurface->GetId());
         multiInstancePidMap[tmpPid]++;
     }
-    for (auto& iter : multiInstancePidMap) {
+    for (const auto& iter : multiInstancePidMap) {
         if (iter.second > MAX_MULTI_INSTANCE_PID_COUNT) {
             pidVisMap[iter.first] = RSVisibleLevel::RS_ALL_VISIBLE;
         }
@@ -2228,7 +2228,7 @@ void RSMainThread::Animate(uint64_t timestamp)
     });
     if (needPrintAnimationDFX && needRequestNextVsync && animationPids.size() > 0) {
         std::string pidList;
-        for (auto& pid : animationPids) {
+        for (const auto& pid : animationPids) {
             pidList += "[" + std::to_string(pid) + "]";
         }
         RS_TRACE_NAME_FMT("Animate from pid %s", pidList.c_str());
