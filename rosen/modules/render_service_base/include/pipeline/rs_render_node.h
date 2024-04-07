@@ -478,7 +478,7 @@ public:
     void ApplyModifiers();
     void ApplyPositionZModifier();
     virtual void UpdateRenderParams();
-    void UpdateDrawingCacheInfoBeforeChildren();
+    void UpdateDrawingCacheInfoBeforeChildren(bool isScreenRotation);
     void UpdateDrawingCacheInfoAfterChildren();
 
     virtual RectI GetFilterRect() const;
