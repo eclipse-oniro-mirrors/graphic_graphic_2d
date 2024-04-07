@@ -1868,6 +1868,8 @@ void RSRenderNode::ApplyModifiers()
     UpdateDrawableVec();
     UpdateDrawableVecV2();
 
+    //Clear node some resource
+    ClearResource();
     // update state
     dirtyTypes_.reset();
     AddToPendingSyncList();

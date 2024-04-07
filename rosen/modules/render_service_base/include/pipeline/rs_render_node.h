@@ -589,6 +589,7 @@ protected:
 
     virtual void InitRenderParams();
     virtual void OnSync();
+    virtual void ClearResource() {};
 
     std::unique_ptr<RSRenderParams> renderParams_;
     std::unique_ptr<RSRenderParams> stagingRenderParams_;
