@@ -36,7 +36,7 @@ ohos_unittest("RSRenderClientPipelineTest") {
 
   cflags = [
     "-Dprivate = public",
-    "-Dprotected = public"
+    "-Dprotected = public",
   ]
 
   include_dirs = [
