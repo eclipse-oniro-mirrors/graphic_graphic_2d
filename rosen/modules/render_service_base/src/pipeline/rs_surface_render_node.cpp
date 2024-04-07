@@ -1304,6 +1304,11 @@ void RSSurfaceRenderNode::UpdateSurfaceCacheContentStaticFlag()
         contentStatic, GetName().c_str(), GetId());
 }
 
+bool RSSurfaceRenderNode::IsOccludedByFilterCache() const
+{
+    return isOccludedByFilterCache_;
+}
+
 void RSSurfaceRenderNode::UpdateSurfaceSubTreeDirtyFlag()
 {
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());

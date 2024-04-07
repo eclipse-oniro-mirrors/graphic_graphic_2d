@@ -161,6 +161,7 @@ void RSFilterDrawable::OnSync()
     ClearFilterCache();
 
     forceUseCache_ = stagingForceUseCache_;
+    clearFilteredCacheAfterDrawing_ = stagingClearFilteredCacheAfterDrawing_;
 
     filterHashChanged_ = false;
     filterRegionChanged_ = false;
@@ -168,6 +169,9 @@ void RSFilterDrawable::OnSync()
     rotationChanged_ = false;
     forceClearCache_ = false;
     stagingForceUseCache_ = false;
+    stagingClearFilteredCacheAfterDrawing_ = false;
+    isOccluded_ = false;
+    belowFilterIsDirty_ = false;
 
     clearType_ = FilterCacheType::BOTH;
     isLargeArea_ = false;
@@ -181,7 +185,7 @@ Drawing::RecordingCanvas::DrawFunc RSFilterDrawable::CreateDrawFunc() const
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
         if (canvas && ptr->filter_) {
             RSPropertyDrawableUtils::DrawFilter(canvas, ptr->filter_,
-                ptr->cacheManager_, ptr->IsForeground(), ptr->forceUseCache_);
+                ptr->cacheManager_, ptr->IsForeground(), ptr->clearFilteredCacheAfterDrawing_);
         }
     };
 }
@@ -225,22 +229,36 @@ void RSFilterDrawable::MarkHasEffectChildren()
 {
     stagingHasEffectChildren_ = true;
 }
- 
+
+void RSFilterDrawable::MarkFilterBelowIsDirty()
+{
+    if (filterType_ != RSFilter::AIBAR) {
+        forceClearCache_ = true;
+    }
+    belowFilterIsDirty_ = true;
+}
+
+void RSFilterDrawable::MarkNodeIsOccluded(bool isOccluded)
+{
+    isOccluded_ = isOccluded;
+}
+
 void RSFilterDrawable::CheckClearFilterCache()
 {
     if (cacheManager_ == nullptr) {
         return;
     }
 
-    FilterCacheType lastCacheType = cacheManager_->GetCachedType();
+    stagingClearFilteredCacheAfterDrawing_ =
+        filterType_ != RSFilter::AIBAR ? (filterHashChanged_ && !filterRegionChanged_) : false;
     RS_OPTIONAL_TRACE_NAME_FMT("RSFilterDrawable::MarkNeedClearFilterCache forceUseCache_:%d, "
-        "forceClearCache_:%d, hashChanged:%d, regionChanged_:%d, belowDirty_:%d, "
-        "lastCacheType:%d, cacheUpdateInterval_:%d, canSkip:%d, isLargeArea:%d, hasEffectChildren:%d",
-        stagingForceUseCache_, forceClearCache_, filterHashChanged_, filterRegionChanged_, filterInteractWithDirty_,
-        lastCacheType, cacheUpdateInterval_, canSkipFrame_, isLargeArea_, stagingHasEffectChildren_);
+        "lastCacheType:%d, cacheUpdateInterval_:%d, canSkip:%d, isLargeArea:%d, hasEffectChildren_:%d,"
+        "filterType_:%d, lastOccluded_:%d", stagingForceUseCache_, forceClearCache_, filterHashChanged_,
+        filterRegionChanged_, filterInteractWithDirty_, stagingClearFilteredCacheAfterDrawing_, lastCacheType_,
+        cacheUpdateInterval_, canSkipFrame_, isLargeArea_, stagingHasEffectChildren_, filterType_);
 
     // no valid cache
-    if (lastCacheType == FilterCacheType::NONE) {
+    if (lastCacheType_ == FilterCacheType::NONE) {
         UpdateFlags(FilterCacheType::NONE, false);
         return;
     }
@@ -257,7 +275,7 @@ void RSFilterDrawable::CheckClearFilterCache()
     }
 
     // clear snapshot cache last frame and clear filtered cache current frame
-    if (lastCacheType == FilterCacheType::FILTERED_SNAPSHOT && filterHashChanged_) {
+    if (lastCacheType_ == FilterCacheType::FILTERED_SNAPSHOT && filterHashChanged_) {
         UpdateFlags(FilterCacheType::FILTERED_SNAPSHOT, false);
         return;
     }
@@ -304,15 +322,17 @@ void RSFilterDrawable::ClearFilterCache()
             cacheManager_ != nullptr, filter_ == nullptr);
         return;
     }
-    RS_OPTIONAL_TRACE_NAME_FMT("RSFilterDrawable::ClearFilterCache clearType:%d", clearType_);
+    RS_OPTIONAL_TRACE_NAME_FMT("RSFilterDrawable::ClearFilterCache clearType:%d, isOccluded_:%d", clearType_, isOccluded_);
     cacheManager_->InvalidateFilterCache(clearType_);
+    lastCacheType_ = isOccluded_ ? cacheManager_->GetCachedType() : (stagingClearFilteredCacheAfterDrawing_ ?
+        FilterCacheType::SNAPSHOT : FilterCacheType::FILTERED_SNAPSHOT);
 }
 
 void RSFilterDrawable::UpdateFlags(FilterCacheType type, bool cacheValid, bool forceResetInterval)
 {
     clearType_ = type;
     isFilterCacheValid_ = cacheValid;
-    if (forceResetInterval) {
+    if (forceResetInterval && !belowFilterIsDirty_) {
         cacheUpdateInterval_ = 0;
         return;
     }

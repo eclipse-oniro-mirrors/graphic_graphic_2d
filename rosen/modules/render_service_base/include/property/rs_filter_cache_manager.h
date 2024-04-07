@@ -40,7 +40,6 @@ class RSDrawingFilter;
 // Warn: Using filter cache in multi-thread environment may cause GPU memory leak or invalid textures.
 class RSFilterCacheManager final {
 public:
-    static bool SoloTaskPrepare;
     RSFilterCacheManager() = default;
     ~RSFilterCacheManager() = default;
     RSFilterCacheManager(const RSFilterCacheManager&) = delete;
@@ -57,7 +56,6 @@ public:
     void UpdateCacheStateWithDirtyRegion();
     const RectI& GetCachedImageRegion() const;
     FilterCacheType GetCachedType() const;
-    void SetForceCache(bool forceCache);
 
     // Call this function during the process phase to apply the filter. Depending on the cache state, it may either
     // regenerate the cache or reuse the existing cache.
@@ -70,8 +68,7 @@ public:
     // cache data. This is used with effect component in RSPropertiesPainter::DrawBackgroundEffect.
     const std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> GeneratedCachedEffectData(RSPaintFilterCanvas& canvas,
         const std::shared_ptr<RSDrawingFilter>& filter, const std::optional<Drawing::RectI>& srcRect = std::nullopt,
-        const std::optional<Drawing::RectI>& dstRect = std::nullopt,
-        const std::tuple<bool, bool>& forceCacheFlags = std::make_tuple(false, false));
+        const std::optional<Drawing::RectI>& dstRect = std::nullopt);
 
     uint8_t CalcDirectionBias(const Drawing::Matrix& mat);
     enum CacheType : uint8_t {
@@ -88,6 +85,9 @@ public:
 
     void InvalidateFilterCache(FilterCacheType clearType = FilterCacheType::BOTH);
 
+    // To reduce memory usage, clear one of the cached images.
+    void CompactFilterCache(bool shouldClearFilteredCache);
+
     inline bool IsCacheValid() const
     {
         return cachedSnapshot_ != nullptr || cachedFilteredSnapshot_ != nullptr;
@@ -101,14 +101,11 @@ private:
     void DrawCachedFilteredSnapshot(RSPaintFilterCanvas& canvas, const Drawing::RectI& dstRect) const;
     // Validate the input srcRect and dstRect, and return the validated rects.
     std::tuple<Drawing::RectI, Drawing::RectI> ValidateParams(RSPaintFilterCanvas& canvas,
-        const std::optional<Drawing::RectI>& srcRect, const std::optional<Drawing::RectI>& dstRect,
-        const std::tuple<bool, bool>& forceCacheFlags = std::make_tuple(false, false));
+        const std::optional<Drawing::RectI>& srcRect, const std::optional<Drawing::RectI>& dstRect);
     inline static void ClipVisibleRect(RSPaintFilterCanvas& canvas);
     // Check if the cache is valid in current GrContext, since FilterCache will never be used in multi-thread
     // environment, we don't need to attempt to reattach SkImages.
     void CheckCachedImages(RSPaintFilterCanvas& canvas);
-    // To reduce memory usage, clear one of the cached images.
-    inline void CompactFilterCache(bool shouldClearFilteredCache);
 
     const char* GetCacheState() const;
 
@@ -125,7 +122,6 @@ private:
     bool pendingPurge_ = false;
     // Region of the cached image, used to determine if we need to invalidate the cache.
     RectI snapshotRegion_; // Note: in device coordinate.
-    bool needForceCache_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

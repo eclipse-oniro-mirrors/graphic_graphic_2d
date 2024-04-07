@@ -188,8 +188,9 @@ void RSPropertyDrawableUtils::CeilMatrixTrans(Drawing::Canvas* canvas)
     canvas->SetMatrix(matrix);
 }
 
-void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas, const std::shared_ptr<RSFilter>& rsFilter,
-    const std::unique_ptr<RSFilterCacheManager>& cacheManager, const bool isForegroundFilter, const bool forceCache)
+void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas,
+    const std::shared_ptr<RSFilter>& rsFilter, const std::unique_ptr<RSFilterCacheManager>& cacheManager,
+    const bool isForegroundFilter, bool shouldClearFilteredCache)
 {
     if (!RSSystemProperties::GetBlurEnabled()) {
         ROSEN_LOGD("RSPropertyDrawableUtils::DrawFilter close blur.");
@@ -222,8 +223,8 @@ void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas, const std::sha
     // Optional use cacheManager to draw filter
     if (auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
         !paintFilterCanvas->GetDisableFilterCache() && cacheManager != nullptr && RSProperties::FilterCacheEnabled) {
-        cacheManager->SetForceCache(forceCache);
         cacheManager->DrawFilter(*paintFilterCanvas, filter, needSnapshotOutset);
+        cacheManager->CompactFilterCache(shouldClearFilteredCache); // flag for clear witch cache after drawing
         return;
     }
 #endif
@@ -253,9 +254,9 @@ void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas, const std::sha
     filter->PostProcess(*canvas);
 }
 
-void RSPropertyDrawableUtils::DrawBackgroundEffect(RSPaintFilterCanvas* canvas,
-    const std::shared_ptr<RSFilter>& rsFilter, const std::unique_ptr<RSFilterCacheManager>& cacheManager,
-    const bool forceCache)
+void RSPropertyDrawableUtils::DrawBackgroundEffect(
+    RSPaintFilterCanvas* canvas, const std::shared_ptr<RSFilter>& rsFilter,
+    const std::unique_ptr<RSFilterCacheManager>& cacheManager, bool shouldClearFilteredCache)
 {
     if (rsFilter == nullptr) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawBackgroundEffect null filter");
@@ -271,12 +272,13 @@ void RSPropertyDrawableUtils::DrawBackgroundEffect(RSPaintFilterCanvas* canvas,
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     // Optional use cacheManager to draw filter
     if (RSProperties::FilterCacheEnabled && cacheManager != nullptr && !canvas->GetDisableFilterCache()) {
-        cacheManager->SetForceCache(forceCache);
         auto&& data = cacheManager->GeneratedCachedEffectData(*canvas, filter, clipIBounds, clipIBounds);
+        cacheManager->CompactFilterCache(shouldClearFilteredCache); // flag for clear witch cache after drawing
         canvas->SetEffectData(data);
         return;
     }
 #endif
+    RS_OPTIONAL_TRACE_NAME("RSPropertyDrawableUtils::DrawBackgroundEffect " + rsFilter->GetDescription());
     auto imageRect = clipIBounds;
     auto imageSnapshot = surface->GetImageSnapshot(imageRect);
     if (imageSnapshot == nullptr) {

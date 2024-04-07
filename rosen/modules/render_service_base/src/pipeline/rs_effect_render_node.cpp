@@ -130,7 +130,11 @@ void RSEffectRenderNode::UpdateFilterCacheManagerWithCacheRegion(
         ROSEN_LOGE("RSEffectRenderNode::UpdateFilterCacheManagerWithCacheRegion filter cache is disabled.");
         return;
     }
-    if (GetFilterRect() != GetFilterCachedRegion(isForeground)) {
+    auto filterRect = GetFilterRect();
+    if (clipRect.has_value()) {
+        filterRect.IntersectRect(*clipRect);
+    }
+    if (filterRect != GetFilterCachedRegion()) {
         MarkFilterStatusChanged(isForeground, true);
     }
 }

@@ -39,12 +39,6 @@ const char* RSFilterCacheManager::GetCacheState() const
     }
 }
 
-inline static bool isEqualRect(const Drawing::RectI& src, const RectI& dst)
-{
-    return src.GetLeft() == dst.GetLeft() && src.GetTop() == dst.GetTop() && src.GetWidth() == dst.GetWidth() &&
-           src.GetHeight() == dst.GetHeight();
-}
-
 void RSFilterCacheManager::UpdateCacheStateWithFilterHash(const std::shared_ptr<RSFilter>& filter)
 {
     RS_OPTIONAL_TRACE_FUNC();
@@ -132,59 +126,38 @@ void RSFilterCacheManager::DrawFilter(RSPaintFilterCanvas& canvas, const std::sh
         return;
     }
     RS_TRACE_NAME_FMT("RSFilterCacheManager::DrawFilter status: %s", GetCacheState());
-    CheckCachedImages(canvas);
     if (!IsCacheValid()) {
         TakeSnapshot(canvas, filter, src, needSnapshotOutset);
     }
 
-    bool shouldClearFilteredCache = false;
     if (cachedFilteredSnapshot_ == nullptr || cachedFilteredSnapshot_->cachedImage_ == nullptr) {
-        auto previousFilterHash = cachedFilterHash_;
         GenerateFilteredSnapshot(canvas, filter, dst);
-        // If 1. the filter hash matches, 2. the filter region is whole snapshot region, we can safely clear original
-        // snapshot, else we need to clear the filtered snapshot.
-        shouldClearFilteredCache = previousFilterHash != cachedFilterHash_ || !isEqualRect(dst, snapshotRegion_);
     }
     DrawCachedFilteredSnapshot(canvas, dst);
-    CompactFilterCache(shouldClearFilteredCache);
-    needForceCache_ =false;
 }
 
 const std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> RSFilterCacheManager::GeneratedCachedEffectData(
     RSPaintFilterCanvas& canvas, const std::shared_ptr<RSDrawingFilter>& filter,
-    const std::optional<Drawing::RectI>& srcRect, const std::optional<Drawing::RectI>& dstRect,
-    const std::tuple<bool, bool>& forceCacheFlags)
+    const std::optional<Drawing::RectI>& srcRect, const std::optional<Drawing::RectI>& dstRect)
 {
     RS_OPTIONAL_TRACE_FUNC();
     if (canvas.GetDeviceClipBounds().IsEmpty()) {
         return nullptr;
     }
-    const auto& [src, dst] = ValidateParams(canvas, srcRect, dstRect, forceCacheFlags);
+    const auto& [src, dst] = ValidateParams(canvas, srcRect, dstRect);
     if (src.IsEmpty() || dst.IsEmpty()) {
         return nullptr;
     }
     RS_TRACE_NAME_FMT("RSFilterCacheManager::GeneratedCachedEffectData status: %s", GetCacheState());
-    CheckCachedImages(canvas);
     if (!IsCacheValid()) {
         TakeSnapshot(canvas, filter, src);
     }
 
-    bool shouldClearFilteredCache = false;
     if (cachedFilteredSnapshot_ == nullptr || cachedFilteredSnapshot_->cachedImage_ == nullptr) {
-        auto previousFilterHash = cachedFilterHash_;
         GenerateFilteredSnapshot(canvas, filter, dst);
-        // If 1. the filter hash matches, 2. the filter region is whole snapshot region, we can safely clear original
-        // snapshot, else we need to clear the filtered snapshot.
-        shouldClearFilteredCache = previousFilterHash != cachedFilterHash_ || !isEqualRect(dst, snapshotRegion_);
     }
     // Keep a reference to the cached image, since CompactCache may invalidate it.
     auto cachedFilteredSnapshot = cachedFilteredSnapshot_;
-    // To reduce the memory consumption, we only keep either the cached snapshot or the filtered image.
-    if (needForceCache_) {
-        shouldClearFilteredCache = false;
-    }
-    CompactFilterCache(shouldClearFilteredCache);
-    needForceCache_ =false;
     return cachedFilteredSnapshot;
 }
 
@@ -351,11 +324,6 @@ const RectI& RSFilterCacheManager::GetCachedImageRegion() const
     return IsCacheValid() ? snapshotRegion_ : emptyRect;
 }
 
-void RSFilterCacheManager::SetForceCache(bool forceCache)
-{
-    needForceCache_ = forceCache;
-}
-
 inline static bool IsCacheInvalid(const RSPaintFilterCanvas::CachedEffectData& cache, RSPaintFilterCanvas& canvas)
 {
     return cache.cachedImage_ == nullptr || !cache.cachedImage_->IsValid(canvas.GetGPUContext().get());
@@ -363,9 +331,6 @@ inline static bool IsCacheInvalid(const RSPaintFilterCanvas::CachedEffectData& c
 
 void RSFilterCacheManager::CheckCachedImages(RSPaintFilterCanvas& canvas)
 {
-    if (needForceCache_) {
-        return;
-    }
     if (cachedSnapshot_ != nullptr && IsCacheInvalid(*cachedSnapshot_, canvas)) {
         ROSEN_LOGE("RSFilterCacheManager::CheckCachedImages cachedSnapshot_ is invalid");
         cachedSnapshot_.reset();
@@ -377,8 +342,7 @@ void RSFilterCacheManager::CheckCachedImages(RSPaintFilterCanvas& canvas)
 }
 
 std::tuple<Drawing::RectI, Drawing::RectI> RSFilterCacheManager::ValidateParams(RSPaintFilterCanvas& canvas,
-    const std::optional<Drawing::RectI>& srcRect, const std::optional<Drawing::RectI>& dstRect,
-    const std::tuple<bool, bool>& forceCacheFlags)
+    const std::optional<Drawing::RectI>& srcRect, const std::optional<Drawing::RectI>& dstRect)
 {
     Drawing::RectI src;
     Drawing::RectI dst;
@@ -394,15 +358,6 @@ std::tuple<Drawing::RectI, Drawing::RectI> RSFilterCacheManager::ValidateParams(
     } else {
         dst = dstRect.value();
         dst.Intersect(deviceRect);
-    }
-    if (snapshotRegion_.GetLeft() > dst.GetLeft() || snapshotRegion_.GetRight() < dst.GetRight() ||
-        snapshotRegion_.GetTop() > dst.GetTop() || snapshotRegion_.GetBottom() < dst.GetBottom()) {
-        // dst region is out of snapshot region, cache is invalid.
-        // It should already be checked by UpdateCacheStateWithFilterRegion in prepare phase, we should never be here.
-        ROSEN_LOGD("RSFilterCacheManager::ValidateParams Cache expired. Reason: dst region is out of snapshot region.");
-        if (!needForceCache_ && IsCacheValid()) {
-            InvalidateFilterCache();
-        }
     }
     return { src, dst };
 }
