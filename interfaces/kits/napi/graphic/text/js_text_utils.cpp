@@ -187,12 +187,10 @@ bool GetParagraphStyleFromJS(napi_env env, napi_value argValue, TypographyStyle&
 
 inline bool GetPlaceholderSpanFromJS(napi_env env, napi_value argValue, PlaceholderSpan& placeholderSpan)
 {
-    if(argValue == nullptr) {
+    if (argValue == nullptr) {
         return false;
     }
-    
     napi_value tempValue = nullptr;
-
     napi_get_named_property(env, argValue, "width", &tempValue);
     double width = 0;
     if (napi_get_value_double(env, tempValue, &width) == napi_ok) {
