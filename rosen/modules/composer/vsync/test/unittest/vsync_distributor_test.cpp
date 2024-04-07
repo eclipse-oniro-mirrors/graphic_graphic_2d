@@ -267,6 +267,30 @@ HWTEST_F(VSyncDistributorTest, GetVSyncConnectionInfos001, Function | MediumTest
     VSyncDistributorTest::vsyncDistributor->AddConnection(conn);
     ASSERT_EQ(VSyncDistributorTest::vsyncDistributor->GetVSyncConnectionInfos(infos), VSYNC_ERROR_OK);
 }
+
+/*
+* Function: SetFrameIsRender001
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetFrameIsRender
+ */
+HWTEST_F(VSyncDistributorTest, SetFrameIsRender001, Function | MediumTest| Level3)
+{
+    VSyncDistributorTest::vsyncDistributor->SetFrameIsRender(true);
+}
+
+/*
+* Function: SetFrameIsRender002
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetFrameIsRender
+ */
+HWTEST_F(VSyncDistributorTest, SetFrameIsRender002, Function | MediumTest| Level3)
+{
+    VSyncDistributorTest::vsyncDistributor->SetFrameIsRender(false);
+}
 } // namespace
 } // namespace Rosen
 } // namespace OHOS
