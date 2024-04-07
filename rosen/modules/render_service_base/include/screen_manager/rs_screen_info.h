@@ -16,8 +16,6 @@
 #ifndef RENDER_SERVICE_BASE_SCREEN_MANAGER_RS_SCREEN_INFO_H
 #define RENDER_SERVICE_BASE_SCREEN_MANAGER_RS_SCREEN_INFO_H
 
-#pragma once
-
 #include <string>
 #include <surface_type.h>
 #include <unordered_set>

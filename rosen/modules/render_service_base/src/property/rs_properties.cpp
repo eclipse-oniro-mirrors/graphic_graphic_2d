@@ -2707,7 +2707,7 @@ std::string RSProperties::Dump() const
     return dumpInfo;
 }
 
-// TODO need to delete, cachemanager moved to filter drawable
+// planning: need to delete, cachemanager moved to filter drawable
 #if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 void RSProperties::CreateFilterCacheManagerIfNeed()
 {
@@ -2770,7 +2770,7 @@ void RSProperties::OnApplyModifiers()
         if (clipToFrame_ && clipToBounds_ && frameOffsetX_ == 0 && frameOffsetY_ == 0) {
             clipToFrame_ = false;
         }
-        // TODO: temporary fix to calculate relative matrix in OnApplyModifiers, later RSRenderNode::Update will
+        // planning: temporary fix to calculate relative matrix in OnApplyModifiers, later RSRenderNode::Update will
         // overwrite it.
         boundsGeo_->UpdateByMatrixFromSelf();
         if (RSSystemProperties::IsPcType()) {

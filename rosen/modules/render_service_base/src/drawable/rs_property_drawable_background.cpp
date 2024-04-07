@@ -418,7 +418,7 @@ bool RSBackgroundEffectDrawable::OnUpdate(const RSRenderNode& node)
 
 void RSBackgroundEffectDrawable::OnSync()
 {
-    // TODO : adapte freeze and rotation logic
+    // planning: adapte freeze and rotation logic
     hasEffectChildren_ = stagingHasEffectChildren_;
     RSFilterDrawable::OnSync();
     stagingHasEffectChildren_ = false;

@@ -1234,7 +1234,7 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManag
         GetRenderProperties().geoDirty_ || (dirtyStatus_ != NodeDirty::CLEAN)) {
         accumGeoDirty = GetMutableRenderProperties().UpdateGeometryByParent(parent,
             !IsInstanceOf<RSSurfaceRenderNode>(), GetContextClipRegion()) || accumGeoDirty;
-        // TODO double check if it would be covered by updateself without geo update
+        // planning: double check if it would be covered by updateself without geo update
         // currently CheckAndUpdateGeoTrans without dirty check
         if (auto geoPtr = GetRenderProperties().boundsGeo_) {
             if (CheckAndUpdateGeoTrans(geoPtr) || accumGeoDirty) {
@@ -1958,7 +1958,7 @@ void RSRenderNode::UpdateDisplayList()
         auto beginIndex = static_cast<int8_t>(begin);
         auto endIndex = static_cast<int8_t>(end);
         for (int8_t i = beginIndex; i < endIndex; ++i) {
-            if (const auto & drawable = drawableVec_[i]) {
+            if (const auto& drawable = drawableVec_[i]) {
                 stagingDrawCmdList_.emplace_back(drawable->CreateDrawFunc());
             }
         }

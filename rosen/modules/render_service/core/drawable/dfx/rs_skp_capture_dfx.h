@@ -16,8 +16,6 @@
 #ifndef RENDER_SERVICE_DRAWABLE_DFX_RS_SKP_CAPTURE_DFX_H
 #define RENDER_SERVICE_DRAWABLE_DFX_RS_SKP_CAPTURE_DFX_H
 
-#pragma once
-
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_recording_canvas.h"
 #include "render_context/render_context.h"

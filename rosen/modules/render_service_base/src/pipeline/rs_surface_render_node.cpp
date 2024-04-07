@@ -1696,7 +1696,7 @@ bool RSSurfaceRenderNode::CheckIfOcclusionChanged() const
 
 bool RSSurfaceRenderNode::CheckParticipateInOcclusion() const
 {
-    // TODO: Need consider others situation
+    // planning: Need consider others situation
     auto nodeParent = GetParent().lock();
     if (nodeParent && nodeParent->IsScale()) {
         return false;
@@ -1724,7 +1724,7 @@ void RSSurfaceRenderNode::CheckAndUpdateOpaqueRegion(const RectI& screeninfo, co
         opaqueRegionBaseInfo_.isTransparent_ == IsTransparent() &&
         opaqueRegionBaseInfo_.hasContainerWindow_ == HasContainerWindow();
     if (!ret) {
-        // TODO: default process focus window
+        // planning: default process focus window
         ResetSurfaceOpaqueRegion(screeninfo, absRect, screenRotation, true, cornerRadius);
     }
     SetOpaqueRegionBaseInfo(screeninfo, absRect, screenRotation, true, cornerRadius);

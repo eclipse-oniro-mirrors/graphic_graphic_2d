@@ -97,7 +97,6 @@ public:
 
     bool HasCachedTexture() const;
 
-
     void SetTextureValidFlag(bool isValid);
     void SetCacheSurfaceNeedUpdated(bool isCacheSurfaceNeedUpdate)
     {

@@ -318,7 +318,7 @@ bool RSDisplayRenderNodeDrawable::CheckDisplayNodeSkip(std::shared_ptr<RSDisplay
         RS_LOGW("RSDisplayRenderNodeDrawable::CheckDisplayNodeSkip: hardwareThread task has too many to excute");
     }
     processor->ProcessDisplaySurface(*displayNode);
-    // TODO commit RCD layers
+    // planning: commit RCD layers
     processor->PostProcess();
     return true;
 }

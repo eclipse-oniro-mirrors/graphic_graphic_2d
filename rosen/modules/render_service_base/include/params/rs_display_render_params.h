@@ -118,9 +118,9 @@ private:
     friend class RSUniRenderVisitor;
     friend class RSDisplayRenderNode;
     
-    std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_; // TODO
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
     // vector of hardwareEnabled nodes above displayNodeSurface like pointer window
-    std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledTopNodes_; // TODO
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledTopNodes_;
 };
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_PARAMS_RS_DISPLAY_RENDER_PARAMS_H

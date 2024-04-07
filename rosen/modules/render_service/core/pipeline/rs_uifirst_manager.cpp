@@ -247,7 +247,7 @@ void RSUifirstManager::RestoreSkipSyncNode()
             RS_OPTIONAL_TRACE_NAME_FMT("RestoreSkipSyncNode %lx num%d", it.first, it.second.size());
             for (auto& node : it.second) {
                 node->SetUifirstSkipPartialSync(false);
-                node->SetUifirstSyncFlag(true); // child sync but child will not use, TODO, only sync root
+                node->SetUifirstSyncFlag(true); // child sync but child will not use, planning: only sync root
                 RSMainThread::Instance()->GetContext().AddPendingSyncNode(node);
             }
         }
@@ -386,7 +386,7 @@ void RSUifirstManager::AddReuseNode(NodeId id)
 
 bool RSUifirstManager::IsUifirstNode(RSSurfaceRenderNode& node, bool animation)
 {
-    bool isDisplayRotation = false; // TODO for pc
+    bool isDisplayRotation = false; // planning: for pc
     bool isPhoneType = RSMainThread::Instance()->GetDeviceType() == DeviceType::PHONE;
     bool isNeedAssignToSubThread = false;
     if (!isPhoneType) { // only enable on phone, disable PC

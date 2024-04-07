@@ -358,7 +358,7 @@ Drawing::RecordingCanvas::DrawFunc RSEnvFGColorDrawable::CreateDrawFunc() const
     auto ptr = std::static_pointer_cast<const RSEnvFGColorDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
         auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
-        // TODO: implement alpha offscreen
+        // planning: implement alpha offscreen
         paintFilterCanvas->SetEnvForegroundColor(ptr->envFGColor_);
     };
 }

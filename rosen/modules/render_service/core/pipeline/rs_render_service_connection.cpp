@@ -992,7 +992,7 @@ bool RSRenderServiceConnection::GetBitmap(NodeId id, Drawing::Bitmap& bitmap)
         RS_LOGE("RSRenderServiceConnection::GetBitmap RenderNodeType != RSRenderNodeType::CANVAS_DRAWING_NODE");
         return false;
     }
-    auto tid = node->GetTid(); // TODO: id may change in subthread
+    auto tid = node->GetTid(); // planning: id may change in subthread
     auto getBitmapTask = [&node, &bitmap, tid]() { bitmap = node->GetBitmap(tid); };
     if (tid == UNI_MAIN_THREAD_INDEX) {
         mainThread_->PostSyncTask(getBitmapTask);
@@ -1022,7 +1022,7 @@ bool RSRenderServiceConnection::GetPixelmap(NodeId id, const std::shared_ptr<Med
         return false;
     }
     bool result = false;
-    auto tid = node->GetTid(); // TODO: id may change in subthread
+    auto tid = node->GetTid(); // planning: id may change in subthread
     auto getPixelmapTask = [&node, &pixelmap, rect, &result, tid, drawCmdList]() {
         result = node->GetPixelmap(pixelmap, rect, tid, drawCmdList);
     };

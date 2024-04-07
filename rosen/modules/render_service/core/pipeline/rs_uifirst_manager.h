@@ -26,7 +26,7 @@ namespace OHOS::Rosen {
 #ifdef RS_PARALLEL
 class RSUifirstManager {
 public:
-    // TODO: move to display node
+    // planning: move to display node
     static RSUifirstManager& Instance();
 
     void AddProcessDoneNode(NodeId id);

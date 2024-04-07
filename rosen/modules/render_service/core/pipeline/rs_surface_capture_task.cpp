@@ -980,7 +980,7 @@ void RSSurfaceCaptureVisitor::DrawChildRenderNode(RSRenderNode& node)
         case CacheType::NONE: {
             node.ProcessRenderBeforeChildren(*canvas_);
             if (node.GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
-                // TODO canvasDrawingNode->GetBitmap() crash
+                // planning: canvasDrawingNode->GetBitmap() crash
             } else {
                 node.ProcessRenderContents(*canvas_);
             }

@@ -694,7 +694,7 @@ bool RSMainThread::CheckParallelSubThreadNodesStatus()
     if (subThreadNodes_.empty() &&
         (deviceType_ == DeviceType::PHONE || (leashWindowCount_ > 0 && isUiFirstOn_ == false))) {
         if (!isUniRender_) {
-            RSSubThreadManager::Instance()->ResetSubThreadGrContext(); // TODO: move to prepare
+            RSSubThreadManager::Instance()->ResetSubThreadGrContext(); // planning: move to prepare
         }
         return false;
     }
@@ -1516,7 +1516,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         SetFocusLeashWindowId();
         uniVisitor->SetFocusedNodeId(focusNodeId_, focusLeashWindowId_);
         if (RSSystemProperties::GetQuickPrepareEnabled()) {
-            //TODO:the QuickPrepare will be replaced by Prepare
+            //planning:the QuickPrepare will be replaced by Prepare
             rootNode->QuickPrepare(uniVisitor);
         } else {
             rootNode->Prepare(uniVisitor);
@@ -1530,7 +1530,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         if (RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
             WaitUntilUploadTextureTaskFinished(isUniRender_);
         }
-        if (false) { // TODO: move to prepare
+        if (false) { // planning: move to prepare
             auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(
                 rootNode->GetFirstChild());
             std::list<std::shared_ptr<RSSurfaceRenderNode>> mainThreadNodes;
