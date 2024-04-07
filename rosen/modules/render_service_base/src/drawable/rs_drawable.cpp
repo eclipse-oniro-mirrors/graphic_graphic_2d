@@ -393,7 +393,7 @@ std::unordered_set<RSDrawableSlot> RSDrawable::CalculateDirtySlots(
     }
 
     // Step 1.2: expand dirty slots by rules
-    // TODO: border etc. should be updated when border radius changed
+    // planning: border etc. should be updated when border radius changed
     if (dirtySlots.count(RSDrawableSlot::FRAME_OFFSET)) {
         if (drawableVec[static_cast<size_t>(RSDrawableSlot::CLIP_TO_FRAME)]) {
             dirtySlots.emplace(RSDrawableSlot::CLIP_TO_FRAME);

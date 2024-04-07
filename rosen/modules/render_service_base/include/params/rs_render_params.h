@@ -138,8 +138,8 @@ private:
     bool childHasVisibleFilter_ = false;
     bool hasSandBox_ = false;
     bool isDrawingCacheChanged_ = false;
-    bool isSecurityLayer_ = false; // TODO
-    bool isSkipLayer_ = false; // TODO
+    bool isSecurityLayer_ = false;
+    bool isSkipLayer_ = false;
     bool shouldPaint_ = false;
     Drawing::Rect shadowRect_;
     RSDrawingCacheType drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;

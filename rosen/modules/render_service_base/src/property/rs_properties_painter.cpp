@@ -1798,7 +1798,7 @@ void RSPropertiesPainter::BeginBlendMode(RSPaintFilterCanvas& canvas, const RSPr
     canvas.Save();
     canvas.ClipRoundRect(RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::INTERSECT, true);
 
-    // TODO: fix offscreen protector
+    // planning: fix offscreen protector
 
     // fast blend mode
     if (blendModeApplyType == static_cast<int>(RSColorBlendApplyType::FAST)) {
@@ -1833,7 +1833,7 @@ void RSPropertiesPainter::EndBlendMode(RSPaintFilterCanvas& canvas, const RSProp
         return;
     }
 
-    // TODO: fix offscreen protector
+    // planning: fix offscreen protector
     if (blendModeApplyType == static_cast<int>(RSColorBlendApplyType::FAST)) {
         canvas.RestoreEnv();
     } else {

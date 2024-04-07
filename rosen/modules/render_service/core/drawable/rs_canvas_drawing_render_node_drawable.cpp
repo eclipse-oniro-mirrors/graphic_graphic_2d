@@ -156,7 +156,6 @@ void RSCanvasDrawingRenderNodeDrawable::DrawRenderContent(Drawing::Canvas& canva
 
 void RSCanvasDrawingRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
 {
-    // TODO
     OnDraw(canvas);
 }
 
@@ -170,10 +169,7 @@ void RSCanvasDrawingRenderNodeDrawable::PlaybackInCorrespondThread()
         if (!surface_ || !canvas_) {
             return;
         }
-        // todo clear op
-        // DrawContent(*canvas_, rect);
-        // DrawForeground(*canvas_, rect);
-        // node->SetNeedProcess(false);
+        // planning: clear op
     };
     RSTaskDispatcher::GetInstance().PostTask(threadId_, task, false);
 }
@@ -228,7 +224,7 @@ void RSCanvasDrawingRenderNodeDrawable::Flush(float width, float height, std::sh
             }
 #endif
         } else {
-            image_ = surface_->GetImageSnapshot(); // TODO: return image_
+            image_ = surface_->GetImageSnapshot(); // planning: return image_
             backendTexture_ = surface_->GetBackendTexture();
             if (!backendTexture_.IsValid()) {
                 RS_LOGE("RSCanvasDrawingRenderNodeDrawable::Flush !backendTexture_.IsValid() %d", __LINE__);
@@ -260,7 +256,7 @@ void RSCanvasDrawingRenderNodeDrawable::ProcessCPURenderInBackgroundThread(std::
             return;
         }
         cmds->Playback(*surface->GetCanvas());
-        auto image = surface->GetImageSnapshot(); // TODO: adapt multithread
+        auto image = surface->GetImageSnapshot(); // planning: adapt multithread
         if (image) {
             SKResourceManager::Instance().HoldResource(image);
         }

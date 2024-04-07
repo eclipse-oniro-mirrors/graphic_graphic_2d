@@ -2707,7 +2707,7 @@ std::string RSProperties::Dump() const
     return dumpInfo;
 }
 
-// TODO need to delete, cachemanager moved to filter drawable
+// planning: need to delete, cachemanager moved to filter drawable
 #if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 void RSProperties::CreateFilterCacheManagerIfNeed()
 {
@@ -2770,7 +2770,7 @@ void RSProperties::OnApplyModifiers()
         if (clipToFrame_ && clipToBounds_ && frameOffsetX_ == 0 && frameOffsetY_ == 0) {
             clipToFrame_ = false;
         }
-        // TODO: temporary fix to calculate relative matrix in OnApplyModifiers, later RSRenderNode::Update will
+        // planning: temporary fix to calculate relative matrix in OnApplyModifiers, later RSRenderNode::Update will
         // overwrite it.
         boundsGeo_->UpdateByMatrixFromSelf();
         if (RSSystemProperties::IsPcType()) {
@@ -2815,9 +2815,6 @@ void RSProperties::OnApplyModifiers()
         needFilter_ = backgroundFilter_ != nullptr || filter_ != nullptr || useEffect_ || IsLightUpEffectValid() ||
                       IsDynamicLightUpValid() || greyCoef_.has_value() || linearGradientBlurPara_ != nullptr ||
                       GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE;
-#if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
-        // CreateFilterCacheManagerIfNeed();
-#endif
         ApplyGreyCoef();
     }
     GenerateRRect();

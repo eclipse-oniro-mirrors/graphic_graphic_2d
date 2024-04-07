@@ -69,7 +69,7 @@ public:
     bool CheckFilterCacheNeedForceClear();
     bool CheckFilterCacheNeedForceSave();
 
-    // TODO delte when freeze enabled for all nodes.
+    // planning: delte when freeze enabled for all nodes.
     bool IsStaticCached() const override
     {
         return isStaticCached_;

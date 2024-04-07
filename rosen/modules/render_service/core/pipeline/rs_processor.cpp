@@ -139,7 +139,6 @@ bool RSProcessor::InitForRenderThread(RSDisplayRenderNode& node, ScreenId mirror
 
     // CalculateScreenTransformMatrix
     auto mirrorNode = params->GetMirrorSource().lock();
-
     if (!mirrorNode) {
         screenTransformMatrix_ = params->GetMatrix();
     } else {
