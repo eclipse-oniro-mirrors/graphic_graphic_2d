@@ -23,6 +23,7 @@
 #include "utils/log.h"
 #include "draw/color.h"
 #include "text_style.h"
+#include "typography_create.h"
 #include "typography_style.h"
 #include <codecvt>
 
