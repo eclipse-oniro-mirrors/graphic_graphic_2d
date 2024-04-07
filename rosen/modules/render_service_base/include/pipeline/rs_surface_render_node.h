@@ -875,6 +875,7 @@ public:
     void CalcFilterCacheValidForOcclusion();
     // mark occluded by upper filtercache
     void UpdateOccludedByFilterCache(bool val);
+    bool IsOccludedByFilterCache() const;
 
     bool IsFilterCacheStatusChanged() const
     {

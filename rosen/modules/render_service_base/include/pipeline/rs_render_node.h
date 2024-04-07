@@ -418,6 +418,7 @@ public:
     void UpdateEffectRegion(std::optional<Drawing::RectI>& region, bool isForced = false);
 
     // for blur filter cache
+    void UpdateLastFilterCacheRegion(const std::optional<RectI>& clipRect = std::nullopt);
     void MarkFilterStatusChanged(bool isForeground, bool isFilterRegionChanged);
     virtual void UpdateFilterCacheWithDirty(RSDirtyRegionManager& dirtyManager, bool isForeground = false);
     virtual void UpdateFilterCacheManagerWithCacheRegion(RSDirtyRegionManager& dirtyManager,
@@ -561,6 +562,8 @@ public:
         return context_;
     }
 
+    void SetOccludedStatus(bool occluded);
+
 protected:
     virtual void OnApplyModifiers() {}
 
@@ -619,7 +622,7 @@ protected:
     bool lastFrameSynced_ = true;
 
     std::shared_ptr<DrawableV2::RSFilterDrawable> GetFilterDrawable(bool isForeground) const;
-    const RectI GetFilterCachedRegion(bool isForeground) const;
+    const RectI GetFilterCachedRegion() const;
     virtual void MarkFilterCacheFlagsAfterPrepare(
         std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable, bool isForeground = false);
     std::atomic<bool> isStaticCached_ = false;
@@ -825,6 +828,7 @@ private:
     bool backgroundFilterInteractWithDirty_ = false;
     bool foregroundFilterRegionChanged_ = false;
     bool foregroundFilterInteractWithDirty_ = false;
+    bool isOccluded_ = false;
 
     friend class DrawFuncOpItem;
     friend class RSAliasDrawable;

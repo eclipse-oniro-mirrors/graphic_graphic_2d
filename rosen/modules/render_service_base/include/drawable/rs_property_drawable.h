@@ -124,6 +124,8 @@ public:
     void MarkFilterForceClearCache();
     void MarkRotationChanged();
     void MarkHasEffectChildren();
+    void MarkNodeIsOccluded(bool isOccluded);
+    void MarkFilterBelowIsDirty();
     void CheckClearFilterCache();
 
     bool IsFilterCacheValid() const;
@@ -147,19 +149,24 @@ protected:
     // flags for clearing filter cache
     bool forceUseCache_ = false;
     bool forceClearCache_ = false;
+    bool belowFilterIsDirty_ = false;
     uint32_t cachedFilterHash_ = 0;
     bool filterHashChanged_ = false;
     bool filterRegionChanged_ = false;
     bool filterInteractWithDirty_ = false;
     bool rotationChanged_ = false;
     bool hasEffectChildren_ = false;
+    bool clearFilteredCacheAfterDrawing_ = false;
  
     // clear one of snapshot cache and filtered cache after drawing
     bool stagingForceUseCache_ = false;
     bool stagingHasEffectChildren_ = false;
+    bool stagingClearFilteredCacheAfterDrawing_ = false;
  
     // the type cache needed clear before drawing
     FilterCacheType clearType_ = FilterCacheType::NONE;
+    FilterCacheType lastCacheType_ = FilterCacheType::NONE;
+    bool isOccluded_ = false;
  
     // force cache with cacheUpdateInterval_
     bool isLargeArea_ = false;
