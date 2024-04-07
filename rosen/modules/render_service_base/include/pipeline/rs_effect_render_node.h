@@ -69,7 +69,7 @@ public:
     bool CheckFilterCacheNeedForceClear();
     bool CheckFilterCacheNeedForceSave();
 
-    // TODO delte when freeze enabled for all nodes.
+    // planning: delte when freeze enabled for all nodes.
     bool IsStaticCached() const override
     {
         return isStaticCached_;
@@ -79,7 +79,8 @@ protected:
     RectI GetFilterRect() const override;
     void UpdateFilterCacheManagerWithCacheRegion(RSDirtyRegionManager& dirtyManager,
         const std::optional<RectI>& clipRect, bool isForeground = false) override;
-    void MarkFilterCacheFlagsAfterPrepare(bool isForeground = false) override;
+    void MarkFilterCacheFlagsAfterPrepare(
+        std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable, bool isForeground = false) override;
 
 private:
     bool isVisitedOcclusionFilterCacheEmpty_ = true;

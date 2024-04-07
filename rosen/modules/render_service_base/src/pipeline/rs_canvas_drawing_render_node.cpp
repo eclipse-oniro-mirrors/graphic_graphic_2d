@@ -83,8 +83,8 @@ bool RSCanvasDrawingRenderNode::ResetSurfaceWithTexture(int width, int height, R
 
     Drawing::BitmapFormat bitmapFormat = { image->GetColorType(), image->GetAlphaType() };
     auto sharedTexture = std::make_shared<Drawing::Image>();
-    if (!sharedTexture->BuildFromTexture(
-            *canvas.GetGPUContext(), sharedBackendTexture.GetTextureInfo(), origin, bitmapFormat, nullptr)) {
+    if (!sharedTexture->BuildFromTexture(*canvas.GetGPUContext(), sharedBackendTexture.GetTextureInfo(),
+        origin, bitmapFormat, nullptr)) {
         RS_LOGE("RSCanvasDrawingRenderNode::ResetSurfaceWithTexture sharedTexture is nullptr");
         return false;
     }
@@ -447,8 +447,9 @@ bool RSCanvasDrawingRenderNode::IsNeedResetSurface() const
     return false;
 }
 
-void RSCanvasDrawingRenderNode::OnApplyModifiers()
+void RSCanvasDrawingRenderNode::AddDirtyType(RSModifierType type)
 {
+    dirtyTypes_.set(static_cast<int>(type), true);
     std::lock_guard<std::mutex> lock(drawCmdListsMutex_);
     for (auto& [type, list]: GetDrawCmdModifiers()) {
         if (list.empty()) {
@@ -493,6 +494,11 @@ void RSCanvasDrawingRenderNode::ResetSurface()
     }
     surface_ = nullptr;
     recordingCanvas_ = nullptr;
+}
+
+const std::map<RSModifierType, std::list<Drawing::DrawCmdListPtr>>& RSCanvasDrawingRenderNode::GetDrawCmdLists() const
+{
+    return drawCmdLists_;
 }
 } // namespace Rosen
 } // namespace OHOS

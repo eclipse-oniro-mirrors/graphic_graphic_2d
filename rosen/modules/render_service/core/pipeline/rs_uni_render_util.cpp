@@ -64,7 +64,7 @@ void RSUniRenderUtil::MergeDirtyHistory(std::shared_ptr<RSDisplayRenderNode>& no
         if (surfaceNode == nullptr || !surfaceNode->IsAppWindow()) {
             continue;
         }
-        RS_TRACE_NAME_FMT("RSUniRenderUtil::MergeDirtyHistory for surfaceNode %lu", surfaceNode->GetId());
+        RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderUtil::MergeDirtyHistory for surfaceNode %lu", surfaceNode->GetId());
         auto surfaceDirtyManager = renderParallel ? surfaceNode->GetSyncDirtyManager() : surfaceNode->GetDirtyManager();
         if (!surfaceDirtyManager->SetBufferAge(bufferAge)) {
             ROSEN_LOGE("RSUniRenderUtil::MergeDirtyHistory with invalid buffer age %{public}d", bufferAge);
@@ -1082,7 +1082,8 @@ void RSUniRenderUtil::LayerRotate(RSSurfaceRenderNode& node, const ScreenInfo& s
             break;
         }
         case ScreenRotation::ROTATION_180: {
-            node.SetDstRect({screenWidth - rect.left_ - rect.width_, screenHeight - rect.top_ - rect.height_, rect.width_, rect.height_});
+            node.SetDstRect({screenWidth - rect.left_ - rect.width_, screenHeight - rect.top_ - rect.height_,
+                rect.width_, rect.height_});
             break;
         }
         case ScreenRotation::ROTATION_270: {

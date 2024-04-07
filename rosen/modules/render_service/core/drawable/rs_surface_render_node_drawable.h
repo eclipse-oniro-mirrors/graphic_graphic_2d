@@ -67,7 +67,7 @@ public:
 
     std::string GetDebugInfo()
     {
-        std::string res="pid_";
+        std::string res = "pid_";
         res.append("_name_");
         res.append(std::static_pointer_cast<const RSSurfaceRenderNode>(renderNode_)->GetName());
         return res;
@@ -77,20 +77,11 @@ public:
     void ClearCacheSurfaceInThread();
     void ClearCacheSurface(bool isClearCompletedCacheSurface = true);
 
-    std::shared_ptr<Drawing::Surface> GetCacheSurface() const
-    {
-        std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
-        return cacheSurface_;
-    }
-
-    std::shared_ptr<Drawing::Surface> GetCacheSurface(uint32_t threadIndex, bool needCheckThread, bool releaseAfterGet = false);
+    std::shared_ptr<Drawing::Surface> GetCacheSurface(uint32_t threadIndex, bool needCheckThread,
+        bool releaseAfterGet = false);
     bool NeedInitCacheSurface();
-    bool NeedInitCacheCompletedSurface() ;
-    bool IsCacheSurfaceValid() const;
-    std::shared_ptr<Drawing::Image> GetCompletedImage(RSPaintFilterCanvas& canvas, uint32_t threadIndex, bool isUIFirst);
-    std::shared_ptr<Drawing::Surface> GetCompletedCacheSurface(uint32_t threadIndex, bool needCheckThread,bool releaseAfterGet);
-
-
+    std::shared_ptr<Drawing::Image> GetCompletedImage(RSPaintFilterCanvas& canvas, uint32_t threadIndex,
+        bool isUIFirst);
     using ClearCacheSurfaceFunc =
         std::function<void(std::shared_ptr<Drawing::Surface>&&,
         std::shared_ptr<Drawing::Surface>&&, uint32_t, uint32_t)>;
@@ -102,8 +93,9 @@ public:
         ClearCacheSurfaceInThread();
     }
 
-    bool HasCachedTexture() const;
+    bool IsCurFrameStatic(DeviceType deviceType);
 
+    bool HasCachedTexture() const;
 
     void SetTextureValidFlag(bool isValid);
     void SetCacheSurfaceNeedUpdated(bool isCacheSurfaceNeedUpdate)
@@ -159,7 +151,7 @@ private:
         std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
         Drawing::Region& region);
     Drawing::Region CalculateVisibleRegion(RSSurfaceRenderParams* surfaceParams,
-        std::shared_ptr<RSSurfaceRenderNode> surfaceNode) const;
+        std::shared_ptr<RSSurfaceRenderNode> surfaceNode, bool isOffscreen) const;
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::SURFACE_NODE, OnGenerate>;
     static Registrar instance_;
 #ifdef RS_PARALLEL
@@ -171,7 +163,7 @@ private:
     ClearCacheSurfaceFunc clearCacheSurfaceFunc_ = nullptr;
     uint32_t cacheSurfaceThreadIndex_ = UNI_MAIN_THREAD_INDEX;
     uint32_t completedSurfaceThreadIndex_ = UNI_MAIN_THREAD_INDEX;
-    mutable std::recursive_mutex surfaceMutex_;
+    mutable std::recursive_mutex completeResourceMutex_; // only lock complete Resource
     std::shared_ptr<Drawing::Surface> cacheSurface_ = nullptr;
     std::shared_ptr<Drawing::Surface> cacheCompletedSurface_ = nullptr;
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
@@ -183,11 +175,10 @@ private:
 #endif
     std::atomic<bool> isCacheSurfaceNeedUpdate_ = false;
 #endif
-    bool isTextureValid_ = false;
+    std::atomic<bool> isTextureValid_ = false;
     pid_t lastFrameUsedThreadIndex_ = UNI_MAIN_THREAD_INDEX;
     NodePriorityType priority_ = NodePriorityType::MAIN_PRIORITY;
 #endif
-
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

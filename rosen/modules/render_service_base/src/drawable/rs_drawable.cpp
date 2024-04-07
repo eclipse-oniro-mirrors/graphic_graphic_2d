@@ -15,7 +15,7 @@
 
 #include "drawable/rs_drawable.h"
 
-#include <limits.h>
+#include <limits>
 #include "drawable/rs_misc_drawable.h"
 #include "drawable/rs_property_drawable.h"
 #include "drawable/rs_property_drawable_background.h"
@@ -227,11 +227,11 @@ static uint8_t CalculateDrawableVecStatus(RSRenderNode& node, const RSDrawable::
     }
 
     if (HasPropertyDrawableInRange(
-            drawableVec, RSDrawableSlot::BG_PROPERTIES_BEGIN, RSDrawableSlot::BG_PROPERTIES_END)) {
+        drawableVec, RSDrawableSlot::BG_PROPERTIES_BEGIN, RSDrawableSlot::BG_PROPERTIES_END)) {
         result |= DrawableVecStatus::BG_BOUNDS_PROPERTY;
     }
     if (HasPropertyDrawableInRange(
-            drawableVec, RSDrawableSlot::FG_PROPERTIES_BEGIN, RSDrawableSlot::FG_PROPERTIES_END)) {
+        drawableVec, RSDrawableSlot::FG_PROPERTIES_BEGIN, RSDrawableSlot::FG_PROPERTIES_END)) {
         result |= DrawableVecStatus::FG_BOUNDS_PROPERTY;
     }
 
@@ -260,7 +260,7 @@ inline static void SaveRestoreHelper(RSDrawable::Vec& drawableVec, RSDrawableSlo
         return;
     }
     if (type == RSPaintFilterCanvas::kCanvas) {
-        auto count = std::make_shared<uint32_t>(UINT_MAX);
+        auto count = std::make_shared<uint32_t>(std::numeric_limits<uint32_t>::max());
         drawableVec[static_cast<size_t>(slot1)] = std::make_unique<RSSaveDrawable>(count);
         drawableVec[static_cast<size_t>(slot2)] = std::make_unique<RSRestoreDrawable>(count);
     } else {
@@ -395,7 +395,7 @@ std::unordered_set<RSDrawableSlot> RSDrawable::CalculateDirtySlots(
     }
 
     // Step 1.2: expand dirty slots by rules
-    // TODO: border etc. should be updated when border radius changed
+    // planning: border etc. should be updated when border radius changed
     if (dirtySlots.count(RSDrawableSlot::FRAME_OFFSET)) {
         if (drawableVec[static_cast<size_t>(RSDrawableSlot::CLIP_TO_FRAME)]) {
             dirtySlots.emplace(RSDrawableSlot::CLIP_TO_FRAME);

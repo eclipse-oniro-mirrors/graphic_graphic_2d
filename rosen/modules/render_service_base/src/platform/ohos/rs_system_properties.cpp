@@ -382,7 +382,7 @@ bool RSSystemProperties::GetFilterCacheEnabled()
     // Determine whether the filter cache should be enabled. The default value is 1, which means that it is enabled.
     // If dirty-region is not properly implemented, the filter cache will act as a skip-frame strategy for filters.
     static bool filterCacheEnabled =
-        std::atoi((system::GetParameter("persist.sys.graphic.filterCacheEnabled", "0")).c_str()) != 0;
+        std::atoi((system::GetParameter("persist.sys.graphic.filterCacheEnabled", "1")).c_str()) != 0;
     return filterCacheEnabled;
 }
 
@@ -777,7 +777,7 @@ SubTreePrepareCheckType RSSystemProperties::GetSubTreePrepareCheckType()
     static CachedHandle g_Handle = CachedParameterCreate("persist.sys.graphic.SubTreePrepareCheckType.type", "2");
     int changed = 0;
     const char *type = CachedParameterGetChanged(g_Handle, &changed);
-    return static_cast<SubTreePrepareCheckType>(ConvertToInt(type, 2));
+    return static_cast<SubTreePrepareCheckType>(ConvertToInt(type, 2)); // Default value 2
 }
 } // namespace Rosen
 } // namespace OHOS

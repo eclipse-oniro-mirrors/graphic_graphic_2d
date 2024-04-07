@@ -26,15 +26,17 @@ namespace OHOS::Rosen {
 #ifdef RS_PARALLEL
 class RSUifirstManager {
 public:
-    // TODO: move to display node
+    // planning: move to display node
     static RSUifirstManager& Instance();
 
     void AddProcessDoneNode(NodeId id);
     void AddPendingPostNode(NodeId id, std::shared_ptr<RSSurfaceRenderNode>& node);
-    void AddPendingResetNode(NodeId id);
+    void AddPendingResetNode(NodeId id, std::shared_ptr<RSSurfaceRenderNode>& node);
     void AddReuseNode(NodeId id);
 
     CacheProcessStatus GetNodeStatus(NodeId id);
+    // judge if surfacenode satisfies async subthread rendering condtions for Uifirst
+    void UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancestorNodeHasAnimation);
     void PostUifistSubTasks();
     void ProcessSubDoneNode();
     bool CollectSkipSyncNode(const std::shared_ptr<RSRenderNode> &node);
@@ -70,14 +72,15 @@ private:
     void SortSubThreadNodesPriority();
 
     void UifirstStateChange(RSSurfaceRenderNode& node, bool currentFrameIsUifirstNode);
-    void CheckIfParentUifirstNodeEnable(RSSurfaceRenderNode& node, bool parentUifirstNodeEnable);
+    void UpdateChildrenDirtyRect(RSSurfaceRenderNode& node);
     // only use in mainThread; keep ref by subthreadProcessingNode_
 
     // only use in RT
     std::unordered_map<NodeId, std::shared_ptr<DrawableV2::RSRenderNodeDrawableAdapter>> subthreadProcessingNode_;
     std::set<NodeId> processingNodeSkipSync_;
     std::set<NodeId> processingNodePartialSync_;
-    std::unordered_map<NodeId, std::vector<std::shared_ptr<RSRenderNode>>> pendingSyncForSkipBefore_; // (instanceId, vector<needsync_node>)
+    // (instanceId, vector<needsync_node>)
+    std::unordered_map<NodeId, std::vector<std::shared_ptr<RSRenderNode>>> pendingSyncForSkipBefore_;
 
     // use in RT & subThread
     std::mutex childernDrawableMutex_;
@@ -85,7 +88,7 @@ private:
 
     // pending post node: collect in main, use&clear in RT
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> pendingPostNodes_;
-    std::set<NodeId> pendingResetNodes_;
+    std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> pendingResetNodes_;
     bool isUiFirstOn_ = false;
     std::list<NodeId> sortedSubThreadNodeIds_;
 

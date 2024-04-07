@@ -63,18 +63,22 @@ bool RSSurfaceCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback)
     std::shared_ptr<DrawableV2::RSRenderNodeDrawable> displayNodeDrawable = nullptr;
     visitor_ = std::make_shared<RSSurfaceCaptureVisitor>(scaleX_, scaleY_, RSUniRenderJudgement::IsUniRender());
     if (auto surfaceNode = node->ReinterpretCastTo<RSSurfaceRenderNode>()) {
-        pixelmap = CreatePixelMapBySurfaceNode(surfaceNode, visitor_->IsUniRender());
-        visitor_->IsDisplayNode(false);
         // Determine whether cache can be used
-        auto firstLevelNode = surfaceNode->GetFirstLevelNode();
-        auto firstLevelNodeParams = static_cast<RSSurfaceRenderParams*>(firstLevelNode->GetRenderParams().get());
-        if (firstLevelNodeParams && firstLevelNodeParams->GetUifirstNodeEnableParam()) {
+        auto curNode = surfaceNode;
+        auto parentNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(surfaceNode->GetParent().lock());
+        if (parentNode && parentNode->IsLeashWindow()) {
+            curNode = parentNode;
+        }
+        auto curNodeParams = static_cast<RSSurfaceRenderParams*>(curNode->GetRenderParams().get());
+        if (curNodeParams && curNodeParams->GetUifirstNodeEnableParam()) {
             surfaceNodeDrawable = std::static_pointer_cast<DrawableV2::RSRenderNodeDrawable>(
-                DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(firstLevelNode));
+                DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(curNode));
         } else {
             surfaceNodeDrawable = std::static_pointer_cast<DrawableV2::RSRenderNodeDrawable>(
                 DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
         }
+        pixelmap = CreatePixelMapBySurfaceNode(curNode, visitor_->IsUniRender());
+        visitor_->IsDisplayNode(false);
     } else if (auto displayNode = node->ReinterpretCastTo<RSDisplayRenderNode>()) {
         visitor_->SetHasingSecurityOrSkipLayer(FindSecurityOrSkipLayer());
         pixelmap = CreatePixelMapByDisplayNode(displayNode, visitor_->IsUniRender(),
@@ -114,10 +118,10 @@ bool RSSurfaceCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback)
         canvas.Scale(scaleX_, scaleY_);
         canvas.SetDisableFilterCache(true);
         if (surfaceNodeDrawable) {
-            RSUniRenderThread::SetCaptureParam(CaptureParam(true, false, false, scaleX_, scaleY_));
+            RSUniRenderThread::SetCaptureParam(CaptureParam(true, true, false, scaleX_, scaleY_));
             surfaceNodeDrawable->OnCapture(canvas);
         } else if (displayNodeDrawable) {
-            RSUniRenderThread::SetCaptureParam(CaptureParam(true, true, false, scaleX_, scaleY_));
+            RSUniRenderThread::SetCaptureParam(CaptureParam(true, false, false, scaleX_, scaleY_));
             displayNodeDrawable->OnCapture(canvas);
         } else {
             RS_LOGE("RSSurfaceCaptureTaskParallel::Run: Invalid RSRenderNodeDrawable!");
@@ -204,7 +208,8 @@ bool RSSurfaceCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback)
                 } else if (rotation == ScreenRotation::ROTATION_270) {
                     pixelmap->rotate(static_cast<int32_t>(270)); // 270 degrees
                 }
-                RS_LOGI("RSSurfaceCaptureTaskParallel::Run: PixelmapRotation: %{public}d", static_cast<int32_t>(rotation));
+                RS_LOGI("RSSurfaceCaptureTaskParallel::Run: PixelmapRotation: %{public}d",
+                    static_cast<int32_t>(rotation));
             }
             // To get dump image
             // execute "param set rosen.dumpsurfacetype.enabled 3 && setenforce 0"
@@ -340,7 +345,8 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByD
     return Media::PixelMap::Create(opts);
 }
 
-std::shared_ptr<Drawing::Surface> RSSurfaceCaptureTaskParallel::CreateSurface(const std::unique_ptr<Media::PixelMap>& pixelmap)
+std::shared_ptr<Drawing::Surface> RSSurfaceCaptureTaskParallel::CreateSurface(
+    const std::unique_ptr<Media::PixelMap>& pixelmap)
 {
     if (pixelmap == nullptr) {
         RS_LOGE("RSSurfaceCaptureTaskParallel::CreateSurface: pixelmap == nullptr");

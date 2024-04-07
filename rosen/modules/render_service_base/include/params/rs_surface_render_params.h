@@ -110,29 +110,27 @@ public:
     {
         return isSkipLayer_;
     }
-    const std::set<NodeId>& GetSkipLayerIds() const
-    {
-        return skipLayerIds_;
-    }
     const std::set<NodeId>& GetSecurityLayerIds() const
     {
         return securityLayerIds_;
     }
+    const std::set<NodeId>& GetSkipLayerIds() const
+    {
+        return skipLayerIds_;
+    }
+    bool HasSecurityLayer()
+    {
+        return securityLayerIds_.size() != 0;
+    }
+    bool HasSkipLayer()
+    {
+        return skipLayerIds_.size() != 0;
+    }
+
     std::string GetName() const
     {
         return name_;
     }
-    void SetNeedSubmitSubThread(bool needSubmitSubThread)
-    {
-        processed = false;
-        needSubmitSubThread_ = needSubmitSubThread;
-    }
-
-    bool GetNeedSubmitSubThread()
-    {
-        return needSubmitSubThread_;
-    }
-    bool processed = false;
 
     void SetUifirstNodeEnableParam(bool isUifirst)
     {
@@ -156,6 +154,24 @@ public:
         uiFirstParentFlag_ = isUifirstParent;
         needSync_ = true;
     }
+
+    void SetUifirstChildrenDirtyRectParam(const RectI& rect)
+    {
+        childrenDirtyRect_ = rect;
+        needSync_ = true;
+    }
+
+    RectI& GetUifirstChildrenDirtyRectParam()
+    {
+        return childrenDirtyRect_;
+    }
+    void SetSurfaceCacheContentStatic(bool contentStatic);
+    bool GetSurfaceCacheContentStatic() const;
+
+    float GetPositionZ() const;
+
+    void SetSurfaceSubTreeDirty(bool isSubTreeDirty);
+    bool GetSurfaceSubTreeDirty() const;
 
     bool GetParentUifirstNodeEnableParam()
     {
@@ -208,16 +224,18 @@ private:
     bool isTransparent_ = false;
     bool isSpherizeValid_ = false;
     bool needBilinearInterpolation_ = false;
-    bool needSubmitSubThread_ = false; // UI First
-    bool isMainThreadNode_ = false; //UI First
     bool uiFirstFlag_ = false;
     bool uiFirstParentFlag_ = false;
     Color backgroundColor_ = RgbPalette::Transparent();
 
     RectI oldDirtyInSurface_;
+    RectI childrenDirtyRect_;
     RectI absDrawRect_;
     RRect rrect_;
 
+    bool surfaceCacheContentStatic_ = false;
+    bool isSubTreeDirty_ = false;
+    float positionZ_ = 0.0f;
     bool occlusionVisible_ = false;
     Occlusion::Region visibleRegion_;
     bool isOccludedByFilterCache_ = false;

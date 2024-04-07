@@ -36,14 +36,14 @@ RSCanvasDrawingRenderNodeDrawable::RSCanvasDrawingRenderNodeDrawable(std::shared
     canvasDrawingRenderNode->InitRenderContent();
 }
 
- RSCanvasDrawingRenderNodeDrawable::~RSCanvasDrawingRenderNodeDrawable()
- {
+RSCanvasDrawingRenderNodeDrawable::~RSCanvasDrawingRenderNodeDrawable()
+{
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     if (curThreadInfo_.second && surface_) {
         curThreadInfo_.second(std::move(surface_));
     }
 #endif
- }
+}
 
 RSRenderNodeDrawable::Ptr RSCanvasDrawingRenderNodeDrawable::OnGenerate(std::shared_ptr<const RSRenderNode> node)
 {
@@ -156,7 +156,6 @@ void RSCanvasDrawingRenderNodeDrawable::DrawRenderContent(Drawing::Canvas& canva
 
 void RSCanvasDrawingRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
 {
-    // TODO
     OnDraw(canvas);
 }
 
@@ -170,10 +169,7 @@ void RSCanvasDrawingRenderNodeDrawable::PlaybackInCorrespondThread()
         if (!surface_ || !canvas_) {
             return;
         }
-        // todo clear op
-        // DrawContent(*canvas_, rect);
-        // DrawForeground(*canvas_, rect);
-        // node->SetNeedProcess(false);
+        // planning: clear op
     };
     RSTaskDispatcher::GetInstance().PostTask(threadId_, task, false);
 }
@@ -220,18 +216,18 @@ void RSCanvasDrawingRenderNodeDrawable::Flush(float width, float height, std::sh
             Drawing::BitmapFormat info = Drawing::BitmapFormat{ image_->GetColorType(), image_->GetAlphaType() };
             SharedTextureContext* sharedContext = new SharedTextureContext(image_); // last image
             image_ = std::make_shared<Drawing::Image>();
-            bool ret = image_->BuildFromTexture(*rscanvas.GetGPUContext(), backendTexture_.GetTextureInfo(), origin, info, nullptr,
-                DeleteSharedTextureContext, sharedContext);
+            bool ret = image_->BuildFromTexture(*rscanvas.GetGPUContext(), backendTexture_.GetTextureInfo(), origin,
+                info, nullptr, DeleteSharedTextureContext, sharedContext);
             if (!ret) {
                 RS_LOGE("RSCanvasDrawingRenderNodeDrawable::Flush image BuildFromTexture failed");
                 return;
             }
 #endif
         } else {
-            image_ = surface_->GetImageSnapshot(); // TODO: return image_
+            image_ = surface_->GetImageSnapshot(); // planning: return image_
             backendTexture_ = surface_->GetBackendTexture();
             if (!backendTexture_.IsValid()) {
-                RS_LOGE("RSCanvasDrawingRenderNodeDrawable::ResetSurfaceWithTexture !backendTexture_.IsValid() %d", __LINE__);
+                RS_LOGE("RSCanvasDrawingRenderNodeDrawable::Flush !backendTexture_.IsValid() %d", __LINE__);
             }
         }
 
@@ -260,7 +256,7 @@ void RSCanvasDrawingRenderNodeDrawable::ProcessCPURenderInBackgroundThread(std::
             return;
         }
         cmds->Playback(*surface->GetCanvas());
-        auto image = surface->GetImageSnapshot(); // TODO: adapt multithread
+        auto image = surface->GetImageSnapshot(); // planning: adapt multithread
         if (image) {
             SKResourceManager::Instance().HoldResource(image);
         }
@@ -457,16 +453,16 @@ bool RSCanvasDrawingRenderNodeDrawable::ResetSurfaceWithTexture(int width, int h
     Drawing::BitmapFormat bitmapFormat = { image_->GetColorType(), image_->GetAlphaType() };
     SharedTextureContext* sharedContext = new SharedTextureContext(image_); // will move image
     auto preImageInNewContext = std::make_shared<Drawing::Image>();
-    if (!preImageInNewContext->BuildFromTexture(
-            *canvas.GetGPUContext(), backendTexture_.GetTextureInfo(), origin, bitmapFormat, nullptr,
-            DeleteSharedTextureContext, sharedContext)) {
+    if (!preImageInNewContext->BuildFromTexture(*canvas.GetGPUContext(), backendTexture_.GetTextureInfo(),
+        origin, bitmapFormat, nullptr, DeleteSharedTextureContext, sharedContext)) {
         RS_LOGE("RSCanvasDrawingRenderNodeDrawable::ResetSurfaceWithTexture preImageInNewContext is nullptr");
         ClearPreSurface(preSurface);
         return false;
     }
     if (RSSystemProperties::GetRecordingEnabled()) {
         if (preImageInNewContext->IsTextureBacked()) {
-            RS_LOGI("RSCanvasDrawingRenderNodeDrawable::ResetSurfaceWithTexture sharedTexture from texture to raster image");
+            RS_LOGI("RSCanvasDrawingRenderNodeDrawable::ResetSurfaceWithTexture preImageInNewContext "
+                "from texture to raster image");
             preImageInNewContext = preImageInNewContext->MakeRasterImage();
         }
     }

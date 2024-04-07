@@ -115,7 +115,8 @@ void RSProcessor::RequestPerf(uint32_t layerLevel, bool onOffTag)
     }
 }
 
-bool RSProcessor::InitForRenderThread(RSDisplayRenderNode& node, ScreenId mirroredId, std::shared_ptr<RSBaseRenderEngine> renderEngine)
+bool RSProcessor::InitForRenderThread(RSDisplayRenderNode& node, ScreenId mirroredId,
+    std::shared_ptr<RSBaseRenderEngine> renderEngine)
 {
     auto params = static_cast<RSDisplayRenderParams*>(node.GetRenderParams().get());
     if (!params) {
@@ -138,7 +139,6 @@ bool RSProcessor::InitForRenderThread(RSDisplayRenderNode& node, ScreenId mirror
 
     // CalculateScreenTransformMatrix
     auto mirrorNode = params->GetMirrorSource().lock();
-
     if (!mirrorNode) {
         screenTransformMatrix_ = params->GetMatrix();
     } else {

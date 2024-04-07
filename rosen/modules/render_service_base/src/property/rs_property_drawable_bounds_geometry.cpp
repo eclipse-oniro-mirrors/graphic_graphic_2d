@@ -31,11 +31,11 @@
 #include "pipeline/rs_effect_render_node.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "platform/common/rs_log.h"
-#include "platform/common/rs_system_properties.h"
 #include "property/rs_properties.h"
 #include "property/rs_properties_def.h"
 #include "property/rs_properties_painter.h"
 #include "render/rs_skia_filter.h"
+#include "platform/common/rs_system_properties.h"
 
 namespace {
 constexpr int PARAM_DOUBLE = 2;
@@ -971,9 +971,9 @@ RSBlendSaveLayerDrawable::RSBlendSaveLayerDrawable(int blendMode)
 
 void RSBlendSaveLayerDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
 {
-    if (!canvas.HasOffscreenLayer() &&
-        RSPropertiesPainter::IsDangerousBlendMode(
-            static_cast<int>(blendBrush_.GetBlendMode()), static_cast<int>(RSColorBlendApplyType::SAVE_LAYER))) {
+    if (canvas.GetBlendOffscreenLayerCnt() == 0 &&
+        RSPropertiesPainter::IsDangerousBlendMode(static_cast<int>(blendBrush_.GetBlendMode()),
+        static_cast<int>(RSColorBlendApplyType::SAVE_LAYER))) {
         Drawing::SaveLayerOps maskLayerRec(nullptr, nullptr, 0);
         canvas.SaveLayer(maskLayerRec);
         ROSEN_LOGD("Dangerous offscreen blendmode may produce transparent pixels, add extra offscreen here.");
@@ -993,7 +993,7 @@ void RSBlendSaveLayerDrawable::Draw(const RSRenderContent& content, RSPaintFilte
 
 void RSBlendFastDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
 {
-    if (!canvas.HasOffscreenLayer() &&
+    if (canvas.GetBlendOffscreenLayerCnt() == 0 &&
         RSPropertiesPainter::IsDangerousBlendMode(blendMode_ - 1, static_cast<int>(RSColorBlendApplyType::FAST))) {
         Drawing::SaveLayerOps maskLayerRec(nullptr, nullptr, 0);
         canvas.SaveLayer(maskLayerRec);
@@ -1002,14 +1002,16 @@ void RSBlendFastDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanv
     canvas.SetBlendMode({ blendMode_ - 1 }); // map blendMode to SkBlendMode
 }
 
+
 void RSBlendSaveLayerRestoreDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
 {
-    // SAVE_ALL slot will do all necessary restore
+    canvas.RestoreAlpha();
+    canvas.Restore();
 }
 
 void RSBlendFastRestoreDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
 {
-    // SAVE_ALL slot will do all necessary restore
+    canvas.Restore();
 }
 
 } // namespace OHOS::Rosen

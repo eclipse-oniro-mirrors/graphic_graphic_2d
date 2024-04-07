@@ -87,7 +87,6 @@ enum class RSDrawableSlot : int8_t {
     RESTORE_BLEND_MODE,
     RESTORE_ALL,
 
-
     // Annotations: Please remember to update this when new slots are added.
     // NOTE: MAX and *_END enums are using the one-past-the-end style.
     BG_PROPERTIES_BEGIN      = BLEND_MODE,
@@ -118,8 +117,6 @@ public:
     using Generator = std::function<Ptr(const RSRenderNode&)>;
 
     // =================virtual functions==================
-    // Call on first create, return nullptr if no need to create
-    // static Ptr OnGenerate(const RSRenderNode& content) { return nullptr; };
 
     // Call on property change, return true if update succeed, false if need destroy
     virtual bool OnUpdate(const RSRenderNode& content)

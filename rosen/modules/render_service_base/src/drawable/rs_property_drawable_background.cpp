@@ -127,12 +127,6 @@ bool RSMaskShadowDrawable::OnUpdate(const RSRenderNode& node)
     RSColor colorPicked;
     if (properties.GetColorPickerCacheTaskShadow() != nullptr &&
         properties.GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE) {
-        // if (RSPropertyDrawableUtils::PickColor(canvas, properties.GetColorPickerCacheTaskShadow(), path, matrix,
-        //     colorPicked)) {
-        //     RSPropertyDrawableUtils::GetDarkColor(colorPicked);
-        // } else {
-        //     shadowAlpha = 0;
-        // }
         if (!properties.GetColorPickerCacheTaskShadow()->GetFirstGetColorFinished()) {
             shadowAlpha = 0;
         }
@@ -159,7 +153,6 @@ Drawing::RecordingCanvas::DrawFunc RSMaskShadowDrawable::CreateDrawFunc() const
 {
     auto ptr = std::static_pointer_cast<const RSMaskShadowDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        Drawing::AutoCanvasRestore rst(*canvas, true);
         RSPropertyDrawableUtils::CeilMatrixTrans(canvas);
         ptr->drawCmdList_->Playback(*canvas);
     };
@@ -197,10 +190,6 @@ bool RSColorfulShadowDrawable::OnUpdate(const RSRenderNode& node)
     canvas.ClipPath(path, Drawing::ClipOp::INTERSECT, false);
     // draw node content as shadow
     // [PLANNING]: maybe we should also draw background color / image here, and we should cache the shadow image
-    // TODO
-    // if (auto node = RSBaseRenderNode::ReinterpretCast<RSCanvasRenderNode>(properties.backref_.lock())) {
-    //     node->InternalDrawContent(canvas);
-    // }
     return true;
 }
 
@@ -282,7 +271,7 @@ bool RSMaskDrawable::OnUpdate(const RSRenderNode& node)
 RSDrawable::Ptr RSBackgroundColorDrawable::OnGenerate(const RSRenderNode& node)
 {
     if (node.IsInstanceOf<RSSurfaceRenderNode>()) {
-        return nullptr; 
+        return nullptr;
     }
     if (auto ret = std::make_shared<RSBackgroundColorDrawable>(); ret->OnUpdate(node)) {
         return std::move(ret);
@@ -400,7 +389,7 @@ RSDrawable::Ptr RSBackgroundFilterDrawable::OnGenerate(const RSRenderNode& node)
     if (filterDrawable->OnUpdate(node)) {
         return filterDrawable;
     }
-    return nullptr; 
+    return nullptr;
 }
 
 bool RSBackgroundFilterDrawable::OnUpdate(const RSRenderNode& node)
@@ -429,7 +418,7 @@ bool RSBackgroundEffectDrawable::OnUpdate(const RSRenderNode& node)
 
 void RSBackgroundEffectDrawable::OnSync()
 {
-    // TODO : adapte freeze and rotation logic
+    // planning: adapte freeze and rotation logic
     hasEffectChildren_ = stagingHasEffectChildren_;
     RSFilterDrawable::OnSync();
     stagingHasEffectChildren_ = false;

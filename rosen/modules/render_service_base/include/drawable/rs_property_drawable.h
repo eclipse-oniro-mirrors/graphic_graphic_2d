@@ -106,8 +106,7 @@ public:
 private:
 };
 
-class RSFilterDrawable : public RSDrawable
-{
+class RSFilterDrawable : public RSDrawable {
 public:
     RSFilterDrawable();
     ~RSFilterDrawable() override = default;
@@ -127,7 +126,8 @@ public:
     void MarkHasEffectChildren();
     void CheckClearFilterCache();
 
-    virtual bool IsFilterCacheValid() const;
+    bool IsFilterCacheValid() const;
+    bool GetFilterForceClearCache() const;
  
     void OnSync() override;
     Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
@@ -135,7 +135,7 @@ public:
 
 private:
     void ClearFilterCache();
-    void UpdateFlags(FilterCacheType type, bool cacheValid);
+    void UpdateFlags(FilterCacheType type, bool cacheValid, bool forceResetInterval = true);
  
 protected:
     void RecordFilterInfos(const std::shared_ptr<RSFilter>& rsFilter);
@@ -154,7 +154,7 @@ protected:
     bool rotationChanged_ = false;
     bool hasEffectChildren_ = false;
  
-    // clear one of snapshot cache and filtered cache after drawing 
+    // clear one of snapshot cache and filtered cache after drawing
     bool stagingForceUseCache_ = false;
     bool stagingHasEffectChildren_ = false;
  

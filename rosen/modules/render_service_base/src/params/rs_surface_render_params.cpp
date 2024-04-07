@@ -14,6 +14,7 @@
  */
 
 #include "params/rs_surface_render_params.h"
+#include "rs_trace.h"
 
 namespace OHOS::Rosen {
 RSSurfaceRenderParams::RSSurfaceRenderParams(NodeId id) : RSRenderParams(id) {}
@@ -165,6 +166,39 @@ sptr<SyncFence> RSSurfaceRenderParams::GetAcquireFence() const
 }
 #endif
 
+void RSSurfaceRenderParams::SetSurfaceCacheContentStatic(bool contentStatic)
+{
+    if (surfaceCacheContentStatic_ == contentStatic) {
+        return;
+    }
+    surfaceCacheContentStatic_ = contentStatic;
+    needSync_ = true;
+}
+
+bool RSSurfaceRenderParams::GetSurfaceCacheContentStatic() const
+{
+    return surfaceCacheContentStatic_;
+}
+
+float RSSurfaceRenderParams::GetPositionZ() const
+{
+    return positionZ_;
+}
+
+void RSSurfaceRenderParams::SetSurfaceSubTreeDirty(bool isSubTreeDirty)
+{
+    if (isSubTreeDirty_ == isSubTreeDirty) {
+        return;
+    }
+    isSubTreeDirty_ = isSubTreeDirty;
+    needSync_ = true;
+}
+
+bool RSSurfaceRenderParams::GetSurfaceSubTreeDirty() const
+{
+    return isSubTreeDirty_;
+}
+
 void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
 {
     auto targetSurfaceParams = static_cast<RSSurfaceRenderParams*>(target.get());
@@ -190,17 +224,18 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->layerInfo_ = layerInfo_;
     targetSurfaceParams->isHardwareEnabled_ = isHardwareEnabled_;
     targetSurfaceParams->isLastFrameHardwareEnabled_ = isLastFrameHardwareEnabled_;
-    targetSurfaceParams->needSubmitSubThread_ = needSubmitSubThread_;
-    targetSurfaceParams->processed = false;
-    targetSurfaceParams->isMainThreadNode_ = isMainThreadNode_;
     targetSurfaceParams->uiFirstFlag_ = uiFirstFlag_;
     targetSurfaceParams->uiFirstParentFlag_ = uiFirstParentFlag_;
+    targetSurfaceParams->childrenDirtyRect_ = childrenDirtyRect_;
     targetSurfaceParams->isOccludedByFilterCache_ = isOccludedByFilterCache_;
     targetSurfaceParams->isSecurityLayer_ = isSecurityLayer_;
     targetSurfaceParams->isSkipLayer_ = isSkipLayer_;
     targetSurfaceParams->skipLayerIds_= skipLayerIds_;
     targetSurfaceParams->securityLayerIds_= securityLayerIds_;
-    targetSurfaceParams->name_= name_;
+    targetSurfaceParams->name_ = name_;
+    targetSurfaceParams->surfaceCacheContentStatic_ = GetSurfaceCacheContentStatic();
+    targetSurfaceParams->positionZ_ = positionZ_;
+    targetSurfaceParams->isSubTreeDirty_ = isSubTreeDirty_;
     RSRenderParams::OnSync(target);
 }
 

@@ -150,6 +150,13 @@ float RSSubThreadManager::GetAppGpuMemoryInMB()
     return total;
 }
 
+void RSSubThreadManager::SubmitFilterSubThreadTask()
+{
+    if (filterThread) {
+        filterThread->FlushAndSubmit();
+    }
+}
+
 void RSSubThreadManager::SubmitSubThreadTask(const std::shared_ptr<RSDisplayRenderNode>& node,
     const std::list<std::shared_ptr<RSSurfaceRenderNode>>& subThreadNodes)
 {
@@ -185,7 +192,8 @@ void RSSubThreadManager::SubmitSubThreadTask(const std::shared_ptr<RSDisplayRend
         if (cacheSkippedNodeMap.count(child->GetId()) != 0 && child->HasCachedTexture()) {
             RS_OPTIONAL_TRACE_NAME_FMT("SubmitTask cacheCmdSkippedNode: [%s, %llu]",
                 child->GetName().c_str(), child->GetId());
-            ROSEN_LOGE("RSSubThreadManager::SubmitSubThreadTask cacheSkippedNodeMap.count(child->GetId()) != 0 && child->HasCachedTexture()");
+            ROSEN_LOGE("RSSubThreadManager::SubmitSubThreadTask "
+                "cacheSkippedNodeMap.count(child->GetId()) != 0 && child->HasCachedTexture()");
             continue;
         }
         nodeTaskState_[child->GetId()] = 1;
@@ -387,23 +395,21 @@ void RSSubThreadManager::ScheduleRenderNodeDrawable(DrawableV2::RSSurfaceRenderN
 
     auto minDoingCacheProcessNum = threadList_[0]->GetDoingCacheProcessNum();
     minLoadThreadIndex_ = 0;
-    for (unsigned int j = 1; j < SUB_THREAD_NUM; j++)
-    {
-        if (minDoingCacheProcessNum > threadList_[j]->GetDoingCacheProcessNum())
-        {
+    for (unsigned int j = 1; j < SUB_THREAD_NUM; j++) {
+        if (minDoingCacheProcessNum > threadList_[j]->GetDoingCacheProcessNum()) {
             minDoingCacheProcessNum = threadList_[j]->GetDoingCacheProcessNum();
             minLoadThreadIndex_ = j;
         }
     }
     auto nowIdx = minLoadThreadIndex_;
-    if (threadIndexMap_.count(nodeDrawable->GetLastFrameUsedThreadIndex()) != 0)
-    {
+    if (threadIndexMap_.count(nodeDrawable->GetLastFrameUsedThreadIndex()) != 0) {
         nowIdx = threadIndexMap_[nodeDrawable->GetLastFrameUsedThreadIndex()];
     }
 
     auto subThread = threadList_[nowIdx];
     auto tid = reThreadIndexMap_[nowIdx];
     nodeTaskState_[param->GetId()] = 1;
+    subThread->DoingCacheProcessNumInc();
     subThread->PostTask([subThread, nodeDrawable, tid]() {
         nodeDrawable->SetLastFrameUsedThreadIndex(tid);
         subThread->DrawableCache(nodeDrawable);

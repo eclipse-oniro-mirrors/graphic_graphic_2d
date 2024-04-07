@@ -66,11 +66,18 @@ RSRenderNodeDrawable::Ptr RSSurfaceRenderNodeDrawable::OnGenerate(std::shared_pt
     return new RSSurfaceRenderNodeDrawable(std::move(node));
 }
 
-Drawing::Region RSSurfaceRenderNodeDrawable::CalculateVisibleRegion(RSSurfaceRenderParams* surfaceParams,
-   std::shared_ptr<RSSurfaceRenderNode> surfaceNode) const
+Drawing::Region RSSurfaceRenderNodeDrawable::CalculateVisibleRegion(RSSurfaceRenderParams *surfaceParams,
+    std::shared_ptr<RSSurfaceRenderNode> surfaceNode, bool isOffscreen) const
 {
     Drawing::Region resultRegion;
     if (!surfaceParams->IsMainWindowType()) {
+        return resultRegion;
+    }
+
+    // FUTURE: return real region
+    if (isOffscreen) {
+        resultRegion.SetRect(Drawing::RectI(0, 0,
+        DRAWING_MAX_S32_FITS_IN_FLOAT, DRAWING_MAX_S32_FITS_IN_FLOAT));
         return resultRegion;
     }
 
@@ -120,7 +127,7 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             surfaceNode->GetName().c_str(), surfaceParams->GetId());
         return;
     }
-    Drawing::Region curSurfaceDrawRegion = CalculateVisibleRegion(surfaceParams, surfaceNode);
+    Drawing::Region curSurfaceDrawRegion = CalculateVisibleRegion(surfaceParams, surfaceNode, isuifirstNode);
     auto uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams().get();
     if (!uniParam) {
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw uniParam is nullptr");
@@ -137,7 +144,7 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
     RS_TRACE_NAME("RSSurfaceRenderNodeDrawable::OnDraw:[" + surfaceNode->GetName() + "] " +
-                  surfaceParams->GetAbsDrawRect().ToString() + "Alpha: " + std::to_string(surfaceNode->GetGlobalAlpha()));
+        surfaceParams->GetAbsDrawRect().ToString() + "Alpha: " + std::to_string(surfaceNode->GetGlobalAlpha()));
 
     RS_LOGD("RSSurfaceRenderNodeDrawable::OnDraw node:%{public}" PRIu64 ",child size:%{public}u,"
             "name:%{public}s,OcclusionVisible:%{public}d",
@@ -191,7 +198,7 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     rscanvas->SetDirtyFlag(false);
     if (surfaceParams->IsMainWindowType()) {
         RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::OnDraw SurfaceNode: [%s], NodeId: %llu, ProcessedNodes: %d",
-            surfaceNode->GetNodeName().c_str(), surfaceNode->GetId(), RSRenderNodeDrawable::GetProcessedNodeCount());
+            surfaceNode->GetName().c_str(), surfaceNode->GetId(), RSRenderNodeDrawable::GetProcessedNodeCount());
     }
 }
 
@@ -219,9 +226,15 @@ void RSSurfaceRenderNodeDrawable::MergeDirtyRegionBelowCurSurface(RSRenderThread
             }
         }
         // [planing] surfaceDirtyRegion can be optimized by visibleDirtyRegion in some case.
-        auto surfaceDirtyRegion = Occlusion::Region{
+        auto surfaceDirtyRegion = Occlusion::Region {
             Occlusion::Rect{ surfaceNode->GetSyncDirtyManager()->GetDirtyRegion() } };
         accumulatedDirtyRegion.OrSelf(surfaceDirtyRegion);
+        // add children window dirty here for uifirst leasf window will not traverse cached children
+        if (surfaceParams->GetUifirstNodeEnableParam()) {
+            auto childrenDirtyRegion = Occlusion::Region {
+                Occlusion::Rect{ surfaceParams->GetUifirstChildrenDirtyRectParam() } };
+            accumulatedDirtyRegion.OrSelf(childrenDirtyRegion);
+        }
     }
 }
 
@@ -257,10 +270,10 @@ void RSSurfaceRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
 
     RS_TRACE_NAME("RSSurfaceRenderNodeDrawable::OnCapture:[" + surfaceNode->GetName() + "] " +
         surfaceParams->GetAbsDrawRect().ToString() + "Alpha: " + std::to_string(surfaceNode->GetGlobalAlpha()));
-    if (RSUniRenderThread::GetCaptureParam().isCaptureDisplay_) {
-        CaptureSurfaceInDisplay(*surfaceNode, *rscanvas, *surfaceParams);
-    } else {
+    if (RSUniRenderThread::GetCaptureParam().isSingleSurface_) {
         CaptureSingleSurfaceNode(*surfaceNode, *rscanvas, *surfaceParams);
+    } else {
+        CaptureSurfaceInDisplay(*surfaceNode, *rscanvas, *surfaceParams);
     }
 }
 
@@ -302,11 +315,12 @@ void RSSurfaceRenderNodeDrawable::CaptureSingleSurfaceNode(RSSurfaceRenderNode& 
         RS_LOGE("RSSurfaceRenderNodeDrawable::CaptureSurfaceInDisplay uniParams is nullptr");
         return;
     }
-    // TODO: has SecurityLayer or Skiplayer
-    if (DealWithUIFirstCache(surfaceNode, canvas, surfaceParams, *uniParams)) {
+
+    if (!(surfaceParams.HasSecurityLayer() || surfaceParams.HasSkipLayer()) &&
+        DealWithUIFirstCache(surfaceNode, canvas, surfaceParams, *uniParams)) {
         return;
     }
-    
+
     RSRenderNodeDrawable::OnCapture(canvas);
 }
 
@@ -327,8 +341,9 @@ void RSSurfaceRenderNodeDrawable::CaptureSurfaceInDisplay(RSSurfaceRenderNode& s
         RS_LOGE("RSSurfaceRenderNodeDrawable::CaptureSurfaceInDisplay uniParams is nullptr");
         return;
     }
-    // TODO: has SecurityLayer or Skiplayer
-    if (DealWithUIFirstCache(surfaceNode, canvas, surfaceParams, *uniParams)) {
+
+    if (!(surfaceParams.HasSecurityLayer() || surfaceParams.HasSkipLayer()) &&
+        DealWithUIFirstCache(surfaceNode, canvas, surfaceParams, *uniParams)) {
         return;
     }
 
@@ -417,7 +432,9 @@ bool RSSurfaceRenderNodeDrawable::DealWithUIFirstCache(RSSurfaceRenderNode& surf
         Drawing::Rect bounds = renderParams ? renderParams->GetBounds() : Drawing::Rect(0, 0, 0, 0);
         RSAutoCanvasRestore acr(&canvas);
         canvas.MultiplyAlpha(surfaceParams.GetAlpha());
-        canvas.ConcatMatrix(surfaceParams.GetMatrix());
+        if (!RSUniRenderThread::GetCaptureParam().isSingleSurface_) {
+            canvas.ConcatMatrix(surfaceParams.GetMatrix());
+        }
         DrawBackground(canvas, bounds);
         bool drawCacheSuccess = true;
         if (!DrawUIFirstCache(canvas)) {
@@ -429,14 +446,18 @@ bool RSSurfaceRenderNodeDrawable::DealWithUIFirstCache(RSSurfaceRenderNode& surf
         if (uniParams.GetUIFirstDebugEnabled()) { // DFX for uifirst
             if (drawCacheSuccess) {
                 Drawing::Brush rectBrush;
+                // Alpha 128, blue 255
                 rectBrush.SetColor(Drawing::Color(128, 0, 0, 255));
                 canvas.AttachBrush(rectBrush);
+                // Left 300, width 500, height 200
                 canvas.DrawRect(Drawing::Rect(300, 0, 500, 200));
                 canvas.DetachBrush();
             } else {
                 Drawing::Brush rectBrush;
+                // Alpha 128, blue 255
                 rectBrush.SetColor(Drawing::Color(128, 0, 0, 255));
                 canvas.AttachBrush(rectBrush);
+                // Left 800, width 1000, height 200
                 canvas.DrawRect(Drawing::Rect(800, 0, 1000, 200));
                 canvas.DetachBrush();
             }

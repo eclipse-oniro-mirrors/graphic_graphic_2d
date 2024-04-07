@@ -17,6 +17,7 @@
 
 #include "drawable/rs_property_drawable_utils.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
+#include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_render_node.h"
 
 namespace OHOS::Rosen {
@@ -67,7 +68,8 @@ bool RSChildrenDrawable::OnUpdate(const RSRenderNode& node)
         }
     }
     // merge pendingChildren into stagingChildrenDrawableVec_
-    stagingChildrenDrawableVec_.insert(stagingChildrenDrawableVec_.end(), pendingChildren.begin(), pendingChildren.end());
+    stagingChildrenDrawableVec_.insert(stagingChildrenDrawableVec_.end(), pendingChildren.begin(),
+        pendingChildren.end());
     return !stagingChildrenDrawableVec_.empty();
 }
 
@@ -92,7 +94,8 @@ bool RSChildrenDrawable::OnSharedTransition(const RSRenderNode::SharedPtr& node)
     }
     if (isLower) {
         // for lower hierarchy node, we skip it here, and add to unpaired share transitions
-        SharedTransitionParam::unpairedShareTransitions_.emplace(sharedTransitionParam->inNodeId_, sharedTransitionParam);
+        SharedTransitionParam::unpairedShareTransitions_.emplace(sharedTransitionParam->inNodeId_,
+            sharedTransitionParam);
     } else {
         // for higher hierarchy node, we add paired node (lower in hierarchy) first, then add it
         if (auto childDrawable = RSRenderNodeDrawableAdapter::OnGenerate(pairedNode)) {
@@ -150,11 +153,23 @@ bool RSCustomModifierDrawable::OnUpdate(const RSRenderNode& node)
     // regenerate stagingDrawCmdList_
     needSync_ = true;
     stagingDrawCmdListVec_.clear();
-    for (const auto& modifier : itr->second) {
-        auto property = std::static_pointer_cast<RSRenderProperty<Drawing::DrawCmdListPtr>>(modifier->GetProperty());
-        if (const auto& drawCmdList = property->GetRef()) {
-            if (drawCmdList->GetWidth() > 0 && drawCmdList->GetHeight() > 0) {
-                stagingDrawCmdListVec_.push_back(drawCmdList);
+    if (node.GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
+        auto& drawingNode = static_cast<const RSCanvasDrawingRenderNode&>(node);
+        auto& cmdLists = drawingNode.GetDrawCmdLists();
+        auto itr = cmdLists.find(type_);
+        if (itr == cmdLists.end() || itr->second.empty()) {
+            return false;
+        }
+        for(auto& cmd : itr->second) {
+            stagingDrawCmdListVec_.emplace_back(cmd);
+        }
+    } else {
+        for (const auto& modifier : itr->second) {
+            auto property = std::static_pointer_cast<RSRenderProperty<Drawing::DrawCmdListPtr>>(modifier->GetProperty());
+            if (const auto& drawCmdList = property->GetRef()) {
+                if (drawCmdList->GetWidth() > 0 && drawCmdList->GetHeight() > 0) {
+                    stagingDrawCmdListVec_.push_back(drawCmdList);
+                }
             }
         }
     }
@@ -285,7 +300,7 @@ RSDrawable::Ptr RSEndBlendModeDrawable::OnGenerate(const RSRenderNode& node)
         return nullptr;
     }
 
-    return std::make_shared<RSEndBlendModeDrawable>(properties.GetColorBlendApplyType());
+    return std::make_shared<RSEndBlendModeDrawable>();
 };
 
 bool RSEndBlendModeDrawable::OnUpdate(const RSRenderNode& node)
@@ -297,27 +312,14 @@ bool RSEndBlendModeDrawable::OnUpdate(const RSRenderNode& node)
         return false;
     }
 
-    stagingBlendApplyType_ = properties.GetColorBlendApplyType();
-    needSync_ = true;
-
     return true;
-}
-
-void RSEndBlendModeDrawable::OnSync()
-{
-    if (needSync_ == false) {
-        return;
-    }
-    blendApplyType_ = stagingBlendApplyType_;
-    needSync_ = false;
 }
 
 Drawing::RecordingCanvas::DrawFunc RSEndBlendModeDrawable::CreateDrawFunc() const
 {
-    auto ptr = std::static_pointer_cast<const RSEndBlendModeDrawable>(shared_from_this());
-    return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
+    return [](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
         auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
-        RSPropertyDrawableUtils::EndBlendMode(*paintFilterCanvas, ptr->blendApplyType_);
+        RSPropertyDrawableUtils::EndBlendMode(*paintFilterCanvas);
     };
 }
 
@@ -356,7 +358,7 @@ Drawing::RecordingCanvas::DrawFunc RSEnvFGColorDrawable::CreateDrawFunc() const
     auto ptr = std::static_pointer_cast<const RSEnvFGColorDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
         auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
-        // TODO: implement alpha offscreen
+        // planning: implement alpha offscreen
         paintFilterCanvas->SetEnvForegroundColor(ptr->envFGColor_);
     };
 }

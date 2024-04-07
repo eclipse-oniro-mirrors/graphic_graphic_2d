@@ -17,8 +17,8 @@
 
 #include "common/rs_optional_trace.h"
 #include "platform/common/rs_log.h"
-#include "property/rs_properties_painter.h"
 #include "render/rs_material_filter.h"
+#include "property/rs_properties_painter.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -182,6 +182,7 @@ void RSPropertyDrawableUtils::CeilMatrixTrans(Drawing::Canvas* canvas)
 {
     // The translation of the matrix is rounded to improve the hit ratio of skia blurfilter cache,
     // the function <compute_key_and_clip_bounds> in <skia/src/gpu/GrBlurUtil.cpp> for more details.
+    Drawing::AutoCanvasRestore rst(*canvas, true);
     auto matrix = canvas->GetTotalMatrix();
     matrix.Set(Drawing::Matrix::TRANS_X, std::ceil(matrix.Get(Drawing::Matrix::TRANS_X)));
     matrix.Set(Drawing::Matrix::TRANS_Y, std::ceil(matrix.Get(Drawing::Matrix::TRANS_Y)));
@@ -218,22 +219,10 @@ void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas, const std::sha
         return;
     }
 
-    // for foreground filter, when do online opacity, rendering result already applied opacity,
-    // so drawImage should not apply opacity again
-    // RSAutoCanvasRestore autoCanvasRestore(canvas,
-    //     isForegroundFilter ? RSPaintFilterCanvas::kAlpha : RSPaintFilterCanvas::kNone);
-    // if (isForegroundFilter) {
-    //     canvas->SetAlpha(1.0);
-    // }
-
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     // Optional use cacheManager to draw filter
     if (auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
         !paintFilterCanvas->GetDisableFilterCache() && cacheManager != nullptr && RSProperties::FilterCacheEnabled) {
-        // if (filter->GetFilterType() == RSFilter::LINEAR_GRADIENT_BLUR) {
-        //     filter->SetBoundsGeometry(properties.GetFrameWidth(), properties.GetFrameHeight());
-        //     filter->SetCanvasChange(*paintFilterCanvas);
-        // }
         cacheManager->SetForceCache(forceCache);
         cacheManager->DrawFilter(*paintFilterCanvas, filter, needSnapshotOutset);
         return;
@@ -257,11 +246,6 @@ void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas, const std::sha
     }
 
     filter->PreProcess(imageSnapshot);
-    // if (filter->GetFilterType() == RSFilter::LINEAR_GRADIENT_BLUR) {
-    //     filter->SetCanvasChange(*canvas);
-    //     filter->SetBoundsGeometry(properties.GetFrameWidth(), properties.GetFrameHeight());
-    // }
-
     Drawing::AutoCanvasRestore acr(*canvas, true);
     canvas->ResetMatrix();
     Drawing::Rect srcRect = Drawing::Rect(0, 0, imageSnapshot->GetWidth(), imageSnapshot->GetHeight());
@@ -270,8 +254,9 @@ void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas, const std::sha
     filter->PostProcess(*canvas);
 }
 
-void RSPropertyDrawableUtils::DrawBackgroundEffect(RSPaintFilterCanvas* canvas, const std::shared_ptr<RSFilter>& rsFilter,
-    const std::unique_ptr<RSFilterCacheManager>& cacheManager, const bool forceCache)
+void RSPropertyDrawableUtils::DrawBackgroundEffect(RSPaintFilterCanvas* canvas,
+    const std::shared_ptr<RSFilter>& rsFilter, const std::unique_ptr<RSFilterCacheManager>& cacheManager,
+    const bool forceCache)
 {
     if (rsFilter == nullptr) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawBackgroundEffect null filter");
@@ -285,13 +270,13 @@ void RSPropertyDrawableUtils::DrawBackgroundEffect(RSPaintFilterCanvas* canvas, 
     auto clipIBounds = canvas->GetDeviceClipBounds();
     auto filter = std::static_pointer_cast<RSDrawingFilter>(rsFilter);
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
-     // Optional use cacheManager to draw filter
-     if (RSProperties::FilterCacheEnabled && cacheManager != nullptr && !canvas->GetDisableFilterCache()) {
-         cacheManager->SetForceCache(forceCache);
-         auto&& data = cacheManager->GeneratedCachedEffectData(*canvas, filter, clipIBounds, clipIBounds);
-         canvas->SetEffectData(data);
-         return;
-     }
+    // Optional use cacheManager to draw filter
+    if (RSProperties::FilterCacheEnabled && cacheManager != nullptr && !canvas->GetDisableFilterCache()) {
+        cacheManager->SetForceCache(forceCache);
+        auto&& data = cacheManager->GeneratedCachedEffectData(*canvas, filter, clipIBounds, clipIBounds);
+        canvas->SetEffectData(data);
+        return;
+    }
 #endif
     auto imageRect = clipIBounds;
     auto imageSnapshot = surface->GetImageSnapshot(imageRect);
@@ -656,8 +641,8 @@ Drawing::Path RSPropertyDrawableUtils::CreateShadowPath(const std::shared_ptr<RS
 void RSPropertyDrawableUtils::DrawShadow(Drawing::Canvas* canvas, Drawing::Path& path, const float& offsetX,
     const float& offsetY, const float& elevation, const bool& isFilled, Color spotColor)
 {
-    Drawing::AutoCanvasRestore acr(*canvas, true);
     CeilMatrixTrans(canvas);
+    Drawing::AutoCanvasRestore acr(*canvas, true);
     if (!isFilled) {
         canvas->ClipPath(path, Drawing::ClipOp::DIFFERENCE, true);
     }
@@ -699,18 +684,12 @@ void RSPropertyDrawableUtils::DrawUseEffect(RSPaintFilterCanvas* canvas)
     Drawing::Rect srcRect = dstRect;
     srcRect.Offset(-effectData->cachedRect_.GetLeft(), -effectData->cachedRect_.GetTop());
     canvas->DrawImageRect(*effectData->cachedImage_, srcRect, dstRect,
-                         Drawing::SamplingOptions(), Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
+        Drawing::SamplingOptions(), Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
     canvas->DetachBrush();
 }
 
 void RSPropertyDrawableUtils::BeginBlendMode(RSPaintFilterCanvas& canvas, int blendMode, int blendModeApplyType)
 {
-    if (!canvas.HasOffscreenLayer() && RSPropertiesPainter::IsDangerousBlendMode(blendMode - 1, blendModeApplyType)) {
-        Drawing::SaveLayerOps maskLayerRec(nullptr, nullptr, 0);
-        canvas.SaveLayer(maskLayerRec);
-        ROSEN_LOGD("Dangerous offscreen blendmode may produce transparent pixels, add extra offscreen here.");
-    }
-
     // fast blend mode
     if (blendModeApplyType == static_cast<int>(RSColorBlendApplyType::FAST)) {
         canvas.SetBlendMode({ blendMode - 1 }); // map blendMode to SkBlendMode
@@ -718,8 +697,10 @@ void RSPropertyDrawableUtils::BeginBlendMode(RSPaintFilterCanvas& canvas, int bl
     }
 
     // save layer mode
-    CeilMatrixTrans(&canvas);
-
+    auto matrix = canvas.GetTotalMatrix();
+    matrix.Set(Drawing::Matrix::TRANS_X, std::ceil(matrix.Get(Drawing::Matrix::TRANS_X)));
+    matrix.Set(Drawing::Matrix::TRANS_Y, std::ceil(matrix.Get(Drawing::Matrix::TRANS_Y)));
+    canvas.SetMatrix(matrix);
     Drawing::Brush blendBrush_;
     blendBrush_.SetAlphaF(canvas.GetAlpha());
     blendBrush_.SetBlendMode(static_cast<Drawing::BlendMode>(blendMode - 1)); // map blendMode to Drawing::BlendMode
@@ -730,12 +711,11 @@ void RSPropertyDrawableUtils::BeginBlendMode(RSPaintFilterCanvas& canvas, int bl
     canvas.SetAlpha(1.0f);
 }
 
-void RSPropertyDrawableUtils::EndBlendMode(RSPaintFilterCanvas& canvas, int blendModeApplyType)
+void RSPropertyDrawableUtils::EndBlendMode(RSPaintFilterCanvas& canvas)
 {
-    // RSRenderNodeDrawable will do other necessary work (restore canvas & env), we only need to restore alpha
-    if (blendModeApplyType != static_cast<int>(RSColorBlendApplyType::FAST)) {
-        canvas.RestoreAlpha();
-    }
+    canvas.RestoreEnv();
+    canvas.RestoreAlpha();
+    canvas.Restore();
 }
 
 Color RSPropertyDrawableUtils::CalculateInvertColor(const Color& backgroundColor)

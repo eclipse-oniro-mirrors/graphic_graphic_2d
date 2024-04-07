@@ -216,6 +216,7 @@ private:
 
     bool BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node);
     bool AfterUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node);
+    void UpdateSurfaceRenderNodeRotate(RSSurfaceRenderNode& node);
     void UpdateSurfaceDirtyAndGlobalDirty();
     void CollectFilterInfoAndUpdateDirty(RSRenderNode& node);
     RectI GetVisibleEffectDirty(RSRenderNode& node) const;
@@ -323,8 +324,6 @@ private:
     bool CheckIfUIFirstSurfaceContentReusable(std::shared_ptr<RSSurfaceRenderNode>& node, bool& isAssigned);
     // currently classify surface assigned subthread specific dirty case for preparation
     void ClassifyUIFirstSurfaceDirtyStatus(RSSurfaceRenderNode& node);
-    // judge if surfacenode satisfies async subthread rendering conditions for uifirst
-    void UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancestorNodeHasAnimation);
 
     void PrepareTypesOfSurfaceRenderNodeBeforeUpdate(RSSurfaceRenderNode& node);
     void PrepareTypesOfSurfaceRenderNodeAfterUpdate(RSSurfaceRenderNode& node);
