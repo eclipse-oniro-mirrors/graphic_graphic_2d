@@ -209,6 +209,10 @@ public:
     Vector4f GetOutlineRadius() const;
     const std::shared_ptr<RSBorder>& GetOutline() const;
 
+    void SetForegroundEffectRadius(const float foregroundEffectRadius);
+    float GetForegroundEffectRadius() const;
+    bool IsForegroundEffectRadiusValid() const;
+
     // filter properties
     void SetBackgroundFilter(const std::shared_ptr<RSFilter>& backgroundFilter);
     void SetLinearGradientBlurPara(const std::shared_ptr<RSLinearGradientBlurPara>& para);
@@ -435,6 +439,7 @@ private:
     std::shared_ptr<RSLightSource> lightSourcePtr_ = nullptr;
     std::shared_ptr<RSIlluminated> illuminatedPtr_ = nullptr;
 
+    float foregroundEffectRadius_ = 0.f;
     std::shared_ptr<RSFilter> backgroundFilter_ = nullptr;
     std::shared_ptr<RSLinearGradientBlurPara> linearGradientBlurPara_ = nullptr;
     std::shared_ptr<EmitterUpdater> emitterUpdater_ = nullptr;
