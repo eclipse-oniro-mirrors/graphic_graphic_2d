@@ -186,7 +186,7 @@ RSUniRenderVisitor::RSUniRenderVisitor()
 #endif
     RSTagTracker::UpdateReleaseResourceEnabled(RSSystemProperties::GetReleaseResourceEnabled());
     isScreenRotationAnimating_ = RSSystemProperties::GetCacheEnabledForRotation();
-    isSubSurfaceEnabled_ = RSSystemProperties::GetSubSurfaceEnabled();
+    isSubSurfaceEnabled_ = RSSystemProperties::GetSubSurfaceEnabled() && RSSystemProperties::IsPhoneType();
     isSkipCanvasNodeOutOfScreen_ = RSSystemParameters::GetSkipCanvasNodeOutofScreenEnabled();
 #if defined(RS_ENABLE_DRIVEN_RENDER)
     if (RSDrivenRenderManager::GetInstance().GetDrivenRenderEnabled()) {
@@ -2248,6 +2248,13 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode ScreenManager is nullptr");
         return;
     }
+    ScreenInfo curScreenInfo = screenManager->QueryScreenInfo(node.GetScreenId());
+    // skip frame according to skipFrameInterval value of SetScreenSkipFrameInterval interface
+    if (node.SkipFrame(curScreenInfo.skipFrameInterval)) {
+        RS_TRACE_NAME("SkipFrame, screenId:" + std::to_string(node.GetScreenId()));
+        return;
+    }
+
     constexpr int ROTATION_NUM = 4;
     auto screenRotation = node.GetScreenRotation();
     if (RSSystemProperties::IsFoldScreenFlag() && node.GetScreenId() == 0) {
@@ -3883,13 +3890,9 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     }
 #endif
     if (isUIFirst_ && isSubThread_) {
-        bool isFirstLevelSurface = !RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node.GetParent().lock());
-        if (isSubSurfaceEnabled_) {
-            isFirstLevelSurface = node.IsFirstLevelSurfaceNode();
-        }
         if (auto parentNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(node.GetParent().lock()) ||
             (SceneBoardJudgement::IsSceneBoardEnabled() && (node.IsLeashWindow() || (node.IsAppWindow() &&
-            isFirstLevelSurface)))) {
+            node.IsFirstLevelNode())))) {
             UpdateCacheSurface(node);
             return;
         }
