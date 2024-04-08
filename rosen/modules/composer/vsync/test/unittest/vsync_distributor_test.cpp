@@ -273,7 +273,7 @@ HWTEST_F(VSyncDistributorTest, GetVSyncConnectionInfos001, Function | MediumTest
 * Type: Function
 * Rank: Important(2)
 * EnvConditions: N/A
-* CaseDescription: 1. call SetFrameIsRender
+* CaseDescription: 1. call SetFrameIsRender with render is true
  */
 HWTEST_F(VSyncDistributorTest, SetFrameIsRender001, Function | MediumTest| Level3)
 {
@@ -285,7 +285,7 @@ HWTEST_F(VSyncDistributorTest, SetFrameIsRender001, Function | MediumTest| Level
 * Type: Function
 * Rank: Important(2)
 * EnvConditions: N/A
-* CaseDescription: 1. call SetFrameIsRender
+* CaseDescription: 1. call SetFrameIsRender with render is false
  */
 HWTEST_F(VSyncDistributorTest, SetFrameIsRender002, Function | MediumTest| Level3)
 {
