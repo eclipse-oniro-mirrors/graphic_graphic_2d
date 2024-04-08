@@ -9,7 +9,6 @@
 #define RSFontArguments_DEFINED
 
 #include <cstdint>
-
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
@@ -25,7 +24,6 @@ struct FontArguments {
     };
 
     /** Specify a palette to use and overrides for palette entries.
-     *
      *  `overrides` is a list of pairs of palette entry index and color.
      *  The overriden palette entries will use the associated color.
      *  Override pairs with palette entry indices out of range will not be applied.
@@ -42,57 +40,53 @@ struct FontArguments {
     };
 
     FontArguments()
-            : fCollectionIndex(0)
-            , fVariationDesignPosition{nullptr, 0}
-            , fPalette{0, nullptr, 0} {}
+            : collectionIndex_(0)
+            , variationDesignPosition_{nullptr, 0}
+            , palette_{0, nullptr, 0} {}
 
     /** Specify the index of the desired font.
-     *
      *  Font formats like ttc, dfont, cff, cid, pfr, t42, t1, and fon may actually be indexed
      *  collections of fonts.
      */
     FontArguments& SetCollectionIndex(int collectionIndex) {
-        fCollectionIndex = collectionIndex;
+        collectionIndex_ = collectionIndex;
         return *this;
     }
 
     /** Specify a position in the variation design space.
-     *
      *  Any axis not specified will use the default value.
      *  Any specified axis not actually present in the font will be ignored.
-     *
      *  @param position not copied. The value must remain valid for life of SkFontArguments.
      */
     FontArguments& SetVariationDesignPosition(VariationPosition position) {
-        fVariationDesignPosition.coordinates = position.coordinates;
-        fVariationDesignPosition.coordinateCount = position.coordinateCount;
+        variationDesignPosition_.coordinates = position.coordinates;
+        variationDesignPosition_.coordinateCount = position.coordinateCount;
         return *this;
     }
 
     int GetCollectionIndex() const {
-        return fCollectionIndex;
+        return collectionIndex_;
     }
 
     VariationPosition GetVariationDesignPosition() const {
-        return fVariationDesignPosition;
+        return variationDesignPosition_;
     }
 
     FontArguments& SetPalette(Palette palette) {
-        fPalette.index = palette.index;
-        fPalette.overrides = palette.overrides;
-        fPalette.overrideCount = palette.overrideCount;
+        palette_.index = palette.index;
+        palette_.overrides = palette.overrides;
+        palette_.overrideCount = palette.overrideCount;
         return *this;
     }
 
-    Palette GetPalette() const { return fPalette; }
+    Palette GetPalette() const { return palette_; }
 
 private:
-    int fCollectionIndex;
-    VariationPosition fVariationDesignPosition;
-    Palette fPalette;
+    int collectionIndex_;
+    VariationPosition variationDesignPosition_;
+    Palette palette_;
 };
-}
-}
-}
-
-#endif
+} // namespace Drawing
+} // namespace Rosen
+} // namespace OHOS
+#endif //RSFontArguments_DEFINED

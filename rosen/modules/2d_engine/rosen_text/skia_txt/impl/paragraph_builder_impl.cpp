@@ -255,9 +255,9 @@ skt::TextStyle ParagraphBuilderImpl::ConvertTextStyleToSkStyle(const TextStyle& 
     skStyle.setFontArguments(MakeFontArguments(fv));
 /***************************************************************/
 
-    if (!txt.fontVariations.GetAxisValues().empty()) {
-        skStyle.setFontArguments(MakeFontArguments(txt.fontVariations));
-    }
+    // if (!txt.fontVariations.GetAxisValues().empty()) {
+    //     skStyle.setFontArguments(MakeFontArguments(txt.fontVariations));
+    // }
 
     skStyle.resetShadows();
     for (const TextShadow& txtShadow : txt.textShadows) {
