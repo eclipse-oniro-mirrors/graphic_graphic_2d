@@ -15,6 +15,7 @@
 
 #include <cstdint>
 #include <scoped_bytrace.h>
+#include <unordered_set>
 #include "rs_trace.h"
 #include "hdi_output.h"
 #include "metadata_helper.h"
@@ -185,6 +186,26 @@ int32_t HdiOutput::CreateLayer(uint64_t surfaceId, const LayerInfoPtr &layerInfo
         layerIdMap_[layerId] = layer;
     }
     surfaceIdMap_[surfaceId] = layer;
+
+    // DISPLAY ENGINE
+    uint32_t ret = 0;
+    std::vector<std::string> validKeys{};
+    ret = device_->GetSupportedLayerPerFrameParameterKey(validKeys);
+    if (ret != 0) {
+        HLOGD("GetSupportedLayerPreFrameParameter Fail! ret = %{public}d", ret);
+        return GRAPHIC_DISPLAY_SUCCESS;
+    }
+    const std::string GENERIC_METADATA_KEY_ARSR_PRE_NEEDED = "ArsrDoEnhance";
+    if (std::find(validKeys.begin(), validKeys.end(), GENERIC_METADATA_KEY_ARSR_PRE_NEEDED) != validKeys.end()) {
+        if (CheckIfDoArsrPre(layerInfo)) {
+            const std::vector<int8_t> valueBlob{static_cast<int8_t>(1)};
+            ret = device_->SetLayerPerFrameParameter(screenId_, layerId,
+                                                     GENERIC_METADATA_KEY_ARSR_PRE_NEEDED, valueBlob);
+        }
+        if (ret != 0) {
+            HLOGD("SetLayerPerFrameParameter Fail! ret = %{public}d", ret);
+        }
+    }
 
     return GRAPHIC_DISPLAY_SUCCESS;
 }
@@ -424,6 +445,38 @@ void HdiOutput::SetBufferColorSpace(sptr<SurfaceBuffer>& buffer, const std::vect
     if (MetadataHelper::SetColorSpaceType(buffer, targetColorSpace) != GSERROR_OK) {
         HLOGE("HdiOutput::SetBufferColorSpace set metadata to buffer failed");
     }
+}
+
+// DISPLAY ENGINE
+bool HdiOutput::CheckIfDoArsrPre(const LayerInfoPtr &layerInfo)
+{
+    static const std::unordered_set<GraphicPixelFormat> yuvFormats {
+        GRAPHIC_PIXEL_FMT_YUV_422_I,
+        GRAPHIC_PIXEL_FMT_YCBCR_422_SP,
+        GRAPHIC_PIXEL_FMT_YCRCB_422_SP,
+        GRAPHIC_PIXEL_FMT_YCBCR_420_SP,
+        GRAPHIC_PIXEL_FMT_YCRCB_420_SP,
+        GRAPHIC_PIXEL_FMT_YCBCR_422_P,
+        GRAPHIC_PIXEL_FMT_YCRCB_422_P,
+        GRAPHIC_PIXEL_FMT_YCBCR_420_P,
+        GRAPHIC_PIXEL_FMT_YCRCB_420_P,
+        GRAPHIC_PIXEL_FMT_YUYV_422_PKG,
+        GRAPHIC_PIXEL_FMT_UYVY_422_PKG,
+        GRAPHIC_PIXEL_FMT_YVYU_422_PKG,
+        GRAPHIC_PIXEL_FMT_VYUY_422_PKG,
+    };
+
+    static const std::unordered_set<std::string> videoLayers {
+        "xcomponentIdSurface",
+        "componentIdSurface",
+    };
+
+    if ((yuvFormats.count(static_cast<GraphicPixelFormat>(layerInfo->GetBuffer()->GetFormat())) > 0) ||
+        (videoLayers.count(layerInfo->GetSurface()->GetName()) > 0)) {
+        return true;
+    }
+
+    return false;
 }
 
 int32_t HdiOutput::FlushScreen(std::vector<LayerPtr> &compClientLayers)
