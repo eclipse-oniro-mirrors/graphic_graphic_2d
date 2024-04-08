@@ -108,7 +108,7 @@ enum class RSModifierType : int16_t {
     ILLUMINATED_BORDER_WIDTH,      // 81
     ILLUMINATED_TYPE,              // 82
     BLOOM,                         // 83
-    FOREGROUND_EFFECT_RADIUS       // 84
+    FOREGROUND_EFFECT_RADIUS,      // 84
     DYNAMIC_DIM_DEGREE,            // 85
     CUSTOM,                        // 86
     EXTENDED,                      // 87
