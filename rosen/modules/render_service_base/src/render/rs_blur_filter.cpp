@@ -59,11 +59,6 @@ std::string RSBlurFilter::GetDescription()
 
 std::string RSBlurFilter::GetDetailedDescription()
 {
-    std::optional<Vector2f> greyCoef = greyCoef_;
-    if (greyCoef == std::nullopt) {
-        greyCoef->x_ = 0.0;
-        greyCoef->y_ = 0.0;
-    }
     return "RSBlurFilterBlur, radius: " + std::to_string(blurRadiusX_) + " sigma" +
         ", greyCoef1: " + std::to_string(greyCoef_ == std::nullopt ? 0.0f : greyCoef_->x_) +
         ", greyCoef2: " + std::to_string(greyCoef_ == std::nullopt ? 0.0f : greyCoef_->y_);
