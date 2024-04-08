@@ -100,8 +100,8 @@ void HgmConfigCallbackManager::RegisterHgmRefreshRateUpdateCallback(
     if (callback == nullptr) {
         if (refreshRateUpdateCallbacks_.find(pid) != refreshRateUpdateCallbacks_.end()) {
                 refreshRateUpdateCallbacks_.erase(pid);
+                HGM_LOGD("refreshRateUpdateCallbacks unregister succ, remove pid %{public}u", pid);
         }
-        HGM_LOGD("refreshRateUpdateCallbacks unregister succ, remove pid %{public}u", pid);
         return;
     }
     refreshRateUpdateCallbacks_[pid] = callback;
