@@ -3447,6 +3447,7 @@ void RSRenderNode::OnSync()
 
     if (drawCmdListNeedSync_) {
         std::swap(stagingDrawCmdList_, drawCmdList_);
+        isDrawCmdListEmpty_ = drawCmdList_.empty();
         stagingDrawCmdList_.clear();
         drawCmdIndex_ = stagingDrawCmdIndex_;
         drawCmdListNeedSync_ = false;

@@ -567,6 +567,11 @@ public:
 
     void SetOccludedStatus(bool occluded);
 
+    bool IsCmdListEmpty() const
+    {
+        return isDrawCmdListEmpty_;
+    }
+
 protected:
     virtual void OnApplyModifiers() {}
 
@@ -816,6 +821,7 @@ private:
     };
     bool addedToPendingSyncList_ = false;
     bool drawCmdListNeedSync_ = false;
+    bool isDrawCmdListEmpty_ = true; // access by render thread only
     bool uifirstNeedSync_ = false; // both cmdlist&param
     bool uifirstSkipPartialSync_ = false;
     DrawCmdIndex uifirstDrawCmdIndex_;
