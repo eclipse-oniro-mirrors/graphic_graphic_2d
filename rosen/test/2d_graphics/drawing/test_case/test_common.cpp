@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 #include "test_common.h"
+
 #include <fcntl.h>
+
 #include "image/image.h"
 #include "image_packer.h"
 #include "utils/log.h"
@@ -40,7 +42,7 @@ int TestCommon::PackingPixmap(std::shared_ptr<OHOS::Media::PixelMap> pixmap, std
         return RET_FAILED;
     }
 
-    std::string path = "/data/test/" + fileName + ".jpg";
+    std::string path = "/data/test/" + fileName + ".png";
     int32_t fileDes = open(path.c_str(), O_CREAT | O_RDWR);
     if (fileDes <= 0) {
         Log("failed to open");
@@ -48,7 +50,7 @@ int TestCommon::PackingPixmap(std::shared_ptr<OHOS::Media::PixelMap> pixmap, std
     }
 
     OHOS::Media::PackOption option;
-    option.format = "image/jpeg";
+    option.format = "image/png";
     uint32_t result = imagePacker.StartPacking(fileDes, option);
     if (result != 0) {
         Log("failed to StartPacking");
