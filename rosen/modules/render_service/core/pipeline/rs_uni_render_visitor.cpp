@@ -2579,7 +2579,7 @@ void RSUniRenderVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
         bool isSubTreeNeedPrepare = node.IsSubTreeNeedPrepare(filterInGlobal_) || ForcePrepareSubTree();
         isSubTreeNeedPrepare ? QuickPrepareChildren(node) :
             node.SubTreeSkipPrepare(*curSurfaceDirtyManager_, curDirty_, dirtyFlag_, prepareClipRect_);
-        PostPrepare(node);
+        PostPrepare(node, !isSubTreeNeedPrepare);
     } else {
         node.UpdateChildrenOutOfRectFlag(false);
         PrepareChildren(node);
