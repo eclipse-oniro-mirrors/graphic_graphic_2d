@@ -47,7 +47,7 @@ private:
 
 class RS_EXPORT FontVariations {
 public:
-    void SetAxisValue(std::string tag, float value);
+    void SetAxisValue(const std::string& tag, float value);
     const std::map<std::string, float>& GetAxisValues() const;
     bool operator ==(const FontVariations& rhs) const;
     void Clear();
@@ -114,7 +114,7 @@ struct TextStyle {
     bool isSymbolGlyph = false;
     HMSymbolTxt symbol;
     double baseLineShift = 0.0;
-    bool isPlaceholder = false;    
+    bool isPlaceholder = false;
 };
 } // namespace Rosen
 } // namespace OHOS

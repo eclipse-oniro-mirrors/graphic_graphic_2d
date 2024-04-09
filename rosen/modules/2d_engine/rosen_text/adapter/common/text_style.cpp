@@ -55,7 +55,7 @@ void FontFeatures::Clear()
     featureMap_.clear();
 }
 
-void FontVariations::SetAxisValue(std::string tag, float value)
+void FontVariations::SetAxisValue(const std::string& tag, float value)
 {
     axis_[tag] = value;
 }
