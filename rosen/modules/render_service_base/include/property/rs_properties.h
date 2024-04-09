@@ -286,6 +286,7 @@ public:
         const std::optional<Drawing::Rect>& clipRect);
     bool UpdateGeometryByParent(const std::shared_ptr<RSRenderNode>& parent,
         bool needParentOffset, const std::optional<Drawing::Rect>& clipRect);
+    RectF GetLocalBoundsAndFramesRect() const;
     RectF GetBoundsRect() const;
 
     bool IsGeoDirty() const;

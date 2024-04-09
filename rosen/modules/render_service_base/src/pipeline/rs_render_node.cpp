@@ -801,11 +801,14 @@ bool RSRenderNode::IsOnlyBasicGeoTransform() const
 void RSRenderNode::SubTreeSkipPrepare(RSDirtyRegionManager& dirtymanager, bool isDirty, bool accumGeoDirty,
     const RectI& clipRect)
 {
+    // [planning] Prev and current dirty rect need to be joined only when accumGeoDirty is true.
+    auto dirtyRect = absChildrenRect_;
     if (HasChildrenOutOfRect() && (isDirty || clipAbsDrawRectChange_)) {
         if (auto geoPtr = GetRenderProperties().GetBoundsGeometry()) {
             absChildrenRect_ = geoPtr->MapAbsRect(childrenRect_.ConvertTo<float>());
+            dirtyRect = dirtyRect.JoinRect(absChildrenRect_);
         }
-        dirtymanager.MergeDirtyRect(clipRect.IntersectRect(absChildrenRect_));
+        dirtymanager.MergeDirtyRect(clipRect.IntersectRect(dirtyRect));
     }
     SetGeoUpdateDelay(accumGeoDirty);
 }
@@ -1164,7 +1167,7 @@ void RSRenderNode::UpdateSelfDrawRect()
 {
     // empty rect would not join and doesn't need to check
     auto& properties = GetRenderProperties();
-    selfDrawRect_ = properties.GetBoundsRect().ConvertTo<int>();
+    selfDrawRect_ = properties.GetLocalBoundsAndFramesRect().ConvertTo<int>();
     if (auto drawRegion = properties.GetDrawRegion()) {
         selfDrawRect_ = selfDrawRect_.JoinRect((*drawRegion).ConvertTo<int>());
     }
