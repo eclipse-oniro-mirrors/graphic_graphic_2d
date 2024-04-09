@@ -65,6 +65,7 @@ ohos_executable("drawing_engine_sample") {
     "drawing_engine/drawing_surface",
     "$graphic_2d_root/rosen/modules/composer/hdi_backend/include",
     "$graphic_2d_root/utils/sync_fence/export",
+    "$graphic_2d_root/interfaces/inner_api/common",
     "$graphic_2d_root/rosen/include/common",
     "$graphic_2d_root/rosen/modules/render_service_base/src/platform/ohos/backend",
     "$graphic_2d_root/rosen/modules/render_service_base/src",
@@ -87,11 +88,7 @@ ohos_executable("drawing_engine_sample") {
     "benchmarks/benchmark_dcl",
   ]
 
-  deps = [
-    "$graphic_2d_root:libsurface",
-    "$graphic_2d_root/rosen/modules/composer:libcomposer",
-    "$graphic_2d_root/utils:sync_fence",
-  ]
+  deps = [ "$graphic_2d_root/rosen/modules/composer:libcomposer" ]
 
   deps += [ "//third_party/skia:skia_ohos" ]
 
@@ -169,14 +166,13 @@ ohos_executable("drawing_sample_canvaskit0310") {
   ]
 
   deps = [
-    "$graphic_2d_root:libsurface",
     "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics_canvaskit0310",
     "$graphic_2d_root/rosen/modules/composer:libcomposer",
     "$graphic_2d_root/utils:libgraphic_utils",
-    "$graphic_2d_root/utils:sync_fence",
   ]
 
   external_deps = [
+    "graphic_surface:surface",
     "hilog:libhilog",
     "ipc:ipc_core",
   ]
@@ -215,10 +211,7 @@ ohos_executable("drawing_sample_replayer") {
     "$graphic_2d_root/rosen/modules/render_service_client/core",
   ]
 
-  deps = [
-    "$graphic_2d_root:libsurface",
-    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
-  ]
+  deps = [ "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client" ]
 
   public_deps = libgl
   defines = gpu_defines
@@ -244,6 +237,7 @@ ohos_executable("drawing_sample_replayer") {
   ]
   external_deps = [
     "c_utils:utils",
+    "graphic_surface:surface",
     "ipc:ipc_core",
     "window_manager:libdm",
   ]
