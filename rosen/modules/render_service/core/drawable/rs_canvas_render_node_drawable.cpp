@@ -42,6 +42,9 @@ RSRenderNodeDrawable::Ptr RSCanvasRenderNodeDrawable::OnGenerate(std::shared_ptr
  */
 void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
+    if (renderNode_->IsCmdListEmpty()) { // skip empty RenderNode
+        return;
+    }
     auto& params = renderNode_->GetRenderParams();
     if (!params) {
         RS_LOGE("params is nullptr");
@@ -70,6 +73,9 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
  */
 void RSCanvasRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
 {
+    if (renderNode_->IsCmdListEmpty()) { // skip empty RenderNode
+        return;
+    }
     auto& params = renderNode_->GetRenderParams();
     if (!params) {
         return;
