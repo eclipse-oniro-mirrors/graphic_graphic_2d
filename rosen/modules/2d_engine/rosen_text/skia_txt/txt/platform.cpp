@@ -25,7 +25,7 @@ namespace SPText {
 std::vector<std::string> GetDefaultFontFamilies()
 {
 #ifdef OHOS_STANDARD_SYSTEM
-    return { "MiSans-VF", "OhosThemeFont", "HarmonyOS-Sans" };
+    return { "OhosThemeFont", "HarmonyOS-Sans" };
 #else
     return "sans-serif";
 #endif

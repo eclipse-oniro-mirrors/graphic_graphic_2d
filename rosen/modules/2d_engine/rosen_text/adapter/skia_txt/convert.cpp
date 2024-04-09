@@ -172,6 +172,12 @@ SPText::TextStyle Convert(const TextStyle& style)
     for (const auto& [tag, value] : style.fontFeatures.GetFontFeatures()) {
         textStyle.fontFeatures.SetFeature(RemoveQuotes(tag), value);
     }
+
+    if (!style.fontVariations.GetAxisValues().empty()) {
+        for (const auto& [axis, value] : style.fontVariations.GetAxisValues()) {
+            textStyle.fontVariations.SetAxisValue(axis, value);
+        }
+    }
     return textStyle;
 }
 } // namespace AdapterTxt

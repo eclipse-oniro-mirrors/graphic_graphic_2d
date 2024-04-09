@@ -249,15 +249,9 @@ skt::TextStyle ParagraphBuilderImpl::ConvertTextStyleToSkStyle(const TextStyle& 
         skStyle.addFontFeature(SkString(ff.first.c_str()), ff.second);
     }
 
-/***************************************************************/
-    FontVariations fv;
-    fv.SetAxisValue("wght", txt.letterSpacing);//wdht
-    skStyle.setFontArguments(MakeFontArguments(fv));
-/***************************************************************/
-
-    // if (!txt.fontVariations.GetAxisValues().empty()) {
-    //     skStyle.setFontArguments(MakeFontArguments(txt.fontVariations));
-    // }
+    if (!txt.fontVariations.GetAxisValues().empty()) {
+        skStyle.setFontArguments(MakeFontArguments(txt.fontVariations));
+    }
 
     skStyle.resetShadows();
     for (const TextShadow& txtShadow : txt.textShadows) {

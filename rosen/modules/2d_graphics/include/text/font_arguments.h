@@ -40,16 +40,14 @@ struct FontArguments {
     };
 
     FontArguments()
-            : collectionIndex_(0)
-            , variationDesignPosition_{nullptr, 0}
-            , palette_{0, nullptr, 0} {}
+        : fontCollectionIndex_(0), variationDesignPosition_{nullptr, 0}, palette_{0, nullptr, 0} {}
 
     /** Specify the index of the desired font.
      *  Font formats like ttc, dfont, cff, cid, pfr, t42, t1, and fon may actually be indexed
      *  collections of fonts.
      */
-    FontArguments& SetCollectionIndex(int collectionIndex) {
-        collectionIndex_ = collectionIndex;
+    FontArguments& SetCollectionIndex(int fontCollectionIndex) {
+        fontCollectionIndex_ = fontCollectionIndex;
         return *this;
     }
 
@@ -65,7 +63,7 @@ struct FontArguments {
     }
 
     int GetCollectionIndex() const {
-        return collectionIndex_;
+        return fontCollectionIndex_;
     }
 
     VariationPosition GetVariationDesignPosition() const {
@@ -82,7 +80,7 @@ struct FontArguments {
     Palette GetPalette() const { return palette_; }
 
 private:
-    int collectionIndex_;
+    int fontCollectionIndex_;
     VariationPosition variationDesignPosition_;
     Palette palette_;
 };
