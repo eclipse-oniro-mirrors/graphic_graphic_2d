@@ -20,7 +20,7 @@
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
-/** Represents a set of actual arguments for a font. */
+// Represents a set of actual arguments for a font.
 struct FontArguments {
     struct VariationPosition {
         struct Coordinate {
