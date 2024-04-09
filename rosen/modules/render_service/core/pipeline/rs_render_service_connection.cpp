@@ -565,7 +565,9 @@ void RSRenderServiceConnection::TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCap
                 }
                 ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
             };
-            if (!isProcOnBgThread) {
+            if (isProcOnBgThread) {
+                RSBackgroundThread::Instance().PostTask(captureTask);
+            } else {
                 mainThread_->PostTask(captureTask);
             }
         } else {
