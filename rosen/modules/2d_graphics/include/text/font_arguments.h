@@ -53,7 +53,7 @@ FontArguments(): fontCollectionIndex_(0), variationDesignPosition_{nullptr, 0}, 
 {
 }
 
-/* 
+/*
  * Specify the index of the desired font.
  *  Font formats like ttc, dfont, cff, cid, pfr, t42, t1, and fon may actually be indexed
  *  collections of fonts.
