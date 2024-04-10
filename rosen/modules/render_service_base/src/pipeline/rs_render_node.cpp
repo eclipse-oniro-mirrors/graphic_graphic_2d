@@ -1180,7 +1180,7 @@ void RSRenderNode::UpdateBufferDirtyRegion()
         auto rect = surfaceNode->GetDamageRegion();
         auto matrix = surfaceNode->GetBufferRelMatrix();
         auto bufferDirtyRect = GetRenderProperties().GetBoundsGeometry()->MapRect(
-            RectF(rect.x, rect.y, rect.w, rect.h), matrix);
+            RectF(rect.x, rect.y, rect.w, rect.h), matrix).ConvertTo<float>();
         // The buffer's dirtyRect should not be out of the scope of the node's dirtyRect
         selfDrawRect_ = bufferDirtyRect.IntersectRect(selfDrawRect_);
         RS_OPTIONAL_TRACE_NAME_FMT("RSRenderNode id: %" PRIu64 ", buffer size [%d,%d], "
