@@ -23,6 +23,7 @@
 #include "utils/log.h"
 #include "draw/color.h"
 #include "text_style.h"
+#include "typography_create.h"
 #include "typography_style.h"
 #include <codecvt>
 
@@ -263,6 +264,8 @@ bool GetDecorationFromJS(napi_env env, napi_value argValue, TextStyle& textStyle
 bool GetTextStyleFromJS(napi_env env, napi_value argValue, TextStyle& textStyle);
 
 bool GetParagraphStyleFromJS(napi_env env, napi_value argValue, TypographyStyle& pographyStyle);
+
+bool GetPlaceholderSpanFromJS(napi_env env, napi_value argValue, PlaceholderSpan& placeholderSpan);
 
 } // namespace OHOS::Rosen
 #endif // OHOS_JS_TEXT_UTILS_H
