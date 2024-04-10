@@ -78,7 +78,7 @@ void RSPointLightManager::PrepareLight()
     for (const auto& illuminatedWeakPtr : dirtyIlluminatedList_) {
         auto illuminatedNodePtr = illuminatedWeakPtr.lock();
         if (illuminatedNodePtr) {
-            illuminatedNodePtr->GetRenderProperties().GetIlluminated()->ClearLightSource();
+            illuminatedNodePtr->GetRenderProperties().GetIlluminated()->ClearLightSourcesAndPosMap();
         }
     }
     PrepareLight(lightSourceNodeMap_, dirtyIlluminatedList_, false);
@@ -112,10 +112,10 @@ void RSPointLightManager::CheckIlluminated(
     const std::shared_ptr<RSRenderNode>& lightSourceNode, const std::shared_ptr<RSRenderNode>& illuminatedNode)
 {
     const auto& geoPtr = (illuminatedNode->GetRenderProperties().GetBoundsGeometry());
-    if (!geoPtr || geoPtr->IsEmpty()) {
+    auto lightSourcePtr = lightSourceNode->GetRenderProperties().GetLightSource();
+    if (!geoPtr || geoPtr->IsEmpty() || !lightSourcePtr) {
         return;
     }
-    auto lightSourcePtr = lightSourceNode->GetRenderProperties().GetLightSource();
     RectI illuminatedAbsRect = geoPtr->GetAbsRect();
     int radius = static_cast<int>(lightSourcePtr->GetLightRadius());
     auto illuminatedRange = RectI(illuminatedAbsRect.left_ - radius, illuminatedAbsRect.top_ - radius,
@@ -133,7 +133,8 @@ void RSPointLightManager::CheckIlluminated(
     auto illuminatedRootNodeId = illuminatedNode->GetInstanceRootNodeId();
     auto lightSourceRootNodeId = lightSourceNode->GetInstanceRootNodeId();
     if (inIlluminatedRange && illuminatedRootNodeId == lightSourceRootNodeId) {
-        illuminatedNode->GetRenderProperties().GetIlluminated()->AddLightSource(lightSourcePtr);
+        auto lightPos = CalculateLightPosForIlluminated(lightSourcePtr, geoPtr);
+        illuminatedNode->GetRenderProperties().GetIlluminated()->AddLightSourcesAndPos(lightSourcePtr, lightPos);
         illuminatedNode->SetDirty();
     }
 }
