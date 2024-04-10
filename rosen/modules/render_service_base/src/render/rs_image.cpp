@@ -128,7 +128,7 @@ RectF ApplyImageFitSwitch(ImageParameter &imageParameter, ImageFit imageFit_, Re
                 imageParameter.dstH = std::min(imageParameter.frameH, imageParameter.frameW / imageParameter.ratio);
             }
             break;
-        case ImageFit::SNAPSHOT:
+        case ImageFit::FIT_SNAPSHOT:
             imageParameter.dstH = imageParameter.frameW / imageParameter.ratio;
             if (imageParameter.frameH < imageParameter.dstH) {
                 tempRectF.SetAll(0, 0, std::ceil(imageParameter.dstW), std::ceil(imageParameter.dstH));
