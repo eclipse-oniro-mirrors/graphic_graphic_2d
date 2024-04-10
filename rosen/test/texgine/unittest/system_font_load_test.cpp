@@ -262,19 +262,7 @@ HWTEST_F(SystemFontLoadTest, SystemFontLoad17, TestSize.Level1)
 HWTEST_F(SystemFontLoadTest, SystemFontLoad18, TestSize.Level1)
 {
     InitSystemFontMockVars({});
-    auto typeface = Typeface::MakeFromFile("/system/fonts/NotoSansJP-VF.ttf");
-    EXPECT_TRUE(typeface != nullptr);
-}
-
-/**
- * @tc.name: SystemFontLoad
- * @tc.desc: Verify the SystemFontLoad
- * @tc.type:FUNC
- */
-HWTEST_F(SystemFontLoadTest, SystemFontLoad19, TestSize.Level1)
-{
-    InitSystemFontMockVars({});
-    auto typeface = Typeface::MakeFromFile("/system/fonts/NotoSansKR-VF.ttf");
+    auto typeface = Typeface::MakeFromFile("/system/fonts/NotoSansCJK-Regular.ttc");
     EXPECT_TRUE(typeface != nullptr);
 }
 
