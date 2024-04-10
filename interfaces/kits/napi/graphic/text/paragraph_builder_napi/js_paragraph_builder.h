@@ -16,11 +16,12 @@
 #ifndef OHOS_ROSEN_JS_PARAGRAPH_BUILDER_H
 #define OHOS_ROSEN_JS_PARAGRAPH_BUILDER_H
 
+#include "font_collection.h"
 #include <native_engine/native_engine.h>
 #include <native_engine/native_value.h>
-#include "typography_create.h"
 #include "text_style.h"
-#include "font_collection.h"
+#include "typography_create.h"
+
 
 namespace OHOS::Rosen {
 class JsParagraphBuilder final {
@@ -48,8 +49,6 @@ private:
     static thread_local napi_ref constructor_;
     std::unique_ptr<TypographyCreate> typographyCreate_ = nullptr;
     std::shared_ptr<FontCollection> fontCollection_ = nullptr;
-    
 };
-
 } // namespace OHOS::Rosen
 #endif // OHOS_ROSEN_JS_PARAGRAPH_BUILDER_H

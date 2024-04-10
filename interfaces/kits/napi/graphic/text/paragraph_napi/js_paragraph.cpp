@@ -168,7 +168,6 @@ napi_value JsParagraph::CreateJsTypography(napi_env env, std::unique_ptr<Typogra
     napi_value result = nullptr;
     napi_status status = napi_get_reference_value(env, constructor_, &constructor);
     if (status == napi_ok) {
-        //paragraphCurrent_ = std::move(typography);
         g_Typography = std::move(typography);
         status = napi_new_instance(env, constructor, 0, nullptr, &result);
         if (status == napi_ok) {

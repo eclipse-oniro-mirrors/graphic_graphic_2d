@@ -25,7 +25,7 @@
 namespace OHOS::Rosen {
 class JsParagraph final {
 public:
-    JsParagraph(std::shared_ptr<Typography> paragraph);
+    explicit JsParagraph(std::shared_ptr<Typography> paragraph);
     ~JsParagraph();
 
     static napi_value Init(napi_env env, napi_value exportObj);
