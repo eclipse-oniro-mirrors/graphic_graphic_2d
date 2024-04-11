@@ -55,7 +55,7 @@ void RSRenderNodeShadowDrawable::Draw(Drawing::Canvas& canvas)
     }
 
     SetSkipShadow(false);
-    DrawRangeImpl(canvas, rect, 0, shadowIndex);
+    DrawRangeImpl(canvas, rect, 0, shadowIndex + 1);
 }
 
 void RSRenderNodeShadowDrawable::DumpDrawableTree(int32_t depth, std::string& out) const
