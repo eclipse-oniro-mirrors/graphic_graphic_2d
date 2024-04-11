@@ -135,6 +135,7 @@ void RSRenderNodeDrawableAdapter::DrawRangeImpl(
                 drawCmdList_[i](&canvas, &rect);
             }
         }
+        return;
     }
 
     for (auto i = start; i < end; i++) {

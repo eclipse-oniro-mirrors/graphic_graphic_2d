@@ -412,6 +412,7 @@ std::unordered_set<RSDrawableSlot> RSDrawable::CalculateDirtySlots(
         }
     }
 
+    // Step 1.4: if corner radius changed, update border and outline
     if (dirtyTypes.test(static_cast<size_t>(RSModifierType::CORNER_RADIUS))) {
         // border may should be updated with corner radius
         if (drawableVec[static_cast<size_t>(RSDrawableSlot::BORDER)]) {
