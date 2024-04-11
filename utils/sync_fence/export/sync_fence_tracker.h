@@ -32,13 +32,20 @@ public:
 
 private:
     const uint32_t SYNC_TIME_OUT = 3000;
+    const unit32_t GPU_SUBHEALTH_EVENT_LIMIT = 200;
+    const unit32_t GPU_SUBHEALTH_EVENT_THRESHOLD = 12;
+    const std::string GPU_LOAD = "/sys/class/devfreq/gpufreq/gpu_scene_aware/utilisation";
     const std::string threadName_;
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> handler_ = nullptr;
     std::atomic<uint32_t> fencesQueued_;
     std::atomic<uint32_t> fencesSignaled_;
-
+    unit32_t gpuSubhealthEventNum = 0;
+    unit32_t gpuSubhealthEventDay;
     void Loop(const sptr<SyncFence>& fence);
+    bool CheckGpuSubhealthEventLimit();
+    void ReportEventGpuSubhealth(unit64_t duration);
+    inline double GetDoubleValue(const std::string& fileName);
 };
 }
 #endif // UTILS_INCLUDE_SYNC_FENCE_TRACKER_H

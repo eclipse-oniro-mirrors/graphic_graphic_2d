@@ -53,6 +53,7 @@ ohos_shared_library("sync_fence") {
     "hilog:libhilog",
     "hitrace:hitrace_meter",
     "ipc:ipc_single",
+    "hisysevent:libhisysevent",
   ]
 
   innerapi_tags = [
