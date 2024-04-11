@@ -42,20 +42,16 @@ void RSDrawFrame::SetRenderThreadParams(std::unique_ptr<RSRenderThreadParams>& s
 void RSDrawFrame::RenderFrame()
 {
     RS_TRACE_NAME_FMT("RenderFrame");
-    RSJankStats::GetInstance().SetStartTime();
-    unirenderInstance_.SetDiscardJankFrames(false);
+    JankStatsRenderFrameStart();
     RSUifirstManager::Instance().ProcessSubDoneNode();
     Sync();
+    const bool doJankStats = IsUniRenderAndOnVsync();
+    JankStatsRenderFrameAfterSync(doJankStats);
     RSUifirstManager::Instance().PostUifistSubTasks();
-    unirenderInstance_.UpdateDisplayNodeScreenId();
     UnblockMainThread();
     Render();
     ReleaseSelfDrawingNodeBuffer();
-    RSJankStats::GetInstance().SetOnVsyncStartTime(
-        unirenderInstance_.GetRSRenderThreadParams()->GetOnVsyncStartTime(),
-        unirenderInstance_.GetRSRenderThreadParams()->GetOnVsyncStartTimeSteady());
-    RSJankStats::GetInstance().SetEndTime(
-        unirenderInstance_.GetDiscardJankFrames(), unirenderInstance_.GetDynamicRefreshRate());
+    JankStatsRenderFrameEnd(doJankStats);
 }
 
 void RSDrawFrame::ReleaseSelfDrawingNodeBuffer()
@@ -90,6 +86,23 @@ void RSDrawFrame::PostAndWait()
             });
 
             frameCV_.wait(frameLock, [this] {return canUnblockMainThread;});
+        }
+    }
+}
+
+void RSDrawFrame::PostDirectCompositionJankStats(const JankDurationParams& rsParams)
+{
+    RS_TRACE_NAME_FMT("PostDirectCompositionJankStats, parallel type %d", static_cast<int>(rsParallelType_));
+    switch (rsParallelType_) {
+        case RsParallelType::RS_PARALLEL_TYPE_SYNC: // wait until render finish in render thread
+        case RsParallelType::RS_PARALLEL_TYPE_SINGLE_THREAD: // render in main thread
+        case RsParallelType::RS_PARALLEL_TYPE_ASYNC: // wait until sync finish in render thread
+        default: {
+            bool isReportTaskDelayed = unirenderInstance_.IsMainLooping();
+            auto task = [rsParams, isReportTaskDelayed]() -> void {
+                RSJankStats::GetInstance().HandleDirectComposition(rsParams, isReportTaskDelayed);
+            };
+            unirenderInstance_.PostTask(task);
         }
     }
 }
@@ -129,5 +142,40 @@ void RSDrawFrame::Render()
     unirenderInstance_.Render();
 }
 
+void RSDrawFrame::JankStatsRenderFrameStart()
+{
+    unirenderInstance_.SetDiscardJankFrames(false);
+    unirenderInstance_.SetSkipJankAnimatorFrame(false);
+}
+
+bool RSDrawFrame::IsUniRenderAndOnVsync() const
+{
+    const auto& renderThreadParams = unirenderInstance_.GetRSRenderThreadParams();
+    if (!renderThreadParams) {
+        return false;
+    }
+    return renderThreadParams->IsUniRenderAndOnVsync();
+}
+
+void RSDrawFrame::JankStatsRenderFrameAfterSync(bool doJankStats)
+{
+    if (!doJankStats) {
+        return;
+    }
+    RSJankStats::GetInstance().SetStartTime();
+    unirenderInstance_.UpdateDisplayNodeScreenId();
+}
+
+void RSDrawFrame::JankStatsRenderFrameEnd(bool doJankStats)
+{
+    if (!doJankStats) {
+        return;
+    }
+    RSJankStats::GetInstance().SetOnVsyncStartTime(
+        unirenderInstance_.GetRSRenderThreadParams()->GetOnVsyncStartTime(),
+        unirenderInstance_.GetRSRenderThreadParams()->GetOnVsyncStartTimeSteady());
+    RSJankStats::GetInstance().SetEndTime(unirenderInstance_.GetSkipJankAnimatorFrame(),
+        unirenderInstance_.GetDiscardJankFrames(), unirenderInstance_.GetDynamicRefreshRate());
+}
 } // namespace Rosen
 } // namespace OHOS 

@@ -103,6 +103,14 @@ public:
     {
         discardJankFrames_.store(discardJankFrames);
     }
+    bool GetSkipJankAnimatorFrame() const
+    {
+        return skipJankAnimatorFrame_.load();
+    }
+    void SetSkipJankAnimatorFrame(bool skipJankAnimatorFrame)
+    {
+        skipJankAnimatorFrame_.store(skipJankAnimatorFrame);
+    }
     void UpdateDisplayNodeScreenId();
     uint32_t GetDynamicRefreshRate() const;
 
@@ -142,6 +150,7 @@ private:
     // for statistic of jank frames
     std::atomic_bool mainLooping_ = false;
     std::atomic_bool discardJankFrames_ = false;
+    std::atomic_bool skipJankAnimatorFrame_ = false;
     ScreenId displayNodeScreenId_ = 0;
 };
 } // namespace Rosen

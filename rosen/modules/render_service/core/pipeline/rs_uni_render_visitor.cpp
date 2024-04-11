@@ -3543,7 +3543,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             RS_TRACE_NAME("DisplayNode skip");
             GpuDirtyRegion::GetInstance().AddSkipProcessFramesNumberForXpower(node.GetScreenId());
 #ifdef OHOS_PLATFORM
-            RSJankStats::GetInstance().SetSkipDisplayNode();
+            RSMainThread::Instance()->SetSkipJankAnimatorFrame(true);
 #endif
             resetRotate_ = CheckIfNeedResetRotate();
             if (!IsHardwareComposerEnabled()) {
