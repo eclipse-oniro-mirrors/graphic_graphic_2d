@@ -117,10 +117,11 @@ bool JsFontCollection::SpiltAbsoluteFontPath(std::string& absolutePath)
     }
     std::string head = absolutePath.substr(0, iter);
     if ((head == "file" && absolutePath.size() > FILE_HEAD_LENGTH)) {
-        absolutePath = absolutePath.substr(iter + 3);
+        absolutePath = absolutePath.substr(iter + 3); // 3 means skip "://"
         // the file format is like "file://system/fonts...",
         return true;
     }
+
     return false;
 }
 
@@ -161,8 +162,8 @@ bool JsFontCollection::GetFontFileProperties(uint8_t* data, size_t& datalen, con
         return false;
     }
     ifs.close();
-
     data = reinterpret_cast<uint8_t*>(buffer.get());
+
     return true;
 }
 
@@ -180,6 +181,7 @@ bool JsFontCollection::AddTypefaceInformation(Drawing::Typeface& typeface, const
             return false;
         }
     }
+
     return true;
 }
 
@@ -198,7 +200,6 @@ napi_value JsFontCollection::OnLoadFont(napi_env env, napi_callback_info info)
     napi_typeof(env, argv[1], &valueType);
     if (valueType != napi_object) {
         ConvertFromJsValue(env, argv[1], familySrc);
-
     } else {
         // Resource type data process center, not yet realized
         return nullptr;
@@ -206,6 +207,7 @@ napi_value JsFontCollection::OnLoadFont(napi_env env, napi_callback_info info)
     if (!SpiltAbsoluteFontPath(familySrc)) {
         return nullptr;
     }
+
     uint8_t* rawData = nullptr;
     size_t rawdatalen = 0;
     if (!GetFontFileProperties(rawData, rawdatalen, familySrc)) {
@@ -219,6 +221,7 @@ napi_value JsFontCollection::OnLoadFont(napi_env env, napi_callback_info info)
     if (!AddTypefaceInformation(*typeface, familyName)) {
         return nullptr;
     }
+
     return NapiGetUndefined(env);
 }
 } // namespace OHOS::Rosen
