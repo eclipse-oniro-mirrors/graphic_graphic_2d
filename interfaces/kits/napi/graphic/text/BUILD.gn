@@ -30,6 +30,7 @@ config("local_text") {
 
   include_dirs = [
     "../text",
+    "../drawing",
     "$graphic_2d_root/rosen/modules/2d_engine/rosen_text/export/rosen_text",
     "$graphic_2d_root/rosen/modules/2d_graphics/include",
   ]
@@ -57,6 +58,7 @@ ohos_shared_library("text_napi_impl") {
     "js_text_init.cpp",
     "js_text_utils.cpp",
     "paragraph_style_napi/js_paragraphstyle.cpp",
+    "paragraph_napi/js_paragraph.cpp",
   ]
 
   configs = [
@@ -67,6 +69,7 @@ ohos_shared_library("text_napi_impl") {
   deps = [
     "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
     "$graphic_2d_root/rosen/modules/texgine:libtexgine_source",
+    "$graphic_2d_root/interfaces/kits/napi/graphic/drawing:drawing_napi_impl",
   ]
 
   external_deps = [
