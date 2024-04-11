@@ -177,6 +177,13 @@ public:
     void Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const override;
 };
 
+class RSPixelMapMaskDrawable : public RSMaskDrawable {
+public:
+    explicit RSPixelMapMaskDrawable(std::shared_ptr<RSMask> mask);
+    ~RSPixelMapMaskDrawable() override = default;
+    void Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const override;
+};
+
 // ============================================================================
 // Shadow
 class RSShadowBaseDrawable : public RSPropertyDrawable {
@@ -258,6 +265,17 @@ public:
 };
 
 // ============================================================================
+// DynamicDim
+class RSDynamicDimDrawable : public RSPropertyDrawable {
+public:
+    explicit RSDynamicDimDrawable() = default;
+    ~RSDynamicDimDrawable() override = default;
+    void Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const override;
+    static RSPropertyDrawable::DrawablePtr Generate(const RSRenderContent& context);
+    bool Update(const RSRenderContent& context) override;
+};
+
+// ============================================================================
 // BackgroundFilter
 class RSBackgroundFilterDrawable : public RSPropertyDrawable {
 public:
@@ -268,11 +286,11 @@ public:
     bool Update(const RSRenderContent& content) override;
 };
 
-// ForegroundFilter
-class RSForegroundFilterDrawable : public RSPropertyDrawable {
+// CompositingFilter
+class RSCompositingFilterDrawable : public RSPropertyDrawable {
 public:
-    explicit RSForegroundFilterDrawable() = default;
-    ~RSForegroundFilterDrawable() override = default;
+    explicit RSCompositingFilterDrawable() = default;
+    ~RSCompositingFilterDrawable() override = default;
     static RSPropertyDrawable::DrawablePtr Generate(const RSRenderContent& content);
     void Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const override;
     bool Update(const RSRenderContent& content) override;

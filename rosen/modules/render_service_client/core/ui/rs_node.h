@@ -120,6 +120,7 @@ public:
 
     bool IsUniRenderEnabled() const;
     bool IsRenderServiceNode() const;
+    void SetTakeSurfaceForUIFlag();
 
     static std::vector<std::shared_ptr<RSAnimation>> Animate(const RSAnimationTimingProtocol& timingProtocol,
         const RSAnimationTimingCurve& timingCurve, const PropertyCallback& callback,
@@ -223,12 +224,13 @@ public:
     void SetEnvForegroundColorStrategy(ForegroundColorStrategyType colorType);
     void SetParticleParams(
         std::vector<ParticleParams>& particleParams, const std::function<void()>& finishCallback = nullptr);
-    void SetParticleDrawRegion(std::vector<ParticleParams>& particleParams);
+    void SetEmitterUpdater(const std::shared_ptr<EmitterUpdater>& para);
     void SetForegroundColor(uint32_t colorValue);
     void SetBackgroundColor(uint32_t colorValue);
     void SetBackgroundShader(const std::shared_ptr<RSShader>& shader);
 
     void SetBgImage(const std::shared_ptr<RSImage>& image);
+    void SetBgImageInnerRect(const Vector4f& innerRect);
     void SetBgImageSize(float width, float height);
     void SetBgImageWidth(float width);
     void SetBgImageHeight(float height);
@@ -254,11 +256,13 @@ public:
     void SetOutlineStyle(const Vector4<BorderStyle>& style);
     void SetOutlineRadius(const Vector4f& radius);
 
+    void SetForegroundEffectRadius(const float blurRadius);
     void SetBackgroundFilter(const std::shared_ptr<RSFilter>& backgroundFilter);
     void SetFilter(const std::shared_ptr<RSFilter>& filter);
     void SetLinearGradientBlurPara(const std::shared_ptr<RSLinearGradientBlurPara>& para);
     void SetDynamicLightUpRate(const float rate);
     void SetDynamicLightUpDegree(const float lightUpDegree);
+    void SetDynamicDimDegree(const float dimDegree);
     void SetGreyCoef(const Vector2f greyCoef);
     void SetCompositingFilter(const std::shared_ptr<RSFilter>& compositingFilter);
 
@@ -328,6 +332,8 @@ public:
 
     void SetLightIntensity(float lightIntensity);
 
+    void SetLightColor(uint32_t lightColorValue);
+
     void SetLightPosition(const Vector4f& lightPosition);
 
     void SetLightPosition(float positionX, float positionY, float positionZ);
@@ -362,6 +368,10 @@ public:
 
     void SetFrameNodeInfo(int32_t id, std::string tag);
 
+    virtual void SetTextureExport(bool isTextureExportNode);
+
+    void SyncTextureExport(bool isTextureExportNode);
+
     int32_t GetFrameNodeId();
 
     std::string GetFrameNodeTag();
@@ -375,6 +385,12 @@ public:
 
     // key: symbolSpanID, value:symbol animation node list
     std::unordered_map<uint64_t, std::list<SharedPtr>> canvasNodesListMap;
+
+    void SetInstanceId(int32_t instanceId);
+    int32_t GetInstanceId() const
+    {
+        return instanceId_;
+    }
 protected:
     explicit RSNode(bool isRenderServiceNode, bool isTextureExportNode = false);
     explicit RSNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode = false);
@@ -407,12 +423,14 @@ private:
     static void InitUniRenderEnabled();
     NodeId id_;
     NodeId parent_ = 0;
+    int32_t instanceId_ = INSTANCE_ID_UNDEFINED;
     int32_t frameNodeId_ = -1;
     std::string frameNodeTag_;
     std::string nodeName_ = "";
     std::vector<NodeId> children_;
     void SetParent(NodeId parent);
     void RemoveChildById(NodeId childId);
+    virtual void CreateTextureExportRenderNodeInRT() {};
 
     bool AnimationCallback(AnimationId animationId, AnimationCallbackEvent event);
     bool HasPropertyAnimation(const PropertyId& id);
@@ -427,6 +445,7 @@ private:
     void MarkAllExtendModifierDirty();
     void ResetExtendModifierDirty();
     void UpdateImplicitAnimator();
+    void SetParticleDrawRegion(std::vector<ParticleParams>& particleParams);
 
     // Planning: refactor RSUIAnimationManager and remove this method
     void ClearAllModifiers();

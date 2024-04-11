@@ -185,9 +185,10 @@ public:
 
     virtual Range<size_t> GetActualTextRange(int lineNumber, bool includeSpaces) = 0;
 
-    virtual std::vector<LineMetrics>& GetLineMetrics() = 0;
+    virtual std::vector<LineMetrics>& GetLineMetrics(std::vector<size_t>& startIndexs) = 0;
 
-    virtual bool GetLineMetricsAt(int lineNumber, skia::textlayout::LineMetrics* lineMetrics) const = 0;
+    virtual bool GetLineMetricsAt(
+        int lineNumber, skia::textlayout::LineMetrics* lineMetrics, size_t& startIndex) const = 0;
 
     virtual void SetAnimation(
         std::function<bool(const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)>& animationFunc) = 0;
@@ -196,6 +197,8 @@ public:
 
     virtual OHOS::Rosen::Drawing::FontMetrics MeasureText() = 0;
     virtual OHOS::Rosen::Drawing::FontMetrics GetFontMetricsResult(const OHOS::Rosen::SPText::TextStyle& textStyle) = 0;
+    virtual bool GetLineFontMetrics(const size_t lineNumber,
+        size_t& charNumber, std::vector<Drawing::FontMetrics>& fontMetrics) = 0;
 };
 } // namespace SPText
 } // namespace Rosen

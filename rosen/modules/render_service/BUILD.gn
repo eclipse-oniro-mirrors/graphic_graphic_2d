@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+# Copyright (c) 2021-2024 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -155,12 +155,11 @@ ohos_shared_library("librender_service") {
   include_dirs = [
     "core",
     "core/round_corner_display",
-    "$graphic_2d_root/frameworks/surface/include",
-    "$graphic_2d_root/interfaces/inner_api/surface",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/modules/2d_graphics",
     "$graphic_2d_root/rosen/modules/composer/vsync/include",
     "$graphic_2d_root/rosen/modules/composer/hdi_backend/include",
+    "$graphic_2d_root/rosen/modules/frame_report/include",
     "$graphic_2d_root/rosen/modules/render_frame_trace/include",
     "$graphic_2d_root/rosen/modules/render_service_base/include",
     "$graphic_2d_root/rosen/modules/render_service_base/src",
@@ -187,8 +186,8 @@ ohos_shared_library("librender_service") {
   }
 
   deps = [
-    "$graphic_2d_root:libsurface",
     "$graphic_2d_root/rosen/modules/composer:libcomposer",
+    "$graphic_2d_root/rosen/modules/frame_report:librs_frame_report",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager:libhyper_graphic_manager",
     "$graphic_2d_root/rosen/modules/render_frame_trace:render_frame_trace",
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
@@ -267,6 +266,7 @@ ohos_shared_library("librender_service") {
     "drivers_interface_display:display_commontype_idl_headers",
     "eventhandler:libeventhandler",
     "graphic_surface:frame_report",
+    "graphic_surface:surface",
     "hicollie:libhicollie",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -274,6 +274,7 @@ ohos_shared_library("librender_service") {
     "hiview:libucollection_utility",
     "init:libbegetutil",
     "ipc:ipc_core",
+    "qos_manager:qos",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "window_manager:libwsutils",
@@ -312,6 +313,7 @@ ohos_shared_library("librender_service") {
 
   if (accessibility_enable) {
     external_deps += [ "accessibility:accessibilityconfig" ]
+    external_deps += [ "accessibility:accessibility_common" ]
     defines += accessibility_defines
   }
 
@@ -349,19 +351,23 @@ ohos_executable("render_service") {
     cfi = true
     cfi_cross_dso = true
     debug = false
+    if (rosen_is_ohos) {
+      boundary_sanitize = true
+      integer_overflow = true
+      ubsan = true
+    }
   }
   sources = [ "core/main.cpp" ]
 
   include_dirs = [
     "core",
+    "$graphic_2d_root/interfaces/inner_api/common",
     "//commonlibrary/c_utils/base/include",
-    "$graphic_2d_root/frameworks/surface/include",
     "$graphic_2d_root/utils/color_manager/export",
   ]
 
   deps = [
     ":librender_service",
-    "$graphic_2d_root:libsurface",
     "$graphic_2d_root/rosen/modules/composer:libcomposer",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager:libhyper_graphic_manager",
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",

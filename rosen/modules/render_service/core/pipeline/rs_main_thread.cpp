@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <cstdint>
 #define EGL_EGLEXT_PROTOTYPES
 #include "pipeline/rs_main_thread.h"
 
@@ -54,7 +55,6 @@
 #include "pipeline/rs_base_render_util.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_divided_render_util.h"
-#include "pipeline/rs_frame_report.h"
 #include "pipeline/rs_render_engine.h"
 #include "pipeline/rs_render_service_visitor.h"
 #include "pipeline/rs_root_render_node.h"
@@ -78,12 +78,14 @@
 #include "render_context/memory_handler.h"
 #endif
 #include "render/rs_pixel_map_util.h"
+#include "rs_frame_report.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "transaction/rs_transaction_proxy.h"
 
 #include "xcollie/watchdog.h"
 
 #include "render_frame_trace.h"
+#include "render/rs_typeface_cache.h"
 
 #if defined(ACCESSIBILITY_ENABLE)
 #include "accessibility_config.h"
@@ -145,7 +147,6 @@ constexpr int32_t SIMI_VISIBLE_RATE = 2;
 constexpr int32_t DEFAULT_RATE = 1;
 constexpr int32_t INVISBLE_WINDOW_RATE = 10;
 constexpr int32_t SYSTEM_ANIMATED_SECNES_RATE = 2;
-constexpr int32_t MAX_MULTI_INSTANCE_PID_COUNT = 1;
 constexpr uint32_t WAIT_FOR_MEM_MGR_SERVICE = 100;
 constexpr uint32_t CAL_NODE_PREFERRED_FPS_LIMIT = 50;
 constexpr uint32_t EVENT_SET_HARDWARE_UTIL = 100004;
@@ -297,6 +298,10 @@ void RSMainThread::Init()
         Render();
         RS_PROFILER_ON_RENDER_END();
 
+        if (!hasMark_) {
+            SetFrameIsRender(true);
+        }
+        hasMark_ = false;
         // move rnv after mark rsnotrendering
         if (needRequestNextVsyncAnimate_ || rsVSyncDistributor_->HasPendingUIRNV()) {
             rsVSyncDistributor_->MarkRSAnimate();
@@ -321,6 +326,7 @@ void RSMainThread::Init()
 #ifdef RS_ENABLE_PARALLEL_UPLOAD
         RSUploadResourceThread::Instance().OnRenderEnd();
 #endif
+        RSTypefaceCache::Instance().HandleDelayDestroyQueue();
         mainLooping_.store(false);
         RS_PROFILER_ON_FRAME_END();
     };
@@ -331,6 +337,11 @@ void RSMainThread::Init()
             }
         };
     Drawing::DrawOpItem::SetBaseCallback(holdDrawingImagefunc);
+    static std::function<std::shared_ptr<Drawing::Typeface> (uint64_t)> customTypefaceQueryfunc =
+        [] (uint64_t globalUniqueId) -> std::shared_ptr<Drawing::Typeface> {
+            return RSTypefaceCache::Instance().GetDrawingTypefaceCache(globalUniqueId);
+        };
+    Drawing::DrawOpItem::SetTypefaceQueryCallBack(customTypefaceQueryfunc);
 
     isUniRender_ = RSUniRenderJudgement::IsUniRender();
     SetDeviceType();
@@ -374,7 +385,7 @@ void RSMainThread::Init()
     rsFrameRateLinker_ = std::make_shared<RSRenderFrameRateLinker>();
     conn->id_ = rsFrameRateLinker_->GetId();
     rsVSyncDistributor_->AddConnection(conn);
-    receiver_ = std::make_shared<VSyncReceiver>(conn, token->AsObject(), handler_);
+    receiver_ = std::make_shared<VSyncReceiver>(conn, token->AsObject(), handler_, "rs");
     receiver_->Init();
     if (isUniRender_) {
         uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
@@ -450,6 +461,14 @@ void RSMainThread::Init()
             if (!this->rsVSyncDistributor_->IsDVsyncOn()) {
                 RSMainThread::Instance()->RequestNextVSync();
             }
+        });
+    });
+    frameRateMgr_->touchMgr_->SetRSIdleUpdateCallback([](bool rsIdleTimerExpired) {
+        RSMainThread::Instance()->PostTask([rsIdleTimerExpired]() {
+            RS_TRACE_NAME_FMT("RSMainThread::RSTimerExpiredCallback Run rsIdleTimerExpiredFlag: %s",
+                rsIdleTimerExpired? "True":"False");
+            RSMainThread::Instance()->SetRSIdleTimerExpiredFlag(rsIdleTimerExpired);
+            RSMainThread::Instance()->RequestNextVSync();
         });
     });
     frameRateMgr_->Init(rsVSyncController_, appVSyncController_, vsyncGenerator_);
@@ -1099,10 +1118,6 @@ void RSMainThread::CollectInfoForHardwareComposer()
                 return;
             }
 
-            if (surfaceNode->IsRosenWeb()) {
-                hasRosenWebNode_ = true;
-            }
-
             // if hwc node is set on the tree this frame, mark its parent app node to be prepared
             auto appNodeId = surfaceNode->GetInstanceRootNodeId();
             if (surfaceNode->IsNewOnTree()) {
@@ -1463,7 +1478,6 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
         RS_TRACE_NAME_FMT("RSMainThread::ProcessHgmFrameRate pendingRefreshRate: %d", *pendingRefreshRate);
     }
 
-    frameRateMgr_-> HandleTempEvent("ROSEN_WEB", hasRosenWebNode_, OLED_120_HZ, OLED_120_HZ);
     // hgm warning: use IsLtpo instead after GetDisplaySupportedModes ready
     if (frameRateMgr_->GetCurScreenStrategyId().find("LTPO") == std::string::npos) {
         frameRateMgr_->UniProcessDataForLtps(idleTimerExpiredFlag_);
@@ -1472,11 +1486,29 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
         frameRateMgr_->UniProcessDataForLtpo(timestamp, rsFrameRateLinker_, appFrameLinkers,
             idleTimerExpiredFlag_, rsVSyncDistributor_->IsDVsyncOn());
     }
+
+    // if RS get here means it has frame coming in
+    frameRateMgr_->touchMgr_->ResetRSTimer(frameRateMgr_->GetCurScreenId());
+    frameRateMgr_->touchMgr_->HandleRSFrameUpdate(rsIdleTimerExpiredFlag_);
+
+    if (rsVSyncDistributor_->IsDVsyncOn()) {
+        auto pendingRefreshRate = frameRateMgr_->GetPendingRefreshRate();
+        if (pendingRefreshRate != nullptr) {
+            hgmCore.SetPendingScreenRefreshRate(*pendingRefreshRate);
+            frameRateMgr_->ResetPendingRefreshRate();
+        }
+    }
 }
 
 bool RSMainThread::GetParallelCompositionEnabled()
 {
     return doParallelComposition_;
+}
+
+void RSMainThread::SetFrameIsRender(bool isRender)
+{
+    hasMark_ = true;
+    rsVSyncDistributor_->SetFrameIsRender(isRender);
 }
 
 void RSMainThread::ColorPickerRequestVsyncIfNeed()
@@ -1541,6 +1573,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
             return;
         } else {
             RS_LOGD("RSMainThread::Render nothing to update");
+            RSMainThread::Instance()->SetFrameIsRender(false);
             for (auto& node: hardwareEnabledNodes_) {
                 if (!node->IsHardwareForcedDisabled()) {
                     node->MarkCurrentFrameHardwareEnabled();
@@ -1596,7 +1629,6 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     isDirty_ = false;
     forceUpdateUniRenderFlag_ = false;
     idleTimerExpiredFlag_ = false;
-    hasRosenWebNode_ = false;
 }
 
 pid_t RSMainThread::GetDesktopPidForRotationScene() const
@@ -1762,12 +1794,12 @@ RSVisibleLevel RSMainThread::GetRegionVisibleLevel(const Occlusion::Region& curR
 }
 
 void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::SharedPtr>& curAllSurfaces,
-    VisibleData& dstCurVisVec, std::map<uint32_t, RSVisibleLevel>& dstPidVisMap)
+    VisibleData& dstCurVisVec, std::map<NodeId, RSVisibleLevel>& dstVisMapForVsyncRate)
 {
     Occlusion::Region accumulatedRegion;
     VisibleData curVisVec;
     OcclusionRectISet occlusionSurfaces;
-    std::map<uint32_t, RSVisibleLevel> pidVisMap;
+    std::map<NodeId, RSVisibleLevel> visMapForVsyncRate;
     bool hasFilterCacheOcclusion = false;
     bool filterCacheOcclusionEnabled = RSSystemParameters::GetFilterCacheOcculusionEnabled();
     for (auto it = curAllSurfaces.rbegin(); it != curAllSurfaces.rend(); ++it) {
@@ -1784,12 +1816,12 @@ void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::Sha
             RSVisibleLevel visibleLevel = GetRegionVisibleLevel(curRegion, subResult);
             RS_LOGD("%{public}s nodeId[%{public}" PRIu64 "] visibleLevel[%{public}d]",
                 __func__, curSurface->GetId(), visibleLevel);
-            curSurface->SetVisibleRegionRecursive(subResult, curVisVec, pidVisMap, true, visibleLevel,
+            curSurface->SetVisibleRegionRecursive(subResult, curVisVec, visMapForVsyncRate, true, visibleLevel,
                 !systemAnimatedScenesList_.empty());
             curSurface->AccumulateOcclusionRegion(accumulatedRegion, curRegion, hasFilterCacheOcclusion, isUniRender_,
                 filterCacheOcclusionEnabled);
         } else {
-            curSurface->SetVisibleRegionRecursive({}, curVisVec, pidVisMap);
+            curSurface->SetVisibleRegionRecursive({}, curVisVec, visMapForVsyncRate);
             RS_LOGD("%{public}s nodeId[%{public}" PRIu64 "] visibleLevel[%{public}d]",
                 __func__, curSurface->GetId(), RSVisibleLevel::RS_INVISIBLE);
         }
@@ -1798,7 +1830,7 @@ void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::Sha
     // if there are valid filter cache occlusion, recalculate surfacenode visibleregionforcallback for WMS/QOS callback
     if (hasFilterCacheOcclusion && isUniRender_) {
         curVisVec.clear();
-        pidVisMap.clear();
+        visMapForVsyncRate.clear();
         occlusionSurfaces.clear();
         accumulatedRegion = {};
         for (auto it = curAllSurfaces.rbegin(); it != curAllSurfaces.rend(); ++it) {
@@ -1812,18 +1844,18 @@ void RSMainThread::CalcOcclusionImplementation(std::vector<RSBaseRenderNode::Sha
                 Occlusion::Region curRegion { occlusionRect };
                 Occlusion::Region subResult = curRegion.Sub(accumulatedRegion);
                 RSVisibleLevel visibleLevel = GetRegionVisibleLevel(curRegion, subResult);
-                curSurface->SetVisibleRegionRecursive(subResult, curVisVec, pidVisMap, false, visibleLevel,
+                curSurface->SetVisibleRegionRecursive(subResult, curVisVec, visMapForVsyncRate, false, visibleLevel,
                     !systemAnimatedScenesList_.empty());
                 curSurface->AccumulateOcclusionRegion(accumulatedRegion, curRegion, hasFilterCacheOcclusion,
                     isUniRender_, false);
             } else {
-                curSurface->SetVisibleRegionRecursive({}, curVisVec, pidVisMap, false);
+                curSurface->SetVisibleRegionRecursive({}, curVisVec, visMapForVsyncRate, false);
             }
         }
     }
 
     dstCurVisVec.insert(dstCurVisVec.end(), curVisVec.begin(), curVisVec.end());
-    dstPidVisMap.insert(pidVisMap.begin(), pidVisMap.end());
+    dstVisMapForVsyncRate.insert(visMapForVsyncRate.begin(), visMapForVsyncRate.end());
 }
 
 void RSMainThread::CalcOcclusion()
@@ -1903,59 +1935,37 @@ void RSMainThread::CalcOcclusion()
     }
     isReduceVSyncBySystemAnimatedScenes_ = false;
     VisibleData dstCurVisVec;
-    std::map<uint32_t, RSVisibleLevel> dstPidVisMap;
+    std::map<NodeId, RSVisibleLevel> dstVisMapForVsyncRate;
     for (auto& surfaces : curAllSurfacesInDisplay) {
-        CalcOcclusionImplementation(surfaces.second, dstCurVisVec, dstPidVisMap);
+        CalcOcclusionImplementation(surfaces.second, dstCurVisVec, dstVisMapForVsyncRate);
     }
 
     // Callback to WMS and QOS
     CallbackToWMS(dstCurVisVec);
-    SetVSyncRateByVisibleLevel(dstPidVisMap, curAllSurfaces);
+    SetVSyncRateByVisibleLevel(dstVisMapForVsyncRate, curAllSurfaces);
     // Callback for registered self drawing surfacenode
     SurfaceOcclusionCallback();
 }
 
-void RSMainThread::SetMultiInstancePidVSyncRate(std::map<uint32_t, RSVisibleLevel>& pidVisMap,
-    std::vector<RSBaseRenderNode::SharedPtr>& curAllSurfaces)
-{
-    std::map<uint32_t, int> multiInstancePidMap;
-    for (auto it = curAllSurfaces.rbegin(); it != curAllSurfaces.rend(); ++it) {
-        auto curSurface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
-        if (curSurface == nullptr || curSurface->GetDstRect().IsEmpty() || curSurface->IsLeashWindow()) {
-            continue;
-        }
-        uint32_t tmpPid = ExtractPid(curSurface->GetId());
-        multiInstancePidMap[tmpPid]++;
-    }
-    for (auto& iter : multiInstancePidMap) {
-        if (iter.second > MAX_MULTI_INSTANCE_PID_COUNT) {
-            pidVisMap[iter.first] = RSVisibleLevel::RS_ALL_VISIBLE;
-        }
-    }
-}
-
-bool RSMainThread::CheckSurfaceVisChanged(std::map<uint32_t, RSVisibleLevel>& pidVisMap,
+bool RSMainThread::CheckSurfaceVisChanged(std::map<NodeId, RSVisibleLevel>& visMapForVsyncRate,
     std::vector<RSBaseRenderNode::SharedPtr>& curAllSurfaces)
 {
     if (!systemAnimatedScenesList_.empty()) {
-        pidVisMap.clear();
+        visMapForVsyncRate.clear();
         for (auto it = curAllSurfaces.rbegin(); it != curAllSurfaces.rend(); ++it) {
             auto curSurface = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
             if (curSurface == nullptr || curSurface->GetDstRect().IsEmpty() || curSurface->IsLeashWindow()) {
                 continue;
             }
-            uint32_t tmpPid = ExtractPid(curSurface->GetId());
-            pidVisMap[tmpPid] = RSVisibleLevel::RS_SYSTEM_ANIMATE_SCENE;
+            visMapForVsyncRate[curSurface->GetId()] = RSVisibleLevel::RS_SYSTEM_ANIMATE_SCENE;
         }
         isReduceVSyncBySystemAnimatedScenes_ = true;
-    } else {
-        SetMultiInstancePidVSyncRate(pidVisMap, curAllSurfaces);
     }
-    bool isVisibleChanged = pidVisMap.size() != lastPidVisMap_.size();
+    bool isVisibleChanged = visMapForVsyncRate.size() != visMapForVsyncRate.size();
     if (!isVisibleChanged) {
-        auto iterCur = pidVisMap.begin();
-        auto iterLast = lastPidVisMap_.begin();
-        for (; iterCur != pidVisMap.end(); iterCur++, iterLast++) {
+        auto iterCur = visMapForVsyncRate.begin();
+        auto iterLast = lastVisMapForVsyncRate_.begin();
+        for (; iterCur != visMapForVsyncRate.end(); iterCur++, iterLast++) {
             if (iterCur->first != iterLast->first ||
                 iterCur->second != iterLast->second) {
                 isVisibleChanged = true;
@@ -1965,20 +1975,20 @@ bool RSMainThread::CheckSurfaceVisChanged(std::map<uint32_t, RSVisibleLevel>& pi
     }
 
     if (isVisibleChanged) {
-        lastPidVisMap_ = pidVisMap;
+        lastVisMapForVsyncRate_ = visMapForVsyncRate;
     }
     return isVisibleChanged;
 }
 
-void RSMainThread::SetVSyncRateByVisibleLevel(std::map<uint32_t, RSVisibleLevel>& pidVisMap,
+void RSMainThread::SetVSyncRateByVisibleLevel(std::map<NodeId, RSVisibleLevel>& visMapForVsyncRate,
     std::vector<RSBaseRenderNode::SharedPtr>& curAllSurfaces)
 {
-    if (!vsyncControlEnabled_ || !CheckSurfaceVisChanged(pidVisMap, curAllSurfaces) ||
+    if (!vsyncControlEnabled_ || !CheckSurfaceVisChanged(visMapForVsyncRate, curAllSurfaces) ||
         appVSyncDistributor_ == nullptr) {
         return;
     }
-    RS_TRACE_NAME_FMT("%s pidVisMapSize[%lu]", __func__, pidVisMap.size());
-    for (auto iter:pidVisMap) {
+    RS_TRACE_NAME_FMT("%s visMapForVsyncRateSize[%lu]", __func__, visMapForVsyncRate.size());
+    for (auto iter:visMapForVsyncRate) {
         if (iter.second == RSVisibleLevel::RS_SEMI_DEFAULT_VISIBLE) {
             appVSyncDistributor_->SetQosVSyncRate(iter.first, SIMI_VISIBLE_RATE);
         } else if (iter.second == RSVisibleLevel::RS_SYSTEM_ANIMATE_SCENE) {
@@ -2047,14 +2057,13 @@ void RSMainThread::SurfaceOcclusionCallback()
         float visibleAreaRatio = 0.0f;
         bool isOnTheTree = savedAppWindowNode_[listener.first].first->IsOnTheTree();
         if (isOnTheTree) {
-            const auto& property = savedAppWindowNode_[listener.first].first->GetRenderProperties();
+            const auto& property = savedAppWindowNode_[listener.first].second->GetRenderProperties();
             auto dstRect = property.GetBoundsGeometry()->GetAbsRect();
             if (dstRect.IsEmpty()) {
                 continue;
             }
             visibleAreaRatio = static_cast<float>(savedAppWindowNode_[listener.first].second->
-                GetVisibleRegionForCallBack().IntersectArea(dstRect)) /
-                static_cast<float>(dstRect.GetWidth() * dstRect.GetHeight());
+                GetVisibleRegionForCallBack().Area()) / static_cast<float>(dstRect.GetWidth() * dstRect.GetHeight());
             auto& partitionVector = std::get<2>(listener.second); // get tuple 2 partition points vector
             bool vectorEmpty = partitionVector.empty();
             if (vectorEmpty && (visibleAreaRatio > 0.0f)) {
@@ -2220,7 +2229,7 @@ void RSMainThread::Animate(uint64_t timestamp)
     });
     if (needPrintAnimationDFX && needRequestNextVsync && animationPids.size() > 0) {
         std::string pidList;
-        for (auto& pid : animationPids) {
+        for (const auto& pid : animationPids) {
             pidList += "[" + std::to_string(pid) + "]";
         }
         RS_TRACE_NAME_FMT("Animate from pid %s", pidList.c_str());
@@ -2872,6 +2881,7 @@ SystemAnimatedScenes RSMainThread::GetSystemAnimatedScenes()
 
 bool RSMainThread::CheckNodeHasToBePreparedByPid(NodeId nodeId, bool isClassifyByRoot)
 {
+    std::lock_guard<std::mutex> lock(context_->activeNodesInRootMutex_);
     if (context_->activeNodesInRoot_.empty() || nodeId == INVALID_NODEID) {
         return false;
     }
@@ -2881,13 +2891,13 @@ bool RSMainThread::CheckNodeHasToBePreparedByPid(NodeId nodeId, bool isClassifyB
         return std::any_of(context_->activeNodesInRoot_.begin(), context_->activeNodesInRoot_.end(),
             [pid](const auto& iter) { return ExtractPid(iter.first) == pid; });
     } else {
-        std::lock_guard<std::mutex> lock(context_->activeNodesInRootMutex_);
         return context_->activeNodesInRoot_.count(nodeId);
     }
 }
 
 bool RSMainThread::IsDrawingGroupChanged(RSRenderNode& cacheRootNode) const
 {
+    std::lock_guard<std::mutex> lock(context_->activeNodesInRootMutex_);
     auto iter = context_->activeNodesInRoot_.find(cacheRootNode.GetInstanceRootNodeId());
     if (iter != context_->activeNodesInRoot_.end()) {
         const auto& activeNodeIds = iter->second;
@@ -2914,6 +2924,7 @@ void RSMainThread::CheckAndUpdateInstanceContentStaticStatus(std::shared_ptr<RSS
         RS_LOGE("CheckAndUpdateInstanceContentStaticStatus instanceNode invalid.");
         return ;
     }
+    std::lock_guard<std::mutex> lock(context_->activeNodesInRootMutex_);
     auto iter = context_->activeNodesInRoot_.find(instanceNode->GetId());
     if (iter != context_->activeNodesInRoot_.end()) {
         instanceNode->UpdateSurfaceCacheContentStatic(iter->second);

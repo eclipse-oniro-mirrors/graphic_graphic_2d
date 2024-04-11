@@ -77,6 +77,16 @@ public:
         return rogWidth_;
     }
 
+    void SetRenderWindowsName(std::vector<std::string>& windowsName)
+    {
+        windowsName_ = windowsName;
+    }
+
+    std::vector<std::string>& GetRenderWindowName()
+    {
+        return windowsName_;
+    }
+
     uint32_t GetRogHeight() const
     {
         return rogHeight_;
@@ -264,12 +274,16 @@ public:
     }
 
     std::shared_ptr<Drawing::Image> GetCacheImgForCapture() {
-        std::unique_lock<std::mutex> lock(mtx_);
         return cacheImgForCapture_;
     }
     void SetCacheImgForCapture(std::shared_ptr<Drawing::Image> cacheImgForCapture) {
-        std::unique_lock<std::mutex> lock(mtx_);
         cacheImgForCapture_ = cacheImgForCapture;
+    }
+    std::shared_ptr<Drawing::Image> GetOffScreenCacheImgForCapture() {
+        return offScreenCacheImgForCapture_;
+    }
+    void SetOffScreenCacheImgForCapture(std::shared_ptr<Drawing::Image> offScreenCacheImgForCapture) {
+        offScreenCacheImgForCapture_ = offScreenCacheImgForCapture;
     }
     NodeId GetRootIdOfCaptureWindow() {
         return rootIdOfCaptureWindow_;
@@ -309,12 +323,14 @@ private:
     std::map<NodeId, RectI> lastFrameSurfacePos_;
     std::map<NodeId, RectI> currentFrameSurfacePos_;
     std::shared_ptr<RSDirtyRegionManager> dirtyManager_ = nullptr;
+    std::vector<std::string> windowsName_;
 
     std::vector<RSBaseRenderNode::SharedPtr> curAllSurfaces_;
     std::mutex mtx_;
 
     // Use in screen recording optimization
     std::shared_ptr<Drawing::Image> cacheImgForCapture_ = nullptr;
+    std::shared_ptr<Drawing::Image> offScreenCacheImgForCapture_ = nullptr;
     NodeId rootIdOfCaptureWindow_ = INVALID_NODEID;
 
     // Use in vulkan parallel rendering

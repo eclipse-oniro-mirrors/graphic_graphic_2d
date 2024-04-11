@@ -53,11 +53,17 @@ int32_t ParticleRenderParams::GetParticleCount() const
 
 int64_t ParticleRenderParams::GetLifeTimeStartValue() const
 {
+    if (emitterConfig_.lifeTime_.start_ > std::numeric_limits<uint64_t>::max() / NS_PER_MS) {
+        return std::numeric_limits<uint64_t>::max();
+    }
     return emitterConfig_.lifeTime_.start_ * NS_PER_MS;
 }
 
 int64_t ParticleRenderParams::GetLifeTimeEndValue() const
 {
+    if (emitterConfig_.lifeTime_.end_ > std::numeric_limits<uint64_t>::max() / NS_PER_MS) {
+        return std::numeric_limits<uint64_t>::max();
+    }
     return emitterConfig_.lifeTime_.end_ * NS_PER_MS;
 }
 
@@ -672,7 +678,8 @@ bool RSRenderParticle::IsAlive() const
     if (dead_ == true) {
         return false;
     }
-    if (particleParams_->GetLifeTimeStartValue() == -1 && particleParams_->GetLifeTimeEndValue() == -1) {
+    if (particleParams_->GetLifeTimeStartValue() == -1 * NS_PER_MS &&
+        particleParams_->GetLifeTimeEndValue() == -1 * NS_PER_MS) {
         return true;
     }
     return activeTime_ < lifeTime_;

@@ -192,8 +192,6 @@ public:
     void CountMem(int pid, MemoryGraphic& mem);
     void CountMem(std::vector<MemoryGraphic>& mems);
     void SetAppWindowNum(uint32_t num);
-    void SetMultiInstancePidVSyncRate(std::map<uint32_t, RSVisibleLevel>& pidVisMap,
-        std::vector<RSBaseRenderNode::SharedPtr>& curAllSurfaces);
     bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes);
     SystemAnimatedScenes GetSystemAnimatedScenes();
     void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow);
@@ -206,6 +204,10 @@ public:
     void SetIdleTimerExpiredFlag(bool flag)
     {
         idleTimerExpiredFlag_ = flag;
+    }
+    void SetRSIdleTimerExpiredFlag(bool flag)
+    {
+        rsIdleTimerExpiredFlag_ = flag;
     }
     std::shared_ptr<Drawing::Image> GetWatermarkImg();
     bool GetWatermarkFlag();
@@ -279,6 +281,8 @@ public:
     const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& GetSelfDrawingNodes() const;
     bool GetParallelCompositionEnabled();
     std::shared_ptr<HgmFrameRateManager> GetFrameRateMgr() { return frameRateMgr_; };
+
+    void SetFrameIsRender(bool isRender);
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -304,11 +308,11 @@ private:
     void UniRender(std::shared_ptr<RSBaseRenderNode> rootNode);
     bool CheckSurfaceNeedProcess(OcclusionRectISet& occlusionSurfaces, std::shared_ptr<RSSurfaceRenderNode> curSurface);
     void CalcOcclusionImplementation(std::vector<RSBaseRenderNode::SharedPtr>& curAllSurfaces,
-        VisibleData& dstCurVisVec, std::map<uint32_t, RSVisibleLevel>& dstPidVisMap);
+        VisibleData& dstCurVisVec, std::map<NodeId, RSVisibleLevel>& dstPidVisMap);
     void CalcOcclusion();
-    bool CheckSurfaceVisChanged(std::map<uint32_t, RSVisibleLevel>& pidVisMap,
+    bool CheckSurfaceVisChanged(std::map<NodeId, RSVisibleLevel>& pidVisMap,
         std::vector<RSBaseRenderNode::SharedPtr>& curAllSurfaces);
-    void SetVSyncRateByVisibleLevel(std::map<uint32_t, RSVisibleLevel>& pidVisMap,
+    void SetVSyncRateByVisibleLevel(std::map<NodeId, RSVisibleLevel>& pidVisMap,
         std::vector<RSBaseRenderNode::SharedPtr>& curAllSurfaces);
     void CallbackToWMS(VisibleData& curVisVec);
     void SendCommands();
@@ -449,7 +453,7 @@ private:
     mutable std::mutex hardwareThreadTaskMutex_;
     std::condition_variable hardwareThreadTaskCond_;
 
-    std::map<uint32_t, RSVisibleLevel> lastPidVisMap_;
+    std::map<NodeId, RSVisibleLevel> lastVisMapForVsyncRate_;
     VisibleData lastVisVec_;
     std::map<NodeId, uint64_t> lastDrawStatusMap_;
     std::vector<NodeId> curDrawStatusVec_;
@@ -521,6 +525,7 @@ private:
     std::string currentBundleName_ = "";
     bool forceUpdateUniRenderFlag_ = false;
     bool idleTimerExpiredFlag_ = false;
+    bool rsIdleTimerExpiredFlag_ = false;
     // for ui first
     std::mutex mutex_;
     std::queue<std::shared_ptr<Drawing::Surface>> tmpSurfaces_;
@@ -545,6 +550,7 @@ private:
 
     // for dvsync (animate requestNextVSync after mark rsnotrendering)
     bool needRequestNextVsyncAnimate_ = false;
+    bool hasMark_ = false;
 
     // for statistic of jank frames
     std::atomic_bool mainLooping_ = false;
@@ -552,7 +558,6 @@ private:
     ScreenId displayNodeScreenId_ = 0;
 
     bool forceUIFirstChanged_ = false;
-    bool hasRosenWebNode_ = false;
 
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;

@@ -62,6 +62,14 @@ typedef struct OH_Drawing_Canvas OH_Drawing_Canvas;
 typedef struct OH_Drawing_Pen OH_Drawing_Pen;
 
 /**
+ * @brief Defines a region, which is used to represent an enclosed area on the canvas layer.
+ *
+ * @since 12
+ * @version 1.0
+ */
+typedef struct OH_Drawing_Region OH_Drawing_Region;
+
+/**
  * @brief Defines as a brush, which is used to describe the style and color to fill in a shape.
  *
  * @since 8
@@ -102,6 +110,14 @@ typedef struct OH_Drawing_Point OH_Drawing_Point;
 typedef struct OH_Drawing_PixelMap OH_Drawing_PixelMap;
 
 /**
+ * @brief Define color space to determine color information.
+ *
+ * @since 12
+ * @version 1.0
+ */
+typedef struct OH_Drawing_ColorSpace OH_Drawing_ColorSpace;
+
+/**
  * @brief Defines a point of 2d.
  *
  * @since 12
@@ -111,6 +127,14 @@ typedef struct {
     float x;
     float y;
 } OH_Drawing_Point2D;
+
+/**
+ * @brief Defines a corner radii, which is on x-axis and y-axis.
+ *
+ * @since 12
+ * @version 1.0
+ */
+typedef OH_Drawing_Point2D OH_Drawing_Corner_Radii;
 
 /**
  * @brief Defines a point of 3d, which is used to describe the coordinate point.
@@ -238,20 +262,28 @@ typedef struct OH_Drawing_Image OH_Drawing_Image;
 typedef struct OH_Drawing_SamplingOptions OH_Drawing_SamplingOptions;
 
 /**
- * @brief Defines a sdf shape, which is used to describe directed vector dield.
- *
- * @since 12
- * @version 1.0
- */
-typedef struct OH_Drawing_Sdf OH_Drawing_Sdf;
-
-/**
  * @brief Defines a textBlobBuilder, which is used to build the textBlob.
  *
  * @since 11
  * @version 1.0
  */
 typedef struct OH_Drawing_TextBlobBuilder OH_Drawing_TextBlobBuilder;
+
+/**
+ * @brief Defines a GPU context, which is used to describe the GPU backend context.
+ *
+ * @since 12
+ * @version 1.0
+ */
+typedef struct OH_Drawing_GpuContext OH_Drawing_GpuContext;
+
+/**
+ * @brief Defines a surface, which is used to manage the pixels that a canvas draws into.
+ *
+ * @since 12
+ * @version 1.0
+ */
+typedef struct OH_Drawing_Surface OH_Drawing_Surface;
 
 /**
  * @brief Enumerates storage formats of bitmap pixels.

@@ -129,11 +129,13 @@ public:
         return subSurfaceNodes_;
     }
 
-    bool IsFirstLevelSurfaceNode();
+    bool IsFirstLevelNode();
+    bool IsSubSurfaceNode();
     bool SubSurfaceNodeNeedDraw(PartialRenderType opDropType);
-    void AddSubSurfaceNode(SharedPtr child, SharedPtr parent);
-    void RemoveSubSurfaceNode(SharedPtr child, SharedPtr parent);
-    inline static const bool isSubSurfaceEnabled_ = RSSystemProperties::GetSubSurfaceEnabled();
+    void AddSubSurfaceNode(SharedPtr parent);
+    void RemoveSubSurfaceNode(SharedPtr parent);
+    inline static const bool isSubSurfaceEnabled_ =
+        RSSystemProperties::GetSubSurfaceEnabled() && RSSystemProperties::IsPhoneType();
 
     // flag: isOnTheTree; instanceRootNodeId: displaynode or leash/appnode attached to
     // firstLevelNodeId: surfacenode for uiFirst to assign task; cacheNodeId: drawing cache rootnode attached to
@@ -387,6 +389,16 @@ public:
 
     bool HasFilter() const;
     void SetHasFilter(bool hasFilter);
+    void ExcuteSurfaceCaptureCommand();
+    bool GetCommandExcuted() const
+    {
+        return commandExcuted_;
+    }
+
+    void SetCommandExcuted(bool commandExcuted)
+    {
+        commandExcuted_ = commandExcuted;
+    }
 
     std::recursive_mutex& GetSurfaceMutex() const;
 
@@ -405,6 +417,9 @@ public:
 
     bool IsScale() const;
     void SetIsScale(bool isScale);
+
+    bool IsScaleInPreFrame() const;
+    void SetIsScaleInPreFrame(bool isScale);
 
     void SetPriority(NodePriorityType priority);
     NodePriorityType GetPriority();
@@ -619,6 +634,7 @@ private:
     void FallbackAnimationsToRoot();
     void FilterModifiersByPid(pid_t pid);
 
+    void UpdateBufferDirtyRegion(RectI& dirtyRect, const RectI& drawRegion);
     void UpdateDirtyRegion(RSDirtyRegionManager& dirtyManager, bool geoDirty, std::optional<RectI> clipRect);
     void UpdateFullScreenFilterCacheRect(RSDirtyRegionManager& dirtyManager, bool isForeground) const;
 
@@ -668,6 +684,7 @@ private:
     // specify if any subnode uses effect, not including itself
     bool hasEffectNode_ = false;
 
+    std::atomic<bool> commandExcuted_ = false;
     std::unordered_set<NodeId> curCacheFilterRects_ = {};
     std::unordered_set<NodeId> visitedCacheRoots_ = {};
     // collect subtree's surfaceNode including itself
@@ -679,6 +696,7 @@ private:
     uint32_t completedSurfaceThreadIndex_ = UNI_MAIN_THREAD_INDEX;
     bool isMainThreadNode_ = true;
     bool isScale_ = false;
+    bool isScaleInPreFrame_ = false;
     bool hasFilter_ = false;
     bool hasHardwareNode_ = false;
     bool hasAbilityComponent_ = false;

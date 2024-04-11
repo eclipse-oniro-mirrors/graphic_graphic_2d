@@ -242,6 +242,11 @@ Vector4f RSModifierExtractor::GetOutlineRadius() const
     GET_PROPERTY_FROM_MODIFIERS_EQRETURN(Vector4f, OUTLINE_RADIUS, Vector4f(0.f), =);
 }
 
+float RSModifierExtractor::GetForegroundEffectRadius() const
+{
+    GET_PROPERTY_FROM_MODIFIERS(float, FOREGROUND_EFFECT_RADIUS, 0.f, =);
+}
+
 std::shared_ptr<RSFilter> RSModifierExtractor::GetBackgroundFilter() const
 {
     GET_PROPERTY_FROM_MODIFIERS_EQRETURN(std::shared_ptr<RSFilter>, BACKGROUND_FILTER, nullptr, =);
@@ -342,9 +347,19 @@ float RSModifierExtractor::GetLightUpEffectDegree() const
     GET_PROPERTY_FROM_MODIFIERS_EQRETURN(float, LIGHT_UP_EFFECT, 0.f, =);
 }
 
+float RSModifierExtractor::GetDynamicDimDegree() const
+{
+    GET_PROPERTY_FROM_MODIFIERS(float, DYNAMIC_DIM_DEGREE, 0.f, =);
+}
+
 float RSModifierExtractor::GetLightIntensity() const
 {
     GET_PROPERTY_FROM_MODIFIERS_EQRETURN(float, LIGHT_INTENSITY, 0.f, =);
+}
+
+Color RSModifierExtractor::GetLightColor() const
+{
+    GET_PROPERTY_FROM_MODIFIERS(Color, LIGHT_COLOR, RgbPalette::White(), =);
 }
 
 Vector4f RSModifierExtractor::GetLightPosition() const

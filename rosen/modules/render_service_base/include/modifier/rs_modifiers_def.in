@@ -64,6 +64,8 @@ DECLARE_NOANIMATABLE_MODIFIER(BackgroundShader, std::shared_ptr<RSShader>, BACKG
 
 DECLARE_NOANIMATABLE_MODIFIER(BgImage, std::shared_ptr<RSImage>, BG_IMAGE, Background)
 
+DECLARE_ANIMATABLE_MODIFIER(BgImageInnerRect, Vector4f, BG_IMAGE_INNER_RECT, Add, Background, LAYOUT)
+
 DECLARE_ANIMATABLE_MODIFIER(BgImageWidth, float, BG_IMAGE_WIDTH, Add, Background, LAYOUT)
 
 DECLARE_ANIMATABLE_MODIFIER(BgImageHeight, float, BG_IMAGE_HEIGHT, Add, Background, LAYOUT)
@@ -91,6 +93,8 @@ DECLARE_ANIMATABLE_MODIFIER(Filter, std::shared_ptr<RSFilter>, FILTER, Add, Fore
 DECLARE_ANIMATABLE_MODIFIER(BackgroundFilter, std::shared_ptr<RSFilter>, BACKGROUND_FILTER, Add, Background, COARSE)
 
 DECLARE_NOANIMATABLE_MODIFIER(LinearGradientBlurPara, std::shared_ptr<RSLinearGradientBlurPara>, LINEAR_GRADIENT_BLUR_PARA, Foreground)
+
+DECLARE_NOANIMATABLE_MODIFIER(EmitterUpdater, std::shared_ptr<EmitterUpdater>, PARTICLE_EMITTER_UPDATER, Foreground)
 
 DECLARE_NOANIMATABLE_MODIFIER(FrameGravity, Gravity, FRAME_GRAVITY, Appearance)
 
@@ -164,6 +168,8 @@ DECLARE_ANIMATABLE_MODIFIER(DynamicLightUpRate, float, DYNAMIC_LIGHT_UP_RATE, Re
 
 DECLARE_ANIMATABLE_MODIFIER(DynamicLightUpDegree, float, DYNAMIC_LIGHT_UP_DEGREE, Replace, Foreground, COARSE)
 
+DECLARE_ANIMATABLE_MODIFIER(DynamicDimDegree, float, DYNAMIC_DIM_DEGREE, Replace, Foreground, COARSE)
+
 DECLARE_NOANIMATABLE_MODIFIER(UseShadowBatching, bool, USE_SHADOW_BATCHING, Background)
 
 DECLARE_ANIMATABLE_MODIFIER(GreyCoef, Vector2f, GREY_COEF, Replace, Background, COARSE)
@@ -174,6 +180,10 @@ DECLARE_ANIMATABLE_MODIFIER(LightPosition, Vector4f, LIGHT_POSITION, Replace, Fo
 
 DECLARE_ANIMATABLE_MODIFIER(LightIntensity, float, LIGHT_INTENSITY, Replace, Foreground, COARSE)
 
+DECLARE_ANIMATABLE_MODIFIER(LightColor, Color, LIGHT_COLOR, Replace, Foreground, COARSE)
+
 DECLARE_ANIMATABLE_MODIFIER(IlluminatedBorderWidth, float, ILLUMINATED_BORDER_WIDTH, Replace, Foreground, COARSE)
 
 DECLARE_NOANIMATABLE_MODIFIER(IlluminatedType, int, ILLUMINATED_TYPE, Foreground)
+
+DECLARE_ANIMATABLE_MODIFIER(ForegroundEffectRadius, float, FOREGROUND_EFFECT_RADIUS, Replace, Foreground, COARSE)

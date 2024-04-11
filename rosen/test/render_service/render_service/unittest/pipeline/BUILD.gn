@@ -475,6 +475,10 @@ ohos_unittest("RSUniRenderVisitorTest") {
     external_deps +=
         [ "drivers_interface_display:display_commontype_idl_headers" ]
   }
+  if (graphic_2d_feature_enable_opinc) {
+    import("//foundation/graphic/graphic_2d_ext/opinc/config.gni")
+    include_dirs += opinc_adapter_opt_set.opinc_include_set
+  }
 }
 
 ## Build RSUniUiCaptureTest
@@ -493,6 +497,7 @@ ohos_unittest("RSUniUiCaptureTest") {
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
     external_deps += [ "accessibility:accessibilityconfig" ]
+    external_deps += [ "accessibility:accessibility_common" ]
   }
   defines = []
   defines += gpu_defines
@@ -558,6 +563,7 @@ ohos_unittest("RSMainThreadTest") {
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
     external_deps += [ "accessibility:accessibilityconfig" ]
+    external_deps += [ "accessibility:accessibility_common" ]
     defines += [ "ACCESSIBILITY_ENABLE" ]
   }
   if (defined(use_video_processing_engine) && use_video_processing_engine) {
@@ -717,7 +723,6 @@ ohos_unittest("RSUniRenderVirtualProcessorTest") {
 ## Build RSBaseRenderEngineUnitTest
 ohos_unittest("RSBaseRenderEngineUnitTest") {
   module_out_path = module_output_path
-  include_dirs = [ "$graphic_2d_root/frameworks/surface/include" ]
   sources = [ "rs_base_render_engine_test.cpp" ]
   deps = [ ":rs_test_common" ]
   external_deps = [
@@ -858,6 +863,10 @@ ohos_unittest("RSDrivenRenderManagerTest") {
     external_deps +=
         [ "drivers_interface_display:display_commontype_idl_headers" ]
   }
+  if (graphic_2d_feature_enable_opinc) {
+    import("//foundation/graphic/graphic_2d_ext/opinc/config.gni")
+    include_dirs += opinc_adapter_opt_set.opinc_include_set
+  }
 }
 
 ## Build RSDrivenRenderVisitorTest
@@ -996,7 +1005,6 @@ ohos_unittest("RSUnmarshalThreadTest") {
 ## Build rs_test_common.a {{{
 config("rs_test_common_public_config") {
   include_dirs = [
-    "$graphic_2d_root/frameworks/surface/include",
     "$graphic_2d_root/rosen/include",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/frame_rate_manager",
     "$graphic_2d_root/rosen/modules/render_service/core",
@@ -1041,7 +1049,9 @@ ohos_static_library("rs_test_common") {
     defines += [ "USE_ROSEN_DRAWING" ]
   }
 
-  external_deps = [
+  external_deps = []
+
+  public_external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
     "init:libbegetutil",

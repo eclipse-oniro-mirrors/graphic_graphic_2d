@@ -68,6 +68,7 @@ public:
     Vector4<uint32_t> GetOutlineStyle() const;
     Vector4f GetOutlineRadius() const;
 
+    float GetForegroundEffectRadius() const;
     std::shared_ptr<RSFilter> GetBackgroundFilter() const;
     std::shared_ptr<RSFilter> GetFilter() const;
 
@@ -92,8 +93,10 @@ public:
     std::shared_ptr<RSMask> GetMask() const;
     float GetSpherizeDegree() const;
     float GetLightUpEffectDegree() const;
+    float GetDynamicDimDegree() const;
 
     float GetLightIntensity() const;
+    Color GetLightColor() const;
     Vector4f GetLightPosition() const;
     float GetIlluminatedBorderWidth() const;
     int GetIlluminatedType() const;

@@ -52,6 +52,7 @@ constexpr float MAX_TRANS_RATIO = 0.95f;
 constexpr float MIN_SPOT_RATIO = 1.0f;
 constexpr float MAX_SPOT_RATIO = 1.95f;
 constexpr float MAX_AMBIENT_RADIUS = 150.0f;
+constexpr int MAX_LIGHT_SOURCES = 12;
 // when the blur radius > SNAPSHOT_OUTSET_BLUR_RADIUS_THRESHOLD,
 // the snapshot should call outset before blur to shrink by 1px.
 constexpr static float SNAPSHOT_OUTSET_BLUR_RADIUS_THRESHOLD = 40.0f;
@@ -63,6 +64,7 @@ std::shared_ptr<Drawing::RuntimeEffect> RSPropertiesPainter::greyAdjustEffect_ =
 std::shared_ptr<Drawing::RuntimeEffect> RSPropertiesPainter::binarizationShaderEffect_ = nullptr;
 std::shared_ptr<Drawing::RuntimeEffect> RSPropertiesPainter::lightUpEffectShaderEffect_ = nullptr;
 std::shared_ptr<Drawing::RuntimeEffect> RSPropertiesPainter::dynamicLightUpBlenderEffect_ = nullptr;
+std::shared_ptr<Drawing::RuntimeEffect> RSPropertiesPainter::dynamicDimShaderEffect_ = nullptr;
 
 Drawing::Rect RSPropertiesPainter::Rect2DrawingRect(const RectF& r)
 {
@@ -648,13 +650,20 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
     if (auto& cacheManager = properties.GetFilterCacheManager(filterType == FilterType::FOREGROUND_FILTER);
         cacheManager != nullptr && !canvas.GetDisableFilterCache()) {
         if (filter->GetFilterType() == RSFilter::LINEAR_GRADIENT_BLUR) {
-            filter->SetBoundsGeometry(properties.GetFrameWidth(), properties.GetFrameHeight());
+            filter->IsOffscreenCanvas(true);
+            filter->SetGeometry(canvas, properties.GetFrameWidth(), properties.GetFrameHeight());
+            needSnapshotOutset = false;
         }
         cacheManager->DrawFilter(canvas, filter, needSnapshotOutset);
         return;
     }
 #endif
 
+    if (filter->GetFilterType() == RSFilter::LINEAR_GRADIENT_BLUR) {
+        filter->IsOffscreenCanvas(false);
+        filter->SetGeometry(canvas, properties.GetFrameWidth(), properties.GetFrameHeight());
+        needSnapshotOutset = false;
+    }
     auto clipIBounds = canvas.GetDeviceClipBounds();
     auto imageClipIBounds = clipIBounds;
     if (needSnapshotOutset) {
@@ -672,12 +681,6 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
     }
 
     filter->PreProcess(imageSnapshot);
-    if (filter->GetFilterType() == RSFilter::LINEAR_GRADIENT_BLUR) {
-        Drawing::Matrix mat = canvas.GetTotalMatrix();
-        filter->SetCanvasChange(mat, surface->Width(), surface->Height());
-        filter->SetBoundsGeometry(properties.GetFrameWidth(), properties.GetFrameHeight());
-    }
-
     canvas.ResetMatrix();
     auto visibleRect = canvas.GetVisibleRect();
     visibleRect.Round();
@@ -1099,16 +1102,16 @@ const std::shared_ptr<Drawing::RuntimeShaderBuilder>& RSPropertiesPainter::GetPh
     }
     std::shared_ptr<Drawing::RuntimeEffect> lightEffect_;
     std::string lightString(R"(
-        uniform mat4 lightPos;
-        uniform mat4 viewPos;
-        uniform vec4 specularStrength;
+        uniform vec4 lightPos[12];
+        uniform vec4 viewPos[12];
+        uniform vec4 specularLightColor[12];
+        uniform float specularStrength[12];
 
         mediump vec4 main(vec2 drawing_coord) {
             vec4 lightColor = vec4(1.0, 1.0, 1.0, 1.0);
             float ambientStrength = 0.0;
             vec4 diffuseColor = vec4(1.0, 1.0, 1.0, 1.0);
             float diffuseStrength = 0.0;
-            vec4 specularColor = vec4(1.0, 1.0, 1.0, 1.0);
             float shininess = 8.0;
             mediump vec4 fragColor = vec4(0.0, 0.0, 0.0, 0.0);
             vec4 NormalMap = vec4(0.0, 0.0, 1.0, 0.0);
@@ -1116,7 +1119,7 @@ const std::shared_ptr<Drawing::RuntimeShaderBuilder>& RSPropertiesPainter::GetPh
             vec4 ambient = lightColor * ambientStrength;
             vec3 norm = normalize(NormalMap.rgb);
 
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 12; i++) {
                 if (abs(specularStrength[i]) > 0.01) {
                     vec3 lightDir = normalize(vec3(lightPos[i].xy - drawing_coord, lightPos[i].z));
                     float diff = max(dot(norm, lightDir), 0.0);
@@ -1126,6 +1129,7 @@ const std::shared_ptr<Drawing::RuntimeShaderBuilder>& RSPropertiesPainter::GetPh
                     float spec = pow(max(dot(norm, halfwayDir), 0.0), shininess); // exponential relationship of angle
                     vec4 specular = lightColor * spec; // multiply color of incident light
                     vec4 o = ambient + diffuse * diffuseStrength * diffuseColor; // diffuse reflection
+                    vec4 specularColor = specularLightColor[i];
                     fragColor = fragColor + o + specular * specularStrength[i] * specularColor;
                 }
             }
@@ -1148,8 +1152,8 @@ void RSPropertiesPainter::DrawLight(const RSProperties& properties, Drawing::Can
     if (!lightBuilder) {
         return;
     }
-    const auto& lightSources = properties.GetIlluminated()->GetLightSources();
-    if (lightSources.empty()) {
+    const auto& lightSourcesAndPosMap = properties.GetIlluminated()->GetLightSourcesAndPosMap();
+    if (lightSourcesAndPosMap.empty()) {
         ROSEN_LOGD("RSPropertiesPainter::DrawLight lightSourceList is empty!");
         return;
     }
@@ -1157,31 +1161,48 @@ void RSPropertiesPainter::DrawLight(const RSProperties& properties, Drawing::Can
     if (!geoPtr || geoPtr->IsEmpty()) {
         return;
     }
-    DrawLightInner(properties, canvas, lightBuilder, lightSources, geoPtr);
+    std::vector<std::pair<std::shared_ptr<RSLightSource>, Vector4f>> lightSourcesAndPosVec(
+        lightSourcesAndPosMap.begin(), lightSourcesAndPosMap.end());
+    if (lightSourcesAndPosVec.size() > MAX_LIGHT_SOURCES) {
+        std::sort(lightSourcesAndPosVec.begin(), lightSourcesAndPosVec.end(), [](const auto& x, const auto& y) {
+            return x.second.x_ * x.second.x_ + x.second.y_ * x.second.y_ <
+                   y.second.x_ * y.second.x_ + y.second.y_ * y.second.y_;
+        });
+    }
+    DrawLightInner(properties, canvas, lightBuilder, lightSourcesAndPosVec, geoPtr);
 }
 
 void RSPropertiesPainter::DrawLightInner(const RSProperties& properties, Drawing::Canvas& canvas,
     std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder,
-    const std::unordered_set<std::shared_ptr<RSLightSource>>& lightSources,
+    const std::vector<std::pair<std::shared_ptr<RSLightSource>, Vector4f>>& lightSourcesAndPosVec,
     const std::shared_ptr<RSObjAbsGeometry>& geoPtr)
 {
-    auto iter = lightSources.begin();
     auto cnt = 0;
-    Drawing::Matrix44 lightPositionMatrix;
-    Drawing::Matrix44 viewPosMatrix;
-    Vector4f lightIntensityV4;
-    constexpr int MAX_LIGHT_SOUCES = 4;
-    while (iter != lightSources.end() && cnt < MAX_LIGHT_SOUCES) {
-        auto lightPos = RSPointLightManager::Instance()->CalculateLightPosForIlluminated((*iter), geoPtr);
-        auto lightIntensity = (*iter)->GetLightIntensity();
-        lightIntensityV4[cnt] = lightIntensity;
-        lightPositionMatrix.SetCol(cnt, lightPos.x_, lightPos.y_, lightPos.z_, lightPos.w_);
-        viewPosMatrix.SetCol(cnt, lightPos.x_, lightPos.y_, lightPos.z_, lightPos.w_);
+    constexpr int vectorLen = 4;
+    float lightPosArray[vectorLen * MAX_LIGHT_SOURCES] = { 0 };
+    float viewPosArray[vectorLen * MAX_LIGHT_SOURCES] = { 0 };
+    float lightColorArray[vectorLen * MAX_LIGHT_SOURCES] = { 0 };
+    float lightIntensityArray[MAX_LIGHT_SOURCES] = { 0 };
+
+    auto iter = lightSourcesAndPosVec.begin();
+    while (iter != lightSourcesAndPosVec.end() && cnt < MAX_LIGHT_SOURCES) {
+        auto lightPos = iter->second;
+        auto lightIntensity = iter->first->GetLightIntensity();
+        auto lightColor = iter->first->GetLightColor();
+        Vector4f lightColorVec =
+            Vector4f(lightColor.GetRed(), lightColor.GetGreen(), lightColor.GetBlue(), lightColor.GetAlpha());
+        for (int i = 0; i < vectorLen; i++) {
+            lightPosArray[cnt * vectorLen + i] = lightPos[i];
+            viewPosArray[cnt * vectorLen + i] = lightPos[i];
+            lightColorArray[cnt * vectorLen + i] = lightColorVec[i] / UINT8_MAX;
+        }
+        lightIntensityArray[cnt] = lightIntensity;
         iter++;
         cnt++;
     }
-    lightBuilder->SetUniform("lightPos", lightPositionMatrix);
-    lightBuilder->SetUniform("viewPos", viewPosMatrix);
+    lightBuilder->SetUniform("lightPos", lightPosArray, vectorLen * MAX_LIGHT_SOURCES);
+    lightBuilder->SetUniform("viewPos", viewPosArray, vectorLen * MAX_LIGHT_SOURCES);
+    lightBuilder->SetUniform("specularLightColor", lightColorArray, vectorLen * MAX_LIGHT_SOURCES);
     Drawing::Pen pen;
     Drawing::Brush brush;
     pen.SetAntiAlias(true);
@@ -1189,23 +1210,27 @@ void RSPropertiesPainter::DrawLightInner(const RSProperties& properties, Drawing
     auto illuminatedType = properties.GetIlluminated()->GetIlluminatedType();
     ROSEN_LOGD("RSPropertiesPainter::DrawLight illuminatedType:%{public}d", illuminatedType);
     if (illuminatedType == IlluminatedType::CONTENT) {
-        DrawContentLight(properties, canvas, lightBuilder, brush, lightIntensityV4);
+        DrawContentLight(properties, canvas, lightBuilder, brush, lightIntensityArray);
     } else if (illuminatedType == IlluminatedType::BORDER) {
-        DrawBorderLight(properties, canvas, lightBuilder, pen, lightIntensityV4);
+        DrawBorderLight(properties, canvas, lightBuilder, pen, lightIntensityArray);
     } else if (illuminatedType == IlluminatedType::BORDER_CONTENT) {
-        DrawContentLight(properties, canvas, lightBuilder, brush, lightIntensityV4);
-        DrawBorderLight(properties, canvas, lightBuilder, pen, lightIntensityV4);
+        DrawContentLight(properties, canvas, lightBuilder, brush, lightIntensityArray);
+        DrawBorderLight(properties, canvas, lightBuilder, pen, lightIntensityArray);
     }
 }
 
 void RSPropertiesPainter::DrawContentLight(const RSProperties& properties, Drawing::Canvas& canvas,
-    std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Brush& brush, Vector4f& lightIntensity)
+    std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Brush& brush,
+    const float lightIntensityArray[])
 {
     // content light
     std::shared_ptr<Drawing::ShaderEffect> shader;
-    auto contentStrength = lightIntensity * 0.3f;
-    lightBuilder->SetUniformVec4("specularStrength", contentStrength.x_,
-        contentStrength.y_, contentStrength.z_, contentStrength.w_);
+    constexpr float contentIntensityCoefficient = 0.3f;
+    float specularStrengthArr[MAX_LIGHT_SOURCES] = { 0 };
+    for (int i = 0; i < MAX_LIGHT_SOURCES; i++) {
+        specularStrengthArr[i] = lightIntensityArray[i] * contentIntensityCoefficient;
+    }
+    lightBuilder->SetUniform("specularStrength", specularStrengthArr, MAX_LIGHT_SOURCES);
     shader = lightBuilder->MakeShader(nullptr, false);
     brush.SetShaderEffect(shader);
     canvas.AttachBrush(brush);
@@ -1214,12 +1239,12 @@ void RSPropertiesPainter::DrawContentLight(const RSProperties& properties, Drawi
 }
 
 void RSPropertiesPainter::DrawBorderLight(const RSProperties& properties, Drawing::Canvas& canvas,
-    std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Pen& pen, Vector4f& lightIntensity)
+    std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Pen& pen,
+    const float lightIntensityArray[])
 {
     // border light
     std::shared_ptr<Drawing::ShaderEffect> shader;
-    lightBuilder->SetUniformVec4("specularStrength", lightIntensity.x_,
-        lightIntensity.y_, lightIntensity.z_, lightIntensity.w_);
+    lightBuilder->SetUniform("specularStrength", lightIntensityArray, MAX_LIGHT_SOURCES);
     shader = lightBuilder->MakeShader(nullptr, false);
     pen.SetShaderEffect(shader);
     float borderWidth = std::ceil(properties.GetIlluminatedBorderWidth());
@@ -1395,6 +1420,11 @@ void RSPropertiesPainter::DrawMask(const RSProperties& properties, Drawing::Canv
         canvas.DrawPath(*mask->GetMaskPath());
         canvas.DetachBrush();
         canvas.DetachPen();
+    } else if (mask->IsPixelMapMask()) {
+        Drawing::AutoCanvasRestore arc(canvas, true);
+        if (mask->GetImage()) {
+            canvas.DrawImage(*mask->GetImage(), 0.f, 0.f, Drawing::SamplingOptions());
+        }
     }
 
     // back to mask layer
@@ -1721,6 +1751,85 @@ std::shared_ptr<Drawing::Blender> RSPropertiesPainter::MakeDynamicLightUpBlender
     return builder->MakeBlender();
 }
 
+void RSPropertiesPainter::DrawDynamicDim(const RSProperties& properties, RSPaintFilterCanvas& canvas)
+{
+    Drawing::Surface* surface = canvas.GetSurface();
+    if (surface == nullptr) {
+        ROSEN_LOGD("RSPropertiesPainter::DrawDynamicDim surface is null");
+        return;
+    }
+    Drawing::AutoCanvasRestore acr(canvas, true);
+    if (properties.GetClipBounds() != nullptr) {
+        canvas.ClipPath(properties.GetClipBounds()->GetDrawingPath(), Drawing::ClipOp::INTERSECT, true);
+    } else {
+        canvas.ClipRoundRect(RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::INTERSECT, true);
+    }
+
+    auto clipBounds = canvas.GetDeviceClipBounds();
+    auto image = surface->GetImageSnapshot(clipBounds);
+    if (image == nullptr) {
+        ROSEN_LOGE("RSPropertiesPainter::DrawDynamicDim image is null");
+        return;
+    }
+    Drawing::Matrix scaleMat;
+    auto imageShader = Drawing::ShaderEffect::CreateImageShader(
+        *image, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP,
+        Drawing::SamplingOptions(Drawing::FilterMode::LINEAR), scaleMat);
+    auto shader = MakeDynamicDimShader(properties.GetDynamicDimDegree().value(), imageShader);
+    if (shader == nullptr) {
+        ROSEN_LOGE("RSPropertiesPainter::DrawDynamicDim shader is null");
+        return;
+    }
+    Drawing::Brush brush;
+    brush.SetShaderEffect(shader);
+    canvas.ResetMatrix();
+    canvas.Translate(clipBounds.GetLeft(), clipBounds.GetTop());
+    canvas.DrawBackground(brush);
+}
+
+std::shared_ptr<Drawing::ShaderEffect> RSPropertiesPainter::MakeDynamicDimShader(
+    float dynamicDimDeg, std::shared_ptr<Drawing::ShaderEffect> imageShader)
+{
+    static constexpr char prog[] = R"(
+        uniform half dynamicDimDeg;
+        uniform shader imageShader;
+
+        vec3 rgb2hsv(in vec3 c)
+        {
+            vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+            vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+            vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+            float d = q.x - min(q.w, q.y);
+            float e = 1.0e-10;
+            return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+        }
+        vec3 hsv2rgb(in vec3 c)
+        {
+            vec3 rgb = clamp(abs(mod(c.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+            return c.z * mix(vec3(1.0), rgb, c.y);
+        }
+        half4 main(float2 coord)
+        {
+            vec3 hsv = rgb2hsv(imageShader.eval(coord).rgb);
+            hsv.y = hsv.y * 0.8;
+            hsv.z = min(hsv.z * dynamicDimDeg, 1.0);
+            return vec4(hsv2rgb(hsv), 1.0);
+        }
+    )";
+    if (dynamicDimShaderEffect_ == nullptr) {
+        dynamicDimShaderEffect_ = Drawing::RuntimeEffect::CreateForShader(prog);
+        if (dynamicDimShaderEffect_ == nullptr) {
+            ROSEN_LOGE("MakeBinarizationShader::RuntimeShader effect error\n");
+            return nullptr;
+        }
+    }
+    std::shared_ptr<Drawing::ShaderEffect> children[] = {imageShader};
+    size_t childCount = 1;
+    auto data = std::make_shared<Drawing::Data>();
+    data->BuildWithCopy(&dynamicDimDeg, sizeof(dynamicDimDeg));
+    return dynamicDimShaderEffect_->MakeShader(data, children, childCount, nullptr, false);
+}
+
 void RSPropertiesPainter::DrawParticle(const RSProperties& properties, RSPaintFilterCanvas& canvas)
 {
     const auto& particleVector = properties.GetParticles();
@@ -1812,6 +1921,8 @@ void RSPropertiesPainter::BeginBlendMode(RSPaintFilterCanvas& canvas, const RSPr
         // no blend
         return;
     }
+    RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO,
+        "RSPropertiesPainter::BlendMode, blendMode: %d, blendModeApplyType: %d", blendMode, blendModeApplyType);
 
     canvas.Save();
     canvas.ClipRoundRect(RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::INTERSECT, true);

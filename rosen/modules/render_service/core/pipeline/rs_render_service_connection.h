@@ -77,7 +77,8 @@ private:
 
     sptr<IVSyncConnection> CreateVSyncConnection(const std::string& name,
                                                  const sptr<VSyncIConnectionToken>& token,
-                                                 uint64_t id) override;
+                                                 uint64_t id,
+                                                 NodeId windowNodeId = 0) override;
 
     int32_t SetFocusAppInfo(
         int32_t pid, int32_t uid, const std::string &bundleName, const std::string &abilityName,
@@ -127,10 +128,10 @@ private:
     void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status) override;
 
     void TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCaptureCallback> callback, float scaleX, float scaleY,
-        SurfaceCaptureType surfaceCaptureType) override;
+        SurfaceCaptureType surfaceCaptureType, bool isSync) override;
 
     void TakeSurfaceCaptureForUIWithUni(
-        NodeId id, sptr<RSISurfaceCaptureCallback> callback, float scaleX, float scaleY);
+        NodeId id, sptr<RSISurfaceCaptureCallback> callback, float scaleX, float scaleY, bool isSync);
 
     void RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app) override;
 
@@ -199,6 +200,8 @@ private:
     bool GetBitmap(NodeId id, Drawing::Bitmap& bitmap) override;
     bool GetPixelmap(NodeId id, std::shared_ptr<Media::PixelMap> pixelmap,
         const Drawing::Rect* rect, std::shared_ptr<Drawing::DrawCmdList> drawCmdList) override;
+    bool RegisterTypeface(uint64_t globalUniqueId, std::shared_ptr<Drawing::Typeface>& typeface) override;
+    bool UnRegisterTypeface(uint64_t globalUniqueId) override;
 
     int32_t SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval) override;
 
@@ -212,6 +215,8 @@ private:
     int32_t RegisterHgmConfigChangeCallback(sptr<RSIHgmConfigChangeCallback> callback) override;
 
     int32_t RegisterHgmRefreshRateModeChangeCallback(sptr<RSIHgmConfigChangeCallback> callback) override;
+
+    int32_t RegisterHgmRefreshRateUpdateCallback(sptr<RSIHgmConfigChangeCallback> callback) override;
 
     void SetAppWindowNum(uint32_t num) override;
 

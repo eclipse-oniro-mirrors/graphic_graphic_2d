@@ -16,6 +16,7 @@
 #include "hgm_frame_rate_manager.h"
 
 #include <algorithm>
+#include <ctime>
 #include "common/rs_optional_trace.h"
 #include "common/rs_thread_handler.h"
 #include "pipeline/rs_uni_render_judgement.h"
@@ -27,6 +28,7 @@
 #include "sandbox_utils.h"
 #include "frame_rate_report.h"
 #include "hgm_config_callback_manager.h"
+#include "hisysevent.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -35,23 +37,26 @@ namespace {
     constexpr float MIN_DRAWING_DIVISOR = 10.0f;
     constexpr float DIVISOR_TWO = 2.0f;
     constexpr int32_t IDLE_TIMER_EXPIRED = 200; // ms
-    constexpr int32_t IDLE_AFTER_TOUCH_UP = 3000; // ms
     constexpr float ONE_MS_IN_NANO = 1000000.0f;
     constexpr uint32_t UNI_RENDER_VSYNC_OFFSET = 5000000; // ns
+    constexpr uint32_t REPORT_VOTER_INFO_LIMIT = 10;
+    constexpr int32_t LAST_TOUCH_DOWN_CNT = 1;
 
     constexpr uint32_t SCENE_BEFORE_XML = 1;
     constexpr uint32_t SCENE_AFTER_TOUCH = 3;
     // CAUTION: with priority
     const std::string VOTER_NAME[] = {
         "VOTER_THERMAL",
+        "VOTER_GAMES",
+        "VOTER_VIDEO",
         "VOTER_VIRTUALDISPLAY",
         "VOTER_MULTI_APP",
+        "VOTER_ANCO",
 
         "VOTER_XML",
-        "VOTER_LTPO",
         "VOTER_TOUCH",
+        "VOTER_LTPO",
         "VOTER_SCENE",
-        "VOTER_TEMP",
         "VOTER_IDLE"
     };
 }
@@ -91,7 +96,17 @@ void HgmFrameRateManager::Init(sptr<VSyncController> rsController,
             CreateVSyncGenerator()->SetVSyncMode(VSYNC_MODE_LTPS);
         }
     });
+
+    hgmCore.RegisterRefreshRateUpdateCallback([](int32_t refreshRate) {
+        HgmConfigCallbackManager::GetInstance()->SyncRefreshRateUpdateCallback(refreshRate);
+    });
+
     controller_ = std::make_shared<HgmVSyncGeneratorController>(rsController, appController, vsyncGenerator);
+
+    touchMgr_->touchMachine_.RegisterIdleEventCallback([this] () {
+        DeliverRefreshRateVote(0, "VOTER_TOUCH", REMOVE_VOTE);
+        touchMgr_->StopRSTimer(curScreenId_);
+    });
 }
 
 void HgmFrameRateManager::UniProcessDataForLtpo(uint64_t timestamp,
@@ -104,10 +119,17 @@ void HgmFrameRateManager::UniProcessDataForLtpo(uint64_t timestamp,
 
     auto& hgmCore = HgmCore::Instance();
     FrameRateRange finalRange;
+    FrameRateVoteInfo frameRateVoteInfo;
+    frameRateVoteInfo.SetTimestamp(std::time(nullptr));
     if (curRefreshRateMode_ == HGM_REFRESHRATE_MODE_AUTO) {
         finalRange = rsFrameRateLinker->GetExpectedRange();
+        if (finalRange.IsValid()) {
+            frameRateVoteInfo.SetLtpoInfo(0, "ANIMATE");
+        }
         for (auto linker : appFrameRateLinkers) {
-            finalRange.Merge(linker.second->GetExpectedRange());
+            if (finalRange.Merge(linker.second->GetExpectedRange())) {
+                frameRateVoteInfo.SetLtpoInfo(linker.second->GetId(), "APP_LINKER");
+            }
         }
 
         if (finalRange.IsValid()) {
@@ -125,7 +147,7 @@ void HgmFrameRateManager::UniProcessDataForLtpo(uint64_t timestamp,
         }
     }
 
-    VoteRange voteResult = ProcessRefreshRateVote();
+    VoteRange voteResult = ProcessRefreshRateVote(frameRateVoteInfo);
     // max used here
     finalRange = {voteResult.second, voteResult.second, voteResult.second};
     CalcRefreshRate(curScreenId_, finalRange);
@@ -137,8 +159,39 @@ void HgmFrameRateManager::UniProcessDataForLtpo(uint64_t timestamp,
         pendingRefreshRate_ = std::make_shared<uint32_t>(currRefreshRate_);
         if (currRefreshRate_ != hgmCore.GetPendingScreenRefreshRate()) {
             forceUpdateCallback_(false, true);
+            touchMgr_->rsIdleUpdateCallback_(false);
             FrameRateReport();
         }
+    }
+
+    if (isDvsyncOn) {
+        pendingRefreshRate_ = std::make_shared<uint32_t>(currRefreshRate_);
+    }
+
+    ReportHiSysEvent(frameRateVoteInfo);
+}
+
+void HgmFrameRateManager::ReportHiSysEvent(const FrameRateVoteInfo& frameRateVoteInfo)
+{
+    if (frameRateVoteInfo.voterName.empty()) {
+        return;
+    }
+    if (frameRateVoteInfoVec_.empty()) {
+        frameRateVoteInfoVec_.emplace_back(frameRateVoteInfo);
+        return;
+    }
+    if (frameRateVoteInfoVec_.back().voterName != frameRateVoteInfo.voterName ||
+        frameRateVoteInfoVec_.back().preferred != frameRateVoteInfo.preferred) {
+        if (frameRateVoteInfoVec_.size() >= REPORT_VOTER_INFO_LIMIT) {
+            std::string msg;
+            for (auto& info : frameRateVoteInfoVec_) {
+                msg += info.ToString();
+            }
+            HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, "HGM_VOTER_INFO",
+                OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "MSG", msg);
+            frameRateVoteInfoVec_.clear();
+        }
+        frameRateVoteInfoVec_.emplace_back(frameRateVoteInfo);
     }
 }
 
@@ -150,10 +203,15 @@ void HgmFrameRateManager::UniProcessDataForLtps(bool idleTimerExpired)
     if (idleTimerExpired) {
         // idle in ltps
         HandleIdleEvent(ADD_VOTE);
+    } else {
+        StartScreenTimer(curScreenId_, IDLE_TIMER_EXPIRED, nullptr, [this]() {
+            forceUpdateCallback_(true, false);
+        });
     }
 
     FrameRateRange finalRange;
-    VoteRange voteResult = ProcessRefreshRateVote();
+    FrameRateVoteInfo frameRateVoteInfo;
+    VoteRange voteResult = ProcessRefreshRateVote(frameRateVoteInfo);
     auto& hgmCore = HgmCore::Instance();
     uint32_t lastPendingRate = hgmCore.GetPendingScreenRefreshRate();
     // max used here
@@ -168,8 +226,10 @@ void HgmFrameRateManager::UniProcessDataForLtps(bool idleTimerExpired)
     pendingRefreshRate_ = std::make_shared<uint32_t>(currRefreshRate_);
     if (currRefreshRate_ != hgmCore.GetPendingScreenRefreshRate()) {
         forceUpdateCallback_(false, true);
+        touchMgr_->rsIdleUpdateCallback_(false);
         FrameRateReport();
     }
+    ReportHiSysEvent(frameRateVoteInfo);
 }
 
 void HgmFrameRateManager::FrameRateReport() const
@@ -224,6 +284,7 @@ void HgmFrameRateManager::HandleFrameRateChangeForLTPO(uint64_t timestamp, bool 
         pendingRefreshRate_ = std::make_shared<uint32_t>(currRefreshRate_);
         if (currRefreshRate_ != HgmCore::Instance().GetPendingScreenRefreshRate()) {
             forceUpdateCallback_(false, true);
+            touchMgr_->rsIdleUpdateCallback_(false);
             FrameRateReport();
         }
     };
@@ -492,14 +553,34 @@ void HgmFrameRateManager::HandleTouchEvent(int32_t touchStatus)
         return;
     }
 
-    if (touchStatus == TOUCH_DOWN) {
-        DeliverRefreshRateVote(0, "VOTER_TOUCH", ADD_VOTE, touchFps_, touchFps_);
-        StopScreenTimer(curScreenId_);
+    static std::mutex hgmTouchEventMutex;
+    if (touchCnt_ < 0) {
+        touchCnt_ = 0;
+    }
+    std::unique_lock<std::mutex> lock(hgmTouchEventMutex);
+    if (touchStatus == TOUCH_DOWN || touchStatus == TOUCH_PULL_DOWN) {
+        touchCnt_++;
+        if (touchCnt_ == LAST_TOUCH_DOWN_CNT) {
+            DeliverRefreshRateVote(0, "VOTER_TOUCH", ADD_VOTE, touchFps_, touchFps_);
+            HGM_LOGI("[touch manager] update to target %{public}d fps", touchFps_);
+            StopScreenTimer(curScreenId_);
+            touchMgr_->StopRSTimer(curScreenId_);
+            touchMgr_->touchMachine_.TouchEventHandle(TouchEvent::DOWN);
+        }
+    } else if (touchStatus == TOUCH_UP || touchStatus == TOUCH_PULL_UP) {
+        touchCnt_--;
+        if (touchCnt_ == 0) {
+            HGM_LOGI("[touch manager] touch up detect");
+            StartScreenTimer(curScreenId_, TOUCH_UP_TIMEOUT_TIMER_EXPIRED, nullptr, [this]() {
+                forceUpdateCallback_(true, false);
+            });
+            touchMgr_->touchMachine_.TouchEventHandle(TouchEvent::UP);
+            touchMgr_->StartRSTimer(curScreenId_, TOUCH_RS_IDLE_TIMER_EXPIRED, nullptr, [this]() {
+                touchMgr_->rsIdleUpdateCallback_(true);
+            });
+        }
     } else {
-        // idle detect used in ltps
-        StartScreenTimer(curScreenId_, IDLE_AFTER_TOUCH_UP, nullptr, [this]() {
-            forceUpdateCallback_(true, false);
-        });
+        HGM_LOGD("[touch manager] other touch status not support");
     }
 }
 
@@ -507,8 +588,10 @@ void HgmFrameRateManager::HandleIdleEvent(bool isIdle)
 {
     if (isIdle) {
         HGM_LOGI("HandleIdleEvent status:%{public}u", isIdle);
-        DeliverRefreshRateVote(0, "VOTER_TOUCH", REMOVE_VOTE);
-        DeliverRefreshRateVote(0, "VOTER_IDLE", ADD_VOTE, idleFps_, idleFps_);
+        // fix for down event but not refreshing frames condition
+        if (touchMgr_->touchMachine_.GetState() != TouchState::DOWN) {
+            DeliverRefreshRateVote(0, "VOTER_IDLE", ADD_VOTE, idleFps_, idleFps_);
+        }
     } else {
         DeliverRefreshRateVote(0, "VOTER_IDLE", REMOVE_VOTE);
     }
@@ -534,6 +617,7 @@ void HgmFrameRateManager::HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus
     HGM_LOGI("HandleScreenPowerStatus curScreen:%{public}d status:%{public}d",
         static_cast<int>(curScreenId_), static_cast<int>(status));
     if (status != ScreenPowerStatus::POWER_STATUS_ON) {
+        touchCnt_ = 0;
         return;
     }
     if (curScreenId_ == id) {
@@ -635,6 +719,7 @@ void HgmFrameRateManager::MarkVoteChange()
     isRefreshNeed_ = true;
     if (forceUpdateCallback_ != nullptr) {
         forceUpdateCallback_(false, true);
+        touchMgr_->rsIdleUpdateCallback_(false);
     }
 }
 
@@ -690,7 +775,7 @@ void HgmFrameRateManager::DeliverRefreshRateVote(pid_t pid, std::string eventNam
     }
 }
 
-VoteRange HgmFrameRateManager::ProcessRefreshRateVote()
+VoteRange HgmFrameRateManager::ProcessRefreshRateVote(FrameRateVoteInfo& frameRateVoteInfo)
 {
     if (!isRefreshNeed_) {
         uint32_t lastPendingRate = HgmCore::Instance().GetPendingScreenRefreshRate();
@@ -722,17 +807,21 @@ VoteRange HgmFrameRateManager::ProcessRefreshRateVote()
             min = minTemp;
             if (min >= max) {
                 min = max;
+                frameRateVoteInfo.SetVoteInfo(voter, max);
                 break;
             }
         }
         if (maxTemp < max) {
             max = maxTemp;
+            frameRateVoteInfo.SetVoteInfo(voter, max);
             if (min >= max) {
                 max = min;
+                frameRateVoteInfo.SetVoteInfo(voter, max);
                 break;
             }
         }
         if (min == max) {
+            frameRateVoteInfo.SetVoteInfo(voter, max);
             break;
         }
     }
@@ -828,13 +917,6 @@ void HgmFrameRateManager::CleanVote(pid_t pid)
     }
 }
 
-void HgmFrameRateManager::HandleTempEvent(
-    const std::string& tempEventName, bool eventStatus, uint32_t min, uint32_t max)
-{
-    RS_TRACE_NAME_FMT("HandleTempEvent TempEvent:%s, status:%u, value:[%d-%d]",
-        tempEventName.c_str(), eventStatus, min, max);
-    DeliverRefreshRateVote(0, "VOTER_TEMP", eventStatus, min, max);
-}
 
 } // namespace Rosen
 } // namespace OHOS

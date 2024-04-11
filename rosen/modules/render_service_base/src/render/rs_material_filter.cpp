@@ -100,8 +100,14 @@ RSMaterialFilter::RSMaterialFilter(MaterialParam materialParam, BLUR_COLOR_MODE 
         colorPickerTask_ = std::make_shared<RSColorPickerCacheTask>();
     }
 
+    float radiusForHash = DecreasePrecision(radius_);
+    float saturationForHash = DecreasePrecision(saturation_);
+    float brightnessForHash = DecreasePrecision(brightness_);
     hash_ = SkOpts::hash(&type_, sizeof(type_), 0);
-    hash_ = SkOpts::hash(&materialParam, sizeof(materialParam), hash_);
+    hash_ = SkOpts::hash(&radiusForHash, sizeof(radiusForHash), hash_);
+    hash_ = SkOpts::hash(&saturationForHash, sizeof(saturationForHash), hash_);
+    hash_ = SkOpts::hash(&brightnessForHash, sizeof(brightnessForHash), hash_);
+    hash_ = SkOpts::hash(&maskColor_, sizeof(maskColor_), hash_);
     hash_ = SkOpts::hash(&colorMode_, sizeof(colorMode_), hash_);
 }
 
@@ -128,7 +134,8 @@ std::string RSMaterialFilter::GetDetailedDescription()
     if (sprintf_s(maskColorStr, UINT8_MAX, "%08X", maskColor_.AsArgbInt()) != -1) {
         return "RSMaterialFilterBlur, radius: " + std::to_string(radius_) + " sigma" +
             ", saturation: " + std::to_string(saturation_) + ", brightness: " + std::to_string(brightness_) +
-            ", greyCoef1: " + std::to_string(greyCoef_->x_) + ", greyCoef2: " + std::to_string(greyCoef_->y_) +
+            ", greyCoef1: " + std::to_string(greyCoef_ == std::nullopt ? 0.0f : greyCoef_->x_) +
+            ", greyCoef2: " + std::to_string(greyCoef_ == std::nullopt ? 0.0f : greyCoef_->y_) +
             ", color: " + maskColorStr + ", colorMode: " + std::to_string(colorMode_);
     };
     return "RSMaterialFilterBlur, maskColorStr failed";
@@ -169,7 +176,8 @@ std::shared_ptr<Drawing::ColorFilter> RSMaterialFilter::GetColorFilter(float sat
 std::shared_ptr<Drawing::ImageFilter> RSMaterialFilter::CreateMaterialFilter(float radius, float sat, float brightness)
 {
     colorFilter_ = GetColorFilter(sat, brightness);
-    return Drawing::ImageFilter::CreateColorBlurImageFilter(*colorFilter_, radius, radius);
+    auto blurType = KAWASE_BLUR_ENABLED ? Drawing::ImageBlurType::KAWASE : Drawing::ImageBlurType::GAUSS;
+    return Drawing::ImageFilter::CreateColorBlurImageFilter(*colorFilter_, radius, radius, blurType);
 }
 
 std::shared_ptr<Drawing::ImageFilter> RSMaterialFilter::CreateMaterialStyle(
@@ -298,8 +306,10 @@ void RSMaterialFilter::DrawImageRect(Drawing::Canvas& canvas, const std::shared_
     if (greyImage == nullptr) {
         greyImage = image;
     }
+    static bool DDGR_ENABLED = RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR;
     KawaseParameter param = KawaseParameter(src, dst, radius_, colorFilter_, brush.GetColor().GetAlphaF());
-    if (KAWASE_BLUR_ENABLED && KawaseBlurFilter::GetKawaseBlurFilter()->ApplyKawaseBlur(canvas, greyImage, param)) {
+    if (!DDGR_ENABLED && KAWASE_BLUR_ENABLED &&
+        KawaseBlurFilter::GetKawaseBlurFilter()->ApplyKawaseBlur(canvas, greyImage, param)) {
         return;
     }
     canvas.AttachBrush(brush);

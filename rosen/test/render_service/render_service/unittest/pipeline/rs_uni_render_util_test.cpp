@@ -116,6 +116,34 @@ HWTEST_F(RSUniRenderUtilTest, SrcRectScaleDown_002, Function | SmallTest | Level
 }
 
 /*
+ * @tc.name: GetMatrixOfBufferToRelRect_001
+ * @tc.desc: test GetMatrixOfBufferToRelRect with surfaceNode without buffer
+ * @tc.type: FUNC
+ * @tc.require: #I9E60C
+ */
+HWTEST_F(RSUniRenderUtilTest, GetMatrixOfBufferToRelRect_001, Function | SmallTest | Level2)
+{
+    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    RSSurfaceRenderNode& node = static_cast<RSSurfaceRenderNode&>(*(rsSurfaceRenderNode.get()));
+    RSUniRenderUtil::GetMatrixOfBufferToRelRect(node);
+}
+
+/*
+ * @tc.name: GetMatrixOfBufferToRelRect_002
+ * @tc.desc: test GetMatrixOfBufferToRelRect with surfaceNode with buffer
+ * @tc.type: FUNC
+ * @tc.require: #I9E60C
+ */
+HWTEST_F(RSUniRenderUtilTest, GetMatrixOfBufferToRelRect_002, Function | SmallTest | Level2)
+{
+    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    RSSurfaceRenderNode& node = static_cast<RSSurfaceRenderNode&>(*(rsSurfaceRenderNode.get()));
+    RSUniRenderUtil::GetMatrixOfBufferToRelRect(node);
+}
+
+/*
  * @tc.name: CreateBufferDrawParam_001
  * @tc.desc:
  * @tc.type: FUNC
@@ -388,12 +416,12 @@ HWTEST_F(RSUniRenderUtilTest, AssignSubThreadNode, Function | SmallTest | Level2
 }
 
 /*
- * @tc.name: FloorTransXYInCanvasMatrix
+ * @tc.name: CeilTransXYInCanvasMatrix
  * @tc.desc:
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSUniRenderUtilTest, FloorTransXYInCanvasMatrix, Function | SmallTest | Level2)
+HWTEST_F(RSUniRenderUtilTest, CeilTransXYInCanvasMatrix, Function | SmallTest | Level2)
 {
     Drawing::Matrix matrix = Drawing::Matrix();
     matrix.SetMatrix(1.0, 0.0, 0.1, 0.0, 1.0, 0.1, 0.0, 0.0, 1.0);
@@ -402,7 +430,7 @@ HWTEST_F(RSUniRenderUtilTest, FloorTransXYInCanvasMatrix, Function | SmallTest |
     auto cachedEffectDataptr = std::make_shared<RSPaintFilterCanvas::CachedEffectData>();
     RSPaintFilterCanvas::CanvasStatus status{0.0, matrix, cachedEffectDataptr};
     canvas->SetCanvasStatus(status);
-    RSUniRenderUtil::FloorTransXYInCanvasMatrix(*canvas);
+    RSUniRenderUtil::CeilTransXYInCanvasMatrix(*canvas);
     ASSERT_TRUE(canvas->GetTotalMatrix().Get(Drawing::Matrix::TRANS_X) < 0.001);
     ASSERT_TRUE(canvas->GetTotalMatrix().Get(Drawing::Matrix::TRANS_Y) < 0.001);
 }

@@ -56,6 +56,7 @@ public:
     static void DrawBinarizationShader(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawLightUpEffect(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawDynamicLightUp(const RSProperties& properties, RSPaintFilterCanvas& canvas);
+    static void DrawDynamicDim(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawParticle(const RSProperties& properties, RSPaintFilterCanvas& canvas);
 
     static void BeginBlendMode(RSPaintFilterCanvas& canvas, const RSProperties& properties);
@@ -108,14 +109,18 @@ private:
     static void DrawShadowInner(const RSProperties& properties, RSPaintFilterCanvas& canvas, Drawing::Path& path);
     static void DrawLightInner(const RSProperties& properties, Drawing::Canvas& canvas,
         std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder,
-        const std::unordered_set<std::shared_ptr<RSLightSource>>& lightSources,
+        const std::vector<std::pair<std::shared_ptr<RSLightSource>, Vector4f>>& lightSourcesAndPosMap,
         const std::shared_ptr<RSObjAbsGeometry>& geoPtr);
     static void DrawContentLight(const RSProperties& properties, Drawing::Canvas& canvas,
-        std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Brush& brush, Vector4f& lightIntensity);
+        std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Brush& brush,
+        const float lightIntensityArray[]);
     static void DrawBorderLight(const RSProperties& properties, Drawing::Canvas& canvas,
-        std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Pen& pen, Vector4f& lightIntensity);
+        std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Pen& pen,
+        const float lightIntensityArray[]);
     static std::shared_ptr<Drawing::ShaderEffect> MakeLightUpEffectShader(
         float lightUpDeg, std::shared_ptr<Drawing::ShaderEffect> imageShader);
+    static std::shared_ptr<Drawing::ShaderEffect> MakeDynamicDimShader(
+        float dynamicDimDeg, std::shared_ptr<Drawing::ShaderEffect> imageShader);
     static std::shared_ptr<Drawing::ShaderEffect> MakeBinarizationShader(float low, float high,
         float thresholdLow, float thresholdHigh, std::shared_ptr<Drawing::ShaderEffect> imageShader);
     static std::shared_ptr<Drawing::RuntimeEffect> MakeGreyAdjustmentEffect();
@@ -128,6 +133,7 @@ private:
     static std::shared_ptr<Drawing::RuntimeEffect> binarizationShaderEffect_;
     static std::shared_ptr<Drawing::RuntimeEffect> lightUpEffectShaderEffect_;
     static std::shared_ptr<Drawing::RuntimeEffect> dynamicLightUpBlenderEffect_;
+    static std::shared_ptr<Drawing::RuntimeEffect> dynamicDimShaderEffect_;
     inline static int g_blurCnt = 0;
 };
 } // namespace Rosen

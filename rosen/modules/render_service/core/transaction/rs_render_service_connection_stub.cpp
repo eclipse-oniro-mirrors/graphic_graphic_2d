@@ -14,6 +14,7 @@
  */
 
 #include "rs_render_service_connection_stub.h"
+#include <memory>
 #include "ivsync_connection.h"
 #include "securec.h"
 #include "sys_binder.h"
@@ -464,12 +465,13 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             float scaleX = data.ReadFloat();
             float scaleY = data.ReadFloat();
             SurfaceCaptureType surfaceCaptureType = static_cast<SurfaceCaptureType>(data.ReadUint8());
+            bool isSync = data.ReadBool();
             if (RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode(id)->GetType() ==
                 RSRenderNodeType::DISPLAY_NODE && !securityManager_.IsInterfaceCodeAccessible(code)) {
                 RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest no permission to access TAKE_SURFACE_CAPTURE");
                 return ERR_INVALID_STATE;
             }
-            TakeSurfaceCapture(id, cb, scaleX, scaleY, surfaceCaptureType);
+            TakeSurfaceCapture(id, cb, scaleX, scaleY, surfaceCaptureType, isSync);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_APPLICATION_AGENT): {
@@ -792,6 +794,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             std::string name = data.ReadString();
             auto remoteObj = data.ReadRemoteObject();
             uint64_t id = data.ReadUint64();
+            NodeId windowNodeID = data.ReadUint64();
             if (remoteObj == nullptr) {
                 ret = ERR_NULL_OBJECT;
                 break;
@@ -805,7 +808,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_UNKNOWN_OBJECT;
                 break;
             }
-            sptr<IVSyncConnection> conn = CreateVSyncConnection(name, token, id);
+            sptr<IVSyncConnection> conn = CreateVSyncConnection(name, token, id, windowNodeID);
             if (conn == nullptr) {
                 ret = ERR_NULL_OBJECT;
                 break;
@@ -1001,6 +1004,32 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             if (result) {
                 RSMarshallingHelper::Marshalling(reply, pixelmap);
             }
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_TYPEFACE): {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            uint64_t uniqueId = data.ReadUint64();
+            std::shared_ptr<Drawing::Typeface> typeface;
+            bool result = false;
+            result = RSMarshallingHelper::Unmarshalling(data, typeface);
+            if (result) {
+                RegisterTypeface(uniqueId, typeface);
+            }
+            reply.WriteBool(result);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_TYPEFACE): {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            uint64_t uniqueId = data.ReadUint64();
+            UnRegisterTypeface(uniqueId);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SKIP_FRAME_INTERVAL): {
@@ -1308,6 +1337,21 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             int32_t status = RegisterHgmRefreshRateModeChangeCallback(callback);
+            reply.WriteInt32(status);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REFRESH_RATE_UPDATE_CALLBACK) : {
+            sptr<RSIHgmConfigChangeCallback> callback = nullptr;
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            auto remoteObject = data.ReadRemoteObject();
+            if (remoteObject != nullptr) {
+                callback = iface_cast<RSIHgmConfigChangeCallback>(remoteObject);
+            }
+            int32_t status = RegisterHgmRefreshRateUpdateCallback(callback);
             reply.WriteInt32(status);
             break;
         }

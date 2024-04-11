@@ -41,6 +41,7 @@ enum RSNodeCommandType : uint16_t {
     UPDATE_MODIFIER_MASK_PTR,
     UPDATE_MODIFIER_PATH_PTR,
     UPDATE_MODIFIER_GRADIENT_BLUR_PTR,
+    UPDATE_MODIFIER_EMITTER_UPDATER_PTR,
     UPDATE_MODIFIER_SHADER_PTR,
     UPDATE_MODIFIER_VECTOR2F,
     UPDATE_MODIFIER_VECTOR4_BORDER_STYLE,
@@ -57,6 +58,7 @@ enum RSNodeCommandType : uint16_t {
     MARK_CONTENT_CHANGED,
     SET_DRAW_REGION,
     SET_OUT_OF_PARENT,
+    SET_TAKE_SURFACE_CAPTURE_FOR_UI_FLAG,
 
     REGISTER_GEOMETRY_TRANSITION,
     UNREGISTER_GEOMETRY_TRANSITION,
@@ -132,6 +134,7 @@ public:
     static void MarkContentChanged(RSContext& context, NodeId nodeId, bool isChanged);
     static void SetDrawRegion(RSContext& context, NodeId nodeId, std::shared_ptr<RectF> rect);
     static void SetOutOfParent(RSContext& context, NodeId nodeId, OutOfParentType outOfParent);
+    static void SetTakeSurfaceForUIFlag(RSContext& context, NodeId nodeId);
 
     static void RegisterGeometryTransitionPair(RSContext& context, NodeId inNodeId, NodeId outNodeId);
     static void UnregisterGeometryTransitionPair(RSContext& context, NodeId inNodeId, NodeId outNodeId);
@@ -179,6 +182,10 @@ ADD_COMMAND(RSUpdatePropertyLinearGradientBlurPara,
     ARG(RS_NODE, UPDATE_MODIFIER_GRADIENT_BLUR_PTR,
         RSNodeCommandHelper::UpdateModifier<std::shared_ptr<RSLinearGradientBlurPara>>,
         NodeId, std::shared_ptr<RSLinearGradientBlurPara>, PropertyId, PropertyUpdateType))
+ADD_COMMAND(RSUpdatePropertyEmitterUpdater,
+    ARG(RS_NODE, UPDATE_MODIFIER_EMITTER_UPDATER_PTR,
+        RSNodeCommandHelper::UpdateModifier<std::shared_ptr<EmitterUpdater>>,
+        NodeId, std::shared_ptr<EmitterUpdater>, PropertyId, PropertyUpdateType))
 ADD_COMMAND(RSUpdatePropertyShader,
     ARG(RS_NODE, UPDATE_MODIFIER_SHADER_PTR, RSNodeCommandHelper::UpdateModifier<std::shared_ptr<RSShader>>,
         NodeId, std::shared_ptr<RSShader>, PropertyId, PropertyUpdateType))
@@ -230,6 +237,8 @@ ADD_COMMAND(RSSetDrawRegion,
 ADD_COMMAND(RSSetOutOfParent,
     ARG(RS_NODE, SET_OUT_OF_PARENT, RSNodeCommandHelper::SetOutOfParent,
         NodeId, OutOfParentType))
+ADD_COMMAND(RSSetTakeSurfaceForUIFlag,
+    ARG(RS_NODE, SET_TAKE_SURFACE_CAPTURE_FOR_UI_FLAG, RSNodeCommandHelper::SetTakeSurfaceForUIFlag, NodeId))
 
 ADD_COMMAND(RSRegisterGeometryTransitionNodePair,
     ARG(RS_NODE, REGISTER_GEOMETRY_TRANSITION, RSNodeCommandHelper::RegisterGeometryTransitionPair, NodeId, NodeId))

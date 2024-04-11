@@ -539,7 +539,8 @@ void RSScreen::DisplayDump(int32_t screenIndex, std::string& dumpString)
         dumpString += "mirrorId=";
         dumpString += (mirrorId_ == INVALID_SCREEN_ID) ? "INVALID_SCREEN_ID" : std::to_string(mirrorId_);
         dumpString += ", ";
-        AppendFormat(dumpString, ", render size: %dx%d, isvirtual=true\n", width_, height_);
+        AppendFormat(dumpString, ", render size: %dx%d, isvirtual=true, skipFrameInterval_:%d\n",
+            width_, height_, skipFrameInterval_);
     } else {
         dumpString += "screen[" + std::to_string(screenIndex) + "]: ";
         dumpString += "id=";
@@ -550,8 +551,9 @@ void RSScreen::DisplayDump(int32_t screenIndex, std::string& dumpString)
         dumpString += "backlight=" + std::to_string(GetScreenBacklight());
         dumpString += ", ";
         ScreenTypeDump(dumpString);
-        AppendFormat(dumpString, ", render size: %dx%d, physical screen resolution: %dx%d, isvirtual=false\n",
-            width_, height_, phyWidth_, phyHeight_);
+        AppendFormat(dumpString,
+            ", render size: %dx%d, physical screen resolution: %dx%d, isvirtual=false, skipFrameInterval_:%d\n",
+            width_, height_, phyWidth_, phyHeight_, skipFrameInterval_);
         dumpString += "\n";
         ModeInfoDump(dumpString);
         CapabilityDump(dumpString);
@@ -606,6 +608,15 @@ void RSScreen::ClearFpsDump(int32_t screenIndex, std::string& dumpString, std::s
         return;
     }
     hdiOutput_->ClearFpsDump(dumpString, arg);
+}
+
+void RSScreen::HitchsDump(int32_t screenIndex, std::string& dumpString, std::string& arg)
+{
+    if (hdiOutput_ == nullptr) {
+        RS_LOGW("RSScreen %{public}s: hdiOutput_ is nullptr.", __func__);
+        return;
+    }
+    hdiOutput_->DumpHitchs(dumpString, arg);
 }
 
 void RSScreen::ResizeVirtualScreen(uint32_t width, uint32_t height)

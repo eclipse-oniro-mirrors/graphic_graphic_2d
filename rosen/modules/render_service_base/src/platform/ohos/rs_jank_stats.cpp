@@ -137,7 +137,7 @@ void RSJankStats::SetRSJankStats()
         return;
     }
     if (missedVsync >= VSYNC_JANK_LOG_THRESHOLED) {
-        ROSEN_LOGI("RSJankStats::SetJankStats jank frames %{public}lld", missedVsync);
+        ROSEN_LOGI("RSJankStats::SetJankStats jank frames %{public} " PRId64 "", missedVsync);
     }
     size_t type = JANK_FRAME_INVALID;
     if (missedVsync < 6) {                                       // JANK_FRAME_6_FREQ   : (0,6)
@@ -408,8 +408,9 @@ void RSJankStats::ReportEventJankFrame(const JankFrames& jankFrames, bool isRepo
             return;
         }
         float aveFrameTimeSteady = jankFrames.totalFrameTimeSteady_ / static_cast<float>(jankFrames.totalFrames_);
-        RS_TRACE_NAME_FMT("RSJankStats::ReportEventJankFrame maxFrameTime is %" PRId64 "ms: %s",
-                        jankFrames.maxFrameTimeSteady_, GetSceneDescription(info).c_str());
+        RS_TRACE_NAME_FMT(
+            "RSJankStats::ReportEventJankFrame maxFrameTime is %" PRId64 "ms, maxHitchTime is %" PRId64 "ms: %s",
+            jankFrames.maxFrameTimeSteady_, jankFrames.maxHitchTime_, GetSceneDescription(info).c_str());
         HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, reportName,
             OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "UNIQUE_ID", info.uniqueId, "SCENE_ID", info.sceneId,
             "PROCESS_NAME", info.processName, "MODULE_NAME", info.bundleName, "ABILITY_NAME", info.abilityName,
@@ -425,8 +426,9 @@ void RSJankStats::ReportEventJankFrame(const JankFrames& jankFrames, bool isRepo
         }
         float aveFrameTimeSteady =
             jankFrames.lastTotalFrameTimeSteady_ / static_cast<float>(jankFrames.lastTotalFrames_);
-        RS_TRACE_NAME_FMT("RSJankStats::ReportEventJankFrame maxFrameTime is %" PRId64 "ms: %s",
-                        jankFrames.lastMaxFrameTimeSteady_, GetSceneDescription(info).c_str());
+        RS_TRACE_NAME_FMT(
+            "RSJankStats::ReportEventJankFrame maxFrameTime is %" PRId64 "ms, maxHitchTime is %" PRId64 "ms: %s",
+            jankFrames.lastMaxFrameTimeSteady_, jankFrames.lastMaxHitchTime_, GetSceneDescription(info).c_str());
         HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, reportName,
             OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "UNIQUE_ID", info.uniqueId, "SCENE_ID", info.sceneId,
             "PROCESS_NAME", info.processName, "MODULE_NAME", info.bundleName, "ABILITY_NAME", info.abilityName,

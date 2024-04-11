@@ -301,6 +301,8 @@ RSPropertyDrawable::DrawablePtr RSMaskDrawable::Generate(const RSRenderContent& 
         return std::make_unique<RSGradientMaskDrawable>(mask);
     } else if (mask->IsPathMask()) {
         return std::make_unique<RSPathMaskDrawable>(mask);
+    } else if (mask->IsPixelMapMask()) {
+        return std::make_unique<RSPixelMapMaskDrawable>(mask);
     }
     return nullptr;
 }
@@ -409,6 +411,30 @@ void RSPathMaskDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanva
         canvas.DrawPath(*mask_->GetMaskPath());
         canvas.DetachBrush();
         canvas.DetachPen();
+    }
+    canvas.RestoreToCount(tmpLayer);
+    Drawing::SaveLayerOps slrContent(&bounds, &maskBrush_);
+    canvas.SaveLayer(slrContent);
+    canvas.ClipRect(bounds, Drawing::ClipOp::INTERSECT, true);
+}
+
+RSPixelMapMaskDrawable::RSPixelMapMaskDrawable(std::shared_ptr<RSMask> mask) : RSMaskDrawable(mask) {}
+
+void RSPixelMapMaskDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
+{
+    auto& properties = content.GetRenderProperties();
+    auto bounds = RSPropertiesPainter::Rect2DrawingRect(properties.GetBoundsRect());
+    canvas.Save();
+    Drawing::SaveLayerOps slr(&bounds, nullptr);
+    canvas.SaveLayer(slr);
+    int tmpLayer = canvas.GetSaveCount();
+    Drawing::SaveLayerOps slrMask(&bounds, &maskFilterBrush_);
+    canvas.SaveLayer(slrMask);
+    {
+        Drawing::AutoCanvasRestore acr(canvas, true);
+        if (mask_->GetImage()) {
+            canvas.DrawImage(*mask_->GetImage(), 0.f, 0.f, Drawing::SamplingOptions());
+        }
     }
     canvas.RestoreToCount(tmpLayer);
     Drawing::SaveLayerOps slrContent(&bounds, &maskBrush_);
@@ -633,6 +659,26 @@ bool RSLightUpEffectDrawable::Update(const RSRenderContent& content)
 }
 
 // ============================================================================
+//DynamicDim
+RSPropertyDrawable::DrawablePtr RSDynamicDimDrawable::Generate(const RSRenderContent& context)
+{
+    if (!context.GetRenderProperties().IsDynamicDimValid()) {
+        return nullptr;
+    }
+    return std::make_unique<RSDynamicDimDrawable>();
+}
+
+bool RSDynamicDimDrawable::Update(const RSRenderContent& context)
+{
+    return context.GetRenderProperties().IsDynamicDimValid();
+}
+
+void RSDynamicDimDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
+{
+    RSPropertiesPainter::DrawDynamicDim(content.GetRenderProperties(), canvas);
+}
+
+// ============================================================================
 // Binarization
 void RSBinarizationDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
 {
@@ -683,26 +729,26 @@ void RSBackgroundFilterDrawable::Draw(const RSRenderContent& content, RSPaintFil
     RSPropertiesPainter::DrawFilter(content.GetRenderProperties(), canvas, FilterType::BACKGROUND_FILTER);
 }
 
-// foreground filter
-RSPropertyDrawable::DrawablePtr RSForegroundFilterDrawable::Generate(const RSRenderContent& content)
+// compositing filter
+RSPropertyDrawable::DrawablePtr RSCompositingFilterDrawable::Generate(const RSRenderContent& content)
 {
     if (!RSPropertiesPainter::BLUR_ENABLED) {
-        ROSEN_LOGD("RSForegroundFilterDrawable::Generate close blur.");
+        ROSEN_LOGD("RSCompositingFilterDrawable::Generate close blur.");
         return nullptr;
     }
     auto& filter = content.GetRenderProperties().GetFilter();
     if (filter == nullptr) {
         return nullptr;
     }
-    return std::make_unique<RSForegroundFilterDrawable>();
+    return std::make_unique<RSCompositingFilterDrawable>();
 }
 
-bool RSForegroundFilterDrawable::Update(const RSRenderContent& content)
+bool RSCompositingFilterDrawable::Update(const RSRenderContent& content)
 {
     return content.GetRenderProperties().GetFilter() != nullptr;
 }
 
-void RSForegroundFilterDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
+void RSCompositingFilterDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
 {
     RSPropertiesPainter::DrawFilter(content.GetRenderProperties(), canvas, FilterType::FOREGROUND_FILTER);
 }
@@ -828,20 +874,25 @@ RSPropertyDrawable::DrawablePtr RSPixelStretchDrawable::Generate(const RSRenderC
 void RSBackgroundDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanvas& canvas) const
 {
     auto& properties = content.GetRenderProperties();
-    bool antiAlias = RSPropertiesPainter::GetBgAntiAlias() || !properties.GetCornerRadius().IsZero();
     auto borderColorAlpha = properties.GetBorderColor()[0].GetAlpha();
     Drawing::Brush brush = brush_;
-    brush.SetAntiAlias(antiAlias);
-    canvas.AttachBrush(brush);
     // use drawrrect to avoid texture update in phone screen rotation scene
-    if (RSSystemProperties::IsPhoneType()) {
+    if (RSSystemProperties::IsPhoneType() && RSSystemProperties::GetCacheEnabledForRotation()) {
+        bool antiAlias = RSPropertiesPainter::GetBgAntiAlias() || !properties.GetCornerRadius().IsZero();
+        brush.SetAntiAlias(antiAlias);
+        canvas.AttachBrush(brush);
         if (borderColorAlpha < BORDER_TRANSPARENT) {
             canvas.DrawRoundRect(RSPropertiesPainter::RRect2DrawingRRect(properties.GetRRect()));
         } else {
             canvas.DrawRoundRect(RSPropertiesPainter::RRect2DrawingRRect(properties.GetInnerRRect()));
         }
     } else {
-        canvas.DrawRect(RSPropertiesPainter::Rect2DrawingRect(properties.GetBoundsRect()));
+        canvas.AttachBrush(brush);
+        if (borderColorAlpha < BORDER_TRANSPARENT) {
+            canvas.DrawRect(RSPropertiesPainter::Rect2DrawingRect(properties.GetBoundsRect()));
+        } else {
+            canvas.DrawRect(RSPropertiesPainter::RRect2DrawingRRect(properties.GetInnerRRect()).GetRect());
+        }
     }
     canvas.DetachBrush();
 }
@@ -917,7 +968,10 @@ void RSBackgroundImageDrawable::Draw(const RSRenderContent& content, RSPaintFilt
     const auto& image = properties.GetBgImage();
 
     auto boundsRect = RSPropertiesPainter::Rect2DrawingRect(properties.GetBoundsRect());
+    auto innerRect = properties.GetBgImageInnerRect();
     canvas.AttachBrush(brush_);
+    image->SetInnerRect(std::make_optional<Drawing::RectI>(
+        innerRect.x_, innerRect.y_, innerRect.x_ + innerRect.z_, innerRect.y_ + innerRect.w_));
     image->CanvasDrawImage(canvas, boundsRect, Drawing::SamplingOptions(), true);
     canvas.DetachBrush();
 }
@@ -932,6 +986,8 @@ std::unique_ptr<RSPropertyDrawable> BlendSaveDrawableGenerate(const RSRenderCont
         // no blend
         return nullptr;
     }
+    RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO,
+        "BlendSaveDrawableGenerate::BlendMode, blendMode: %d, blendModeApplyType: %d", blendMode, blendModeApplyType);
     if (blendModeApplyType == static_cast<int>(RSColorBlendApplyType::FAST)) {
         return std::make_unique<RSBlendFastDrawable>(blendMode);
     }

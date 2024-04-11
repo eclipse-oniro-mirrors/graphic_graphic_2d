@@ -131,7 +131,10 @@ public:
 
     void SetHardwareEnabledNodes(const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hardwareEnabledNodes);
     void AssignGlobalZOrderAndCreateLayer(std::vector<std::shared_ptr<RSSurfaceRenderNode>>& nodesInZOrder);
+    void RotateMirrorCanvasIfNeed(RSDisplayRenderNode& node, bool canvasRotation = false);
     void ScaleMirrorIfNeed(RSDisplayRenderNode& node, bool canvasRotation = false);
+    void RotateMirrorCanvasIfNeedForWiredScreen(RSDisplayRenderNode& node);
+    void ScaleMirrorIfNeedForWiredScreen(RSDisplayRenderNode& node, bool canvasRotation = false);
 
     bool GetIsPartialRenderEnabled() const
     {
@@ -195,7 +198,7 @@ private:
     void DrawAllSurfaceOpaqueRegionForDFX(RSDisplayRenderNode& node);
     void DrawSurfaceOpaqueRegionForDFX(RSSurfaceRenderNode& node);
     void DrawTargetSurfaceVisibleRegionForDFX(RSDisplayRenderNode& node);
-    void DrawCurrentRefreshRate(uint32_t currentRefreshRate, uint32_t realtimeRefreshRate);
+    void DrawCurrentRefreshRate(uint32_t currentRefreshRate, uint32_t realtimeRefreshRate, RSDisplayRenderNode& node);
     // check if surface name is in dfx target list
     inline bool CheckIfSurfaceTargetedForDFX(std::string nodeName)
     {
@@ -209,6 +212,7 @@ private:
 
     bool IsNotDirtyHardwareEnabledTopSurface(std::shared_ptr<RSSurfaceRenderNode>& node) const;
     std::vector<RectI> GetDirtyRects(const Occlusion::Region &region);
+    void ClipRegion(std::shared_ptr<Drawing::Canvas> canvas, const Drawing::Region& region) const;
     /* calculate display/global (between windows) level dirty region, current include:
      * 1. window move/add/remove 2. transparent dirty region
      * when process canvas culling, canvas intersect with surface's visibledirty region or
@@ -260,7 +264,6 @@ private:
     void DrawChildRenderNode(RSRenderNode& node);
     void DrawChildCanvasRenderNode(RSRenderNode& node);
 
-    void RotateMirrorCanvasIfNeed(RSDisplayRenderNode& node, bool canvasRotation = false);
     void CheckColorSpace(RSSurfaceRenderNode& node);
     void HandleColorGamuts(RSDisplayRenderNode& node, const sptr<RSScreenManager>& screenManager);
     void CheckPixelFormat(RSSurfaceRenderNode& node);
@@ -357,6 +360,7 @@ private:
     bool dirtyFlag_ { false };
     std::unique_ptr<RSRenderFrame> renderFrame_;
     std::shared_ptr<RSPaintFilterCanvas> canvas_;
+    Drawing::Region clipRegion_;
     std::map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> dirtySurfaceNodeMap_;
     std::map<NodeId, RectI> cacheRenderNodeMapRects_;
     std::map<NodeId, bool> cacheRenderNodeIsUpdateMap_;
@@ -488,6 +492,7 @@ private:
     bool noNeedTodrawShadowAgain_ = false;
     bool notRunCheckAndSetNodeCacheType_ = false;
     int updateCacheProcessCnt_ = 0;
+    std::vector<std::string> windowsName_;
 
     NodeId firstVisitedCache_ = INVALID_NODEID;
     std::unordered_set<NodeId> visitedCacheNodeIds_ = {};
@@ -505,6 +510,7 @@ private:
     bool isNodeSingleFrameComposer_ = false;
     // use for screen recording optimization
     std::shared_ptr<Drawing::Image> cacheImgForCapture_ = nullptr;
+    std::shared_ptr<Drawing::Image> offScreenCacheImgForCapture_ = nullptr;
 
     void SetHasSharedTransitionNode(RSSurfaceRenderNode& surfaceNode, bool hasSharedTransitionNode);
 

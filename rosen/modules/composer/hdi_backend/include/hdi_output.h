@@ -72,6 +72,7 @@ public:
     std::unique_ptr<FrameBufferEntry> GetFramebuffer();
     void Dump(std::string &result) const;
     void DumpFps(std::string &result, const std::string &arg) const;
+    void DumpHitchs(std::string &result, const std::string &arg) const;
     void ClearFpsDump(std::string &result, const std::string &arg);
     void SetDirectClientCompEnableStatus(bool enableStatus);
     bool GetDirectClientCompEnableStatus() const;
@@ -129,6 +130,9 @@ private:
     inline bool CheckFbSurface();
     bool CheckAndUpdateClientBufferCahce(sptr<SurfaceBuffer> buffer, uint32_t& index);
     static void SetBufferColorSpace(sptr<SurfaceBuffer>& buffer, const std::vector<LayerPtr>& layers);
+
+    // DISPLAY ENGINE
+    bool CheckIfDoArsrPre(const LayerInfoPtr &layerInfo);
 };
 } // namespace Rosen
 } // namespace OHOS

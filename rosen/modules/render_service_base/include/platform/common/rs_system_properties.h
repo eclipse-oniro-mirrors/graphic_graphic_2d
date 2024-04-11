@@ -217,6 +217,7 @@ public:
 
     static bool GetDumpUICaptureEnabled();
     static bool GetDumpUIPixelmapEnabled();
+    static uint32_t GetVirtualScreenScaleModeDFX();
 
     static inline GpuApiType GetGpuApiType()
     {
