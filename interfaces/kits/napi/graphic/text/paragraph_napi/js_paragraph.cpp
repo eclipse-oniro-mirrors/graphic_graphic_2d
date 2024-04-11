@@ -12,14 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "utils/log.h"
-#include "js_paragraph.h"
-#include "paragraph_builder_napi/js_paragraph_builder.h"
-#include "../js_text_utils.h"
-#include "draw/canvas.h"
 #include "canvas_napi/js_canvas.h"
-#include "text_line_napi/js_text_line.h"
+#include "draw/canvas.h"
 #include "../drawing/js_drawing_utils.h"
+#include "js_paragraph.h"
+#include "../js_text_utils.h"
+#include "paragraph_builder_napi/js_paragraph_builder.h"
+#include "text_line_napi/js_text_line.h"
+#include "utils/log.h"
 
 namespace OHOS::Rosen {
 std::unique_ptr<Typography> g_Typography = nullptr;
