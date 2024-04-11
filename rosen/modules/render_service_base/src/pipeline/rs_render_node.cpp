@@ -2025,7 +2025,21 @@ void RSRenderNode::UpdateShadowRect()
 void RSRenderNode::UpdateDisplayList()
 {
 #ifndef ROSEN_ARKUI_X
+    // Planning: use the mask from DrawableVecStatus in rs_drawable.cpp
+    constexpr auto BG_BOUNDS_PROPERTY = 1 << 1;
+    constexpr auto FG_BOUNDS_PROPERTY = 1 << 2;
+    constexpr auto FRAME_PROPERTY = 1 << 4;
+    constexpr auto EXTRA_PROPERTY = 1 << 5;
+    constexpr auto CONTENT_MASK = BG_BOUNDS_PROPERTY | FG_BOUNDS_PROPERTY | FRAME_PROPERTY | EXTRA_PROPERTY;
+
     stagingDrawCmdList_.clear();
+    drawCmdListNeedSync_ = true;
+
+    if ((drawableVecStatus_ & CONTENT_MASK) == 0) {
+        // Nothing to draw
+        stagingRenderParams_->SetContentEmpty(true);
+        return;
+    }
 
     // Note: the loop range is [begin, end], both end is included.
     auto AppendDrawFunc = [&](RSDrawableSlot begin, RSDrawableSlot end) -> int8_t {
@@ -2052,9 +2066,7 @@ void RSRenderNode::UpdateDisplayList()
 
     AppendDrawFunc(RSDrawableSlot::BACKGROUND_STYLE, RSDrawableSlot::BG_RESTORE_BOUNDS);
 
-    // Planning: use the mask from DrawableVecStatus in rs_drawable.cpp
-    constexpr auto FRAME_PROPERTY_MASK = 1 << 4;
-    if (drawableVecStatus_ & FRAME_PROPERTY_MASK) {
+    if (drawableVecStatus_ & FRAME_PROPERTY) {
         // Update index of CONTENT_STYLE
         stagingDrawCmdIndex_.contentIndex_ = AppendDrawFunc(RSDrawableSlot::SAVE_FRAME, RSDrawableSlot::CONTENT_STYLE);
         stagingDrawCmdIndex_.backgroundEndIndex_ = stagingDrawCmdList_.size();
@@ -2074,9 +2086,7 @@ void RSRenderNode::UpdateDisplayList()
 
     AppendDrawFunc(RSDrawableSlot::FG_SAVE_BOUNDS, RSDrawableSlot::RESTORE_ALL);
     stagingDrawCmdIndex_.endIndex_ = stagingDrawCmdList_.size();
-
-    stagingRenderParams_->SetContentEmpty(stagingDrawCmdList_.empty());
-    drawCmdListNeedSync_ = true;
+    stagingRenderParams_->SetContentEmpty(false);
 #endif
 }
 

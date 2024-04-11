@@ -200,17 +200,22 @@ enum DrawableVecStatus : uint8_t {
     FG_BOUNDS_PROPERTY = 1 << 2,
     FRAME_TRANSFORM    = 1 << 3,
     FRAME_PROPERTY     = 1 << 4,
-    HAVE_ENV_CHANGE    = 1 << 5,
+    EXTRA_PROPERTY     = 1 << 5,
+    ENV_CHANGED        = 1 << 6,
+    // masks
     BOUNDS_MASK        = CLIP_TO_BOUNDS | BG_BOUNDS_PROPERTY | FG_BOUNDS_PROPERTY,
     FRAME_MASK         = FRAME_TRANSFORM | FRAME_PROPERTY,
-    OTHER_MASK         = HAVE_ENV_CHANGE,
+    OTHER_MASK         = ENV_CHANGED,
+    CONTENT_MASK       = BG_BOUNDS_PROPERTY | FG_BOUNDS_PROPERTY | FRAME_PROPERTY | EXTRA_PROPERTY,
 };
 
 inline static bool HasPropertyDrawableInRange(
-    const RSDrawable::Vec& drawableVec, RSDrawableSlot begin, RSDrawableSlot end)
+    const RSDrawable::Vec& drawableVec, RSDrawableSlot begin, RSDrawableSlot end) noexcept
 {
-    return std::any_of(drawableVec.begin() + static_cast<size_t>(begin), drawableVec.begin() + static_cast<size_t>(end),
-        [](const auto& Ptr) { return Ptr != nullptr; });
+    // Note: the loop range is [begin, end], both end is included.
+    auto beginIt = drawableVec.begin() + static_cast<size_t>(begin);
+    auto endIt = drawableVec.begin() + static_cast<size_t>(end) + 1;
+    return std::any_of(beginIt, endIt, [](const auto& Ptr) { return Ptr != nullptr; });
 }
 
 static uint8_t CalculateDrawableVecStatus(RSRenderNode& node, const RSDrawable::Vec& drawableVec)
@@ -220,7 +225,8 @@ static uint8_t CalculateDrawableVecStatus(RSRenderNode& node, const RSDrawable::
 
     // color blend mode has implicit dependency on clipToBounds
     if (properties.GetClipToBounds() || properties.GetClipToRRect() || properties.GetClipBounds() != nullptr ||
-        properties.GetColorBlendMode() != static_cast<int>(RSColorBlendMode::NONE)) {
+        properties.GetColorBlendMode() != static_cast<int>(RSColorBlendMode::NONE))
+    {
         result |= DrawableVecStatus::CLIP_TO_BOUNDS;
     }
 
@@ -242,13 +248,18 @@ static uint8_t CalculateDrawableVecStatus(RSRenderNode& node, const RSDrawable::
         result |= DrawableVecStatus::FRAME_PROPERTY;
     }
 
+    if (HasPropertyDrawableInRange(
+            drawableVec, RSDrawableSlot::EXTRA_PROPERTIES_BEGIN, RSDrawableSlot::EXTRA_PROPERTIES_END)) {
+        result |= DrawableVecStatus::EXTRA_PROPERTY;
+    }
+
     // Foreground color & Background Effect & Blend Mode should be processed here
     if (drawableVec[static_cast<size_t>(RSDrawableSlot::ENV_FOREGROUND_COLOR)] ||
         drawableVec[static_cast<size_t>(RSDrawableSlot::ENV_FOREGROUND_COLOR_STRATEGY)] ||
         drawableVec[static_cast<size_t>(RSDrawableSlot::BLEND_MODE)] ||
         (node.GetType() == RSRenderNodeType::EFFECT_NODE &&
             drawableVec[static_cast<size_t>(RSDrawableSlot::BACKGROUND_FILTER)])) {
-        result |= DrawableVecStatus::HAVE_ENV_CHANGE;
+        result |= DrawableVecStatus::ENV_CHANGED;
     }
 
     return result;
@@ -364,7 +375,7 @@ static void OptimizeGlobalSaveRestore(RSRenderNode& node, RSDrawable::Vec& drawa
 
     // Parent will do canvas save/restore, we don't need to do it again
     uint8_t saveType = RSPaintFilterCanvas::SaveType::kNone;
-    if (flags & DrawableVecStatus::HAVE_ENV_CHANGE) {
+    if (flags & DrawableVecStatus::ENV_CHANGED) {
         // If we change env(fg color, effect, blendMode etc), we need to save env
         saveType |= RSPaintFilterCanvas::SaveType::kEnv;
     }
