@@ -292,7 +292,8 @@ inline napi_value GetRectAndConvertToJsValue(napi_env env, Drawing::Rect rect)
     return objValue;
 }
 
-inline napi_value CreateTextRectJsValue(napi_env env, TextRect textrect) {
+inline napi_value CreateTextRectJsValue(napi_env env, TextRect textrect)
+{
     napi_value objValue = nullptr;
     napi_create_object(env, &objValue);
     if (objValue != nullptr) {
@@ -301,9 +302,6 @@ inline napi_value CreateTextRectJsValue(napi_env env, TextRect textrect) {
     }
     return objValue;
 }
-
-
-
 
 bool OnMakeFontFamilies(napi_env& env, napi_value jsValue, std::vector<std::string> &fontFamilies);
 

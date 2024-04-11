@@ -499,12 +499,10 @@ napi_value JsParagraph::OnDidExceedMaxLines(napi_env env, napi_callback_info inf
 JsParagraph::JsParagraph(std::shared_ptr<Typography> typography)
     : paragraph_(typography)
 {
-
 }
 
 JsParagraph::~JsParagraph()
 {
-
 }
 
 std::shared_ptr<Typography> JsParagraph::GetParagraph()

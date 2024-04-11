@@ -129,8 +129,8 @@ static const std::map<std::string_view, const std::vector<struct JsEnumInt>&> g_
     { "EllipsisModal", g_ellipsisModal },
     { "TextDecoration", g_textDecoration },
     { "PlaceholderAlignment", g_placeholderVerticalAlignment },
-    { "RectWidthStyle",g_rectWidthStyle},
-    { "RectHeightStyle",g_rectHeightStyle},
+    { "RectWidthStyle", g_rectWidthStyle},
+    { "RectHeightStyle", g_rectHeightStyle},
 };
 
 napi_value JsEnum::JsEnumIntInit(napi_env env, napi_value exports)
