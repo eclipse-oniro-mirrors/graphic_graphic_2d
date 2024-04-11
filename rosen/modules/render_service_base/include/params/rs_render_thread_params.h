@@ -153,6 +153,16 @@ public:
         return onVsyncStartTimeSteady_;
     }
 
+    void SetIsUniRenderAndOnVsync(bool isUniRenderAndOnVsync)
+    {
+        isUniRenderAndOnVsync_ = isUniRenderAndOnVsync;
+    }
+
+    bool IsUniRenderAndOnVsync() const
+    {
+        return isUniRenderAndOnVsync_;
+    }
+
 private:
     // Used by hardware thred
     uint64_t timestamp_ = 0;
@@ -178,6 +188,7 @@ private:
     std::shared_ptr<Drawing::Image> watermarkImg_ = nullptr;
     int64_t onVsyncStartTime_ = TIMESTAMP_INITIAL;
     int64_t onVsyncStartTimeSteady_ = TIMESTAMP_INITIAL;
+    bool isUniRenderAndOnVsync_ = false;
 
     friend class RSMainThread;
     friend class RSUniRenderVisitor;

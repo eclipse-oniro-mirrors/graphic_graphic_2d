@@ -29,7 +29,6 @@
 
 namespace OHOS {
 namespace Rosen {
-namespace {
 constexpr uint32_t STANDARD_REFRESH_RATE = 60;
 constexpr int64_t TIMESTAMP_INITIAL = -1;
 constexpr int32_t TRACE_ID_INITIAL = -1;
@@ -91,20 +90,31 @@ struct TraceIdRemainderStats {
     int64_t remainder_ = 0;
     int64_t setTimeSteady_ = TIMESTAMP_INITIAL;
 };
-} // namespace
+
+struct JankDurationParams {
+    int64_t timeStart_ = TIMESTAMP_INITIAL;
+    int64_t timeStartSteady_ = TIMESTAMP_INITIAL;
+    int64_t timeEnd_ = TIMESTAMP_INITIAL;
+    int64_t timeEndSteady_ = TIMESTAMP_INITIAL;
+    uint32_t refreshRate_ = 0;
+    bool discardJankFrames_ = false;
+    bool skipJankAnimatorFrame_ = false;
+};
 
 class RSJankStats {
 public:
     static RSJankStats& GetInstance();
     void SetOnVsyncStartTime(int64_t onVsyncStartTime, int64_t onVsyncStartTimeSteady);
-    void SetStartTime();
-    void SetEndTime(bool discardJankFrames = false, uint32_t dynamicRefreshRate = STANDARD_REFRESH_RATE);
+    void SetStartTime(bool doDirectComposition = false);
+    void SetEndTime(bool skipJankAnimatorFrame = false, bool discardJankFrames = false,
+                    uint32_t dynamicRefreshRate = STANDARD_REFRESH_RATE,
+                    bool doDirectComposition = false, bool isReportTaskDelayed = false);
+    void HandleDirectComposition(const JankDurationParams& rsParams, bool isReportTaskDelayed);
     void ReportJankStats();
     void SetReportEventResponse(const DataBaseRs& info);
     void SetReportEventComplete(const DataBaseRs& info);
     void SetReportEventJankFrame(const DataBaseRs& info, bool isReportTaskDelayed);
     void SetAppFirstFrame(pid_t appPid);
-    void SetSkipDisplayNode();
 
 private:
     RSJankStats() = default;
@@ -112,7 +122,7 @@ private:
     DISALLOW_COPY_AND_MOVE(RSJankStats);
 
     void UpdateEndTime();
-    void SetRSJankStats();
+    void SetRSJankStats(uint32_t dynamicRefreshRate);
     void UpdateJankFrame(JankFrames& jankFrames, uint32_t dynamicRefreshRate);
     void ReportEventResponse(const JankFrames& jankFrames) const;
     void ReportEventComplete(const JankFrames& jankFrames) const;
@@ -121,8 +131,7 @@ private:
     void ReportEventFirstFrame();
     void ReportEventFirstFrameByPid(pid_t appPid) const;
     void HandleImplicitAnimationEndInAdvance(JankFrames& jankFrames, bool isReportTaskDelayed);
-    void RecordJankFrameInit();
-    void RecordJankFrame();
+    void RecordJankFrame(uint32_t dynamicRefreshRate);
     void RecordJankFrameSingle(int64_t missedFrames, JankFrameRecordStats& recordStats);
     void RecordAnimationDynamicFrameRate(JankFrames& jankFrames, bool isReportTaskDelayed);
     void SetAnimationTraceBegin(std::pair<int64_t, std::string> animationId, const JankFrames& jankFrames);
@@ -148,7 +157,8 @@ private:
     bool isFirstSetStart_ = true;
     bool isFirstSetEnd_ = true;
     bool isNeedReportJankStats_ = false;
-    bool isSkipDisplayNode_ = false;
+    bool isLastFrameDoDirectComposition_ = false;
+    bool isCurrentFrameSwitchToNotDoDirectComposition_ = false;
     int64_t rsStartTime_ = TIMESTAMP_INITIAL;
     int64_t rsStartTimeSteady_ = TIMESTAMP_INITIAL;
     int64_t rtStartTime_ = TIMESTAMP_INITIAL;
