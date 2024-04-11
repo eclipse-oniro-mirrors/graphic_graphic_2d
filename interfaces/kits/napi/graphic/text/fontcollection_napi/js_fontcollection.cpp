@@ -14,9 +14,8 @@
  */
 
 #include <fstream>
-
 #include "js_fontcollection.h"
-#include "utils/log.h"
+
 namespace OHOS::Rosen {
 constexpr size_t FILE_HEAD_LENGTH = 7; // 7 is the size of "file://"
 thread_local napi_ref JsFontCollection::constructor_ = nullptr;
@@ -27,7 +26,7 @@ napi_value JsFontCollection::Constructor(napi_env env, napi_callback_info info)
     napi_value jsThis = nullptr;
     napi_status status = napi_get_cb_info(env, info, &argCount, nullptr, &jsThis, nullptr);
     if (status != napi_ok) {
-        LOGE("JsFontCollection::Constructor failed to napi_get_cb_info");
+        LOGE("Constructor failed to napi_get_cb_info");
         return nullptr;
     }
 
@@ -36,7 +35,7 @@ napi_value JsFontCollection::Constructor(napi_env env, napi_callback_info info)
         JsFontCollection::Destructor, nullptr, nullptr);
     if (status != napi_ok) {
         delete jsFontCollection;
-        LOGE("JsFontCollection::Constructor Failed to wrap native instance");
+        LOGE("Constructor Failed to wrap native instance");
         return nullptr;
     }
     return jsThis;
@@ -53,19 +52,16 @@ napi_value JsFontCollection::Init(napi_env env, napi_value exportObj)
     napi_status status = napi_define_class(env, CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Constructor, nullptr,
         sizeof(properties) / sizeof(properties[0]), properties, &constructor);
     if (status != napi_ok) {
-        LOGE("JsFontCollection::Init Failed to define FontCollection class");
         return nullptr;
     }
 
     status = napi_create_reference(env, constructor, 1, &constructor_);
     if (status != napi_ok) {
-        LOGE("JsFontCollection::Init Failed to create reference of constructor");
         return nullptr;
     }
 
     status = napi_set_named_property(env, exportObj, CLASS_NAME.c_str(), constructor);
     if (status != napi_ok) {
-        LOGE("JsFontCollection::Init Failed to set constructor");
         return nullptr;
     }
     return exportObj;
@@ -99,7 +95,6 @@ napi_value JsFontCollection::DisableFallback(napi_env env, napi_callback_info in
 napi_value JsFontCollection::OnDisableFallback(napi_env env, napi_callback_info info)
 {
     if (m_fontCollection == nullptr) {
-        LOGE("JsFontCollection::OnClose path is nullptr");
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
     }
 
@@ -109,17 +104,15 @@ napi_value JsFontCollection::OnDisableFallback(napi_env env, napi_callback_info 
 
 napi_value JsFontCollection::LoadFont(napi_env env, napi_callback_info info)
 {
-    LOGE("LoadFontTrace | into JS LoadFont");
     JsFontCollection* me = CheckParamsAndGetThis<JsFontCollection>(env, info);
     return (me != nullptr) ? me->OnLoadFont(env, info) : nullptr;
 }
 
 bool JsFontCollection::SpiltAbsoluteFontPath(std::string& absolutePath)
 {
-    LOGE("LoadFontTrace | absolutePath FamilyStr=%s",absolutePath.c_str());
     auto iter = absolutePath.find_first_of(':');
     if (iter == std::string::npos) {
-        LOGE("Path is not Absolute Path");
+        LOGE("Font file directory is not absolute path");
         return false;
     }
     std::string head = absolutePath.substr(0, iter);
@@ -135,33 +128,28 @@ bool JsFontCollection::GetFontFileProperties(uint8_t* data, size_t& datalen, con
 {
     std::ifstream f(path.c_str());
     if (!f.good()) {
-        LOGE("LoadFontTrace File NO exist");
         return false;
     }
 
     std::ifstream ifs(path, std::ios_base::in);
     if (!ifs.is_open()) {
-        LOGE("LoadFontTrace | 1 Faild Get Font File and datalen=%zu",datalen);
         return false;
     }
 
     ifs.seekg(0, ifs.end);
     if (!ifs.good()) {
         ifs.close();
-        LOGE("LoadFontTrace |  2Faild Get Font File and datalen=%zu",datalen);
         return false;
     }
 
     datalen = ifs.tellg();
     if (ifs.fail()) {
         ifs.close();
-        LOGE("LoadFontTrace | 3 Faild Get Font File and datalen=%zu",datalen);
         return false;
     }
 
     ifs.seekg(ifs.beg);
     if (!ifs.good()) {
-         LOGE("LoadFontTrace | 4 Faild Get Font File and datalen=%zu",datalen);
         ifs.close();
         return false;
     }
@@ -170,19 +158,16 @@ bool JsFontCollection::GetFontFileProperties(uint8_t* data, size_t& datalen, con
     ifs.read(buffer.get(), datalen);
     if (!ifs.good()) {
         ifs.close();
-        LOGE("LoadFontTrace | 5 Faild Get Font File and datalen=%zu",datalen);
         return false;
     }
     ifs.close();
 
     data = reinterpret_cast<uint8_t*>(buffer.get());
-    LOGE("LoadFontTrace | Success Get Font File and datalen=%zu",datalen);
     return true;
 }
 
 bool JsFontCollection::AddTypefaceInformation(Drawing::Typeface& typeface, const std::string familyName)
 {
-    LOGE("LoadFontTrace: into AddTypefaceInformation familyName=%s",familyName.c_str());
     std::shared_ptr<Drawing::Typeface> drawingTypeface(&typeface);
     std::string name = familyName;
     if (name.empty()) {
@@ -192,29 +177,22 @@ bool JsFontCollection::AddTypefaceInformation(Drawing::Typeface& typeface, const
     if (Drawing::Typeface::GetTypefaceRegisterCallBack() != nullptr) {
         bool ret = Drawing::Typeface::GetTypefaceRegisterCallBack()(drawingTypeface);
         if (!ret) {
-            LOGE("LoadFontTrace: register typeface failed.");
             return false;
         }
     }
-    LOGE("LoadFontTrace: AddTypefaceInformation Successed");
     return true;
 }
 
 napi_value JsFontCollection::OnLoadFont(napi_env env, napi_callback_info info)
 {
-    LOGE("LoadFontTrace | Ready Get FontOptions Target");
     size_t argc = 2;
     napi_value argv[ARGC_TWO] = {nullptr};
     if (napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr) != napi_ok ||
             argc < ARGC_TWO) {
-            LOGE("LoadFontTrace Param unvaild");
             return nullptr;
     }
-    //napi_value familyNameNApi = nullptr;
-    //napi_value familySrcNApi = nullptr;
     std::string familyName;
     std::string familySrc;
-    //napi_get_named_property(env, argv[0], "familyName", &familyNameNApi);
     ConvertFromJsValue(env, argv[0], familyName);
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[1], &valueType);
@@ -223,32 +201,22 @@ napi_value JsFontCollection::OnLoadFont(napi_env env, napi_callback_info info)
 
     } else {
         // Resource type data process center, not yet realized
-        //  napi_get_named_property(env, argv[1], "familySrc", &familySrcNApi);
         return nullptr;
     }
-    LOGE("LoadFontTrace |Ready into SpiltAbsoluteFontPath  and FamilyStr= %s  familyName=%s",familySrc.c_str(),
-        familyName.c_str());
     if (!SpiltAbsoluteFontPath(familySrc)) {
-        LOGE("LoadFontTrace UNVaild Font Path");
         return nullptr;
     }
-    LOGE("LoadFontTrace | Split Over and FamilyStr= %s  familyName=%s",familySrc.c_str(),
-    familyName.c_str());
     uint8_t* rawData = nullptr;
     size_t rawdatalen = 0;
     if (!GetFontFileProperties(rawData, rawdatalen, familySrc)) {
-        LOGE("LoadFontTrace UNVaild Font File");
         return nullptr;
     }
-    LOGE("LoadFontTrace | Success Test  Get Font File and datalen=%zu",rawdatalen);
     Drawing::Typeface* typeface = nullptr;
     typeface = m_fontCollection->LoadFont(familyName, rawData, rawdatalen);
     if (!typeface) {
-        LOGE("LoadFontTrace No have typeface");        
         return nullptr;
     }
     if (!AddTypefaceInformation(*typeface, familyName)) {
-        LOGE("LoadFontTrace AddTypefaceInformation false");
         return nullptr;
     }
     return NapiGetUndefined(env);
