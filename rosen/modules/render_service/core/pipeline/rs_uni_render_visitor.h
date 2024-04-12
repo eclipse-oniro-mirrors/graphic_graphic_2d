@@ -260,6 +260,7 @@ private:
     void CheckMergeGlobalFilterForDisplay(Occlusion::Region& accumulatedDirtyRegion);
 
     bool IsNotDirtyHardwareEnabledTopSurface(std::shared_ptr<RSSurfaceRenderNode>& node) const;
+    void ClipRegion(std::shared_ptr<Drawing::Canvas> canvas, const Drawing::Region& region) const;
     /* calculate display/global (between windows) level dirty region, current include:
      * 1. window move/add/remove 2. transparent dirty region
      * when process canvas culling, canvas intersect with surface's visibledirty region or
@@ -420,6 +421,7 @@ private:
     bool dirtyFlag_ { false };
     std::unique_ptr<RSRenderFrame> renderFrame_;
     std::shared_ptr<RSPaintFilterCanvas> canvas_;
+    Drawing::Region clipRegion_;
     std::map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> dirtySurfaceNodeMap_;
     std::vector<RectI> cacheRenderNodeMapRects_;
     Drawing::Rect boundsRect_ {};
@@ -583,6 +585,7 @@ private:
 
     // use for screen recording optimization
     std::shared_ptr<Drawing::Image> cacheImgForCapture_ = nullptr;
+    std::shared_ptr<Drawing::Image> offScreenCacheImgForCapture_ = nullptr;
 
     void SetHasSharedTransitionNode(RSSurfaceRenderNode& surfaceNode, bool hasSharedTransitionNode);
 

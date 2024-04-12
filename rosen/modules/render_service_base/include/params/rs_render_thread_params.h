@@ -61,6 +61,11 @@ public:
         return isOpDropped_;
     }
 
+    void SetOpDropped(bool opDropped)
+    {
+        isOpDropped_ = opDropped;
+    }
+
     bool GetUIFirstDebugEnabled() const
     {
         return isUIFirstDebugEnable_;
