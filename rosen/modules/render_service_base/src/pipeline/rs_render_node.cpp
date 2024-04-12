@@ -2043,7 +2043,7 @@ void RSRenderNode::UpdateDisplayList()
 
     if ((drawableVecStatus_ & CONTENT_MASK) == 0) {
         // Nothing to draw
-        stagingRenderParams_->SetContentEmpty(true);
+        stagingRenderParams_->SetContentEmpty(IsInstanceOf<RSCanvasRenderNode>());
         return;
     }
 
@@ -2075,7 +2075,10 @@ void RSRenderNode::UpdateDisplayList()
     if (drawableVecStatus_ & FRAME_PROPERTY) {
         // Update index of CONTENT_STYLE
         stagingDrawCmdIndex_.contentIndex_ = AppendDrawFunc(RSDrawableSlot::SAVE_FRAME, RSDrawableSlot::CONTENT_STYLE);
-        stagingDrawCmdIndex_.backgroundEndIndex_ = stagingDrawCmdList_.size();
+
+        // Update index of BACKGOUND_END
+        stagingDrawCmdIndex_.backgroundEndIndex_ = stagingDrawCmdIndex_.contentIndex_ == -1 ?
+            stagingDrawCmdList_.size() : stagingDrawCmdIndex_.contentIndex_ - 1;
 
         // Update index of CHILDREN
         stagingDrawCmdIndex_.childrenIndex_ = AppendDrawFunc(RSDrawableSlot::CHILDREN, RSDrawableSlot::CHILDREN);
