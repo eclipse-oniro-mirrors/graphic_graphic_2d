@@ -454,14 +454,14 @@ HWTEST_F(SyncFenceTest, TrackFenceTest, Function | MediumTest | Level2)
 }
 
 /*
-* Function: TrackFence
+* Function: TrackFenceTestAcquireFence
 * Type: Function
 * Rank: Important(2)
 * EnvConditions: N/A
 * CaseDescription: 1. call TrackFence, call Loop
 *                  2. check ret
 */
-HWTEST_F(SyncFenceTest, TrackFenceTest, Function | MediumTest | Level2)
+HWTEST_F(SyncFenceTest, TrackFenceTestAcquireFence, Function | MediumTest | Level2)
 {
     sptr<SyncTimeline> syncTimeline_ = new SyncTimeline();
     bool valid = syncTimeline_->IsValid();
