@@ -18,7 +18,8 @@
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
-Paint::Paint() noexcept {}
+Paint::Paint() noexcept
+    : filter_() {}
 
 Paint::Paint(const Paint& other) noexcept
 {
@@ -34,6 +35,7 @@ Paint::Paint(const Paint& other) noexcept
         filter_ = other.filter_;
         hasFilter_ = true;
     } else {
+        filter_.Reset();
         hasFilter_ = false;
     }
     colorSpace_ = other.colorSpace_;
@@ -43,7 +45,7 @@ Paint::Paint(const Paint& other) noexcept
 }
 
 Paint::Paint(const Color& c, std::shared_ptr<ColorSpace> colorSpace) noexcept
-    : color_(c), colorSpace_(colorSpace) {}
+    : color_(c), filter_(), colorSpace_(colorSpace) {}
 
 Paint& Paint::operator=(const Paint& other)
 {
@@ -59,6 +61,7 @@ Paint& Paint::operator=(const Paint& other)
         filter_ = other.filter_;
         hasFilter_ = true;
     } else {
+        filter_.Reset();
         hasFilter_ = false;
     }
     colorSpace_ = other.colorSpace_;
@@ -90,6 +93,7 @@ void Paint::AttachBrush(const Brush& brush)
         filter_ = brush.GetFilter();
         hasFilter_ = true;
     } else {
+        filter_.Reset();
         hasFilter_ = false;
     }
     colorSpace_ = brush.GetColorSpace();
@@ -111,6 +115,7 @@ void Paint::AttachPen(const Pen& pen)
         filter_ = pen.GetFilter();
         hasFilter_ = true;
     } else {
+        filter_.Reset();
         hasFilter_ = false;
     }
     colorSpace_ = pen.GetColorSpace();
