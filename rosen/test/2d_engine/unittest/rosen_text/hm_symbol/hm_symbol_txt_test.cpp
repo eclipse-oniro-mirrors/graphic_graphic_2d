@@ -89,7 +89,7 @@ HWTEST_F(OHHmSymbolTxtTest, OHHmSymbolTxtTest004, TestSize.Level1)
     std::vector<Drawing::Color> colors = {color1, color2, color3};
     symbol.SetRenderColor(colors);
     auto colors1 = symbol.GetRenderColor();
-    EXPECT_EQ(colors1.size(), 3);
+    EXPECT_EQ(colors1.size(), 3); // this 3 is the size of RenderColor
 }
 
 /*
@@ -176,7 +176,7 @@ HWTEST_F(OHHmSymbolTxtTest, OHHmSymbolTxtTest008, TestSize.Level1)
     TextStyle style;
     style.isSymbolGlyph = true;
     SPText::TextStyle textStyle;
-    style.symbol.SetAminationStart(true); 
+    style.symbol.SetAminationStart(true);
     textStyle = AdapterTxt::Convert(style);
     EXPECT_EQ(textStyle.symbol.GetAminationStart(), true);
 }
@@ -191,15 +191,15 @@ HWTEST_F(OHHmSymbolTxtTest, OHHmSymbolTxtTest009, TestSize.Level1)
     TextStyle style;
     style.isSymbolGlyph = true;
     SPText::TextStyle textStyle;
-    style.symbol.SetVisualMode(VisualMode::VISUAL_SMALL); 
+    style.symbol.SetVisualMode(VisualMode::VISUAL_SMALL);
     auto visualMap = style.symbol.GetVisualMap();
     EXPECT_EQ(visualMap.empty(), false);
 
-    style.symbol.SetVisualMode(VisualMode::VISUAL_LARGER); 
+    style.symbol.SetVisualMode(VisualMode::VISUAL_LARGER);
     visualMap = style.symbol.GetVisualMap();
     EXPECT_EQ(visualMap.empty(), false);
 
-    style.symbol.SetVisualMode(VisualMode::VISUAL_MEDIUM); 
+    style.symbol.SetVisualMode(VisualMode::VISUAL_MEDIUM);
     visualMap = style.symbol.GetVisualMap();
     EXPECT_EQ(visualMap.empty(), true);
 }

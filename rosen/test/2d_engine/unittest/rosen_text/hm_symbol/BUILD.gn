@@ -20,9 +20,7 @@ module_output_path = "graphic_2d/rosen/modules/2d_engine/rosen_text/hm_symbol"
 ohos_unittest("hm_symbol_engine_test") {
   module_out_path = module_output_path
   if (use_skia_txt) {
-    sources = [
-      "hm_symbol_txt_test.cpp",
-    ]
+    sources = [ "hm_symbol_txt_test.cpp" ]
   }
   include_dirs = [
     "//third_party/googletest/googletest/include",
@@ -35,32 +33,29 @@ ohos_unittest("hm_symbol_engine_test") {
     "$rosen_root/modules/render_service_base/include",
   ]
 
-    defines = [
-      "USE_GRAPHIC_TEXT_GINE",
-      "WINDOWS_PLATFORM",
+  defines = [
+    "USE_GRAPHIC_TEXT_GINE",
+    "WINDOWS_PLATFORM",
+  ]
+  cflags = [ "-std=c++17" ]
+
+  platform = current_os
+  if (platform == "mingw") {
+    platform = "windows"
+  }
+
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [
+      "USE_ROSEN_DRAWING",
+      "USE_SKIA_TXT",
     ]
-    cflags = [ "-std=c++17" ]
-
-    platform = current_os
-    if (platform == "mingw") {
-      platform = "windows"
+    if (ace_enable_gpu) {
+      defines += [ "ACE_ENABLE_GPU" ]
     }
-
-    if (defined(use_rosen_drawing) && use_rosen_drawing) {
-      defines += [
-        "USE_ROSEN_DRAWING",
-        "USE_SKIA_TXT",
-      ]
-      if (ace_enable_gpu) {
-        defines += [ "ACE_ENABLE_GPU" ]
-      }
-    }
+  }
 
   deps = [
-    "$rosen_2d_engine_root/rosen_text/skia_txt:skia_libtxt_$platform",
     "$rosen_root/modules/2d_graphics:2d_graphics",
-    "$rosen_root/modules/texgine:libtexgine_source",
-    "$skia_root_new:skia_$platform",
     "//third_party/googletest:gtest_main",
   ]
 
