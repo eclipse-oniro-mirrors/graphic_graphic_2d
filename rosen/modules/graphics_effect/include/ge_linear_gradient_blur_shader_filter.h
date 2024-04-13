@@ -44,9 +44,6 @@ public:
         geoHeight_ = geoHeight;
     }
 
-    std::shared_ptr<Drawing::Image> DrawImageRect(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image>& image,
-        const Drawing::Rect& src, const Drawing::Rect& dst) const;
-
 private:
     static void TransformGradientBlurDirection(uint8_t& direction, const uint8_t directionBias);
     static void ComputeScale(float width, float height, bool useMaskAlgorithm);
@@ -76,12 +73,20 @@ private:
         std::shared_ptr<Drawing::ShaderEffect> gradientShader);
     static void DrawMeanLinearGradientBlur(const std::shared_ptr<Drawing::Image>& image, Drawing::Canvas& canvas,
         float radius, std::shared_ptr<Drawing::ShaderEffect> alphaGradientShader, const Drawing::Rect& dst);
+    std::shared_ptr<Drawing::Image> ProcessImageDDGR(
+        Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image> image, uint8_t directionBias);
+    static bool ProcessGradientDirectionPoints(
+        Drawing::Point (&pts)[2], const Drawing::Rect& clipBounds, GEGradientDirection direction);
+    static std::shared_ptr<Drawing::Image> BuildMeanLinearGradientBlur(const std::shared_ptr<Drawing::Image>& image,
+        Drawing::Canvas& canvas, float radius, std::shared_ptr<Drawing::ShaderEffect> alphaGradientShader,
+        Drawing::Matrix blurMatrix);
 
     static std::shared_ptr<Drawing::RuntimeEffect> horizontalMeanBlurShaderEffect_;
     static std::shared_ptr<Drawing::RuntimeEffect> verticalMeanBlurShaderEffect_;
     static std::shared_ptr<Drawing::RuntimeEffect> maskBlurShaderEffect_;
     inline static Drawing::Matrix mat_;
 };
+
 } // namespace Rosen
 } // namespace OHOS
 

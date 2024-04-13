@@ -47,68 +47,68 @@ GELinearGradientBlurShaderFilter::GELinearGradientBlurShaderFilter(
     linearGradientBlurPara_ = std::make_shared<GELinearGradientBlurPara>(
         params.blurRadius, params.fractionStops, static_cast<GEGradientDirection>(params.direction), maskLinearBlur);
     mat_ = params.mat;
-    tranX_ = params.surfaceWidth;
-    tranY_ = params.surfaceHeight;
-    // type_ = FilterType::LINEAR_GRADIENT_BLUR;
-    // hash_ = SkOpts::hash(&type_, sizeof(type_), 0);
-    // hash_ = SkOpts::hash(&linearGradientBlurPara_, sizeof(linearGradientBlurPara_), hash_);
+    tranX_ = params.tranX;
+    tranY_ = params.tranY;
+    isOffscreenCanvas_ = params.isOffscreenCanvas;
 }
 
 GELinearGradientBlurShaderFilter::~GELinearGradientBlurShaderFilter() = default;
 
-std::shared_ptr<Drawing::Image> GELinearGradientBlurShaderFilter::ProcessImage(Drawing::Canvas& canvas,
-    const std::shared_ptr<Drawing::Image> image, const Drawing::Rect& src, const Drawing::Rect& dst)
+std::shared_ptr<Drawing::Image> GELinearGradientBlurShaderFilter::ProcessImageDDGR(
+    Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image> image, uint8_t directionBias)
 {
-    return DrawImageRect(canvas, image, src, dst);
+    auto& para = linearGradientBlurPara_;
+    auto clipIPadding = Drawing::Rect(0, 0, geoWidth_ * imageScale_, geoHeight_ * imageScale_);
+    uint8_t direction = static_cast<uint8_t>(para->direction_);
+    TransformGradientBlurDirection(direction, directionBias);
+    float radius = para->blurRadius_;
+
+    Drawing::Brush brush;
+    Drawing::Filter imageFilter;
+    Drawing::GradientBlurType blurType;
+    if (GetMaskLinearBlurEnabled() && para->useMaskAlgorithm_) {
+        blurType = Drawing::GradientBlurType::AlPHA_BLEND;
+        radius /= 2; // 2: half radius.
+    } else {
+        radius -= para->originalBase_;
+        radius = std::clamp(radius, 0.0f, 60.0f); // 60.0 represents largest blur radius
+        blurType = Drawing::GradientBlurType::RADIUS_GRADIENT;
+    }
+    imageFilter.SetImageFilter(Drawing::ImageFilter::CreateGradientBlurImageFilter(
+        radius, para->fractionStops_, static_cast<Drawing::GradientDir>(direction), blurType, nullptr));
+    brush.SetFilter(imageFilter);
+
+    canvas.AttachBrush(brush);
+    Drawing::Rect rect = clipIPadding;
+    rect.Offset(-clipIPadding.GetLeft(), -clipIPadding.GetTop());
+    canvas.DrawImageRect(
+        *image, rect, clipIPadding, Drawing::SamplingOptions(), Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
+    canvas.DetachBrush();
+    return image;
 }
 
-std::shared_ptr<Drawing::Image> GELinearGradientBlurShaderFilter::DrawImageRect(Drawing::Canvas& canvas,
-    const std::shared_ptr<Drawing::Image>& image, const Drawing::Rect& src, const Drawing::Rect& dst) const
+std::shared_ptr<Drawing::Image> GELinearGradientBlurShaderFilter::ProcessImage(Drawing::Canvas& canvas,
+    const std::shared_ptr<Drawing::Image> image, const Drawing::Rect& src, const Drawing::Rect& dst)
 {
     auto& para = linearGradientBlurPara_;
     if (!image || para == nullptr || para->blurRadius_ <= 0) {
         return image;
     }
-    LOGE("GELinearGradientBlurShaderFilter::DrawImageRect%{public}f,  %{public}f, %{public}f, %{public}f, %{public}f ",
-        para->blurRadius_, geoWidth_, geoHeight_, tranX_, tranY_);
+    LOGD("GELinearGradientBlurShaderFilter::DrawImageRect%{public}f,  %{public}f, %{public}f, %{public}f, %{public}f "
+         "%{public}d",
+        para->blurRadius_, geoWidth_, geoHeight_, tranX_, tranY_, (int)isOffscreenCanvas_);
 
     ComputeScale(dst.GetWidth(), dst.GetHeight(), para->useMaskAlgorithm_);
     auto clipIPadding = Drawing::Rect(0, 0, geoWidth_ * imageScale_, geoHeight_ * imageScale_);
     uint8_t directionBias = 0;
     auto alphaGradientShader = MakeAlphaGradientShader(clipIPadding, para, directionBias);
-
     if (alphaGradientShader == nullptr) {
         LOGE("GELinearGradientBlurShaderFilter::DrawImageRect alphaGradientShader null");
         return image;
     }
 
     if (Drawing::SystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::DDGR) {
-        uint8_t direction = static_cast<uint8_t>(para->direction_);
-        TransformGradientBlurDirection(direction, directionBias);
-        float radius = para->blurRadius_;
-
-        Drawing::Brush brush;
-        Drawing::Filter imageFilter;
-        Drawing::GradientBlurType blurType;
-        if (GetMaskLinearBlurEnabled() && para->useMaskAlgorithm_) {
-            blurType = Drawing::GradientBlurType::AlPHA_BLEND;
-            radius /= 2; // 2: half radius.
-        } else {
-            radius -= para->originalBase_;
-            radius = std::clamp(radius, 0.0f, 60.0f); // 60.0 represents largest blur radius
-            blurType = Drawing::GradientBlurType::RADIUS_GRADIENT;
-        }
-        imageFilter.SetImageFilter(Drawing::ImageFilter::CreateGradientBlurImageFilter(
-            radius, para->fractionStops_, static_cast<Drawing::GradientDir>(direction), blurType, nullptr));
-        brush.SetFilter(imageFilter);
-
-        canvas.AttachBrush(brush);
-        Drawing::Rect rect = clipIPadding;
-        rect.Offset(-clipIPadding.GetLeft(), -clipIPadding.GetTop());
-        canvas.DrawImageRect(*image, rect, clipIPadding, Drawing::SamplingOptions(),
-            Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
-        canvas.DetachBrush();
-        return image;
+        return ProcessImageDDGR(canvas, image, directionBias);
     }
     if (GetMaskLinearBlurEnabled() && para->useMaskAlgorithm_) {
         // use faster LinearGradientBlur if valid
@@ -135,7 +135,7 @@ std::shared_ptr<Drawing::Image> GELinearGradientBlurShaderFilter::DrawImageRect(
 void GELinearGradientBlurShaderFilter::ComputeScale(float width, float height, bool useMaskAlgorithm)
 {
     if (GetMaskLinearBlurEnabled() && useMaskAlgorithm) {
-        imageScale_ = 1.f;
+        imageScale_ = 1.0f;
     } else {
         if (width * height < 10000) { // 10000 for 100 * 100 resolution
             imageScale_ = 0.7f;       // 0.7 for scale
@@ -195,8 +195,9 @@ bool GELinearGradientBlurShaderFilter::GetGEGradientDirectionPoints(
 {
     switch (direction) {
         case GEGradientDirection::BOTTOM: {
-            pts[0].Set(clipBounds.GetWidth() / 2 + clipBounds.GetLeft(), clipBounds.GetTop());    // 2 middle of width;
-            pts[1].Set(clipBounds.GetWidth() / 2 + clipBounds.GetLeft(), clipBounds.GetBottom()); // 2  middle of width;
+            pts[0].Set(clipBounds.GetWidth() / 2 + clipBounds.GetLeft(), clipBounds.GetTop()); // 2 middle of width;
+            pts[1].Set(clipBounds.GetWidth() / 2 + clipBounds.GetLeft(),
+                clipBounds.GetBottom()); // 2  middle of width;
             break;
         }
         case GEGradientDirection::TOP: {
@@ -205,15 +206,27 @@ bool GELinearGradientBlurShaderFilter::GetGEGradientDirectionPoints(
             break;
         }
         case GEGradientDirection::RIGHT: {
-            pts[0].Set(clipBounds.GetLeft(), clipBounds.GetHeight() / 2 + clipBounds.GetTop());  // 2  middle of height;
-            pts[1].Set(clipBounds.GetRight(), clipBounds.GetHeight() / 2 + clipBounds.GetTop()); // 2  middle of height;
+            pts[0].Set(clipBounds.GetLeft(), clipBounds.GetHeight() / 2 + clipBounds.GetTop()); // 2  middle of height;
+            pts[1].Set(clipBounds.GetRight(),
+                clipBounds.GetHeight() / 2 + clipBounds.GetTop()); // 2  middle of height;
             break;
         }
         case GEGradientDirection::LEFT: {
-            pts[0].Set(clipBounds.GetRight(), clipBounds.GetHeight() / 2 + clipBounds.GetTop()); // 2  middle of height;
-            pts[1].Set(clipBounds.GetLeft(), clipBounds.GetHeight() / 2 + clipBounds.GetTop());  // 2  middle of height;
+            pts[0].Set(clipBounds.GetRight(),
+                clipBounds.GetHeight() / 2 + clipBounds.GetTop());                              // 2  middle of height;
+            pts[1].Set(clipBounds.GetLeft(), clipBounds.GetHeight() / 2 + clipBounds.GetTop()); // 2  middle of height;
             break;
         }
+        default: {
+        }
+    }
+    return ProcessGradientDirectionPoints(pts, clipBounds, direction);
+}
+
+bool GELinearGradientBlurShaderFilter::ProcessGradientDirectionPoints(
+    Drawing::Point (&pts)[2], const Drawing::Rect& clipBounds, GEGradientDirection direction)
+{
+    switch (direction) {
         case GEGradientDirection::RIGHT_BOTTOM: {
             pts[0].Set(clipBounds.GetLeft(), clipBounds.GetTop());
             pts[1].Set(clipBounds.GetRight(), clipBounds.GetBottom());
@@ -235,7 +248,6 @@ bool GELinearGradientBlurShaderFilter::GetGEGradientDirectionPoints(
             break;
         }
         default: {
-            return false;
         }
     }
     Drawing::Matrix pointsMat = mat_;
@@ -366,43 +378,18 @@ void GELinearGradientBlurShaderFilter::DrawMeanLinearGradientBlur(const std::sha
         return;
     }
 
+    if (imageScale_ < 1e-6) {
+        return;
+    }
+
     Drawing::Matrix m;
     Drawing::Matrix blurMatrix;
     blurMatrix.PostScale(imageScale_, imageScale_);
     blurMatrix.PostTranslate(dst.GetLeft(), dst.GetTop());
 
-    auto width = image->GetWidth();
-    auto height = image->GetHeight();
-    auto originImageInfo = image->GetImageInfo();
-    auto scaledInfo = Drawing::ImageInfo(std::ceil(width * imageScale_), std::ceil(height * imageScale_),
-        originImageInfo.GetColorType(), originImageInfo.GetAlphaType(), originImageInfo.GetColorSpace());
     Drawing::SamplingOptions linear(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
 
-    Drawing::RuntimeShaderBuilder hBlurBuilder(horizontalMeanBlurShaderEffect_);
-    hBlurBuilder.SetUniform("r", radius);
-    hBlurBuilder.SetChild("imageShader", Drawing::ShaderEffect::CreateImageShader(*image, Drawing::TileMode::CLAMP,
-                                             Drawing::TileMode::CLAMP, linear, blurMatrix));
-    hBlurBuilder.SetChild("gradientShader", alphaGradientShader);
-    std::shared_ptr<Drawing::Image> tmpBlur(
-        hBlurBuilder.MakeImage(canvas.GetGPUContext().get(), nullptr, scaledInfo, false));
-
-    Drawing::RuntimeShaderBuilder vBlurBuilder(verticalMeanBlurShaderEffect_);
-    vBlurBuilder.SetUniform("r", radius);
-    vBlurBuilder.SetChild("imageShader", Drawing::ShaderEffect::CreateImageShader(
-                                             *tmpBlur, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, linear, m));
-    vBlurBuilder.SetChild("gradientShader", alphaGradientShader);
-    std::shared_ptr<Drawing::Image> tmpBlur2(
-        vBlurBuilder.MakeImage(canvas.GetGPUContext().get(), nullptr, scaledInfo, false));
-
-    hBlurBuilder.SetChild("imageShader", Drawing::ShaderEffect::CreateImageShader(
-                                             *tmpBlur2, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, linear, m));
-    std::shared_ptr<Drawing::Image> tmpBlur3(
-        hBlurBuilder.MakeImage(canvas.GetGPUContext().get(), nullptr, scaledInfo, false));
-
-    vBlurBuilder.SetChild("imageShader", Drawing::ShaderEffect::CreateImageShader(
-                                             *tmpBlur3, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, linear, m));
-    std::shared_ptr<Drawing::Image> tmpBlur4(
-        vBlurBuilder.MakeImage(canvas.GetGPUContext().get(), nullptr, scaledInfo, false));
+    auto tmpBlur4 = BuildMeanLinearGradientBlur(image, canvas, radius, alphaGradientShader, blurMatrix);
 
     float invBlurScale = 1.0f / imageScale_;
     Drawing::Matrix invBlurMatrix;
@@ -417,6 +404,49 @@ void GELinearGradientBlurShaderFilter::DrawMeanLinearGradientBlur(const std::sha
     canvas.DetachBrush();
 }
 
+std::shared_ptr<Drawing::Image> GELinearGradientBlurShaderFilter::BuildMeanLinearGradientBlur(
+    const std::shared_ptr<Drawing::Image>& image, Drawing::Canvas& canvas, float radius,
+    std::shared_ptr<Drawing::ShaderEffect> alphaGradientShader, Drawing::Matrix blurMatrix)
+{
+    auto width = image->GetWidth();
+    auto height = image->GetHeight();
+    auto originImageInfo = image->GetImageInfo();
+    auto scaledInfo = Drawing::ImageInfo(std::ceil(width * imageScale_), std::ceil(height * imageScale_),
+        originImageInfo.GetColorType(), originImageInfo.GetAlphaType(), originImageInfo.GetColorSpace());
+    Drawing::Matrix m;
+    Drawing::SamplingOptions linear(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    Drawing::RuntimeShaderBuilder hBlurBuilder(horizontalMeanBlurShaderEffect_);
+    hBlurBuilder.SetUniform("r", radius);
+    auto shader1 = Drawing::ShaderEffect::CreateImageShader(
+        *image, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, linear, blurMatrix);
+    hBlurBuilder.SetChild("imageShader", shader1);
+    hBlurBuilder.SetChild("gradientShader", alphaGradientShader);
+    std::shared_ptr<Drawing::Image> tmpBlur(
+        hBlurBuilder.MakeImage(canvas.GetGPUContext().get(), nullptr, scaledInfo, false));
+
+    Drawing::RuntimeShaderBuilder vBlurBuilder(verticalMeanBlurShaderEffect_);
+    vBlurBuilder.SetUniform("r", radius);
+    auto tmpBlurShader = Drawing::ShaderEffect::CreateImageShader(
+        *tmpBlur, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, linear, m);
+    vBlurBuilder.SetChild("imageShader", tmpBlurShader);
+    vBlurBuilder.SetChild("gradientShader", alphaGradientShader);
+    std::shared_ptr<Drawing::Image> tmpBlur2(
+        vBlurBuilder.MakeImage(canvas.GetGPUContext().get(), nullptr, scaledInfo, false));
+
+    auto tmpBlur2Shader = Drawing::ShaderEffect::CreateImageShader(
+        *tmpBlur2, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, linear, m);
+    hBlurBuilder.SetChild("imageShader", tmpBlur2Shader);
+    std::shared_ptr<Drawing::Image> tmpBlur3(
+        hBlurBuilder.MakeImage(canvas.GetGPUContext().get(), nullptr, scaledInfo, false));
+
+    auto tmpBlur3Shader = Drawing::ShaderEffect::CreateImageShader(
+        *tmpBlur3, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, linear, m);
+    vBlurBuilder.SetChild("imageShader", tmpBlur3Shader);
+    std::shared_ptr<Drawing::Image> tmpBlur4(
+        vBlurBuilder.MakeImage(canvas.GetGPUContext().get(), nullptr, scaledInfo, false));
+    return tmpBlur4;
+}
+
 std::shared_ptr<Drawing::Image> GELinearGradientBlurShaderFilter::DrawMaskLinearGradientBlur(
     const std::shared_ptr<Drawing::Image>& image, Drawing::Canvas& canvas, std::shared_ptr<GEShaderFilter>& blurFilter,
     std::shared_ptr<Drawing::ShaderEffect> alphaGradientShader, const Drawing::Rect& dst)
@@ -427,6 +457,9 @@ std::shared_ptr<Drawing::Image> GELinearGradientBlurShaderFilter::DrawMaskLinear
     }
 
     auto imageInfo = image->GetImageInfo();
+    if (imageInfo.GetWidth() < 1e-6 || imageInfo.GetHeight() < 1e-6) {
+        return image;
+    }
     auto srcRect = Drawing::Rect(0, 0, imageInfo.GetWidth(), imageInfo.GetHeight());
     auto blurImage = blurFilter->ProcessImage(canvas, image, srcRect, dst);
 
