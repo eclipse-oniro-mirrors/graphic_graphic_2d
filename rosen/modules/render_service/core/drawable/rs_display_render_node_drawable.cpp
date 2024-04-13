@@ -379,6 +379,12 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
 
+    auto uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams().get();
+    if (!uniParam) {
+        RS_LOGE("RSDisplayRenderNodeDrawable::OnDraw uniParam is null");
+        return;
+    }
+
     auto mirroredNode = params->GetMirrorSource().lock();
     if (mirroredNode) {
         auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
@@ -392,16 +398,14 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             RS_LOGE("RSDisplayRenderNodeDrawable::OnDraw processor init failed!");
             return;
         }
+        bool opDropped = uniParam->IsOpDropped();
+        uniParam->SetOpDropped(false);
         ProcessVirtualScreen(*displayNodeSp, *params, processor);
         processor->PostProcess();
+        uniParam->SetOpDropped(opDropped);
         return;
     }
 
-    auto uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams().get();
-    if (!uniParam) {
-        RS_LOGE("RSDisplayRenderNodeDrawable::OnDraw uniParam is null");
-        return;
-    }
     if (uniParam->IsOpDropped() && CheckDisplayNodeSkip(displayNodeSp, params, processor)) {
         return;
     }
