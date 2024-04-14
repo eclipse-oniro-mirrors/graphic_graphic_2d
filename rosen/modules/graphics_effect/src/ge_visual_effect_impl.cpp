@@ -15,6 +15,8 @@
 
 #include "ge_visual_effect_impl.h"
 
+#include <unordered_map>
+
 #include "ge_log.h"
 
 namespace OHOS {
@@ -78,6 +80,24 @@ void GEVisualEffectImpl::SetParam(const std::string& tag, int32_t param)
 
             if (tag == "DIRECTION") {
                 linearGradientBlurParams_->direction = param;
+            }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void GEVisualEffectImpl::SetParam(const std::string& tag, bool param)
+{
+    switch (filterType_) {
+        case FilterType::LINEAR_GRADIENT_BLUR: {
+            if (linearGradientBlurParams_ == nullptr) {
+                return;
+            }
+
+            if (tag == "ISOFFSCREEN") {
+                linearGradientBlurParams_->isOffscreenCanvas = param;
             }
             break;
         }
@@ -158,24 +178,17 @@ void GEVisualEffectImpl::SetAIBarParams(const std::string& tag, float param)
         return;
     }
 
-    if (tag == "AIBAR_LOW") {
-        aiBarParams_->aiBarLow = param;
-    }
+    static std::unordered_map<std::string, std::function<void(float)>> actions = {
+        { "AIBAR_LOW",        [this](float p) { this->aiBarParams_->aiBarLow        = p; } },
+        { "AIBAR_HIGH",       [this](float p) { this->aiBarParams_->aiBarHigh       = p; } },
+        { "AIBAR_THRESHOLD",  [this](float p) { this->aiBarParams_->aiBarThreshold  = p; } },
+        { "AIBAR_OPACITY",    [this](float p) { this->aiBarParams_->aiBarOpacity    = p; } },
+        { "AIBAR_SATURATION", [this](float p) { this->aiBarParams_->aiBarSaturation = p; } }
+    };
 
-    if (tag == "AIBAR_HIGH") {
-        aiBarParams_->aiBarHigh = param;
-    }
-
-    if (tag == "AIBAR_THRESHOLD") {
-        aiBarParams_->aiBarThreshold = param;
-    }
-
-    if (tag == "AIBAR_OPACITY") {
-        aiBarParams_->aiBarOpacity = param;
-    }
-
-    if (tag == "AIBAR_SATURATION") {
-        aiBarParams_->aiBarSaturation = param;
+    auto it = actions.find(tag);
+    if (it != actions.end()) {
+        it->second(param);
     }
 }
 
@@ -184,12 +197,15 @@ void GEVisualEffectImpl::SetGreyParams(const std::string& tag, float param)
     if (greyParams_ == nullptr) {
         return;
     }
-    if (tag == "GREY_COEF_1") {
-        greyParams_->greyCoef1 = param;
-    }
 
-    if (tag == "GREY_COEF_2") {
-        greyParams_->greyCoef2 = param;
+    static std::unordered_map<std::string, std::function<void(float)>> actions = {
+        { "GREY_COEF_1", [this](float p) { this->greyParams_->greyCoef1 = p; } },
+        { "GREY_COEF_2", [this](float p) { this->greyParams_->greyCoef2 = p; } }
+    };
+
+    auto it = actions.find(tag);
+    if (it != actions.end()) {
+        it->second(param);
     }
 }
 
@@ -198,24 +214,18 @@ void GEVisualEffectImpl::SetLinearGradientBlurParams(const std::string& tag, flo
     if (linearGradientBlurParams_ == nullptr) {
         return;
     }
-    if (tag == "BLURRADIUS") {
-        linearGradientBlurParams_->blurRadius = param;
-    }
 
-    if (tag == "GEOWIDTH") {
-        linearGradientBlurParams_->geoWidth = param;
-    }
+    static std::unordered_map<std::string, std::function<void(float)>> actions = {
+        { "BLURRADIUS", [this](float p) { this->linearGradientBlurParams_->blurRadius = p; } },
+        { "GEOWIDTH",   [this](float p) { this->linearGradientBlurParams_->geoWidth   = p; } },
+        { "GEOHEIGHT",  [this](float p) { this->linearGradientBlurParams_->geoHeight  = p; } },
+        { "TRANX",      [this](float p) { this->linearGradientBlurParams_->tranX      = p; } },
+        { "TRANY",      [this](float p) { this->linearGradientBlurParams_->tranY      = p; } }
+    };
 
-    if (tag == "GEOHEIGHT") {
-        linearGradientBlurParams_->geoHeight = param;
-    }
-
-    if (tag == "SURFACEWIDTH") {
-        linearGradientBlurParams_->surfaceWidth = param;
-    }
-
-    if (tag == "SURFACEHEIGHT") {
-        linearGradientBlurParams_->surfaceHeight = param;
+    auto it = actions.find(tag);
+    if (it != actions.end()) {
+        it->second(param);
     }
 }
 

@@ -51,8 +51,9 @@ struct GELinearGradientBlurShaderFilterParams {
     float geoWidth;
     float geoHeight;
     Drawing::Matrix mat;
-    float surfaceWidth;
-    float surfaceHeight;
+    float tranX;
+    float tranY;
+    bool isOffscreenCanvas;
 };
 
 class GEVisualEffectImpl;
@@ -72,6 +73,7 @@ public:
     void SetParam(const std::string& tag, const std::shared_ptr<Drawing::ColorFilter> param) {}
     void SetParam(const std::string& tag, const Drawing::Matrix param);
     void SetParam(const std::string& tag, const std::vector<std::pair<float, float>>);
+    void SetParam(const std::string& tag, bool param);
 
     const std::string& GetName() const
     {

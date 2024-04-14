@@ -60,12 +60,13 @@ public:
         direction_ = direction;
         if (maskLinearBlurEnabled && useMaskAlgorithm_) {
             auto kawaseParams = std::make_shared<Drawing::GEKawaseBlurShaderFilterParams>();
-            kawaseParams->radius = blurRadius_ / 2;
+            kawaseParams->radius = blurRadius_ / 2; // 2: experience factor
             LinearGradientBlurFilter_ = std::make_shared<GEKawaseBlurShaderFilter>(*kawaseParams);
         }
     }
     ~GELinearGradientBlurPara() = default;
 };
+
 } // namespace Rosen
 } // namespace OHOS
 
