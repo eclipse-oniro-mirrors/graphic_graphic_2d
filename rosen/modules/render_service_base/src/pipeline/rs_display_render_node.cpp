@@ -16,6 +16,7 @@
 #include "pipeline/rs_display_render_node.h"
 
 #include "common/rs_obj_abs_geometry.h"
+#include "common/rs_optional_trace.h"
 #include "params/rs_display_render_params.h"
 #include "pipeline/rs_render_node.h"
 #include "platform/common/rs_log.h"
@@ -170,6 +171,8 @@ void RSDisplayRenderNode::InitRenderParams()
 
 void RSDisplayRenderNode::OnSync()
 {
+    RS_OPTIONAL_TRACE_NAME_FMT("RSDisplayRenderNode::OnSync global dirty[%s]",
+        dirtyManager_->GetCurrentFrameDirtyRegion().ToString().c_str());
     auto displayParams = static_cast<RSDisplayRenderParams*>(stagingRenderParams_.get());
     if (displayParams == nullptr) {
         RS_LOGE("RSDisplayRenderNode::OnSync displayParams is null");

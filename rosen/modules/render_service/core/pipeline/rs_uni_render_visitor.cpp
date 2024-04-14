@@ -1214,6 +1214,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
         static_cast<int>(node.GetSurfaceNodeType()), node.IsSubTreeDirty());
 
     // 0. init curSurface* info and check current node need to tranverse
+    auto curCornerRadius = curCornerRadius_;
     if (!BeforeUpdateSurfaceDirtyCalc(node)) {
         RS_LOGE("RSUniRenderVisitor::QuickPrepareSurfaceRenderNode BeforeUpdateSurfaceDirtyCalc fail");
         RSUifirstManager::Instance().DisableUifirstNode(node);
@@ -1251,6 +1252,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
 
     ResetCurSurfaceInfoAsUpperSurfaceParent(node);
     curAlpha_ = prevAlpha;
+    curCornerRadius_ = curCornerRadius;
 }
 
 void RSUniRenderVisitor::CalculateOcclusion(RSSurfaceRenderNode& node)
@@ -1334,6 +1336,7 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
     auto dirtyManager = curSurfaceNode_ ? curSurfaceDirtyManager_ : curDisplayDirtyManager_;
     auto dirtyFlag = dirtyFlag_;
     auto prevAlpha = curAlpha_;
+    auto curCornerRadius = curCornerRadius_;
     curAlpha_ *= std::clamp(node.GetRenderProperties().GetAlpha(), 0.f, 1.f);
 
     if (isDrawingCacheEnabled_) {
@@ -1344,6 +1347,7 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
     dirtyFlag_ = node.UpdateDrawRectAndDirtyRegion(*dirtyManager, dirtyFlag_, prepareClipRect_);
     // update prepare clip before children
     UpdatePrepareClip(node);
+    node.UpdateCurCornerRadius(curCornerRadius_, curSurfaceNode_ != nullptr);
 
     // 1. Recursively traverse child nodes if above curSurfaceNode and subnode need draw
     bool isSubTreeNeedPrepare = !curSurfaceNode_ || node.IsSubTreeNeedPrepare(filterInGlobal_) ||
@@ -1355,6 +1359,7 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
     prepareClipRect_ = prepareClipRect;
     dirtyFlag_ = dirtyFlag;
     curAlpha_ = prevAlpha;
+    curCornerRadius_ = curCornerRadius;
 }
 
 void RSUniRenderVisitor::UpdateRotationStatusForEffectNode(RSEffectRenderNode& node)
@@ -1518,6 +1523,8 @@ bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
         UpdateSecurityAndSkipLayerRecord(node);
     }
     if (node.IsMainWindowType() || node.IsLeashWindow()) {
+        // UpdateCurCornerRadius must process before curSurfaceNode_ update
+        node.UpdateCurCornerRadius(curCornerRadius_, curSurfaceNode_ != nullptr);
         curSurfaceNode_ = node.ReinterpretCastTo<RSSurfaceRenderNode>();
         curSurfaceDirtyManager_ = node.GetDirtyManager();
         if (!curSurfaceDirtyManager_ || !curSurfaceNode_) {
@@ -1559,6 +1566,7 @@ bool RSUniRenderVisitor::AfterUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
     }
     // 2 Update Occlusion info before children preparation
     if (node.IsMainWindowType()) {
+        node.SetGlobalCornerRadius(curCornerRadius_);
         CalculateOcclusion(node);
         RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderVisitor::AfterUpdateSurfaceDirtyCalc visibleRegion:%s",
             node.GetVisibleRegion().GetRegionInfo().c_str());
@@ -1960,23 +1968,25 @@ void RSUniRenderVisitor::CheckMergeSurfaceDirtysForDisplay(std::shared_ptr<RSSur
         // 1 Handles the case of transparent surface, merge transparent dirty rect
         RectI transparentDirtyRect = oldDirtyInSurface.IntersectRect(dirtyRect);
         if (!transparentDirtyRect.IsEmpty()) {
-            RS_LOGD("CheckMergeSurfaceDirtysForDisplay merge transparent dirty %{public}s rect %{public}s",
-                surfaceNode->GetName().c_str(), transparentDirtyRect.ToString().c_str());
+            RS_LOGD("CheckMergeSurfaceDirtysForDisplay global merge transparent dirty "
+                "%{public}s rect %{public}s", surfaceNode->GetName().c_str(),
+                transparentDirtyRect.ToString().c_str());
             curDisplayNode_->GetDirtyManager()->MergeDirtyRect(transparentDirtyRect);
         }
     }
     if (surfaceNode->GetZorderChanged()) {
         // 2 Zorder changed case, merge surface dest Rect
-        RS_LOGD("CheckMergeSurfaceDirtysForDisplay merge GetZorderChanged %{public}s rect %{public}s",
-            surfaceNode->GetName().c_str(), oldDirtyInSurface.ToString().c_str());
+        RS_LOGD("CheckMergeSurfaceDirtysForDisplay global merge GetZorderChanged "
+            "%{public}s rect %{public}s", surfaceNode->GetName().c_str(), oldDirtyInSurface.ToString().c_str());
         curDisplayNode_->GetDirtyManager()->MergeDirtyRect(oldDirtyInSurface);
     }
     // 3 surfacePos chanded case, merge surface lastframe pos or curframe pos
     RectI lastFrameSurfacePos = curDisplayNode_->GetLastFrameSurfacePos(surfaceNode->GetId());
     RectI currentFrameSurfacePos = curDisplayNode_->GetCurrentFrameSurfacePos(surfaceNode->GetId());
     if (surfaceNode->GetAnimateState() || lastFrameSurfacePos != currentFrameSurfacePos) {
-        RS_LOGD("CheckMergeSurfaceDirtysForDisplay merge surface pos changed %{public}s lastFrameRect %{public}s"
-            " currentFrameRect %{public}s", surfaceNode->GetName().c_str(), lastFrameSurfacePos.ToString().c_str(),
+        RS_LOGD("CheckMergeSurfaceDirtysForDisplay merge global surface pos changed "
+            "%{public}s lastFrameRect %{public}s currentFrameRect %{public}s",
+            surfaceNode->GetName().c_str(), lastFrameSurfacePos.ToString().c_str(),
             currentFrameSurfacePos.ToString().c_str());
         if (!lastFrameSurfacePos.IsEmpty()) {
             curDisplayNode_->GetDirtyManager()->MergeDirtyRect(lastFrameSurfacePos);
@@ -1998,7 +2008,7 @@ void RSUniRenderVisitor::CheckMergeSurfaceDirtysForDisplay(std::shared_ptr<RSSur
         // So we should always merge dirtyRect here.
         if (!shadowDirtyRect.IsEmpty()) {
             curDisplayNode_->GetDirtyManager()->MergeDirtyRect(dirtyRect);
-            RS_LOGD("CheckMergeSurfaceDirtysForDisplay merge ShadowValid %{public}s rect %{public}s",
+            RS_LOGD("CheckMergeSurfaceDirtysForDisplay global merge ShadowValid %{public}s rect %{public}s",
                 surfaceNode->GetName().c_str(), dirtyRect.ToString().c_str());
         }
         if (isShadowDisappear) {
@@ -2008,7 +2018,7 @@ void RSUniRenderVisitor::CheckMergeSurfaceDirtysForDisplay(std::shared_ptr<RSSur
     // 5 handle last and curframe surfaces which appear or disappear case
     std::vector<RectI> surfaceChangedRects = curDisplayNode_->GetSurfaceChangedRects();
     for (auto& surfaceChangedRect : surfaceChangedRects) {
-        RS_LOGD("CheckMergeSurfaceDirtysForDisplay merge Surface closed %{public}s",
+        RS_LOGD("CheckMergeSurfaceDirtysForDisplay global merge Surface closed %{public}s",
             surfaceChangedRect.ToString().c_str());
         if (!surfaceChangedRect.IsEmpty()) {
             curDisplayNode_->GetDirtyManager()->MergeDirtyRect(surfaceChangedRect);
@@ -2028,8 +2038,9 @@ void RSUniRenderVisitor::CheckMergeTransparentDirtysForDisplay(std::shared_ptr<R
         auto surfaceDirtyRegion = Occlusion::Region{ Occlusion::Rect{ dirtyRect } };
         auto containerDirtyRegion = containerRegion.And(surfaceDirtyRegion);
         if (!containerDirtyRegion.IsEmpty()) {
-            RS_LOGD("CheckMergeContainerDirtysForDisplay merge containerDirtyRegion %{public}s region %{public}s",
-                surfaceNode->GetName().c_str(), containerDirtyRegion.GetRegionInfo().c_str());
+            RS_LOGD("CheckMergeContainerDirtysForDisplay global merge containerDirtyRegion "
+                "%{public}s region %{public}s", surfaceNode->GetName().c_str(),
+                containerDirtyRegion.GetRegionInfo().c_str());
             // plan: we can use surfacenode's absrect as containerRegion's bound
             const auto& rect = containerRegion.GetBoundRef();
             curDisplayNode_->GetDirtyManager()->MergeDirtyRect(
@@ -2047,8 +2058,9 @@ void RSUniRenderVisitor::CheckMergeTransparentDirtysForDisplay(std::shared_ptr<R
         auto surfaceDirtyRegion = Occlusion::Region{ Occlusion::Rect{ dirtyRect } };
         Occlusion::Region transparentDirtyRegion = transparentRegion.And(surfaceDirtyRegion);
         if (!transparentDirtyRegion.IsEmpty()) {
-            RS_LOGD("CheckMergeContainerDirtysForDisplay merge TransparentDirtyRegion %{public}s region %{public}s",
-                surfaceNode->GetName().c_str(), transparentDirtyRegion.GetRegionInfo().c_str());
+            RS_LOGD("CheckMergeContainerDirtysForDisplay global merge TransparentDirtyRegion "
+                "%{public}s region %{public}s", surfaceNode->GetName().c_str(),
+                transparentDirtyRegion.GetRegionInfo().c_str());
             const std::vector<Occlusion::Rect>& rects = transparentDirtyRegion.GetRegionRects();
             for (const auto& rect : rects) {
                 curDisplayNode_->GetDirtyManager()->MergeDirtyRect(
@@ -3799,7 +3811,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         } else {
             canvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
         }
-        
+
         RSPropertiesPainter::SetBgAntiAlias(true);
         if (isUIFirst_) {
             int saveCount = canvas_->Save();
