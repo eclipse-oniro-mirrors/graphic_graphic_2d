@@ -1237,12 +1237,12 @@ bool RSSurfaceRenderNode::SubNodeNeedDraw(const RectI &r, PartialRenderType opDr
 void RSSurfaceRenderNode::ResetSurfaceOpaqueRegion(const RectI& screeninfo, const RectI& absRect,
     const ScreenRotation screenRotation, const bool isFocusWindow, const Vector4<int>& cornerRadius)
 {
-    Occlusion::Rect absRectR {absRect};
+    Occlusion::Rect absRectR { absRect };
     Occlusion::Region oldOpaqueRegion { opaqueRegion_ };
 
     // The transparent region of surfaceNode should include shadow area
-    Occlusion::Rect dirtyRect {GetOldDirty()};
-    transparentRegion_ = Occlusion::Region{dirtyRect};
+    Occlusion::Rect dirtyRect { GetOldDirty() };
+    transparentRegion_ = Occlusion::Region{ dirtyRect };
 
     if (IsTransparent()) {
         opaqueRegion_ = Occlusion::Region();
@@ -1696,6 +1696,8 @@ void RSSurfaceRenderNode::ResetSurfaceContainerRegion(const RectI& screeninfo, c
 
 void RSSurfaceRenderNode::OnSync()
 {
+    RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceRenderNode::OnSync name[%s] dirty[%s]",
+        GetName().c_str(), dirtyManager_->GetCurrentFrameDirtyRegion().ToString().c_str());
     dirtyManager_->OnSync(syncDirtyManager_);
     if (IsMainWindowType() || IsLeashWindow() || lastFrameUifirstFlag_) {
         auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());

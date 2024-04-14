@@ -3556,6 +3556,13 @@ bool RSRenderNode::UpdateLocalDrawRect()
     return stagingRenderParams_->SetLocalDrawRect(drawRect);
 }
 
+void RSRenderNode::UpdateCurCornerRadius(Vector4f& curCornerRadius, bool isSubNodeInSurface)
+{
+    if (!isSubNodeInSurface) {
+        Vector4f::Max(GetRenderProperties().GetCornerRadius(), curCornerRadius, curCornerRadius);
+    }
+}
+
 void RSRenderNode::ResetChangeState()
 {
     clipAbsDrawRectChange_ = false;
