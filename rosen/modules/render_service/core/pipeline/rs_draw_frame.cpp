@@ -16,24 +16,19 @@
 #include "pipeline/rs_draw_frame.h"
 
 #include "rs_trace.h"
-#include "pipeline/rs_uni_render_thread.h"
 
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_uifirst_manager.h"
+#include "pipeline/rs_uni_render_thread.h"
 #include "property/rs_filter_cache_manager.h"
 
 namespace OHOS {
 namespace Rosen {
-RSDrawFrame::RSDrawFrame() : unirenderInstance_(RSUniRenderThread::Instance())
-                           , rsParallelType_(RSSystemParameters::GetRsParallelType())
-{
+RSDrawFrame::RSDrawFrame()
+    : unirenderInstance_(RSUniRenderThread::Instance()), rsParallelType_(RSSystemParameters::GetRsParallelType())
+{}
 
-}
-
-RSDrawFrame::~RSDrawFrame() noexcept
-{
-
-}
+RSDrawFrame::~RSDrawFrame() noexcept {}
 
 void RSDrawFrame::SetRenderThreadParams(std::unique_ptr<RSRenderThreadParams>& stagingRenderThreadParams)
 {
@@ -95,7 +90,7 @@ void RSDrawFrame::PostAndWait()
                 unirenderInstance_.SetMainLooping(false);
             });
 
-            frameCV_.wait(frameLock, [this] {return canUnblockMainThread;});
+            frameCV_.wait(frameLock, [this] { return canUnblockMainThread; });
         }
     }
 }
@@ -188,4 +183,4 @@ void RSDrawFrame::JankStatsRenderFrameEnd(bool doJankStats)
         unirenderInstance_.GetDiscardJankFrames(), unirenderInstance_.GetDynamicRefreshRate());
 }
 } // namespace Rosen
-} // namespace OHOS 
+} // namespace OHOS

@@ -544,7 +544,6 @@ protected:
     std::shared_ptr<RSRenderModifier> CreateRenderModifier() const override;
 };
 
-<<<<<<< HEAD
 class RSC_EXPORT RSEmitterUpdaterModifier : public RSForegroundModifier {
 public:
     explicit RSEmitterUpdaterModifier(const std::shared_ptr<RSPropertyBase>& property);
@@ -554,8 +553,6 @@ protected:
     std::shared_ptr<RSRenderModifier> CreateRenderModifier() const override;
 };
 
-=======
->>>>>>> origin/master
 class RSC_EXPORT RSDynamicDimDegreeModifier : public RSForegroundModifier {
 public:
     explicit RSDynamicDimDegreeModifier(const std::shared_ptr<RSPropertyBase>& property);
@@ -565,18 +562,6 @@ protected:
     std::shared_ptr<RSRenderModifier> CreateRenderModifier() const override;
 };
 
-<<<<<<< HEAD
-=======
-class RSC_EXPORT RSEmitterUpdaterModifier : public RSForegroundModifier {
-public:
-    explicit RSEmitterUpdaterModifier(const std::shared_ptr<RSPropertyBase>& property);
-    virtual ~RSEmitterUpdaterModifier() = default;
-protected:
-    RSModifierType GetModifierType() const override;
-    std::shared_ptr<RSRenderModifier> CreateRenderModifier() const override;
-};
-
->>>>>>> origin/master
 class RSC_EXPORT RSLinearGradientBlurParaModifier : public RSForegroundModifier {
 public:
     explicit RSLinearGradientBlurParaModifier(const std::shared_ptr<RSPropertyBase>& property);

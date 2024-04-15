@@ -242,7 +242,7 @@ public:
     void SetTpFeatureConfig(int32_t feature, const char* config);
 #endif
     void SetVirtualScreenUsingStatus(bool isVirtualScreenUsingStatus);
-    void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
+
 private:
     RSInterfaces();
     ~RSInterfaces() noexcept;

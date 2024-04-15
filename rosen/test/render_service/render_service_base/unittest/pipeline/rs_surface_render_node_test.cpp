@@ -896,7 +896,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, StoreMustRenewedInfo002, TestSize.Level2)
     auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
     ASSERT_NE(node, nullptr);
 
-    node->SetUseEffectNodes(true);
+    node->SetChildHasVisibleEffect(true);
     node->RSRenderNode::StoreMustRenewedInfo();
     node->StoreMustRenewedInfo();
     ASSERT_TRUE(node->HasMustRenewedInfo());

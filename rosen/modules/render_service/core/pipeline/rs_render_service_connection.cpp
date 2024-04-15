@@ -15,12 +15,18 @@
 
 #include "rs_render_service_connection.h"
 
-#include "common/rs_background_thread.h"
 #include "frame_report.h"
-#include "hgm_core.h"
 #include "hgm_command.h"
+#include "hgm_core.h"
 #include "hgm_frame_rate_manager.h"
 #include "offscreen_render/rs_offscreen_render_thread.h"
+#include "rs_main_thread.h"
+#include "rs_profiler.h"
+#include "rs_trace.h"
+#include "system/rs_system_parameters.h"
+
+#include "common/rs_background_thread.h"
+#include "drawable/rs_canvas_drawing_render_node_drawable.h"
 #include "pipeline/parallel_render/rs_sub_thread_manager.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_realtime_refresh_rate_manager.h"
@@ -37,14 +43,6 @@
 #include "platform/common/rs_system_properties.h"
 #include "platform/ohos/rs_jank_stats.h"
 #include "render/rs_typeface_cache.h"
-#include "rs_main_thread.h"
-#include "rs_trace.h"
-<<<<<<< HEAD
-#include "system/rs_system_parameters.h"
-#include "drawable/rs_canvas_drawing_render_node_drawable.h"
-=======
-#include "rs_profiler.h"
->>>>>>> origin/master
 
 #ifdef TP_FEATURE_ENABLE
 #include "touch_screen/touch_screen.h"
@@ -614,12 +612,12 @@ void RSRenderServiceConnection::TakeSurfaceCaptureForUIWithUni(NodeId id, sptr<R
         RSOffscreenRenderThread::Instance().PostTask(offscreenRenderTask);
     } else {
         auto node = mainThread_->GetContext().GetNodeMap().GetRenderNode<RSRenderNode>(id);
-        if (node == nullptr || !node->GetCommandExcuted()) {
+        if (node == nullptr || !node->GetCommandExecuted()) {
             RSOffscreenRenderThread::Instance().InSertCaptureTask(id, offscreenRenderTask);
             return;
         }
         RSOffscreenRenderThread::Instance().PostTask(offscreenRenderTask);
-        node->SetCommandExcuted(false);
+        node->SetCommandExecuted(false);
     }
 }
 
@@ -1315,8 +1313,6 @@ void RSRenderServiceConnection::SetVirtualScreenUsingStatus(bool isVirtualScreen
     return;
 }
 
-<<<<<<< HEAD
-=======
 #ifdef RS_PROFILER_ENABLED
 int RSRenderServiceConnection::OnRemoteRequest(
     uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
@@ -1326,7 +1322,6 @@ int RSRenderServiceConnection::OnRemoteRequest(
 }
 #endif
 
->>>>>>> origin/master
 void RSRenderServiceConnection::SetCurtainScreenUsingStatus(bool isCurtainScreenOn)
 {
     auto task = [this, isCurtainScreenOn]() -> void {

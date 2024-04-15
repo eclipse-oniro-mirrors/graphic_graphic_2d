@@ -190,7 +190,7 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     DrawBackground(canvas, bounds);
 
     if (isSelfDrawingSurface) {
-        RSUniRenderUtil::FloorTransXYInCanvasMatrix(*rscanvas);
+        RSUniRenderUtil::CeilTransXYInCanvasMatrix(*rscanvas);
     }
 
     // 2. draw self drawing node
@@ -319,7 +319,7 @@ void RSSurfaceRenderNodeDrawable::CaptureSingleSurfaceNode(RSSurfaceRenderNode& 
     DrawBackground(canvas, bounds);
 
     if (isSelfDrawingSurface) {
-        RSUniRenderUtil::FloorTransXYInCanvasMatrix(canvas);
+        RSUniRenderUtil::CeilTransXYInCanvasMatrix(canvas);
     }
 
     if (surfaceParams.GetIsSecurityLayer() || surfaceParams.GetIsSkipLayer()) {
@@ -400,7 +400,7 @@ void RSSurfaceRenderNodeDrawable::CaptureSurfaceInDisplay(RSSurfaceRenderNode& s
     DrawBackground(canvas, bounds);
 
     if (isSelfDrawingSurface) {
-        RSUniRenderUtil::FloorTransXYInCanvasMatrix(canvas);
+        RSUniRenderUtil::CeilTransXYInCanvasMatrix(canvas);
     }
     auto parentSurfaceMatrix = RSRenderParams::parentSurfaceMatrix_;
     RSRenderParams::parentSurfaceMatrix_ = canvas.GetTotalMatrix();

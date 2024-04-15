@@ -47,7 +47,7 @@ public:
      * occlusion is calculated.
      * make sure this function is called after merge dirty history
      */
-    static Occlusion::Region MergeVisibleDirtyRegion(std::vector<RSBaseRenderNode::SharedPtr>& allSurfaceNodes,
+    static Occlusion::Region MergeVisibleDirtyRegion(std::vector<RSRenderNode::SharedPtr>& allSurfaceNodes,
         std::vector<NodeId>& hasVisibleDirtyRegionSurfaceVec, bool useAlignedDirtyRegion = false,
         bool renderParallel = false);
     static std::vector<RectI> ScreenIntersectDirtyRects(const Occlusion::Region &region, ScreenInfo& screenInfo);

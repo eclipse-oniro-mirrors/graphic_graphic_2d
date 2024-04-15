@@ -46,7 +46,7 @@ public:
         PostTask([t(std::move(scheduledTask))]() { t->Run(); });
         return std::move(taskFuture);
     }
-    uint32_t GetunExcuteTaskNum();
+    uint32_t GetunExecuteTaskNum();
     void RefreshRateCounts(std::string& dumpString);
     void ClearRefreshRateCounts(std::string& dumpString);
     int GetHardwareTid() const;
@@ -79,7 +79,7 @@ private:
     std::shared_ptr<RSBaseRenderEngine> uniRenderEngine_;
     UniFallbackCallback redrawCb_;
     std::mutex mutex_;
-    std::atomic<uint32_t> unExcuteTaskNum_ = 0;
+    std::atomic<uint32_t> unExecuteTaskNum_ = 0;
     int hardwareTid_ = -1;
 
     HgmRefreshRates hgmRefreshRates_;

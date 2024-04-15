@@ -16,18 +16,18 @@
 #ifndef RS_MAIN_THREAD
 #define RS_MAIN_THREAD
 
+#include <event_handler.h>
 #include <future>
 #include <memory>
 #include <mutex>
 #include <queue>
-#include <thread>
 #include <set>
+#include <thread>
 
 #include "refbase.h"
 #include "rs_base_render_engine.h"
 #include "rs_draw_frame.h"
 #include "vsync_distributor.h"
-#include <event_handler.h>
 #include "vsync_receiver.h"
 
 #include "command/rs_command.h"
@@ -39,13 +39,14 @@
 #include "ipc_callbacks/rs_isurface_occlusion_change_callback.h"
 #include "memory/rs_app_state_listener.h"
 #include "memory/rs_memory_graphic.h"
+#include "params/rs_render_thread_params.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_draw_frame.h"
 #include "pipeline/rs_uni_render_judgement.h"
-#include "platform/drawing/rs_vsync_client.h"
 #include "platform/common/rs_event_manager.h"
+#include "platform/drawing/rs_vsync_client.h"
 #include "transaction/rs_transaction_data.h"
-#include "params/rs_render_thread_params.h"
+
 #ifdef RES_SCHED_ENABLE
 #include "vsync_system_ability_listener.h"
 #endif
@@ -163,8 +164,8 @@ public:
     bool WaitUntilDisplayNodeBufferReleased(RSDisplayRenderNode& node);
     void NotifyDisplayNodeBufferReleased();
 
-    bool WaitHardwareThreadTaskExcute();
-    void NotifyHardwareThreadCanExcuteTask();
+    bool WaitHardwareThreadTaskExecute();
+    void NotifyHardwareThreadCanExecuteTask();
 
     void ClearTransactionDataPidInfo(pid_t remotePid);
     void AddTransactionDataPidInfo(pid_t remotePid);
@@ -259,15 +260,15 @@ public:
     void SurfaceOcclusionChangeCallback(VisibleData& dstCurVisVec);
     void SubscribeAppState();
     void HandleOnTrim(Memory::SystemMemoryLevel level);
+    void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
+    bool IsCurtainScreenOn() const;
     void NotifySurfaceCapProcFinish();
     void WaitUntilSurfaceCapProcFinished();
     void SetSurfaceCapProcFinished(bool flag);
 
     bool GetParallelCompositionEnabled();
     std::shared_ptr<HgmFrameRateManager> GetFrameRateMgr() { return frameRateMgr_; };
-    
-    void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
-    bool IsCurtainScreenOn() const;
+    void SetFrameIsRender(bool isRender);
     void PerfForBlurIfNeeded();
 
     bool IsOnVsync() const
@@ -290,27 +291,11 @@ public:
         return skipJankAnimatorFrame_.load();
     }
 
-<<<<<<< HEAD
     void SetSkipJankAnimatorFrame(bool skipJankAnimatorFrame)
     {
         skipJankAnimatorFrame_.store(skipJankAnimatorFrame);
     }
 
-=======
-    void SubscribeAppState();
-    void HandleOnTrim(Memory::SystemMemoryLevel level);
-    void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
-    bool IsCurtainScreenOn() const;
-    void NotifySurfaceCapProcFinish();
-    void WaitUntilSurfaceCapProcFinished();
-    void SetSurfaceCapProcFinished(bool flag);
-
-    const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& GetSelfDrawingNodes() const;
-    bool GetParallelCompositionEnabled();
-    std::shared_ptr<HgmFrameRateManager> GetFrameRateMgr() { return frameRateMgr_; };
-
-    void SetFrameIsRender(bool isRender);
->>>>>>> origin/master
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -476,7 +461,7 @@ private:
     // Used to refresh the whole display when AccessibilityConfig is changed
     bool isAccessibilityConfigChanged_ = false;
 
-    // used for blocking mainThread when hardwareThread has 2 and more task to excute
+    // used for blocking mainThread when hardwareThread has 2 and more task to Execute
     mutable std::mutex hardwareThreadTaskMutex_;
     std::condition_variable hardwareThreadTaskCond_;
 
@@ -577,8 +562,12 @@ private:
     bool hasMark_ = false;
 
     bool forceUIFirstChanged_ = false;
-<<<<<<< HEAD
-    bool hasRosenWebNode_ = false;
+
+#ifdef RS_PROFILER_ENABLED
+    friend class RSProfiler;
+#endif
+    pid_t exitedPid_ = -1;
+    std::set<pid_t> exitedPidSet_;
     RSDrawFrame drawFrame_;
     std::unique_ptr<RSRenderThreadParams> renderThreadParams_ = nullptr; // sync to render thread
     RsParallelType rsParallelType_;
@@ -589,15 +578,6 @@ private:
     std::atomic_bool discardJankFrames_ = false;
     std::atomic_bool skipJankAnimatorFrame_ = false;
     ScreenId displayNodeScreenId_ = 0;
-=======
-
-#ifdef RS_PROFILER_ENABLED
-    friend class RSProfiler;
-#endif
-    bool isCurtainScreenOn_ = false;
-    pid_t exitedPid_ = -1;
-    std::set<pid_t> exitedPidSet_;
->>>>>>> origin/master
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

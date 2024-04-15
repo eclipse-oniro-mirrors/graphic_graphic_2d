@@ -140,9 +140,6 @@ const std::array<ResetPropertyFunc, static_cast<int>(RSModifierType::CUSTOM)> g_
     [](RSProperties* prop) { prop->SetIlluminatedType(-1); },            // ILLUMINATED_TYPE
     [](RSProperties* prop) { prop->SetBloom({}); },                      // BLOOM
     [](RSProperties* prop) { prop->SetEmitterUpdater({}); },             // PARTICLE_EMITTER_UPDATER
-<<<<<<< HEAD
-    [](RSProperties* prop) { prop->SetDynamicDimDegree({}); },           // DYNAMIC_LIGHT_UP_DEGREE
-=======
     [](RSProperties* prop) { prop->SetForegroundEffectRadius(0.f); },    // FOREGROUND_EFFECT_RADIUS
     [](RSProperties* prop) { prop->SetDynamicDimDegree({}); },           // DYNAMIC_LIGHT_UP_DEGREE
     [](RSProperties* prop) { prop->SetBackgroundBlurRadius(0.f); },      // BACKGROUND_BLUR_RADIUS
@@ -159,7 +156,6 @@ const std::array<ResetPropertyFunc, static_cast<int>(RSModifierType::CUSTOM)> g_
     [](RSProperties* prop) { prop->SetForegroundBlurColorMode(BLUR_COLOR_MODE::DEFAULT); }, // FOREGROUND_BLUR_COLORMODE
     [](RSProperties* prop) { prop->SetForegroundBlurRadiusX(0.f); },     // FOREGROUND_BLUR_RADIUS_X
     [](RSProperties* prop) { prop->SetForegroundBlurRadiusY(0.f); },     // FOREGROUND_BLUR_RADIUS_Y
->>>>>>> origin/master
 };
 } // namespace
 
@@ -409,7 +405,6 @@ bool RSProperties::UpdateGeometryByParent(const Drawing::Matrix* parentMatrix,
     if (!RSSystemProperties::GetSkipGeometryNotChangeEnabled()) {
         return true;
     }
-<<<<<<< HEAD
     const auto& rect = boundsGeo_->GetAbsRect();
     if (!lastRect_.has_value()) {
         lastRect_ = rect;
@@ -419,9 +414,6 @@ bool RSProperties::UpdateGeometryByParent(const Drawing::Matrix* parentMatrix,
     lastRect_ = rect;
     return dirtyFlag;
 }
-=======
-    auto& boundsGeoPtr = (boundsGeo_);
->>>>>>> origin/master
 
 bool RSProperties::UpdateGeometry(
     const RSProperties* parent, bool dirtyFlag, const std::optional<Drawing::Point>& offset)
@@ -429,23 +421,12 @@ bool RSProperties::UpdateGeometry(
     if (!dirtyFlag && !geoDirty_) {
         return false;
     }
-<<<<<<< HEAD
     auto parentMatrix = parent == nullptr ? nullptr : &(parent->GetBoundsGeometry()->GetAbsMatrix());
     if (parentMatrix && sandbox_ && sandbox_->matrix_) {
         parentMatrix = &(sandbox_->matrix_.value());
     }
     CheckEmptyBounds();
     boundsGeo_->UpdateMatrix(parentMatrix, offset);
-=======
-    auto parentGeoPtr = parent == nullptr ? nullptr : (parent->boundsGeo_.get());
-    if (parentGeoPtr && sandbox_ && sandbox_->matrix_) {
-        auto parentGeo = std::make_shared<RSObjAbsGeometry>();
-        parentGeo->ConcatMatrix(*(sandbox_->matrix_));
-        boundsGeoPtr->UpdateMatrix(parentGeo, offset, clipRect);
-    } else {
-        boundsGeoPtr->UpdateMatrix(parent == nullptr ? nullptr : (parent->boundsGeo_), offset, clipRect);
-    }
->>>>>>> origin/master
     if (lightSourcePtr_ && lightSourcePtr_->IsLightSourceValid()) {
         CalculateAbsLightPosition();
         RSPointLightManager::Instance()->AddDirtyLightSource(backref_);
@@ -1192,14 +1173,6 @@ void RSProperties::SetDynamicDimDegree(const std::optional<float>& DimDegree)
     contentDirty_ = true;
 }
 
-<<<<<<< HEAD
-const std::optional<float>& RSProperties::GetDynamicDimDegree() const
-{
-    return dynamicDimDegree_;
-}
-
-=======
->>>>>>> origin/master
 void RSProperties::SetFilter(const std::shared_ptr<RSFilter>& filter)
 {
     filter_ = filter;
@@ -3188,15 +3161,8 @@ void RSProperties::OnApplyModifiers()
         }
         needFilter_ = backgroundFilter_ != nullptr || filter_ != nullptr || useEffect_ || IsLightUpEffectValid() ||
                       IsDynamicLightUpValid() || greyCoef_.has_value() || linearGradientBlurPara_ != nullptr ||
-<<<<<<< HEAD
-                      IsDynamicDimValid() || GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE;
-=======
                       IsDynamicDimValid() || GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE ||
                       foregroundFilter_ != nullptr;
-#if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
-        CreateFilterCacheManagerIfNeed();
-#endif
->>>>>>> origin/master
         ApplyGreyCoef();
     }
     GenerateRRect();

@@ -419,6 +419,6 @@ void RSSubThreadManager::ScheduleRenderNodeDrawable(DrawableV2::RSSurfaceRenderN
         nodeDrawable->SetLastFrameUsedThreadIndex(tid);
         subThread->DrawableCache(nodeDrawable);
     });
-    needResetContext_ = true;    
+    needResetContext_ = true;
 }
-}
+} // namespace OHOS::Rosen

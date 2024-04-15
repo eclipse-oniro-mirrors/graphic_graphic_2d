@@ -97,7 +97,7 @@ void RSNodeCommandHelper::SetTakeSurfaceForUIFlag(RSContext& context, NodeId nod
     auto& nodeMap = context.GetNodeMap();
     auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
     if (node) {
-        node->ExcuteSurfaceCaptureCommand();
+        node->ExecuteSurfaceCaptureCommand();
     }
 }
 

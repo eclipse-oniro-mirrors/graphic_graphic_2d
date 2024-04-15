@@ -160,7 +160,6 @@ void RSSurfaceRenderNode::UpdateSrcRect(const Drawing::Canvas& canvas, const Dra
     }
 }
 
-<<<<<<< HEAD
 void RSSurfaceRenderNode::UpdateHwcDisabledBySrcRect(bool hasRotation)
 {
 #ifndef ROSEN_CROSS_PLATFORM
@@ -183,13 +182,6 @@ void RSSurfaceRenderNode::UpdateHwcDisabledBySrcRect(bool hasRotation)
 #endif
 }
 
-bool RSSurfaceRenderNode::IsHardwareDisabledBySrcRect() const
-{
-    return isHardwareForcedDisabledBySrcRect_;
-}
-
-=======
->>>>>>> origin/master
 bool RSSurfaceRenderNode::IsYUVBufferFormat() const
 {
 #ifndef ROSEN_CROSS_PLATFORM
@@ -544,7 +536,7 @@ const std::shared_ptr<RSDirtyRegionManager>& RSSurfaceRenderNode::GetDirtyManage
     return dirtyManager_;
 }
 
-std::shared_ptr<RSDirtyRegionManager> RSSurfaceRenderNode::GetSyncDirtyManager() const
+const std::shared_ptr<RSDirtyRegionManager>& RSSurfaceRenderNode::GetSyncDirtyManager() const
 {
     return syncDirtyManager_;
 }
@@ -889,7 +881,7 @@ void RSSurfaceRenderNode::NotifyRTBufferAvailable(bool isTextureExportNode)
 
     if (isRefresh_) {
         ROSEN_LOGI("RSSurfaceRenderNode::NotifyRTBufferAvailable nodeId = %{public}" PRIu64 " RenderThread", GetId());
-        RSRTRefreshCallback::Instance().ExcuteRefresh();
+        RSRTRefreshCallback::Instance().ExecuteRefresh();
     }
 
     {

@@ -508,11 +508,6 @@ bool RSUniRenderUtil::IsNodeAssignSubThread(std::shared_ptr<RSSurfaceRenderNode>
 {
     auto deviceType = RSMainThread::Instance()->GetDeviceType();
     bool isNeedAssignToSubThread = false;
-<<<<<<< HEAD
-    if (isPhoneType && node->IsLeashWindow()) {
-        isNeedAssignToSubThread = (node->IsScale() || ROSEN_EQ(node->GetGlobalAlpha(), 0.0f) ||
-            node->GetForceUIFirst()) && !node->HasFilter();
-=======
     if (deviceType != DeviceType::PC && node->IsLeashWindow()) {
         isNeedAssignToSubThread = (node->IsScale() || node->IsScaleInPreFrame()
             || ROSEN_EQ(node->GetGlobalAlpha(), 0.0f) || node->GetForceUIFirst()) && !node->HasFilter();
@@ -520,7 +515,6 @@ bool RSUniRenderUtil::IsNodeAssignSubThread(std::shared_ptr<RSSurfaceRenderNode>
             " status:%d filter:%d isScale:%d isScalePreFrame:%d forceUIFirst:%d isNeedAssign:%d",
             node->GetName().c_str(), node->GetId(), node->GetCacheSurfaceProcessedStatus(), node->HasFilter(),
             node->IsScale(), node->IsScaleInPreFrame(), node->GetForceUIFirst(), isNeedAssignToSubThread);
->>>>>>> origin/master
     }
     std::string surfaceName = node->GetName();
     bool needFilterSCB = surfaceName.substr(0, 3) == "SCB" ||

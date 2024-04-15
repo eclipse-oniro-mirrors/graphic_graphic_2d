@@ -178,8 +178,6 @@ HWTEST_F(RSInterfacesSystemTest, SetCurtainScreenUsingStatus002, Function | Medi
 {
     RSInterfaces::GetInstance().SetCurtainScreenUsingStatus(false);
 }
-<<<<<<< HEAD
-=======
 
 /**
  * @tc.name: SetVirtualScreenUsingStatus001
@@ -202,7 +200,6 @@ HWTEST_F(RSInterfacesSystemTest, SetVirtualScreenUsingStatus002, Function | Medi
 {
     RSInterfaces::GetInstance().SetVirtualScreenUsingStatus(false);
 }
->>>>>>> origin/master
 }
 } // namespace Rosen
 } // namespace OHOS

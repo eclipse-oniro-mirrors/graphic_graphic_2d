@@ -220,10 +220,6 @@ public:
     void SetTpFeatureConfig(int32_t feature, const char* config) override;
 #endif
     void SetVirtualScreenUsingStatus(bool isVirtualScreenUsingStatus) override;
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/master
     void SetCurtainScreenUsingStatus(bool isCurtainScreenOn) override;
 private:
     bool FillParcelWithTransactionData(

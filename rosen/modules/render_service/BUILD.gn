@@ -37,7 +37,7 @@ ohos_shared_library("librender_service") {
   if (enhanced_opt) {
     configs = [ ":render_service_link_config" ]
   }
-  defines = ["RS_PARALLEL"]
+  defines = [ "RS_PARALLEL" ]
   if (graphic_2d_feature_color_gamut_enable) {
     defines += [ "PADDING_HEIGHT_32" ]
   } else {
@@ -81,11 +81,11 @@ ohos_shared_library("librender_service") {
     "core/pipeline/round_corner_display/rs_round_corner_config.cpp",
     "core/pipeline/round_corner_display/rs_round_corner_display.cpp",
     "core/pipeline/round_corner_display/rs_sub_thread_rcd.cpp",
-    "core/pipeline/rs_uifirst_manager.cpp",
     "core/pipeline/rs_base_render_engine.cpp",
     "core/pipeline/rs_base_render_util.cpp",
     "core/pipeline/rs_composer_adapter.cpp",
     "core/pipeline/rs_divided_render_util.cpp",
+    "core/pipeline/rs_draw_frame.cpp",
     "core/pipeline/rs_hardware_thread.cpp",
     "core/pipeline/rs_main_thread.cpp",
     "core/pipeline/rs_physical_screen_processor.cpp",
@@ -99,10 +99,10 @@ ohos_shared_library("librender_service") {
     "core/pipeline/rs_render_service_visitor.cpp",
     "core/pipeline/rs_surface_capture_task.cpp",
     "core/pipeline/rs_surface_capture_task_parallel.cpp",
+    "core/pipeline/rs_uifirst_manager.cpp",
     "core/pipeline/rs_uni_hwc_prevalidate_util.cpp",
     "core/pipeline/rs_uni_render_composer_adapter.cpp",
     "core/pipeline/rs_uni_render_engine.cpp",
-    "core/pipeline/rs_draw_frame.cpp",
     "core/pipeline/rs_uni_render_listener.cpp",
     "core/pipeline/rs_uni_render_processor.cpp",
     "core/pipeline/rs_uni_render_thread.cpp",
@@ -125,13 +125,13 @@ ohos_shared_library("librender_service") {
   #drawable
   sources += [
     "core/drawable/rs_canvas_drawing_render_node_drawable.cpp",
-    "core/drawable/rs_surface_render_node_drawable.cpp",
-    "core/drawable/rs_root_render_node_drawable.cpp",
-    "core/drawable/rs_render_node_drawable.cpp",
-    "core/drawable/rs_effect_render_node_drawable.cpp",
-    "core/drawable/rs_display_render_node_drawable.cpp",
     "core/drawable/rs_canvas_render_node_drawable.cpp",
+    "core/drawable/rs_display_render_node_drawable.cpp",
+    "core/drawable/rs_effect_render_node_drawable.cpp",
+    "core/drawable/rs_render_node_drawable.cpp",
     "core/drawable/rs_render_node_shadow_drawable.cpp",
+    "core/drawable/rs_root_render_node_drawable.cpp",
+    "core/drawable/rs_surface_render_node_drawable.cpp",
     "core/drawable/rs_ui_first_surface_render_node_drawable.cpp",
   ]
 

@@ -14,32 +14,35 @@
  */
 
 #include "pipeline/rs_hardware_thread.h"
+
 #include <memory>
 #include <unistd.h>
+
+#include "frame_report.h"
+#include "hdi_backend.h"
+#include "hgm_core.h"
+#include "hgm_frame_rate_manager.h"
+#include "parameters.h"
+#include "rs_realtime_refresh_rate_manager.h"
+#include "rs_trace.h"
+#include "vsync_sampler.h"
+
+#include "common/rs_optional_trace.h"
+#include "common/rs_singleton.h"
+#include "pipeline/round_corner_display/rs_round_corner_display.h"
+#include "pipeline/rs_base_render_util.h"
+#include "pipeline/rs_main_thread.h"
+#include "pipeline/rs_uni_render_engine.h"
+#include "pipeline/rs_uni_render_thread.h"
+#include "pipeline/rs_uni_render_util.h"
+#include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
+#include "screen_manager/rs_screen_manager.h"
 
 #ifdef RS_ENABLE_EGLIMAGE
 #include "src/gpu/gl/GrGLDefines.h"
 #endif
 
-#include "hgm_core.h"
-#include "pipeline/rs_base_render_util.h"
-#include "pipeline/rs_uni_render_util.h"
-#include "pipeline/rs_main_thread.h"
-#include "pipeline/rs_uni_render_engine.h"
-#include "pipeline/rs_uni_render_thread.h"
-#include "pipeline/round_corner_display/rs_round_corner_display.h"
-#include "hgm_frame_rate_manager.h"
-#include "platform/common/rs_log.h"
-#include "platform/common/rs_system_properties.h"
-#include "screen_manager/rs_screen_manager.h"
-#include "common/rs_singleton.h"
-#include "rs_realtime_refresh_rate_manager.h"
-#include "rs_trace.h"
-#include "common/rs_optional_trace.h"
-#include "frame_report.h"
-#include "hdi_backend.h"
-#include "vsync_sampler.h"
-#include "parameters.h"
 #ifdef RS_ENABLE_VK
 #include "rs_vk_image_manager.h"
 #endif
@@ -136,9 +139,9 @@ void RSHardwareThread::PostDelayTask(const std::function<void()>& task, int64_t 
     }
 }
 
-uint32_t RSHardwareThread::GetunExcuteTaskNum()
+uint32_t RSHardwareThread::GetunExecuteTaskNum()
 {
-    return unExcuteTaskNum_;
+    return unExecuteTaskNum_;
 }
 
 void RSHardwareThread::RefreshRateCounts(std::string& dumpString)
@@ -204,12 +207,12 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
             FrameReport::GetInstance().SetLastSwapBufferTime(endTimeNs - startTimeNs);
         }
 
-        unExcuteTaskNum_--;
-        if (unExcuteTaskNum_ <= HARDWARE_THREAD_TASK_NUM) {
-            RSMainThread::Instance()->NotifyHardwareThreadCanExcuteTask();
+        unExecuteTaskNum_--;
+        if (unExecuteTaskNum_ <= HARDWARE_THREAD_TASK_NUM) {
+            RSMainThread::Instance()->NotifyHardwareThreadCanExecuteTask();
         }
     };
-    unExcuteTaskNum_++;
+    unExecuteTaskNum_++;
 
     if (!hgmCore.GetLtpoEnabled()) {
         PostTask(task);

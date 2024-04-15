@@ -21,6 +21,11 @@
 #include "platform/common/rs_log.h"
 
 namespace OHOS::Rosen {
+namespace {
+// DFX drawing alpha
+constexpr float DFXFillAlpha = 0.2f;
+constexpr float DFXFontSize = 24.f;
+}
 
 static const std::map<DirtyRegionType, std::string> DIRTY_REGION_TYPE_MAP {
     { DirtyRegionType::UPDATE_DIRTY_REGION, "UPDATE_DIRTY_REGION" },
@@ -89,7 +94,7 @@ void RSDirtyRectsDfx::DrawDirtyRectForDFX(
     Drawing::Brush rectBrush;
     // font size: 24
     std::shared_ptr<Drawing::TextBlob> textBlob =
-        Drawing::TextBlob::MakeFromString(position.c_str(), Drawing::Font(nullptr, 24.0f, 1.0f, 0.0f));
+        Drawing::TextBlob::MakeFromString(position.c_str(), Drawing::Font(nullptr, DFXFontSize, 1.0f, 0.0f));
     if (fillType == RSPaintStyle::STROKE) {
         rectPen.SetColor(color);
         rectPen.SetAntiAlias(true);
@@ -111,11 +116,10 @@ void RSDirtyRectsDfx::DrawDirtyRectForDFX(
     canvas_->DetachBrush();
 }
 
-void RSDirtyRectsDfx::DrawDirtyRegionForDFX(std::vector<RectI> dirtyRects) const
+void RSDirtyRectsDfx::DrawDirtyRegionForDFX(const std::vector<RectI>& dirtyRects) const
 {
-    const float fillAlpha = 0.2;
     for (const auto& subRect : dirtyRects) {
-        DrawDirtyRectForDFX(subRect, Drawing::Color::COLOR_BLUE, RSPaintStyle::STROKE, fillAlpha);
+        DrawDirtyRectForDFX(subRect, Drawing::Color::COLOR_BLUE, RSPaintStyle::STROKE, DFXFillAlpha);
     }
 }
 
@@ -128,7 +132,6 @@ void RSDirtyRectsDfx::DrawAndTraceSingleDirtyRegionTypeForDFX(
         return;
     }
     std::map<NodeId, RectI> dirtyInfo;
-    float fillAlpha = 0.2;
     std::map<RSRenderNodeType, std::pair<std::string, SkColor>> nodeConfig = {
         { RSRenderNodeType::CANVAS_NODE, std::make_pair("canvas", SK_ColorRED) },
         { RSRenderNodeType::SURFACE_NODE, std::make_pair("surface", SK_ColorGREEN) },
@@ -140,7 +143,7 @@ void RSDirtyRectsDfx::DrawAndTraceSingleDirtyRegionTypeForDFX(
         subInfo += (" " + info.first + "node amount: " + std::to_string(dirtyInfo.size()));
         for (const auto& [nid, rect] : dirtyInfo) {
             if (isDrawn) {
-                DrawDirtyRectForDFX(rect, info.second, RSPaintStyle::STROKE, fillAlpha);
+                DrawDirtyRectForDFX(rect, info.second, RSPaintStyle::STROKE, DFXFillAlpha);
             }
         }
     }
@@ -159,7 +162,7 @@ bool RSDirtyRectsDfx::DrawDetailedTypesOfDirtyRegionForDFX(RSSurfaceRenderNode& 
     }
     if (dirtyRegionDebugType == DirtyRegionDebugType::CUR_DIRTY_DETAIL_ONLY_TRACE) {
         auto i = DirtyRegionType::UPDATE_DIRTY_REGION;
-        for (; i < DirtyRegionType::TYPE_AMOUNT; i = (DirtyRegionType)(i + 1)) {
+        for (; i < DirtyRegionType::TYPE_AMOUNT; i = static_cast<DirtyRegionType>(i + 1)) {
             DrawAndTraceSingleDirtyRegionTypeForDFX(node, i, false);
         }
         return true;
@@ -186,7 +189,7 @@ void RSDirtyRectsDfx::DrawSurfaceOpaqueRegionForDFX(RSSurfaceRenderNode& node) c
 {
     const auto& opaqueRegionRects = node.GetOpaqueRegion().GetRegionRects();
     for (const auto& subRect : opaqueRegionRects) {
-        DrawDirtyRectForDFX(subRect.ToRectI(), Drawing::Color::COLOR_GREEN, RSPaintStyle::FILL, 0.2f, 0);
+        DrawDirtyRectForDFX(subRect.ToRectI(), Drawing::Color::COLOR_GREEN, RSPaintStyle::FILL, DFXFillAlpha, 0);
     }
 }
 
@@ -201,8 +204,7 @@ void RSDirtyRectsDfx::DrawAllSurfaceDirtyRegionForDFX() const
 
     // draw display dirtyregion with red color
     RectI dirtySurfaceRect = targetNode_->GetSyncDirtyManager()->GetDirtyRegion();
-    const float fillAlpha = 0.2;
-    DrawDirtyRectForDFX(dirtySurfaceRect, Drawing::Color::COLOR_RED, RSPaintStyle::STROKE, fillAlpha);
+    DrawDirtyRectForDFX(dirtySurfaceRect, Drawing::Color::COLOR_RED, RSPaintStyle::STROKE, DFXFillAlpha);
 }
 
 void RSDirtyRectsDfx::DrawAllSurfaceOpaqueRegionForDFX() const
@@ -258,7 +260,7 @@ void RSDirtyRectsDfx::DrawTargetSurfaceVisibleRegionForDFX() const
         }
         if (CheckIfSurfaceTargetedForDFX(surfaceNode->GetName())) {
             auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceNode->GetRenderParams().get());
-            const auto visibleRegions = surfaceParams->GetVisibleRegion().GetRegionRects();
+            const auto& visibleRegions = surfaceParams->GetVisibleRegion().GetRegionRects();
             std::vector<RectI> rects;
             for (auto& rect : visibleRegions) {
                 rects.emplace_back(rect.left_, rect.top_, rect.right_ - rect.left_, rect.bottom_ - rect.top_);

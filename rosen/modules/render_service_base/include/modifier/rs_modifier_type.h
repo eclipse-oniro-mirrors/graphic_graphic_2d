@@ -50,83 +50,6 @@ enum class RSModifierType : int16_t {
     BACKGROUND_COLOR,              // 20
     BACKGROUND_SHADER,             // 21
     BG_IMAGE,                      // 22
-<<<<<<< HEAD
-    BG_IMAGE_WIDTH,                // 23
-    BG_IMAGE_HEIGHT,               // 24
-    BG_IMAGE_POSITION_X,           // 25
-    BG_IMAGE_POSITION_Y,           // 26
-    SURFACE_BG_COLOR,              // 27
-    BORDER_COLOR,                  // 28
-    BORDER_WIDTH,                  // 29
-    BORDER_STYLE,                  // 30
-    FILTER,                        // 31
-    BACKGROUND_FILTER,             // 32
-    LINEAR_GRADIENT_BLUR_PARA,     // 33
-    DYNAMIC_LIGHT_UP_RATE,         // 34
-    DYNAMIC_LIGHT_UP_DEGREE,       // 35
-    FRAME_GRAVITY,                 // 36
-    CLIP_RRECT,                    // 37
-    CLIP_BOUNDS,                   // 38
-    CLIP_TO_BOUNDS,                // 39
-    CLIP_TO_FRAME,                 // 40
-    VISIBLE,                       // 41
-    SHADOW_COLOR,                  // 42
-    SHADOW_OFFSET_X,               // 43
-    SHADOW_OFFSET_Y,               // 44
-    SHADOW_ALPHA,                  // 45
-    SHADOW_ELEVATION,              // 46
-    SHADOW_RADIUS,                 // 47
-    SHADOW_PATH,                   // 48
-    SHADOW_MASK,                   // 49
-    SHADOW_COLOR_STRATEGY,         // 50
-    MASK,                          // 51
-    SPHERIZE,                      // 52
-    LIGHT_UP_EFFECT,               // 53
-    PIXEL_STRETCH,                 // 54
-    PIXEL_STRETCH_PERCENT,         // 55
-    USE_EFFECT,                    // 56
-    COLOR_BLEND_MODE,              // 57
-    COLOR_BLEND_APPLY_TYPE,        // 58
-    SANDBOX,                       // 59
-    GRAY_SCALE,                    // 60
-    BRIGHTNESS,                    // 61
-    CONTRAST,                      // 62
-    SATURATE,                      // 63
-    SEPIA,                         // 64
-    INVERT,                        // 65
-    AIINVERT,                      // 66
-    SYSTEMBAREFFECT,               // 67
-    HUE_ROTATE,                    // 68
-    COLOR_BLEND,                   // 69
-    PARTICLE,                      // 70
-    SHADOW_IS_FILLED,              // 71
-    OUTLINE_COLOR,                 // 72
-    OUTLINE_WIDTH,                 // 73
-    OUTLINE_STYLE,                 // 74
-    OUTLINE_RADIUS,                // 75
-    USE_SHADOW_BATCHING,           // 76
-    GREY_COEF,                     // 77
-    LIGHT_INTENSITY,               // 78
-    LIGHT_COLOR,                   // 79
-    LIGHT_POSITION,                // 80
-    ILLUMINATED_BORDER_WIDTH,      // 81
-    ILLUMINATED_TYPE,              // 82
-    BLOOM,                         // 83
-    PARTICLE_EMITTER_UPDATER,      // 84
-    DYNAMIC_DIM_DEGREE,            // 85
-    CUSTOM,                        // 86
-    EXTENDED,                      // 87
-    TRANSITION,                    // 88
-    BACKGROUND_STYLE,              // 89
-    CONTENT_STYLE,                 // 90
-    FOREGROUND_STYLE,              // 91
-    OVERLAY_STYLE,                 // 92
-    NODE_MODIFIER,                 // 93
-    ENV_FOREGROUND_COLOR,          // 94
-    ENV_FOREGROUND_COLOR_STRATEGY, // 95
-    GEOMETRYTRANS,                 // 96
-    CHILDREN,                      // 97, PLACEHOLDER, no such modifier, but we need a dirty flag
-=======
     BG_IMAGE_INNER_RECT,           // 23
     BG_IMAGE_WIDTH,                // 24
     BG_IMAGE_HEIGHT,               // 25
@@ -217,7 +140,7 @@ enum class RSModifierType : int16_t {
     ENV_FOREGROUND_COLOR,          // 110
     ENV_FOREGROUND_COLOR_STRATEGY, // 111
     GEOMETRYTRANS,                 // 112
->>>>>>> origin/master
+    CHILDREN,                      // 113, PLACEHOLDER, no such modifier, but we need a dirty flag
     MAX_RS_MODIFIER_TYPE,
 };
 using ModifierDirtyTypes = std::bitset<static_cast<int>(RSModifierType::MAX_RS_MODIFIER_TYPE)>;

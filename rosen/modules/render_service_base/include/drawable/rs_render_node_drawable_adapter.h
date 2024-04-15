@@ -16,8 +16,8 @@
 #ifndef RENDER_SERVICE_BASE_DRAWABLE_RS_RENDER_NODE_DRAWABLE_ADAPTER_H
 #define RENDER_SERVICE_BASE_DRAWABLE_RS_RENDER_NODE_DRAWABLE_ADAPTER_H
 
-#include <memory>
 #include <map>
+#include <memory>
 #include <mutex>
 
 #include "common/rs_common_def.h"

@@ -547,19 +547,18 @@ bool RSSystemProperties::GetUIFirstEnabled()
 #endif
 }
 
-<<<<<<< HEAD
 bool RSSystemProperties::GetUIFirstDebugEnabled()
 {
     static bool debugEnable = system::GetParameter("persist.sys.graphic.uifirstDebugEnabled", "0") != "0";
     return debugEnable;
-=======
+}
+
 bool RSSystemProperties::GetUIFirstForceEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.ui.first.force.enabled", "0");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 1) != 0;
->>>>>>> origin/master
 }
 
 bool RSSystemProperties::GetDebugTraceEnabled()
@@ -569,19 +568,18 @@ bool RSSystemProperties::GetDebugTraceEnabled()
     return openDebugTrace;
 }
 
-<<<<<<< HEAD
-bool RSSystemProperties::GetDumpImgEnabled()
-{
-    static bool dumpImgEnabled =
-        std::atoi((system::GetParameter("persist.sys.graphic.dumpImgEnabled", "0")).c_str()) != 0;
-    return dumpImgEnabled;
-=======
 int RSSystemProperties::GetDebugTraceLevel()
 {
     static int openDebugTraceLevel =
         std::atoi((system::GetParameter("persist.sys.graphic.openDebugTrace", "0")).c_str());
     return openDebugTraceLevel;
->>>>>>> origin/master
+}
+
+bool RSSystemProperties::GetDumpImgEnabled()
+{
+    static bool dumpImgEnabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.dumpImgEnabled", "0")).c_str()) != 0;
+    return dumpImgEnabled;
 }
 
 bool RSSystemProperties::FindNodeInTargetList(std::string node)
@@ -788,6 +786,7 @@ bool RSSystemProperties::GetSubSurfaceEnabled()
         std::atoi((system::GetParameter("persist.sys.graphic.subSurface", "1")).c_str());
     return subSurfaceEnabled;
 }
+
 bool RSSystemProperties::GetSecurityPermissionCheckEnabled()
 {
     static bool openSecurityPermissionCheck =
@@ -817,20 +816,19 @@ bool RSSystemProperties::GetDumpUIPixelmapEnabled()
     return dumpUIPixelmapEnabled;
 }
 
-<<<<<<< HEAD
+uint32_t RSSystemProperties::GetVirtualScreenScaleModeDFX()
+{
+    static uint32_t scaleModeDFX =
+        std::atoi((system::GetParameter("persist.rosen.virtualScreenScaleMode.debugType", "2")).c_str());
+    return (scaleModeDFX > DEFAULT_SCALE_MODE) ? DEFAULT_SCALE_MODE : scaleModeDFX;
+}
+
 SubTreePrepareCheckType RSSystemProperties::GetSubTreePrepareCheckType()
 {
     static CachedHandle g_Handle = CachedParameterCreate("persist.sys.graphic.SubTreePrepareCheckType.type", "2");
     int changed = 0;
     const char *type = CachedParameterGetChanged(g_Handle, &changed);
     return static_cast<SubTreePrepareCheckType>(ConvertToInt(type, 2)); // Default value 2
-=======
-uint32_t RSSystemProperties::GetVirtualScreenScaleModeDFX()
-{
-    static uint32_t scaleModeDFX =
-        std::atoi((system::GetParameter("persist.rosen.virtualScreenScaleMode.debugType", "2")).c_str());
-    return (scaleModeDFX > DEFAULT_SCALE_MODE) ? DEFAULT_SCALE_MODE : scaleModeDFX;
->>>>>>> origin/master
 }
 } // namespace Rosen
 } // namespace OHOS

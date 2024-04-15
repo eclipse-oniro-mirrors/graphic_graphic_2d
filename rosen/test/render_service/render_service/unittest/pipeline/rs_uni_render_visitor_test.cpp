@@ -3139,40 +3139,6 @@ HWTEST_F(RSUniRenderVisitorTest, GetCacheImageFromMirrorNode001, TestSize.Level2
     ASSERT_EQ(rsUniRenderVisitor->GetCacheImageFromMirrorNode(rsDisplayRenderNode), nullptr);
 }
 
-#ifndef RS_PARALLEL
-/**
- * @tc.name: DrawSurfaceLayer001
- * @tc.desc: Test RSUniRenderVisitorTest.DrawSurfaceLayer while
- *           displayNode has child
- * @tc.type: FUNC
- * @tc.require: issueI7UGLR
- */
-HWTEST_F(RSUniRenderVisitorTest, DrawSurfaceLayer001, TestSize.Level2)
-{
-    NodeId id = 0;
-    RSDisplayNodeConfig config;
-    auto displayNode = std::make_shared<RSDisplayRenderNode>(id, config);
-    ASSERT_NE(displayNode, nullptr);
-    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    ASSERT_NE(surfaceNode, nullptr);
-    displayNode->AddChild(surfaceNode);
-
-    std::list<std::shared_ptr<RSSurfaceRenderNode>> mainThreadNodes;
-    std::list<std::shared_ptr<RSSurfaceRenderNode>> subThreadNodes;
-    RSUniRenderUtil::AssignWindowNodes(displayNode, mainThreadNodes, subThreadNodes);
-
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    auto drawingCanvas = std::make_shared<Drawing::Canvas>(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-
-    ASSERT_NE(drawingCanvas, nullptr);
-    rsUniRenderVisitor->canvas_ = std::make_unique<RSPaintFilterCanvas>(drawingCanvas.get());
-    rsUniRenderVisitor->renderEngine_ = std::make_shared<RSUniRenderEngine>();
-    rsUniRenderVisitor->renderEngine_->Init();
-    rsUniRenderVisitor->DrawSurfaceLayer(displayNode, subThreadNodes);
-}
-#endif
-
 /**
  * @tc.name: SwitchColorFilterDrawing001
  * @tc.desc: Test RSUniRenderVisitorTest.SwitchColorFilterDrawing while

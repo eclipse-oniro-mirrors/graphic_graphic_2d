@@ -358,16 +358,17 @@ bool RSSystemProperties::GetHwcRegionDfxEnabled()
     return false;
 }
 
-<<<<<<< HEAD
 SubTreePrepareCheckType RSSystemProperties::GetSubTreePrepareCheckType()
 {
     return SubTreePrepareCheckType::ENABLED;
 }
 
 bool RSSystemProperties::GetRenderParallelEnabled()
-=======
+{
+    return false;
+}
+
 bool RSSystemProperties::GetUIFirstForceEnabled()
->>>>>>> origin/master
 {
     return false;
 }

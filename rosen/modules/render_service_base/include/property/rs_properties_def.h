@@ -211,7 +211,6 @@ private:
     Vector4f absLightPosition_ = Vector4f(); // absolute light Position;
     Color lightColor_ = RgbPalette::White();
     float intensity_ = 0.f;
-    Color lightColor_ = RgbPalette::White();
     float preIntensity_ = 0.f;
     float radius_ = 0.f;
 };

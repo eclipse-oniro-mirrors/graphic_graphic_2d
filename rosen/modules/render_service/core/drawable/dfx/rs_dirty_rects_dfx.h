@@ -50,8 +50,7 @@ private:
     bool DrawDetailedTypesOfDirtyRegionForDFX(RSSurfaceRenderNode& node) const;
     void DrawSurfaceOpaqueRegionForDFX(RSSurfaceRenderNode& node) const;
 
-    void DrawDirtyRegionForDFX(std::vector<RectI> dirtyRects) const;
-    void DrawCacheRegionForDFX(std::vector<RectI> cacheRects) const;
+    void DrawDirtyRegionForDFX(const std::vector<RectI>& dirtyRects) const;
     void DrawAllSurfaceDirtyRegionForDFX() const;
     void DrawAllSurfaceOpaqueRegionForDFX() const;
     void DrawTargetSurfaceDirtyRegionForDFX() const;

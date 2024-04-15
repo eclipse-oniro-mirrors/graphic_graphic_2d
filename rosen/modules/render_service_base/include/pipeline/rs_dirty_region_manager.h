@@ -55,13 +55,9 @@ public:
     RSDirtyRegionManager(bool isDisplayDirtyManager);
     ~RSDirtyRegionManager() = default;
     // update/expand current frame dirtyregion
-<<<<<<< HEAD
-    void MergeDirtyRect(const RectI& rect);
+    void MergeDirtyRect(const RectI& rect, bool isDebugRect = false);
     // update/expand current frame dirtyregion if intersect
     bool MergeDirtyRectIfIntersect(const RectI& rect);
-=======
-    void MergeDirtyRect(const RectI& rect, bool isDebugRect = false);
->>>>>>> origin/master
     // update/expand dirtyregion after merge history
     void MergeDirtyRectAfterMergeHistory(const RectI& rect);
     // clip dirtyregion in current frame
@@ -135,7 +131,7 @@ public:
         }
         return false;
     }
-    // OnSync must be excuted after UpdateDirty API
+    // OnSync must be Executed after UpdateDirty API
     void OnSync(std::shared_ptr<RSDirtyRegionManager> targetManager);
 
     // added for dirty region dfx

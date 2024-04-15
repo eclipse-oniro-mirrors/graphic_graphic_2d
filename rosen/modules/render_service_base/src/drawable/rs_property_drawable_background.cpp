@@ -372,7 +372,10 @@ bool RSBackgroundImageDrawable::OnUpdate(const RSRenderNode& node)
     Drawing::Brush brush;
     brush.SetAntiAlias(antiAlias);
     auto boundsRect = RSPropertyDrawableUtils::Rect2DrawingRect(properties.GetBoundsRect());
+    auto innerRect = properties.GetBgImageInnerRect();
     bgImage->SetDstRect(properties.GetBgImageRect());
+    bgImage->SetInnerRect(std::make_optional<Drawing::RectI>(
+        innerRect.x_, innerRect.y_, innerRect.x_ + innerRect.z_, innerRect.y_ + innerRect.w_));
     canvas.AttachBrush(brush);
     bgImage->CanvasDrawImage(canvas, boundsRect, Drawing::SamplingOptions(), true);
     canvas.DetachBrush();

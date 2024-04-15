@@ -15,6 +15,12 @@
 
 #include "skia_image.h"
 
+#include "skia_bitmap.h"
+#include "skia_data.h"
+#include "skia_image_info.h"
+#include "skia_pixmap.h"
+#include "skia_surface.h"
+#include "skia_texture_info.h"
 #include "src/core/SkAutoMalloc.h"
 #include "src/core/SkReadBuffer.h"
 #include "src/core/SkWriteBuffer.h"
@@ -26,13 +32,6 @@
 #include "image/picture.h"
 #include "utils/data.h"
 #include "utils/log.h"
-
-#include "skia_bitmap.h"
-#include "skia_data.h"
-#include "skia_image_info.h"
-#include "skia_pixmap.h"
-#include "skia_surface.h"
-#include "skia_texture_info.h"
 #include "utils/system_properties.h"
 
 #ifdef ACE_ENABLE_GPU
