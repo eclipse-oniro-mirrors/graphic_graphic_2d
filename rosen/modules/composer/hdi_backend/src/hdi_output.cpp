@@ -529,7 +529,8 @@ int32_t HdiOutput::Commit(sptr<SyncFence> &fbFence)
     return device_->Commit(screenId_, fbFence);
 }
 
-int32_t HdiOutput::CommitAndGetReleaseFence(sptr<SyncFence> &fbFence, int32_t& skipState, bool& needFlush, std::vector<uint32_t>& layers, std::vector<sptr<SyncFence>>& fences)
+int32_t HdiOutput::CommitAndGetReleaseFence(sptr<SyncFence> &fbFence, int32_t& skipState, bool& needFlush,
+    std::vector<uint32_t>& layers, std::vector<sptr<SyncFence>>& fences)
 {
     CHECK_DEVICE_NULL(device_);
     layersId_.clear();
