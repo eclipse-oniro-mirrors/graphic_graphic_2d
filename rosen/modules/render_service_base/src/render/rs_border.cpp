@@ -442,7 +442,7 @@ void RSBorder::PaintBottomPath(Drawing::Canvas& canvas, Drawing::Pen& pen, const
         auto re = Drawing::Rect(x, y - endArcHeight, x + endArcWidth, y);
         Drawing::Path bottomBorder;
         bottomBorder.MoveTo(std::max(offsetX + width - RIGHTW2,
-                                     offsetY + width - brRad.GetX() / 2.f), y - brRad.GetY() / 2.f);
+                            offsetY + width - brRad.GetX() / 2.f), y - brRad.GetY() / 2.f);
         bottomBorder.ArcTo(rs.GetLeft(), rs.GetTop(), rs.GetRight(), rs.GetBottom(), BOTTOM_START, SWEEP_ANGLE);
         bottomBorder.ArcTo(re.GetLeft(), re.GetTop(), re.GetRight(), re.GetBottom(), BOTTOM_END, SWEEP_ANGLE);
         bottomBorder.LineTo(std::min(x, offsetX + blRad.GetX() / 2.f), y - blRad.GetY() / 2.f);
