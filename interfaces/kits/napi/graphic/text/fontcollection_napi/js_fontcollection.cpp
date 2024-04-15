@@ -15,7 +15,6 @@
 
 #include <fstream>
 #include "js_fontcollection.h"
-#include "utils/log.h"
 
 namespace OHOS::Rosen {
 constexpr size_t FILE_HEAD_LENGTH = 7; // 7 is the size of "file://"

@@ -162,10 +162,10 @@ napi_value JsParagraph::OnPaint(napi_env env, napi_callback_info info)
         ROSEN_LOGE("JsParagraph::OnPaint Argv is invalid");
         return NapiGetUndefined(env);
     }
-    Drawing::RecordingCanvas* tempCanvas = (Drawing::RecordingCanvas*)jsCanvas->GetCanvas();
-    tempCanvas->SetIsCustomTypeface(true);
-    tempCanvas->SetIsCustomTextType(true);
-    paragraph_->Paint(tempCanvas, x, y);
+    Drawing::RecordingCanvas* recordingCanvas = (Drawing::RecordingCanvas*)jsCanvas->GetCanvas();
+    recordingCanvas->SetIsCustomTypeface(true);
+    recordingCanvas->SetIsCustomTextType(true);
+    paragraph_->Paint(recordingCanvas, x, y);
     return NapiGetUndefined(env);
 }
 
