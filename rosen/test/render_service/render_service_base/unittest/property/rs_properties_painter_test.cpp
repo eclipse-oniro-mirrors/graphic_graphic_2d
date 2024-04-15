@@ -17,6 +17,8 @@
 
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "property/rs_properties_painter.h"
+#include "property/rs_point_light_manager.h"
+#include "render/rs_foreground_effect_filter.h"
 #include "render/rs_skia_filter.h"
 #include "render/rs_shadow.h"
 #include "pipeline/rs_render_node.h"
@@ -723,7 +725,8 @@ HWTEST_F(RSPropertiesPainterTest, DrawLight001, TestSize.Level1)
 
     auto lightSourcePtr = std::make_shared<RSLightSource>();
     RSIlluminated rsIlluminated;
-    rsIlluminated.AddLightSource(lightSourcePtr);
+    Vector4f lightPos;
+    rsIlluminated.AddLightSourcesAndPos(lightSourcePtr, lightPos);
     RSPropertiesPainter::DrawLight(properties, canvas);
     EXPECT_TRUE(true);
 
@@ -744,27 +747,29 @@ HWTEST_F(RSPropertiesPainterTest, DrawLightInner001, TestSize.Level1)
     properties.SetIlluminatedType(-1);
     auto lightBuilder = RSPropertiesPainter::GetPhongShaderBuilder();
     std::shared_ptr<RSLightSource> newLightSource = std::make_shared<RSLightSource>();
-    std::unordered_set<std::shared_ptr<RSLightSource>> lightSources;
-    lightSources.insert(newLightSource);
+    std::vector<std::pair<std::shared_ptr<RSLightSource>, Vector4f>> lightSourcesAndPosVec;
     std::shared_ptr<RSObjAbsGeometry> geoPtr;
-    RSPropertiesPainter::DrawLightInner(properties, canvas, lightBuilder, lightSources, geoPtr);
+    auto instance = RSPointLightManager::Instance();
+    auto lightPos = instance->CalculateLightPosForIlluminated(newLightSource, geoPtr);
+    lightSourcesAndPosVec.push_back(std::make_pair(newLightSource, lightPos));
+    RSPropertiesPainter::DrawLightInner(properties, canvas, lightBuilder, lightSourcesAndPosVec, geoPtr);
     EXPECT_TRUE(true);
 
     properties.SetIlluminatedBorderWidth(0.f);
     IlluminatedType illuminatedType = IlluminatedType::CONTENT;
     RSIlluminated rsIlluminated;
     rsIlluminated.SetIlluminatedType(illuminatedType);
-    RSPropertiesPainter::DrawLightInner(properties, canvas, lightBuilder, lightSources, geoPtr);
+    RSPropertiesPainter::DrawLightInner(properties, canvas, lightBuilder, lightSourcesAndPosVec, geoPtr);
     EXPECT_TRUE(true);
 
     illuminatedType = IlluminatedType::BORDER;
     rsIlluminated.SetIlluminatedType(illuminatedType);
-    RSPropertiesPainter::DrawLightInner(properties, canvas, lightBuilder, lightSources, geoPtr);
+    RSPropertiesPainter::DrawLightInner(properties, canvas, lightBuilder, lightSourcesAndPosVec, geoPtr);
     EXPECT_TRUE(true);
 
     illuminatedType = IlluminatedType::BORDER_CONTENT;
     rsIlluminated.SetIlluminatedType(illuminatedType);
-    RSPropertiesPainter::DrawLightInner(properties, canvas, lightBuilder, lightSources, geoPtr);
+    RSPropertiesPainter::DrawLightInner(properties, canvas, lightBuilder, lightSourcesAndPosVec, geoPtr);
     EXPECT_TRUE(true);
 }
 
@@ -1243,6 +1248,42 @@ HWTEST_F(RSPropertiesPainterTest, DrawDynamicLightUp002, TestSize.Level1)
     Drawing::Canvas drawingCanvas;
     RSPaintFilterCanvas canvas(&drawingCanvas);
     RSPropertiesPainter::DrawDynamicLightUp(properties, canvas);
+}
+
+/**
+ * @tc.name: DrawForegroundFilter001
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSPropertiesPainterTest, DrawForegroundFilter001, TestSize.Level1)
+{
+    float blurRadius = 10.f; // foreground effect blur radius
+    auto foregroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(blurRadius);
+    RSProperties properties;
+    properties.SetForegroundFilter(foregroundEffectFilter);
+
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+
+    RSPropertiesPainter::DrawForegroundFilter(properties, canvas);
+}
+
+/**
+ * @tc.name: DrawForegroundFilter002
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSPropertiesPainterTest, DrawForegroundFilter002, TestSize.Level1)
+{
+    float blurRadius = 20.f; // foreground effect blur radius
+    auto foregroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(blurRadius);
+    RSProperties properties;
+    properties.SetForegroundFilter(foregroundEffectFilter);
+
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+
+    RSPropertiesPainter::DrawForegroundFilter(properties, canvas);
 }
 } // namespace Rosen
 } // namespace OHOS

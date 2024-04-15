@@ -104,23 +104,39 @@ enum class RSModifierType : int16_t {
     USE_SHADOW_BATCHING,           // 77
     GREY_COEF,                     // 78
     LIGHT_INTENSITY,               // 79
-    LIGHT_POSITION,                // 80
-    ILLUMINATED_BORDER_WIDTH,      // 81
-    ILLUMINATED_TYPE,              // 82
-    BLOOM,                         // 83
-    FOREGROUND_EFFECT_RADIUS,      // 84
-    DYNAMIC_DIM_DEGREE,            // 85
-    CUSTOM,                        // 86
-    EXTENDED,                      // 87
-    TRANSITION,                    // 88
-    BACKGROUND_STYLE,              // 89
-    CONTENT_STYLE,                 // 90
-    FOREGROUND_STYLE,              // 91
-    OVERLAY_STYLE,                 // 92
-    NODE_MODIFIER,                 // 93
-    ENV_FOREGROUND_COLOR,          // 94
-    ENV_FOREGROUND_COLOR_STRATEGY, // 95
-    GEOMETRYTRANS,                 // 96
+    LIGHT_COLOR,                   // 80
+    LIGHT_POSITION,                // 81
+    ILLUMINATED_BORDER_WIDTH,      // 82
+    ILLUMINATED_TYPE,              // 83
+    BLOOM,                         // 84
+    PARTICLE_EMITTER_UPDATER,      // 85
+    FOREGROUND_EFFECT_RADIUS,      // 86
+    DYNAMIC_DIM_DEGREE,            // 87
+    BACKGROUND_BLUR_RADIUS,        // 88
+    BACKGROUND_BLUR_SATURATION,    // 89
+    BACKGROUND_BLUR_BRIGHTNESS,    // 90
+    BACKGROUND_BLUR_MASK_COLOR,    // 91
+    BACKGROUND_BLUR_COLOR_MODE,    // 92
+    BACKGROUND_BLUR_RADIUS_X,      // 93
+    BACKGROUND_BLUR_RADIUS_Y,      // 94
+    FOREGROUND_BLUR_RADIUS,        // 95
+    FOREGROUND_BLUR_SATURATION,    // 96
+    FOREGROUND_BLUR_BRIGHTNESS,    // 97
+    FOREGROUND_BLUR_MASK_COLOR,    // 98
+    FOREGROUND_BLUR_COLOR_MODE,    // 99
+    FOREGROUND_BLUR_RADIUS_X,      // 100
+    FOREGROUND_BLUR_RADIUS_Y,      // 101
+    CUSTOM,                        // 102
+    EXTENDED,                      // 103
+    TRANSITION,                    // 104
+    BACKGROUND_STYLE,              // 105
+    CONTENT_STYLE,                 // 106
+    FOREGROUND_STYLE,              // 107
+    OVERLAY_STYLE,                 // 108
+    NODE_MODIFIER,                 // 109
+    ENV_FOREGROUND_COLOR,          // 110
+    ENV_FOREGROUND_COLOR_STRATEGY, // 111
+    GEOMETRYTRANS,                 // 112
     MAX_RS_MODIFIER_TYPE,
 };
 

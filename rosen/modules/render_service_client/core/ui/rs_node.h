@@ -224,7 +224,7 @@ public:
     void SetEnvForegroundColorStrategy(ForegroundColorStrategyType colorType);
     void SetParticleParams(
         std::vector<ParticleParams>& particleParams, const std::function<void()>& finishCallback = nullptr);
-    void SetParticleDrawRegion(std::vector<ParticleParams>& particleParams);
+    void SetEmitterUpdater(const std::shared_ptr<EmitterUpdater>& para);
     void SetForegroundColor(uint32_t colorValue);
     void SetBackgroundColor(uint32_t colorValue);
     void SetBackgroundShader(const std::shared_ptr<RSShader>& shader);
@@ -332,6 +332,8 @@ public:
 
     void SetLightIntensity(float lightIntensity);
 
+    void SetLightColor(uint32_t lightColorValue);
+
     void SetLightPosition(const Vector4f& lightPosition);
 
     void SetLightPosition(float positionX, float positionY, float positionZ);
@@ -430,6 +432,22 @@ private:
     void RemoveChildById(NodeId childId);
     virtual void CreateTextureExportRenderNodeInRT() {};
 
+    void SetBackgroundBlurRadius(float radius);
+    void SetBackgroundBlurSaturation(float saturation);
+    void SetBackgroundBlurBrightness(float brightness);
+    void SetBackgroundBlurMaskColor(Color maskColor);
+    void SetBackgroundBlurColorMode(int colorMode);
+    void SetBackgroundBlurRadiusX(float blurRadiusX);
+    void SetBackgroundBlurRadiusY(float blurRadiusY);
+
+    void SetForegroundBlurRadius(float radius);
+    void SetForegroundBlurSaturation(float saturation);
+    void SetForegroundBlurBrightness(float brightness);
+    void SetForegroundBlurMaskColor(Color maskColor);
+    void SetForegroundBlurColorMode(int colorMode);
+    void SetForegroundBlurRadiusX(float blurRadiusX);
+    void SetForegroundBlurRadiusY(float blurRadiusY);
+    
     bool AnimationCallback(AnimationId animationId, AnimationCallbackEvent event);
     bool HasPropertyAnimation(const PropertyId& id);
     void FallbackAnimationsToRoot();
@@ -443,6 +461,7 @@ private:
     void MarkAllExtendModifierDirty();
     void ResetExtendModifierDirty();
     void UpdateImplicitAnimator();
+    void SetParticleDrawRegion(std::vector<ParticleParams>& particleParams);
 
     // Planning: refactor RSUIAnimationManager and remove this method
     void ClearAllModifiers();

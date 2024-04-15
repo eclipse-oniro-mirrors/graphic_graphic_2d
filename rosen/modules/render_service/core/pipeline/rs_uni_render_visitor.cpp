@@ -211,8 +211,7 @@ RSUniRenderVisitor::RSUniRenderVisitor()
 void RSUniRenderVisitor::PartialRenderOptionInit()
 {
     partialRenderType_ = RSSystemProperties::GetUniPartialRenderEnabled();
-    isPartialRenderEnabled_ = (partialRenderType_ != PartialRenderType::DISABLED) &&
-        RSMainThread::Instance()->IsSingleDisplay();
+    isPartialRenderEnabled_ = (partialRenderType_ != PartialRenderType::DISABLED);
     dirtyRegionDebugType_ = RSSystemProperties::GetDirtyRegionDebugType();
     surfaceRegionDebugType_ = RSSystemProperties::GetSurfaceRegionDfxType();
     isRegionDebugEnabled_ = (dirtyRegionDebugType_ != DirtyRegionDebugType::DISABLED) ||
@@ -1189,6 +1188,7 @@ void RSUniRenderVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 #endif
     if (node.GetName().find(CAPTURE_WINDOW_NAME) != std::string::npos) {
         hasCaptureWindow_[currentVisitDisplay_] = true;
+        node.SetContentDirty(); // screen recording capsule force mark dirty
     }
 
     node.SetAncestorDisplayNode(curDisplayNode_);
@@ -2238,6 +2238,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
 {
     if (mirroredDisplays_.size() == 0) {
         node.SetCacheImgForCapture(nullptr);
+        node.SetOffScreenCacheImgForCapture(nullptr);
     }
     RS_TRACE_NAME("ProcessDisplayRenderNode[" + std::to_string(node.GetScreenId()) + "]" +
         node.GetDirtyManager()->GetDirtyRegion().ToString().c_str());
@@ -2403,21 +2404,39 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode screen recording optimization is enable");
                 ScaleMirrorIfNeed(node, canvasRotation);
                 RotateMirrorCanvasIfNeed(node, canvasRotation);
+                PrepareOffscreenRender(*mirrorNode);
                 canvas_->Save();
-                // If both canvas and skImage have rotated, we need to reset the canvas
                 if (resetRotate_) {
                     Drawing::Matrix invertMatrix;
                     if (processor->GetScreenTransformMatrix().Invert(invertMatrix)) {
+                        // If both canvas and skImage have rotated, we need to reset the canvas
                         canvas_->ConcatMatrix(invertMatrix);
+                        // If both canvas and clipRegion have rotated, we need to reset the clipRegion
+                        Drawing::Path path;
+                        if (clipRegion_.GetBoundaryPath(&path)) {
+                            path.Transform(invertMatrix);
+                            Drawing::Region clip;
+                            clip.SetRect(Drawing::RectI(0, 0, canvas_->GetWidth(), canvas_->GetHeight()));
+                            clipRegion_.SetPath(path, clip);
+                        }
                     }
                 }
                 Drawing::Brush brush;
                 brush.SetAntiAlias(true);
                 canvas_->AttachBrush(brush);
-                canvas_->DrawImage(*cacheImageProcessed, 0, 0,
-                    Drawing::SamplingOptions(Drawing::CubicResampler::Mitchell()));
+                auto sampling = Drawing::SamplingOptions(Drawing::FilterMode::NEAREST, Drawing::MipmapMode::NEAREST);
+                canvas_->DrawImage(*cacheImageProcessed, 0, 0, sampling);
                 canvas_->DetachBrush();
                 canvas_->Restore();
+                if (isOpDropped_ && !isDirtyRegionAlignedEnable_) {
+                    ClipRegion(canvas_, clipRegion_);
+                }
+                auto offScreenCacheImgForCapture = mirrorNode->GetOffScreenCacheImgForCapture();
+                if (offScreenCacheImgForCapture) {
+                    canvas_->AttachBrush(brush);
+                    canvas_->DrawImage(*offScreenCacheImgForCapture, 0, 0, sampling);
+                    canvas_->DetachBrush();
+                }
                 bool parallelComposition = RSMainThread::Instance()->GetParallelCompositionEnabled();
                 if (!parallelComposition) {
                     auto saveCount = canvas_->Save();
@@ -2425,12 +2444,16 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                         *mirrorNode, mirrorNode->GetRootIdOfCaptureWindow());
                     canvas_->RestoreToCount(saveCount);
                 }
+                FinishOffscreenRender(true);
                 canvas_->Restore();
                 DrawWatermarkIfNeed(*mirrorNode, true);
             } else {
                 RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode screen recording optimization is disable");
                 mirrorNode->SetCacheImgForCapture(nullptr);
+                mirrorNode->SetOffScreenCacheImgForCapture(nullptr);
                 auto saveCount = canvas_->Save();
+                bool isOpDropped = isOpDropped_;
+                isOpDropped_ = false;
                 ScaleMirrorIfNeed(node, canvasRotation);
                 RotateMirrorCanvasIfNeed(node, canvasRotation);
                 PrepareOffscreenRender(*mirrorNode);
@@ -2438,6 +2461,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 ProcessChildren(*mirrorNode);
                 FinishOffscreenRender(true);
                 DrawWatermarkIfNeed(*mirrorNode, true);
+                isOpDropped_ = isOpDropped;
                 canvas_->RestoreToCount(saveCount);
             }
             canvas_->SetDisableFilterCache(false);
@@ -2452,14 +2476,20 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             RS_LOGE("RSUniRenderVisitor::ProcessDisplayRenderNode failed to get canvas.");
             return;
         }
+        bool isOpDropped = isOpDropped_;
+        isOpDropped_ = false;
         ProcessChildren(node);
         DrawWatermarkIfNeed(node);
         DrawCurtainScreen();
+        isOpDropped_ = isOpDropped;
 #if defined(RS_ENABLE_DRIVEN_RENDER)
     } else if (drivenInfo_ && drivenInfo_->currDrivenRenderMode == DrivenUniRenderMode::REUSE_WITH_CLIP_HOLE) {
         RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode DrivenUniRenderMode is REUSE_WITH_CLIP_HOLE");
+        bool isOpDropped = isOpDropped_;
+        isOpDropped_ = false;
         node.SetGlobalZOrder(globalZOrder_);
         processor_->ProcessDisplaySurface(node);
+        isOpDropped_ = isOpDropped;
 #endif
     } else {
         curDisplayDirtyManager_->SetSurfaceSize(screenInfo_.width, screenInfo_.height);
@@ -2575,7 +2605,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         Drawing::Region region;
         Occlusion::Region dirtyRegionTest;
         std::vector<RectI> rects;
-        bool clipPath = false;
 #ifdef RS_ENABLE_VK
         int saveCountBeforeClip = 0;
         if (RSSystemProperties::IsUseVulkan()) {
@@ -2637,28 +2666,9 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             }
         }
         if (isOpDropped_ && !isDirtyRegionAlignedEnable_) {
-            if (region.IsEmpty()) {
-                // [planning] Remove this after frame buffer can cancel
-                canvas_->ClipRect(Drawing::Rect());
-            } else if (region.IsRect()) {
-                canvas_->ClipRegion(region);
-                canvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
-            } else {
-                RS_TRACE_NAME("RSUniRenderVisitor: clipPath");
-                clipPath = true;
-#ifdef RS_ENABLE_VK
-                if (RSSystemProperties::IsUseVulkan()) {
-                    canvas_->ClipRegion(region);
-                } else {
-                    Drawing::Path dirtyPath;
-                    region.GetBoundaryPath(&dirtyPath);
-                    canvas_->ClipPath(dirtyPath, Drawing::ClipOp::INTERSECT, true);
-                }
-#else
-                Drawing::Path dirtyPath;
-                region.GetBoundaryPath(&dirtyPath);
-                canvas_->ClipPath(dirtyPath, Drawing::ClipOp::INTERSECT, true);
-#endif
+            clipRegion_ = region;
+            ClipRegion(canvas_, region);
+            if (!region.IsEmpty()) {
                 canvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
             }
         } else {
@@ -2675,8 +2685,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
             canvas_->SetCacheType((isScreenRotationAnimating_ || displayNodeRotationChanged)
                 ? RSPaintFilterCanvas::CacheType::ENABLED
                 : RSPaintFilterCanvas::CacheType::DISABLED);
-            bool needOffscreen = clipPath || displayNodeRotationChanged;
-
+            bool needOffscreen = (!region.IsEmpty() && !region.IsRect()) || displayNodeRotationChanged;
             if (needOffscreen) {
                 ClearTransparentBeforeSaveLayer(); // clear transparent before concat display node's matrix
             }
@@ -2685,6 +2694,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 canvas_->ConcatMatrix(geoPtr->GetMatrix());
             }
             if (needOffscreen) {
+                RS_TRACE_NAME("RSUniRenderVisitor: OffscreenRender");
                 // we are doing rotation animation, try offscreen render if capable
                 displayNodeMatrix_ = canvas_->GetTotalMatrix();
                 PrepareOffscreenRender(node);
@@ -2793,6 +2803,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         RS_OPTIONAL_TRACE_END();
         if (cacheImgForCapture_ != nullptr) {
             node.SetCacheImgForCapture(cacheImgForCapture_);
+            node.SetOffScreenCacheImgForCapture(offScreenCacheImgForCapture_);
         }
         if (IsHardwareComposerEnabled() && !hardwareEnabledNodes_.empty()) {
             globalZOrder_ = 0.0f;
@@ -2971,6 +2982,31 @@ bool RSUniRenderVisitor::IsNotDirtyHardwareEnabledTopSurface(std::shared_ptr<RSS
     node->SetNodeDirty(isHardwareForcedDisabled_ || node->HasSubNodeShouldPaint() ||
         !node->IsLastFrameHardwareEnabled());
     return !node->IsNodeDirty();
+}
+
+void RSUniRenderVisitor::ClipRegion(std::shared_ptr<Drawing::Canvas> canvas, const Drawing::Region& region) const
+{
+    if (region.IsEmpty()) {
+        // [planning] Remove this after frame buffer can cancel
+        canvas->ClipRect(Drawing::Rect());
+    } else if (region.IsRect()) {
+        canvas->ClipRegion(region);
+    } else {
+        RS_TRACE_NAME("RSUniRenderVisitor: clipPath");
+#ifdef RS_ENABLE_VK
+        if (RSSystemProperties::IsUseVulkan()) {
+            canvas->ClipRegion(region);
+        } else {
+            Drawing::Path dirtyPath;
+            region.GetBoundaryPath(&dirtyPath);
+            canvas->ClipPath(dirtyPath, Drawing::ClipOp::INTERSECT, true);
+        }
+#else
+        Drawing::Path dirtyPath;
+        region.GetBoundaryPath(&dirtyPath);
+        canvas->ClipPath(dirtyPath, Drawing::ClipOp::INTERSECT, true);
+#endif
+    }
 }
 
 void RSUniRenderVisitor::CalcDirtyDisplayRegion(std::shared_ptr<RSDisplayRenderNode>& node)
@@ -3990,7 +4026,12 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     if (!isSecurityDisplay_ && canvas_->GetSurface() != nullptr &&
         node.GetName().find(CAPTURE_WINDOW_NAME) != std::string::npos) {
         resetRotate_ = CheckIfNeedResetRotate();
-        cacheImgForCapture_ = canvas_->GetSurface()->GetImageSnapshot();
+        if (canvasBackup_ && canvasBackup_->GetSurface()) {
+            cacheImgForCapture_ = canvasBackup_->GetSurface()->GetImageSnapshot();
+            offScreenCacheImgForCapture_ = canvas_->GetSurface()->GetImageSnapshot();
+        } else {
+            cacheImgForCapture_ = canvas_->GetSurface()->GetImageSnapshot();
+        }
         auto mirrorNode = curDisplayNode_->GetMirrorSource().lock() ?
             curDisplayNode_->GetMirrorSource().lock() : curDisplayNode_;
         auto ndoeParent =  node.GetParent().lock();
@@ -4374,7 +4415,7 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
     if (!node.ShouldPaint() ||
         (canvas_ && canvas_->GetDeviceClipBounds().IsEmpty() && hardwareEnabledNodes_.empty())) {
 #ifdef DDGR_ENABLE_FEATURE_OPINC
-        if (isOpincDropNodeExt_) {
+        if (isOpincDropNodeExt_ && !node.isOpincRootNode_) {
             return;
         }
 #else
@@ -4385,7 +4426,7 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
     if (isSkipCanvasNodeOutOfScreen_ && !isSubNodeOfSurfaceInProcess_ && !node.HasSubSurface() &&
         geoPtr && IsOutOfScreenRegion(geoPtr->GetAbsRect()) && !isSubThread_) {
 #ifdef DDGR_ENABLE_FEATURE_OPINC
-        if (isOpincDropNodeExt_) {
+        if (isOpincDropNodeExt_ && !node.isOpincRootNode_) {
             return;
         }
 #else
@@ -4410,7 +4451,7 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
 
             node.isCoveredByOtherNode_ = false;
 #ifdef DDGR_ENABLE_FEATURE_OPINC
-            if (isOpincDropNodeExt_) {
+            if (isOpincDropNodeExt_ && !node.isOpincRootNode_) {
                 return;
             }
 #else
@@ -4441,7 +4482,7 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
                         node.GetId(), node.GetType(), DirtyRegionType::CANVAS_NODE_SKIP_RECT, dirtyRect);
                 } else {
 #ifdef DDGR_ENABLE_FEATURE_OPINC
-                    if (isOpincDropNodeExt_) {
+                    if (isOpincDropNodeExt_ && !node.isOpincRootNode_) {
                         return;
                     }
 #else
@@ -4462,7 +4503,7 @@ void RSUniRenderVisitor::ProcessCanvasRenderNode(RSCanvasRenderNode& node)
         // skip render driven node sub tree
         if (RSDrivenRenderManager::GetInstance().ClipHoleForDrivenNode(*canvas_, node)) {
 #ifdef DDGR_ENABLE_FEATURE_OPINC
-            if (isOpincDropNodeExt_) {
+            if (isOpincDropNodeExt_ && !node.isOpincRootNode_) {
                 return;
             }
 #else
@@ -4616,8 +4657,12 @@ void RSUniRenderVisitor::FinishOffscreenRender(bool isMirror)
     Drawing::Brush paint;
     paint.SetAntiAlias(true);
     canvasBackup_->AttachBrush(paint);
-    Drawing::SamplingOptions sampling =
-        Drawing::SamplingOptions(Drawing::FilterMode::NEAREST, Drawing::MipmapMode::NEAREST);
+    Drawing::SamplingOptions sampling;
+    if (isMirror) {
+        sampling = Drawing::SamplingOptions(Drawing::CubicResampler::Mitchell());
+    } else {
+        sampling = Drawing::SamplingOptions(Drawing::FilterMode::NEAREST, Drawing::MipmapMode::NEAREST);
+    }
     canvasBackup_->DrawImage(*offscreenSurface_->GetImageSnapshot().get(), 0, 0, sampling);
     canvasBackup_->DetachBrush();
     // restore current canvas and cleanup
@@ -5134,7 +5179,11 @@ bool RSUniRenderVisitor::CheckIfNeedResetRotate()
     if (canvas_ == nullptr) {
         return true;
     }
-    int angle = RSUniRenderUtil::GetRotationFromMatrix(canvas_->GetTotalMatrix());
+    auto matrix = canvas_->GetTotalMatrix();
+    if (displayNodeMatrix_.has_value()) {
+        matrix.PreConcat(displayNodeMatrix_.value());
+    }
+    int angle = RSUniRenderUtil::GetRotationFromMatrix(matrix);
     return angle != 0 && angle % ROTATION_90 == 0;
 }
 

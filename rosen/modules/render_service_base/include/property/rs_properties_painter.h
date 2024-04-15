@@ -72,6 +72,7 @@ public:
     static void DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas, FilterType filterType,
         const std::optional<Drawing::Rect>& rect = std::nullopt,
         const std::shared_ptr<RSFilter>& externalFilter = nullptr);
+    static void DrawForegroundFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas);
     static void DrawForegroundColor(const RSProperties& properties, Drawing::Canvas& canvas);
     static void DrawMask(const RSProperties& properties, Drawing::Canvas& canvas);
     static void DrawMask(const RSProperties& properties, Drawing::Canvas& canvas, Drawing::Rect maskBounds);
@@ -109,12 +110,14 @@ private:
     static void DrawShadowInner(const RSProperties& properties, RSPaintFilterCanvas& canvas, Drawing::Path& path);
     static void DrawLightInner(const RSProperties& properties, Drawing::Canvas& canvas,
         std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder,
-        const std::unordered_set<std::shared_ptr<RSLightSource>>& lightSources,
+        const std::vector<std::pair<std::shared_ptr<RSLightSource>, Vector4f>>& lightSourcesAndPosMap,
         const std::shared_ptr<RSObjAbsGeometry>& geoPtr);
     static void DrawContentLight(const RSProperties& properties, Drawing::Canvas& canvas,
-        std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Brush& brush, Vector4f& lightIntensity);
+        std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Brush& brush,
+        const float lightIntensityArray[]);
     static void DrawBorderLight(const RSProperties& properties, Drawing::Canvas& canvas,
-        std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Pen& pen, Vector4f& lightIntensity);
+        std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Pen& pen,
+        const float lightIntensityArray[]);
     static std::shared_ptr<Drawing::ShaderEffect> MakeLightUpEffectShader(
         float lightUpDeg, std::shared_ptr<Drawing::ShaderEffect> imageShader);
     static std::shared_ptr<Drawing::ShaderEffect> MakeDynamicDimShader(

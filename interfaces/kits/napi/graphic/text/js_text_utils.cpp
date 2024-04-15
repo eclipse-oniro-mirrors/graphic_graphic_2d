@@ -157,7 +157,7 @@ bool GetTextStyleFromJS(napi_env env, napi_value argValue, TextStyle& textStyle)
     if (tempValue != nullptr && ConvertFromJsValue(env, tempValue, text)) {
         textStyle.ellipsis = Str8ToStr16(text);
     }
-    napi_get_named_property(env, argValue, "ellipsisModal", &tempValue);
+    napi_get_named_property(env, argValue, "ellipsisMode", &tempValue);
     uint32_t ellipsisModal = 0;
     if (tempValue != nullptr && napi_get_value_uint32(env, tempValue, &ellipsisModal)== napi_ok) {
         textStyle.ellipsisModal = EllipsisModal(ellipsisModal);
@@ -210,6 +210,44 @@ bool GetParagraphStyleFromJS(napi_env env, napi_value argValue, TypographyStyle&
     uint32_t breakStrategy = 0;
     if (tempValue != nullptr && napi_get_value_uint32(env, tempValue, &breakStrategy) == napi_ok) {
         pographyStyle.breakStrategy = BreakStrategy(breakStrategy);
+    }
+    return true;
+}
+
+bool GetPlaceholderSpanFromJS(napi_env env, napi_value argValue, PlaceholderSpan& placeholderSpan)
+{
+    if (argValue == nullptr) {
+        return false;
+    }
+    napi_value tempValue = nullptr;
+    napi_get_named_property(env, argValue, "width", &tempValue);
+    double width = 0;
+    if (tempValue != nullptr && napi_get_value_double(env, tempValue, &width) == napi_ok) {
+        placeholderSpan.width = width;
+    }
+
+    napi_get_named_property(env, argValue, "height", &tempValue);
+    double height = 0;
+    if (tempValue != nullptr && napi_get_value_double(env, tempValue, &height) == napi_ok) {
+        placeholderSpan.height = height;
+    }
+
+    napi_get_named_property(env, argValue, "align", &tempValue);
+    uint32_t align = 0;
+    if (tempValue != nullptr && napi_get_value_uint32(env, tempValue, &align) == napi_ok) {
+        placeholderSpan.alignment = PlaceholderVerticalAlignment(align);
+    }
+
+    napi_get_named_property(env, argValue, "baseline", &tempValue);
+    uint32_t baseline = 0;
+    if (tempValue != nullptr && napi_get_value_uint32(env, tempValue, &baseline) == napi_ok) {
+        placeholderSpan.baseline = TextBaseline(baseline);
+    }
+
+    napi_get_named_property(env, argValue, "baselineOffset", &tempValue);
+    double baselineOffset = 0;
+    if (tempValue != nullptr && napi_get_value_double(env, tempValue, &baselineOffset) == napi_ok) {
+        placeholderSpan.baselineOffset = baselineOffset;
     }
     return true;
 }

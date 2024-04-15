@@ -99,7 +99,6 @@ public:
     void HandlePackageEvent(uint32_t listSize, const std::vector<std::string>& packageList);
     void HandleRefreshRateEvent(pid_t pid, const EventInfo& eventInfo);
     void HandleTouchEvent(int32_t touchStatus);
-    void HandleTempEvent(const std::string& tempEventName, bool eventStatus, uint32_t min, uint32_t max);
 
     void CleanVote(pid_t pid);
     int32_t GetCurRefreshRateMode() const { return curRefreshRateMode_; };
@@ -180,7 +179,7 @@ private:
     bool isLtpo_ = true;
     bool isReduceAllowed_ = true;
     bool isRefreshNeed_ = true;
-    bool isTouchEnable_ = true;
+    bool isTouchEnable_ = false;
     int32_t touchFps_ = 120;
     int32_t idleFps_ = 60;
     int32_t touchCnt_ = 0;
