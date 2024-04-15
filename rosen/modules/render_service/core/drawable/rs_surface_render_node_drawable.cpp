@@ -284,6 +284,7 @@ void RSSurfaceRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
 
     RS_TRACE_NAME("RSSurfaceRenderNodeDrawable::OnCapture:[" + surfaceNode->GetName() + "] " +
         surfaceParams->GetAbsDrawRect().ToString() + "Alpha: " + std::to_string(surfaceNode->GetGlobalAlpha()));
+    RSAutoCanvasRestore acr(rscanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
     if (RSUniRenderThread::GetCaptureParam().isSingleSurface_) {
         CaptureSingleSurfaceNode(*surfaceNode, *rscanvas, *surfaceParams);
     } else {
