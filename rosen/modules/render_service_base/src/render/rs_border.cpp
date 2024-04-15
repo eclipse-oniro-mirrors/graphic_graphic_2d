@@ -442,7 +442,7 @@ void RSBorder::PaintBottomPath(Drawing::Canvas& canvas, Drawing::Pen& pen, const
         auto re = Drawing::Rect(x, y - endArcHeight, x + endArcWidth, y);
         Drawing::Path bottomBorder;
         bottomBorder.MoveTo(std::max(offsetX + width - RIGHTW2,
-                            offsetY + width - brRad.GetX() / 2.f), y - brRad.GetY() / 2.f);
+                                     offsetY + width - brRad.GetX() / 2.f), y - brRad.GetY() / 2.f);
         bottomBorder.ArcTo(rs.GetLeft(), rs.GetTop(), rs.GetRight(), rs.GetBottom(), BOTTOM_START, SWEEP_ANGLE);
         bottomBorder.ArcTo(re.GetLeft(), re.GetTop(), re.GetRight(), re.GetBottom(), BOTTOM_END, SWEEP_ANGLE);
         bottomBorder.LineTo(std::min(x, offsetX + blRad.GetX() / 2.f), y - blRad.GetY() / 2.f);
@@ -493,11 +493,11 @@ void RSBorder::PaintLeftPath(Drawing::Canvas& canvas, Drawing::Pen& pen, const D
         float startArcHeight = std::min(height - BOTTOMW, blRad.GetY() * 2.f);
         float endArcHeight = std::min(height - TOPW, tlRad.GetY() * 2.f);
         auto rs = Drawing::Rect(x, offsetY + height - BOTTOMW2 - startArcHeight,
-                                x + startArcWidth , offsetY + height - BOTTOMW2);
+                                x + startArcWidth, offsetY + height - BOTTOMW2);
         auto re = Drawing::Rect(x, y, x + endArcWidth, y + endArcHeight);
         Drawing::Path leftBorder;
         leftBorder.MoveTo(x + blRad.GetX() / 2.f, std::max(offsetY + height - BOTTOMW2,
-                          offsetY + height - blRad.GetY() / 2.f));
+                                                           offsetY + height - blRad.GetY() / 2.f));
         leftBorder.ArcTo(rs.GetLeft(), rs.GetTop(), rs.GetRight(), rs.GetBottom(), LEFT_START, SWEEP_ANGLE);
         leftBorder.ArcTo(re.GetLeft(), re.GetTop(), re.GetRight(), re.GetBottom(), LEFT_END, SWEEP_ANGLE);
         leftBorder.LineTo(x + tlRad.GetX() / 2.f, std::min(y, offsetY + tlRad.GetY() / 2.f));
@@ -565,11 +565,11 @@ Drawing::Point RSBorder::GetTRIP(const Drawing::RoundRect& rrect, const Drawing:
             Drawing::Point trRad = rrect.GetCornerRadius(Drawing::RoundRect::TOP_RIGHT_POS);
             Drawing::Point tlRad = rrect.GetCornerRadius(Drawing::RoundRect::TOP_LEFT_POS);
             Drawing::Point brRad = rrect.GetCornerRadius(Drawing::RoundRect::BOTTOM_RIGHT_POS);
-            if(k <= kc) {
+            if (k <= kc) {
                 float drx = std::max(trRad.GetX() - RIGHTW, 0.f);
                 float dlx = std::max(tlRad.GetX() - LEFTW, 0.f);
                 x = (drx > 0) ? (x - std::min(drx, width / 2.f - dlx)) : (x + width / 2.f);
-                y = (rrect.GetRect().GetWidth() - x ) * k;
+                y = (rrect.GetRect().GetWidth() - x) * k;
             } else {
                 float dty = std::max(trRad.GetY() - TOPW, 0.f);
                 float dby = std::max(brRad.GetY() - BOTTOMW, 0.f);
