@@ -14,11 +14,11 @@
  */
 #include "canvas_napi/js_canvas.h"
 #include "draw/canvas.h"
+#include "recording/recording_canvas.h"
 #include "../drawing/js_drawing_utils.h"
 #include "js_paragraph.h"
 #include "../js_text_utils.h"
 #include "paragraph_builder_napi/js_paragraph_builder.h"
-#include "utils/log.h"
 
 namespace OHOS::Rosen {
 std::unique_ptr<Typography> g_Typography = nullptr;
@@ -161,7 +161,10 @@ napi_value JsParagraph::OnPaint(napi_env env, napi_callback_info info)
         ROSEN_LOGE("JsParagraph::OnPaint Argv is invalid");
         return NapiGetUndefined(env);
     }
-    paragraph_->Paint(jsCanvas->GetCanvas(), x, y);
+    Drawing::RecordingCanvas* tempCanvas = (Drawing::RecordingCanvas*)jsCanvas->GetCanvas();
+    tempCanvas->SetIsCustomTypeface(true);
+    tempCanvas->SetIsCustomTextType(true);
+    paragraph_->Paint(tempCanvas, x, y);
     return NapiGetUndefined(env);
 }
 
