@@ -28,6 +28,7 @@
 #include "rs_profiler_telemetry.h"
 #include "rs_profiler_utils.h"
 
+#include "params/rs_display_render_params.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_render_service_connection.h"
 #include "pipeline/rs_uni_render_util.h"
@@ -96,20 +97,30 @@ double RSProfiler::GetDirtyRegionRelative(RSContext& context)
     if (!displayNode) {
         return -1;
     }
+    auto params = static_cast<RSDisplayRenderParams*>(displayNode->GetRenderParams().get());
+    auto& renderThreadParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    if (!renderThreadParams) {
+        return 0.0;
+    }
 
-    const RectI displayResolution = displayNode->GetDirtyManager()->GetSurfaceRect();
-    const double displayWidth = displayResolution.GetWidth();
-    const double displayHeight = displayResolution.GetHeight();
-    const uint32_t bufferAge = 3;
+    auto& curAllSurfaces = params->GetAllMainAndLeashSurfaces();
+    auto dirtyManager = displayNode->GetSyncDirtyManager();
+    auto screenInfo = params->GetScreenInfo();
+    const double displayWidth = screenInfo.width;
+    const double displayHeight = screenInfo.height;
     // not to update the RSRenderFrame/DirtyManager and just calculate dirty region
     const bool isAlignedDirtyRegion = false;
-    RSUniRenderUtil::MergeDirtyHistory(displayNode, bufferAge, isAlignedDirtyRegion);
-    std::vector<NodeId> hasVisibleDirtyRegionSurfaceVec;
+    const uint32_t bufferAge = 3;
+    RSUniRenderUtil::MergeDirtyHistory(displayNode, bufferAge, isAlignedDirtyRegion, true);
+    Occlusion::Region dirtyRegion = RSUniRenderUtil::MergeVisibleDirtyRegion(
+        curAllSurfaces, RSUniRenderThread::Instance().GetDrawStatusVec(), isAlignedDirtyRegion, true);
+    RSUniRenderUtil::SetAllSurfaceGlobalDityRegion(curAllSurfaces, dirtyManager->GetDirtyRegion());
 
+    auto rects = RSUniRenderUtil::ScreenIntersectDirtyRects(dirtyRegion, screenInfo);
     double accumulatedArea = 0.0;
-
-    // PLANNING: temporary remove dirty region dump, add back later
-
+    for (const auto& rect : rects) {
+        accumulatedArea += rect.GetWidth() * rect.GetHeight();
+    }
     const double dirtyRegionPercentage = accumulatedArea / (displayWidth * displayHeight);
     return dirtyRegionPercentage;
 }
