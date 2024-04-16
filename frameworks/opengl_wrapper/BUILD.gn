@@ -92,6 +92,7 @@ if (current_os != "ohos") {
 
     if (graphic_2d_feature_use_aps_igameservice_func) {
       external_deps += aps_client_external_deps
+      external_deps += gameservice_render_slice_report_external_deps
     }
 
     if (defined(graphic_2d_ext_configs.vendor_root)) {
