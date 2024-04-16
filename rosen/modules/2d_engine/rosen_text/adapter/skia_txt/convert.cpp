@@ -86,6 +86,7 @@ SPText::ParagraphStyle Convert(const TypographyStyle& style)
         .customSpTextStyle = style.customTextStyle,
         .textHeightBehavior = static_cast<SPText::TextHeightBehavior>(style.textHeightBehavior),
         .hintingIsOn = style.hintingIsOn,
+        .breakStrategy = static_cast<SPText::BreakStrategy>(style.breakStrategy),
     };
 }
 
