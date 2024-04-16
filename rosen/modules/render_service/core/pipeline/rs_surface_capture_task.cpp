@@ -631,7 +631,7 @@ void RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWithUni(RSSurfaceRenderNod
         canvas_->Save();
     }
 
-    if (node.IsAppWindow()) {
+    if (node.IsAppWindow() || node.IsLeashWindow()) {
         // When CaptureSingleSurfaceNodeWithUni, we should consider scale factor of canvas_ and
         // child nodes (self-drawing surfaceNode) of AppWindow should use relative coordinates
         // which is the node relative to the upper-left corner of the window.
@@ -1016,11 +1016,11 @@ bool RSSurfaceCaptureVisitor::DrawBlurInCache(RSRenderNode& node)
     if (curCacheFilterRects_.count(node.GetId())) {
         // draw filter before drawing cachedSurface
         curCacheFilterRects_.erase(node.GetId());
-        if (curCacheFilterRects_.empty() || !node.ChildHasFilter()) {
+        if (curCacheFilterRects_.empty() || !node.ChildHasVisibleFilter()) {
             // no filter to draw, return
             return true;
         }
-    } else if (!node.ChildHasFilter()) {
+    } else if (!node.ChildHasVisibleFilter()) {
         // no filter to draw, return
         return true;
     }

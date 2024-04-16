@@ -183,7 +183,8 @@ public:
     std::shared_ptr<VSyncReceiver> CreateVSyncReceiver(
         const std::string& name,
         uint64_t id,
-        const std::shared_ptr<OHOS::AppExecFwk::EventHandler> &looper = nullptr);
+        const std::shared_ptr<OHOS::AppExecFwk::EventHandler> &looper = nullptr,
+        NodeId windowNodeId = 0);
 
     int32_t RegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback);
 
@@ -195,6 +196,10 @@ public:
     int32_t RegisterHgmConfigChangeCallback(const HgmConfigChangeCallback& callback);
 
     int32_t RegisterHgmRefreshRateModeChangeCallback(const HgmRefreshRateModeChangeCallback& callback);
+
+    int32_t RegisterHgmRefreshRateUpdateCallback(const HgmRefreshRateUpdateCallback& callback);
+
+    int32_t UnRegisterHgmRefreshRateUpdateCallback();
 
     void SetAppWindowNum(uint32_t num);
 
@@ -229,13 +234,15 @@ public:
 
     void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback);
 
+    void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
+
     GpuDirtyRegionInfo GetCurrentDirtyRegionInfo(ScreenId id);
 
 #ifdef TP_FEATURE_ENABLE
     void SetTpFeatureConfig(int32_t feature, const char* config);
 #endif
     void SetVirtualScreenUsingStatus(bool isVirtualScreenUsingStatus);
-    void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
+
 private:
     RSInterfaces();
     ~RSInterfaces() noexcept;

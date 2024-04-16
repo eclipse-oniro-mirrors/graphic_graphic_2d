@@ -41,6 +41,7 @@ enum RSNodeCommandType : uint16_t {
     UPDATE_MODIFIER_MASK_PTR,
     UPDATE_MODIFIER_PATH_PTR,
     UPDATE_MODIFIER_GRADIENT_BLUR_PTR,
+    UPDATE_MODIFIER_EMITTER_UPDATER_PTR,
     UPDATE_MODIFIER_SHADER_PTR,
     UPDATE_MODIFIER_VECTOR2F,
     UPDATE_MODIFIER_VECTOR4_BORDER_STYLE,
@@ -51,10 +52,6 @@ enum RSNodeCommandType : uint16_t {
     UPDATE_MODIFIER_DRAWING_MATRIX,
 
     SET_FREEZE,
-    MARK_DRIVEN_RENDER,
-    MARK_DRIVEN_RENDER_ITEM_INDEX,
-    MARK_DRIVEN_RENDER_FRAME_PAINT_STATE,
-    MARK_CONTENT_CHANGED,
     SET_DRAW_REGION,
     SET_OUT_OF_PARENT,
     SET_TAKE_SURFACE_CAPTURE_FOR_UI_FLAG,
@@ -127,10 +124,6 @@ public:
         bool includeProperty);
     static void MarkNodeSingleFrameComposer(RSContext& context, NodeId nodeId, bool isNodeFasterDraw, pid_t pid);
 
-    static void MarkDrivenRender(RSContext& context, NodeId nodeId, bool flag);
-    static void MarkDrivenRenderItemIndex(RSContext& context, NodeId nodeId, int32_t index);
-    static void MarkDrivenRenderFramePaintState(RSContext& context, NodeId nodeId, bool flag);
-    static void MarkContentChanged(RSContext& context, NodeId nodeId, bool isChanged);
     static void SetDrawRegion(RSContext& context, NodeId nodeId, std::shared_ptr<RectF> rect);
     static void SetOutOfParent(RSContext& context, NodeId nodeId, OutOfParentType outOfParent);
     static void SetTakeSurfaceForUIFlag(RSContext& context, NodeId nodeId);
@@ -181,6 +174,10 @@ ADD_COMMAND(RSUpdatePropertyLinearGradientBlurPara,
     ARG(RS_NODE, UPDATE_MODIFIER_GRADIENT_BLUR_PTR,
         RSNodeCommandHelper::UpdateModifier<std::shared_ptr<RSLinearGradientBlurPara>>,
         NodeId, std::shared_ptr<RSLinearGradientBlurPara>, PropertyId, PropertyUpdateType))
+ADD_COMMAND(RSUpdatePropertyEmitterUpdater,
+    ARG(RS_NODE, UPDATE_MODIFIER_EMITTER_UPDATER_PTR,
+        RSNodeCommandHelper::UpdateModifier<std::shared_ptr<EmitterUpdater>>,
+        NodeId, std::shared_ptr<EmitterUpdater>, PropertyId, PropertyUpdateType))
 ADD_COMMAND(RSUpdatePropertyShader,
     ARG(RS_NODE, UPDATE_MODIFIER_SHADER_PTR, RSNodeCommandHelper::UpdateModifier<std::shared_ptr<RSShader>>,
         NodeId, std::shared_ptr<RSShader>, PropertyId, PropertyUpdateType))
@@ -215,16 +212,6 @@ ADD_COMMAND(RSMarkNodeGroup,
 ADD_COMMAND(RSMarkNodeSingleFrameComposer,
     ARG(RS_NODE, MARK_NODE_SINGLE_FRAME_COMPOSER, RSNodeCommandHelper::MarkNodeSingleFrameComposer,
         NodeId, bool, pid_t))
-
-ADD_COMMAND(RSMarkDrivenRender,
-    ARG(RS_NODE, MARK_DRIVEN_RENDER, RSNodeCommandHelper::MarkDrivenRender, NodeId, bool))
-ADD_COMMAND(RSMarkDrivenRenderItemIndex,
-    ARG(RS_NODE, MARK_DRIVEN_RENDER_ITEM_INDEX, RSNodeCommandHelper::MarkDrivenRenderItemIndex, NodeId, int32_t))
-ADD_COMMAND(RSMarkDrivenRenderFramePaintState,
-    ARG(RS_NODE, MARK_DRIVEN_RENDER_FRAME_PAINT_STATE,
-        RSNodeCommandHelper::MarkDrivenRenderFramePaintState, NodeId, bool))
-ADD_COMMAND(RSMarkContentChanged,
-    ARG(RS_NODE, MARK_CONTENT_CHANGED, RSNodeCommandHelper::MarkContentChanged, NodeId, bool))
 
 ADD_COMMAND(RSSetDrawRegion,
     ARG(RS_NODE, SET_DRAW_REGION, RSNodeCommandHelper::SetDrawRegion,

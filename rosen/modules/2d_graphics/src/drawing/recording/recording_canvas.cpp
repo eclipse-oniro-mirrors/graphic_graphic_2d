@@ -59,6 +59,23 @@ void RecordingCanvas::ResetCanvas(int32_t width, int32_t height)
     Reset(width, height);
 }
 
+void RecordingCanvas::Reset(int32_t width, int32_t height, bool addDrawOpImmediate)
+{
+    DrawCmdList::UnmarshalMode mode =
+        addDrawOpImmediate ? DrawCmdList::UnmarshalMode::IMMEDIATE : DrawCmdList::UnmarshalMode::DEFERRED;
+    cmdList_ = std::make_shared<DrawCmdList>(width, height, mode);
+    addDrawOpImmediate_ = addDrawOpImmediate;
+    isCustomTextType_ = false;
+    customTextBrush_ = std::nullopt;
+    customTextPen_ = std::nullopt;
+    saveOpStateStack_ = std::stack<SaveOpState>();
+    gpuContext_ = nullptr;
+    RemoveAll();
+    DetachBrush();
+    DetachPen();
+    NoDrawCanvas::Reset(width, height);
+}
+
 void RecordingCanvas::DrawPoint(const Point& point)
 {
     if (!addDrawOpImmediate_) {
@@ -331,10 +348,9 @@ void RecordingCanvas::DrawTextBlob(const TextBlob* blob, const scalar x, const s
     }
     TextBlob::Context ctx {nullptr, IsCustomTypeface()};
     auto textBlobHandle = CmdListHelper::AddTextBlobToCmdList(*cmdList_, blob, &ctx);
-    uint32_t typefaceId = 0;
     uint64_t globalUniqueId = 0;
     if (ctx.GetTypeface() != nullptr) {
-        typefaceId = ctx.GetTypeface()->GetUniqueID();
+        uint32_t typefaceId = ctx.GetTypeface()->GetUniqueID();
         globalUniqueId = (shiftedPid | typefaceId);
     }
     AddDrawOpImmediate<DrawTextBlobOpItem::ConstructorHandle>(textBlobHandle, globalUniqueId, x, y);

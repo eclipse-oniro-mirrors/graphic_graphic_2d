@@ -15,6 +15,7 @@
 
 #include <cstdint>
 #include <scoped_bytrace.h>
+#include <unordered_set>
 #include "rs_trace.h"
 #include "hdi_output.h"
 #include "metadata_helper.h"
@@ -186,6 +187,26 @@ int32_t HdiOutput::CreateLayer(uint64_t surfaceId, const LayerInfoPtr &layerInfo
     }
     surfaceIdMap_[surfaceId] = layer;
 
+    // DISPLAY ENGINE
+    uint32_t ret = 0;
+    std::vector<std::string> validKeys{};
+    ret = device_->GetSupportedLayerPerFrameParameterKey(validKeys);
+    if (ret != 0) {
+        HLOGD("GetSupportedLayerPreFrameParameter Fail! ret = %{public}d", ret);
+        return GRAPHIC_DISPLAY_SUCCESS;
+    }
+    const std::string GENERIC_METADATA_KEY_ARSR_PRE_NEEDED = "ArsrDoEnhance";
+    if (std::find(validKeys.begin(), validKeys.end(), GENERIC_METADATA_KEY_ARSR_PRE_NEEDED) != validKeys.end()) {
+        if (CheckIfDoArsrPre(layerInfo)) {
+            const std::vector<int8_t> valueBlob{static_cast<int8_t>(1)};
+            ret = device_->SetLayerPerFrameParameter(screenId_, layerId,
+                                                     GENERIC_METADATA_KEY_ARSR_PRE_NEEDED, valueBlob);
+        }
+        if (ret != 0) {
+            HLOGD("SetLayerPerFrameParameter Fail! ret = %{public}d", ret);
+        }
+    }
+
     return GRAPHIC_DISPLAY_SUCCESS;
 }
 
@@ -292,9 +313,9 @@ bool HdiOutput::GetDirectClientCompEnableStatus() const
     return directClientCompositionEnabled_;
 }
 
-int32_t HdiOutput::PreProcessLayersComp(bool &needFlush)
+int32_t HdiOutput::PreProcessLayersComp()
 {
-    int32_t ret;
+    int32_t ret = GRAPHIC_DISPLAY_SUCCESS;
     bool doClientCompositionDirectly;
     {
         std::unique_lock<std::mutex> lock(layerMutex_);
@@ -325,20 +346,13 @@ int32_t HdiOutput::PreProcessLayersComp(bool &needFlush)
         }
     }
 
-    CHECK_DEVICE_NULL(device_);
-    ret = device_->PrepareScreenLayers(screenId_, needFlush);
-    if (ret != GRAPHIC_DISPLAY_SUCCESS) {
-        HLOGE("PrepareScreenLayers failed, ret is %{public}d", ret);
-        return GRAPHIC_DISPLAY_FAILURE;
-    }
-
     if (doClientCompositionDirectly) {
         ScopedBytrace doClientCompositionDirectlyTag("DoClientCompositionDirectly");
         HLOGD("Direct client composition is enabled.");
         return GRAPHIC_DISPLAY_SUCCESS;
     }
 
-    return UpdateLayerCompType();
+    return ret;
 }
 
 int32_t HdiOutput::UpdateLayerCompType()
@@ -426,6 +440,38 @@ void HdiOutput::SetBufferColorSpace(sptr<SurfaceBuffer>& buffer, const std::vect
     }
 }
 
+// DISPLAY ENGINE
+bool HdiOutput::CheckIfDoArsrPre(const LayerInfoPtr &layerInfo)
+{
+    static const std::unordered_set<GraphicPixelFormat> yuvFormats {
+        GRAPHIC_PIXEL_FMT_YUV_422_I,
+        GRAPHIC_PIXEL_FMT_YCBCR_422_SP,
+        GRAPHIC_PIXEL_FMT_YCRCB_422_SP,
+        GRAPHIC_PIXEL_FMT_YCBCR_420_SP,
+        GRAPHIC_PIXEL_FMT_YCRCB_420_SP,
+        GRAPHIC_PIXEL_FMT_YCBCR_422_P,
+        GRAPHIC_PIXEL_FMT_YCRCB_422_P,
+        GRAPHIC_PIXEL_FMT_YCBCR_420_P,
+        GRAPHIC_PIXEL_FMT_YCRCB_420_P,
+        GRAPHIC_PIXEL_FMT_YUYV_422_PKG,
+        GRAPHIC_PIXEL_FMT_UYVY_422_PKG,
+        GRAPHIC_PIXEL_FMT_YVYU_422_PKG,
+        GRAPHIC_PIXEL_FMT_VYUY_422_PKG,
+    };
+
+    static const std::unordered_set<std::string> videoLayers {
+        "xcomponentIdSurface",
+        "componentIdSurface",
+    };
+
+    if ((yuvFormats.count(static_cast<GraphicPixelFormat>(layerInfo->GetBuffer()->GetFormat())) > 0) ||
+        (videoLayers.count(layerInfo->GetSurface()->GetName()) > 0)) {
+        return true;
+    }
+
+    return false;
+}
+
 int32_t HdiOutput::FlushScreen(std::vector<LayerPtr> &compClientLayers)
 {
     auto fbEntry = GetFramebuffer();
@@ -481,6 +527,12 @@ int32_t HdiOutput::Commit(sptr<SyncFence> &fbFence)
 {
     CHECK_DEVICE_NULL(device_);
     return device_->Commit(screenId_, fbFence);
+}
+
+int32_t HdiOutput::CommitAndGetReleaseFence(sptr<SyncFence> &fbFence, int32_t& skipState, bool& needFlush)
+{
+    CHECK_DEVICE_NULL(device_);
+    return device_->CommitAndGetReleaseFence(screenId_, fbFence, skipState, needFlush);
 }
 
 int32_t HdiOutput::UpdateInfosAfterCommit(sptr<SyncFence> fbFence)
@@ -546,7 +598,7 @@ int32_t HdiOutput::ReleaseFramebuffer(const sptr<SyncFence>& releaseFence)
     return ret;
 }
 
-void HdiOutput::ReleaseSurfaceBuffer()
+void HdiOutput::ReleaseSurfaceBuffer(sptr<SyncFence>& releaseFence)
 {
     auto releaseBuffer = [](sptr<SurfaceBuffer> buffer, sptr<SyncFence> releaseFence,
         sptr<IConsumerSurface> cSurface) -> void {
@@ -587,11 +639,14 @@ void HdiOutput::ReleaseSurfaceBuffer()
             auto preBuffer = layer->GetPreBuffer();
             auto consumer = layer->GetSurface();
             releaseBuffer(preBuffer, fence, consumer);
+            if (layer->GetUniRenderFlag()) {
+                releaseFence = fence;
+            }
         }
     }
 }
 
-void HdiOutput::ReleaseLayers()
+void HdiOutput::ReleaseLayers(sptr<SyncFence>& releaseFence)
 {
     auto layerPresentTimestamp = [](const LayerInfoPtr& layer, const sptr<IConsumerSurface>& cSurface) -> void {
         if (!layer->IsSupportedPresentTimestamp()) {
@@ -616,7 +671,7 @@ void HdiOutput::ReleaseLayers()
             layerPresentTimestamp(layer->GetLayerInfo(), layer->GetLayerInfo()->GetSurface());
         }
     }
-    ReleaseSurfaceBuffer();
+    ReleaseSurfaceBuffer(releaseFence);
 }
 
 std::map<LayerInfoPtr, sptr<SyncFence>> HdiOutput::GetLayersReleaseFence()

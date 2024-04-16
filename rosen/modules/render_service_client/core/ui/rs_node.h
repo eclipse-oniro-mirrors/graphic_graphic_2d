@@ -110,6 +110,12 @@ public:
     {
         return (IsInstanceOf<T>()) ? std::static_pointer_cast<T>(shared_from_this()) : nullptr;
     }
+    template<typename T>
+    std::shared_ptr<const T> ReinterpretCastTo() const
+    {
+        return (IsInstanceOf<T>()) ? std::static_pointer_cast<const T>(shared_from_this()) : nullptr;
+    }
+
     virtual std::string DumpNode(int depth) const;
     SharedPtr GetParent();
 
@@ -217,6 +223,12 @@ public:
     void SetSkewX(float skewX);
     void SetSkewY(float skewY);
 
+    void SetPersp(float persp);
+    void SetPersp(float perspX, float perspY);
+    void SetPersp(const Vector2f& persp);
+    void SetPerspX(float perspX);
+    void SetPerspY(float perspY);
+
     void SetAlpha(float alpha);
     void SetAlphaOffscreen(bool alphaOffscreen);
 
@@ -224,12 +236,13 @@ public:
     void SetEnvForegroundColorStrategy(ForegroundColorStrategyType colorType);
     void SetParticleParams(
         std::vector<ParticleParams>& particleParams, const std::function<void()>& finishCallback = nullptr);
-    void SetParticleDrawRegion(std::vector<ParticleParams>& particleParams);
+    void SetEmitterUpdater(const std::shared_ptr<EmitterUpdater>& para);
     void SetForegroundColor(uint32_t colorValue);
     void SetBackgroundColor(uint32_t colorValue);
     void SetBackgroundShader(const std::shared_ptr<RSShader>& shader);
 
     void SetBgImage(const std::shared_ptr<RSImage>& image);
+    void SetBgImageInnerRect(const Vector4f& innerRect);
     void SetBgImageSize(float width, float height);
     void SetBgImageWidth(float width);
     void SetBgImageHeight(float height);
@@ -255,6 +268,7 @@ public:
     void SetOutlineStyle(const Vector4<BorderStyle>& style);
     void SetOutlineRadius(const Vector4f& radius);
 
+    void SetForegroundEffectRadius(const float blurRadius);
     void SetBackgroundFilter(const std::shared_ptr<RSFilter>& backgroundFilter);
     void SetFilter(const std::shared_ptr<RSFilter>& filter);
     void SetLinearGradientBlurPara(const std::shared_ptr<RSLinearGradientBlurPara>& para);
@@ -306,11 +320,12 @@ public:
 
     void SetColorBlendApplyType(RSColorBlendApplyType colorBlendApplyType);
 
-    // driven render
-    void MarkDrivenRender(bool flag);
-    void MarkDrivenRenderItemIndex(int index);
-    void MarkDrivenRenderFramePaintState(bool flag);
-    void MarkContentChanged(bool isChanged);
+    // driven render was shelved, functions will be deleted soon [start]
+    void MarkDrivenRender(bool flag) {}
+    void MarkDrivenRenderItemIndex(int index) {}
+    void MarkDrivenRenderFramePaintState(bool flag) {}
+    void MarkContentChanged(bool isChanged) {}
+    // driven render was shelved, functions will be deleted soon [end]
 
     void AddModifier(const std::shared_ptr<RSModifier> modifier);
     void RemoveModifier(const std::shared_ptr<RSModifier> modifier);
@@ -329,6 +344,8 @@ public:
     void SetGrayScale(float grayScale);
 
     void SetLightIntensity(float lightIntensity);
+
+    void SetLightColor(uint32_t lightColorValue);
 
     void SetLightPosition(const Vector4f& lightPosition);
 
@@ -381,6 +398,12 @@ public:
 
     // key: symbolSpanID, value:symbol animation node list
     std::unordered_map<uint64_t, std::list<SharedPtr>> canvasNodesListMap;
+
+    void SetInstanceId(int32_t instanceId);
+    int32_t GetInstanceId() const
+    {
+        return instanceId_;
+    }
 protected:
     explicit RSNode(bool isRenderServiceNode, bool isTextureExportNode = false);
     explicit RSNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode = false);
@@ -413,6 +436,7 @@ private:
     static void InitUniRenderEnabled();
     NodeId id_;
     NodeId parent_ = 0;
+    int32_t instanceId_ = INSTANCE_ID_UNDEFINED;
     int32_t frameNodeId_ = -1;
     std::string frameNodeTag_;
     std::string nodeName_ = "";
@@ -421,6 +445,22 @@ private:
     void RemoveChildById(NodeId childId);
     virtual void CreateTextureExportRenderNodeInRT() {};
 
+    void SetBackgroundBlurRadius(float radius);
+    void SetBackgroundBlurSaturation(float saturation);
+    void SetBackgroundBlurBrightness(float brightness);
+    void SetBackgroundBlurMaskColor(Color maskColor);
+    void SetBackgroundBlurColorMode(int colorMode);
+    void SetBackgroundBlurRadiusX(float blurRadiusX);
+    void SetBackgroundBlurRadiusY(float blurRadiusY);
+
+    void SetForegroundBlurRadius(float radius);
+    void SetForegroundBlurSaturation(float saturation);
+    void SetForegroundBlurBrightness(float brightness);
+    void SetForegroundBlurMaskColor(Color maskColor);
+    void SetForegroundBlurColorMode(int colorMode);
+    void SetForegroundBlurRadiusX(float blurRadiusX);
+    void SetForegroundBlurRadiusY(float blurRadiusY);
+    
     bool AnimationCallback(AnimationId animationId, AnimationCallbackEvent event);
     bool HasPropertyAnimation(const PropertyId& id);
     void FallbackAnimationsToRoot();
@@ -434,14 +474,13 @@ private:
     void MarkAllExtendModifierDirty();
     void ResetExtendModifierDirty();
     void UpdateImplicitAnimator();
+    void SetParticleDrawRegion(std::vector<ParticleParams>& particleParams);
 
     // Planning: refactor RSUIAnimationManager and remove this method
     void ClearAllModifiers();
 
     pid_t implicitAnimatorTid_ = 0;
     bool extendModifierIsDirty_ { false };
-    // driven render
-    bool drivenFlag_ = false;
 
     bool isNodeGroup_ = false;
 

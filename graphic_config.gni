@@ -45,6 +45,7 @@ declare_args() {
   graphic_2d_feature_enable_recording_dcl = true
   graphic_2d_feature_use_igraphics_extend_hooks = false
   graphic_2d_feature_use_aps_igameservice_func = false
+  graphic_2d_feature_enable_rsparallel = false
 
   if (defined(is_arkui_x) && is_arkui_x) {
     use_new_render_context = false
@@ -59,7 +60,8 @@ declare_args() {
   graphic_2d_feature_enable_stack_culling = false
 }
 
-if (graphic_2d_feature_product == "phone") {
+if (graphic_2d_feature_product == "phone" ||
+    graphic_2d_feature_product == "tablet") {
   graphic_2d_feature_enable_vulkan = true
   graphic_2d_feature_enable_ddgr = false
   graphic_2d_feature_enable_stack_culling = true
@@ -152,14 +154,9 @@ if (graphic_2d_feature_rs_enable_eglimage || current_os == "android") {
 # use_texgine = graphic_2d_feature_use_texgine
 
 if (graphic_2d_feature_rs_enable_uni_render) {
-  rs_enable_driven_render = true
   graphic_2d_feature_enable_dvsync = true
-  gpu_defines += [
-    "RS_ENABLE_DRIVEN_RENDER",
-    "RS_ENABLE_UNI_RENDER",
-  ]
+  gpu_defines += [ "RS_ENABLE_UNI_RENDER" ]
 } else {
-  rs_enable_driven_render = false
   graphic_2d_feature_enable_dvsync = false
 }
 
@@ -295,6 +292,7 @@ hilog_root = "//base/hiviewdfx/hilog"
 window_base_path = "//foundation/window/window_manager"
 safwk_base = "//foundation/systemabilitymgr/safwk"
 skia_root_new = "//third_party/skia"
+graphic_surface_root = "//foundation/graphic/graphic_surface"
 memmgr_root = "//foundation/resourceschedule/memmgr"
 memmgr_plugin_root = "//foundation/resourceschedule/memmgr_plugin"
 fuzz_test_output_path = "graphic_2d/graphic_2d"

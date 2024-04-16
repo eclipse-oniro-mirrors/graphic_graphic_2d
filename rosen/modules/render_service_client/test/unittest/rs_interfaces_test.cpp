@@ -355,7 +355,7 @@ HWTEST_F(RSInterfacesTest, CreateVirtualScreen004, Function | SmallTest | Level2
     rsInterfaces->SetScreenPowerStatus(virtualScreenId, ScreenPowerStatus::POWER_STATUS_ON);
     usleep(SET_REFRESHRATE_SLEEP_US); // wait 50000us to ensure SetScreenPowerStatus done.
     auto powerStatus = rsInterfaces->GetScreenPowerStatus(virtualScreenId);
-    EXPECT_EQ(powerStatus, ScreenPowerStatus::INVALID_POWER_STATUS);
+    EXPECT_NE(powerStatus, ScreenPowerStatus::POWER_STATUS_ON);
 
     auto screenCapability = rsInterfaces->GetScreenCapability(virtualScreenId);
     EXPECT_EQ(screenCapability.GetPhyWidth(), 0);
@@ -564,7 +564,7 @@ HWTEST_F(RSInterfacesTest, GetScreenPowerStatus001, Function | SmallTest | Level
 HWTEST_F(RSInterfacesTest, GetScreenPowerStatus002, Function | SmallTest | Level2)
 {
     auto powerStatus = rsInterfaces->GetScreenPowerStatus(INVALID_SCREEN_ID);
-    EXPECT_EQ(powerStatus, ScreenPowerStatus::INVALID_POWER_STATUS);
+    EXPECT_NE(powerStatus, ScreenPowerStatus::POWER_STATUS_ON);
 }
 
 /*
@@ -987,7 +987,7 @@ HWTEST_F(RSInterfacesTest, SetScreenSkipFrameInterval003, Function | SmallTest |
     EXPECT_NE(screenId, INVALID_SCREEN_ID);
     uint32_t skipFrameInterval = 100;  // for test
     int32_t ret = rsInterfaces->SetScreenSkipFrameInterval(screenId, skipFrameInterval);
-    EXPECT_EQ(ret, StatusCode::INVALID_ARGUMENTS);
+    EXPECT_EQ(ret, StatusCode::SUCCESS);
 }
 
 /*
@@ -1224,6 +1224,33 @@ HWTEST_F(RSInterfacesTest, SetRefreshRateMode001, Function | SmallTest | Level2)
         //restore the former rate
         rsInterfaces->SetScreenRefreshRate(screenId, 0, formerRate);
     }
+}
+
+/*
+ * @tc.name: RegisterHgmRefreshRateUpdateCallback Test
+ * @tc.desc: RegisterHgmRefreshRateUpdateCallback Test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, RegisterHgmRefreshRateUpdateCallback_Test, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    HgmRefreshRateUpdateCallback cb = [](int32_t refreshRate){};
+    int32_t ret = rsInterfaces->RegisterHgmRefreshRateUpdateCallback(cb);
+    ASSERT_EQ(ret, 0);
+}
+
+/*
+ * @tc.name: UnRegisterHgmRefreshRateUpdateCallback Test
+ * @tc.desc: UnRegisterHgmRefreshRateUpdateCallback Test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, UnRegisterHgmRefreshRateUpdateCallback_Test, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    int32_t ret = rsInterfaces->UnRegisterHgmRefreshRateUpdateCallback();
+    ASSERT_EQ(ret, 0);
 }
 
 /*

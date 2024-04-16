@@ -130,7 +130,7 @@ void RSScreen::PhysicalScreenInit() noexcept
         RS_LOGE("RSScreen %{public}s: RSScreen(id %{public}" PRIu64 ") failed to GetScreenSupportedModes.",
             __func__, id_);
     }
-    
+
     if (hdiScreen_->GetHDRCapabilityInfos(hdrCapability_) < 0) {
         RS_LOGE("RSScreen %{public}s: RSScreen(id %{public}" PRIu64 ") failed to GetHDRCapabilityInfos.",
             __func__, id_);
@@ -174,6 +174,7 @@ void RSScreen::PhysicalScreenInit() noexcept
             ++index;
         }
     }
+    screenBacklightLevel_ = GetScreenBacklight();
 }
 
 void RSScreen::ScreenCapabilityInit() noexcept
@@ -539,7 +540,8 @@ void RSScreen::DisplayDump(int32_t screenIndex, std::string& dumpString)
         dumpString += "mirrorId=";
         dumpString += (mirrorId_ == INVALID_SCREEN_ID) ? "INVALID_SCREEN_ID" : std::to_string(mirrorId_);
         dumpString += ", ";
-        AppendFormat(dumpString, ", render size: %dx%d, isvirtual=true\n", width_, height_);
+        AppendFormat(dumpString, ", render size: %dx%d, isvirtual=true, skipFrameInterval_:%d\n",
+            width_, height_, skipFrameInterval_);
     } else {
         dumpString += "screen[" + std::to_string(screenIndex) + "]: ";
         dumpString += "id=";
@@ -550,8 +552,9 @@ void RSScreen::DisplayDump(int32_t screenIndex, std::string& dumpString)
         dumpString += "backlight=" + std::to_string(GetScreenBacklight());
         dumpString += ", ";
         ScreenTypeDump(dumpString);
-        AppendFormat(dumpString, ", render size: %dx%d, physical screen resolution: %dx%d, isvirtual=false\n",
-            width_, height_, phyWidth_, phyHeight_);
+        AppendFormat(dumpString,
+            ", render size: %dx%d, physical screen resolution: %dx%d, isvirtual=false, skipFrameInterval_:%d\n",
+            width_, height_, phyWidth_, phyHeight_, skipFrameInterval_);
         dumpString += "\n";
         ModeInfoDump(dumpString);
         CapabilityDump(dumpString);
@@ -636,6 +639,7 @@ void RSScreen::SetScreenBacklight(uint32_t level)
     if (hdiScreen_->SetScreenBacklight(level) < 0) {
         return;
     }
+    screenBacklightLevel_ = level;
 }
 
 int32_t RSScreen::GetScreenBacklight() const
@@ -645,6 +649,9 @@ int32_t RSScreen::GetScreenBacklight() const
         return INVALID_BACKLIGHT_VALUE;
     }
     uint32_t level = 0;
+    if (screenBacklightLevel_ != INVALID_BACKLIGHT_VALUE) {
+        return screenBacklightLevel_;
+    }
     if (hdiScreen_->GetScreenBacklight(level) < 0) {
         return INVALID_BACKLIGHT_VALUE;
     }

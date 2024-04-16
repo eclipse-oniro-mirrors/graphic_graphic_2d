@@ -21,8 +21,10 @@
 #include "modules/skparagraph/include/Paragraph.h"
 #include "paragraph_style.h"
 #include "line_metrics.h"
+#include "text_line_base.h"
 
 #include "rosen_text/symbol_animation_config.h"
+#include "utils.h"
 
 class SkCanvas;
 
@@ -69,20 +71,6 @@ struct TextBox {
 
     SkRect rect;
     TextDirection direction;
-};
-
-template<typename T>
-struct Range {
-    Range() : start(), end() {}
-    Range(T s, T e) : start(s), end(e) {}
-
-    bool operator==(const Range<T>& other) const
-    {
-        return start == other.start && end == other.end;
-    }
-
-    T start;
-    T end;
 };
 
 // Paragraph can be laid out and then drawn on the canvas.
@@ -185,9 +173,10 @@ public:
 
     virtual Range<size_t> GetActualTextRange(int lineNumber, bool includeSpaces) = 0;
 
-    virtual std::vector<LineMetrics>& GetLineMetrics() = 0;
+    virtual std::vector<LineMetrics>& GetLineMetrics(std::vector<size_t>& startIndexs) = 0;
 
-    virtual bool GetLineMetricsAt(int lineNumber, skia::textlayout::LineMetrics* lineMetrics) const = 0;
+    virtual bool GetLineMetricsAt(
+        int lineNumber, skia::textlayout::LineMetrics* lineMetrics, size_t& startIndex) const = 0;
 
     virtual void SetAnimation(
         std::function<bool(const std::shared_ptr<TextEngine::SymbolAnimationConfig>&)>& animationFunc) = 0;
@@ -198,6 +187,8 @@ public:
     virtual OHOS::Rosen::Drawing::FontMetrics GetFontMetricsResult(const OHOS::Rosen::SPText::TextStyle& textStyle) = 0;
     virtual bool GetLineFontMetrics(const size_t lineNumber,
         size_t& charNumber, std::vector<Drawing::FontMetrics>& fontMetrics) = 0;
+    virtual std::vector<std::unique_ptr<SPText::TextLineBase>> GetTextLines() const = 0;
+    virtual std::unique_ptr<Paragraph> CloneSelf() = 0;
 };
 } // namespace SPText
 } // namespace Rosen

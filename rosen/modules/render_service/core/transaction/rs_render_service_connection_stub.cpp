@@ -794,6 +794,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             std::string name = data.ReadString();
             auto remoteObj = data.ReadRemoteObject();
             uint64_t id = data.ReadUint64();
+            NodeId windowNodeID = data.ReadUint64();
             if (remoteObj == nullptr) {
                 ret = ERR_NULL_OBJECT;
                 break;
@@ -807,7 +808,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_UNKNOWN_OBJECT;
                 break;
             }
-            sptr<IVSyncConnection> conn = CreateVSyncConnection(name, token, id);
+            sptr<IVSyncConnection> conn = CreateVSyncConnection(name, token, id, windowNodeID);
             if (conn == nullptr) {
                 ret = ERR_NULL_OBJECT;
                 break;
@@ -1336,6 +1337,21 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             int32_t status = RegisterHgmRefreshRateModeChangeCallback(callback);
+            reply.WriteInt32(status);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REFRESH_RATE_UPDATE_CALLBACK) : {
+            sptr<RSIHgmConfigChangeCallback> callback = nullptr;
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            auto remoteObject = data.ReadRemoteObject();
+            if (remoteObject != nullptr) {
+                callback = iface_cast<RSIHgmConfigChangeCallback>(remoteObject);
+            }
+            int32_t status = RegisterHgmRefreshRateUpdateCallback(callback);
             reply.WriteInt32(status);
             break;
         }
