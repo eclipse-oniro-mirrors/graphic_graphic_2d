@@ -31,7 +31,8 @@
 #if USE_APS_IGAMESERVICE_FUNC
 #include "egl_slice_report.h"
 #include "aps_game_fps_controller.h"
-#endif //USE_APS_IGAMESERVICE_FUNC
+#endif
+
 using namespace OHOS;
 namespace OHOS {
 static inline void ClearError()

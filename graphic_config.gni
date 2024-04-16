@@ -252,6 +252,7 @@ if (exec_script(check_graphic_ext_file_script,
   import(
       "//vendor/huawei/domains/game/gameservice_server/performance/graphics/report/config.gni")
 }
+
 graphic_2d_delegator_configs = {
 }
 if (exec_script(check_graphic_ext_file_script,
