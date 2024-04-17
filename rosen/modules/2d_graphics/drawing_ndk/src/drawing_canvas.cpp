@@ -383,7 +383,8 @@ void OH_Drawing_CanvasDrawPixelMapRect(OH_Drawing_Canvas* cCanvas, OH_Drawing_Pi
 #ifdef OHOS_PLATFORM
     DrawingCanvasUtils::DrawPixelMapRect(CastToCanvas(cCanvas),
         Media::PixelMapNative_GetPixelMap(reinterpret_cast<NativePixelMap_*>(pixelMap)),
-        CastToRect(*src), CastToRect(*dst), CastToSamplingOptions(*cSampingOptions));
+        reinterpret_cast<const Drawing::Rect*>(src), reinterpret_cast<const Drawing::Rect*>(dst),
+        reinterpret_cast<const Drawing::SamplingOptions*>(cSampingOptions));
 #endif
 }
 
@@ -510,6 +511,19 @@ void OH_Drawing_CanvasClipRect(OH_Drawing_Canvas* cCanvas, const OH_Drawing_Rect
         return;
     }
     canvas->ClipRect(CastToRect(*cRect), CClipOpCastToClipOp(cClipOp), doAntiAlias);
+}
+
+void OH_Drawing_CanvasClipRoundRect(OH_Drawing_Canvas* cCanvas, const OH_Drawing_RoundRect* cRoundRect,
+    OH_Drawing_CanvasClipOp cClipOp, bool doAntiAlias)
+{
+    if (cRoundRect == nullptr) {
+        return;
+    }
+    Canvas* canvas = CastToCanvas(cCanvas);
+    if (canvas == nullptr) {
+        return;
+    }
+    canvas->ClipRoundRect(CastToRoundRect(*cRoundRect), CClipOpCastToClipOp(cClipOp), doAntiAlias);
 }
 
 void OH_Drawing_CanvasClipPath(OH_Drawing_Canvas* cCanvas, const OH_Drawing_Path* cPath,

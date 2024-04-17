@@ -30,11 +30,16 @@ public:
     static napi_value Constructor(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void* nativeObject, void* finalize);
     static napi_value DisableFallback(napi_env env, napi_callback_info info);
+    static napi_value LoadFontSync(napi_env env, napi_callback_info info);
 
     std::shared_ptr<FontCollection> GetFontCollection();
 private:
     static thread_local napi_ref constructor_;
     napi_value OnDisableFallback(napi_env env, napi_callback_info info);
+    napi_value OnLoadFont(napi_env env, napi_callback_info info);
+    bool SpiltAbsoluteFontPath(std::string& absolutePath);
+    Drawing::Typeface* GetFontFileProperties(const std::string path, const std::string familyName);
+    bool AddTypefaceInformation(Drawing::Typeface* typeface, const std::string familyName);
     std::shared_ptr<FontCollection> m_fontCollection = nullptr;
 };
 } // namespace OHOS::Rosen

@@ -138,9 +138,9 @@ void RSInterfaces::SetRefreshRateMode(int32_t refreshRateMode)
     renderServiceClient_->SetRefreshRateMode(refreshRateMode);
 }
 
-void RSInterfaces::SyncFrameRateRange(const FrameRateRange& range)
+void RSInterfaces::SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range)
 {
-    renderServiceClient_->SyncFrameRateRange(range);
+    renderServiceClient_->SyncFrameRateRange(id, range);
 }
 
 uint32_t RSInterfaces::GetScreenCurrentRefreshRate(ScreenId id)
@@ -339,9 +339,10 @@ std::shared_ptr<VSyncReceiver> RSInterfaces::CreateVSyncReceiver(
 std::shared_ptr<VSyncReceiver> RSInterfaces::CreateVSyncReceiver(
     const std::string& name,
     uint64_t id,
-    const std::shared_ptr<OHOS::AppExecFwk::EventHandler> &looper)
+    const std::shared_ptr<OHOS::AppExecFwk::EventHandler> &looper,
+    NodeId windowNodeId)
 {
-    return renderServiceClient_->CreateVSyncReceiver(name, looper, id);
+    return renderServiceClient_->CreateVSyncReceiver(name, looper, id, windowNodeId);
 }
 
 int32_t RSInterfaces::GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability)
@@ -428,6 +429,16 @@ int32_t RSInterfaces::RegisterHgmConfigChangeCallback(const HgmConfigChangeCallb
 int32_t RSInterfaces::RegisterHgmRefreshRateModeChangeCallback(const HgmRefreshRateModeChangeCallback& callback)
 {
     return renderServiceClient_->RegisterHgmRefreshRateModeChangeCallback(callback);
+}
+
+int32_t RSInterfaces::RegisterHgmRefreshRateUpdateCallback(const HgmRefreshRateUpdateCallback& callback)
+{
+    return renderServiceClient_->RegisterHgmRefreshRateUpdateCallback(callback);
+}
+
+int32_t RSInterfaces::UnRegisterHgmRefreshRateUpdateCallback()
+{
+    return renderServiceClient_->RegisterHgmRefreshRateUpdateCallback(nullptr);
 }
 
 void RSInterfaces::SetAppWindowNum(uint32_t num)

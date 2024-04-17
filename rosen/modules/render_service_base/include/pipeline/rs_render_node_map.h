@@ -34,9 +34,6 @@ public:
     bool RegisterDisplayRenderNode(const std::shared_ptr<RSDisplayRenderNode>& nodePtr);
     void UnregisterRenderNode(NodeId id);
 
-    void AddDrivenRenderNode(const std::shared_ptr<RSBaseRenderNode>& nodePtr);
-    void RemoveDrivenRenderNode(NodeId id);
-
     // Get RenderNode with type T, return nullptr if not found or type mismatch
     template<typename T = RSBaseRenderNode>
     const std::shared_ptr<T> GetRenderNode(NodeId id) const
@@ -55,11 +52,11 @@ public:
         std::shared_ptr<std::unordered_map<NodeId, std::shared_ptr<RSBaseRenderNode>>> subRenderNodeMap, pid_t pid);
     void TraversalNodes(std::function<void (const std::shared_ptr<RSBaseRenderNode>&)> func) const;
     void TraverseSurfaceNodes(std::function<void (const std::shared_ptr<RSSurfaceRenderNode>&)> func) const;
-    void TraverseDrivenRenderNodes(std::function<void (const std::shared_ptr<RSRenderNode>&)> func) const;
     void TraverseDisplayNodes(std::function<void (const std::shared_ptr<RSDisplayRenderNode>&)> func) const;
     void TraverseCanvasDrawingNodes(std::function<void (const std::shared_ptr<RSCanvasDrawingRenderNode>&)> func) const;
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> GetResidentSurfaceNodeMap() const;
     bool IsResidentProcessNode(NodeId id) const;
+    void CalCulateAbilityComponentNumsInProcess(NodeId id);
 
     NodeId GetEntryViewNodeId() const;
     NodeId GetWallPaperViewNodeId() const;
@@ -68,6 +65,7 @@ public:
     void ObtainLauncherNodeId(const std::shared_ptr<RSSurfaceRenderNode> surfaceNode);
 private:
     explicit RSRenderNodeMap();
+    void EraseAbilityComponentNumsInProcess(NodeId id);
     ~RSRenderNodeMap() = default;
     RSRenderNodeMap(const RSRenderNodeMap&) = delete;
     RSRenderNodeMap(const RSRenderNodeMap&&) = delete;
@@ -77,10 +75,10 @@ private:
 private:
     std::unordered_map<NodeId, std::shared_ptr<RSBaseRenderNode>> renderNodeMap_;
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> surfaceNodeMap_;
-    std::unordered_map<NodeId, std::shared_ptr<RSRenderNode>> drivenRenderNodeMap_;
     std::unordered_map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> residentSurfaceNodeMap_;
     std::unordered_map<NodeId, std::shared_ptr<RSDisplayRenderNode>> displayNodeMap_;
     std::unordered_map<NodeId, std::shared_ptr<RSCanvasDrawingRenderNode>> canvasDrawingNodeMap_;
+    std::unordered_map<pid_t, int> abilityComponentNumsInProcess_;
 
     NodeId entryViewNodeId_ = 0;
     NodeId wallpaperViewNodeId_ = 0;

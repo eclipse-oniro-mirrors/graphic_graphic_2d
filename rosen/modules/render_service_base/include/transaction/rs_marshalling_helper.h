@@ -50,6 +50,8 @@ class RSImageBase;
 class RSMask;
 class RSPath;
 class RSLinearGradientBlurPara;
+class MotionBlurParam;
+class EmitterUpdater;
 template<typename T>
 class RenderParticleParaType;
 class EmitterConfig;
@@ -230,6 +232,8 @@ public:
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSShader>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSPath>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSLinearGradientBlurPara>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<MotionBlurParam>)
+    DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<EmitterUpdater>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSFilter>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSMask>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSImage>)

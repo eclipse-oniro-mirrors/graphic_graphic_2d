@@ -33,6 +33,7 @@
 #include "pipeline/rs_uni_render_util.h"
 #include "platform/common/rs_log.h"
 #include "render/rs_skia_filter.h"
+#include "pipeline/rs_render_engine.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -196,7 +197,9 @@ std::shared_ptr<Drawing::Surface> RSUniUICapture::CreateSurface(
 RSUniUICapture::RSUniUICaptureVisitor::RSUniUICaptureVisitor(NodeId nodeId, float scaleX, float scaleY)
     : nodeId_(nodeId), scaleX_(scaleX), scaleY_(scaleY)
 {
-    renderEngine_ = RSMainThread::Instance()->GetRenderEngine();
+    // Avoid RS restart issue temperorily
+    renderEngine_ = std::make_shared<RSRenderEngine>();
+    renderEngine_->Init();
     isUniRender_ = RSUniRenderJudgement::IsUniRender();
     auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode<RSRenderNode>(nodeId_);
     if (node == nullptr) {
@@ -218,10 +221,8 @@ void RSUniUICapture::PostTaskToRSRecord(std::shared_ptr<ExtendRecordingCanvas> c
 {
     std::function<void()> recordingDrawCall = [canvas, node, visitor]() -> void {
         visitor->SetCanvas(canvas);
-        if (!node->IsOnTheTree()) {
-            node->ApplyModifiers();
-            node->Prepare(visitor);
-        }
+        node->ApplyModifiers();
+        node->PrepareChildrenForApplyModifiers();
         node->Process(visitor);
     };
     RSMainThread::Instance()->PostSyncTask(recordingDrawCall);
@@ -250,6 +251,7 @@ void RSUniUICapture::RSUniUICaptureVisitor::SetCanvas(std::shared_ptr<ExtendReco
     canvas_->Scale(scaleX_, scaleY_);
     canvas_->SetDisableFilterCache(true);
     canvas_->SetRecordingState(true);
+    canvas_->SetCacheType(Drawing::CacheType::DISABLED);
 }
 
 void RSUniUICapture::RSUniUICaptureVisitor::ProcessChildren(RSRenderNode& node)
@@ -318,8 +320,10 @@ void RSUniUICapture::RSUniUICaptureVisitor::ProcessCanvasRenderNode(RSCanvasRend
             canvasDrawingNode->SetSurfaceClearFunc({ UNI_MAIN_THREAD_INDEX, clearFunc });
             canvasDrawingNode->ProcessRenderContents(*canvas_);
         } else {
-            Drawing::Bitmap bitmap = canvasDrawingNode->GetBitmap();
-            canvas_->DrawBitmap(bitmap, 0, 0);
+            auto image = canvasDrawingNode->GetImage(UNI_MAIN_THREAD_INDEX);
+            if (image) {
+                canvas_->DrawImage(*image, 0, 0, Drawing::SamplingOptions());
+            }
         }
     } else {
         node.ProcessRenderContents(*canvas_);

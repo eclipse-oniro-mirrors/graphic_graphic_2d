@@ -211,7 +211,8 @@ sptr<Surface> RSRenderServiceConnectionProxy::CreateNodeAndSurface(const RSSurfa
 
 sptr<IVSyncConnection> RSRenderServiceConnectionProxy::CreateVSyncConnection(const std::string& name,
                                                                              const sptr<VSyncIConnectionToken>& token,
-                                                                             uint64_t id)
+                                                                             uint64_t id,
+                                                                             NodeId windowNodeId)
 {
     if (token == nullptr) {
         ROSEN_LOGE("RSRenderServiceConnectionProxy::CreateVSyncConnection: token is nullptr.");
@@ -224,6 +225,7 @@ sptr<IVSyncConnection> RSRenderServiceConnectionProxy::CreateVSyncConnection(con
     data.WriteString(name);
     data.WriteRemoteObject(token->AsObject());
     data.WriteUint64(id);
+    data.WriteUint64(windowNodeId);
     option.SetFlags(MessageOption::TF_SYNC);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_VSYNC_CONNECTION);
     int32_t err = Remote()->SendRequest(code, data, reply, option);
@@ -513,7 +515,7 @@ void RSRenderServiceConnectionProxy::SetRefreshRateMode(int32_t refreshRateMode)
     }
 }
 
-void RSRenderServiceConnectionProxy::SyncFrameRateRange(const FrameRateRange& range)
+void RSRenderServiceConnectionProxy::SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -524,6 +526,7 @@ void RSRenderServiceConnectionProxy::SyncFrameRateRange(const FrameRateRange& ra
     }
 
     option.SetFlags(MessageOption::TF_SYNC);
+    data.WriteUint64(id);
     data.WriteUint32(range.min_);
     data.WriteUint32(range.max_);
     data.WriteUint32(range.preferred_);
@@ -1721,6 +1724,31 @@ int32_t RSRenderServiceConnectionProxy::RegisterHgmRefreshRateModeChangeCallback
     option.SetFlags(MessageOption::TF_SYNC);
     data.WriteRemoteObject(callback->AsObject());
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REFRESH_RATE_MODE_CHANGE_CALLBACK);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::RegisterHgmRefreshRateModeChangeCallback: Send Request err.");
+        return RS_CONNECTION_ERROR;
+    }
+    int32_t result = reply.ReadInt32();
+    return result;
+}
+
+int32_t RSRenderServiceConnectionProxy::RegisterHgmRefreshRateUpdateCallback(
+    sptr<RSIHgmConfigChangeCallback> callback)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return RS_CONNECTION_ERROR;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (callback) {
+        data.WriteRemoteObject(callback->AsObject());
+    } else {
+        data.WriteRemoteObject(nullptr);
+    }
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REFRESH_RATE_UPDATE_CALLBACK);
     int32_t err = Remote()->SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RSRenderServiceConnectionProxy::RegisterHgmRefreshRateModeChangeCallback: Send Request err.");

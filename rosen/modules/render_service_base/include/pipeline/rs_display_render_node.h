@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <mutex>
+
 #ifndef ROSEN_CROSS_PLATFORM
 #include <ibuffer_consumer_listener.h>
 #include <iconsumer_surface.h>
@@ -29,6 +30,7 @@
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_handler.h"
 #include <screen_manager/screen_types.h>
+#include "screen_manager/rs_screen_info.h"
 #ifdef NEW_RENDER_CONTEXT
 #include "rs_render_surface.h"
 #else
@@ -131,6 +133,7 @@ public:
     void CollectSurface(
         const std::shared_ptr<RSBaseRenderNode>& node, std::vector<RSBaseRenderNode::SharedPtr>& vec,
         bool isUniRender, bool onlyFirstLevel) override;
+    void QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visitor) override;
     void Prepare(const std::shared_ptr<RSNodeVisitor>& visitor) override;
     void Process(const std::shared_ptr<RSNodeVisitor>& visitor) override;
 
@@ -199,11 +202,15 @@ public:
 
     ScreenRotation GetRotation() const;
 
-    std::shared_ptr<RSDirtyRegionManager> GetDirtyManager()
+    std::shared_ptr<RSDirtyRegionManager> GetDirtyManager() const
     {
         return dirtyManager_;
     }
-    void UpdateDisplayDirtyManager(int32_t bufferage, bool useAlignedDirtyRegion = false);
+    std::shared_ptr<RSDirtyRegionManager> GetSyncDirtyManager() const
+    {
+        return syncDirtyManager_;
+    }
+    void UpdateDisplayDirtyManager(int32_t bufferage, bool useAlignedDirtyRegion = false, bool renderParallel = false);
     void ClearCurrentSurfacePos();
     void UpdateSurfaceNodePos(NodeId id, RectI rect)
     {
@@ -250,6 +257,13 @@ public:
         return curAllSurfaces_;
     }
 
+    void UpdateRenderParams() override;
+    void UpdatePartialRenderParams();
+    void UpdateScreenRenderParams(ScreenInfo& screenInfo, std::map<ScreenId, bool>& displayHasSecSurface,
+        std::map<ScreenId, bool>& displayHasSkipSurface, std::map<ScreenId, bool>& hasCaptureWindow);
+    void RecordMainAndLeashSurfaces(RSBaseRenderNode::SharedPtr surface);
+    std::vector<RSBaseRenderNode::SharedPtr>& GetAllMainAndLeashSurfaces() { return curMainAndLeashSurfaceNodes_;}
+
     void UpdateRotation();
     bool IsRotationChanged() const;
     bool IsFirstTimeToProcessor() const {
@@ -274,12 +288,16 @@ public:
     }
 
     std::shared_ptr<Drawing::Image> GetCacheImgForCapture() {
-        std::unique_lock<std::mutex> lock(mtx_);
         return cacheImgForCapture_;
     }
     void SetCacheImgForCapture(std::shared_ptr<Drawing::Image> cacheImgForCapture) {
-        std::unique_lock<std::mutex> lock(mtx_);
         cacheImgForCapture_ = cacheImgForCapture;
+    }
+    std::shared_ptr<Drawing::Image> GetOffScreenCacheImgForCapture() {
+        return offScreenCacheImgForCapture_;
+    }
+    void SetOffScreenCacheImgForCapture(std::shared_ptr<Drawing::Image> offScreenCacheImgForCapture) {
+        offScreenCacheImgForCapture_ = offScreenCacheImgForCapture;
     }
     NodeId GetRootIdOfCaptureWindow() {
         return rootIdOfCaptureWindow_;
@@ -288,7 +306,14 @@ public:
         rootIdOfCaptureWindow_ = rootIdOfCaptureWindow;
     }
 
+    void SetMainAndLeashSurfaceDirty(bool isDirty);
+
+protected:
+    void OnSync() override;
 private:
+    void InitRenderParams() override;
+    // vector of sufacenodes will records dirtyregions by itself
+    std::vector<RSBaseRenderNode::SharedPtr> curMainAndLeashSurfaceNodes_;
     CompositeType compositeType_ { HARDWARE_COMPOSITE };
     ScreenRotation screenRotation_ = ScreenRotation::ROTATION_0;
     ScreenRotation originScreenRotation_ = ScreenRotation::ROTATION_0;
@@ -320,12 +345,14 @@ private:
     std::map<NodeId, RectI> currentFrameSurfacePos_;
     std::shared_ptr<RSDirtyRegionManager> dirtyManager_ = nullptr;
     std::vector<std::string> windowsName_;
+    std::shared_ptr<RSDirtyRegionManager> syncDirtyManager_ = nullptr;
 
     std::vector<RSBaseRenderNode::SharedPtr> curAllSurfaces_;
     std::mutex mtx_;
 
     // Use in screen recording optimization
     std::shared_ptr<Drawing::Image> cacheImgForCapture_ = nullptr;
+    std::shared_ptr<Drawing::Image> offScreenCacheImgForCapture_ = nullptr;
     NodeId rootIdOfCaptureWindow_ = INVALID_NODEID;
 
     // Use in vulkan parallel rendering

@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
 ## Build drawing_sample {{{
 config("drawing_sample_config") {
@@ -46,26 +47,25 @@ ohos_executable("drawing_sample") {
   configs = [ ":drawing_sample_config" ]
 
   include_dirs = [
-    "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics/include",
-    "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics/src",
-    "//foundation/graphic/graphic_2d/rosen/samples/2d_graphics/test/include",
+    "$graphic_2d_root/rosen/modules/2d_graphics/include",
+    "$graphic_2d_root/rosen/modules/2d_graphics/src",
+    "$graphic_2d_root/rosen/samples/2d_graphics/test/include",
     "//foundation/multimedia/image_framework/interfaces/innerkits/include",
-    "//foundation/graphic/graphic_2d/rosen/modules/composer/hdi_backend/include",
-    "//foundation/graphic/graphic_2d/rosen/include/common",
-    "//foundation/graphic/graphic_2d/rosen/modules/composer/vsync/include",
-    "//foundation/graphic/graphic_2d/interfaces/inner_api/composer",
+    "$graphic_2d_root/rosen/modules/composer/hdi_backend/include",
+    "$graphic_2d_root/rosen/include/common",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
+    "$graphic_2d_root/interfaces/inner_api/composer",
   ]
 
   deps = [
-    "//foundation/graphic/graphic_2d:libsurface",
-    "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics",
-    "//foundation/graphic/graphic_2d/rosen/modules/composer:libcomposer",
-    "//foundation/graphic/graphic_2d/utils:sync_fence",
+    "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
+    "$graphic_2d_root/rosen/modules/composer:libcomposer",
   ]
 
   deps += [ "//third_party/skia:skia_ohos" ]
   external_deps = [
     "eventhandler:libeventhandler",
+    "graphic_surface:surface",
     "hilog:libhilog",
   ]
 

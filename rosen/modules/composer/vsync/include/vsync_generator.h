@@ -68,7 +68,7 @@ public:
     virtual void Dump(std::string &result) = 0;
     virtual bool GetFrameRateChaingStatus() = 0;
     virtual VsyncError SetReferenceTimeOffset(int32_t phaseByPulseNum) = 0;
-    virtual VsyncError CheckAndUpdateRefereceTime(int64_t hardwareVsyncInterval, int64_t referenceTime) = 0;
+    virtual VsyncError CheckAndUpdateReferenceTime(int64_t hardwareVsyncInterval, int64_t referenceTime) = 0;
     virtual void SetPendingMode(int64_t period, int64_t timestamp) = 0;
     virtual VsyncError StartRefresh() = 0;
 
@@ -102,7 +102,7 @@ public:
     void Dump(std::string &result) override;
     bool GetFrameRateChaingStatus() override;
     VsyncError SetReferenceTimeOffset(int32_t phaseByPulseNum) override;
-    VsyncError CheckAndUpdateRefereceTime(int64_t hardwareVsyncInterval, int64_t referenceTime) override;
+    VsyncError CheckAndUpdateReferenceTime(int64_t hardwareVsyncInterval, int64_t referenceTime) override;
     void SetPendingMode(int64_t period, int64_t timestamp) override;
     VsyncError StartRefresh() override;
 
@@ -140,6 +140,7 @@ private:
 #ifdef COMPOSER_SCHED_ENABLE
     void SubScribeSystemAbility();
 #endif
+    void PeriodCheckLocked(int64_t hardwareVsyncInterval);
 
     sptr<VSyncSystemAbilityListener> saStatusChangeListener_ = nullptr;
     int64_t period_;
@@ -178,6 +179,8 @@ private:
     int64_t phaseRecord_ = 0;
     int64_t periodRecord_ = 0;
     sptr<VSyncDistributor> rsVSyncDistributor_;
+    int32_t periodCheckCounter_ = 0;
+    int64_t lastPeriod_ = 0;
 };
 } // impl
 } // namespace Rosen

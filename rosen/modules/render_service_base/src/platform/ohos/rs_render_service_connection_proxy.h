@@ -44,7 +44,8 @@ public:
 
     virtual sptr<IVSyncConnection> CreateVSyncConnection(const std::string& name,
                                                          const sptr<VSyncIConnectionToken>& token,
-                                                         uint64_t id = 0) override;
+                                                         uint64_t id = 0,
+                                                         NodeId windowNodeId = 0) override;
 
     int32_t SetFocusAppInfo(
         int32_t pid, int32_t uid, const std::string &bundleName, const std::string &abilityName,
@@ -77,7 +78,7 @@ public:
 
     void SetRefreshRateMode(int32_t refreshRateMode) override;
 
-    void SyncFrameRateRange(const FrameRateRange& range) override;
+    void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range) override;
 
     uint32_t GetScreenCurrentRefreshRate(ScreenId id) override;
 
@@ -176,6 +177,8 @@ public:
     int32_t RegisterHgmConfigChangeCallback(sptr<RSIHgmConfigChangeCallback> callback) override;
 
     int32_t RegisterHgmRefreshRateModeChangeCallback(sptr<RSIHgmConfigChangeCallback> callback) override;
+
+    int32_t RegisterHgmRefreshRateUpdateCallback(sptr<RSIHgmConfigChangeCallback> callback) override;
 
     void SetAppWindowNum(uint32_t num) override;
 

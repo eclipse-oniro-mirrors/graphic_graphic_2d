@@ -67,6 +67,8 @@ public:
         LIGHT_UP_EFFECT,
         AIBAR,
         LINEAR_GRADIENT_BLUR,
+        FOREGROUND_EFFECT,
+        MOTION_BLUR,
     };
     FilterType GetFilterType() const
     {

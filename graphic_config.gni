@@ -44,6 +44,8 @@ declare_args() {
   graphic_2d_feature_tp_switch_enbale = false
   graphic_2d_feature_enable_recording_dcl = true
   graphic_2d_feature_use_igraphics_extend_hooks = false
+  graphic_2d_feature_enable_chipset_vsync = false
+  graphic_2d_feature_enable_rspipeline = false
 
   if (defined(is_arkui_x) && is_arkui_x) {
     use_new_render_context = false
@@ -152,15 +154,14 @@ if (graphic_2d_feature_rs_enable_eglimage || current_os == "android") {
 # use_texgine = graphic_2d_feature_use_texgine
 
 if (graphic_2d_feature_rs_enable_uni_render) {
-  rs_enable_driven_render = true
   graphic_2d_feature_enable_dvsync = true
-  gpu_defines += [
-    "RS_ENABLE_DRIVEN_RENDER",
-    "RS_ENABLE_UNI_RENDER",
-  ]
+  if (graphic_2d_feature_product == "phone") {
+    graphic_2d_feature_enable_chipset_vsync = true
+  }
+  gpu_defines += [ "RS_ENABLE_UNI_RENDER" ]
 } else {
-  rs_enable_driven_render = false
   graphic_2d_feature_enable_dvsync = false
+  graphic_2d_feature_enable_chipset_vsync = false
 }
 
 if (graphic_2d_feature_enable_afbc) {
@@ -178,6 +179,9 @@ if (defined(use_new_render_context) && use_new_render_context) {
 
 if (graphic_2d_feature_enable_dvsync) {
   gpu_defines += [ "RS_ENABLE_DVSYNC" ]
+}
+if (graphic_2d_feature_enable_chipset_vsync) {
+  gpu_defines += [ "RS_ENABLE_CHIPSET_VSYNC" ]
 }
 
 tp_defines = []
@@ -278,6 +282,7 @@ hilog_root = "//base/hiviewdfx/hilog"
 window_base_path = "//foundation/window/window_manager"
 safwk_base = "//foundation/systemabilitymgr/safwk"
 skia_root_new = "//third_party/skia"
+graphic_surface_root = "//foundation/graphic/graphic_surface"
 memmgr_root = "//foundation/resourceschedule/memmgr"
 memmgr_plugin_root = "//foundation/resourceschedule/memmgr_plugin"
 fuzz_test_output_path = "graphic_2d/graphic_2d"

@@ -43,7 +43,8 @@
         "graphic_2d_feature_enable_afbc",
         "graphic_2d_feature_freemem_enable",
         "graphic_2d_feature_parallel_render_enable",
-        "graphic_2d_feature_tp_switch_enbale"
+        "graphic_2d_feature_tp_switch_enbale",
+        "graphic_2d_feature_rs_enable_profiler"
       ],
       "rom": "10000KB",
       "ram": "10000KB",
@@ -61,6 +62,7 @@
           "hitrace",
           "ability_runtime",
           "drivers_interface_display",
+          "drivers_interface_camera_ext",
           "c_utils",
           "access_token",
           "safwk",
@@ -88,20 +90,19 @@
           "vulkan-headers",
           "hiview",
           "battery_manager",
-          "cJSON"
+          "cJSON",
+          "jsoncpp",
+          "openssl"
         ],
         "third_party": [
           "flutter",
           "libuv",
-          "openssl",
           "libxml2",
-          "bounds_checking_function",
           "icu",
           "libpng",
           "zlib",
           "skia",
           "cJSON",
-          "jsoncpp",
           "egl",
           "opengles",
           "vulkan-headers",
@@ -127,7 +128,8 @@
             "//foundation/graphic/graphic_2d/rosen/modules/effect/egl:libegl_effect",
             "//foundation/graphic/graphic_2d/rosen/modules/texgine:libtexgine",
             "//foundation/graphic/graphic_2d/frameworks/vulkan_layers:vulkan_swapchain_layer",
-            "//foundation/graphic/graphic_2d/frameworks/vulkan_layers:vulkan_swapchain_layer_json"
+            "//foundation/graphic/graphic_2d/frameworks/vulkan_layers:vulkan_swapchain_layer_json",
+            "//foundation/graphic/graphic_2d/rosen/modules/graphics_effect:libgraphics_effect"
           ],
           "fwk_group": [
             "//foundation/graphic/graphic_2d/rosen/modules/render_service_base:librender_service_base",
@@ -141,29 +143,6 @@
           ]
       },
         "inner_kits": [
-          {
-            "type": "so",
-            "name": "//foundation/graphic/graphic_2d/frameworks/surface:surface",
-            "header": {
-              "header_files": [
-                "buffer_extra_data.h",
-                "egl_data.h",
-                "egl_surface.h",
-                "external_window.h",
-                "native_buffer.h",
-                "native_buffer_inner.h",
-                "ibuffer_consumer_listener.h",
-                "ibuffer_producer.h",
-                "iconsumer_surface.h",
-                "surface.h",
-                "surface_buffer.h",
-                "surface_type.h",
-                "surface_utils.h",
-                "window.h"
-              ],
-              "header_base": "//foundation/graphic/graphic_2d/interfaces/inner_api/surface"
-            }
-          },
           {
             "type": "so",
             "name": "//foundation/graphic/graphic_2d/interfaces/kits/napi/graphic/drawing:drawing_napi_impl",

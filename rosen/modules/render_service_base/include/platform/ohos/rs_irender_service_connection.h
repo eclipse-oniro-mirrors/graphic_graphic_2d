@@ -62,7 +62,8 @@ public:
 
     virtual sptr<IVSyncConnection> CreateVSyncConnection(const std::string& name,
                                                          const sptr<VSyncIConnectionToken>& token = nullptr,
-                                                         uint64_t id = 0) = 0;
+                                                         uint64_t id = 0,
+                                                         NodeId windowNodeId = 0) = 0;
 
     virtual int32_t SetFocusAppInfo(
         int32_t pid, int32_t uid, const std::string &bundleName, const std::string &abilityName,
@@ -96,7 +97,7 @@ public:
 
     virtual void SetRefreshRateMode(int32_t refreshRateMode) = 0;
 
-    virtual void SyncFrameRateRange(const FrameRateRange& range) = 0;
+    virtual void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range) = 0;
 
     virtual uint32_t GetScreenCurrentRefreshRate(ScreenId id) = 0;
 
@@ -203,6 +204,8 @@ public:
     virtual int32_t RegisterHgmRefreshRateModeChangeCallback(sptr<RSIHgmConfigChangeCallback> callback) = 0;
 
     virtual void SetAppWindowNum(uint32_t num) = 0;
+
+    virtual int32_t RegisterHgmRefreshRateUpdateCallback(sptr<RSIHgmConfigChangeCallback> callback) = 0;
 
     virtual bool SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes) = 0;
 

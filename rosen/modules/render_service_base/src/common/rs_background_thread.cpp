@@ -82,6 +82,12 @@ void RSBackgroundThread::InitRenderContext(RenderContext* context)
     renderContext_ = context;
     PostTask([this]() {
         gpuContext_ = CreateShareGPUContext();
+        if (gpuContext_ == nullptr) {
+            return;
+        }
+        gpuContext_->RegisterPostFunc([](const std::function<void()>& task) {
+            RSBackgroundThread::Instance().PostTask(task);
+        });
     });
 }
 
@@ -126,6 +132,16 @@ std::shared_ptr<Drawing::GPUContext> RSBackgroundThread::CreateShareGPUContext()
     }
 #endif
     return nullptr;
+}
+
+void RSBackgroundThread::SetGrResourceFinishFlag(bool resourceFinish)
+{
+    resourceFinish_ = resourceFinish;
+}
+
+bool RSBackgroundThread::GetGrResourceFinishFlag()
+{
+    return resourceFinish_;
 }
 
 void RSBackgroundThread::CleanGrResource()

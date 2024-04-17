@@ -24,9 +24,11 @@
 
 namespace OHOS {
 namespace Rosen {
+const bool KAWASE_BLUR_ENABLED = RSSystemProperties::GetKawaseEnabled();
+const auto BLUR_TYPE = KAWASE_BLUR_ENABLED ? Drawing::ImageBlurType::KAWASE : Drawing::ImageBlurType::GAUSS;
 RSBlurFilter::RSBlurFilter(float blurRadiusX, float blurRadiusY) : RSDrawingFilter(
     Drawing::ImageFilter::CreateBlurImageFilter(blurRadiusX, blurRadiusY, Drawing::TileMode::CLAMP, nullptr,
-        Drawing::ImageBlurType::KAWASE)),
+        BLUR_TYPE)),
     blurRadiusX_(blurRadiusX),
     blurRadiusY_(blurRadiusY)
 {
@@ -37,7 +39,6 @@ RSBlurFilter::RSBlurFilter(float blurRadiusX, float blurRadiusY) : RSDrawingFilt
     hash_ = SkOpts::hash(&type_, sizeof(type_), 0);
     hash_ = SkOpts::hash(&blurRadiusXForHash, sizeof(blurRadiusXForHash), hash_);
     hash_ = SkOpts::hash(&blurRadiusYForHash, sizeof(blurRadiusYForHash), hash_);
-    useKawase_ = RSSystemProperties::GetKawaseEnabled();
 }
 
 RSBlurFilter::~RSBlurFilter() = default;
@@ -60,7 +61,8 @@ std::string RSBlurFilter::GetDescription()
 std::string RSBlurFilter::GetDetailedDescription()
 {
     return "RSBlurFilterBlur, radius: " + std::to_string(blurRadiusX_) + " sigma" +
-        ", greyCoef1: " + std::to_string(greyCoef_->x_) + ", greyCoef2: " + std::to_string(greyCoef_->y_);
+        ", greyCoef1: " + std::to_string(greyCoef_ == std::nullopt ? 0.0f : greyCoef_->x_) +
+        ", greyCoef2: " + std::to_string(greyCoef_ == std::nullopt ? 0.0f : greyCoef_->y_);
 }
 
 bool RSBlurFilter::IsValid() const
@@ -138,7 +140,7 @@ void RSBlurFilter::DrawImageRect(Drawing::Canvas& canvas, const std::shared_ptr<
     // if kawase blur failed, use gauss blur
     static bool DDGR_ENABLED = RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR;
     KawaseParameter param = KawaseParameter(src, dst, blurRadiusX_, nullptr, brush.GetColor().GetAlphaF());
-    if (!DDGR_ENABLED && useKawase_ &&
+    if (!DDGR_ENABLED && KAWASE_BLUR_ENABLED &&
         KawaseBlurFilter::GetKawaseBlurFilter()->ApplyKawaseBlur(canvas, greyImage, param)) {
         return;
     }

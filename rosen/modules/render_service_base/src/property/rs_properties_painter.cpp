@@ -25,6 +25,7 @@
 #include "property/rs_point_light_manager.h"
 #include "property/rs_properties_def.h"
 #include "render/rs_blur_filter.h"
+#include "render/rs_foreground_effect_filter.h"
 #include "render/rs_skia_filter.h"
 #include "render/rs_material_filter.h"
 #include "platform/common/rs_system_properties.h"
@@ -52,6 +53,7 @@ constexpr float MAX_TRANS_RATIO = 0.95f;
 constexpr float MIN_SPOT_RATIO = 1.0f;
 constexpr float MAX_SPOT_RATIO = 1.95f;
 constexpr float MAX_AMBIENT_RADIUS = 150.0f;
+constexpr int MAX_LIGHT_SOURCES = 12;
 // when the blur radius > SNAPSHOT_OUTSET_BLUR_RADIUS_THRESHOLD,
 // the snapshot should call outset before blur to shrink by 1px.
 constexpr static float SNAPSHOT_OUTSET_BLUR_RADIUS_THRESHOLD = 40.0f;
@@ -600,6 +602,40 @@ std::shared_ptr<Drawing::Image> RSPropertiesPainter::DrawGreyAdjustment(Drawing:
     return builder->MakeImage(canvas.GetGPUContext().get(), nullptr, image->GetImageInfo(), false);
 }
 
+void RSPropertiesPainter::DrawForegroundFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas)
+{
+    RS_OPTIONAL_TRACE_NAME("DrawForegroundFilter restore");
+    auto surface = canvas.GetSurface();
+    std::shared_ptr<Drawing::Image> imageSnapshot = nullptr;
+    if (surface) {
+        imageSnapshot = surface->GetImageSnapshot();
+    } else {
+        ROSEN_LOGD("RSPropertiesPainter::DrawForegroundFilter Surface null");
+    }
+
+    canvas.RestorePCanvasList();
+    canvas.SwapBackMainScreenData();
+
+    auto& RSFilter = properties.GetForegroundFilter();
+    if (RSFilter == nullptr) {
+        return;
+    }
+
+    if (imageSnapshot == nullptr) {
+        ROSEN_LOGD("RSPropertiesPainter::DrawForegroundFilter image null");
+        return;
+    }
+    auto foregroundFilter = std::static_pointer_cast<RSDrawingFilter>(RSFilter);
+
+    if (foregroundFilter->GetFilterType() == RSFilter::MOTION_BLUR) {
+        auto canvasOriginal = canvas.GetOriginalCanvas();
+        foregroundFilter->SetGeometry(*canvasOriginal, 0.f, 0.f);
+    }
+
+    foregroundFilter->DrawImageRect(canvas, imageSnapshot, Drawing::Rect(0, 0, imageSnapshot->GetWidth(),
+        imageSnapshot->GetHeight()), Drawing::Rect(0, 0, imageSnapshot->GetWidth(), imageSnapshot->GetHeight()));
+}
+
 void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilterCanvas& canvas,
     FilterType filterType, const std::optional<Drawing::Rect>& rect, const std::shared_ptr<RSFilter>& externalFilter)
 {
@@ -770,9 +806,7 @@ void RSPropertiesPainter::DrawBackgroundEffect(
             ROSEN_LOGE("DrawBackgroundEffect::node reinterpret cast failed.");
             return;
         }
-        // node is freeze or screen rotating, force cache filterred snapshot.
-        auto forceCacheFlags = std::make_tuple(effectNode->IsStaticCached(), effectNode->GetRotationChanged());
-        auto&& data = cacheManager->GeneratedCachedEffectData(canvas, filter, bounds, bounds, forceCacheFlags);
+        auto&& data = cacheManager->GeneratedCachedEffectData(canvas, filter, bounds, bounds);
         canvas.SetEffectData(data);
         return;
     }
@@ -864,6 +898,27 @@ void RSPropertiesPainter::ApplyBackgroundEffect(const RSProperties& properties, 
     canvas.DrawImageRect(*effectData->cachedImage_, srcRect, dstRect,
                          Drawing::SamplingOptions(), Drawing::SrcRectConstraint::FAST_SRC_RECT_CONSTRAINT);
     canvas.DetachBrush();
+}
+
+void RSPropertiesPainter::GetPixelStretchDirtyRect(RectI& dirtyPixelStretch,
+    const RSProperties& properties, const bool isAbsCoordinate)
+{
+    auto& pixelStretch = properties.GetPixelStretch();
+    if (!pixelStretch.has_value()) {
+        return;
+    }
+    auto boundsRect = properties.GetBoundsRect();
+    auto scaledBounds = RectF(boundsRect.left_ - pixelStretch->x_, boundsRect.top_ - pixelStretch->y_,
+        boundsRect.width_ + pixelStretch->x_ + pixelStretch->z_,
+        boundsRect.height_ + pixelStretch->y_ + pixelStretch->w_);
+    auto geoPtr = properties.GetBoundsGeometry();
+    Drawing::Matrix matrix = (geoPtr && isAbsCoordinate) ? geoPtr->GetAbsMatrix() : Drawing::Matrix();
+    auto drawingRect = Rect2DrawingRect(scaledBounds);
+    matrix.MapRect(drawingRect, drawingRect);
+    dirtyPixelStretch.left_ = std::floor(drawingRect.GetLeft());
+    dirtyPixelStretch.top_ = std::floor(drawingRect.GetTop());
+    dirtyPixelStretch.width_ = std::ceil(drawingRect.GetWidth()) + PARAM_DOUBLE;
+    dirtyPixelStretch.height_ = std::ceil(drawingRect.GetHeight()) + PARAM_DOUBLE;
 }
 
 void RSPropertiesPainter::DrawPixelStretch(const RSProperties& properties, RSPaintFilterCanvas& canvas)
@@ -1072,7 +1127,7 @@ void RSPropertiesPainter::DrawFrame(
 }
 
 RRect RSPropertiesPainter::GetRRectForDrawingBorder(const RSProperties& properties,
-    const std::shared_ptr<RSBorder>& border, const bool& isOutline)
+    const std::shared_ptr<RSBorder>& border, const bool isOutline)
 {
     if (!border) {
         return RRect();
@@ -1084,7 +1139,7 @@ RRect RSPropertiesPainter::GetRRectForDrawingBorder(const RSProperties& properti
 }
 
 RRect RSPropertiesPainter::GetInnerRRectForDrawingBorder(const RSProperties& properties,
-    const std::shared_ptr<RSBorder>& border, const bool& isOutline)
+    const std::shared_ptr<RSBorder>& border, const bool isOutline)
 {
     if (!border) {
         return RRect();
@@ -1101,16 +1156,16 @@ const std::shared_ptr<Drawing::RuntimeShaderBuilder>& RSPropertiesPainter::GetPh
     }
     std::shared_ptr<Drawing::RuntimeEffect> lightEffect_;
     std::string lightString(R"(
-        uniform mat4 lightPos;
-        uniform mat4 viewPos;
-        uniform vec4 specularStrength;
+        uniform vec4 lightPos[12];
+        uniform vec4 viewPos[12];
+        uniform vec4 specularLightColor[12];
+        uniform float specularStrength[12];
 
         mediump vec4 main(vec2 drawing_coord) {
             vec4 lightColor = vec4(1.0, 1.0, 1.0, 1.0);
             float ambientStrength = 0.0;
             vec4 diffuseColor = vec4(1.0, 1.0, 1.0, 1.0);
             float diffuseStrength = 0.0;
-            vec4 specularColor = vec4(1.0, 1.0, 1.0, 1.0);
             float shininess = 8.0;
             mediump vec4 fragColor = vec4(0.0, 0.0, 0.0, 0.0);
             vec4 NormalMap = vec4(0.0, 0.0, 1.0, 0.0);
@@ -1118,7 +1173,7 @@ const std::shared_ptr<Drawing::RuntimeShaderBuilder>& RSPropertiesPainter::GetPh
             vec4 ambient = lightColor * ambientStrength;
             vec3 norm = normalize(NormalMap.rgb);
 
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 12; i++) {
                 if (abs(specularStrength[i]) > 0.01) {
                     vec3 lightDir = normalize(vec3(lightPos[i].xy - drawing_coord, lightPos[i].z));
                     float diff = max(dot(norm, lightDir), 0.0);
@@ -1128,6 +1183,7 @@ const std::shared_ptr<Drawing::RuntimeShaderBuilder>& RSPropertiesPainter::GetPh
                     float spec = pow(max(dot(norm, halfwayDir), 0.0), shininess); // exponential relationship of angle
                     vec4 specular = lightColor * spec; // multiply color of incident light
                     vec4 o = ambient + diffuse * diffuseStrength * diffuseColor; // diffuse reflection
+                    vec4 specularColor = specularLightColor[i];
                     fragColor = fragColor + o + specular * specularStrength[i] * specularColor;
                 }
             }
@@ -1150,8 +1206,8 @@ void RSPropertiesPainter::DrawLight(const RSProperties& properties, Drawing::Can
     if (!lightBuilder) {
         return;
     }
-    const auto& lightSources = properties.GetIlluminated()->GetLightSources();
-    if (lightSources.empty()) {
+    const auto& lightSourcesAndPosMap = properties.GetIlluminated()->GetLightSourcesAndPosMap();
+    if (lightSourcesAndPosMap.empty()) {
         ROSEN_LOGD("RSPropertiesPainter::DrawLight lightSourceList is empty!");
         return;
     }
@@ -1159,31 +1215,48 @@ void RSPropertiesPainter::DrawLight(const RSProperties& properties, Drawing::Can
     if (!geoPtr || geoPtr->IsEmpty()) {
         return;
     }
-    DrawLightInner(properties, canvas, lightBuilder, lightSources, geoPtr);
+    std::vector<std::pair<std::shared_ptr<RSLightSource>, Vector4f>> lightSourcesAndPosVec(
+        lightSourcesAndPosMap.begin(), lightSourcesAndPosMap.end());
+    if (lightSourcesAndPosVec.size() > MAX_LIGHT_SOURCES) {
+        std::sort(lightSourcesAndPosVec.begin(), lightSourcesAndPosVec.end(), [](const auto& x, const auto& y) {
+            return x.second.x_ * x.second.x_ + x.second.y_ * x.second.y_ <
+                   y.second.x_ * y.second.x_ + y.second.y_ * y.second.y_;
+        });
+    }
+    DrawLightInner(properties, canvas, lightBuilder, lightSourcesAndPosVec, geoPtr);
 }
 
 void RSPropertiesPainter::DrawLightInner(const RSProperties& properties, Drawing::Canvas& canvas,
     std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder,
-    const std::unordered_set<std::shared_ptr<RSLightSource>>& lightSources,
+    const std::vector<std::pair<std::shared_ptr<RSLightSource>, Vector4f>>& lightSourcesAndPosVec,
     const std::shared_ptr<RSObjAbsGeometry>& geoPtr)
 {
-    auto iter = lightSources.begin();
     auto cnt = 0;
-    Drawing::Matrix44 lightPositionMatrix;
-    Drawing::Matrix44 viewPosMatrix;
-    Vector4f lightIntensityV4;
-    constexpr int MAX_LIGHT_SOUCES = 4;
-    while (iter != lightSources.end() && cnt < MAX_LIGHT_SOUCES) {
-        auto lightPos = RSPointLightManager::Instance()->CalculateLightPosForIlluminated((*iter), geoPtr);
-        auto lightIntensity = (*iter)->GetLightIntensity();
-        lightIntensityV4[cnt] = lightIntensity;
-        lightPositionMatrix.SetCol(cnt, lightPos.x_, lightPos.y_, lightPos.z_, lightPos.w_);
-        viewPosMatrix.SetCol(cnt, lightPos.x_, lightPos.y_, lightPos.z_, lightPos.w_);
+    constexpr int vectorLen = 4;
+    float lightPosArray[vectorLen * MAX_LIGHT_SOURCES] = { 0 };
+    float viewPosArray[vectorLen * MAX_LIGHT_SOURCES] = { 0 };
+    float lightColorArray[vectorLen * MAX_LIGHT_SOURCES] = { 0 };
+    float lightIntensityArray[MAX_LIGHT_SOURCES] = { 0 };
+
+    auto iter = lightSourcesAndPosVec.begin();
+    while (iter != lightSourcesAndPosVec.end() && cnt < MAX_LIGHT_SOURCES) {
+        auto lightPos = iter->second;
+        auto lightIntensity = iter->first->GetLightIntensity();
+        auto lightColor = iter->first->GetLightColor();
+        Vector4f lightColorVec =
+            Vector4f(lightColor.GetRed(), lightColor.GetGreen(), lightColor.GetBlue(), lightColor.GetAlpha());
+        for (int i = 0; i < vectorLen; i++) {
+            lightPosArray[cnt * vectorLen + i] = lightPos[i];
+            viewPosArray[cnt * vectorLen + i] = lightPos[i];
+            lightColorArray[cnt * vectorLen + i] = lightColorVec[i] / UINT8_MAX;
+        }
+        lightIntensityArray[cnt] = lightIntensity;
         iter++;
         cnt++;
     }
-    lightBuilder->SetUniform("lightPos", lightPositionMatrix);
-    lightBuilder->SetUniform("viewPos", viewPosMatrix);
+    lightBuilder->SetUniform("lightPos", lightPosArray, vectorLen * MAX_LIGHT_SOURCES);
+    lightBuilder->SetUniform("viewPos", viewPosArray, vectorLen * MAX_LIGHT_SOURCES);
+    lightBuilder->SetUniform("specularLightColor", lightColorArray, vectorLen * MAX_LIGHT_SOURCES);
     Drawing::Pen pen;
     Drawing::Brush brush;
     pen.SetAntiAlias(true);
@@ -1191,23 +1264,27 @@ void RSPropertiesPainter::DrawLightInner(const RSProperties& properties, Drawing
     auto illuminatedType = properties.GetIlluminated()->GetIlluminatedType();
     ROSEN_LOGD("RSPropertiesPainter::DrawLight illuminatedType:%{public}d", illuminatedType);
     if (illuminatedType == IlluminatedType::CONTENT) {
-        DrawContentLight(properties, canvas, lightBuilder, brush, lightIntensityV4);
+        DrawContentLight(properties, canvas, lightBuilder, brush, lightIntensityArray);
     } else if (illuminatedType == IlluminatedType::BORDER) {
-        DrawBorderLight(properties, canvas, lightBuilder, pen, lightIntensityV4);
+        DrawBorderLight(properties, canvas, lightBuilder, pen, lightIntensityArray);
     } else if (illuminatedType == IlluminatedType::BORDER_CONTENT) {
-        DrawContentLight(properties, canvas, lightBuilder, brush, lightIntensityV4);
-        DrawBorderLight(properties, canvas, lightBuilder, pen, lightIntensityV4);
+        DrawContentLight(properties, canvas, lightBuilder, brush, lightIntensityArray);
+        DrawBorderLight(properties, canvas, lightBuilder, pen, lightIntensityArray);
     }
 }
 
 void RSPropertiesPainter::DrawContentLight(const RSProperties& properties, Drawing::Canvas& canvas,
-    std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Brush& brush, Vector4f& lightIntensity)
+    std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Brush& brush,
+    const float lightIntensityArray[])
 {
     // content light
     std::shared_ptr<Drawing::ShaderEffect> shader;
-    auto contentStrength = lightIntensity * 0.3f;
-    lightBuilder->SetUniformVec4("specularStrength", contentStrength.x_,
-        contentStrength.y_, contentStrength.z_, contentStrength.w_);
+    constexpr float contentIntensityCoefficient = 0.3f;
+    float specularStrengthArr[MAX_LIGHT_SOURCES] = { 0 };
+    for (int i = 0; i < MAX_LIGHT_SOURCES; i++) {
+        specularStrengthArr[i] = lightIntensityArray[i] * contentIntensityCoefficient;
+    }
+    lightBuilder->SetUniform("specularStrength", specularStrengthArr, MAX_LIGHT_SOURCES);
     shader = lightBuilder->MakeShader(nullptr, false);
     brush.SetShaderEffect(shader);
     canvas.AttachBrush(brush);
@@ -1216,12 +1293,12 @@ void RSPropertiesPainter::DrawContentLight(const RSProperties& properties, Drawi
 }
 
 void RSPropertiesPainter::DrawBorderLight(const RSProperties& properties, Drawing::Canvas& canvas,
-    std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Pen& pen, Vector4f& lightIntensity)
+    std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder, Drawing::Pen& pen,
+    const float lightIntensityArray[])
 {
     // border light
     std::shared_ptr<Drawing::ShaderEffect> shader;
-    lightBuilder->SetUniformVec4("specularStrength", lightIntensity.x_,
-        lightIntensity.y_, lightIntensity.z_, lightIntensity.w_);
+    lightBuilder->SetUniform("specularStrength", lightIntensityArray, MAX_LIGHT_SOURCES);
     shader = lightBuilder->MakeShader(nullptr, false);
     pen.SetShaderEffect(shader);
     float borderWidth = std::ceil(properties.GetIlluminatedBorderWidth());
@@ -1237,7 +1314,7 @@ void RSPropertiesPainter::DrawBorderLight(const RSProperties& properties, Drawin
 }
 
 void RSPropertiesPainter::DrawBorderBase(const RSProperties& properties, Drawing::Canvas& canvas,
-    const std::shared_ptr<RSBorder>& border, const bool& isOutline)
+    const std::shared_ptr<RSBorder>& border, const bool isOutline)
 {
     if (!border || !border->HasBorder()) {
         return;
@@ -1301,7 +1378,7 @@ void RSPropertiesPainter::DrawBorder(const RSProperties& properties, Drawing::Ca
 }
 
 void RSPropertiesPainter::GetOutlineDirtyRect(RectI& dirtyOutline,
-    const RSProperties& properties, const bool& isAbsCoordinate)
+    const RSProperties& properties, const bool isAbsCoordinate)
 {
     auto outline = properties.GetOutline();
     if (!outline || !outline->HasBorder()) {
@@ -1418,30 +1495,6 @@ void RSPropertiesPainter::DrawMask(const RSProperties& properties, Drawing::Canv
 {
     Drawing::Rect maskBounds = Rect2DrawingRect(properties.GetBoundsRect());
     DrawMask(properties, canvas, maskBounds);
-}
-
-RectF RSPropertiesPainter::GetCmdsClipRect(Drawing::DrawCmdListPtr& cmds)
-{
-    ROSEN_LOGE("Drawing Unsupport RSPropertiesPainter::GetCmdsClipRect");
-    return RectF { 0.0f, 0.0f, 0.0f, 0.0f };
-}
-
-void RSPropertiesPainter::DrawFrameForDriven(const RSProperties& properties, RSPaintFilterCanvas& canvas,
-                                             Drawing::DrawCmdListPtr& cmds)
-{
-#if defined(RS_ENABLE_DRIVEN_RENDER)
-    if (cmds == nullptr) {
-        return;
-    }
-    Rosen::Drawing::Matrix mat;
-    if (GetGravityMatrix(
-            properties.GetFrameGravity(), properties.GetFrameRect(), cmds->GetWidth(), cmds->GetHeight(), mat)) {
-        canvas.ConcatMatrix(mat);
-    }
-    auto frameRect = Rect2DrawingRect(properties.GetFrameRect());
-    // temporary solution for driven content clip
-    cmds->Playback(canvas, &frameRect);
-#endif
 }
 
 void RSPropertiesPainter::DrawSpherize(const RSProperties& properties, RSPaintFilterCanvas& canvas,
@@ -1887,81 +1940,6 @@ bool RSPropertiesPainter::IsDangerousBlendMode(int blendMode, int blendApplyType
         return tmp & fastDangerousBit;
     }
     return tmp & offscreenDangerousBit;
-}
-
-void RSPropertiesPainter::BeginBlendMode(RSPaintFilterCanvas& canvas, const RSProperties& properties)
-{
-    auto blendMode = properties.GetColorBlendMode();
-    int blendModeApplyType = properties.GetColorBlendApplyType();
-
-    if (blendMode == 0) {
-        // no blend
-        return;
-    }
-    RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO,
-        "RSPropertiesPainter::BlendMode, blendMode: %d, blendModeApplyType: %d", blendMode, blendModeApplyType);
-
-    canvas.Save();
-    canvas.ClipRoundRect(RRect2DrawingRRect(properties.GetRRect()), Drawing::ClipOp::INTERSECT, true);
-
-    if (canvas.GetBlendOffscreenLayerCnt() == 0 && IsDangerousBlendMode(blendMode - 1, blendModeApplyType)) {
-        Drawing::SaveLayerOps maskLayerRec(nullptr, nullptr, 0);
-        canvas.SaveLayer(maskLayerRec);
-        canvas.AddBlendOffscreenLayer(true);
-        ROSEN_LOGD("Dangerous fast blendmode may produce transparent pixels, add extra offscreen here.");
-    }
-    // fast blend mode
-    if (blendModeApplyType == static_cast<int>(RSColorBlendApplyType::FAST)) {
-        canvas.SaveBlendMode();
-        canvas.SetBlendMode({ blendMode - 1 }); // map blendMode to SkBlendMode
-        return;
-    }
-
-    // save layer mode
-    auto matrix = canvas.GetTotalMatrix();
-    matrix.Set(Drawing::Matrix::TRANS_X, std::ceil(matrix.Get(Drawing::Matrix::TRANS_X)));
-    matrix.Set(Drawing::Matrix::TRANS_Y, std::ceil(matrix.Get(Drawing::Matrix::TRANS_Y)));
-    canvas.SetMatrix(matrix);
-    Drawing::Brush blendBrush_;
-    blendBrush_.SetAlphaF(canvas.GetAlpha());
-    blendBrush_.SetBlendMode(static_cast<Drawing::BlendMode>(blendMode - 1)); // map blendMode to Drawing::BlendMode
-    Drawing::SaveLayerOps maskLayerRec(nullptr, &blendBrush_, 0);
-    canvas.SaveLayer(maskLayerRec);
-
-    canvas.AddBlendOffscreenLayer(false);
-    canvas.SaveBlendMode();
-    canvas.SetBlendMode(std::nullopt);
-    canvas.SaveAlpha();
-    canvas.SetAlpha(1.0f);
-}
-
-void RSPropertiesPainter::EndBlendMode(RSPaintFilterCanvas& canvas, const RSProperties& properties)
-{
-    auto blendMode = properties.GetColorBlendMode();
-    int blendModeApplyType = properties.GetColorBlendApplyType();
-
-    if (blendMode == 0) {
-        // no blend
-        return;
-    }
-
-    if (blendModeApplyType == static_cast<int>(RSColorBlendApplyType::FAST)) {
-        canvas.RestoreBlendMode();
-        if (canvas.IsBlendOffscreenExtraLayer()) {
-            canvas.Restore();
-            canvas.MinusBlendOffscreenLayer();
-        }
-    } else {
-        canvas.RestoreBlendMode();
-        canvas.RestoreAlpha();
-        canvas.Restore();
-        canvas.MinusBlendOffscreenLayer();
-        if (canvas.IsBlendOffscreenExtraLayer()) {
-            canvas.Restore();
-            canvas.MinusBlendOffscreenLayer();
-        }
-    }
-    canvas.Restore();
 }
 } // namespace Rosen
 } // namespace OHOS
