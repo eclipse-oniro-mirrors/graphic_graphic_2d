@@ -34,6 +34,7 @@ constexpr float LEFT_END = 180.0f;
 constexpr float SWEEP_ANGLE = 45.0f;
 } // namespace
 
+// defines short names for widths/half widths of each borders
 #define LEFTW GetWidth(RSBorder::LEFT)
 #define LEFTW2 GetWidth(RSBorder::LEFT) / 2.f
 #define RIGHTW GetWidth(RSBorder::RIGHT)
@@ -317,12 +318,14 @@ void RSBorder::PaintTopPath(Drawing::Canvas& canvas, Drawing::Pen& pen, const Dr
         Drawing::Point tlip = GetTLIP(rrect, innerRectCenter);
         // top right intersection point with innerRect center
         Drawing::Point trip = GetTRIP(rrect, innerRectCenter);
+        // draw clipping path for top border
         topClipPath.MoveTo(offsetX, offsetY);
         topClipPath.LineTo(tlip.GetX(), tlip.GetY());
         topClipPath.LineTo(trip.GetX(), trip.GetY());
         topClipPath.LineTo(offsetX + width, offsetY);
         topClipPath.Close();
         canvas.ClipPath(topClipPath, Drawing::ClipOp::INTERSECT, true);
+        // calc rectangles to draw left top and right top arcs according to radii values
         float startArcWidth = std::min(width - LEFTW, tlRad.GetX() * 2.f);
         float endArcWidth = std::min(width - RIGHTW, trRad.GetX() * 2.f);
         float startArcHeight = std::min(rrect.GetRect().GetHeight() - TOPW, tlRad.GetY() * 2.f);
@@ -330,6 +333,7 @@ void RSBorder::PaintTopPath(Drawing::Canvas& canvas, Drawing::Pen& pen, const Dr
         auto rs = Drawing::Rect(x, y, x + startArcWidth, y + startArcHeight);
         auto re = Drawing::Rect(offsetX + width - RIGHTW / 2.f - endArcWidth, y,
                                 offsetX + width - RIGHTW / 2.f, y + endArcHeight);
+        // create drawing path from left top corner to right top corner
         Drawing::Path topBorder;
         topBorder.MoveTo(std::min(x, offsetX + tlRad.GetX() / 2.f), y + tlRad.GetY() / 2.f);
         topBorder.ArcTo(rs.GetLeft(), rs.GetTop(), rs.GetRight(), rs.GetBottom(), TOP_START, SWEEP_ANGLE);
@@ -373,18 +377,21 @@ void RSBorder::PaintRightPath(Drawing::Canvas& canvas, Drawing::Pen& pen, const 
         Drawing::Point trip = GetTRIP(rrect, innerRectCenter);
         // bottom right intersection point with innerRect center
         Drawing::Point brip = GetBRIP(rrect, innerRectCenter);
+        // draw clipping path for right border
         rightClipPath.MoveTo(offsetX + width, offsetY);
         rightClipPath.LineTo(trip.GetX(), trip.GetY());
         rightClipPath.LineTo(brip.GetX(), brip.GetY());
         rightClipPath.LineTo(offsetX + width, offsetY + height);
         rightClipPath.Close();
         canvas.ClipPath(rightClipPath, Drawing::ClipOp::INTERSECT, true);
+        // calc rectangles to draw right top and right bottom arcs according to radii values
         float startArcWidth = std::min(width - RIGHTW, trRad.GetX() * 2.f);
         float endArcWidth = std::min(width - RIGHTW, brRad.GetX() * 2.f);
         float startArcHeight = std::min(height - TOPW, trRad.GetY() * 2.f);
         float endArcHeight = std::min(height - BOTTOMW, brRad.GetY() * 2.f);
         auto rs = Drawing::Rect(x - startArcWidth, y, x, y + startArcHeight);
         auto re = Drawing::Rect(x - endArcWidth, height - BOTTOMW2 - endArcHeight, x, height - BOTTOMW2);
+        // create drawing path from right top corner to right bottom corner
         Drawing::Path rightBorder;
         rightBorder.MoveTo(x - trRad.GetX() / 2.f, std::min(y, offsetY + trRad.GetY() / 2.f));
         rightBorder.ArcTo(rs.GetLeft(), rs.GetTop(), rs.GetRight(), rs.GetBottom(), RIGHT_START, SWEEP_ANGLE);
@@ -426,6 +433,7 @@ void RSBorder::PaintBottomPath(Drawing::Canvas& canvas, Drawing::Pen& pen, const
         Drawing::Point blip = GetBLIP(rrect, innerRectCenter);
         // bottom right intersection point with innerRect center
         Drawing::Point brip = GetBRIP(rrect, innerRectCenter);
+        // draw clipping path for bottom border
         Drawing::Path bottomClipPath;
         bottomClipPath.MoveTo(offsetX, offsetY + rrect.GetRect().GetHeight());
         bottomClipPath.LineTo(blip.GetX(), blip.GetY());
@@ -433,6 +441,7 @@ void RSBorder::PaintBottomPath(Drawing::Canvas& canvas, Drawing::Pen& pen, const
         bottomClipPath.LineTo(offsetX + width, offsetY + rrect.GetRect().GetHeight());
         bottomClipPath.Close();
         canvas.ClipPath(bottomClipPath, Drawing::ClipOp::INTERSECT, true);
+        // calc rectangles to draw right bottom and left bottom arcs according to radii values
         float startArcWidth = std::min(width - RIGHTW, brRad.GetX() * 2.f);
         float endArcWidth = std::min(width - LEFTW, blRad.GetX() * 2.f);
         float startArcHeight = std::min(rrect.GetRect().GetHeight() - BOTTOMW, brRad.GetY() * 2.f);
@@ -440,6 +449,7 @@ void RSBorder::PaintBottomPath(Drawing::Canvas& canvas, Drawing::Pen& pen, const
         auto rs = Drawing::Rect(offsetX + width - RIGHTW2 - startArcWidth, y - startArcHeight,
                                 offsetX + width - RIGHTW2, y);
         auto re = Drawing::Rect(x, y - endArcHeight, x + endArcWidth, y);
+        // create drawing path from right bottom corner to left bottom corner
         Drawing::Path bottomBorder;
         bottomBorder.MoveTo(std::max(offsetX + width - RIGHTW2, offsetY + width - brRad.GetX() / 2.f),
                             y - brRad.GetY() / 2.f);
@@ -482,12 +492,14 @@ void RSBorder::PaintLeftPath(Drawing::Canvas& canvas, Drawing::Pen& pen, const D
         Drawing::Point tlip = GetTLIP(rrect, innerRectCenter);
         // bottom left intersection point with innerRect center
         Drawing::Point blip = GetBLIP(rrect, innerRectCenter);
+        // draw clipping path for left border
         leftClipPath.MoveTo(offsetX, offsetY);
         leftClipPath.LineTo(tlip.GetX(), tlip.GetY());
         leftClipPath.LineTo(blip.GetX(), blip.GetY());
         leftClipPath.LineTo(offsetX, offsetY + height);
         leftClipPath.Close();
         canvas.ClipPath(leftClipPath, Drawing::ClipOp::INTERSECT, true);
+        // calc rectangles to draw left bottom and left top arcs according to radii values
         float startArcWidth = std::min(rrect.GetRect().GetWidth() - LEFTW, blRad.GetX() * 2.f);
         float endArcWidth = std::min(rrect.GetRect().GetWidth() - LEFTW, tlRad.GetX() * 2.f);
         float startArcHeight = std::min(height - BOTTOMW, blRad.GetY() * 2.f);
@@ -495,6 +507,7 @@ void RSBorder::PaintLeftPath(Drawing::Canvas& canvas, Drawing::Pen& pen, const D
         auto rs = Drawing::Rect(x, offsetY + height - BOTTOMW2 - startArcHeight,
                                 x + startArcWidth, offsetY + height - BOTTOMW2);
         auto re = Drawing::Rect(x, y, x + endArcWidth, y + endArcHeight);
+        // create drawing path from left bottom corner to left top corner
         Drawing::Path leftBorder;
         leftBorder.MoveTo(x + blRad.GetX() / 2.f, std::max(offsetY + height - BOTTOMW2,
                                                            offsetY + height - blRad.GetY() / 2.f));
@@ -519,25 +532,35 @@ void RSBorder::PaintLeftPath(Drawing::Canvas& canvas, Drawing::Pen& pen, const D
 // Return top left intersection pos for clipping
 Drawing::Point RSBorder::GetTLIP(const Drawing::RoundRect& rrect, const Drawing::Point& innerRectCenter) const
 {
+    // inner round rect center point
     float x = innerRectCenter.GetX();
     float y = innerRectCenter.GetY();
+    // width/height of inner round rect
     float width = rrect.GetRect().GetWidth() - LEFTW - RIGHTW;
     float height = rrect.GetRect().GetHeight() - TOPW - BOTTOMW;
     if (width > 0) {
+        // kc is linear ratio of inner rect
         float kc = height / width;
         if (LEFTW > 0) {
+            // k is linear ratio for external rect (cutting angle at top left corner)
             float k = TOPW / LEFTW;
+            // raduii values of external round rect for calculating clipping point
             Drawing::Point tlRad = rrect.GetCornerRadius(Drawing::RoundRect::TOP_LEFT_POS);
             Drawing::Point trRad = rrect.GetCornerRadius(Drawing::RoundRect::TOP_RIGHT_POS);
             Drawing::Point blRad = rrect.GetCornerRadius(Drawing::RoundRect::BOTTOM_LEFT_POS);
+            // shows what center axis of inner round rect we intersect fist (x or y)
             if (k <= kc) {
+                // top left and right raduii for inner round rect
                 float dlx = std::max(tlRad.GetX() - LEFTW, 0.f);
                 float drx = std::max(trRad.GetX() - RIGHTW, 0.f);
+                // calc delta to prevent overlapping of top right corner
                 x = (dlx > 0) ? (x + std::min(dlx, width / 2.f - drx)) : (x - width / 2.f);
                 y = x * k;
             } else {
+                // left top and bottom raduii for inner round rect
                 float dty = std::max(tlRad.GetY() - TOPW, 0.f);
                 float dby = std::max(blRad.GetY() - BOTTOMW, 0.f);
+                // calc delta to prevent overlapping of bottom left corner
                 y = (dty > 0) ? (y = y + std::min(dty, height / 2.f - dby)) : (y - height / 2.f);
                 x = y / k;
             }
@@ -554,25 +577,35 @@ Drawing::Point RSBorder::GetTLIP(const Drawing::RoundRect& rrect, const Drawing:
 // Return top right intersection pos for clipping
 Drawing::Point RSBorder::GetTRIP(const Drawing::RoundRect& rrect, const Drawing::Point& innerRectCenter) const
 {
+    // inner round rect center point
     float x = innerRectCenter.GetX();
     float y = innerRectCenter.GetY();
+    // width/height of inner round rect
     float width = rrect.GetRect().GetWidth() - LEFTW - RIGHTW;
     float height = rrect.GetRect().GetHeight() - TOPW - BOTTOMW;
     if (width > 0) {
+        // kc is linear ratio of inner rect
         float kc = height / width;
         if (RIGHTW > 0) {
+            // k is linear ratio for external rect (cutting angle at top right corner)
             float k = TOPW / RIGHTW;
+            // raduii values of external round rect for calculating clipping point
             Drawing::Point trRad = rrect.GetCornerRadius(Drawing::RoundRect::TOP_RIGHT_POS);
             Drawing::Point tlRad = rrect.GetCornerRadius(Drawing::RoundRect::TOP_LEFT_POS);
             Drawing::Point brRad = rrect.GetCornerRadius(Drawing::RoundRect::BOTTOM_RIGHT_POS);
+            // shows what center axis of inner round rect we intersect fist (x or y)
             if (k <= kc) {
+                // top left and right raduii for inner round rect
                 float drx = std::max(trRad.GetX() - RIGHTW, 0.f);
                 float dlx = std::max(tlRad.GetX() - LEFTW, 0.f);
+                // calc delta to prevent overlapping of top left corner
                 x = (drx > 0) ? (x - std::min(drx, width / 2.f - dlx)) : (x + width / 2.f);
                 y = (rrect.GetRect().GetWidth() - x) * k;
             } else {
+                // right top and bottom raduii for inner round rect
                 float dty = std::max(trRad.GetY() - TOPW, 0.f);
                 float dby = std::max(brRad.GetY() - BOTTOMW, 0.f);
+                // calc delta to prevent overlapping of bottom right corner
                 y = (dty > 0) ? (y = y + std::min(dty, height / 2.f - dby)) : (y - height / 2.f);
                 x = rrect.GetRect().GetWidth() - y / k;
             }
@@ -589,25 +622,35 @@ Drawing::Point RSBorder::GetTRIP(const Drawing::RoundRect& rrect, const Drawing:
 // Return bottom left intersection pos for clipping
 Drawing::Point RSBorder::GetBLIP(const Drawing::RoundRect& rrect, const Drawing::Point& innerRectCenter) const
 {
+    // inner round rect center point
     float x = innerRectCenter.GetX();
     float y = innerRectCenter.GetY();
+    // width/height of inner round rect
     float width = rrect.GetRect().GetWidth() - LEFTW - RIGHTW;
     float height = rrect.GetRect().GetHeight() - TOPW - BOTTOMW;
     if (width > 0) {
+        // kc is linear ratio of inner rect
         float kc = height / width;
         if (LEFTW > 0) {
+            // k is linear ratio for external rect (cutting angle at bottom left corner)
             float k = BOTTOMW / LEFTW;
+            // raduii values of external round rect for calculating clipping point
             Drawing::Point blRad = rrect.GetCornerRadius(Drawing::RoundRect::BOTTOM_LEFT_POS);
             Drawing::Point tlRad = rrect.GetCornerRadius(Drawing::RoundRect::TOP_LEFT_POS);
             Drawing::Point brRad = rrect.GetCornerRadius(Drawing::RoundRect::BOTTOM_RIGHT_POS);
+            // shows what center axis of inner round rect we intersect fist (x or y)
             if (k <= kc) {
+                // bottom left and right raduii for inner round rect
                 float dlx = std::max(blRad.GetX() - LEFTW, 0.f);
                 float drx = std::max(brRad.GetX() - RIGHTW, 0.f);
+                // calc delta to prevent overlapping of bottom right corner
                 x = (dlx > 0) ? (x + std::min(dlx, width / 2.f - drx)) : (x - width / 2.f);
                 y = rrect.GetRect().GetHeight() - x * k;
             } else {
+                // left bottom and top raduii for inner round rect
                 float dby = std::max(blRad.GetY() - BOTTOMW, 0.f);
                 float dty = std::max(tlRad.GetY() - TOPW, 0.f);
+                // calc delta to prevent overlapping of top left corner
                 y = (dby > 0) ? (y = y - std::min(dby, height / 2.f - dty)) : (y + height / 2.f);
                 x = (rrect.GetRect().GetHeight() - y) / k;
             }
@@ -624,25 +667,35 @@ Drawing::Point RSBorder::GetBLIP(const Drawing::RoundRect& rrect, const Drawing:
 // Return bottom right intersection pos for clipping
 Drawing::Point RSBorder::GetBRIP(const Drawing::RoundRect& rrect, const Drawing::Point& innerRectCenter) const
 {
+    // inner round rect center point
     float x = innerRectCenter.GetX();
     float y = innerRectCenter.GetY();
+    // width/height of inner round rect
     float width = rrect.GetRect().GetWidth() - LEFTW - RIGHTW;
     float height = rrect.GetRect().GetHeight() - TOPW - BOTTOMW;
     if (width > 0) {
+        // kc is linear ratio of inner rect
         float kc = height / width;
         if (RIGHTW > 0) {
+            // k is linear ratio for external rect (cutting angle at bottom right corner)
             float k = BOTTOMW / RIGHTW;
+            // raduii values of external round rect for calculating clipping point
             Drawing::Point brRad = rrect.GetCornerRadius(Drawing::RoundRect::BOTTOM_RIGHT_POS);
             Drawing::Point blRad = rrect.GetCornerRadius(Drawing::RoundRect::BOTTOM_LEFT_POS);
             Drawing::Point trRad = rrect.GetCornerRadius(Drawing::RoundRect::TOP_RIGHT_POS);
+            // shows what center axis of inner round rect we intersect fist (x or y)
             if (k <= kc) {
+                // bottom left and right raduii for inner round rect
                 float drx = std::max(brRad.GetX() - RIGHTW, 0.f);
                 float dlx = std::max(blRad.GetX() - LEFTW, 0.f);
+                // calc delta to prevent overlapping of bottom left corner
                 x = (drx > 0) ? (x - std::min(drx, width / 2.f - dlx)) : (x + width / 2.f);
                 y = rrect.GetRect().GetHeight() - (rrect.GetRect().GetWidth() - x) * k;
             } else {
+                // right bottom and top raduii for inner round rect
                 float dby = std::max(brRad.GetY() - BOTTOMW, 0.f);
                 float dty = std::max(trRad.GetY() - TOPW, 0.f);
+                // calc delta to prevent overlapping of top right corner
                 y = (dby > 0) ? (y = y - std::min(dby, height / 2.f - dty)) : (y + height / 2.f);
                 x = rrect.GetRect().GetWidth() - (rrect.GetRect().GetHeight() - y) / k;
             }
