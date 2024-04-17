@@ -824,11 +824,14 @@ void RSProfiler::SetReplayTimes(double replayStartTime, double recordStartTime)
     g_transactionTimeCorrection = static_cast<int64_t>((replayStartTime - recordStartTime) * NS_TO_S);
 }
 
-void RSProfiler::PerfTreeFlatten(const RSRenderNode& node, std::unordered_set<NodeId>& nodeSet)
+int RSProfiler::PerfTreeFlatten(
+    const RSRenderNode& node, std::unordered_set<NodeId>& nodeSet, std::unordered_map<NodeId, int>& mapNode2Count)
 {
     if (node.renderContent_ == nullptr) {
-        return;
+        return 0;
     }
+
+    int nodeCmdListCount = 0;
 
     for (auto& [type, modifiers] : node.renderContent_->drawCmdModifiers_) {
         if (type >= RSModifierType::ENV_FOREGROUND_COLOR) {
@@ -838,23 +841,36 @@ void RSProfiler::PerfTreeFlatten(const RSRenderNode& node, std::unordered_set<No
             auto propertyValue = std::static_pointer_cast<RSRenderProperty<Drawing::DrawCmdListPtr>>
                 (modifier->GetProperty())->Get();
             if (propertyValue != nullptr && propertyValue->GetOpItemSize() > 0) {
-                nodeSet.insert(node.id_);
+                nodeCmdListCount = 1;
             }
         }
     }
+    
+    int drawCmdListCount = nodeCmdListCount;
+    int valuableChildrenCount = 0;
 
     if (node.GetSortedChildren()) {
         for (auto& child : *node.GetSortedChildren()) {
             if (child) {
-                PerfTreeFlatten(*child, nodeSet);
+                drawCmdListCount += PerfTreeFlatten(*child, nodeSet, mapNode2Count);
+                valuableChildrenCount++;
             }
         }
     }
     for (auto& [child, pos] : node.disappearingChildren_) {
         if (child) {
-            PerfTreeFlatten(*child, nodeSet);
+            drawCmdListCount += PerfTreeFlatten(*child, nodeSet, mapNode2Count);
+            valuableChildrenCount++;
         }
     }
+
+    if (drawCmdListCount > 0) {
+        mapNode2Count[node.id_] = drawCmdListCount;
+        if (!(valuableChildrenCount == 1 && nodeCmdListCount == 0)) {
+            nodeSet.insert(node.id_);
+        }
+    }
+    return drawCmdListCount;
 }
 
 } // namespace OHOS::Rosen
