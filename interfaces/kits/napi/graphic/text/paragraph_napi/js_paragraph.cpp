@@ -15,7 +15,7 @@
 #include "canvas_napi/js_canvas.h"
 #include "draw/canvas.h"
 #include "recording/recording_canvas.h"
-#include "drawing/js_drawing_utils.h"
+#include "js_drawing_utils.h"
 #include "js_paragraph.h"
 #include "js_text_utils.h"
 #include "paragraph_builder_napi/js_paragraph_builder.h"
@@ -162,7 +162,7 @@ napi_value JsParagraph::OnPaint(napi_env env, napi_callback_info info)
         ROSEN_LOGE("JsParagraph::OnPaint Argv is invalid");
         return NapiGetUndefined(env);
     }
-    if (jsCanvas->GetCanvas()->GetDrawingType() == DrawingType::RECORDING) {
+    if (jsCanvas->GetCanvas()->GetDrawingType() == Drawing::DrawingType::RECORDING) {
         Drawing::RecordingCanvas* recordingCanvas = (Drawing::RecordingCanvas*)jsCanvas->GetCanvas();
         recordingCanvas->SetIsCustomTypeface(true);
         recordingCanvas->SetIsCustomTextType(true);
