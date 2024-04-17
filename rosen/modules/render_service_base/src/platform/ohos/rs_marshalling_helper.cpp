@@ -597,6 +597,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<Moti
     success = success && Marshalling(parcel, val->scaleAnchor[1]);
     return success;
 }
+
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<MotionBlurParam>& val)
 {
     float radius;
