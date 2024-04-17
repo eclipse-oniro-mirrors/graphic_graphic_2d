@@ -45,7 +45,7 @@ napi_value JsFontCollection::Init(napi_env env, napi_value exportObj)
 {
     napi_property_descriptor properties[] = {
         DECLARE_NAPI_FUNCTION("disableFallback", JsFontCollection::DisableFallback),
-        DECLARE_NAPI_FUNCTION("loadFont", JsFontCollection::LoadFont),
+        DECLARE_NAPI_FUNCTION("loadFontSync", JsFontCollection::LoadFontSync),
     };
 
     napi_value constructor = nullptr;
@@ -102,7 +102,7 @@ napi_value JsFontCollection::OnDisableFallback(napi_env env, napi_callback_info 
     return NapiGetUndefined(env);
 }
 
-napi_value JsFontCollection::LoadFont(napi_env env, napi_callback_info info)
+napi_value JsFontCollection::LoadFontSync(napi_env env, napi_callback_info info)
 {
     JsFontCollection* me = CheckParamsAndGetThis<JsFontCollection>(env, info);
     return (me != nullptr) ? me->OnLoadFont(env, info) : nullptr;
@@ -213,7 +213,6 @@ napi_value JsFontCollection::OnLoadFont(napi_env env, napi_callback_info info)
         }
         return NapiGetUndefined(env);
     }
-
     return NapiGetUndefined(env);
 }
 } // namespace OHOS::Rosen
