@@ -208,16 +208,10 @@ napi_value JsFontCollection::OnLoadFont(napi_env env, napi_callback_info info)
     napi_typeof(env, argv[1], &valueType);
     if (valueType != napi_object) {
         ConvertFromJsValue(env, argv[1], familySrc);
-    } else {
-        // Resource type of data process center, not yet realized
-        return nullptr;
-    }
-    if (!SpiltAbsoluteFontPath(familySrc)) {
-        return nullptr;
-    }
-
-    if (!GetFontFileProperties(familySrc, familyName)) {
-        return nullptr;
+        if (!SpiltAbsoluteFontPath(familySrc) || !GetFontFileProperties(familySrc, familyName)) {
+            return nullptr;
+        }
+        return NapiGetUndefined(env);
     }
 
     return NapiGetUndefined(env);
