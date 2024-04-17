@@ -12,12 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include "render/rs_motion_blur_filter.h"
-#include "src/core/SkOpts.h"
-#include "platform/common/rs_log.h"
-#include "platform/common/rs_system_properties.h"
+
 #include "common/rs_optional_trace.h"
 #include "draw/surface.h"
+#include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
+#include "src/core/SkOpts.h"
 
 namespace OHOS {
 namespace Rosen {
