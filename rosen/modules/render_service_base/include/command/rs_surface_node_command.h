@@ -161,7 +161,8 @@ ADD_COMMAND(RSSurfaceNodeSetForeground,
 ADD_COMMAND(RSSurfaceNodeSetForceUIFirst,
     ARG(SURFACE_NODE, SURFACE_NODE_SET_FORCE_UIFIRST, SurfaceNodeCommandHelper::SetForceUIFirst, NodeId, bool))
 ADD_COMMAND(RSSurfaceNodeSetAncoForceDoDirect,
-    ARG(SURFACE_NODE, SURFACE_NODE_SET_ANCO_FORCE_DO_DIRECT, SurfaceNodeCommandHelper::SetAncoForceDoDirect, NodeId, bool))
+    ARG(SURFACE_NODE, SURFACE_NODE_SET_ANCO_FORCE_DO_DIRECT, SurfaceNodeCommandHelper::SetAncoForceDoDirect,
+    NodeId, bool))
 } // namespace Rosen
 } // namespace OHOS
 #endif // ROSEN_RENDER_SERVICE_BASE_COMMAND_RS_SURFACE_NODE_COMMAND_H
