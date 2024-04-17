@@ -45,7 +45,6 @@ declare_args() {
   graphic_2d_feature_enable_recording_dcl = true
   graphic_2d_feature_use_igraphics_extend_hooks = false
   graphic_2d_feature_use_aps_igameservice_func = false
-  graphic_2d_feature_enable_rsparallel = false
   graphic_2d_feature_enable_rspipeline = false
 
   if (defined(is_arkui_x) && is_arkui_x) {
