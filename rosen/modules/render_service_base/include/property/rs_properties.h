@@ -34,10 +34,10 @@
 #include "render/rs_gradient_blur_para.h"
 #include "render/rs_image.h"
 #include "render/rs_mask.h"
+#include "render/rs_motion_blur_filter.h"
 #include "render/rs_path.h"
 #include "render/rs_shader.h"
 #include "render/rs_shadow.h"
-#include "render/rs_motion_blur_filter.h"
 
 #include "property/rs_filter_cache_manager.h"
 
