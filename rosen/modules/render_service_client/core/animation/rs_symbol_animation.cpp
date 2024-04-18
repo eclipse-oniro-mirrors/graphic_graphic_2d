@@ -53,7 +53,7 @@ bool ElementInMap(const std::string& curElement, const std::map<std::string, T>&
     return (element != curMap.end());
 }
 
-double CurveArgsInMap(const std::string& curElement, const std::map<std::string, double>& curMap)
+float CurveArgsInMap(const std::string& curElement, const std::map<std::string, double>& curMap)
 {
     if (curMap.empty()) {
         return 0.0;
@@ -62,8 +62,7 @@ double CurveArgsInMap(const std::string& curElement, const std::map<std::string,
     if (element == curMap.end()) {
         return 0.0;
     }
-    double value = element->second;
-    return value;
+    return static_cast<float>(element->second);
 }
 
 void CreateAnimationTimingCurve(const OHOS::Rosen::Drawing::DrawingCurveType type,
@@ -73,22 +72,21 @@ void CreateAnimationTimingCurve(const OHOS::Rosen::Drawing::DrawingCurveType typ
     if (type == OHOS::Rosen::Drawing::DrawingCurveType::LINEAR) {
         curve = RSAnimationTimingCurve::LINEAR;
     } else if (type == OHOS::Rosen::Drawing::DrawingCurveType::SPRING) {
-        double scaleVelocity = CurveArgsInMap("velocity", curveArgs);
-        double scaleMass = CurveArgsInMap("mass", curveArgs);
-        double scaleStiffness = CurveArgsInMap("stiffness", curveArgs);
-        double scaleDamping = CurveArgsInMap("damping", curveArgs);
-        curve = RSAnimationTimingCurve::CreateInterpolatingSpring(static_cast<float>(scaleMass),
-            static_cast<float>(scaleStiffness), static_cast<float>(scaleDamping), static_cast<float>(scaleVelocity));
+        float scaleVelocity = CurveArgsInMap("velocity", curveArgs);
+        float scaleMass = CurveArgsInMap("mass", curveArgs);
+        float scaleStiffness = CurveArgsInMap("stiffness", curveArgs);
+        float scaleDamping = CurveArgsInMap("damping", curveArgs);
+        curve = RSAnimationTimingCurve::CreateInterpolatingSpring(scaleMass, scaleStiffness, scaleDamping,
+                                                                  scaleVelocity);
     } else if (type == OHOS::Rosen::Drawing::DrawingCurveType::FRICTION ||
         type == OHOS::Rosen::Drawing::DrawingCurveType::SHARP) {
-        double ctrlX1 = CurveArgsInMap("ctrlX1", curveArgs);
-        double ctrlY1 = CurveArgsInMap("ctrlY1", curveArgs);
-        double ctrlX2 = CurveArgsInMap("ctrlX2", curveArgs);
-        double ctrlY2 = CurveArgsInMap("ctrlY2", curveArgs);
-        curve = RSAnimationTimingCurve::CreateCubicCurve(static_cast<float>(ctrlX1),
-            static_cast<float>(ctrlY1), static_cast<float>(ctrlX2), static_cast<float>(ctrlY2));
+        float ctrlX1 = CurveArgsInMap("ctrlX1", curveArgs);
+        float ctrlY1 = CurveArgsInMap("ctrlY1", curveArgs);
+        float ctrlX2 = CurveArgsInMap("ctrlX2", curveArgs);
+        float ctrlY2 = CurveArgsInMap("ctrlY2", curveArgs);
+        curve = RSAnimationTimingCurve::CreateCubicCurve(ctrlX1, ctrlY1, ctrlX2, ctrlY2);
     } else {
-         return;
+        return;
     }
 }
 } // namespace SymbolAnimation
@@ -167,7 +165,7 @@ bool RSSymbolAnimation::ChooseAnimation(const std::shared_ptr<RSNode>& rsNode,
     const std::shared_ptr<TextEngine::SymbolAnimationConfig>& symbolAnimationConfig)
 {
     if (std::count(publicSupportAnimations_.begin(),
-        publicSupportAnimations_.end(), symbolAnimationConfig->effectStrategy)) {
+        publicSupportAnimations_.end(), symbolAnimationConfig->effectStrategy) != 0) {
         SpliceAnimation(rsNode, parameters, symbolAnimationConfig->effectStrategy);
     }
 
@@ -506,7 +504,7 @@ bool RSSymbolAnimation::SetKeyframeAlphaAnimation(const std::shared_ptr<RSNode>&
 }
 
 bool RSSymbolAnimation::GetKeyframeAlphaAnimationParas(
-    const std::vector<Drawing::DrawingPiecewiseParameter>& oneGroupParas,
+    std::vector<Drawing::DrawingPiecewiseParameter>& oneGroupParas,
     uint32_t& totalDuration, std::vector<float>& timePercents)
 {
     if (oneGroupParas.empty()) {
@@ -516,7 +514,7 @@ bool RSSymbolAnimation::GetKeyframeAlphaAnimationParas(
     uint32_t interval = 0;
     // traverse all time stages
     for (unsigned long i = 0; i < oneGroupParas.size(); i++) {
-        if (i + 1 < oneGroupParas.size()){
+        if (i + 1 < oneGroupParas.size()) {
             interval = oneGroupParas[i + 1].delay -
                        (static_cast<int>(oneGroupParas[i].duration) + oneGroupParas[i].delay);
         } else {
@@ -524,16 +522,16 @@ bool RSSymbolAnimation::GetKeyframeAlphaAnimationParas(
         }
         totalDuration = oneGroupParas[i].duration + totalDuration + interval;
         if (!SymbolAnimation::ElementInMap(ALPHA_PROP, oneGroupParas[i].properties) ||
-            oneGroupParas[i].properties.at(ALPHA_PROP).size() != PROPERTIES) {
+            oneGroupParas[i].properties[ALPHA_PROP].size() != PROPERTIES) {
             return false;
         }
         // the value of the key frame needs
-        float alphaValueStart = oneGroupParas[i].properties.at(ALPHA_PROP)[PROP_START];
+        float alphaValueStart = oneGroupParas[i].properties[ALPHA_PROP][PROP_START];
         std::shared_ptr<RSAnimatableProperty<float>> alphaPropertyStart = nullptr;
         SymbolAnimation::CreateOrSetModifierValue(alphaPropertyStart, alphaValueStart);
         alphaPropertyStages_.push_back(alphaPropertyStart);
 
-        float alphaValueEnd = oneGroupParas[i].properties.at(ALPHA_PROP)[PROP_END];
+        float alphaValueEnd = oneGroupParas[i].properties[ALPHA_PROP][PROP_END];
         std::shared_ptr<RSAnimatableProperty<float>> alphaPropertyEnd = nullptr;
         SymbolAnimation::CreateOrSetModifierValue(alphaPropertyEnd, alphaValueEnd);
         alphaPropertyStages_.push_back(alphaPropertyEnd);

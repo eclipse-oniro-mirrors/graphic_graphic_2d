@@ -109,8 +109,7 @@ private:
     std::shared_ptr<RSAnimation> KeyframeAlphaSymbolAnimation(const std::shared_ptr<RSNode>& rsNode,
         const Drawing::DrawingPiecewiseParameter& oneStageParas,
         const uint32_t duration, const std::vector<float>& timePercents);
-    bool GetKeyframeAlphaAnimationParas(
-        const std::vector<Drawing::DrawingPiecewiseParameter>& oneGroupParas,
+    bool GetKeyframeAlphaAnimationParas(std::vector<Drawing::DrawingPiecewiseParameter>& oneGroupParas,
         uint32_t& totalDuration, std::vector<float>& timePercents);
 
     std::shared_ptr<RSNode> rsNode_ = nullptr;
