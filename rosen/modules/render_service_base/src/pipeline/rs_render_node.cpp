@@ -2107,61 +2107,62 @@ void RSRenderNode::UpdateDisplayList()
         return;
     }
 
+    int8_t index = 0;
     // Note: the loop range is [begin, end], both end is included.
-    auto AppendDrawFunc = [&](RSDrawableSlot begin, RSDrawableSlot end) -> int8_t {
-        auto beginIndex = static_cast<int8_t>(begin);
+    auto AppendDrawFunc = [&](RSDrawableSlot end) -> int8_t {
         auto endIndex = static_cast<int8_t>(end);
-        for (int8_t i = beginIndex; i <= endIndex; ++i) {
-            if (const auto& drawable = drawableVec_[i]) {
+        for (; index <= endIndex; ++index) {
+            if (const auto& drawable = drawableVec_[index]) {
                 stagingDrawCmdList_.emplace_back(drawable->CreateDrawFunc());
             }
         }
-        // If the last drawable exist, return its index, otherwise return -1
+        // If the end drawable exist, return its index, otherwise return -1
         return drawableVec_[endIndex] != nullptr ? stagingDrawCmdList_.size() - 1 : -1;
     };
 
     // Update index of SHADOW
-    stagingDrawCmdIndex_.shadowIndex_ = AppendDrawFunc(RSDrawableSlot::SAVE_ALL, RSDrawableSlot::SHADOW);
+    stagingDrawCmdIndex_.shadowIndex_ = AppendDrawFunc(RSDrawableSlot::SHADOW);
 
-    AppendDrawFunc(RSDrawableSlot::FOREGROUND_FILTER, RSDrawableSlot::OUTLINE);
+    AppendDrawFunc(RSDrawableSlot::OUTLINE);
     stagingDrawCmdIndex_.renderGroupBeginIndex_ = stagingDrawCmdList_.size();
 
     // Update index of BACKGROUND_COLOR
     stagingDrawCmdIndex_.backgroundColorIndex_ =
-        AppendDrawFunc(RSDrawableSlot::BG_SAVE_BOUNDS, RSDrawableSlot::BACKGROUND_COLOR);
+        AppendDrawFunc(RSDrawableSlot::BACKGROUND_COLOR);
 
     // Update index of BACKGROUND_FILTER
     stagingDrawCmdIndex_.backgroundFilterIndex_ =
-        AppendDrawFunc(RSDrawableSlot::BACKGROUND_SHADER, RSDrawableSlot::BACKGROUND_FILTER);
+        AppendDrawFunc(RSDrawableSlot::BACKGROUND_FILTER);
 
     // Update index of USE_EFFECT
-    stagingDrawCmdIndex_.useEffectIndex_ = AppendDrawFunc(RSDrawableSlot::USE_EFFECT, RSDrawableSlot::USE_EFFECT);
+    stagingDrawCmdIndex_.useEffectIndex_ = AppendDrawFunc(RSDrawableSlot::USE_EFFECT);
 
-    AppendDrawFunc(RSDrawableSlot::BACKGROUND_STYLE, RSDrawableSlot::BG_RESTORE_BOUNDS);
+    AppendDrawFunc(RSDrawableSlot::BG_RESTORE_BOUNDS);
 
     if (drawableVecStatus_ & FRAME_PROPERTY) {
         // Update index of CONTENT_STYLE
-        stagingDrawCmdIndex_.contentIndex_ = AppendDrawFunc(RSDrawableSlot::SAVE_FRAME, RSDrawableSlot::CONTENT_STYLE);
+        stagingDrawCmdIndex_.contentIndex_ = AppendDrawFunc(RSDrawableSlot::CONTENT_STYLE);
 
         // Update index of BACKGROUND_END
         stagingDrawCmdIndex_.backgroundEndIndex_ = stagingDrawCmdIndex_.contentIndex_ == -1 ?
             stagingDrawCmdList_.size() : stagingDrawCmdIndex_.contentIndex_;
 
         // Update index of CHILDREN
-        stagingDrawCmdIndex_.childrenIndex_ = AppendDrawFunc(RSDrawableSlot::CHILDREN, RSDrawableSlot::CHILDREN);
+        stagingDrawCmdIndex_.childrenIndex_ = AppendDrawFunc(RSDrawableSlot::CHILDREN);
         stagingDrawCmdIndex_.foregroundBeginIndex_ = stagingDrawCmdList_.size();
 
-        AppendDrawFunc(RSDrawableSlot::FOREGROUND_STYLE, RSDrawableSlot::RESTORE_FRAME);
+        AppendDrawFunc(RSDrawableSlot::RESTORE_FRAME);
     } else {
         // Nothing inside frame, skip useless slots and update indexes
         stagingDrawCmdIndex_.contentIndex_ = -1;
         stagingDrawCmdIndex_.childrenIndex_ = -1;
         stagingDrawCmdIndex_.backgroundEndIndex_ = stagingDrawCmdList_.size();
         stagingDrawCmdIndex_.foregroundBeginIndex_ = stagingDrawCmdList_.size();
+        index = static_cast<int8_t>(RSDrawableSlot::FG_SAVE_BOUNDS);
     }
     stagingDrawCmdIndex_.renderGroupEndIndex_ = stagingDrawCmdList_.size();
 
-    AppendDrawFunc(RSDrawableSlot::FG_SAVE_BOUNDS, RSDrawableSlot::RESTORE_ALL);
+    AppendDrawFunc(RSDrawableSlot::RESTORE_ALL);
     stagingDrawCmdIndex_.endIndex_ = stagingDrawCmdList_.size();
     stagingRenderParams_->SetContentEmpty(false);
 #endif
