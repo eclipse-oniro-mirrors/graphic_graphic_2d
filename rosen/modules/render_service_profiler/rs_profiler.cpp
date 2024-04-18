@@ -884,8 +884,7 @@ void RSProfiler::CalcPerfNodeAllStep()
         auto it = g_nodeSetPerf.begin();
         std::advance(it, g_nodeSetPerfCalcIndex - 1);
         g_calcPerfNode = *it;
-    }
-    else {
+    } else {
         g_nodeSetPerfCalcIndex = -1;
         return;
     }
