@@ -2345,7 +2345,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByFilterRect(
         }
         auto dstRect = hwcNodePtr->GetDstRect();
         bool isIntersect = dstRect.Intersect(filterRect);
-        if (isIntersect) {
+        if (isIntersect && !hwcNodePtr->GetAncoForceDoDirect()) {
             RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%llu disabled by filter rect",
                 hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId());
             hwcNodePtr->SetHardwareForcedDisabledState(true);
