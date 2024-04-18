@@ -184,6 +184,7 @@ skt::ParagraphStyle ParagraphBuilderImpl::TextStyleToSkStyle(const ParagraphStyl
     strutStyle.setForceStrutHeight(txt.forceStrutHeight);
     strutStyle.setStrutEnabled(txt.strutEnabled);
     strutStyle.setWordBreakType(static_cast<skt::WordBreakType>(txt.wordBreakType));
+    strutStyle.setLineBreakStrategy(static_cast<skt::LineBreakStrategy>(txt.breakStrategy));
     skStyle.setStrutStyle(strutStyle);
 
     skStyle.setTextAlign(static_cast<skt::TextAlign>(txt.textAlign));
