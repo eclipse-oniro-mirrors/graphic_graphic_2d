@@ -1447,6 +1447,14 @@ void RSMainThread::SetSurfaceCapProcFinished(bool flag)
     surfaceCapProcFinished_ = flag;
 }
 
+bool RSMainThread::IsRequestedNextVSync()
+{
+    if (receiver_ != nullptr) {
+        return receiver_->IsRequestedNextVSync();
+    }
+    return false;
+}
+
 void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
 {
     RS_TRACE_FUNC();
