@@ -832,23 +832,23 @@ int RSProfiler::PerfTreeFlatten(
     }
 
     int nodeCmdListCount = 0;
-
     for (auto& [type, modifiers] : node.renderContent_->drawCmdModifiers_) {
         if (type >= RSModifierType::ENV_FOREGROUND_COLOR) {
             continue;
         }
         for (auto& modifier : modifiers) {
-            auto propertyValue = std::static_pointer_cast<RSRenderProperty<Drawing::DrawCmdListPtr>>
-                (modifier->GetProperty())->Get();
-            if (propertyValue != nullptr && propertyValue->GetOpItemSize() > 0) {
+            auto propertyPtr =
+                modifier ? std::static_pointer_cast<RSRenderProperty<Drawing::DrawCmdListPtr>>(modifier->GetProperty())
+                         : nullptr;
+            auto propertyValue = propertyPtr ? propertyPtr->Get() : nullptr;
+            if (propertyValue && propertyValue->GetOpItemSize() > 0) {
                 nodeCmdListCount = 1;
             }
         }
     }
-    
+
     int drawCmdListCount = nodeCmdListCount;
     int valuableChildrenCount = 0;
-
     if (node.GetSortedChildren()) {
         for (auto& child : *node.GetSortedChildren()) {
             if (child) {
