@@ -29,6 +29,7 @@
 #include "animation/rs_render_interpolating_spring_animation.h"
 #include "animation/rs_render_keyframe_animation.h"
 #include "animation/rs_render_particle.h"
+#include "animation/rs_particle_noise_field.h"
 #include "animation/rs_render_particle_animation.h"
 #include "animation/rs_render_path_animation.h"
 #include "animation/rs_render_spring_animation.h"
@@ -50,6 +51,7 @@
 #include "render/rs_mask.h"
 #include "render/rs_material_filter.h"
 #include "render/rs_path.h"
+#include "render/rs_pixel_map_shader.h"
 #include "render/rs_shader.h"
 #include "transaction/rs_ashmem_helper.h"
 
@@ -98,10 +100,39 @@ MARSHALLING_AND_UNMARSHALLING(double, Double)
 #undef MARSHALLING_AND_UNMARSHALLING
 
 namespace {
-template<typename T, typename P>
-static inline sk_sp<T> sk_reinterpret_cast(sk_sp<P> ptr)
+bool MarshallingExtendObjectFromDrawCmdList(Parcel& parcel, const std::shared_ptr<Drawing::DrawCmdList>& val)
 {
-    return sk_sp<T>(static_cast<T*>(SkSafeRef(ptr.get())));
+    std::vector<std::shared_ptr<Drawing::ExtendObject>> objectVec;
+    uint32_t objectSize = val->GetAllExtendObject(objectVec);
+    if (!parcel.WriteUint32(objectSize)) {
+        return false;
+    }
+    if (objectSize == 0) {
+        return true;
+    }
+    for (const auto& object : objectVec) {
+        if (!object->Marshalling(parcel)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool UnmarshallingExtendObjectToDrawCmdList(Parcel& parcel, std::shared_ptr<Drawing::DrawCmdList>& val)
+{
+    uint32_t objectSize = parcel.ReadUint32();
+    if (objectSize == 0) {
+        return true;
+    }
+    std::vector<std::shared_ptr<Drawing::ExtendObject>> objectVec;
+    for (uint32_t i = 0; i < objectSize; i++) {
+        std::shared_ptr<RSPixelMapShader> object = std::make_shared<RSPixelMapShader>();
+        if (!object->Unmarshalling(parcel)) {
+            return false;
+        }
+        objectVec.emplace_back(object);
+    }
+    return val->SetupExtendObject(objectVec);
 }
 } // namespace
 
@@ -589,6 +620,47 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<EmitterU
     return success;
 }
 
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<ParticleNoiseField>& val)
+{
+    bool success = Marshalling(parcel, val->fieldStrength_);
+    success = success && Marshalling(parcel, val->fieldShape_);
+    success = success && Marshalling(parcel, val->fieldSize_.x_) && Marshalling(parcel, val->fieldSize_.y_);
+    success = success && Marshalling(parcel, val->fieldCenter_.x_) && Marshalling(parcel, val->fieldCenter_.y_);
+    success = success && Marshalling(parcel, val->fieldFeather_) &&  Marshalling(parcel, val->noiseScale_);
+    success = success && Marshalling(parcel, val->noiseFrequency_) &&  Marshalling(parcel, val->noiseAmplitude_);
+    return success;
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<ParticleNoiseField>& val)
+{
+    int fieldStrength = 0;
+    ShapeType fieldShape = ShapeType::RECT;
+    float fieldSizeX = 0.f;
+    float fieldSizeY = 0.f;
+    float fieldCenterX = 0.f;
+    float fieldCenterY = 0.f;
+    uint16_t fieldFeather = 0;
+    float noiseScale = 0.f;
+    float noiseFrequency = 0.f;
+    float noiseAmplitude = 0.f;
+
+    bool success = Unmarshalling(parcel, fieldStrength);
+    success = success && Unmarshalling(parcel, fieldShape);
+    success = success && Unmarshalling(parcel, fieldSizeX) && Unmarshalling(parcel, fieldSizeY);
+    Vector2f fieldSize(fieldSizeX, fieldSizeY);
+    success = success && Unmarshalling(parcel, fieldCenterX) && Unmarshalling(parcel, fieldCenterY);
+    Vector2f fieldCenter(fieldCenterX, fieldCenterY);
+    success = success && Unmarshalling(parcel, fieldFeather);
+    success = success && Unmarshalling(parcel, noiseScale);
+    success = success && Unmarshalling(parcel, noiseFrequency);
+    success = success && Unmarshalling(parcel, noiseAmplitude);
+    if (success) {
+        val = std::make_shared<ParticleNoiseField>(fieldStrength, fieldShape, fieldSize, fieldCenter, fieldFeather,
+            noiseScale, noiseFrequency, noiseAmplitude);
+    }
+    return success;
+}
+
 // MotionBlurPara
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<MotionBlurParam>& val)
 {
@@ -761,7 +833,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, RenderParticleParaType<f
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const RenderParticleColorParaType& val)
 {
     bool success = Marshalling(parcel, val.colorVal_.start_) && Marshalling(parcel, val.colorVal_.end_) &&
-                   Marshalling(parcel, val.updator_);
+                   Marshalling(parcel, val.distribution_) && Marshalling(parcel, val.updator_);
     if (val.updator_ == ParticleUpdator::RANDOM) {
         success = success && Marshalling(parcel, val.redRandom_.start_) && Marshalling(parcel, val.redRandom_.end_);
         success =
@@ -787,6 +859,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, RenderParticleColorParaT
 {
     Color colorValStart = RSColor(0, 0, 0);
     Color colorValEnd = RSColor(0, 0, 0);
+    DistributionType distribution = DistributionType::UNIFORM;
     ParticleUpdator updator = ParticleUpdator::NONE;
     float redRandomStart = 0.f;
     float redRandomEnd = 0.f;
@@ -798,7 +871,7 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, RenderParticleColorParaT
     float alphaRandomEnd = 0.f;
     std::vector<std::shared_ptr<ChangeInOverLife<Color>>> valChangeOverLife;
     bool success = Unmarshalling(parcel, colorValStart) && Unmarshalling(parcel, colorValEnd) &&
-                   Unmarshalling(parcel, updator);
+                   Unmarshalling(parcel, distribution) && Unmarshalling(parcel, updator);
     if (updator == ParticleUpdator::RANDOM) {
         success = success && Unmarshalling(parcel, redRandomStart) && Unmarshalling(parcel, redRandomEnd) &&
                   Unmarshalling(parcel, greenRandomStart) && Unmarshalling(parcel, greenRandomEnd) &&
@@ -828,8 +901,8 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, RenderParticleColorParaT
         Range<float> greenRandom(greenRandomStart, greenRandomEnd);
         Range<float> blueRandom(blueRandomStart, blueRandomEnd);
         Range<float> alphaRandom(alphaRandomStart, alphaRandomEnd);
-        val = RenderParticleColorParaType(
-            colorVal, updator, redRandom, greenRandom, blueRandom, alphaRandom, std::move(valChangeOverLife));
+        val = RenderParticleColorParaType(colorVal, distribution, updator, redRandom, greenRandom, blueRandom,
+            alphaRandom, std::move(valChangeOverLife));
     }
     return success;
 }
@@ -1242,6 +1315,12 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<Draw
             }
         }
     }
+
+    ret &= MarshallingExtendObjectFromDrawCmdList(parcel, val);
+    if (!ret) {
+        ROSEN_LOGE("unirender: failed RSMarshallingHelper::Marshalling Drawing::DrawCmdList ExtendObject");
+        return ret;
+    }
 #ifdef ROSEN_OHOS
     std::vector<sptr<SurfaceBuffer>> surfaceBufferVec;
     uint32_t surfaceBufferSize = val->GetAllSurfaceBuffer(surfaceBufferVec);
@@ -1380,6 +1459,11 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Drawing:
         val->SetupBaseObj(ObjectBaseVec);
     }
 
+    ret &= UnmarshallingExtendObjectToDrawCmdList(parcel, val);
+    if (!ret) {
+        ROSEN_LOGE("unirender: failed RSMarshallingHelper::Marshalling Drawing::DrawCmdList ExtendObject");
+        return ret;
+    }
 #ifdef ROSEN_OHOS
     uint32_t surfaceBufferSize = parcel.ReadUint32();
     if (surfaceBufferSize > 0) {
@@ -1664,6 +1748,7 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSLinearGradientBlurPara>)          \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<MotionBlurParam>)                   \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<EmitterUpdater>)                    \
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<ParticleNoiseField>)                    \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<std::shared_ptr<ParticleRenderParams>>) \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<ParticleRenderParams>)              \
     EXPLICIT_INSTANTIATION(TEMPLATE, RSRenderParticleVector)                             \
