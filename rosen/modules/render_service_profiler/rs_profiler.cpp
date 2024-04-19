@@ -331,6 +331,7 @@ void RSProfiler::OnFrameEnd()
         return;
     }
 
+    constexpr NodeId renderEntireFrame = 1;
     std::sort(std::begin(g_calcPerfNodeTime), std::end(g_calcPerfNodeTime));
     constexpr int middle = CALC_PERF_NODE_TIME_COUNT / 2;
     Respond("CALC_PERF_NODE_RESULT: " + std::to_string(g_calcPerfNode) + " " +
@@ -338,7 +339,7 @@ void RSProfiler::OnFrameEnd()
             std::to_string(g_calcPerfNodeTime[middle]));
     Network::SendRSTreeSingleNodePerf(g_calcPerfNode, g_calcPerfNodeTime[middle]);
 
-    if (g_calcPerfNode != 1) {
+    if (g_calcPerfNode != renderEntireFrame) {
         auto parent = GetRenderNode(g_calcPerfNodeParent);
         auto child = parent ? GetRenderNode(g_calcPerfNode) : nullptr;
         if (child) {
@@ -799,18 +800,23 @@ void RSProfiler::GetPerfTree(const ArgList& args)
 
     g_nodeSetPerf.clear();
     g_mapNode2Count.clear();
+    g_mapNode2ComplementTime.clear();
 
     auto& rootNode = g_renderServiceContext->GetGlobalRootRenderNode();
-    if (rootNode == nullptr) {
+    auto rootNodeChildren = rootNode ? rootNode->GetSortedChildren() : nullptr;
+    if (!rootNodeChildren) {
         Respond("ERROR");
         return;
     }
 
-    for (const auto& child : *rootNode->GetSortedChildren()) {
+    for (const auto& child : *rootNodeChildren) {
         auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(child);
-        if (displayNode) {
-            const auto& nodes = displayNode->GetCurAllSurfaces();
-            for (auto& node : nodes) {
+        if (!displayNode) {
+            continue;
+        }
+        const auto& nodes = displayNode->GetCurAllSurfaces();
+        for(auto& node : nodes) {
+            if (node) {
                 PerfTreeFlatten(*node, g_nodeSetPerf, g_mapNode2Count);
             }
         }
@@ -820,9 +826,12 @@ void RSProfiler::GetPerfTree(const ArgList& args)
     auto& nodeMap = g_renderServiceContext->GetMutableNodeMap();
     for (auto it = g_nodeSetPerf.begin(); it != g_nodeSetPerf.end(); it++) {
         auto node = nodeMap.GetRenderNode(*it);
+        if (!node) {
+            continue;
+        }
         std::string sNodeType;
         node->DumpNodeType(sNodeType);
-        outString += (it != g_nodeSetPerf.begin() ? ", " : "") + std::to_string(*it) + ":" +
+        outString += (it != g_nodeSetPerf.begin() ? ", " : "") + std::to_string(*it) + ":" + 
             std::to_string(g_mapNode2Count[*it]) + " [" + sNodeType + "]";
     }
 
@@ -834,19 +843,16 @@ void RSProfiler::CalcPerfNode(const ArgList& args)
 {
     g_calcPerfNode = args.Uint64();
     auto node = GetRenderNode(g_calcPerfNode);
-    if (!node) {
+    const auto parent = node ? node->GetParent().lock() : nullptr;
+    auto parentChildren = parent ? parent->GetChildren() : nullptr;
+    if (!parentChildren) {
         return;
     }
 
-    const auto parent = node->GetParent().lock();
-    if (!parent) {
-        return;
-    }
-
-    g_calcPerfNodeParent = parent->GetId();
     int index = 0;
-    for (const auto& child : *parent->GetChildren()) {
-        if (child->GetId() == node->GetId()) {
+    g_calcPerfNodeParent = parent->GetId();
+    for (const auto& child : *parentChildren) {
+        if (child && child->GetId() == node->GetId()) {
             g_calcPerfNodeIndex = index;
         }
     }
@@ -866,7 +872,6 @@ void RSProfiler::CalcPerfNodeAll(const ArgList& args)
 
     g_nodeSetPerfCalcIndex = 0;
     CalcPerfNodeAllStep();
-
     AwakeRenderServiceThread();
 }
 
@@ -890,21 +895,17 @@ void RSProfiler::CalcPerfNodeAllStep()
     }
 
     auto node = GetRenderNode(g_calcPerfNode);
-    if (!node) {
+    const auto parent = node ? node->GetParent().lock() : nullptr;
+    auto parentChildren = parent ? parent->GetChildren() : nullptr;
+    if (!parentChildren) {
         g_nodeSetPerfCalcIndex = -1;
         return;
     }
 
-    const auto parent = node->GetParent().lock();
-    if (!parent) {
-        g_nodeSetPerfCalcIndex = -1;
-        return;
-    }
-
-    g_calcPerfNodeParent = parent->GetId();
     int index = 0;
-    for (const auto& child : *parent->GetChildren()) {
-        if (child->GetId() == node->GetId()) {
+    g_calcPerfNodeParent = parent->GetId();
+    for (const auto& child : *parentChildren) {
+        if (child && child->GetId() == node->GetId()) {
             g_calcPerfNodeIndex = index;
         }
     }
