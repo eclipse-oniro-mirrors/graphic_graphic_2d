@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+enable_glfw_window = false
 use_mingw_win = "${current_os}_${current_cpu}" == "mingw_x86_64"
 ace_root = "//foundation/arkui/ace_engine"
 graphic_2d_root = "//foundation/graphic/graphic_2d"
