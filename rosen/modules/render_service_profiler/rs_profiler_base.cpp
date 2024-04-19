@@ -536,10 +536,6 @@ static void MarshalRenderModifier(const RSRenderModifier& modifier, std::strings
     const int32_t dataSize = parcel.GetDataSize();
     data.write(reinterpret_cast<const char*>(&dataSize), sizeof(dataSize));
     data.write(reinterpret_cast<const char*>(parcel.GetData()), dataSize);
-
-    const int32_t objectCount = parcel.GetOffsetsSize();
-    data.write(reinterpret_cast<const char*>(&objectCount), sizeof(objectCount));
-    data.write(reinterpret_cast<char*>(parcel.GetObjectOffsets()), objectCount * sizeof(binder_size_t));
 }
 
 void RSProfiler::MarshalNode(const RSRenderNode& node, std::stringstream& data)
@@ -683,17 +679,10 @@ static RSRenderModifier* UnmarshalRenderModifier(std::stringstream& data)
     buffer.resize(bufferSize);
     data.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
 
-    uint32_t objectCount = 0;
-    data.read(reinterpret_cast<char*>(&objectCount), sizeof(objectCount));
-
-    binder_size_t objectOffsets[objectCount];
-    data.read(reinterpret_cast<char*>(objectOffsets), sizeof(objectOffsets));
-
     uint8_t parcelMemory[sizeof(Parcel) + 1];
     auto* parcel = new (parcelMemory + 1) Parcel;
     parcel->SetMaxCapacity(GetParcelMaxCapacity());
     parcel->WriteBuffer(buffer.data(), buffer.size());
-    parcel->InjectOffsets(reinterpret_cast<binder_size_t>(objectOffsets), objectCount);
 
     return RSRenderModifier::Unmarshalling(*parcel);
 }
