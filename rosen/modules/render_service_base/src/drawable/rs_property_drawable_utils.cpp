@@ -234,7 +234,6 @@ void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas,
     }
 #endif
 
-    auto clipIBounds = canvas->GetDeviceClipBounds();
     auto imageClipIBounds = clipIBounds;
     if (needSnapshotOutset) {
         imageClipIBounds.MakeOutset(-1, -1);
