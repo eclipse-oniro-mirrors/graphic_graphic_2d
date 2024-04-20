@@ -424,6 +424,7 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, float)                                              \
     EXPLICIT_INSTANTIATION(TEMPLATE, int)                                                \
     EXPLICIT_INSTANTIATION(TEMPLATE, Color)                                              \
+    EXPLICIT_INSTANTIATION(TEMPLATE, RSDynamicBrightnessPara)                            \
     EXPLICIT_INSTANTIATION(TEMPLATE, Gravity)                                            \
     EXPLICIT_INSTANTIATION(TEMPLATE, ForegroundColorStrategyType)                        \
     EXPLICIT_INSTANTIATION(TEMPLATE, Matrix3f)                                           \

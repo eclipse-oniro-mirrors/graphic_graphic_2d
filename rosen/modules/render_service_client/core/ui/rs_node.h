@@ -277,6 +277,10 @@ public:
     void SetDynamicLightUpRate(const float rate);
     void SetDynamicLightUpDegree(const float lightUpDegree);
     void SetDynamicDimDegree(const float dimDegree);
+    void SetFgBrightnessParams(const RSDynamicBrightnessPara& params);
+    void SetFgBrightnessFract(const float& fract);
+    void SetBgBrightnessParams(const RSDynamicBrightnessPara& params);
+    void SetBgBrightnessFract(const float& fract);
     void SetGreyCoef(const Vector2f greyCoef);
     void SetCompositingFilter(const std::shared_ptr<RSFilter>& compositingFilter);
 

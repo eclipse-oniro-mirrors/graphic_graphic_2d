@@ -1279,6 +1279,30 @@ void RSNode::SetDynamicLightUpDegree(const float lightUpDegree)
         RSAnimatableProperty<float>>(RSModifierType::DYNAMIC_LIGHT_UP_DEGREE, lightUpDegree);
 }
 
+void RSNode::SetFgBrightnessParams(const RSDynamicBrightnessPara& params)
+{
+    SetProperty<RSFgBrightnessParamsModifier,
+        RSProperty<RSDynamicBrightnessPara>>(RSModifierType::FG_BRIGHTNESS_PARAMS, params);
+}
+
+void RSNode::SetFgBrightnessFract(const float& fract)
+{
+    SetProperty<RSFgBrightnessFractModifier,
+        RSAnimatableProperty<float>>(RSModifierType::FG_BRIGHTNESS_FRACTION, fract);
+}
+
+void RSNode::SetBgBrightnessParams(const RSDynamicBrightnessPara& params)
+{
+    SetProperty<RSBgBrightnessParamsModifier,
+        RSProperty<RSDynamicBrightnessPara>>(RSModifierType::BG_BRIGHTNESS_PARAMS, params);
+}
+
+void RSNode::SetBgBrightnessFract(const float& fract)
+{
+    SetProperty<RSBgBrightnessFractModifier,
+        RSAnimatableProperty<float>>(RSModifierType::BG_BRIGHTNESS_FRACTION, fract);
+}
+
 void RSNode::SetDynamicDimDegree(const float dimDegree)
 {
     SetProperty<RSDynamicDimDegreeModifier,
