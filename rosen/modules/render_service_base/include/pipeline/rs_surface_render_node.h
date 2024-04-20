@@ -337,6 +337,8 @@ public:
     void MarkUIHidden(bool isHidden);
     bool IsUIHidden() const;
 
+    bool IsLeashWindowSurfaceNodeVisible();
+
     const std::string& GetName() const
     {
         return name_;
