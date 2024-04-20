@@ -242,7 +242,6 @@ HWTEST_F(RSBlurFilterTest, SetGreyCoefTest, TestSize.Level1)
  */
 HWTEST_F(RSBlurFilterTest, CanSkipFrameTest, TestSize.Level1)
 {
-    // for test
     float blurRadiusX = 27.0f;
     float blurRadiusY = 26.0f;
     auto blurFilter = std::make_shared<RSBlurFilter>(blurRadiusX, blurRadiusY);
