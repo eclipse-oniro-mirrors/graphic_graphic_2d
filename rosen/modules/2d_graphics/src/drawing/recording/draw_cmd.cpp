@@ -1058,18 +1058,6 @@ void DrawTextBlobOpItem::Playback(Canvas* canvas, const Rect* rect)
         LOGD("DrawTextBlobOpItem textBlob is null");
         return;
     }
-    Drawing::RectI globalClipBounds = canvas->GetDeviceClipBounds();
-    if ((globalClipBounds.GetWidth() == 1 || globalClipBounds.GetHeight() == 1) && !callFromCacheFunc_) {
-        // if the ClipBound's width == 1, the textblob will draw outside of the clip,
-        // this is a workround for this case
-        if (!cacheImage_) {
-            cacheImage_ = GenerateCachedOpItem(canvas);
-        }
-        if (cacheImage_) {
-            cacheImage_->Playback(canvas, rect);
-        }
-        return;
-    }
     if (canvas->isHighContrastEnabled()) {
         LOGD("DrawTextBlobOpItem::Playback highContrastEnabled, %{public}s, %{public}d", __FUNCTION__, __LINE__);
         ColorQuad colorQuad = paint_.GetColor().CastToColorQuad();
@@ -1266,9 +1254,7 @@ std::shared_ptr<DrawImageRectOpItem> DrawTextBlobOpItem::GenerateCachedOpItem(Ca
         offscreenCanvas->Translate(-bounds->GetLeft(), -bounds->GetTop());
     }
 
-    callFromCacheFunc_ = true;
     Playback(offscreenCanvas, nullptr);
-    callFromCacheFunc_ = false;
 
     std::shared_ptr<Image> image = offscreenSurface->GetImageSnapshot();
     Drawing::Rect src(0, 0, image->GetWidth(), image->GetHeight());

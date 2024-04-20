@@ -807,8 +807,6 @@ private:
     scalar x_;
     scalar y_;
     std::shared_ptr<TextBlob> textBlob_;
-    std::shared_ptr<DrawImageRectOpItem> cacheImage_;
-    bool callFromCacheFunc_ = false;
 };
 
 class DrawSymbolOpItem : public DrawWithPaintOpItem {
