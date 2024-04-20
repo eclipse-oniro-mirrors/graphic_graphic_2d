@@ -170,6 +170,18 @@ DECLARE_NOANIMATABLE_MODIFIER(ColorBlendMode, int, COLOR_BLEND_MODE, Background)
 
 DECLARE_NOANIMATABLE_MODIFIER(ColorBlendApplyType, int, COLOR_BLEND_APPLY_TYPE, Background)
 
+DECLARE_NOANIMATABLE_MODIFIER(FgBrightnessParams, RSDynamicBrightnessPara, FG_BRIGHTNESS_PARAMS,
+    Foreground)
+
+DECLARE_ANIMATABLE_MODIFIER(FgBrightnessFract, float, FG_BRIGHTNESS_FRACTION, Replace,
+    Foreground, COARSE)
+
+DECLARE_NOANIMATABLE_MODIFIER(BgBrightnessParams, RSDynamicBrightnessPara, BG_BRIGHTNESS_PARAMS,
+    Background)
+
+DECLARE_ANIMATABLE_MODIFIER(BgBrightnessFract, float, BG_BRIGHTNESS_FRACTION, Replace,
+    Background, COARSE)
+
 DECLARE_ANIMATABLE_MODIFIER(DynamicLightUpRate, float, DYNAMIC_LIGHT_UP_RATE, Replace, Foreground, COARSE)
 
 DECLARE_ANIMATABLE_MODIFIER(DynamicLightUpDegree, float, DYNAMIC_LIGHT_UP_DEGREE, Replace, Foreground, COARSE)

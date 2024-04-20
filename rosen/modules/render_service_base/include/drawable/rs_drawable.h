@@ -47,6 +47,7 @@ enum class RSDrawableSlot : int8_t {
     BG_SAVE_BOUNDS,
     CLIP_TO_BOUNDS,
     BLEND_MODE,
+    CONTENT_BLENDER,
     BACKGROUND_COLOR,
     BACKGROUND_SHADER,
     BACKGROUND_IMAGE,
@@ -86,6 +87,7 @@ enum class RSDrawableSlot : int8_t {
 
     // Restore state
     RESTORE_BLEND_MODE,
+    RESTORE_BLENDER,
     RESTORE_FOREGROUND_FILTER,
     RESTORE_ALL,
 

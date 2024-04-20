@@ -92,6 +92,10 @@ constexpr static std::array<ResetPropertyFunc, static_cast<int>(RSModifierType::
     [](RSProperties* prop) { prop->SetLinearGradientBlurPara({}); },     // LINEAR_GRADIENT_BLUR_PARA
     [](RSProperties* prop) { prop->SetDynamicLightUpRate({}); },         // DYNAMIC_LIGHT_UP_RATE
     [](RSProperties* prop) { prop->SetDynamicLightUpDegree({}); },       // DYNAMIC_LIGHT_UP_DEGREE
+    [](RSProperties* prop) { prop->SetFgBrightnessParams({}); },         // FG_BRIGHTNESS_PARAMS
+    [](RSProperties* prop) { prop->SetFgBrightnessFract(1.0); },         // FG_BRIGHTNESS_FRACTION
+    [](RSProperties* prop) { prop->SetBgBrightnessParams({}); },         // BG_BRIGHTNESS_PARAMS
+    [](RSProperties* prop) { prop->SetBgBrightnessFract(1.0); },         // BG_BRIGHTNESS_FRACTION
     [](RSProperties* prop) { prop->SetFrameGravity(Gravity::DEFAULT); }, // FRAME_GRAVITY
     [](RSProperties* prop) { prop->SetClipRRect({}); },                  // CLIP_RRECT
     [](RSProperties* prop) { prop->SetClipBounds({}); },                 // CLIP_BOUNDS
@@ -1206,6 +1210,78 @@ void RSProperties::SetDynamicLightUpDegree(const std::optional<float>& lightUpDe
     filterNeedUpdate_ = true;
     SetDirty();
     contentDirty_ = true;
+}
+
+void RSProperties::SetFgBrightnessParams(const std::optional<RSDynamicBrightnessPara>& params)
+{
+    fgBrightnessParams_ = params;
+    if (params.has_value()) {
+        isDrawn_ = true;
+    }
+    filterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+std::optional<RSDynamicBrightnessPara> RSProperties::GetFgBrightnessParams() const
+{
+    return fgBrightnessParams_;
+}
+
+void RSProperties::SetFgBrightnessFract(float fraction)
+{
+    fgBrightnessFract_ = fraction;
+    isDrawn_ = true;
+    filterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+float RSProperties::GetFgBrightnessFract() const
+{
+    return fgBrightnessFract_;
+}
+
+void RSProperties::SetBgBrightnessParams(const std::optional<RSDynamicBrightnessPara>& params)
+{
+    bgBrightnessParams_ = params;
+    if (params.has_value()) {
+        isDrawn_ = true;
+    }
+    filterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+std::optional<RSDynamicBrightnessPara> RSProperties::GetBgBrightnessParams() const
+{
+    return bgBrightnessParams_;
+}
+
+void RSProperties::SetBgBrightnessFract(float fraction)
+{
+    bgBrightnessFract_ = fraction;
+    isDrawn_ = true;
+    filterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+float RSProperties::GetBgBrightnessFract() const
+{
+    return bgBrightnessFract_;
+}
+
+bool RSProperties::IsFgBrightnessValid() const
+{
+    return fgBrightnessParams_.has_value() && ROSEN_GE(fgBrightnessFract_, 0.0) &&
+        ROSEN_LE(fgBrightnessFract_, 1.0);
+}
+
+bool RSProperties::IsBgBrightnessValid() const
+{
+    return bgBrightnessParams_.has_value() && ROSEN_GE(bgBrightnessFract_, 0.0) &&
+        ROSEN_LE(bgBrightnessFract_, 1.0);
 }
 
 void RSProperties::SetGreyCoef(const std::optional<Vector2f>& greyCoef)
@@ -3252,7 +3328,9 @@ void RSProperties::OnApplyModifiers()
         needFilter_ = backgroundFilter_ != nullptr || filter_ != nullptr || useEffect_ || IsLightUpEffectValid() ||
                       IsDynamicLightUpValid() || greyCoef_.has_value() || linearGradientBlurPara_ != nullptr ||
                       IsDynamicDimValid() || GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE ||
-                      foregroundFilter_ != nullptr || motionBlurPara_ != nullptr;
+                      foregroundFilter_ != nullptr || motionBlurPara_ != nullptr || IsFgBrightnessValid() ||
+                      IsBgBrightnessValid();
+
         ApplyGreyCoef();
     }
     GenerateRRect();

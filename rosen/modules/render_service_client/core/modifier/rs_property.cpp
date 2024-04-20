@@ -229,6 +229,12 @@ void RSProperty<std::shared_ptr<RSPath>>::UpdateToRender(
     UPDATE_TO_RENDER(RSUpdatePropertyPath, value, type);
 }
 template<>
+void RSProperty<RSDynamicBrightnessPara>::UpdateToRender(
+    const RSDynamicBrightnessPara& value, PropertyUpdateType type) const
+{
+    UPDATE_TO_RENDER(RSUpdatePropertyDynamicBrightness, value, type);
+}
+template<>
 void RSProperty<std::shared_ptr<RSLinearGradientBlurPara>>::UpdateToRender(
     const std::shared_ptr<RSLinearGradientBlurPara>& value, PropertyUpdateType type) const
 {

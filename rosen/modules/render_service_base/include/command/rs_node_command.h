@@ -40,6 +40,7 @@ enum RSNodeCommandType : uint16_t {
     UPDATE_MODIFIER_IMAGE_PTR,
     UPDATE_MODIFIER_MASK_PTR,
     UPDATE_MODIFIER_PATH_PTR,
+    UPDATE_MODIFIER_DYNAMIC_BRIGHTNESS,
     UPDATE_MODIFIER_GRADIENT_BLUR_PTR,
     UPDATE_MODIFIER_MOTION_BLUR_PTR,
     UPDATE_MODIFIER_EMITTER_UPDATER_PTR,
@@ -172,6 +173,10 @@ ADD_COMMAND(RSUpdatePropertyMask,
 ADD_COMMAND(RSUpdatePropertyPath,
     ARG(RS_NODE, UPDATE_MODIFIER_PATH_PTR, RSNodeCommandHelper::UpdateModifier<std::shared_ptr<RSPath>>,
         NodeId, std::shared_ptr<RSPath>, PropertyId, PropertyUpdateType))
+ADD_COMMAND(RSUpdatePropertyDynamicBrightness,
+    ARG(RS_NODE, UPDATE_MODIFIER_DYNAMIC_BRIGHTNESS,
+        RSNodeCommandHelper::UpdateModifier<RSDynamicBrightnessPara>,
+        NodeId, RSDynamicBrightnessPara, PropertyId, PropertyUpdateType))
 ADD_COMMAND(RSUpdatePropertyLinearGradientBlurPara,
     ARG(RS_NODE, UPDATE_MODIFIER_GRADIENT_BLUR_PTR,
         RSNodeCommandHelper::UpdateModifier<std::shared_ptr<RSLinearGradientBlurPara>>,

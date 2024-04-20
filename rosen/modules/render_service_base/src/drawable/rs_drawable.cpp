@@ -70,6 +70,10 @@ static constexpr std::array<RSDrawableSlot, DIRTY_LUT_SIZE> g_propertyToDrawable
     RSDrawableSlot::COMPOSITING_FILTER,            // LINEAR_GRADIENT_BLUR_PARA
     RSDrawableSlot::DYNAMIC_LIGHT_UP,              // DYNAMIC_LIGHT_UP_RATE
     RSDrawableSlot::DYNAMIC_LIGHT_UP,              // DYNAMIC_LIGHT_UP_DEGREE
+    RSDrawableSlot::CONTENT_BLENDER,               // FG_BRIGHTNESS_PARAMS
+    RSDrawableSlot::CONTENT_BLENDER,               // FG_BRIGHTNESS_FRACTION
+    RSDrawableSlot::BACKGROUND_COLOR,              // BG_BRIGHTNESS_PARAMS
+    RSDrawableSlot::BACKGROUND_COLOR,              // BG_BRIGHTNESS_FRACTION
     RSDrawableSlot::FRAME_OFFSET,                  // FRAME_GRAVITY
     RSDrawableSlot::CLIP_TO_BOUNDS,                // CLIP_RRECT
     RSDrawableSlot::CLIP_TO_BOUNDS,                // CLIP_BOUNDS
@@ -190,6 +194,7 @@ static const std::array<RSDrawable::Generator, GEN_LUT_SIZE> g_drawableGenerator
     nullptr,                                             // BG_SAVE_BOUNDS,
     nullptr,                                             // CLIP_TO_BOUNDS,
     RSBeginBlendModeDrawable::OnGenerate,                // BLEND_MODE,
+    RSBeginBlenderDrawable::OnGenerate,                  // CONTENT_BLENDER,
     RSBackgroundColorDrawable::OnGenerate,               // BACKGROUND_COLOR,
     RSBackgroundShaderDrawable::OnGenerate,              // BACKGROUND_SHADER,
     RSBackgroundImageDrawable::OnGenerate,               // BACKGROUND_IMAGE,
@@ -229,6 +234,7 @@ static const std::array<RSDrawable::Generator, GEN_LUT_SIZE> g_drawableGenerator
 
     // Restore state
     RSEndBlendModeDrawable::OnGenerate,             // RESTORE_BLEND_MODE,
+    RSEndBlenderDrawable::OnGenerate,               // RESTORE_BLENDER,
     RSForegroundFilterRestoreDrawable::OnGenerate,  // RESTORE_FOREGROUND_FILTER
     nullptr,                                        // RESTORE_ALL,
 };
@@ -297,6 +303,7 @@ static uint8_t CalculateDrawableVecStatus(RSRenderNode& node, const RSDrawable::
     if (drawableVec[static_cast<size_t>(RSDrawableSlot::ENV_FOREGROUND_COLOR)] ||
         drawableVec[static_cast<size_t>(RSDrawableSlot::ENV_FOREGROUND_COLOR_STRATEGY)] ||
         drawableVec[static_cast<size_t>(RSDrawableSlot::BLEND_MODE)] ||
+        drawableVec[static_cast<size_t>(RSDrawableSlot::CONTENT_BLENDER)] ||
         (node.GetType() == RSRenderNodeType::EFFECT_NODE &&
             drawableVec[static_cast<size_t>(RSDrawableSlot::BACKGROUND_FILTER)])) {
         result |= DrawableVecStatus::ENV_CHANGED;
@@ -477,6 +484,10 @@ std::unordered_set<RSDrawableSlot> RSDrawable::CalculateDirtySlots(
         if (drawableVec[static_cast<size_t>(RSDrawableSlot::FOREGROUND_FILTER)]) {
             dirtySlots.emplace(RSDrawableSlot::FOREGROUND_FILTER);
         }
+    }
+
+    if (dirtySlots.count(RSDrawableSlot::CONTENT_BLENDER)) {
+        dirtySlots.emplace(RSDrawableSlot::RESTORE_BLENDER);
     }
 
     if (dirtySlots.count(RSDrawableSlot::FOREGROUND_FILTER)) {

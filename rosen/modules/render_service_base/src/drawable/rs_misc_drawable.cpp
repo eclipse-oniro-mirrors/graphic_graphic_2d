@@ -341,6 +341,79 @@ Drawing::RecordingCanvas::DrawFunc RSEndBlendModeDrawable::CreateDrawFunc() cons
     };
 }
 
+RSDrawable::Ptr RSBeginBlenderDrawable::OnGenerate(const RSRenderNode& node)
+{
+    const RSProperties& properties = node.GetRenderProperties();
+    if (!properties.IsFgBrightnessValid()) {
+        return nullptr;
+    }
+    auto blender = RSPropertyDrawableUtils::MakeDynamicBrightnessBlender(
+        properties.GetFgBrightnessParams().value(), properties.GetFgBrightnessFract());
+
+    return std::make_shared<RSBeginBlenderDrawable>(blender);
+}
+
+bool RSBeginBlenderDrawable::OnUpdate(const RSRenderNode& node)
+{
+    const RSProperties& properties = node.GetRenderProperties();
+    if (!properties.IsFgBrightnessValid()) {
+        return false;
+    }
+
+    auto blender = RSPropertyDrawableUtils::MakeDynamicBrightnessBlender(
+        properties.GetFgBrightnessParams().value(), properties.GetFgBrightnessFract());
+    stagingBlender_ = blender;
+    needSync_ = true;
+
+    return true;
+}
+
+void RSBeginBlenderDrawable::OnSync()
+{
+    if (needSync_ == false) {
+        return;
+    }
+    blender_ = stagingBlender_;
+    needSync_ = false;
+}
+
+Drawing::RecordingCanvas::DrawFunc RSBeginBlenderDrawable::CreateDrawFunc() const
+{
+    auto ptr = std::static_pointer_cast<const RSBeginBlenderDrawable>(shared_from_this());
+    return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
+        auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
+        RSPropertyDrawableUtils::BeginBlender(*paintFilterCanvas, ptr->blender_);
+    };
+}
+
+RSDrawable::Ptr RSEndBlenderDrawable::OnGenerate(const RSRenderNode& node)
+{
+    const RSProperties& properties = node.GetRenderProperties();
+    if (!properties.IsFgBrightnessValid()) {
+        return nullptr;
+    }
+
+    return std::make_shared<RSEndBlenderDrawable>();
+};
+
+bool RSEndBlenderDrawable::OnUpdate(const RSRenderNode& node)
+{
+    const RSProperties& properties = node.GetRenderProperties();
+    if (!properties.IsFgBrightnessValid()) {
+        return false;
+    }
+
+    return true;
+}
+
+Drawing::RecordingCanvas::DrawFunc RSEndBlenderDrawable::CreateDrawFunc() const
+{
+    return [](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
+        auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
+        RSPropertyDrawableUtils::EndBlender(*paintFilterCanvas);
+    };
+}
+
 // ============================================================================
 // EnvFGColor
 RSDrawable::Ptr RSEnvFGColorDrawable::OnGenerate(const RSRenderNode& node)

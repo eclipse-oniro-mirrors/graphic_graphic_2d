@@ -175,6 +175,11 @@ public:
     void SetBlendMode(std::optional<int> blendMode);
     bool HasOffscreenLayer() const;
 
+    // blender related
+    void SetBlender(std::optional<std::shared_ptr<Drawing::Blender>> blender);
+    std::optional<std::shared_ptr<Drawing::Blender>> GetBlender() const;
+    void RestoreBlender();
+
     // save/restore utils
     struct SaveStatus {
         int canvasSaveCount = -1;
@@ -306,6 +311,10 @@ private:
     // save every dirty region of the current surface for quick reject
     std::stack<Drawing::Region> dirtyRegionStack_;
     
+    // blendmode related
+    std::stack<std::optional<int>> blendModeStack_;
+    std::optional<std::shared_ptr<Drawing::Blender>> blenderSave_ = std::nullopt;
+    std::optional<std::shared_ptr<Drawing::Blender>> blender_ = std::nullopt;
     // greater than 0 indicates canvas currently is drawing on a new layer created offscreen blendmode
     // std::stack<bool> blendOffscreenStack_;
 

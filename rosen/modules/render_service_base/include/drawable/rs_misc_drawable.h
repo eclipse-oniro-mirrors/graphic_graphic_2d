@@ -214,6 +214,35 @@ private:
     int blendApplyType_;
     int stagingBlendApplyType_;
 };
+
+// Blender
+class RSBeginBlenderDrawable : public RSDrawable {
+public:
+    RSBeginBlenderDrawable(std::shared_ptr<Drawing::Blender> blender) : blender_(blender) {}
+    ~RSBeginBlenderDrawable() override = default;
+
+    static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
+    bool OnUpdate(const RSRenderNode& node) override;
+    void OnSync() override;
+    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+
+private:
+    bool needSync_ = false;
+    std::shared_ptr<Drawing::Blender> blender_;
+
+    std::shared_ptr<Drawing::Blender> stagingBlender_;
+};
+
+class RSEndBlenderDrawable : public RSDrawable {
+public:
+    RSEndBlenderDrawable() = default;
+    ~RSEndBlenderDrawable() override = default;
+
+    static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
+    bool OnUpdate(const RSRenderNode& node) override;
+    void OnSync() override {};
+    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+};
 } // namespace DrawableV2
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_DRAWABLE_RS_MISC_DRAWABLE_H

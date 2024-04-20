@@ -977,6 +977,11 @@ CoreCanvas& RSPaintFilterCanvas::AttachPen(const Pen& pen)
         p.SetBlendMode(static_cast<Drawing::BlendMode>(*blendMode));
     }
 
+    // use blender_ to set blender
+    if (blender_) {
+        p.SetBlender(blender_.value());
+    }
+
 #ifdef ENABLE_RECORDING_DCL
     for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
         if ((*iter) != nullptr) {
@@ -1009,6 +1014,12 @@ CoreCanvas& RSPaintFilterCanvas::AttachBrush(const Brush& brush)
     if (auto& blendMode = envStack_.top().blendMode_) {
         b.SetBlendMode(static_cast<Drawing::BlendMode>(*blendMode));
     }
+
+    // use blender_ to set blender
+    if (blender_) {
+        b.SetBlender(blender_.value());
+    }
+
 #ifdef ENABLE_RECORDING_DCL
     for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
         if ((*iter) != nullptr) {
@@ -1040,6 +1051,11 @@ CoreCanvas& RSPaintFilterCanvas::AttachPaint(const Drawing::Paint& paint)
     // use blendModeStack_.top() to set blend mode
     if (auto& blendMode = envStack_.top().blendMode_) {
         p.SetBlendMode(static_cast<Drawing::BlendMode>(*blendMode));
+    }
+
+    // use blender_ to set blender
+    if (blender_) {
+        p.SetBlender(blender_.value());
     }
 
 #ifdef ENABLE_RECORDING_DCL
@@ -1130,6 +1146,23 @@ void RSPaintFilterCanvas::RestoreAlphaToCount(int count)
 void RSPaintFilterCanvas::SetBlendMode(std::optional<int> blendMode)
 {
     envStack_.top().blendMode_ = blendMode;
+}
+
+void RSPaintFilterCanvas::SetBlender(std::optional<std::shared_ptr<Drawing::Blender>> blender)
+{
+    blenderSave_ = blender_;
+    blender_ = blender;
+}
+
+std::optional<std::shared_ptr<Drawing::Blender>> RSPaintFilterCanvas::GetBlender() const
+{
+    return blender_;
+}
+
+void RSPaintFilterCanvas::RestoreBlender()
+{
+    blender_ = blenderSave_;
+    blenderSave_ = std::nullopt;
 }
 
 int RSPaintFilterCanvas::SaveEnv()

@@ -702,6 +702,9 @@ template<>
 RSC_EXPORT void RSProperty<std::shared_ptr<RSPath>>::UpdateToRender(
     const std::shared_ptr<RSPath>& value, PropertyUpdateType type) const;
 template<>
+RSC_EXPORT void RSProperty<RSDynamicBrightnessPara>::UpdateToRender(
+    const RSDynamicBrightnessPara& value, PropertyUpdateType type) const;
+template<>
 RSC_EXPORT void RSProperty<std::shared_ptr<RSLinearGradientBlurPara>>::UpdateToRender(
     const std::shared_ptr<RSLinearGradientBlurPara>& value, PropertyUpdateType type) const;
 template<>
