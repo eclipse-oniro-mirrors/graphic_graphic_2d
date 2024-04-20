@@ -6185,6 +6185,9 @@ void RSUniRenderVisitor::ProcessUnpairedSharedTransitionNode()
         if (auto parent = sptr->GetParent().lock()) {
             parent->ApplyModifiers();
         }
+        auto& node = *sptr;
+        node.GetStagingRenderParams()->SetAlpha(node.GetRenderProperties().GetAlpha());
+        node.UpdateRenderParams();
     };
     for (auto& [id, wptr] : SharedTransitionParam::unpairedShareTransitions_) {
         auto sharedTransitionParam = wptr.lock();

@@ -49,6 +49,7 @@
 namespace OHOS {
 namespace Rosen {
 namespace DrawableV2 {
+class RSChildrenDrawable;
 class RSRenderNodeDrawableAdapter;
 class RSRenderNodeShadowDrawable;
 }
@@ -608,7 +609,7 @@ public:
     void SetOccludedStatus(bool occluded);
     const RectI GetFilterCachedRegion() const;
     bool IsEffectNodeNeedTakeSnapShot() const;
-
+    void SetChildrenHasSharedTransition(bool hasSharedTransition);
 protected:
     virtual void OnApplyModifiers() {}
 
