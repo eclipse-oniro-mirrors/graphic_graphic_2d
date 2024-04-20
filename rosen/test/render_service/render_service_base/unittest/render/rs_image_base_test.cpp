@@ -39,7 +39,7 @@ void RSImageBaseTest::TearDown() {}
  * @tc.name: DrawImageTest
  * @tc.desc: Verify function DrawImage
  * @tc.type:FUNC
- * @tc.require:SR20240111372440
+ * @tc.require: issueI9I9D1
  */
 HWTEST_F(RSImageBaseTest, DrawImageTest, TestSize.Level1)
 {
@@ -57,7 +57,7 @@ HWTEST_F(RSImageBaseTest, DrawImageTest, TestSize.Level1)
  * @tc.name: SetImageTest
  * @tc.desc: Verify function SetImage
  * @tc.type:FUNC
- * @tc.require:SR20240111372440
+ * @tc.require: issueI9I9D1
  */
 HWTEST_F(RSImageBaseTest, SetImageTest, TestSize.Level1)
 {
@@ -71,7 +71,7 @@ HWTEST_F(RSImageBaseTest, SetImageTest, TestSize.Level1)
  * @tc.name: SetPixelMapTest
  * @tc.desc: Verify function SetPixelMap
  * @tc.type:FUNC
- * @tc.require:SR20240111372440
+ * @tc.require: issueI9I9D1
  */
 HWTEST_F(RSImageBaseTest, SetPixelMapTest, TestSize.Level1)
 {
@@ -85,7 +85,7 @@ HWTEST_F(RSImageBaseTest, SetPixelMapTest, TestSize.Level1)
  * @tc.name: DumpPictureTest
  * @tc.desc: Verify function DumpPicture
  * @tc.type:FUNC
- * @tc.require:SR20240111372440
+ * @tc.require: issueI9I9D1
  */
 HWTEST_F(RSImageBaseTest, DumpPictureTest, TestSize.Level1)
 {
@@ -102,7 +102,7 @@ HWTEST_F(RSImageBaseTest, DumpPictureTest, TestSize.Level1)
  * @tc.name: SetSrcRectTest
  * @tc.desc: Verify function SetSrcRect
  * @tc.type:FUNC
- * @tc.require:SR20240111372440
+ * @tc.require: issueI9I9D1
  */
 HWTEST_F(RSImageBaseTest, SetSrcRectTest, TestSize.Level1)
 {
@@ -117,7 +117,7 @@ HWTEST_F(RSImageBaseTest, SetSrcRectTest, TestSize.Level1)
  * @tc.name: SetDstRectTest
  * @tc.desc: Verify function SetDstRect
  * @tc.type:FUNC
- * @tc.require:SR20240111372440
+ * @tc.require: issueI9I9D1
  */
 HWTEST_F(RSImageBaseTest, SetDstRectTest, TestSize.Level1)
 {
@@ -132,7 +132,7 @@ HWTEST_F(RSImageBaseTest, SetDstRectTest, TestSize.Level1)
  * @tc.name: SetImagePixelAddrTest
  * @tc.desc: Verify function SetImagePixelAddr
  * @tc.type:FUNC
- * @tc.require:SR20240111372440
+ * @tc.require: issueI9I9D1
  */
 HWTEST_F(RSImageBaseTest, SetImagePixelAddrTest, TestSize.Level1)
 {
@@ -146,7 +146,7 @@ HWTEST_F(RSImageBaseTest, SetImagePixelAddrTest, TestSize.Level1)
  * @tc.name: UpdateNodeIdToPictureTest
  * @tc.desc: Verify function UpdateNodeIdToPicture
  * @tc.type:FUNC
- * @tc.require:SR20240111372440
+ * @tc.require: issueI9I9D1
  */
 HWTEST_F(RSImageBaseTest, UpdateNodeIdToPictureTest, TestSize.Level1)
 {
@@ -164,7 +164,7 @@ HWTEST_F(RSImageBaseTest, UpdateNodeIdToPictureTest, TestSize.Level1)
  * @tc.name: MarkRenderServiceImageTest
  * @tc.desc: Verify function MarkRenderServiceImage
  * @tc.type:FUNC
- * @tc.require:SR20240111372440
+ * @tc.require: issueI9I9D1
  */
 HWTEST_F(RSImageBaseTest, MarkRenderServiceImageTest, TestSize.Level1)
 {
@@ -177,7 +177,7 @@ HWTEST_F(RSImageBaseTest, MarkRenderServiceImageTest, TestSize.Level1)
  * @tc.name: ConvertPixelMapToDrawingImageTest
  * @tc.desc: Verify function ConvertPixelMapToDrawingImage
  * @tc.type:FUNC
- * @tc.require:SR20240111372440
+ * @tc.require: issueI9I9D1
  */
 HWTEST_F(RSImageBaseTest, ConvertPixelMapToDrawingImageTest, TestSize.Level1)
 {
@@ -192,7 +192,7 @@ HWTEST_F(RSImageBaseTest, ConvertPixelMapToDrawingImageTest, TestSize.Level1)
  * @tc.name: GenUniqueIdTest
  * @tc.desc: Verify function GenUniqueId
  * @tc.type:FUNC
- * @tc.require:SR20240111372440
+ * @tc.require: issueI9I9D1
  */
 HWTEST_F(RSImageBaseTest, GenUniqueIdTest, TestSize.Level1)
 {
@@ -205,7 +205,7 @@ HWTEST_F(RSImageBaseTest, GenUniqueIdTest, TestSize.Level1)
  * @tc.name: GetPixelMapTest
  * @tc.desc: Verify function GetPixelMap
  * @tc.type:FUNC
- * @tc.require:SR20240111372440
+ * @tc.require: issueI9I9D1
  */
 HWTEST_F(RSImageBaseTest, GetPixelMapTest, TestSize.Level1)
 {
