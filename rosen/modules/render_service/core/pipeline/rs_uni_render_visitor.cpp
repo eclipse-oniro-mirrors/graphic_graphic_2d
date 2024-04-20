@@ -4019,9 +4019,9 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
     }
     RS_LOGD("RSUniRenderVisitor::ProcessDisplayRenderNode end");
 #ifdef RS_ENABLE_VK
-        if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN) {
-            renderEngine_->GetRenderContext()->GetDrGPUContext()->StoreVkPipelineCacheData();
-        }
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN) {
+        renderEngine_->GetRenderContext()->GetDrGPUContext()->StoreVkPipelineCacheData();
+    }
 #endif
 }
 
