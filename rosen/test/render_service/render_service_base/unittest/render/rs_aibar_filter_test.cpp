@@ -37,6 +37,7 @@ void RSAIBarFilterTest::TearDown() {}
  * @tc.name: DrawImageRectTest
  * @tc.desc: Verify function DrawImageRect
  * @tc.type:FUNC
+ * @tc.require: issueI9I98H
  */
 HWTEST_F(RSAIBarFilterTest, DrawImageRectTest, TestSize.Level1)
 {
