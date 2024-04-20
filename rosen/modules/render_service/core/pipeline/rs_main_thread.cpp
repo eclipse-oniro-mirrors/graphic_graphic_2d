@@ -1757,14 +1757,14 @@ void RSMainThread::CheckSystemSceneStatus()
         std::chrono::duration_cast<std::chrono::nanoseconds>(
             std::chrono::steady_clock::now().time_since_epoch()).count());
     while (!systemAnimatedScenesList_.empty()) {
-        if (curTime - systemAnimatedScenesList_.front().second > MAX_SYSTEM_SCENE_STATUS_TIME) {
+        if (curTime - static_cast<uint64_t>(systemAnimatedScenesList_.front().second) > MAX_SYSTEM_SCENE_STATUS_TIME) {
             systemAnimatedScenesList_.pop_front();
         } else {
             break;
         }
     }
     while (!threeFingerScenesList_.empty()) {
-        if (curTime - threeFingerScenesList_.front().second > MAX_SYSTEM_SCENE_STATUS_TIME) {
+        if (curTime - static_cast<uint64_t>(threeFingerScenesList_.front().second) > MAX_SYSTEM_SCENE_STATUS_TIME) {
             threeFingerScenesList_.pop_front();
         } else {
             break;

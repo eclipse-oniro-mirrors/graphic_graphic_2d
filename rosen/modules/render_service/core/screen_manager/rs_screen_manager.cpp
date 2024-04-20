@@ -552,7 +552,6 @@ void RSScreenManager::ProcessScreenConnectedLocked(std::shared_ptr<HdiOutput> &o
 void RSScreenManager::ProcessScreenDisConnectedLocked(std::shared_ptr<HdiOutput> &output)
 {
     ScreenId id = ToScreenId(output->GetScreenId());
-
     if (screens_.count(id) == 0) {
         RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
     } else {
