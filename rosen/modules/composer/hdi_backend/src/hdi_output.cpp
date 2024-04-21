@@ -682,10 +682,9 @@ void HdiOutput::ReleaseLayers(sptr<SyncFence>& releaseFence)
 
 std::map<LayerInfoPtr, sptr<SyncFence>> HdiOutput::GetLayersReleaseFence()
 {
-    std::map<LayerInfoPtr, sptr<SyncFence>> res;
-    std::unique_lock<std::mutex> lock(layerMutex_);
     if (skipState_ != GRAPHIC_DISPLAY_SUCCESS) {
         if (device_ == nullptr) {
+            HLOGE("GetLayersReleaseFence failed, device is nullptr");
             return {};
         }
         int32_t ret = device_->GetScreenReleaseFence(screenId_, layersId_, fences_);
@@ -695,6 +694,8 @@ std::map<LayerInfoPtr, sptr<SyncFence>> HdiOutput::GetLayersReleaseFence()
             return {};
         }
     }
+    std::map<LayerInfoPtr, sptr<SyncFence>> res;
+    std::unique_lock<std::mutex> lock(layerMutex_);
     size_t layerNum = layersId_.size();
     for (size_t i = 0; i < layerNum; i++) {
         auto iter = layerIdMap_.find(layersId_[i]);
