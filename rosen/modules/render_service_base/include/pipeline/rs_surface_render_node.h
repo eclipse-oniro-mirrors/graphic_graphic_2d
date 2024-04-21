@@ -426,17 +426,21 @@ public:
 
     void SetSecurityLayer(bool isSecurityLayer);
     void SetSkipLayer(bool isSkipLayer);
+    void SetProtectedLayer(bool isProtectedLayer);
 
     // get whether it is a security/skip layer itself
     bool GetSecurityLayer() const;
     bool GetSkipLayer() const;
+    bool GetProtectedLayer() const;
 
     // get whether it and it's subtree contain security layer
     bool GetHasSecurityLayer() const;
     bool GetHasSkipLayer() const;
+    bool GetHasProtectedLayer() const;
 
     void SyncSecurityInfoToFirstLevelNode();
     void SyncSkipInfoToFirstLevelNode();
+    void SyncProtectedInfoToFirstLevelNode();
 
     void SetFingerprint(bool hasFingerprint);
     bool GetFingerprint() const;
@@ -1088,8 +1092,10 @@ private:
 
     bool isSecurityLayer_ = false;
     bool isSkipLayer_ = false;
+    bool isProtectedLayer_ = false;
     std::set<NodeId> skipLayerIds_= {};
     std::set<NodeId> securityLayerIds_= {};
+    std::set<NodeId> protectedLayerIds_= {};
 
     bool hasFingerprint_ = false;
     RectI srcRect_;
