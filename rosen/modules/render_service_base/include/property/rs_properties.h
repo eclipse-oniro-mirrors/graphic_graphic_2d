@@ -383,6 +383,9 @@ public:
         return pixelStretchPercent_;
     }
 
+    void SetPixelStretchTileMode(int stretchTileMode);
+    int GetPixelStretchTileMode() const;
+
     void SetAiInvert(const std::optional<Vector4f>& aiInvert);
     const std::optional<Vector4f>& GetAiInvert() const;
     void SetSystemBarEffect(bool systemBarEffect);
@@ -585,6 +588,8 @@ private:
 
     std::optional<Vector4f> pixelStretch_;
     std::optional<Vector4f> pixelStretchPercent_;
+    int pixelStretchTileMode_ = 0;
+
     std::optional<Vector4f> aiInvert_;
     std::optional<RRect> clipRRect_;
 
