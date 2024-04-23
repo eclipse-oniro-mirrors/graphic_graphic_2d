@@ -53,7 +53,7 @@ using SymbolAnimationConfig = struct SymbolAnimationConfig {
     uint16_t animationMode = 0;
     int repeatCount = 1;
     bool animationStart = true;
-    Drawing::DrawingCommonSubType commonSubType = Drawing::DrawingCommonSubType::UP;
+    Drawing::DrawingCommonSubType commonSubType = Drawing::DrawingCommonSubType::DOWN;
 };
 }
 }

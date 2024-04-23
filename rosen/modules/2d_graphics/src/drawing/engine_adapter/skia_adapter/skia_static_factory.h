@@ -79,7 +79,7 @@ public:
     static DrawingSymbolLayersGroups GetSymbolLayersGroups(uint32_t glyphId);
     static std::vector<std::vector<DrawingPiecewiseParameter>> GetGroupParameters(
         DrawingAnimationType type, uint16_t groupSum, uint16_t animationMode = 0,
-        DrawingCommonSubType commonSubType = DrawingCommonSubType::UP);
+        DrawingCommonSubType commonSubType = DrawingCommonSubType::DOWN);
     static FontStyleSet* CreateEmpty();
 };
 } // namespace Drawing
