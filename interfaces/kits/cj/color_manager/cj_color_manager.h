@@ -16,15 +16,19 @@
 #ifndef OHOS_CJ_COLOR_MANAGER_H
 #define OHOS_CJ_COLOR_MANAGER_H
 
+#include "cj_color_mgr_utils.h"
 #include "color_space.h"
 #include "ffi_remote_data.h"
-#include "cj_color_mgr_utils.h"
 
 namespace OHOS {
 namespace ColorManager {
 class CjColorManager : public OHOS::FFI::FFIData {
 public:
     explicit CjColorManager(std::shared_ptr<ColorSpace> ptr);
+    virtual ~CjColorManager()
+    {
+        colorSpaceToken_ = nullptr;
+    }
     static std::tuple<int32_t, std::string, std::shared_ptr<ColorSpace>> create(ApiColorSpaceType colorSpaceName);
     static std::shared_ptr<ColorSpace> create(ColorSpacePrimaries primaries, float gamma, int32_t* errCode);
     inline const std::shared_ptr<ColorSpace>& GetColorSpaceToken() const

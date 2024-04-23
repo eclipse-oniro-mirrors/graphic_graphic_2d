@@ -17,10 +17,10 @@
 #define OHOS_CJ_COLOR_MGR_UTILS_H
 
 #include <cstdint>
+#include <hilog/log.h>
 #include <memory>
 #include <map>
 #include <string>
-#include <hilog/log.h>
 #include "color_space.h"
 
 #define FFI_EXPORT __attribute__((visibility("default")))
@@ -43,6 +43,7 @@ enum class ApiColorSpaceType : uint32_t {
     DCI_P3 = 2,
     DISPLAY_P3 = 3,
     SRGB = 4,
+    CUSTOM = 5,
     BT709 = 6,
     BT601_EBU = 7,
     BT601_SMPTE_C = 8,
@@ -62,14 +63,13 @@ enum class ApiColorSpaceType : uint32_t {
     P3_PQ_LIMIT = 22,
     LINEAR_P3 = 23,
     LINEAR_SRGB = 24,
-    LINEAR_BT709 = LINEAR_SRGB,
     LINEAR_BT2020 = 25,
+    TYPE_END = 26,
+    LINEAR_BT709 = LINEAR_SRGB,
     DISPLAY_SRGB = SRGB,
     DISPLAY_P3_SRGB = DISPLAY_P3,
     DISPLAY_P3_HLG = P3_HLG,
-    DISPLAY_P3_PQ = P3_PQ,
-    CUSTOM = 5,
-    TYPE_END = 26
+    DISPLAY_P3_PQ = P3_PQ
 };
 
 const std::map<ColorSpaceName, ApiColorSpaceType> NATIVE_TO_CJ_COLOR_SPACE_TYPE_MAP {

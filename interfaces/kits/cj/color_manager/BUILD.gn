@@ -14,7 +14,14 @@
 import("//build/ohos.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
+config("ffi_color_manager_native_config") {
+  include_dirs = [ "./" ]
+  cflags_cc = [ "-std=c++17" ]
+}
+
 ohos_shared_library("cj_color_manager_ffi") {
+  public_configs = [ ":ffi_color_manager_native_config" ]
+
   sanitize = {
     cfi = true
     cfi_cross_dso = true

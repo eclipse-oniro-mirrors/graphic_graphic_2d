@@ -13,10 +13,12 @@
  * limitations under the License.
  */
 
+#include "cj_common_ffi.h"
+
 extern "C" {
-int FFiOHOSColorMgrCreateByColorSpace = 0;
-int FFiOHOSColorMgrCreate = 0;
-int FFiOHOSColorMgrGetColorSpaceName = 0;
-int FFiOHOSColorMgrGetWhitePoint = 0;
-int FFiOHOSColorMgrGetGamma = 0;
+FFI_EXPORT int CJ_ColorMgrCreateByColorSpace = 0;
+FFI_EXPORT int CJ_ColorMgrCreate = 0;
+FFI_EXPORT int CJ_ColorMgrGetColorSpaceName = 0;
+FFI_EXPORT int CJ_ColorMgrGetWhitePoint = 0;
+FFI_EXPORT int CJ_ColorMgrGetGamma = 0;
 }

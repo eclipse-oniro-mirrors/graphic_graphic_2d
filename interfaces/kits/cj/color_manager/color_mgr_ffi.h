@@ -16,9 +16,9 @@
 #ifndef CJ_COLOR_MGR_FFI_H
 #define CJ_COLOR_MGR_FFI_H
 
+#include "cj_color_mgr_utils.h"
 #include "cj_common_ffi.h"
 #include "color_space.h"
-#include "cj_color_mgr_utils.h"
 
 extern "C" {
     FFI_EXPORT RetDataCString CJ_ColorMgrCreateByColorSpace(uint32_t colorSpaceName, int64_t* id);
