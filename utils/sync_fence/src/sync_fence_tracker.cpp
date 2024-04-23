@@ -23,8 +23,8 @@
 #include "file_ex.h"
 
 #ifdef FENCE_SCHED_ENABLE
-#include "res_type.h"
 #include "res_sched_client.h"
+#include "res_type.h"
 #endif
 
 namespace OHOS {
