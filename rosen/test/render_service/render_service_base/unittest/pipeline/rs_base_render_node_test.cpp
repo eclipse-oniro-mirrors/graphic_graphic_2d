@@ -16,6 +16,7 @@
 #include "gtest/gtest.h"
 
 #include "pipeline/rs_base_render_node.h"
+#include "pipeline/rs_render_thread_visitor.h"
 #include "platform/common/rs_log.h"
 using namespace testing;
 using namespace testing::ext;
@@ -900,7 +901,7 @@ HWTEST_F(RSBaseRenderNodeTest, GetNodeGroupType, TestSize.Level1)
  * @tc.name: IsPureContainerTest
  * @tc.desc: test results of IsPureContainer
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, IsPureContainer, TestSize.Level1)
 {
@@ -912,7 +913,7 @@ HWTEST_F(RSBaseRenderNodeTest, IsPureContainer, TestSize.Level1)
  * @tc.name: IsContentNodeTest
  * @tc.desc: test results of IsContentNode
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, IsContentNodeTest, TestSize.Level1)
 {
@@ -924,7 +925,7 @@ HWTEST_F(RSBaseRenderNodeTest, IsContentNodeTest, TestSize.Level1)
  * @tc.name: SetContainBootAnimation
  * @tc.desc: test results of SetContainBootAnimation
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, SetContainBootAnimation, TestSize.Level1)
 {
@@ -938,7 +939,7 @@ HWTEST_F(RSBaseRenderNodeTest, SetContainBootAnimation, TestSize.Level1)
  * @tc.name: UpdateChildrenRect
  * @tc.desc: test results of UpdateChildrenRect
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, UpdateChildrenRect, TestSize.Level1)
 {
@@ -961,7 +962,7 @@ HWTEST_F(RSBaseRenderNodeTest, UpdateChildrenRect, TestSize.Level1)
  * @tc.name: SetParent
  * @tc.desc: test results of SetParent
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, SetParent, TestSize.Level1)
 {
@@ -975,7 +976,7 @@ HWTEST_F(RSBaseRenderNodeTest, SetParent, TestSize.Level1)
  * @tc.name: ResetParent
  * @tc.desc: test results of ResetParent
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, ResetParent, TestSize.Level1)
 {
@@ -988,7 +989,7 @@ HWTEST_F(RSBaseRenderNodeTest, ResetParent, TestSize.Level1)
  * @tc.name: SubSurfaceNodeNeedDraw
  * @tc.desc: test results of SubSurfaceNodeNeedDraw
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, SubSurfaceNodeNeedDraw, TestSize.Level1)
 {
@@ -1003,7 +1004,7 @@ HWTEST_F(RSBaseRenderNodeTest, SubSurfaceNodeNeedDraw, TestSize.Level1)
  * @tc.name: AddSubSurfaceNode
  * @tc.desc: test results of AddSubSurfaceNode
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, AddSubSurfaceNode, TestSize.Level1)
 {
@@ -1017,7 +1018,7 @@ HWTEST_F(RSBaseRenderNodeTest, AddSubSurfaceNode, TestSize.Level1)
  * @tc.name: RemoveSubSurfaceNode
  * @tc.desc: test results of RemoveSubSurfaceNode
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, RemoveSubSurfaceNode, TestSize.Level1)
 {
@@ -1031,7 +1032,7 @@ HWTEST_F(RSBaseRenderNodeTest, RemoveSubSurfaceNode, TestSize.Level1)
  * @tc.name: DumpTree
  * @tc.desc: test results of DumpTree
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, DumpTree, TestSize.Level1)
 {
@@ -1046,13 +1047,13 @@ HWTEST_F(RSBaseRenderNodeTest, DumpTree, TestSize.Level1)
  * @tc.name: DumpNodeType
  * @tc.desc: test results of DumpNodeType
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, DumpNodeType, TestSize.Level1)
 {
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
     std::string out = "string";
-    node->DumpNodeType(out);
+    node->DumpNodeType(RSRenderNodeType::RS_NODE, out);
     ASSERT_TRUE(true);
 }
 
@@ -1060,7 +1061,7 @@ HWTEST_F(RSBaseRenderNodeTest, DumpNodeType, TestSize.Level1)
  * @tc.name: DumpSubClassNode
  * @tc.desc: test results of DumpSubClassNode
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, DumpSubClassNode, TestSize.Level1)
 {
@@ -1074,7 +1075,7 @@ HWTEST_F(RSBaseRenderNodeTest, DumpSubClassNode, TestSize.Level1)
  * @tc.name: DumpDrawCmdModifiers
  * @tc.desc: test results of DumpDrawCmdModifiers
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, DumpDrawCmdModifiers, TestSize.Level1)
 {
@@ -1098,7 +1099,7 @@ HWTEST_F(RSBaseRenderNodeTest, DumpDrawCmdModifiers, TestSize.Level1)
  * @tc.name: DumpDrawCmdModifier
  * @tc.desc: test results of DumpDrawCmdModifier
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, DumpDrawCmdModifier, TestSize.Level1)
 {
@@ -1128,7 +1129,7 @@ HWTEST_F(RSBaseRenderNodeTest, DumpDrawCmdModifier, TestSize.Level1)
  * @tc.name: SetContentDirty
  * @tc.desc: test results of SetContentDirty
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, SetContentDirty, TestSize.Level1)
 {
@@ -1141,7 +1142,7 @@ HWTEST_F(RSBaseRenderNodeTest, SetContentDirty, TestSize.Level1)
  * @tc.name: SetDirty
  * @tc.desc: test results of SetDirty
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, SetDirty, TestSize.Level1)
 {
@@ -1158,7 +1159,7 @@ HWTEST_F(RSBaseRenderNodeTest, SetDirty, TestSize.Level1)
  * @tc.name: CollectSurface
  * @tc.desc: test results of CollectSurface
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, CollectSurface, TestSize.Level1)
 {
@@ -1176,7 +1177,7 @@ HWTEST_F(RSBaseRenderNodeTest, CollectSurface, TestSize.Level1)
  * @tc.name: CollectSurfaceForUIFirstSwitch
  * @tc.desc: test results of CollectSurfaceForUIFirstSwitch
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, CollectSurfaceForUIFirstSwitch, TestSize.Level1)
 {
@@ -1191,7 +1192,7 @@ HWTEST_F(RSBaseRenderNodeTest, CollectSurfaceForUIFirstSwitch, TestSize.Level1)
  * @tc.name: Prepare
  * @tc.desc: test results of Prepare
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, Prepare, TestSize.Level1)
 {
@@ -1208,7 +1209,7 @@ HWTEST_F(RSBaseRenderNodeTest, Prepare, TestSize.Level1)
  * @tc.name: Process
  * @tc.desc: test results of Process
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, Process, TestSize.Level1)
 {
@@ -1222,15 +1223,12 @@ HWTEST_F(RSBaseRenderNodeTest, Process, TestSize.Level1)
  * @tc.name: SendCommandFromRT
  * @tc.desc: test results of SendCommandFromRT
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, SendCommandFromRT, TestSize.Level1)
 {
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
-    uint64_t timeoutNS = 1;
-    std::shared_ptr<RSRenderPropertyBase> property = std::make_shared<RSRenderPropertyBase>();
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSNodeGetShowingPropertyAndCancelAnimation>(id, property, timeoutNS);
+    std::unique_ptr<RSCommand> command;
     NodeId nodeId = 0;
     node->SendCommandFromRT(command, nodeId);
     ASSERT_TRUE(true);
@@ -1240,7 +1238,7 @@ HWTEST_F(RSBaseRenderNodeTest, SendCommandFromRT, TestSize.Level1)
  * @tc.name: InternalRemoveSelfFromDisappearingChildren
  * @tc.desc: test results of InternalRemoveSelfFromDisappearingChildren
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, InternalRemoveSelfFromDisappearingChildren, TestSize.Level1)
 {
@@ -1259,7 +1257,7 @@ HWTEST_F(RSBaseRenderNodeTest, InternalRemoveSelfFromDisappearingChildren, TestS
  * @tc.name: FallbackAnimationsToRoot
  * @tc.desc: test results of FallbackAnimationsToRoot
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, FallbackAnimationsToRoot, TestSize.Level1)
 {
@@ -1272,7 +1270,7 @@ HWTEST_F(RSBaseRenderNodeTest, FallbackAnimationsToRoot, TestSize.Level1)
  * @tc.name: ActivateDisplaySync
  * @tc.desc: test results of ActivateDisplaySync
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, ActivateDisplaySync, TestSize.Level1)
 {
@@ -1286,7 +1284,7 @@ HWTEST_F(RSBaseRenderNodeTest, ActivateDisplaySync, TestSize.Level1)
  * @tc.name: UpdateDisplaySyncRange
  * @tc.desc: test results of UpdateDisplaySyncRange
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, UpdateDisplaySyncRange, TestSize.Level1)
 {
@@ -1302,7 +1300,7 @@ HWTEST_F(RSBaseRenderNodeTest, UpdateDisplaySyncRange, TestSize.Level1)
  * @tc.name: Animate
  * @tc.desc: test results of Animate
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, Animate, TestSize.Level1)
 {
@@ -1321,7 +1319,7 @@ HWTEST_F(RSBaseRenderNodeTest, Animate, TestSize.Level1)
  * @tc.name: Update
  * @tc.desc: test results of Update
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, Update, TestSize.Level1)
 {
@@ -1341,7 +1339,7 @@ HWTEST_F(RSBaseRenderNodeTest, Update, TestSize.Level1)
  * @tc.name: UpdateBufferDirtyRegion
  * @tc.desc: test results of UpdateBufferDirtyRegion
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, UpdateBufferDirtyRegion, TestSize.Level1)
 {
@@ -1356,7 +1354,7 @@ HWTEST_F(RSBaseRenderNodeTest, UpdateBufferDirtyRegion, TestSize.Level1)
  * @tc.name: UpdateDirtyRegion
  * @tc.desc: test results of UpdateDirtyRegion
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, UpdateDirtyRegion, TestSize.Level1)
 {
@@ -1376,7 +1374,7 @@ HWTEST_F(RSBaseRenderNodeTest, UpdateDirtyRegion, TestSize.Level1)
  * @tc.name: IsSelfDrawingNode
  * @tc.desc: test results of IsSelfDrawingNode
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, IsSelfDrawingNode, TestSize.Level1)
 {
@@ -1388,7 +1386,7 @@ HWTEST_F(RSBaseRenderNodeTest, IsSelfDrawingNode, TestSize.Level1)
  * @tc.name: IsDirty
  * @tc.desc: test results of IsDirty
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, IsDirty, TestSize.Level1)
 {
@@ -1400,7 +1398,7 @@ HWTEST_F(RSBaseRenderNodeTest, IsDirty, TestSize.Level1)
  * @tc.name: IsContentDirty
  * @tc.desc: test results of IsContentDirty
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, IsContentDirty, TestSize.Level1)
 {
@@ -1412,7 +1410,7 @@ HWTEST_F(RSBaseRenderNodeTest, IsContentDirty, TestSize.Level1)
  * @tc.name: UpdateRenderStatus
  * @tc.desc: test results of UpdateRenderStatus
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, UpdateRenderStatus, TestSize.Level1)
 {
@@ -1430,7 +1428,7 @@ HWTEST_F(RSBaseRenderNodeTest, UpdateRenderStatus, TestSize.Level1)
  * @tc.name: UpdateParentChildrenRect
  * @tc.desc: test results of UpdateParentChildrenRect
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, UpdateParentChildrenRect, TestSize.Level1)
 {
@@ -1447,37 +1445,10 @@ HWTEST_F(RSBaseRenderNodeTest, UpdateParentChildrenRect, TestSize.Level1)
 }
 
 /**
- * @tc.name: IsBackgroundFilterCacheValid
- * @tc.desc: test results of IsBackgroundFilterCacheValid
- * @tc.type:FUNC
- * @tc.require: issueI9H6GL
- */
-HWTEST_F(RSBaseRenderNodeTest, IsBackgroundFilterCacheValid, TestSize.Level1)
-{
-    auto node = std::make_shared<RSBaseRenderNode>(id, context);
-    ASSERT_FALSE(node->IsBackgroundFilterCacheValid());
-}
-
-/**
- * @tc.name: UpdateFilterCacheWithDirty
- * @tc.desc: test results of UpdateFilterCacheWithDirty
- * @tc.type:FUNC
- * @tc.require: issueI9H6GL
- */
-HWTEST_F(RSBaseRenderNodeTest, UpdateFilterCacheWithDirty, TestSize.Level1)
-{
-    auto node = std::make_shared<RSBaseRenderNode>(id, context);
-    RSDirtyRegionManager dirtyManager;
-    bool isForeground = true;
-    node->UpdateFilterCacheWithDirty(dirtyManager, isForeground);
-    ASSERT_TRUE(true);
-}
-
-/**
  * @tc.name: RenderTraceDebug
  * @tc.desc: test results of RenderTraceDebug
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, RenderTraceDebug, TestSize.Level1)
 {
@@ -1490,7 +1461,7 @@ HWTEST_F(RSBaseRenderNodeTest, RenderTraceDebug, TestSize.Level1)
  * @tc.name: AddModifier
  * @tc.desc: test results of AddModifier
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, AddModifier, TestSize.Level1)
 {
@@ -1514,7 +1485,7 @@ HWTEST_F(RSBaseRenderNodeTest, AddModifier, TestSize.Level1)
  * @tc.name: AddGeometryModifier
  * @tc.desc: test results of AddGeometryModifier
  * @tc.type:FUNC
- * @tc.require: issueI9H6GL
+ * @tc.require: issueI9KBCZ
  */
 HWTEST_F(RSBaseRenderNodeTest, AddGeometryModifier, TestSize.Level1)
 {
