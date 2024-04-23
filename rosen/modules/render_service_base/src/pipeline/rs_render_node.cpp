@@ -44,7 +44,6 @@
 #include "property/rs_point_light_manager.h"
 #include "property/rs_properties_painter.h"
 #include "property/rs_property_trace.h"
-#include "rs_trace.h"
 #include "render/rs_foreground_effect_filter.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "visitor/rs_node_visitor.h"

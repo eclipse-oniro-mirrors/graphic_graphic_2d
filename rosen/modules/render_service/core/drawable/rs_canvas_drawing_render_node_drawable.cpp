@@ -144,6 +144,9 @@ void RSCanvasDrawingRenderNodeDrawable::DrawRenderContent(Drawing::Canvas& canva
     canvasDrawingNode->SetNeedProcess(false);
     Rosen::Drawing::Matrix mat;
     const auto& params = GetRenderParams();
+    if (params == nullptr) {
+        return;
+    }
     auto& frameRect = params->GetFrameRect();
     if (RSPropertiesPainter::GetGravityMatrix(params->GetFrameGravity(),
         { frameRect.GetLeft(), frameRect.GetTop(), frameRect.GetWidth(), frameRect.GetHeight() },

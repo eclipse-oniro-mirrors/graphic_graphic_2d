@@ -1983,6 +1983,9 @@ const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& RSSurfaceRenderNode::GetC
 
 void RSSurfaceRenderNode::SetGlobalDirtyRegion(const RectI& rect, bool renderParallel)
 {
+    if (!renderDrawable_ || !renderDrawable_->GetRenderParams()) {
+        return;
+    }
     auto visibleRegion = renderParallel
         ? static_cast<RSSurfaceRenderParams*>(renderDrawable_->GetRenderParams().get())->GetVisibleRegion()
         : visibleRegion_;

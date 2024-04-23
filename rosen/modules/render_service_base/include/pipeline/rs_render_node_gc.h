@@ -20,8 +20,8 @@
 #include <mutex>
 #include <vector>
 
-#include "pipeline/rs_render_node.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
+#include "pipeline/rs_render_node.h"
 
 namespace OHOS {
 namespace Rosen {

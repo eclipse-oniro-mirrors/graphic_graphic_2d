@@ -50,6 +50,7 @@ void RSRenderNodeGC::ReleaseNodeMemory()
     for (auto ptr : toDele) {
         if (ptr) {
             delete ptr;
+            ptr = nullptr;
         }
     }
 }
@@ -90,6 +91,7 @@ void RSRenderNodeGC::ReleaseDrawableMemory()
     for (auto ptr : toDele) {
         if (ptr) {
             delete ptr;
+            ptr = nullptr;
         }
     }
 }

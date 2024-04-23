@@ -23,9 +23,9 @@
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
 #include "common/rs_rect.h"
-#include "utils/rect.h"
 #include "recording/recording_canvas.h"
 #include "pipeline/rs_render_content.h"
+#include "utils/rect.h"
 
 namespace OHOS::Rosen {
 class RSRenderNode;
