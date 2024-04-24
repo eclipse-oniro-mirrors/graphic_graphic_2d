@@ -21,7 +21,6 @@
 #include "native_engine/native_value.h"
 #include "utils/point.h"
 
-#include "utils/log.h"
 #include "draw/color.h"
 #include "text_style.h"
 #include "typography.h"
@@ -277,6 +276,24 @@ inline napi_value GetPointAndConvertToJsValue(napi_env env, Drawing::Point& poni
     return objValue;
 }
 
+inline void GetPointFromJsValue(napi_env env, napi_value argValue, Drawing::Point& ponit)
+{
+    napi_value objValue = nullptr;
+    double targetX = 0;
+    double targetY = 0;
+    if (napi_get_named_property(env, argValue, "x", &objValue) != napi_ok ||
+        napi_get_value_double(env, objValue, &targetX) != napi_ok) {
+        return;
+    }
+
+    if (napi_get_named_property(env, argValue, "y", &objValue) != napi_ok ||
+        napi_get_value_double(env, objValue, &targetY) != napi_ok) {
+        return;
+    }
+    ponit.Set(targetX, targetY);
+    return;
+}
+
 void BindNativeFunction(napi_env env, napi_value object, const char* name, const char* moduleName, napi_callback func);
 napi_value CreateJsError(napi_env env, int32_t errCode, const std::string& message);
 
@@ -366,6 +383,14 @@ bool GetParagraphStyleFromJS(napi_env env, napi_value argValue, TypographyStyle&
 
 bool GetPlaceholderSpanFromJS(napi_env env, napi_value argValue, PlaceholderSpan& placeholderSpan);
 
+void ParsePartTextStyle(napi_env env, napi_value argValue, TextStyle& textStyle);
+
 size_t GetParamLen(napi_env env, napi_value param);
+
+void ScanShadowValue(napi_env env, napi_value allShadowValue, uint32_t arrayLength, TextStyle& textStyle);
+
+void SetTextShadowProperty(napi_env env, napi_value argValue, TextStyle& textStyle);
+
+void SetTextShadowPoint(napi_env env, napi_value argValue, const std::string& str, Drawing::Point& offset);
 } // namespace OHOS::Rosen
 #endif // OHOS_JS_TEXT_UTILS_H

@@ -120,13 +120,8 @@ bool GetDecorationFromJS(napi_env env, napi_value argValue, const std::string& s
     return true;
 }
 
-bool GetTextStyleFromJS(napi_env env, napi_value argValue, TextStyle& textStyle)
+void ParsePartTextStyle(napi_env env, napi_value argValue, TextStyle& textStyle)
 {
-    if (argValue == nullptr) {
-        return false;
-    }
-    SetTextStyleColor(env, argValue, "color", textStyle.color);
-
     napi_value tempValue = nullptr;
     napi_get_named_property(env, argValue, "fontWeight", &tempValue);
     uint32_t fontWeight = 0;
@@ -152,7 +147,6 @@ bool GetTextStyleFromJS(napi_env env, napi_value argValue, TextStyle& textStyle)
     SetTextStyleBooleValueFromJS(env, argValue, "halfLeading", textStyle.halfLeading);
     SetTextStyleBooleValueFromJS(env, argValue, "heightOnly", textStyle.heightOnly);
     napi_get_named_property(env, argValue, "ellipsis", &tempValue);
-
     std::string text = "";
     if (tempValue != nullptr && ConvertFromJsValue(env, tempValue, text)) {
         textStyle.ellipsis = Str8ToStr16(text);
@@ -167,6 +161,64 @@ bool GetTextStyleFromJS(napi_env env, napi_value argValue, TextStyle& textStyle)
     if (tempValue != nullptr && ConvertFromJsValue(env, tempValue, textLocale)) {
         textStyle.locale = textLocale;
     }
+}
+
+void SetTextShadowPoint(napi_env env, napi_value argValue, const std::string& str, Drawing::Point& offset)
+{
+    napi_value tempValue = nullptr;
+    napi_get_named_property(env, argValue, str.c_str(), &tempValue);
+    if (tempValue == nullptr) {
+        return;
+    }
+    GetPointFromJsValue(env, tempValue, offset);
+    return;
+}
+
+void ScanShadowValue(napi_env env, napi_value allShadowValue, uint32_t arrayLength, TextStyle& textStyle)
+{
+    textStyle.shadows.clear();
+    for (uint32_t further = 0; further < arrayLength; further++) {
+        napi_value element;
+        Drawing::Color colorSrc;
+        Drawing::Point offset;
+        double runTimeRadius = 0;
+        if (napi_get_element(env, allShadowValue, further, &element) != napi_ok) {
+            return;
+        }
+        SetTextStyleColor(env, element, "color", colorSrc);
+        SetTextShadowPoint(env, element, "point", offset);
+        napi_value radius = nullptr;
+        if (napi_get_named_property(env, element, "blurRadius", &radius) != napi_ok ||
+            napi_get_value_double(env, radius, &runTimeRadius) != napi_ok) {
+        }
+        textStyle.shadows.emplace_back(TextShadow(colorSrc, offset, runTimeRadius));
+    }
+    return;
+}
+
+void SetTextShadowProperty(napi_env env, napi_value argValue, TextStyle& textStyle)
+{
+    napi_value allShadowValue = nullptr;
+    if (napi_get_named_property(env, argValue, "textShadow", &allShadowValue) != napi_ok) {
+        return;
+    }
+
+    uint32_t arrayLength = 0;
+    if (napi_get_array_length(env, allShadowValue, &arrayLength) != napi_ok) {
+        return;        
+    }
+    ScanShadowValue(env, allShadowValue, arrayLength, textStyle);
+    return;
+}
+
+bool GetTextStyleFromJS(napi_env env, napi_value argValue, TextStyle& textStyle)
+{
+    if (argValue == nullptr) {
+        return false;
+    }
+    SetTextStyleColor(env, argValue, "color", textStyle.color);
+    ParsePartTextStyle(env, argValue, textStyle);
+    SetTextShadowProperty(env, argValue, textStyle);
     return true;
 }
 
