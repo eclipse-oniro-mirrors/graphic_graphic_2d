@@ -531,7 +531,7 @@ void RSDisplayRenderNodeDrawable::DrawMirrorScreen(RSDisplayRenderNode& displayN
     auto mirroredProcessor = std::static_pointer_cast<RSUniRenderVirtualProcessor>(processor);
     bool hasSpicalLayer = (hasSecSurface[mirroredNode->GetScreenId()] || hasSkipSurface[mirroredNode->GetScreenId()] ||
         hasProtectedSurface[mirroredNode->GetScreenId()] || hasCaptureWindow[mirroredNode->GetScreenId()] ||
-        !params.GetScreenInfo().filteredAppSet.empty() || RSMainThread::Instance()->IsCurtainScreenOn());
+        !params.GetScreenInfo().filteredAppSet.empty() || RSUniRenderThread::Instance().IsCurtainScreenOn());
     if (mirroredNode->GetSecurityDisplay() != displayNodeSp.GetSecurityDisplay() &&
         mirroredProcessor && hasSpicalLayer) {
         curCanvas_ = mirroredProcessor->GetCanvas();
@@ -765,8 +765,8 @@ void RSDisplayRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
 
     Drawing::AutoCanvasRestore acr(canvas, true);
 
-    if (params->HasSecurityLayer() || params->HasSkipLayer() ||
-        params->HasProtectedLayer() || params->HasCaptureWindow()) {
+    if (params->HasSecurityLayer() || params->HasSkipLayer() || params->HasProtectedLayer() ||
+        params->HasCaptureWindow() || RSUniRenderThread::Instance().IsCurtainScreenOn()) {
         RS_LOGD("RSDisplayRenderNodeDrawable::OnCapture: params %{public}s \
             process RSDisplayRenderNode(id:[%{public}" PRIu64 "]) Not using UniRender buffer.",
             params->ToString().c_str(), params->GetId());
@@ -967,7 +967,7 @@ void RSDisplayRenderNodeDrawable::DrawWatermarkIfNeed(
 void RSDisplayRenderNodeDrawable::DrawCurtainScreen(
     RSDisplayRenderNode& node, RSPaintFilterCanvas& canvas) const
 {
-    if (!RSMainThread::Instance()->IsCurtainScreenOn()) {
+    if (!RSUniRenderThread::Instance().IsCurtainScreenOn()) {
         return;
     }
     RS_TRACE_FUNC();
