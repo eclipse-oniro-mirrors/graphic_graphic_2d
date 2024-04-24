@@ -2219,6 +2219,23 @@ void RSMainThread::RequestNextVSync(const std::string& fromWhom, int64_t lastVSy
     }
 }
 
+void RSMainThread::ProcessScreenHotPlugEvents()
+{
+    auto screenManager_ = CreateOrGetScreenManager();
+    if (!screenManager_) {
+        return;
+    }
+
+    if (!screenManager_->TrySimpleProcessHotPlugEvents()) {
+        auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
+        if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
+            RSHardwareThread::Instance().PostTask([=]() { screenManager_->ProcessScreenHotPlugEvents(); });
+        } else {
+            PostTask([=]() { screenManager_->ProcessScreenHotPlugEvents(); });
+        }
+    }
+}
+
 void RSMainThread::OnVsync(uint64_t timestamp, void* data)
 {
     isOnVsync_.store(true);
@@ -2241,15 +2258,7 @@ void RSMainThread::OnVsync(uint64_t timestamp, void* data)
 #if defined(RS_ENABLE_CHIPSET_VSYNC)
     SetVsyncInfo(timestamp);
 #endif
-    auto screenManager_ = CreateOrGetScreenManager();
-    if (screenManager_ != nullptr) {
-        auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
-        if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
-            RSHardwareThread::Instance().PostTask([=]() { screenManager_->ProcessScreenHotPlugEvents(); });
-        } else {
-            PostTask([=]() { screenManager_->ProcessScreenHotPlugEvents(); });
-        }
-    }
+    ProcessScreenHotPlugEvents();
     RSJankStatsOnVsyncEnd(onVsyncStartTime, onVsyncStartTimeSteady);
     isOnVsync_.store(false);
 }
