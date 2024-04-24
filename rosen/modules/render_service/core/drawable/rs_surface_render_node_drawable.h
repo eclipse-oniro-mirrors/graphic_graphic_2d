@@ -26,13 +26,11 @@ class RSRenderThreadParams;
 class RSSurfaceRenderNode;
 class RSSurfaceRenderParams;
 namespace DrawableV2 {
-#ifdef RS_PARALLEL
 struct UIFirstParams {
     uint32_t submittedSubThreadIndex_ = INT_MAX;
     std::atomic<CacheProcessStatus> cacheProcessStatus_ = CacheProcessStatus::WAITING;
     std::atomic<bool> isNeedSubmitSubThread_ = true;
 };
-#endif
 class RSSurfaceRenderNodeDrawable : public RSRenderNodeDrawable {
 public:
     explicit RSSurfaceRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
@@ -43,7 +41,6 @@ public:
     void OnCapture(Drawing::Canvas& canvas) override;
     bool EnableRecordingOptimization(RSRenderParams& params);
 
-#ifdef RS_PARALLEL
     void SubDraw(Drawing::Canvas& canvas);
 
     void UpdateCacheSurface();
@@ -135,7 +132,7 @@ public:
     {
         return priority_;
     }
-#endif
+
     void DealWithSelfDrawingNodeBuffer(RSSurfaceRenderNode& surfaceNode,
         RSPaintFilterCanvas& canvas, const RSSurfaceRenderParams& surfaceParams);
 
@@ -157,11 +154,13 @@ private:
         std::shared_ptr<RSSurfaceRenderNode> surfaceNode, bool isOffscreen) const;
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::SURFACE_NODE, OnGenerate>;
     static Registrar instance_;
-#ifdef RS_PARALLEL
+
     std::string name_;
-    bool DrawUIFirstCache(RSPaintFilterCanvas& rscanvas);
+    bool DrawUIFirstCache(RSPaintFilterCanvas& rscanvas, bool canSkipWait);
     bool CheckIfNeedResetRotate(RSPaintFilterCanvas& canvas);
     NodeId FindInstanceChildOfDisplay(std::shared_ptr<RSRenderNode> node);
+    void DrawUIFirstDfx(RSPaintFilterCanvas& canvas, MultiThreadCacheType enableType,
+        RSSurfaceRenderParams& surfaceParams, bool drawCacheSuccess);
 
     // UIFIRST
     UIFirstParams uiFirstParams;
@@ -183,7 +182,6 @@ private:
     std::atomic<bool> isTextureValid_ = false;
     pid_t lastFrameUsedThreadIndex_ = UNI_MAIN_THREAD_INDEX;
     NodePriorityType priority_ = NodePriorityType::MAIN_PRIORITY;
-#endif
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen
