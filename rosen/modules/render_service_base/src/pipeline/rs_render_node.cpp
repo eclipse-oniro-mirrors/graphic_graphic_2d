@@ -238,7 +238,7 @@ void RSRenderNode::AddChild(SharedPtr child, int index)
     disappearingChildren_.remove_if([&child](const auto& pair) -> bool { return pair.first == child; });
     // A child is not on the tree until its parent is on the tree
     if (isOnTheTree_) {
-        child->SetIsOnTheTree(true, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_);
+        child->SetIsOnTheTree(true, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_, uifirstRootNodeId_);
     }
     SetContentDirty();
     isFullChildrenListValid_ = false;
@@ -308,7 +308,8 @@ void RSRenderNode::RemoveChild(SharedPtr child, bool skipTransition)
     isFullChildrenListValid_ = false;
 }
 
-void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId firstLevelNodeId, NodeId cacheNodeId)
+void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId firstLevelNodeId,
+    NodeId cacheNodeId, NodeId uifirstRootNodeId)
 {
     // We do not need to label a child when the child is removed from a parent that is not on the tree
     if (flag == isOnTheTree_) {
@@ -329,6 +330,9 @@ void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId f
     // in case prepare stage upper cacheRoot cannot specify dirty subnode
     if (cacheNodeId != INVALID_NODEID) {
         drawingCacheRootId_ = cacheNodeId;
+    }
+    if (uifirstRootNodeId != INVALID_NODEID) {
+        uifirstRootNodeId_ = uifirstRootNodeId;
     }
 
     for (auto& weakChild : children_) {
@@ -385,7 +389,7 @@ void RSRenderNode::AddCrossParentChild(const SharedPtr& child, int32_t index)
     disappearingChildren_.remove_if([&child](const auto& pair) -> bool { return pair.first == child; });
     // A child is not on the tree until its parent is on the tree
     if (isOnTheTree_) {
-        child->SetIsOnTheTree(true, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_);
+        child->SetIsOnTheTree(true, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_, uifirstRootNodeId_);
     }
     SetContentDirty();
     isFullChildrenListValid_ = false;
@@ -613,7 +617,10 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
         out += sharedTransitionParam_->Dump();
     }
     if (IsSuggestedDrawInGroup()) {
-        out += ", [node group" + std::to_string(nodeGroupType_) + "]";
+        out += ", [nodeGroup" + std::to_string(nodeGroupType_) + "]"; // adapt for SmartPerf Editor tree tool
+    }
+    if (uifirstRootNodeId_ != INVALID_NODEID) {
+        out += ", uifirstRootNodeId_: " + std::to_string(uifirstRootNodeId_);
     }
     DumpSubClassNode(out);
     out += ", Properties: " + GetRenderProperties().Dump();
@@ -934,6 +941,26 @@ void RSRenderNode::PrepareSelfNodeForApplyModifiers()
     AddToPendingSyncList();
 }
 
+bool RSRenderNode::IsUifirstArkTsCardNode()
+{
+    if (nodeGroupType_ == NodeGroupType::NONE) {
+        return false;
+    }
+    for (auto& child : *GetChildren()) {
+        if (!child) {
+            continue;
+        }
+        auto surfaceChild = child->ReinterpretCastTo<RSSurfaceRenderNode>();
+        if (!surfaceChild) {
+            continue;
+        }
+        if (surfaceChild->GetLastFrameUifirstFlag() == MultiThreadCacheType::ARKTS_CARD) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void RSRenderNode::UpdateDrawingCacheInfoBeforeChildren(bool isScreenRotation)
 {
     if (!ShouldPaint() || isScreenRotation) {
@@ -952,6 +979,9 @@ void RSRenderNode::UpdateDrawingCacheInfoBeforeChildren(bool isScreenRotation)
 
 void RSRenderNode::UpdateDrawingCacheInfoAfterChildren()
 {
+    if (IsUifirstArkTsCardNode()) {
+        SetDrawingCacheType(RSDrawingCacheType::DISABLED_CACHE);
+    }
     if (HasChildrenOutOfRect() && GetDrawingCacheType() == RSDrawingCacheType::TARGETED_CACHE) {
         RS_OPTIONAL_TRACE_NAME_FMT("DrawingCacheInfoAfter ChildrenOutOfRect id:%llu", GetId());
         SetDrawingCacheType(RSDrawingCacheType::DISABLED_CACHE);
@@ -1550,7 +1580,7 @@ void RSRenderNode::UpdateRenderStatus(RectI& dirtyRegion, bool isPartialRenderEn
 
 void RSRenderNode::MapAndUpdateChildrenRect()
 {
-    auto geoPtr = GetRenderProperties().GetBoundsGeometry();
+    auto& geoPtr = GetRenderProperties().GetBoundsGeometry();
     if (!shouldPaint_ || geoPtr == nullptr) {
         return;
     }
@@ -2993,7 +3023,7 @@ bool RSRenderNode::IsFilterRectsInCache() const
 RectI RSRenderNode::GetFilterRect() const
 {
     auto& properties = GetRenderProperties();
-    auto geoPtr = (properties.GetBoundsGeometry());
+    auto& geoPtr = (properties.GetBoundsGeometry());
     if (!geoPtr) {
         return {};
     }
@@ -3255,6 +3285,22 @@ const std::shared_ptr<RSRenderNode> RSRenderNode::GetInstanceRootNode() const
     }
     return context->GetNodeMap().GetRenderNode(instanceRootNodeId_);
 }
+
+NodeId RSRenderNode::GetUifirstRootNodeId() const
+{
+    return uifirstRootNodeId_;
+}
+
+void RSRenderNode::UpdateTreeUifirstRootNodeId(NodeId id)
+{
+    uifirstRootNodeId_ = id;
+    for (auto& child : *GetChildren()) {
+        if (child) {
+            child->UpdateTreeUifirstRootNodeId(id);
+        }
+    }
+}
+
 NodeId RSRenderNode::GetFirstLevelNodeId() const
 {
     return firstLevelNodeId_;
@@ -3710,7 +3756,7 @@ void RSRenderNode::OnSync()
     }
 
     // copy newest for uifirst root node, now force sync done nodes
-    if (uifirstNeedSync_ && !uifirstSkipPartialSync_) {
+    if (uifirstNeedSync_) {
         RS_TRACE_NAME_FMT("uifirst_sync %lx", GetId());
         renderDrawable_->uifirstDrawCmdList_.assign(renderDrawable_->drawCmdList_.begin(),
                                                     renderDrawable_->drawCmdList_.end());
