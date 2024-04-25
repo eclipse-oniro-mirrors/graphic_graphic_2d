@@ -1290,7 +1290,7 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(
         // currently CheckAndUpdateGeoTrans without dirty check
         if (auto geoPtr = properties.boundsGeo_) {
             // selfdrawing node's geo may not dirty when its dirty region changes
-            if (CheckAndUpdateGeoTrans(geoPtr) || accumGeoDirty || isSelfDrawingNode_) {
+            if (CheckAndUpdateGeoTrans(geoPtr) || accumGeoDirty || properties.geoDirty_ || isSelfDrawingNode_) {
                 absDrawRect_ = geoPtr->MapAbsRect(selfDrawRect_);
                 if (isSelfDrawingNode_) {
                     selfDrawingNodeAbsDirtyRect_ = geoPtr->MapAbsRect(selfDrawingNodeDirtyRect_);
