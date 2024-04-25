@@ -62,7 +62,7 @@ public:
     {
         return currentFrameCanSkipFirstWait_.load();
     }
-    bool CurrentEventsStopLeashWindow(RSSurfaceRenderNode& node);
+    bool CheckIfAppWindowHasAnimation(RSSurfaceRenderNode& node);
     void DisableUifirstNode(RSSurfaceRenderNode& node);
     static void ProcessTreeStateChange(RSSurfaceRenderNode& node);
 

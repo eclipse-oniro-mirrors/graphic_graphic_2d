@@ -125,7 +125,7 @@ void RSUifirstManager::RenderGroupUpdate(DrawableV2::RSSurfaceRenderNodeDrawable
             break;
         }
         if (node->IsSuggestedDrawInGroup()) {
-            RS_TRACE_NAME_FMT("cache_changed by uifirst card %lx", node->GetId());
+            RS_OPTIONAL_TRACE_NAME_FMT("cache_changed by uifirst card %lx", node->GetId());
             node->SetDrawingCacheChanged(true);
             node->AddToPendingSyncList();
         }
@@ -644,7 +644,7 @@ bool RSUifirstManager::EventsCanSkipFirstWait(std::vector<EventInfo>& events)
     return false;
 }
 
-bool RSUifirstManager::CurrentEventsStopLeashWindow(RSSurfaceRenderNode& node)
+bool RSUifirstManager::CheckIfAppWindowHasAnimation(RSSurfaceRenderNode& node)
 {
     if (currentFrameEvent_.empty()) {
         return false;
@@ -732,7 +732,8 @@ bool RSUifirstManager::IsArkTsCardCache(RSSurfaceRenderNode& node, bool animatio
 // animation first, may reuse last image cache
 bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animation)
 {
-    return RSUifirstManager::IsUifirstNode(node, animation);
+    return RSUifirstManager::IsUifirstNode(node, animation) &&
+        !RSUifirstManager::Instance().CheckIfAppWindowHasAnimation(node);
 }
 
 void RSUifirstManager::UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancestorNodeHasAnimation)
