@@ -57,6 +57,7 @@
 #include "platform/ohos/rs_jank_stats.h"
 #include "property/rs_properties_painter.h"
 #include "property/rs_point_light_manager.h"
+#include "render/rs_drawing_filter.h"
 #include "render/rs_skia_filter.h"
 #include "pipeline/parallel_render/rs_sub_thread_manager.h"
 #include "system/rs_system_parameters.h"
