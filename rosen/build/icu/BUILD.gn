@@ -131,9 +131,9 @@ template("rosen_libicu") {
 
     if (defined(config.use_external_icu)) {
       if (config.use_external_icu == "static") {
-        deps = [ "//third_party/icu/icu4c:static_icuuc" ]
+        external_deps = [ "icu:static_icuuc" ]
       } else if (config.use_external_icu == "shared") {
-        deps = [ "//third_party/icu/icu4c:shared_icuuc" ]
+        external_deps = [ "icu:shared_icuuc" ]
       }
     } else {
       configs += [ "//build/config/compiler:rtti" ]
