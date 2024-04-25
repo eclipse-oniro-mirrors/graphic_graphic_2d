@@ -68,6 +68,7 @@ public:
     using SharedPtr = std::shared_ptr<RSRenderNode>;
     using ClearSurfaceTask = std::function<void()>;
     static inline constexpr RSRenderNodeType Type = RSRenderNodeType::RS_NODE;
+    std::atomic<int32_t> cacheCnt_ = -1;
     virtual RSRenderNodeType GetType() const
     {
         return Type;
