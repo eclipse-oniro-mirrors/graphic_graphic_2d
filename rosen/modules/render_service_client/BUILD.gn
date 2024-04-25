@@ -34,9 +34,6 @@ config("render_service_client_config") {
       "$graphic_2d_root/utils/color_manager/export",
       "//foundation/multimedia/image_framework/interfaces/innerkits/include",
     ]
-    if (ace_enable_gpu) {
-      defines += [ "ACE_ENABLE_GPU" ]
-    }
   }
 }
 
