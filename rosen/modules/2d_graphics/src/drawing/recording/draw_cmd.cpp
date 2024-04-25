@@ -1058,10 +1058,6 @@ void DrawTextBlobOpItem::Playback(Canvas* canvas, const Rect* rect)
         LOGD("DrawTextBlobOpItem textBlob is null");
         return;
     }
-    if (canvas == nullptr) {
-        LOGD("canvas is null");
-        return;
-    }
     RectI globalClipBounds = canvas->GetDeviceClipBounds();
     bool saveFlag = false;
     if (globalClipBounds.GetWidth() == 1 || globalClipBounds.GetHeight() == 1) {

@@ -547,11 +547,13 @@ HWTEST_F(DrawCmdTest, DrawTextBlobOpItem001, TestSize.Level1)
     paint.SetColor(color, space);
     DrawTextBlobOpItem opItem{textBlob.get(), 0, 0, paint};
     opItem.Marshalling(*drawCmdList);
+    auto recordingCanvas = std::make_shared<RecordingCanvas>(1, 10); // 1: width, 10: height
     Rect rect;
-    opItem.Playback(nullptr, &rect);
+    opItem.Playback(recordingCanvas.get(), &rect);
     Canvas canvas;
     opItem.GenerateCachedOpItem(&canvas);
-    opItem.Playback(nullptr, &rect);
+    auto recordingCanvas2 = std::make_shared<RecordingCanvas>(10, 10); // 10: width, height
+    opItem.Playback(recordingCanvas2.get(), &rect);
 
     DrawTextBlobOpItem::ConstructorHandle::GenerateCachedOpItem(*drawCmdList, nullptr, 0, 0, paint);
     DrawTextBlobOpItem::ConstructorHandle::GenerateCachedOpItem(*drawCmdList, textBlob.get(), 0, 0, paint);

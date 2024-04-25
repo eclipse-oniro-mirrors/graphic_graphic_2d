@@ -385,7 +385,7 @@ HWTEST_F(PenTest, GetterAndSetterOfAlphaf001, TestSize.Level1)
     ASSERT_TRUE(pen != nullptr);
     scalar alpha = 0;
     pen->SetAlphaF(alpha);
-    ASSERT_EQ(alpha, pen->GetAlphaF());
+    ASSERT_TRUE(IsScalarAlmostEqual(alpha, pen->GetAlphaF()));
 }
 
 /**
@@ -401,7 +401,7 @@ HWTEST_F(PenTest, GetterAndSetterOfWidth001, TestSize.Level1)
     ASSERT_TRUE(pen != nullptr);
     scalar w = 0;
     pen->SetWidth(w);
-    ASSERT_EQ(w, pen->GetWidth());
+    ASSERT_TRUE(IsScalarAlmostEqual(w, pen->GetWidth()));
 }
 
 /**
