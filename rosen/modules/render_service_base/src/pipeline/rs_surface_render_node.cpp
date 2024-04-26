@@ -1372,7 +1372,7 @@ void RSSurfaceRenderNode::CheckValidFilterCacheFullyCoverTarget(const RSRenderNo
     if (filterNode.IsInstanceOf<RSEffectRenderNode>()) {
         return;
     }
-    if (isFilterCacheFullyCovered_ || !filterNode.IsBackgroundFilterCacheValid()) {
+    if (isFilterCacheFullyCovered_ || !filterNode.IsFilterCacheValid()) {
         return;
     }
     // [planning] need to replace absRect with filterRect
@@ -1775,7 +1775,7 @@ void RSSurfaceRenderNode::OnSync()
     RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceRenderNode::OnSync name[%s] dirty[%s]",
         GetName().c_str(), dirtyManager_->GetCurrentFrameDirtyRegion().ToString().c_str());
     dirtyManager_->OnSync(syncDirtyManager_);
-    if (IsMainWindowType() || IsLeashWindow() || lastFrameUifirstFlag_) {
+    if (IsMainWindowType() || IsLeashWindow() || lastFrameUifirstFlag_ != MultiThreadCacheType::NONE) {
         auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
         if (surfaceParams == nullptr) {
             RS_LOGE("RSSurfaceRenderNode::OnSync surfaceParams is null");
@@ -2223,7 +2223,7 @@ void RSSurfaceRenderNode::UpdateCacheSurfaceDirtyManager(int bufferAge)
 }
 
 void RSSurfaceRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId firstLevelNodeId,
-    NodeId cacheNodeId)
+    NodeId cacheNodeId, NodeId uifirstRootNodeId)
 {
     instanceRootNodeId = IsLeashOrMainWindow() ? GetId() : instanceRootNodeId;
     if (IsLeashWindow()) {
@@ -2414,34 +2414,16 @@ void RSSurfaceRenderNode::SetUifirstChildrenDirtyRectParam(RectI rect)
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (stagingSurfaceParams) {
         stagingSurfaceParams->SetUifirstChildrenDirtyRectParam(rect);
-        if (stagingRenderParams_->NeedSync()) {
-            if (auto context = GetContext().lock()) {
-                context->AddPendingSyncNode(shared_from_this());
-            } else {
-                RS_LOGE("RSSurfaceRenderNode::SetUifirstFlag context is null");
-                OnSync();
-            }
-        }
-    } else {
-        RS_LOGE("RSSurfaceRenderNode::SetUifirstFlag stagingSurfaceParams is null");
+        AddToPendingSyncList();
     }
 }
 
-void RSSurfaceRenderNode::SetUifirstNodeEnableParam(bool b)
+void RSSurfaceRenderNode::SetUifirstNodeEnableParam(MultiThreadCacheType b)
 {
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (stagingSurfaceParams) {
         stagingSurfaceParams->SetUifirstNodeEnableParam(b);
-        if (stagingRenderParams_->NeedSync()) {
-            if (auto context = GetContext().lock()) {
-                context->AddPendingSyncNode(shared_from_this());
-            } else {
-                RS_LOGE("RSSurfaceRenderNode::SetUifirstFlag context is null");
-                OnSync();
-            }
-        }
-    } else {
-        RS_LOGE("RSSurfaceRenderNode::SetUifirstFlag stagingSurfaceParams is null");
+        AddToPendingSyncList();
     }
 }
 
@@ -2450,16 +2432,7 @@ void RSSurfaceRenderNode::SetIsParentUifirstNodeEnableParam(bool b)
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (stagingSurfaceParams) {
         stagingSurfaceParams->SetIsParentUifirstNodeEnableParam(b);
-        if (stagingRenderParams_->NeedSync()) {
-            if (auto context = GetContext().lock()) {
-                context->AddPendingSyncNode(shared_from_this());
-            } else {
-                RS_LOGE("RSSurfaceRenderNode::SetUifirstFlag context is null");
-                OnSync();
-            }
-        }
-    } else {
-        RS_LOGE("RSSurfaceRenderNode::SetUifirstFlag stagingSurfaceParams is null");
+        AddToPendingSyncList();
     }
 }
 
