@@ -131,9 +131,12 @@ void VSyncGenerator::ThreadLoop()
     int64_t occurTimestamp = 0;
     int64_t nextTimeStamp = 0;
     int64_t occurReferenceTime = 0;
-    while (vsyncThreadRunning_ == true) {
+    while (true) {
         {
             std::unique_lock<std::mutex> locker(mutex_);
+            if (vsyncThreadRunning_ == false) {
+                break;
+            }
             UpdateVSyncModeLocked();
             occurReferenceTime = referenceTime_;
             phaseRecord_ = phase_;
@@ -435,6 +438,7 @@ void VSyncGenerator::SubScribeSystemAbility()
 
 VsyncError VSyncGenerator::UpdateMode(int64_t period, int64_t phase, int64_t referenceTime)
 {
+    std::lock_guard<std::mutex> locker(mutex_);
     ScopedBytrace func("UpdateMode, period:" + std::to_string(period) +
                         ", phase:" + std::to_string(phase) +
                         ", referenceTime:" + std::to_string((referenceTime)) +
@@ -443,7 +447,6 @@ VsyncError VSyncGenerator::UpdateMode(int64_t period, int64_t phase, int64_t ref
         VLOGE("wrong parameter, period:" VPUBI64 ", referenceTime:" VPUBI64, period, referenceTime);
         return VSYNC_ERROR_INVALID_ARGUMENTS;
     }
-    std::lock_guard<std::mutex> locker(mutex_);
     phase_ = phase;
     if (period != 0) {
         UpdatePeriodLocked(period);
@@ -738,6 +741,7 @@ void VSyncGenerator::SetPendingMode(int64_t period, int64_t timestamp)
 
 void VSyncGenerator::Dump(std::string &result)
 {
+    std::unique_lock<std::mutex> lock(mutex_);
     result.append("\n-- VSyncGenerator --");
     result += "\nperiod:" + std::to_string(period_);
     result += "\nphase:" + std::to_string(phase_);
