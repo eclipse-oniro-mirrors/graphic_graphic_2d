@@ -229,6 +229,10 @@ void RSMaterialFilter::PostProcess(Drawing::Canvas& canvas)
 {
     Drawing::Brush brush;
     brush.SetColor(maskColor_.AsArgbInt());
+    // Missed from copying snapshot to canvas if doesn't use snapshot
+    // Not used without cache
+    if (RSSystemProperties::GetDrawFilterWithoutSnapshotEnabled())
+        brush.SetAntiAlias(true);
     canvas.DrawBackground(brush);
 }
 

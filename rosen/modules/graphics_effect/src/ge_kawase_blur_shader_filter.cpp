@@ -26,6 +26,7 @@ namespace Rosen {
 // Advanced Filter
 #define PROPERTY_HIGPU_VERSION "const.gpu.vendor"
 #define PROPERTY_DEBUG_SUPPORT_AF "persist.sys.graphic.supports_af"
+#define PROPERTY_BLUR_EXTRA_FILTER "persist.sys.graphic.blurExtraFilter"
 namespace {
 
 static constexpr uint32_t BLUR_SAMPLE_COUNT = 5;
@@ -38,6 +39,7 @@ static constexpr float MAX_CROSS_FADE_RADIUS = 10.0f;
 static std::shared_ptr<Drawing::RuntimeEffect> BLUREFFECT;
 static std::shared_ptr<Drawing::RuntimeEffect> MIXEFFECT;
 static std::shared_ptr<Drawing::RuntimeEffect> BLUREFFECTAF;
+static std::shared_ptr<Drawing::RuntimeEffect> SIMPLEFILTER;
 
 } // namespace
 
@@ -61,6 +63,13 @@ static bool IsAdvancedFilterUsable()
     // we will not use it
     return GESystemProperties::GetBoolSystemProperty(PROPERTY_DEBUG_SUPPORT_AF, false);
     return false;
+}
+
+static bool GetBlurExtraFilterEnabled()
+{
+    static bool blurExtraFilterEnabled =
+        (std::atoi(GESystemProperties::GetEventProperty(PROPERTY_BLUR_EXTRA_FILTER).c_str()) != 0);
+    return blurExtraFilterEnabled;
 }
 
 static void getNormalizedOffset(SkV2* offsets, const uint32_t offsetCount, const OffsetInfo& offsetInfo)
@@ -101,6 +110,13 @@ GEKawaseBlurShaderFilter::GEKawaseBlurShaderFilter(const Drawing::GEKawaseBlurSh
         LOGE("GEKawaseBlurShaderFilter::GEKawaseBlurShaderFilter failed to construct when initializing MixEffect.");
         return;
     }
+
+    if (GetBlurExtraFilterEnabled()) {
+        if (!InitSimpleFilter()) {
+            LOGE("GEKawaseBlurShaderFilter::GEKawaseBlurShaderFilter failed to construct SimpleFilter");
+            return;
+        }
+    }
 }
 
 GEKawaseBlurShaderFilter::~GEKawaseBlurShaderFilter() = default;
@@ -108,6 +124,18 @@ GEKawaseBlurShaderFilter::~GEKawaseBlurShaderFilter() = default;
 int GEKawaseBlurShaderFilter::GetRadius() const
 {
     return radius_;
+}
+
+std::shared_ptr<Drawing::ShaderEffect> GEKawaseBlurShaderFilter::ApplySimpleFilter(Drawing::Canvas& canvas,
+    const std::shared_ptr<Drawing::Image>& input, const std::shared_ptr<Drawing::ShaderEffect>& prevShader,
+    const Drawing::ImageInfo& scaledInfo, const Drawing::SamplingOptions& linear) const
+{
+    Drawing::RuntimeShaderBuilder simpleBlurBuilder(SIMPLEFILTER);
+    simpleBlurBuilder.SetChild("imageInput", prevShader);
+    std::shared_ptr<Drawing::Image> tmpSimpleBlur(simpleBlurBuilder.MakeImage(
+        canvas.GetGPUContext().get(), nullptr, scaledInfo, false));
+    return Drawing::ShaderEffect::CreateImageShader(*tmpSimpleBlur, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP,
+        linear, Drawing::Matrix());
 }
 
 std::shared_ptr<Drawing::Image> GEKawaseBlurShaderFilter::ProcessImage(Drawing::Canvas& canvas,
@@ -142,6 +170,9 @@ std::shared_ptr<Drawing::Image> GEKawaseBlurShaderFilter::ProcessImage(Drawing::
     auto tmpShader = Drawing::ShaderEffect::CreateImageShader(
         *input, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, linear, blurMatrix);
     Drawing::RuntimeShaderBuilder blurBuilder(isUsingAF ? BLUREFFECTAF : BLUREFFECT);
+    if (GetBlurExtraFilterEnabled() && SIMPLEFILTER) {
+        tmpShader = ApplySimpleFilter(canvas, input, tmpShader, scaledInfo, linear);
+    }
     blurBuilder.SetChild("imageInput", tmpShader);
 
     auto offsetXY = radiusByPasses * blurScale_;
@@ -268,6 +299,24 @@ bool GEKawaseBlurShaderFilter::InitMixEffect()
         MIXEFFECT = Drawing::RuntimeEffect::CreateForShader(mixString);
         if (MIXEFFECT == nullptr) {
             LOGE("GEKawaseBlurShaderFilter::RuntimeShader mixEffect create failed");
+            return false;
+        }
+    }
+    return true;
+}
+
+bool GEKawaseBlurShaderFilter::InitSimpleFilter()
+{
+    static std::string simpleShader(R"(
+        uniform shader imageInput;
+        half4 main(float2 xy) {
+            return imageInput.eval(xy);
+        }
+    )");
+    if (SIMPLEFILTER == nullptr) {
+        SIMPLEFILTER = Drawing::RuntimeEffect::CreateForShader(simpleShader);
+        if (SIMPLEFILTER == nullptr) {
+            LOGE("GEKawaseBlurShaderFilter::RuntimeShader failed to create simple filter");
             return false;
         }
     }
