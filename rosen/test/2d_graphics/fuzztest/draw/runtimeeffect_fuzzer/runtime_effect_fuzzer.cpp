@@ -36,9 +36,8 @@ bool RuntimeEffectFuzzTest(const uint8_t* data, size_t size)
 
     std::shared_ptr<RuntimeEffect> runtimeEffect = RuntimeEffect::CreateForShader("shader");
     runtimeEffect->GetDrawingType();
-    RuntimeShaderBuilder runtimeShaderBuilder{runtimeEffect};
     bool isOpaque = GetObject<bool>();
-    runtimeShaderBuilder.MakeShader(nullptr, isOpaque);
+    runtimeEffect->MakeShader(nullptr, nullptr, 0, nullptr, isOpaque);
 
     return true;
 }
