@@ -2512,7 +2512,7 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest092, TestSize.Level
     OH_Drawing_TypographyCreate* handler = OH_Drawing_CreateTypographyHandler(typoStyle,
         OH_Drawing_CreateFontCollection());
     typography = OH_Drawing_CreateTypography(handler);
-    EXPECT_EQ(indents_notfound, OH_Drawing_TypographyGetIndentsWithIndex(typography, -1));
+    EXPECT_EQ(0.0, OH_Drawing_TypographyGetIndentsWithIndex(typography, -1));
     const float indents[] = {1.2, 3.4};
     OH_Drawing_TypographySetIndents(typography, 2, indents);
     int indexOutOfBounds = 3;
