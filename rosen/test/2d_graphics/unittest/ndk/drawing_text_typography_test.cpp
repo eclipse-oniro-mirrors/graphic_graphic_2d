@@ -2498,7 +2498,7 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest102, TestSize.Level
         EXPECT_EQ(OH_Drawing_FontParserGetFontByName(parser, name) != nullptr, true);
         EXPECT_EQ(OH_Drawing_FontParserGetFontByName(nullptr, name) == nullptr, true);
         OH_Drawing_DestroySystemFontList(list, fontNum);
-        OH_Drawing_DestroySystemFontList(nullptr, nullptr);
+        OH_Drawing_DestroySystemFontList(nullptr, fontNum);
     }
     OH_Drawing_DestroyFontParser(parser);
 }
