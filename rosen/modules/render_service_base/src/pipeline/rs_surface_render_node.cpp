@@ -1897,6 +1897,18 @@ const std::vector<std::shared_ptr<RSRenderNode>>& RSSurfaceRenderNode::GetChildr
     return childrenFilterNodes_;
 }
 
+std::vector<RectI> RSSurfaceRenderNode::GetChildrenNeedFilterRectsWithoutCacheValid()
+{
+    std::vector<RectI> childrenFilterRectsWithoutCacheValid;
+    auto maxSize = std::min(childrenFilterRects_.size(), childrenFilterRectsCacheValid_.size());
+    for (size_t i = 0; i < maxSize; i++) {
+        if (!childrenFilterRectsCacheValid_[i]) {
+            childrenFilterRectsWithoutCacheValid.emplace_back(childrenFilterRects_[i]);
+        }
+    }
+    return childrenFilterRectsWithoutCacheValid;
+};
+
 // manage abilities' nodeid info
 void RSSurfaceRenderNode::UpdateAbilityNodeIds(NodeId id, bool isAdded)
 {
