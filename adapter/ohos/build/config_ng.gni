@@ -13,6 +13,7 @@
 
 form_components_support = false
 plugin_components_support = false
+use_external_icu = "shared"
 
 defines = [ "NG_BUILD" ]
 
