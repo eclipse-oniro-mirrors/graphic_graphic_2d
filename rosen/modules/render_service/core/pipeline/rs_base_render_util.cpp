@@ -830,7 +830,9 @@ bool RSBaseRenderUtil::IsNeedClient(RSRenderNode& node, const ComposeInfo& info)
 
 bool RSBaseRenderUtil::IsForceClient()
 {
-    return (std::atoi((system::GetParameter("rosen.client_composition.enabled", "0")).c_str()) != 0);
+    static bool forceClient =
+        std::atoi((system::GetParameter("rosen.client_composition.enabled", "0")).c_str()) != 0;
+    return forceClient;
 }
 
 BufferRequestConfig RSBaseRenderUtil::GetFrameBufferRequestConfig(const ScreenInfo& screenInfo, bool isPhysical,
