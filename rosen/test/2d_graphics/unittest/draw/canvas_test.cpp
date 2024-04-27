@@ -711,6 +711,49 @@ HWTEST_F(CanvasTest, CanvasAttachAndDetachBrushTest001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetRecordingStateTest001
+ * @tc.desc: Test for GetRecordingState functions.
+ * @tc.type: FUNC
+ * @tc.require: I719U5
+ */
+HWTEST_F(CanvasTest, GetRecordingStateTest001, TestSize.Level1)
+{
+    auto canvas = std::make_unique<Canvas>();
+    ASSERT_TRUE(canvas != nullptr);
+    canvas->SetRecordingState(true);
+    bool state = canvas->GetRecordingState();
+    ASSERT_TRUE(state);
+}
+
+/**
+ * @tc.name: SetRecordingStateTest001
+ * @tc.desc: Test for SetRecordingState functions.
+ * @tc.type: FUNC
+ * @tc.require: I719U5
+ */
+HWTEST_F(CanvasTest, SetRecordingStateTest001, TestSize.Level1)
+{
+    auto canvas = std::make_unique<Canvas>();
+    ASSERT_TRUE(canvas != nullptr);
+    canvas->SetRecordingState(false);
+    bool state = canvas->GetRecordingState();
+    ASSERT_TRUE(!state);
+}
+
+/**
+ * @tc.name: GetDrawingTypeTest001
+ * @tc.desc: Test for GetDrawingType functions.
+ * @tc.type: FUNC
+ * @tc.require: I719U5
+ */
+HWTEST_F(CanvasTest, GetDrawingTypeTest001, TestSize.Level1)
+{
+    std::shared_ptr<Drawing::OverDrawCanvas> overDrawCanvas;
+    DrawingType type = overDrawCanvas->GetDrawingType();
+    ASSERT_TRUE(type == DrawingType::OVER_DRAW);
+}
+
+/**
  * @tc.name: GetBounds001
  * @tc.desc: Test for geting the bounds of layer.
  * @tc.type: FUNC
