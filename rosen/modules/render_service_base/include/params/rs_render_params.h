@@ -49,7 +49,7 @@ public:
     void SetMatrix(const Drawing::Matrix& matrix);
     const Drawing::Matrix& GetMatrix() const;
 
-    void ApplyAlphaAndMatrixToCanvas(RSPaintFilterCanvas& canvas) const;
+    void ApplyAlphaAndMatrixToCanvas(RSPaintFilterCanvas& canvas, const Drawing::Matrix& parentSurfaceMatrix) const;
 
     void SetBoundsRect(const Drawing::RectF& boundsRect);
     const Drawing::Rect& GetBounds() const;
@@ -132,8 +132,6 @@ public:
 
     // dfx
     virtual std::string ToString() const;
-
-    static Drawing::Matrix parentSurfaceMatrix_;
 
 protected:
     bool needSync_ = false;

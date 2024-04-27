@@ -555,7 +555,7 @@ void RSDisplayRenderNodeDrawable::DrawMirrorScreen(RSDisplayRenderNode& displayN
         float mirrorScaleX = mirroredProcessor->GetMirrorScaleX();
         float mirrorScaleY = mirroredProcessor->GetMirrorScaleY();
         RSUniRenderThread::SetCaptureParam(CaptureParam(true, false, true, mirrorScaleX, mirrorScaleY));
-        RSRenderParams::parentSurfaceMatrix_ = curCanvas_->GetTotalMatrix();
+        parentSurfaceMatrix_ = curCanvas_->GetTotalMatrix();
         mirroredNodeDrawable->OnCapture(*curCanvas_);
         RSUniRenderThread::ResetCaptureParam();
         curCanvas_->Restore();
