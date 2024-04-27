@@ -1044,7 +1044,7 @@ RSRenderNode::~RSRenderNode()
     ClearCacheSurface();
     auto context = GetContext().lock();
     if (!context) {
-        ROSEN_LOGE("Invalid context");
+        ROSEN_LOGD("RSRenderNode::~RSRenderNode: Invalid context");
         return;
     }
 }
