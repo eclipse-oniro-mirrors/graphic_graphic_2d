@@ -118,8 +118,6 @@ public:
     float GetIlluminatedBorderWidth() const;
     int GetIlluminatedType() const;
     float GetBloom() const;
-    Vector2f GetGreyCoef() const;
-    Vector4f GetAiInvert() const;
 
     std::string Dump() const;
 private:

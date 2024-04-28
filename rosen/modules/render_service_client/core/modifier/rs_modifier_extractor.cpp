@@ -458,16 +458,6 @@ float RSModifierExtractor::GetBloom() const
     GET_PROPERTY_FROM_MODIFIERS_EQRETURN(float, BLOOM, 0.f, =);
 }
 
-Vector2f RSModifierExtractor::GetGreyCoef() const
-{
-    GET_PROPERTY_FROM_MODIFIERS(Vector2f, GREY_COEF, Vector2f(0.f, 0.f), =);
-}
-
-Vector4f RSModifierExtractor::GetAiInvert() const
-{
-    GET_PROPERTY_FROM_MODIFIERS_EQRETURN(Vector4f, AIINVERT, Vector4f(0.f), =);
-}
-
 std::string RSModifierExtractor::Dump() const
 {
     std::string dumpInfo;

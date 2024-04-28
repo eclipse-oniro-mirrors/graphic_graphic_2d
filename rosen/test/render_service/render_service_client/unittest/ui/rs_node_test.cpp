@@ -3583,8 +3583,6 @@ HWTEST_F(RSNodeTest, SetGreyCoef001, TestSize.Level1)
     auto rsNode = RSCanvasNode::Create();
     Vector2f greyCoef = { 0.5, 0.5 };
     rsNode->SetGreyCoef(greyCoef);
-    EXPECT_TRUE(rsNode->GetStagingProperties().GetGreyCoef().x_ == 0.5);
-    EXPECT_TRUE(rsNode->GetStagingProperties().GetGreyCoef().y_ == 0.5);
 }
 
 /**
@@ -3597,7 +3595,6 @@ HWTEST_F(RSNodeTest, SetAiInvertTest, TestSize.Level1)
     auto rootNode = RSCanvasNode::Create();
     auto value = Vector4f(10.f);
     rootNode->SetAiInvert(value);
-    EXPECT_TRUE(ROSEN_EQ(rootNode->GetStagingProperties().GetAiInvert(), value));
 }
 
 /**
@@ -3605,7 +3602,7 @@ HWTEST_F(RSNodeTest, SetAiInvertTest, TestSize.Level1)
  * @tc.desc:
  * @tc.type:FUNC
  */
-HWTEST_F(RSNodeTest, SetSpherizeDegree001, TestSize.Level1)
+HWTEST_F(RSNodeTest, SetandGetSpherizeDegree001, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
     float spherizeDegree = 1.0f;
@@ -3618,7 +3615,7 @@ HWTEST_F(RSNodeTest, SetSpherizeDegree001, TestSize.Level1)
  * @tc.desc:
  * @tc.type:FUNC
  */
-HWTEST_F(RSNodeTest, SetLightUpEffectDegree001, TestSize.Level1)
+HWTEST_F(RSNodeTest, SetandGetLightUpEffectDegree001, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
     float lightUpEffectDegree = 1.0f;
