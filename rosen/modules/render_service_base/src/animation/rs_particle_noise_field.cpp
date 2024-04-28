@@ -143,8 +143,9 @@ float PerlinNoise2D::lerp(float t, float a, float b)
 
 float PerlinNoise2D::grad(int hash, float x, float y)
 {
-    // Convert low 4 bits of hash code into 12 gradient directions
-    int h = hash & 15; // Use a bitwise AND operation (&) to get the lowest 4 bits of the hash value
+    // Convert low 4 bits of hash code into 12 gradient directions.
+    // Use a bitwise AND operation (&) to get the lowest 4 bits of the hash value.
+    uint32_t h = static_cast<uint32_t>(hash) & 15;
     // The value of h determines whether the first component of the gradient vector is x or y.
     // If the value of h is less than 8, u is assigned the value x, otherwise y
     double u = h < 8 ? x : y;
@@ -176,9 +177,9 @@ float PerlinNoise2D::noise(float x, float y)
 {
     x *= noiseFrequency_;
     y *= noiseFrequency_;
-    // Find the unit square that contains the point
-    int X = (int)floor(x) & 255;
-    int Y = (int)floor(y) & 255;
+    // Find the unit square that contains the point, 255 is vector max index
+    uint32_t X = static_cast<uint32_t>(static_cast<int>(floor(x))) & 255;
+    uint32_t Y = static_cast<uint32_t>(static_cast<int>(floor(y))) & 255;
 
     // Find relative x, y of point in square
     x -= floor(x);
