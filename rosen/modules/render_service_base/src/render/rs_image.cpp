@@ -365,7 +365,7 @@ void RSImage::SetNodeId(NodeId nodeId)
     nodeId_ = nodeId;
 }
 
-void RSImage::SetPaint(Drawing::Paint paint)
+void RSImage::Setpaint(Drawing::Paint paint)
 {
     paint_ = paint;
 }

@@ -92,9 +92,6 @@ public:
     void SetAntiAlias(bool aa);
     bool IsAntiAlias() const { return antiAlias_; }
 
-    void SetHDRImage(bool hdrImage);
-    bool IsHDRImage() const { return hdrImage_; }
-
     void Reset();
     void Disable();
 
@@ -113,7 +110,6 @@ private:
     Pen::CapStyle cap_ = Pen::CapStyle::DEFAULT_CAP;
 
     bool hasFilter_ = false;
-    bool hdrImage_ = false;
     Filter filter_;
 
     std::shared_ptr<ColorSpace> colorSpace_ = nullptr;
