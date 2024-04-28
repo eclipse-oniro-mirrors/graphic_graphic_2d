@@ -51,6 +51,9 @@ HWTEST_F(RSLightUpEffectFilterTest, RSLightUpEffectFilterTest001, TestSize.Level
     auto filter2 = std::make_shared<RSLightUpEffectFilter>(lightUpDegree);
     auto result = filter->Compose(filter2);
     EXPECT_TRUE(result != nullptr);
+
+    RSLightUpEffectFilter rsLightUpEffectFilter = RSLightUpEffectFilter(lightUpDegree);
+    rsLightUpEffectFilter.GetDescription();
 }
 
 /**
