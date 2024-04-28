@@ -165,19 +165,24 @@ void VSyncGenerator::ThreadLoop()
             }
         }
 
-        bool isWakeup = false;
-        if (occurTimestamp < nextTimeStamp) {
-            std::unique_lock<std::mutex> lck(waitForTimeoutMtx_);
-            auto err = waitForTimeoutCon_.wait_for(lck, std::chrono::nanoseconds(nextTimeStamp - occurTimestamp));
-            if (err == std::cv_status::timeout) {
-                isWakeup = true;
-            } else {
-                ScopedBytrace func("VSyncGenerator::ThreadLoop::Continue");
-                continue;
-            }
-        }
-        ListenerVsyncEventCB(occurTimestamp, nextTimeStamp, occurReferenceTime, isWakeup);
+        WaitForTimeout(occurTimestamp, nextTimeStamp, occurReferenceTime);
     }
+}
+
+void VSyncGenerator::WaitForTimeout(int64_t occurTimestamp, int64_t nextTimeStamp, int64_t occurReferenceTime)
+{
+    bool isWakeup = false;
+    if (occurTimestamp < nextTimeStamp) {
+        std::unique_lock<std::mutex> lck(waitForTimeoutMtx_);
+        auto err = waitForTimeoutCon_.wait_for(lck, std::chrono::nanoseconds(nextTimeStamp - occurTimestamp));
+        if (err == std::cv_status::timeout) {
+            isWakeup = true;
+        } else {
+            ScopedBytrace func("VSyncGenerator::ThreadLoop::Continue");
+            return;
+        }
+    }
+    ListenerVsyncEventCB(occurTimestamp, nextTimeStamp, occurReferenceTime, isWakeup);
 }
 
 bool VSyncGenerator::ChangeListenerOffsetInternal()
