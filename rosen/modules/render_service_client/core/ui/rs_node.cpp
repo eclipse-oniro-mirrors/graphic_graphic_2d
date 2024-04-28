@@ -320,7 +320,6 @@ void RSNode::ExecuteWithoutAnimation(
 void RSNode::FallbackAnimationsToRoot()
 {
     auto target = RSNodeMap::Instance().GetAnimationFallbackNode();
-
     if (target == nullptr) {
         ROSEN_LOGE("Failed to move animation to root, root node is null!");
         return;
