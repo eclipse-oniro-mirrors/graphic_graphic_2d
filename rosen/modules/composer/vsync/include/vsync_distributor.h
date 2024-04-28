@@ -152,7 +152,6 @@ private:
 #ifdef COMPOSER_SCHED_ENABLE
     void SubScribeSystemAbility(const std::string& threadName);
 #endif
-    void NotifyMainThread();
     void OnVSyncTrigger(int64_t now, int64_t period, uint32_t refreshRate, VSyncMode vsyncMode);
 
     sptr<VSyncSystemAbilityListener> saStatusChangeListener_ = nullptr;
@@ -177,8 +176,6 @@ private:
     sptr<DVsync> dvsync_ = nullptr;
     bool pendingRNVInVsync_ = false;  // for vsync switch to dvsync
     std::atomic<int64_t> lastDVsyncTS_ = 0;  // for dvsync switch to vsync
-    bool pendingRNVInDVsync_ = false;
-    bool lockExecute_ = false;
 #endif
     bool isRs_ = false;
 };

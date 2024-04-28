@@ -243,7 +243,6 @@ VSyncDistributor::~VSyncDistributor()
         if (threadLoop_.joinable()) {
             {
                 std::unique_lock<std::mutex> locker(mutex_);
-                dvsync_->MarkPendingRNVIsProcess(false);
                 dvsync_->RNVNotify();
             }
             con_.notify_all();
@@ -328,8 +327,9 @@ void VSyncDistributor::WaitForVsyncOrRequest(std::unique_lock<std::mutex> &locke
 
     // before con_ wait, notify the rnv_con.
 #if defined(RS_ENABLE_DVSYNC)
-    dvsync_->MarkPendingRNVIsProcess(false);
-    dvsync_->RNVNotify();
+    if (IsDVsyncOn()) {
+        dvsync_->RNVNotify();
+    }
 #endif
     con_.wait(locker);
 
@@ -348,7 +348,6 @@ void VSyncDistributor::WaitForVsyncOrRequest(std::unique_lock<std::mutex> &locke
                 EnableVSync();
             }
         }
-        pendingRNVInDVsync_ = false;
     }
 #endif
 }
@@ -379,14 +378,7 @@ void VSyncDistributor::ThreadMain()
         {
             bool waitForVSync = false;
             std::unique_lock<std::mutex> locker(mutex_);
-            timestamp = event_.timestamp;
-            event_.timestamp = 0;
-            vsyncCount = event_.vsyncCount;
-            if (vsyncMode_ == VSYNC_MODE_LTPO) {
-                CollectConnectionsLTPO(waitForVSync, timestamp, conns, event_.vsyncPulseCount);
-            } else {
-                CollectConnections(waitForVSync, timestamp, conns, vsyncCount);
-            }
+            CollectConns(waitForVSync, timestamp, conns);
             // no vsync signal
             if (timestamp == 0) {
                 // there is some connections request next vsync, enable vsync if vsync disable and
@@ -394,8 +386,9 @@ void VSyncDistributor::ThreadMain()
                 if (waitForVSync == true && vsyncEnabled_ == false) {
                     EnableVSync();
 #if defined(RS_ENABLE_DVSYNC)
-                    dvsync_->MarkPendingRNVIsProcess(false);
-                    dvsync_->RNVNotify();
+                    if (IsDVsyncOn()) {
+                        dvsync_->RNVNotify();
+                    }
 #endif
                     if (con_.wait_for(locker, std::chrono::milliseconds(SOFT_VSYNC_PERIOD)) ==
                         std::cv_status::timeout) {
@@ -416,45 +409,65 @@ void VSyncDistributor::ThreadMain()
                 continue;
             }
         }
-        {
+        if (!PostVSyncEventPreProcess(timestamp, conns)) {
+            continue;
+        } else {
             // IMPORTANT: ScopedDebugTrace here will cause frame loss.
             ScopedBytrace func(name_ + "_SendVsync");
         }
-#if defined(RS_ENABLE_DVSYNC)
-        // ensure the preexecution only gets ahead for at most one period(i.e., 3 buffer rotation)
-        if (IsDVsyncOn()) {
-            int64_t periodBeforeDelay = 0L;
-            int64_t periodAfterDelay = 0L;
-            {
-                std::unique_lock<std::mutex> locker(mutex_);
-                periodBeforeDelay = event_.period;
-                dvsync_->MarkDistributorSleep(true);
-                dvsync_->RNVNotify();
-                dvsync_->DelayBeforePostEvent(timestamp, locker);
-                dvsync_->MarkDistributorSleep(false);
-                periodAfterDelay = event_.period;
-            }
-            // if getting switched into vsync mode after sleep
-            if (!IsDVsyncOn()) {
-                ScopedBytrace func("NoAccumulateInVsync");
-                lastDVsyncTS_.store(0);  // ensure further OnVSyncEvent do not skip
-                for (auto conn : conns) {
-                    RequestNextVSync(conn);
-                }  // resend RNV for vsync
-                continue;  // do not accumulate frame;
-            } else if (std::abs(periodAfterDelay - periodBeforeDelay) > MAX_PERIOD_BIAS) {
-                timestamp = timestamp + periodAfterDelay - periodBeforeDelay;
-                dvsync_->SetLastVirtualVSyncTS(timestamp);
-            }
-        }
-        {
-            std::unique_lock<std::mutex> locker(mutex_);
-            pendingRNVInVsync_ = false;
-            lockExecute_ = true;
-        }
-#endif
         PostVSyncEvent(conns, timestamp);
     }
+}
+
+void VSyncDistributor::CollectConns(bool &waitForVSync, int64_t &timestamp,
+    std::vector<sptr<VSyncConnection>> &conns)
+{
+    timestamp = event_.timestamp;
+    event_.timestamp = 0;
+    if (vsyncMode_ == VSYNC_MODE_LTPO) {
+        CollectConnectionsLTPO(waitForVSync, timestamp, conns, event_.vsyncPulseCount);
+    } else {
+        CollectConnections(waitForVSync, timestamp, conns, event_.vsyncCount);
+    }
+}
+
+bool VSyncDistributor::PostVSyncEventPreProcess(int64_t &timestamp, std::vector<sptr<VSyncConnection>> &conns)
+{
+#if defined(RS_ENABLE_DVSYNC)
+    // ensure the preexecution only gets ahead for at most one period(i.e., 3 buffer rotation)
+    if (IsDVsyncOn()) {
+        int64_t periodBeforeDelay = 0L;
+        int64_t periodAfterDelay = 0L;
+        {
+            std::unique_lock<std::mutex> locker(mutex_);
+            periodBeforeDelay = event_.period;
+            dvsync_->MarkDistributorSleep(true);
+            dvsync_->RNVNotify();
+            dvsync_->DelayBeforePostEvent(timestamp, locker);
+            dvsync_->MarkDistributorSleep(false);
+            periodAfterDelay = event_.period;
+        }
+        // if getting switched into vsync mode after sleep
+        if (!IsDVsyncOn()) {
+            ScopedBytrace func("NoAccumulateInVsync");
+            lastDVsyncTS_.store(0);  // ensure further OnVSyncEvent do not skip
+            for (auto conn : conns) {
+                RequestNextVSync(conn);
+            }  // resend RNV for vsync
+            return false;  // do not accumulate frame;
+        } else if (std::abs(periodAfterDelay - periodBeforeDelay) > MAX_PERIOD_BIAS) {
+            timestamp = timestamp + periodAfterDelay - periodBeforeDelay;
+            dvsync_->SetLastVirtualVSyncTS(timestamp);
+        }
+    }
+    {
+        std::unique_lock<std::mutex> locker(mutex_);
+        pendingRNVInVsync_ = false;
+    }
+    return true;
+#else
+    return true;
+#endif
 }
 
 void VSyncDistributor::EnableVSync()
@@ -753,30 +766,17 @@ VsyncError VSyncDistributor::RequestNextVSync(const sptr<VSyncConnection> &conne
         connection->rate_ = 0;
     }
     connection->triggerThisTime_ = true;
-    NotifyMainThread();
-    VLOGD("conn name:%{public}s, rate:%{public}d", connection->info_.name_.c_str(), connection->rate_);
-    return VSYNC_ERROR_OK;
-}
-
-void VSyncDistributor::NotifyMainThread()
-{
 #if defined(RS_ENABLE_DVSYNC)
-    if (IsDVsyncOn()) {
-        if (!lockExecute_) {
-            con_.notify_all();
-        } else {
-            ScopedBytrace func("set pendingRNVInDVsync_ = true");
-            pendingRNVInDVsync_ = true;
-            dvsync_->RNVNotify();
-        }
-    } else if (isRs_ && dvsync_->IsFeatureEnabled()) {
+    if (isRs_ && dvsync_->IsFeatureEnabled()) {
         con_.notify_all();
-    } else {
+    } else 
+#else
+    {
         EnableVSync();
     }
-#else
-    EnableVSync();
 #endif
+    VLOGD("conn name:%{public}s, rate:%{public}d", connection->info_.name_.c_str(), connection->rate_);
+    return VSYNC_ERROR_OK;
 }
 
 VsyncError VSyncDistributor::SetVSyncRate(int32_t rate, const sptr<VSyncConnection>& connection)
@@ -983,17 +983,11 @@ void VSyncDistributor::SetFrameIsRender(bool isRender)
 {
 #if defined(RS_ENABLE_DVSYNC)
     std::unique_lock<std::mutex> locker(mutex_);
-    ScopedBytrace trace("VSyncDistributor::SetFrameIsRender");
+    ScopedBytrace trace("SetFrameIsRender");
     if (isRender) {
         dvsync_->UnMarkRSNotRendering();
     } else {
         dvsync_->MarkRSNotRendering();
-    }
-    lockExecute_ = false;
-    if (IsDVsyncOn() && pendingRNVInDVsync_) {
-        ScopedBytrace func("pendingRNVInDVsync_ is true, notify");
-        dvsync_->MarkPendingRNVIsProcess(true);
-        con_.notify_all();
     }
 #endif
 }
