@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,12 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "boot_videoplayer.h"
+#include "boot_video_player.h"
 
-#include "boot_animation.h"
 #include "boot_animation_utils.h"
 #include "log.h"
-#include "util.h"
+#include <media_errors.h>
+#include "transaction/rs_interfaces.h"
+#include <parameters.h>
 
 using namespace OHOS;
 #ifdef PLAYER_FRAMEWORK_ENABLE
@@ -25,40 +26,23 @@ static const int CONTENT_TYPE_UNKNOWN = 0;
 static const int STREAM_USAGE_ENFORCED_TONE = 15;
 #endif
 
-void BootVideoPlayer::SetVideoPath(const std::string& path)
+BootVideoPlayer::BootVideoPlayer(const PlayerParams& params)
 {
-    if (path.empty()) {
-        LOGE("set video path is empty");
-        return;
-    }
-    videopath_ = path;
-}
-
+    screenId_ = params.screenId;
+    resPath_ = params.resPath;
 #ifdef PLAYER_FRAMEWORK_ENABLE
-void BootVideoPlayer::SetPlayerSurface(const sptr<Surface>& surface)
-{
-    if (surface == nullptr) {
-        LOGE("SetPlayerSurface surface is nullptr");
-        return;
-    }
-    surface_ = surface;
-}
-
-std::shared_ptr<Media::Player> BootVideoPlayer::GetPlayer()
-{
-    return mediaPlayer_;
-}
+    surface_ = params.surface;
 #endif
+    SetCallback(params.callback);
+    isSoundEnabled_ = params.soundEnabled;
+}
 
-bool BootVideoPlayer::PlayVideo()
+void BootVideoPlayer::Play()
 {
 #ifdef PLAYER_FRAMEWORK_ENABLE
     LOGI("PlayVideo begin");
-    if (mediaPlayer_ == nullptr) {
-        mediaPlayer_ = Media::PlayerFactory::CreatePlayer();
-    }
     while (mediaPlayer_ == nullptr) {
-        LOGE("CreatePlayer fail, mediaPlayer_ is nullptr");
+        LOGI("mediaPlayer is nullptr, try create again");
         mediaPlayer_ = Media::PlayerFactory::CreatePlayer();
         usleep(SLEEP_TIME_US);
     }
@@ -66,68 +50,87 @@ bool BootVideoPlayer::PlayVideo()
     std::shared_ptr<VideoPlayerCallback> cb = std::make_shared<VideoPlayerCallback>(shared_from_this());
     int32_t ret = mediaPlayer_->SetPlayerCallback(cb);
     if (ret != 0) {
-        LOGE("PlayVideo SetPlayerCallback fail, errorCode:%{public}d", ret);
-        return false;
+        LOGE("PlayVideo SetPlayerCallback fail, errorCode: %{public}d", ret);
+        return;
     }
-
-    std::string uri = "file:/" + videopath_;
-    ret = mediaPlayer_->SetSource(uri);
+    std::string path = GetResPath(TYPE_VIDEO);
+    LOGI("video res path: %{public}s", path.c_str());
+    ret = mediaPlayer_->SetSource(path);
     if (ret != 0) {
-        LOGE("PlayVideo SetSource fail, uri:%{public}s, errorCode:%{public}d", uri.c_str(), ret);
-        return false;
+        LOGE("PlayVideo SetSource fail, errorCode: %{public}d", ret);
+        return;
     }
     if (surface_ == nullptr) {
         LOGE("PlayVideo surface is null");
-        return false;
+        return;
     }
     ret = mediaPlayer_->SetVideoSurface(surface_);
     if (ret != 0) {
-        LOGE("PlayVideo SetVideoSurface fail, errorCode:%{public}d", ret);
-        return false;
+        LOGE("PlayVideo SetVideoSurface fail, errorCode: %{public}d", ret);
+        return;
     }
 
-    SetVideoSound();
-    
+    if (!SetVideoSound()) {
+        LOGW("SetVideoSound failed");
+    }
+
     ret = mediaPlayer_->Prepare();
     if (ret !=  0) {
-        LOGE("PlayVideo Prepare fail, errorCode:%{public}d", ret);
-        return false;
+        LOGE("PlayVideo Prepare fail, errorCode: %{public}d", ret);
+        return;
     }
-    LOGI("PlayVideo end");
-    return true;
 #else
-    LOGI("player_framework part is not enabled.");
-    return false;
+    LOGI("player framework is disabled");
 #endif
 }
 
-void BootVideoPlayer::StopVideo()
-{
-    LOGI("BootVideoPlayer StopVideo");
-    vsyncCallbacks_(userData_);
-}
-
-void BootVideoPlayer::SetVideoSound()
+bool BootVideoPlayer::SetVideoSound()
 {
 #ifdef PLAYER_FRAMEWORK_ENABLE
-    LOGI("BootVideoPlayer SetVideoSound");
+    LOGI("SetVideoSound start");
+    if (!isSoundEnabled_) {
+        LOGI("sound disabled on screen: " BPUBU64 "", screenId_);
+        return true;
+    }
     Media::Format format;
     format.PutIntValue(Media::PlayerKeys::CONTENT_TYPE, CONTENT_TYPE_UNKNOWN);
     format.PutIntValue(Media::PlayerKeys::STREAM_USAGE, STREAM_USAGE_ENFORCED_TONE);
     format.PutIntValue(Media::PlayerKeys::RENDERER_FLAG, 0);
     int ret = mediaPlayer_->SetParameter(format);
-    if (ret !=  0) {
+    if (ret != 0) {
         LOGE("PlayVideo SetParameter fail, errorCode:%{public}d", ret);
+        return false;
     }
 
     bool bootSoundEnabled = BootAnimationUtils::GetBootAnimationSoundEnabled();
     if (!bootSoundEnabled) {
         ret = mediaPlayer_->SetVolume(0, 0);
-        if (ret !=  0) {
+        if (ret != 0) {
             LOGE("PlayVideo SetVolume fail, errorCode:%{public}d", ret);
+            return false;
         }
     }
+    return true;
 #endif
+}
+
+void BootVideoPlayer::SetCallback(const BootAnimationCallback* cb)
+{
+    std::lock_guard<std::mutex> locker(mtx_);
+    vSyncCallback_ = cb->callback;
+    userData_ = cb->userData;
+}
+
+#ifdef PLAYER_FRAMEWORK_ENABLE
+std::shared_ptr<Media::Player> BootVideoPlayer::GetMediaPlayer() const
+{
+    return mediaPlayer_;
+}
+#endif
+
+void BootVideoPlayer::StopVideo()
+{
+    vSyncCallback_(userData_);
 }
 
 #ifdef PLAYER_FRAMEWORK_ENABLE
@@ -144,7 +147,7 @@ void VideoPlayerCallback::OnInfo(Media::PlayerOnInfoType type, int32_t extra, co
 {
     switch (type) {
         case Media::INFO_TYPE_SEEKDONE:
-            LOGI("PlayerCallback: OnSeekDone currentPositon is:%{public}d", extra);
+            LOGI("PlayerCallback: OnSeekDone currentPositon is: %{public}d", extra);
             break;
         case Media::INFO_TYPE_SPEEDDONE:
             LOGI("PlayerCallback: SpeedDone");
@@ -153,7 +156,7 @@ void VideoPlayerCallback::OnInfo(Media::PlayerOnInfoType type, int32_t extra, co
             LOGI("PlayerCallback: BitRateDone");
             break;
         case Media::INFO_TYPE_EOS: {
-            LOGI("PlayerCallback: OnEndOfStream isLooping is:%{public}d", extra);
+            LOGI("PlayerCallback: OnEndOfStream isLooping is: %{public}d", extra);
             boot_->StopVideo();
             break;
         }
@@ -164,10 +167,10 @@ void VideoPlayerCallback::OnInfo(Media::PlayerOnInfoType type, int32_t extra, co
             LOGI("PlayerCallback: Bitrate Collect");
             break;
         case Media::INFO_TYPE_STATE_CHANGE:
-            LOGI("PlayerCallback: State Change, current state is %{public}d", extra);
+            LOGI("PlayerCallback: State Change, current state is: %{public}d", extra);
             if (Media::PlayerStates::PLAYER_PREPARED == extra) {
                 LOGI("Begin to play");
-                boot_->GetPlayer()->Play();
+                boot_->GetMediaPlayer()->Play();
             }
             break;
         case Media::INFO_TYPE_POSITION_UPDATE: {
@@ -175,8 +178,10 @@ void VideoPlayerCallback::OnInfo(Media::PlayerOnInfoType type, int32_t extra, co
             break;
         }
         case Media::INFO_TYPE_MESSAGE:
-            LOGI("PlayerCallback: OnMessage is:%{public}d", extra);
-            system::SetParameter("bootevent.bootanimation.started", "true");
+            LOGI("PlayerCallback: OnMessage is: %{public}d", extra);
+            if (!system::GetBoolParameter(BOOT_ANIMATION_STARTED, false)) {
+                system::SetParameter(BOOT_ANIMATION_STARTED, "true");
+            }
             break;
         case Media::INFO_TYPE_RESOLUTION_CHANGE:
             LOGI("PlayerCallback: Resolution Change");
