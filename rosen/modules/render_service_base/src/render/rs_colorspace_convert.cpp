@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include "render/rs_colorspace_convert.h"
 
 #include "effect/image_filter.h"
@@ -23,7 +24,9 @@ namespace Rosen {
 
 RSColorSpaceConvert::RSColorSpaceConvert()
 {
+#ifdef USE_VIDEO_PROCESSING_ENGINE
     colorSpaceConverterDisplay_ = VPE::ColorSpaceConverterDisplay::Create();
+#endif
 }
 
 RSColorSpaceConvert::~RSColorSpaceConvert()

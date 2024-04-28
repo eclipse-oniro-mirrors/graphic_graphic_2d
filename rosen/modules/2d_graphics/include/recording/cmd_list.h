@@ -42,7 +42,6 @@ public:
     virtual void Playback(Canvas& canvas, const Rect& rect,
         const SamplingOptions& sampling, bool isBackground = false) = 0;
     virtual void SetNodeId(NodeId id) {};
-    virtual void SetPaint(Paint paint) {};
 };
 
 class DRAWING_API ExtendImageBaseObj {
