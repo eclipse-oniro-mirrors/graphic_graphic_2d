@@ -92,12 +92,12 @@ void CreateAnimationTimingCurve(const OHOS::Rosen::Drawing::DrawingCurveType typ
     }
 }
 
-void CalcOneTimePercent(std::vector<float>& timePercents, const float totalDuration, const float duration)
+void CalcOneTimePercent(std::vector<float>& timePercents, const uint32_t totalDuration, const uint32_t duration)
 {
     if (totalDuration == 0) {
         return;
     }
-    float timePercent = duration / totalDuration;
+    float timePercent = static_cast<float>(duration) / static_cast<float>(totalDuration);
     timePercent = timePercent > 1 ? 1.0 : timePercent;
     timePercents.push_back(timePercent);
 }
@@ -671,7 +671,7 @@ bool RSSymbolAnimation::GetKeyframeAlphaAnimationParas(
     totalDuration = 0;
     int interval = 0;
     // traverse all time stages
-    for (unsigned long i = 0; i < oneGroupParas.size(); i++) {
+    for (unsigned int i = 0; i < oneGroupParas.size(); i++) {
         if (i + 1 < oneGroupParas.size()) {
             interval = oneGroupParas[i + 1].delay -
                        (static_cast<int>(oneGroupParas[i].duration) + oneGroupParas[i].delay);
@@ -697,31 +697,31 @@ bool RSSymbolAnimation::GetKeyframeAlphaAnimationParas(
         SymbolAnimation::CreateOrSetModifierValue(alphaPropertyEnd, alphaValueEnd);
         alphaPropertyStages_.push_back(alphaPropertyEnd);
     }
-    return CalcTimePercents(timePercents, static_cast<float>(totalDuration), oneGroupParas);
+    return CalcTimePercents(timePercents, totalDuration, oneGroupParas);
 }
 
-bool RSSymbolAnimation::CalcTimePercents(std::vector<float>& timePercents, const float totalDuration,
+bool RSSymbolAnimation::CalcTimePercents(std::vector<float>& timePercents, const uint32_t totalDuration,
     const std::vector<Drawing::DrawingPiecewiseParameter>& oneGroupParas)
 {
-    if (totalDuration <= 0) {
+    if (totalDuration == 0) {
         return false;
     }
     uint32_t duration = 0;
     int interval = 0;
     timePercents.push_back(0); // the first property of timePercent
-    for (unsigned long i = 0; i < oneGroupParas.size() - 1; i++) {
+    for (unsigned int i = 0; i < oneGroupParas.size() - 1; i++) {
         duration = duration + oneGroupParas[i].duration;
-        SymbolAnimation::CalcOneTimePercent(timePercents, totalDuration, static_cast<float>(duration));
+        SymbolAnimation::CalcOneTimePercent(timePercents, totalDuration, duration);
         interval = oneGroupParas[i + 1].delay -
                    (static_cast<int>(oneGroupParas[i].duration) + oneGroupParas[i].delay);
         if (interval < 0) {
             return false;
         }
         duration = duration + static_cast<uint32_t>(interval);
-        SymbolAnimation::CalcOneTimePercent(timePercents, totalDuration, static_cast<float>(duration));
+        SymbolAnimation::CalcOneTimePercent(timePercents, totalDuration, duration);
     }
     duration = duration + oneGroupParas.back().duration;
-    SymbolAnimation::CalcOneTimePercent(timePercents, totalDuration, static_cast<float>(duration));
+    SymbolAnimation::CalcOneTimePercent(timePercents, totalDuration, duration);
     return true;
 }
 
@@ -753,7 +753,7 @@ std::shared_ptr<RSAnimation> RSSymbolAnimation::KeyframeAlphaSymbolAnimation(con
     RSAnimationTimingCurve timingCurve;
     SymbolAnimation::CreateAnimationTimingCurve(oneStageParas.curveType, oneStageParas.curveArgs, timingCurve);
     std::vector<std::tuple<float, std::shared_ptr<RSPropertyBase>, RSAnimationTimingCurve>> keyframes;
-    for (unsigned long i = 1; i < alphaPropertyStages_.size(); i++) {
+    for (unsigned int i = 1; i < alphaPropertyStages_.size(); i++) {
         keyframes.push_back(std::make_tuple(timePercents[i], alphaPropertyStages_[i], timingCurve));
     }
     keyframeAnimation->AddKeyFrames(keyframes);
@@ -800,10 +800,8 @@ void RSSymbolAnimation::ScaleAnimationBase(const std::shared_ptr<RSNode>& rsNode
     SymbolAnimation::CreateAnimationTimingCurve(scaleParameter.curveType, scaleParameter.curveArgs, scaleCurve);
 
     RSAnimationTimingProtocol scaleprotocol;
-    int startDelay = scaleParameter.delay;
-    scaleprotocol.SetStartDelay(startDelay);
-    int duration = scaleParameter.duration;
-    scaleprotocol.SetDuration(duration);
+    scaleprotocol.SetStartDelay(scaleParameter.delay);
+    scaleprotocol.SetDuration(scaleParameter.duration);
 
     // set animation
     std::vector<std::shared_ptr<RSAnimation>> animations1 = RSNode::Animate(

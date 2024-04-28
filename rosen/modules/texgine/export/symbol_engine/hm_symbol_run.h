@@ -72,7 +72,7 @@ private:
     std::function<bool(const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)>
         animationFunc_ = nullptr;
 
-    uint64_t symbolId_;
+    uint64_t symbolId_ = 0;
 };
 } // namespace TextEngine
 } // namespace Rosen
