@@ -277,7 +277,7 @@ void Utils::IterateDirectory(const std::string& path, std::vector<std::string>& 
         return;
     }
 
-    while (struct dirent* entry = readdir(directory)) {        
+    while (struct dirent* entry = readdir(directory)) {
         const std::string entryName(entry->d_name);
         if ((entryName == ".") || (entryName == "..")) {
             continue;
