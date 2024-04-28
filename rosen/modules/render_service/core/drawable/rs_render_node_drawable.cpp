@@ -32,6 +32,9 @@ namespace OHOS::Rosen::DrawableV2 {
 #include "platform/ohos/backend/rs_vulkan_context.h"
 #endif
 RSRenderNodeDrawable::Registrar RSRenderNodeDrawable::instance_;
+thread_local bool RSRenderNodeDrawable::drawBlurForCache_ = false;
+thread_local bool RSRenderNodeDrawable::isOpDropped_ = true;
+thread_local Drawing::Matrix RSRenderNodeDrawable::parentSurfaceMatrix_;
 
 namespace {
 constexpr int32_t DRAWING_CACHE_MAX_UPDATE_TIME = 3;
@@ -142,7 +145,7 @@ void RSRenderNodeDrawable::CheckCacheTypeAndDraw(Drawing::Canvas& canvas, const 
         Drawing::AutoCanvasRestore arc(canvas, true);
         bool isOpDropped = isOpDropped_;
         isOpDropped_ = false;
-        drawBlurForCache_ = true;
+        drawBlurForCache_ = true; // may use in uifirst subthread
         auto drawableCacheType = GetCacheType();
         SetCacheType(DrawableCacheType::NONE);
         RS_TRACE_NAME_FMT("DrawBlurForCache id:%llu", nodeId_);
@@ -154,8 +157,7 @@ void RSRenderNodeDrawable::CheckCacheTypeAndDraw(Drawing::Canvas& canvas, const 
     }
 
     auto curCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
-    if (drawBlurForCache_ && !params.ChildHasVisibleFilter() && !params.ChildHasVisibleEffect() &&
-        !curCanvas->GetIsParallelCanvas()) {
+    if (drawBlurForCache_ && !params.ChildHasVisibleFilter() && !params.ChildHasVisibleEffect()) {
         RS_OPTIONAL_TRACE_NAME_FMT("CheckCacheTypeAndDraw id:%llu child without filter, skip", nodeId_);
         Drawing::AutoCanvasRestore arc(canvas, true);
         DrawBackground(canvas, params.GetBounds());
@@ -214,7 +216,10 @@ void RSRenderNodeDrawable::DrawDfxForCache(Drawing::Canvas& canvas, const Drawin
             updateTimes = drawingCacheUpdateTimeMap_.at(nodeId_);
         }
     }
-    drawingCacheInfos_.emplace_back(dfxRect, updateTimes);
+    {
+        std::lock_guard<std::mutex> lock(drawingCacheInfoMutex_);
+        drawingCacheInfos_.emplace_back(dfxRect, updateTimes);
+    }
 }
 
 void RSRenderNodeDrawable::SetCacheType(DrawableCacheType cacheType)

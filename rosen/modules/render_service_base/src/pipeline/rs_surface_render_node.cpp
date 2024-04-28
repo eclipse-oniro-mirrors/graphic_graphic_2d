@@ -795,6 +795,16 @@ bool RSSurfaceRenderNode::GetForceUIFirst() const
     return forceUIFirst_;
 }
 
+void RSSurfaceRenderNode::SetHDRPresent(bool hasHdrPresent)
+{
+    hasHdrPresent_ = hasHdrPresent;
+}
+
+bool RSSurfaceRenderNode::GetHDRPresent() const
+{
+    return hasHdrPresent_;
+}
+
 void RSSurfaceRenderNode::SetForceUIFirstChanged(bool forceUIFirstChanged)
 {
     forceUIFirstChanged_ = forceUIFirstChanged;
@@ -1373,7 +1383,7 @@ void RSSurfaceRenderNode::CheckValidFilterCacheFullyCoverTarget(const RSRenderNo
     if (filterNode.IsInstanceOf<RSEffectRenderNode>()) {
         return;
     }
-    if (isFilterCacheFullyCovered_ || !filterNode.IsBackgroundFilterCacheValid()) {
+    if (isFilterCacheFullyCovered_ || !filterNode.IsFilterCacheValid()) {
         return;
     }
     // [planning] need to replace absRect with filterRect
@@ -1898,6 +1908,18 @@ const std::vector<std::shared_ptr<RSRenderNode>>& RSSurfaceRenderNode::GetChildr
     return childrenFilterNodes_;
 }
 
+std::vector<RectI> RSSurfaceRenderNode::GetChildrenNeedFilterRectsWithoutCacheValid()
+{
+    std::vector<RectI> childrenFilterRectsWithoutCacheValid;
+    auto maxSize = std::min(childrenFilterRects_.size(), childrenFilterRectsCacheValid_.size());
+    for (size_t i = 0; i < maxSize; i++) {
+        if (!childrenFilterRectsCacheValid_[i]) {
+            childrenFilterRectsWithoutCacheValid.emplace_back(childrenFilterRects_[i]);
+        }
+    }
+    return childrenFilterRectsWithoutCacheValid;
+};
+
 // manage abilities' nodeid info
 void RSSurfaceRenderNode::UpdateAbilityNodeIds(NodeId id, bool isAdded)
 {
@@ -2355,8 +2377,8 @@ void RSSurfaceRenderNode::UpdatePartialRenderParams()
         surfaceParams->SetVisibleRegion(visibleRegion_);
     }
     surfaceParams->absDrawRect_ = GetAbsDrawRect();
-    surfaceParams->SetIsTransparent(IsTransparent());
     surfaceParams->SetOldDirtyInSurface(GetOldDirtyInSurface());
+    surfaceParams->SetTransparentRegion(GetTransparentRegion());
 }
 
 void RSSurfaceRenderNode::InitRenderParams()
