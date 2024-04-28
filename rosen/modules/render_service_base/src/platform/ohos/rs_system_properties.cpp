@@ -770,6 +770,20 @@ bool RSSystemProperties::GetSingleFrameComposerCanvasNodeEnabled()
     return singleFrameComposerCanvasNodeEnabled;
 }
 
+bool RSSystemProperties::GetDrawFilterWithoutSnapshotEnabled()
+{
+    static bool drawFilterWithoutSnahpshotEnabled =
+        (std::atoi(system::GetParameter("persist.sys.graphic.drawFilterWithoutSnahpshot", "0").c_str()) != 0);
+        return drawFilterWithoutSnahpshotEnabled;
+}
+
+bool RSSystemProperties::GetBlurExtraFilterEnabled()
+{
+    static bool blurExtraFilterEnabled =
+        (std::atoi(system::GetParameter("persist.sys.graphic.blurExtraFilter", "0").c_str()) != 0);
+    return blurExtraFilterEnabled;
+}
+
 #ifdef DDGR_ENABLE_FEATURE_OPINC
 const DdgrOpincType RSSystemProperties::ddgrOpincType_ =
     static_cast<DdgrOpincType>(std::atoi((system::GetParameter("persist.ddgr.opinctype", "2")).c_str()));

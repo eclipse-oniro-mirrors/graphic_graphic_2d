@@ -189,6 +189,9 @@ public:
     static bool GetRenderParallelEnabled();
     static bool GetPropertyDrawableEnable();
 
+    static bool GetDrawFilterWithoutSnapshotEnabled();
+    static bool GetBlurExtraFilterEnabled();
+
     static bool GetAnimationCacheEnabled();
 
     static bool GetBoolSystemProperty(const char* name, bool defaultValue);
