@@ -279,16 +279,6 @@ RSMainThread::~RSMainThread() noexcept
     }
 }
 
-
-void RSMainThread::TryCleanResourceInBackGroundThd()
-{
-#if defined(RS_ENABLE_UNI_RENDER) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
-    if (RSBackgroundThread::Instance().GetGrResourceFinishFlag()) {
-        RSBackgroundThread::Instance().CleanGrResource();
-    }
-#endif
-}
-
 void RSMainThread::Init()
 {
     mainLoop_ = [&]() {
@@ -357,7 +347,6 @@ void RSMainThread::Init()
 #if defined(RS_ENABLE_CHIPSET_VSYNC)
         ConnectChipsetVsyncSer();
 #endif
-        TryCleanResourceInBackGroundThd();
         RS_PROFILER_ON_FRAME_END();
     };
     static std::function<void (std::shared_ptr<Drawing::Image> image)> holdDrawingImagefunc =
@@ -1105,7 +1094,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         }
         auto& surfaceHandler = static_cast<RSSurfaceHandler&>(*surfaceNode);
         surfaceHandler.ResetCurrentFrameBufferConsumed();
-        if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler)) {
+        if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, false, timestamp_)) {
             this->bufferTimestamps_[surfaceNode->GetId()] = static_cast<uint64_t>(surfaceNode->GetTimestamp());
             if (surfaceNode->IsCurrentFrameBufferConsumed() && !surfaceNode->IsHardwareEnabledType()) {
                 surfaceNode->SetContentDirty();
@@ -1749,6 +1738,7 @@ void RSMainThread::Render()
         renderThreadParams_->SetRequestNextVsyncFlag(needRequestNextVsyncAnimate_);
         renderThreadParams_->SetPendingScreenRefreshRate(hgmCore.GetPendingScreenRefreshRate());
         renderThreadParams_->SetForceCommitLayer(isHardwareEnabledBufferUpdated_ || forceUpdateUniRenderFlag_);
+        renderThreadParams_->SetOcclusionEnabled(RSSystemProperties::GetOcclusionEnabled());
     }
     if (RSSystemProperties::GetRenderNodeTraceEnabled()) {
         RSPropertyTrace::GetInstance().RefreshNodeTraceInfo();

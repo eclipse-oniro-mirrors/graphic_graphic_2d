@@ -350,7 +350,10 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     isDrawingCacheEnabled_ = RSSystemParameters::GetDrawingCacheEnabled();
     isDrawingCacheDfxEnabled_ = RSSystemParameters::GetDrawingCacheEnabledDfx();
-    drawingCacheInfos_.clear();
+    {
+        std::lock_guard<std::mutex> lock(drawingCacheInfoMutex_);
+        drawingCacheInfos_.clear();
+    }
 
     // check rotation for point light
     constexpr int ROTATION_NUM = 4;
@@ -552,7 +555,7 @@ void RSDisplayRenderNodeDrawable::DrawMirrorScreen(RSDisplayRenderNode& displayN
         float mirrorScaleX = mirroredProcessor->GetMirrorScaleX();
         float mirrorScaleY = mirroredProcessor->GetMirrorScaleY();
         RSUniRenderThread::SetCaptureParam(CaptureParam(true, false, true, mirrorScaleX, mirrorScaleY));
-        RSRenderParams::parentSurfaceMatrix_ = curCanvas_->GetTotalMatrix();
+        parentSurfaceMatrix_ = curCanvas_->GetTotalMatrix();
         mirroredNodeDrawable->OnCapture(*curCanvas_);
         RSUniRenderThread::ResetCaptureParam();
         curCanvas_->Restore();
@@ -941,6 +944,8 @@ void RSDisplayRenderNodeDrawable::DrawWatermarkIfNeed(
             return;
         }
 
+        Drawing::SaveLayerOps slr(nullptr, nullptr, Drawing::SaveLayerOps::INIT_WITH_PREVIOUS);
+        canvas.SaveLayer(slr); // avoid abnormal dsicard
         auto srcRect = Drawing::Rect(0, 0, image->GetWidth(), image->GetHeight());
         auto dstRect = Drawing::Rect(0, 0, screenInfo.width, screenInfo.height);
         Drawing::Brush rectBrush;
@@ -948,6 +953,7 @@ void RSDisplayRenderNodeDrawable::DrawWatermarkIfNeed(
         canvas.DrawImageRect(*image, srcRect, dstRect, Drawing::SamplingOptions(),
             Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
         canvas.DetachBrush();
+        canvas.Restore();
     }
 }
 
