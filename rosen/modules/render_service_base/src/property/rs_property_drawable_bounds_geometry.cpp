@@ -316,7 +316,7 @@ void RSSvgDomMaskDrawable::Draw(const RSRenderContent& content, RSPaintFilterCan
     canvas.Save();
     Drawing::SaveLayerOps slr(&bounds, nullptr);
     canvas.SaveLayer(slr);
-    int tmpLayer = canvas.GetSaveCount();
+    uint32_t tmpLayer = canvas.GetSaveCount();
     Drawing::SaveLayerOps slrMask(&bounds, &maskFilterBrush_);
     canvas.SaveLayer(slrMask);
     {
@@ -340,7 +340,7 @@ void RSSvgPictureMaskDrawable::Draw(const RSRenderContent& content, RSPaintFilte
     canvas.Save();
     Drawing::SaveLayerOps slr(&bounds, nullptr);
     canvas.SaveLayer(slr);
-    int tmpLayer = canvas.GetSaveCount();
+    uint32_t tmpLayer = canvas.GetSaveCount();
     Drawing::SaveLayerOps slrMask(&bounds, &maskFilterBrush_);
     canvas.SaveLayer(slrMask);
     {
@@ -364,7 +364,7 @@ void RSGradientMaskDrawable::Draw(const RSRenderContent& content, RSPaintFilterC
     canvas.Save();
     Drawing::SaveLayerOps slr(&bounds, nullptr);
     canvas.SaveLayer(slr);
-    int tmpLayer = canvas.GetSaveCount();
+    uint32_t tmpLayer = canvas.GetSaveCount();
     Drawing::SaveLayerOps slrMask(&bounds, &maskFilterBrush_);
     canvas.SaveLayer(slrMask);
     {
@@ -391,7 +391,7 @@ void RSPathMaskDrawable::Draw(const RSRenderContent& content, RSPaintFilterCanva
     canvas.Save();
     Drawing::SaveLayerOps slr(&bounds, nullptr);
     canvas.SaveLayer(slr);
-    int tmpLayer = canvas.GetSaveCount();
+    uint32_t tmpLayer = canvas.GetSaveCount();
     Drawing::SaveLayerOps slrMask(&bounds, &maskFilterBrush_);
     canvas.SaveLayer(slrMask);
     {
