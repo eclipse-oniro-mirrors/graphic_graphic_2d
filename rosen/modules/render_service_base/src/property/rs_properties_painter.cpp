@@ -1669,7 +1669,8 @@ std::shared_ptr<Drawing::ShaderEffect> RSPropertiesPainter::MakeBinarizationShad
             float gray = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
             float lowRes = mix(ubo_high, -1.0, step(ubo_thresholdLow, gray));
             float highRes = mix(-1.0, ubo_low, step(ubo_thresholdHigh, gray));
-            float midRes = (ubo_thresholdHigh - gray) * (ubo_high - ubo_low) / (ubo_thresholdHigh - ubo_thresholdLow) + ubo_low;
+            float midRes = (ubo_thresholdHigh - gray) * (ubo_high - ubo_low) /
+            (ubo_thresholdHigh - ubo_thresholdLow) + ubo_low;
             float invertedGray = mix(midRes, max(lowRes, highRes), step(-0.5, max(lowRes, highRes)));
             mediump vec3 invert = vec3(invertedGray);
             mediump vec4 res = vec4(invert, 1.0);
