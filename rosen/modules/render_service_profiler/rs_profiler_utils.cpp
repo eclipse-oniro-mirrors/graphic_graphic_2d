@@ -256,7 +256,6 @@ std::string Utils::NormalizePath(const std::string& path)
     return (path.rfind('/') != path.size() - 1) ? path + "/" : path;
 }
 
-#ifdef REPLAY_TOOL_CLIENT
 void Utils::IterateDirectory(const std::string& path, std::vector<std::string>& files)
 {
     const std::string realPath = GetRealPath(path);
@@ -264,6 +263,7 @@ void Utils::IterateDirectory(const std::string& path, std::vector<std::string>& 
         return;
     }
 
+#ifdef REPLAY_TOOL_CLIENT
     for (auto const& entry : std::filesystem::recursive_directory_iterator(path)) {
         if (entry.is_directory()) {
             IterateDirectory(entry.path().string(), files);
@@ -271,15 +271,7 @@ void Utils::IterateDirectory(const std::string& path, std::vector<std::string>& 
             files.push_back(entry.path().string());
         }
     }
-}
 #else
-void Utils::IterateDirectory(const std::string& path, std::vector<std::string>& files)
-{
-    const std::string realPath = GetRealPath(path);
-    if (realPath.empty()) {
-        return;
-    }
-
     DIR* directory = opendir(realPath.data());
     if (!directory) {
         return;
@@ -298,8 +290,8 @@ void Utils::IterateDirectory(const std::string& path, std::vector<std::string>& 
         }
     }
     closedir(directory);
-}
 #endif // REPLAY_TOOL_CLIENT
+}
 
 void Utils::LoadLine(const std::string& path, std::string& line)
 {
