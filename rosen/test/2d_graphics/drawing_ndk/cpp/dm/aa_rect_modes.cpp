@@ -4,7 +4,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,12 +27,12 @@
 #include "test_common.h"
 #include "common/log_common.h"
 
-char verbs[] = {
-        0, 1, 1, 1, 4,
-        0, 1, 1, 1, 4,
-        0, 1, 1, 1, 4,
-        0, 1, 1, 1, 4
-    };
+char g_verbs[] = {
+    0, 1, 1, 1, 4,
+    0, 1, 1, 1, 4,
+    0, 1, 1, 1, 4,
+    0, 1, 1, 1, 4
+};
 
 static void test4(OH_Drawing_Canvas *canvas)
 {
@@ -54,11 +54,11 @@ static void test4(OH_Drawing_Canvas *canvas)
         {10, 199},
         {10, 199}
     };
-    
+
     OH_Drawing_Path *path = OH_Drawing_PathCreate();
     OH_Drawing_Point2D *ptPtr = pts;
-    for (size_t i = 0; i < sizeof(verbs); ++i) {
-        switch (verbs[i]) {
+    for (size_t i = 0; i < sizeof(g_verbs); ++i) {
+        switch (g_verbs[i]) {
             case 0: // SkPath::kMove_Verb:
                 OH_Drawing_PathMoveTo(path, ptPtr->x, ptPtr->y);
                 ++ptPtr;
