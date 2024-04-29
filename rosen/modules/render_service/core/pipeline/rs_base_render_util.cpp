@@ -935,10 +935,10 @@ bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(
         return false;
     }
     DropFrameProcess(surfaceHandler);
-    std::shared_ptr<RSSurfaceHandler::SurfaceBufferEntry> surfaceBuffer =
-        std::make_shared<RSSurfaceHandler::SurfaceBufferEntry>();
+    std::shared_ptr<RSSurfaceHandler::SurfaceBufferEntry> surfaceBuffer;
     if (surfaceHandler.GetHoldBuffer() == nullptr) {
         std::vector<Rect> damages;
+        surfaceBuffer = std::make_shared<RSSurfaceHandler::SurfaceBufferEntry>();
         int32_t ret = consumer->AcquireBuffer(surfaceBuffer->buffer, surfaceBuffer->acquireFence,
             surfaceBuffer->timestamp, damages);
         if (surfaceBuffer->buffer == nullptr || ret != SURFACE_ERROR_OK) {
