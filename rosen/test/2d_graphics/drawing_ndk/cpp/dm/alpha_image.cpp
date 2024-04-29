@@ -98,7 +98,7 @@ void AlphaImage::OnTestFunction(OH_Drawing_Canvas *canvas)
     OH_Drawing_BrushSetFilter(brush, filter);
     OH_Drawing_Point *startPt = OH_Drawing_PointCreate(144, 16);
     OH_Drawing_Point *endPt = OH_Drawing_PointCreate(144 + kSize, 16 + kSize);
-    uint32_t colors[] = {DRAW_ColorCYAN, DRAW_ColorCYAN};
+    uint32_t colors[] = {DRAW_COLORCYAN, DRAW_COLORCYAN};
     float pos[] = {0.f, 1.f};
     OH_Drawing_ShaderEffect *effect =
         OH_Drawing_ShaderEffectCreateLinearGradient(startPt, endPt, colors, pos, 2, OH_Drawing_TileMode::CLAMP);
@@ -144,7 +144,7 @@ void AlphaImageAlphaTint::OnTestFunction(OH_Drawing_Canvas *canvas)
 {
     uint32_t w = 64;
     uint32_t h = 64;
-    OH_Drawing_CanvasClear(canvas, DRAW_ColorGRAY);
+    OH_Drawing_CanvasClear(canvas, DRAW_COLORGRAY);
     OH_Drawing_Bitmap *bm = OH_Drawing_BitmapCreate();
     OH_Drawing_BitmapFormat format = { OH_Drawing_ColorFormat::COLOR_FORMAT_ALPHA_8,
                                        OH_Drawing_AlphaFormat::ALPHA_FORMAT_OPAQUE };

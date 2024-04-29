@@ -40,14 +40,14 @@ void AlphaGradients::draw_grad(OH_Drawing_Canvas *canvas, DrawRect &r, uint32_t 
     OH_Drawing_Brush *brush = OH_Drawing_BrushCreate();
     OH_Drawing_Pen *pen = OH_Drawing_PenCreate();
 
-    OH_Drawing_Point *startPt = OH_Drawing_PointCreate(r.fLeft, r.fTop);
-    OH_Drawing_Point *endPt = OH_Drawing_PointCreate(r.fRight, r.fBottom);
+    OH_Drawing_Point *startPt = OH_Drawing_PointCreate(r.left, r.top);
+    OH_Drawing_Point *endPt = OH_Drawing_PointCreate(r.right, r.bottom);
 
     static const float_t gPos[] = {0.0f, 1.0f};
     OH_Drawing_ShaderEffect *shaderEffect =
         OH_Drawing_ShaderEffectCreateLinearGradient(startPt, endPt, colors, gPos, 2, OH_Drawing_TileMode::CLAMP);
 
-    OH_Drawing_Rect *rect = OH_Drawing_RectCreate(r.fLeft, r.fTop, r.fRight, r.fBottom);
+    OH_Drawing_Rect *rect = OH_Drawing_RectCreate(r.left, r.top, r.right, r.bottom);
     OH_Drawing_BrushSetShaderEffect(brush, shaderEffect);
     OH_Drawing_CanvasAttachBrush(canvas, brush);
     OH_Drawing_CanvasDrawRect(canvas, rect);
@@ -93,9 +93,9 @@ void AlphaGradients::OnTestFunction(OH_Drawing_Canvas *canvas)
         OH_Drawing_CanvasSave(canvas);
         for (size_t i = 0; i < gRec_size; ++i) {
             draw_grad(canvas, r, gRec[i].fColor0, gRec[i].fColor1, (doPreMul));
-            OH_Drawing_CanvasTranslate(canvas, 0, r.width() + 8); // r.width() + 8距离
+            OH_Drawing_CanvasTranslate(canvas, 0, r.Width() + 8); // r.Width() + 8距离
         }
         OH_Drawing_CanvasRestore(canvas);
-        OH_Drawing_CanvasTranslate(canvas, r.width() + 10, 0); // r.width() + 10距离
+        OH_Drawing_CanvasTranslate(canvas, r.Width() + 10, 0); // r.Width() + 10距离
     }
 }
