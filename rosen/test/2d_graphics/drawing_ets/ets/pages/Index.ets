@@ -34,7 +34,7 @@ struct Index {
   private context: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.settings)
   @State testType: string = 'function';
   @State drawingType: string = 'gpu';
-  @State caseNameStr: string  = 'canvasdrawrect';
+  @State caseNameStr: string  = 'canvasdrawimage';
   @State information: string = '';
   @State testAll: boolean = false;
   caseNameStrBefore: string  = '';
@@ -234,11 +234,7 @@ struct Index {
     try {
       let resourceMgr: resourceManager.ResourceManager = getContext(this).resourceManager
       let imageResources: string[] = []
-      imageResources.push("icon.png")
-      imageResources.push("test_img_case_1.jpg")
-      imageResources.push("test_img_case_2.jpg")
-      imageResources.push("test_img_case_3.jpeg")
-      imageResources.push("test_img_case_4.png")
+      imageResources.push("test.jpg")
 
       for (let i = 0; i < imageResources.length; i++) {
         let imagePath = imageResources[i]
