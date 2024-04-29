@@ -22,8 +22,6 @@
 #include <native_drawing/drawing_point.h>
 #include <native_drawing/drawing_round_rect.h>
 #include <native_drawing/drawing_shader_effect.h>
-
-#include "bench/hardstopgradientbench_scalenumcolors.h"
 #include "test_common.h"
 
 #include "common/log_common.h"
