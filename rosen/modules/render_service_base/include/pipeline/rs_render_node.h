@@ -608,6 +608,26 @@ public:
         uifirstSkipPartialSync_ = skip;
     }
 
+    void SetForceUpdateByUifirst(bool b)
+    {
+        forceUpdateByUifirst_ = b;
+    }
+
+    bool GetForceUpdateByUifirst() const
+    {
+        return forceUpdateByUifirst_;
+    }
+
+    MultiThreadCacheType GetLastFrameUifirstFlag()
+    {
+        return lastFrameUifirstFlag_;
+    }
+
+    void SetLastFrameUifirstFlag(MultiThreadCacheType b)
+    {
+        lastFrameUifirstFlag_ = b;
+    }
+
     void SkipSync()
     {
         lastFrameSynced_ = false;
@@ -889,6 +909,8 @@ private:
     bool drawCmdListNeedSync_ = false;
     bool uifirstNeedSync_ = false; // both cmdlist&param
     bool uifirstSkipPartialSync_ = false;
+    bool forceUpdateByUifirst_ = false;
+    MultiThreadCacheType lastFrameUifirstFlag_ = MultiThreadCacheType::NONE;
     DrawCmdIndex stagingDrawCmdIndex_;
     std::vector<Drawing::RecordingCanvas::DrawFunc> stagingDrawCmdList_;
 

@@ -1641,6 +1641,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
 
     isCachedSurfaceUpdated_ = false;
     if (needTraverseNodeTree) {
+        RSUifirstManager::Instance().ProcessForceUpdateNode();
         doDirectComposition_ = false;
         renderThreadParams_->selfDrawingNodes_ = std::move(selfDrawingNodes_);
         renderThreadParams_->hardwareEnabledTypeNodes_ = std::move(hardwareEnabledNodes_);
