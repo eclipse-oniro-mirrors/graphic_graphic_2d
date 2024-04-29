@@ -231,6 +231,10 @@ private:
     RSB_EXPORT static int PerfTreeFlatten(
         const RSRenderNode& node, std::unordered_set<NodeId>& nodeSet, std::unordered_map<NodeId, int>& mapNode2Count);
 
+    static uint64_t RawNowNano();
+    static uint64_t NowNano();
+    static double Now();
+
     static bool IsRecording();
     static bool IsPlaying();
 

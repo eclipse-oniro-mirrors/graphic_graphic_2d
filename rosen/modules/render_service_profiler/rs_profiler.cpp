@@ -148,7 +148,7 @@ void RSProfiler::OnRemoteRequest(RSRenderServiceConnection* connection, uint32_t
         const pid_t pid = GetConnectionPid(connection);
         const auto& pids = g_recordFile.GetHeaderPids();
         if (std::find(std::begin(pids), std::end(pids), pid) != std::end(pids)) {
-            const double deltaTime = Utils::Now() - g_recordStartTime;
+            const double deltaTime = Now() - g_recordStartTime;
 
             std::stringstream stream(std::ios::in | std::ios::out | std::ios::binary);
 
@@ -302,7 +302,7 @@ void RSProfiler::OnFrameBegin()
         return;
     }
 
-    g_frameBeginTimestamp = Utils::RawNowNano();
+    g_frameBeginTimestamp = RawNowNano();
 }
 
 void RSProfiler::OnFrameEnd()
@@ -319,7 +319,7 @@ void RSProfiler::OnFrameEnd()
         return;
     }
 
-    g_calcPerfNodeTime[g_calcPerfNodeTry] = Utils::RawNowNano() - g_frameBeginTimestamp;
+    g_calcPerfNodeTime[g_calcPerfNodeTry] = RawNowNano() - g_frameBeginTimestamp;
     g_calcPerfNodeTry++;
     if (g_calcPerfNodeTry < CALC_PERF_NODE_TIME_COUNT) {
         AwakeRenderServiceThread();
@@ -381,6 +381,21 @@ void RSProfiler::RenderServiceTreeDump(JsonWriter& out)
 bool RSProfiler::IsEnabled()
 {
     return g_renderService && g_renderServiceThread && g_renderServiceContext;
+}
+
+uint64_t RSProfiler::RawNowNano()
+{
+    return Utils::Now();
+}
+
+uint64_t RSProfiler::NowNano()
+{
+    return PatchTime(RawNowNano());
+}
+
+double RSProfiler::Now()
+{
+    return Utils::ToSeconds(NowNano());
 }
 
 bool RSProfiler::IsRecording()
@@ -576,9 +591,9 @@ void RSProfiler::RecordUpdate()
         return;
     }
 
-    const uint64_t frameLengthNanosecs = Utils::RawNowNano() - g_frameBeginTimestamp;
+    const uint64_t frameLengthNanosecs = RawNowNano() - g_frameBeginTimestamp;
 
-    const double currentTime = g_frameBeginTimestamp * 1e-9; // Utils::Now();
+    const double currentTime = g_frameBeginTimestamp * 1e-9; // Now();
     const double timeSinceRecordStart = currentTime - g_recordStartTime;
 
     if (timeSinceRecordStart > 0.0) {
@@ -659,7 +674,7 @@ void RSProfiler::DumpTree(const ArgList& args)
     GetSurfacesTrees(nodeMap, list);
 
     std::string out = "Tree: count=" + std::to_string(static_cast<int>(GetRenderNodeCount(nodeMap))) +
-                      " time=" + std::to_string(Utils::Now()) + "\n";
+                      " time=" + std::to_string(Now()) + "\n";
 
     const std::string& node = args.String();
     for (const auto& item : list) {
@@ -715,7 +730,7 @@ void RSProfiler::DumpSurfaces(const ArgList& args)
     }
 
     out += "TREE: count=" + std::to_string(static_cast<int32_t>(GetRenderNodeCount(nodeMap))) +
-           " time=" + std::to_string(Utils::Now()) + "\n";
+           " time=" + std::to_string(Now()) + "\n";
 
     Respond(out);
 }
@@ -1003,7 +1018,7 @@ void RSProfiler::RecordStart(const ArgList& args)
 
     SetMode(Mode::WRITE);
 
-    g_recordStartTime = Utils::Now();
+    g_recordStartTime = Now();
 
     std::thread thread([]() {
         while (IsRecording()) {
@@ -1086,11 +1101,11 @@ void RSProfiler::PlaybackStart(const ArgList& args)
         CreateMockConnection(Utils::GetMockPid(pid));
     }
 
-    g_playbackStartTime = Utils::Now();
+    g_playbackStartTime = Now();
 
     const double pauseTime = args.Fp64(1);
     if (pauseTime > 0.0) {
-        const uint64_t currentTime = Utils::RawNowNano();
+        const uint64_t currentTime = RawNowNano();
         const uint64_t pauseTimeStart = currentTime + pauseTime * NANOSECONDS_IN_SECONDS;
         TimePauseAt(currentTime, pauseTimeStart);
     }
@@ -1101,13 +1116,13 @@ void RSProfiler::PlaybackStart(const ArgList& args)
 
     std::thread thread([]() {
         while (IsPlaying()) {
-            const int64_t timestamp = Utils::RawNowNano();
+            const int64_t timestamp = RawNowNano();
 
             PlaybackUpdate();
             Network::SendTelemetry(g_playbackStartTime);
 
             constexpr int64_t timeoutLimit = 8000000;
-            const int64_t timeout = timeoutLimit - Utils::RawNowNano() + timestamp;
+            const int64_t timeout = timeoutLimit - RawNowNano() + timestamp;
             if (timeout > 0) {
                 std::this_thread::sleep_for(std::chrono::nanoseconds(timeout));
             }
@@ -1135,7 +1150,7 @@ void RSProfiler::PlaybackUpdate()
         return;
     }
 
-    const double deltaTime = Utils::Now() - g_playbackStartTime;
+    const double deltaTime = Now() - g_playbackStartTime;
 
     std::vector<uint8_t> data;
     double readTime = 0.0;
@@ -1213,8 +1228,8 @@ void RSProfiler::PlaybackPause(const ArgList& args)
         return;
     }
 
-    const uint64_t currentTime = Utils::RawNowNano();
-    const double recordPlayTime = Utils::Now() - g_playbackStartTime;
+    const uint64_t currentTime = RawNowNano();
+    const double recordPlayTime = Now() - g_playbackStartTime;
     TimePauseAt(currentTime, currentTime);
     Respond("OK: " + std::to_string(recordPlayTime));
 }
@@ -1226,12 +1241,12 @@ void RSProfiler::PlaybackPauseAt(const ArgList& args)
     }
 
     const double pauseTime = args.Fp64();
-    const double recordPlayTime = Utils::Now() - g_playbackStartTime;
+    const double recordPlayTime = Now() - g_playbackStartTime;
     if (recordPlayTime > pauseTime) {
         return;
     }
 
-    const uint64_t curTimeRaw = Utils::RawNowNano();
+    const uint64_t curTimeRaw = RawNowNano();
     const uint64_t pauseTimeStart = curTimeRaw + (pauseTime - recordPlayTime) * NANOSECONDS_IN_SECONDS;
 
     TimePauseAt(curTimeRaw, pauseTimeStart);
