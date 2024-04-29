@@ -2579,6 +2579,45 @@ HWTEST_F(RSNodeTest, SetandGetShadowColor005, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetandGetShadowColorStrategy001
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeTest, SetandGetShadowColorStrategy001, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    int shadowColorStrategy = SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE;
+    rsNode->SetShadowColorStrategy(shadowColorStrategy);
+    EXPECT_TRUE(ROSEN_EQ(rsNode->GetStagingProperties().GetShadowColorStrategy(), shadowColorStrategy));
+}
+
+/**
+ * @tc.name: SetandGetShadowColorStrategy002
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeTest, SetandGetShadowColorStrategy002, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    int shadowColorStrategy = SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_AVERAGE;
+    rsNode->SetShadowColorStrategy(shadowColorStrategy);
+    EXPECT_TRUE(ROSEN_EQ(rsNode->GetStagingProperties().GetShadowColorStrategy(), shadowColorStrategy));
+}
+
+/**
+ * @tc.name: SetandGetShadowColorStrategy003
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeTest, SetandGetShadowColorStrategy003, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    int shadowColorStrategy = SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_MAIN;
+    rsNode->SetShadowColorStrategy(shadowColorStrategy);
+    EXPECT_TRUE(ROSEN_EQ(rsNode->GetStagingProperties().GetShadowColorStrategy(), shadowColorStrategy));
+}
+
+/**
  * @tc.name: SetandGetTranslateThree001
  * @tc.desc:
  * @tc.type:FUNC
@@ -3532,6 +3571,93 @@ HWTEST_F(RSNodeTest, SetBackgroundShader001, TestSize.Level1)
     auto rsNode = RSCanvasNode::Create();
     auto shader = RSShader::CreateRSShader();
     rsNode->SetBackgroundShader(shader);
+}
+
+/**
+ * @tc.name: SetandGetGreyCoef001
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeTest, SetGreyCoef001, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    Vector2f greyCoef = { 0.5, 0.5 };
+    rsNode->SetGreyCoef(greyCoef);
+}
+
+/**
+ * @tc.name: SetandGetAiInvertTest
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeTest, SetAiInvertTest, TestSize.Level1)
+{
+    auto rootNode = RSCanvasNode::Create();
+    auto value = Vector4f(10.f);
+    rootNode->SetAiInvert(value);
+}
+
+/**
+ * @tc.name: SetandGetSpherizeDegree001
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeTest, SetandGetSpherizeDegree001, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    float spherizeDegree = 1.0f;
+    rsNode->SetSpherizeDegree(spherizeDegree);
+    EXPECT_TRUE(ROSEN_EQ(rsNode->GetStagingProperties().GetSpherizeDegree(), spherizeDegree));
+}
+
+/**
+ * @tc.name: SetandGetLightUpEffectDegree001
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeTest, SetandGetLightUpEffectDegree001, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    float lightUpEffectDegree = 1.0f;
+    rsNode->SetLightUpEffectDegree(lightUpEffectDegree);
+    EXPECT_TRUE(ROSEN_EQ(rsNode->GetStagingProperties().GetLightUpEffectDegree(), lightUpEffectDegree));
+}
+
+/**
+ * @tc.name: SetandGetShadowIsFilled001
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeTest, SetandGetShadowIsFilled001, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    rsNode->SetShadowIsFilled(true);
+    EXPECT_EQ(rsNode->GetStagingProperties().GetShadowIsFilled(), true);
+}
+
+/**
+ * @tc.name: SetandGetShadowIsFilled002
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeTest, SetandGetShadowIsFilled002, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    rsNode->SetShadowIsFilled(false);
+    EXPECT_EQ(rsNode->GetStagingProperties().GetShadowIsFilled(), false);
+}
+
+/**
+ * @tc.name: SetandGetForegroundEffectRadius001
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeTest, SetandGetForegroundEffectRadius001, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    float radius = 10.0f;
+    rsNode->SetForegroundEffectRadius(radius);
+    EXPECT_TRUE(ROSEN_EQ(rsNode->GetStagingProperties().GetForegroundEffectRadius(), radius));
 }
 
 /**
