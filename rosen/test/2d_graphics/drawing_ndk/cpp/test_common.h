@@ -72,7 +72,7 @@ struct DrawRect {
         float t = top + dy;
         float r = right - dx;
         float b = bottom - dy;
-        if((r <= l) || (b <= t)) {
+        if ((r <= l) || (b <= t)) {
             return false;
         }
         left = l;
