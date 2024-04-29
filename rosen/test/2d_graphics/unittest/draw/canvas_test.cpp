@@ -785,6 +785,19 @@ HWTEST_F(CanvasTest, GetDrawingTypeTest001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetDrawingTypeTest002
+ * @tc.desc: Test for GetDrawingType NoDrawCanvas functions.
+ * @tc.type: FUNC
+ * @tc.require: I719U5
+ */
+HWTEST_F(CanvasTest, GetDrawingTypeTest002, TestSize.Level1)
+{
+    std::shared_ptr<Drawing::NoDrawCanvas> noDrawCanvas;
+    DrawingType type = noDrawCanvas->GetDrawingType();
+    ASSERT_TRUE(type == DrawingType::NO_DRAW);
+}
+
+/**
  * @tc.name: GetBounds001
  * @tc.desc: Test for geting the bounds of layer.
  * @tc.type: FUNC
