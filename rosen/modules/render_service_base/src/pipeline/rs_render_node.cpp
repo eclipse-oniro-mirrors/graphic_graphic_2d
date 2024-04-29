@@ -1123,8 +1123,13 @@ std::unique_ptr<RSRenderParams>& RSRenderNode::GetStagingRenderParams()
     return stagingRenderParams_;
 }
 
+// Deprecated! Do not use this interface.
+// This interface has crash risks and will be deleted in later versions.
 const std::unique_ptr<RSRenderParams>& RSRenderNode::GetRenderParams() const
 {
+    if (renderDrawable_ == nullptr) {
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(shared_from_this());
+    }
     return renderDrawable_->renderParams_;
 }
 
@@ -3067,11 +3072,11 @@ void RSRenderNode::OnTreeStateChanged()
         SetDirty(true);
         SetParentSubTreeDirty();
     } else if (sharedTransitionParam_) {
-        // clear shared transition param
+        // Mark shared transition unpaired, and mark paired node dirty
+        sharedTransitionParam_->paired_ = false;
         if (auto pairedNode = sharedTransitionParam_->GetPairedNode(id_)) {
-            pairedNode->SetSharedTransitionParam(nullptr);
+            pairedNode->SetDirty(true);
         }
-        SetSharedTransitionParam(nullptr);
     }
     if (!isOnTheTree_) { // force clear blur cache
         MarkForceClearFilterCacheWhenWithInvisible();

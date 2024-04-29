@@ -36,6 +36,8 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 #include "property/rs_properties.h"
+#include "render/rs_drawing_filter.h"
+#include "render/rs_maskcolor_shader_filter.h"
 #include "render/rs_material_filter.h"
 #include "render/rs_path.h"
 
@@ -472,11 +474,14 @@ bool RSUniRenderUtil::Is3DRotation(Drawing::Matrix matrix)
 
 void RSUniRenderUtil::ReleaseColorPickerFilter(std::shared_ptr<RSFilter> RSFilter)
 {
-    auto materialFilter = std::static_pointer_cast<RSMaterialFilter>(RSFilter);
-    if (materialFilter->GetColorPickerCacheTask() == nullptr) {
+    auto drawingFilter = std::static_pointer_cast<RSDrawingFilter>(RSFilter);
+    std::shared_ptr<RSShaderFilter> rsShaderFilter =
+        drawingFilter->GetShaderFilterWithType(RSShaderFilter::MASK_COLOR);
+    if (rsShaderFilter == nullptr) {
         return;
     }
-    materialFilter->ReleaseColorPickerFilter();
+    auto maskColorShaderFilter = std::static_pointer_cast<RSMaskColorShaderFilter>(rsShaderFilter);
+    maskColorShaderFilter->ReleaseColorPickerFilter();
 }
 
 void RSUniRenderUtil::ReleaseColorPickerResource(std::shared_ptr<RSRenderNode>& node)
@@ -499,7 +504,9 @@ void RSUniRenderUtil::ReleaseColorPickerResource(std::shared_ptr<RSRenderNode>& 
     // Recursive to release color picker resource
     for (auto& child : *node->GetChildren()) {
         if (auto canvasChild = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(child)) {
-            ReleaseColorPickerResource(canvasChild);
+            if (RSSystemProperties::GetColorPickerPartialEnabled()) {
+                ReleaseColorPickerResource(canvasChild);
+            }
         }
     }
 }
@@ -566,7 +573,9 @@ void RSUniRenderUtil::AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNod
         bool isNodeAssignSubThread = IsNodeAssignSubThread(node, isRotation);
         if (isNodeAssignSubThread != lastIsNeedAssignToSubThread) {
             auto renderNode = RSBaseRenderNode::ReinterpretCast<RSRenderNode>(node);
-            ReleaseColorPickerResource(renderNode);
+            if (RSSystemProperties::GetColorPickerPartialEnabled()) {
+                ReleaseColorPickerResource(renderNode);
+            }
             node->SetLastIsNeedAssignToSubThread(isNodeAssignSubThread);
         }
         if (isNodeAssignSubThread) {
@@ -601,9 +610,9 @@ void RSUniRenderUtil::AssignMainThreadNode(std::list<std::shared_ptr<RSSurfaceRe
 
     if (RSMainThread::Instance()->GetDeviceType() == DeviceType::PC) {
         RS_TRACE_NAME_FMT("AssignMainThread: name: %s, id: %lu, [HasTransparentSurface: %d, ChildHasVisibleFilter: %d,"
-            "HasFilter: %d, HasAbilityComponent: %d, QueryIfAllHwcChildrenForceDisabledByFilter: %d]",
+            "HasFilter: %d, QueryIfAllHwcChildrenForceDisabledByFilter: %d]",
             node->GetName().c_str(), node->GetId(), node->GetHasTransparentSurface(),
-            node->ChildHasVisibleFilter(), node->HasFilter(), node->HasAbilityComponent(),
+            node->ChildHasVisibleFilter(), node->HasFilter(),
             node->QueryIfAllHwcChildrenForceDisabledByFilter());
     }
 }
@@ -618,14 +627,16 @@ void RSUniRenderUtil::AssignSubThreadNode(
     node->SetCacheType(CacheType::CONTENT);
     node->SetIsMainThreadNode(false);
     auto deviceType = RSMainThread::Instance()->GetDeviceType();
+    bool dirty = node->GetNeedDrawFocusChange()
+        || (!node->IsCurFrameStatic(deviceType) && !node->IsVisibleDirtyEmpty(deviceType));
     // skip complete static window, DO NOT assign it to subthread.
     if (node->GetCacheSurfaceProcessedStatus() == CacheProcessStatus::DONE &&
-        node->HasCachedTexture() && node->IsUIFirstSelfDrawCheck() &&
-        (node->IsCurFrameStatic(deviceType) || node->IsVisibleDirtyEmpty(deviceType))) {
+        node->HasCachedTexture() && node->IsUIFirstSelfDrawCheck() && !dirty) {
         node->SetNeedSubmitSubThread(false);
         RS_OPTIONAL_TRACE_NAME_FMT("subThreadNodes : static skip %s", node->GetName().c_str());
     } else {
         node->SetNeedSubmitSubThread(true);
+        node->SetNeedDrawFocusChange(false);
         node->UpdateCacheSurfaceDirtyManager(2); // 2 means buffer age
     }
     node->SetLastFrameChildrenCnt(node->GetChildren()->size());

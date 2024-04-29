@@ -35,6 +35,7 @@
 #include "common/rs_singleton.h"
 #include "memory/rs_tag_tracker.h"
 #include "params/rs_display_render_params.h"
+#include "pipeline/parallel_render/rs_sub_thread_manager.h"
 #include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_base_render_util.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
@@ -55,10 +56,11 @@
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "platform/ohos/rs_jank_stats.h"
+#include "platform/ohos/rs_node_stats.h"
 #include "property/rs_properties_painter.h"
 #include "property/rs_point_light_manager.h"
+#include "render/rs_drawing_filter.h"
 #include "render/rs_skia_filter.h"
-#include "pipeline/parallel_render/rs_sub_thread_manager.h"
 #include "system/rs_system_parameters.h"
 #include "scene_board_judgement.h"
 #include "hgm_core.h"
@@ -3729,7 +3731,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
 #endif
             resetRotate_ = CheckIfNeedResetRotate();
             if (!IsHardwareComposerEnabled()) {
-                RSMainThread::Instance()->SetFrameIsRender(false);
                 return;
             }
             if (!RSMainThread::Instance()->WaitHardwareThreadTaskExecute()) {
@@ -3742,10 +3743,8 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                     }
                 }
                 RS_TRACE_NAME("DisplayNodeSkip skip commit");
-                RSMainThread::Instance()->SetFrameIsRender(false);
                 return;
             }
-            RSMainThread::Instance()->SetFrameIsRender(true);
             bool needCreateDisplayNodeLayer = false;
             for (auto& surfaceNode: hardwareEnabledNodes_) {
                 if (!surfaceNode->IsHardwareForcedDisabled()) {
@@ -3759,8 +3758,6 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
                 processor_->PostProcess();
             }
             return;
-        } else {
-            RSMainThread::Instance()->SetFrameIsRender(true);
         }
 
         auto rsSurface = node.GetRSSurface();
@@ -5345,6 +5342,9 @@ void RSUniRenderVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
         // count processed canvas node
         RS_TRACE_NAME_FMT("%s PureContainerNode/ProcessedNodes: %u/%u", node.GetName().c_str(),
             processedPureContainerNode_, processedCanvasNodeInCurrentSurface_);
+        const RSNodeStatsType nodeStats = CreateRSNodeStatsItem(
+            processedCanvasNodeInCurrentSurface_, node.GetId(), node.GetName());
+        RSNodeStats::GetInstance().AddNodeStats(nodeStats);
         processedCanvasNodeInCurrentSurface_ = 0; // reset
         processedPureContainerNode_ = 0;
     }
@@ -6178,26 +6178,30 @@ void RSUniRenderVisitor::ProcessUnpairedSharedTransitionNode()
         if (sptr == nullptr) {
             return;
         }
-        sptr->SetSharedTransitionParam(nullptr);
-        // make sure parent regenerates ChildrenDrawable after unpairing
-        if (auto parent = sptr->GetParent().lock()) {
-            parent->ApplyModifiers();
+        // make sure parent regenerates ChildrenDrawable
+        auto parent = sptr->GetParent().lock();
+        if (parent == nullptr) {
+            return;
         }
-        auto& node = *sptr;
-        node.GetStagingRenderParams()->SetAlpha(node.GetRenderProperties().GetAlpha());
-        node.UpdateRenderParams();
+        parent->AddDirtyType(RSModifierType::CHILDREN);
+        parent->ApplyModifiers();
+        // avoid changing the paired status or unpairedShareTransitions_
+        sptr->GetSharedTransitionParam()->paired_ = false;
+        SharedTransitionParam::unpairedShareTransitions_.clear();
     };
-    for (auto& [id, wptr] : SharedTransitionParam::unpairedShareTransitions_) {
+    auto unpairedShareTransitions = std::move(SharedTransitionParam::unpairedShareTransitions_);
+    for (auto& [id, wptr] : unpairedShareTransitions) {
         auto sharedTransitionParam = wptr.lock();
-        if (!sharedTransitionParam) {
+        // If the unpaired share transition is already deal with, do nothing
+        if (!sharedTransitionParam || !sharedTransitionParam->paired_) {
             continue;
         }
-        ROSEN_LOGE("RSUniRenderVisitor::ProcessUnpairedSharedTransitionNode: breaking up %s",
+        ROSEN_LOGE("RSUniRenderVisitor::ProcessUnpairedSharedTransitionNode: mark %s as unpaired",
             sharedTransitionParam->Dump().c_str());
+        sharedTransitionParam->paired_ = false;
         unpairNode(sharedTransitionParam->inNode_);
         unpairNode(sharedTransitionParam->outNode_);
     }
-    SharedTransitionParam::unpairedShareTransitions_.clear();
 }
 
 NodeId RSUniRenderVisitor::FindInstanceChildOfDisplay(std::shared_ptr<RSRenderNode> node)

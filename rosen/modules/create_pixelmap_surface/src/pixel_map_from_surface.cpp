@@ -410,7 +410,7 @@ std::shared_ptr<Drawing::Image> PixelMapFromSurface::CreateDrawingImage()
         Drawing::AlphaType::ALPHATYPE_PREMUL };
     std::shared_ptr<Drawing::Image> drawingImage = std::make_shared<Drawing::Image>();
     if (!drawingImage) {
-        cleanUpHelper->unRef();
+        cleanUpHelper->UnRef();
         return nullptr;
     }
 
@@ -419,7 +419,7 @@ std::shared_ptr<Drawing::Image> PixelMapFromSurface::CreateDrawingImage()
         Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, nullptr,
         NativeBufferUtils::DeleteVkImage,
         cleanUpHelper)) {
-        cleanUpHelper->unRef();
+        cleanUpHelper->UnRef();
         return nullptr;
     }
     return drawingImage;
