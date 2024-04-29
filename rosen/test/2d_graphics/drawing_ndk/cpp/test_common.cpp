@@ -119,7 +119,7 @@ uint32_t color_to_565(uint32_t color)
 
 OH_Drawing_Rect* DrawCreateRect(DrawRect r)
 {
-    OH_Drawing_Rect* rect = OH_Drawing_RectCreate(r.fLeft, r.fTop, r.fRight, r.fBottom);
+    OH_Drawing_Rect* rect = OH_Drawing_RectCreate(r.left, r.top, r.right, r.bottom);
     return rect;
 }
 
@@ -160,16 +160,16 @@ uint32_t* DrawBitmapGetAddr32(OH_Drawing_Bitmap* bitmap, int x, int y)
 void DrawPathGetBound(DrawRect& r, float x, float y)
 {
     // 比最小的小，比最大的大就设置
-    if (x < r.fLeft) {
-        r.fLeft = x;
+    if (x < r.left) {
+        r.left = x;
     }
-    if (x > r.fRight) {
-        r.fRight = x;
+    if (x > r.right) {
+        r.right = x;
     }
-    if (y < r.fTop) {
-        r.fTop = y;
+    if (y < r.top) {
+        r.top = y;
     }
-    if (y > r.fBottom) {
-        r.fBottom = y;
+    if (y > r.bottom) {
+        r.bottom = y;
     }
 }

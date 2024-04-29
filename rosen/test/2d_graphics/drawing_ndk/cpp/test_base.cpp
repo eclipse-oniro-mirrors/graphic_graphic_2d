@@ -215,12 +215,16 @@ void TestBase::GpuCanvasToFile(napi_env env)
     createOps.alphaType = 0;
     createOps.editable = 1;
     size_t bufferSize = createOps.width * createOps.height * 4;
-    void *dstPixels = malloc(bitmapWidth_ * bitmapHeight_ * 4);
-    if (dstPixels == nullptr) {
-        DRAWING_LOGE("dstPixels malloc failed");
+    if (dstPixels_) {
+        free(dstPixels_);
+        dstPixels_ = nullptr;
+    }
+    dstPixels_ = malloc(bitmapWidth_ * bitmapHeight_ * 4);
+    if (dstPixels_ == nullptr) {
+        DRAWING_LOGE("dstPixels_ malloc failed");
         return;
     }
-    bool output = OH_Drawing_CanvasReadPixels(gpuCanvas_, &imageInfo_, dstPixels, 4 * bitmapWidth_, 0, 0);
+    bool output = OH_Drawing_CanvasReadPixels(gpuCanvas_, &imageInfo_, dstPixels_, 4 * bitmapWidth_, 0, 0);
     if (!output) {
         DRAWING_LOGE("read pixels failed");
         return;
@@ -228,17 +232,14 @@ void TestBase::GpuCanvasToFile(napi_env env)
     if (bitmap_) {
         OH_Drawing_BitmapDestroy(bitmap_);
     }
-    bitmap_ = OH_Drawing_BitmapCreateFromPixels(&imageInfo_, dstPixels, 4 * bitmapWidth_); // 4 for rgba
-    int32_t res = OH_PixelMap_CreatePixelMap(env, createOps, (uint8_t *)dstPixels, bufferSize, &pixelMap);
+    bitmap_ = OH_Drawing_BitmapCreateFromPixels(&imageInfo_, dstPixels_, 4 * bitmapWidth_);
+    int32_t res = OH_PixelMap_CreatePixelMap(env, createOps, (uint8_t *)dstPixels_, bufferSize, &pixelMap);
     if (res != IMAGE_RESULT_SUCCESS || pixelMap == nullptr) {
-        DRAWING_LOGE(" failed to OH_PixelMap_CreatePixelMap width = %{public}u, height = %{public}u",
-            bitmapWidth_, bitmapHeight_);
+        DRAWING_LOGE(" failed to OH_PixelMap_CreatePixelMap width = %{public}u, height = %{public}u", bitmapWidth_, bitmapHeight_);
         return;
     }
 
     Pixmap2File(env, pixelMap);
-    free(dstPixels);
-    dstPixels = nullptr;
 }
 
 void TestBase::Pixmap2File(napi_env env, napi_value pixelMap)

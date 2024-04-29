@@ -34,7 +34,12 @@ class TestBase {
 public:
     TestBase(){};
     explicit TestBase(int styleType):styleType_(styleType){};
-    virtual ~TestBase() = default;
+    virtual ~TestBase() {
+        if (dstPixels_) {
+            free(dstPixels_);
+            dstPixels_ = nullptr;
+        }
+    };
 
     void SetFileName(std::string fileName);
     void SetTestCount(uint32_t testCount);
@@ -68,6 +73,7 @@ protected:
     void BitmapCanvasToFile(napi_env env);
     void GpuCanvasToFile(napi_env env);
     void Pixmap2File(napi_env env, napi_value pixelMap);
+    void* dstPixels_ = nullptr;
 
     //pixmap to file
     OH_Drawing_Bitmap* bitmap_ = nullptr;
