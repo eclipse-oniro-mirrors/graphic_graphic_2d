@@ -14,8 +14,8 @@
  */
 
 #include <hilog/log.h>
-#include "napi/native_api.h"
 #include "common/log_common.h"
+#include "napi/native_api.h"
 #include "plugin/plugin_manager.h"
 
 EXTERN_C_START

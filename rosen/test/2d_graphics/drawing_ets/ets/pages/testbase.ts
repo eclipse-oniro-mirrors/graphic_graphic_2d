@@ -13,22 +13,17 @@
  * limitations under the License.
  */
 
-import image from '@ohos.multimedia.image';
-import drawing from "@ohos.graphics.drawing";
 import common2D from "@ohos.graphics.common2D";
+import drawing from "@ohos.graphics.drawing";
+import image from '@ohos.multimedia.image';
+import systemDateTime from '@ohos.systemDateTime';
 import fs from '@ohos.file.fs'
 import { BusinessError } from '@ohos.base';
-import systemDateTime from '@ohos.systemDateTime';
 import { Global } from './global';
 
 const TAG = '[DrawingTest]';
-/**
- * 测试基类
- */
 export class TestBase {
-
   public constructor() {
-    console.log(TAG, 'create TestBase');
     this.width_ = 720;
     this.height_ = 720;
     this.backgroundA_ = 0xFF;
@@ -52,7 +47,6 @@ export class TestBase {
   testCount_: number | 1; //性能功耗测试时候，关键接口的默认循环次数
   time_: number | 0; //性能测试耗时
   styleType_: number | 0; //性能测试耗时
-
 
   public async CreateBitmapCanvas() {
     console.log(TAG, 'CreateBitmapCanvas'+ this.width_ + ' * ' + this.height_);
@@ -88,7 +82,6 @@ export class TestBase {
 
   public OnTestFunction(canvas: drawing.Canvas) {
     //接口调用，功能测试
-    console.log(TAG, 'TestBase OnTestFunction');
   }
 
   public OnTestPerformance(canvas: drawing.Canvas) {
@@ -107,7 +100,6 @@ export class TestBase {
 
   public OnTestFunctionGpuUpScreen(canvas: drawing.Canvas) {
     //gpu上屏幕绘制图案
-    console.info(TAG, 'TestBase MyRenderNode TestFunctionGpuUpScreen');
     this.OnTestFunction(canvas)
   }
 
@@ -117,7 +109,6 @@ export class TestBase {
   }
 
   public async TestFunctionCpu(dir: string) {
-    console.log(TAG, 'TestFunctionCpu start');
     await this.CreateBitmapCanvas();
     if (this.canvas_ == null || this.canvas_ == undefined) {
       console.error(TAG, 'canvas_ is invalid');
@@ -125,7 +116,6 @@ export class TestBase {
     }
     this.OnTestFunctionCpu(this.canvas_);
     this.BitmapCanvasToFile(dir);
-    console.log(TAG, 'TestFunctionCpu end');
   }
 
   public SetTestCount(count: number) {
@@ -133,7 +123,6 @@ export class TestBase {
   }
 
   public async TestPerformanceCpu() {
-    console.log(TAG, 'TestPerformanceCpu start');
     await this.CreateBitmapCanvas();
     if (this.canvas_ == null || this.canvas_ == undefined) {
       console.log(TAG, 'canvas_ is invalid');
@@ -150,22 +139,18 @@ export class TestBase {
     this.time_ = endTime - startTime;
     console.error(TAG, 'DrawingApiTest TotalApiCallTime: [' + this.time_ + ']');
     console.error(TAG, 'DrawingApiTest TotalApiCallCount: [' + this.testCount_ + ']');
-    console.error(TAG, 'TestPerformanceCpu end');
     this.StyleSettingsDestroy(this.canvas_);
   }
 
   public TestFunctionGpuUpScreen(canvas: drawing.Canvas) {
-    console.log(TAG, 'TestFunctionGpu start');
     if (canvas == null || canvas == undefined) {
       console.error(TAG, 'canvas is invalid');
       return;
     }
     this.OnTestFunctionGpuUpScreen(canvas);
-    console.log(TAG, 'TestFunctionGpu end');
   }
 
   public TestPerformanceGpuUpScreen(canvas: drawing.Canvas): number {
-    console.log(TAG, 'TestPerformanceGpuUpScreen start');
     if (canvas == null || canvas == undefined) {
       console.error(TAG, 'canvas is invalid');
       return;
@@ -188,8 +173,6 @@ export class TestBase {
   }
   public StyleSettings(canvas: drawing.Canvas, styleType: StyleType) {
     if (styleType == StyleType.DRAW_STYLE_COMPLEX) {
-
-      console.log(TAG, 'xyj DRAW_ STYLE_COMPLEX end');
       let color: common2D.Color = { alpha: 255, red: 255, green: 0, blue: 0 };
       let filter = drawing.ColorFilter.createLinearToSRGBGamma();
 
@@ -290,7 +273,6 @@ export class TestBase {
       pen.setBlendMode(drawing.BlendMode.MULTIPLY)
     }
   }
-
 }
 
 export enum TestFunctionStyleType {

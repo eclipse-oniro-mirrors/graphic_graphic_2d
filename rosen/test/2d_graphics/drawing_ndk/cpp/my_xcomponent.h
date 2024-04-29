@@ -18,10 +18,11 @@
 #include <ace/xcomponent/native_interface_xcomponent.h>
 #include <arpa/nameser.h>
 #include <bits/alltypes.h>
-#include <GLES3/gl3.h>
+#include <cstdint>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include <native_window/external_window.h>
+#include <GLES3/gl3.h>
+#include <map>
 #include <native_drawing/drawing_bitmap.h>
 #include <native_drawing/drawing_color.h>
 #include <native_drawing/drawing_canvas.h>
@@ -31,10 +32,9 @@
 #include <native_drawing/drawing_path.h>
 #include <native_drawing/drawing_rect.h>
 #include <native_drawing/drawing_surface.h>
-#include <cstdint>
-#include <map>
-#include <sys/mman.h>
+#include <native_window/external_window.h>
 #include <string>
+#include <sys/mman.h>
 #include "napi/native_api.h"
 #include "test_base.h"
 
@@ -81,12 +81,12 @@ public:
 private:
     void BitmapToScreenCanvas(OH_Drawing_Bitmap* bitmap);
 
-    // This is the size of the display area, not the size of the entire screen
     OHNativeWindow *nativeWindow_ = nullptr;
     EGLDisplay mEGLDisplay = EGL_NO_DISPLAY;
     EGLConfig mEGLConfig = nullptr;
     EGLContext mEGLContext = EGL_NO_CONTEXT;
     EGLSurface mEGLSurface = nullptr;
+    // This is the size of the display area, not the size of the entire screen
     uint64_t screenWidth_ = 0;
     uint64_t screenHeight_ = 0;
     OH_Drawing_Bitmap *screenBitmap_ = nullptr;
@@ -99,7 +99,6 @@ private:
     BufferHandle *bufferHandle_ = nullptr;
     struct NativeWindowBuffer *buffer_ = nullptr;
     int fenceFd_ = 0;
-
     uint32_t testCount_ = DEFAULT_TESTCOUNT;
     uint32_t usedTime_ = 0;
 };

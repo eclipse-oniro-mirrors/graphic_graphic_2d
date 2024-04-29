@@ -26,14 +26,11 @@
 class PluginManager {
 public:
     ~PluginManager();
-
     static PluginManager *GetInstance();
-
     void SetNativeXComponent(std::string &id, OH_NativeXComponent *nativeXComponent);
     MyXComponent *GetRender(std::string &id);
     void Export(napi_env env, napi_value exports);
 private:
-
     std::unordered_map<std::string, OH_NativeXComponent *> nativeXComponentMap_;
     std::unordered_map<std::string, MyXComponent *> pluginRenderMap_;
 };
