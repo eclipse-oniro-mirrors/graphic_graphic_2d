@@ -48,6 +48,11 @@ Drawing::RectI RSPaintFilterCanvasBase::GetDeviceClipBounds() const
     return canvas_->GetDeviceClipBounds();
 }
 
+Drawing::RectI RSPaintFilterCanvasBase::GetRoundInDeviceClipBounds() const
+{
+    return canvas_->GetRoundInDeviceClipBounds();
+}
+
 uint32_t RSPaintFilterCanvasBase::GetSaveCount() const
 {
     return canvas_->GetSaveCount();

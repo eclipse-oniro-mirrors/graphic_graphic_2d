@@ -26,9 +26,6 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
-// when the blur radius > SNAPSHOT_OUTSET_BLUR_RADIUS_THRESHOLD,
-// the snapshot should call outset before blur to shrink by 1px.
-constexpr static float SNAPSHOT_OUTSET_BLUR_RADIUS_THRESHOLD = 40.0f;
 constexpr int TRACE_LEVEL_TWO = 2;
 } // namespace
 
@@ -207,16 +204,6 @@ void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas,
     }
 
     auto filter = std::static_pointer_cast<RSDrawingFilter>(rsFilter);
-    if (filter->GetFilterType() == RSFilter::MATERIAL) {
-        float radius = 0.f;
-        std::shared_ptr<RSShaderFilter> rsShaderFilter =
-            filter->GetShaderFilterWithType(RSShaderFilter::KAWASE);
-        if (rsShaderFilter != nullptr) {
-            auto kawaseShaderFilter = std::static_pointer_cast<RSKawaseBlurShaderFilter>(rsShaderFilter);
-            radius = kawaseShaderFilter->GetRadius();
-        }
-        filter->SetSnapshotOutset(radius >= SNAPSHOT_OUTSET_BLUR_RADIUS_THRESHOLD);
-    }
     auto clipIBounds = canvas->GetDeviceClipBounds();
     RS_OPTIONAL_TRACE_NAME("DrawFilter " + rsFilter->GetDescription());
     RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO, "DrawFilter, filterType: %d, %s, bounds: %s",
@@ -254,7 +241,7 @@ void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas,
             filter->SetSnapshotOutset(false);
         }
         cacheManager->DrawFilter(*paintFilterCanvas, filter,
-            { filter->NeedSnapshotOutset(), shouldClearFilteredCache });
+            { false, shouldClearFilteredCache });
         cacheManager->CompactFilterCache(shouldClearFilteredCache); // flag for clear witch cache after drawing
         return;
     }
@@ -268,9 +255,6 @@ void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas,
         filter->SetSnapshotOutset(false);
     }
     auto imageClipIBounds = clipIBounds;
-    if (filter->NeedSnapshotOutset()) {
-        imageClipIBounds.MakeOutset(-1, -1);
-    }
     auto imageSnapshot = surface->GetImageSnapshot(imageClipIBounds);
     if (imageSnapshot == nullptr) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawFilter image null");
@@ -605,7 +589,7 @@ std::shared_ptr<Drawing::Blender> RSPropertyDrawableUtils::MakeDynamicBrightness
     if (ROSEN_LNE(fract, 0.0) || ROSEN_GE(fract, 1.0)) {
         return nullptr;
     }
- 
+
     auto builder = MakeDynamicBrightnessBuilder();
     if (!builder) {
         ROSEN_LOGE("RSPropertyDrawableUtils::MakeDynamicBrightnessBlender make builder fail");
@@ -643,11 +627,11 @@ std::shared_ptr<Drawing::RuntimeBlenderBuilder> RSPropertyDrawableUtils::MakeDyn
         uniform half ubo_negr;
         uniform half ubo_negg;
         uniform half ubo_negb;
- 
+
         const vec3 baseVec = vec3(0.2412016, 0.6922296, 0.0665688);
- 
+
         half3 gray(half3 x, half a, half b) { return a * x + b; }
- 
+
         half3 sat(half3 inColor, half n, half3 pos, half3 neg) {
             half base = dot(inColor, baseVec) * (1.0 - n);
             half3 nColor = base + inColor * n;
@@ -658,7 +642,7 @@ std::shared_ptr<Drawing::RuntimeBlenderBuilder> RSPropertyDrawableUtils::MakeDyn
             half3 test = mix(negDelta, posDelta, grt);
             return test;
         }
- 
+
         half4 main(half4 src, half4 dst) {
             half3 color = gray(dst.rgb, ubo_rate, ubo_degree);
             half3 pos = half3(ubo_posr, ubo_posg, ubo_posb);
