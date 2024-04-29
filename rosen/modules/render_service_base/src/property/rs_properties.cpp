@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <securec.h>
 
+#include "animation/rs_render_particle_animation.h"
 #include "common/rs_common_def.h"
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_vector4.h"
@@ -49,6 +50,8 @@ const Vector4f Vector4fZero { 0.f, 0.f, 0.f, 0.f };
 const auto EMPTY_RECT = RectF();
 constexpr float SPHERIZE_VALID_EPSILON = 0.001f; // used to judge if spherize valid
 constexpr uint8_t BORDER_TYPE_NONE = (uint32_t)BorderStyle::NONE;
+constexpr int BORDER_NUM = 4;
+constexpr int16_t BORDER_TRANSPARENT = 255;
 
 using ResetPropertyFunc = void (*)(RSProperties* prop);
 // Every modifier before RSModifierType::CUSTOM is property modifier, and it should have a ResetPropertyFunc
@@ -1054,6 +1057,19 @@ const std::shared_ptr<RSBorder>& RSProperties::GetBorder() const
     return border_;
 }
 
+bool RSProperties::GetBorderColorIsTransparent() const
+{
+    if (border_) {
+        for (int i = 0; i < BORDER_NUM; i++) {
+            auto alpha = border_->GetColorFour()[i].GetAlpha();
+            if (alpha < BORDER_TRANSPARENT) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void RSProperties::SetOutlineColor(Vector4<Color> color)
 {
     if (!outline_) {
@@ -1169,11 +1185,23 @@ void RSProperties::SetLinearGradientBlurPara(const std::shared_ptr<RSLinearGradi
     contentDirty_ = true;
 }
 
-void RSProperties::SetEmitterUpdater(const std::shared_ptr<EmitterUpdater>& para)
+void RSProperties::SetEmitterUpdater(const std::vector<std::shared_ptr<EmitterUpdater>>& para)
 {
     emitterUpdater_ = para;
-    if (emitterUpdater_) {
+    if (!emitterUpdater_.empty()) {
         isDrawn_ = true;
+        auto renderNode = backref_.lock();
+        if (renderNode == nullptr) {
+            return;
+        }
+        auto animation = renderNode->GetAnimationManager().GetParticleAnimation();
+        if (animation == nullptr) {
+            return;
+        }
+        auto particleAnimation = std::static_pointer_cast<RSRenderParticleAnimation>(animation);
+        if (particleAnimation) {
+            particleAnimation->UpdateEmitter(emitterUpdater_);
+        }
     }
     filterNeedUpdate_ = true;
     SetDirty();
@@ -1185,6 +1213,18 @@ void RSProperties::SetParticleNoiseFields(const std::shared_ptr<ParticleNoiseFie
     particleNoiseFields_ = para;
     if (particleNoiseFields_) {
         isDrawn_ = true;
+        auto renderNode = backref_.lock();
+        if (renderNode == nullptr) {
+            return;
+        }
+        auto animation = renderNode->GetAnimationManager().GetParticleAnimation();
+        if (animation == nullptr) {
+            return;
+        }
+        auto particleAnimation = std::static_pointer_cast<RSRenderParticleAnimation>(animation);
+        if (particleAnimation) {
+            particleAnimation->UpdateNoiseField(particleNoiseFields_);
+        }
     }
     filterNeedUpdate_ = true;
     SetDirty();
@@ -1337,7 +1377,7 @@ const std::shared_ptr<RSLinearGradientBlurPara>& RSProperties::GetLinearGradient
     return linearGradientBlurPara_;
 }
 
-const std::shared_ptr<EmitterUpdater>& RSProperties::GetEmitterUpdater() const
+const std::vector<std::shared_ptr<EmitterUpdater>>& RSProperties::GetEmitterUpdater() const
 {
     return emitterUpdater_;
 }
@@ -1837,12 +1877,11 @@ bool RSProperties::IsContentDirty() const
 
 RectI RSProperties::GetDirtyRect() const
 {
-    auto boundsGeometry = (boundsGeo_);
-    RectI dirtyRect = boundsGeometry->MapAbsRect(GetLocalBoundsAndFramesRect());
+    RectI dirtyRect = boundsGeo_->MapAbsRect(GetLocalBoundsAndFramesRect());
     if (drawRegion_ == nullptr || drawRegion_->IsEmpty()) {
         return dirtyRect;
     } else {
-        auto drawRegion = boundsGeometry->MapAbsRect(*drawRegion_);
+        auto drawRegion = boundsGeo_->MapAbsRect(*drawRegion_);
         // this is used to fix the scene with drawRegion problem, which is need to be optimized
         drawRegion.SetRight(drawRegion.GetRight() + 1);
         drawRegion.SetBottom(drawRegion.GetBottom() + 1);
@@ -1855,19 +1894,18 @@ RectI RSProperties::GetDirtyRect() const
 RectI RSProperties::GetDirtyRect(RectI& drawRegion) const
 {
     RectI dirtyRect;
-    auto boundsGeometry = (boundsGeo_);
     if (clipToBounds_ || std::isinf(GetFrameWidth()) || std::isinf(GetFrameHeight())) {
-        dirtyRect = boundsGeometry->GetAbsRect();
+        dirtyRect = boundsGeo_->GetAbsRect();
     } else {
         auto frameRect =
-            boundsGeometry->MapAbsRect(RectF(GetFrameOffsetX(), GetFrameOffsetY(), GetFrameWidth(), GetFrameHeight()));
-        dirtyRect = boundsGeometry->GetAbsRect().JoinRect(frameRect);
+            boundsGeo_->MapAbsRect(RectF(GetFrameOffsetX(), GetFrameOffsetY(), GetFrameWidth(), GetFrameHeight()));
+        dirtyRect = boundsGeo_->GetAbsRect().JoinRect(frameRect);
     }
     if (drawRegion_ == nullptr || drawRegion_->IsEmpty()) {
         drawRegion = RectI();
         return dirtyRect;
     } else {
-        drawRegion = boundsGeometry->MapAbsRect(*drawRegion_);
+        drawRegion = boundsGeo_->MapAbsRect(*drawRegion_);
         // this is used to fix the scene with drawRegion problem, which is need to be optimized
         drawRegion.SetRight(drawRegion.GetRight() + 1);
         drawRegion.SetBottom(drawRegion.GetBottom() + 1);

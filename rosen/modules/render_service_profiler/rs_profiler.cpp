@@ -22,6 +22,7 @@
 #include "rs_profiler_capture_recorder.h"
 #include "rs_profiler_capturedata.h"
 #include "rs_profiler_file.h"
+#include "rs_profiler_json.h"
 #include "rs_profiler_network.h"
 #include "rs_profiler_telemetry.h"
 #include "rs_profiler_utils.h"
@@ -317,7 +318,7 @@ void RSProfiler::OnFrameEnd()
     if (g_calcPerfNode == 0) {
         return;
     }
-        
+
     g_calcPerfNodeTime[g_calcPerfNodeTry] = Utils::RawNowNano() - g_frameBeginTimestamp;
     g_calcPerfNodeTry++;
     if (g_calcPerfNodeTry < CALC_PERF_NODE_TIME_COUNT) {
@@ -350,6 +351,31 @@ void RSProfiler::OnFrameEnd()
         CalcPerfNodeAllStep();
     }
     AwakeRenderServiceThread();
+}
+
+void RSProfiler::RenderServiceTreeDump(JsonWriter& out)
+{
+    RS_TRACE_NAME("GetDumpTreeJSON");
+
+    if (!g_renderServiceContext) {
+        return;
+    }
+
+    auto& animation = out["Animation Node"];
+    animation.PushArray();
+    for (auto& [nodeId, _] : g_renderServiceContext->animatingNodeList_) {
+        animation.Append(nodeId);
+    }
+    animation.PopArray();
+
+    auto& root = out["Root node"];
+    const auto rootNode = g_renderServiceContext->GetGlobalRootRenderNode();
+    if (rootNode) {
+        DumpNode(*rootNode, root);
+    } else {
+        root.PushObject();
+        root.PopObject();
+    }
 }
 
 bool RSProfiler::IsEnabled()
@@ -647,6 +673,30 @@ void RSProfiler::DumpTree(const ArgList& args)
     Respond(out);
 }
 
+void RSProfiler::DumpTreeToJson(const ArgList& args)
+{
+    if (!g_renderServiceContext) {
+        return;
+    }
+
+    JsonWriter json;
+    json.PushObject();
+    RenderServiceTreeDump(json);
+
+    auto& display = json["Display"];
+    auto displayNode = GetDisplayNode(*g_renderServiceContext);
+    auto dirtyManager = displayNode ? displayNode->GetDirtyManager() : nullptr;
+    if (dirtyManager) {
+        const auto displayRect = dirtyManager->GetSurfaceRect();
+        display = { displayRect.GetLeft(), displayRect.GetTop(), displayRect.GetRight(), displayRect.GetBottom() };
+    } else {
+        display = { 0.0f, 0.0f, 0.0f, 0.0f };
+    }
+
+    json.PopObject();
+    Network::SendRSTreeDumpJSON(json.GetDumpString());
+}
+
 void RSProfiler::DumpSurfaces(const ArgList& args)
 {
     if (!g_renderServiceContext) {
@@ -823,7 +873,7 @@ void RSProfiler::GetPerfTree(const ArgList& args)
             continue;
         }
         std::string sNodeType;
-        node->DumpNodeType(sNodeType);
+        RSRenderNode::DumpNodeType(node->GetType(), sNodeType);
         outString += (it != g_nodeSetPerf.begin() ? ", " : "") + std::to_string(*it) + ":" +
             std::to_string(g_mapNode2Count[*it]) + " [" + sNodeType + "]";
     }
@@ -1084,7 +1134,7 @@ void RSProfiler::PlaybackUpdate()
     if (!IsPlaying()) {
         return;
     }
-    
+
     const double deltaTime = Utils::Now() - g_playbackStartTime;
 
     std::vector<uint8_t> data;

@@ -224,6 +224,7 @@ public:
     Vector4<uint32_t> GetOutlineStyle() const;
     Vector4f GetOutlineRadius() const;
     const std::shared_ptr<RSBorder>& GetOutline() const;
+    bool GetBorderColorIsTransparent() const;
 
     void SetForegroundEffectRadius(const float foregroundEffectRadius);
     float GetForegroundEffectRadius() const;
@@ -232,7 +233,7 @@ public:
     // filter properties
     void SetBackgroundFilter(const std::shared_ptr<RSFilter>& backgroundFilter);
     void SetLinearGradientBlurPara(const std::shared_ptr<RSLinearGradientBlurPara>& para);
-    void SetEmitterUpdater(const std::shared_ptr<EmitterUpdater>& para);
+    void SetEmitterUpdater(const std::vector<std::shared_ptr<EmitterUpdater>>& para);
     void SetParticleNoiseFields(const std::shared_ptr<ParticleNoiseFields>& para);
     void SetDynamicLightUpRate(const std::optional<float>& rate);
     void SetDynamicLightUpDegree(const std::optional<float>& lightUpDegree);
@@ -252,7 +253,7 @@ public:
     void SetMotionBlurPara(const std::shared_ptr<MotionBlurParam>& para);
     const std::shared_ptr<RSFilter>& GetBackgroundFilter() const;
     const std::shared_ptr<RSLinearGradientBlurPara>& GetLinearGradientBlurPara() const;
-    const std::shared_ptr<EmitterUpdater>& GetEmitterUpdater() const;
+    const std::vector<std::shared_ptr<EmitterUpdater>>& GetEmitterUpdater() const;
     const std::shared_ptr<ParticleNoiseFields>& GetParticleNoiseFields() const;
     void IfLinearGradientBlurInvalid();
     const std::shared_ptr<RSFilter>& GetFilter() const;
@@ -551,7 +552,7 @@ private:
     std::shared_ptr<RSFilter> backgroundFilter_ = nullptr;
     std::shared_ptr<RSLinearGradientBlurPara> linearGradientBlurPara_ = nullptr;
     std::shared_ptr<MotionBlurParam> motionBlurPara_ = nullptr;
-    std::shared_ptr<EmitterUpdater> emitterUpdater_ = nullptr;
+    std::vector<std::shared_ptr<EmitterUpdater>> emitterUpdater_;
     std::shared_ptr<ParticleNoiseFields> particleNoiseFields_ = nullptr;
     std::shared_ptr<RSBorder> border_ = nullptr;
     std::shared_ptr<RSBorder> outline_ = nullptr;
@@ -653,6 +654,9 @@ private:
     friend class DrawableV2::RSBackgroundFilterDrawable;
     friend class DrawableV2::RSShadowDrawable;
     friend class DrawableV2::RSFilterDrawable;
+#ifdef RS_PROFILER_ENABLED
+    friend class RSProfiler;
+#endif
 };
 } // namespace Rosen
 } // namespace OHOS
