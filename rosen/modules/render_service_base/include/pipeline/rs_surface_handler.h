@@ -102,6 +102,16 @@ public:
         return consumer_;
     }
 
+    void SetHoldBuffer(std::shared_ptr<SurfaceBufferEntry> buffer)
+    {
+        holdBuffer_ = buffer;
+    }
+
+    inline std::shared_ptr<SurfaceBufferEntry> GetHoldBuffer()
+    {
+        return holdBuffer_;
+    }
+
     void SetBuffer(
         const sptr<SurfaceBuffer>& buffer,
         const sptr<SyncFence>& acquireFence,
@@ -230,6 +240,7 @@ private:
     float globalZOrder_ = 0.0f;
     std::atomic<int> bufferAvailableCount_ = 0;
     bool bufferSizeChanged_ = false;
+    std::shared_ptr<SurfaceBufferEntry> holdBuffer_ = nullptr;
 };
 }
 }
