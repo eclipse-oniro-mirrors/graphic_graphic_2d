@@ -54,5 +54,5 @@ HWTEST_F(OH_Drawing_TextLineBaseTest, OH_Drawing_TextLineBaseTest001, TestSize.L
     vectorTextLineBase[0]->GetTextRange();
     vectorTextLineBase[0]->Paint(canvas, 100.0, 100.0);
 }
-}// namespace Rosen
-}// namespace OHOS
+} // namespace Rosen
+} // namespace OHOS
