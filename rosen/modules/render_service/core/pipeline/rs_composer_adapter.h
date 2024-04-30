@@ -88,6 +88,7 @@ private:
     void LayerRotate(const LayerInfoPtr& layer, RSBaseRenderNode& node) const;
     void LayerCrop(const LayerInfoPtr& layer) const;
     static void LayerScaleDown(const LayerInfoPtr& layer);
+    static void LayerScaleFit(const LayerInfoPtr& layer);
     static void LayerPresentTimestamp(const LayerInfoPtr& layer, const sptr<IConsumerSurface>& surface);
 
     void OnPrepareComplete(sptr<Surface>& surface, const PrepareCompleteParam& param, void* data);

@@ -619,6 +619,64 @@ void RSUniRenderComposerAdapter::LayerScaleDown(const LayerInfoPtr& layer, RSSur
     }
 }
 
+// private func, guarantee the layer is valid
+void RSUniRenderComposerAdapter::LayerScaleFit(const LayerInfoPtr& layer, RSSurfaceRenderNode& node)
+{
+    ScalingMode scalingMode = ScalingMode::SCALING_MODE_SCALE_TO_WINDOW;
+    const auto& buffer = layer->GetBuffer();
+    const auto& surface = layer->GetSurface();
+    if (buffer == nullptr || surface == nullptr) {
+        return;
+    }
+
+    if (surface->GetScalingMode(buffer->GetSeqNum(), scalingMode) == GSERROR_OK &&
+        scalingMode == ScalingMode::SCALING_MODE_SCALE_FIT) {
+        GraphicIRect srcRect = layer->GetCropRect();
+        GraphicIRect dstRect = layer->GetLayerSize();
+        uint32_t newWidth = static_cast<uint32_t>(srcRect.w);
+        uint32_t newHeight = static_cast<uint32_t>(srcRect.h);
+        uint32_t dstWidth = static_cast<uint32_t>(dstRect.w);
+        uint32_t dstHeight = static_cast<uint32_t>(dstRect.h);
+
+        if (newWidth * dstHeight > newHeight * dstWidth) {
+            // too wide
+            if (srcRect.w == 0) {
+                return;
+            }
+            newWidth = dstWidth;
+            newHeight = srcRect.h * newWidth / srcRect.w;
+        } else if (newWidth * dstHeight < newHeight * dstWidth) {
+            // too tall
+            if (srcRect.h == 0) {
+                return;
+            }
+            newHeight = dstHeight;
+            newWidth = srcRect.w * newHeight / srcRect.h;
+        } else {
+            newHeight = dstHeight;
+            newWidth = dstWidth;
+        }
+
+        if (newWidth < dstWidth) {
+            // the crop is too wide
+            uint32_t dw = dstWidth - newWidth;
+            auto halfdw = dw / 2;
+            dstRect.x += halfdw;
+        } else if (newHeight < dstHeight) {
+            // thr crop is too tall
+            uint32_t dh = dstHeight - newHeight;
+            auto halfdh = dh / 2;
+            srcRect.y += halfdh;
+        }
+        dstRect.h = static_cast<int32_t>(newHeight);
+        dstRect.w = static_cast<int32_t>(newWidth);
+        layer->SetLayerSize(dstRect);
+        RS_LOGD("RsDebug RSUniRenderComposerAdapter::LayerScaleFit layer has been scaledown dst[%{public}d %{public}d"
+            " %{public}d %{public}d] src[%{public}d %{public}d %{public}d %{public}d]",
+            dstRect.x, dstRect.y, dstRect.w, dstRect.h, srcRect.x, srcRect.y, srcRect.w, srcRect.h);
+    }
+}
+
 // private func
 bool RSUniRenderComposerAdapter::IsOutOfScreenRegion(const ComposeInfo& info) const
 {
@@ -669,6 +727,7 @@ LayerInfoPtr RSUniRenderComposerAdapter::CreateBufferLayer(RSSurfaceRenderNode& 
     LayerRotate(layer, node);
     LayerCrop(layer);
     LayerScaleDown(layer, node);
+    LayerScaleFit(layer, node);
     return layer;
 }
 
