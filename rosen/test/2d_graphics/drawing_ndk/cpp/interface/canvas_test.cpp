@@ -364,12 +364,12 @@ void CanvasDrawShadow::OnTestPerformance(OH_Drawing_Canvas* canvas)
     OH_Drawing_Path* pathCreate = OH_Drawing_PathCreate(); // 用于创建一个路径对象。
     OH_Drawing_Point3D planeParams;
     OH_Drawing_Point3D devLightPos;
-    planeParams.x = 0; // 0 用于坐标计算
-    planeParams.y = 0; // 0 用于坐标计算
-    planeParams.z = 50.f;  // 50.f 用于坐标计算
-    devLightPos.x = 100.f; // 100.f 用于坐标计算
-    devLightPos.y = 100.f; // 100.f 用于坐标计算
-    devLightPos.z = 100.f; // 100.f 用于坐标计算
+    planeParams.x = 0;        // 0 用于坐标计算
+    planeParams.y = 0;        // 0 用于坐标计算
+    planeParams.z = 50.f;     // 50.f 用于坐标计算
+    devLightPos.x = 100.f;    // 100.f 用于坐标计算
+    devLightPos.y = 100.f;    // 100.f 用于坐标计算
+    devLightPos.z = 100.f;    // 100.f 用于坐标计算
     float lightRadius = 50.f; // 50.f 用于坐标计算
     uint32_t ambientColor = 0x19000000;
     uint32_t spotColor = 0x40000000;
@@ -458,7 +458,7 @@ void CanvasReadPixels::OnTestPerformance(OH_Drawing_Canvas* canvas)
     float b = t + rand.nextULessThan(bitmapHeight_);
     OH_Drawing_Rect* rect = OH_Drawing_RectCreate(l, t, r, b);
     for (int i = 0; i < testCount_; i++) {
-        void* dstPixels = malloc(r * b * 4); // 4 用于像素计算
+        char* dstPixels = (char*)malloc(r * b * 4); // 4 用于像素计算
         // 从画布中拷贝像素数据到指定地址，去掉readPixels接口就只有drawRect接口画的一个矩形,用日志看读数据的结果
         res = OH_Drawing_CanvasReadPixels(canvas, &imageInfo, dstPixels, r * 4, l, t); // 4 用于像素计算
         free(dstPixels);
