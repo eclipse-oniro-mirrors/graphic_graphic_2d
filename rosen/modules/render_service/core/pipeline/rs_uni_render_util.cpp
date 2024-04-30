@@ -1060,7 +1060,9 @@ void RSUniRenderUtil::UpdateRealSrcRect(RSSurfaceRenderNode& node, const RectI& 
             }
         }
     }
-    node.SetSrcRect(srcRect);
+    RectI bufferRect(0, 0, bufferWidth, bufferHeight);
+    RectI newSrcRect = srcRect.IntersectRect(bufferRect);
+    node.SetSrcRect(newSrcRect);
 }
  
 void RSUniRenderUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo)
