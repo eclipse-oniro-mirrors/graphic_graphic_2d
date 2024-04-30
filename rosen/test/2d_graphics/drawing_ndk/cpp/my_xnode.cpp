@@ -135,7 +135,10 @@ void MyXNode::TestFunction(OH_Drawing_Canvas* canvas, std::string caseName)
         DRAWING_LOGE("failed to get testcase");
         return;
     }
+    OH_Drawing_CanvasSave(canvas);
+    testCase->ClipCanvasToDrawSize(canvas);
     testCase->TestFunctionGpu(canvas);
+    OH_Drawing_CanvasRestore(canvas);
 }
 
 uint32_t MyXNode::TestPerformance(OH_Drawing_Canvas* canvas, std::string caseName, uint32_t testCount)
