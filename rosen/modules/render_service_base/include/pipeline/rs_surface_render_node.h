@@ -839,7 +839,7 @@ public:
         bool isUniRender,
         bool filterCacheOcclusionEnabled);
 
-    bool LeashWindowRelatedAppWindowOccluded(std::shared_ptr<RSSurfaceRenderNode>& appNode);
+    bool LeashWindowRelatedAppWindowOccluded(std::vector<std::shared_ptr<RSSurfaceRenderNode>>& appNode);
 
     void OnTreeStateChanged() override;
 
