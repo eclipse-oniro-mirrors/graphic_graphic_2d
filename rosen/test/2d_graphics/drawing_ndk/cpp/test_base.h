@@ -34,7 +34,8 @@ class TestBase {
 public:
     TestBase(){};
     explicit TestBase(int styleType):styleType_(styleType){};
-    virtual ~TestBase() {
+    virtual ~TestBase()
+    {
         if (dstPixels_) {
             free(dstPixels_);
             dstPixels_ = nullptr;

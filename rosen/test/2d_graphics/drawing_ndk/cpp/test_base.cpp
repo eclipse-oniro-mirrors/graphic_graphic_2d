@@ -219,7 +219,7 @@ void TestBase::GpuCanvasToFile(napi_env env)
         free(dstPixels_);
         dstPixels_ = nullptr;
     }
-    dstPixels_ = malloc(bitmapWidth_ * bitmapHeight_ * 4);
+    dstPixels_ = malloc(bitmapWidth_ * bitmapHeight_ * 4); // 4 for rgba
     if (dstPixels_ == nullptr) {
         DRAWING_LOGE("dstPixels_ malloc failed");
         return;
@@ -232,10 +232,10 @@ void TestBase::GpuCanvasToFile(napi_env env)
     if (bitmap_) {
         OH_Drawing_BitmapDestroy(bitmap_);
     }
-    bitmap_ = OH_Drawing_BitmapCreateFromPixels(&imageInfo_, dstPixels_, 4 * bitmapWidth_);
+    bitmap_ = OH_Drawing_BitmapCreateFromPixels(&imageInfo_, dstPixels_, 4 * bitmapWidth_); // 4 for rgba
     int32_t res = OH_PixelMap_CreatePixelMap(env, createOps, (uint8_t *)dstPixels_, bufferSize, &pixelMap);
     if (res != IMAGE_RESULT_SUCCESS || pixelMap == nullptr) {
-        DRAWING_LOGE(" failed to OH_PixelMap_CreatePixelMap width = %{public}u, height = %{public}u", bitmapWidth_, bitmapHeight_);
+        DRAWING_LOGE("failed to CreatePixelMap width = %{public}u, height = %{public}u", bitmapWidth_, bitmapHeight_);
         return;
     }
 
