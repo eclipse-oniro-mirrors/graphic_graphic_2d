@@ -24,9 +24,9 @@ const TAG = '[DrawingTest]';
 @Component
 struct Index {
   private xComponentContext: XComponentContext | undefined = undefined;
-  @State testType: string = 'performance';
-  @State drawingType: string = 'cpu-xcomponent';
-  @State caseNameStr: string  = 'canvas_drawrect';
+  @State testType: string = 'function';
+  @State drawingType: string = 'gpu-xcomponent';
+  @State caseNameStr: string  = 'aarectmodes';
   @State information: string = '';
   imagePackerApi: image.ImagePacker = image.createImagePacker();
   caseNameStrBefore: string  = '';
@@ -43,7 +43,7 @@ struct Index {
           NodeContainer(this.myNodeController)
             .width('100%')
             .height('100%')
-            .backgroundColor('#000000')
+            .backgroundColor(Color.White)
             .onAppear(()=>{
               console.warn(TAG, 'MyNodeController onAppear');
             })
@@ -55,6 +55,7 @@ struct Index {
             .onLoad((xComponentContext) => {
               this.xComponentContext = xComponentContext as XComponentContext;
             }).width('100%') // Multiples of 64
+            .id('myXcomponent').backgroundColor(Color.White)
         }.height('65%')
       }
 
@@ -167,7 +168,7 @@ struct Index {
         .width('80%')
         .height('7%')
       } else if (this.testType == 'function'){
-        if (this.drawingType == 'cpu-xcomponent' || this.drawingType == 'gpu-xcomponent') {
+        if (this.drawingType == 'cpu-xcomponent') {
           Row(){
             Button("TestAll")
               .id('testAll')
@@ -183,7 +184,7 @@ struct Index {
               .shadow(ShadowStyle.OUTER_DEFAULT_LG)
           }
           .height('7%')
-        } else if (this.drawingType == 'gpu-xnode'){
+        } else if (this.drawingType == 'gpu-xnode' || this.drawingType == 'gpu-xcomponent'){
           Row() {
             Button("SnapShort")
               .fontSize('16fp')
@@ -192,7 +193,8 @@ struct Index {
               .onClick(() => {
                 console.log(TAG, "SnapShort click");
                 const context: Context = getContext(this);
-                componentSnapshot.get("myNodeController", (error:Error, pixmap: image.PixelMap) => {
+                componentSnapshot.get(this.drawingType == 'gpu-xnode' ? "myXcomponent" : "",
+                  (error:Error, pixmap: image.PixelMap) => {
                   if (error) {
                     console.log("error:", JSON.stringify(error))
                     return;
