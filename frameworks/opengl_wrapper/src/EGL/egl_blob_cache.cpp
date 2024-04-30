@@ -211,7 +211,7 @@ EGLsizeiANDROID BlobCache::GetBlob(const void *key, EGLsizeiANDROID keySize, voi
         } else {
             errno_t ret = memcpy_s(value, valueSize, it->second->data, it->second->dataSize);
             if (ret != EOK) {
-                WLOGE("memcpy_s failed, err = %d\n", err);
+                WLOGE("memcpy_s failed");
                 return false;
             }
             auto moveblob = it->first;
@@ -347,7 +347,7 @@ void BlobCache::ReadFromDisk()
         close(fd);
         return;
     }
-    ssize_t filesize = bufstat.st_size;
+    size_t filesize = bufstat.st_size;
     if (filesize > maxShaderSize_ + maxShaderSize_ || filesize <= 0) {
         close(fd);
         return;
