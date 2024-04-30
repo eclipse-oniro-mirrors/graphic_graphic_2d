@@ -557,21 +557,20 @@ void PathContains::OnTestPerformance(OH_Drawing_Canvas* canvas)
 {
     OH_Drawing_Path* path = OH_Drawing_PathCreate();
     TestRend rand;
-
+    OH_Drawing_Point2D pts;
+    float x1 = rand.nextULessThan(bitmapWidth_);
+    float y1 = rand.nextULessThan(bitmapHeight_);
+    float x2 = rand.nextULessThan(bitmapWidth_);
+    float y2 = rand.nextULessThan(bitmapHeight_);
+    float ptsx = rand.nextULessThan(bitmapWidth_);
+    float ptsy = rand.nextULessThan(bitmapHeight_);
+    pts.x = ptsx;
+    pts.y = ptsy;
+    OH_Drawing_PathAddRect(path, x1, y1, x2, y2, OH_Drawing_PathDirection::PATH_DIRECTION_CW);
     for (int i = 0; i < testCount_; i++) {
-        OH_Drawing_Point2D pts[i];
-        float x1 = rand.nextULessThan(bitmapWidth_);
-        float y1 = rand.nextULessThan(bitmapHeight_);
-        float x2 = rand.nextULessThan(bitmapWidth_);
-        float y2 = rand.nextULessThan(bitmapHeight_);
-        float ptsx = rand.nextULessThan(bitmapWidth_);
-        float ptsy = rand.nextULessThan(bitmapHeight_);
-        OH_Drawing_Rect* rect = OH_Drawing_RectCreate(x1, y1, x2, y2);
         OH_Drawing_PathContains(path, ptsx, ptsy);
-        pts[i].x = ptsx;
-        pts[i].y = ptsy;
-        OH_Drawing_CanvasDrawPoints(canvas, OH_Drawing_PointMode::POINT_MODE_POINTS, i, pts);
     }
+    OH_Drawing_CanvasDrawPoints(canvas, OH_Drawing_PointMode::POINT_MODE_POINTS, 1, &pts); // 1 用于数量计算
     OH_Drawing_PathDestroy(path);
 }
 
