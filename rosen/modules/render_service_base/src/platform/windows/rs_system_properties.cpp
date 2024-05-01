@@ -397,5 +397,10 @@ bool RSSystemProperties::GetUIFirstForceEnabled()
 {
     return false;
 }
+
+bool RSSystemProperties::GetAceDebugBoundaryEnabled()
+{
+    return false;
+}
 } // namespace Rosen
 } // namespace OHOS
