@@ -839,6 +839,11 @@ bool RSSystemProperties::GetSubSurfaceEnabled()
     return subSurfaceEnabled;
 }
 
+bool RSSystemProperties::GetAceDebugBoundaryEnabled()
+{
+    return system::GetParameter("persist.ace.debug.boundary.enabled", "false") == "true";
+}
+
 bool RSSystemProperties::GetSecurityPermissionCheckEnabled()
 {
     static bool openSecurityPermissionCheck =
