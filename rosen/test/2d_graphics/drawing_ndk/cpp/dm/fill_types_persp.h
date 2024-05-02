@@ -22,16 +22,17 @@
 #include "../test_base.h"
 
 class FillTypePersp : public TestBase {
-    typedef struct{
+    typedef struct {
         int x;
         int y;
         OH_Drawing_PathFillType ft;
         float scale;
-    }DATA_PARAM;
+    } DATA_PARAM;
+
 public:
     FillTypePersp();
     ~FillTypePersp() = default;
-    
+
 protected:
     void MakePath();
     void ShowPath(OH_Drawing_Canvas* canvas, DATA_PARAM param, OH_Drawing_Brush* brush);

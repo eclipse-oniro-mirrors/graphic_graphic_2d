@@ -22,21 +22,22 @@
 
 #include "../test_base.h"
 
-#define SK_SCALAR1 1.0f     // default
-#define SK_SCALAR_HALF 0.5f // default
-
 class FillType : public TestBase {
+    typedef struct {
+        int x;
+        int y;
+        OH_Drawing_PathFillType ft;
+        float scale;
+    } DATA_PARAM;
+
 public:
     FillType();
     ~FillType() override;
 
 protected:
-    OH_Drawing_PathFillType ft;
-    // 创建路径path对象
-    OH_Drawing_Path* path = OH_Drawing_PathCreate();
     void OnTestFunction(OH_Drawing_Canvas* canvas) override;
-    void showPath(
-        OH_Drawing_Canvas* canvas, int x, int y, OH_Drawing_PathFillType ft, float scale, OH_Drawing_Brush* brush);
+    void showPath(OH_Drawing_Canvas* canvas, DATA_PARAM param, OH_Drawing_Brush* brush);
     void showFour(OH_Drawing_Canvas* canvas, float scale, OH_Drawing_Brush* brush);
+    OH_Drawing_Path* path = nullptr;
 };
 #endif // FILLTYPES_H

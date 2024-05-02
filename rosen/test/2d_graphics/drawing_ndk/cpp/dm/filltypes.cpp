@@ -32,16 +32,15 @@ FillType::FillType()
     fileName_ = "filltypes";
 }
 
-FillType::~FillType()
-{
-    OH_Drawing_PathDestroy(path);
-    path = nullptr; // 避免悬挂指针
-}
+FillType::~FillType() {}
 
-void FillType::showPath(
-    OH_Drawing_Canvas* canvas, int x, int y, OH_Drawing_PathFillType ft, float scale, OH_Drawing_Brush* brush)
+void FillType::showPath(OH_Drawing_Canvas* canvas, DATA_PARAM param, OH_Drawing_Brush* brush)
 {
-    // 创建一个矩形对象为图像画布
+    int x = param.x;
+    int y = param.y;
+    OH_Drawing_PathFillType ft = param.ft;
+    float scale = param.scale;
+
     float right = 150;                                                       // 150 矩阵创建参数
     float bottom = 150;                                                      // 150 矩阵创建参数
     OH_Drawing_Rect* rectAngLe = OH_Drawing_RectCreate(0, 0, right, bottom); // 0, 0, 创建矩阵对象参数
@@ -53,9 +52,9 @@ void FillType::showPath(
 
     OH_Drawing_PathSetFillType(path, ft);
     // 其中这里平移画布的x=rectAngLe.left + rectAngLe.right.y=rectAngLe.top + rectAngLe.bottom
-    OH_Drawing_CanvasTranslate(canvas, right * SK_SCALAR_HALF, bottom * SK_SCALAR_HALF);
+    OH_Drawing_CanvasTranslate(canvas, right * 0.5, bottom * 0.5); // 0.5 0.5 平移到中点
     OH_Drawing_CanvasScale(canvas, scale, scale);
-    OH_Drawing_CanvasTranslate(canvas, -(right * SK_SCALAR_HALF), -(bottom * SK_SCALAR_HALF));
+    OH_Drawing_CanvasTranslate(canvas, -(right * 0.5), -(bottom * 0.5)); // 0.5 0.5 平移到中点
     // 上画布
     OH_Drawing_CanvasAttachBrush(canvas, brush);
     OH_Drawing_CanvasDrawPath(canvas, path);
@@ -66,10 +65,11 @@ void FillType::showPath(
 // FillTypeGM::showFour 左上角、右上角、左下角、右下角四个为一组选择枚举类型进行变换
 void FillType::showFour(OH_Drawing_Canvas* canvas, float scale, OH_Drawing_Brush* brush)
 {
-    showPath(canvas, 0, 0, OH_Drawing_PathFillType::PATH_FILL_TYPE_WINDING, scale, brush);           // 0, 0 showPath
-    showPath(canvas, 200, 0, OH_Drawing_PathFillType::PATH_FILL_TYPE_EVEN_ODD, scale, brush);        // 200, 0 showPath
-    showPath(canvas, 0, 200, OH_Drawing_PathFillType::PATH_FILL_TYPE_INVERSE_WINDING, scale, brush); // 0, 200 showPath
-    showPath(canvas, 200, 200, OH_Drawing_PathFillType::PATH_FILL_TYPE_INVERSE_EVEN_ODD, scale,
+    showPath(canvas, { 0, 0, OH_Drawing_PathFillType::PATH_FILL_TYPE_WINDING, scale }, brush);    // 0, 0 showPath
+    showPath(canvas, { 200, 0, OH_Drawing_PathFillType::PATH_FILL_TYPE_EVEN_ODD, scale }, brush); // 200, 0 showPath
+    showPath(
+        canvas, { 0, 200, OH_Drawing_PathFillType::PATH_FILL_TYPE_INVERSE_WINDING, scale }, brush); // 0, 200 showPath
+    showPath(canvas, { 200, 200, OH_Drawing_PathFillType::PATH_FILL_TYPE_INVERSE_EVEN_ODD, scale },
         brush); //  200, 200 showPath
 }
 
@@ -91,24 +91,26 @@ void FillType::OnTestFunction(OH_Drawing_Canvas* canvas)
     OH_Drawing_Rect* rects = OH_Drawing_RectCreate(x - r, y - r, x + r, y + r);
     float startAngle = 0;     // 0 PathAddArc参数
     float sweepAngle = 360.0; // 360.0 PathAddArc参数
+    path = OH_Drawing_PathCreate();
     OH_Drawing_PathAddArc(path, rect, startAngle, sweepAngle);
     OH_Drawing_PathAddArc(path, rects, startAngle, sweepAngle);
 
-    // 上述前置动作已做完
     OH_Drawing_CanvasTranslate(canvas, 20, 20); // 20,20 Indicates the distance to translate on x-axis、y-axis
     const float scale = 1.25;                   // 1.25：左侧两个与右侧两个的图像放大缩小
     OH_Drawing_BrushSetAntiAlias(brush, false);
-    showFour(canvas, SK_SCALAR1, brush);
+    showFour(canvas, 1.0, brush);               // 1.0 scale
     OH_Drawing_CanvasTranslate(canvas, 450, 0); // 450, 0 Translate参数
     showFour(canvas, scale, brush);
     OH_Drawing_BrushSetAntiAlias(brush, true);
     OH_Drawing_CanvasTranslate(canvas, -450, 450); //-450, 450 Translate参数
-    showFour(canvas, SK_SCALAR1, brush);
-    OH_Drawing_CanvasTranslate(canvas, 450, 0); // 450, 0 Translate参数
+    showFour(canvas, 1.0, brush);                  // 1.0 scale
+    OH_Drawing_CanvasTranslate(canvas, 450, 0);    // 450, 0 Translate参数
     showFour(canvas, scale, brush);
 
     OH_Drawing_RectDestroy(rect);
     OH_Drawing_RectDestroy(rects);
     OH_Drawing_CanvasDetachBrush(canvas);
     OH_Drawing_BrushDestroy(brush);
+    OH_Drawing_PathDestroy(path);
+    path = nullptr;
 }
