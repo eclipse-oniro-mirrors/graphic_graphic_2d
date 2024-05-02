@@ -257,11 +257,11 @@ void RSPropertyDrawableUtils::DrawFilter(Drawing::Canvas* canvas,
     auto imageClipIBounds = clipIBounds;
     auto imageSnapshot = surface->GetImageSnapshot(imageClipIBounds);
     if (imageSnapshot == nullptr) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::DrawFilter image null");
+        ROSEN_LOGD("RSPropertyDrawableUtils::DrawFilter image null");
         return;
     }
     if (RSSystemProperties::GetImageGpuResourceCacheEnable(imageSnapshot->GetWidth(), imageSnapshot->GetHeight())) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::DrawFilter cache image resource(w:%{public}d, h:%{public}d).",
+        ROSEN_LOGD("RSPropertyDrawableUtils::DrawFilter cache image resource(w:%{public}d, h:%{public}d).",
             imageSnapshot->GetWidth(), imageSnapshot->GetHeight());
         imageSnapshot->HintCacheGpuResource();
     }
@@ -409,7 +409,7 @@ void RSPropertyDrawableUtils::DrawColorFilter(
     auto clipBounds = canvas->GetDeviceClipBounds();
     auto imageSnapshot = surface->GetImageSnapshot(clipBounds);
     if (imageSnapshot == nullptr) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::DrawColorFilter image is null");
+        ROSEN_LOGD("RSPropertyDrawableUtils::DrawColorFilter image is null");
         return;
     }
     imageSnapshot->HintCacheGpuResource();
