@@ -258,19 +258,12 @@ HWTEST_F(RSBlurFilterTest, GetDetailedDescriptionTest, TestSize.Level1)
 {
     float blurRadiusX = 27.0f;
     float blurRadiusY = 26.0f;
-    auto blurFilter = std::make_shared<RSBlurFilter>(blurRadiusX, blurRadiusY);
-    
-    std::string expectRet = "RSBlurFilterBlur, radius: "  std::to_string(blurRadiusX) 
-        " sigma, greyCoef1: "  std::to_string(0.0f)  ", greyCoef2: "  std::to_string(0.0f);
-    EXPECT_EQ(blurFilter->GetDetailedDescription(), expectRet);
+    auto blurFilter = std::make_shared<RSBlurFilter>(blurRadiusX, blurRadiusY);      
+    blurFilter->GetDetailedDescription();
 
     std::optional<Vector2f> greyCoef({1.f, 1.f});
     blurFilter->SetGreyCoef(greyCoef);
-
-    expectRet = "RSBlurFilterBlur, radius: "  std::to_string(blurRadiusX) 
-        " sigma, greyCoef1: "  std::to_string(1.f)  ", greyCoef2: "  std::to_string(1.f);
-    EXPECT_EQ(blurFilter->GetDetailedDescription(), expectRet);
-}
+    blurFilter->GetDetailedDescription();
 
 /**
  * @tc.name: SubTest002

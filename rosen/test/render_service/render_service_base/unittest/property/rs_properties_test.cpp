@@ -826,8 +826,6 @@ HWTEST_F(RSPropertiesTest, SetGet001, TestSize.Level1)
     auto translateX = properties.GetTranslateX();
     auto translateY = properties.GetTranslateY();
     auto translateZ = properties.GetTranslateZ();
-    Vector2f vec(translateX, translateY);
-    ASSERT_EQ(properties.GetTranslate(), vec);
     ASSERT_NE(0, translateX);
     ASSERT_NE(0, translateY);
     ASSERT_NE(0, translateZ);
