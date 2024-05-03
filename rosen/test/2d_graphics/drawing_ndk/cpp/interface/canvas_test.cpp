@@ -459,6 +459,8 @@ void CanvasReadPixels::OnTestPerformance(OH_Drawing_Canvas* canvas)
     OH_Drawing_Rect* rect = OH_Drawing_RectCreate(l, t, r, b);
     for (int i = 0; i < testCount_; i++) {
         char* dstPixels = (char*)malloc(r * b * 4); // 4 用于像素计算
+        if (dstPixels == nullptr)
+            continue;
         // 从画布中拷贝像素数据到指定地址，去掉readPixels接口就只有drawRect接口画的一个矩形,用日志看读数据的结果
         res = OH_Drawing_CanvasReadPixels(canvas, &imageInfo, dstPixels, r * 4, l, t); // 4 用于像素计算
         free(dstPixels);
