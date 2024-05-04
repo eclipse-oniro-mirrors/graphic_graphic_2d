@@ -233,6 +233,7 @@ ohos_source_set("render_service_base_src") {
     "src/drawable/rs_property_drawable_foreground.cpp",
     "src/drawable/rs_property_drawable_utils.cpp",
     "src/drawable/rs_render_node_drawable_adapter.cpp",
+    "src/drawable/rs_render_node_shadow_drawable.cpp",
 
     #render
     "src/render/rs_aibar_filter.cpp",
@@ -517,6 +518,7 @@ ohos_source_set("render_service_base_src") {
       "$graphic_2d_root/rosen/modules/render_service_profiler/rs_profiler_base.cpp",
       "$graphic_2d_root/rosen/modules/render_service_profiler/rs_profiler_dump.cpp",
       "$graphic_2d_root/rosen/modules/render_service_profiler/rs_profiler_pixelmap.cpp",
+      "$graphic_2d_root/rosen/modules/render_service_profiler/rs_profiler_settings.cpp",
       "$graphic_2d_root/rosen/modules/render_service_profiler/rs_profiler_utils.cpp",
     ]
   }

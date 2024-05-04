@@ -105,6 +105,20 @@ HWTEST_F(CanvasTest, CanvasGetDeviceClipBoundsTest001, TestSize.Level1)
     EXPECT_TRUE(rect != nullptr);
 }
 
+/**
+ * @tc.name: CanvasGetRoundInDeviceClipBoundsTest001
+ * @tc.desc: Test for geting bounds of clip in device corrdinates.
+ * @tc.type: FUNC
+ * @tc.require: I719NQ
+ */
+HWTEST_F(CanvasTest, CanvasGetRoundInDeviceClipBoundsTest001, TestSize.Level1)
+{
+    auto canvas = std::make_unique<Canvas>();
+    ASSERT_TRUE(canvas != nullptr);
+    auto rect = std::make_unique<RectI>(canvas->GetRoundInDeviceClipBounds());
+    EXPECT_TRUE(rect != nullptr);
+}
+
 #ifdef ACE_ENABLE_GPU
 /**
  * @tc.name: CanvasGetGPUContextTest001
@@ -782,6 +796,19 @@ HWTEST_F(CanvasTest, GetDrawingTypeTest001, TestSize.Level1)
     std::shared_ptr<Drawing::OverDrawCanvas> overDrawCanvas;
     DrawingType type = overDrawCanvas->GetDrawingType();
     ASSERT_TRUE(type == DrawingType::OVER_DRAW);
+}
+
+/**
+ * @tc.name: GetDrawingTypeTest002
+ * @tc.desc: Test for GetDrawingType NoDrawCanvas functions.
+ * @tc.type: FUNC
+ * @tc.require: I719U5
+ */
+HWTEST_F(CanvasTest, GetDrawingTypeTest002, TestSize.Level1)
+{
+    std::shared_ptr<Drawing::NoDrawCanvas> noDrawCanvas;
+    DrawingType type = noDrawCanvas->GetDrawingType();
+    ASSERT_TRUE(type == DrawingType::NO_DRAW);
 }
 
 /**

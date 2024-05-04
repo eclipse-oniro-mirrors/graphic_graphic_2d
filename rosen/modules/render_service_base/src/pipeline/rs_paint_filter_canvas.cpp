@@ -48,6 +48,11 @@ Drawing::RectI RSPaintFilterCanvasBase::GetDeviceClipBounds() const
     return canvas_->GetDeviceClipBounds();
 }
 
+Drawing::RectI RSPaintFilterCanvasBase::GetRoundInDeviceClipBounds() const
+{
+    return canvas_->GetRoundInDeviceClipBounds();
+}
+
 uint32_t RSPaintFilterCanvasBase::GetSaveCount() const
 {
     return canvas_->GetSaveCount();
@@ -1455,6 +1460,45 @@ void RSPaintFilterCanvas::SaveLayer(const Drawing::SaveLayerOps& saveLayerOps)
 {
     envStack_.top().hasOffscreenLayer_ = true;
     RSPaintFilterCanvasBase::SaveLayer(saveLayerOps);
+}
+bool RSPaintFilterCanvas::GetHDRPresent() const
+{
+    return hasHdrPresent_;
+}
+
+void RSPaintFilterCanvas::SetHDRPresent(bool hasHdrPresent)
+{
+    hasHdrPresent_ = hasHdrPresent;
+}
+
+ScreenId RSPaintFilterCanvas::GetScreenId() const
+{
+    return screenId_;
+}
+
+void RSPaintFilterCanvas::SetScreenId(ScreenId screenId)
+{
+    screenId_ = screenId;
+}
+
+GraphicColorGamut RSPaintFilterCanvas::GetTargetColorGamut() const
+{
+    return targetColorGamut_;
+}
+
+void RSPaintFilterCanvas::SetTargetColorGamut(GraphicColorGamut colorGamut)
+{
+    targetColorGamut_ = colorGamut;
+}
+
+float RSPaintFilterCanvas::GetBrightnessRatio() const
+{
+    return brightnessRatio_;
+}
+
+void RSPaintFilterCanvas::SetBrightnessRatio(float brightnessRatio)
+{
+    brightnessRatio_ = brightnessRatio;
 }
 } // namespace Rosen
 } // namespace OHOS
