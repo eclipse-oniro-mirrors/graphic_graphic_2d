@@ -397,6 +397,9 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     auto mirroredNode = params->GetMirrorSource().lock();
     if (!mirroredNode && displayNodeSp->GetCacheImgForCapture()) {
+        displayNodeSp->SetCacheImgForCapture(nullptr);
+    }
+    if (!mirroredNode && displayNodeSp->GetCacheImgForCapture()) {
         mirroredNode->SetCacheImgForCapture(nullptr);
     }
     if (mirroredNode ||
@@ -469,7 +472,6 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         curCanvas_->SetBrightnessRatio(0.5f);
         curCanvas_->SetScreenId(screenId);
     }
-    curCanvas_->SetCurDisplayNode(displayNodeSp);
 
     RemoveClearMemoryTask();
     // canvas draw
