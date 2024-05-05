@@ -282,14 +282,19 @@ void RSSurfaceRenderNodeDrawable::MergeDirtyRegionBelowCurSurface(RSRenderThread
     std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
     Drawing::Region& region)
 {
-    if (surfaceNode->IsMainWindowType() && surfaceParams->GetVisibleRegion().IsEmpty()) {
+    if (surfaceParams->IsMainWindowType() && surfaceParams->GetVisibleRegion().IsEmpty()) {
         return;
     }
-    if (surfaceNode->IsMainWindowType() || surfaceNode->IsLeashWindow()) {
+    if (surfaceParams->IsMainWindowType() || surfaceParams->IsLeashWindow()) {
         auto& accumulatedDirtyRegion = uniParam->GetAccumulatedDirtyRegion();
-        auto transparentRegion = surfaceParams->GetTransparentRegion();
-        if (!transparentRegion.IsEmpty()) {
-            auto dirtyRegion = transparentRegion.And(accumulatedDirtyRegion);
+        Occlusion::Region calcRegion;
+        if (surfaceParams->IsMainWindowType() && surfaceParams->IsParentScaling()) {
+            calcRegion = surfaceParams->GetVisibleRegion();
+        } else if (!surfaceParams->GetTransparentRegion().IsEmpty()) {
+            calcRegion = surfaceParams->GetTransparentRegion();
+        }
+        if (!calcRegion.IsEmpty()) {
+            auto dirtyRegion = calcRegion.And(accumulatedDirtyRegion);
             if (!dirtyRegion.IsEmpty()) {
                 for (auto& rect : dirtyRegion.GetRegionRects()) {
                     Drawing::Region tempRegion;

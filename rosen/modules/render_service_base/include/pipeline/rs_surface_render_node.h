@@ -393,7 +393,7 @@ public:
     void SetHwcChildrenDisabledStateByUifirst();
 
     void SetContextBounds(const Vector4f bounds);
-    bool CheckParticipateInOcclusion() const;
+    bool CheckParticipateInOcclusion();
 
     void OnApplyModifiers() override;
 
@@ -1261,6 +1261,7 @@ private:
 
     bool animateState_ = false;
     bool isRotating_ = false;
+    bool isParentScaling_ = false;
 
     bool needDrawAnimateProperty_ = false;
     bool prevVisible_ = false;

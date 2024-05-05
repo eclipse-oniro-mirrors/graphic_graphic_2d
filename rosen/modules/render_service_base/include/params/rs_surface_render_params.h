@@ -60,6 +60,10 @@ public:
     {
         return isMainWindowType_;
     }
+    bool IsLeashWindow() const
+    {
+        return isLeashWindow_;
+    }
     RSSurfaceNodeType GetSurfaceNodeType() const
     {
         return rsSurfaceNodeType_;
@@ -202,6 +206,9 @@ public:
     void SetOcclusionVisible(bool visible);
     bool GetOcclusionVisible() const;
 
+    void SetIsParentScaling(bool isParentScaling);
+    bool IsParentScaling() const;
+
     void SetTransparentRegion(const Occlusion::Region& transparentRegion);
     const Occlusion::Region& GetTransparentRegion() const;
 
@@ -238,6 +245,7 @@ public:
 protected:
 private:
     bool isMainWindowType_ = false;
+    bool isLeashWindow_ = false;
     RSSurfaceNodeType rsSurfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
     SelfDrawingNodeType selfDrawingType_ = SelfDrawingNodeType::DEFAULT;
     RSRenderNode::WeakPtr ancestorDisplayNode_;
@@ -245,6 +253,7 @@ private:
     float alpha_ = 0;
     bool isTransparent_ = false;
     bool isSpherizeValid_ = false;
+    bool isParentScaling_ = false;
     bool needBilinearInterpolation_ = false;
     MultiThreadCacheType uiFirstFlag_ = MultiThreadCacheType::NONE;
     bool uiFirstParentFlag_ = false;
