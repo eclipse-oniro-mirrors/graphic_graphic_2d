@@ -784,7 +784,6 @@ void RSRenderServiceConnection::SetScreenBacklight(ScreenId id, uint32_t level)
 {
     RSLuminanceControl::Get().SetSdrLuminance(id, level);
     if (RSLuminanceControl::Get().IsHdrOn(id) && level > 0) {
-        mainThread_->ForceRefreshForUni();
         return;
     }
 
