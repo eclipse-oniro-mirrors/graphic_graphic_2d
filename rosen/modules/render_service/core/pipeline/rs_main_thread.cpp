@@ -1831,16 +1831,17 @@ void RSMainThread::Render()
         for (const auto& child : *rootNode->GetSortedChildren()) {
             auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(child);
             auto screenId = displayNode->GetScreenId();
-            if (displayNode != nullptr) {
-                if (rsLuminance.IsDimmingOn(screenId)) {
-                    ForceRefreshForUni();
-                    rsLuminance.DimmingIncrease(screenId);
-                }
-                if (rsLuminance.IsNeedUpdateLuminance(screenId)) {
-                    uint32_t newLevel = rsLuminance.GetNewHdrLuminance(screenId);
-                    screenManager_->SetScreenBacklight(screenId, newLevel);
-                    rsLuminance.SetNowHdrLuminance(screenId, newLevel);
-                }
+            if (displayNode == nullptr) {
+                continue;
+            }
+            if (rsLuminance.IsDimmingOn(screenId)) {
+                ForceRefreshForUni();
+                rsLuminance.DimmingIncrease(screenId);
+            }
+            if (rsLuminance.IsNeedUpdateLuminance(screenId)) {
+                uint32_t newLevel = rsLuminance.GetNewHdrLuminance(screenId);
+                screenManager_->SetScreenBacklight(screenId, newLevel);
+                rsLuminance.SetNowHdrLuminance(screenId, newLevel);
             }
         }
     }
