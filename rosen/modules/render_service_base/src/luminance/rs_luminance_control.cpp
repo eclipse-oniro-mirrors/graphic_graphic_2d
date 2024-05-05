@@ -52,7 +52,7 @@ void RSLuminanceControl::SetNowHdrLuminance(uint64_t screenId, uint32_t level)
 {
 }
 
-bool RSLuminanceControl::IsNeedUpdateLuminace(uint64_t screenId)
+bool RSLuminanceControl::IsNeedUpdateLuminance(uint64_t screenId)
 {
     return false;
 }
