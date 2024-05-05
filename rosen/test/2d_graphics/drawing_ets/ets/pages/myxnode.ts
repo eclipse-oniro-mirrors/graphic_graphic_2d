@@ -67,7 +67,7 @@ export class MyRenderNode extends RenderNode {
 
     test.SetTestCount(this.testCount);
     let time = test.TestPerformanceGpuUpScreen(canvas);
-    printCallback('GpuUpScreen TestCount: ' + this.testCount.toString() + ', used: ' + time.toString() + 'ms');
+    printCallback('Count: ' + this.testCount.toString() + ', used: ' + time.toString() + 'ms');
   }
 }
 

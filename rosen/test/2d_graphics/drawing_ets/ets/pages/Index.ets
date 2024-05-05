@@ -313,7 +313,7 @@ struct Index {
 
     test.TestPerformanceCpu().then(()=>{
       this.context.drawImage(test.pixelMap_, 0, 0);
-      this.LogMsg('TestCount: ' + testCount + ', used: ' + test.time_.toString() + 'ms');
+      this.LogMsg('Count: ' + testCount + ', used: ' + test.time_.toString() + 'ms');
     });
     console.log(TAG, 'TestPerformanceCpu end');
   }
