@@ -50,6 +50,11 @@ void RSJankStats::SetOnVsyncStartTime(int64_t onVsyncStartTime, int64_t onVsyncS
     rsStartTimeSteady_ = onVsyncStartTimeSteady;
 }
 
+void RSJankStats::SetAccumulatedBufferCount(int accumulatedBufferCount)
+{
+    accumulatedBufferCount_ = accumulatedBufferCount;
+}
+
 void RSJankStats::SetStartTime(bool doDirectComposition)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -540,13 +545,17 @@ void RSJankStats::ReportEventFirstFrameByPid(pid_t appPid) const
         OHOS::HiviewDFX::HiSysEvent::EventType::BEHAVIOR, "APP_PID", static_cast<int32_t>(appPid));
 }
 
-// dynamicRefreshRate is retained for future algorithm adjustment, keep it unused currently
-void RSJankStats::RecordJankFrame(uint32_t /* dynamicRefreshRate */)
+void RSJankStats::RecordJankFrame(uint32_t dynamicRefreshRate)
 {
+    if (dynamicRefreshRate == 0) {
+        dynamicRefreshRate = STANDARD_REFRESH_RATE;
+    }
+    const float accumulatedTime = accumulatedBufferCount_ * S_TO_MS / dynamicRefreshRate;
     for (auto& recordStats : jankExplicitAnimatorFrameRecorder_) {
         recordStats.isRecorded_ = false;
     }
-    const int64_t missedFramesByDuration = static_cast<int64_t>(GetEffectiveFrameTime(true) / VSYNC_PERIOD);
+    const int64_t missedFramesByDuration = static_cast<int64_t>(
+        std::max<float>(0.f, GetEffectiveFrameTime(true) - accumulatedTime) / VSYNC_PERIOD);
     if (missedFramesByDuration > 0 && explicitAnimationTotal_ > 0) {
         for (auto& recordStats : jankExplicitAnimatorFrameRecorder_) {
             RecordJankFrameSingle(missedFramesByDuration, recordStats);
@@ -555,7 +564,8 @@ void RSJankStats::RecordJankFrame(uint32_t /* dynamicRefreshRate */)
     for (auto& recordStats : jankImplicitAnimatorFrameRecorder_) {
         recordStats.isRecorded_ = false;
     }
-    const int64_t missedFramesByInterval = static_cast<int64_t>(GetEffectiveFrameTime(isFirstSetEnd_) / VSYNC_PERIOD);
+    const int64_t missedFramesByInterval = static_cast<int64_t>(
+        std::max<float>(0.f, GetEffectiveFrameTime(isFirstSetEnd_) - accumulatedTime) / VSYNC_PERIOD);
     if (missedFramesByInterval > 0 && implicitAnimationTotal_ > 0) {
         for (auto& recordStats : jankImplicitAnimatorFrameRecorder_) {
             RecordJankFrameSingle(missedFramesByInterval, recordStats);

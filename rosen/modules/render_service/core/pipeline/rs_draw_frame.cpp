@@ -180,6 +180,7 @@ void RSDrawFrame::JankStatsRenderFrameAfterSync(bool doJankStats)
         return;
     }
     RSJankStats::GetInstance().SetStartTime();
+    RSJankStats::GetInstance().SetAccumulatedBufferCount(RSBaseRenderUtil::GetAccumulatedBufferCount());
     unirenderInstance_.UpdateDisplayNodeScreenId();
 }
 
