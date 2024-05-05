@@ -1826,23 +1826,22 @@ void RSMainThread::Render()
         PerfForBlurIfNeeded();
     }
 
-    if (auto screenManager_ = CreateOrGetScreenManager(); screenManager_ != nullptr) {
-        auto& rsLuminance = RSLuminanceControl::Get();
-        for (const auto& child : *rootNode->GetSortedChildren()) {
-            auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(child);
-            auto screenId = displayNode->GetScreenId();
-            if (displayNode == nullptr) {
-                continue;
-            }
-            if (rsLuminance.IsDimmingOn(screenId)) {
-                ForceRefreshForUni();
-                rsLuminance.DimmingIncrease(screenId);
-            }
-            if (rsLuminance.IsNeedUpdateLuminance(screenId)) {
-                uint32_t newLevel = rsLuminance.GetNewHdrLuminance(screenId);
-                screenManager_->SetScreenBacklight(screenId, newLevel);
-                rsLuminance.SetNowHdrLuminance(screenId, newLevel);
-            }
+    auto screenManager = CreateOrGetScreenManager();
+    auto& rsLuminance = RSLuminanceControl::Get();
+    for (const auto& child : *rootNode->GetSortedChildren()) {
+        auto displayNode = RSBaseRenderNode::ReinterpretCast<RSDisplayRenderNode>(child);
+        if (displayNode == nullptr) {
+            continue;
+        }
+
+        auto screenId = displayNode->GetScreenId();
+        if (rsLuminance.IsDimmingOn(screenId)) {
+            rsLuminance.DimmingIncrease(screenId);
+        }
+        if (rsLuminance.IsNeedUpdateLuminance(screenId)) {
+            uint32_t newLevel = rsLuminance.GetNewHdrLuminance(screenId);
+            screenManager->SetScreenBacklight(screenId, newLevel);
+            rsLuminance.SetNowHdrLuminance(screenId, newLevel);
         }
     }
 }
