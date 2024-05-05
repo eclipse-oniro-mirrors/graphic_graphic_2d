@@ -13,45 +13,24 @@
  * limitations under the License.
  */
 
+#include "common/log_common.h"
 #include <bits/alltypes.h>
 #include <chrono>
+#include <fcntl.h>
+#include <memory>
 #include <native_drawing/drawing_font_collection.h>
 #include <native_drawing/drawing_text_typography.h>
-#include "common/log_common.h"
-#include "my_xcomponent.h"
-
 #include <sstream>
 #include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <unistd.h>
-#include <memory>
 #include <unordered_map>
-
+#include "my_xcomponent.h"
 #include "testcasefactory.h"
+#include "test_common.h"
 
 static std::unordered_map<std::string, MyXComponent *> g_instance;
-
-bool ConvertStringFromJsValue(napi_env env, napi_value jsValue, std::string &value)
-{
-    size_t len = 0;
-    if (napi_get_value_string_utf8(env, jsValue, nullptr, 0, &len) != napi_ok) {
-        return false;
-    }
-    auto buffer = std::make_unique<char[]>(len + 1);
-    size_t strLength = 0;
-    if (napi_get_value_string_utf8(env, jsValue, buffer.get(), len + 1, &strLength) == napi_ok) {
-        value = buffer.get();
-        return true;
-    }
-    return false;
-}
-
-bool ConvertStringFromIntValue(napi_env env, napi_value jsValue, uint32_t &value)
-{
-    return napi_get_value_uint32(env, jsValue, &value) == napi_ok;
-}
 
 EGLConfig getConfig(int version, EGLDisplay eglDisplay)
 {
@@ -93,14 +72,18 @@ static void OnSurfaceCreatedCB(OH_NativeXComponent *component, void *window)
         return;
     }
     std::string id(idStr);
-    auto render = MyXComponent::GetInstance(id);
+    auto render = MyXComponent::GetOrCreateInstance(id);
+    if (render == nullptr) {
+        DRAWING_LOGE("OnSurfaceCreatedCB: Failed to get instance");
+        return;
+    }
     OHNativeWindow *nativeWindow = static_cast<OHNativeWindow *>(window);
     render->SetNativeWindow(nativeWindow);
 
     uint64_t width;
     uint64_t height;
-    int32_t xSize = OH_NativeXComponent_GetXComponentSize(component, window, &width, &height);
-    if ((xSize == OH_NATIVEXCOMPONENT_RESULT_SUCCESS) && (render != nullptr)) {
+    int32_t status = OH_NativeXComponent_GetXComponentSize(component, window, &width, &height);
+    if ((status == OH_NATIVEXCOMPONENT_RESULT_SUCCESS) && (render != nullptr)) {
         render->SetSceenHeight(height);
         render->SetScreenWidth(width);
     }
@@ -121,6 +104,91 @@ static void OnSurfaceDestroyedCB(OH_NativeXComponent *component, void *window)
     }
     std::string id(idStr);
     MyXComponent::Release(id);
+}
+
+// 通过callback获取到宽高信息
+void MyXComponent::SetScreenWidth(uint64_t width)
+{
+    screenWidth_ = width;
+}
+
+// 通过callback获取到宽高信息
+void MyXComponent::SetSceenHeight(uint64_t height)
+{
+    screenHeight_ = height;
+}
+
+// 通过callback获取到window
+void MyXComponent::SetNativeWindow(OHNativeWindow *nativeWindow)
+{
+    nativeWindow_ = nativeWindow;
+}
+
+//获取屏幕xcomponent的绘制canvas
+void MyXComponent::InitScreenCanvas()
+{
+    if (nativeWindow_ == nullptr) {
+        DRAWING_LOGE("nativeWindow_ is nullptr");
+        return;
+    }
+    // 这里的nativeWindow是从上一步骤中的回调函数中获得的
+    // 通过 OH_NativeWindow_NativeWindowRequestBuffer 获取 OHNativeWindowBuffer 实例
+    int ret = OH_NativeWindow_NativeWindowRequestBuffer(nativeWindow_, &buffer_, &fenceFd_);
+    if (ret != 0) {
+        DRAWING_LOGE("failed to NativeWindowRequestBuffer");
+        return;
+    }
+    DRAWING_LOGI("request buffer ret = %{public}d", ret);
+    // 通过 OH_NativeWindow_GetBufferHandleFromNative 获取 buffer 的 handle
+    bufferHandle_ = OH_NativeWindow_GetBufferHandleFromNative(buffer_);
+    // 使用系统mmap接口拿到bufferHandle的内存虚拟地址
+    mappedAddr_ = static_cast<uint32_t *>(
+        mmap(bufferHandle_->virAddr, bufferHandle_->size, PROT_READ | PROT_WRITE, MAP_SHARED, bufferHandle_->fd, 0));
+    if (mappedAddr_ == MAP_FAILED) {
+        DRAWING_LOGE("mmap failed");
+        return;
+    }
+
+    if (screenCanvas_) {
+        OH_Drawing_CanvasDestroy(screenCanvas_);
+        screenCanvas_ = nullptr;
+    }
+    if (screenBitmap_) {
+        OH_Drawing_BitmapDestroy(screenBitmap_);
+        screenBitmap_ = nullptr;
+    }
+    screenImageInfo_ = {static_cast<int32_t>(screenWidth_), static_cast<int32_t>(screenHeight_),
+        COLOR_FORMAT_RGBA_8888, ALPHA_FORMAT_OPAQUE};
+    screenBitmap_ = OH_Drawing_BitmapCreateFromPixels(&screenImageInfo_, mappedAddr_, screenWidth_ * 4);
+    screenCanvas_ = OH_Drawing_CanvasCreate();
+    OH_Drawing_CanvasBind(screenCanvas_, screenBitmap_);
+    OH_Drawing_CanvasClear(screenCanvas_, OH_Drawing_ColorSetArgb(0x00, 0x00, 0x00, 0x00));
+}
+
+void MyXComponent::BitmapToScreenCanvas(OH_Drawing_Bitmap* bitmap)
+{
+    DRAWING_LOGE("MyXComponent  BitmapToScreenCanvas");
+    if (screenCanvas_ == nullptr || bitmap == nullptr) {
+        return;
+    }
+    OH_Drawing_CanvasDrawBitmap(screenCanvas_, bitmap, 0, 0);
+    FlushScreen();
+
+    int result = munmap(mappedAddr_, bufferHandle_->size);
+    if (result == -1) {
+        DRAWING_LOGE("munmap failed!");
+    }
+    mappedAddr_ = nullptr;
+}
+
+void MyXComponent::FlushScreen()
+{
+    if (nativeWindow_ != nullptr && buffer_ != nullptr) {
+        // 设置刷新区域，如果Region中的Rect为nullptr,或者rectNumber为0，则认为OHNativeWindowBuffer全部有内容更改。
+        Region region {nullptr, 0};
+        // 通过OH_NativeWindow_NativeWindowFlushBuffer 提交给消费者使用，例如：显示在屏幕上。
+        OH_NativeWindow_NativeWindowFlushBuffer(nativeWindow_, buffer_, fenceFd_, region);
+    }
 }
 
 int32_t MyXComponent::InitializeEglContext()
@@ -155,173 +223,40 @@ int32_t MyXComponent::InitializeEglContext()
     mEGLSurface = eglCreatePbufferSurface(mEGLDisplay, mEGLConfig, attribs);
     if (!eglMakeCurrent(mEGLDisplay, mEGLSurface, mEGLSurface, mEGLContext)) {
         DRAWING_LOGE("eglMakeCurrent error = %{public}d", eglGetError());
+        return -1;
     }
 
     DRAWING_LOGI("Init success.");
     return 0;
 }
 
-// 通过callback获取到宽高信息
-void MyXComponent::SetScreenWidth(uint64_t width)
+void MyXComponent::DeInitializeEglContext()
 {
-    screenWidth_ = width;
-}
-
-// 通过callback获取到宽高信息
-void MyXComponent::SetSceenHeight(uint64_t height)
-{
-    screenHeight_ = height;
-}
-
-// 通过callback获取到window
-void MyXComponent::SetNativeWindow(OHNativeWindow *nativeWindow)
-{
-    nativeWindow_ = nativeWindow;
-}
-
-//获取屏幕xcomponent的显示buffer地址
-void MyXComponent::GetScreenBuffer()
-{
-    if (nativeWindow_ == nullptr) {
-        DRAWING_LOGE("nativeWindow_ is nullptr");
-        return;
-    }
-    // 这里的nativeWindow是从上一步骤中的回调函数中获得的
-    // 通过 OH_NativeWindow_NativeWindowRequestBuffer 获取 OHNativeWindowBuffer 实例
-    int ret = OH_NativeWindow_NativeWindowRequestBuffer(nativeWindow_, &buffer_, &fenceFd_);
-    DRAWING_LOGI("request buffer ret = %{public}d", ret);
-    // 通过 OH_NativeWindow_GetBufferHandleFromNative 获取 buffer 的 handle
-    bufferHandle_ = OH_NativeWindow_GetBufferHandleFromNative(buffer_);
-    // 使用系统mmap接口拿到bufferHandle的内存虚拟地址
-    mappedAddr_ = static_cast<uint32_t *>(
-        mmap(bufferHandle_->virAddr, bufferHandle_->size, PROT_READ | PROT_WRITE, MAP_SHARED, bufferHandle_->fd, 0));
-    if (mappedAddr_ == MAP_FAILED) {
-        DRAWING_LOGE("mmap failed");
-    }
-}
-
-//显示到屏幕上
-void MyXComponent::DisplayScreenCanvas()
-{
-    // 画完后获取像素地址，地址指向的内存包含画布画的像素数据
-    void *bitmapAddr = OH_Drawing_BitmapGetPixels(screenBitmap_);
-    uint32_t *value = static_cast<uint32_t *>(bitmapAddr);
-
-    uint32_t *pixel = static_cast<uint32_t *>(mappedAddr_); // 使用mmap获取到的地址来访问内存
-    if (pixel == nullptr) {
-        DRAWING_LOGE("pixel is null");
-        return;
-    }
-    if (value == nullptr) {
-        DRAWING_LOGE("value is null");
-        return;
-    }
-    for (uint32_t x = 0; x < screenWidth_; x++) {
-        for (uint32_t y = 0; y < screenHeight_; y++) {
-            *pixel++ = *value++;
-        }
-    }
-    // 设置刷新区域，如果Region中的Rect为nullptr,或者rectNumber为0，则认为OHNativeWindowBuffer全部有内容更改。
-    Region region {nullptr, 0};
-    // 通过OH_NativeWindow_NativeWindowFlushBuffer 提交给消费者使用，例如：显示在屏幕上。
-    OH_NativeWindow_NativeWindowFlushBuffer(nativeWindow_, buffer_, fenceFd_, region);
-    // 内存使用完记得去掉内存映射
-    int result = munmap(mappedAddr_, bufferHandle_->size);
-    if (result == -1) {
-        DRAWING_LOGE("munmap failed!");
-    }
-}
-
-void MyXComponent::DisplayScreenGpuCanvas()
-{
-    uint32_t width = static_cast<uint32_t>(bufferHandle_->stride / 4);
-    // 画完后获取像素地址，地址指向的内存包含画布画的像素数据
-    void *dstPixels = malloc(width * screenHeight_ * 4);
-    if (dstPixels == nullptr) {
-        DRAWING_LOGE("dstPixels malloc failed");
-        return;
-    }
-    bool ret = OH_Drawing_CanvasReadPixels(screenCanvas_, &screenImageInfo_, dstPixels, 4 * width, 0, 0);
+    EGLBoolean ret = eglDestroySurface(mEGLDisplay, mEGLSurface);
     if (!ret) {
-        DRAWING_LOGE("read pixels failed");
-        return;
+        DRAWING_LOGW("eglDestroySurface failure.");
     }
-    uint32_t *value = static_cast<uint32_t *>(dstPixels);
 
-    uint32_t *pixel = static_cast<uint32_t *>(mappedAddr_); // 使用mmap获取到的地址来访问内存
-    if (pixel == nullptr) {
-        DRAWING_LOGE("pixel is null");
-        return;
+    ret = eglDestroyContext(mEGLDisplay, mEGLContext);
+    if (!ret) {
+        DRAWING_LOGW("eglDestroyContext failure.");
     }
-    if (value == nullptr) {
-        DRAWING_LOGE("value is null");
-        return;
-    }
-    for (uint32_t x = 0; x < screenWidth_; x++) {
-        for (uint32_t y = 0; y < screenHeight_; y++) {
-            *pixel++ = *value++;
-        }
-    }
-    // 设置刷新区域，如果Region中的Rect为nullptr,或者rectNumber为0，则认为OHNativeWindowBuffer全部有内容更改。
-    Region region{nullptr, 0};
-    // 通过OH_NativeWindow_NativeWindowFlushBuffer 提交给消费者使用，例如：显示在屏幕上。
-    OH_NativeWindow_NativeWindowFlushBuffer(nativeWindow_, buffer_, fenceFd_, region);
-    // 内存使用完记得去掉内存映射
-    int result = munmap(mappedAddr_, bufferHandle_->size);
-    if (result == -1) {
-        DRAWING_LOGE("munmap failed!");
-    }
-    free(dstPixels);
-    dstPixels = nullptr;
-}
 
-void MyXComponent::CreateScreenCanvas()
-{
-    uint32_t width = static_cast<uint32_t>(bufferHandle_->stride / 4);
-    // 创建一个bitmap对象
-    screenBitmap_ = OH_Drawing_BitmapCreate();
-        
-    // 定义bitmap的像素格式
-    OH_Drawing_BitmapFormat cFormat {COLOR_FORMAT_RGBA_8888, ALPHA_FORMAT_OPAQUE};
-    // 构造对应格式的bitmap
-    OH_Drawing_BitmapBuild(screenBitmap_, width, screenHeight_, &cFormat);
-
-    // 创建一个canvas对象
-    screenCanvas_ = OH_Drawing_CanvasCreate();
-    // 将画布与bitmap绑定，画布画的内容会输出到绑定的bitmap内存中
-    OH_Drawing_CanvasBind(screenCanvas_, screenBitmap_);
-    // 使用白色清除画布内容
-    OH_Drawing_CanvasClear(screenCanvas_, OH_Drawing_ColorSetArgb(0x00, 0x00, 0x00, 0x00));
-}
-
-void MyXComponent::CreateScreenGpuCanvas()
-{
-    uint32_t width = static_cast<uint32_t>(bufferHandle_->stride / 4);
-    OH_Drawing_GpuContextOptions gpuOptions{false};
-    screenImageInfo_ = {static_cast<int32_t>(width), static_cast<int32_t>(screenHeight_),
-        COLOR_FORMAT_RGBA_8888, ALPHA_FORMAT_OPAQUE};
-    screenGpuContext_ = OH_Drawing_GpuContextCreateFromGL(gpuOptions);
-    screenSurface_ = OH_Drawing_SurfaceCreateFromGpuContext(screenGpuContext_, true, screenImageInfo_);
-    // 获取gpu canvas对象
-    screenCanvas_ = OH_Drawing_SurfaceGetCanvas(screenSurface_);
-    // 使用白色清除画布内容
-    OH_Drawing_CanvasClear(screenCanvas_, OH_Drawing_ColorSetArgb(0x00, 0x00, 0x00, 0x00));
-}
-
-void MyXComponent::BitmapToScreenCanvas(OH_Drawing_Bitmap* bitmap)
-{
-    DRAWING_LOGE("MyXComponent  BitmapToScreenCanvas");
-    if (screenCanvas_ == nullptr || bitmap == nullptr) {
-        return;
+    ret = eglTerminate(mEGLDisplay);
+    if (!ret) {
+        DRAWING_LOGW("eglTerminate failure.");
     }
-    OH_Drawing_CanvasDrawBitmap(screenCanvas_, bitmap, 0, 0);
+
+    mEGLSurface = NULL;
+    mEGLContext = NULL;
+    mEGLDisplay = NULL;
 }
 
 void MyXComponent::TestPerformanceCpu(napi_env env, std::string caseName)
 {
-    DRAWING_LOGE("MyXComponent TestPerformanceCpu start");
     auto testCase = TestCaseFactory::GetPerformanceCpuCase(caseName);
     if (testCase == nullptr) {
+        FlushScreen();
         DRAWING_LOGE("failed to get testcase");
         return;
     }
@@ -329,14 +264,13 @@ void MyXComponent::TestPerformanceCpu(napi_env env, std::string caseName)
     testCase->TestPerformanceCpu(env);
     usedTime_ = testCase->GetTime();
     BitmapToScreenCanvas(testCase->GetBitmap());
-    DRAWING_LOGE("MyXComponent TestPerformanceCpu end");
 }
 
 void MyXComponent::TestPerformanceGpu(napi_env env, std::string caseName)
 {
-    DRAWING_LOGE("MyXComponent TestPerformanceGpu start");
     auto testCase = TestCaseFactory::GetPerformanceCpuCase(caseName);
     if (testCase == nullptr) {
+        FlushScreen();
         DRAWING_LOGE("failed to get testcase");
         return;
     }
@@ -344,7 +278,6 @@ void MyXComponent::TestPerformanceGpu(napi_env env, std::string caseName)
     testCase->TestPerformanceGpu(env);
     usedTime_ = testCase->GetTime();
     BitmapToScreenCanvas(testCase->GetBitmap());
-    DRAWING_LOGE("MyXComponent TestPerformanceGpu end");
 }
 
 void MyXComponent::TestFunctionCpu(napi_env env, std::string caseName)
@@ -362,6 +295,7 @@ void MyXComponent::TestFunctionCpu(napi_env env, std::string caseName)
     } else {
         auto testCase = TestCaseFactory::GetFunctionCpuCase(caseName);
         if (testCase == nullptr) {
+            FlushScreen();
             DRAWING_LOGE("failed to get testcase");
             return;
         }
@@ -386,6 +320,7 @@ void MyXComponent::TestFunctionGpu(napi_env env, std::string caseName)
     } else {
         auto testCase = TestCaseFactory::GetFunctionCpuCase(caseName);
         if (testCase == nullptr) {
+            FlushScreen();
             DRAWING_LOGE("failed to get testcase");
             return;
         }
@@ -416,7 +351,7 @@ napi_value MyXComponent::NapiSetTestCount(napi_env env, napi_callback_info info)
         return nullptr;
     }
     uint32_t testCount;
-    if (!ConvertStringFromIntValue(env, argv[0], testCount)) {
+    if (!ConvertIntFromJsValue(env, argv[0], testCount)) {
         DRAWING_LOGE("NapiDrawPattern: get caseName fail");
         return nullptr;
     }
@@ -442,7 +377,7 @@ napi_value MyXComponent::NapiSetTestCount(napi_env env, napi_callback_info info)
     }
     DRAWING_LOGI("ID = %{public}s", idStr);
     std::string id(idStr);
-    MyXComponent *render = MyXComponent().GetInstance(id);
+    MyXComponent *render = MyXComponent().GetOrCreateInstance(id);
     if (render != nullptr) {
         render->SetTestCount(testCount);
     } else {
@@ -492,7 +427,7 @@ napi_value MyXComponent::NapiGetTime(napi_env env, napi_callback_info info)
     }
     DRAWING_LOGI("ID = %{public}s", idStr);
     std::string id(idStr);
-    MyXComponent *render = MyXComponent().GetInstance(id);
+    MyXComponent *render = MyXComponent().GetOrCreateInstance(id);
     if (render != nullptr) {
         DRAWING_LOGE("DrawingTest render->GetTime");
         napi_value value = nullptr;
@@ -546,19 +481,15 @@ napi_value MyXComponent::NapiFunctionCpu(napi_env env, napi_callback_info info)
     }
     DRAWING_LOGI("NapiFunctionCpu ID = %{public}s", idStr);
     std::string id(idStr);
-    MyXComponent *render = MyXComponent().GetInstance(id);
+    MyXComponent *render = MyXComponent().GetOrCreateInstance(id);
     if (render != nullptr) {
-        render->GetScreenBuffer();
-        render->CreateScreenCanvas();
+        render->InitScreenCanvas();
         render->TestFunctionCpu(env, caseName);
-        render->DisplayScreenCanvas();
-        render->Destroy();
     } else {
         DRAWING_LOGE("NapiFunctionCpu: render is nullptr");
     }
     return nullptr;
 }
-
 
 napi_value MyXComponent::NapiFunctionGpu(napi_env env, napi_callback_info info)
 {
@@ -602,14 +533,12 @@ napi_value MyXComponent::NapiFunctionGpu(napi_env env, napi_callback_info info)
     }
     DRAWING_LOGI("NapiFunctionGpu ID = %{public}s", idStr);
     std::string id(idStr);
-    MyXComponent *render = MyXComponent().GetInstance(id);
+    MyXComponent *render = MyXComponent().GetOrCreateInstance(id);
     if (render != nullptr) {
-        render->GetScreenBuffer();
+        render->InitScreenCanvas();
         render->InitializeEglContext();
-        render->CreateScreenGpuCanvas();
         render->TestFunctionGpu(env, caseName);
-        render->DisplayScreenGpuCanvas();
-        render->DestroyGpu();
+        render->DeInitializeEglContext();
     } else {
         DRAWING_LOGE("NapiFunctionGpu: render is nullptr");
     }
@@ -658,17 +587,13 @@ napi_value MyXComponent::NapiPerformanceCpu(napi_env env, napi_callback_info inf
     }
     DRAWING_LOGI("ID = %{public}s", idStr);
     std::string id(idStr);
-    MyXComponent *render = MyXComponent().GetInstance(id);
+    MyXComponent *render = MyXComponent().GetOrCreateInstance(id);
     if (render != nullptr) {
-        render->GetScreenBuffer();
-        render->CreateScreenCanvas();
+        render->InitScreenCanvas();
         render->TestPerformanceCpu(env, caseName);
-        render->DisplayScreenCanvas();
-        render->Destroy();
     } else {
         DRAWING_LOGE("render is nullptr");
     }
-    DRAWING_LOGE("DrawingTest NapiPerformanceCpu end");
     
     return nullptr;
 }
@@ -713,14 +638,12 @@ napi_value MyXComponent::NapiPerformanceGpu(napi_env env, napi_callback_info inf
         return nullptr;
     }
     std::string id(idStr);
-    MyXComponent *render = MyXComponent().GetInstance(id);
+    MyXComponent *render = MyXComponent().GetOrCreateInstance(id);
     if (render != nullptr) {
-        render->GetScreenBuffer();
+        render->InitScreenCanvas();
         render->InitializeEglContext();
-        render->CreateScreenGpuCanvas();
         render->TestPerformanceGpu(env, caseName);
-        render->DisplayScreenGpuCanvas();
-        render->DestroyGpu();
+        render->DeInitializeEglContext();
     } else {
         DRAWING_LOGE("render is nullptr");
     }
@@ -731,88 +654,44 @@ napi_value MyXComponent::NapiPerformanceGpu(napi_env env, napi_callback_info inf
 
 MyXComponent::~MyXComponent()
 {
-    // 销毁创建的对象
-    if (screenSurface_) {
-        OH_Drawing_SurfaceDestroy(screenSurface_);
-        screenSurface_ = nullptr;
-    }
-    if (screenGpuContext_) {
-        OH_Drawing_GpuContextDestroy(screenGpuContext_);
-        screenGpuContext_ = nullptr;
-    }
-    // 销毁canvas对象
     if (screenCanvas_) {
         OH_Drawing_CanvasDestroy(screenCanvas_);
         screenCanvas_ = nullptr;
     }
-    // 销毁bitmap对象
     if (screenBitmap_) {
         OH_Drawing_BitmapDestroy(screenBitmap_);
         screenBitmap_ = nullptr;
     }
 
+    if (mappedAddr_ != nullptr && bufferHandle_ != nullptr) {
+        int result = munmap(mappedAddr_, bufferHandle_->size);
+        if (result == -1) {
+            DRAWING_LOGE("munmap failed!");
+        }
+    }
     buffer_ = nullptr;
     bufferHandle_ = nullptr;
     nativeWindow_ = nullptr;
     mappedAddr_ = nullptr;
 }
 
-void MyXComponent::Destroy()
-{
-    // 销毁创建的对象
-    // 销毁canvas对象
-    if (screenCanvas_) {
-        OH_Drawing_CanvasDestroy(screenCanvas_);
-        screenCanvas_ = nullptr;
-    }
-    // 销毁bitmap对象
-    if (screenBitmap_) {
-        OH_Drawing_BitmapDestroy(screenBitmap_);
-        screenBitmap_ = nullptr;
-    }
-}
-
-void MyXComponent::DestroyGpu()
-{
-    // 销毁创建的对象
-    // 销毁bitmap对象
-    if (screenBitmap_) {
-        OH_Drawing_BitmapDestroy(screenBitmap_);
-        screenBitmap_ = nullptr;
-    }
-
-    EGLBoolean ret = eglDestroySurface(mEGLDisplay, mEGLSurface);
-    if (!ret) {
-        DRAWING_LOGW("eglDestroySurface failure.");
-    }
-
-    ret = eglDestroyContext(mEGLDisplay, mEGLContext);
-    if (!ret) {
-        DRAWING_LOGW("eglDestroyContext failure.");
-    }
-
-    ret = eglTerminate(mEGLDisplay);
-    if (!ret) {
-        DRAWING_LOGW("eglTerminate failure.");
-    }
-
-    mEGLSurface = NULL;
-    mEGLContext = NULL;
-    mEGLDisplay = NULL;
-}
-
 void MyXComponent::Release(std::string &id)
 {
-    MyXComponent *render = MyXComponent::GetInstance(id);
+    auto map = g_instance.find(id);
+    if (map == g_instance.end()) {
+        return;
+    }
+    MyXComponent *render = g_instance[id];
     if (render != nullptr) {
+        g_instance.erase(map);
         delete render;
         render = nullptr;
-        g_instance.erase(g_instance.find(id));
     }
 }
 
 void MyXComponent::Export(napi_env env, napi_value exports)
 {
+    DRAWING_LOGI("MyXComponent napi init");
     if ((env == nullptr) || (exports == nullptr)) {
         DRAWING_LOGE("Export: env or exports is null");
         return;
@@ -844,7 +723,7 @@ void MyXComponent::RegisterCallback(OH_NativeXComponent *nativeXComponent)
     OH_NativeXComponent_RegisterCallback(nativeXComponent, &renderCallback_);
 }
 
-MyXComponent *MyXComponent::GetInstance(std::string &id)
+MyXComponent *MyXComponent::GetOrCreateInstance(std::string &id)
 {
     if (g_instance.find(id) == g_instance.end()) {
         MyXComponent *render = new MyXComponent(id);
