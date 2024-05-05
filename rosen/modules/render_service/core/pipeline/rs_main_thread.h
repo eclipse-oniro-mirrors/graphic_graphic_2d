@@ -372,7 +372,7 @@ private:
     void PerfAfterAnim(bool needRequestNextVsync);
     void PerfMultiWindow();
     void RenderFrameStart(uint64_t timestamp);
-    void ResetHardwareEnabledState();
+    void ResetHardwareEnabledState(bool isUniRender);
     void CheckIfHardwareForcedDisabled();
     void CheckAndUpdateTransactionIndex(
         std::shared_ptr<TransactionDataMap>& transactionDataEffective, std::string& transactionFlags);
