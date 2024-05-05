@@ -1815,12 +1815,16 @@ bool RSSurfaceRenderNode::CheckIfOcclusionChanged() const
     return GetZorderChanged() || GetDstRectChanged() || IsOpaqueRegionChanged();
 }
 
-bool RSSurfaceRenderNode::CheckParticipateInOcclusion() const
+bool RSSurfaceRenderNode::CheckParticipateInOcclusion()
 {
     // planning: Need consider others situation
+    isParentScaling_ = false;
     auto nodeParent = GetParent().lock();
     if (nodeParent && nodeParent->IsScale()) {
-        return false;
+        isParentScaling_ = true;
+        if (GetDstRectChanged()) {
+            return false;
+        }
     }
     if (IsTransparent() || GetAnimateState() || IsRotating()) {
         return false;
@@ -2377,6 +2381,7 @@ void RSSurfaceRenderNode::UpdatePartialRenderParams()
     }
     if (IsMainWindowType()) {
         surfaceParams->SetVisibleRegion(visibleRegion_);
+        surfaceParams->SetIsParentScaling(isParentScaling_);
     }
     surfaceParams->absDrawRect_ = GetAbsDrawRect();
     surfaceParams->SetOldDirtyInSurface(GetOldDirtyInSurface());
@@ -2409,6 +2414,7 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->selfDrawingType_ = GetSelfDrawingNodeType();
     surfaceParams->needBilinearInterpolation_ = NeedBilinearInterpolation();
     surfaceParams->isMainWindowType_ = IsMainWindowType();
+    surfaceParams->isLeashWindow_ = IsLeashWindow();
     surfaceParams->SetAncestorDisplayNode(ancestorDisplayNode_);
     surfaceParams->isSecurityLayer_ = isSecurityLayer_;
     surfaceParams->isSkipLayer_ = isSkipLayer_;
