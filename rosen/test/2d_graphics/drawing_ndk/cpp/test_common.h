@@ -36,7 +36,7 @@
 
 class TestRend {
 public:
-    TestRend() {init(0);}
+    TestRend() { init(0); }
     explicit TestRend(uint32_t seed) { init(seed); }
     ~TestRend() = default;
     
@@ -62,10 +62,10 @@ struct DrawRect {
     float right;
     float bottom;
     bool Contains(float x, float y) const { return x >= left && x < right && y >= top && y < bottom; }
-    float Width(){return (right - left);}
-    float Height(){return (bottom - top);}
-    float CenterX(){return (right - left) / 2;} // 2 for mid
-    float CenterY(){return (bottom - top) / 2;} // 2 for mid
+    float Width(){ return (right - left); }
+    float Height(){ return (bottom - top); }
+    float CenterX(){ return (right - left) / 2; } // 2 for mid
+    float CenterY(){ return (bottom - top) / 2; } // 2 for mid
     bool Inset(float dx, float dy)
     {
         float l = left + dx;
@@ -105,4 +105,7 @@ uint16_t* DrawBitmapGetAddr16(OH_Drawing_Bitmap* bitmap, int x, int y);
 uint32_t* DrawBitmapGetAddr32(OH_Drawing_Bitmap* bitmap, int x, int y);
 
 void DrawPathGetBound(DrawRect& r, float x, float y);
+
+bool ConvertStringFromJsValue(napi_env env, napi_value jsValue, std::string &value);
+bool ConvertIntFromJsValue(napi_env env, napi_value jsValue, uint32_t &value);
 #endif // TEST_COMMON_H

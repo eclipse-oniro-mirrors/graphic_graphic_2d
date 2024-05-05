@@ -29,20 +29,12 @@ export class MyRenderNode extends RenderNode {
   clear:boolean = false;
 
   async draw(context: DrawContext) {
-    // if (this.flag) {
-    //   context.size.height = 300
-    //   context.size.width = 300
-    // } else {
-    //   context.size.height = 200
-    //   context.size.width = 200
-    // }
     if (this.clear) {
       printCallback('Clear XNode');
       return;
     }
 
     console.log(TAG, 'MyRenderNode draw');
-    // const canvas = context.canvas;
     if (this.testType == 'function') {
       console.log(TAG, 'MyRenderNode draw function');
       this.TestFunctional(context);
@@ -53,7 +45,7 @@ export class MyRenderNode extends RenderNode {
   }
 
   async TestFunctional(context: DrawContext) {
-    console.info(TAG, 'MyRenderNode TestFunctional--', this.caseNameStr);
+    console.info(TAG, 'MyRenderNode TestFunctional', this.caseNameStr);
     nativeXNode.TestFunctional(context, this.caseNameStr);
     printCallback('XNode TestFunctional ok');
   }
@@ -61,7 +53,7 @@ export class MyRenderNode extends RenderNode {
   async TestPerformance(context: DrawContext) {
     console.info(TAG, 'MyRenderNode TestPerformance', this.caseNameStr, this.testCount);
     let performanceTime = nativeXNode.TestPerformance(context, this.caseNameStr, this.testCount);
-    printCallback('XNode TestCount: ' + this.testCount.toString() + ', used: ' + performanceTime.toString() + 'ms');
+    printCallback('Count: ' + this.testCount.toString() + ', used: ' + performanceTime.toString() + 'ms');
   }
 }
 

@@ -285,7 +285,7 @@ struct Index {
       this.xComponentContext.setTestCount(testCount);
       this.xComponentContext.testPerformanceCpu(this.caseNameStr);
       let time = this.xComponentContext.getTime();
-      this.LogMsg('TestCount: ' + testCount + ', used: ' + time.toString() + 'ms');
+      this.LogMsg('Count: ' + testCount + ', used: ' + time.toString() + 'ms');
     }
     console.log(TAG, 'TestPerformanceCpu end');
   }
@@ -298,7 +298,7 @@ struct Index {
       this.xComponentContext.setTestCount(testCount);
       this.xComponentContext.testPerformanceGpu(this.caseNameStr);
       let time = this.xComponentContext.getTime();
-      this.LogMsg('TestCount: ' + testCount + ', used: ' + time.toString() + 'ms');
+      this.LogMsg('Count: ' + testCount + ', used: ' + time.toString() + 'ms');
     }
     console.log(TAG, 'TestPerformanceGpu end');
   }
