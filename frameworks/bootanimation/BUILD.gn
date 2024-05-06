@@ -79,8 +79,8 @@ ohos_executable("bootanimation") {
   }
 
   external_deps = [
-    "c_utils:utils",
     "cJSON:cjson_static",
+    "c_utils:utils",
     "config_policy:configpolicy_util",
     "hilog:libhilog",
     "hitrace:hitrace_meter",
