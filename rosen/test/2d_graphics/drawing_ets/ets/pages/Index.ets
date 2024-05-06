@@ -295,6 +295,7 @@ struct Index {
       // 异步处理 绘制到屏幕上
       test.fileName_ = this.caseNameStr;
       await test.TestFunctionCpu(context.cacheDir).then(()=>{
+        this.context.clearRect(0, 0, test.width_, test.height_);
         this.context.drawImage(test.pixelMap_, 0, 0);
       });
       this.LogMsg('TestFunctionalCpu end');
@@ -312,6 +313,7 @@ struct Index {
     test.SetTestCount(testCount);
 
     test.TestPerformanceCpu().then(()=>{
+      this.context.clearRect(0, 0, test.width_, test.height_);
       this.context.drawImage(test.pixelMap_, 0, 0);
       this.LogMsg('Count: ' + testCount + ', used: ' + test.time_.toString() + 'ms');
     });
