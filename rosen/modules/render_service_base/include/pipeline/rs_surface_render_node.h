@@ -350,7 +350,7 @@ public:
         offsetX_ = offset;
     }
 
-    int32_t GetOffSetX()
+    int32_t GetOffSetX() const
     {
         return offsetX_;
     }
@@ -360,7 +360,7 @@ public:
         offsetY_ = offset;
     }
 
-    int32_t GetOffSetY()
+    int32_t GetOffSetY() const
     {
         return offsetY_;
     }

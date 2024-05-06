@@ -624,7 +624,7 @@ void RSDisplayRenderNodeDrawable::SetVirtualScreenType(RSDisplayRenderNode& node
 {
     auto mirroredNode = node.GetMirrorSource().lock();
     switch (screenInfo.state) {
-        case ScreenState::PRODUCER_SURFACE_ENABLE:
+        case ScreenState::SOFTWARE_OUTPUT_ENABLE:
             node.SetCompositeType(mirroredNode ?
                 RSDisplayRenderNode::CompositeType::UNI_RENDER_MIRROR_COMPOSITE :
                 RSDisplayRenderNode::CompositeType::UNI_RENDER_EXPAND_COMPOSITE);

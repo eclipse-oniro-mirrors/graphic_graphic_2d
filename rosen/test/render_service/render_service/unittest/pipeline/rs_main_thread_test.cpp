@@ -1550,14 +1550,18 @@ HWTEST_F(RSMainThreadTest, CalcOcclusionImplementation, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
+    RSDisplayNodeConfig config;
+    NodeId displayNodeId = 0;
+    auto displayNode = std::make_shared<RSDisplayRenderNode>(displayNodeId, config, mainThread->context_);
+
     std::vector<RSBaseRenderNode::SharedPtr> curAllSurfaces;
-    NodeId id = 0;
-    auto node = std::make_shared<RSSurfaceRenderNode>(id, mainThread->context_);
+    NodeId surfaceNodeId = 0;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceNodeId, mainThread->context_);
     curAllSurfaces.emplace_back(nullptr);
-    curAllSurfaces.emplace_back(node);
+    curAllSurfaces.emplace_back(surfaceNode);
     VisibleData dstCurVisVec;
     std::map<NodeId, RSVisibleLevel> dstPidVisMap;
-    mainThread->CalcOcclusionImplementation(curAllSurfaces, dstCurVisVec, dstPidVisMap);
+    mainThread->CalcOcclusionImplementation(displayNode, curAllSurfaces, dstCurVisVec, dstPidVisMap);
 }
 
 /**
@@ -2841,7 +2845,7 @@ HWTEST_F(RSMainThreadTest, CalcOcclusionImplementation001, TestSize.Level1)
     curAllSurfaces.emplace_back(nodeTop);
     VisibleData dstCurVisVec;
     std::map<NodeId, RSVisibleLevel> dstPidVisMap;
-    mainThread->CalcOcclusionImplementation(curAllSurfaces, dstCurVisVec, dstPidVisMap);
+    mainThread->CalcOcclusionImplementation(nullptr, curAllSurfaces, dstCurVisVec, dstPidVisMap);
     ASSERT_EQ(nodeBottom->GetOcclusionVisible(), true);
     ASSERT_EQ(nodeTop->GetOcclusionVisible(), true);
     ASSERT_EQ(nodeBottom->GetVisibleRegion().Size(), 1);
@@ -2878,7 +2882,7 @@ HWTEST_F(RSMainThreadTest, CalcOcclusionImplementation002, TestSize.Level1)
     curAllSurfaces.emplace_back(nodeTop);
     VisibleData dstCurVisVec;
     std::map<NodeId, RSVisibleLevel> dstPidVisMap;
-    mainThread->CalcOcclusionImplementation(curAllSurfaces, dstCurVisVec, dstPidVisMap);
+    mainThread->CalcOcclusionImplementation(nullptr, curAllSurfaces, dstCurVisVec, dstPidVisMap);
     ASSERT_EQ(nodeBottom->GetOcclusionVisible(), true);
     ASSERT_EQ(nodeTop->GetOcclusionVisible(), true);
     ASSERT_EQ(nodeBottom->GetVisibleRegion().Size(), 2);
@@ -2915,7 +2919,7 @@ HWTEST_F(RSMainThreadTest, CalcOcclusionImplementation003, TestSize.Level1)
     curAllSurfaces.emplace_back(nodeTop);
     VisibleData dstCurVisVec;
     std::map<NodeId, RSVisibleLevel> dstPidVisMap;
-    mainThread->CalcOcclusionImplementation(curAllSurfaces, dstCurVisVec, dstPidVisMap);
+    mainThread->CalcOcclusionImplementation(nullptr, curAllSurfaces, dstCurVisVec, dstPidVisMap);
     ASSERT_EQ(nodeBottom->GetOcclusionVisible(), false);
     ASSERT_EQ(nodeTop->GetOcclusionVisible(), true);
     ASSERT_EQ(nodeBottom->GetVisibleRegion().Size(), 0);
@@ -2953,7 +2957,7 @@ HWTEST_F(RSMainThreadTest, CalcOcclusionImplementation004, TestSize.Level1)
     curAllSurfaces.emplace_back(nodeTop);
     VisibleData dstCurVisVec;
     std::map<NodeId, RSVisibleLevel> dstPidVisMap;
-    mainThread->CalcOcclusionImplementation(curAllSurfaces, dstCurVisVec, dstPidVisMap);
+    mainThread->CalcOcclusionImplementation(nullptr, curAllSurfaces, dstCurVisVec, dstPidVisMap);
     ASSERT_EQ(nodeBottom->GetOcclusionVisible(), true);
     ASSERT_EQ(nodeTop->GetOcclusionVisible(), true);
     ASSERT_EQ(nodeBottom->GetVisibleRegion().Size(), 1);
@@ -2993,7 +2997,7 @@ HWTEST_F(RSMainThreadTest, CalcOcclusionImplementation005, TestSize.Level1)
     curAllSurfaces.emplace_back(nodeTop);
     VisibleData dstCurVisVec;
     std::map<NodeId, RSVisibleLevel> dstPidVisMap;
-    mainThread->CalcOcclusionImplementation(curAllSurfaces, dstCurVisVec, dstPidVisMap);
+    mainThread->CalcOcclusionImplementation(nullptr, curAllSurfaces, dstCurVisVec, dstPidVisMap);
     ASSERT_EQ(nodeBottom->GetOcclusionVisible(), false);
     ASSERT_EQ(nodeTop->GetOcclusionVisible(), true);
     ASSERT_EQ(nodeBottom->GetVisibleRegion().Size(), 0);
