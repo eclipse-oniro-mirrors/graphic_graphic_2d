@@ -969,7 +969,9 @@ public:
 
     bool GetUifirstSupportFlag() override
     {
-        return RSRenderNode::GetUifirstSupportFlag();
+        return RSRenderNode::GetUifirstSupportFlag() &&
+            (GetSurfaceNodeType() != RSSurfaceNodeType::SELF_DRAWING_NODE ||
+            name_.find("SceneViewer Model") == std::string::npos);
     }
 
     void UpdateSurfaceCacheContentStaticFlag();
