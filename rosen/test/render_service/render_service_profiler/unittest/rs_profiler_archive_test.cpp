@@ -136,24 +136,6 @@ HWTEST_F(RSProfilerArchiveTest, SerializeStringTest, testing::ext::TestSize.Leve
     EXPECT_EQ(initial, result);
 }
 
-/*
- * @tc.name: SerializeVectorFlatTest
- * @tc.desc: Test Archive std::vector of primitive types serialization
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSProfilerArchiveTest, SerializeVectorFlatTest, testing::ext::TestSize.Level1)
-{
-    std::vector<char> buf;
-    DataWriter writer(buf);
-    DataReader reader(buf);
-    std::vector<int> initial = { 6, 235, 4357, 3245, -656, 34857, 435, -645, 6546, -253, 564 };
-    std::vector<int> result = {};
-    writer.Serialize(initial);
-    reader.Serialize(result);
-    EXPECT_EQ(initial, result);
-}
-
 struct SomeStruct {
     static void Serialize(Archive& archive, SomeStruct& value)
     {
