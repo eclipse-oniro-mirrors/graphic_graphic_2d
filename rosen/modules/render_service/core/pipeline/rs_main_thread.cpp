@@ -305,19 +305,7 @@ void RSMainThread::Init()
         // may mark rsnotrendering
         Render(); // now render is traverse tree to prepare
         RS_PROFILER_ON_RENDER_END();
-        if (isUniRender_ && !doDirectComposition_) {
-            renderThreadParams_->SetContext(context_);
-            drawFrame_.SetRenderThreadParams(renderThreadParams_);
-            drawFrame_.PostAndWait();
-        }
-        if (isUniRender_ && doDirectComposition_) {
-            UpdateDisplayNodeScreenId();
-            if (!markRenderFlag_) {
-                SetFrameIsRender(true);
-            }
-            markRenderFlag_ = false;
-        }
-
+        OnUniRenderDraw();
         InformHgmNodeInfo();
         if (!isUniRender_) {
             ReleaseAllNodesBuffer();
@@ -1822,6 +1810,30 @@ void RSMainThread::Render()
         CallbackDrawContextStatusToWMS();
         CheckSystemSceneStatus();
         PerfForBlurIfNeeded();
+    }
+}
+
+void RSMainThread::OnUniRenderDraw()
+{
+    if (!isUniRender_) {
+        return;
+    }
+
+    if (!doDirectComposition_) {
+        renderThreadParams_->SetContext(context_);
+        drawFrame_.SetRenderThreadParams(renderThreadParams_);
+        drawFrame_.PostAndWait();
+        return;
+    }
+
+    UpdateDisplayNodeScreenId();
+    if (!markRenderFlag_) {
+        SetFrameIsRender(true);
+    }
+    markRenderFlag_ = false;
+    RsFrameReport& fr = RsFrameReport::GetInstance();
+    if (fr.GetEnable()) {
+        fr.RSRenderEnd();
     }
 }
 

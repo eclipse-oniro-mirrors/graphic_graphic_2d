@@ -329,6 +329,7 @@ private:
     void CollectInfoForHardwareComposer();
     void ReleaseAllNodesBuffer();
     void Render();
+    void OnUniRenderDraw();
     void SetDeviceType();
     void ColorPickerRequestVsyncIfNeed();
     void UniRender(std::shared_ptr<RSBaseRenderNode> rootNode);
