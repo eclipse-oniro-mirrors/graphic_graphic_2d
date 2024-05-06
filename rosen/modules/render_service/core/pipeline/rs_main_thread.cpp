@@ -322,8 +322,6 @@ void RSMainThread::Init()
         InformHgmNodeInfo();
         if (!isUniRender_) {
             ReleaseAllNodesBuffer();
-            auto subThreadManager = RSSubThreadManager::Instance();
-            subThreadManager->SubmitFilterSubThreadTask();
         }
         SendCommands();
         {
