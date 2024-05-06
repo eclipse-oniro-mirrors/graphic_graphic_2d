@@ -61,7 +61,7 @@ void ConvexPaths::OnTestFunction(OH_Drawing_Canvas *canvas)
         OH_Drawing_CanvasDrawPath(canvas, fPaths[i]);
         OH_Drawing_CanvasRestore(canvas);
     }
-    OH_Drawing_CanvasDetachPen(canvas);
+    OH_Drawing_CanvasDetachBrush(canvas);
     OH_Drawing_BrushDestroy(brush);
 
     for (int f = 0; f < fPaths.size(); ++f) {
