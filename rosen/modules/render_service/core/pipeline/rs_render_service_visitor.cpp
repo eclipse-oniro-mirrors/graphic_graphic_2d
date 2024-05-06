@@ -310,7 +310,7 @@ void RSRenderServiceVisitor::UpdateDisplayNodeCompositeType(RSDisplayRenderNode&
 {
     ScreenState state = screenInfo.state;
     switch (state) {
-        case ScreenState::PRODUCER_SURFACE_ENABLE:
+        case ScreenState::SOFTWARE_OUTPUT_ENABLE:
             node.SetCompositeType(RSDisplayRenderNode::CompositeType::SOFTWARE_COMPOSITE);
             break;
         case ScreenState::HDI_OUTPUT_ENABLE:
