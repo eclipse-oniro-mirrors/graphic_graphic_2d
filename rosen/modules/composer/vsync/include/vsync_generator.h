@@ -73,6 +73,7 @@ public:
     virtual VsyncError StartRefresh() = 0;
 
     virtual void SetRSDistributor(sptr<VSyncDistributor> &rsVSyncDistributor) = 0;
+    virtual void SetAppDistributor(sptr<VSyncDistributor> &rsVSyncDistributor) = 0;
 };
 
 sptr<VSyncGenerator> CreateVSyncGenerator();
@@ -107,6 +108,7 @@ public:
     VsyncError StartRefresh() override;
 
     void SetRSDistributor(sptr<VSyncDistributor> &rsVSyncDistributor) override;
+    void SetAppDistributor(sptr<VSyncDistributor> &rsVSyncDistributor) override;
 
 private:
     friend class OHOS::Rosen::VSyncGenerator;
@@ -182,6 +184,7 @@ private:
     sptr<VSyncDistributor> rsVSyncDistributor_;
     int32_t periodCheckCounter_ = 0;
     int64_t lastPeriod_ = 0;
+    sptr<VSyncDistributor> appVSyncDistributor_;
 };
 } // impl
 } // namespace Rosen

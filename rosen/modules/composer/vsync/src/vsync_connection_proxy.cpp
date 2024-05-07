@@ -36,6 +36,8 @@ VsyncError VSyncConnectionProxy::RequestNextVSync(const std::string& fromWhom, i
     MessageParcel ret;
 
     arg.WriteInterfaceToken(GetDescriptor());
+    arg.WriteString(fromWhom);
+    arg.WriteInt64(lastVSyncTS);
     int res = Remote()->SendRequest(IVSYNC_CONNECTION_REQUEST_NEXT_VSYNC, arg, ret, opt);
     if (res != NO_ERROR) {
         VLOGE("ipc send fail, error:%{public}d", res);
@@ -85,6 +87,21 @@ VsyncError VSyncConnectionProxy::Destroy()
 
     arg.WriteInterfaceToken(GetDescriptor());
     int res = Remote()->SendRequest(IVSYNC_CONNECTION_DESTROY, arg, ret, opt);
+    if (res != NO_ERROR) {
+        return VSYNC_ERROR_BINDER_ERROR;
+    }
+    return VSYNC_ERROR_OK;
+}
+
+VsyncError VSyncConnectionProxy::SetUiDvsyncSwitch(bool dvsyncSwitch)
+{
+    MessageOption opt(MessageOption::TF_ASYNC);
+    MessageParcel arg;
+    MessageParcel ret;
+
+    arg.WriteInterfaceToken(GetDescriptor());
+    arg.WriteBool(dvsyncSwitch);
+    int res = Remote()->SendRequest(IVSYNC_CONNECTION_SET_UI_DVSYNC_SWITCH, arg, ret, opt);
     if (res != NO_ERROR) {
         return VSYNC_ERROR_BINDER_ERROR;
     }

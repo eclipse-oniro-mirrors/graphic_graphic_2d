@@ -754,9 +754,8 @@ void HgmFrameRateManager::DeliverRefreshRateVote(pid_t pid, std::string eventNam
 VoteRange HgmFrameRateManager::ProcessRefreshRateVote(FrameRateVoteInfo& frameRateVoteInfo)
 {
     if (!isRefreshNeed_) {
-        uint32_t lastPendingRate = HgmCore::Instance().GetPendingScreenRefreshRate();
-        RS_TRACE_NAME_FMT("Process nothing, lastRate:[%d]", lastPendingRate);
-        return std::make_pair(lastPendingRate, lastPendingRate);
+        RS_TRACE_NAME_FMT("Process nothing, lastRate:[%d,%d]", lastVoteMin_, lastVoteMax_);
+        return std::make_pair(lastVoteMin_, lastVoteMax_);
     }
     UpdateVoteRule();
     std::lock_guard<std::mutex> voteNameLock(voteNameMutex_);
@@ -802,6 +801,8 @@ VoteRange HgmFrameRateManager::ProcessRefreshRateVote(FrameRateVoteInfo& frameRa
         }
     }
 
+    lastVoteMin_ = min;
+    lastVoteMax_ = max;
     isRefreshNeed_ = false;
     HGM_LOGI("Process: Strategy:%{public}s Screen:%{public}d Mode:%{public}d -- VoteResult:{%{public}d-%{public}d}",
         curScreenStrategyId_.c_str(), static_cast<int>(curScreenId_), curRefreshRateMode_, min, max);

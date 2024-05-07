@@ -184,6 +184,8 @@ private:
     int32_t idleFps_ = 60;
     HgmMultiAppStrategy multiAppStrategy_;
     HgmTouchManager touchManager_;
+    uint32_t lastVoteMin_ = 0;
+    uint32_t lastVoteMax_ = 144;
 };
 } // namespace Rosen
 } // namespace OHOS

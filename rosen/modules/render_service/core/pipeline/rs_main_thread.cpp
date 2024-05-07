@@ -853,6 +853,20 @@ void RSMainThread::SkipCommandByNodeId(std::vector<std::unique_ptr<RSTransaction
     }
 }
 
+void RSMainThread::RequestNextVsyncForCachedCommand(std::string& transactionFlags, pid_t pid, uint64_t curIndex)
+{
+#ifdef ROSEN_EMULATOR
+    transactionFlags += " cache [" + std::to_string(pid) + "," + std::to_string(curIndex) + "]";
+    RequestNextVSync();
+#else
+    if (rsVSyncDistributor_->IsUiDvsyncOn()) {
+        transactionFlags += " cache [" + std::to_string(pid) + "," + std::to_string(curIndex) + "]";
+        RS_OPTIONAL_TRACE_NAME_FMT("trigger NextVsync for Dvsync-Cached command");
+        RequestNextVSync("fromRsMainCommand", timestamp_);
+    }
+#endif
+}
+
 void RSMainThread::CheckAndUpdateTransactionIndex(std::shared_ptr<TransactionDataMap>& transactionDataEffective,
     std::string& transactionFlags)
 {
@@ -870,11 +884,8 @@ void RSMainThread::CheckAndUpdateTransactionIndex(std::shared_ptr<TransactionDat
             }
             auto curIndex = (*iter)->GetIndex();
             if (curIndex == lastIndex + 1) {
-                if ((*iter)->GetTimestamp() >= timestamp_) {
-#ifdef ROSEN_EMULATOR
-                    transactionFlags += "cache [" + std::to_string(pid) + "," + std::to_string(curIndex) + "]";
-                    RequestNextVSync();
-#endif
+                if ((*iter)->GetTimestamp() + rsVSyncDistributor_->GetUiCommandDelayTime() >= timestamp_) {
+                    RequestNextVsyncForCachedCommand(transactionFlags, pid, curIndex);
                     break;
                 }
                 ++lastIndex;
@@ -1543,7 +1554,8 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
     if (rsVSyncDistributor_->IsDVsyncOn()) {
         auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
         auto pendingRefreshRate = frameRateMgr_->GetPendingRefreshRate();
-        if (pendingRefreshRate != nullptr) {
+        if (pendingRefreshRate != nullptr
+            && (!rsVSyncDistributor_->IsUiDvsyncOn() || rsVSyncDistributor_->GetRefreshRate() == *pendingRefreshRate) {
             hgmCore.SetPendingScreenRefreshRate(*pendingRefreshRate);
             frameRateMgr_->ResetPendingRefreshRate();
         }

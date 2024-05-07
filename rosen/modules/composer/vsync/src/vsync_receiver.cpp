@@ -24,6 +24,7 @@
 #include "rs_frame_report_ext.h"
 #include "vsync_log.h"
 #include "sandbox_utils.h"
+#include "vsync_distributor.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -46,8 +47,7 @@ void VSyncCallBackListener::OnReadable(int32_t fileDescriptor)
         ret = read(fileDescriptor, data, sizeof(data));
         if (ret == 0) {
             return;
-        }
-        if (ret == -1) {
+        } else if (ret == -1) {
             if (errno == EINTR) {
                 ret = 0;
                 continue;
@@ -55,6 +55,11 @@ void VSyncCallBackListener::OnReadable(int32_t fileDescriptor)
         } else {
             dataCount += ret;
         }
+#if defined(RS_ENABLE_DVSYNC)
+        if (DVsync::IsFeatureEnabled() && data[0] >= Now()) {
+            break;
+        }
+#endif
     } while (ret != -1);
 
     VSyncCallback cb = nullptr;
@@ -235,6 +240,15 @@ bool VSyncReceiver::IsRequestedNextVSync()
         return false;
     }
     return listener_->GetRNVFlag();
+}
+
+VsyncError VSyncReceiver::SetUiDvsyncSwitch(bool dvsyncSwitch)
+{
+    std::lock_guard<std::mutex> locker(initMutex_);
+    if (!init_) {
+        return VSYNC_ERROR_API_FAILED;
+    }
+    return connection_->SetUiDvsyncSwitch(dvsyncSwitch);
 }
 } // namespace Rosen
 } // namespace OHOS
