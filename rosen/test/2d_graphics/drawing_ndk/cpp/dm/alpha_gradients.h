@@ -22,10 +22,10 @@
 typedef uint32_t SkColor;
 typedef unsigned int U8CPU;
 
-class AlphaGradients final : public TestBase {
+class AlphaGradients : public TestBase {
 public:
     AlphaGradients();
-    ~AlphaGradients() = default;
+    ~AlphaGradients() override;
 
 protected:
     void OnTestFunction(OH_Drawing_Canvas *canvas) override;

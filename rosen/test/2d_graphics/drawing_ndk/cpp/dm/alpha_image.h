@@ -19,19 +19,19 @@
 #include <native_drawing/drawing_rect.h>
 #include <native_drawing/drawing_canvas.h>
 
-class AlphaImage final : public TestBase {
+class AlphaImage : public TestBase {
 public:
     AlphaImage();
-    ~AlphaImage() = default;
+    ~AlphaImage() override;
 
 protected:
     void OnTestFunction(OH_Drawing_Canvas *canvas) override;
 };
 
-class AlphaImageAlphaTint final : public TestBase {
+class AlphaImageAlphaTint : public TestBase {
 public:
     AlphaImageAlphaTint();
-    ~AlphaImageAlphaTint() = default;
+    ~AlphaImageAlphaTint() override;
 
 protected:
     void OnTestFunction(OH_Drawing_Canvas *canvas) override;

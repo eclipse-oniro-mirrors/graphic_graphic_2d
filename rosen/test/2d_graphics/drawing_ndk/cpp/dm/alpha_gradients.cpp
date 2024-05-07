@@ -31,6 +31,8 @@ AlphaGradients::AlphaGradients()
     fileName_ = "alphagradients";
 }
 
+AlphaGradients::~AlphaGradients() {}
+
 void AlphaGradients::draw_grad(OH_Drawing_Canvas *canvas, DrawRect &r, uint32_t c0, uint32_t c1, bool doPreMul)
 {
     if (doPreMul)

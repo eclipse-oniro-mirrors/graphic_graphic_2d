@@ -102,6 +102,8 @@ AddArc::AddArc()
     fileName_ = "addarc";
 }
 
+AddArc::~AddArc() {}
+
 void AddArc::OnTestFunction(OH_Drawing_Canvas *canvas)
 {
     OH_Drawing_CanvasTranslate(canvas, 20, 20); // 20距离

@@ -77,6 +77,8 @@ AlphaImage::AlphaImage()
     fileName_ = "alpha_image";
 }
 
+AlphaImage::~AlphaImage() {}
+
 void AlphaImage::OnTestFunction(OH_Drawing_Canvas *canvas)
 {
     float kSize = 96;
@@ -142,6 +144,8 @@ AlphaImageAlphaTint::AlphaImageAlphaTint()
     bitmapHeight_ = K_H;
     fileName_ = "alpha_image_alpha_tint";
 }
+
+AlphaImageAlphaTint::~AlphaImageAlphaTint() {}
 
 void AlphaImageAlphaTint::OnTestFunction(OH_Drawing_Canvas *canvas)
 {
