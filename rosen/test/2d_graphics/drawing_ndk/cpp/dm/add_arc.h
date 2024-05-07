@@ -19,20 +19,20 @@
 #include <native_drawing/drawing_rect.h>
 #include <native_drawing/drawing_canvas.h>
 
-class AddArcMeas : public TestBase {
+class AddArcMeas final : public TestBase {
 public:
     AddArcMeas();
     ~AddArcMeas();
 protected:
-    void OnTestFunction(OH_Drawing_Canvas* canvas) override;
+    void OnTestFunction(OH_Drawing_Canvas *canvas) override;
 };
 
-class AddArc : public TestBase {
+class AddArc final : public TestBase {
 public:
     AddArc();
     ~AddArc() = default;
 protected:
-    void OnTestFunction(OH_Drawing_Canvas* canvas) override;
+    void OnTestFunction(OH_Drawing_Canvas *canvas) override;
     bool OnAnimate();
     float fRotate;
 };

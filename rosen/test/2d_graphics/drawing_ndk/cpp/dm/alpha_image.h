@@ -19,21 +19,21 @@
 #include <native_drawing/drawing_rect.h>
 #include <native_drawing/drawing_canvas.h>
 
-class AlphaImage : public TestBase {
-  public:
+class AlphaImage final : public TestBase {
+public:
     AlphaImage();
     ~AlphaImage() = default;
 
-  protected:
+protected:
     void OnTestFunction(OH_Drawing_Canvas *canvas) override;
 };
 
-class AlphaImageAlphaTint : public TestBase {
-  public:
+class AlphaImageAlphaTint final : public TestBase {
+public:
     AlphaImageAlphaTint();
     ~AlphaImageAlphaTint() = default;
 
-  protected:
+protected:
     void OnTestFunction(OH_Drawing_Canvas *canvas) override;
 };
 #endif // AA_RECT_MODES_H

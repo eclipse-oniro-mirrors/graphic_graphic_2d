@@ -19,11 +19,11 @@
 #include <native_drawing/drawing_rect.h>
 #include <native_drawing/drawing_canvas.h>
 
-class AARectModes : public TestBase {
+class AARectModes final : public TestBase {
 public:
     AARectModes();
     ~AARectModes();
 protected:
-    void OnTestFunction(OH_Drawing_Canvas* canvas) override;
+    void OnTestFunction(OH_Drawing_Canvas *canvas) override;
 };
 #endif // AA_RECT_MODES_H
