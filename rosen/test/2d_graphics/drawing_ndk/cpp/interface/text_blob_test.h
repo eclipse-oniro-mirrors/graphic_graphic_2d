@@ -27,7 +27,7 @@ public:
     {
         fileName_ = "TextBlobBuilderCreate";
     };
-    ~TextBlobBuilderCreate() = default;
+    ~TextBlobBuilderCreate() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 614 ms 1000次
@@ -39,7 +39,7 @@ public:
     {
         fileName_ = "TextBlobCreateFromText";
     };
-    ~TextBlobCreateFromText() = default;
+    ~TextBlobCreateFromText() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 440 ms 100次
@@ -51,7 +51,7 @@ public:
     {
         fileName_ = "TextBlobCreateFromPosText";
     };
-    ~TextBlobCreateFromPosText() = default;
+    ~TextBlobCreateFromPosText() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 230 ms 100次
@@ -63,7 +63,7 @@ public:
     {
         fileName_ = "TextBlobCreateFromString";
     };
-    ~TextBlobCreateFromString() = default;
+    ~TextBlobCreateFromString() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 486 ms 100次
@@ -75,7 +75,7 @@ public:
     {
         fileName_ = "TextBlobGetBounds";
     };
-    ~TextBlobGetBounds() = default;
+    ~TextBlobGetBounds() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 365 ms 100次

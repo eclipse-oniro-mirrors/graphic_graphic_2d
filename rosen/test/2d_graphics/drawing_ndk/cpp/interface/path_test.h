@@ -28,7 +28,7 @@ public:
     {
         fileName_ = "PathTransformWithPerspectiveClip";
     }
-    ~PathTransformWithPerspectiveClip() = default;
+    ~PathTransformWithPerspectiveClip() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 358 ms 100次
@@ -41,7 +41,7 @@ public:
     {
         fileName_ = "PathSetFillType";
     }
-    ~PathSetFillType() = default;
+    ~PathSetFillType() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 712 ms 100次
@@ -54,7 +54,7 @@ public:
     {
         fileName_ = "PathGetLength";
     }
-    ~PathGetLength() = default;
+    ~PathGetLength() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 768 ms 100次
@@ -67,7 +67,7 @@ public:
     {
         fileName_ = "PathClose";
     }
-    ~PathClose() = default;
+    ~PathClose() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 1544 ms 100次
@@ -79,7 +79,7 @@ public:
     {
         fileName_ = "PathOffset";
     }
-    ~PathOffset() = default;
+    ~PathOffset() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 454 ms 100次
@@ -91,7 +91,7 @@ public:
     {
         fileName_ = "PathReset";
     }
-    ~PathReset() = default;
+    ~PathReset() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 2613 ms 100次
@@ -103,7 +103,7 @@ public:
     {
         fileName_ = "PathCubicTo";
     }
-    ~PathCubicTo() = default;
+    ~PathCubicTo() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 2041 ms 100次
@@ -115,7 +115,7 @@ public:
     {
         fileName_ = "PathRMoveTo";
     }
-    ~PathRMoveTo() = default;
+    ~PathRMoveTo() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 1299 ms 100次
@@ -127,7 +127,7 @@ public:
     {
         fileName_ = "PathRLineTo";
     }
-    ~PathRLineTo() = default;
+    ~PathRLineTo() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 767 ms 100次
@@ -139,7 +139,7 @@ public:
     {
         fileName_ = "PathRQuadTo";
     }
-    ~PathRQuadTo() = default;
+    ~PathRQuadTo() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 1184 ms 100次
@@ -151,7 +151,7 @@ public:
     {
         fileName_ = "PathRConicTo";
     }
-    ~PathRConicTo() = default;
+    ~PathRConicTo() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 931 ms 100次
@@ -163,7 +163,7 @@ public:
     {
         fileName_ = "PathRCubicTo";
     }
-    ~PathRCubicTo() = default;
+    ~PathRCubicTo() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 1124 ms 100次
@@ -175,7 +175,7 @@ public:
     {
         fileName_ = "PathAddRect";
     }
-    ~PathAddRect() = default;
+    ~PathAddRect() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 727 ms 100次
@@ -187,7 +187,7 @@ public:
     {
         fileName_ = "PathAddRectWithInitialCorner";
     }
-    ~PathAddRectWithInitialCorner() = default;
+    ~PathAddRectWithInitialCorner() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 739 ms 100次
@@ -199,7 +199,7 @@ public:
     {
         fileName_ = "PathAddRoundRect";
     }
-    ~PathAddRoundRect() = default;
+    ~PathAddRoundRect() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 783 ms 100次
@@ -211,7 +211,7 @@ public:
     {
         fileName_ = "PathAddPath";
     }
-    ~PathAddPath() = default;
+    ~PathAddPath() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 2348 ms 100次
@@ -223,7 +223,7 @@ public:
     {
         fileName_ = "PathAddPathWithMode";
     }
-    ~PathAddPathWithMode() = default;
+    ~PathAddPathWithMode() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 2133 ms 100次
@@ -236,7 +236,7 @@ public:
     {
         fileName_ = "PathAddPathWithOffsetAndMode";
     }
-    ~PathAddPathWithOffsetAndMode() = default;
+    ~PathAddPathWithOffsetAndMode() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override; // 3547 ms 100次
@@ -246,7 +246,7 @@ protected:
 class PathEffectCreateDashPathEffect : public TestBase {
 public:
     explicit PathEffectCreateDashPathEffect(int type) : TestBase(type) {};
-    ~PathEffectCreateDashPathEffect() = default;
+    ~PathEffectCreateDashPathEffect() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -257,7 +257,7 @@ protected:
 class PathCreate : public TestBase {
 public:
     explicit PathCreate(int type) : TestBase(type) {};
-    ~PathCreate() = default;
+    ~PathCreate() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -268,7 +268,7 @@ protected:
 class PathLineTo : public TestBase {
 public:
     explicit PathLineTo(int type) : TestBase(type) {};
-    ~PathLineTo() = default;
+    ~PathLineTo() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -279,7 +279,7 @@ protected:
 class PathArcTo : public TestBase {
 public:
     explicit PathArcTo(int type) : TestBase(type) {};
-    ~PathArcTo() = default;
+    ~PathArcTo() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -290,7 +290,7 @@ protected:
 class PathQuadTo : public TestBase {
 public:
     explicit PathQuadTo(int type) : TestBase(type) {};
-    ~PathQuadTo() = default;
+    ~PathQuadTo() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -301,7 +301,7 @@ protected:
 class PathCopy : public TestBase {
 public:
     explicit PathCopy(int type) : TestBase(type) {};
-    ~PathCopy() = default;
+    ~PathCopy() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -312,7 +312,7 @@ protected:
 class PathConicTo : public TestBase {
 public:
     explicit PathConicTo(int type) : TestBase(type) {};
-    ~PathConicTo() = default;
+    ~PathConicTo() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -323,7 +323,7 @@ protected:
 class PathAddPathWithMatrixAndMode : public TestBase {
 public:
     explicit PathAddPathWithMatrixAndMode(int type) : TestBase(type) {};
-    ~PathAddPathWithMatrixAndMode() = default;
+    ~PathAddPathWithMatrixAndMode() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -333,7 +333,7 @@ protected:
 class PathAddOvalWithInitialPoint : public TestBase {
 public:
     explicit PathAddOvalWithInitialPoint(int type) : TestBase(type) {};
-    ~PathAddOvalWithInitialPoint() = default;
+    ~PathAddOvalWithInitialPoint() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -347,7 +347,7 @@ private:
 class PathAddArc : public TestBase {
 public:
     explicit PathAddArc(int type) : TestBase(type) {};
-    ~PathAddArc() = default;
+    ~PathAddArc() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -360,7 +360,7 @@ private:
 class PathTransform : public TestBase {
 public:
     explicit PathTransform(int type) : TestBase(type) {};
-    ~PathTransform() = default;
+    ~PathTransform() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -369,7 +369,7 @@ protected:
 class PathAddOval : public TestBase {
 public:
     explicit PathAddOval(int type) : TestBase(type) {};
-    ~PathAddOval() = default;
+    ~PathAddOval() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -378,7 +378,7 @@ protected:
 class PathContains : public TestBase {
 public:
     explicit PathContains(int type) : TestBase(type) {};
-    ~PathContains() = default;
+    ~PathContains() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;

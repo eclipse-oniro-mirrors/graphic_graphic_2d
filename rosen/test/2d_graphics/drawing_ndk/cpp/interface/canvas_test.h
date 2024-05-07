@@ -25,7 +25,7 @@
 class CanvasDrawRect : public TestBase {
 public:
     explicit CanvasDrawRect(int type) : TestBase(type) {};
-    ~CanvasDrawRect() = default;
+    ~CanvasDrawRect() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -36,7 +36,7 @@ protected:
 class CanvasDrawImageRect : public TestBase {
 public:
     explicit CanvasDrawImageRect(int type) : TestBase(type) {};
-    ~CanvasDrawImageRect() = default;
+    ~CanvasDrawImageRect() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -50,7 +50,7 @@ protected:
 class CanvasRotate : public TestBase {
 public:
     explicit CanvasRotate(int type) : TestBase(type) {};
-    ~CanvasRotate() = default;
+    ~CanvasRotate() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -62,7 +62,7 @@ protected:
 class CanvasTranslate : public TestBase {
 public:
     explicit CanvasTranslate(int type) : TestBase(type) {};
-    ~CanvasTranslate() = default;
+    ~CanvasTranslate() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -74,7 +74,7 @@ protected:
 class CanvasScale : public TestBase {
 public:
     explicit CanvasScale(int type) : TestBase(type) {};
-    ~CanvasScale() = default;
+    ~CanvasScale() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -85,7 +85,7 @@ protected:
 class CanvasConcatMatrix : public TestBase {
 public:
     explicit CanvasConcatMatrix(int type) : TestBase(type) {};
-    ~CanvasConcatMatrix() = default;
+    ~CanvasConcatMatrix() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -97,7 +97,7 @@ protected:
 class CanvasClear : public TestBase {
 public:
     explicit CanvasClear(int type) : TestBase(type) {};
-    ~CanvasClear() = default;
+    ~CanvasClear() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -109,7 +109,7 @@ protected:
 class CanvasSetMatrix : public TestBase {
 public:
     explicit CanvasSetMatrix(int type) : TestBase(type) {};
-    ~CanvasSetMatrix() = default;
+    ~CanvasSetMatrix() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -120,7 +120,7 @@ protected:
 class CanvasResetMatrix : public TestBase {
 public:
     explicit CanvasResetMatrix(int type) : TestBase(type) {};
-    ~CanvasResetMatrix() = default;
+    ~CanvasResetMatrix() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -131,7 +131,7 @@ protected:
 class CanvasDrawImageRectWithSrc : public TestBase {
 public:
     explicit CanvasDrawImageRectWithSrc(int type) : TestBase(type) {};
-    ~CanvasDrawImageRectWithSrc() = default;
+    ~CanvasDrawImageRectWithSrc() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -143,7 +143,7 @@ protected:
 class CanvasReadPixels : public TestBase {
 public:
     explicit CanvasReadPixels(int type) : TestBase(type) {};
-    ~CanvasReadPixels() = default;
+    ~CanvasReadPixels() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -154,7 +154,7 @@ protected:
 class CanvasReadPixelsToBitmap : public TestBase {
 public:
     explicit CanvasReadPixelsToBitmap(int type) : TestBase(type) {};
-    ~CanvasReadPixelsToBitmap() = default;
+    ~CanvasReadPixelsToBitmap() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -165,7 +165,7 @@ protected:
 class CanvasDrawShadow : public TestBase {
 public:
     explicit CanvasDrawShadow(int type) : TestBase(type) {};
-    ~CanvasDrawShadow() = default;
+    ~CanvasDrawShadow() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -176,7 +176,7 @@ protected:
 class CanvasSkew : public TestBase {
 public:
     explicit CanvasSkew(int type) : TestBase(type) {};
-    ~CanvasSkew() = default;
+    ~CanvasSkew() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -187,7 +187,7 @@ protected:
 class CanvasDrawVertices : public TestBase {
 public:
     explicit CanvasDrawVertices(int type) : TestBase(type) {};
-    ~CanvasDrawVertices() = default;
+    ~CanvasDrawVertices() override {};
 
 protected:
     int rectWidth_ = 0;  // 0 矩形宽度
@@ -198,7 +198,7 @@ protected:
 class CanvasDrawPath : public TestBase {
 public:
     explicit CanvasDrawPath(int type) : TestBase(type) {};
-    ~CanvasDrawPath() = default;
+    ~CanvasDrawPath() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -207,7 +207,7 @@ protected:
 class CanvasRestoreToCount : public TestBase {
 public:
     explicit CanvasRestoreToCount(int type) : TestBase(type) {};
-    ~CanvasRestoreToCount() = default;
+    ~CanvasRestoreToCount() override {};
 
 protected:
     uint32_t fSave_Count = 0; // 0 保存的数量
@@ -217,9 +217,9 @@ protected:
 class CanvasDrawPoints : public TestBase {
 public:
     explicit CanvasDrawPoints(int type) : TestBase(type) {};
-    ~CanvasDrawPoints() = default;
+    ~CanvasDrawPoints() override {};
 
-protected:
+  protected:
     const int n = 10; // 10 可以同时存储的点的数量
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
 };
@@ -227,7 +227,7 @@ protected:
 class CanvasDrawLine : public TestBase {
 public:
     explicit CanvasDrawLine(int type) : TestBase(type) {};
-    ~CanvasDrawLine() = default;
+    ~CanvasDrawLine() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -236,7 +236,7 @@ protected:
 class CanvasDrawLayer : public TestBase {
 public:
     explicit CanvasDrawLayer(int type) : TestBase(type) {};
-    ~CanvasDrawLayer() = default;
+    ~CanvasDrawLayer() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -245,7 +245,7 @@ protected:
 class CanvasDrawBitmap : public TestBase {
 public:
     explicit CanvasDrawBitmap(int type) : TestBase(type) {};
-    ~CanvasDrawBitmap() = default;
+    ~CanvasDrawBitmap() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -254,7 +254,7 @@ protected:
 class CanvasDrawBackground : public TestBase {
 public:
     explicit CanvasDrawBackground(int type) : TestBase(type) {};
-    ~CanvasDrawBackground() = default;
+    ~CanvasDrawBackground() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -263,7 +263,7 @@ protected:
 class CanvasDrawRegion : public TestBase {
 public:
     explicit CanvasDrawRegion(int type) : TestBase(type) {};
-    ~CanvasDrawRegion() = default;
+    ~CanvasDrawRegion() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -272,7 +272,7 @@ protected:
 class CanvasDrawPixelMapRect : public TestBase {
 public:
     explicit CanvasDrawPixelMapRect(int type) : TestBase(type) {};
-    ~CanvasDrawPixelMapRect() = default;
+    ~CanvasDrawPixelMapRect() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -281,7 +281,7 @@ protected:
 class CanvasSave : public TestBase {
 public:
     explicit CanvasSave(int type) : TestBase(type) {};
-    ~CanvasSave() = default;
+    ~CanvasSave() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -293,7 +293,7 @@ public:
     {
         fileName_ = "CanvasDrawBitmapRect";
     };
-    ~CanvasDrawBitmapRect() = default;
+    ~CanvasDrawBitmapRect() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -305,7 +305,7 @@ public:
     {
         fileName_ = "CanvasDrawCircle";
     };
-    ~CanvasDrawCircle() = default;
+    ~CanvasDrawCircle() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -317,7 +317,7 @@ public:
     {
         fileName_ = "CanvasDrawOval";
     };
-    ~CanvasDrawOval() = default;
+    ~CanvasDrawOval() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -329,7 +329,7 @@ public:
     {
         fileName_ = "CanvasDrawArc";
     };
-    ~CanvasDrawArc() = default;
+    ~CanvasDrawArc() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -341,7 +341,7 @@ public:
     {
         fileName_ = "CanvasDrawRoundRect";
     };
-    ~CanvasDrawRoundRect() = default;
+    ~CanvasDrawRoundRect() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -353,7 +353,7 @@ public:
     {
         fileName_ = "CanvasDrawTextBlob";
     };
-    ~CanvasDrawTextBlob() = default;
+    ~CanvasDrawTextBlob() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -365,7 +365,7 @@ public:
     {
         fileName_ = "CanvasClipRect";
     };
-    ~CanvasClipRect() = default;
+    ~CanvasClipRect() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -377,7 +377,7 @@ public:
     {
         fileName_ = "CanvasClipRoundRect";
     };
-    ~CanvasClipRoundRect() = default;
+    ~CanvasClipRoundRect() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
@@ -389,7 +389,7 @@ public:
     {
         fileName_ = "CanvasClipPath";
     };
-    ~CanvasClipPath() = default;
+    ~CanvasClipPath() override {};
 
 protected:
     void OnTestPerformance(OH_Drawing_Canvas* canvas) override;
