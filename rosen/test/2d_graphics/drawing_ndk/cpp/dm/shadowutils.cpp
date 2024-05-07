@@ -207,14 +207,12 @@ void draw_rect_path_shadow(OH_Drawing_Canvas* canvas, DRAW_RECT_PARAM& param, fl
     float kHeight = param.kHeight;
     float kLightR = param.kLightR;
     float kPad = param.kPad;
-
     OH_Drawing_CanvasShadowFlags flags = param.flags;
     OH_Drawing_Matrix* m = param.m;
     int pathCounter = 0;
     for (const auto path : param.paths) {
         DrawRect pathBound = param.pathsBounds[pathCounter];
         float dx = pathBound.Width() + kHeight + kPad;
-
         if (x + dx > K_W - 3 * kPad) { // 3倍间距
             OH_Drawing_CanvasRestore(canvas);
             OH_Drawing_CanvasTranslate(canvas, 0, dy);
@@ -235,9 +233,7 @@ void draw_rect_path_shadow(OH_Drawing_Canvas* canvas, DRAW_RECT_PARAM& param, fl
             OH_Drawing_CanvasDrawShadow(
                 canvas, path, { 0, 0, kHeight }, lightPos, kLightR, AMBIENT_COLOR, SPOT_COLOR, flags);
         }
-
         draw_rect_path(canvas, path, mode, flags);
-
         if (SHADOW_FLAGS_TRANSPARENT_OCCLUDER == flags && 0 == pathCounter % 3) { // 3个图形换行
             OH_Drawing_CanvasRestore(canvas);
         }
