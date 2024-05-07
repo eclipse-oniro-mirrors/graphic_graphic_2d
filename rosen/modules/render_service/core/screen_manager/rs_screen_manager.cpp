@@ -278,7 +278,7 @@ void RSScreenManager::ForceRefreshOneFrameIfNoRNV()
         mainThread->PostTask([mainThread]() {
             mainThread->SetDirtyFlag();
         });
-        mainThread->ForceRefreshForUni();
+        mainThread->RequestNextVSync();
     }
 }
 
@@ -391,6 +391,17 @@ void RSScreenManager::CleanAndReinit()
             }
         });
     }
+}
+
+bool RSScreenManager::TrySimpleProcessHotPlugEvents()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (pendingHotPlugEvents_.empty() && connectedIds_.empty()) {
+        isHwcDead_ = false;
+        mipiCheckInFirstHotPlugEvent_ = true;
+        return true;
+    }
+    return false;
 }
 
 void RSScreenManager::ProcessScreenHotPlugEvents()
@@ -818,7 +829,7 @@ ScreenId RSScreenManager::CreateVirtualScreen(
 int32_t RSScreenManager::SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (screens_.find(id) == screens_.end()) {
+    if (screens_.find(id) == screens_.end() || surface == nullptr) {
         return SCREEN_NOT_FOUND;
     }
     uint64_t surfaceId = surface->GetUniqueId();
@@ -954,7 +965,7 @@ bool RSScreenManager::SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool can
     }
 
     RS_LOGD("RSScreenManager %{public}s: canvasRotation: %{public}d", __func__, canvasRotation);
-    
+
     return screens_.at(id)->SetVirtualMirrorScreenCanvasRotation(canvasRotation);
 }
 
@@ -968,7 +979,7 @@ bool RSScreenManager::SetVirtualMirrorScreenScaleMode(ScreenId id, ScreenScaleMo
     }
 
     RS_LOGD("RSScreenManager %{public}s: scaleMode: %{public}d", __func__, scaleMode);
-    
+
     return screens_.at(id)->SetVirtualMirrorScreenScaleMode(scaleMode);
 }
 
@@ -1106,7 +1117,7 @@ ScreenInfo RSScreenManager::QueryScreenInfo(ScreenId id) const
     } else if (!screen->IsVirtual()) {
         info.state = ScreenState::HDI_OUTPUT_ENABLE;
     } else {
-        info.state = ScreenState::PRODUCER_SURFACE_ENABLE;
+        info.state = ScreenState::SOFTWARE_OUTPUT_ENABLE;
     }
     info.skipFrameInterval = screen->GetScreenSkipFrameInterval();
     screen->GetPixelFormat(info.pixelFormat);
@@ -1241,6 +1252,21 @@ void RSScreenManager::ClearFpsDump(std::string& dumpString, std::string& arg)
         screen->ClearFpsDump(index, dumpString, arg);
         index++;
     }
+}
+
+void RSScreenManager::ClearFrameBufferIfNeed()
+{
+    RSHardwareThread::Instance().PostTask([this]() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        for (const auto& [id, screen] : screens_) {
+            if (!screen) {
+                continue;
+            }
+            if (screen->GetOutput()->GetBufferCacheSize() > 0) {
+                RSHardwareThread::Instance().ClearFrameBuffers(screen->GetOutput());
+            }
+        }
+    });
 }
 
 void RSScreenManager::HitchsDump(std::string& dumpString, std::string& arg)

@@ -128,6 +128,26 @@ public:
         watermarkImg_ = std::move(watermarkImg);
     }
 
+    void SetOcclusionEnabled(bool isOcclusionEnabled)
+    {
+        isOcclusionEnabled_ = isOcclusionEnabled;
+    }
+
+    bool IsOcclusionEnabled() const
+    {
+        return isOcclusionEnabled_;
+    }
+
+    void SetCurtainScreenUsingStatus(bool isCurtainScreenOn)
+    {
+        isCurtainScreenOn_ = isCurtainScreenOn;
+    }
+
+    bool IsCurtainScreenOn() const
+    {
+        return isCurtainScreenOn_;
+    }
+    
     void SetForceCommitLayer(bool forceCommit)
     {
         isForceCommitLayer_ = forceCommit;
@@ -217,6 +237,17 @@ public:
     {
         return context_.lock();
     }
+
+    void SetImplicitAnimationEnd(bool isImplicitAnimationEnd)
+    {
+        isImplicitAnimationEnd_ = isImplicitAnimationEnd;
+    }
+
+    bool GetImplicitAnimationEnd() const
+    {
+        return isImplicitAnimationEnd_;
+    }
+
 private:
     bool startVisit_ = false;
     bool hasCaptureImg_ = false;
@@ -234,6 +265,7 @@ private:
     bool isOpaqueRegionDfxEnabled_ = false;
     bool isVisibleRegionDfxEnabled_ = false;
     bool isOpDropped_ = false;
+    bool isOcclusionEnabled_ = false;
     bool isUIFirstDebugEnable_ = false;
     DirtyRegionDebugType dirtyRegionDebugType_ = DirtyRegionDebugType::DISABLED;
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> selfDrawingNodes_;
@@ -250,6 +282,9 @@ private:
     int64_t onVsyncStartTimeSteady_ = TIMESTAMP_INITIAL;
     bool isUniRenderAndOnVsync_ = false;
     std::weak_ptr<RSContext> context_;
+    bool isCurtainScreenOn_ = false;
+
+    bool isImplicitAnimationEnd_ = false;
 
     friend class RSMainThread;
     friend class RSUniRenderVisitor;

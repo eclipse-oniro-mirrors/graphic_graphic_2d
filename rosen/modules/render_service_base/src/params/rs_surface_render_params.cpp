@@ -33,16 +33,6 @@ bool RSSurfaceRenderParams::GetOcclusionVisible() const
     return occlusionVisible_;
 }
 
-void RSSurfaceRenderParams::SetIsTransparent(bool isTransparent)
-{
-    isTransparent_ = isTransparent;
-}
-
-bool RSSurfaceRenderParams::GetIsTransparent() const
-{
-    return isTransparent_;
-}
-
 void RSSurfaceRenderParams::SetOldDirtyInSurface(const RectI& oldDirtyInSurface)
 {
     oldDirtyInSurface_ = oldDirtyInSurface;
@@ -51,6 +41,26 @@ void RSSurfaceRenderParams::SetOldDirtyInSurface(const RectI& oldDirtyInSurface)
 RectI RSSurfaceRenderParams::GetOldDirtyInSurface() const
 {
     return oldDirtyInSurface_;
+}
+
+void RSSurfaceRenderParams::SetIsParentScaling(bool isParentScaling)
+{
+    isParentScaling_ = isParentScaling;
+}
+
+bool RSSurfaceRenderParams::IsParentScaling() const
+{
+    return isParentScaling_;
+}
+
+void RSSurfaceRenderParams::SetTransparentRegion(const Occlusion::Region& transparentRegion)
+{
+    transparentRegion_ = transparentRegion;
+}
+
+const Occlusion::Region& RSSurfaceRenderParams::GetTransparentRegion() const
+{
+    return transparentRegion_;
 }
 
 Occlusion::Region RSSurfaceRenderParams::GetVisibleRegion() const
@@ -211,19 +221,21 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     }
 
     targetSurfaceParams->isMainWindowType_ = isMainWindowType_;
+    targetSurfaceParams->isLeashWindow_ = isLeashWindow_;
     targetSurfaceParams->rsSurfaceNodeType_ = rsSurfaceNodeType_;
     targetSurfaceParams->selfDrawingType_ = selfDrawingType_;
     targetSurfaceParams->ancestorDisplayNode_ = ancestorDisplayNode_;
     targetSurfaceParams->alpha_ = alpha_;
     targetSurfaceParams->isSpherizeValid_ = isSpherizeValid_;
+    targetSurfaceParams->isParentScaling_ = isParentScaling_;
     targetSurfaceParams->needBilinearInterpolation_ = needBilinearInterpolation_;
     targetSurfaceParams->backgroundColor_ = backgroundColor_;
     targetSurfaceParams->absDrawRect_ = absDrawRect_;
     targetSurfaceParams->rrect_ = rrect_;
     targetSurfaceParams->occlusionVisible_ = occlusionVisible_;
     targetSurfaceParams->visibleRegion_ = visibleRegion_;
-    targetSurfaceParams->isTransparent_ = isTransparent_;
     targetSurfaceParams->oldDirtyInSurface_ = oldDirtyInSurface_;
+    targetSurfaceParams->transparentRegion_ = transparentRegion_;
     targetSurfaceParams->isHardwareEnabled_ = isHardwareEnabled_;
     targetSurfaceParams->isLastFrameHardwareEnabled_ = isLastFrameHardwareEnabled_;
     targetSurfaceParams->uiFirstFlag_ = uiFirstFlag_;

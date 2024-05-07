@@ -389,10 +389,8 @@ private:
 
     void SwitchColorFilterDrawing(int currentSaveCount);
     void ProcessShadowFirst(RSRenderNode& node, bool inSubThread);
-    void SaveCurSurface(std::shared_ptr<RSDirtyRegionManager> dirtyManager,
-        std::shared_ptr<RSSurfaceRenderNode> surfaceNode);
-    void RestoreCurSurface(std::shared_ptr<RSDirtyRegionManager> &dirtyManager,
-        std::shared_ptr<RSSurfaceRenderNode> &surfaceNode);
+    void SaveCurSurface();
+    void RestoreCurSurface();
     void PrepareSubSurfaceNodes(RSSurfaceRenderNode& node);
     void ProcessSubSurfaceNodes(RSSurfaceRenderNode& node);
 
@@ -408,6 +406,7 @@ private:
     }
     void UpdateRotationStatusForEffectNode(RSEffectRenderNode& node);
     void CheckFilterNodeInSkippedSubTreeNeedClearCache(const RSRenderNode& node, RSDirtyRegionManager& dirtyManager);
+    void UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& node);
 
     std::shared_ptr<Drawing::Surface> offscreenSurface_;                 // temporary holds offscreen surface
     std::shared_ptr<RSPaintFilterCanvas> canvasBackup_; // backup current canvas before offscreen render
@@ -452,6 +451,7 @@ private:
     bool isSecurityDisplay_ = false;
 
     bool hasFingerprint_ = false;
+    bool hasHdrpresent_ = false;
     bool mirrorAutoRotate_ = false;
 
     std::shared_ptr<RSBaseRenderEngine> renderEngine_;
@@ -472,6 +472,7 @@ private:
     bool isOcclusionEnabled_ = false;
     bool isSkipCanvasNodeOutOfScreen_ = false;
     bool isScreenRotationAnimating_ = false;
+    bool displayNodeRotationChanged_ = false;
     std::vector<std::string> dfxTargetSurfaceNames_;
     PartialRenderType partialRenderType_;
     QuickSkipPrepareType quickSkipPrepareType_;
@@ -563,6 +564,8 @@ private:
     bool curContentDirty_ = false;
     bool isPhone_ = false;
     bool isPc_ = false;
+    bool isOverdrawDfxOn_ = false;
+    bool aceDebugBoundaryEnabled_ = false;
     bool isCacheBlurPartialRenderEnabled_ = false;
     bool drawCacheWithBlur_ = false;
     bool notRunCheckAndSetNodeCacheType_ = false;

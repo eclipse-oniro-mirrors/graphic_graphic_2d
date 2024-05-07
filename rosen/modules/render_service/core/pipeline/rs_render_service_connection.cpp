@@ -19,6 +19,7 @@
 #include "hgm_command.h"
 #include "hgm_core.h"
 #include "hgm_frame_rate_manager.h"
+#include "luminance/rs_luminance_control.h"
 #include "offscreen_render/rs_offscreen_render_thread.h"
 #include "rs_main_thread.h"
 #include "rs_profiler.h"
@@ -37,6 +38,7 @@
 #include "pipeline/rs_surface_capture_task_parallel.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_task_dispatcher.h"
+#include "pipeline/rs_uifirst_manager.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "pipeline/rs_uni_ui_capture.h"
 #include "pixel_map_from_surface.h"
@@ -780,6 +782,11 @@ int32_t RSRenderServiceConnection::GetScreenBacklight(ScreenId id)
 
 void RSRenderServiceConnection::SetScreenBacklight(ScreenId id, uint32_t level)
 {
+    RSLuminanceControl::Get().SetSdrLuminance(id, level);
+    if (RSLuminanceControl::Get().IsHdrOn(id) && level > 0) {
+        return;
+    }
+
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
         RSHardwareThread::Instance().ScheduleTask(
@@ -1250,9 +1257,13 @@ void RSRenderServiceConnection::NotifyRefreshRateEvent(const EventInfo& eventInf
     mainThread_->GetFrameRateMgr()->HandleRefreshRateEvent(remotePid_, eventInfo);
 }
 
-void RSRenderServiceConnection::NotifyTouchEvent(int32_t touchStatus)
+void RSRenderServiceConnection::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
 {
-    mainThread_->GetFrameRateMgr()->HandleTouchEvent(touchStatus);
+    if (mainThread_->GetFrameRateMgr() == nullptr) {
+        RS_LOGW("RSRenderServiceConnection::NotifyTouchEvent: frameRateMgr is nullptr.");
+        return;
+    }
+    mainThread_->GetFrameRateMgr()->HandleTouchEvent(touchStatus, touchCnt);
 }
 
 void RSRenderServiceConnection::ReportEventResponse(DataBaseRs info)
@@ -1261,6 +1272,7 @@ void RSRenderServiceConnection::ReportEventResponse(DataBaseRs info)
         RSJankStats::GetInstance().SetReportEventResponse(info);
     };
     renderThread_.PostTask(task);
+    RSUifirstManager::Instance().OnProcessEventResponse(info);
 }
 
 void RSRenderServiceConnection::ReportEventComplete(DataBaseRs info)
@@ -1269,6 +1281,7 @@ void RSRenderServiceConnection::ReportEventComplete(DataBaseRs info)
         RSJankStats::GetInstance().SetReportEventComplete(info);
     };
     renderThread_.PostTask(task);
+    RSUifirstManager::Instance().OnProcessEventComplete(info);
 }
 
 void RSRenderServiceConnection::ReportEventJankFrame(DataBaseRs info)

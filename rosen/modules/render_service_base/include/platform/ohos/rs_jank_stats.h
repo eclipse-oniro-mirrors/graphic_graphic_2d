@@ -35,6 +35,7 @@ constexpr int32_t TRACE_ID_INITIAL = -1;
 
 struct JankFrames {
     bool isSetReportEventResponse_ = false;
+    bool isSetReportEventResponseTemp_ = false;
     bool isSetReportEventComplete_ = false;
     bool isSetReportEventJankFrame_ = false;
     bool isReportEventResponse_ = false;
@@ -42,9 +43,11 @@ struct JankFrames {
     bool isReportEventJankFrame_ = false;
     bool isUpdateJankFrame_ = false;
     bool isFirstFrame_ = false;
+    bool isFirstFrameTemp_ = false;
     bool isFrameRateRecorded_ = false;
     bool isAnimationEnded_ = false;
     bool isDisplayAnimator_ = false;
+    bool isImplicitAnimationEnd_ = false;
     int64_t setTimeSteady_ = TIMESTAMP_INITIAL;
     int64_t startTime_ = TIMESTAMP_INITIAL;
     int64_t startTimeSteady_ = TIMESTAMP_INITIAL;
@@ -115,6 +118,8 @@ public:
     void SetReportEventComplete(const DataBaseRs& info);
     void SetReportEventJankFrame(const DataBaseRs& info, bool isReportTaskDelayed);
     void SetAppFirstFrame(pid_t appPid);
+    void SetImplicitAnimationEnd(bool needReport);
+    void SetAccumulatedBufferCount(int accumulatedBufferCount);
 
 private:
     RSJankStats() = default;
@@ -181,6 +186,7 @@ private:
     std::map<int64_t, TraceIdRemainderStats> traceIdRemainder_;
     std::map<std::pair<int64_t, std::string>, JankFrames> animateJankFrames_;
     std::mutex mutex_;
+    std::atomic<int> accumulatedBufferCount_ = 0;
 
     enum JankRangeType : size_t {
         JANK_FRAME_6_FREQ = 0,

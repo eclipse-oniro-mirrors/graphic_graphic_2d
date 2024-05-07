@@ -57,7 +57,8 @@ public:
         NodeId id, const RSDisplayNodeConfig& config, const std::weak_ptr<RSContext>& context = {});
     ~RSDisplayRenderNode() override;
     void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID,
-        NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID) override;
+        NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID,
+        NodeId uifirstRootNodeId = INVALID_NODEID) override;
 
     void SetScreenId(uint64_t screenId)
     {
@@ -154,7 +155,7 @@ public:
     void SetIsMirrorDisplay(bool isMirror);
     void SetSecurityDisplay(bool isSecurityDisplay);
     bool GetSecurityDisplay() const;
-    bool SkipFrame(uint32_t skipFrameInterval);
+    bool SkipFrame(uint32_t skipFrameInterval) override;
     void SetBootAnimation(bool isBootAnimation) override;
     bool GetBootAnimation() const override;
     WeakPtr GetMirrorSource() const
@@ -257,6 +258,10 @@ public:
     {
         return curAllSurfaces_;
     }
+    std::vector<RSBaseRenderNode::SharedPtr>& GetCurAllSurfaces(bool onlyFirstLevel)
+    {
+        return onlyFirstLevel ? curAllFirstLevelSurfaces_ : curAllSurfaces_;
+    }
 
     void UpdateRenderParams() override;
     void UpdatePartialRenderParams();
@@ -316,9 +321,79 @@ public:
 
     void SetMainAndLeashSurfaceDirty(bool isDirty);
 
+    void SetHDRPresent(bool hdrPresent);
+
     std::map<NodeId, std::shared_ptr<RSSurfaceRenderNode>>& GetDirtySurfaceNodeMap()
     {
         return dirtySurfaceNodeMap_;
+    }
+
+    void ClearSurfaceSrcRect()
+    {
+        surfaceSrcRects_.clear();
+    }
+    
+    void ClearSurfaceDstRect()
+    {
+        surfaceDstRects_.clear();
+    }
+    
+    void ClearSurfaceTotalMatrix()
+    {
+        surfaceTotalMatrix_.clear();
+    }
+
+    void SetSurfaceSrcRect(NodeId id, RectI rect)
+    {
+        surfaceSrcRects_[id] = rect;
+    }
+
+    void SetSurfaceDstRect(NodeId id, RectI rect)
+    {
+        surfaceDstRects_[id] = rect;
+    }
+
+    void SetSurfaceTotalMatrix(NodeId id, const Drawing::Matrix& totalMatrix)
+    {
+        surfaceTotalMatrix_[id] = totalMatrix;
+    }
+
+    RectI GetSurfaceSrcRect(NodeId id) const
+    {
+        auto iter = surfaceSrcRects_.find(id);
+        if (iter == surfaceSrcRects_.cend()) {
+            return RectI();
+        }
+
+        return iter->second;
+    }
+
+    RectI GetSurfaceDstRect(NodeId id) const
+    {
+        auto iter = surfaceDstRects_.find(id);
+        if (iter == surfaceDstRects_.cend()) {
+            return RectI();
+        }
+
+        return iter->second;
+    }
+
+    Drawing::Matrix GetSurfaceTotalMatrix(NodeId id) const
+    {
+        auto iter = surfaceTotalMatrix_.find(id);
+        if (iter == surfaceTotalMatrix_.cend()) {
+            return Drawing::Matrix();
+        }
+
+        return iter->second;
+    }
+
+    const std::vector<NodeId>& GetLastSurfaceIds() const {
+        return lastSurfaceIds_;
+    }
+
+    void SetLastSurfaceIds(std::vector<NodeId> lastSurfaceIds) {
+        lastSurfaceIds_ = std::move(lastSurfaceIds);
     }
 
 protected:
@@ -361,6 +436,7 @@ private:
     std::shared_ptr<RSDirtyRegionManager> syncDirtyManager_ = nullptr;
 
     std::vector<RSBaseRenderNode::SharedPtr> curAllSurfaces_;
+    std::vector<RSBaseRenderNode::SharedPtr> curAllFirstLevelSurfaces_;
     std::mutex mtx_;
 
     // Use in screen recording optimization
@@ -373,6 +449,13 @@ private:
     bool isParallelDisplayNode_ = false;
 
     std::map<NodeId, std::shared_ptr<RSSurfaceRenderNode>> dirtySurfaceNodeMap_;
+    
+	// support multiscreen
+    std::map<NodeId, RectI> surfaceSrcRects_;
+    std::map<NodeId, RectI> surfaceDstRects_;
+    std::map<NodeId, Drawing::Matrix> surfaceTotalMatrix_;
+
+    std::vector<NodeId> lastSurfaceIds_;
 };
 } // namespace Rosen
 } // namespace OHOS

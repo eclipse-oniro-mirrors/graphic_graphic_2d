@@ -103,6 +103,7 @@ HWTEST_F(RSMaskTest, LifeCycle003, TestSize.Level1)
     ASSERT_TRUE(mask != nullptr);
 
     ASSERT_TRUE(mask->IsSvgMask());
+    ASSERT_TRUE(mask->GetSvgDom() == svgDom);
 }
 
 /**
@@ -226,6 +227,10 @@ HWTEST_F(RSMaskTest, LifeCycle008, TestSize.Level1)
      */
     Drawing::Path path2;
     mask->SetMaskPath(path2);
+    auto path3 = mask->GetMaskPath();
+    ASSERT_TRUE(path2.GetBounds() == path3->GetBounds());
+
+    ASSERT_TRUE(!mask->GetSvgPicture());
 }
 
 /**
@@ -248,6 +253,23 @@ HWTEST_F(RSMaskTest, LifeCycle009, TestSize.Level1)
     Drawing::Brush brush2;
     mask->SetMaskBrush(brush2);
     ASSERT_TRUE(mask->GetMaskBrush() == brush2);
+}
+
+/**
+ * @tc.name: LifeCycle010
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSMaskTest, LifeCycle010, TestSize.Level1)
+{
+    /**
+     * @tc.steps: step1. create RSMask by Path
+     */
+    Drawing::Brush brush;
+    Drawing::Pen pen;
+    Drawing::Path path;
+    std::shared_ptr<RSMask> mask = RSMask::CreatePathMask(path, pen, brush);
+    ASSERT_TRUE(mask != nullptr);
 }
 
 /**
@@ -366,6 +388,7 @@ HWTEST_F(RSMaskTest, CreatePixelMapMask001, TestSize.Level1)
     ASSERT_TRUE(mask != nullptr);
     mask->SetPixelMap(pixelmap);
     ASSERT_TRUE(mask->GetImage() == nullptr);
+    EXPECT_EQ(mask->GetPixelMap(), nullptr);
     ASSERT_TRUE(mask->IsPixelMapMask());
 }
 
@@ -383,5 +406,18 @@ HWTEST_F(RSMaskTest, CreatePixelMapMask002, TestSize.Level1)
     std::shared_ptr<RSMask> mask = RSMask::CreateGradientMask(brush);
     ASSERT_TRUE(mask != nullptr);
     ASSERT_TRUE(mask->IsPixelMapMask() == false);
+}
+
+/**
+ * @tc.name: GetPixelMapTest
+ * @tc.desc: Verify function GetPixelMap
+ * @tc.type:FUNC
+ * @tc.require: issuesI9MO9U
+ */
+HWTEST_F(RSMaskTest, GetPixelMapTest, TestSize.Level1)
+{
+    Drawing::Brush brush;
+    std::shared_ptr<RSMask> mask = RSMask::CreateGradientMask(brush);
+    ASSERT_EQ(mask->GetPixelMap(), nullptr);
 }
 } // namespace OHOS::Rosen

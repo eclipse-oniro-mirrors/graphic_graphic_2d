@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "common/rs_thread_handler.h"
 #include "common/rs_thread_looper.h"
@@ -33,6 +34,7 @@ namespace OHOS {
 namespace Rosen {
 class RSUniRenderThread {
 public:
+    using Callback = std::function<void()>;
     static RSUniRenderThread& Instance();
 
     // disable copy and move
@@ -48,6 +50,8 @@ public:
     void PostTask(const std::function<void()>& task);
     void RemoveTask(const std::string& name);
     void PostRTTask(const std::function<void()>& task);
+    void PostImageReleaseTask(const std::function<void()>& task);
+    void RunImageReleaseTask();
     void PostTask(RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime,
         AppExecFwk::EventQueue::Priority priority = AppExecFwk::EventQueue::Priority::HIGH);
     void PostSyncTask(const std::function<void()>& task);
@@ -72,6 +76,8 @@ public:
     std::shared_ptr<Drawing::Image> GetWatermarkImg();
     bool GetWatermarkFlag();
     
+    bool IsCurtainScreenOn() const;
+
     static void SetCaptureParam(const CaptureParam& param);
     static CaptureParam& GetCaptureParam();
     static void ResetCaptureParam();
@@ -121,6 +127,8 @@ public:
         return tid_;
     }
 
+    void SetAcquireFence(sptr<SyncFence> acquireFence);
+
 private:
     RSUniRenderThread();
     ~RSUniRenderThread() noexcept;
@@ -144,8 +152,6 @@ private:
     // used for stalling renderThread before displayNode has no freed buffer to request
     std::condition_variable displayNodeBufferReleasedCond_;
 
-    // Those variable is used to manage memory.
-    bool clearMemoryFinished_ = true;
     bool clearMemDeeply_ = false;
     DeviceType deviceType_ = DeviceType::PHONE;
     std::mutex mutex_;
@@ -161,6 +167,13 @@ private:
     ScreenId displayNodeScreenId_ = 0;
     std::set<pid_t> exitedPidSet_;
     ClearMemoryMoment clearMoment_;
+
+    std::vector<Callback> imageReleaseTasks_;
+    std::mutex imageReleaseMutex_;
+    bool postImageReleaseTaskFlag_;
+    int imageReleaseCount_ = 0;
+
+    sptr<SyncFence> acquireFence_ = SyncFence::INVALID_FENCE;
 };
 } // namespace Rosen
 } // namespace OHOS

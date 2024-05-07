@@ -62,6 +62,11 @@ bool RSSystemProperties::GetRenderNodeTraceEnabled()
     return {};
 }
 
+bool RSSystemProperties::GetAnimationTraceEnabled()
+{
+    return {};
+}
+
 bool RSSystemProperties::GetDrawOpTraceEnabled()
 {
     return false;
@@ -334,6 +339,16 @@ bool RSSystemProperties::GetSingleFrameComposerCanvasNodeEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetDrawFilterWithoutSnapshotEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetBlurExtraFilterEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetSubSurfaceEnabled()
 {
     return false;
@@ -358,7 +373,7 @@ bool RSSystemProperties::GetDumpUIPixelmapEnabled()
     return false;
 }
 
-uint32_t RSSystemProperties::GetVirtualScreenScaleModeDFX()
+int RSSystemProperties::GetVirtualScreenScaleModeDFX()
 {
     return {};
 }
@@ -379,6 +394,11 @@ bool RSSystemProperties::GetRenderParallelEnabled()
 }
 
 bool RSSystemProperties::GetUIFirstForceEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetAceDebugBoundaryEnabled()
 {
     return false;
 }

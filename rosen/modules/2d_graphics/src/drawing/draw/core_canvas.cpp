@@ -47,6 +47,11 @@ RectI CoreCanvas::GetDeviceClipBounds() const
     return impl_->GetDeviceClipBounds();
 }
 
+RectI CoreCanvas::GetRoundInDeviceClipBounds() const
+{
+    return impl_->GetRoundInDeviceClipBounds();
+}
+
 #ifdef ACE_ENABLE_GPU
 std::shared_ptr<GPUContext> CoreCanvas::GetGPUContext()
 {
@@ -226,6 +231,12 @@ std::shared_ptr<Drawing::OpListHandle> CoreCanvas::OpCalculateAfter(const Rect& 
     return impl_->OpCalculateAfter(bound);
 }
 // opinc_end
+
+void CoreCanvas::DrawAtlas(const Image* atlas, const RSXform xform[], const Rect tex[], const ColorQuad colors[],
+    int count, BlendMode mode, const SamplingOptions& sampling, const Rect* cullRect)
+{
+    impl_->DrawAtlas(atlas, xform, tex, colors, count, mode, sampling, cullRect);
+}
 
 void CoreCanvas::DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py)
 {

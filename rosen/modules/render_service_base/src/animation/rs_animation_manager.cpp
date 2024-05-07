@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <string>
 
+#include "animation/rs_animation_trace_utils.h"
 #include "animation/rs_render_animation.h"
 #include "command/rs_animation_command.h"
 #include "command/rs_message_processor.h"
@@ -111,6 +112,9 @@ void RSAnimationManager::FilterAnimationByPid(pid_t pid)
     // remove all animations belong to given pid (by matching higher 32 bits of animation id)
     EraseIf(animations_, [pid, this](const auto& pair) -> bool {
         if (ExtractPid(pair.first) != pid) {
+            return false;
+        }
+        if (!pair.second) {
             return false;
         }
         pair.second->Finish();
@@ -212,6 +216,7 @@ void RSAnimationManager::OnAnimationFinished(const std::shared_ptr<RSRenderAnima
     NodeId targetId = animation->GetTargetId();
     AnimationId animationId = animation->GetAnimationId();
 
+    RSAnimationTraceUtils::GetInstance().addAnimationFinishTrace(targetId, animationId);
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSAnimationCallback>(targetId, animationId, FINISHED);
     RSMessageProcessor::Instance().AddUIMessage(ExtractPid(animationId), std::move(command));
@@ -280,7 +285,7 @@ const std::unordered_map<PropertyId, AnimationId>& RSAnimationManager::GetPartic
     return particleAnimations_;
 }
 
-const std::shared_ptr<RSRenderAnimation>& RSAnimationManager::GetParticleAnimation()
+std::shared_ptr<RSRenderAnimation> RSAnimationManager::GetParticleAnimation()
 {
     if (particleAnimations_.empty()) {
         return nullptr;

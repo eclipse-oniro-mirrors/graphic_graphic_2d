@@ -17,6 +17,7 @@
 #define RENDER_SERVICE_CORE_PIPELINE_RS_BASE_RENDER_UTIL_H
 
 #include <vector>
+#include <atomic>
 #include "image/bitmap.h"
 #include "utils/matrix.h"
 #include "utils/rect.h"
@@ -24,6 +25,7 @@
 
 #include "screen_manager/rs_screen_manager.h"
 #include "pipeline/rs_paint_filter_canvas.h"
+#include "pipeline/rs_surface_handler.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_composer_adapter.h"
 #include "pixel_map.h"
@@ -99,10 +101,13 @@ public:
     static Drawing::Matrix GetSurfaceTransformMatrix(GraphicTransformType rotationTransform, const RectF& bounds);
     static Drawing::Matrix GetGravityMatrix(Gravity gravity, const sptr<SurfaceBuffer>& buffer, const RectF& bounds);
     static void SetPropertiesForCanvas(RSPaintFilterCanvas& canvas, const BufferDrawParam& params);
+    static Drawing::ColorType GetColorTypeFromBufferFormat(int32_t pixelFmt);
+    static Drawing::BitmapFormat GenerateDrawingBitmapFormat(const sptr<OHOS::SurfaceBuffer>& buffer);
 
     static GSError DropFrameProcess(RSSurfaceHandler& node);
     static Rect MergeBufferDamages(const std::vector<Rect>& damages);
-    static bool ConsumeAndUpdateBuffer(RSSurfaceHandler& surfaceHandler);
+    static bool ConsumeAndUpdateBuffer(
+        RSSurfaceHandler& surfaceHandler, bool isDisplaySurface, uint64_t vsyncTimestamp = 0);
     static bool ReleaseBuffer(RSSurfaceHandler& surfaceHandler);
 
     static std::unique_ptr<RSTransactionData> ParseTransactionData(MessageParcel& parcel);
@@ -141,6 +146,9 @@ public:
     static bool WriteCacheImageRenderNodeToPng(std::shared_ptr<Drawing::Surface> surface, std::string debugInfo);
     static bool WriteCacheImageRenderNodeToPng(std::shared_ptr<Drawing::Image> image, std::string debugInfo);
 
+    static int GetAccumulatedBufferCount();
+    static void IncAcquiredBufferCount();
+    static void DecAcquiredBufferCount();
 private:
     static bool CreateYuvToRGBABitMap(sptr<OHOS::SurfaceBuffer> buffer, std::vector<uint8_t>& newBuffer,
         Drawing::Bitmap& bitmap);
@@ -151,6 +159,8 @@ private:
     static bool WriteToPng(const std::string &filename, const WriteToPngParam &param);
 
     static bool enableClient;
+
+    static inline std::atomic<int> acquiredBufferCount_ = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

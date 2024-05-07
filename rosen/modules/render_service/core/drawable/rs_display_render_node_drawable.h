@@ -31,16 +31,19 @@ namespace OHOS::Rosen {
 namespace DrawableV2 {
 class RSDisplayRenderNodeDrawable : public RSRenderNodeDrawable {
 public:
-    explicit RSDisplayRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
     ~RSDisplayRenderNodeDrawable() override = default;
 
     static RSRenderNodeDrawable::Ptr OnGenerate(std::shared_ptr<const RSRenderNode> node);
     void OnDraw(Drawing::Canvas& canvas) override;
     void OnCapture(Drawing::Canvas& canvas) override;
+    void DrawHardwareEnabledNodes(Drawing::Canvas& canvas,
+        std::shared_ptr<RSDisplayRenderNode> displayNodeSp, RSDisplayRenderParams* params);
+    void DrawHardwareEnabledNodes(Drawing::Canvas& canvas);
     void SwitchColorFilter(RSPaintFilterCanvas& canvas) const;
     void SetHighContrastIfEnabled(RSPaintFilterCanvas& canvas) const;
 
 private:
+    explicit RSDisplayRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
     bool CheckDisplayNodeSkip(std::shared_ptr<RSDisplayRenderNode> displayNode, RSDisplayRenderParams* params,
         std::shared_ptr<RSProcessor> processor);
     std::unique_ptr<RSRenderFrame> RequestFrame(std::shared_ptr<RSDisplayRenderNode> displayNodeSp,
@@ -52,6 +55,9 @@ private:
     void DrawWatermarkIfNeed(RSDisplayRenderNode& node, RSPaintFilterCanvas& canvas) const;
     void DrawMirrorScreen(RSDisplayRenderNode& displayNodeSp, RSDisplayRenderParams& params,
         std::shared_ptr<RSProcessor> processor);
+    using DrawFuncPtr = void(RSDisplayRenderNodeDrawable::*)(Drawing::Canvas&);
+    void DrawMirror(RSDisplayRenderNode& displayNodeSp, RSDisplayRenderParams& params,
+        std::shared_ptr<RSProcessor> processor, DrawFuncPtr drawFunc);
     void DrawExpandScreen(RSUniRenderVirtualProcessor& processor);
     void SetVirtualScreenType(RSDisplayRenderNode& node, const ScreenInfo& screenInfo);
     void ScaleMirrorIfNeed(RSDisplayRenderNode& node, std::shared_ptr<RSProcessor> processor);
