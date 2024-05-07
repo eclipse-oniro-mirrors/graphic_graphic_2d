@@ -25,7 +25,7 @@ class ShadowUtils : public TestBase {
 public:
     enum ShadowMode { K_NO_OCCLUDERS, K_OCCLUDERS, K_GRAY_SCALE };
     explicit ShadowUtils(ShadowMode m);
-    ~ShadowUtils() = default;
+    ~ShadowUtils() override {};
 
 protected:
     void OnTestFunction(OH_Drawing_Canvas* canvas) override;

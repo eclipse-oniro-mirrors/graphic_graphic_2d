@@ -25,7 +25,7 @@
 class PointsMaskFilter : public TestBase {
 public:
     PointsMaskFilter();
-    ~PointsMaskFilter() = default;
+    ~PointsMaskFilter() override {};
 
 protected:
     void OnTestFunction(OH_Drawing_Canvas* canvas) override;

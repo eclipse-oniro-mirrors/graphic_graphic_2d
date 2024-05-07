@@ -20,7 +20,7 @@
 class SkBug8955 : public TestBase {
 public:
     SkBug8955();
-    ~SkBug8955() = default;
+    ~SkBug8955() override {};
 
 protected:
     void OnTestFunction(OH_Drawing_Canvas* canvas) override;

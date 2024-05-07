@@ -29,7 +29,7 @@ public:
         bitmapHeight_ = K_H;
         fileName_ = "stroke_rect_shader"; // 对标 stroke_rect_shader.cpp
     }
-    ~StrokeRectShader() = default;
+    ~StrokeRectShader() override {};
 
 protected:
     void OnTestFunction(OH_Drawing_Canvas* canvas) override;

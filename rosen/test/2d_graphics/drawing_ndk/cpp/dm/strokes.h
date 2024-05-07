@@ -23,7 +23,7 @@
 class Strokes2 : public TestBase {
 public:
     Strokes2();
-    ~Strokes2() = default;
+    ~Strokes2() override {};
 
 protected:
     void OnTestFunction(OH_Drawing_Canvas *canvas) override;
