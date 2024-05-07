@@ -41,6 +41,8 @@ DrawBitmapRect2::DrawBitmapRect2()
     fileName_ = "bitmaprect";
 }
 
+DrawBitmapRect2::~DrawBitmapRect2() {}
+
 // OH_Drawing_Image *PrecondItions():创建了一个位图（bitmap），并在其上绘制了一个圆形，然后生成了一个图像（image）对象
 OH_Drawing_Image *PrecondItions()
 {

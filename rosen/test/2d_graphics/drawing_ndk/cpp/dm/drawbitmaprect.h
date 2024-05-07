@@ -30,7 +30,7 @@ struct Rect {
 class DrawBitmapRect2 : public TestBase {
   public:
     DrawBitmapRect2();
-    ~DrawBitmapRect2() = default;
+    ~DrawBitmapRect2() override;
 
   protected:
     void OnTestFunction(OH_Drawing_Canvas *canvas) override;

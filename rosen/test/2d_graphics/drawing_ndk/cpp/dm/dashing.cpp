@@ -76,6 +76,8 @@ Dashing::Dashing()
     fileName_ = "dashing";
 }
 
+Dashing::~Dashing() {}
+
 void Dashing::OnTestFunction(OH_Drawing_Canvas *canvas)
 {
     Dashings dashings;
@@ -156,6 +158,8 @@ Dashing2::Dashing2()
     fileName_ = "dashing2";
 }
 
+Dashing2::~Dashing2() {}
+
 void Dashing2::OnTestFunction(OH_Drawing_Canvas *canvas)
 {
     constexpr int gIntervals[] = {
@@ -210,6 +214,8 @@ Dashing4::Dashing4()
     bitmapHeight_ = 1100; // 1100高度
     fileName_ = "dashing4";
 }
+
+Dashing4::~Dashing4() {}
 
 void Dashing4::DashingNum(OH_Drawing_Canvas *canvas, OH_Drawing_Pen *pen, Dashings dashings)
 {

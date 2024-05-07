@@ -27,7 +27,7 @@ struct Dashings {
 class Dashing : public TestBase {
 public:
     Dashing();
-    ~Dashing() = default;
+    ~Dashing() override;
 
 protected:
     void OnTestFunction(OH_Drawing_Canvas *canvas) override;
@@ -36,7 +36,7 @@ protected:
 class Dashing2 : public TestBase {
 public:
     Dashing2();
-    ~Dashing2() = default;
+    ~Dashing2() override;
 
 protected:
     void OnTestFunction(OH_Drawing_Canvas *canvas) override;
@@ -45,7 +45,7 @@ protected:
 class Dashing4 : public TestBase {
 public:
     Dashing4();
-    ~Dashing4() = default;
+    ~Dashing4() override;
 
 protected:
     struct Intervals {
