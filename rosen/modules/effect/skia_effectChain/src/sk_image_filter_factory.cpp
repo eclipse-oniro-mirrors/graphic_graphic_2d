@@ -23,9 +23,26 @@ static constexpr float GRAYSCALE_PARAONE = 0.2126f;
 static constexpr float GRAYSCALE_PARATWO = 0.7152f;
 static constexpr float GRAYSCALE_PARATHREE = 0.0722f;
 
-sk_sp<SkImageFilter> SKImageFilterFactory::Blur(float radius)
+static inline SkTileMode ConvertToSkTileMode(int32_t skTileModeNum)
 {
-    return SkImageFilters::Blur(radius, radius, nullptr);
+    switch (skTileModeNum) {
+        case 0:
+            return SkTileMode::kClamp;
+        case 1:
+            return SkTileMode::kRepeat;
+        case 2:
+            return SkTileMode::kMirror;
+        case 3:
+            return SkTileMode::kDecal;
+        default:
+            return SkTileMode::kDecal;
+    }
+}
+
+sk_sp<SkImageFilter> SKImageFilterFactory::Blur(float radius, int32_t skTileModeNum)
+{
+    SkTileMode skTileMode = ConvertToSkTileMode(skTileModeNum);
+    return SkImageFilters::Blur(radius, radius, skTileMode, nullptr);
 }
 
 sk_sp<SkImageFilter> SKImageFilterFactory::Brightness(float degree)

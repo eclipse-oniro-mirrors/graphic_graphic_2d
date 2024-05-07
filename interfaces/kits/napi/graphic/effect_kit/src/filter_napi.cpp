@@ -38,6 +38,10 @@ namespace {
 
 namespace OHOS {
 namespace Rosen {
+static const int32_t ARGS_ONE = 1;
+static const int32_t ARGS_TWO = 2;
+static const int32_t PARAM0 = 0;
+static const int32_t PARAM1 = 1;
 struct FilterAsyncContext {
     napi_env env;
     napi_async_work work;
@@ -415,8 +419,8 @@ napi_value FilterNapi::GetPixelMapAsync(napi_env env, napi_callback_info info)
 
 napi_value FilterNapi::Blur(napi_env env, napi_callback_info info)
 {
-    size_t argc = 1;
-    napi_value argv[1];
+    size_t argc = ARGS_TWO;
+    napi_value argv[ARGS_TWO];
     napi_value _this;
     napi_status status;
     IMG_JS_ARGS(env, info, status, argc, argv, _this);
@@ -425,24 +429,30 @@ napi_value FilterNapi::Blur(napi_env env, napi_callback_info info)
         return nullptr;
     }
     float radius = 0.0f;
-    if (argc != 1) {
-        return nullptr;
-    }
-    if (Media::ImageNapiUtils::getType(env, argv[0]) == napi_number) {
+    if (Media::ImageNapiUtils::getType(env, argv[PARAM0]) == napi_number) {
         double scale = -1.0f;
-        if (IMG_IS_OK(napi_get_value_double(env, argv[0], &scale))) {
+        if (IMG_IS_OK(napi_get_value_double(env, argv[PARAM0], &scale))) {
             if (scale >= 0) {
                 radius = static_cast<float>(scale);
             }
         }
     }
+    
+    int32_t skTileMode = 3;
+    if (argc == ARGS_ONE) {
+        EFFECT_LOG_I("FilterNapi parse input with default skTileMode");
+    } else if (argc == ARGS_TWO) {
+        napi_get_value_int32(env, argv[PARAM1], &skTileMode);
+    }
+
     FilterNapi* thisFilter = nullptr;
     NAPI_CALL(env, napi_unwrap(env, _this, reinterpret_cast<void**>(&thisFilter)));
     if (thisFilter == nullptr) {
         EFFECT_LOG_I("FilterNapi napi_unwrap is Faild");
         return nullptr;
     }
-    auto blur = Rosen::SKImageFilterFactory::Blur(radius);
+    
+    auto blur = Rosen::SKImageFilterFactory::Blur(radius, skTileMode);
     thisFilter->AddNextFilter(blur);
     return _this;
 }
