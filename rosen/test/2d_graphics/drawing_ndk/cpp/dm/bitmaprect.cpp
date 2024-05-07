@@ -92,8 +92,10 @@ void DrawBitmapRect4::OnTestFunction(OH_Drawing_Canvas *canvas)
         OH_Drawing_CanvasDrawBitmapRect(canvas, fBigBitmap, DrawCreateRect(srcR1), DrawCreateRect(dstR1), option);
         OH_Drawing_CanvasDrawBitmapRect(canvas, fBigBitmap, DrawCreateRect(srcR2), DrawCreateRect(dstR2), option);
     } else {
-        DRAWING_LOGI("OnTestFunction  DrawBitmapRect4 rect::rountout接口缺失");
+        DRAWING_LOGI("OnTestFunction  DrawBitmapRect4 Rect::roundOut接口缺失");
     }
     OH_Drawing_CanvasDetachBrush(canvas);
     OH_Drawing_BrushDestroy(brush);
+    OH_Drawing_BitmapDestroy(fBigBitmap);
+    OH_Drawing_SamplingOptionsDestroy(option);
 }

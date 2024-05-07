@@ -95,6 +95,7 @@ void BlurLargeRrects::OnTestFunction(OH_Drawing_Canvas *canvas)
     OH_Drawing_FilterDestroy(filter);
     OH_Drawing_CanvasDetachBrush(canvas);
     OH_Drawing_RectDestroy(rect);
+    OH_Drawing_RoundRectDestroy(rrect);
     OH_Drawing_BrushDestroy(brush);
     brush = nullptr;
     DRAWING_LOGI("BlurLargeRrects::OnTestFunction end");

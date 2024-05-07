@@ -99,4 +99,5 @@ void Anisotropic::OnTestFunction(OH_Drawing_Canvas *canvas)
         OH_Drawing_CanvasDrawRect(canvas, rect);
     }
     OH_Drawing_BitmapDestroy(bitmap);
+    OH_Drawing_SamplingOptionsDestroy(fsampling);
 }

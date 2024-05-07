@@ -15,7 +15,6 @@
 #ifndef BLUR_CIRCLES_H
 #define BLUR_CIRCLES_H
 #include "../test_base.h"
-#include <bits/alltypes.h>
 
 class BlurCircles : public TestBase {
 public:
