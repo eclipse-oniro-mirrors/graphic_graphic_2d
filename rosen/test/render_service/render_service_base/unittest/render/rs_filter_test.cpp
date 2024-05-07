@@ -146,4 +146,40 @@ HWTEST_F(RSFilterTest, operatorTest003, TestSize.Level1)
     lhs = std::make_shared<RSFilter>();
     EXPECT_EQ(lhs * 1.0f, nullptr);
 }
+
+/**
+ * @tc.name: CreateLightUpEffectFilter
+ * @tc.desc:
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSFilterTest, CreateLightUpEffectFilter, TestSize.Level1)
+{
+    float lightUpDegree = 0.5f;
+    auto filter = RSFilter::CreateLightUpEffectFilter(lightUpDegree);
+    ASSERT_NE(filter, nullptr);
+}
+
+/**
+ * @tc.name: GetDetailedDescriptionTest
+ * @tc.desc: Verify function GetDetailedDescription
+ * @tc.type:FUNC
+ * @tc.require: issuesI9MO9U
+ */
+HWTEST_F(RSFilterTest, GetDetailedDescriptionTest, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSFilter>();
+    EXPECT_EQ(filter->GetDetailedDescription(), "RSFilter 0");
+}
+
+/**
+ * @tc.name: IsValidTest
+ * @tc.desc: Verify function IsValid
+ * @tc.type:FUNC
+ * @tc.require: issuesI9MO9U
+ */
+HWTEST_F(RSFilterTest, IsValidTest, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSFilter>();
+    EXPECT_FALSE(filter->IsValid());
+}
 } // namespace OHOS::Rosen

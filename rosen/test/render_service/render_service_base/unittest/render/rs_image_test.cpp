@@ -385,6 +385,16 @@ HWTEST_F(RSImageTest, RSImageBase001, TestSize.Level1)
     canvas.AttachBrush(brush);
     imageBase.DrawImage(canvas, Drawing::SamplingOptions());
     canvas.DetachBrush();
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+    auto img = std::make_shared<Drawing::Image>();
+    imageBase.SetDmaImage(img);
+#endif
+
+#ifdef ROSEN_OHOS
+    Parcel parcel;
+    EXPECT_TRUE(imageBase.Marshalling(parcel));
+    EXPECT_EQ(imageBase.Unmarshalling(parcel), nullptr);
+#endif
 }
 
 /**
@@ -424,5 +434,57 @@ HWTEST_F(RSImageTest, RSImageCache001, TestSize.Level1)
     RSImageCache::Instance().CachePixelMap(0, pixelMap);
     RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(1, nullptr);
     RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(0, nullptr);
+
+    auto img = std::make_shared<Drawing::Image>();
+    RSImageCache::Instance().CacheDrawingImage(0, img);
+
+    EXPECT_EQ(RSImageCache::Instance().GetDrawingImageCache(0), nullptr);
+
+    RSImageCache::Instance().IncreaseDrawingImageCacheRefCount(0);
+}
+
+/**
+ * @tc.name: SetInnerRectTest
+ * @tc.desc: Verify function SetInnerRect
+ * @tc.type:FUNC
+ * @tc.require: issuesI9MO9U
+ */
+HWTEST_F(RSImageTest, SetInnerRectTest, TestSize.Level1)
+{
+    auto rsImage = std::make_shared<RSImage>();
+    auto innerRect = std::make_optional<Drawing::RectI>();
+    rsImage->SetInnerRect(innerRect);
+    EXPECT_NE(rsImage, nullptr);
+}
+
+/**
+ * @tc.name: SetPaintTest
+ * @tc.desc: Verify function SetPaint
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSImageTest, SetPaintTest, TestSize.Level1)
+{
+    auto rsImage = std::make_shared<RSImage>();
+    ASSERT_NE(rsImage, nullptr);
+    Drawing::Paint paint;
+    rsImage->SetPaint(paint);
+    EXPECT_EQ(rsImage->paint_, paint);
+}
+
+/**
+ * @tc.name: dumpTest
+ * @tc.desc: Verify function dump
+ * @tc.type:FUNC
+ * @tc.require: issuesI9MO9U
+ */
+HWTEST_F(RSImageTest, dumpTest, TestSize.Level1)
+{
+    auto rsImage = std::make_shared<RSImage>();
+    auto innerRect = std::make_optional<Drawing::RectI>();
+    ASSERT_NE(rsImage, nullptr);
+    std::string desc = "dump ";
+    rsImage->dump(desc, 0);
+    EXPECT_NE(desc, "dump ");
 }
 } // namespace OHOS::Rosen

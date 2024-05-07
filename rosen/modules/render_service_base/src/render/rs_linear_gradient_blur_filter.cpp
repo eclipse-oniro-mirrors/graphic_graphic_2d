@@ -31,7 +31,7 @@ std::shared_ptr<Drawing::RuntimeEffect> RSLinearGradientBlurFilter::maskBlurShad
 
 RSLinearGradientBlurFilter::RSLinearGradientBlurFilter(const std::shared_ptr<RSLinearGradientBlurPara>& para,
     const float geoWidth, const float geoHeight)
-    : RSDrawingFilter(nullptr),
+    : RSDrawingFilterOriginal(nullptr),
       linearGradientBlurPara_(para)
 {
     geoWidth_ = geoWidth;
@@ -74,7 +74,7 @@ void RSLinearGradientBlurFilter::DrawImageRect(Drawing::Canvas& canvas, const st
         }
 
         auto& RSFilter = para->LinearGradientBlurFilter_;
-        auto filter = std::static_pointer_cast<RSDrawingFilter>(RSFilter);
+        auto filter = std::static_pointer_cast<RSDrawingFilterOriginal>(RSFilter);
         DrawMaskLinearGradientBlur(image, canvas, filter, alphaGradientShader, dst);
     } else {
         // use original LinearGradientBlur
@@ -239,6 +239,10 @@ bool RSLinearGradientBlurFilter::GetGradientDirectionPoints(
 std::shared_ptr<Drawing::ShaderEffect> RSLinearGradientBlurFilter::MakeAlphaGradientShader(
     const Drawing::Rect& clipBounds, const std::shared_ptr<RSLinearGradientBlurPara>& para, uint8_t directionBias)
 {
+    if (para->fractionStops_.size() < 1) {
+        return nullptr;
+    }
+
     std::vector<Drawing::ColorQuad> c;
     std::vector<Drawing::scalar> p;
     Drawing::Point pts[2];
@@ -263,10 +267,10 @@ std::shared_ptr<Drawing::ShaderEffect> RSLinearGradientBlurFilter::MakeAlphaGrad
         p.emplace_back(para->fractionStops_[i].second);
     }
     // 0.01 represents the fraction bias
-    if (para->fractionStops_[para->fractionStops_.size() - 1].second < (1 - 0.01)) {
+    if (para->fractionStops_.back().second < (1 - 0.01)) {
         c.emplace_back(Drawing::Color::ColorQuadSetARGB(ColorMin, ColorMax, ColorMax, ColorMax));
         // 0.01 represents the fraction bias
-        p.emplace_back(para->fractionStops_[para->fractionStops_.size() - 1].second + 0.01);
+        p.emplace_back(para->fractionStops_.back().second + 0.01);
     }
     return Drawing::ShaderEffect::CreateLinearGradient(pts[0], pts[1], c, p, Drawing::TileMode::CLAMP);
 }
@@ -403,7 +407,7 @@ void RSLinearGradientBlurFilter::DrawMeanLinearGradientBlur(const std::shared_pt
 }
 
 void RSLinearGradientBlurFilter::DrawMaskLinearGradientBlur(const std::shared_ptr<Drawing::Image>& image,
-    Drawing::Canvas& canvas, std::shared_ptr<RSDrawingFilter>& blurFilter,
+    Drawing::Canvas& canvas, std::shared_ptr<RSDrawingFilterOriginal>& blurFilter,
     std::shared_ptr<Drawing::ShaderEffect> alphaGradientShader, const Drawing::Rect& dst)
 {
     if (image == nullptr) {

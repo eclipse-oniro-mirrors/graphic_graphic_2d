@@ -43,6 +43,9 @@ napi_value JsParagraph::Constructor(napi_env env, napi_callback_info info)
     }
 
     JsParagraph *jsParagraph = new(std::nothrow) JsParagraph(std::move(g_Typography));
+    if (jsParagraph == nullptr) {
+        return nullptr;
+    }
 
     status = napi_wrap(env, jsThis, jsParagraph,
         JsParagraph::Destructor, nullptr, nullptr);
@@ -429,7 +432,7 @@ napi_value JsParagraph::OnGetLineCount(napi_env env, napi_callback_info info)
         ROSEN_LOGE("JsParagraph::OnGetLineCount paragraph_ is nullptr");
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
     }
-    size_t lineCount = paragraph_->GetLineCount();
+    size_t lineCount = static_cast<size_t>(paragraph_->GetLineCount());
     return CreateJsNumber(env, lineCount);
 }
 

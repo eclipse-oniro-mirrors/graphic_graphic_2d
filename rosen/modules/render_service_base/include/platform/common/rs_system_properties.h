@@ -189,6 +189,9 @@ public:
     static bool GetRenderParallelEnabled();
     static bool GetPropertyDrawableEnable();
 
+    static bool GetDrawFilterWithoutSnapshotEnabled();
+    static bool GetBlurExtraFilterEnabled();
+
     static bool GetAnimationCacheEnabled();
 
     static bool GetBoolSystemProperty(const char* name, bool defaultValue);
@@ -213,10 +216,12 @@ public:
     static bool GetSingleFrameComposerEnabled();
     static bool GetSingleFrameComposerCanvasNodeEnabled();
     static bool GetSubSurfaceEnabled();
+    static bool GetAceDebugBoundaryEnabled();
     static bool GetSecurityPermissionCheckEnabled();
     static bool GetParallelUploadTexture();
     static bool GetEffectMergeEnabled();
     static SubTreePrepareCheckType GetSubTreePrepareCheckType();
+    static bool GetHDRImageEnable();
 
 #ifdef DDGR_ENABLE_FEATURE_OPINC
     static DdgrOpincType GetDdgrOpincType();
@@ -234,7 +239,7 @@ public:
     static bool GetDumpUIPixelmapEnabled();
     static bool GetDumpImgEnabled();
 
-    static uint32_t GetVirtualScreenScaleModeDFX();
+    static int GetVirtualScreenScaleModeDFX();
 
     static inline GpuApiType GetGpuApiType()
     {

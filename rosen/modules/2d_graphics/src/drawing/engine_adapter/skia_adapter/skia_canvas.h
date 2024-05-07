@@ -64,6 +64,7 @@ public:
     Matrix GetTotalMatrix() const override;
     Rect GetLocalClipBounds() const override;
     RectI GetDeviceClipBounds() const override;
+    RectI GetRoundInDeviceClipBounds() const override;
 #ifdef ACE_ENABLE_GPU
     std::shared_ptr<GPUContext> GetGPUContext() const override;
 #endif
@@ -115,6 +116,8 @@ public:
     // opinc_end
 
     // image
+    void DrawAtlas(const Image* atlas, const RSXform xform[], const Rect tex[], const ColorQuad colors[], int count,
+        BlendMode mode, const SamplingOptions& sampling, const Rect* cullRect) override;
     void DrawBitmap(const Bitmap& bitmap, const scalar px, const scalar py) override;
     void DrawImage(const Image& image, const scalar px, const scalar py, const SamplingOptions& sampling) override;
     void DrawImageRect(const Image& image, const Rect& src, const Rect& dst, const SamplingOptions& sampling,
@@ -181,7 +184,7 @@ private:
     std::shared_ptr<SkCanvas> skiaCanvas_;
     SkCanvas* skCanvas_;
     // opinc_begin
-    SkCanvas* skCanvasBackup_;
+    SkCanvas* skCanvasBackup_ = nullptr;
     std::shared_ptr<SkiaCanvasOp> skiaCanvasOp_ = nullptr;
     // opinc_end
     SkiaPaint skiaPaint_;

@@ -29,7 +29,6 @@ namespace OHOS::Rosen {
 namespace DrawableV2 {
 namespace {
 bool g_forceBgAntiAlias = true;
-constexpr int16_t BORDER_TRANSPARENT = 255;
 constexpr int TRACE_LEVEL_TWO = 2;
 }
 
@@ -223,7 +222,7 @@ bool RSMaskDrawable::OnUpdate(const RSRenderNode& node)
     canvas.Save();
     Drawing::SaveLayerOps slr(&maskBounds, nullptr);
     canvas.SaveLayer(slr);
-    int tmpLayer = canvas.GetSaveCount();
+    uint32_t tmpLayer = canvas.GetSaveCount();
 
     Drawing::Brush maskfilter;
     Drawing::Filter filter;
@@ -304,7 +303,8 @@ bool RSBackgroundColorDrawable::OnUpdate(const RSRenderNode& node)
     canvas.AttachBrush(brush);
     // use drawrrect to avoid texture update in phone screen rotation scene
     if (RSSystemProperties::IsPhoneType()) {
-        if (properties.GetBorderColor()[0].GetAlpha() < BORDER_TRANSPARENT) {
+        if (properties.GetBorderColorIsTransparent() ||
+            properties.GetBorderStyle().x_ != static_cast<uint32_t>(BorderStyle::SOLID)) {
             canvas.DrawRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRect(properties.GetRRect()));
         } else {
             canvas.DrawRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRect(properties.GetInnerRRect()));
@@ -342,16 +342,19 @@ bool RSBackgroundShaderDrawable::OnUpdate(const RSRenderNode& node)
     auto shaderEffect = bgShader->GetDrawingShader();
     brush.SetShaderEffect(shaderEffect);
     canvas.AttachBrush(brush);
-    auto borderColorAlpha = properties.GetBorderColor()[0].GetAlpha();
     // use drawrrect to avoid texture update in phone screen rotation scene
-    if (RSSystemProperties::IsPhoneType()) {
-        if (borderColorAlpha < BORDER_TRANSPARENT) {
+    if (RSSystemProperties::IsPhoneType() && RSSystemProperties::GetCacheEnabledForRotation()) {
+        if (properties.GetBorderColorIsTransparent()) {
             canvas.DrawRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRect(properties.GetRRect()));
         } else {
             canvas.DrawRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRect(properties.GetInnerRRect()));
         }
     } else {
-        canvas.DrawRect(RSPropertyDrawableUtils::Rect2DrawingRect(properties.GetBoundsRect()));
+        if (properties.GetBorderColorIsTransparent()) {
+            canvas.DrawRect(RSPropertiesPainter::Rect2DrawingRect(properties.GetBoundsRect()));
+        } else {
+            canvas.DrawRect(RSPropertiesPainter::RRect2DrawingRRect(properties.GetInnerRRect()).GetRect());
+        }
     }
     canvas.DetachBrush();
     return true;
@@ -453,7 +456,7 @@ Drawing::RecordingCanvas::DrawFunc RSBackgroundEffectDrawable::CreateDrawFunc() 
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
         if (canvas && ptr && ptr->filter_ && ptr->hasEffectChildren_) {
             auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
-            RS_OPTIONAL_TRACE_NAME_FMT("RSBackgroundEffectDrawable::DrawBackgroundEffect nodeId[%lld]", ptr->nodeId_);
+            RS_TRACE_NAME_FMT("RSBackgroundEffectDrawable::DrawBackgroundEffect nodeId[%lld]", ptr->nodeId_);
             RSPropertyDrawableUtils::DrawBackgroundEffect(
                 paintFilterCanvas, ptr->filter_, ptr->cacheManager_, ptr->clearFilteredCacheAfterDrawing_);
         }

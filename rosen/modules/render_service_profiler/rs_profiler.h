@@ -231,6 +231,10 @@ private:
     RSB_EXPORT static int PerfTreeFlatten(
         const RSRenderNode& node, std::unordered_set<NodeId>& nodeSet, std::unordered_map<NodeId, int>& mapNode2Count);
 
+    static uint64_t RawNowNano();
+    static uint64_t NowNano();
+    static double Now();
+
     static bool IsRecording();
     static bool IsPlaying();
 
@@ -258,6 +262,8 @@ private:
     static Command GetCommand(const std::string& command);
     static void ProcessCommands();
     static void Respond(const std::string& message);
+    static void SetSystemParameter(const ArgList& args);
+    static void GetSystemParameter(const ArgList& args);
     static void DumpNodeModifiers(const ArgList& args);
     static void DumpConnections(const ArgList& args);
     static void DumpNodeProperties(const ArgList& args);

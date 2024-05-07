@@ -770,6 +770,20 @@ bool RSSystemProperties::GetSingleFrameComposerCanvasNodeEnabled()
     return singleFrameComposerCanvasNodeEnabled;
 }
 
+bool RSSystemProperties::GetDrawFilterWithoutSnapshotEnabled()
+{
+    static bool drawFilterWithoutSnahpshotEnabled =
+        (std::atoi(system::GetParameter("persist.sys.graphic.drawFilterWithoutSnahpshot", "0").c_str()) != 0);
+        return drawFilterWithoutSnahpshotEnabled;
+}
+
+bool RSSystemProperties::GetBlurExtraFilterEnabled()
+{
+    static bool blurExtraFilterEnabled =
+        (std::atoi(system::GetParameter("persist.sys.graphic.blurExtraFilter", "0").c_str()) != 0);
+    return blurExtraFilterEnabled;
+}
+
 #ifdef DDGR_ENABLE_FEATURE_OPINC
 const DdgrOpincType RSSystemProperties::ddgrOpincType_ =
     static_cast<DdgrOpincType>(std::atoi((system::GetParameter("persist.ddgr.opinctype", "2")).c_str()));
@@ -825,6 +839,11 @@ bool RSSystemProperties::GetSubSurfaceEnabled()
     return subSurfaceEnabled;
 }
 
+bool RSSystemProperties::GetAceDebugBoundaryEnabled()
+{
+    return system::GetParameter("persist.ace.debug.boundary.enabled", "false") == "true";
+}
+
 bool RSSystemProperties::GetSecurityPermissionCheckEnabled()
 {
     static bool openSecurityPermissionCheck =
@@ -854,9 +873,9 @@ bool RSSystemProperties::GetDumpUIPixelmapEnabled()
     return dumpUIPixelmapEnabled;
 }
 
-uint32_t RSSystemProperties::GetVirtualScreenScaleModeDFX()
+int RSSystemProperties::GetVirtualScreenScaleModeDFX()
 {
-    static uint32_t scaleModeDFX =
+    static int scaleModeDFX =
         std::atoi((system::GetParameter("persist.rosen.virtualScreenScaleMode.debugType", "2")).c_str());
     return (scaleModeDFX > DEFAULT_SCALE_MODE) ? DEFAULT_SCALE_MODE : scaleModeDFX;
 }
@@ -867,6 +886,14 @@ SubTreePrepareCheckType RSSystemProperties::GetSubTreePrepareCheckType()
     int changed = 0;
     const char *type = CachedParameterGetChanged(g_Handle, &changed);
     return static_cast<SubTreePrepareCheckType>(ConvertToInt(type, 2)); // Default value 2
+}
+
+bool RSSystemProperties::GetHDRImageEnable()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.hdrimage.enable", "1");
+    int changed = 0;
+    const char *num = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(num, 0);
 }
 } // namespace Rosen
 } // namespace OHOS

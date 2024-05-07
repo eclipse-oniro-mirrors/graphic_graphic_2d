@@ -110,6 +110,10 @@ bool MarshallingExtendObjectFromDrawCmdList(Parcel& parcel, const std::shared_pt
     if (objectSize == 0) {
         return true;
     }
+    if (objectSize > USHRT_MAX) {
+        ROSEN_LOGE("unirender: RSMarshallingHelper::MarshallingExtendObjectFromDrawCmdList failed with max limit");
+        return false;
+    }
     for (const auto& object : objectVec) {
         if (!object->Marshalling(parcel)) {
             return false;
@@ -123,6 +127,10 @@ bool UnmarshallingExtendObjectToDrawCmdList(Parcel& parcel, std::shared_ptr<Draw
     uint32_t objectSize = parcel.ReadUint32();
     if (objectSize == 0) {
         return true;
+    }
+    if (objectSize > USHRT_MAX) {
+        ROSEN_LOGE("unirender: RSMarshallingHelper::UnmarshallingExtendObjectToDrawCmdList failed with max limit");
+        return false;
     }
     std::vector<std::shared_ptr<Drawing::ExtendObject>> objectVec;
     for (uint32_t i = 0; i < objectSize; i++) {
@@ -516,8 +524,8 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const Drawing::Matrix& val
 {
     Drawing::Matrix::Buffer buffer;
     val.GetAll(buffer);
-    int32_t size = buffer.size() * sizeof(Drawing::scalar);
-    bool ret = parcel.WriteInt32(size);
+    uint32_t size = buffer.size() * sizeof(Drawing::scalar);
+    bool ret = parcel.WriteUint32(size);
     ret &= RSMarshallingHelper::WriteToParcel(parcel, buffer.data(), size);
     if (!ret) {
         ROSEN_LOGE("unirender: failed RSMarshallingHelper::Marshalling Drawing::Matrix");
@@ -527,7 +535,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const Drawing::Matrix& val
 
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, Drawing::Matrix& val)
 {
-    int32_t size = parcel.ReadInt32();
+    uint32_t size = parcel.ReadUint32();
     if (size < sizeof(Drawing::scalar) * Drawing::Matrix::MATRIX_SIZE) {
         ROSEN_LOGE("RSMarshallingHelper::Unmarshalling Drawing::Matrix failed size %{public}d", size);
         return false;

@@ -259,12 +259,18 @@ bool JsFontCollection::ParseResourcePath(napi_env env, napi_value value, const s
 Drawing::Typeface* JsFontCollection::GetFontFileProperties(const std::string path, const std::string familyName)
 {
     size_t datalen;
-    std::ifstream f(path.c_str());
+
+    char tmpPath[PATH_MAX] = {0};
+    if (realpath(path.c_str(), tmpPath) == nullptr) {
+        return nullptr;
+    }
+
+    std::ifstream f(tmpPath);
     if (!f.good()) {
         return nullptr;
     }
 
-    std::ifstream ifs(path, std::ios_base::in);
+    std::ifstream ifs(tmpPath, std::ios_base::in);
     if (!ifs.is_open()) {
         return nullptr;
     }
@@ -275,7 +281,7 @@ Drawing::Typeface* JsFontCollection::GetFontFileProperties(const std::string pat
         return nullptr;
     }
 
-    datalen = ifs.tellg();
+    datalen = static_cast<size_t>(ifs.tellg());
     if (ifs.fail()) {
         ifs.close();
         return nullptr;

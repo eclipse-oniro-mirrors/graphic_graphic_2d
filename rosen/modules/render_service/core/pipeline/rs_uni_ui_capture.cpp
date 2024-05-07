@@ -32,6 +32,7 @@
 #include "pipeline/rs_uni_render_judgement.h"
 #include "pipeline/rs_uni_render_util.h"
 #include "platform/common/rs_log.h"
+#include "render/rs_drawing_filter.h"
 #include "render/rs_skia_filter.h"
 #include "pipeline/rs_render_engine.h"
 
@@ -245,7 +246,7 @@ void RSUniUICapture::RSUniUICaptureVisitor::SetCanvas(std::shared_ptr<ExtendReco
         RS_LOGE("RSUniUICaptureVisitor::SetCanvas: canvas == nullptr");
         return;
     }
-    auto renderContext = RSMainThread::Instance()->GetRenderEngine()->GetRenderContext();
+    auto renderContext = RSOffscreenRenderThread::Instance().GetRenderContext();
     canvas->SetGrRecordingContext(renderContext->GetSharedDrGPUContext());
     canvas_ = std::make_shared<RSPaintFilterCanvas>(canvas.get());
     canvas_->Scale(scaleX_, scaleY_);
@@ -309,6 +310,11 @@ void RSUniUICapture::RSUniUICaptureVisitor::ProcessCanvasRenderNode(RSCanvasRend
         }
         canvas_->SetMatrix(relativeMatrix);
     }
+    bool needOffscreen = node.IsForcedDrawInGroup();
+    if (needOffscreen) {
+        Drawing::SaveLayerOps slr(nullptr, nullptr);
+        canvas_->SaveLayer(slr);
+    }
     node.ProcessRenderBeforeChildren(*canvas_);
     if (node.GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
         auto canvasDrawingNode = node.ReinterpretCastTo<RSCanvasDrawingRenderNode>();
@@ -329,6 +335,9 @@ void RSUniUICapture::RSUniUICaptureVisitor::ProcessCanvasRenderNode(RSCanvasRend
         node.ProcessRenderContents(*canvas_);
     }
     ProcessChildren(node);
+    if (needOffscreen) {
+        canvas_->Restore();
+    }
     node.ProcessRenderAfterChildren(*canvas_);
 }
 

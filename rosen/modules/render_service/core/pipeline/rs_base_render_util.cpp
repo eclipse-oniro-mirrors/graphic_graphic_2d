@@ -504,7 +504,7 @@ SimpleColorSpace& GetColorSpaceOfCertainGamut(GraphicColorGamut colorGamut,
     }
 }
 
-const uint16_t maxUint10 = 1023;
+const uint16_t MAX_UINT10 = 1023;
 float RGBUint8ToFloat(uint8_t val)
 {
     return val * 1.0f / 255.0f; // 255.0f is the max value.
@@ -513,7 +513,7 @@ float RGBUint8ToFloat(uint8_t val)
 // Used to transfer integers of pictures with color depth of 10 bits to float
 float RGBUint10ToFloat(uint16_t val)
 {
-    return val * 1.0f / maxUint10; // 1023.0f is the max value
+    return val * 1.0f / MAX_UINT10; // 1023.0f is the max value
 }
 
 uint8_t RGBFloatToUint8(float val)
@@ -525,7 +525,7 @@ uint8_t RGBFloatToUint8(float val)
 uint16_t RGBFloatToUint10(float val)
 {
     // 1023.0 is the max value, + 0.5f to avoid negative.
-    return static_cast<uint16_t>(Saturate(val) * maxUint10 + 0.5f);
+    return static_cast<uint16_t>(Saturate(val) * MAX_UINT10 + 0.5f);
 }
 
 Offset RGBUintToFloat(uint8_t* dst, uint8_t* src, int32_t pixelFormat, Vector3f &srcColor,
@@ -647,15 +647,6 @@ bool ConvertBufferColorGamut(std::vector<uint8_t>& dstBuf, const sptr<OHOS::Surf
     dstBuf.resize(offsetDst); // dstBuf size might not be as large ad srcBuf in HDR
 
     return true;
-}
-
-Drawing::BitmapFormat GenerateDrawingBitmapFormat(const sptr<OHOS::SurfaceBuffer>& buffer)
-{
-    Drawing::ColorType colorType = (buffer->GetFormat() == GRAPHIC_PIXEL_FMT_BGRA_8888) ?
-        Drawing::ColorType::COLORTYPE_BGRA_8888 : Drawing::ColorType::COLORTYPE_RGBA_8888;
-    Drawing::AlphaType alphaType = Drawing::AlphaType::ALPHATYPE_PREMUL;
-    Drawing::BitmapFormat format { colorType, alphaType };
-    return format;
 }
 
 // YUV to RGBA: Pixel value conversion table
@@ -839,7 +830,9 @@ bool RSBaseRenderUtil::IsNeedClient(RSRenderNode& node, const ComposeInfo& info)
 
 bool RSBaseRenderUtil::IsForceClient()
 {
-    return (std::atoi((system::GetParameter("rosen.client_composition.enabled", "0")).c_str()) != 0);
+    static bool forceClient =
+        std::atoi((system::GetParameter("rosen.client_composition.enabled", "0")).c_str()) != 0;
+    return forceClient;
 }
 
 BufferRequestConfig RSBaseRenderUtil::GetFrameBufferRequestConfig(const ScreenInfo& screenInfo, bool isPhysical,
@@ -900,6 +893,24 @@ GSError RSBaseRenderUtil::DropFrameProcess(RSSurfaceHandler& node)
     return OHOS::GSERROR_OK;
 }
 
+Drawing::ColorType RSBaseRenderUtil::GetColorTypeFromBufferFormat(int32_t pixelFmt)
+{
+    switch (pixelFmt) {
+        case GRAPHIC_PIXEL_FMT_RGBA_8888:
+            return Drawing::ColorType::COLORTYPE_RGBA_8888;
+        case GRAPHIC_PIXEL_FMT_BGRA_8888 :
+            return Drawing::ColorType::COLORTYPE_BGRA_8888;
+        case GRAPHIC_PIXEL_FMT_RGB_565:
+            return Drawing::ColorType::COLORTYPE_RGB_565;
+        case GRAPHIC_PIXEL_FMT_YCBCR_P010:
+        case GRAPHIC_PIXEL_FMT_YCRCB_P010:
+        case GRAPHIC_PIXEL_FMT_RGBA_1010102:
+            return Drawing::ColorType::COLORTYPE_RGBA_1010102;
+        default:
+            return Drawing::ColorType::COLORTYPE_RGBA_8888;
+    }
+}
+
 Rect RSBaseRenderUtil::MergeBufferDamages(const std::vector<Rect>& damages)
 {
     RectI damage;
@@ -909,44 +920,66 @@ Rect RSBaseRenderUtil::MergeBufferDamages(const std::vector<Rect>& damages)
     return {damage.left_, damage.top_, damage.width_, damage.height_};
 }
 
-bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfaceHandler)
+bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(
+    RSSurfaceHandler& surfaceHandler, bool isDisplaySurface, uint64_t vsyncTimestamp)
 {
-    auto availableBufferCnt = surfaceHandler.GetAvailableBufferCount();
-    if (availableBufferCnt <= 0) {
-        // this node has no new buffer, try use old buffer.
+    if (surfaceHandler.GetAvailableBufferCount() <= 0) {
+        // this node has no new buffer, try use cache.
+        // if don't have cache, will not update and use old buffer.
+        // display surface don't have cache, always use old buffer.
+        surfaceHandler.ConsumeAndUpdateBuffer(surfaceHandler.GetBufferFromCache(vsyncTimestamp));
         return true;
     }
     auto& consumer = surfaceHandler.GetConsumer();
     if (consumer == nullptr) {
         return false;
     }
-
     DropFrameProcess(surfaceHandler);
-    sptr<SurfaceBuffer> buffer;
-    sptr<SyncFence> acquireFence = SyncFence::INVALID_FENCE;
-    int64_t timestamp = 0;
-    std::vector<Rect> damages;
-    auto ret = consumer->AcquireBuffer(buffer, acquireFence, timestamp, damages);
-    if (buffer == nullptr || ret != SURFACE_ERROR_OK) {
-        RS_LOGE("RsDebug surfaceHandler(id: %{public}" PRIu64 ") AcquireBuffer failed(ret: %{public}d)!",
-            surfaceHandler.GetNodeId(), ret);
-        return false;
+    std::shared_ptr<RSSurfaceHandler::SurfaceBufferEntry> surfaceBuffer;
+    if (surfaceHandler.GetHoldBuffer() == nullptr) {
+        std::vector<Rect> damages;
+        surfaceBuffer = std::make_shared<RSSurfaceHandler::SurfaceBufferEntry>();
+        int32_t ret = consumer->AcquireBuffer(surfaceBuffer->buffer, surfaceBuffer->acquireFence,
+            surfaceBuffer->timestamp, damages);
+        if (surfaceBuffer->buffer == nullptr || ret != SURFACE_ERROR_OK) {
+            RS_LOGE("RsDebug surfaceHandler(id: %{public}" PRIu64 ") AcquireBuffer failed(ret: %{public}d)!",
+                surfaceHandler.GetNodeId(), ret);
+            surfaceBuffer = nullptr;
+            return false;
+        }
+        // The damages of buffer will be merged here, only single damage is supported so far
+        Rect damageAfterMerge = MergeBufferDamages(damages);
+        if (damageAfterMerge.h <= 0 || damageAfterMerge.w <= 0) {
+            RS_LOGW("RsDebug surfaceHandler(id: %{public}" PRIu64 ") buffer damage is invalid",
+                surfaceHandler.GetNodeId());
+        }
+        surfaceBuffer->damageRect = damageAfterMerge;
+        if (consumer->IsBufferHold()) {
+            surfaceHandler.SetHoldBuffer(surfaceBuffer);
+            surfaceBuffer = nullptr;
+            RS_LOGW("RsDebug surfaceHandler(id: %{public}" PRIu64 ") set hold buffer",
+                surfaceHandler.GetNodeId());
+            return true;
+        }
     }
-    // The damages of buffer will be merged here, only single damage is supported so far
-    Rect damageAfterMerge = MergeBufferDamages(damages);
-    if (damageAfterMerge.h <= 0 || damageAfterMerge.w <= 0) {
-        RS_LOGW("RsDebug surfaceHandler(id: %{public}" PRIu64 ") buffer damage is invalid",
-            surfaceHandler.GetNodeId());
+    if (consumer->IsBufferHold()) {
+        surfaceBuffer = surfaceHandler.GetHoldBuffer();
+        surfaceHandler.SetHoldBuffer(nullptr);
+        consumer->SetBufferHold(false);
+        RS_LOGW("RsDebug surfaceHandler(id: %{public}" PRIu64 ") consume hold buffer", surfaceHandler.GetNodeId());
     }
-
-#ifndef ROSEN_CROSS_PLATFORM
-    surfaceHandler.SetBufferSizeChanged(buffer);
-#endif
-    surfaceHandler.SetBuffer(buffer, acquireFence, damageAfterMerge, timestamp);
-    surfaceHandler.SetCurrentFrameBufferConsumed();
-    RS_LOGD("RsDebug surfaceHandler(id: %{public}" PRIu64 ") AcquireBuffer success, timestamp = %{public}" PRId64 ".",
-        surfaceHandler.GetNodeId(), timestamp);
+    RS_LOGD("RsDebug surfaceHandler(id: %{public}" PRIu64 ") AcquireBuffer success, "
+        "vysnc timestamp = %{public}" PRIu64 ", buffer timestamp = %{public}" PRIu64 " .",
+        surfaceHandler.GetNodeId(), vsyncTimestamp, static_cast<uint64_t>(surfaceBuffer->timestamp));
+    
+    if (isDisplaySurface) {
+        surfaceHandler.ConsumeAndUpdateBuffer(*(surfaceBuffer.get()));
+    } else {
+        surfaceHandler.CacheBuffer(*(surfaceBuffer.get()));
+        surfaceHandler.ConsumeAndUpdateBuffer(surfaceHandler.GetBufferFromCache(vsyncTimestamp));
+    }
     surfaceHandler.ReduceAvailableBuffer();
+    surfaceBuffer = nullptr;
     return true;
 }
 
@@ -1205,10 +1238,22 @@ bool RSBaseRenderUtil::CreateYuvToRGBABitMap(sptr<OHOS::SurfaceBuffer> buffer, s
 
 bool RSBaseRenderUtil::CreateBitmap(sptr<OHOS::SurfaceBuffer> buffer, Drawing::Bitmap& bitmap)
 {
-    Drawing::BitmapFormat format = Detail::GenerateDrawingBitmapFormat(buffer);
+    Drawing::BitmapFormat format = GenerateDrawingBitmapFormat(buffer);
     bitmap.Build(buffer->GetWidth(), buffer->GetHeight(), format, buffer->GetStride());
     bitmap.SetPixels(buffer->GetVirAddr());
     return true;
+}
+
+Drawing::BitmapFormat RSBaseRenderUtil::GenerateDrawingBitmapFormat(const sptr<OHOS::SurfaceBuffer>& buffer)
+{
+    Drawing::BitmapFormat format;
+    if (buffer == nullptr) {
+        return format;
+    }
+    Drawing::ColorType colorType = GetColorTypeFromBufferFormat(buffer->GetFormat());
+    Drawing::AlphaType alphaType = Drawing::AlphaType::ALPHATYPE_PREMUL;
+    format = { colorType, alphaType };
+    return format;
 }
 
 bool RSBaseRenderUtil::CreateNewColorGamutBitmap(sptr<OHOS::SurfaceBuffer> buffer, std::vector<uint8_t>& newBuffer,
@@ -1218,7 +1263,7 @@ bool RSBaseRenderUtil::CreateNewColorGamutBitmap(sptr<OHOS::SurfaceBuffer> buffe
     bool convertRes = Detail::ConvertBufferColorGamut(newBuffer, buffer, srcGamut, dstGamut, metaDatas);
     if (convertRes) {
         RS_LOGW("CreateNewColorGamutBitmap: convert color gamut succeed, use new buffer to create bitmap.");
-        Drawing::BitmapFormat format = Detail::GenerateDrawingBitmapFormat(buffer);
+        Drawing::BitmapFormat format = GenerateDrawingBitmapFormat(buffer);
         bitmap.Build(buffer->GetWidth(), buffer->GetHeight(), format, buffer->GetStride());
         bitmap.SetPixels(newBuffer.data());
         return true;
@@ -1585,5 +1630,23 @@ GraphicTransformType RSBaseRenderUtil::RotateEnumToInt(int angle, GraphicTransfo
         return iter != pairToEnumMap.end() ? iter->second : GraphicTransformType::GRAPHIC_ROTATE_NONE;
     }
 }
+
+int RSBaseRenderUtil::GetAccumulatedBufferCount()
+{
+    return std::max(acquiredBufferCount_ -  1, 0);
+}
+
+void RSBaseRenderUtil::IncAcquiredBufferCount()
+{
+    ++acquiredBufferCount_;
+    RS_TRACE_NAME_FMT("Inc Acq BufferCount %d", acquiredBufferCount_.load());
+}
+
+void RSBaseRenderUtil::DecAcquiredBufferCount()
+{
+    --acquiredBufferCount_;
+    RS_TRACE_NAME_FMT("Dec Acq BufferCount %d", acquiredBufferCount_.load());
+}
+
 } // namespace Rosen
 } // namespace OHOS

@@ -124,7 +124,7 @@ HWTEST_F(RSMaterialFilterTest, GetDescriptionTest001, TestSize.Level1)
 HWTEST_F(RSMaterialFilterTest, ComposeTest001, TestSize.Level1)
 {
     MaterialParam materialParam;
-    std::shared_ptr<RSDrawingFilter> other = nullptr;
+    std::shared_ptr<RSDrawingFilterOriginal> other = nullptr;
     auto rsMaterialFilter = std::make_shared<RSMaterialFilter>(materialParam, BLUR_COLOR_MODE::DEFAULT);
     EXPECT_EQ(rsMaterialFilter->Compose(other), nullptr);
 }
@@ -236,10 +236,10 @@ HWTEST_F(RSMaterialFilterTest, AddTest001, TestSize.Level1)
 {
     MaterialParam materialParam;
     auto rhs = std::make_shared<RSFilter>();
-    rhs->type_ = RSDrawingFilter::FilterType::NONE;
+    rhs->type_ = RSDrawingFilterOriginal::FilterType::NONE;
     auto rsMaterialFilter = std::make_shared<RSMaterialFilter>(materialParam, BLUR_COLOR_MODE::AVERAGE);
     EXPECT_NE(rsMaterialFilter->Add(rhs), nullptr);
-    rhs->type_ = RSDrawingFilter::FilterType::MATERIAL;
+    rhs->type_ = RSDrawingFilterOriginal::FilterType::MATERIAL;
     EXPECT_NE(rsMaterialFilter->Add(rhs), nullptr);
 }
 
@@ -252,10 +252,10 @@ HWTEST_F(RSMaterialFilterTest, SubTest001, TestSize.Level1)
 {
     MaterialParam materialParam;
     auto rhs = std::make_shared<RSFilter>();
-    rhs->type_ = RSDrawingFilter::FilterType::NONE;
+    rhs->type_ = RSDrawingFilterOriginal::FilterType::NONE;
     auto rsMaterialFilter = std::make_shared<RSMaterialFilter>(materialParam, BLUR_COLOR_MODE::AVERAGE);
     EXPECT_NE(rsMaterialFilter->Sub(rhs), nullptr);
-    rhs->type_ = RSDrawingFilter::FilterType::MATERIAL;
+    rhs->type_ = RSDrawingFilterOriginal::FilterType::MATERIAL;
     EXPECT_NE(rsMaterialFilter->Sub(rhs), nullptr);
 }
 
@@ -393,6 +393,38 @@ HWTEST_F(RSMaterialFilterTest, IsNearZero001, TestSize.Level1)
     std::shared_ptr<RSFilter> rsMaterialFilter = std::make_shared<RSMaterialFilter>(materialParam, mode);
     float threshold = 1.0f;
     EXPECT_TRUE(rsMaterialFilter->IsNearZero(threshold));
+}
+
+/**
+ * @tc.name: GetDetailedDescription001
+ * @tc.desc: Verify function GetDetailedDescription
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSMaterialFilterTest, GetDetailedDescription001, TestSize.Level1)
+{
+    float dipScale = 1.0f;
+    BLUR_COLOR_MODE mode = BLUR_COLOR_MODE::DEFAULT;
+    float ratio = 1.0f;
+    MATERIAL_BLUR_STYLE style = MATERIAL_BLUR_STYLE::STYLE_CARD_DARK;
+    RSMaterialFilter rsMaterialFilter = RSMaterialFilter(style, dipScale, mode, ratio);
+
+    rsMaterialFilter.GetDetailedDescription();
+}
+
+/**
+ * @tc.name: GetColorPickerCacheTask001
+ * @tc.desc: Verify function GetColorPickerCacheTask001
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSMaterialFilterTest, GetColorPickerCacheTask001, TestSize.Level1)
+{
+    float dipScale = 1.0f;
+    BLUR_COLOR_MODE mode = BLUR_COLOR_MODE::DEFAULT;
+    float ratio = 1.0f;
+    MATERIAL_BLUR_STYLE style = MATERIAL_BLUR_STYLE::STYLE_CARD_DARK;
+    RSMaterialFilter rsMaterialFilter = RSMaterialFilter(style, dipScale, mode, ratio);
+
+    EXPECT_NE(rsMaterialFilter.GetColorPickerCacheTask(), nullptr);
 }
 
 /**

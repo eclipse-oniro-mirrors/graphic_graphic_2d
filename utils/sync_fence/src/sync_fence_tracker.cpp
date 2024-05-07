@@ -23,8 +23,10 @@
 #include "file_ex.h"
 
 #ifdef FENCE_SCHED_ENABLE
-#include "res_sched_client.h"
-#include "res_type.h"
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 #endif
 
 namespace OHOS {
@@ -36,7 +38,61 @@ namespace {
 #define LOG_TAG "SyncFence"
 
 #ifdef FENCE_SCHED_ENABLE
-    const uint32_t RS_SUB_QOS_LEVEL = 7;
+constexpr unsigned int QOS_CTRL_IPC_MAGIC = 0xCC;
+
+#define QOS_CTRL_BASIC_OPERATION \
+    _IOWR(QOS_CTRL_IPC_MAGIC, 1, struct QosCtrlData)
+
+#define QOS_APPLY 1
+
+typedef enum {
+    QOS_BACKGROUND = 0,
+    QOS_UTILITY,
+    QOS_DEFAULT,
+    QOS_USER_INITIATED,
+    QOS_DEADLINE_REQUEST,
+    QOS_USER_INTERACTIVE,
+    QOS_KEY_BACKGROUND,
+} QosLevel;
+
+struct QosCtrlData {
+    int pid;
+    unsigned int type;
+    unsigned int level;
+    int qos;
+    int staticQos;
+    int dynamicQos;
+    bool tagSchedEnable = false;
+};
+
+static int TrivalOpenQosCtrlNode(void)
+{
+    char fileName[] = "/proc/thread-self/sched_qos_ctrl";
+    int fd = open(fileName, O_RDWR);
+    if (fd < 0) {
+        HILOG_WARN(LOG_CORE, "open qos node failed");
+    }
+    return fd;
+}
+
+void QosApply(unsigned int level)
+{
+    int fd = TrivalOpenQosCtrlNode();
+    if (fd < 0) {
+        return;
+    }
+
+    int tid = gettid();
+    struct QosCtrlData data;
+    data.level = level;
+    data.type = QOS_APPLY;
+    data.pid = tid;
+    int ret = ioctl(fd, QOS_CTRL_BASIC_OPERATION, &data);
+    if (ret < 0) {
+        HILOG_WARN(LOG_CORE, "qos apply failed");
+    }
+    close(fd);
+}
 #endif
 }
 
@@ -51,16 +107,7 @@ SyncFenceTracker::SyncFenceTracker(const std::string threadName)
 #ifdef FENCE_SCHED_ENABLE
     if (handler_) {
         handler_->PostTask([]() {
-            std::string strPid = std::to_string(getpid());
-            std::string strTid = std::to_string(gettid());
-            std::string strQos = std::to_string(RS_SUB_QOS_LEVEL);
-            std::unordered_map<std::string, std::string> mapPayload;
-            mapPayload["pid"] = strPid;
-            mapPayload[strTid] = strQos;
-            mapPayload["bundleName"] = "SyncFenceTracker";
-            uint32_t type = OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE;
-            int64_t value = 0;
-            OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, value, mapPayload);
+            QosApply(QosLevel::QOS_USER_INTERACTIVE);
         });
     }
 #endif
@@ -88,9 +135,9 @@ bool SyncFenceTracker::CheckGpuSubhealthEventLimit()
 {
     auto now = std::chrono::system_clock::now();
     std::time_t t = std::chrono::system_clock::to_time_t(now);
-    std::tm tm = *std::localtime(&t);
-    if (gpuSubhealthEventNum == 0 || tm.tm_yday > gpuSubhealthEventDay) {
-        gpuSubhealthEventDay = tm.tm_yday;
+    std::tm *tm = std::localtime(&t);
+    if (gpuSubhealthEventNum == 0 || ((tm != nullptr) && tm->tm_yday > gpuSubhealthEventDay)) {
+        gpuSubhealthEventDay = tm->tm_yday;
         gpuSubhealthEventNum = 0;
         HILOG_DEBUG(LOG_CORE, "first event of %{public}" PRId32, gpuSubhealthEventDay);
         gpuSubhealthEventNum++;
@@ -117,22 +164,28 @@ inline void SyncFenceTracker::UpdateFrameQueue(int32_t startTime)
 inline int32_t SyncFenceTracker::GetFrameRate()
 {
     int32_t frameRate = 0;
-    int32_t frameNum = frameStartTimes->size() - 1;
-    if (frameNum > 0) {
-        frameRate = FRAME_PERIOD * frameNum / (frameStartTimes->back() - frameStartTimes->front());
+    auto frameNum = frameStartTimes->size();
+    if (frameNum > 1) {
+        frameRate = FRAME_PERIOD * (frameNum - 1) / (frameStartTimes->back() - frameStartTimes->front());
     }
-    HILOG_DEBUG(LOG_CORE, "frameNum: %{public}" PRId32 ", frameRate: %{public}" PRId32,
+    HILOG_DEBUG(LOG_CORE, "frameNum: %zu, frameRate: %{public}" PRId32,
         frameNum, frameRate);
     return frameRate;
 }
 
 void SyncFenceTracker::ReportEventGpuSubhealth(int32_t duration)
 {
-    auto reportName = "GPU_SUBHEALTH_MONITORING";
-    RS_TRACE_NAME_FMT("RSJankStats::ReportEventGpuSubhealth");
-    HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, reportName,
-        OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "WAIT_ACQUIRE_FENCE_TIME", duration,
-        "FRAME_RATE", GetFrameRate());
+    if (handler_) {
+        handler_->PostTask([this, duration]() {
+            RS_TRACE_NAME_FMT("report GPU_SUBHEALTH_MONITORING");
+            auto reportName = "GPU_SUBHEALTH_MONITORING";
+            HILOG_DEBUG(LOG_CORE, "report GPU_SUBHEALTH_MONITORING. duration : %{public}"
+                PRId32, duration);
+            HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, reportName,
+                OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "WAIT_ACQUIRE_FENCE_TIME",
+                duration, "FRAME_RATE", GetFrameRate());
+        });
+    }
 }
 
 void SyncFenceTracker::Loop(const sptr<SyncFence>& fence)

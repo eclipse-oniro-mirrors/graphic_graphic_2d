@@ -26,6 +26,7 @@
 #include "pipeline/rs_draw_cmd_list.h"
 #include "pipeline/rs_node_map.h"
 #include "transaction/rs_transaction_proxy.h"
+#include "ui/rs_hdr_manager.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -46,7 +47,12 @@ RSCanvasNode::SharedPtr RSCanvasNode::Create(bool isRenderServiceNode, bool isTe
 RSCanvasNode::RSCanvasNode(bool isRenderServiceNode, bool isTextureExportNode)
     : RSNode(isRenderServiceNode, isTextureExportNode) {}
 
-RSCanvasNode::~RSCanvasNode() {}
+RSCanvasNode::~RSCanvasNode()
+{
+    if (hdrPresent_) {
+        RSHDRManager::Instance().ReduceHDRNum();
+    }
+}
 
 ExtendRecordingCanvas* RSCanvasNode::BeginRecording(int width, int height)
 {
@@ -151,6 +157,17 @@ void RSCanvasNode::SetFreeze(bool isFreeze)
     if (transactionProxy != nullptr) {
         transactionProxy->AddCommand(command, true);
     }
+}
+
+void RSCanvasNode::SetHDRPresent(bool hdrPresent)
+{
+    hdrPresent_ = hdrPresent;
+    if (hdrPresent) {
+        RSHDRManager::Instance().IncreaseHDRNum();
+    } else {
+        RSHDRManager::Instance().ReduceHDRNum();
+    }
+    ROSEN_LOGD("SetHDRPresent:%{public}d hdrnum:%{public}d", hdrPresent, RSHDRManager::Instance().getHDRNum());
 }
 
 void RSCanvasNode::OnBoundsSizeChanged() const

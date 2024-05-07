@@ -413,6 +413,11 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_STATE;
                 break;
             }
+            if (!securityManager_.IsInterfaceCodeAccessible(code)) {
+                RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest no permission to access"\
+                    "GET_SHOW_REFRESH_RATE_ENABLED");
+                return ERR_INVALID_STATE;
+            }
             bool enable = GetShowRefreshRateEnabled();
             reply.WriteBool(enable);
             break;
@@ -422,6 +427,11 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             if (token != RSIRenderServiceConnection::GetDescriptor()) {
                 ret = ERR_INVALID_STATE;
                 break;
+            }
+            if (!securityManager_.IsInterfaceCodeAccessible(code)) {
+                RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest no permission to access"\
+                    "SET_SHOW_REFRESH_RATE_ENABLED");
+                return ERR_INVALID_STATE;
             }
             bool enable = data.ReadBool();
             SetShowRefreshRateEnabled(enable);
@@ -481,7 +491,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_APPLICATION_AGENT): {
-            uint32_t pid = RS_PROFILER_READ_PID(data);
+            uint32_t pid = static_cast<uint32_t>(RS_PROFILER_READ_PID(data));
             auto remoteObject = data.ReadRemoteObject();
             if (remoteObject == nullptr) {
                 ret = ERR_NULL_OBJECT;
@@ -1347,7 +1357,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             auto touchStatus = data.ReadInt32();
-            NotifyTouchEvent(touchStatus);
+            auto touchCnt = data.ReadInt32();
+            NotifyTouchEvent(touchStatus, touchCnt);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_HGM_CFG_CALLBACK) : {

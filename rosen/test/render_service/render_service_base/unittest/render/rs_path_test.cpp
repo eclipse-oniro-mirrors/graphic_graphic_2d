@@ -83,6 +83,31 @@ HWTEST_F(RSPathTest, GetDrawingPathTest001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ReverseTest001
+ * @tc.desc:
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPathTest, ReverseTest001, TestSize.Level1)
+{
+    Drawing::Path path = CreateDrawingPath();
+    auto rsPath = RSPath::CreateRSPath(path);
+    auto reveseRsPath = rsPath->Reverse();
+    EXPECT_NE(rsPath, reveseRsPath);
+}
+
+/**
+ * @tc.name: GetDistanceTest
+ * @tc.desc:
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPathTest, GetDistanceTest, TestSize.Level1)
+{
+    Drawing::Path path = CreateDrawingPath();
+    auto rsPath = RSPath::CreateRSPath(path);
+    EXPECT_EQ(rsPath->GetDistance(), path.GetLength(false));
+}
+
+/**
  * @tc.name: SetSkiaPathTest
  * @tc.desc:
  * @tc.type: FUNC
@@ -118,5 +143,17 @@ HWTEST_F(RSPathTest, GetPosTanTest002, TestSize.Level1)
     Vector4f pos = { 1.0f, 1.0f, 1.0f, 1.0f };
     float degrees = 0.0f;
     EXPECT_FALSE(rsPath->GetPosTan(0.0f, pos, degrees));
+}
+
+/**
+ * @tc.name: ReverseTest002
+ * @tc.desc: Verify function Reverse
+ * @tc.type: FUNC
+ * @tc.require: issuesI9MO9U
+ */
+HWTEST_F(RSPathTest, ReverseTest002, TestSize.Level1)
+{
+    RSPath rsPath;
+    EXPECT_NE(rsPath.Reverse(), nullptr);
 }
 } // namespace OHOS::Rosen
