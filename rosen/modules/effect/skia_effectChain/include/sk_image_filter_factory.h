@@ -20,6 +20,13 @@
 
 namespace OHOS {
 namespace Rosen {
+    
+enum class SkTileModeNum : int32_t {
+    SK_CLAMP = 0,
+    SK_REPEAT,
+    SK_MIRROR,
+    SK_DECAL
+}
 
 struct PixelColorMatrix {
     static constexpr uint8_t MATRIX_SIZE = 20;
