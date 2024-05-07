@@ -25,14 +25,14 @@ static constexpr float GRAYSCALE_PARATHREE = 0.0722f;
 
 SkTileMode ConvertToSkTileMode(int32_t skTileModeNum)
 {
-    switch (static_cast<enum SkTileModeNum>skTileModeNum) {
-        case SK_CLAMP:
+    switch (static_cast<enum SkTileModeNum>(skTileModeNum)) {
+        case SkTileModeNum::SK_CLAMP:
             return SkTileMode::kClamp;
-        case SK_REPEAT:
+        case SkTileModeNum::SK_REPEAT:
             return SkTileMode::kRepeat;
-        case SK_MIRROR:
+        case SkTileModeNum::SK_MIRROR:
             return SkTileMode::kMirror;
-        case SK_DECAL:
+        case SkTileModeNum::SK_DECAL:
             return SkTileMode::kDecal;
         default:
             return SkTileMode::kDecal;

@@ -26,7 +26,7 @@ enum class SkTileModeNum : int32_t {
     SK_REPEAT,
     SK_MIRROR,
     SK_DECAL
-}
+};
 
 struct PixelColorMatrix {
     static constexpr uint8_t MATRIX_SIZE = 20;
