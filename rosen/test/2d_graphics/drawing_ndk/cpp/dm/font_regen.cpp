@@ -39,6 +39,7 @@ OH_Drawing_TextBlob* make_blob(const std::string& text, OH_Drawing_Font* font)
     OH_Drawing_TextBlobBuilderAllocRunPos(builder, font, count, rect);
     OH_Drawing_TextBlob* blob = OH_Drawing_TextBlobBuilderMake(builder);
     OH_Drawing_TextBlobBuilderDestroy(builder);
+    OH_Drawing_RectDestroy(rect);
     return blob;
 }
 
