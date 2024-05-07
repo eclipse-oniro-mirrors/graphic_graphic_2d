@@ -820,7 +820,7 @@ void RSSurfaceRenderNode::SetAncoForceDoDirect(bool ancoForceDoDirect)
 }
 bool RSSurfaceRenderNode::GetAncoForceDoDirect() const
 {
-    return false;
+    return ancoForceDoDirect_;
 }
 
 void RSSurfaceRenderNode::RegisterTreeStateChangeCallback(TreeStateChangeCallback callback)
