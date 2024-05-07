@@ -96,8 +96,7 @@ void DrawBitmapRect2::OnTestFunction(OH_Drawing_Canvas *canvas)
     DRAWING_LOGI("DrawBitmapRect2::OnTestFunction start");
     OH_Drawing_CanvasClear(canvas, 0xFFCCCCCC);
 
-    // 其中OH_Drawing_CanvasDrawRect接口实现有问题并未用画笔画出而是用画刷，故这边备注了画笔的操作
-    // 如果要验证原图的效果，可以把注释放开用画笔。这里注释掉保留源码逻辑
+    // 其中OH_Drawing_CanvasDrawRect接口实现有问题并未用画笔画出而是用画刷，故这边多了画笔的操作
     OH_Drawing_Pen *pen = OH_Drawing_PenCreate();
     OH_Drawing_PenSetAntiAlias(pen, true);
     OH_Drawing_PenSetColor(pen, 0xFF000000);
@@ -138,7 +137,7 @@ void DrawBitmapRect2::OnTestFunction(OH_Drawing_Canvas *canvas)
     OH_Drawing_RectDestroy(dst);
     OH_Drawing_RectDestroy(dstR);
     OH_Drawing_ImageDestroy(image);
-    // 上方要放开注释，这里也需要放开，释放画笔内存
+    // 释放画笔内存
     OH_Drawing_CanvasDetachPen(canvas);
     OH_Drawing_PenDestroy(pen);
     DRAWING_LOGI("DrawBitmapRect2::OnTestFunction end");
