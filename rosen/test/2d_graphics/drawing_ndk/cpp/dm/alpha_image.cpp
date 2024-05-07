@@ -81,10 +81,7 @@ AlphaImage::~AlphaImage() {}
 
 void AlphaImage::OnTestFunction(OH_Drawing_Canvas *canvas)
 {
-    float kSize = 96;
     auto image = make_alpha_image(kSize, kSize);
-    OH_Drawing_Brush *brush = OH_Drawing_BrushCreate();
-    OH_Drawing_Filter *filter = OH_Drawing_FilterCreate();
 
     OH_Drawing_MaskFilter *maskFilter = OH_Drawing_MaskFilterCreateBlur(OH_Drawing_BlurType::NORMAL, 10.f, true);
     OH_Drawing_SamplingOptions *option = OH_Drawing_SamplingOptionsCreate(OH_Drawing_FilterMode::FILTER_MODE_NEAREST,

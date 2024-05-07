@@ -16,8 +16,10 @@
 #define ALPHA_IMAGE_H
 #include "../test_base.h"
 #include <bits/alltypes.h>
-#include <native_drawing/drawing_rect.h>
+#include <native_drawing/drawing_brush.h>
 #include <native_drawing/drawing_canvas.h>
+#include <native_drawing/drawing_filter.h>
+#include <native_drawing/drawing_rect.h>
 
 class AlphaImage : public TestBase {
 public:
@@ -26,6 +28,9 @@ public:
 
 protected:
     void OnTestFunction(OH_Drawing_Canvas *canvas) override;
+    float kSize = 96;
+    OH_Drawing_Brush *brush = OH_Drawing_BrushCreate();
+    OH_Drawing_Filter *filter = OH_Drawing_FilterCreate();
 };
 
 class AlphaImageAlphaTint : public TestBase {
