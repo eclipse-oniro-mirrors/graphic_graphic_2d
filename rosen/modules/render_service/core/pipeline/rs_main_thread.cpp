@@ -1222,9 +1222,9 @@ void RSMainThread::CollectInfoForHardwareComposer()
                     surfaceNode->SetContentDirty();
                 }
             } else if (!surfaceNode->GetIsLastFrameHwcEnabled()) { // gpu -> hwc
-                doDirectComposition_ = false;
                 if (surfaceNode->IsCurrentFrameBufferConsumed()) {
                     surfaceNode->SetContentDirty();
+                    doDirectComposition_ = false;
                 } else {
                     surfaceNode->SetHwcDelayDirtyFlag(true);
                 }
