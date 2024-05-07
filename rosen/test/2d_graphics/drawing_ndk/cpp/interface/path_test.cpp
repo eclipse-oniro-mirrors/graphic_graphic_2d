@@ -310,7 +310,6 @@ void PathAddOvalWithInitialPoint::OnTestPerformance(OH_Drawing_Canvas* canvas)
 void PathAddArc::OnTestPerformance(OH_Drawing_Canvas* canvas)
 {
     OH_Drawing_Path* path = OH_Drawing_PathCreate();
-    // OH_Drawing_PathSetDirection(path, PATH_DIRECTION_CW); // 设置路径方向为顺时针
     for (int i = 0; i < testCount_; i++) {
         int l = i % bitmapWidth_;
         int t = (i + 100) % bitmapHeight_;                               // 100 用于高度计算
