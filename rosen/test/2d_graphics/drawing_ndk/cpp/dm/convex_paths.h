@@ -25,7 +25,7 @@
 
 #include "common/log_common.h"
 
-class ConvexPaths : public TestBase {
+class ConvexPaths final : public TestBase {
 public:
     ConvexPaths()
     {

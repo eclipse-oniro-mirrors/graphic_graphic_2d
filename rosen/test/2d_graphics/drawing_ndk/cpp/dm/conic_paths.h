@@ -25,7 +25,7 @@
 
 #include "common/log_common.h"
 
-class ConicPaths : public TestBase {
+class ConicPaths final : public TestBase {
 public:
     ConicPaths()
     {
