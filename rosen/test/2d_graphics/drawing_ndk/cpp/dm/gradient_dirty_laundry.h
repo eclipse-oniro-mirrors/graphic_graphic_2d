@@ -30,7 +30,7 @@
 class Gradients : public TestBase {
 public:
     Gradients();
-    ~Gradients() = default;
+    ~Gradients() override;
 
 protected:
     void OnTestFunction(OH_Drawing_Canvas* canvas) override;

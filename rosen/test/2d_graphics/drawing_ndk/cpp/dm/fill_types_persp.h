@@ -31,7 +31,7 @@ class FillTypePersp : public TestBase {
 
 public:
     FillTypePersp();
-    ~FillTypePersp() = default;
+    ~FillTypePersp() override;
 
 protected:
     void MakePath();

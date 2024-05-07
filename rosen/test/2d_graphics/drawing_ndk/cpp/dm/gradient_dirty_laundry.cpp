@@ -40,6 +40,8 @@ Gradients::Gradients()
     fileName_ = "gradient_dirty_laundry";
 }
 
+Gradients::~Gradients() {}
+
 struct GradData {
     int fCount = 40; // 40  表示颜色数量
     const uint32_t* fColors;
