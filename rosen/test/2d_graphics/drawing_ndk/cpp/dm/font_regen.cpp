@@ -37,7 +37,9 @@ OH_Drawing_TextBlob* make_blob(const std::string& text, OH_Drawing_Font* font)
 
     int count = OH_Drawing_FontCountText(font, text.c_str(), len, OH_Drawing_TextEncoding::TEXT_ENCODING_UTF8);
     OH_Drawing_TextBlobBuilderAllocRunPos(builder, font, count, rect);
-    return OH_Drawing_TextBlobBuilderMake(builder);
+    OH_Drawing_TextBlob* blob = OH_Drawing_TextBlobBuilderMake(builder);
+    OH_Drawing_TextBlobBuilderDestroy(builder);
+    return blob;
 }
 
 BadApple::BadApple()
@@ -54,16 +56,21 @@ void BadApple::OnTestFunction(OH_Drawing_Canvas* canvas)
         ("iPad Pro"),
     };
     OH_Drawing_Font* font = OH_Drawing_FontCreate();
-    float textSize = 256; //  FontSetTextSize 参数
+    float textSize = 256; //  256 FontSetTextSize 参数
     OH_Drawing_FontSetTextSize(font, textSize);
-    OH_Drawing_TextBlob* fBlobs[3];         // OH_Drawing_TextBlob*
+    OH_Drawing_TextBlob* fBlobs[3];         // OH_Drawing_TextBlob* 3个元素
     fBlobs[0] = make_blob(kTexts[0], font); // return OH_Drawing_TextBlobBuilderMake(builder)
     fBlobs[1] = make_blob(kTexts[1], font); // return OH_Drawing_TextBlobBuilderMake(builder)
 
     OH_Drawing_Pen* pen = OH_Drawing_PenCreate();
     OH_Drawing_PenSetColor(pen, 0xFF111111);
     OH_Drawing_CanvasAttachPen(canvas, pen);
-
     OH_Drawing_CanvasDrawTextBlob(canvas, fBlobs[0], 10, 260); // 10, 260 CanvasDrawTextBlob参数
     OH_Drawing_CanvasDrawTextBlob(canvas, fBlobs[1], 10, 500); // 10, 500 CanvasDrawTextBlob参数
+
+    OH_Drawing_CanvasDetachPen(canvas);
+    OH_Drawing_PenDestroy(pen);
+    OH_Drawing_TextBlobDestroy(fBlobs[0]);
+    OH_Drawing_TextBlobDestroy(fBlobs[1]);
+    OH_Drawing_FontDestroy(font);
 }

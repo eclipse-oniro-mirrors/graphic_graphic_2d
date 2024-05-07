@@ -98,6 +98,7 @@ OH_Drawing_ShaderEffect* MakeRadial(const OH_Drawing_Point* firstPoint, const OH
     }
     OH_Drawing_ShaderEffect* MakeRadial =
         OH_Drawing_ShaderEffectCreateRadialGradient(centerPt, Point.x, g_data.fColors, positions, fCount, tileMode);
+    OH_Drawing_PointDestroy(centerPt);
     return MakeRadial;
 }
 OH_Drawing_ShaderEffect* MakeSweep(const OH_Drawing_Point* firstPoint, const OH_Drawing_Point* secondPoint,
@@ -120,6 +121,7 @@ OH_Drawing_ShaderEffect* MakeSweep(const OH_Drawing_Point* firstPoint, const OH_
     }
     OH_Drawing_ShaderEffect* MakeSweep =
         OH_Drawing_ShaderEffectCreateSweepGradient(centerPt, g_data.fColors, positions, fCount, tileMode);
+    OH_Drawing_PointDestroy(centerPt);
     return MakeSweep;
 }
 
@@ -134,7 +136,9 @@ constexpr GradMaker G_GRAD_MAKERS[] = {
 void Gradients::OnTestFunction(OH_Drawing_Canvas* canvas)
 {
     DRAWING_LOGI("GradientsGM::OnTestFunction start");
-
+    //  渐变的起点和终点坐标
+    OH_Drawing_Point* firstPoint = OH_Drawing_PointCreate(0, 0);          // 0, 0  创建Point
+    OH_Drawing_Point* secondPoint = OH_Drawing_PointCreate(100.0, 100.0); // 100.0, 100.0 创建点
     // 使用指定颜色设置清空画布底色
     OH_Drawing_CanvasClear(canvas, 0xFFDDDDDD);
     // 创建一个画刷brush对象设置抗锯齿属性
@@ -148,11 +152,13 @@ void Gradients::OnTestFunction(OH_Drawing_Canvas* canvas)
     for (size_t i = 0; i < sizeof(G_GRAD_DATA) / sizeof(G_GRAD_DATA[0]); i++) {
         OH_Drawing_CanvasSave(canvas);
         for (size_t j = 0; j < sizeof(G_GRAD_MAKERS) / sizeof(G_GRAD_MAKERS[0]); j++) {
-            OH_Drawing_BrushSetShaderEffect(
-                brush, G_GRAD_MAKERS[j](firstPoint, secondPoint, G_GRAD_DATA[i], OH_Drawing_TileMode::CLAMP));
+            OH_Drawing_ShaderEffect* effect =
+                G_GRAD_MAKERS[j](firstPoint, secondPoint, G_GRAD_DATA[i], OH_Drawing_TileMode::CLAMP);
+            OH_Drawing_BrushSetShaderEffect(brush, effect);
             OH_Drawing_CanvasAttachBrush(canvas, brush);
             OH_Drawing_CanvasDrawRect(canvas, rectAngLe);
             OH_Drawing_CanvasTranslate(canvas, 0, 120); // y平移 120
+            OH_Drawing_ShaderEffectDestroy(effect);
         }
         OH_Drawing_CanvasRestore(canvas);
         OH_Drawing_CanvasTranslate(canvas, 120, 0); // x平移 120
@@ -161,5 +167,7 @@ void Gradients::OnTestFunction(OH_Drawing_Canvas* canvas)
     OH_Drawing_RectDestroy(rectAngLe);
     OH_Drawing_CanvasDetachBrush(canvas);
     OH_Drawing_BrushDestroy(brush);
+    OH_Drawing_PointDestroy(firstPoint);
+    OH_Drawing_PointDestroy(secondPoint);
     brush = nullptr;
 }

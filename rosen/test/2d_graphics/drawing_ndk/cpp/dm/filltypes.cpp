@@ -58,6 +58,7 @@ void FillType::showPath(OH_Drawing_Canvas* canvas, DATA_PARAM param, OH_Drawing_
     // 上画布
     OH_Drawing_CanvasAttachBrush(canvas, brush);
     OH_Drawing_CanvasDrawPath(canvas, path);
+    OH_Drawing_CanvasDetachBrush(canvas);
     OH_Drawing_CanvasRestore(canvas);
     OH_Drawing_RectDestroy(rectAngLe);
 }

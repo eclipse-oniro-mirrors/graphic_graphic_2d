@@ -70,6 +70,7 @@ void FillTypePersp::ShowPath(OH_Drawing_Canvas* canvas, DATA_PARAM param, OH_Dra
     OH_Drawing_CanvasTranslate(canvas, -r.CenterX(), -r.CenterY());
     OH_Drawing_CanvasAttachBrush(canvas, brush);
     OH_Drawing_CanvasDrawPath(canvas, fPath);
+    OH_Drawing_CanvasDetachBrush(canvas);
     OH_Drawing_RectDestroy(rc);
     OH_Drawing_CanvasRestore(canvas);
 }
@@ -155,4 +156,7 @@ void FillTypePersp::OnTestFunction(OH_Drawing_Canvas* canvas)
     OH_Drawing_ShaderEffectDestroy(effect);
     OH_Drawing_BrushDestroy(bkgnrd);
     OH_Drawing_MatrixDestroy(mat);
+    OH_Drawing_MatrixDestroy(persp);
+    OH_Drawing_PathDestroy(fPath);
+    OH_Drawing_PointDestroy(center);
 }

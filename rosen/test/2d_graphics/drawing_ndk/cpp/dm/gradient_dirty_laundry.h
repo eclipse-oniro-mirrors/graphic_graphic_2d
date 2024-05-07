@@ -34,8 +34,5 @@ public:
 
 protected:
     void OnTestFunction(OH_Drawing_Canvas* canvas) override;
-    //  渐变的起点和终点坐标
-    OH_Drawing_Point* firstPoint = OH_Drawing_PointCreate(0, 0);          // 0, 0  创建Point
-    OH_Drawing_Point* secondPoint = OH_Drawing_PointCreate(100.0, 100.0); // 100.0, 100.0 创建点
 };
 #endif // GRADIENTSGM_H
