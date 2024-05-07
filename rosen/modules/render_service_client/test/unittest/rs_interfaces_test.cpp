@@ -1421,17 +1421,17 @@ HWTEST_F(RSInterfacesTest, GetCurrentRefreshRateMode, Function | SmallTest | Lev
 HWTEST_F(RSInterfacesTest, CreatePixelMapFromSurfaceId001, Function | SmallTest | Level2)
 {
     ASSERT_NE(rsInterfaces, nullptr);
-    auto surface = IConsumerSurface::Create();
-    ASSERT_NE(surface, nullptr);
+    auto cSurface = IConsumerSurface::Create();
+    ASSERT_NE(cSurface, nullptr);
     OHOS::Rect rect = {
         .x = 0,
         .y = 0,
         .w = 300,
         .h = 300,
     };
-    unint64_t surfaceId = static_cast<uint64_t>(surface->GetUniqueId());
+    uint64_t surfaceId = static_cast<uint64_t>(cSurface->GetUniqueId());
     auto utils = SurfaceUtils::GetInstance();
-    utils->Add(surfaceId, surface);
+    utils->Add(surfaceId, cSurface);
     rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect);
 }
 
