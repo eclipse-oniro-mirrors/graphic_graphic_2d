@@ -39,8 +39,6 @@ FillTypePersp::FillTypePersp()
     fileName_ = "filltypespersp";
 }
 
-FillTypePersp::~FillTypePersp() {}
-
 void FillTypePersp::MakePath()
 {
     fPath = OH_Drawing_PathCreate();

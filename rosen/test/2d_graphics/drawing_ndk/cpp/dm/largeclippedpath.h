@@ -31,7 +31,7 @@ public:
         fileName_ = "largeclippedpath";
     }
 
-    ~LargeClippedPath() override;
+    ~LargeClippedPath() override {};
 
 protected:
     void OnTestFunction(OH_Drawing_Canvas* canvas) override;

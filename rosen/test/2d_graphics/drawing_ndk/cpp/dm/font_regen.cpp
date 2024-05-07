@@ -49,8 +49,6 @@ BadApple::BadApple()
     fileName_ = "badapple";
 }
 
-BadApple::~BadApple() {}
-
 void BadApple::OnTestFunction(OH_Drawing_Canvas* canvas)
 {
     static const std::string kTexts[] = {

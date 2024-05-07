@@ -32,8 +32,6 @@ FillType::FillType()
     fileName_ = "filltypes";
 }
 
-FillType::~FillType() {}
-
 void FillType::showPath(OH_Drawing_Canvas* canvas, DATA_PARAM param, OH_Drawing_Brush* brush)
 {
     int x = param.x;

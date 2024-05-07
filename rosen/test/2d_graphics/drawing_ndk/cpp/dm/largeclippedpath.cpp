@@ -32,8 +32,6 @@
 
 constexpr int K_SIZE = 1000; // 1000 Size
 
-LargeClippedPath::~LargeClippedPath() {}
-
 void LargeClippedPath::OnTestFunction(OH_Drawing_Canvas* canvas)
 {
     // 使用指定颜色清空画布

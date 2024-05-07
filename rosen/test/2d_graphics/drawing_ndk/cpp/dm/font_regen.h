@@ -24,7 +24,7 @@
 class BadApple : public TestBase {
 public:
     BadApple();
-    ~BadApple() override;
+    ~BadApple() override {};
 
 protected:
     void OnTestFunction(OH_Drawing_Canvas* canvas) override;

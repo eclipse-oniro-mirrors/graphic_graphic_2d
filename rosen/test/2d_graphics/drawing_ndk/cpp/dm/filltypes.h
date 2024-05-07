@@ -32,7 +32,7 @@ class FillType : public TestBase {
 
 public:
     FillType();
-    ~FillType() override;
+    ~FillType() override {};
 
 protected:
     void OnTestFunction(OH_Drawing_Canvas* canvas) override;
