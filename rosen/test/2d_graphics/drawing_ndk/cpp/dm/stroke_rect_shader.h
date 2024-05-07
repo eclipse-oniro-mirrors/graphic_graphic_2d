@@ -18,7 +18,6 @@
 
 #include <bits/alltypes.h>
 #include <native_drawing/drawing_canvas.h>
-#include <native_drawing/drawing_rect.h>
 #include "../test_base.h"
 
 enum { K_W = 690, K_H = 300 };
@@ -28,6 +27,7 @@ public:
     {
         bitmapWidth_ = K_W;
         bitmapHeight_ = K_H;
+        fileName_ = "stroke_rect_shader";
     }
     ~StrokeRectShader() = default;
 

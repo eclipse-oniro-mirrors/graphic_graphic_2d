@@ -56,7 +56,7 @@ Strokes2::Strokes2()
 {
     bitmapWidth_ = K_W;
     bitmapHeight_ = K_H * 2; // 2 画2倍的高度
-    fileName_ = "strokes_poly";
+    fileName_ = "strokes_poly"; // 对标 strokes.cpp
 }
 
 void Strokes2::OnTestFunction(OH_Drawing_Canvas* canvas)
@@ -71,7 +71,7 @@ void Strokes2::OnTestFunction(OH_Drawing_Canvas* canvas)
         OH_Drawing_PathLineTo(fPath, x, y);
     }
 
-    OH_Drawing_CanvasClear(canvas, 0xFFFFFFFF);
+    OH_Drawing_CanvasClear(canvas, DRAW_COLORWHITE);
     OH_Drawing_Pen* pen = OH_Drawing_PenCreate();
     OH_Drawing_PenSetWidth(pen, 4.5f); // 4.5f pen width
 

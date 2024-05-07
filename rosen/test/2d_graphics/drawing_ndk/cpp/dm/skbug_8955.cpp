@@ -36,38 +36,16 @@ SkBug8955::SkBug8955()
     fileName_ = "skbug_8955";
 }
 
-OH_Drawing_TextBlob* makeFromText(const void* text, size_t byteLength, OH_Drawing_Font* font,
-    OH_Drawing_TextBlobBuilder* textBlobBuilder, OH_Drawing_TextEncoding encoding)
-{
-    const int count = OH_Drawing_FontCountText(font, text, byteLength, encoding);
-    if (count < 1) {
-        return nullptr;
-    };
-    OH_Drawing_TextBlobBuilderAllocRunPos(textBlobBuilder, font, count, nullptr);
-
-    //  font.textToGlyphs、font.getPos接口缺失
-
-    return OH_Drawing_TextBlobCreateFromText(text, byteLength, font, encoding);
-}
-
 void SkBug8955::OnTestFunction(OH_Drawing_Canvas* canvas)
 {
     OH_Drawing_Brush* brush = OH_Drawing_BrushCreate();
-
     OH_Drawing_Font* font = OH_Drawing_FontCreate();
     float fSize = 50.f;
     OH_Drawing_FontSetTextSize(font, fSize);
-
-    OH_Drawing_TextBlobBuilder* textBlobBuilder = OH_Drawing_TextBlobBuilderCreate();
-
-    auto blob = makeFromText("+", 1, font, textBlobBuilder, TEXT_ENCODING_UTF8);
-
+    auto blob = OH_Drawing_TextBlobCreateFromText("+", 1, font, TEXT_ENCODING_UTF8); // 1 为字符串长度
     OH_Drawing_CanvasSave(canvas);
-
     OH_Drawing_CanvasScale(canvas, 0, 0);
-
     OH_Drawing_CanvasAttachBrush(canvas, brush);
-
     float x = 30.f;
     float y = 60.f;
     OH_Drawing_CanvasDrawTextBlob(canvas, blob, x, y);
@@ -76,7 +54,6 @@ void SkBug8955::OnTestFunction(OH_Drawing_Canvas* canvas)
 
     OH_Drawing_CanvasDetachBrush(canvas);
     OH_Drawing_FontDestroy(font);
-    OH_Drawing_TextBlobBuilderDestroy(textBlobBuilder);
     OH_Drawing_BrushDestroy(brush);
     OH_Drawing_TextBlobDestroy(blob);
 }

@@ -16,12 +16,12 @@
 
 #include <native_drawing/drawing_brush.h>
 #include <native_drawing/drawing_color.h>
-#include <native_drawing/drawing_matrix.h>
 #include <native_drawing/drawing_path.h>
 #include <native_drawing/drawing_pen.h>
 #include <native_drawing/drawing_point.h>
 #include <native_drawing/drawing_round_rect.h>
 #include <native_drawing/drawing_shader_effect.h>
+#include <native_drawing/drawing_rect.h>
 #include "test_common.h"
 
 #include "common/log_common.h"
@@ -74,8 +74,8 @@ void StrokeRectShader::OnTestFunction(OH_Drawing_Canvas* canvas)
     OH_Drawing_Point* startPts = OH_Drawing_PointCreate(Rect.left, Rect.top);
     OH_Drawing_Point* endPts = OH_Drawing_PointCreate(Rect.right, Rect.bottom);
     const uint32_t kColors[] = {
-        0xFFFF0000,
-        0xFF0000FF,
+        DRAW_COLORRED, // 0xFFFF0000
+        DRAW_COLORBLUE, // 0xFF0000FF
     };
 
     int nCount = 2;

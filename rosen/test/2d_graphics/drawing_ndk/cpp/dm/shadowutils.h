@@ -32,4 +32,4 @@ protected:
     void draw_paths(OH_Drawing_Canvas* canvas, ShadowMode mode);
     ShadowMode sMode;
 };
-#endif // AA_RECT_MODES_H
+#endif // SHADOW_UTILS_H

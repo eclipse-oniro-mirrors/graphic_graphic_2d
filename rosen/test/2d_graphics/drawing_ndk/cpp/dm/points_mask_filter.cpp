@@ -37,7 +37,7 @@ PointsMaskFilter::PointsMaskFilter()
 {
     bitmapWidth_ = K_W;
     bitmapHeight_ = K_H;
-    fileName_ = "point_smaskfilter";
+    fileName_ = "points_maskfilter"; // 对标 points.cpp
 }
 
 // 用例名: pointsmaskfilter 测试 OH_Drawing_MaskFilterCreateBlur
