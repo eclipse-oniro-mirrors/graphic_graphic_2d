@@ -594,6 +594,7 @@ void RSDisplayRenderNodeDrawable::DrawMirror(RSDisplayRenderNode& displayNodeSp,
         RS_LOGE("RSDisplayRenderNodeDrawable::DrawMirror failed to get canvas.");
         return;
     }
+    curCanvas_->Clear(Drawing::Color::COLOR_BLACK);
     curCanvas_->SetDisableFilterCache(true);
     if (hasSecSurface[mirroredNode->GetScreenId()]) {
         SetCanvasBlack(*processor);
