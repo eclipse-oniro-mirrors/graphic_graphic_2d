@@ -84,10 +84,6 @@ export class TextBlobBounds extends TestBase {
       const textBlob: drawing.TextBlob = drawing.TextBlob.makeFromString(text, font, drawing.TextEncoding.TEXT_ENCODING_UTF8);
       canvas.drawTextBlob(textBlob, rand.nextULessThan(this.width_),rand.nextULessThan(this.height_));
       let bounds:common2D.Rect = textBlob.bounds();
-      // canvas.drawRect(bounds);
     }
   }
 }
-
-
-
