@@ -454,12 +454,12 @@ bool VSyncDistributor::PostVSyncEventPreProcess(int64_t &timestamp, std::vector<
         int64_t periodAfterDelay = 0L;
         {
             std::unique_lock<std::mutex> locker(mutex_);
-            periodBeforeDelay = event_.period;
+            periodBeforeDelay = dvsync_->GetPeriod();
             dvsync_->MarkDistributorSleep(true);
             dvsync_->RNVNotify();
             dvsync_->DelayBeforePostEvent(timestamp, locker);
             dvsync_->MarkDistributorSleep(false);
-            periodAfterDelay = event_.period;
+            periodAfterDelay = dvsync_->GetPeriod();
         }
         // if getting switched into vsync mode after sleep
         if (!IsDVsyncOn() && isRs_) {
