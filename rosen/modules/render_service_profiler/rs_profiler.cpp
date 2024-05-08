@@ -91,38 +91,45 @@ NodeId GetNodeId(const std::shared_ptr<RSRenderNode>& node)
     To visualize the damage region (as it's set for KHR_partial_update), you can set the following variable:
     'hdc shell param set rosen.dirtyregiondebug.enabled 6'
 */
-double RSProfiler::GetDirtyRegionRelative(RSContext& context)
+void RSProfiler::SetDirtyRegion(const Occlusion::Region& dirtyRegion)
 {
-    std::shared_ptr<RSDisplayRenderNode> displayNode = GetDisplayNode(context);
+    if (!IsRecording()) {
+        return;
+    }
+
+    const double maxPercentValue = 100.0;
+    g_dirtyRegionPercentage = maxPercentValue;
+
+    if (!g_context) {
+        return;
+    }
+    std::shared_ptr<RSDisplayRenderNode> displayNode = GetDisplayNode(*g_context);
     if (!displayNode) {
-        return -1;
+        return;
     }
     auto params = static_cast<RSDisplayRenderParams*>(displayNode->GetRenderParams().get());
-    auto& renderThreadParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
-    if (!renderThreadParams) {
-        return 0.0;
+    if (!params) {
+        return;
     }
 
-    auto& curAllSurfaces = params->GetAllMainAndLeashSurfaces();
-    auto dirtyManager = displayNode->GetSyncDirtyManager();
     auto screenInfo = params->GetScreenInfo();
-    const double displayWidth = screenInfo.width;
-    const double displayHeight = screenInfo.height;
-    // not to update the RSRenderFrame/DirtyManager and just calculate dirty region
-    const bool isAlignedDirtyRegion = false;
-    const uint32_t bufferAge = 3;
-    RSUniRenderUtil::MergeDirtyHistory(displayNode, bufferAge, isAlignedDirtyRegion, true);
-    Occlusion::Region dirtyRegion = RSUniRenderUtil::MergeVisibleDirtyRegion(
-        curAllSurfaces, RSUniRenderThread::Instance().GetDrawStatusVec(), isAlignedDirtyRegion, true);
-    RSUniRenderUtil::SetAllSurfaceGlobalDityRegion(curAllSurfaces, dirtyManager->GetDirtyRegion());
+    const uint64_t displayWidth = screenInfo.width;
+    const uint64_t displayHeight = screenInfo.height;
+    const uint64_t displayArea = displayWidth * displayHeight;
 
     auto rects = RSUniRenderUtil::ScreenIntersectDirtyRects(dirtyRegion, screenInfo);
-    double accumulatedArea = 0.0;
+    uint64_t dirtyRegionArea = 0;
     for (const auto& rect : rects) {
-        accumulatedArea += rect.GetWidth() * rect.GetHeight();
+        dirtyRegionArea += static_cast<uint64_t>(rect.GetWidth()) * rect.GetHeight();
     }
-    const double dirtyRegionPercentage = accumulatedArea / (displayWidth * displayHeight);
-    return dirtyRegionPercentage;
+
+    if (displayArea > 0) {
+        g_dirtyRegionPercentage =
+            maxPercentValue * static_cast<double>(dirtyRegionArea) / static_cast<double>(displayArea);
+    }
+    if (g_dirtyRegionPercentage > maxPercentValue) {
+        g_dirtyRegionPercentage = maxPercentValue;
+    }
 }
 
 void RSProfiler::Init(RSRenderService* renderService)
@@ -299,10 +306,6 @@ void RSProfiler::OnRenderBegin()
 {
     if (!IsEnabled()) {
         return;
-    }
-    if (IsRecording()) {
-        constexpr double ratioToPercent = 100.0;
-        g_dirtyRegionPercentage = GetDirtyRegionRelative(*g_renderServiceContext) * ratioToPercent;
     }
 }
 

@@ -80,6 +80,7 @@
 
 #ifdef RS_PROFILER_ENABLED
 #include "rs_profiler_capture_recorder.h"
+#include "rs_profiler.h"
 #endif
 
 namespace OHOS {
@@ -1979,6 +1980,10 @@ void RSUniRenderVisitor::UpdateSurfaceDirtyAndGlobalDirty()
     CheckMergeDebugRectforRefreshRate();
     curDisplayNode_->ClearCurrentSurfacePos();
     std::swap(preMainAndLeashWindowNodesIds_, curMainAndLeashWindowNodesIds_);
+
+#ifdef RS_PROFILER_ENABLED
+    RS_PROFILER_SET_DIRTY(accumulatedDirtyRegion);
+#endif
 }
 
 void RSUniRenderVisitor::SurfaceOcclusionCallbackToWMS()

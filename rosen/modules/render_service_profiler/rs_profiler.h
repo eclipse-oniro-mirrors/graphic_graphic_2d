@@ -21,6 +21,8 @@
 
 #include "common/rs_vector4.h"
 
+#include "params/rs_display_render_params.h"
+
 #ifdef RS_PROFILER_ENABLED
 #define RS_PROFILER_INIT(renderSevice) RSProfiler::Init(renderSevice)
 #define RS_PROFILER_ON_FRAME_BEGIN() RSProfiler::OnFrameBegin()
@@ -42,6 +44,7 @@
 #define RS_PROFILER_PATCH_COMMAND(parcel, command) RSProfiler::PatchCommand(parcel, command)
 #define RS_PROFILER_MARSHAL_PIXELMAP(parcel, map) RSProfiler::MarshalPixelMap(parcel, map)
 #define RS_PROFILER_UNMARSHAL_PIXELMAP(parcel) RSProfiler::UnmarshalPixelMap(parcel)
+#define RS_PROFILER_SET_DIRTY_REGION(dirtyRegion) RSProfiler::SetDirtyRegion(dirtyRegion)
 #else
 #define RS_PROFILER_INIT(renderSevice)
 #define RS_PROFILER_ON_FRAME_BEGIN()
@@ -62,6 +65,7 @@
 #define RS_PROFILER_MARSHAL_PIXELMAP(parcel, map) (map)->Marshalling(parcel)
 #define RS_PROFILER_UNMARSHAL_PIXELMAP(parcel) Media::PixelMap::Unmarshalling(parcel)
 #define RS_PROFILER_PATCH_COMMAND(parcel, command)
+#define RS_PROFILER_SET_DIRTY_REGION(dirtyRegion)
 #endif
 
 #ifdef RS_PROFILER_ENABLED
@@ -148,6 +152,7 @@ public:
     RSB_EXPORT static void PatchCommand(const Parcel& parcel, RSCommand* command);
     RSB_EXPORT static bool MarshalPixelMap(Parcel& parcel, const std::shared_ptr<Media::PixelMap>& map);
     RSB_EXPORT static Media::PixelMap* UnmarshalPixelMap(Parcel& parcel);
+    RSB_EXPORT static void SetDirtyRegion(const Occlusion::Region& dirtyRegion);
 
 // temporary
 public:
@@ -254,8 +259,6 @@ private:
 
     static std::shared_ptr<RSRenderNode> GetRenderNode(uint64_t id);
     static void ProcessSendingRdc();
-
-    static double GetDirtyRegionRelative(RSContext& context);
 
     // Network interface
     using Command = void (*)(const ArgList&);
