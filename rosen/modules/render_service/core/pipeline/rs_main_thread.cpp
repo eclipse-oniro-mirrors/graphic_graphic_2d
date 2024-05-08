@@ -1559,7 +1559,7 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
         auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
         auto pendingRefreshRate = frameRateMgr_->GetPendingRefreshRate();
         if (pendingRefreshRate != nullptr
-            && (!rsVSyncDistributor_->IsUiDvsyncOn() || rsVSyncDistributor_->GetRefreshRate() == *pendingRefreshRate) {
+            && (!rsVSyncDistributor_->IsUiDvsyncOn() || rsVSyncDistributor_->GetRefreshRate() == *pendingRefreshRate)) {
             hgmCore.SetPendingScreenRefreshRate(*pendingRefreshRate);
             frameRateMgr_->ResetPendingRefreshRate();
         }
