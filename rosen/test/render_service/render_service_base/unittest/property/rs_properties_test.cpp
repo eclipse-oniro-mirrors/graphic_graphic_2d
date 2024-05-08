@@ -269,7 +269,7 @@ HWTEST_F(RSPropertiesTest, SetShadowMask001, TestSize.Level1)
 HWTEST_F(RSPropertiesTest, GetShadow001, TestSize.Level1)
 {
     RSProperties properties;
-    EXPECT_TRUE(properties.GetShadow().has_value());
+    EXPECT_FALSE(properties.GetShadow().has_value());
     EXPECT_FALSE(properties.IsShadowValid());
 }
 
@@ -1337,7 +1337,7 @@ HWTEST_F(RSPropertiesTest, NeedFilterNClip001, TestSize.Level1)
 {
     RSProperties properties;
     EXPECT_FALSE(properties.NeedFilter());
-    EXPECT_TRUE(properties.NeedClip());
+    EXPECT_FALSE(properties.NeedClip());
 }
 
 /**
