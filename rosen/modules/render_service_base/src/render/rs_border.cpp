@@ -261,9 +261,11 @@ bool RSBorder::ApplySimpleBorder(const RRect& rrect) const
     if (!(colors_.size() == 1 && widths_.size() == 1 && styles_.size() == 1)) {
         return false;
     }
-    if (!(rrect.radius_[0].x_ == rrect.radius_[1].x_ && rrect.radius_[0].x_ == rrect.radius_[2].x_ &&
-          rrect.radius_[0].x_ == rrect.radius_[3].x_)) {
-        return false;
+    constexpr uint32_t NUM_OF_CORNERS_IN_RECT = 4;
+    for(int i = 1; i < NUM_OF_CORNERS_IN_RECT; i++) {
+        if (rrect.radius_[0].x_ != rrect.radius_[i].x_) {
+            return false;
+        }
     }
     if (styles_.front() == BorderStyle::SOLID) {
         return true;
