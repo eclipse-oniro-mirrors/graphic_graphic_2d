@@ -1674,7 +1674,6 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     } else if (RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
         WaitUntilUploadTextureTaskFinished(isUniRender_);
     }
-    isDirty_ = false;
     forceUpdateUniRenderFlag_ = false;
     idleTimerExpiredFlag_ = false;
 }
@@ -2950,9 +2949,14 @@ void RSMainThread::AddTransactionDataPidInfo(pid_t remotePid)
     effectiveTransactionDataIndexMap_[remotePid].first = 0;
 }
 
-void RSMainThread::SetDirtyFlag()
+void RSMainThread::SetDirtyFlag(bool isDirty)
 {
-    isDirty_ = true;
+    isDirty_ = isDirty;
+}
+
+bool RSMainThread::GetDirtyFlag()
+{
+    return isDirty_;
 }
 
 void RSMainThread::SetColorPickerForceRequestVsync(bool colorPickerForceRequestVsync)
