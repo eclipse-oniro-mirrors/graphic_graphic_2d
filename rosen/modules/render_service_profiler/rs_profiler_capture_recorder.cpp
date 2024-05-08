@@ -67,6 +67,7 @@ Drawing::Canvas* RSCaptureRecorder::TryInstantCapture(float width, float height)
     mskpIdxNext_ = *MSKP_COUNTER;
 
     if (mskpMaxLocal_ > 0) {
+        // record next frame, triggered by profiler step
         if (mskpIdxCurrent_ != mskpIdxNext_) {
             recordingTriggered_ = true;
             return TryCaptureMSKP(width, height);
