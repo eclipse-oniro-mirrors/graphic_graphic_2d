@@ -1191,5 +1191,47 @@ HWTEST_F(RSPaintFilterCanvasTest, GetLocalClipBoundsTest, TestSize.Level1)
     result = paintFilterCanvas_->GetLocalClipBounds(canvas, &rectI);
     EXPECT_TRUE(result.has_value());
 }
+
+
+/**
+ * @tc.name: PaintFilter001
+ * @tc.desc: Test has not filter before PaintFilter
+ * @tc.type:FUNC
+ * @tc.require: issueI9NLRF
+ */
+HWTEST_F(RSPaintFilterCanvasTest, PaintFilter001, TestSize.Level1)
+{
+    Drawing::Paint paint;
+
+    paintFilterCanvas_->PaintFilter(paint);
+    EXPECT_TRUE(paint.HasFilter());
+}
+
+/**
+ * @tc.name: PaintFilter002
+ * @tc.desc: Test has filter before PaintFilter
+ * @tc.type:FUNC
+ * @tc.require: issueI9NLRF
+ */
+HWTEST_F(RSPaintFilterCanvasTest, PaintFilter002, TestSize.Level1)
+{
+    Drawing::Paint paint;
+
+    Drawing::Filter filter = paint.GetFilter();
+    Drawing::ColorMatrix luminanceMatrix;
+    // 0.5 means half discount
+    luminanceMatrix.SetScale(0.5f, 0.5f, 0.5f, 1.0f);
+    auto luminanceColorFilter =
+        std::make_shared<Drawing::ColorFilter>(Drawing::ColorFilter::FilterType::MATRIX, luminanceMatrix);
+    EXPECT_TRUE(luminanceColorFilter != nullptr);
+
+    auto colorFilter = filter.GetColorFilter();
+    filter.SetColorFilter(luminanceColorFilter);
+    paint.SetFilter(filter);
+
+    paintFilterCanvas_->PaintFilter(paint);
+    EXPECT_TRUE(paint.GetFilter() == filter);
+}
+
 } // namespace Rosen
 } // namespace OHOS
