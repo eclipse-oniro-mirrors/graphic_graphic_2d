@@ -545,7 +545,11 @@ HWTEST_F(RecordingCanvasTest, DrawShadow001, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: I7K0BS
  */
+<<<<<<< HEAD
 HWTEST_F(RecordingCanvasTest, DrawShadowStyle001, TestSize.Level1)
+=======
+HWTEST_F(RecordingCanvasTest, DrawShadow001, TestSize.Level1)
+>>>>>>> ce0359b3aa5922f1243c92e29149e0e95218a44b
 {
     auto recordingCanvas1 = std::make_shared<RecordingCanvas>(CANAS_WIDTH, CANAS_HEIGHT);
     auto recordingCanvas2 = std::make_shared<RecordingCanvas>(CANAS_WIDTH, CANAS_HEIGHT, false);
