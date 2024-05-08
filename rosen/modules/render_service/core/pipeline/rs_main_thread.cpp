@@ -162,6 +162,7 @@ constexpr const char* WALLPAPER_VIEW = "WallpaperView";
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
 constexpr const char* MEM_MGR = "MemMgr";
 constexpr const char* DESKTOP_NAME_FOR_ROTATION = "SCBDesktop";
+constexpr const char* CAPTURE_WINDOW_NAME = "CapsuleWindow";
 #ifdef RS_ENABLE_GL
 constexpr size_t DEFAULT_SKIA_CACHE_SIZE        = 96 * (1 << 20);
 constexpr int DEFAULT_SKIA_CACHE_COUNT          = 2 * (1 << 12);
@@ -576,17 +577,17 @@ void RSMainThread::SetFocusAppInfo(
     focusAppUid_ = uid;
     focusAppBundleName_ = bundleName;
     focusAppAbilityName_ = abilityName;
-    UpdateFocusNodeId(focusNodeId_, focusNodeId);
+    UpdateFocusNodeId(focusNodeId);
 }
 
-void RSMainThread::UpdateFocusNodeId(NodeId oldFocusNodeId, NodeId newFocusNodeId)
+void RSMainThread::UpdateFocusNodeId(NodeId focusNodeId)
 {
-    if (newFocusNodeId == oldFocusNodeId || newFocusNodeId == INVALID_NODEID) {
+    if (focusNodeId_ == focusNodeId || focusNodeId == INVALID_NODEID) {
         return;
     }
-    UpdateNeedDrawFocusChange(oldFocusNodeId);
-    UpdateNeedDrawFocusChange(newFocusNodeId);
-    focusNodeId_ = newFocusNodeId;
+    UpdateNeedDrawFocusChange(focusNodeId_);
+    UpdateNeedDrawFocusChange(focusNodeId);
+    focusNodeId_ = focusNodeId;
 }
 
 void RSMainThread::UpdateNeedDrawFocusChange(NodeId id)
@@ -1106,6 +1107,9 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         if (surfaceNode->IsLeashOrMainWindow()) {
             surfaceNode->ResetIsOnlyBasicGeoTransform();
         }
+        if (surfaceNode->GetName().find(CAPTURE_WINDOW_NAME) != std::string::npos) {
+            surfaceNode->SetContentDirty(); // screen recording capsule force mark dirty
+        }
         if (surfaceNode->IsHardwareEnabledType()
             && CheckSubThreadNodeStatusIsDoing(surfaceNode->GetInstanceRootNodeId())) {
             RS_LOGD("SubThread is processing %{public}s, skip acquire buffer", surfaceNode->GetName().c_str());
@@ -1229,9 +1233,9 @@ void RSMainThread::CollectInfoForHardwareComposer()
                     surfaceNode->SetContentDirty();
                 }
             } else if (!surfaceNode->GetIsLastFrameHwcEnabled()) { // gpu -> hwc
-                doDirectComposition_ = false;
                 if (surfaceNode->IsCurrentFrameBufferConsumed()) {
                     surfaceNode->SetContentDirty();
+                    doDirectComposition_ = false;
                 } else {
                     surfaceNode->SetHwcDelayDirtyFlag(true);
                 }
@@ -1293,11 +1297,11 @@ void RSMainThread::CheckIfHardwareForcedDisabled()
     });
 
     bool isExpandScreenCase = itr != children->end();
-
+    bool enableHwcForMirrorMode = RSSystemProperties::GetHardwareComposerEnabledForMirrorMode();
     // [PLANNING] GetChildrenCount > 1 indicates multi display, only Mirror Mode need be marked here
     // Mirror Mode reuses display node's buffer, so mark it and disable hardware composer in this case
     isHardwareForcedDisabled_ = isHardwareForcedDisabled_ || doWindowAnimate_ ||
-        (isMultiDisplay && isExpandScreenCase && !hasProtectedLayer_) || hasColorFilter;
+        (isMultiDisplay && (isExpandScreenCase || !enableHwcForMirrorMode) && !hasProtectedLayer_) || hasColorFilter;
     RS_OPTIONAL_TRACE_NAME_FMT("hwc debug global: CheckIfHardwareForcedDisabled isHardwareForcedDisabled_:%d "
         "doWindowAnimate_:%d isMultiDisplay:%d hasColorFilter:%d",
         isHardwareForcedDisabled_, doWindowAnimate_.load(), isMultiDisplay, hasColorFilter);

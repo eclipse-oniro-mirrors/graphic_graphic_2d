@@ -218,10 +218,6 @@ void RSUniRenderVisitor::PartialRenderOptionInit()
 {
     partialRenderType_ = RSSystemProperties::GetUniPartialRenderEnabled();
     isPartialRenderEnabled_ = (partialRenderType_ != PartialRenderType::DISABLED);
-    sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
-    auto screenNum = screenManager->GetAllScreenIds().size();
-    isPartialRenderEnabled_ = (screenNum <= 1) && (partialRenderType_ != PartialRenderType::DISABLED) &&
-        RSMainThread::Instance()->IsSingleDisplay();
     dirtyRegionDebugType_ = RSSystemProperties::GetDirtyRegionDebugType();
     surfaceRegionDebugType_ = RSSystemProperties::GetSurfaceRegionDfxType();
     isRegionDebugEnabled_ = (dirtyRegionDebugType_ != DirtyRegionDebugType::DISABLED) ||
@@ -1175,7 +1171,7 @@ void RSUniRenderVisitor::UpdateForegroundFilterCacheWithDirty(RSRenderNode& node
     RSDirtyRegionManager& dirtyManager, bool isForeground)
 {
     node.UpdateFilterCacheWithBelowDirty(dirtyManager, isForeground);
-    node.UpdateFilterCacheWithSelfDirty(prepareClipRect_);
+    node.UpdateFilterCacheWithSelfDirty();
 }
 
 void RSUniRenderVisitor::UpdateSurfaceRenderNodeRotate(RSSurfaceRenderNode& node)
@@ -2144,9 +2140,8 @@ void RSUniRenderVisitor::CheckMergeTransparentFilterForDisplay(
                     // backgroundfilter affected by below dirty
                     filterNode->MarkFilterStatusChanged(false, false);
                 }
-                RS_LOGD("RSUniRenderVisitor::CheckMergeTransparentFilterForDisplay merge "
-                    "filterRegion %{public}s region %{public}s",
-                    surfaceNode->GetName().c_str(), it->second.ToString().c_str());
+                RS_LOGD("RSUniRenderVisitor::CheckMergeTransparentFilterForDisplay global merge filterRegion "
+                    "%{public}s region %{public}s", surfaceNode->GetName().c_str(), it->second.ToString().c_str());
                 curDisplayNode_->GetDirtyManager()->MergeDirtyRect(it->second);
                 if (filterNode->GetRenderProperties().GetFilter()) {
                     // foregroundfilter affected by below dirty
@@ -2155,7 +2150,8 @@ void RSUniRenderVisitor::CheckMergeTransparentFilterForDisplay(
             } else {
                 globalFilter_.insert(*it);
             }
-            filterNode->MarkAndUpdateFilterNodeDirtySlotsAfterPrepare(dirtyBelowContainsFilterNode);
+            filterNode->MarkAndUpdateFilterNodeDirtySlotsAfterPrepare(
+                *(curDisplayNode_->GetDirtyManager()), dirtyBelowContainsFilterNode);
             if (filterNode->ShouldPaint() && !filterNode->IsFilterCacheValid() &&
                 (filterNode->GetRenderProperties().GetBackgroundFilter() ||
                 filterNode->GetRenderProperties().GetFilter())) {
@@ -2240,7 +2236,7 @@ void RSUniRenderVisitor::CheckMergeGlobalFilterForDisplay(Occlusion::Region& acc
             globalFilter_.insert(*it);
         }
         filterNode->UpdateFilterCacheWithSelfDirty();
-        filterNode->MarkAndUpdateFilterNodeDirtySlotsAfterPrepare();
+        filterNode->MarkAndUpdateFilterNodeDirtySlotsAfterPrepare(*(curDisplayNode_->GetDirtyManager()));
     }
 
     // Recursively traverses until the globalDirty do not change
@@ -2279,7 +2275,6 @@ void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeSkipped)
         auto globalFilterRect = (node.IsInstanceOf<RSEffectRenderNode>() && !node.IsEffectNodeNeedTakeSnapShot()) ?
             GetVisibleEffectDirty(node) : node.GetOldDirtyInSurface();
         CollectFilterInfoAndUpdateDirty(node, *curDirtyManager, globalFilterRect);
-        node.UpdateLastFilterCacheRegion(prepareClipRect_);
         node.SetGlobalAlpha(curAlpha_);
     }
 
@@ -2337,9 +2332,7 @@ void RSUniRenderVisitor::CheckFilterNodeInSkippedSubTreeNeedClearCache(
         }
         RectI filterRect;
         filterNode->UpdateFilterRegionInSkippedSubTree(dirtyManager, rootNode, filterRect, prepareClipRect_);
-        bool inSkippedSubtree = true;
-        CollectFilterInfoAndUpdateDirty(*filterNode, dirtyManager, filterRect, inSkippedSubtree);
-        filterNode->UpdateLastFilterCacheRegionInSkippedSubTree(filterRect);
+        CollectFilterInfoAndUpdateDirty(*filterNode, dirtyManager, filterRect);
     }
 }
 
@@ -2478,7 +2471,7 @@ RectI RSUniRenderVisitor::GetVisibleEffectDirty(RSRenderNode& node) const
 }
 
 void RSUniRenderVisitor::CollectFilterInfoAndUpdateDirty(RSRenderNode& node,
-    RSDirtyRegionManager& dirtyManager, const RectI& globalFilterRect, bool isInSkippedSubTree)
+    RSDirtyRegionManager& dirtyManager, const RectI& globalFilterRect)
 {
     bool isNodeAddedToTransparentCleanFilters = false;
     if (curSurfaceNode_) {
@@ -2489,8 +2482,7 @@ void RSUniRenderVisitor::CollectFilterInfoAndUpdateDirty(RSRenderNode& node,
         if (node.GetRenderProperties().GetFilter()) {
             node.UpdateFilterCacheWithBelowDirty(dirtyManager, true);
         }
-        isInSkippedSubTree ? node.UpdateFilterCacheWithSelfDirty(std::nullopt, isInSkippedSubTree, globalFilterRect) :
-            node.UpdateFilterCacheWithSelfDirty(prepareClipRect_);
+        node.UpdateFilterCacheWithSelfDirty();
         if (curSurfaceNode_->IsTransparent()) {
             globalFilterRects_.emplace_back(globalFilterRect);
             if (!isIntersect || (isIntersect && node.GetRenderProperties().GetBackgroundFilter() &&
@@ -2515,7 +2507,7 @@ void RSUniRenderVisitor::CollectFilterInfoAndUpdateDirty(RSRenderNode& node,
         containerFilter_.insert({node.GetId(), globalFilterRect});
     }
     if (curSurfaceNode_ && !isNodeAddedToTransparentCleanFilters) {
-        node.MarkAndUpdateFilterNodeDirtySlotsAfterPrepare();
+        node.MarkAndUpdateFilterNodeDirtySlotsAfterPrepare(dirtyManager);
     }
 }
 
@@ -4065,6 +4057,7 @@ void RSUniRenderVisitor::ProcessDisplayRenderNode(RSDisplayRenderNode& node)
         AssignGlobalZOrderAndCreateLayer(appWindowNodesInZOrder_);
         node.SetGlobalZOrder(globalZOrder_++);
         node.SetRenderWindowsName(windowsName_);
+        node.SetDamageRegion(rects);
         processor_->ProcessDisplaySurface(node);
         AssignGlobalZOrderAndCreateLayer(hardwareEnabledTopNodes_);
     }
