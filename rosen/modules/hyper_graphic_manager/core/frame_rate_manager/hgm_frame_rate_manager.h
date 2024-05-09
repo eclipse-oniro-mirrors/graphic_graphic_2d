@@ -137,8 +137,6 @@ private:
     void Reset();
     void UpdateAppSupportStatus();
     void UpdateGuaranteedPlanVote(uint64_t timestamp);
-    void SetAnimationVote(const std::shared_ptr<RSRenderFrameRateLinker>& linker,
-        bool& needCheckAnimation);
     bool CollectFrameRateChange(FrameRateRange finalRange, std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker,
         const FrameRateLinkerMap& appFrameRateLinkers);
     void HandleFrameRateChangeForLTPO(uint64_t timestamp, bool isDvsyncOn);
