@@ -56,7 +56,7 @@ void VSyncCallBackListener::OnReadable(int32_t fileDescriptor)
             dataCount += ret;
         }
 #if defined(RS_ENABLE_DVSYNC)
-        if (DVsync::IsFeatureEnabled() && data[0] >= Now()) {
+        if (DVsync::IsUiDvsyncFeatureEnabled() && data[0] >= Now()) {
             break;
         }
 #endif
