@@ -173,17 +173,6 @@ void HgmFrameRateManager::UpdateAppSupportStatus()
     idleDetector_.SetAppSupportStatus(flag);
 }
 
-void HgmFrameRateManager::SetAnimationVote(const std::shared_ptr<RSRenderFrameRateLinker>& linker,
-    bool& needCheckAnimation)
-{
-    if (linker->GetAnimationStatus() == false) {
-        needCheckAnimation = false;
-        idleDetector_.SetAnimationStatus(false);
-        return;
-    }
-    idleDetector_.SetAnimationStatus(true);
-}
-
 void HgmFrameRateManager::UpdateGuaranteedPlanVote(uint64_t timestamp)
 {
     if (!idleDetector_.GetAppSupportStatus()) {
@@ -232,8 +221,6 @@ void HgmFrameRateManager::UniProcessDataForLtpo(uint64_t timestamp,
     RS_TRACE_FUNC();
     Reset();
 
-    bool needCheckAnimation = true;
-    UpdateGuaranteedPlanVote(timestamp);
     auto& hgmCore = HgmCore::Instance();
     FrameRateRange finalRange;
     FrameRateVoteInfo frameRateVoteInfo;
@@ -244,9 +231,7 @@ void HgmFrameRateManager::UniProcessDataForLtpo(uint64_t timestamp,
             frameRateVoteInfo.SetLtpoInfo(0, "ANIMATE");
         }
         for (auto linker : appFrameRateLinkers) {
-            if (needCheckAnimation) {
-                SetAnimationVote(linker.second, needCheckAnimation);
-            }
+            idleDetector_.SetAnimationStatus(linker.second->GetAnimationStatus());
             if (finalRange.Merge(linker.second->GetExpectedRange())) {
                 frameRateVoteInfo.SetLtpoInfo(linker.second->GetId(), "APP_LINKER");
             }
@@ -267,6 +252,7 @@ void HgmFrameRateManager::UniProcessDataForLtpo(uint64_t timestamp,
         }
     }
 
+    UpdateGuaranteedPlanVote(timestamp);
     VoteRange voteResult = ProcessRefreshRateVote(frameRateVoteInfo);
     // max used here
     finalRange = {voteResult.second, voteResult.second, voteResult.second};
