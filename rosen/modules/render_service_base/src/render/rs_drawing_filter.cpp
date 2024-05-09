@@ -24,7 +24,11 @@
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "property/rs_properties_painter.h"
+#include "render/rs_aibar_shader_filter.h"
+#include "render/rs_grey_shader_filter.h"
 #include "render/rs_kawase_blur_shader_filter.h"
+#include "render/rs_linear_gradient_blur_shader_filter.h"
+#include "render/rs_maskcolor_shader_filter.h"
 #include "src/core/SkOpts.h"
 
 namespace OHOS {
@@ -68,6 +72,52 @@ RSDrawingFilter::RSDrawingFilter(std::shared_ptr<Drawing::ImageFilter> imageFilt
 }
 
 RSDrawingFilter::~RSDrawingFilter() {};
+
+std::string RSDrawingFilter::GetDetailedDescription()
+{
+    std::string filterString;
+    if (FilterType::MATERIAL == type_) {
+        filterString = "RSMaterialFilterBlur";
+    } else if (FilterType::BLUR == type_) {
+        filterString = "RSBlurFilterBlur";
+    } else if (FilterType::LINEAR_GRADIENT_BLUR == type_) {
+        filterString = "RSLinearGradientBlurFilterBlur";
+    } else if (FilterType::AIBAR == type_) {
+        filterString = "RSAIBarFilterBlur";
+    }
+    for (const auto& shaderFilter : shaderFilters_) {
+        if (shaderFilter->GetShaderFilterType() == RSShaderFilter::KAWASE) {
+            auto filter = std::static_pointer_cast<RSKawaseBlurShaderFilter>(shaderFilter);
+            int radius = filter->GetRadius();
+            filterString = filterString + ", radius: " + std::to_string(radius) + " sigma";
+        } else if (shaderFilter->GetShaderFilterType() == RSShaderFilter::GREY) {
+            auto filter = std::static_pointer_cast<RSGreyShaderFilter>(shaderFilter);
+            float greyCoefLow = filter->GetGreyCoefLow();
+            float greyCoefHigh = filter->GetGreyCoefHigh();
+            filterString = filterString + ", greyCoef1: " + std::to_string(greyCoefLow);
+            filterString = filterString + ", greyCoef2: " + std::to_string(greyCoefHigh);
+        } else if (shaderFilter->GetShaderFilterType() == RSShaderFilter::MASK_COLOR) {
+            auto filter = std::static_pointer_cast<RSMaskColorShaderFilter>(shaderFilter);
+            int colorMode = filter->GetColorMode();
+            RSColor maskColor = filter->GetMaskColor();
+            char maskColorStr[UINT8_MAX] = { 0 };
+            auto ret = memset_s(maskColorStr, UINT8_MAX, 0, UINT8_MAX);
+            if (ret != EOK) {
+                return "Failed to memset_s for maskColorStr, ret=" + std::to_string(ret);
+            }
+            if (sprintf_s(maskColorStr, UINT8_MAX, "%08X", maskColor.AsArgbInt()) != -1) {
+                filterString =
+                    filterString + ", maskColor: " + maskColorStr + ", colorMode: " + std::to_string(colorMode);
+            }
+        } else if (shaderFilter->GetShaderFilterType() == RSShaderFilter::LINEAR_GRADIENT_BLUR) {
+            auto filter = std::static_pointer_cast<RSLinearGradientBlurShaderFilter>(shaderFilter);
+            float radius = filter->GetLinearGradientBlurRadius();
+            filterString = filterString + ", radius: " + std::to_string(radius);
+        }
+    }
+
+    return filterString;
+}
 
 Drawing::Brush RSDrawingFilter::GetBrush() const
 {
