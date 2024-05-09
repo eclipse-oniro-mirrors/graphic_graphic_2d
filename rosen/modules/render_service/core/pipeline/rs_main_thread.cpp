@@ -320,6 +320,7 @@ void RSMainThread::Init()
         ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
         SetRSEventDetectorLoopFinishTag();
         rsEventManager_.UpdateParam();
+        ResetAnimateNodeFlag();
         SKResourceManager::Instance().ReleaseResource();
         // release node memory
         if (RSRenderNodeGC::Instance().GetNodeSize() > 0) {
@@ -2422,6 +2423,7 @@ void RSMainThread::Animate(uint64_t timestamp)
         doWindowAnimate_ = false;
         return;
     }
+    UpdateAnimateNodeFlag();
     doDirectComposition_ = false;
     bool curWinAnim = false;
     bool needRequestNextVsync = false;
@@ -3352,6 +3354,35 @@ void RSMainThread::UpdateUIFirstSwitch()
 bool RSMainThread::IsUIFirstOn() const
 {
     return isUiFirstOn_;
+}
+
+void RSMainThread::UpdateAnimateNodeFlag()
+{
+    if (!context_) {
+        return;
+    }
+    context_->curFrameAnimatingNodeList_.insert(context_->animatingNodeList_.begin(),
+        context_->animatingNodeList_.end());
+    for (auto& item : context_->curFrameAnimatingNodeList_) {
+        auto node = item.second.lock();
+        if (node) {
+            node->SetCurFrameHasAnimation(true);
+        }
+    }
+}
+
+void RSMainThread::ResetAnimateNodeFlag()
+{
+    if (!context_) {
+        return;
+    }
+    for (auto& item : context_->curFrameAnimatingNodeList_) {
+        auto node = item.second.lock();
+        if (node) {
+            node->SetCurFrameHasAnimation(false);
+        }
+    }
+    context_->curFrameAnimatingNodeList_.clear();
 }
 
 void RSMainThread::ReleaseSurface()
