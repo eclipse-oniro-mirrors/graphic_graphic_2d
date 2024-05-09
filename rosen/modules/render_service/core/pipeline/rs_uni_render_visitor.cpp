@@ -1477,7 +1477,7 @@ void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
 {
     MergeRemovedChildDirtyRegion(node, true);
     bool animationBackup = ancestorNodeHasAnimation_;
-    ancestorNodeHasAnimation_ = ancestorNodeHasAnimation_ || node.HasAnimation();
+    ancestorNodeHasAnimation_ = ancestorNodeHasAnimation_ || node.GetCurFrameHasAnimation();
     node.ResetChildRelevantFlags();
     node.ResetChildUifirstSupportFlag();
     auto children = node.GetSortedChildren();

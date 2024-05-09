@@ -103,6 +103,8 @@ public:
     void RenderServiceTreeDump(std::string& dumpString, bool forceDumpSingleFrame = true);
     void RsEventParamDump(std::string& dumpString);
     bool IsUIFirstOn() const;
+    void UpdateAnimateNodeFlag();
+    void ResetAnimateNodeFlag();
     void GetAppMemoryInMB(float& cpuMemSize, float& gpuMemSize);
     void ClearMemoryCache(ClearMemoryMoment moment, bool deeply = false, pid_t pid = -1);
 
