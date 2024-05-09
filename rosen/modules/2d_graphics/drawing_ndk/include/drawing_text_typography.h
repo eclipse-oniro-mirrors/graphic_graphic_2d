@@ -43,7 +43,6 @@
 #include "drawing_font.h"
 #include "drawing_text_declaration.h"
 #include "drawing_types.h"
-#include "drawing_point.h"
 
 #include "stdint.h"
 
