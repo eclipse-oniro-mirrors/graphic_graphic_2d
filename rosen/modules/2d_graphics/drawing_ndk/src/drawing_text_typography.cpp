@@ -53,6 +53,8 @@ __attribute__((constructor)) void init()
 } // namespace
 #endif
 
+static std::shared_ptr<OHOS::Rosen::Drawing::ObjectMgr> objectMgr = OHOS::Rosen::Drawing::ObjectMgr::GetInstance();
+
 template<typename T1, typename T2>
 inline T1* ConvertToOriginalText(T2* ptr)
 {
