@@ -53,11 +53,6 @@ __attribute__((constructor)) void init()
 } // namespace
 #endif
 
-#define CHENGQIANG(fmt, ...)               \
-    ::OHOS::HiviewDFX::HiLog::Error(::OHOS::HiviewDFX::HiLogLabel \
-        { LOG_CORE, 0xD001402, "2DGraphics" }, "%{public}s: " fmt, __func__, ##__VA_ARGS__)
-static std::shared_ptr<OHOS::Rosen::Drawing::ObjectMgr> objectMgr = OHOS::Rosen::Drawing::ObjectMgr::GetInstance();
-
 template<typename T1, typename T2>
 inline T1* ConvertToOriginalText(T2* ptr)
 {
