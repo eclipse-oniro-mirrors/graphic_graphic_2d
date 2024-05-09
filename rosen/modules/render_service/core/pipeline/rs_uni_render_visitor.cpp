@@ -1859,31 +1859,39 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
                 continue;
             }
             auto transform = RSUniRenderUtil::GetLayerTransform(*hwcNodePtr, screenInfo_);
-            auto surfacelLayer =
-                RSUniHwcPrevalidateUtil::GetInstance().CreateSurfaceNodeLayerInfo(hwcNodePtr, transform, curFps);
-            prevalidLayers.emplace_back(surfacelLayer);
+            RequestLayerInfo surfaceLayer;
+            if (RSUniHwcPrevalidateUtil::GetInstance().CreateSurfaceNodeLayerInfo(
+                hwcNodePtr, transform, curFps, surfaceLayer)) {
+                prevalidLayers.emplace_back(surfaceLayer);
+            }
         }
     });
-    // add display layer
-    auto displayLayer = RSUniHwcPrevalidateUtil::GetInstance().CreateDisplayNodeLayerInfo(
-        globalZOrder_ + 1, curDisplayNode_, screenInfo_, curFps);
-    prevalidLayers.emplace_back(displayLayer);
-    // add rcd layer
-    if (auto rcdBackgroundNode = RSRcdRenderManager::GetInstance().GetBackgroundSurfaceNode()) {
-        auto rcdLayer = RSUniHwcPrevalidateUtil::GetInstance().CreateRCDLayerInfo(
-            rcdBackgroundNode, screenInfo_, curFps);
-        prevalidLayers.emplace_back(rcdLayer);
-    }
-    if (auto rcdTopNode = RSRcdRenderManager::GetInstance().GetContentSurfaceNode()) {
-        auto rcdLayer = RSUniHwcPrevalidateUtil::GetInstance().CreateRCDLayerInfo(
-            rcdTopNode, screenInfo_, curFps);
-        prevalidLayers.emplace_back(rcdLayer);
-    }
-    const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
-    std::map<uint64_t, RequestCompositionType> strategy;
-    if (!RSUniHwcPrevalidateUtil::GetInstance().PreValidate(screenInfo_.id, prevalidLayers, strategy)) {
+    if (prevalidLayers.size() == 0) {
+        RS_LOGD("RSUniRenderVisitor::PrevalidateHwcNode no hardware layer");
         return;
     }
+    // add display layer
+    RequestLayerInfo displayLayer;
+    if (RSUniHwcPrevalidateUtil::GetInstance().CreateDisplayNodeLayerInfo(
+        globalZOrder_ + 1, curDisplayNode_, screenInfo_, curFps, displayLayer)) {
+        prevalidLayers.emplace_back(displayLayer);
+    }
+    // add rcd layer
+    RequestLayerInfo rcdLayer;
+    if (RSUniHwcPrevalidateUtil::GetInstance().CreateRCDLayerInfo(
+        RSRcdRenderManager::GetInstance().GetBackgroundSurfaceNode(), screenInfo_, curFps, rcdLayer)) {
+        prevalidLayers.emplace_back(rcdLayer);
+    }
+    if (RSUniHwcPrevalidateUtil::GetInstance().CreateRCDLayerInfo(
+        RSRcdRenderManager::GetInstance().GetContentSurfaceNode(), screenInfo_, curFps, rcdLayer)) {
+        prevalidLayers.emplace_back(rcdLayer);
+    }
+    std::map<uint64_t, RequestCompositionType> strategy;
+    if (!RSUniHwcPrevalidateUtil::GetInstance().PreValidate(screenInfo_.id, prevalidLayers, strategy)) {
+        RS_LOGD("RSUniRenderVisitor::PrevalidateHwcNode preValidate failed");
+        return;
+    }
+    const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
     for (auto it : strategy) {
         if (it.second != RequestCompositionType::DEVICE) {
             auto node = nodeMap.GetRenderNode<RSSurfaceRenderNode>(it.first);
