@@ -204,6 +204,16 @@ void Network::SendDclPath(const std::string& path)
     }
 }
 
+void Network::SendMskpPath(const std::string& path)
+{
+    if (!path.empty()) {
+        std::string out;
+        out += static_cast<char>(PackageID::RS_PROFILER_MSKP_FILEPATH);
+        out += path;
+        SendBinary(out.data(), out.size());
+    }
+}
+
 void Network::SendSkp(const void* data, size_t size)
 {
     if (data && (size > 0)) {
