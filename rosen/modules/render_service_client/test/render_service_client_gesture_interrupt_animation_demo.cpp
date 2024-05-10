@@ -130,7 +130,8 @@ int main()
     rsUiDirector->Init();
     auto runner = OHOS::AppExecFwk::EventRunner::Create(true);
     auto handler = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
-    rsUiDirector->SetUITaskRunner([handler](const std::function<void()>& task) { handler->PostTask(task); });
+    rsUiDirector->SetUITaskRunner(
+        [handler](const std::function<void()>& task, uint32_t delay) { handler->PostTask(task); });
     runner->Run();
     RSTransaction::FlushImplicitTransaction();
     rsUiDirector->SetRSSurfaceNode(surfaceNode);

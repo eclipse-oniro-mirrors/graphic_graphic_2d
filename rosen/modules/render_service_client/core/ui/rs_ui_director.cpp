@@ -420,13 +420,18 @@ void RSUIDirector::PostFrameRateTask(const std::function<void()>& task)
 
 void RSUIDirector::PostTask(const std::function<void()>& task, int32_t instanceId)
 {
+    PostDelayTask(task, 0, instanceId);
+}
+
+void RSUIDirector::PostDelayTask(const std::function<void()>& task, uint32_t delay, int32_t instanceId)
+{
     std::unique_lock<std::mutex> lock(g_uiTaskRunnersVisitorMutex);
     for (const auto &[director, taskRunner] : g_uiTaskRunners) {
         if (director->instanceId_ != instanceId) {
             continue;
         }
         ROSEN_LOGD("RSUIDirector::PostTask instanceId=%{public}d success", instanceId);
-        taskRunner(task);
+        taskRunner(task, delay);
         return;
     }
     if (instanceId != INSTANCE_ID_UNDEFINED) {
@@ -434,7 +439,7 @@ void RSUIDirector::PostTask(const std::function<void()>& task, int32_t instanceI
     }
     for (const auto &[_, taskRunner] : g_uiTaskRunners) {
         ROSEN_LOGD("RSUIDirector::PostTask success");
-        taskRunner(task);
+        taskRunner(task, delay);
         return;
     }
 }
