@@ -28,7 +28,8 @@ void RSFrameRateLinkerCommandHelper::Destroy(RSContext& context, FrameRateLinker
     linkerMap.UnregisterFrameRateLinker(id);
 }
 
-void RSFrameRateLinkerCommandHelper::UpdateRange(RSContext& context, FrameRateLinkerId id, FrameRateRange range, bool isAnimatorStopped)
+void RSFrameRateLinkerCommandHelper::UpdateRange(RSContext& context, FrameRateLinkerId id,
+    FrameRateRange range, bool isAnimatorStopped)
 {
     ROSEN_LOGD("RSFrameRateLinkerCommandHelper::UpdateRange %{public}" PRIu64 ", {%{public}d, %{public}d, %{public}d}",
         id, range.min_, range.max_, range.preferred_);

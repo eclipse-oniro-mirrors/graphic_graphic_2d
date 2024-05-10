@@ -173,6 +173,20 @@ void HgmFrameRateManager::UpdateAppSupportStatus()
     idleDetector_.SetAppSupportStatus(flag);
 }
 
+void HgmFrameRateManager::SetAnimationVote(const std::shared_ptr<RSRenderFrameRateLinker>& linker,
+    bool& needCheckAnimationStatus)
+{
+    if (!needCheckAnimationStatus) {
+        return;
+    }
+    if (linker->GetAnimationStatus() == false) {
+        needCheckAnimationStatus = false;
+        idleDetector_.SetAnimationStatus(false);
+        return;
+    }
+    idleDetector_.SetAnimationStatus(true);
+}
+
 void HgmFrameRateManager::UpdateGuaranteedPlanVote(uint64_t timestamp)
 {
     if (!idleDetector_.GetAppSupportStatus()) {
@@ -230,8 +244,9 @@ void HgmFrameRateManager::UniProcessDataForLtpo(uint64_t timestamp,
         if (finalRange.IsValid()) {
             frameRateVoteInfo.SetLtpoInfo(0, "ANIMATE");
         }
+        bool needCheckAnimationStatus = true;
         for (auto linker : appFrameRateLinkers) {
-            idleDetector_.SetAnimationStatus(linker.second->GetAnimationStatus());
+            SetAnimationVote(linker.second, needCheckAnimationStatus);
             if (finalRange.Merge(linker.second->GetExpectedRange())) {
                 frameRateVoteInfo.SetLtpoInfo(linker.second->GetId(), "APP_LINKER");
             }
