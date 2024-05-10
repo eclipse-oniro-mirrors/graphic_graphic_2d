@@ -54,10 +54,11 @@ static void MergePath(RSPath& multPath, const std::vector<RSGroupInfo>& groupInf
 }
 
 /**
- * \param multPath (output paramer) combine all paths of mask indexes in groupInfos
- * \param groupInfos the groupsInfos of symbol
- * \param pathLayers the all paths of symbol
- *  check this symbol group is a mask layer, that it has only mask indexes
+ * @brief check if the symbol group is a mask layer, that it has only mask indexes
+ * @param multPath (output paramer) combine all paths of mask indexes in groupInfos
+ * @param groupInfos the groupsInfos of symbol
+ * @param pathLayers the all paths of symbol
+ * @return true if the group is a mask layer
  */
 static bool IsMaskLayer(RSPath& multPath, const std::vector<RSGroupInfo>& groupInfos, std::vector<RSPath>& pathLayers)
 {

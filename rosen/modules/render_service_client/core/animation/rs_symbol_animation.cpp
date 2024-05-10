@@ -785,11 +785,12 @@ std::shared_ptr<RSAnimation> RSSymbolAnimation::KeyframeAlphaSymbolAnimation(con
     return keyframeAnimation;
 }
 
-/* function
- * \param rsNode is the node of symbol animation
- * \param scaleParamter is the parameter of the scale effect
- * \param scaleProperty property of the scale effect
- * creates a scaleModifier by scaleParamter and adds it to rsNode
+/**
+ * @brief creates a scaleModifier by scaleParamter and adds it to rsNode
+ * @param rsNode is the node of symbol animation
+ * @param scaleParamter is the parameter of the scale effect
+ * @param scaleProperty property of the scale effect
+ * @return true if add scale modifer success
  */
 bool RSSymbolAnimation::AddScaleBaseModifier(const std::shared_ptr<RSNode>& rsNode,
     Drawing::DrawingPiecewiseParameter& scaleParameter,
