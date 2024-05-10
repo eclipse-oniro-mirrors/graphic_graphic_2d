@@ -545,7 +545,7 @@ std::vector<ActiveDirtyRegionInfo> RSInterfaces::GetActiveDirtyRegionInfo()
 
 GlobalDirtyRegionInfo RSInterfaces::GetGlobalDirtyRegionInfo()
 {
-    const auto & globalDirtyRegionInfo = renderServiceClient_->GetGlobalDirtyRegionInfo();
+    const auto& globalDirtyRegionInfo = renderServiceClient_->GetGlobalDirtyRegionInfo();
     return globalDirtyRegionInfo;
 }
 
