@@ -21,11 +21,11 @@
 namespace OHOS {
 namespace Rosen {
     
-enum class SkTileModeNum : int32_t {
-    SK_CLAMP = 0,
-    SK_REPEAT,
-    SK_MIRROR,
-    SK_DECAL
+enum class TileMode : int32_t {
+    CLAMP = 0,
+    REPEAT,
+    MIRROR,
+    DECAL
 };
 
 struct PixelColorMatrix {
@@ -37,7 +37,7 @@ struct PixelColorMatrix {
 
 class SKImageFilterFactory {
 public:
-    static sk_sp<SkImageFilter> Blur(float radius, SkTileModeNum skTileModeNum);
+    static sk_sp<SkImageFilter> Blur(float radius, TileMode tileMode);
     static sk_sp<SkImageFilter> Brightness(float degree);
     static sk_sp<SkImageFilter> Grayscale();
     static sk_sp<SkImageFilter> Invert();
