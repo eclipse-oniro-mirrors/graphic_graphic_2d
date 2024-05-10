@@ -437,11 +437,12 @@ napi_value FilterNapi::Blur(napi_env env, napi_callback_info info)
     }
     TileMode tileMode = TileMode::DECAL;
     if (argc == ARGS_ONE) {
-        EFFECT_LOG_I("FilterNapi parse input with default skTileMode.");
+        EFFECT_LOG_D("FilterNapi parse input with default skTileMode.");
     } else if (argc == ARGS_TWO) {
         int32_t skTileMode = 0;
-        napi_get_value_int32(env, argv[1], &skTileMode);
-        tileMode = static_cast<TileMode>(skTileMode);
+        if (IMG_IS_OK(napi_get_value_int32(env, argv[1], &skTileMode))) {
+            tileMode = static_cast<TileMode>(skTileMode);
+        }
     }
 
     FilterNapi* thisFilter = nullptr;
