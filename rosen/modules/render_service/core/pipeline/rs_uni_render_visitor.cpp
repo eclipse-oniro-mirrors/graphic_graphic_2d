@@ -1707,7 +1707,21 @@ void RSUniRenderVisitor::UpdateHwcNodeByTransform(RSSurfaceRenderNode& node)
     RSUniRenderUtil::DealWithNodeGravity(node, screenInfo_);
     RSUniRenderUtil::LayerRotate(node, screenInfo_);
     RSUniRenderUtil::LayerCrop(node, screenInfo_);
-    RSUniRenderUtil::LayerScaleDown(node);
+    ScalingMode scalingMode = ScalingMode::SCALING_MODE_SCALE_TO_WINDOW;
+    const auto& buffer = node.GetBuffer();
+    const auto& surface = node.GetConsumer();
+    if (surface == nullptr) {
+        RS_LOGE("surface is nullptr");
+        return;
+    }
+
+    if (surface->GetScalingMode(buffer->GetSeqNum(), scalingMode) == GSERROR_OK) {
+        if (scalingMode == ScalingMode::SCALING_MODE_SCALE_CROP) {
+            RSUniRenderUtil::LayerScaleDown(node);
+        } else if (scalingMode == ScalingMode::SCALING_MODE_SCALE_FIT) {
+            RSUniRenderUtil::LayerScaleFit(node);
+        }
+    }
     node.SetCalcRectInPrepare(true);
 }
 
@@ -2386,7 +2400,7 @@ void RSUniRenderVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& r
             matrix.PostConcat(parentProperty.GetBoundsGeometry()->GetMatrix());
         }
         if (!(hwcNodePtr->GetTotalMatrix() == matrix) ||
-            hwcNodePtr->GetBufferSizeChanged()) {
+            hwcNodePtr->GetBufferSizeChanged() || hwcNodePtr->CheckScalingModeChanged()) {
             const auto& properties = hwcNodePtr->GetRenderProperties();
             Drawing::Rect bounds = Drawing::Rect(0, 0, properties.GetBoundsWidth(), properties.GetBoundsHeight());
             Drawing::Rect absRect;
