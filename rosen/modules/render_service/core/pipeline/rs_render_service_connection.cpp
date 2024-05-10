@@ -497,7 +497,7 @@ void RSRenderServiceConnection::SetRefreshRateMode(int32_t refreshRateMode)
     ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
 }
 
-void RSRenderServiceConnection::SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range)
+void RSRenderServiceConnection::SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range, bool isAnimatorStopped)
 {
     mainThread_->ScheduleTask([=]() {
         auto& context = mainThread_->GetContext();
@@ -508,6 +508,7 @@ void RSRenderServiceConnection::SyncFrameRateRange(FrameRateLinkerId id, const F
             return;
         }
         linker->SetExpectedRange(range);
+        linker->IsAnimationIdle(isAnimatorStopped);
     }).wait();
 }
 

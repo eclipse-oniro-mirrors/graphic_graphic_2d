@@ -369,7 +369,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             uint32_t min = data.ReadUint32();
             uint32_t max = data.ReadUint32();
             uint32_t preferred = data.ReadUint32();
-            SyncFrameRateRange(id, {min, max, preferred});
+            bool isAnimatorStopped = data.ReadBool();
+            SyncFrameRateRange(id, {min, max, preferred}, isAnimatorStopped);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_CURRENT_REFRESH_RATE): {
