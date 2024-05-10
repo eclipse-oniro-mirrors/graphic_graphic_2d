@@ -442,7 +442,6 @@ napi_value FilterNapi::Blur(napi_env env, napi_callback_info info)
         int32_t skTileMode = 0;
         napi_get_value_int32(env, argv[1], &skTileMode);
         skTileModeNum = <Rosen::SKImageFilterFactory::SkTileModeNum>(skTileMode);
-        blur = Rosen::SKImageFilterFactory::Blur(radius, skTileModeNum);
     }
 
     FilterNapi* thisFilter = nullptr;
@@ -451,7 +450,7 @@ napi_value FilterNapi::Blur(napi_env env, napi_callback_info info)
         EFFECT_LOG_I("FilterNapi napi_unwrap is Faild");
         return nullptr;
     }
-    
+    blur = Rosen::SKImageFilterFactory::Blur(radius, skTileModeNum);
     thisFilter->AddNextFilter(blur);
     return _this;
 }
