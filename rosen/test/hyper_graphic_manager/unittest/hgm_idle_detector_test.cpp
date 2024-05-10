@@ -52,7 +52,7 @@ HWTEST_F(HgmIdleDetectorTest, SetAndGetAppSupportStatus, Function | SmallTest | 
     std::unique_ptr<HgmIdleDetector> idledetector = std::make_unique<HgmIdleDetector>();
 
     PART("CaseDescription") {
-        STEP("1. set an idledetector") {
+        STEP("1. get an idledetector") {
             STEP_ASSERT_NE(idledetector, nullptr);
         }
         STEP("2. set app support status") {
@@ -76,7 +76,7 @@ HWTEST_F(HgmIdleDetectorTest, SetAndGetAceAnimatorIdleStatus, Function | SmallTe
     std::unique_ptr<HgmIdleDetector> idledetector = std::make_unique<HgmIdleDetector>();
 
     PART("CaseDescription") {
-        STEP("1. set an idledetector") {
+        STEP("1. get an idledetector") {
             STEP_ASSERT_NE(idledetector, nullptr);
         }
         STEP("2. set aceAnimator idle status") {
@@ -100,7 +100,7 @@ HWTEST_F(HgmIdleDetectorTest, SetAndGetTouchUpTime, Function | SmallTest | Level
     std::unique_ptr<HgmIdleDetector> idledetector = std::make_unique<HgmIdleDetector>();
 
     PART("CaseDescription") {
-        STEP("1. set an idledetector") {
+        STEP("1. get an idledetector") {
             STEP_ASSERT_NE(idledetector, nullptr);
         }
         STEP("2. set app support status") {
@@ -124,7 +124,7 @@ HWTEST_F(HgmIdleDetectorTest, SetAndGetSurfaceTimeStatus, Function | SmallTest |
     std::unique_ptr<HgmIdleDetector> idledetector = std::make_unique<HgmIdleDetector>();
 
     PART("CaseDescription") {
-        STEP("1. set an idledetector") {
+        STEP("1. get an idledetector") {
             STEP_ASSERT_NE(idledetector, nullptr);
         }
         STEP("2. set app support status") {
