@@ -61,7 +61,7 @@ public:
         return touchUpTime_;
     }
 
-    void SurfaceTimeUpdate(const std::string& name, uint64_t timestamp);
+    void UpdateSurfaceTime(const std::string& name, uint64_t timestamp);
     bool GetSurFaceIdleState(uint64_t timestamp) const;
  
 private:

@@ -132,7 +132,7 @@ public:
     void ProcessPendingRefreshRate(uint64_t timestamp);
     HgmMultiAppStrategy& GetMultiAppStrategy() { return multiAppStrategy_; }
     HgmTouchManager& GetTouchManager() { return touchManager_; }
-    void TimeUpdate(const std::string& name, uint64_t timestamp);
+    void UpdateSurfaceTime(const std::string& name, uint64_t timestamp);
 private:
     void Reset();
     void UpdateAppSupportStatus();

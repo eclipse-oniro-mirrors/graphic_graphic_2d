@@ -22,7 +22,7 @@ namespace {
     constexpr uint64_t MAX_BUFFER_COUNT = 10;
 }
 
-void HgmIdleDetector::SurfaceTimeUpdate(const std::string& name, uint64_t timestamp)
+void HgmIdleDetector::UpdateSurfaceTime(const std::string& name, uint64_t timestamp)
 {
     if (!GetAppSupportStatus() || frameTimeMap_.size() > MAX_BUFFER_COUNT) {
         if (!frameTimeMap_.empty()) {

@@ -1106,7 +1106,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         }
         auto& surfaceHandler = static_cast<RSSurfaceHandler&>(*surfaceNode);
         if (frameRateMgr_ != nullptr && surfaceHandler.GetAvailableBufferCount() > 0) {
-            frameRateMgr_->TimeUpdate(surfaceNode->GetName(), timestamp_);
+            frameRateMgr_->UpdateSurfaceTime(surfaceNode->GetName(), timestamp_);
         }
         surfaceHandler.ResetCurrentFrameBufferConsumed();
         if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, false, timestamp_)) {

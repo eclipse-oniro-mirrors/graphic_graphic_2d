@@ -150,9 +150,9 @@ void HgmFrameRateManager::ProcessPendingRefreshRate(uint64_t timestamp)
     }
 }
 
-void HgmFrameRateManager::TimeUpdate(const std::string& name, uint64_t timestamp)
+void HgmFrameRateManager::UpdateSurfaceTime(const std::string& name, uint64_t timestamp)
 {
-    idleDetector_.SurfaceTimeUpdate(name, timestamp);
+    idleDetector_.UpdateSurfaceTime(name, timestamp);
 }
 
 void HgmFrameRateManager::UpdateAppSupportStatus()
