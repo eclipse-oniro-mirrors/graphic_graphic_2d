@@ -40,8 +40,6 @@ namespace OHOS {
 namespace Rosen {
 static const int32_t ARGS_ONE = 1;
 static const int32_t ARGS_TWO = 2;
-static const int32_t PARAM0 = 0;
-static const int32_t PARAM1 = 1;
 struct FilterAsyncContext {
     napi_env env;
     napi_async_work work;
@@ -429,21 +427,22 @@ napi_value FilterNapi::Blur(napi_env env, napi_callback_info info)
         return nullptr;
     }
     float radius = 0.0f;
-    if (Media::ImageNapiUtils::getType(env, argv[PARAM0]) == napi_number) {
+    if (Media::ImageNapiUtils::getType(env, argv[0]) == napi_number) {
         double scale = -1.0f;
-        if (IMG_IS_OK(napi_get_value_double(env, argv[PARAM0], &scale))) {
+        if (IMG_IS_OK(napi_get_value_double(env, argv[0], &scale))) {
             if (scale >= 0) {
                 radius = static_cast<float>(scale);
             }
         }
     }
-    auto blur = Rosen::SKImageFilterFactory::Blur(radius);
+    Rosen::SKImageFilterFactory::SkTileModeNum skTileModeNum = Rosen::SKImageFilterFactory::SkTileModeNum::SK_DECAL;
     if (argc == ARGS_ONE) {
         EFFECT_LOG_I("FilterNapi parse input with default skTileMode.");
     } else if (argc == ARGS_TWO) {
         int32_t skTileMode = 0;
-        napi_get_value_int32(env, argv[PARAM1], &skTileMode);
-        blur = Rosen::SKImageFilterFactory::BlurWithMode(radius, skTileMode);
+        napi_get_value_int32(env, argv[1], &skTileMode);
+        skTileModeNum = <Rosen::SKImageFilterFactory::SkTileModeNum>(skTileMode);
+        blur = Rosen::SKImageFilterFactory::Blur(radius, skTileModeNum);
     }
 
     FilterNapi* thisFilter = nullptr;

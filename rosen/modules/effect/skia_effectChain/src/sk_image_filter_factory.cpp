@@ -23,9 +23,9 @@ static constexpr float GRAYSCALE_PARAONE = 0.2126f;
 static constexpr float GRAYSCALE_PARATWO = 0.7152f;
 static constexpr float GRAYSCALE_PARATHREE = 0.0722f;
 
-SkTileMode ConvertToSkTileMode(int32_t skTileModeNum)
+SkTileMode ConvertToSkTileMode(SkTileModeNum skTileModeNum)
 {
-    switch (static_cast<enum SkTileModeNum>(skTileModeNum)) {
+    switch (skTileModeNum) {
         case SkTileModeNum::SK_CLAMP:
             return SkTileMode::kClamp;
         case SkTileModeNum::SK_REPEAT:
@@ -39,12 +39,7 @@ SkTileMode ConvertToSkTileMode(int32_t skTileModeNum)
     }
 }
 
-sk_sp<SkImageFilter> SKImageFilterFactory::Blur(float radius)
-{
-    return SkImageFilters::Blur(radius, radius, nullptr);
-}
-
-sk_sp<SkImageFilter> SKImageFilterFactory::BlurWithMode(float radius, int32_t skTileModeNum)
+sk_sp<SkImageFilter> SKImageFilterFactory::Blur(float radius, SkTileModeNum skTileModeNum)
 {
     SkTileMode skTileMode = ConvertToSkTileMode(skTileModeNum);
     return SkImageFilters::Blur(radius, radius, skTileMode, nullptr);
