@@ -27,6 +27,7 @@
 
 #include "common/rs_optional_trace.h"
 #include "drawable/rs_surface_render_node_drawable.h"
+#include "info_collection/rs_gpu_dirty_region_collection.h"
 #include "params/rs_display_render_params.h"
 #include "params/rs_surface_render_params.h"
 #include "pipeline/parallel_render/rs_sub_thread_manager.h"
@@ -34,7 +35,6 @@
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
-#include "info_collection/rs_gpu_dirty_region_collection.h"
 #include "platform/common/rs_log.h"
 #include "property/rs_properties.h"
 #include "render/rs_drawing_filter.h"
