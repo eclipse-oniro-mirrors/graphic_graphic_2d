@@ -207,6 +207,34 @@ bool RSSurfaceRenderParams::GetSurfaceSubTreeDirty() const
     return isSubTreeDirty_;
 }
 
+void RSSurfaceRenderParams::SetGpuOverDrawBufferOptimizeNode(bool overDrawNode)
+{
+    if (isGpuOverDrawBufferOptimizeNode_ == overDrawNode) {
+        return;
+    }
+    isGpuOverDrawBufferOptimizeNode_ = overDrawNode;
+    needSync_ = true;
+}
+
+bool RSSurfaceRenderParams::IsGpuOverDrawBufferOptimizeNode() const
+{
+    return isGpuOverDrawBufferOptimizeNode_;
+}
+
+void RSSurfaceRenderParams::SetOverDrawBufferNodeCornerRadius(const Vector4f& radius)
+{
+    if (overDrawBufferNodeCornerRadius_ == radius) {
+        return;
+    }
+    overDrawBufferNodeCornerRadius_ = radius;
+    needSync_ = true;
+}
+
+const Vector4f& RSSurfaceRenderParams::GetOverDrawBufferNodeCornerRadius() const
+{
+    return overDrawBufferNodeCornerRadius_;
+}
+
 void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
 {
     auto targetSurfaceParams = static_cast<RSSurfaceRenderParams*>(target.get());
@@ -253,6 +281,8 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->bufferCacheSet_ = bufferCacheSet_;
     targetSurfaceParams->positionZ_ = positionZ_;
     targetSurfaceParams->isSubTreeDirty_ = isSubTreeDirty_;
+    targetSurfaceParams->overDrawBufferNodeCornerRadius_ = overDrawBufferNodeCornerRadius_;
+    targetSurfaceParams->isGpuOverDrawBufferOptimizeNode_ = isGpuOverDrawBufferOptimizeNode_;
     RSRenderParams::OnSync(target);
 }
 

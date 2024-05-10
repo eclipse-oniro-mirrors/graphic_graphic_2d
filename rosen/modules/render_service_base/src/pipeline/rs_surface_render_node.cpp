@@ -2428,6 +2428,8 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->protectedLayerIds_= protectedLayerIds_;
     surfaceParams->name_= name_;
     surfaceParams->positionZ_ = properties.GetPositionZ();
+    surfaceParams->overDrawBufferNodeCornerRadius_ = GetOverDrawBufferNodeCornerRadius();
+    surfaceParams->isGpuOverDrawBufferOptimizeNode_ = isGpuOverDrawBufferOptimizeNode_;
     surfaceParams->SetNeedSync(true);
 
     RSRenderNode::UpdateRenderParams();

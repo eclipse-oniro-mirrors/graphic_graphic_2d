@@ -398,6 +398,13 @@ private:
     void CheckFilterNodeInSkippedSubTreeNeedClearCache(const RSRenderNode& node, RSDirtyRegionManager& dirtyManager);
     void UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& node);
 
+    /* Check whether gpu overdraw buffer feature can be enabled on the RenderNode
+     * 1. is leash window
+     * 2. window has scale, radius, no transparency and no animation
+     * 3. find the child background node, which is no transparency and completely filling the window
+     */
+    void CheckIsGpuOverDrawBufferOptimizeNode(RSSurfaceRenderNode& node);
+
     std::shared_ptr<Drawing::Surface> offscreenSurface_;                 // temporary holds offscreen surface
     std::shared_ptr<RSPaintFilterCanvas> canvasBackup_; // backup current canvas before offscreen render
 

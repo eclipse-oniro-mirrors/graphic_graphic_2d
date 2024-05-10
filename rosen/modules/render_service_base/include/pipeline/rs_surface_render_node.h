@@ -1059,6 +1059,24 @@ public:
         return bufferRelMatrix_;
     }
 
+    void SetGpuOverDrawBufferOptimizeNode(bool overDrawNode)
+    {
+        isGpuOverDrawBufferOptimizeNode_ = overDrawNode;
+    }
+    bool IsGpuOverDrawBufferOptimizeNode() const
+    {
+        return isGpuOverDrawBufferOptimizeNode_;
+    }
+
+    void SetOverDrawBufferNodeCornerRadius(const Vector4f& radius)
+    {
+        overDrawBufferNodeCornerRadius_ = radius;
+    }
+    const Vector4f& GetOverDrawBufferNodeCornerRadius() const
+    {
+        return overDrawBufferNodeCornerRadius_;
+    }
+
 protected:
     void OnSync() override;
     void OnSkipSync() override;
@@ -1299,6 +1317,8 @@ private:
     bool hasTransparentSurface_ = false;
 
     bool ancoForceDoDirect_ = false;
+    bool isGpuOverDrawBufferOptimizeNode_ = false;
+    Vector4f overDrawBufferNodeCornerRadius_;
 
     friend class RSUniRenderVisitor;
     friend class RSRenderNode;
