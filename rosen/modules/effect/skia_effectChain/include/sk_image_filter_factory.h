@@ -37,7 +37,7 @@ struct PixelColorMatrix {
 
 class SKImageFilterFactory {
 public:
-    static sk_sp<SkImageFilter> Blur(float radius, TileMode tileMode);
+    static sk_sp<SkImageFilter> Blur(float radius, TileMode tileMode = TileMode::DECAL);
     static sk_sp<SkImageFilter> Brightness(float degree);
     static sk_sp<SkImageFilter> Grayscale();
     static sk_sp<SkImageFilter> Invert();
