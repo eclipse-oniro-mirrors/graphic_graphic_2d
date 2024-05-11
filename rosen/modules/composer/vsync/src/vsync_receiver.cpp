@@ -46,7 +46,8 @@ void VSyncCallBackListener::OnReadable(int32_t fileDescriptor)
         ret = read(fileDescriptor, data, sizeof(data));
         if (ret == 0) {
             return;
-        } else if (ret == -1) {
+        } 
+        if (ret == -1) {
             if (errno == EINTR) {
                 ret = 0;
                 continue;
