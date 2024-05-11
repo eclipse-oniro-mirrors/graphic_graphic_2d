@@ -32,8 +32,8 @@ public:
 
     FrameRateLinkerId GetId() const;
     bool IsUniRenderEnabled() const;
-    void UpdateFrameRateRange(const FrameRateRange& range, bool isAnimatorStopped);
-    void UpdateFrameRateRangeImme(const FrameRateRange& range, bool isAnimatorStopped);
+    void UpdateFrameRateRange(const FrameRateRange& range, bool isAnimatorStopped = true);
+    void UpdateFrameRateRangeImme(const FrameRateRange& range, bool isAnimatorStopped = true);
     void SetEnable(bool enabled);
     bool IsEnable();
     static std::shared_ptr<RSFrameRateLinker> Create();
