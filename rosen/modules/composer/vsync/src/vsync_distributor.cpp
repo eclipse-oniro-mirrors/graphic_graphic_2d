@@ -462,7 +462,7 @@ bool VSyncDistributor::PostVSyncEventPreProcess(int64_t &timestamp, std::vector<
             periodAfterDelay = event_.period;
         }
         // if getting switched into vsync mode after sleep
-        if (!IsDVsyncOn() && isRs_) {
+        if (!IsDVsyncOn()) {
             ScopedBytrace func("NoAccumulateInVsync");
             lastDVsyncTS_.store(0);  // ensure further OnVSyncEvent do not skip
             for (auto conn : conns) {
@@ -477,7 +477,9 @@ bool VSyncDistributor::PostVSyncEventPreProcess(int64_t &timestamp, std::vector<
     {
         std::unique_lock<std::mutex> locker(mutex_);
         pendingRNVInVsync_ = false;
-        event_.period = dvsync_->GetPeriod();
+        if (IsUiDvsyncOn()) {
+            event_.period = dvsync_->GetPeriod();
+        }
     }
 #endif
     return true;
@@ -516,6 +518,9 @@ void VSyncDistributor::OnDVSyncTrigger(int64_t now, int64_t period, uint32_t ref
 
     int64_t lastDVsyncTS = lastDVsyncTS_.load();
     // when dvsync switch to vsync, skip all vsync events within one period from the pre-rendered timestamp
+    if (dvsync_->NeedSkipDVsyncPrerenderedFrame()) {
+        return;
+    }
     if (!IsDVsyncOn() && now < (lastDVsyncTS + DVSYNC_ON_PERIOD - MAX_PERIOD_BIAS)) {
         ScopedBytrace func("skip DVSync prerendered frame, now: " + std::to_string(now) +
             ",lastDVsyncTS: " + std::to_string(lastDVsyncTS));
@@ -760,7 +765,7 @@ VsyncError VSyncDistributor::RequestNextVSync(const sptr<VSyncConnection> &conne
     std::unique_lock<std::mutex> locker(mutex_);
 
 #if defined(RS_ENABLE_DVSYNC)
-    if (IsDVsyncOn() && isRs_ && fromWhom != "fromRsMainCommand") {
+    if (IsDVsyncOn() && isRs_) {
         dvsync_->RNVWait(locker);
     }
 #endif
