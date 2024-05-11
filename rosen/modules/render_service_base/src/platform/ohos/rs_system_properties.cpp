@@ -915,5 +915,19 @@ bool RSSystemProperties::IsForceClient()
     const char *num = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(num, 0);
 }
+
+bool RSSystemProperties::GetUnmarshParallelFlag()
+{
+    static bool flag = system::GetParameter("rosen.graphic.UnmashParallelEnabled", "1") != "0";
+    return flag;
+}
+
+uint32_t RSSystemProperties::GetUnMarshParallelSize()
+{
+    static uint32_t size =
+        static_cast<uint32_t>(std::atoi(
+            (system::GetParameter("rosen.graphic.UnmashParallelSize", "102400")).c_str())); // 100K
+    return size;
+}
 } // namespace Rosen
 } // namespace OHOS

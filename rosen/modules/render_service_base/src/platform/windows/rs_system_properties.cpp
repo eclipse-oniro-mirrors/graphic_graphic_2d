@@ -412,5 +412,15 @@ bool RSSystemProperties::IsForceClient()
 {
     return false;
 }
+
+bool RSSystemProperties::GetUnmarshParallelFlag()
+{
+    return false;
+}
+
+uint32_t RSSystemProperties::GetUnMarshParallelSize()
+{
+    return UINT32_MAX;
+}
 } // namespace Rosen
 } // namespace OHOS
