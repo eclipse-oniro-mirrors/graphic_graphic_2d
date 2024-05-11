@@ -486,9 +486,11 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     RSDirtyRectsDfx rsDirtyRectsDfx(displayNodeSp);
     std::vector<RectI> damageRegionrects;
+    Drawing::Region clipRegion;
     if (uniParam->IsPartialRenderEnabled()) {
         damageRegionrects = MergeDirtyHistory(displayNodeSp, renderFrame->GetBufferAge(), screenInfo, rsDirtyRectsDfx);
         uniParam->Reset();
+        clipRegion = GetFilpedRegion(damageRegionrects, screenInfo);
         if (!uniParam->IsRegionDebugEnabled()) {
             renderFrame->SetDamageRegion(damageRegionrects);
         }
@@ -526,17 +528,19 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         if (needOffscreen) {
             uniParam->SetOpDropped(false);
             PrepareOffscreenRender(*displayNodeSp);
-        } else {
-            curCanvas_->ConcatMatrix(params->GetMatrix());
         }
 
         if (uniParam->IsOpDropped()) {
-            auto region = GetFilpedRegion(damageRegionrects, screenInfo);
-            uniParam->SetClipRegion(region);
-            ClipRegion(*curCanvas_, region);
+            uniParam->SetClipRegion(clipRegion);
+            ClipRegion(*curCanvas_, clipRegion);
         } else {
             curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
         }
+
+        if (!needOffscreen) {
+            curCanvas_->ConcatMatrix(params->GetMatrix());
+        }
+
         if (params->IsRotationChanged()) {
             // draw black background in rotation for camera
             curCanvas_->Clear(Drawing::Color::COLOR_BLACK);
