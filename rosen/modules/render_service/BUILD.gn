@@ -288,6 +288,7 @@ ohos_shared_library("librender_service") {
     "c_utils:utils",
     "drivers_interface_display:display_commontype_idl_headers",
     "eventhandler:libeventhandler",
+    "ffrt:libffrt",
     "graphic_surface:frame_report",
     "graphic_surface:surface",
     "hicollie:libhicollie",
