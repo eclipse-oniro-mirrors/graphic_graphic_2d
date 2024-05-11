@@ -407,7 +407,8 @@ void RSRenderServiceClient::SetRefreshRateMode(int32_t refreshRateMode)
     renderService->SetRefreshRateMode(refreshRateMode);
 }
 
-void RSRenderServiceClient::SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range, bool isAnimatorStopped)
+void RSRenderServiceClient::SyncFrameRateRange(FrameRateLinkerId id,
+    const FrameRateRange& range, bool isAnimatorStopped)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
