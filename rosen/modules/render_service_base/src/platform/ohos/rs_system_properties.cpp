@@ -929,5 +929,11 @@ int RSSystemProperties::GetRSNodeLimit()
         std::atoi((system::GetParameter("persist.sys.graphic.rsNodeLimit", "500")).c_str());
     return rsNodeLimit;
 }
+
+bool RSSystemProperties::GetGpuOverDrawBufferOptimizeEnabled()
+{
+    static bool flag = system::GetParameter("rosen.gpu.overdraw.optimize.enabled", "0") != "0";
+    return flag;
+}
 } // namespace Rosen
 } // namespace OHOS

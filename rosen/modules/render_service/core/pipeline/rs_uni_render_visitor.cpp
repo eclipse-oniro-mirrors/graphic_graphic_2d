@@ -1263,6 +1263,9 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     isSubTreeNeedPrepare ? QuickPrepareChildren(node) :
         node.SubTreeSkipPrepare(*curSurfaceDirtyManager_, curDirty_, dirtyFlag_, prepareClipRect_);
 
+    if (node.IsLeashWindow() && RSSystemProperties::GetGpuOverDrawBufferOptimizeEnabled()) {
+        CheckIsGpuOverDrawBufferOptimizeNode(node);
+    }
     node.SetGlobalAlpha(curAlpha_);
     PostPrepare(node, !isSubTreeNeedPrepare);
     prepareClipRect_ = prepareClipRect;
@@ -6183,5 +6186,41 @@ void RSUniRenderVisitor::CheckMergeDebugRectforRefreshRate()
         curDisplayNode_->GetDirtyManager()->MergeDirtyRect(tempRect, true);  // true：debugRect for dislplayNode skip
     }
 }
+
+void RSUniRenderVisitor::CheckIsGpuOverDrawBufferOptimizeNode(RSSurfaceRenderNode& node)
+{
+    bool hasAnim = ancestorNodeHasAnimation_ || node.GetCurFrameHasAnimation();
+    if (!node.IsScale() || hasAnim || curCornerRadius_.IsZero() || curAlpha_ < 1) {
+        node.SetGpuOverDrawBufferOptimizeNode(false);
+        return;
+    }
+
+    for (auto& child : *(node.GetChildren())) {
+        if (!child || !child->IsSubSurfaceNode()) {
+            continue;
+        }
+        auto rootNode = child->GetFirstChild();
+        if (!rootNode) {
+            break;
+        }
+        auto canvasNode = rootNode->GetFirstChild();
+        if (!canvasNode) {
+            break;
+        }
+        const auto& surfaceProperties = node.GetRenderProperties();
+        const auto& canvasProperties = canvasNode->GetRenderProperties();
+        if (canvasProperties.GetAlpha() >= 1
+            && canvasProperties.GetBackgroundColor().GetAlpha() >= MAX_ALPHA
+            && canvasProperties.GetFrameWidth() == surfaceProperties.GetFrameWidth()
+            && canvasProperties.GetFrameHeight() == surfaceProperties.GetFrameHeight()) {
+            node.SetGpuOverDrawBufferOptimizeNode(true);
+            node.SetOverDrawBufferNodeCornerRadius(curCornerRadius_);
+            return;
+        }
+    }
+
+    node.SetGpuOverDrawBufferOptimizeNode(false);
+}
+
 } // namespace Rosen
 } // namespace OHOS

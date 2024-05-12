@@ -21,6 +21,7 @@
 #include "draw/brush.h"
 #include "rs_trace.h"
 
+#include "common/rs_optional_trace.h"
 #include "common/rs_obj_abs_geometry.h"
 #include "impl_interface/region_impl.h"
 #include "memory/rs_tag_tracker.h"
@@ -244,6 +245,12 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     auto parentSurfaceMatrix = RSRenderParams::GetParentSurfaceMatrix();
     RSRenderParams::SetParentSurfaceMatrix(rscanvas->GetTotalMatrix());
+
+    // add a blending disable rect op behind floating window, to enable overdraw buffer feature on special gpu.
+    if (surfaceParams->IsLeashWindow() && RSSystemProperties::GetGpuOverDrawBufferOptimizeEnabled()
+        && surfaceParams->IsGpuOverDrawBufferOptimizeNode()) {
+        EnableGpuOverDrawDrawBufferOptimization(canvas, surfaceParams);
+    }
 
     auto bounds = surfaceParams->GetFrameRect();
 
@@ -574,4 +581,24 @@ void RSSurfaceRenderNodeDrawable::DrawUIFirstDfx(RSPaintFilterCanvas& canvas, Mu
     canvas.DetachBrush();
 }
 
+void RSSurfaceRenderNodeDrawable::EnableGpuOverDrawDrawBufferOptimization(Drawing::Canvas& canvas,
+    RSSurfaceRenderParams* surfaceParams)
+{
+    const Vector4f& radius = surfaceParams->GetOverDrawBufferNodeCornerRadius();
+    if (radius.IsZero()) {
+        return;
+    }
+    RS_OPTIONAL_TRACE_NAME_FMT("EnableGpuOverDrawDrawBufferOptimization Id:%" PRIu64 "", surfaceParams->GetId());
+    const Drawing::Rect& bounds = surfaceParams->GetFrameRect();
+    Drawing::Brush brush;
+    // must set src blend mode, so overdraw buffer feature can enabled.
+    brush.SetBlendMode(Drawing::BlendMode::SRC);
+    // cause the rect will be covered by the child background node, so we just add a white rect
+    brush.SetColor(Drawing::Color::COLOR_WHITE);
+    canvas.AttachBrush(brush);
+    Drawing::AutoCanvasRestore arc(canvas, true);
+    canvas.Translate(radius.x_, radius.y_);
+    canvas.DrawRect(Drawing::Rect {0, 0, bounds.GetWidth() - 2 * radius.x_, bounds.GetHeight() - 2 * radius.y_});
+    canvas.DetachBrush();
+}
 } // namespace OHOS::Rosen::DrawableV2

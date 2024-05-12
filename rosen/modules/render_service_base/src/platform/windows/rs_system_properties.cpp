@@ -422,5 +422,10 @@ uint32_t RSSystemProperties::GetUnMarshParallelSize()
 {
     return UINT32_MAX;
 }
+
+bool RSSystemProperties::GetGpuOverDrawBufferOptimizeEnabled()
+{
+    return false;
+}
 } // namespace Rosen
 } // namespace OHOS
