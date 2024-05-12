@@ -147,13 +147,10 @@ napi_value JsPath::OnMoveTo(napi_env env, napi_callback_info info)
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
     }
 
-    size_t argc = ARGC_TWO;
     napi_value argv[ARGC_TWO] = {nullptr};
-    napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    if (status != napi_ok || argc < ARGC_TWO) {
-        ROSEN_LOGE("JsPath::OnMoveTo Argc is invalid: %{public}zu", argc);
-        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
-    }
+    CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_TWO);
+    CHECK_EACH_PARAM(ARGC_ZERO, napi_number);
+    CHECK_EACH_PARAM(ARGC_ONE, napi_number);
 
     double x = 0.0;
     double y = 0.0;
@@ -173,13 +170,10 @@ napi_value JsPath::OnLineTo(napi_env env, napi_callback_info info)
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
     }
 
-    size_t argc = ARGC_TWO;
     napi_value argv[ARGC_TWO] = {nullptr};
-    napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    if (status != napi_ok || argc < ARGC_TWO) {
-        ROSEN_LOGE("JsPath::OnLineTo Argc is invalid: %{public}zu", argc);
-        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
-    }
+    CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_TWO);
+    CHECK_EACH_PARAM(ARGC_ZERO, napi_number);
+    CHECK_EACH_PARAM(ARGC_ONE, napi_number);
 
     double x = 0.0;
     double y = 0.0;
@@ -199,13 +193,14 @@ napi_value JsPath::OnArcTo(napi_env env, napi_callback_info info)
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
     }
 
-    size_t argc = ARGC_SIX;
     napi_value argv[ARGC_SIX] = {nullptr};
-    napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    if (status != napi_ok || argc < ARGC_SIX) {
-        ROSEN_LOGE("JsPath::OnArcTo Argc is invalid: %{public}zu", argc);
-        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
-    }
+    CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_SIX);
+    CHECK_EACH_PARAM(ARGC_ZERO, napi_number);
+    CHECK_EACH_PARAM(ARGC_ONE, napi_number);
+    CHECK_EACH_PARAM(ARGC_TWO, napi_number);
+    CHECK_EACH_PARAM(ARGC_THREE, napi_number);
+    CHECK_EACH_PARAM(ARGC_FOUR, napi_number);
+    CHECK_EACH_PARAM(ARGC_FIVE, napi_number);
 
     double x1 = 0.0;
     double y1 = 0.0;
@@ -231,13 +226,12 @@ napi_value JsPath::OnQuadTo(napi_env env, napi_callback_info info)
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
     }
 
-    size_t argc = ARGC_FOUR;
     napi_value argv[ARGC_FOUR] = {nullptr};
-    napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    if (status != napi_ok || argc < ARGC_FOUR) {
-        ROSEN_LOGE("JsPath::OnQuadTo Argc is invalid: %{public}zu", argc);
-        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
-    }
+    CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_FOUR);
+    CHECK_EACH_PARAM(ARGC_ZERO, napi_number);
+    CHECK_EACH_PARAM(ARGC_ONE, napi_number);
+    CHECK_EACH_PARAM(ARGC_TWO, napi_number);
+    CHECK_EACH_PARAM(ARGC_THREE, napi_number);
 
     double ctrlPtX = 0.0;
     double ctrlPtY = 0.0;
@@ -260,13 +254,14 @@ napi_value JsPath::OnCubicTo(napi_env env, napi_callback_info info)
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
     }
 
-    size_t argc = ARGC_SIX;
     napi_value argv[ARGC_SIX] = {nullptr};
-    napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    if (status != napi_ok || argc < ARGC_SIX) {
-        ROSEN_LOGE("JsPath::OnCubicTo Argc is invalid: %{public}zu", argc);
-        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
-    }
+    CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_SIX);
+    CHECK_EACH_PARAM(ARGC_ZERO, napi_number);
+    CHECK_EACH_PARAM(ARGC_ONE, napi_number);
+    CHECK_EACH_PARAM(ARGC_TWO, napi_number);
+    CHECK_EACH_PARAM(ARGC_THREE, napi_number);
+    CHECK_EACH_PARAM(ARGC_FOUR, napi_number);
+    CHECK_EACH_PARAM(ARGC_FIVE, napi_number);
 
     double px1 = 0.0;
     double py1 = 0.0;
