@@ -23,6 +23,7 @@
 
 #include "draw/color.h"
 #include "js_drawing_utils.h"
+#include "line_metrics.h"
 #include "text_style.h"
 #include "typography.h"
 #include "typography_create.h"
@@ -387,6 +388,160 @@ inline napi_value CreateTextRectJsValue(napi_env env, TextRect textrect)
     return objValue;
 }
 
+inline napi_value CreateArrayStringJsValue(napi_env env, std::vector<std::string> vectorString)
+{
+    napi_value jsArray = nullptr;
+    if (napi_create_array_with_length(env, vectorString.size(), &jsArray) == napi_ok) {
+    size_t index = 0;
+    for (const auto& family : vectorString) {
+        napi_value jsString;
+        napi_create_string_utf8(env, family.c_str(), family.length(), &jsString);
+        napi_set_element(env, jsArray, index++, jsString);
+    }
+    }
+    return jsArray;
+}
+
+inline napi_value CreateStringJsValue(napi_env env, std::u16string u16String)
+{
+    napi_value jsStr = nullptr;
+    napi_create_string_utf16(env, reinterpret_cast<const char16_t*>(u16String.c_str()), u16String.length(), &jsStr);
+    return jsStr;
+}
+
+inline napi_value CreateTextStyleJsValue(napi_env env, TextStyle textStyle)
+{
+    napi_value objValue = nullptr;
+    napi_create_object(env, &objValue);
+    if (objValue != nullptr) {
+        napi_set_named_property(env, objValue, "decoration", CreateJsNumber(
+            env,static_cast<uint32_t>(textStyle.decoration)));
+        napi_set_named_property(env, objValue, "color", CreateJsNumber(env,
+            (uint32_t)textStyle.color.CastToColorQuad()));
+        napi_set_named_property(env, objValue, "fontWeight", CreateJsNumber(
+            env,static_cast<uint32_t>(textStyle.fontWeight)));
+        napi_set_named_property(env, objValue, "fontStyle", CreateJsNumber(
+            env,static_cast<uint32_t>(textStyle.fontStyle)));
+        napi_set_named_property(env, objValue, "baseline", CreateJsNumber(
+            env,static_cast<uint32_t>(textStyle.baseline)));
+        napi_set_named_property(env, objValue, "fontFamilies", CreateArrayStringJsValue(env, textStyle.fontFamilies));
+        napi_set_named_property(env, objValue, "fontSize", CreateJsNumber(env,textStyle.fontSize));
+        napi_set_named_property(env, objValue, "letterSpacing", CreateJsNumber(env,textStyle.letterSpacing));
+        napi_set_named_property(env, objValue, "wordSpacing", CreateJsNumber(env,textStyle.wordSpacing));
+        napi_set_named_property(env, objValue, "wordSpacing", CreateJsNumber(env,textStyle.wordSpacing));
+        napi_set_named_property(env, objValue, "heightScale", CreateJsNumber(env,textStyle.heightScale));
+        napi_set_named_property(env, objValue, "halfLeading", CreateJsNumber(env,textStyle.halfLeading));
+        napi_set_named_property(env, objValue, "heightOnly", CreateJsNumber(env,textStyle.heightOnly));
+        napi_set_named_property(env, objValue, "ellipsis", CreateStringJsValue(env,textStyle.ellipsis));
+        napi_set_named_property(env, objValue, "ellipsisMode", CreateJsNumber(
+            env,static_cast<uint32_t>(textStyle.ellipsisModal)));
+        napi_set_named_property(env, objValue, "locale", CreateJsValue(env,textStyle.locale));
+    }
+    return objValue;
+}
+
+inline napi_value CreateFontMetricsJsValue(napi_env env, Drawing::FontMetrics fontMetrics)
+{
+    napi_value objValue = nullptr;
+    napi_create_object(env, &objValue);
+    if (objValue != nullptr) {
+        napi_set_named_property(env, objValue, "flags", CreateJsNumber(env, fontMetrics.fFlags));
+        napi_set_named_property(env, objValue, "top", CreateJsNumber(env, fontMetrics.fTop)); // float type
+        napi_set_named_property(env, objValue, "ascent", CreateJsNumber(env, fontMetrics.fAscent));
+        napi_set_named_property(env, objValue, "descent", CreateJsNumber(env, fontMetrics.fDescent));
+        napi_set_named_property(env, objValue, "bottom", CreateJsNumber(env, fontMetrics.fBottom));
+        napi_set_named_property(env, objValue, "leading", CreateJsNumber(env, fontMetrics.fLeading));
+        napi_set_named_property(env, objValue, "avgCharWidth", CreateJsNumber(env, fontMetrics.fAvgCharWidth));
+        napi_set_named_property(env, objValue, "maxCharWidth", CreateJsNumber(env, fontMetrics.fMaxCharWidth));
+        napi_set_named_property(env, objValue, "xMin", CreateJsNumber(env, fontMetrics.fXMin));
+        napi_set_named_property(env, objValue, "xMax", CreateJsNumber(env, fontMetrics.fXMax));
+        napi_set_named_property(env, objValue, "xHeight", CreateJsNumber(env, fontMetrics.fXHeight));
+        napi_set_named_property(env, objValue, "capHeight", CreateJsNumber(env, fontMetrics.fCapHeight));
+        napi_set_named_property(env, objValue, "underlineThickness", CreateJsNumber(env, fontMetrics.fUnderlineThickness));
+        napi_set_named_property(env, objValue, "underlinePosition", CreateJsNumber(env, fontMetrics.fUnderlinePosition));
+        napi_set_named_property(env, objValue, "strikeoutThickness", CreateJsNumber(env, fontMetrics.fStrikeoutThickness));
+        napi_set_named_property(env, objValue, "strikeoutPosition", CreateJsNumber(env, fontMetrics.fStrikeoutPosition));
+    }
+    return objValue;
+}
+
+inline napi_value CreateRunMetricsJsValue(napi_env env, RunMetrics runMetrics)
+{
+    napi_value objValue = nullptr;
+    napi_create_object(env, &objValue);
+    if (objValue != nullptr) {
+        napi_set_named_property(env, objValue, "textStyle", CreateTextStyleJsValue(env, *(runMetrics.textStyle)));
+        napi_set_named_property(env, objValue, "fontMetrics", CreateFontMetricsJsValue(env, runMetrics.fontMetrics));
+    }
+    return objValue;
+}
+
+inline napi_value CreateLineMetricsJsValue(napi_env env, LineMetrics lineMetrics)
+{
+    napi_value objValue = nullptr;
+    napi_create_object(env, &objValue);
+    if (objValue != nullptr) {
+        napi_set_named_property(env, objValue, "startIndex", CreateJsNumber(env, (uint32_t)lineMetrics.startIndex));
+        napi_set_named_property(env, objValue, "endIndex", CreateJsNumber(env, (uint32_t)lineMetrics.endIndex));
+        napi_set_named_property(env, objValue, "ascent", CreateJsNumber(env, lineMetrics.ascender));
+        napi_set_named_property(env, objValue, "descent", CreateJsNumber(env, lineMetrics.descender));
+        napi_set_named_property(env, objValue, "height", CreateJsNumber(env, lineMetrics.height));
+        napi_set_named_property(env, objValue, "width", CreateJsNumber(env, lineMetrics.width));
+        napi_set_named_property(env, objValue, "left", CreateJsNumber(env, lineMetrics.x));
+        napi_set_named_property(env, objValue, "topHeight", CreateJsNumber(env, lineMetrics.capHeight));
+        napi_value tempMapRunMetrics = nullptr;
+        uint32_t runMetricsCount = 0;
+        napi_get_array_length(env, tempMapRunMetrics, &runMetricsCount);
+        size_t index = 0;
+        for (const auto& pair : lineMetrics.runMetrics) {
+        napi_value jsPair;
+        napi_create_array_with_length(env, 2, &jsPair);
+
+        napi_set_element(env, jsPair, 0, CreateJsNumber(env, (uint32_t)pair.first));
+        napi_set_element(env, jsPair, 1, CreateRunMetricsJsValue(env, pair.second));
+        napi_set_element(env, tempMapRunMetrics, index++, jsPair);
+        }
+        napi_set_named_property(env, objValue, "runMetrics", tempMapRunMetrics);
+    }
+    return objValue;
+}
+
+inline void SetFontMetricsFloatValueFromJS(napi_env env, napi_value argValue, const std::string str, float& cValue)
+{
+    napi_value tempValue = nullptr;
+    napi_get_named_property(env, argValue, str.c_str(), &tempValue);
+    if (tempValue == nullptr) {
+        return;
+    }
+    double tempValuechild = 0.0;
+
+    ConvertFromJsValue(env, tempValue, tempValuechild);
+    cValue = static_cast<float>(tempValuechild);
+}
+
+inline void SetLineMetricsDoubleValueFromJS(napi_env env, napi_value argValue, const std::string str, double& cValue)
+{
+    napi_value tempValue = nullptr;
+    napi_get_named_property(env, argValue, str.c_str(), &tempValue);
+    if (tempValue == nullptr) {
+        return;
+    }
+    ConvertFromJsValue(env, tempValue, cValue);
+}
+
+inline void SetLineMetricsSizeTValueFromJS(napi_env env, napi_value argValue, const std::string str, uint32_t& cValue)
+{
+    napi_value tempValue = nullptr;
+    napi_get_named_property(env, argValue, str.c_str(), &tempValue);
+    if (tempValue == nullptr) {
+        return;
+    }
+
+    uint32_t tempValuechild = 0;
+    ConvertFromJsValue(env, tempValue, tempValuechild);
+    cValue = static_cast<size_t>(tempValuechild);
+}
+
 bool OnMakeFontFamilies(napi_env& env, napi_value jsValue, std::vector<std::string> &fontFamilies);
 
 bool SetTextStyleColor(napi_env env, napi_value argValue, const std::string& str, Drawing::Color& colorSrc);
@@ -402,6 +557,12 @@ bool GetPlaceholderSpanFromJS(napi_env env, napi_value argValue, PlaceholderSpan
 void ParsePartTextStyle(napi_env env, napi_value argValue, TextStyle& textStyle);
 
 size_t GetParamLen(napi_env env, napi_value param);
+
+bool GetFontMetricsFromJS(napi_env env, napi_value argValue, Drawing::FontMetrics& fontMetrics);
+
+bool GetRunMetricsFromJS(napi_env env, napi_value argValue, SPText::RunMetrics& runMetrics);
+
+bool GetLineMetricsFromJS(napi_env env, napi_value argValue, LineMetrics& runMetrics);
 
 void ScanShadowValue(napi_env env, napi_value allShadowValue, uint32_t arrayLength, TextStyle& textStyle);
 

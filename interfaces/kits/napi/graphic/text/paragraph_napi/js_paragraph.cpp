@@ -78,6 +78,8 @@ napi_value JsParagraph::Init(napi_env env, napi_value exportObj)
         DECLARE_NAPI_FUNCTION("getLineWidth", JsParagraph::GetLineWidth),
         DECLARE_NAPI_FUNCTION("didExceedMaxLines", JsParagraph::DidExceedMaxLines),
         DECLARE_NAPI_FUNCTION("getTextLines", JsParagraph::GetTextLines),
+        DECLARE_NAPI_FUNCTION("getActualTextRange", JsParagraph::GetActualTextRange),
+        DECLARE_NAPI_FUNCTION("getLineMetrics", JsParagraph::GetLineMetrics),
     };
     napi_value constructor = nullptr;
     napi_status status = napi_define_class(env, CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Constructor, nullptr,
@@ -503,6 +505,63 @@ napi_value JsParagraph::OnDidExceedMaxLines(napi_env env, napi_callback_info inf
     }
     bool didExceedMaxLines = paragraph_->DidExceedMaxLines();
     return CreateJsValue(env, didExceedMaxLines);
+}
+
+napi_value JsParagraph::GetActualTextRange(napi_env env, napi_callback_info info)
+{
+    JsParagraph* me = CheckParamsAndGetThis<JsParagraph>(env, info);
+    return (me != nullptr) ? me->OnGetActualTextRange(env, info) : nullptr;
+}
+
+napi_value JsParagraph::OnGetActualTextRange(napi_env env, napi_callback_info info)
+{
+    if (paragraph_ == nullptr) {
+        ROSEN_LOGE("JsParagraph::OnGetActualTextRange paragraph_ is nullptr");
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+
+    size_t argc = ARGC_TWO;
+    napi_value argv[ARGC_TWO] = {nullptr};
+    napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (status != napi_ok || argc < ARGC_TWO) {
+        ROSEN_LOGE("JsParagraph::OnGetActualTextRange Argc is invalid: %{public}zu", argc);
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+    int lineNumber = 0;
+    if (!(ConvertFromJsValue(env, argv[0], lineNumber))) {
+        ROSEN_LOGE("JsParagraph::OnGetActualTextRange Argv is invalid");
+        return NapiGetUndefined(env);
+    }
+    bool includeSpaces = false;
+    if (!(ConvertFromJsValue(env, argv[1], includeSpaces))) {
+        ROSEN_LOGE("JsParagraph::OnGetActualTextRange Argv is invalid");
+        return NapiGetUndefined(env);
+    }
+    OHOS::Rosen::Boundary range = paragraph_->GetActualTextRange(lineNumber, includeSpaces);
+    return GetRangeAndConvertToJsValue(env, &range);
+}
+
+napi_value JsParagraph::GetLineMetrics(napi_env env, napi_callback_info info)
+{
+    JsParagraph* me = CheckParamsAndGetThis<JsParagraph>(env, info);
+    return (me != nullptr) ? me->OnGetLineMetrics(env, info) : nullptr;
+}
+
+napi_value JsParagraph::OnGetLineMetrics(napi_env env, napi_callback_info info)
+{
+    if (paragraph_ == nullptr) {
+        ROSEN_LOGE("JsParagraph::OnGetLineMetrics paragraph_ is nullptr");
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+    std::vector<LineMetrics> vectorLineMetrics = paragraph_->GetLineMetrics();
+    napi_value returnLineMetrics = nullptr;
+    NAPI_CALL(env, napi_create_array(env, &returnLineMetrics));
+    int num = static_cast<int>(vectorLineMetrics.size());
+    for (int index = 0; index < num; ++index) {
+        // napi_value tempValue = CreateTextRectJsValue(env, rectsForPlaceholders[index]);
+        // NAPI_CALL(env, napi_set_element(env, returnPlaceholders, index, tempValue));
+    }
+    return returnLineMetrics;
 }
 
 JsParagraph::JsParagraph(std::shared_ptr<Typography> typography)

@@ -123,6 +123,18 @@ static const std::vector<struct JsEnumInt> g_affinity = {
     { "DOWNSTREAM", static_cast<size_t>(Affinity::NEXT) },
 };
 
+static const std::vector<struct JsEnumInt> g_fontMetricsFlags = {
+    { "UNDERLINE_THICKNESS_IS_VALID", static_cast<size_t>(
+        Drawing::FontMetrics::FontMetricsFlags::UNDERLINE_THICKNESS_IS_VALID_FLAG) },
+    { "UNDERLINE_POSITION_IS_VALID", static_cast<size_t>(
+        Drawing::FontMetrics::FontMetricsFlags::UNDERLINE_POSITION_IS_VALID_FLAG) },
+    { "STRIKEOUT_THICKNESS_IS_VALID", static_cast<size_t>(
+        Drawing::FontMetrics::FontMetricsFlags::STRIKEOUT_THICKNESS_IS_VALID_FLAG) },
+    { "STRIKEOUT_POSITION_IS_VALID", static_cast<size_t>(
+        Drawing::FontMetrics::FontMetricsFlags::STRIKEOUT_POSITION_IS_VALID_FLAG) },
+    { "BOUNDS_INVALID", static_cast<size_t>(Drawing::FontMetrics::FontMetricsFlags::BOUNDS_INVALID_FLAG) },
+};
+
 static const std::map<std::string_view, const std::vector<struct JsEnumInt>&> g_intEnumClassMap = {
     { "TextAlign", g_textAlign },
     { "TextDecorationStyle", g_textDecorationStyle },
@@ -138,6 +150,7 @@ static const std::map<std::string_view, const std::vector<struct JsEnumInt>&> g_
     { "RectWidthStyle", g_rectWidthStyle},
     { "RectHeightStyle", g_rectHeightStyle},
     { "Affinity", g_affinity},
+    { "FontMetricsFlags", g_fontMetricsFlags},
 };
 
 napi_value JsEnum::JsEnumIntInit(napi_env env, napi_value exports)

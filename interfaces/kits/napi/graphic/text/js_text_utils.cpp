@@ -316,4 +316,93 @@ size_t GetParamLen(napi_env env, napi_value param)
     }
     return buffSize;
 }
+
+bool GetFontMetricsFromJS(napi_env env, napi_value argValue, Drawing::FontMetrics& fontMetrics)
+{
+    if (argValue == nullptr) {
+        return false;
+    }
+    napi_value tempValue = nullptr;
+    napi_get_named_property(env, argValue, "flags", &tempValue);
+    uint32_t flags = 0;
+    if (tempValue != nullptr && napi_get_value_uint32(env, tempValue, &flags) == napi_ok) {
+        fontMetrics.fFlags = Drawing::FontMetrics::FontMetricsFlags(flags);
+    }
+    // SetTextStyleDoubleValueFromJS(env, argValue, "fontSize", textStyle.fontSize);
+    SetFontMetricsFloatValueFromJS(env, argValue, "top", fontMetrics.fTop);
+    SetFontMetricsFloatValueFromJS(env, argValue, "ascent", fontMetrics.fAscent);
+    SetFontMetricsFloatValueFromJS(env, argValue, "descent", fontMetrics.fDescent);
+    SetFontMetricsFloatValueFromJS(env, argValue, "bottom", fontMetrics.fBottom);
+    SetFontMetricsFloatValueFromJS(env, argValue, "leading", fontMetrics.fLeading);
+    SetFontMetricsFloatValueFromJS(env, argValue, "avgCharWidth", fontMetrics.fAvgCharWidth);
+    SetFontMetricsFloatValueFromJS(env, argValue, "maxCharWidth", fontMetrics.fMaxCharWidth);
+    SetFontMetricsFloatValueFromJS(env, argValue, "xMin", fontMetrics.fXMin);
+    SetFontMetricsFloatValueFromJS(env, argValue, "xMax", fontMetrics.fXMax);
+    SetFontMetricsFloatValueFromJS(env, argValue, "xHeight", fontMetrics.fXHeight);
+    SetFontMetricsFloatValueFromJS(env, argValue, "capHeight", fontMetrics.fCapHeight);
+    SetFontMetricsFloatValueFromJS(env, argValue, "underlineThickness", fontMetrics.fUnderlineThickness);
+    SetFontMetricsFloatValueFromJS(env, argValue, "underlinePosition", fontMetrics.fUnderlinePosition);
+    SetFontMetricsFloatValueFromJS(env, argValue, "strikeoutThickness", fontMetrics.fStrikeoutThickness);
+    SetFontMetricsFloatValueFromJS(env, argValue, "strikeoutPosition", fontMetrics.fStrikeoutPosition);
+    return true;
+}
+
+bool GetRunMetricsFromJS(napi_env env, napi_value argValue, RunMetrics& runMetrics)
+{
+    if (argValue == nullptr) {
+        return false;
+    }
+    napi_value tempValue = nullptr;
+    napi_get_named_property(env, argValue, "textStyle", &tempValue);
+    OHOS::Rosen::TextStyle tempTextStyle;
+    if (tempValue != nullptr && GetTextStyleFromJS(env, tempValue, tempTextStyle)) {
+        runMetrics.textStyle = &tempTextStyle;
+    }
+
+    napi_get_named_property(env, argValue, "fontMetrics", &tempValue);
+    Drawing::FontMetrics tempFontMetrics;
+    if (tempValue != nullptr && GetFontMetricsFromJS(env, tempValue, tempFontMetrics)) {
+        runMetrics.fontMetrics = tempFontMetrics;
+    }
+    return true;
+}
+
+bool GetLineMetricsFromJS(napi_env env, napi_value argValue, LineMetrics& lineMetrics)
+{
+    if (argValue == nullptr) {
+        return false;
+    }
+    napi_value tempMapRunMetrics = nullptr;
+    uint32_t runMetricsCount = 0;
+    napi_get_named_property(env, argValue, "runMetrics", &tempMapRunMetrics);
+    napi_get_array_length(env, tempMapRunMetrics, &runMetricsCount);
+    if (tempMapRunMetrics != nullptr) {
+        for (uint32_t i = 0; i < runMetricsCount; ++i) {
+            napi_value jsItem;
+            napi_get_element(env, tempMapRunMetrics, i, &jsItem);
+            napi_value key;
+            napi_value value;
+            napi_get_element(env, jsItem, 0, &key);
+            napi_get_element(env, jsItem, 1, &value);
+            uint32_t textIndex = 0;
+            TextStyle textStyle;
+            RunMetrics runMetrics(&textStyle);
+            if (key != nullptr && value != nullptr && napi_get_value_uint32(env, key, &textIndex) == napi_ok &&
+                GetRunMetricsFromJS(env, value, runMetrics)) {
+                lineMetrics.runMetrics.insert(std::make_pair(textIndex, runMetrics));
+            }
+        }
+    }
+    SetLineMetricsSizeTValueFromJS(env, argValue, "startIndex", lineMetrics.startIndex);
+    SetLineMetricsSizeTValueFromJS(env, argValue, "endIndex", lineMetrics.endIndex);
+    SetLineMetricsDoubleValueFromJS(env, argValue, "ascent", lineMetrics.ascender);
+    SetLineMetricsDoubleValueFromJS(env, argValue, "descent", lineMetrics.descender);
+    SetLineMetricsDoubleValueFromJS(env, argValue, "height", lineMetrics.height);
+    SetLineMetricsDoubleValueFromJS(env, argValue, "width", lineMetrics.width);
+    SetLineMetricsDoubleValueFromJS(env, argValue, "left", lineMetrics.x);
+    SetLineMetricsDoubleValueFromJS(env, argValue, "baseline", lineMetrics.y);
+    SetLineMetricsDoubleValueFromJS(env, argValue, "lineNumber", lineMetrics.y);
+    SetLineMetricsDoubleValueFromJS(env, argValue, "topHeight", lineMetrics.y);
+    return true;
+}
 } // namespace OHOS::Rosen
