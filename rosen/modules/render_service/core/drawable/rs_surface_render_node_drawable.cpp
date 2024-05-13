@@ -494,7 +494,6 @@ void RSSurfaceRenderNodeDrawable::DealWithSelfDrawingNodeBuffer(RSSurfaceRenderN
             { 0, 0, surfaceParams.GetBounds().GetWidth(), surfaceParams.GetBounds().GetHeight() });
         Drawing::SaveLayerOps layerOps(&bounds, nullptr);
         canvas.SaveLayer(layerOps);
-        canvas.SetAlpha(1.0f);
         Drawing::Brush brush;
         brush.SetColor(Drawing::Color(bgColor.AsArgbInt()));
         canvas.AttachBrush(brush);
