@@ -473,6 +473,7 @@ public:
     void MarkFilterHasEffectChildren();
 
     // for blur filter cache
+    virtual void CheckBlurFilterCacheNeedForceClearOrSave(bool rotationChanged = false);
     void UpdateLastFilterCacheRegion();
     void UpdateFilterRegionInSkippedSubTree(RSDirtyRegionManager& dirtyManager,
         const RSRenderNode& subTreeRoot, RectI& filterRect, const std::optional<RectI>& clipRect);
@@ -480,7 +481,9 @@ public:
     virtual void UpdateFilterCacheWithBelowDirty(RSDirtyRegionManager& dirtyManager, bool isForeground = false);
     virtual void UpdateFilterCacheWithSelfDirty();
     bool IsBackgroundInAppOrNodeSelfDirty() const;
-    void PostPrepareForBlurFilterNode(RSDirtyRegionManager& dirtyManager, bool rotationChanged = false);
+    void PostPrepareForBlurFilterNode(RSDirtyRegionManager& dirtyManager);
+    void CheckFilterCacheAndUpdateDirtySlots(
+        std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable, RSDrawableSlot slot);
     bool IsFilterCacheValid() const;
     bool IsAIBarFilterCacheValid() const;
     void MarkForceClearFilterCacheWhenWithInvisible();
@@ -746,8 +749,9 @@ protected:
     bool clipAbsDrawRectChange_ = false;
 
     std::shared_ptr<DrawableV2::RSFilterDrawable> GetFilterDrawable(bool isForeground) const;
-    virtual void MarkFilterCacheFlagsAfterPrepare(
-        std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable, bool isForeground = false);
+    virtual void MarkFilterCacheFlags(std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable,
+        RSDirtyRegionManager& dirtyManager, bool isForeground = false);
+    bool IsForceClearOrUseFilterCache(bool isForeground);
     std::atomic<bool> isStaticCached_ = false;
     bool lastFrameHasVisibleEffect_ = false;
     RectI filterRegion_;
