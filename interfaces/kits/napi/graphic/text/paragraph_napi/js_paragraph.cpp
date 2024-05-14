@@ -543,8 +543,14 @@ napi_value JsParagraph::OnGetActualTextRange(napi_env env, napi_callback_info in
 
 napi_value JsParagraph::GetLineMetrics(napi_env env, napi_callback_info info)
 {
+    size_t argc = ARGC_ONE;
+    napi_value argv[ARGC_ONE] = {nullptr};
+    napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     JsParagraph* me = CheckParamsAndGetThis<JsParagraph>(env, info);
-    return (me != nullptr) ? me->OnGetLineMetrics(env, info) : nullptr;
+    if (status == napi_ok && argc < ARGC_ONE) {
+        return (me != nullptr) ? me->OnGetLineMetrics(env, info) : nullptr;
+    }
+    return (me != nullptr) ? me->OnGetLineMetricsAt(env, info) : nullptr;
 }
 
 napi_value JsParagraph::OnGetLineMetrics(napi_env env, napi_callback_info info)
@@ -558,10 +564,33 @@ napi_value JsParagraph::OnGetLineMetrics(napi_env env, napi_callback_info info)
     NAPI_CALL(env, napi_create_array(env, &returnLineMetrics));
     int num = static_cast<int>(vectorLineMetrics.size());
     for (int index = 0; index < num; ++index) {
-        // napi_value tempValue = CreateTextRectJsValue(env, rectsForPlaceholders[index]);
-        // NAPI_CALL(env, napi_set_element(env, returnPlaceholders, index, tempValue));
+        napi_value tempValue = CreateLineMetricsJsValue(env, vectorLineMetrics[index]);
+        napi_set_element(env, returnLineMetrics, index, tempValue);
     }
     return returnLineMetrics;
+}
+
+napi_value JsParagraph::OnGetLineMetricsAt(napi_env env, napi_callback_info info)
+{
+    if (paragraph_ == nullptr) {
+        ROSEN_LOGE("JsParagraph::OnGetLineMetricsAt paragraph_ is nullptr");
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+    size_t argc = ARGC_ONE;
+    napi_value argv[ARGC_ONE] = {nullptr};
+    napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (status != napi_ok || argc < ARGC_ONE) {
+        ROSEN_LOGE("JsParagraph::OnLayout Argc is invalid: %{public}zu", argc);
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+    int lineNumber = 0;
+    if (!(ConvertFromJsValue(env, argv[0], lineNumber))) {
+        ROSEN_LOGE("JsParagraph::OnGetLineMetricsAt Argv is invalid");
+        return NapiGetUndefined(env);
+    }
+    LineMetrics lineMetrics;
+    paragraph_->GetLineMetricsAt(lineNumber, &lineMetrics);
+    return CreateLineMetricsJsValue(env, lineMetrics);
 }
 
 JsParagraph::JsParagraph(std::shared_ptr<Typography> typography)

@@ -415,27 +415,27 @@ inline napi_value CreateTextStyleJsValue(napi_env env, TextStyle textStyle)
     napi_create_object(env, &objValue);
     if (objValue != nullptr) {
         napi_set_named_property(env, objValue, "decoration", CreateJsNumber(
-            env,static_cast<uint32_t>(textStyle.decoration)));
+            env, static_cast<uint32_t>(textStyle.decoration)));
         napi_set_named_property(env, objValue, "color", CreateJsNumber(env,
             (uint32_t)textStyle.color.CastToColorQuad()));
         napi_set_named_property(env, objValue, "fontWeight", CreateJsNumber(
-            env,static_cast<uint32_t>(textStyle.fontWeight)));
+            env, static_cast<uint32_t>(textStyle.fontWeight)));
         napi_set_named_property(env, objValue, "fontStyle", CreateJsNumber(
-            env,static_cast<uint32_t>(textStyle.fontStyle)));
+            env, static_cast<uint32_t>(textStyle.fontStyle)));
         napi_set_named_property(env, objValue, "baseline", CreateJsNumber(
-            env,static_cast<uint32_t>(textStyle.baseline)));
+            env, static_cast<uint32_t>(textStyle.baseline)));
         napi_set_named_property(env, objValue, "fontFamilies", CreateArrayStringJsValue(env, textStyle.fontFamilies));
-        napi_set_named_property(env, objValue, "fontSize", CreateJsNumber(env,textStyle.fontSize));
-        napi_set_named_property(env, objValue, "letterSpacing", CreateJsNumber(env,textStyle.letterSpacing));
-        napi_set_named_property(env, objValue, "wordSpacing", CreateJsNumber(env,textStyle.wordSpacing));
-        napi_set_named_property(env, objValue, "wordSpacing", CreateJsNumber(env,textStyle.wordSpacing));
-        napi_set_named_property(env, objValue, "heightScale", CreateJsNumber(env,textStyle.heightScale));
-        napi_set_named_property(env, objValue, "halfLeading", CreateJsNumber(env,textStyle.halfLeading));
-        napi_set_named_property(env, objValue, "heightOnly", CreateJsNumber(env,textStyle.heightOnly));
-        napi_set_named_property(env, objValue, "ellipsis", CreateStringJsValue(env,textStyle.ellipsis));
+        napi_set_named_property(env, objValue, "fontSize", CreateJsNumber(env, textStyle.fontSize));
+        napi_set_named_property(env, objValue, "letterSpacing", CreateJsNumber(env, textStyle.letterSpacing));
+        napi_set_named_property(env, objValue, "wordSpacing", CreateJsNumber(env, textStyle.wordSpacing));
+        napi_set_named_property(env, objValue, "wordSpacing", CreateJsNumber(env, textStyle.wordSpacing));
+        napi_set_named_property(env, objValue, "heightScale", CreateJsNumber(env, textStyle.heightScale));
+        napi_set_named_property(env, objValue, "halfLeading", CreateJsNumber(env, textStyle.halfLeading));
+        napi_set_named_property(env, objValue, "heightOnly", CreateJsNumber(env, textStyle.heightOnly));
+        napi_set_named_property(env, objValue, "ellipsis", CreateStringJsValue(env, textStyle.ellipsis));
         napi_set_named_property(env, objValue, "ellipsisMode", CreateJsNumber(
             env,static_cast<uint32_t>(textStyle.ellipsisModal)));
-        napi_set_named_property(env, objValue, "locale", CreateJsValue(env,textStyle.locale));
+        napi_set_named_property(env, objValue, "locale", CreateJsValue(env, textStyle.locale));
     }
     return objValue;
 }
@@ -457,10 +457,14 @@ inline napi_value CreateFontMetricsJsValue(napi_env env, Drawing::FontMetrics fo
         napi_set_named_property(env, objValue, "xMax", CreateJsNumber(env, fontMetrics.fXMax));
         napi_set_named_property(env, objValue, "xHeight", CreateJsNumber(env, fontMetrics.fXHeight));
         napi_set_named_property(env, objValue, "capHeight", CreateJsNumber(env, fontMetrics.fCapHeight));
-        napi_set_named_property(env, objValue, "underlineThickness", CreateJsNumber(env, fontMetrics.fUnderlineThickness));
-        napi_set_named_property(env, objValue, "underlinePosition", CreateJsNumber(env, fontMetrics.fUnderlinePosition));
-        napi_set_named_property(env, objValue, "strikeoutThickness", CreateJsNumber(env, fontMetrics.fStrikeoutThickness));
-        napi_set_named_property(env, objValue, "strikeoutPosition", CreateJsNumber(env, fontMetrics.fStrikeoutPosition));
+        napi_set_named_property(env, objValue, "underlineThickness", CreateJsNumber(env,
+            fontMetrics.fUnderlineThickness));
+        napi_set_named_property(env, objValue, "underlinePosition", CreateJsNumber(env,
+            fontMetrics.fUnderlinePosition));
+        napi_set_named_property(env, objValue, "strikeoutThickness", CreateJsNumber(env,
+            fontMetrics.fStrikeoutThickness));
+        napi_set_named_property(env, objValue, "strikeoutPosition", CreateJsNumber(env,
+            fontMetrics.fStrikeoutPosition));
     }
     return objValue;
 }

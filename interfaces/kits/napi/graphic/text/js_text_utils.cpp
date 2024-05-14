@@ -328,7 +328,6 @@ bool GetFontMetricsFromJS(napi_env env, napi_value argValue, Drawing::FontMetric
     if (tempValue != nullptr && napi_get_value_uint32(env, tempValue, &flags) == napi_ok) {
         fontMetrics.fFlags = Drawing::FontMetrics::FontMetricsFlags(flags);
     }
-    // SetTextStyleDoubleValueFromJS(env, argValue, "fontSize", textStyle.fontSize);
     SetFontMetricsFloatValueFromJS(env, argValue, "top", fontMetrics.fTop);
     SetFontMetricsFloatValueFromJS(env, argValue, "ascent", fontMetrics.fAscent);
     SetFontMetricsFloatValueFromJS(env, argValue, "descent", fontMetrics.fDescent);
@@ -400,8 +399,17 @@ bool GetLineMetricsFromJS(napi_env env, napi_value argValue, LineMetrics& lineMe
     SetLineMetricsDoubleValueFromJS(env, argValue, "height", lineMetrics.height);
     SetLineMetricsDoubleValueFromJS(env, argValue, "width", lineMetrics.width);
     SetLineMetricsDoubleValueFromJS(env, argValue, "left", lineMetrics.x);
-    SetLineMetricsDoubleValueFromJS(env, argValue, "baseline", lineMetrics.y);
-    SetLineMetricsDoubleValueFromJS(env, argValue, "lineNumber", lineMetrics.y);
+    napi_value tempValue = nullptr;
+    napi_get_named_property(env, argValue, "baseline", &tempValue);
+    uint32_t baseline = 0;
+    if (tempValue != nullptr && napi_get_value_uint32(env, tempValue, &baseline) == napi_ok) {
+        lineMetrics.endIndex = static_cast<size_t>(baseline);
+    }
+
+    uint32_t lineNumber = 0;
+    if (tempValue != nullptr && napi_get_value_uint32(env, tempValue, &lineNumber) == napi_ok) {
+        lineMetrics.startIndex = static_cast<size_t>(lineNumber);
+    }
     SetLineMetricsDoubleValueFromJS(env, argValue, "topHeight", lineMetrics.y);
     return true;
 }

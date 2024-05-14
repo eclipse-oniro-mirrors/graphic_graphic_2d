@@ -76,6 +76,7 @@ private:
     napi_value OnGetTextLines(napi_env env, napi_callback_info info);
     napi_value OnGetActualTextRange(napi_env env, napi_callback_info info);
     napi_value OnGetLineMetrics(napi_env env, napi_callback_info info);
+    napi_value OnGetLineMetricsAt(napi_env env, napi_callback_info info);
     std::shared_ptr<Typography> paragraph_ = nullptr;
 };
 } // namespace OHOS::Rosen
