@@ -128,7 +128,10 @@ public:
     void CheckClearFilterCache();
 
     bool IsFilterCacheValid() const;
-    bool GetFilterForceClearCache() const;
+    bool IsForceClearFilterCache() const;
+    bool IsForceUseFilterCache() const;
+    bool NeedPendingPurge() const;
+    bool IsAIBarCacheValid() const;
  
     void OnSync() override;
     Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
@@ -172,6 +175,7 @@ protected:
     RSFilter::FilterType filterType_ = RSFilter::NONE;
     int cacheUpdateInterval_ = 0;
     bool isFilterCacheValid_ = false; // catch status in current frame
+    bool pendingPurge_ = false;
 
     std::unique_ptr<RSFilterCacheManager> cacheManager_;
     NodeId nodeId_ = INVALID_NODEID;

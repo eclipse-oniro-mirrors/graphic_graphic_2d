@@ -203,16 +203,16 @@ void RecordingCanvas::DrawShadow(const Path& path, const Point3& planeParams, co
 }
 
 void RecordingCanvas::DrawShadowStyle(const Path& path, const Point3& planeParams, const Point3& devLightPos,
-    scalar lightRadius, Color ambientColor, Color spotColor, ShadowFlags flag, bool isShadowStyle)
+    scalar lightRadius, Color ambientColor, Color spotColor, ShadowFlags flag, bool isLimitElevation)
 {
     if (!addDrawOpImmediate_) {
         cmdList_->AddDrawOp(std::make_shared<DrawShadowStyleOpItem>(
-            path, planeParams, devLightPos, lightRadius, ambientColor, spotColor, flag, isShadowStyle));
+            path, planeParams, devLightPos, lightRadius, ambientColor, spotColor, flag, isLimitElevation));
         return;
     }
     auto pathHandle = CmdListHelper::AddPathToCmdList(*cmdList_, path);
     cmdList_->AddDrawOp<DrawShadowStyleOpItem::ConstructorHandle>(
-        pathHandle, planeParams, devLightPos, lightRadius, ambientColor, spotColor, flag, isShadowStyle);
+        pathHandle, planeParams, devLightPos, lightRadius, ambientColor, spotColor, flag, isLimitElevation);
 }
 
 void RecordingCanvas::DrawRegion(const Region& region)
@@ -359,7 +359,7 @@ void RecordingCanvas::DrawTextBlob(const TextBlob* blob, const scalar x, const s
         AddDrawOpDeferred<DrawTextBlobOpItem>(blob, x, y);
         return;
     }
-    TextBlob::Context ctx {nullptr, IsCustomTypeface()};
+    TextBlob::Context ctx {nullptr, false};
     auto textBlobHandle = CmdListHelper::AddTextBlobToCmdList(*cmdList_, blob, &ctx);
     uint64_t globalUniqueId = 0;
     if (ctx.GetTypeface() != nullptr) {

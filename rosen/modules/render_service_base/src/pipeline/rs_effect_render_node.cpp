@@ -123,44 +123,62 @@ void RSEffectRenderNode::SetEffectRegion(const std::optional<Drawing::RectI>& ef
     GetMutableRenderProperties().SetHaveEffectRegion(true);
 }
 
-void RSEffectRenderNode::UpdateFilterCacheWithSelfDirty(const std::optional<RectI>& clipRect,
-    bool isInSkippedSubTree, const std::optional<RectI>& filterRectForceUpdated)
+void RSEffectRenderNode::CheckBlurFilterCacheNeedForceClearOrSave(bool rotationChanged)
+{
+    if (GetRenderProperties().GetBackgroundFilter()) {
+        return;
+    }
+    auto filterDrawable = GetFilterDrawable(false);
+    if (filterDrawable == nullptr) {
+        return;
+    }
+    if (CheckFilterCacheNeedForceClear()) {
+        filterDrawable->MarkFilterForceClearCache();
+    } else if (CheckFilterCacheNeedForceSave()) {
+        filterDrawable->MarkFilterForceUseCache();
+    }
+    RSRenderNode::CheckBlurFilterCacheNeedForceClearOrSave(rotationChanged);
+}
+
+void RSEffectRenderNode::UpdateFilterCacheWithSelfDirty()
 {
     if (!RSProperties::FilterCacheEnabled) {
         ROSEN_LOGE("RSEffectRenderNode::UpdateFilterCacheManagerWithCacheRegion filter cache is disabled.");
         return;
     }
-    RectI filterRect = isInSkippedSubTree ? filterRectForceUpdated.value() : GetFilterRect();
-    if (!isInSkippedSubTree && clipRect.has_value()) {
-        filterRect = filterRect.IntersectRect(*clipRect);
+    if (IsForceClearOrUseFilterCache(false)) {
+        return;
     }
-    RS_OPTIONAL_TRACE_NAME_FMT("effectNode[%llu] UpdateFilterCacheWithSelfDirty lastRect:%s, currRegion:%s",
-        GetId(), GetFilterCachedRegion().ToString().c_str(), filterRect.ToString().c_str());
-    if (filterRect == GetFilterCachedRegion()) {
+    auto filterDrawable = GetFilterDrawable(false);
+    // clear filter cache if no child marked useeffect
+    if (filterDrawable != nullptr && !ChildHasVisibleEffect() && lastFrameHasVisibleEffect_) {
+        RS_OPTIONAL_TRACE_NAME_FMT("RSEffectRenderNode[%llu]::UpdateFilterCacheWithSelfDirty "
+            "hasVisibleEffect:%d", GetId(), ChildHasVisibleEffect());
+        filterDrawable->MarkFilterForceClearCache();
+        return;
+    }
+    RS_OPTIONAL_TRACE_NAME_FMT("RSEffectRenderNode[%llu]::UpdateFilterCacheWithSelfDirty lastRect:%s, currRegion:%s",
+        GetId(), GetFilterCachedRegion().ToString().c_str(), filterRegion_.ToString().c_str());
+    if (filterRegion_ == GetFilterCachedRegion()) {
         return;
     }
     // effect render node  only support background filter
     MarkFilterStatusChanged(false, true);
 }
 
-void RSEffectRenderNode::MarkFilterCacheFlagsAfterPrepare(
-    std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable, bool isForeground)
+void RSEffectRenderNode::MarkFilterCacheFlags(std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable,
+    RSDirtyRegionManager& dirtyManager, bool isForeground)
 {
-    if (filterDrawable == nullptr) {
+    preStaticStatus_ = IsStaticCached();
+    lastFrameHasVisibleEffect_ = ChildHasVisibleEffect();
+    if (filterDrawable == nullptr || IsForceClearOrUseFilterCache(isForeground)) {
         return;
     }
-    if (!(filterDrawable->GetFilterForceClearCache()) && CheckFilterCacheNeedForceClear()) {
-        filterDrawable->MarkFilterForceClearCache();
-    } else if (CheckFilterCacheNeedForceSave()) {
-        filterDrawable->MarkFilterForceUseCache();
-    }
+    // use for skip-frame when screen rotation
     if (isRotationChanged_) {
         filterDrawable->MarkRotationChanged();
     }
-
-    RSRenderNode::MarkFilterCacheFlagsAfterPrepare(filterDrawable, isForeground);
-    preStaticStatus_ = IsStaticCached();
-    lastFrameHasVisibleEffect_ = ChildHasVisibleEffect();
+    RSRenderNode::MarkFilterCacheFlags(filterDrawable, dirtyManager, isForeground);
 }
 
 bool RSEffectRenderNode::CheckFilterCacheNeedForceSave()
@@ -177,8 +195,7 @@ bool RSEffectRenderNode::CheckFilterCacheNeedForceClear()
         " preRotationStatus_:%d, isRotationChanged_:%d, preStaticStatus_:%d, isStaticCached:%d,"
         " hasVisibleEffect:%d", GetId(), foldStatusChanged_, preRotationStatus_, isRotationChanged_,
         preStaticStatus_, IsStaticCached(), ChildHasVisibleEffect());
-    return foldStatusChanged_ || (preRotationStatus_ != isRotationChanged_) ||
-        (preStaticStatus_ != IsStaticCached()) || !ChildHasVisibleEffect();
+    return foldStatusChanged_ || (preRotationStatus_ != isRotationChanged_) || (preStaticStatus_ != IsStaticCached());
 }
 
 void RSEffectRenderNode::SetRotationChanged(bool isRotationChanged)

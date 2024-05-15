@@ -134,7 +134,8 @@ public:
 
     void SetForceHardwareAndFixRotation(bool flag);
     bool GetForceHardwareByUser() const;
-    int32_t GetFixedRotationDegree() const;
+    bool GetForceHardware() const;
+    void SetForceHardware(bool flag);
 
     SelfDrawingNodeType GetSelfDrawingNodeType() const
     {
@@ -246,7 +247,7 @@ public:
 
     bool IsHardwareForcedDisabled() const
     {
-        if (isForceHardwareByUser_ && !isHardwareForcedDisabledByVisibility_) {
+        if (isForceHardware_ && !isHardwareForcedDisabledByVisibility_) {
             return false;
         }
         return isHardwareForcedDisabled_ || isHardwareForcedDisabledByVisibility_ ||
@@ -350,7 +351,7 @@ public:
         offsetX_ = offset;
     }
 
-    int32_t GetOffSetX()
+    int32_t GetOffSetX() const
     {
         return offsetX_;
     }
@@ -360,7 +361,7 @@ public:
         offsetY_ = offset;
     }
 
-    int32_t GetOffSetY()
+    int32_t GetOffSetY() const
     {
         return offsetY_;
     }
@@ -393,7 +394,7 @@ public:
     void SetHwcChildrenDisabledStateByUifirst();
 
     void SetContextBounds(const Vector4f bounds);
-    bool CheckParticipateInOcclusion() const;
+    bool CheckParticipateInOcclusion();
 
     void OnApplyModifiers() override;
 
@@ -972,6 +973,11 @@ public:
         return RSRenderNode::GetUifirstSupportFlag();
     }
 
+    bool OpincGetNodeSupportFlag() override
+    {
+        return false;
+    }
+
     void UpdateSurfaceCacheContentStaticFlag();
 
     void UpdateSurfaceSubTreeDirtyFlag();
@@ -1059,8 +1065,34 @@ public:
         return bufferRelMatrix_;
     }
 
+    void SetGpuOverDrawBufferOptimizeNode(bool overDrawNode)
+    {
+        isGpuOverDrawBufferOptimizeNode_ = overDrawNode;
+    }
+    bool IsGpuOverDrawBufferOptimizeNode() const
+    {
+        return isGpuOverDrawBufferOptimizeNode_;
+    }
+
+    void SetOverDrawBufferNodeCornerRadius(const Vector4f& radius)
+    {
+        overDrawBufferNodeCornerRadius_ = radius;
+    }
+    const Vector4f& GetOverDrawBufferNodeCornerRadius() const
+    {
+        return overDrawBufferNodeCornerRadius_;
+    }
+    
+    bool HasSubSurfaceNodes() const;
+    void SetIsSubSurfaceNode(bool isSubSurfaceNode);
+    bool IsSubSurfaceNode() const;
+    const std::map<NodeId, RSSurfaceRenderNode::WeakPtr>& GetChildSubSurfaceNodes() const;
+    void GetAllSubSurfaceNodes(std::vector<std::pair<NodeId, RSSurfaceRenderNode::WeakPtr>>& allSubSurfaceNodes);
+    std::string SubSurfaceNodesDump() const;
+
 protected:
     void OnSync() override;
+    void OnSkipSync() override;
 
 private:
     void OnResetParent() override;
@@ -1075,6 +1107,8 @@ private:
     {
         return isHardwareForcedDisabledBySrcRect_;
     }
+    void OnSubSurfaceChanged();
+    void UpdateChildSubSurfaceNodes(RSSurfaceRenderNode::SharedPtr node, bool isOnTheTree);
     bool IsYUVBufferFormat() const;
     void InitRenderParams() override;
     void UpdateRenderParams() override;
@@ -1187,6 +1221,7 @@ private:
     {
         RectI screenRect_;
         RectI absRect_;
+        RectI oldDirty_;
         ScreenRotation screenRotation_ = ScreenRotation::INVALID_SCREEN_ROTATION;
         bool isFocusWindow_ = false;
         bool isTransparent_ = false;
@@ -1236,9 +1271,9 @@ private:
     // used for hardware enabled nodes
     bool isHardwareEnabledNode_ = false;
     bool isForceHardwareByUser_ = false;
+    bool isForceHardware_ = false;
     bool isHardwareForcedDisabledByVisibility_ = false;
     RectI originalDstRect_;
-    int32_t fixedRotationDegree_ = -90;
     SelfDrawingNodeType selfDrawingType_ = SelfDrawingNodeType::DEFAULT;
     bool isCurrentFrameHardwareEnabled_ = false;
     bool isLastFrameHardwareEnabled_ = false;
@@ -1261,6 +1296,7 @@ private:
 
     bool animateState_ = false;
     bool isRotating_ = false;
+    bool isParentScaling_ = false;
 
     bool needDrawAnimateProperty_ = false;
     bool prevVisible_ = false;
@@ -1296,6 +1332,11 @@ private:
     bool hasTransparentSurface_ = false;
 
     bool ancoForceDoDirect_ = false;
+    bool isGpuOverDrawBufferOptimizeNode_ = false;
+    Vector4f overDrawBufferNodeCornerRadius_;
+
+    std::map<NodeId, RSSurfaceRenderNode::WeakPtr> childSubSurfaceNodes_;
+    bool isSubSurfaceNode_ = false;
 
     friend class RSUniRenderVisitor;
     friend class RSRenderNode;

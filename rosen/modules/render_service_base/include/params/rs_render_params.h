@@ -94,6 +94,11 @@ public:
         return isSkipLayer_;
     }
 
+    inline bool IsLayerDirty() const
+    {
+        return dirtyType_.test(RSRenderParamsDirtyType::LAYER_INFO_DIRTY);
+    }
+
     void SetChildHasVisibleFilter(bool val);
     bool ChildHasVisibleFilter() const;
     void SetChildHasVisibleEffect(bool val);
@@ -107,6 +112,13 @@ public:
 
     void SetDrawingCacheType(RSDrawingCacheType cacheType);
     RSDrawingCacheType GetDrawingCacheType() const;
+
+    void OpincUpdateRootFlag(bool suggestFlag);
+    bool OpincGetRootFlag() const;
+    void OpincSetCacheChangeFlag(bool state);
+    bool OpincGetCacheChangeState();
+    bool OpincGetCachedMark();
+    void OpincSetCachedMark(bool mark);
 
     void SetDrawingCacheIncludeProperty(bool includeProperty);
     bool GetDrawingCacheIncludeProperty() const;
@@ -165,6 +177,9 @@ private:
     Drawing::Rect shadowRect_;
     RSDrawingCacheType drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;
     DirtyRegionInfoForDFX dirtyRegionInfoForDFX_;
+    bool isOpincRootFlag_ = false;
+    bool isOpincStateChanged_ = false;
+    bool isOpincMarkCached_ = false;
 };
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_PARAMS_RS_RENDER_PARAMS_H

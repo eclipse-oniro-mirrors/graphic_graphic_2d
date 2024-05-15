@@ -98,7 +98,6 @@ HWTEST_F(HgmFrameRateMgrTest, UniProcessDataForLtpo, Function | SmallTest | Leve
             HgmConfigCallbackManager::GetInstance()->RegisterHgmRefreshRateModeChangeCallback(pid, nullptr);
             frameRateMgr->Init(rsController, appController, vsyncGenerator);
             frameRateMgr->SetForceUpdateCallback([](bool idleTimerExpired, bool forceUpdate) {});
-            frameRateMgr->touchMgr_->SetRSIdleUpdateCallback([](bool rsIdleTimerExpired) {});
             frameRateMgr->UniProcessDataForLtpo(timestamp, rsFrameRateLinker, appFrameLinkers, flag, false);
         }
     }
@@ -114,6 +113,7 @@ HWTEST_F(HgmFrameRateMgrTest, UniProcessDataForLtps, Function | SmallTest | Leve
 {
     bool flag = false;
     std::unique_ptr<HgmFrameRateManager> frameRateMgr = std::make_unique<HgmFrameRateManager>();
+    frameRateMgr->SetForceUpdateCallback([](bool idleTimerExpired, bool forceUpdate) {});
     PART("CaseDescription") {
         STEP("1. check the result of UniProcessDataForLtps") {
             frameRateMgr->UniProcessDataForLtps(flag);

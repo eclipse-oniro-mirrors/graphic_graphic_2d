@@ -32,6 +32,7 @@ public:
     static napi_value Constructor(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void* nativeObject, void* finalize);
     static napi_value LoadFontSync(napi_env env, napi_callback_info info);
+    static napi_value GetGlobalInstance(napi_env env, napi_callback_info info);
 
     std::shared_ptr<FontCollection> GetFontCollection();
 private:
@@ -43,8 +44,7 @@ private:
     bool ParseResourceType(napi_env env, napi_value value, ResourceInfo& info);
     bool GetResourcePartData(napi_env env, ResourceInfo& info, napi_value paramsNApi,
         napi_value bundleNameNApi, napi_value moduleNameNApi);
-    Drawing::Typeface* GetFontFileProperties(const std::string path, const std::string familyName);
-    bool AddTypefaceInformation(Drawing::Typeface* typeface, const std::string familyName);
+    bool GetFontFileProperties(const std::string path, const std::string familyName);
     std::shared_ptr<FontCollection> fontcollection_ = nullptr;
 };
 } // namespace OHOS::Rosen

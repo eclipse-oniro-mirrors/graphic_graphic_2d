@@ -224,6 +224,7 @@ void RSDisplayRenderNode::UpdateScreenRenderParams(ScreenInfo& screenInfo,
     displayParams->displayHasSkipSurface_ = std::move(displayHasSkipSurface);
     displayParams->displayHasProtectedSurface_ = std::move(displayHasProtectedSurface);
     displayParams->hasCaptureWindow_ = std::move(hasCaptureWindow);
+    displayParams->SetNeedOffscreen(IsRotationChanged());
 }
 
 void RSDisplayRenderNode::UpdatePartialRenderParams()
@@ -303,14 +304,15 @@ bool RSDisplayRenderNode::IsRotationChanged() const
 void RSDisplayRenderNode::UpdateRotation()
 {
     auto displayParams = static_cast<RSDisplayRenderParams*>(stagingRenderParams_.get());
-    displayParams->SetRotationChanged(IsRotationChanged());
     AddToPendingSyncList();
 
     auto& boundsGeoPtr = (GetRenderProperties().GetBoundsGeometry());
     if (boundsGeoPtr == nullptr) {
         return;
     }
+    lastRotationChanged_ = IsRotationChanged();
     lastRotation_ = boundsGeoPtr->GetRotation();
+    displayParams->SetRotationChanged(IsRotationChanged());
 }
 
 void RSDisplayRenderNode::UpdateDisplayDirtyManager(int32_t bufferage, bool useAlignedDirtyRegion, bool renderParallel)

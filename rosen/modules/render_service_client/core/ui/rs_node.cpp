@@ -1897,6 +1897,16 @@ bool RSNode::GetIsCustomTextType()
     return isCustomTextType_;
 }
 
+void RSNode::SetIsCustomTypeface(bool isCustomTypeface)
+{
+    isCustomTypeface_ = isCustomTypeface;
+}
+
+bool RSNode::GetIsCustomTypeface()
+{
+    return isCustomTypeface_;
+}
+
 void RSNode::SetDrawRegion(std::shared_ptr<RectF> rect)
 {
     if (drawRegion_ != rect) {
@@ -1953,6 +1963,20 @@ void RSNode::MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer)
         if (transactionProxy != nullptr) {
             transactionProxy->AddCommand(command, IsRenderServiceNode());
         }
+    }
+}
+
+void RSNode::MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate)
+{
+    if (isSuggestOpincNode_ == isOpincNode) {
+        return;
+    }
+    isSuggestOpincNode_ = isOpincNode;
+    std::unique_ptr<RSCommand> command = std::make_unique<RSMarkSuggestOpincNode>(GetId(),
+        isOpincNode, isNeedCalculate);
+    auto transactionProxy = RSTransactionProxy::GetInstance();
+    if (transactionProxy != nullptr) {
+        transactionProxy->AddCommand(command, IsRenderServiceNode());
     }
 }
 

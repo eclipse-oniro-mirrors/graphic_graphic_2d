@@ -34,12 +34,11 @@ private:
     void OnVsync();
     bool Draw();
     bool OnDraw(Rosen::Drawing::CoreCanvas* canvas, int32_t curNo);
-    void InitPicCoordinates(const Rosen::ScreenId screenId);
+    void InitPicCoordinates(Rosen::ScreenId screenId);
     bool ReadPicZipFile(ImageStructVec& imgVec, int32_t& freq);
     bool CheckFrameRateValid(int32_t frameRate);
     std::string GetPicZipPath();
 
-private:
     int32_t windowWidth_;
     int32_t windowHeight_;
     int32_t picCurNo_ = 0;

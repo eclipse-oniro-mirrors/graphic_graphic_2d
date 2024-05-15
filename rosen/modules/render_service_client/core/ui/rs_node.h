@@ -341,10 +341,16 @@ public:
 
     bool GetIsCustomTextType();
 
+    void SetIsCustomTypeface(bool isCustomTypeface);
+
+    bool GetIsCustomTypeface();
+
     void SetDrawRegion(std::shared_ptr<RectF> rect);
 
     // Mark preferentially draw node and childrens
     void MarkNodeGroup(bool isNodeGroup, bool isForced = true, bool includeProperty = false);
+
+    void MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate = false);
 
     void MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer);
 
@@ -439,6 +445,7 @@ protected:
 
     std::vector<PropertyId> GetModifierIds() const;
     bool isCustomTextType_ = false;
+    bool isCustomTypeface_ = false;
 
     std::recursive_mutex& GetPropertyMutex() const
     {
@@ -499,6 +506,8 @@ private:
     bool isNodeGroup_ = false;
 
     bool isNodeSingleFrameComposer_ = false;
+
+    bool isSuggestOpincNode_ = false;
 
     RSModifierExtractor stagingPropertiesExtractor_;
     RSShowingPropertiesFreezer showingPropertiesFreezer_;

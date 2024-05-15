@@ -36,6 +36,7 @@ public:
     static inline std::weak_ptr<RSContext> context = {};
     static inline RSPaintFilterCanvas* canvas_;
     static inline Drawing::Canvas drawingCanvas_;
+    uint8_t MAX_ALPHA = 255;
 };
 
 void RSSurfaceRenderNodeTest::SetUpTestCase()
@@ -740,8 +741,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSkipLayer001, TestSize.Level2)
 
 /**
  * @tc.name: SetSkipLayer002
- * @tc.desc: Test SetSkipLayer for surface node which is skip layer
-    and has leash window node as instant parent
+ * @tc.desc: Test SetSkipLayer for surface node while skip Layer isn't first level node
  * @tc.type: FUNC
  * @tc.require: issueI9ABGS
  */
@@ -762,38 +762,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSkipLayer002, TestSize.Level2)
     parentNode->SetIsOnTheTree(true);
     skipLayerNode->SetSkipLayer(true);
 
-    ASSERT_TRUE(parentNode->GetSkipLayer() && parentNode->GetHasSkipLayer());
-}
-
-/**
- * @tc.name: SetSkipLayer003
- * @tc.desc: Test SetSkipLayer for surface node which is skip layer
-        and don't have leash window node as instant parent
- * @tc.type: FUNC
- * @tc.require: issueI9ABGS
- */
-HWTEST_F(RSSurfaceRenderNodeTest, SetSkipLayer003, TestSize.Level2)
-{
-    auto rsContext = std::make_shared<RSContext>();
-    ASSERT_NE(rsContext, nullptr);
-    auto ancestorNode = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
-    auto parentNode = std::make_shared<RSSurfaceRenderNode>(id + 1, rsContext);
-    auto skipLayerNode = std::make_shared<RSSurfaceRenderNode>(id + 2, rsContext);
-    ASSERT_NE(ancestorNode, nullptr);
-    ASSERT_NE(parentNode, nullptr);
-    ASSERT_NE(skipLayerNode, nullptr);
-
-    rsContext->GetMutableNodeMap().renderNodeMap_[ancestorNode->GetId()] = ancestorNode;
-    rsContext->GetMutableNodeMap().renderNodeMap_[parentNode->GetId()] = parentNode;
-    rsContext->GetMutableNodeMap().renderNodeMap_[skipLayerNode->GetId()] = skipLayerNode;
-
-    ancestorNode->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
-    ancestorNode->AddChild(parentNode);
-    parentNode->AddChild(skipLayerNode);
-    ancestorNode->SetIsOnTheTree(true);
-    skipLayerNode->SetSkipLayer(true);
-
-    ASSERT_TRUE(!ancestorNode->GetSkipLayer() && ancestorNode->GetHasSkipLayer());
+    ASSERT_TRUE(parentNode->GetHasSkipLayer());
 }
 
 /**
@@ -815,8 +784,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSecurityLayer001, TestSize.Level2)
 
 /**
  * @tc.name: SetSecurityLayer002
- * @tc.desc: Test SetSecurityLayer for surface node which is security layer
-    and has leash window node as instant parent
+ * @tc.desc: Test SetSecurityLayer for surface node while security Layer isn't first level node
  * @tc.type: FUNC
  * @tc.require: issueI9ABGS
  */
@@ -837,38 +805,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetSecurityLayer002, TestSize.Level2)
     parentNode->SetIsOnTheTree(true);
     securityLayerNode->SetSecurityLayer(true);
 
-    ASSERT_TRUE(parentNode->GetSecurityLayer() && parentNode->GetHasSecurityLayer());
-}
-
-/**
- * @tc.name: SetSecurityLayer003
- * @tc.desc: Test SetSecurityLayer for surface node which is security layer
-        and don't have leash window node as instant parent
- * @tc.type: FUNC
- * @tc.require: issueI9ABGS
- */
-HWTEST_F(RSSurfaceRenderNodeTest, SetSecurityLayer003, TestSize.Level2)
-{
-    auto rsContext = std::make_shared<RSContext>();
-    ASSERT_NE(rsContext, nullptr);
-    auto ancestorNode = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
-    auto parentNode = std::make_shared<RSSurfaceRenderNode>(id + 1, rsContext);
-    auto securityLayerNode = std::make_shared<RSSurfaceRenderNode>(id + 2, rsContext);
-    ASSERT_NE(ancestorNode, nullptr);
-    ASSERT_NE(parentNode, nullptr);
-    ASSERT_NE(securityLayerNode, nullptr);
-
-    rsContext->GetMutableNodeMap().renderNodeMap_[ancestorNode->GetId()] = ancestorNode;
-    rsContext->GetMutableNodeMap().renderNodeMap_[parentNode->GetId()] = parentNode;
-    rsContext->GetMutableNodeMap().renderNodeMap_[securityLayerNode->GetId()] = securityLayerNode;
-
-    ancestorNode->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
-    ancestorNode->AddChild(parentNode);
-    parentNode->AddChild(securityLayerNode);
-    ancestorNode->SetIsOnTheTree(true);
-    securityLayerNode->SetSecurityLayer(true);
-
-    ASSERT_TRUE(!ancestorNode->GetSecurityLayer() && ancestorNode->GetHasSecurityLayer());
+    ASSERT_TRUE(parentNode->GetHasSecurityLayer());
 }
 
 /**
@@ -1051,15 +988,66 @@ HWTEST_F(RSSurfaceRenderNodeTest, QuerySubAssignable001, TestSize.Level2)
  * @tc.name: QuerySubAssignable002
  * @tc.desc: Test QuerySubAssignable while has filter
  * @tc.type: FUNC
- * @tc.require: issueI98VTC
+ * @tc.require: issueI9LOXQ
  */
 HWTEST_F(RSSurfaceRenderNodeTest, QuerySubAssignable002, TestSize.Level2)
 {
     auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
     ASSERT_NE(node, nullptr);
+    
+    if (RSUniRenderJudgement::IsUniRender()) {
+        node->InitRenderParams();
+    }
     node->SetHasFilter(true);
     
     ASSERT_EQ(node->QuerySubAssignable(false), false);
+}
+
+/**
+ * @tc.name: QuerySubAssignable003
+ * @tc.desc: Test QuerySubAssignable while node's child has filter and child is transparent
+ * @tc.type: FUNC
+ * @tc.require: issueI9LOXQ
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, QuerySubAssignable003, TestSize.Level2)
+{
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
+    auto childNode = std::make_shared<RSSurfaceRenderNode>(id + 1, context);
+    ASSERT_NE(node, nullptr);
+    ASSERT_NE(childNode, nullptr);
+
+    if (RSUniRenderJudgement::IsUniRender()) {
+        node->InitRenderParams();
+        childNode->InitRenderParams();
+    }
+    childNode->SetHasFilter(true);
+    node->SetChildHasVisibleFilter(true);
+    
+    ASSERT_EQ(node->QuerySubAssignable(false), false);
+}
+
+/**
+ * @tc.name: QuerySubAssignable004
+ * @tc.desc: Test QuerySubAssignable while node's child has filter and is not transparent
+ * @tc.type: FUNC
+ * @tc.require: issueI9LOXQ
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, QuerySubAssignable004, TestSize.Level2)
+{
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
+    auto childNode = std::make_shared<RSSurfaceRenderNode>(id + 1, context);
+    ASSERT_NE(node, nullptr);
+    ASSERT_NE(childNode, nullptr);
+
+    if (RSUniRenderJudgement::IsUniRender()) {
+        node->InitRenderParams();
+        childNode->InitRenderParams();
+    }
+    childNode->SetHasFilter(true);
+    node->SetChildHasVisibleFilter(true);
+    node->SetAbilityBGAlpha(MAX_ALPHA);
+    
+    ASSERT_EQ(node->QuerySubAssignable(false), true);
 }
 
 /**
@@ -2017,6 +2005,486 @@ HWTEST_F(RSSurfaceRenderNodeTest, ResetSurfaceContainerRegion, TestSize.Level1)
 }
 
 /**
+ * @tc.name: OnSync
+ * @tc.desc: test results of OnSync
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, OnSync, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> surfaceNode = std::make_shared<RSSurfaceRenderNode>(id);
+    surfaceNode->OnSync();
+    ASSERT_EQ(surfaceNode->stagingRenderParams_, nullptr);
+}
+
+/**
+ * @tc.name: CheckIfOcclusionReusable
+ * @tc.desc: test results of CheckIfOcclusionReusable
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, CheckIfOcclusionReusable, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> surfaceNode = std::make_shared<RSSurfaceRenderNode>(id);
+    std::queue<NodeId> surfaceNodesIds;
+    ASSERT_TRUE(surfaceNode->CheckIfOcclusionReusable(surfaceNodesIds));
+    surfaceNodesIds.push(1);
+    bool result = surfaceNode->CheckIfOcclusionReusable(surfaceNodesIds);
+    ASSERT_TRUE(result);
+}
+
+/**
+ * @tc.name: CheckParticipateInOcclusion
+ * @tc.desc: test results of CheckParticipateInOcclusion
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, CheckParticipateInOcclusion, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    EXPECT_FALSE(node->CheckParticipateInOcclusion());
+}
+
+/**
+ * @tc.name: CheckAndUpdateOpaqueRegion
+ * @tc.desc: test results of CheckAndUpdateOpaqueRegion
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, CheckAndUpdateOpaqueRegion, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    RectI screeninfo { 0, 0, 100, 100 };
+    ScreenRotation screenRotation = ScreenRotation::ROTATION_0;
+    node->CheckAndUpdateOpaqueRegion(screeninfo, screenRotation);
+    EXPECT_FALSE(node->IsOpaqueRegionChanged());
+}
+
+/**
+ * @tc.name: UpdateChildrenFilterRects
+ * @tc.desc: test results of UpdateChildrenFilterRects
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, UpdateChildrenFilterRects, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> testNode = std::make_shared<RSSurfaceRenderNode>(id);
+    std::shared_ptr<RSRenderNode> filterNode = std::make_shared<RSRenderNode>(id + 1);
+    RectI rect { 0, 0, 20, 20 };
+    bool cacheValid = true;
+    testNode->ResetChildrenFilterRects();
+    testNode->UpdateChildrenFilterRects(filterNode, rect, cacheValid);
+    testNode->UpdateChildrenFilterRects(filterNode, RectI(), cacheValid);
+    const std::vector<RectI>& filterRects = testNode->GetChildrenNeedFilterRects();
+    ASSERT_EQ(filterRects.size(), 1);
+}
+
+/**
+ * @tc.name: UpdateChildrenFilterRects
+ * @tc.desc: test results of UpdateChildrenFilterRects
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, UpdateAbilityNodeIds, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    node->UpdateAbilityNodeIds(1, true);
+    EXPECT_TRUE(node->GetAbilityNodeIds().count(1) == 1);
+    std::unordered_set<NodeId> nodeIds;
+    node->AddAbilityComponentNodeIds(nodeIds);
+    node->ResetAbilityNodeIds();
+    node->UpdateAbilityNodeIds(1, false);
+    EXPECT_TRUE(node->GetAbilityNodeIds().empty());
+}
+
+/**
+ * @tc.name: UpdateChildHardwareEnabledNode
+ * @tc.desc: test results of UpdateChildHardwareEnabledNode
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, UpdateChildHardwareEnabledNode, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    node->UpdateChildHardwareEnabledNode(1, false);
+    node->UpdateChildHardwareEnabledNode(1, true);
+    ASSERT_TRUE(node->GetNeedCollectHwcNode());
+}
+
+/**
+ * @tc.name: SetHwcChildrenDisabledStateByUifirst
+ * @tc.desc: test results of SetHwcChildrenDisabledStateByUifirst
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetHwcChildrenDisabledStateByUifirst, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    node->SetHwcChildrenDisabledStateByUifirst();
+    ASSERT_TRUE(node->childHardwareEnabledNodes_.size() == 0);
+}
+
+/**
+ * @tc.name: OnApplyModifiers
+ * @tc.desc: test results of OnApplyModifiers
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, OnApplyModifiers, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    node->OnApplyModifiers();
+    auto& properties = node->GetMutableRenderProperties();
+    ASSERT_EQ(properties.GetAlpha(), properties.GetAlpha() * node->contextAlpha_);
+}
+
+/**
+ * @tc.name: LeashWindowRelatedAppWindowOccluded
+ * @tc.desc: test results of LeashWindowRelatedAppWindowOccluded
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, LeashWindowRelatedAppWindowOccluded, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> appNode;
+    ASSERT_FALSE(node->LeashWindowRelatedAppWindowOccluded(appNode));
+}
+
+/**
+ * @tc.name: GetLeashWindowNestedSurfaces
+ * @tc.desc: test results of GetLeashWindowNestedSurfaces
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, GetLeashWindowNestedSurfaces, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    ASSERT_TRUE(node->GetLeashWindowNestedSurfaces().size() == 0);
+}
+
+/**
+ * @tc.name: IsUIFirstSelfDrawCheck
+ * @tc.desc: test results of IsUIFirstSelfDrawCheck
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, IsUIFirstSelfDrawCheck, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    ASSERT_TRUE(node->IsUIFirstSelfDrawCheck());
+}
+
+/**
+ * @tc.name: IsCurFrameStatic
+ * @tc.desc: test results of IsCurFrameStatic
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, IsCurFrameStatic, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    DeviceType deviceType = DeviceType::PHONE;
+    bool res = node->IsCurFrameStatic(deviceType);
+    ASSERT_TRUE(res);
+}
+
+/**
+ * @tc.name: IsVisibleDirtyEmpty
+ * @tc.desc: test results of IsVisibleDirtyEmpty
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, IsVisibleDirtyEmpty, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    DeviceType deviceType = DeviceType::PHONE;
+    bool res = node->IsVisibleDirtyEmpty(deviceType);
+    ASSERT_TRUE(res);
+}
+
+/**
+ * @tc.name: UpdateCacheSurfaceDirtyManager
+ * @tc.desc: test results of UpdateCacheSurfaceDirtyManager
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, UpdateCacheSurfaceDirtyManager, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    int bufferAge = 1;
+    node->UpdateCacheSurfaceDirtyManager(bufferAge);
+    ASSERT_NE(node->cacheSurfaceDirtyManager_, nullptr);
+}
+
+/**
+ * @tc.name: SetIsOnTheTree
+ * @tc.desc: test results of SetIsOnTheTree
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetIsOnTheTree, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    bool flag = true;
+    NodeId instanceRootNodeId = 1;
+    NodeId firstLevelNodeId = 1;
+    NodeId cacheNodeId = 1;
+    node->SetIsOnTheTree(flag, instanceRootNodeId, firstLevelNodeId, cacheNodeId);
+    ASSERT_EQ(node->GetId(), 0);
+}
+
+/**
+ * @tc.name: HasOnlyOneRootNode
+ * @tc.desc: test results of HasOnlyOneRootNode
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, HasOnlyOneRootNode, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    bool res = node->HasOnlyOneRootNode();
+    ASSERT_FALSE(res);
+}
+
+/**
+ * @tc.name: GetNodeIsSingleFrameComposer
+ * @tc.desc: test results of GetNodeIsSingleFrameComposer
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, GetNodeIsSingleFrameComposer, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    bool res = node->GetNodeIsSingleFrameComposer();
+    ASSERT_FALSE(res);
+}
+
+/**
+ * @tc.name: QuerySubAssignable
+ * @tc.desc: test results of QuerySubAssignable
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, QuerySubAssignable, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    bool isRotation = true;
+    bool res = node->QuerySubAssignable(isRotation);
+    ASSERT_FALSE(res);
+}
+
+/**
+ * @tc.name: GetGravityTranslate
+ * @tc.desc: test results of GetGravityTranslate
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, GetGravityTranslate, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    float imgWidth = 1.0f;
+    float imgHeight = 1.0f;
+    node->GetGravityTranslate(imgWidth, imgHeight);
+    ASSERT_FALSE(node->IsLeashWindow());
+}
+
+/**
+ * @tc.name: SetOcclusionVisible
+ * @tc.desc: test results of SetOcclusionVisible
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetOcclusionVisible, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    bool visible = true;
+    node->SetOcclusionVisible(visible);
+    node->stagingRenderParams_ = std::make_unique<RSRenderParams>(id);
+    node->addedToPendingSyncList_ = true;
+    node->SetOcclusionVisible(visible);
+    ASSERT_TRUE(node->isOcclusionVisible_);
+}
+
+/**
+ * @tc.name: UpdatePartialRenderParams
+ * @tc.desc: test results of UpdatePartialRenderParams
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, UpdatePartialRenderParams, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    node->UpdatePartialRenderParams();
+    node->UpdateRenderParams();
+    node->UpdateAncestorDisplayNodeInRenderParams();
+    node->SetUifirstChildrenDirtyRectParam(RectI());
+    node->SetUifirstNodeEnableParam(MultiThreadCacheType::NONE);
+    node->SetIsParentUifirstNodeEnableParam(true);
+    ASSERT_EQ(node->stagingRenderParams_.get(), nullptr);
+}
+
+/**
+ * @tc.name: InitRenderParams
+ * @tc.desc: test results of InitRenderParams
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, InitRenderParams, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    node->InitRenderParams();
+    ASSERT_NE(node->stagingRenderParams_.get(), nullptr);
+}
+
+/**
+ * @tc.name: GetHasTransparentSurface
+ * @tc.desc: test results of GetHasTransparentSurface
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, GetHasTransparentSurface, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    node->SetHasSharedTransitionNode(true);
+    ASSERT_TRUE(node->GetHasSharedTransitionNode());
+    ASSERT_FALSE(node->GetHasTransparentSurface());
+}
+
+/**
+ * @tc.name: GetCacheSurfaceProcessedStatus
+ * @tc.desc: test results of GetCacheSurfaceProcessedStatus
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, GetCacheSurfaceProcessedStatus, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    CacheProcessStatus cacheProcessStatus = CacheProcessStatus::DOING;
+    node->SetCacheSurfaceProcessedStatus(cacheProcessStatus);
+    ASSERT_EQ(node->GetCacheSurfaceProcessedStatus(), cacheProcessStatus);
+}
+
+/**
+ * @tc.name: IsUIFirstCacheReusable
+ * @tc.desc: test results of IsUIFirstCacheReusable
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, IsUIFirstCacheReusable, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    DeviceType deviceType = DeviceType::PHONE;
+    node->GetContextClipRegion();
+    ASSERT_FALSE(node->IsHistoryOccludedDirtyRegionNeedSubmit());
+    node->ClearHistoryUnSubmittedDirtyInfo();
+    ASSERT_FALSE(node->hasUnSubmittedOccludedDirtyRegion_);
+    node->UpdateHistoryUnsubmittedDirtyInfo();
+    ASSERT_TRUE(node->hasUnSubmittedOccludedDirtyRegion_);
+    ASSERT_FALSE(node->IsUIFirstCacheReusable(deviceType));
+}
+
+/**
+ * @tc.name: GetLocalZOrder
+ * @tc.desc: test results of GetLocalZOrder
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, GetLocalZOrder, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    float localZOrder = 1.0f;
+    node->SetLocalZOrder(localZOrder);
+    ASSERT_EQ(node->GetLocalZOrder(), localZOrder);
+}
+
+/**
+ * @tc.name: GetChildHardwareEnabledNodes
+ * @tc.desc: test results of GetChildHardwareEnabledNodes
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, GetChildHardwareEnabledNodes, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    std::weak_ptr<RSSurfaceRenderNode> childNode = std::make_shared<RSSurfaceRenderNode>(id + 1);
+    node->AddChildHardwareEnabledNode(childNode);
+    node->ResetChildHardwareEnabledNodes();
+    ASSERT_EQ(node->GetChildHardwareEnabledNodes().size(), 0);
+}
+
+/**
+ * @tc.name: UpdateSurfaceCacheContentStatic
+ * @tc.desc: test results of UpdateSurfaceCacheContentStatic
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, UpdateSurfaceCacheContentStatic001, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    node->UpdateSurfaceCacheContentStatic();
+    ASSERT_EQ(node->dirtyContentNodeNum_, 0);
+}
+
+/**
+ * @tc.name: GetChildrenNeedFilterRectsCacheValid
+ * @tc.desc: test results of GetChildrenNeedFilterRectsCacheValid
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, GetChildrenNeedFilterRectsCacheValid, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    ASSERT_EQ(node->GetChildrenFilterNodes().size(), 0);
+    ASSERT_EQ(node->GetChildrenNeedFilterRectsCacheValid().size(), 0);
+}
+
+/**
+ * @tc.name: CheckOpaqueRegionBaseInfo
+ * @tc.desc: test results of CheckOpaqueRegionBaseInfo
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, CheckOpaqueRegionBaseInfo, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    RectI screeninfo;
+    RectI absRect;
+    ScreenRotation screenRotation = ScreenRotation::ROTATION_0;
+    bool isFocusWindow = true;
+    Vector4<int> cornerRadius;
+    ASSERT_FALSE(node->CheckOpaqueRegionBaseInfo(screeninfo, absRect, screenRotation, isFocusWindow, cornerRadius));
+    bool hasContainer = true;
+    float density = 1.0f;
+    node->containerConfig_.Update(hasContainer, density);
+    node->stagingRenderParams_ = std::make_unique<RSRenderParams>(id);
+    node->addedToPendingSyncList_ = true;
+    node->isHardwareForcedDisabled_ = true;
+    node->UpdateHardwareDisabledState(true);
+    ASSERT_FALSE(node->opaqueRegionBaseInfo_.hasContainerWindow_);
+    node->UpdateOccludedByFilterCache(false);
+    ASSERT_FALSE(node->IsOccludedByFilterCache());
+    ASSERT_TRUE(node->IsNeedSetVSync());
+    ASSERT_FALSE(node->CheckIfOcclusionChanged());
+}
+
+/**
+ * @tc.name: NeedSetCallbackForRenderThreadRefresh
+ * @tc.desc: test results of NeedSetCallbackForRenderThreadRefresh
+ * @tc.type: FUNC
+ * @tc.require: issueI9L0VL
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, NeedSetCallbackForRenderThreadRefresh, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    node->SetStartAnimationFinished();
+    ASSERT_TRUE(node->IsStartAnimationFinished());
+
+    node->SetCallbackForRenderThreadRefresh(true);
+    ASSERT_FALSE(node->NeedSetCallbackForRenderThreadRefresh());
+}
+
+/**
  * @tc.name: ProtectedLayer001
  * @tc.desc: Test ProtectedLayer when SetProtectedLayer is true.
  * @tc.type: FUNC
@@ -2077,6 +2545,162 @@ HWTEST_F(RSSurfaceRenderNodeTest, GetHasProtectedLayer002, TestSize.Level2)
 
     node->SetProtectedLayer(false);
     bool result = node->GetHasProtectedLayer();
+    ASSERT_EQ(result, false);
+}
+
+/**
+ * @tc.name: IsCurFrameStatic001
+ * @tc.desc: Test IsCurFrameStatic when DeviceType is PC.
+ * @tc.type: FUNC
+ * @tc.require: issueI9P0BR
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, IsCurFrameStatic001, TestSize.Level2)
+{
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
+    ASSERT_NE(node, nullptr);
+
+    bool result = node->IsCurFrameStatic(DeviceType::PC);
+    ASSERT_EQ(result, false);
+}
+
+/**
+ * @tc.name: IsCurFrameStatic002
+ * @tc.desc: Test IsCurFrameStatic when DeviceType is PHONE.
+ * @tc.type: FUNC
+ * @tc.require: issueI9P0BR
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, IsCurFrameStatic002, TestSize.Level2)
+{
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
+    ASSERT_NE(node, nullptr);
+
+    bool result = node->IsCurFrameStatic(DeviceType::PHONE);
+    ASSERT_EQ(result, true);
+}
+
+/**
+ * @tc.name: IsCurFrameStatic003
+ * @tc.desc: Test IsCurFrameStatic when node is leashwiNode
+ * @tc.type: FUNC
+ * @tc.require: issueI9P0BR
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, IsCurFrameStatic003, TestSize.Level2)
+{
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
+    ASSERT_NE(node, nullptr);
+    node->surfaceCacheContentStatic_ = true;
+    node->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
+    bool result = node->IsCurFrameStatic(DeviceType::PC);
+    ASSERT_EQ(result, true);
+}
+
+/**
+ * @tc.name: IsCurFrameStatic004
+ * @tc.desc: Test IsCurFrameStatic when node is selfDrawingNode
+ * @tc.type: FUNC
+ * @tc.require: issueI9P0BR
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, IsCurFrameStatic004, TestSize.Level2)
+{
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, context);
+    ASSERT_NE(node, nullptr);
+    node->surfaceCacheContentStatic_ = true;
+    node->nodeType_ = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    bool result = node->IsCurFrameStatic(DeviceType::PC);
+    ASSERT_EQ(result, false);
+}
+
+/**
+ * @tc.name: IsCurFrameStatic005
+ * @tc.desc: Test IsCurFrameStatic when childNode is contentStatic
+ * @tc.type: FUNC
+ * @tc.require: issueI9P0BR
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, IsCurFrameStatic005, TestSize.Level2)
+{
+    auto leash = std::make_shared<RSSurfaceRenderNode>(id, context);
+    ASSERT_NE(leash, nullptr);
+    leash->surfaceCacheContentStatic_ = true;
+    leash->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
+    auto app = std::make_shared<RSSurfaceRenderNode>(id + 1, context);
+    ASSERT_NE(app, nullptr);
+    app->surfaceCacheContentStatic_ = true;
+    app->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
+
+    leash->AddChild(app);
+    leash->GenerateFullChildrenList();
+    leash->lastFrameChildrenCnt_ = 1;
+    bool result = leash->IsCurFrameStatic(DeviceType::PC);
+    ASSERT_EQ(result, true);
+}
+
+/**
+ * @tc.name: IsCurFrameStatic006
+ * @tc.desc: Test IsCurFrameStatic when lastFrameChildrenCnt_ is 0
+ * @tc.type: FUNC
+ * @tc.require: issueI9P0BR
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, IsCurFrameStatic006, TestSize.Level2)
+{
+    auto leash = std::make_shared<RSSurfaceRenderNode>(id, context);
+    ASSERT_NE(leash, nullptr);
+    leash->surfaceCacheContentStatic_ = true;
+    leash->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
+    auto app = std::make_shared<RSSurfaceRenderNode>(id + 1, context);
+    ASSERT_NE(app, nullptr);
+    app->surfaceCacheContentStatic_ = true;
+    app->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
+
+    leash->AddChild(app);
+    leash->GenerateFullChildrenList();
+    bool result = leash->IsCurFrameStatic(DeviceType::PC);
+    ASSERT_EQ(result, false);
+}
+
+/**
+ * @tc.name: IsCurFrameStatic007
+ * @tc.desc: Test IsCurFrameStatic when lastFrameChildrenCnt_ is 0
+ * @tc.type: FUNC
+ * @tc.require: issueI9P0BR
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, IsCurFrameStatic007, TestSize.Level2)
+{
+    auto leash = std::make_shared<RSSurfaceRenderNode>(id, context);
+    ASSERT_NE(leash, nullptr);
+    leash->surfaceCacheContentStatic_ = true;
+    leash->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
+    auto app = std::make_shared<RSSurfaceRenderNode>(id + 1, context);
+    ASSERT_NE(app, nullptr);
+    app->surfaceCacheContentStatic_ = false;
+    app->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
+
+    leash->AddChild(app);
+    leash->GenerateFullChildrenList();
+    bool result = leash->IsCurFrameStatic(DeviceType::PC);
+    ASSERT_EQ(result, false);
+}
+
+/**
+ * @tc.name: IsCurFrameStatic008
+ * @tc.desc: Test IsCurFrameStatic when childNode is not contentStatic
+ * @tc.type: FUNC
+ * @tc.require: issueI9P0BR
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, IsCurFrameStatic008, TestSize.Level2)
+{
+    auto leash = std::make_shared<RSSurfaceRenderNode>(id, context);
+    ASSERT_NE(leash, nullptr);
+    leash->surfaceCacheContentStatic_ = true;
+    leash->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
+    auto app = std::make_shared<RSSurfaceRenderNode>(id + 1, context);
+    ASSERT_NE(app, nullptr);
+    app->surfaceCacheContentStatic_ = false;
+    app->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
+
+    leash->AddChild(app);
+    leash->GenerateFullChildrenList();
+    leash->lastFrameChildrenCnt_ = 1;
+    bool result = leash->IsCurFrameStatic(DeviceType::PC);
     ASSERT_EQ(result, false);
 }
 } // namespace Rosen

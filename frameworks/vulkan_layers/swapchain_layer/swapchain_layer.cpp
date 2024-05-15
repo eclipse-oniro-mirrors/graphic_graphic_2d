@@ -626,13 +626,18 @@ VKAPI_ATTR VkResult SetWindowBufferUsage(NativeWindow* window, const VkSwapchain
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR VkResult SetWindowScalingMode(NativeWindow* window, OHScalingMode scalingMode)
+VKAPI_ATTR VkResult SetWindowScalingMode(NativeWindow* window, OHScalingModeV2 scalingMode)
 {
     if (window == nullptr) {
         return VK_ERROR_SURFACE_LOST_KHR;
     }
-    SWLOGD("NativeWindow Not Support Set ScalingMode now. Set OHScalingMode is [%{public}d]",
-        static_cast<int>(scalingMode));
+    SWLOGD("NativeWindow Set OHScalingMode is [%{public}d]", static_cast<int>(scalingMode));
+    int err = OH_NativeWindow_NativeWindowSetScalingModeV2(window, scalingMode);
+    if (err != OHOS::GSERROR_OK) {
+        SWLOGE("NativeWindow Set ScalingMode[%{public}d] failed, error: %{public}d",
+            static_cast<int>(scalingMode), err);
+        return VK_ERROR_SURFACE_LOST_KHR;
+    }
 
     return VK_SUCCESS;
 }
@@ -688,7 +693,7 @@ VKAPI_ATTR VkResult SetWindowInfo(VkDevice device, const VkSwapchainCreateInfoKH
     }
 
     // Set Scaling mode
-    if (SetWindowScalingMode(window, OHScalingMode::OH_SCALING_MODE_SCALE_TO_WINDOW) != VK_SUCCESS) {
+    if (SetWindowScalingMode(window, OHScalingModeV2::OH_SCALING_MODE_SCALE_TO_WINDOW_V2) != VK_SUCCESS) {
         return VK_ERROR_SURFACE_LOST_KHR;
     }
 
@@ -961,8 +966,8 @@ VkResult GetPhysicalDevicePresentRectanglesKHR(VkPhysicalDevice physicalDevice,
 
     NativeWindow* window = SurfaceFromHandle(surface)->window;
 
-    int width = 0;
-    int height = 0;
+    int32_t width = 0;
+    int32_t height = 0;
     int err = NativeWindowHandleOpt(window, GET_BUFFER_GEOMETRY, &height, &width);
     if (err != OHOS::GSERROR_OK) {
         SWLOGE("NativeWindow get buffer geometry failed: (%{public}d)", err);
@@ -1027,10 +1032,11 @@ struct Region::Rect* GetRegionRect(
                     alignof(Region::Rect), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND));
 }
 
-void InitRegionRect(const VkRectLayerKHR* layer, struct Region::Rect* rect)
+void InitRegionRect(const VkRectLayerKHR* layer, struct Region::Rect* rect, int32_t bufferHeight)
 {
     rect->x = layer->offset.x;
-    rect->y = layer->offset.y;
+    // flip rect to adapt to bottom-left coordinate
+    rect->y = bufferHeight - layer->extent.height - layer->offset.y;
     rect->w = layer->extent.width;
     rect->h = layer->extent.height;
 }
@@ -1041,6 +1047,15 @@ VkResult FlushBuffer(const VkPresentRegionKHR* region, struct Region::Rect* rect
     const VkAllocationCallbacks* defaultAllocator = &GetDefaultAllocator();
     Region localRegion = {};
     if (memset_s(&localRegion, sizeof(localRegion), 0, sizeof(Region)) != EOK) {
+        return VK_ERROR_SURFACE_LOST_KHR;
+    }
+    NativeWindow* window = swapchain.surface.window;
+    // Get buffer width and height for flip damage rect
+    int32_t bufferWidth = 0;
+    int32_t bufferHeight = 0;
+    int err = NativeWindowHandleOpt(window, GET_BUFFER_GEOMETRY, &bufferHeight, &bufferWidth);
+    if (err != OHOS::GSERROR_OK) {
+        SWLOGE("NativeWindow get buffer geometry failed, error num: %{public}d", err);
         return VK_ERROR_SURFACE_LOST_KHR;
     }
     if (region != nullptr) {
@@ -1054,15 +1069,14 @@ VkResult FlushBuffer(const VkPresentRegionKHR* region, struct Region::Rect* rect
             }
         }
         for (int32_t r = 0; r < rectangleCount; ++r) {
-            InitRegionRect(&region->pRectangles[r], &rects[r]);
+            InitRegionRect(&region->pRectangles[r], &rects[r], bufferHeight);
         }
 
         localRegion.rects = rects;
         localRegion.rectNumber = rectangleCount;
     }
-    NativeWindow* window = swapchain.surface.window;
     // the acquire fence will be close by BufferQueue module
-    int err = NativeWindowFlushBuffer(window, img.buffer, fence, localRegion);
+    err = NativeWindowFlushBuffer(window, img.buffer, fence, localRegion);
     VkResult scResult = VK_SUCCESS;
     if (err != OHOS::GSERROR_OK) {
         SWLOGE("NativeWindow FlushBuffer failed: (%{public}d)", err);
@@ -1208,8 +1222,8 @@ VKAPI_ATTR void VKAPI_CALL DestroySurfaceKHR(
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilitiesKHR(
     VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, VkSurfaceCapabilitiesKHR* capabilities)
 {
-    int width = 0;
-    int height = 0;
+    int32_t width = 0;
+    int32_t height = 0;
     OH_NativeBuffer_TransformType transformHint = NATIVEBUFFER_ROTATE_NONE;
     uint32_t defaultQueueSize = MAX_BUFFER_SIZE;
     if (surface != VK_NULL_HANDLE) {
