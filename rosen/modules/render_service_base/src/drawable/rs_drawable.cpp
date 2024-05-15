@@ -437,6 +437,43 @@ static void OptimizeGlobalSaveRestore(RSRenderNode& node, RSDrawable::Vec& drawa
     SaveRestoreHelper(drawableVec, RSDrawableSlot::SAVE_ALL, RSDrawableSlot::RESTORE_ALL,
         static_cast<RSPaintFilterCanvas::SaveType>(saveType));
 }
+
+constexpr std::array boundsDirtyTypes = {
+    RSDrawableSlot::MASK,
+    RSDrawableSlot::SHADOW,
+    RSDrawableSlot::OUTLINE,
+    RSDrawableSlot::FOREGROUND_FILTER,
+    RSDrawableSlot::CLIP_TO_BOUNDS,
+    RSDrawableSlot::BACKGROUND_COLOR,
+    RSDrawableSlot::BACKGROUND_SHADER,
+    RSDrawableSlot::BACKGROUND_IMAGE,
+    RSDrawableSlot::ENV_FOREGROUND_COLOR_STRATEGY,
+    RSDrawableSlot::FG_CLIP_TO_BOUNDS,
+    RSDrawableSlot::FOREGROUND_COLOR,
+    RSDrawableSlot::POINT_LIGHT,
+    RSDrawableSlot::BORDER,
+    RSDrawableSlot::PIXEL_STRETCH,
+    RSDrawableSlot::RESTORE_FOREGROUND_FILTER,
+};
+constexpr std::array frameDirtyTypes = {
+    RSDrawableSlot::CLIP_TO_FRAME,
+    RSDrawableSlot::COMPOSITING_FILTER,
+};
+constexpr std::array borderDirtyTypes = {
+    RSDrawableSlot::BACKGROUND_COLOR,
+    RSDrawableSlot::BACKGROUND_SHADER,
+    RSDrawableSlot::BACKGROUND_IMAGE,
+};
+template<std::size_t SIZE>
+inline void MarkAffectedSlots(const std::array<RSDrawableSlot, SIZE>& affectedSlots, const RSDrawable::Vec& drawableVec,
+    std::unordered_set<RSDrawableSlot>& dirtySlots)
+{
+    for (auto slot : affectedSlots) {
+        if (drawableVec[static_cast<size_t>(slot)]) {
+            dirtySlots.emplace(slot);
+        }
+    }
+}
 } // namespace
 
 std::unordered_set<RSDrawableSlot> RSDrawable::CalculateDirtySlots(
@@ -456,55 +493,19 @@ std::unordered_set<RSDrawableSlot> RSDrawable::CalculateDirtySlots(
 
     // Step 1.2: expand dirty slots by rules
     // if bounds or cornerRadius changed, mark affected drawables as dirty
-    static constexpr std::array boundsDirtyTypes = {
-        RSDrawableSlot::MASK,
-        RSDrawableSlot::SHADOW,
-        RSDrawableSlot::OUTLINE,
-        RSDrawableSlot::CLIP_TO_BOUNDS,
-        RSDrawableSlot::BACKGROUND_COLOR,
-        RSDrawableSlot::BACKGROUND_SHADER,
-        RSDrawableSlot::BACKGROUND_IMAGE,
-        RSDrawableSlot::ENV_FOREGROUND_COLOR_STRATEGY,
-        RSDrawableSlot::FG_CLIP_TO_BOUNDS,
-        RSDrawableSlot::FOREGROUND_COLOR,
-        RSDrawableSlot::POINT_LIGHT,
-        RSDrawableSlot::BORDER,
-        RSDrawableSlot::PIXEL_STRETCH,
-    };
     if (dirtyTypes.test(static_cast<size_t>(RSModifierType::BOUNDS)) ||
         dirtyTypes.test(static_cast<size_t>(RSModifierType::CORNER_RADIUS))) {
-        for (auto slot : boundsDirtyTypes) {
-            if (drawableVec[static_cast<size_t>(slot)]) {
-                dirtySlots.emplace(slot);
-            }
-        }
+        MarkAffectedSlots(boundsDirtyTypes, drawableVec, dirtySlots);
     }
 
     // if frame changed, mark affected drawables as dirty
-    static constexpr std::array frameDirtyTypes = {
-        RSDrawableSlot::CLIP_TO_FRAME,
-        RSDrawableSlot::FOREGROUND_FILTER,
-    };
     if (dirtySlots.count(RSDrawableSlot::FRAME_OFFSET)) {
-        for (auto slot : frameDirtyTypes) {
-            if (drawableVec[static_cast<size_t>(slot)]) {
-                dirtySlots.emplace(slot);
-            }
-        }
+        MarkAffectedSlots(frameDirtyTypes, drawableVec, dirtySlots);
     }
 
     // if border changed, mark affected drawables as dirty
-    static constexpr std::array borderDirtyTypes = {
-        RSDrawableSlot::BACKGROUND_COLOR,
-        RSDrawableSlot::BACKGROUND_SHADER,
-        RSDrawableSlot::BACKGROUND_IMAGE,
-    };
     if (dirtySlots.count(RSDrawableSlot::BORDER)) {
-        for (auto slot : borderDirtyTypes) {
-            if (drawableVec[static_cast<size_t>(slot)]) {
-                dirtySlots.emplace(slot);
-            }
-        }
+        MarkAffectedSlots(borderDirtyTypes, drawableVec, dirtySlots);
     }
 
     // PLANNING: merge these restore operations with RESTORE_ALL drawable
