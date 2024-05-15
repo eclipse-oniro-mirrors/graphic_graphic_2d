@@ -62,8 +62,9 @@ int main()
     priHandle.handle.fd = -1;
     priHandle.handle.reserveInts = 1;
     priHandle.data = 1;
+    GraphicExtDataHandle *graphicDataHandle = reinterpret_cast<GraphicExtDataHandle*>(&priHandle);
     std::cout << "SetTunnelHandle Begin " << std::endl;
-    surface->SetTunnelHandle(reinterpret_cast<GraphicExtDataHandle*>(&priHandle));
+    surface->SetTunnelHandle(graphicDataHandle);
     std::cout << "SetTunnelHandle Finish " << std::endl;
     sleep(1000); // wait 1000s
 }
