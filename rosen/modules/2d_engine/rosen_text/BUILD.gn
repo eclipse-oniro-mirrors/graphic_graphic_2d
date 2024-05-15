@@ -103,9 +103,7 @@ if (enable_text_gine) {
     public_configs = [ ":rosen_text_public_config" ]
     public_external_deps = [ "bounds_checking_function:libsec_shared" ]
 
-    include_dirs = [
-      "$rosen_root/modules/render_service_base/include",
-    ]
+    include_dirs = [ "$rosen_root/modules/render_service_base/include" ]
 
     defines += [
       "USE_GRAPHIC_TEXT_GINE",
