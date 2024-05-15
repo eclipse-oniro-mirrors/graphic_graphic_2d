@@ -245,7 +245,7 @@ GLint EGLCore::PrepareDraw()
 }
 
 bool EGLCore::ExecuteDraw(GLint position, const GLfloat *color, const GLfloat rectangleVertices[],
-                        unsigned long vertSize)
+    unsigned long vertSize)
 {
     if ((position < 0) || (color == nullptr) || (vertSize / sizeof(rectangleVertices[0]) != RECTANGLE_VERTICES_SIZE)) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "ExecuteDraw: param error");
