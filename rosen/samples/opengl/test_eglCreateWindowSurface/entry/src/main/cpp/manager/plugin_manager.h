@@ -21,7 +21,7 @@
 #include <js_native_api_types.h>
 #include <ace/xcomponent/native_interface_xcomponent.h>
 
-#include "../render/plugin_render.h"
+#include "plugin_render.h"
 
 class PluginManager {
 public:
