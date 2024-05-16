@@ -136,7 +136,7 @@ Color RSPropertyDrawableUtils::GetColorForShadowSyn(Drawing::Canvas* canvas, Dra
     RSColor colorPicked;
     auto shadowAlpha = color.GetAlpha();
     auto matrix = canvas->GetTotalMatrix();
-    auto deviceClipBounds = canvas->GetDeviceClipBounds(); 
+    auto deviceClipBounds = canvas->GetDeviceClipBounds();
     if (PickColorSyn(canvas, path, matrix, deviceClipBounds, colorPicked, colorStrategy)) {
         GetDarkColor(colorPicked);
     } else {
