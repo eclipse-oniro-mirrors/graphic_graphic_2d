@@ -304,7 +304,6 @@ void RSProfiler::OnProcessCommand()
 void RSProfiler::OnRenderBegin()
 {
     if (!IsEnabled()) {
-        RS_LOGI("RSProfiler::OnRenderBegin(): disabled"); // NOLINT
         return;
     }
     g_renderServiceCpuId = Utils::GetCpuId();
