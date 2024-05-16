@@ -1862,9 +1862,6 @@ inline static bool IsLargeArea(int width, int height)
 
 void RSRenderNode::PostPrepareForBlurFilterNode(RSDirtyRegionManager& dirtyManager, bool needRequestNextVsync)
 {
-    if (IsInstanceOf<RSEffectRenderNode>() && ChildHasVisibleEffect()) {
-        MarkFilterHasEffectChildren();
-    }
     if (!RSProperties::FilterCacheEnabled) {
         ROSEN_LOGE("RSRenderNode::PostPrepareForBlurFilterNode filter cache is disabled.");
         return;
@@ -2333,7 +2330,8 @@ void RSRenderNode::UpdateDisplayList()
     }
 
     int8_t index = 0;
-    // Note: the loop range is [begin, end], both end is included.
+    // Process all drawables in [index, end], end is included.
+    // Note: After this loop, index will be end+1
     auto AppendDrawFunc = [&](RSDrawableSlot end) -> int8_t {
         auto endIndex = static_cast<int8_t>(end);
         for (; index <= endIndex; ++index) {
@@ -2352,12 +2350,13 @@ void RSRenderNode::UpdateDisplayList()
     stagingDrawCmdIndex_.renderGroupBeginIndex_ = stagingDrawCmdList_.size();
 
     // Update index of BACKGROUND_COLOR
-    stagingDrawCmdIndex_.backgroundColorIndex_ =
-        AppendDrawFunc(RSDrawableSlot::BACKGROUND_COLOR);
+    stagingDrawCmdIndex_.backgroundColorIndex_ = AppendDrawFunc(RSDrawableSlot::BACKGROUND_COLOR);
+
+    // Update index of BACKGROUND_IMAGE
+    stagingDrawCmdIndex_.backgroundColorIndex_ = AppendDrawFunc(RSDrawableSlot::BACKGROUND_IMAGE);
 
     // Update index of BACKGROUND_FILTER
-    stagingDrawCmdIndex_.backgroundFilterIndex_ =
-        AppendDrawFunc(RSDrawableSlot::BACKGROUND_FILTER);
+    stagingDrawCmdIndex_.backgroundFilterIndex_ = AppendDrawFunc(RSDrawableSlot::BACKGROUND_FILTER);
 
     // Update index of USE_EFFECT
     stagingDrawCmdIndex_.useEffectIndex_ = AppendDrawFunc(RSDrawableSlot::USE_EFFECT);
@@ -2369,8 +2368,8 @@ void RSRenderNode::UpdateDisplayList()
         stagingDrawCmdIndex_.contentIndex_ = AppendDrawFunc(RSDrawableSlot::CONTENT_STYLE);
 
         // Update index of BACKGROUND_END
-        stagingDrawCmdIndex_.backgroundEndIndex_ = stagingDrawCmdIndex_.contentIndex_ == -1 ?
-            static_cast<int8_t>(stagingDrawCmdList_.size()) : stagingDrawCmdIndex_.contentIndex_;
+        stagingDrawCmdIndex_.backgroundEndIndex_ = stagingDrawCmdIndex_.contentIndex_ == -1
+            ? static_cast<int8_t>(stagingDrawCmdList_.size()) : stagingDrawCmdIndex_.contentIndex_;
 
         // Update index of CHILDREN
         stagingDrawCmdIndex_.childrenIndex_ = AppendDrawFunc(RSDrawableSlot::CHILDREN);
@@ -2409,17 +2408,7 @@ void RSRenderNode::UpdateEffectRegion(std::optional<Drawing::RectI>& region, boo
 
 void RSRenderNode::MarkFilterHasEffectChildren()
 {
-    // now only background filter need to mark effect child
-    if (GetRenderProperties().GetBackgroundFilter()) {
-        auto filterDrawable = GetFilterDrawable(false);
-        if (filterDrawable == nullptr) {
-            return;
-        }
-        filterDrawable->MarkHasEffectChildren();
-    }
-    if (!RSProperties::FilterCacheEnabled) {
-        UpdateDirtySlotsAndPendingNodes(RSDrawableSlot::BACKGROUND_FILTER);
-    }
+
 }
 
 std::shared_ptr<RSRenderModifier> RSRenderNode::GetModifier(const PropertyId& id)

@@ -80,6 +80,8 @@ public:
     {
         return isStaticCached_;
     }
+    void InitRenderParams() override;
+    void UpdateRenderParams() override;
 
 protected:
     RectI GetFilterRect() const override;

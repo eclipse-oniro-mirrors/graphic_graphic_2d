@@ -158,7 +158,6 @@ protected:
     bool filterRegionChanged_ = false;
     bool filterInteractWithDirty_ = false;
     bool rotationChanged_ = false;
-    bool hasEffectChildren_ = false;
     bool clearFilteredCacheAfterDrawing_ = false;
     bool forceClearCacheWithLastFrame_ = false;
  

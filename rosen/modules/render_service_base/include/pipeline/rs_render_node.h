@@ -756,6 +756,7 @@ protected:
     std::atomic<bool> isStaticCached_ = false;
     bool lastFrameHasVisibleEffect_ = false;
     RectI filterRegion_;
+    void UpdateDirtySlotsAndPendingNodes(RSDrawableSlot slot);
 
 private:
     NodeId id_;
@@ -970,7 +971,6 @@ private:
     RSDrawable::Vec drawableVec_;
 
     // for blur cache
-    void UpdateDirtySlotsAndPendingNodes(RSDrawableSlot slot);
     RectI lastFilterRegion_;
     bool backgroundFilterRegionChanged_ = false;
     bool backgroundFilterInteractWithDirty_ = false;
