@@ -48,6 +48,17 @@ float RSSpherizeEffectFilter::GetSpherizeDegree() const
     return spherizeDegree_;
 }
 
+Drawing::Brush RSSpherizeEffectFilter::GetBrush(const std::shared_ptr<Drawing::Image>& image) const
+{
+    Drawing::Brush brush;
+    brush.SetBlendMode(Drawing::BlendMode::SRC_OVER);
+    Drawing::SamplingOptions samplingOptions;
+    Drawing::Matrix scaleMat;
+    brush.SetShaderEffect(Drawing::ShaderEffect::CreateImageShader(
+        *image, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, samplingOptions, scaleMat));
+    return brush;
+}
+
 void RSSpherizeEffectFilter::DrawImageRect(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image>& image,
     const Drawing::Rect& src, const Drawing::Rect& dst) const
 {
@@ -59,12 +70,7 @@ void RSSpherizeEffectFilter::DrawImageRect(Drawing::Canvas& canvas, const std::s
     float height = image->GetHeight();
     bool isWidthGreater = width > height;
 
-    Drawing::Brush brush;
-    brush.SetBlendMode(Drawing::BlendMode::SRC_OVER);
-    Drawing::SamplingOptions samplingOptions;
-    Drawing::Matrix scaleMat;
-    brush.SetShaderEffect(Drawing::ShaderEffect::CreateImageShader(
-        *image, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, samplingOptions, scaleMat));
+    auto brush = GetBrush(image);
     canvas.AttachBrush(brush);
 
     const Drawing::Point texCoords[4] = {
