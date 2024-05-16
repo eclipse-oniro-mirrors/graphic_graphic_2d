@@ -1949,7 +1949,10 @@ std::shared_ptr<RSMask> RSProperties::GetMask() const
 void RSProperties::SetSpherize(float spherizeDegree)
 {
     spherizeDegree_ = spherizeDegree;
-    isSpherizeValid_ = spherizeDegree_ > SPHERIZE_VALID_EPSILON;
+    if (IsSpherizeValid()) {
+        isDrawn_ = true;
+    }
+    filterNeedUpdate_ = true;
     SetDirty();
     contentDirty_ = true;
 }
@@ -1961,7 +1964,7 @@ float RSProperties::GetSpherize() const
 
 bool RSProperties::IsSpherizeValid() const
 {
-    return isSpherizeValid_;
+    return isSpherizeValid_ = spherizeDegree_ > SPHERIZE_VALID_EPSILON;
 }
 
 void RSProperties::SetLightUpEffect(float lightUpEffectDegree)
@@ -3607,9 +3610,12 @@ void RSProperties::OnApplyModifiers()
         if (IsForegroundEffectRadiusValid()) {
             auto foregroundEffectFilter = std::make_shared<RSForegroundEffectFilter>(foregroundEffectRadius_);
             foregroundFilter_ = foregroundEffectFilter;
-        }
-        if (!IsForegroundEffectRadiusValid()) {
+        } else {
             foregroundFilter_.reset();
+        }
+        if (IsSpherizeValid()){
+            auto spherizeEffectFilter = std::make_shared<RSSpherizeEffectFilter>(spherizeDegree_);
+            foregroundFilter_ = spherizeEffectFilter;
         }
         if (motionBlurPara_ && ROSEN_GE(motionBlurPara_->radius, 0.0)) {
             auto motionBlurFilter = std::make_shared<RSMotionBlurFilter>(motionBlurPara_);
