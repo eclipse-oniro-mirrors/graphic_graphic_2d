@@ -331,18 +331,21 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
     }
     bool isProtected = false;
 #ifdef RS_ENABLE_VK
-    if (RSSystemProperties::GetDrmEnabled() && RSMainThread::Instance()->GetDeviceType() == DeviceType::PHONE) {
-        for (const auto& layer : layers) {
-            if (layer && layer->GetBuffer() && (layer->GetBuffer()->GetUsage() & BUFFER_USAGE_PROTECTED)) {
-                isProtected = true;
-                break;
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+        if (RSSystemProperties::GetDrmEnabled() && RSMainThread::Instance()->GetDeviceType() == DeviceType::PHONE) {
+            for (const auto& layer : layers) {
+                if (layer && layer->GetBuffer() && (layer->GetBuffer()->GetUsage() & BUFFER_USAGE_PROTECTED)) {
+                    isProtected = true;
+                    break;
+                }
             }
+            if (RSSystemProperties::IsUseVulkan()) {
+                RsVulkanContext::GetSingleton().SetIsProtected(isProtected);
+            }
+        } else {
+            RsVulkanContext::GetSingleton().SetIsProtected(false);
         }
-        if (RSSystemProperties::IsUseVulkan()) {
-            RsVulkanContext::GetSingleton().SetIsProtected(isProtected);
-        }
-    } else {
-        RsVulkanContext::GetSingleton().SetIsProtected(false);
     }
 #endif
 
