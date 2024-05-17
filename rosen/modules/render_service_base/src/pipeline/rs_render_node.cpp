@@ -798,7 +798,9 @@ bool RSRenderNode::IsOnlyBasicGeoTransform() const
 
 void RSRenderNode::MergeSubTreeDirtyRegion(RSDirtyRegionManager& dirtyManager, const RectI& clipRect)
 {
-    dirtyManager.MergeDirtyRect(clipRect.IntersectRect(absChildrenRect_));
+    if (geoUpdateDelay_) {
+        dirtyManager.MergeDirtyRect(clipRect.IntersectRect(absChildrenRect_));
+    }
     lastFrameSubTreeSkipped_ = false;
 }
 
