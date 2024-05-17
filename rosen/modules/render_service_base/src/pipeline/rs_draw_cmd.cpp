@@ -149,8 +149,7 @@ void RSExtendImageObject::PreProcessPixelMap(Drawing::Canvas& canvas, const std:
         return;
     }
 
-    if (pixelMap->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC &&
-        sampling.GetMipmapMode() != Drawing::MipmapMode::LINEAR) {
+    if (RSPixelMapUtil::IsSupportZeroCopy(pixelMap, sampling)) {
 #if defined(RS_ENABLE_GL)
         if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
             if (GetDrawingImageFromSurfaceBuffer(canvas, reinterpret_cast<SurfaceBuffer*>(pixelMap->GetFd()))) {
