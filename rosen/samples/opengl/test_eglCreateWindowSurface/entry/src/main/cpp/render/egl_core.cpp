@@ -21,7 +21,7 @@
 #include <algorithm>
 #include "egl_core.h"
 #include "plugin_render.h"
-#include "../common/common.h"
+#include "common.h"
 
 bool EGLCore::EglContextInit(void *window, int width, int height)
 {

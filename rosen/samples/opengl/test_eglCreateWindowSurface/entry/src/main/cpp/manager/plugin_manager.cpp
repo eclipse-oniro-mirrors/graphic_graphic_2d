@@ -20,7 +20,7 @@
 #include <hilog/log.h>
 
 #include "plugin_manager.h"
-#include "../common/common.h"
+#include "common.h"
 
 PluginManager PluginManager::m_pluginManager;
 
