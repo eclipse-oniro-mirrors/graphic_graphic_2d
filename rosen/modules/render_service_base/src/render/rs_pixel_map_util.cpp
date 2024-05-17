@@ -264,7 +264,8 @@ std::shared_ptr<Drawing::Image> RSPixelMapUtil::ConvertYUVPixelMapToDrawingImage
     return nullptr;
 }
 
-bool RSPixelMapUtil::IsSupportZeroCopy(std::shared_ptr<Media::PixelMap> pixelMap, const Drawing::SamplingOptions& sampling)
+bool RSPixelMapUtil::IsSupportZeroCopy(std::shared_ptr<Media::PixelMap> pixelMap,
+    const Drawing::SamplingOptions& sampling)
 {
     if (!(pixelMap->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC)) {
         return false;
