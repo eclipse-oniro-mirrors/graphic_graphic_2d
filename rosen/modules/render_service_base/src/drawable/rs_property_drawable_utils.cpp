@@ -136,8 +136,7 @@ Color RSPropertyDrawableUtils::GetColorForShadowSyn(Drawing::Canvas* canvas, Dra
     RSColor colorPicked;
     auto shadowAlpha = color.GetAlpha();
     auto matrix = canvas->GetTotalMatrix();
-    auto deviceClipBounds = canvas->GetDeviceClipBounds();
-    if (PickColorSyn(canvas, path, matrix, deviceClipBounds, colorPicked, colorStrategy)) {
+    if (PickColorSyn(canvas, path, matrix, colorPicked, colorStrategy)) {
         GetDarkColor(colorPicked);
     } else {
         shadowAlpha = 0;
@@ -145,19 +144,17 @@ Color RSPropertyDrawableUtils::GetColorForShadowSyn(Drawing::Canvas* canvas, Dra
     return Color(colorPicked.GetRed(), colorPicked.GetGreen(), colorPicked.GetBlue(), shadowAlpha);
 }
 
-bool RSPropertyDrawableUtils::PickColorSyn(Drawing::Canvas* canvas, Drawing::Path& drPath, Drawing::Matrix& matrix,
-    Drawing::RectI& deviceClipBounds, RSColor& colorPicked, const int& colorStrategy)
+std::shared_ptr<Drawing::Image> RSPropertyDrawableUtils::GetShadowRegionImage(Drawing::Canvas* canvas,
+    Drawing::Path& drPath, Drawing::Matrix& matrix)
 {
     Drawing::Rect clipBounds = drPath.GetBounds();
     Drawing::RectI clipIBounds = { static_cast<int>(clipBounds.GetLeft()), static_cast<int>(clipBounds.GetTop()),
         static_cast<int>(clipBounds.GetRight()), static_cast<int>(clipBounds.GetBottom()) };
     Drawing::Surface* drSurface = canvas->GetSurface();
-
     if (drSurface == nullptr) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::PickColorSyn drSurface is null");
-        return false;
+        ROSEN_LOGE("RSPropertyDrawableUtils::GetShadowRegionImage drSurface is null");
+        return nullptr;
     }
-
     static int deviceWidth = drSurface->Width();
     static int deviceHeight = drSurface->Height();
     Drawing::Rect regionRect = {0, 0, clipIBounds.GetWidth(), clipIBounds.GetHeight()};
@@ -168,30 +165,46 @@ bool RSPropertyDrawableUtils::PickColorSyn(Drawing::Canvas* canvas, Drawing::Pat
     int32_t fRight = std::clamp(int(regionRectDev.GetRight()), 0, deviceWidth - 1);
     int32_t fBottom = std::clamp(int(regionRectDev.GetBottom()), 0, deviceHeight - 1);
     if (fLeft == fRight || fTop == fBottom) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::PickColorSyn Shadow Rect Invalid");
-        return false;
+        ROSEN_LOGE("RSPropertyDrawableUtils::GetShadowRegionImage Shadow Rect Invalid");
+        return nullptr;
     }
-
     Drawing::RectI regionBounds = { fLeft, fTop, fRight, fBottom };
     std::shared_ptr<Drawing::Image> shadowRegionImage = drSurface->GetImageSnapshot(regionBounds);
+    return shadowRegionImage;
+}
 
+bool RSPropertyDrawableUtils::PickColorSyn(Drawing::Canvas* canvas, Drawing::Path& drPath, Drawing::Matrix& matrix,
+    RSColor& colorPicked, const int& colorStrategy)
+{
+    std::shared_ptr<Drawing::Image> shadowRegionImage = GetShadowRegionImage(canvas, drPath, matrix);
     if (shadowRegionImage == nullptr) {
         ROSEN_LOGE("RSPropertyDrawableUtils::PickColorSyn GetImageSnapshot Failed");
         return false;
     }
-
-    std::shared_ptr<Drawing::Pixmap> dst;
-    if (!GpuScaleImage(canvas, shadowRegionImage, dst)) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::PickColorSyn GpuScaleImage Failed");
+    auto scaledImage = GpuScaleImage(canvas, shadowRegionImage);
+    if (scaledImage == nullptr) {
+        ROSEN_LOGE("RSPropertyDrawableUtils::PickColorSyn scaledImage is null");
         return false;
     }
-
+    std::shared_ptr<Drawing::Pixmap> dst;
+    const int buffLen = scaledImage->GetWidth() * scaledImage->GetHeight();
+    auto pixelPtr = std::make_unique<uint32_t[]>(buffLen);
+    if (pixelPtr == nullptr) {
+        ROSEN_LOGE("RSPropertyDrawableUtils::PickColorSyn pixelPtr is null");
+        return false;
+    }
+    auto info = scaledImage->GetImageInfo();
+    dst = std::make_shared<Drawing::Pixmap>(info, pixelPtr.get(), info.GetWidth() * info.GetBytesPerPixel());
+    bool flag = scaledImage->ReadPixels(*dst, 0, 0);
+    if (!flag) {
+        ROSEN_LOGE("RSPropertyDrawableUtils::PickColorSyn ReadPixel Failed");
+        return false;
+    }
     uint32_t errorCode = 0;
     std::shared_ptr<RSColorPicker> colorPicker = RSColorPicker::CreateColorPicker(dst, errorCode);
     if (errorCode != 0) {
         return false;
     }
-
     Drawing::ColorQuad color;
     if (colorStrategy == SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_MAIN) {
         colorPicker->GetLargestProportionColor(color);
@@ -203,8 +216,8 @@ bool RSPropertyDrawableUtils::PickColorSyn(Drawing::Canvas* canvas, Drawing::Pat
     return true;
 }
 
-bool RSPropertyDrawableUtils::GpuScaleImage(Drawing::Canvas* canvas,
-    const std::shared_ptr<Drawing::Image> image, std::shared_ptr<Drawing::Pixmap>& dst)
+std::shared_ptr<Drawing::Image> RSPropertyDrawableUtils::GpuScaleImage(Drawing::Canvas* canvas,
+    const std::shared_ptr<Drawing::Image> image)
 {
     std::string shaderString(R"(
         uniform shader imageInput;
@@ -218,7 +231,7 @@ bool RSPropertyDrawableUtils::GpuScaleImage(Drawing::Canvas* canvas,
     std::shared_ptr<Drawing::RuntimeEffect> effect = Drawing::RuntimeEffect::CreateForShader(shaderString);
     if (!effect) {
         ROSEN_LOGE("RSPropertyDrawableUtils::GpuScaleImage effect is null");
-        return false;
+        return nullptr;
     }
 
     Drawing::SamplingOptions linear(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
@@ -239,21 +252,7 @@ bool RSPropertyDrawableUtils::GpuScaleImage(Drawing::Canvas* canvas,
     std::shared_ptr<Drawing::Image> tmpColorImg = effectBulider->MakeImage(
         canvas->GetGPUContext().get(), nullptr, pcInfo, false);
 
-    const int buffLen = tmpColorImg->GetWidth() * tmpColorImg->GetHeight();
-    auto pixelPtr = new(std::nothrow) uint32_t[buffLen];
-    if (pixelPtr == nullptr) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::GpuScaleImage pixelPtr is null");
-        return false;
-    }
-
-    auto info = tmpColorImg->GetImageInfo();
-    dst = std::make_shared<Drawing::Pixmap>(info, pixelPtr, info.GetWidth() * info.GetBytesPerPixel());
-    bool flag = tmpColorImg->ReadPixels(*dst, 0, 0);
-    if (pixelPtr != nullptr) {
-        delete[] pixelPtr;
-        pixelPtr = nullptr;
-    }
-    return flag;
+    return tmpColorImg;
 }
 
 void RSPropertyDrawableUtils::GetDarkColor(RSColor& color)

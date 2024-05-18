@@ -32,10 +32,12 @@ public:
         Drawing::Path& drPath, Drawing::Matrix& matrix, RSColor& colorPicked);
     static Color GetColorForShadowSyn(Drawing::Canvas* canvas, Drawing::Path& path, const Color& color,
         const int& colorStrategy);
+    static std::shared_ptr<Drawing::Image> GetShadowRegionImage(Drawing::Canvas* canvas,
+        Drawing::Path& drPath, Drawing::Matrix& matrix);
     static bool PickColorSyn(Drawing::Canvas* canvas, Drawing::Path& drPath, Drawing::Matrix& matrix,
-        Drawing::RectI& deviceClipBounds, RSColor& colorPicked, const int& colorStrategy);
-    static bool GpuScaleImage(Drawing::Canvas* canvas, const std::shared_ptr<Drawing::Image> image,
-        std::shared_ptr<Drawing::Pixmap>& dst);
+        RSColor& colorPicked, const int& colorStrategy);
+    static std::shared_ptr<Drawing::Image> GpuScaleImage(Drawing::Canvas* canvas,
+        const std::shared_ptr<Drawing::Image> image);
     static void GetDarkColor(RSColor& color);
     static void CeilMatrixTrans(Drawing::Canvas* canvas);
     static void BeginForegroundFilter(RSPaintFilterCanvas& canvas, const RectF& bounds);
