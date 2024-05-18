@@ -351,6 +351,8 @@ if (!is_arkui_x) {
     sanitize = {
       cfi = true
       cfi_cross_dso = true
+      cfi_no_nvcall = true
+      cfi_vcall_icall_only = true
       debug = false
     }
     platform = current_os
@@ -395,6 +397,8 @@ ohos_shared_library("2d_graphics_canvaskit0310") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
+    cfi_no_nvcall = true
+    cfi_vcall_icall_only = true
     debug = false
   }
   sources = [
