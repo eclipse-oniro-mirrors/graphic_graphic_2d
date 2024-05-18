@@ -283,11 +283,14 @@ std::unique_ptr<RSRenderFrame> RSBaseRenderEngine::RequestFrame(const std::share
 #endif
 {
 #ifdef RS_ENABLE_VK
-    skContext_ = RsVulkanContext::GetSingleton().CreateDrawingContext();
-    if (renderContext_ == nullptr) {
-        return nullptr;
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+        skContext_ = RsVulkanContext::GetSingleton().CreateDrawingContext();
+        if (renderContext_ == nullptr) {
+            return nullptr;
+        }
+        renderContext_->SetUpGpuContext(skContext_);
     }
-    renderContext_->SetUpGpuContext(skContext_);
 #endif
     if (rsSurface == nullptr) {
         RS_LOGE("RSBaseRenderEngine::RequestFrame: surface is null!");
