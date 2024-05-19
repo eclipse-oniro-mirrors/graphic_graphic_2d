@@ -204,6 +204,131 @@ HWTEST_F(SkiaImageTest, IsValid001, TestSize.Level1)
         ASSERT_TRUE(skiaImage->IsValid(&context));
     }
 }
+
+/**
+ * @tc.name: MakeFromYUVAPixmaps
+ * @tc.desc: Test MakeFromYUVAPixmaps
+ * @tc.type: FUNC
+ * @tc.require: I91EH1
+ */
+HWTEST_F(SkiaImageTest, MakeFromYUVAPixmaps, TestSize.Level1)
+{
+    Bitmap bitmap;
+    GPUContext gpuContext;
+    YUVInfo info(100, 100, YUVInfo::PlaneConfig::Y_UV, YUVInfo::SubSampling::K420,
+        YUVInfo::YUVColorSpace::JPEG_FULL_YUVCOLORSPACE);
+    std::shared_ptr<SkiaImage> skiaImage = std::make_shared<SkiaImage>();
+    std::shared_ptr<Image> image = skiaImage->MakeFromYUVAPixmaps(gpuContext, info, nullptr);
+    ASSERT_TRUE(image == nullptr);
+}
+
+/**
+ * @tc.name: BuildSubset002
+ * @tc.desc: Test BuildSubset002
+ * @tc.type: FUNC
+ * @tc.require: I91EH1
+ */
+HWTEST_F(SkiaImageTest, BuildSubset002, TestSize.Level1)
+{
+    std::shared_ptr<SkiaImage> skiaImage = std::make_shared<SkiaImage>();
+    std::unique_ptr<Bitmap> bitmap = std::make_unique<Bitmap>();
+    ASSERT_TRUE(bitmap != nullptr);
+    EXPECT_TRUE(bitmap->Build(151, 150, { ColorType::COLORTYPE_ALPHA_8, AlphaType::ALPHATYPE_OPAQUE }));
+    std::shared_ptr<Image> image = bitmap->MakeImage();
+    ASSERT_TRUE(image != nullptr);
+    RectI rect;
+    GPUContext context;
+    bool result = skiaImage->BuildSubset(image, rect, context);
+    ASSERT_FALSE(result);
+}
+
+/**
+ * @tc.name: BuildFromCompressed
+ * @tc.desc: Test BuildFromCompressed
+ * @tc.type: FUNC
+ * @tc.require: I91EH1
+ */
+HWTEST_F(SkiaImageTest, BuildFromCompressed, TestSize.Level1)
+{
+    const int height = 100;
+    const int width = 100;
+    std::shared_ptr<SkiaImage> skiaImage = std::make_shared<SkiaImage>();
+    GPUContext context;
+    bool result = skiaImage->BuildFromCompressed(context, nullptr, width, height, CompressedType::ETC2_RGB8_UNORM);
+    ASSERT_FALSE(result);
+}
+
+/**
+ * @tc.name: BuildFromTexture002
+ * @tc.desc: Test BuildFromTexture
+ * @tc.type: FUNC
+ * @tc.require: I91EH1
+ */
+HWTEST_F(SkiaImageTest, BuildFromTexture002, TestSize.Level1)
+{
+    std::shared_ptr<SkiaImage> skiaImage = std::make_shared<SkiaImage>();
+    GPUContext context;
+    TextureInfo textureInfo;
+    BitmapFormat bitmapFormat;
+    bool buildFromTexture = skiaImage->BuildFromTexture(context, textureInfo, TextureOrigin::TOP_LEFT, bitmapFormat,
+        nullptr, nullptr, nullptr);
+    ASSERT_FALSE(buildFromTexture);
+}
+
+/**
+ * @tc.name: BuildFromSurface002
+ * @tc.desc: Test BuildFromSurface
+ * @tc.type: FUNC
+ * @tc.require: I91EH1
+ */
+HWTEST_F(SkiaImageTest, BuildFromSurface002, TestSize.Level1)
+{
+    auto skiaCanvas = std::make_shared<SkiaCanvas>();
+    auto gpuContext = skiaCanvas->GetGPUContext();
+    BitmapFormat bitmapFormat { COLORTYPE_RGBA_8888, ALPHATYPE_OPAQUE };
+    auto colorSpace = std::make_shared<ColorSpace>(ColorSpace::ColorSpaceType::NO_TYPE);
+    std::shared_ptr<SkiaImage> skiaImage = std::make_shared<SkiaImage>();
+    Surface surFace;
+    auto ret = skiaImage->BuildFromSurface(*gpuContext, surFace, TextureOrigin::TOP_LEFT, bitmapFormat, colorSpace);
+    ASSERT_FALSE(ret);
+}
+
+/**
+ * @tc.name: SetGrBackendTexture
+ * @tc.desc: Test SetGrBackendTexture
+ * @tc.type: FUNC
+ * @tc.require: I91EH1
+ */
+HWTEST_F(SkiaImageTest, SetGrBackendTexture, TestSize.Level1)
+{
+    std::shared_ptr<SkiaImage> skiaImage = std::make_shared<SkiaImage>();
+    ASSERT_TRUE(skiaImage != nullptr);
+    GrBackendTexture skBackendTexture;
+    skiaImage->SetGrBackendTexture(skBackendTexture);
+}
+
+/**
+ * @tc.name: GetBackendTexture
+ * @tc.desc: Test GetBackendTexture
+ * @tc.type: FUNC
+ * @tc.require: I91EH1
+ */
+HWTEST_F(SkiaImageTest, GetBackendTexture, TestSize.Level1)
+{
+    Bitmap bitmap;
+    BitmapFormat bitmapFormat { COLORTYPE_RGBA_8888, ALPHATYPE_OPAQUE };
+    std::shared_ptr<SkiaImage> skiaImage = std::make_shared<SkiaImage>();
+    ASSERT_TRUE(skiaImage != nullptr);
+    TextureOrigin origin = TextureOrigin::TOP_LEFT;
+    BackendTexture backKendTexture = skiaImage->GetBackendTexture(true, nullptr);
+    ASSERT_TRUE(!backKendTexture.IsValid());
+    bitmap.Build(100, 100, bitmapFormat);
+    skiaImage->BuildFromBitmap(bitmap);
+    BackendTexture backKendTexture1 = skiaImage->GetBackendTexture(true, nullptr);
+    ASSERT_TRUE(!backKendTexture1.IsValid());
+    BackendTexture backKendTexture2 = skiaImage->GetBackendTexture(true, &origin);
+    ASSERT_TRUE(!backKendTexture2.IsValid());
+}
 #endif
 
 /**
@@ -419,6 +544,35 @@ HWTEST_F(SkiaImageTest, CanPeekPixels001, TestSize.Level1)
 {
     std::shared_ptr<SkiaImage> skiaImage = std::make_shared<SkiaImage>();
     ASSERT_TRUE(!skiaImage->CanPeekPixels());
+}
+
+/**
+ * @tc.name: GetWidth001
+ * @tc.desc: Test GetWidth
+ * @tc.type: FUNC
+ * @tc.require: I91EH1
+ */
+HWTEST_F(SkiaImageTest, GetWidth001, TestSize.Level1)
+{
+
+    sk_sp<SkImage> img;
+    SkiaImage skiaImage;
+    skiaImage.SetSkImage(img);
+    ASSERT_TRUE(skiaImage.GetImage() == img);
+}
+
+/**
+ * @tc.name: MakeFromRaster
+ * @tc.desc: Test MakeFromRaster
+ * @tc.type: FUNC
+ * @tc.require: I91EH1
+ */
+HWTEST_F(SkiaImageTest, MakeFromRaster, TestSize.Level1)
+{
+    Pixmap pixmap;
+    std::shared_ptr<SkiaImage> skiaImage = std::make_shared<SkiaImage>();
+    std::shared_ptr<Image> image = skiaImage->MakeFromRaster(pixmap, nullptr, nullptr);
+    ASSERT_TRUE(image == nullptr);
 }
 
 } // namespace Drawing

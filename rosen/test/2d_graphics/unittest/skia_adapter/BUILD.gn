@@ -59,6 +59,7 @@ ohos_unittest("2d_graphics_skia_canvas_test") {
     "skia_trace_memory_dump_test.cpp",
     "skia_typeface_test.cpp",
     "skia_vertices_test.cpp",
+    "skia_static_factory_test.cpp",
   ]
 
   include_dirs = [
