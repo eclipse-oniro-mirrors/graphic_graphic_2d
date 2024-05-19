@@ -14,10 +14,11 @@
  */
 
 #include <cstddef>
+
 #include "gtest/gtest.h"
+
 #include "text/typeface.h"
 #include "utils/memory_stream.h"
-
 
 using namespace testing;
 using namespace testing::ext;
@@ -38,7 +39,6 @@ void TypefaceTest::TearDownTestCase() {}
 void TypefaceTest::SetUp() {}
 void TypefaceTest::TearDown() {}
 
-
 /**
  * @tc.name: MakeFromStream001
  * @tc.desc: Test MakeFromStream
@@ -47,8 +47,8 @@ void TypefaceTest::TearDown() {}
  */
 HWTEST_F(TypefaceTest, MakeFromStream001, TestSize.Level1)
 {
-    char data[10] = {0};
-    auto stream = std::make_unique<MemoryStream>(data,10);
+    char data[10] = { 0 };
+    auto stream = std::make_unique<MemoryStream>(data, 10);
     ASSERT_TRUE(stream != nullptr);
     auto typeface = Typeface::MakeFromStream(std::move(stream));
     ASSERT_TRUE(typeface != nullptr);
@@ -63,8 +63,8 @@ HWTEST_F(TypefaceTest, MakeFromStream001, TestSize.Level1)
 HWTEST_F(TypefaceTest, MakeFromName001, TestSize.Level1)
 {
     FontStyle style;
-    std::string familyName = "Arial"; 
-    auto ret = Typeface::MakeFromName(familyName.c_str(),style);
+    std::string familyName = "Arial";
+    auto ret = Typeface::MakeFromName(familyName.c_str(), style);
 
     ASSERT_TRUE(ret != nullptr);
 }
@@ -77,7 +77,7 @@ HWTEST_F(TypefaceTest, MakeFromName001, TestSize.Level1)
  */
 HWTEST_F(TypefaceTest, GetFamilyName001, TestSize.Level1)
 {
-    auto typeface = std::make_shared<Typeface>(nullptr);    
+    auto typeface = std::make_shared<Typeface>(nullptr);
     ASSERT_TRUE(typeface != nullptr);
     ASSERT_TRUE(typeface->GetFamilyName() == "");
 }
@@ -90,7 +90,7 @@ HWTEST_F(TypefaceTest, GetFamilyName001, TestSize.Level1)
  */
 HWTEST_F(TypefaceTest, GetTableSize001, TestSize.Level1)
 {
-    auto typeface = std::make_shared<Typeface>(nullptr);    
+    auto typeface = std::make_shared<Typeface>(nullptr);
     ASSERT_TRUE(typeface != nullptr);
     ASSERT_TRUE(typeface->GetTableSize(0) == 0);
 }
@@ -103,10 +103,10 @@ HWTEST_F(TypefaceTest, GetTableSize001, TestSize.Level1)
  */
 HWTEST_F(TypefaceTest, GetTableData001, TestSize.Level1)
 {
-    auto typeface = std::make_shared<Typeface>(nullptr);    
+    auto typeface = std::make_shared<Typeface>(nullptr);
     ASSERT_TRUE(typeface != nullptr);
-    char data[10] = {0};
-    ASSERT_TRUE(typeface->GetTableData(0,0,10,data) == 0);
+    char data[10] = { 0 };
+    ASSERT_TRUE(typeface->GetTableData(0, 0, 10, data) == 0);
 }
 
 /**
@@ -117,7 +117,7 @@ HWTEST_F(TypefaceTest, GetTableData001, TestSize.Level1)
  */
 HWTEST_F(TypefaceTest, GetItalic001, TestSize.Level1)
 {
-    auto typeface = std::make_shared<Typeface>(nullptr);    
+    auto typeface = std::make_shared<Typeface>(nullptr);
     ASSERT_TRUE(typeface != nullptr);
     ASSERT_TRUE(typeface->GetItalic() == false);
 }
@@ -130,7 +130,7 @@ HWTEST_F(TypefaceTest, GetItalic001, TestSize.Level1)
  */
 HWTEST_F(TypefaceTest, GetUniqueID001, TestSize.Level1)
 {
-    auto typeface = std::make_shared<Typeface>(nullptr);    
+    auto typeface = std::make_shared<Typeface>(nullptr);
     ASSERT_TRUE(typeface != nullptr);
     ASSERT_TRUE(typeface->GetUniqueID() == 0);
 }
@@ -143,7 +143,7 @@ HWTEST_F(TypefaceTest, GetUniqueID001, TestSize.Level1)
  */
 HWTEST_F(TypefaceTest, GetUniqueID002, TestSize.Level1)
 {
-    auto typeface = std::make_shared<Typeface>(nullptr);    
+    auto typeface = std::make_shared<Typeface>(nullptr);
     ASSERT_TRUE(typeface != nullptr);
     ASSERT_TRUE(typeface->GetUnitsPerEm() == 0);
 }
@@ -156,7 +156,6 @@ HWTEST_F(TypefaceTest, GetUniqueID002, TestSize.Level1)
  */
 HWTEST_F(TypefaceTest, MakeClone001, TestSize.Level1)
 {
-
     auto typeface = Typeface::MakeDefault();
     ASSERT_TRUE(typeface != nullptr);
     FontArguments arg;
@@ -171,7 +170,7 @@ HWTEST_F(TypefaceTest, MakeClone001, TestSize.Level1)
  */
 HWTEST_F(TypefaceTest, MakeClone002, TestSize.Level1)
 {
-    auto typeface = std::make_unique<Typeface>(nullptr);    
+    auto typeface = std::make_unique<Typeface>(nullptr);
     ASSERT_TRUE(typeface != nullptr);
     FontArguments arg;
     ASSERT_TRUE(typeface->MakeClone(arg) == nullptr);
@@ -185,9 +184,9 @@ HWTEST_F(TypefaceTest, MakeClone002, TestSize.Level1)
  */
 HWTEST_F(TypefaceTest, Serialize001, TestSize.Level1)
 {
-    auto typeface = Typeface::MakeDefault(); 
+    auto typeface = Typeface::MakeDefault();
     ASSERT_TRUE(typeface != nullptr);
-    ASSERT_TRUE(typeface->Serialize() 1= nullptr);
+    ASSERT_TRUE(typeface->Serialize() 1 = nullptr);
 }
 
 /**
@@ -198,7 +197,7 @@ HWTEST_F(TypefaceTest, Serialize001, TestSize.Level1)
  */
 HWTEST_F(TypefaceTest, Serialize002, TestSize.Level1)
 {
-    auto typeface = std::make_shared<Typeface>(nullptr);    
+    auto typeface = std::make_shared<Typeface>(nullptr);
     ASSERT_TRUE(typeface != nullptr);
     ASSERT_TRUE(typeface->Serialize() == nullptr);
 }
@@ -211,10 +210,10 @@ HWTEST_F(TypefaceTest, Serialize002, TestSize.Level1)
  */
 HWTEST_F(TypefaceTest, Deserialize001, TestSize.Level1)
 {
-    auto typeface = Typeface::MakeDefault(); 
+    auto typeface = Typeface::MakeDefault();
     ASSERT_TRUE(typeface != nullptr);
-    char data[10] = {0};
-    ASSERT_TRUE(typeface->Deserialize(data,10) == nullptr);
+    char data[10] = { 0 };
+    ASSERT_TRUE(typeface->Deserialize(data, 10) == nullptr);
 }
 
 } // namespace Drawing
