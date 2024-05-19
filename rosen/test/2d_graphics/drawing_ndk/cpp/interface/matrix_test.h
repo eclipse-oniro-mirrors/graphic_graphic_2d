@@ -24,7 +24,7 @@
 
 class MatrixReset : public TestBase {
 public:
-    MatrixReset(int type) : TestBase(type)
+    explicit MatrixReset(int type) : TestBase(type)
     {
         fileName_ = "MatrixReset";
     }
@@ -36,7 +36,7 @@ protected:
 
 class MatrixConcat : public TestBase {
 public:
-    MatrixConcat(int type) : TestBase(type)
+    explicit MatrixConcat(int type) : TestBase(type)
     {
         fileName_ = "MatrixConcat";
     }
@@ -48,7 +48,7 @@ protected:
 
 class MatrixInvert : public TestBase {
 public:
-    MatrixInvert(int type) : TestBase(type)
+    explicit MatrixInvert(int type) : TestBase(type)
     {
         fileName_ = "MatrixInvert";
     }
@@ -60,7 +60,7 @@ protected:
 
 class MatrixSetPolyToPoly : public TestBase {
 public:
-    MatrixSetPolyToPoly(int type) : TestBase(type)
+    explicit MatrixSetPolyToPoly(int type) : TestBase(type)
     {
         fileName_ = "MatrixSetPolyToPoly";
     }
@@ -72,7 +72,7 @@ protected:
 
 class MatrixPreRotate : public TestBase {
 public:
-    MatrixPreRotate(int type) : TestBase(type)
+    explicit MatrixPreRotate(int type) : TestBase(type)
     {
         fileName_ = "MatrixPreRotate";
     };
@@ -84,7 +84,7 @@ protected:
 
 class MatrixPostScale : public TestBase {
 public:
-    MatrixPostScale(int type) : TestBase(type)
+    explicit MatrixPostScale(int type) : TestBase(type)
     {
         fileName_ = "MatrixPostScale";
     };
@@ -96,7 +96,7 @@ protected:
 
 class MatrixPostTranslate : public TestBase {
 public:
-    MatrixPostTranslate(int type) : TestBase(type)
+    explicit MatrixPostTranslate(int type) : TestBase(type)
     {
         fileName_ = "MatrixPostTranslate";
     };
@@ -108,7 +108,7 @@ protected:
 
 class MatrixIsEqual : public TestBase {
 public:
-    MatrixIsEqual(int type) : TestBase(type)
+    explicit MatrixIsEqual(int type) : TestBase(type)
     {
         fileName_ = "MatrixIsEqual";
     };

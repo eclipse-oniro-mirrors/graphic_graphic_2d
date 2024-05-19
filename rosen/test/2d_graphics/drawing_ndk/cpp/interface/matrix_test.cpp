@@ -116,7 +116,7 @@ void MatrixInvert::OnTestPerformance(OH_Drawing_Canvas* canvas)
 
 void MatrixSetPolyToPoly::OnTestPerformance(OH_Drawing_Canvas* canvas)
 {
-    int N = 4;
+    int count = 4;
     TestRend rand;
     OH_Drawing_Path* path = OH_Drawing_PathCreate();
     float x1 = rand.nextULessThan(bitmapWidth_);
@@ -132,7 +132,7 @@ void MatrixSetPolyToPoly::OnTestPerformance(OH_Drawing_Canvas* canvas)
     OH_Drawing_Point2D src[] = { { x1, y1 }, { x2, y1 }, { x1, y2 }, { x2, y2 } };
     OH_Drawing_Point2D dst[] = { { x3, y3 }, { x3, y4 }, { x4, y3 }, { x4, y4 } };
     for (int i = 0; i < testCount_; i++) {
-        OH_Drawing_MatrixSetPolyToPoly(matrix, src, dst, N);
+        OH_Drawing_MatrixSetPolyToPoly(matrix, src, dst, count);
     }
     OH_Drawing_PathTransform(path, matrix);
     OH_Drawing_CanvasDrawPath(canvas, path);
