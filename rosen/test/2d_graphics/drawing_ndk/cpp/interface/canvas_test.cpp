@@ -647,11 +647,10 @@ void CanvasClipPath::OnTestPerformance(OH_Drawing_Canvas* canvas)
 void CanvasGetTotalMatrix::OnTestPerformance(OH_Drawing_Canvas* canvas)
 {
     TestRend rand;
-    float l, t, r, b;
-    l = rand.nextULessThan(bitmapWidth_);
-    t = rand.nextULessThan(bitmapHeight_);
-    r = l + rand.nextULessThan(bitmapWidth_);
-    b = t + rand.nextULessThan(bitmapHeight_);
+    float l = rand.nextULessThan(bitmapWidth_);
+    float t = rand.nextULessThan(bitmapHeight_);
+    float r = l + rand.nextULessThan(bitmapWidth_);
+    float b = t + rand.nextULessThan(bitmapHeight_);
     OH_Drawing_Rect* rect = OH_Drawing_RectCreate(l, t, r, b);
     OH_Drawing_CanvasDrawRect(canvas, rect);
     OH_Drawing_Matrix* matrix_a = OH_Drawing_MatrixCreateRotation(45, 0, 0);    // 45为顺时针旋转角度
