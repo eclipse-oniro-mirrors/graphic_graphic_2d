@@ -606,7 +606,19 @@ void VSyncDistributor::OnVSyncEvent(int64_t now, int64_t period, uint32_t refres
 void VSyncDistributor::OnConnsRefreshRateChanged(const std::vector<std::pair<uint64_t, uint32_t>> &refreshRates)
 {
     std::lock_guard<std::mutex> locker(changingConnsRefreshRatesMtx_);
-    changingConnsRefreshRates_ = refreshRates;
+    for (auto refreshRate : refreshRates) {
+        bool found = false;
+        for (auto it = changingConnsRefreshRates_.begin(); it != changingConnsRefreshRates_.end(); it++) {
+            if ((*it).first == refreshRate.first) { // first is linkerId
+                (*it).second = refreshRate.second; // second is refreshRate
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            changingConnsRefreshRates_.push_back(refreshRate);
+        }
+    }
 }
 
 void VSyncDistributor::SubScribeSystemAbility(const std::string& threadName)
