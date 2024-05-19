@@ -82,6 +82,86 @@ HWTEST_F(SkiaPathTest, SkiaPath001, TestSize.Level1)
     EXPECT_TRUE(skiaPath2.Contains(0, 0));
     EXPECT_TRUE(!skiaPath2.Deserialize(nullptr));
 }
+
+/**
+ * @tc.name: RArcTo001
+ * @tc.desc: Test SkiaPath's funstions
+ * @tc.type: FUNC
+ * @tc.require: I8VQSW
+ */
+HWTEST_F(SkiaPathTest, RArcTo001, TestSize.Level1)
+{
+    SkiaPath skiaPath;
+    skiaPath.RArcTo(0, 0, 90, PathDirection::CW_DIRECTION, 90, 90); // 90: angle, 90: endX and endY
+}
+
+/**
+ * @tc.name: InitWithInterpolate001
+ * @tc.desc: Test SkiaPath's funstions
+ * @tc.type: FUNC
+ * @tc.require: I8VQSW
+ */
+HWTEST_F(SkiaPathTest, InitWithInterpolate001, TestSize.Level1)
+{   
+    SkiaPath skiaPath;
+    Path path;
+    Path path2;
+    skiaPath.InitWithInterpolate(path, path2, 2); // 2: weight
+}
+
+/**
+ * @tc.name: TransformWithPerspectiveClip001
+ * @tc.desc: Test SkiaPath's funstions
+ * @tc.type: FUNC
+ * @tc.require: I8VQSW
+ */
+HWTEST_F(SkiaPathTest, TransformWithPerspectiveClip001, TestSize.Level1)
+{
+    SkiaPath skiaPath;
+    Path path;
+    Matrix matrix;
+    skiaPath.TransformWithPerspectiveClip(matrix, &path, true);
+}
+
+/**
+ * @tc.name: OpWith001
+ * @tc.desc: Test SkiaPath's funstions
+ * @tc.type: FUNC
+ * @tc.require: I8VQSW
+ */
+HWTEST_F(SkiaPathTest, OpWith001, TestSize.Level1)
+{
+    SkiaPath skiaPath;
+    Path path;
+    Path path2;
+    skiaPath.OpWith(path, path2, PathOp::DIFFERENCE);
+}
+
+/**
+ * @tc.name: Offset001
+ * @tc.desc: Test SkiaPath's funstions
+ * @tc.type: FUNC
+ * @tc.require: I8VQSW
+ */
+HWTEST_F(SkiaPathTest, Offset001, TestSize.Level1)
+{
+    SkiaPath skiaPath;
+    skiaPath.Offset(100, 100);
+}
+
+/**
+ * @tc.name: Offset002
+ * @tc.desc: Test SkiaPath's funstions
+ * @tc.type: FUNC
+ * @tc.require: I8VQSW
+ */
+HWTEST_F(SkiaPathTest, Offset002, TestSize.Level1)
+{
+    SkiaPath skiaPath;
+    Path path;
+    skiaPath.Offset(path, 100, 100); 
+}
+
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
