@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -42,7 +42,7 @@ void RSSurfaceCaptureTaskParallelTest::TearDown() {}
  * @tc.name: FindSecurityOrSkipOrProtectedLayer
  * @tc.desc: function test
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueI9PKY5
 */
 HWTEST_F(RSSurfaceCaptureTaskParallelTest, FindSecurityOrSkipOrProtectedLayer, TestSize.Level2)
 {
@@ -85,7 +85,7 @@ HWTEST_F(RSSurfaceCaptureTaskParallelTest, FindSecurityOrSkipOrProtectedLayer, T
  * @tc.name: ScreenCorrection
  * @tc.desc: function test
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueI9PKY5
 */
 HWTEST_F(RSSurfaceCaptureTaskParallelTest, ScreenCorrection, TestSize.Level2)
 {
