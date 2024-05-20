@@ -13,18 +13,18 @@
  * limitations under the License.
  */
 
-#include "gtest/gtest.h"
-
 #include "drawing_color.h"
 #include "drawing_color_filter.h"
 #include "drawing_filter.h"
 #include "drawing_pen.h"
+#include "drawing_point.h"
+#include "drawing_shader_effect.h"
 #include "drawing_shadow_layer.h"
+#include "drawing_types.h"
+#include "gtest/gtest.h"
+
 #include "effect/color_filter.h"
 #include "effect/filter.h"
-#include "drawing_types.h"
-#include "drawing_shader_effect.h"
-#include "drawing_point.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -215,8 +215,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_penGetFilter010, TestSize.Le
     OH_Drawing_ColorFilter* colorFilterTmp = OH_Drawing_ColorFilterCreateLinearToSrgbGamma();
     OH_Drawing_FilterSetColorFilter(cFilter_, nullptr);
     OH_Drawing_FilterGetColorFilter(cFilter_, colorFilterTmp);
-    EXPECT_EQ((reinterpret_cast<ColorFilter*>(colorFilterTmp))->GetType(),
-        ColorFilter::FilterType::NO_TYPE);
+    EXPECT_EQ((reinterpret_cast<ColorFilter*>(colorFilterTmp))->GetType(), ColorFilter::FilterType::NO_TYPE);
 
     OH_Drawing_Filter* tmpFilter_ = OH_Drawing_FilterCreate();
     EXPECT_NE(cFilter_, nullptr);
@@ -273,7 +272,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenIsAntiAlias, TestSize.Lev
  */
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetAntiAlias, TestSize.Level1)
 {
-    OH_Drawing_PenSetAntiAlias(nullptr,false);
+    OH_Drawing_PenSetAntiAlias(nullptr, false);
 }
 
 /*
@@ -295,7 +294,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetColor, TestSize.Level1
  */
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetColor, TestSize.Level1)
 {
-    OH_Drawing_PenSetColor(nullptr,0xFFFFFFFF);
+    OH_Drawing_PenSetColor(nullptr, 0xFFFFFFFF);
 }
 
 /*
@@ -318,7 +317,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetAlpha, TestSize.Level1
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetAlpha002, TestSize.Level1)
 {
     OH_Drawing_Pen* pen = OH_Drawing_PenCreate();
-    OH_Drawing_PenSetAlpha(pen,0xFF);
+    OH_Drawing_PenSetAlpha(pen, 0xFF);
     ASSERT_TRUE(OH_Drawing_PenGetAlpha(pen) == 0xFF);
     OH_Drawing_PenDestroy(pen);
 }
@@ -331,7 +330,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetAlpha002, TestSize.Lev
  */
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetAlpha, TestSize.Level1)
 {
-    OH_Drawing_PenSetAlpha(nullptr,0xFF);
+    OH_Drawing_PenSetAlpha(nullptr, 0xFF);
 }
 
 /*
@@ -343,7 +342,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetAlpha, TestSize.Level1
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetAlpha002, TestSize.Level1)
 {
     OH_Drawing_Pen* pen = OH_Drawing_PenCreate();
-    OH_Drawing_PenSetAlpha(pen,0xFF);
+    OH_Drawing_PenSetAlpha(pen, 0xFF);
     OH_Drawing_PenDestroy(pen);
 }
 
@@ -366,7 +365,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetWidth, TestSize.Level1
  */
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetWidth, TestSize.Level1)
 {
-    OH_Drawing_PenSetWidth(nullptr,10);
+    OH_Drawing_PenSetWidth(nullptr, 10);
 }
 
 /*
@@ -388,7 +387,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetMiterLimit, TestSize.L
  */
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetMiterLimit, TestSize.Level1)
 {
-    OH_Drawing_PenSetMiterLimit(nullptr,0);
+    OH_Drawing_PenSetMiterLimit(nullptr, 0);
 }
 
 /*
@@ -399,7 +398,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetMiterLimit, TestSize.L
  */
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetCap, TestSize.Level1)
 {
-    OH_Drawing_PenSetCap(nullptr,OH_Drawing_PenLineCapStyle::LINE_FLAT_CAP);
+    OH_Drawing_PenSetCap(nullptr, OH_Drawing_PenLineCapStyle::LINE_FLAT_CAP);
 }
 
 /*
@@ -421,7 +420,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetJoin001, TestSize.Leve
  */
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetJoin001, TestSize.Level1)
 {
-    OH_Drawing_PenSetJoin(nullptr,OH_Drawing_PenLineJoinStyle::LINE_MITER_JOIN);
+    OH_Drawing_PenSetJoin(nullptr, OH_Drawing_PenLineJoinStyle::LINE_MITER_JOIN);
 }
 
 /*
@@ -432,7 +431,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetJoin001, TestSize.Leve
  */
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetShaderEffect001, TestSize.Level1)
 {
-    OH_Drawing_PenSetShaderEffect(nullptr,nullptr);
+    OH_Drawing_PenSetShaderEffect(nullptr, nullptr);
 }
 
 /*
@@ -445,11 +444,11 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetShaderEffect002, TestS
 {
     OH_Drawing_Pen* pen = OH_Drawing_PenCreate();
     OH_Drawing_Point* point = OH_Drawing_PointCreate(100, 100); // point 100,100
-    uint32_t colors[] = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF};
-    float pos[] = {0, 0.5, 1.0};
-    OH_Drawing_ShaderEffect* effect = OH_Drawing_ShaderEffectCreateRadialGradient(point, 100, colors,
-            pos, 3, OH_Drawing_TileMode::CLAMP);
-    OH_Drawing_PenSetShaderEffect(pen,effect);
+    uint32_t colors[] = { 0xFFFF0000, 0xFF00FF00, 0xFF0000FF };
+    float pos[] = { 0, 0.5, 1.0 };
+    OH_Drawing_ShaderEffect* effect =
+        OH_Drawing_ShaderEffectCreateRadialGradient(point, 100, colors, pos, 3, OH_Drawing_TileMode::CLAMP);
+    OH_Drawing_PenSetShaderEffect(pen, effect);
     OH_Drawing_ShaderEffectDestroy(effect);
     OH_Drawing_PenDestroy(pen);
 }
@@ -462,7 +461,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetShaderEffect002, TestS
  */
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetShadowLayer001, TestSize.Level1)
 {
-    OH_Drawing_PenSetShadowLayer(nullptr,nullptr);
+    OH_Drawing_PenSetShadowLayer(nullptr, nullptr);
 }
 
 /*
@@ -478,8 +477,8 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetShadowLayer002, TestSi
     float x = 100;
     float y = 100;
     uint32_t color = 0xFF00FF00;
-    OH_Drawing_ShadowLayer* shadowLayer = OH_Drawing_ShadowLayerCreate(blurRadius, x, y, color);            
-    OH_Drawing_PenSetShadowLayer(pen,shadowLayer);
+    OH_Drawing_ShadowLayer* shadowLayer = OH_Drawing_ShadowLayerCreate(blurRadius, x, y, color);
+    OH_Drawing_PenSetShadowLayer(pen, shadowLayer);
     OH_Drawing_ShadowLayerDestroy(shadowLayer);
     OH_Drawing_PenDestroy(pen);
 }
@@ -492,7 +491,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetShadowLayer002, TestSi
  */
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetFilter001, TestSize.Level1)
 {
-    OH_Drawing_PenSetFilter(nullptr,nullptr);
+    OH_Drawing_PenSetFilter(nullptr, nullptr);
 }
 
 /*
@@ -504,7 +503,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetFilter001, TestSize.Le
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetFilter002, TestSize.Level1)
 {
     OH_Drawing_Pen* pen = OH_Drawing_PenCreate();
-    OH_Drawing_PenSetFilter(pen,nullptr);
+    OH_Drawing_PenSetFilter(pen, nullptr);
     OH_Drawing_PenDestroy(pen);
 }
 
@@ -518,7 +517,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetFilter003, TestSize.Le
 {
     OH_Drawing_Pen* pen = OH_Drawing_PenCreate();
     OH_Drawing_Filter* filter = OH_Drawing_FilterCreate();
-    OH_Drawing_PenSetFilter(pen,filter);
+    OH_Drawing_PenSetFilter(pen, filter);
     OH_Drawing_FilterDestroy(filter);
     OH_Drawing_PenDestroy(pen);
 }
@@ -531,7 +530,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetFilter003, TestSize.Le
  */
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetFilter001, TestSize.Level1)
 {
-    OH_Drawing_PenGetFilter(nullptr,nullptr);
+    OH_Drawing_PenGetFilter(nullptr, nullptr);
 }
 
 /*
@@ -543,7 +542,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetFilter001, TestSize.Le
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetFilter002, TestSize.Level1)
 {
     OH_Drawing_Pen* pen = OH_Drawing_PenCreate();
-    OH_Drawing_PenGetFilter(pen,nullptr);
+    OH_Drawing_PenGetFilter(pen, nullptr);
     OH_Drawing_PenDestroy(pen);
 }
 
@@ -557,7 +556,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetFilter003, TestSize.Le
 {
     OH_Drawing_Pen* pen = OH_Drawing_PenCreate();
     OH_Drawing_Filter* filter = OH_Drawing_FilterCreate();
-    OH_Drawing_PenGetFilter(pen,filter);
+    OH_Drawing_PenGetFilter(pen, filter);
     OH_Drawing_FilterDestroy(filter);
     OH_Drawing_PenDestroy(pen);
 }
