@@ -64,7 +64,7 @@ static bool CheckEglExtension(const char* extensions, const char* extension)
     return false;
 }
 
-static EGLDisplay GetPlatformEglDisplay(EGLenum platform, void* native_display, const EGLint* attrib_list)
+static EGLDisplay GetPlatformEglDisplay(EGLenum platform, void* nativeDisplay, const EGLint* attribList)
 {
     static GetPlatformDisplayExt eglGetPlatformDisplayExt = NULL;
 
@@ -78,10 +78,10 @@ static EGLDisplay GetPlatformEglDisplay(EGLenum platform, void* native_display, 
     }
 
     if (eglGetPlatformDisplayExt) {
-        return eglGetPlatformDisplayExt(platform, native_display, attrib_list);
+        return eglGetPlatformDisplayExt(platform, nativeDisplay, attribList);
     }
 
-    return eglGetDisplay((EGLNativeDisplayType)native_display);
+    return eglGetDisplay((EGLNativeDisplayType)nativeDisplay);
 }
 
 class NativeImageTest : public testing::Test {
