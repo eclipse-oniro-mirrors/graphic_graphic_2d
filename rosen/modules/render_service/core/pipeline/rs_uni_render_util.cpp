@@ -1413,11 +1413,13 @@ void RSUniRenderUtil::LayerScaleFit(RSSurfaceRenderNode& node)
     uint32_t newHeightDstWidth = newHeight * dstWidth;
 
     if (newWidthDstHeight > newHeightDstWidth) {
+        uint32_t srcRectWidth = newWidth;
         newWidth = dstWidth;
-        newHeight = srcRect.height_ * newWidth / srcRect.width_;
+        newHeight = newHeight * newWidth / srcRectWidth;
     } else if (newWidthDstHeight < newHeightDstWidth) {
+        uint32_t srcRectHeight = newHeight;
         newHeight = dstHeight;
-        newWidth = srcRect.width_ * newHeight / srcRect.height_;
+        newWidth = newWidth * newHeight / srcRectHeight;
     } else {
         newHeight = dstHeight;
         newWidth = dstWidth;
@@ -1426,11 +1428,11 @@ void RSUniRenderUtil::LayerScaleFit(RSSurfaceRenderNode& node)
     if (newWidth < dstWidth) {
         uint32_t dw = dstWidth - newWidth;
         auto halfdw = dw / 2;
-        dstRect.left_ += halfdw;
+        dstRect.left_ += static_cast<int32_t>(halfdw);
     } else if (newHeight < dstHeight) {
         uint32_t dh = dstHeight - newHeight;
         auto halfdh = dh / 2;
-        dstRect.top_ += halfdh;
+        dstRect.top_ += static_cast<int32_t>(halfdh);
     }
     dstRect.height_ = static_cast<int32_t>(newHeight);
     dstRect.width_ = static_cast<int32_t>(newWidth);
