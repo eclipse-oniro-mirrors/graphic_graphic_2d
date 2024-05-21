@@ -1772,6 +1772,9 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
     } else {
         processor->PostProcess();
     }
+
+    auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
+    hgmCore.SetDirectCompositionFlag(true);
     RS_LOGD("RSMainThread::DoDirectComposition end");
     return true;
 }
