@@ -324,9 +324,6 @@ std::vector<LineMetrics> Typography::GetLineMetrics()
             line.endIndex = spLineMetrics.endIndex;
             std::vector<TextStyle> lineMetricsStyles;
             for (const auto& [index, styleMtrics] : spLineMetrics.runMetrics) {
-                    "  spLineMetrics.runMetrics.size() = %zu index = %zu ",
-                     spLineMetrics.runMetrics.size(), index);
-
                 lineMetricsStyles.push_back(Convert(*styleMtrics.textStyle));
                 line.runMetrics.emplace(std::piecewise_construct, std::forward_as_tuple(index),
                     std::forward_as_tuple(&lineMetricsStyles.back(), styleMtrics.fontMetrics));
@@ -370,13 +367,9 @@ bool Typography::GetLineMetricsAt(int lineNumber, LineMetrics* lineMetrics)
     lineMetrics->endIndex = skLineMetrics.fEndIndex;
     lineMetrics->lineNumber = skLineMetrics.fLineNumber;
     lineMetrics->baseline = skLineMetrics.fBaseline;
-    LOGE("yqf-C++: skLineMetrics.fLineNumber is  %{public}zu ", skLineMetrics.fLineNumber);
-    LOGE("yqf-C++: skLineMetrics.fBaseline is %{public}f", skLineMetrics.fBaseline);
     std::vector<TextStyle> lineMetricsStyles;
     for (const auto& [index, styleMtrics] : skLineMetrics.fLineMetrics) {
-        LOGE("yqf-C++: GetLineMetricsAt for loop  is in");
         lineMetricsStyles.push_back(SkStyleToTextStyle(*styleMtrics.text_style));
-        // lineMetricsStyles_.push_back(reinterpret_cast<void*>(styleMtrics.text_style));
         lineMetrics->runMetrics.emplace(std::piecewise_construct, std::forward_as_tuple(index),
         std::forward_as_tuple(&lineMetricsStyles.back(), styleMtrics.font_metrics));
     }

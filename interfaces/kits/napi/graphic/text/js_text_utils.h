@@ -484,7 +484,7 @@ inline napi_value ConvertMapToNapiMap(napi_env env, const std::map<size_t, RunMe
     napi_value result;
     napi_status status = napi_create_object(env, &result);
     if (status != napi_ok) {
-        ROSEN_LOGE("yqf-Napi: ConvertMapToNapiMap napi_create_object failed");
+        ROSEN_LOGE("ConvertMapToNapiMap create napi object failed");
         return nullptr;
     }
     napi_value jsSize;
