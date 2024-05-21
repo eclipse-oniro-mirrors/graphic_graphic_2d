@@ -2166,7 +2166,7 @@ void RSNode::AddChild(SharedPtr child, int index)
     childId = child->GetHierarchyCommandNodeId();
     std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeAddChild>(id_, childId, index);
     transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), id_);
-    if (GetType() == RSUINodeType::SURFACE_NODE) {
+    if (child->GetType() == RSUINodeType::SURFACE_NODE) {
         ROSEN_LOGI("RSNode::AddChild, NodeId: %{public}" PRIu64 ", ChildId: %{public}" PRIu64, id_, childId);
         RS_TRACE_NAME_FMT("RSNode::AddChild, NodeId: %" PRIu64 ", ChildId: %" PRIu64, id_, childId);
     }
