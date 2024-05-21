@@ -1389,7 +1389,7 @@ uint32_t RSMainThread::GetDynamicRefreshRate() const
 
 void RSMainThread::PurgeCacheBetweenFrames(ClearMemoryMoment moment)
 {
-    if(!RSSystemProperties::GetReleaseResourceEnabled()){
+    if (!RSSystemProperties::GetReleaseResourceEnabled()) {
         return;
     }
     RS_TRACE_NAME_FMT("MEM PurgeCacheBetweenFrames add task");
