@@ -72,6 +72,8 @@ static int64_t g_transactionTimeCorrection = 0;
 
 static const size_t PARCEL_MAX_CAPACITY = 234 * 1024 * 1024;
 
+bool RSProfiler::testing_ = false;
+
 constexpr size_t GetParcelMaxCapacity()
 {
     return PARCEL_MAX_CAPACITY;
@@ -80,7 +82,7 @@ constexpr size_t GetParcelMaxCapacity()
 bool RSProfiler::IsEnabled()
 {
     static const bool ENABLED = RSSystemProperties::GetProfilerEnabled();
-    return ENABLED;
+    return ENABLED || testing_;
 }
 
 uint32_t RSProfiler::GetCommandCount()

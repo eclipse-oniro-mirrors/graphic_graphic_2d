@@ -311,6 +311,8 @@ private:
     static void TestSaveFrame(const ArgList& args);
     static void TestLoadFrame(const ArgList& args);
     static void TestSwitch(const ArgList& args);
+    // set to true in DT only
+    RSB_EXPORT static bool testing_;
 };
 
 } // namespace OHOS::Rosen
