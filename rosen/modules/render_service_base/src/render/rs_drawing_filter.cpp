@@ -54,6 +54,7 @@ RSDrawingFilter::RSDrawingFilter(std::shared_ptr<RSShaderFilter> shaderFilter)
     hash_ = shaderFilter->Hash();
     shaderFilters_.reserve(SHADER_FILTERS_SIZE);
     shaderFilters_.emplace_back(shaderFilter);
+    imageFilterHash_ = static_cast<uint32_t>(0);
 }
 
 RSDrawingFilter::RSDrawingFilter(std::shared_ptr<Drawing::ImageFilter> imageFilter,
