@@ -162,7 +162,7 @@ constexpr uint32_t CAL_NODE_PREFERRED_FPS_LIMIT = 50;
 constexpr uint32_t EVENT_SET_HARDWARE_UTIL = 100004;
 constexpr const char* WALLPAPER_VIEW = "WallpaperView";
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
-constexpr const char* CLEAR_GPU_CACHE_IN_FRAME = "ClearGpuCacheEveryFrame";
+constexpr const char* PURGE_CACHE_BETWEEN_FRAMES = "PurgeCacheBetweenFrames";
 constexpr const char* MEM_MGR = "MemMgr";
 constexpr const char* DESKTOP_NAME_FOR_ROTATION = "SCBDesktop";
 constexpr const char* CAPTURE_WINDOW_NAME = "CapsuleWindow";
@@ -1406,9 +1406,9 @@ void RSMainThread::PurgeCacheBetweenFrames(ClearMemoryMoment moment)
             RS_TRACE_NAME_FMT("PurgeCacheBetweenFrames");
             std::set<int> protectedPidSet = { GetDesktopPidForRotationScene() };
             MemoryManager::PurgeCacheBetweenFrames(grContext, true, this->exitedPidSet_, protectedPidSet);
-            RemoveTask(CLEAR_GPU_CACHE_IN_FRAME);
+            RemoveTask(PURGE_CACHE_BETWEEN_FRAMES);
         },
-        CLEAR_GPU_CACHE_IN_FRAME, 0, AppExecFwk::EventQueue::Priority::LOW);
+        PURGE_CACHE_BETWEEN_FRAMES, 0, AppExecFwk::EventQueue::Priority::LOW);
 }
 
 void RSMainThread::ClearMemoryCache(ClearMemoryMoment moment, bool deeply, pid_t pid)
@@ -2401,8 +2401,7 @@ void RSMainThread::OnVsync(uint64_t timestamp, void* data)
 #endif
     ProcessScreenHotPlugEvents();
     RSJankStatsOnVsyncEnd(onVsyncStartTime, onVsyncStartTimeSteady, onVsyncStartTimeSteadyFloat);
-    if (RSSystemProperties::GetPurgeResourcesEveryEnabled()) {
-        // clear memory after every vsync
+    if (RSSystemProperties::GetPurgeBetweenFramesEnabled()) {
         PurgeCacheBetweenFrames(context_->clearMoment_);
     }
     isOnVsync_.store(false);

@@ -123,7 +123,6 @@ void MemoryManager::PurgeCacheBetweenFrames(Drawing::GPUContext* gpuContext, boo
         RS_LOGE("PurgeCacheBetweenFrames fail, gpuContext is nullptr");
         return;
     }
-    RS_TRACE_NAME_FMT("PurgeCacheBetweenFrames exitedPidSet size: %d",exitedPidSet.size());
     gpuContext->PurgeCacheBetweenFrames(scratchResourceOnly, exitedPidSet, protectedPidSet);
 #endif
 }

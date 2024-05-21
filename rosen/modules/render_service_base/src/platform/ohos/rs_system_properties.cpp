@@ -796,7 +796,7 @@ bool RSSystemProperties::GetBlurExtraFilterEnabled()
     return blurExtraFilterEnabled;
 }
 
-bool RSSystemProperties::GetPurgeResourcesEveryEnabled()
+bool RSSystemProperties::GetPurgeBetweenFramesEnabled()
 {
     static bool purgeResourcesEveryEnabled =
         (std::atoi(system::GetParameter("persist.sys.graphic.mem.purge_between_frames_enabled", "0").c_str()) != 0);
