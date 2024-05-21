@@ -85,7 +85,6 @@ void RSEffectRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         auto effectData = offscreenCanvas->GetEffectData();
         effectData->cachedRect_.Offset(currentRect.GetLeft(), currentRect.GetTop());
         paintFilterCanvas->SetEffectData(effectData);
-        RSRenderNodeDrawable::RenderTraceDebug();
     }
 
     RSRenderNodeDrawableAdapter::DrawImpl(canvas, bounds, drawCmdIndex_.childrenIndex_);

@@ -282,7 +282,6 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
 
     RSRenderParams::SetParentSurfaceMatrix(parentSurfaceMatrix);
-    RSRenderNodeDrawable::RenderTraceDebug();
 }
 
 void RSSurfaceRenderNodeDrawable::MergeDirtyRegionBelowCurSurface(RSRenderThreadParams* uniParam,

@@ -68,7 +68,6 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RSRenderNodeDrawable::OnDraw(canvas);
     }
     RSRenderNodeDrawable::ProcessedNodeCountInc();
-    RSRenderNodeDrawable::RenderTraceDebug();
 }
 
 /*

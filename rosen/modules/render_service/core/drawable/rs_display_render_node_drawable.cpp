@@ -626,7 +626,6 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     displayNodeSp->SetDamageRegion(damageRegionrects);
     processor->ProcessDisplaySurface(*displayNodeSp);
     processor->PostProcess();
-    RSRenderNodeDrawable::RenderTraceDebug();
     RS_TRACE_END();
 }
 
