@@ -67,7 +67,7 @@ bool CheckScbReadyToDraw(const std::shared_ptr<RSBaseRenderNode>& child)
 bool IsFirstFrameReadyToDraw(RSSurfaceRenderNode& node)
 {
     auto sortedChildren = node.GetSortedChildren();
-    if (node.IsScbScreen()) {
+    if (node.IsScbScreen() || node.IsSCBNode()) {
         for (const auto& child : *sortedChildren) {
             if (CheckScbReadyToDraw(child)) {
                 return true;
@@ -738,6 +738,7 @@ void RSSurfaceRenderNode::SetForceHardware(bool flag)
         originalDstRect_ = dstRect_;
     }
     isForceHardware_ = isForceHardwareByUser_ && flag;
+    SetContentDirty();
 }
 
 void RSSurfaceRenderNode::SetSecurityLayer(bool isSecurityLayer)
@@ -1272,7 +1273,7 @@ WINDOW_LAYER_INFO_TYPE RSSurfaceRenderNode::GetVisibleLevelForWMS(RSVisibleLevel
     return WINDOW_LAYER_INFO_TYPE::SEMI_VISIBLE;
 }
 
-bool RSSurfaceRenderNode::IsNeedSetVSync()
+bool RSSurfaceRenderNode::IsSCBNode()
 {
     return GetName().substr(0, SCB_NODE_NAME_PREFIX_LENGTH) != "SCB";
 }
@@ -1345,7 +1346,7 @@ void RSSurfaceRenderNode::SetVisibleRegionRecursive(const Occlusion::Region& reg
 
     // collect visible changed pid
     if (qosPidCal_ && GetType() == RSRenderNodeType::SURFACE_NODE && !isSystemAnimatedScenes) {
-        visMapForVsyncRate[GetId()] = !IsNeedSetVSync() ? RSVisibleLevel::RS_ALL_VISIBLE : visibleLevel;
+        visMapForVsyncRate[GetId()] = !IsSCBNode() ? RSVisibleLevel::RS_ALL_VISIBLE : visibleLevel;
     }
 
     visibleRegionForCallBack_ = region;
@@ -1930,10 +1931,10 @@ void RSSurfaceRenderNode::CheckAndUpdateOpaqueRegion(const RectI& screeninfo, co
     auto absRect = GetDstRect().IntersectRect(GetOldDirtyInSurface());
     Vector4f tmpCornerRadius;
     Vector4f::Max(GetWindowCornerRadius(), GetGlobalCornerRadius(), tmpCornerRadius);
-    Vector4<int> cornerRadius(static_cast<int>(std::ceil(tmpCornerRadius.x_)),
-                                static_cast<int>(std::ceil(tmpCornerRadius.y_)),
-                                static_cast<int>(std::ceil(tmpCornerRadius.z_)),
-                                static_cast<int>(std::ceil(tmpCornerRadius.w_)));
+    Vector4<int> cornerRadius(static_cast<int>(std::round(tmpCornerRadius.x_)),
+                                static_cast<int>(std::round(tmpCornerRadius.y_)),
+                                static_cast<int>(std::round(tmpCornerRadius.z_)),
+                                static_cast<int>(std::round(tmpCornerRadius.w_)));
 
     bool ret = opaqueRegionBaseInfo_.screenRect_ == screeninfo &&
         opaqueRegionBaseInfo_.absRect_ == absRect &&
@@ -2479,6 +2480,7 @@ void RSSurfaceRenderNode::UpdatePartialRenderParams()
     }
     if (IsMainWindowType()) {
         surfaceParams->SetVisibleRegion(visibleRegion_);
+        surfaceParams->SetVisibleRegionInVirtual(visibleRegionInVirtual_);
         surfaceParams->SetIsParentScaling(isParentScaling_);
     }
     surfaceParams->absDrawRect_ = GetAbsDrawRect();

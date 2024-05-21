@@ -15,14 +15,14 @@
 
 #include "pipeline/rs_effect_render_node.h"
 
-#include "memory/rs_memory_track.h"
-
 #include "common/rs_obj_abs_geometry.h"
+#include "common/rs_optional_trace.h"
+#include "memory/rs_memory_track.h"
+#include "params/rs_effect_render_params.h"
 #include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
 #include "property/rs_properties_painter.h"
 #include "visitor/rs_node_visitor.h"
-#include "platform/common/rs_system_properties.h"
-#include "common/rs_optional_trace.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -146,12 +146,12 @@ void RSEffectRenderNode::UpdateFilterCacheWithSelfDirty()
         ROSEN_LOGE("RSEffectRenderNode::UpdateFilterCacheManagerWithCacheRegion filter cache is disabled.");
         return;
     }
-    if (IsForceClearOrUseFilterCache(false)) {
+    auto filterDrawable = GetFilterDrawable(false);
+    if (filterDrawable == nullptr || IsForceClearOrUseFilterCache(filterDrawable)) {
         return;
     }
-    auto filterDrawable = GetFilterDrawable(false);
     // clear filter cache if no child marked useeffect
-    if (filterDrawable != nullptr && !ChildHasVisibleEffect() && lastFrameHasVisibleEffect_) {
+    if (!ChildHasVisibleEffect() && lastFrameHasVisibleEffect_) {
         RS_OPTIONAL_TRACE_NAME_FMT("RSEffectRenderNode[%llu]::UpdateFilterCacheWithSelfDirty "
             "hasVisibleEffect:%d", GetId(), ChildHasVisibleEffect());
         filterDrawable->MarkFilterForceClearCache();
@@ -167,18 +167,18 @@ void RSEffectRenderNode::UpdateFilterCacheWithSelfDirty()
 }
 
 void RSEffectRenderNode::MarkFilterCacheFlags(std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable,
-    RSDirtyRegionManager& dirtyManager, bool isForeground)
+    RSDirtyRegionManager& dirtyManager, bool needRequestNextVsync)
 {
     preStaticStatus_ = IsStaticCached();
     lastFrameHasVisibleEffect_ = ChildHasVisibleEffect();
-    if (filterDrawable == nullptr || IsForceClearOrUseFilterCache(isForeground)) {
+    if (IsForceClearOrUseFilterCache(filterDrawable)) {
         return;
     }
     // use for skip-frame when screen rotation
     if (isRotationChanged_) {
         filterDrawable->MarkRotationChanged();
     }
-    RSRenderNode::MarkFilterCacheFlags(filterDrawable, dirtyManager, isForeground);
+    RSRenderNode::MarkFilterCacheFlags(filterDrawable, dirtyManager, needRequestNextVsync);
 }
 
 bool RSEffectRenderNode::CheckFilterCacheNeedForceSave()
@@ -222,6 +222,41 @@ uint64_t RSEffectRenderNode::GetCurrentAttachedScreenId() const
 void RSEffectRenderNode::SetFoldStatusChanged(bool foldStatusChanged)
 {
     foldStatusChanged_ = foldStatusChanged;
+}
+
+void RSEffectRenderNode::InitRenderParams()
+{
+    stagingRenderParams_ = std::make_unique<RSEffectRenderParams>(GetId());
+    DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(shared_from_this());
+    if (renderDrawable_ == nullptr) {
+        RS_LOGE("RSEffectRenderNode::InitRenderParams failed");
+        return;
+    }
+}
+
+void RSEffectRenderNode::MarkFilterHasEffectChildren()
+{
+    // now only background filter need to mark effect child
+    if (GetRenderProperties().GetBackgroundFilter()) {
+        auto filterDrawable = GetFilterDrawable(false);
+        if (filterDrawable == nullptr) {
+            return;
+        }
+        filterDrawable->MarkHasEffectChildren();
+    }
+    if (!RSProperties::FilterCacheEnabled) {
+        UpdateDirtySlotsAndPendingNodes(RSDrawableSlot::BACKGROUND_FILTER);
+    }
+}
+
+void RSEffectRenderNode::OnFilterCacheStateChanged()
+{
+    auto filterDrawable = GetFilterDrawable(false);
+    auto effectParams = static_cast<RSEffectRenderParams*>(stagingRenderParams_.get());
+    if (filterDrawable == nullptr || effectParams == nullptr) {
+        return;
+    }
+    effectParams->SetCacheValid(filterDrawable->IsFilterCacheValid());
 }
 } // namespace Rosen
 } // namespace OHOS

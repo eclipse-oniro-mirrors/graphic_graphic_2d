@@ -940,6 +940,7 @@ void RSScreenManager::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status
         }
         mainThread->PostTask([mainThread]() {
             mainThread->SetDirtyFlag();
+            mainThread->SetScreenPowerOnChanged(true);
         });
         if (screenPowerStatus_.count(id) == 0 ||
             screenPowerStatus_[id] == ScreenPowerStatus::POWER_STATUS_OFF ||
@@ -1105,8 +1106,8 @@ ScreenInfo RSScreenManager::QueryScreenInfo(ScreenId id) const
     info.id = id;
     info.width = screen->Width();
     info.height = screen->Height();
-    info.phyWidth = screen->PhyWidth();
-    info.phyHeight = screen->PhyHeight();
+    info.phyWidth = screen->PhyWidth() ? screen->PhyWidth() : screen->Width();
+    info.phyHeight = screen->PhyHeight() ? screen->PhyHeight() : screen->Height();
     auto ret = screen->GetScreenColorGamut(info.colorGamut);
     if (ret != StatusCode::SUCCESS) {
         info.colorGamut = COLOR_GAMUT_SRGB;

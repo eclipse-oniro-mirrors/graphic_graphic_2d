@@ -470,18 +470,19 @@ public:
     OutOfParentType GetOutOfParent() const;
 
     void UpdateEffectRegion(std::optional<Drawing::RectI>& region, bool isForced = false);
-    void MarkFilterHasEffectChildren();
+    virtual void MarkFilterHasEffectChildren() {};
+    virtual void OnFilterCacheStateChanged() {};
 
     // for blur filter cache
     virtual void CheckBlurFilterCacheNeedForceClearOrSave(bool rotationChanged = false);
     void UpdateLastFilterCacheRegion();
     void UpdateFilterRegionInSkippedSubTree(RSDirtyRegionManager& dirtyManager,
-        const RSRenderNode& subTreeRoot, RectI& filterRect, const std::optional<RectI>& clipRect);
+        const RSRenderNode& subTreeRoot, RectI& filterRect, const RectI& clipRect);
     void MarkFilterStatusChanged(bool isForeground, bool isFilterRegionChanged);
     virtual void UpdateFilterCacheWithBelowDirty(RSDirtyRegionManager& dirtyManager, bool isForeground = false);
     virtual void UpdateFilterCacheWithSelfDirty();
     bool IsBackgroundInAppOrNodeSelfDirty() const;
-    void PostPrepareForBlurFilterNode(RSDirtyRegionManager& dirtyManager);
+    void PostPrepareForBlurFilterNode(RSDirtyRegionManager& dirtyManager, bool needRequestNextVsync);
     void CheckFilterCacheAndUpdateDirtySlots(
         std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable, RSDrawableSlot slot);
     bool IsFilterCacheValid() const;
@@ -749,12 +750,14 @@ protected:
     bool clipAbsDrawRectChange_ = false;
 
     std::shared_ptr<DrawableV2::RSFilterDrawable> GetFilterDrawable(bool isForeground) const;
-    virtual void MarkFilterCacheFlags(std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable,
-        RSDirtyRegionManager& dirtyManager, bool isForeground = false);
-    bool IsForceClearOrUseFilterCache(bool isForeground);
+    virtual void MarkFilterCacheFlags(
+        std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable, RSDirtyRegionManager& dirtyManager,
+        bool needRequestNextVsync);
+    bool IsForceClearOrUseFilterCache(std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable);
     std::atomic<bool> isStaticCached_ = false;
     bool lastFrameHasVisibleEffect_ = false;
     RectI filterRegion_;
+    void UpdateDirtySlotsAndPendingNodes(RSDrawableSlot slot);
 
 private:
     NodeId id_;
@@ -969,7 +972,6 @@ private:
     RSDrawable::Vec drawableVec_;
 
     // for blur cache
-    void UpdateDirtySlotsAndPendingNodes(RSDrawableSlot slot);
     RectI lastFilterRegion_;
     bool backgroundFilterRegionChanged_ = false;
     bool backgroundFilterInteractWithDirty_ = false;

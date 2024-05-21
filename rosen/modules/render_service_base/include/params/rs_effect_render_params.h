@@ -13,9 +13,24 @@
  * limitations under the License.
  */
 
-#include "params/rs_canvas_render_params.h"
+#ifndef RENDER_SERVICE_BASE_PARAMS_RS_EFFECT_RENDER_PARAMS_H
+#define RENDER_SERVICE_BASE_PARAMS_RS_EFFECT_RENDER_PARAMS_H
+
+#include "params/rs_render_params.h"
 
 namespace OHOS::Rosen {
-RSCanvasRenderParams::RSCanvasRenderParams(NodeId id) : RSRenderParams(id) {}
+class RSB_EXPORT RSEffectRenderParams : public RSRenderParams {
+public:
+    explicit RSEffectRenderParams(NodeId id);
+    ~RSEffectRenderParams() override = default;
+    void OnSync(const std::unique_ptr<RSRenderParams>& target) override;
 
+    void SetCacheValid(bool valid);
+    bool GetCacheValid() const;
+
+private:
+    bool cacheValid_ = false;
+    bool hasEffectChildren_ = false;
+};
 } // namespace OHOS::Rosen
+#endif // RENDER_SERVICE_BASE_PARAMS_RS_EFFECT_RENDER_PARAMS_H
