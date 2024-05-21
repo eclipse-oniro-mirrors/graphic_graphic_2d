@@ -34,6 +34,7 @@ void RSRootRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
     RS_LOGD("RSRootRenderNodeDrawable::OnDraw node: %{public}" PRIu64, nodeId_);
     RSCanvasRenderNodeDrawable::OnDraw(canvas);
+    RSRenderNodeDrawable::RenderTraceDebug();
 }
 
 void RSRootRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)

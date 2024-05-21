@@ -49,6 +49,7 @@ public:
     void Draw(Drawing::Canvas& canvas) override;
     virtual void OnDraw(Drawing::Canvas& canvas);
     virtual void OnCapture(Drawing::Canvas& canvas);
+    void RenderTraceDebug();
 
     // deprecated
     inline std::shared_ptr<const RSRenderNode> GetRenderNode()

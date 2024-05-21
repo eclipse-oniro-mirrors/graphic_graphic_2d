@@ -22,6 +22,7 @@
 #include "pipeline/rs_uni_render_thread.h"
 #include "pipeline/rs_uni_render_util.h"
 #include "platform/common/rs_log.h"
+#include "property/rs_property_trace.h"
 #include "rs_trace.h"
 
 namespace OHOS::Rosen::DrawableV2 {
@@ -75,6 +76,18 @@ void RSRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     Drawing::Rect bounds = GetRenderParams() ? GetRenderParams()->GetFrameRect() : Drawing::Rect(0, 0, 0, 0);
 
     DrawAll(canvas, bounds);
+}
+
+void RSRenderNodeDrawable::RenderTraceDebug()
+{
+    if (RSSystemProperties::GetRenderNodeTraceEnabled()) {
+        auto node = GetRenderNode();
+        if (node) {
+            RSPropertyTrace::GetInstance().PropertiesDisplayByTrace(node->GetId(), node->GetRenderProperties());
+            RSPropertyTrace::GetInstance().TracePropertiesByNodeName(
+                node->GetId(), node->GetNodeName(), node->GetRenderProperties());
+        }
+    }
 }
 
 /*

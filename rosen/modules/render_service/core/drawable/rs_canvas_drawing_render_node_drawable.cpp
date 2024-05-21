@@ -110,6 +110,7 @@ void RSCanvasDrawingRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     auto nodeSp = std::const_pointer_cast<RSRenderNode>(renderNode);
     auto canvasDrawingRenderNode = std::static_pointer_cast<RSCanvasDrawingRenderNode>(nodeSp);
     canvasDrawingRenderNode->SetDrawCmdListsVisited(true);
+    RSRenderNodeDrawable::RenderTraceDebug();
 }
 
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
