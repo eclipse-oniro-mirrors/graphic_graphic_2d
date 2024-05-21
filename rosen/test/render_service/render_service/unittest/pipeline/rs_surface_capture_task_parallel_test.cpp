@@ -15,9 +15,9 @@
 
 #include <gtest/gtest.h>
 
-#include "pipeline/rs_surface_capture_task_parallel.h"
-#include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_context.h"
+#include "pipeline/rs_main_thread.h"
+#include "pipeline/rs_surface_capture_task_parallel.h"
 #include "pipeline/rs_surface_render_node.h"
 
 using namespace testing;
