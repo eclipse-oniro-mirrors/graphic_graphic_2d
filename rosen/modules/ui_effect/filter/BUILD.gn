@@ -45,8 +45,6 @@ ohos_shared_library("uieffect_filter") {
 
   deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
 
-  external_deps = [ "c_utils:utils" ]
-
   cflags_cc = [ "-std=c++17" ]
 
   part_name = "graphic_2d"
