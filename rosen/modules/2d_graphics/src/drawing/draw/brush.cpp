@@ -175,7 +175,7 @@ bool Brush::AsBlendMode()
     return StaticFactory::AsBlendMode(*this);
 }
 
-bool Brush::IsHdr()
+bool Brush::IsHdr() const
 {
     return isHdr_;
 }

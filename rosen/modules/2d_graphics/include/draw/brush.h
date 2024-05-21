@@ -247,7 +247,7 @@ public:
      * @brief Set HDR state.
      * @param bool HDR state.
      */
-    void SetHdr();
+    void SetHdr(bool isHdr);
 
     friend DRAWING_API bool operator==(const Brush& b1, const Brush& b2);
     friend DRAWING_API bool operator!=(const Brush& b1, const Brush& b2);
