@@ -210,7 +210,7 @@ public:
      * @param exitedPidSet          GPU resource of exited PidSet used to purge unlocked resources.
      * @param protectedPidSet       GPU resource of protectedPidSet will not be purged.
      */
-    void PurgeResourcesEveryFrame(bool scratchResourcesOnly, const std::set<pid_t>& exitedPidSet,
+    void PurgeCacheBetweenFrames(bool scratchResourcesOnly, const std::set<pid_t>& exitedPidSet,
         const std::set<pid_t>& protectedPidSet);
 
     /**

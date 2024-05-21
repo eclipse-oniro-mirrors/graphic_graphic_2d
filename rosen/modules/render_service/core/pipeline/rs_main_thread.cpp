@@ -1405,7 +1405,7 @@ void RSMainThread::PurgeCacheBetweenFrames(ClearMemoryMoment moment)
             }
             RS_TRACE_NAME_FMT("PurgeCacheBetweenFrames");
             std::set<int> protectedPidSet = { GetDesktopPidForRotationScene() };
-            MemoryManager::PurgeResourcesEveryFrame(grContext, true, this->exitedPidSet_, protectedPidSet);
+            MemoryManager::PurgeCacheBetweenFrames(grContext, true, this->exitedPidSet_, protectedPidSet);
             RemoveTask(CLEAR_GPU_CACHE_IN_FRAME);
         },
         CLEAR_GPU_CACHE_IN_FRAME, 0, AppExecFwk::EventQueue::Priority::LOW);
