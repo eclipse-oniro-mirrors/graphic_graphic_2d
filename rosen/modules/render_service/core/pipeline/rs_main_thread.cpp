@@ -3002,7 +3002,6 @@ void RSMainThread::CountMem(std::vector<MemoryGraphic>& mems)
         MemoryManager::CountMemory(pids,
             RSUniRenderThread::Instance().GetRenderEngine()->GetRenderContext()->GetDrGPUContext(), mems);
     });
-
 #endif
 }
 
