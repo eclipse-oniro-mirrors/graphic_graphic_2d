@@ -307,8 +307,8 @@ HWTEST_F(SkiaSurfaceTest, GetCanvas001, TestSize.Level1)
     sk_sp<SkSurface> skSurface = SkSurface::MakeRasterN32Premul(100, 100);
     SkiaSurface skiaSurface;
     skiaSurface.SetSkSurface(skSurface);
-    auto skia = skiaSurface.GetCanvas();
-    ASSERT_TRUE(skia != nullptr);
+    auto canvas = skiaSurface.GetCanvas();
+    ASSERT_TRUE(canvas != nullptr);
 }
 
 /**
@@ -322,12 +322,12 @@ HWTEST_F(SkiaSurfaceTest, GetImageSnapshot001, TestSize.Level1)
     sk_sp<SkSurface> skSurface = SkSurface::MakeRasterN32Premul(100, 100);
     SkiaSurface skiaSurface;
     skiaSurface.SetSkSurface(skSurface);
-    auto skia = skiaSurface.GetImageSnapshot();
-    ASSERT_TRUE(skia != nullptr);
+    auto image = skiaSurface.GetImageSnapshot();
+    ASSERT_TRUE(image != nullptr);
 }
 
 /**
- * @tc.name: GetImageSnapshot001
+ * @tc.name: GetImageSnapshot002
  * @tc.desc: Test GetImageSnapshot
  * @tc.type: FUNC
  * @tc.require:I91EDT
@@ -342,8 +342,8 @@ HWTEST_F(SkiaSurfaceTest, GetImageSnapshot002, TestSize.Level1)
     RectI rectI;
     rectI = imageInfo.GetBound();
     skiaSurface.SetSkSurface(skSurface);
-    auto skia = skiaSurface.GetImageSnapshot(rectI);
-    ASSERT_TRUE(skia != nullptr);
+    auto image = skiaSurface.GetImageSnapshot(rectI);
+    ASSERT_TRUE(image != nullptr);
 }
 
 /**
@@ -357,8 +357,8 @@ HWTEST_F(SkiaSurfaceTest, GetBackendTexture001, TestSize.Level1)
     sk_sp<SkSurface> skSurface = SkSurface::MakeRasterN32Premul(100, 100);
     SkiaSurface skiaSurface;
     skiaSurface.SetSkSurface(skSurface);
-    auto skia = skiaSurface.GetBackendTexture(BackendAccess::FLUSH_WRITE);
-    ASSERT_TRUE(skia.IsValid());
+    auto texture = skiaSurface.GetBackendTexture(BackendAccess::FLUSH_WRITE);
+    ASSERT_TRUE(texture.IsValid());
 }
 
 /**

@@ -87,7 +87,7 @@ HWTEST_F(SkiaPathTest, SkiaPath001, TestSize.Level1)
 
 /**
  * @tc.name: RArcTo001
- * @tc.desc: Test SkiaPath's funstions
+ * @tc.desc: Test RArcTo
  * @tc.type: FUNC
  * @tc.require: I8VQSW
  */
@@ -99,7 +99,7 @@ HWTEST_F(SkiaPathTest, RArcTo001, TestSize.Level1)
 
 /**
  * @tc.name: InitWithInterpolate001
- * @tc.desc: Test SkiaPath's funstions
+ * @tc.desc: Test InitWithInterpolate
  * @tc.type: FUNC
  * @tc.require: I8VQSW
  */
@@ -113,7 +113,7 @@ HWTEST_F(SkiaPathTest, InitWithInterpolate001, TestSize.Level1)
 
 /**
  * @tc.name: TransformWithPerspectiveClip001
- * @tc.desc: Test SkiaPath's funstions
+ * @tc.desc: Test TransformWithPerspectiveClip
  * @tc.type: FUNC
  * @tc.require: I8VQSW
  */
@@ -127,7 +127,7 @@ HWTEST_F(SkiaPathTest, TransformWithPerspectiveClip001, TestSize.Level1)
 
 /**
  * @tc.name: OpWith001
- * @tc.desc: Test SkiaPath's funstions
+ * @tc.desc: Test OpWith
  * @tc.type: FUNC
  * @tc.require: I8VQSW
  */
@@ -141,7 +141,7 @@ HWTEST_F(SkiaPathTest, OpWith001, TestSize.Level1)
 
 /**
  * @tc.name: Offset001
- * @tc.desc: Test SkiaPath's funstions
+ * @tc.desc: Test Offset
  * @tc.type: FUNC
  * @tc.require: I8VQSW
  */
@@ -153,7 +153,7 @@ HWTEST_F(SkiaPathTest, Offset001, TestSize.Level1)
 
 /**
  * @tc.name: Offset002
- * @tc.desc: Test SkiaPath's funstions
+ * @tc.desc: Test Offset
  * @tc.type: FUNC
  * @tc.require: I8VQSW
  */
@@ -161,7 +161,7 @@ HWTEST_F(SkiaPathTest, Offset002, TestSize.Level1)
 {
     SkiaPath skiaPath;
     Path path;
-    skiaPath.Offset(path, 100, 100);
+    skiaPath.Offset(&path, 100, 100);
 }
 
 } // namespace Drawing
