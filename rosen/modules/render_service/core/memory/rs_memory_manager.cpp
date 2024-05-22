@@ -115,6 +115,7 @@ void MemoryManager::ReleaseUnlockGpuResource(Drawing::GPUContext* gpuContext, st
     gpuContext->PurgeUnlockedResourcesByPid(false, exitedPidSet);
 #endif
 }
+
 void MemoryManager::PurgeCacheBetweenFrames(Drawing::GPUContext* gpuContext, bool scratchResourceOnly,
     std::set<pid_t>& exitedPidSet, std::set<pid_t>& protectedPidSet)
 {

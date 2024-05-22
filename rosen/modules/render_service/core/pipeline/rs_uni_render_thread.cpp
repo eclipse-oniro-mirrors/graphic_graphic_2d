@@ -50,6 +50,7 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
+constexpr const char* PURGE_CACHE_BETWEEN_FRAMES = "PurgeCacheBetweenFrames";
 constexpr uint32_t TIME_OF_TWENTY_FRAMES = 20000;
 constexpr uint32_t TIME_OF_THE_FRAMES = 1000;
 constexpr uint32_t WAIT_FOR_RELEASED_BUFFER_TIMEOUT = 3000;
@@ -536,6 +537,26 @@ void RSUniRenderThread::ClearMemoryCache(ClearMemoryMoment moment, bool deeply, 
     PostTask(task, CLEAR_GPU_CACHE,
         (this->deviceType_ == DeviceType::PHONE ? TIME_OF_TWENTY_FRAMES : TIME_OF_THE_FRAMES)
                 / GetRefreshRate());
+}
+
+void RSUniRenderThread::PurgeCacheBetweenFrames(ClearMemoryMoment moment)
+{
+    if (!RSSystemProperties::GetReleaseResourceEnabled()) {
+        return;
+    }
+    RS_TRACE_NAME_FMT("MEM PurgeCacheBetweenFrames add task");
+    PostTask(
+        [this]() {
+            auto grContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
+            if (!grContext) {
+                return;
+            }
+            RS_TRACE_NAME_FMT("PurgeCacheBetweenFrames");
+            std::set<int> protectedPidSet = { GetDesktopPidForRotationScene() };
+            MemoryManager::PurgeCacheBetweenFrames(grContext, true, this->exitedPidSet_, protectedPidSet);
+            RemoveTask(PURGE_CACHE_BETWEEN_FRAMES);
+        },
+        PURGE_CACHE_BETWEEN_FRAMES, 0, AppExecFwk::EventQueue::Priority::LOW);
 }
 
 void RSUniRenderThread::RenderServiceTreeDump(std::string& dumpString) const
