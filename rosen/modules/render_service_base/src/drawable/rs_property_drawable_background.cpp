@@ -24,6 +24,7 @@
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
+#include "platform/common/rs_system_properties.h"
 
 namespace OHOS::Rosen {
 namespace DrawableV2 {
@@ -135,10 +136,10 @@ bool RSMaskShadowDrawable::OnUpdate(const RSRenderNode& node)
     }
 
     const RSProperties& properties = node.GetRenderProperties();
-    auto shadowRadius = properties.GetShadowRadius();
-    auto shadowOffsetX = properties.GetShadowOffsetX();
-    auto shadowOffsetY = properties.GetShadowOffsetY();
     if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
+        auto shadowRadius = properties.GetShadowRadius();
+        auto shadowOffsetX = properties.GetShadowOffsetX();
+        auto shadowOffsetY = properties.GetShadowOffsetY();
         RSPropertyDrawable::stagingPropertyDescription_ = "DrawShadow, Radius: " + std::to_string(shadowRadius) +
             " ShadowOffsetX: " + std::to_string(shadowOffsetX) +" ShadowOffsetY: " + std::to_string(shadowOffsetY);
     }
@@ -322,14 +323,7 @@ bool RSBackgroundColorDrawable::OnUpdate(const RSRenderNode& node)
     brush.SetColor(Drawing::Color(bgColor.AsArgbInt()));
     if (properties.IsBgBrightnessValid()) {
         if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
-            RSDynamicBrightnessPara params = properties.GetBgBrightnessParams().value();
-            RSPropertyDrawable::stagingPropertyDescription_ =
-                "BackgroundBrightnessInternal, rate: " + std::to_string(params.rate_) +
-                " lightUpDegree: " + std::to_string(params.lightUpDegree_) +
-                " cubicCoeff: " + std::to_string(params.cubicCoeff_) +
-                " quadCoeff: " + std::to_string(params.quadCoeff_) +
-                " saturation: " + std::to_string(params.saturation_) +
-                " fgBrightnessFract: " + std::to_string(properties.GetBgBrightnessFract());
+            RSPropertyDrawable::stagingPropertyDescription_ = properties.GetBgBrightnessDescription();
         }
         auto blender = RSPropertyDrawableUtils::MakeDynamicBrightnessBlender(
             properties.GetBgBrightnessParams().value(), properties.GetBgBrightnessFract());

@@ -20,6 +20,7 @@
 #include "drawable/rs_render_node_drawable_adapter.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_render_node.h"
+#include "platform/common/rs_system_properties.h"
 
 namespace OHOS::Rosen {
 namespace DrawableV2 {
@@ -270,13 +271,7 @@ bool RSBeginBlenderDrawable::OnUpdate(const RSRenderNode& node)
     // NOTE: stagingIsDangerous_ should be set true when adding a blender that may generate transparent pixels
     if (properties.IsFgBrightnessValid()) {
         if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
-            RSDynamicBrightnessPara params = properties.GetFgBrightnessParams().value();
-            stagingPropertyDescription_ = "ForegroundBrightness, rate: " + std::to_string(params.rate_) +
-                " lightUpDegree: " + std::to_string(params.lightUpDegree_) +
-                " cubicCoeff: " + std::to_string(params.cubicCoeff_) +
-                " quadCoeff: " + std::to_string(params.quadCoeff_) +
-                " saturation: " + std::to_string(params.saturation_) +
-                " fgBrightnessFract: " + std::to_string(properties.GetFgBrightnessFract());
+            stagingPropertyDescription_ = properties.GetFgBrightnessDescription();
         }
         stagingBlender_ = RSPropertyDrawableUtils::MakeDynamicBrightnessBlender(
             properties.GetFgBrightnessParams().value(), properties.GetFgBrightnessFract());
