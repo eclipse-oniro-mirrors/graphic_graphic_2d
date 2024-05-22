@@ -24,7 +24,6 @@
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
-#include "platform/common/rs_system_properties.h"
 
 namespace OHOS::Rosen {
 namespace DrawableV2 {

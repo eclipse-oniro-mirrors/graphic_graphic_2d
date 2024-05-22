@@ -1333,6 +1333,9 @@ bool RSProperties::IsBgBrightnessValid() const
 
 std::string RSProperties::GetFgBrightnessDescription() const
 {
+    if (fgBrightnessParams_ == nullptr) {
+        return "fgBrightnessParams is nullptr";
+    }
     std::string description = "ForegroundBrightness, rate: " + std::to_string(fgBrightnessParams_->rate_) +
         " lightUpDegree: " + std::to_string(fgBrightnessParams_->lightUpDegree_) +
         " cubicCoeff: " + std::to_string(fgBrightnessParams_->cubicCoeff_) +
@@ -1344,6 +1347,9 @@ std::string RSProperties::GetFgBrightnessDescription() const
 
 std::string RSProperties::GetBgBrightnessDescription() const
 {
+    if (bgBrightnessParams_ == nullptr) {
+        return "bgBrightnessParams is nullptr";
+    }
     std::string description = "BackgroundBrightnessInternal, rate: " + std::to_string(bgBrightnessParams_->rate_) +
         " lightUpDegree: " + std::to_string(bgBrightnessParams_->lightUpDegree_) +
         " cubicCoeff: " + std::to_string(bgBrightnessParams_->cubicCoeff_) + 
