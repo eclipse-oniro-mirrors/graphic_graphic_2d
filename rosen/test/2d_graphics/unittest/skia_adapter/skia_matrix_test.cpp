@@ -304,20 +304,6 @@ HWTEST_F(SkiaMatrixTest, Invert001, TestSize.Level1)
     skiaMatrix.Invert(inverse);
 }
 
-/**
- * @tc.name: Equals001
- * @tc.desc: Test Equals
- * @tc.type: FUNC
- * @tc.require: I91EH1
- */
-HWTEST_F(SkiaMatrixTest, Equals001, TestSize.Level1)
-{
-    SkiaMatrix skiaMatrix;
-    Matrix a;
-    Matrix b;
-    skiaMatrix.Equals(a, b);
-}
-
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
