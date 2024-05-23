@@ -523,9 +523,9 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetFilter003, TestSize.Le
     OH_Drawing_Pen* pen = OH_Drawing_PenCreate();
     OH_Drawing_Filter* filter = OH_Drawing_FilterCreate();
     OH_Drawing_PenSetFilter(pen, filter);
-    OH_Drawing_Filter* cFilter = OH_Drawing_FilterCreate();
+    OH_Drawing_Filter* cFilter = nullptr;
     OH_Drawing_PenGetFilter(pen, cFilter);
-    ASSERT_TRUE(cFilter != nullptr);
+    ASSERT_TRUE(cFilter == filter);
     OH_Drawing_FilterDestroy(filter);
     OH_Drawing_PenDestroy(pen);
 }
@@ -563,9 +563,9 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetFilter002, TestSize.Le
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetFilter003, TestSize.Level1)
 {
     OH_Drawing_Pen* pen = OH_Drawing_PenCreate();
-    OH_Drawing_Filter* filter = OH_Drawing_FilterCreate();
+    OH_Drawing_Filter* filter = nullptr;
     OH_Drawing_PenGetFilter(pen, filter);
-    ASSERT_TRUE(filter != nullptr);
+    ASSERT_TRUE(filter == nullptr);
     OH_Drawing_FilterDestroy(filter);
     OH_Drawing_PenDestroy(pen);
 }
