@@ -12,10 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "ge_hash.h"
 
-#include "params/rs_canvas_render_params.h"
+#include <cstring>
 
-namespace OHOS::Rosen {
-RSCanvasRenderParams::RSCanvasRenderParams(NodeId id) : RSRenderParams(id) {}
+#include "ge_hash_refer.h"
 
-} // namespace OHOS::Rosen
+namespace OHOS {
+namespace GraphicsEffectEngine {
+uint32_t Hash32Next(uint32_t hash, const void* data, size_t bytes, uint32_t seed)
+{
+    return static_cast<uint32_t>(GEHash(&hash, sizeof(hash), GEHash(data, bytes, seed, SECRET), SECRET));
+}
+uint64_t Hash64Next(uint64_t hash, const void* data, size_t bytes, uint64_t seed)
+{
+    return GEHash(&hash, sizeof(hash), GEHash(data, bytes, seed, SECRET), SECRET);
+}
+} // namespace GraphicsEffectEngine
+} // namespace OHOS
