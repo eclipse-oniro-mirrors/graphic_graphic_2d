@@ -96,6 +96,7 @@ private:
     mutable GLuint texId_ = 0;
 #endif
     mutable OHNativeWindowBuffer* nativeWindowBuffer_ = nullptr;
+    mutable OH_NativeBuffer* nativeBuffer_ = nullptr;
     mutable pid_t tid_ = 0;
 #endif
 #ifdef RS_ENABLE_VK

@@ -157,7 +157,7 @@ void RSExtendImageObject::PreProcessPixelMap(Drawing::Canvas& canvas, const std:
         return;
     }
 
-    if (RSPixelMapUtil::IsSupportZeroCopy(pixelMap, sampling)) {
+    if (pixelMap->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC && !pixelMap->IsAstc()) {
 #if defined(RS_ENABLE_GL)
         if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
             if (GetDrawingImageFromSurfaceBuffer(canvas, reinterpret_cast<SurfaceBuffer*>(pixelMap->GetFd()))) {
@@ -176,11 +176,20 @@ void RSExtendImageObject::PreProcessPixelMap(Drawing::Canvas& canvas, const std:
     }
 
     if (pixelMap->IsAstc()) {
-        const void* data = pixelMap->GetPixels();
         std::shared_ptr<Drawing::Data> fileData = std::make_shared<Drawing::Data>();
-        const int seekSize = 16;
-        if (pixelMap->GetCapacity() > seekSize) {
-            fileData->BuildWithoutCopy((void*)((char*) data + seekSize), pixelMap->GetCapacity() - seekSize);
+        // After RS is switched to Vulkan, the judgment of GpuApiType can be deleted.
+        if (pixelMap->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC &&
+            RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN) {
+            sptr<SurfaceBuffer> surfaceBuf(reinterpret_cast<SurfaceBuffer *>(pixelMap->GetFd()));
+            nativeWindowBuffer_ = CreateNativeWindowBufferFromSurfaceBuffer(&surfaceBuf);
+            nativeBuffer_ = OH_NativeBufferFromNativeWindowBuffer(nativeWindowBuffer_);
+            fileData->BuildFromOHNativeBuffer(nativeBuffer_, pixelMap->GetCapacity());
+        } else {
+            const void* data = pixelMap->GetPixels();
+            const int seekSize = 16;
+            if (pixelMap->GetCapacity() > seekSize) {
+                fileData->BuildWithoutCopy((void*)((char*) data + seekSize), pixelMap->GetCapacity() - seekSize);
+            }
         }
         rsImage_->SetCompressData(fileData);
         return;
