@@ -477,6 +477,11 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             if (lemScreen[0] == '2') { // Small folding screen
                 exFoldScreen_ = false;
             }
+            if (displayNodeSp->GetCompositeType() == RSDisplayRenderNode::CompositeType::UNI_RENDER_COMPOSITE) {
+                RS_LOGD("RSDisplayRenderNodeDrawable::OnDraw wired screen projection.");
+                WiredScreenProjection(displayNodeSp, *params, processor);
+                return;
+            }
             DrawMirrorScreen(displayNodeSp, *params, processor);
         } else {
             bool isOpDropped = uniParam->IsOpDropped();
@@ -818,6 +823,45 @@ void RSDisplayRenderNodeDrawable::DrawExpandScreen(RSUniRenderVirtualProcessor& 
     RSUniRenderThread::SetCaptureParam(CaptureParam(true, false, false, scaleX, scaleY));
     RSRenderNodeDrawable::OnCapture(*curCanvas_);
     RSUniRenderThread::ResetCaptureParam();
+}
+
+void RSDisplayRenderNodeDrawable::WiredScreenProjection(std::shared_ptr<RSDisplayRenderNode> displayNodeSp,
+    RSDisplayRenderParams& params, std::shared_ptr<RSProcessor> processor)
+{
+    RSUniRenderThread::Instance().WaitUntilDisplayNodeBufferReleased(displayNodeSp);
+    if (!exFoldScreen_) {
+        canvasRotation_ = true;
+    } else {
+        canvasRotation_ = false;
+    }
+    auto renderFrame = RequestFrame(displayNodeSp, params, processor);
+    if (!renderFrame) {
+        RS_LOGE("RSDisplayRenderNodeDrawable::WiredScreenProjection failed to request frame");
+        return;
+    }
+    auto drSurface = renderFrame->GetFrame()->GetSurface();
+    if (!drSurface) {
+        RS_LOGE("RSDisplayRenderNodeDrawable::WiredScreenProjection DrawingSurface is null");
+        return;
+    }
+    curCanvas_ = std::make_shared<RSPaintFilterCanvas>(drSurface.get());
+    if (!curCanvas_) {
+        RS_LOGE("RSDisplayRenderNodeDrawable::WiredScreenProjection failed to create canvas");
+        return;
+    }
+    curCanvas_->Save();
+    ScaleMirrorIfNeed(*displayNodeSp, processor);
+    RotateMirrorCanvasIfNeed(*displayNodeSp);
+    auto mirroredNode = params.GetMirrorSource().lock();
+    bool forceCPU = false;
+    auto drawParams = RSUniRenderUtil::CreateBufferDrawParam(*mirroredNode, forceCPU);
+    auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
+    drawParams.isMirror = true;
+    renderEngine->DrawDisplayNodeWithParams(*curCanvas_, *mirroredNode, drawParams);
+    curCanvas_->Restore();
+    renderFrame->Flush();
+    processor->ProcessDisplaySurface(*displayNodeSp);
+    processor->PostProcess();
 }
 
 void RSDisplayRenderNodeDrawable::SetVirtualScreenType(RSDisplayRenderNode& node, const ScreenInfo& screenInfo)
