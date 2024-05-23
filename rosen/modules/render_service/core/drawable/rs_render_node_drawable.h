@@ -158,9 +158,6 @@ protected:
     bool CheckIfNeedUpdateCache(RSRenderParams& params);
     void UpdateCacheSurface(Drawing::Canvas& canvas, const RSRenderParams& params);
 
-    static int GetProcessedCanvasNodeCount();
-    static void ProcessedCanvasNodeCountInc();
-    static void ClearProcessedCanvasNodeCount();
     static thread_local bool drawBlurForCache_;
 
 private:
@@ -181,7 +178,6 @@ private:
     static inline std::unordered_map<NodeId, int32_t> drawingCacheUpdateTimeMap_;
 
     static thread_local bool isOpDropped_;
-    static inline std::atomic<int> processedCanvasNodeCount_ = 0;
     static inline std::atomic<int> totalProcessedNodeCount_ = 0;
     // used foe render group cache
 

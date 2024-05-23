@@ -536,21 +536,6 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
     }
 }
 
-int RSRenderNodeDrawable::GetProcessedCanvasNodeCount()
-{
-    return processedCanvasNodeCount_;
-}
-
-void RSRenderNodeDrawable::ProcessedCanvasNodeCountInc()
-{
-    ++processedCanvasNodeCount_;
-}
-
-void RSRenderNodeDrawable::ClearProcessedCanvasNodeCount()
-{
-    processedCanvasNodeCount_ = 0;
-}
-
 int RSRenderNodeDrawable::GetTotalProcessedNodeCount()
 {
     return totalProcessedNodeCount_;
