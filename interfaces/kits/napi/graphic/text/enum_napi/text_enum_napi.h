@@ -19,7 +19,6 @@
 #include <memory>
 #include <native_engine/native_engine.h>
 #include <native_engine/native_value.h>
-#include "text/font_metrics.h"
 #include "typography_create.h"
 #include "typography_style.h"
 

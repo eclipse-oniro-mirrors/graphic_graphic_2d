@@ -542,7 +542,7 @@ inline void SetLineMetricsDoubleValueFromJS(napi_env env, napi_value argValue, c
     ConvertFromJsValue(env, tempValue, cValue);
 }
 
-inline void SetLineMetricsSizeTValueFromJS(napi_env env, napi_value argValue, const std::string str, uint32_t& cValue)
+inline void SetLineMetricsSizeTValueFromJS(napi_env env, napi_value argValue, const std::string str, size_t& cValue)
 {
     napi_value tempValue = nullptr;
     napi_get_named_property(env, argValue, str.c_str(), &tempValue);

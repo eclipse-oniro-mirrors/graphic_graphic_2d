@@ -386,21 +386,6 @@ bool Typography::GetLineMetricsAt(int lineNumber, LineMetrics* lineMetrics)
     return true;
 }
 
-FontWeight GetTxtFontWeight(int fontWeight)
-{
-    constexpr int minWeight = static_cast<int>(FontWeight::W100);
-    constexpr int maxWeight = static_cast<int>(FontWeight::W900);
-
-    int weight = std::clamp((fontWeight - 100) / 100, minWeight, maxWeight);
-    return static_cast<FontWeight>(weight);
-}
-
-FontStyle GetTxtFontStyle(RSFontStyle::Slant slant)
-{
-    return slant == RSFontStyle::Slant::UPRIGHT_SLANT ?
-        FontStyle::NORMAL : FontStyle::ITALIC;
-}
-
 Drawing::FontMetrics Typography::GetFontMetrics(const OHOS::Rosen::TextStyle& textStyle)
 {
     auto spTextStyle = Convert(textStyle);
