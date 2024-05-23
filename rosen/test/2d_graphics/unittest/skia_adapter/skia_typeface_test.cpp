@@ -147,6 +147,20 @@ HWTEST_F(SkiaTypefaceTest, MakeFromName001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: MakeFromName002
+ * @tc.desc: Test MakeFromName
+ * @tc.type: FUNC
+ * @tc.require:I91EDT
+ */
+HWTEST_F(SkiaTypefaceTest, MakeFromName002, TestSize.Level1)
+{
+    FontStyle fontStyle;
+    auto typeface = SkiaTypeface::MakeDefault();
+    ASSERT_TRUE(typeface != nullptr);
+    ASSERT_TRUE(SkiaTypeface::MakeFromName("familyName", fontStyle) != nullptr);
+}
+
+/**
  * @tc.name: MakeFromFile001
  * @tc.desc: Test MakeFromFile
  * @tc.type: FUNC
@@ -342,20 +356,6 @@ HWTEST_F(SkiaTypefaceTest, MakeFromStream001, TestSize.Level1)
     ASSERT_EQ(typefaceWithData, nullptr);
     std::shared_ptr<Typeface> typefaceEmptyStream = SkiaTypeface::MakeFromStream(std::make_unique<MemoryStream>(), 0);
     ASSERT_EQ(typefaceEmptyStream, nullptr);
-}
-
-/**
- * @tc.name: MakeFromName002
- * @tc.desc: Test MakeFromName
- * @tc.type: FUNC
- * @tc.require:I91EDT
- */
-HWTEST_F(SkiaTypefaceTest, MakeFromName002, TestSize.Level1)
-{
-    FontStyle fontStyle;
-    auto typeface = SkiaTypeface::MakeDefault();
-    ASSERT_TRUE(typeface != nullptr);
-    ASSERT_TRUE(SkiaTypeface::MakeFromName("familyName", fontStyle) != nullptr);
 }
 
 /**
