@@ -18,9 +18,6 @@
 #include <multimedia/image_framework/image_pixel_map_mdk.h>
 #include <native_drawing/drawing_color.h>
 #include <native_drawing/drawing_pen.h>
-#include <cstdio.h>
-#include <cstdlib.h>
-#include <ctime.h>
 
 #include "test_common.h"
 
