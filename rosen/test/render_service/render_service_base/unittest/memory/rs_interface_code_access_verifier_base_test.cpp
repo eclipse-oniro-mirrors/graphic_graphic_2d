@@ -42,7 +42,7 @@ HWTEST_F(RSInterfaceCodeAccessVerifierBaseTest, IsSystemCallingTest, testing::ex
 {
     auto verifier = std::make_unique<RSIBufferAvailableCallbackInterfaceCodeAccessVerifier>();
     const std::string callingCode = "test";
-    ASSERT_EQ(verifier->IsSystemCalling(callingCode), true);    
+    ASSERT_EQ(verifier->IsSystemCalling(callingCode), true);
 }
 
 /**
@@ -55,7 +55,7 @@ HWTEST_F(RSInterfaceCodeAccessVerifierBaseTest, CheckPermissionTest, testing::ex
 {
     auto verifier = std::make_unique<RSIBufferAvailableCallbackInterfaceCodeAccessVerifier>();
     CodeUnderlyingType code = 0;
-    ASSERT_EQ(verifier->CheckPermission(code), true);    
+    ASSERT_EQ(verifier->CheckPermission(code), true);
 }
 
 /**
@@ -68,7 +68,7 @@ HWTEST_F(RSInterfaceCodeAccessVerifierBaseTest, IsPermissionAuthenticatedTest, t
 {
     auto verifier = std::make_unique<RSIBufferAvailableCallbackInterfaceCodeAccessVerifier>();
     CodeUnderlyingType code = 0;
-    ASSERT_EQ(verifier->IsPermissionAuthenticated(code), true);    
+    ASSERT_EQ(verifier->IsPermissionAuthenticated(code), true);
 }
 
 /**
@@ -81,6 +81,6 @@ HWTEST_F(RSInterfaceCodeAccessVerifierBaseTest, IsCommonVerificationPassedTest, 
 {
     auto verifier = std::make_unique<RSIBufferAvailableCallbackInterfaceCodeAccessVerifier>();
     CodeUnderlyingType code = 0;
-    ASSERT_EQ(verifier->IsCommonVerificationPassed(code), true);    
+    ASSERT_EQ(verifier->IsCommonVerificationPassed(code), true);
 }
 } // namespace OHOS::Rosen
