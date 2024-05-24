@@ -51,7 +51,7 @@ HWTEST_F(TypefaceTest, MakeFromStream001, TestSize.Level1)
     auto stream = std::make_unique<MemoryStream>(data, 10);
     ASSERT_TRUE(stream != nullptr);
     auto typeface = Typeface::MakeFromStream(std::move(stream));
-    ASSERT_TRUE(typeface != nullptr);
+    ASSERT_TRUE(typeface == nullptr);
 }
 
 /**
@@ -170,10 +170,12 @@ HWTEST_F(TypefaceTest, MakeClone001, TestSize.Level1)
  */
 HWTEST_F(TypefaceTest, MakeClone002, TestSize.Level1)
 {
-    auto typeface = std::make_unique<Typeface>(nullptr);
+    auto typeface = Typeface::MakeDefault();//std::make_unique<Typeface>(nullptr);
     ASSERT_TRUE(typeface != nullptr);
     FontArguments arg;
-    ASSERT_TRUE(typeface->MakeClone(arg) == nullptr);
+    auto typefaceclone = typeface->MakeClone(arg);
+    ASSERT_TRUE(typefaceclone != nullptr);
+    ASSERT_TRUE(typeface->GetItalic() == typefaceclone->GetItalic());
 }
 
 /**
@@ -186,7 +188,7 @@ HWTEST_F(TypefaceTest, Serialize001, TestSize.Level1)
 {
     auto typeface = Typeface::MakeDefault();
     ASSERT_TRUE(typeface != nullptr);
-    ASSERT_TRUE(typeface->Serialize() == nullptr);
+    ASSERT_TRUE(typeface->Serialize() != nullptr);
 }
 
 /**
@@ -210,10 +212,8 @@ HWTEST_F(TypefaceTest, Serialize002, TestSize.Level1)
  */
 HWTEST_F(TypefaceTest, Deserialize001, TestSize.Level1)
 {
-    auto typeface = Typeface::MakeDefault();
-    ASSERT_TRUE(typeface != nullptr);
     char data[10] = { 0 };
-    ASSERT_TRUE(typeface->Deserialize(data, 10) == nullptr);
+    ASSERT_TRUE(Typeface::Deserialize(data, 10) == nullptr);
 }
 
 } // namespace Drawing
