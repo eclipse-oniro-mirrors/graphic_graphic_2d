@@ -585,7 +585,9 @@ napi_value JsParagraph::OnGetLineMetricsAt(napi_env env, napi_callback_info info
         return NapiGetUndefined(env);
     }
     LineMetrics lineMetrics;
-    paragraph_->GetLineMetricsAt(lineNumber, &lineMetrics);
+    if (!paragraph_->GetLineMetricsAt(lineNumber, &lineMetrics)) {
+        return nullptr;
+    }
     return CreateLineMetricsJsValue(env, lineMetrics);
 }
 

@@ -428,55 +428,6 @@ bool GetRunMetricsFromJS(napi_env env, napi_value argValue, RunMetrics& runMetri
     return true;
 }
 
-bool GetLineMetricsFromJS(napi_env env, napi_value argValue, LineMetrics& lineMetrics)
-{
-    if (argValue == nullptr) {
-        return false;
-    }
-    napi_value tempMapRunMetrics = nullptr;
-    uint32_t runMetricsCount = 0;
-    napi_get_named_property(env, argValue, "runMetrics", &tempMapRunMetrics);
-    napi_get_array_length(env, tempMapRunMetrics, &runMetricsCount);
-    if (tempMapRunMetrics != nullptr) {
-        for (uint32_t i = 0; i < runMetricsCount; ++i) {
-            napi_value jsItem;
-            napi_get_element(env, tempMapRunMetrics, i, &jsItem);
-            napi_value key;
-            napi_value value;
-            napi_get_element(env, jsItem, 0, &key);
-            napi_get_element(env, jsItem, 1, &value);
-            uint32_t textIndex = 0;
-            TextStyle textStyle;
-            RunMetrics runMetrics(&textStyle);
-            if (key != nullptr && value != nullptr && napi_get_value_uint32(env, key, &textIndex) == napi_ok &&
-                GetRunMetricsFromJS(env, value, runMetrics)) {
-                lineMetrics.runMetrics.insert(std::make_pair(textIndex, runMetrics));
-            }
-        }
-    }
-    SetLineMetricsSizeTValueFromJS(env, argValue, "startIndex", lineMetrics.startIndex);
-    SetLineMetricsSizeTValueFromJS(env, argValue, "endIndex", lineMetrics.endIndex);
-    SetLineMetricsDoubleValueFromJS(env, argValue, "ascent", lineMetrics.ascender);
-    SetLineMetricsDoubleValueFromJS(env, argValue, "descent", lineMetrics.descender);
-    SetLineMetricsDoubleValueFromJS(env, argValue, "height", lineMetrics.height);
-    SetLineMetricsDoubleValueFromJS(env, argValue, "width", lineMetrics.width);
-    SetLineMetricsDoubleValueFromJS(env, argValue, "left", lineMetrics.x);
-    napi_value tempValue = nullptr;
-    napi_get_named_property(env, argValue, "baseline", &tempValue);
-    uint32_t baseline = 0;
-    if (tempValue != nullptr && napi_get_value_uint32(env, tempValue, &baseline) == napi_ok) {
-        lineMetrics.endIndex = static_cast<size_t>(baseline);
-    }
-
-    uint32_t lineNumber = 0;
-    napi_get_named_property(env, argValue, "lineNumber", &tempValue);
-    if (tempValue != nullptr && napi_get_value_uint32(env, tempValue, &lineNumber) == napi_ok) {
-        lineMetrics.startIndex = static_cast<size_t>(lineNumber);
-    }
-    SetLineMetricsDoubleValueFromJS(env, argValue, "topHeight", lineMetrics.y);
-    return true;
-}
-
 void SetStrutStyleFromJS(napi_env env, napi_value argValue, TypographyStyle& pographyStyle)
 {
     if (!argValue) {

@@ -387,21 +387,21 @@ inline napi_value CreateTextRectJsValue(napi_env env, TextRect textrect)
     return objValue;
 }
 
-inline napi_value CreateArrayStringJsValue(napi_env env, std::vector<std::string> vectorString)
+inline napi_value CreateArrayStringJsValue(napi_env env, std::vector<std::string&> vectorString)
 {
     napi_value jsArray = nullptr;
     if (napi_create_array_with_length(env, vectorString.size(), &jsArray) == napi_ok) {
-    size_t index = 0;
-    for (const auto& family : vectorString) {
-        napi_value jsString;
-        napi_create_string_utf8(env, family.c_str(), family.length(), &jsString);
-        napi_set_element(env, jsArray, index++, jsString);
-    }
+        size_t index = 0;
+        for (const auto& family : vectorString) {
+            napi_value jsString;
+            napi_create_string_utf8(env, family.c_str(), family.length(), &jsString);
+            napi_set_element(env, jsArray, index++, jsString);
+        }
     }
     return jsArray;
 }
 
-inline napi_value CreateStringJsValue(napi_env env, std::u16string u16String)
+inline napi_value CreateStringJsValue(napi_env env, std::u16string& u16String)
 {
     napi_value jsStr = nullptr;
     napi_create_string_utf16(env, reinterpret_cast<const char16_t*>(u16String.c_str()), u16String.length(), &jsStr);
@@ -490,8 +490,7 @@ inline napi_value ConvertMapToNapiMap(napi_env env, const std::map<size_t, RunMe
     napi_create_uint32(env, map.size(), &jsSize);
     napi_set_named_property(env, result, "size", jsSize);
     for (const auto &[key, val] : map) {
-        const std::string &name = std::to_string(key);
-        status = napi_set_property(env, result, CreateJsValue(env, name), CreateRunMetricsJsValue(env, val));
+        status = napi_set_property(env, result, CreateJsValue(env, key), CreateRunMetricsJsValue(env, val));
         if (status != napi_ok) {
             return nullptr;
         }
@@ -519,7 +518,7 @@ inline napi_value CreateLineMetricsJsValue(napi_env env, OHOS::Rosen::LineMetric
     return objValue;
 }
 
-inline void SetFontMetricsFloatValueFromJS(napi_env env, napi_value argValue, const std::string str, float& cValue)
+inline void SetFontMetricsFloatValueFromJS(napi_env env, napi_value argValue, const std::string& str, float& cValue)
 {
     napi_value tempValue = nullptr;
     napi_get_named_property(env, argValue, str.c_str(), &tempValue);
@@ -579,7 +578,6 @@ bool GetFontMetricsFromJS(napi_env env, napi_value argValue, Drawing::FontMetric
 
 bool GetRunMetricsFromJS(napi_env env, napi_value argValue, RunMetrics& runMetrics);
 
-bool GetLineMetricsFromJS(napi_env env, napi_value argValue, LineMetrics& runMetrics);
 bool GetNamePropertyFromJS(napi_env env, napi_value argValue, const std::string& str, napi_value& propertyValue);
 
 template<class Type>
