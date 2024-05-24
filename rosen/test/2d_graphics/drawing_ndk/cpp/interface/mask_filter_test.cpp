@@ -33,9 +33,6 @@
 #include <native_drawing/drawing_sampling_options.h>
 #include <native_drawing/drawing_shader_effect.h>
 #include <native_drawing/drawing_text_blob.h>
-#include <cstdio.h>
-#include <cstdlib.h>
-#include <ctime.h>
 
 #include "test_common.h"
 
