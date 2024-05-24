@@ -138,6 +138,7 @@ void TextBlobGetBounds::OnTestPerformance(OH_Drawing_Canvas* canvas)
     OH_Drawing_TextBlobDestroy(blob);
     OH_Drawing_FontDestroy(font);
 }
+
 void TextBlobBuilderAllocRunPos::OnTestPerformance(OH_Drawing_Canvas* canvas)
 {
     TestRend rand;
