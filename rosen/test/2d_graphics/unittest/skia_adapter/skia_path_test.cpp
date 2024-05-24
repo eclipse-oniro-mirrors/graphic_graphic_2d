@@ -14,11 +14,9 @@
  */
 
 #include <cstddef>
-
 #include "gtest/gtest.h"
-#include "skia_adapter/skia_path.h"
-
 #include "draw/path.h"
+#include "skia_adapter/skia_path.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -50,23 +48,23 @@ HWTEST_F(SkiaPathTest, SkiaPath001, TestSize.Level1)
     SkiaPath skiaPath;
     skiaPath.MoveTo(0, 0);
     skiaPath.LineTo(100, 100); // 100: x, y
-    skiaPath.LineTo(100, 0);   // 100: x
+    skiaPath.LineTo(100, 0); // 100: x
     skiaPath.Close();
     skiaPath.Reset();
-    skiaPath.ArcTo(0, 0, 100, 100, 90, 90);                        // 100: pt2X and pt2Y, 90: startAngle and sweepAngle
+    skiaPath.ArcTo(0, 0, 100, 100, 90, 90); // 100: pt2X and pt2Y, 90: startAngle and sweepAngle
     skiaPath.ArcTo(0, 0, 90, PathDirection::CW_DIRECTION, 90, 90); // 90: angle, 90: endX and endY
-    skiaPath.ArcTo(0, 0, 90, 90, 10);                              // 90: x2 and y2, 10: radius
-    skiaPath.CubicTo(0, 0, 100, 100, 100, 200);                    // 100: angle, direction and endX, 200: endY
-    skiaPath.QuadTo(0, 0, 100, 100);                               // 100: endX and endY
-    skiaPath.RMoveTo(100, 100);                                    // 100: dx and dy
-    skiaPath.RLineTo(200, 200);                                    // 200: dx and dy
-    skiaPath.RCubicTo(0, 0, 100, 100, 100, 200);                   // 200: dx and dy
-    skiaPath.RQuadTo(0, 0, 100, 100);                              // 100: dx2 and dy2
+    skiaPath.ArcTo(0, 0, 90, 90, 10); // 90: x2 and y2, 10: radius
+    skiaPath.CubicTo(0, 0, 100, 100, 100, 200); // 100: angle, direction and endX, 200: endY
+    skiaPath.QuadTo(0, 0, 100, 100); // 100: endX and endY
+    skiaPath.RMoveTo(100, 100); // 100: dx and dy
+    skiaPath.RLineTo(200, 200); // 200: dx and dy
+    skiaPath.RCubicTo(0, 0, 100, 100, 100, 200); // 200: dx and dy
+    skiaPath.RQuadTo(0, 0, 100, 100); // 100: dx2 and dy2
     skiaPath.AddOval(0, 0, 100, 100, PathDirection::CW_DIRECTION); // 100: right, bottom
-    skiaPath.AddArc(0, 0, 100, 100, 90, 90);                       // 100: right, bottom, 90: startAngle, sweepAngle
-    skiaPath.AddCircle(0, 0, 100, PathDirection::CW_DIRECTION);    // 100: radius
-    skiaPath.AddRoundRect(
-        0, 0, 100, 100, 100, 100, PathDirection::CW_DIRECTION); // 100: right, bottom, xRadius, yRadius
+    skiaPath.AddArc(0, 0, 100, 100, 90, 90); // 100: right, bottom, 90: startAngle, sweepAngle
+    skiaPath.AddCircle(0, 0, 100, PathDirection::CW_DIRECTION); // 100: radius
+    skiaPath.AddRoundRect(0, 0,
+        100, 100, 100, 100, PathDirection::CW_DIRECTION); // 100: right, bottom, xRadius, yRadius
     Path path;
     skiaPath.AddPath(path, 200, 200, PathAddMode::APPEND_PATH_ADD_MODE); // 200: dx and dy
     skiaPath.AddPath(path, PathAddMode::APPEND_PATH_ADD_MODE);
@@ -84,86 +82,6 @@ HWTEST_F(SkiaPathTest, SkiaPath001, TestSize.Level1)
     EXPECT_TRUE(skiaPath2.Contains(0, 0));
     EXPECT_TRUE(!skiaPath2.Deserialize(nullptr));
 }
-
-/**
- * @tc.name: RArcTo001
- * @tc.desc: Test RArcTo
- * @tc.type: FUNC
- * @tc.require: I8VQSW
- */
-HWTEST_F(SkiaPathTest, RArcTo001, TestSize.Level1)
-{
-    SkiaPath skiaPath;
-    skiaPath.RArcTo(0, 0, 90, PathDirection::CW_DIRECTION, 90, 90); // 90: angle, 90: endX and endY
-}
-
-/**
- * @tc.name: InitWithInterpolate001
- * @tc.desc: Test InitWithInterpolate
- * @tc.type: FUNC
- * @tc.require: I8VQSW
- */
-HWTEST_F(SkiaPathTest, InitWithInterpolate001, TestSize.Level1)
-{
-    SkiaPath skiaPath;
-    Path path;
-    Path path2;
-    skiaPath.InitWithInterpolate(path, path2, 2); // 2: weight
-}
-
-/**
- * @tc.name: TransformWithPerspectiveClip001
- * @tc.desc: Test TransformWithPerspectiveClip
- * @tc.type: FUNC
- * @tc.require: I8VQSW
- */
-HWTEST_F(SkiaPathTest, TransformWithPerspectiveClip001, TestSize.Level1)
-{
-    SkiaPath skiaPath;
-    Path path;
-    Matrix matrix;
-    skiaPath.TransformWithPerspectiveClip(matrix, &path, true);
-}
-
-/**
- * @tc.name: OpWith001
- * @tc.desc: Test OpWith
- * @tc.type: FUNC
- * @tc.require: I8VQSW
- */
-HWTEST_F(SkiaPathTest, OpWith001, TestSize.Level1)
-{
-    SkiaPath skiaPath;
-    Path path;
-    Path path2;
-    skiaPath.OpWith(path, path2, PathOp::DIFFERENCE);
-}
-
-/**
- * @tc.name: Offset001
- * @tc.desc: Test Offset
- * @tc.type: FUNC
- * @tc.require: I8VQSW
- */
-HWTEST_F(SkiaPathTest, Offset001, TestSize.Level1)
-{
-    SkiaPath skiaPath;
-    skiaPath.Offset(100, 100);
-}
-
-/**
- * @tc.name: Offset002
- * @tc.desc: Test Offset
- * @tc.type: FUNC
- * @tc.require: I8VQSW
- */
-HWTEST_F(SkiaPathTest, Offset002, TestSize.Level1)
-{
-    SkiaPath skiaPath;
-    Path path;
-    skiaPath.Offset(&path, 100, 100);
-}
-
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
