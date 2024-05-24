@@ -115,6 +115,8 @@ HWTEST_F(SkiaRuntimeEffectTest, SetRuntimeEffect001, TestSize.Level1)
     SkiaRuntimeEffect skiaRuntimeEffect;
     sk_sp<SkRuntimeEffect> effect;
     skiaRuntimeEffect.SetRuntimeEffect(effect);
+    auto effect2 = skiaRuntimeEffect.GetRuntimeEffect();
+    ASSERT_TRUE(effect == effect2);
 }
 
 /**
