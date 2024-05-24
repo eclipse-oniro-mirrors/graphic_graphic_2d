@@ -34,4 +34,6 @@ void FontCountText::OnTestPerformance(OH_Drawing_Canvas* canvas)
         length * 10, length * 10, length * 20, length * 20); // length*10, length*10, length*20, length*20 矩形参数
     OH_Drawing_CanvasDrawRect(canvas, rect1);
     OH_Drawing_RectDestroy(rect1);
+    OH_Drawing_BrushDestroy(DemoRef);
+    OH_Drawing_FontDestroy(font);
 }
