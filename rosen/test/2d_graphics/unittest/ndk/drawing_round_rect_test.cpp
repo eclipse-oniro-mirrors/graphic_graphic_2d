@@ -60,8 +60,8 @@ HWTEST_F(NativeDrawingRoundRectTest, CCornerPosCastToCornerPos001, TestSize.Leve
 
     OH_Drawing_Corner_Radii retrievedRadius;
     retrievedRadius = OH_Drawing_RoundRectGetCorner(roundRect, OH_Drawing_CornerPos::CORNER_POS_TOP_LEFT);
-    EXPECT_EQ(retrievedRadius.x, radius.x);
-    EXPECT_EQ(retrievedRadius.y, radius.y);
+    ASSERT_FLOAT_EQ(retrievedRadius.x, radius.x);
+    ASSERT_FLOAT_EQ(retrievedRadius.y, radius.y);
 
     OH_Drawing_RoundRectDestroy(roundRect);
     OH_Drawing_RectDestroy(rect);
@@ -86,8 +86,8 @@ HWTEST_F(NativeDrawingRoundRectTest, CCornerPosCastToCornerPos002, TestSize.Leve
     OH_Drawing_Corner_Radii retrievedRadius;
 
     retrievedRadius = OH_Drawing_RoundRectGetCorner(roundRect, OH_Drawing_CornerPos::CORNER_POS_TOP_RIGHT);
-    EXPECT_EQ(retrievedRadius.x, radius.x);
-    EXPECT_EQ(retrievedRadius.y, radius.y);
+    ASSERT_FLOAT_EQ(retrievedRadius.x, radius.x);
+    ASSERT_FLOAT_EQ(retrievedRadius.y, radius.y);
 
     OH_Drawing_RoundRectDestroy(roundRect);
     OH_Drawing_RectDestroy(rect);
@@ -112,8 +112,8 @@ HWTEST_F(NativeDrawingRoundRectTest, CCornerPosCastToCornerPos003, TestSize.Leve
     OH_Drawing_Corner_Radii retrievedRadius;
 
     retrievedRadius = OH_Drawing_RoundRectGetCorner(roundRect, OH_Drawing_CornerPos::CORNER_POS_BOTTOM_RIGHT);
-    EXPECT_EQ(retrievedRadius.x, radius.x);
-    EXPECT_EQ(retrievedRadius.y, radius.y);
+    ASSERT_FLOAT_EQ(retrievedRadius.x, radius.x);
+    ASSERT_FLOAT_EQ(retrievedRadius.y, radius.y);
 
     OH_Drawing_RoundRectDestroy(roundRect);
     OH_Drawing_RectDestroy(rect);
@@ -138,8 +138,8 @@ HWTEST_F(NativeDrawingRoundRectTest, CCornerPosCastToCornerPos004, TestSize.Leve
     OH_Drawing_Corner_Radii retrievedRadius;
 
     retrievedRadius = OH_Drawing_RoundRectGetCorner(roundRect, OH_Drawing_CornerPos::CORNER_POS_BOTTOM_LEFT);
-    EXPECT_EQ(retrievedRadius.x, radius.x);
-    EXPECT_EQ(retrievedRadius.y, radius.y);
+    ASSERT_FLOAT_EQ(retrievedRadius.x, radius.x);
+    ASSERT_FLOAT_EQ(retrievedRadius.y, radius.y);
 
     OH_Drawing_RoundRectDestroy(roundRect);
     OH_Drawing_RectDestroy(rect);
@@ -158,8 +158,8 @@ HWTEST_F(NativeDrawingRoundRectTest, OH_Drawing_RoundRectGetCorner001, TestSize.
     OH_Drawing_Corner_Radii radii =
         OH_Drawing_RoundRectGetCorner(nullRoundRect, OH_Drawing_CornerPos::CORNER_POS_TOP_LEFT);
 
-    EXPECT_EQ(radii.x, 0);
-    EXPECT_EQ(radii.y, 0);
+    ASSERT_FLOAT_EQ(radii.x, 0);
+    ASSERT_FLOAT_EQ(radii.y, 0);
 }
 } // namespace Drawing
 } // namespace Rosen

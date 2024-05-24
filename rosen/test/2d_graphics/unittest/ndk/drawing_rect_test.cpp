@@ -303,7 +303,7 @@ HWTEST_F(NativeDrawingRectTest, NativeDrawingRectTest_RectSetLeft001, TestSize.L
     OH_Drawing_RectSetLeft(rect, 10);                                  // 10 means Left
 
     ASSERT_FLOAT_EQ(OH_Drawing_RectGetLeft(rect), 10); // 10 equal to number
-    ASSERT_NE(OH_Drawing_RectGetLeft(rect), 0.f);
+    ASSERT_FLOAT_EQ(OH_Drawing_RectGetLeft(rect), 0.f);
     OH_Drawing_RectDestroy(rect);
 }
 
@@ -458,10 +458,7 @@ HWTEST_F(NativeDrawingRectTest, NativeDrawingRectTest_RectGetRight001, TestSize.
  */
 HWTEST_F(NativeDrawingRectTest, NativeDrawingRectTest_RectGetRight002, TestSize.Level1)
 {
-    OH_Drawing_Rect *rect = nullptr;
-    OH_Drawing_RectGetRight(rect);
-    ASSERT_TRUE(rect == nullptr);
-    OH_Drawing_RectDestroy(rect);
+    ASSERT_TRUE(OH_Drawing_RectGetRight(nullptr) == 0);
 }
 
 /*
