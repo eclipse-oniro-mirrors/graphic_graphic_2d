@@ -38,6 +38,7 @@ ohos_unittest("2d_graphics_ndk_test") {
     "drawing_rect_test.cpp",
     "drawing_region_test.cpp",
     "drawing_register_font_test.cpp",
+    "drawing_round_rect_test.cpp",
     "drawing_shader_effect_test.cpp",
     "drawing_surface_test.cpp",
     "drawing_text_typography_test.cpp",
