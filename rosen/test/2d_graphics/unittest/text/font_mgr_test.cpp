@@ -111,6 +111,7 @@ HWTEST_F(FontMgrTest, GetFamilyName001, TestSize.Level1)
     std::shared_ptr<FontMgr> FontMgr = FontMgr::CreateDefaultFontMgr();
     std::string familyName;
     FontMgr->GetFamilyName(0, familyName);
+    ASSERT_TRUE(familyName.length() > 0);
 }
 
 /**
