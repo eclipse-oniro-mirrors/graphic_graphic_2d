@@ -116,7 +116,7 @@ public:
         return std::move(taskFuture);
     }
 
-    const std::shared_ptr<RSBaseRenderEngine>& GetRenderEngine() const
+    const std::shared_ptr<RSBaseRenderEngine> GetRenderEngine() const
     {
         RS_LOGD("You'd better to call GetRenderEngine from RSUniRenderThread directly");
         return isUniRender_ ? std::move(RSUniRenderThread::Instance().GetRenderEngine()) : renderEngine_;
@@ -238,6 +238,7 @@ public:
 
     DeviceType GetDeviceType() const;
     bool IsSingleDisplay();
+    bool HasMirrorDisplay() const;
     bool GetNoNeedToPostTask();
     uint64_t GetFocusNodeId() const;
     uint64_t GetFocusLeashWindowId() const;
@@ -268,6 +269,7 @@ public:
     }
 
     void SurfaceOcclusionChangeCallback(VisibleData& dstCurVisVec);
+    void SurfaceOcclusionCallback();
     void SubscribeAppState();
     void HandleOnTrim(Memory::SystemMemoryLevel level);
     void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
@@ -302,7 +304,9 @@ public:
 
     void SetDiscardJankFrames(bool discardJankFrames)
     {
-        discardJankFrames_.store(discardJankFrames);
+        if (discardJankFrames_.load() != discardJankFrames) {
+            discardJankFrames_.store(discardJankFrames);
+        }
     }
 
     bool GetSkipJankAnimatorFrame() const
@@ -328,7 +332,7 @@ private:
     RSMainThread& operator=(const RSMainThread&) = delete;
     RSMainThread& operator=(const RSMainThread&&) = delete;
 
-    void OnVsync(uint64_t timestamp, void* data);
+    void OnVsync(uint64_t timestamp, uint64_t frameCount, void* data);
     void ProcessCommand();
     void Animate(uint64_t timestamp);
     void ConsumeAndUpdateAllNodes();
@@ -353,7 +357,6 @@ private:
         std::vector<RSBaseRenderNode::SharedPtr>& curAllSurfaces);
     void CallbackToWMS(VisibleData& curVisVec);
     void SendCommands();
-    void SurfaceOcclusionCallback();
     void InitRSEventDetector();
     void RemoveRSEventDetector();
     void SetRSEventDetectorLoopStartTag();
@@ -373,6 +376,7 @@ private:
     void ClassifyRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData);
     void ProcessRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData, pid_t pid);
     void ProcessSyncRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData, pid_t pid);
+    void ProcessSyncTransactionCount(std::unique_ptr<RSTransactionData>& rsTransactionData);
     void ProcessAllSyncTransactionData();
     void ProcessCommandForDividedRender();
     void ProcessCommandForUniRender();
@@ -425,6 +429,7 @@ private:
     int64_t GetCurrentSystimeMs() const;
     int64_t GetCurrentSteadyTimeMs() const;
     float GetCurrentSteadyTimeMsFloat() const;
+    void UpdateLuminance();
 
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
@@ -437,6 +442,7 @@ private:
     std::map<uint64_t, std::vector<std::unique_ptr<RSCommand>>> effectiveCommands_;
     std::map<uint64_t, std::vector<std::unique_ptr<RSCommand>>> pendingEffectiveCommands_;
     std::unordered_map<pid_t, std::vector<std::unique_ptr<RSTransactionData>>> syncTransactionData_;
+    std::unordered_map<int32_t, int32_t> subSyncTransactionCounts_;
     int32_t syncTransactionCount_ { 0 };
 
     TransactionDataMap cachedTransactionDataMap_;

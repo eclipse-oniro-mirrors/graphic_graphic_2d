@@ -14,6 +14,7 @@
  */
 
 #include "rs_render_service_connection.h"
+#include <string>
 
 #include "frame_report.h"
 #include "hgm_command.h"
@@ -57,6 +58,7 @@
 namespace OHOS {
 namespace Rosen {
 constexpr int SLEEP_TIME_US = 1000;
+constexpr int TASK_DELAY_TIME_MS = 1000;
 // we guarantee that when constructing this object,
 // all these pointers are valid, so will not check them.
 RSRenderServiceConnection::RSRenderServiceConnection(
@@ -124,6 +126,18 @@ void RSRenderServiceConnection::MoveRenderNodeMap(
 void RSRenderServiceConnection::RemoveRenderNodeMap(
     std::shared_ptr<std::unordered_map<NodeId, std::shared_ptr<RSBaseRenderNode>>> subRenderNodeMap) noexcept
 {
+    // temp solution to address the dma leak
+    for (auto& [_, node] : *subRenderNodeMap) {
+        auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node);
+        if (surfaceNode && surfaceNode->GetName().find("ShellAssistantAnco") != std::string::npos) {
+            auto task = [surfaceNode = surfaceNode] {
+                surfaceNode->CleanCache();
+                surfaceNode->ResetRenderParams();
+                surfaceNode->SetConsumer(nullptr);
+            };
+            RSMainThread::Instance()->PostTask(task, "ResetBuffer", TASK_DELAY_TIME_MS);
+        }
+    }
     auto iter = subRenderNodeMap->begin();
     for (; iter != subRenderNodeMap->end();) {
         iter = subRenderNodeMap->erase(iter);
@@ -1044,9 +1058,6 @@ int32_t RSRenderServiceConnection::GetScreenType(ScreenId id, RSScreenType& scre
 
 bool RSRenderServiceConnection::GetBitmap(NodeId id, Drawing::Bitmap& bitmap)
 {
-    if (!mainThread_->IsIdle()) {
-        return false;
-    }
     auto node = mainThread_->GetContext().GetNodeMap().GetRenderNode<RSCanvasDrawingRenderNode>(id);
     if (node == nullptr) {
         RS_LOGE("RSRenderServiceConnection::GetBitmap cannot find NodeId: [%{public}" PRIu64 "]", id);
@@ -1067,6 +1078,9 @@ bool RSRenderServiceConnection::GetBitmap(NodeId id, Drawing::Bitmap& bitmap)
     };
     auto getBitmapTask = [&node, &bitmap, tid]() { bitmap = node->GetBitmap(tid); };
     if (tid == UNI_MAIN_THREAD_INDEX) {
+        if (!mainThread_->IsIdle() && mainThread_->GetContext().HasActiveNode(node)) {
+            return false;
+        }
         mainThread_->PostSyncTask(getBitmapTask);
     } else if (tid == UNI_RENDER_THREAD_INDEX) {
         renderThread_.PostSyncTask(getDrawableBitmapTask);
@@ -1113,9 +1127,6 @@ bool RSRenderServiceConnection::GetPixelmap(NodeId id, const std::shared_ptr<Med
         }
         mainThread_->PostSyncTask(getPixelmapTask);
     } else if (tid == UNI_RENDER_THREAD_INDEX) {
-        if (!renderThread_.IsIdle()) {
-            return false;
-        }
         renderThread_.PostSyncTask(getDrawablePixelmapTask);
     } else {
         RSTaskDispatcher::GetInstance().PostTask(
@@ -1227,6 +1238,7 @@ void RSRenderServiceConnection::SetAppWindowNum(uint32_t num)
 
 bool RSRenderServiceConnection::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes)
 {
+    RSUifirstManager::Instance().OnProcessAnimateScene(systemAnimatedScenes);
     std::lock_guard<std::mutex> lock(mutex_);
     return mainThread_->SetSystemAnimatedScenes(systemAnimatedScenes);
 }

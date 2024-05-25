@@ -45,6 +45,8 @@
 #include "render/rs_skia_filter.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "screen_manager/rs_screen_mode_info.h"
+#include "drawable/rs_render_node_drawable_adapter.h"
+#include "params/rs_surface_render_params.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -63,6 +65,7 @@ bool RSSurfaceCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback)
     std::shared_ptr<DrawableV2::RSRenderNodeDrawable> surfaceNodeDrawable = nullptr;
     std::shared_ptr<DrawableV2::RSRenderNodeDrawable> displayNodeDrawable = nullptr;
     visitor_ = std::make_shared<RSSurfaceCaptureVisitor>(scaleX_, scaleY_, RSUniRenderJudgement::IsUniRender());
+    RSSurfaceRenderParams* curNodeParams = nullptr;
     if (auto surfaceNode = node->ReinterpretCastTo<RSSurfaceRenderNode>()) {
         // Determine whether cache can be used
         auto curNode = surfaceNode;
@@ -70,8 +73,10 @@ bool RSSurfaceCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback)
         if (parentNode && parentNode->IsLeashWindow()) {
             curNode = parentNode;
         }
-        auto curNodeParams = static_cast<RSSurfaceRenderParams*>(curNode->GetRenderParams().get());
-        if (curNodeParams && curNodeParams->GetUifirstNodeEnableParam() == MultiThreadCacheType::LEASH_WINDOW) {
+        curNodeParams = static_cast<RSSurfaceRenderParams*>(curNode->GetRenderParams().get());
+        if (curNodeParams && (curNodeParams->GetUifirstNodeEnableParam() == MultiThreadCacheType::LEASH_WINDOW ||
+            curNodeParams->GetUifirstNodeEnableParam() == MultiThreadCacheType::NONFOCUS_WINDOW) &&
+            curNodeParams->GetShouldPaint()) {
             surfaceNodeDrawable = std::static_pointer_cast<DrawableV2::RSRenderNodeDrawable>(
                 DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(curNode));
         } else {
@@ -215,6 +220,9 @@ bool RSSurfaceCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback)
                 std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
         };
         RSBackgroundThread::Instance().PostTask(copytask);
+        if (curNodeParams && curNodeParams->IsNodeToBeCaptured()) {
+            RSUifirstManager::Instance().AddCapturedNodes(curNodeParams->GetId());
+        }
         return true;
     } else {
         std::shared_ptr<Drawing::Image> img(surface.get()->GetImageSnapshot());

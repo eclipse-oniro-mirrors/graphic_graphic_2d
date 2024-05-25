@@ -1178,5 +1178,21 @@ HWTEST_F(RSPaintFilterCanvasTest, PaintFilter002, TestSize.Level1)
     EXPECT_TRUE(paint.GetFilter() == filter);
 }
 
+/**
+ * @tc.name: SetBlenderTest
+ * @tc.desc: SetBlender
+ * @tc.type:FUNC
+ * @tc.require:issuesI9J2YE
+ */
+HWTEST_F(RSPaintFilterCanvasTest, SetBlenderTest, TestSize.Level1)
+{
+    std::shared_ptr<Drawing::Blender> blender = nullptr;
+    auto mode = Drawing::BlendMode::SRC;
+    blender = Drawing::Blender::CreateWithBlendMode(mode);
+    EXPECT_TRUE(blender != nullptr);
+    Drawing::Brush brush;
+    brush.SetBlender(blender);
+}
+
 } // namespace Rosen
 } // namespace OHOS

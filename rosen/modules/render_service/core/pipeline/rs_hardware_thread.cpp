@@ -169,9 +169,17 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
     // need to sync the hgm data from main thread.
     // Temporary sync the timestamp to fix the duplicate time stamp issue.
     auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
-    uint32_t rate = RSUniRenderThread::Instance().GetPendingScreenRefreshRate();
+    uint32_t rate = 0;
+    uint64_t currTimestamp = 0;
+    if (hgmCore.GetDirectCompositionFlag()) {
+        rate = hgmCore.GetPendingScreenRefreshRate();
+        hgmCore.SetDirectCompositionFlag(false);
+        currTimestamp = hgmCore.GetCurrentTimestamp();
+    } else {
+        rate = RSUniRenderThread::Instance().GetPendingScreenRefreshRate();
+        currTimestamp = RSUniRenderThread::Instance().GetCurrentTimestamp();
+    }
     uint32_t currentRate = hgmCore.GetScreenCurrentRefreshRate(hgmCore.GetActiveScreenId());
-    uint64_t currTimestamp = RSUniRenderThread::Instance().GetCurrentTimestamp();
     RSTaskMessage::RSTask task = [this, output = output, layers = layers, rate = rate,
         currentRate = currentRate, timestamp = currTimestamp]() {
         int64_t startTimeNs = 0;
@@ -283,14 +291,10 @@ void RSHardwareThread::PerformSetActiveMode(OutputPtr output, uint64_t timestamp
         }
 
         screenManager->SetScreenActiveMode(id, modeId);
-        if (!hgmCore.GetLtpoEnabled()) {
-            hdiBackend_->StartSample(output);
-        } else {
-            auto pendingPeriod = hgmCore.GetIdealPeriod(hgmCore.GetScreenCurrentRefreshRate(id));
-            int64_t pendingTimestamp = static_cast<int64_t>(timestamp);
-            hdiBackend_->SetPendingMode(output, pendingPeriod, pendingTimestamp);
-            hdiBackend_->StartSample(output);
-        }
+        auto pendingPeriod = hgmCore.GetIdealPeriod(hgmCore.GetScreenCurrentRefreshRate(id));
+        int64_t pendingTimestamp = static_cast<int64_t>(timestamp);
+        hdiBackend_->SetPendingMode(output, pendingPeriod, pendingTimestamp);
+        hdiBackend_->StartSample(output);
     }
 }
 

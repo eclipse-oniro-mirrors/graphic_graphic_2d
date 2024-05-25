@@ -135,6 +135,13 @@ bool RSMaskShadowDrawable::OnUpdate(const RSRenderNode& node)
     }
 
     const RSProperties& properties = node.GetRenderProperties();
+    if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
+        auto shadowRadius = properties.GetShadowRadius();
+        auto shadowOffsetX = properties.GetShadowOffsetX();
+        auto shadowOffsetY = properties.GetShadowOffsetY();
+        RSPropertyDrawable::stagingPropertyDescription_ = "DrawShadow, Radius: " + std::to_string(shadowRadius) +
+            " ShadowOffsetX: " + std::to_string(shadowOffsetX) +" ShadowOffsetY: " + std::to_string(shadowOffsetY);
+    }
     Drawing::AutoCanvasRestore acr(canvas, true);
     Drawing::Path path = RSPropertyDrawableUtils::CreateShadowPath(properties.GetShadowPath(),
         properties.GetClipBounds(), properties.GetRRect());
@@ -174,6 +181,8 @@ Drawing::RecordingCanvas::DrawFunc RSMaskShadowDrawable::CreateDrawFunc() const
 {
     auto ptr = std::static_pointer_cast<const RSMaskShadowDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
+        RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO, "RSMaskShadowDrawable:: %s, bounds: %s",
+            ptr->propertyDescription_.c_str(), rect->ToString().c_str());
         Drawing::AutoCanvasRestore rst(*canvas, true);
         RSPropertyDrawableUtils::CeilMatrixTrans(canvas);
         ptr->drawCmdList_->Playback(*canvas);
@@ -309,20 +318,22 @@ bool RSBackgroundColorDrawable::OnUpdate(const RSRenderNode& node)
     // regenerate stagingDrawCmdList_
     RSPropertyDrawCmdListUpdater updater(0, 0, this);
     Drawing::Canvas& canvas = *updater.GetRecordingCanvas();
-    // only disable antialias when background is rect and g_forceBgAntiAlias is false
-    bool antiAlias = g_forceBgAntiAlias || !properties.GetCornerRadius().IsZero();
     Drawing::Brush brush;
-    brush.SetAntiAlias(antiAlias);
     brush.SetColor(Drawing::Color(bgColor.AsArgbInt()));
     if (properties.IsBgBrightnessValid()) {
+        if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
+            RSPropertyDrawable::stagingPropertyDescription_ = properties.GetBgBrightnessDescription();
+        }
         auto blender = RSPropertyDrawableUtils::MakeDynamicBrightnessBlender(
             properties.GetBgBrightnessParams().value(), properties.GetBgBrightnessFract());
         brush.SetBlender(blender);
     }
 
-    canvas.AttachBrush(brush);
     // use drawrrect to avoid texture update in phone screen rotation scene
-    if (RSSystemProperties::IsPhoneType()) {
+    if (RSSystemProperties::IsPhoneType() && RSSystemProperties::GetCacheEnabledForRotation()) {
+        bool antiAlias = RSPropertiesPainter::GetBgAntiAlias() || !properties.GetCornerRadius().IsZero();
+        brush.SetAntiAlias(antiAlias);
+        canvas.AttachBrush(brush);
         if (properties.GetBorderColorIsTransparent() ||
             properties.GetBorderStyle().x_ != static_cast<uint32_t>(BorderStyle::SOLID)) {
             canvas.DrawRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRect(properties.GetRRect()));
@@ -330,7 +341,13 @@ bool RSBackgroundColorDrawable::OnUpdate(const RSRenderNode& node)
             canvas.DrawRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRect(properties.GetInnerRRect()));
         }
     } else {
-        canvas.DrawRect(RSPropertyDrawableUtils::Rect2DrawingRect(properties.GetBoundsRect()));
+        canvas.AttachBrush(brush);
+        if (properties.GetBorderColorIsTransparent() ||
+            properties.GetBorderStyle().x_ != static_cast<uint32_t>(BorderStyle::SOLID)) {
+            canvas.DrawRect(RSPropertiesPainter::Rect2DrawingRect(properties.GetBoundsRect()));
+        } else {
+            canvas.DrawRect(RSPropertiesPainter::RRect2DrawingRRect(properties.GetInnerRRect()).GetRect());
+        }
     }
     canvas.DetachBrush();
     return true;
@@ -356,21 +373,24 @@ bool RSBackgroundShaderDrawable::OnUpdate(const RSRenderNode& node)
     RSPropertyDrawCmdListUpdater updater(0, 0, this);
     Drawing::Canvas& canvas = *updater.GetRecordingCanvas();
     // only disable antialias when background is rect and g_forceBgAntiAlias is false
-    bool antiAlias = g_forceBgAntiAlias || !properties.GetCornerRadius().IsZero();
     Drawing::Brush brush;
-    brush.SetAntiAlias(antiAlias);
     auto shaderEffect = bgShader->GetDrawingShader();
     brush.SetShaderEffect(shaderEffect);
-    canvas.AttachBrush(brush);
     // use drawrrect to avoid texture update in phone screen rotation scene
     if (RSSystemProperties::IsPhoneType() && RSSystemProperties::GetCacheEnabledForRotation()) {
-        if (properties.GetBorderColorIsTransparent()) {
+        bool antiAlias = RSPropertiesPainter::GetBgAntiAlias() || !properties.GetCornerRadius().IsZero();
+        brush.SetAntiAlias(antiAlias);
+        canvas.AttachBrush(brush);
+        if (properties.GetBorderColorIsTransparent() ||
+            properties.GetBorderStyle().x_ != static_cast<uint32_t>(BorderStyle::SOLID)) {
             canvas.DrawRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRect(properties.GetRRect()));
         } else {
             canvas.DrawRoundRect(RSPropertyDrawableUtils::RRect2DrawingRRect(properties.GetInnerRRect()));
         }
     } else {
-        if (properties.GetBorderColorIsTransparent()) {
+        canvas.AttachBrush(brush);
+        if (properties.GetBorderColorIsTransparent() ||
+            properties.GetBorderStyle().x_ != static_cast<uint32_t>(BorderStyle::SOLID)) {
             canvas.DrawRect(RSPropertiesPainter::Rect2DrawingRect(properties.GetBoundsRect()));
         } else {
             canvas.DrawRect(RSPropertiesPainter::RRect2DrawingRRect(properties.GetInnerRRect()).GetRect());
@@ -392,7 +412,7 @@ bool RSBackgroundImageDrawable::OnUpdate(const RSRenderNode& node)
 {
     const RSProperties& properties = node.GetRenderProperties();
     const auto& bgImage = properties.GetBgImage();
-    if (!bgImage) {
+    if (!bgImage || !bgImage->GetPixelMap()) {
         return false;
     }
 
@@ -461,10 +481,9 @@ bool RSBackgroundEffectDrawable::OnUpdate(const RSRenderNode& node)
 
 void RSBackgroundEffectDrawable::OnSync()
 {
-    hasEffectChildren_ = stagingHasEffectChildren_;
     RSFilterDrawable::OnSync();
     // clear both cache image when it has no effect children and will not draw in this frame
-    if (!hasEffectChildren_) {
+    if (!stagingHasEffectChildren_) {
         lastCacheType_ = FilterCacheType::NONE;
     }
     stagingHasEffectChildren_ = false;
@@ -474,12 +493,10 @@ Drawing::RecordingCanvas::DrawFunc RSBackgroundEffectDrawable::CreateDrawFunc() 
 {
     auto ptr = std::static_pointer_cast<const RSBackgroundEffectDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (canvas && ptr && ptr->filter_ && ptr->hasEffectChildren_) {
-            auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
-            RS_TRACE_NAME_FMT("RSBackgroundEffectDrawable::DrawBackgroundEffect nodeId[%lld]", ptr->nodeId_);
-            RSPropertyDrawableUtils::DrawBackgroundEffect(
-                paintFilterCanvas, ptr->filter_, ptr->cacheManager_, ptr->clearFilteredCacheAfterDrawing_);
-        }
+        auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
+        RS_TRACE_NAME_FMT("RSBackgroundEffectDrawable::DrawBackgroundEffect nodeId[%lld]", ptr->nodeId_);
+        RSPropertyDrawableUtils::DrawBackgroundEffect(
+            paintFilterCanvas, ptr->filter_, ptr->cacheManager_, ptr->clearFilteredCacheAfterDrawing_);
     };
 }
 

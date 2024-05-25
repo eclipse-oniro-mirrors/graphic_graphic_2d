@@ -247,10 +247,10 @@ sptr<IVSyncConnection> RSRenderServiceConnectionProxy::CreateVSyncConnection(con
     }
 
     sptr<IRemoteObject> rObj = reply.ReadRemoteObject();
-    sptr<IVSyncConnection> conn = iface_cast<IVSyncConnection>(rObj);
-    if (conn == nullptr) {
+    if (rObj == nullptr) {
         return nullptr;
     }
+    sptr<IVSyncConnection> conn = iface_cast<IVSyncConnection>(rObj);
     return conn;
 }
 

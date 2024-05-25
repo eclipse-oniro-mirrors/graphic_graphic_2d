@@ -111,6 +111,19 @@ void RSSystemProperties::SetInstantRecording(bool flag)
     system::SetParameter("debug.graphic.instant.recording.enabled", flag ? "1" : "0");
 }
 
+uint32_t RSSystemProperties::GetBetaRecordingMode()
+{
+    static CachedHandle handle = CachedParameterCreate("persist.graphic.profiler.betarecording", "0");
+    int32_t changed = 0;
+    const char* state = CachedParameterGetChanged(handle, &changed);
+    return ConvertToInt(state, 0);
+}
+
+void RSSystemProperties::SetBetaRecordingMode(uint32_t param)
+{
+    system::SetParameter("persist.graphic.profiler.betarecording", std::to_string(param));
+}
+
 bool RSSystemProperties::GetSaveRDC()
 {
     return (system::GetParameter("debug.graphic.rdcenabled", "0") != "0");
@@ -189,6 +202,22 @@ PartialRenderType RSSystemProperties::GetUniPartialRenderEnabled()
     static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.partialrender.enabled", "4");
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return static_cast<PartialRenderType>(ConvertToInt(enable, DEFAULT_UNI_PARTIAL_RENDER_ENABLED_VALUE));
+}
+
+bool RSSystemProperties::GetVirtualDirtyDebugEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.virtualdirtydebug.enabled", "0");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 0) != 0;
+}
+
+bool RSSystemProperties::GetVirtualDirtyEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.virtualdirty.enabled", "0");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 0) != 0;
 }
 
 bool RSSystemProperties::GetReleaseResourceEnabled()
@@ -796,8 +825,15 @@ bool RSSystemProperties::GetBlurExtraFilterEnabled()
     return blurExtraFilterEnabled;
 }
 
+bool RSSystemProperties::GetPurgeBetweenFramesEnabled()
+{
+    static bool purgeResourcesEveryEnabled =
+        (std::atoi(system::GetParameter("persist.sys.graphic.mem.purge_between_frames_enabled", "0").c_str()) != 0);
+    return purgeResourcesEveryEnabled;
+}
+
 const DdgrOpincType RSSystemProperties::ddgrOpincType_ =
-    static_cast<DdgrOpincType>(std::atoi((system::GetParameter("persist.ddgr.opinctype", "0")).c_str()));
+    static_cast<DdgrOpincType>(std::atoi((system::GetParameter("persist.ddgr.opinctype", "2")).c_str()));
 const DdgrOpincDfxType RSSystemProperties::ddgrOpincDfxType_ =
     static_cast<DdgrOpincDfxType>(std::atoi((
         system::GetParameter("persist.rosen.ddgr.opinctype.debugtype", "0")).c_str()));
@@ -909,6 +945,13 @@ bool RSSystemProperties::IsForceClient()
     int changed = 0;
     const char *num = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(num, 0);
+}
+
+bool RSSystemProperties::GetTextBlobAsPixelMap()
+{
+    static bool pixelMapEnabled =
+        std::atoi((system::GetParameter("persist.rosen.textBlobAsPixelMapEnable.enable", "0")).c_str()) != 0;
+    return pixelMapEnabled;
 }
 
 bool RSSystemProperties::GetUnmarshParallelFlag()

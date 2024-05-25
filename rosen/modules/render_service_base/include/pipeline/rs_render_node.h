@@ -120,7 +120,7 @@ public:
     void SetContentDirty();
     void ResetIsOnlyBasicGeoTransform();
     bool IsOnlyBasicGeoTransform() const;
-    void MergeSubTreeDirtyRegion(RSDirtyRegionManager& dirtyManager, const RectI& clipRect);
+    void ForceMergeSubTreeDirtyRegion(RSDirtyRegionManager& dirtyManager, const RectI& clipRect);
     void SubTreeSkipPrepare(RSDirtyRegionManager& dirtymanager, bool isDirty, bool accumGeoDirty,
         const RectI& clipRect);
     inline bool LastFrameSubTreeSkipped() const
@@ -178,7 +178,7 @@ public:
     // return children and disappeared children, not guaranteed to be sorted by z-index
     ChildrenListSharedPtr GetChildren() const;
     // return children and disappeared children, sorted by z-index
-    ChildrenListSharedPtr GetSortedChildren() const;
+    virtual ChildrenListSharedPtr GetSortedChildren() const;
     uint32_t GetChildrenCount() const;
     std::shared_ptr<RSRenderNode> GetFirstChild() const;
 
@@ -470,7 +470,8 @@ public:
     OutOfParentType GetOutOfParent() const;
 
     void UpdateEffectRegion(std::optional<Drawing::RectI>& region, bool isForced = false);
-    void MarkFilterHasEffectChildren();
+    virtual void MarkFilterHasEffectChildren() {};
+    virtual void OnFilterCacheStateChanged() {};
 
     // for blur filter cache
     virtual void CheckBlurFilterCacheNeedForceClearOrSave(bool rotationChanged = false);
@@ -756,6 +757,7 @@ protected:
     std::atomic<bool> isStaticCached_ = false;
     bool lastFrameHasVisibleEffect_ = false;
     RectI filterRegion_;
+    void UpdateDirtySlotsAndPendingNodes(RSDrawableSlot slot);
 
 private:
     NodeId id_;
@@ -797,8 +799,14 @@ private:
     bool hasRemovedChild_ = false;
     bool lastFrameSubTreeSkipped_ = false;
     bool hasChildrenOutOfRect_ = false;
+    bool lastFrameHasChildrenOutOfRect_ = false;
     RectI childrenRect_;
+    
+    // aim to record children rect in abs coords, without considering clip
     RectI absChildrenRect_;
+    // aim to record current frame clipped children dirty region, in abs coords
+    RectI subTreeDirtyRegion_;
+
     bool childHasVisibleFilter_ = false;  // only collect visible children filter status
     bool childHasVisibleEffect_ = false;  // only collect visible children has useeffect
     std::vector<NodeId> visibleFilterChild_;
@@ -970,7 +978,6 @@ private:
     RSDrawable::Vec drawableVec_;
 
     // for blur cache
-    void UpdateDirtySlotsAndPendingNodes(RSDrawableSlot slot);
     RectI lastFilterRegion_;
     bool backgroundFilterRegionChanged_ = false;
     bool backgroundFilterInteractWithDirty_ = false;

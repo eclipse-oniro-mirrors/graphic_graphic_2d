@@ -265,6 +265,7 @@ private:
     void CheckMergeSurfaceDirtysForDisplay(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) const;
     void CheckMergeTransparentDirtysForDisplay(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) const;
 
+    bool IfSkipInCalcGlobalDirty(RSSurfaceRenderNode& surfaceNode) const;
     void CheckMergeTransparentFilterForDisplay(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
         Occlusion::Region& accumulatedDirtyRegion);
     // If reusable filter cache covers whole screen, mark lower layer to skip process
@@ -387,7 +388,6 @@ private:
     bool DrawBlurInCache(RSRenderNode& node);
     void UpdateCacheRenderNodeMapWithBlur(RSRenderNode& node);
     bool IsFirstVisitedCacheForced() const;
-    bool IsRosenWebHardwareDisabled(RSSurfaceRenderNode& node, int rotation) const;
     bool ForceHardwareComposer(RSSurfaceRenderNode& node) const;
     // return if srcRect is allowed by dss restriction
     bool UpdateSrcRectForHwcNode(RSSurfaceRenderNode& node, bool isProtected = false);
@@ -409,6 +409,11 @@ private:
     bool ForcePrepareSubTree()
     {
         return curSurfaceNode_ && curSurfaceNode_->GetNeedCollectHwcNode();
+    }
+    bool IsValidInVirtualScreen(RSSurfaceRenderNode& node) const
+    {
+        return !node.GetSkipLayer() && (screenInfo_.filteredAppSet.empty() ||
+            screenInfo_.filteredAppSet.find(node.GetId()) != screenInfo_.filteredAppSet.end());
     }
     void UpdateRotationStatusForEffectNode(RSEffectRenderNode& node);
     void CheckFilterNodeInSkippedSubTreeNeedClearCache(const RSRenderNode& node, RSDirtyRegionManager& dirtyManager);
@@ -482,6 +487,11 @@ private:
     bool isVisibleRegionDfxEnabled_ = false;
     bool isDisplayDirtyDfxEnabled_ = false;
     bool isCanvasNodeSkipDfxEnabled_ = false;
+    bool isVirtualDirtyEnabled_ = false;
+    bool isVirtualDirtyDfxEnabled_ = false;
+    bool hasMirrorDisplay_ = false;
+    // if display node has skip layer except capsule window
+    bool hasSkipLayer_ = false;
     bool isQuickSkipPreparationEnabled_ = false;
     bool isOcclusionEnabled_ = false;
     bool isSkipCanvasNodeOutOfScreen_ = false;
@@ -571,6 +581,7 @@ private:
     // variable for occlusion
     bool needRecalculateOcclusion_ = false;
     Occlusion::Region accumulatedOcclusionRegion_;
+    Occlusion::Region occlusionRegionWithoutSkipLayer_;
 
     bool curDirty_ = false;
     bool curContentDirty_ = false;

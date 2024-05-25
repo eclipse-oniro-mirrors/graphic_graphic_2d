@@ -53,11 +53,18 @@ private:
     void AdjustZOrderAndDrawSurfaceNode(
         std::vector<std::shared_ptr<RSSurfaceRenderNode>>& nodes,
         Drawing::Canvas& canvas, RSDisplayRenderParams& params) const;
-    void DrawWatermarkIfNeed(RSDisplayRenderNode& node, RSPaintFilterCanvas& canvas) const;
-    void DrawMirrorScreen(RSDisplayRenderNode& displayNodeSp, RSDisplayRenderParams& params,
+    void WiredScreenProjection(std::shared_ptr<RSDisplayRenderNode> displayNodeSp, RSDisplayRenderParams& params,
         std::shared_ptr<RSProcessor> processor);
+    void DrawWatermarkIfNeed(RSDisplayRenderNode& node, RSPaintFilterCanvas& canvas) const;
+    void RotateMirrorCanvas(ScreenRotation& rotation, float mainWidth, float mainHeight);
+    void RotateMirrorCanvasOnExFoldScreen(RSDisplayRenderParams& params, ScreenRotation& rotation, float mainWidth,
+        float mainHeight);
+    void DrawMirrorScreen(std::shared_ptr<RSDisplayRenderNode>& displayNode, RSDisplayRenderParams& params,
+        std::shared_ptr<RSProcessor> processor);
+    std::vector<RectI> CalculateVirtualDirty(RSDisplayRenderNode& displayNode,
+        std::shared_ptr<RSProcessor> processor, RSDisplayRenderParams& params, Drawing::Matrix canvasMatrix);
     using DrawFuncPtr = void(RSDisplayRenderNodeDrawable::*)(Drawing::Canvas&);
-    void DrawMirror(RSDisplayRenderNode& displayNodeSp, RSDisplayRenderParams& params,
+    void DrawMirror(std::shared_ptr<RSDisplayRenderNode>& displayNode, RSDisplayRenderParams& params,
         std::shared_ptr<RSProcessor> processor, DrawFuncPtr drawFunc, RSRenderThreadParams& uniParam);
     void DrawExpandScreen(RSUniRenderVirtualProcessor& processor);
     void SetVirtualScreenType(RSDisplayRenderNode& node, const ScreenInfo& screenInfo);
@@ -83,6 +90,9 @@ private:
     std::shared_ptr<Drawing::Surface> offscreenSurface_; // temporary holds offscreen surface
     std::shared_ptr<RSPaintFilterCanvas> canvasBackup_; // backup current canvas before offscreen rende
     bool canvasRotation_ = false;
+    bool exFoldScreen_ = false; // Expanded state of folding screen
+    bool isLastFrameHasSecSurface_ = false;
+    Drawing::Matrix lastMatrix_;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

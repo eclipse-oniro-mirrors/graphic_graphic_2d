@@ -1106,8 +1106,8 @@ ScreenInfo RSScreenManager::QueryScreenInfo(ScreenId id) const
     info.id = id;
     info.width = screen->Width();
     info.height = screen->Height();
-    info.phyWidth = screen->PhyWidth();
-    info.phyHeight = screen->PhyHeight();
+    info.phyWidth = screen->PhyWidth() ? screen->PhyWidth() : screen->Width();
+    info.phyHeight = screen->PhyHeight() ? screen->PhyHeight() : screen->Height();
     auto ret = screen->GetScreenColorGamut(info.colorGamut);
     if (ret != StatusCode::SUCCESS) {
         info.colorGamut = COLOR_GAMUT_SRGB;
@@ -1172,7 +1172,7 @@ std::shared_ptr<HdiOutput> RSScreenManager::GetOutput(ScreenId id) const
     std::lock_guard<std::mutex> lock(mutex_);
 
     // assert screens_.count(id) == 1
-    if (screens_.count(id) == 0) {
+    if (screens_.count(id) == 0 || !screens_.at(id)) {
         RS_LOGW("RSScreenManager::GetOutput: There is no screen for id %{public}" PRIu64 ".", id);
         return nullptr;
     }

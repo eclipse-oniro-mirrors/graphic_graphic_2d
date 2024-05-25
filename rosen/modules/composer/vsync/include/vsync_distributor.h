@@ -147,6 +147,7 @@ private:
     /* std::pair<id, refresh rate> */
     void OnConnsRefreshRateChanged(const std::vector<std::pair<uint64_t, uint32_t>> &refreshRates);
     void WaitForVsyncOrRequest(std::unique_lock<std::mutex> &locker);
+    void WaitForVsyncOrTimeOut(std::unique_lock<std::mutex> &locker);
     VsyncError SetQosVSyncRateByPid(uint32_t pid, int32_t rate, bool isSystemAnimateScene = false);
 
 #ifdef COMPOSER_SCHED_ENABLE
@@ -167,7 +168,7 @@ private:
     VSyncEvent event_;
     bool vsyncEnabled_;
     std::string name_;
-    bool vsyncThreadRunning_;
+    bool vsyncThreadRunning_ = false;
     std::unordered_map<int32_t, int32_t> connectionCounter_;
     std::vector<std::pair<uint64_t, uint32_t>> changingConnsRefreshRates_; // std::pair<id, refresh rate>
     VSyncMode vsyncMode_ = VSYNC_MODE_LTPS; // default LTPS

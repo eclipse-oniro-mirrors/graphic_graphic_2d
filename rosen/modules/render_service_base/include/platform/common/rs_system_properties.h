@@ -124,6 +124,8 @@ public:
     static bool GetProfilerEnabled();
     static bool GetInstantRecording();
     static void SetInstantRecording(bool flag);
+    static uint32_t GetBetaRecordingMode();
+    static void SetBetaRecordingMode(uint32_t param);
     static bool GetSaveRDC();
     static void SetSaveRDC(bool flag);
 
@@ -134,6 +136,8 @@ public:
     static DirtyRegionDebugType GetDirtyRegionDebugType();
     static PartialRenderType GetPartialRenderEnabled();
     static PartialRenderType GetUniPartialRenderEnabled();
+    static bool GetVirtualDirtyDebugEnabled();
+    static bool GetVirtualDirtyEnabled();
     static bool GetOcclusionEnabled();
     static std::string GetRSEventProperty(const std::string &paraName);
     static bool GetDirectClientCompEnableStatus();
@@ -188,6 +192,7 @@ public:
 
     static bool GetDrawFilterWithoutSnapshotEnabled();
     static bool GetBlurExtraFilterEnabled();
+    static bool GetPurgeBetweenFramesEnabled();
 
     static bool GetAnimationCacheEnabled();
 
@@ -239,7 +244,7 @@ public:
     static bool GetDumpImgEnabled();
 
     static int GetVirtualScreenScaleModeDFX();
-
+    static bool GetTextBlobAsPixelMap();
     static inline GpuApiType GetGpuApiType()
     {
         return RSSystemProperties::systemGpuApiType_;

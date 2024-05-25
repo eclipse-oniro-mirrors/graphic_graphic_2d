@@ -79,7 +79,9 @@ std::shared_ptr<Media::PixelMap> RSUniUICapture::TakeLocalCapture()
     }
     auto canvas = std::make_shared<RSPaintFilterCanvas>(drSurface.get());
     RS_LOGD("RSUniUICapture::TakeLocalCapture: drawCallList size is %{public}zu", drawCallList->GetOpItemSize());
-    drawCallList->Playback(*canvas);
+    const auto& property = node->GetRenderProperties();
+    Drawing::Rect rect = Drawing::Rect(0, 0, property.GetBoundsWidth(), property.GetBoundsHeight());
+    drawCallList->Playback(*canvas, &rect);
     if (!isUniRender_ || isUseCpuSurface_) {
         return pixelmap;
     }
@@ -204,19 +206,6 @@ RSUniUICapture::RSUniUICaptureVisitor::RSUniUICaptureVisitor(NodeId nodeId, floa
     renderEngine_ = std::make_shared<RSRenderEngine>();
     renderEngine_->Init();
     isUniRender_ = RSUniRenderJudgement::IsUniRender();
-    auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode<RSRenderNode>(nodeId_);
-    if (node == nullptr) {
-        RS_LOGE("RSUniUICapture::TakeLocalCapture node is nullptr return");
-        return;
-    }
-    const auto& targetNodeProperty = node->GetRenderProperties();
-    auto targetNodeGeoPtr = (targetNodeProperty.GetBoundsGeometry());
-    captureMatrix_.Set(Drawing::Matrix::Index::SCALE_X, scaleX_);
-    captureMatrix_.Set(Drawing::Matrix::Index::SCALE_X, scaleY_);
-    Drawing::Matrix invertMatrix;
-    if (targetNodeGeoPtr->GetAbsMatrix().Invert(invertMatrix)) {
-        captureMatrix_.PreConcat(invertMatrix);
-    }
 }
 
 void RSUniUICapture::PostTaskToRSRecord(std::shared_ptr<ExtendRecordingCanvas> canvas,
@@ -391,6 +380,12 @@ void RSUniUICapture::RSUniUICaptureVisitor::ProcessSurfaceViewWithUni(RSSurfaceR
         RS_LOGE("RSUniUICaptureVisitor::ProcessSurfaceViewWithUni node:%{public}" PRIu64 ", get geoPtr failed",
             node.GetId());
         return;
+    }
+    captureMatrix_.Set(Drawing::Matrix::Index::SCALE_X, scaleX_);
+    captureMatrix_.Set(Drawing::Matrix::Index::SCALE_Y, scaleY_);
+    Drawing::Matrix invertMatrix;
+    if (geoPtr->GetAbsMatrix().Invert(invertMatrix)) {
+        captureMatrix_.PreConcat(invertMatrix);
     }
     canvas_->SetMatrix(captureMatrix_);
     canvas_->ConcatMatrix(geoPtr->GetAbsMatrix());

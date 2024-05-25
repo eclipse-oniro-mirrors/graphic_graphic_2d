@@ -472,6 +472,9 @@ void RSPropertyDrawableUtils::DrawBackgroundEffect(
     g_blurCnt++;
     auto clipIBounds = canvas->GetDeviceClipBounds();
     auto filter = std::static_pointer_cast<RSDrawingFilter>(rsFilter);
+    RS_OPTIONAL_TRACE_NAME("RSPropertyDrawableUtils::DrawBackgroundEffect " + rsFilter->GetDescription());
+    RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO, "EffectComponent, %s, bounds: %s",
+        rsFilter->GetDetailedDescription().c_str(), clipIBounds.ToString().c_str());
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     // Optional use cacheManager to draw filter
     if (RSProperties::FilterCacheEnabled && cacheManager != nullptr && !canvas->GetDisableFilterCache()) {
@@ -481,9 +484,6 @@ void RSPropertyDrawableUtils::DrawBackgroundEffect(
         return;
     }
 #endif
-    RS_OPTIONAL_TRACE_NAME("RSPropertyDrawableUtils::DrawBackgroundEffect " + rsFilter->GetDescription());
-    RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO, "EffectComponent, %s, bounds: %s",
-        rsFilter->GetDetailedDescription().c_str(), clipIBounds.ToString().c_str());
     auto imageRect = clipIBounds;
     auto imageSnapshot = surface->GetImageSnapshot(imageRect);
     if (imageSnapshot == nullptr) {
@@ -703,10 +703,6 @@ std::shared_ptr<Drawing::ShaderEffect> RSPropertyDrawableUtils::MakeBinarization
 std::shared_ptr<Drawing::Blender> RSPropertyDrawableUtils::MakeDynamicBrightnessBlender(
     const RSDynamicBrightnessPara& params, const float fract)
 {
-    if (ROSEN_LNE(fract, 0.0) || ROSEN_GE(fract, 1.0)) {
-        return nullptr;
-    }
-
     auto builder = MakeDynamicBrightnessBuilder();
     if (!builder) {
         ROSEN_LOGE("RSPropertyDrawableUtils::MakeDynamicBrightnessBlender make builder fail");
@@ -717,7 +713,7 @@ std::shared_ptr<Drawing::Blender> RSPropertyDrawableUtils::MakeDynamicBrightness
     constexpr int IDNEX_ONE = 1;
     constexpr int IDNEX_TWO = 2;
     RS_OPTIONAL_TRACE_NAME("RSPropertyDrawableUtils::MakeDynamicBrightnessBlender");
-    builder->SetUniform("ubo_fract", fract);
+    builder->SetUniform("ubo_fract", std::clamp(fract, 0.0f, 1.0f));
     builder->SetUniform("ubo_rate", params.rate_);
     builder->SetUniform("ubo_degree", params.lightUpDegree_);
     builder->SetUniform("ubo_cubic", params.cubicCoeff_);

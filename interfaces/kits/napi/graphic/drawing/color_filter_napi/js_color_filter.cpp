@@ -83,6 +83,11 @@ napi_value JsColorFilter::Constructor(napi_env env, napi_callback_info info)
     }
 
     JsColorFilter *jsColorFilter = new(std::nothrow) JsColorFilter();
+    if (!jsColorFilter) {
+        ROSEN_LOGE("Failed to create JsColorFilter");
+        return nullptr;
+    }
+
     status = napi_wrap(env, jsThis, jsColorFilter, JsColorFilter::Destructor, nullptr, nullptr);
     if (status != napi_ok) {
         delete jsColorFilter;
@@ -105,7 +110,6 @@ napi_value JsColorFilter::CreateBlendModeColorFilter(napi_env env, napi_callback
 {
     napi_value argv[ARGC_TWO] = {nullptr};
     CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_TWO);
-    CHECK_EACH_PARAM(ARGC_ZERO, napi_object);
 
     int32_t argb[ARGC_FOUR] = {0};
     if (!ConvertFromJsColor(env, argv[ARGC_ZERO], argb, ARGC_FOUR)) {
@@ -126,17 +130,12 @@ napi_value JsColorFilter::CreateComposeColorFilter(napi_env env, napi_callback_i
 {
     napi_value argv[ARGC_TWO] = {nullptr};
     CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_TWO);
-    CHECK_EACH_PARAM(ARGC_ZERO, napi_object);
-    CHECK_EACH_PARAM(ARGC_ONE, napi_object);
 
     JsColorFilter *jsColorFilter1 = nullptr;
+    GET_UNWRAP_PARAM(ARGC_ZERO, jsColorFilter1);
+
     JsColorFilter *jsColorFilter2 = nullptr;
-    napi_unwrap(env, argv[0], (void **)&jsColorFilter1);
-    napi_unwrap(env, argv[1], (void **)&jsColorFilter2);
-    if (jsColorFilter1 == nullptr || jsColorFilter2 == nullptr) {
-        ROSEN_LOGE("JsColorFilter::CreateComposeColorFilter argv is invalid");
-        return nullptr;
-    }
+    GET_UNWRAP_PARAM(ARGC_ONE, jsColorFilter2);
 
     std::shared_ptr<ColorFilter> colorFilter1 = jsColorFilter1->GetColorFilter();
     std::shared_ptr<ColorFilter> colorFilter2 = jsColorFilter2->GetColorFilter();
