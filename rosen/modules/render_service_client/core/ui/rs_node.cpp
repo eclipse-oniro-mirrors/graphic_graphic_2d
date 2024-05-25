@@ -1814,8 +1814,8 @@ void RSNode::RemoveModifier(const std::shared_ptr<RSModifier> modifier)
         if (!isExist) {
             modifiersTypeMap_.erase((int16_t)deleteType);
         }
+        modifier->DetachFromNode();
     }
-    modifier->DetachFromNode();
     std::unique_ptr<RSCommand> command = std::make_unique<RSRemoveModifier>(GetId(), modifier->GetPropertyId());
     auto transactionProxy = RSTransactionProxy::GetInstance();
     if (transactionProxy != nullptr) {
