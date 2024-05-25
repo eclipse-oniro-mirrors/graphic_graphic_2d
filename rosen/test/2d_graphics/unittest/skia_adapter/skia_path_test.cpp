@@ -164,10 +164,11 @@ HWTEST_F(SkiaPathTest, Offset002, TestSize.Level1)
 {
     SkiaPath skiaPath;
     Path path;
-    skiaPath.Offset(path, 100, 100);
+    skiaPath.Offset(&path, 100, 100);
     ASSERT_TRUE(skiaPath.IsValid());
 }
 
+/**
  * @tc.name: SkiaPathGetPositionAndTangent002
  * @tc.desc: Test GetPositionAndTangent
  * @tc.type: FUNC
