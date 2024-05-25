@@ -156,6 +156,16 @@ bool IsFirstFrameReadyToDraw(RSSurfaceRenderNode& node)
     }
     return result;
 }
+
+std::string VisibleDataToString(const VisibleData& val)
+{
+    std::string str = "VisibleData:";
+    for (const auto& v : val) {
+        str += "[nodeId, visibleLevel] = [" + std::to_string(v.first) + ", " +
+            std::to_string(v.second) + "], ";
+    }
+    return str;
+}
 }
 
 void DoScreenRcdTask(std::shared_ptr<RSProcessor>& processor, std::unique_ptr<RcdInfo>& rcdInfo,
@@ -1194,25 +1204,31 @@ void RSUniRenderVisitor::ResetDisplayDirtyRegion()
     if (!curDisplayDirtyManager_) {
         return;
     }
-    ResetDisplayDirtyRegionForScreenPowerChange();
-    ResetDisplayDirtyRegionForColorFilterSwitch();
-    ResetDisplayDirtyRegionForCurtainScreenUsingStatusChange();
+    bool ret = CheckScreenPowerChange() ||
+        CheckColorFilterChange() ||
+        CheckCurtainScreenUsingStatusChange();
+    if (ret) {
+        curDisplayDirtyManager_->ResetDirtyAsSurfaceSize();
+        RS_LOGD("RSUniRenderVisitor::ResetDisplayDirtyRegion on");
+    }
 }
 
-void RSUniRenderVisitor::ResetDisplayDirtyRegionForScreenPowerChange()
+bool RSUniRenderVisitor::CheckScreenPowerChange() const
 {
     if (!RSMainThread::Instance()->GetScreenPowerOnChanged()) {
-        return;
+        return false;
     }
-    curDisplayDirtyManager_->ResetDirtyAsSurfaceSize();
+    RS_LOGD("RSUniRenderVisitor::CheckScreenPowerChange changed");
+    return true;
 }
 
-void RSUniRenderVisitor::ResetDisplayDirtyRegionForCurtainScreenUsingStatusChange()
+bool RSUniRenderVisitor::CheckCurtainScreenUsingStatusChange() const
 {
     if (!RSMainThread::Instance()->IsCurtainScreenUsingStatusChanged()) {
-        return;
+        return false;
     }
-    curDisplayDirtyManager_->ResetDirtyAsSurfaceSize();
+    RS_LOGD("RSUniRenderVisitor::CheckCurtainScreenUsingStatusChange changed");
+    return true;
 }
 
 void RSUniRenderVisitor::QuickPrepareDisplayRenderNode(RSDisplayRenderNode& node)
@@ -1331,6 +1347,8 @@ void RSUniRenderVisitor::UpdateNodeVisibleRegion(RSSurfaceRenderNode& node)
         Occlusion::Region subResultWithoutSkipLayer = selfDrawRegion.Sub(occlusionRegionWithoutSkipLayer_);
         node.SetVisibleRegionInVirtual(subResultWithoutSkipLayer);
     }
+    RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderVisitor::UpdateNodeVisibleRegion name[%s] visibleRegion[%s]",
+        node.GetName().c_str(), node.GetVisibleRegion().GetRegionInfo().c_str());
 }
 
 void RSUniRenderVisitor::CalculateOcclusion(RSSurfaceRenderNode& node)
@@ -1351,7 +1369,15 @@ void RSUniRenderVisitor::CalculateOcclusion(RSSurfaceRenderNode& node)
         }
     }
     node.SetOcclusionInSpecificScenes(false);
-    // collect surface occlusion visibleLevel
+    CollectOcclusionInfoForWMS(node);
+}
+
+void RSUniRenderVisitor::CollectOcclusionInfoForWMS(RSSurfaceRenderNode& node)
+{
+    if (!node.IsMainWindowType()) {
+        return;
+    }
+    // collect mainWindow occlusion visibleLevel
     Occlusion::Region selfDrawRegion { node.GetSurfaceOcclusionRect(true) };
     auto visibleLevel = GetRegionVisibleLevel(node.GetVisibleRegion(), selfDrawRegion);
     // wms default all visible about sefdrawing node and AbilityComponent node
@@ -1367,6 +1393,30 @@ void RSUniRenderVisitor::CalculateOcclusion(RSSurfaceRenderNode& node)
     if (visibleLevel != RSVisibleLevel::RS_INVISIBLE) {
         dstCurVisVec_.emplace_back(std::make_pair(node.GetId(),
             node.GetVisibleLevelForWMS(visibleLevel)));
+    }
+}
+
+void RSUniRenderVisitor::SurfaceOcclusionCallbackToWMS()
+{
+    if (RSSystemParameters::GetOcclusionCallBackToWMSDebugType()) {
+        allDstCurVisVec_.clear();
+        const auto& curAllSurfaces = curDisplayNode_->GetAllMainAndLeashSurfaces();
+        for (const auto& surfacePtr : curAllSurfaces) {
+            if (surfacePtr == nullptr) {
+                continue;
+            }
+            const auto& surfaceNode = static_cast<RSSurfaceRenderNode&>(*surfacePtr);
+            if (surfaceNode.IsMainWindowType()) {
+                allDstCurVisVec_.emplace_back(std::make_pair(surfacePtr->GetId(),
+                    WINDOW_LAYER_INFO_TYPE::ALL_VISIBLE));
+            }
+        }
+        visibleChanged_ = true;
+    }
+    if (visibleChanged_) {
+        RSMainThread::Instance()->SurfaceOcclusionChangeCallback(allDstCurVisVec_);
+        RS_LOGD("RSUniRenderVisitor::SurfaceOcclusionCallbackToWMS %{public}s",
+            VisibleDataToString(allDstCurVisVec_).c_str());
     }
 }
 
@@ -1663,8 +1713,6 @@ bool RSUniRenderVisitor::AfterUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
     if (node.IsMainWindowType()) {
         node.SetGlobalCornerRadius(curCornerRadius_);
         CalculateOcclusion(node);
-        RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderVisitor::AfterUpdateSurfaceDirtyCalc visibleRegion:%s",
-            node.GetVisibleRegion().GetRegionInfo().c_str());
     }
     // 3. Update HwcNode Info for appNode
     UpdateHwcNodeInfoForAppNode(node);
@@ -2052,10 +2100,7 @@ void RSUniRenderVisitor::UpdateSurfaceDirtyAndGlobalDirty()
 
 void RSUniRenderVisitor::UpdateSurfaceOcclusionInfo()
 {
-    if (!needRecalculateOcclusion_) {
-        RS_LOGD("RSUniRenderVisitor::UpdateSurfaceOcclusionInfo no need to update");
-        return;
-    }
+    // [planning] can be optimized by needRecalculateOcclusion
     bool visibleChanged = dstCurVisVec_.size() != lastVisVec_.size();
     if (!visibleChanged) {
         for (uint32_t i = 0; i < dstCurVisVec_.size(); i++) {
@@ -2618,6 +2663,7 @@ void RSUniRenderVisitor::UpdateSubSurfaceNodeRectInSkippedSubTree(const RSRender
         if (subSurfaceNodePtr->IsLeashOrMainWindow()) {
             curMainAndLeashWindowNodesIds_.push(subSurfaceNodePtr->GetId());
             curDisplayNode_->RecordMainAndLeashSurfaces(subSurfaceNodePtr);
+            CollectOcclusionInfoForWMS(*subSurfaceNodePtr);
         }
     }
     ResetSubSurfaceNodesCalState(allSubSurfaceNodes);
@@ -6308,12 +6354,13 @@ void RSUniRenderVisitor::DrawCurtainScreen()
     canvas_->DetachBrush();
 }
 
-void RSUniRenderVisitor::ResetDisplayDirtyRegionForColorFilterSwitch()
+bool RSUniRenderVisitor::CheckColorFilterChange() const
 {
     if (!RSMainThread::Instance()->IsAccessibilityConfigChanged()) {
-        return;
+        return false;
     }
-    curDisplayDirtyManager_->ResetDirtyAsSurfaceSize();
+    RS_LOGD("RSUniRenderVisitor::CheckColorFilterChange changed");
+    return true;
 }
 
 void RSUniRenderVisitor::CheckMergeDebugRectforRefreshRate()
