@@ -1632,8 +1632,9 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
     DvsyncInfo info;
     info.isRsDvsyncOn = rsVSyncDistributor_->IsDVsyncOn();
     info.isUiDvsyncOn =  rsVSyncDistributor_->IsUiDvsyncOn();
+    auto rsRate = rsVSyncDistributor_->GetRefreshRate();
     // Check and processing refresh rate task.
-    frameRateMgr_->ProcessPendingRefreshRate(timestamp, rsVSyncDistributor_->GetRefreshRate(), info);
+    frameRateMgr_->ProcessPendingRefreshRate(timestamp, rsRate, info);
 
     // hgm warning: use IsLtpo instead after GetDisplaySupportedModes ready
     if (frameRateMgr_->GetCurScreenStrategyId().find("LTPO") == std::string::npos) {
@@ -1648,7 +1649,7 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
         auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
         auto pendingRefreshRate = frameRateMgr_->GetPendingRefreshRate();
         if (pendingRefreshRate != nullptr
-            && (!info.isUiDvsyncOn || rsVSyncDistributor_->GetRefreshRate() == *pendingRefreshRate)) {
+            && (!info.isUiDvsyncOn || rsRate == *pendingRefreshRate)) {
             hgmCore.SetPendingScreenRefreshRate(*pendingRefreshRate);
             frameRateMgr_->ResetPendingRefreshRate();
         }
