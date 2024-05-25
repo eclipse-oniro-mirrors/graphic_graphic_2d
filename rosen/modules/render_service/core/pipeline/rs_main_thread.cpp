@@ -1058,6 +1058,30 @@ void RSMainThread::ProcessRSTransactionData(std::unique_ptr<RSTransactionData>& 
     rsTransactionData->Process(*context_);
 }
 
+void RSMainThread::ProcessSyncTransactionCount(std::unique_ptr<RSTransactionData>& rsTransactionData)
+{
+    bool isNeedCloseSync = rsTransactionData->IsNeedCloseSync();
+    auto hostPid = rsTransactionData->GetHostPid();
+    if (hostPid == -1 || ExtractPid(rsTransactionData->GetSyncId()) == static_cast<uint32_t>(hostPid)) {
+        // Synchronous commands initiated directly from the SCB
+        if (isNeedCloseSync) {
+            syncTransactionCount_ += rsTransactionData->GetSyncTransactionNum();
+        } else {
+            syncTransactionCount_ -= 1;
+        }
+    } else {
+        // Synchronous command initiated by uiextension host
+        auto count = subSyncTransactionCounts_[hostPid];
+        if (rsTransactionData->GetSyncTransactionNum() > 0) {
+            count += rsTransactionData->GetSyncTransactionNum();
+            syncTransactionCount_ -= 1;
+        } else {
+            count -= 1;
+        }
+        count == 0 ? subSyncTransactionCounts_.erase(hostPid) : subSyncTransactionCounts_[hostPid] = count;
+    }
+}
+
 void RSMainThread::ProcessSyncRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData, pid_t pid)
 {
     if (!rsTransactionData->IsNeedSync()) {
@@ -1073,7 +1097,6 @@ void RSMainThread::ProcessSyncRSTransactionData(std::unique_ptr<RSTransactionDat
         return;
     }
 
-    bool isNeedCloseSync = rsTransactionData->IsNeedCloseSync();
     if (syncTransactionData_.empty()) {
         if (handler_) {
             auto task = [this, syncId = rsTransactionData->GetSyncId()]() {
@@ -1095,12 +1118,9 @@ void RSMainThread::ProcessSyncRSTransactionData(std::unique_ptr<RSTransactionDat
     if (syncTransactionData_.count(pid) == 0) {
         syncTransactionData_.insert({ pid, std::vector<std::unique_ptr<RSTransactionData>>() });
     }
-    syncTransactionCount_ += rsTransactionData->GetSyncTransactionNum();
-    if (!isNeedCloseSync) {
-        syncTransactionCount_ -= 1;
-    }
+    ProcessSyncTransactionCount(rsTransactionData);
     syncTransactionData_[pid].emplace_back(std::move(rsTransactionData));
-    if (syncTransactionCount_ == 0) {
+    if (syncTransactionCount_ == 0 && subSyncTransactionCounts_.empty()) {
         ProcessAllSyncTransactionData();
     }
 }
@@ -1116,6 +1136,7 @@ void RSMainThread::ProcessAllSyncTransactionData()
     }
     syncTransactionData_.clear();
     syncTransactionCount_ = 0;
+    subSyncTransactionCounts_.clear();
     RequestNextVSync();
 }
 
