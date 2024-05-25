@@ -206,9 +206,6 @@ void RSRenderNodeDrawableAdapter::DrawImpl(Drawing::Canvas& canvas, const Drawin
 
 void RSRenderNodeDrawableAdapter::DrawBackground(Drawing::Canvas& canvas, const Drawing::Rect& rect) const
 {
-    if (drawCmdList_.empty()) {
-        return;
-    }
     DrawRangeImpl(canvas, rect, 0, drawCmdIndex_.backgroundEndIndex_);
 }
 
@@ -262,10 +259,6 @@ void RSRenderNodeDrawableAdapter::DrawForeground(Drawing::Canvas& canvas, const 
 
 void RSRenderNodeDrawableAdapter::DrawAll(Drawing::Canvas& canvas, const Drawing::Rect& rect) const
 {
-    const auto& drawCmdList = drawCmdList_;
-    if (drawCmdList.empty()) {
-        return;
-    }
     DrawRangeImpl(canvas, rect, 0, drawCmdIndex_.endIndex_);
 }
 

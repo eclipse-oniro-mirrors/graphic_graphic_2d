@@ -223,7 +223,7 @@ public:
     bool HasRemovedChild() const;
     inline void ResetChildrenRect()
     {
-        childrenRect_ = RectI();
+        childrenRect_.Clear();
     }
     RectI GetChildrenRect() const;
 
@@ -236,11 +236,20 @@ public:
     const std::unordered_set<NodeId>& GetVisibleEffectChild() const;
     void UpdateVisibleEffectChild(RSRenderNode& childNode);
 
-    NodeId GetInstanceRootNodeId() const;
+    inline NodeId GetInstanceRootNodeId() const
+    {
+        return instanceRootNodeId_;
+    }
     const std::shared_ptr<RSRenderNode> GetInstanceRootNode() const;
-    NodeId GetFirstLevelNodeId() const;
+    inline NodeId GetFirstLevelNodeId() const
+    {
+        return firstLevelNodeId_;
+    }
     const std::shared_ptr<RSRenderNode> GetFirstLevelNode() const;
-    NodeId GetUifirstRootNodeId() const;
+    inline NodeId GetUifirstRootNodeId() const
+    {
+        return uifirstRootNodeId_;
+    }
     void UpdateTreeUifirstRootNodeId(NodeId id);
 
     // reset accumulated vals before traverses children

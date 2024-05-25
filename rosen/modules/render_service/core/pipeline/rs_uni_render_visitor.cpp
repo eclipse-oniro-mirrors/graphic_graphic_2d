@@ -419,7 +419,7 @@ void RSUniRenderVisitor::MergeRemovedChildDirtyRegion(RSRenderNode& node, bool n
 
     // [planning] merge removed child's rect instead
     if (needMap && curSurfaceNode_) {
-        if (auto geoPtr = node.GetRenderProperties().GetBoundsGeometry()) {
+        if (auto& geoPtr = node.GetRenderProperties().GetBoundsGeometry()) {
             dirtyRect = geoPtr->MapAbsRect(dirtyRect.ConvertTo<float>());
         }
     } else {
@@ -1455,7 +1455,7 @@ void RSUniRenderVisitor::UpdateRotationStatusForEffectNode(RSEffectRenderNode& n
 void RSUniRenderVisitor::UpdatePrepareClip(RSRenderNode& node)
 {
     const auto& property = node.GetRenderProperties();
-    auto geoPtr = property.GetBoundsGeometry();
+    auto& geoPtr = property.GetBoundsGeometry();
     if (geoPtr == nullptr) {
         return;
     }
@@ -2516,7 +2516,9 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByFilterRect(
 void RSUniRenderVisitor::UpdateHwcNodeEnableByGlobalFilter(std::shared_ptr<RSSurfaceRenderNode>& node)
 {
     auto cleanFilter = transparentCleanFilter_.find(node->GetId());
+    bool cleanFilterFound = (cleanFilter != transparentCleanFilter_.end());
     auto dirtyFilter = transparentDirtyFilter_.find(node->GetId());
+    bool dirtyFilterFound = (dirtyFilter != transparentDirtyFilter_.end());
     auto& curMainAndLeashSurfaces = curDisplayNode_->GetAllMainAndLeashSurfaces();
     for (auto it = curMainAndLeashSurfaces.rbegin(); it != curMainAndLeashSurfaces.rend(); ++it) {
         auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(*it);
@@ -2535,13 +2537,13 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByGlobalFilter(std::shared_ptr<RSSur
             if (!hwcNodePtr || hwcNodePtr->IsHardwareForcedDisabled()) {
                 continue;
             }
-            if (cleanFilter != transparentCleanFilter_.end()) {
+            if (cleanFilterFound) {
                 UpdateHwcNodeEnableByGlobalCleanFilter(cleanFilter->second, *hwcNodePtr);
                 if (hwcNodePtr->IsHardwareForcedDisabled()) {
                     continue;
                 }
             }
-            if (dirtyFilter != transparentDirtyFilter_.end()) {
+            if (dirtyFilterFound) {
                 for (auto filter = dirtyFilter->second.begin(); filter != dirtyFilter->second.end(); ++filter) {
                     if (hwcNodePtr->GetDstRect().Intersect(filter->second)) {
                         RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%llu disabled by transparentDirtyFilter",
@@ -6321,7 +6323,7 @@ void RSUniRenderVisitor::CheckMergeDebugRectforRefreshRate()
     // Debug dirtyregion of show current refreshRation
     if (RSRealtimeRefreshRateManager::Instance().GetShowRefreshRateEnabled()) {
         RectI tempRect = {100, 100, 500, 200};   // setDirtyRegion for RealtimeRefreshRate
-        auto geoPtr = curDisplayNode_->GetRenderProperties().GetBoundsGeometry();
+        auto& geoPtr = curDisplayNode_->GetRenderProperties().GetBoundsGeometry();
         tempRect = geoPtr->MapAbsRect(tempRect.ConvertTo<float>());
         curDisplayNode_->GetDirtyManager()->MergeDirtyRect(tempRect, true);  // true：debugRect for dislplayNode skip
     }
