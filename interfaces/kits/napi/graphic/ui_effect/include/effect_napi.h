@@ -18,13 +18,13 @@
 #include <hilog/log.h>
 #include <iostream>
 
-#include "background_color_effect_para.h"
-#include "blender.h"
-#include "brightness_blender.h"
+#include "effect/include/background_color_effect_para.h"
+#include "effect/include/blender.h"
+#include "effect/include/brightness_blender.h"
+#include "effect/include/visual_effect.h"
+#include "effect/include/visual_effect_para.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
-#include "visual_effect.h"
-#include "visual_effect_para.h"
 
 namespace OHOS {
 namespace Rosen {
