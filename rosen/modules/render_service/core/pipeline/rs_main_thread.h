@@ -269,6 +269,7 @@ public:
     }
 
     void SurfaceOcclusionChangeCallback(VisibleData& dstCurVisVec);
+    void SurfaceOcclusionCallback();
     void SubscribeAppState();
     void HandleOnTrim(Memory::SystemMemoryLevel level);
     void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
@@ -356,7 +357,6 @@ private:
         std::vector<RSBaseRenderNode::SharedPtr>& curAllSurfaces);
     void CallbackToWMS(VisibleData& curVisVec);
     void SendCommands();
-    void SurfaceOcclusionCallback();
     void InitRSEventDetector();
     void RemoveRSEventDetector();
     void SetRSEventDetectorLoopStartTag();
@@ -429,6 +429,7 @@ private:
     int64_t GetCurrentSystimeMs() const;
     int64_t GetCurrentSteadyTimeMs() const;
     float GetCurrentSteadyTimeMsFloat() const;
+    void RequestNextVsyncForCachedCommand(std::string& transactionFlags, pid_t pid, uint64_t curIndex);
     void UpdateLuminance();
 
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;

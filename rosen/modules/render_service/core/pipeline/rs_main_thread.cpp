@@ -901,6 +901,20 @@ void RSMainThread::SkipCommandByNodeId(std::vector<std::unique_ptr<RSTransaction
     }
 }
 
+void RSMainThread::RequestNextVsyncForCachedCommand(std::string& transactionFlags, pid_t pid, uint64_t curIndex)
+{
+#ifdef ROSEN_EMULATOR
+    transactionFlags += " cache [" + std::to_string(pid) + "," + std::to_string(curIndex) + "]";
+    RequestNextVSync();
+#else
+    if (rsVSyncDistributor_->IsUiDvsyncOn()) {
+        transactionFlags += " cache (" + std::to_string(pid) + "," + std::to_string(curIndex) + ")";
+        RS_TRACE_NAME("trigger NextVsync for Dvsync-Cached command");
+        RequestNextVSync("fromRsMainCommand", timestamp_);
+    }
+#endif
+}
+
 void RSMainThread::CheckAndUpdateTransactionIndex(std::shared_ptr<TransactionDataMap>& transactionDataEffective,
     std::string& transactionFlags)
 {
@@ -918,11 +932,9 @@ void RSMainThread::CheckAndUpdateTransactionIndex(std::shared_ptr<TransactionDat
             }
             auto curIndex = (*iter)->GetIndex();
             if (curIndex == lastIndex + 1) {
-                if ((*iter)->GetTimestamp() >= timestamp_) {
-#ifdef ROSEN_EMULATOR
-                    transactionFlags += "cache [" + std::to_string(pid) + "," + std::to_string(curIndex) + "]";
-                    RequestNextVSync();
-#endif
+                if ((*iter)->GetTimestamp() + static_cast<uint64_t>(rsVSyncDistributor_->GetUiCommandDelayTime())
+                    >= timestamp_) {
+                    RequestNextVsyncForCachedCommand(transactionFlags, pid, curIndex);
                     break;
                 }
                 ++lastIndex;
@@ -1617,8 +1629,12 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
     if (!frameRateMgr_) {
         return;
     }
+    DvsyncInfo info;
+    info.isRsDvsyncOn = rsVSyncDistributor_->IsDVsyncOn();
+    info.isUiDvsyncOn =  rsVSyncDistributor_->IsUiDvsyncOn();
+    auto rsRate = rsVSyncDistributor_->GetRefreshRate();
     // Check and processing refresh rate task.
-    frameRateMgr_->ProcessPendingRefreshRate(timestamp);
+    frameRateMgr_->ProcessPendingRefreshRate(timestamp, rsRate, info);
 
     // hgm warning: use IsLtpo instead after GetDisplaySupportedModes ready
     if (frameRateMgr_->GetCurScreenStrategyId().find("LTPO") == std::string::npos) {
@@ -1626,13 +1642,14 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
     } else {
         auto appFrameLinkers = GetContext().GetFrameRateLinkerMap().Get();
         frameRateMgr_->UniProcessDataForLtpo(timestamp, rsFrameRateLinker_, appFrameLinkers,
-            idleTimerExpiredFlag_, rsVSyncDistributor_->IsDVsyncOn());
+            idleTimerExpiredFlag_, info);
     }
 
     if (rsVSyncDistributor_->IsDVsyncOn()) {
         auto& hgmCore = OHOS::Rosen::HgmCore::Instance();
         auto pendingRefreshRate = frameRateMgr_->GetPendingRefreshRate();
-        if (pendingRefreshRate != nullptr) {
+        if (pendingRefreshRate != nullptr
+            && (!info.isUiDvsyncOn || rsRate == *pendingRefreshRate)) {
             hgmCore.SetPendingScreenRefreshRate(*pendingRefreshRate);
             frameRateMgr_->ResetPendingRefreshRate();
         }
@@ -1857,6 +1874,7 @@ void RSMainThread::Render()
         renderThreadParams_->SetTimestamp(hgmCore.GetCurrentTimestamp());
         renderThreadParams_->SetRequestNextVsyncFlag(needRequestNextVsyncAnimate_);
         renderThreadParams_->SetPendingScreenRefreshRate(hgmCore.GetPendingScreenRefreshRate());
+        renderThreadParams_->SetPendingConstraintRelativeTime(hgmCore.GetPendingConstraintRelativeTime());
         renderThreadParams_->SetForceCommitLayer(isHardwareEnabledBufferUpdated_ || forceUpdateUniRenderFlag_);
         renderThreadParams_->SetOcclusionEnabled(RSSystemProperties::GetOcclusionEnabled());
     }
@@ -1876,6 +1894,7 @@ void RSMainThread::Render()
         renderThreadParams_->SetWatermark(watermarkFlag_, watermarkImg_);
         renderThreadParams_->SetCurtainScreenUsingStatus(isCurtainScreenOn_);
         UniRender(rootNode);
+        frameCount_++;
     } else {
         auto rsVisitor = std::make_shared<RSRenderServiceVisitor>();
         rsVisitor->SetAnimateState(doWindowAnimate_);
@@ -2324,7 +2343,7 @@ void RSMainThread::SurfaceOcclusionCallback()
                 continue;
             }
             visibleAreaRatio = static_cast<float>(savedAppWindowNode_[listener.first].second->
-                GetVisibleRegionForCallBack().Area()) / static_cast<float>(dstRect.GetWidth() * dstRect.GetHeight());
+                GetVisibleRegion().Area()) / static_cast<float>(dstRect.GetWidth() * dstRect.GetHeight());
             auto& partitionVector = std::get<2>(listener.second); // get tuple 2 partition points vector
             bool vectorEmpty = partitionVector.empty();
             if (vectorEmpty && (visibleAreaRatio > 0.0f)) {

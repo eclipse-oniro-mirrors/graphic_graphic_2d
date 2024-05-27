@@ -180,6 +180,9 @@ void VSyncGenerator::ThreadLoop()
                 bool modelChanged = UpdateChangeDataLocked(occurTimestamp, occurReferenceTime, nextTimeStamp);
                 if (modelChanged) {
                     ScopedBytrace func("VSyncGenerator: LTPO mode change");
+                    locker.unlock();
+                    appVSyncDistributor_->RecordVsyncModeChange(currRefreshRate_, period_);
+                    rsVSyncDistributor_->RecordVsyncModeChange(currRefreshRate_, period_);
                     continue;
                 }
             }
@@ -675,6 +678,11 @@ VsyncError VSyncGenerator::StartRefresh()
 void VSyncGenerator::SetRSDistributor(sptr<VSyncDistributor> &rsVSyncDistributor)
 {
     rsVSyncDistributor_ = rsVSyncDistributor;
+}
+
+void VSyncGenerator::SetAppDistributor(sptr<VSyncDistributor> &appVSyncDistributor)
+{
+    appVSyncDistributor_ = appVSyncDistributor;
 }
 
 void VSyncGenerator::PeriodCheckLocked(int64_t hardwareVsyncInterval)
