@@ -189,12 +189,11 @@ void RSExtendImageObject::PreProcessPixelMap(Drawing::Canvas& canvas, const std:
             }
         } else {
             const void* data = pixelMap->GetPixels();
-            if (pixelMap->GetCapacity() > ASTC_HEAD_BYTES) {
-                if (!fileData->BuildWithoutCopy((void*)((char*) data + ASTC_HEAD_BYTES),
-                    pixelMap->GetCapacity() - ASTC_HEAD_BYTES)) {
-                    LOGE("PreProcessPixelMap data BuildWithoutCopy fail");
-                    return;
-                }
+            if (pixelMap->GetCapacity() > ASTC_HEAD_BYTES &&
+                !fileData->BuildWithoutCopy((void*)((char*) data + ASTC_HEAD_BYTES),
+                pixelMap->GetCapacity() - ASTC_HEAD_BYTES)) {
+                LOGE("PreProcessPixelMap data BuildWithoutCopy fail");
+                return;
             }
         }
         rsImage_->SetCompressData(fileData);
