@@ -1074,7 +1074,7 @@ void RSMainThread::ProcessSyncTransactionCount(std::unique_ptr<RSTransactionData
 {
     bool isNeedCloseSync = rsTransactionData->IsNeedCloseSync();
     auto hostPid = rsTransactionData->GetHostPid();
-    if (hostPid == -1 || ExtractPid(rsTransactionData->GetSyncId()) == static_cast<uint32_t>(hostPid)) {
+    if (hostPid == -1 || ExtractPid(rsTransactionData->GetSyncId()) == hostPid) {
         // Synchronous commands initiated directly from the SCB
         if (isNeedCloseSync) {
             syncTransactionCount_ += rsTransactionData->GetSyncTransactionNum();
