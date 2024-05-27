@@ -354,6 +354,7 @@ void RSSubThread::ResetGrContext()
     if (grContext_ == nullptr) {
         return;
     }
+    grContext_->PurgeUnlockedResources(true);
     grContext_->FlushAndSubmit(true);
     grContext_->FreeGpuResources();
 }
