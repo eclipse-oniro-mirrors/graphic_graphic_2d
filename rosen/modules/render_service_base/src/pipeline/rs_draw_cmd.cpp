@@ -183,12 +183,18 @@ void RSExtendImageObject::PreProcessPixelMap(Drawing::Canvas& canvas, const std:
             sptr<SurfaceBuffer> surfaceBuf(reinterpret_cast<SurfaceBuffer *>(pixelMap->GetFd()));
             nativeWindowBuffer_ = CreateNativeWindowBufferFromSurfaceBuffer(&surfaceBuf);
             OH_NativeBuffer* nativeBuffer = OH_NativeBufferFromNativeWindowBuffer(nativeWindowBuffer_);
-            fileData->BuildFromOHNativeBuffer(nativeBuffer, pixelMap->GetCapacity());
+            if (!fileData->BuildFromOHNativeBuffer(nativeBuffer, pixelMap->GetCapacity())) {
+                LOGE("PreProcessPixelMap data BuildFromOHNativeBuffer fail");
+                return;
+            }
         } else {
             const void* data = pixelMap->GetPixels();
-            const int seekSize = 16;
-            if (pixelMap->GetCapacity() > seekSize) {
-                fileData->BuildWithoutCopy((void*)((char*) data + seekSize), pixelMap->GetCapacity() - seekSize);
+            if (pixelMap->GetCapacity() > ASTC_HEAD_BYTES) {
+                if (!fileData->BuildWithoutCopy((void*)((char*) data + ASTC_HEAD_BYTES),
+                    pixelMap->GetCapacity() - ASTC_HEAD_BYTES)) {
+                    LOGE("PreProcessPixelMap data BuildWithoutCopy fail");
+                    return;
+                }
             }
         }
         rsImage_->SetCompressData(fileData);
