@@ -182,29 +182,29 @@ HWTEST_F(FontParserTest, NameTableParserTest1, TestSize.Level1)
 HWTEST_F(FontParserTest, NameTableParserTest2, TestSize.Level1)
 {
     auto typeface = Drawing::Typeface::MakeDefault();
-    if(typeface == nullptr) {
-    LOGSO_FUNC_LINE(ERROR) << "typeface is nullptr";
-    return;
+    if (typeface == nullptr) {
+        LOGSO_FUNC_LINE(ERROR) << "typeface is nullptr";
+        return;
     }
     auto tag = HB_TAG('n', 'a', 'm', 'e');
     auto size = typeface->GetTableSize(tag);
-    if(size <= 0) {
-    LOGSO_FUNC_LINE(ERROR) << "haven't name";
-    return ;
+    if (size <= 0) {
+        LOGSO_FUNC_LINE(ERROR) << "haven't name";
+        return ;
     }
     std::unique_ptr<char[]> tableData = nullptr;
     tableData = std::make_unique<char[]>(size);
     auto retTableData = typeface->GetTableData(tag, 0, size, tableData.get());
-    if(size != retTableData) {
-    LOGSO_FUNC_LINE(ERROR) << "get table data failed size:" << size << ",ret:" << retTableData;
-    return ;
+    if (size != retTableData) {
+        LOGSO_FUNC_LINE(ERROR) << "get table data failed size:" << size << ",ret:" << retTableData;
+        return ;
     }
     hb_blob_t* hblob = nullptr;
     hblob = hb_blob_create(
             reinterpret_cast<const char *>(tableData.get()), size, HB_MEMORY_MODE_WRITABLE, tableData.get(), nullptr);
-    if(hblob == nullptr) {
-    LOGSO_FUNC_LINE(ERROR) << "hblob is nullptr";
-    return ;
+    if (hblob == nullptr) {
+        LOGSO_FUNC_LINE(ERROR) << "hblob is nullptr";
+        return ;
     }
     const char* data_ = nullptr;
     unsigned int length_ = 0;
