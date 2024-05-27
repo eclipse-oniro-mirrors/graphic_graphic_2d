@@ -56,6 +56,11 @@ enum TouchStatus : uint32_t {
     TOUCH_PULL_UP = 14,
 };
 
+struct DvsyncInfo {
+    bool isRsDvsyncOn = false;
+    bool isUiDvsyncOn = false;
+};
+
 struct FrameRateVoteInfo {
     std::string voterName = "";
     uint32_t preferred = 0;
@@ -110,7 +115,7 @@ public:
     void HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus status);
     bool IsLtpo() const { return isLtpo_; };
     void UniProcessDataForLtpo(uint64_t timestamp, std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker,
-        const FrameRateLinkerMap& appFrameRateLinkers, bool idleTimerExpired, bool isDvsyncOn);
+        const FrameRateLinkerMap& appFrameRateLinkers, bool idleTimerExpired, const DvsyncInfo& dvsyncInfo);
     void UniProcessDataForLtps(bool idleTimerExpired);
 
     int32_t GetExpectedFrameRate(const RSPropertyUnit unit, float velocity) const;
@@ -129,7 +134,7 @@ public:
     void InitTouchManager();
     std::shared_ptr<uint32_t> GetPendingRefreshRate();
     void ResetPendingRefreshRate();
-    void ProcessPendingRefreshRate(uint64_t timestamp);
+    void ProcessPendingRefreshRate(uint64_t timestamp, uint32_t rsRate, const DvsyncInfo& dvsyncInfo);
     HgmMultiAppStrategy& GetMultiAppStrategy() { return multiAppStrategy_; }
     HgmTouchManager& GetTouchManager() { return touchManager_; }
     void UpdateSurfaceTime(const std::string& name, uint64_t timestamp);
@@ -157,9 +162,10 @@ private:
     static std::string GetScreenType(ScreenId screenId);
     void MarkVoteChange();
     static bool MergeRangeByPriority(VoteRange& rangeRes, VoteRange range);
-    VoteRange ProcessRefreshRateVote(FrameRateVoteInfo& frameRateVoteInfo);
+    VoteRange ProcessRefreshRateVote(FrameRateVoteInfo& frameRateVoteInfo, const DvsyncInfo& dvsyncInfo);
     void UpdateVoteRule();
     void ReportHiSysEvent(const FrameRateVoteInfo& frameRateVoteInfo);
+    VoteRange ProcessRefreshRateVoteNoRefreshNeeded(const DvsyncInfo& dvsyncInfo);
 
     uint32_t currRefreshRate_ = 0;
     uint32_t controllerRate_ = 0;
@@ -195,6 +201,8 @@ private:
     bool startCheck_ = false;
     bool prepareCheck_ = false;
     HgmIdleDetector idleDetector_;
+    uint32_t lastVoteMin_ = 0;
+    uint32_t lastVoteMax_ = 144;
 };
 } // namespace Rosen
 } // namespace OHOS

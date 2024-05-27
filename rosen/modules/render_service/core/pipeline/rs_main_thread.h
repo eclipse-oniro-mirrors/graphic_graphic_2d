@@ -429,6 +429,7 @@ private:
     int64_t GetCurrentSystimeMs() const;
     int64_t GetCurrentSteadyTimeMs() const;
     float GetCurrentSteadyTimeMsFloat() const;
+    void RequestNextVsyncForCachedCommand(std::string& transactionFlags, pid_t pid, uint64_t curIndex);
     void UpdateLuminance();
 
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
