@@ -147,11 +147,14 @@ HWTEST_F(OH_Drawing_ConvertTest, OH_Drawing_ConvertTest009, TestSize.Level1)
 HWTEST_F(OH_Drawing_ConvertTest, OH_Drawing_ConvertTest010, TestSize.Level2)
 {
     TextStyle textStyle;
+    int tagFeature = 10;
+    float tagAxis = 1.2;
+    double fontParam = 14.0;
     textStyle.symbol.SetVisualMode(VisualMode::VISUAL_SMALL);
-    textStyle.fontFeatures.SetFeature("tag", 10);
-    textStyle.fontVariations.SetAxisValue("tag", 1.2);
+    textStyle.fontFeatures.SetFeature("tag", tagFeature);
+    textStyle.fontVariations.SetAxisValue("tag", tagAxis);
     SPText::TextStyle sptextStyle = AdapterTxt::Convert(textStyle);
-    EXPECT_EQ(sptextStyle.fontSize == 14.0, true);
+    EXPECT_EQ(sptextStyle.fontSize == fontParam, true);
 }
 } // namespace Rosen
 } // namespace OHOS
