@@ -1264,10 +1264,9 @@ void RSRenderNode::UpdateAbsDirtyRegion(RSDirtyRegionManager& dirtyManager, cons
     }
 }
 
-bool RSRenderNode::UpdateDrawRectAndDirtyRegion(
-    RSDirtyRegionManager& dirtyManager, bool accumGeoDirty, const RectI& clipRect)
+bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManager, bool accumGeoDirty,
+    const RectI& clipRect, const Drawing::Matrix& parentSurfaceMatrix)
 {
-    const static auto IdentityMatrix = Drawing::Matrix();
     bool selfDrawRectChanged = false;
     // 1. update self drawrect if dirty
     if (IsDirty()) {
@@ -1280,34 +1279,38 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(
         accumGeoDirty = true;
     }
     auto& properties = GetMutableRenderProperties();
-    if (accumGeoDirty || properties.NeedClip() ||
-        properties.geoDirty_ || (dirtyStatus_ != NodeDirty::CLEAN)) {
-        const Drawing::Matrix* parentMatrix = nullptr;
-        std::optional<Drawing::Point> offset;
+    if (accumGeoDirty || properties.NeedClip() || properties.geoDirty_ || (dirtyStatus_ != NodeDirty::CLEAN)) {
         if (auto sandbox = properties.GetSandBox(); sandbox.has_value() && sharedTransitionParam_) {
-            parentMatrix = &IdentityMatrix;
-            offset = Drawing::Point { sandbox->x_, sandbox->y_ };
+            // case a. use parent surface matrix with sandbox
+            auto translateMatrix = Drawing::Matrix();
+            translateMatrix.Translate(sandbox->x_, sandbox->y_);
+            properties.GetBoundsGeometry()->SetContextMatrix(translateMatrix);
+            accumGeoDirty = properties.UpdateGeometryByParent(&parentSurfaceMatrix, std::nullopt) || accumGeoDirty;
+            properties.GetBoundsGeometry()->SetContextMatrix(std::nullopt);
+        } else if (parent != nullptr) {
+            // case b. use parent matrix
+            auto parentMatrix = &(parent->GetRenderProperties().GetBoundsGeometry()->GetAbsMatrix());
+            auto offset = !IsInstanceOf<RSSurfaceRenderNode>() ?
+                std::make_optional<Drawing::Point>(parent->GetRenderProperties().GetFrameOffsetX(),
+                parent->GetRenderProperties().GetFrameOffsetY()) : std::nullopt;
+            accumGeoDirty = properties.UpdateGeometryByParent(parentMatrix, offset) || accumGeoDirty;
         } else {
-            parentMatrix = parent ? &(parent->GetRenderProperties().GetBoundsGeometry()->GetAbsMatrix()) : nullptr;
-            if (parent && !IsInstanceOf<RSSurfaceRenderNode>()) {
-                offset = Drawing::Point { parent->GetRenderProperties().GetFrameOffsetX(),
-                    parent->GetRenderProperties().GetFrameOffsetY() };
-            }
+            // case c. no parent
+            accumGeoDirty = properties.UpdateGeometryByParent(nullptr, std::nullopt) || accumGeoDirty;
         }
-        accumGeoDirty = properties.UpdateGeometryByParent(parentMatrix, offset) || accumGeoDirty;
         // planning: double check if it would be covered by updateself without geo update
         // currently CheckAndUpdateGeoTrans without dirty check
-        if (auto& geoPtr = properties.boundsGeo_) {
-            // selfdrawing node's geo may not dirty when its dirty region changes
-            if (CheckAndUpdateGeoTrans(geoPtr) || accumGeoDirty || properties.geoDirty_ ||
-                isSelfDrawingNode_ || selfDrawRectChanged) {
-                absDrawRect_ = geoPtr->MapAbsRect(selfDrawRect_);
-                if (isSelfDrawingNode_) {
-                    selfDrawingNodeAbsDirtyRect_ = geoPtr->MapAbsRect(selfDrawingNodeDirtyRect_);
-                }
-                UpdateClipAbsDrawRectChangeState(clipRect);
+        auto& geoPtr = properties.boundsGeo_;
+        // selfdrawing node's geo may not dirty when its dirty region changes
+        if (CheckAndUpdateGeoTrans(geoPtr) || accumGeoDirty || properties.geoDirty_ || isSelfDrawingNode_ ||
+            selfDrawRectChanged) {
+            absDrawRect_ = geoPtr->MapAbsRect(selfDrawRect_);
+            if (isSelfDrawingNode_) {
+                selfDrawingNodeAbsDirtyRect_ = geoPtr->MapAbsRect(selfDrawingNodeDirtyRect_);
             }
+            UpdateClipAbsDrawRectChangeState(clipRect);
         }
+        UpdateClipAbsDrawRectChangeState(clipRect);
     }
     // 3. update dirtyRegion if needed
     if (properties.GetBackgroundFilter()) {
@@ -3694,14 +3697,9 @@ void RSRenderNode::UpdateRenderParams()
     if (!boundGeo) {
         return;
     }
-
-    if (sharedTransitionParam_ && GetRenderProperties().GetSandBox()) {
-        stagingRenderParams_->SetMatrix(boundGeo->GetAbsMatrix());
-        stagingRenderParams_->SetHasSandBox(true);
-    } else {
-        stagingRenderParams_->SetMatrix(boundGeo->GetMatrix());
-        stagingRenderParams_->SetHasSandBox(false);
-    }
+    bool hasSandbox = sharedTransitionParam_ && GetRenderProperties().GetSandBox();
+    stagingRenderParams_->SetHasSandBox(hasSandbox);
+    stagingRenderParams_->SetMatrix(boundGeo->GetMatrix());
     stagingRenderParams_->SetFrameGravity(GetRenderProperties().GetFrameGravity());
     stagingRenderParams_->SetBoundsRect({ 0, 0, boundGeo->GetWidth(), boundGeo->GetHeight() });
     stagingRenderParams_->SetFrameRect({ 0, 0, GetRenderProperties().GetFrameWidth(),
