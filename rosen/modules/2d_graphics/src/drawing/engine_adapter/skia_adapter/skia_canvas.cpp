@@ -234,8 +234,8 @@ void SkiaCanvas::DrawSdf(const SDFShapeBase& shape)
         builder.uniform("strokecolpara2") = color[4]; // color_[4] is strokecolor green channel.
         builder.uniform("strokecolpara3") = color[5]; // color_[5] is strokecolor blue channel.
         builder.uniform("sdfalpha") = color[6]; // color_[6] is color alpha channel.
-        float size = shape.GetSize();
-        builder.uniform("sdfsize") = size;
+        builder.uniform("sdfsize") = shape.GetSize();
+        builder.uniform("filltype") = shape.GetFillType();
     }
     builder.uniform("width") = width;
     auto shader = builder.makeShader(nullptr, false);
