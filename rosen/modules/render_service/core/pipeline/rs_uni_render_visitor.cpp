@@ -2399,6 +2399,25 @@ void RSUniRenderVisitor::CheckMergeGlobalFilterForDisplay(Occlusion::Region& acc
     }
 }
 
+void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
+{
+    auto nodeParent = node.GetParent().lock();
+    if (nodeParent == nullptr) {
+        return;
+    }
+    if (node.GetRenderProperties().NeedFilter() || node.ChildHasVisibleFilter()) {
+        nodeParent->SetChildHasVisibleFilter(true);
+        nodeParent->UpdateVisibleFilterChild(node);
+    }
+    if (node.GetRenderProperties().GetUseEffect() || node.ChildHasVisibleEffect()) {
+        nodeParent->SetChildHasVisibleEffect(true);
+        nodeParent->UpdateVisibleEffectChild(node);
+    }
+    if (node.GetSharedTransitionParam() || node.ChildHasSharedTransition()) {
+        nodeParent->SetChildHasSharedTransition(true);
+    }
+}
+
 void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeSkipped)
 {
     auto curDirtyManager = curSurfaceNode_ ? curSurfaceDirtyManager_ : curDisplayDirtyManager_;
@@ -2418,20 +2437,7 @@ void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeSkipped)
         CollectFilterInfoAndUpdateDirty(node, *curDirtyManager, globalFilterRect);
         node.SetGlobalAlpha(curAlpha_);
     }
-
-    if (auto nodeParent = node.GetParent().lock()) {
-        if (node.GetRenderProperties().NeedFilter() || node.ChildHasVisibleFilter()) {
-            nodeParent->SetChildHasVisibleFilter(true);
-            nodeParent->UpdateVisibleFilterChild(node);
-        }
-        if (node.GetRenderProperties().GetUseEffect() || node.ChildHasVisibleEffect()) {
-            nodeParent->SetChildHasVisibleEffect(true);
-            nodeParent->UpdateVisibleEffectChild(node);
-        }
-        if (node.GetSharedTransitionParam() || node.ChildHasSharedTransition()) {
-            nodeParent->SetChildHasSharedTransition(true);
-        }
-    }
+    CollectEffectInfo(node);
     node.MapAndUpdateChildrenRect();
     node.UpdateLocalDrawRect();
     node.ResetChangeState();
@@ -2473,6 +2479,7 @@ void RSUniRenderVisitor::CheckFilterNodeInSkippedSubTreeNeedClearCache(
             UpdateRotationStatusForEffectNode(*effectNode);
         }
         filterNode->CheckBlurFilterCacheNeedForceClearOrSave(rotationChanged);
+        filterNode->MarkClearFilterCacheIfEffectChildrenChanged();
         if (filterNode->GetRenderProperties().GetBackgroundFilter()) {
             filterNode->UpdateFilterCacheWithBelowDirty(dirtyManager, false);
         }

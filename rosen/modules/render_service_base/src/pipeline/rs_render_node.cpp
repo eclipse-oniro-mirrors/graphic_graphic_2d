@@ -1855,9 +1855,7 @@ inline static bool IsLargeArea(int width, int height)
 
 void RSRenderNode::PostPrepareForBlurFilterNode(RSDirtyRegionManager& dirtyManager, bool needRequestNextVsync)
 {
-    if (ChildHasVisibleEffect()) {
-        MarkFilterHasEffectChildren();
-    }
+    MarkFilterHasEffectChildren();
     if (!RSProperties::FilterCacheEnabled) {
         ROSEN_LOGE("RSRenderNode::PostPrepareForBlurFilterNode filter cache is disabled.");
         return;
@@ -1890,14 +1888,12 @@ void RSRenderNode::MarkFilterCacheFlags(std::shared_ptr<DrawableV2::RSFilterDraw
 
     RS_OPTIONAL_TRACE_NAME_FMT("MarkFilterCacheFlags:node[%llu], NeedPendingPurge:%d, forceClearWithoutNextVsync:%d",
         GetId(), filterDrawable->NeedPendingPurge(), (!needRequestNextVsync && filterDrawable->IsSkippingFrame()));
-
     // force update if last frame use cache because skip-frame and current frame background is not dirty
     if (filterDrawable->NeedPendingPurge()) {
         dirtyManager.MergeDirtyRect(filterRegion_);
         isDirtyRegionUpdated_ = true;
         return;
     }
-
     // force update if no next vsync when skip-frame enabled
     if (!needRequestNextVsync && filterDrawable->IsSkippingFrame()) {
         filterDrawable->ForceClearCacheWithLastFrame();
