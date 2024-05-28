@@ -352,7 +352,7 @@ void RSRenderNode::ResetChildRelevantFlags()
     childHasSharedTransition_ = false;
     visibleFilterChild_.clear();
     visibleEffectChild_.clear();
-    childrenRect_ = RectI();
+    childrenRect_.Clear();
     hasChildrenOutOfRect_ = false;
 }
 
@@ -810,7 +810,7 @@ void RSRenderNode::SubTreeSkipPrepare(
     // [planning] Prev and current dirty rect need to be joined only when accumGeoDirty is true.
     if (isDirty || clipAbsDrawRectChange_) {
         auto dirtyRect = subTreeDirtyRegion_;
-        if (auto geoPtr = GetRenderProperties().GetBoundsGeometry()) {
+        if (auto& geoPtr = GetRenderProperties().GetBoundsGeometry()) {
             absChildrenRect_ = geoPtr->MapAbsRect(childrenRect_.ConvertTo<float>());
             subTreeDirtyRegion_ = absChildrenRect_.IntersectRect(clipRect);
             dirtyRect = dirtyRect.JoinRect(subTreeDirtyRegion_);
@@ -1297,7 +1297,7 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(
         accumGeoDirty = properties.UpdateGeometryByParent(parentMatrix, offset) || accumGeoDirty;
         // planning: double check if it would be covered by updateself without geo update
         // currently CheckAndUpdateGeoTrans without dirty check
-        if (auto geoPtr = properties.boundsGeo_) {
+        if (auto& geoPtr = properties.boundsGeo_) {
             // selfdrawing node's geo may not dirty when its dirty region changes
             if (CheckAndUpdateGeoTrans(geoPtr) || accumGeoDirty || properties.geoDirty_ ||
                 isSelfDrawingNode_ || selfDrawRectChanged) {
@@ -1336,7 +1336,7 @@ void RSRenderNode::UpdateDirtyRegionInfoForDFX(RSDirtyRegionManager& dirtyManage
     // update OVERLAY_RECT
     auto& properties = GetRenderProperties();
     if (auto drawRegion = properties.GetDrawRegion()) {
-        if (auto geoPtr = GetRenderProperties().GetBoundsGeometry()) {
+        if (auto& geoPtr = properties.GetBoundsGeometry()) {
             dirtyManager.UpdateDirtyRegionInfoForDfx(
                 GetId(), GetType(), DirtyRegionType::OVERLAY_RECT, geoPtr->MapAbsRect(*drawRegion));
         }
@@ -1618,15 +1618,14 @@ void RSRenderNode::UpdateParentChildrenRect(std::shared_ptr<RSRenderNode> parent
     if (!shouldPaint_ || (oldDirty_.IsEmpty() && GetChildrenRect().IsEmpty())) {
         return;
     }
-    auto renderParent = (parentNode);
-    if (renderParent) {
+    if (parentNode) {
         // accumulate current node's all children region(including itself)
         // apply oldDirty_ as node's real region(including overlay and shadow)
         RectI accumulatedRect = GetChildrenRect().JoinRect(oldDirty_);
-        renderParent->UpdateChildrenRect(accumulatedRect);
+        parentNode->UpdateChildrenRect(accumulatedRect);
         // check each child is inside of parent
-        if (!accumulatedRect.IsInsideOf(renderParent->GetOldDirty())) {
-            renderParent->UpdateChildrenOutOfRectFlag(true);
+        if (!accumulatedRect.IsInsideOf(parentNode->GetOldDirty())) {
+            parentNode->UpdateChildrenOutOfRectFlag(true);
         }
     }
 }
@@ -3286,10 +3285,7 @@ void RSRenderNode::UpdateVisibleEffectChild(RSRenderNode& childNode)
     auto& childEffectNodes = childNode.GetVisibleEffectChild();
     visibleEffectChild_.insert(childEffectNodes.begin(), childEffectNodes.end());
 }
-NodeId RSRenderNode::GetInstanceRootNodeId() const
-{
-    return instanceRootNodeId_;
-}
+
 const std::shared_ptr<RSRenderNode> RSRenderNode::GetInstanceRootNode() const
 {
     auto context = GetContext().lock();
@@ -3298,11 +3294,6 @@ const std::shared_ptr<RSRenderNode> RSRenderNode::GetInstanceRootNode() const
         return nullptr;
     }
     return context->GetNodeMap().GetRenderNode(instanceRootNodeId_);
-}
-
-NodeId RSRenderNode::GetUifirstRootNodeId() const
-{
-    return uifirstRootNodeId_;
 }
 
 void RSRenderNode::UpdateTreeUifirstRootNodeId(NodeId id)
@@ -3315,10 +3306,6 @@ void RSRenderNode::UpdateTreeUifirstRootNodeId(NodeId id)
     }
 }
 
-NodeId RSRenderNode::GetFirstLevelNodeId() const
-{
-    return firstLevelNodeId_;
-}
 const std::shared_ptr<RSRenderNode> RSRenderNode::GetFirstLevelNode() const
 {
     auto context = GetContext().lock();
@@ -3703,7 +3690,7 @@ void RSRenderNode::InitRenderParams()
 
 void RSRenderNode::UpdateRenderParams()
 {
-    auto boundGeo = GetRenderProperties().GetBoundsGeometry();
+    auto& boundGeo = GetRenderProperties().GetBoundsGeometry();
     if (!boundGeo) {
         return;
     }

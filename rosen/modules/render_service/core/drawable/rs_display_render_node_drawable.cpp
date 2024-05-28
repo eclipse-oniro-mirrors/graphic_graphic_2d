@@ -1187,7 +1187,7 @@ void RSDisplayRenderNodeDrawable::DrawHardwareEnabledNodes(Drawing::Canvas& canv
 
 void RSDisplayRenderNodeDrawable::SwitchColorFilter(RSPaintFilterCanvas& canvas) const
 {
-    auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
+    const auto& renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
     ColorFilterMode colorFilterMode = renderEngine->GetColorFilterMode();
     if (colorFilterMode == ColorFilterMode::INVERT_COLOR_DISABLE_MODE ||
         colorFilterMode >= ColorFilterMode::DALTONIZATION_NORMAL_MODE) {
@@ -1216,7 +1216,7 @@ void RSDisplayRenderNodeDrawable::SwitchColorFilter(RSPaintFilterCanvas& canvas)
 
 void RSDisplayRenderNodeDrawable::SetHighContrastIfEnabled(RSPaintFilterCanvas& canvas) const
 {
-    auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
+    const auto& renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
     canvas.SetHighContrast(renderEngine->IsHighContrastEnabled());
 }
 
