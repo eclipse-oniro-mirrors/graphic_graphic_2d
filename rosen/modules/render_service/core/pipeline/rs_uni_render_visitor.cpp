@@ -3642,7 +3642,6 @@ std::shared_ptr<Drawing::Image> RSUniRenderVisitor::GetCacheImageFromMirrorNode(
             if (!image->BuildFromTexture(*grContext, imageBackendTexure.GetTextureInfo(),
                 Drawing::TextureOrigin::BOTTOM_LEFT, bitmapFormat, nullptr,
                 SKResourceManager::DeleteSharedTextureContext, sharedContext)) {
-                delete sharedContext;
                 RS_LOGE("RSUniRenderVisitor::GetCacheImageFromMirrorNode image is nullptr");
             }
         }

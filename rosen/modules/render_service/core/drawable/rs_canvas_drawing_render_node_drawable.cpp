@@ -246,7 +246,6 @@ void RSCanvasDrawingRenderNodeDrawable::Flush(float width, float height, std::sh
             bool ret = image_->BuildFromTexture(*rscanvas.GetGPUContext(), backendTexture_.GetTextureInfo(), origin,
                 info, nullptr, SKResourceManager::DeleteSharedTextureContext, sharedContext);
             if (!ret) {
-                delete sharedContext;
                 RS_LOGE("RSCanvasDrawingRenderNodeDrawable::Flush image BuildFromTexture failed");
                 return;
             }
@@ -481,7 +480,6 @@ bool RSCanvasDrawingRenderNodeDrawable::ResetSurfaceWithTexture(int width, int h
     auto preImageInNewContext = std::make_shared<Drawing::Image>();
     if (!preImageInNewContext->BuildFromTexture(*canvas.GetGPUContext(), backendTexture_.GetTextureInfo(),
         origin, bitmapFormat, nullptr, SKResourceManager::DeleteSharedTextureContext, sharedContext)) {
-        delete sharedContext;
         RS_LOGE("RSCanvasDrawingRenderNodeDrawable::ResetSurfaceWithTexture preImageInNewContext is nullptr");
         ClearPreSurface(preSurface);
         return false;
