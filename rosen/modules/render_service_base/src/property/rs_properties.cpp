@@ -1732,7 +1732,7 @@ RRect RSProperties::GetClipRRect() const
 
 bool RSProperties::GetClipToRRect() const
 {
-    return clipRRect_.has_value();
+    return clipRRect_.has_value() && !clipRRect_->rect_.IsEmpty();
 }
 
 void RSProperties::SetClipBounds(const std::shared_ptr<RSPath>& path)

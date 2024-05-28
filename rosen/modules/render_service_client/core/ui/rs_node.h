@@ -310,6 +310,7 @@ public:
     void SetFrameGravity(Gravity gravity);
 
     void SetClipRRect(const Vector4f& clipRect, const Vector4f& clipRadius);
+    void SetClipRRect(const std::shared_ptr<RRect>& rrect);
     void SetClipBounds(const std::shared_ptr<RSPath>& clipToBounds);
     void SetClipToBounds(bool clipToBounds);
     void SetClipToFrame(bool clipToFrame);
