@@ -23,8 +23,6 @@ config("render_service_client_config") {
     "$graphic_2d_root/interfaces/inner_api/common",
     "$graphic_2d_root/interfaces/inner_api/composer",
     "$graphic_2d_root/rosen/modules/2d_engine/rosen_text/export/rosen_text/",
-
-    "//drivers/peripheral/base",
     "$graphic_2d_root/rosen/modules/2d_graphics",
   ]
   defines = rs_common_define

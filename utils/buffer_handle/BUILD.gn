@@ -29,7 +29,6 @@ config("buffer_handle_config") {
 config("buffer_handle_public_config") {
   include_dirs = [
     "export",
-    "../../../../../drivers/peripheral/base",
     "../../../../../foundation/graphic/graphic_2d/utils/log",
   ]
 }
@@ -43,6 +42,7 @@ ohos_static_library("buffer_handle") {
 
   external_deps = [
     "c_utils:utils",
+    "hdf_core:libhdi",
     "ipc:ipc_single",
   ]
 
