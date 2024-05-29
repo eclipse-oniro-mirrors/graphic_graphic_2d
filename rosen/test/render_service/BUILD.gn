@@ -35,6 +35,7 @@ group("test") {
     "render_service_base/fuzztest/rscolorpicker_fuzzer:fuzztest",
     "render_service_base/fuzztest/rscommand_fuzzer:fuzztest",
     "render_service_base/fuzztest/rscpuoverdrawcanvaslistener_fuzzer:fuzztest",
+    "render_service_base/fuzztest/rsdisplaynodecommand_fuzzer:fuzztest",
     "render_service_base/fuzztest/rsfuntionaldelegate_fuzzer:fuzztest",
     "render_service_base/fuzztest/rsgpuoverdrawcanvaslistener_fuzzer:fuzztest",
     "render_service_base/fuzztest/rslineargradientblurfilter_fuzzer:fuzztest",
