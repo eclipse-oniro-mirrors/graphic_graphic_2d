@@ -50,7 +50,7 @@ T GetData()
     return object;
 }
 
-bool DoGet(const uint8_t* data, size_t size)
+bool DoGet001(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
         return false;
@@ -98,6 +98,25 @@ bool DoGet(const uint8_t* data, size_t size)
     modifierExtractor.GetOutlineColor();
     modifierExtractor.GetOutlineWidth();
     modifierExtractor.GetOutlineStyle();
+
+    return true;
+}
+
+bool DoGet002(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    // test
+    RSModifierExtractor modifierExtractor;
+    RSNode nodeTest(true);
+    modifierExtractor.node_ = &nodeTest;
     modifierExtractor.GetOutlineRadius();
     modifierExtractor.GetForegroundEffectRadius();
     modifierExtractor.GetBackgroundFilter();
@@ -129,6 +148,25 @@ bool DoGet(const uint8_t* data, size_t size)
     modifierExtractor.GetBackgroundBlurRadiusX();
     modifierExtractor.GetBackgroundBlurRadiusY();
     modifierExtractor.GetForegroundBlurRadius();
+
+    return true;
+}
+
+bool DoGet003(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // initialize
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+
+    // test
+    RSModifierExtractor modifierExtractor;
+    RSNode nodeTest(true);
+    modifierExtractor.node_ = &nodeTest;
     modifierExtractor.GetForegroundBlurSaturation();
     modifierExtractor.GetForegroundBlurBrightness();
     modifierExtractor.GetForegroundBlurMaskColor();
@@ -152,7 +190,9 @@ bool DoGet(const uint8_t* data, size_t size)
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
-    OHOS::Rosen::DoGet(data, size);
+    OHOS::Rosen::DoGet001(data, size);
+    OHOS::Rosen::DoGet002(data, size);
+    OHOS::Rosen::DoGet003(data, size);
     return 0;
 }
 
