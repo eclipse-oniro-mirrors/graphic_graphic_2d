@@ -19,7 +19,6 @@
 
 #include "effect/runtime_effect.h"
 #include "effect/runtime_shader_builder.h"
-#include "render/rs_skia_filter.h"
 #include "render/rs_foreground_effect_filter.h"
 
 namespace OHOS {
