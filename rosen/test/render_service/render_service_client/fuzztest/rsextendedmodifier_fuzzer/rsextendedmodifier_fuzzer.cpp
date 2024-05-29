@@ -88,7 +88,7 @@ bool DoCreateRenderModifier(const uint8_t* data, size_t size)
     NodeId id = GetData<NodeId>();
     auto ctx = RSExtendedModifierHelper::CreateDrawingContext(id);
     PropertyId propertyId = GetData<PropertyId>();
-    RSModifierType type = GetData<RSModifierType>();;
+    RSModifierType type = GetData<RSModifierType>();
     RSExtendedModifierHelper::CreateRenderModifier(ctx, propertyId, type);
     return true;
 }
