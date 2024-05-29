@@ -1646,6 +1646,30 @@ int32_t RSScreenManager::SetScreenColorSpace(ScreenId id, GraphicCM_ColorSpaceTy
     return SetScreenColorSpaceLocked(id, colorSpace);
 }
 
+void RSScreenManager::MarkPowerOffNeedProcessOneFrame()
+{
+    powerOffNeedProcessOneFrame_ = true;
+}
+
+void RSScreenManager::ResetPowerOffNeedProcessOneFrame()
+{
+    powerOffNeedProcessOneFrame_ = false;
+}
+
+bool RSScreenManager::GetPowerOffNeedProcessOneFrame() const
+{
+    return powerOffNeedProcessOneFrame_;
+}
+
+bool RSScreenManager::IsScreenPowerOff(ScreenId id) const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (screenPowerStatus_.count(id) == 0) {
+        return false;
+    }
+    return screenPowerStatus_.at(id) == GraphicDispPowerStatus::GRAPHIC_POWER_STATUS_SUSPEND ||
+        screenPowerStatus_.at(id) == GraphicDispPowerStatus::GRAPHIC_POWER_STATUS_OFF;
+}
 } // namespace impl
 
 sptr<RSScreenManager> CreateOrGetScreenManager()

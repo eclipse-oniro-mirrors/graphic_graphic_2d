@@ -380,6 +380,10 @@ void RSDisplayRenderNodeDrawable::PostClearMemoryTask() const
 
 void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
+    // if screen power off, skip on draw
+    if (SkipDisplayIfScreenOff()) {
+        return;
+    }
     // canvas will generate in every request frame
     (void)canvas;
 
@@ -1403,5 +1407,35 @@ void RSDisplayRenderNodeDrawable::FinishOffscreenRender(const Drawing::SamplingO
     // restore current canvas and cleanup
     offscreenSurface_ = nullptr;
     curCanvas_ = std::move(canvasBackup_);
+}
+
+bool RSDisplayRenderNodeDrawable::SkipDisplayIfScreenOff() const
+{
+    if (!RSSystemProperties::GetSkipDisplayIfScreenOffEnabled() || !RSSystemProperties::IsPhoneType()) {
+        return false;
+    }
+    auto screenManager = CreateOrGetScreenManager();
+    auto renderNode = renderNode_.lock();
+    if (!screenManager || !renderNode) {
+        RS_LOGE("RSDisplayRenderNodeDrawable::SkipRenderFrameIfScreenOff, failed to get screen manager/renderNode!");
+        return false;
+    }
+    auto nodeSp = std::const_pointer_cast<RSRenderNode>(renderNode);
+    auto displayNodeSp = std::static_pointer_cast<RSDisplayRenderNode>(nodeSp);
+    if (!displayNodeSp) {
+        RS_LOGE("RSDisplayRenderNodeDrawable::SkipRenderFrameIfScreenOff, display node is null!.");
+        return false;
+    }
+    ScreenId id = displayNodeSp->GetScreenId();
+    if (!screenManager->IsScreenPowerOff(id)) {
+        return false;
+    }
+    if (screenManager->GetPowerOffNeedProcessOneFrame()) {
+        RS_LOGD("RSDisplayRenderNodeDrawable::SkipRenderFrameIfScreenOff screen_%{public}" PRIu64
+            " power off, one more frame.", id);
+        screenManager->ResetPowerOffNeedProcessOneFrame();
+        return false;
+    }
+    return true;
 }
 } // namespace OHOS::Rosen::DrawableV2
