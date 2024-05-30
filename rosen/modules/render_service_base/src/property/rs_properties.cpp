@@ -1732,7 +1732,7 @@ RRect RSProperties::GetClipRRect() const
 
 bool RSProperties::GetClipToRRect() const
 {
-    return clipRRect_.has_value();
+    return clipRRect_.has_value() && !clipRRect_->rect_.IsEmpty();
 }
 
 void RSProperties::SetClipBounds(const std::shared_ptr<RSPath>& path)
@@ -1797,11 +1797,17 @@ RectF RSProperties::GetLocalBoundsAndFramesRect() const
 
 RectF RSProperties::GetBoundsRect() const
 {
+    auto rect = RectF();
     if (boundsGeo_->IsEmpty()) {
-        return {0, 0, GetFrameWidth(), GetFrameHeight()};
+        if (!std::isinf(GetFrameWidth()) && !std::isinf(GetFrameHeight())) {
+            return {0, 0, GetFrameWidth(), GetFrameHeight()};
+        }
     } else {
-        return {0, 0, GetBoundsWidth(), GetBoundsHeight()};
+        if (!std::isinf(GetBoundsWidth()) && !std::isinf(GetBoundsHeight())) {
+            return {0, 0, GetBoundsWidth(), GetBoundsHeight()};
+        }
     }
+    return rect;
 }
 
 RectF RSProperties::GetFrameRect() const
@@ -3642,6 +3648,7 @@ void RSProperties::OnApplyModifiers()
     }
     if (colorFilterNeedUpdate_) {
         GenerateColorFilter();
+        needFilter_ = needFilter_ || (colorFilter_ != nullptr);
     }
     if (pixelStretchNeedUpdate_ || geoDirty_) {
         CalculatePixelStretch();
