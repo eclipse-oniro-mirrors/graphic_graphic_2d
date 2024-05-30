@@ -264,7 +264,7 @@ void SkiaCanvas::DrawPoints(PointMode mode, size_t count, const Point pts[])
         return;
     }
 
-    const SkPoint* skPts = reinterpret_cast<const SkPoint*>(&pts);
+    const SkPoint* skPts = reinterpret_cast<const SkPoint*>(pts);
 
     SortedPaints& paints = skiaPaint_.GetSortedPaints();
     for (int i = 0; i < paints.count_; i++) {

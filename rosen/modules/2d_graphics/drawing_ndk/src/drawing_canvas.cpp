@@ -264,27 +264,8 @@ void OH_Drawing_CanvasDrawPoints(OH_Drawing_Canvas* cCanvas, OH_Drawing_PointMod
         g_drawingErrorCode = OH_DRAWING_ERROR_INVALID_PARAMETER;
         return;
     }
-    const Point* points = reinterpret_cast<const Point*>(&pts);
+    const Point* points = reinterpret_cast<const Point*>(pts);
     canvas->DrawPoints(static_cast<PointMode>(mode), count, points);
-}
-
-static VertexMode vertexMmodeCastToVertexMmode(const OH_Drawing_VertexMode& vertexMmode)
-{
-    VertexMode mode = VertexMode::TRIANGLES_VERTEXMODE;
-    switch (vertexMmode) {
-        case VERTEX_MODE_TRIANGLES:
-            mode = VertexMode::TRIANGLES_VERTEXMODE;
-            break;
-        case VERTEX_MODE_TRIANGLES_STRIP:
-            mode = VertexMode::TRIANGLESSTRIP_VERTEXMODE;
-            break;
-        case VERTEX_MODE_TRIANGLE_FAN:
-            mode = VertexMode::TRIANGLEFAN_VERTEXMODE;
-            break;
-        default:
-            break;
-    }
-    return mode;
 }
 
 void OH_Drawing_CanvasDrawVertices(OH_Drawing_Canvas* cCanvas, OH_Drawing_VertexMode vertexMode,
@@ -319,7 +300,7 @@ void OH_Drawing_CanvasDrawVertices(OH_Drawing_Canvas* cCanvas, OH_Drawing_Vertex
         texsPoint[i] = CastToPoint(texs[i]);
     }
     Vertices* vertices = new Vertices();
-    vertices->MakeCopy(vertexMmodeCastToVertexMmode(vertexMode), vertexCount, positionsPoint,
+    vertices->MakeCopy(static_cast<VertexMode>(vertexMode), vertexCount, positionsPoint,
         texsPoint, colors, indexCount, indices);
     canvas->DrawVertices(*vertices, static_cast<BlendMode>(mode));
     delete vertices;
