@@ -275,10 +275,8 @@ void RSUifirstManager::SyncHDRDisplayParam(DrawableV2::RSSurfaceRenderNodeDrawab
     if (!displayParams) {
         return;
     }
-    bool hdrPresent = displayParams->GetHDRPresent();
+    bool isHdrOn = displayParams->GetHDRPresent();
     ScreenId id = displayParams->GetScreenId();
-    RSLuminanceControl::Get().SetHdrStatus(id, hdrPresent);
-    bool isHdrOn = RSLuminanceControl::Get().IsHdrOn(id);
     drawable->SetHDRPresent(isHdrOn);
     if (isHdrOn) {
         // 0 means defalut brightnessRatio
@@ -900,8 +898,7 @@ bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animat
     }
 
     std::string surfaceName = node.GetName();
-    bool needFilterSCB = surfaceName.substr(0, 3) == "SCB" ||
-        surfaceName.substr(0, 13) == "BlurComponent"; // filter BlurComponent, 13 is string len
+    bool needFilterSCB = node.GetSurfaceWindowType() == SurfaceWindowType::SYSTEM_SCB_WINDOW;
     if (needFilterSCB || node.IsSelfDrawingType()) {
         return false;
     }
@@ -923,8 +920,7 @@ bool RSUifirstManager::IsNonFocusWindowCache(RSSurfaceRenderNode& node, bool ani
     }
 
     std::string surfaceName = node.GetName();
-    bool needFilterSCB = surfaceName.substr(0, 3) == "SCB" ||
-        surfaceName.substr(0, 13) == "BlurComponent"; // filter BlurComponent, 13 is string len
+    bool needFilterSCB = node.GetSurfaceWindowType() == SurfaceWindowType::SYSTEM_SCB_WINDOW;
     if (needFilterSCB || node.IsSelfDrawingType()) {
         return false;
     }
