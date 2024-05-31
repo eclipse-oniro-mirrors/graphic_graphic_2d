@@ -1262,12 +1262,30 @@ void RSNode::SetOutlineRadius(const Vector4f& radius)
 
 void RSNode::SetUIBackgroundFilter(const OHOS::Rosen::Filter* backgroundFilter)
 {
-    // To do: generate composed filter here.
+    // To do: generate composed filter here. Now we just set background blur in v1.0.
+    auto filterParas = backgroundFilter->GetAllPara();
+    for (const auto& filterPara : filterParas) {
+        if (filterPara->GetParaType() == FilterPara::BLUR) {
+            auto filterBlurPara = std::static_pointer_cast<FilterBlurPara>(filterPara);
+            auto blurRadius = FilterBlurPara->GetRadius();
+            SetBackgroundBlurRadiusX(blurRadius);
+            SetBackgroundBlurRadiusY(blurRadius);
+        }
+    }
 }
 
 void RSNode::SetUICompositingFilter(const OHOS::Rosen::Filter* compositingFilter)
 {
-    // To do: generate composed filter here.
+    // To do: generate composed filter here. Now we just set compositing blur in v1.0.
+    auto filterParas = compositingFilter->GetAllPara();
+    for (const auto& filterPara : filterParas) {
+        if (filterPara->GetParaType() == FilterPara::BLUR) {
+            auto filterBlurPara = std::static_pointer_cast<FilterBlurPara>(filterPara);
+            auto blurRadius = FilterBlurPara->GetRadius();
+            SetForegroundBlurRadiusX(blurRadius);
+            SetForegroundBlurRadiusY(blurRadius);
+        }
+    }
 }
 
 void RSNode::SetUIForegroundFilter(const OHOS::Rosen::Filter* foregroundFilter)
