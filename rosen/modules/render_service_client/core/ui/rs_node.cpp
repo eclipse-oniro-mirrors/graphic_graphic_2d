@@ -1267,7 +1267,7 @@ void RSNode::SetUIBackgroundFilter(const OHOS::Rosen::Filter* backgroundFilter)
     for (const auto& filterPara : filterParas) {
         if (filterPara->GetParaType() == FilterPara::BLUR) {
             auto filterBlurPara = std::static_pointer_cast<FilterBlurPara>(filterPara);
-            auto blurRadius = FilterBlurPara->GetRadius();
+            auto blurRadius = filterBlurPara->GetRadius();
             SetBackgroundBlurRadiusX(blurRadius);
             SetBackgroundBlurRadiusY(blurRadius);
         }
@@ -1281,7 +1281,7 @@ void RSNode::SetUICompositingFilter(const OHOS::Rosen::Filter* compositingFilter
     for (const auto& filterPara : filterParas) {
         if (filterPara->GetParaType() == FilterPara::BLUR) {
             auto filterBlurPara = std::static_pointer_cast<FilterBlurPara>(filterPara);
-            auto blurRadius = FilterBlurPara->GetRadius();
+            auto blurRadius = filterBlurPara->GetRadius();
             SetForegroundBlurRadiusX(blurRadius);
             SetForegroundBlurRadiusY(blurRadius);
         }
