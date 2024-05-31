@@ -49,25 +49,25 @@ napi_value EffectNapi::Init(napi_env env, napi_value exports)
                                            nullptr,
                                            sizeof(static_prop) / sizeof(static_prop[0]), static_prop,
                                            &constructor);
-    IMG_NAPI_CHECK_RET_D(IMG_IS_OK(status), nullptr, UIEFFECT_LOG_E("define class fail"));
+    UIEFFECT_NAPI_CHECK_RET_D(UIEFFECT_IS_OK(status), nullptr, UIEFFECT_LOG_E("define class fail"));
  
     status = napi_create_reference(env, constructor, 1, &sConstructor_);
-    if (!IMG_IS_OK(status)) {
+    if (!UIEFFECT_IS_OK(status)) {
         UIEFFECT_LOG_I("EffectNapi Init napi_create_reference falid");
         return nullptr;
     }
     napi_value global = nullptr;
     status = napi_get_global(env, &global);
-    IMG_NAPI_CHECK_RET_D(IMG_IS_OK(status), nullptr, UIEFFECT_LOG_E("Init:get global fail"));
+    UIEFFECT_NAPI_CHECK_RET_D(UIEFFECT_IS_OK(status), nullptr, UIEFFECT_LOG_E("Init:get global fail"));
  
     status = napi_set_named_property(env, global, CLASS_NAME.c_str(), constructor);
-    IMG_NAPI_CHECK_RET_D(IMG_IS_OK(status), nullptr, UIEFFECT_LOG_E("Init:set global named property fail"));
+    UIEFFECT_NAPI_CHECK_RET_D(UIEFFECT_IS_OK(status), nullptr, UIEFFECT_LOG_E("Init:set global named property fail"));
  
     status = napi_set_named_property(env, exports, CLASS_NAME.c_str(), constructor);
-    IMG_NAPI_CHECK_RET_D(IMG_IS_OK(status), nullptr, UIEFFECT_LOG_E("set named property fail"));
+    UIEFFECT_NAPI_CHECK_RET_D(UIEFFECT_IS_OK(status), nullptr, UIEFFECT_LOG_E("set named property fail"));
  
-    status = napi_define_properties(env, exports, IMG_ARRAY_SIZE(static_prop), static_prop);
-    IMG_NAPI_CHECK_RET_D(IMG_IS_OK(status), nullptr, UIEFFECT_LOG_E("define properties fail"));
+    status = napi_define_properties(env, exports, UIEFFECT_ARRAY_SIZE(static_prop), static_prop);
+    UIEFFECT_NAPI_CHECK_RET_D(UIEFFECT_IS_OK(status), nullptr, UIEFFECT_LOG_E("define properties fail"));
     return exports;
 }
  
@@ -99,7 +99,7 @@ void EffectNapi::Destructor(napi_env env, void* nativeObject, void* finalize)
 {
     EffectNapi *effectNapi = reinterpret_cast<EffectNapi*>(nativeObject);
  
-    if (IMG_NOT_NULL(effectNapi)) {
+    if (UIEFFECT_NOT_NULL(effectNapi)) {
         effectNapi->~EffectNapi();
     }
 }
@@ -257,7 +257,7 @@ bool ParseJsVec3Value(napi_value jsObject, napi_env env, const std::string& name
     napi_get_named_property(env, jsObject, name.c_str(), &param);
  
     napi_valuetype valueType = napi_undefined;
-    valueType = Media::ImageNapiUtils::getType(env, param);
+    valueType = UIEffectNapiUtils::getType(env, param);
     if (valueType == napi_undefined) {
         return true;
     }
@@ -334,7 +334,7 @@ napi_value EffectNapi::SetbackgroundColorBlender(napi_env env, napi_callback_inf
     napi_value thisVar = nullptr;
     napi_value argValue[NUM_1] = {0};
     size_t argCount = NUM_1;
-    IMG_JS_ARGS(env, info, status, argCount, argValue, thisVar);
+    UIEFFECT_JS_ARGS(env, info, status, argCount, argValue, thisVar);
  
     if (status != napi_ok) {
         UIEFFECT_LOG_E("EffectNapi SetbackgroundColorBlender parsr input Faild");
