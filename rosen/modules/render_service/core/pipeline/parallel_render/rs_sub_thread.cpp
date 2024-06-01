@@ -276,7 +276,7 @@ void RSSubThread::DrawableCache(DrawableV2::RSSurfaceRenderNodeDrawable* nodeDra
         RS_LOGE("RSSubThread::DrawableCache canvas is nullptr");
         return;
     }
-
+    SetHighContrastIfEnabled(*rscanvas);
     rscanvas->SetIsParallelCanvas(true);
     rscanvas->SetDisableFilterCache(true);
     rscanvas->SetParallelThreadIdx(threadIndex_);
@@ -386,5 +386,13 @@ MemoryGraphic RSSubThread::CountSubMem(int pid)
         memoryGraphic = MemoryManager::CountPidMemory(pid, grContext_.get());
     });
     return memoryGraphic;
+}
+
+void RSSubThread::SetHighContrastIfEnabled(RSPaintFilterCanvas& canvas)
+{
+    auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
+    if (renderEngine) {
+        canvas.SetHighContrast(renderEngine->IsHighContrastEnabled());
+    }
 }
 }
