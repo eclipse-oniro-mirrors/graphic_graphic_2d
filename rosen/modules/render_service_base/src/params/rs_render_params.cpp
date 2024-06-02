@@ -367,6 +367,8 @@ void RSRenderParams::SetCanvasDrawingSurfaceParams(int width, int height)
 {
     surfaceParams_.width = width;
     surfaceParams_.height = height;
+}
+
 const std::shared_ptr<RSFilter>& RSRenderParams::GetForegroundFilterCache() const
 {
     return foregroundFilterCache_;
