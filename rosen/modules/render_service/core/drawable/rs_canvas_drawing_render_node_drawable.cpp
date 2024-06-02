@@ -87,7 +87,7 @@ void RSCanvasDrawingRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     auto& bounds = params->GetBounds();
     auto surfaceParams = params->GetCanvasDrawingSurfaceParams();
     std::lock_guard<std::mutex> lockTask(taskMutex_);
-    if (!InitSurface(surfaceParams.GetWidth(), surfaceParams.GetHeight(), *paintFilterCanvas)) {
+    if (!InitSurface(surfaceParams.width, surfaceParams.height, *paintFilterCanvas)) {
         RS_LOGE("Failed to init surface!");
         return;
     }
