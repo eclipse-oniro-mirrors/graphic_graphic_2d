@@ -1821,12 +1821,10 @@ void RSRenderNode::UpdateFilterCacheWithBackgroundDirty()
     if (filterDrawable == nullptr || IsForceClearOrUseFilterCache(filterDrawable)) {
         return;
     }
- 
     auto hasBackground = drawableVec_[static_cast<int32_t>(RSDrawableSlot::BACKGROUND_COLOR)] ||
                          drawableVec_[static_cast<int32_t>(RSDrawableSlot::BACKGROUND_SHADER)] ||
                          drawableVec_[static_cast<int32_t>(RSDrawableSlot::BACKGROUND_IMAGE)];
     auto alphaDirty = dirtyTypes_.test(static_cast<size_t>(RSModifierType::ALPHA));
- 
     if (alphaDirty && hasBackground) {
         RS_OPTIONAL_TRACE_NAME_FMT(
             "RSRenderNode[%llu] background color or shader or image is dirty due to changes in alpha", GetId());
