@@ -58,7 +58,7 @@ void RSRenderServiceListener::OnBufferAvailable()
             " RT buffer available", node->GetId());
         node->NotifyRTBufferAvailable(node->GetIsTextureExportNode());
     }
-    RSMainThread::Instance()->RequestNextVSync();
+    RSMainThread::Instance()->RequestNextVSync("UI");
 }
 
 void RSRenderServiceListener::OnTunnelHandleChange()

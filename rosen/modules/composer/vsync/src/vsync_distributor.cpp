@@ -349,28 +349,13 @@ void VSyncDistributor::WaitForVsyncOrRequest(std::unique_lock<std::mutex> &locke
     if (!isRs_ && IsDVsyncOn()) {
         con_.wait(locker, [this] {return dvsync_->WaitCond();});
     } else {
-        while (true) {
-            if (isLtpo_) {
-                constexpr int64_t DEFAULT_PERIOD = 100000000;
-                ScopedBytrace func("ltpoVsyncWait:" + std::to_string(DEFAULT_PERIOD));
-                isLtpo_ = false;
-                // wait period reduce the number of empty frames caused by Ltpo,
-                con_.wait_for(locker, std::chrono::nanoseconds(DEFAULT_PERIOD));
-            } else {
-                con_.wait(locker);
-            }
-            if (!isLtpo_) {
-                break;
-            } else {
-                dvsync_->RNVNotify();
-            }
-        }
+        con_.wait(locker);
     }
     if (pendingRNVInVsync_) {
         return;
     }
     if (IsDVsyncOn()) {
-        std::pair<bool, int64_t> result = dvsync_->DoPreExecute(locker, con_, isLtpo_);
+        std::pair<bool, int64_t> result = dvsync_->DoPreExecute(locker, con_);
         if (result.first) {
             event_.timestamp = result.second;
             lastDVsyncTS_.store(result.second);
@@ -823,11 +808,6 @@ VsyncError VSyncDistributor::RequestNextVSync(const sptr<VSyncConnection> &conne
     connection->triggerThisTime_ = true;
 #if defined(RS_ENABLE_DVSYNC)
     if (dvsync_->IsFeatureEnabled()) {
-        isLtpo_ = false;
-        if (IsDVsyncOn() && fromWhom == "ltpoForceUpdate") {
-            ScopedBytrace temp("ltpoVsync");
-            isLtpo_ = true;
-        }
         con_.notify_all();
     } else
 #endif
