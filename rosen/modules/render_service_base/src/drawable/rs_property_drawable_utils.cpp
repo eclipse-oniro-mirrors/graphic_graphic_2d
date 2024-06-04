@@ -473,7 +473,8 @@ void RSPropertyDrawableUtils::DrawBackgroundEffect(
         rsFilter->GetDetailedDescription().c_str(), clipIBounds.ToString().c_str());
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     // Optional use cacheManager to draw filter
-    if (RSProperties::FilterCacheEnabled && cacheManager != nullptr && !canvas->GetDisableFilterCache()) {
+    if (RSProperties::FilterCacheEnabled && cacheManager != nullptr && !canvas->GetDisableFilterCache() &&
+        !canvas->GetHDRPresent()) {
         auto&& data = cacheManager->GeneratedCachedEffectData(*canvas, filter, clipIBounds, clipIBounds);
         cacheManager->CompactFilterCache(shouldClearFilteredCache); // flag for clear witch cache after drawing
         canvas->SetEffectData(data);
@@ -988,6 +989,7 @@ void RSPropertyDrawableUtils::DrawUseEffect(RSPaintFilterCanvas* canvas)
         canvas->ClipIRect(visibleIRect, Drawing::ClipOp::INTERSECT);
     }
     Drawing::Brush brush;
+    brush.SetForceBrightnessDisable(true);
     canvas->AttachBrush(brush);
     // dstRect: canvas clip region
     Drawing::Rect dstRect = canvas->GetDeviceClipBounds();
