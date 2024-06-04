@@ -517,7 +517,6 @@ void RSSurfaceRenderNodeDrawable::DealWithSelfDrawingNodeBuffer(RSSurfaceRenderN
     pid_t threadId = gettid();
     auto params = RSUniRenderUtil::CreateBufferDrawParam(surfaceNode, false, threadId, true);
     params.targetColorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
-    params.dstRect.MakeOutset(1, 1);
 #ifdef USE_VIDEO_PROCESSING_ENGINE
     auto screenManager = CreateOrGetScreenManager();
     auto ancestorDisplayNode = surfaceParams.GetAncestorDisplayNode().lock();
