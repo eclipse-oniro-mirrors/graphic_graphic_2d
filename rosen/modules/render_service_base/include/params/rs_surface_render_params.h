@@ -37,6 +37,7 @@ struct RSLayerInfo {
     Drawing::Matrix matrix;
     int32_t gravity = 0;
     int32_t zOrder = 0;
+    float alpha = 1.f;
     sptr<SurfaceBuffer> buffer;
     sptr<SurfaceBuffer> preBuffer;
     sptr<SyncFence> acquireFence = SyncFence::INVALID_FENCE;
@@ -48,7 +49,7 @@ struct RSLayerInfo {
             (boundRect == layerInfo.boundRect) && (matrix == layerInfo.matrix) && (gravity == layerInfo.gravity) &&
             (zOrder == layerInfo.zOrder) && (buffer == layerInfo.buffer) && (preBuffer == layerInfo.preBuffer) &&
             (acquireFence == layerInfo.acquireFence) && (blendType == layerInfo.blendType) &&
-            (transformType == layerInfo.transformType);
+            (transformType == layerInfo.transformType) && (ROSEN_EQ(alpha, layerInfo.alpha));
     }
 #endif
 };
@@ -56,11 +57,11 @@ class RSB_EXPORT RSSurfaceRenderParams : public RSRenderParams {
 public:
     explicit RSSurfaceRenderParams(NodeId id);
     ~RSSurfaceRenderParams() override = default;
-    bool IsMainWindowType() const
+    inline bool IsMainWindowType() const
     {
         return isMainWindowType_;
     }
-    bool IsLeashWindow() const
+    inline bool IsLeashWindow() const
     {
         return isLeashWindow_;
     }
@@ -252,6 +253,9 @@ public:
     void SetIsNodeToBeCaptured(bool isNodeToBeCaptured);
     bool IsNodeToBeCaptured() const;
 
+    void SetSkipDraw(bool skip);
+    bool GetSkipDraw() const;
+
 #ifndef ROSEN_CROSS_PLATFORM
     void SetBuffer(const sptr<SurfaceBuffer>& buffer);
     sptr<SurfaceBuffer> GetBuffer() const;
@@ -316,6 +320,7 @@ private:
     std::string name_= "";
     Vector4f overDrawBufferNodeCornerRadius_;
     bool isGpuOverDrawBufferOptimizeNode_ = false;
+    bool isSkipDraw_ = false;
 
     friend class RSSurfaceRenderNode;
     friend class RSUniRenderProcessor;

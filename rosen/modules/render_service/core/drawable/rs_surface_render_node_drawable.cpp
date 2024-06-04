@@ -49,7 +49,7 @@ namespace OHOS::Rosen::DrawableV2 {
 RSSurfaceRenderNodeDrawable::Registrar RSSurfaceRenderNodeDrawable::instance_;
 
 RSSurfaceRenderNodeDrawable::RSSurfaceRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node)
-   : RSRenderNodeDrawable(std::move(node))
+    : RSRenderNodeDrawable(std::move(node)), RSSurfaceHandler(node->GetId())
 {
     auto nodeSp = std::const_pointer_cast<RSRenderNode>(node);
     auto surfaceNode = std::static_pointer_cast<RSSurfaceRenderNode>(nodeSp);
@@ -159,6 +159,11 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(GetRenderParams().get());
     if (!surfaceParams) {
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw params is nullptr");
+        return;
+    }
+    if (surfaceParams->GetSkipDraw()) {
+        RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::OnDraw SkipDraw [%s] Id:%llu",
+            name_.c_str(), surfaceParams->GetId());
         return;
     }
     auto renderEngine_ = RSUniRenderThread::Instance().GetRenderEngine();
@@ -356,6 +361,15 @@ void RSSurfaceRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
         return;
     }
 
+    // process black list
+    auto blackList = uniParam->GetBlackList();
+    if (UNLIKELY(RSUniRenderThread::GetCaptureParam().isMirror_) &&
+        !blackList.empty() && blackList.find(surfaceParams->GetId()) != blackList.end()) {
+        RS_LOGD("RSSurfaceRenderNodeDrawable::OnCapture: (id:[%{public}" PRIu64 "]) is in black list",
+            surfaceParams->GetId());
+        return;
+    }
+
     bool noSpecialLayer = (!surfaceParams->GetIsSecurityLayer() && !surfaceParams->GetIsSkipLayer());
     if (UNLIKELY(RSUniRenderThread::GetCaptureParam().isMirror_) && noSpecialLayer &&
         EnableRecordingOptimization(*surfaceParams)) {
@@ -443,8 +457,8 @@ void RSSurfaceRenderNodeDrawable::CaptureSurface(RSSurfaceRenderNode& surfaceNod
         return;
     }
 
-    if (!(surfaceParams.HasSecurityLayer() || surfaceParams.HasSkipLayer() || surfaceParams.HasProtectedLayer()) &&
-        DealWithUIFirstCache(surfaceNode, canvas, surfaceParams, *uniParams)) {
+    if (!(surfaceParams.HasSecurityLayer() || surfaceParams.HasSkipLayer() || surfaceParams.HasProtectedLayer() ||
+        hasHdrPresent_) && DealWithUIFirstCache(surfaceNode, canvas, surfaceParams, *uniParams)) {
         return;
     }
 
@@ -490,10 +504,9 @@ void RSSurfaceRenderNodeDrawable::DealWithSelfDrawingNodeBuffer(RSSurfaceRenderN
     if (surfaceParams.GetHardwareEnabled() && !RSUniRenderThread::GetCaptureParam().isInCaptureFlag_) {
         if (!surfaceNode.IsHardwareEnabledTopSurface()) {
             RSAutoCanvasRestore arc(&canvas);
-            Drawing::Rect rect(std::round(surfaceParams.GetBounds().GetLeft()),
-                std::round(surfaceParams.GetBounds().GetTop()), std::round(surfaceParams.GetBounds().GetWidth()),
-                std::round(surfaceParams.GetBounds().GetHeight()));
-            canvas.ClipRect(rect);
+            auto bounds = surfaceParams.GetBounds();
+            canvas.ClipRect({std::round(bounds.GetLeft()), std::round(bounds.GetTop()),
+                std::round(bounds.GetRight()), std::round(bounds.GetBottom())});
             canvas.Clear(Drawing::Color::COLOR_TRANSPARENT);
         }
         return;
@@ -630,10 +643,11 @@ std::shared_ptr<RSSurfaceRenderNode> RSSurfaceRenderNodeDrawable::GetSurfaceRend
 
 const Occlusion::Region& RSSurfaceRenderNodeDrawable::GetVisibleDirtyRegion() const
 {
+    static Occlusion::Region defaultRegion;
     auto surfaceNode = GetSurfaceRenderNode();
     if (surfaceNode == nullptr) {
         RS_LOGE("RSSurfaceRenderNodeDrawable::GetVisibleDirtyRegion surfaceNode is nullptr");
-        return {};
+        return defaultRegion;
     }
     return surfaceNode->GetVisibleDirtyRegion();
 }
@@ -688,7 +702,7 @@ void RSSurfaceRenderNodeDrawable::SetDirtyRegionBelowCurrentLayer(Occlusion::Reg
     surfaceNode->SetDirtyRegionBelowCurrentLayer(region);
 }
 
-const std::shared_ptr<RSDirtyRegionManager>& RSSurfaceRenderNodeDrawable::GetSyncDirtyManager() const
+std::shared_ptr<RSDirtyRegionManager> RSSurfaceRenderNodeDrawable::GetSyncDirtyManager() const
 {
     auto surfaceNode = GetSurfaceRenderNode();
     if (surfaceNode == nullptr) {
