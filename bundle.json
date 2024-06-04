@@ -99,7 +99,8 @@
           "icu",
           "libpng",
           "ffrt",
-          "libxml2"
+          "libxml2",
+          "skia"
         ],
         "third_party": [
           "flutter",

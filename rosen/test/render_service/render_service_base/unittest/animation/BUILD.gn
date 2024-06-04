@@ -54,11 +54,10 @@ ohos_unittest("RSRenderServiceBaseAnimationTest") {
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_base:librender_service_base",
     "//third_party/googletest:gtest_main",
   ]
-  deps += [ "//third_party/skia:skia_ohos" ]
-
   external_deps = [
     "c_utils:utils",
     "init:libbegetutil",
+    "skia:skia_canvaskit",
   ]
 
   subsystem_name = "graphic"
