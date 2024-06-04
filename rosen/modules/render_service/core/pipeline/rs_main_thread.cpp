@@ -2699,7 +2699,7 @@ void RSMainThread::RecvRSTransactionData(std::unique_ptr<RSTransactionData>& rsT
     } else {
         ClassifyRSTransactionData(rsTransactionData);
     }
-    RequestNextVSync("UI");
+    RequestNextVSync();
 }
 
 void RSMainThread::ClassifyRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData)
