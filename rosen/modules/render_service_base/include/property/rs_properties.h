@@ -333,7 +333,7 @@ public:
 
     bool IsBackgroundMaterialFilterValid() const;
     bool IsForegroundMaterialFilterVaild() const;
-    
+
     // shadow properties
     void SetShadowColor(Color color);
     void SetShadowOffsetX(float offsetX);
@@ -612,7 +612,7 @@ private:
     int foregroundColorMode_ = BLUR_COLOR_MODE::DEFAULT;
     float foregroundBlurRadiusX_ = 0.f;
     float foregroundBlurRadiusY_ = 0.f;
-    
+
     std::weak_ptr<RSRenderNode> backref_;
 
     std::optional<Vector4f> pixelStretch_;
@@ -644,6 +644,7 @@ private:
     void CheckGreyCoef();
 
     void UpdateFilter();
+    void UpdateForegroundFilter();
 
     // partial update
     bool colorFilterNeedUpdate_ = false;
