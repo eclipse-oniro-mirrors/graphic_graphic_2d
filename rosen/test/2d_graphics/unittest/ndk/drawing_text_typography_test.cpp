@@ -1559,7 +1559,6 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest047, TestSize.Level
     OH_Drawing_TypographyCreate* handler = OH_Drawing_CreateTypographyHandler(typoStyle,
         OH_Drawing_CreateFontCollection());
     EXPECT_TRUE(handler != nullptr);
-
     OH_Drawing_SetTextStyleColor(txtStyle, OH_Drawing_ColorSetArgb(0xFF, 0x00, 0x00, 0x00));
     double fontSize = 30;
     OH_Drawing_SetTextStyleFontSize(txtStyle, fontSize);
