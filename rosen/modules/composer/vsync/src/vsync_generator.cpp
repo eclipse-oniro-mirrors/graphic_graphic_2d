@@ -184,9 +184,7 @@ void VSyncGenerator::ThreadLoop()
                     bool clearAllSamplesFlag = clearAllSamplesFlag_;
                     clearAllSamplesFlag_ = false;
                     locker.unlock();
-                    if (clearAllSamplesFlag) {
-                        CreateVSyncSampler()->ClearAllSamples();
-                    }
+                    ClearAllSamplesInternal(clearAllSamplesFlag);
                     appVSyncDistributor_->RecordVsyncModeChange(currRefreshRate_, period_);
                     rsVSyncDistributor_->RecordVsyncModeChange(currRefreshRate_, period_);
                     continue;
@@ -350,6 +348,13 @@ bool VSyncGenerator::UpdateChangeDataLocked(int64_t now, int64_t referenceTime, 
     }
 
     return modelChanged;
+}
+
+void VSyncGenerator::ClearAllSamplesInternal(bool clearAllSamplesFlag)
+{
+    if (clearAllSamplesFlag) {
+        CreateVSyncSampler()->ClearAllSamples();
+    }
 }
 
 void VSyncGenerator::UpdateVSyncModeLocked()
@@ -763,7 +768,7 @@ VsyncError VSyncGenerator::CheckAndUpdateReferenceTime(int64_t hardwareVsyncInte
 
     if (rsVSyncDistributor_->IsDVsyncOn() ||
         ((abs(hardwareVsyncInterval - pendingPeriod_) < PERIOD_CHECK_THRESHOLD) &&
-        (abs(hardwareVsyncInterval - targetPeriod_) < PERIOD_CHECK_THRESHOLD))) {
+        (abs(hardwareVsyncInterval - targetPeriod_) < PERIOD_CHECK_THRESHOLD || targetPeriod_ == 0))) {
         // framerate has changed
         frameRateChanging_ = false;
         ScopedBytrace changeEnd("frameRateChanging_ = false");

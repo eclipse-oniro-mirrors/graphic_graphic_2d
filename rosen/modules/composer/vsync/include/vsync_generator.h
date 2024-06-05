@@ -149,6 +149,7 @@ private:
 #endif
     void PeriodCheckLocked(int64_t hardwareVsyncInterval);
     VsyncError SetExpectNextVsyncTimeInternal(int64_t expectNextVsyncTime);
+    void ClearAllSamplesInternal(bool clearAllSamplesFlag);
     void CalculateReferenceTimeOffsetPulseNumLocked(int64_t referenceTime);
 
     sptr<VSyncSystemAbilityListener> saStatusChangeListener_ = nullptr;
