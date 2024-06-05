@@ -343,7 +343,7 @@ _graphic_2d_adapter_dir =
 
 if (defined(is_arkui_x) && is_arkui_x) {
   # In case of arkui-x compilation, copy android and ios adapters from ace_engine
-  exec_script("$graphic_2d_root/copy_arkui_adapters.py",
+  exec_script("$graphic_2d_root/utils/build/copy_arkui_adapters.py",
               [
                 _ace_adapter_dir,
                 _graphic_2d_adapter_dir,
