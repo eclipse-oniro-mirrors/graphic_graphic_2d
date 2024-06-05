@@ -363,6 +363,9 @@ void RSSubThread::ResetGrContext()
 
 void RSSubThread::ThreadSafetyReleaseTexture()
 {
+    if (grContext_ == nullptr) {
+        return;
+    }
     grContext_->FreeGpuResources();
 }
 
