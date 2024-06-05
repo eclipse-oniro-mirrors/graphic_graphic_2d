@@ -22,6 +22,9 @@ ohos_unittest("RSRenderServiceBaseRenderTest") {
   module_out_path = module_output_path
 
   sources = [
+    "rs_grey_shader_filter_test.cpp",
+    "rs_kawase_blur_shader_filter_test.cpp",
+    "rs_linear_gradient_blur_shader_filter_test.cpp",
     "rs_spherize_effect_filter_test.cpp",
     "rs_typeface_cache_test.cpp",
   ]
