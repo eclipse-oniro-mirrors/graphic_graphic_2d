@@ -58,7 +58,7 @@ ohos_unittest("RSNodeCommandTest") {
     "//foundation/graphic/graphic_2d/rosen/modules/render_service_base:librender_service_base",
     "//third_party/googletest:gtest_main",
   ]
-  deps += [ "//third_party/skia:skia_ohos" ]
+
   if (defined(use_rosen_drawing) && use_rosen_drawing) {
     public_deps = [ "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics" ]
   }
@@ -66,6 +66,7 @@ ohos_unittest("RSNodeCommandTest") {
     "c_utils:utils",
     "hilog:libhilog",
     "init:libbegetutil",
+    "skia:skia_canvaskit",
   ]
 
   subsystem_name = "graphic"

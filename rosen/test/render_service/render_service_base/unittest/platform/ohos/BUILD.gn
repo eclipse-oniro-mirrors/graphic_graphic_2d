@@ -74,9 +74,10 @@ ohos_unittest("RSRenderServiceBasePlatformTest") {
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
     "//foundation/multimedia/image_framework/interfaces/innerkits:image_native",
   ]
-  public_external_deps = [ "graphic_surface:sync_fence" ]
-  deps += [ "//third_party/skia:skia_ohos" ]
-  public_deps += [ "//third_party/skia:skia_ohos" ]
+  public_external_deps = [
+    "graphic_surface:sync_fence",
+    "skia:skia_canvaskit",
+  ]
 
   if (ace_enable_gpu) {
     include_dirs += [ "//third_party/openssl/include" ]
@@ -98,6 +99,7 @@ ohos_unittest("RSRenderServiceBasePlatformTest") {
     "init:libbegetutil",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
+    "skia:skia_canvaskit",
   ]
 
   subsystem_name = "graphic"
