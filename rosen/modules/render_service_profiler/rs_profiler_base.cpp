@@ -564,7 +564,7 @@ static void CreateRenderSurfaceNode(RSContext& context, NodeId id, bool isTextur
         .isTextureExportNode = isTextureExportNode,
         .isSync = false };
 
-    if (auto node = std::make_shared<RSSurfaceRenderNode>(config, context.weak_from_this())) {
+    if (auto node = SurfaceNodeCommandHelper::CreateWithConfigInRS(config, context)) {
         node->SetAbilityBGAlpha(backgroundAlpha);
         node->SetGlobalAlpha(globalAlpha);
         context.GetMutableNodeMap().RegisterRenderNode(node);
