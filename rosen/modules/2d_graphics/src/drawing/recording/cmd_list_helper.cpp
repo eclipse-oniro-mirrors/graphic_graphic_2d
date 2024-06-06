@@ -17,7 +17,6 @@
 
 #include "recording/draw_cmd.h"
 #include "recording/draw_cmd_list.h"
-
 #include "skia_adapter/skia_vertices.h"
 #include "skia_adapter/skia_image_filter.h"
 #include "skia_adapter/skia_mask_filter.h"
