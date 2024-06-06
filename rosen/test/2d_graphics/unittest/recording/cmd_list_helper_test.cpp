@@ -548,7 +548,7 @@ HWTEST_F(CmdListHelperTest, TextBlob, TestSize.Level1)
 {
     auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
     OpDataHandle handle = CmdListHelper::AddTextBlobToCmdList(*cmdList, nullptr);
-    auto sptr = CmdListHelper::GetTextBlobFromCmdList(*cmdList, handle);
+    auto sptr = CmdListHelper::GetTextBlobFromCmdList(*cmdList, handle, 0);
     EXPECT_EQ(sptr, nullptr);
 }
 
@@ -563,7 +563,7 @@ HWTEST_F(CmdListHelperTest, Region, TestSize.Level1)
     auto cmdList = DrawCmdList::CreateFromData({ nullptr, 0 }, false);
     Region region;
     OpDataHandle handle = CmdListHelper::AddRegionToCmdList(*cmdList, region);
-    auto sptr = CmdListHelper::GetRegionFromCmdList(*cmdList, handle, 0);
+    auto sptr = CmdListHelper::GetRegionFromCmdList(*cmdList, handle);
     EXPECT_NE(sptr, nullptr);
 }
 
