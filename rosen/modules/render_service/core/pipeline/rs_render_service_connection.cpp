@@ -26,6 +26,7 @@
 #include "rs_trace.h"
 #include "system/rs_system_parameters.h"
 
+#include "command/rs_surface_node_command.h"
 #include "common/rs_background_thread.h"
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
 #include "pipeline/parallel_render/rs_sub_thread_manager.h"
@@ -303,7 +304,7 @@ bool RSRenderServiceConnection::GetUniRenderEnabled()
 bool RSRenderServiceConnection::CreateNode(const RSSurfaceRenderNodeConfig& config)
 {
     std::shared_ptr<RSSurfaceRenderNode> node =
-        std::make_shared<RSSurfaceRenderNode>(config, mainThread_->GetContext().weak_from_this());
+        SurfaceNodeCommandHelper::CreateWithConfigInRS(config, mainThread_->GetContext());
     if (node == nullptr) {
         RS_LOGE("RSRenderService::CreateNode fail");
         return false;
@@ -322,7 +323,7 @@ sptr<Surface> RSRenderServiceConnection::CreateNodeAndSurface(const RSSurfaceRen
         usleep(SLEEP_TIME_US);
     }
     std::shared_ptr<RSSurfaceRenderNode> node =
-        std::make_shared<RSSurfaceRenderNode>(config, mainThread_->GetContext().weak_from_this());
+        SurfaceNodeCommandHelper::CreateWithConfigInRS(config, mainThread_->GetContext());
     if (node == nullptr) {
         RS_LOGE("RSRenderService::CreateNodeAndSurface CreateNode fail");
         return nullptr;

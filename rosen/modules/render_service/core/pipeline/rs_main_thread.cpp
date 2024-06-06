@@ -370,10 +370,8 @@ void RSMainThread::Init()
         SKResourceManager::Instance().ReleaseResource();
         // release node memory
         if (RSRenderNodeGC::Instance().GetNodeSize() > 0) {
-            RSBackgroundThread::Instance().PostTask([] () {
-                RS_TRACE_NAME("ReleaseRSRenderNodeMemory");
-                RSRenderNodeGC::Instance().ReleaseNodeMemory();
-            });
+            RS_TRACE_NAME("ReleaseRSRenderNodeMemory");
+            RSRenderNodeGC::Instance().ReleaseNodeMemory();
         }
 #ifdef RS_ENABLE_PARALLEL_UPLOAD
         RSUploadResourceThread::Instance().OnRenderEnd();
