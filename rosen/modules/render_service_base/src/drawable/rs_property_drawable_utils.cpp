@@ -499,6 +499,11 @@ void RSPropertyDrawableUtils::DrawBackgroundEffect(
     auto clipBounds = Drawing::Rect(0, 0, imageRect.GetWidth(), imageRect.GetHeight());
     auto imageSnapshotBounds = Drawing::Rect(0, 0, imageSnapshot->GetWidth(), imageSnapshot->GetHeight());
     filter->DrawImageRect(offscreenCanvas, imageSnapshot, imageSnapshotBounds, clipBounds);
+    auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
+    if (paintFilterCanvas != nullptr) {
+        offscreenCanvas.SetHDRPresent(paintFilterCanvas->GetHDRPresent());
+        offscreenCanvas.SetBrightnessRatio(paintFilterCanvas->GetBrightnessRatio());
+    }
     filter->PostProcess(offscreenCanvas);
 
     auto imageCache = offscreenSurface->GetImageSnapshot();
