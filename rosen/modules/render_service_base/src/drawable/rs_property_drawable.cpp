@@ -395,7 +395,7 @@ bool RSFilterDrawable::IsAIBarCacheValid()
     if (cacheUpdateInterval_ == 0 || forceClearCacheWithLastFrame_) {
         return false;
     } else {
-        MaskFilterForceUseCache(true);
+        MarkFilterForceUseCache(true);
         return true;
     }
 }
