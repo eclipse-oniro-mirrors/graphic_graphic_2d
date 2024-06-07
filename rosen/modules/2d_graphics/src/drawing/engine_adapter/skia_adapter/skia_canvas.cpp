@@ -977,9 +977,9 @@ void SkiaCanvas::ClipIRect(const RectI& rect, ClipOp op)
         LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
         return;
     }
-    const SkRect* clipRect = reinterpret_cast<const SkRect*>(&rect);
+    SkRect clipRect = SkRect::MakeLTRB(rect.GetLeft(), rect.GetTop(), rect.GetRight(), rect.GetBottom());
     SkClipOp clipOp = static_cast<SkClipOp>(op);
-    skCanvas_->clipRect(*clipRect, clipOp, false);
+    skCanvas_->clipRect(clipRect, clipOp, false);
 }
 
 void SkiaCanvas::ClipRoundRect(const RoundRect& roundRect, ClipOp op, bool doAntiAlias)
