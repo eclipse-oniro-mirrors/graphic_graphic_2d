@@ -328,6 +328,11 @@ public:
     
     void ProcessSubSyncTransactionCount(int32_t hostPid);
 
+    bool IsFirstFrameOfPartialRender() const
+    {
+        return isFirstFrameOfPartialRender_;
+    }
+
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -636,6 +641,11 @@ private:
     std::atomic_bool discardJankFrames_ = false;
     std::atomic_bool skipJankAnimatorFrame_ = false;
     ScreenId displayNodeScreenId_ = 0;
+
+    // partial render
+    bool isFirstFrameOfPartialRender_ = false;
+    bool isPartialRenderEnabledOfLastFrame_ = false;
+    bool isRegionDebugEnabledOfLastFrame_ = false;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD
