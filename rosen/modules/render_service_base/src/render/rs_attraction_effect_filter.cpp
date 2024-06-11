@@ -281,8 +281,8 @@ std::vector<Drawing::Point> RSAttractionEffectFilter::CalculateUpperCtrlPointOfV
 
 std::vector<Drawing::Point> RSAttractionEffectFilter::CalculateLowerCtrlPointOfVertex(float deltaX, float deltaY,
     float width, float height, int location)
-{   
-    if (width < 1.0f) {
+{
+    if (width == 0.0f) {
         width = 1.0f;
     }
     // Coordinates of the lower control point of the curve:(m1*(deltaX * height/width - width)), m2 * deltaY)
