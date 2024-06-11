@@ -59,9 +59,6 @@ public:
         return Type;
     }
 
-    explicit RSSurfaceRenderNode(NodeId id, const std::weak_ptr<RSContext>& context = {},
-        bool isTextureExportNode = false);
-    explicit RSSurfaceRenderNode(const RSSurfaceRenderNodeConfig& config, const std::weak_ptr<RSContext>& context = {});
     ~RSSurfaceRenderNode() override;
 
     void PrepareRenderBeforeChildren(RSPaintFilterCanvas& canvas);
@@ -1164,6 +1161,9 @@ protected:
     void OnSkipSync() override;
 
 private:
+    explicit RSSurfaceRenderNode(NodeId id, const std::weak_ptr<RSContext>& context = {},
+        bool isTextureExportNode = false);
+    explicit RSSurfaceRenderNode(const RSSurfaceRenderNodeConfig& config, const std::weak_ptr<RSContext>& context = {});
     void OnResetParent() override;
     void ClearChildrenCache();
     bool SubNodeIntersectWithExtraDirtyRegion(const RectI& r) const;
@@ -1416,6 +1416,7 @@ private:
     bool doDirectComposition_ = true;
     bool isSkipDraw_ = false;
 
+    friend class SurfaceNodeCommandHelper;
     friend class RSUifirstManager;
     friend class RSUniRenderVisitor;
     friend class RSRenderNode;
