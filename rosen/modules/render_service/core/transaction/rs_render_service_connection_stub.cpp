@@ -1466,6 +1466,11 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_STATE;
                 break;
             }
+            uint64_t tokenId = OHOS::IPCSkeleton::GetCallingFullTokenID();
+            if (Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(tokenId)) {
+                ret = ERR_TRANSACTION_FAILED;
+                break;
+            }
             const auto& activeDirtyRegionInfos = GetActiveDirtyRegionInfo();
             reply.WriteInt32(activeDirtyRegionInfos.size());
             for (const auto& activeDirtyRegionInfo : activeDirtyRegionInfos) {
