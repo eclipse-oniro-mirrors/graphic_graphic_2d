@@ -375,7 +375,7 @@ float RSModifierExtractor::GetAttractionFractionValue() const
 
 Vector2f RSModifierExtractor::GetAttractionDstPointValue() const
 {
-    (GET_PROPERTY_FROM_MODIFIERS(Vector2f, ATTRACTION_DSTPOINT, Vector2f(0.f, 0.f), =));
+    GET_PROPERTY_FROM_MODIFIERS(Vector2f, ATTRACTION_DSTPOINT, Vector2f(0.f, 0.f), =);
 }
 
 float RSModifierExtractor::GetLightUpEffectDegree() const

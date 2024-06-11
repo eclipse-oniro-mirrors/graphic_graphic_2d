@@ -420,13 +420,14 @@ public:
     void SetSpherize(float spherizeDegree);
     float GetSpherize() const;
     bool IsSpherizeValid() const;
+    void CreateSphereEffectFilter();
 
     bool IsAttractionValid() const;
     void SetAttractionFraction(float fraction);
     void SetAttractionDstPoint(Vector2f dstPoint);
     float GetAttractionFraction() const;
     Vector2f GetAttractionDstPoint() const;
-    void CreateAttractionEffectFilter(float attractFraction);
+    void CreateAttractionEffectFilter();
 
     void SetLightUpEffect(float lightUpEffectDegree);
     float GetLightUpEffect() const;
