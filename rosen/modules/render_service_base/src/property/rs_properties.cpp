@@ -2101,6 +2101,30 @@ bool RSProperties::IsSpherizeValid() const
     return isSpherizeValid_;
 }
 
+void RSProperties::CreateSphereEffectFilter()
+{
+    auto spherizeEffectFilter = std::make_shared<RSSpherizeEffectFilter>(spherizeDegree_);
+    if (IS_UNI_RENDER) {
+        foregroundFilterCache_ = spherizeEffectFilter;
+    } else {
+        foregroundFilter_ = spherizeEffectFilter;
+    }
+}
+
+void RSProperties::CreateAttractionEffectFilter()
+{
+    float canvasWidth = GetBoundsRect().GetWidth();
+    float canvasHeight = GetBoundsRect().GetHeight();
+    Vector2f destinationPoint = GetAttractionDstPoint();
+    auto attractionEffectFilter = std::make_shared<RSAttractionEffectFilter>(attractFraction_);
+    attractionEffectFilter->CalculateWindowStatus(canvasWidth, canvasHeight, destinationPoint);
+    if (IS_UNI_RENDER) {
+        foregroundFilterCache_ = attractionEffectFilter;
+    } else {
+        foregroundFilter_ = attractionEffectFilter;
+    }
+}
+
 float RSProperties::GetAttractionFraction() const
 {
     return attractFraction_;
@@ -3839,23 +3863,9 @@ void RSProperties::UpdateFilter()
             foregroundFilter_ = foregroundEffectFilter;
         }
     } else if (IsSpherizeValid()) {
-        auto spherizeEffectFilter = std::make_shared<RSSpherizeEffectFilter>(spherizeDegree_);
-        if (IS_UNI_RENDER) {
-            foregroundFilterCache_ = spherizeEffectFilter;
-        } else {
-            foregroundFilter_ = spherizeEffectFilter;
-        }
+        CreateSphereEffectFilter();
     } else if (IsAttractionValid()) {
-        float canvasWidth = GetBoundsRect().GetWidth();
-        float canvasHeight = GetBoundsRect().GetHeight();
-        Vector2f destinationPoint = GetAttractionDstPoint();
-        auto attractionEffectFilter = std::make_shared<RSAttractionEffectFilter>(attractFraction_);
-        attractionEffectFilter->CalculateWindowStatus(canvasWidth, canvasHeight, destinationPoint);
-        if (IS_UNI_RENDER) {
-            foregroundFilterCache_ = attractionEffectFilter;
-        } else {
-            foregroundFilter_ = attractionEffectFilter;
-        }
+        CreateAttractionEffectFilter();
     } else if (GetShadowMask()) {
         float elevation = GetShadowElevation();
         Drawing::scalar n1 = 0.25f * elevation * (1 + elevation / 128.0f);  // 0.25f 128.0f

@@ -264,6 +264,7 @@ void RSProfiler::DumpPropertiesDecoration(const RSProperties& properties, JsonWr
 
     if (!ROSEN_EQ(properties.GetAttractionFraction(), 0.f)) {
         out["AttractionEffect"] = properties.GetAttractionFraction();
+    }
 
     if (!ROSEN_EQ(properties.GetForegroundColor(), RgbPalette::Transparent())) {
         out["ForegroundColor"] = "#" + Hex(properties.GetForegroundColor().AsArgbInt()) + " (ARGB)";

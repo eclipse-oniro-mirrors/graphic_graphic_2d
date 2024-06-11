@@ -86,10 +86,11 @@ float RSAttractionEffectFilter::BinarySearch(float targetX, const Drawing::Point
 {
     float start = 0.0f;
     float end = 1.0f;
+    float midPoint = 0.0f;
     int maxIterCount = 100;
     int currentIter = 0;
     while (currentIter < maxIterCount) {
-        float midPoint = (start + end) / 2;
+        midPoint = (start + end) / 2.0f;
         float estimate = CalculateCubic(p1.GetX(), p2.GetX(), midPoint);
         if (IsWithinThreshold(targetX, estimate, 0.001f)) {
             return CalculateCubic(p1.GetY(), p2.GetY(), midPoint);
@@ -99,8 +100,9 @@ float RSAttractionEffectFilter::BinarySearch(float targetX, const Drawing::Point
         } else {
             end = midPoint;
         }
-        currentIter;
+        currentIter++;
     }
+    return CalculateCubic(p1.GetY(), p2.GetY(), midPoint);
 }
 
 std::vector<Drawing::Point> RSAttractionEffectFilter::CalculateCubicsCtrlPointOffset(
@@ -153,7 +155,7 @@ std::vector<Drawing::Point> RSAttractionEffectFilter::CalculateCubicsCtrlPoint(
     std::vector<int> indice = CreateIndexSequence(isBelowTarget, location);
     std::vector<Drawing::Point> pathCtrlPointList(pointNum, Drawing::Point(0.0f, 0.0f));
 
-    for (int i = 0; i < pointNum; i) {
+    for (int i = 0; i < pointNum; i++) {
         int index = indice[i];
         if (!isBelowTarget) {
             pathCtrlPointList[i] = pathList[index] +  (isFirstCtrl ? points[i] : points[0]);
@@ -194,7 +196,7 @@ void RSAttractionEffectFilter::CalculateBezierVelList(const std::vector<Drawing:
     curveVelList.push_back(LerpPoint(bottomVelocity, topVelocity, 0.67f, 0.33f));
     std::vector<int> indice = CreateIndexSequence(isBelowTarget, location);
     int pointNum = 12;
-    for (int i = 0; i < pointNum; i) {
+    for (int i = 0; i < pointNum; i++) {
         int index = indice[i];
         velocityCtrl[i] = curveVelList[index];
     }
@@ -268,7 +270,7 @@ void RSAttractionEffectFilter::CalculateDeltaXAndDeltaY(const Drawing::Point win
 std::vector<Drawing::Point> RSAttractionEffectFilter::CalculateUpperCtrlPointOfVertex(float deltaX, float deltaY,
     float width, float height, int location)
 {
-    // Coordinates of the upper control point of the curve track : (k1 * width + k2 * deltaX, k3 * height + k4 * deltaY)
+    // Coordinates of the upper control point of the curve:(k1 * width + k2 * deltaX, k3 * height + k4 * deltaY)
     Drawing::Point topLeft = { (0.016f * width - 0.08f * deltaX) * location, 0.464f * height + 0.40f * deltaY };
     Drawing::Point topRight = { (-1.147f * width - 0.016f * deltaX) * location, -0.187f * height + 0.30f * deltaY };
     Drawing::Point bottomLeft = { (-0.15f * width - 0.075f * deltaX) * location, 0.0f * height + 0.2f * deltaY };
@@ -279,7 +281,11 @@ std::vector<Drawing::Point> RSAttractionEffectFilter::CalculateUpperCtrlPointOfV
 
 std::vector<Drawing::Point> RSAttractionEffectFilter::CalculateLowerCtrlPointOfVertex(float deltaX, float deltaY,
     float width, float height, int location)
-{   // Coordinates of the lower control point of the curve track : (m1*(deltaX * height/width - width)), m2 * deltaY)
+{   
+    if (width < 1.0f) {
+        width = 1.0f;
+    }
+    // Coordinates of the lower control point of the curve:(m1*(deltaX * height/width - width)), m2 * deltaY)
     Drawing::Point topLeft = { (0.3f * (deltaX * height / width - width)) * location, -0.20f * deltaY };
     Drawing::Point topRight = { (0.45f * (deltaX * height / width - width)) * location, -0.30f * deltaY };
     Drawing::Point bottomLeft = { (0.15f * (deltaX * height / width - width)) * location, -0.20f * deltaY };
@@ -345,7 +351,7 @@ void RSAttractionEffectFilter::CalculateWindowStatus(float canvasWidth, float ca
     CalculateBezierVelList(velocityCtrlPointUpper, speedListsFirst, location, isBelowTarget);
     CalculateBezierVelList(velocityCtrlPointLower, speedListsSecond, location, isBelowTarget);
 
-    for (int i = 0; i < pointNum; +i) {
+    for (int i = 0; i < pointNum; ++i) {
         float speed = BinarySearch(attractionFraction_, speedListsFirst[i], speedListsSecond[i]);
         windowStatusPoints_[i] = CubicBezier(windowCtrlPoints[i], controlPointListFirst[i], controlPointListSecond[i],
             pointDst[0], speed);

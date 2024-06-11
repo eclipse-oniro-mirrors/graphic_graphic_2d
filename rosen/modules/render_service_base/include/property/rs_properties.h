@@ -41,6 +41,7 @@
 #include "render/rs_path.h"
 #include "render/rs_shader.h"
 #include "render/rs_shadow.h"
+#include "render/rs_attraction_effect_filter.h"
 
 #include "property/rs_filter_cache_manager.h"
 
@@ -425,6 +426,7 @@ public:
     void SetAttractionDstPoint(Vector2f dstPoint);
     float GetAttractionFraction() const;
     Vector2f GetAttractionDstPoint() const;
+    void CreateAttractionEffectFilter(float attractFraction);
 
     void SetLightUpEffect(float lightUpEffectDegree);
     float GetLightUpEffect() const;
