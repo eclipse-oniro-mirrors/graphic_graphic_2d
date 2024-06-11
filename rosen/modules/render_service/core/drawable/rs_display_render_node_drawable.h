@@ -56,7 +56,7 @@ private:
     void WiredScreenProjection(std::shared_ptr<RSDisplayRenderNode> displayNodeSp, RSDisplayRenderParams& params,
         std::shared_ptr<RSProcessor> processor);
     void ScaleAndRotateMirrorForWiredScreen(RSDisplayRenderNode& node, RSDisplayRenderNode& mirroredNode);
-    void DrawWatermarkIfNeed(RSDisplayRenderNode& node, RSPaintFilterCanvas& canvas) const;
+    void DrawWatermarkIfNeed(RSDisplayRenderParams& params, RSPaintFilterCanvas& canvas) const;
     void RotateMirrorCanvas(ScreenRotation& rotation, float mainWidth, float mainHeight);
     void RotateMirrorCanvasOnExFoldScreen(RSDisplayRenderParams& params, ScreenRotation& rotation, float mainWidth,
         float mainHeight);

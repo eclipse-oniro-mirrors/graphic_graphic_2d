@@ -615,7 +615,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
             SetHighContrastIfEnabled(*curCanvas_);
             RSRenderNodeDrawable::OnDraw(*curCanvas_);
-            DrawWatermarkIfNeed(*displayNodeSp, *curCanvas_);
+            DrawWatermarkIfNeed(*params, *curCanvas_);
             DrawCurtainScreen();
             // switch color filtering
             SwitchColorFilter(*curCanvas_);
@@ -1189,7 +1189,7 @@ void RSDisplayRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
         // Currently, capture do not support HDR display
         rscanvas->SetCapture(true);
         RSRenderNodeDrawable::OnCapture(canvas);
-        DrawWatermarkIfNeed(*displayNodeSp, *rscanvas);
+        DrawWatermarkIfNeed(*params, *rscanvas);
     } else {
         auto processor = RSProcessorFactory::CreateProcessor(params->GetCompositeType());
         if (!processor) {
@@ -1387,22 +1387,30 @@ void RSDisplayRenderNodeDrawable::AdjustZOrderAndDrawSurfaceNode(
     }
 }
 
-void RSDisplayRenderNodeDrawable::DrawWatermarkIfNeed(
-    RSDisplayRenderNode& node, RSPaintFilterCanvas& canvas) const
+void RSDisplayRenderNodeDrawable::DrawWatermarkIfNeed(RSDisplayRenderParams& params, RSPaintFilterCanvas& canvas) const
 {
-    if (RSUniRenderThread::Instance().GetWatermarkFlag()) {
+    if (!RSUniRenderThread::Instance().GetWatermarkFlag()) {
+        return;
+    }
+    auto image = RSUniRenderThread::Instance().GetWatermarkImg();
+    if (image == nullptr) {
+        return;
+    }
+    if (auto screenManager = CreateOrGetScreenManager()) {
         RS_TRACE_FUNC();
-        sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
-        auto screenInfo = screenManager->QueryScreenInfo(node.GetScreenId());
-        auto image = RSUniRenderThread::Instance().GetWatermarkImg();
-        if (image == nullptr) {
-            return;
+        auto screenInfo = screenManager->QueryScreenInfo(params.GetScreenId());
+        auto mainWidth = static_cast<float>(screenInfo.width);
+        auto mainHeight = static_cast<float>(screenInfo.height);
+        if (RSSystemProperties::IsFoldScreenFlag() && params.GetScreenId() == 0) {
+            auto rotation = params.GetScreenRotation();
+            if (rotation == ScreenRotation::ROTATION_0 || rotation == ScreenRotation::ROTATION_180) {
+                std::swap(mainWidth, mainHeight);
+            }
         }
-
         Drawing::SaveLayerOps slr(nullptr, nullptr, Drawing::SaveLayerOps::INIT_WITH_PREVIOUS);
         canvas.SaveLayer(slr); // avoid abnormal dsicard
         auto srcRect = Drawing::Rect(0, 0, image->GetWidth(), image->GetHeight());
-        auto dstRect = Drawing::Rect(0, 0, screenInfo.width, screenInfo.height);
+        auto dstRect = Drawing::Rect(0, 0, mainWidth, mainHeight);
         Drawing::Brush rectBrush;
         canvas.AttachBrush(rectBrush);
         canvas.DrawImageRect(*image, srcRect, dstRect, Drawing::SamplingOptions(),
