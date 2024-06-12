@@ -282,14 +282,12 @@ std::vector<Drawing::Point> RSAttractionEffectFilter::CalculateUpperCtrlPointOfV
 std::vector<Drawing::Point> RSAttractionEffectFilter::CalculateLowerCtrlPointOfVertex(float deltaX, float deltaY,
     float width, float height, int location)
 {
-    if (width == 0.0f) {
-        width = 1.0f;
-    }
+    float inverseWidth = (width >= 1.0f) ? (1.0f / width) : 1.0f;
     // Coordinates of the lower control point of the curve:(m1*(deltaX * height/width - width)), m2 * deltaY)
-    Drawing::Point topLeft = { (0.3f * (deltaX * height / width - width)) * location, -0.20f * deltaY };
-    Drawing::Point topRight = { (0.45f * (deltaX * height / width - width)) * location, -0.30f * deltaY };
-    Drawing::Point bottomLeft = { (0.15f * (deltaX * height / width - width)) * location, -0.20f * deltaY };
-    Drawing::Point bottomRight = { (0.30f * (deltaX * height / width - width)) * location, -0.112f * deltaY };
+    Drawing::Point topLeft = { (0.3f * (deltaX * height * inverseWidth - width)) * location, -0.20f * deltaY };
+    Drawing::Point topRight = { (0.45f * (deltaX * height * inverseWidth - width)) * location, -0.30f * deltaY };
+    Drawing::Point bottomLeft = { (0.15f * (deltaX * height * inverseWidth - width)) * location, -0.20f * deltaY };
+    Drawing::Point bottomRight = { (0.30f * (deltaX * height * inverseWidth - width)) * location, -0.112f * deltaY };
     std::vector<Drawing::Point> lowerControlPoint = { topLeft, topRight, bottomLeft, bottomRight };
     return lowerControlPoint;
 }
