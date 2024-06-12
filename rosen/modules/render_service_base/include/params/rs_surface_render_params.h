@@ -305,6 +305,9 @@ public:
 
     // DFX
     std::string ToString() const override;
+    // Set/Get OpaqueRegion, currently only used for DFX
+    void SetOpaqueRegion(const Occlusion::Region& opaqueRegion);
+    const Occlusion::Region& GetOpaqueRegion() const;
 
 protected:
 private:
@@ -330,6 +333,7 @@ private:
     RectI absDrawRect_;
     RRect rrect_;
     Occlusion::Region transparentRegion_;
+    Occlusion::Region opaqueRegion_;
 
     bool surfaceCacheContentStatic_ = false;
     bool preSurfaceCacheContentStatic_ = false;
