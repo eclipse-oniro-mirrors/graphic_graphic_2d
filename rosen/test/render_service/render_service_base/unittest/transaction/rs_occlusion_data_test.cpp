@@ -61,7 +61,7 @@ HWTEST_F(RSOcclusionDataTest, UnmarshallingTest002, TestSize.Level1)
 {
     Parcel parcel;
     RSOcclusionData rsOcclusionData;
-    parcel.WriteUint32(5);//for test size
+    parcel.WriteUint32(5); // for test size
     RSOcclusionData* rsOcclusionDataPtr = rsOcclusionData.Unmarshalling(parcel);
     ASSERT_NE(rsOcclusionDataPtr,nullptr);
 }
@@ -79,9 +79,9 @@ HWTEST_F(RSOcclusionDataTest, UnmarshallingTest003, TestSize.Level1)
     uint64_t id = 2;
     uint32_t visibelLevel = 3;
     rsOcclusionData.visibleData_.emplace_back(std::make_pair(id, (WINDOW_LAYER_INFO_TYPE)visibelLevel));
-    parcel.WriteUint32(1);//for test size
-    parcel.WriteUint64(2);//for test data.first
-    parcel.WriteUint32(3);//for test data.second
+    parcel.WriteUint32(1); // for test size
+    parcel.WriteUint64(2); // for test data.first
+    parcel.WriteUint32(3); // for test data.second
     RSOcclusionData* rsOcclusionDataPtr = rsOcclusionData.Unmarshalling(parcel);
     ASSERT_NE(rsOcclusionDataPtr,nullptr);
 }

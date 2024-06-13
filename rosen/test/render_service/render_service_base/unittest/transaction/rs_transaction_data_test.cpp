@@ -118,7 +118,7 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand003, TestSize.Level1)
 {
     RSTransactionData rsTransactionData;
     Parcel parcel;
-    parcel.WriteInt32(57);//for test commandSize > readableSize
+    parcel.WriteInt32(57); // for test commandSize > readableSize
     rsTransactionData.Marshalling(parcel);
     ASSERT_EQ(rsTransactionData.UnmarshallingCommand(parcel), false);
 }
@@ -133,7 +133,7 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand004, TestSize.Level1)
 {
     RSTransactionData rsTransactionData;
     Parcel parcel;
-    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size()));//for test commandSize
+    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size())); // for test commandSize
     ASSERT_EQ(rsTransactionData.UnmarshallingCommand(parcel), false);
 }
 
@@ -147,8 +147,8 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand005, TestSize.Level1)
 {
     RSTransactionData rsTransactionData;
     Parcel parcel;
-    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size()));//for test commandSize
-    parcel.WriteBool(false);//for test isUniRender
+    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size())); // for test commandSize
+    parcel.WriteBool(false); // for test isUniRender
     ASSERT_EQ(rsTransactionData.UnmarshallingCommand(parcel), false);
 }
 
@@ -162,9 +162,9 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand006, TestSize.Level1)
 {
     RSTransactionData rsTransactionData;
     Parcel parcel;
-    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size()));//for test commandSize
-    parcel.WriteBool(false);//for test isUniRender
-    parcel.WriteUint64(1);//for test nodeId
+    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size())); // for test commandSize
+    parcel.WriteBool(false); // for test isUniRender
+    parcel.WriteUint64(1); // for test nodeId
     ASSERT_EQ(rsTransactionData.UnmarshallingCommand(parcel), false);
 }
 
@@ -178,10 +178,10 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand007, TestSize.Level1)
 {
     RSTransactionData rsTransactionData;
     Parcel parcel;
-    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size()));//for test commandSize
-    parcel.WriteBool(false);//for test isUniRender
-    parcel.WriteUint64(1);//for test nodeId
-    parcel.WriteUint8(1);//for test followType
+    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size())); // for test commandSize
+    parcel.WriteBool(false); // for test isUniRender
+    parcel.WriteUint64(1); // for test nodeId
+    parcel.WriteUint8(1); // for test followType
     ASSERT_EQ(rsTransactionData.UnmarshallingCommand(parcel), false);
 }
 
@@ -195,11 +195,11 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand008, TestSize.Level1)
 {
     RSTransactionData rsTransactionData;
     Parcel parcel;
-    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size()));//for test commandSize
-    parcel.WriteBool(false);//for test isUniRender
-    parcel.WriteUint64(1);//for test nodeId
-    parcel.WriteUint8(1);//for test followType
-    parcel.WriteUint8(1);//for test hasCommand
+    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size())); // for test commandSize
+    parcel.WriteBool(false); // for test isUniRender
+    parcel.WriteUint64(1); // for test nodeId
+    parcel.WriteUint8(1); // for test followType
+    parcel.WriteUint8(1); // for test hasCommand
     ASSERT_EQ(rsTransactionData.UnmarshallingCommand(parcel), false);
 }
 
@@ -213,12 +213,12 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand009, TestSize.Level1)
 {
     RSTransactionData rsTransactionData;
     Parcel parcel;
-    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size()));//for test commandSize
-    parcel.WriteBool(false);//for test isUniRender
-    parcel.WriteUint64(1);//for test nodeId
-    parcel.WriteUint8(1);//for test followType
-    parcel.WriteUint8(1);//for test hasCommand
-    parcel.WriteUint16(0);//for test commandType
+    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size())); // for test commandSize
+    parcel.WriteBool(false); // for test isUniRender
+    parcel.WriteUint64(1); // for test nodeId
+    parcel.WriteUint8(1); // for test followType
+    parcel.WriteUint8(1); // for test hasCommand
+    parcel.WriteUint16(0); // for test commandType
     ASSERT_EQ(rsTransactionData.UnmarshallingCommand(parcel), false);
 }
 
@@ -232,13 +232,13 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand010, TestSize.Level1)
 {
     RSTransactionData rsTransactionData;
     Parcel parcel;
-    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size()));//for test commandSize
-    parcel.WriteBool(false);//for test isUniRender
-    parcel.WriteUint64(1);//for test nodeId
-    parcel.WriteUint8(1);//for test followType
-    parcel.WriteUint8(1);//for test hasCommand
-    parcel.WriteUint16(100);//for test commandType
-    parcel.WriteUint16(100);//for test commandSubType
+    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size())); // for test commandSize
+    parcel.WriteBool(false); // for test isUniRender
+    parcel.WriteUint64(1); // for test nodeId
+    parcel.WriteUint8(1); // for test followType
+    parcel.WriteUint8(1); // for test hasCommand
+    parcel.WriteUint16(100); // for test commandType
+    parcel.WriteUint16(100); // for test commandSubType
     ASSERT_EQ(rsTransactionData.UnmarshallingCommand(parcel), false);
 }
 
@@ -252,13 +252,13 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand011, TestSize.Level1)
 {
     RSTransactionData rsTransactionData;
     Parcel parcel;
-    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size()));//for test commandSize
-    parcel.WriteBool(false);//for test isUniRender
-    parcel.WriteUint64(1);//for test nodeId
-    parcel.WriteUint8(1);//for test followType
-    parcel.WriteUint8(1);//for test hasCommand
-    parcel.WriteUint16(0);//for test commandType
-    parcel.WriteUint16(0);//for test commandSubType
+    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size())); // for test commandSize
+    parcel.WriteBool(false); // for test isUniRender
+    parcel.WriteUint64(1); // for test nodeId
+    parcel.WriteUint8(1); // for test followType
+    parcel.WriteUint8(1); // for test hasCommand
+    parcel.WriteUint16(0); // for test commandType
+    parcel.WriteUint16(0); // for test commandSubType
     ASSERT_EQ(rsTransactionData.UnmarshallingCommand(parcel), false);
 }
 
@@ -272,21 +272,21 @@ HWTEST_F(RSTransactionDataTest, UnmarshallingCommand012, TestSize.Level1)
 {
     RSTransactionData rsTransactionData;
     Parcel parcel;
-    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size()));//for test commandSize
-    parcel.WriteBool(false);//for test isUniRender
-    parcel.WriteUint64(1);//for test nodeId
-    parcel.WriteUint8(1);//for test followType
-    parcel.WriteUint8(1);//for test hasCommand
-    parcel.WriteUint16(0);//for test commandType
-    parcel.WriteUint16(0);//for test commandSubType
-    parcel.WriteBool(true);//for test needSync_
-    parcel.WriteBool(true);//for test needCloseSync_
-    parcel.WriteInt32(100);//for test syncTransactionCount_
-    parcel.WriteUint64(100);//for test timestamp_
-    parcel.WriteInt32(1);//for test pid
-    parcel.WriteUint64(1);//for test index_
-    parcel.WriteUint64(1);//for test syncId_
-    parcel.WriteInt32(1);//for test hostPid_
+    parcel.WriteInt32(static_cast<int32_t>(rsTransactionData.payload_.size())); // for test commandSize
+    parcel.WriteBool(false); // for test isUniRender
+    parcel.WriteUint64(1); // for test nodeId
+    parcel.WriteUint8(1); // for test followType
+    parcel.WriteUint8(1); // for test hasCommand
+    parcel.WriteUint16(0); // for test commandType
+    parcel.WriteUint16(0); // for test commandSubType
+    parcel.WriteBool(true); // for test needSync_
+    parcel.WriteBool(true); // for test needCloseSync_
+    parcel.WriteInt32(100); // for test syncTransactionCount_
+    parcel.WriteUint64(100); // for test timestamp_
+    parcel.WriteInt32(1); // for test pid
+    parcel.WriteUint64(1); // for test index_
+    parcel.WriteUint64(1); // for test syncId_
+    parcel.WriteInt32(1); // for test hostPid_
     ASSERT_EQ(rsTransactionData.UnmarshallingCommand(parcel), true);
 }
 

@@ -72,7 +72,7 @@ HWTEST_F(RSHgmConfigDataTest, UnmarshallingTest002, TestSize.Level1)
     parcel.WriteFloat(rsHgmConfigData.ppi_);
     parcel.WriteFloat(rsHgmConfigData.xDpi_);
     parcel.WriteFloat(rsHgmConfigData.yDpi_);
-    parcel.WriteUint32(17);//for test size
+    parcel.WriteUint32(17); // for test size
     RSHgmConfigData* rsHgmConfigDataPtr = rsHgmConfigData.Unmarshalling(parcel);
     ASSERT_NE(rsHgmConfigDataPtr,nullptr);
 }
