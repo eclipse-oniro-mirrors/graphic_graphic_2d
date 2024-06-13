@@ -38,7 +38,7 @@ namespace {
 * Type: Function
 * Rank: Important(2)
 * EnvConditions: N/A
-* CaseDescription: 
+* CaseDescription:
     1. call CreatePixelMapFromSurface with nullptr suface and should return nullptr
     2. call CreatePixelMapFromSurface with incorrect rect.left and should return nullptr
     3. call CreatePixelMapFromSurface with incorrect rect.top and should return nullptr
@@ -52,7 +52,7 @@ HWTEST_F(PixelMapFromSurfaceTest, CreatePixelMapFromSurface001, Function | Mediu
     auto cSurface = IConsumerSurface::Create();
     ASSERT_NE(cSurface, nullptr);
     auto producer = cSurface->GetProducer();
-    auto pSurface = surface::CreateSurfaceAsProducer(producer);
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
     ASSERT_NE(pSurface, nullptr);
     srcRect = {-1, 0, 100, 100};
     ASSERT_EQ(OHOS::Rosen::CreatePixelMapFromSurface(pSurface, srcRect), nullptr);

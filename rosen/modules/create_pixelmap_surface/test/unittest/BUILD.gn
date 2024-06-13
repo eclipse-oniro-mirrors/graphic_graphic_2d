@@ -13,7 +13,6 @@
 
 import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
-import("//build/config/feature.gni")
 
 module_out_path = "graphic_2d/create_pixelmap_surface"
 
@@ -37,8 +36,8 @@ ohos_unittest("pixel_map_from_surface_test") {
 ## Build pixel_map_test_common.a {{{
 config("pixel_map_test_common_public_config") {
   include_dirs = [
-    "//foundation/graphic/graphic_2d/interfaces/inner_api/common",
-    "//foundation/graphic/graphic_2d/rosen/modules/create_pixelmap_surface/include",
+    "$graphic_2d_root/interfaces/inner_api/common",
+    "$graphic_2d_root/rosen/modules/create_pixelmap_surface/include",
   ]
 
   cflags = [
@@ -59,10 +58,10 @@ ohos_static_library("pixel_map_test_common") {
     cfi_no_nvcall = true
     debug = false
   }
-  public_configs = [ ":vsync_test_common_public_config" ]
+  public_configs = [ ":pixel_map_test_common_public_config" ]
 
   public_deps = [
-    "$graphic_2d_root/rosen/module/create_pixelmap_surface:create_pixelmap_suface",
+    "$graphic_2d_root/rosen/modules/create_pixelmap_surface:create_pixelmap_surface",
     "//third_party/googletest:gmock_main",
     "//third_party/googletest:gtest_main",
   ]
