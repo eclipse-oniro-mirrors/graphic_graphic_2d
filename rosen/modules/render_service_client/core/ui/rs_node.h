@@ -378,6 +378,9 @@ public:
 
     void MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate = false);
 
+    // Mark uifirst node
+    void MarkUifirstNode(bool isUifirstNode);
+
     void MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer);
 
     void SetGrayScale(float grayScale);
@@ -534,6 +537,8 @@ private:
     bool isNodeSingleFrameComposer_ = false;
 
     bool isSuggestOpincNode_ = false;
+
+    bool isUifirstNode_ = true;
 
     RSModifierExtractor stagingPropertiesExtractor_;
     RSShowingPropertiesFreezer showingPropertiesFreezer_;

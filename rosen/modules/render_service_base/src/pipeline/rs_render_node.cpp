@@ -3922,6 +3922,12 @@ void RSRenderNode::AddToPendingSyncList()
     }
 }
 
+void RSRenderNode::MarkUifirstNode(bool isUifirstNode)
+{
+    RS_OPTIONAL_TRACE_NAME_FMT("MarkUifirstNode id:%lld, isUifirstNode:%d", GetId(), isUifirstNode);
+    isUifirstNode_ = isUifirstNode;
+}
+
 void RSRenderNode::SetChildrenHasSharedTransition(bool hasSharedTransition)
 {
     childrenHasSharedTransition_ = hasSharedTransition;
