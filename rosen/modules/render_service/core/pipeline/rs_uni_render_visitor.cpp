@@ -6447,7 +6447,7 @@ void RSUniRenderVisitor::CheckMergeDebugRectforRefreshRate()
             if (surfaceNode) {
                 auto& geoPtr = surfaceNode->GetRenderProperties().GetBoundsGeometry();
                 tempRect = geoPtr->MapAbsRect(tempRect.ConvertTo<float>());
-                curDisplayNode_->GetDirtyManager()->MergeDirtyRect(tempRect, true);  // trueЈєdebugRect for dislplayNode skip
+                curDisplayNode_->GetDirtyManager()->MergeDirtyRect(tempRect, true);  // true: debugRect for dislplayNode skip
                 return;
             }
         }
