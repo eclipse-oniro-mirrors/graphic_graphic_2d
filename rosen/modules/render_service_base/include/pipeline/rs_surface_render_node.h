@@ -1156,6 +1156,7 @@ public:
 
     void SetSkipDraw(bool skip);
     bool GetSkipDraw() const;
+    void SetNeedOffscreen(bool needOffscreen);
 protected:
     void OnSync() override;
     void OnSkipSync() override;

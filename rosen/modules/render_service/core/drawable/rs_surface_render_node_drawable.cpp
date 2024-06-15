@@ -139,6 +139,67 @@ void RSSurfaceRenderNodeDrawable::CacheImgForCapture(RSPaintFilterCanvas& canvas
     }
 }
 
+bool RSSurfaceRenderNodeDrawable::PrepareOffscreenRender()
+{
+    // cleanup
+    canvasBackup_ = nullptr;
+
+    // check offscreen size
+    int offscreenWidth = curCanvas_->GetSurface()->Width();
+    int offscreenHeight = curCanvas_->GetSurface()->Height();
+    if (offscreenWidth <= 0 || offscreenHeight <= 0) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::PrepareOffscreenRender, offscreenWidth or offscreenHeight is invalid");
+        return false;
+    }
+    if (curCanvas_->GetSurface() == nullptr) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::PrepareOffscreenRender, current surface is nullptr");
+        return false;
+    }
+
+    int maxRenderSize = std::max(offscreenWidth, offscreenHeight);
+    // create offscreen surface and canvas
+    if (offscreenSurface_ == nullptr || maxRenderSize_ != maxRenderSize) {
+        RS_LOGD("PrepareOffscreenRender create offscreen surface offscreenSurface_,\
+            new [%{public}d, %{public}d %{public}d]", offscreenWidth, offscreenHeight, maxRenderSize);
+        RS_TRACE_NAME_FMT("PrepareOffscreenRender surface size: [%d, %d]", maxRenderSize, maxRenderSize);
+        maxRenderSize_ = maxRenderSize;
+        offscreenSurface_ = curCanvas_->GetSurface()->MakeSurface(maxRenderSize_, maxRenderSize_);
+    }
+    if (offscreenSurface_ == nullptr) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::PrepareOffscreenRender, offscreenSurface is nullptr");
+        return false;
+    }
+
+    offscreenCanvas_ = std::make_shared<RSPaintFilterCanvas>(offscreenSurface_.get());
+
+    // copy current canvas properties into offscreen canvas
+    offscreenCanvas_->CopyConfiguration(*curCanvas_);
+
+    // backup current canvas and replace with offscreen canvas
+    canvasBackup_ = curCanvas_;
+    curCanvas_ = offscreenCanvas_.get();
+    curCanvas_->Save();
+    curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
+    return true;
+}
+
+void RSSurfaceRenderNodeDrawable::FinishOffscreenRender(const Drawing::SamplingOptions& sampling)
+{
+    if (canvasBackup_ == nullptr) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::FinishOffscreenRender, canvasBackup_ is nullptr");
+        return;
+    }
+    // draw offscreen surface to current canvas
+    Drawing::Brush paint;
+    paint.SetAntiAlias(true);
+    canvasBackup_->AttachBrush(paint);
+    auto image = offscreenSurface_->GetImageSnapshot();
+    canvasBackup_->DrawImage(*image, 0, 0, sampling);
+    canvasBackup_->DetachBrush();
+    curCanvas_->Restore();
+    curCanvas_ = canvasBackup_;
+}
+
 void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
     if (!ShouldPaint()) {
@@ -228,57 +289,92 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     surfaceNode->UpdateFilterCacheStatusWithVisible(true);
 
-    RSAutoCanvasRestore acr(rscanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
-
     // Draw base pipeline start
-    surfaceParams->ApplyAlphaAndMatrixToCanvas(*rscanvas);
+    RSAutoCanvasRestore acr(rscanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
+    bool needOffscreen = surfaceParams->GetNeedOffscreen() && !rscanvas->GetTotalMatrix().IsIdentity() &&
+        surfaceParams->IsAppWindow() && surfaceNode->GetName().substr(0, 3) != "SCB";
+    curCanvas_ = rscanvas;
+    if (needOffscreen) {
+        releaseCount_ = 0;
+        if (!PrepareOffscreenRender()) {
+            needOffscreen = false;
+        }
+    } else {
+        releaseCount_++;
+        if (releaseCount_ == MAX_RELEASE_FRAME) {
+            offscreenSurface_ = nullptr;
+            releaseCount_ = 0;
+        }
+    }
+
+    surfaceParams->ApplyAlphaAndMatrixToCanvas(*curCanvas_, !needOffscreen);
 
     bool isSelfDrawingSurface = surfaceParams->GetSurfaceNodeType() == RSSurfaceNodeType::SELF_DRAWING_NODE;
     if (isSelfDrawingSurface && !surfaceParams->IsSpherizeValid()) {
         SetSkip(surfaceParams->GetBuffer() != nullptr ? SkipType::SKIP_BACKGROUND_COLOR : SkipType::NONE);
-        rscanvas->Save();
+        curCanvas_->Save();
     }
 
     if (surfaceParams->IsMainWindowType()) {
         RSRenderNodeDrawable::ClearTotalProcessedNodeCount();
-        rscanvas->PushDirtyRegion(curSurfaceDrawRegion);
+        if (!surfaceParams->GetNeedOffscreen()) {
+            curCanvas_->PushDirtyRegion(curSurfaceDrawRegion);
+        }
     }
 
     auto parentSurfaceMatrix = RSRenderParams::GetParentSurfaceMatrix();
-    RSRenderParams::SetParentSurfaceMatrix(rscanvas->GetTotalMatrix());
+    if (!needOffscreen) {
+        RSRenderParams::SetParentSurfaceMatrix(curCanvas_->GetTotalMatrix());
+    }
 
     // add a blending disable rect op behind floating window, to enable overdraw buffer feature on special gpu.
     if (surfaceParams->IsLeashWindow() && RSSystemProperties::GetGpuOverDrawBufferOptimizeEnabled()
         && surfaceParams->IsGpuOverDrawBufferOptimizeNode()) {
-        EnableGpuOverDrawDrawBufferOptimization(canvas, surfaceParams);
+        EnableGpuOverDrawDrawBufferOptimization(*curCanvas_, surfaceParams);
     }
 
     auto bounds = surfaceParams->GetFrameRect();
 
     // 1. draw background
-    DrawBackground(canvas, bounds);
+    DrawBackground(*curCanvas_, bounds);
 
     // 2. draw self drawing node
     if (surfaceParams->GetBuffer() != nullptr) {
-        DealWithSelfDrawingNodeBuffer(*surfaceNode, *rscanvas, *surfaceParams);
+        DealWithSelfDrawingNodeBuffer(*surfaceNode, *curCanvas_, *surfaceParams);
     }
 
     if (isSelfDrawingSurface) {
-        rscanvas->Restore();
+        curCanvas_->Restore();
     }
 
     // 3. Draw content of this node by the main canvas.
-    DrawContent(canvas, bounds);
+    DrawContent(*curCanvas_, bounds);
 
     // 4. Draw children of this node by the main canvas.
-    DrawChildren(canvas, bounds);
+    DrawChildren(*curCanvas_, bounds);
 
     // 5. Draw foreground of this node by the main canvas.
-    DrawForeground(canvas, bounds);
+    DrawForeground(*curCanvas_, bounds);
+
+    if (needOffscreen) {
+        Drawing::AutoCanvasRestore acr(*canvasBackup_, true);
+        if (surfaceParams->HasSandBox()) {
+            canvasBackup_->SetMatrix(surfaceParams->GetParentSurfaceMatrix());
+            canvasBackup_->ConcatMatrix(surfaceParams->GetMatrix());
+        } else {
+            canvasBackup_->ConcatMatrix(surfaceParams->GetMatrix());
+        }
+        FinishOffscreenRender(
+            Drawing::SamplingOptions(Drawing::FilterMode::NEAREST, Drawing::MipmapMode::NEAREST));
+        RS_LOGD("FinishOffscreenRender %{public}s node type %{public}d", surfaceParams->GetName().c_str(),
+            int(surfaceParams->GetSurfaceNodeType()));
+    }
 
     // Draw base pipeline end
     if (surfaceParams->IsMainWindowType()) {
-        rscanvas->PopDirtyRegion();
+        if (!surfaceParams->GetNeedOffscreen()) {
+            curCanvas_->PopDirtyRegion();
+        }
         RS_TRACE_NAME_FMT("RSUniRenderThread::Render() the number of total ProcessedNodes: %d",
             RSRenderNodeDrawable::GetTotalProcessedNodeCount());
         const RSNodeStatsType nodeStats = CreateRSNodeStatsItem(
