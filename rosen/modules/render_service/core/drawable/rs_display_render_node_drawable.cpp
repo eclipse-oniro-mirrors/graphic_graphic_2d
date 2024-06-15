@@ -674,7 +674,6 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     RS_TRACE_BEGIN("RSDisplayRenderNodeDrawable CommitLayer");
     auto& hardwareNodes = RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetHardwareEnabledTypeNodes();
-    float globalZOrder = 0.f;
     for (const auto& surfaceNode : hardwareNodes) {
         if (surfaceNode == nullptr) {
             continue;
@@ -682,10 +681,8 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         auto params = static_cast<RSSurfaceRenderParams*>(surfaceNode->GetRenderParams().get());
         if (params->GetHardwareEnabled()) {
             processor->CreateLayer(*surfaceNode, *params);
-            globalZOrder++;
         }
     }
-    displayNodeSp->SetGlobalZOrder(globalZOrder);
     displayNodeSp->SetDirtyRects(damageRegionrects);
     processor->ProcessDisplaySurface(*displayNodeSp);
     CreateUIFirstLayer(processor);
