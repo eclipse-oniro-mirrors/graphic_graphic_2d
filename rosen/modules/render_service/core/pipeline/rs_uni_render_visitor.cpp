@@ -2593,28 +2593,43 @@ void RSUniRenderVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& r
     }
 }
 
+void RSUniRenderVisitor::CalcHwcNodeEnableByFilterRect(
+    std::shared_ptr<RSSurfaceRenderNode>& node, const RectI& filterRect)
+{
+    if (!node) {
+        return;
+    }
+    auto dstRect = node->GetDstRect();
+    bool isIntersect = dstRect.Intersect(filterRect);
+    if (isIntersect) {
+        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%llu disabled by filter rect",
+            node->GetName().c_str(), node->GetId());
+        node->SetHardwareForcedDisabledState(true);
+    }
+}
+
 void RSUniRenderVisitor::UpdateHwcNodeEnableByFilterRect(
     std::shared_ptr<RSSurfaceRenderNode>& node, const RectI& filterRect)
 {
-    if (!node || filterRect.IsEmpty()) {
+    if (filterRect.IsEmpty()) {
         return;
     }
-    const auto& hwcNodes = node->GetChildHardwareEnabledNodes();
-    if (hwcNodes.empty()) {
-        return;
-    }
-    // [planning]: Has opaque control exists between the filter and hwc.
-    for (auto hwcNode : hwcNodes) {
-        auto hwcNodePtr = hwcNode.lock();
-        if (!hwcNodePtr) {
-            continue;
+    if (!node) {
+        const auto& selfDrawingNodes = RSMainThread::Instance()->GetSelfDrawingNodes();
+        if (selfDrawingNodes.empty()) {
+            return;
         }
-        auto dstRect = hwcNodePtr->GetDstRect();
-        bool isIntersect = dstRect.Intersect(filterRect);
-        if (isIntersect) {
-            RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%llu disabled by filter rect",
-                hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId());
-            hwcNodePtr->SetHardwareForcedDisabledState(true);
+        for (auto hwcNode : selfDrawingNodes) {
+            CalcHwcNodeEnableByFilterRect(hwcNode, filterRect);
+        }
+    } else {
+        const auto& hwcNodes = node->GetChildHardwareEnabledNodes();
+        if (hwcNodes.empty()) {
+            return;
+        }
+        for (auto hwcNode : hwcNodes) {
+            auto hwcNodePtr = hwcNode.lock();
+            CalcHwcNodeEnableByFilterRect(hwcNodePtr, filterRect);
         }
     }
 }
