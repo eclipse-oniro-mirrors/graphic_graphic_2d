@@ -1774,8 +1774,6 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     if (needTraverseNodeTree) {
         RSUifirstManager::Instance().ProcessForceUpdateNode();
         doDirectComposition_ = false;
-        renderThreadParams_->selfDrawingNodes_ = std::move(selfDrawingNodes_);
-        renderThreadParams_->hardwareEnabledTypeNodes_ = std::move(hardwareEnabledNodes_);
         uniVisitor->SetAnimateState(doWindowAnimate_);
         uniVisitor->SetDirtyFlag(isDirty_ || isAccessibilityConfigChanged_ || forceUIFirstChanged_);
         forceUIFirstChanged_ = false;
@@ -1790,6 +1788,8 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         } else {
             rootNode->Prepare(uniVisitor);
         }
+        renderThreadParams_->selfDrawingNodes_ = std::move(selfDrawingNodes_);
+        renderThreadParams_->hardwareEnabledTypeNodes_ = std::move(hardwareEnabledNodes_);
         isAccessibilityConfigChanged_ = false;
         isCurtainScreenUsingStatusChanged_ = false;
         RSPointLightManager::Instance()->PrepareLight();
@@ -2512,6 +2512,11 @@ void RSMainThread::RSJankStatsOnVsyncStart(int64_t onVsyncStartTime, int64_t onV
         SetDiscardJankFrames(false);
         SetSkipJankAnimatorFrame(false);
     }
+}
+
+const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& RSMainThread::GetSelfDrawingNodes() const
+{
+    return selfDrawingNodes_;
 }
 
 void RSMainThread::RSJankStatsOnVsyncEnd(int64_t onVsyncStartTime, int64_t onVsyncStartTimeSteady,
