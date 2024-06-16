@@ -118,7 +118,7 @@ public:
     // indicate if this node type can enable hardware composer
     bool IsHardwareEnabledType() const
     {
-        if (IsRosenWeb() && !RSSystemProperties::IsPhoneType()) {
+        if (IsRosenWeb() && !(RSSystemProperties::IsPhoneType() || RSSystemProperties::IsTabletType())) {
             return false;
         }
         return (nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && isHardwareEnabledNode_) ||
@@ -1156,6 +1156,7 @@ public:
 
     void SetSkipDraw(bool skip);
     bool GetSkipDraw() const;
+    void SetNeedOffscreen(bool needOffscreen);
 protected:
     void OnSync() override;
     void OnSkipSync() override;

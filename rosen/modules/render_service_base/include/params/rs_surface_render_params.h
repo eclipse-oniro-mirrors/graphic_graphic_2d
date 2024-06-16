@@ -306,6 +306,20 @@ public:
     // DFX
     std::string ToString() const override;
 
+    void SetNeedOffscreen(bool needOffscreen)
+    {
+        if (needOffscreen_ == needOffscreen) {
+            return;
+        }
+        needOffscreen_ = needOffscreen;
+        needSync_ = true;
+    }
+
+    bool GetNeedOffscreen() const
+    {
+        return needOffscreen_;
+    }
+
 protected:
 private:
     bool isMainWindowType_ = false;
@@ -365,6 +379,7 @@ private:
     bool isGpuOverDrawBufferOptimizeNode_ = false;
     bool isSkipDraw_ = false;
     ScalingMode preScalingMode_ = ScalingMode::SCALING_MODE_SCALE_TO_WINDOW;
+    bool needOffscreen_ = false;
 
     friend class RSSurfaceRenderNode;
     friend class RSUniRenderProcessor;

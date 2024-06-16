@@ -2600,6 +2600,17 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     RSRenderNode::UpdateRenderParams();
 }
 
+void RSSurfaceRenderNode::SetNeedOffscreen(bool needOffscreen)
+{
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (stagingSurfaceParams) {
+        stagingSurfaceParams->SetNeedOffscreen(needOffscreen);
+        AddToPendingSyncList();
+    } else {
+        RS_LOGE("RSSurfaceRenderNode::SetNeedOffscreen stagingSurfaceParams is null");
+    }
+}
+
 void RSSurfaceRenderNode::UpdateAncestorDisplayNodeInRenderParams()
 {
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
