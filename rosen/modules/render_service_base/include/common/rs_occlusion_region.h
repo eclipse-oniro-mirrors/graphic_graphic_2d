@@ -280,7 +280,7 @@ public:
         return rects_;
     }
 
-    std::vector<RectI>& GetRegionRectIs()
+    std::vector<RectI> GetRegionRectIs()
     {
         std::vector<RectI> rectIs;
         for (const auto& rect : rects_) {
