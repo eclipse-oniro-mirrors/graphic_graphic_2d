@@ -2147,7 +2147,7 @@ void RSUniRenderVisitor::UpdateSurfaceDirtyAndGlobalDirty()
     CheckAndUpdateFilterCacheOcclusion(curMainAndLeashSurfaces);
     CheckMergeGlobalFilterForDisplay(accumulatedDirtyRegion);
     ResetDisplayDirtyRegion();
-    CheckMergeDebugRectforRefreshRate(curMainAndLeashSurfaces);
+    CheckMergeDebugRectforRefreshRate(surfaces);
     curDisplayNode_->ClearCurrentSurfacePos();
     std::swap(preMainAndLeashWindowNodesIds_, curMainAndLeashWindowNodesIds_);
 
@@ -6454,7 +6454,7 @@ void RSUniRenderVisitor::CheckMergeDebugRectforRefreshRate(std::vector<RSBaseRen
         if (!surfaceNodeSet) {
             auto &geoPtr = curDisplayNode_->GetRenderProperties().GetBoundsGeometry();
             tempRect = geoPtr->MapAbsRect(tempRect.ConvertTo<float>());
-            curDisplayNode_->GetDirtyManager()->MergeDirtyRect(tempRect, true);  // true: debugRect for dislplayNode skip
+            curDisplayNode_->GetDirtyManager()->MergeDirtyRect(tempRect, true);
         }
     }
 }
