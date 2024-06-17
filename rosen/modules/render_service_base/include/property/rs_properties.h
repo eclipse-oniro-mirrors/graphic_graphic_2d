@@ -42,6 +42,7 @@
 #include "render/rs_path.h"
 #include "render/rs_shader.h"
 #include "render/rs_shadow.h"
+#include "render/rs_attraction_effect_filter.h"
 
 #include "property/rs_filter_cache_manager.h"
 
@@ -443,6 +444,14 @@ public:
     void SetSpherize(float spherizeDegree);
     float GetSpherize() const;
     bool IsSpherizeValid() const;
+    void CreateSphereEffectFilter();
+
+    bool IsAttractionValid() const;
+    void SetAttractionFraction(float fraction);
+    void SetAttractionDstPoint(Vector2f dstPoint);
+    float GetAttractionFraction() const;
+    Vector2f GetAttractionDstPoint() const;
+    void CreateAttractionEffectFilter();
 
     void SetLightUpEffect(float lightUpEffectDegree);
     float GetLightUpEffect() const;
@@ -624,6 +633,10 @@ private:
     std::shared_ptr<RSFilter> foregroundFilter_ = nullptr; // view content filter
     std::shared_ptr<RSFilter> foregroundFilterCache_ = nullptr; // view content filter via cache
     bool foregroundEffectDirty_ = false;
+
+    float attractFraction_ = 0.f;
+    Vector2f attractDstPoint_ = {0.f, 0.f};
+    bool isAttractionValid_ = false;
 
     // filter property
     float backgroundBlurRadius_ = 0.f;
