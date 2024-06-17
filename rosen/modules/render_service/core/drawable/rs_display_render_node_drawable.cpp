@@ -544,7 +544,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
                 RS_LOGE("RSDisplayRenderNodeDrawable::OnDraw expandProcessor is null!");
                 return;
             }
-            RSDirtyRectsDfx rsDirtyRectsDfx(displayNodeSp);
+            RSDirtyRectsDfx rsDirtyRectsDfx(displayNodeSp, params);
             std::vector<RectI> damageRegionRects;
             // disable expand screen dirty when skipFrameInterval > 1, because the dirty history is incorrect
             if (uniParam->IsVirtualDirtyEnabled() && curScreenInfo.skipFrameInterval <= 1) {
@@ -585,7 +585,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
 
-    RSDirtyRectsDfx rsDirtyRectsDfx(displayNodeSp);
+    RSDirtyRectsDfx rsDirtyRectsDfx(displayNodeSp, params);
     std::vector<RectI> damageRegionrects;
     Drawing::Region clipRegion;
     if (uniParam->IsPartialRenderEnabled()) {
@@ -735,7 +735,7 @@ void RSDisplayRenderNodeDrawable::DrawMirrorScreen(std::shared_ptr<RSDisplayRend
         uniParam->SetOpDropped(false);
         mirroredNode->SetOriginScreenRotation(displayNodeSp->GetOriginScreenRotation());
         mirroredProcessor->CalculateTransform(*mirroredNode);
-        RSDirtyRectsDfx rsDirtyRectsDfx(displayNodeSp);
+        RSDirtyRectsDfx rsDirtyRectsDfx(displayNodeSp, &params);
         if (uniParam->IsVirtualDirtyEnabled()) {
             auto dirtyRects = CalculateVirtualDirty(
                 *displayNodeSp, processor, params, mirroredProcessor->GetCanvasMatrix());
@@ -857,7 +857,7 @@ void RSDisplayRenderNodeDrawable::DrawMirror(std::shared_ptr<RSDisplayRenderNode
     clipRegion.Clone(uniParam.GetClipRegion());
     ResetRotateIfNeed(*mirroredNode, *mirroredProcessor, clipRegion);
 
-    RSDirtyRectsDfx rsDirtyRectsDfx(displayNodeSp);
+    RSDirtyRectsDfx rsDirtyRectsDfx(displayNodeSp, &params);
     if (uniParam.IsVirtualDirtyEnabled()) {
         Drawing::Matrix matrix = canvasBackup_->GetTotalMatrix();
         matrix.PreConcat(curCanvas_->GetTotalMatrix());
