@@ -672,11 +672,22 @@ void HgmFrameRateManager::HandlePackageEvent(pid_t pid, uint32_t listSize, const
     }
     HgmTaskHandleThread::Instance().PostTask([this, packageList] () {
         if (multiAppStrategy_.HandlePkgsEvent(packageList) == EXEC_SUCCESS) {
-            std::lock_guard<std::mutex> locker(pkgSceneMutex_);
-            sceneStack_.clear();
+            ClearScene();
         }
         UpdateAppSupportStatus();
     });
+}
+
+void HgmFrameRateManager::ClearScene()
+{
+    std::lock_guard<std::mutex> locker(pkgSceneMutex_);
+    for (auto it = sceneStack_.begin(); it != sceneStack_.end();) {
+        if (it->first.find("CAMERA") != std::string::npos) {
+            it++;
+        } else {
+            it = sceneStack_.erase(it);
+        }
+    }
 }
 
 void HgmFrameRateManager::HandleRefreshRateEvent(pid_t pid, const EventInfo& eventInfo)
