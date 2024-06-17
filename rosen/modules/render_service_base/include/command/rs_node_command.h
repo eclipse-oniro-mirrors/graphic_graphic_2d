@@ -65,6 +65,8 @@ enum RSNodeCommandType : uint16_t {
     MARK_NODE_SINGLE_FRAME_COMPOSER,
     MARK_SUGGEST_OPINC_NODE,
 
+    MARK_UIFIRST_NODE,
+
     SET_NODE_NAME,
     UPDATE_MODIFIER_MOTION_BLUR_PTR,
     UPDATE_MODIFIER_WATER_RIPPLE,
@@ -130,6 +132,8 @@ public:
         bool includeProperty);
     static void MarkNodeSingleFrameComposer(RSContext& context, NodeId nodeId, bool isNodeFasterDraw, pid_t pid);
     static void MarkSuggestOpincNode(RSContext& context, NodeId nodeId, bool isOpincNode, bool isNeedCalculate);
+
+    static void MarkUifirstNode(RSContext& context, NodeId nodeId, bool isUifirstNode);
 
     static void SetDrawRegion(RSContext& context, NodeId nodeId, std::shared_ptr<RectF> rect);
     static void SetOutOfParent(RSContext& context, NodeId nodeId, OutOfParentType outOfParent);
@@ -241,6 +245,9 @@ ADD_COMMAND(RSMarkNodeSingleFrameComposer,
         NodeId, bool, pid_t))
 ADD_COMMAND(RSMarkSuggestOpincNode,
     ARG(RS_NODE, MARK_SUGGEST_OPINC_NODE, RSNodeCommandHelper::MarkSuggestOpincNode, NodeId, bool, bool))
+
+ADD_COMMAND(RSMarkUifirstNode,
+    ARG(RS_NODE, MARK_UIFIRST_NODE, RSNodeCommandHelper::MarkUifirstNode, NodeId, bool))
 
 ADD_COMMAND(RSSetDrawRegion,
     ARG(RS_NODE, SET_DRAW_REGION, RSNodeCommandHelper::SetDrawRegion,
