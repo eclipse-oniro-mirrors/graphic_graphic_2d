@@ -16,8 +16,12 @@
 #include "gtest/gtest.h"
 
 #include "drawable/rs_drawable.h"
+#include "drawable/rs_misc_drawable.h"
+#include "drawable/rs_property_drawable.h"
 #include "drawable/rs_property_drawable_background.h"
+#include "drawable/rs_property_drawable_foreground.h"
 #include "pipeline/rs_render_node.h"
+#include "pipeline/rs_surface_render_node.h"
 
 using namespace testing;
 using namespace testing::ext;
