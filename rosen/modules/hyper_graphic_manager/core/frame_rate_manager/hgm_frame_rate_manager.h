@@ -199,6 +199,7 @@ private:
     void UpdateVoteRule();
     void ReportHiSysEvent(const VoteInfo& frameRateVoteInfo);
     void SetResultVoteInfo(VoteInfo& voteInfo, uint32_t min, uint32_t max);
+    void ClearScene();
 
     uint32_t currRefreshRate_ = 0;
     uint32_t controllerRate_ = 0;
