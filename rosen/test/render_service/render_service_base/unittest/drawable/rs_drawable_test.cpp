@@ -105,7 +105,7 @@ HWTEST_F(RSDrawableTest, UpdateSaveRestore, TestSize.Level1)
     properties.SetClipBounds(path);
     properties.colorBlendMode_ = 1;
     properties.fgBrightnessParams_ = std::make_optional<RSDynamicBrightnessPara>();
-    properties.fgBrightnessFract_ = 0;
+    properties.fgBrightnessParams_->fraction_ = 0;
     node.renderContent_->GetMutableRenderProperties().SetUseEffect(true);
     std::shared_ptr<RSDrawable> drawable = DrawableV2::RSUseEffectDrawable::OnGenerate(node);
     drawableVec[static_cast<size_t>(RSDrawableSlot::CONTENT_BEGIN)] = drawable;
