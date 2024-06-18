@@ -129,12 +129,10 @@ export class TestBase {
       return;
     }
     this.StyleSettings(this.canvas_, this.styleType_);
-    let startTime = systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false);
-    console.log(TAG, 'DrawingApiTest Started: [' + startTime + ']');
-
+    let startTime = systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, true);
     await this.OnTestPerformanceCpu(this.canvas_);
-
-    let endTime = systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false);
+    let endTime = systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, true);
+    console.log(TAG, 'DrawingApiTest Started: [' + startTime + ']');
     console.log(TAG, 'DrawingApiTest Finished: [' + endTime + ']');
     this.time_ = endTime - startTime;
     // log error is to avoid log loss
@@ -158,12 +156,12 @@ export class TestBase {
     }
 
     this.StyleSettings(canvas, this.styleType_);
-    let startTime = systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false);
-    console.log(TAG, 'DrawingApiTest Started: [' + startTime + ']');
+    let startTime = systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, true);
 
     this.OnTestPerformanceGpuUpScreen(canvas);
 
-    let endTime = systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, false);
+    let endTime = systemDateTime.getUptime(systemDateTime.TimeType.STARTUP, true);
+    console.log(TAG, 'DrawingApiTest Started: [' + startTime + ']');
     console.log(TAG, 'DrawingApiTest Finished: [' + endTime + ']');
     this.time_ = endTime - startTime;
     // log error is to avoid log loss
@@ -195,6 +193,11 @@ export class TestBase {
       pen.setBlendMode(1);
       pen.setDither(true);
       canvas.attachPen(pen);
+    } else if (styleType == StyleType.DRAW_STYLE_PERFORMANCE_TEST) {
+      let brush = new drawing.Brush();
+      let color: common2D.Color = { alpha: 255, red: 255, green: 0, blue: 0 };
+      brush.setColor(color);
+      canvas.attachBrush(brush);
     }
   }
   public StyleSettingsDestroy(canvas: drawing.Canvas) {
@@ -286,6 +289,6 @@ export enum TestFunctionStyleType {
 
 export enum StyleType { //公共的pen，brush，filter等配置
   DRAW_STYLE_NONE = 0,
-  DRAW_STYLE_COMPLEX, //最复杂的配置，会将所有配置加上，得出近似最恶劣的性能数据
-  DRAW_STYLE_FUNCTION_TEST_1, //
+  DRAW_STYLE_COMPLEX, // 最复杂的配置，会将所有配置加上，得出近似最恶劣的性能数据
+  DRAW_STYLE_PERFORMANCE_TEST, // 性能测试的简单接口
 }

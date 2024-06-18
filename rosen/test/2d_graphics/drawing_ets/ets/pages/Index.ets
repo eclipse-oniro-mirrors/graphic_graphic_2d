@@ -325,7 +325,7 @@ struct Index {
     test.TestPerformanceCpu().then(()=>{
       this.context.clearRect(0, 0, test.width_, test.height_);
       this.context.drawImage(test.pixelMap_, 0, 0);
-      this.LogMsg('Count: ' + testCount + ', used: ' + test.time_.toString() + 'ms');
+      this.LogMsg('Count: ' + testCount + ', used: ' + test.time_.toString() + 'ns');
     });
     console.log(TAG, 'TestPerformanceCpu end');
   }

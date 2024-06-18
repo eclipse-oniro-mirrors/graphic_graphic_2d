@@ -21,6 +21,7 @@
 #include "recording/draw_cmd.h"
 #include "recording/recording_canvas.h"
 #include "utils/log.h"
+#include "utils/performanceCaculate.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -225,8 +226,41 @@ void DrawCmdList::MarshallingDrawOps()
     }
 }
 
+void DrawCmdList::CaculatePerformanceOpType()
+{
+    if (!PerformanceCaculate::GetDrawingTestRecordingEnabled()) {
+        return;
+    }
+    uint32_t offset = offset_;
+    const int caculatePerformaceCount = 500;    // 被测单接口用例至少出现500次以上
+    std::map<uint32_t, uint32_t> opTypeCountMap;
+    do {
+        void* itemPtr = opAllocator_.OffsetToAddr(offset);
+        auto* curOpItemPtr = static_cast<OpItem*>(itemPtr);
+        if (curOpItemPtr == nullptr) {
+            break;
+        }
+        uint32_t type = curOpItemPtr->GetType();
+        if (opTypeCountMap.find(type) != opTypeCountMap.end()) {
+            if (++opTypeCountMap[type] > caculatePerformaceCount) {
+                performanceCaculateOpType_ = type;
+                DRAWING_PERFORMANCE_START_CACULATE;
+                return;
+            }
+        } else {
+            opTypeCountMap[type] = 1;   // 记录出现的第1次
+        }
+        offset = curOpItemPtr->GetNextOpItemOffset();
+    } while (offset != 0);
+}
+
 void DrawCmdList::UnmarshallingDrawOps()
 {
+    CaculatePerformanceOpType();
+    if (performanceCaculateOpType_ != 0) {
+        LOGI("Drawing Performance UnmarshallingDrawOps begin %{public}llu", PerformanceCaculate::GetUpTime());
+    }
+
     if (opAllocator_.GetSize() <= offset_) {
         return;
     }
@@ -279,12 +313,19 @@ void DrawCmdList::UnmarshallingDrawOps()
     if ((int)imageAllocator_.GetSize() > 0) {
         imageAllocator_.ClearData();
     }
+
+    if (performanceCaculateOpType_ != 0) {
+        LOGI("Drawing Performance UnmarshallingDrawOps end %{public}llu", PerformanceCaculate::GetUpTime());
+    }
 }
 
 void DrawCmdList::Playback(Canvas& canvas, const Rect* rect)
 {
     if (width_ <= 0 || height_ <= 0) {
         return;
+    }
+    if (performanceCaculateOpType_ != 0) {
+        LOGI("Drawing Performance Playback begin %{public}llu", PerformanceCaculate::GetUpTime());
     }
     if (canvas.GetDrawingType() == DrawingType::RECORDING) {
         PlaybackToDrawCmdList(static_cast<RecordingCanvas&>(canvas).GetDrawCmdList());
@@ -311,6 +352,11 @@ void DrawCmdList::Playback(Canvas& canvas, const Rect* rect)
         PlaybackByBuffer(canvas, &tmpRect);
     } else if (mode_ == DrawCmdList::UnmarshalMode::DEFERRED) {
         PlaybackByVector(canvas, &tmpRect);
+    }
+    if (performanceCaculateOpType_ != 0) {
+        DRAWING_PERFORMANCE_STOP_CACULATE;
+        performanceCaculateOpType_ = 0;
+        LOGI("Drawing Performance Playback end %{public}llu", PerformanceCaculate::GetUpTime());
     }
 }
 

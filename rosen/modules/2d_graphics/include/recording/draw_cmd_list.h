@@ -191,6 +191,7 @@ private:
     void PlaybackToDrawCmdList(std::shared_ptr<DrawCmdList> drawCmdList);
     void PlaybackByVector(Canvas& canvas, const Rect* rect = nullptr);
     void PlaybackByBuffer(Canvas& canvas, const Rect* rect = nullptr);
+    void CaculatePerformanceOpType();
 
     int32_t width_;
     int32_t height_;
@@ -203,6 +204,7 @@ private:
     std::vector<std::pair<int, std::shared_ptr<DrawOpItem>>> replacedOpListForVector_;
     bool isCached_ = false;
     bool cachedHighContrast_ = false;
+    uint32_t performanceCaculateOpType_ = 0;
 };
 
 using DrawCmdListPtr = std::shared_ptr<DrawCmdList>;

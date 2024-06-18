@@ -36,6 +36,7 @@
 #include "image/bitmap.h"
 #include "image/image.h"
 #include "utils/log.h"
+#include "utils/performanceCaculate.h"
 #include "SkOverdrawCanvas.h"
 #include "include/utils/SkNoDrawCanvas.h"
 
@@ -246,6 +247,7 @@ void SkiaCanvas::DrawPoint(const Point& point, const Paint& paint)
     const SkPoint* skPoint = reinterpret_cast<const SkPoint*>(&point);
     skPaint_ = defaultPaint_;
     SkiaPaint::PaintToSkPaint(paint, skPaint_);
+    DRAWING_PERFORMANCE_TEST_SKIA_RETURN;
     skCanvas_->drawPoint(*skPoint, skPaint_);
 }
 
@@ -272,6 +274,7 @@ void SkiaCanvas::DrawLine(const Point& startPt, const Point& endPt, const Paint&
     const SkPoint* skEndPt = reinterpret_cast<const SkPoint*>(&endPt);
     skPaint_ = defaultPaint_;
     SkiaPaint::PaintToSkPaint(paint, skPaint_);
+    DRAWING_PERFORMANCE_TEST_SKIA_RETURN
     skCanvas_->drawLine(*skStartPt, *skEndPt, skPaint_);
 }
 
@@ -284,6 +287,7 @@ void SkiaCanvas::DrawRect(const Rect& rect, const Paint& paint)
     const SkRect* skRect = reinterpret_cast<const SkRect*>(&rect);
     skPaint_ = defaultPaint_;
     SkiaPaint::PaintToSkPaint(paint, skPaint_);
+    DRAWING_PERFORMANCE_TEST_SKIA_RETURN
     skCanvas_->drawRect(*skRect, skPaint_);
 }
 
@@ -361,6 +365,7 @@ void SkiaCanvas::DrawCircle(const Point& centerPt, scalar radius, const Paint& p
     }
     skPaint_ = defaultPaint_;
     SkiaPaint::PaintToSkPaint(paint, skPaint_);
+    DRAWING_PERFORMANCE_TEST_SKIA_RETURN
     skCanvas_->drawCircle(centerPt.GetX(), centerPt.GetY(), radius, skPaint_);
 }
 
@@ -376,6 +381,7 @@ void SkiaCanvas::DrawPath(const Path& path, const Paint& paint)
     }
     skPaint_ = defaultPaint_;
     SkiaPaint::PaintToSkPaint(paint, skPaint_);
+    DRAWING_PERFORMANCE_TEST_SKIA_RETURN
     skCanvas_->drawPath(skPathImpl->GetPath(), skPaint_);
 }
 
