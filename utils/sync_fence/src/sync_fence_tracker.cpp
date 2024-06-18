@@ -161,7 +161,7 @@ inline void SyncFenceTracker::UpdateFrameQueue(int32_t startTime)
     frameStartTimes->push(startTime);
 }
 
-inline int32_t SyncFenceTracker::GetFrameRate()
+int32_t SyncFenceTracker::GetFrameRate()
 {
     int32_t frameRate = 0;
     auto frameNum = frameStartTimes->size();
