@@ -25,7 +25,6 @@
 #include "rs_trace.h"
 
 #include "common/rs_common_def.h"
-#include "include/gpu/GrDirectContext.h"
 #include "platform/common/rs_log.h"
 
 namespace OHOS {
@@ -36,7 +35,6 @@ constexpr float S_TO_MS = 1000.f;                    // s to ms
 constexpr int64_t ANIMATION_TIMEOUT = 5000;          // 5s
 constexpr int64_t S_TO_NS = 1000000000;              // s to ns
 constexpr int64_t VSYNC_JANK_LOG_THRESHOLED = 6;     // 6 times vsync
-std::atomic<int64_t> animationStacks(0);
 }
 
 RSJankStats& RSJankStats::GetInstance()
