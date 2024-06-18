@@ -660,10 +660,6 @@ void RSJankStats::RecordAnimationDynamicFrameRate(JankFrames& jankFrames, bool i
 
 void RSJankStats::SetAnimationTraceBegin(std::pair<int64_t, std::string> animationId, const JankFrames& jankFrames)
 {
-    #ifdef SKIA_OHOS_FOR_OHOS_TRACE
-        animationStacks += 1;
-        GrDirectContext::setIsInAnimation(true);
-    #endif
     const int32_t traceId = jankFrames.traceId_;
     if (traceId == TRACE_ID_INITIAL) {
         ROSEN_LOGE("RSJankStats::SetAnimationTraceBegin traceId not initialized");
@@ -705,12 +701,6 @@ void RSJankStats::SetAnimationTraceEnd(const JankFrames& jankFrames)
     } else {
         implicitAnimationTotal_--;
     }
-    #ifdef SKIA_OHOS_FOR_OHOS_TRACE
-        animationStacks -= 1;
-        if (animationStacks <= 0) {
-            GrDirectContext::setIsInAnimation(false);
-        }
-    #endif
 }
 
 void RSJankStats::CheckAnimationTraceTimeout()
