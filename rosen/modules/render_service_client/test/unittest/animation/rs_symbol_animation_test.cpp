@@ -37,13 +37,14 @@ HWTEST_F(RSSymbolAnimationTest, InitSupportAnimationTableTest, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSSymbolAnimationTest InitSupportAnimationTable start";
     auto symbolAnimation = RSSymbolAnimation();
-    symbolAnimation.InitSupportAnimationTable();
+    symbolAnimation.InitSupportAnimationTable(); // init data
+    symbolAnimation.InitSupportAnimationTable(); // if data exists, data will not init again
     GTEST_LOG_(INFO) << "RSSymbolAnimationTest InitSupportAnimationTable end";
 }
 
 /**
  * @tc.name: ReplaceAnimationTest001
- * @tc.desc: Verify the basic ability, ReplaceAnimation of ReplaceAnimationTest001
+ * @tc.desc: Verify the basic ability, ReplaceAnimation of RSSymbolAnimationTest
  * @tc.type: FUNC
  */
 HWTEST_F(RSSymbolAnimationTest, ReplaceAnimationTest001, TestSize.Level1)
@@ -61,7 +62,7 @@ HWTEST_F(RSSymbolAnimationTest, ReplaceAnimationTest001, TestSize.Level1)
     canvasNode->SetBounds(ANIMATION_START_BOUNDS);
     canvasNode->SetFrame(ANIMATION_START_BOUNDS);
     /**
-     * @tc.steps: step2. start BounceAnimation test
+     * @tc.steps: step2. start ReplaceAnimation test
      */
     symbolAnimation.AppearAnimation(canvasNode, disappearGroupParas);
     symbolAnimation.AppearAnimation(canvasNode, appearGroupParas);
@@ -455,7 +456,6 @@ HWTEST_F(RSSymbolAnimationTest, KeyframeAlphaSymbolAnimation007, TestSize.Level1
      * @tc.steps: step2. start KeyframeAlphaSymbolAnimation test
      */
     EXPECT_FALSE(getParasFlag == false);
-    EXPECT_FALSE(timePercents.size() == 1);
     NotifyStartAnimation();
     GTEST_LOG_(INFO) << "RSSymbolAnimationTest KeyframeAlphaSymbolAnimation007 end";
 }

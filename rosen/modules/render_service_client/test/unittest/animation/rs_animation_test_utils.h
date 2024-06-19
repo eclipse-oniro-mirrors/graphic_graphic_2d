@@ -82,7 +82,6 @@ const Drawing::DrawingPiecewiseParameter BOUNCE_FIRST_PHASE_PARAS = {
     OHOS::Rosen::Drawing::DrawingCurveType::LINEAR, // animation curve type
     {},
     16, 0,                         // 16 is animation duration, 0 is animation delay
-    // animation scale parameters
     {
         {"sx", {1.01, 1}},          // scale of x-axis is from 1.01 to 1
         {"sy", {1.01, 1}}           // scale of y-axis is from 1.01 to 1
@@ -97,7 +96,6 @@ const Drawing::DrawingPiecewiseParameter BOUNCE_SECOND_PHASE_PARAS = {
         {"damping", 22}            // 22 is damping of animation curve
     },
     16, 0,                         // 16 is animation duration, 0 is animation delay
-    // animation scale parameters
     {
         {"sx", {1.01, 1}},          // scale of x-axis is from 1.01 to 1
         {"sy", {1.01, 1}}           // scale of y-axis is from 1.01 to 1
@@ -112,7 +110,6 @@ const Drawing::DrawingPiecewiseParameter APPEAR_FIRST_PHASE_PARAS = {
         {"damping", 22}            // 22 is damping of animation curve
     },
     16, 0,                         // 16 is animation duration, 0 is animation delay
-    // animation scale parameters
     {
         {"sx", {0.9, 1}},          // scale of x-axis is from 0.9 to 1
         {"sy", {0.9, 1}}           // scale of y-axis is from 0.9 to 1
@@ -128,7 +125,6 @@ const std::vector<float> TIME_PERCENTS = {0.0, 0.35, 0.35, 1.0};
 const std::vector<float> ALPHA_VALUES = {0.4, 1.0, 1.0, 0.4};
 const Drawing::DrawingPiecewiseParameter VARIABLECOLOR_FIRST_PHASE_PARAS = {
     OHOS::Rosen::Drawing::DrawingCurveType::SHARP, // animation curve type
-    // animation curve config
     {
         {"ctrlX1", 0.33},          // 0.33 is x coord of the first control point
         {"ctrlY1", 0},             // 0 is y coord of the first control point
@@ -140,7 +136,6 @@ const Drawing::DrawingPiecewiseParameter VARIABLECOLOR_FIRST_PHASE_PARAS = {
 };
 const Drawing::DrawingPiecewiseParameter VARIABLECOLOR_SECOND_PHASE_PARAS = {
     OHOS::Rosen::Drawing::DrawingCurveType::SHARP, // animation curve type
-    // animation curve config
     {
         {"ctrlX1", 0.33},          // 0.33 is x coord of the first control point
         {"ctrlY1", 0},             // 0 is y coord of the first control point
@@ -152,7 +147,6 @@ const Drawing::DrawingPiecewiseParameter VARIABLECOLOR_SECOND_PHASE_PARAS = {
 };
 const Drawing::DrawingPiecewiseParameter DISAPPEAR_FIRST_PHASE_PARAS = {
     OHOS::Rosen::Drawing::DrawingCurveType::SPRING, // animation curve type
-    // animation curve config
     {
         {"velocity", 0},           // 0 is velocity of animation curve
         {"mass", 1},               // 1 is mass of animation curve
@@ -160,7 +154,6 @@ const Drawing::DrawingPiecewiseParameter DISAPPEAR_FIRST_PHASE_PARAS = {
         {"damping", 22}            // 22 is damping of animation curve
     },
     16, 0,                         // 16 is animation duration, 0 is animation delay
-    // animation scale parameters
     {
         {"sx", {1, 0.3}},          // scale of x-axis is from 1 to 0.3
         {"sy", {1, 0.3}}           // scale of y-axis is from 1 to 0.3
@@ -172,19 +165,20 @@ const Drawing::DrawingPiecewiseParameter DISAPPEAR_SECOND_PHASE_PARAS = {
     100, 0,                        // 100 is animation duration, 0 is animation delay
     {{"alpha", {1.0, 0.0}}}        // alpha is from 1 to 0
 };
+
 const TextEngine::SymbolAnimationConfig VARIABLE_COLOR_CONFIG = {
-    // symbolNodes is {}; numNodes is 0; effectStrategy is VARIABLE_COLOR;
-    // symbolSpanId is 9999, which is a random value; animationMode is 0, which means iterative mode;
-    // repeatCount is 1; animationStart is true;
-    {}, 0, Drawing::DrawingEffectStrategy::VARIABLE_COLOR, 9999, 0, 1, true,
-    Drawing::DrawingCommonSubType::DOWN // commonSubType
+    {}, 0, // symbolNodes is {}; numNodes is 0;
+    Drawing::DrawingEffectStrategy::VARIABLE_COLOR, // effectStrategy is VARIABLE_COLOR;
+    9999, 0, // symbolSpanId is 9999, which is a random value; animationMode is 0, which means iterative mode;
+    1, true, Drawing::DrawingCommonSubType::DOWN // repeatCount is 1; animationStart is true；move direction is
+
 };
+
 const TextEngine::SymbolAnimationConfig PULSE_CONFIG = {
-    // symbolNodes is {}; numNodes is 0; effectStrategy is PULSE;
-    // symbolSpanId is 8888, which is a random value; animationMode is 0, which means hierarchical mode;
-    // repeatCount is 1; animationStart is true;
-    {}, 0, Drawing::DrawingEffectStrategy::PULSE, 8888, 0, 1, true,
-    Drawing::DrawingCommonSubType::DOWN // commonSubType
+    {}, 0, // symbolNodes is {}; numNodes is 0;
+    Drawing::DrawingEffectStrategy::PULSE, // effectStrategy is PULSE;
+    8888, 0, // symbolSpanId is 8888, which is a random value; animationMode is 0, which means hierarchical mode;
+    1, true, Drawing::DrawingCommonSubType::DOWN // repeatCount is 1; animationStart is true；move direction is downward
 };
 } // ANIMATIONTEST
 } // namespace Rosen
