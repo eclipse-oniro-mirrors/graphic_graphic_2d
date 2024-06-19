@@ -232,6 +232,8 @@ template("render_service_client_source_set") {
       external_deps = [ "hilog:libhilog" ]
     }
 
+    external_deps += [ "graphic_surface:surface_headers" ]
+
     if (rosen_cross_platform) {
       deps += [ "$rosen_root/modules/platform:hilog" ]
     }
