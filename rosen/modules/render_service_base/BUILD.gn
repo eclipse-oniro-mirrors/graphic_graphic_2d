@@ -461,8 +461,8 @@ ohos_source_set("render_service_base_src") {
   ]
 
   if (rosen_is_ohos) {
-    external_deps += [ "image_framework:image_native" ]  
-  } 
+    external_deps += [ "image_framework:image_native" ]
+  }
 
   if (!is_mingw && !is_mac && !is_cross_platform) {
     defines += [ "ENABLE_RUST" ]
