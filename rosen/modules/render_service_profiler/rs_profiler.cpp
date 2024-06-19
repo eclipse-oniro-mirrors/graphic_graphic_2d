@@ -422,7 +422,7 @@ void RSProfiler::OnFrameEnd()
 
 void RSProfiler::CalcNodeWeigthOnFrameEnd()
 {
-    if (g_calcPerfNode == 0) {
+    if (g_calcPerfNode == 0 || g_calcPerfNodeTry < 0 || g_calcPerfNodeTry > CALC_PERF_NODE_TIME_COUNT) {
         return;
     }
 
