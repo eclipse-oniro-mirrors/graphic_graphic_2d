@@ -90,6 +90,10 @@ public:
     {
         return isSpherizeValid_;
     }
+    bool IsAttractionValid() const
+    {
+        return isAttractionValid_;
+    }
     bool NeedBilinearInterpolation() const
     {
         return needBilinearInterpolation_;
@@ -209,7 +213,7 @@ public:
     {
         return dstRect_;
     }
-    void SetSurfaceCacheContentStatic(bool contentStatic);
+    void SetSurfaceCacheContentStatic(bool contentStatic, bool lastFrameSynced);
     bool GetSurfaceCacheContentStatic() const;
     bool GetPreSurfaceCacheContentStatic() const;
 
@@ -305,6 +309,23 @@ public:
 
     // DFX
     std::string ToString() const override;
+    // Set/Get OpaqueRegion, currently only used for DFX
+    void SetOpaqueRegion(const Occlusion::Region& opaqueRegion);
+    const Occlusion::Region& GetOpaqueRegion() const;
+
+    void SetNeedOffscreen(bool needOffscreen)
+    {
+        if (needOffscreen_ == needOffscreen) {
+            return;
+        }
+        needOffscreen_ = needOffscreen;
+        needSync_ = true;
+    }
+
+    bool GetNeedOffscreen() const
+    {
+        return needOffscreen_;
+    }
 
 protected:
 private:
@@ -318,6 +339,7 @@ private:
     float alpha_ = 0;
     bool isTransparent_ = false;
     bool isSpherizeValid_ = false;
+    bool isAttractionValid_ = false;
     bool isParentScaling_ = false;
     bool needBilinearInterpolation_ = false;
     MultiThreadCacheType uiFirstFlag_ = MultiThreadCacheType::NONE;
@@ -330,6 +352,7 @@ private:
     RectI absDrawRect_;
     RRect rrect_;
     Occlusion::Region transparentRegion_;
+    Occlusion::Region opaqueRegion_;
 
     bool surfaceCacheContentStatic_ = false;
     bool preSurfaceCacheContentStatic_ = false;
@@ -365,6 +388,7 @@ private:
     bool isGpuOverDrawBufferOptimizeNode_ = false;
     bool isSkipDraw_ = false;
     ScalingMode preScalingMode_ = ScalingMode::SCALING_MODE_SCALE_TO_WINDOW;
+    bool needOffscreen_ = false;
 
     friend class RSSurfaceRenderNode;
     friend class RSUniRenderProcessor;

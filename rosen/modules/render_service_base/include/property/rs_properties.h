@@ -35,12 +35,14 @@
 #include "render/rs_filter.h"
 #include "render/rs_gradient_blur_para.h"
 #include "render/rs_image.h"
+#include "render/rs_magnifier_para.h"
 #include "render/rs_mask.h"
 #include "render/rs_motion_blur_filter.h"
 #include "render/rs_particles_drawable.h"
 #include "render/rs_path.h"
 #include "render/rs_shader.h"
 #include "render/rs_shadow.h"
+#include "render/rs_attraction_effect_filter.h"
 
 #include "property/rs_filter_cache_manager.h"
 
@@ -264,6 +266,11 @@ public:
     float GetFgBrightnessFract() const;
     void SetFgBrightnessParams(const std::optional<RSDynamicBrightnessPara>& params);
     std::optional<RSDynamicBrightnessPara> GetFgBrightnessParams() const;
+    
+    void SetWaterRippleParams(const std::optional<RSWaterRipplePara>& params);
+    std::optional<RSWaterRipplePara> GetWaterRippleParams() const;
+    void SetWaterRippleProgress(const float& progress);
+    float GetWaterRippleProgress() const;
 
     void SetBgBrightnessRates(const Vector4f& rates);
     Vector4f GetBgBrightnessRates() const;
@@ -280,6 +287,7 @@ public:
 
     void SetFilter(const std::shared_ptr<RSFilter>& filter);
     void SetMotionBlurPara(const std::shared_ptr<MotionBlurParam>& para);
+    void SetMagnifierParams(const std::shared_ptr<RSMagnifierParams>& para);
     const std::shared_ptr<RSFilter>& GetBackgroundFilter() const;
     const std::shared_ptr<RSLinearGradientBlurPara>& GetLinearGradientBlurPara() const;
     const std::vector<std::shared_ptr<EmitterUpdater>>& GetEmitterUpdater() const;
@@ -287,6 +295,7 @@ public:
     void IfLinearGradientBlurInvalid();
     const std::shared_ptr<RSFilter>& GetFilter() const;
     const std::shared_ptr<MotionBlurParam>& GetMotionBlurPara() const;
+    const std::shared_ptr<RSMagnifierParams>& GetMagnifierPara() const;
     bool NeedFilter() const;
     void SetGreyCoef(const std::optional<Vector2f>& greyCoef);
     const std::optional<Vector2f>& GetGreyCoef() const;
@@ -435,6 +444,14 @@ public:
     void SetSpherize(float spherizeDegree);
     float GetSpherize() const;
     bool IsSpherizeValid() const;
+    void CreateSphereEffectFilter();
+
+    bool IsAttractionValid() const;
+    void SetAttractionFraction(float fraction);
+    void SetAttractionDstPoint(Vector2f dstPoint);
+    float GetAttractionFraction() const;
+    Vector2f GetAttractionDstPoint() const;
+    void CreateAttractionEffectFilter();
 
     void SetLightUpEffect(float lightUpEffectDegree);
     float GetLightUpEffect() const;
@@ -443,6 +460,7 @@ public:
     bool IsDynamicDimValid() const;
     bool IsFgBrightnessValid() const;
     bool IsBgBrightnessValid() const;
+    bool IsWaterRippleValid() const;
     std::string GetFgBrightnessDescription() const;
     std::string GetBgBrightnessDescription() const;
 
@@ -541,7 +559,9 @@ private:
     void GenerateForegroundMaterialBlurFilter();
     std::shared_ptr<Drawing::ColorFilter> GetMaterialColorFilter(float sat, float brightness);
     void GenerateAIBarFilter();
+    void GenerateWaterRippleFilter();
     void GenerateLinearGradientBlurFilter();
+    void GenerateMagnifierFilter();
 
     bool NeedClip() const;
 
@@ -572,6 +592,9 @@ private:
     int colorBlendMode_ = 0;
     int colorBlendApplyType_ = 0;
 
+    std::optional<RSWaterRipplePara> waterRippleParams_ = std::nullopt;
+    float waterRippleProgress_ = 0.0f;
+
     std::optional<RSDynamicBrightnessPara> fgBrightnessParams_;
     std::optional<RSDynamicBrightnessPara> bgBrightnessParams_;
 
@@ -592,6 +615,7 @@ private:
     std::shared_ptr<RSFilter> backgroundFilter_ = nullptr;
     std::shared_ptr<RSLinearGradientBlurPara> linearGradientBlurPara_ = nullptr;
     std::shared_ptr<MotionBlurParam> motionBlurPara_ = nullptr;
+    std::shared_ptr<RSMagnifierParams> magnifierPara_ = nullptr;
     std::vector<std::shared_ptr<EmitterUpdater>> emitterUpdater_;
     std::shared_ptr<ParticleNoiseFields> particleNoiseFields_ = nullptr;
     std::shared_ptr<RSBorder> border_ = nullptr;
@@ -609,6 +633,10 @@ private:
     std::shared_ptr<RSFilter> foregroundFilter_ = nullptr; // view content filter
     std::shared_ptr<RSFilter> foregroundFilterCache_ = nullptr; // view content filter via cache
     bool foregroundEffectDirty_ = false;
+
+    float attractFraction_ = 0.f;
+    Vector2f attractDstPoint_ = {0.f, 0.f};
+    bool isAttractionValid_ = false;
 
     // filter property
     float backgroundBlurRadius_ = 0.f;

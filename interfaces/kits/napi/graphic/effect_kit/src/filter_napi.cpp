@@ -347,7 +347,7 @@ void FilterNapi::GetPixelMapAsyncExecute(napi_env env, void* data)
         }
         managerFlag = (*manager).second.load();
     }
-    
+
     if (!managerFlag) {
         std::lock_guard<std::mutex> lock2(getPixelMapAsyncExecuteMutex_);
         ctx->filterNapi->Render(ctx->forceCPU);
@@ -368,7 +368,7 @@ napi_value FilterNapi::GetPixelMapAsync(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
-    
+
     size_t argc = 1;
     napi_value argv[1];
     napi_status status;
@@ -385,7 +385,7 @@ napi_value FilterNapi::GetPixelMapAsync(napi_env env, napi_callback_info info)
             EFFECT_LOG_I("FilterNapi: GetPixelMapAsync parse forceCPU failed");
         }
     }
-    ctx->forceCPU = true;
+    ctx->forceCPU = false;
 
     if (argc >= NUM_1) {
         if (Media::ImageNapiUtils::getType(env, argv[argc - 1]) == napi_function) {
@@ -403,8 +403,9 @@ napi_value FilterNapi::GetPixelMapAsync(napi_env env, napi_callback_info info)
     }
 
     if (ctx->errorMsg != nullptr) {
-        IMG_CREATE_CREATE_ASYNC_WORK(env, status, "GetPixelMapAsyncError", [](napi_env env, void* data) {},
-            GetPixelMapAsyncErrorComplete, ctx, ctx->work);
+        IMG_CREATE_CREATE_ASYNC_WORK(env, status, "GetPixelMapAsyncError", [](napi_env env, void* data) {
+            EFFECT_LOG_E("FilterNapi: GetPixelMapAsync fail to extract param");
+        }, GetPixelMapAsyncErrorComplete, ctx, ctx->work);
     } else {
         IMG_CREATE_CREATE_ASYNC_WORK(env, status, "GetPixelMapAsync", GetPixelMapAsyncExecute,
             GetPixelMapAsyncComplete, ctx, ctx->work);

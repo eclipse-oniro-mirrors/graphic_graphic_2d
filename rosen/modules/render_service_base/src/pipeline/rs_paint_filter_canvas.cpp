@@ -1044,8 +1044,8 @@ void RSPaintFilterCanvas::PaintFilter(T& paint)
 
     auto colorFilter = filter.GetColorFilter();
     if (colorFilter) {
-        RS_LOGE("hdr PaintFilter has colorFilter");
-        return;
+        RS_LOGD("hdr PaintFilter has colorFilter");
+        luminanceColorFilter->Compose(*colorFilter.get());
     }
     filter.SetColorFilter(luminanceColorFilter);
 
@@ -1290,6 +1290,10 @@ void RSPaintFilterCanvas::CopyConfiguration(const RSPaintFilterCanvas& other)
     isParallelCanvas_ = other.isParallelCanvas_;
     disableFilterCache_ = other.disableFilterCache_;
     threadIndex_ = other.threadIndex_;
+    hasHdrPresent_ = other.hasHdrPresent_;
+    brightnessRatio_ = other.brightnessRatio_;
+    screenId_ = other.screenId_;
+    targetColorGamut_ = other.targetColorGamut_;
 }
 
 void RSPaintFilterCanvas::SetHighContrast(bool enabled)

@@ -15,6 +15,7 @@
 
 #include "drawing_color.h"
 #include "drawing_color_filter.h"
+#include "drawing_error_code.h"
 #include "drawing_filter.h"
 #include "drawing_pen.h"
 #include "drawing_point.h"
@@ -25,6 +26,9 @@
 
 #include "effect/color_filter.h"
 #include "effect/filter.h"
+#include "drawing_path.h"
+#include "drawing_rect.h"
+#include "drawing_matrix.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -130,6 +134,8 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_penSetMiterLimit005, TestSiz
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_penSetCap006, TestSize.Level1)
 {
     OH_Drawing_Pen* pen5 = OH_Drawing_PenCreate();
+    EXPECT_EQ(OH_Drawing_PenGetCap(nullptr), OH_Drawing_PenLineCapStyle::LINE_FLAT_CAP);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
     OH_Drawing_PenSetCap(pen5, OH_Drawing_PenLineCapStyle::LINE_SQUARE_CAP);
     EXPECT_EQ(OH_Drawing_PenGetCap(pen5), OH_Drawing_PenLineCapStyle::LINE_SQUARE_CAP);
     OH_Drawing_PenSetCap(pen5, OH_Drawing_PenLineCapStyle::LINE_FLAT_CAP);
@@ -169,6 +175,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_penSetBlendMode008, TestSize
     EXPECT_NE(pen8, nullptr);
     OH_Drawing_PenSetBlendMode(pen8, OH_Drawing_BlendMode::BLEND_MODE_SRC);
     OH_Drawing_PenSetBlendMode(nullptr, OH_Drawing_BlendMode::BLEND_MODE_SRC);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
     OH_Drawing_PenDestroy(pen8);
 }
 
@@ -254,6 +261,48 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetShadowLayer011, TestSi
 }
 
 /*
+ * @tc.name: NativeDrawingPenTest_PenCopy012
+ * @tc.desc: test for creates an <b>OH_Drawing_Pen</b> copy object.
+ * @tc.type: FUNC
+ * @tc.require: AR000GTO5R
+ */
+HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenCopy012, TestSize.Level1)
+{
+    OH_Drawing_Pen* pen = OH_Drawing_PenCreate();
+    EXPECT_NE(OH_Drawing_PenCopy(pen), nullptr);
+    pen = nullptr;
+    EXPECT_EQ(OH_Drawing_PenCopy(pen), nullptr);
+    OH_Drawing_PenDestroy(pen);
+}
+
+/*
+ * @tc.name: NativeDrawingPenTest_PenGetFillPath013
+ * @tc.desc: test for gets the filled equivalent of the src path.
+ * @tc.type: FUNC
+ * @tc.require: AR000GTO5R
+ */
+HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetFillPath013, TestSize.Level1)
+{
+    OH_Drawing_Pen *pen = OH_Drawing_PenCreate();
+    OH_Drawing_PenSetWidth(pen, 10); // 10: width of pen
+    OH_Drawing_Path *dst = OH_Drawing_PathCreate();
+    OH_Drawing_Rect *rect = OH_Drawing_RectCreate(10, 10, 20, 20); // rect left[10], top[10], right[20], bottom[20]
+    OH_Drawing_Matrix *matrix = OH_Drawing_MatrixCreate();
+    EXPECT_FALSE(OH_Drawing_PenGetFillPath(pen, nullptr, dst, rect, matrix));
+
+    OH_Drawing_Path *src = OH_Drawing_PathCreate();
+    OH_Drawing_PathMoveTo(src, 10, 10); // 10: point's x, 10 point's y
+    OH_Drawing_PathLineTo(src, 20, 20); // 20: point's x, 20 point's y
+    EXPECT_TRUE(OH_Drawing_PenGetFillPath(pen, src, dst, rect, matrix));
+
+    OH_Drawing_PenDestroy(pen);
+    OH_Drawing_PathDestroy(src);
+    OH_Drawing_PathDestroy(dst);
+    OH_Drawing_RectDestroy(rect);
+    OH_Drawing_MatrixDestroy(matrix);
+}
+
+/*
  * @tc.name: NativeDrawingPenTest_PenIsAntiAlias
  * @tc.desc: test for OH_Drawing_PenIsAntiAlias.
  * @tc.type: FUNC
@@ -262,6 +311,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetShadowLayer011, TestSi
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenIsAntiAlias, TestSize.Level1)
 {
     ASSERT_TRUE(OH_Drawing_PenIsAntiAlias(nullptr) == false);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -273,6 +323,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenIsAntiAlias, TestSize.Lev
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetAntiAlias, TestSize.Level1)
 {
     OH_Drawing_PenSetAntiAlias(nullptr, false);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -284,6 +335,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetAntiAlias, TestSize.Le
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetColor, TestSize.Level1)
 {
     ASSERT_TRUE(OH_Drawing_PenGetColor(nullptr) == 0);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -295,6 +347,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetColor, TestSize.Level1
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetColor, TestSize.Level1)
 {
     OH_Drawing_PenSetColor(nullptr, 0xFFFFFFFF);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -306,6 +359,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetColor, TestSize.Level1
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetAlpha, TestSize.Level1)
 {
     ASSERT_TRUE(OH_Drawing_PenGetAlpha(nullptr) == 0);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -331,6 +385,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetAlpha002, TestSize.Lev
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetAlpha, TestSize.Level1)
 {
     OH_Drawing_PenSetAlpha(nullptr, 0xFF);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -356,6 +411,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetAlpha002, TestSize.Lev
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetWidth, TestSize.Level1)
 {
     EXPECT_EQ(OH_Drawing_PenGetWidth(nullptr), 0);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -367,6 +423,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetWidth, TestSize.Level1
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetWidth, TestSize.Level1)
 {
     OH_Drawing_PenSetWidth(nullptr, 10);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -378,6 +435,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetWidth, TestSize.Level1
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetMiterLimit, TestSize.Level1)
 {
     OH_Drawing_PenGetMiterLimit(nullptr);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -389,6 +447,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetMiterLimit, TestSize.L
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetMiterLimit, TestSize.Level1)
 {
     OH_Drawing_PenSetMiterLimit(nullptr, 0);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -400,6 +459,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetMiterLimit, TestSize.L
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetCap, TestSize.Level1)
 {
     OH_Drawing_PenSetCap(nullptr, OH_Drawing_PenLineCapStyle::LINE_FLAT_CAP);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -411,6 +471,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetCap, TestSize.Level1)
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetJoin001, TestSize.Level1)
 {
     ASSERT_TRUE(OH_Drawing_PenGetJoin(nullptr) == OH_Drawing_PenLineJoinStyle::LINE_MITER_JOIN);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -422,6 +483,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetJoin001, TestSize.Leve
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetJoin001, TestSize.Level1)
 {
     OH_Drawing_PenSetJoin(nullptr, OH_Drawing_PenLineJoinStyle::LINE_MITER_JOIN);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -433,6 +495,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetJoin001, TestSize.Leve
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetShaderEffect001, TestSize.Level1)
 {
     OH_Drawing_PenSetShaderEffect(nullptr, nullptr);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -464,6 +527,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetShaderEffect002, TestS
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetShadowLayer001, TestSize.Level1)
 {
     OH_Drawing_PenSetShadowLayer(nullptr, nullptr);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -494,6 +558,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetShadowLayer002, TestSi
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetFilter001, TestSize.Level1)
 {
     OH_Drawing_PenSetFilter(nullptr, nullptr);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -539,6 +604,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenSetFilter003, TestSize.Le
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetFilter001, TestSize.Level1)
 {
     OH_Drawing_PenGetFilter(nullptr, nullptr);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
@@ -579,6 +645,7 @@ HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenGetFilter003, TestSize.Le
 HWTEST_F(NativeDrawingPenTest, NativeDrawingPenTest_PenReset, TestSize.Level1)
 {
     OH_Drawing_PenReset(nullptr);
+    EXPECT_EQ(OH_Drawing_ErrorCodeGet(), OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 } // namespace Drawing

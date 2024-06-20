@@ -54,7 +54,7 @@ public:
     void SetMatrix(const Drawing::Matrix& matrix);
     const Drawing::Matrix& GetMatrix() const;
 
-    void ApplyAlphaAndMatrixToCanvas(RSPaintFilterCanvas& canvas) const;
+    void ApplyAlphaAndMatrixToCanvas(RSPaintFilterCanvas& canvas, bool applyMatrix = true) const;
 
     void SetBoundsRect(const Drawing::RectF& boundsRect);
     const Drawing::Rect& GetBounds() const;
@@ -91,6 +91,13 @@ public:
     }
 
     void SetFrameGravity(Gravity gravity);
+
+    void SetNeedFilter(bool needFilter);
+
+    inline bool NeedFilter() const
+    {
+        return needFilter_;
+    }
 
     inline bool IsSecurityLayer() const
     {
@@ -196,6 +203,7 @@ private:
     bool isOpincRootFlag_ = false;
     bool isOpincStateChanged_ = false;
     bool isOpincMarkCached_ = false;
+    bool needFilter_ = false;
     SurfaceParam surfaceParams_;
     bool freezeFlag_ = false;
 };

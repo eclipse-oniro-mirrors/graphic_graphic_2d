@@ -36,6 +36,7 @@ static RoundRect* CastToRoundRect(OH_Drawing_RoundRect* cRoundRect)
 OH_Drawing_RoundRect* OH_Drawing_RoundRectCreate(const OH_Drawing_Rect* cRect, float xRad, float yRad)
 {
     if (cRect == nullptr) {
+        g_drawingErrorCode = OH_DRAWING_ERROR_INVALID_PARAMETER;
         return nullptr;
     }
     return (OH_Drawing_RoundRect*)new RoundRect(CastToRect(*cRect), xRad, yRad);

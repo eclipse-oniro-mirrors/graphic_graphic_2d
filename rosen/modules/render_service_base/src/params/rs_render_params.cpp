@@ -62,14 +62,18 @@ const Drawing::Matrix& RSRenderParams::GetMatrix() const
     return matrix_;
 }
 
-void RSRenderParams::ApplyAlphaAndMatrixToCanvas(RSPaintFilterCanvas& canvas) const
+void RSRenderParams::ApplyAlphaAndMatrixToCanvas(RSPaintFilterCanvas& canvas, bool applyMatrix) const
 {
     if (UNLIKELY(HasSandBox())) {
-        canvas.SetMatrix(parentSurfaceMatrix_);
-        canvas.ConcatMatrix(matrix_);
+        if (applyMatrix) {
+            canvas.SetMatrix(parentSurfaceMatrix_);
+            canvas.ConcatMatrix(matrix_);
+        }
         canvas.SetAlpha(alpha_);
     } else {
-        canvas.ConcatMatrix(matrix_);
+        if (applyMatrix) {
+            canvas.ConcatMatrix(matrix_);
+        }
         if (alpha_ < 1.0f && (drawingCacheType_ == RSDrawingCacheType::FORCED_CACHE || alphaOffScreen_)) {
             auto rect = GetBounds();
             Drawing::Brush brush;
@@ -343,6 +347,15 @@ void RSRenderParams::SetFrameGravity(Gravity gravity)
     needSync_ = true;
 }
 
+void RSRenderParams::SetNeedFilter(bool needFilter)
+{
+    if (needFilter_ == needFilter) {
+        return;
+    }
+    needFilter_ = needFilter;
+    needSync_ = true;
+}
+
 bool RSRenderParams::NeedSync() const
 {
     return needSync_;
@@ -416,12 +429,15 @@ void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     target->frameGravity_ = frameGravity_;
     target->childHasVisibleFilter_ = childHasVisibleFilter_;
     target->childHasVisibleEffect_ = childHasVisibleEffect_;
-    target->isDrawingCacheChanged_ = isDrawingCacheChanged_;
+    // use flag in render param and staging render param to determine if cache should be updated
+    // (flag in render param may be not used because of occlusion skip, so we need to update cache in next frame)
+    target->isDrawingCacheChanged_ = target->isDrawingCacheChanged_ || isDrawingCacheChanged_;
     target->shadowRect_ = shadowRect_;
     target->drawingCacheType_ = drawingCacheType_;
     target->drawingCacheIncludeProperty_ = drawingCacheIncludeProperty_;
     target->dirtyRegionInfoForDFX_ = dirtyRegionInfoForDFX_;
     target->alphaOffScreen_ = alphaOffScreen_;
+    target->needFilter_ = needFilter_;
     target->foregroundFilterCache_ = foregroundFilterCache_;
     OnCanvasDrawingSurfaceChange(target);
     target->isOpincRootFlag_ = isOpincRootFlag_;

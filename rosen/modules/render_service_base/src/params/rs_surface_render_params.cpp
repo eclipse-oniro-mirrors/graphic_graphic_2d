@@ -198,9 +198,14 @@ bool RSSurfaceRenderParams::GetPreSurfaceCacheContentStatic() const
     return preSurfaceCacheContentStatic_;
 }
 
-void RSSurfaceRenderParams::SetSurfaceCacheContentStatic(bool contentStatic)
+void RSSurfaceRenderParams::SetSurfaceCacheContentStatic(bool contentStatic, bool lastFrameSynced)
 {
+    // 1. don't sync while contentStatic not change
     if (surfaceCacheContentStatic_ == contentStatic) {
+        return;
+    }
+    // 2. don't sync while last frame isn't static and skip sync
+    if (!surfaceCacheContentStatic_ && !lastFrameSynced) {
         return;
     }
     preSurfaceCacheContentStatic_ = surfaceCacheContentStatic_;
@@ -320,6 +325,7 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->ancestorDisplayNode_ = ancestorDisplayNode_;
     targetSurfaceParams->alpha_ = alpha_;
     targetSurfaceParams->isSpherizeValid_ = isSpherizeValid_;
+    targetSurfaceParams->isAttractionValid_ = isAttractionValid_;
     targetSurfaceParams->isParentScaling_ = isParentScaling_;
     targetSurfaceParams->needBilinearInterpolation_ = needBilinearInterpolation_;
     targetSurfaceParams->backgroundColor_ = backgroundColor_;
@@ -355,6 +361,8 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->dstRect_ = dstRect_;
     targetSurfaceParams->isSkipDraw_ = isSkipDraw_;
     targetSurfaceParams->isLeashWindowVisibleRegionEmpty_ = isLeashWindowVisibleRegionEmpty_;
+    targetSurfaceParams->opaqueRegion_ = opaqueRegion_;
+    targetSurfaceParams->needOffscreen_ = needOffscreen_;
     RSRenderParams::OnSync(target);
 }
 
@@ -365,6 +373,7 @@ std::string RSSurfaceRenderParams::ToString() const
     ret += RENDER_BASIC_PARAM_TO_STRING(int(selfDrawingType_));
     ret += RENDER_BASIC_PARAM_TO_STRING(alpha_);
     ret += RENDER_BASIC_PARAM_TO_STRING(isSpherizeValid_);
+    ret += RENDER_BASIC_PARAM_TO_STRING(isAttractionValid_);
     ret += RENDER_BASIC_PARAM_TO_STRING(needBilinearInterpolation_);
     ret += RENDER_BASIC_PARAM_TO_STRING(backgroundColor_.GetAlpha());
     ret += RENDER_RECT_PARAM_TO_STRING(absDrawRect_);
@@ -383,5 +392,15 @@ bool RSSurfaceRenderParams::IsVisibleRegionEmpty(const Drawing::Region curSurfac
         return GetUifirstNodeEnableParam() != MultiThreadCacheType::NONE && GetLeashWindowVisibleRegionEmptyParam();
     }
     return false;
+}
+
+void RSSurfaceRenderParams::SetOpaqueRegion(const Occlusion::Region& opaqueRegion)
+{
+    opaqueRegion_ = opaqueRegion;
+}
+
+const Occlusion::Region& RSSurfaceRenderParams::GetOpaqueRegion() const
+{
+    return opaqueRegion_;
 }
 } // namespace OHOS::Rosen

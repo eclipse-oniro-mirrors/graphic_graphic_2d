@@ -53,6 +53,18 @@ std::map<const std::string, std::function<void(GEVisualEffectImpl*)>> GEVisualEf
             impl->SetFilterType(GEVisualEffectImpl::FilterType::HPS_BLUR);
             impl->MakeHpsBlurParams();
         }
+    },
+    { GE_FILTER_WATER_RIPPLE,
+        [](GEVisualEffectImpl* impl) {
+            impl->SetFilterType(GEVisualEffectImpl::FilterType::WATER_RIPPLE);
+            impl->MakeWaterRippleParams();
+        }
+    },
+    { GE_FILTER_MAGNIFIER,
+        [](GEVisualEffectImpl* impl) {
+            impl->SetFilterType(GEVisualEffectImpl::FilterType::MAGNIFIER);
+            impl->MakeMagnifierParams();
+        }
     }
 };
 
@@ -134,6 +146,14 @@ void GEVisualEffectImpl::SetParam(const std::string& tag, float param)
             SetHpsBlurParams(tag, param);
             break;
         }
+        case FilterType::WATER_RIPPLE: {
+            SetWaterRippleParams(tag, param);
+            break;
+        }
+        case FilterType::MAGNIFIER: {
+            SetMagnifierParamsFloat(tag, param);
+            break;
+        }
         default:
             break;
     }
@@ -175,6 +195,18 @@ void GEVisualEffectImpl::SetParam(const std::string& tag, const std::vector<std:
             if (tag == GE_FILTER_LINEAR_GRADIENT_BLUR_FRACTION_STOPS) {
                 linearGradientBlurParams_->fractionStops = param;
             }
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void GEVisualEffectImpl::SetParam(const std::string& tag, const uint32_t param)
+{
+    switch (filterType_) {
+        case FilterType::MAGNIFIER: {
+            SetMagnifierParamsUint32(tag, param);
             break;
         }
         default:
@@ -260,6 +292,86 @@ void GEVisualEffectImpl::SetHpsBlurParams(const std::string& tag, float param)
         { GE_FILTER_HPS_BLUR_SATURATION,
             [](GEVisualEffectImpl* obj, float p) { obj->hpsBlurParams_->saturation = p; } },
         { GE_FILTER_HPS_BLUR_BRIGHTNESS, [](GEVisualEffectImpl* obj, float p) { obj->hpsBlurParams_->brightness = p; } }
+    };
+
+    auto it = actions.find(tag);
+    if (it != actions.end()) {
+        it->second(this, param);
+    }
+}
+
+void GEVisualEffectImpl::SetWaterRippleParams(const std::string& tag, float param)
+{
+    if (waterRippleParams_ == nullptr) {
+        return;
+    }
+ 
+    static std::unordered_map<std::string, std::function<void(GEVisualEffectImpl*, float)>> actions = {
+        
+        { GE_FILTER_WATER_RIPPLE_PROGRESS,
+            [](GEVisualEffectImpl* obj, float p) { obj->waterRippleParams_->progress = p; } },
+        { GE_FILTER_WATER_RIPPLE_WAVE_NUM,
+            [](GEVisualEffectImpl* obj, float p) { obj->waterRippleParams_->waveCount = p; } },
+        { GE_FILTER_WATER_RIPPLE_RIPPLE_CENTER_X,
+            [](GEVisualEffectImpl* obj, float p) { obj->waterRippleParams_->rippleCenterX = p; } },
+        { GE_FILTER_WATER_RIPPLE_RIPPLE_CENTER_Y,
+            [](GEVisualEffectImpl* obj, float p) { obj->waterRippleParams_->rippleCenterY = p; } },
+    };
+ 
+    auto it = actions.find(tag);
+    if (it != actions.end()) {
+        it->second(this, param);
+    }
+}
+
+void GEVisualEffectImpl::SetMagnifierParamsFloat(const std::string& tag, float param)
+{
+    if (magnifierParams_ == nullptr) {
+        return;
+    }
+
+    static std::unordered_map<std::string, std::function<void(GEVisualEffectImpl*, float)>> actions = {
+        { GE_FILTER_MAGNIFIER_FACTOR,
+            [](GEVisualEffectImpl* obj, float p) { obj->magnifierParams_->factor = p; } },
+        { GE_FILTER_MAGNIFIER_WIDTH,
+            [](GEVisualEffectImpl* obj, float p) { obj->magnifierParams_->width = p; } },
+        { GE_FILTER_MAGNIFIER_HEIGHT,
+            [](GEVisualEffectImpl* obj, float p) { obj->magnifierParams_->height = p; } },
+        { GE_FILTER_MAGNIFIER_BORDER_WIDTH,
+            [](GEVisualEffectImpl* obj, float p) { obj->magnifierParams_->borderWidth = p; } },
+        { GE_FILTER_MAGNIFIER_CORNER_RADIUS,
+            [](GEVisualEffectImpl* obj, float p) { obj->magnifierParams_->cornerRadius = p; } },
+        { GE_FILTER_MAGNIFIER_SHADOW_OFFSET_X,
+            [](GEVisualEffectImpl* obj, float p) { obj->magnifierParams_->shadowOffsetX = p; } },
+        { GE_FILTER_MAGNIFIER_SHADOW_OFFSET_Y,
+            [](GEVisualEffectImpl* obj, float p) { obj->magnifierParams_->shadowOffsetY = p; } },
+        { GE_FILTER_MAGNIFIER_SHADOW_SIZE,
+            [](GEVisualEffectImpl* obj, float p) { obj->magnifierParams_->shadowSize = p; } },
+        { GE_FILTER_MAGNIFIER_SHADOW_STRENGTH,
+            [](GEVisualEffectImpl* obj, float p) { obj->magnifierParams_->shadowStrength = p; } }
+    };
+
+    auto it = actions.find(tag);
+    if (it != actions.end()) {
+        it->second(this, param);
+    }
+}
+
+void GEVisualEffectImpl::SetMagnifierParamsUint32(const std::string& tag, uint32_t param)
+{
+    if (magnifierParams_ == nullptr) {
+        return;
+    }
+
+    static std::unordered_map<std::string, std::function<void(GEVisualEffectImpl*, uint32_t)>> actions = {
+        { GE_FILTER_MAGNIFIER_GRADIENT_MASK_COLOR_1,
+            [](GEVisualEffectImpl* obj, uint32_t p) { obj->magnifierParams_->gradientMaskColor1 = p; } },
+        { GE_FILTER_MAGNIFIER_GRADIENT_MASK_COLOR_2,
+            [](GEVisualEffectImpl* obj, uint32_t p) { obj->magnifierParams_->gradientMaskColor2 = p; } },
+        { GE_FILTER_MAGNIFIER_OUTER_CONTOUR_COLOR_1,
+            [](GEVisualEffectImpl* obj, uint32_t p) { obj->magnifierParams_->outerContourColor1 = p; } },
+        { GE_FILTER_MAGNIFIER_OUTER_CONTOUR_COLOR_2,
+            [](GEVisualEffectImpl* obj, uint32_t p) { obj->magnifierParams_->outerContourColor2 = p; } }
     };
 
     auto it = actions.find(tag);
