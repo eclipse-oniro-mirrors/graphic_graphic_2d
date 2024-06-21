@@ -936,12 +936,44 @@ void RSDisplayRenderNodeDrawable::WiredScreenProjection(std::shared_ptr<RSDispla
     }
     curCanvas_->Save();
     ScaleAndRotateMirrorForWiredScreen(*displayNodeSp, *mirroredNode);
+    RSDirtyRectsDfx rsDirtyRectsDfx(displayNodeSp);
+    std::vector<RectI> damageRegionRects;
+    auto curScreenInfo = params.GetScreenInfo();
+    sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
+    auto uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams().get();
+    if (uniParam && uniParam->IsVirtualDirtyEnabled() && screenManager) {
+        int32_t bufferAge = renderFrame->GetBufferAge();
+        int32_t actualAge = curScreenInfo.skipFrameInterval ?
+            static_cast<int32_t>(curScreenInfo.skipFrameInterval) * bufferAge : bufferAge;
+        ScreenInfo mainScreenInfo = screenManager->QueryScreenInfo(mirroredNode->GetScreenId());
+        auto canvasMatrix = curCanvas_->GetTotalMatrix();
+        std::shared_ptr<RSObjAbsGeometry> tmpGeo = std::make_shared<RSObjAbsGeometry>();
+        auto tempDamageRegionRects = MergeDirtyHistoryInVirtual(*mirroredNode, actualAge, mainScreenInfo);
+        for (auto& rect : tempDamageRegionRects) {
+            RectI mappedRect = tmpGeo->MapRect(rect.ConvertTo<float>(), canvasMatrix);
+            damageRegionRects.emplace_back(mappedRect);
+        }
+        if (!(lastMatrix_ == canvasMatrix) || uniParam->GetForceMirrorScreenDirty()) {
+            displayNodeSp->GetSyncDirtyManager()->ResetDirtyAsSurfaceSize();
+            lastMatrix_ = canvasMatrix;
+        }
+        displayNodeSp->UpdateDisplayDirtyManager(bufferAge, false, true);
+        auto extraDirty = displayNodeSp->GetSyncDirtyManager()->GetDirtyRegion();
+        if (!extraDirty.IsEmpty()) {
+            damageRegionRects.emplace_back(extraDirty);
+        }
+        if (!uniParam->IsVirtualDirtyDfxEnabled()) {
+            renderFrame->SetDirtyInfo(damageRegionRects);
+        }
+    }
+    rsDirtyRectsDfx.SetVirtualDirtyRects(damageRegionRects, curScreenInfo);
     bool forceCPU = false;
     auto drawParams = RSUniRenderUtil::CreateBufferDrawParam(*mirroredNode, forceCPU);
     auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
     drawParams.isMirror = true;
     renderEngine->DrawDisplayNodeWithParams(*curCanvas_, *mirroredNode, drawParams);
     curCanvas_->Restore();
+    rsDirtyRectsDfx.OnDrawVirtual(curCanvas_);
     renderFrame->Flush();
     processor->ProcessDisplaySurface(*displayNodeSp);
     processor->PostProcess();
