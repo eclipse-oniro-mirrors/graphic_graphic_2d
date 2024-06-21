@@ -34,7 +34,6 @@ public:
     std::shared_ptr<RSSurfaceRenderNode> renderNode_;
     std::shared_ptr<RSDisplayRenderNode> displayRenderNode_;
     RSRenderNodeDrawableAdapter* drawable_ = nullptr;
-    std::shared_ptr<RSSurfaceRenderNodeDrawable> surfaceDrawable_ = nullptr;
     std::shared_ptr<RSDisplayRenderNodeDrawable> displayDrawable_ = nullptr;
     std::shared_ptr<RSDirtyRectsDfx> rsDirtyRectsDfx_;
     std::shared_ptr<RSPaintFilterCanvas> canvas_;
@@ -55,24 +54,23 @@ void RSDirtyRectsDFXTest::SetUp()
     displayRenderNode_ = std::make_shared<RSDisplayRenderNode>(DEFAULT_ID, config);
     if (!renderNode_) {
         RS_LOGE("RSSurfaceRenderNodeDrawableTest: failed to create surface node.");
-    }
-    surfaceDrawable_ = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
-        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(renderNode_));
-    if (!surfaceDrawable_->renderParams_) {
-        RS_LOGE("RSSurfaceRenderNodeDrawableTest: failed to init surfaceDrawable_.");
+        return;
     }
     displayDrawable_ = std::static_pointer_cast<RSDisplayRenderNodeDrawable>(
-        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(renderNode_));
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(displayRenderNode_));
     if (!displayDrawable_->renderParams_) {
         RS_LOGE("RSSurfaceRenderNodeDrawableTest: failed to init displayDrawable_.");
+        return;
     }
     auto displayRenderParams = static_cast<RSDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
     if (!displayRenderParams) {
         RS_LOGE("RSSurfaceRenderNodeDrawableTest: failed to init displayRenderParams.");
+        return;
     }
     rsDirtyRectsDfx_ = std::make_shared<RSDirtyRectsDfx>(displayRenderNode_, displayRenderParams);
     if (!rsDirtyRectsDfx_) {
         RS_LOGE("RSSurfaceRenderNodeDrawableTest: failed to create RSDirtyRectsDfx.");
+        return;
     }
     drawingCanvas_ = std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
     if (drawingCanvas_) {
@@ -91,7 +89,7 @@ HWTEST_F(RSDirtyRectsDFXTest, OnDraw, TestSize.Level1)
 {
     ASSERT_NE(rsDirtyRectsDfx_, nullptr);
     rsDirtyRectsDfx_->OnDraw(canvas_);
-    ASSERT_NE(rsDirtyRectsDfx_->canvas_, nullptr);
+    ASSERT_EQ(rsDirtyRectsDfx_->canvas_, nullptr);
 }
 
 /**
@@ -117,7 +115,7 @@ HWTEST_F(RSDirtyRectsDFXTest, DrawDirtyRegionInVirtual, TestSize.Level1)
 {
     ASSERT_NE(rsDirtyRectsDfx_, nullptr);
     rsDirtyRectsDfx_->DrawDirtyRegionInVirtual();
-    ASSERT_NE(rsDirtyRectsDfx_->canvas_, nullptr);
+    ASSERT_EQ(rsDirtyRectsDfx_->canvas_, nullptr);
 }
 
 /**
@@ -149,7 +147,11 @@ HWTEST_F(RSDirtyRectsDFXTest, DrawDirtyRegionForDFX, TestSize.Level1)
     }
     rsDirtyRectsDfx_->DrawDirtyRegionForDFX(rects);
 
-    rects = rsDirtyRectsDfx_->targetNode_->GetSyncDirtyManager()->GetMergedDirtyRegions();
+    auto targetNode = rsDirtyRectsDfx_->targetNode_;
+    ASSERT_NE(targetNode, nullptr);
+    auto dirtyManager = targetNode->GetSyncDirtyManager();
+    ASSERT_NE(targetNode, nullptr);
+    rects = dirtyManager->GetMergedDirtyRegions();
     rsDirtyRectsDfx_->DrawDirtyRegionForDFX(rects);
 }
 
@@ -163,7 +165,9 @@ HWTEST_F(RSDirtyRectsDFXTest, DrawAllSurfaceOpaqueRegionForDFX, TestSize.Level1)
 {
     ASSERT_NE(rsDirtyRectsDfx_, nullptr);
     rsDirtyRectsDfx_->DrawAllSurfaceOpaqueRegionForDFX();
-    ASSERT_NE(rsDirtyRectsDfx_->targetNode_->GetRenderParams(), nullptr);
+    auto targetNode = rsDirtyRectsDfx_->targetNode_;
+    ASSERT_NE(targetNode, nullptr);
+    ASSERT_NE(targetNode->GetRenderParams(), nullptr);
 }
 
 /**

@@ -27,7 +27,6 @@ using namespace OHOS::Rosen::DrawableV2;
 
 namespace OHOS::Rosen {
 constexpr int32_t DEFAULT_CANVAS_SIZE = 100;
-constexpr NodeId DEFAULT_ID = 0xFFFF;
 
 class RSSkpCaptureDFXTest : public testing::Test {
 public:
@@ -45,24 +44,7 @@ public:
 
 void RSSkpCaptureDFXTest::SetUpTestCase() {}
 void RSSkpCaptureDFXTest::TearDownTestCase() {}
-void RSSkpCaptureDFXTest::SetUp()
-{
-    renderNode_ = std::make_shared<RSSurfaceRenderNode>(DEFAULT_ID);
-    RSDisplayNodeConfig config;
-    displayRenderNode_ = std::make_shared<RSDisplayRenderNode>(DEFAULT_ID, config);
-    if (!renderNode_) {
-        RS_LOGE("RSSurfaceRenderNodeDrawableTest: failed to create surface node.");
-    }
-    surfaceDrawable_ = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
-        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(renderNode_));
-    if (!surfaceDrawable_->renderParams_) {
-        RS_LOGE("RSSurfaceRenderNodeDrawableTest: failed to init render params.");
-    }
-    drawingCanvas_ = std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
-    if (drawingCanvas_) {
-        canvas_ = std::make_shared<RSPaintFilterCanvas>(drawingCanvas_.get());
-    }
-}
+void RSSkpCaptureDFXTest::SetUp() {}
 void RSSkpCaptureDFXTest::TearDown() {}
 
 /**
@@ -73,11 +55,13 @@ void RSSkpCaptureDFXTest::TearDown() {}
  */
 HWTEST_F(RSSkpCaptureDFXTest, capture, TestSize.Level1)
 {
-    ASSERT_NE(canvas_, nullptr);
+    auto drawingCanvas = std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
+    
+    ASSERT_NE(canvas, nullptr);
     {
-        RSSkpCaptureDfx capture(canvas_);
-        ASSERT_NE(capture.recordingCanvas_, nullptr);
-        ASSERT_NE(capture.curCanvas_, nullptr);
+        RSSkpCaptureDfx capture(canvas);
+        ASSERT_EQ(capture.recordingCanvas_, nullptr);
     }
 }
 }

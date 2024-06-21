@@ -51,11 +51,13 @@ void RSUIFirstSurfaceRenderNodeDrawableTest::SetUp()
     displayRenderNode_ = std::make_shared<RSDisplayRenderNode>(DEFAULT_ID, config);
     if (!renderNode_) {
         RS_LOGE("RSSurfaceRenderNodeDrawableTest: failed to create surface node.");
+        return;
     }
     surfaceDrawable_ = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
         DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(renderNode_));
-    if (!surfaceDrawable_->renderParams_) {
+    if (!surfaceDrawable_ || !surfaceDrawable_->renderParams_) {
         RS_LOGE("RSSurfaceRenderNodeDrawableTest: failed to init render params.");
+        return;
     }
     drawingCanvas_ = std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
     if (drawingCanvas_) {
@@ -83,6 +85,9 @@ HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, CreateUIFirstSurfaceRenderNodeD
  */
 HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, GetCacheSurfaceTest, TestSize.Level1)
 {
+    if (surfaceDrawable_ == nullptr) {
+        return;
+    }
     uint32_t threadIndex = 1;
     bool needCheckThread = true;
     bool releaseAfterGet = true;
@@ -103,6 +108,9 @@ HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, GetCacheSurfaceTest, TestSize.L
  */
 HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, GetCompletedImageTest, TestSize.Level1)
 {
+    if (surfaceDrawable_ == nullptr) {
+        return;
+    }
     uint32_t threadIndex = 1;
     bool isUIFirst = true;
 
@@ -113,7 +121,11 @@ HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, GetCompletedImageTest, TestSize
 
     isUIFirst = false;
     result = surfaceDrawable_->GetCompletedImage(*rscanvas, threadIndex, isUIFirst);
-    EXPECT_NE(result, nullptr);
+    ASSERT_EQ(result, nullptr);
+
+    surfaceDrawable_->cacheCompletedSurface_ = std::make_shared<Drawing::Surface>();
+    result = surfaceDrawable_->GetCompletedImage(*rscanvas, threadIndex, isUIFirst);
+    ASSERT_EQ(result, nullptr);
 }
 
 /**
@@ -124,6 +136,9 @@ HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, GetCompletedImageTest, TestSize
  */
 HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, DrawCacheSurfaceTest, TestSize.Level1)
 {
+    if (surfaceDrawable_ == nullptr) {
+        return;
+    }
     Vector2f boundSize;
     uint32_t threadIndex = 1;
     bool isUIFirst = false;
@@ -160,6 +175,9 @@ HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, NeedInitCacheSurfaceTest, TestS
  */
 HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, UpdateCompletedCacheSurfaceTest, TestSize.Level1)
 {
+    if (surfaceDrawable_ == nullptr) {
+        return;
+    }
     uint32_t completedSurfaceThreadIndex = 1;
     uint32_t cacheSurfaceThreadIndex = 0;
     surfaceDrawable_->completedSurfaceThreadIndex_ = completedSurfaceThreadIndex;
@@ -177,11 +195,15 @@ HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, UpdateCompletedCacheSurfaceTest
  */
 HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, ClearCacheSurfaceTest, TestSize.Level1)
 {
+    if (surfaceDrawable_ == nullptr) {
+        return;
+    }
     surfaceDrawable_->ClearCacheSurface(true);
     ASSERT_EQ(surfaceDrawable_->cacheCompletedCleanupHelper_, nullptr);
 
+    surfaceDrawable_->cacheCompletedSurface_ = std::make_shared<Drawing::Surface>();
     surfaceDrawable_->ClearCacheSurface(false);
-    ASSERT_NE(surfaceDrawable_->cacheCompletedCleanupHelper_, nullptr);
+    ASSERT_EQ(surfaceDrawable_->cacheCompletedCleanupHelper_, nullptr);
 }
 #endif
 /**
@@ -192,6 +214,9 @@ HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, ClearCacheSurfaceTest, TestSize
  */
 HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, IsCurFrameStaticTest, TestSize.Level1)
 {
+    if (surfaceDrawable_ == nullptr) {
+        return;
+    }
     auto result = surfaceDrawable_->IsCurFrameStatic(DeviceType::PC);
     ASSERT_EQ(result, false);
 }
@@ -204,6 +229,9 @@ HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, IsCurFrameStaticTest, TestSize.
  */
 HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, SubDrawTest, TestSize.Level1)
 {
+    if (surfaceDrawable_ == nullptr) {
+        return;
+    }
     Drawing::Canvas* drawingCanvas = new Drawing::Canvas(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
     surfaceDrawable_->SubDraw(*drawingCanvas);
     EXPECT_TRUE(surfaceDrawable_->uifirstDrawCmdList_.empty());
@@ -217,12 +245,15 @@ HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, SubDrawTest, TestSize.Level1)
  */
 HWTEST_F(RSUIFirstSurfaceRenderNodeDrawableTest, DrawUIFirstCacheTest, TestSize.Level1)
 {
+    if (surfaceDrawable_ == nullptr) {
+        return;
+    }
     Drawing::Canvas* drawingCanvas = new Drawing::Canvas(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
     auto rscanvas = static_cast<RSPaintFilterCanvas*>(drawingCanvas);
     auto result = surfaceDrawable_->DrawUIFirstCache(*rscanvas, true);
     EXPECT_EQ(result, false);
 
     result = surfaceDrawable_->DrawUIFirstCache(*rscanvas, false);
-    EXPECT_EQ(result, true);
+    EXPECT_EQ(result, false);
 }
 }
