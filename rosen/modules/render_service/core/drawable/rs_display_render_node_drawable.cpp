@@ -939,7 +939,7 @@ void RSDisplayRenderNodeDrawable::WiredScreenProjection(std::shared_ptr<RSDispla
     RSDirtyRectsDfx rsDirtyRectsDfx(displayNodeSp);
     std::vector<RectI> damageRegionRects = CalculateVirtualDirtyForWiredScreen(
         *displayNodeSp, renderFrame, params, curCanvas_->GetTotalMatrix());
-    rsDirtyRectsDfx.SetVirtualDirtyRects(damageRegionRects, curScreenInfo);
+    rsDirtyRectsDfx.SetVirtualDirtyRects(damageRegionRects, params.GetScreenInfo());
     bool forceCPU = false;
     auto drawParams = RSUniRenderUtil::CreateBufferDrawParam(*mirroredNode, forceCPU);
     auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
@@ -952,7 +952,7 @@ void RSDisplayRenderNodeDrawable::WiredScreenProjection(std::shared_ptr<RSDispla
     processor->PostProcess();
 }
 
-std::vector<RectI> CalculateVirtualDirtyForWiredScreen(RSDisplayRenderNode& displayNode,
+std::vector<RectI> RSDisplayRenderNodeDrawable::CalculateVirtualDirtyForWiredScreen(RSDisplayRenderNode& displayNode,
     std::unique_ptr<RSRenderFrame>& renderFrame, RSDisplayRenderParams& params, Drawing::Matrix canvasMatrix)
 {
     std::vector<RectI> damageRegionRects;
