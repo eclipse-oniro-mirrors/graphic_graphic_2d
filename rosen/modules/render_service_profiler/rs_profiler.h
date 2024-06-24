@@ -48,7 +48,6 @@
 #define RS_PROFILER_SET_DIRTY_REGION(dirtyRegion) RSProfiler::SetDirtyRegion(dirtyRegion)
 #define RS_PROFILER_WRITE_PARCEL_DATA(parcel) RSProfiler::WriteParcelData(parcel)
 #define RS_PROFILER_READ_PARCEL_DATA(parcel, size, isMalloc) RSProfiler::ReadParcelData(parcel, size, isMalloc)
-#define RS_PROFILER_UPDATE_HWC_NODE_CHECK() RSProfiler::UpdateHwcNodeCheck()
 #define RS_PROFILER_GET_FRAME_NUMBER() RSProfiler::GetFrameNumber()
 #define RS_PROFILER_ON_PARALLEL_RENDER_BEGIN() RSProfiler::OnParallelRenderBegin()
 #define RS_PROFILER_ON_PARALLEL_RENDER_END(renderFrameNumber) RSProfiler::OnParallelRenderEnd(renderFrameNumber)
@@ -75,7 +74,6 @@
 #define RS_PROFILER_SET_DIRTY_REGION(dirtyRegion)
 #define RS_PROFILER_WRITE_PARCEL_DATA(parcel)
 #define RS_PROFILER_READ_PARCEL_DATA(parcel, size, isMalloc) RSMarshallingHelper::ReadFromAshmem(parcel, size, isMalloc)
-#define RS_PROFILER_UPDATE_HWC_NODE_CHECK() true
 #define RS_PROFILER_GET_FRAME_NUMBER() 0
 #define RS_PROFILER_ON_PARALLEL_RENDER_BEGIN()
 #define RS_PROFILER_ON_PARALLEL_RENDER_END(renderFrameNumber)
@@ -173,8 +171,6 @@ public:
     RSB_EXPORT static bool IsSharedMemoryEnabled();
     RSB_EXPORT static bool IsBetaRecordEnabled();
     RSB_EXPORT static bool IsBetaRecordEnabledWithMetrics();
-
-    RSB_EXPORT static bool UpdateHwcNodeCheck();
 
 private:
     static const char* GetProcessNameByPid(int pid);

@@ -369,7 +369,7 @@ void RSProfiler::OnParallelRenderEnd(uint32_t frameNumber)
 
     const uint64_t frameLengthNanosecs = RawNowNano() - g_frameRenderBeginTimestamp;
 
-    const double currentTime = g_frameRenderBeginTimestamp * 1e-9; // Now();
+    const double currentTime = static_cast<double>(g_frameRenderBeginTimestamp) * 1e-9;
     const double timeSinceRecordStart = currentTime - g_recordStartTime;
 
     if (timeSinceRecordStart > 0.0) {
