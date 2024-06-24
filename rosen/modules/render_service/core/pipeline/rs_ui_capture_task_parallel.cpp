@@ -32,6 +32,7 @@
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_render_service_connection.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "pipeline/rs_surface_capture_task_parallel.h"
 #include "pipeline/rs_uifirst_manager.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "pipeline/rs_uni_render_util.h"
@@ -46,21 +47,6 @@
 
 namespace OHOS {
 namespace Rosen {
-namespace {
-inline void DrawCapturedImg(Drawing::Image& image,
-    Drawing::Surface& surface, const Drawing::BackendTexture& backendTexture)
-{
-    RSPaintFilterCanvas canvas(&surface);
-    Drawing::TextureOrigin origin = Drawing::TextureOrigin::BOTTOM_LEFT;
-    Drawing::BitmapFormat bitmapFormat =
-        Drawing::BitmapFormat{ Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
-    image.BuildFromTexture(*canvas.GetGPUContext(), backendTexture.GetTextureInfo(),
-        origin, bitmapFormat, nullptr);
-    canvas.DrawImage(image, 0.f, 0.f, Drawing::SamplingOptions());
-    surface.FlushAndSubmit(true);
-}
-}
-
 void RSUiCaptureTaskParallel::Capture(NodeId id, sptr<RSISurfaceCaptureCallback> callback, float scaleX, float scaleY)
 {
     std::shared_ptr<RSUiCaptureTaskParallel> captureHandle =
@@ -176,61 +162,12 @@ bool RSUiCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback)
 #if (defined (RS_ENABLE_GL) || defined (RS_ENABLE_VK)) && (defined RS_ENABLE_EGLIMAGE)
 #ifdef RS_ENABLE_UNI_RENDER
     if (RSSystemProperties::GetSnapshotWithDMAEnabled()) {
-        RSUniRenderUtil::OptimizedFlushAndSubmit(surface, grContext, !RSSystemProperties::IsPcType());
-        Drawing::BackendTexture backendTexture = surface->GetBackendTexture();
-        if (!backendTexture.IsValid()) {
-            RS_LOGE("RSUiCaptureTaskParallel: SkiaSurface bind Image failed: BackendTexture is invalid");
+        auto copytask = RSSurfaceCaptureTaskParallel::CreateSurfaceCopyTaskWithDMA(surface, std::move(pixelMap_),
+            nodeId_, callback);
+        if (!copytask) {
+            RS_LOGE("RSUiCaptureTaskParallel::Run: create capture task failed!");
             return false;
         }
-        auto wrapper = std::make_shared<std::tuple<std::unique_ptr<Media::PixelMap>>>();
-        std::get<0>(*wrapper) = std::move(pixelMap_);
-        auto id = nodeId_;
-        auto wrapperSf = std::make_shared<std::tuple<std::shared_ptr<Drawing::Surface>>>();
-        std::get<0>(*wrapperSf) = std::move(surface);
-        std::function<void()> copytask = [wrapper, callback, backendTexture, wrapperSf, id]() -> void {
-            if (!backendTexture.IsValid()) {
-                RS_LOGE("RSUiCaptureTaskParallel: Surface bind Image failed: BackendTexture is invalid");
-                callback->OnSurfaceCapture(id, nullptr);
-                RSUniRenderUtil::ClearNodeCacheSurface(
-                    std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
-                return;
-            }
-            auto pixelmap = std::move(std::get<0>(*wrapper));
-            if (pixelmap == nullptr) {
-                RS_LOGE("RSUiCaptureTaskParallel: pixelmap == nullptr");
-                callback->OnSurfaceCapture(id, nullptr);
-                RSUniRenderUtil::ClearNodeCacheSurface(
-                    std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
-                return;
-            }
-
-            Drawing::ImageInfo info = Drawing::ImageInfo{ pixelmap->GetWidth(), pixelmap->GetHeight(),
-                Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
-            std::shared_ptr<Drawing::Surface> surface;
-            auto grContext = RSBackgroundThread::Instance().GetShareGPUContext().get();
-            surface = Drawing::Surface::MakeRenderTarget(grContext, false, info);
-            if (surface == nullptr) {
-                RS_LOGE("RSUiCaptureTaskParallel: MakeRenderTarget fail.");
-                callback->OnSurfaceCapture(id, nullptr);
-                RSUniRenderUtil::ClearNodeCacheSurface(
-                    std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
-                return;
-            }
-            auto tmpImg = std::make_shared<Drawing::Image>();
-            DrawCapturedImg(*tmpImg, *surface, backendTexture);
-            if (!CopyDataToPixelMap(tmpImg, pixelmap)) {
-                RS_LOGE("RSUiCaptureTaskParallel: CopyDataToPixelMap failed");
-                callback->OnSurfaceCapture(id, nullptr);
-                RSUniRenderUtil::ClearNodeCacheSurface(
-                    std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
-                return;
-            }
-            RSBaseRenderUtil::WritePixelMapToPng(*pixelmap);
-            callback->OnSurfaceCapture(id, pixelmap.get());
-            RSBackgroundThread::Instance().CleanGrResource();
-            RSUniRenderUtil::ClearNodeCacheSurface(
-                std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
-        };
         RSBackgroundThread::Instance().PostTask(copytask);
         return true;
     } else {
