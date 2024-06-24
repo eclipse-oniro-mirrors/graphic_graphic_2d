@@ -448,7 +448,7 @@ JsCanvas::~JsCanvas()
 
 napi_value JsCanvas::DrawRect(napi_env env, napi_callback_info info)
 {
-    DRAWING_PERFORMANCE_TEST_JS(nullptr);
+    DRAWING_PERFORMANCE_TEST_JS_RETURN(nullptr);
     JsCanvas* me = CheckParamsAndGetThis<JsCanvas>(env, info);
     return (me != nullptr) ? me->OnDrawRect(env, info) : nullptr;
 }
@@ -486,14 +486,14 @@ napi_value JsCanvas::OnDrawRect(napi_env env, napi_callback_info info)
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
     }
 
-    DRAWING_PERFORMANCE_TEST_NAPI(nullptr);
+    DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
     m_canvas->DrawRect(drawingRect);
     return nullptr;
 }
 
 napi_value JsCanvas::DrawCircle(napi_env env, napi_callback_info info)
 {
-    DRAWING_PERFORMANCE_TEST_JS(nullptr);
+    DRAWING_PERFORMANCE_TEST_JS_RETURN(nullptr);
     JsCanvas* me = CheckParamsAndGetThis<JsCanvas>(env, info);
     return (me != nullptr) ? me->OnDrawCircle(env, info) : nullptr;
 }
@@ -516,14 +516,14 @@ napi_value JsCanvas::OnDrawCircle(napi_env env, napi_callback_info info)
     GET_DOUBLE_PARAM(ARGC_TWO, radius);
 
     Drawing::Point centerPt = Drawing::Point(x, y);
-    DRAWING_PERFORMANCE_TEST_NAPI(nullptr);
+    DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
     m_canvas->DrawCircle(centerPt, radius);
     return nullptr;
 }
 
 napi_value JsCanvas::DrawImage(napi_env env, napi_callback_info info)
 {
-    DRAWING_PERFORMANCE_TEST_JS(nullptr);
+    DRAWING_PERFORMANCE_TEST_JS_RETURN(nullptr);
     JsCanvas* me = CheckParamsAndGetThis<JsCanvas>(env, info);
     return (me != nullptr) ? me->OnDrawImage(env, info) : nullptr;
 }
@@ -558,7 +558,7 @@ napi_value JsCanvas::OnDrawImage(napi_env env, napi_callback_info info)
     }
 
     if (argc == ARGC_THREE) {
-        DRAWING_PERFORMANCE_TEST_NAPI(nullptr);
+        DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
         m_canvas->DrawImage(*image, px, py, Drawing::SamplingOptions());
     } else {
         JsSamplingOptions* jsSamplingOptions = nullptr;
@@ -569,7 +569,7 @@ napi_value JsCanvas::OnDrawImage(napi_env env, napi_callback_info info)
             ROSEN_LOGE("JsCanvas::OnDrawImage get samplingOptions is nullptr");
             return nullptr;
         }
-        DRAWING_PERFORMANCE_TEST_NAPI(nullptr);
+        DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
         m_canvas->DrawImage(*image, px, py, *samplingOptions.get());
     }
 
@@ -579,7 +579,7 @@ napi_value JsCanvas::OnDrawImage(napi_env env, napi_callback_info info)
 
 napi_value JsCanvas::DrawColor(napi_env env, napi_callback_info info)
 {
-    DRAWING_PERFORMANCE_TEST_JS(nullptr);
+    DRAWING_PERFORMANCE_TEST_JS_RETURN(nullptr);
     JsCanvas* me = CheckParamsAndGetThis<JsCanvas>(env, info);
     return (me != nullptr) ? me->OnDrawColor(env, info) : nullptr;
 }
@@ -604,12 +604,12 @@ napi_value JsCanvas::OnDrawColor(napi_env env, napi_callback_info info)
         }
         auto color = Color::ColorQuadSetARGB(argb[ARGC_ZERO], argb[ARGC_ONE], argb[ARGC_TWO], argb[ARGC_THREE]);
         if (argc == ARGC_ONE) {
-            DRAWING_PERFORMANCE_TEST_NAPI(nullptr);
+            DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
             m_canvas->DrawColor(color);
         } else {
             int32_t jsMode = 0;
             GET_INT32_CHECK_GE_ZERO_PARAM(ARGC_ONE, jsMode);
-            DRAWING_PERFORMANCE_TEST_NAPI(nullptr);
+            DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
             m_canvas->DrawColor(color, BlendMode(jsMode));
         }
     } else if (argc == ARGC_FOUR || argc == ARGC_FIVE) {
@@ -623,12 +623,12 @@ napi_value JsCanvas::OnDrawColor(napi_env env, napi_callback_info info)
         GET_COLOR_PARAM(ARGC_THREE, blue);
         auto color = Color::ColorQuadSetARGB(alpha, red, green, blue);
         if (argc == ARGC_FOUR) {
-            DRAWING_PERFORMANCE_TEST_NAPI(nullptr);
+            DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
             m_canvas->DrawColor(color);
         } else {
             int32_t jsMode = 0;
             GET_INT32_CHECK_GE_ZERO_PARAM(ARGC_ONE, jsMode);
-            DRAWING_PERFORMANCE_TEST_NAPI(nullptr);
+            DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
             m_canvas->DrawColor(color, BlendMode(jsMode));
         }
     } else {
@@ -640,7 +640,7 @@ napi_value JsCanvas::OnDrawColor(napi_env env, napi_callback_info info)
 
 napi_value JsCanvas::DrawPoint(napi_env env, napi_callback_info info)
 {
-    DRAWING_PERFORMANCE_TEST_JS(nullptr);
+    DRAWING_PERFORMANCE_TEST_JS_RETURN(nullptr);
     JsCanvas* me = CheckParamsAndGetThis<JsCanvas>(env, info);
     return (me != nullptr) ? me->OnDrawPoint(env, info) : nullptr;
 }
@@ -660,14 +660,14 @@ napi_value JsCanvas::OnDrawPoint(napi_env env, napi_callback_info info)
     double py = 0.0;
     GET_DOUBLE_PARAM(ARGC_ONE, py);
 
-    DRAWING_PERFORMANCE_TEST_NAPI(nullptr);
+    DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
     m_canvas->DrawPoint(Point(px, py));
     return nullptr;
 }
 
 napi_value JsCanvas::DrawPath(napi_env env, napi_callback_info info)
 {
-    DRAWING_PERFORMANCE_TEST_JS(nullptr);
+    DRAWING_PERFORMANCE_TEST_JS_RETURN(nullptr);
     JsCanvas* me = CheckParamsAndGetThis<JsCanvas>(env, info);
     return (me != nullptr) ? me->OnDrawPath(env, info) : nullptr;
 }
@@ -690,14 +690,14 @@ napi_value JsCanvas::OnDrawPath(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    DRAWING_PERFORMANCE_TEST_NAPI(nullptr);
+    DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
     m_canvas->DrawPath(*jsPath->GetPath());
     return nullptr;
 }
 
 napi_value JsCanvas::DrawLine(napi_env env, napi_callback_info info)
 {
-    DRAWING_PERFORMANCE_TEST_JS(nullptr);
+    DRAWING_PERFORMANCE_TEST_JS_RETURN(nullptr);
     JsCanvas* me = CheckParamsAndGetThis<JsCanvas>(env, info);
     return (me != nullptr) ? me->OnDrawLine(env, info) : nullptr;
 }
@@ -721,14 +721,14 @@ napi_value JsCanvas::OnDrawLine(napi_env env, napi_callback_info info)
     double endPy = 0.0;
     GET_DOUBLE_PARAM(ARGC_THREE, endPy);
 
-    DRAWING_PERFORMANCE_TEST_NAPI(nullptr);
+    DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
     m_canvas->DrawLine(Point(startPx, startPy), Point(endPx, endPy));
     return nullptr;
 }
 
 napi_value JsCanvas::DrawText(napi_env env, napi_callback_info info)
 {
-    DRAWING_PERFORMANCE_TEST_JS(nullptr);
+    DRAWING_PERFORMANCE_TEST_JS_RETURN(nullptr);
     JsCanvas* me = CheckParamsAndGetThis<JsCanvas>(env, info);
     return (me != nullptr) ? me->OnDrawText(env, info) : nullptr;
 }
@@ -750,7 +750,7 @@ napi_value JsCanvas::OnDrawText(napi_env env, napi_callback_info info)
     double y = 0.0;
     GET_DOUBLE_PARAM(ARGC_TWO, y);
 
-    DRAWING_PERFORMANCE_TEST_NAPI(nullptr);
+    DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
     m_canvas->DrawTextBlob(jsTextBlob->GetTextBlob().get(), x, y);
     return nullptr;
 }
@@ -888,7 +888,7 @@ napi_value JsCanvas::OnDrawRegion(napi_env env, napi_callback_info info)
 
 napi_value JsCanvas::AttachPen(napi_env env, napi_callback_info info)
 {
-    DRAWING_PERFORMANCE_TEST_JS(nullptr);
+    DRAWING_PERFORMANCE_TEST_JS_RETURN(nullptr);
     JsCanvas* me = CheckParamsAndGetThis<JsCanvas>(env, info);
     if (me == nullptr) {
         return nullptr;
@@ -909,14 +909,14 @@ napi_value JsCanvas::AttachPen(napi_env env, napi_callback_info info)
         ROSEN_LOGE("JsCanvas::AttachPen pen is nullptr");
         return nullptr;
     }
-    DRAWING_PERFORMANCE_TEST_NAPI(nullptr);
+    DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
     canvas->AttachPen(*jsPen->GetPen());
     return nullptr;
 }
 
 napi_value JsCanvas::AttachBrush(napi_env env, napi_callback_info info)
 {
-    DRAWING_PERFORMANCE_TEST_JS(nullptr);
+    DRAWING_PERFORMANCE_TEST_JS_RETURN(nullptr);
     JsCanvas* me = CheckParamsAndGetThis<JsCanvas>(env, info);
     if (me == nullptr) {
         return nullptr;
@@ -937,14 +937,14 @@ napi_value JsCanvas::AttachBrush(napi_env env, napi_callback_info info)
         ROSEN_LOGE("JsCanvas::AttachBrush brush is nullptr");
         return nullptr;
     }
-    DRAWING_PERFORMANCE_TEST_NAPI(nullptr);
+    DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
     canvas->AttachBrush(*jsBrush->GetBrush());
     return nullptr;
 }
 
 napi_value JsCanvas::DetachPen(napi_env env, napi_callback_info info)
 {
-    DRAWING_PERFORMANCE_TEST_JS(nullptr);
+    DRAWING_PERFORMANCE_TEST_JS_RETURN(nullptr);
     JsCanvas* me = CheckParamsAndGetThis<JsCanvas>(env, info);
     if (me == nullptr) {
         return nullptr;
@@ -954,14 +954,14 @@ napi_value JsCanvas::DetachPen(napi_env env, napi_callback_info info)
         ROSEN_LOGE("JsCanvas::DetachPen canvas is null");
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
     }
-    DRAWING_PERFORMANCE_TEST_NAPI(nullptr);
+    DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
     canvas->DetachPen();
     return nullptr;
 }
 
 napi_value JsCanvas::DetachBrush(napi_env env, napi_callback_info info)
 {
-    DRAWING_PERFORMANCE_TEST_JS(nullptr);
+    DRAWING_PERFORMANCE_TEST_JS_RETURN(nullptr);
     JsCanvas* me = CheckParamsAndGetThis<JsCanvas>(env, info);
     if (me == nullptr) {
         return nullptr;
@@ -971,7 +971,7 @@ napi_value JsCanvas::DetachBrush(napi_env env, napi_callback_info info)
         ROSEN_LOGE("JsCanvas::DetachBrush canvas is null");
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
     }
-    DRAWING_PERFORMANCE_TEST_NAPI(nullptr);
+    DRAWING_PERFORMANCE_TEST_NAP_RETURN(nullptr);
     canvas->DetachBrush();
     return nullptr;
 }

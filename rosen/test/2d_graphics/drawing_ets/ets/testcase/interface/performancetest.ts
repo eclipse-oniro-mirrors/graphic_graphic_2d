@@ -77,10 +77,10 @@ export class PerformanceCanvasDrawTextBlob extends TestBase {
   public OnTestPerformance(canvas: drawing.Canvas) {
     let text : string = 'textblob';
     const font : drawing.Font = new drawing.Font();
-    font.setSize(20)
+    font.setSize(50)
     const textBlob = drawing.TextBlob.makeFromString(text, font, drawing.TextEncoding.TEXT_ENCODING_UTF8);
     for (let i = 0; i < this.testCount_; i++) {
-      canvas.drawTextBlob(textBlob, 0, 0);
+      canvas.drawTextBlob(textBlob, 100, 100);
     }
   }
 }

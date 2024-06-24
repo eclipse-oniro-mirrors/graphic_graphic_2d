@@ -228,9 +228,6 @@ void DrawCmdList::MarshallingDrawOps()
 
 void DrawCmdList::CaculatePerformanceOpType()
 {
-    if (!PerformanceCaculate::GetDrawingTestRecordingEnabled()) {
-        return;
-    }
     uint32_t offset = offset_;
     const int caculatePerformaceCount = 500;    // 被测单接口用例至少出现500次以上
     std::map<uint32_t, uint32_t> opTypeCountMap;
@@ -256,7 +253,9 @@ void DrawCmdList::CaculatePerformanceOpType()
 
 void DrawCmdList::UnmarshallingDrawOps()
 {
-    CaculatePerformanceOpType();
+    if (PerformanceCaculate::GetDrawingTestRecordingEnabled()) {
+        CaculatePerformanceOpType();
+    }
     if (performanceCaculateOpType_ != 0) {
         LOGI("Drawing Performance UnmarshallingDrawOps begin %{public}llu", PerformanceCaculate::GetUpTime());
     }

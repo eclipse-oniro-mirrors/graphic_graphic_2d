@@ -17,29 +17,29 @@
 #define PERFORMANCE_H
 
 #ifdef DRAWING_PERFORMANCE_TEST
-#define DRAWING_PERFORMANCE_TEST_JS(data)                                   \
+#define DRAWING_PERFORMANCE_TEST_JS_RETURN(data)                            \
     if (Drawing::PerformanceCaculate::GetDrawingTestJsEnabled()) {          \
         return (data);                                                      \
     }
-#define DRAWING_PERFORMANCE_TEST_NAPI(data)                                 \
+#define DRAWING_PERFORMANCE_TEST_NAP_RETURN(data)                           \
     if (Drawing::PerformanceCaculate::GetDrawingTestNapiEnabled()) {        \
         return (data);                                                      \
     }
-#define DRAWING_PERFORMANCE_TEST_SKIA(data)                                 \
+#define DRAWING_PERFORMANCE_TEST_SKIA_RETURN(data)                          \
     if (Drawing::PerformanceCaculate::GetDrawingTestSkiaEnabled()) {        \
         return (data);                                                      \
     }
-#define DRAWING_PERFORMANCE_TEST_SKIA_RETURN                                \
+#define DRAWING_PERFORMANCE_TEST_SKIA_NO_PARAM_RETURN                       \
     if (Drawing::PerformanceCaculate::GetDrawingTestSkiaEnabled()) {        \
         return;                                                             \
     }
 #define DRAWING_PERFORMANCE_START_CACULATE Drawing::PerformanceCaculate::SetCaculateSwitch(true)
 #define DRAWING_PERFORMANCE_STOP_CACULATE Drawing::PerformanceCaculate::SetCaculateSwitch(false)
 #else
-#define DRAWING_PERFORMANCE_TEST_JS(data)
-#define DRAWING_PERFORMANCE_TEST_NAPI(data)
-#define DRAWING_PERFORMANCE_TEST_SKIA(data)
-#define DRAWING_PERFORMANCE_TEST_SKIA_RETURN
+#define DRAWING_PERFORMANCE_TEST_JS_RETURN(data)
+#define DRAWING_PERFORMANCE_TEST_NAP_RETURN(data)
+#define DRAWING_PERFORMANCE_TEST_SKIA_RETURN(data)
+#define DRAWING_PERFORMANCE_TEST_SKIA_NO_PARAM_RETURN
 #define DRAWING_PERFORMANCE_START_CACULATE
 #define DRAWING_PERFORMANCE_STOP_CACULATE
 #endif

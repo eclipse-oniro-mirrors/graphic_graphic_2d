@@ -83,8 +83,8 @@ protected:
     void Pixmap2RawFile(void *pixelmap, uint32_t pixelMapSize);
     void Pixmap2ImageFile(OH_PixelmapNative* pixelMap);
 
-    std::chrono::high_resolution_clock::time_point LogStart();
-    void LogEnd(std::chrono::high_resolution_clock::time_point start);
+    unsigned long long LogStart();
+    void LogEnd(unsigned long long longstart);
 
     void* dstPixels_ = nullptr;
 
