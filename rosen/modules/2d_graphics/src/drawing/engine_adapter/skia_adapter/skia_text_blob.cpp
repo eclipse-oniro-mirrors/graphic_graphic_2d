@@ -205,6 +205,9 @@ Path SkiaTextBlob::GetDrawingPathforTextBlob(uint16_t glyphId, const TextBlob* b
 
 void SkiaTextBlob::GetDrawingPointsForTextBlob(const TextBlob* blob, std::vector<Point>& points)
 {
+    if (blob == nullptr) {
+        return;
+    }
     SkTextBlob* skTextBlob = nullptr;
     if (blob) {
         auto skiaBlobImpl = blob->GetImpl<SkiaTextBlob>();
