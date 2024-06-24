@@ -1374,6 +1374,9 @@ void RSMainThread::CollectInfoForHardwareComposer()
                         "rs debug: name %s, id %llu, isLastFrameHwcEnabled not enabled and buffer consumed",
                         surfaceNode->GetName().c_str(), surfaceNode->GetId());
                 } else {
+                    if (surfaceNode->GetAncoForceDoDirect()) {
+                        surfaceNode->SetContentDirty();
+                    }
                     surfaceNode->SetHwcDelayDirtyFlag(true);
                 }
             } else { // hwc -> hwc
@@ -3531,11 +3534,6 @@ void RSMainThread::UpdateUIFirstSwitch()
 {
     RSUifirstManager::Instance().SetUseDmaBuffer(RSSystemParameters::GetUIFirstDmaBufferEnabled() &&
         deviceType_ == DeviceType::PHONE);
-    if (RSSystemProperties::GetUIFirstForceEnabled()) {
-        isUiFirstOn_ = true;
-        RSUifirstManager::Instance().SetUiFirstSwitch(isUiFirstOn_);
-        return;
-    }
 
     const std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
     if (!rootNode) {
