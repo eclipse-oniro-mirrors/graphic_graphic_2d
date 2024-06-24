@@ -674,7 +674,7 @@ void RSRenderServiceConnection::TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCap
             mainThread_->PostTask(captureTask);
         }
     } else {
-        if (RSSystemProperties::GetRenderParallelEnabled()) {
+        if (RSUniRenderJudgement::IsUniRender()) {
             RSMainThread::Instance()->PostTask([id, callback, scaleX, scaleY, isSync]() {
                     TakeSurfaceCaptureForUiParallel(id, callback, scaleX, scaleY, isSync);
                 }, "UiCapture", 0, AppExecFwk::EventQueue::Priority::IMMEDIATE);
@@ -694,26 +694,13 @@ void RSRenderServiceConnection::TakeSurfaceCaptureForUiParallel(
         return;
     }
 
+    std::function<void()> captureTask = [id, callback, scaleX, scaleY]() {
+        RSUiCaptureTaskParallel::Capture(id, callback, scaleX, scaleY);
+    };
     if (!isSync && node->IsOnTheTree() && !node->IsDirty()) {
-        std::shared_ptr<RSUiCaptureTaskParallel> captureHandle =
-            std::make_shared<RSUiCaptureTaskParallel>(id, scaleX, scaleY);
-        if (!captureHandle->CreateResources()) {
-            RS_LOGE("RSRenderServiceConnection::TakeSurfaceCaptureForUiParallel CreateResources failed");
-            callback->OnSurfaceCapture(id, nullptr);
-            return;
-        }
-
-        std::function<void()> captureTask = [captureHandle, id, callback]() -> void {
-            if (!captureHandle->Run(callback)) {
-                callback->OnSurfaceCapture(id, nullptr);
-            }
-        };
-        RSUniRenderThread::Instance().PostSyncTask(captureTask);
+        RSUniRenderThread::Instance().PostTask(captureTask);
     } else {
-        std::function<void()> prepareCaptureTask = [id, callback, scaleX, scaleY]() -> void {
-            RSUiCaptureTaskParallel::Capture(id, callback, scaleX, scaleY);
-        };
-        RSMainThread::Instance()->AddUiCaptureTask(id, prepareCaptureTask);
+        RSMainThread::Instance()->AddUiCaptureTask(id, captureTask);
     }
 }
 

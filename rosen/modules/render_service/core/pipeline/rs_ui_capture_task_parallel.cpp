@@ -81,7 +81,7 @@ void RSUiCaptureTaskParallel::Capture(NodeId id, sptr<RSISurfaceCaptureCallback>
             callback->OnSurfaceCapture(id, nullptr);
         }
     };
-    RSUniRenderThread::Instance().PostSyncTask(captureTask);
+    RSUniRenderThread::Instance().PostTask(captureTask);
 }
 
 bool RSUiCaptureTaskParallel::CreateResources()
