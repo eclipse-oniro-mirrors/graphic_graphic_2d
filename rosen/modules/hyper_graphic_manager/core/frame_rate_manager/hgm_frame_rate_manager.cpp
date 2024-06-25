@@ -604,6 +604,9 @@ int32_t HgmFrameRateManager::GetPreferredFps(const std::string& type, float velo
     if (!configData) {
         return 0;
     }
+    if (ROSEN_EQ(velocity, 0.f)) {
+        return 0;
+    }
     const std::string settingMode = std::to_string(curRefreshRateMode_);
     if (configData->screenConfigs_.count(curScreenStrategyId_) &&
         configData->screenConfigs_[curScreenStrategyId_].count(settingMode) &&
