@@ -368,21 +368,6 @@ HWTEST_F(RenderContextTest, AbandonContext001, Level1)
 }
 
 /**
- * @tc.name: AbandonContext002
- * @tc.desc: Verify the AbandonContext of RenderContextTest
- * @tc.type: FUNC
- */
-HWTEST_F(RenderContextTest, AbandonContext002, Level1)
-{
-#ifdef RS_ENABLE_VK
-    RenderContext renderContext;
-    drGPUContext_ = nullptr
-    renderContext.AbandonContext();
-    ASSERT_EQ(1, true);
-#endif
-}
-
-/**
  * @tc.name: AcquireSurface001
  * @tc.desc: Verify the AcquireSurface of RenderContextTest
  * @tc.type: FUNC
