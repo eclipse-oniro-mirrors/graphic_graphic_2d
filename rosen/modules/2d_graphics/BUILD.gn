@@ -162,6 +162,7 @@ template("graphics2d_source_set") {
       "$drawing_core_src_dir/utils/matrix44.cpp",
       "$drawing_core_src_dir/utils/memory_stream.cpp",
       "$drawing_core_src_dir/utils/object_mgr.cpp",
+      "$drawing_core_src_dir/utils/performanceCaculate.cpp",
       "$drawing_core_src_dir/utils/region.cpp",
       "$drawing_core_src_dir/utils/resource_holder.cpp",
       "$drawing_core_src_dir/utils/round_rect.cpp",

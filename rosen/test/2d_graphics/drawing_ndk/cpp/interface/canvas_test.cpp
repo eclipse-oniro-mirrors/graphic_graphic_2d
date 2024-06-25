@@ -319,7 +319,7 @@ void CanvasReadPixels::OnTestPerformance(OH_Drawing_Canvas* canvas)
 {
     bool res;
     OH_Drawing_Image_Info imageInfo { 100, 100, COLOR_FORMAT_RGBA_8888, ALPHA_FORMAT_OPAQUE }; // 100 用于宽高
-    char* dstPixels = static_cast<char*>malloc(100 * 100 * 4); // 100 4 用于像素计算
+    char* dstPixels = static_cast<char*>(malloc(100 * 100 * 4)); // 100 4 用于像素计算
     if (dstPixels == nullptr)
         return;
     OH_Drawing_Rect* rect = OH_Drawing_RectCreate(0, 0, 100, 100); // 0, 0, 100, 100 创建矩形

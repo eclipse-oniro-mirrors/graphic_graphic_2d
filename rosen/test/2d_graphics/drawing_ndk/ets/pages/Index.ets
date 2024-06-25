@@ -153,17 +153,16 @@ struct Index {
                 }
               })
           }
-          if (this.drawingType == 'gpu-xnode') {
-            Button("Clear")
-              .fontSize('16fp')
-              .id('Clear')
-              .onClick(() => {
-                console.log(TAG, "Clear click");
-                this.myNodeController.Clear();
-              })
-              .width('30%')
-              .shadow(ShadowStyle.OUTER_DEFAULT_LG)
-          }
+          Button("Clear")
+            .fontSize('16fp')
+            .id('Clear')
+            .onClick(() => {
+              console.log(TAG, "Clear click");
+              this.myNodeController.Clear();
+              this.caseNameStr = ""
+            })
+            .width('30%')
+            .shadow(ShadowStyle.OUTER_DEFAULT_LG)
         }
         .width('80%')
         .height('7%')

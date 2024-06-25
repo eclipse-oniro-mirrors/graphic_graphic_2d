@@ -141,18 +141,17 @@ struct Index {
                 }
               })
           }
-          if (this.drawingType == 'gpu') {
-            Button("Clear")
-              .fontSize('16fp')
-              .id('Clear')
-              .fontWeight(500)
-              .onClick(() => {
-                console.log(TAG, "Clear click");
-                this.myNodeController.Clear();
-              })
-              .width('30%')
-              .shadow(ShadowStyle.OUTER_DEFAULT_LG)
-          }
+          Button("Clear")
+            .fontSize('16fp')
+            .id('Clear')
+            .fontWeight(500)
+            .onClick(() => {
+              console.log(TAG, "Clear click");
+              this.myNodeController.Clear();
+              this.caseNameStr = ""
+            })
+            .width('30%')
+            .shadow(ShadowStyle.OUTER_DEFAULT_LG)
         }
         .width('80%')
         .height('7%')
@@ -325,7 +324,7 @@ struct Index {
     test.TestPerformanceCpu().then(()=>{
       this.context.clearRect(0, 0, test.width_, test.height_);
       this.context.drawImage(test.pixelMap_, 0, 0);
-      this.LogMsg('Count: ' + testCount + ', used: ' + test.time_.toString() + 'ms');
+      this.LogMsg('Count: ' + testCount + ', used: ' + test.time_.toString() + 'ns');
     });
     console.log(TAG, 'TestPerformanceCpu end');
   }

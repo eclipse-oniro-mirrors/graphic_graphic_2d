@@ -37,9 +37,13 @@
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/time.h>
+#include <sys/timerfd.h>
 #include <unistd.h>
 #include <unordered_map>
 #include "common/log_common.h"
+
+const int SECOND_TO_NANO = 1000000000;
 
 void TestBase::SetFileName(std::string fileName)
 {
@@ -85,18 +89,26 @@ void TestBase::TestFunctionGpu(napi_env env)
 
 void TestBase::TestFunctionGpu(OH_Drawing_Canvas *canvas) { OnTestFunction(canvas); }
 
-std::chrono::high_resolution_clock::time_point TestBase::LogStart()
+unsigned long long TestBase::LogStart()
 {
-    auto start = std::chrono::high_resolution_clock::now();
+    unsigned long long start = 0;
+    struct timespec tv {};
+    if (clock_gettime(CLOCK_BOOTTIME, &tv) >= 0) {
+        start = tv.tv_sec * SECOND_TO_NANO + tv.tv_nsec;
+    }
     return start;
 }
 
-void TestBase::LogEnd(std::chrono::high_resolution_clock::time_point start)
+void TestBase::LogEnd(unsigned long long start)
 {
-    auto end = std::chrono::high_resolution_clock::now();
+    unsigned long long end = 0;
+    struct timespec tv {};
+    if (clock_gettime(CLOCK_BOOTTIME, &tv) >= 0) {
+        end = tv.tv_sec * SECOND_TO_NANO + tv.tv_nsec;
+    }
     // LOGE is to avoid log loss
     DRAWING_LOGE("DrawingApiTest TotalApiCallCount: [%{public}u]", testCount_);
-    usedTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    usedTime_ = end - start;
     DRAWING_LOGE("DrawingApiTest TotalApiCallTime: [%{public}u]", usedTime_);
 }
 

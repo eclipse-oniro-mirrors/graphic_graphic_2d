@@ -50,6 +50,7 @@
 #include "drawable/dfx/rs_dirty_rects_dfx.h"
 #include "drawable/dfx/rs_skp_capture_dfx.h"
 #include "platform/ohos/overdraw/rs_overdraw_controller.h"
+#include "utils/performanceCaculate.h"
 namespace OHOS::Rosen::DrawableV2 {
 namespace {
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
@@ -660,9 +661,16 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
     RSMainThread::Instance()->SetDirtyFlag(false);
 
+    if (Drawing::PerformanceCaculate::GetDrawingFlushPrint()) {
+        RS_LOGI("Drawing Performance Flush start %{public}llu", Drawing::PerformanceCaculate::GetUpTime(false));
+    }
     RS_TRACE_BEGIN("RSDisplayRenderNodeDrawable Flush");
     renderFrame->Flush();
     RS_TRACE_END();
+    if (Drawing::PerformanceCaculate::GetDrawingFlushPrint()) {
+        RS_LOGI("Drawing Performance Flush end %{public}llu", Drawing::PerformanceCaculate::GetUpTime(false));
+        Drawing::PerformanceCaculate::ResetCaculateTimeCount();
+    }
 
     // process round corner display
     auto rcdInfo = std::make_unique<RcdInfo>();
