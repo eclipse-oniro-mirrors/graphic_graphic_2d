@@ -1403,7 +1403,7 @@ bool RSProperties::IsWaterRippleValid() const
 {
     return ROSEN_GE(waterRippleProgress_, 0.0f) && ROSEN_LE(waterRippleProgress_, 1.0f) &&
            waterRippleParams_.has_value() && ROSEN_GE(waterRippleParams_->waveCount, 1.0f) &&
-           ROSEN_GE(waterRippleParams_->waveCount, 3.0f);
+           ROSEN_LE(waterRippleParams_->waveCount, 3.0f);
 }
 
 void RSProperties::SetFgBrightnessRates(const Vector4f& rates)
