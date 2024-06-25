@@ -540,7 +540,6 @@ void VSyncDistributor::OnDVSyncTrigger(int64_t now, int64_t period, uint32_t ref
         event_.timestamp = now;
         event_.vsyncCount++;
     }
-
     if (refreshRate > 0) {
         event_.vsyncPulseCount += static_cast<int64_t>(VSYNC_MAX_REFRESHRATE / refreshRate);
         generatorRefreshRate_ = refreshRate;
