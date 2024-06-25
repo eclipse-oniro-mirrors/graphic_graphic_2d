@@ -69,7 +69,7 @@ group("libfence") {
 }
 
 group("libvulkan") {
-  public_external_deps = [ "vulkan-loader:vulkan_loader" ]
+  public_deps = libvulkan
 }
 
 group("libnative_image") {
