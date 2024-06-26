@@ -203,5 +203,9 @@ void RSUniRenderProcessor::ProcessRcdSurface(RSRcdSurfaceRenderNode& node)
     layers_.emplace_back(layer);
 }
 
+std::vector<LayerInfoPtr> RSUniRenderProcessor::GetLayers() const
+{
+    return layers_;
+}
 } // namespace Rosen
 } // namespace OHOS

@@ -42,6 +42,7 @@
 #include "pipeline/rs_uni_render_thread.h"
 #include "pipeline/rs_uni_render_util.h"
 #include "pipeline/sk_resource_manager.h"
+#include "pipeline/rs_pointer_render_manager.h"
 #include "platform/common/rs_log.h"
 #include "platform/ohos/rs_jank_stats.h"
 #include "property/rs_point_light_manager.h"
@@ -696,6 +697,13 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     CreateUIFirstLayer(processor);
     processor->PostProcess();
     RS_TRACE_END();
+
+    if (!mirroredNode) {
+        RS_TRACE_BEGIN("RSDisplayRenderNodeDrawable ProcessColorPicker");
+        RSPointerRenderManager::GetInstance().ProcessColorPicker(processor, curCanvas_->GetGPUContext());
+        RSPointerRenderManager::GetInstance().SetCacheImgForPointer(nullptr);
+        RS_TRACE_END();
+    }
 }
 
 void RSDisplayRenderNodeDrawable::DrawMirrorScreen(std::shared_ptr<RSDisplayRenderNode>& displayNodeSp,
