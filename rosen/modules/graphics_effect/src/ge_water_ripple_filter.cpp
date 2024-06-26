@@ -51,10 +51,6 @@ std::shared_ptr<Drawing::Image> GEWaterRippleFilter::ProcessImage(Drawing::Canva
     Drawing::Matrix matrix;
     auto shader = Drawing::ShaderEffect::CreateImageShader(*image, Drawing::TileMode::CLAMP,
         Drawing::TileMode::CLAMP, Drawing::SamplingOptions(Drawing::FilterMode::LINEAR), matrix);
-    if (shader == nullptr) {
-        LOGI("GEWaterRippleFilter::ProcessImage shader create failed");
-        return nullptr;
-    }
     if (g_waterRippleEffect == nullptr) {
         if (InitWaterRippleEffect() == false) {
             LOGE("GEWaterRippleFilter::ProcessImage g_waterRippleEffect init failed");
@@ -84,8 +80,10 @@ std::shared_ptr<Drawing::Image> GEWaterRippleFilter::ProcessImage(Drawing::Canva
 
 bool GEWaterRippleFilter::InitWaterRippleEffect()
 {
+    g_waterRippleEffect = Drawing::RuntimeEffect::CreateForShader(shaderString);
     if (g_waterRippleEffect == nullptr) {
-        g_waterRippleEffect = Drawing::RuntimeEffect::CreateForShader(shaderString);
+        LOGE("GEWaterRippleFilter::RuntimeShader failed to create water ripple filter");
+        return false;
     }
     return true;
 }
