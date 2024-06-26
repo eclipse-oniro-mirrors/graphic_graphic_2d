@@ -16,6 +16,7 @@
 #include "drawing_canvas_utils.h"
 
 #include <memory>
+
 #include "pipeline/rs_recording_canvas.h"
 #include "pixel_map.h"
 #include "render/rs_pixel_map_util.h"
@@ -39,6 +40,10 @@ void DrawingCanvasUtils::DrawPixelMapRect(Drawing::Canvas* canvas, std::shared_p
         return;
     }
     std::shared_ptr<Drawing::Image> image = RSPixelMapUtil::ExtractDrawingImage(pixelMap);
+    if (!image) {
+        g_drawingErrorCode = OH_DRAWING_ERROR_INVALID_PARAMETER;
+        return;
+    }
     canvas->DrawImageRect(*image, src ? *src : Drawing::Rect(0, 0, pixelMap->GetWidth(), pixelMap->GetHeight()),
         *dst, sampling ? *sampling : Drawing::SamplingOptions());
 #endif
