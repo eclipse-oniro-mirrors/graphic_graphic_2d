@@ -362,6 +362,8 @@ RSDisplaySoloistManager& RSDisplaySoloistManager::GetInstance() noexcept
     return soloistManager;
 }
 
+RSDisplaySoloistManager::~RSDisplaySoloistManager() noexcept {}
+
 bool RSDisplaySoloistManager::InitVsyncReceiver()
 {
     if (hasInitVsyncReceiver_) {
