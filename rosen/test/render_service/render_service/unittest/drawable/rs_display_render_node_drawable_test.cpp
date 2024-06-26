@@ -392,19 +392,6 @@ HWTEST_F(RSDisplayRenderNodeDrawableTest, CreateUIFirstLayerTest, TestSize.Level
 }
 
 /**
- * @tc.name: RemoveClearMemoryTask
- * @tc.desc: Test RemoveClearMemoryTask
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSDisplayRenderNodeDrawableTest, RemoveClearMemoryTaskTest, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    displayDrawable_->RemoveClearMemoryTask();
-    displayDrawable_->PostClearMemoryTask();
-}
-
-/**
  * @tc.name: OnDraw
  * @tc.desc: Test OnDraw
  * @tc.type: FUNC
