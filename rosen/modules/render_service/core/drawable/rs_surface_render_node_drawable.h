@@ -248,6 +248,8 @@ private:
     // DMA Buffer
     bool DrawUIFirstCacheWithDma(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
     void DrawDmaBufferWithGPU(RSPaintFilterCanvas& canvas);
+    void DrawSelfDrawingNodeBuffer(RSSurfaceRenderNode& surfaceNode, RSPaintFilterCanvas& canvas,
+        const RSSurfaceRenderParams& surfaceParams, BufferDrawParam& params);
 #ifndef ROSEN_CROSS_PLATFORM
     sptr<IBufferConsumerListener> consumerListener_ = nullptr;
 #endif
