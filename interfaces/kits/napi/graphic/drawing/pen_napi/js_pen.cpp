@@ -502,7 +502,6 @@ napi_value JsPen::GetFillPath(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-
     Rect* rect = nullptr;
     napi_valuetype isRectNullptr;
     napi_typeof(env, argv[ARGC_TWO], &isRectNullptr);
@@ -521,7 +520,6 @@ napi_value JsPen::GetFillPath(napi_env env, napi_callback_info info)
     
     return CreateJsValue(env, pen->GetFillPath(*src->GetPath(),
         *dst->GetPath(), rect, matrix->GetMatrix() ? *matrix->GetMatrix().get() : Matrix()));
-    
 }
 
 Pen* JsPen::GetPen()
