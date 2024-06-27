@@ -138,5 +138,19 @@ HWTEST_F(RsFrameReportTest, SetFrameParam001, TestSize.Level1)
 {
     RsFrameReport::GetInstance().SetFrameParam(0, 0, 0, 0);
 }
+
+/**
+ * @tc.name: LoadLibrary001
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsFrameReportTest, LoadLibrary001, TestSize.Level1)
+{
+    RsFrameReport& fr = RsFrameReport::GetInstance();
+    fr.CloseLibrary();
+    fr.LoadLibrary();
+    fr.CloseLibrary();
+}
 } // namespace Rosen
 } // namespace OHOS
