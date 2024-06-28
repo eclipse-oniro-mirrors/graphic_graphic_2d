@@ -25,9 +25,9 @@ namespace OHOS {
 namespace Rosen {
 namespace {
     const std::string bufferName = "frameBuffer";
-    const std::string aceAnimato = "aceAnimato";
-    const std::string rosenWeb = "rosenWeb";
-    const std::string ohFlutter = "ohFlutter";
+    const std::string aceAnimato = "AceAnimato";
+    const std::string rosenWeb = "RosenWeb";
+    const std::string ohFlutter = "oh_Flutter";
     const std::string otherSurface = "Other_SF";
     constexpr uint64_t  currTime = 100000000;
     constexpr uint64_t  lastTime = 200000000;
@@ -163,7 +163,7 @@ HWTEST_F(HgmIdleDetectorTest, GetSupportSurface, Function | SmallTest | Level1)
         STEP("1. get an idledetector") {
             STEP_ASSERT_NE(idledetector, nullptr);
         }
-        STEP("2. set idledetector date") {
+        STEP("2. set surface date") {
             idledetector->SetAppSupportStatus(true);
             idledetector->ClearAppBufferBlackList();
             bool ret = idledetector->GetSupportSurface();
@@ -198,10 +198,10 @@ HWTEST_F(HgmIdleDetectorTest, GetSurfaceUpExpectFps001, Function | SmallTest | L
         STEP("1. get an idledetector") {
             STEP_ASSERT_NE(idledetector, nullptr);
         }
-        STEP("2. get idledetector up expect fps") {
+        STEP("2. get surface up expect fps") {
             idledetector->SetAppSupportStatus(true);
             idledetector->ClearAppBufferList();
-            uin32_t ret = idledetector->GetSurfaceUpExpectFps();
+            uint32_t ret = idledetector->GetSurfaceUpExpectFps();
             STEP_ASSERT_EQ(ret, fps120HZ);
 
             idledetector->SetAceAnimatorIdleStatus(false);
@@ -255,7 +255,7 @@ HWTEST_F(HgmIdleDetectorTest, GetSurfaceUpExpectFps002, Function | SmallTest | L
             idledetector->appBufferList_.push_back(std::make_pair(rosenWeb, fps90HZ));
             idledetector->appBufferList_.push_back(std::make_pair(ohFlutter, fps90HZ));
             idledetector->appBufferList_.push_back(std::make_pair(aceAnimato, fps60HZ));
-            ret = idledetector->GetSurfaceUpExpectFps();
+            uint32_t ret = idledetector->GetSurfaceUpExpectFps();
             STEP_ASSERT_EQ(ret, fps120HZ);
 
             idledetector->ClearAppBufferList();
@@ -275,7 +275,6 @@ HWTEST_F(HgmIdleDetectorTest, GetSurfaceUpExpectFps002, Function | SmallTest | L
             idledetector->appBufferList_.push_back(std::make_pair(bufferName, fps60HZ));
             ret = idledetector->GetSurfaceUpExpectFps();
             STEP_ASSERT_EQ(ret, fps120HZ);
-
         }
     }
 }

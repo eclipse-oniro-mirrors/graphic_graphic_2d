@@ -21,9 +21,9 @@ namespace {
     constexpr uint64_t BUFFER_IDLE_TIME_OUT = 200000000; // 200ms
     constexpr uint64_t MAX_BUFFER_COUNT = 10;
     constexpr uint32_t MAX_BUFFER_LENGTH = 10;
-	constexpr uint32_t FPS_120HZ = 120;
-	const std::string ACEANIMATO_NAME = "AceAnimato";
-	const std::string OTHER_SURFACE = "Other_SF";
+    constexpr uint32_t FPS_120HZ = 120;
+    const std::string ACEANIMATO_NAME = "AceAnimato";
+    const std::string OTHER_SURFACE = "Other_SF";
 }
 
 void HgmIdleDetector::UpdateSurfaceTime(const std::string& name, uint64_t timestamp)
@@ -43,11 +43,11 @@ void HgmIdleDetector::UpdateSurfaceTime(const std::string& name, uint64_t timest
         temp = name.substr(0, MAX_BUFFER_LENGTH);
     }
 
-	auto it = std::find(supportAppBufferList_.begin(), supportAppBufferList_.end(), OTHER_SURFACE);
-	if (it == supportAppBufferList_.end()) {
-		auto name = std::find(supportAppBufferList_.begin(), supportAppBufferList_.end(), temp);
-			if (name == supportAppBufferList_.end()) { return; }
-	}
+    auto it = std::find(supportAppBufferList_.begin(), supportAppBufferList_.end(), OTHER_SURFACE);
+    if (it == supportAppBufferList_.end()) {
+        auto name = std::find(supportAppBufferList_.begin(), supportAppBufferList_.end(), temp);
+            if (name == supportAppBufferList_.end()) { return; }
+    }
 
     frameTimeMap_[temp] = timestamp;
 }
@@ -74,21 +74,21 @@ bool HgmIdleDetector::GetSurFaceIdleState(uint64_t timestamp)
 
 bool HgmIdleDetector::GetSupportSurface()
 {
-	if (appBufferBlackList_.empty()) {
-		return true;
-	}
-	if (std::find(appBufferBlackList_.begin(), appBufferBlackList_.end(), ACEANIMATO_NAME)
-		== appBufferBlackList_.end() && !aceAnimatorIdleState_) { return true; }
+    if (appBufferBlackList_.empty()) {
+        return true;
+    }
+    if (std::find(appBufferBlackList_.begin(), appBufferBlackList_.end(), ACEANIMATO_NAME)
+        == appBufferBlackList_.end() && !aceAnimatorIdleState_) { return true; }
 
-	if (frameTimeMap_.empty()) {
-		return false;
-	}
+    if (frameTimeMap_.empty()) {
+        return false;
+    }
 
-	for (auto &it : frameTimeMap_) {
-		if (std::find(appBufferBlackList_.begin(), appBufferBlackList_.end(), it.first)
-			== appBufferBlackList_.end()) { return true; }
-	}
-	return false;
+    for (auto &it : frameTimeMap_) {
+        if (std::find(appBufferBlackList_.begin(), appBufferBlackList_.end(), it.first)
+            == appBufferBlackList_.end()) { return true; }
+    }
+    return false;
 }
 
 uint32_t HgmIdleDetector::GetSurfaceUpExpectFps()
@@ -110,9 +110,7 @@ uint32_t HgmIdleDetector::GetSurfaceUpExpectFps()
         auto key = member.first;
         auto it = std::find_if(appBufferList_.begin(), appBufferList_.end(),
             [&key](const std::pair<std::string, uint32_t>& pair) { return pair.first == key; });
-        if (it!= appBufferList_.end()) {
-            return fps;
-        }
+        if (it == appBufferList_.end()) { return fps; }
     }
 
     for (auto &it : appBufferList_) {

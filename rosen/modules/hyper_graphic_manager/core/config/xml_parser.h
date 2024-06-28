@@ -62,7 +62,7 @@ private:
     int32_t ParseAppTypes(xmlNode &node, std::unordered_map<int32_t, std::string> &appTypes);
     int32_t ParseVideoFrameVoteConfig(xmlNode &node);
     std::string ExtractPropertyValue(const std::string &propName, xmlNode &node);
-    void ParseAppBufferStrategyList(xmlNode &node, PolicyConfigData::StrategyConfig &strategy);
+    void ParseBufferStrategyList(xmlNode &node, PolicyConfigData::StrategyConfig &strategy);
     int32_t ParseSubSequentParams(xmlNode &node, std::string &paraName);
     void ParseAppBufferList(xmlNode &node);
     xmlDoc *xmlDocument_;

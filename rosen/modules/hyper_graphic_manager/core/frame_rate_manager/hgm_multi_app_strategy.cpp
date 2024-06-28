@@ -72,11 +72,12 @@ HgmErrCode HgmMultiAppStrategy::HandlePkgsEvent(const std::vector<std::string>& 
 void HgmMultiAppStrategy::HandleTouchInfo(TouchInfo& touchInfo)
 {
     RS_TRACE_NAME_FMT("[HandleTouchInfo] pkgName:%s, touchState:%d", touchInfo.pkgName.c_str(), touchInfo.touchState);
-    HGM_LOGD("touch info update, pkgName:%{public}s, touchState:%{public}d", touchInfo.pkgName.c_str(), touchInfo.touchState);
+    HGM_LOGD("touch info update, pkgName:%{public}s, touchState:%{public}d",
+        touchInfo.pkgName.c_str(), touchInfo.touchState);
     touchInfo_ = { touchInfo.pkgName, touchInfo.touchState, touchInfo.upExpectFps };
     if (touchInfo.pkgName == "" && !pkgs_.empty()) {
         auto [focusPkgName, pid, appType] = AnalyzePkgParam(pkgs_.front());
-        touchInfo_.pakName = focusPkgName;
+        touchInfo_.pkgName = focusPkgName;
         HGM_LOGD("auto change touch pkgName to focusPkgName:%{public}s", focusPkgName.c_str());
     }
     CalcVote();
@@ -269,7 +270,7 @@ void HgmMultiAppStrategy::UseStrategyNum()
         voteRes_.first = EXEC_SUCCESS;
         voteRes_.second = strategyConfigs.at(strategyName);
         OnLightFactor(voteRes_.second);
-        UpdateStrategyByTouch(voteRes_.second, touchInfo_.pakName);
+        UpdateStrategyByTouch(voteRes_.second, touchInfo_.pkgName);
     }
 }
 
@@ -396,14 +397,14 @@ void HgmMultiAppStrategy::UpdateStrategyByTouch(
                 touchInfo->touchState, strategy.down);
             strategy.min = settingStrategy.down;
             strategy.max = settingStrategy.down;
-        } else if (touchInfo->touchState = TouchState::UP_STATE && touchInfo->upExpectFps > 0) {
+        } else if (touchInfo->touchState == TouchState::UP_STATE && touchInfo->upExpectFps > 0) {
             RS_TRACE_NAME_FMT("[UpdateStrategyByTouch] state:%d, upExpectFps:%d force update",
                 touchInfo->touchState, touchInfo->upExpectFps);
             strategy.min = touchInfo->upExpectFps;
             strategy.max = touchInfo->upExpectFps;
         }
     } else {
-        if (pkgName != uniqueTouchInfo_->pakName) {
+        if (pkgName != uniqueTouchInfo_->pkgName) {
             return;
         }
         auto touchInfo = std::move(uniqueTouchInfo_);

@@ -146,7 +146,7 @@ public:
     std::string defaultRefreshRateMode_ = "-1";
     // <"120", "1">
     std::vector<std::pair<int32_t, int32_t>> refreshRateForSettings_;
-	std::vector<std::string> appBufferList_;
+    std::vector<std::string> appBufferList_;
     bool xmlCompatibleMode_ = false;
     bool safeVoteEnabled = true;
     // <"VIRTUAL_AXX", "4">

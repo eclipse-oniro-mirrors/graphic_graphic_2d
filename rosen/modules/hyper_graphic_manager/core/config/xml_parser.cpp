@@ -123,7 +123,7 @@ int32_t XMLParser::ParseParam(xmlNode &node)
     return EXEC_SUCCESS;
 }
 
-int32_t HgmXMLParser::ParseSubSequentParams(xmlNode &node, std::string &paraName)
+int32_t XMLParser::ParseSubSequentParams(xmlNode &node, std::string &paraName)
 {
     int32_t setResult = EXEC_SUCCESS;
 
@@ -234,7 +234,7 @@ int32_t XMLParser::ParseStrategyConfig(xmlNode &node)
         strategy.drawMin = IsNumber(drawMin) ? std::stoi(drawMin) : 0;
         strategy.drawMax = IsNumber(drawMax) ? std::stoi(drawMax) : 0;
         strategy.down = IsNumber(down) ? std::stoi(down) : strategy.max;
-        ParseAppBufferStrategyList(*currNode, strategy);
+        ParseBufferStrategyList(*currNode, strategy);
         mParsedData_->strategyConfigs_[name] = strategy;
         HGM_LOGI("HgmXMLParser ParseStrategyConfig name=%{public}s min=%{public}d drawMin=%{public}d",
                  name.c_str(), mParsedData_->strategyConfigs_[name].min, mParsedData_->strategyConfigs_[name].drawMin);
@@ -263,7 +263,7 @@ void XMLParser::ParseAppBufferList(xmlNode &node)
     }
 }
 
-void XMLParser::ParseAppBufferStrategyList(xmlNode &node, PolicyConfigData::StrategyConfig &strategy)
+void XMLParser::ParseBufferStrategyList(xmlNode &node, PolicyConfigData::StrategyConfig &strategy)
 {
     if (mParsedData_->appBufferList_.empty()) {
         return;
@@ -280,18 +280,18 @@ void XMLParser::ParseAppBufferStrategyList(xmlNode &node, PolicyConfigData::Stra
     }
     for (auto &it : config) {
         if (std::stoi(it.second) == 0) {
-            strategy.appBufferBlackList.emplace_back(it.first);
+            strategy.appBufferBlackList.push_back(it.first);
         } else {
-            strategy.appBufferList.emplace_back(make_pair(it.first, std::stoi(it.second)));
+            strategy.appBufferList.push_back(make_pair(it.first, std::stoi(it.second)));
         }
     }
     if (strategy.appBufferList.empty()) {
         return;
     }
     std::sort(strategy.appBufferList.begin(), strategy.appBufferList.end(),
-        [](const std::pair<std::string uint32_t>& a, const std::pair<std::string uint32_t>& b) {
+        [](const std::pair<std::string, uint32_t>& a, const std::pair<std::string, uint32_t>& b) {
         return a.second > b.second;
-    )};
+    });
 
     return;
 }
@@ -347,8 +347,6 @@ int32_t XMLParser::ParseSubScreenConfig(xmlNode &node, PolicyConfigData::ScreenS
         ParseMultiAppStrategy(*thresholdNode, screenSetting);
     } else if (name == "app_types") {
         setResult = ParseAppTypes(*thresholdNode, screenSetting.appTypes);
-    } else if (name == "additional_touch_rate_config") {
-        setResult = ParseSimplex(*thresholdNode, screenSetting.appBufferList);
     } else {
         setResult = EXEC_SUCCESS;
     }
