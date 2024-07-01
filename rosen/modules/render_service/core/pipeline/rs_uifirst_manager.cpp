@@ -721,9 +721,6 @@ void RSUifirstManager::AddPendingPostNode(NodeId id, std::shared_ptr<RSSurfaceRe
 
     if (currentFrameCacheType == MultiThreadCacheType::LEASH_WINDOW ||
         currentFrameCacheType == MultiThreadCacheType::NONFOCUS_WINDOW) {
-        if (isRecentTaskScene_.load() && !node->IsNodeToBeCaptured()) {
-            node->SetIsNodeToBeCaptured(true);
-        }
         // delete card node in leashwindow tree
         for (auto it = pendingPostCardNodes_.begin(); it != pendingPostCardNodes_.end();) {
             auto surfaceNode = it->second;
@@ -1018,7 +1015,7 @@ bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animat
         if (RSUifirstManager::Instance().IsRecentTaskScene()) {
             isNeedAssignToSubThread = node.IsScale() && LeashWindowContainMainWindow(node);
         } else {
-            isNeedAssignToSubThread = animation || node.IsNodeToBeCaptured();
+            isNeedAssignToSubThread = animation;
         }
 
         // 1: Planning: support multi appwindows
@@ -1189,7 +1186,7 @@ void RSUifirstManager::UpdateUIFirstLayerInfo(const ScreenInfo& screenInfo)
 void RSUifirstManager::ProcessTreeStateChange(RSSurfaceRenderNode& node)
 {
     // Planning: do not clear complete image for card
-    if (node.IsOnTheTree() || node.IsNodeToBeCaptured()) {
+    if (node.IsOnTheTree()) {
         return;
     }
     RSUifirstManager::Instance().DisableUifirstNode(node);
