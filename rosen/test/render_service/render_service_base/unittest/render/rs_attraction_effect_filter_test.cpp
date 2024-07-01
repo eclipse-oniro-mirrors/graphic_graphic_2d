@@ -87,8 +87,7 @@ HWTEST_F(RSAttractionEffectFilterTest, IsValid001, TestSize.Level1)
     EXPECT_FALSE(firstEffectFilter.IsValid());
 
     RSAttractionEffectFilter secondEffectFilter(1.f);
-    EXPECT_TRUE(firstEffectFilter.IsValid());
-
+    EXPECT_TRUE(secondEffectFilter.IsValid());
 }
 
 /**
@@ -115,12 +114,14 @@ HWTEST_F(RSAttractionEffectFilterTest, GetAttractionFraction001, TestSize.Level1
 HWTEST_F(RSAttractionEffectFilterTest, GetAttractionDirtyRegion001, TestSize.Level1)
 {
     RSAttractionEffectFilter firstEffectFilter(0.5f);
-    EXPECT_TRUE(firstEffectFilter.GetAttractionDirtyRegion.x_ == 0);
+    RectI dirtyRegion = firstEffectFilter.GetAttractionDirtyRegion();
+    EXPECT_TRUE(dirtyRegion.left_ == 0);
 
     float leftPoint = 10.f;
     float topPonit = 10.f;
     firstEffectFilter.UpdateDirtyRegion(leftPoint, topPonit);
-    EXPECT_FALSE(firstEffectFilter.GetAttractionDirtyRegion.x_ == 0);
+    dirtyRegion = firstEffectFilter.GetAttractionDirtyRegion();
+    EXPECT_FALSE(dirtyRegion.left_ == 0);
 }
 
 /**
@@ -232,29 +233,11 @@ HWTEST_F(RSAttractionEffectFilterTest, CreateIndexSequence001, TestSize.Level1)
     RSAttractionEffectFilter firstEffectFilter(0.5f);
     float direction = 1.0f;
     std::vector<int> pathList = firstEffectFilter.CreateIndexSequence(direction);
-    EXPECT_TRUE(pathList0[0] == 0);
+    EXPECT_TRUE(pathList[0] == 0);
 
     direction = -1.0f;
     pathList = firstEffectFilter.CreateIndexSequence(direction);
-    EXPECT_TRUE(pathList0[0] == 3);
-}
-
-/**
- * @tc.name: CreateIndexSequence001
- * @tc.desc: test results of CreateIndexSequence
- * @tc.type: FUNC
- * @tc.require: issueI9UX8W
- */
-HWTEST_F(RSAttractionEffectFilterTest, CreateIndexSequence001, TestSize.Level1)
-{
-    RSAttractionEffectFilter firstEffectFilter(0.5f);
-    float direction = 1.0f;
-    std::vector<int> pathList = firstEffectFilter.CreateIndexSequence(direction);
-    EXPECT_TRUE(pathList0[0] == 0);
-
-    direction = -1.0f;
-    pathList = firstEffectFilter.CreateIndexSequence(direction);
-    EXPECT_TRUE(pathList0[0] == 3);
+    EXPECT_TRUE(pathList[0] == 3);
 }
 
 /**
@@ -266,17 +249,17 @@ HWTEST_F(RSAttractionEffectFilterTest, CreateIndexSequence001, TestSize.Level1)
 HWTEST_F(RSAttractionEffectFilterTest, CreateIndexSequence002, TestSize.Level1)
 {
     RSAttractionEffectFilter firstEffectFilter(0.5f);
-    Vector2f destinationPoint(5.0f, 20.0f);
+    Vector2f destinationPoint(5.0f, 5.0f);
     float canvasWidth = 10.f;
     float canvasHeight = 10.f;
     firstEffectFilter.CalculateWindowStatus(canvasWidth, canvasHeight, destinationPoint);
     float direction = 1.0f;
     std::vector<int> pathList = firstEffectFilter.CreateIndexSequence(direction);
-    EXPECT_TRUE(pathList0[0] == 9);
+    EXPECT_TRUE(pathList[0] == 9);
 
     direction = -1.0f;
     pathList = firstEffectFilter.CreateIndexSequence(direction);
-    EXPECT_TRUE(pathList0[0] == 0);
+    EXPECT_TRUE(pathList[0] == 0);
 }
 
 /**
@@ -288,19 +271,19 @@ HWTEST_F(RSAttractionEffectFilterTest, CreateIndexSequence002, TestSize.Level1)
 HWTEST_F(RSAttractionEffectFilterTest, CalculateVelocityCtrlPointUpper001, TestSize.Level1)
 {
     RSAttractionEffectFilter firstEffectFilter(0.5f);
-    Vector2f destinationPoint(5.0f, 15.0f);
+    Vector2f destinationPoint(5.0f, 5.0f);
     float canvasWidth = 10.f;
     float canvasHeight = 10.f;
     firstEffectFilter.CalculateWindowStatus(canvasWidth, canvasHeight, destinationPoint);
     std::vector<Drawing::Point> velocityCtrlPointUpper = firstEffectFilter.CalculateVelocityCtrlPointUpper();
-    EXPECT_EQ(velocityCtrlPointUpper[0].GetX() == 0.5f);
-    EXPECT_EQ(velocityCtrlPointUpper[1].GetX() == 0.0f);
+    EXPECT_EQ(velocityCtrlPointUpper[0].GetX(), 0.5f);
+    EXPECT_EQ(velocityCtrlPointUpper[1].GetX(), 0.2f);
 
     Vector2f destinationPointBelow(5.0f, 15.0f);
     firstEffectFilter.CalculateWindowStatus(canvasWidth, canvasHeight, destinationPointBelow);
     std::vector<Drawing::Point> velocityCtrlPointUpperBelow = firstEffectFilter.CalculateVelocityCtrlPointUpper();
-    EXPECT_EQ(velocityCtrlPointUpperBelow[0].GetX() == 0.5f);
-    EXPECT_EQ(velocityCtrlPointUpperBelow[1].GetX() == 0.2f);
+    EXPECT_EQ(velocityCtrlPointUpperBelow[0].GetX(), 0.5f);
+    EXPECT_EQ(velocityCtrlPointUpperBelow[1].GetX(), 0.0f);
 }
 
 /**
@@ -312,19 +295,19 @@ HWTEST_F(RSAttractionEffectFilterTest, CalculateVelocityCtrlPointUpper001, TestS
 HWTEST_F(RSAttractionEffectFilterTest, CalculateVelocityCtrlPointLower001, TestSize.Level1)
 {
     RSAttractionEffectFilter firstEffectFilter(0.5f);
-    Vector2f destinationPoint(5.0f, 15.0f);
+    Vector2f destinationPoint(5.0f, 5.0f);
     float canvasWidth = 10.f;
     float canvasHeight = 10.f;
     firstEffectFilter.CalculateWindowStatus(canvasWidth, canvasHeight, destinationPoint);
     std::vector<Drawing::Point> velocityCtrlPointUpper = firstEffectFilter.CalculateVelocityCtrlPointLower();
-    EXPECT_EQ(velocityCtrlPointUpper[0].GetX() == 0.5f);
-    EXPECT_EQ(velocityCtrlPointUpper[1].GetX() == 0.0f);
+    EXPECT_EQ(velocityCtrlPointUpper[0].GetX(), 0.5f);
+    EXPECT_EQ(velocityCtrlPointUpper[1].GetX(), 0.2f);
 
     Vector2f destinationPointBelow(5.0f, 15.0f);
     firstEffectFilter.CalculateWindowStatus(canvasWidth, canvasHeight, destinationPointBelow);
     std::vector<Drawing::Point> velocityCtrlPointUpperBelow = firstEffectFilter.CalculateVelocityCtrlPointLower();
-    EXPECT_EQ(velocityCtrlPointUpperBelow[0].GetX() == 0.5f);
-    EXPECT_EQ(velocityCtrlPointUpperBelow[1].GetX() == 0.2f);
+    EXPECT_EQ(velocityCtrlPointUpperBelow[0].GetX(), 0.5f);
+    EXPECT_EQ(velocityCtrlPointUpperBelow[1].GetX(), 0.0f);
 }
 
 /**
@@ -348,15 +331,15 @@ HWTEST_F(RSAttractionEffectFilterTest, CalculateUpperCtrlPointOfVertex001, TestS
     std::vector<Drawing::Point> upperControlPointOfVertex1 =
         firstEffectFilter.CalculateUpperCtrlPointOfVertex(deltaX, deltaY, width, height, direction);
 
-    Vector2f destinationPointBelow(5.0f, 5.0f);
+    Vector2f destinationPointBelow(-5.0f, 5.0f);
     firstEffectFilter.CalculateWindowStatus(canvasWidth, canvasHeight, destinationPointBelow);
     std::vector<Drawing::Point> upperControlPointOfVertex2 =
         firstEffectFilter.CalculateUpperCtrlPointOfVertex(deltaX, deltaY, width, height, direction);
     
-    EXPECT_NE(upperControlPointOfVertex1[0].GetX() == upperControlPointOfVertex2[0].GetX());
-    EXPECT_NE(upperControlPointOfVertex1[1].GetX() == upperControlPointOfVertex2[1].GetX());
-    EXPECT_EQ(upperControlPointOfVertex1[2].GetX() == upperControlPointOfVertex2[2].GetX());
-    EXPECT_EQ(upperControlPointOfVertex1[3].GetX() == upperControlPointOfVertex2[3].GetX());  
+    EXPECT_NE(upperControlPointOfVertex1[0].GetX(), upperControlPointOfVertex2[0].GetX());
+    EXPECT_EQ(upperControlPointOfVertex1[1].GetX(), upperControlPointOfVertex2[1].GetX());
+    EXPECT_NE(upperControlPointOfVertex1[2].GetX(), upperControlPointOfVertex2[2].GetX());
+    EXPECT_EQ(upperControlPointOfVertex1[3].GetX(), upperControlPointOfVertex2[3].GetX());
 }
 
 /**
@@ -380,15 +363,15 @@ HWTEST_F(RSAttractionEffectFilterTest, CalculateLowerCtrlPointOfVertex001, TestS
     std::vector<Drawing::Point> upperControlPointOfVertex1 =
         firstEffectFilter.CalculateLowerCtrlPointOfVertex(deltaX, deltaY, width, height, direction);
 
-    Vector2f destinationPointBelow(5.0f, 5.0f);
+    Vector2f destinationPointBelow(-5.0f, 5.0f);
     firstEffectFilter.CalculateWindowStatus(canvasWidth, canvasHeight, destinationPointBelow);
     std::vector<Drawing::Point> upperControlPointOfVertex2 =
         firstEffectFilter.CalculateLowerCtrlPointOfVertex(deltaX, deltaY, width, height, direction);
     
-    EXPECT_NE(upperControlPointOfVertex1[0].GetX() == upperControlPointOfVertex2[0].GetX());
-    EXPECT_NE(upperControlPointOfVertex1[1].GetX() == upperControlPointOfVertex2[1].GetX());
-    EXPECT_NE(upperControlPointOfVertex1[2].GetX() == upperControlPointOfVertex2[2].GetX());
-    EXPECT_NE(upperControlPointOfVertex1[3].GetX() == upperControlPointOfVertex2[3].GetX());  
+    EXPECT_NE(upperControlPointOfVertex1[0].GetX(), upperControlPointOfVertex2[0].GetX());
+    EXPECT_NE(upperControlPointOfVertex1[1].GetX(), upperControlPointOfVertex2[1].GetX());
+    EXPECT_NE(upperControlPointOfVertex1[2].GetX(), upperControlPointOfVertex2[2].GetX());
+    EXPECT_NE(upperControlPointOfVertex1[3].GetX(), upperControlPointOfVertex2[3].GetX());
 }
 } // namespace Rosen
 } // namespace OHOS
