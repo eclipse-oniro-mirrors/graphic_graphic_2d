@@ -491,6 +491,17 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             SetShowRefreshRateEnabled(enable);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO): {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            pid_t pid = data.ReadInt32();
+            std::string ret = GetRefreshInfo(pid);
+            reply.WriteString(ret);
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_RESOLUTION): {
             ScreenId id = data.ReadUint64();
             uint32_t width = data.ReadUint32();
