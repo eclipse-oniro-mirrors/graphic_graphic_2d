@@ -86,6 +86,7 @@ private:
     bool isEnableCursorInversion_ = false;
     std::shared_ptr<Drawing::Image> cacheImgForPointer_ = nullptr;
     std::mutex cursorInvertMutex_;
+    std::recursive_mutex mutex_;
     std::map<pid_t, sptr<RSIPointerLuminanceChangeCallback>> colorChangeListeners_;
     enum class CursorBrightness {
         NONE,

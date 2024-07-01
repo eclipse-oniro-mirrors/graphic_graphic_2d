@@ -104,7 +104,7 @@ void RSPointerRenderManager::ExecutePointerLuminanceChangeCallback(int32_t brigh
 
 void RSPointerRenderManager::CallPointerLuminanceChange(int32_t brightness)
 {
-    std::lock_guard<std::mutex> lock(cursorInvertMutex_);
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
     RS_LOGD("RSPointerRenderManager::CallPointerLuminanceChange luminance_:%{public}d.", luminance_);
     if (brightnessMode_ == CursorBrightness::NONE) {
         brightnessMode_ = brightness < static_cast<int32_t>(RGB * HALF) ?
