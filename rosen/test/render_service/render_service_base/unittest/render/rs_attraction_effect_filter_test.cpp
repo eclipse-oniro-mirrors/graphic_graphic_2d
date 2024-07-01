@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "gtest/gtest.h"
 
-#include "render/rs_spherize_effect_filter.h"
 #include "draw/color.h"
 #include "image/image_info.h"
+#include "gtest/gtest.h"
+#include "render/rs_attraction_effect_filter.h"
 #include "skia_image.h"
 #include "skia_image_info.h"
 
