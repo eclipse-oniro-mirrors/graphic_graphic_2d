@@ -1198,7 +1198,7 @@ void RSMainThread::ProcessAllSyncTransactionData()
 
 void RSMainThread::GetTextureFlutterIdleState()
 {
-    if (!RSRenderNode::GetTextureFlutterIdleState()) {
+    if (frameRateMgr_ != nullptr && !RSRenderNode::GetTextureFlutterIdleState()) {
         frameRateMgr_->UpdateSurfaceTime(OH_FLUTTER, timestamp_);
     }
 }

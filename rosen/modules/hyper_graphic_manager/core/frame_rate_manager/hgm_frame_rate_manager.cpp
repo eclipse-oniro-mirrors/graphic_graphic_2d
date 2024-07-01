@@ -222,8 +222,6 @@ void HgmFrameRateManager::SetAceAnimatorVote(const std::shared_ptr<RSRenderFrame
 
 void HgmFrameRateManager::UpdateGuaranteedPlanVote(uint64_t timestamp)
 {
-    static int32_t lastUpExpectFps = 0;
-
     if (!idleDetector_.GetAppSupportStatus()) {
         return;
     }
@@ -234,7 +232,7 @@ void HgmFrameRateManager::UpdateGuaranteedPlanVote(uint64_t timestamp)
     if (touchManager_.GetState() != TouchState::UP_STATE) {
         prepareCheck_ = false;
         startCheck_ = false;
-        lastUpExpectFps = 0;
+        lastUpExpectFps_ = 0;
     }
 
     if (touchManager_.GetState() == TouchState::UP_STATE && lastTouchState_.load() == TouchState::DOWN_STATE) {
@@ -267,9 +265,11 @@ void HgmFrameRateManager::UpdateGuaranteedPlanVote(uint64_t timestamp)
         touchManager_.HandleThirdFrameIdle();
     } else {
         uint32_t fps = idleDetector_.GetSurfaceUpExpectFps();
-        if (fps == lastUpExpectFps) { return; }
+        if (fps == lastUpExpectFps_) {
+            return;
+        }
 
-        lastUpExpectFps = fps;
+        lastUpExpectFps_ = fps;
         HgmMultiAppStrategy::TouchInfo touchInfo = {
             .touchState = TouchState::UP_STATE,
             .upExpectFps = fps,

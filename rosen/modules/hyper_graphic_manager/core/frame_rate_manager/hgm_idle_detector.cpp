@@ -22,11 +22,11 @@ namespace {
     constexpr uint64_t MAX_BUFFER_COUNT = 10;
     constexpr uint32_t MAX_BUFFER_LENGTH = 10;
     constexpr uint32_t FPS_120HZ = 120;
-    const std::string ACEANIMATO_NAME = "AceAnimato";
+    const std::string ACE_ANIMATOR_NAME = "AceAnimato";
     const std::string OTHER_SURFACE = "Other_SF";
 }
 
-void HgmIdleDetector::UpdateSurfaceTime(const std::string& name, uint64_t timestamp)
+void HgmIdleDetector::UpdateSurfaceTime(const std::string& surfaceName, uint64_t timestamp)
 {
     if (!GetAppSupportStatus() || frameTimeMap_.size() > MAX_BUFFER_COUNT) {
         if (!frameTimeMap_.empty()) {
@@ -34,19 +34,21 @@ void HgmIdleDetector::UpdateSurfaceTime(const std::string& name, uint64_t timest
         }
         return;
     }
-    if (name.empty()) {
+    if (surfaceName.empty()) {
         return;
     }
 
-    auto temp = name;
-    if (name.size() > MAX_BUFFER_LENGTH) {
-        temp = name.substr(0, MAX_BUFFER_LENGTH);
+    auto temp = surfaceName;
+    if (surfaceName.size() > MAX_BUFFER_LENGTH) {
+        temp = surfaceName.substr(0, MAX_BUFFER_LENGTH);
     }
 
     auto it = std::find(supportAppBufferList_.begin(), supportAppBufferList_.end(), OTHER_SURFACE);
     if (it == supportAppBufferList_.end()) {
-        auto name = std::find(supportAppBufferList_.begin(), supportAppBufferList_.end(), temp);
-        if (name == supportAppBufferList_.end()) { return; }
+        auto bufferName = std::find(supportAppBufferList_.begin(), supportAppBufferList_.end(), temp);
+        if (bufferName == supportAppBufferList_.end()) {
+            return;
+        }
     }
 
     frameTimeMap_[temp] = timestamp;
@@ -77,16 +79,20 @@ bool HgmIdleDetector::GetSupportSurface()
     if (appBufferBlackList_.empty()) {
         return true;
     }
-    if (std::find(appBufferBlackList_.begin(), appBufferBlackList_.end(), ACEANIMATO_NAME)
-        == appBufferBlackList_.end() && !aceAnimatorIdleState_) { return true; }
+    if (std::find(appBufferBlackList_.begin(), appBufferBlackList_.end(), ACE_ANIMATOR_NAME) ==
+        appBufferBlackList_.end() && !aceAnimatorIdleState_) {
+            return true;
+        }
 
     if (frameTimeMap_.empty()) {
         return false;
     }
 
     for (auto &it : frameTimeMap_) {
-        if (std::find(appBufferBlackList_.begin(), appBufferBlackList_.end(), it.first)
-            == appBufferBlackList_.end()) { return true; }
+        if (std::find(appBufferBlackList_.begin(), appBufferBlackList_.end(), it.first) ==
+            appBufferBlackList_.end()) {
+            return true;
+        }
     }
     return false;
 }
@@ -100,7 +106,7 @@ uint32_t HgmIdleDetector::GetSurfaceUpExpectFps()
     }
     if (!aceAnimatorIdleState_) {
         auto iter = std::find_if(appBufferList_.begin(), appBufferList_.end(),
-            [&](const auto& pair) { return pair.first == ACEANIMATO_NAME; });
+            [&](const auto& pair) { return pair.first == ACE_ANIMATOR_NAME; });
         if (iter != appBufferList_.end() && frameTimeMap_.empty()) {
             return iter->second;
         }
@@ -110,12 +116,18 @@ uint32_t HgmIdleDetector::GetSurfaceUpExpectFps()
         auto key = member.first;
         auto it = std::find_if(appBufferList_.begin(), appBufferList_.end(),
             [&key](const std::pair<std::string, uint32_t>& pair) { return pair.first == key; });
-        if (it == appBufferList_.end()) { return fps; }
+        if (it == appBufferList_.end()) {
+            return fps;
+        }
     }
 
     for (auto &it : appBufferList_) {
-        if (it.first == ACEANIMATO_NAME && !aceAnimatorIdleState_) { return it.second; }
-        if (frameTimeMap_.count(it.first)) { return it.second; }
+        if (it.first == ACEANIMATO_NAME && !aceAnimatorIdleState_) {
+            return it.second;
+        }
+        if (frameTimeMap_.count(it.first)) {
+            return it.second;
+        }
     }
 
     return fps;

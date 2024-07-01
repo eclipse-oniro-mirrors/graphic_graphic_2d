@@ -85,11 +85,13 @@ private:
     uint64_t touchUpTime_ = 0;
     std::mutex appSupportedMutex_;
     std::mutex touchUpTimeMutex_;
-    // FORMAT: <buffername, time>
-    std::vector<std::string> supportAppBufferList_;
-    std::unordered_map<std::string, uint64_t> frameTimeMap_;
-    std::vector<std::pair<std::string, uint32_t>> appBufferList_;
+    // FORMAT: <buffername>
     std::vector<std::string> appBufferBlackList_;
+    std::vector<std::string> supportAppBufferList_;
+    // FORMAT: <buffername, time>
+    std::unordered_map<std::string, uint64_t> frameTimeMap_;
+    // FORMAT: <buffername, fps>
+    std::vector<std::pair<std::string, uint32_t>> appBufferList_;
 };
 } // namespace Rosen
 } // namespace OHOS
