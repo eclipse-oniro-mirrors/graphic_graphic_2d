@@ -620,6 +620,26 @@ void RSUniRenderThread::PurgeCacheBetweenFrames()
         PURGE_CACHE_BETWEEN_FRAMES, 0, AppExecFwk::EventQueue::Priority::LOW);
 }
 
+void RSUniRenderThread::PreAllocateTextureBetweenFrames()
+{
+    RemoveTask(PRE_ALLOCATE_TEXTURE_BETWEEN_FRAMES);
+    PostTask(
+        [this]() {
+            RS_TRACE_NAME_FMT("PreAllocateTextureBetweenFrames");
+            GrDirectContext::preAllocateTextureBetweenFrames();
+        },
+        PRE_ALLOCATE_TEXTURE_BETWEEN_FRAMES,
+        (this->deviceType_ == DeviceType::PHONE ? TIME_OF_EIGHT_FRAMES : TIME_OF_THE_FRAMES) / GetRefreshRate(),
+        AppExecFwk::EventQueue::Priority::LOW);
+}
+
+void RSUniRenderThread::MemoryManagementBetweenFrames()
+{
+    if (RSSystemProperties::GetPreAllocateTextureBetweenFramesEnabled()) {
+        PreAllocateTextureBetweenFrames();
+    }
+}
+
 void RSUniRenderThread::RenderServiceTreeDump(std::string& dumpString) const
 {
     if (!rootNodeDrawable_) {
