@@ -449,7 +449,7 @@ HWTEST_F(RSInterfacesTest, SetPointerColorInversionEnabled001, TestSize.Level1)
 
 /**
  * @tc.name: RegisterPointerLuminanceChangeCallback001
- * @tc.desc: set pointer color inversion enabled function.
+ * @tc.desc: register pointer luminance change callback function.
  * @tc.type: FUNC
  * @tc.require: Issue #IA8DQ6
  */
@@ -459,15 +459,13 @@ HWTEST_F(RSInterfacesTest, RegisterPointerLuminanceChangeCallback001, TestSize.L
     EXPECT_EQ(ret, StatusCode::SUCCESS);
 }
 
-/*
-* Function: UnRegisterPointerLuminanceChangeCallback
-* Type: Function
-* Rank: Important(2)
-* EnvConditions: N/A
-* CaseDescription: 1. call UnRegisterPointerLuminanceChangeCallback
-*                  2. check
-*/
-HWTEST_F(RSInterfacesTest, UnRegisterPointerLuminanceChangeCallback, Function | SmallTest | Level2)
+/**
+ * @tc.name: UnRegisterPointerLuminanceChangeCallback001
+ * @tc.desc: unregister pointer luminance change callback function.
+ * @tc.type: FUNC
+ * @tc.require: Issue #IA8DQ6
+ */
+HWTEST_F(RSInterfacesTest, UnRegisterPointerLuminanceChangeCallback001, TestSize.Level1)
 {
     int32_t ret = rsInterfaces->UnRegisterPointerLuminanceChangeCallback();
     EXPECT_EQ(ret, StatusCode::SUCCESS);
