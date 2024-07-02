@@ -2793,7 +2793,7 @@ void RSProperties::GenerateForegroundBlurFilter()
     if (greyCoef_.has_value()) {
         std::shared_ptr<RSGreyShaderFilter> greyShaderFilter =
             std::make_shared<RSGreyShaderFilter>(greyCoef_->x_, greyCoef_->y_);
-        std::shared_ptr<RSDrawingFilter> originalFilter = std::make_shared<RSDrawingFilter>(greyShaderFilter);
+        originalFilter = std::make_shared<RSDrawingFilter>(greyShaderFilter);
     }
 
     if (RSSystemProperties::GetHpsBlurEnabled() && false) {
