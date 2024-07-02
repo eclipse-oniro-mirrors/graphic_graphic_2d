@@ -65,6 +65,7 @@
 
 namespace OHOS::Rosen {
 constexpr uint32_t HARDWARE_THREAD_TASK_NUM = 2;
+constexpr uint32_t SAMPLE_FREQUENCY = 10;
 
 RSHardwareThread& RSHardwareThread::Instance()
 {
@@ -165,6 +166,9 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
     delayTime_ = 0;
     LayerComposeCollection::GetInstance().UpdateUniformOrOfflineComposeFrameNumberForDFX(layers.size());
     RefreshRateParam param = GetRefreshRateParam();
+#ifdef RES_SCHED_ENABLE
+    ReportFrameToRSS();
+#endif
     RSTaskMessage::RSTask task = [this, output = output, layers = layers, param = param]() {
         int64_t startTimeNs = 0;
         int64_t endTimeNs = 0;
@@ -222,6 +226,26 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
         }
     }
 }
+
+#ifdef RES_SCHED_ENABLE
+void RSHardwareThread::ReportFrameToRSS()
+{
+    if (VsyncResEventListener::GetInstance()->GetIsNeedReport()) {
+        if (reportCount_ % SAMPLE_FREQUENCY == 0) {
+            uint32_t type = OHOS::ResourceSchedule::ResType::RES_TYPE_SEND_FRAME_EVENT;
+            int64_t value = 0;
+            std::unordered_map<std::string, std::string> mapPayload;
+            OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, value, mapPayload);
+        }
+        reportCount_ ++;
+        if (reportCount_ > SAMPLE_FREQUENCY) {
+            reportCount_ /= SAMPLE_FREQUENCY;
+        }
+    } else {
+        reportCount_ = 0;
+    }
+}
+#endif
 
 RefreshRateParam RSHardwareThread::GetRefreshRateParam()
 {
