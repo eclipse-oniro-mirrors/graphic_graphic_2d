@@ -3478,7 +3478,9 @@ void RSRenderNode::SetNodeName(const std::string& nodeName)
     if (nodeName.substr(0, MAX_NODE_NAME_LEN) == OH_FLUTTER_NAME) {
         flutterIdle_ = false;
         return;
-    } else { flutterIdle_ = true; }
+    } else {
+        flutterIdle_ = true;
+    }
 
     nodeName_ = nodeName;
 }

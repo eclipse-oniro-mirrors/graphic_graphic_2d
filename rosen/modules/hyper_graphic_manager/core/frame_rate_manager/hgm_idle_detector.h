@@ -62,7 +62,7 @@ public:
     }
 
     void UpdateSurfaceTime(const std::string& name, uint64_t timestamp);
-    bool GetSurFaceIdleState(uint64_t timestamp);
+    bool GetSurfaceIdleState(uint64_t timestamp);
     uint32_t GetSurfaceUpExpectFps();
     bool GetSupportSurface();
     void ClearAppBufferList() { appBufferList_.clear(); }

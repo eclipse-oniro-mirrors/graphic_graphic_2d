@@ -21,7 +21,7 @@ namespace {
     constexpr uint64_t BUFFER_IDLE_TIME_OUT = 200000000; // 200ms
     constexpr uint64_t MAX_BUFFER_COUNT = 10;
     constexpr uint32_t MAX_BUFFER_LENGTH = 10;
-    constexpr uint32_t FPS_120HZ = 120;
+    constexpr uint32_t FPS_120 = 120;
     const std::string ACE_ANIMATOR_NAME = "AceAnimato";
     const std::string OTHER_SURFACE = "Other_SF";
 }
@@ -54,7 +54,7 @@ void HgmIdleDetector::UpdateSurfaceTime(const std::string& surfaceName, uint64_t
     frameTimeMap_[temp] = timestamp;
 }
 
-bool HgmIdleDetector::GetSurFaceIdleState(uint64_t timestamp)
+bool HgmIdleDetector::GetSurfaceIdleState(uint64_t timestamp)
 {
     bool idle = true;
 
@@ -99,7 +99,7 @@ bool HgmIdleDetector::GetSupportSurface()
 
 uint32_t HgmIdleDetector::GetSurfaceUpExpectFps()
 {
-    uint32_t fps = FPS_120HZ;
+    uint32_t fps = FPS_120;
 
     if (appBufferList_.empty()) {
         return fps;
