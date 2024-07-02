@@ -153,7 +153,7 @@ HWTEST_F(HgmIdleDetectorTest, SetAndGetSurfaceTimeStatus, Function | SmallTest |
  * @tc.name: GetSupportSurface
  * @tc.desc: Verify the result of GetSupportSurface function
  * @tc.type: FUNC
- * @tc.require: I9V8VW
+ * @tc.require: IAA0JX
  */
 HWTEST_F(HgmIdleDetectorTest, GetSupportSurface, Function | SmallTest | Level1)
 {
@@ -188,7 +188,7 @@ HWTEST_F(HgmIdleDetectorTest, GetSupportSurface, Function | SmallTest | Level1)
  * @tc.name: GetSurfaceUpExpectFps001
  * @tc.desc: Verify the result of GetSurfaceUpExpectFps001 function
  * @tc.type: FUNC
- * @tc.require: I9V8VW
+ * @tc.require: IAA0JX
  */
 HWTEST_F(HgmIdleDetectorTest, GetSurfaceUpExpectFps001, Function | SmallTest | Level1)
 {
@@ -232,7 +232,7 @@ HWTEST_F(HgmIdleDetectorTest, GetSurfaceUpExpectFps001, Function | SmallTest | L
  * @tc.name: GetSurfaceUpExpectFps002
  * @tc.desc: Verify the result of GetSurfaceUpExpectFps002 function
  * @tc.type: FUNC
- * @tc.require: I9V8VW
+ * @tc.require: IAA0JX
  */
 HWTEST_F(HgmIdleDetectorTest, GetSurfaceUpExpectFps002, Function | SmallTest | Level1)
 {
