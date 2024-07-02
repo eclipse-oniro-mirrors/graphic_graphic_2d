@@ -30,6 +30,7 @@
 #include "params/rs_surface_render_params.h"
 #include "pipeline/rs_hardware_thread.h"
 #include "pipeline/rs_main_thread.h"
+#include "pipeline/rs_render_node_gc.h"
 #include "pipeline/rs_surface_handler.h"
 #include "pipeline/rs_task_dispatcher.h"
 #include "pipeline/rs_uni_render_engine.h"
@@ -121,6 +122,11 @@ void RSUniRenderThread::Start()
         RS_LOGE("RSUniRenderThread Start runner null");
     }
     runner_->Run();
+    auto PostTaskProxy = [](RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime,
+        AppExecFwk::EventQueue::Priority priority) {
+        RSUniRenderThread::Instance().PostTask(task, name, delayTime, priority);
+    };
+    RSRenderNodeGC::Instance().SetRenderTask(PostTaskProxy);
     PostSyncTask([this] {
         RS_LOGE("RSUniRenderThread Started ...");
         Inittcache();
