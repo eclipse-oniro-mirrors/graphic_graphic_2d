@@ -15,11 +15,13 @@
 
 #ifndef HGM_ENERGY_CONSUMPTION_POLICY_H
 #define HGM_ENERGY_CONSUMPTION_POLICY_H
+
 #include <mutex>
 #include <string>
 #include <unordered_map>
 
 #include "animation/rs_frame_rate_range.h"
+
 namespace OHOS::Rosen {
 class HgmEnergyConsumptionPolicy {
 public:
