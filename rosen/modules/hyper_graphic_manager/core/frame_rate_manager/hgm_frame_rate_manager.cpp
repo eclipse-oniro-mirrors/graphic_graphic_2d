@@ -138,6 +138,7 @@ void HgmFrameRateManager::InitTouchManager()
                 HgmMultiAppStrategy::TouchInfo touchInfo = {
                     .pkgName = touchManager_.GetPkgName(),
                     .touchState = newState,
+                    .upExpectFps = OLED_120_HZ,
                 };
                 multiAppStrategy_.HandleTouchInfo(touchInfo);
                 lastTouchState_.store(TouchState::DOWN_STATE);
