@@ -31,7 +31,7 @@ public:
     bool GetIsNeedReport();
 private:
     static std::once_flag createFlag_;
-    static sptr<VsyncResEventListener> instance_;
+    static sptr<VSyncResEventListener> instance_;
     std::atomic<bool> isNeedReport_ = {false};
 };
 } // namespace Rosen
