@@ -316,6 +316,7 @@ void HgmFrameRateManager::ReportHiSysEvent(const VoteInfo& frameRateVoteInfo)
     if (frameRateVoteInfo.voterName.empty()) {
         return;
     }
+    std::lock_guard<std::mutex> locker(frameRateVoteInfoMutex_);
     bool needAdd = frameRateVoteInfoVec_.empty() || frameRateVoteInfoVec_.back().second != frameRateVoteInfo;
     if (frameRateVoteInfoVec_.size() >= REPORT_VOTER_INFO_LIMIT) {
         std::string msg;
