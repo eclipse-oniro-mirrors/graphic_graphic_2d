@@ -191,7 +191,7 @@ bool RSEffectRenderNode::CheckFilterCacheNeedForceClear()
         " preRotationStatus_:%d, isRotationChanged_:%d, preStaticStatus_:%d, isStaticCached:%d",
         GetId(), foldStatusChanged_, preRotationStatus_, isRotationChanged_, preStaticStatus_, IsStaticCached());
     return foldStatusChanged_ || (preRotationStatus_ != isRotationChanged_) ||
-        (preStaticStatus_ != isStaticCached && isStaticCached == false);
+        (preStaticStatus_ != isStaticCached_ && isStaticCached_ == false);
 }
 
 void RSEffectRenderNode::SetRotationChanged(bool isRotationChanged)
