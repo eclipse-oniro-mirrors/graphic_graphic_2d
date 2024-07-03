@@ -61,6 +61,9 @@
 #include "system_ability_definition.h"
 #include "if_system_ability_manager.h"
 #include <iservice_registry.h>
+#include "res_sched_client.h"
+#include "res_type.h"
+#include "vsync_res_event_listener.h"
 #endif
 
 namespace OHOS::Rosen {
@@ -230,13 +233,13 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
 #ifdef RES_SCHED_ENABLE
 void RSHardwareThread::ReportFrameToRSS()
 {
-    if (VsyncResEventListener::GetInstance()->GetIsNeedReport()) {
-        if (VsyncResEventListener::GetInstance()->GetIsFirstReport() ||reportCount_ % SAMPLE_FREQUENCY == 0) {
+    if (VSyncResEventListener::GetInstance()->GetIsNeedReport()) {
+        if (VSyncResEventListener::GetInstance()->GetIsFirstReport() ||reportCount_ % SAMPLE_FREQUENCY == 0) {
             uint32_t type = OHOS::ResourceSchedule::ResType::RES_TYPE_SEND_FRAME_EVENT;
             int64_t value = 0;
             std::unordered_map<std::string, std::string> mapPayload;
             OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, value, mapPayload);
-            VsyncResEventListener::GetInstance()->SetIsFirstReport(false);
+            VSyncResEventListener::GetInstance()->SetIsFirstReport(false);
         }
         reportCount_ ++;
         if (reportCount_ > SAMPLE_FREQUENCY) {
