@@ -65,14 +65,24 @@ public:
     bool GetSurfaceIdleState(uint64_t timestamp);
     uint32_t GetSurfaceUpExpectFps();
     bool GetSupportSurface();
-    void ClearAppBufferList() { appBufferList_.clear(); }
-    void ClearAppBufferBlackList() { appBufferBlackList_.clear(); }
+    void ClearAppBufferList()
+    {
+        std::lock_guard<std::mutex> lock(appBufferListMutex_);
+        appBufferList_.clear();
+    }
+    void ClearAppBufferBlackList()
+    {
+        std::lock_guard<std::mutex> lock(appBufferBlackListMutex_);
+        appBufferBlackList_.clear();
+    }
     void UpdateAppBufferList(std::vector<std::pair<std::string, uint32_t>> &appBufferList)
     {
+        std::lock_guard<std::mutex> lock(appBufferListMutex_);
         appBufferList_ = appBufferList;
     }
     void UpdateAppBufferBlackList(std::vector<std::string> &appBufferBlackList)
     {
+        std::lock_guard<std::mutex> lock(appBufferBlackListMutex_);
         appBufferBlackList_ = appBufferBlackList;
     }
     void UpdateSupportAppBufferList(std::vector<std::string> &supportAppBufferList)
@@ -85,6 +95,8 @@ private:
     uint64_t touchUpTime_ = 0;
     std::mutex appSupportedMutex_;
     std::mutex touchUpTimeMutex_;
+    std::mutex appBufferListMutex_;
+    std::mutex appBufferBlackListMutex_;
     // FORMAT: <buffername>
     std::vector<std::string> appBufferBlackList_;
     std::vector<std::string> supportAppBufferList_;

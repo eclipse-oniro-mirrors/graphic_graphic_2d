@@ -408,12 +408,17 @@ void HgmMultiAppStrategy::UpdateStrategyByTouch(
             return;
         }
         auto touchInfo = std::move(uniqueTouchInfo_);
-        if (touchInfo->touchState != TouchState::IDLE_STATE) {
+        if (touchInfo->touchState == TouchState::DOWN_STATE) {
             RS_TRACE_NAME_FMT("[UpdateStrategyByTouch] pkgName:%s, state:%d, downFps:%d",
                 pkgName.c_str(), touchInfo->touchState, strategy.down);
             strategy.min = strategy.down;
             strategy.max = strategy.down;
             voteRes_.first = EXEC_SUCCESS;
+        } else if (touchInfo->touchState == TouchState::UP_STATE && touchInfo->upExpectFps > 0) {
+            RS_TRACE_NAME_FMT("[UpdateStrategyByTouch] pkgName:%s, state:%d, upExpectFps:%d force update",
+                pkgName.c_str(), touchInfo->touchState, touchInfo->upExpectFps);
+            strategy.min = touchInfo->upExpectFps;
+            strategy.max = touchInfo->upExpectFps;
         }
     }
 }

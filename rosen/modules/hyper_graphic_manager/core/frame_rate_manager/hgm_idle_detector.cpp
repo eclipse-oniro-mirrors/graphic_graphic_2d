@@ -76,6 +76,7 @@ bool HgmIdleDetector::GetSurfaceIdleState(uint64_t timestamp)
 
 bool HgmIdleDetector::GetSupportSurface()
 {
+    std::lock_guard<std::mutex> lock(appBufferBlackListMutex_);
     if (appBufferBlackList_.empty()) {
         return true;
     }
@@ -101,6 +102,7 @@ uint32_t HgmIdleDetector::GetSurfaceUpExpectFps()
 {
     uint32_t fps = FPS_120;
 
+    std::lock_guard<std::mutex> lock(appBufferListMutex_);
     if (appBufferList_.empty()) {
         return fps;
     }
