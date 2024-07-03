@@ -650,12 +650,12 @@ void RSSurfaceRenderNodeDrawable::DealWithHdr(RSSurfaceRenderNode& surfaceNode,
     if (buffer == nullptr) {
         return;
     }
+    bool isHdrBuffer = false;
     Media::VideoProcessingEngine::CM_ColorSpaceInfo colorSpaceInfo;
-    if (MetadataHelper::GetColorSpaceInfo(buffer, colorSpaceInfo) != GSERROR_OK) {
-        return;
+    if (MetadataHelper::GetColorSpaceInfo(buffer, colorSpaceInfo) == GSERROR_OK) {
+        isHdrBuffer = colorSpaceInfo.transfunc == HDI::Display::Graphic::Common::V1_0::TRANSFUNC_PQ ||
+            colorSpaceInfo.transfunc == HDI::Display::Graphic::Common::V1_0::TRANSFUNC_HLG;
     }
-    bool isHdrBuffer = colorSpaceInfo.transfunc == HDI::Display::Graphic::Common::V1_0::TRANSFUNC_PQ ||
-        colorSpaceInfo.transfunc == HDI::Display::Graphic::Common::V1_0::TRANSFUNC_HLG;
 
     surfaceNode.SetDisplayNit(RSLuminanceControl::Get().GetHdrDisplayNits(screenId));
     surfaceNode.SetBrightnessRatio(
