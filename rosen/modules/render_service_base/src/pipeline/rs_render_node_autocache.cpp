@@ -180,8 +180,6 @@ void RSRenderNode::NodeCacheStateReset(NodeCacheState nodeCacheState)
         SetCacheStateByRetrytime();
         isOpincRootFlag_ = false;
     }
-    ROSEN_LOGD("Node id %{public}" PRIu64 " set dirty, reset cache state", GetId());
-    SetDirty();
     stagingRenderParams_->OpincSetCacheChangeFlag(true);
     isOpincRootFlag_ = false;
     stagingRenderParams_->OpincUpdateRootFlag(false);
