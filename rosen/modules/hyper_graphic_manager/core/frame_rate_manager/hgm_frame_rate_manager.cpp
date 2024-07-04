@@ -753,10 +753,9 @@ void HgmFrameRateManager::HandleTouchEvent(pid_t remotePid, int32_t touchStatus,
     if (touchStatus == TOUCH_DOWN || touchStatus == TOUCH_PULL_DOWN) {
         HGM_LOGI("[touch manager] down %{public}s", pkgName.c_str());
         PolicyConfigData::StrategyConfig strategyRes;
-        if (multiAppStrategy_.GetFocusAppStrategyConfig(pkgName, strategyRes) == EXEC_SUCCESS &&
         HgmTaskHandleThread::Instance().RemoveEvent(ENERGY_ASSURANCE_TASK_ID);
         HgmEnergyConsumptionPolicy::Instance().SetEnergyConsumptionAssuranceMode(false);
-        if (multiAppStrategy_.GetFocusAppStrategyConfig(strategyRes) == EXEC_SUCCESS &&
+        if (multiAppStrategy_.GetFocusAppStrategyConfig(pkgName, strategyRes) == EXEC_SUCCESS &&
             strategyRes.dynamicMode != DynamicModeType::TOUCH_DISENABLED) {
             touchManager_.HandleTouchEvent(TouchEvent::DOWN_EVENT, pkgName);
         }
