@@ -578,8 +578,11 @@ HWTEST_F(RSUniRenderUtilTest, MergeVisibleDirtyRegionTest001, Function | SmallTe
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> allSurfaceNodeDrawables;
     std::vector<NodeId> hasVisibleDirtyRegionSurfaceVec;
     NodeId nodeId = 0;
+//  isAppWindow_为true的node
     auto node = std::make_shared<RSRenderNode>(nodeId++);
+//  param为nullptr的node
     auto node1 = std::make_shared<RSRenderNode>(nodeId++);
+//  isAppWindow_为false的node
     auto node2 = std::make_shared<RSRenderNode>(nodeId++);
     auto appWindowDrawable = std::make_shared<DrawableV2::RSRenderNodeDrawable>(node);
     auto appWindowDrawableParam = new RSSurfaceRenderParams(node->id_);
@@ -601,6 +604,71 @@ HWTEST_F(RSUniRenderUtilTest, MergeVisibleDirtyRegionTest001, Function | SmallTe
     RSUniRenderUtil::MergeVisibleDirtyRegion(allSurfaceNodeDrawables, hasVisibleDirtyRegionSurfaceVec, false);
     RSUniRenderUtil::MergeVisibleDirtyRegion(allSurfaceNodeDrawables, hasVisibleDirtyRegionSurfaceVec, true);
     ASSERT_TRUE(appWindowDrawable->renderParams_);
+}
+
+/**
+ * @tc.name: MergeVisibleDirtyRegionTest001
+ * @tc.desc: Verify function MergeVisibleDirtyRegion
+ * @tc.type:FUNC
+ * @tc.require:issuesI9KRF1
+ */
+HWTEST_F(RSUniRenderUtilTest, MergeVisibleDirtyRegionTest001, Function | SmallTest | Level2)
+{
+    std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> allSurfaceNodeDrawables;
+    std::vector<NodeId> hasVisibleDirtyRegionSurfaceVec;
+    auto node = std::make_shared<RSRenderNode>(0);
+    auto drawable = std::make_shared<DrawableV2::RSRenderNodeDrawable>(node);
+    auto param = std::make_unique<RSSurfaceRenderParams>(node->id_);
+    param->isMainWindowType_ = false;
+    param->isLeashWindow_ = false;
+    param->isAppWindow_ = false;
+    drawble->renderParams_ = std::move(param);
+    allSurfaceNodeDrawables.push_back(nullptr);
+    allSurfaceNodeDrawables.push_back(drawable);
+    RSUniRenderUtil::MergeVisibleDirtyRegion(allSurfaceNodeDrawables, hasVisibleDirtyRegionSurfaceVec, false);
+    RSUniRenderUtil::MergeVisibleDirtyRegion(allSurfaceNodeDrawables, hasVisibleDirtyRegionSurfaceVec, true);
+    ASSERT_TRUE(drawble->renderParams_);
+}
+
+/**
+ * @tc.name: MergeVisibleDirtyRegionTest002
+ * @tc.desc: Verify function MergeVisibleDirtyRegion
+ * @tc.type:FUNC
+ * @tc.require:issuesI9KRF1
+ */
+HWTEST_F(RSUniRenderUtilTest, MergeVisibleDirtyRegionTest002, Function | SmallTest | Level2)
+{
+    std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> allSurfaceNodeDrawables;
+    std::vector<NodeId> hasVisibleDirtyRegionSurfaceVec;
+    auto node = std::make_shared<RSRenderNode>(0);
+    auto drawable = std::make_shared<DrawableV2::RSRenderNodeDrawable>(node);
+    allSurfaceNodeDrawables.push_back(drawable);
+    RSUniRenderUtil::MergeVisibleDirtyRegion(allSurfaceNodeDrawables, hasVisibleDirtyRegionSurfaceVec, false);
+    RSUniRenderUtil::MergeVisibleDirtyRegion(allSurfaceNodeDrawables, hasVisibleDirtyRegionSurfaceVec, true);
+    ASSERT_FALSE(drawble->renderParams_);
+}
+
+/**
+ * @tc.name: MergeVisibleDirtyRegionTest003
+ * @tc.desc: Verify function MergeVisibleDirtyRegion
+ * @tc.type:FUNC
+ * @tc.require:issuesI9KRF1
+ */
+HWTEST_F(RSUniRenderUtilTest, MergeVisibleDirtyRegionTest003, Function | SmallTest | Level2)
+{
+    std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> allSurfaceNodeDrawables;
+    std::vector<NodeId> hasVisibleDirtyRegionSurfaceVec;
+    auto node = std::make_shared<RSRenderNode>(0);
+    auto drawable = std::make_shared<DrawableV2::RSRenderNodeDrawable>(node);
+    auto param = std::make_unique<RSSurfaceRenderParams>(node->id_);
+    param->isMainWindowType_ = false;
+    param->isLeashWindow_ = false;
+    param->isAppWindow_ = false;
+    drawble->renderParams_ = std::move(param);
+    allSurfaceNodeDrawables.push_back(drawable);
+    RSUniRenderUtil::MergeVisibleDirtyRegion(allSurfaceNodeDrawables, hasVisibleDirtyRegionSurfaceVec, false);
+    RSUniRenderUtil::MergeVisibleDirtyRegion(allSurfaceNodeDrawables, hasVisibleDirtyRegionSurfaceVec, true);
+    ASSERT_TRUE(drawble->renderParams_);
 }
 
 /**
