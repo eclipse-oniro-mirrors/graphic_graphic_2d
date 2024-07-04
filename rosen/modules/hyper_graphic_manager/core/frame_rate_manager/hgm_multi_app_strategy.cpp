@@ -411,6 +411,7 @@ void HgmMultiAppStrategy::UpdateStrategyByTouch(
                 pkgName.c_str(), touchInfo->touchState, touchInfo->upExpectFps);
             strategy.min = touchInfo->upExpectFps;
             strategy.max = touchInfo->upExpectFps;
+            voteRes_.first = EXEC_SUCCESS;
         }
     }
 }
