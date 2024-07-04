@@ -445,8 +445,8 @@ HWTEST_F(RSClientTest, SetScreenChangeCallback001, TestSize.Level1)
  */
 HWTEST_F(RSClientTest, SetPointerColorInversionConfig001, TestSize.Level1)
 {
-    float darkBuffer = 0.5;
-    float brightBuffer = 0.5;
+    float darkBuffer = 0.5f;
+    float brightBuffer = 0.5f;
     int64_t interval = 50;
     EXPECT_EQ(rsClient->SetPointerColorInversionConfig(darkBuffer, brightBuffer, interval), StatusCode::SUCCESS);
 }

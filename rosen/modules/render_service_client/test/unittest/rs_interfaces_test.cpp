@@ -428,8 +428,8 @@ HWTEST_F(RSInterfacesTest, GetScreenSupportedModes002, Function | SmallTest | Le
  */
 HWTEST_F(RSInterfacesTest, SetPointerColorInversionConfig001, TestSize.Level1)
 {
-    float darkBuffer = 0.5;
-    float brightBuffer = 0.5;
+    float darkBuffer = 0.5f;
+    float brightBuffer = 0.5f;
     int64_t interval = 50;
     int32_t ret = rsInterfaces->SetPointerColorInversionConfig(darkBuffer, brightBuffer, interval);
     EXPECT_EQ(ret, StatusCode::SUCCESS);
