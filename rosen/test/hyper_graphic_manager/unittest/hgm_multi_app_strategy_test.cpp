@@ -157,8 +157,8 @@ HWTEST_F(HgmMultiAppStrategyTest, SingleAppTouch001, Function | SmallTest | Leve
             multiAppStrategy_->HandleTouchInfo(touchInfo);
             res = multiAppStrategy_->GetVoteRes(strategyConfig);
             ASSERT_EQ(res, EXEC_SUCCESS);
-            ASSERT_EQ(strategyConfig.min, downFps0);
-            ASSERT_EQ(strategyConfig.max, downFps0);
+            ASSERT_EQ(strategyConfig.min, fps0);
+            ASSERT_EQ(strategyConfig.max, fps0);
 
             touchInfo = {
                 .touchState = TouchState::IDLE_STATE,
