@@ -23,6 +23,7 @@
 
 #include "common/rs_common_def.h"
 #include "include/core/SkGraphics.h"
+#include "include/gpu/GrDirectContext.h"
 #include "surface.h"
 #include "sync_fence.h"
 #include "memory/rs_memory_manager.h"
@@ -53,6 +54,7 @@ namespace {
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
 constexpr const char* DEFAULT_CLEAR_GPU_CACHE = "DefaultClearGpuCache";
 constexpr const char* PURGE_CACHE_BETWEEN_FRAMES = "PurgeCacheBetweenFrames";
+constexpr const char* PRE_ALLOCATE_TEXTURE_BETWEEN_FRAMES = "PreAllocateTextureBetweenFrames";
 constexpr uint32_t TIME_OF_EIGHT_FRAMES = 8000;
 constexpr uint32_t TIME_OF_THE_FRAMES = 1000;
 constexpr uint32_t TIME_OF_DEFAULT_CLEAR_GPU_CACHE = 5000;
