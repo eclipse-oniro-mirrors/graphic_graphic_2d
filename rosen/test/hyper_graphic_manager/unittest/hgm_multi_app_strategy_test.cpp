@@ -223,7 +223,7 @@ HWTEST_F(HgmMultiAppStrategyTest, SingleAppTouch002, Function | SmallTest | Leve
 
 /**
  * @tc.name: SingleAppTouch003
- * @tc.desc: Verify the result of SingleAppTouch002 function
+ * @tc.desc: Verify the result of SingleAppTouch003 function
  * @tc.type: FUNC
  * @tc.require:
  */
