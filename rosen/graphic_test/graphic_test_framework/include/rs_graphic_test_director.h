@@ -17,10 +17,10 @@
 #define RS_GRAPHIC_TEST_DIRECTOR_H
 
 #include "common/rs_rect.h"
-#include "ui/rs_ui_director.h"
-#include "ui/rs_display_node.h"
 #include "pixel_map.h"
 #include "rs_graphic_rootnode.h"
+#include "ui/rs_display_node.h"
+#include "ui/rs_ui_director.h"
 
 namespace OHOS {
 namespace Rosen {

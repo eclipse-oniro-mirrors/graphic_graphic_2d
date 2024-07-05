@@ -16,12 +16,12 @@
 #ifndef RS_GRAPHIC_TEST_H
 #define RS_GRAPHIC_TEST_H
 
-#include "rs_graphic_test_ext.h"
-#include "rs_graphic_rootnode.h"
-#include "common/rs_rect.h"
 #include "common/rs_color.h"
-#include "ui/rs_surface_node.h"
+#include "common/rs_rect.h"
+#include "rs_graphic_rootnode.h"
+#include "rs_graphic_test_ext.h"
 #include "ui/rs_canvas_node.h"
+#include "ui/rs_surface_node.h"
 
 namespace OHOS {
 namespace Rosen {

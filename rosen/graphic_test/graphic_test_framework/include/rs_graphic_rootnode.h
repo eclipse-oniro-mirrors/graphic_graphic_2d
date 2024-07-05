@@ -16,8 +16,8 @@
 #ifndef RS_GRAPHIC_ROOTNODE_H
 #define RS_GRAPHIC_ROOTNODE_H
 
-#include "ui/rs_surface_node.h"
 #include "ui/rs_canvas_node.h"
+#include "ui/rs_surface_node.h"
 
 namespace OHOS {
 namespace Rosen {
