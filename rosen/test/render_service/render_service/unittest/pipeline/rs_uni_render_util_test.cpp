@@ -569,7 +569,7 @@ HWTEST_F(RSUniRenderUtilTest, MergeVisibleDirtyRegionTest, Function | SmallTest 
 
 /**
  * @tc.name: MergeVisibleDirtyRegionTest001
- * @tc.desc: Verify function MergeVisibleDirtyRegion
+ * @tc.desc: Verify function MergeVisibleDirtyRegion while node is App Window
  * @tc.type:FUNC
  * @tc.require:issuesI9KRF1
  */
@@ -593,7 +593,7 @@ HWTEST_F(RSUniRenderUtilTest, MergeVisibleDirtyRegionTest001, Function | SmallTe
 
 /**
  * @tc.name: MergeVisibleDirtyRegionTest002
- * @tc.desc: Verify function MergeVisibleDirtyRegion
+ * @tc.desc: Verify function MergeVisibleDirtyRegion while node has no param
  * @tc.type:FUNC
  * @tc.require:issuesI9KRF1
  */
@@ -611,7 +611,7 @@ HWTEST_F(RSUniRenderUtilTest, MergeVisibleDirtyRegionTest002, Function | SmallTe
 
 /**
  * @tc.name: MergeVisibleDirtyRegionTest003
- * @tc.desc: Verify function MergeVisibleDirtyRegion
+ * @tc.desc: Verify function MergeVisibleDirtyRegion while node is not App Window
  * @tc.type:FUNC
  * @tc.require:issuesI9KRF1
  */
