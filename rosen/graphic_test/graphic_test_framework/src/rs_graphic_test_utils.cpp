@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#include "rs_graphic_test_utils.h"
 #include "png.h"
 #include "rs_graphic_log.h"
+#include "rs_graphic_test_utils.h"
 
 static bool WriteToPng(const std::string &filename, const WriteToPngParam &param)
 {

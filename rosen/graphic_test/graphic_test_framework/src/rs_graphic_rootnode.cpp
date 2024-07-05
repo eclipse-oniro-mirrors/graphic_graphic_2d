@@ -31,7 +31,7 @@ void RSGraphicRootNode::SetTestSurface(
     testSurfaceNode_ = node;
     screenSurfaceNode_->AddChild(testSurfaceNode_, -1);
 }
-                                                                                                                                                                                             
+
 void RSGraphicRootNode::ResetTestSurface()
 {
     screenSurfaceNode_->RemoveChild(testSurfaceNode_);

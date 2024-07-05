@@ -14,11 +14,11 @@
  */
 
 #include "rs_graphic_test.h"
-#include "ui/rs_surface_node.h"
-#include "ui/rs_root_node.h"
 #include "rs_graphic_test_director.h"
-#include "rs_parameter_parse.h"
 #include "rs_graphic_test_utils.h"
+#include "rs_parameter_parse.h"
+#include "ui/rs_root_node.h"
+#include "ui/rs_surface_node.h"
 
 #include <thread>
 #include <chrono>

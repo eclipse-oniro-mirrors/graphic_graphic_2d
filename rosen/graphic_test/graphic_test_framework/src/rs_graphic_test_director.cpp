@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
+#include "display_manager.h"
 #include "rs_graphic_test_director.h"
+#include "rs_parameter_parse.h"
+#include "transaction/rs_interfaces.h"
+#include "ui/rs_root_node.h"
 #include "ui/rs_surface_node.h"
 #include "ui/rs_ui_director.h"
-#include "ui/rs_root_node.h"
-#include "transaction/rs_interfaces.h"
-#include "rs_parameter_parse.h"
-#include "display_manager.h"
 
 #include <chrono>
 #include <condition_variable>

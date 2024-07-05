@@ -14,8 +14,8 @@
  */
 
 #include "rs_graphic_test.h"
-#include "rs_parameter_parse.h"
 #include "rs_graphic_test_director.h"
+#include "rs_parameter_parse.h"
 
 using namespace OHOS;
 using namespace OHOS::Rosen;

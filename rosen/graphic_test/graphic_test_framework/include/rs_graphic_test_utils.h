@@ -16,10 +16,11 @@
 #ifndef RS_GRAPHIC_TEST_UTILS_H
 #define RS_GRAPHIC_TEST_UTILS_H
 
+#include "pixel_map.h"
+
+#include <chrono>
 #include <string>
 #include <thread>
-#include <chrono>
-#include "pixel_map.h"
 
 using WriteToPngParam = struct {
     uint32_t width;
