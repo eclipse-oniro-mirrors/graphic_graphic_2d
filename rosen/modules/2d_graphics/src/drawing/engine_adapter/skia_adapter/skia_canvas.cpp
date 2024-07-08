@@ -189,7 +189,7 @@ void SkiaCanvas::DrawSdf(const SDFShapeBase& shape)
 {
     std::string shaderString = shape.Getshader();
     if (skCanvas_ == nullptr || skCanvas_->getSurface() == nullptr || shaderString.size() == 0) {
-        LOGD("skCanvas_ or surface is null, or sdf shape is empty. return on line %{public}d", __LINE__);
+        LOGE("skCanvas_ or surface is null, or sdf shape is empty. return on line %{public}d", __LINE__);
         return;
     }
 
