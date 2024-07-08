@@ -214,6 +214,7 @@ const bool RSProperties::FilterCacheEnabled = false;
 #endif
 
 const bool RSProperties::IS_UNI_RENDER = RSUniRenderJudgement::IsUniRender();
+const bool RSProperties::FOREGROUND_FILTER_ENABLED = RSSystemProperties::GetForegroundFilterEnabled();
 
 RSProperties::RSProperties()
 {
@@ -1760,7 +1761,7 @@ const std::optional<Vector2f>& RSProperties::GetGreyCoef() const
 bool RSProperties::IsDynamicDimValid() const
 {
     return dynamicDimDegree_.has_value() &&
-           ROSEN_GE(*dynamicDimDegree_, 0.0) && ROSEN_LE(*dynamicDimDegree_, 1.0);
+           ROSEN_GE(*dynamicDimDegree_, 0.0) && ROSEN_LNE(*dynamicDimDegree_, 1.0);
 }
 
 const std::shared_ptr<RSFilter>& RSProperties::GetFilter() const
@@ -4115,7 +4116,9 @@ void RSProperties::UpdateFilter()
         filter_.reset();
     }
 
-    UpdateForegroundFilter();
+    if (FOREGROUND_FILTER_ENABLED) {
+        UpdateForegroundFilter();
+    }
 
     needFilter_ = backgroundFilter_ != nullptr || filter_ != nullptr || useEffect_ || IsLightUpEffectValid() ||
                   IsDynamicLightUpValid() || greyCoef_.has_value() || linearGradientBlurPara_ != nullptr ||

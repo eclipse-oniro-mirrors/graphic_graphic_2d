@@ -79,6 +79,14 @@ public:
 #endif
     void RemoveVirtualScreen(ScreenId id) override;
 
+    int32_t SetPointerColorInversionConfig(float darkBuffer, float brightBuffer, int64_t interval) override;
+ 
+    int32_t SetPointerColorInversionEnabled(bool enable) override;
+ 
+    int32_t RegisterPointerLuminanceChangeCallback(sptr<RSIPointerLuminanceChangeCallback> callback) override;
+ 
+    int32_t UnRegisterPointerLuminanceChangeCallback() override;
+
     int32_t SetScreenChangeCallback(sptr<RSIScreenChangeCallback> callback) override;
 
     void SetScreenActiveMode(ScreenId id, uint32_t modeId) override;
@@ -111,8 +119,8 @@ public:
 
     void RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app) override;
 
-    void TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCaptureCallback> callback, float scaleX, float scaleY,
-        bool useDma, SurfaceCaptureType surfaceCaptureType, bool isSync) override;
+    void TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCaptureCallback> callback,
+        const RSSurfaceCaptureConfig& captureConfig) override;
 
     RSVirtualScreenResolution GetVirtualScreenResolution(ScreenId id) override;
 
@@ -236,6 +244,8 @@ public:
     GlobalDirtyRegionInfo GetGlobalDirtyRegionInfo() override;
 
     LayerComposeInfo GetLayerComposeInfo() override;
+
+    int32_t RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback) override;
 
 #ifdef TP_FEATURE_ENABLE
     void SetTpFeatureConfig(int32_t feature, const char* config) override;
