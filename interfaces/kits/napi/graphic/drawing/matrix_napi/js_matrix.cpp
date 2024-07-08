@@ -277,7 +277,7 @@ napi_value JsMatrix::SetRotation(napi_env env, napi_callback_info info)
     JsMatrix* me = CheckParamsAndGetThis<JsMatrix>(env, info);
     return (me != nullptr) ? me->OnSetRotation(env, info) : nullptr;
     return nullptr;
- }
+}
 
 napi_value JsMatrix::OnSetRotation(napi_env env, napi_callback_info info)
 {
