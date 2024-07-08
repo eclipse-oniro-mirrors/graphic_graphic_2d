@@ -2168,9 +2168,9 @@ void RSUniRenderVisitor::UpdateSurfaceDirtyAndGlobalDirty()
     });
     curDisplayNode_->SetMainAndLeashSurfaceDirty(hasMainAndLeashSurfaceDirty);
     CheckAndUpdateFilterCacheOcclusion(curMainAndLeashSurfaces);
+    CheckMergeDebugRectforRefreshRate(curMainAndLeashSurfaces);
     CheckMergeGlobalFilterForDisplay(accumulatedDirtyRegion);
     ResetDisplayDirtyRegion();
-    CheckMergeDebugRectforRefreshRate(curMainAndLeashSurfaces);
     curDisplayNode_->ClearCurrentSurfacePos();
     std::swap(preMainAndLeashWindowNodesIds_, curMainAndLeashWindowNodesIds_);
 
