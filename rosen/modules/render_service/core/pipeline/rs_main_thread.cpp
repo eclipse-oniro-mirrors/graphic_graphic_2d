@@ -387,10 +387,7 @@ void RSMainThread::Init()
         ResetAnimateNodeFlag();
         SKResourceManager::Instance().ReleaseResource();
         // release node memory
-        if (RSRenderNodeGC::Instance().GetNodeSize() > 0) {
-            RS_TRACE_NAME("ReleaseRSRenderNodeMemory");
-            RSRenderNodeGC::Instance().ReleaseNodeMemory();
-        }
+        RSRenderNodeGC::Instance().ReleaseNodeMemory();
 #ifdef RS_ENABLE_PARALLEL_UPLOAD
         RSUploadResourceThread::Instance().OnRenderEnd();
 #endif
@@ -453,6 +450,11 @@ void RSMainThread::Init()
     if (ret != 0) {
         RS_LOGW("Add watchdog thread failed");
     }
+    auto PostTaskProxy = [](RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime,
+        AppExecFwk::EventQueue::Priority priority) {
+        RSMainThread::Instance()->PostTask(task, name, delayTime, priority);
+    };
+    RSRenderNodeGC::Instance().SetMainTask(PostTaskProxy);
 #ifdef RES_SCHED_ENABLE
     SubScribeSystemAbility();
 #endif
