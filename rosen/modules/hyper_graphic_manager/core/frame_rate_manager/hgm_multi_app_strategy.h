@@ -47,7 +47,7 @@ public:
     };
 
     HgmErrCode HandlePkgsEvent(const std::vector<std::string>& pkgs);
-    void HandleTouchInfo(TouchInfo& touchInfo);
+    void HandleTouchInfo(const TouchInfo& touchInfo);
     void HandleLightFactorStatus(bool isSafe);
 
     void CalcVote();

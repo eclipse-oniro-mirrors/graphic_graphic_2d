@@ -70,7 +70,7 @@ HgmErrCode HgmMultiAppStrategy::HandlePkgsEvent(const std::vector<std::string>& 
     return EXEC_SUCCESS;
 }
 
-void HgmMultiAppStrategy::HandleTouchInfo(TouchInfo& touchInfo)
+void HgmMultiAppStrategy::HandleTouchInfo(const TouchInfo& touchInfo)
 {
     RS_TRACE_NAME_FMT("[HandleTouchInfo] pkgName:%s, touchState:%d",
         touchInfo.pkgName.c_str(), touchInfo.touchState);
