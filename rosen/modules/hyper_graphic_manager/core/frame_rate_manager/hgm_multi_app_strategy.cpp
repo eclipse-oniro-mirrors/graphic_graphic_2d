@@ -72,15 +72,17 @@ HgmErrCode HgmMultiAppStrategy::HandlePkgsEvent(const std::vector<std::string>& 
 
 void HgmMultiAppStrategy::HandleTouchInfo(TouchInfo& touchInfo)
 {
-    RS_TRACE_NAME_FMT("[HandleTouchInfo] pkgName:%s, touchState:%d", pkgName.c_str(), touchState);
-    HGM_LOGD("touch info update, pkgName:%{public}s, touchState:%{public}d", pkgName.c_str(), touchState);
+    RS_TRACE_NAME_FMT("[HandleTouchInfo] pkgName:%s, touchState:%d",
+        touchInfo.pkgName.c_str(), touchInfo.touchState);
+    HGM_LOGD("touch info update, pkgName:%{public}s, touchState:%{public}d",
+        ouchInfo.pkgName.c_str(), touchInfo.touchState);
     {
         std::lock_guard<std::mutex> lock(touchInfoMutex_);
-        touchInfo_ = { pkgName, touchState };
+        touchInfo_ = { touchInfo.pkgName, touchInfo.touchState, touchInfo.upExpectFps };
         std::lock_guard<std::mutex> pkgsLock(pkgsMutex_);
-        if (pkgName == "" && !pkgs_.empty()) {
+        if (touchInfo.pkgName == "" && !pkgs_.empty()) {
             auto [focusPkgName, pid, appType] = AnalyzePkgParam(pkgs_.front());
-            touchInfo_.first = focusPkgName;
+            touchInfo_.pkgName = focusPkgName;
             HGM_LOGD("auto change touch pkgName to focusPkgName:%{public}s", focusPkgName.c_str());
         }
     }
@@ -303,7 +305,7 @@ void HgmMultiAppStrategy::UseStrategyNum()
         voteRes_.second = strategyConfigMapCache_.at(strategyName);
         OnLightFactor(voteRes_.second);
         std::lock_guard<std::mutex> lock(touchInfoMutex_);
-        UpdateStrategyByTouch(voteRes_.second, touchInfo_.first);
+        UpdateStrategyByTouch(voteRes_.second, touchInfo_.pkgName);
     }
 }
 

@@ -95,7 +95,7 @@ private:
         .down = OledRefreshRate::OLED_120_HZ,
     }};
     std::mutex touchInfoMutex_;
-    TouchInfo touchInfo_ = { "", TouchState::IDLE_STATE }; // pkgName, touchState
+    TouchInfo touchInfo_ = { "", TouchState::IDLE_STATE, OLED_120_HZ }; // pkgName, touchState
     std::unique_ptr<TouchInfo> uniqueTouchInfo_ = nullptr;
     std::atomic<bool> lightFactorStatus_{false};
     std::vector<StrategyChangeCallback> strategyChangeCallbacks_;
