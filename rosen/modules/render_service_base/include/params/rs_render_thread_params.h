@@ -56,6 +56,11 @@ public:
         return isRegionDebugEnabled_;
     }
 
+    bool IsAllSurfaceVisibleDebugEnabled() const
+    {
+        return isAllSurfaceVisibleDebugEnabled_;
+    }
+
     bool IsVirtualDirtyEnabled() const
     {
         return isVirtualDirtyEnabled_;
@@ -347,6 +352,7 @@ private:
     bool isDisplayDirtyDfxEnabled_ = false;
     bool isOpaqueRegionDfxEnabled_ = false;
     bool isVisibleRegionDfxEnabled_ = false;
+    bool isAllSurfaceVisibleDebugEnabled_ = false;
     bool isOpDropped_ = false;
     bool isOcclusionEnabled_ = false;
     bool isUIFirstDebugEnable_ = false;
