@@ -31,6 +31,7 @@
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
 #include "pipeline/parallel_render/rs_sub_thread_manager.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
+#include "pipeline/rs_pointer_render_manager.h"
 #include "pipeline/rs_realtime_refresh_rate_manager.h"
 #include "pipeline/rs_render_frame_rate_linker_map.h"
 #include "pipeline/rs_render_node_gc.h"
@@ -435,6 +436,36 @@ bool RSRenderServiceConnection::Set2DRenderCtrl(bool enable)
     return true;
 }
 #endif
+
+int32_t RSRenderServiceConnection::SetPointerColorInversionConfig(float darkBuffer,
+    float brightBuffer, int64_t interval)
+{
+    RSPointerRenderManager::GetInstance().SetPointerColorInversionConfig(darkBuffer, brightBuffer, interval);
+    return StatusCode::SUCCESS;
+}
+ 
+int32_t RSRenderServiceConnection::SetPointerColorInversionEnabled(bool enable)
+{
+    RSPointerRenderManager::GetInstance().SetPointerColorInversionEnabled(enable);
+    return StatusCode::SUCCESS;
+}
+ 
+int32_t RSRenderServiceConnection::RegisterPointerLuminanceChangeCallback(
+    sptr<RSIPointerLuminanceChangeCallback> callback)
+{
+    if (!callback) {
+        RS_LOGE("RSRenderServiceConnection::RegisterPointerLuminanceChangeCallback: callback is nullptr");
+        return StatusCode::INVALID_ARGUMENTS;
+    }
+    RSPointerRenderManager::GetInstance().RegisterPointerLuminanceChangeCallback(remotePid_, callback);
+    return StatusCode::SUCCESS;
+}
+ 
+int32_t RSRenderServiceConnection::UnRegisterPointerLuminanceChangeCallback()
+{
+    RSPointerRenderManager::GetInstance().UnRegisterPointerLuminanceChangeCallback(remotePid_);
+    return StatusCode::SUCCESS;
+}
 
 void RSRenderServiceConnection::RemoveVirtualScreen(ScreenId id)
 {
