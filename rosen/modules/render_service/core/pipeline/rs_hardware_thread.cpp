@@ -68,7 +68,7 @@
 
 namespace OHOS::Rosen {
 constexpr uint32_t HARDWARE_THREAD_TASK_NUM = 2;
-constexpr uint32_t SAMPLE_FREQUENCY = 10;
+constexpr uint64_t SAMPLE_TIME = 100000000;
 
 RSHardwareThread& RSHardwareThread::Instance()
 {
@@ -234,19 +234,20 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
 void RSHardwareThread::ReportFrameToRSS()
 {
     if (VSyncResEventListener::GetInstance()->GetIsNeedReport()) {
-        if (VSyncResEventListener::GetInstance()->GetIsFirstReport() ||reportCount_ % SAMPLE_FREQUENCY == 0) {
+            uint64_t currTime = static_cast<uint64_t>(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch()).count());
+        if (VSyncResEventListener::GetInstance()->GetIsFirstReport() ||
+            lastReportTime_ == 0 || currTime - lastReportTime_ >= SAMPLE_TIME) {
             uint32_t type = OHOS::ResourceSchedule::ResType::RES_TYPE_SEND_FRAME_EVENT;
             int64_t value = 0;
             std::unordered_map<std::string, std::string> mapPayload;
             OHOS::ResourceSchedule::ResSchedClient::GetInstance().ReportData(type, value, mapPayload);
             VSyncResEventListener::GetInstance()->SetIsFirstReport(false);
+            lastReportTime_ = static_cast<uint64_t>(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch()).count());
         }
-        reportCount_ ++;
-        if (reportCount_ > SAMPLE_FREQUENCY) {
-            reportCount_ /= SAMPLE_FREQUENCY;
-        }
-    } else {
-        reportCount_ = 0;
     }
 }
 #endif
