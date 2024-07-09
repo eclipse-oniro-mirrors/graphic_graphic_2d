@@ -617,10 +617,7 @@ napi_value JsPath::OnIsClosed(napi_env env, napi_callback_info info)
     CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_ONE);
 
     bool forceClosed = false;
-    if (!(ConvertFromJsValue(env, argv[ARGC_ZERO], forceClosed))) {
-        ROSEN_LOGE("JsPath::IsClosed Argv is invalid");
-        return NapiGetUndefined(env);
-    }
+    GET_BOOLEAN_PARAM(ARGC_ZERO, forceClosed);
 
     bool result = m_path->IsClosed(forceClosed);
     return CreateJsNumber(env, result);
