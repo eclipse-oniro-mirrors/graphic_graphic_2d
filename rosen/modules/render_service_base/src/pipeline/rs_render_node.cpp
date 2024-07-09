@@ -2304,8 +2304,11 @@ void RSRenderNode::ApplyModifiers()
     }
 
     // Temporary code, copy matrix into render params
-    UpdateDrawableVec();
-    UpdateDrawableVecV2();
+    if (!RSUniRenderJudgement::IsUniRender()) {
+        UpdateDrawableVec();
+    } else {
+        UpdateDrawableVecV2();
+    }
 
     UpdateFilterCacheWithBackgroundDirty();
 
