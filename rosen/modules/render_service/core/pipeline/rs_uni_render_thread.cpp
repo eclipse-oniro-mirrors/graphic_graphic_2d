@@ -709,6 +709,9 @@ void RSUniRenderThread::PurgeCacheBetweenFrames()
 
 void RSUniRenderThread::PreAllocateTextureBetweenFrames()
 {
+    if (!RSSystemProperties::IsPhoneType()) {
+        return;
+    }
     RemoveTask(PRE_ALLOCATE_TEXTURE_BETWEEN_FRAMES);
     PostTask(
         [this]() {
