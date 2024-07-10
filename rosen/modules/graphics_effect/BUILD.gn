@@ -48,10 +48,10 @@ ohos_source_set("graphics_effect_src") {
     "$graphic_2d_root/utils/color_manager/export",
   ]
 
-    if (host_cpu == "arm64") {
-    include_dirs += [ 
+  if (host_cpu == "arm64") {
+    include_dirs += [
       "$skia_root_new",
-      "$mindspore_root/mindspore-src/source/third_party/securec/include"
+      "$mindspore_root/mindspore-src/source/third_party/securec/include",
     ]
   }
 
@@ -91,17 +91,18 @@ ohos_source_set("graphics_effect_src") {
 if (is_arkui_x) {
   ohos_source_set("libgraphics_effect") {
     branch_protector_ret = "pac_ret"
+
+    if (host_cpu == "arm64") {
+      include_dirs = [
+        "$skia_root_new",
+        "$mindspore_root/mindspore-src/source/third_party/securec/include",
+      ]
+    }
+
     sanitize = {
       cfi = true
       cfi_cross_dso = true
       debug = false
-    }
-    
-    if (host_cpu == "arm64") {
-      include_dirs = [ 
-        "$skia_root_new",
-        "$mindspore_root/mindspore-src/source/third_party/securec/include"
-      ]
     }
 
     public_deps = [ ":graphics_effect_src" ]
@@ -112,18 +113,17 @@ if (is_arkui_x) {
   }
 } else {
   ohos_shared_library("libgraphics_effect") {
+    if (host_cpu == "arm64") {
+      include_dirs = [
+        "$skia_root_new",
+        "$mindspore_root/mindspore-src/source/third_party/securec/include",
+      ]
+    }
     branch_protector_ret = "pac_ret"
     sanitize = {
       cfi = true
       cfi_cross_dso = true
       debug = false
-    }
-
-    if (host_cpu == "arm64") {
-      include_dirs = [ 
-        "$skia_root_new",
-        "$mindspore_root/mindspore-src/source/third_party/securec/include"
-      ]
     }
 
     public_deps = [ ":graphics_effect_src" ]
