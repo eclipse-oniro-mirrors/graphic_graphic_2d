@@ -149,6 +149,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SHOW_REFRESH_RATE_ENABLED),
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::MARK_POWER_OFF_NEED_PROCESS_ONE_FRAME),
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::DISABLE_RENDER_CONTROL_SCREEN),
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_POINTER_COLOR_INVERSION_CONFIG),
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_POINTER_COLOR_INVERSION_ENABLED),
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_POINTER_LUMINANCE_CALLBACK),
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_POINTER_LUMINANCE_CALLBACK),
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_POWER_STATUS),
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_BACK_LIGHT),
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_ACTIVE_MODE),
@@ -217,7 +221,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_ACTIVE_DIRTY_REGION_INFO),
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_GLOBAL_DIRTY_REGION_INFO),
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_LAYER_COMPOSE_INFO),
-        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_CAST_SCREEN_ENABLE_SKIP_WINDOW)
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_CAST_SCREEN_ENABLE_SKIP_WINDOW),
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_UIEXTENSION_CALLBACK)
     };
     if (descriptorCheckList.find(code) != descriptorCheckList.cend()) {
         auto token = data.ReadInterfaceToken();
@@ -419,6 +424,40 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             reply.WriteInt32(status);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_POINTER_COLOR_INVERSION_CONFIG): {
+            float darkBuffer = data.ReadFloat();
+            float brightBuffer = data.ReadFloat();
+            int64_t interval = data.ReadInt64();
+            int32_t status = SetPointerColorInversionConfig(darkBuffer, brightBuffer, interval);
+            reply.WriteInt32(status);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_POINTER_COLOR_INVERSION_ENABLED): {
+            bool enable = data.ReadBool();
+            int32_t status = SetPointerColorInversionEnabled(enable);
+            reply.WriteInt32(status);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_POINTER_LUMINANCE_CALLBACK): {
+            auto remoteObject = data.ReadRemoteObject();
+            if (remoteObject == nullptr) {
+                ret = ERR_NULL_OBJECT;
+                break;
+            }
+            sptr<RSIPointerLuminanceChangeCallback> cb = iface_cast<RSIPointerLuminanceChangeCallback>(remoteObject);
+            if (cb == nullptr) {
+                ret = ERR_NULL_OBJECT;
+                break;
+            }
+            int32_t status = RegisterPointerLuminanceChangeCallback(cb);
+            reply.WriteInt32(status);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_POINTER_LUMINANCE_CALLBACK): {
+            int32_t status = UnRegisterPointerLuminanceChangeCallback();
+            reply.WriteInt32(status);
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_ACTIVE_MODE): {
             ScreenId id = data.ReadUint64();
             uint32_t modeId = data.ReadUint32();
@@ -491,6 +530,17 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             SetShowRefreshRateEnabled(enable);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO): {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIRenderServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            pid_t pid = data.ReadInt32();
+            std::string ret = GetRefreshInfo(pid);
+            reply.WriteString(ret);
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_RESOLUTION): {
             ScreenId id = data.ReadUint64();
             uint32_t width = data.ReadUint32();
@@ -532,19 +582,21 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_NULL_OBJECT;
                 break;
             }
-            float scaleX = data.ReadFloat();
-            float scaleY = data.ReadFloat();
-            bool useDma = data.ReadBool();
-            SurfaceCaptureType surfaceCaptureType = static_cast<SurfaceCaptureType>(data.ReadUint8());
+            RSSurfaceCaptureConfig captureConfig;
+            captureConfig.scaleX = data.ReadFloat();
+            captureConfig.scaleY = data.ReadFloat();
+            captureConfig.useDma = data.ReadBool();
+            captureConfig.useCurWindow = data.ReadBool();
+            captureConfig.captureType = static_cast<SurfaceCaptureType>(data.ReadUint8());
+            captureConfig.isSync = data.ReadBool();
 
             auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode(id);
-            bool isSync = data.ReadBool();
             if (node && node->GetType() == RSRenderNodeType::DISPLAY_NODE &&
                 !securityManager_.IsInterfaceCodeAccessible(code)) {
                 RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest no permission to access TAKE_SURFACE_CAPTURE");
                 return ERR_INVALID_STATE;
             }
-            TakeSurfaceCapture(id, cb, scaleX, scaleY, useDma, surfaceCaptureType, isSync);
+            TakeSurfaceCapture(id, cb, captureConfig);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_APPLICATION_AGENT): {
@@ -1139,8 +1191,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_TOUCH_EVENT) : {
             auto touchStatus = data.ReadInt32();
+            auto pkgName =  data.ReadString();
+            auto pid = data.ReadUint32();
             auto touchCnt = data.ReadInt32();
-            NotifyTouchEvent(touchStatus, touchCnt);
+            NotifyTouchEvent(touchStatus, pkgName, pid, touchCnt);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_HGM_CFG_CALLBACK) : {
@@ -1243,6 +1297,26 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_CURTAIN_SCREEN_USING_STATUS) : {
             auto isCurtainScreenOn = data.ReadBool();
             SetCurtainScreenUsingStatus(isCurtainScreenOn);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_UIEXTENSION_CALLBACK): {
+            if (!securityManager_.IsInterfaceCodeAccessible(code)) {
+                RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest no permission REGISTER_UIEXTENSION_CALLBACK");
+                return ERR_INVALID_STATE;
+            }
+            uint64_t userId = data.ReadUint64();
+            auto remoteObject = data.ReadRemoteObject();
+            if (remoteObject == nullptr) {
+                ret = ERR_NULL_OBJECT;
+                break;
+            }
+            sptr<RSIUIExtensionCallback> callback = iface_cast<RSIUIExtensionCallback>(remoteObject);
+            if (callback == nullptr) {
+                ret = ERR_NULL_OBJECT;
+                break;
+            }
+            int32_t status = RegisterUIExtensionCallback(userId, callback);
+            reply.WriteInt32(status);
             break;
         }
         default: {

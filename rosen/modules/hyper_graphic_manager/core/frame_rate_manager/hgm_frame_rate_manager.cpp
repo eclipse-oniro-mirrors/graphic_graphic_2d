@@ -23,6 +23,7 @@
 #include "pipeline/rs_uni_render_judgement.h"
 #include "hgm_config_callback_manager.h"
 #include "hgm_core.h"
+#include "hgm_energy_consumption_policy.h"
 #include "hgm_log.h"
 #include "parameters.h"
 #include "rs_trace.h"
@@ -45,6 +46,8 @@ namespace {
     constexpr uint32_t FIRST_FRAME_TIME_OUT = 50000000; // 50ms
     constexpr uint32_t SCENE_BEFORE_XML = 1;
     constexpr uint32_t SCENE_AFTER_TOUCH = 3;
+    constexpr uint64_t ENERGY_ASSURANCE_TASK_DELAY_TIME = 1000; //1s
+    const static std::string ENERGY_ASSURANCE_TASK_ID = "ENERGY_ASSURANCE_TASK_ID";
     // CAUTION: with priority
     const std::string VOTER_NAME[] = {
         "VOTER_THERMAL",
@@ -69,6 +72,8 @@ void HgmFrameRateManager::Init(sptr<VSyncController> rsController,
     auto& hgmCore = HgmCore::Instance();
     curRefreshRateMode_ = hgmCore.GetCurrentRefreshRateMode();
     multiAppStrategy_.UpdateXmlConfigCache();
+    HgmEnergyConsumptionPolicy::Instance().SetEnergyConsumptionConfig(
+        multiAppStrategy_.GetScreenSetting().animationPowerConfig);
 
     // hgm warning: get non active screenId in non-folding devices（from sceneboard）
     auto screenList = hgmCore.GetScreenIds();
@@ -85,6 +90,8 @@ void HgmFrameRateManager::Init(sptr<VSyncController> rsController,
             curRefreshRateMode_ = configData->SettingModeId2XmlModeId(curRefreshRateMode_);
         }
         multiAppStrategy_.UpdateXmlConfigCache();
+        HgmEnergyConsumptionPolicy::Instance().SetEnergyConsumptionConfig(
+            multiAppStrategy_.GetScreenSetting().animationPowerConfig);
         multiAppStrategy_.CalcVote();
         HandleIdleEvent(ADD_VOTE);
     }
@@ -181,12 +188,6 @@ void HgmFrameRateManager::UpdateAppSupportStatus()
     if (multiAppStrategy_.GetFocusAppStrategyConfig(config) == EXEC_SUCCESS) {
         if (config.dynamicMode == DynamicModeType::TOUCH_EXT_ENABLED) {
             flag = true;
-        }
-    } else {
-        if (multiAppStrategy_.GetScreenSettingMode(config) == EXEC_SUCCESS) {
-            if (config.dynamicMode == DynamicModeType::TOUCH_EXT_ENABLED) {
-                flag = true;
-            }
         }
     }
     idleDetector_.SetAppSupportStatus(flag);
@@ -316,6 +317,7 @@ void HgmFrameRateManager::ReportHiSysEvent(const VoteInfo& frameRateVoteInfo)
     if (frameRateVoteInfo.voterName.empty()) {
         return;
     }
+    std::lock_guard<std::mutex> locker(frameRateVoteInfoMutex_);
     bool needAdd = frameRateVoteInfoVec_.empty() || frameRateVoteInfoVec_.back().second != frameRateVoteInfo;
     if (frameRateVoteInfoVec_.size() >= REPORT_VOTER_INFO_LIMIT) {
         std::string msg;
@@ -416,6 +418,7 @@ bool HgmFrameRateManager::CollectFrameRateChange(FrameRateRange finalRange,
         }
         if (appFrameRate != linker.second->GetFrameRate() || controllerRateChanged) {
             linker.second->SetFrameRate(appFrameRate);
+            std::lock_guard<std::mutex> lock(appChangeDataMutex_);
             appChangeData_.emplace_back(linker.second->GetId(), appFrameRate);
             HGM_LOGD("HgmFrameRateManager: appChangeData linkerId = %{public}" PRIu64 ", %{public}d",
                 linker.second->GetId(), appFrameRate);
@@ -453,6 +456,7 @@ void HgmFrameRateManager::HandleFrameRateChangeForLTPO(uint64_t timestamp)
     }
 
     RSTaskMessage::RSTask task = [this, lastRefreshRate, targetTime]() {
+        std::lock_guard<std::mutex> lock(appChangeDataMutex_);
         controller_->ChangeGeneratorRate(controllerRate_, appChangeData_, targetTime, isNeedUpdateAppOffset_);
         isNeedUpdateAppOffset_ = false;
         pendingRefreshRate_ = std::make_shared<uint32_t>(currRefreshRate_);
@@ -581,6 +585,8 @@ void HgmFrameRateManager::Reset()
     controllerRate_ = 0;
     pendingConstraintRelativeTime_ = 0;
     pendingRefreshRate_.reset();
+
+    std::lock_guard<std::mutex> lock(appChangeDataMutex_);
     appChangeData_.clear();
 }
 
@@ -690,22 +696,11 @@ void HgmFrameRateManager::HandlePackageEvent(pid_t pid, uint32_t listSize, const
     }
     HgmTaskHandleThread::Instance().PostTask([this, packageList] () {
         if (multiAppStrategy_.HandlePkgsEvent(packageList) == EXEC_SUCCESS) {
-            ClearScene();
+            std::lock_guard<std::mutex> locker(pkgSceneMutex_);
+            sceneStack_.clear();
         }
         UpdateAppSupportStatus();
     });
-}
-
-void HgmFrameRateManager::ClearScene()
-{
-    std::lock_guard<std::mutex> locker(pkgSceneMutex_);
-    for (auto it = sceneStack_.begin(); it != sceneStack_.end();) {
-        if (it->first.find("CAMERA") != std::string::npos) {
-            it++;
-        } else {
-            it = sceneStack_.erase(it);
-        }
-    }
 }
 
 void HgmFrameRateManager::HandleRefreshRateEvent(pid_t pid, const EventInfo& eventInfo)
@@ -731,34 +726,40 @@ void HgmFrameRateManager::HandleRefreshRateEvent(pid_t pid, const EventInfo& eve
     }
 }
 
-void HgmFrameRateManager::HandleTouchEvent(pid_t pid, int32_t touchStatus, int32_t touchCnt)
+void HgmFrameRateManager::HandleTouchEvent(pid_t remotePid, int32_t touchStatus, const std::string& pkgName,
+    uint32_t pid, int32_t touchCnt)
 {
     HGM_LOGD("HandleTouchEvent status:%{public}d", touchStatus);
-    if (pid != DEFAULT_PID) {
+    if (remotePid != DEFAULT_PID) {
         std::lock_guard<std::mutex> lock(cleanPidCallbackMutex_);
-        cleanPidCallback_[pid].insert(CleanPidCallbackType::TOUCH_EVENT);
+        cleanPidCallback_[remotePid].insert(CleanPidCallbackType::TOUCH_EVENT);
     }
 
     static std::mutex hgmTouchEventMutex;
     std::unique_lock<std::mutex> lock(hgmTouchEventMutex);
     if (touchStatus == TOUCH_DOWN || touchStatus == TOUCH_PULL_DOWN) {
-        HGM_LOGI("[touch manager] down");
+        HGM_LOGI("[touch manager] down %{public}s: %{public}d", pkgName.c_str(), pid);
         PolicyConfigData::StrategyConfig strategyRes;
+        HgmTaskHandleThread::Instance().RemoveEvent(ENERGY_ASSURANCE_TASK_ID);
+        HgmEnergyConsumptionPolicy::Instance().SetEnergyConsumptionAssuranceMode(false);
         if (multiAppStrategy_.GetFocusAppStrategyConfig(strategyRes) == EXEC_SUCCESS &&
             strategyRes.dynamicMode != DynamicModeType::TOUCH_DISENABLED) {
-            touchManager_.HandleTouchEvent(TouchEvent::DOWN_EVENT, "");
+                touchManager_.HandleTouchEvent(TouchEvent::DOWN_EVENT, "");
         }
     } else if (touchStatus == TOUCH_UP || touchStatus == TOUCH_PULL_UP) {
         if (touchCnt != LAST_TOUCH_CNT) {
             return;
         }
+        std::lock_guard<std::mutex> lock(voteMutex_);
         if (auto iter = voteRecord_.find("VOTER_GAMES"); iter != voteRecord_.end() && !iter->second.empty() &&
             gameScenes_.empty() && multiAppStrategy_.CheckPidValid(iter->second.front().pid)) {
             HGM_LOGI("[touch manager] keep down in games");
             return;
         }
         if (touchCnt == LAST_TOUCH_CNT) {
-            HGM_LOGI("[touch manager] up");
+            HGM_LOGI("[touch manager] up %{public}s: %{public}d", pkgName.c_str(), pid);
+            auto task = []() { HgmEnergyConsumptionPolicy::Instance().SetEnergyConsumptionAssuranceMode(true); };
+            HgmTaskHandleThread::Instance().PostEvent(ENERGY_ASSURANCE_TASK_ID, task, ENERGY_ASSURANCE_TASK_DELAY_TIME);
             touchManager_.HandleTouchEvent(TouchEvent::UP_EVENT, "");
         }
     } else {
@@ -786,6 +787,8 @@ void HgmFrameRateManager::HandleRefreshRateMode(int32_t refreshRateMode)
     curRefreshRateMode_ = refreshRateMode;
     DeliverRefreshRateVote({"VOTER_LTPO"}, REMOVE_VOTE);
     multiAppStrategy_.UpdateXmlConfigCache();
+    HgmEnergyConsumptionPolicy::Instance().SetEnergyConsumptionConfig(
+        multiAppStrategy_.GetScreenSetting().animationPowerConfig);
     multiAppStrategy_.CalcVote();
     HgmCore::Instance().SetLtpoConfig();
     schedulePreferredFpsChange_ = true;
@@ -817,7 +820,11 @@ void HgmFrameRateManager::HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus
     auto& hgmCore = HgmCore::Instance();
     auto screenList = hgmCore.GetScreenIds();
     auto screenPos = find(screenList.begin(), screenList.end(), id);
+    auto lastCurScreenId = curScreenId_;
     curScreenId_ = (screenPos == screenList.end()) ? 0 : id;
+    if (lastCurScreenId == curScreenId_) {
+        return;
+    }
     HGM_LOGI("HandleScreenPowerStatus curScreen:%{public}d", static_cast<int>(curScreenId_));
     isLtpo_ = (GetScreenType(curScreenId_) == "LTPO");
     std::string curScreenName = "screen" + std::to_string(curScreenId_) + "_" + (isLtpo_ ? "LTPO" : "LTPS");
@@ -829,6 +836,8 @@ void HgmFrameRateManager::HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus
             curScreenStrategyId_ = "LTPO-DEFAULT";
         }
         multiAppStrategy_.UpdateXmlConfigCache();
+        HgmEnergyConsumptionPolicy::Instance().SetEnergyConsumptionConfig(
+            multiAppStrategy_.GetScreenSetting().animationPowerConfig);
     }
 
     multiAppStrategy_.CalcVote();
@@ -847,7 +856,8 @@ void HgmFrameRateManager::HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus
 void HgmFrameRateManager::HandleSceneEvent(pid_t pid, EventInfo eventInfo)
 {
     std::string sceneName = eventInfo.description;
-    auto &gameSceneList = multiAppStrategy_.GetScreenSetting().gameSceneList;
+    auto screenSetting = multiAppStrategy_.GetScreenSetting();
+    auto &gameSceneList = screenSetting.gameSceneList;
 
     std::lock_guard<std::mutex> locker(pkgSceneMutex_);
     std::lock_guard<std::mutex> lock(voteMutex_);
@@ -1194,7 +1204,7 @@ void HgmFrameRateManager::CleanVote(pid_t pid)
                         HandlePackageEvent(DEFAULT_PID, 0, {}); // handle empty pkg
                         break;
                     case CleanPidCallbackType::TOUCH_EVENT:
-                        HandleTouchEvent(DEFAULT_PID, TouchStatus::TOUCH_UP, LAST_TOUCH_CNT);
+                        HandleTouchEvent(DEFAULT_PID, TouchStatus::TOUCH_UP, "", DEFAULT_PID, LAST_TOUCH_CNT);
                         break;
                     case CleanPidCallbackType::GAMES:
                         DeliverRefreshRateVote({"VOTER_GAMES"}, false);
@@ -1232,7 +1242,7 @@ void HgmFrameRateManager::SetResultVoteInfo(VoteInfo& voteInfo, uint32_t min, ui
     if (voteInfo.voterName == "VOTER_PACKAGES" && touchManager_.GetState() != TouchState::IDLE_STATE) {
         voteInfo.extInfo = "ONTOUCH";
     }
-    if (auto& packages = multiAppStrategy_.GetPackages(); packages.size() > 0) {
+    if (auto packages = multiAppStrategy_.GetPackages(); packages.size() > 0) {
         const auto& package = packages.front();
         const auto& pos = package.find(":");
         if (pos != package.npos) {
