@@ -170,18 +170,26 @@ napi_value GetImageInfoAndConvertToJsValue(napi_env env, const Drawing::ImageInf
     napi_create_object(env, &objValue);
 
     if (objValue != nullptr) {
-        napi_set_named_property(env, objValue, g_whcaString[IMAGEINFO_WIDTH_ID],
-            CreateJsNumber(env, static_cast<int32_t>(info.GetWidth())));
-        napi_set_named_property(env, objValue, g_whcaString[IMAGEINFO_HEIGHT_ID],
-            CreateJsNumber(env, static_cast<int32_t>(info.GetHeight())));
+        if (napi_set_named_property(env, objValue, g_whcaString[IMAGEINFO_WIDTH_ID],
+            CreateJsNumber(env, static_cast<int32_t>(info.GetWidth()))) != napi_ok) {
+            return nullptr;
+        }
+        if (napi_set_named_property(env, objValue, g_whcaString[IMAGEINFO_HEIGHT_ID],
+            CreateJsNumber(env, static_cast<int32_t>(info.GetHeight()))) != napi_ok) {
+            return nullptr;
+        }
         Drawing::ColorType clrType = info.GetColorType();
         if (clrType > Drawing::ColorType::COLORTYPE_BGRA_8888) {
             clrType = Drawing::ColorType::COLORTYPE_UNKNOWN;
         }
-        napi_set_named_property(env, objValue, g_whcaString[IMAGEINFO_CLRTYPE_ID],
-            CreateJsNumber(env, static_cast<int32_t>(clrType)));
-        napi_set_named_property(env, objValue, g_whcaString[IMAGEINFO_ALPHTYPE_ID],
-            CreateJsNumber(env, static_cast<int32_t>(info.GetAlphaType())));
+        if (napi_set_named_property(env, objValue, g_whcaString[IMAGEINFO_CLRTYPE_ID],
+            CreateJsNumber(env, static_cast<int32_t>(clrType))) != napi_ok) {
+            return nullptr;
+        }
+        if (napi_set_named_property(env, objValue, g_whcaString[IMAGEINFO_ALPHTYPE_ID],
+            CreateJsNumber(env, static_cast<int32_t>(info.GetAlphaType()))) != napi_ok) {
+            return nullptr;
+        }
     }
     return objValue;
 }
@@ -197,7 +205,9 @@ bool ConvertFromJsImageInfo(napi_env env, napi_value jsValue, Drawing::ImageInfo
     int32_t values[IMAGEINFO_FIELDS_COUNT] = {0};
     for (size_t idx = 0; idx < IMAGEINFO_FIELDS_COUNT; idx++) {
         int32_t* curVal = values + idx;
-        napi_get_named_property(env, jsValue, g_whcaString[idx], &tempValue);
+        if (napi_get_named_property(env, jsValue, g_whcaString[idx], &tempValue) != napi_ok) {
+            return false;
+        }
         if (napi_get_value_int32(env, tempValue, curVal) != napi_ok) {
             return false;
         }
