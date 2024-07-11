@@ -497,7 +497,6 @@ EGLSurface EglWrapperDisplay::CreateEglSurface(EGLConfig config, NativeWindowTyp
     if (table->isLoad && table->egl.eglCreateWindowSurface) {
         EGLSurface surf = table->egl.eglCreateWindowSurface(disp_, config, window, attribList);
         if (surf != EGL_NO_SURFACE) {
-            // return new EglWrapperSurface(this, surf, window);
             EGLSurface mySurface = new EglWrapperSurface(this, surf);
             EglWrapperSurface::Init(window);
             return mySurface;
