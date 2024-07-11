@@ -158,10 +158,10 @@ std::shared_ptr<Drawing::Surface> RSSurfaceRenderNodeDrawable::GetCacheSurface(u
 {
     {
         if (releaseAfterGet) {
-            return std::move(UIFirstCache_->cacheSurface_);
+            return std::move(cacheSurface_);
         }
-        if (!needCheckThread || cacheSurfaceThreadIndex_ == threadIndex || !UIFirstCache_->cacheSurface_) {
-            return UIFirstCache_->cacheSurface_;
+        if (!needCheckThread || cacheSurfaceThreadIndex_ == threadIndex || !cacheSurface_) {
+            return cacheSurface_;
         }
     }
 
@@ -177,8 +177,7 @@ void RSSurfaceRenderNodeDrawable::ClearCacheSurfaceInThread()
     } else {
         std::scoped_lock<std::recursive_mutex> lock(completeResourceMutex_);
         if (clearCacheSurfaceFunc_) {
-            clearCacheSurfaceFunc_(std::move(UIFirstCache_->cacheSurface_),
-                std::move(UIFirstCompletedCache_->cacheSurface_),
+            clearCacheSurfaceFunc_(std::move(cacheSurface_), std::move(cacheCompletedSurface_),
                 cacheSurfaceThreadIndex_, completedSurfaceThreadIndex_);
         }
         ClearCacheSurface();
@@ -188,16 +187,15 @@ void RSSurfaceRenderNodeDrawable::ClearCacheSurfaceInThread()
 void RSSurfaceRenderNodeDrawable::ClearCacheSurfaceOnly()
 {
     RS_TRACE_NAME("ClearCacheSurfaceOnly");
-    if (UIFirstCache_->cacheSurface_ == nullptr) {
+    if (cacheSurface_ == nullptr) {
         return;
     }
     if (clearCacheSurfaceFunc_) {
         clearCacheSurfaceFunc_(
-            std::move(UIFirstCache_->cacheSurface_), nullptr,
-            cacheSurfaceThreadIndex_, completedSurfaceThreadIndex_);
+            std::move(cacheSurface_), nullptr, cacheSurfaceThreadIndex_, completedSurfaceThreadIndex_);
     }
     ClearCacheSurface(false);
-    UIFirstCache_->cacheSurface_.reset();
+    cacheSurface_.reset();
 }
 
 Vector2f RSSurfaceRenderNodeDrawable::GetGravityTranslate(float imgWidth, float imgHeight)
@@ -221,28 +219,28 @@ std::shared_ptr<Drawing::Image> RSSurfaceRenderNodeDrawable::GetCompletedImage(
 {
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     std::scoped_lock<std::recursive_mutex> lock(completeResourceMutex_);
-    if (!UIFirstCompletedCache_->cacheBackendTexture_.IsValid()) {
+    if (!cacheCompletedBackendTexture_.IsValid()) {
         RS_LOGE("RSSurfaceRenderNodeDrawable::GetCompletedImage invalid grBackendTexture_");
         return nullptr;
     }
 #ifdef RS_ENABLE_VK
     if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::VULKAN ||
         OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::DDGR) {
-        if (!UIFirstCompletedCache_->cacheSurface_ || !UIFirstCompletedCache_->cacheCleanupHelper_) {
+        if (!cacheCompletedSurface_ || !cacheCompletedCleanupHelper_) {
             RS_LOGE("RSSurfaceRenderNodeDrawable::GetCompletedImage surface %p cleanupHelper %p",
-                UIFirstCompletedCache_->cacheSurface_.get(), UIFirstCompletedCache_->cacheSurface_.get());
+                cacheCompletedSurface_.get(), cacheCompletedSurface_.get());
             return nullptr;
         }
     }
 #endif
-    auto& image = UIFirstCompletedCache_->image_;
+    auto image = std::make_shared<Drawing::Image>();
     Drawing::TextureOrigin origin = Drawing::TextureOrigin::BOTTOM_LEFT;
     Drawing::BitmapFormat info = Drawing::BitmapFormat{ Drawing::COLORTYPE_RGBA_8888,
         Drawing::ALPHATYPE_PREMUL };
 #ifdef RS_ENABLE_GL
     if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() != OHOS::Rosen::GpuApiType::VULKAN &&
         OHOS::Rosen::RSSystemProperties::GetGpuApiType() != OHOS::Rosen::GpuApiType::DDGR) {
-        image->BuildFromTexture(*canvas.GetGPUContext(), UIFirstCompletedCache_->cacheBackendTexture_.GetTextureInfo(),
+        image->BuildFromTexture(*canvas.GetGPUContext(), cacheCompletedBackendTexture_.GetTextureInfo(),
             origin, info, nullptr);
     }
 #endif
@@ -250,14 +248,13 @@ std::shared_ptr<Drawing::Image> RSSurfaceRenderNodeDrawable::GetCompletedImage(
 #ifdef RS_ENABLE_VK
     if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::VULKAN ||
         OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::DDGR) {
-        image->BuildFromTexture(*canvas.GetGPUContext(), UIFirstCompletedCache_->cacheBackendTexture_.GetTextureInfo(),
+        image->BuildFromTexture(*canvas.GetGPUContext(), cacheCompletedBackendTexture_.GetTextureInfo(),
             origin, info, nullptr,
-            NativeBufferUtils::DeleteVkImage, UIFirstCompletedCache_->cacheCleanupHelper_->Ref());
+            NativeBufferUtils::DeleteVkImage, cacheCompletedCleanupHelper_->Ref());
     }
 #endif
-    return UIFirstCompletedCache_->cacheSurface_ ? image : nullptr;
+    return image;
 #endif
-
 }
 
 bool RSSurfaceRenderNodeDrawable::DrawCacheSurface(RSPaintFilterCanvas& canvas, const Vector2f& boundSize,
@@ -305,13 +302,13 @@ void RSSurfaceRenderNodeDrawable::InitCacheSurface(Drawing::GPUContext* gpuConte
         if (!clearCacheSurfaceFunc_) {
             clearCacheSurfaceFunc_ = func;
         }
-        if (UIFirstCache_->cacheSurface_) {
-            func(std::move(UIFirstCache_->cacheSurface_), nullptr,
+        if (cacheSurface_) {
+            func(std::move(cacheSurface_), nullptr,
                 cacheSurfaceThreadIndex_, completedSurfaceThreadIndex_);
-            UIFirstCache_->cacheSurface_ = nullptr;
+            cacheSurface_ = nullptr;
         }
     } else {
-        UIFirstCache_->cacheSurface_ = nullptr;
+        cacheSurface_ = nullptr;
     }
 
     float width = 0.0f;
@@ -331,7 +328,7 @@ void RSSurfaceRenderNodeDrawable::InitCacheSurface(Drawing::GPUContext* gpuConte
     if (gpuContext == nullptr) {
         if (func) {
             std::scoped_lock<std::recursive_mutex> lock(completeResourceMutex_);
-            func(std::move(UIFirstCache_->cacheSurface_), std::move(UIFirstCompletedCache_->cacheSurface_),
+            func(std::move(cacheSurface_), std::move(cacheCompletedSurface_),
                 cacheSurfaceThreadIndex_, completedSurfaceThreadIndex_);
             ClearCacheSurface();
         }
@@ -342,34 +339,34 @@ void RSSurfaceRenderNodeDrawable::InitCacheSurface(Drawing::GPUContext* gpuConte
     if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() != OHOS::Rosen::GpuApiType::VULKAN &&
         OHOS::Rosen::RSSystemProperties::GetGpuApiType() != OHOS::Rosen::GpuApiType::DDGR) {
         Drawing::ImageInfo info = Drawing::ImageInfo::MakeN32Premul(width, height);
-        UIFirstCache_->cacheSurface_ = Drawing::Surface::MakeRenderTarget(gpuContext, true, info);
+        cacheSurface_ = Drawing::Surface::MakeRenderTarget(gpuContext, true, info);
     }
 #endif
 #ifdef RS_ENABLE_VK
     if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::VULKAN ||
         OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::DDGR) {
-        UIFirstCache_->cacheBackendTexture_ = MakeBackendTexture(width, height);
-        auto vkTextureInfo = UIFirstCache_->cacheBackendTexture_.GetTextureInfo().GetVKTextureInfo();
-        if (!UIFirstCache_->cacheBackendTexture_.IsValid() || !vkTextureInfo) {
+        cacheBackendTexture_ = MakeBackendTexture(width, height);
+        auto vkTextureInfo = cacheBackendTexture_.GetTextureInfo().GetVKTextureInfo();
+        if (!cacheBackendTexture_.IsValid() || !vkTextureInfo) {
             if (func) {
                 std::scoped_lock<std::recursive_mutex> lock(completeResourceMutex_);
-                func(std::move(UIFirstCache_->cacheSurface_), std::move(UIFirstCompletedCache_->cacheSurface_),
+                func(std::move(cacheSurface_), std::move(cacheCompletedSurface_),
                     cacheSurfaceThreadIndex_, completedSurfaceThreadIndex_);
                 ClearCacheSurface();
             }
-            RS_LOGE("RSSurfaceRenderNodeDrawable::InitCacheSurface !UIFirstCache_->cacheBackendTexture_.IsValid() || !vkTextureInfo");
+            RS_LOGE("RSSurfaceRenderNodeDrawable::InitCacheSurface !cacheBackendTexture_.IsValid() || !vkTextureInfo");
             return;
         }
-        UIFirstCache_->cacheCleanupHelper_ = new NativeBufferUtils::VulkanCleanupHelper(RsVulkanContext::GetSingleton(),
+        cacheCleanupHelper_ = new NativeBufferUtils::VulkanCleanupHelper(RsVulkanContext::GetSingleton(),
             vkTextureInfo->vkImage, vkTextureInfo->vkAlloc.memory);
-        UIFirstCache_->cacheSurface_ = Drawing::Surface::MakeFromBackendTexture(
-            gpuContext, UIFirstCache_->cacheBackendTexture_.GetTextureInfo(), Drawing::TextureOrigin::BOTTOM_LEFT,
+        cacheSurface_ = Drawing::Surface::MakeFromBackendTexture(
+            gpuContext, cacheBackendTexture_.GetTextureInfo(), Drawing::TextureOrigin::BOTTOM_LEFT,
             1, Drawing::ColorType::COLORTYPE_RGBA_8888, nullptr,
-            NativeBufferUtils::DeleteVkImage, UIFirstCache_->cacheCleanupHelper_);
+            NativeBufferUtils::DeleteVkImage, cacheCleanupHelper_);
     }
 #endif
 #else
-    UIFirstCache_->cacheSurface_ = Drawing::Surface::MakeRasterN32Premul(width, height);
+    cacheSurface_ = Drawing::Surface::MakeRasterN32Premul(width, height);
 #endif
 }
 bool RSSurfaceRenderNodeDrawable::HasCachedTexture() const
@@ -392,10 +389,10 @@ bool RSSurfaceRenderNodeDrawable::NeedInitCacheSurface()
         height = size.y_;
     }
 
-    if (UIFirstCache_->cacheSurface_ == nullptr) {
+    if (cacheSurface_ == nullptr) {
         return true;
     }
-    auto cacheCanvas = UIFirstCache_->cacheSurface_->GetCanvas();
+    auto cacheCanvas = cacheSurface_->GetCanvas();
     if (cacheCanvas == nullptr) {
         return true;
     }
@@ -406,10 +403,10 @@ bool RSSurfaceRenderNodeDrawable::NeedInitCacheSurface()
 void RSSurfaceRenderNodeDrawable::UpdateBackendTexture()
 {
     RS_TRACE_NAME("RSRenderNodeDrawable::UpdateBackendTexture()");
-    if (UIFirstCache_->cacheSurface_ == nullptr) {
+    if (cacheSurface_ == nullptr) {
         return;
     }
-    UIFirstCache_->cacheBackendTexture_ = UIFirstCache_->cacheSurface_->GetBackendTexture();
+    cacheBackendTexture_ = cacheSurface_->GetBackendTexture();
 }
 #endif
 
@@ -417,15 +414,21 @@ void RSSurfaceRenderNodeDrawable::UpdateCompletedCacheSurface()
 {
     RS_TRACE_NAME("RSRenderNodeDrawable::UpdateCompletedCacheSurface()");
     // renderthread not use, subthread done not use
-    std::swap(UIFirstCache_, UIFirstCompletedCache_);
-    UIFirstCompletedCache_->image_ = UIFirstCompletedCache_->cacheSurface_->GetImageSnapshot();
+    std::swap(cacheSurface_, cacheCompletedSurface_);
     std::swap(cacheSurfaceThreadIndex_, completedSurfaceThreadIndex_);
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+    std::swap(cacheBackendTexture_, cacheCompletedBackendTexture_);
+#ifdef RS_ENABLE_VK
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+        std::swap(cacheCleanupHelper_, cacheCompletedCleanupHelper_);
+    }
+#endif
     SetTextureValidFlag(true);
     SetCacheSurfaceNeedUpdated(false);
 #endif
-    RSBaseRenderUtil::WriteCacheImageRenderNodeToPng(UIFirstCache_->cacheSurface_, "UIFirstCache_->cacheSurface_");
-    RSBaseRenderUtil::WriteCacheImageRenderNodeToPng(UIFirstCompletedCache_->cacheSurface_, "UIFirstCompletedCache_->cacheSurface_");
+    RSBaseRenderUtil::WriteCacheImageRenderNodeToPng(cacheSurface_, "cacheSurface_");
+    RSBaseRenderUtil::WriteCacheImageRenderNodeToPng(cacheCompletedSurface_, "cacheCompletedSurface_");
 }
 void RSSurfaceRenderNodeDrawable::SetTextureValidFlag(bool isValid)
 {
@@ -435,20 +438,20 @@ void RSSurfaceRenderNodeDrawable::SetTextureValidFlag(bool isValid)
 }
 void RSSurfaceRenderNodeDrawable::ClearCacheSurface(bool isClearCompletedCacheSurface)
 {
-    UIFirstCache_->cacheSurface_ = nullptr;
+    cacheSurface_ = nullptr;
 #ifdef RS_ENABLE_VK
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
-        UIFirstCache_->cacheCleanupHelper_ = nullptr;
+        cacheCleanupHelper_ = nullptr;
     }
 #endif
     if (isClearCompletedCacheSurface) {
         std::scoped_lock<std::recursive_mutex> lock(completeResourceMutex_);
-        UIFirstCompletedCache_->cacheSurface_ = nullptr;
+        cacheCompletedSurface_ = nullptr;
 #ifdef RS_ENABLE_VK
         if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
             RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
-            UIFirstCompletedCache_->cacheCleanupHelper_ = nullptr;
+            cacheCompletedCleanupHelper_ = nullptr;
         }
 #endif
 #if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
