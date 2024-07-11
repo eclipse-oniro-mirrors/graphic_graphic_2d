@@ -217,59 +217,58 @@ Vector2f RSSurfaceRenderNodeDrawable::GetGravityTranslate(float imgWidth, float 
 }
 
 std::shared_ptr<Drawing::Image> RSSurfaceRenderNodeDrawable::GetCompletedImage(
-    RSPaintFilterCanvas& canvas, uint32_t threadIndex, bool isUIFirst)
+    RSPaintFilterCanvas& canvas, uint32_t threadIndex)
 {
-    if (isUIFirst) {
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
-        std::scoped_lock<std::recursive_mutex> lock(completeResourceMutex_);
-        if (!UIFirstCompletedCache_->cacheBackendTexture_.IsValid()) {
-            RS_LOGE("RSSurfaceRenderNodeDrawable::GetCompletedImage invalid grBackendTexture_");
+    std::scoped_lock<std::recursive_mutex> lock(completeResourceMutex_);
+    if (!UIFirstCompletedCache_->cacheBackendTexture_.IsValid()) {
+        RS_LOGE("RSSurfaceRenderNodeDrawable::GetCompletedImage invalid grBackendTexture_");
+        return nullptr;
+    }
+#ifdef RS_ENABLE_VK
+    if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::VULKAN ||
+        OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::DDGR) {
+        if (!UIFirstCompletedCache_->cacheSurface_ || !UIFirstCompletedCache_->cacheCleanupHelper_) {
+            RS_LOGE("RSSurfaceRenderNodeDrawable::GetCompletedImage surface %p cleanupHelper %p",
+                UIFirstCompletedCache_->cacheSurface_.get(), UIFirstCompletedCache_->cacheSurface_.get());
             return nullptr;
         }
-#ifdef RS_ENABLE_VK
-        if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::VULKAN ||
-            OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::DDGR) {
-            if (!UIFirstCompletedCache_->cacheSurface_ || !UIFirstCompletedCache_->cacheCleanupHelper_) {
-                RS_LOGE("RSSurfaceRenderNodeDrawable::GetCompletedImage surface %p cleanupHelper %p",
-                    UIFirstCompletedCache_->cacheSurface_.get(), UIFirstCompletedCache_->cacheSurface_.get());
-                return nullptr;
-            }
-        }
+    }
 #endif
-        auto& image = UIFirstCompletedCache_->image_;
-        Drawing::TextureOrigin origin = Drawing::TextureOrigin::BOTTOM_LEFT;
-        Drawing::BitmapFormat info = Drawing::BitmapFormat{ Drawing::COLORTYPE_RGBA_8888,
-            Drawing::ALPHATYPE_PREMUL };
+    auto& image = UIFirstCompletedCache_->image_;
+    Drawing::TextureOrigin origin = Drawing::TextureOrigin::BOTTOM_LEFT;
+    Drawing::BitmapFormat info = Drawing::BitmapFormat{ Drawing::COLORTYPE_RGBA_8888,
+        Drawing::ALPHATYPE_PREMUL };
 #ifdef RS_ENABLE_GL
-        if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() != OHOS::Rosen::GpuApiType::VULKAN &&
-            OHOS::Rosen::RSSystemProperties::GetGpuApiType() != OHOS::Rosen::GpuApiType::DDGR) {
-            image->BuildFromTexture(*canvas.GetGPUContext(), UIFirstCompletedCache_->cacheBackendTexture_.GetTextureInfo(),
-                origin, info, nullptr);
-        }
+    if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() != OHOS::Rosen::GpuApiType::VULKAN &&
+        OHOS::Rosen::RSSystemProperties::GetGpuApiType() != OHOS::Rosen::GpuApiType::DDGR) {
+        image->BuildFromTexture(*canvas.GetGPUContext(), UIFirstCompletedCache_->cacheBackendTexture_.GetTextureInfo(),
+            origin, info, nullptr);
+    }
 #endif
 
 #ifdef RS_ENABLE_VK
-        if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::VULKAN ||
-            OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::DDGR) {
-            image->BuildFromTexture(*canvas.GetGPUContext(), UIFirstCompletedCache_->cacheBackendTexture_.GetTextureInfo(),
-                origin, info, nullptr,
-                NativeBufferUtils::DeleteVkImage, UIFirstCompletedCache_->cacheCleanupHelper_->Ref());
-        }
-#endif
-        return UIFirstCompletedCache_->cacheSurface_ ? image : nullptr;
-#endif
+    if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::VULKAN ||
+        OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::DDGR) {
+        image->BuildFromTexture(*canvas.GetGPUContext(), UIFirstCompletedCache_->cacheBackendTexture_.GetTextureInfo(),
+            origin, info, nullptr,
+            NativeBufferUtils::DeleteVkImage, UIFirstCompletedCache_->cacheCleanupHelper_->Ref());
     }
+#endif
+    return UIFirstCompletedCache_->cacheSurface_ ? image : nullptr;
+#endif
+
 }
 
 bool RSSurfaceRenderNodeDrawable::DrawCacheSurface(RSPaintFilterCanvas& canvas, const Vector2f& boundSize,
-    uint32_t threadIndex, bool isUIFirst)
+    uint32_t threadIndex)
 {
     if (ROSEN_EQ(boundsWidth_, 0.f) || ROSEN_EQ(boundsHeight_, 0.f)) {
         RS_LOGE("RSSurfaceRenderNodeDrawable::DrawCacheSurface return %d", __LINE__);
         return false;
     }
 
-    auto cacheImage = GetCompletedImage(canvas, threadIndex, isUIFirst);
+    auto cacheImage = GetCompletedImage(canvas, threadIndex);
     RSBaseRenderUtil::WriteCacheImageRenderNodeToPng(cacheImage, "cacheImage");
     if (cacheImage == nullptr) {
         RS_LOGE("RSSurfaceRenderNodeDrawable::DrawCacheSurface return %d", __LINE__);
@@ -532,7 +531,7 @@ bool RSSurfaceRenderNodeDrawable::DrawUIFirstCache(RSPaintFilterCanvas& rscanvas
         UpdateCompletedCacheSurface();
 #endif
     }
-    return DrawCacheSurface(rscanvas, params->GetCacheSize(), UNI_MAIN_THREAD_INDEX, true);
+    return DrawCacheSurface(rscanvas, params->GetCacheSize(), UNI_MAIN_THREAD_INDEX);
 }
 
 bool RSSurfaceRenderNodeDrawable::DrawUIFirstCacheWithStarting(RSPaintFilterCanvas& rscanvas, NodeId id)
@@ -546,7 +545,7 @@ bool RSSurfaceRenderNodeDrawable::DrawUIFirstCacheWithStarting(RSPaintFilterCanv
     bool ret = true;
     // draw surface content&&childrensss
     if (HasCachedTexture()) {
-        ret = DrawCacheSurface(rscanvas, params->GetCacheSize(), UNI_MAIN_THREAD_INDEX, true);
+        ret = DrawCacheSurface(rscanvas, params->GetCacheSize(), UNI_MAIN_THREAD_INDEX);
     }
     // draw starting window
     {
