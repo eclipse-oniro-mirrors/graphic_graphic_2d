@@ -370,8 +370,6 @@ napi_property_descriptor JsCanvas::properties_[] = {
     DECLARE_NAPI_FUNCTION("setMatrix", JsCanvas::SetMatrix),
     DECLARE_NAPI_FUNCTION("resetMatrix", JsCanvas::ResetMatrix),
     DECLARE_NAPI_FUNCTION("translate", JsCanvas::Translate),
-    DECLARE_NAPI_FUNCTION("getImageInfo", JsCanvas::GetImageInfo),
-    DECLARE_NAPI_FUNCTION("readPixels", JsCanvas::ReadPixels),
     DECLARE_NAPI_FUNCTION("isClipEmpty", JsCanvas::IsClipEmpty),
 };
 
@@ -1254,21 +1252,6 @@ napi_value JsCanvas::OnRotate(napi_env env, napi_callback_info info)
     return nullptr;
 }
 
-napi_value JsCanvas::GetImageInfo(napi_env env, napi_callback_info info)
-{
-    JsCanvas* me = CheckParamsAndGetThis<JsCanvas>(env, info);
-    return (me != nullptr) ? me->OnGetImageInfo(env, info) : nullptr;
-}
-
-napi_value JsCanvas::OnGetImageInfo(napi_env env, napi_callback_info info)
-{
-    if (m_canvas == nullptr) {
-        ROSEN_LOGE("JsCanvas::OnGetImageInfo canvas is null");
-        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
-    }
-    return GetImageInfoAndConvertToJsValue(env, m_canvas->GetImageInfo());
-}
-
 napi_value JsCanvas::GetSaveCount(napi_env env, napi_callback_info info)
 {
     JsCanvas* me = CheckParamsAndGetThis<JsCanvas>(env, info);
@@ -1815,59 +1798,6 @@ napi_value JsCanvas::OnDrawImageRect(napi_env env, napi_callback_info info)
     }
 #endif
     return nullptr;
-}
-
-napi_value JsCanvas::ReadPixels(napi_env env, napi_callback_info info)
-{
-    JsCanvas* me = CheckParamsAndGetThis<JsCanvas>(env, info);
-    return (me != nullptr) ? me->OnReadPixels(env, info) : nullptr;
-}
-
-napi_value JsCanvas::OnReadPixels(napi_env env, napi_callback_info info)
-{
-    if (m_canvas == nullptr) {
-        ROSEN_LOGE("JsCanvas::OnReadPixels canvas is nullptr");
-        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
-    }
-
-    napi_value argv[ARGC_FIVE] = {nullptr};
-    CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_FIVE);
-
-    Drawing::ImageInfo imageInfo;
-    if (!ConvertFromJsImageInfo(env, argv[ARGC_ZERO], imageInfo)) { // arg #0: ImageInfo imageInfo
-        ROSEN_LOGE("JsCanvas::OnReadPixels argv[0] (ImageInfo) is invalid");
-        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid [0] param (ImageInfo).");
-    }
-
-    napi_value dstPixels = argv[ARGC_ONE]; // arg #1: ArrayBuffer dstPixels
-    bool isArrayBuffer = false;
-    uint8_t* buffer = nullptr;
-    size_t bufLen = 0;
-    napi_status sts = napi_is_arraybuffer(env, dstPixels, &isArrayBuffer);
-    if (sts != napi_ok || !isArrayBuffer ||
-        napi_get_arraybuffer_info(env, dstPixels, reinterpret_cast<void**>(&buffer), &bufLen) != napi_ok ||
-        buffer == nullptr) {
-        ROSEN_LOGE("JsCanvas::OnReadPixels argv[1] (ArrayBuffer) is invalid");
-        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid [0] param (ArrayBuffer).");
-    }
-
-    uint32_t dstRowBytes = 0;
-    GET_UINT32_PARAM(ARGC_TWO, dstRowBytes); // arg #2: number dstRowBytes
-    if (bufLen < static_cast<size_t>(imageInfo.GetHeight() * dstRowBytes)) {
-        ROSEN_LOGE("JsCanvas::OnReadPixels Invalid length of ArrayBuffer.");
-        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid length of ArrayBuffer.");
-    }
-
-    int srcX = 0;
-    GET_INT32_PARAM(ARGC_THREE, srcX); // arg #3: number srcX
-    int srcY = 0;
-    GET_INT32_PARAM(ARGC_FOUR, srcY); // arg #4: number srcY
-
-    const bool retVal = m_canvas->ReadPixels(imageInfo, buffer, dstRowBytes, srcX, srcY);
-    if (!retVal) {
-        ROSEN_LOGE("JsCanvas::OnReadPixels m_canvas->ReadPixels returns false");
-    }
-    return CreateJsValue(env, retVal);
 }
 
 napi_value JsCanvas::ResetMatrix(napi_env env, napi_callback_info info)

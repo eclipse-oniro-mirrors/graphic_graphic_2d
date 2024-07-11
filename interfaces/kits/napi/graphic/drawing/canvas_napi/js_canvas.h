@@ -74,7 +74,6 @@ public:
     static napi_value DrawText(napi_env env, napi_callback_info info);
     static napi_value DetachBrush(napi_env env, napi_callback_info info);
     static napi_value DetachPen(napi_env env, napi_callback_info info);
-    static napi_value GetImageInfo(napi_env env, napi_callback_info info);
     static napi_value GetSaveCount(napi_env env, napi_callback_info info);
     static napi_value GetWidth(napi_env env, napi_callback_info info);
     static napi_value GetHeight(napi_env env, napi_callback_info info);
@@ -89,7 +88,6 @@ public:
     static napi_value SetMatrix(napi_env env, napi_callback_info info);
     static napi_value ResetMatrix(napi_env env, napi_callback_info info);
     static napi_value Translate(napi_env env, napi_callback_info info);
-    static napi_value ReadPixels(napi_env env, napi_callback_info info);
 
     Canvas* GetCanvas();
     DRAWING_API void ResetCanvas();
@@ -119,7 +117,6 @@ private:
     napi_value OnDrawRegion(napi_env env, napi_callback_info info);
     napi_value OnDrawSingleCharacter(napi_env env, napi_callback_info info);
     napi_value OnDrawText(napi_env env, napi_callback_info info);
-    napi_value OnGetImageInfo(napi_env env, napi_callback_info info);
     napi_value OnGetSaveCount(napi_env env, napi_callback_info info);
     napi_value OnGetWidth(napi_env env, napi_callback_info info);
     napi_value OnGetHeight(napi_env env, napi_callback_info info);
@@ -134,7 +131,6 @@ private:
     napi_value OnSetMatrix(napi_env env, napi_callback_info info);
     napi_value OnResetMatrix(napi_env env, napi_callback_info info);
     napi_value OnTranslate(napi_env env, napi_callback_info info);
-    napi_value OnReadPixels(napi_env env, napi_callback_info info);
 
     static bool CreateConstructor(napi_env env);
     static napi_property_descriptor properties_[];
