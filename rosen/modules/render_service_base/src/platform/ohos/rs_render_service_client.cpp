@@ -25,6 +25,7 @@
 
 #include "command/rs_command.h"
 #include "command/rs_node_showing_command.h"
+#include "ipc_callbacks/pointer_luminance_callback_stub.h"
 #include "ipc_callbacks/rs_surface_occlusion_change_callback_stub.h"
 #include "ipc_callbacks/screen_change_callback_stub.h"
 #include "ipc_callbacks/surface_capture_callback_stub.h"
@@ -380,6 +381,63 @@ void RSRenderServiceClient::RemoveVirtualScreen(ScreenId id)
     renderService->RemoveVirtualScreen(id);
 }
 
+int32_t RSRenderServiceClient::SetPointerColorInversionConfig(float darkBuffer, float brightBuffer, int64_t interval)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+ 
+    return renderService->SetPointerColorInversionConfig(darkBuffer, brightBuffer, interval);
+}
+ 
+int32_t RSRenderServiceClient::SetPointerColorInversionEnabled(bool enable)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+ 
+    return renderService->SetPointerColorInversionEnabled(enable);
+}
+ 
+class CustomPointerLuminanceChangeCallback : public RSPointerLuminanceChangeCallbackStub
+{
+public:
+    explicit CustomPointerLuminanceChangeCallback(const PointerLuminanceChangeCallback &callback) : cb_(callback) {}
+    ~CustomPointerLuminanceChangeCallback() override {};
+ 
+    void OnPointerLuminanceChanged(int32_t brightness) override
+    {
+        if (cb_ != nullptr) {
+            cb_(brightness);
+        }
+    }
+ 
+private:
+    PointerLuminanceChangeCallback cb_;
+};
+ 
+int32_t RSRenderServiceClient::RegisterPointerLuminanceChangeCallback(const PointerLuminanceChangeCallback &callback)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+ 
+    sptr<RSIPointerLuminanceChangeCallback> cb = new CustomPointerLuminanceChangeCallback(callback);
+    return renderService->RegisterPointerLuminanceChangeCallback(cb);
+}
+ 
+int32_t RSRenderServiceClient::UnRegisterPointerLuminanceChangeCallback()
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+    return renderService->UnRegisterPointerLuminanceChangeCallback();
+}
+
 class CustomScreenChangeCallback : public RSScreenChangeCallbackStub
 {
 public:
@@ -441,7 +499,7 @@ void RSRenderServiceClient::SetRefreshRateMode(int32_t refreshRateMode)
 }
 
 void RSRenderServiceClient::SyncFrameRateRange(FrameRateLinkerId id,
-    const FrameRateRange& range, bool isAnimatorStopped)
+    const FrameRateRange& range, int32_t animatorExpectedFrameRate)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
@@ -449,7 +507,7 @@ void RSRenderServiceClient::SyncFrameRateRange(FrameRateLinkerId id,
         return;
     }
 
-    return renderService->SyncFrameRateRange(id, range, isAnimatorStopped);
+    return renderService->SyncFrameRateRange(id, range, animatorExpectedFrameRate);
 }
 
 uint32_t RSRenderServiceClient::GetScreenCurrentRefreshRate(ScreenId id)
@@ -1262,11 +1320,12 @@ void RSRenderServiceClient::NotifyRefreshRateEvent(const EventInfo& eventInfo)
     }
 }
 
-void RSRenderServiceClient::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
+void RSRenderServiceClient::NotifyTouchEvent(int32_t touchStatus, const std::string& pkgName, uint32_t pid,
+    int32_t touchCnt)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService != nullptr) {
-        renderService->NotifyTouchEvent(touchStatus, touchCnt);
+        renderService->NotifyTouchEvent(touchStatus, pkgName, pid, touchCnt);
     }
 }
 

@@ -109,6 +109,38 @@ void RSInterfaces::RemoveVirtualScreen(ScreenId id)
     renderServiceClient_->RemoveVirtualScreen(id);
 }
 
+int32_t RSInterfaces::SetPointerColorInversionConfig(float darkBuffer, float brightBuffer, int64_t interval)
+{
+    if (renderServiceClient_ == nullptr) {
+        return StatusCode::RENDER_SERVICE_NULL;
+    }
+    return renderServiceClient_->SetPointerColorInversionConfig(darkBuffer, brightBuffer, interval);
+}
+ 
+int32_t RSInterfaces::SetPointerColorInversionEnabled(bool enable)
+{
+    if (renderServiceClient_ == nullptr) {
+        return StatusCode::RENDER_SERVICE_NULL;
+    }
+    return renderServiceClient_->SetPointerColorInversionEnabled(enable);
+}
+ 
+int32_t RSInterfaces::RegisterPointerLuminanceChangeCallback(const PointerLuminanceChangeCallback &callback)
+{
+    if (renderServiceClient_ == nullptr) {
+        return StatusCode::RENDER_SERVICE_NULL;
+    }
+    return renderServiceClient_->RegisterPointerLuminanceChangeCallback(callback);
+}
+ 
+int32_t RSInterfaces::UnRegisterPointerLuminanceChangeCallback()
+{
+    if (renderServiceClient_ == nullptr) {
+        return StatusCode::RENDER_SERVICE_NULL;
+    }
+    return renderServiceClient_->UnRegisterPointerLuminanceChangeCallback();
+}
+
 int32_t RSInterfaces::SetScreenChangeCallback(const ScreenChangeCallback &callback)
 {
     return renderServiceClient_->SetScreenChangeCallback(callback);
@@ -156,9 +188,10 @@ void RSInterfaces::SetRefreshRateMode(int32_t refreshRateMode)
     renderServiceClient_->SetRefreshRateMode(refreshRateMode);
 }
 
-void RSInterfaces::SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range, bool isAnimatorStopped)
+void RSInterfaces::SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range,
+    int32_t animatorExpectedFrameRate)
 {
-    renderServiceClient_->SyncFrameRateRange(id, range, isAnimatorStopped);
+    renderServiceClient_->SyncFrameRateRange(id, range, animatorExpectedFrameRate);
 }
 
 uint32_t RSInterfaces::GetScreenCurrentRefreshRate(ScreenId id)
@@ -598,9 +631,9 @@ void RSInterfaces::NotifyRefreshRateEvent(const EventInfo& eventInfo)
     renderServiceClient_->NotifyRefreshRateEvent(eventInfo);
 }
 
-void RSInterfaces::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
+void RSInterfaces::NotifyTouchEvent(int32_t touchStatus, const std::string& pkgName, uint32_t pid, int32_t touchCnt)
 {
-    renderServiceClient_->NotifyTouchEvent(touchStatus, touchCnt);
+    renderServiceClient_->NotifyTouchEvent(touchStatus, pkgName, pid, touchCnt);
 }
 
 void RSInterfaces::DisableCacheForRotation()

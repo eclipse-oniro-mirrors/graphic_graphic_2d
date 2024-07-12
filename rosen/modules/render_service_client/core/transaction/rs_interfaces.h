@@ -75,6 +75,14 @@ public:
 
     void RemoveVirtualScreen(ScreenId id);
 
+    int32_t SetPointerColorInversionConfig(float darkBuffer, float brightBuffer, int64_t interval);
+ 
+    int32_t SetPointerColorInversionEnabled(bool enable);
+ 
+    int32_t RegisterPointerLuminanceChangeCallback(const PointerLuminanceChangeCallback &callback);
+ 
+    int32_t UnRegisterPointerLuminanceChangeCallback();
+
     int32_t SetScreenChangeCallback(const ScreenChangeCallback &callback);
 
     bool TakeSurfaceCapture(std::shared_ptr<RSSurfaceNode> node, std::shared_ptr<SurfaceCaptureCallback> callback,
@@ -124,7 +132,7 @@ public:
 
     void SetRefreshRateMode(int32_t refreshRateMode);
 
-    void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range, bool isAnimatorStopped);
+    void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range, int32_t animatorExpectedFrameRate);
 
     uint32_t GetScreenCurrentRefreshRate(ScreenId id);
 
@@ -234,7 +242,7 @@ public:
 
     void NotifyRefreshRateEvent(const EventInfo& eventInfo);
 
-    void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt);
+    void NotifyTouchEvent(int32_t touchStatus, const std::string& pkgName, uint32_t pid, int32_t touchCnt);
 
     void ReportEventResponse(DataBaseRs info);
 

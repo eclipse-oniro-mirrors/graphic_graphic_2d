@@ -31,6 +31,7 @@
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
 #include "pipeline/parallel_render/rs_sub_thread_manager.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
+#include "pipeline/rs_pointer_render_manager.h"
 #include "pipeline/rs_realtime_refresh_rate_manager.h"
 #include "pipeline/rs_render_frame_rate_linker_map.h"
 #include "pipeline/rs_render_node_gc.h"
@@ -436,6 +437,36 @@ bool RSRenderServiceConnection::Set2DRenderCtrl(bool enable)
 }
 #endif
 
+int32_t RSRenderServiceConnection::SetPointerColorInversionConfig(float darkBuffer,
+    float brightBuffer, int64_t interval)
+{
+    RSPointerRenderManager::GetInstance().SetPointerColorInversionConfig(darkBuffer, brightBuffer, interval);
+    return StatusCode::SUCCESS;
+}
+ 
+int32_t RSRenderServiceConnection::SetPointerColorInversionEnabled(bool enable)
+{
+    RSPointerRenderManager::GetInstance().SetPointerColorInversionEnabled(enable);
+    return StatusCode::SUCCESS;
+}
+ 
+int32_t RSRenderServiceConnection::RegisterPointerLuminanceChangeCallback(
+    sptr<RSIPointerLuminanceChangeCallback> callback)
+{
+    if (!callback) {
+        RS_LOGE("RSRenderServiceConnection::RegisterPointerLuminanceChangeCallback: callback is nullptr");
+        return StatusCode::INVALID_ARGUMENTS;
+    }
+    RSPointerRenderManager::GetInstance().RegisterPointerLuminanceChangeCallback(remotePid_, callback);
+    return StatusCode::SUCCESS;
+}
+ 
+int32_t RSRenderServiceConnection::UnRegisterPointerLuminanceChangeCallback()
+{
+    RSPointerRenderManager::GetInstance().UnRegisterPointerLuminanceChangeCallback(remotePid_);
+    return StatusCode::SUCCESS;
+}
+
 void RSRenderServiceConnection::RemoveVirtualScreen(ScreenId id)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -503,7 +534,7 @@ void RSRenderServiceConnection::SetRefreshRateMode(int32_t refreshRateMode)
 }
 
 void RSRenderServiceConnection::SyncFrameRateRange(FrameRateLinkerId id,
-    const FrameRateRange& range, bool isAnimatorStopped)
+    const FrameRateRange& range, int32_t animatorExpectedFrameRate)
 {
     mainThread_->ScheduleTask([=]() {
         auto& context = mainThread_->GetContext();
@@ -514,7 +545,7 @@ void RSRenderServiceConnection::SyncFrameRateRange(FrameRateLinkerId id,
             return;
         }
         linker->SetExpectedRange(range);
-        linker->SetAnimationIdle(isAnimatorStopped);
+        linker->SetAnimatorExpectedFrameRate(animatorExpectedFrameRate);
     }).wait();
 }
 
@@ -1104,7 +1135,8 @@ bool RSRenderServiceConnection::GetBitmap(NodeId id, Drawing::Bitmap& bitmap)
     auto grContext = renderThread_.GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
     auto getDrawableBitmapTask = [&node, &bitmap, grContext]() {
         auto drawableNode = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node);
-        bitmap = static_cast<DrawableV2::RSCanvasDrawingRenderNodeDrawable*>(drawableNode.get())->GetBitmap(grContext);
+        bitmap = std::static_pointer_cast<DrawableV2::RSCanvasDrawingRenderNodeDrawable>(drawableNode)
+            ->GetBitmap(grContext);
     };
     renderThread_.PostSyncTask(getDrawableBitmapTask);
     return !bitmap.IsEmpty();
@@ -1127,14 +1159,14 @@ bool RSRenderServiceConnection::GetPixelmap(NodeId id, const std::shared_ptr<Med
 
     auto drawableNode = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node);
     if (drawableNode) {
-        tid = static_cast<DrawableV2::RSCanvasDrawingRenderNodeDrawable*>(drawableNode.get())->GetTid();
+        tid = std::static_pointer_cast<DrawableV2::RSCanvasDrawingRenderNodeDrawable>(drawableNode)->GetTid();
     }
     auto getPixelmapTask = [&node, &pixelmap, rect, &result, tid, drawCmdList]() {
         result = node->GetPixelmap(pixelmap, rect, tid, drawCmdList);
     };
     auto getDrawablePixelmapTask = [&node, &pixelmap, rect, &result, tid, drawCmdList]() {
         auto drawableNode = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node);
-        result = static_cast<DrawableV2::RSCanvasDrawingRenderNodeDrawable*>(drawableNode.get())->
+        result = std::static_pointer_cast<DrawableV2::RSCanvasDrawingRenderNodeDrawable>(drawableNode)->
             GetPixelmap(pixelmap, rect, tid, drawCmdList);
     };
     if (!node->IsOnTheTree()) {
@@ -1311,13 +1343,14 @@ void RSRenderServiceConnection::NotifyRefreshRateEvent(const EventInfo& eventInf
     mainThread_->GetFrameRateMgr()->HandleRefreshRateEvent(remotePid_, eventInfo);
 }
 
-void RSRenderServiceConnection::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
+void RSRenderServiceConnection::NotifyTouchEvent(int32_t touchStatus, const std::string& pkgName,
+    uint32_t pid, int32_t touchCnt)
 {
     if (mainThread_->GetFrameRateMgr() == nullptr) {
         RS_LOGW("RSRenderServiceConnection::NotifyTouchEvent: frameRateMgr is nullptr.");
         return;
     }
-    mainThread_->GetFrameRateMgr()->HandleTouchEvent(remotePid_, touchStatus, touchCnt);
+    mainThread_->GetFrameRateMgr()->HandleTouchEvent(remotePid_, touchStatus, pkgName, pid, touchCnt);
 }
 
 void RSRenderServiceConnection::ReportEventResponse(DataBaseRs info)

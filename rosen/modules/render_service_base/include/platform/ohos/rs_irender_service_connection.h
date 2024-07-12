@@ -101,6 +101,14 @@ public:
 
     virtual void RemoveVirtualScreen(ScreenId id) = 0;
 
+    virtual int32_t SetPointerColorInversionConfig(float darkBuffer, float brightBuffer, int64_t interval) = 0;
+ 
+    virtual int32_t SetPointerColorInversionEnabled(bool enable) = 0;
+ 
+    virtual int32_t RegisterPointerLuminanceChangeCallback(sptr<RSIPointerLuminanceChangeCallback> callback) = 0;
+ 
+    virtual int32_t UnRegisterPointerLuminanceChangeCallback() = 0;
+
     virtual int32_t SetScreenChangeCallback(sptr<RSIScreenChangeCallback> callback) = 0;
 
     virtual void SetScreenActiveMode(ScreenId id, uint32_t modeId) = 0;
@@ -109,7 +117,8 @@ public:
 
     virtual void SetRefreshRateMode(int32_t refreshRateMode) = 0;
 
-    virtual void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range, bool isAnimatorStopped) = 0;
+    virtual void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range,
+        int32_t animatorExpectedFrameRate) = 0;
 
     virtual uint32_t GetScreenCurrentRefreshRate(ScreenId id) = 0;
 
@@ -239,7 +248,7 @@ public:
 
     virtual void NotifyRefreshRateEvent(const EventInfo& eventInfo) = 0;
 
-    virtual void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt) = 0;
+    virtual void NotifyTouchEvent(int32_t touchStatus, const std::string& pkgName, uint32_t pid, int32_t touchCnt) = 0;
 
     virtual void ReportEventResponse(DataBaseRs info) = 0;
 

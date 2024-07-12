@@ -85,9 +85,15 @@ bool RSPhysicalScreenFuzzTest(const uint8_t* data, size_t size)
     uint32_t height = GetData<uint32_t>();
     bool canvasRotation = GetData<bool>();
     uint32_t scaleMode = GetData<uint32_t>();
+    float darkBuffer = GetData<float>();
+    float brightBuffer = GetData<float>();
+    int64_t interval = GetData<int64_t>();
 
     // test
     auto& rsInterfaces = RSInterfaces::GetInstance();
+    rsInterfaces.SetPointerColorInversionConfig(darkBuffer, brightBuffer, interval);
+    PointerLuminanceChangeCallback callback = [](int32_t) {};
+    rsInterfaces.RegisterPointerLuminanceChangeCallback(callback);
     rsInterfaces.SetScreenActiveMode(static_cast<ScreenId>(id), modeId);
     rsInterfaces.SetScreenPowerStatus(static_cast<ScreenId>(id), static_cast<ScreenPowerStatus>(status));
     rsInterfaces.SetScreenBacklight(static_cast<ScreenId>(id), level);
@@ -138,6 +144,22 @@ bool RSPhysicalScreenFuzzTest(const uint8_t* data, size_t size)
     surfaceConfig.surfaceId = static_cast<NodeId>(GetData<uint64_t>());
     auto surfaceNode = RSSurfaceNode::Create(surfaceConfig);
     rsInterfaces.TakeSurfaceCapture(surfaceNode, callback3);
+    bool enable = GetData<bool>();
+    rsInterfaces.SetCastScreenEnableSkipWindow(static_cast<ScreenId>(id), enable);
+    rsInterfaces.RemoveVirtualScreen(static_cast<ScreenId>(id));
+    ScreenId screenId = INVALID_SCREEN_ID;
+    ScreenEvent screenEvent = ScreenEvent::UNKNOWN;
+    bool callbacked = false;
+    ScreenChangeCallback changeCallback = [&screenId, &screenEvent, &callbacked](ScreenId id, ScreenEvent event) {
+        screenId = id;
+        screenEvent = event;
+        callbacked = true;
+    };
+    rsInterfaces.SetScreenChangeCallback(changeCallback);
+    uint32_t screenRotation = GetData<uint32_t>();
+    rsInterfaces.SetScreenCorrection(static_cast<ScreenId>(id), static_cast<ScreenRotation>(screenRotation));
+    uint32_t systemAnimatedScenes = GetData<uint32_t>();
+    rsInterfaces.SetSystemAnimatedScenes(static_cast<SystemAnimatedScenes>(systemAnimatedScenes));
 
     sleep(1);
 

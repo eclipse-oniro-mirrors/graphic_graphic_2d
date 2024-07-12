@@ -149,6 +149,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SHOW_REFRESH_RATE_ENABLED),
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::MARK_POWER_OFF_NEED_PROCESS_ONE_FRAME),
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::DISABLE_RENDER_CONTROL_SCREEN),
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_POINTER_COLOR_INVERSION_CONFIG),
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_POINTER_COLOR_INVERSION_ENABLED),
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_POINTER_LUMINANCE_CALLBACK),
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_POINTER_LUMINANCE_CALLBACK),
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_POWER_STATUS),
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_BACK_LIGHT),
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_ACTIVE_MODE),
@@ -420,6 +424,40 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             reply.WriteInt32(status);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_POINTER_COLOR_INVERSION_CONFIG): {
+            float darkBuffer = data.ReadFloat();
+            float brightBuffer = data.ReadFloat();
+            int64_t interval = data.ReadInt64();
+            int32_t status = SetPointerColorInversionConfig(darkBuffer, brightBuffer, interval);
+            reply.WriteInt32(status);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_POINTER_COLOR_INVERSION_ENABLED): {
+            bool enable = data.ReadBool();
+            int32_t status = SetPointerColorInversionEnabled(enable);
+            reply.WriteInt32(status);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_POINTER_LUMINANCE_CALLBACK): {
+            auto remoteObject = data.ReadRemoteObject();
+            if (remoteObject == nullptr) {
+                ret = ERR_NULL_OBJECT;
+                break;
+            }
+            sptr<RSIPointerLuminanceChangeCallback> cb = iface_cast<RSIPointerLuminanceChangeCallback>(remoteObject);
+            if (cb == nullptr) {
+                ret = ERR_NULL_OBJECT;
+                break;
+            }
+            int32_t status = RegisterPointerLuminanceChangeCallback(cb);
+            reply.WriteInt32(status);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_POINTER_LUMINANCE_CALLBACK): {
+            int32_t status = UnRegisterPointerLuminanceChangeCallback();
+            reply.WriteInt32(status);
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_ACTIVE_MODE): {
             ScreenId id = data.ReadUint64();
             uint32_t modeId = data.ReadUint32();
@@ -448,8 +486,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             uint32_t max = data.ReadUint32();
             uint32_t preferred = data.ReadUint32();
             uint32_t type = data.ReadUint32();
-            bool isAnimatorStopped = data.ReadBool();
-            SyncFrameRateRange(id, {min, max, preferred, type}, isAnimatorStopped);
+            int32_t animatorExpectedFrameRate = data.ReadInt32();
+            SyncFrameRateRange(id, {min, max, preferred, type}, animatorExpectedFrameRate);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_CURRENT_REFRESH_RATE): {
@@ -499,8 +537,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             pid_t pid = data.ReadInt32();
-            std::string ret = GetRefreshInfo(pid);
-            reply.WriteString(ret);
+            std::string refreshInfo = GetRefreshInfo(pid);
+            reply.WriteString(refreshInfo);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_RESOLUTION): {
@@ -1153,8 +1191,10 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_TOUCH_EVENT) : {
             auto touchStatus = data.ReadInt32();
+            auto pkgName =  data.ReadString();
+            auto pid = data.ReadUint32();
             auto touchCnt = data.ReadInt32();
-            NotifyTouchEvent(touchStatus, touchCnt);
+            NotifyTouchEvent(touchStatus, pkgName, pid, touchCnt);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_HGM_CFG_CALLBACK) : {

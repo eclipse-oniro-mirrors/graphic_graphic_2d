@@ -84,6 +84,7 @@ void HgmFrameRateManager::Init(sptr<VSyncController> rsController,
     auto configData = hgmCore.GetPolicyConfigData();
     if (configData != nullptr) {
         curScreenStrategyId_ = configData->screenStrategyConfigs_[curScreenName];
+        idleDetector_.UpdateSupportAppBufferList(configData->appBufferList_);
         if (curScreenStrategyId_.empty()) {
             curScreenStrategyId_ = "LTPO-DEFAULT";
         }
@@ -141,12 +142,22 @@ void HgmFrameRateManager::InitTouchManager()
         touchManager_.RegisterEnterStateCallback(TouchState::DOWN_STATE,
             [this] (TouchState lastState, TouchState newState) {
             if (lastState == TouchState::IDLE_STATE) {
-                multiAppStrategy_.HandleTouchInfo(touchManager_.GetPkgName(), newState);
+                HgmMultiAppStrategy::TouchInfo touchInfo = {
+                    .pkgName = touchManager_.GetPkgName(),
+                    .touchState = newState,
+                    .upExpectFps = OLED_120_HZ,
+                };
+                multiAppStrategy_.HandleTouchInfo(touchInfo);
+                lastTouchState_.store(TouchState::DOWN_STATE);
             }
         });
         touchManager_.RegisterEnterStateCallback(TouchState::IDLE_STATE,
             [this] (TouchState lastState, TouchState newState) {
-            multiAppStrategy_.HandleTouchInfo(touchManager_.GetPkgName(), newState);
+            HgmMultiAppStrategy::TouchInfo touchInfo = {
+                .pkgName = touchManager_.GetPkgName(),
+                .touchState = newState,
+            };
+            multiAppStrategy_.HandleTouchInfo(touchInfo);
         });
         touchManager_.RegisterEnterStateCallback(TouchState::UP_STATE,
             [this] (TouchState lastState, TouchState newState) {
@@ -184,12 +195,16 @@ void HgmFrameRateManager::UpdateSurfaceTime(const std::string& name, uint64_t ti
 void HgmFrameRateManager::UpdateAppSupportStatus()
 {
     bool flag = false;
+    idleDetector_.ClearAppBufferList();
+    idleDetector_.ClearAppBufferBlackList();
     PolicyConfigData::StrategyConfig config;
     if (multiAppStrategy_.GetFocusAppStrategyConfig(config) == EXEC_SUCCESS) {
         if (config.dynamicMode == DynamicModeType::TOUCH_EXT_ENABLED) {
             flag = true;
         }
     }
+    idleDetector_.UpdateAppBufferList(config.appBufferList);
+    idleDetector_.UpdateAppBufferBlackList(config.appBufferBlackList);
     idleDetector_.SetAppSupportStatus(flag);
 }
 
@@ -199,11 +214,17 @@ void HgmFrameRateManager::SetAceAnimatorVote(const std::shared_ptr<RSRenderFrame
     if (!needCheckAceAnimatorStatus || linker == nullptr) {
         return;
     }
-    if (linker->GetAceAnimatorStatus() == false) {
+    if (linker->GetAceAnimatorExpectedFrameRate() >= 0) {
         needCheckAceAnimatorStatus = false;
+        RS_TRACE_NAME_FMT("SetAceAnimatorVote PID = [%d]  linkerId = [%" PRIu64 "]  SetAceAnimatorIdleStatus[false] "
+            "AnimatorExpectedFrameRate = [%d]", ExtractPid(linker->GetId()), linker->GetId(),
+            linker->GetAceAnimatorExpectedFrameRate());
         idleDetector_.SetAceAnimatorIdleStatus(false);
         return;
     }
+    RS_OPTIONAL_TRACE_NAME_FMT("SetAceAnimatorVote PID = [%d]  linkerId = [%" PRIu64 "] "
+        "SetAceAnimatorIdleStatus[true] AnimatorExpectedFrameRate = [%d]", ExtractPid(linker->GetId()),
+        linker->GetId(), linker->GetAceAnimatorExpectedFrameRate());
     idleDetector_.SetAceAnimatorIdleStatus(true);
 }
 
@@ -213,17 +234,21 @@ void HgmFrameRateManager::UpdateGuaranteedPlanVote(uint64_t timestamp)
         return;
     }
     RS_TRACE_NAME_FMT("HgmFrameRateManager:: TouchState = [%d]  SurFaceIdleStatus = [%d]  AceAnimatorIdleStatus = [%d]",
-        touchManager_.GetState(), idleDetector_.GetSurFaceIdleState(timestamp),
+        touchManager_.GetState(), idleDetector_.GetSurfaceIdleState(timestamp),
         idleDetector_.GetAceAnimatorIdleStatus());
 
     if (touchManager_.GetState() != TouchState::UP_STATE) {
         prepareCheck_ = false;
         startCheck_ = false;
+        lastUpExpectFps_ = 0;
     }
 
-    if (touchManager_.GetState() == TouchState::UP_STATE && lastTouchState_ == TouchState::DOWN_STATE) {
+    if (touchManager_.GetState() == TouchState::UP_STATE && lastTouchState_.load() == TouchState::DOWN_STATE) {
         prepareCheck_ = true;
         if (timestamp - idleDetector_.GetTouchUpTime() > FIRST_FRAME_TIME_OUT) {
+            if (!idleDetector_.GetSupportSurface()) {
+                touchManager_.HandleThirdFrameIdle();
+            }
             prepareCheck_ = false;
             startCheck_ = true;
         }
@@ -231,18 +256,33 @@ void HgmFrameRateManager::UpdateGuaranteedPlanVote(uint64_t timestamp)
 
     if (prepareCheck_) {
         if (timestamp - idleDetector_.GetTouchUpTime() > FIRST_FRAME_TIME_OUT) {
+            if (!idleDetector_.GetSupportSurface()) {
+                touchManager_.HandleThirdFrameIdle();
+            }
             prepareCheck_ = false;
             startCheck_ = true;
         }
     }
-    lastTouchState_ = touchManager_.GetState();
+    lastTouchState_.store(touchManager_.GetState());
 
-    if (!startCheck_) {
+    if (!startCheck_ || touchManager_.GetState() == TouchState::IDLE_STATE) {
         return;
     }
 
-    if (idleDetector_.GetSurFaceIdleState(timestamp) && idleDetector_.GetAceAnimatorIdleStatus()) {
+    if (idleDetector_.GetSurfaceIdleState(timestamp) && idleDetector_.GetAceAnimatorIdleStatus()) {
         touchManager_.HandleThirdFrameIdle();
+    } else {
+        uint32_t fps = idleDetector_.GetSurfaceUpExpectFps();
+        if (fps == lastUpExpectFps_) {
+            return;
+        }
+
+        lastUpExpectFps_ = fps;
+        HgmMultiAppStrategy::TouchInfo touchInfo = {
+            .touchState = TouchState::UP_STATE,
+            .upExpectFps = fps,
+        };
+        multiAppStrategy_.HandleTouchInfo(touchInfo);
     }
 }
 
@@ -728,23 +768,24 @@ void HgmFrameRateManager::HandleRefreshRateEvent(pid_t pid, const EventInfo& eve
     }
 }
 
-void HgmFrameRateManager::HandleTouchEvent(pid_t pid, int32_t touchStatus, int32_t touchCnt)
+void HgmFrameRateManager::HandleTouchEvent(pid_t remotePid, int32_t touchStatus, const std::string& pkgName,
+    uint32_t pid, int32_t touchCnt)
 {
     HGM_LOGD("HandleTouchEvent status:%{public}d", touchStatus);
-    if (pid != DEFAULT_PID) {
+    if (remotePid != DEFAULT_PID) {
         std::lock_guard<std::mutex> lock(cleanPidCallbackMutex_);
-        cleanPidCallback_[pid].insert(CleanPidCallbackType::TOUCH_EVENT);
+        cleanPidCallback_[remotePid].insert(CleanPidCallbackType::TOUCH_EVENT);
     }
 
     static std::mutex hgmTouchEventMutex;
     std::unique_lock<std::mutex> lock(hgmTouchEventMutex);
     if (touchStatus == TOUCH_DOWN || touchStatus == TOUCH_PULL_DOWN) {
-        HGM_LOGI("[touch manager] down");
+        HGM_LOGI("[touch manager] down %{public}s: %{public}d", pkgName.c_str(), pid);
         PolicyConfigData::StrategyConfig strategyRes;
         ExitEnergyConsumptionAssuranceMode();
         if (multiAppStrategy_.GetFocusAppStrategyConfig(strategyRes) == EXEC_SUCCESS &&
             strategyRes.dynamicMode != DynamicModeType::TOUCH_DISENABLED) {
-            touchManager_.HandleTouchEvent(TouchEvent::DOWN_EVENT, "");
+                touchManager_.HandleTouchEvent(TouchEvent::DOWN_EVENT, "");
         }
     } else if (touchStatus == TOUCH_UP || touchStatus == TOUCH_PULL_UP) {
         if (touchCnt != LAST_TOUCH_CNT) {
@@ -757,7 +798,7 @@ void HgmFrameRateManager::HandleTouchEvent(pid_t pid, int32_t touchStatus, int32
             return;
         }
         if (touchCnt == LAST_TOUCH_CNT) {
-            HGM_LOGI("[touch manager] up");
+            HGM_LOGI("[touch manager] up %{public}s: %{public}d", pkgName.c_str(), pid);
             EnterEnergyConsumptionAssuranceMode();
             touchManager_.HandleTouchEvent(TouchEvent::UP_EVENT, "");
         }
@@ -1201,7 +1242,7 @@ void HgmFrameRateManager::CleanVote(pid_t pid)
                         HandlePackageEvent(DEFAULT_PID, 0, {}); // handle empty pkg
                         break;
                     case CleanPidCallbackType::TOUCH_EVENT:
-                        HandleTouchEvent(DEFAULT_PID, TouchStatus::TOUCH_UP, LAST_TOUCH_CNT);
+                        HandleTouchEvent(DEFAULT_PID, TouchStatus::TOUCH_UP, "", DEFAULT_PID, LAST_TOUCH_CNT);
                         break;
                     case CleanPidCallbackType::GAMES:
                         DeliverRefreshRateVote({"VOTER_GAMES"}, false);

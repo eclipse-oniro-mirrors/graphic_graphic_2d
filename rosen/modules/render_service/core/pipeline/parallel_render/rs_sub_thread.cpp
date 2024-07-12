@@ -233,7 +233,7 @@ void RSSubThread::RenderCache(const std::shared_ptr<RSSuperRenderTask>& threadTa
 #endif
 }
 
-void RSSubThread::DrawableCache(DrawableV2::RSSurfaceRenderNodeDrawable* nodeDrawable)
+void RSSubThread::DrawableCache(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable)
 {
     if (grContext_ == nullptr) {
         grContext_ = CreateShareGrContext();
@@ -318,8 +318,12 @@ std::shared_ptr<Drawing::GPUContext> RSSubThread::CreateShareGrContext()
         std::string vulkanVersion = RsVulkanContext::GetSingleton().GetVulkanVersion();
         auto size = vulkanVersion.size();
         handler->ConfigureContext(&options, vulkanVersion.c_str(), size);
-        if (!gpuContext->BuildFromVK(RsVulkanContext::GetSingleton().GetGrVkBackendContext(
-            RSMainThread::Instance()->GetDeviceType() == DeviceType::PC), options)) {
+        bool useHBackendContext = false;
+        if (RSSystemProperties::GetVkQueueDividedEnable()) {
+            useHBackendContext = RSMainThread::Instance()->GetDeviceType() == DeviceType::PC;
+        }
+        if (!gpuContext->BuildFromVK(RsVulkanContext::GetSingleton().GetGrVkBackendContext(useHBackendContext),
+            options)) {
             RS_LOGE("nullptr gpuContext is null");
             return nullptr;
         }
@@ -329,7 +333,7 @@ std::shared_ptr<Drawing::GPUContext> RSSubThread::CreateShareGrContext()
     return nullptr;
 }
 
-void RSSubThread::DrawableCacheWithSkImage(DrawableV2::RSSurfaceRenderNodeDrawable* nodeDrawable)
+void RSSubThread::DrawableCacheWithSkImage(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable)
 {
     if (!nodeDrawable) {
         RS_LOGE("RSSubThread::DrawableCacheWithSkImage nodeDrawable is nullptr");
@@ -374,7 +378,7 @@ void RSSubThread::DrawableCacheWithSkImage(DrawableV2::RSSurfaceRenderNodeDrawab
     RSBaseRenderUtil::WriteCacheImageRenderNodeToPng(cacheSurface, nodeDrawable->GetName());
 }
 
-void RSSubThread::DrawableCacheWithDma(DrawableV2::RSSurfaceRenderNodeDrawable* nodeDrawable)
+void RSSubThread::DrawableCacheWithDma(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable)
 {
     RS_TRACE_NAME("DrawableCacheWithDma");
     if (!nodeDrawable) {
@@ -465,7 +469,7 @@ MemoryGraphic RSSubThread::CountSubMem(int pid)
     return memoryGraphic;
 }
 
-void RSSubThread::ReleaseCacheSurfaceOnly(DrawableV2::RSSurfaceRenderNodeDrawable* nodeDrawable)
+void RSSubThread::ReleaseCacheSurfaceOnly(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable)
 {
     if (!nodeDrawable) {
         return;

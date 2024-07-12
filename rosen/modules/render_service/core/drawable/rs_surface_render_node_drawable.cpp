@@ -63,6 +63,9 @@ RSSurfaceRenderNodeDrawable::RSSurfaceRenderNodeDrawable(std::shared_ptr<const R
     auto nodeSp = std::const_pointer_cast<RSRenderNode>(node);
     auto surfaceNode = std::static_pointer_cast<RSSurfaceRenderNode>(nodeSp);
     name_ = surfaceNode->GetName();
+#ifndef ROSEN_CROSS_PLATFORM
+    consumerOnDraw_ = surfaceNode->GetConsumer();
+#endif
 }
 
 RSSurfaceRenderNodeDrawable::~RSSurfaceRenderNodeDrawable()
@@ -335,10 +338,10 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::OnDraw:[%s] (%d, %d, %d, %d)Alpha: %f", name_.c_str(),
         absDrawRect.left_, absDrawRect.top_, absDrawRect.width_, absDrawRect.height_, surfaceNode->GetGlobalAlpha());
 
-    RS_LOGD("RSSurfaceRenderNodeDrawable::OnDraw node:%{public}" PRIu64 ",child size:%{public}u,"
-            "name:%{public}s,OcclusionVisible:%{public}d",
-        surfaceParams->GetId(), surfaceNode->GetChildrenCount(), name_.c_str(),
-        surfaceParams->GetOcclusionVisible());
+    RS_LOGD("RSSurfaceRenderNodeDrawable::OnDraw node:%{public}" PRIu64 ",child size:%{public}u, name:%{public}s,"
+            "OcclusionVisible:%{public}d Bound:%{public}s",
+        surfaceParams->GetId(), surfaceNode->GetChildrenCount(), name_.c_str(), surfaceParams->GetOcclusionVisible(),
+        surfaceParams->GetBounds().ToString().c_str());
 
     if (DealWithUIFirstCache(*surfaceNode, *rscanvas, *surfaceParams, *uniParam)) {
         return;
@@ -352,9 +355,10 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     // Draw base pipeline start
     RSAutoCanvasRestore acr(rscanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
-    bool needOffscreen = surfaceParams->GetNeedOffscreen() && !rscanvas->GetTotalMatrix().IsIdentity() &&
+    bool needOffscreen = (gettid() == RSUniRenderThread::Instance().GetTid()) &&
+        surfaceParams->GetNeedOffscreen() && !rscanvas->GetTotalMatrix().IsIdentity() &&
         surfaceParams->IsAppWindow() && surfaceNode->GetName().substr(0, 3) != "SCB" && !IsHardwareEnabled() &&
-        gettid() == RSUniRenderThread::Instance().GetTid();
+        (surfaceParams->GetVisibleRegion().Area() == surfaceParams->GetOpaqueRegion().Area());
     curCanvas_ = rscanvas;
     if (needOffscreen) {
         releaseCount_ = 0;
@@ -407,7 +411,7 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             canvasBackup_->ConcatMatrix(surfaceParams->GetMatrix());
         }
         FinishOffscreenRender(
-            Drawing::SamplingOptions(Drawing::FilterMode::NEAREST, Drawing::MipmapMode::NEAREST));
+            Drawing::SamplingOptions(Drawing::FilterMode::NEAREST, Drawing::MipmapMode::NONE));
         RS_LOGD("FinishOffscreenRender %{public}s node type %{public}d", surfaceParams->GetName().c_str(),
             int(surfaceParams->GetSurfaceNodeType()));
     }

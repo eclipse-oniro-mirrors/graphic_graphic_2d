@@ -1016,7 +1016,8 @@ void RSRenderNode::UpdateDrawingCacheInfoAfterChildren()
 
 void RSRenderNode::DisableDrawingCacheByHwcNode()
 {
-    if (GetDrawingCacheType() == RSDrawingCacheType::DISABLED_CACHE) {
+    if (GetDrawingCacheType() == RSDrawingCacheType::DISABLED_CACHE ||
+        GetDrawingCacheType() == RSDrawingCacheType::FOREGROUND_FILTER_CACHE) {
         return;
     }
     RS_OPTIONAL_TRACE_NAME_FMT("DisableDrawingCacheByHwcNode id:%llu", GetId());
@@ -2316,8 +2317,11 @@ void RSRenderNode::ApplyModifiers()
     }
 
     // Temporary code, copy matrix into render params
-    UpdateDrawableVec();
-    UpdateDrawableVecV2();
+    if (LIKELY(RSUniRenderJudgement::IsUniRender())) {
+        UpdateDrawableVecV2();
+    } else {
+        UpdateDrawableVec();
+    }
 
     UpdateFilterCacheWithBackgroundDirty();
 
@@ -4011,6 +4015,7 @@ void RSRenderNode::MarkUifirstNode(bool isUifirstNode)
 {
     RS_OPTIONAL_TRACE_NAME_FMT("MarkUifirstNode id:%lld, isUifirstNode:%d", GetId(), isUifirstNode);
     isUifirstNode_ = isUifirstNode;
+    isUifirstDelay_ = 0;
 }
 
 void RSRenderNode::SetChildrenHasSharedTransition(bool hasSharedTransition)
@@ -4050,6 +4055,15 @@ RSRenderNode::SharedPtr SharedTransitionParam::GetPairedNode(const NodeId nodeId
         return inNode_.lock();
     }
     return nullptr;
+}
+
+void RSRenderNode::SetChildrenHasUIExtension(bool childrenHasUIExtension)
+{
+    childrenHasUIExtension_ = childrenHasUIExtension;
+    auto parent = GetParent().lock();
+    if (parent && parent->ChildrenHasUIExtension() != childrenHasUIExtension) {
+        parent->SetChildrenHasUIExtension(childrenHasUIExtension);
+    }
 }
 
 bool SharedTransitionParam::UpdateHierarchyAndReturnIsLower(const NodeId nodeId)

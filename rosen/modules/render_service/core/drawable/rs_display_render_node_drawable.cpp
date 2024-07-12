@@ -361,7 +361,7 @@ bool RSDisplayRenderNodeDrawable::CheckDisplayNodeSkip(std::shared_ptr<RSDisplay
     }
     processor->ProcessDisplaySurface(*displayNode);
 
-    CreateUIFirstLayer(processor);
+    RSUifirstManager::Instance().CreateUIFirstLayer(processor);
 
     // commit RCD layers
     auto rcdInfo = std::make_unique<RcdInfo>();
@@ -369,17 +369,6 @@ bool RSDisplayRenderNodeDrawable::CheckDisplayNodeSkip(std::shared_ptr<RSDisplay
     DoScreenRcdTask(processor, rcdInfo, screenInfo);
     processor->PostProcess();
     return true;
-}
-
-void RSDisplayRenderNodeDrawable::CreateUIFirstLayer(std::shared_ptr<RSProcessor>& processor)
-{
-    auto pendingDrawables = RSUifirstManager::Instance().GetPendingPostDrawables();
-    for (auto& drawable : pendingDrawables) {
-        auto params = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
-        if (params && params->GetHardwareEnabled()) {
-            processor->CreateUIFirstLayer(*drawable, *params);
-        }
-    }
 }
 
 void RSDisplayRenderNodeDrawable::SetDisplayNodeSkipFlag(RSRenderThreadParams& uniParam, bool flag)
@@ -429,7 +418,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     // check rotation for point light
     constexpr int ROTATION_NUM = 4;
-    auto screenRotation = params->GetScreenRotation();
+    auto screenRotation = GetRenderParams()->GetScreenRotation();
     ScreenId paramScreenId = params->GetScreenId();
     if (RSSystemProperties::IsFoldScreenFlag() && paramScreenId == 0) {
         screenRotation = static_cast<ScreenRotation>((static_cast<int>(screenRotation) + 1) % ROTATION_NUM);
@@ -682,7 +671,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
     displayNodeSp->SetDirtyRects(damageRegionrects);
     processor->ProcessDisplaySurface(*displayNodeSp);
-    CreateUIFirstLayer(processor);
+    RSUifirstManager::Instance().CreateUIFirstLayer(processor);
     processor->PostProcess();
     RS_TRACE_END();
 
@@ -874,7 +863,7 @@ void RSDisplayRenderNodeDrawable::DrawMirror(std::shared_ptr<RSDisplayRenderNode
     PrepareOffscreenRender(*mirroredNode);
 
     auto mirroredNodeDrawable = std::static_pointer_cast<RSDisplayRenderNodeDrawable>(
-        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(std::move(mirroredNode)));
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(mirroredNode));
     // set mirror screen capture param
     // Don't need to scale here since the canvas has been switched from mirror frame to offscreen
     // surface in PrepareOffscreenRender() above. The offscreen surface has the same size as
@@ -1045,14 +1034,15 @@ void RSDisplayRenderNodeDrawable::ScaleAndRotateMirrorForWiredScreen(RSDisplayRe
     auto mirrorWidth = static_cast<float>(mirrorScreenInfo.width);
     auto mirrorHeight = static_cast<float>(mirrorScreenInfo.height);
     auto rotation = mirroredNode.GetScreenRotation();
-    auto exFoldScreen = (RSSystemProperties::IsFoldScreenFlag() && mirroredNode.GetScreenId() == 0);
-    std::string lemScreen = system::GetParameter("const.window.foldscreen.type", "0,0,0,0");
-    if (lemScreen[0] == '2') { // Small folding screen
-        exFoldScreen = false;
-    }
-    if (exFoldScreen) {
-        // 1 means extra 90 degrees for fold screen
-        rotation = static_cast<ScreenRotation>((static_cast<int>(rotation) + 1) % SCREEN_ROTATION_NUM);
+    auto screenManager = CreateOrGetScreenManager();
+    if (screenManager) {
+        auto screenCorrection = screenManager->GetScreenCorrection(mirroredParams->GetScreenId());
+        if (screenCorrection != ScreenRotation::INVALID_SCREEN_ROTATION &&
+            screenCorrection != ScreenRotation::ROTATION_0) {
+            // Recaculate rotation if mirrored screen has additional rotation angle
+            rotation = static_cast<ScreenRotation>((static_cast<int>(rotation) + SCREEN_ROTATION_NUM
+                - static_cast<int>(screenCorrection)) % SCREEN_ROTATION_NUM);
+        }
     }
     if (rotation == ScreenRotation::ROTATION_90 || rotation == ScreenRotation::ROTATION_270) {
         std::swap(mainWidth, mainHeight);

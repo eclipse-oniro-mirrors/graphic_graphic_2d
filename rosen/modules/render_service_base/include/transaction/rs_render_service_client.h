@@ -28,6 +28,7 @@
 
 #include "ipc_callbacks/buffer_available_callback.h"
 #include "ipc_callbacks/iapplication_agent.h"
+#include "ipc_callbacks/pointer_luminance_change_callback.h"
 #include "ipc_callbacks/screen_change_callback.h"
 #include "ipc_callbacks/surface_capture_callback.h"
 #include "memory/rs_memory_graphic.h"
@@ -56,6 +57,7 @@ namespace OHOS {
 namespace Rosen {
 // normal callback functor for client users.
 using ScreenChangeCallback = std::function<void(ScreenId, ScreenEvent)>;
+using PointerLuminanceChangeCallback = std::function<void(int32_t)>;
 using BufferAvailableCallback = std::function<void()>;
 using BufferClearCallback = std::function<void()>;
 using OcclusionChangeCallback = std::function<void(std::shared_ptr<RSOcclusionData>)>;
@@ -158,6 +160,14 @@ public:
     
     void RemoveVirtualScreen(ScreenId id);
 
+    int32_t SetPointerColorInversionConfig(float darkBuffer, float brightBuffer, int64_t interval);
+ 
+    int32_t SetPointerColorInversionEnabled(bool enable);
+ 
+    int32_t RegisterPointerLuminanceChangeCallback(const PointerLuminanceChangeCallback &callback);
+ 
+    int32_t UnRegisterPointerLuminanceChangeCallback();
+
     int32_t SetScreenChangeCallback(const ScreenChangeCallback& callback);
 
 #ifndef ROSEN_ARKUI_X
@@ -167,7 +177,8 @@ public:
 
     void SetRefreshRateMode(int32_t refreshRateMode);
 
-    void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range, bool isAnimatorStopped);
+    void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range,
+        int32_t animatorExpectedFrameRate);
 
     uint32_t GetScreenCurrentRefreshRate(ScreenId id);
 
@@ -295,7 +306,7 @@ public:
 
     void NotifyRefreshRateEvent(const EventInfo& eventInfo);
 
-    void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt);
+    void NotifyTouchEvent(int32_t touchStatus, const std::string& pkgName, uint32_t pid, int32_t touchCnt);
 
     void ReportEventResponse(DataBaseRs info);
 

@@ -105,6 +105,14 @@ private:
 
     void RemoveVirtualScreen(ScreenId id) override;
 
+    int32_t SetPointerColorInversionConfig(float darkBuffer, float brightBuffer, int64_t interval) override;
+ 
+    int32_t SetPointerColorInversionEnabled(bool enable) override;
+ 
+    int32_t RegisterPointerLuminanceChangeCallback(sptr<RSIPointerLuminanceChangeCallback> callback) override;
+ 
+    int32_t UnRegisterPointerLuminanceChangeCallback() override;
+
     int32_t SetScreenChangeCallback(sptr<RSIScreenChangeCallback> callback) override;
 
     void SetScreenActiveMode(ScreenId id, uint32_t modeId) override;
@@ -113,7 +121,8 @@ private:
 
     void SetRefreshRateMode(int32_t refreshRateMode) override;
 
-    void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range, bool isAnimatorStopped) override;
+    void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range,
+        int32_t animatorExpectedFrameRate) override;
 
     uint32_t GetScreenCurrentRefreshRate(ScreenId id) override;
 
@@ -254,7 +263,7 @@ private:
 
     void NotifyRefreshRateEvent(const EventInfo& eventInfo) override;
 
-    void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt) override;
+    void NotifyTouchEvent(int32_t touchStatus, const std::string& pkgName, uint32_t pid, int32_t touchCnt) override;
 
     void SetCacheEnabledForRotation(bool isEnabled) override;
 

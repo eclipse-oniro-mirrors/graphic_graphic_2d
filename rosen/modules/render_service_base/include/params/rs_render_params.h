@@ -19,6 +19,7 @@
 #include "common/rs_common_def.h"
 #include "common/rs_rect.h"
 #include "property/rs_properties.h"
+#include "screen_manager/screen_types.h"
 #include "utils/matrix.h"
 
 namespace OHOS::Rosen {
@@ -114,6 +115,11 @@ public:
         return dirtyType_.test(RSRenderParamsDirtyType::LAYER_INFO_DIRTY);
     }
 
+    inline bool IsBufferDirty() const
+    {
+        return dirtyType_.test(RSRenderParamsDirtyType::BUFFER_INFO_DIRTY);
+    }
+
     void SetChildHasVisibleFilter(bool val);
     bool ChildHasVisibleFilter() const;
     void SetChildHasVisibleEffect(bool val);
@@ -180,6 +186,9 @@ public:
 
     static void SetParentSurfaceMatrix(const Drawing::Matrix& parentSurfaceMatrix);
     static const Drawing::Matrix& GetParentSurfaceMatrix();
+
+    // overrided by displayNode
+    virtual ScreenRotation GetScreenRotation() const;
 
 protected:
     bool needSync_ = false;

@@ -979,7 +979,7 @@ void RSSurfaceRenderNode::OnSkipSync()
 {
 #ifndef ROSEN_CROSS_PLATFORM
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
-    if (surfaceParams && surfaceParams->IsLayerDirty()) {
+    if (surfaceParams && surfaceParams->IsBufferDirty()) {
         auto& preBuffer = surfaceParams->GetPreBuffer();
         if (!preBuffer) {
             return;
@@ -988,6 +988,7 @@ void RSSurfaceRenderNode::OnSkipSync()
         if (context && !surfaceParams->GetHardwareEnabled()) {
             context->GetMutableSkipSyncBuffer().push_back(
                 { preBuffer, GetConsumer(), surfaceParams->GetLastFrameHardwareEnabled() });
+            preBuffer = nullptr;
         }
     }
 #endif
@@ -1001,6 +1002,13 @@ void RSSurfaceRenderNode::UpdateBufferInfo(const sptr<SurfaceBuffer>& buffer, co
     surfaceParams->SetBuffer(buffer);
     surfaceParams->SetAcquireFence(acquireFence);
     surfaceParams->SetPreBuffer(preBuffer);
+    AddToPendingSyncList();
+}
+
+void RSSurfaceRenderNode::ResetPreBuffer()
+{
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    surfaceParams->SetPreBuffer(nullptr);
     AddToPendingSyncList();
 }
 
@@ -2400,13 +2408,13 @@ void RSSurfaceRenderNode::UpdateCacheSurfaceDirtyManager(int bufferAge)
     }
 }
 
-void RSSurfaceRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId firstLevelNodeId,
+void RSSurfaceRenderNode::SetIsOnTheTree(bool onTree, NodeId instanceRootNodeId, NodeId firstLevelNodeId,
     NodeId cacheNodeId, NodeId uifirstRootNodeId)
 {
     RS_LOGI("RSSurfaceRenderNode:SetIsOnTheTree, node:[name: %{public}s, id: %{public}" PRIu64 "], "
-        "on tree: %{public}d", GetName().c_str(), GetId(), flag);
+        "on tree: %{public}d, nodeType: %{public}d", GetName().c_str(), GetId(), onTree, static_cast<int>(nodeType_));
     RS_TRACE_NAME_FMT("RSSurfaceRenderNode:SetIsOnTheTree, node:[name: %s, id: %" PRIu64 "], "
-        "on tree: %d", GetName().c_str(), GetId(), flag);
+        "on tree: %d, nodeType: %d", GetName().c_str(), GetId(), onTree, static_cast<int>(nodeType_));
     instanceRootNodeId = IsLeashOrMainWindow() ? GetId() : instanceRootNodeId;
     if (IsLeashWindow()) {
         firstLevelNodeId = GetId();
@@ -2417,9 +2425,19 @@ void RSSurfaceRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, N
             firstLevelNodeId = parentNode->GetFirstLevelNodeId ();
         }
     }
+    if (IsUIExtension()) {
+        if (onTree) {
+            secUIExtensionNodes_.insert(std::pair<NodeId, NodeId>(GetId(), instanceRootNodeId));
+        } else {
+            secUIExtensionNodes_.erase(GetId());
+        }
+        if (auto parent = GetParent().lock()) {
+            parent->SetChildrenHasUIExtension(onTree);
+        }
+    }
     // if node is marked as cacheRoot, update subtree status when update surface
     // in case prepare stage upper cacheRoot cannot specify dirty subnode
-    RSBaseRenderNode::SetIsOnTheTree(flag, instanceRootNodeId, firstLevelNodeId, cacheNodeId);
+    RSBaseRenderNode::SetIsOnTheTree(onTree, instanceRootNodeId, firstLevelNodeId, cacheNodeId);
 }
 
 CacheProcessStatus RSSurfaceRenderNode::GetCacheSurfaceProcessedStatus() const
@@ -2699,6 +2717,11 @@ void RSSurfaceRenderNode::SetSkipDraw(bool skip)
 bool RSSurfaceRenderNode::GetSkipDraw() const
 {
     return isSkipDraw_;
+}
+
+const std::unordered_map<NodeId, NodeId>& RSSurfaceRenderNode::GetSecUIExtensionNodes()
+{
+    return secUIExtensionNodes_;
 }
 } // namespace Rosen
 } // namespace OHOS
