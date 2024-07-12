@@ -613,13 +613,7 @@ napi_value JsPath::OnIsClosed(napi_env env, napi_callback_info info)
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
     }
 
-    napi_value argv[ARGC_ONE] = {nullptr};
-    CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_ONE);
-
-    bool forceClosed = false;
-    GET_BOOLEAN_PARAM(ARGC_ZERO, forceClosed);
-
-    bool result = m_path->IsClosed(forceClosed);
+    bool result = m_path->IsClosed(true);
     return CreateJsNumber(env, result);
 }
 
