@@ -82,6 +82,7 @@ private:
     SurfaceError UpdateEGLImageAndTexture(EGLDisplay disp, const sptr<SurfaceBuffer>& buffer);
     void UpdateSurfaceInfo(uint32_t seqNum, sptr<SurfaceBuffer> buffer, const sptr<SyncFence> &acquireFence,
                            int64_t timestamp, Rect damage);
+    void CheckImageCacheNeedClean();
 
     uint32_t textureId_;
     uint32_t textureTarget_;
