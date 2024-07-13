@@ -444,7 +444,7 @@ void VSyncDistributor::ThreadMain()
             // IMPORTANT: ScopedDebugTrace here will cause frame loss.
             RS_TRACE_NAME_FMT("%s_SendVsync", name_.c_str());
         }
-        PostVSyncEvent(conns, timestamp);
+        PostVSyncEvent(conns, timestamp, true);
     }
 }
 
@@ -527,7 +527,6 @@ void VSyncDistributor::OnDVSyncTrigger(int64_t now, int64_t period, uint32_t ref
     dvsync_->RecordVSync(now, period, refreshRate);
     dvsync_->NotifyPreexecuteWait();
 
-    int64_t lastDVsyncTS = lastDVsyncTS_.load();
     // when dvsync switch to vsync, skip all vsync events within one period from the pre-rendered timestamp
     if (dvsync_->NeedSkipDVsyncPrerenderedFrame()) {
         return;

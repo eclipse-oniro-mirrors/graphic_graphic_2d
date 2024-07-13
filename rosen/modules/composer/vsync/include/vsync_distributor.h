@@ -124,7 +124,7 @@ public:
     void UnmarkRSAnimate();
     bool HasPendingUIRNV();
     uint32_t GetRefreshRate();
-    void RecordVsyncModeChange(uint32_t refreshReate, int64_t period);
+    void RecordVsyncModeChange(uint32_t refreshRate, int64_t period);
     bool IsUiDvsyncOn();
     VsyncError SetUiDvsyncSwitch(bool dvsyncSwitch, const sptr<VSyncConnection> &connection);
     int64_t GetUiCommandDelayTime();
