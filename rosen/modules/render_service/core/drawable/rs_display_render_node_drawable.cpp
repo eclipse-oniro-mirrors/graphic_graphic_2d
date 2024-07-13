@@ -425,6 +425,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     autoCacheDrawingEnable_ = RSSystemProperties::GetAutoCacheDebugEnabled() && autoCacheEnable_;
     autoCacheRenderNodeInfos_.clear();
     opincRootTotalCount_ = 0;
+    isOpincDropNodeExt_ = true;
 #endif
 
     // check rotation for point light
