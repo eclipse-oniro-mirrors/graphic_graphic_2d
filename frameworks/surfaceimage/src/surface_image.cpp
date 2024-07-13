@@ -269,12 +269,30 @@ EGLImageKHR SurfaceImage::CreateEGLImage(EGLDisplay disp, const sptr<SurfaceBuff
     return img;
 }
 
+void SurfaceImage::CheckImageCacheNeedClean()
+{
+    for (auto it = imageCacheSeqs_.begin(); it != imageCacheSeqs_.end(); it++) {
+        bool result = true;
+        if (IsSurfaceBufferInCache(it->first, result) == SURFACE_ERROR_OK && !result) {
+            if (it->second.eglImage_ != EGL_NO_IMAGE_KHR) {
+                eglDestroyImageKHR(eglDisplay_, it->second.eglImage_);
+                it->second.eglImage_ = EGL_NO_IMAGE_KHR;
+            }
+            if (it->second.eglSync_ != EGL_NO_SYNC_KHR) {
+                eglDestroySyncKHR(eglDisplay_, it->second.eglSync_);
+                it->second.eglSync_ = EGL_NO_SYNC_KHR;
+            }
+        }
+    }
+}
+
 SurfaceError SurfaceImage::UpdateEGLImageAndTexture(EGLDisplay disp, const sptr<SurfaceBuffer>& buffer)
 {
     // private function, buffer is always valid.
     uint32_t seqNum = buffer->GetSeqNum();
     // If there was no eglImage binding to this buffer, we create a new one.
     if (imageCacheSeqs_.count(seqNum) == 0) {
+        CheckImageCacheNeedClean();
         EGLImageKHR eglImage = CreateEGLImage(eglDisplay_, buffer);
         if (eglImage == EGL_NO_IMAGE_KHR) {
             return SURFACE_ERROR_EGL_API_FAILED;
