@@ -47,7 +47,7 @@ class RSB_EXPORT HardwareComposeDisabledReasonCollection {
 public:
     static HardwareComposeDisabledReasonCollection& GetInstance();
 
-    void UpdateHardwareComposeDisabledReasonInfoForDFX(NodeId id, int32_t disabledReason, const std::string& nodeName);
+    void UpdateHardwareComposeDisabledReasonForDFX(NodeId id, int32_t disabledReason, const std::string& nodeName);
     std::vector<HardwareComposeDisabledReasonInfo> GetHardwareComposeDisabledReasonInfo() const;
     void ResetHardwareComposeDisabledReasonInfo();
 
