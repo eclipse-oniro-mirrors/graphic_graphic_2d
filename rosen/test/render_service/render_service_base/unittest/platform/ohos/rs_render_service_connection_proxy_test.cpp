@@ -972,7 +972,7 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, GetHardwareComposeDisabledReasonInf
 {
     NodeId id = 0;
     std::string nodeName = "Test";
-    GpuDirtyRegionCollection::GetInstance().UpdateHardwareComposeDisabledReasonForDFX(id,
+    HardwareComposeDisabledReasonCollection::GetInstance().UpdateHardwareComposeDisabledReasonForDFX(id,
         HardwareComposeDisabledReasons::DISABLED_BY_SRC_PIXEL, nodeName);
     ASSERT_EQ(proxy->GetHardwareComposeDisabledReasonInfo().size(), 0);
 }
