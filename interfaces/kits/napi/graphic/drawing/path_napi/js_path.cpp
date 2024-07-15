@@ -102,7 +102,7 @@ napi_value JsPath::Constructor(napi_env env, napi_callback_info info)
     }
 
     napi_status status = napi_wrap(env, jsThis, jsPath,
-                       JsPath::Destructor, nullptr, nullptr);
+        JsPath::Destructor, nullptr, nullptr);
     if (status != napi_ok) {
         delete jsPath;
         ROSEN_LOGE("JsPath::Constructor Failed to wrap native instance");
