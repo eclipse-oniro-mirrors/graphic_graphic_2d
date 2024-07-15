@@ -50,7 +50,7 @@ std::vector<HardwareComposeDisabledReasonInfo> HardwareComposeDisabledReasonColl
     return hardwareComposeDisabledReasonInfos;
 }
 
-void HardwareComposeDisabledReasonCollection::ResetGlobalDirtyRegionInfo()
+void HardwareComposeDisabledReasonCollection::ResetHardwareComposeDisabledReasonInfo()
 {
     std::lock_guard<std::mutex> lock(hardwareComposeDisabledReasonMtx_);
     hardwareComposeDisabledReasonInfoMap_.clear();
