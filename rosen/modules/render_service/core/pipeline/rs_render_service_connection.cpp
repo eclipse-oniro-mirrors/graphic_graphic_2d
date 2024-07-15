@@ -1440,12 +1440,11 @@ LayerComposeInfo RSRenderServiceConnection::GetLayerComposeInfo()
     return layerComposeInfo;
 }
 
-std::vector<HardwareComposeDisabledReasonInfo> RSRenderServiceConnection::GetHardwareComposeDisabledReasonInfo()
+HwcDisabledReasonInfos RSRenderServiceConnection::GetHwcDisabledReasonInfo()
 {
-    const auto& hardwareComposeDisabledReasonInfos =
-        HardwareComposeDisabledReasonCollection::GetInstance().GetHardwareComposeDisabledReasonInfo();
-    GpuDirtyRegionCollection::GetInstance().ResetActiveDirtyRegionInfo();
-    return hardwareComposeDisabledReasonInfos;
+    const auto& hwcDisabledReasonInfos = HwcDisabledReasonCollection::GetInstance().GetHwcDisabledReasonInfo();
+    HwcDisabledReasonCollection::GetInstance().ResetHwcDisabledReasonInfo();
+    return hwcDisabledReasonInfos;
 }
 
 #ifdef TP_FEATURE_ENABLE

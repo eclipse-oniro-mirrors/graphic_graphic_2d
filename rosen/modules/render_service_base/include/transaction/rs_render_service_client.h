@@ -331,7 +331,7 @@ public:
 
     LayerComposeInfo GetLayerComposeInfo();
 
-    std::vector<HardwareComposeDisabledReasonInfo> GetHardwareComposeDisabledReasonInfo();
+    HwcDisabledReasonInfos GetHwcDisabledReasonInfo();
 
     int32_t RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback);
 

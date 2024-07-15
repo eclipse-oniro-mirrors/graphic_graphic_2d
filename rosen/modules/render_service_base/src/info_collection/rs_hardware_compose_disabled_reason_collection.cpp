@@ -17,43 +17,43 @@
 
 namespace OHOS {
 namespace Rosen {
-HardwareComposeDisabledReasonCollection& HardwareComposeDisabledReasonCollection::GetInstance()
+HwcDisabledReasonCollection& HwcDisabledReasonCollection::GetInstance()
 {
-    static HardwareComposeDisabledReasonCollection instance;
+    static HwcDisabledReasonCollection instance;
     return instance;
 }
 
-HardwareComposeDisabledReasonCollection::HardwareComposeDisabledReasonCollection()
+HwcDisabledReasonCollection::HwcDisabledReasonCollection()
 {
 }
 
-HardwareComposeDisabledReasonCollection::~HardwareComposeDisabledReasonCollection() noexcept
+HwcDisabledReasonCollection::~HwcDisabledReasonCollection() noexcept
 {
 }
 
-void HardwareComposeDisabledReasonCollection::UpdateHardwareComposeDisabledReasonForDFX(NodeId id,
+void HwcDisabledReasonCollection::UpdateHwcDisabledReasonForDFX(NodeId id,
     int32_t disabledReason, const std::string& nodeName)
 {
-    std::lock_guard<std::mutex> lock(hardwareComposeDisabledReasonMtx_);
-    ++hardwareComposeDisabledReasonInfoMap_[id].disabledReasonStatistics[disabledReason];
-    hardwareComposeDisabledReasonInfoMap_[id].pidOfBelongsApp = ExtractPid(id);
-    hardwareComposeDisabledReasonInfoMap_[id].nodeName = nodeName;
+    std::lock_guard<std::mutex> lock(hwcDisabledReasonMtx_);
+    ++hwcDisabledReasonInfoMap_[id].disabledReasonStatistics[disabledReason];
+    hwcDisabledReasonInfoMap_[id].pidOfBelongsApp = ExtractPid(id);
+    hwcDisabledReasonInfoMap_[id].nodeName = nodeName;
 }
 
-std::vector<HardwareComposeDisabledReasonInfo> HardwareComposeDisabledReasonCollection::GetHardwareComposeDisabledReasonInfo() const
+HwcDisabledReasonInfos HwcDisabledReasonCollection::GetHwcDisabledReasonInfo() const
 {
-    std::lock_guard<std::mutex> lock(hardwareComposeDisabledReasonMtx_);
-    std::vector<HardwareComposeDisabledReasonInfo> hardwareComposeDisabledReasonInfos;
-    for (const auto& hardwareComposeDisabledReasonInfo : hardwareComposeDisabledReasonInfoMap_) {
-        hardwareComposeDisabledReasonInfos.emplace_back(hardwareComposeDisabledReasonInfo.second);
+    std::lock_guard<std::mutex> lock(hwcDisabledReasonMtx_);
+    HwcDisabledReasonInfos hwcDisabledReasonInfos;
+    for (const auto& hwcDisabledReasonInfo : hwcDisabledReasonInfoMap_) {
+        hwcDisabledReasonInfos.emplace_back(hwcDisabledReasonInfo.second);
     }
-    return hardwareComposeDisabledReasonInfos;
+    return hwcDisabledReasonInfos;
 }
 
-void HardwareComposeDisabledReasonCollection::ResetHardwareComposeDisabledReasonInfo()
+void HwcDisabledReasonCollection::ResetHwcDisabledReasonInfo()
 {
-    std::lock_guard<std::mutex> lock(hardwareComposeDisabledReasonMtx_);
-    hardwareComposeDisabledReasonInfoMap_.clear();
+    std::lock_guard<std::mutex> lock(hwcDisabledReasonMtx_);
+    hwcDisabledReasonInfoMap_.clear();
 }
 } // namespace Rosen
 } // namespace OHOS

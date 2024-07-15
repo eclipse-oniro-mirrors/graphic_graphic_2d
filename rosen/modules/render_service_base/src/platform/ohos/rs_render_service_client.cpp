@@ -1380,13 +1380,13 @@ LayerComposeInfo RSRenderServiceClient::GetLayerComposeInfo()
     return renderService->GetLayerComposeInfo();
 }
 
-std::vector<HardwareComposeDisabledReasonInfo> RSRenderServiceClient::GetHardwareComposeDisabledReasonInfo()
+HwcDisabledReasonInfos RSRenderServiceClient::GetHwcDisabledReasonInfo()
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService == nullptr) {
         return {};
     }
-    return renderService->GetHardwareComposeDisabledReasonInfo();
+    return renderService->GetHwcDisabledReasonInfo();
 }
 
 #ifdef TP_FEATURE_ENABLE

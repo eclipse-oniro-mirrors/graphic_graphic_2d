@@ -23,7 +23,7 @@
 namespace OHOS {
 namespace Rosen {
 
-enum HardwareComposeDisabledReasons {
+enum HwcDisabledReasons {
     DISABLED_BY_FLITER_RECT = 0,
     DISABLED_BY_TRANSPARENT_CLEAN_FLITER = 1,
     DISABLED_BY_TRANSPARENT_DIRTY_FLITER = 2,
@@ -37,30 +37,32 @@ enum HardwareComposeDisabledReasons {
     DISABLED_REASON_LENGTH = 10,
 };
 
-struct HardwareComposeDisabledReasonInfo {
-    int32_t disabledReasonStatistics[10] = {0};
+struct HwcDisabledReasonInfo {
+    int32_t disabledReasonStatistics[HwcDisabledReasons::DISABLED_REASON_LENGTH] = {0};
     int32_t pidOfBelongsApp = 0;
     std::string nodeName = "";
 };
 
-class RSB_EXPORT HardwareComposeDisabledReasonCollection {
-public:
-    static HardwareComposeDisabledReasonCollection& GetInstance();
+using HwcDisabledReasonInfos = std::vector<HwcDisabledReasonInfo>;
 
-    void UpdateHardwareComposeDisabledReasonForDFX(NodeId id, int32_t disabledReason, const std::string& nodeName);
-    std::vector<HardwareComposeDisabledReasonInfo> GetHardwareComposeDisabledReasonInfo() const;
-    void ResetHardwareComposeDisabledReasonInfo();
+class RSB_EXPORT HwcDisabledReasonCollection {
+public:
+    static HwcDisabledReasonCollection& GetInstance();
+
+    void UpdateHwcDisabledReasonForDFX(NodeId id, int32_t disabledReason, const std::string& nodeName);
+    HwcDisabledReasonInfos GetHwcDisabledReasonInfo() const;
+    void ResetHwcDisabledReasonInfo();
 
 private:
-    HardwareComposeDisabledReasonCollection();
-    ~HardwareComposeDisabledReasonCollection() noexcept;
-    HardwareComposeDisabledReasonCollection(const HardwareComposeDisabledReasonCollection&) = delete;
-    HardwareComposeDisabledReasonCollection(const HardwareComposeDisabledReasonCollection&&) = delete;
-    HardwareComposeDisabledReasonCollection& operator=(const HardwareComposeDisabledReasonCollection&) = delete;
-    HardwareComposeDisabledReasonCollection& operator=(const HardwareComposeDisabledReasonCollection&&) = delete;
+    HwcDisabledReasonCollection();
+    ~HwcDisabledReasonCollection() noexcept;
+    HwcDisabledReasonCollection(const HwcDisabledReasonCollection&) = delete;
+    HwcDisabledReasonCollection(const HwcDisabledReasonCollection&&) = delete;
+    HwcDisabledReasonCollection& operator=(const HwcDisabledReasonCollection&) = delete;
+    HwcDisabledReasonCollection& operator=(const HwcDisabledReasonCollection&&) = delete;
 
-    std::unordered_map<NodeId, HardwareComposeDisabledReasonInfo> hardwareComposeDisabledReasonInfoMap_;
-    mutable std::mutex hardwareComposeDisabledReasonMtx_;
+    std::unordered_map<NodeId, HwcDisabledReasonInfo> hwcDisabledReasonInfoMap_;
+    mutable std::mutex hwcDisabledReasonMtx_;
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -268,7 +268,7 @@ public:
 
     LayerComposeInfo GetLayerComposeInfo() const;
 
-    std::vector<HardwareComposeDisabledReasonInfo> GetHardwareComposeDisabledReasonInfo() const;
+    HwcDisabledReasonInfos GetHwcDisabledReasonInfo() const;
 
 #ifdef TP_FEATURE_ENABLE
     void SetTpFeatureConfig(int32_t feature, const char* config);

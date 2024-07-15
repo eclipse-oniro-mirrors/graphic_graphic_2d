@@ -1287,14 +1287,14 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_TRANSACTION_FAILED;
                 break;
             }
-            const auto& hardwareComposeDisabledReasonInfos = GetHardwareComposeDisabledReasonInfo();
-            reply.WriteInt32(hardwareComposeDisabledReasonInfos.size());
-            for (const auto& hardwareComposeDisabledReasonInfo : hardwareComposeDisabledReasonInfos) {
-                for (const auto& disabledReasonCount : hardwareComposeDisabledReasonInfo.disabledReasonStatistics) {
+            const auto& hwcDisabledReasonInfos = GetHwcDisabledReasonInfo();
+            reply.WriteInt32(hwcDisabledReasonInfos.size());
+            for (const auto& hwcDisabledReasonInfo : hwcDisabledReasonInfos) {
+                for (const auto& disabledReasonCount : hwcDisabledReasonInfo.disabledReasonStatistics) {
                     reply.WriteInt32(disabledReasonCount);
                 }
-                reply.WriteInt32(hardwareComposeDisabledReasonInfo.pidOfBelongsApp);
-                reply.WriteString(hardwareComposeDisabledReasonInfo.nodeName);
+                reply.WriteInt32(hwcDisabledReasonInfo.pidOfBelongsApp);
+                reply.WriteString(hwcDisabledReasonInfo.nodeName);
             }
             break;
         }

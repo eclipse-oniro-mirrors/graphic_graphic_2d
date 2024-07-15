@@ -658,8 +658,7 @@ private:
     bool isCurtainScreenOn_ = false;
 
     // use for hardware compose disabled reason collection
-    HardwareComposeDisabledReasonCollection& hardwareComposeDisabledReasonCollection_ =
-        HardwareComposeDisabledReasonCollection::GetInstance();
+    HwcDisabledReasonCollection& hwcDisabledReasonCollection_ = HwcDisabledReasonCollection::GetInstance();
 };
 } // namespace Rosen
 } // namespace OHOS

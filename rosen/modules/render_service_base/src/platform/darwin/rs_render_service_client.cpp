@@ -544,7 +544,7 @@ LayerComposeInfo RSRenderServiceClient::GetLayerComposeInfo()
     return LayerComposeInfo {};
 }
 
-std::vector<HardwareComposeDisabledReasonInfo> RSRenderServiceClient::GetHardwareComposeDisabledReasonInfo()
+HwcDisabledReasonInfos RSRenderServiceClient::GetHwcDisabledReasonInfo()
 {
     return {};
 }

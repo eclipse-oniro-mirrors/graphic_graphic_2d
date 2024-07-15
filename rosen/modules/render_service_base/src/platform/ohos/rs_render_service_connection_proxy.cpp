@@ -2478,35 +2478,42 @@ LayerComposeInfo RSRenderServiceConnectionProxy::GetLayerComposeInfo()
     return LayerComposeInfo(reply.ReadInt32(), reply.ReadInt32(), reply.ReadInt32());
 }
 
-std::vector<HardwareComposeDisabledReasonInfo> RSRenderServiceConnectionProxy::GetHardwareComposeDisabledReasonInfo()
+HwcDisabledReasonInfos RSRenderServiceConnectionProxy::GetHwcDisabledReasonInfo()
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    std::vector<HardwareComposeDisabledReasonInfo> hardwareComposeDisabledReasonInfos;
+    HwcDisabledReasonInfos hwcDisabledReasonInfos;
     if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
-        return hardwareComposeDisabledReasonInfos;
+        return hwcDisabledReasonInfos;
     }
     option.SetFlags(MessageOption::TF_SYNC);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::
         GET_HARDWARE_COMPOSE_DISABLED_REASON_INFO);
     int32_t err = Remote()->SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
-        ROSEN_LOGE("RSRenderServiceConnectionProxy::GetHardwareComposeDisabledReasonInfo: Send Request err.");
-        return hardwareComposeDisabledReasonInfos;
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::GetHwcDisabledReasonInfo: Send Request err.");
+        return hwcDisabledReasonInfos;
+    }
+    int32_t size = reply.ReadInt32();
+    size_t readableSize = reply.GetReadableBytes() / sizeof(NodeId);
+    size_t len = static_cast<size_t>(size);
+    if (len > readableSize || len > hwcDisabledReasonInfos.max_size()) {
+        RS_LOGE("RSRenderServiceConnectionProxy GetHwcDisabledReasonInfo Failed read vector, size:%{public}zu,"
+            " readableSize:%{public}zu", len, readableSize);
+        return hwcDisabledReasonInfos;
     }
 
-    HardwareComposeDisabledReasonInfo hardwareComposeDisabledReasonInfo;
-    int32_t hardwareComposeDisabledReasonInfosSize = reply.ReadInt32();
-    while (hardwareComposeDisabledReasonInfosSize--) {
-        for (int32_t pos = 0; pos < HardwareComposeDisabledReasons::DISABLED_REASON_LENGTH; pos++) {
-            hardwareComposeDisabledReasonInfo.disabledReasonStatistics[pos] = reply.ReadInt32();
+    HwcDisabledReasonInfo hwcDisabledReasonInfo;
+    while (size--) {
+        for (int32_t pos = 0; pos < HwcDisabledReasons::DISABLED_REASON_LENGTH; pos++) {
+            hwcDisabledReasonInfo.disabledReasonStatistics[pos] = reply.ReadInt32();
         }
-        hardwareComposeDisabledReasonInfo.pidOfBelongsApp = reply.ReadInt32();
-        hardwareComposeDisabledReasonInfo.nodeName = reply.ReadString();
-        hardwareComposeDisabledReasonInfos.emplace_back(hardwareComposeDisabledReasonInfo);
+        hwcDisabledReasonInfo.pidOfBelongsApp = reply.ReadInt32();
+        hwcDisabledReasonInfo.nodeName = reply.ReadString();
+        hwcDisabledReasonInfos.emplace_back(hwcDisabledReasonInfo);
     }
-    return hardwareComposeDisabledReasonInfos;
+    return hwcDisabledReasonInfos;
 }
 
 #ifdef TP_FEATURE_ENABLE

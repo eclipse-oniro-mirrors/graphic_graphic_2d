@@ -246,7 +246,7 @@ public:
 
     LayerComposeInfo GetLayerComposeInfo() override;
 
-    std::vector<HardwareComposeDisabledReasonInfo> GetHardwareComposeDisabledReasonInfo() override;
+    HwcDisabledReasonInfos GetHwcDisabledReasonInfo() override;
 
     int32_t RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback) override;
 

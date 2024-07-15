@@ -963,18 +963,18 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, GetLayerComposeInfo, TestSize.Level
 }
 
 /**
- * @tc.name: GetHardwareComposeDisabledReasonInfo Test
- * @tc.desc: GetHardwareComposeDisabledReasonInfo Test
+ * @tc.name: GetHwcDisabledReasonInfo Test
+ * @tc.desc: GetHwcDisabledReasonInfo Test
  * @tc.type:FUNC
  * @tc.require: issueIACUOK
  */
-HWTEST_F(RSRenderServiceConnectionProxyTest, GetHardwareComposeDisabledReasonInfo, TestSize.Level1)
+HWTEST_F(RSRenderServiceConnectionProxyTest, GetHwcDisabledReasonInfo, TestSize.Level1)
 {
     NodeId id = 0;
     std::string nodeName = "Test";
-    HardwareComposeDisabledReasonCollection::GetInstance().UpdateHardwareComposeDisabledReasonForDFX(id,
-        HardwareComposeDisabledReasons::DISABLED_BY_SRC_PIXEL, nodeName);
-    ASSERT_EQ(proxy->GetHardwareComposeDisabledReasonInfo().size(), 0);
+    HwcDisabledReasonCollection::GetInstance().UpdateHwcDisabledReasonForDFX(id,
+        HwcDisabledReasons::DISABLED_BY_SRC_PIXEL, nodeName);
+    ASSERT_EQ(proxy->GetHwcDisabledReasonInfo().size(), 0);
 }
 } // namespace Rosen
 } // namespace OHOS
