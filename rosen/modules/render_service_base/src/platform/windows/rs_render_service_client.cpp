@@ -529,7 +529,7 @@ void RSRenderServiceClient::SetOnRemoteDiedCallback(const OnRemoteDiedCallback& 
 {
 }
 
-std::vector<HardwareComposeDisabledReasonInfo> RSRenderServiceClient::GetActiveDirtyRegionInfo()
+std::vector<ActiveDirtyRegionInfo> RSRenderServiceClient::GetActiveDirtyRegionInfo()
 {
     return {};
 }
