@@ -1294,7 +1294,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                     reply.WriteInt32(disabledReasonCount);
                 }
                 reply.WriteInt32(hardwareComposeDisabledReasonInfo.pidOfBelongsApp);
-                reply.WriteInt32(hardwareComposeDisabledReasonInfo.nodeName);
+                reply.WriteString(hardwareComposeDisabledReasonInfo.nodeName);
             }
             break;
         }
