@@ -74,9 +74,9 @@
 #include "pipeline/round_corner_display/rs_round_corner_display.h"
 #include "pipeline/round_corner_display/rs_message_bus.h"
 
+#include "rs_profiler.h"
 #ifdef RS_PROFILER_ENABLED
 #include "rs_profiler_capture_recorder.h"
-#include "rs_profiler.h"
 #endif
 
 namespace OHOS {
