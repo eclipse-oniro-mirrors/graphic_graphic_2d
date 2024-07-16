@@ -74,9 +74,9 @@
 #include "pipeline/round_corner_display/rs_round_corner_display.h"
 #include "pipeline/round_corner_display/rs_message_bus.h"
 
+#include "rs_profiler.h"
 #ifdef RS_PROFILER_ENABLED
 #include "rs_profiler_capture_recorder.h"
-#include "rs_profiler.h"
 #endif
 
 namespace OHOS {
@@ -1292,7 +1292,8 @@ void RSUniRenderVisitor::QuickPrepareDisplayRenderNode(RSDisplayRenderNode& node
         // Callback for registered self drawing surfacenode
         RSMainThread::Instance()->SurfaceOcclusionCallback();
     }
-    RSUifirstManager::Instance().UpdateUIFirstLayerInfo(screenInfo_);
+    //UIFirst layer must be above displayNode, so use zorder + 1
+    RSUifirstManager::Instance().UpdateUIFirstLayerInfo(screenInfo_, globalZOrder_ + 1);
     curDisplayNode_->UpdatePartialRenderParams();
     curDisplayNode_->UpdateScreenRenderParams(screenInfo_, displayHasSecSurface_, displayHasSkipSurface_,
         displayHasProtectedSurface_, hasCaptureWindow_);
@@ -2127,7 +2128,7 @@ void RSUniRenderVisitor::UpdateHwcNodeDirtyRegionAndCreateLayer(std::shared_ptr<
         auto transform = RSUniRenderUtil::GetLayerTransform(*hwcNodePtr, screenInfo_);
         hwcNodePtr->UpdateHwcNodeLayerInfo(transform);
     }
-    curDisplayNode_->SetGlobalZOrder(globalZOrder_);
+    curDisplayNode_->SetDisplayGlobalZOrder(globalZOrder_);
     if (pointWindow) {
         // globalZOrder_ + 2 is displayNode layer, point window must be at the top.
         pointWindow->SetGlobalZOrder(globalZOrder_ + 2);

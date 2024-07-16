@@ -976,5 +976,22 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, GetHwcDisabledReasonInfo, TestSize.
         HwcDisabledReasons::DISABLED_BY_SRC_PIXEL, nodeName);
     ASSERT_EQ(proxy->GetHwcDisabledReasonInfo().size(), 0);
 }
+
+/**
+ * @tc.name: RegisterUIExtensionCallback Test
+ * @tc.desc: RegisterUIExtensionCallback Test, with empty/non-empty callback.
+ * @tc.type:FUNC
+ * @tc.require: issueIABHAX
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, RegisterUIExtensionCallback, TestSize.Level1)
+{
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    ASSERT_NE(samgr, nullptr);
+    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
+    sptr<RSIUIExtensionCallback> callback = iface_cast<RSIUIExtensionCallback>(remoteObject);
+    uint64_t userId = 0;
+    ASSERT_EQ(proxy->RegisterUIExtensionCallback(userId, nullptr), INVALID_ARGUMENTS);
+    ASSERT_EQ(proxy->RegisterUIExtensionCallback(userId, callback), RS_CONNECTION_ERROR);
+}
 } // namespace Rosen
 } // namespace OHOS
