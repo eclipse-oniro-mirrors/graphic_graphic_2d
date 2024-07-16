@@ -656,6 +656,9 @@ private:
     // use for curtain screen
     void DrawCurtainScreen();
     bool isCurtainScreenOn_ = false;
+
+    // use for hardware compose disabled reason collection
+    HwcDisabledReasonCollection& hwcDisabledReasonCollection_ = HwcDisabledReasonCollection::GetInstance();
 };
 } // namespace Rosen
 } // namespace OHOS

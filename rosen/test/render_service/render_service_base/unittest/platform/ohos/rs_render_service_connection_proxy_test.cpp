@@ -963,6 +963,21 @@ HWTEST_F(RSRenderServiceConnectionProxyTest, GetLayerComposeInfo, TestSize.Level
 }
 
 /**
+ * @tc.name: GetHwcDisabledReasonInfo Test
+ * @tc.desc: GetHwcDisabledReasonInfo Test
+ * @tc.type:FUNC
+ * @tc.require: issueIACUOK
+ */
+HWTEST_F(RSRenderServiceConnectionProxyTest, GetHwcDisabledReasonInfo, TestSize.Level1)
+{
+    NodeId id = 0;
+    std::string nodeName = "Test";
+    HwcDisabledReasonCollection::GetInstance().UpdateHwcDisabledReasonForDFX(id,
+        HwcDisabledReasons::DISABLED_BY_SRC_PIXEL, nodeName);
+    ASSERT_EQ(proxy->GetHwcDisabledReasonInfo().size(), 0);
+}
+
+/**
  * @tc.name: RegisterUIExtensionCallback Test
  * @tc.desc: RegisterUIExtensionCallback Test, with empty/non-empty callback.
  * @tc.type:FUNC

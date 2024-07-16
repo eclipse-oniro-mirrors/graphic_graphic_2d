@@ -544,6 +544,11 @@ LayerComposeInfo RSRenderServiceClient::GetLayerComposeInfo()
     return LayerComposeInfo {};
 }
 
+HwcDisabledReasonInfos RSRenderServiceClient::GetHwcDisabledReasonInfo()
+{
+    return {};
+}
+
 #ifdef TP_FEATURE_ENABLE
 void RSRenderServiceClient::SetTpFeatureConfig(int32_t feature, const char* config)
 {

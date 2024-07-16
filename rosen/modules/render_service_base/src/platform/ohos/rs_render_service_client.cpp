@@ -1380,6 +1380,15 @@ LayerComposeInfo RSRenderServiceClient::GetLayerComposeInfo()
     return renderService->GetLayerComposeInfo();
 }
 
+HwcDisabledReasonInfos RSRenderServiceClient::GetHwcDisabledReasonInfo()
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return {};
+    }
+    return renderService->GetHwcDisabledReasonInfo();
+}
+
 #ifdef TP_FEATURE_ENABLE
 void RSRenderServiceClient::SetTpFeatureConfig(int32_t feature, const char* config)
 {

@@ -1280,6 +1280,24 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             reply.WriteInt32(LayerComposeInfo.redrawFrameNumber);
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::
+            GET_HARDWARE_COMPOSE_DISABLED_REASON_INFO) : {
+            uint64_t tokenId = OHOS::IPCSkeleton::GetCallingFullTokenID();
+            if (Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(tokenId)) {
+                ret = ERR_TRANSACTION_FAILED;
+                break;
+            }
+            const auto& hwcDisabledReasonInfos = GetHwcDisabledReasonInfo();
+            reply.WriteInt32(hwcDisabledReasonInfos.size());
+            for (const auto& hwcDisabledReasonInfo : hwcDisabledReasonInfos) {
+                for (const auto& disabledReasonCount : hwcDisabledReasonInfo.disabledReasonStatistics) {
+                    reply.WriteInt32(disabledReasonCount);
+                }
+                reply.WriteInt32(hwcDisabledReasonInfo.pidOfBelongsApp);
+                reply.WriteString(hwcDisabledReasonInfo.nodeName);
+            }
+            break;
+        }
 #ifdef TP_FEATURE_ENABLE
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_TP_FEATURE_CONFIG) : {
             int32_t feature = data.ReadInt32();

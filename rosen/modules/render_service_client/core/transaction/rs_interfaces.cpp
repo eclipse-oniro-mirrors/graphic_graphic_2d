@@ -664,6 +664,12 @@ LayerComposeInfo RSInterfaces::GetLayerComposeInfo() const
     return layerComposeInfo;
 }
 
+HwcDisabledReasonInfos RSInterfaces::GetHwcDisabledReasonInfo() const
+{
+    const auto& hwcDisabledReasonInfo = renderServiceClient_->GetHwcDisabledReasonInfo();
+    return hwcDisabledReasonInfo;
+}
+
 #ifdef TP_FEATURE_ENABLE
 void RSInterfaces::SetTpFeatureConfig(int32_t feature, const char* config)
 {
