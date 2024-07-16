@@ -52,7 +52,7 @@ public:
     static napi_value GetLength(napi_env env, napi_callback_info info);
     static napi_value GetPositionAndTangent(napi_env env, napi_callback_info info);
     static napi_value GetMatrix(napi_env env, napi_callback_info info);
-    static napi_value BuildFromSVGString(napi_env env, napi_callback_info info);
+    static napi_value BuildFromSvgString(napi_env env, napi_callback_info info);
     Path* GetPath();
 
 private:
@@ -76,7 +76,7 @@ private:
     napi_value OnGetLength(napi_env env, napi_callback_info info);
     napi_value OnGetPositionAndTangent(napi_env env, napi_callback_info info);
     napi_value OnGetMatrix(napi_env env, napi_callback_info info);
-    napi_value OnBuildFromSVGString(napi_env env, napi_callback_info info);
+    napi_value OnBuildFromSvgString(napi_env env, napi_callback_info info);
 
     static thread_local napi_ref constructor_;
     Path* m_path = nullptr;

@@ -50,7 +50,7 @@ napi_value JsPath::Init(napi_env env, napi_value exportObj)
         DECLARE_NAPI_FUNCTION("getLength", JsPath::GetLength),
         DECLARE_NAPI_FUNCTION("getPositionAndTangent", JsPath::GetPositionAndTangent),
         DECLARE_NAPI_FUNCTION("getMatrix", JsPath::GetMatrix),
-        DECLARE_NAPI_FUNCTION("buildFromSVGString", JsPath::BuildFromSVGString),
+        DECLARE_NAPI_FUNCTION("buildFromSvgString", JsPath::BuildFromSvgString),
     };
 
     napi_value constructor = nullptr;
@@ -240,10 +240,10 @@ napi_value JsPath::GetMatrix(napi_env env, napi_callback_info info)
     return (me != nullptr) ? me->OnGetMatrix(env, info) : nullptr;
 }
 
-napi_value JsPath::BuildFromSVGString(napi_env env, napi_callback_info info)
+napi_value JsPath::BuildFromSvgString(napi_env env, napi_callback_info info)
 {
     JsPath* me = CheckParamsAndGetThis<JsPath>(env, info);
-    return (me != nullptr) ? me->OnBuildFromSVGString(env, info) : nullptr;
+    return (me != nullptr) ? me->OnBuildFromSvgString(env, info) : nullptr;
 }
 
 napi_value JsPath::OnMoveTo(napi_env env, napi_callback_info info)
@@ -474,7 +474,7 @@ napi_value JsPath::OnGetMatrix(napi_env env, napi_callback_info info)
     return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
 }
 
-napi_value JsPath::OnBuildFromSVGString(napi_env env, napi_callback_info info)
+napi_value JsPath::OnBuildFromSvgString(napi_env env, napi_callback_info info)
 {
     if (m_path == nullptr) {
         ROSEN_LOGE("JsPath::OnBuildFromSVGString path is nullptr");
