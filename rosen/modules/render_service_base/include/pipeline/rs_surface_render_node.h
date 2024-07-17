@@ -1194,6 +1194,11 @@ public:
         return brightnessRatio_;
     }
 
+    void SetHardWareDisabledByReverse(bool isHardWareDisabledByReverse)
+    {
+        isHardWareDisabledByReverse_ = isHardWareDisabledByReverse;
+    }
+    
     std::string GetNeedSourceTuningWindow();
  
     void SetNodeNeedTuning(bool isVideoInYuvConfig)
