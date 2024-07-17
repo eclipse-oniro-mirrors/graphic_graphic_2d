@@ -1377,17 +1377,6 @@ void RSSurfaceRenderNode::UpdateHwcNodeLayerInfo(GraphicTransformType transform)
 #endif
 }
 
-std::string RSSurfaceRenderNode::GetNeedSourceTuningWindow()
-{
-    int32_t uid = 0;
-    auto appMgrClient = std::make_shared<AppExecFwk::AppMgrClient>();
-    auto nodeId = GetId();
-    auto pid = ExtractPid(nodeId);
-    std::string appName = "";
-    appMgrClient->GetBundleNameByPid(pid, appName, uid);
-    return appName;
-}
-
 void RSSurfaceRenderNode::UpdateHardwareDisabledState(bool disabled)
 {
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
