@@ -41,6 +41,7 @@ public:
     template<typename T>
     T Estimate(float fraction, const T& startValue, const T& endValue)
     {
+        fraction = std::clamp(fraction, 0.0f, 1.0f);
         return startValue * (1.0f - fraction) + endValue * fraction;
     }
 
@@ -54,7 +55,8 @@ public:
         return 0.0f;
     }
 
-    virtual float EstimateFraction(const std::shared_ptr<RSInterpolator>& interpolator, float targetFraction)
+    virtual float EstimateFraction(const std::shared_ptr<RSInterpolator>& interpolator,
+        float targetFraction, int duration)
     {
         return 0.0f;
     }
@@ -124,14 +126,24 @@ public:
         return 0.0f;
     }
 
-    float EstimateFraction(const std::shared_ptr<RSInterpolator>& interpolator, float targetFraction) override
+    float EstimateFraction(const std::shared_ptr<RSInterpolator>& interpolator,
+        float targetFraction, int duration) override
     {
-        float end = FRACTION_MAX;
+        if (interpolator == nullptr || duration <= 0) {
+            return FRACTION_MIN;
+        }
+        int secondTime = std::ceil(static_cast<float>(duration) / SECOND_TO_MS);
+        if (secondTime <= 0) {
+            return FRACTION_MIN;
+        }
+        auto frameTimes = MAX_FRAME_TIME_FRACTION * secondTime;
         float lastFraction = FRACTION_MIN;
-        for (float time = FRAME_PER_TIME_FRACTION; time <= end; time += FRAME_PER_TIME_FRACTION) {
-            float fraction = interpolator->Interpolate(time);
+        for (uint32_t time = 1; time <= frameTimes; time++) {
+            float frameFraction = static_cast<float>(time) / frameTimes;
+            frameFraction = std::clamp(frameFraction, 0.0f, 1.0f);
+            float fraction = interpolator->Interpolate(frameFraction);
             if (lastFraction <= targetFraction && fraction >= targetFraction) {
-                return time;
+                return frameFraction;
             }
             lastFraction = fraction;
         }
