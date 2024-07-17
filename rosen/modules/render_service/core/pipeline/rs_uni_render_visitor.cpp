@@ -2686,8 +2686,8 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByGlobalCleanFilter(
 {
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
     for (auto filter = cleanFilter.begin(); filter != cleanFilter.end(); ++filter) {
-        auto& rendernode = nodeMap.GetRenderNode<RSRenderNode>(filter->first);
         if (hwcNodePtr.GetDstRect().Intersect(filter->second)) {
+            auto& rendernode = nodeMap.GetRenderNode<RSRenderNode>(filter->first);
             if (rendernode->IsAIBarFilterCacheValid()) {
                 ROSEN_LOGD("RSUniRenderVisitor::UpdateHwcNodeByFilter: skip intersection for using cache");
                 continue;
