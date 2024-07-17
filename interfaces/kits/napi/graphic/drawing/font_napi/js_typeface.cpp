@@ -102,7 +102,7 @@ napi_value JsTypeface::CreateJsTypeface(napi_env env, const std::shared_ptr<Type
     if (status == napi_ok) {
         auto jsTypeface = new(std::nothrow) JsTypeface(typeface);
         if (jsTypeface == nullptr) {
-            ROSEN_LOGE("JsTypeface::MakeFromFile New Typeface failed!");
+            ROSEN_LOGE("JsTypeface::CreateJsTypeface allocation failed!");
             return nullptr;
         }
         napi_create_object(env, &result);
@@ -124,6 +124,7 @@ napi_value JsTypeface::CreateJsTypeface(napi_env env, const std::shared_ptr<Type
         if (status == napi_ok) {
             return result;
         } else {
+            delete jsTypeface;
             ROSEN_LOGE("Drawing_napi: New instance could not be obtained");
         }
     }
@@ -185,6 +186,7 @@ napi_value JsTypeface::MakeFromFile(napi_env env, napi_callback_info info)
         Drawing::Typeface::GetTypefaceRegisterCallBack() != nullptr) {
         bool ret = Drawing::Typeface::GetTypefaceRegisterCallBack()(rawTypeface);
         if (!ret) {
+            delete typeface;
             ROSEN_LOGE("JsTypeface::MakeFromFile MakeRegister Typeface failed!");
             return nullptr;
         }
