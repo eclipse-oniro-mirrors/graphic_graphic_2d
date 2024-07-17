@@ -52,9 +52,16 @@ static std::map<uint32_t, int64_t> IDEAL_PERIOD = {
 HgmCore& HgmCore::Instance()
 {
     static HgmCore instance;
+    static std::mutex mtx;
     if (instance.IsInit()) {
         return instance;
     }
+
+    std::lock_guard<std::mutex> lock(mtx);
+    if (instance.IsInit()) {
+        return instance;
+    }
+    
     if (instance.Init() == false) {
         HGM_LOGI("HgmCore initialization failed");
     }
