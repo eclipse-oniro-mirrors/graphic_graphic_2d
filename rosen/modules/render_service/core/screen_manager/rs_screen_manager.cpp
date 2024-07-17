@@ -889,9 +889,9 @@ void RSScreenManager::SetCastScreenBlackList(std::unordered_set<uint64_t>& scree
     castScreenBlackLists_ = screenBlackList;
 }
 
-int32_t RSScreenManager::SetVirtualScreenBlackList(ScreenId id, std::vector<uint64_t>& blackLists)
+int32_t RSScreenManager::SetVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList)
 {
-    std::unordered_set<NodeId> screenBlackList(blackLists.begin(), blackLists.end());
+    std::unordered_set<NodeId> screenBlackList(blackList.begin(), blackList.end());
     if (id == INVALID_SCREEN_ID) {
         RS_LOGD("RSScreenManager %{public}s: CastScreenBlackLists.", __func__);
         SetCastScreenBlackList(screenBlackList);

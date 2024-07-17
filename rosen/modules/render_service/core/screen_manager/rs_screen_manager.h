@@ -70,7 +70,7 @@ public:
         int flags = 0,
         std::vector<uint64_t> filteredAppVector = {}) = 0;
 
-    virtual int32_t SetVirtualScreenBlackList(ScreenId id, std::vector<uint64_t>& blackListVector) = 0;
+    virtual int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList) = 0;
 
     virtual int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) = 0;
 
@@ -264,7 +264,7 @@ public:
         int32_t flags,
         std::vector<uint64_t> filteredAppVector) override;
 
-    int32_t SetVirtualScreenBlackList(ScreenId id, std::vector<uint64_t>& blackListVector) override;
+    int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList) override;
 
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) override;
 

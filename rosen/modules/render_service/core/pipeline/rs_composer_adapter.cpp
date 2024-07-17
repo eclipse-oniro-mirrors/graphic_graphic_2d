@@ -751,37 +751,35 @@ void RSComposerAdapter::LayerScaleDown(const LayerInfoPtr& layer)
         GraphicIRect dstRect = layer->GetLayerSize();
         GraphicIRect srcRect = layer->GetCropRect();
 
-        uint32_t newWidth = static_cast<uint32_t>(srcRect.w);
-        uint32_t newHeight = static_cast<uint32_t>(srcRect.h);
+        int32_t newWidth = srcRect.w;
+        int32_t newHeight = srcRect.h;
+
+        if (dstRect.w <= 0 || dstRect.h <= 0 || srcRect.w <= 0 || srcRect.h <= 0) {
+            // invalid rect size
+            RS_LOGE("RSComposerAdapter::LayerScaleDown : Invalid rect size.");
+            return;
+        }
 
         if (newWidth * dstRect.h > newHeight * dstRect.w) {
-            // too wide
-            if (dstRect.h == 0) {
-                return;
-            }
             newWidth = dstRect.w * newHeight / dstRect.h;
         } else if (newWidth * dstRect.h < newHeight * dstRect.w) {
-            // too tall
-            if (dstRect.w == 0) {
-                return;
-            }
             newHeight = dstRect.h * newWidth / dstRect.w;
         } else {
             return;
         }
 
-        uint32_t currentWidth = static_cast<uint32_t>(srcRect.w);
-        uint32_t currentHeight = static_cast<uint32_t>(srcRect.h);
+        int32_t currentWidth = srcRect.w;
+        int32_t currentHeight = srcRect.h;
 
         if (newWidth < currentWidth) {
             // the crop is too wide
-            uint32_t dw = currentWidth - newWidth;
+            int32_t dw = currentWidth - newWidth;
             auto halfdw = dw / 2;
             srcRect.x += halfdw;
             srcRect.w = newWidth;
         } else {
             // thr crop is too tall
-            uint32_t dh = currentHeight - newHeight;
+            int32_t dh = currentHeight - newHeight;
             auto halfdh = dh / 2;
             srcRect.y += halfdh;
             srcRect.h = newHeight;

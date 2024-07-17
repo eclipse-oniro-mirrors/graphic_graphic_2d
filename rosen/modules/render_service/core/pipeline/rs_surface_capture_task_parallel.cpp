@@ -113,6 +113,7 @@ void RSSurfaceCaptureTaskParallel::Capture(NodeId id,
     if (captureHandle == nullptr) {
         RS_LOGD("RSSurfaceCaptureTaskParallel::Capture captureHandle is nullptr!");
         callback->OnSurfaceCapture(id, nullptr);
+        return;
     }
     if (!captureHandle->CreateResources()) {
         callback->OnSurfaceCapture(id, nullptr);

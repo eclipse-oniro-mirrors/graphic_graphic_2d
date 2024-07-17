@@ -1698,20 +1698,20 @@ void RSUniRenderUtil::OptimizedFlushAndSubmit(std::shared_ptr<Drawing::Surface>&
 #endif
 }
 
-void RSUniRenderUtil::AccumulateMatrixAndAlpha(std::shared_ptr<RSSurfaceRenderNode>& node,
+void RSUniRenderUtil::AccumulateMatrixAndAlpha(std::shared_ptr<RSSurfaceRenderNode>& hwcNode,
     Drawing::Matrix& matrix, float& alpha)
 {
-    if (node == nullptr) {
+    if (hwcNode == nullptr) {
         return;
     }
-    const auto& property = node->GetRenderProperties();
+    const auto& property = hwcNode->GetRenderProperties();
     alpha = property.GetAlpha();
     matrix = property.GetBoundsGeometry()->GetMatrix();
-    auto parent = node->GetParent().lock();
+    auto parent = hwcNode->GetParent().lock();
     while (parent && parent->GetType() != RSRenderNodeType::DISPLAY_NODE) {
-        const auto& property = parent->GetRenderProperties();
-        alpha *= property.GetAlpha();
-        matrix.PostConcat(property.GetBoundsGeometry()->GetMatrix());
+        const auto& curProperty = parent->GetRenderProperties();
+        alpha *= curProperty.GetAlpha();
+        matrix.PostConcat(curProperty.GetBoundsGeometry()->GetMatrix());
         if (ROSEN_EQ(alpha, 1.f)) {
             parent->DisableDrawingCacheByHwcNode();
         }
