@@ -80,15 +80,18 @@ void RSRenderServiceListener::OnTunnelHandleChange()
 
 void RSRenderServiceListener::OnCleanCache()
 {
-    auto node = surfaceRenderNode_.lock();
-    if (node == nullptr) {
-        RS_LOGD("RSRenderServiceListener::OnBufferAvailable node is nullptr");
-        return;
-    }
-    RS_LOGD("RsDebug RSRenderServiceListener::OnCleanCache node id:%{public}" PRIu64, node->GetId());
-    node->ResetBufferAvailableCount();
-    node->ResetPreBuffer();
-    node->CleanPreBuffer();
+    std::weak_ptr<RSSurfaceRenderNode> surfaceNode = surfaceRenderNode_;
+    RSMainThread::Instance()->PostTask([surfaceNode]() {
+        auto node = surfaceNode.lock();
+        if (node == nullptr) {
+            RS_LOGD("RSRenderServiceListener::OnBufferAvailable node is nullptr");
+            return;
+        }
+        RS_LOGD("RsDebug RSRenderServiceListener::OnCleanCache node id:%{public}" PRIu64, node->GetId());
+        node->ResetBufferAvailableCount();
+        node->ResetPreBuffer();
+        node->CleanPreBuffer();
+    });
 }
 
 void RSRenderServiceListener::OnGoBackground()

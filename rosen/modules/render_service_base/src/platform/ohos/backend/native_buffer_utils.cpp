@@ -90,8 +90,8 @@ bool CreateVkImage(RsVulkanContext& vkContext, VkImage* image,
 
     if (imageSize.width * imageSize.height * imageSize.depth > VKIMAGE_LIMIT_SIZE) {
         ROSEN_LOGE("NativeBufferUtils: vkCreateImag failed, image is too large, width:%{public}u, height::%{public}u,"
-                   "depth::%{public}u" imageSize.width,
-            imageSize.height, imageSize.depth);
+                   "depth::%{public}u",
+            imageSize.width, imageSize.height, imageSize.depth);
         return false;
     }
 
