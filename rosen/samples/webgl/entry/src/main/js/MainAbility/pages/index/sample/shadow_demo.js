@@ -313,7 +313,7 @@ function initFramebuffer(gl) {
         return error();
     }
     texture = gl.createTexture();
-    if (!texture){
+    if (!texture) {
         return error();
     }
     gl.bindTexture(gl.TEXTURE_2D, texture);
