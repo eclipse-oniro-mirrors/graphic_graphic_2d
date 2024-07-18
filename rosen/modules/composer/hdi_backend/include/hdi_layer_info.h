@@ -557,7 +557,7 @@ private:
     int32_t displayNit_ = 500; // default luminance for sdr
     float brightnessRatio_ = 1.0f; // default ratio for sdr
     ScalingMode scalingMode_;
-    int32_t layerSource_ = 0;
+    int32_t layerSource_ = 0; // default layer source tag
 };
 } // namespace Rosen
 } // namespace OHOS
