@@ -315,15 +315,14 @@ napi_value JsTextBlob::MakeFromPosText(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    // Chinese characters need to be encoded with UTF16
     size_t bufferLen = static_cast<size_t>(len);
-    char16_t buffer[bufferLen + 1];
-    if (napi_get_value_string_utf16(env, argv[ARGC_ZERO], buffer, bufferLen + 1, &bufferLen) != napi_ok) {
+    char buffer[bufferLen + 1];
+    if (napi_get_value_string_utf8(env, argv[ARGC_ZERO], buffer, bufferLen + 1, &bufferLen) != napi_ok) {
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Incorrect Argv[0] type.");
     }
 
     std::shared_ptr<TextBlob> textBlob =
-        TextBlob::MakeFromPosText(buffer, CHAR16_SIZE * bufferLen, points, *font, TextEncoding::UTF16);
+        TextBlob::MakeFromPosText(buffer, bufferLen, points, *font, TextEncoding::UTF8);
     if (textBlob == nullptr) {
         ROSEN_LOGE("JsTextBlob::MakeFromPosText textBlob is nullptr");
         return nullptr;
