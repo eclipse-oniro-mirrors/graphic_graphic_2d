@@ -68,8 +68,10 @@ HWTEST_F(RSRenderNodeGCTest, NodeDestructorInner001, TestSize.Level1)
     node.NodeDestructorInner(ptr);
     EXPECT_TRUE(ptr != nullptr);
 
+    ptr->fallbackAnimationOnDestroy_ = false;
     node.NodeDestructorInner(ptr);
     EXPECT_TRUE(ptr != nullptr);
+    ptr->fallbackAnimationOnDestroy_ = true;
 }
 
 /**

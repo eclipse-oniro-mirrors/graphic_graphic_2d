@@ -66,11 +66,6 @@ void RSRenderPropertyAnimation::AttachRenderProperty(const std::shared_ptr<RSRen
     }
 }
 
-uint16_t RSRenderPropertyAnimation::GetRemainingTime(const bool isCountRepeat) const
-{
-    return animationFraction_.GetRemainingTime(isCountRepeat);
-}
-
 bool RSRenderPropertyAnimation::Marshalling(Parcel& parcel) const
 {
     if (!RSRenderAnimation::Marshalling(parcel)) {
