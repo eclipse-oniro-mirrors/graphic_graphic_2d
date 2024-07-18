@@ -32,8 +32,9 @@ public:
     bool GetVideoSurfaceFlag() const;
 
 private:
-    std::unordered_map<std::string, std::string> sourceTuningConfig_;
     std::function<void()> startNewAniamtionFunc_ = nullptr;
+    // source crop tuning
+    std::unordered_map<std::string, std::string> sourceTuningConfig_;
     bool VideoSurfaceFlag_ = false;
 };
 } // namespace OHOS::Rosen
