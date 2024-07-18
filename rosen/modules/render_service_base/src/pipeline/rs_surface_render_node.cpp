@@ -17,6 +17,7 @@
 
 #include "command/rs_surface_node_command.h"
 #include "common/rs_common_def.h"
+#include "common/rs_common_hook.h"
 #include "rs_trace.h"
 #include "common/rs_optional_trace.h"
 #include "common/rs_obj_abs_geometry.h"
@@ -171,16 +172,6 @@ void RSSurfaceRenderNode::UpdateHwcDisabledBySrcRect(bool hasRotation)
     isHardwareForcedDisabledBySrcRect_ = false;
     if (buffer == nullptr) {
         return;
-    }
-     // We allow 1px error value to avoid disable dss by mistake [this flag only used for YUV buffer format]
-    if (IsYUVBufferFormat()) {
-        auto width = static_cast<int>(buffer->GetSurfaceBufferWidth());
-        auto height = static_cast<int>(buffer->GetSurfaceBufferHeight());
-        isHardwareForcedDisabledBySrcRect_ =  !GetAncoForceDoDirect() &&
-            (hasRotation ? srcRect_.width_ + 1 < width : srcRect_.height_ + 1 < height);
-        RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%llu disableBySrc:%d src:[%d, %d]" \
-            " buffer:[%d, %d] hasRotation:%d", GetName().c_str(), GetId(),
-            isHardwareForcedDisabledBySrcRect_, srcRect_.width_, srcRect_.height_, width, height, hasRotation);
     }
 #endif
 }
@@ -1378,6 +1369,10 @@ void RSSurfaceRenderNode::UpdateHwcNodeLayerInfo(GraphicTransformType transform)
     surfaceParams->SetLayerInfo(layer);
     surfaceParams->SetHardwareEnabled(!IsHardwareForcedDisabled());
     surfaceParams->SetLastFrameHardwareEnabled(isLastFrameHwcEnabled_);
+    // 1 means need source tuning
+    if (RsCommonHook::Instance().GetVideoSurfaceFlag() && IsYUVBufferFormat()) {
+        surfaceParams->SetLayerSourceTuning(1);
+    }
     AddToPendingSyncList();
 #endif
 }

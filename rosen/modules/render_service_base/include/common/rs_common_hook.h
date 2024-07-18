@@ -17,6 +17,8 @@
 #define RS_COMMON_HOOK_H
 
 #include <functional>
+#include <string>
+#include <unordered_map>
 
 namespace OHOS::Rosen {
 class RsCommonHook {
@@ -24,9 +26,17 @@ public:
     static RsCommonHook& Instance();
     void RegisterStartNewAnimationListener(std::function<void()> listener);
     void OnStartNewAnimation();
+    // source crop tuning
+    void SetVideoSurfaceConfig(std::unordered_map<std::string, std::string> sourceTuningConfig);
+    const std::unordered_map<std::string, std::string>& GetVideoSurfaceConfig() const;
+    void SetVideoSurfaceFlag(bool VideoSurfaceFlag);
+    bool GetVideoSurfaceFlag() const;
 
 private:
     std::function<void()> startNewAniamtionFunc_ = nullptr;
+    // source crop tuning
+    std::unordered_map<std::string, std::string> sourceTuningConfig_;
+    bool VideoSurfaceFlag_ = false;
 };
 } // namespace OHOS::Rosen
 #endif
