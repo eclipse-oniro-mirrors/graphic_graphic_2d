@@ -413,7 +413,7 @@ napi_value JsPath::OnGetPositionAndTangent(napi_env env, napi_callback_info info
     }
 
     napi_value argv[ARGC_SIX] = {nullptr};
-    CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_SIX);
+    CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_FOUR);
 
     bool forceClosed = false;
     GET_BOOLEAN_PARAM(ARGC_ZERO, forceClosed);
