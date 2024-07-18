@@ -279,6 +279,23 @@ static bool MakePoints(napi_env& env, Point* point, uint32_t size, napi_value& a
     return true;
 }
 
+static napi_value getJsTextBlob(const char* buffer, size_t bufferLen, const Point points[],
+                                const std::shared_ptr<Font>& font, napi_env env)
+{
+    std::shared_ptr<TextBlob> textBlob =
+        TextBlob::MakeFromPosText(buffer, bufferLen, points, *font, TextEncoding::UTF8);
+    if (textBlob == nullptr) {
+        ROSEN_LOGE("getJsTextBlob: textBlob is nullptr");
+        return nullptr;
+    }
+    napi_value jsTextBlob = JsTextBlob::CreateJsTextBlob(env, textBlob);
+    if (jsTextBlob == nullptr) {
+        ROSEN_LOGE("getJsTextBlob: jsTextBlob is nullptr");
+        return nullptr;
+    }
+    return jsTextBlob;
+}
+
 napi_value JsTextBlob::MakeFromPosText(napi_env env, napi_callback_info info)
 {
     napi_value argv[ARGC_FOUR] = {nullptr};
@@ -293,17 +310,21 @@ napi_value JsTextBlob::MakeFromPosText(napi_env env, napi_callback_info info)
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Incorrect Argv[2].");
     }
     if (pointsSize == 0) {
-        ROSEN_LOGE("JsTextBlob::MakeFromPosText points array is empty");
+        ROSEN_LOGE("JsTextBlob::MakeFromPosText: points array is empty");
         return nullptr;
     }
     if (len != pointsSize) {
-        ROSEN_LOGE("JsTextBlob::MakeFromPosText string length does not match points array length");
+        ROSEN_LOGE("JsTextBlob::MakeFromPosText: string length does not match points array length");
         return nullptr;
     }
 
-    Point points[pointsSize];
+    Point* points = new(std::nothrow) Point[pointsSize];
+    if (!points) {
+        ROSEN_LOGE("JsTextBlob::MakeFromPosText: failed to create Point");
+        return nullptr;
+    }
     if (!MakePoints(env, points, pointsSize, array)) {
-        ROSEN_LOGE("JsTextBlob::MakeFromPosText Argv[2] is invalid");
+        ROSEN_LOGE("JsTextBlob::MakeFromPosText: Argv[2] is invalid");
         return nullptr;
     }
 
@@ -311,28 +332,20 @@ napi_value JsTextBlob::MakeFromPosText(napi_env env, napi_callback_info info)
     GET_UNWRAP_PARAM(ARGC_THREE, jsFont);
     std::shared_ptr<Font> font = jsFont->GetFont();
     if (font == nullptr) {
-        ROSEN_LOGE("JsTextBlob::MakeFromPosText font is nullptr");
+        ROSEN_LOGE("JsTextBlob::MakeFromPosText: font is nullptr");
         return nullptr;
     }
 
     size_t bufferLen = static_cast<size_t>(len);
-    char buffer[bufferLen + 1];
+    char* buffer = new(std::nothrow) char[bufferLen + 1];
+    if (!buffer) {
+        ROSEN_LOGE("JsTextBlob::MakeFromPosText: failed to create buffer");
+        return nullptr;
+    }
     if (napi_get_value_string_utf8(env, argv[ARGC_ZERO], buffer, bufferLen + 1, &bufferLen) != napi_ok) {
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Incorrect Argv[0] type.");
     }
-
-    std::shared_ptr<TextBlob> textBlob =
-        TextBlob::MakeFromPosText(buffer, bufferLen, points, *font, TextEncoding::UTF8);
-    if (textBlob == nullptr) {
-        ROSEN_LOGE("JsTextBlob::MakeFromPosText textBlob is nullptr");
-        return nullptr;
-    }
-    napi_value jsTextBlob = JsTextBlob::CreateJsTextBlob(env, textBlob);
-    if (jsTextBlob == nullptr) {
-        ROSEN_LOGE("JsTextBlob::MakeFromPosText jsTextBlob is nullptr");
-        return nullptr;
-    }
-    return jsTextBlob;
+    return getJsTextBlob(buffer, bufferLen, points, font, env);
 }
 
 napi_value JsTextBlob::CreateJsTextBlob(napi_env env, const std::shared_ptr<TextBlob> textBlob)
