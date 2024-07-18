@@ -26,6 +26,7 @@ public:
     static RsCommonHook& Instance();
     void RegisterStartNewAnimationListener(std::function<void()> listener);
     void OnStartNewAnimation();
+    // source crop tuning
     void SetVideoSurfaceConfig(std::unordered_map<std::string, std::string> sourceTuningConfig);
     const std::unordered_map<std::string, std::string>& GetVideoSurfaceConfig() const;
     void SetVideoSurfaceFlag(bool VideoSurfaceFlag);
