@@ -2604,6 +2604,9 @@ void RSUniRenderVisitor::UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& r
         return;
     }
     
+    if (!curSurfaceNode_) {
+        return;
+    }
     const auto& hwcNodes = curSurfaceNode_->GetChildHardwareEnabledNodes();
     if (hwcNodes.empty()) {
         return;
