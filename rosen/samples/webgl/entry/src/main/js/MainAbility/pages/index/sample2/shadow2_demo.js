@@ -311,7 +311,7 @@ function initFramebuffer(gl) {
         return null;
     };
     framebuffer = gl.createFramebuffer();
-    if (!framebuffer){
+    if (!framebuffer) {
         return error();
     }
     texture = gl.createTexture();
