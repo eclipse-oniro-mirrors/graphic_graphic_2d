@@ -813,7 +813,6 @@ bool RSSurfaceRenderNodeDrawable::DealWithUIFirstCache(RSSurfaceRenderNode& surf
     }
     if (!drawCacheSuccess) {
         RS_TRACE_NAME_FMT("[%s] reuse failed!", name_.c_str());
-        RS_LOGE("DrawUIFirstCache failed!");
     }
     DrawForeground(canvas, bounds);
     if (uniParams.GetUIFirstDebugEnabled()) {
