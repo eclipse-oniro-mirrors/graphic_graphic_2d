@@ -20,5 +20,6 @@ group("fuzztest") {
     "fontmgr_fuzzer:fuzztest",
     "fontstyle_fuzzer:fuzztest",
     "fontstyleset_fuzzer:fuzztest",
+    "hmsymbolconfigohos_fuzzer:fuzztest",
   ]
 }
