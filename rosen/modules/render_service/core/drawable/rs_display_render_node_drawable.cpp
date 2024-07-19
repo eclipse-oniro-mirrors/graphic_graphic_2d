@@ -1484,8 +1484,8 @@ void RSDisplayRenderNodeDrawable::PrepareOffscreenRender(const RSRenderNode& nod
     // check offscreen size and hardware renderer
     useFixedOffscreenSurfaceSize_ = false;
     const auto& property = node.GetRenderProperties();
-    uint32_t offscreenWidth = property.GetFrameWidth();
-    uint32_t offscreenHeight = property.GetFrameHeight();
+    int32_t offscreenWidth = static_cast<int32_t>(property.GetFrameWidth());
+    int32_t offscreenHeight = static_cast<int32_t>(property.GetFrameHeight());
     auto params = static_cast<RSDisplayRenderParams*>(GetRenderParams().get());
     // use fixed surface size in order to reduce create texture
     if (RSSystemProperties::IsFoldScreenFlag() && params && params->IsRotationChanged()) {

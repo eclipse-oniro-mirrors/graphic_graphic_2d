@@ -103,7 +103,7 @@ public:
     virtual int32_t GetScreenColorSpace(GraphicCM_ColorSpaceType& colorSpace) const = 0;
     virtual int32_t SetScreenColorSpace(GraphicCM_ColorSpaceType colorSpace) = 0;
     virtual const std::unordered_set<uint64_t>& GetWhiteList() const = 0;
-    virtual void SetBlackList(std::unordered_set<uint64_t>& blackListSet) = 0;
+    virtual void SetBlackList(std::unordered_set<uint64_t>& blackList) = 0;
     virtual void SetCastScreenEnableSkipWindow(bool enable) = 0;
     virtual const std::unordered_set<uint64_t>& GetBlackList() const = 0;
     virtual bool GetCastScreenEnableSkipWindow() = 0;

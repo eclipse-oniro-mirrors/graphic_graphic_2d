@@ -97,9 +97,10 @@ void RSUifirstManager::AddProcessDoneNode(NodeId id)
 
 void RSUifirstManager::ResetUifirstNode(std::shared_ptr<RSSurfaceRenderNode>& nodePtr)
 {
-    if (nodePtr) {
-        nodePtr->SetUifirstUseStarting(false);
+    if (!nodePtr) {
+        return;
     }
+    nodePtr->SetUifirstUseStarting(false);
     SetUifirstNodeEnableParam(*nodePtr, MultiThreadCacheType::NONE);
     RSMainThread::Instance()->GetContext().AddPendingSyncNode(nodePtr);
     auto drawable = GetSurfaceDrawableByID(nodePtr->GetId());

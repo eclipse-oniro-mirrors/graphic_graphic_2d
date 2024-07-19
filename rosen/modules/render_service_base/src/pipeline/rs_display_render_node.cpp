@@ -190,7 +190,7 @@ void RSDisplayRenderNode::OnSync()
 void RSDisplayRenderNode::HandleCurMainAndLeashSurfaceNodes()
 {
     surfaceCountForMultiLayersPerf_ = 0;
-    for (const auto surface : curMainAndLeashSurfaceNodes_) {
+    for (const auto& surface : curMainAndLeashSurfaceNodes_) {
         auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(surface);
         if (!surfaceNode || surfaceNode->IsLeashWindow()) {
             continue;
