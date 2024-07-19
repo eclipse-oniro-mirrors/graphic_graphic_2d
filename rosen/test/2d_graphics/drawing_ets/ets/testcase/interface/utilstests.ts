@@ -54,7 +54,13 @@ export class JoinRect extends TestBase {
       canvas.detachPen();
       canvas.detachBrush();
 
-      let result = common2D.Utils.joinRect(rect, other);
+      let result: boolean = false;
+      
+      try {
+        result = common2D.Utils.joinRect(rect, other);
+      } catch(err) {
+        console.error("Utils.joinRect exception: ", err.name, ":", err.message, err.stack);
+      }
 
       console.log("Result = " + result);
       console.log("Expected rect: left = 0, top = 0, right = 600, bottom = 600");
