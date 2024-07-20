@@ -57,6 +57,7 @@ public:
     static napi_value Close(napi_env env, napi_callback_info info);
     static napi_value Offset(napi_env env, napi_callback_info info);
     static napi_value Reset(napi_env env, napi_callback_info info);
+    static napi_value Op(napi_env env, napi_callback_info info);
     static napi_value GetLength(napi_env env, napi_callback_info info);
     static napi_value GetPositionAndTangent(napi_env env, napi_callback_info info);
     static napi_value GetMatrix(napi_env env, napi_callback_info info);
@@ -90,6 +91,7 @@ private:
     napi_value OnClose(napi_env env, napi_callback_info info);
     napi_value OnOffset(napi_env env, napi_callback_info info);
     napi_value OnReset(napi_env env, napi_callback_info info);
+    napi_value OnOp(napi_env env, napi_callback_info info);
     napi_value OnGetLength(napi_env env, napi_callback_info info);
     napi_value OnGetPositionAndTangent(napi_env env, napi_callback_info info);
     napi_value OnGetMatrix(napi_env env, napi_callback_info info);

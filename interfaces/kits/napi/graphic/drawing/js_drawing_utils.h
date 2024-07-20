@@ -23,11 +23,13 @@
 
 #include "common/rs_common_def.h"
 #include "draw/color.h"
+#include "draw/shadow.h"
 #include "native_engine/native_engine.h"
 #include "native_engine/native_value.h"
 #include "text/font_metrics.h"
 #include "text/font_types.h"
 #include "utils/point.h"
+#include "utils/point3.h"
 #include "utils/rect.h"
 
 namespace OHOS::Rosen {
@@ -339,6 +341,11 @@ bool ConvertFromJsIRect(napi_env env, napi_value jsValue, int32_t* ltrb, size_t 
 
 bool ConvertFromJsPoint(napi_env env, napi_value jsValue, double* point, size_t size);
 
+bool ConvertFromJsPoint3d(napi_env env, napi_value src, Point3& point3d);
+
+bool ConvertFromJsShadowFlag(napi_env env, napi_value src, ShadowFlags& shadowFlag,
+    ShadowFlags defaultFlag = ShadowFlags::NONE);
+
 inline bool ConvertFromJsNumber(napi_env env, napi_value jsValue, int32_t& value, int32_t lo, int32_t hi)
 {
     return napi_get_value_int32(env, jsValue, &value) == napi_ok && value >= lo && value <= hi;
@@ -430,7 +437,7 @@ napi_value CreateJsError(napi_env env, int32_t errCode, const std::string& messa
 
 bool ConvertFromJsTextEncoding(napi_env env, TextEncoding& textEncoding, napi_value nativeType);
 
-inline napi_value GetColorAndConvertToJsValue(napi_env env, Color& color)
+inline napi_value GetColorAndConvertToJsValue(napi_env env, const Color& color)
 {
     napi_value objValue = nullptr;
     napi_create_object(env, &objValue);

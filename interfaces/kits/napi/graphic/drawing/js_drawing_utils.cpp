@@ -130,6 +130,44 @@ bool ConvertFromJsIRect(napi_env env, napi_value jsValue, int32_t* ltrb, size_t 
     return true;
 }
 
+bool ConvertFromJsShadowFlag(napi_env env, napi_value src, ShadowFlags& shadowFlag, ShadowFlags defaultFlag)
+{
+    if (src == nullptr) {
+        return false;
+    }
+    uint32_t value = 0;
+    if (!ConvertFromJsValue(env, src, value)) {
+        return false;
+    }
+    shadowFlag = defaultFlag;
+    if (value >= static_cast<uint32_t>(ShadowFlags::NONE) && value <= static_cast<uint32_t>(ShadowFlags::ALL)) {
+        shadowFlag = static_cast<ShadowFlags>(value);
+    }
+    return true;
+}
+
+bool ConvertFromJsPoint3d(napi_env env, napi_value src, Point3& point3d)
+{
+    if (src == nullptr) {
+        return false;
+    }
+    napi_value tempValue = nullptr;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    napi_get_named_property(env, src, "x", &tempValue);
+    bool isXOk = ConvertFromJsValue(env, tempValue, x);
+    napi_get_named_property(env, src, "y", &tempValue);
+    bool isYOk = ConvertFromJsValue(env, tempValue, y);
+    napi_get_named_property(env, src, "z", &tempValue);
+    bool isZOk = ConvertFromJsValue(env, tempValue, z);
+    if (!(isXOk && isYOk && isZOk)) {
+        return false;
+    }
+    point3d = Point3(x, y, z);
+    return true;
+}
+
 bool ConvertFromJsPointsArray(napi_env env, napi_value array, Drawing::Point* points, uint32_t count)
 {
     for (uint32_t i = 0; i < count; i++)  {

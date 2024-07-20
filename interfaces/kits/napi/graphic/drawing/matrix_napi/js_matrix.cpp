@@ -82,7 +82,7 @@ napi_value JsMatrix::Constructor(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    JsMatrix* jsMatrix = new(std::nothrow) JsMatrix();
+    JsMatrix* jsMatrix = new(std::nothrow) JsMatrix(std::make_shared<Matrix>());
     if (jsMatrix == nullptr) {
         ROSEN_LOGE("JsMatrix::Constructor Failed to create jsMatrix");
         return nullptr;

@@ -55,6 +55,7 @@ napi_value JsPath::Init(napi_env env, napi_value exportObj)
         DECLARE_NAPI_FUNCTION("close", JsPath::Close),
         DECLARE_NAPI_FUNCTION("offset", JsPath::Offset),
         DECLARE_NAPI_FUNCTION("reset", JsPath::Reset),
+        DECLARE_NAPI_FUNCTION("op", JsPath::Op),
         DECLARE_NAPI_FUNCTION("getLength", JsPath::GetLength),
         DECLARE_NAPI_FUNCTION("getPositionAndTangent", JsPath::GetPositionAndTangent),
         DECLARE_NAPI_FUNCTION("getMatrix", JsPath::GetMatrix),
@@ -337,6 +338,12 @@ napi_value JsPath::IsClosed(napi_env env, napi_callback_info info)
 {
     JsPath* me = CheckParamsAndGetThis<JsPath>(env, info);
     return (me != nullptr) ? me->OnIsClosed(env, info) : nullptr;
+}
+
+napi_value JsPath::Op(napi_env env, napi_callback_info info)
+{
+    JsPath* me = CheckParamsAndGetThis<JsPath>(env, info);
+    return (me != nullptr) ? me->OnOp(env, info) : nullptr;
 }
 
 napi_value JsPath::OnMoveTo(napi_env env, napi_callback_info info)
@@ -636,6 +643,28 @@ napi_value JsPath::OnAddPolygon(napi_env env, napi_callback_info info)
 
     m_path->AddPoly(points, size, close);
     return nullptr;
+}
+
+napi_value JsPath::OnOp(napi_env env, napi_callback_info info)
+{
+    if (m_path == nullptr) {
+        ROSEN_LOGE("JsPath::OnOp path is nullptr");
+        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+    }
+
+    napi_value argv[ARGC_TWO] = {nullptr};
+    CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_TWO);
+
+    JsPath* jsPath = nullptr;
+    GET_UNWRAP_PARAM(ARGC_ZERO, jsPath);
+    if (jsPath->GetPath() == nullptr) {
+        ROSEN_LOGE("JsPath::OnOp path is nullptr");
+        return nullptr;
+    }
+
+    int32_t jsPathOp = 0;
+    GET_ENUM_PARAM(ARGC_ONE, jsPathOp, 0, static_cast<int32_t>(PathOp::REVERSE_DIFFERENCE));
+    return CreateJsValue(env, m_path->Op(*m_path, *jsPath->GetPath(), static_cast<PathOp>(jsPathOp)));
 }
 
 napi_value JsPath::OnClose(napi_env env, napi_callback_info info)
