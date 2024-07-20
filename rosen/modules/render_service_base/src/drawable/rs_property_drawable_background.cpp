@@ -486,7 +486,7 @@ void RSBackgroundImageDrawable::SetCompressedDataForASTC()
 {
     std::shared_ptr<Media::PixelMap> pixelMap = bgImage_->GetPixelMap();
     std::shared_ptr<Drawing::Data> fileData = std::make_shared<Drawing::Data>();
-    if (!pixelMap || !fileData) {
+    if (!pixelMap || !fileData || !pixelMap->GetFd()) {
         RS_LOGE("SetCompressedDataForASTC fail, data is null");
         return;
     }
@@ -550,18 +550,21 @@ Drawing::RecordingCanvas::DrawFunc RSBackgroundImageDrawable::CreateDrawFunc() c
         Drawing::Brush brush;
         canvas->AttachBrush(brush);
         auto bgImage = ptr->bgImage_;
+        if (!bgImage) {
+            return;
+        }
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-        if (bgImage->GetPixelMap() && bgImage->GetPixelMap()->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC) {
+        if (bgImage->GetPixelMap() && !bgImage->GetPixelMap()->IsAstc() &&
+            bgImage->GetPixelMap()->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC) {
             if (!bgImage->GetPixelMap()->GetFd()) {
                 return;
             }
-            if (bgImage->GetPixelMap()->IsAstc()) {
-                ptr->SetCompressedDataForASTC();
-            } else {
-                auto dmaImage = ptr->MakeFromTextureForVK(*canvas,
-                reinterpret_cast<SurfaceBuffer*>(bgImage->GetPixelMap()->GetFd()));
-                bgImage->SetDmaImage(dmaImage);
-            }
+            auto dmaImage =
+                ptr->MakeFromTextureForVK(*canvas, reinterpret_cast<SurfaceBuffer*>(bgImage->GetPixelMap()->GetFd()));
+            bgImage->SetDmaImage(dmaImage);
+        }
+        if (bgImage->GetPixelMap() && bgImage->GetPixelMap()->IsAstc()) {
+            ptr->SetCompressedDataForASTC();
         }
 #endif
         bgImage->CanvasDrawImage(*canvas, ptr->boundsRect_, Drawing::SamplingOptions(), true);
