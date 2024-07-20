@@ -645,6 +645,9 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
     if (IsSuggestedDrawInGroup()) {
         out += ", [nodeGroup" + std::to_string(nodeGroupType_) + "]"; // adapt for SmartPerf Editor tree tool
     }
+    if (HasChildrenOutOfRect()) {
+        out += ", [ChildrenOutOfParent: true]";
+    }
     if (uifirstRootNodeId_ != INVALID_NODEID) {
         out += ", uifirstRootNodeId_: " + std::to_string(uifirstRootNodeId_);
     }
