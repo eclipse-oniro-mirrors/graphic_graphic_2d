@@ -25,7 +25,8 @@ namespace OHOS::Rosen {
 namespace Drawing {
 class JsMatrix final {
 public:
-    explicit JsMatrix() : m_matrix(std::make_shared<Matrix>()) {};
+    explicit JsMatrix(std::shared_ptr<Matrix> matrix)
+        : m_matrix(matrix) {};
     ~JsMatrix();
 
     static napi_value Init(napi_env env, napi_value exportObj);
