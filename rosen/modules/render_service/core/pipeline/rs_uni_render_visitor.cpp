@@ -907,6 +907,7 @@ void RSUniRenderVisitor::ResetCurSurfaceInfoAsUpperSurfaceParent(RSSurfaceRender
     // record current frame mainwindow or leashwindow node
     if (node.IsMainWindowType() || node.IsLeashWindow()) {
         curMainAndLeashWindowNodesIds_.push(node.GetId());
+        curAllMainAndLeashWindowNodesIds_.emplace_back(node.GetId());
         curDisplayNode_->RecordMainAndLeashSurfaces(node.shared_from_this());
     }
     // only reset for instance node
@@ -1475,6 +1476,9 @@ void RSUniRenderVisitor::CollectOcclusionInfoForWMS(RSSurfaceRenderNode& node)
     // collect mainWindow occlusion visibleLevel
     Occlusion::Region selfDrawRegion { node.GetSurfaceOcclusionRect(true) };
     auto visibleLevel = GetRegionVisibleLevel(node.GetVisibleRegion(), selfDrawRegion);
+    // collect surface node visibleLevel for dynamic Vsync Rate.
+    CollectVSyncRate(node, visibleLevel);
+
     // wms default all visible about sefdrawing node and AbilityComponent node
     auto instanceNode = node.GetInstanceRootNode() ?
         node.GetInstanceRootNode()->ReinterpretCastTo<RSSurfaceRenderNode>() : nullptr;
@@ -1489,6 +1493,31 @@ void RSUniRenderVisitor::CollectOcclusionInfoForWMS(RSSurfaceRenderNode& node)
     }
     dstCurVisVec_.emplace_back(std::make_pair(node.GetId(),
         node.GetVisibleLevelForWMS(visibleLevel)));
+}
+
+void RSUniRenderVisitor::CollectVSyncRate(RSSurfaceRenderNode& node, RSVisibleLevel visibleLevel)
+{
+    if (!node.GetQosCal()) {
+        return;
+    }
+    auto nodeId = node.GetId();
+    if (RSMainThread::Instance()->IsSystemAnimatedScenesListEmpty()) {
+        RSVisibleLevel levelForVsync = node.IsSCBNode() ? visibleLevel : RSVisibleLevel::RS_ALL_VISIBLE;
+        visMapForVSyncRate_[nodeId] = levelForVsync;
+        RS_OPTIONAL_TRACE_NAME_FMT("CollectVSyncRate name=%s id=%" PRIu64 " visLevel=%d", node.GetName().c_str(),
+            nodeId, levelForVsync);
+        RS_LOGD("CollectVSyncRate name=%{public}s id=%{public}" PRIu64 " visLevel=%{public}d",
+            node.GetName().c_str(), nodeId, levelForVsync);
+    } else {
+        if (!(node.GetDstRect().IsEmpty() || node.IsLeashWindow())) {
+            RSVisibleLevel levelForVsync = RSVisibleLevel::RS_SYSTEM_ANIMATE_SCENE;
+            visMapForVSyncRate_[nodeId] = levelForVsync;
+            RS_OPTIONAL_TRACE_NAME_FMT("CollectVSyncRate name=%s id=%" PRIu64 " visLevel=%d", node.GetName().c_str(),
+                nodeId, levelForVsync);
+            RS_LOGD("CollectVSyncRate name=%{public}s id=%{public}" PRIu64 " visLevel=%{public}d",
+                node.GetName().c_str(), nodeId, levelForVsync);
+        }
+    }
 }
 
 void RSUniRenderVisitor::SurfaceOcclusionCallbackToWMS()
@@ -1813,6 +1842,8 @@ bool RSUniRenderVisitor::BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node)
     if (node.GetBuffer() != nullptr) {
         node.SetBufferRelMatrix(RSUniRenderUtil::GetMatrixOfBufferToRelRect(node));
     }
+    node.setQosCal((RSMainThread::Instance()->GetDeviceType() == DeviceType::PC) &&
+        RSSystemParameters::GetVSyncControlEnabled());
     return true;
 }
 
@@ -2301,6 +2332,7 @@ void RSUniRenderVisitor::UpdateSurfaceOcclusionInfo()
     if (visibleChanged) {
         visibleChanged_ = visibleChanged;
     }
+    vSyncRatesChanged_ = vSyncRatesChanged_ || visibleChanged_;
     allDstCurVisVec_.insert(allDstCurVisVec_.end(), dstCurVisVec_.begin(), dstCurVisVec_.end());
     lastVisVec_.clear();
     std::swap(lastVisVec_, dstCurVisVec_);
@@ -2949,6 +2981,7 @@ void RSUniRenderVisitor::UpdateSubSurfaceNodeRectInSkippedSubTree(const RSRender
         subSurfaceNodePtr->SetCalcRectInPrepare(true);
         if (subSurfaceNodePtr->IsLeashOrMainWindow()) {
             curMainAndLeashWindowNodesIds_.push(subSurfaceNodePtr->GetId());
+            curAllMainAndLeashWindowNodesIds_.emplace_back(subSurfaceNodePtr->GetId());
             curDisplayNode_->RecordMainAndLeashSurfaces(subSurfaceNodePtr);
             CollectOcclusionInfoForWMS(*subSurfaceNodePtr);
         }
