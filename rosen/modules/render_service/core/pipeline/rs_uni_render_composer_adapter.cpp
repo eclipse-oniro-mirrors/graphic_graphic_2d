@@ -810,7 +810,6 @@ LayerInfoPtr RSUniRenderComposerAdapter::CreateLayer(RSDisplayRenderNode& node)
         RS_LOGE("RSUniRenderComposerAdapter::CreateLayer: output is nullptr");
         return nullptr;
     }
-    RS_OPTIONAL_TRACE_BEGIN("RSUniRenderComposerAdapter::CreateLayer");
 
     auto drawable = node.GetRenderDrawable();
     if (!drawable) {
@@ -823,23 +822,23 @@ LayerInfoPtr RSUniRenderComposerAdapter::CreateLayer(RSDisplayRenderNode& node)
     if (!RSBaseRenderUtil::ConsumeAndUpdateBuffer(*surfaceHandler, true) ||
         !surfaceHandler->GetBuffer()) {
         RS_LOGE("RSUniRenderComposerAdapter::CreateLayer consume buffer failed.");
-        RS_OPTIONAL_TRACE_END();
         return nullptr;
     }
     RSBaseRenderUtil::IncAcquiredBufferCount();
     ComposeInfo info = BuildComposeInfo(node);
-    RS_LOGD("RSUniRenderComposerAdapter::ProcessSurface displayNode id:%{public}" PRIu64 " dst [%{public}d %{public}d"
+    RS_OPTIONAL_TRACE_NAME_FMT("CreateLayer displayNode zorder:%d bufferFormat:%d", info.zOrder,
+        surfaceHandler->GetBuffer()->GetFormat());
+    RS_LOGD("RSUniRenderComposerAdapter::CreateLayer displayNode id:%{public}" PRIu64 " dst [%{public}d %{public}d"
         " %{public}d %{public}d] SrcRect [%{public}d %{public}d] rawbuffer [%{public}d %{public}d] surfaceBuffer"
-        " [%{public}d %{public}d], globalZOrder:%{public}d, blendType = %{public}d",
+        " [%{public}d %{public}d], globalZOrder:%{public}d, blendType = %{public}d, bufferFormat:%d",
         node.GetId(), info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h, info.srcRect.w, info.srcRect.h,
         info.buffer->GetWidth(), info.buffer->GetHeight(), info.buffer->GetSurfaceBufferWidth(),
-        info.buffer->GetSurfaceBufferHeight(), info.zOrder, info.blendType);
+        info.buffer->GetSurfaceBufferHeight(), info.zOrder, info.blendType, surfaceHandler->GetBuffer()->GetFormat());
     LayerInfoPtr layer = HdiLayerInfo::CreateHdiLayerInfo();
     layer->SetUniRenderFlag(true);
     layer->SetWindowsName(node.GetRenderWindowName());
     SetComposeInfoToLayer(layer, info, surfaceHandler->GetConsumer(), &node);
     LayerRotate(layer, node);
-    RS_OPTIONAL_TRACE_END();
     // do not crop or scale down for displayNode's layer.
     return layer;
 }
