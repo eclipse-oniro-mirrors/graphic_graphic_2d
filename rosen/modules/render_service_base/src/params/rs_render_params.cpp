@@ -19,6 +19,7 @@
 #include "params/rs_surface_render_params.h"
 #include "pipeline/rs_render_node.h"
 #include "property/rs_properties.h"
+#include "property/rs_properties_painter.h"
 
 namespace OHOS::Rosen {
 namespace {
@@ -80,7 +81,7 @@ void RSRenderParams::ApplyAlphaAndMatrixToCanvas(RSPaintFilterCanvas& canvas, bo
             canvas.ConcatMatrix(matrix_);
         }
         if (alpha_ < 1.0f && (drawingCacheType_ == RSDrawingCacheType::FORCED_CACHE || alphaOffScreen_)) {
-            auto rect = GetBounds();
+            auto rect = RSPropertiesPainter::Rect2DrawingRect(GetLocalDrawRect());
             Drawing::Brush brush;
             brush.SetAlpha(static_cast<uint32_t>(std::clamp(alpha_, 0.f, 1.f) * UINT8_MAX));
             Drawing::SaveLayerOps slr(&rect, &brush);
