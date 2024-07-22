@@ -900,8 +900,8 @@ bool RSSystemProperties::GetPreAllocateTextureBetweenFramesEnabled()
 bool RSSystemProperties::GetAsyncFreeVMAMemoryBetweenFramesEnabled()
 {
     static bool AsyncFreeVMAMemoryBetweenFramesEnabled =
-        (std::atoi(system::GetParameter("persist.sys.graphic.mem.async_free_between_frames_enabled", "1")
-                       .c_str()) != 0);
+        (std::atoi(system::GetParameter("persist.sys.graphic.mem.async_free_between_frames_enabled", "1").c_str()) !=
+            0);
     return AsyncFreeVMAMemoryBetweenFramesEnabled;
 }
 
