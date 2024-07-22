@@ -4948,16 +4948,16 @@ HWTEST_F(RSUniRenderVisitorTest, CheckMergeTransparentDirtysForDisplay002, TestS
  * @tc.type: FUNC
  * @tc.require: issuesIAE8IM
  */
-// HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeInfoForAppNode, TestSize.Level2)
-// {
-//     RSSurfaceRenderNodeConfig config;
-//     config.id = 10;
-//     auto rsContext = std::make_shared<RSContext>();
-//     auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config, rsContext->weak_from_this());
-//     ASSERT_NE(rsSurfaceRenderNode, nullptr);
-//     rsSurfaceRenderNode->InitRenderParams();
-//     rsSurfaceRenderNode->UpdateHwcNodeInfoForAppNode(rsSurfaceRenderNode);
-// }
+HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeInfoForAppNode, TestSize.Level2)
+{
+    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    ASSERT_NE(rsSurfaceRenderNode->GetConsumer(), nullptr);
+    
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->UpdateHwcNodeInfoForAppNode(*rsSurfaceRenderNode);
+}
 
 /**
  * @tc.name: UpdateHwcNodeRectInSkippedSubTree
