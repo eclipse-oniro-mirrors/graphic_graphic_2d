@@ -41,7 +41,6 @@ public:
     template<typename T>
     T Estimate(float fraction, const T& startValue, const T& endValue)
     {
-        fraction = std::clamp(fraction, 0.0f, 1.0f);
         return startValue * (1.0f - fraction) + endValue * fraction;
     }
 
@@ -138,7 +137,7 @@ public:
         }
         auto frameTimes = MAX_FRAME_TIME_FRACTION * secondTime;
         float lastFraction = FRACTION_MIN;
-        for (uint32_t time = 1; time <= frameTimes; time++) {
+        for (int time = 1; time <= frameTimes; time++) {
             float frameFraction = static_cast<float>(time) / frameTimes;
             frameFraction = std::clamp(frameFraction, 0.0f, 1.0f);
             float fraction = interpolator->Interpolate(frameFraction);
