@@ -73,8 +73,8 @@ void RSSurfaceHandler::ConsumeAndUpdateBuffer(SurfaceBufferEntry buffer)
     if (!buffer.buffer) {
         return;
     }
-    SetBufferSizeChanged(buffer.buffer);
     SetBuffer(buffer.buffer, buffer.acquireFence, buffer.damageRect, buffer.timestamp);
+    SetBufferSizeChanged(buffer.buffer);
     SetCurrentFrameBufferConsumed();
     RS_LOGD("RsDebug surfaceHandler(id: %{public}" PRIu64 ") buffer update, "\
         "buffer timestamp = %{public}" PRId64 " .", GetNodeId(), buffer.timestamp);

@@ -1374,21 +1374,26 @@ void RSSurfaceRenderNode::UpdateHwcNodeLayerInfo(GraphicTransformType transform)
     layer.matrix = totalMatrix_;
     layer.alpha = GetGlobalAlpha();
     isHardwareForcedDisabled_ = isProtectedLayer_ ? false : isHardwareForcedDisabled_;
-    RS_LOGD("RSSurfaceRenderNode::UpdateHwcNodeLayerInfo: node: %{public}s-%{public}" PRIu64 ","
-        " src: %{public}s, dst: %{public}s, bounds: [%{public}d, %{public}d]"
-        " transform: %{public}d, zOrder: %{public}d, cur: %{public}d, last: %{public}d",
-        GetName().c_str(), GetId(),
+#ifndef ROSEN_CROSS_PLATFORM
+    auto buffer = surfaceHandler_->GetBuffer();
+    RS_LOGD("RSSurfaceRenderNode::UpdateHwcNodeLayerInfo: name:%{public}s id:%{public}" PRIu64 ", bufferFormat:%d,"
+        " src:%{public}s, dst:%{public}s, bounds:[%{public}d, %{public}d] buffer:[%{public}d, %{public}d]"
+        " transform:%{public}d, zOrder:%{public}d, cur:%{public}d, last:%{public}d",
+        GetName().c_str(), GetId(), buffer ? buffer->GetFormat() : -1,
         srcRect_.ToString().c_str(),
         dstRect_.ToString().c_str(),
         layer.boundRect.w, layer.boundRect.h,
+        buffer ? buffer->GetSurfaceBufferWidth() : 0, buffer ? buffer->GetSurfaceBufferHeight() : 0,
         transform, layer.zOrder, !IsHardwareForcedDisabled(), isLastFrameHwcEnabled_);
-    RS_OPTIONAL_TRACE_NAME_FMT("hwc debug:UpdateHwcNodeLayerInfo: node: %s-%lu,"
-        " src: %s, dst: %s, bounds: [%d, %d], transform: %d, zOrder: %d, cur: %d, last: %d",
-        GetName().c_str(), GetId(),
+    RS_OPTIONAL_TRACE_NAME_FMT("hwc debug:UpdateHwcNodeLayerInfo: name:%s id:%lu, bufferFormat:%d,"
+        " src:%s, dst:%s, bounds:[%d, %d], buffer:[%d, %d], transform:%d, zOrder:%d, cur:%d, last:%d",
+        GetName().c_str(), GetId(), buffer ? buffer->GetFormat() : -1,
         srcRect_.ToString().c_str(),
         dstRect_.ToString().c_str(),
         layer.boundRect.w, layer.boundRect.h,
+        buffer ? buffer->GetSurfaceBufferWidth() : 0, buffer ? buffer->GetSurfaceBufferHeight() : 0,
         transform, layer.zOrder, !IsHardwareForcedDisabled(), isLastFrameHwcEnabled_);
+#endif
     surfaceParams->SetLayerInfo(layer);
     surfaceParams->SetHardwareEnabled(!IsHardwareForcedDisabled());
     surfaceParams->SetLastFrameHardwareEnabled(isLastFrameHwcEnabled_);
