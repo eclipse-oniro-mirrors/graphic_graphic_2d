@@ -166,7 +166,7 @@ public:
     void SetSecurityDisplay(bool isSecurityDisplay);
     bool GetSecurityDisplay() const;
     void SetDisplayGlobalZOrder(float zOrder);
-    bool SkipFrame(uint32_t skipFrameInterval) override;
+    bool SkipFrame(uint32_t refreshRate, uint32_t skipFrameInterval) override;
     void SetBootAnimation(bool isBootAnimation) override;
     bool GetBootAnimation() const override;
     WeakPtr GetMirrorSource() const
@@ -454,7 +454,6 @@ private:
     Drawing::Matrix initMatrix_;
     bool isFirstTimeToProcessor_ = true;
     bool hasFingerprint_ = false;
-    uint64_t frameCount_ = 0;
 
     std::map<NodeId, RectI> lastFrameSurfacePos_;
     std::map<NodeId, RectI> currentFrameSurfacePos_;
@@ -495,6 +494,7 @@ private:
         std::make_shared<std::vector<std::shared_ptr<RSRenderNode>>>();
 
     friend class DisplayNodeCommandHelper;
+    int64_t lastRefreshTime_ = 0;
 };
 } // namespace Rosen
 } // namespace OHOS
