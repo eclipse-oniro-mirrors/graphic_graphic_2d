@@ -266,17 +266,20 @@ void RSDisplayRenderNode::UpdatePartialRenderParams()
     displayParams->SetAllMainAndLeashSurfaces(curMainAndLeashSurfaceNodes_);
 }
 
-bool RSDisplayRenderNode::SkipFrame(uint32_t skipFrameInterval)
+bool RSDisplayRenderNode::SkipFrame(uint32_t refreshRate, uint32_t skipFrameInterval)
 {
-    frameCount_++;
-    // ensure skipFrameInterval is not 0
-    if (skipFrameInterval == 0) {
+    if (refreshRate == 0 || skipFrameInterval <= 1) {
         return false;
     }
-    if (frameCount_ >= 1 && (frameCount_ - 1) % skipFrameInterval == 0) {
-        return false;
+    int64_t currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+    int64_t refreshInterval = currentTime - lastRefreshTime_;
+    // 1000000000ns == 1s, 110/100 allows 10% over.
+    bool needSkip = refreshInterval < (1000000000LL / refreshRate) * (skipFrameInterval - 1) * 110 / 100;
+    if (!needSkip) {
+        lastRefreshTime_ = currentTime;
     }
-    return true;
+    return needSkip;
 }
 
 void RSDisplayRenderNode::SetDisplayGlobalZOrder(float zOrder)

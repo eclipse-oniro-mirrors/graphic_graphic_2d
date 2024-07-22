@@ -703,7 +703,7 @@ public:
     virtual void MarkClearFilterCacheIfEffectChildrenChanged() {}
     bool HasBlurFilter() const;
     void SetChildrenHasSharedTransition(bool hasSharedTransition);
-    virtual bool SkipFrame(uint32_t skipFrameInterval) { return false; }
+    virtual bool SkipFrame(uint32_t refreshRate, uint32_t skipFrameInterval) { return false; }
     void RemoveChildFromFulllist(NodeId nodeId);
     void SetStartingWindowFlag(bool startingFlag);
     bool GetStartingWindowFlag() const

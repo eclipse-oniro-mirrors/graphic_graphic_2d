@@ -69,6 +69,8 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     uint32_t rogHeight = GetData<uint32_t>();
     int32_t offsetX = GetData<int32_t>();
     int32_t offsetY = GetData<int32_t>();
+    uint32_t refreshRate = GetData<uint32_t>();
+    uint32_t skipFrameInterval = GetData<uint32_t>();
     ScreenRotation screenRotation = (ScreenRotation)rogWidth;
     RSDisplayRenderNode::CompositeType type = (RSDisplayRenderNode::CompositeType)rogWidth;
     auto node = std::make_shared<RSBaseRenderNode>(id);
@@ -115,7 +117,7 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     rsDisplayRenderNode.SetIsMirrorDisplay(true);
     rsDisplayRenderNode.SetSecurityDisplay(true);
     rsDisplayRenderNode.GetSecurityDisplay();
-    rsDisplayRenderNode.SkipFrame(rogWidth);
+    rsDisplayRenderNode.SkipFrame(refreshRate, skipFrameInterval);
     rsDisplayRenderNode.SetBootAnimation(true);
     rsDisplayRenderNode.GetBootAnimation();
     rsDisplayRenderNode.GetMirrorSource();
