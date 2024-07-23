@@ -748,7 +748,7 @@ void RSUniRenderThread::PreAllocateTextureBetweenFrames()
             GrDirectContext::preAllocateTextureBetweenFrames();
         },
         PRE_ALLOCATE_TEXTURE_BETWEEN_FRAMES,
-        (this->deviceType_ == DeviceType::PHONE ? TIME_OF_EIGHT_FRAMES : TIME_OF_THE_FRAMES) / GetRefreshRate(),
+        0,
         AppExecFwk::EventQueue::Priority::LOW);
 }
 
