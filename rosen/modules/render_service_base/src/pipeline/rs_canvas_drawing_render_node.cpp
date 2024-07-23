@@ -486,7 +486,9 @@ void RSCanvasDrawingRenderNode::AddDirtyType(RSModifierType type)
                 continue;
             }
             drawCmdLists_[type].emplace_back(cmd);
-            SetNeedProcess(true);
+            if (cmd->GetOpItemSize() > 0) {
+                SetNeedProcess(true);
+            }
         }
     }
 }

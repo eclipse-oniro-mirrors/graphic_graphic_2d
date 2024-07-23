@@ -95,7 +95,7 @@ private:
     NativeBufferUtils::VulkanCleanupHelper* vulkanCleanupHelper_ = nullptr;
 #endif
     std::shared_ptr<RSPaintFilterCanvas> canvas_;
-    pid_t threadId_ = RSUniRenderThread::Instance().GetTid();
+    std::atomic<pid_t> threadId_ = RSUniRenderThread::Instance().GetTid();
 
     ThreadInfo curThreadInfo_ = { UNI_RENDER_THREAD_INDEX, std::function<void(std::shared_ptr<Drawing::Surface>)>() };
     ThreadInfo preThreadInfo_ = { UNI_RENDER_THREAD_INDEX, std::function<void(std::shared_ptr<Drawing::Surface>)>() };
