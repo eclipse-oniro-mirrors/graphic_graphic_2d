@@ -304,7 +304,10 @@ std::unique_ptr<RSRenderFrame> RSBaseRenderEngine::RequestFrame(
 #endif
     rsSurface->SetColorSpace(config.colorGamut);
     rsSurface->SetSurfacePixelFormat(config.format);
-
+    if (frameContextConfig.isMirror) {
+        RS_LOGD("RSBaseRenderEngine::RequestFrame: Mirror Screen Set Timeout to 0.");
+        rsSurface->SetTimeOut(config.timeout);
+    }
     auto bufferUsage = config.usage;
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)) && (defined RS_ENABLE_EGLIMAGE)
     if (forceCPU) {
