@@ -157,9 +157,10 @@ void RSCanvasDrawingRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
 void RSCanvasDrawingRenderNodeDrawable::PlaybackInCorrespondThread()
 {
     auto canvasDrawingPtr = std::static_pointer_cast<DrawableV2::RSCanvasDrawingRenderNodeDrawable>(shared_from_this());
-    auto task = [this, canvasDrawingPtr]() {
+    pid_t threadId = threadId_;
+    auto task = [this, canvasDrawingPtr, threadId]() {
         std::unique_lock<std::recursive_mutex> lock(drawableMutex_);
-        if (!surface_ || !canvas_ || !renderParams_) {
+        if (!surface_ || !canvas_ || !renderParams_ || threadId != threadId_) {
             return;
         }
         if (renderParams_->GetCanvasDrawingSurfaceChanged()) {
@@ -168,8 +169,9 @@ void RSCanvasDrawingRenderNodeDrawable::PlaybackInCorrespondThread()
         auto rect = GetRenderParams()->GetBounds();
         DrawContent(*canvas_, rect);
         renderParams_->SetNeedProcess(false);
+        canvas_->Flush();
     };
-    RSTaskDispatcher::GetInstance().PostTask(threadId_, task, false);
+    RSTaskDispatcher::GetInstance().PostTask(threadId, task, false);
 }
 
 bool RSCanvasDrawingRenderNodeDrawable::InitSurface(int width, int height, RSPaintFilterCanvas& canvas)
