@@ -805,7 +805,7 @@ void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam&
     auto sy = params.dstRect.GetHeight() / srcHeight;
     auto tx = params.dstRect.GetLeft() - params.srcRect.GetLeft() * sx;
     auto ty = params.dstRect.GetTop() - params.srcRect.GetTop() * sy;
-    if (srcWidth == 0.0f || srcHeight == 0.0f) {
+    if (ROSEN_EQ(srcWidth, 0.0f) || ROSEN_EQ(srcHeight, 0.0f)) {
         RS_LOGE("RSBaseRenderEngine::DrawImage image srcRect params invalid.");
     }
     matrix.SetScaleTranslate(sx, sy, tx, ty);
