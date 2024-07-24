@@ -16,7 +16,7 @@
 #ifndef RS_POINTER_RENDER_MANAGER_H
 #define RS_POINTER_RENDER_MANAGER_H
 
-#include "ipc_callbacks/pointer_luminance_change_callback.h"
+#include "ipc_callbacks/pointer_render/pointer_luminance_change_callback.h"
 #include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_processor.h"
 #ifdef RS_ENABLE_VK

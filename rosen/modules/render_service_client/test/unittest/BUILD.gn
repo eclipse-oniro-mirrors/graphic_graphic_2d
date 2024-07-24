@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//build/config/components/multimodalinput/cursor_config.gni")
 import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
@@ -62,6 +63,9 @@ ohos_unittest("RSJankDetectorTest") {
 ohos_unittest("RSInterfacesTest") {
   module_out_path = module_out_path
   sources = [ "rs_interfaces_test.cpp" ]
+  if (input_ext_feature_magiccursor) {
+    defines = [ "OHOS_BUILD_ENABLE_MAGICCURSOR" ]
+  }
   deps = [ ":rs_client_test_common" ]
   external_deps = [ "graphic_surface:surface" ]
 }
