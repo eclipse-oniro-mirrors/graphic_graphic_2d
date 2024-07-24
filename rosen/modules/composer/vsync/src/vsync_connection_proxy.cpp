@@ -69,7 +69,6 @@ VsyncError VSyncConnectionProxy::SetUiDvsyncConfig(int32_t bufferCount)
     MessageParcel ret;
 
     arg.WriteInterfaceToken(GetDescriptor());
-    arg.WriteBool(bufferCount);
     if (!arg.WriteInt32(bufferCount)) {
         VLOGE("SetUiDvsyncConfig bufferCount error");
         return VSYNC_ERROR_UNKOWN;
