@@ -1713,7 +1713,7 @@ HWTEST_F(RSInterfacesTest, RegisterUIExtensionCallback_002, Function | SmallTest
  * @tc.name: SetVirtualScreenStatus
  * @tc.desc: Test SetVirtualScreenStatus
  * @tc.type: FUNC
- * @tc.require: issueI9P2WC
+ * @tc.require: issueIAF42F
  */
 HWTEST_F(RSInterfacesTest, SetVirtualScreenStatus, Function | SmallTest | Level2)
 {
