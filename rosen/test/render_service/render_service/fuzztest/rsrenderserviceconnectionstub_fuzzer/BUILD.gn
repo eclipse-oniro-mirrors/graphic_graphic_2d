@@ -12,7 +12,6 @@
 # limitations under the License.
 
 #####################hydra-fuzz###################
-import("//build/config/components/multimodalinput/cursor_config.gni")
 import("//build/config/features.gni")
 import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
@@ -73,9 +72,6 @@ ohos_fuzztest("RSRenderServiceConnectionStubFuzzTest") {
     defines = [ "USE_ROSEN_DRAWING" ]
   }
 
-  if (input_ext_feature_magiccursor) {
-    defines += [ "OHOS_BUILD_ENABLE_MAGICCURSOR" ]
-  }
 }
 
 ###############################################################################

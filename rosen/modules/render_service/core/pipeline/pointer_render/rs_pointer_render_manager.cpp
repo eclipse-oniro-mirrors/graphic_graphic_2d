@@ -64,13 +64,13 @@ int64_t RSPointerRenderManager::GetCurrentTime()
 }
 
 void RSPointerRenderManager::SetPointerColorInversionConfig(float darkBuffer, float brightBuffer,
-    int64_t interval, int32_t colorRange)
+    int64_t interval, int32_t rangeSize)
 {
     std::lock_guard<std::mutex> lock(cursorInvertMutex_);
     darkBuffer_ = darkBuffer;
     brightBuffer_ = brightBuffer;
     colorSamplingInterval_ = interval;
-    rangeSize_ = colorRange;
+    rangeSize_ = rangeSize;
 }
  
 void RSPointerRenderManager::SetPointerColorInversionEnabled(bool enable)

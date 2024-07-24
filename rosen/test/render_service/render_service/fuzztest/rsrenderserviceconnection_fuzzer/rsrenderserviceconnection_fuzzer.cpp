@@ -531,7 +531,8 @@ bool DoSetPointerColorInversionConfig(const uint8_t* data, size_t size)
     float darkBuffer = GetData<float>();
     float brightBuffer = GetData<float>();
     int64_t interval = GetData<int64_t>();
-    rsConn->SetPointerColorInversionConfig(darkBuffer, brightBuffer, interval);
+    int32_t rangeSize = GetData<int32_t>();
+    rsConn->SetPointerColorInversionConfig(darkBuffer, brightBuffer, interval, rangeSize);
     return true;
 }
 

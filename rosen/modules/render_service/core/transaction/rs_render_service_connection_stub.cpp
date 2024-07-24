@@ -433,7 +433,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             float darkBuffer = data.ReadFloat();
             float brightBuffer = data.ReadFloat();
             int64_t interval = data.ReadInt64();
-            int32_t status = SetPointerColorInversionConfig(darkBuffer, brightBuffer, interval);
+            int32_t rangeSize = data.ReadInt32();
+            int32_t status = SetPointerColorInversionConfig(darkBuffer, brightBuffer, interval, rangeSize);
             reply.WriteInt32(status);
             break;
         }
