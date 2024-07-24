@@ -41,7 +41,7 @@ public:
     static RSPointerRenderManager& GetInstance();
     static int64_t GetCurrentTime();
     void ProcessColorPicker(std::shared_ptr<RSProcessor> processor, std::shared_ptr<Drawing::GPUContext> gpuContext);
-    void SetPointerColorInversionConfig(float darkBuffer, float brightBuffer, int64_t interval);
+    void SetPointerColorInversionConfig(float darkBuffer, float brightBuffer, int64_t interval, int32_t colorRange);
     void SetPointerColorInversionEnabled(bool enable);
     void RegisterPointerLuminanceChangeCallback(pid_t pid, sptr<RSIPointerLuminanceChangeCallback> callback);
     void UnRegisterPointerLuminanceChangeCallback(pid_t pid);
@@ -54,6 +54,7 @@ private:
     void ExecutePointerLuminanceChangeCallback(int32_t brightness);
     void CallPointerLuminanceChange(int32_t brightness);
     bool CheckColorPickerEnabled();
+    void CalculateColorRange(RectI& pRect);
     bool CalculateTargetLayer(std::shared_ptr<RSProcessor> processor);
     void RunColorPickerTask();
     std::shared_ptr<Drawing::Image> GetIntersectImageByLayer(const BufferDrawParam& param);
@@ -97,6 +98,7 @@ private:
     CursorBrightness brightnessMode_ = CursorBrightness::NONE;
     int64_t lastColorPickerTime_ = 0;
     int64_t colorSamplingInterval_ = 50;
+    int32_t rangeSize_ = 0;
     float darkBuffer_ = 0.55f;
     float brightBuffer_ = 0.35f;
 };
