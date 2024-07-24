@@ -21,6 +21,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fcntl.h>
+#include <fuzzer/FuzzedDataProvider.h>
 #include <hilog/log.h>
 #include <securec.h>
 #include <unistd.h>
@@ -72,11 +73,16 @@ bool DoCreateColorPicker(const uint8_t* data, size_t size)
     g_pos = 0;
 
     auto pixmap = std::make_shared<Pixmap>();
-    auto rsColorPicker = std::make_shared<RSColorPicker>(pixmap);
-    uint32_t werrorCodeidth = GetData<uint32_t>();
-    double coordinates = GetData<double>();
+    auto rsColorPicker = std::make_shared<RSColorPicker>(pixmap); 
+    FuzzedDataProvider fdp(data, size);
+    uint32_t werrorCodeidth = fdp.ConsumeIntegralInRange<uint32_t>(0, 2);
+    double coordinates[4];
+    coordinates[0] = GetData<double>();
+    coordinates[1] = GetData<double>();
+    coordinates[2] = GetData<double>();
+    coordinates[3] = GetData<double>();
     RSColorPicker::CreateColorPicker(pixmap, werrorCodeidth);
-    RSColorPicker::CreateColorPicker(pixmap, &coordinates, werrorCodeidth);
+    RSColorPicker::CreateColorPicker(pixmap, coordinates, werrorCodeidth);
     return true;
 }
 bool DoGetLargestProportionColor(const uint8_t* data, size_t size)
