@@ -1897,7 +1897,7 @@ VirtualScreenStatus RSScreenManager::GetVirtualScreenStatus(ScreenId id) const
         RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64 ".", __func__, id);
         return VirtualScreenStatus::VIRTUAL_SCREEN_PLAY;
     }
-    screensIt->second->GetVirtualScreenStatus();
+    return screensIt->second->GetVirtualScreenStatus();
 }
 } // namespace impl
 
