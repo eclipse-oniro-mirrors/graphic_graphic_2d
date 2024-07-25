@@ -245,6 +245,7 @@ void HgmFrameRateManager::UpdateGuaranteedPlanVote(uint64_t timestamp)
         idleDetector_.GetAceAnimatorIdleStatus());
 
     if (!startCheck_.load() || touchManager_.GetState() == TouchState::IDLE_STATE) {
+        lastUpExpectFps_ = 0;
         return;
     }
 
