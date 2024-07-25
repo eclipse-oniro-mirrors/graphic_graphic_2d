@@ -60,6 +60,7 @@ public:
         this->independentContext = independentContext;
     }
     bool isProtected = false;
+    bool isMirror = false;
     bool independentContext = false;
 };
 // The RenderFrame can do auto flush
