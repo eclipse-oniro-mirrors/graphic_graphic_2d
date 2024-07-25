@@ -2563,9 +2563,9 @@ HWTEST_F(RSRenderNodeTest, UpdateDirtyRegionInfoForDFX001, TestSize.Level1)
     std::shared_ptr<RSDirtyRegionManager> rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
     canvasNode->lastFrameSubTreeSkipped_ = true;
     canvasNode->subTreeDirtyRegion_ = RectI(0, 0, DEFAULT_BOUNDS_SIZE, DEFAULT_BOUNDS_SIZE);
-    // 'resize' added to avoid segmentation fault crash in 
+    // 'resize' added to avoid segmentation fault crash in
     // the RSDirtyRegionManager::UpdateDirtyRegionInfoForDfx() in line
-    // dirtyCanvasNodeInfo_[dirtyType].emplace(std::make_pair(id, rect));
+    // dirtyCanvasNodeInfo_[dirtyType].emplace(std::make_pair(id, rect))
     rsDirtyManager->dirtyCanvasNodeInfo_.resize(DirtyRegionType::TYPE_AMOUNT);
     canvasNode->UpdateDirtyRegionInfoForDFX(*rsDirtyManager);
     EXPECT_FALSE(rsDirtyManager->dirtyCanvasNodeInfo_.empty());
@@ -2596,7 +2596,7 @@ HWTEST_F(RSRenderNodeTest, UpdateDirtyRegionInfoForDFX002, TestSize.Level1)
     canvasNode->absDrawRect_ = RectI(0, 0, DEFAULT_BOUNDS_SIZE, DEFAULT_BOUNDS_SIZE);
     // 'resize' added to avoid segmentation fault crash in 
     // the RSDirtyRegionManager::UpdateDirtyRegionInfoForDfx() in line
-    // dirtyCanvasNodeInfo_[dirtyType].emplace(std::make_pair(id, rect));
+    // dirtyCanvasNodeInfo_[dirtyType].emplace(std::make_pair(id, rect))
     rsDirtyManager->dirtyCanvasNodeInfo_.resize(DirtyRegionType::TYPE_AMOUNT);
     canvasNode->UpdateDirtyRegionInfoForDFX(*rsDirtyManager);
     EXPECT_FALSE(rsDirtyManager->dirtyCanvasNodeInfo_.empty());
