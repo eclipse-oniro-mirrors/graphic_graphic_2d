@@ -89,6 +89,11 @@ bool HgmIdleDetector::GetSupportSurface()
         return false;
     }
 
+    if (std::find(appBufferBlackList_.begin(), appBufferBlackList_.end(), OTHER_SURFACE) !=
+        appBufferBlackList_.end()) {
+        return fasle;
+    }
+
     for (auto &it : frameTimeMap_) {
         if (std::find(appBufferBlackList_.begin(), appBufferBlackList_.end(), it.first) ==
             appBufferBlackList_.end()) {
