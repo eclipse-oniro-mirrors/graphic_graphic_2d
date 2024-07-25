@@ -739,8 +739,7 @@ protected:
 
     void DumpSubClassNode(std::string& out) const;
     void DumpDrawCmdModifiers(std::string& out) const;
-    void DumpDrawCmdModifier(std::string& propertyDesc, RSModifierType type,
-        std::shared_ptr<RSRenderModifier>& modifier) const;
+    void DumpModifiers(std::string& out) const;
 
     virtual void OnTreeStateChanged();
     // recursive update subSurfaceCnt
