@@ -797,6 +797,8 @@ void RSSurfaceRenderNode::SetSecurityLayer(bool isSecurityLayer)
     } else {
         securityLayerIds_.erase(GetId());
     }
+    ROSEN_LOGI("RSSurfaceRenderNode::SetSecurityLayer, Node id: %{public}" PRIu64 ", SecurityLayer:%{public}d",
+        GetId(), isSecurityLayer);
     SyncSecurityInfoToFirstLevelNode();
 }
 
