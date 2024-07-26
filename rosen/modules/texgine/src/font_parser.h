@@ -39,6 +39,9 @@ namespace TextEngine {
 
 class FontParser {
 public:
+
+    static std::string targetFullname;
+
     enum class PlatformId {
         UNITE_CODE = 0,
         MACINTOSH = 1,

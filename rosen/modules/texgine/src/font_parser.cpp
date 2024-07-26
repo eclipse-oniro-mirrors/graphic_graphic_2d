@@ -63,6 +63,8 @@ FontParser::FontParser()
     fontSet_.insert(fontSet_.end(), prodFonts.begin(), prodFonts.end());
 }
 
+std::string FontParser::targetFullname = "";
+
 void FontParser::ProcessCmapTable(const struct CmapTables* cmapTable, FontParser::FontDescriptor& fontDescriptor)
 {
     for (auto i = 0; i < cmapTable->numTables.Get(); ++i) {
@@ -91,6 +93,10 @@ void FontParser::GetStringFromNameId(FontParser::NameId nameId, unsigned int lan
             break;
         }
         case FontParser::NameId::FULL_NAME: {
+            if (FontParser::targetFullname != "" && fontDescriptor.fullName == FontParser::targetFullname) {
+                break;
+            }
+
             SetNameString(fontDescriptor, fontDescriptor.fullName, fontDescriptor.fullNameLid,
                 languageId, nameString);
             break;
@@ -394,6 +400,7 @@ private:
 std::unique_ptr<FontParser::FontDescriptor> FontParser::ParseFontDescriptor(const std::string& fontName,
     const unsigned int languageId)
 {
+    FontParser::targetFullname = fontName;
     FontConfigJson fontConfigJson;
     fontConfigJson.ParseFontFileMap();
     std::shared_ptr<FontFileMap> fontFileMap = fontConfigJson.GetFontFileMap();
