@@ -518,6 +518,7 @@ private:
     bool isCanvasNodeSkipDfxEnabled_ = false;
     bool isVirtualDirtyEnabled_ = false;
     bool isVirtualDirtyDfxEnabled_ = false;
+    bool isExpandScreenDirtyEnabled_ = false;
     bool hasMirrorDisplay_ = false;
     // if display node has skip layer except capsule window
     bool hasSkipLayer_ = false;
