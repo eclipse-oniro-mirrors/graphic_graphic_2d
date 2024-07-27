@@ -265,15 +265,15 @@ void HgmFrameRateManager::UpdateGuaranteedPlanVote(uint64_t timestamp)
         RS_TRACE_NAME_FMT("UpdateGuaranteedPlanVote:: Surface And Animator Idle, Vote Idle");
         touchManager_.HandleThirdFrameIdle();
     } else {
-        int32_t currTouchUpExpectFPS = idleDetector_.GetTouchUpExpectFPS();
-        if (currTouchUpExpectFPS == lastTouchUpExpectFps_) {
+        int32_t currTouchUpExpectedFPS = idleDetector_.GetTouchUpExpectedFPS();
+        if (currTouchUpExpectedFPS == lastTouchUpExpectFps_) {
             return;
         }
 
-        lastTouchUpExpectFps_ = currTouchUpExpectFPS;
+        lastTouchUpExpectFps_ = currTouchUpExpectedFPS;
         HgmMultiAppStrategy::TouchInfo touchInfo = {
             .touchState = TouchState::UP_STATE,
-            .upExpectFps = currTouchUpExpectFPS,
+            .upExpectFps = currTouchUpExpectedFPS,
         };
         multiAppStrategy_.HandleTouchInfo(touchInfo);
     }

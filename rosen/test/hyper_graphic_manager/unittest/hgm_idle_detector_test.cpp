@@ -166,12 +166,12 @@ HWTEST_F(HgmIdleDetectorTest, ThirdFrameNeedHighRefresh, Function | SmallTest | 
 }
 
 /**
- * @tc.name: GetTouchUpExpectFPS001
- * @tc.desc: Verify the result of GetTouchUpExpectFPS001 function
+ * @tc.name: GetTouchUpExpectedFPS001
+ * @tc.desc: Verify the result of GetTouchUpExpectedFPS001 function
  * @tc.type: FUNC
  * @tc.require: IAFG2V
  */
-HWTEST_F(HgmIdleDetectorTest, GetTouchUpExpectFPS001, Function | SmallTest | Level1)
+HWTEST_F(HgmIdleDetectorTest, GetTouchUpExpectedFPS001, Function | SmallTest | Level1)
 {
     std::unique_ptr<HgmIdleDetector> idleDetector = std::make_unique<HgmIdleDetector>();
 
@@ -182,28 +182,28 @@ HWTEST_F(HgmIdleDetectorTest, GetTouchUpExpectFPS001, Function | SmallTest | Lev
         STEP("2. get surface up expect fps") {
             idleDetector->SetAppSupportedState(true);
             idleDetector->ClearAppBufferList();
-            int32_t ret = idleDetector->GetTouchUpExpectFPS();
+            int32_t ret = idleDetector->GetTouchUpExpectedFPS();
             STEP_ASSERT_EQ(ret, fps120HZ);
 
             idleDetector->SetAceAnimatorIdleState(false);
-            ret = idleDetector->GetTouchUpExpectFPS();
+            ret = idleDetector->GetTouchUpExpectedFPS();
             STEP_ASSERT_EQ(ret, fps120HZ);
 
             idleDetector->appBufferList_.push_back(std::make_pair(aceAnimator, fps90HZ));
-            ret = idleDetector->GetTouchUpExpectFPS();
+            ret = idleDetector->GetTouchUpExpectedFPS();
             STEP_ASSERT_EQ(ret, fps90HZ);
 
             idleDetector->frameTimeMap_[bufferName] = currTime;
-            ret = idleDetector->GetTouchUpExpectFPS();
+            ret = idleDetector->GetTouchUpExpectedFPS();
             STEP_ASSERT_EQ(ret, fps120HZ);
 
             idleDetector->frameTimeMap_[flutterBuffer] = currTime;
             idleDetector->appBufferList_.push_back(std::make_pair(flutterBuffer, fps90HZ));
-            ret = idleDetector->GetTouchUpExpectFPS();
+            ret = idleDetector->GetTouchUpExpectedFPS();
             STEP_ASSERT_EQ(ret, fps120HZ);
 
             idleDetector->frameTimeMap_[rosenWeb] = currTime;
-            ret = idleDetector->GetTouchUpExpectFPS();
+            ret = idleDetector->GetTouchUpExpectedFPS();
             STEP_ASSERT_EQ(ret, fps120HZ);
         }
     }
@@ -235,7 +235,7 @@ HWTEST_F(HgmIdleDetectorTest, GetTouchUpExpectFPS002, Function | SmallTest | Lev
             idleDetector->appBufferList_.push_back(std::make_pair(rosenWeb, fps90HZ));
             idleDetector->appBufferList_.push_back(std::make_pair(flutterBuffer, fps90HZ));
             idleDetector->appBufferList_.push_back(std::make_pair(aceAnimator, fps60HZ));
-            int32_t ret = idleDetector->GetTouchUpExpectFPS();
+            int32_t ret = idleDetector->GetTouchUpExpectedFPS();
             STEP_ASSERT_EQ(ret, fps120HZ);
 
             idleDetector->ClearAppBufferList();
@@ -244,7 +244,7 @@ HWTEST_F(HgmIdleDetectorTest, GetTouchUpExpectFPS002, Function | SmallTest | Lev
             idleDetector->appBufferList_.push_back(std::make_pair(rosenWeb, fps90HZ));
             idleDetector->appBufferList_.push_back(std::make_pair(flutterBuffer, fps90HZ));
             idleDetector->appBufferList_.push_back(std::make_pair(bufferName, fps60HZ));
-            ret = idleDetector->GetTouchUpExpectFPS();
+            ret = idleDetector->GetTouchUpExpectedFPS();
             STEP_ASSERT_EQ(ret, fps90HZ);
 
             idleDetector->ClearAppBufferList();
@@ -253,7 +253,7 @@ HWTEST_F(HgmIdleDetectorTest, GetTouchUpExpectFPS002, Function | SmallTest | Lev
             idleDetector->appBufferList_.push_back(std::make_pair(rosenWeb, fps90HZ));
             idleDetector->appBufferList_.push_back(std::make_pair(flutterBuffer, fps90HZ));
             idleDetector->appBufferList_.push_back(std::make_pair(bufferName, fps60HZ));
-            ret = idleDetector->GetTouchUpExpectFPS();
+            ret = idleDetector->GetTouchUpExpectedFPS();
             STEP_ASSERT_EQ(ret, fps120HZ);
         }
     }

@@ -36,16 +36,16 @@ void HgmIdleDetector::UpdateSurfaceTime(const std::string& surfaceName, uint64_t
         return;
     }
 
-    auto tempSurfaceName = surfaceName.size() > MAX_BUFFER_LENGTH ?
+    auto validSurfaceName = surfaceName.size() > MAX_BUFFER_LENGTH ?
         surfaceName.substr(0, MAX_BUFFER_LENGTH) : surfaceName;
     if (!std::count(supportAppBufferList_.begin(), supportAppBufferList_.end(), OTHER_SURFACE) &&
-        !std::count(supportAppBufferList_.begin(), supportAppBufferList_.end(), tempSurfaceName)) {
+        !std::count(supportAppBufferList_.begin(), supportAppBufferList_.end(), validSurfaceName)) {
             return;
     }
 
     RS_TRACE_NAME_FMT("UpdateSurfaceTime:: Not Idle SurFace Name = [%s]  From Pid = [%d]",
         surfaceName.c_str(), pid);
-    frameTimeMap_[tempSurfaceName] = timestamp;
+    frameTimeMap_[validSurfaceName] = timestamp;
 }
 
 bool HgmIdleDetector::GetSurfaceIdleState(uint64_t timestamp)
@@ -88,7 +88,7 @@ bool HgmIdleDetector::ThirdFrameNeedHighRefresh()
     return false;
 }
 
-int32_t HgmIdleDetector::GetTouchUpExpectFPS()
+int32_t HgmIdleDetector::GetTouchUpExpectedFPS()
 {
     std::lock_guard<std::mutex> lock(appBufferListMutex_);
     if (appBufferList_.empty()) {

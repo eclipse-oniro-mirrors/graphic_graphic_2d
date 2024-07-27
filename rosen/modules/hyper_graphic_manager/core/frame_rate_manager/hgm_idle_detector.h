@@ -51,7 +51,7 @@ public:
 
     void UpdateSurfaceTime(const std::string& surfaceName, uint64_t timestamp,  pid_t pid);
     bool GetSurfaceIdleState(uint64_t timestamp);
-    int32_t GetTouchUpExpectFPS();
+    int32_t GetTouchUpExpectedFPS();
     bool ThirdFrameNeedHighRefresh();
     void ClearAppBufferList()
     {
