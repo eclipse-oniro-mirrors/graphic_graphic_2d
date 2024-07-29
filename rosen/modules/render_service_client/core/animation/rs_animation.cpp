@@ -503,6 +503,9 @@ void RSAnimation::UpdateStagingValue(bool isFirstStart)
 
 void RSAnimation::UpdateParamToRenderAnimation(const std::shared_ptr<RSRenderAnimation>& animation)
 {
+    if (animation == nullptr) {
+        return;
+    }
     animation->SetDuration(GetDuration());
     animation->SetStartDelay(GetStartDelay());
     animation->SetRepeatCount(GetRepeatCount());
@@ -523,7 +526,7 @@ void RSAnimation::UpdateParamToRenderAnimation(const std::shared_ptr<RSRenderAni
 void RSAnimation::StartCustomAnimation(const std::shared_ptr<RSRenderAnimation>& animation)
 {
     auto modifierManager = RSModifierManagerMap::Instance()->GetModifierManager(gettid());
-    if (modifierManager == nullptr) {
+    if (modifierManager == nullptr || animation == nullptr) {
         ROSEN_LOGE("Failed to start custom animation, modifier manager is null  animationId: %{public}" PRIu64 "!",
             GetId());
         return;
