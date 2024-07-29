@@ -182,11 +182,32 @@ public:
 
     static void ClearRenderGroupCache();
 
+    const std::vector<NodeId>& GetAllMainAndLeashWindowNodesIds()
+    {
+        return curAllMainAndLeashWindowNodesIds_;
+    }
+
+    const std::map<NodeId, RSVisibleLevel>& GetVisMapForVSyncRate()
+    {
+        return visMapForVSyncRate_;
+    }
+
+    bool GetVSyncRatesChanged() const
+    {
+        return vSyncRatesChanged_;
+    }
+
+    NodeId GetFocusedNodeId() const
+    {
+        return currentFocusedNodeId_;
+    }
+
     using RenderParam = std::tuple<std::shared_ptr<RSRenderNode>, RSPaintFilterCanvas::CanvasStatus>;
 private:
     void CheckFilterCacheNeedForceClearOrSave(RSRenderNode& node);
     void CheckFilterCacheFullyCovered(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) const;
     void UpdateOccludedStatusWithFilterNode(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) const;
+    void MergeDirtySurfaceToDssOrDirty(RSSurfaceRenderNode& surfaceNode, const RectI& dirtyRect) const;
     void PartialRenderOptionInit();
     RSVisibleLevel GetRegionVisibleLevel(const Occlusion::Region& visibleRegion,
         const Occlusion::Region& selfDrawRegion);
@@ -265,6 +286,7 @@ private:
     void UpdateHwcNodeDirtyRegionAndCreateLayer(std::shared_ptr<RSSurfaceRenderNode>& node);
     void UpdateHwcNodeEnable();
     void PrevalidateHwcNode();
+    // use in QuickPrepareSurfaceRenderNode, update SurfaceRenderNode's uiFirst status
     void PrepareForUIFirstNode(RSSurfaceRenderNode& node);
 
     void UpdateHwcNodeDirtyRegionForApp(std::shared_ptr<RSSurfaceRenderNode>& appNode,
@@ -280,6 +302,7 @@ private:
     void CheckMergeDisplayDirtyByAttraction(RSSurfaceRenderNode& surfaceNode) const;
     void CheckMergeSurfaceDirtysForDisplay(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) const;
     void CheckMergeDisplayDirtyByTransparentRegions(RSSurfaceRenderNode& surfaceNode) const;
+    void CheckMergeTopSurfaceForDisplay(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) const;
 
     bool IfSkipInCalcGlobalDirty(RSSurfaceRenderNode& surfaceNode) const;
     void CheckMergeDisplayDirtyByTransparentFilter(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
@@ -421,6 +444,7 @@ private:
     void UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& node);
     void UpdateSubSurfaceNodeRectInSkippedSubTree(const RSRenderNode& rootNode);
     void CollectOcclusionInfoForWMS(RSSurfaceRenderNode& node);
+    void CollectVSyncRate(RSSurfaceRenderNode& node, RSVisibleLevel visibleLevel);
     void CollectEffectInfo(RSRenderNode& node);
 
     /* Check whether gpu overdraw buffer feature can be enabled on the RenderNode
@@ -494,6 +518,7 @@ private:
     bool isCanvasNodeSkipDfxEnabled_ = false;
     bool isVirtualDirtyEnabled_ = false;
     bool isVirtualDirtyDfxEnabled_ = false;
+    bool isExpandScreenDirtyEnabled_ = false;
     bool hasMirrorDisplay_ = false;
     // if display node has skip layer except capsule window
     bool hasSkipLayer_ = false;
@@ -560,11 +585,13 @@ private:
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledTopNodes_;
     // vector of Appwindow nodes ids not contain subAppWindow nodes ids in current frame
     std::queue<NodeId> curMainAndLeashWindowNodesIds_;
+    std::vector<NodeId> curAllMainAndLeashWindowNodesIds_;
     // vector of current displaynode mainwindow surface visible info
     VisibleData dstCurVisVec_;
     // vector of current frame mainwindow surface visible info
     VisibleData allDstCurVisVec_;
     bool visibleChanged_ = false;
+    bool vSyncRatesChanged_ = false;
     std::mutex occlusionMutex_;
     float localZOrder_ = 0.0f; // local zOrder for surfaceView under same app window node
 
@@ -591,6 +618,8 @@ private:
 
     bool curDirty_ = false;
     bool curContentDirty_ = false;
+    // to record and pass container node dirty to leash node.
+    bool curContainerDirty_ = false;
     bool isPhone_ = false;
     bool isPc_ = false;
     bool isOverdrawDfxOn_ = false;
@@ -658,6 +687,8 @@ private:
 
     // use for hardware compose disabled reason collection
     HwcDisabledReasonCollection& hwcDisabledReasonCollection_ = HwcDisabledReasonCollection::GetInstance();
+
+    std::map<NodeId, RSVisibleLevel> visMapForVSyncRate_;
 };
 } // namespace Rosen
 } // namespace OHOS

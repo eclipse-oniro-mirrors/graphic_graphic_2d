@@ -586,6 +586,11 @@ public:
         return abilityBgAlpha_;
     }
 
+    bool GetQosCal()
+    {
+        return qosPidCal_;
+    }
+
     void setQosCal(bool qosPidCal)
     {
         qosPidCal_ = qosPidCal;
@@ -1166,6 +1171,10 @@ public:
         return surfaceHandler_;
     }
 
+    void CheckContainerDirtyStatusAndUpdateDirty(bool containerDirty)
+    {
+        dirtyStatus_ = containerDirty ? NodeDirty::DIRTY : dirtyStatus_;
+    }
 protected:
     void OnSync() override;
     void OnSkipSync() override;
