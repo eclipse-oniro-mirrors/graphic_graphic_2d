@@ -26,6 +26,7 @@ namespace Rosen {
 RSRenderAnimation::RSRenderAnimation(AnimationId id) : id_(id) {}
 bool RSRenderAnimation::Marshalling(Parcel& parcel) const
 {
+    // animationId, targetId
     if (!(parcel.WriteUint64(id_))) {
         ROSEN_LOGE("RSRenderAnimation::Marshalling, write id failed");
         return false;
