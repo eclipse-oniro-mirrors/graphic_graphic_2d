@@ -765,6 +765,12 @@ bool RSUniRenderUtil::Is3DRotation(Drawing::Matrix matrix)
 {
     Drawing::Matrix::Buffer value;
     matrix.GetAll(value);
+    // ScaleX and ScaleY must have different sign
+    if (!(std::signbit(value[Drawing::Matrix::Index::SCALE_X]) ^
+        std::signbit(value[Drawing::Matrix::Index::SCALE_Y]))) {
+        return false;
+    }
+
     int rotateX = static_cast<int>(-round(atan2(value[Drawing::Matrix::Index::PERSP_1],
         value[Drawing::Matrix::Index::SCALE_Y]) * (180 / PI)));
     int rotateY = static_cast<int>(-round(atan2(value[Drawing::Matrix::Index::PERSP_0],
