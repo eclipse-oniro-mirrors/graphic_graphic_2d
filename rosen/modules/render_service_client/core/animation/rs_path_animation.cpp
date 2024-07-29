@@ -220,6 +220,7 @@ void RSPathAnimation::OnUpdateStagingValue(bool isFirstStart)
     }
 
     float targetRotation = 0.0f;
+    float byRotation = endTangent - startTangent;
     if (isFirstStart) {
         if (GetAutoReverse() && GetRepeatCount() % NUMBER_FOR_HALF == 0) {
             targetRotation = startTangent;
@@ -228,7 +229,6 @@ void RSPathAnimation::OnUpdateStagingValue(bool isFirstStart)
         }
     } else {
         float currentRotation = target->GetStagingProperties().GetRotation();
-        float byRotation = endTangent - startTangent;
         if (GetAutoReverse() && GetRepeatCount() % NUMBER_FOR_HALF == 0) {
             targetRotation = IsReversed() ? currentRotation + byRotation
                 : currentRotation - byRotation;

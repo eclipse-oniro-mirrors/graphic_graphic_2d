@@ -706,6 +706,9 @@ void RSSurfaceCaptureVisitor::CaptureSingleSurfaceNodeWithUni(RSSurfaceRenderNod
     }
     if (isSelfDrawingSurface) {
         RSPropertiesPainter::DrawFilter(property, *canvas_, FilterType::FOREGROUND_FILTER);
+    }
+
+    if (isSelfDrawingSurface) {
         canvas_->Restore();
     }
 
