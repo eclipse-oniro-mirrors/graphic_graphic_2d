@@ -1241,14 +1241,24 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_ROTATION_CACHE_ENABLED) : {
-            auto isEnabled = data.ReadBool();
+            bool isEnabled = false;
+            if (!data.ReadBool(isEnabled)) {
+                ret = IPC_STUB_INVALID_DATA_ERR;
+                break;
+            }
             SetCacheEnabledForRotation(isEnabled);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CHANGE_SYNCHRONIZE_COUNT): {
-            auto syncId = data.ReadUint64();
-            auto parentPid = data.ReadInt32();
-            auto childPid = data.ReadInt32();
+            uint64_t syncId = 0;
+            uint32_t parentPid = 0;
+            uint32_t childPid = 0;
+            if (!(data.ReadUint64(syncId) &&
+                data.ReadInt32(parentPid) &&
+                data.ReadInt32(childPid))) {
+                ret = IPC_STUB_INVALID_DATA_ERR;
+                break;
+            }
             ChangeSyncCount(syncId, parentPid, childPid);
             break;
         }
