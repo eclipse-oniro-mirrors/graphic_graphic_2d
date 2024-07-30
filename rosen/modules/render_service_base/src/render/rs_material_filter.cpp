@@ -185,7 +185,7 @@ std::shared_ptr<Drawing::ImageFilter> RSMaterialFilter::CreateMaterialFilter(flo
     if (colorFilter_) {
         return Drawing::ImageFilter::CreateColorBlurImageFilter(*colorFilter_, radius, radius, blurType);
     }
-    return Drawing::ImageFilter::CreateBlurImageFilter(radius, radius, Drawing::TileMode::CLAMP, nullptr, BLUR_TYPE);
+    return Drawing::ImageFilter::CreateBlurImageFilter(radius, radius, Drawing::TileMode::CLAMP, nullptr, blurType);
 }
 
 std::shared_ptr<Drawing::ImageFilter> RSMaterialFilter::CreateMaterialStyle(
