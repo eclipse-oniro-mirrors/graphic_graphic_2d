@@ -348,11 +348,6 @@ void RSMainThread::DvsyncCheckRequestNextVsync()
 
 void RSMainThread::Init()
 {
-    std::thread preLoadSysTTFThread([]() {
-        Drawing::FontMgr::CreateDefaultFontMgr();
-    });
-    preLoadSysTTFThread.detach();
-    
     mainLoop_ = [&]() {
         RS_PROFILER_ON_FRAME_BEGIN();
         if (isUniRender_ && !renderThreadParams_) {
