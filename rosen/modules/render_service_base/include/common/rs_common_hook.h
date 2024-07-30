@@ -45,7 +45,7 @@ private:
     bool videoSurfaceFlag_ = false;
 
     // use in updating hwcnode hardware state with background alpha
-    bool hardwareEnabledByHwcNodeSkippedFlag_ = false;
+    bool hardwareEnabledByHwcnodeSkippedFlag_ = false;
     bool hardwareEnabledByBackgroundAlphaSkippedFlag_ = false;
 };
 } // namespace OHOS::Rosen
