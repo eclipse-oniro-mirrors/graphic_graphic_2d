@@ -367,7 +367,7 @@ HWTEST_F(VSyncDistributorTest, SetHardwareTaskNum001, Function | MediumTest| Lev
  */
 HWTEST_F(VSyncDistributorTest, GetUiCommandDelayTime001, Function | MediumTest| Level3)
 {
-    VSyncDistributorTest::vsyncDistributor->GetUiCommandDelayTime();
+    ASSERT_EQ(VSyncDistributorTest::vsyncDistributor->GetUiCommandDelayTime(), 0);
 }
 
 /*
@@ -380,7 +380,7 @@ HWTEST_F(VSyncDistributorTest, GetUiCommandDelayTime001, Function | MediumTest| 
 HWTEST_F(VSyncDistributorTest, SetUiDvsyncConfig001, Function | MediumTest| Level3)
 {
     uint32_t bufferCount = 2;
-    VSyncDistributorTest::vsyncDistributor->SetUiDvsyncConfig(bufferCount);
+    ASSERT_EQ(VSyncDistributorTest::vsyncDistributor->SetUiDvsyncConfig(bufferCount), VSYNC_ERROR_OK);
 }
 } // namespace
 } // namespace Rosen
