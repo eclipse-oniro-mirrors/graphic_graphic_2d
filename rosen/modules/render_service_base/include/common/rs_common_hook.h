@@ -36,7 +36,7 @@ public:
     void SetHardwareEnabledByHwcnodeFlag(bool hardwareEnabledByHwcNodeSkippedFlag);
     void SetHardwareEnabledByBackgroundAlphaFlag(bool hardwareEnabledByBackgroundAlphaSkippedFlag);
     bool GetHardwareEnabledByHwcnodeFlag() const;
-    bool GetHardwareEnabledByBackgroundAlphaFlag() const;    
+    bool GetHardwareEnabledByBackgroundAlphaFlag() const;
 
 private:
     std::function<void()> startNewAniamtionFunc_ = nullptr;
