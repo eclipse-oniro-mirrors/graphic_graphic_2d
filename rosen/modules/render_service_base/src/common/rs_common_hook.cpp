@@ -46,7 +46,7 @@ const std::unordered_map<std::string, std::string>& RsCommonHook::GetVideoSurfac
 
 void RsCommonHook::SetVideoSurfaceFlag(bool videoSurfaceFlag)
 {
-    VideoSurfaceFlag_ = videoSurfaceFlag;
+    videoSurfaceFlag_ = videoSurfaceFlag;
 }
 
 bool RsCommonHook::GetVideoSurfaceFlag() const
