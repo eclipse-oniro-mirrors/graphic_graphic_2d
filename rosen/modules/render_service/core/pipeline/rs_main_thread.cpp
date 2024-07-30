@@ -94,7 +94,6 @@
 #include "render/rs_typeface_cache.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "transaction/rs_transaction_proxy.h"
-#include "text/font_mgr.h"
 
 #ifdef RS_ENABLE_GL
 #include "GLES3/gl3.h"
