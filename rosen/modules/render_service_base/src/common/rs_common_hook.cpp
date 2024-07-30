@@ -55,14 +55,24 @@ bool RsCommonHook::GetVideoSurfaceFlag() const
 }
 
 // skip hwcnode hardware state updating
-bool RsCommonHook::IsHardwareDisabledByHwcNodeSkipped() const
+void RsCommonHook::SetHardwareEnabledByHwcnodeFlag(bool hardwareEnabledByHwcnodeSkippedFlag)
 {
-    return hardwareDisabledByHwcNodeSkippedFlag_;
+    hardwareEnabledByHwcnodeSkippedFlag_ = hardwareEnabledByHwcnodeSkippedFlag;
 }
 
-bool RsCommonHook::IsHardwareDisabledByBackgroundAlphaSkipped() const
+void RsCommonHook::SetHardwareEnabledByBackgroundAlphaFlag(bool hardwareEnabledByBackgroundAlphaSkippedFlag)
 {
-    return hardwareDisabledByBackgroundAlphaSkippedFlag_;
+    hardwareEnabledByBackgroundAlphaSkippedFlag_ = hardwareEnabledByBackgroundAlphaSkippedFlag;
+}
+
+bool RsCommonHook::GetHardwareEnabledByHwcnodeFlag() const
+{
+    return hardwareEnabledByHwcnodeSkippedFlag_;
+}
+
+bool RsCommonHook::GetHardwareEnabledByBackgroundAlphaFlag() const
+{
+    return hardwareEnabledByBackgroundAlphaSkippedFlag_;
 }
 
 } // namespace OHOS::Rosen
