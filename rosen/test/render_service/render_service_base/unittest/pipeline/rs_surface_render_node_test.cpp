@@ -2497,7 +2497,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetRootIdOfCaptureWindow, TestSize.Level2)
 {
     auto rsContext = std::make_shared<RSContext>();
     auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
-    auto rootId = id + 1;
+    auto rootId = id + 1; // 1 : generate a rootId for CaptureWindow
     node->SetRootIdOfCaptureWindow(rootId);
     ASSERT_EQ(node->GetRootIdOfCaptureWindow(), rootId);
     node->InitRenderParams();
