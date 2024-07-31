@@ -117,7 +117,7 @@ HWTEST_F(HgmIdleDetectorTest, SetAndGetSurfaceTimeState, Function | SmallTest | 
             idleDetector->supportAppBufferList_.insert(idleDetector->supportAppBufferList_.begin(), otherSurface);
         }
         STEP("3. set buffer renew time") {
-            idleDetector->UpdateSurfaceTime(bufferName, currTime, Pid);
+            idleDetector->UpdateSurfaceTime(bufferName, currTime, Pid, UIFWKType::SURFACE);
         }
         STEP("4. get buffer idle state") {
             bool ret = idleDetector->GetSurfaceIdleState(lastTime);

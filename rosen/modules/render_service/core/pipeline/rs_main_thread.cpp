@@ -1238,7 +1238,8 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         auto& surfaceHandler = *surfaceNode->GetMutableRSSurfaceHandler();
         if (frameRateMgr_ != nullptr && surfaceHandler.GetAvailableBufferCount() > 0) {
             auto surfaceNodeName = surfaceNode->GetName().empty() ? DEFAULT_SURFACE_NODE_NAME : surfaceNode->GetName();
-            frameRateMgr_->UpdateSurfaceTime(surfaceNodeName, timestamp_, ExtractPid(surfaceNode->GetId()));
+            frameRateMgr_->UpdateSurfaceTime(surfaceNodeName, timestamp_,
+                ExtractPid(surfaceNode->GetId()), UIFWKType::SURFACE);
         }
         surfaceHandler.ResetCurrentFrameBufferConsumed();
         if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, false, timestamp_)) {
@@ -2784,6 +2785,10 @@ void RSMainThread::Animate(uint64_t timestamp)
         node->animationManager_.SetRateDeciderEnable(isRateDeciderEnabled, frameRateGetFunc);
         auto [hasRunningAnimation, nodeNeedRequestNextVsync, nodeCalculateAnimationValue] =
             node->Animate(timestamp, period, isDisplaySyncEnabled);
+        if (frameRateMgr_ != nullptr) {
+            frameRateMgr_->UpdateSurfaceTime(node->GetNodeName(), timestamp_,
+                ExtractPid(node->GetId()), UIFWKType::UNKNOWN);
+        }
         if (!hasRunningAnimation) {
             node->InActivateDisplaySync();
             RS_LOGD("RSMainThread::Animate removing finished animating node %{public}" PRIu64, node->GetId());

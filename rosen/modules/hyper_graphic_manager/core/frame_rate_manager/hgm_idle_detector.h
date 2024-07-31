@@ -22,6 +22,11 @@
 namespace OHOS {
 namespace Rosen {
 
+enum UIFWKType : int32_t {
+    UNKNOWN = 0;
+    SURFACE = 1;
+}
+
 class HgmIdleDetector {
 public:
     HgmIdleDetector() = default;
@@ -49,7 +54,8 @@ public:
         return aceAnimatorIdleState_;
     }
 
-    void UpdateSurfaceTime(const std::string& surfaceName, uint64_t timestamp,  pid_t pid);
+    void UpdateSurfaceTime(const std::string& surfaceName, uint64_t timestamp,
+        pid_t pid, UIFWKType uifwkType = UIFWKType::UNKNOWN);
     bool GetSurfaceIdleState(uint64_t timestamp);
     int32_t GetTouchUpExpectedFPS();
     bool ThirdFrameNeedHighRefresh();
@@ -78,6 +84,8 @@ public:
         supportAppBufferList_ = supportAppBufferList;
     }
 private:
+    bool GetUnknownFrameworkState(const std::string& surfaceName);
+    bool GetSurfaceFrameworkState(const std::string& surfaceName);
     bool appSupported_ = false;
     bool aceAnimatorIdleState_ = true;
     std::mutex appSupportedMutex_;
