@@ -1186,7 +1186,8 @@ public:
         dirtyStatus_ = containerDirty ? NodeDirty::DIRTY : dirtyStatus_;
     }
 
-    NodeId GetRootIdOfCaptureWindow() {
+    NodeId GetRootIdOfCaptureWindow()
+    {
         return rootIdOfCaptureWindow_;
     }
     void SetRootIdOfCaptureWindow(NodeId rootIdOfCaptureWindow);
