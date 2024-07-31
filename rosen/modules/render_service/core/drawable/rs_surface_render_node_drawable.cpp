@@ -313,16 +313,17 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
     Drawing::Region curSurfaceDrawRegion = CalculateVisibleRegion(*uniParam, *surfaceParams, *this, isUiFirstNode);
     // when surfacenode named "CapsuleWindow", cache the current canvas as SkImage for screen recording
-    auto ancestorDrawableTmp = surfaceParams->GetAncestorDisplayDrawable().lock();
-    if (ancestorDrawableTmp == nullptr) {
-        RS_LOGE("ancestorDrawable is nullptr");
+    auto ancestorDrawableTmp =
+        std::static_pointer_cast<RSDisplayRenderNodeDrawable>(surfaceParams->GetAncestorDisplayDrawable().lock());
+    if (UNLIKELY(ancestorDrawableTmp == nullptr || ancestorDrawableTmp->GetRenderParams() == nullptr)) {
+        RS_LOGE("ancestorDrawable/renderParams is nullptr");
         return;
     }
-    auto curDisplayDrawable = std::static_pointer_cast<RSDisplayRenderNodeDrawable>(ancestorDrawableTmp);
     // To be deleted after captureWindow being deleted
-    if (surfaceParams->GetName().find("CapsuleWindow") != std::string::npos) {
-        CacheImgForCapture(*rscanvas, *curDisplayDrawable);
-        RSUniRenderThread::Instance().GetRSRenderThreadParams()->SetRootIdOfCaptureWindow(curDisplayDrawable->GetId());
+    if (surfaceParams->GetName().find("CapsuleWindow") != std::string::npos &&
+        !ancestorDrawableTmp->GetRenderParams()->IsRotationChanged()) {
+        CacheImgForCapture(*rscanvas, *ancestorDrawableTmp);
+        uniParam->SetRootIdOfCaptureWindow(surfaceParams->GetRootIdOfCaptureWindow());
     }
 
     if (!isUiFirstNode) {

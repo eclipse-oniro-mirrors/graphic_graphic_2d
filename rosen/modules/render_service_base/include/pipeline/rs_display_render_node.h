@@ -281,12 +281,6 @@ public:
     void SetOffScreenCacheImgForCapture(std::shared_ptr<Drawing::Image> offScreenCacheImgForCapture) {
         offScreenCacheImgForCapture_ = offScreenCacheImgForCapture;
     }
-    NodeId GetRootIdOfCaptureWindow() {
-        return rootIdOfCaptureWindow_;
-    }
-    void SetRootIdOfCaptureWindow(NodeId rootIdOfCaptureWindow) {
-        rootIdOfCaptureWindow_ = rootIdOfCaptureWindow;
-    }
 
     void SetMainAndLeashSurfaceDirty(bool isDirty);
 
@@ -432,7 +426,6 @@ private:
 
     // Use in screen recording optimization
     std::shared_ptr<Drawing::Image> offScreenCacheImgForCapture_ = nullptr;
-    NodeId rootIdOfCaptureWindow_ = INVALID_NODEID;
 
     // Use in vulkan parallel rendering
     bool isParallelDisplayNode_ = false;
