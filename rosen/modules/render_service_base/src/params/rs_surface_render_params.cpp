@@ -391,7 +391,7 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->totalMatrix_ = totalMatrix_;
     targetSurfaceParams->globalAlpha_ = globalAlpha_;
     targetSurfaceParams->hasFingerprint_ = hasFingerprint_;
-    targetDisplayParams->rootIdOfCaptureWindow_ = rootIdOfCaptureWindow_;
+    targetSurfaceParams->rootIdOfCaptureWindow_ = rootIdOfCaptureWindow_;
     RSRenderParams::OnSync(target);
 }
 
