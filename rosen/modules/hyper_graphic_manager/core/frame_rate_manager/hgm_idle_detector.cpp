@@ -95,6 +95,7 @@ void HgmIdleDetector::ProcessNuknownIdleState(const std::unordered_map<NodeId,
         }
     }
 }
+
 bool HgmIdleDetector::GetSurfaceIdleState(uint64_t timestamp)
 {
     if (frameTimeMap_.empty()) {
