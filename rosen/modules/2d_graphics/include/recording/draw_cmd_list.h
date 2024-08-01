@@ -187,6 +187,8 @@ public:
     void UpdateNodeIdToPicture(NodeId nodeId);
 
     size_t CountTextBlobNum();
+
+    void Dump(std::string& out);
 private:
     void ClearCache();
     void GenerateCacheByVector(Canvas* canvas, const Rect* rect);
