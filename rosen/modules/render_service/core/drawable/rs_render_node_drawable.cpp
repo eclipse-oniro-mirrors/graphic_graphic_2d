@@ -315,7 +315,6 @@ void RSRenderNodeDrawable::DumpDrawableTree(std::string& out) const
         if (params) {
             out += ", params" + params->ToString();
         }
-        RS_LOGE("DumpDrawableTree string out = %{public}s", out.c_str());
     };
     RSUniRenderThread::Instance().PostSyncTask(syncTask);
 }
