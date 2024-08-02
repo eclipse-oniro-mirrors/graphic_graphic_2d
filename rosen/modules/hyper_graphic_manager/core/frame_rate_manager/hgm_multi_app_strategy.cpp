@@ -483,25 +483,27 @@ void HgmMultiAppStrategy::CheckPackageInConfigList(const std::vector<std::string
     rsCommonHook.SetHardwareEnabledByHwcnodeBelowSelfInAppFlag(false);
     rsCommonHook.SetHardwareEnabledByBackgroundAlphaFlag(false);
     std::unordered_map<std::string, std::string>& videoConfigFromHgm = configData->sourceTuningConfig_;
-    if (!videoConfigFromHgm.empty()) {
-        for (auto &param: pkgs) {
-            std::string pkgNameForCheck = param.substr(0, param.find(':'));
-            if (videoConfigFromHgm.find(pkgNameForCheck) == videoConfigFromHgm.end()) {
-                rsCommonHook.SetVideoSurfaceFlag(false);
-                rsCommonHook.SetHardwareEnabledByHwcnodeBelowSelfInAppFlag(false);
-                rsCommonHook.SetHardwareEnabledByBackgroundAlphaFlag(false);
-                break;
-            }
-            // 1 means crop source tuning
-            if (videoConfigFromHgm[pkgNameForCheck] == "1") {
-                rsCommonHook.SetVideoSurfaceFlag(true);
-            // 2 means skip hardware disabled by hwc node and background alpha
-            } else if (videoConfigFromHgm[pkgNameForCheck] == "2") {
-                rsCommonHook.SetHardwareEnabledByHwcnodeBelowSelfInAppFlag(true);
-                rsCommonHook.SetHardwareEnabledByBackgroundAlphaFlag(true);
-            }
+    if (videoConfigFromHgm.empty()) {
+        return;
+    }
+    for (auto &param: pkgs) {
+        std::string pkgNameForCheck = param.substr(0, param.find(':'));
+        if (videoConfigFromHgm.find(pkgNameForCheck) == videoConfigFromHgm.end()) {
+            rsCommonHook.SetVideoSurfaceFlag(false);
+            rsCommonHook.SetHardwareEnabledByHwcnodeBelowSelfInAppFlag(false);
+            rsCommonHook.SetHardwareEnabledByBackgroundAlphaFlag(false);
+            break;
+        }
+        // 1 means crop source tuning
+        if (videoConfigFromHgm[pkgNameForCheck] == "1") {
+            rsCommonHook.SetVideoSurfaceFlag(true);
+        // 2 means skip hardware disabled by hwc node and background alpha
+        } else if (videoConfigFromHgm[pkgNameForCheck] == "2") {
+            rsCommonHook.SetHardwareEnabledByHwcnodeBelowSelfInAppFlag(true);
+            rsCommonHook.SetHardwareEnabledByBackgroundAlphaFlag(true);
         }
     }
+
 }
 } // namespace Rosen
 } // namespace OHOS
