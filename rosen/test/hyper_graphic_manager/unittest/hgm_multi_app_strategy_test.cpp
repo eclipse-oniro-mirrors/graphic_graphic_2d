@@ -563,7 +563,7 @@ HWTEST_F(HgmMultiAppStrategyTest, BackgroundApp, Function | SmallTest | Level1)
  * @tc.name: CheckPackageInConfigList
  * @tc.desc: Verify the result of CheckPackageInConfigList
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: IAHFXD
  */
 HWTEST_F(HgmMultiAppStrategyTest, CheckPackageInConfigList, Function | SmallTest | Level1)
 {
