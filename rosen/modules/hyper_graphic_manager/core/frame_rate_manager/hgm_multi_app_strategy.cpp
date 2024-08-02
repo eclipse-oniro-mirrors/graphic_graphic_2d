@@ -475,8 +475,8 @@ void HgmMultiAppStrategy::CheckPackageInConfigList(const std::vector<std::string
 {
     auto& rsCommonHook = RsCommonHook::Instance();
     auto& hgmCore = HgmCore::Instance();
-    auto configData = hgmCore->GetPolicyConfigData();
-    if (configData.empty()) {
+    auto configData = hgmCore.GetPolicyConfigData();
+    if (configData == nullptr) {
         return;
     }
     std::unordered_map<std::string, std::string> videoConfigFromHgm = configData->souceTuningConfig_;
