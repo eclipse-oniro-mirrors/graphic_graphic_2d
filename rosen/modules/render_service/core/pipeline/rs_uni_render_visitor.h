@@ -172,8 +172,9 @@ public:
     // Use in updating hwcnode hardware state with background alpha
     void UpdateHardwareStateByHwcNodeBackgroundAlpha(const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes);
 
-    void UpdateHardwareStateByCoverage(std::weak_ptr<RSSurfaceRenderNode> hwcNode,
+    bool IsNodeBelowDstCoverNodeAboveDst(std::weak_ptr<RSSurfaceRenderNode> hwcNode,
         std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodeVector);
+    // Use end
 
     void SurfaceOcclusionCallbackToWMS();
 

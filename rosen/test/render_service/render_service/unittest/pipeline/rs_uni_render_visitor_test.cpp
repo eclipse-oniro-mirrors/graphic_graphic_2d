@@ -5202,7 +5202,7 @@ HWTEST_F(RSUniRenderVisitorTest, CollectFilterInfoAndUpdateDirty003, TestSize.Le
  * @tc.name: UpdateHardwareStateByHwcNodeBackgroundAlpha
  * @tc.desc: Test RSUnitRenderVisitorTest.UpdateHardwareStateByHwcNodeBackgroundAlpha
  * @tc.type: FUNC
- * @tc.require: IAFZT1
+ * @tc.require:
  */
 HWTEST_F(RSUniRenderVisitorTest, UpdateHardwareStateByHwcNodeBackgroundAlpha, TestSize.Level1)
 {
@@ -5214,17 +5214,17 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHardwareStateByHwcNodeBackgroundAlpha, Te
 }
 
 /**
- * @tc.name: UpdateHardwareStateByCoverage
- * @tc.desc: Test RSUnitRenderVisitorTest.UpdateHardwareStateByCoverage
+ * @tc.name: IsNodeBelowDstCoverNodeAboveDst
+ * @tc.desc: Test RSUnitRenderVisitorTest.IsNodeBelowDstCoverNodeAboveDst
  * @tc.type: FUNC
- * @tc.require: IAFZT1
+ * @tc.require:
  */
-HWTEST_F(RSUniRenderVisitorTest, UpdateHardwareStateByCoverage, TestSize.Level1)
+HWTEST_F(RSUniRenderVisitorTest, IsNodeBelowDstCoverNodeAboveDst, TestSize.Level1)
 {
     std::vector<std::weak_ptr<RSSurfaceRenderNode>> hwcNodes;
     std::weak_ptr<RSSurfaceRenderNode> hwcNode;
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    rsUniRenderVisitor->UpdateHardwareStateByCoverage(hwcNode, hwcNodes);
+    rsUniRenderVisitor->IsNodeBelowDstCoverNodeAboveDst(hwcNode, hwcNodes);
 }
 
 } // OHOS::Rosen
