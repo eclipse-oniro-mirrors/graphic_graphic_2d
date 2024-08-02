@@ -2069,7 +2069,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByBackgroundAlpha(RSSurfaceRenderNod
         RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%llu disabled by background color alpha < 1",
             node.GetName().c_str(), node.GetId());
         // use in skip updating hardware state for hwcnode with background alpha in specific situation
-        if (RsCommonHook::Instance().GetHardwareEnabledByBackgroundAlphaFlag()) {
+        if (!RsCommonHook::Instance().GetHardwareEnabledByBackgroundAlphaFlag()) {
             node.SetHardwareForcedDisabledState(true);
         }
         node.SetNodeHasBackgroundColorAlpha(true);
