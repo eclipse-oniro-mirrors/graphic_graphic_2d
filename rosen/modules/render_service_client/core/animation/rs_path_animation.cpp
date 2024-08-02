@@ -341,6 +341,7 @@ void RSPathAnimation::InitNeedPath(const std::shared_ptr<RSPropertyBase>& startV
     const std::shared_ptr<RSPropertyBase>& endValue)
 {
     if (startValue == nullptr || endValue == nullptr) {
+        ROSEN_LOGD("Input is invaild, failed to InitNeedPath.");
         return;
     }
     auto startVector4f = std::static_pointer_cast<RSProperty<Vector4f>>(startValue);

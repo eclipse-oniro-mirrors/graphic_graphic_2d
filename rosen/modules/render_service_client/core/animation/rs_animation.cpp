@@ -504,6 +504,7 @@ void RSAnimation::UpdateStagingValue(bool isFirstStart)
 void RSAnimation::UpdateParamToRenderAnimation(const std::shared_ptr<RSRenderAnimation>& animation)
 {
     if (animation == nullptr) {
+        ROSEN_LOGD("Animation is null, failed to update param.");
         return;
     }
     animation->SetDuration(GetDuration());

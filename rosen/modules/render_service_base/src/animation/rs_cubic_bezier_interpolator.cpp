@@ -85,7 +85,7 @@ int RSCubicBezierInterpolator::BinarySearch(float key) const
 {
     int low = 0;
     int high = MAX_RESOLUTION;
-    unsigned int middle = 0;
+    int middle = 0;
     float approximation = 0.0;
     constexpr float epsilon = 1e-6f;
     while (low <= high) {

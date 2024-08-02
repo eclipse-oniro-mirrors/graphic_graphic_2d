@@ -438,6 +438,7 @@ void RSSymbolAnimation::GroupAnimationStart(
 void RSSymbolAnimation::SetNodePivot(const std::shared_ptr<RSNode>& rsNode)
 {
     if (rsNode == nullptr) {
+        ROSEN_LOGD("Interpolator is null, return FRACTION_MIN.");
         return;
     }
     // Set Node Center Offset
@@ -457,6 +458,7 @@ void RSSymbolAnimation::SpliceAnimation(const std::shared_ptr<RSNode>& rsNode,
     const Drawing::DrawingEffectStrategy& effectStrategy)
 {
     if (rsNode == nullptr) {
+        ROSEN_LOGD("RsNode is null, failed to SpliceAnimation.");
         return;
     }
     if (effectStrategy == Drawing::DrawingEffectStrategy::DISAPPEAR ||
