@@ -47,12 +47,15 @@ void RSLinearGradientBlurFilter::DrawImageRect(Drawing::Canvas& canvas, const st
     const Drawing::Rect& src, const Drawing::Rect& dst) const
 {
     auto& para = linearGradientBlurPara_;
-    if (!image || para == nullptr || para->blurRadius_ <= 0 || imageScale_ <= 0) {
+    if (!image || para == nullptr || para->blurRadius_ <= 0) {
         return;
     }
 
     RS_OPTIONAL_TRACE_NAME("DrawLinearGradientBlur");
     ComputeScale(dst.GetWidth(), dst.GetHeight(), para->useMaskAlgorithm_);
+    if (imageScale_ <= 0) {
+        return;
+    }
     auto clipIPadding = Drawing::Rect(0, 0, geoWidth_ * imageScale_, geoHeight_ * imageScale_);
     uint8_t directionBias = 0;
     auto alphaGradientShader = MakeAlphaGradientShader(clipIPadding, para, directionBias);
