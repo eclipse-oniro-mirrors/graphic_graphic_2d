@@ -5221,8 +5221,8 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHardwareStateByHwcNodeBackgroundAlpha, Te
  */
 HWTEST_F(RSUniRenderVisitorTest, IsNodeBelowInsideOfNodeAbove, TestSize.Level1)
 {
-    const RectI& rectAbove;
-    std::list<RectI>& hwcNodeRectList;
+    const RectI rectAbove;
+    std::list<RectI> hwcNodeRectList;
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     rsUniRenderVisitor->IsNodeBelowInsideOfNodeAbove(rectAbove, hwcNodeRectList);
 }
