@@ -378,9 +378,13 @@ void RSRenderProperty<Vector4f>::Dump(std::string& out) const
         case RSModifierType::BORDER_DASH_GAP:
         case RSModifierType::OUTLINE_WIDTH:
         case RSModifierType::OUTLINE_DASH_WIDTH:
-        case RSModifierType::OUTLINE_DASH_GAP:
-        case RSModifierType::OUTLINE_RADIUS: {
+        case RSModifierType::OUTLINE_DASH_GAP: {
             ss << "[left:" << v4f.x_ << " top:" << v4f.y_ << " right:" << v4f.z_ << " bottom:" << v4f.w_ << + "]";
+            break;
+        }
+        case RSModifierType::CORNER_RADIUS:
+        case RSModifierType::OUTLINE_RADIUS: {
+            ss << "[topLeft:" << v4f.x_ << " topRight:" << v4f.y_ << " bottomRight:" << v4f.z_ << " bottomLeft:" << v4f.w_ << + "]";
             break;
         }
         case RSModifierType::BOUNDS: {
