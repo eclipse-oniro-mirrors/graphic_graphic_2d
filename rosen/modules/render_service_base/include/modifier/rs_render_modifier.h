@@ -68,7 +68,7 @@ public:
         return RSModifierType::INVALID;
     }
 
-    std::string GetModifierTypeString()
+    virtual std::string GetModifierTypeString()
     {
         auto iter = RS_MODIFIER_TYPE_TO_STRING.find(GetType());
         if (iter != RS_MODIFIER_TYPE_TO_STRING.end()) {
@@ -304,12 +304,20 @@ public:
         {                                                                                                        \
             property->SetModifierType(RSModifierType::MODIFIER_TYPE);                                            \
         }                                                                                                        \
+        std::string modifierName = #MODIFIER_NAME;                                                               \
         virtual ~RS##MODIFIER_NAME##RenderModifier() = default;                                                  \
         void Apply(RSModifierContext& context) const override;                                                   \
         void Update(const std::shared_ptr<RSRenderPropertyBase>& prop, bool isDelta) override;                   \
         bool Marshalling(Parcel& parcel) override;                                                               \
         RSModifierType GetType() override { return (RSModifierType::MODIFIER_TYPE); }                            \
-    };
+        virtual std::string GetModifierTypeString() override {                                                   \
+            std::string descr = RS##MODIFIER_TIER##RenderModifier::GetModifierTypeString();                      \
+            if (RSModifierType::MODIFIER_TYPE == RSModifierType::BOUNDS) {                                       \
+                descr = modifierName;                                                                            \
+            }                                                                                                    \
+            return descr;                                                                                        \
+        }                                                                                                        \
+    };                                                                                                           \
 
 #define DECLARE_NOANIMATABLE_MODIFIER(MODIFIER_NAME, TYPE, MODIFIER_TYPE, MODIFIER_TIER) \
     DECLARE_ANIMATABLE_MODIFIER(MODIFIER_NAME, TYPE, MODIFIER_TYPE, Add, MODIFIER_TIER, ZERO)

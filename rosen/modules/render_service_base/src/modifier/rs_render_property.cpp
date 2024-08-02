@@ -427,6 +427,11 @@ void RSRenderProperty<Vector4f>::Dump(std::string& out) const
 template<>
 void RSRenderProperty<Quaternion>::Dump(std::string& out) const
 {
+    Quaternion q = Get();
+    out += "[x:" + std::to_string(q.x_) + " y:";
+    out += std::to_string(q.y_) + " z:";
+    out += std::to_string(q.z_) + " w:";
+    out += std::to_string(q.w_) + "]";    
 }
 
 template<>
