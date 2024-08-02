@@ -1241,7 +1241,8 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
             frameRateMgr_->UpdateSurfaceTime(surfaceNodeName, timestamp_, ExtractPid(surfaceNode->GetId()));
         }
         surfaceHandler.ResetCurrentFrameBufferConsumed();
-        if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, false, timestamp_)) {
+        if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(
+            surfaceHandler, {surfaceNode->GetName(), false, timestamp_})) {
             this->bufferTimestamps_[surfaceNode->GetId()] = static_cast<uint64_t>(surfaceHandler.GetTimestamp());
             if (surfaceHandler.IsCurrentFrameBufferConsumed() && surfaceNode->IsHardwareEnabledType()) {
                 GpuDirtyRegionCollection::GetInstance().UpdateActiveDirtyInfoForDFX(surfaceNode->GetId(),
