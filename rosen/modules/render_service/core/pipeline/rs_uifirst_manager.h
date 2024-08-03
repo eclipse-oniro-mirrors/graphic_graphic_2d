@@ -227,6 +227,7 @@ private:
     const std::vector<std::string> cardCanSkipFirstWaitScene_ = {
         { "INTO_HOME_ANI" }, // unlock to desktop
         { "FINGERPRINT_UNLOCK_ANI" }, // finger unlock to desktop
+        { "SCREEN_OFF_FINGERPRINT_UNLOCK_ANI" }, // aod finger unlock
         { "PASSWORD_UNLOCK_ANI" }, // password unlock to desktop
         { "FACIAL_FLING_UNLOCK_ANI" }, // facial unlock to desktop
         { "FACIAL_UNLOCK_ANI" }, // facial unlock to desktop
