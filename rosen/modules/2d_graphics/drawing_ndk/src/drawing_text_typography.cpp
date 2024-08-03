@@ -101,7 +101,7 @@ void OH_Drawing_DestroyTypographyStyle(OH_Drawing_TypographyStyle* style)
 
 void OH_Drawing_SetTypographyTextDirection(OH_Drawing_TypographyStyle* style, int direction)
 {
-    if (!style ) {
+    if (!style) {
         return;
     }
     TextDirection textDirection;
@@ -128,7 +128,7 @@ void OH_Drawing_SetTypographyTextDirection(OH_Drawing_TypographyStyle* style, in
 
 void OH_Drawing_SetTypographyTextAlign(OH_Drawing_TypographyStyle* style, int align)
 {
-    if (!style ) {
+    if (!style) {
         return;
     }
     TextAlign textAlign;
@@ -170,7 +170,7 @@ void OH_Drawing_SetTypographyTextAlign(OH_Drawing_TypographyStyle* style, int al
 
 void OH_Drawing_SetTypographyTextMaxLines(OH_Drawing_TypographyStyle* style, int lineNumber)
 {
-    if (!style ) {
+    if (!style) {
         return;
     }
 #ifndef USE_GRAPHIC_TEXT_GINE
@@ -192,7 +192,7 @@ void OH_Drawing_DestroyTextStyle(OH_Drawing_TextStyle* style)
 
 void OH_Drawing_SetTextStyleColor(OH_Drawing_TextStyle* style, uint32_t color)
 {
-    if (!style ) {
+    if (!style) {
         return;
     }
 #ifndef USE_GRAPHIC_TEXT_GINE
@@ -204,7 +204,7 @@ void OH_Drawing_SetTextStyleColor(OH_Drawing_TextStyle* style, uint32_t color)
 
 void OH_Drawing_SetTextStyleFontSize(OH_Drawing_TextStyle* style, double fontSize)
 {
-    if (!style ) {
+    if (!style) {
         return;
     }
 #ifndef USE_GRAPHIC_TEXT_GINE
@@ -216,7 +216,7 @@ void OH_Drawing_SetTextStyleFontSize(OH_Drawing_TextStyle* style, double fontSiz
 
 void OH_Drawing_SetTextStyleFontWeight(OH_Drawing_TextStyle* style, int fontWeight)
 {
-    if (!style ) {
+    if (!style) {
         return;
     }
     FontWeight rosenFontWeight;
@@ -270,7 +270,7 @@ void OH_Drawing_SetTextStyleFontWeight(OH_Drawing_TextStyle* style, int fontWeig
 
 void OH_Drawing_SetTextStyleBaseLine(OH_Drawing_TextStyle* style, int baseline)
 {
-    if (!style ) {
+    if (!style) {
         return;
     }
     TextBaseline rosenBaseLine;
@@ -296,7 +296,7 @@ void OH_Drawing_SetTextStyleBaseLine(OH_Drawing_TextStyle* style, int baseline)
 
 void OH_Drawing_SetTextStyleDecoration(OH_Drawing_TextStyle* style, int decoration)
 {
-    if (!style ) {
+    if (!style) {
         return;
     }
     TextDecoration rosenDecoration;
@@ -338,7 +338,7 @@ void OH_Drawing_SetTextStyleDecoration(OH_Drawing_TextStyle* style, int decorati
 
 void OH_Drawing_SetTextStyleDecorationColor(OH_Drawing_TextStyle* style, uint32_t color)
 {
-    if (!style ) {
+    if (!style) {
         return;
     }
 #ifndef USE_GRAPHIC_TEXT_GINE
@@ -350,7 +350,7 @@ void OH_Drawing_SetTextStyleDecorationColor(OH_Drawing_TextStyle* style, uint32_
 
 void OH_Drawing_SetTextStyleFontHeight(OH_Drawing_TextStyle* style, double fontHeight)
 {
-    if (!style ) {
+    if (!style) {
         return;
     }
 #ifndef USE_GRAPHIC_TEXT_GINE
@@ -365,7 +365,7 @@ void OH_Drawing_SetTextStyleFontHeight(OH_Drawing_TextStyle* style, double fontH
 void OH_Drawing_SetTextStyleFontFamilies(OH_Drawing_TextStyle* style,
     int fontFamiliesNumber, const char* fontFamilies[])
 {
-    if (!style ) {
+    if (!style) {
         return;
     }
     std::vector<std::string> rosenFontFamilies;
@@ -381,7 +381,7 @@ void OH_Drawing_SetTextStyleFontFamilies(OH_Drawing_TextStyle* style,
 
 void OH_Drawing_SetTextStyleFontStyle(OH_Drawing_TextStyle* style, int fontStyle)
 {
-    if (!style ) {
+    if (!style) {
         return;
     }
 #ifndef USE_GRAPHIC_TEXT_GINE
@@ -422,7 +422,7 @@ void OH_Drawing_SetTextStyleFontStyle(OH_Drawing_TextStyle* style, int fontStyle
 
 void OH_Drawing_SetTextStyleLocale(OH_Drawing_TextStyle* style, const char* locale)
 {
-    if (!style ) {
+    if (!style) {
         return;
     }
 #ifndef USE_GRAPHIC_TEXT_GINE
