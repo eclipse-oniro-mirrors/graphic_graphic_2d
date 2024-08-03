@@ -2053,7 +2053,7 @@ bool OH_Drawing_TypographyIsEllipsized(OH_Drawing_TypographyStyle* style)
 
 void OH_Drawing_SetTypographyTextEllipsis(OH_Drawing_TypographyStyle* style, const char* ellipsis)
 {
-    if (!style || ellipsis) {
+    if (!style || !ellipsis) {
         return;
     }
     std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;

@@ -41,10 +41,10 @@ namespace txt {
     }
 
     /*
-    * @tc.name: ParagraphStyleTest001
-    * @tc.desc: test for ConvertToTextStyle
-    * @tc.type: FUNC
-    */
+     * @tc.name: ParagraphStyleTest001
+     * @tc.desc: test for ConvertToTextStyle
+     * @tc.type: FUNC
+     */
     HWTEST_F(ParagraphStyleTest, ParagraphStyleTest001, TestSize.Level1)
     {
         auto result = paragraphStyle->ConvertToTextStyle();
@@ -52,13 +52,12 @@ namespace txt {
     }
 
     /*
-    * @tc.name: ParagraphStyleTest002
-    * @tc.desc: test for GetEquivalentAlign
-    * @tc.type: FUNC
-    */
+     * @tc.name: ParagraphStyleTest002
+     * @tc.desc: test for GetEquivalentAlign
+     * @tc.type: FUNC
+     */
     HWTEST_F(ParagraphStyleTest, ParagraphStyleTest002, TestSize.Level1)
     {
-//        TextAlign::START
         paragraphStyle->textAlign = OHOS::Rosen::SPText::TextAlign::START;
         auto result1 = paragraphStyle->GetEquivalentAlign();
         EXPECT_EQ(result1, OHOS::Rosen::SPText::TextAlign::LEFT);
