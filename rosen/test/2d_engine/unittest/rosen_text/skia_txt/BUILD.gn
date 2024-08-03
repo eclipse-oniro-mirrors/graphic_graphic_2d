@@ -31,6 +31,7 @@ ohos_unittest("rosen_text_skia_txt_test") {
       "text_line_base_test.cpp",
       "text_style_test.cpp",
       "typeface_font_asset_provider_test.cpp",
+      "paragraph_style_test.cpp",
     ]
   }
   include_dirs = [
