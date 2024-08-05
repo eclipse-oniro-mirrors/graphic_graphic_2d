@@ -23,7 +23,7 @@
 namespace OHOS {
 namespace Rosen {
 
-enum UIFWKType : int32_t {
+enum class UIFWKType : int32_t {
     FROM_UNKNOWN = 0,
     FROM_SURFACE = 1,
 };
