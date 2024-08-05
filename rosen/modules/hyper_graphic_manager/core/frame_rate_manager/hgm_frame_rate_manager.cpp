@@ -444,15 +444,11 @@ bool HgmFrameRateManager::CollectFrameRateChange(FrameRateRange finalRange,
     bool frameRateChanged = false;
     bool controllerRateChanged = false;
     auto rsFrameRate = GetDrawingFrameRate(currRefreshRate_, finalRange);
-    if (controller_) {
-        controllerRate_ = rsFrameRate > 0 ? rsFrameRate : controller_->GetCurrentRate();
-        if (controllerRate_ != controller_->GetCurrentRate()) {
-            rsFrameRateLinker->SetFrameRate(controllerRate_);
-            controllerRateChanged = true;
-            frameRateChanged = true;
-        }
-    } else if (rsFrameRate > 0) {
-        controllerRate_ = rsFrameRate;
+    controllerRate_ = rsFrameRate > 0 ? rsFrameRate : controller_->GetCurrentRate();
+    if (controllerRate_ != controller_->GetCurrentRate()) {
+        rsFrameRateLinker->SetFrameRate(controllerRate_);
+        controllerRateChanged = true;
+        frameRateChanged = true;
     }
 
     auto& hgmCore = HgmCore::Instance();
