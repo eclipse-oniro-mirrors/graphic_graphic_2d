@@ -215,7 +215,7 @@ void HgmEnergyConsumptionPolicy::PrintLog(FrameRateRange &rsRange, bool state, i
         auto task = [this, rsRange]() {
             std::lock_guard<std::recursive_mutex> lock(mutex_);
             energyAssuranceState_[rsRange.type_] = false;
-            HGM_LOGI("HgmEnergyConsumptionPolicy exit the energy consumption assurance mode, rateType:%{public}s", 
+            HGM_LOGI("HgmEnergyConsumptionPolicy exit the energy consumption assurance mode, rateType:%{public}s",
                 rsRange.GetExtInfo().c_str());
         };
         HgmTaskHandleThread::Instance().PostEvent(taskId, task, ENERGY_ASSURANCE_LOG_DELAY_TIME);

@@ -47,7 +47,7 @@ private:
     // Unit: ms
     int animationIdleDuration_ = 2000;
     int animationIdleFps_ = 60;
-    std::unordered_map<uitn32_t, bool> energyAssuranceState_;
+    std::unordered_map<int32_t, bool> energyAssuranceState_;
 
     HgmEnergyConsumptionPolicy();
     ~HgmEnergyConsumptionPolicy() = default;
