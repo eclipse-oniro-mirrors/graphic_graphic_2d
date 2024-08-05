@@ -202,8 +202,8 @@ private:
     void ReportHiSysEvent(const VoteInfo& frameRateVoteInfo);
     void SetResultVoteInfo(VoteInfo& voteInfo, uint32_t min, uint32_t max);
     void UpdateEnergyConsumptionConfig();
-    void EnterEnergyConsumptionAssuranceMode();
-    void ExitEnergyConsumptionAssuranceMode();
+    static void EnterEnergyConsumptionAssuranceMode();
+    static void ExitEnergyConsumptionAssuranceMode();
     static void ProcessVoteLog(const VoteInfo& curVoteInfo, bool isSkip);
 
     uint32_t currRefreshRate_ = 0;
