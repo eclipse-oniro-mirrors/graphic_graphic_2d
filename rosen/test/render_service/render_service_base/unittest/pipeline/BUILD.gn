@@ -293,7 +293,6 @@ ohos_unittest("RSDisplayRenderNodeTest") {
   subsystem_name = "graphic"
 }
 
-
 ##############################  RSDrawCmdListTest  ##################################
 ohos_unittest("RSDrawCmdListTest") {
   module_out_path = module_output_path
@@ -386,7 +385,6 @@ ohos_unittest("RSDrawCmdTest") {
   subsystem_name = "graphic"
 }
 
-
 ##############################  RSEffectRenderNodeTest  ##################################
 ohos_unittest("RSEffectRenderNodeTest") {
   module_out_path = module_output_path
@@ -432,7 +430,6 @@ ohos_unittest("RSEffectRenderNodeTest") {
 
   subsystem_name = "graphic"
 }
-
 
 ##############################  RSOcclusionConfigTest  ##################################
 ohos_unittest("RSOcclusionConfigTest") {
@@ -480,7 +477,6 @@ ohos_unittest("RSOcclusionConfigTest") {
   subsystem_name = "graphic"
 }
 
-
 ##############################  RSPaintFilterCanvasTest  ##################################
 ohos_unittest("RSPaintFilterCanvasTest") {
   module_out_path = module_output_path
@@ -526,7 +522,6 @@ ohos_unittest("RSPaintFilterCanvasTest") {
 
   subsystem_name = "graphic"
 }
-
 
 ##############################  RSProxyRenderNodeTest  ##################################
 ohos_unittest("RSProxyRenderNodeTest") {
@@ -574,7 +569,6 @@ ohos_unittest("RSProxyRenderNodeTest") {
   subsystem_name = "graphic"
 }
 
-
 ##############################  RSExtendRecordingCanvasTest  ##################################
 ohos_unittest("RSExtendRecordingCanvasTest") {
   module_out_path = module_output_path
@@ -620,7 +614,6 @@ ohos_unittest("RSExtendRecordingCanvasTest") {
 
   subsystem_name = "graphic"
 }
-
 
 ##############################  RSRenderContentTest  ##################################
 ohos_unittest("RSRenderContentTest") {
@@ -668,7 +661,6 @@ ohos_unittest("RSRenderContentTest") {
   subsystem_name = "graphic"
 }
 
-
 ##############################  RSRenderDisplaySyncTest  ##################################
 ohos_unittest("RSRenderDisplaySyncTest") {
   module_out_path = module_output_path
@@ -714,7 +706,6 @@ ohos_unittest("RSRenderDisplaySyncTest") {
 
   subsystem_name = "graphic"
 }
-
 
 ##############################  RSRenderFrameRateLinkerMapTest  ##################################
 ohos_unittest("RSRenderFrameRateLinkerMapTest") {
@@ -762,7 +753,6 @@ ohos_unittest("RSRenderFrameRateLinkerMapTest") {
   subsystem_name = "graphic"
 }
 
-
 ##############################  RSRenderFrameRateLinkerTest  ##################################
 ohos_unittest("RSRenderFrameRateLinkerTest") {
   module_out_path = module_output_path
@@ -808,7 +798,6 @@ ohos_unittest("RSRenderFrameRateLinkerTest") {
 
   subsystem_name = "graphic"
 }
-
 
 ##############################  RSRenderNodeAutocacheTest  ##################################
 ohos_unittest("RSRenderNodeAutocacheTest") {
@@ -1430,10 +1419,10 @@ group("unittest") {
     ":RSDrawCmdListTest",
     ":RSDrawCmdTest",
     ":RSEffectRenderNodeTest",
+    ":RSExtendRecordingCanvasTest",
     ":RSOcclusionConfigTest",
     ":RSPaintFilterCanvasTest",
     ":RSProxyRenderNodeTest",
-    ":RSExtendRecordingCanvasTest",
     ":RSRenderContentTest",
     ":RSRenderDisplaySyncTest",
     ":RSRenderFrameRateLinkerMapTest",
@@ -1450,6 +1439,6 @@ group("unittest") {
     ":RSSurfaceRenderNodeTwoTest",
     ":RSTaskDispatcherTest",
     ":RSUniRenderJudgementTest",
-    ":SKResourceManagerTest"
+    ":SKResourceManagerTest",
   ]
 }
