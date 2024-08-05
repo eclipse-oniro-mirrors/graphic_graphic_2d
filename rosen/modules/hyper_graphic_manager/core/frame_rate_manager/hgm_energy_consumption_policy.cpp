@@ -199,6 +199,7 @@ void HgmEnergyConsumptionPolicy::SetEnergyConsumptionRateRange(FrameRateRange& r
 
 void HgmEnergyConsumptionPolicy::PrintLog(FrameRateRange &rsRange, bool state, int idleFps)
 {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
     const static &it = energyAssuranceState_.find(rsRange.type_);
     const auto taskId = ENERGY_ASSURANCE_LOG_TASK_ID + std::to_string(rsRange.type_);
     // Enter assurance solution
@@ -212,6 +213,7 @@ void HgmEnergyConsumptionPolicy::PrintLog(FrameRateRange &rsRange, bool state, i
 
         // Continued assurance status
         auto task = [this, rsRange]() {
+            std::lock_guard<std::recursive_mutex> lock(mutex_);
             energyAssuranceState_[rsRange.type_] = false;
             HGM_LOGI("HgmEnergyConsumptionPolicy exit the energy consumption assurance mode, rateType:%{public}s", 
                 rsRange.GetExtInfo().c_str());
