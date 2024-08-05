@@ -116,20 +116,15 @@ void HgmFrameRateManager::RegisterCoreCallbacksAndInitController(sptr<VSyncContr
 {
     auto& hgmCore = HgmCore::Instance();
     hgmCore.RegisterRefreshRateModeChangeCallback([rsController, appController](int32_t mode) {
-        if (HgmCore::Instance().IsLTPOSwitchOn()) {
-            if (rsController) {
-                rsController->SetPhaseOffset(0);
-            }
-            if (appController) {
-                appController->SetPhaseOffset(0);
-            }
-        } else if (RSUniRenderJudgement::IsUniRender()) {
-            if (rsController) {
-                rsController->SetPhaseOffset(UNI_RENDER_VSYNC_OFFSET);
-            }
-            if (appController) {
-                appController->SetPhaseOffset(UNI_RENDER_VSYNC_OFFSET);
-            }
+        int64_t offset = 0;
+        if (!HgmCore::Instance().IsLTPOSwitchOn() && RSUniRenderJudgement::IsUniRender()) {
+            offset = UNI_RENDER_VSYNC_OFFSET;
+        }
+        if (rsController) {
+            rsController->SetPhaseOffset(offset);
+        }
+        if (appController) {
+            appController->SetPhaseOffset(offset);
         }
         CreateVSyncGenerator()->SetVSyncMode(HgmCore::Instance().IsLTPOSwitchOn() ? VSYNC_MODE_LTPO : VSYNC_MODE_LTPS);
     });
