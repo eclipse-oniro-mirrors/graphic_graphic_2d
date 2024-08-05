@@ -30,14 +30,16 @@ namespace txt {
         static inline std::shared_ptr <OHOS::Rosen::SPText::ParagraphStyle> paragraphStyle = nullptr;
     };
 
-    void ParagraphStyleTest::SetUpTestCase() {
+    void ParagraphStyleTest::SetUpTestCase()
+    {
         paragraphStyle = std::make_shared<OHOS::Rosen::SPText::ParagraphStyle>();
         if (!paragraphStyle) {
             std::cout << "ParagraphStyleTest::SetUpTestCase error paragraphStyle is nullptr" << std::endl;
         }
     }
 
-    void ParagraphStyleTest::TearDownTestCase() {
+    void ParagraphStyleTest::TearDownTestCase()
+    {
     }
 
     /*

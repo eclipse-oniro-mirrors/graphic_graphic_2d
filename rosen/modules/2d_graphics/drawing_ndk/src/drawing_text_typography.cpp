@@ -214,11 +214,8 @@ void OH_Drawing_SetTextStyleFontSize(OH_Drawing_TextStyle* style, double fontSiz
 #endif
 }
 
-void OH_Drawing_SetTextStyleFontWeight(OH_Drawing_TextStyle* style, int fontWeight)
+static FontWeight GetFontWeight(int fontWeight)
 {
-    if (!style) {
-        return;
-    }
     FontWeight rosenFontWeight;
     switch (fontWeight) {
         case FONT_WEIGHT_100: {
@@ -261,6 +258,15 @@ void OH_Drawing_SetTextStyleFontWeight(OH_Drawing_TextStyle* style, int fontWeig
             rosenFontWeight = FontWeight::W400;
         }
     }
+    return rosenFontWeight;
+}
+
+void OH_Drawing_SetTextStyleFontWeight(OH_Drawing_TextStyle* style, int fontWeight)
+{
+    if (!style) {
+        return;
+    }
+    FontWeight rosenFontWeight = GetFontWeight(fontWeight);
 #ifndef USE_GRAPHIC_TEXT_GINE
     ConvertToOriginalText<TextStyle>(style)->fontWeight_ = rosenFontWeight;
 #else
