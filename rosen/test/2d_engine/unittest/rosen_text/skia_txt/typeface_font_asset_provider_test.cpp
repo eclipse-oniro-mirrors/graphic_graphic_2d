@@ -184,12 +184,12 @@ HWTEST_F(TypefaceFontAssetProviderTest, TypefaceFontAssetProviderTest009, TestSi
 
 /*
  * @tc.name: TypefaceFontAssetProviderTest010
- * @tc.desc: test for createTypeFace with invalid index
+ * @tc.desc: test for createTypeface with invalid index
  * @tc.type: FUNC
  */
 HWTEST_F(TypefaceFontAssetProviderTest, TypefaceFontAssetProviderTest010, TestSize.Level1)
 {
     TypefaceFontStyleSet fontStyleSet;
-    EXPECT_EQ(fontStyleSet.createTypeFace(1), nullptr);
+    EXPECT_EQ(fontStyleSet.createTypeface(1), nullptr);
 }
 } // namespace txt
