@@ -225,7 +225,8 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_UIEXTENSION_CALLBACK),
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VMA_CACHE_STATUS),
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_STATUS),
-        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_ANCO_FORCE_DO_DIRECT)
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_ANCO_FORCE_DO_DIRECT),
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_DISPLAY_NODE),
     };
     if (std::find(std::cbegin(descriptorCheckList), std::cend(descriptorCheckList), code) !=
         std::cend(descriptorCheckList)) {
@@ -1592,6 +1593,20 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             bool direct = data.ReadBool();
             bool result = SetAncoForceDoDirect(direct);
             reply.WriteBool(result);
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_DISPLAY_NODE) : {
+            auto id = data.ReadUint64();
+            auto mirrorId = data.ReadUint64();
+            auto screenId = data.ReadUint64();
+            auto isMirrored = data.ReadBool();
+            RSDisplayRenderNodeConfig config = {
+                .id = id,
+                .mirrorNodeId = mirrorId,
+                .screenId = screenId,
+                .isMirrored = isMirrored
+            };
+            reply.WriteBool(CreateNode(config));
             break;
         }
         default: {
