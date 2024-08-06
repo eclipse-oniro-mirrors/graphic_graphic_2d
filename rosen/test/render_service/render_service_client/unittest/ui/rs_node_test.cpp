@@ -3788,7 +3788,10 @@ HWTEST_F(RSNodeTest, SetUIBackgroundFilter, TestSize.Level1)
     rsNode->SetUIBackgroundFilter(filterObj);
     EXPECT_TRUE(rsNode->GetStagingProperties().GetBackgroundBlurRadiusX() == floatData[1]);
     EXPECT_TRUE(rsNode->GetStagingProperties().GetBackgroundBlurRadiusY() == floatData[1]);
-    delete filterObj;
+    if (filterObj != nullptr) {
+        delete filterObj;
+        filterObj = nullptr;
+    }
 }
 
 /**
@@ -3806,7 +3809,10 @@ HWTEST_F(RSNodeTest, SetUICompositingFilter, TestSize.Level1)
     rsNode->SetUICompositingFilter(filterObj);
     EXPECT_TRUE(rsNode->GetStagingProperties().GetForegroundBlurRadiusX() == floatData[1]);
     EXPECT_TRUE(rsNode->GetStagingProperties().GetForegroundBlurRadiusY() == floatData[1]);
-    delete filterObj;
+    if (filterObj != nullptr) {
+        delete filterObj;
+        filterObj = nullptr;
+    }
 }
 
 /**
@@ -3823,7 +3829,10 @@ HWTEST_F(RSNodeTest, SetUIForegroundFilter, TestSize.Level1)
     filterObj->AddPara(para);
     rsNode->SetUIForegroundFilter(filterObj);
     EXPECT_TRUE(rsNode->GetStagingProperties().GetForegroundEffectRadius() == floatData[1]);
-    delete filterObj;
+    if (filterObj != nullptr) {
+        delete filterObj;
+        filterObj = nullptr;
+    }
 }
 
 /**
