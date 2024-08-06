@@ -448,6 +448,7 @@ HWTEST_F(RSBaseRenderNodeTest, SetSharedTransitionParam, TestSize.Level1)
 HWTEST_F(RSBaseRenderNodeTest, SetGlobalAlpha, TestSize.Level1)
 {
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
+    node->InitRenderParams();
     float alpha = 1.0f;
     node->SetGlobalAlpha(alpha);
 
@@ -660,6 +661,7 @@ HWTEST_F(RSBaseRenderNodeTest, MarkNodeGroup, TestSize.Level1)
     RSRenderNode::NodeGroupType type = RSRenderNode::NodeGroupType::GROUP_TYPE_BUTT;
     bool isNodeGroup = false;
     bool includeProperty = true;
+    node->InitRenderParams();
     node->MarkNodeGroup(type, isNodeGroup, includeProperty);
 
     type = RSRenderNode::NodeGroupType::GROUPED_BY_USER;
@@ -1046,36 +1048,6 @@ HWTEST_F(RSBaseRenderNodeTest, DumpDrawCmdModifiers, TestSize.Level1)
     map[RSModifierType::ENV_FOREGROUND_COLOR] = list;
     node->renderContent_->drawCmdModifiers_ = map;
     node->DumpDrawCmdModifiers(out);
-    ASSERT_TRUE(true);
-}
-
-/**
- * @tc.name: DumpDrawCmdModifier
- * @tc.desc: test results of DumpDrawCmdModifier
- * @tc.type:FUNC
- * @tc.require: issueI9KBCZ
- */
-HWTEST_F(RSBaseRenderNodeTest, DumpDrawCmdModifier, TestSize.Level1)
-{
-    auto node = std::make_shared<RSBaseRenderNode>(id, context);
-    std::string propertyDesc = "noDesc";
-    RSModifierType type;
-    Drawing::Matrix matrix;
-    PropertyId id = 1;
-    std::shared_ptr<RSRenderProperty<Drawing::Matrix>> property =
-        std::make_shared<RSRenderProperty<Drawing::Matrix>>(matrix, id);
-    std::shared_ptr<RSGeometryTransRenderModifier> modifierCast =
-        std::make_shared<RSGeometryTransRenderModifier>(property);
-    std::shared_ptr<RSRenderModifier> modifier = modifierCast;
-
-    type = RSModifierType::ENV_FOREGROUND_COLOR;
-    node->DumpDrawCmdModifier(propertyDesc, type, modifier);
-
-    type = RSModifierType::ENV_FOREGROUND_COLOR_STRATEGY;
-    node->DumpDrawCmdModifier(propertyDesc, type, modifier);
-
-    type = RSModifierType::GEOMETRYTRANS;
-    node->DumpDrawCmdModifier(propertyDesc, type, modifier);
     ASSERT_TRUE(true);
 }
 

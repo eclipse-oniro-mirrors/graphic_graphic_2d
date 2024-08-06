@@ -18,41 +18,48 @@
 
 #include <mutex>
 #include <unordered_map>
+#include "pipeline/rs_render_node.h"
 
 namespace OHOS {
 namespace Rosen {
+
+enum class UIFWKType : int32_t {
+    FROM_UNKNOWN = 0,
+    FROM_SURFACE = 1,
+};
 
 class HgmIdleDetector {
 public:
     HgmIdleDetector() = default;
     ~HgmIdleDetector() = default;
 
-    void SetAppSupportStatus(bool appSupported)
+    void SetAppSupportedState(bool appSupported)
     {
         std::lock_guard<std::mutex> lock(appSupportedMutex_);
         appSupported_ = appSupported;
     }
 
-    bool GetAppSupportStatus()
+    bool GetAppSupportedState()
     {
         std::lock_guard<std::mutex> lock(appSupportedMutex_);
         return appSupported_;
     }
 
-    void SetAceAnimatorIdleStatus(bool aceAnimatorIdleState)
+    void SetAceAnimatorIdleState(bool aceAnimatorIdleState)
     {
         aceAnimatorIdleState_ = aceAnimatorIdleState;
     }
 
-    bool GetAceAnimatorIdleStatus() const
+    bool GetAceAnimatorIdleState() const
     {
         return aceAnimatorIdleState_;
     }
 
-    void UpdateSurfaceTime(const std::string& surfaceName, uint64_t timestamp);
+    void UpdateSurfaceTime(const std::string& surfaceName, uint64_t timestamp,
+        pid_t pid, UIFWKType uiFwkType = UIFWKType::FROM_UNKNOWN);
     bool GetSurfaceIdleState(uint64_t timestamp);
-    int32_t GetSurfaceUpExpectFps();
-    bool GetSupportSurface();
+    int32_t GetTouchUpExpectedFPS();
+    bool ThirdFrameNeedHighRefresh();
     void ClearAppBufferList()
     {
         std::lock_guard<std::mutex> lock(appBufferListMutex_);
@@ -77,7 +84,11 @@ public:
     {
         supportAppBufferList_ = supportAppBufferList;
     }
+    void ProcessUnknownUIFwkIdleState(const std::unordered_map<NodeId,
+        std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>>>& activeNodesInRoot, uint64_t timestamp);
 private:
+    bool GetUnknownFrameworkState(const std::string& surfaceName);
+    bool GetSurfaceFrameworkState(const std::string& surfaceName);
     bool appSupported_ = false;
     bool aceAnimatorIdleState_ = true;
     std::mutex appSupportedMutex_;

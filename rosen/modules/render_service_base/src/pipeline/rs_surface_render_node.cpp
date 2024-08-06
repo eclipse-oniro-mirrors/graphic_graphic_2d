@@ -616,6 +616,16 @@ void RSSurfaceRenderNode::ProcessRenderAfterChildren(RSPaintFilterCanvas& canvas
     needDrawAnimateProperty_ = false;
 }
 
+void RSSurfaceRenderNode::SetNeedClearPreBuffer(bool needClear)
+{
+    isNeedClearPreBuffer_.store(needClear);
+}
+
+bool RSSurfaceRenderNode::GetNeedClearPreBuffer() const
+{
+    return isNeedClearPreBuffer_;
+}
+
 void RSSurfaceRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanvas& canvas)
 {
     if (GetCacheType() != CacheType::ANIMATE_PROPERTY && !needDrawAnimateProperty_) {
@@ -817,6 +827,11 @@ void RSSurfaceRenderNode::SetProtectedLayer(bool isProtectedLayer)
     SyncProtectedInfoToFirstLevelNode();
 }
 
+void RSSurfaceRenderNode::SetForceClientForDRMOnly(bool forceClient)
+{
+    forceClientForDRMOnly_ = forceClient;
+}
+
 bool RSSurfaceRenderNode::GetSecurityLayer() const
 {
     return isSecurityLayer_;
@@ -915,9 +930,6 @@ void RSSurfaceRenderNode::SetForceUIFirst(bool forceUIFirst)
 }
 bool RSSurfaceRenderNode::GetForceUIFirst() const
 {
-    if (name_.find("SCBWallpaper") != std::string::npos) {
-        return true;
-    }
     return forceUIFirst_;
 }
 
@@ -1037,11 +1049,11 @@ void RSSurfaceRenderNode::NeedClearBufferCache()
 
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     std::set<int32_t> bufferCacheSet;
-    if (surfaceHandler_->GetBuffer()) {
-        bufferCacheSet.insert(surfaceHandler_->GetBuffer()->GetSeqNum());
+    if (auto buffer = surfaceHandler_->GetBuffer()) {
+        bufferCacheSet.insert(buffer->GetSeqNum());
     }
-    if (surfaceHandler_->GetPreBuffer().buffer) {
-        bufferCacheSet.insert(surfaceHandler_->GetPreBuffer().buffer->GetSeqNum());
+    if (auto preBuffer = surfaceHandler_->GetPreBuffer()) {
+        bufferCacheSet.insert(preBuffer->GetSeqNum());
     }
     surfaceParams->SetBufferClearCacheSet(bufferCacheSet);
     AddToPendingSyncList();
@@ -1588,7 +1600,7 @@ void RSSurfaceRenderNode::UpdateFilterCacheStatusWithVisible(bool visible)
         return;
     }
     prevVisible_ = visible;
-#if defined(NEW_SKIA) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+#if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     if (!RSUniRenderJudgement::IsUniRender() && !visible && !filterNodes_.empty()
         && !isOcclusionVisibleWithoutFilter_) {
         for (auto& node : filterNodes_) {
@@ -1985,10 +1997,15 @@ void RSSurfaceRenderNode::CheckAndUpdateOpaqueRegion(const RectI& screeninfo, co
         opaqueRegionBaseInfo_.isTransparent_ == IsTransparent() &&
         opaqueRegionBaseInfo_.hasContainerWindow_ == HasContainerWindow();
     if (!ret) {
-        // planning: default process focus window
+        if (absRect.IsEmpty()) {
+            RS_LOGW("%{public}s absRect is empty, dst rect: %{public}s, old dirty in surface: %{public}s",
+                GetName().c_str(), GetDstRect().ToString().c_str(), GetOldDirtyInSurface().ToString().c_str());
+            RS_TRACE_NAME_FMT("%s absRect is empty, dst rect: %s, old dirty in surface: %s",
+                GetName().c_str(), GetDstRect().ToString().c_str(), GetOldDirtyInSurface().ToString().c_str());
+        }
         ResetSurfaceOpaqueRegion(screeninfo, absRect, screenRotation, isFocusWindow, cornerRadius);
+        SetOpaqueRegionBaseInfo(screeninfo, absRect, screenRotation, isFocusWindow, cornerRadius);
     }
-    SetOpaqueRegionBaseInfo(screeninfo, absRect, screenRotation, isFocusWindow, cornerRadius);
 }
 
 bool RSSurfaceRenderNode::CheckOpaqueRegionBaseInfo(const RectI& screeninfo, const RectI& absRect,
@@ -2606,6 +2623,7 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->isSkipLayer_ = isSkipLayer_;
     surfaceParams->isProtectedLayer_ = isProtectedLayer_;
     surfaceParams->animateState_ = animateState_;
+    surfaceParams->forceClientForDRMOnly_ = forceClientForDRMOnly_;
     surfaceParams->skipLayerIds_= skipLayerIds_;
     surfaceParams->securityLayerIds_= securityLayerIds_;
     surfaceParams->protectedLayerIds_= protectedLayerIds_;
@@ -2706,6 +2724,16 @@ bool RSSurfaceRenderNode::GetSkipDraw() const
 const std::unordered_map<NodeId, NodeId>& RSSurfaceRenderNode::GetSecUIExtensionNodes()
 {
     return secUIExtensionNodes_;
+}
+
+void RSSurfaceRenderNode::SetRootIdOfCaptureWindow(NodeId rootIdOfCaptureWindow)
+{
+    rootIdOfCaptureWindow_ = rootIdOfCaptureWindow;
+    if (stagingRenderParams_ == nullptr) {
+        RS_LOGE("%{public}s displayParams is nullptr", __func__);
+        return;
+    }
+    stagingRenderParams_->SetRootIdOfCaptureWindow(rootIdOfCaptureWindow);
 }
 } // namespace Rosen
 } // namespace OHOS

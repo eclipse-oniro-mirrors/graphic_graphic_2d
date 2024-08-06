@@ -227,6 +227,16 @@ public:
         isHardwareForcedDisabledByVisibility_ = forcesDisabled;
     }
 
+    void SetNodeHasBackgroundColorAlpha(bool forcesDisabled)
+    {
+        isHardwareForcedByBackgroundAlpha_ = forcesDisabled;
+    }
+
+    bool IsNodeHasBackgroundColorAlpha() const
+    {
+        return isHardwareForcedByBackgroundAlpha_;
+    }
+
     void SetHardwareDisabledByCache(bool disabledByCache)
     {
         isHardwareDisabledByCache_ = disabledByCache;
@@ -249,7 +259,7 @@ public:
 
     bool IsHardwareForcedDisabled() const
     {
-        if (isForceHardware_ && !isHardwareForcedDisabledByVisibility_) {
+        if ((isForceHardware_ && !isHardwareForcedDisabledByVisibility_) || isProtectedLayer_) {
             return false;
         }
         return isHardwareForcedDisabled_ || isHardwareForcedDisabledByVisibility_ ||
@@ -434,6 +444,7 @@ public:
     void SetSecurityLayer(bool isSecurityLayer);
     void SetSkipLayer(bool isSkipLayer);
     void SetProtectedLayer(bool isProtectedLayer);
+    void SetForceClientForDRMOnly(bool forceClient);
 
     // get whether it is a security/skip layer itself
     bool GetSecurityLayer() const;
@@ -987,6 +998,9 @@ public:
         return false;
     }
 
+    void SetNeedClearPreBuffer(bool needClear);
+    bool GetNeedClearPreBuffer() const;
+
     void UpdateSurfaceCacheContentStaticFlag();
 
     void UpdateSurfaceSubTreeDirtyFlag();
@@ -1173,8 +1187,18 @@ public:
 
     void CheckContainerDirtyStatusAndUpdateDirty(bool containerDirty)
     {
+        if (!IsLeashWindow()) {
+            return;
+        }
         dirtyStatus_ = containerDirty ? NodeDirty::DIRTY : dirtyStatus_;
     }
+
+    NodeId GetRootIdOfCaptureWindow() const
+    {
+        return rootIdOfCaptureWindow_;
+    }
+    void SetRootIdOfCaptureWindow(NodeId rootIdOfCaptureWindow);
+
 protected:
     void OnSync() override;
     void OnSkipSync() override;
@@ -1214,6 +1238,7 @@ private:
     bool isSecurityLayer_ = false;
     bool isSkipLayer_ = false;
     bool isProtectedLayer_ = false;
+    bool forceClientForDRMOnly_ = false;
     std::set<NodeId> skipLayerIds_= {};
     std::set<NodeId> securityLayerIds_= {};
     std::set<NodeId> protectedLayerIds_= {};
@@ -1242,6 +1267,7 @@ private:
     std::atomic<bool> isNotifyRTBufferAvailable_ = false;
     std::atomic<bool> isNotifyUIBufferAvailable_ = true;
     std::atomic_bool isBufferAvailable_ = false;
+    std::atomic_bool isNeedClearPreBuffer_ = false;
     sptr<RSIBufferAvailableCallback> callbackFromRT_ = nullptr;
     sptr<RSIBufferAvailableCallback> callbackFromUI_ = nullptr;
     sptr<RSIBufferClearCallback> clearBufferCallback_ = nullptr;
@@ -1432,6 +1458,10 @@ private:
 
     bool doDirectComposition_ = true;
     bool isSkipDraw_ = false;
+
+    bool isHardwareForcedByBackgroundAlpha_ = false;
+
+    NodeId rootIdOfCaptureWindow_ = INVALID_NODEID;
 
     // UIExtension record, <UIExtension, hostAPP>
     inline static std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};

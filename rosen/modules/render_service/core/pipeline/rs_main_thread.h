@@ -111,6 +111,7 @@ public:
     void ResetAnimateNodeFlag();
     void GetAppMemoryInMB(float& cpuMemSize, float& gpuMemSize);
     void ClearMemoryCache(ClearMemoryMoment moment, bool deeply = false, pid_t pid = -1);
+    static bool CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode);
 
     template<typename Task, typename Return = std::invoke_result_t<Task>>
     std::future<Return> ScheduleTask(Task&& task)
@@ -228,7 +229,7 @@ public:
     std::shared_ptr<Drawing::Image> GetWatermarkImg();
     bool GetWatermarkFlag();
 
-    bool IsFirstOrLastFrameOfWatermark() const
+    bool IsWatermarkFlagChanged() const
     {
         return lastWatermarkFlag_ != watermarkFlag_;
     }
@@ -283,6 +284,7 @@ public:
     void SubscribeAppState();
     void HandleOnTrim(Memory::SystemMemoryLevel level);
     void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
+    void RefreshEntireDisplay();
     bool IsCurtainScreenOn() const;
     void NotifySurfaceCapProcFinish();
     void WaitUntilSurfaceCapProcFinished();
@@ -334,13 +336,14 @@ public:
     {
         return needRequestNextVsyncAnimate_;
     }
-    
-    void ProcessEmptySyncTransactionCount(uint64_t syncId, int32_t parentPid, int32_t childPid);
 
     bool IsFirstFrameOfPartialRender() const
     {
         return isFirstFrameOfPartialRender_;
     }
+
+    bool IsHardwareEnabledNodesNeedSync();
+    bool IsOcclusionNodesNeedSync(NodeId id);
 
     void CallbackDrawContextStatusToWMS(bool isUniRender = false);
     void SetHardwareTaskNum(uint32_t num);
@@ -496,6 +499,7 @@ private:
     uint64_t lastCleanCacheTimestamp_ = 0;
     pid_t lastCleanCachePid_ = -1;
     int hardwareTid_ = -1;
+    std::string transactionFlags_ = "";
     std::unordered_map<uint32_t, sptr<IApplicationAgent>> applicationAgentMap_;
 
     std::shared_ptr<RSContext> context_;

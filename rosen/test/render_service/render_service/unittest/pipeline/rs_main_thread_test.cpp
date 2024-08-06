@@ -51,7 +51,10 @@ public:
     static void* CreateParallelSyncSignal(uint32_t count);
 };
 
-void RSMainThreadTest::SetUpTestCase() {}
+void RSMainThreadTest::SetUpTestCase()
+{
+    RSTestUtil::InitRenderNodeGC();
+}
 void RSMainThreadTest::TearDownTestCase() {}
 void RSMainThreadTest::SetUp() {}
 void RSMainThreadTest::TearDown() {}
@@ -433,7 +436,6 @@ HWTEST_F(RSMainThreadTest, ProcessSyncTransactionCount, TestSize.Level1)
 
     rsTransactionData->MarkNeedCloseSync();
     mainThread->ProcessSyncTransactionCount(rsTransactionData);
-    mainThread->ProcessEmptySyncTransactionCount(0, 0, 0);
     mainThread->StartSyncTransactionFallbackTask(rsTransactionData);
     ASSERT_EQ(rsTransactionData->IsNeedCloseSync(), true);
 }
@@ -652,7 +654,7 @@ HWTEST_F(RSMainThreadTest, IsNeedProcessBySingleFrameComposerTest003, TestSize.L
     pid_t pid = 1;
     transactionData->SetSendingPid(pid);
     RSSingleFrameComposer::AddOrRemoveAppPidToMap(true, pid);
-    
+
     NodeId id = 1;
     auto node = std::make_shared<RSRenderNode>(id, mainThread->context_);
     mainThread->context_->RegisterAnimatingRenderNode(node);
@@ -673,7 +675,7 @@ HWTEST_F(RSMainThreadTest, IsNeedProcessBySingleFrameComposerTest004, TestSize.L
     pid_t pid = 1;
     transactionData->SetSendingPid(pid);
     RSSingleFrameComposer::AddOrRemoveAppPidToMap(true, pid);
-    
+
     NodeId firstWindowNodeId = 2;
     auto firstWindowNode = std::make_shared<RSSurfaceRenderNode>(firstWindowNodeId, mainThread->context_);
     firstWindowNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
@@ -683,7 +685,7 @@ HWTEST_F(RSMainThreadTest, IsNeedProcessBySingleFrameComposerTest004, TestSize.L
     firstWindowNode->AddChild(firstWindowChildNode);
     firstWindowNode->GenerateFullChildrenList();
     mainThread->context_->nodeMap.RegisterRenderNode(firstWindowNode);
-    
+
     NodeId secondWindowNodeId = 2;
     auto secondWindowNode = std::make_shared<RSSurfaceRenderNode>(secondWindowNodeId, mainThread->context_);
     secondWindowNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
@@ -837,15 +839,16 @@ HWTEST_F(RSMainThreadTest, GetWatermarkImg, TestSize.Level1)
 }
 
 /**
- * @tc.name: IsFirstOrLastFrameOfWatermark
- * @tc.desc: IsFirstOrLastFrameOfWatermark test
+ * @tc.name: IsWatermarkFlagChanged
+ * @tc.desc: IsWatermarkFlagChanged test
  * @tc.type: FUNC
- * @tc.require: issueI7HDVG
+ * @tc.require: issuesIA8LNR
  */
-HWTEST_F(RSMainThreadTest, IsFirstOrLastFrameOfWatermark, TestSize.Level1)
+HWTEST_F(RSMainThreadTest, IsWatermarkFlagChanged, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
-    mainThread->IsFirstOrLastFrameOfWatermark();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->IsWatermarkFlagChanged();
 }
 
 /**
@@ -2850,6 +2853,20 @@ HWTEST_F(RSMainThreadTest, ReleaseSurface, TestSize.Level1)
 }
 
 /**
+ * @tc.name: RefreshEntireDisplay
+ * @tc.desc: RefreshEntireDisplay Test
+ * @tc.type: FUNC
+ * @tc.require: issueI9ABGS
+ */
+HWTEST_F(RSMainThreadTest, RefreshEntireDisplay, TestSize.Level2)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->RefreshEntireDisplay();
+    ASSERT_EQ(mainThread->IsCurtainScreenUsingStatusChanged(), true);
+}
+
+/**
  * @tc.name: SetCurtainScreenUsingStatus
  * @tc.desc: SetCurtainScreenUsingStatus Test
  * @tc.type: FUNC
@@ -2880,6 +2897,7 @@ HWTEST_F(RSMainThreadTest, CalcOcclusionImplementation001, TestSize.Level1)
 
     NodeId idBottom = 0;
     auto nodeBottom = std::make_shared<RSSurfaceRenderNode>(idBottom, mainThread->context_);
+    nodeBottom->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(idBottom);
     RectI rectBottom = RectI(0, 0, 100, 100);
     nodeBottom->oldDirtyInSurface_ = rectBottom;
     nodeBottom->SetDstRect(rectBottom);
@@ -2887,11 +2905,12 @@ HWTEST_F(RSMainThreadTest, CalcOcclusionImplementation001, TestSize.Level1)
 
     NodeId idTop = 1;
     auto nodeTop = std::make_shared<RSSurfaceRenderNode>(idTop, mainThread->context_);
+    nodeTop->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(idTop);
     RectI rectTop = RectI(100, 100, 100, 100);
     nodeTop->oldDirtyInSurface_ = rectTop;
     nodeTop->SetDstRect(rectTop);
     nodeTop->opaqueRegion_ = Occlusion::Region(rectTop);
-    
+
     curAllSurfaces.emplace_back(nodeBottom);
     curAllSurfaces.emplace_back(nodeTop);
     VisibleData dstCurVisVec;
@@ -2917,6 +2936,7 @@ HWTEST_F(RSMainThreadTest, CalcOcclusionImplementation002, TestSize.Level1)
 
     NodeId idBottom = 0;
     auto nodeBottom = std::make_shared<RSSurfaceRenderNode>(idBottom, mainThread->context_);
+    nodeBottom->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(idBottom);
     RectI rectBottom = RectI(0, 0, 100, 100);
     nodeBottom->oldDirtyInSurface_ = rectBottom;
     nodeBottom->SetDstRect(rectBottom);
@@ -2924,11 +2944,12 @@ HWTEST_F(RSMainThreadTest, CalcOcclusionImplementation002, TestSize.Level1)
 
     NodeId idTop = 1;
     auto nodeTop = std::make_shared<RSSurfaceRenderNode>(idTop, mainThread->context_);
+    nodeTop->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(idTop);
     RectI rectTop = RectI(50, 50, 100, 100);
     nodeTop->oldDirtyInSurface_ = rectTop;
     nodeTop->SetDstRect(rectTop);
     nodeTop->opaqueRegion_ = Occlusion::Region(rectTop);
-    
+
     curAllSurfaces.emplace_back(nodeBottom);
     curAllSurfaces.emplace_back(nodeTop);
     VisibleData dstCurVisVec;
@@ -2954,6 +2975,7 @@ HWTEST_F(RSMainThreadTest, CalcOcclusionImplementation003, TestSize.Level1)
 
     NodeId idBottom = 0;
     auto nodeBottom = std::make_shared<RSSurfaceRenderNode>(idBottom, mainThread->context_);
+    nodeBottom->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(idBottom);
     RectI rectBottom = RectI(0, 0, 100, 100);
     nodeBottom->oldDirtyInSurface_ = rectBottom;
     nodeBottom->SetDstRect(rectBottom);
@@ -2961,11 +2983,12 @@ HWTEST_F(RSMainThreadTest, CalcOcclusionImplementation003, TestSize.Level1)
 
     NodeId idTop = 1;
     auto nodeTop = std::make_shared<RSSurfaceRenderNode>(idTop, mainThread->context_);
+    nodeTop->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(idTop);
     RectI rectTop = RectI(0, 0, 100, 100);
     nodeTop->oldDirtyInSurface_ = rectTop;
     nodeTop->SetDstRect(rectTop);
     nodeTop->opaqueRegion_ = Occlusion::Region(rectTop);
-    
+
     curAllSurfaces.emplace_back(nodeBottom);
     curAllSurfaces.emplace_back(nodeTop);
     VisibleData dstCurVisVec;
@@ -2991,6 +3014,7 @@ HWTEST_F(RSMainThreadTest, CalcOcclusionImplementation004, TestSize.Level1)
 
     NodeId idBottom = 0;
     auto nodeBottom = std::make_shared<RSSurfaceRenderNode>(idBottom, mainThread->context_);
+    nodeBottom->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(idBottom);
     RectI rectBottom = RectI(0, 0, 100, 100);
     nodeBottom->oldDirtyInSurface_ = rectBottom;
     nodeBottom->SetDstRect(rectBottom);
@@ -2998,12 +3022,13 @@ HWTEST_F(RSMainThreadTest, CalcOcclusionImplementation004, TestSize.Level1)
 
     NodeId idTop = 1;
     auto nodeTop = std::make_shared<RSSurfaceRenderNode>(idTop, mainThread->context_);
+    nodeTop->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(idTop);
     RectI rectTop = RectI(0, 0, 100, 100);
     nodeTop->oldDirtyInSurface_ = rectTop;
     nodeTop->SetDstRect(rectTop);
     // The top node is transparent
     nodeTop->SetGlobalAlpha(0.0f);
-    
+
     curAllSurfaces.emplace_back(nodeBottom);
     curAllSurfaces.emplace_back(nodeTop);
     VisibleData dstCurVisVec;
@@ -3030,6 +3055,7 @@ HWTEST_F(RSMainThreadTest, CalcOcclusionImplementation005, TestSize.Level1)
 
     NodeId idBottom = 0;
     auto nodeBottom = std::make_shared<RSSurfaceRenderNode>(idBottom, mainThread->context_);
+    nodeBottom->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(idBottom);
     RectI rectBottom = RectI(0, 0, 100, 100);
     nodeBottom->oldDirtyInSurface_ = rectBottom;
     nodeBottom->SetDstRect(rectBottom);
@@ -3037,13 +3063,14 @@ HWTEST_F(RSMainThreadTest, CalcOcclusionImplementation005, TestSize.Level1)
 
     NodeId idTop = 1;
     auto nodeTop = std::make_shared<RSSurfaceRenderNode>(idTop, mainThread->context_);
+    nodeTop->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(idTop);
     RectI rectTop = RectI(0, 0, 100, 100);
     nodeTop->oldDirtyInSurface_ = rectTop;
     nodeTop->SetDstRect(rectTop);
     // The top node is transparent
     nodeTop->SetGlobalAlpha(0.0f);
     nodeTop->isFilterCacheValidForOcclusion_ = true;
-    
+
     curAllSurfaces.emplace_back(nodeBottom);
     curAllSurfaces.emplace_back(nodeTop);
     VisibleData dstCurVisVec;

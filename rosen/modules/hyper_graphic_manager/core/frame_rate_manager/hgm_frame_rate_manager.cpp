@@ -44,7 +44,7 @@ namespace {
     constexpr uint32_t REPORT_VOTER_INFO_LIMIT = 20;
     constexpr int32_t LAST_TOUCH_CNT = 1;
 
-    constexpr uint32_t FIRST_FRAME_TIME_OUT = 50; // 50ms
+    constexpr uint32_t FIRST_FRAME_TIME_OUT = 100; // 100ms
     constexpr uint32_t SCENE_BEFORE_XML = 1;
     constexpr uint32_t SCENE_AFTER_TOUCH = 3;
     constexpr uint64_t ENERGY_ASSURANCE_TASK_DELAY_TIME = 1000; //1s
@@ -95,7 +95,6 @@ void HgmFrameRateManager::Init(sptr<VSyncController> rsController,
         }
         multiAppStrategy_.UpdateXmlConfigCache();
         UpdateEnergyConsumptionConfig();
-        RsCommonHook::Instance().SetVideoSurfaceConfig(configData->sourceTuningConfig_);
         multiAppStrategy_.CalcVote();
         HandleIdleEvent(ADD_VOTE);
     }
@@ -194,25 +193,31 @@ void HgmFrameRateManager::ProcessPendingRefreshRate(uint64_t timestamp, uint32_t
     }
 }
 
-void HgmFrameRateManager::UpdateSurfaceTime(const std::string& name, uint64_t timestamp)
+void HgmFrameRateManager::UpdateSurfaceTime(const std::string& surfaceName, uint64_t timestamp,
+    pid_t pid, UIFWKType uiFwkType)
 {
-    idleDetector_.UpdateSurfaceTime(name, timestamp);
+    idleDetector_.UpdateSurfaceTime(surfaceName, timestamp, pid, uiFwkType);
 }
 
-void HgmFrameRateManager::UpdateAppSupportStatus()
+void HgmFrameRateManager::ProcessUnknownUIFwkIdleState(const std::unordered_map<NodeId,
+    std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>>>& activeNodesInRoot, uint64_t timestamp)
 {
-    bool flag = false;
+    idleDetector_.ProcessUnknownUIFwkIdleState(activeNodesInRoot, timestamp);
+}
+void HgmFrameRateManager::UpdateAppSupportedState()
+{
+    bool appNeedHighRefresh = false;
     idleDetector_.ClearAppBufferList();
     idleDetector_.ClearAppBufferBlackList();
     PolicyConfigData::StrategyConfig config;
     if (multiAppStrategy_.GetFocusAppStrategyConfig(config) == EXEC_SUCCESS) {
         if (config.dynamicMode == DynamicModeType::TOUCH_EXT_ENABLED) {
-            flag = true;
+            appNeedHighRefresh = true;
         }
     }
     idleDetector_.UpdateAppBufferList(config.appBufferList);
     idleDetector_.UpdateAppBufferBlackList(config.appBufferBlackList);
-    idleDetector_.SetAppSupportStatus(flag);
+    idleDetector_.SetAppSupportedState(appNeedHighRefresh);
 }
 
 void HgmFrameRateManager::SetAceAnimatorVote(const std::shared_ptr<RSRenderFrameRateLinker>& linker,
@@ -223,43 +228,57 @@ void HgmFrameRateManager::SetAceAnimatorVote(const std::shared_ptr<RSRenderFrame
     }
     if (linker->GetAceAnimatorExpectedFrameRate() >= 0) {
         needCheckAceAnimatorStatus = false;
-        RS_TRACE_NAME_FMT("SetAceAnimatorVote PID = [%d]  linkerId = [%" PRIu64 "]  SetAceAnimatorIdleStatus[false] "
+        RS_TRACE_NAME_FMT("SetAceAnimatorVote PID = [%d]  linkerId = [%" PRIu64 "]  SetAceAnimatorIdleState[false] "
             "AnimatorExpectedFrameRate = [%d]", ExtractPid(linker->GetId()), linker->GetId(),
             linker->GetAceAnimatorExpectedFrameRate());
-        idleDetector_.SetAceAnimatorIdleStatus(false);
+        idleDetector_.SetAceAnimatorIdleState(false);
         return;
     }
     RS_OPTIONAL_TRACE_NAME_FMT("SetAceAnimatorVote PID = [%d]  linkerId = [%" PRIu64 "] "
-        "SetAceAnimatorIdleStatus[true] AnimatorExpectedFrameRate = [%d]", ExtractPid(linker->GetId()),
+        "SetAceAnimatorIdleState[true] AnimatorExpectedFrameRate = [%d]", ExtractPid(linker->GetId()),
         linker->GetId(), linker->GetAceAnimatorExpectedFrameRate());
-    idleDetector_.SetAceAnimatorIdleStatus(true);
+    idleDetector_.SetAceAnimatorIdleState(true);
 }
 
 void HgmFrameRateManager::UpdateGuaranteedPlanVote(uint64_t timestamp)
 {
-    if (!idleDetector_.GetAppSupportStatus()) {
+    if (!idleDetector_.GetAppSupportedState()) {
         return;
     }
-    RS_TRACE_NAME_FMT("HgmFrameRateManager:: TouchState = [%d]  SurFaceIdleStatus = [%d]  AceAnimatorIdleStatus = [%d]",
+    RS_TRACE_NAME_FMT("HgmFrameRateManager:: TouchState = [%d]  SurfaceIdleState = [%d]  AceAnimatorIdleState = [%d]",
         touchManager_.GetState(), idleDetector_.GetSurfaceIdleState(timestamp),
-        idleDetector_.GetAceAnimatorIdleStatus());
+        idleDetector_.GetAceAnimatorIdleState());
 
+    // After touch up, wait FIRST_FRAME_TIME_OUT ms
     if (!startCheck_.load() || touchManager_.GetState() == TouchState::IDLE_STATE) {
+        needHighRefresh_ = false;
+        lastTouchUpExpectFps_ = 0;
         return;
     }
 
-    if (idleDetector_.GetSurfaceIdleState(timestamp) && idleDetector_.GetAceAnimatorIdleStatus()) {
+    // Check if third framework need high refresh
+    if (!needHighRefresh_) {
+        needHighRefresh_ = true;
+        if (!idleDetector_.ThirdFrameNeedHighRefresh()) {
+            touchManager_.HandleThirdFrameIdle();
+            return;
+        }
+    }
+
+    //Third frame need high refresh vote
+    if (idleDetector_.GetSurfaceIdleState(timestamp) && idleDetector_.GetAceAnimatorIdleState()) {
+        RS_TRACE_NAME_FMT("UpdateGuaranteedPlanVote:: Surface And Animator Idle, Vote Idle");
         touchManager_.HandleThirdFrameIdle();
     } else {
-        int32_t fps = idleDetector_.GetSurfaceUpExpectFps();
-        if (fps == lastUpExpectFps_) {
+        int32_t currTouchUpExpectedFPS = idleDetector_.GetTouchUpExpectedFPS();
+        if (currTouchUpExpectedFPS == lastTouchUpExpectFps_) {
             return;
         }
 
-        lastUpExpectFps_ = fps;
+        lastTouchUpExpectFps_ = currTouchUpExpectedFPS;
         HgmMultiAppStrategy::TouchInfo touchInfo = {
             .touchState = TouchState::UP_STATE,
-            .upExpectFps = fps,
+            .upExpectFps = currTouchUpExpectedFPS,
         };
         multiAppStrategy_.HandleTouchInfo(touchInfo);
     }
@@ -720,20 +739,8 @@ void HgmFrameRateManager::HandlePackageEvent(pid_t pid, uint32_t listSize, const
             std::lock_guard<std::mutex> locker(pkgSceneMutex_);
             sceneStack_.clear();
         }
-        CheckPackageInConfigList(multiAppStrategy_.GetForegroundPidApp());
-        UpdateAppSupportStatus();
+        UpdateAppSupportedState();
     });
-}
-
-void HgmFrameRateManager::CheckPackageInConfigList(std::unordered_map<pid_t,
-    std::pair<int32_t, std::string>> foregroundPidAppMap)
-{
-    std::unordered_map<std::string, std::string> videoConfigFromHgm = RsCommonHook::Instance().GetVideoSurfaceConfig();
-    for (auto pair: foregroundPidAppMap) {
-        if (videoConfigFromHgm.find(pair.second.second) != videoConfigFromHgm.end()) {
-            RsCommonHook::Instance().SetVideoSurfaceFlag(true);
-        }
-    }
 }
 
 void HgmFrameRateManager::HandleRefreshRateEvent(pid_t pid, const EventInfo& eventInfo)
@@ -825,10 +832,6 @@ void HgmFrameRateManager::HandleRefreshRateMode(int32_t refreshRateMode)
     DeliverRefreshRateVote({"VOTER_LTPO"}, REMOVE_VOTE);
     multiAppStrategy_.UpdateXmlConfigCache();
     UpdateEnergyConsumptionConfig();
-    auto configData = HgmCore::Instance().GetPolicyConfigData();
-    if (configData != nullptr) {
-        RsCommonHook::Instance().SetVideoSurfaceConfig(configData->sourceTuningConfig_);
-    }
     multiAppStrategy_.CalcVote();
     HgmCore::Instance().SetLtpoConfig();
     schedulePreferredFpsChange_ = true;
@@ -877,7 +880,6 @@ void HgmFrameRateManager::HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus
         }
         multiAppStrategy_.UpdateXmlConfigCache();
         UpdateEnergyConsumptionConfig();
-        RsCommonHook::Instance().SetVideoSurfaceConfig(configData->sourceTuningConfig_);
     }
 
     multiAppStrategy_.CalcVote();
@@ -1030,38 +1032,36 @@ void HgmFrameRateManager::DeliverRefreshRateVote(const VoteInfo& voteInfo, bool 
     }
 }
 
-bool HgmFrameRateManager::MergeRangeByPriority(VoteRange& rangeRes, const VoteRange& curVoteRange)
+std::pair<bool, bool> HgmFrameRateManager::MergeRangeByPriority(VoteRange& rangeRes, const VoteRange& curVoteRange)
 {
     auto &[min, max] = rangeRes;
     auto &[minTemp, maxTemp] = curVoteRange;
+    bool needMergeVoteInfo = false;
     if (minTemp > min) {
         min = minTemp;
         if (min >= max) {
             min = max;
-            return true;
+            return {true, needMergeVoteInfo};
         }
     }
     if (maxTemp < max) {
         max = maxTemp;
+        needMergeVoteInfo = true;
         if (min >= max) {
             max = min;
-            return true;
+            return {true, needMergeVoteInfo};
         }
     }
     if (min == max) {
-        return true;
+        return {true, needMergeVoteInfo};
     }
-    return false;
+    return {false, needMergeVoteInfo};
 }
 
 bool HgmFrameRateManager::MergeLtpo2IdleVote(
     std::vector<std::string>::iterator &voterIter, VoteInfo& resultVoteInfo, VoteRange &mergedVoteRange)
 {
     bool mergeSuccess = false;
-    auto log = [](std::string voter, pid_t pid, uint32_t minTemp, uint32_t maxTemp) {
-        RS_TRACE_NAME_FMT("Process voter:%s(pid:%d), value:[%d-%d] skip", voter.c_str(), pid, minTemp, maxTemp);
-        HGM_LOGI("Process:%{public}s(%{public}d):[%{public}d, %{public}d] skip", voter.c_str(), pid, minTemp, maxTemp);
-    };
     // [VOTER_LTPO, VOTER_IDLE)
     for (; voterIter != voters_.end() - 1; voterIter++) {
         if (voteRecord_.find(*voterIter) == voteRecord_.end()) {
@@ -1074,27 +1074,23 @@ bool HgmFrameRateManager::MergeLtpo2IdleVote(
 
         VoteInfo curVoteInfo = vec.back();
         if (!multiAppStrategy_.CheckPidValid(curVoteInfo.pid)) {
-            log(curVoteInfo.voterName, curVoteInfo.pid, curVoteInfo.min, curVoteInfo.max);
+            ProcessVoteLog(curVoteInfo, true);
             continue;
         }
         if (curVoteInfo.voterName == "VOTER_VIDEO") {
             auto foregroundPidApp = multiAppStrategy_.GetForegroundPidApp();
             if (foregroundPidApp.find(curVoteInfo.pid) == foregroundPidApp.end()) {
-                log(curVoteInfo.voterName, curVoteInfo.pid, curVoteInfo.min, curVoteInfo.max);
+                ProcessVoteLog(curVoteInfo, true);
                 continue;
             }
             auto configData = HgmCore::Instance().GetPolicyConfigData();
             if (configData != nullptr && configData->videoFrameRateList_.find(
                 foregroundPidApp[curVoteInfo.pid].second) == configData->videoFrameRateList_.end()) {
-                log(curVoteInfo.voterName, curVoteInfo.pid, curVoteInfo.min, curVoteInfo.max);
+                ProcessVoteLog(curVoteInfo, true);
                 continue;
             }
         }
-        RS_TRACE_NAME_FMT("Process voter:%s(pid:%d), value:[%d-%d]",
-            curVoteInfo.voterName.c_str(), curVoteInfo.pid, curVoteInfo.min, curVoteInfo.max);
-        // FORMAT voter(pid):[min，max]
-        HGM_LOGI("Process: %{public}s(%{public}d):[%{public}d, %{public}d]",
-            curVoteInfo.voterName.c_str(), curVoteInfo.pid, curVoteInfo.min, curVoteInfo.max);
+        ProcessVoteLog(curVoteInfo, false);
         if (mergeSuccess) {
             mergedVoteRange.first = mergedVoteRange.first > curVoteInfo.min ? mergedVoteRange.first : curVoteInfo.min;
             if (curVoteInfo.max >= mergedVoteRange.second) {
@@ -1113,8 +1109,10 @@ bool HgmFrameRateManager::MergeLtpo2IdleVote(
 VoteInfo HgmFrameRateManager::ProcessRefreshRateVote()
 {
     if (!isRefreshNeed_) {
-        RS_TRACE_NAME_FMT("Process nothing, lastVoteInfo: %s[%d, %d]",
-            lastVoteInfo_.voterName.c_str(), lastVoteInfo_.min, lastVoteInfo_.max);
+        const auto& packages = multiAppStrategy_.GetPackages();
+        RS_TRACE_NAME_FMT("Process nothing, lastVoteInfo: %s[%d, %d] curPackage: %s, touchState: %d",
+            lastVoteInfo_.voterName.c_str(), lastVoteInfo_.min, lastVoteInfo_.max,
+            packages.empty() ? "" : packages.front().c_str(), touchManager_.GetState());
         return lastVoteInfo_;
     }
     UpdateVoteRule();
@@ -1126,9 +1124,14 @@ VoteInfo HgmFrameRateManager::ProcessRefreshRateVote()
     auto &[min, max] = voteRange;
 
     for (auto voterIter = voters_.begin(); voterIter != voters_.end(); voterIter++) {
-        if (*voterIter == "VOTER_LTPO") {
-            VoteRange info;
-            if (MergeLtpo2IdleVote(voterIter, resultVoteInfo, info) && MergeRangeByPriority(voteRange, info)) {
+        VoteRange range;
+        VoteInfo info;
+        if (*voterIter == "VOTER_LTPO" && MergeLtpo2IdleVote(voterIter, info, range)) {
+            auto [mergeVoteRange, mergeVoteInfo] = MergeRangeByPriority(voteRange, range);
+            if (mergeVoteInfo) {
+                resultVoteInfo.Merge(info);
+            }
+            if (mergeVoteRange) {
                 break;
             }
         }
@@ -1139,22 +1142,17 @@ VoteInfo HgmFrameRateManager::ProcessRefreshRateVote()
         }
         VoteInfo curVoteInfo = voteRecord_[voter].back();
         if ((voter == "VOTER_GAMES" && !gameScenes_.empty()) || !multiAppStrategy_.CheckPidValid(curVoteInfo.pid)) {
-            RS_TRACE_NAME_FMT("Process voter:%s(pid:%d), value:[%d-%d] skip",
-                curVoteInfo.voterName.c_str(), curVoteInfo.pid, curVoteInfo.min, curVoteInfo.max);
-            HGM_LOGI("Process: %{public}s(%{public}d):[%{public}d, %{public}d] skip",
-                curVoteInfo.voterName.c_str(), curVoteInfo.pid, curVoteInfo.min, curVoteInfo.max);
+            ProcessVoteLog(curVoteInfo, true);
             continue;
         }
-
-        RS_TRACE_NAME_FMT("Process voter:%s(pid:%d), value:[%d-%d]",
-            curVoteInfo.voterName.c_str(), curVoteInfo.pid, curVoteInfo.min, curVoteInfo.max);
-        HGM_LOGI("Process: %{public}s(%{public}d):[%{public}d, %{public}d]",
-            curVoteInfo.voterName.c_str(), curVoteInfo.pid, curVoteInfo.min, curVoteInfo.max);
-        if (MergeRangeByPriority(voteRange, {curVoteInfo.min, curVoteInfo.max})) {
+        ProcessVoteLog(curVoteInfo, false);
+        auto [mergeVoteRange, mergeVoteInfo] = MergeRangeByPriority(voteRange, {curVoteInfo.min, curVoteInfo.max});
+        if (mergeVoteInfo) {
             resultVoteInfo.Merge(curVoteInfo);
+        }
+        if (mergeVoteRange) {
             break;
         }
-        resultVoteInfo.Merge(curVoteInfo);
     }
     isRefreshNeed_ = false;
     HGM_LOGI("Process: Strategy:%{public}s Screen:%{public}d Mode:%{public}d -- VoteResult:{%{public}d-%{public}d}",
@@ -1318,6 +1316,14 @@ void HgmFrameRateManager::ExitEnergyConsumptionAssuranceMode()
     HgmTaskHandleThread::Instance().RemoveEvent(UI_ENERGY_ASSURANCE_TASK_ID);
     HgmEnergyConsumptionPolicy::Instance().SetAnimationEnergyConsumptionAssuranceMode(false);
     HgmEnergyConsumptionPolicy::Instance().SetUiEnergyConsumptionAssuranceMode(false);
+}
+
+void HgmFrameRateManager::ProcessVoteLog(const VoteInfo& curVoteInfo, bool isSkip)
+{
+    RS_TRACE_NAME_FMT("Process voter:%s(pid:%d), value:[%d-%d] skip: %s",
+        curVoteInfo.voterName.c_str(), curVoteInfo.pid, curVoteInfo.min, curVoteInfo.max, isSkip ? "true" : "false");
+    HGM_LOGI("Process: %{public}s(%{public}d):[%{public}d, %{public}d] skip: %{public}s",
+        curVoteInfo.voterName.c_str(), curVoteInfo.pid, curVoteInfo.min, curVoteInfo.max, isSkip ? "true" : "false");
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -98,9 +98,8 @@ void RSUniRenderComposerAdapter::CommitLayers(const std::vector<LayerInfoPtr>& l
 
 void RSUniRenderComposerAdapter::SetPreBufferInfo(RSSurfaceHandler& surfaceHandler, ComposeInfo& info) const
 {
-    auto& preBuffer = surfaceHandler.GetPreBuffer();
-    info.preBuffer = preBuffer.buffer;
-    preBuffer.Reset();
+    info.preBuffer = surfaceHandler.GetPreBuffer();
+    surfaceHandler.ResetPreBuffer();
 }
 
 // private func, for RSDisplayRenderNode
@@ -149,8 +148,10 @@ ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(DrawableV2::RSDisplayRe
         matrix.Get(Drawing::Matrix::Index::PERSP_1), matrix.Get(Drawing::Matrix::Index::PERSP_2)};
     info.gravity = static_cast<int32_t>(Gravity::RESIZE);
 
-    info.displayNit = DEFAULT_BRIGHTNESS;
-    info.brightnessRatio = NO_RATIO;
+    const auto curDisplayParam = static_cast<RSDisplayRenderParams*>(displayDrawable.GetRenderParams().get());
+    if (curDisplayParam) {
+        info.brightnessRatio = curDisplayParam->GetBrightnessRatio();
+    }
     return info;
 }
 
