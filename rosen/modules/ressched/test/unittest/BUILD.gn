@@ -37,8 +37,3 @@ ohos_unittest("graphic_ressched_test") {
     "resource_schedule_service:ressched_client",
   ]
 }
-
-
-
-
-
