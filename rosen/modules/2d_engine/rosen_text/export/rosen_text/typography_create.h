@@ -41,11 +41,8 @@ struct PlaceholderSpan {
     PlaceholderVerticalAlignment alignment;
     TextBaseline baseline;
     double baselineOffset;
-    PlaceholderSpan()
-        : width(0.0)
-          , height(0.0)
-          , baselineOffset(0.0) {
-    }
+
+    PlaceholderSpan() : width(0.0), height(0.0), baselineOffset(0.0) {}
 };
 
 class RS_EXPORT TypographyCreate {

@@ -281,7 +281,7 @@ bool JsFontCollection::ParseResourcePath(const std::string familyName, ResourceI
         return false;
     }
 
-    if(info.params.empty()){
+    if (info.params.empty()) {
         return false;
     }
 
@@ -320,7 +320,7 @@ bool JsFontCollection::GetFontFileProperties(const std::string path, const std::
 {
     size_t datalen;
 
-    if(fontcollection_ == nullptr){
+    if (fontcollection_ == nullptr) {
         TEXT_LOGE("fontcollection_ is nullptr");
         return false;
     }
@@ -382,16 +382,16 @@ napi_value JsFontCollection::OnLoadFont(napi_env env, napi_callback_info info)
     }
     std::string familyName;
     std::string familySrc;
-    if(!ConvertFromJsValue(env, argv[0], familyName)){
-        TEXT_LOGE("JsFontCollection::OnLoadFont argv[0] convert fail");
-        return false;
+    if (!ConvertFromJsValue(env, argv[0], familyName)) {
+        TEXT_LOGE("OnLoadFont argv[0] convert fail");
+        return nullptr;
     }
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[1], &valueType);
     if (valueType != napi_object) {
-        if(!ConvertFromJsValue(env, argv[1], familySrc)){
-            TEXT_LOGE("JsFontCollection::OnLoadFont argv[1] convert fail");
-            return false;
+        if (!ConvertFromJsValue(env, argv[1], familySrc)) {
+            TEXT_LOGE("OnLoadFont argv[1] convert fail");
+            return nullptr;
         }
         if (!SpiltAbsoluteFontPath(familySrc) || !GetFontFileProperties(familySrc, familyName)) {
             return nullptr;
