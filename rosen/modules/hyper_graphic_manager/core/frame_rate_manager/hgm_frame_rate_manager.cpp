@@ -113,19 +113,23 @@ void HgmFrameRateManager::Init(sptr<VSyncController> rsController,
 void HgmFrameRateManager::RegisterCoreCallbacksAndInitController(sptr<VSyncController> rsController,
     sptr<VSyncController> appController, sptr<VSyncGenerator> vsyncGenerator)
 {
+    if (rsController == nullptr || appController == nullptr) {
+        HGM_LOGE("HgmFrameRateManager::rsController or appController is nullptr");
+        return;
+    }
     auto& hgmCore = HgmCore::Instance();
     hgmCore.RegisterRefreshRateModeChangeCallback([rsController, appController](int32_t mode) {
-        int64_t offset = 0;
-        if (!HgmCore::Instance().IsLTPOSwitchOn() && RSUniRenderJudgement::IsUniRender()) {
-            offset = UNI_RENDER_VSYNC_OFFSET;
+        if (HgmCore::Instance().IsLTPOSwitchOn()) {
+            rsController->SetPhaseOffset(0);
+            appController->SetPhaseOffset(0);
+            CreateVSyncGenerator()->SetVSyncMode(VSYNC_MODE_LTPO);
+        } else {
+            if (RSUniRenderJudgement::IsUniRender()) {
+                rsController->SetPhaseOffset(UNI_RENDER_VSYNC_OFFSET);
+                appController->SetPhaseOffset(UNI_RENDER_VSYNC_OFFSET);
+            }
+            CreateVSyncGenerator()->SetVSyncMode(VSYNC_MODE_LTPS);
         }
-        if (rsController) {
-            rsController->SetPhaseOffset(offset);
-        }
-        if (appController) {
-            appController->SetPhaseOffset(offset);
-        }
-        CreateVSyncGenerator()->SetVSyncMode(HgmCore::Instance().IsLTPOSwitchOn() ? VSYNC_MODE_LTPO : VSYNC_MODE_LTPS);
     });
 
     hgmCore.RegisterRefreshRateUpdateCallback([](int32_t refreshRate) {
@@ -441,6 +445,10 @@ bool HgmFrameRateManager::CollectFrameRateChange(FrameRateRange finalRange,
                                                  std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker,
                                                  const FrameRateLinkerMap& appFrameRateLinkers)
 {
+    if (controller_ == nullptr) {
+        HGM_LOGE("no valid controller, cannot work correctly, maybe Init() wasn't executed correctly.");
+        return false;
+    }
     bool frameRateChanged = false;
     bool controllerRateChanged = false;
     auto rsFrameRate = GetDrawingFrameRate(currRefreshRate_, finalRange);
@@ -507,7 +515,9 @@ void HgmFrameRateManager::HandleFrameRateChangeForLTPO(uint64_t timestamp)
 
     RSTaskMessage::RSTask task = [this, lastRefreshRate, targetTime]() {
         std::lock_guard<std::mutex> lock(appChangeDataMutex_);
-        controller_->ChangeGeneratorRate(controllerRate_, appChangeData_, targetTime, isNeedUpdateAppOffset_);
+        if (controller_) {
+            controller_->ChangeGeneratorRate(controllerRate_, appChangeData_, targetTime, isNeedUpdateAppOffset_);
+        }
         isNeedUpdateAppOffset_ = false;
         pendingRefreshRate_ = std::make_shared<uint32_t>(currRefreshRate_);
         if (currRefreshRate_ != lastRefreshRate) {
