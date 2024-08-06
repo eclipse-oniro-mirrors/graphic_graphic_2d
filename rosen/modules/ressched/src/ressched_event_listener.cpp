@@ -20,7 +20,7 @@
 
 namespace OHOS {
 namespace Rosen {
-std::once_flag Ressch edEventListener::createFlag_;
+std::once_flag ResschedEventListener::createFlag_;
 sptr<ResschedEventListener> ResschedEventListener::instance_ = nullptr;
 constexpr uint64_t SAMPLE_TIME = 100000000;
 sptr<ResschedEventListener> ResschedEventListener::GetInstance() noexcept

@@ -47,7 +47,6 @@ config("vsync_public_config") {
   if (graphic_2d_feature_enable_dvsync) {
     include_dirs += [ "$graphic_2d_ext_root/dvsync/include" ]
   }
-
   if (defined(global_parts_info) &&
       defined(global_parts_info.resourceschedule_resource_schedule_service)) {
       include_dirs += ["$graphic_2d_root/rosen/modules/ressched/include"]
