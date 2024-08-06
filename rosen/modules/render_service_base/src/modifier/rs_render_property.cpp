@@ -410,6 +410,12 @@ void RSRenderProperty<Color>::Dump(std::string& out) const
 template<>
 void RSRenderProperty<std::shared_ptr<RSFilter>>::Dump(std::string& out) const
 {
+    auto filter = Get();
+    out += "[";
+    if (filter != nullptr && filter->IsValid()) {
+        out += filter->GetDescription();
+    }
+    out += "]";
 }
 
 template<>
