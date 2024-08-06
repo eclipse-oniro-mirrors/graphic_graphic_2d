@@ -15,6 +15,8 @@
 #include <gtest/gtest.h>
 #include "ressched_event_listener.h"
 
+#include "res_sched_client.h"
+#include "res_type.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -73,6 +75,7 @@ HWTEST_F(ResschedEventListenerTest, OnReceiveEvent001, Function | MediumTest| Le
  */
 HWTEST_F(ResschedEventListenerTest, ReportFrameToRSS001, Function | MediumTest| Level3)
 {
+    std::unordered_map<std::string, std::string> extInfo;
     ResschedEventListener::GetInstance()->OnReceiveEvent(ResourceSchedule::ResType::EventType::EVENT_DRAW_FRAME_REPORT,
         ResourceSchedule::ResType::EventValue::EVENT_VALUE_DRAW_FRAME_REPORT_START, extInfo);
     ResschedEventListener::GetInstance()->ReportFrameToRSS();
