@@ -1329,6 +1329,11 @@ char** OH_Drawing_FontParserGetSystemFontList(OH_Drawing_FontParser* fontParser,
     icu::Locale locale = icu::Locale::getDefault();
     std::vector<TextEngine::FontParser::FontDescriptor> systemFontList =
         ConvertToOriginalText<TextEngine::FontParser>(fontParser)->GetVisibilityFonts(std::string(locale.getName()));
+
+    if (systemFontList.empty()) {
+        *num = 0;
+        return nullptr;
+    }
     fontList = new char* [systemFontList.size()];
     if (fontList == nullptr) {
         return nullptr;
@@ -1337,12 +1342,12 @@ char** OH_Drawing_FontParserGetSystemFontList(OH_Drawing_FontParser* fontParser,
         fontList[i] = nullptr;
         bool res = CopyStrData(&fontList[i], systemFontList[i].fullName);
         if (!res) {
-            for (size_t j = i; j >= 0; j--) {
-                delete fontList[j];
-                fontList[j] = nullptr;
+            for (size_t j = 0; j <= i; j++) {
+                delete[] fontList[j];
             }
             delete[] fontList;
             fontList = nullptr;
+            *num = 0;
             return nullptr;
         }
     }

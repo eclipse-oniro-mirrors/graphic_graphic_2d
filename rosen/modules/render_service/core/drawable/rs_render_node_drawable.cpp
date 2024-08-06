@@ -303,6 +303,22 @@ void RSRenderNodeDrawable::DrawDfxForCacheInfo(RSPaintFilterCanvas& canvas)
     }
 }
 
+void RSRenderNodeDrawable::DumpDrawableTree(std::string& out) const
+{
+    std::function<void()> dumpDrawableTreeSyncTask = [&out, this]() -> void {
+        if (skipType_ != DrawableV2::SkipType::NONE) {
+            out += ", SkipType:" + std::to_string(static_cast<int>(skipType_));
+            out += ", SkipIndex:" + std::to_string(GetSkipIndex());
+        }
+        out += "\n";
+        auto& params = GetRenderParams();
+        if (params) {
+            out += ", params" + params->ToString();
+        }
+    };
+    RSUniRenderThread::Instance().PostSyncTask(dumpDrawableTreeSyncTask);
+}
+
 void RSRenderNodeDrawable::SetCacheType(DrawableCacheType cacheType)
 {
     cacheType_ = cacheType;
@@ -593,6 +609,7 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
     // So set isOpDropped_ = false here.
     bool isOpDropped = isOpDropped_;
     isOpDropped_ = false;
+    Drawing::AutoCanvasRestore arc(*cacheCanvas, true);
     cacheCanvas->Clear(Drawing::Color::COLOR_TRANSPARENT);
 
     OpincCanvasUnionTranslate(*cacheCanvas);
