@@ -497,7 +497,6 @@ void HgmMultiAppStrategy::CheckPackageInConfigList(const std::vector<std::string
             rsCommonHook.SetHardwareEnabledByBackgroundAlphaFlag(true);
         }
     }
-
 }
 } // namespace Rosen
 } // namespace OHOS
