@@ -5214,17 +5214,17 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHardwareStateByHwcNodeBackgroundAlpha, Te
 }
 
 /**
- * @tc.name: IsNodeBelowInsideOfNodeAbove
- * @tc.desc: Test RSUnitRenderVisitorTest.IsNodeBelowInsideOfNodeAbove
+ * @tc.name: IsNodeAboveInsideOfNodeBelow
+ * @tc.desc: Test RSUnitRenderVisitorTest.IsNodeAboveInsideOfNodeBelow
  * @tc.type: FUNC
  * @tc.require: IAHFXD
  */
-HWTEST_F(RSUniRenderVisitorTest, IsNodeBelowInsideOfNodeAbove, TestSize.Level1)
+HWTEST_F(RSUniRenderVisitorTest, IsNodeAboveInsideOfNodeBelow, TestSize.Level1)
 {
     const RectI rectAbove;
     std::list<RectI> hwcNodeRectList;
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    rsUniRenderVisitor->IsNodeBelowInsideOfNodeAbove(rectAbove, hwcNodeRectList);
+    rsUniRenderVisitor->IsNodeAboveInsideOfNodeBelow(rectAbove, hwcNodeRectList);
 }
 
 } // OHOS::Rosen
