@@ -211,7 +211,8 @@ bool JsFontCollection::GetResourcePartData(napi_env env, ResourceInfo& info, nap
             napi_get_value_int32(env, indexValue, &num);
             info.params.emplace_back(std::to_string(num));
         } else {
-            TEXT_LOGE("invalid argument");
+            TEXT_LOGE("invalid argument %{public}d", valueType);
+            return false;
         }
     }
 
@@ -279,6 +280,11 @@ bool JsFontCollection::ParseResourcePath(const std::string familyName, ResourceI
     if (reSourceManager == nullptr) {
         return false;
     }
+
+    if(info.params.empty()){
+        return false;
+    }
+
     if (info.type == static_cast<int32_t>(ResourceType::STRING)) {
         std::string rPath;
         if (info.resId < 0 && info.params[0].size() > 0) {
@@ -313,6 +319,11 @@ bool JsFontCollection::ParseResourcePath(const std::string familyName, ResourceI
 bool JsFontCollection::GetFontFileProperties(const std::string path, const std::string familyName)
 {
     size_t datalen;
+
+    if(fontcollection_ == nullptr){
+        TEXT_LOGE("fontcollection_ is nullptr");
+        return false;
+    }
 
     char tmpPath[PATH_MAX] = {0};
     if (realpath(path.c_str(), tmpPath) == nullptr) {
@@ -371,11 +382,17 @@ napi_value JsFontCollection::OnLoadFont(napi_env env, napi_callback_info info)
     }
     std::string familyName;
     std::string familySrc;
-    ConvertFromJsValue(env, argv[0], familyName);
+    if(!ConvertFromJsValue(env, argv[0], familyName)){
+        TEXT_LOGE("JsFontCollection::OnLoadFont argv[0] convert fail");
+        return false;
+    }
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, argv[1], &valueType);
     if (valueType != napi_object) {
-        ConvertFromJsValue(env, argv[1], familySrc);
+        if(!ConvertFromJsValue(env, argv[1], familySrc)){
+            TEXT_LOGE("JsFontCollection::OnLoadFont argv[1] convert fail");
+            return false;
+        }
         if (!SpiltAbsoluteFontPath(familySrc) || !GetFontFileProperties(familySrc, familyName)) {
             return nullptr;
         }

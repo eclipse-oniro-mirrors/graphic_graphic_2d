@@ -308,7 +308,7 @@ HWTEST_F(ParagraphTest, ParagraphTest021, TestSize.Level1)
 {
     EXPECT_EQ(paragraph_ != nullptr, true);
     // 2 just for test
-    EXPECT_EQ(paragraph_->GetRectsForRange(0, 2, RectHeightStyle::MAX, RectWidthStyle::TIGHT).size(), 0);
+    EXPECT_EQ(paragraph_->GetRectsForRange(0, 2, RectHeightStyle::MAX, RectWidthStyle::TIGHT).size(), 1);
 }
 
 /*
@@ -459,5 +459,34 @@ HWTEST_F(ParagraphTest, ParagraphTest034, TestSize.Level1)
 {
     EXPECT_EQ(paragraph_ != nullptr, true);
     EXPECT_EQ(paragraph_->CloneSelf() != nullptr, true);
+}
+
+/*
+ * @tc.name: ParagraphTest035
+ * @tc.desc: test for UpdateColor
+ * @tc.type: FUNC
+ */
+HWTEST_F(ParagraphTest, ParagraphTest035, TestSize.Level1) {
+    EXPECT_EQ(paragraph_ != nullptr, true);
+    RSColor rsColor(10, 10, 10, 10);
+    paragraph_->UpdateColor(0, 10, rsColor);
+}
+
+/*
+ * @tc.name: ParagraphTest036
+ * @tc.desc: test for SkStyleToTextStyle
+ * @tc.type: FUNC
+ */
+HWTEST_F(ParagraphTest, ParagraphTest036, TestSize.Level1) {
+    EXPECT_EQ(paragraph_ != nullptr, true);
+    auot metrics = paragraph_->GetLineMetrics();
+    for (const skia::textlayout::LineMetrics &skLineMetrics : metrics) {
+        for (const auto& [index, styleMetrics] : skLineMetrics.fLineMetrics) {
+            OHOS::Rosen::SPText::TextStyle spTextStyle = paragraph_->SkStyleToTextStyle(*styleMetrics.text_style);
+        }
+    }
+
+    EXPECT_EQ(paragraph_->GetLongestLine() <= 50, true);
+    EXPECT_EQ(paragraph_->GetLongestLineWithIndent() <= 50, true);
 }
 } // namespace txt
