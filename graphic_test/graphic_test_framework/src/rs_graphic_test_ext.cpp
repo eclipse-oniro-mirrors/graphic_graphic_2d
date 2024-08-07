@@ -42,7 +42,7 @@ bool TestDefManager::Regist(const char* testCaseName, const char* testName,
     std::string startPath = "graphic_test/";
     size_t startPos = std::string(filePath).find(startPath) + startPath.length();
     if (startPos == std::string::npos) {
-        LOGE("TestDefManager::Regist fail filePath %{public}s", filePath.c_str());
+        LOGE("TestDefManager::Regist fail filePath %{public}s", filePath);
         return false;
     }
 
