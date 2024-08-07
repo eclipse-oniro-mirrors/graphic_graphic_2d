@@ -54,7 +54,7 @@ void ResschedEventListener::ReportFrameToRSS()
                     std::chrono::steady_clock::now().time_since_epoch()).count());
         if (GetIsFirstReport() ||
             lastReportTime_ == 0 || currTime - lastReportTime_ >= SAMPLE_TIME) {
-            RS_TRACE_BEGIN("ReportFrameToRSS")
+            RS_TRACE_BEGIN("ReportFrameToRSS");
             uint32_t type = OHOS::ResourceSchedule::ResType::RES_TYPE_SEND_FRAME_EVENT;
             int64_t value = 0;
             std::unordered_map<std::string, std::string> mapPayload;
