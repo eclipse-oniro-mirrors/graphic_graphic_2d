@@ -273,6 +273,11 @@ void RSDividedUICapture::RSDividedUICaptureVisitor::ProcessSurfaceRenderNode(RSS
     }
     // draw pixelmap in canvas
     auto image = RSPixelMapUtil::ExtractDrawingImage(pixelMap);
+    if (image == nullptr) {
+        ROSEN_LOGE("RSDividedUICaptureVisitor::ProcessSurfaceRenderNode, failed to extract drawing image from "
+                   "pixelMap, image is nullptr");
+        return;
+    }
     canvas_->DrawImage(*image, node.GetRenderProperties().GetBoundsPositionX(),
         node.GetRenderProperties().GetBoundsPositionY(), Drawing::SamplingOptions());
     ProcessChildren(node);
