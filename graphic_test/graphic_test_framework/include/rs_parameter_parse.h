@@ -36,7 +36,7 @@ public:
     int manualTestWaitTime = 1500; //ms
     std::unordered_set<RSGraphicTestType> filterTestTypes = {};
     RSGraphicTestMode runTestMode = RSGraphicTestMode::ALL;
-    int32_t vsynRate = 1;
+    int32_t vsyncRate = 1;
 };
 
 } // namespace Rosen

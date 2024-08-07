@@ -67,7 +67,7 @@ public:
     {
         frameCallback_ = {
             .userData_ = this,
-            .callback_ = std::bind(&VSyncWaiter::OnVSync, this);
+            .callback_ = std::bind(&VSyncWaiter::OnVSync, this),
         };
         vsyncReceiver_ = RSInterfaces::GetInstance().CreateVSyncReceiver("RSGraphicTest", handler);
         vsyncReceiver_->Init();
@@ -96,7 +96,7 @@ private:
     size_t counts_ = 0;
     std::shared_ptr<OHOS::Rosen::VSyncReceiver> vsyncReceiver_;
     Rosen::VSyncReceiver::FrameCallback frameCallback_;
-}
+};
 
 RSGraphicTestDirector& RSGraphicTestDirector::Instance()
 {
