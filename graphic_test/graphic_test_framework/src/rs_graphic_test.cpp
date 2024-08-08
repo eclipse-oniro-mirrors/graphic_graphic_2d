@@ -122,10 +122,12 @@ void RSGraphicTest::TearDown()
                 LOGE("RSGraphicTest::TearDown write image failed %{public}s-%{public}s",
                     testInfo->test_case_name(), testInfo->name());
             }
+            std::cout << "png write to " << filename << std::endl;
         }
     }
 
     AfterEach();
+    WaitTimeout(RSParameterParse::Instance().testCaseWaitTime);
 
     GetRootNode()->ResetTestSurface();
     RSGraphicTestDirector::Instance().FlushMessage();
