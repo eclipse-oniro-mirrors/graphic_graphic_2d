@@ -438,7 +438,8 @@ HWTEST_F(RSUiCaptureTaskParallelTest, CreateResources002, Function | SmallTest |
     // RSSurfaceRenderNode
     NodeId surfaceRenderNodeId = 101;
     RSSurfaceCaptureConfig config1;
-    auto surfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(surfaceRenderNodeId, std::make_shared<RSContext>(), true);
+    auto surfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(surfaceRenderNodeId, std::make_shared<RSContext>(),
+        true);
     nodeMap.RegisterRenderNode(surfaceRenderNode);
     auto surfaceRenderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(surfaceRenderNodeId, config1);
     ASSERT_EQ(surfaceRenderNodeHandle->CreateResources(), false);
@@ -446,7 +447,8 @@ HWTEST_F(RSUiCaptureTaskParallelTest, CreateResources002, Function | SmallTest |
     // RSCanvasRenderNode
     NodeId canvasRenderNodeId = 102;
     RSSurfaceCaptureConfig config2;
-    auto canvasRenderNode = std::make_shared<RSCanvasRenderNode>(canvasRenderNodeId, std::make_shared<RSContext>(), true);
+    auto canvasRenderNode = std::make_shared<RSCanvasRenderNode>(canvasRenderNodeId, std::make_shared<RSContext>(),
+        true);
     nodeMap.RegisterRenderNode(canvasRenderNode);
     auto canvasRenderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(canvasRenderNodeId, config2);
     ASSERT_EQ(canvasRenderNodeHandle->CreateResources(), false);
