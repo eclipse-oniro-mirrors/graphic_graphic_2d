@@ -408,12 +408,12 @@ HWTEST_F(RSUiCaptureTaskParallelTest, TakeSurfaceCaptureForUiNotOnTree, Function
 }
 
 /*
- * @tc.name: RSUiCaptureTaskParallel_CreateResources
+ * @tc.name: CreateResources001
  * @tc.desc: Test RSUiCaptureTaskParallel::CreateResources
  * @tc.type: FUNC
  * @tc.require: issueIA6QID
 */
-HWTEST_F(RSUiCaptureTaskParallelTest, RSUiCaptureTaskParallel_CreateResources, Function | SmallTest | Level2)
+HWTEST_F(RSUiCaptureTaskParallelTest, CreateResources001, Function | SmallTest | Level2)
 {
     NodeId id = -1; // invalid id
     RSSurfaceCaptureConfig captureConfig;
