@@ -1811,7 +1811,7 @@ bool RSRenderServiceConnection::SetVirtualScreenStatus(ScreenId id, VirtualScree
 bool RSRenderServiceConnection::SetAncoForceDoDirect(bool direct)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    mainThread_->SetAncoForceDoDirect(remotePid_, userId, callback);
+    mainThread_->SetAncoForceDoDirect(direct);
     return true;
 }
 
