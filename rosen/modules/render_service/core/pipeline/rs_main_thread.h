@@ -291,7 +291,6 @@ public:
     void SetSurfaceCapProcFinished(bool flag);
 
     bool GetParallelCompositionEnabled();
-    std::shared_ptr<HgmFrameRateManager> GetFrameRateMgr() { return frameRateMgr_; };
     void SetFrameIsRender(bool isRender);
     const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& GetSelfDrawingNodes() const;
 
@@ -591,8 +590,7 @@ private:
     bool doParallelComposition_ = false;
     bool hasProtectedLayer_ = false;
 
-    std::shared_ptr<HgmFrameRateManager> frameRateMgr_ = nullptr;
-    std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker_ = nullptr;
+    std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker_ = nullptr; // modify by HgmThread
     pid_t desktopPidForRotationScene_ = 0;
     FrameRateRange rsCurrRange_;
 
