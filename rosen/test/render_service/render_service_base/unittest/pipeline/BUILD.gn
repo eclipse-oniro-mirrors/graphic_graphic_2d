@@ -1431,7 +1431,6 @@ group("unittest") {
     ":RSRenderNodeGCTest",
     ":RSRenderNodeMapTest",
     ":RSRenderNodeTest",
-    ":RSRenderNodeTest2",
     ":RSRootRenderNodeTest",
     ":RSSingleFrameComposerTest",
     ":RSSurfaceHandlerTest",
