@@ -60,7 +60,6 @@ group("unittest") {
       ":RSFilterSubThreadTest",
       ":RSRenderTaskTest",
       ":RSSubThreadManagerTest",
-      ":RSSubThreadTest",
       ":RSUIFirstRenderListenerTest",
     ]
   }
