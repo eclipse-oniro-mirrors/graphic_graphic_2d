@@ -33,6 +33,39 @@ function printResults(canvas: drawing.Canvas, isPassed: Boolean) {
   canvas.drawTextBlob(blob, 10, 50);
 }
 
+export class CanvasClear extends TestBase {
+
+  region_: drawing.Region | undefined;
+
+  public constructor(){
+    super();
+    this.region_ = new drawing.Region();
+    this.region_.setRect(0, 0, 500, 500);
+  }
+
+  public OnTestFunction(canvas: drawing.Canvas): void {
+    try {
+      canvas.clear({ alpha: 255, red: 255, green: 0, blue: 0 });
+    } catch (e) {
+      console.log("canvasClear exception: " + e);
+      printResults(canvas, false);
+    }
+    try {
+      canvas.clear(0xffff0000);
+    } catch (e) {
+      console.log("canvasClear exception: " + e);
+      printResults(canvas, false);
+    }
+  }
+
+  public OnTestPerformance(canvas: drawing.Canvas) {
+    for (let i = 0; i < this.testCount_; i++) {
+      canvas.clear(0xffff0000);
+    }
+    printResults(canvas, true);
+  }
+}
+
 export class CanvasDrawRect extends TestBase {
 
   public constructor(styleType: number = StyleType.DRAW_STYLE_NONE){
