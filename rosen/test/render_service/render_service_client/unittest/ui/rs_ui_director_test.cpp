@@ -17,6 +17,7 @@
 #include "gtest/gtest.h"
 #include "animation/rs_render_animation.h"
 #include "pipeline/rs_render_result.h"
+#include "pipeline/rs_node_map.h"
 #include "modifier/rs_modifier_manager.h"
 #include "surface.h"
 #include "ui/rs_canvas_node.h"
@@ -124,6 +125,7 @@ HWTEST_F(RSUIDirectorTest, PlatformInit001, TestSize.Level1)
     std::string cacheDir = "test";
     director->SetCacheDir(cacheDir);
     ASSERT_TRUE(!director->cacheDir_.empty());
+    director->Init(false);
 }
 
 /**
@@ -426,9 +428,15 @@ HWTEST_F(RSUIDirectorTest, GoGround, TestSize.Level1)
     node->AttachRSSurfaceNode(surfaceNode);
     director->SetRSSurfaceNode(surfaceNode);
     director->SetRoot(node->GetId());
+    RSRootNode::SharedPtr nodePtr = std::make_shared<RSRootNode>(node->GetId());
+    nodePtr->SetId(node->GetId());
     director->StartTextureExport();
     director->GoForeground();
     director->GoBackground();
+    bool res = RSNodeMap::MutableInstance().RegisterNode(nodePtr);
+    director->GoForeground();
+    director->GoBackground();
+    ASSERT_TRUE(res);
 }
 
 /**
