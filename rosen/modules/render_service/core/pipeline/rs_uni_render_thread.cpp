@@ -775,13 +775,14 @@ void RSUniRenderThread::MemoryManagementBetweenFrames()
 
 void RSUniRenderThread::RenderServiceTreeDump(std::string& dumpString) const
 {
-    const std::shared_ptr<RSBaseRenderNode> rootNode =
-        RSMainThread::Instance()->GetContext().GetGlobalRootRenderNode();
-    if (!rootNode) {
-        dumpString += "rootNode is nullptr";
-        return;
-    }
-    rootNode->DumpDrawableTree(0, dumpString);
+    auto task = [this, &dumpString]() {
+        if (!rootNodeDrawable_) {
+            dumpString.append("rootNode is null\n");
+            return;
+        }
+        rootNodeDrawable_->DumpDrawableTree(0, dumpString, RSMainThread::Instance()->GetContext());
+    };
+    PostSyncTask(task);
 }
 
 void RSUniRenderThread::UpdateDisplayNodeScreenId()
