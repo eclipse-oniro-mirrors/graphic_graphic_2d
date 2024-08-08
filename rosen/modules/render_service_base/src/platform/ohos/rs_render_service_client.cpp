@@ -1443,7 +1443,7 @@ bool RSRenderServiceClient::SetVirtualScreenStatus(ScreenId id, VirtualScreenSta
     return false;
 }
 
-void RSRenderServiceClient::SetAncoForceDoDirect(bool direct)
+bool RSRenderServiceClient::SetAncoForceDoDirect(bool direct)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService != nullptr) {
