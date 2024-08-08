@@ -479,14 +479,12 @@ HWTEST_F(RSUiCaptureTaskParallelTest, CreateResources003, Function | SmallTest |
     parent1->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
     parent1->hasSubNodeShouldPaint_ = false;
     renderNode->parent_ = parent1;
-    renderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(nodeId, config);
     ASSERT_EQ(renderNodeHandle->CreateResources(), true);
 
     auto parent2 = std::make_shared<RSSurfaceRenderNode>(parentNodeId, std::make_shared<RSContext>(), true);
     parent2->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
     parent2->hasSubNodeShouldPaint_ = true;
     renderNode->parent_ = parent2;
-    renderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(nodeId, config);
     ASSERT_EQ(renderNodeHandle->CreateResources(), true);
 
     auto parent3 = std::make_shared<RSSurfaceRenderNode>(parentNodeId, std::make_shared<RSContext>(), true);
@@ -494,7 +492,6 @@ HWTEST_F(RSUiCaptureTaskParallelTest, CreateResources003, Function | SmallTest |
     parent3->hasSubNodeShouldPaint_ = true;
     parent3->lastFrameUifirstFlag_ = MultiThreadCacheType::LEASH_WINDOW;
     renderNode->parent_ = parent3;
-    renderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(nodeId, config);
     ASSERT_EQ(renderNodeHandle->CreateResources(), false);
 
     auto parent4 = std::make_shared<RSSurfaceRenderNode>(parentNodeId, std::make_shared<RSContext>(), true);
@@ -504,7 +501,6 @@ HWTEST_F(RSUiCaptureTaskParallelTest, CreateResources003, Function | SmallTest |
     parent4->renderContent_->renderProperties_.SetBoundsWidth(1024.0f);
     parent4->renderContent_->renderProperties_.SetBoundsHeight(1024.0f);
     renderNode->parent_ = parent4;
-    renderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(nodeId, config);
     ASSERT_EQ(renderNodeHandle->CreateResources(), true);
 }
 
