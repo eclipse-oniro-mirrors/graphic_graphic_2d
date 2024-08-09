@@ -560,6 +560,9 @@ HWTEST_F(RSUiCaptureTaskParallelTest, Run002, Function | SmallTest | Level2)
 
     handle->CreateResources();
     ASSERT_EQ(handle->Run(mockCallback), true);
+
+    handle->nodeDrawable_ = nullptr;
+    ASSERT_EQ(handle->Run(mockCallback), false);
 }
 
 /*
