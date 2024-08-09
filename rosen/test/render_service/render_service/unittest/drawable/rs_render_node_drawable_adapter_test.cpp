@@ -282,7 +282,7 @@ HWTEST(RSRenderNodeDrawableAdapterTest, DrawRangeImplAndRelatedTest, TestSize.Le
     EXPECT_LE(start, skipIndex);
     EXPECT_GT(end, skipIndex);
     adapter->DrawRangeImpl(drawingCanvas, rect, start, end + 1);
-
+    adapter->DrawRangeImpl(drawingCanvas, rect, start, end);
     std::vector<Drawing::RecordingCanvas::DrawFunc> drawCmdList;
     adapter->drawCmdList_.swap(drawCmdList);
 }
