@@ -1492,6 +1492,13 @@ void RSNode::SetBackgroundFilter(const std::shared_ptr<RSFilter>& backgroundFilt
         SetBackgroundBlurBrightness(Brightness);
         SetBackgroundBlurMaskColor(MaskColor);
         SetBackgroundBlurColorMode(ColorMode);
+
+        char maskColorStr[UINT8_MAX] = { 0 };
+        if (sprintf_s(maskColorStr, UINT8_MAX, "%08X", MaskColor.AsArgbInt()) != -1) {
+            bgFilterDescription_ = "MaterialFilter, radius: " + std::to_string(Radius) + " sigma" +
+            ", saturation: " + std::to_string(Saturation) + ", brightness: " + std::to_string(Brightness) +
+            ", color: " + maskColorStr + ", colorMode: " + std::to_string(ColorMode) + "Id: " + std::to_string(id_);
+        }
     } else if (backgroundFilter->GetFilterType() == RSFilter::BLUR) {
         auto blurFilter = std::static_pointer_cast<RSBlurFilter>(backgroundFilter);
         float blurRadiusX = blurFilter->GetBlurRadiusX();
@@ -1499,6 +1506,11 @@ void RSNode::SetBackgroundFilter(const std::shared_ptr<RSFilter>& backgroundFilt
         SetBackgroundBlurRadiusX(blurRadiusX);
         SetBackgroundBlurRadiusY(blurRadiusY);
     }
+}
+
+std::string RSNode::GetBackgroundFilterDescription()
+{
+    return bgFilterDescription_;
 }
 
 void RSNode::SetFilter(const std::shared_ptr<RSFilter>& filter)
