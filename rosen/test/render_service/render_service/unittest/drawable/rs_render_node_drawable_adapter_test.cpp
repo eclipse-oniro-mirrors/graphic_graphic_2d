@@ -233,7 +233,6 @@ HWTEST(RSRenderNodeDrawableAdapterTest, DumpDrawableVecTest, TestSize.Level1)
     auto adapter = std::make_shared<RSRenderNodeDrawable>(node);
     auto retStr = node->DumpDrawableVec();
     EXPECT_TRUE(retStr.empty());
-
     auto renderNode = std::make_shared<RSRenderNode>(id + 1);
     auto rSChildrenDrawableBrother = std::make_shared<RSChildrenDrawableBrotherAdapter>();
     renderNode->drawableVec_[static_cast<int32_t>(RSDrawableSlot::CHILDREN)] = std::move(rSChildrenDrawableBrother);
