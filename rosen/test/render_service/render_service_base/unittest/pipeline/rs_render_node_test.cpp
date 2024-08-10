@@ -1326,7 +1326,7 @@ HWTEST_F(RSRenderNodeTest, RSRenderNodeDumpTest002, TestSize.Level1)
  * @tc.name: RSSurfaceRenderNodeDumpTest
  * @tc.desc: DumpNodeType DumpTree and DumpSubClassNode test
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: issueIAJ6BA
  */
 HWTEST_F(RSRenderNodeTest, RSSurfaceRenderNodeDumpTest, TestSize.Level1)
 {
@@ -1341,7 +1341,7 @@ HWTEST_F(RSRenderNodeTest, RSSurfaceRenderNodeDumpTest, TestSize.Level1)
  * @tc.name: RSDisplayRenderNodeDumpTest
  * @tc.desc: DumpNodeType DumpTree and DumpSubClassNode test
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: issueIAJ6BA
  */
 HWTEST_F(RSRenderNodeTest, RSDisplayRenderNodeDumpTest, TestSize.Level1)
 {
@@ -1356,7 +1356,7 @@ HWTEST_F(RSRenderNodeTest, RSDisplayRenderNodeDumpTest, TestSize.Level1)
  * @tc.name: RSRootRenderNodeDumpTest
  * @tc.desc: DumpNodeType DumpTree and DumpSubClassNode test
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: issueIAJ6BA
  */
 HWTEST_F(RSRenderNodeTest, RSRootRenderNodeDumpTest, TestSize.Level1)
 {
