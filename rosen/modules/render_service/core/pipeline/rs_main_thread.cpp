@@ -1746,10 +1746,10 @@ std::unordered_map<std::string, pid_t> RSMainThread::GetUiFrameworkDirtyNodes()
         return "";
     }
     std::unordered_map<std::string, pid_t> uiFrameworkDirtyNodeName;
-    for (auto iter = dirtyNodes.begin(); iter != dirtyNodes.end();) {
+    for (auto iter = neededDirtyNodes.begin(); iter != neededDirtyNodes.end();) {
         auto renderNode = iter->lock();
         if (renderNode == nullptr) {
-            iter = dirtyNodes.erase(iter);
+            iter = neededDirtyNodes.erase(iter);
         } else {
             if (renderNode->IsDirty()) {
                 uiFrameworkDirtyNodeName[renderNode->GetNodeName()] = ExtractPid(renderNode->GetId());
