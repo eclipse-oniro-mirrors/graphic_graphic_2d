@@ -371,6 +371,25 @@ HWTEST_F(HdiOutputTest, ReleaseLayers, Function | MediumTest | Level1)
     sptr<SyncFence> fbFence = SyncFence::INVALID_FENCE;
     HdiOutputTest::hdiOutput_->ReleaseLayers(fbFence);
 }
+/*
+* Function: DumpHitchs
+* Type: Function
+* Rank: Important(1)
+* EnvConditions: N/A
+* CaseDescription: 1.call DumpHitchs()
+*                  2.check ret
+*/
+HWTEST_F(HdiOutputTest, DumpHitchs, Function | MediumTest | Level1)
+{
+    std::vector<LayerInfoPtr> layerInfos;
+    for (size_t i = 0; i < 3; i++) {
+        layerInfos.emplace_back(make_shared<HdiLayerInfo>());
+    }
+    HdiOutputTest::hdiOutput_->SetLayerInfo(layerInfos);
+    HdiOutputTest::hdiOutput_->DumpHitchs();
+    std::string ret = "";
+    HdiOutputTest::hdiOutput_->DumpFps(ret, "UniRender");
+}
 } // namespace
 } // namespace Rosen
 } // namespace OHOS
