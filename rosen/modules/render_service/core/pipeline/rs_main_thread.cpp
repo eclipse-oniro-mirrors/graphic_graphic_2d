@@ -1752,7 +1752,6 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
     auto rsRate = rsVSyncDistributor_->GetRefreshRate();
     frameRateMgr->ProcessPendingRefreshRate(timestamp, vsyncId_, rsRate, info);
     
-
     HgmTaskHandleThread::Instance().PostTask([timestamp, info, activeNodesInRootMap, rsCurrRange = rsCurrRange_,
                                             rsFrameRateLinker = rsFrameRateLinker_,
                                             appFrameRateLinkers = GetContext().GetFrameRateLinkerMap().Get(),
@@ -1769,7 +1768,8 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
             return;
         }
         if (context_ != nullptr) {
-            frameRateMgr_->GetIdleDetector().ProcessUnknownUIFwkIdleState(context_->GetNeededDirtyNodes(), timestamp);
+            auto& neededDirtyNodes = context_->GetNeededDirtyNodes();
+            frameRateMgr_->GetIdleDetector().ProcessUnknownUIFwkIdleState(neededDirtyNodes, timestamp);
         }
         // hgm warning: use IsLtpo instead after GetDisplaySupportedModes ready
         if (frameRateMgr->GetCurScreenStrategyId().find("LTPO") != std::string::npos) {
