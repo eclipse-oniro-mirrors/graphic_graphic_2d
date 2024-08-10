@@ -437,7 +437,6 @@ private:
     void SetFocusLeashWindowId();
     void ProcessHgmFrameRate(uint64_t timestamp);
     void SetUiFrameworkTypeList();
-    void UpdateUiFrameworkTypeIdleState(uint64_t timestamp);
     bool IsLastFrameUIFirstEnabled(NodeId appNodeId) const;
     RSVisibleLevel GetRegionVisibleLevel(const Occlusion::Region& curRegion,
         const Occlusion::Region& visibleRegion);

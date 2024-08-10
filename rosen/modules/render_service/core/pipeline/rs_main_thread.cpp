@@ -1736,14 +1736,6 @@ void RSMainThread::SetUiFrameworkTypeList()
     }
 }
 
-void RSMainThread::UpdateUiFrameworkTypeIdleState(uint64_t timestamp)
-{
-    if (frameRateMgr_ == nullptr || context_ == nullptr) {
-        return;
-    }
-    frameRateMgr_->GetIdleDetector().ProcessUnknownUIFwkIdleState(context_->GetNeededDirtyNodes(), timestamp)
-}
-
 void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
 {
     DvsyncInfo info;
@@ -1776,7 +1768,9 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
         if (frameRateMgr == nullptr) {
             return;
         }
-        UpdateUiFrameworkTypeIdleState(timestamp);
+        if (context_ != nullptr) {
+            frameRateMgr_->GetIdleDetector().ProcessUnknownUIFwkIdleState(context_->GetNeededDirtyNodes(), timestamp);
+        }
         // hgm warning: use IsLtpo instead after GetDisplaySupportedModes ready
         if (frameRateMgr->GetCurScreenStrategyId().find("LTPO") != std::string::npos) {
             frameRateMgr->UniProcessDataForLtpo(timestamp, rsFrameRateLinker, appFrameRateLinkers,
