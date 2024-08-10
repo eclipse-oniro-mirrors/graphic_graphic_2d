@@ -154,22 +154,27 @@ public:
 
     void SetClearMoment(ClearMemoryMoment moment);
     ClearMemoryMoment GetClearMoment() const;
+
     void SetUiFrameworkTypeList(const std::vector<std::string>& list)
     {
         uiFrameworkTypeList_ = list;
     }
+
     const std::vector<std::string>& GetUiFrameworkTypeList() const
     {
         return uiFrameworkTypeList_;
     }
+
     void UpdateNeededDirtyNodes(std::weak_ptr<RSRenderNode> dirtyNode)
     {
         neededDirtyNodes_.push_back(dirtyNode);
     }
+
     std::vector<std::weak_ptr<RSRenderNode>>& GetNeededDirtyNodes()
     {
         return neededDirtyNodes_;
     }
+
 private:
     // This function is used for initialization, should be called once after constructor.
     void Initialize();
