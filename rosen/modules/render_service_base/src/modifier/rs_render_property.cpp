@@ -451,9 +451,7 @@ void RSRenderProperty<Matrix3f>::Dump(std::string& out) const
 template<>
 void RSRenderProperty<Color>::Dump(std::string& out) const
 {
-    out += "[";
     Get().Dump(out);
-    out += "]";
 }
 
 template<>
@@ -471,15 +469,15 @@ template<>
 void RSRenderProperty<Vector4<Color>>::Dump(std::string& out) const
 {
     Vector4<Color> v4Color = Get();
-    out += "[left:";
+    out += "[left";
     v4Color.x_.Dump(out);
-    out += " top:";
+    out += " top";
     v4Color.y_.Dump(out);
-    out += " right:";
+    out += " right";
     v4Color.z_.Dump(out);
     out += " bottom";
     v4Color.w_.Dump(out);
-    out += "]";
+    out += ']';
 }
 
 template<>
@@ -490,25 +488,89 @@ void RSRenderProperty<RRect>::Dump(std::string& out) const
 template<>
 void RSRenderProperty<Drawing::DrawCmdListPtr>::Dump(std::string& out) const
 {
-    out += "drawCmdList[";
-    Get()->Dump(out);
-    out += "]";
+    auto propertyData = Get();
+    if (propertyData != nullptr) {
+        out += "drawCmdList[";
+        propertyData->Dump(out);
+        out += ']';
+    }
 }
 
 template<>
 void RSRenderProperty<ForegroundColorStrategyType>::Dump(std::string& out) const
 {
-    out += "ENV_FOREGROUND_COLOR_STRATEGY[";
     out += std::to_string(static_cast<int>(Get()));
-    out += "]";
 }
 
 template<>
 void RSRenderProperty<SkMatrix>::Dump(std::string& out) const
 {
-    out += "GEOMETRYTRANS[";
     Get().dump(out, 0);
-    out += "]";
+}
+
+template<>
+void RSRenderProperty<std::shared_ptr<RSLinearGradientBlurPara>>::Dump(std::string& out) const
+{
+    auto property = Get();
+    if (property != nullptr) {
+        property->Dump(out);
+    }
+}
+
+template<>
+void RSRenderProperty<std::shared_ptr<MotionBlurParam>>::Dump(std::string& out) const
+{
+    auto property = Get();
+    if (property != nullptr) {
+        property->Dump(out);
+    }
+}
+
+template<>
+void RSRenderProperty<std::shared_ptr<RSMagnifierParams>>::Dump(std::string& out) const
+{
+    auto property = Get();
+    if (property != nullptr) {
+        property->Dump(out);
+    }
+}
+
+template<>
+void RSRenderProperty<std::vector<std::shared_ptr<EmitterUpdater>>>::Dump(std::string& out) const
+{
+    auto property = Get();
+    out += '[';
+    bool found = false;
+    for (auto& eu : property) {
+        if (eu != nullptr) {
+            found = true;
+            out += "emitterUpdater";
+            eu->Dump(out);
+            out += ' ';
+        }
+    }
+    if (found) {
+        out.pop_back();
+    }
+    out += ']';
+}
+
+template<>
+void RSRenderProperty<std::shared_ptr<ParticleNoiseFields>>::Dump(std::string& out) const
+{
+    auto property = Get();
+    if (property != nullptr) {
+        property->Dump(out);
+    }
+}
+
+template<>
+void RSRenderProperty<std::shared_ptr<RSMask>>::Dump(std::string& out) const
+{
+    auto property = Get();
+    if (property != nullptr) {
+        property->Dump(out);
+    }
 }
 
 template<>
@@ -686,6 +748,12 @@ template class RSRenderProperty<RRect>;
 template class RSRenderProperty<Drawing::DrawCmdListPtr>;
 template class RSRenderProperty<ForegroundColorStrategyType>;
 template class RSRenderProperty<SkMatrix>;
+template class RSRenderProperty<std::shared_ptr<RSLinearGradientBlurPara>>;
+template class RSRenderProperty<std::shared_ptr<MotionBlurParam>>;
+template class RSRenderProperty<std::shared_ptr<RSMagnifierParams>>;
+template class RSRenderProperty<std::vector<std::shared_ptr<EmitterUpdater>>>;
+template class RSRenderProperty<std::shared_ptr<ParticleNoiseFields>>;
+template class RSRenderProperty<std::shared_ptr<RSMask>>;
 
 template class RSRenderAnimatableProperty<float>;
 template class RSRenderAnimatableProperty<Vector4f>;
