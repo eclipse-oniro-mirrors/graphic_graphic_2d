@@ -268,6 +268,8 @@ public:
 
     HwcDisabledReasonInfos GetHwcDisabledReasonInfo() const;
 
+    void SetVmaCacheStatus(bool flag);
+
 #ifdef TP_FEATURE_ENABLE
     void SetTpFeatureConfig(int32_t feature, const char* config);
 #endif
@@ -276,6 +278,8 @@ public:
     int32_t RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback);
 
     bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus);
+
+    bool SetAncoForceDoDirect(bool direct);
 
 private:
     RSInterfaces();

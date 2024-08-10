@@ -779,7 +779,7 @@ void RSRenderNode::DumpDrawCmdModifiers(std::string& out) const
         return;
     }
     std::string splitStr = ", ";
-    std::string modifierDesc = ", DrawCmdModifiers:[";
+    std::string modifierDesc = ", DrawCmdModifiers2:[";
     for (auto& [type, modifiers] : renderContent_->drawCmdModifiers_) {
         std::string typeName = "UNKNOWN";
         auto iter = RS_MODIFIER_TYPE_TO_STRING.find(type);
@@ -1080,9 +1080,7 @@ RSRenderNode::~RSRenderNode()
     if (appPid_ != 0) {
         RSSingleFrameComposer::AddOrRemoveAppPidToMap(false, appPid_);
     }
-    if (fallbackAnimationOnDestroy_) {
-        FallbackAnimationsToRoot();
-    }
+    FallbackAnimationsToRoot();
     if (clearCacheSurfaceFunc_ && (cacheSurface_ || cacheCompletedSurface_)) {
         clearCacheSurfaceFunc_(std::move(cacheSurface_), std::move(cacheCompletedSurface_), cacheSurfaceThreadIndex_,
             completedSurfaceThreadIndex_);

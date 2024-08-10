@@ -1097,7 +1097,7 @@ void VSyncDistributor::SetFrameIsRender(bool isRender)
 {
 #if defined(RS_ENABLE_DVSYNC)
     std::unique_lock<std::mutex> locker(mutex_);
-    ScopedBytrace trace("SetFrameIsRender:" + std::to_stirng(isRender));
+    ScopedBytrace trace("SetFrameIsRender:" + std::to_string(isRender));
     if (isRender) {
         dvsync_->UnMarkRSNotRendering();
     } else {
@@ -1199,6 +1199,12 @@ void VSyncDistributor::SetHardwareTaskNum(uint32_t num)
         dvsync_->SetHardwareTaskNum(num);
     }
 #endif
+}
+
+int64_t VSyncDistributor::GetVsyncCount()
+{
+    std::unique_lock<std::mutex> locker(mutex_);
+    return event_.vsyncCount;
 }
 }
 }

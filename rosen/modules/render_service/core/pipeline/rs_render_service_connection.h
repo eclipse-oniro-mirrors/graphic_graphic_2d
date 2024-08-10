@@ -273,6 +273,8 @@ private:
 
     HwcDisabledReasonInfos GetHwcDisabledReasonInfo() override;
 
+    void SetVmaCacheStatus(bool flag) override;
+
     int32_t RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback) override;
 
 #ifdef TP_FEATURE_ENABLE
@@ -281,6 +283,8 @@ private:
 
     void SetVirtualScreenUsingStatus(bool isVirtualScreenUsingStatus) override;
     void SetCurtainScreenUsingStatus(bool isCurtainScreenOn) override;
+
+    bool SetAncoForceDoDirect(bool direct) override;
 
     pid_t remotePid_;
     wptr<RSRenderService> renderService_;

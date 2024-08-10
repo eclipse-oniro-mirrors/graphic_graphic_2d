@@ -544,6 +544,10 @@ HwcDisabledReasonInfos RSRenderServiceClient::GetHwcDisabledReasonInfo()
     return {};
 }
 
+void RSRenderServiceClient::SetVmaCacheStatus(bool flag)
+{
+}
+
 #ifdef TP_FEATURE_ENABLE
 void RSRenderServiceClient::SetTpFeatureConfig(int32_t feature, const char* config)
 {
@@ -564,6 +568,11 @@ int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, cons
 }
 
 bool RSRenderServiceClient::SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus)
+{
+    return false;
+}
+
+bool RSRenderServiceClient::SetAncoForceDoDirect(bool direct)
 {
     return false;
 }

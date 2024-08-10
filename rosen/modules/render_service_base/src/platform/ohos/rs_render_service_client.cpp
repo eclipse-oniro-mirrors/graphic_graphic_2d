@@ -1379,6 +1379,15 @@ HwcDisabledReasonInfos RSRenderServiceClient::GetHwcDisabledReasonInfo()
     return renderService->GetHwcDisabledReasonInfo();
 }
 
+void RSRenderServiceClient::SetVmaCacheStatus(bool flag)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return;
+    }
+    renderService->SetVmaCacheStatus(flag);
+}
+
 #ifdef TP_FEATURE_ENABLE
 void RSRenderServiceClient::SetTpFeatureConfig(int32_t feature, const char* config)
 {
@@ -1439,6 +1448,16 @@ bool RSRenderServiceClient::SetVirtualScreenStatus(ScreenId id, VirtualScreenSta
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService != nullptr) {
         return renderService->SetVirtualScreenStatus(id, screenStatus);
+    }
+    return false;
+}
+
+bool RSRenderServiceClient::SetAncoForceDoDirect(bool direct)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService != nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::SetAncoForceDoDirect renderService == nullptr!");
+        return renderService->SetAncoForceDoDirect(direct);
     }
     return false;
 }
