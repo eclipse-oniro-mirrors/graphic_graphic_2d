@@ -994,7 +994,7 @@ int32_t RSScreenManager::SetVirtualScreenSecurityExemptionList(
     }
     virtualScreen->second->SetSecurityExemptionList(securityExemptionList);
     for (auto exemption : securityExemptionList) {
-        RS_LOGD("RSScreenManager %{public}s: virtual screen(id %{public}" PRIu64 "), surfaceNodeId %{public}" PRIu64 ".",
+        RS_LOGD("RSScreenManager %{public}s: virtual screen(id %{public}" PRIu64 "), nodeId %{public}" PRIu64 ".",
             __func__, id, exemption);
     }
     return SUCCESS;

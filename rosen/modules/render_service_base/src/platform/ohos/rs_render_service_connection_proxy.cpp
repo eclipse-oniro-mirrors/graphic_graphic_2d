@@ -484,7 +484,7 @@ int32_t RSRenderServiceConnectionProxy::SetVirtualScreenSecurityExemptionList(
     }
 
     option.SetFlags(MessageOption::TF_SYNC);
-    if(!data.WriteUint64(id)) {
+    if (!data.WriteUint64(id)) {
         return WRITE_PARCEL_ERR;
     }
     if (!data.WriteUInt64Vector(securityExemptionList)) {

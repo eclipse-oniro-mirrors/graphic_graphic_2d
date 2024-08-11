@@ -526,19 +526,20 @@ void RSUniRenderVisitor::UpdateVirtualScreenSecurityExemption(RSDisplayRenderNod
     }
     auto securityExemptionList = screenManager_->GetVirtualScreenSecurityExemptionList(node.GetScreenId());
     if (securityExemptionList.size() == 0) {
-        RS_LOGD("UpdateVirtualScreenSecurityExemption::node:%{public}" PRIu64 ", isSecurityExemption:false", node.GetId());
+        RS_LOGD("UpdateVirtualScreenSecurityExemption::node:%{public}" PRIu64 ", isSecurityExemption:false",
+            node.GetId());
         node.SetSecurityExemption(false);
         mirrorNode->ClearSecurityLayerList();
         return;
     }
     auto securityLayerList = mirrorNode->GetSecurityLayerList();
     for (auto exemptionLayer : securityExemptionList) {
-        RS_LOGD("UpdateVirtualScreenSecurityExemption::node:%{public}" PRIu64 ", securityExemption nodeId %{public}" PRIu64 ".",
-            node.GetId(), exemptionLayer);
+        RS_LOGD("UpdateVirtualScreenSecurityExemption::node:%{public}" PRIu64 ""
+            "securityExemption nodeId %{public}" PRIu64 ".", node.GetId(), exemptionLayer);
     }
     for (auto secLayer : securityLayerList) {
-        RS_LOGD("UpdateVirtualScreenSecurityExemption::node:%{public}" PRIu64 ", securityLayer nodeId %{public}" PRIu64 ".",
-            mirrorNode->GetId(), secLayer);
+        RS_LOGD("UpdateVirtualScreenSecurityExemption::node:%{public}" PRIu64 ""
+            "securityLayer nodeId %{public}" PRIu64 ".", mirrorNode->GetId(), secLayer);
     }
     bool isSecurityExemption = false;
     if (securityExemptionList.size() >= securityLayerList.size()) {
