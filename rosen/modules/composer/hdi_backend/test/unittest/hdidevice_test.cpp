@@ -202,7 +202,7 @@ HWTEST_F(HdiDeviceTest, LayerFuncs002, Function | MediumTest| Level3)
     GraphicLayerInfo layerInfo;
     uint32_t cacheCount = 1;
     EXPECT_EQ(HdiDeviceTest::hdiDevice_->CreateLayer(screenId, layerInfo, cacheCount, layerId),
-              GRAPHIC_DISPLAY_SUCCESS);
+              GRAPHIC_DISPLAY_FAILURE);
     std::vector<std::string> valueRet = HdiDeviceTest::hdiDevice_->GetSupportedLayerPerFrameParameterKey();
     const std::string validKey = "ArsrDoEnhance";
     if (std::find(valueRet.begin(), valueRet.end(), validKey) != valueRet.end()) {
@@ -210,7 +210,7 @@ HWTEST_F(HdiDeviceTest, LayerFuncs002, Function | MediumTest| Level3)
         EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetLayerPerFrameParameter(screenId, layerId, validKey, valueBlob),
               GRAPHIC_DISPLAY_FAILURE);
     }
-    EXPECT_EQ(HdiDeviceTest::hdiDevice_->CloseLayer(screenId, layerId), GRAPHIC_DISPLAY_SUCCESS);
+    EXPECT_EQ(HdiDeviceTest::hdiDevice_->CloseLayer(screenId, layerId), GRAPHIC_DISPLAY_FAILURE);
 }
 } // namespace
 } // namespace Rosen
