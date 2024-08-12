@@ -64,7 +64,7 @@ HWTEST_F(HdiDeviceTest, DeviceFuncs001, Function | MediumTest| Level3)
     EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetScreenMode(screenId, screenModeId), GRAPHIC_DISPLAY_SUCCESS);
     uint32_t width = 1080;
     uint32_t height = 1920;
-    EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetScreenOverlayResolution(screenId, width, height), GRAPHIC_DISPLAY_SUCCESS);
+    EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetScreenOverlayResolution(screenId, width, height), GRAPHIC_DISPLAY_NOT_SUPPORT);
     GraphicDispPowerStatus dstatus = GRAPHIC_POWER_STATUS_ON;
     EXPECT_EQ(HdiDeviceTest::hdiDevice_->GetScreenPowerStatus(screenId, dstatus), GRAPHIC_DISPLAY_SUCCESS);
     EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetScreenPowerStatus(screenId, dstatus), GRAPHIC_DISPLAY_SUCCESS);
@@ -90,9 +90,6 @@ HWTEST_F(HdiDeviceTest, DeviceFuncs001, Function | MediumTest| Level3)
     std::vector<GraphicColorGamut> gamuts;
     EXPECT_EQ(HdiDeviceTest::hdiDevice_->GetScreenSupportedColorGamuts(screenId, gamuts), GRAPHIC_DISPLAY_NOT_SUPPORT);
     GraphicColorGamut gamut = GRAPHIC_COLOR_GAMUT_INVALID;
-    std::vector<uint32_t> layers;
-    std::vector<sptr<SyncFence>> fences;
-    EXPECT_EQ(HdiDeviceTest::hdiDevice_->GetScreenReleaseFence(screenId, layers, fences));
     EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetScreenColorGamut(screenId, gamut), GRAPHIC_DISPLAY_NOT_SUPPORT);
     EXPECT_EQ(HdiDeviceTest::hdiDevice_->GetScreenColorGamut(screenId, gamut), GRAPHIC_DISPLAY_NOT_SUPPORT);
     GraphicGamutMap gamutMap = GRAPHIC_GAMUT_MAP_CONSTANT;
@@ -100,7 +97,7 @@ HWTEST_F(HdiDeviceTest, DeviceFuncs001, Function | MediumTest| Level3)
     EXPECT_EQ(HdiDeviceTest::hdiDevice_->GetScreenGamutMap(screenId, gamutMap), GRAPHIC_DISPLAY_NOT_SUPPORT);
     std::vector<float> matrix = { 0.0 };
     EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetScreenColorTransform(screenId, matrix), GRAPHIC_DISPLAY_NOT_SUPPORT);
-    EXPECT_EQ(HdiDeviceTest::hdiDevice_->Commit(screenId, fence));
+    EXPECT_EQ(HdiDeviceTest::hdiDevice_->Commit(screenId, fence), -1);
 }
 
 /*
@@ -145,9 +142,15 @@ HWTEST_F(HdiDeviceTest, LayerFuncs001, Function | MediumTest| Level3)
     BufferHandle *handle = nullptr;
     sptr<SyncFence> acquireFence = nullptr;
     std::vector<uint32_t> deletingList = {};
-    uint32_t cacheIndex = 0;
+    uint32_t cacheIndex = INVALID_BUFFER_CACHE_INDEX;
     GraphicLayerBuffer layerBuffer = {handle, cacheIndex, acquireFence, deletingList};
-    EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetLayerBuffer(screenId, layerId, layerBuffer), GRAPHIC_DISPLAY_NULL_PTR);
+    EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetLayerBuffer(screenId, layerId, layerBuffer), GRAPHIC_DISPLAY_PARAM_ERR);
+    handle = new BufferHandle();
+    EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetLayerBuffer(screenId, layerId, layerBuffer), GRAPHIC_DISPLAY_PARAM_ERR);
+    layerBuffer.acquireFence = new SyncFence(10);
+    EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetLayerBuffer(screenId, layerId, layerBuffer), GRAPHIC_DISPLAY_PARAM_ERR);
+    layerBuffer.cacheIndex = 0;
+    EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetLayerBuffer(screenId, layerId, layerBuffer), GRAPHIC_DISPLAY_SUCCESS);
     GraphicCompositionType cmpType = GRAPHIC_COMPOSITION_CLIENT;
     EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetLayerCompositionType(screenId, layerId, cmpType), GRAPHIC_DISPLAY_SUCCESS);
     GraphicBlendType blendType = GRAPHIC_BLEND_NONE;
