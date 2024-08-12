@@ -113,8 +113,7 @@ bool RSColorPickerCacheTask::GpuScaleImage(std::shared_ptr<RSPaintFilterCanvas> 
     }
 
     Drawing::SamplingOptions linear(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
-    std::shared_ptr<Drawing::RuntimeShaderBuilder> effectBulider =
-        std::make_shared<Drawing::RuntimeShaderBuilder>(effect);
+    auto effectBulider = std::make_shared<Drawing::RuntimeShaderBuilder>(effect);
     Drawing::ImageInfo pcInfo;
     Drawing::Matrix matrix;
     matrix.SetScale(1.0, 1.0);
@@ -127,8 +126,7 @@ bool RSColorPickerCacheTask::GpuScaleImage(std::shared_ptr<RSPaintFilterCanvas> 
     }
     effectBulider->SetChild("imageInput", Drawing::ShaderEffect::CreateImageShader(
         *threadImage, Drawing::TileMode::CLAMP, Drawing::TileMode::CLAMP, linear, matrix));
-    std::shared_ptr<Drawing::Image> tmpColorImg = effectBulider->MakeImage(
-        cacheCanvas->GetGPUContext().get(), nullptr, pcInfo, false);
+    auto tmpColorImg = effectBulider->MakeImage(cacheCanvas->GetGPUContext().get(), nullptr, pcInfo, false);
     if (tmpColorImg == nullptr) {
         ROSEN_LOGE("RSColorPickerCacheTask tmpColorImg is null");
         return false;
