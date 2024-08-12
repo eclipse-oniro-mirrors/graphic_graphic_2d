@@ -94,6 +94,7 @@
 #include "render/rs_pixel_map_util.h"
 #include "render/rs_typeface_cache.h"
 #include "screen_manager/rs_screen_manager.h"
+#include "transaction/rs_transaction_metric_collector.h"
 #include "transaction/rs_transaction_proxy.h"
 
 #ifdef RS_ENABLE_GL
@@ -2905,6 +2906,7 @@ void RSMainThread::RecvAndProcessRSTransactionDataImmediately(std::unique_ptr<RS
     RS_TRACE_NAME("ProcessBySingleFrameComposer");
     {
         std::lock_guard<std::mutex> lock(transitionDataMutex_);
+        RSTransactionMetricCollector::GetInstance().Collect(rsTransactionData);
         cachedTransactionDataMap_[rsTransactionData->GetSendingPid()].emplace_back(std::move(rsTransactionData));
     }
     ForceRefreshForUni();
@@ -2917,6 +2919,7 @@ void RSMainThread::RecvRSTransactionData(std::unique_ptr<RSTransactionData>& rsT
     }
     if (isUniRender_) {
         std::lock_guard<std::mutex> lock(transitionDataMutex_);
+        RSTransactionMetricCollector::GetInstance().Collect(rsTransactionData);
         cachedTransactionDataMap_[rsTransactionData->GetSendingPid()].emplace_back(std::move(rsTransactionData));
     } else {
         ClassifyRSTransactionData(rsTransactionData);

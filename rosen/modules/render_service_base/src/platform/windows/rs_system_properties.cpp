@@ -379,6 +379,11 @@ bool RSSystemProperties::IsPcType()
     return false;
 }
 
+bool RSSystemProperties::IsBetaRelease()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetSyncTransactionEnabled()
 {
     return false;

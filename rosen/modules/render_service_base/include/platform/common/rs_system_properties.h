@@ -225,6 +225,7 @@ public:
     static bool IsPhoneType();
     static bool IsTabletType();
     static bool IsPcType();
+    static bool IsBetaRelease();
     static bool GetSyncTransactionEnabled();
     static int GetSyncTransactionWaitDelay();
     static bool GetSingleFrameComposerEnabled();
