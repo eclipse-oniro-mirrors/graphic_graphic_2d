@@ -405,7 +405,7 @@ Drawing::TileMode FilterNapi::ParserArgumentType(napi_env env, napi_value argv)
     if (UIEffectNapiUtils::getType(env, argv) == napi_number) {
         double tmp = 0.0f;
         if (UIEFFECT_IS_OK(napi_get_value_double(env, argv, &tmp))) {
-            int32_t mode = tmp;
+            int32_t mode = static_cast<int32_t>(tmp);
             auto iter = INDEX_TO_TILEMODE.find(mode);
             if (iter != INDEX_TO_TILEMODE.end()) {
                 return iter->second;
