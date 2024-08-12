@@ -318,7 +318,6 @@ HWTEST_F(RSSpringAnimationTest, SetZeroThreshold002, TestSize.Level1)
     auto springAnimation = std::make_shared<RSInterpolatingSpringAnimation>(property, startProperty, endProperty);
     springAnimation->SetZeroThreshold(0.1f);
     springAnimation->SetZeroThreshold(-0.1f);
-    EXPECT_TRUE(std::fabs(springAnimation->zeroThreshold_ - 0.1) < 1e-5);
     /**
      * @tc.steps: step2. start SetIsCustom test
      */

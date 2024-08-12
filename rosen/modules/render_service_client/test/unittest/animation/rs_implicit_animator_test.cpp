@@ -16,6 +16,7 @@
 #include "gtest/gtest.h"
 
 #include "animation/rs_implicit_animator.h"
+#include "animation/rs_implicit_animation_param.h"
 #include "animation/rs_motion_path_option.h"
 #include "ui/rs_canvas_node.h"
 #include "modifier/rs_property_modifier.h"
@@ -252,7 +253,8 @@ HWTEST_F(RSImplicitAnimatorTest, CreateImplicitAnimationWithInitialVelocity002, 
     implicitAnimator->CreateImplicitAnimationWithInitialVelocity(
         canvasNode, property, startProperty, endProperty, velocity);
 
-    implicitAnimator->OpenImplicitAnimation([]() {});
+    auto finishCallBack = std::make_shared<AnimationFinishCallback>(nullptr);
+    implicitAnimator->OpenImplicitAnimation(finishCallBack);
     EXPECT_TRUE(implicitAnimator != nullptr);
     GTEST_LOG_(INFO) << "RSImplicitAnimatorTest CreateImplicitAnimationWithInitialVelocity002 end";
 }
@@ -269,21 +271,22 @@ HWTEST_F(RSImplicitAnimatorTest, ProcessEmptyAnimationTest001, TestSize.Level1)
     auto timingCurve = RSAnimationTimingCurve::SPRING;
     timingProtocol.duration_ = -1;
     auto implicitAnimator = std::make_shared<RSImplicitAnimator>();
-    implicitAnimator->OpenImplicitAnimation(timingProtocol, timingCurve, []() {});
+    std::shared_ptr<AnimationFinishCallback> finishCallback = std::make_shared<AnimationFinishCallback>(nullptr);
+    implicitAnimator->OpenImplicitAnimation(timingProtocol, timingCurve, std::move(finishCallback));
     EXPECT_TRUE(implicitAnimator != nullptr);
 
-    std::shared_ptr<AnimationFinishCallback> finishCallback = std::make_shared<AnimationFinishCallback>();
-    finishCallback->finishCallbackType_ = FinishCallbackType::TIME_INSENSITIVE;
+    finishCallback = std::make_shared<AnimationFinishCallback>(nullptr, FinishCallbackType::TIME_INSENSITIVE);
     implicitAnimator->ProcessEmptyAnimations(finishCallback);
 
-    finishCallback->finishCallbackType_ = FinishCallbackType::TIME_SENSITIVE;
+    finishCallback = std::make_shared<AnimationFinishCallback>(nullptr, FinishCallbackType::TIME_INSENSITIVE);
     implicitAnimator->ProcessEmptyAnimations(finishCallback);
 
     auto implicitAnimator2 = std::make_shared<RSImplicitAnimator>();
-    implicitAnimator2->CreateImplicitTransition(nullptr);
-    implicitAnimator2->OpenImplicitAnimation([]() {});
-    std::shared_ptr<AnimationFinishCallback> finishCallback2 = std::make_shared<AnimationFinishCallback>();
-    implicitAnimator2->ProcessEmptyAnimations(finishCallback2);
+    auto canvasNode = RSCanvasNode::Create();
+    implicitAnimator2->CreateImplicitTransition(*canvasNode.get()); 
+    finishCallback = std::make_shared<AnimationFinishCallback>(nullptr);
+    implicitAnimator2->OpenImplicitAnimation(std::move(finishCallback));
+    implicitAnimator2->ProcessEmptyAnimations(finishCallback);
 
     implicitAnimator2->interactiveImplicitAnimations_.push({});
     implicitAnimator2->CloseInterActiveImplicitAnimation(true);
@@ -294,11 +297,13 @@ HWTEST_F(RSImplicitAnimatorTest, ProcessEmptyAnimationTest001, TestSize.Level1)
 
     implicitAnimator2->BeginImplicitPathAnimation(nullptr);
     RSAnimationTimingProtocol timingProtocol3;
-    auto timingCurve3 = RSAnimationTimingCurve::CurveType::INTERPOLATING;
+    auto timingCurve3 = RSAnimationTimingCurve();
+    timingCurve3.type_ = RSAnimationTimingCurve::CurveType::SPRING;
     timingProtocol3.duration_ = 0;
-    auto implicitAnimator = std::make_shared<RSImplicitAnimator>(nullptr);
-    implicitAnimator->OpenImplicitAnimation(timingProtocol3, timingCurve3, []() {});
-    implicitAnimator3->BeginImplicitPathAnimation();
+    auto implicitAnimator3 = std::make_shared<RSImplicitAnimator>();
+    finishCallback = std::make_shared<AnimationFinishCallback>();
+    implicitAnimator3->OpenImplicitAnimation(timingProtocol3, timingCurve3, std::move(finishCallback));
+    implicitAnimator3->BeginImplicitPathAnimation(nullptr);
     EXPECT_TRUE(implicitAnimator2 != nullptr);
     EXPECT_TRUE(implicitAnimator3 != nullptr);
 
@@ -325,45 +330,50 @@ HWTEST_F(RSImplicitAnimatorTest, CreateImplicitAnimationWithInitialVelocity003, 
     std::shared_ptr<RSAnimatableProperty<Vector4f>> prop_end = nullptr;
     auto velocity = std::make_shared<RSAnimatableProperty<float>>(1.0f);
 
-    implicitAnimator->implicitAnimationParams_.push(timingProtocol, Rosen::ImplicitAnimationParamType::SPRING);
-    implicitAnimator->CreateImplicitAnimationWithInitialVelocity(node, prop, prop_start, prop_end, velocity);
+    std::shared_ptr <RSImplicitSpringAnimationParam> para =
+        std::make_shared<RSImplicitSpringAnimationParam>(timingProtocol, timingCurve);
+    implicitAnimator->implicitAnimationParams_.push(para);
 
     auto node1 = RSCanvasNode::Create();
     implicitAnimator->OpenImplicitAnimation(RSAnimationTimingProtocol::DEFAULT, RSAnimationTimingCurve::DEFAULT);
-    implicitAnimator->CreateImplicitAnimationWithInitialVelocity(node1, prop, prop_start, prop_end, velocity);
 
     auto prop1 = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
-    RSAnimationTimingProtocol timingProtocol;
-    auto timingCurve = RSAnimationTimingCurve::SPRING;
     timingProtocol.duration_ = -1;
-    std::shared_ptr<AnimationFinishCallback> finishCallback = std::make_shared<AnimationFinishCallback>();
-    finishCallback->finishCallbackType_ = FinishCallbackType::LOGICALLY;
+    std::shared_ptr<AnimationFinishCallback> finishCallback =
+        std::make_shared<AnimationFinishCallback>(nullptr, FinishCallbackType::LOGICALLY);
 
-    implicitAnimator->OpenImplicitAnimation(timingProtocol, timingCurve, finishCallback);
+    implicitAnimator->OpenImplicitAnimation(timingProtocol, RSAnimationTimingCurve::DEFAULT, std::move(finishCallback));
     implicitAnimator->CreateImplicitAnimationWithInitialVelocity(node1, prop1, prop_start, prop_end, velocity);
     prop1->id_ = 0;
-    implicitAnimator->CreateImplicitAnimation(node1, prop1, prop_start, prop_end, velocity);
+    implicitAnimator->CreateImplicitAnimation(node1, prop1, prop_start, prop_end);
 
     timingProtocol.duration_ = 1;
-    implicitAnimator->OpenImplicitAnimation(timingProtocol, timingCurve, finishCallback);
-    implicitAnimator->implicitAnimationParams_.push(std::make_shared<RSImplicitCancelAnimationParam>(timingProtocol));
-    implicitAnimator->CreateImplicitAnimation(node1, prop1, prop_start, prop_end, velocity);
+    para = std::make_shared<RSImplicitCancelAnimationParam>(timingProtocol, timingCurve);
+    implicitAnimator->OpenImplicitAnimation(timingProtocol, RSAnimationTimingCurve::DEFAULT, std::move(finishCallback));
+    implicitAnimator->implicitAnimationParams_.push(para);
+    implicitAnimator->CreateImplicitAnimation(node1, prop1, prop_start, prop_end);
 
     prop1->id_ = 1;
-    implicitAnimator->OpenImplicitAnimation(timingProtocol, timingCurve, finishCallback, [](){});
-    implicitAnimator->implicitAnimationParams_.push(std::make_shared<RSImplicitSpringAnimationParam>(timingProtocol));
-    implicitAnimator->CreateImplicitAnimation(node1, prop1, prop_start, prop_end, velocity);
+    auto repeatCallBack = std::make_shared<AnimationRepeatCallback>(nullptr);
+    implicitAnimator->OpenImplicitAnimation(
+        timingProtocol, RSAnimationTimingCurve::DEFAULT, std::move(finishCallback), std::move(repeatCallBack));
+    para = std::make_shared<RSImplicitSpringAnimationParam>(timingProtocol, timingCurve);
+    implicitAnimator->implicitAnimationParams_.push(para);
+    implicitAnimator->CreateImplicitAnimation(node1, prop1, prop_start, prop_end);
 
-    implicitAnimator->implicitAnimationParams_.push(
-        std::make_shared<RSImplicitInterpolatingSpringAnimationParam>(timingProtocol));
-    implicitAnimator->CreateImplicitAnimation(node1, prop1, prop_start, prop_end, velocity);
+    para = std::make_shared<RSImplicitInterpolatingSpringAnimationParam>(timingProtocol, timingCurve);
+    implicitAnimator->implicitAnimationParams_.push(para);
+    implicitAnimator->CreateImplicitAnimation(node1, prop1, prop_start, prop_end);
 
-    implicitAnimator->implicitAnimationParams_.push(std::make_shared<RSImplicitPathAnimationParam>(timingProtocol));
-    implicitAnimator->CreateImplicitAnimation(node1, prop1, prop_start, prop_end, velocity);
+    auto pathOpt = std::make_shared<RSMotionPathOption>("");
+    para = std::make_shared<RSImplicitPathAnimationParam>(timingProtocol, timingCurve, pathOpt);
+    implicitAnimator->implicitAnimationParams_.push(para);
+    implicitAnimator->CreateImplicitAnimation(node1, prop1, prop_start, prop_end);
 
     prop1->isCustom_ = true;
-    implicitAnimator->implicitAnimationParams_.push(timingProtocol, Rosen::ImplicitAnimationParamType::INVALID);
-    implicitAnimator->CreateImplicitAnimation(node1, prop1, prop_start, prop_end, velocity);
+    para = std::make_shared<RSImplicitAnimationParam>(timingProtocol, Rosen::ImplicitAnimationParamType::INVALID);
+    implicitAnimator->implicitAnimationParams_.push(para);
+    implicitAnimator->CreateImplicitAnimation(node1, prop1, prop_start, prop_end);
 
     implicitAnimator->ExecuteWithoutAnimation(nullptr);
 

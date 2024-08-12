@@ -561,8 +561,11 @@ HWTEST_F(RSAnimationTest, AnimationStatus003, TestSize.Level1)
  */
 HWTEST_F(RSAnimationTest, AnimationStatus004, TestSize.Level1)
 {
+    auto property = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
     RSAnimationTimingProtocol protocol;
-    auto animations = RSNode::Animate(protocol, RSAnimationTimingCurve::LINEAR, []() {});
+    auto animations = RSNode::Animate(protocol, RSAnimationTimingCurve::LINEAR, [&property]() {
+        property->set(ANIMATION_END_BOUNDS);    
+    });
     auto animation = std::static_pointer_cast<RSCurveAnimation>(animations[FIRST_ANIMATION]);
 
     animation->state_ = Rosen::RSAnimation::AnimationState::PAUSED;
