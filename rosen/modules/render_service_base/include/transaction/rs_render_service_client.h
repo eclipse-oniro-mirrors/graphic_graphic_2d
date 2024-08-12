@@ -158,11 +158,10 @@ public:
     int32_t SetVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector);
 #endif
 
-#ifdef RS_ENABLE_VK
-    bool Set2DRenderCtrl(bool enable);
-#endif
+    int32_t SetVirtualScreenSecurityExemptionList(ScreenId id, const std::vector<NodeId>& securityExemptionList);
+
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable);
-    
+
     void RemoveVirtualScreen(ScreenId id);
 
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
@@ -329,8 +328,6 @@ public:
 
     void SetCacheEnabledForRotation(bool isEnabled);
 
-    void ChangeSyncCount(uint64_t syncId, int32_t parentPid, int32_t childPid);
-
     void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback);
 
     std::vector<ActiveDirtyRegionInfo> GetActiveDirtyRegionInfo();
@@ -341,7 +338,11 @@ public:
 
     HwcDisabledReasonInfos GetHwcDisabledReasonInfo();
 
+    void SetVmaCacheStatus(bool flag);
+
     int32_t RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback);
+
+    bool SetAncoForceDoDirect(bool direct);
 
 #ifdef TP_FEATURE_ENABLE
     void SetTpFeatureConfig(int32_t feature, const char* config);

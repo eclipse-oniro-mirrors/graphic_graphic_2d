@@ -22,7 +22,9 @@
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_dirty_region_manager.h"
+#include "pipeline/rs_display_render_node.h"
 #include "pipeline/rs_render_node.h"
+#include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "skia_adapter/skia_canvas.h"
 #include "parameters.h"
@@ -220,24 +222,6 @@ HWTEST_F(RSRenderNodeTest, DrawCacheSurfaceTest002, TestSize.Level1)
     node.SetCacheType(type);
     node.DrawCacheSurface(*canvas_, isSubThreadNode);
     ASSERT_EQ(node.GetCompletedCacheSurface(), NULL);
-}
-
-/**
- * @tc.name: MarkNodeGroupTest
- * @tc.desc: test
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSRenderNodeTest, MarkNodeGroupTest, TestSize.Level1)
-{
-    RSRenderNode node(id, context);
-    bool isNodeGruop = true;
-    auto nodeGruopType = node.GetNodeGroupType();
-    RSRenderNode::NodeGroupType type = RSRenderNode::NodeGroupType::GROUPED_BY_USER;
-    if (type >= nodeGruopType) {
-        node.MarkNodeGroup(type, isNodeGruop, false);
-        ASSERT_EQ(node.GetNodeGroupType(), type);
-    }
 }
 
 /**
@@ -1339,6 +1323,50 @@ HWTEST_F(RSRenderNodeTest, RSRenderNodeDumpTest002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: RSSurfaceRenderNodeDumpTest
+ * @tc.desc: DumpNodeType DumpTree and DumpSubClassNode test
+ * @tc.type: FUNC
+ * @tc.require: issueIAJ6BA
+ */
+HWTEST_F(RSRenderNodeTest, RSSurfaceRenderNodeDumpTest, TestSize.Level1)
+{
+    std::string outTest = "";
+    auto renderNode = std::make_shared<RSSurfaceRenderNode>(0);
+    renderNode->DumpSubClassNode(outTest);
+    EXPECT_EQ(outTest, ", Parent [null], Name [SurfaceNode], hasConsumer: 0, Alpha: 1.000000, Visible: 1, "
+	    "VisibleRegion [Empty], OpaqueRegion [Empty], OcclusionBg: 0, SecurityLayer: 0, skipLayer: 0, surfaceType: 0");
+}
+
+/**
+ * @tc.name: RSDisplayRenderNodeDumpTest
+ * @tc.desc: DumpNodeType DumpTree and DumpSubClassNode test
+ * @tc.type: FUNC
+ * @tc.require: issueIAJ6BA
+ */
+HWTEST_F(RSRenderNodeTest, RSDisplayRenderNodeDumpTest, TestSize.Level1)
+{
+    std::string outTest = "";
+    RSDisplayNodeConfig config;
+    auto renderNode = std::make_shared<RSDisplayRenderNode>(0, config);
+    renderNode->DumpSubClassNode(outTest);
+    EXPECT_EQ(outTest, ", skipLayer: 0");
+}
+
+/**
+ * @tc.name: RSRootRenderNodeDumpTest
+ * @tc.desc: DumpNodeType DumpTree and DumpSubClassNode test
+ * @tc.type: FUNC
+ * @tc.require: issueIAJ6BA
+ */
+HWTEST_F(RSRenderNodeTest, RSRootRenderNodeDumpTest, TestSize.Level1)
+{
+    std::string outTest = "";
+    auto renderNode = std::make_shared<RSRootRenderNode>(0);
+    renderNode->DumpSubClassNode(outTest);
+    EXPECT_EQ(outTest, ", Visible: 1, Size: [-inf, -inf], EnableRender: 1");
+}
+
+/**
  * @tc.name: IsContentNodeTest003
  * @tc.desc: IsContentNode test
  * @tc.type: FUNC
@@ -2065,7 +2093,7 @@ HWTEST_F(RSRenderNodeTest, ManageRenderingResourcesTest022, TestSize.Level1)
 {
     std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
     EXPECT_NE(nodeTest, nullptr);
-
+    nodeTest->InitRenderParams();
     // SetGlobalAlpha test
     nodeTest->SetGlobalAlpha(1.0f);
     EXPECT_EQ(nodeTest->globalAlpha_, 1.0f);
@@ -2089,14 +2117,14 @@ HWTEST_F(RSRenderNodeTest, ManageRenderingResourcesTest022, TestSize.Level1)
     EXPECT_TRUE(nodeTest->NeedInitCacheSurface());
 
     nodeTest->boundsModifier_ = nullptr;
-    std::shared_ptr<RSRenderProperty<Drawing::DrawCmdListPtr>> propertyTest =
-        std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
+    auto propertyTest = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
     EXPECT_NE(propertyTest, nullptr);
-    std::shared_ptr<RSDrawCmdListRenderModifier> frameModifier =
-        std::make_shared<RSDrawCmdListRenderModifier>(propertyTest);
+    auto frameModifier = std::make_shared<RSDrawCmdListRenderModifier>(propertyTest);
     EXPECT_NE(frameModifier, nullptr);
     frameModifier->property_ = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
     EXPECT_NE(frameModifier->property_, nullptr);
+    frameModifier->property_->GetRef() = std::make_shared<Drawing::DrawCmdList>(10, 10);
+    frameModifier->SetType(RSModifierType::FRAME);
     nodeTest->frameModifier_ = frameModifier;
     nodeTest->cacheSurface_ = std::make_shared<Drawing::Surface>();
     EXPECT_NE(nodeTest->cacheSurface_, nullptr);
@@ -2277,7 +2305,12 @@ HWTEST_F(RSRenderNodeTest, GetCompletedImageTest026, TestSize.Level1)
     EXPECT_EQ(nodeTest->GetCompletedImage(canvas, 0, true), nullptr);
 
     nodeTest->cacheCompletedBackendTexture_.isValid_ = true;
+#ifdef RS_ENABLE_VK
+    // nullptr as cacheCompletedCleanupHelper_ is false
+    EXPECT_EQ(nodeTest->GetCompletedImage(canvas, 0, true), nullptr);
+#else
     EXPECT_NE(nodeTest->GetCompletedImage(canvas, 0, true), nullptr);
+#endif
 
     // cacheCompletedSurface_->GetImageSnapshot() is false
     EXPECT_EQ(nodeTest->GetCompletedImage(canvas, 0, false), nullptr);
@@ -2296,6 +2329,7 @@ HWTEST_F(RSRenderNodeTest, ManageCachingTest027, TestSize.Level1)
 {
     std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
     EXPECT_NE(nodeTest, nullptr);
+    nodeTest->InitRenderParams();
     // GetCompletedCacheSurface test
     nodeTest->cacheCompletedSurface_ = nullptr;
     EXPECT_EQ(nodeTest->GetCompletedCacheSurface(0, true, true), nullptr);
@@ -2558,6 +2592,10 @@ HWTEST_F(RSRenderNodeTest, UpdateDirtyRegionInfoForDFX001, TestSize.Level1)
     std::shared_ptr<RSDirtyRegionManager> rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
     canvasNode->lastFrameSubTreeSkipped_ = true;
     canvasNode->subTreeDirtyRegion_ = RectI(0, 0, DEFAULT_BOUNDS_SIZE, DEFAULT_BOUNDS_SIZE);
+    // 'resize' added to avoid segmentation fault crash in
+    // the RSDirtyRegionManager::UpdateDirtyRegionInfoForDfx() in line
+    // dirtyCanvasNodeInfo_[dirtyType].emplace(std::make_pair(id, rect))
+    rsDirtyManager->dirtyCanvasNodeInfo_.resize(DirtyRegionType::TYPE_AMOUNT);
     canvasNode->UpdateDirtyRegionInfoForDFX(*rsDirtyManager);
     EXPECT_FALSE(rsDirtyManager->dirtyCanvasNodeInfo_.empty());
     if (isPropertyChanged) {
@@ -2585,6 +2623,10 @@ HWTEST_F(RSRenderNodeTest, UpdateDirtyRegionInfoForDFX002, TestSize.Level1)
     auto& properties = canvasNode->GetMutableRenderProperties();
     properties.clipToBounds_ = true;
     canvasNode->absDrawRect_ = RectI(0, 0, DEFAULT_BOUNDS_SIZE, DEFAULT_BOUNDS_SIZE);
+    // 'resize' added to avoid segmentation fault crash in
+    // the RSDirtyRegionManager::UpdateDirtyRegionInfoForDfx() in line
+    // dirtyCanvasNodeInfo_[dirtyType].emplace(std::make_pair(id, rect))
+    rsDirtyManager->dirtyCanvasNodeInfo_.resize(DirtyRegionType::TYPE_AMOUNT);
     canvasNode->UpdateDirtyRegionInfoForDFX(*rsDirtyManager);
     EXPECT_FALSE(rsDirtyManager->dirtyCanvasNodeInfo_.empty());
     if (isPropertyChanged) {

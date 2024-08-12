@@ -1287,15 +1287,6 @@ napi_value JsCanvas::OnDrawNestedRoundRect(napi_env env, napi_callback_info info
     return nullptr;
 }
 
-static void DestructorMatrix(napi_env env, void *nativeObject, void *finalize)
-{
-    (void)finalize;
-    if (nativeObject != nullptr) {
-        JsMatrix *napi = reinterpret_cast<JsMatrix *>(nativeObject);
-        delete napi;
-    }
-}
-
 napi_value JsCanvas::GetTotalMatrix(napi_env env, napi_callback_info info)
 {
     JsCanvas* me = CheckParamsAndGetThis<JsCanvas>(env, info);
@@ -1311,26 +1302,8 @@ napi_value JsCanvas::OnGetTotalMatrix(napi_env env, napi_callback_info info)
 
     Matrix matrix = m_canvas->GetTotalMatrix();
     std::shared_ptr<Matrix> matrixPtr = std::make_shared<Matrix>(matrix);
-    JsMatrix *jsMatrix = new(std::nothrow) JsMatrix(matrixPtr);
-    if (jsMatrix == nullptr) {
-        ROSEN_LOGE("GetTotalMatrix jsMatrix is null!");
-        return nullptr;
-    }
 
-    napi_value resultValue = nullptr;
-    napi_create_object(env, &resultValue);
-    if (resultValue == nullptr) {
-        ROSEN_LOGE("GetTotalMatrix resultValue is NULL!");
-        return nullptr;
-    }
-
-    napi_wrap(env, resultValue, jsMatrix, DestructorMatrix, nullptr, nullptr);
-    if (resultValue == nullptr) {
-        ROSEN_LOGE("[NAPI]GetTotalMatrix resultValue is null!");
-        delete jsMatrix;
-        return nullptr;
-    }
-    return resultValue;
+    return JsMatrix::CreateJsMatrix(env, matrixPtr);
 }
 
 napi_value JsCanvas::AttachPen(napi_env env, napi_callback_info info)
@@ -1594,7 +1567,7 @@ napi_value JsCanvas::OnClipRegion(napi_env env, napi_callback_info info)
     }
 
     int32_t jsClipOp = 0;
-    GET_INT32_CHECK_GE_ZERO_PARAM(ARGC_ONE, jsClipOp);
+    GET_ENUM_PARAM(ARGC_ONE, jsClipOp, 0, static_cast<int32_t>(ClipOp::INTERSECT));
 
     m_canvas->ClipRegion(*region, static_cast<ClipOp>(jsClipOp));
     return nullptr;
@@ -1823,7 +1796,7 @@ napi_value JsCanvas::OnClipRoundRect(napi_env env, napi_callback_info info)
     }
 
     int32_t clipOpInt = 0;
-    GET_INT32_CHECK_GE_ZERO_PARAM(ARGC_ONE, clipOpInt);
+    GET_ENUM_PARAM(ARGC_ONE, clipOpInt, 0, static_cast<int32_t>(ClipOp::INTERSECT));
 
     if (argc == ARGC_TWO) {
         m_canvas->ClipRoundRect(jsRoundRect->GetRoundRect(), static_cast<ClipOp>(clipOpInt));
@@ -1950,10 +1923,7 @@ napi_value JsCanvas::OnGetLocalClipBounds(napi_env env, napi_callback_info info)
     Rect rect = m_canvas->GetLocalClipBounds();
     std::shared_ptr<Rect> rectPtr = std::make_shared<Rect>(rect.GetLeft(),
         rect.GetTop(), rect.GetRight(), rect.GetBottom());
-    if (!rectPtr) {
-        ROSEN_LOGE("JsTextBlob::OnGetLocalClipBounds rect is nullptr");
-        return nullptr;
-    }
+
     return GetRectAndConvertToJsValue(env, rectPtr);
 }
 

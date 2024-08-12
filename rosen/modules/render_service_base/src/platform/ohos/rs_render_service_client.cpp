@@ -339,6 +339,18 @@ int32_t RSRenderServiceClient::SetVirtualScreenBlackList(ScreenId id, std::vecto
     return renderService->SetVirtualScreenBlackList(id, blackListVector);
 }
 
+int32_t RSRenderServiceClient::SetVirtualScreenSecurityExemptionList(
+    ScreenId id,
+    const std::vector<NodeId>& securityExemptionList)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return RENDER_SERVICE_NULL;
+    }
+
+    return renderService->SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
+}
+
 int32_t RSRenderServiceClient::SetCastScreenEnableSkipWindow(ScreenId id, bool enable)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
@@ -358,18 +370,6 @@ int32_t RSRenderServiceClient::SetVirtualScreenSurface(ScreenId id, sptr<Surface
 
     return renderService->SetVirtualScreenSurface(id, surface);
 }
-
-#ifdef RS_ENABLE_VK
-bool RSRenderServiceClient::Set2DRenderCtrl(bool enable)
-{
-    auto renderService = RSRenderServiceConnectHub::GetRenderService();
-    if (renderService == nullptr) {
-        return false;
-    }
-
-    return renderService->Set2DRenderCtrl(enable);
-}
-#endif
 
 void RSRenderServiceClient::RemoveVirtualScreen(ScreenId id)
 {
@@ -1347,14 +1347,6 @@ void RSRenderServiceClient::SetCacheEnabledForRotation(bool isEnabled)
     }
 }
 
-void RSRenderServiceClient::ChangeSyncCount(uint64_t syncId, int32_t parentPid, int32_t childPid)
-{
-    auto renderService = RSRenderServiceConnectHub::GetRenderService();
-    if (renderService != nullptr) {
-        renderService->ChangeSyncCount(syncId, parentPid, childPid);
-    }
-}
-
 void RSRenderServiceClient::SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback)
 {
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
@@ -1397,6 +1389,15 @@ HwcDisabledReasonInfos RSRenderServiceClient::GetHwcDisabledReasonInfo()
         return {};
     }
     return renderService->GetHwcDisabledReasonInfo();
+}
+
+void RSRenderServiceClient::SetVmaCacheStatus(bool flag)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService == nullptr) {
+        return;
+    }
+    renderService->SetVmaCacheStatus(flag);
 }
 
 #ifdef TP_FEATURE_ENABLE
@@ -1459,6 +1460,16 @@ bool RSRenderServiceClient::SetVirtualScreenStatus(ScreenId id, VirtualScreenSta
     auto renderService = RSRenderServiceConnectHub::GetRenderService();
     if (renderService != nullptr) {
         return renderService->SetVirtualScreenStatus(id, screenStatus);
+    }
+    return false;
+}
+
+bool RSRenderServiceClient::SetAncoForceDoDirect(bool direct)
+{
+    auto renderService = RSRenderServiceConnectHub::GetRenderService();
+    if (renderService != nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::SetAncoForceDoDirect renderService == nullptr!");
+        return renderService->SetAncoForceDoDirect(direct);
     }
     return false;
 }

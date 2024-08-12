@@ -198,6 +198,26 @@ public:
         currentFrameSurfacesByDescZOrder_.emplace_back(id, rect);
     }
 
+    void AddSecurityLayer(NodeId id)
+    {
+        securityLayerList_.emplace_back(id);
+    }
+
+    void ClearSecurityLayerList()
+    {
+        securityLayerList_.clear();
+    }
+
+    const std::vector<NodeId>& GetSecurityLayerList()
+    {
+        return securityLayerList_;
+    }
+
+    void SetSecurityExemption(bool isSecurityExemption)
+    {
+        isSecurityExemption_ = isSecurityExemption;
+    }
+
     RectI GetLastFrameSurfacePos(NodeId id)
     {
         if (lastFrameSurfacePos_.count(id) == 0) {
@@ -283,12 +303,6 @@ public:
     }
     void SetOffScreenCacheImgForCapture(std::shared_ptr<Drawing::Image> offScreenCacheImgForCapture) {
         offScreenCacheImgForCapture_ = offScreenCacheImgForCapture;
-    }
-    NodeId GetRootIdOfCaptureWindow() {
-        return rootIdOfCaptureWindow_;
-    }
-    void SetRootIdOfCaptureWindow(NodeId rootIdOfCaptureWindow) {
-        rootIdOfCaptureWindow_ = rootIdOfCaptureWindow;
     }
 
     void SetMainAndLeashSurfaceDirty(bool isDirty);
@@ -433,13 +447,15 @@ private:
     std::shared_ptr<RSDirtyRegionManager> dirtyManager_ = nullptr;
     std::vector<std::string> windowsName_;
 
+    std::vector<NodeId> securityLayerList_;
+    bool isSecurityExemption_ = false;
+
     std::vector<RSBaseRenderNode::SharedPtr> curAllSurfaces_;
     std::vector<RSBaseRenderNode::SharedPtr> curAllFirstLevelSurfaces_;
     std::mutex mtx_;
 
     // Use in screen recording optimization
     std::shared_ptr<Drawing::Image> offScreenCacheImgForCapture_ = nullptr;
-    NodeId rootIdOfCaptureWindow_ = INVALID_NODEID;
 
     // Use in vulkan parallel rendering
     bool isParallelDisplayNode_ = false;
