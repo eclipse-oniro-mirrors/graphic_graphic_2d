@@ -76,15 +76,15 @@ bool HgmIdleDetector::GetUnknownFrameworkState(const std::string& surfaceName,
 bool HgmIdleDetector::GetSurfaceFrameworkState(const std::string& surfaceName,
     std::string& validSurfaceName)
 {
-    if (std::count(supportAppBufferList_.begin(), supportAppBufferList_.end(), OTHER_SURFACE)) {
-        validSurfaceName = OTHER_SURFACE;
-        return true;
-    }
     for (auto supportedAppBuffer : supportAppBufferList_) {
         if (surfaceName.rfind(supportedAppBuffer, 0) == 0) {
             validSurfaceName = supportedAppBuffer;
             return true;
         }
+    }
+   if (std::count(supportAppBufferList_.begin(), supportAppBufferList_.end(), OTHER_SURFACE)) {
+        validSurfaceName = OTHER_SURFACE;
+        return true;
     }
     return false;
 }
