@@ -350,9 +350,10 @@ HWTEST_F(HdiOutputTest, SetBufferColorSpace, Function | MediumTest | Level1)
     for (size_t i = 0; i < 3; i++) {
         layers.emplace_back(std::make_shared<HdiLayer>(i));
     }
-    HdiOutputTest::hdiOutput_->SetBufferColorSpace(nullptr, layers);
-    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
+    sptr<SurfaceBuffer> buffer = nullptr;
     HdiOutputTest::hdiOutput_->SetBufferColorSpace(buffer, layers);
+    sptr<SurfaceBuffer> buffer1 = new SurfaceBufferImpl();
+    HdiOutputTest::hdiOutput_->SetBufferColorSpace(buffer1, layers);
 }
 /*
 * Function: ReleaseLayers
