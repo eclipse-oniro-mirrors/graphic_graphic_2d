@@ -1049,7 +1049,7 @@ HWTEST_F(RSUniRenderUtilTest, LayerScaleDown001, TestSize.Level2)
 
 /*
  * @tc.name: LayerScaleDownt002
- * @tc.desc: LayerScaleDown test with modify params
+ * @tc.desc: LayerScaleDown test when src < dst
  * @tc.type: FUNC
  * @tc.require: issueIAJBBO
  */
@@ -1074,7 +1074,7 @@ HWTEST_F(RSUniRenderUtilTest, LayerScaleDown002, TestSize.Level2)
 
 /*
  * @tc.name: LayerScaleDown003
- * @tc.desc: LayerScaleDown test with modify params
+ * @tc.desc: LayerScaleDown test when src > dst
  * @tc.type: FUNC
  * @tc.require: issueIAJBBO
  */
@@ -1255,6 +1255,7 @@ HWTEST_F(RSUniRenderUtilTest, GetMatrixOfBufferToRelRect_003, TestSize.Level2)
     ASSERT_NE(rsSurfaceRenderNode, nullptr);
     RSSurfaceRenderNode& node = static_cast<RSSurfaceRenderNode&>(*(rsSurfaceRenderNode.get()));
     node.GetRSSurfaceHandler()->consumer_ = nullptr;
-    RSUniRenderUtil::GetMatrixOfBufferToRelRect(node);
+    auto matrix = RSUniRenderUtil::GetMatrixOfBufferToRelRect(node);
+    ASSERT_EQ(matrix, Drawing::Matrix());
 }
 } // namespace OHOS::Rosen
