@@ -538,13 +538,13 @@ napi_value JsCanvas::OnDrawShadow(napi_env env, napi_callback_info info)
     napi_typeof(env, argv[ARGC_FIVE], &argvFiveType);
 
     if (argvFourType == napi_number && argvFiveType == napi_number) {
-        if (!ConvertFromJsColorWithNumber(env, argv[ARGC_FOUR], ambientColor, ARGC_FOUR) ||
-         !ConvertFromJsColorWithNumber(env, argv[ARGC_FIVE], spotColor, ARGC_FOUR)) {
+        if (!ConvertFromJsColorWithNumber(env, argv[ARGC_FOUR], ambientColor, ARGC_FOUR, ARGC_FOUR) ||
+            !ConvertFromJsColorWithNumber(env, argv[ARGC_FIVE], spotColor, ARGC_FOUR, ARGC_FIVE)) {
             return nullptr;
         }
     } else {
         if (!ConvertFromJsColor(env, argv[ARGC_FOUR], ambientColor, ARGC_FOUR) ||
-         !ConvertFromJsColor(env, argv[ARGC_FIVE], spotColor, ARGC_FOUR)) {
+            !ConvertFromJsColor(env, argv[ARGC_FIVE], spotColor, ARGC_FOUR)) {
             return nullptr;
         }
     }

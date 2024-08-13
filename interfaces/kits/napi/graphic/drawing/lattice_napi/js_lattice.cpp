@@ -166,7 +166,7 @@ bool GetLatticeColors(napi_env env, napi_value colorsArray, uint32_t count, std:
             napi_typeof(env, tempColor, &valueType);
             bool exitFlag = false;
             if (valueType == napi_number) {
-                exitFlag = ConvertFromJsColorWithNumber(env, tempColor, argb, ARGC_FOUR);
+                exitFlag = ConvertFromJsColorWithNumber(env, tempColor, argb, ARGC_FOUR, i);
             }
             if (!exitFlag && !ConvertFromJsColor(env, tempColor, argb, ARGC_FOUR)) {
                 ROSEN_LOGE("JsLattice::CreateImageLattice colors is invalid");
