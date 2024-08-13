@@ -68,12 +68,12 @@ void ResschedEventListener::ReportFrameToRSS()
     }
 }
 
-bool ResschedEventListener::GetIsNeedReport()
+bool ResschedEventListener::GetIsNeedReport() const
 {
     return isNeedReport_.load();
 }
 
-bool ResschedEventListener::GetIsFirstReport()
+bool ResschedEventListener::GetIsFirstReport() const
 {
     return isFirstReport_.load();
 }
