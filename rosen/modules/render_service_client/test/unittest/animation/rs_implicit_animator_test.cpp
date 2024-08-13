@@ -283,7 +283,7 @@ HWTEST_F(RSImplicitAnimatorTest, ProcessEmptyAnimationTest001, TestSize.Level1)
 
     auto implicitAnimator2 = std::make_shared<RSImplicitAnimator>();
     auto canvasNode = RSCanvasNode::Create();
-    implicitAnimator2->CreateImplicitTransition(*canvasNode.get()); 
+    implicitAnimator2->CreateImplicitTransition(*canvasNode.get());
     finishCallback = std::make_shared<AnimationFinishCallback>(nullptr);
     implicitAnimator2->OpenImplicitAnimation(std::move(finishCallback));
     implicitAnimator2->ProcessEmptyAnimations(finishCallback);
