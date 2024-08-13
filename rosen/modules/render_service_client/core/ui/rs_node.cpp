@@ -1480,7 +1480,7 @@ void RSNode::SetBackgroundFilter(const std::shared_ptr<RSFilter>& backgroundFilt
         SetBackgroundBlurColorMode(BLUR_COLOR_MODE::DEFAULT);
         SetBackgroundBlurRadiusX(0.f);
         SetBackgroundBlurRadiusY(0.f);
-        bgFilterDescription_ = " ";
+        bgFilterDescription_ = "";
     } else if (backgroundFilter->GetFilterType() == RSFilter::MATERIAL) {
         auto materialFilter = std::static_pointer_cast<RSMaterialFilter>(backgroundFilter);
         float Radius = materialFilter->GetRadius();
