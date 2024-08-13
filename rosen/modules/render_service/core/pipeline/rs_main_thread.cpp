@@ -1725,6 +1725,39 @@ bool RSMainThread::IsRequestedNextVSync()
     return false;
 }
 
+void RSMainThread::SetUiFrameworkTypeTable()
+{
+    auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
+    if (!initUiFwkTable_ && frameRateMgr != nullptr && context_ != nullptr) {
+        initUiFwkTable_ = true;
+        context_->SetUiFrameworkTypeTable(frameRateMgr->GetIdleDetector().GetUiFrameworkTypeTable());
+    }
+}
+
+std::unordered_map<std::string, pid_t> RSMainThread::GetUiFrameworkDirtyNodes()
+{
+    if (context_ == nullptr) {
+        return {};
+    }
+    auto& uiFwkDirtyNodes = context_->GetUiFrameworkDirtyNodes();
+    if (uiFwkDirtyNodes.empty()) {
+        return {};
+    }
+    std::unordered_map<std::string, pid_t> uiFrameworkDirtyNodeName;
+    for (auto iter = uiFwkDirtyNodes.begin(); iter != uiFwkDirtyNodes.end();) {
+        auto renderNode = iter->lock();
+        if (renderNode == nullptr) {
+            iter = uiFwkDirtyNodes.erase(iter);
+        } else {
+            if (renderNode->IsDirty()) {
+                uiFrameworkDirtyNodeName[renderNode->GetNodeName()] = ExtractPid(renderNode->GetId());
+            }
+            ++iter;
+        }
+    }
+    return uiFrameworkDirtyNodeName;
+}
+
 void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
 {
     DvsyncInfo info;
@@ -1736,17 +1769,16 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
     if (frameRateMgr == nullptr || rsVSyncDistributor_ == nullptr) {
         return;
     }
+    SetUiFrameworkTypeTable();
     // Check and processing refresh rate task.
     auto rsRate = rsVSyncDistributor_->GetRefreshRate();
     frameRateMgr->ProcessPendingRefreshRate(timestamp, vsyncId_, rsRate, info);
     
-    std::unique_lock<std::mutex> lock(context_->activeNodesInRootMutex_);
-    auto activeNodesInRootMap = context_->activeNodesInRoot_;
-    lock.unlock();
-    HgmTaskHandleThread::Instance().PostTask([timestamp, info, activeNodesInRootMap, rsCurrRange = rsCurrRange_,
+    HgmTaskHandleThread::Instance().PostTask([timestamp, info, rsCurrRange = rsCurrRange_,
                                             rsFrameRateLinker = rsFrameRateLinker_,
                                             appFrameRateLinkers = GetContext().GetFrameRateLinkerMap().Get(),
-                                            idleTimerExpiredFlag = idleTimerExpiredFlag_] () mutable {
+                                            idleTimerExpiredFlag = idleTimerExpiredFlag_,
+                                            uiFrameworkDirtyNodeName = GetUiFrameworkDirtyNodes()] () mutable {
         RS_TRACE_NAME("ProcessHgmFrameRate");
         if (rsFrameRateLinker != nullptr) {
             rsCurrRange.type_ = RS_ANIMATION_FRAME_RATE_TYPE;
@@ -1758,7 +1790,11 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
         if (frameRateMgr == nullptr) {
             return;
         }
-        frameRateMgr->ProcessUnknownUIFwkIdleState(activeNodesInRootMap, timestamp);
+        if (!uiFrameworkDirtyNodeName.empty()) {
+            for (auto [uiFwkDirtyNodeName, pid] : uiFrameworkDirtyNodeName) {
+                frameRateMgr->UpdateSurfaceTime(uiFwkDirtyNodeName, timestamp, pid, UIFWKType::FROM_UNKNOWN);
+            }
+        }
         // hgm warning: use IsLtpo instead after GetDisplaySupportedModes ready
         if (frameRateMgr->GetCurScreenStrategyId().find("LTPO") != std::string::npos) {
             frameRateMgr->UniProcessDataForLtpo(timestamp, rsFrameRateLinker, appFrameRateLinkers,

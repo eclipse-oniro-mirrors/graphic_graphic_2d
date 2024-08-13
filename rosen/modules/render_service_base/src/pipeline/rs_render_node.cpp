@@ -3590,6 +3590,16 @@ bool RSRenderNode::IsStaticCached() const
 void RSRenderNode::SetNodeName(const std::string& nodeName)
 {
     nodeName_ = nodeName;
+    auto context = GetContext().lock();
+    if (!context || nodeName.empty()) {
+        return;
+    }
+    auto& uiFrameworkTypeTable = context->GetUiFrameworkTypeTable();
+    for (auto uiFwkType : uiFrameworkTypeTable) {
+        if (nodeName.rfind(uiFwkType, 0) == 0) {
+            context->UpdateUiFrameworkDirtyNodes(weak_from_this());
+        }
+    }
 }
 const std::string& RSRenderNode::GetNodeName() const
 {
