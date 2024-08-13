@@ -98,6 +98,29 @@ HWTEST_F(RSUniRenderUtilTest, SrcRectScaleDown_002, Function | SmallTest | Level
 }
 
 /*
+ * @tc.name: SrcRectScaleDown_003
+ * @tc.desc: Test SrcRectScaleDown when srcRect is multiple
+ * @tc.type: FUNC
+ * @tc.require: issueIAJOWI
+*/
+HWTEST_F(RSUniRenderUtilTest, SrcRectScaleDown_003, Function | SmallTest | Level2)
+{
+    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    RSSurfaceRenderNode& node = static_cast<RSSurfaceRenderNode&>(*(rsSurfaceRenderNode.get()));
+    BufferDrawParam params;
+    Drawing::Rect srcRect(5, 7, 6, 8);
+    params.srcRect = srcRect;
+    RectF localBounds(1, 2, 3, 4);
+    RSUniRenderUtil::SrcRectScaleDown(
+        params, node.GetRSSurfaceHandler()->GetBuffer(), node.GetRSSurfaceHandler()->GetConsumer(), localBounds);
+    srcRect.SetRight(8);
+    srcRect.SetBottom(10);
+    RSUniRenderUtil::SrcRectScaleDown(
+        params, node.GetRSSurfaceHandler()->GetBuffer(), node.GetRSSurfaceHandler()->GetConsumer(), localBounds);
+}
+
+/*
  * @tc.name: SrcRectScaleFit_001
  * @tc.desc: default value
  * @tc.type: FUNC
@@ -298,6 +321,23 @@ HWTEST_F(RSUniRenderUtilTest, ClearCacheSurface, Function | SmallTest | Level2)
 }
 
 /*
+ * @tc.name: PostReleaseSurfaceTask001
+ * @tc.desc: Test PostReleaseSurfaceTask when surface is not nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIAJOWI
+ */
+HWTEST_F(RSUniRenderUtilTest, PostReleaseSurfaceTask001, Function | SmallTest | Level2)
+{
+    const Drawing::ImageInfo info =
+        Drawing::ImageInfo { 200, 200, Drawing::COLORTYPE_N32, Drawing::ALPHATYPE_OPAQUE };
+    auto surface(Drawing::Surface::MakeRaster(info));
+    uint32_t threadIndex = UNI_MAIN_THREAD_INDEX;
+    RSUniRenderUtil::PostReleaseSurfaceTask(std::move(surface), threadIndex);
+    threadIndex = UNI_RENDER_THREAD_INDEX;
+    RSUniRenderUtil::PostReleaseSurfaceTask(std::move(surface), threadIndex);
+}
+ 
+/*
  * @tc.name: ClearNodeCacheSurface
  * @tc.desc:
  * @tc.type: FUNC
@@ -347,6 +387,22 @@ HWTEST_F(RSUniRenderUtilTest, AssignMainThreadNode, Function | SmallTest | Level
     RSUniRenderUtil::AssignMainThreadNode(mainThreadNodes, nullptr);
     ASSERT_EQ(0, mainThreadNodes.size());
     auto node = RSTestUtil::CreateSurfaceNode();
+    RSUniRenderUtil::AssignMainThreadNode(mainThreadNodes, node);
+    ASSERT_EQ(1, mainThreadNodes.size());
+}
+
+/*
+ * @tc.name: AssignMainThreadNode002
+ * @tc.desc:Test AssignMainThreadNode002 when node.isMainThreadNode_ is false
+ * @tc.type: FUNC
+ * @tc.require: issueIAJOWI
+ */
+HWTEST_F(RSUniRenderUtilTest, AssignMainThreadNode002, Function | SmallTest | Level2)
+{
+    std::list<std::shared_ptr<RSSurfaceRenderNode>> mainThreadNodes;
+    ASSERT_EQ(0, mainThreadNodes.size());
+    auto node = RSTestUtil::CreateSurfaceNode();
+    node->isMainThreadNode_ = false;
     RSUniRenderUtil::AssignMainThreadNode(mainThreadNodes, node);
     ASSERT_EQ(1, mainThreadNodes.size());
 }
@@ -502,6 +558,23 @@ HWTEST_F(RSUniRenderUtilTest, IsNeedClientsTest, Function | SmallTest | Level2)
 }
 
 /**
+ * @tc.name: ReleaseColorPickerFilter001
+ * @tc.desc: Test ReleaseColorPickerFilter when filter is nullptr and not nullptr
+ * @tc.type:FUNC
+ * @tc.require: issueIAJOWI
+ */
+HWTEST_F(RSUniRenderUtilTest, ReleaseColorPickerFilter001, Function | SmallTest | Level2)
+{
+    std::shared_ptr<RSFilter> filter = nullptr;
+    ASSERT_EQ(filter, nullptr);
+    RSUniRenderUtil::ReleaseColorPickerFilter(filter);
+
+    filter = RSFilter::CreateBlurFilter(1.0f, 1.0f);
+    ASSERT_NE(filter, nullptr);
+    RSUniRenderUtil::ReleaseColorPickerFilter(filter);
+}
+
+/**
  * @tc.name: ReleaseColorPickerResourceTest
  * @tc.desc: Verify function ReleaseColorPickerResource
  * @tc.type:FUNC
@@ -516,6 +589,32 @@ HWTEST_F(RSUniRenderUtilTest, ReleaseColorPickerResourceTest, Function | SmallTe
     node->children_.emplace_back(std::make_shared<RSRenderNode>(id));
     RSUniRenderUtil::ReleaseColorPickerResource(node);
     EXPECT_FALSE(node->children_.empty());
+}
+
+/**
+ * @tc.name: ReleaseColorPickerResourceTest002
+ * @tc.desc: Test ReleaseColorPickerResource without nullptr
+ * @tc.type:FUNC
+ * @tc.require: issueIAJOWI
+ */
+HWTEST_F(RSUniRenderUtilTest, ReleaseColorPickerResourceTest002, Function | SmallTest | Level2)
+{
+    NodeId id = 0;
+    std::shared_ptr<RSRenderNode> node = std::make_shared<RSRenderNode>(id);
+    ASSERT_NE(node, nullptr);
+    node->renderContent_->renderProperties_.filter_ = std::make_shared<RSFilter>();
+    ASSERT_NE(node->renderContent_->renderProperties_.filter_, nullptr);
+    node->renderContent_->renderProperties_.filter_->type_ = RSFilter::MATERIAL;
+    node->renderContent_->renderProperties_.backgroundFilter_ = std::make_shared<RSFilter>();
+    ASSERT_NE(node->renderContent_->renderProperties_.backgroundFilter_, nullptr);
+    node->renderContent_->renderProperties_.backgroundFilter_->type_ = RSFilter::MATERIAL;
+
+    id = 1;
+    auto child = std::make_shared<RSSurfaceRenderNode>(id);
+    ASSERT_NE(child, nullptr);
+    node->AddChild(child);
+    EXPECT_FALSE(node->children_.empty());
+    RSUniRenderUtil::ReleaseColorPickerResource(node);
 }
 
 /*
@@ -723,6 +822,25 @@ HWTEST_F(RSUniRenderUtilTest, HandleHardwareNodeTest, Function | SmallTest | Lev
     node->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
     RSUniRenderUtil::HandleHardwareNode(node);
     EXPECT_FALSE(node->GetRSSurfaceHandler()->GetBuffer());
+}
+
+/*
+ * @tc.name: HandleHardwareNodeTest002
+ * @tc.desc: Test HandleHardwareNode add child to node
+ * @tc.type: FUNC
+ * @tc.require: issueIAJOWI
+ */
+HWTEST_F(RSUniRenderUtilTest, HandleHardwareNodeTest002, Function | SmallTest | Level2)
+{
+    NodeId id = 1;
+    auto node = std::make_shared<RSSurfaceRenderNode>(id);
+    ASSERT_NE(node, nullptr);
+    node->hasHardwareNode_ = true;
+    id = 2;
+    auto child = std::make_shared<RSSurfaceRenderNode>(id);
+    ASSERT_NE(child, nullptr);
+    node->AddChild(child);
+    RSUniRenderUtil::HandleHardwareNode(node);
 }
 
 /*
