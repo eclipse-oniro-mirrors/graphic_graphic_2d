@@ -109,13 +109,14 @@ HWTEST_F(RSUniRenderUtilTest, SrcRectScaleDown_003, Function | SmallTest | Level
     ASSERT_NE(rsSurfaceRenderNode, nullptr);
     RSSurfaceRenderNode& node = static_cast<RSSurfaceRenderNode&>(*(rsSurfaceRenderNode.get()));
     BufferDrawParam params;
-    Drawing::Rect srcRect(5, 7, 6, 8);
-    params.srcRect = srcRect;
-    RectF localBounds(1, 2, 3, 4);
+    params.srcRect = Drawing::Rect(5, 7, 6, 8);
+    RectF localBounds = RectF(1, 2, 3, 4);
     RSUniRenderUtil::SrcRectScaleDown(
         params, node.GetRSSurfaceHandler()->GetBuffer(), node.GetRSSurfaceHandler()->GetConsumer(), localBounds);
-    srcRect.SetRight(8);
-    srcRect.SetBottom(10);
+    const int32_t right = 8;
+    const int32_t bottom = 10;
+    params.srcRect.SetRight(right);
+    params.srcRect.SetBottom(bottom);
     RSUniRenderUtil::SrcRectScaleDown(
         params, node.GetRSSurfaceHandler()->GetBuffer(), node.GetRSSurfaceHandler()->GetConsumer(), localBounds);
 }
