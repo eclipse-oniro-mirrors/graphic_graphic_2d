@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,91 +14,215 @@
  */
 
 #include "gtest/gtest.h"
-#include "params/rs_render_params.h"
-#include "limit_number.h"
+#include "params/rs_surface_render_params.h"
 
 using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
-class RSRenderParamsTest : public testing::Test {
+class RSSurfaceRenderParamsTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
-    static void DisplayTestInfo();
 };
-
-void RSRenderParamsTest::SetUpTestCase() {}
-void RSRenderParamsTest::TearDownTestCase() {}
-void RSRenderParamsTest::SetUp() {}
-void RSRenderParamsTest::TearDown() {}
-void RSRenderParamsTest::DisplayTestInfo()
-{
-    return;
-}
+void RSSurfaceRenderParamsTest::SetUpTestCase() {}
+void RSSurfaceRenderParamsTest::TearDownTestCase() {}
+void RSSurfaceRenderParamsTest::SetUp() {}
+void RSSurfaceRenderParamsTest::TearDown() {}
 
 /**
- * @tc.name: OnSync001
+ * @tc.name: SetOccludedByFilterCache
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSRenderParamsTest, OnSync001, TestSize.Level1)
+HWTEST_F(RSSurfaceRenderParamsTest, SetOccludedByFilterCache, TestSize.Level1)
 {
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[3];
-    std::unique_ptr<RSRenderParams> target = std::make_unique<RSRenderParams>(id);
-    auto renderParams = static_cast<RSRenderParams*>(target.get());
-    RSRenderParams params(id);
-    params.childHasVisibleEffect_ = true;
-    params.OnSync(target);
-    EXPECT_EQ(params.childHasVisibleEffect_, renderParams->childHasVisibleEffect_);
+    RSSurfaceRenderParams params(100);
+    params.SetOccludedByFilterCache(false);
+    EXPECT_EQ(params.needSync_, false);
+
+    params.SetOccludedByFilterCache(true);
+    EXPECT_EQ(params.needSync_, true);
 }
 
 /**
- * @tc.name: SetAlpha001
+ * @tc.name: SetHardwareEnabled
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSRenderParamsTest, SetAlpha001, TestSize.Level1)
+HWTEST_F(RSSurfaceRenderParamsTest, SetHardwareEnabled, TestSize.Level1)
 {
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[4];
-    std::unique_ptr<RSRenderParams> target = std::make_unique<RSRenderParams>(id);
-    RSRenderParams params(id);
-    auto renderParams = static_cast<RSRenderParams*>(target.get());
-    renderParams->alpha_ = 1.0;
-    float alpha = 1.0;
-    params.SetAlpha(alpha);
+    RSSurfaceRenderParams params(101);
+    params.SetHardwareEnabled(false);
+    EXPECT_EQ(params.needSync_, false);
+
+    params.SetHardwareEnabled(true);
+    EXPECT_EQ(params.needSync_, true);
 }
 
 /**
- * @tc.name: SetAlphaOffScreen001
+ * @tc.name: SetLastFrameHardwareEnabled
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSRenderParamsTest, SetAlphaOffScreen001, TestSize.Level1)
+HWTEST_F(RSSurfaceRenderParamsTest, SetLastFrameHardwareEnabled, TestSize.Level1)
 {
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
-    RSRenderParams params(id);
-    bool alphaOffScreen = false;
-    params.SetAlphaOffScreen(alphaOffScreen);
+    RSSurfaceRenderParams params(102);
+    params.SetLastFrameHardwareEnabled(false);
+    EXPECT_EQ(params.needSync_, false);
+
+    params.SetLastFrameHardwareEnabled(true);
+    EXPECT_EQ(params.needSync_, true);
 }
 
 /**
- * @tc.name: ApplyAlphaAndMatrixToCanvas001
+ * @tc.name: SetLayerSourceTuning
  * @tc.desc:
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSRenderParamsTest, ApplyAlphaAndMatrixToCanvas001, TestSize.Level1)
+HWTEST_F(RSSurfaceRenderParamsTest, SetLayerSourceTuning, TestSize.Level1)
 {
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
-    RSRenderParams params(id);
-    Drawing::Canvas canvas;
-    RSPaintFilterCanvas paintFilterCanvas(&canvas);
-    params.ApplyAlphaAndMatrixToCanvas(paintFilterCanvas, true);
+    RSSurfaceRenderParams params(103);
+    params.SetLayerSourceTuning(false);
+    EXPECT_EQ(params.needSync_, false);
+
+    params.SetLayerSourceTuning(true);
+    EXPECT_EQ(params.needSync_, true);
 }
-} // namespace OHOS::Rosen
+
+/**
+ * @tc.name: SetForceHardwareByUser
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, SetForceHardwareByUser, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(104);
+    params.SetForceHardwareByUser(false);
+    EXPECT_EQ(params.needSync_, false);
+
+    params.SetForceHardwareByUser(true);
+    EXPECT_EQ(params.needSync_, true);
+}
+
+
+/**
+ * @tc.name: SetSurfaceCacheContentStatic
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, SetSurfaceCacheContentStatic, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(105);
+    params.SetSurfaceCacheContentStatic(false, false);
+    EXPECT_EQ(params.needSync_, false);
+
+    params.SetSurfaceCacheContentStatic(true, false);
+    EXPECT_EQ(params.needSync_, false);
+
+    params.SetSurfaceCacheContentStatic(true, true);
+    EXPECT_EQ(params.needSync_, true);
+
+    RSSurfaceRenderParams paramsAno(106);
+    paramsAno.surfaceCacheContentStatic_ = true;
+    params.SetSurfaceCacheContentStatic(false, true);
+    EXPECT_EQ(params.needSync_, true);
+
+    params.SetSurfaceCacheContentStatic(false, false);
+    EXPECT_EQ(params.needSync_, true);
+}
+
+/**
+ * @tc.name: SetSurfaceSubTreeDirty
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, SetSurfaceSubTreeDirty, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(107);
+    params.SetSurfaceSubTreeDirty(false);
+    EXPECT_EQ(params.needSync_, false);
+
+    params.SetSurfaceSubTreeDirty(true);
+    EXPECT_EQ(params.needSync_, true);
+}
+
+/**
+* @tc.name: SetGpuOverDrawBufferOptimizeNode
+* @tc.desc:
+* @tc.type:FUNC
+* @tc.require:
+*/
+HWTEST_F(RSSurfaceRenderParamsTest, SetGpuOverDrawBufferOptimizeNode, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(108);
+    params.SetGpuOverDrawBufferOptimizeNode(false);
+    EXPECT_EQ(params.needSync_, false);
+
+    params.SetGpuOverDrawBufferOptimizeNode(true);
+    EXPECT_EQ(params.needSync_, true);
+}
+
+/**
+ * @tc.name: SetOverDrawBufferNodeCornerRadius
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, SetOverDrawBufferNodeCornerRadius, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(109);
+    params.SetOverDrawBufferNodeCornerRadius(false);
+    EXPECT_EQ(params.needSync_, false);
+
+    params.SetOverDrawBufferNodeCornerRadius(true);
+    EXPECT_EQ(params.needSync_, true);
+}
+
+/**
+* @tc.name: SetRootIdOfCaptureWindow
+* @tc.desc:
+* @tc.type:FUNC
+* @tc.require:
+*/
+HWTEST_F(RSSurfaceRenderParamsTest, SetRootIdOfCaptureWindow, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(110);
+    params.SetRootIdOfCaptureWindow(false);
+    EXPECT_EQ(params.needSync_, false);
+
+    params.SetRootIdOfCaptureWindow(true);
+    EXPECT_EQ(params.needSync_, true);
+}
+
+/**
+ * @tc.name: IsVisibleDirtyRegionEmpty
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, IsVisibleDirtyRegionEmpty, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(111);
+    Drawing::Region region;
+    params.windowInfo_.isMainWindowType_ = true;
+    ASSERT_TRUE(params.IsVisibleDirtyRegionEmpty(region));
+
+    params.windowInfo_.isMainWindowType_ = false;
+    params.windowInfo_.isLeashWindow_ = true;
+    ASSERT_FALSE(params.IsVisibleDirtyRegionEmpty(region));
+
+    params.windowInfo_.isMainWindowType_ = false;
+    params.windowInfo_.isLeashWindow_ = false;
+    ASSERT_FALSE(params.IsVisibleDirtyRegionEmpty(region));
+}
+}
