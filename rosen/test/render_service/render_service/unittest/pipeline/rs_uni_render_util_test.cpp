@@ -679,18 +679,18 @@ HWTEST_F(RSUniRenderUtilTest, IsNeedClientsTest, Function | SmallTest | Level2)
  */
 HWTEST_F(RSUniRenderUtilTest, IsNeedClientTest002, Function | SmallTest | Level2)
 {
-    auto node = RSTestUtil::CreateSurfaceNode();
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(1);
     ASSERT_NE(node, nullptr);
     ComposeInfo info;
     node->renderContent_->renderProperties_.SetRotation(1.0f);
-    EXPECT_TRUE(RSUniRenderUtil::IsNeedClient(node, info));
+    EXPECT_TRUE(RSUniRenderUtil::IsNeedClient(*node, info));
     node->renderContent_->renderProperties_.SetRotationX(1.0f);
-    EXPECT_TRUE(RSUniRenderUtil::IsNeedClient(node, info));
+    EXPECT_TRUE(RSUniRenderUtil::IsNeedClient(*node, info));
     node->renderContent_->renderProperties_.SetRotationY(1.0f);
-    EXPECT_TRUE(RSUniRenderUtil::IsNeedClient(node, info));
+    EXPECT_TRUE(RSUniRenderUtil::IsNeedClient(*node, info));
     Quaternion quaternion(90.0f, 90.0f, 90.0f, 90.0f);
     node->renderContent_->renderProperties_.SetQuaternion(quaternion);
-    EXPECT_TRUE(RSUniRenderUtil::IsNeedClient(node, info));
+    EXPECT_TRUE(RSUniRenderUtil::IsNeedClient(*node, info));
 }
 
 /**
