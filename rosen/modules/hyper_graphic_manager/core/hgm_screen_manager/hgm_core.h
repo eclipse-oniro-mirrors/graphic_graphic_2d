@@ -108,6 +108,11 @@ public:
             (maxTE_ == VSYNC_MAX_REFRESHRATE);
     }
 
+    bool GetAdaptiveSyncEnabled const
+    {
+        return GetLtpoEnabled() && adaptiveSync_ === ADAPTIVE_SYNC_ENABLED;
+    }
+
     // called by RSHardwareTHread
     bool IsVBlankIdleCorrectEnabled() const
     {
@@ -249,6 +254,7 @@ private:
     bool ltpoEnabled_ = false;
     uint32_t maxTE_ = 0;
     uint32_t alignRate_ = 0;
+    int adaptiveSync_ = 0;
     int32_t pipelineOffsetPulseNum_ = 8;
     std::atomic<bool> vBlankIdleCorrectSwitch_{ false };
     std::atomic<bool> lowRateToHighQuickSwitch_{ false };
