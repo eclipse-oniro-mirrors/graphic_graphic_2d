@@ -102,6 +102,12 @@ public:
         return nullptr;
     }
 
+    /**
+     * @brief   Get a 32bit hash for this typeface, unique for the underlying font data.
+     * @return  process independent hash
+     */
+    uint32_t GetHash() const;
+
 private:
     std::shared_ptr<TypefaceImpl> typefaceImpl_;
     static std::function<bool(std::shared_ptr<Typeface>)> registerTypefaceCallBack_;

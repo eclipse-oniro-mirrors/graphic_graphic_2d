@@ -41,6 +41,10 @@ public:
     virtual std::shared_ptr<Typeface> MakeClone(const FontArguments& args) const = 0;
     virtual bool IsCustomTypeface() const = 0;
     virtual std::shared_ptr<Data> Serialize() const = 0;
+    virtual uint32_t GetHash() const
+    {
+        return 0; // provide implementation in case adapter does not have means
+    }
 
 protected:
     TypefaceImpl() noexcept = default;

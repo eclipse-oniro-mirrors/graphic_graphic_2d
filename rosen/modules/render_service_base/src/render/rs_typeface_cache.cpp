@@ -50,6 +50,27 @@ uint32_t RSTypefaceCache::GetTypefaceId(uint64_t uniqueId)
     return static_cast<uint32_t>(0xFFFFFFFF & uniqueId);
 }
 
+bool RSTypefaceCache::HasTypeface(uint64_t uniqueId, uint32_t hash)
+{
+    std::lock_guard<std::mutex> lock(mapMutex_);
+    if (typefaceHashCode_.find(uniqueId) != typefaceHashCode_.end()) {
+        // this client has already registered this typeface
+        return true;
+    }
+
+    if (hash) {
+        // check if someone else has already registered this typeface, add ref count and
+        // mapping if so.
+        if (auto iterator = typefaceHashMap_.find(hash); iterator != typefaceHashMap_.end()) {
+            typefaceHashCode_[uniqueId] = hash;
+            std::get<1>(iterator->second)++;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void RSTypefaceCache::CacheDrawingTypeface(uint64_t uniqueId,
     std::shared_ptr<Drawing::Typeface> typeface)
 {
@@ -58,10 +79,14 @@ void RSTypefaceCache::CacheDrawingTypeface(uint64_t uniqueId,
         if (typefaceHashCode_.find(uniqueId) != typefaceHashCode_.end()) {
             return;
         }
-        std::shared_ptr<Drawing::Data> data = typeface->Serialize();
-        const void* stream = data->GetData();
-        size_t size = data->GetSize();
-        uint32_t  hash_value = SkOpts::hash_fn(stream, size, 0);
+        uint32_t hash_value = typeface->GetHash();
+        if (!hash_value) { // fallback to slow path if the adapter does not provide hash
+            std::shared_ptr<Drawing::Data> data = typeface->Serialize();
+            const void* stream = data->GetData();
+            size_t size = data->GetSize();
+            const size_t MAX_HASH_SIZE(20000);
+            hash_value = SkOpts::hash_fn(stream, std::min(size, MAX_HASH_SIZE), 0);
+        }
         typefaceHashCode_[uniqueId] = hash_value;
         if (typefaceHashMap_.find(hash_value) != typefaceHashMap_.end()) {
             auto [faceCache, ref] = typefaceHashMap_[hash_value];

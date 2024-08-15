@@ -60,6 +60,7 @@ public:
     static sk_sp<SkTypeface> DeserializeTypeface(const void* data, size_t length, void* ctx);
     std::shared_ptr<Data> Serialize() const override;
     static std::shared_ptr<Typeface> Deserialize(const void* data, size_t size);
+    uint32_t GetHash() const override;
 
 private:
     SkiaTypeface() = default;
