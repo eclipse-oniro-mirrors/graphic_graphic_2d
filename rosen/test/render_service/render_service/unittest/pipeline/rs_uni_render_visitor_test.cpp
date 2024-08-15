@@ -22,6 +22,7 @@
 #include "rs_test_util.h"
 #include "system/rs_system_parameters.h"
 
+#include "consumer_surface.h"
 #include "draw/color.h"
 #include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_context.h"
