@@ -526,7 +526,7 @@ void RSHardwareThread::AddRefreshRateCount()
             RS_LOGE("RSHardwareThread::AddRefreshData fail, frameBufferSurfaceOhos_ is nullptr");
             return;
         }
-        frameRateMgr->GetTouchManager().HandleRsFrame();
+        frameRateMgr->HandleRsFrame();
     });
 }
 
