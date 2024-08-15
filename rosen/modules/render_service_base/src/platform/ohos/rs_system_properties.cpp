@@ -292,6 +292,14 @@ bool RSSystemProperties::GetHwcRegionDfxEnabled()
     return hwcRegionDfxEnabled;
 }
 
+bool RSSystemProperties::GetDrawMirrorCacheImageEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.cacheimage.mirror.enabled", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 0) != 0;
+}
+
 bool RSSystemProperties::GetAFBCEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.afbc.enabled", "1");
@@ -600,14 +608,6 @@ bool RSSystemProperties::GetKawaseOriginalEnabled()
     static bool kawaseOriginalEnabled =
         std::atoi((system::GetParameter("persist.sys.graphic.kawaseOriginalEnable", "0")).c_str()) != 0;
     return kawaseOriginalEnabled;
-}
-
-// this will migrate to rs_system_parameters.cpp
-bool RSSystemProperties::GetQuickPrepareEnabled()
-{
-    static bool quickPrepareEnabled =
-        std::atoi((system::GetParameter("persist.sys.graphic.quickPrepareEnabled", "1")).c_str()) != 0;
-    return quickPrepareEnabled;
 }
 
 bool RSSystemProperties::GetRenderParallelEnabled()

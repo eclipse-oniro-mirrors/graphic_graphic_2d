@@ -39,7 +39,7 @@ bool RSInterfaceCodeAccessVerifierBase::IsInterfaceCodeAccessible(CodeUnderlying
     return true;
 }
 #ifdef ENABLE_IPC_SECURITY
-Security::AccessToken::ATokenTypeEnum RSInterfaceCodeAccessVerifierBase::GetTokenType() const
+Security::AccessToken::ATokenTypeEnum RSInterfaceCodeAccessVerifierBase::GetTokenType()
 {
     uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
     return Security::AccessToken::AccessTokenKit::GetTokenTypeFlag(tokenId);
@@ -72,10 +72,6 @@ bool RSInterfaceCodeAccessVerifierBase::CheckHapPermission(
 
 bool RSInterfaceCodeAccessVerifierBase::CheckPermission(CodeUnderlyingType code) const
 {
-    bool securityPermissionCheckEnabled =  RSSystemProperties::GetSecurityPermissionCheckEnabled();
-    if (!securityPermissionCheckEnabled) {
-        return true;
-    }
     std::vector<std::string> permissions = GetPermissions(code);
     bool hasPermission = true;
     auto tokenType = GetTokenType();
@@ -96,34 +92,6 @@ bool RSInterfaceCodeAccessVerifierBase::CheckPermission(CodeUnderlyingType code)
         }
         if (!hasPermission) {
             RS_LOGD("%{public}d ipc interface code access denied: HAS NO PERMISSION", code);
-            return false;
-        }
-    }
-    return true;
-}
-
-bool RSInterfaceCodeAccessVerifierBase::IsPermissionAuthenticated(CodeUnderlyingType code) const
-{
-    std::vector<std::string> permissions = GetPermissions(code);
-    bool hasPermission = true;
-    auto tokenType = GetTokenType();
-    auto tokenID = GetTokenID();
-    for (auto& permission : permissions) {
-        switch (tokenType) {
-            case Security::AccessToken::ATokenTypeEnum::TOKEN_HAP:
-                hasPermission = CheckHapPermission(tokenID, permission);
-                break;
-            case Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE:
-                hasPermission = CheckNativePermission(tokenID, permission);
-                break;
-            case Security::AccessToken::ATokenTypeEnum::TOKEN_SHELL:
-                hasPermission = CheckNativePermission(tokenID, permission);
-                break;
-            default:
-                break;
-        }
-        if (!hasPermission) {
-            RS_LOGE("%{public}d ipc interface code access denied: permission authentication failed", code);
             return false;
         }
     }
@@ -176,7 +144,7 @@ int RSInterfaceCodeAccessVerifierBase::GetInterfacePermissionSize() const
     return countSz;
 }
 
-bool RSInterfaceCodeAccessVerifierBase::IsSystemApp() const
+bool RSInterfaceCodeAccessVerifierBase::IsSystemApp()
 {
     uint64_t fullTokenId = IPCSkeleton::GetCallingFullTokenID();
     return Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
@@ -198,6 +166,42 @@ bool RSInterfaceCodeAccessVerifierBase::IsSystemCalling(const std::string& calli
     }
     return isSystemCalling;
 }
+
+bool RSInterfaceCodeAccessVerifierBase::IsAncoCalling(const std::string& callingCode) const
+{
+    static constexpr uint32_t ANCO_UID = 5557;
+    bool isAncoCalling = (OHOS::IPCSkeleton::GetCallingUid() == ANCO_UID);
+    if (!isAncoCalling) {
+        RS_LOGE("%{public}s ipc interface code access denied: not anco calling", callingCode.c_str());
+    }
+    return isAncoCalling;
+}
+
+void RSInterfaceCodeAccessVerifierBase::GetAccessType(bool& isTokenTypeValid, bool& isNonSystemAppCalling)
+{
+    switch (GetTokenType()) {
+        case (Security::AccessToken::ATokenTypeEnum::TOKEN_HAP): {
+            isTokenTypeValid = true;
+            isNonSystemAppCalling = !IsSystemApp();
+            break;
+        }
+        case (Security::AccessToken::ATokenTypeEnum::TOKEN_NATIVE): {
+            isTokenTypeValid = true;
+            isNonSystemAppCalling = false;
+            break;
+        }
+        case (Security::AccessToken::ATokenTypeEnum::TOKEN_SHELL): {
+            isTokenTypeValid = true;
+            isNonSystemAppCalling = false;
+            break;
+        }
+        default: { // TOKEN_INVALID and TOKEN_TYPE_BUTT
+            isTokenTypeValid = false;
+            isNonSystemAppCalling = false;
+            break;
+        }
+    }
+}
 #else
 bool RSInterfaceCodeAccessVerifierBase::IsSystemCalling(const std::string& /* callingCode */) const
 {
@@ -209,9 +213,15 @@ bool RSInterfaceCodeAccessVerifierBase::CheckPermission(CodeUnderlyingType code)
     return true;
 }
 
-bool RSInterfaceCodeAccessVerifierBase::IsPermissionAuthenticated(CodeUnderlyingType code) const
+bool RSInterfaceCodeAccessVerifierBase::IsAncoCalling(const std::string& callingCode) const
 {
     return true;
+}
+
+void RSInterfaceCodeAccessVerifierBase::GetAccessType(bool& isTokenTypeValid, bool& isNonSystemAppCalling)
+{
+    isTokenTypeValid = true;
+    isNonSystemAppCalling = false;
 }
 #endif
 

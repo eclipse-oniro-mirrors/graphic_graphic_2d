@@ -92,6 +92,69 @@ HWTEST_F(RSSurfaceRenderNodeTest, ConnectToNodeInRenderService001, TestSize.Leve
 }
 
 /**
+ * @tc.name: SetSurfaceNodeType001
+ * @tc.desc: Test SetSurfaceNodeType
+ * @tc.type: FUNC
+ * @tc.require: issueIAI1VN
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetSurfaceNodeType001, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSSurfaceNodeType type = RSSurfaceNodeType::DEFAULT;
+    RSSurfaceRenderNodeConfig config = { .id = id, .nodeType = type };
+    auto node = std::make_shared<RSSurfaceRenderNode>(config);
+    EXPECT_NE(node, nullptr);
+    node->SetSurfaceNodeType(RSSurfaceNodeType::ABILITY_COMPONENT_NODE);
+    bool isSameType = (node->GetSurfaceNodeType() == RSSurfaceNodeType::ABILITY_COMPONENT_NODE);
+    EXPECT_TRUE(isSameType);
+    node->SetSurfaceNodeType(RSSurfaceNodeType::DEFAULT);
+    isSameType = (node->GetSurfaceNodeType() == RSSurfaceNodeType::DEFAULT);
+    EXPECT_FALSE(isSameType);
+}
+
+/**
+ * @tc.name: SetSurfaceNodeType002
+ * @tc.desc: Test SetSurfaceNodeType
+ * @tc.type: FUNC
+ * @tc.require: issueIAI1VN
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetSurfaceNodeType002, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSSurfaceNodeType type = RSSurfaceNodeType::DEFAULT;
+    RSSurfaceRenderNodeConfig config = { .id = id, .nodeType = type };
+    auto node = std::make_shared<RSSurfaceRenderNode>(config);
+    EXPECT_NE(node, nullptr);
+    node->SetSurfaceNodeType(RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE);
+    bool isSameType = (node->GetSurfaceNodeType() == RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE);
+    EXPECT_TRUE(isSameType);
+    node->SetSurfaceNodeType(RSSurfaceNodeType::DEFAULT);
+    isSameType = (node->GetSurfaceNodeType() == RSSurfaceNodeType::DEFAULT);
+    EXPECT_FALSE(isSameType);
+}
+
+/**
+ * @tc.name: SetSurfaceNodeType003
+ * @tc.desc: Test SetSurfaceNodeType
+ * @tc.type: FUNC
+ * @tc.require: issueIAI1VN
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, SetSurfaceNodeType003, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSSurfaceNodeType type = RSSurfaceNodeType::DEFAULT;
+    RSSurfaceRenderNodeConfig config = { .id = id, .nodeType = type };
+    auto node = std::make_shared<RSSurfaceRenderNode>(config);
+    EXPECT_NE(node, nullptr);
+    node->SetSurfaceNodeType(RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE);
+    bool isSameType = (node->GetSurfaceNodeType() == RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE);
+    EXPECT_TRUE(isSameType);
+    node->SetSurfaceNodeType(RSSurfaceNodeType::DEFAULT);
+    isSameType = (node->GetSurfaceNodeType() == RSSurfaceNodeType::DEFAULT);
+    EXPECT_FALSE(isSameType);
+}
+
+/**
  * @tc.name: ClearChildrenCache001
  * @tc.desc: test
  * @tc.type:FUNC
@@ -828,7 +891,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetForceHardwareAndFixRotation001, TestSize.Le
 
     node->InitRenderParams();
     node->SetForceHardwareAndFixRotation(true);
-    ASSERT_EQ(node->isForceHardwareByUser_, true);
+    ASSERT_EQ(node->isFixRotationByUser_, true);
 }
 
 /**
@@ -844,7 +907,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetForceHardwareAndFixRotation002, TestSize.Le
 
     node->InitRenderParams();
     node->SetForceHardwareAndFixRotation(false);
-    ASSERT_EQ(node->isForceHardwareByUser_, false);
+    ASSERT_EQ(node->isFixRotationByUser_, false);
 }
 
 /**
@@ -944,6 +1007,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, PrepareRenderBeforeChildren, TestSize.Level1)
     Drawing::Canvas canvas;
     RSPaintFilterCanvas rsPaintFilterCanvas(&canvas);
     std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id, context);
+    node->InitRenderParams();
     node->PrepareRenderBeforeChildren(rsPaintFilterCanvas);
     ASSERT_NE(node->GetRenderProperties().GetBoundsGeometry(), nullptr);
 }
@@ -1107,6 +1171,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, ProcessAnimatePropertyBeforeChildren, TestSize
     Drawing::Canvas canvasArgs;
     auto canvas = std::make_shared<RSPaintFilterCanvas>(&canvasArgs);
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id, context);
+    surfaceNode->InitRenderParams();
     surfaceNode->ProcessAnimatePropertyBeforeChildren(*canvas, true);
     surfaceNode->cacheType_ = CacheType::ANIMATE_PROPERTY;
     surfaceNode->needDrawAnimateProperty_ = true;
@@ -2488,21 +2553,69 @@ HWTEST_F(RSSurfaceRenderNodeTest, GetSkipDraw001, TestSize.Level2)
 }
 
 /**
- * @tc.name: SetRootIdOfCaptureWindow
- * @tc.desc: test results of SetRootIdOfCaptureWindow
- * @tc.type:FUNC
- * @tc.require:issueI981R9
+ * @tc.name: GetAncoForceDoDirect001
+ * @tc.desc: Test function GetAncoForceDoDirect
+ * @tc.type: FUNC
+ * @tc.require: issueIAIIEP
  */
-HWTEST_F(RSSurfaceRenderNodeTest, SetRootIdOfCaptureWindow, TestSize.Level2)
+HWTEST_F(RSSurfaceRenderNodeTest, GetAncoForceDoDirect001, TestSize.Level2)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    ASSERT_NE(rsContext, nullptr);
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    ASSERT_NE(node, nullptr);
+
+    RSSurfaceRenderNode::SetAncoForceDoDirect(false);
+    node->SetAncoFlags(1);
+    ASSERT_FALSE(node->GetAncoForceDoDirect());
+    ASSERT_EQ(node->GetAncoFlags(), 1);
+    node->SetAncoFlags(0);
+    ASSERT_FALSE(node->GetAncoForceDoDirect());
+    ASSERT_EQ(node->GetAncoFlags(), 0);
+
+    RSSurfaceRenderNode::SetAncoForceDoDirect(true);
+    node->SetAncoFlags(1);
+    ASSERT_TRUE(node->GetAncoForceDoDirect());
+    ASSERT_EQ(node->GetAncoFlags(), 1);
+    node->SetAncoFlags(0);
+    ASSERT_FALSE(node->GetAncoForceDoDirect());
+    ASSERT_EQ(node->GetAncoFlags(), 0);
+}
+
+/**
+ * @tc.name: RotateCorner001
+ * @tc.desc: test results of RotateCorner
+ * @tc.type:FUNC
+ * @tc.require:issueIAIAQ0
+ */
+HWTEST_F(RSSurfaceRenderNodeTest, RotateCorner001, TestSize.Level2)
 {
     auto rsContext = std::make_shared<RSContext>();
     auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
-    auto rootId = id + 1; // 1 : generate a rootId for CaptureWindow
-    node->SetRootIdOfCaptureWindow(rootId);
-    ASSERT_EQ(node->GetRootIdOfCaptureWindow(), rootId);
-    node->InitRenderParams();
-    node->SetRootIdOfCaptureWindow(rootId);
-    ASSERT_EQ(node->GetStagingRenderParams()->GetRootIdOfCaptureWindow(), rootId);
+    constexpr int firstCornerRadius{1};
+    constexpr int secondCornerRadius{2};
+    constexpr int thirdCornerRadius{3};
+    constexpr int fourthCornerRadius{4};
+
+    Vector4<int> cornerRadius1{firstCornerRadius, secondCornerRadius, thirdCornerRadius, fourthCornerRadius};
+    node->RotateCorner(RS_ROTATION_0, cornerRadius1);
+    EXPECT_TRUE(cornerRadius1 == Vector4<int>(
+        firstCornerRadius, secondCornerRadius, thirdCornerRadius, fourthCornerRadius));
+    
+    Vector4<int> cornerRadius2{firstCornerRadius, secondCornerRadius, thirdCornerRadius, fourthCornerRadius};
+    node->RotateCorner(RS_ROTATION_90, cornerRadius2);
+    EXPECT_TRUE(cornerRadius2 == Vector4<int>(
+        fourthCornerRadius, firstCornerRadius, secondCornerRadius, thirdCornerRadius));
+    
+    Vector4<int> cornerRadius3{firstCornerRadius, secondCornerRadius, thirdCornerRadius, fourthCornerRadius};
+    node->RotateCorner(RS_ROTATION_180, cornerRadius3);
+    EXPECT_TRUE(cornerRadius3 == Vector4<int>(
+        thirdCornerRadius, fourthCornerRadius, firstCornerRadius, secondCornerRadius));
+    
+    Vector4<int> cornerRadius4{firstCornerRadius, secondCornerRadius, thirdCornerRadius, fourthCornerRadius};
+    node->RotateCorner(RS_ROTATION_270, cornerRadius4);
+    EXPECT_TRUE(cornerRadius4 == Vector4<int>(
+        secondCornerRadius, thirdCornerRadius, fourthCornerRadius, firstCornerRadius));
 }
 } // namespace Rosen
 } // namespace OHOS

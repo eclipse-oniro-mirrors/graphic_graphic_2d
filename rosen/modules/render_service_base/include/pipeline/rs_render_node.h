@@ -276,6 +276,7 @@ public:
     bool UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManager, bool accumGeoDirty, const RectI& clipRect,
         const Drawing::Matrix& parentSurfaceMatrix);
     void UpdateDirtyRegionInfoForDFX(RSDirtyRegionManager& dirtyManager);
+    void UpdateSubTreeSkipDirtyForDFX(RSDirtyRegionManager& dirtyManager, const RectI& rect);
     // update node's local draw region (based on node itself, including childrenRect)
     bool UpdateLocalDrawRect();
 
@@ -501,7 +502,7 @@ public:
         std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable, RSDrawableSlot slot);
     bool IsFilterCacheValid() const;
     bool IsAIBarFilterCacheValid() const;
-    void MarkForceClearFilterCacheWhenWithInvisible();
+    void MarkForceClearFilterCacheWithInvisible();
 
     void CheckGroupableAnimation(const PropertyId& id, bool isAnimAdd);
     bool IsForcedDrawInGroup() const;
@@ -718,9 +719,6 @@ public:
         return renderDrawable_;
     }
 
-    // DFX
-    void DumpDrawableTree(int32_t depth, std::string& out) const;
-
 protected:
     virtual void OnApplyModifiers() {}
     void SetOldDirtyInSurface(RectI oldDirtyInSurface);
@@ -740,8 +738,7 @@ protected:
 
     void DumpSubClassNode(std::string& out) const;
     void DumpDrawCmdModifiers(std::string& out) const;
-    void DumpDrawCmdModifier(std::string& propertyDesc, RSModifierType type,
-        std::shared_ptr<RSRenderModifier>& modifier) const;
+    void DumpModifiers(std::string& out) const;
 
     virtual void OnTreeStateChanged();
     // recursive update subSurfaceCnt
@@ -831,9 +828,6 @@ private:
     void ResortChildren();
     bool ShouldClearSurface();
 
-    // DFX
-    std::string DumpDrawableVec() const;
-
     std::weak_ptr<RSContext> context_ = {};
 
     bool isContentDirty_ = false;
@@ -889,7 +883,6 @@ private:
     bool isDirtyRegionUpdated_ = false;
     bool isContainBootAnimation_ = false;
     bool isLastVisible_ = false;
-    bool fallbackAnimationOnDestroy_ = true;
     uint32_t disappearingTransitionCount_ = 0;
     RectI oldDirty_;
     RectI oldDirtyInSurface_;

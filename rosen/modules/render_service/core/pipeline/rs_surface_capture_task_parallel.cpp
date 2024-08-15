@@ -64,50 +64,26 @@ static inline void DrawCapturedImg(Drawing::Image& image,
 void RSSurfaceCaptureTaskParallel::CheckModifiers(NodeId id)
 {
     RS_TRACE_NAME("RSSurfaceCaptureTaskParallel::CheckModifiers");
-    auto nodePtr = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(
-        RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode(id));
-    if (nodePtr == nullptr) {
+    bool needSync = RSMainThread::Instance()->IsOcclusionNodesNeedSync(id) ||
+        RSMainThread::Instance()->IsHardwareEnabledNodesNeedSync();
+    if (!needSync) {
         return;
     }
-
-    bool needSync = false;
-    if (nodePtr->IsLeashWindow() && nodePtr->GetLastFrameUifirstFlag() == MultiThreadCacheType::NONE) {
-        auto children = nodePtr->GetSortedChildren();
-        for (auto child : *children) {
-            auto childSurfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child);
-            if (childSurfaceNode && childSurfaceNode->IsMainWindowType() &&
-                childSurfaceNode->GetVisibleRegion().IsEmpty()) {
-                childSurfaceNode->ApplyModifiers();
-                childSurfaceNode->PrepareChildrenForApplyModifiers();
-                needSync = true;
-            }
-        }
-    } else if (nodePtr->IsMainWindowType() && nodePtr->GetVisibleRegion().IsEmpty()) {
-        auto curNode = nodePtr;
-        auto parentNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(nodePtr->GetParent().lock());
-        if (parentNode && parentNode->IsLeashWindow()) {
-            curNode = parentNode;
-        }
-        if (curNode->GetLastFrameUifirstFlag() == MultiThreadCacheType::NONE) {
-            nodePtr->ApplyModifiers();
-            nodePtr->PrepareChildrenForApplyModifiers();
-            needSync = true;
-        }
-    }
-
-    if (needSync) {
-        std::function<void()> syncTask = []() -> void {
-            RS_TRACE_NAME("RSSurfaceCaptureTaskParallel::SyncModifiers");
-            auto& pendingSyncNodes = RSMainThread::Instance()->GetContext().pendingSyncNodes_;
-            for (auto& [id, weakPtr] : pendingSyncNodes) {
-                if (auto node = weakPtr.lock()) {
+    std::function<void()> syncTask = []() -> void {
+        RS_TRACE_NAME("RSSurfaceCaptureTaskParallel::SyncModifiers");
+        auto& pendingSyncNodes = RSMainThread::Instance()->GetContext().pendingSyncNodes_;
+        for (auto& [id, weakPtr] : pendingSyncNodes) {
+            if (auto node = weakPtr.lock()) {
+                if (!RSUifirstManager::Instance().CollectSkipSyncNode(node)) {
                     node->Sync();
+                } else {
+                    node->SkipSync();
                 }
             }
-            pendingSyncNodes.clear();
-        };
-        RSUniRenderThread::Instance().PostSyncTask(syncTask);
-    }
+        }
+        pendingSyncNodes.clear();
+    };
+    RSUniRenderThread::Instance().PostSyncTask(syncTask);
 }
 
 void RSSurfaceCaptureTaskParallel::Capture(NodeId id,
@@ -135,9 +111,12 @@ void RSSurfaceCaptureTaskParallel::Capture(NodeId id,
 
 bool RSSurfaceCaptureTaskParallel::CreateResources()
 {
-    RS_LOGD("RSSurfaceCaptureTaskParallel capture nodeId:[%{public}" PRIu64 "]", nodeId_);
+    RS_LOGD("RSSurfaceCaptureTaskParallel capture nodeId:[%{public}" PRIu64 "] scaleX:%{public}f"
+        " scaleY:%{public}f useCurWindow:%{public}d", nodeId_, captureConfig_.scaleX,
+        captureConfig_.scaleY,  captureConfig_.useCurWindow);
     if (ROSEN_EQ(captureConfig_.scaleX, 0.f) || ROSEN_EQ(captureConfig_.scaleY, 0.f) ||
-        captureConfig_.scaleX < 0.f || captureConfig_.scaleY < 0.f) {
+        captureConfig_.scaleX < 0.f || captureConfig_.scaleY < 0.f ||
+        captureConfig_.scaleX > 1.f || captureConfig_.scaleY > 1.f) {
         RS_LOGE("RSSurfaceCaptureTaskParallel::CreateResources: SurfaceCapture scale is invalid.");
         return false;
     }
@@ -297,11 +276,10 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByD
     opts.size.height = ceil(pixmapHeight * captureConfig_.scaleY);
     RS_LOGI("RSSurfaceCaptureTaskParallel::CreatePixelMapByDisplayNode: NodeId:[%{public}" PRIu64 "],"
         " origin pixelmap size: [%{public}u, %{public}u],"
-        " created pixelmap size: [%{public}u, %{public}u],"
         " scale: [%{public}f, %{public}f],"
-        " useDma: [%{public}d]",
-        node->GetId(), pixmapWidth, pixmapHeight, opts.size.width, opts.size.height,
-        captureConfig_.scaleX, captureConfig_.scaleY, captureConfig_.useDma);
+        " useDma: [%{public}d], screenRotation: [%{public}d], screenCorrection: [%{public}d]",
+        node->GetId(), pixmapWidth, pixmapHeight, captureConfig_.scaleX, captureConfig_.scaleY,
+        captureConfig_.useDma, screenRotation_, screenCorrection_);
     return Media::PixelMap::Create(opts);
 }
 
@@ -355,8 +333,6 @@ int32_t RSSurfaceCaptureTaskParallel::CalPixelMapRotation()
     auto screenRotation = ScreenRotationMapping(screenRotation_);
     auto screenCorrection = ScreenRotationMapping(screenCorrection_);
     int32_t rotation = screenRotation - screenCorrection;
-    RS_LOGI("RSSurfaceCaptureTaskParallel::CalPixelMapRotation: screenRotation:%{public}d"
-        " screenCorrection:%{public}d", screenRotation, screenCorrection);
     return rotation;
 }
 

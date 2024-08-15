@@ -692,6 +692,52 @@ HWTEST_F(RSRenderNodeTest2, MapAndUpdateChildrenRect002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: MapAndUpdateChildrenRect003
+ * @tc.desc: test
+ * @tc.type: FUNC
+ * @tc.require: issueI9V3BK
+ */
+HWTEST_F(RSRenderNodeTest2, MapAndUpdateChildrenRect003, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
+    std::shared_ptr<RSSurfaceRenderNode> surfaceNode = std::make_shared<RSSurfaceRenderNode>(1);
+
+    surfaceNode->shouldPaint_ = true;
+    auto& properties = nodeTest->GetMutableRenderProperties();
+    properties.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
+    properties.SetClipToFrame(true);
+    surfaceNode->selfDrawRect_ = {0, 0, 1000, 1100};
+    surfaceNode->childrenRect_ = {0, 0, 1000, 1000};
+    nodeTest->selfDrawRect_ = {0, 0, 1000, 800};
+    surfaceNode->parent_ = nodeTest;
+    surfaceNode->MapAndUpdateChildrenRect();
+    ASSERT_TRUE(true);
+}
+
+/**
+ * @tc.name: MapAndUpdateChildrenRect004
+ * @tc.desc: test
+ * @tc.type: FUNC
+ * @tc.require: issueI9V3BK
+ */
+HWTEST_F(RSRenderNodeTest2, MapAndUpdateChildrenRect004, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
+    std::shared_ptr<RSSurfaceRenderNode> surfaceNode = std::make_shared<RSSurfaceRenderNode>(1);
+
+    surfaceNode->shouldPaint_ = true;
+    auto& properties = nodeTest->GetMutableRenderProperties();
+    properties.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
+    properties.SetClipToFrame(false);
+    surfaceNode->selfDrawRect_ = {0, 0, 1000, 1100};
+    surfaceNode->childrenRect_ = {0, 0, 1000, 1000};
+    nodeTest->selfDrawRect_ = {0, 0, 1000, 800};
+    surfaceNode->parent_ = nodeTest;
+    surfaceNode->MapAndUpdateChildrenRect();
+    ASSERT_TRUE(true);
+}
+
+/**
  * @tc.name: IsFilterCacheValid001
  * @tc.desc: test
  * @tc.type: FUNC
@@ -1111,29 +1157,15 @@ HWTEST_F(RSRenderNodeTest2, DumpSubClassNodeTest032, TestSize.Level1)
 }
 
 /**
- * @tc.name: DumpDrawCmdModifierTest033
- * @tc.desc: DumpDrawCmdModifier ForceMergeSubTreeDirtyRegion SubTreeSkipPrepare test
+ * @tc.name: ForceMergeSubTreeDirtyRegionTest033
+ * @tc.desc: ForceMergeSubTreeDirtyRegion SubTreeSkipPrepare test
  * @tc.type: FUNC
  * @tc.require: issueIA61E9
  */
-HWTEST_F(RSRenderNodeTest2, DumpDrawCmdModifierTest033, TestSize.Level1)
+HWTEST_F(RSRenderNodeTest2, ForceMergeSubTreeDirtyRegionTest033, TestSize.Level1)
 {
     std::shared_ptr<RSSurfaceRenderNode> nodeTest = std::make_shared<RSSurfaceRenderNode>(0);
     EXPECT_NE(nodeTest, nullptr);
-
-    std::string outTest7;
-    std::shared_ptr<RSRenderProperty<Drawing::DrawCmdListPtr>> propertyTest =
-        std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
-    EXPECT_NE(propertyTest, nullptr);
-    std::shared_ptr<RSDrawCmdListRenderModifier> drawCmdModifiersTest =
-        std::make_shared<RSDrawCmdListRenderModifier>(propertyTest);
-    EXPECT_NE(drawCmdModifiersTest, nullptr);
-    std::shared_ptr<RSRenderModifier> modifier = std::dynamic_pointer_cast<RSRenderModifier>(drawCmdModifiersTest);
-    EXPECT_NE(modifier, nullptr);
-    nodeTest->DumpDrawCmdModifier(outTest7, RSModifierType::ENV_FOREGROUND_COLOR, modifier);
-    nodeTest->DumpDrawCmdModifier(outTest7, RSModifierType::ENV_FOREGROUND_COLOR_STRATEGY, modifier);
-    nodeTest->DumpDrawCmdModifier(outTest7, RSModifierType::GEOMETRYTRANS, modifier);
-    EXPECT_NE(outTest7, "");
 
     RSDirtyRegionManager dirtyManagerTest1;
     RectI clipRectTest1 = RectI { 0, 0, 1, 1 };
@@ -1232,5 +1264,22 @@ HWTEST_F(RSRenderNodeTest2, UpdateDrawingCacheInfoBeforeChildrenTest035, TestSiz
     nodeTest->DisableDrawingCacheByHwcNode();
     EXPECT_EQ(nodeTest->drawingCacheType_, RSDrawingCacheType::DISABLED_CACHE);
 }
+
+/**
+ * @tc.name: SetDrawRegionTest
+ * @tc.desc: SetDrawRegionTest
+ * @tc.type: FUNC
+ * @tc.require: issueIA5Y41
+ */
+HWTEST_F(RSRenderNodeTest2, SetDrawRegionTest, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
+    std::shared_ptr<RectF> rect = std::make_shared<RectF>();
+    rect->SetAll(0, 0, (std::numeric_limits<uint16_t>::max() + 1),
+        (std::numeric_limits<uint16_t>::max() + 1));
+    nodeTest->SetDrawRegion(rect);
+    ASSERT_TRUE(true);
+}
+
 } // namespace Rosen
 } // namespace OHOS

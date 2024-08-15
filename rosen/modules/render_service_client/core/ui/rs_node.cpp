@@ -272,6 +272,7 @@ std::vector<std::shared_ptr<RSAnimation>> RSNode::AnimateWithCurrentOptions(
     auto implicitAnimator = RSImplicitAnimatorMap::Instance().GetAnimator(gettid());
     if (implicitAnimator == nullptr) {
         ROSEN_LOGE("Failed to open implicit animation, implicit animator is null!");
+        propertyCallback();
         return {};
     }
     auto finishCallbackType =
@@ -1373,12 +1374,14 @@ void RSNode::SetUIBackgroundFilter(const OHOS::Rosen::Filter* backgroundFilter)
             auto rippleCenterX = waterRipplePara->GetRippleCenterX();
             auto rippleCenterY = waterRipplePara->GetRippleCenterY();
             auto progress = waterRipplePara->GetProgress();
-            RSWaterRipplePara rs_water_ripple_param = {
+            auto rippleMode = waterRipplePara->GetRippleMode();
+            RSWaterRipplePara params = {
                 waveCount,
                 rippleCenterX,
-                rippleCenterY
+                rippleCenterY,
+                rippleMode
             };
-            SetWaterRippleParams(rs_water_ripple_param, progress);
+            SetWaterRippleParams(params, progress);
         }
     }
 }
@@ -1419,6 +1422,15 @@ void RSNode::SetUIForegroundFilter(const OHOS::Rosen::Filter* foregroundFilter)
             auto filterBlurPara = std::static_pointer_cast<FilterBlurPara>(filterPara);
             auto blurRadius = filterBlurPara->GetRadius();
             SetForegroundEffectRadius(blurRadius);
+        }
+        if (filterPara->GetParaType() == FilterPara::FLY_OUT) {
+            auto flyOutPara = std::static_pointer_cast<FlyOutPara>(filterPara);
+            auto flyMode = flyOutPara->GetFlyMode();
+            auto degree = flyOutPara->GetDegree();
+            RSFlyOutPara rs_fly_out_param = {
+                flyMode,
+            };
+            SetFlyOutParams(rs_fly_out_param, degree);
         }
     }
 }
@@ -1468,6 +1480,7 @@ void RSNode::SetBackgroundFilter(const std::shared_ptr<RSFilter>& backgroundFilt
         SetBackgroundBlurColorMode(BLUR_COLOR_MODE::DEFAULT);
         SetBackgroundBlurRadiusX(0.f);
         SetBackgroundBlurRadiusY(0.f);
+        bgFilterDescription_ = "";
     } else if (backgroundFilter->GetFilterType() == RSFilter::MATERIAL) {
         auto materialFilter = std::static_pointer_cast<RSMaterialFilter>(backgroundFilter);
         float Radius = materialFilter->GetRadius();
@@ -1480,13 +1493,27 @@ void RSNode::SetBackgroundFilter(const std::shared_ptr<RSFilter>& backgroundFilt
         SetBackgroundBlurBrightness(Brightness);
         SetBackgroundBlurMaskColor(MaskColor);
         SetBackgroundBlurColorMode(ColorMode);
+
+        const uint8_t MaskColorBytes = 16; // 16 bytes
+        char maskColorStr[MaskColorBytes] = { 0 };
+        if (sprintf_s(maskColorStr, MaskColorBytes, "%08X", MaskColor.AsArgbInt()) != -1) {
+            bgFilterDescription_ = "materialFilter, radius: " + std::to_string(Radius) + " sigma" +
+            ", saturation: " + std::to_string(Saturation) + ", brightness: " + std::to_string(Brightness) +
+            ", color: " + maskColorStr + ", colorMode: " + std::to_string(ColorMode) + "Id: " + std::to_string(id_);
+        }
     } else if (backgroundFilter->GetFilterType() == RSFilter::BLUR) {
         auto blurFilter = std::static_pointer_cast<RSBlurFilter>(backgroundFilter);
         float blurRadiusX = blurFilter->GetBlurRadiusX();
         float blurRadiusY = blurFilter->GetBlurRadiusY();
         SetBackgroundBlurRadiusX(blurRadiusX);
         SetBackgroundBlurRadiusY(blurRadiusY);
+        bgFilterDescription_ = "blurFilter, radius: " + std::to_string(blurRadiusX) + " sigma";
     }
+}
+
+std::string RSNode::GetBackgroundFilterDescription()
+{
+    return bgFilterDescription_;
 }
 
 void RSNode::SetFilter(const std::shared_ptr<RSFilter>& filter)
@@ -1787,6 +1814,14 @@ void RSNode::SetWaterRippleParams(const RSWaterRipplePara& params, float progres
         RSProperty<RSWaterRipplePara>>(RSModifierType::WATER_RIPPLE_PARAMS, params);
     SetProperty<RSWaterRippleProgressModifier,
         RSAnimatableProperty<float>>(RSModifierType::WATER_RIPPLE_PROGRESS, progress);
+}
+
+void RSNode::SetFlyOutParams(const RSFlyOutPara& params, float degree)
+{
+    SetProperty<RSFlyOutParamsModifier,
+        RSProperty<RSFlyOutPara>>(RSModifierType::FLY_OUT_PARAMS, params);
+    SetProperty<RSFlyOutDegreeModifier,
+        RSAnimatableProperty<float>>(RSModifierType::FLY_OUT_DEGREE, degree);
 }
 
 void RSNode::SetFreeze(bool isFreeze)

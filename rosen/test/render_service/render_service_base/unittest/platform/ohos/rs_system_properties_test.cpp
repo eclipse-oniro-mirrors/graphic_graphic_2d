@@ -272,6 +272,17 @@ HWTEST_F(RSSystemPropertiesTest, GetHwcRegionDfxEnabled, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetDrawMirrorCacheImageEnabled
+ * @tc.desc: GetDrawMirrorCacheImageEnabled Test
+ * @tc.type:FUNC
+ * @tc.require: issueI9JZWC
+ */
+HWTEST_F(RSSystemPropertiesTest, GetDrawMirrorCacheImageEnabled, TestSize.Level1)
+{
+    ASSERT_TRUE(RSSystemProperties::GetDrawMirrorCacheImageEnabled());
+}
+
+/**
  * @tc.name: GetAFBCEnabled
  * @tc.desc: GetAFBCEnabled Test
  * @tc.type:FUNC
@@ -668,17 +679,6 @@ HWTEST_F(RSSystemPropertiesTest, GetRandomColorEnabled, TestSize.Level1)
 HWTEST_F(RSSystemPropertiesTest, GetKawaseOriginalEnabled, TestSize.Level1)
 {
     ASSERT_FALSE(RSSystemProperties::GetKawaseOriginalEnabled());
-}
-
-/**
- * @tc.name: GetQuickPrepareEnabled
- * @tc.desc: GetQuickPrepareEnabled Test
- * @tc.type:FUNC
- * @tc.require: issueI9JZWC
- */
-HWTEST_F(RSSystemPropertiesTest, GetQuickPrepareEnabled, TestSize.Level1)
-{
-    ASSERT_TRUE(RSSystemProperties::GetQuickPrepareEnabled());
 }
 
 /**

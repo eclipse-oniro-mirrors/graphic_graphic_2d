@@ -215,6 +215,17 @@ void GEVisualEffectImpl::SetParam(const std::string& tag, const std::vector<std:
 void GEVisualEffectImpl::SetParam(const std::string& tag, const uint32_t param)
 {
     switch (filterType_) {
+        case FilterType::WATER_RIPPLE: {
+            if (waterRippleParams_ == nullptr) {
+                return;
+            }
+            if (tag == GE_FILTER_WATER_RIPPLE_RIPPLE_MODE) {
+                waterRippleParams_->rippleMode = param;
+            } else if (tag == GE_FILTER_WATER_RIPPLE_WAVE_NUM) {
+                waterRippleParams_->waveCount = param;
+            }
+            break;
+        }
         case FilterType::MAGNIFIER: {
             SetMagnifierParamsUint32(tag, param);
             break;
@@ -376,8 +387,6 @@ void GEVisualEffectImpl::SetWaterRippleParams(const std::string& tag, float para
         
         { GE_FILTER_WATER_RIPPLE_PROGRESS,
             [](GEVisualEffectImpl* obj, float p) { obj->waterRippleParams_->progress = p; } },
-        { GE_FILTER_WATER_RIPPLE_WAVE_NUM,
-            [](GEVisualEffectImpl* obj, float p) { obj->waterRippleParams_->waveCount = p; } },
         { GE_FILTER_WATER_RIPPLE_RIPPLE_CENTER_X,
             [](GEVisualEffectImpl* obj, float p) { obj->waterRippleParams_->rippleCenterX = p; } },
         { GE_FILTER_WATER_RIPPLE_RIPPLE_CENTER_Y,

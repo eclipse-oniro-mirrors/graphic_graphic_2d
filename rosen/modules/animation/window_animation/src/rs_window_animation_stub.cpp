@@ -229,8 +229,8 @@ int RSWindowAnimationStub::WindowAnimationTargetsUpdate(MessageParcel& data, Mes
     sptr<RSWindowAnimationTarget> fullScreenWindowTarget = nullptr;
     bool isfullScreenWindowTarget;
     if (!data.ReadBool(isfullScreenWindowTarget)) {
-        WALOGE("Failed to read whether there is full screen window target");
-        return ERR_INVALID_DATA;;
+        WALOGE("Failed to read whether there is full screen window target!");
+        return ERR_INVALID_DATA;
     }
     
     if (isfullScreenWindowTarget) {

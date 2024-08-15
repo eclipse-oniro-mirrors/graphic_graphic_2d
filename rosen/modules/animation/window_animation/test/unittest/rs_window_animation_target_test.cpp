@@ -35,26 +35,10 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
-
-    static std::shared_ptr<RSWindowAnimationTarget> windowAnimationTarget_;
 };
-std::shared_ptr<RSWindowAnimationTarget> RSWindowAnimationStubTest::windowAnimationTarget_ = nullptr;
 
-void RSWindowAnimationTargetTest::SetUpTestCase() {
-    RSSurfaceNodeConfig config;
-    std::shared_ptr<RSSurfaceNode> animationSurfaceNode = RSSurfaceNode::Create(config, true);
-    std::shared_ptr<RSWindowAnimationTarget> windowAnimationTarget_ = std::make_shared<RSWindowAnimationTarget>();
-    windowAnimationTarget_->bundleName_ = "";
-    windowAnimationTarget_->abilityName_ = "";
-    windowAnimationTarget_->windowBounds_ = RRect();
-    windowAnimationTarget_->surfaceNode_ = animationSurfaceNode;
-    windowAnimationTarget_->windowId_ = 0;
-    windowAnimationTarget_->displayId_ = 0;
-    windowAnimationTarget_->missionId_ = 0;
-}
-void RSWindowAnimationTargetTest::TearDownTestCase() {
-    windowAnimationTarget_ = nullptr;
-}
+void RSWindowAnimationTargetTest::SetUpTestCase() {}
+void RSWindowAnimationTargetTest::TearDownTestCase() {}
 void RSWindowAnimationTargetTest::SetUp() {}
 void RSWindowAnimationTargetTest::TearDown() {}
 
@@ -65,12 +49,25 @@ void RSWindowAnimationTargetTest::TearDown() {}
  */
 HWTEST_F(RSWindowAnimationTargetTest, Unmarshalling001, TestSize.Level1)
 {
+    GTEST_LOG_(INFO) << "RSWindowAnimationTargetTest Unmarshalling001 start";
+    RSSurfaceNodeConfig config;
+    std::shared_ptr<RSSurfaceNode> animationSurfaceNode = RSSurfaceNode::Create(config, true);
+    std::shared_ptr<RSWindowAnimationTarget> windowAnimationTarget = std::make_shared<RSWindowAnimationTarget>();
+    windowAnimationTarget->bundleName_ = "";
+    windowAnimationTarget->abilityName_ = "";
+    windowAnimationTarget->windowBounds_ = RRect();
+    windowAnimationTarget->surfaceNode_ = animationSurfaceNode;
+    windowAnimationTarget->windowId_ = 0;
+    windowAnimationTarget->displayId_ = 0;
+    windowAnimationTarget->missionId_ = 0;
+
     Parcel parcel;
     auto res = windowAnimationTarget->Unmarshalling(parcel);
     ASSERT_EQ(res, nullptr);
-    windowAnimationTarget_->Marshalling(parcel);
-    res = windowAnimationTarget_->Unmarshalling(parcel);
+    windowAnimationTarget->Marshalling(parcel);
+    res = windowAnimationTarget->Unmarshalling(parcel);
     ASSERT_NE(res, nullptr);
+    GTEST_LOG_(INFO) << "RSWindowAnimationTargetTest Unmarshalling001 end";
 }
 
 /**
@@ -80,12 +77,25 @@ HWTEST_F(RSWindowAnimationTargetTest, Unmarshalling001, TestSize.Level1)
  */
 HWTEST_F(RSWindowAnimationTargetTest, Marshalling001, TestSize.Level1)
 {
+    GTEST_LOG_(INFO) << "RSWindowAnimationTargetTest Marshalling001 start";
+    RSSurfaceNodeConfig config;
+    std::shared_ptr<RSSurfaceNode> animationSurfaceNode = RSSurfaceNode::Create(config, true);
+    std::shared_ptr<RSWindowAnimationTarget> windowAnimationTarget = std::make_shared<RSWindowAnimationTarget>();
+    windowAnimationTarget->bundleName_ = "";
+    windowAnimationTarget->abilityName_ = "";
+    windowAnimationTarget->windowBounds_ = RRect();
+    windowAnimationTarget->surfaceNode_ = animationSurfaceNode;
+    windowAnimationTarget->windowId_ = 0;
+    windowAnimationTarget->displayId_ = 0;
+    windowAnimationTarget->missionId_ = 0;
+
     Parcel parcel;
-    bool res = windowAnimationTarget_->Marshalling(parcel);
+    bool res = windowAnimationTarget->Marshalling(parcel);
     ASSERT_EQ(res, true);
-    windowAnimationTarget_->surfaceNode_ = nullptr;
-    res = windowAnimationTarget_->Marshalling(parcel);
+    windowAnimationTarget->surfaceNode_ = nullptr;
+    res = windowAnimationTarget->Marshalling(parcel);
     ASSERT_EQ(res, true);
+    GTEST_LOG_(INFO) << "RSWindowAnimationTargetTest Marshalling001 end";
 }
 
 /**
@@ -95,18 +105,31 @@ HWTEST_F(RSWindowAnimationTargetTest, Marshalling001, TestSize.Level1)
  */
 HWTEST_F(RSWindowAnimationTargetTest, ReadFromParcel001, TestSize.Level1)
 {
+    GTEST_LOG_(INFO) << "RSWindowAnimationTargetTest ReadFromParcel001 start";
+    RSSurfaceNodeConfig config;
+    std::shared_ptr<RSSurfaceNode> animationSurfaceNode = RSSurfaceNode::Create(config, true);
+    std::shared_ptr<RSWindowAnimationTarget> windowAnimationTarget = std::make_shared<RSWindowAnimationTarget>();
+    windowAnimationTarget->bundleName_ = "";
+    windowAnimationTarget->abilityName_ = "";
+    windowAnimationTarget->windowBounds_ = RRect();
+    windowAnimationTarget->surfaceNode_ = animationSurfaceNode;
+    windowAnimationTarget->windowId_ = 0;
+    windowAnimationTarget->displayId_ = 0;
+    windowAnimationTarget->missionId_ = 0;
+
     Parcel parcel;
-    bool res = windowAnimationTarget_->ReadFromParcel(parcel);
+    bool res = windowAnimationTarget->ReadFromParcel(parcel);
     ASSERT_EQ(res, false);
-    windowAnimationTarget_->Marshalling(parcel);
-    res = windowAnimationTarget_->ReadFromParcel(parcel);
+    windowAnimationTarget->Marshalling(parcel);
+    res = windowAnimationTarget->ReadFromParcel(parcel);
     ASSERT_EQ(res, true);
     
     Parcel parcelNull;
-    windowAnimationTarget_->surfaceNode_ = nullptr;
-    windowAnimationTarget_->Marshalling(parcelNull);
-    res = windowAnimationTarget_->ReadFromParcel(parcelNull);
+    windowAnimationTarget->surfaceNode_ = nullptr;
+    windowAnimationTarget->Marshalling(parcelNull);
+    res = windowAnimationTarget->ReadFromParcel(parcelNull);
     ASSERT_EQ(res, true);
+    GTEST_LOG_(INFO) << "RSWindowAnimationTargetTest ReadFromParcel001 end";
 }
 } // namespace Rosen
 } // namespace OHOS

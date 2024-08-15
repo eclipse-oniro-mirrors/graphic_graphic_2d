@@ -15,37 +15,78 @@
 
 #include "hgm_idle_detector.h"
 #include "rs_trace.h"
+#include "hgm_task_handle_thread.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace {
     constexpr uint64_t BUFFER_IDLE_TIME_OUT = 200000000; // 200ms
-    constexpr uint64_t MAX_BUFFER_COUNT = 10;
-    constexpr uint32_t MAX_BUFFER_LENGTH = 10;
+    constexpr uint64_t MAX_CACHED_VALID_SURFACE_NAME_COUNT = 60;
     constexpr uint32_t FPS_MAX = 120;
     const std::string ACE_ANIMATOR_NAME = "AceAnimato";
     const std::string OTHER_SURFACE = "Other_SF";
 }
 
-void HgmIdleDetector::UpdateSurfaceTime(const std::string& surfaceName, uint64_t timestamp,  pid_t pid)
+void HgmIdleDetector::UpdateSurfaceTime(const std::string& surfaceName, uint64_t timestamp,
+    pid_t pid, UIFWKType uiFwkType)
 {
-    if (!GetAppSupportedState() || frameTimeMap_.size() > MAX_BUFFER_COUNT || surfaceName.empty()) {
+    if (surfaceName.empty()) {
+        return;
+    }
+
+    if (!GetAppSupportedState() || frameTimeMap_.size() > MAX_CACHED_VALID_SURFACE_NAME_COUNT) {
         if (!frameTimeMap_.empty()) {
             frameTimeMap_.clear();
         }
         return;
     }
-
-    auto validSurfaceName = surfaceName.size() > MAX_BUFFER_LENGTH ?
-        surfaceName.substr(0, MAX_BUFFER_LENGTH) : surfaceName;
-    if (!std::count(supportAppBufferList_.begin(), supportAppBufferList_.end(), OTHER_SURFACE) &&
-        !std::count(supportAppBufferList_.begin(), supportAppBufferList_.end(), validSurfaceName)) {
+    std::string validSurfaceName = "";
+    bool needHighRefresh = false;
+    switch (uiFwkType) {
+        case UIFWKType::FROM_UNKNOWN:
+            needHighRefresh = GetUnknownFrameworkState(surfaceName, validSurfaceName);
+            break;
+        case UIFWKType::FROM_SURFACE:
+            needHighRefresh = GetSurfaceFrameworkState(surfaceName, validSurfaceName);
+            break;
+        default:
+            break;
+    }
+    if (!needHighRefresh) {
         return;
     }
 
     RS_TRACE_NAME_FMT("UpdateSurfaceTime:: Not Idle SurFace Name = [%s]  From Pid = [%d]",
         surfaceName.c_str(), pid);
     frameTimeMap_[validSurfaceName] = timestamp;
+}
+
+bool HgmIdleDetector::GetUnknownFrameworkState(const std::string& surfaceName,
+    std::string& uiFwkType)
+{
+    for (auto supportedAppBuffer : supportAppBufferList_) {
+        if (surfaceName.rfind(supportedAppBuffer, 0) == 0) {
+            uiFwkType = supportedAppBuffer;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool HgmIdleDetector::GetSurfaceFrameworkState(const std::string& surfaceName,
+    std::string& validSurfaceName)
+{
+    for (auto supportedAppBuffer : supportAppBufferList_) {
+        if (surfaceName.rfind(supportedAppBuffer, 0) == 0) {
+            validSurfaceName = supportedAppBuffer;
+            return true;
+        }
+    }
+    if (std::count(supportAppBufferList_.begin(), supportAppBufferList_.end(), OTHER_SURFACE)) {
+        validSurfaceName = OTHER_SURFACE;
+        return true;
+    }
+    return false;
 }
 
 bool HgmIdleDetector::GetSurfaceIdleState(uint64_t timestamp)
@@ -69,7 +110,6 @@ bool HgmIdleDetector::GetSurfaceIdleState(uint64_t timestamp)
 
 bool HgmIdleDetector::ThirdFrameNeedHighRefresh()
 {
-    std::lock_guard<std::mutex> lock(appBufferBlackListMutex_);
     if (appBufferBlackList_.empty() || (!aceAnimatorIdleState_ &&
         !std::count(appBufferBlackList_.begin(), appBufferBlackList_.end(), ACE_ANIMATOR_NAME))) {
         return true;
@@ -90,7 +130,6 @@ bool HgmIdleDetector::ThirdFrameNeedHighRefresh()
 
 int32_t HgmIdleDetector::GetTouchUpExpectedFPS()
 {
-    std::lock_guard<std::mutex> lock(appBufferListMutex_);
     if (appBufferList_.empty()) {
         return FPS_MAX;
     }

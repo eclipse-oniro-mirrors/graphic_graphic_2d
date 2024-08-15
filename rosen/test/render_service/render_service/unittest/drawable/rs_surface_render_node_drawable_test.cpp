@@ -83,62 +83,6 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CreateSurfaceRenderNodeDrawable, TestS
 }
 
 /**
- * @tc.name: FindInstanceChildOfDisplay
- * @tc.desc: Test FindInstanceChildOfDisplay, early return case
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, FindInstanceChildOfDisplay001, TestSize.Level1)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    ASSERT_EQ(surfaceDrawable_->FindInstanceChildOfDisplay(nullptr), INVALID_NODEID);
-
-    NodeId id = 1;
-    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id);
-    ASSERT_EQ(surfaceDrawable_->FindInstanceChildOfDisplay(surfaceNode), INVALID_NODEID);
-}
-
-/**
- * @tc.name: FindInstanceChildOfDisplay
- * @tc.desc: Test FindInstanceChildOfDisplay, if surface parent is display
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, FindInstanceChildOfDisplay002, TestSize.Level1)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    RSDisplayNodeConfig config;
-    NodeId displayId = 1;
-    auto displayNode = std::make_shared<RSDisplayRenderNode>(displayId, config);
-    NodeId surfaceId = 2;
-    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceId);
-    displayNode->AddChild(surfaceNode);
-
-    ASSERT_EQ(surfaceDrawable_->FindInstanceChildOfDisplay(surfaceNode), surfaceId);
-}
-
-/**
- * @tc.name: CacheImgForCapture
- * @tc.desc: Test CacheImgForCapture
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, CacheImgForCapture, TestSize.Level1)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    auto rsRenderNode = std::make_shared<RSRenderNode>(0);
-    auto curDisplayNodeDrawable = std::make_shared<RSDisplayRenderNodeDrawable>(std::move(rsRenderNode));
-    curDisplayNodeDrawable->renderParams_ = std::make_unique<RSRenderParams>(0);
-    ASSERT_NE(curDisplayNodeDrawable, nullptr);
-    std::shared_ptr<Drawing::Surface> surface = Drawing::Surface::MakeRasterN32Premul(100, 100);
-    ASSERT_NE(surface, nullptr);
-    RSPaintFilterCanvas paintFilterCanvas(surface.get());
-    surfaceDrawable_->CacheImgForCapture(paintFilterCanvas, *curDisplayNodeDrawable);
-    EXPECT_TRUE(curDisplayNodeDrawable->renderParams_->GetSecurityDisplay());
-    EXPECT_TRUE(paintFilterCanvas.GetSurface());
-}
-
-/**
  * @tc.name: OnDraw
  * @tc.desc: Test OnDraw
  * @tc.type: FUNC
@@ -397,33 +341,6 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCapture, TestSize.Level1)
 }
 
 /**
- * @tc.name: EnableRecordingOptimization
- * @tc.desc: Test EnableRecordingOptimization
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, EnableRecordingOptimization, TestSize.Level1)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    RSSurfaceRenderParams surfaceParams(0);
-    ASSERT_FALSE(surfaceDrawable_->EnableRecordingOptimization(surfaceParams));
-    ASSERT_FALSE(RSUniRenderThread::Instance().GetRSRenderThreadParams());
-    RSUniRenderThread::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
-    ASSERT_FALSE(surfaceDrawable_->EnableRecordingOptimization(surfaceParams));
-
-    RSUniRenderThread::Instance().renderThreadParams_->hasCaptureImg_ = true;
-    RSUniRenderThread::Instance().renderThreadParams_->rootIdOfCaptureWindow_ = 1;
-    RSUniRenderThread::Instance().renderThreadParams_->startVisit_ = false;
-    ASSERT_TRUE(surfaceDrawable_->EnableRecordingOptimization(surfaceParams));
-
-    RSUniRenderThread::Instance().renderThreadParams_->startVisit_ = true;
-    ASSERT_FALSE(surfaceDrawable_->EnableRecordingOptimization(surfaceParams));
-    
-    RSUniRenderThread::Instance().renderThreadParams_->rootIdOfCaptureWindow_ = surfaceParams.GetId();
-    ASSERT_FALSE(surfaceDrawable_->EnableRecordingOptimization(surfaceParams));
-}
-
-/**
  * @tc.name: CaptureSurface
  * @tc.desc: Test CaptureSurface, default case
  * @tc.type: FUNC
@@ -497,19 +414,6 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface002, TestSize.Level1)
     surfaceParams->isSecurityLayer_ = false;
     surfaceParams->isProtectedLayer_ = true;
     surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
-}
-
-/**
- * @tc.name: CheckIfNeedResetRotate
- * @tc.desc: Test CheckIfNeedResetRotate
- * @tc.type: FUNC
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckIfNeedResetRotate, TestSize.Level1)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    Drawing::Canvas canvas;
-    RSPaintFilterCanvas paintFilterCanvas(&canvas);
-    ASSERT_FALSE(surfaceDrawable_->CheckIfNeedResetRotate(paintFilterCanvas));
 }
 
 /**
@@ -898,70 +802,6 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawUIFirstDfxTest, TestSize.Level1)
     enableType = MultiThreadCacheType::LEASH_WINDOW;
     surfaceDrawable_->DrawUIFirstDfx(canvas, enableType, *surfaceParams, true);
     surfaceDrawable_->DrawUIFirstDfx(canvas, enableType, *surfaceParams, false);
-}
-
-/**
- * @tc.name: DealWithSelfDrawingNodeBuffer
- * @tc.desc: Test DealWithSelfDrawingNodeBuffer
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, DealWithSelfDrawingNodeBufferTest, TestSize.Level1)
-{
-    ASSERT_NE(renderNode_, nullptr);
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    RSUniRenderThread::GetCaptureParam().isSnapshot_ = true;
-    std::shared_ptr<Drawing::Surface> drawingSurface = std::make_shared<Drawing::Surface>();
-    canvas_->surface_ = drawingSurface.get();
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable_->renderParams_.get());
-    ASSERT_NE(surfaceParams, nullptr);
-    const auto params01 = surfaceParams;
-    RSUniRenderThread::Instance().uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
-    surfaceParams->isHardwareEnabled_ = true;
-    CaptureParam param;
-    param.isSnapshot_ = false;
-    param.isMirror_ = false;
-    RSUniRenderThread::SetCaptureParam(param);
-    surfaceDrawable_->DealWithSelfDrawingNodeBuffer(*canvas_, *params01);
-    ASSERT_FALSE(surfaceDrawable_->IsHardwareEnabledTopSurface());
-    ASSERT_TRUE(surfaceParams->GetHardwareEnabled());
-
-    renderNode_->nodeType_ = RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE;
-    renderNode_->name_ = "pointer window"; // for test
-    const auto params03 = surfaceParams;
-    surfaceDrawable_->DealWithSelfDrawingNodeBuffer(*canvas_, *params03);
-    ASSERT_TRUE(renderNode_->IsHardwareEnabledTopSurface());
-}
-
-/**
- * @tc.name: DrawSelfDrawingNodeBuffer
- * @tc.desc: Test DrawSelfDrawingNodeBuffer
- * @tc.type: FUNC
- * @tc.require: issueIAEDYI
- */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawSelfDrawingNodeBufferTest, TestSize.Level1)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable_->renderParams_.get());
-    ASSERT_NE(surfaceParams, nullptr);
-    const auto params01 = surfaceParams;
-    BufferDrawParam params;
-    RSUniRenderThread::Instance().uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
-    surfaceDrawable_->DrawSelfDrawingNodeBuffer(*canvas_, *params01, params);
-    ASSERT_TRUE(surfaceParams->GetSelfDrawingNodeType() != SelfDrawingNodeType::VIDEO);
-
-    Color color(255, 255, 255, 255); // for test
-    surfaceParams->backgroundColor_ = color;
-    const auto params02 = surfaceParams;
-    surfaceDrawable_->DrawSelfDrawingNodeBuffer(*canvas_, *params02, params);
-    ASSERT_TRUE(surfaceParams->GetSelfDrawingNodeType() != SelfDrawingNodeType::VIDEO);
-    ASSERT_FALSE(surfaceDrawable_->HasCornerRadius(*params02));
-
-    surfaceParams->rrect_.radius_[0].x_ = 0.f;
-    surfaceParams->rrect_.radius_[0].y_ = 4.f;
-    const auto params03 = surfaceParams;
-    surfaceDrawable_->DrawSelfDrawingNodeBuffer(*canvas_, *params03, params);
-    ASSERT_TRUE(surfaceDrawable_->HasCornerRadius(*params03));
 }
 
 /**

@@ -89,6 +89,7 @@ napi_value EffectNapi::Constructor(napi_env env, napi_callback_info info)
     status = napi_wrap(env, jsThis, effectNapi, EffectNapi::Destructor, nullptr, nullptr);
     if (status != napi_ok) {
         delete effectNapi;
+        effectNapi = nullptr;
         UIEFFECT_LOG_E("Failed to wrap native instance");
         return nullptr;
     }
@@ -118,6 +119,7 @@ napi_value EffectNapi::CreateEffect(napi_env env, napi_callback_info info)
         [](napi_env env, void* data, void* hint) {
             VisualEffect* effectObj = (VisualEffect*)data;
             delete effectObj;
+            effectObj = nullptr;
         },
         nullptr, nullptr);
     napi_property_descriptor resultFuncs[] = {
@@ -181,6 +183,12 @@ napi_value EffectNapi::CreateBrightnessBlender(napi_env env, napi_callback_info 
     }
     napi_value object = nullptr;
     napi_create_object(env, &object);
+    if (object == nullptr) {
+        UIEFFECT_LOG_E("EffectNapi CreateBrightnessBlender object is Faild");
+        delete blender;
+        blender = nullptr;
+        return nullptr;
+    }
     napi_wrap(
         env, object, blender,
         [](napi_env env, void* data, void* hint) {
@@ -196,6 +204,7 @@ napi_value EffectNapi::CreateBrightnessBlender(napi_env env, napi_callback_info 
     if (argc != 1) {
         UIEFFECT_LOG_E("EffectNapi  SetbackgroundColorBlender input check failed, argc number is not 1.");
         delete blender;
+        blender = nullptr;
         return nullptr;
     }
 
@@ -203,12 +212,14 @@ napi_value EffectNapi::CreateBrightnessBlender(napi_env env, napi_callback_info 
     if (nativeObj == nullptr) {
         UIEFFECT_LOG_E("EffectNapi  SetbackgroundColorBlender input check failed, nativeObj is nullptr.");
         delete blender;
+        blender = nullptr;
         return nullptr;
     }
 
-    if (!CheckCreateBrightnessBlender (env, nativeObj)) {
+    if (!CheckCreateBrightnessBlender(env, nativeObj)) {
         UIEFFECT_LOG_E("EffectNapi  CheckCreateBrightnessBlender failed.");
         delete blender;
+        blender = nullptr;
         return nullptr;
     }
 
@@ -221,9 +232,6 @@ napi_value EffectNapi::CreateBrightnessBlender(napi_env env, napi_callback_info 
     napi_set_named_property(env, object, "negativeCoefficient", ParseJsValue(env, nativeObj, "negativeCoefficient"));
     napi_set_named_property(env, object, "fraction", ParseJsValue(env, nativeObj, "fraction"));
 
-    if (object == nullptr) {
-        UIEFFECT_LOG_E("EffectNapi CreateBrightnessBlender object is Faild");
-    }
     return object;
 }
  
@@ -275,24 +283,24 @@ bool ParseJsVec3Value(napi_value jsObject, napi_env env, const std::string& name
     }
     uint32_t arraySize = 0;
     if (!IsArrayForNapiValue(env, param, arraySize)) {
-        UIEFFECT_LOG_E("GetRegionCoordinates get args fail, not array");
+        UIEFFECT_LOG_E("ParseJsVec3Value: get args fail, not array");
         return false;
     }
     if (arraySize < NUM_3) {
-        UIEFFECT_LOG_E("GetRegionCoordinates coordinates num less than 4");
+        UIEFFECT_LOG_E("ParseJsVec3Value: get args fail, array size less than 3");
         return false;
     }
     for (size_t i = 0; i < NUM_3; i++) {
         napi_value jsValue;
         if ((napi_get_element(env, param, i, &jsValue)) != napi_ok) {
-            UIEFFECT_LOG_E("GetRegionCoordinates get args fail");
+            UIEFFECT_LOG_E("ParseJsVec3Value: get args fail, get value of element fail");
             return false;
         }
         double value = 0.0;
         if (napi_get_value_double(env, jsValue, &value) == napi_ok) {
             vecTmp[i] = value;
         } else {
-            UIEFFECT_LOG_E("GetRegionCoordinates region coordinates not double");
+            UIEFFECT_LOG_E("ParseJsVec3Value: get args fail, value of element not double");
             return false;
         }
     }
