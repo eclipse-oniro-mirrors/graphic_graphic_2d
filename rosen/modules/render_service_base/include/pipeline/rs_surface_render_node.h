@@ -1206,6 +1206,15 @@ public:
         dirtyStatus_ = containerDirty ? NodeDirty::DIRTY : dirtyStatus_;
     }
 
+    bool GetHasReducedCornerRadius() const
+    {
+        return hasReducedCornerRadius_;
+    }
+
+    void SetHasReducedCornerRadius(bool hasReducedCornerRadius)
+    {
+        hasReducedCornerRadius_ = hasReducedCornerRadius;
+    }
 protected:
     void OnSync() override;
     void OnSkipSync() override;
@@ -1259,6 +1268,7 @@ private:
     bool hasHdrPresent_ = false;
     RectI srcRect_;
     Drawing::Matrix totalMatrix_;
+    bool hasReducedCornerRadius_ = false;
     int32_t offsetX_ = 0;
     int32_t offsetY_ = 0;
     float positionZ_ = 0.0f;

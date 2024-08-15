@@ -1416,13 +1416,52 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(std::vector<
     hwcRects.emplace_back(dst);
 }
 
-void RSUniRenderVisitor::UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSSurfaceRenderNode>& hwcNode)
+void RSUniRenderVisitor::UpdateHwcNodeProperty(std::shared_ptr<RSSurfaceRenderNode> hwcNode)
 {
-    Drawing::Matrix totalMatrix;
-    float alpha = 1.f;
-    RSUniRenderUtil::AccumulateMatrixAndAlpha(hwcNode, totalMatrix, alpha);
+    auto hwcNodeGeo = hwcNode->GetRenderProperties().GetBoundsGeometry();
+    if (!hwcNodeGeo) {
+        RS_LOGE("hwcNode Geometry is not prepared.");
+        return;
+    }
+    bool hasCornerRadius = !hwcNode->GetRenderProperties().GetCornerRadius().IsZero();
+    float alpha = hwcNode->GetRenderProperties().GetAlpha();
+    Drawing::Matrix totalMatrix = hwcNodeGeo->GetMatrix();
+    auto hwcNodeRect = hwcNodeGeo->GetAbsRect();
+    RSUniRenderUtil::TraverseParentNodeAndReduce(hwcNode,
+        [&alpha](std::shared_ptr<RSRenderNode> parent) {
+            auto& parentProperty = parent->GetRenderProperties();
+            alpha *= parentProperty.GetAlpha();
+            if (ROSEN_EQ(alpha, 1.f) && parent->GetType() != RSRenderNodeType::DISPLAY_NODE) {
+                parent->DisableDrawingCacheByHwcNode();
+            }
+        },
+        [&totalMatrix](std::shared_ptr<RSRenderNode> parent) {
+            auto& parentProperty = parent->GetRenderProperties();
+            auto parentGeo = parentProperty.GetBoundsGeometry(); 
+            if (parentGeo) {
+                totalMatrix.PostConcat(parentGeo->GetMatrix());
+            }
+        },
+        [&hasCornerRadius, hwcNodeRect](std::shared_ptr<RSRenderNode> parent) {
+            if (hasCornerRadius) {
+                return;
+            }
+            auto& parentProperty = parent->GetRenderProperties();
+            auto parentGeo = parentProperty.GetBoundsGeometry();
+            if (parentGeo && hwcNodeRect.Intersect(parentGeo->GetAbsRect())) {
+                hasCornerRadius |= (!parentProperty.GetCornerRadius().IsZero());
+            }
+        }
+    );
     hwcNode->SetTotalMatrix(totalMatrix);
     hwcNode->SetGlobalAlpha(alpha);
+    hwcNode->SetHasReducedCornerRadius(hasCornerRadius);
+}
+
+void RSUniRenderVisitor::UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSSurfaceRenderNode>& hwcNode)
+{
+    auto alpha = hwcNode->GetGlobalAlpha();
+    auto totalMatrix = hwcNode->GetTotalMatrix();
     if (!ROSEN_EQ(alpha, 1.f)) {
         RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%llu disabled by accumulated alpha:%.2f",
             hwcNode->GetName().c_str(), hwcNode->GetId(), alpha);
@@ -1468,6 +1507,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnable()
             if (!hwcNodePtr || !hwcNodePtr->IsOnTheTree()) {
                 continue;
             }
+            UpdateHwcNodeProperty(hwcNodePtr);
             UpdateHwcNodeEnableByRotateAndAlpha(hwcNodePtr);
             UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, hwcNodePtr);
 
@@ -1693,37 +1733,23 @@ void RSUniRenderVisitor::UpdateChildHwcNodeEnableByHwcNodeBelow(std::vector<Rect
     std::shared_ptr<RSSurfaceRenderNode>& appNode)
 {
     const auto& hwcNodes = appNode->GetChildHardwareEnabledNodes();
-    std::shared_ptr<RSRenderNode> parentNode =
-        std::static_pointer_cast<RSRenderNode>(appNode);
-    bool hasCornerRadius = !appNode->GetRenderProperties().GetCornerRadius().IsZero();
-    auto appRect = appNode->GetRenderProperties().GetBoundsRect();
-    while ((bool)(parentNode = parentNode->GetParent().lock()) &&
-           parentNode->GetType() != RSRenderNodeType::DISPLAY_NODE) {
-        auto parentRect = parentNode->GetRenderProperties().GetBoundsRect();
-        if (parentRect.Intersect(appRect)) {
-            hasCornerRadius |= (!parentNode->GetRenderProperties().GetCornerRadius().IsZero());
-        }
-        if (hasCornerRadius) {
-            break;
-        }
-    }
     for (auto hwcNode : hwcNodes) {
         auto hwcNodePtr = hwcNode.lock();
         if (!hwcNodePtr || !hwcNodePtr->IsOnTheTree()) {
             continue;
         }
-        UpdateHwcNodeEnableByHwcNodeBelowSelf(hwcRects, hwcNodePtr, hasCornerRadius);
+        UpdateHwcNodeEnableByHwcNodeBelowSelf(hwcRects, hwcNodePtr);
     }
 }
 
 void RSUniRenderVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelf(std::vector<RectI>& hwcRects,
-    std::shared_ptr<RSSurfaceRenderNode>& hwcNode, bool hasCornerRadius)
+    std::shared_ptr<RSSurfaceRenderNode>& hwcNode)
 {
     if (hwcNode->IsHardwareForcedDisabled()) {
         return;
     }
     auto dst = hwcNode->GetDstRect();
-    if (hwcNode->GetAncoForceDoDirect() || !hasCornerRadius) {
+    if (hwcNode->GetAncoForceDoDirect() || !hwcNode->GetHasReducedCornerRadius()) {
         hwcRects.emplace_back(dst);
         return;
     }
