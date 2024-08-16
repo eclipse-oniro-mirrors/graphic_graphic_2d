@@ -419,7 +419,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, CollectSurfaceTest001, TestSize.Level1)
 }
 
 /**
- * @tc.name: CollectSurfaceTest
+ * @tc.name: CollectSurfaceTest002
  * @tc.desc: function test
  * @tc.type:FUNC
  * @tc.require:
