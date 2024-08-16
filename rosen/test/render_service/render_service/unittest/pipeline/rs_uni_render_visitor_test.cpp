@@ -3140,4 +3140,179 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeDirtyRegionForApp002, TestSize.Lev
     rsUniRenderVisitor->UpdateHwcNodeDirtyRegionForApp(appNode, hwcNode);
     ASSERT_FALSE(appNode->GetDirtyManager()->GetCurrentFrameDirtyRegion().IsEmpty());
 }
+
+/**
+ * @tc.name: CalculateOcclusion
+ * @tc.desc: Test CalculateOcclusion002, curDisplayNode_ = nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIAJSIS
+ */
+HWTEST_F(RSUniRenderVisitorTest, CalculateOcclusion002, TestSize.Level1)
+{
+    auto node = RSTestUtil::CreateSurfaceNode();
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->curDisplayNode_ = nullptr;
+    rsUniRenderVisitor->CalculateOcclusion(*node);
+}
+
+/**
+ * @tc.name: CalculateOcclusion
+ * @tc.desc: Test CalculateOcclusion003, isAllSurfaceVisibleDebugEnabled_ = true
+ * @tc.type: FUNC
+ * @tc.require: issueIAJSIS
+ */
+HWTEST_F(RSUniRenderVisitorTest, CalculateOcclusion003, TestSize.Level1)
+{
+    auto node = RSTestUtil::CreateSurfaceNode();
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    NodeId displayNodeId = 3;
+    RSDisplayNodeConfig config;
+    rsUniRenderVisitor->curDisplayNode_ = std::make_shared<RSDisplayRenderNode>(displayNodeId, config);
+    rsUniRenderVisitor->isAllSurfaceVisibleDebugEnabled_ = true;
+    rsUniRenderVisitor->CalculateOcclusion(*node);
+}
+
+/**
+ * @tc.name: CollectOcclusionInfoForWMS
+ * @tc.desc: Test CollectOcclusionInfoForWMS001, node.IsMainWindowType() return false
+ * @tc.type: FUNC
+ * @tc.require: issueIAJSIS
+ */
+HWTEST_F(RSUniRenderVisitorTest, CollectOcclusionInfoForWMS001, TestSize.Level1)
+{
+    auto node = RSTestUtil::CreateSurfaceNode();
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    node->SetSurfaceNodeType(RSSurfaceNodeType::SCB_SCREEN_NODE);
+    rsUniRenderVisitor->CollectOcclusionInfoForWMS(*node);
+}
+
+/**
+ * @tc.name: CollectOcclusionInfoForWMS
+ * @tc.desc: Test CollectOcclusionInfoForWMS002, instanceNode == nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIAJSIS
+ */
+HWTEST_F(RSUniRenderVisitorTest, CollectOcclusionInfoForWMS002, TestSize.Level1)
+{
+    auto node = RSTestUtil::CreateSurfaceNode();
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    node->SetSurfaceNodeType(RSSurfaceNodeType::DEFAULT);
+    std::shared_ptr<RSContext> context = nullptr;
+    node->context_ = context;
+    rsUniRenderVisitor->CollectOcclusionInfoForWMS(*node);
+}
+
+/**
+ * @tc.name: GetCurrentBlackList
+ * @tc.desc: Test GetCurrentBlackList002, screenManager_ && curDisplayNode_ != nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIAJSIS
+ */
+HWTEST_F(RSUniRenderVisitorTest, GetCurrentBlackList002, TestSize.Level1)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    rsUniRenderVisitor->screenManager_ = CreateOrGetScreenManager();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    NodeId displayNodeId = 3;
+    RSDisplayNodeConfig config;
+    rsUniRenderVisitor->curDisplayNode_ = std::make_shared<RSDisplayRenderNode>(displayNodeId, config);
+    rsUniRenderVisitor->curDisplayNode_->InitRenderParams();
+    ASSERT_EQ(rsUniRenderVisitor->GetCurrentBlackList().size(), 0);
+}
+
+/**
+ * @tc.name: QuickPrepareEffectRenderNode
+ * @tc.desc: Test QuickPrepareEffectRenderNode001, dirtyManager = nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIAJSIS
+ */
+HWTEST_F(RSUniRenderVisitorTest, QuickPrepareEffectRenderNode001, TestSize.Level1)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->curSurfaceNode_ = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    rsUniRenderVisitor->curSurfaceDirtyManager_ = nullptr;
+    NodeId id = 2;
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSEffectRenderNode>(id, rsContext->weak_from_this());
+    node->InitRenderParams();
+    rsUniRenderVisitor->QuickPrepareEffectRenderNode(*node);
+}
+
+/**
+ * @tc.name: QuickPrepareEffectRenderNode
+ * @tc.desc: Test QuickPrepareEffectRenderNode002, dirtyManager != nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIAJSIS
+ */
+HWTEST_F(RSUniRenderVisitorTest, QuickPrepareEffectRenderNode002, TestSize.Level1)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
+    auto dirtyManager = surfaceNode->GetDirtyManager();
+    ASSERT_NE(dirtyManager, nullptr);
+    rsUniRenderVisitor->curSurfaceDirtyManager_ = dirtyManager;
+    NodeId id1 = 2;
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSEffectRenderNode>(id1, rsContext->weak_from_this());
+    node->InitRenderParams();
+    NodeId id2 = 0;
+    RSDisplayNodeConfig config;
+    auto displayNode = std::make_shared<RSDisplayRenderNode>(id2, config);
+    rsUniRenderVisitor->curDisplayNode_ = displayNode;
+    rsUniRenderVisitor->QuickPrepareEffectRenderNode(*node);
+}
+
+/**
+ * @tc.name: UpdatePrepareClip
+ * @tc.desc: Test UpdatePrepareClip001, geoPtr = nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIAJSIS
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdatePrepareClip001, TestSize.Level1)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    node->GetMutableRenderProperties().boundsGeo_ = nullptr;
+    rsUniRenderVisitor->UpdatePrepareClip(*node);
+}
+
+/**
+ * @tc.name: UpdatePrepareClip
+ * @tc.desc: Test UpdatePrepareClip002, clipToBounds_ & clipToframe_ = true;
+ * @tc.type: FUNC
+ * @tc.require: issueIAJSIS
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdatePrepareClip002, TestSize.Level1)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    node->GetMutableRenderProperties().clipToBounds_ = true;
+    node->GetMutableRenderProperties().clipToFrame_ = true;
+    rsUniRenderVisitor->UpdatePrepareClip(*node);
+}
+
+/**
+ * @tc.name: UpdatePrepareClip
+ * @tc.desc: Test UpdatePrepareClip003, clipToBounds_ & clipToframe_ = false;
+ * @tc.type: FUNC
+ * @tc.require: issueIAJSIS
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdatePrepareClip003, TestSize.Level1)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    node->GetMutableRenderProperties().clipToBounds_ = false;
+    node->GetMutableRenderProperties().clipToFrame_ = false;
+    rsUniRenderVisitor->UpdatePrepareClip(*node);
+}
 } // OHOS::Rosen
