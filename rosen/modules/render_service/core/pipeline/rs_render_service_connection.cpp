@@ -1062,7 +1062,7 @@ void RSRenderServiceConnection::SetScreenBacklight(ScreenId id, uint32_t level)
                 RS_LOGE("RSRenderServiceConnection::SetScreenBacklight fail");
                 return;
             }
-            connection->mainThread_->RefreshEntireDisplay();
+            connection->mainThread_->SetLuminanceChangingStatus(true);
             connection->mainThread_->SetDirtyFlag();
             connection->mainThread_->RequestNextVSync();
         };
