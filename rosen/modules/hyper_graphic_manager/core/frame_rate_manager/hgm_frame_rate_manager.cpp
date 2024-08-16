@@ -69,6 +69,9 @@ namespace {
         "VOTER_VIDEO",
         "VOTER_IDLE"
     };
+
+    constexpr int ADAPTIVE_SYNC_PROPERTY = 2;
+    constexpr int DISPLAY_SUCCESS = 1;
 }
 
 HgmFrameRateManager::HgmFrameRateManager()
@@ -861,7 +864,7 @@ void HgmFrameRateManager::HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus
     }
 
     if (!IsCurrentScreenSupportAS()) {
-        isAdaptive_ = false;
+        isAdaptive_.store(false);
     }
 }
 
@@ -1150,7 +1153,7 @@ bool HgmFrameRateManager::IsCurrentScreenSupportAS()
     return propertyAS_ == DISPLAY_SUCCESS;
 }
 
-void HgmFrameRateManager::JudgeAdaptiveSync(std::string voterName)
+void HgmFrameRateManager::ProcessAdaptiveSync(std::string voterName)
 {
     bool isAdaptiveSyncEnabled = HgmCore::Instance().GetAdaptiveSyncEnabled();
     if (!isAdaptiveSyncEnabled) {
@@ -1158,20 +1161,20 @@ void HgmFrameRateManager::JudgeAdaptiveSync(std::string voterName)
     }
 
     // VOTER_GAMES wins, enter adaptive vsync mode
-    bool flag = voterName == "VOTER_GAMES";
+    bool isGameVoter = voterName == "VOTER_GAMES";
 
-    if (isAdaptive_ == flag) {
+    if (isAdaptive_.load() == isGameVoter) {
         return;
     }
 
-    if (flag && !IsCurrentScreenSupportAS()) {
+    if (isGameVoter && !IsCurrentScreenSupportAS()) {
         HGM_LOGI("current screen not support adaptive sync mode");
         return;
     }
 
     HGM_LOGI("ProcessHgmFrameRate RSAdaptiveVsync change mode");
     RS_TRACE_BEGIN("ProcessHgmFrameRate RSAdaptiveVsync change mode");
-    isAdaptive_ = !isAdaptive_;
+    isAdaptive_.store(!isAdaptive_.load());
     RS_TRACE_END();
 }
 
@@ -1243,7 +1246,7 @@ VoteInfo HgmFrameRateManager::ProcessRefreshRateVote()
     HGM_LOGI("Process: Strategy:%{public}s Screen:%{public}d Mode:%{public}d -- VoteResult:{%{public}d-%{public}d}",
         curScreenStrategyId_.c_str(), static_cast<int>(curScreenId_), curRefreshRateMode_, min, max);
     SetResultVoteInfo(resultVoteInfo, min, max);
-    JudgeAdaptiveSync(resultVoteInfo.voterName);
+    ProcessAdaptiveSync(resultVoteInfo.voterName);
     return resultVoteInfo;
 }
 

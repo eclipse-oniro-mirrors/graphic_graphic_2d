@@ -154,7 +154,7 @@ int32_t HgmCore::InitXmlConfig()
     return EXEC_SUCCESS;
 }
 
-void HgmCore::SetASConfig(PolicyConfigData::ScreenSetting curScreenSetting)
+void HgmCore::SetASConfig(PolicyConfigData::ScreenSetting& curScreenSetting)
 {
     if (curScreenSetting.ltpoConfig.find("adaptiveSync") != curScreenSetting.ltpoConfig.end()) {
         std::string asConfig = curScreenSetting.ltpoConfig["adaptiveSync"];
