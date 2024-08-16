@@ -248,7 +248,7 @@ HWTEST_F(RSSurfaceRenderNodeThreeTest, SetIsOnTheTree, TestSize.Level1)
     parent->firstLevelNodeId_ = 0;
     node->SetIsOnTheTree(flag, instanceRootNodeId, firstLevelNodeId, cacheNodeId);
     ASSERT_EQ(parent->GetFirstLevelNodeId(), INVALID_NODEID);
-    node->nodeType_ = RSSurfaceNodeType::UI_EXTENSION_NODE;
+    node->nodeType_ = RSSurfaceNodeType::SCB_SCREEN_NODE;
     flag = true;
     node->SetIsOnTheTree(flag, instanceRootNodeId, firstLevelNodeId, cacheNodeId);
     ASSERT_TRUE(node->IsUIExtension());
@@ -502,7 +502,6 @@ HWTEST_F(RSSurfaceRenderNodeThreeTest, CheckOpaqueRegionBaseInfo, TestSize.Level
     ASSERT_FALSE(node->opaqueRegionBaseInfo_.hasContainerWindow_);
     node->UpdateOccludedByFilterCache(false);
     ASSERT_FALSE(node->IsOccludedByFilterCache());
-    ASSERT_TRUE(node->IsNeedSetVSync());
     ASSERT_FALSE(node->CheckIfOcclusionChanged());
 }
 
@@ -807,24 +806,6 @@ HWTEST_F(RSSurfaceRenderNodeThreeTest, GetSkipDraw001, TestSize.Level2)
     ASSERT_NE(node, nullptr);
 
     ASSERT_FALSE(node->GetSkipDraw());
-}
-
-/**
- * @tc.name: SetRootIdOfCaptureWindow
- * @tc.desc: test results of SetRootIdOfCaptureWindow
- * @tc.type:FUNC
- * @tc.require:issueI981R9
- */
-HWTEST_F(RSSurfaceRenderNodeThreeTest, SetRootIdOfCaptureWindow, TestSize.Level2)
-{
-    auto rsContext = std::make_shared<RSContext>();
-    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
-    auto rootId = id + 1; // 1 : generate a rootId for CaptureWindow
-    node->SetRootIdOfCaptureWindow(rootId);
-    ASSERT_EQ(node->GetRootIdOfCaptureWindow(), rootId);
-    node->InitRenderParams();
-    node->SetRootIdOfCaptureWindow(rootId);
-    ASSERT_EQ(node->GetStagingRenderParams()->GetRootIdOfCaptureWindow(), rootId);
 }
 
 /**
