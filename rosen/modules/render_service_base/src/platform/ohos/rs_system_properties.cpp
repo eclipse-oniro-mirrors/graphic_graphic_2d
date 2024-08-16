@@ -292,6 +292,14 @@ bool RSSystemProperties::GetHwcRegionDfxEnabled()
     return hwcRegionDfxEnabled;
 }
 
+bool RSSystemProperties::GetDrawMirrorCacheImageEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.cacheimage.mirror.enabled", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 0) != 0;
+}
+
 bool RSSystemProperties::GetAFBCEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.afbc.enabled", "1");
@@ -995,14 +1003,6 @@ SubTreePrepareCheckType RSSystemProperties::GetSubTreePrepareCheckType()
     int changed = 0;
     const char *type = CachedParameterGetChanged(g_Handle, &changed);
     return static_cast<SubTreePrepareCheckType>(ConvertToInt(type, 2)); // Default value 2
-}
-
-bool RSSystemProperties::GetLayerCursorEnable()
-{
-    static CachedHandle g_Handle = CachedParameterCreate("rosen.layercursor.enable", "0");
-    int changed = 0;
-    const char *num = CachedParameterGetChanged(g_Handle, &changed);
-    return (ConvertToInt(num, 0) != 0) && IsPcType();
 }
 
 bool RSSystemProperties::GetHDRImageEnable()

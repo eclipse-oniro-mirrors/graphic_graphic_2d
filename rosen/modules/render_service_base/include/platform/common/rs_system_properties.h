@@ -160,6 +160,7 @@ public:
     static bool GetHardwareComposerEnabled();
     static bool GetHardwareComposerEnabledForMirrorMode();
     static bool GetHwcRegionDfxEnabled();
+    static bool GetDrawMirrorCacheImageEnabled();
     static bool GetAFBCEnabled();
     static bool GetReleaseResourceEnabled();
     static bool GetRSScreenRoundCornerEnable();
@@ -235,7 +236,6 @@ public:
     static bool GetEffectMergeEnabled();
     static SubTreePrepareCheckType GetSubTreePrepareCheckType();
     static bool GetHDRImageEnable();
-    static bool GetLayerCursorEnable();
     static bool IsForceClient();
     static bool GetUnmarshParallelFlag();
     static uint32_t GetUnMarshParallelSize();

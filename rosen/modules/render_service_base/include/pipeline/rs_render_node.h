@@ -247,10 +247,12 @@ public:
         return firstLevelNodeId_;
     }
     const std::shared_ptr<RSRenderNode> GetFirstLevelNode() const;
+    // only use for ARKTS_CARD
     inline NodeId GetUifirstRootNodeId() const
     {
         return uifirstRootNodeId_;
     }
+    const std::shared_ptr<RSRenderNode> GetUifirstRootNode() const;
     void UpdateTreeUifirstRootNodeId(NodeId id);
 
     // reset accumulated vals before traverses children
@@ -502,7 +504,7 @@ public:
         std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable, RSDrawableSlot slot);
     bool IsFilterCacheValid() const;
     bool IsAIBarFilterCacheValid() const;
-    void MarkForceClearFilterCacheWhenWithInvisible();
+    void MarkForceClearFilterCacheWithInvisible();
 
     void CheckGroupableAnimation(const PropertyId& id, bool isAnimAdd);
     bool IsForcedDrawInGroup() const;
@@ -719,9 +721,6 @@ public:
         return renderDrawable_;
     }
 
-    // DFX
-    void DumpDrawableTree(int32_t depth, std::string& out) const;
-
 protected:
     virtual void OnApplyModifiers() {}
     void SetOldDirtyInSurface(RectI oldDirtyInSurface);
@@ -830,9 +829,6 @@ private:
     void GenerateFullChildrenList();
     void ResortChildren();
     bool ShouldClearSurface();
-
-    // DFX
-    std::string DumpDrawableVec() const;
 
     std::weak_ptr<RSContext> context_ = {};
 

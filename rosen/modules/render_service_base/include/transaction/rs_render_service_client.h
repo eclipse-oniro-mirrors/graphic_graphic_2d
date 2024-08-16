@@ -158,8 +158,10 @@ public:
     int32_t SetVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector);
 #endif
 
+    int32_t SetVirtualScreenSecurityExemptionList(ScreenId id, const std::vector<NodeId>& securityExemptionList);
+
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable);
-    
+
     void RemoveVirtualScreen(ScreenId id);
 
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
@@ -349,7 +351,7 @@ public:
     void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
     bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus);
 private:
-    void TriggerSurfaceCaptureCallback(NodeId id, Media::PixelMap* pixelmap);
+    void TriggerSurfaceCaptureCallback(NodeId id, std::shared_ptr<Media::PixelMap> pixelmap);
     std::mutex mutex_;
     std::map<NodeId, sptr<RSIBufferAvailableCallback>> bufferAvailableCbRTMap_;
     std::mutex mapMutex_;

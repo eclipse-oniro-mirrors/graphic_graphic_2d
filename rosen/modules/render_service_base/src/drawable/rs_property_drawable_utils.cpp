@@ -157,8 +157,8 @@ std::shared_ptr<Drawing::Image> RSPropertyDrawableUtils::GetShadowRegionImage(Dr
         ROSEN_LOGE("RSPropertyDrawableUtils::GetShadowRegionImage drSurface is null");
         return nullptr;
     }
-    int deviceWidth = drSurface->Width();
-    int deviceHeight = drSurface->Height();
+    static int deviceWidth = drSurface->Width();
+    static int deviceHeight = drSurface->Height();
     Drawing::Rect regionRect = {0, 0, clipIBounds.GetWidth(), clipIBounds.GetHeight()};
     Drawing::Rect regionRectDev;
     matrix.MapRect(regionRectDev, regionRect);
@@ -547,6 +547,7 @@ void RSPropertyDrawableUtils::DrawColorFilter(
     Drawing::Filter filter;
     filter.SetColorFilter(colorFilter);
     brush.SetFilter(filter);
+    brush.SetForceBrightnessDisable(true);
     auto surface = canvas->GetSurface();
     if (surface == nullptr) {
         ROSEN_LOGE("RSPropertyDrawableUtils::DrawColorFilter surface is null");

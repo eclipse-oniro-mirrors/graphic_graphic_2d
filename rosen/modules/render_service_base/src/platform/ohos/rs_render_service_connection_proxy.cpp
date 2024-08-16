@@ -50,7 +50,7 @@ void RSRenderServiceConnectionProxy::CommitTransaction(std::unique_ptr<RSTransac
 
     // split to several parcels if parcel size > PARCEL_SPLIT_THRESHOLD during marshalling
     std::vector<std::shared_ptr<MessageParcel>> parcelVector;
-    auto func = [isUniMode, &parcelVector, &transactionData, this]() {
+    auto func = [isUniMode, &parcelVector, &transactionData, this]() -> bool {
         if (isUniMode) {
             ++transactionDataIndex_;
         }
@@ -58,16 +58,19 @@ void RSRenderServiceConnectionProxy::CommitTransaction(std::unique_ptr<RSTransac
         std::shared_ptr<MessageParcel> parcel = std::make_shared<MessageParcel>();
         if (!FillParcelWithTransactionData(transactionData, parcel)) {
             ROSEN_LOGE("FillParcelWithTransactionData failed!");
-            return;
+            return false;
         }
         parcelVector.emplace_back(parcel);
+        return true;
     };
     if (transactionData->IsNeedSync() && transactionData->IsEmpty()) {
         RS_TRACE_NAME("Commit empty syncTransaction");
         func();
     } else {
         while (transactionData->GetMarshallingIndex() < transactionData->GetCommandCount()) {
-            func();
+            if (!func()) {
+                return;
+            }
         }
     }
 
@@ -464,6 +467,37 @@ int32_t RSRenderServiceConnectionProxy::SetVirtualScreenBlackList(ScreenId id, s
     int32_t err = Remote()->SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RSRenderServiceConnectionProxy::SetVirtualScreenBlackList: Send Request err.");
+        return RS_CONNECTION_ERROR;
+    }
+
+    int32_t status = reply.ReadInt32();
+    return status;
+}
+
+int32_t RSRenderServiceConnectionProxy::SetVirtualScreenSecurityExemptionList(
+    ScreenId id,
+    const std::vector<NodeId>& securityExemptionList)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        return WRITE_PARCEL_ERR;
+    }
+
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!data.WriteUint64(id)) {
+        return WRITE_PARCEL_ERR;
+    }
+    if (!data.WriteUInt64Vector(securityExemptionList)) {
+        return WRITE_PARCEL_ERR;
+    }
+    uint32_t code = static_cast<uint32_t>(
+        RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::SetVirtualScreenSecurityExemptionList: Send Request err.");
         return RS_CONNECTION_ERROR;
     }
 
@@ -1911,7 +1945,7 @@ int32_t RSRenderServiceConnectionProxy::RegisterOcclusionChangeCallback(sptr<RSI
     if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
         return RS_CONNECTION_ERROR;
     }
-    option.SetFlags(MessageOption::TF_SYNC);
+    option.SetFlags(MessageOption::TF_ASYNC);
     data.WriteRemoteObject(callback->AsObject());
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_OCCLUSION_CHANGE_CALLBACK);
     int32_t err = Remote()->SendRequest(code, data, reply, option);

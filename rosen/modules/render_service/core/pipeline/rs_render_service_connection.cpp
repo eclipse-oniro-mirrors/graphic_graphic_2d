@@ -482,6 +482,16 @@ int32_t RSRenderServiceConnection::SetVirtualScreenBlackList(ScreenId id, std::v
     return screenManager_->SetVirtualScreenBlackList(id, blackListVector);
 }
 
+int32_t RSRenderServiceConnection::SetVirtualScreenSecurityExemptionList(
+    ScreenId id,
+    const std::vector<NodeId>& securityExemptionList)
+{
+    if (!screenManager_) {
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManager_->SetVirtualScreenSecurityExemptionList(id, securityExemptionList);
+}
+
 int32_t RSRenderServiceConnection::SetCastScreenEnableSkipWindow(ScreenId id, bool enable)
 {
     if (!screenManager_) {
@@ -724,7 +734,15 @@ void RSRenderServiceConnection::MarkPowerOffNeedProcessOneFrame()
 {
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
-        renderThread_.PostTask([=]() { screenManager_->MarkPowerOffNeedProcessOneFrame(); });
+        renderThread_.PostTask(
+            [weakThis = wptr<RSRenderServiceConnection>(this)]() {
+                sptr<RSRenderServiceConnection> connection = weakThis.promote();
+                if (!connection) {
+                    return;
+                }
+                connection->screenManager_->MarkPowerOffNeedProcessOneFrame();
+            }
+        );
     }
 }
 
@@ -732,7 +750,15 @@ void RSRenderServiceConnection::DisablePowerOffRenderControl(ScreenId id)
 {
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
-        renderThread_.PostTask([=]() { screenManager_->DisablePowerOffRenderControl(id); });
+        renderThread_.PostTask(
+            [weakThis = wptr<RSRenderServiceConnection>(this), id]() {
+                sptr<RSRenderServiceConnection> connection = weakThis.promote();
+                if (!connection) {
+                    return;
+                }
+                connection->screenManager_->DisablePowerOffRenderControl(id);
+            }
+        );
     }
 }
 
@@ -817,36 +843,24 @@ void RSRenderServiceConnection::TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCap
     }
     std::function<void()> captureTask = [id, callback, captureConfig, accessible]() -> void {
         auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode(id);
-        if (node != nullptr && node->GetType() == RSRenderNodeType::DISPLAY_NODE && !accessible) {
+        if (node != nullptr && !accessible &&
+            (node->GetType() == RSRenderNodeType::DISPLAY_NODE ||
+            node->GetType() == RSRenderNodeType::SURFACE_NODE)) {
             RS_LOGE("RSRenderServiceConnection::TakeSurfaceCapture no permission");
+            callback->OnSurfaceCapture(id, nullptr);
             return;
         }
         auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
         if (captureConfig.captureType == SurfaceCaptureType::DEFAULT_CAPTURE) {
-            if (RSSystemParameters::GetRsSurfaceCaptureType() ==
-                RsSurfaceCaptureType::RS_SURFACE_CAPTURE_TYPE_MAIN_THREAD ||
-                renderType == UniRenderEnabledType::UNI_RENDER_DISABLED) {
-                if (node == nullptr) {
-                    RS_LOGE("RSRenderServiceConnection::TakeSurfaceCapture node == nullptr");
-                    return;
+            if (renderType == UniRenderEnabledType::UNI_RENDER_DISABLED) {
+                RS_LOGD("RSRenderService::TakeSurfaceCapture captureTaskInner nodeId:[%{public}" PRIu64 "]",
+                    id);
+                ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSRenderService::TakeSurfaceCapture");
+                RSSurfaceCaptureTask task(id, captureConfig);
+                if (!task.Run(callback)) {
+                    callback->OnSurfaceCapture(id, nullptr);
                 }
-                auto isProcOnBgThread = (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) ?
-                    !node->IsOnTheTree() : false;
-                std::function<void()> captureTaskInner = [id, callback, captureConfig, isProcOnBgThread]() -> void {
-                    RS_LOGD("RSRenderService::TakeSurfaceCapture captureTaskInner nodeId:[%{public}" PRIu64 "]",
-                        id);
-                    ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSRenderService::TakeSurfaceCapture");
-                    RSSurfaceCaptureTask task(id, captureConfig, isProcOnBgThread);
-                    if (!task.Run(callback)) {
-                        callback->OnSurfaceCapture(id, nullptr);
-                    }
-                    ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
-                };
-                if (isProcOnBgThread) {
-                    RSBackgroundThread::Instance().PostTask(captureTaskInner);
-                } else {
-                    captureTaskInner();
-                }
+                ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
             } else {
                 RSSurfaceCaptureTaskParallel::CheckModifiers(id);
                 RSSurfaceCaptureTaskParallel::Capture(id, callback, captureConfig);
@@ -1613,10 +1627,24 @@ int32_t RSRenderServiceConnection::ResizeVirtualScreen(ScreenId id, uint32_t wid
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
         return RSHardwareThread::Instance().ScheduleTask(
-            [=]() { return screenManager_->ResizeVirtualScreen(id, width, height); }).get();
+            [weakThis = wptr<RSRenderServiceConnection>(this), id, width, height]() -> int32_t {
+                sptr<RSRenderServiceConnection> connection = weakThis.promote();
+                if (!connection) {
+                    return RS_CONNECTION_ERROR;
+                }
+                return connection->screenManager_->ResizeVirtualScreen(id, width, height);
+            }
+        ).get();
     } else {
         return mainThread_->ScheduleTask(
-            [=]() { return screenManager_->ResizeVirtualScreen(id, width, height); }).get();
+            [weakThis = wptr<RSRenderServiceConnection>(this), id, width, height]() -> int32_t {
+                sptr<RSRenderServiceConnection> connection = weakThis.promote();
+                if (!connection) {
+                    return RS_CONNECTION_ERROR;
+                }
+                return connection->screenManager_->ResizeVirtualScreen(id, width, height);
+            }
+        ).get();
     }
 }
 
