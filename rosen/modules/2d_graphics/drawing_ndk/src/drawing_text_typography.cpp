@@ -2210,6 +2210,10 @@ OH_Drawing_FontFeature* OH_Drawing_TextStyleGetFontFeatures(OH_Drawing_TextStyle
     for (auto& kv : originMap) {
         (fontFeatureArray + index)->tag = new (std::nothrow) char[(kv.first).size() + 1];
         if ((fontFeatureArray + index)->tag == nullptr) {
+            for (size_t j = 0; j < index; j++) {
+                delete[] (fontFeatureArray + j)->tag;
+                (fontFeatureArray + j)->tag = nullptr;
+            }
             return nullptr;
         }
         auto result = strcpy_s((fontFeatureArray + index)->tag, ((kv.first).size() + 1), (kv.first).c_str());
