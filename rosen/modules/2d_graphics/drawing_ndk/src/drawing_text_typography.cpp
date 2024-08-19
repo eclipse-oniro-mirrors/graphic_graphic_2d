@@ -380,7 +380,7 @@ void OH_Drawing_SetTextStyleFontFamilies(
         if (fontFamilies[i]) {
             rosenFontFamilies.emplace_back(fontFamilies[i]);
         } else {
-            LOGE("Null fontFamilies[%d{public}s]", i);
+            LOGE("Null fontFamilies[%{public}d]", i);
             return;
         }
     }
@@ -2543,6 +2543,12 @@ char** OH_Drawing_TypographyTextlineStyleGetFontFamilies(OH_Drawing_TypographySt
     for (size_t i = 0; i < systemFontFamilies.size(); ++i) {
         fontFamilie[i] = new (std::nothrow) char[systemFontFamilies[i].size() + 1];
         if (!fontFamilie[i]) {
+            for (size_t j = 0; j < i; j++) {
+                delete[] fontFamilie[j];
+                fontFamilie[j] = nullptr;
+            }
+            delete[] fontFamilie;
+            fontFamilie = nullptr;
             return nullptr;
         }
         auto retMemset =
