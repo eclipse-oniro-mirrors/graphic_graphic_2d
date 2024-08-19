@@ -640,6 +640,10 @@ void RSProfiler::HiddenSpaceTurnOn()
     }
 
     const auto& rootRenderNode = g_context->GetGlobalRootRenderNode();
+    if (rootRenderNode == nullptr) {
+        RS_LOGE("RSProfiler::HiddenSpaceTurnOn rootRenderNode is nullptr");
+        return;
+    }
     auto& children = *rootRenderNode->GetChildren();
     if (children.empty()) {
         return;
@@ -660,6 +664,10 @@ void RSProfiler::HiddenSpaceTurnOn()
 void RSProfiler::HiddenSpaceTurnOff()
 {
     const auto& rootRenderNode = g_context->GetGlobalRootRenderNode();
+    if (rootRenderNode == nullptr) {
+        RS_LOGE("RSProfiler::HiddenSpaceTurnOff rootRenderNode is nullptr");
+        return;
+    }
     const auto& children = *rootRenderNode->GetChildren();
     if (children.empty()) {
         return;
