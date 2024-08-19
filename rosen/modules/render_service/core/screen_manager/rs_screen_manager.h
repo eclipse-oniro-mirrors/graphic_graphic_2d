@@ -78,12 +78,8 @@ public:
     virtual const std::vector<uint64_t> GetVirtualScreenSecurityExemptionList(ScreenId id) = 0;
 
     virtual int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) = 0;
-
-    virtual void GetCastScreenBlackList(std::unordered_set<uint64_t>& screenBlackList) = 0;
-
-    virtual bool GetCastScreenEnableSkipWindow(ScreenId id) = 0;
     
-    virtual std::unordered_set<uint64_t> GetVirtualScreenBlackList(ScreenId id) = 0;
+    virtual std::unordered_set<uint64_t> GetVirtualScreenBlackList(ScreenId id) const = 0;
 
     virtual int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface) = 0;
 
@@ -282,12 +278,8 @@ public:
     const std::vector<uint64_t> GetVirtualScreenSecurityExemptionList(ScreenId id) override;
 
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) override;
-
-    void GetCastScreenBlackList(std::unordered_set<uint64_t>& screenBlackList) override;
-
-    bool GetCastScreenEnableSkipWindow(ScreenId id) override;
     
-    std::unordered_set<uint64_t> GetVirtualScreenBlackList(ScreenId id) override;
+    std::unordered_set<uint64_t> GetVirtualScreenBlackList(ScreenId id) const override;
 
     int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface) override;
 
@@ -467,7 +459,6 @@ private:
     ScreenRotation GetScreenCorrectionLocked(ScreenId id) const;
     int32_t GetScreenBacklightLocked(ScreenId id) const;
 
-    void SetCastScreenBlackList(std::unordered_set<uint64_t>& screenBlackList);
     void RemoveVirtualScreenLocked(ScreenId id);
     ScreenId GenerateVirtualScreenIdLocked();
     void ReuseVirtualScreenIdLocked(ScreenId id);
@@ -491,6 +482,7 @@ private:
     int32_t GetScreenColorSpaceLocked(ScreenId id, GraphicCM_ColorSpaceType& colorSpace) const;
     int32_t SetScreenColorSpaceLocked(ScreenId id, GraphicCM_ColorSpaceType colorSpace);
     ScreenInfo QueryScreenInfoLocked(ScreenId id) const;
+    bool GetCastScreenEnableSkipWindow(ScreenId id) const;
 
 #ifdef RS_SUBSCRIBE_SENSOR_ENABLE
     void RegisterSensorCallback();

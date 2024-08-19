@@ -474,14 +474,7 @@ void RSDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
                 WiredScreenProjection(*params, processor);
                 return;
             }
-            castScreenEnableSkipWindow_ = screenManager->GetCastScreenEnableSkipWindow(paramScreenId);
-            if (castScreenEnableSkipWindow_) {
-                RS_LOGD("RSDisplayRenderNodeDrawable::OnDraw, Enable CastScreen SkipWindow.");
-                screenManager->GetCastScreenBlackList(currentBlackList_);
-            } else {
-                RS_LOGD("RSDisplayRenderNodeDrawable::OnDraw, Enable RecordScreen SkipWindow.");
-                currentBlackList_ = screenManager->GetVirtualScreenBlackList(paramScreenId);
-            }
+            currentBlackList_ = screenManager->GetVirtualScreenBlackList(paramScreenId);
             uniParam->SetBlackList(currentBlackList_);
             uniParam->SetWhiteList(screenInfo.whiteList);
             curSecExemption_ = params->GetSecurityExemption();
@@ -724,6 +717,10 @@ int32_t RSDisplayRenderNodeDrawable::GetSpecialLayerType(RSDisplayRenderParams& 
 {
     auto hasGeneralSpecialLayer = params.HasSecurityLayer() || params.HasSkipLayer() || params.HasProtectedLayer() ||
         RSUniRenderThread::Instance().IsCurtainScreenOn() || params.GetHDRPresent();
+    RS_LOGD("RSDisplayRenderNodeDrawable::GetSpecialLayerType, SecurityLayer:%{public}d, SkipLayer:%{public}d,"
+        "ProtectedLayer:%{public}d, CurtainScreen:%{public}d, HDRPresent:%{public}d", params.HasSecurityLayer(),
+        params.HasSkipLayer(), params.HasProtectedLayer(), RSUniRenderThread::Instance().IsCurtainScreenOn(),
+        params.GetHDRPresent());
     if (RSUniRenderThread::GetCaptureParam().isSnapshot_) {
         return hasGeneralSpecialLayer ? HAS_SPECIAL_LAYER :
             (params.HasCaptureWindow() ? CAPTURE_WINDOW : NO_SPECIAL_LAYER);

@@ -762,7 +762,7 @@ void RSUniRenderVisitor::CalculateOcclusion(RSSurfaceRenderNode& node)
     // check current surface Participate In Occlusion
     if (node.CheckParticipateInOcclusion() && !isAllSurfaceVisibleDebugEnabled_) {
         accumulatedOcclusionRegion_.OrSelf(node.GetOpaqueRegion());
-        std::unordered_set<NodeId> currentBlackList = GetCurrentBlackList();
+        const auto& currentBlackList = GetCurrentBlackList();
         if (IsValidInVirtualScreen(node) && currentBlackList.find(node.GetId()) == currentBlackList.end()) {
             occlusionRegionWithoutSkipLayer_.OrSelf(node.GetOpaqueRegion());
         }
@@ -848,19 +848,13 @@ void RSUniRenderVisitor::SurfaceOcclusionCallbackToWMS()
     }
 }
 
-std::unordered_set<NodeId> RSUniRenderVisitor::GetCurrentBlackList() const
+const std::unordered_set<NodeId>& RSUniRenderVisitor::GetCurrentBlackList() const
 {
     if (!screenManager_ || !curDisplayNode_) {
         return std::unordered_set<NodeId>();
     }
 
-    std::unordered_set<NodeId> currentBlackList;
-    if (screenManager_->GetCastScreenEnableSkipWindow(curDisplayNode_->GetScreenId())) {
-        screenManager_->GetCastScreenBlackList(currentBlackList);
-    } else {
-        currentBlackList = screenManager_->GetVirtualScreenBlackList(curDisplayNode_->GetScreenId());
-    }
-    return currentBlackList;
+    return screenManager_->GetVirtualScreenBlackList(curDisplayNode_->GetScreenId());
 }
 
 RSVisibleLevel RSUniRenderVisitor::GetRegionVisibleLevel(const Occlusion::Region& visibleRegion,

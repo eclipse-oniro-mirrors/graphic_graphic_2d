@@ -932,36 +932,25 @@ ScreenId RSScreenManager::CreateVirtualScreen(
     return newId;
 }
 
-void RSScreenManager::GetCastScreenBlackList(std::unordered_set<uint64_t>& screenBlackList)
-{
-    std::lock_guard<std::mutex> lock(blackListMutex_);
-    screenBlackList = castScreenBlackLists_;
-}
-
-void RSScreenManager::SetCastScreenBlackList(std::unordered_set<uint64_t>& screenBlackList)
-{
-    std::lock_guard<std::mutex> lock(blackListMutex_);
-    castScreenBlackLists_ = screenBlackList;
-}
-
 int32_t RSScreenManager::SetVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     std::unordered_set<NodeId> screenBlackList(blackList.begin(), blackList.end());
     if (id == INVALID_SCREEN_ID) {
-        RS_LOGD("RSScreenManager %{public}s: CastScreenBlackLists.", __func__);
-        SetCastScreenBlackList(screenBlackList);
+        RS_LOGI("RSScreenManager %{public}s: Cast screen blacklists for id %{public}" PRIu64 ".", __func__, id);
+        castScreenBlackLists_ = screenBlackList;
         return SUCCESS;
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     auto virtualScreen = screens_.find(id);
     if (virtualScreen == screens_.end()) {
         RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64 ".", __func__, id);
         return SCREEN_NOT_FOUND;
     } else {
         if (virtualScreen->second != nullptr) {
+            RS_LOGI("RSScreenManager %{public}s: Record screen blacklists for id %{public}" PRIu64 ".", __func__, id);
             virtualScreen->second->SetBlackList(screenBlackList);
         } else {
-            RS_LOGW("RSScreenManager %{public}s: Null screen for id %{public}" PRIu64 ".", __func__, id);
+            RS_LOGW("RSScreenManager %{public}s: BlackLists are null for id %{public}" PRIu64 ".", __func__, id);
             return SCREEN_NOT_FOUND;
         }
     }
@@ -975,7 +964,8 @@ int32_t RSScreenManager::SetVirtualScreenBlackList(ScreenId id, const std::vecto
             if (mainScreen->second != nullptr) {
                 mainScreen->second->SetBlackList(screenBlackList);
             } else {
-                RS_LOGW("RSScreenManager %{public}s: Null screen for id %{public}" PRIu64 ".", __func__, mainId);
+                RS_LOGW("RSScreenManager %{public}s: BlackLists are null for id %{public}" PRIu64 ".",
+                    __func__, mainId);
                 return SCREEN_NOT_FOUND;
             }
         }
@@ -1030,6 +1020,26 @@ const std::vector<uint64_t> RSScreenManager::GetVirtualScreenSecurityExemptionLi
     return virtualScreen->second->GetSecurityExemptionList();
 }
 
+std::unordered_set<NodeId> RSScreenManager::GetVirtualScreenBlackList(ScreenId id) const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto virtualScreen = screens_.find(id);
+    if (virtualScreen == screens_.end()) {
+        RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64 ".", __func__, id);
+        return {};
+    }
+    if (GetCastScreenEnableSkipWindow(id)) {
+        RS_LOGD("RSScreenManager %{public}s: Cast screen blacklists for id %{public}" PRIu64 ".", __func__, id);
+        return castScreenBlackLists_;
+    }
+    if (virtualScreen->second != nullptr) {
+        RS_LOGD("RSScreenManager %{public}s: Record screen blacklists for id %{public}" PRIu64 ".", __func__, id);
+        return virtualScreen->second->GetBlackList();
+    }
+    RS_LOGD("RSScreenManager %{public}s: BlackLists are null for id %{public}" PRIu64 ".", __func__, id);
+    return {};
+}
+
 int32_t RSScreenManager::SetCastScreenEnableSkipWindow(ScreenId id, bool enable)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -1048,7 +1058,7 @@ int32_t RSScreenManager::SetCastScreenEnableSkipWindow(ScreenId id, bool enable)
     }
 }
 
-bool RSScreenManager::GetCastScreenEnableSkipWindow(ScreenId id)
+bool RSScreenManager::GetCastScreenEnableSkipWindow(ScreenId id) const
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto virtualScreen = screens_.find(id);
@@ -1061,23 +1071,6 @@ bool RSScreenManager::GetCastScreenEnableSkipWindow(ScreenId id)
         } else {
             RS_LOGW("RSScreenManager %{public}s: Null screen for id %{public}" PRIu64 ".", __func__, id);
             return false;
-        }
-    }
-}
-
-std::unordered_set<NodeId> RSScreenManager::GetVirtualScreenBlackList(ScreenId id)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto virtualScreen = screens_.find(id);
-    if (virtualScreen == screens_.end()) {
-        RS_LOGW("RSScreenManager %{public}s: There is no screen for id %{public}" PRIu64 ".", __func__, id);
-        return {};
-    } else {
-        if (virtualScreen->second != nullptr) {
-            return virtualScreen->second->GetBlackList();
-        } else {
-            RS_LOGW("RSScreenManager %{public}s: Null screen for id %{public}" PRIu64 ".", __func__, id);
-            return {};
         }
     }
 }
