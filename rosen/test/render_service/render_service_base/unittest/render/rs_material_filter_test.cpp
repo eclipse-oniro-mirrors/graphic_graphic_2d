@@ -18,6 +18,7 @@
 #include "parameters.h"
 #include "draw/surface.h"
 #include "pipeline/rs_paint_filter_canvas.h"
+#include "pipeline/rs_uni_render_judgement.h"
 #include "render/rs_material_filter.h"
 
 using namespace testing;
