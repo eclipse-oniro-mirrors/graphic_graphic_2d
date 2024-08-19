@@ -406,19 +406,20 @@ HWTEST_F(RSUniRenderUtilTest, AssignWindowNodes002, Function | SmallTest | Level
 
 /*
  * @tc.name: ClearSurfaceIfNeed
- * @tc.desc:
+ * @tc.desc: Test ClearSurfaceIfNeed with various displayNode
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueIAKA4Y
  */
 HWTEST_F(RSUniRenderUtilTest, ClearSurfaceIfNeed, Function | SmallTest | Level2)
 {
     RSRenderNodeMap map;
     std::set<std::shared_ptr<RSBaseRenderNode>> oldChildren;
     RSUniRenderUtil::ClearSurfaceIfNeed(map, nullptr, oldChildren);
-    NodeId id = 0;
+    NodeId id = 1;
     RSDisplayNodeConfig config;
-    auto node = std::make_shared<RSDisplayRenderNode>(id, config);
-    RSUniRenderUtil::ClearSurfaceIfNeed(map, node, oldChildren);
+    auto displayNode = std::make_shared<RSDisplayRenderNode>(id, config);
+    ASSERT_NE(displayNode, nullptr);
+    RSUniRenderUtil::ClearSurfaceIfNeed(map, displayNode, oldChildren);
 }
 
 /*
@@ -447,16 +448,17 @@ HWTEST_F(RSUniRenderUtilTest, ClearSurfaceIfNeed002, Function | SmallTest | Leve
 
 /*
  * @tc.name: ClearCacheSurface
- * @tc.desc:
+ * @tc.desc: Test ClearCacheSurface when threadIndex = 0
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueIAKA4Y
  */
 HWTEST_F(RSUniRenderUtilTest, ClearCacheSurface, Function | SmallTest | Level2)
 {
-    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNode();
-    RSSurfaceRenderNode& node = static_cast<RSSurfaceRenderNode&>(*(rsSurfaceRenderNode.get()));
+    NodeId id = 1;
+    std::shared_ptr<RSRenderNode> node = std::make_shared<RSRenderNode>(id);
+    ASSERT_NE(node, nullptr);
     uint32_t threadIndex = 0;
-    RSUniRenderUtil::ClearCacheSurface(node, threadIndex);
+    RSUniRenderUtil::ClearCacheSurface(*node, threadIndex);
 }
 
 /*
@@ -1095,11 +1097,11 @@ HWTEST_F(RSUniRenderUtilTest, HandleHardwareNodeTest003, Function | SmallTest | 
     ASSERT_NE(child, nullptr);
     node->AddChild(child);
 
-    std::shared_ptr<RSSurfaceRenderNode> rssNode = nullptr;
-    std::weak_ptr<RSSurfaceRenderNode> rssNodeF = rssNode;
-    std::weak_ptr<RSSurfaceRenderNode> rssNodeT = std::make_shared<RSSurfaceRenderNode>(1);
-    node->childHardwareEnabledNodes_.emplace_back(rssNodeF);
-    node->childHardwareEnabledNodes_.emplace_back(rssNodeT);
+    std::shared_ptr<RSSurfaceRenderNode> rsNode = nullptr;
+    std::weak_ptr<RSSurfaceRenderNode> rsNodeF = rsNode;
+    std::weak_ptr<RSSurfaceRenderNode> rsNodeT = std::make_shared<RSSurfaceRenderNode>(1);
+    node->childHardwareEnabledNodes_.emplace_back(rsNodeF);
+    node->childHardwareEnabledNodes_.emplace_back(rsNodeT);
     RSUniRenderUtil::HandleHardwareNode(node);
 }
 
@@ -1445,7 +1447,7 @@ HWTEST_F(RSUniRenderUtilTest, AccumulateMatrixAndAlpha003, TestSize.Level2)
 
     Drawing::Matrix matrix = Drawing::Matrix();
     matrix.SetMatrix(1, 0, 0, 0, 1, 0, 0, 0, 1);
-    float alpha = 2.0f;
+    float alpha = 0.8f;
     rsUniRenderUtil.AccumulateMatrixAndAlpha(hwcNode, matrix, alpha);
 }
 
