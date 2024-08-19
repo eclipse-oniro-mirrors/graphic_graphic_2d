@@ -236,7 +236,7 @@ double Typography::GetLineHeight(int lineNumber)
 double Typography::GetLineWidth(int lineNumber)
 {
     const auto &lines = paragraph_->GetLineMetrics();
-    if ((0 <= lineNumber && lineNumber) < (static_cast<int>(lines.size()))) {
+    if ((0 <= lineNumber) && (lineNumber < static_cast<int>(lines.size()))) {
         return lines[lineNumber].fWidth;
     }
     return 0.0;
