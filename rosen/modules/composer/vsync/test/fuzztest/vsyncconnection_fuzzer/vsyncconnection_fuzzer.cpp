@@ -84,6 +84,14 @@ namespace OHOS {
         vsyncConnection->SetUiDvsyncSwitch(vsyncSwitch);
         int32_t bufferCount = GetData<int32_t>();
         vsyncConnection->SetUiDvsyncConfig(bufferCount);
+        MessageParcel arguments;
+        MessageParcel reply;
+        MessageOption option;
+        uint32_t code = GetData<uint32_t>();
+        vsyncConnection->OnRemoteRequest(code, arguments, reply, option);
+        for (uint32_t i = 0; i < 6; ++i) {
+            vsyncConnection->OnRemoteRequest(i, arguments, reply, option);
+        }
         return true;
     }
 }
