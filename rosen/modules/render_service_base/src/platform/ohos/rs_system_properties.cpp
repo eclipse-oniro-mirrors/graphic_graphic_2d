@@ -848,6 +848,12 @@ bool RSSystemProperties::IsPcType()
     return isPc;
 }
 
+bool RSSystemProperties::IsBetaRelease()
+{
+    static bool isBetaRelease = system::GetParameter("const.logsystem.versiontype", "") == "beta";
+    return isBetaRelease;
+}
+
 bool RSSystemProperties::GetSyncTransactionEnabled()
 {
     static bool syncTransactionEnabled =
