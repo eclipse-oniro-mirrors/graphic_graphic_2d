@@ -1424,6 +1424,7 @@ void RSUniRenderVisitor::UpdateHwcNodeProperty(std::shared_ptr<RSSurfaceRenderNo
         return;
     }
     bool hasCornerRadius = !hwcNode->GetRenderProperties().GetCornerRadius().IsZero();
+    bool isIntersectWithRoundCorner = hasCornerRadius;
     float alpha = hwcNode->GetRenderProperties().GetAlpha();
     Drawing::Matrix totalMatrix = hwcNodeGeo->GetMatrix();
     auto hwcNodeRect = hwcNodeGeo->GetAbsRect();
@@ -1437,25 +1438,47 @@ void RSUniRenderVisitor::UpdateHwcNodeProperty(std::shared_ptr<RSSurfaceRenderNo
         },
         [&totalMatrix](std::shared_ptr<RSRenderNode> parent) {
             auto& parentProperty = parent->GetRenderProperties();
-            auto parentGeo = parentProperty.GetBoundsGeometry(); 
+            auto parentGeo = parentProperty.GetBoundsGeometry();
             if (parentGeo) {
                 totalMatrix.PostConcat(parentGeo->GetMatrix());
             }
         },
-        [&hasCornerRadius, hwcNodeRect](std::shared_ptr<RSRenderNode> parent) {
-            if (hasCornerRadius) {
+        [&isIntersectWithRoundCorner, hwcNodeRect](std::shared_ptr<RSRenderNode> parent) {
+            if (isIntersectWithRoundCorner) {
                 return;
             }
             auto& parentProperty = parent->GetRenderProperties();
+            auto cornerRadius = parentProperty.GetCornerRadius();
+            auto maxCornerRadius = *std::max_element(std::begin(cornerRadius.data_), std::end(cornerRadius.data_));
             auto parentGeo = parentProperty.GetBoundsGeometry();
-            if (parentGeo && hwcNodeRect.Intersect(parentGeo->GetAbsRect())) {
-                hasCornerRadius |= (!parentProperty.GetCornerRadius().IsZero());
+            static const std::array offsetVecs {
+                UIPoint { 0, 0 },
+                UIPoint { 1, 0 },
+                UIPoint { 0, 1 },
+                UIPoint { 1, 1 }
+            };
+            if (parentGeo) {
+                /*
+                * The logic here is to calculate whether the HWC Node affects
+                * the round corner property of the parent node.
+                * The method is to calculate whether the Rect of the HWC Node intersects
+                * with the AABB of the round corner of the parent node.
+                */
+                auto parentRect = parentGeo->GetAbsRect();
+                UIPoint offset { parentRect.GetWidth() - maxCornerRadius, parentRect.GetHeight() - maxCornerRadius };
+                UIPoint anchorPoint { parentRect.GetLeft(), parentRect.GetTop() };
+                isIntersectWithRoundCorner = isIntersectWithRoundCorner ||
+                std::any_of(std::begin(offsetVecs), std::end(offsetVecs),
+                [hwcNodeRect, offset, maxCornerRadius, anchorPoint](auto offsetVec) {
+                    auto res = anchorPoint + offset * offsetVec;
+                    return RectI(res.x_, res.y_, maxCornerRadius, maxCornerRadius).Intersect(hwcNodeRect);
+                });
             }
         }
     );
     hwcNode->SetTotalMatrix(totalMatrix);
     hwcNode->SetGlobalAlpha(alpha);
-    hwcNode->SetHasReducedCornerRadius(hasCornerRadius);
+    hwcNode->SetIsIntersectWithRoundCorner(isIntersectWithRoundCorner);
 }
 
 void RSUniRenderVisitor::UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSSurfaceRenderNode>& hwcNode)
@@ -1738,18 +1761,19 @@ void RSUniRenderVisitor::UpdateChildHwcNodeEnableByHwcNodeBelow(std::vector<Rect
         if (!hwcNodePtr || !hwcNodePtr->IsOnTheTree()) {
             continue;
         }
-        UpdateHwcNodeEnableByHwcNodeBelowSelf(hwcRects, hwcNodePtr);
+        UpdateHwcNodeEnableByHwcNodeBelowSelf(hwcRects, hwcNodePtr,
+            hwcNodePtr->GetIsIntersectWithRoundCorner());
     }
 }
 
 void RSUniRenderVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelf(std::vector<RectI>& hwcRects,
-    std::shared_ptr<RSSurfaceRenderNode>& hwcNode)
+    std::shared_ptr<RSSurfaceRenderNode>& hwcNode, bool isIntersectWithRoundCorner)
 {
     if (hwcNode->IsHardwareForcedDisabled()) {
         return;
     }
     auto dst = hwcNode->GetDstRect();
-    if (hwcNode->GetAncoForceDoDirect() || !hwcNode->GetHasReducedCornerRadius()) {
+    if (hwcNode->GetAncoForceDoDirect() || !isIntersectWithRoundCorner) {
         hwcRects.emplace_back(dst);
         return;
     }

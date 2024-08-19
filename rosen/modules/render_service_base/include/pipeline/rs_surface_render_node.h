@@ -1206,14 +1206,14 @@ public:
         dirtyStatus_ = containerDirty ? NodeDirty::DIRTY : dirtyStatus_;
     }
 
-    bool GetHasReducedCornerRadius() const
+    bool GetIsIntersectWithRoundCorner() const
     {
-        return hasReducedCornerRadius_;
+        return isIntersectWithRoundCorner_;
     }
 
-    void SetHasReducedCornerRadius(bool hasReducedCornerRadius)
+    void SetIsIntersectWithRoundCorner(bool isIntersectWithRoundCorner)
     {
-        hasReducedCornerRadius_ = hasReducedCornerRadius;
+        isIntersectWithRoundCorner_ = isIntersectWithRoundCorner;
     }
 protected:
     void OnSync() override;
@@ -1268,7 +1268,7 @@ private:
     bool hasHdrPresent_ = false;
     RectI srcRect_;
     Drawing::Matrix totalMatrix_;
-    bool hasReducedCornerRadius_ = false;
+    bool isIntersectWithRoundCorner_ = false;
     int32_t offsetX_ = 0;
     int32_t offsetY_ = 0;
     float positionZ_ = 0.0f;
