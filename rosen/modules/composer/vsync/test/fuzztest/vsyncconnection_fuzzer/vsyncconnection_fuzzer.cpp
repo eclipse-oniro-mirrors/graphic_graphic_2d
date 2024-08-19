@@ -73,6 +73,17 @@ namespace OHOS {
         // 16666667 is Vsync period.
         vsyncConnection->PostEvent(now, 16666667, 0);
 
+        vsyncConnection->RequestNextVSync();
+        std::string fromWhom = "FUZZ";
+        int64_t lastVSyncTS = GetData<int64_t>();
+        vsyncConnection->RequestNextVSync(fromWhom, lastVSyncTS);
+        int32_t fd = GetData<int32_t>();
+        vsyncConnection->GetReceiveFd(fd);
+        vsyncConnection->Destroy();
+        bool vsyncSwitch = GetData<bool>();
+        vsyncConnection->SetUiDvsyncSwitch(vsyncSwitch);
+        int32_t bufferCount = GetData<int32_t>();
+        vsyncConnection->SetUiDvsyncConfig(bufferCount);
         return true;
     }
 }
