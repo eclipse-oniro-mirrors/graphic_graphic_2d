@@ -482,6 +482,28 @@ constexpr std::array borderDirtyTypes = {
     RSDrawableSlot::BACKGROUND_SHADER,
     RSDrawableSlot::BACKGROUND_IMAGE,
 };
+constexpr std::array fuzeSkipDirtyTypes = {
+    RSDrawableSlot::USE_EFFECT,
+    RSDrawableSlot::BACKGROUND_STYLE,
+    RSDrawableSlot::DYNAMIC_LIGHT_UP,
+    RSDrawableSlot::ENV_FOREGROUND_COLOR_STRATEGY,
+    RSDrawableSlot::FRAME_OFFSET,
+    RSDrawableSlot::CLIP_TO_FRAME,
+    RSDrawableSlot::CONTENT_STYLE,
+    RSDrawableSlot::CHILDREN,
+    RSDrawableSlot::FOREGROUND_STYLE,
+    RSDrawableSlot::FG_CLIP_TO_BOUNDS,
+    RSDrawableSlot::BINARIZATION,
+    RSDrawableSlot::COLOR_FILTER,
+    RSDrawableSlot::LIGHT_UP_EFFECT,
+    RSDrawableSlot::DYNAMIC_DIM,
+    RSDrawableSlot::COMPOSITING_FILTER,
+    RSDrawableSlot::FOREGROUND_COLOR,
+    RSDrawableSlot::POINT_LIGHT,
+    RSDrawableSlot::BORDER,
+    RSDrawableSlot::OVERLAY,
+    RSDrawableSlot::PARTICLE_EFFECT,
+};
 template<std::size_t SIZE>
 inline void MarkAffectedSlots(const std::array<RSDrawableSlot, SIZE>& affectedSlots, const RSDrawable::Vec& drawableVec,
     std::unordered_set<RSDrawableSlot>& dirtySlots)
@@ -541,7 +563,63 @@ std::unordered_set<RSDrawableSlot> RSDrawable::CalculateDirtySlots(
     if (dirtySlots.count(RSDrawableSlot::FOREGROUND_FILTER)) {
         dirtySlots.emplace(RSDrawableSlot::RESTORE_FOREGROUND_FILTER);
     }
+
+    // fuse pixel stretch with background filter
+    if (dirtySlots.count(RSDrawableSlot::PIXEL_STRETCH) &&
+        drawableVec[static_cast<size_t>(RSDrawableSlot::BACKGROUND_FILTER)]) {
+        dirtySlots.emplace(RSDrawableSlot::BACKGROUND_FILTER);
+    }
+    if (dirtySlots.count(RSDrawableSlot::BACKGROUND_FILTER)) {
+        dirtySlots.emplace(RSDrawableSlot::PIXEL_STRETCH);
+    }
+
     return dirtySlots;
+}
+
+void AddPixelStretchDrawableSlot(const RSRenderNode& node, std::unordered_set<RSDrawableSlot>& dirtySlots,
+                                 RSDrawable::Vec& drawableVec, bool& drawableAddedOrRemoved)
+{
+    dirtySlots.emplace(RSDrawableSlot::PIXEL_STRETCH);
+    auto& filterDrawable = drawableVec[static_cast<size_t>(RSDrawableSlot::BACKGROUND_FILTER)];
+    auto bgFilterDrawable = std::static_pointer_cast<RSBackgroundFilterDrawable>(filterDrawable);
+    
+    // If pixel stretch and background filter both exist and there is no slot in fuzeSkipDirtyTypes,
+    // and the grey adjustment exists, we fuze the blur with pixel stretch using the MESA algorithm.
+    // These restrictions guarantee the specifications unchanged when fusing.
+    bool canFuze = RSSystemProperties::GetMESABlurFuzedEnabled() &&
+                   dirtySlots.count(RSDrawableSlot::BACKGROUND_FILTER) &&
+                   bgFilterDrawable && bgFilterDrawable->CheckIsMESABlur();
+    if (canFuze) {
+        for (const auto& slot : fuzeSkipDirtyTypes) {
+            if (drawableVec[static_cast<size_t>(slot)]) {
+                canFuze = false;
+                break;
+            }
+        }
+    }
+    // update pixelStretch drawable slot
+    if (auto& drawable = drawableVec[static_cast<size_t>(RSDrawableSlot::PIXEL_STRETCH)]) {
+        // If the slot is already created, call OnUpdate
+        if (canFuze || !drawable->OnUpdate(node)) {
+            // If the slot is no longer needed or can be fuzed with the blur, destroy it
+            drawable.reset();
+            drawableAddedOrRemoved = true;
+        }
+    } else if (!canFuze) {
+        auto& generator = g_drawableGeneratorLut[static_cast<int>(RSDrawableSlot::PIXEL_STRETCH)];
+        // If the slot is not created and not fuzed with the blur, call OnGenerate
+        // In this case, we draw pixel stretch in the original way
+        if (auto drawable = generator(node)) {
+            drawableVec[static_cast<size_t>(RSDrawableSlot::PIXEL_STRETCH)] = std::move(drawable);
+            drawableAddedOrRemoved = true;
+        }
+        if (bgFilterDrawable && bgFilterDrawable->CheckIsMESABlur()) {
+            // remove pixel stretch params in the background filter
+            bgFilterDrawable->RemovePixelStretchParams();
+        }
+    }
+
+    return;
 }
 
 bool RSDrawable::UpdateDirtySlots(
@@ -549,6 +627,12 @@ bool RSDrawable::UpdateDirtySlots(
 {
     // Step 2: Update or generate all dirty slots
     bool drawableAddedOrRemoved = false;
+    // Deal with the pixel stretch at the end if MESABlurFuzed is enabled
+    bool pixelStretchDirty = false;
+    if (RSSystemProperties::GetMESABlurFuzedEnabled() && dirtySlots.count(RSDrawableSlot::PIXEL_STRETCH)) {
+        pixelStretchDirty = true;
+        dirtySlots.erase(RSDrawableSlot::PIXEL_STRETCH);
+    }
     for (const auto& slot : dirtySlots) {
         if (auto& drawable = drawableVec[static_cast<size_t>(slot)]) {
             // If the slot is already created, call OnUpdate
@@ -564,6 +648,10 @@ bool RSDrawable::UpdateDirtySlots(
                 drawableAddedOrRemoved = true;
             }
         }
+    }
+    // deal with the pixel stretch when MESABlurFuzed is enabled
+    if (pixelStretchDirty) {
+        AddPixelStretchDrawableSlot(node, dirtySlots, drawableVec, drawableAddedOrRemoved);
     }
 
     return drawableAddedOrRemoved;

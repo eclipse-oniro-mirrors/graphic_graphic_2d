@@ -151,6 +151,10 @@ public:
 
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
+    void RemovePixelStretchParams();
+    bool CheckIsMESABlur();
+private:
+    bool isMESABlur_ = false;
 };
 
 class RSBackgroundEffectDrawable : public RSFilterDrawable {

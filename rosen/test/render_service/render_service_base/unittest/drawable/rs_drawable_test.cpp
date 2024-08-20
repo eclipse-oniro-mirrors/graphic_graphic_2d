@@ -86,6 +86,8 @@ HWTEST_F(RSDrawableTest, UpdateDirtySlots, TestSize.Level1)
     ASSERT_FALSE(RSDrawable::UpdateDirtySlots(node, drawableVec, dirtySlots));
     node.GetMutableRenderProperties().SetBackgroundShader(nullptr);
     ASSERT_TRUE(RSDrawable::UpdateDirtySlots(node, drawableVec, dirtySlots));
+    dirtySlots.emplace(RSDrawableSlot::PIXEL_STRETCH);
+    ASSERT_TRUE(RSDrawable::UpdateDirtySlots(node, drawableVec, dirtySlots));
 
     NodeId idTwo = 2;
     RSRenderNode nodeTwo(idTwo);

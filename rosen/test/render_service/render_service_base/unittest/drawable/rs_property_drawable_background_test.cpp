@@ -368,6 +368,8 @@ HWTEST_F(RSRSBinarizationDrawableTest, RSBackgroundFilterDrawable, TestSize.Leve
     auto drawableThree = std::make_shared<DrawableV2::RSBackgroundFilterDrawable>();
     node.renderContent_->GetMutableRenderProperties().SetBackgroundFilter(nullptr);
     ASSERT_FALSE(drawableThree->OnUpdate(node));
+    drawableThree->RemovePixelStretchParams();
+    ASSERT_FALSE(drawableThree->CheckIsMESABlur());
     auto drawableFour = std::make_shared<DrawableV2::RSBackgroundEffectDrawable>();
     ASSERT_FALSE(drawableFour->OnUpdate(node));
 }

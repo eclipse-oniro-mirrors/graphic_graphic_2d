@@ -598,7 +598,18 @@ bool RSBackgroundFilterDrawable::OnUpdate(const RSRenderNode& node)
     RecordFilterInfos(rsFilter);
     needSync_ = true;
     stagingFilter_ = rsFilter;
+    isMESABlur_ = RSPropertyDrawableUtils::RSFilterSetPixelStretch(node.GetRenderProperties(), stagingFilter_);
     return true;
+}
+
+bool RSBackgroundFilterDrawable::CheckIsMESABlur()
+{
+    return isMESABlur_;
+}
+
+void RSBackgroundFilterDrawable::RemovePixelStretchParams()
+{
+    RSPropertyDrawableUtils::RSFilterRemovePixelStretch(stagingFilter_);
 }
 
 bool RSBackgroundEffectDrawable::OnUpdate(const RSRenderNode& node)
