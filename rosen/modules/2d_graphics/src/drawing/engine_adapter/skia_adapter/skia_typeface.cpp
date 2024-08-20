@@ -270,14 +270,22 @@ std::shared_ptr<Typeface> SkiaTypeface::Deserialize(const void* data, size_t siz
 
 uint32_t SkiaTypeface::GetHash() const
 {
+    if(hash_ != 0){
+        return hash_;
+    }
     if (!skTypeface_) {
         LOGD("skTypeface nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
         return 0;
     }
 
     auto skData = skTypeface_->serialize(SkTypeface::SerializeBehavior::kDontIncludeData);
-    uint32_t hash = SkOpts::hash_fn(skData->data(), skData->size(), 0);
-    return hash;
+    hash_ = SkOpts::hash_fn(skData->data(), skData->size(), 0);
+    return hash_;
+}
+
+void SkiaTypeface::SetHash(uint32_t hash)
+{
+    hash_ = hash;
 }
 
 } // namespace Drawing

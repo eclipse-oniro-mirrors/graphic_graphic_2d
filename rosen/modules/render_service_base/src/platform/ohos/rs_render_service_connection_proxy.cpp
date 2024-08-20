@@ -1874,39 +1874,30 @@ bool RSRenderServiceConnectionProxy::GetPixelmap(NodeId id, std::shared_ptr<Medi
 bool RSRenderServiceConnectionProxy::RegisterTypeface(uint64_t globalUniqueId,
     std::shared_ptr<Drawing::Typeface>& typeface)
 {
-    MessageOption option;
-    option.SetFlags(MessageOption::TF_SYNC);
-
-    {
-        MessageParcel data2;
-        MessageParcel reply2;
-
-        if (!data2.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
-            return false;
-        }
-
-        if (auto hash = typeface->GetHash()) { // if adapter does not provide hash, use old path
-            data2.WriteUint64(globalUniqueId);
-            data2.WriteUint32(hash);
-
-            uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NEED_REGISTER_TYPEFACE);
-            int32_t err = Remote()->SendRequest(code, data2, reply2, option);
-            if (err != NO_ERROR) {
-                RS_LOGW("Check if RegisterTypeface is needed failed, err:%{public}d", err);
-                return false;
-            }
-            if (!reply2.ReadBool()) {
-                return true; // the hash exists on server, no need to resend full data
-            }
-        }
-    }
-
     MessageParcel data;
     MessageParcel reply;
+    MessageOption option;
     if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
         return false;
     }
+    option.SetFlags(MessageOption::TF_SYNC);
+    auto hash = typeface->GetHash();
     data.WriteUint64(globalUniqueId);
+    data.WriteUint32(hash);
+
+    if (hash) { // if adapter does not provide hash, use old path
+        MessageParcel reply2;
+        uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NEED_REGISTER_TYPEFACE);
+        int32_t err = Remote()->SendRequest(code, data, reply2, option);
+        if (err != NO_ERROR) {
+            RS_LOGW("Check if RegisterTypeface is needed failed, err:%{public}d", err);
+            return false;
+        }
+        if (!reply2.ReadBool()) {
+            return true; // the hash exists on server, no need to resend full data
+        }
+    }
+
     RSMarshallingHelper::Marshalling(data, typeface);
 
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_TYPEFACE);

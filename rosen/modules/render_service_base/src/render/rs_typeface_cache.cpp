@@ -51,6 +51,17 @@ uint32_t RSTypefaceCache::GetTypefaceId(uint64_t uniqueId)
     return static_cast<uint32_t>(0xFFFFFFFF & uniqueId);
 }
 
+bool RSTypefaceCache::AddIfFound(uint64_t uniqueId, uint32_t hash)
+{
+    auto iterator = typefaceHashMap_.find(hash);
+    if(iterator != typefaceHashMap_.end()){
+        typefaceHashCode_[uniqueId] = hash;
+        std::get<1>(iterator->second)++;
+        return true;
+    }
+    return false;
+}
+
 bool RSTypefaceCache::HasTypeface(uint64_t uniqueId, uint32_t hash)
 {
     std::lock_guard<std::mutex> lock(mapMutex_);
@@ -62,11 +73,16 @@ bool RSTypefaceCache::HasTypeface(uint64_t uniqueId, uint32_t hash)
     if (hash) {
         // check if someone else has already registered this typeface, add ref count and
         // mapping if so.
+        if(AddIfFound(uniqueId, hash)) {
+            return true;
+        }
+
         auto iterator = typefaceHashMap_.find(hash);
         if (iterator != typefaceHashMap_.end()) {
-            typefaceHashCode_[uniqueId] = hash;
-            std::get<1>(iterator->second)++;
+            iterator->second.push_bask(uniqueId);
             return true;
+        } else {
+            typefaceHashQueue_[hash] {uniqueId};
         }
     }
 
@@ -86,8 +102,7 @@ void RSTypefaceCache::CacheDrawingTypeface(uint64_t uniqueId,
             std::shared_ptr<Drawing::Data> data = typeface->Serialize();
             const void* stream = data->GetData();
             size_t size = data->GetSize();
-            const size_t MAX_HASH_SIZE(20000);
-            hash_value = SkOpts::hash_fn(stream, std::min(size, MAX_HASH_SIZE), 0);
+            hash_value = SkOpts::hash_fn(stream, std::min(size, 20000lu), 0);
         }
         typefaceHashCode_[uniqueId] = hash_value;
         if (typefaceHashMap_.find(hash_value) != typefaceHashMap_.end()) {
@@ -103,26 +118,61 @@ void RSTypefaceCache::CacheDrawingTypeface(uint64_t uniqueId,
             return;
         }
         typefaceHashMap_[hash_value] = std::make_tuple(typeface, 1);
+        // register queued entries
+        auto iterator = typefaceHashQueue_.find(hash_value);
+        if (iterator != typefaceHashQueue_.end()) {
+            while (iterator->second.size()) {
+                auto back = iterator->second.back();
+                if(back != uniqueId){
+                    AddIfFound(back, hash_value);
+                }
+                iterator->second.pop_back();
+            }
+        }
     }
+}
+
+static void RemoveHashMap(std::unordered_map<uint64_t, TypefaceTuple> &typefaceHashMap, unit64_t hash_value)
+{
+    if (typefaceHashMap.find(hash_value) != typefaceHashMap.end()) {
+        auto [typeface, ref] = typefaceHashMap[hash_value];
+        if (ref == 1) {
+            typefaceHashMap.erase(hash_value);
+        } else {
+            typefaceHashMap[hash_value] = std::make_tuple(typeface, ref - 1)
+        }
+    }
+}
+
+static bool EmptyAfterErase(std::vector<uint64_t>& vec, size_t ix)
+{
+    vec.erase(vec.begin() + ix);
+    return vec.empty();
 }
 
 void RSTypefaceCache::RemoveDrawingTypefaceByGlobalUniqueId(uint64_t globalUniqueId)
 {
     std::lock_guard<std::mutex> lock(mapMutex_);
+    // first check the queue;
+    for (auto& ref : typefaceHashQueue_) {
+        size_t ix{0};
+        for (auto uid : ref.second) {
+            if (uid == globalUniqueId) {
+                if (EmptyAfterErase(ref.second, ix)) {
+                     typefaceHashQueue_.erase(ref.first);
+                }
+                return;
+            }
+            ix++;
+        }
+    }
     if (typefaceHashCode_.find(globalUniqueId) == typefaceHashCode_.end()) {
         return;
     }
     auto hash_value = typefaceHashCode_[globalUniqueId];
     typefaceHashCode_.erase(globalUniqueId);
-    if (typefaceHashMap_.find(hash_value) == typefaceHashMap_.end()) {
-        return;
-    }
-    auto [typeface, ref] = typefaceHashMap_[hash_value];
-    if (ref == 1) {
-        typefaceHashMap_.erase(hash_value);
-    } else {
-        typefaceHashMap_[hash_value] = std::make_tuple(typeface, ref - 1);
-    }
+
+    RemoveHashMap(typefaceHashMap_, hash_value);
 }
 
 std::shared_ptr<Drawing::Typeface> RSTypefaceCache::GetDrawingTypefaceCache(uint64_t uniqueId) const
@@ -139,21 +189,35 @@ std::shared_ptr<Drawing::Typeface> RSTypefaceCache::GetDrawingTypefaceCache(uint
     return nullptr;
 }
 
-static void RemoveHashMap(std::unordered_map<uint64_t, TypefaceTuple> &typefaceHashMap, uint64_t hash_value)
+static void PurgeMapWithPid(pid_t pid, std::unordered_map<unit32_t, std::vector<unit64_t>>& map)
 {
-    if (typefaceHashMap.find(hash_value) != typefaceHashMap.end()) {
-        auto [typeface, ref] = typefaceHashMap[hash_value];
-        if (ref == 1) {
-            typefaceHashMap.erase(hash_value);
-        } else {
-            typefaceHashMap[hash_value] = std::make_tuple(typeface, ref - 1);
+    // go through queued items;
+    std::vector<size_t> removeList;
+
+    for (auto& ref : map) {
+        size_t ix{0};
+        for (auto uid : ref.second) {
+            pid_t pidCache = static_cast<pid_t>(uid >> 32);
+            if (pid == pidCache) {
+                if (EmptyAfterErase(ref.second, ix)) {
+                    removeList.push_back(ref.first);
+                }
+            }
+            ix++;
         }
+    }
+
+    while(removeList.size()){
+        map.erase(removeList.back());
+        removeList.pop_back();
     }
 }
 
 void RSTypefaceCache::RemoveDrawingTypefacesByPid(pid_t pid)
 {
     std::lock_guard<std::mutex> lock(mapMutex_);
+    PurgeMapWithPid(pid, typefaceHashQueue_);
+
     for (auto it = typefaceHashCode_.begin(); it != typefaceHashCode_.end();) {
         uint64_t uniqueId = it->first;
         pid_t pidCache = static_cast<pid_t>(uniqueId >> 32);

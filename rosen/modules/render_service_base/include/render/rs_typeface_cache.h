@@ -78,6 +78,7 @@ public:
     void Dump() const;
 
 private:
+    bool AddIfFound(uint64_t uniqueId, uint32_t hash);
     RSTypefaceCache(const RSTypefaceCache&) = delete;
     RSTypefaceCache(const RSTypefaceCache&&) = delete;
     RSTypefaceCache& operator=(const RSTypefaceCache&) = delete;
@@ -88,6 +89,7 @@ private:
 
     mutable std::mutex listMutex_;
     std::list<RSTypefaceRef> delayDestroyTypefaces_;
+    std::unordered_map<uint32_t, std::vector<uint64_t>> typefaceHashQueue_;
 };
 } // namespace Rosen
 } // namespace OHOS

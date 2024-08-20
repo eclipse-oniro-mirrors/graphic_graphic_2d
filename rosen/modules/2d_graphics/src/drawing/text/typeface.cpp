@@ -158,6 +158,13 @@ uint32_t Typeface::GetHash() const
     return 0;
 }
 
+void Typeface::SetHash(uint32_t hash)
+{
+    if (typefaceImpl_) {
+        typefaceImpl_->SetHash(hash);
+    }
+}
+
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

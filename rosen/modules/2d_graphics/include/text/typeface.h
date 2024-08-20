@@ -108,6 +108,11 @@ public:
      */
     uint32_t GetHash() const;
 
+    /**
+     * @brief Set a 32bit hash for this typeface, unique for the underlying font data.
+     */
+    void SetHash(uint32_t hash);
+
 private:
     std::shared_ptr<TypefaceImpl> typefaceImpl_;
     static std::function<bool(std::shared_ptr<Typeface>)> registerTypefaceCallBack_;
