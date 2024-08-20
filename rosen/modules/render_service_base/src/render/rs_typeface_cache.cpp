@@ -77,12 +77,13 @@ bool RSTypefaceCache::HasTypeface(uint64_t uniqueId, uint32_t hash)
             return true;
         }
 
-        auto iterator = typefaceHashMap_.find(hash);
-        if (iterator != typefaceHashMap_.end()) {
+        // check if someone else is about to register this typeface -> queue uid
+        auto iterator = typefaceHashQueue_.find(hash);
+        if (iterator != typefaceHashQueue_.end()) {
             iterator->second.push_bask(uniqueId);
             return true;
         } else {
-            typefaceHashQueue_[hash] {uniqueId};
+            typefaceHashQueue_[hash] = {uniqueId};
         }
     }
 
@@ -132,7 +133,7 @@ void RSTypefaceCache::CacheDrawingTypeface(uint64_t uniqueId,
     }
 }
 
-static void RemoveHashMap(std::unordered_map<uint64_t, TypefaceTuple> &typefaceHashMap, unit64_t hash_value)
+static void RemoveHashMap(std::unordered_map<uint64_t, TypefaceTuple> &typefaceHashMap, uint64_t hash_value)
 {
     if (typefaceHashMap.find(hash_value) != typefaceHashMap.end()) {
         auto [typeface, ref] = typefaceHashMap[hash_value];
@@ -189,7 +190,7 @@ std::shared_ptr<Drawing::Typeface> RSTypefaceCache::GetDrawingTypefaceCache(uint
     return nullptr;
 }
 
-static void PurgeMapWithPid(pid_t pid, std::unordered_map<unit32_t, std::vector<unit64_t>>& map)
+static void PurgeMapWithPid(pid_t pid, std::unordered_map<uint32_t, std::vector<uint64_t>>& map)
 {
     // go through queued items;
     std::vector<size_t> removeList;
