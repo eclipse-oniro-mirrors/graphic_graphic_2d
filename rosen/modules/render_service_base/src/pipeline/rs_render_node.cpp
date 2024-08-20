@@ -782,11 +782,8 @@ void RSRenderNode::DumpDrawCmdModifiers(std::string& out) const
     std::string splitStr = ", ";
     std::string modifierDesc = ", DrawCmdModifiers2:[";
     for (auto& [type, modifiers] : renderContent_->drawCmdModifiers_) {
-        std::string typeName = "UNKNOWN";
-        auto iter = RS_MODIFIER_TYPE_TO_STRING.find(type);
-        if (iter != RS_MODIFIER_TYPE_TO_STRING.end()) {
-            typeName = iter->second;
-        }
+        auto modifierTypeString = std::make_shared<RSModifierTypeString>();
+        std::string typeName = modifierTypeString->GetModifierTypeString(type);
         modifierDesc += typeName + ":[";
         std::string propertyDesc = "";
         bool found = false;
@@ -2743,13 +2740,14 @@ void RSRenderNode::InitCacheSurface(Drawing::GPUContext* gpuContext, ClearCacheS
         if (!clearCacheSurfaceFunc_) {
             clearCacheSurfaceFunc_ = func;
         }
+        std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
         if (cacheSurface_) {
             func(std::move(cacheSurface_), nullptr,
                 cacheSurfaceThreadIndex_, completedSurfaceThreadIndex_);
-            std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
             cacheSurface_ = nullptr;
         }
     } else {
+        std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
         cacheSurface_ = nullptr;
     }
 #ifdef RS_ENABLE_VK
@@ -2780,6 +2778,7 @@ void RSRenderNode::InitCacheSurface(Drawing::GPUContext* gpuContext, ClearCacheS
 #if (defined (RS_ENABLE_GL) || defined (RS_ENABLE_VK)) && (defined RS_ENABLE_EGLIMAGE)
     if (gpuContext == nullptr) {
         if (func) {
+            std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
             func(std::move(cacheSurface_), std::move(cacheCompletedSurface_),
                 cacheSurfaceThreadIndex_, completedSurfaceThreadIndex_);
             ClearCacheSurface();
@@ -2821,6 +2820,7 @@ void RSRenderNode::InitCacheSurface(Drawing::GPUContext* gpuContext, ClearCacheS
     }
 #endif
 #else
+    std::scoped_lock<std::recursive_mutex> lock(surfaceMutex_);
     cacheSurface_ = Drawing::Surface::MakeRasterN32Premul(width, height);
 #endif
 }
@@ -3006,7 +3006,7 @@ std::shared_ptr<Drawing::Surface> RSRenderNode::GetCompletedCacheSurface(uint32_
                 cacheCompletedCleanupHelper_ = nullptr;
             }
 #endif
-            return std::move(cacheCompletedSurface_);
+            return cacheCompletedSurface_;
         }
         if (!needCheckThread || completedSurfaceThreadIndex_ == threadIndex || !cacheCompletedSurface_) {
             return cacheCompletedSurface_;
@@ -3966,6 +3966,12 @@ bool RSRenderNode::UpdateLocalDrawRect()
 {
     auto drawRect = selfDrawRect_.JoinRect(childrenRect_.ConvertTo<float>());
     return stagingRenderParams_->SetLocalDrawRect(drawRect);
+}
+
+void RSRenderNode::UpdateAbsDrawRect()
+{
+    auto absRect = GetAbsDrawRect();
+    stagingRenderParams_->SetAbsDrawRect(absRect);
 }
 
 void RSRenderNode::UpdateCurCornerRadius(Vector4f& curCornerRadius, bool isSubNodeInSurface)

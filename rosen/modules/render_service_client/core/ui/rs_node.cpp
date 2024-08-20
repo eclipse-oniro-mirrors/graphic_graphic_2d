@@ -529,12 +529,22 @@ void RSNode::MarkDirty(NodeDirtyType type, bool isDirty)
     }
 }
 
-std::shared_ptr<RSObjAbsGeometry> RSNode::GetLocalGeometry()
+float RSNode::GetGlobalPositionX() const
+{
+    return globalPositionX_;
+}
+
+float RSNode::GetGlobalPositionY() const
+{
+    return globalPositionY_;
+}
+
+std::shared_ptr<RSObjAbsGeometry> RSNode::GetLocalGeometry() const
 {
     return localGeometry_;
 }
 
-std::shared_ptr<RSObjAbsGeometry> RSNode::GetGlobalGeometry()
+std::shared_ptr<RSObjAbsGeometry> RSNode::GetGlobalGeometry() const
 {
     return globalGeometry_;
 }
@@ -562,6 +572,16 @@ void RSNode::UpdateGlobalGeometry(const std::shared_ptr<RSObjAbsGeometry>& paren
     }
     *globalGeometry_ = *localGeometry_;
     globalGeometry_->UpdateMatrix(&parentGlobalGeometry->GetAbsMatrix(), std::nullopt);
+
+    float parentGlobalPositionX = 0.f;
+    float parentGlobalPositionY = 0.f;
+    auto parent = GetParent();
+    if (parent) {
+        parentGlobalPositionX = parent->globalPositionX_;
+        parentGlobalPositionY = parent->globalPositionY_;
+    }
+    globalPositionX_ = parentGlobalPositionX + localGeometry_->GetX();
+    globalPositionY_ = parentGlobalPositionY + localGeometry_->GetY();
 }
 
 template<typename ModifierName, typename PropertyName, typename T>
@@ -1460,6 +1480,27 @@ void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
                 brightnessBlender->GetPositiveCoeff().data_[2] },
             { brightnessBlender->GetNegativeCoeff().data_[0], brightnessBlender->GetNegativeCoeff().data_[1],
                 brightnessBlender->GetNegativeCoeff().data_[2] } });
+    }
+}
+
+void RSNode::SetBlender(const Blender* blender)
+{
+    if (blender == nullptr) {
+        ROSEN_LOGE("RSNode::SetBlender: blender is null!");
+        return;
+    }
+
+    if (Blender::BRIGHTNESS_BLENDER == blender->GetBlenderType()) {
+        auto brightnessBlender = static_cast<const BrightnessBlender*>(blender);
+        if (brightnessBlender != nullptr) {
+            SetFgBrightnessFract(brightnessBlender->GetFraction());
+            SetFgBrightnessParams({ brightnessBlender->GetLinearRate(), brightnessBlender->GetDegree(),
+                brightnessBlender->GetCubicRate(), brightnessBlender->GetQuadRate(), brightnessBlender->GetSaturation(),
+                { brightnessBlender->GetPositiveCoeff().x_, brightnessBlender->GetPositiveCoeff().y_,
+                    brightnessBlender->GetPositiveCoeff().z_ },
+                { brightnessBlender->GetNegativeCoeff().x_, brightnessBlender->GetNegativeCoeff().y_,
+                    brightnessBlender->GetNegativeCoeff().z_ } });
+        }
     }
 }
 

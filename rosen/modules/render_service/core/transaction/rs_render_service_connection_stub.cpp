@@ -1219,15 +1219,21 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_TYPEFACE): {
             // timer: 3s
             OHOS::Rosen::RSXCollie registerTypefaceXCollie("registerTypefaceXCollie_" + std::to_string(callingPid), 3);
+            bool result = false;
             uint64_t uniqueId = data.ReadUint64();
             uint32_t hash = data.ReadUint32();
             RS_PROFILER_PATCH_NODE_ID(data, uniqueId);
-            std::shared_ptr<Drawing::Typeface> typeface;
-            bool result = false;
-            result = RSMarshallingHelper::Unmarshalling(data, typeface);
-            if (result && typeface) {
-                typeface->SetHash(hash);
-                RegisterTypeface(uniqueId, typeface);
+            // safe check
+            if (ExtractPid(uniqueId) == callingPid) {
+                std::shared_ptr<Drawing::Typeface> typeface;
+                result = RSMarshallingHelper::Unmarshalling(data, typeface);
+                if (result && typeface) {
+                    typeface->SetHash(hash);
+                    RegisterTypeface(uniqueId, typeface);
+                }
+            } else {
+                RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest callingPid[%{public}d] "
+                    "no permission REGISTER_TYPEFACE", callingPid);
             }
             if (!reply.WriteBool(result)) {
                 ret = ERR_INVALID_REPLY;
@@ -1237,7 +1243,13 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_TYPEFACE): {
             uint64_t uniqueId = data.ReadUint64();
             RS_PROFILER_PATCH_NODE_ID(data, uniqueId);
-            UnRegisterTypeface(uniqueId);
+            // safe check
+            if (ExtractPid(uniqueId) == callingPid) {
+                UnRegisterTypeface(uniqueId);
+            } else {
+                RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest callingPid[%{public}d] "
+                    "no permission UNREGISTER_TYPEFACE", callingPid);
+            }
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SKIP_FRAME_INTERVAL): {

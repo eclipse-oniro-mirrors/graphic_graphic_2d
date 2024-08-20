@@ -542,7 +542,13 @@ void RSMainThread::Init()
 #endif
 
     auto delegate = RSFunctionalDelegate::Create();
-    delegate->SetRepaintCallback([]() { RSMainThread::Instance()->RequestNextVSync(); });
+    delegate->SetRepaintCallback([this]() {
+        PostTask([this]() {
+            SetDirtyFlag();
+            isOverDrawEnabledOfCurFrame_ = RSOverdrawController::GetInstance().IsEnabled();
+            RequestNextVSync("OverDrawUpdate");
+        });
+    });
     RSOverdrawController::GetInstance().SetDelegate(delegate);
 
     HgmTaskHandleThread::Instance().PostSyncTask([this] () {
@@ -1786,25 +1792,6 @@ void RSMainThread::SetFrameIsRender(bool isRender)
     }
 }
 
-void RSMainThread::ColorPickerRequestVsyncIfNeed()
-{
-    if (colorPickerForceRequestVsync_) {
-        colorPickerRequestFrameNum_--;
-        if (colorPickerRequestFrameNum_ > 0) {
-            RSMainThread::Instance()->SetNoNeedToPostTask(false);
-            RSMainThread::Instance()->SetDirtyFlag();
-            RequestNextVSync();
-        } else {
-            // The last frame reset to 15, then to request next 15 frames if need
-            colorPickerRequestFrameNum_ = 15;
-            RSMainThread::Instance()->SetNoNeedToPostTask(true);
-            colorPickerForceRequestVsync_ = false;
-        }
-    } else {
-        RSMainThread::Instance()->SetNoNeedToPostTask(false);
-    }
-}
-
 void RSMainThread::WaitUntilUploadTextureTaskFinishedForGL()
 {
     if (RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
@@ -1871,13 +1858,6 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
             needTraverseNodeTree = !DoDirectComposition(rootNode, !isLastFrameDirectComposition_);
         } else if (forceUpdateUniRenderFlag_) {
             RS_TRACE_NAME("RSMainThread::UniRender ForceUpdateUniRender");
-        } else if (colorPickerForceRequestVsync_) {
-            RS_TRACE_NAME("RSMainThread::UniRender ColorPickerForceRequestVsync");
-            RSMainThread::Instance()->SetSkipJankAnimatorFrame(true);
-            RSMainThread::Instance()->SetNoNeedToPostTask(false);
-            RSMainThread::Instance()->SetDirtyFlag();
-            RequestNextVSync();
-            return;
         } else if (!pendingUiCaptureTasks_.empty()) {
             RS_LOGD("RSMainThread::Render pendingUiCaptureTasks_ not empty");
         } else {
@@ -1894,8 +1874,6 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         }
     }
 
-    ColorPickerRequestVsyncIfNeed();
-
     isCachedSurfaceUpdated_ = false;
     if (needTraverseNodeTree) {
         RSUifirstManager::Instance().ProcessForceUpdateNode();
@@ -1905,6 +1883,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         forceUIFirstChanged_ = false;
         isFirstFrameOfPartialRender_ = (!isPartialRenderEnabledOfLastFrame_ || isRegionDebugEnabledOfLastFrame_) &&
             uniVisitor->GetIsPartialRenderEnabled() && !uniVisitor->GetIsRegionDebugEnabled();
+        isFirstFrameOfOverdrawSwitch_ = (isOverDrawEnabledOfCurFrame_ != isOverDrawEnabledOfLastFrame_);
         SetFocusLeashWindowId();
         uniVisitor->SetFocusedNodeId(focusNodeId_, focusLeashWindowId_);
         rootNode->QuickPrepare(uniVisitor);
@@ -1912,6 +1891,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         SetUniVSyncRateByVisibleLevel(uniVisitor);
         renderThreadParams_->selfDrawables_ = std::move(selfDrawables_);
         renderThreadParams_->hardwareEnabledTypeDrawables_ = std::move(hardwareEnabledDrwawables_);
+        renderThreadParams_->isOverDrawEnabled_ = isOverDrawEnabledOfCurFrame_;
         isAccessibilityConfigChanged_ = false;
         isCurtainScreenUsingStatusChanged_ = false;
         isLuminanceChanged_ = false;
@@ -1934,6 +1914,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         lastWatermarkFlag_ = watermarkFlag_;
         isPartialRenderEnabledOfLastFrame_ = uniVisitor->GetIsPartialRenderEnabled();
         isRegionDebugEnabledOfLastFrame_ = uniVisitor->GetIsRegionDebugEnabled();
+        isOverDrawEnabledOfLastFrame_ = isOverDrawEnabledOfCurFrame_;
         // set params used in render thread
         uniVisitor->SetUniRenderThreadParam(renderThreadParams_);
     } else if (RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
@@ -3333,11 +3314,6 @@ void RSMainThread::SetScreenPowerOnChanged(bool val)
 bool RSMainThread::GetScreenPowerOnChanged() const
 {
     return screenPowerOnChanged_;
-}
-
-void RSMainThread::SetColorPickerForceRequestVsync(bool colorPickerForceRequestVsync)
-{
-    colorPickerForceRequestVsync_ = colorPickerForceRequestVsync;
 }
 
 void RSMainThread::SetNoNeedToPostTask(bool noNeedToPostTask)

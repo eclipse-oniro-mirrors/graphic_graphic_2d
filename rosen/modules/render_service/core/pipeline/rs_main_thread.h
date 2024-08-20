@@ -195,7 +195,6 @@ public:
 
     void SetDirtyFlag(bool isDirty = true);
     bool GetDirtyFlag();
-    void SetColorPickerForceRequestVsync(bool colorPickerForceRequestVsync);
     void SetNoNeedToPostTask(bool noNeedToPostTask);
     void SetAccessibilityConfigChanged();
     void SetScreenPowerOnChanged(bool val);
@@ -347,6 +346,11 @@ public:
         return systemAnimatedScenesList_.empty();
     }
 
+    bool IsFirstFrameOfOverdrawSwitch() const
+    {
+        return isFirstFrameOfOverdrawSwitch_;
+    }
+
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -367,7 +371,6 @@ private:
     void Render();
     void OnUniRenderDraw();
     void SetDeviceType();
-    void ColorPickerRequestVsyncIfNeed();
     void UniRender(std::shared_ptr<RSBaseRenderNode> rootNode);
     bool CheckSurfaceNeedProcess(OcclusionRectISet& occlusionSurfaces, std::shared_ptr<RSSurfaceRenderNode> curSurface);
     RSVisibleLevel CalcSurfaceNodeVisibleRegion(const std::shared_ptr<RSDisplayRenderNode>& displayNode,
@@ -563,9 +566,7 @@ private:
     bool systemAnimatedScenesEnabled_ = false;
     bool isFoldScreenDevice_ = false;
 
-    bool colorPickerForceRequestVsync_ = false;
     std::atomic_bool noNeedToPostTask_ = false;
-    std::atomic_int colorPickerRequestFrameNum_ = 15;
 
     std::shared_ptr<RSBaseRenderEngine> renderEngine_;
     std::shared_ptr<RSBaseRenderEngine> uniRenderEngine_;
@@ -650,6 +651,11 @@ private:
     bool lastFrameUIExtensionDataEmpty_ = false;
     // <pid, <uid, callback>>
     std::map<pid_t, std::pair<uint64_t, sptr<RSIUIExtensionCallback>>> uiExtensionListenners_ = {};
+
+    // overDraw
+    bool isFirstFrameOfOverdrawSwitch_ = false;
+    bool isOverDrawEnabledOfCurFrame_ = false;
+    bool isOverDrawEnabledOfLastFrame_ = false;
 
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;

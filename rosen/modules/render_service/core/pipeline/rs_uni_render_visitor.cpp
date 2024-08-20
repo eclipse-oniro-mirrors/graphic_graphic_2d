@@ -459,9 +459,9 @@ void RSUniRenderVisitor::ResetDisplayDirtyRegion()
     if (!curDisplayDirtyManager_) {
         return;
     }
-    bool ret = CheckScreenPowerChange() || CheckColorFilterChange() ||
-        CheckCurtainScreenUsingStatusChange() || IsFirstFrameOfPartialRender() ||
-        IsWatermarkFlagChanged() || IsDisplayZoomIn() || isCompleteRenderEnabled_ || CheckLuminanceStatusChange();
+    bool ret = CheckScreenPowerChange() || CheckColorFilterChange() || CheckCurtainScreenUsingStatusChange() ||
+               IsFirstFrameOfPartialRender() || IsWatermarkFlagChanged() || IsDisplayZoomIn() ||
+               isCompleteRenderEnabled_ || CheckLuminanceStatusChange() || IsFirstFrameOfOverdrawSwitch();
     if (ret) {
         curDisplayDirtyManager_->ResetDirtyAsSurfaceSize();
         RS_LOGD("RSUniRenderVisitor::ResetDisplayDirtyRegion on");
@@ -504,6 +504,15 @@ bool RSUniRenderVisitor::IsFirstFrameOfPartialRender() const
     return true;
 }
 
+bool RSUniRenderVisitor::IsFirstFrameOfOverdrawSwitch() const
+{
+    if (!RSMainThread::Instance()->IsFirstFrameOfOverdrawSwitch()) {
+        return false;
+    }
+    RS_LOGD("IsFirstFrameOfOverdrawSwitch");
+    return true;
+}
+
 bool RSUniRenderVisitor::IsWatermarkFlagChanged() const
 {
     if (RSMainThread::Instance()->IsWatermarkFlagChanged()) {
@@ -520,7 +529,9 @@ bool RSUniRenderVisitor::IsDisplayZoomIn() const
         return false;
     }
     auto scale = curDisplayNode_->GetRenderProperties().GetScale();
-    return scale.x_ > 1.f || scale.y_ > 1.f;
+    bool curZoomState = scale.x_ > 1.f || scale.y_ > 1.f;
+    curDisplayNode_->UpdateZoomState(curZoomState);
+    return curZoomState || curDisplayNode_->IsZoomStateChange();
 }
 
 void RSUniRenderVisitor::UpdateVirtualScreenSecurityExemption(RSDisplayRenderNode& node)
@@ -1420,13 +1431,75 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(std::vector<
     hwcRects.emplace_back(dst);
 }
 
-void RSUniRenderVisitor::UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSSurfaceRenderNode>& hwcNode)
+void RSUniRenderVisitor::UpdateHwcNodeProperty(std::shared_ptr<RSSurfaceRenderNode> hwcNode)
 {
-    Drawing::Matrix totalMatrix;
-    float alpha = 1.f;
-    RSUniRenderUtil::AccumulateMatrixAndAlpha(hwcNode, totalMatrix, alpha);
+    auto hwcNodeGeo = hwcNode->GetRenderProperties().GetBoundsGeometry();
+    if (!hwcNodeGeo) {
+        RS_LOGE("hwcNode Geometry is not prepared.");
+        return;
+    }
+    bool hasCornerRadius = !hwcNode->GetRenderProperties().GetCornerRadius().IsZero();
+    bool isIntersectWithRoundCorner = hasCornerRadius;
+    float alpha = hwcNode->GetRenderProperties().GetAlpha();
+    Drawing::Matrix totalMatrix = hwcNodeGeo->GetMatrix();
+    auto hwcNodeRect = hwcNodeGeo->GetAbsRect();
+    RSUniRenderUtil::TraverseParentNodeAndReduce(hwcNode,
+        [&alpha](std::shared_ptr<RSRenderNode> parent) {
+            auto& parentProperty = parent->GetRenderProperties();
+            alpha *= parentProperty.GetAlpha();
+            if (ROSEN_EQ(alpha, 1.f) && parent->GetType() != RSRenderNodeType::DISPLAY_NODE) {
+                parent->DisableDrawingCacheByHwcNode();
+            }
+        },
+        [&totalMatrix](std::shared_ptr<RSRenderNode> parent) {
+            auto& parentProperty = parent->GetRenderProperties();
+            auto parentGeo = parentProperty.GetBoundsGeometry();
+            if (parentGeo) {
+                totalMatrix.PostConcat(parentGeo->GetMatrix());
+            }
+        },
+        [&isIntersectWithRoundCorner, hwcNodeRect](std::shared_ptr<RSRenderNode> parent) {
+            if (isIntersectWithRoundCorner) {
+                return;
+            }
+            auto& parentProperty = parent->GetRenderProperties();
+            auto cornerRadius = parentProperty.GetCornerRadius();
+            auto maxCornerRadius = *std::max_element(std::begin(cornerRadius.data_), std::end(cornerRadius.data_));
+            auto parentGeo = parentProperty.GetBoundsGeometry();
+            static const std::array offsetVecs {
+                UIPoint { 0, 0 },
+                UIPoint { 1, 0 },
+                UIPoint { 0, 1 },
+                UIPoint { 1, 1 }
+            };
+            if (parentGeo) {
+                /*
+                * The logic here is to calculate whether the HWC Node affects
+                * the round corner property of the parent node.
+                * The method is to calculate whether the Rect of the HWC Node intersects
+                * with the AABB of the round corner of the parent node.
+                */
+                auto parentRect = parentGeo->GetAbsRect();
+                UIPoint offset { parentRect.GetWidth() - maxCornerRadius, parentRect.GetHeight() - maxCornerRadius };
+                UIPoint anchorPoint { parentRect.GetLeft(), parentRect.GetTop() };
+                isIntersectWithRoundCorner = isIntersectWithRoundCorner ||
+                std::any_of(std::begin(offsetVecs), std::end(offsetVecs),
+                [hwcNodeRect, offset, maxCornerRadius, anchorPoint](auto offsetVec) {
+                    auto res = anchorPoint + offset * offsetVec;
+                    return RectI(res.x_, res.y_, maxCornerRadius, maxCornerRadius).Intersect(hwcNodeRect);
+                });
+            }
+        }
+    );
     hwcNode->SetTotalMatrix(totalMatrix);
     hwcNode->SetGlobalAlpha(alpha);
+    hwcNode->SetIsIntersectWithRoundCorner(isIntersectWithRoundCorner);
+}
+
+void RSUniRenderVisitor::UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSSurfaceRenderNode>& hwcNode)
+{
+    auto alpha = hwcNode->GetGlobalAlpha();
+    auto totalMatrix = hwcNode->GetTotalMatrix();
     if (!ROSEN_EQ(alpha, 1.f)) {
         RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name:%s id:%llu disabled by accumulated alpha:%.2f",
             hwcNode->GetName().c_str(), hwcNode->GetId(), alpha);
@@ -1472,6 +1545,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnable()
             if (!hwcNodePtr || !hwcNodePtr->IsOnTheTree()) {
                 continue;
             }
+            UpdateHwcNodeProperty(hwcNodePtr);
             UpdateHwcNodeEnableByRotateAndAlpha(hwcNodePtr);
             UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, hwcNodePtr);
 
@@ -1691,37 +1765,24 @@ void RSUniRenderVisitor::UpdateChildHwcNodeEnableByHwcNodeBelow(std::vector<Rect
     std::shared_ptr<RSSurfaceRenderNode>& appNode)
 {
     const auto& hwcNodes = appNode->GetChildHardwareEnabledNodes();
-    std::shared_ptr<RSRenderNode> parentNode =
-        std::static_pointer_cast<RSRenderNode>(appNode);
-    bool hasCornerRadius = !appNode->GetRenderProperties().GetCornerRadius().IsZero();
-    auto appRect = appNode->GetRenderProperties().GetBoundsRect();
-    while ((bool)(parentNode = parentNode->GetParent().lock()) &&
-           parentNode->GetType() != RSRenderNodeType::DISPLAY_NODE) {
-        auto parentRect = parentNode->GetRenderProperties().GetBoundsRect();
-        if (parentRect.Intersect(appRect)) {
-            hasCornerRadius |= (!parentNode->GetRenderProperties().GetCornerRadius().IsZero());
-        }
-        if (hasCornerRadius) {
-            break;
-        }
-    }
     for (auto hwcNode : hwcNodes) {
         auto hwcNodePtr = hwcNode.lock();
         if (!hwcNodePtr || !hwcNodePtr->IsOnTheTree()) {
             continue;
         }
-        UpdateHwcNodeEnableByHwcNodeBelowSelf(hwcRects, hwcNodePtr, hasCornerRadius);
+        UpdateHwcNodeEnableByHwcNodeBelowSelf(hwcRects, hwcNodePtr,
+            hwcNodePtr->GetIsIntersectWithRoundCorner());
     }
 }
 
 void RSUniRenderVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelf(std::vector<RectI>& hwcRects,
-    std::shared_ptr<RSSurfaceRenderNode>& hwcNode, bool hasCornerRadius)
+    std::shared_ptr<RSSurfaceRenderNode>& hwcNode, bool isIntersectWithRoundCorner)
 {
     if (hwcNode->IsHardwareForcedDisabled()) {
         return;
     }
     auto dst = hwcNode->GetDstRect();
-    if (hwcNode->GetAncoForceDoDirect() || !hasCornerRadius) {
+    if (hwcNode->GetAncoForceDoDirect() || !isIntersectWithRoundCorner) {
         hwcRects.emplace_back(dst);
         return;
     }
@@ -2129,6 +2190,7 @@ void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeSkipped)
     node.MapAndUpdateChildrenRect();
     node.UpdateSubTreeInfo(prepareClipRect_);
     node.UpdateLocalDrawRect();
+    node.UpdateAbsDrawRect();
     node.ResetChangeState();
     if (isDrawingCacheEnabled_) {
         node.UpdateDrawingCacheInfoAfterChildren();
@@ -2250,7 +2312,8 @@ void RSUniRenderVisitor::UpdateHardwareStateByHwcNodeBackgroundAlpha(
         if (!hwcNodePtr->IsNodeHasBackgroundColorAlpha() && !hwcNodePtr->IsHardwareForcedDisabled()) {
             hwcRects.push_back(hwcNodePtr->GetDstRect());
         } else if (hwcNodePtr->IsNodeHasBackgroundColorAlpha() && !hwcNodePtr->IsHardwareForcedDisabled() &&
-            hwcRects.size() != 0 && IsNodeAboveInsideOfNodeBelow(hwcNodePtr->GetDstRect(), hwcRects)) {
+            hwcRects.size() != 0 && (IsNodeAboveInsideOfNodeBelow(hwcNodePtr->GetDstRect(), hwcRects) ||
+            RsCommonHook::Instance().GetHardwareEnabledByIgnoringInsideFlag())) {
             continue;
         } else {
             hwcNodePtr->SetHardwareForcedDisabledState(true);
