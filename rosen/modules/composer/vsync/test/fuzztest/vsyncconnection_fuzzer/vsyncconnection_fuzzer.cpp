@@ -23,6 +23,7 @@
 
 namespace OHOS {
     namespace {
+        constexpr uint32_t FUNC_NUM = 6;
         const uint8_t* data_ = nullptr;
         size_t size_ = 0;
         size_t pos;
@@ -89,7 +90,7 @@ namespace OHOS {
         MessageOption option;
         uint32_t code = GetData<uint32_t>();
         vsyncConnection->OnRemoteRequest(code, arguments, reply, option);
-        for (uint32_t i = 0; i < 6; ++i) {
+        for (uint32_t i = 0; i < FUNC_NUM; ++i) {
             vsyncConnection->OnRemoteRequest(i, arguments, reply, option);
         }
         return true;
