@@ -38,8 +38,7 @@
 namespace OHOS {
 namespace Rosen {
 
-enum class DrawError
-{
+enum class DrawError {
     ERR_OK = 0,
     ERR_CPU_CANVAS,
     ERR_GPU_CANVAS,
