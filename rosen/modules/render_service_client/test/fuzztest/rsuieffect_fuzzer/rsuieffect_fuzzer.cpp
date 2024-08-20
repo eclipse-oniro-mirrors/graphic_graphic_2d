@@ -145,10 +145,10 @@ namespace OHOS {
     void PixelStretchParaFuzzTest()
     {
         Vector4f stretchPercent;
-        stretchPercent[0] = GetData<float>(); // left
-        stretchPercent[1] = GetData<float>(); // top
-        stretchPercent[2] = GetData<float>(); // right
-        stretchPercent[3] = GetData<float>(); // bottom
+        stretchPercent[0] = GetData<float>(); // 0 represents left
+        stretchPercent[1] = GetData<float>(); // 1 represents top
+        stretchPercent[2] = GetData<float>(); // 2 represents right
+        stretchPercent[3] = GetData<float>(); // 3 represents bottom
         Drawing::TileMode stretchTileMode = Drawing::TileMode::CLAMP;
 
         auto pixelStretchPara = std::make_shared<PixelStretchPara>();
