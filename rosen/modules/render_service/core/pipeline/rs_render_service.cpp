@@ -147,6 +147,10 @@ bool RSRenderService::Init()
 
 void RSRenderService::Run()
 {
+    if (!mainThread_) {
+        RS_LOGE("RSRenderService::Run failed, mainThread is nullptr");
+        return;
+    }
     RS_LOGE("RSRenderService::Run");
     mainThread_->Start();
 }
@@ -177,6 +181,10 @@ void RSRenderService::RegisterRcdMsg()
 
 sptr<RSIRenderServiceConnection> RSRenderService::CreateConnection(const sptr<RSIConnectionToken>& token)
 {
+    if (!mainThread_ || !token) {
+        RS_LOGE("RSRenderService::CreateConnection failed, mainThread or token is nullptr");
+        return nullptr;
+    }
     pid_t remotePid = GetCallingPid();
     RS_PROFILER_ON_CREATE_CONNECTION(remotePid);
 
@@ -187,8 +195,9 @@ sptr<RSIRenderServiceConnection> RSRenderService::CreateConnection(const sptr<RS
     sptr<RSIRenderServiceConnection> tmp;
     std::unique_lock<std::mutex> lock(mutex_);
     // if connections_ has the same token one, replace it.
-    if (connections_.count(tokenObj) > 0) {
-        tmp = connections_.at(tokenObj);
+    auto it = connections_.find(tokenObj);
+    if (it != connections_.end()) {
+        tmp = it->second;
     }
     connections_[tokenObj] = newConn;
     lock.unlock();
@@ -222,12 +231,19 @@ int RSRenderService::Dump(int fd, const std::vector<std::u16string>& args)
     if (dumpString.size() == 0) {
         return OHOS::INVALID_OPERATION;
     }
-    write(fd, dumpString.c_str(), dumpString.size());
+    if (write(fd, dumpString.c_str(), dumpString.size()) < 0) {
+        RS_LOGE("RSRenderService::DumpNodesNotOnTheTree write failed");
+        return UNKNOWN_ERROR;
+    }
     return OHOS::NO_ERROR;
 }
 
 void RSRenderService::DumpNodesNotOnTheTree(std::string& dumpString) const
 {
+    if (!mainThread_) {
+        RS_LOGE("RSRenderService::DumpNodesNotOnTheTree failed, mainThread is nullptr");
+        return;
+    }
     dumpString.append("\n");
     dumpString.append("-- Node Not On Tree\n");
 
@@ -251,6 +267,10 @@ void RSRenderService::DumpNodesNotOnTheTree(std::string& dumpString) const
 
 void RSRenderService::DumpAllNodesMemSize(std::string& dumpString) const
 {
+    if (!mainThread_) {
+        RS_LOGE("RSRenderService::DumpAllNodesMemSize failed, mainThread is nullptr");
+        return;
+    }
     dumpString.append("\n");
     dumpString.append("-- All Surfaces Memory Size\n");
     dumpString.append("the memory size of all surfaces buffer is : dumpend");
@@ -320,6 +340,10 @@ void RSRenderService::DumpHelpInfo(std::string& dumpString) const
 void RSRenderService::FPSDUMPProcess(std::unordered_set<std::u16string>& argSets,
     std::string& dumpString, const std::u16string& arg) const
 {
+    if (!mainThread_ || !screenManager_) {
+        RS_LOGE("RSRenderService::FPSDUMPProcess failed, mainThread or screenManager is nullptr");
+        return;
+    }
     auto iter = argSets.find(arg);
     if (iter != argSets.end()) {
         std::string layerArg;
@@ -341,6 +365,10 @@ void RSRenderService::FPSDUMPProcess(std::unordered_set<std::u16string>& argSets
 void RSRenderService::FPSDUMPClearProcess(std::unordered_set<std::u16string>& argSets,
     std::string& dumpString, const std::u16string& arg) const
 {
+    if (!mainThread_ || !screenManager_) {
+        RS_LOGE("RSRenderService::FPSDUMPClearProcess failed, mainThread or screenManager is nullptr");
+        return;
+    }
     auto iter = argSets.find(arg);
     if (iter != argSets.end()) {
         std::string layerArg;
@@ -366,6 +394,10 @@ void RSRenderService::FPSDUMPClearProcess(std::unordered_set<std::u16string>& ar
 
 void RSRenderService::DumpRSEvenParam(std::string& dumpString) const
 {
+    if (!mainThread_) {
+        RS_LOGE("RSRenderService::DumpRSEvenParam failed, mainThread is nullptr");
+        return;
+    }
     dumpString.append("\n");
     dumpString.append("-- EventParamListDump: \n");
     mainThread_->RsEventParamDump(dumpString);
@@ -373,6 +405,10 @@ void RSRenderService::DumpRSEvenParam(std::string& dumpString) const
 
 void RSRenderService::DumpRenderServiceTree(std::string& dumpString, bool forceDumpSingleFrame) const
 {
+    if (!mainThread_) {
+        RS_LOGE("RSRenderService::DumpRenderServiceTree failed, mainThread is nullptr");
+        return;
+    }
     dumpString.append("\n");
     dumpString.append("-- RenderServiceTreeDump: \n");
     mainThread_->RenderServiceTreeDump(dumpString, forceDumpSingleFrame);
@@ -395,6 +431,10 @@ void RSRenderService::DumpClearRefreshRateCounts(std::string& dumpString) const
 void RSRenderService::WindowHitchsDump(
     std::unordered_set<std::u16string>& argSets, std::string& dumpString, const std::u16string& arg) const
 {
+    if (!mainThread_ || !screenManager_) {
+        RS_LOGE("RSRenderService::WindowHitchsDump failed, mainThread or screenManager is nullptr");
+        return;
+    }
     auto iter = argSets.find(arg);
     if (iter != argSets.end()) {
         std::string layerArg;
@@ -415,6 +455,10 @@ void RSRenderService::WindowHitchsDump(
 
 void RSRenderService::DumpSurfaceNode(std::string& dumpString, NodeId id) const
 {
+    if (!mainThread_) {
+        RS_LOGE("RSRenderService::DumpSurfaceNode failed, mainThread is nullptr");
+        return;
+    }
     dumpString.append("\n");
     dumpString.append("-- SurfaceNode\n");
 
@@ -489,6 +533,10 @@ static bool ExtractDumpInfo(std::unordered_set<std::u16string>& argSets, std::st
 
 void RSRenderService::DumpMem(std::unordered_set<std::u16string>& argSets, std::string& dumpString) const
 {
+    if (!mainThread_) {
+        RS_LOGE("RSRenderService::DumpMem failed, mainThread is nullptr");
+        return;
+    }
     std::string type;
     bool isSuccess = ExtractDumpInfo(argSets, type, u"dumpMem");
     if (!isSuccess) {
@@ -506,6 +554,10 @@ void RSRenderService::DumpMem(std::unordered_set<std::u16string>& argSets, std::
 
 void RSRenderService::DumpNode(std::unordered_set<std::u16string>& argSets, std::string& dumpString) const
 {
+    if (!mainThread_) {
+        RS_LOGE("RSRenderService::DumpNode failed, mainThread is nullptr");
+        return;
+    }
     std::string type;
     bool isSuccess = ExtractDumpInfo(argSets, type, u"dumpNode");
     if (!isSuccess) {
@@ -531,6 +583,10 @@ void RSRenderService::DumpJankStatsRs(std::string& dumpString) const
 
 void RSRenderService::DoDump(std::unordered_set<std::u16string>& argSets, std::string& dumpString) const
 {
+    if (!mainThread_ || !screenManager_) {
+        RS_LOGE("RSRenderService::DoDump failed, mainThread or screenManager is nullptr");
+        return;
+    }
     std::u16string arg1(u"screen");
     std::u16string arg2(u"surface");
     std::u16string arg3(u"fps");

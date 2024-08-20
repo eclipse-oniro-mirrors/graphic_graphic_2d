@@ -184,6 +184,10 @@ void RSScreen::PhysicalScreenInit() noexcept
 
 void RSScreen::ScreenCapabilityInit() noexcept
 {
+    if (!hdiScreen_) {
+        RS_LOGE("RSScreen %{public}s failed, hdiScreen_ is nullptr",  __func__);
+        return;
+    }
     if (IsVirtual()) {
         RS_LOGW("RSScreen %{public}s: this is virtual screen, use the default display capability.",  __func__);
         return;
@@ -270,6 +274,10 @@ void RSScreen::SetActiveMode(uint32_t modeId)
         RS_LOGW("RSScreen %{public}s: virtual screen not support SetActiveMode.", __func__);
         return;
     }
+    if (!hdiScreen_) {
+        RS_LOGE("RSScreen %{public}s failed, hdiScreen_ is nullptr",  __func__);
+        return;
+    }
 
     if (modeId >= supportedModes_.size()) {
         RS_LOGE("RSScreen %{public}s: set fails because the index is out of bounds.", __func__);
@@ -298,6 +306,10 @@ void RSScreen::SetActiveMode(uint32_t modeId)
 
 void RSScreen::SetRogResolution(uint32_t width, uint32_t height)
 {
+    if (!hdiScreen_) {
+        RS_LOGE("RSScreen %{public}s failed, hdiScreen_ is nullptr",  __func__);
+        return;
+    }
     if ((width == 0 || height == 0) ||
         (width == width_ && height == height_) ||
         (width > phyWidth_ || height > phyHeight_)) {
@@ -339,6 +351,10 @@ int32_t RSScreen::GetActiveModePosByModeId(int32_t modeId) const
 
 void RSScreen::SetPowerStatus(uint32_t powerStatus)
 {
+    if (!hdiScreen_) {
+        RS_LOGE("RSScreen %{public}s failed, hdiScreen_ is nullptr",  __func__);
+        return;
+    }
     if (IsVirtual()) {
         RS_LOGW("[UL_POWER]RSScreen %{public}s: virtual screen not support SetPowerStatus.", __func__);
         return;
@@ -425,6 +441,10 @@ const GraphicDisplayCapability& RSScreen::GetCapability() const
 
 uint32_t RSScreen::GetPowerStatus() const
 {
+    if (!hdiScreen_) {
+        RS_LOGE("RSScreen %{public}s failed, hdiScreen_ is nullptr",  __func__);
+        return INVALID_POWER_STATUS;
+    }
     if (IsVirtual()) {
         RS_LOGW("RSScreen %{public}s: virtual screen not support GetPowerStatus.", __func__);
         return ScreenPowerStatus::INVALID_POWER_STATUS;
@@ -673,6 +693,10 @@ void RSScreen::ResizeVirtualScreen(uint32_t width, uint32_t height)
 
 void RSScreen::SetScreenBacklight(uint32_t level)
 {
+    if (!hdiScreen_) {
+        RS_LOGE("RSScreen %{public}s failed, hdiScreen_ is nullptr",  __func__);
+        return;
+    }
     if (IsVirtual()) {
         RS_LOGW("RSScreen %{public}s: virtual screen not support SetScreenBacklight.", __func__);
         return;
@@ -687,6 +711,10 @@ void RSScreen::SetScreenBacklight(uint32_t level)
 
 int32_t RSScreen::GetScreenBacklight() const
 {
+    if (!hdiScreen_) {
+        RS_LOGE("RSScreen %{public}s failed, hdiScreen_ is nullptr",  __func__);
+        return INVALID_BACKLIGHT_VALUE;
+    }
     if (IsVirtual()) {
         RS_LOGW("RSScreen %{public}s: virtual screen not support GetScreenBacklight.", __func__);
         return INVALID_BACKLIGHT_VALUE;
@@ -757,6 +785,10 @@ int32_t RSScreen::GetScreenColorGamut(ScreenColorGamut &mode) const
 
 int32_t RSScreen::SetScreenColorGamut(int32_t modeIdx)
 {
+    if (!hdiScreen_) {
+        RS_LOGE("RSScreen %{public}s failed, hdiScreen_ is nullptr",  __func__);
+        return StatusCode::HDI_ERROR;
+    }
     if (modeIdx < 0) {
         return StatusCode::INVALID_ARGUMENTS;
     }
@@ -784,6 +816,10 @@ int32_t RSScreen::SetScreenColorGamut(int32_t modeIdx)
 
 int32_t RSScreen::SetScreenGamutMap(ScreenGamutMap mode)
 {
+    if (!hdiScreen_) {
+        RS_LOGE("RSScreen %{public}s failed, hdiScreen_ is nullptr",  __func__);
+        return StatusCode::HDI_ERROR;
+    }
     if (IsVirtual()) {
         currentVirtualGamutMap_ = mode;
         return StatusCode::SUCCESS;
@@ -809,6 +845,10 @@ ScreenRotation RSScreen::GetScreenCorrection() const
 
 int32_t RSScreen::GetScreenGamutMap(ScreenGamutMap &mode) const
 {
+    if (!hdiScreen_) {
+        RS_LOGE("RSScreen %{public}s failed, hdiScreen_ is nullptr",  __func__);
+        return StatusCode::HDI_ERROR;
+    }
     if (IsVirtual()) {
         mode = currentVirtualGamutMap_;
         return StatusCode::SUCCESS;
@@ -976,6 +1016,10 @@ int32_t RSScreen::GetScreenColorSpace(GraphicCM_ColorSpaceType& colorSpace) cons
 
 int32_t RSScreen::SetScreenColorSpace(GraphicCM_ColorSpaceType colorSpace)
 {
+    if (!hdiScreen_) {
+        RS_LOGE("RSScreen %{public}s failed, hdiScreen_ is nullptr",  __func__);
+        return StatusCode::HDI_ERROR;
+    }
     auto iter = COMMON_COLOR_SPACE_TYPE_TO_RS_MAP.find(colorSpace);
     if (iter == COMMON_COLOR_SPACE_TYPE_TO_RS_MAP.end()) {
         return StatusCode::INVALID_ARGUMENTS;
