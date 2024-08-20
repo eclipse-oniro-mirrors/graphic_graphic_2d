@@ -257,7 +257,7 @@ static bool GetStretchPercent(napi_env env, napi_value param, std::shared_ptr<Pi
 napi_value FilterNapi::SetPixelStretch(napi_env env, napi_callback_info info)
 {
     if (!UIEffectNapiUtils::IsSystemApp()) {
-        UIEFFECT_LOG_E("SetPixelStretch failed");
+        FILTER_LOG_E("SetPixelStretch failed");
         napi_throw_error(env, std::to_string(ERR_NOT_SYSTEM_APP).c_str(),
             "FilterNapi SetPixelStretch failed, is not system app");
         return nullptr;
@@ -320,7 +320,7 @@ uint32_t FilterNapi::GetSpecialIntValue(napi_env env, napi_value argValue)
 napi_value FilterNapi::SetWaterRipple(napi_env env, napi_callback_info info)
 {
     if (!UIEffectNapiUtils::IsSystemApp()) {
-        UIEFFECT_LOG_E("SetWaterRipple failed");
+        FILTER_LOG_E("SetWaterRipple failed");
         napi_throw_error(env, std::to_string(ERR_NOT_SYSTEM_APP).c_str(),
             "FilterNapi SetWaterRipple failed, is not system app");
         return nullptr;
@@ -377,7 +377,7 @@ napi_value FilterNapi::SetWaterRipple(napi_env env, napi_callback_info info)
 napi_value FilterNapi::SetFlyOut(napi_env env, napi_callback_info info)
 {
     if (!UIEffectNapiUtils::IsSystemApp()) {
-        UIEFFECT_LOG_E("SetFlyOut failed");
+        FILTER_LOG_E("SetFlyOut failed");
         napi_throw_error(env, std::to_string(ERR_NOT_SYSTEM_APP).c_str(),
             "FilterNapi SetFlyOut failed, is not system app");
         return nullptr;
