@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "hgm_command.h"
 #include "screen_manager/screen_types.h"
 
 namespace OHOS {
