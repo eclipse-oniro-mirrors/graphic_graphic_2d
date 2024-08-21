@@ -332,10 +332,6 @@ void RSRenderService::DumpHelpInfo(std::string& dumpString) const
 void RSRenderService::FPSDUMPProcess(std::unordered_set<std::u16string>& argSets,
     std::string& dumpString, const std::u16string& arg) const
 {
-    if (!mainThread_ || !screenManager_) {
-        RS_LOGE("RSRenderService::FPSDUMPProcess failed, mainThread or screenManager is nullptr");
-        return;
-    }
     auto iter = argSets.find(arg);
     if (iter != argSets.end()) {
         std::string layerArg;
@@ -357,10 +353,6 @@ void RSRenderService::FPSDUMPProcess(std::unordered_set<std::u16string>& argSets
 void RSRenderService::FPSDUMPClearProcess(std::unordered_set<std::u16string>& argSets,
     std::string& dumpString, const std::u16string& arg) const
 {
-    if (!mainThread_ || !screenManager_) {
-        RS_LOGE("RSRenderService::FPSDUMPClearProcess failed, mainThread or screenManager is nullptr");
-        return;
-    }
     auto iter = argSets.find(arg);
     if (iter != argSets.end()) {
         std::string layerArg;
@@ -415,10 +407,6 @@ void RSRenderService::DumpClearRefreshRateCounts(std::string& dumpString) const
 void RSRenderService::WindowHitchsDump(
     std::unordered_set<std::u16string>& argSets, std::string& dumpString, const std::u16string& arg) const
 {
-    if (!mainThread_ || !screenManager_) {
-        RS_LOGE("RSRenderService::WindowHitchsDump failed, mainThread or screenManager is nullptr");
-        return;
-    }
     auto iter = argSets.find(arg);
     if (iter != argSets.end()) {
         std::string layerArg;
