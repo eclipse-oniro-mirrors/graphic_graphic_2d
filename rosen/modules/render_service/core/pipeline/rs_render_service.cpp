@@ -240,10 +240,6 @@ int RSRenderService::Dump(int fd, const std::vector<std::u16string>& args)
 
 void RSRenderService::DumpNodesNotOnTheTree(std::string& dumpString) const
 {
-    if (!mainThread_) {
-        RS_LOGE("RSRenderService::DumpNodesNotOnTheTree failed, mainThread is nullptr");
-        return;
-    }
     dumpString.append("\n");
     dumpString.append("-- Node Not On Tree\n");
 
@@ -267,10 +263,6 @@ void RSRenderService::DumpNodesNotOnTheTree(std::string& dumpString) const
 
 void RSRenderService::DumpAllNodesMemSize(std::string& dumpString) const
 {
-    if (!mainThread_) {
-        RS_LOGE("RSRenderService::DumpAllNodesMemSize failed, mainThread is nullptr");
-        return;
-    }
     dumpString.append("\n");
     dumpString.append("-- All Surfaces Memory Size\n");
     dumpString.append("the memory size of all surfaces buffer is : dumpend");
@@ -394,10 +386,6 @@ void RSRenderService::FPSDUMPClearProcess(std::unordered_set<std::u16string>& ar
 
 void RSRenderService::DumpRSEvenParam(std::string& dumpString) const
 {
-    if (!mainThread_) {
-        RS_LOGE("RSRenderService::DumpRSEvenParam failed, mainThread is nullptr");
-        return;
-    }
     dumpString.append("\n");
     dumpString.append("-- EventParamListDump: \n");
     mainThread_->RsEventParamDump(dumpString);
@@ -405,10 +393,6 @@ void RSRenderService::DumpRSEvenParam(std::string& dumpString) const
 
 void RSRenderService::DumpRenderServiceTree(std::string& dumpString, bool forceDumpSingleFrame) const
 {
-    if (!mainThread_) {
-        RS_LOGE("RSRenderService::DumpRenderServiceTree failed, mainThread is nullptr");
-        return;
-    }
     dumpString.append("\n");
     dumpString.append("-- RenderServiceTreeDump: \n");
     mainThread_->RenderServiceTreeDump(dumpString, forceDumpSingleFrame);
@@ -455,10 +439,6 @@ void RSRenderService::WindowHitchsDump(
 
 void RSRenderService::DumpSurfaceNode(std::string& dumpString, NodeId id) const
 {
-    if (!mainThread_) {
-        RS_LOGE("RSRenderService::DumpSurfaceNode failed, mainThread is nullptr");
-        return;
-    }
     dumpString.append("\n");
     dumpString.append("-- SurfaceNode\n");
 
@@ -533,10 +513,6 @@ static bool ExtractDumpInfo(std::unordered_set<std::u16string>& argSets, std::st
 
 void RSRenderService::DumpMem(std::unordered_set<std::u16string>& argSets, std::string& dumpString) const
 {
-    if (!mainThread_) {
-        RS_LOGE("RSRenderService::DumpMem failed, mainThread is nullptr");
-        return;
-    }
     std::string type;
     bool isSuccess = ExtractDumpInfo(argSets, type, u"dumpMem");
     if (!isSuccess) {
@@ -554,10 +530,6 @@ void RSRenderService::DumpMem(std::unordered_set<std::u16string>& argSets, std::
 
 void RSRenderService::DumpNode(std::unordered_set<std::u16string>& argSets, std::string& dumpString) const
 {
-    if (!mainThread_) {
-        RS_LOGE("RSRenderService::DumpNode failed, mainThread is nullptr");
-        return;
-    }
     std::string type;
     bool isSuccess = ExtractDumpInfo(argSets, type, u"dumpNode");
     if (!isSuccess) {
