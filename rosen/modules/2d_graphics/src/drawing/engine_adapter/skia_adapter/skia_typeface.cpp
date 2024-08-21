@@ -275,7 +275,7 @@ uint32_t SkiaTypeface::GetHash() const
     }
     if (!skTypeface_) {
         LOGD("skTypeface nullptr, %{public}s, %{public}d", __FUNCTION__, __LINE__);
-        return 0;
+        return hash_;
     }
 
     auto skData = skTypeface_->serialize(SkTypeface::SerializeBehavior::kDontIncludeData);
