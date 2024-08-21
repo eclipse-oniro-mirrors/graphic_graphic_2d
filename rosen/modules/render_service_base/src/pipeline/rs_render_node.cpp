@@ -3624,6 +3624,7 @@ void RSRenderNode::SetNodeName(const std::string& nodeName)
     if (!context || nodeName.empty()) {
         return;
     }
+    // For LTPO: Record nodes that match the interested UI framework.
     auto& uiFrameworkTypeTable = context->GetUiFrameworkTypeTable();
     for (auto uiFwkType : uiFrameworkTypeTable) {
         if (nodeName.rfind(uiFwkType, 0) == 0) {
