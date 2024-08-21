@@ -28,8 +28,8 @@ enum HgmScreenType {
     LTPS1,
     LTPS2,
     LTPO = 10,
-    LTPO1,
-    LTPO2,
+    LTPO1, // First-generation LTPO screen
+    LTPO2, // Second-generation LTPO screen
     LTPO3,
 };
 
@@ -57,7 +57,7 @@ private:
     int32_t InitPanelTypeMap(std::string& panelInfo);
 
     // key: panel id
-    std::unordered_map<int32_t, HgmPanelInfo> mPanelInfo_;
+    std::unordered_map<int32_t, HgmPanelInfo> panelInfo_;
 
     static const std::string HGM_EXT_SO_PATH;
     static const std::string GET_PANEL_INFO_SYMBOL;

@@ -102,6 +102,11 @@ ohos_shared_library("libhyper_graphic_manager") {
     "libxml2:libxml2",
   ]
 
+  if (defined(graphic_2d_hgm_configs.vendor_root)) {
+    sources += graphic_2d_hgm_configs.libhyper_graphic_manager_ext_sources
+    sources -= graphic_2d_hgm_configs.libhyper_graphic_manager_ext_sources_del
+  }
+
   part_name = "graphic_2d"
   subsystem_name = "graphic"
 
