@@ -100,7 +100,9 @@ bool RSSurfaceCaptureTask::Run(sptr<RSISurfaceCaptureCallback> callback)
     // To get dump image
     // execute "param set rosen.dumpsurfacetype.enabled 3 && setenforce 0"
     RSBaseRenderUtil::WritePixelMapToPng(*pixelmap);
-    callback->OnSurfaceCapture(nodeId_, pixelmap.get());
+    if (callback) {
+        callback->OnSurfaceCapture(nodeId_, pixelmap.get());
+    }
     return true;
 }
 
@@ -167,6 +169,10 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTask::CreatePixelMapByDisplayNo
 
 bool CopyDataToPixelMap(std::shared_ptr<Drawing::Image> img, const std::unique_ptr<Media::PixelMap>& pixelmap)
 {
+    if (!img || !pixelmap) {
+        RS_LOGE("RSSurfaceCaptureTask::CopyDataToPixelMap failed, img or pixelmap is nullptr");
+        return false;
+    }
     auto size = pixelmap->GetRowBytes() * pixelmap->GetHeight();
 #ifdef ROSEN_OHOS
     int fd = AshmemCreate("RSSurfaceCapture Data", size);
@@ -278,6 +284,9 @@ void RSSurfaceCaptureVisitor::SetSurface(Drawing::Surface* surface)
 void RSSurfaceCaptureVisitor::ProcessChildren(RSRenderNode &node)
 {
     for (auto& child : *node.GetSortedChildren()) {
+        if (!child) {
+            continue;
+        }
         child->Process(shared_from_this());
     }
 }
