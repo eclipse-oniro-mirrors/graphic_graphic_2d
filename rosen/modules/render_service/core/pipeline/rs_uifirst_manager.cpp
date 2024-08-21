@@ -477,7 +477,7 @@ void RSUifirstManager::PostReleaseCacheSurfaceSubTask(NodeId id)
     RS_OPTIONAL_TRACE_NAME_FMT("post ReleaseCacheSurface %d", id);
 
     if (subthreadProcessingNode_.find(id) != subthreadProcessingNode_.end()) { // drawable is doing, do not send
-        RS_TRACE_NAME_FMT("node %lx is doing", id);
+        RS_TRACE_NAME_FMT("node %" PRIu64" is doing", id);
         RS_LOGE("RSUifirstManager ERROR: try to clean running node");
         return;
     }
@@ -486,7 +486,7 @@ void RSUifirstManager::PostReleaseCacheSurfaceSubTask(NodeId id)
     auto drawable = DrawableV2::RSRenderNodeDrawableAdapter::GetDrawableById(id);
     if (drawable) {
         // post task
-        RS_OPTIONAL_TRACE_NAME_FMT("Post_SubTask_s %lx", id);
+        RS_OPTIONAL_TRACE_NAME_FMT("Post_SubTask_s %" PRIu64"", id);
         RSSubThreadManager::Instance()->ScheduleReleaseCacheSurfaceOnly(
             std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(drawable));
     }
@@ -588,6 +588,12 @@ bool RSUifirstManager::CollectSkipSyncNode(const std::shared_ptr<RSRenderNode> &
             if (uifirstRootNodeDrawable->GetId() == node->GetId()) {
                 RS_OPTIONAL_TRACE_NAME_FMT(
                     "set partial_sync %" PRIu64 " root %" PRIu64 "", node->GetId(), uifirstRootNodeDrawable->GetId());
+            node->SetUifirstSkipPartialSync(true);
+                return false;
+            }
+
+            RS_OPTIONAL_TRACE_NAME_FMT("CollectSkipSyncNode root %" PRIu64 ", node %" PRIu64 "",
+                uifirstRootNodeDrawable->GetId(), node->GetId());
             return true;
         }
     }
