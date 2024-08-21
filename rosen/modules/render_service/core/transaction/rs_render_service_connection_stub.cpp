@@ -163,6 +163,7 @@ void CopyFileDescriptor(MessageParcel& old, MessageParcel& copied)
             int32_t val = dup(flat->handle);
             if (val < 0) {
                 ROSEN_LOGW("CopyFileDescriptor dup failed, fd:%{public}d", val);
+                return;
             }
             copiedFlat->handle = static_cast<uint32_t>(val);
         }
@@ -180,6 +181,9 @@ std::shared_ptr<MessageParcel> CopyParcelIfNeed(MessageParcel& old, pid_t callin
         return nullptr;
     }
     if (dataSize > MAX_DATA_SIZE) {
+        return nullptr;
+    }
+    if (dataSize == 0) {
         return nullptr;
     }
     RS_TRACE_NAME("CopyParcelForUnmarsh: size:" + std::to_string(dataSize));
@@ -1210,12 +1214,19 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_TYPEFACE): {
             // timer: 3s
             OHOS::Rosen::RSXCollie registerTypefaceXCollie("registerTypefaceXCollie_" + std::to_string(callingPid), 3);
-            uint64_t uniqueId = data.ReadUint64();
-            std::shared_ptr<Drawing::Typeface> typeface;
             bool result = false;
-            result = RSMarshallingHelper::Unmarshalling(data, typeface);
-            if (result) {
-                RegisterTypeface(uniqueId, typeface);
+            uint64_t uniqueId = data.ReadUint64();
+            RS_PROFILER_PATCH_NODE_ID(data, uniqueId);
+            // safe check
+            if (ExtractPid(uniqueId) == callingPid) {
+                std::shared_ptr<Drawing::Typeface> typeface;
+                result = RSMarshallingHelper::Unmarshalling(data, typeface);
+                if (result) {
+                    RegisterTypeface(uniqueId, typeface);
+                }
+            } else {
+                RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest callingPid[%{public}d] "
+                    "no permission REGISTER_TYPEFACE", callingPid);
             }
             if (!reply.WriteBool(result)) {
                 ret = ERR_INVALID_REPLY;
@@ -1224,10 +1235,22 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_TYPEFACE): {
             uint64_t uniqueId = data.ReadUint64();
-            UnRegisterTypeface(uniqueId);
+            RS_PROFILER_PATCH_NODE_ID(data, uniqueId);
+            // safe check
+            if (ExtractPid(uniqueId) == callingPid) {
+                UnRegisterTypeface(uniqueId);
+            } else {
+                RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest callingPid[%{public}d] "
+                    "no permission UNREGISTER_TYPEFACE", callingPid);
+            }
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SKIP_FRAME_INTERVAL): {
+            if (!securityManager_.IsInterfaceCodeAccessible(code)) {
+                RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest no permission to access"\
+                    "SET_SCREEN_SKIP_FRAME_INTERVAL");
+                return ERR_INVALID_STATE;
+            }
             ScreenId id = data.ReadUint64();
             uint32_t skipFrameInterval = data.ReadUint32();
             int32_t result = SetScreenSkipFrameInterval(id, skipFrameInterval);
@@ -1494,7 +1517,15 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_ROTATION_CACHE_ENABLED) : {
-            auto isEnabled = data.ReadBool();
+            if (!securityManager_.IsInterfaceCodeAccessible(code)) {
+                RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest no permission SET_ROTATION_CACHE_ENABLED");
+                return ERR_INVALID_STATE;
+            }
+            bool isEnabled = false;
+            if (!data.ReadBool(isEnabled)) {
+                ret = IPC_STUB_INVALID_DATA_ERR;
+                break;
+            }
             SetCacheEnabledForRotation(isEnabled);
             break;
         }

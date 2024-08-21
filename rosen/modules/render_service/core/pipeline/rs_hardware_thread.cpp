@@ -221,6 +221,17 @@ void RSHardwareThread::CommitAndReleaseLayers(OutputPtr output, const std::vecto
     if (!hgmCore.GetLtpoEnabled()) {
         PostTask(task);
     } else {
+        // if in game adaptive vsync mode and do direct composition,send layer immediately
+        auto frameRateMgr = hgmCore.GetFrameRateMgr();
+        if (frameRateMgr != nullptr) {
+            bool isAdaptive = frameRateMgr->IsAdaptive();
+            RS_LOGD("RSHardwareThread::CommitAndReleaseLayers send layer isAdaptive: %{public}u", isAdaptive);
+            if (isAdaptive) {
+                RS_TRACE_NAME("RSHardwareThread::CommitAndReleaseLayers PostTask in Adaptive Mode");
+                PostTask(task);
+                return;
+            }
+        }
         auto period  = CreateVSyncSampler()->GetHardwarePeriod();
         int64_t pipelineOffset = hgmCore.GetPipelineOffset();
         uint64_t expectCommitTime = static_cast<uint64_t>(param.frameTimestamp +
@@ -344,7 +355,6 @@ void RSHardwareThread::PerformSetActiveMode(OutputPtr output, uint64_t timestamp
     auto &hgmCore = OHOS::Rosen::HgmCore::Instance();
     auto screenManager = CreateOrGetScreenManager();
     if (screenManager == nullptr) {
-        RS_LOGE("RSHardwareThread CreateOrGetScreenManager fail.");
         return;
     }
 
@@ -357,7 +367,6 @@ void RSHardwareThread::PerformSetActiveMode(OutputPtr output, uint64_t timestamp
 
     std::unique_ptr<std::unordered_map<ScreenId, int32_t>> modeMap(hgmCore.GetModesToApply());
     if (modeMap == nullptr) {
-        RS_LOGE("RSHardwareThread::PerformSetData fail, modeMap is nullptr");
         return;
     }
 
@@ -484,9 +493,9 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
         frameBufferSurfaceOhos_ = CreateFrameBufferSurfaceOhos(surface);
     }
     FrameContextConfig frameContextConfig = {isProtected, false};
-    if (RSSystemProperties::GetVkQueueDividedEnable()) {
-        frameContextConfig.independentContext = true;
-    }
+#ifdef RS_ENABLE_VKQUEUE_PRIORITY
+    frameContextConfig.independentContext = RSSystemProperties::GetVkQueuePriorityEnable();
+#endif
     auto renderFrame = uniRenderEngine_->RequestFrame(frameBufferSurfaceOhos_, renderFrameConfig,
         forceCPU, true, frameContextConfig);
     if (renderFrame == nullptr) {
@@ -504,7 +513,12 @@ void RSHardwareThread::Redraw(const sptr<Surface>& surface, const std::vector<La
     }
 #endif
 
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    uniRenderEngine_->DrawLayers(*canvas, layers, false, screenInfo, colorGamut);
+#else
     uniRenderEngine_->DrawLayers(*canvas, layers, false, screenInfo);
+#endif
+
     renderFrame->Flush();
     RS_LOGD("RsDebug RSHardwareThread::Redraw flush frame buffer end");
 }
@@ -558,6 +572,10 @@ GraphicColorGamut RSHardwareThread::ComputeTargetColorGamut(const std::vector<La
     using namespace HDI::Display::Graphic::Common::V1_0;
     GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_SRGB;
     for (auto& layer : layers) {
+        if (layer == nullptr) {
+            RS_LOGE("RSHardwareThread::ComputeTargetColorGamut layer is nullptr");
+            continue;
+        }
         auto buffer = layer->GetBuffer();
         if (buffer == nullptr) {
             RS_LOGW("RSHardwareThread::ComputeTargetColorGamut The buffer of layer is nullptr");

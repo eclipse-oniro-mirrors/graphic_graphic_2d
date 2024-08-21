@@ -89,8 +89,6 @@ public:
     static int GetRotationDegreeFromMatrix(Drawing::Matrix matrix);
     static bool Is3DRotation(Drawing::Matrix matrix);
 
-    static void ReleaseColorPickerFilter(std::shared_ptr<RSFilter> RSFilter);
-    static void ReleaseColorPickerResource(std::shared_ptr<RSRenderNode>& node);
     static void AssignWindowNodes(const std::shared_ptr<RSDisplayRenderNode>& displayNode,
         std::list<std::shared_ptr<RSSurfaceRenderNode>>& mainThreadNodes,
         std::list<std::shared_ptr<RSSurfaceRenderNode>>& subThreadNodes);
@@ -131,6 +129,22 @@ public:
         Drawing::Matrix parentMatrix, NodeId hostId, UIExtensionCallbackData& callbackData);
     static void ProcessCacheImage(RSPaintFilterCanvas& canvas, Drawing::Image& cacheImageProcessed);
     static void FlushDmaSurfaceBuffer(Media::PixelMap* pixelmap);
+    template<typename... Callbacks>
+    static void TraverseParentNodeAndReduce(std::shared_ptr<RSSurfaceRenderNode> hwcNode, Callbacks&&... callbacks)
+    {
+        static_assert((std::is_invocable<Callbacks, std::shared_ptr<RSRenderNode>>::value && ...),
+                    "uninvocable callback");
+        if (!hwcNode) {
+            return;
+        }
+        auto parent = std::static_pointer_cast<RSRenderNode>(hwcNode);
+        while (static_cast<bool>(parent = parent->GetParent().lock())) {
+            (std::invoke(callbacks, parent), ...);
+            if (parent->GetType() == RSRenderNodeType::DISPLAY_NODE) {
+                break;
+            }
+        }
+    }
 private:
     static RectI SrcRectRotateTransform(RSSurfaceRenderNode& node, GraphicTransformType transformType);
     static void AssignMainThreadNode(std::list<std::shared_ptr<RSSurfaceRenderNode>>& mainThreadNodes,
