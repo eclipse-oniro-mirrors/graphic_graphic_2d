@@ -588,10 +588,9 @@ bool RSUifirstManager::CollectSkipSyncNode(const std::shared_ptr<RSRenderNode> &
             if (uifirstRootNodeDrawable->GetId() == node->GetId()) {
                 RS_OPTIONAL_TRACE_NAME_FMT(
                     "set partial_sync %" PRIu64 " root %" PRIu64 "", node->GetId(), uifirstRootNodeDrawable->GetId());
-            node->SetUifirstSkipPartialSync(true);
+                node->SetUifirstSkipPartialSync(true);
                 return false;
             }
-
             RS_OPTIONAL_TRACE_NAME_FMT("CollectSkipSyncNode root %" PRIu64 ", node %" PRIu64 "",
                 uifirstRootNodeDrawable->GetId(), node->GetId());
             return true;
