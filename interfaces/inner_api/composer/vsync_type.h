@@ -18,9 +18,6 @@
 
 #include <cstdint>
 namespace OHOS {
-namespace Rosen {
-    constexpr uint32_t VSYNC_MAX_REFRESHRATE = 360; // 360hz at most
-} // Rosen
 
 typedef enum {
     /*
