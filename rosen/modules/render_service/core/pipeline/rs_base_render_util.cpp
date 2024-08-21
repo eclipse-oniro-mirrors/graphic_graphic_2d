@@ -1362,10 +1362,7 @@ bool RSBaseRenderUtil::WriteSurfaceRenderNodeToPng(const RSSurfaceRenderNode& no
         return false;
     }
 
-    struct timeval now;
-    gettimeofday(&now, nullptr);
-    constexpr int64_t secToUsec = 1000 * 1000;
-    int64_t nowVal =  static_cast<int64_t>(now.tv_sec) * secToUsec + static_cast<int64_t>(now.tv_usec);
+    int64_t nowVal = GenerateCurrentTimeStamp();
     std::string filename = "/data/SurfaceRenderNode_" +
         node.GetName() + "_"  +
         std::to_string(node.GetId()) + "_" +
@@ -1395,10 +1392,7 @@ bool RSBaseRenderUtil::WriteCacheRenderNodeToPng(const RSRenderNode& node)
         return false;
     }
 
-    struct timeval now;
-    gettimeofday(&now, nullptr);
-    constexpr int64_t secToUsec = 1000 * 1000;
-    int64_t nowVal =  static_cast<int64_t>(now.tv_sec) * secToUsec + static_cast<int64_t>(now.tv_usec);
+    int64_t nowVal = GenerateCurrentTimeStamp();
     std::string filename = "/data/CacheRenderNode_" +
         std::to_string(node.GetId()) + "_" +
         std::to_string(nowVal) + ".png";
@@ -1511,10 +1505,7 @@ bool RSBaseRenderUtil::WritePixelMapToPng(Media::PixelMap& pixelMap)
     if (type != DumpSurfaceType::PIXELMAP) {
         return false;
     }
-    struct timeval now;
-    gettimeofday(&now, nullptr);
-    constexpr int64_t secToUsec = 1000 * 1000;
-    int64_t nowVal =  static_cast<int64_t>(now.tv_sec) * secToUsec + static_cast<int64_t>(now.tv_usec);
+    int64_t nowVal = GenerateCurrentTimeStamp();
     std::string filename = "/data/PixelMap_" + std::to_string(nowVal) + ".png";
 
     WriteToPngParam param;

@@ -30,10 +30,10 @@
 #include "pipeline/parallel_render/rs_sub_thread_manager.h"
 #include "pipeline/rs_main_thread.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "pipeline/rs_uifirst_manager.h"
 #include "pipeline/rs_uni_render_thread.h"
 #include "pipeline/rs_uni_render_util.h"
 #include "pipeline/rs_uni_render_visitor.h"
-#include "pipeline/rs_uifirst_manager.h"
 #include "rs_trace.h"
 
 #ifdef RES_SCHED_ENABLE
@@ -44,7 +44,7 @@ namespace OHOS::Rosen {
 RSSubThread::~RSSubThread()
 {
     RS_LOGI("~RSSubThread():%{public}d", threadIndex_);
-    PostTask([this]() {
+    PostSyncTask([this]() {
         DestroyShareEglContext();
     });
 }
@@ -214,7 +214,7 @@ void RSSubThread::RenderCache(const std::shared_ptr<RSSuperRenderTask>& threadTa
         }
 
         RSTagTracker nodeProcessTracker(grContext_.get(), surfaceNodePtr->GetId(),
-            RSTagTracker::TAGTYPE::TAG_SUB_THREAD);
+            RSTagTracker::TAGTYPE::TAG_SUB_THREAD, surfaceNodePtr->GetName());
         bool needNotify = !surfaceNodePtr->HasCachedTexture();
         nodeDrawable->Process(visitor);
         nodeProcessTracker.SetTagEnd();
@@ -222,7 +222,7 @@ void RSSubThread::RenderCache(const std::shared_ptr<RSSuperRenderTask>& threadTa
         if (cacheSurface) {
             RS_TRACE_NAME_FMT("Rendercache skSurface flush and submit");
             RSTagTracker nodeFlushTracker(grContext_.get(), surfaceNodePtr->GetId(),
-                RSTagTracker::TAGTYPE::TAG_SUB_THREAD);
+                RSTagTracker::TAGTYPE::TAG_SUB_THREAD, surfaceNodePtr->GetName());
             cacheSurface->FlushAndSubmit(true);
             nodeFlushTracker.SetTagEnd();
         }
@@ -261,7 +261,7 @@ void RSSubThread::DrawableCache(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeD
     nodeDrawable->SetSubThreadSkip(false);
 
     RS_TRACE_NAME_FMT("RSSubThread::DrawableCache [%s]", nodeDrawable->GetName().c_str());
-    RSTagTracker tagTracker(grContext_.get(), nodeId, RSTagTracker::TAGTYPE::TAG_SUB_THREAD);
+    RSTagTracker tagTracker(grContext_.get(), nodeId, RSTagTracker::TAGTYPE::TAG_SUB_THREAD, nodeDrawable->GetName());
     nodeDrawable->SetCacheSurfaceProcessedStatus(CacheProcessStatus::DOING);
     if (nodeDrawable->GetTaskFrameCount() != RSUniRenderThread::Instance().GetFrameCount() &&
         nodeDrawable->HasCachedTexture()) {

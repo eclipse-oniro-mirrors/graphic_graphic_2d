@@ -44,6 +44,7 @@
 #include "params/rs_render_thread_params.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_draw_frame.h"
+#include "pipeline/rs_graphic_config.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "platform/common/rs_event_manager.h"
 #include "platform/drawing/rs_vsync_client.h"
@@ -105,6 +106,8 @@ public:
     void PostSyncTask(RSTaskMessage::RSTask task);
     bool IsIdle() const;
     void RenderServiceTreeDump(std::string& dumpString, bool forceDumpSingleFrame = true);
+    void SendClientDumpNodeTreeCommands(uint32_t taskId);
+    void CollectClientNodeTreeResult(uint32_t taskId, std::string& dumpString, size_t timeout);
     void RsEventParamDump(std::string& dumpString);
     bool IsUIFirstOn() const;
     void UpdateAnimateNodeFlag();
@@ -341,6 +344,8 @@ public:
 
     void SetAncoForceDoDirect(bool direct);
 
+    bool IsBlurSwitchOpen() const;
+    
     bool IsSystemAnimatedScenesListEmpty() const
     {
         return systemAnimatedScenesList_.empty();
@@ -469,6 +474,9 @@ private:
     void PrepareUiCaptureTasks(std::shared_ptr<RSUniRenderVisitor> uniVisitor);
     void UIExtensionNodesTraverseAndCallback();
     bool CheckUIExtensionCallbackDataChanged() const;
+    void ConfigureRenderService();
+
+    void OnDumpClientNodeTree(NodeId nodeId, pid_t pid, uint32_t taskId, const std::string& result);
 
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
@@ -586,6 +594,16 @@ private:
     bool isHardwareForcedDisabled_ = false; // if app node has shadow or filter, disable hardware composer for all
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> hardwareEnabledDrwawables_;
 
+    // for client node tree dump
+    struct NodeTreeDumpTask {
+        size_t count = 0;
+        size_t completionCount = 0;
+        std::map<pid_t, std::optional<std::string>> data;
+    };
+    std::mutex nodeTreeDumpMutex_;
+    std::condition_variable nodeTreeDumpCondVar_;
+    std::unordered_map<uint32_t, NodeTreeDumpTask> nodeTreeDumpTasks_;
+
     // used for watermark
     std::mutex watermarkMutex_;
     std::shared_ptr<Drawing::Image> watermarkImg_ = nullptr;
@@ -683,6 +701,9 @@ private:
     bool isPartialRenderEnabledOfLastFrame_ = false;
     bool isRegionDebugEnabledOfLastFrame_ = false;
     bool initUiFwkTable_ = false;
+
+    // graphic config
+    bool isBlurSwitchOpen_ = true;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

@@ -1214,6 +1214,10 @@ public:
         dirtyStatus_ = containerDirty ? NodeDirty::DIRTY : dirtyStatus_;
     }
 
+    void SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark);
+    void SetWatermarkEnabled(const std::string& name, bool isEnabled);
+    std::map<std::string, std::pair<bool, std::shared_ptr<Media::PixelMap>>> GetWatermark() const;
+    size_t GetWatermarkSize() const;
     bool GetIsIntersectWithRoundCorner() const
     {
         return isIntersectWithRoundCorner_;
@@ -1493,6 +1497,7 @@ private:
     bool isSkipDraw_ = false;
 
     bool isHardwareForcedByBackgroundAlpha_ = false;
+    std::map<std::string, std::pair<bool, std::shared_ptr<Media::PixelMap>>> watermarkHandles_ = {};
 
     // UIExtension record, <UIExtension, hostAPP>
     inline static std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};

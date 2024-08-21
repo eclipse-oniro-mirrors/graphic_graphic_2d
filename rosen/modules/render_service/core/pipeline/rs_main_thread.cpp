@@ -44,6 +44,7 @@
 
 #include "animation/rs_animation_fraction.h"
 #include "command/rs_message_processor.h"
+#include "command/rs_node_command.h"
 #include "common/rs_background_thread.h"
 #include "common/rs_common_def.h"
 #include "common/rs_optional_trace.h"
@@ -329,6 +330,7 @@ RSMainThread::RSMainThread() : mainThreadId_(std::this_thread::get_id()),
 
 RSMainThread::~RSMainThread() noexcept
 {
+    RSNodeCommandHelper::SetDumpNodeTreeProcessor(nullptr);
     RemoveRSEventDetector();
     RSInnovation::CloseInnovationSo();
     if (rsAppStateListener_) {
@@ -417,6 +419,18 @@ void RSMainThread::Init()
             return RSTypefaceCache::Instance().GetDrawingTypefaceCache(globalUniqueId);
         };
     Drawing::DrawOpItem::SetTypefaceQueryCallBack(customTypefaceQueryfunc);
+    {
+        using namespace std::placeholders;
+        RSNodeCommandHelper::SetDumpNodeTreeProcessor(
+            std::bind(&RSMainThread::OnDumpClientNodeTree, this, _1, _2, _3, _4));
+    }
+
+    if (RSGraphicConfig::LoadConfigXml()) {
+        if (RSGraphicConfig::GetConfig().IsMap()) {
+            RSGraphicConfig::DumpConfig(*RSGraphicConfig::GetConfig().mapValue);
+        }
+        ConfigureRenderService();
+    }
 
     isUniRender_ = RSUniRenderJudgement::IsUniRender();
     SetDeviceType();
@@ -866,20 +880,23 @@ bool RSMainThread::CheckParallelSubThreadNodesStatus()
             }
             RS_LOGD("RSMainThread::CheckParallelSubThreadNodesStatus pid = %{public}s, node name: %{public}s,"
                 "id: %{public}" PRIu64 "", std::to_string(pid).c_str(), node->GetName().c_str(), node->GetId());
-            if (cacheCmdSkippedInfo_.count(pid) == 0) {
-                cacheCmdSkippedInfo_[pid] = std::make_pair(std::vector<NodeId>{node->GetId()}, false);
+            auto it = cacheCmdSkippedInfo_.find(pid);
+            if (it == cacheCmdSkippedInfo_.end()) {
+                cacheCmdSkippedInfo_.emplace(pid, std::make_pair(std::vector<NodeId>{node->GetId()}, false));
             } else {
-                cacheCmdSkippedInfo_[pid].first.push_back(node->GetId());
+                it->second.first.push_back(node->GetId());
             }
             if (!node->HasAbilityComponent()) {
                 continue;
             }
             for (auto& nodeId : node->GetAbilityNodeIds()) {
                 pid_t abilityNodePid = ExtractPid(nodeId);
-                if (cacheCmdSkippedInfo_.count(abilityNodePid) == 0) {
-                    cacheCmdSkippedInfo_[abilityNodePid] = std::make_pair(std::vector<NodeId>{node->GetId()}, true);
+                it = cacheCmdSkippedInfo_.find(abilityNodePid);
+                if (it == cacheCmdSkippedInfo_.end()) {
+                    cacheCmdSkippedInfo_.emplace(abilityNodePid,
+                        std::make_pair(std::vector<NodeId>{node->GetId()}, true));
                 } else {
-                    cacheCmdSkippedInfo_[abilityNodePid].first.push_back(node->GetId());
+                    it->second.first.push_back(node->GetId());
                 }
             }
         }
@@ -1614,14 +1631,17 @@ void RSMainThread::ClearMemoryCache(ClearMemoryMoment moment, bool deeply, pid_t
             this->clearMemDeeply_ = false;
             this->SetClearMoment(ClearMemoryMoment::NO_CLEAR);
         };
-    if (!isUniRender_ || rsParallelType_ == RsParallelType::RS_PARALLEL_TYPE_SINGLE_THREAD) {
-        PostTask(task, CLEAR_GPU_CACHE,
-            (this->deviceType_ == DeviceType::PHONE ? TIME_OF_EIGHT_FRAMES : TIME_OF_THE_FRAMES) / GetRefreshRate(),
-            AppExecFwk::EventQueue::Priority::HIGH);
-    } else {
-        RSUniRenderThread::Instance().PostTask(task, CLEAR_GPU_CACHE,
-            (this->deviceType_ == DeviceType::PHONE ? TIME_OF_EIGHT_FRAMES : TIME_OF_THE_FRAMES) / GetRefreshRate(),
-            AppExecFwk::EventQueue::Priority::HIGH);
+    auto refreshRate = GetRefreshRate();
+    if (refreshRate > 0) {
+        if (!isUniRender_ || rsParallelType_ == RsParallelType::RS_PARALLEL_TYPE_SINGLE_THREAD) {
+            PostTask(task, CLEAR_GPU_CACHE,
+                (this->deviceType_ == DeviceType::PHONE ? TIME_OF_EIGHT_FRAMES : TIME_OF_THE_FRAMES) / refreshRate,
+                AppExecFwk::EventQueue::Priority::HIGH);
+        } else {
+            RSUniRenderThread::Instance().PostTask(task, CLEAR_GPU_CACHE,
+                (this->deviceType_ == DeviceType::PHONE ? TIME_OF_EIGHT_FRAMES : TIME_OF_THE_FRAMES) / refreshRate,
+                AppExecFwk::EventQueue::Priority::HIGH);
+        }
     }
 }
 
@@ -1825,7 +1845,7 @@ void RSMainThread::PrepareUiCaptureTasks(std::shared_ptr<RSUniRenderVisitor> uni
 void RSMainThread::ProcessUiCaptureTasks()
 {
     while (!uiCaptureTasks_.empty()) {
-        if (RSUiCaptureTaskParallel::captureCount_ >= MAX_CAPTURE_COUNT) {
+        if (RSUiCaptureTaskParallel::GetCaptureCount() >= MAX_CAPTURE_COUNT) {
             return;
         }
         auto captureTask = std::get<1>(uiCaptureTasks_.front());
@@ -3115,6 +3135,104 @@ void RSMainThread::RenderServiceTreeDump(std::string& dumpString, bool forceDump
     }
 }
 
+void RSMainThread::SendClientDumpNodeTreeCommands(uint32_t taskId)
+{
+    std::unique_lock<std::mutex> lock(nodeTreeDumpMutex_);
+    if (nodeTreeDumpTasks_.find(taskId) != nodeTreeDumpTasks_.end()) {
+        RS_LOGW("SendClientDumpNodeTreeCommands task[%{public}u] duplicate", taskId);
+        return;
+    }
+
+    std::unordered_map<pid_t, std::vector<NodeId>> topNodes;
+    if (const auto& rootNode = context_->GetGlobalRootRenderNode()) {
+        for (const auto& displayNode : *rootNode->GetSortedChildren()) {
+            for (const auto& node : *displayNode->GetSortedChildren()) {
+                NodeId id = node->GetId();
+                topNodes[ExtractPid(id)].push_back(id);
+            }
+        }
+    }
+    context_->GetNodeMap().TraversalNodes([this, &topNodes] (const std::shared_ptr<RSBaseRenderNode>& node) {
+        if (node->IsOnTheTree() && node->GetType() == RSRenderNodeType::ROOT_NODE) {
+            if (auto parent = node->GetParent().lock()) {
+                NodeId id = parent->GetId();
+                topNodes[ExtractPid(id)].push_back(id);
+            }
+            NodeId id = node->GetId();
+            topNodes[ExtractPid(id)].push_back(id);
+        }
+    });
+
+    auto& task = nodeTreeDumpTasks_[taskId];
+    for (const auto& [pid, nodeIds] : topNodes) {
+        auto iter = applicationAgentMap_.find(pid);
+        if (iter == applicationAgentMap_.end() || !iter->second) {
+            continue;
+        }
+        auto transactionData = std::make_shared<RSTransactionData>();
+        for (auto id : nodeIds) {
+            auto command = std::make_unique<RSDumpClientNodeTree>(id, pid, taskId, "");
+            transactionData->GetPayload().emplace_back(id, FollowType::NONE, std::move(command));
+            task.count++;
+        }
+        iter->second->OnTransaction(transactionData);
+    }
+    RS_LOGI("SendClientDumpNodeTreeCommands send task[%{public}u] count[%{public}zu]",
+        taskId, task.count);
+}
+
+void RSMainThread::CollectClientNodeTreeResult(uint32_t taskId, std::string& dumpString, size_t timeout)
+{
+    std::unique_lock<std::mutex> lock(nodeTreeDumpMutex_);
+    nodeTreeDumpCondVar_.wait_for(lock, std::chrono::milliseconds(timeout), [this, taskId] () {
+        const auto& task = nodeTreeDumpTasks_[taskId];
+        return task.completionCount == task.count;
+    });
+
+    const auto& task = nodeTreeDumpTasks_[taskId];
+    size_t completed = task.completionCount;
+    dumpString += "\n-- ClientNodeTreeDump: ";
+    for (const auto& [pid, data] : task.data) {
+        dumpString += "\n| pid[";
+        dumpString += std::to_string(pid);
+        dumpString += "]";
+        if (data) {
+            dumpString += "\n";
+            dumpString += data.value();
+        }
+    }
+    nodeTreeDumpTasks_.erase(taskId);
+
+    RS_LOGI("CollectClientNodeTreeResult task[%{public}u] completionCount[%{public}zu]",
+        taskId, completed);
+}
+
+void RSMainThread::OnDumpClientNodeTree(NodeId nodeId, pid_t pid, uint32_t taskId, const std::string& result)
+{
+    {
+        std::unique_lock<std::mutex> lock(nodeTreeDumpMutex_);
+        auto iter = nodeTreeDumpTasks_.find(taskId);
+        if (iter == nodeTreeDumpTasks_.end()) {
+            RS_LOGW("OnDumpClientNodeTree task[%{public}u] not found for pid[%d]", taskId, pid);
+            return;
+        }
+
+        iter->second.completionCount++;
+        auto& data = iter->second.data[pid];
+        if (data) {
+            data->append("\n");
+            data->append(result);
+        } else {
+            data = result;
+        }
+    }
+    nodeTreeDumpCondVar_.notify_all();
+
+    RS_LOGI("OnDumpClientNodeTree task[%{public}u] dataSize[%{public}zu] pid[%d]",
+        taskId, result.size(), pid);
+}
+
+
 bool RSMainThread::DoParallelComposition(std::shared_ptr<RSBaseRenderNode> rootNode)
 {
     using CreateParallelSyncSignalFunc = void* (*)(uint32_t);
@@ -3164,11 +3282,13 @@ void RSMainThread::ClearTransactionDataPidInfo(pid_t remotePid)
         return;
     }
     std::lock_guard<std::mutex> lock(transitionDataMutex_);
-    if (effectiveTransactionDataIndexMap_.count(remotePid) > 0 &&
-        !effectiveTransactionDataIndexMap_[remotePid].second.empty()) {
-        RS_LOGD("RSMainThread::ClearTransactionDataPidInfo process:%{public}d destroyed, skip commands", remotePid);
+    auto it = effectiveTransactionDataIndexMap_.find(remotePid);
+    if (it != effectiveTransactionDataIndexMap_.end()) {
+        if (!it->second.second.empty()) {
+            RS_LOGD("RSMainThread::ClearTransactionDataPidInfo process:%{public}d destroyed, skip commands", remotePid);
+        }
+        effectiveTransactionDataIndexMap_.erase(it);
     }
-    effectiveTransactionDataIndexMap_.erase(remotePid);
     transactionDataLastWaitTime_.erase(remotePid);
 
     // clear cpu cache when process exit
@@ -3290,10 +3410,14 @@ void RSMainThread::AddTransactionDataPidInfo(pid_t remotePid)
         return;
     }
     std::lock_guard<std::mutex> lock(transitionDataMutex_);
-    if (effectiveTransactionDataIndexMap_.count(remotePid) > 0) {
+    auto it = effectiveTransactionDataIndexMap_.find(remotePid);
+    if (it != effectiveTransactionDataIndexMap_.end()) {
         RS_LOGW("RSMainThread::AddTransactionDataPidInfo remotePid:%{public}d already exists", remotePid);
+        it->second.first = 0;
+    } else {
+        effectiveTransactionDataIndexMap_.emplace(remotePid,
+            std::make_pair(0, std::vector<std::unique_ptr<RSTransactionData>>()));;
     }
-    effectiveTransactionDataIndexMap_[remotePid].first = 0;
 }
 
 void RSMainThread::SetDirtyFlag(bool isDirty)
@@ -4039,6 +4163,24 @@ bool RSMainThread::CheckUIExtensionCallbackDataChanged() const
 void RSMainThread::SetHardwareTaskNum(uint32_t num)
 {
     rsVSyncDistributor_->SetHardwareTaskNum(num);
+}
+
+void RSMainThread::ConfigureRenderService()
+{
+    const auto& config = RSGraphicConfig::GetConfig();
+    RSGraphicConfig::ConfigItem item = config["blurEffect"];
+    if (item.IsMap()) {
+        auto subItem = item["blurSwitchOpen"].GetProp("enable");
+        if (subItem.IsBool()) {
+            isBlurSwitchOpen_ = subItem.boolValue;
+            RS_LOGI("RSMainThread::ConfigureRenderService isBlurSwitchOpen_:%{public}d", isBlurSwitchOpen_);
+        }
+    }
+}
+
+bool RSMainThread::IsBlurSwitchOpen() const
+{
+    return isBlurSwitchOpen_;
 }
 } // namespace Rosen
 } // namespace OHOS

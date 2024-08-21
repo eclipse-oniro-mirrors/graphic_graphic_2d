@@ -325,11 +325,17 @@ void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId f
     if (isOnTheTree_) {
         instanceRootNodeId_ = instanceRootNodeId;
         firstLevelNodeId_ = firstLevelNodeId;
+        if (stagingRenderParams_) {
+            stagingRenderParams_->SetFirstLevelNode(firstLevelNodeId_);
+        }
         OnTreeStateChanged();
     } else {
         OnTreeStateChanged();
         instanceRootNodeId_ = instanceRootNodeId;
         firstLevelNodeId_ = firstLevelNodeId;
+        if (stagingRenderParams_) {
+            stagingRenderParams_->SetFirstLevelNode(firstLevelNodeId_);
+        }
     }
     // if node is marked as cacheRoot, update subtree status when update surface
     // in case prepare stage upper cacheRoot cannot specify dirty subnode
@@ -338,6 +344,9 @@ void RSRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId f
     }
     if (uifirstRootNodeId != INVALID_NODEID) {
         uifirstRootNodeId_ = uifirstRootNodeId;
+        if (stagingRenderParams_) {
+            stagingRenderParams_->SetUiFirstRootNode(uifirstRootNodeId_);
+        }
     }
 
     for (auto& weakChild : children_) {
@@ -2029,7 +2038,7 @@ void RSRenderNode::MarkFilterCacheFlags(std::shared_ptr<DrawableV2::RSFilterDraw
     }
     // force update if no next vsync when skip-frame enabled
     if (!needRequestNextVsync && filterDrawable->IsSkippingFrame()) {
-        filterDrawable->ForceClearCacheWithLastFrame();
+        filterDrawable->MarkForceClearCacheWithLastFrame();
         return;
     }
 
@@ -2055,16 +2064,14 @@ void RSRenderNode::MarkForceClearFilterCacheWithInvisible()
         auto filterDrawable = GetFilterDrawable(false);
         if (filterDrawable != nullptr) {
             filterDrawable->MarkFilterForceClearCache();
-            filterDrawable->MarkNeedClearFilterCache();
-            UpdateDirtySlotsAndPendingNodes(RSDrawableSlot::BACKGROUND_FILTER);
+            CheckFilterCacheAndUpdateDirtySlots(filterDrawable, RSDrawableSlot::BACKGROUND_FILTER);
         }
     }
     if (GetRenderProperties().GetFilter()) {
         auto filterDrawable = GetFilterDrawable(true);
         if (filterDrawable != nullptr) {
             filterDrawable->MarkFilterForceClearCache();
-            filterDrawable->MarkNeedClearFilterCache();
-            UpdateDirtySlotsAndPendingNodes(RSDrawableSlot::COMPOSITING_FILTER);
+            CheckFilterCacheAndUpdateDirtySlots(filterDrawable, RSDrawableSlot::COMPOSITING_FILTER);
         }
     }
 }
@@ -2373,8 +2380,8 @@ void RSRenderNode::ApplyModifiers()
     UpdateShouldPaint();
 
     RS_LOGI_IF(DEBUG_NODE,
-        "RSRenderNode::apply modifiers dirtyTypes_:%{public}d RenderProperties's sandBox's hasValue is %{public}d"
-        " isTextureExportNode_:%{public}d", dirtyTypes_, GetRenderProperties().GetSandBox().has_value(),
+        "RSRenderNode::apply modifiers RenderProperties's sandBox's hasValue is %{public}d"
+        " isTextureExportNode_:%{public}d", GetRenderProperties().GetSandBox().has_value(),
         isTextureExportNode_);
     if (dirtyTypes_.test(static_cast<size_t>(RSModifierType::SANDBOX)) &&
         !GetRenderProperties().GetSandBox().has_value() && sharedTransitionParam_) {
@@ -2418,7 +2425,6 @@ void RSRenderNode::UpdateDrawableVec()
 {
     // Collect dirty slots
     auto dirtySlots = RSPropertyDrawable::GenerateDirtySlots(GetRenderProperties(), dirtyTypes_);
-    RS_LOGI_IF(DEBUG_NODE, "RSRenderNode::update drawable Vec dirtySlots is %{public}d", dirtySlots);
     if (!GetIsUsedBySubThread()) {
         UpdateDrawableVecInternal(dirtySlots);
     } else if (auto context = context_.lock()) {
@@ -2443,8 +2449,7 @@ void RSRenderNode::UpdateDrawableVecV2()
     // If any drawable has changed, or the CLIP_TO_BOUNDS slot has changed, then we need to recalculate
     // save/clip/restore.
     RS_LOGI_IF(DEBUG_NODE,
-        "RSRenderNode::update drawable VecV2 drawableChanged:%{public}d dirtySlots:%{public}d",
-        drawableChanged, dirtySlots);
+        "RSRenderNode::update drawable VecV2 drawableChanged:%{public}d", drawableChanged);
     if (drawableChanged || dirtySlots.count(RSDrawableSlot::CLIP_TO_BOUNDS)) {
         // Step 3: Recalculate save/clip/restore on demands
         RSDrawable::UpdateSaveRestore(*this, drawableVec_, drawableVecStatus_);
@@ -3102,7 +3107,7 @@ bool RSRenderNode::IsSuggestedDrawInGroup() const
 void RSRenderNode::MarkNodeGroup(NodeGroupType type, bool isNodeGroup, bool includeProperty)
 {
     RS_OPTIONAL_TRACE_NAME_FMT("MarkNodeGroup type:%d isNodeGroup:%d id:%llu", type, isNodeGroup, GetId());
-    RS_LOGI_IF(DEBUG_NODE, "RSRenderNode::MarkNodeGP type:%{public}d isNodeGroup:%{public}d id:%{public}" + PRIu64,
+    RS_LOGI_IF(DEBUG_NODE, "RSRenderNode::MarkNodeGP type:%{public}d isNodeGroup:%{public}d id:%{public}" PRIu64,
         type, isNodeGroup, GetId());
     if (isNodeGroup && type == NodeGroupType::GROUPED_BY_UI) {
         auto context = GetContext().lock();
@@ -3534,6 +3539,9 @@ const std::shared_ptr<RSRenderNode> RSRenderNode::GetInstanceRootNode() const
 void RSRenderNode::UpdateTreeUifirstRootNodeId(NodeId id)
 {
     uifirstRootNodeId_ = id;
+    if (stagingRenderParams_) {
+        stagingRenderParams_->SetUiFirstRootNode(uifirstRootNodeId_);
+    }
     for (auto& child : *GetChildren()) {
         if (child) {
             child->UpdateTreeUifirstRootNodeId(id);

@@ -2126,7 +2126,7 @@ void RSNode::AddModifier(const std::shared_ptr<RSModifier> modifier)
                 std::make_unique<RSAddModifier>(GetId(), modifier->CreateRenderModifier());
             transactionProxy->AddCommand(cmdForRemote, true, GetFollowType(), GetId());
         }
-        ROSEN_LOGI_IF(DEBUG_MODIFIER, "RSNode::add modifier, node id: %{public}" PRIu64 ", type: %{public}s",
+        ROSEN_LOGD("RSNode::add modifier, node id: %{public}" PRIu64 ", type: %{public}s",
             GetId(), modifier->GetModifierTypeString().c_str());
     }
 }
@@ -2146,7 +2146,7 @@ void RSNode::DoFlushModifier()
     for (const auto& [_, modifier] : modifiers_) {
         std::unique_ptr<RSCommand> command = std::make_unique<RSAddModifier>(GetId(), modifier->CreateRenderModifier());
         transactionProxy->AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());
-        ROSEN_LOGI_IF(DEBUG_MODIFIER, "RSNode::flush modifier, node id: %{public}" PRIu64 ", type: %{public}s",
+        ROSEN_LOGD("RSNode::flush modifier, node id: %{public}" PRIu64 ", type: %{public}s",
             GetId(), modifier->GetModifierTypeString().c_str());
     }
 }
@@ -2186,7 +2186,7 @@ void RSNode::RemoveModifier(const std::shared_ptr<RSModifier> modifier)
                 std::make_unique<RSRemoveModifier>(GetId(), modifier->GetPropertyId());
             transactionProxy->AddCommand(cmdForRemote, true, GetFollowType(), GetId());
         }
-        ROSEN_LOGI_IF(DEBUG_MODIFIER, "RSNode::remove modifier, node id: %{public}" PRIu64 ", type: %{public}s",
+        ROSEN_LOGD("RSNode::remove modifier, node id: %{public}" PRIu64 ", type: %{public}s",
             GetId(), modifier->GetModifierTypeString().c_str());
     }
 }
@@ -2787,6 +2787,67 @@ void RSNode::SetParent(NodeId parentId)
 RSNode::SharedPtr RSNode::GetParent()
 {
     return RSNodeMap::Instance().GetNode(parent_);
+}
+
+void RSNode::DumpTree(int depth, std::string& out) const
+{
+    for (int i = 0; i < depth; i++) {
+        out += "  ";
+    }
+    out += "| ";
+    Dump(out);
+    for (auto childId : children_) {
+        if (auto child = RSNodeMap::Instance().GetNode(childId)) {
+            out += "\n";
+            child->DumpTree(depth + 1, out);
+        }
+    }
+}
+
+void RSNode::Dump(std::string& out) const
+{
+    auto iter = RSUINodeTypeStrs.find(GetType());
+    out += (iter != RSUINodeTypeStrs.end() ? iter->second : "RSNode");
+    out += "[" + std::to_string(id_);
+    out += "], parent[" + std::to_string(parent_);
+    out += "], instanceId[" + std::to_string(instanceId_);
+    if (auto node = ReinterpretCastTo<RSSurfaceNode>()) {
+        out += "], name[" + node->GetName();
+    } else if (!nodeName_.empty()) {
+        out += "], nodeName[" + nodeName_;
+    }
+    out += "], frameNodeId[" + std::to_string(frameNodeId_);
+    out += "], frameNodeTag[" + frameNodeTag_;
+    out += "], extendModifierIsDirty[";
+    out += extendModifierIsDirty_ ? "true" : "false";
+    out += "], isNodeGroup[";
+    out += isNodeGroup_ ? "true" : "false";
+    out += "], isSingleFrameComposer[";
+    out += isNodeSingleFrameComposer_ ? "true" : "false";
+    out += "], isSuggestOpincNode[";
+    out += isSuggestOpincNode_ ? "true" : "false";
+    out += "], isUifirstNode[";
+    out += isUifirstNode_ ? "true" : "false";
+    out += "], drawRegion[";
+    if (drawRegion_) {
+        out += "x:" + std::to_string(drawRegion_->GetLeft());
+        out += " y:" + std::to_string(drawRegion_->GetTop());
+        out += " width:" + std::to_string(drawRegion_->GetWidth());
+        out += " height:" + std::to_string(drawRegion_->GetHeight());
+    } else {
+        out += "null";
+    }
+    out += "], outOfParent[" + std::to_string(static_cast<int>(outOfParent_));
+    out += "], animations[";
+    for (const auto& [id, anim] : animations_) {
+        out += "{id:" + std::to_string(id);
+        out += " propId:" + std::to_string(anim->GetPropertyId());
+        out += "} ";
+    }
+    if (!animations_.empty()) {
+        out.pop_back();
+    }
+    out += "]";
 }
 
 std::string RSNode::DumpNode(int depth) const
