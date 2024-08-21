@@ -15,8 +15,9 @@
 
 #include "text/typeface.h"
 
-#include "impl_interface/typeface_impl.h"
 #include "static_factory.h"
+
+#include "impl_interface/typeface_impl.h"
 
 namespace OHOS {
 namespace Rosen {

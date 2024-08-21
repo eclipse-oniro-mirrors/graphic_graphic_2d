@@ -64,11 +64,12 @@ public:
     uint32_t GetHash() const override;
     /** store hash, storing a zero causes recalculating a hash when asked */
     void SetHash(uint32_t hash) override;
+
 private:
     SkiaTypeface() = default;
 
     sk_sp<SkTypeface> skTypeface_;
-    mutable uint32_t hash_{0};
+    mutable uint32_t hash_ { 0 };
 };
 } // namespace Drawing
 } // namespace Rosen

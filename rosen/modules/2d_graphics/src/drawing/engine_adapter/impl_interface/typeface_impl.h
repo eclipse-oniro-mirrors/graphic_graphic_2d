@@ -47,9 +47,7 @@ public:
         return 0;
     }
 
-    virtual void SetHash(uint32_t)
-    {
-    }
+    virtual void SetHash(uint32_t) {}
 
 protected:
     TypefaceImpl() noexcept = default;

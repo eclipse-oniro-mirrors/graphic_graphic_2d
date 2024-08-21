@@ -54,7 +54,7 @@ uint32_t RSTypefaceCache::GetTypefaceId(uint64_t uniqueId)
 bool RSTypefaceCache::AddIfFound(uint64_t uniqueId, uint32_t hash)
 {
     auto iterator = typefaceHashMap_.find(hash);
-    if(iterator != typefaceHashMap_.end()){
+    if (iterator != typefaceHashMap_.end()) {
         typefaceHashCode_[uniqueId] = hash;
         std::get<1>(iterator->second)++;
         return true;
@@ -73,7 +73,7 @@ bool RSTypefaceCache::HasTypeface(uint64_t uniqueId, uint32_t hash)
     if (hash) {
         // check if someone else has already registered this typeface, add ref count and
         // mapping if so.
-        if(AddIfFound(uniqueId, hash)) {
+        if (AddIfFound(uniqueId, hash)) {
             return true;
         }
 
@@ -83,7 +83,7 @@ bool RSTypefaceCache::HasTypeface(uint64_t uniqueId, uint32_t hash)
             iterator->second.push_back(uniqueId);
             return true;
         } else {
-            typefaceHashQueue_[hash] = {uniqueId};
+            typefaceHashQueue_[hash] = { uniqueId };
         }
     }
 
@@ -133,7 +133,7 @@ void RSTypefaceCache::CacheDrawingTypeface(uint64_t uniqueId,
     }
 }
 
-static void RemoveHashMap(std::unordered_map<uint64_t, TypefaceTuple> &typefaceHashMap, uint64_t hash_value)
+static void RemoveHashMap(std::unordered_map<uint64_t, TypefaceTuple>& typefaceHashMap, uint64_t hash_value)
 {
     if (typefaceHashMap.find(hash_value) != typefaceHashMap.end()) {
         auto [typeface, ref] = typefaceHashMap[hash_value];
@@ -156,11 +156,11 @@ void RSTypefaceCache::RemoveDrawingTypefaceByGlobalUniqueId(uint64_t globalUniqu
     std::lock_guard<std::mutex> lock(mapMutex_);
     // first check the queue;
     for (auto& ref : typefaceHashQueue_) {
-        size_t ix{0};
+        size_t ix { 0 };
         for (auto uid : ref.second) {
             if (uid == globalUniqueId) {
                 if (EmptyAfterErase(ref.second, ix)) {
-                     typefaceHashQueue_.erase(ref.first);
+                    typefaceHashQueue_.erase(ref.first);
                 }
                 return;
             }
@@ -196,7 +196,7 @@ static void PurgeMapWithPid(pid_t pid, std::unordered_map<uint32_t, std::vector<
     std::vector<size_t> removeList;
 
     for (auto& ref : map) {
-        size_t ix{0};
+        size_t ix { 0 };
         for (auto uid : ref.second) {
             pid_t pidCache = static_cast<pid_t>(uid >> 32);
             if (pid == pidCache) {
@@ -208,7 +208,7 @@ static void PurgeMapWithPid(pid_t pid, std::unordered_map<uint32_t, std::vector<
         }
     }
 
-    while(removeList.size()){
+    while (removeList.size()) {
         map.erase(removeList.back());
         removeList.pop_back();
     }
