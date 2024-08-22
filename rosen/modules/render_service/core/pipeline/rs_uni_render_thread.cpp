@@ -591,6 +591,27 @@ bool RSUniRenderThread::IsCurtainScreenOn() const
     return renderThreadParams_ ? renderThreadParams_->IsCurtainScreenOn() : false;
 }
 
+bool RSUniRenderThread::IsColorFilterModeOn() const
+{
+    if (!uniRenderEngine_) {
+        return false;
+    }
+    ColorFilterMode colorFilterMode = uniRenderEngine_->GetColorFilterMode();
+    if (colorFilterMode == ColorFilterMode::INVERT_COLOR_DISABLE_MODE ||
+        colorFilterMode >= ColorFilterMode::DALTONIZATION_NORMAL_MODE) {
+        return false;
+    }
+    return true;
+}
+
+bool RSUniRenderThread::IsHighContrastTextModeOn() const
+{
+    if (!uniRenderEngine_) {
+        return false;
+    }
+    return uniRenderEngine_->IsHighContrastEnabled();
+}
+
 std::string FormatNumber(size_t number)
 {
     constexpr uint8_t FORMATE_NUM_STEP = 3;
