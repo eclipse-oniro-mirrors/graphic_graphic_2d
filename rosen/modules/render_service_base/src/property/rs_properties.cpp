@@ -4130,7 +4130,6 @@ void RSProperties::OnApplyModifiers()
         GenerateColorFilter();
         if (colorFilter_ != nullptr) {
             needFilter_ = true;
-            colorFilter_ = nullptr;
         } else {
             filterNeedUpdate_ = true;
         }
