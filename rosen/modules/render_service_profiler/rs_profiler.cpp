@@ -13,23 +13,25 @@
  * limitations under the License.
  */
 
+#include "rs_profiler.h"
+
 #include <cstddef>
 #include <filesystem>
 #include <numeric>
 
 #include "foundation/graphic/graphic_2d/utils/log/rs_trace.h"
-#include "rs_profiler.h"
 #include "rs_profiler_archive.h"
 #include "rs_profiler_cache.h"
 #include "rs_profiler_capture_recorder.h"
 #include "rs_profiler_capturedata.h"
 #include "rs_profiler_file.h"
 #include "rs_profiler_json.h"
+#include "rs_profiler_log.h"
 #include "rs_profiler_network.h"
+#include "rs_profiler_packet.h"
 #include "rs_profiler_settings.h"
 #include "rs_profiler_telemetry.h"
 #include "rs_profiler_utils.h"
-#include "rs_profiler_packet.h"
 
 #include "params/rs_display_render_params.h"
 #include "pipeline/rs_main_thread.h"
@@ -351,7 +353,7 @@ void RSProfiler::OnRenderBegin()
     if (!IsEnabled()) {
         return;
     }
-    RS_LOGD("RSProfiler::OnRenderBegin(): enabled"); // NOLINT
+    HRPD("OnRenderBegin()");
     g_renderServiceCpuId = Utils::GetCpuId();
 }
 
@@ -881,7 +883,10 @@ void RSProfiler::RecordUpdate()
 
 void RSProfiler::Respond(const std::string& message)
 {
-    Network::SendMessage(message);
+    if (!message.empty()) {
+        Network::SendMessage(message);
+        HRPI("%s", message.data());
+    }
 }
 
 void RSProfiler::SetSystemParameter(const ArgList& args)
@@ -895,6 +900,17 @@ void RSProfiler::GetSystemParameter(const ArgList& args)
 {
     const auto parameter = SystemParameter::Find(args.String());
     Respond(parameter ? parameter->ToString() : "There is no such a system parameter");
+}
+
+void RSProfiler::Reset(const ArgList& args)
+{
+    const ArgList dummy;
+    RecordStop(dummy);
+    PlaybackStop(dummy);
+
+    Utils::FileDelete(RSFile::GetDefaultPath());
+
+    Respond("Reset");
 }
 
 void RSProfiler::DumpSystemParameters(const ArgList& args)
@@ -1435,8 +1451,8 @@ void RSProfiler::PlaybackPrepareFirstFrame(const ArgList& args)
         return;
     }
 
-    auto& fileAnimeStartTimes = g_playbackFile.GetAnimeStartTimes();
-    for (const auto item : fileAnimeStartTimes) {
+    const auto& fileAnimeStartTimes = g_playbackFile.GetAnimeStartTimes();
+    for (const auto& item : fileAnimeStartTimes) {
         if (animeMap.count(item.first)) {
             animeMap[Utils::PatchNodeId(item.first)].push_back(item.second);
         } else {
@@ -1510,7 +1526,7 @@ void RSProfiler::PlaybackStop(const ArgList& args)
     Respond("Playback stop");
 }
 
-double RSProfiler::PlaybackUpdate(const double deltaTime)
+double RSProfiler::PlaybackUpdate(double deltaTime)
 {
     std::vector<uint8_t> data;
     double readTime = 0.0;
@@ -1673,6 +1689,7 @@ RSProfiler::Command RSProfiler::GetCommand(const std::string& command)
         { "socket_shutdown", SocketShutdown },
         { "version", Version },
         { "file_version", FileVersion },
+        { "reset", Reset },
     };
 
     if (command.empty()) {
