@@ -37,10 +37,7 @@ ohos_unittest("hm_symbol_engine_test") {
     "$rosen_root/modules/render_service_base/include",
   ]
 
-  defines = [
-    "USE_GRAPHIC_TEXT_GINE",
-    "WINDOWS_PLATFORM",
-  ]
+  defines = [ "WINDOWS_PLATFORM" ]
   cflags = [ "-std=c++17" ]
 
   platform = current_os
