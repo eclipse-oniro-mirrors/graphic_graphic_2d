@@ -160,7 +160,7 @@ std::shared_ptr<Media::PixelMap> SKImageChain::GetPixelMap()
     return dstPixelMap_;
 }
 
-DrawError SKImageChain::Draw()
+void SKImageChain::Draw()
 {
     DrawError ret = DrawError::ERR_OK;
     if (canvas_ == nullptr) {
@@ -168,12 +168,13 @@ DrawError SKImageChain::Draw()
         if (forceCPU_) {
             if (!CreateCPUCanvas()) {
                 LOGE("Failed to create canvas for CPU.");
-                ret = DrawError::ERR_CPU_CANVAS;
+                return;
             }
         } else {
             if (!CreateGPUCanvas()) {
                 LOGE("Failed to create canvas for GPU.");
-                ret = DrawError::ERR_GPU_CANVAS;
+                DestroyGPUCanvas();
+                return;
             }
         }
     }
