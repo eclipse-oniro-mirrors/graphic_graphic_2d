@@ -207,7 +207,8 @@ static void PurgeMapWithPid(pid_t pid, std::unordered_map<uint32_t, std::vector<
 
     for (auto& ref : map) {
         size_t ix { 0 };
-        for (auto uid : ref.second) {
+        std::vector<uint64_t> uniqueIdVec = ref.second;
+        for (auto uid : uniqueIdVec) {
             pid_t pidCache = static_cast<pid_t>(uid >> 32);
             if (pid != pidCache) {
                 ix++;
@@ -215,8 +216,8 @@ static void PurgeMapWithPid(pid_t pid, std::unordered_map<uint32_t, std::vector<
             }
             if (EmptyAfterErase(ref.second, ix)) {
                 removeList.push_back(ref.first);
-            }
-            break;
+                break;
+            }            
         }
     }
 
