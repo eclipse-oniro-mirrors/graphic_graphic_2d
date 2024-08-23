@@ -80,6 +80,7 @@ OH_Drawing_ErrorCode OH_Drawing_RecordCmdUtilsDestroy(OH_Drawing_RecordCmdUtils*
  *         Returns {@link OH_DRAWING_SUCCESS} if the operation is successful.
  *         Returns {@link OH_DRAWING_ERROR_INVALID_PARAMETER} if recordCmdUtils or canvas is nullptr,
  *         width less than or equal to 0 or height less than or equal to 0.
+ *         Returns {@link OH_DRAWING_ERROR_ALLOCATION_FAILED} if the memory is out.
  * @since 13
  * @version 1.0
  */
@@ -95,6 +96,7 @@ OH_Drawing_ErrorCode OH_Drawing_RecordCmdUtilsBeginRecording(OH_Drawing_RecordCm
  * @return Returns the error code.
  *         Returns {@link OH_DRAWING_SUCCESS} if the operation is successful.
  *         Returns {@link OH_DRAWING_ERROR_INVALID_PARAMETER} if recordCmdUtils or recordCmd is nullptr.
+ *         Returns {@link OH_DRAWING_ERROR_ALLOCATION_FAILED} if the memory is out.
  * @since 13
  * @version 1.0
  */
