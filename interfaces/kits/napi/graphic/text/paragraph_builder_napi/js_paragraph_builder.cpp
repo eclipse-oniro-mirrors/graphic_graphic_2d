@@ -228,7 +228,7 @@ napi_value JsParagraphBuilder::Build(napi_env env, napi_callback_info info)
 napi_value JsParagraphBuilder::OnBuild(napi_env env, napi_callback_info info)
 {
     if (typographyCreate_ == nullptr) {
-        TEXT_LOGE("JsParagraphBuilder::OnAddPlaceholder typographyCreate_ is null");
+        TEXT_LOGE("typographyCreate_ is null");
         return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
     }
 

@@ -120,7 +120,7 @@ uint32_t OH_Drawing_GetFontData(const std::string& path, std::unique_ptr<char[]>
         return ERROR_READ_FILE_FAILED;
     }
     ifs.close();
-    return SUCCESS;
+    return 0;
 }
 
 uint32_t OH_Drawing_RegisterFont(
@@ -133,7 +133,7 @@ uint32_t OH_Drawing_RegisterFont(
     std::unique_ptr<char[]> buffer;
     std::streamsize size;
     uint32_t result = OH_Drawing_GetFontData(path, buffer, size);
-    if (result != SUCCESS) {
+    if (result != 0) {
         return result;
     }
     const std::string familyName = fontFamily;
