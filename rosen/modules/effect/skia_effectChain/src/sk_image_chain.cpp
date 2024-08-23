@@ -182,7 +182,7 @@ DrawError SKImageChain::Draw()
         if (!forceCPU_) {
             DestroyGPUCanvas();
         }
-        return;
+        return DrawError::ERR_IMAGE_NULL;
     }
     ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "SKImageChain::Draw");
     SkPaint paint;
