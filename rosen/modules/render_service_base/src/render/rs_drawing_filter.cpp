@@ -307,6 +307,10 @@ void RSDrawingFilter::ApplyImageEffect(Drawing::Canvas& canvas, const std::share
             tmpFilter->GenerateGEVisualEffect(effectContainer);
             auto blurImage = geRender->ApplyImageEffect(
                 canvas, *effectContainer, outImage, src, src, Drawing::SamplingOptions());
+            if (blurImage == nullptr) {
+                ROSEN_LOGE("RSDrawingFilter::DrawImageRect blurImage is null");
+                return;
+            }
             brush.SetForceBrightnessDisable(true);
             canvas.AttachBrush(brush);
             canvas.DrawImageRect(*blurImage, src, dst, Drawing::SamplingOptions());
