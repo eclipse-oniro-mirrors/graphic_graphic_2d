@@ -345,6 +345,8 @@ sptr<Surface> RSRenderServiceConnection::CreateNodeAndSurface(const RSSurfaceRen
                 node->GetId(), preNode->GetType());
             usleep(SLEEP_TIME_US);
         }
+        RS_LOGI("CreateNodeAndSurface RegisterRenderNode id:%{public}" PRIu64 ", name:%{public}s", node->GetId(),
+            node->GetName().c_str());
         mainThread->GetContext().GetMutableNodeMap().RegisterRenderNode(node);
     };
     if (config.isSync) {
