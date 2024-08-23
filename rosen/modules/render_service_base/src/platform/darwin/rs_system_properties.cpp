@@ -170,6 +170,15 @@ bool RSSystemProperties::GetCacheEnabledForRotation()
     return {};
 }
 
+void RSSystemProperties::SetDefaultDeviceRotationOffset(uint32_t offset)
+{
+}
+
+uint32_t RSSystemProperties::GetDefaultDeviceRotationOffset()
+{
+    return {};
+}
+
 #ifndef NEW_SKIA
 bool RSSystemProperties::GetReleaseResourceEnabled()
 {
@@ -405,6 +414,11 @@ bool RSSystemProperties::GetDrawFilterWithoutSnapshotEnabled()
 }
 
 bool RSSystemProperties::GetBlurExtraFilterEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetDiscardCanvasBeforeFilterEnabled()
 {
     return false;
 }

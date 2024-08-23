@@ -43,7 +43,7 @@ void RSFile::Create(const std::string& fname)
     }
     const std::lock_guard<std::mutex> lgMutex(writeMutex_);
 
-#ifdef REPLAY_TOOL_CLIENT
+#ifdef RENDER_PROFILER_APPLICATION
     file_ = Utils::FileOpen(fname, "wb");
 #else
     file_ = Utils::FileOpen(fname, "wbe");
@@ -70,7 +70,7 @@ bool RSFile::Open(const std::string& fname)
         Close();
     }
 
-#ifdef REPLAY_TOOL_CLIENT
+#ifdef RENDER_PROFILER_APPLICATION
     file_ = Utils::FileOpen(fname, "rb");
 #else
     file_ = Utils::FileOpen(fname, "rbe");
@@ -628,7 +628,7 @@ bool RSFile::ReadTrackData(
 
 void RSFile::ReadTrackDataRestart(LayerTrackIndexPtr trackIndex, uint32_t layer)
 {
-    if (layerData_.empty()) {
+    if (!HasLayer(layer)) {
         return;
     }
 
