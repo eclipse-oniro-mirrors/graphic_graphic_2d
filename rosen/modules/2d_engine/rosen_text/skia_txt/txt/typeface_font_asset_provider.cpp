@@ -17,6 +17,7 @@
 
 #include "include/core/SkString.h"
 #include "include/core/SkTypeface.h"
+#include "utils/text_log.h"
 
 namespace txt {
 TypefaceFontAssetProvider::TypefaceFontAssetProvider() = default;
@@ -32,6 +33,10 @@ size_t TypefaceFontAssetProvider::GetFamilyCount() const
 std::string TypefaceFontAssetProvider::GetFamilyName(int index) const
 {
     std::unique_lock lock(assetMutex_);
+    if ((index < 0) || (index >= static_cast<int>(familyNames_.size()))) {
+        TEXT_LOGW("Array bounds exceeded, familyName Index: %d", index);
+        return "";
+    }
     return familyNames_[index];
 }
 

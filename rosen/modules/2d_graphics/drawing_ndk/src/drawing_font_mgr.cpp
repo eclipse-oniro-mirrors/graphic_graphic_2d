@@ -55,6 +55,9 @@ OH_Drawing_FontMgr* OH_Drawing_FontMgrCreate()
 
 void OH_Drawing_FontMgrDestroy(OH_Drawing_FontMgr* drawingFontMgr)
 {
+    if (drawingFontMgr == nullptr) {
+        return;
+    }
     std::lock_guard<std::mutex> lock(g_fontMgrLockMutex);
     auto it = g_fontMgrMap.find(drawingFontMgr);
     if (it == g_fontMgrMap.end()) {
@@ -65,6 +68,9 @@ void OH_Drawing_FontMgrDestroy(OH_Drawing_FontMgr* drawingFontMgr)
 
 int OH_Drawing_FontMgrGetFamilyCount(OH_Drawing_FontMgr* drawingFontMgr)
 {
+    if (drawingFontMgr == nullptr) {
+        return 0;
+    }
     FontMgr* fontMgr = CastToFontMgr(drawingFontMgr);
     if (fontMgr == nullptr) {
         return 0;
@@ -92,6 +98,9 @@ static bool CopyStrData(char** destination, const std::string& source)
 
 char* OH_Drawing_FontMgrGetFamilyName(OH_Drawing_FontMgr* drawingFontMgr, int index)
 {
+    if (drawingFontMgr == nullptr) {
+        return nullptr;
+    }
     FontMgr* fontMgr = CastToFontMgr(drawingFontMgr);
     if (fontMgr == nullptr) {
         return nullptr;
@@ -116,6 +125,9 @@ void OH_Drawing_FontMgrDestroyFamilyName(char* familyName)
 
 OH_Drawing_FontStyleSet* OH_Drawing_FontMgrCreateFontStyleSet(OH_Drawing_FontMgr* drawingFontMgr, int index)
 {
+    if (drawingFontMgr == nullptr) {
+        return nullptr;
+    }
     FontMgr* fontMgr = CastToFontMgr(drawingFontMgr);
     if (fontMgr == nullptr) {
         return nullptr;
@@ -129,6 +141,9 @@ OH_Drawing_FontStyleSet* OH_Drawing_FontMgrCreateFontStyleSet(OH_Drawing_FontMgr
 
 void OH_Drawing_FontMgrDestroyFontStyleSet(OH_Drawing_FontStyleSet* drawingFontStyleSet)
 {
+    if (drawingFontStyleSet == nullptr) {
+        return;
+    }
     std::lock_guard<std::mutex> lock(g_fontStyleSetLockMutex);
     auto it = g_fontStyleSetMap.find(drawingFontStyleSet);
     if (it == g_fontStyleSetMap.end()) {
@@ -139,6 +154,9 @@ void OH_Drawing_FontMgrDestroyFontStyleSet(OH_Drawing_FontStyleSet* drawingFontS
 
 OH_Drawing_FontStyleSet* OH_Drawing_FontMgrMatchFamily(OH_Drawing_FontMgr* drawingFontMgr, const char* familyName)
 {
+    if (drawingFontMgr == nullptr || familyName == nullptr) {
+        return nullptr;
+    }
     FontMgr* fontMgr = CastToFontMgr(drawingFontMgr);
     if (fontMgr == nullptr) {
         return nullptr;
@@ -156,6 +174,9 @@ OH_Drawing_FontStyleSet* OH_Drawing_FontMgrMatchFamily(OH_Drawing_FontMgr* drawi
 OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyle(
     OH_Drawing_FontMgr* drawingFontMgr, const char* familyName, OH_Drawing_FontStyleStruct fontStyle)
 {
+    if (drawingFontMgr == nullptr || familyName == nullptr) {
+        return nullptr;
+    }
     FontMgr* fontMgr = CastToFontMgr(drawingFontMgr);
     if (fontMgr == nullptr) {
         return nullptr;
@@ -175,6 +196,9 @@ OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyleCharacter(OH_Drawing_Font
     const char* familyName, OH_Drawing_FontStyleStruct fontStyle, const char* bcp47[], int bcp47Count,
     int32_t character)
 {
+    if (drawingFontMgr == nullptr || familyName == nullptr || bcp47 == nullptr || bcp47Count <= 0) {
+        return nullptr;
+    }
     FontMgr* fontMgr = CastToFontMgr(drawingFontMgr);
     if (fontMgr == nullptr) {
         return nullptr;
@@ -193,6 +217,9 @@ OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyleCharacter(OH_Drawing_Font
 
 OH_Drawing_Typeface* OH_Drawing_FontStyleSetCreateTypeface(OH_Drawing_FontStyleSet* fontStyleSet, int index)
 {
+    if (fontStyleSet == nullptr) {
+        return nullptr;
+    }
     FontStyleSet* converFontStyleSet = reinterpret_cast<FontStyleSet*>(fontStyleSet);
     if (converFontStyleSet == nullptr) {
         return nullptr;
@@ -213,7 +240,7 @@ OH_Drawing_FontStyleStruct OH_Drawing_FontStyleSetGetStyle(
     fontStyleStruct.weight = FONT_WEIGHT_400;
     fontStyleStruct.width = FONT_WIDTH_NORMAL;
     fontStyleStruct.slant = FONT_STYLE_NORMAL;
-    if (styleName == nullptr) {
+    if (styleName == nullptr || fontStyleSet == nullptr) {
         return fontStyleStruct;
     }
     FontStyleSet* converFontStyleSet = reinterpret_cast<FontStyleSet*>(fontStyleSet);
@@ -260,6 +287,9 @@ void OH_Drawing_FontStyleSetFreeStyleName(char** styleName)
 OH_Drawing_Typeface* OH_Drawing_FontStyleSetMatchStyle(
     OH_Drawing_FontStyleSet* fontStyleSet, OH_Drawing_FontStyleStruct fontStyleStruct)
 {
+    if (fontStyleSet == nullptr) {
+        return nullptr;
+    }
     FontStyleSet* converFontStyleSet = reinterpret_cast<FontStyleSet*>(fontStyleSet);
     if (converFontStyleSet == nullptr) {
         return nullptr;
@@ -276,6 +306,9 @@ OH_Drawing_Typeface* OH_Drawing_FontStyleSetMatchStyle(
 
 int OH_Drawing_FontStyleSetCount(OH_Drawing_FontStyleSet* fontStyleSet)
 {
+    if (fontStyleSet == nullptr) {
+        return 0;
+    }
     FontStyleSet* converFontStyleSet = reinterpret_cast<FontStyleSet*>(fontStyleSet);
     if (converFontStyleSet == nullptr) {
         return 0;
