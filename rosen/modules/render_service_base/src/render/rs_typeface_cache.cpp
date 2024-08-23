@@ -20,6 +20,7 @@
 #include "src/core/SkLRUCache.h"
 #include "platform/common/rs_log.h"
 #include <sstream>
+#include <algorithm>
 
 // after 5 vsync count, destory it
 #define DELAY_DESTROY_VSYNC_COUNT 5
@@ -136,30 +137,28 @@ void RSTypefaceCache::CacheDrawingTypeface(uint64_t uniqueId,
     }
 }
 
-static bool EmptyAfterErase(std::vector<uint64_t>& vec, size_t ix)
+static bool g_emptyAfterErase(std::vector<uint64_t>& vec, size_t ix)
 {
     vec.erase(vec.begin() + ix);
     return vec.empty();
 }
 
-static void RemoveHashQueue(
+static void g_removeHashQueue(
     std::unordered_map<uint32_t, std::vector<uint64_t>>& typefaceHashQueue, uint64_t globalUniqueId)
 {
     for (auto& ref : typefaceHashQueue) {
-        size_t ix { 0 };
-        for (auto uid : ref.second) {
-            if (uid == globalUniqueId) {
-                if (EmptyAfterErase(ref.second, ix)) {
-                    typefaceHashQueue.erase(ref.first);
-                }
-                return;
+        auto it = std::find(ref.second.begin(), ref.second.end(), globalUniqueId);
+        if (it != ref.second.end()) {
+            size_t ix = std::distance(ref.second.begin(), it);
+            if (EmptyAfterErase(ref.second, ix)) {
+                typefaceHashQueue.erase(ref.first);
             }
-            ix++;
+            return;
         }
     }
 }
 
-static void RemoveHashMap(std::unordered_map<uint64_t, TypefaceTuple>& typefaceHashMap, uint64_t hash_value)
+static void g_removeHashMap(std::unordered_map<uint64_t, TypefaceTuple>& typefaceHashMap, uint64_t hash_value)
 {
     if (typefaceHashMap.find(hash_value) != typefaceHashMap.end()) {
         auto [typeface, ref] = typefaceHashMap[hash_value];
@@ -175,7 +174,7 @@ void RSTypefaceCache::RemoveDrawingTypefaceByGlobalUniqueId(uint64_t globalUniqu
 {
     std::lock_guard<std::mutex> lock(mapMutex_);
     // first check the queue;
-    RemoveHashQueue(typefaceHashQueue_, globalUniqueId);
+    g_removeHashQueue(typefaceHashQueue_, globalUniqueId);
     
     if (typefaceHashCode_.find(globalUniqueId) == typefaceHashCode_.end()) {
         return;
@@ -183,7 +182,7 @@ void RSTypefaceCache::RemoveDrawingTypefaceByGlobalUniqueId(uint64_t globalUniqu
     auto hash_value = typefaceHashCode_[globalUniqueId];
     typefaceHashCode_.erase(globalUniqueId);
 
-    RemoveHashMap(typefaceHashMap_, hash_value);
+    g_removeHashMap(typefaceHashMap_, hash_value);
 }
 
 std::shared_ptr<Drawing::Typeface> RSTypefaceCache::GetDrawingTypefaceCache(uint64_t uniqueId) const
@@ -200,7 +199,7 @@ std::shared_ptr<Drawing::Typeface> RSTypefaceCache::GetDrawingTypefaceCache(uint
     return nullptr;
 }
 
-static void PurgeMapWithPid(pid_t pid, std::unordered_map<uint32_t, std::vector<uint64_t>>& map)
+static void g_purgeMapWithPid(pid_t pid, std::unordered_map<uint32_t, std::vector<uint64_t>>& map)
 {
     // go through queued items;
     std::vector<size_t> removeList;
@@ -214,10 +213,10 @@ static void PurgeMapWithPid(pid_t pid, std::unordered_map<uint32_t, std::vector<
                 ix++;
                 continue;
             }
-            if (EmptyAfterErase(ref.second, ix)) {
+            if (g_emptyAfterErase(ref.second, ix)) {
                 removeList.push_back(ref.first);
                 break;
-            }            
+            }
         }
     }
 
@@ -230,13 +229,13 @@ static void PurgeMapWithPid(pid_t pid, std::unordered_map<uint32_t, std::vector<
 void RSTypefaceCache::RemoveDrawingTypefacesByPid(pid_t pid)
 {
     std::lock_guard<std::mutex> lock(mapMutex_);
-    PurgeMapWithPid(pid, typefaceHashQueue_);
+    g_purgeMapWithPid(pid, typefaceHashQueue_);
 
     for (auto it = typefaceHashCode_.begin(); it != typefaceHashCode_.end();) {
         uint64_t uniqueId = it->first;
         pid_t pidCache = static_cast<pid_t>(uniqueId >> 32);
         if (pid == pidCache) {
-            RemoveHashMap(typefaceHashMap_, it->second);
+            g_removeHashMap(typefaceHashMap_, it->second);
             it = typefaceHashCode_.erase(it);
         } else {
             ++it;
