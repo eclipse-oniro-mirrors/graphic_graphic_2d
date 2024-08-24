@@ -402,6 +402,13 @@ void RSPropertyDrawableUtils::DrawForegroundFilter(RSPaintFilterCanvas& canvas,
         return;
     }
     auto foregroundFilter = std::static_pointer_cast<RSDrawingFilterOriginal>(rsFilter);
+    if (foregroundFilter->GetFilterType() == RSFilter::MOTION_BLUR) {
+        if (canvas.GetDisableFilterCache()) {
+            foregroundFilter->DisableMotionBlur(true);
+        } else {
+            foregroundFilter->DisableMotionBlur(false);
+        }
+    }
 
     foregroundFilter->DrawImageRect(canvas, imageSnapshot, Drawing::Rect(0, 0, imageSnapshot->GetWidth(),
         imageSnapshot->GetHeight()), Drawing::Rect(0, 0, imageSnapshot->GetWidth(), imageSnapshot->GetHeight()));
@@ -666,7 +673,7 @@ std::shared_ptr<Drawing::ShaderEffect> RSPropertyDrawableUtils::MakeBinarization
 }
 
 std::shared_ptr<Drawing::Blender> RSPropertyDrawableUtils::MakeDynamicBrightnessBlender(
-    const RSDynamicBrightnessPara& params)
+    const RSDynamicBrightnessPara& params, float ratio)
 {
     if (!RSSystemProperties::GetDynamicBrightnessEnabled()) {
         return nullptr;
@@ -679,6 +686,7 @@ std::shared_ptr<Drawing::Blender> RSPropertyDrawableUtils::MakeDynamicBrightness
     }
 
     RS_OPTIONAL_TRACE_NAME("RSPropertyDrawableUtils::MakeDynamicBrightnessBlender");
+    builder->SetUniform("ubo_ratio", ratio);
     builder->SetUniform("ubo_fract", std::clamp(params.fraction_, 0.0f, 1.0f));
     builder->SetUniform("ubo_cubic", params.rates_.x_);
     builder->SetUniform("ubo_quad", params.rates_.y_);
@@ -698,6 +706,7 @@ std::shared_ptr<Drawing::RuntimeBlenderBuilder> RSPropertyDrawableUtils::MakeDyn
 {
     RS_OPTIONAL_TRACE_NAME("RSPropertyDrawableUtils::MakeDynamicBrightnessBuilder");
     static constexpr char prog[] = R"(
+        uniform half ubo_ratio;
         uniform half ubo_fract;
         uniform half ubo_rate;
         uniform half ubo_degree;
@@ -712,7 +721,11 @@ std::shared_ptr<Drawing::RuntimeBlenderBuilder> RSPropertyDrawableUtils::MakeDyn
         uniform half ubo_negb;
 
         const vec3 baseVec = vec3(0.2412016, 0.6922296, 0.0665688);
-
+        const float eps = 1e-6;
+        half3 getUnpremulRGB(half4 color) {
+            half factor = 1.0 / (max(ubo_ratio, eps) * max(color.a, eps));
+            return clamp(color.rgb * factor, 0.0, 1.0);
+        }
         half3 gray(half3 x, half4 coeff) {
             return coeff.x * x * x * x + coeff.y * x * x + coeff.z * x + coeff.w;
         }
@@ -726,14 +739,13 @@ std::shared_ptr<Drawing::RuntimeBlenderBuilder> RSPropertyDrawableUtils::MakeDyn
         }
         half4 main(half4 src, half4 dst) {
             half4 coeff = half4(ubo_cubic, ubo_quad, ubo_rate, ubo_degree);
-            half3 color = gray(dst.rgb / (dst.a + 0.000001), coeff); // restore alpha-premul first
+            half3 color = gray(getUnpremulRGB(dst), coeff);
             half3 pos = half3(ubo_posr, ubo_posg, ubo_posb);
             half3 neg = half3(ubo_negr, ubo_negg, ubo_negb);
             color = sat(color, ubo_baseSat, pos, neg);
             color = clamp(color, 0.0, 1.0);
-            color = mix(color, src.rgb, ubo_fract);
-            half4 res = half4(mix(dst.rgb, color, src.a), 1.0);
-            return dst.a * res; // alpha-premul
+            color = mix(color, getUnpremulRGB(src), ubo_fract);
+            return half4(mix(dst.rgb, color * ubo_ratio * dst.a, src.a), dst.a);
         }
     )";
     if (dynamicBrightnessBlenderEffect_ == nullptr) {
@@ -923,8 +935,16 @@ void RSPropertyDrawableUtils::DrawShadow(Drawing::Canvas* canvas, Drawing::Path&
 }
 
 void RSPropertyDrawableUtils::DrawShadowMaskFilter(Drawing::Canvas* canvas, Drawing::Path& path, const float& offsetX,
-    const float& offsetY, const float& radius, Color spotColor)
+    const float& offsetY, const float& radius, const bool& isFilled, Color spotColor)
 {
+    RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO,
+        "RSPropertyDrawableUtils::DrawShadowMaskFilter, Radius: %f, ShadowOffsetX: "
+        "%f, ShadowOffsetY: %f, bounds: %s",
+        radius, offsetX, offsetY, path.GetBounds().ToString().c_str());
+    Drawing::AutoCanvasRestore acr(*canvas, true);
+    if (!isFilled) {
+        canvas->ClipPath(path, Drawing::ClipOp::DIFFERENCE, true);
+    }
     path.Offset(offsetX, offsetY);
     Drawing::Brush brush;
     brush.SetColor(Drawing::Color::ColorQuadSetARGB(
