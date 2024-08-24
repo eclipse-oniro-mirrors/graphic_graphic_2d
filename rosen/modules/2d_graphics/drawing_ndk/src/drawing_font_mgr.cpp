@@ -64,9 +64,6 @@ void OH_Drawing_FontMgrDestroy(OH_Drawing_FontMgr* drawingFontMgr)
 
 int OH_Drawing_FontMgrGetFamilyCount(OH_Drawing_FontMgr* drawingFontMgr)
 {
-    if (drawingFontMgr == nullptr) {
-        return 0;
-    }
     FontMgr* fontMgr = CastToFontMgr(drawingFontMgr);
     if (fontMgr == nullptr) {
         return 0;
@@ -87,6 +84,7 @@ static bool CopyStrData(char** destination, const std::string& source)
     auto retCopy = strcpy_s(*destination, destinationSize, source.c_str());
     if (retCopy != 0) {
         delete[] *destination;
+        *destination = nullptr;
         return false;
     }
     return true;
@@ -94,11 +92,8 @@ static bool CopyStrData(char** destination, const std::string& source)
 
 char* OH_Drawing_FontMgrGetFamilyName(OH_Drawing_FontMgr* drawingFontMgr, int index)
 {
-    if (drawingFontMgr == nullptr) {
-        return nullptr;
-    }
     FontMgr* fontMgr = CastToFontMgr(drawingFontMgr);
-    if (fontMgr == nullptr) {
+    if (fontMgr == nullptr || index < 0) {
         return nullptr;
     }
     std::string strFamilyName = "";
@@ -121,11 +116,8 @@ void OH_Drawing_FontMgrDestroyFamilyName(char* familyName)
 
 OH_Drawing_FontStyleSet* OH_Drawing_FontMgrCreateFontStyleSet(OH_Drawing_FontMgr* drawingFontMgr, int index)
 {
-    if (drawingFontMgr == nullptr) {
-        return nullptr;
-    }
     FontMgr* fontMgr = CastToFontMgr(drawingFontMgr);
-    if (fontMgr == nullptr) {
+    if (fontMgr == nullptr || index < 0) {
         return nullptr;
     }
     FontStyleSet* fontStyleSet = fontMgr->CreateStyleSet(index);
@@ -149,7 +141,7 @@ void OH_Drawing_FontMgrDestroyFontStyleSet(OH_Drawing_FontStyleSet* drawingFontS
 
 OH_Drawing_FontStyleSet* OH_Drawing_FontMgrMatchFamily(OH_Drawing_FontMgr* drawingFontMgr, const char* familyName)
 {
-    if (drawingFontMgr == nullptr || familyName == nullptr) {
+    if (familyName == nullptr) {
         return nullptr;
     }
     FontMgr* fontMgr = CastToFontMgr(drawingFontMgr);
@@ -169,7 +161,7 @@ OH_Drawing_FontStyleSet* OH_Drawing_FontMgrMatchFamily(OH_Drawing_FontMgr* drawi
 OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyle(
     OH_Drawing_FontMgr* drawingFontMgr, const char* familyName, OH_Drawing_FontStyleStruct fontStyle)
 {
-    if (drawingFontMgr == nullptr || familyName == nullptr) {
+    if (familyName == nullptr) {
         return nullptr;
     }
     FontMgr* fontMgr = CastToFontMgr(drawingFontMgr);
@@ -191,7 +183,7 @@ OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyleCharacter(OH_Drawing_Font
     const char* familyName, OH_Drawing_FontStyleStruct fontStyle, const char* bcp47[], int bcp47Count,
     int32_t character)
 {
-    if (drawingFontMgr == nullptr || familyName == nullptr || bcp47 == nullptr || bcp47Count <= 0) {
+    if (familyName == nullptr || bcp47 == nullptr || bcp47Count <= 0) {
         return nullptr;
     }
     FontMgr* fontMgr = CastToFontMgr(drawingFontMgr);
@@ -212,7 +204,7 @@ OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyleCharacter(OH_Drawing_Font
 
 OH_Drawing_Typeface* OH_Drawing_FontStyleSetCreateTypeface(OH_Drawing_FontStyleSet* fontStyleSet, int index)
 {
-    if (fontStyleSet == nullptr) {
+    if (fontStyleSet == nullptr || index < 0) {
         return nullptr;
     }
     FontStyleSet* converFontStyleSet = reinterpret_cast<FontStyleSet*>(fontStyleSet);
@@ -235,7 +227,7 @@ OH_Drawing_FontStyleStruct OH_Drawing_FontStyleSetGetStyle(
     fontStyleStruct.weight = FONT_WEIGHT_400;
     fontStyleStruct.width = FONT_WIDTH_NORMAL;
     fontStyleStruct.slant = FONT_STYLE_NORMAL;
-    if (styleName == nullptr || fontStyleSet == nullptr) {
+    if (styleName == nullptr || fontStyleSet == nullptr || index < 0) {
         return fontStyleStruct;
     }
     FontStyleSet* converFontStyleSet = reinterpret_cast<FontStyleSet*>(fontStyleSet);

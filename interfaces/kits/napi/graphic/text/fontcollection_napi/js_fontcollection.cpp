@@ -94,13 +94,13 @@ napi_value JsFontCollection::Init(napi_env env, napi_value exportObj)
 
     status = napi_create_reference(env, constructor, 1, &constructor_);
     if (status != napi_ok) {
-        TEXT_LOGE("Failed to create reference to constructor");
+        TEXT_LOGE("Failed to create reference");
         return nullptr;
     }
 
     status = napi_set_named_property(env, exportObj, CLASS_NAME.c_str(), constructor);
     if (status != napi_ok) {
-        TEXT_LOGE("Failed to set named property for constructor");
+        TEXT_LOGE("Failed to set named property");
         return nullptr;
     }
     return exportObj;

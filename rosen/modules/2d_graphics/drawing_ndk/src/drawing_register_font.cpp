@@ -75,7 +75,7 @@ static uint32_t LoadFromFontCollection(
     return 0;
 }
 
-uint32_t OH_Drawing_GetFontData(const std::string& path, std::unique_ptr<char[]>& buffer, std::streamsize& size)
+uint32_t LoadFontDataFromFile(const std::string& path, std::unique_ptr<char[]>& buffer, std::streamsize& size)
 {
 #ifdef BUILD_NON_SDK_VER
     std::error_code ec;
@@ -126,13 +126,13 @@ uint32_t OH_Drawing_GetFontData(const std::string& path, std::unique_ptr<char[]>
 uint32_t OH_Drawing_RegisterFont(
     OH_Drawing_FontCollection* fontCollection, const char* fontFamily, const char* familySrc)
 {
-    if (fontCollection == nullptr || fontFamily == nullptr || familySrc == nullptr) {
+    if (fontCollection == nullptr || familySrc == nullptr) {
         return ERROR_NULL_FONT_COLLECTION;
     }
     const std::string path = familySrc;
     std::unique_ptr<char[]> buffer;
-    std::streamsize size;
-    uint32_t result = OH_Drawing_GetFontData(path, buffer, size);
+    std::streamsize size = 0;
+    uint32_t result = LoadFontDataFromFile(path, buffer, size);
     if (result != 0) {
         return result;
     }
@@ -144,7 +144,7 @@ uint32_t OH_Drawing_RegisterFont(
 uint32_t OH_Drawing_RegisterFontBuffer(
     OH_Drawing_FontCollection* fontCollection, const char* fontFamily, uint8_t* fontBuffer, size_t length)
 {
-    if (fontCollection == nullptr || fontFamily == nullptr) {
+    if (fontCollection == nullptr) {
         return ERROR_NULL_FONT_COLLECTION;
     }
     if (fontBuffer == nullptr) {
