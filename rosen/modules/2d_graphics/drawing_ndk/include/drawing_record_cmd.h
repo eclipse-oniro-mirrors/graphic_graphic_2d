@@ -100,7 +100,7 @@ OH_Drawing_ErrorCode OH_Drawing_RecordCmdUtilsBeginRecording(OH_Drawing_RecordCm
  * @since 13
  * @version 1.0
  */
-OH_Drawing_ErrorCode OH_Drawing_RecordCmdUtilsFinishingRecording(OH_Drawing_RecordCmdUtils* recordCmdUtils,
+OH_Drawing_ErrorCode OH_Drawing_RecordCmdUtilsFinishRecording(OH_Drawing_RecordCmdUtils* recordCmdUtils,
     OH_Drawing_RecordCmd** recordCmd);
 
 /**
