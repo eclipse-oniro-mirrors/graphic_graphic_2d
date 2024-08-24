@@ -1597,7 +1597,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnable()
 void RSUniRenderVisitor::PrevalidateHwcNode()
 {
     if (!isPrevalidateHwcNodeEnable_) {
-        RS_LOGD("RSUniRenderVisitor::PrevalidateHwcNode prevalidate close");
+        RS_LOGD_IF(DEBUG_PREVALIDATE, "RSUniRenderVisitor::PrevalidateHwcNode prevalidate close");
         return;
     }
     auto& curMainAndLeashSurfaces = curDisplayNode_->GetAllMainAndLeashSurfaces();
@@ -1614,7 +1614,7 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
         uiFirstLayers, curFps, static_cast<float>(zOrder) + 2.f, screenInfo_);
     RS_TRACE_NAME_FMT("PrevalidateHwcNode hwcLayer: %u, uifirstLayer: %u", prevalidLayers.size(), uiFirstLayers.size());
     if (prevalidLayers.size() == 0 && uiFirstLayers.size() == 0) {
-        RS_LOGD("RSUniRenderVisitor::PrevalidateHwcNode no hardware layer");
+        RS_LOGI_IF(DEBUG_PREVALIDATE, "RSUniRenderVisitor::PrevalidateHwcNode no hardware layer");
         return;
     }
     // add display layer
@@ -1637,13 +1637,13 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
     }
     std::map<uint64_t, RequestCompositionType> strategy;
     if (!RSUniHwcPrevalidateUtil::GetInstance().PreValidate(screenInfo_.id, prevalidLayers, strategy)) {
-        RS_LOGD("RSUniRenderVisitor::PrevalidateHwcNode prevalidate failed");
+        RS_LOGI_IF(DEBUG_PREVALIDATE, "RSUniRenderVisitor::PrevalidateHwcNode prevalidate failed");
         return;
     }
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
     for (auto it : strategy) {
-        RS_LOGD("RSUniRenderVisitor::PrevalidateHwcNode id: %{public}" PRIu64 ", result: %{public}d",
-            it.first, it.second);
+        RS_LOGD_IF(DEBUG_PREVALIDATE, "RSUniRenderVisitor::PrevalidateHwcNode id: %{public}" PRIu64 ","
+            " result: %{public}d", it.first, it.second);
         if (it.second == RequestCompositionType::DEVICE) {
             continue;
         }
