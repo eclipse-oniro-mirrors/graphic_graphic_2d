@@ -46,7 +46,7 @@ std::shared_ptr<FontMgrImpl> SkiaFontMgr::CreateDynamicFontMgr()
 Typeface* SkiaFontMgr::LoadDynamicFont(const std::string& familyName, const uint8_t* data, size_t dataLength)
 {
     auto dynamicFontMgr = static_cast<txt::DynamicFontManager*>(skFontMgr_.get());
-    if (dynamicFontMgr == nullptr || data == nullptr || dataLength == 0) {
+    if (dynamicFontMgr == nullptr) {
         LOGD("SkiaFontMgr::LoadDynamicFont, dynamicFontMgr nullptr");
         return nullptr;
     }

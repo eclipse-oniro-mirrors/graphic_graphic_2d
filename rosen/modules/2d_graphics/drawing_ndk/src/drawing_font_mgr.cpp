@@ -161,9 +161,6 @@ OH_Drawing_FontStyleSet* OH_Drawing_FontMgrMatchFamily(OH_Drawing_FontMgr* drawi
 OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyle(
     OH_Drawing_FontMgr* drawingFontMgr, const char* familyName, OH_Drawing_FontStyleStruct fontStyle)
 {
-    if (familyName == nullptr) {
-        return nullptr;
-    }
     FontMgr* fontMgr = CastToFontMgr(drawingFontMgr);
     if (fontMgr == nullptr) {
         return nullptr;
@@ -183,7 +180,7 @@ OH_Drawing_Typeface* OH_Drawing_FontMgrMatchFamilyStyleCharacter(OH_Drawing_Font
     const char* familyName, OH_Drawing_FontStyleStruct fontStyle, const char* bcp47[], int bcp47Count,
     int32_t character)
 {
-    if (familyName == nullptr || bcp47 == nullptr || bcp47Count <= 0) {
+    if (bcp47 == nullptr || bcp47Count <= 0) {
         return nullptr;
     }
     FontMgr* fontMgr = CastToFontMgr(drawingFontMgr);
@@ -208,9 +205,6 @@ OH_Drawing_Typeface* OH_Drawing_FontStyleSetCreateTypeface(OH_Drawing_FontStyleS
         return nullptr;
     }
     FontStyleSet* converFontStyleSet = reinterpret_cast<FontStyleSet*>(fontStyleSet);
-    if (converFontStyleSet == nullptr) {
-        return nullptr;
-    }
     auto drawingTypeface = converFontStyleSet->CreateTypeface(index);
     if (!drawingTypeface) {
         return nullptr;
@@ -274,9 +268,6 @@ void OH_Drawing_FontStyleSetFreeStyleName(char** styleName)
 OH_Drawing_Typeface* OH_Drawing_FontStyleSetMatchStyle(
     OH_Drawing_FontStyleSet* fontStyleSet, OH_Drawing_FontStyleStruct fontStyleStruct)
 {
-    if (fontStyleSet == nullptr) {
-        return nullptr;
-    }
     FontStyleSet* converFontStyleSet = reinterpret_cast<FontStyleSet*>(fontStyleSet);
     if (converFontStyleSet == nullptr) {
         return nullptr;
@@ -293,9 +284,6 @@ OH_Drawing_Typeface* OH_Drawing_FontStyleSetMatchStyle(
 
 int OH_Drawing_FontStyleSetCount(OH_Drawing_FontStyleSet* fontStyleSet)
 {
-    if (fontStyleSet == nullptr) {
-        return 0;
-    }
     FontStyleSet* converFontStyleSet = reinterpret_cast<FontStyleSet*>(fontStyleSet);
     if (converFontStyleSet == nullptr) {
         return 0;

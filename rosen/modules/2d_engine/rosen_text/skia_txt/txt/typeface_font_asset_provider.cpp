@@ -34,7 +34,7 @@ std::string TypefaceFontAssetProvider::GetFamilyName(int index) const
 {
     std::unique_lock lock(assetMutex_);
     if ((index < 0) || (index >= static_cast<int>(familyNames_.size()))) {
-        TEXT_LOGW("Array bounds exceeded, familyName Index: %d", index);
+        TEXT_LOGW("Invalid index:%{public}d", index);
         return "";
     }
     return familyNames_[index];
@@ -116,6 +116,9 @@ int TypefaceFontStyleSet::count()
 void TypefaceFontStyleSet::getStyle(int index, SkFontStyle* style, SkString* name)
 {
     SkASSERT(static_cast<size_t>(index) < typefaces_.size());
+    if (static_cast<size_t>(index) >= typefaces_.size()) {
+        return;
+    }
     if (style) {
         *style = typefaces_[index]->fontStyle();
     }
