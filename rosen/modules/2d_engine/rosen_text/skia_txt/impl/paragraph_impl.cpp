@@ -311,19 +311,11 @@ TextStyle ParagraphImpl::SkStyleToTextStyle(const skt::TextStyle& skStyle)
     txt.locale = skStyle.getLocale().c_str();
     if (skStyle.hasBackground()) {
         PaintID backgroundId = std::get<PaintID>(skStyle.getBackgroundPaintOrID());
-        if ((0 <= backgroundId) && (backgroundId < static_cast<int>(paints_.size()))) {
-            txt.background = paints_[backgroundId];
-        } else {
-            TEXT_LOGW("Invalid background Id:%{public}d", backgroundId);
-        }
+        txt.background = paints_[backgroundId];
     }
     if (skStyle.hasForeground()) {
         PaintID foregroundId = std::get<PaintID>(skStyle.getForegroundPaintOrID());
-        if ((0 <= foregroundId) && (foregroundId < static_cast<int>(paints_.size()))) {
-            txt.foreground = paints_[foregroundId];
-        } else {
-            TEXT_LOGW("Invalid foreground Id:%{public}d", foregroundId);
-        }
+        txt.foreground = paints_[foregroundId];
     }
 
     txt.textShadows.clear();

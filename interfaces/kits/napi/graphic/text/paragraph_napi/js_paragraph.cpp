@@ -711,6 +711,12 @@ JsParagraph::~JsParagraph()
 {
 }
 
+std::shared_ptr<Typography> JsParagraph::GetParagraph()
+{
+    std::shared_ptr<Typography> typography = std::move(paragraph_);
+    return typography;
+}
+
 napi_value JsParagraph::CreateJsTypography(napi_env env, std::unique_ptr<Typography> typography)
 {
     napi_value constructor = nullptr;
