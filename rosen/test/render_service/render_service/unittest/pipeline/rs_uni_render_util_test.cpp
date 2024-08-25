@@ -1841,6 +1841,7 @@ HWTEST_F(RSUniRenderUtilTest, CreateBufferDrawParam002, TestSize.Level2)
     rsDisplayRenderNode->renderDrawable_ = rsDisplayRenderNodeDrawable;
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     auto buffer = surfaceNode->surfaceHandler_->GetBuffer();
+    ASSERT_NE(buffer, nullptr);
     buffer->SetSurfaceBufferWidth(400);
     buffer->SetSurfaceBufferHeight(400);
     rsDisplayRenderNodeDrawable->surfaceHandler_->buffer_.buffer = buffer;
