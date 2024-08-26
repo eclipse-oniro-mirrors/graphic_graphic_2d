@@ -1584,7 +1584,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnable()
             UpdateHwcNodeEnableByRotateAndAlpha(hwcNodePtr);
             UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, hwcNodePtr);
 
-            if (hwcNodePtr->GetAncoFlags() & static_cast<int32_t>(AncoFlags::IS_ANCO_NODE)) {
+            if (hwcNodePtr->GetAncoFlags() & static_cast<uint32_t>(AncoFlags::IS_ANCO_NODE)) {
                 ancoNodes.emplace_back(hwcNodePtr);
                 ancoHasGpu = (ancoHasGpu || hwcNodePtr->IsHardwareForcedDisabled());
             }
