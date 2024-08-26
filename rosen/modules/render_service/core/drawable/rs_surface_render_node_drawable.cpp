@@ -699,7 +699,7 @@ void RSSurfaceRenderNodeDrawable::DealWithSelfDrawingNodeBuffer(
     DealWithHdr(surfaceParams);
 #endif
     if (surfaceParams.GetHardwareEnabled() && !RSUniRenderThread::IsInCaptureProcess()) {
-        if (!IsHardwareEnabledTopSurface()) {
+        if (!IsHardwareEnabledTopSurface(surfaceParams)) {
             ClipHoleForSelfDrawingNode(canvas, surfaceParams);
         }
         return;
