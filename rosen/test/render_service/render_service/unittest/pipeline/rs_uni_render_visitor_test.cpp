@@ -1317,6 +1317,91 @@ HWTEST_F(RSUniRenderVisitorTest, ResetCurSurfaceInfoAsUpperSurfaceParent002, Tes
 }
 
 /*
+ * @tc.name: ResetCurSurfaceInfoAsUpperSurfaceParent003
+ * @tc.desc: Reset curSurfaceInfo when upper surface is leash/main window
+ * @tc.type: FUNC
+ * @tc.require: issuesI8MQCS
+ */
+HWTEST_F(RSUniRenderVisitorTest, ResetCurSurfaceInfoAsUpperSurfaceParent003, TestSize.Level2)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    auto upperSurfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNode, nullptr);
+    ASSERT_NE(upperSurfaceNode, nullptr);
+    upperSurfaceNode->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
+    surfaceNode->SetParent(upperSurfaceNode);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
+    NodeId id = 0;
+    RSDisplayNodeConfig config;
+    auto displayNode = std::make_shared<RSDisplayRenderNode>(id, config);
+    rsUniRenderVisitor->curDisplayNode_ = displayNode;
+    rsUniRenderVisitor->ResetCurSurfaceInfoAsUpperSurfaceParent(*surfaceNode);
+    ASSERT_EQ(rsUniRenderVisitor->curSurfaceNode_, surfaceNode);
+}
+
+/*
+ * @tc.name: UpdateChildHwcNodeEnabledByHwcNodeBelow
+ * @tc.desc: Test RSUniRenderVistorTest.UpdateChildHwcNodeEnableByHwcNodeBelow
+ * @tc.type: FUNC
+ * @tc.require: issuesI8MQCS
+ */
+HWTEST_F(RSUniRenderVisitorTest, UpdateChildHwcNodeEnableByHwcNodeBelow, TestSize.Level2)
+{
+    auto appNode = RSTestUtil::CreateSurfaceNode();
+    RSSurfaceRenderNodeConfig surfaceConfig;
+    surfaceConfig.id = 1;
+    auto hwcNode1 = std::make_shared<RSSurfaceRenderNode>(surfaceConfig);
+    ASSERT_NE(hwcNode1, nullptr);
+    surfaceConfig.id = 2;
+    auto hwcNode2 = std::make_shared<RSSurfaceRenderNode>(surfaceConfig);
+    ASSERT_NE(hwcNode2, nullptr);
+    std::weak_ptr<RSSurfaceRenderNode> hwcNode3;
+    hwcNode1->SetIsOnTheTree(true);
+    hwcNode2->SetIsOnTheTree(false);
+    appNode->AddChildHardwareEnabledNode(hwcNode1);
+    appNode->AddChildHardwareEnabledNode(hwcNode2);
+    appNode->AddChildHardwareEnabledNode(hwcNode3);
+    std::vector<RectI> hwcRects;
+    hwcRects.emplace_back(0, 0, 0, 0);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    rsUniRenderVisitor->UpdateChildHwcNodeEnableByHwcNodeBelow(hwcRects, appNode);
+}
+
+/*
+ * @tc.name: PrepareForUIFirstNode001
+ * @tc.desc: Test PrePareForUIFirstNode with last frame uifirst flag is not leash window and hardware enabled
+ * @tc.type: FUNC
+ * @tc.require: issuesI8MQCS
+ */
+HWTEST_F(RSUniRenderVisitorTest, PrepareForCapsuleWindowMode001, TestSize.Level2)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetLastFrameUifirstFlag(MultiThreadCacheType::NONE);
+    surfaceNode->SetHardwareForcedDisabledState(false);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    rsUniRenderVisitor->PrepareForUIFirstNode(*surfaceNode);
+}
+
+/*
+ * @tc.name: PrepareForUIFirstNode002
+ * @tc.desc: Test PrePareForUIFirstNode with last frame uifirst flag is leash window and hardware disabled
+ * @tc.type: FUNC
+ * @tc.require: issuesI8MQCS
+ */
+HWTEST_F(RSUniRenderVisitorTest, PrepareForCapsuleWindowMode002, TestSize.Level2)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetLastFrameUifirstFlag(MultiThreadCacheType::LEASH_WINDOW);
+    surfaceNode->SetHardwareForcedDisabledState(true);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    rsUniRenderVisitor->PrepareForUIFirstNode(*surfaceNode);
+}
+
+/*
  * @tc.name: QuickPrepareSurfaceRenderNode001
  * @tc.desc: Test RSUniRenderVisitorTest.PrepareSurfaceRenderNode while surface node has security layer
  * @tc.type: FUNC
