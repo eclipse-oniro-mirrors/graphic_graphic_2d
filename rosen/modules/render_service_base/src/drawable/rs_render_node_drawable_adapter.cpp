@@ -499,5 +499,9 @@ const RectI RSRenderNodeDrawableAdapter::GetFilterCachedRegion() const
         return rect;
     }
 }
+void RSRenderNodeDrawableAdapter::SetSkipCacheLayer(bool hasSkipCacheLayer)
+{
+    hasSkipCacheLayer_ = hasSkipCacheLayer;
+}
 
 } // namespace OHOS::Rosen::DrawableV2

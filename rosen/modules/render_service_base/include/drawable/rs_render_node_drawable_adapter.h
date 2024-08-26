@@ -132,6 +132,8 @@ public:
     bool IsFilterCacheValidForOcclusion() const;
     const RectI GetFilterCachedRegion() const;
 
+    void SetSkipCacheLayer(bool hasSkipCacheLayer);
+
 protected:
     // Util functions
     std::string DumpDrawableVec(const std::shared_ptr<RSRenderNode>& renderNode) const;
@@ -191,6 +193,8 @@ protected:
 #else
     static RSRenderNodeDrawableAdapter* curDrawingCacheRoot_;
 #endif
+    // if the node needs to avoid drawing cache because of some layers, such as the security layer...
+    bool hasSkipCacheLayer_ = false;
     ClearSurfaceTask clearSurfaceTask_ = nullptr;
 private:
     static void InitRenderParams(const std::shared_ptr<const RSRenderNode>& node,
