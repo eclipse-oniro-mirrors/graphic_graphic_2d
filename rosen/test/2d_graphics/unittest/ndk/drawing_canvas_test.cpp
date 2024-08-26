@@ -31,6 +31,7 @@
 #include "drawing_pen.h"
 #include "drawing_pixel_map.h"
 #include "drawing_point.h"
+#include "drawing_record_cmd.h"
 #include "drawing_rect.h"
 #include "drawing_region.h"
 #include "drawing_round_rect.h"
@@ -1670,6 +1671,92 @@ HWTEST_F(NativeDrawingCanvasTest, NativeDrawingCanvasTest_CanvasDrawSingleCharac
     const char* strThree = "";
     EXPECT_EQ(OH_Drawing_CanvasDrawSingleCharacter(canvas_, strThree, font, x, y), OH_DRAWING_ERROR_INVALID_PARAMETER);
     OH_Drawing_FontDestroy(font);
+}
+
+/*
+ * @tc.name: NativeDrawingCanvasTest_CanvasDrawRecordCmd001
+ * @tc.desc: test for Recod an OH_Drawing_CanvasDrawRecordCmd object for an OH_Drawing_Filter object.
+ * @tc.type: FUNC
+ * @tc.require: AR000GTO5R
+ */
+HWTEST_F(NativeDrawingCanvasTest, NativeDrawingCanvasTest_CanvasDrawRecordCmd001, TestSize.Level1)
+{
+    int32_t width = 10;
+    int32_t height = 10;
+    OH_Drawing_Canvas* canvas = nullptr;
+    OH_Drawing_RecordCmdUtils* recordCmdUtils = OH_Drawing_RecordCmdUtilsCreate();
+    OH_Drawing_ErrorCode code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, &canvas);
+    EXPECT_EQ(code, OH_DRAWING_SUCCESS);
+    OH_Drawing_RecordCmd* recordCmd = nullptr;
+    code = OH_Drawing_RecordCmdUtilsFinishRecording(recordCmdUtils, &recordCmd);
+    EXPECT_EQ(code, OH_DRAWING_SUCCESS);
+    OH_Drawing_Canvas* recordCanvas = OH_Drawing_CanvasCreate();
+    code = OH_Drawing_CanvasDrawRecordCmd(recordCanvas, recordCmd);
+    EXPECT_EQ(code, OH_DRAWING_SUCCESS);
+    code = OH_Drawing_RecordCmdDestroy(recordCmd);
+    EXPECT_EQ(code, OH_DRAWING_SUCCESS);
+    code = OH_Drawing_RecordCmdUtilsDestroy(recordCmdUtils);
+    EXPECT_EQ(code, OH_DRAWING_SUCCESS);
+    OH_Drawing_CanvasDestroy(recordCanvas);
+}
+
+/*
+ * @tc.name: NativeDrawingCanvasTest_FilterDrawRecordCmd002
+ * @tc.desc: test for Recod an OH_Drawing_CanvasDrawRecordCmd object for an OH_Drawing_Filter object.
+ * @tc.type: FUNC
+ * @tc.require: AR000GTO5R
+ */
+HWTEST_F(NativeDrawingCanvasTest, NativeDrawingCanvasTest_FilterDrawRecordCmd002, TestSize.Level1)
+{
+    int32_t width = 10;
+    int32_t height = 10;
+    OH_Drawing_Canvas* canvas = nullptr;
+    OH_Drawing_RecordCmdUtils* recordCmdUtils = OH_Drawing_RecordCmdUtilsCreate();
+    OH_Drawing_ErrorCode code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, &canvas);
+    EXPECT_EQ(code, OH_DRAWING_SUCCESS);
+    OH_Drawing_RecordCmd* recordCmd = nullptr;
+    code = OH_Drawing_RecordCmdUtilsFinishRecording(recordCmdUtils, &recordCmd);
+    EXPECT_EQ(code, OH_DRAWING_SUCCESS);
+    OH_Drawing_Canvas* recordCanvas = nullptr;
+    code = OH_Drawing_CanvasDrawRecordCmd(recordCanvas, recordCmd);
+    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
+    code = OH_Drawing_RecordCmdDestroy(recordCmd);
+    EXPECT_EQ(code, OH_DRAWING_SUCCESS);
+    code = OH_Drawing_RecordCmdUtilsDestroy(recordCmdUtils);
+    EXPECT_EQ(code, OH_DRAWING_SUCCESS);
+    OH_Drawing_CanvasDestroy(recordCanvas);
+}
+
+/*
+ * @tc.name: NativeDrawingCanvasTest_FilterDrawRecordCmd003
+ * @tc.desc: test for Recod an OH_Drawing_CanvasDrawRecordCmd object for an OH_Drawing_Filter object.
+ * @tc.type: FUNC
+ * @tc.require: AR000GTO5R
+ */
+HWTEST_F(NativeDrawingCanvasTest, NativeDrawingCanvasTest_FilterDrawRecordCmd003, TestSize.Level1)
+{
+    OH_Drawing_Canvas* canvas = OH_Drawing_CanvasCreate();
+    OH_Drawing_RecordCmd* recordCmd = nullptr;
+    OH_Drawing_ErrorCode code = OH_Drawing_CanvasDrawRecordCmd(canvas, recordCmd);
+    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
+    code = OH_Drawing_RecordCmdDestroy(recordCmd);
+    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
+}
+
+/*
+ * @tc.name: NativeDrawingCanvasTest_FilterDrawRecordCmd004
+ * @tc.desc: test for Recod an OH_Drawing_CanvasDrawRecordCmd object for an OH_Drawing_Filter object.
+ * @tc.type: FUNC
+ * @tc.require: AR000GTO5R
+ */
+HWTEST_F(NativeDrawingCanvasTest, NativeDrawingCanvasTest_FilterDrawRecordCmd004, TestSize.Level1)
+{
+    OH_Drawing_Canvas* canvas = nullptr;
+    OH_Drawing_RecordCmd* recordCmd = nullptr;
+    OH_Drawing_ErrorCode code = OH_Drawing_CanvasDrawRecordCmd(canvas, recordCmd);
+    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
+    code = OH_Drawing_RecordCmdDestroy(recordCmd);
+    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 } // namespace Drawing
 } // namespace Rosen
