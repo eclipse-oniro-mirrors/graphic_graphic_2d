@@ -206,7 +206,7 @@ private:
         return isOpincMarkCached_;
     }
     bool IsOpincNodeInScreenRect(RSRenderParams& params);
-    static thread_local bool isNeedOffScreenCache_;
+    static thread_local bool isOffScreenWithClipHole_;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

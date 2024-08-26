@@ -331,6 +331,12 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             surfaceParams->GetGlobalAlpha(), surfaceParams->GetId());
         return;
     }
+    hasSkipCacheLayer_ =
+        (surfaceParams->GetIsSecurityLayer() && !uniParam->GetSecExemption()) || surfaceParams->GetIsSkipLayer();
+    if (hasSkipCacheLayer_ && curDrawingCacheRoot_) {
+        curDrawingCacheRoot_->SetSkipCacheLayer(true);
+    }
+
     Drawing::Region curSurfaceDrawRegion = CalculateVisibleRegion(*uniParam, *surfaceParams, *this, isUiFirstNode);
 
     if (!isUiFirstNode) {
