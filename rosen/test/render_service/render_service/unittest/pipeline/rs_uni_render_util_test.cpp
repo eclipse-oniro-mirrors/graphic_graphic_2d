@@ -2011,6 +2011,7 @@ HWTEST_F(RSUniRenderUtilTest, CreateBufferDrawParam009, TestSize.Level2)
     ASSERT_EQ(cpuParam.buffer, nocpuParam.buffer);
     ASSERT_EQ(cpuParam.acquireFence, nocpuParam.acquireFence);
     ASSERT_EQ(cpuParam.srcRect, nocpuParam.srcRect);
+}
 /*
  * @tc.name: FlushDmaSurfaceBuffer001
  * @tc.desc: test FlushDmaSurfaceBuffer when pixelMap is nullptr
