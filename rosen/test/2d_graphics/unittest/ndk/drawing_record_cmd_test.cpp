@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,12 +34,12 @@ public:
 
 void NativeDrawingRecordCmdTest::SetUpTestCase() {}
 void NativeDrawingRecordCmdTest::TearDownTestCase() {}
-void NativeDrawingRecordCmdTest::SetUp(){}
-void NativeDrawingRecordCmdTest::TearDown(){}
+void NativeDrawingRecordCmdTest::SetUp() {}
+void NativeDrawingRecordCmdTest::TearDown() {}
 
 /*
  * @tc.name: NativeRecordCmdTest_RecordCmdUtilsCreate
- * @tc.desc: test for OH_Drawing_Record.
+ * @tc.desc: test for OH_Drawing_RecordCmdUtilsCreate and OH_Drawing_RecordCmdUtilsDestroy.
  * @tc.type: FUNC
  * @tc.require: AR000GTO5R
  */
@@ -49,14 +49,13 @@ HWTEST_F(NativeDrawingRecordCmdTest, NativeRecordCmdTest_RecordCmdUtilsCreate, T
     EXPECT_TRUE(recordCmdUtils != nullptr);
     OH_Drawing_ErrorCode code = OH_Drawing_RecordCmdUtilsDestroy(recordCmdUtils);
     EXPECT_EQ(code, OH_DRAWING_SUCCESS);
-    recordCmdUtils = nullptr;
-    code = OH_Drawing_RecordCmdUtilsDestroy(recordCmdUtils);
+    code = OH_Drawing_RecordCmdUtilsDestroy(nullptr);
     EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
 }
 
 /*
  * @tc.name: NativeRecordCmdTest_RecordCmdUtilsBeginRecording001
- * @tc.desc: test for OH_Drawing_Record.
+ * @tc.desc: test for OH_Drawing_RecordCmdUtilsBeginRecording.
  * @tc.type: FUNC
  * @tc.require: AR000GTO5R
  */
@@ -66,29 +65,31 @@ HWTEST_F(NativeDrawingRecordCmdTest, NativeRecordCmdTest_RecordCmdUtilsBeginReco
     int32_t height = 20; // canvas height is 20
     OH_Drawing_RecordCmdUtils* recordCmdUtils = OH_Drawing_RecordCmdUtilsCreate();
     EXPECT_TRUE(recordCmdUtils != nullptr);
-    OH_Drawing_Canvas* canvas = OH_Drawing_CanvasCreate();
-    EXPECT_TRUE(canvas != nullptr);
+    OH_Drawing_Canvas* canvas = nullptr;
     OH_Drawing_ErrorCode code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, &canvas);
-    EXPECT_TRUE(canvas != nullptr);
     EXPECT_EQ(code, OH_DRAWING_SUCCESS);
-    code = OH_Drawing_RecordCmdUtilsBeginRecording(nullptr, width, height, &canvas);
     EXPECT_TRUE(canvas != nullptr);
-    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
-    code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, nullptr);
-    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
-    code = OH_Drawing_RecordCmdUtilsBeginRecording(nullptr, width, height, nullptr);
-    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
     int32_t width1 = OH_Drawing_CanvasGetWidth(canvas);
     int32_t height2 = OH_Drawing_CanvasGetHeight(canvas);
     EXPECT_TRUE(width1 == width);
     EXPECT_TRUE(height2 == height);
+
+    code = OH_Drawing_RecordCmdUtilsBeginRecording(nullptr, width, height, &canvas);
+    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
+
+    code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, nullptr);
+    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
+
+    code = OH_Drawing_RecordCmdUtilsBeginRecording(nullptr, width, height, nullptr);
+    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
+
     code = OH_Drawing_RecordCmdUtilsDestroy(recordCmdUtils);
     EXPECT_EQ(code, OH_DRAWING_SUCCESS);
 }
 
 /*
  * @tc.name: NativeRecordCmdTest_RecordCmdUtilsBeginRecording002
- * @tc.desc: test for OH_Drawing_Record.
+ * @tc.desc: test for OH_Drawing_RecordCmdUtilsBeginRecording.
  * @tc.type: FUNC
  * @tc.require: AR000GTO5R
  */
@@ -98,152 +99,97 @@ HWTEST_F(NativeDrawingRecordCmdTest, NativeRecordCmdTest_RecordCmdUtilsBeginReco
     int32_t height = 20; // canvas height is 20
     OH_Drawing_RecordCmdUtils* recordCmdUtils = OH_Drawing_RecordCmdUtilsCreate();
     EXPECT_TRUE(recordCmdUtils != nullptr);
-    OH_Drawing_Canvas* canvas = OH_Drawing_CanvasCreate();
-    EXPECT_TRUE(canvas != nullptr);
+    OH_Drawing_Canvas* canvas = nullptr;
     OH_Drawing_ErrorCode code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, &canvas);
-    EXPECT_TRUE(canvas != nullptr);
     EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
-    int32_t width1 = OH_Drawing_CanvasGetWidth(canvas);
-    int32_t height2 = OH_Drawing_CanvasGetHeight(canvas);
-    EXPECT_TRUE(width1 == width);
-    EXPECT_TRUE(height2 == height);
+
     width = 10; // canvas width is 10
     height = -1; // canvas height is -1
     code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, &canvas);
-    EXPECT_TRUE(canvas != nullptr);
     EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
-    width1 = OH_Drawing_CanvasGetWidth(canvas);
-    height2 = OH_Drawing_CanvasGetHeight(canvas);
-    EXPECT_TRUE(width1 == width);
-    EXPECT_TRUE(height2 == height);
+
+    width = -1; // canvas width is -1
+    height = -2; // canvas height is -2
+    canvas = nullptr;
+    code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, &canvas);
+    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
+
     code = OH_Drawing_RecordCmdUtilsDestroy(recordCmdUtils);
     EXPECT_EQ(code, OH_DRAWING_SUCCESS);
 }
 
 /*
  * @tc.name: NativeRecordCmdTest_RecordCmdUtilsBeginRecording003
- * @tc.desc: test for OH_Drawing_Record.
+ * @tc.desc: test for OH_Drawing_RecordCmdUtilsBeginRecording.
  * @tc.type: FUNC
  * @tc.require: AR000GTO5R
  */
 HWTEST_F(NativeDrawingRecordCmdTest, NativeRecordCmdTest_RecordCmdUtilsBeginRecording003, TestSize.Level1)
 {
-    int32_t width = -1; // canvas width is -1
-    int32_t height = -2; // canvas height is -2
+    int32_t width = 0; // canvas width is 0
+    int32_t height = 20; // canvas height is 20
     OH_Drawing_RecordCmdUtils* recordCmdUtils = OH_Drawing_RecordCmdUtilsCreate();
     EXPECT_TRUE(recordCmdUtils != nullptr);
-    OH_Drawing_Canvas* canvas = OH_Drawing_CanvasCreate();
-    EXPECT_TRUE(canvas != nullptr);
+    OH_Drawing_Canvas* canvas = nullptr;
     OH_Drawing_ErrorCode code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, &canvas);
-    EXPECT_TRUE(canvas != nullptr);
     EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
-    int32_t width1 = OH_Drawing_CanvasGetWidth(canvas);
-    int32_t height2 = OH_Drawing_CanvasGetHeight(canvas);
-    EXPECT_TRUE(width1 == width);
-    EXPECT_TRUE(height2 == height);
-    width = 0; // canvas width is 0
-    code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, &canvas);
-    EXPECT_TRUE(canvas != nullptr);
-    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
-    width1 = OH_Drawing_CanvasGetWidth(canvas);
-    height2 = OH_Drawing_CanvasGetHeight(canvas);
-    EXPECT_TRUE(width1 == width);
-    EXPECT_TRUE(height2 == height);
+
     width = 10; // canvas width is 10
     height = 0; // canvas width is 0
     code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, &canvas);
-    EXPECT_TRUE(canvas != nullptr);
     EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
-    width1 = OH_Drawing_CanvasGetWidth(canvas);
-    height2 = OH_Drawing_CanvasGetHeight(canvas);
-    EXPECT_TRUE(width1 == width);
-    EXPECT_TRUE(height2 == height);
+
     width = -1; // canvas width is -1
     height = 0; // canvas width is 0
     code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, &canvas);
-    EXPECT_TRUE(canvas != nullptr);
     EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
-    width1 = OH_Drawing_CanvasGetWidth(canvas);
-    height2 = OH_Drawing_CanvasGetHeight(canvas);
-    EXPECT_TRUE(width1 == width);
-    EXPECT_TRUE(height2 == height);
+
     width = 0; // canvas width is 0
     height = -1; // canvas width is -1
     code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, &canvas);
-    EXPECT_TRUE(canvas != nullptr);
     EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
-    width1 = OH_Drawing_CanvasGetWidth(canvas);
-    height2 = OH_Drawing_CanvasGetHeight(canvas);
-    EXPECT_TRUE(width1 == width);
-    EXPECT_TRUE(height2 == height);
+
+    width = 0; // canvas width is 0
+    height = 0; // canvas width is -1
+    code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, &canvas);
+    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
+
     code = OH_Drawing_RecordCmdUtilsDestroy(recordCmdUtils);
     EXPECT_EQ(code, OH_DRAWING_SUCCESS);
 }
 
 /*
  * @tc.name: NativeRecordCmdTest_RecordCmdUtilsFinishRecording001
- * @tc.desc: test for OH_Drawing_Record.
+ * @tc.desc: test for OH_Drawing_RecordCmdUtilsFinishRecording.
  * @tc.type: FUNC
  * @tc.require: AR000GTO5R
  */
 HWTEST_F(NativeDrawingRecordCmdTest, NativeRecordCmdTest_RecordCmdUtilsFinishRecording001, TestSize.Level1)
 {
+    int32_t width = 10;
+    int32_t height = 20;
+    OH_Drawing_RecordCmd* recordCmd = nullptr;
+    OH_Drawing_Canvas* canvas = nullptr;
     OH_Drawing_RecordCmdUtils* recordCmdUtils = OH_Drawing_RecordCmdUtilsCreate();
     EXPECT_TRUE(recordCmdUtils != nullptr);
-    OH_Drawing_ErrorCode code = OH_Drawing_RecordCmdUtilsFinishRecording(recordCmdUtils, nullptr);
-    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
-    code = OH_Drawing_RecordCmdUtilsDestroy(recordCmdUtils);
-    EXPECT_EQ(code, OH_DRAWING_SUCCESS);
-}
+    OH_Drawing_ErrorCode code = OH_Drawing_RecordCmdUtilsFinishRecording(recordCmdUtils, &recordCmd);
+    EXPECT_TRUE(code != OH_DRAWING_SUCCESS);
 
-/*
- * @tc.name: NativeRecordCmdTest_RecordCmdUtilsFinishRecording002
- * @tc.desc: test for OH_Drawing_Record.
- * @tc.type: FUNC
- * @tc.require: AR000GTO5R
- */
-HWTEST_F(NativeDrawingRecordCmdTest, NativeRecordCmdTest_RecordCmdUtilsFinishRecording002, TestSize.Level1)
-{
-    int32_t width = 10; // canvas width is 10
-    int32_t height = 20; // canvas width is 20
-    OH_Drawing_RecordCmd* recordCmd = nullptr;
-    OH_Drawing_RecordCmdUtils* recordCmdUtils = nullptr;
-    OH_Drawing_Canvas* canvas = OH_Drawing_CanvasCreate();
-    EXPECT_TRUE(canvas != nullptr);
-    OH_Drawing_ErrorCode code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, &canvas);
+    code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, &canvas);
     EXPECT_TRUE(canvas != nullptr);
     code = OH_Drawing_RecordCmdUtilsFinishRecording(recordCmdUtils, &recordCmd);
+    EXPECT_TRUE(code == OH_DRAWING_SUCCESS);
     EXPECT_TRUE(recordCmd != nullptr);
-    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
-    code = OH_Drawing_RecordCmdUtilsFinishRecording(nullptr, nullptr);
-    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
-    code = OH_Drawing_RecordCmdUtilsDestroy(recordCmdUtils);
     code = OH_Drawing_RecordCmdDestroy(recordCmd);
-    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
-}
-
-/*
- * @tc.name: NativeRecordCmdTest_RecordCmdUtilsFinishRecording003
- * @tc.desc: test for OH_Drawing_Record.
- * @tc.type: FUNC
- * @tc.require: AR000GTO5R
- */
-HWTEST_F(NativeDrawingRecordCmdTest, NativeRecordCmdTest_RecordCmdUtilsFinishRecording004, TestSize.Level1)
-{
-    int32_t width = 10; // canvas width is 10
-    int32_t height = 20; // canvas height is 20
-    OH_Drawing_RecordCmd* recordCmd = nullptr;
-    OH_Drawing_RecordCmdUtils* recordCmdUtils = OH_Drawing_RecordCmdUtilsCreate();
-    EXPECT_TRUE(recordCmdUtils != nullptr);
-    OH_Drawing_Canvas* canvas = OH_Drawing_CanvasCreate();
-    EXPECT_TRUE(canvas != nullptr);
-    OH_Drawing_ErrorCode code = OH_Drawing_RecordCmdUtilsBeginRecording(recordCmdUtils, width, height, &canvas);
-    EXPECT_TRUE(canvas != nullptr);
-    code = OH_Drawing_RecordCmdUtilsFinishRecording(recordCmdUtils, &recordCmd);
-    EXPECT_TRUE(recordCmd != nullptr);
     EXPECT_EQ(code, OH_DRAWING_SUCCESS);
+
+    code = OH_Drawing_RecordCmdUtilsFinishRecording(recordCmdUtils, nullptr);
+    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
+
+    code = OH_Drawing_RecordCmdUtilsFinishRecording(nullptr, &recordCmd);
+    EXPECT_EQ(code, OH_DRAWING_ERROR_INVALID_PARAMETER);
+
     code = OH_Drawing_RecordCmdUtilsDestroy(recordCmdUtils);
-    code = OH_Drawing_RecordCmdDestroy(recordCmd);
     EXPECT_EQ(code, OH_DRAWING_SUCCESS);
 }
 } // namespace Drawing
