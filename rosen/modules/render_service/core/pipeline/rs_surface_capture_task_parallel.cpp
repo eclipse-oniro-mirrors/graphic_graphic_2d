@@ -405,6 +405,7 @@ std::function<void()> RSSurfaceCaptureTaskParallel::CreateSurfaceSyncCopyTask(
         std::shared_ptr<Drawing::Surface> surface;
         auto grContext = RSBackgroundThread::Instance().GetShareGPUContext();
         if (!grContext) {
+            callback->OnSurfaceCapture(id, nullptr);
             return;
         }
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
