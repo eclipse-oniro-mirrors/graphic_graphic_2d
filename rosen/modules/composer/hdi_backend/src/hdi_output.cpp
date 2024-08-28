@@ -202,13 +202,16 @@ int32_t HdiOutput::CreateLayerLocked(uint64_t surfaceId, const LayerInfoPtr &lay
     layerIdMap_[layerId] = layer;
     surfaceIdMap_[surfaceId] = layer;
 
+    const bool& isLayerArsrEnabled = layerInfo->GetLayerArsr();
+
     if (device_ == nullptr) {
         HLOGE("[%{public}s]HdiDevice is nullptr.", __func__);
         return GRAPHIC_DISPLAY_SUCCESS;
     }
 
-    if ((arsrPreEnabledForVm_ && CheckSupportArsrPreMetadata() && CheckIfDoArsrPreForVm(layerInfo)) ||
-        (arsrPreEnabled_ && CheckSupportArsrPreMetadata() && CheckIfDoArsrPre(layerInfo))) {
+    if (((arsrPreEnabledForVm_ && CheckSupportArsrPreMetadata() && CheckIfDoArsrPreForVm(layerInfo)) ||
+        (arsrPreEnabled_ && CheckSupportArsrPreMetadata() && CheckIfDoArsrPre(layerInfo))) &&
+        isLayerArsrEnabled) {
         const std::vector<int8_t> valueBlob{static_cast<int8_t>(1)};
         if (device_->SetLayerPerFrameParameter(screenId_,
             layerId, GENERIC_METADATA_KEY_ARSR_PRE_NEEDED, valueBlob) != 0) {
