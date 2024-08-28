@@ -449,5 +449,10 @@ Occlusion::Region RSDisplayRenderNode::GetDisappearedSurfaceRegionBelowCurrent(N
     }
     return result;
 }
+
+bool RSDisplayRenderNode::IsZoomStateChange() const
+{
+    return preZoomState_ != curZoomState_;
+}
 } // namespace Rosen
 } // namespace OHOS
