@@ -35,7 +35,7 @@ bool UIEffectNapiUtils::IsSystemApp()
     uint64_t tokenId = OHOS::IPCSkeleton::GetCallingFullTokenID();
     return Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(tokenId);
 #else
-    return false;
+    return true;
 #endif
 }
 
