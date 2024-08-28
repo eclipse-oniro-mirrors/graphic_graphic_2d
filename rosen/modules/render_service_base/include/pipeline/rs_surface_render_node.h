@@ -114,7 +114,15 @@ public:
 
     bool IsHardwareEnabledTopSurface() const
     {
-        return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE && GetName() == "pointer window";
+        return (nodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE && GetName() == "pointer window") ||
+            (IsLayerTop());
+    }
+
+    void SetLayerTop(bool isTop);
+
+    bool IsLayerTop() const
+    {
+        return isLayerTop_;
     }
 
     // indicate if this node type can enable hardware composer
@@ -1278,6 +1286,7 @@ private:
 
     std::string name_;
     RSSurfaceNodeType nodeType_ = RSSurfaceNodeType::DEFAULT;
+    bool isLayerTop_ = false;
     const enum SurfaceWindowType surfaceWindowType_ = SurfaceWindowType::DEFAULT_WINDOW;
     GraphicColorGamut colorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
 #ifndef ROSEN_CROSS_PLATFORM

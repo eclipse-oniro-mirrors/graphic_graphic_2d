@@ -307,5 +307,21 @@ void SurfaceNodeCommandHelper::SetWatermarkEnabled(RSContext& context, NodeId no
         node->SetWatermarkEnabled(name, isEnabled);
     }
 }
+
+void SurfaceNodeCommandHelper::SetLayerTop(RSContext& context, NodeId nodeId, std::string nodeIdStr, bool isTop)
+{
+    const auto& nodeMap = context.GetNodeMap();
+    nodeMap.TraverseSurfaceNodes(
+        [&nodeIdStr, &isTop](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
+        if (surfaceNode == nullptr) {
+            return;
+        }
+        if ((surfaceNode->GetName() == nodeIdStr) &&
+            (surfaceNode->GetSurfaceNodeType() == RSSurfaceNodeType::SELF_DRAWING_NODE)) {
+            surfaceNode->SetLayerTop(isTop);
+        }
+        return;
+    });
+}
 } // namespace Rosen
 } // namespace OHOS

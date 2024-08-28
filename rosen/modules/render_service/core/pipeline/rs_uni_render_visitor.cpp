@@ -1675,12 +1675,17 @@ void RSUniRenderVisitor::UpdateHwcNodeDirtyRegionAndCreateLayer(std::shared_ptr<
         return;
     }
     std::shared_ptr<RSSurfaceRenderNode> pointWindow;
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> topLayers;
     for (auto hwcNode : hwcNodes) {
         auto hwcNodePtr = hwcNode.lock();
         if (!hwcNodePtr || !hwcNodePtr->IsOnTheTree()) {
             continue;
         }
         auto surfaceHandler = hwcNodePtr->GetMutableRSSurfaceHandler();
+        if (hwcNodePtr->IsLayerTop()) {
+            topLayers.emplace_back(hwcNodePtr);
+            continue;
+        }
         if (node->IsHardwareEnabledTopSurface()) {
             pointWindow = hwcNodePtr;
             continue;
@@ -1703,6 +1708,9 @@ void RSUniRenderVisitor::UpdateHwcNodeDirtyRegionAndCreateLayer(std::shared_ptr<
         }
     }
     curDisplayNode_->SetDisplayGlobalZOrder(globalZOrder_);
+    if (!topLayers.empty()) {
+        UpdateTopLayersDirtyStatus(topLayers);
+    }
     if (pointWindow) {
         UpdatePointWindowDirtyStatus(pointWindow);
     }
@@ -1719,6 +1727,20 @@ void RSUniRenderVisitor::UpdatePointWindowDirtyStatus(std::shared_ptr<RSSurfaceR
         pointWindow->UpdateHwcNodeLayerInfo(transform);
         if (RSMainThread::Instance()->GetDeviceType() == DeviceType::PC) {
             pointerWindowManager_.UpdatePointerDirtyToGlobalDirty(pointWindow, curDisplayNode_);
+        }
+    }
+}
+
+void RSUniRenderVisitor::UpdateTopLayersDirtyStatus(std::vector<std::shared_ptr<RSSurfaceRenderNode>> topLayers)
+{
+    for (const auto& topLayer : topLayers) {
+        std::shared_ptr<RSSurfaceHandler> topLayerSurfaceHandler = topLayer->GetMutableRSSurfaceHandler();
+        if (topLayerSurfaceHandler) {
+            topLayerSurfaceHandler->SetGlobalZOrder(globalZOrder_ + 1);
+            topLayer->SetCalcRectInPrepare(false);
+            topLayer->SetHardwareForcedDisabledState(!IsHardwareComposerEnabled() || !topLayer->ShouldPaint());
+            auto transform = RSUniRenderUtil::GetLayerTransform(*topLayer, screenInfo_);
+            topLayer->UpdateHwcNodeLayerInfo(transform);
         }
     }
 }

@@ -332,6 +332,9 @@ public:
     void SetSkipDraw(bool skip);
     bool GetSkipDraw() const;
 
+    void SetLayerTop(bool isTop);
+    bool IsLayerTop() const;
+
     bool IsVisibleDirtyRegionEmpty(const Drawing::Region curSurfaceDrawRegion) const;
     
     void SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark);
@@ -487,6 +490,7 @@ private:
     Vector4f overDrawBufferNodeCornerRadius_;
     bool isGpuOverDrawBufferOptimizeNode_ = false;
     bool isSkipDraw_ = false;
+    bool isLayerTop_ = false;
     ScalingMode preScalingMode_ = ScalingMode::SCALING_MODE_SCALE_TO_WINDOW;
     bool needOffscreen_ = false;
     bool layerCreated_ = false;

@@ -1008,6 +1008,18 @@ void RSSurfaceRenderNode::NotifyTreeStateChange()
     }
 }
 
+void RSSurfaceRenderNode::SetLayerTop(bool isTop)
+{
+    isLayerTop_ = isTop;
+    SetContentDirty();
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams == nullptr) {
+        return;
+    }
+    surfaceParams->SetLayerTop(isTop);
+    AddToPendingSyncList();
+}
+
 void RSSurfaceRenderNode::SetColorSpace(GraphicColorGamut colorSpace)
 {
     colorSpace_ = colorSpace;

@@ -358,6 +358,20 @@ bool RSSurfaceRenderParams::GetSkipDraw() const
     return isSkipDraw_;
 }
 
+void RSSurfaceRenderParams::SetLayerTop(bool isTop)
+{
+    if (isLayerTop_ == isTop) {
+        return;
+    }
+    isLayerTop_ = isTop;
+    needSync_ = true;
+}
+
+bool RSSurfaceRenderParams::IsLayerTop() const
+{
+    return isLayerTop_;
+}
+
 void RSSurfaceRenderParams::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
 {
     auto iter = watermarkHandles_.find(name);
@@ -457,6 +471,7 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->isNodeToBeCaptured_ = isNodeToBeCaptured_;
     targetSurfaceParams->dstRect_ = dstRect_;
     targetSurfaceParams->isSkipDraw_ = isSkipDraw_;
+    targetSurfaceParams->isLayerTop_ = isLayerTop_;
     targetSurfaceParams->isLeashWindowVisibleRegionEmpty_ = isLeashWindowVisibleRegionEmpty_;
     targetSurfaceParams->opaqueRegion_ = opaqueRegion_;
     targetSurfaceParams->preScalingMode_ = preScalingMode_;
