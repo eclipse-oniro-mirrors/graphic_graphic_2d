@@ -68,6 +68,11 @@ bool SKImageChain::CreateCPUCanvas()
         return false;
     }
     canvas_ = cpuSurface_->getCanvas();
+    if (canvas_ == nullptr) {
+        LOGE("CPU create canvas is nullptr.");
+        return false;
+    }
+
     return true;
 }
 
@@ -87,6 +92,11 @@ bool SKImageChain::CreateGPUCanvas()
         return false;
     }
     canvas_ = gpuSurface_->getCanvas();
+    if (canvas_ == nullptr) {
+        LOGE("GPU create canvas is nullptr.");
+        return false;
+    }
+
     return true;
 #else
     LOGI("GPU rendering is not supported.");
