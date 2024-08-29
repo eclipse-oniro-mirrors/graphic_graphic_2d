@@ -304,19 +304,13 @@ bool RSRenderServiceConnection::CreateNode(const RSDisplayNodeConfig& displayNod
         RS_LOGE("RSRenderService::CreateDisplayNode fail");
         return false;
     }
-<<<<<<< HEAD
     std::function<void()> registerNode = [node, weakThis = wptr<RSRenderServiceConnection>(this),
         mirrorNodeId = displayNodeConfig.mirrorNodeId]() -> void {
-=======
-    std::function<void()> registerNode = [node, displayNodeConfig,
-        weakThis = wptr<RSRenderServiceConnection>(this)]() {
->>>>>>> 668763467108ea1b3482676a525d171c2eec1d33
         sptr<RSRenderServiceConnection> connection = weakThis.promote();
         if (!connection) {
             return;
         }
         auto& context = connection->mainThread_->GetContext();
-<<<<<<< HEAD
         auto mirrorSourceNode = context.GetNodeMap()
             .GetRenderNode<RSDisplayRenderNode>(mirrorNodeId);
         if (!mirrorSourceNode) { 
@@ -324,15 +318,6 @@ bool RSRenderServiceConnection::CreateNode(const RSDisplayNodeConfig& displayNod
         }
         context.GetGlobalRootRenderNode()->AddChild(node);
         context.GetMutableNodeMap().RegisterRenderNode(node);
-=======
-        context.GetMutableNodeMap().RegisterRenderNode(node);
-        context.GetGlobalRootRenderNode()->AddChild(node);
-        auto mirrorSourceNode = context.GetNodeMap()
-            .GetRenderNode<RSDisplayRenderNode>(displayNodeConfig.mirrorNodeId);
-        if (!mirrorSourceNode) {
-            return;
-        }
->>>>>>> 668763467108ea1b3482676a525d171c2eec1d33
         node->SetMirrorSource(mirrorSourceNode);
     };
     mainThread_->PostSyncTask(registerNode);
