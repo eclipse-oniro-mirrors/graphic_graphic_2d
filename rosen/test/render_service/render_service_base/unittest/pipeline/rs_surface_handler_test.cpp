@@ -210,6 +210,27 @@ HWTEST_F(RSSurfaceHandlerTest, CacheBuffer01, TestSize.Level2)
 }
 
 /**
+ * @tc.name: CacheBuffer002
+ * @tc.desc: test CacheBuffer for add cache which timestamp include in cache's key list
+ * @tc.type: FUNC
+ * @tc.require: issueIANDBE
+ */
+HWTEST_F(RSSurfaceHandlerTest, CacheBuffer002, TestSize.Level2)
+{
+    RSSurfaceHandler::SurfaceBufferEntry buffer1 = RequestAndFlushBuffer();
+    RSSurfaceHandler::SurfaceBufferEntry buffer2 = RequestAndFlushBuffer();
+    buffer1.timestamp = 100; // make the timestamps of two buffers the same
+    buffer2.timestamp = 100;
+
+    ASSERT_NE(rSSurfaceHandlerPtr_, nullptr);
+    rSSurfaceHandlerPtr_->bufferCache_.clear();
+    rSSurfaceHandlerPtr_->CacheBuffer(buffer1, "");
+    rSSurfaceHandlerPtr_->CacheBuffer(buffer2, "");
+
+    ASSERT_EQ(rSSurfaceHandlerPtr_->bufferCache_.size(), 1);
+}
+
+/**
  * @tc.name: GetBufferFromCache001
  * @tc.desc: test GetBufferFromCache while no cache satisfy render time
  * @tc.type:FUNC
