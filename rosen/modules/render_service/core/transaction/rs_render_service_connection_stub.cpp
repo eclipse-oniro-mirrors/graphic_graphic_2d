@@ -905,6 +905,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             if (result != StatusCode::SUCCESS) {
+                ret = ERR_UNKNOWN_REASON;
                 break;
             }
             std::copy(mode.begin(), mode.end(), std::back_inserter(modeSend));
@@ -923,6 +924,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             if (result != StatusCode::SUCCESS) {
+                ret = ERR_UNKNOWN_REASON;
                 break;
             }
             for (auto i : keys) {
@@ -942,6 +944,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             if (result != StatusCode::SUCCESS) {
+                ret = ERR_UNKNOWN_REASON;
                 break;
             }
             if (!reply.WriteUint32(mode)) {
@@ -1005,6 +1008,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             if (result != StatusCode::SUCCESS) {
+                ret = ERR_UNKNOWN_REASON;
                 break;
             }
             if (!reply.WriteUint32(mode)) {
@@ -1081,6 +1085,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 }
                 if (!pixelMap->Marshalling(reply)) {
                     RS_LOGE("pixelMap Marshalling fail");
+                    ret = ERR_INVALID_REPLY;
                 }
             } else {
                 if (!reply.WriteBool(false)) {
@@ -1099,6 +1104,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             if (result != StatusCode::SUCCESS) {
+                ret = ERR_UNKNOWN_REASON;
                 break;
             }
             if (!reply.WriteParcelable(&screenHDRCapability)) {
@@ -1115,6 +1121,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             if (result != StatusCode::SUCCESS) {
+                ret = ERR_UNKNOWN_REASON;
                 break;
             }
             if (!reply.WriteUint32(static_cast<uint32_t>(pixelFormat))) {
@@ -1141,6 +1148,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             if (result != StatusCode::SUCCESS) {
+                ret = ERR_UNKNOWN_REASON;
                 break;
             }
             std::copy(hdrFormats.begin(), hdrFormats.end(), std::back_inserter(hdrFormatsSend));
@@ -1158,6 +1166,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             if (result != StatusCode::SUCCESS) {
+                ret = ERR_UNKNOWN_REASON;
                 break;
             }
             if (!reply.WriteUint32(hdrFormat)) {
@@ -1184,6 +1193,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             if (result != StatusCode::SUCCESS) {
+                ret = ERR_UNKNOWN_REASON;
                 break;
             }
             std::copy(colorSpaces.begin(), colorSpaces.end(), std::back_inserter(colorSpacesSend));
@@ -1201,6 +1211,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             if (result != StatusCode::SUCCESS) {
+                ret = ERR_UNKNOWN_REASON;
                 break;
             }
             if (!reply.WriteUint32(colorSpace)) {
@@ -1226,6 +1237,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             if (result != StatusCode::SUCCESS) {
+                ret = ERR_UNKNOWN_REASON;
                 break;
             }
             if (!reply.WriteUint32(type)) {
@@ -1238,6 +1250,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             if (ExtractPid(id) != callingPid) {
                 RS_LOGW("The GetBitmap isn't legal, nodeId:%{public}" PRIu64 ", callingPid:%{public}d",
                     id, callingPid);
+                ret = ERR_INVALID_DATA;
                 break;
             }
             RS_PROFILER_PATCH_NODE_ID(data, id);
@@ -1257,6 +1270,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             if (ExtractPid(id) != callingPid) {
                 RS_LOGW("The GetPixelmap isn't legal, nodeId:%{public}" PRIu64 ", callingPid:%{public}d",
                     id, callingPid);
+                ret = ERR_INVALID_DATA;
                 break;
             }
             RS_PROFILER_PATCH_NODE_ID(data, id);
@@ -1301,6 +1315,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             } else {
                 RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest callingPid[%{public}d] "
                     "no permission REGISTER_TYPEFACE", callingPid);
+                ret = ERR_INVALID_DATA;
             }
             if (!reply.WriteBool(result)) {
                 ret = ERR_INVALID_REPLY;
@@ -1316,6 +1331,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             } else {
                 RS_LOGE("RSRenderServiceConnectionStub::OnRemoteRequest callingPid[%{public}d] "
                     "no permission UNREGISTER_TYPEFACE", callingPid);
+                ret = ERR_INVALID_DATA;
             }
             break;
         }
@@ -1357,6 +1373,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             if (ExtractPid(id) != callingPid) {
                 RS_LOGW("The RegisterSurfaceOcclusionChangeCallback isn't legal, nodeId:%{public}" PRIu64 ", "
                     "callingPid:%{public}d", id, callingPid);
+                ret = ERR_INVALID_DATA;
                 break;
             }
             auto remoteObject = data.ReadRemoteObject();
@@ -1388,6 +1405,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             if (ExtractPid(id) != callingPid) {
                 RS_LOGW("The UnRegisterSurfaceOcclusionChangeCallback isn't legal, nodeId:%{public}" PRIu64 ", "
                     "callingPid:%{public}d", id, callingPid);
+                ret = ERR_INVALID_DATA;
                 break;
             }
             int32_t status = UnRegisterSurfaceOcclusionChangeCallback(id);
@@ -1484,6 +1502,7 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             if (ExtractPid(id) != callingPid) {
                 RS_LOGW("The SetHardwareEnabled isn't legal, nodeId:%{public}" PRIu64 ", callingPid:%{public}d",
                     id, callingPid);
+                ret = ERR_INVALID_DATA;
                 break;
             }
             auto isEnabled = data.ReadBool();
