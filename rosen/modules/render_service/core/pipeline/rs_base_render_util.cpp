@@ -1205,6 +1205,7 @@ void RSBaseRenderUtil::DealWithSurfaceRotationAndGravity(GraphicTransformType tr
         int degree = RSUniRenderUtil::GetRotationDegreeFromMatrix(nodeParams->GetLayerInfo().matrix);
         extraRotation = degree - rotationDegree;
     }
+
     rotationTransform = static_cast<GraphicTransformType>(
         (rotationTransform + extraRotation / RS_ROTATION_90 + SCREEN_ROTATION_NUM) % SCREEN_ROTATION_NUM);
 
