@@ -202,14 +202,12 @@ void HgmFrameRateManager::InitTouchManager()
         });
         touchManager_.RegisterEnterStateCallback(TouchState::DOWN_STATE,
             [this] (TouchState lastState, TouchState newState) {
-            if (lastState == TouchState::IDLE_STATE) {
-                HgmMultiAppStrategy::TouchInfo touchInfo = {
-                    .pkgName = touchManager_.GetPkgName(),
-                    .touchState = newState,
-                    .upExpectFps = OLED_120_HZ,
-                };
-                multiAppStrategy_.HandleTouchInfo(touchInfo);
-            }
+            HgmMultiAppStrategy::TouchInfo touchInfo = {
+                .pkgName = touchManager_.GetPkgName(),
+                .touchState = newState,
+                .upExpectFps = OLED_120_HZ,
+            };
+            multiAppStrategy_.HandleTouchInfo(touchInfo);
             startCheck_.store(false);
         });
         touchManager_.RegisterEnterStateCallback(TouchState::IDLE_STATE,
@@ -522,6 +520,9 @@ void HgmFrameRateManager::HandleFrameRateChangeForLTPO(uint64_t timestamp, bool 
         }
         // ChangeGeneratorRate delay 1 frame
         if (!followRs) {
+            if (forceUpdateCallback_ != nullptr) {
+                forceUpdateCallback_(false, true);
+            }
             return;
         }
     }
@@ -1001,6 +1002,9 @@ void HgmFrameRateManager::MarkVoteChange(const std::string& voter)
 
     // changeGenerator only once in a single vsync period
     if (!changeGeneratorRateValid_.load()) {
+        if (forceUpdateCallback_ != nullptr) {
+            forceUpdateCallback_(false, true);
+        }
         return;
     }
     currRefreshRate_ = refreshRate;
