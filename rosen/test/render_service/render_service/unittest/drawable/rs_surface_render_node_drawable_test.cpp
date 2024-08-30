@@ -319,7 +319,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, MergeDirtyRegionBelowCurSurface009, Te
     uniParams->accumulatedDirtyRegion_.bound_ = bound;
     surfaceDrawable_->MergeDirtyRegionBelowCurSurface(*uniParams, region);
     ASSERT_FALSE(surfaceParams->GetTransparentRegion().IsEmpty());
-    ASSERT_FALSE(region.IsEmpty());
+    ASSERT_TRUE(region.IsEmpty());
 }
 
 /**
@@ -463,6 +463,9 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, PrepareOffscreenRender, TestSize.Level
     RSPaintFilterCanvas paintFilterCanvas(surface.get());
     surfaceDrawable_->curCanvas_ = &paintFilterCanvas;
     ASSERT_TRUE(surfaceDrawable_->PrepareOffscreenRender());
+
+    surfaceDrawable_->curCanvas_->surface_ = nullptr;
+    ASSERT_FALSE(surfaceDrawable_->PrepareOffscreenRender());
 }
 
 /**
