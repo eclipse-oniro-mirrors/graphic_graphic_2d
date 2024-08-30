@@ -397,6 +397,11 @@ void RSDisplayRenderNodeDrawable::SetDisplayNodeSkipFlag(RSRenderThreadParams& u
 void RSDisplayRenderNodeDrawable::CheckFilterCacheFullyCovered(RSSurfaceRenderParams& surfaceParams, RectI screenRect)
 {
     surfaceParams.SetFilterCacheFullyCovered(false);
+    if (!surfaceParams.IsTransparent() || surfaceParams.GetIsRotating()) {
+        RS_OPTIONAL_TRACE_NAME_FMT("CheckFilterCacheFullyCovered NodeId[%" PRIu64 "], isOpaque: %d, isRotating: %d",
+            surfaceParams.GetId(), !surfaceParams.IsTransparent(), surfaceParams.GetIsRotating());
+        return;
+    }
     bool dirtyBelowContainsFilterNode = false;
     for (auto& filterNodeId : surfaceParams.GetVisibleFilterChild()) {
         auto drawableAdapter = DrawableV2::RSRenderNodeDrawableAdapter::GetDrawableById(filterNodeId);
@@ -409,7 +414,7 @@ void RSDisplayRenderNodeDrawable::CheckFilterCacheFullyCovered(RSSurfaceRenderPa
                 "NodeId[%" PRIu64 "]", surfaceParams.GetName().c_str(), filterNodeId);
             continue;
         }
-        auto filterParams = static_cast<RSRenderParams*>(filterNodeDrawable->GetRenderParams().get());
+        const auto& filterParams = filterNodeDrawable->GetRenderParams();
         if (filterParams == nullptr || !filterParams->HasBlurFilter()) {
             RS_LOGD("CheckFilterCacheFullyCovered filter params is nullptr or has no blur, Name[%{public}s],"
                 "NodeId[%" PRIu64 "]", surfaceParams.GetName().c_str(), filterNodeId);
@@ -419,20 +424,17 @@ void RSDisplayRenderNodeDrawable::CheckFilterCacheFullyCovered(RSSurfaceRenderPa
         // 1.The filter node global alpha equals 1;
         // 2.There is no invalid filter cache node below, which should take snapshot;
         // 3.The filter node has no global corner;
-        // 4.The surfaceNode is transparent, the opaque surfaceNode can occlude without filter cache;
-        // 5.The node type is not EFFECT_NODE;
+        // 4.The node type is not EFFECT_NODE;
         if (ROSEN_EQ(filterParams->GetGlobalAlpha(), 1.f) && !dirtyBelowContainsFilterNode &&
-            !filterParams->HasGlobalCorner() && surfaceParams.IsTransparent() &&
-            filterParams->GetType() != RSRenderNodeType::EFFECT_NODE) {
+            !filterParams->HasGlobalCorner() && filterParams->GetType() != RSRenderNodeType::EFFECT_NODE) {
             surfaceParams.CheckValidFilterCacheFullyCoverTarget(
                 filterNodeDrawable->IsFilterCacheValidForOcclusion(),
                 filterNodeDrawable->GetFilterCachedRegion(), screenRect);
         }
-        RS_OPTIONAL_TRACE_NAME_FMT("CheckFilterCacheFullyCovered NodeId[%" PRIu64 "], globalAlpha: %f,"
-            "hasInvalidFilterCacheBefore: %d, hasNoCorner: %d, isTransparent: %d, isNodeTypeCorrect: %d,"
-            "isCacheValid: %d, cacheRect: %s", filterNodeId, filterParams->GetGlobalAlpha(),
-            !dirtyBelowContainsFilterNode, !filterParams->HasGlobalCorner(), surfaceParams.IsTransparent(),
-            filterParams->GetType() != RSRenderNodeType::EFFECT_NODE,
+        RS_OPTIONAL_TRACE_NAME_FMT("CheckFilterCacheFullyCovered NodeId[%" PRIu64 "], globalAlpha: %f, "
+            "hasInvalidFilterCacheBefore: %d, hasNoCorner: %d, isNodeTypeCorrect: %d, isCacheValid: %d, "
+            "cacheRect: %s", filterNodeId, filterParams->GetGlobalAlpha(), !dirtyBelowContainsFilterNode,
+            !filterParams->HasGlobalCorner(), filterParams->GetType() != RSRenderNodeType::EFFECT_NODE,
             filterNodeDrawable->IsFilterCacheValidForOcclusion(),
             filterNodeDrawable->GetFilterCachedRegion().ToString().c_str());
         if (filterParams->GetEffectNodeShouldPaint() && !filterNodeDrawable->IsFilterCacheValidForOcclusion()) {
@@ -453,8 +455,12 @@ void RSDisplayRenderNodeDrawable::CheckAndUpdateFilterCacheOcclusion(
     // if upper surface reuse filter cache which fully cover whole screen
     // mark lower layers for process skip
     auto& curAllSurfaceDrawables = params.GetAllMainAndLeashSurfaceDrawables();
-    for (auto it = curAllSurfaceDrawables.begin(); it != curAllSurfaceDrawables.end(); ++it) {
-        auto surfaceNodeDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(*it);
+    for (const auto& adapter : curAllSurfaceDrawables) {
+        if (adapter == nullptr || adapter->GetNodeType() != RSRenderNodeType::SURFACE_NODE) {
+            RS_LOGD("CheckAndUpdateFilterCacheOcclusion adapter is nullptr or error type");
+            continue;
+        }
+        auto surfaceNodeDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(adapter);
         if (surfaceNodeDrawable == nullptr) {
             RS_LOGD("CheckAndUpdateFilterCacheOcclusion surfaceNodeDrawable is nullptr");
             continue;

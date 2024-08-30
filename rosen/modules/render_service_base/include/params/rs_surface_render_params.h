@@ -141,6 +141,10 @@ public:
     {
         return animateState_;
     }
+    bool GetIsRotating() const
+    {
+        return isRotating_;
+    }
     bool GetForceClientForDRMOnly() const
     {
         return forceClientForDRMOnly_;
@@ -479,6 +483,7 @@ private:
     bool isSkipLayer_ = false;
     bool isProtectedLayer_ = false;
     bool animateState_ = false;
+    bool isRotating_ = false;
     bool forceClientForDRMOnly_ = false;
     bool isSubSurfaceNode_ = false;
     Gravity uiFirstFrameGravity_ = Gravity::TOP_LEFT;
