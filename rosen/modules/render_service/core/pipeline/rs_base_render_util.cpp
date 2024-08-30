@@ -1182,7 +1182,7 @@ Drawing::Matrix RSBaseRenderUtil::GetGravityMatrix(
     auto frameHeight = static_cast<float>(buffer->GetSurfaceBufferHeight());
     const float boundsWidth = bounds.GetWidth();
     const float boundsHeight = bounds.GetHeight();
-    if (frameWidth == boundsWidth && frameHeight == boundsHeight) {
+    if (ROSEN_EQ(frameWidth, boundsWidth) && ROSEN_EQ(frameHeight, boundsHeight)) {
         return gravityMatrix;
     }
 
