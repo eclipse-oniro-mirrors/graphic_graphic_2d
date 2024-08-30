@@ -619,6 +619,12 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SYNC_FRAME_RATE_RANGE): {
             FrameRateLinkerId id = data.ReadUint64();
+            if (ExtractPid(id) != callingPid) {
+                RS_LOGW("The SyncFrameRateRange isn't legal, frameRateLinkerId: %{public}" PRIu64
+                    ", callingPid:%{public}d", id, callingPid);
+                ret = ERR_INVALID_DATA;
+                break;
+            }
             uint32_t min = data.ReadUint32();
             uint32_t max = data.ReadUint32();
             uint32_t preferred = data.ReadUint32();
@@ -629,6 +635,12 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_FRAME_RATE_LINKER): {
             FrameRateLinkerId id = data.ReadUint64();
+            if (ExtractPid(id) != callingPid) {
+                RS_LOGW("The UnregisterFrameRateLinker isn't legal, frameRateLinkerId: %{public}" PRIu64
+                    ", callingPid:%{public}d", id, callingPid);
+                ret = ERR_INVALID_DATA;
+                break;
+            }
             UnregisterFrameRateLinker(id);
             break;
         }
