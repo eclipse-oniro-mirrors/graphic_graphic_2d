@@ -242,17 +242,29 @@ void HgmFrameRateManager::ProcessPendingRefreshRate(
     }
     auto &hgmCore = HgmCore::Instance();
     hgmCore.SetTimestamp(timestamp);
-    if (pendingRefreshRate_ != nullptr) {
-        hgmCore.SetPendingConstraintRelativeTime(pendingConstraintRelativeTime_);
-        hgmCore.SetPendingScreenRefreshRate(*pendingRefreshRate_);
-        RS_TRACE_NAME_FMT("ProcessHgmFrameRate pendingRefreshRate: %d", *pendingRefreshRate_);
-        pendingRefreshRate_.reset();
-        pendingConstraintRelativeTime_ = 0;
-    }
+    static uint64_t lastPendingConstraintRelativeTime = 0;
+    static uint32_t lastPendingRefreshRate = 0;
     if (curRefreshRateMode_ == HGM_REFRESHRATE_MODE_AUTO &&
         dvsyncInfo.isUiDvsyncOn && GetCurScreenStrategyId().find("LTPO") != std::string::npos) {
         RS_TRACE_NAME_FMT("ProcessHgmFrameRate pendingRefreshRate: %d ui-dvsync", rsRate);
         hgmCore.SetPendingScreenRefreshRate(rsRate);
+    } else if (pendingRefreshRate_ != nullptr) {
+        hgmCore.SetPendingConstraintRelativeTime(pendingConstraintRelativeTime_);
+        lastPendingConstraintRelativeTime = pendingConstraintRelativeTime_;
+        pendingConstraintRelativeTime_ = 0;
+
+        hgmCore.SetPendingScreenRefreshRate(*pendingRefreshRate_);
+        lastPendingRefreshRate = *pendingRefreshRate_;
+        pendingRefreshRate_.reset();
+        RS_TRACE_NAME_FMT("ProcessHgmFrameRate pendingRefreshRate: %d", lastPendingRefreshRate);
+    } else {
+        if (lastPendingConstraintRelativeTime != 0) {
+            hgmCore.SetPendingConstraintRelativeTime(lastPendingConstraintRelativeTime);
+        }
+        if (lastPendingRefreshRate != 0) {
+            hgmCore.SetPendingScreenRefreshRate(lastPendingRefreshRate);
+            RS_TRACE_NAME_FMT("ProcessHgmFrameRate pendingRefreshRate: %d", lastPendingRefreshRate);
+        }
     }
     changeGeneratorRateValid_.store(true);
 }
