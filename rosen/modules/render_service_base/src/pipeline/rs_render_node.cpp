@@ -302,13 +302,17 @@ void RSRenderNode::RemoveChild(SharedPtr child, bool skipTransition)
     // avoid duplicate entry in disappearingChildren_ (this should not happen)
     disappearingChildren_.remove_if([&child](const auto& pair) -> bool { return pair.first == child; });
     // if child has disappearing transition, add it to disappearingChildren_
-    if (skipTransition == false && child->HasDisappearingTransition(true)) {
+    if (skipTransition == false && child->HasDisappearingTransition(true) && isOnTheTree_) {
         ROSEN_LOGD("RSRenderNode::RemoveChild %{public}" PRIu64 " move child(id %{public}" PRIu64 ") into"
             " disappearingChildren", GetId(), child->GetId());
         // keep shared_ptr alive for transition
         uint32_t origPos = static_cast<uint32_t>(std::distance(children_.begin(), it));
         disappearingChildren_.emplace_back(child, origPos);
     } else {
+        std::atomic_store_explicit(&fullChildrenList_, EmptyChildrenList, std::memory_order_release);
+        drawableVec_[static_cast<int8_t>(RSDrawableSlot::CHILDREN)].reset();
+        stagingDrawCmdList_.clear();
+        AddToPendingSyncList();
         child->ResetParent();
     }
     children_.erase(it);
