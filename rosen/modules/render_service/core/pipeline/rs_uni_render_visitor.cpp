@@ -168,6 +168,7 @@ void RSUniRenderVisitor::PartialRenderOptionInit()
     surfaceRegionDebugType_ = RSSystemProperties::GetSurfaceRegionDfxType();
     isTargetDirtyRegionDfxEnabled_ = RSSystemProperties::GetTargetDirtyRegionDfxEnabled(dfxTargetSurfaceNames_) &&
         (surfaceRegionDebugType_ == SurfaceRegionDebugType::DISABLED);
+    isTargetUIFirstDfxEnabled_ = RSSystemProperties::GetTargetUIFirstDfxEnabled(dfxTargetSurfaceNames_);
     isRegionDebugEnabled_ = (dirtyRegionDebugType_ != DirtyRegionDebugType::DISABLED) ||
         (surfaceRegionDebugType_ != SurfaceRegionDebugType::DISABLED) || (dfxTargetSurfaceNames_.size() > 0);
     isVisibleRegionDfxEnabled_ = (surfaceRegionDebugType_ == SurfaceRegionDebugType::VISIBLE_REGION);
@@ -743,6 +744,12 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
 void RSUniRenderVisitor::PrepareForUIFirstNode(RSSurfaceRenderNode& node)
 {
     MultiThreadCacheType lastFlag = node.GetLastFrameUifirstFlag();
+    auto isSurface = CheckIfSurfaceForUIFirstDFX(node.GetName());
+    if (isTargetUIFirstDfxEnabled_ && !node.isTargetUIFirstDfxEnabled_ && CheckIfSurfaceForUIFirstDFX(node.GetName())) {
+        RS_LOGD("UIFirstDFX Name[%{public}s] ID[%{public}" PRIu64 "] OpenDebug",
+            node.GetName().c_str(), node.GetId());
+    }
+    node.isTargetUIFirstDfxEnabled_ = isTargetDirtyRegionDfxEnabled_ && isSurface;
     RSUifirstManager::Instance().UpdateUifirstNodes(node, ancestorNodeHasAnimation_ || node.GetCurFrameHasAnimation());
     RSUifirstManager::Instance().UpdateUIFirstNodeUseDma(node, globalSurfaceBounds_);
     if (node.GetLastFrameUifirstFlag() == MultiThreadCacheType::LEASH_WINDOW &&
