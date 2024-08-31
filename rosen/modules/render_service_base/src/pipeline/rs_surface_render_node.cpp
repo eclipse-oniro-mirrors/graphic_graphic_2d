@@ -2669,7 +2669,6 @@ void RSSurfaceRenderNode::UpdatePartialRenderParams()
         return;
     }
     if (IsMainWindowType()) {
-        surfaceParams->SetVisibleRegion(visibleRegion_);
         surfaceParams->SetVisibleRegionInVirtual(visibleRegionInVirtual_);
         surfaceParams->SetIsParentScaling(isParentScaling_);
     }
@@ -2677,6 +2676,18 @@ void RSSurfaceRenderNode::UpdatePartialRenderParams()
     surfaceParams->SetOldDirtyInSurface(GetOldDirtyInSurface());
     surfaceParams->SetTransparentRegion(GetTransparentRegion());
     surfaceParams->SetOpaqueRegion(GetOpaqueRegion());
+}
+
+void RSSurfaceRenderNode::UpdateExtendVisibleRegion(Occlusion::Region& region)
+{
+    extendVisibleRegion_.Reset();
+    extendVisibleRegion_ = region.Or(visibleRegion_);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams == nullptr) {
+        RS_LOGE("RSSurfaceRenderNode::UpdateExtendVisibleRegion surfaceParams is nullptr");
+        return;
+    }
+    surfaceParams->SetVisibleRegion(extendVisibleRegion_);
 }
 
 void RSSurfaceRenderNode::InitRenderParams()
