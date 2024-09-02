@@ -1245,15 +1245,15 @@ bool HgmFrameRateManager::ProcessRefreshRateVote(
         // Multiple scene are not considered at this time
         auto configData = HgmCore::Instance().GetPolicyConfigData();
         auto screenSetting = multiAppStrategy_.GetScreenSetting();
-        auto ancoSceneIt = screenSetting.ancoSceneList.find(*ancoScene_.begin());
+        auto ancoSceneIt = screenSetting.ancoSceneList.find(*ancoScenes_.begin());
         uint32_t min = OLED_60_HZ;
-        uint32_t max = OLED_60_HZ;
+        uint32_t max = OLED_90_HZ;
         if (configData != nullptr && ancoSceneIt != screenSetting.ancoSceneList.end() && 
             XMLParser::IsNumber(ancoSceneIt->second)) {
-            min = static_cast<uint32_t>(configData->strategyConfig_[ancoSceneIt->second].min);
-            max = static_cast<uint32_t>(configData->strategyConfig_[ancoSceneIt->second].max);
+            min = static_cast<uint32_t>(configData->strategyConfigs_[ancoSceneIt->second].min);
+            max = static_cast<uint32_t>(configData->strategyConfigs_[ancoSceneIt->second].max);
         }
-        curVoteInfo.SetRange(OLED_60_HZ, OLED_90_HZ);
+        curVoteInfo.SetRange(min, max);
     }
     ProcessVoteLog(curVoteInfo, false);
     auto [mergeVoteRange, mergeVoteInfo] = MergeRangeByPriority(voteRange, {curVoteInfo.min, curVoteInfo.max});
