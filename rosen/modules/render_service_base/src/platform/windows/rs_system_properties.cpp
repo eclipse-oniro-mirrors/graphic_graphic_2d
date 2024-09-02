@@ -477,6 +477,11 @@ SubTreePrepareCheckType RSSystemProperties::GetSubTreePrepareCheckType()
     return SubTreePrepareCheckType::ENABLED;
 }
 
+bool RSSystemProperties::GetTargetUIFirstDfxEnabled(std::vector<std::string>& SurfaceNames)
+{
+    return false;
+}
+
 bool RSSystemProperties::GetRenderParallelEnabled()
 {
     return false;
