@@ -94,7 +94,7 @@ void SKResourceManager::ReleaseResource()
 #ifdef RS_ENABLE_PREFETCH
                     int prefetchStep = 2;
                     if (size > prefetchStep) {
-                        __builtin_prefetch(&*(skSurfaces_[tid].begin()++++), 0, 1);
+                        __builtin_prefetch(&*(++(++skSurfaces_[tid].begin())), 0, 1);
                     }
 #endif
                     auto surface = skSurfaces_[tid].front();
