@@ -342,7 +342,7 @@ void RSUniRenderVisitor::HandlePixelFormat(RSDisplayRenderNode& node, const sptr
         return;
     }
     ScreenId screenId = stagingDisplayParams->GetScreenId();
-    RSLuminanceControl::Get().SetHdrStatus(screenId, hasHdrpresent_ && !hasNotFullScreenWindow_);
+    RSLuminanceControl::Get().SetHdrStatus(screenId, hasHdrpresent_);
     bool isHdrOn = RSLuminanceControl::Get().IsHdrOn(screenId);
     float brightnessRatio = RSLuminanceControl::Get().GetHdrBrightnessRatio(screenId, 0);
     if (!hasHdrpresent_ && !hasUniRenderHdrSurface_) {
@@ -655,11 +655,9 @@ void RSUniRenderVisitor::CheckFilterCacheNeedForceClearOrSave(RSRenderNode& node
     }
     bool rotationChanged = curDisplayNode_ ?
         curDisplayNode_->IsRotationChanged() || curDisplayNode_->IsLastRotationChanged() : false;
-    bool hdrChanged = curDisplayNode_ ?
-        RSLuminanceControl::Get().IsDimmingOn(curDisplayNode_->GetScreenId()) : false;
     bool rotationStatusChanged = curDisplayNode_ ?
         curDisplayNode_->GetPreRotationStatus() != curDisplayNode_->GetCurRotationStatus() : false;
-    node.CheckBlurFilterCacheNeedForceClearOrSave(rotationChanged || hdrChanged, rotationStatusChanged);
+    node.CheckBlurFilterCacheNeedForceClearOrSave(rotationChanged, rotationStatusChanged);
 }
 
 void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
@@ -1588,6 +1586,10 @@ void RSUniRenderVisitor::UpdateHwcNodeEnable()
                 ancoNodes.emplace_back(hwcNodePtr);
                 ancoHasGpu = (ancoHasGpu || hwcNodePtr->IsHardwareForcedDisabled());
             }
+            // HDR is UniRender
+            if (hwcNodePtr->IsHardwareForcedDisabled() && RSMainThread::CheckIsHdrSurface(*hwcNodePtr)) {
+                hasUniRenderHdrSurface_ = true;
+            }
         }
     });
 
@@ -1598,6 +1600,19 @@ void RSUniRenderVisitor::UpdateHwcNodeEnable()
     }
 
     PrevalidateHwcNode();
+
+    if (hasUniRenderHdrSurface_) {
+        const auto& selfDrawingNodes = RSMainThread::Instance()->GetSelfDrawingNodes();
+        if (selfDrawingNodes.empty()) {
+            return;
+        }
+        for (auto hwcNode : selfDrawingNodes) {
+            if (!hwcNode->IsHardwareForcedDisabled()) {
+                RS_TRACE_NAME_FMT("HDR draw in uniRender");
+                hwcNode->SetHardwareForcedDisabledState(true);
+            }
+        }
+    }
 }
 
 void RSUniRenderVisitor::PrevalidateHwcNode()
@@ -1708,10 +1723,6 @@ void RSUniRenderVisitor::UpdateHwcNodeDirtyRegionAndCreateLayer(std::shared_ptr<
             hwcNodePtr->SetForceClientForDRMOnly(displayNodeRotationChanged_ || isScreenRotationAnimating_);
         } else {
             hwcNodePtr->SetForceClientForDRMOnly(false);
-        }
-        // HDR in UniRender
-        if (hwcNodePtr->IsHardwareForcedDisabled() && RSMainThread::CheckIsHdrSurface(*hwcNodePtr)) {
-            hasUniRenderHdrSurface_ = true;
         }
     }
     curDisplayNode_->SetDisplayGlobalZOrder(globalZOrder_);
@@ -2302,8 +2313,6 @@ void RSUniRenderVisitor::CheckFilterNodeInSkippedSubTreeNeedClearCache(
 {
     bool rotationChanged = curDisplayNode_ ?
         curDisplayNode_->IsRotationChanged() || curDisplayNode_->IsLastRotationChanged() : false;
-    bool hdrChanged = curDisplayNode_ ?
-        RSLuminanceControl::Get().IsDimmingOn(curDisplayNode_->GetScreenId()) : false;
     bool rotationStatusChanged = curDisplayNode_ ?
         curDisplayNode_->GetPreRotationStatus() != curDisplayNode_->GetCurRotationStatus() : false;
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
@@ -2316,7 +2325,7 @@ void RSUniRenderVisitor::CheckFilterNodeInSkippedSubTreeNeedClearCache(
         if (auto effectNode = RSRenderNode::ReinterpretCast<RSEffectRenderNode>(filterNode)) {
             UpdateRotationStatusForEffectNode(*effectNode);
         }
-        filterNode->CheckBlurFilterCacheNeedForceClearOrSave(rotationChanged || hdrChanged, rotationStatusChanged);
+        filterNode->CheckBlurFilterCacheNeedForceClearOrSave(rotationChanged, rotationStatusChanged);
         filterNode->MarkClearFilterCacheIfEffectChildrenChanged();
         if (filterNode->GetRenderProperties().GetBackgroundFilter()) {
             filterNode->UpdateFilterCacheWithBelowDirty(dirtyManager, false);
@@ -2665,13 +2674,6 @@ void RSUniRenderVisitor::UpdateSurfaceRenderNodeScale(RSSurfaceRenderNode& node)
         isScale = (!ROSEN_EQ(absMatrix.Get(Drawing::Matrix::SCALE_X), 1.f, EPSILON_SCALE) ||
             !ROSEN_EQ(absMatrix.Get(Drawing::Matrix::SCALE_Y), 1.f, EPSILON_SCALE));
     } else {
-        const auto& dstRect = node.GetDstRect();
-        float dstRectWidth = dstRect.GetWidth();
-        float dstRectHeight = dstRect.GetHeight();
-        // [planning] this will be deleted by hdr solution
-        if (dstRectWidth < screenInfo_.width || dstRectHeight < screenInfo_.height) {
-            hasNotFullScreenWindow_ = true;
-        }
         bool getMinMaxScales = false;
         // scaleFactors[0]-minimum scaling factor, scaleFactors[1]-maximum scaling factor
         Drawing::scalar scaleFactors[2];
@@ -2681,6 +2683,9 @@ void RSUniRenderVisitor::UpdateSurfaceRenderNodeScale(RSSurfaceRenderNode& node)
         }
         if (!getMinMaxScales) {
             RS_LOGD("getMinMaxScales fail, node:%{public}s %{public}" PRIu64 "", node.GetName().c_str(), node.GetId());
+            const auto& dstRect = node.GetDstRect();
+            float dstRectWidth = dstRect.GetWidth();
+            float dstRectHeight = dstRect.GetHeight();
             float boundsWidth = property.GetBoundsWidth();
             float boundsHeight = property.GetBoundsHeight();
             isScale =
