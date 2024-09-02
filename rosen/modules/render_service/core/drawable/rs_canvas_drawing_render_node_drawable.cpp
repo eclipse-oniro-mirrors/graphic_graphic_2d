@@ -714,6 +714,7 @@ bool RSCanvasDrawingRenderNodeDrawable::ResetSurfaceWithTexture(int width, int h
     }
     if (canvas.GetGPUContext() == nullptr) {
         RS_LOGE("RSCanvasDrawingRenderNodeDrawable::ResetSurfaceWithTexture GPU context is nullptr");
+        ClearPreSurface(preSurface);
         return false;
     }
 
