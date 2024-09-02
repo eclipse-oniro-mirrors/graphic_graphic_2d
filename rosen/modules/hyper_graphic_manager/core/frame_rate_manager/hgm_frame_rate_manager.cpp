@@ -449,6 +449,8 @@ void HgmFrameRateManager::FrameRateReport()
     }
     HGM_LOGD("FrameRateReport: RS(%{public}d) = %{public}d, APP(%{public}d) = %{public}d",
         GetRealPid(), rates[GetRealPid()], UNI_APP_PID, rates[UNI_APP_PID]);
+    RS_TRACE_NAME_FMT("FrameRateReport: RS(%d) = %d, APP(%d) = %d",
+        GetRealPid(), rates[GetRealPid()], UNI_APP_PID, rates[UNI_APP_PID]);
     FRAME_TRACE::FrameRateReport::GetInstance().SendFrameRates(rates);
     FRAME_TRACE::FrameRateReport::GetInstance().SendFrameRatesToRss(rates);
     schedulePreferredFpsChange_ = false;
@@ -500,8 +502,8 @@ bool HgmFrameRateManager::CollectFrameRateChange(FrameRateRange finalRange,
                 linker.second->GetId(), appFrameRate);
             frameRateChanged = true;
         }
-        if (expectedRange.min_ == OLED_NULL_HZ && expectedRange.max_ == OLED_144_HZ &&
-            expectedRange.preferred_ == OLED_NULL_HZ) {
+        if (expectedRange.min_ == OLED_NULL_HZ && expectedRange.preferred_ == OLED_NULL_HZ &&
+            (expectedRange.max_ == OLED_144_HZ || expectedRange.max_ == OLED_NULL_HZ)) {
             continue;
         }
         RS_TRACE_NAME_FMT("HgmFrameRateManager::UniProcessData multiAppFrameRate: pid = %d, linkerId = %ld, "\
