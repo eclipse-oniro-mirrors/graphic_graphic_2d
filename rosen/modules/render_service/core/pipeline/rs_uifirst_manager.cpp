@@ -407,7 +407,7 @@ void RSUifirstManager::SyncHDRDisplayParam(std::shared_ptr<DrawableV2::RSSurface
 
 bool RSUifirstManager::CheckVisibleDirtyRegionIsEmpty(const std::shared_ptr<RSSurfaceRenderNode>& node)
 {
-    if (RSMainThread::Instance()->GetDeviceType() != DeviceType::PC) {
+    if (GetUiFirstMode() != UiFirstModeType::MULTI_WINDOW_MODE) {
         return false;
     }
     for (auto& child : *node->GetSortedChildren()) {
@@ -1186,7 +1186,7 @@ bool RSUifirstManager::IsArkTsCardCache(RSSurfaceRenderNode& node, bool animatio
     if (RSLuminanceControl::Get().IsHdrOn(curDisplayNode->GetScreenId())) {
         return false;
     }
-    bool flag = ((RSMainThread::Instance()->GetDeviceType() == DeviceType::PHONE) &&
+    bool flag = ((GetUiFirstMode() == UiFirstModeType::SINGLE_WINDOW_MODE) &&
         (node.GetSurfaceNodeType() == RSSurfaceNodeType::ABILITY_COMPONENT_NODE) &&
         RSUifirstManager::Instance().NodeIsInCardWhiteList(node) &&
         (node.ShouldPaint()) && (node.GetName().find(ARKTSCARDNODE_NAME) != std::string::npos));
@@ -1203,7 +1203,7 @@ bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animat
         return true;
     }
     bool isNeedAssignToSubThread = false;
-    if ((RSMainThread::Instance()->GetDeviceType() == DeviceType::PC) ||
+    if ((GetUiFirstMode() == UiFirstModeType::MULTI_WINDOW_MODE) ||
         (node.GetFirstLevelNodeId() != node.GetId()) ||
         (RSUifirstManager::Instance().NodeIsInCardWhiteList(node)) ||
         (RSUifirstManager::Instance().CheckIfAppWindowHasAnimation(node))) {
@@ -1236,7 +1236,7 @@ bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animat
 bool RSUifirstManager::IsNonFocusWindowCache(RSSurfaceRenderNode& node, bool animation)
 {
     bool isDisplayRotation = RSUifirstManager::Instance().rotationChanged_;
-    if ((RSMainThread::Instance()->GetDeviceType() != DeviceType::PC) ||
+    if ((GetUiFirstMode() != UiFirstModeType::MULTI_WINDOW_MODE) ||
         (node.GetFirstLevelNodeId() != node.GetId()) ||
         (RSUifirstManager::Instance().NodeIsInCardWhiteList(node))) {
         return false;
@@ -1262,7 +1262,7 @@ void RSUifirstManager::UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancest
         ancestorNodeHasAnimation, node.GetUifirstSupportFlag(), isUiFirstOn_);
     if (!isUiFirstOn_ || !node.GetUifirstSupportFlag()) {
         UifirstStateChange(node, MultiThreadCacheType::NONE);
-        if (!node.isUifirstNode_ && RSMainThread::Instance()->GetDeviceType() != DeviceType::PC) {
+        if (!node.isUifirstNode_ && GetUiFirstMode() != UiFirstModeType::MULTI_WINDOW_MODE) {
             node.isUifirstDelay_++;
             if (node.isUifirstDelay_ > EVENT_STOP_TIMEOUT) {
                 node.isUifirstNode_ = true;
@@ -1482,6 +1482,21 @@ void RSUifirstManager::CheckCurrentFrameHasCardNodeReCreate(const RSSurfaceRende
         node.GetId()) != currentFrameDeletedCardNodes_.end()) {
         isCurrentFrameHasCardNodeReCreate_ = true;
     }
+}
+
+RSUifirstManager::UiFirstModeType RSUifirstManager::GetUiFirstMode()
+{
+    auto deviceType = RSMainThread::Instance()->GetDeviceType();
+    if (deviceType == DeviceType::PHONE) {
+        return UiFirstModeType::SINGLE_WINDOW_MODE;
+    }
+    if (deviceType == DeviceType::PC) {
+        return UiFirstModeType::MULTI_WINDOW_MODE;
+    }
+    if (deviceType == DeviceType::TABLET) {
+        return isFreeMultiWindowEnabled_ ? UiFirstModeType::MULTI_WINDOW_MODE : UiFirstModeType::SINGLE_WINDOW_MODE;
+    }
+    return UiFirstModeType::SINGLE_WINDOW_MODE;
 }
 
 } // namespace Rosen

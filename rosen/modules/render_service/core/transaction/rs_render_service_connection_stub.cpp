@@ -1768,6 +1768,11 @@ int RSRenderServiceConnectionStub::OnRemoteRequest(
             reply.WriteBool(CreateNode(config, id));
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_FREE_MULTI_WINDOW_STATUS) : {
+            bool enable = data.ReadBool();
+            SetFreeMultiWindowStatus(direct);
+            break;
+        }
         default: {
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }

@@ -1957,5 +1957,11 @@ bool RSRenderServiceConnection::SetAncoForceDoDirect(bool direct)
     return true;
 }
 
+void RSRenderServiceConnection::SetFreeMultiWindowStatus(bool enable)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    mainThread_->SetFreeMultiWindowStatus(enable);
+}
+
 } // namespace Rosen
 } // namespace OHOS

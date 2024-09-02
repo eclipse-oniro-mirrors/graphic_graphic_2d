@@ -1841,6 +1841,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     }
     UpdateUIFirstSwitch();
     UpdateRogSizeIfNeeded();
+    RSUifirstManager::Instance().SetFreeMultiWindowStatus(isFreeMultiWindowEnabled_);
     auto uniVisitor = std::make_shared<RSUniRenderVisitor>();
     uniVisitor->SetAppWindowNum(appWindowNum_);
     uniVisitor->SetProcessorRenderEngine(GetRenderEngine());
@@ -3873,7 +3874,9 @@ void RSMainThread::UpdateUIFirstSwitch()
         return;
     }
     uint32_t actualScreensNum = screenManager_->GetActualScreensNum();
-    if (deviceType_ != DeviceType::PC) {
+    if ((deviceType_ == DeviceType::PHONE) ||
+        (deviceType_ == DeviceType::TABLET && !isFreeMultiWindowEnabled_) ||
+        (deviceType_ == DeviceType::OTHERS)) {
         if (hasProtectedLayer_) {
             isUiFirstOn_ = false;
         } else if (isFoldScreenDevice_) {
