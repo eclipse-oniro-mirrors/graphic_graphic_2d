@@ -2811,7 +2811,7 @@ void RSRenderServiceConnectionProxy::SetFreeMultiWindowStatus(bool enable)
         ROSEN_LOGE("RSRenderServiceConnectionProxy::SetFreeMultiWindowStatus: write token err.");
         return;
     }
-    option.SetFlags(MessageOption::TF_SYNC);
+    option.SetFlags(MessageOption::TF_ASYNC);
     if (!data.WriteBool(enable)) {
         ROSEN_LOGE("RSRenderServiceConnectionProxy::SetFreeMultiWindowStatus: write bool val err.");
         return;

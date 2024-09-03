@@ -40,11 +40,6 @@ public:
         std::set<NodeId> disableNodes;
     };
 
-    enum UiFirstModeType : uint8_t {
-        SINGLE_WINDOW_MODE,
-        MULTI_WINDOW_MODE,
-    };
-
     void AddProcessDoneNode(NodeId id);
     void AddPendingPostNode(NodeId id, std::shared_ptr<RSSurfaceRenderNode>& node,
         MultiThreadCacheType cacheType);
@@ -150,6 +145,7 @@ public:
     {
         isFreeMultiWindowEnabled_ = enable;
     }
+    UiFirstModeType GetUiFirstMode();
 
 private:
     RSUifirstManager();
@@ -196,8 +192,6 @@ private:
     void CheckCurrentFrameHasCardNodeReCreate(const RSSurfaceRenderNode& node);
     void ResetCurrentFrameDeletedCardNodes();
     bool IsPreFirstLevelNodeDoing(std::shared_ptr<RSRenderNode> node);
-
-    UiFirstModeType GetUiFirstMode();
 
     // only use in mainThread & RT onsync
     std::vector<NodeId> pendingForceUpdateNode_;

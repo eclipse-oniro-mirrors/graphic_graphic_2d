@@ -1485,7 +1485,7 @@ void RSUifirstManager::CheckCurrentFrameHasCardNodeReCreate(const RSSurfaceRende
     }
 }
 
-RSUifirstManager::UiFirstModeType RSUifirstManager::GetUiFirstMode()
+UiFirstModeType RSUifirstManager::GetUiFirstMode()
 {
     auto deviceType = RSMainThread::Instance()->GetDeviceType();
     if (deviceType == DeviceType::PHONE) {

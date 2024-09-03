@@ -1959,8 +1959,10 @@ bool RSRenderServiceConnection::SetAncoForceDoDirect(bool direct)
 
 void RSRenderServiceConnection::SetFreeMultiWindowStatus(bool enable)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    mainThread_->SetFreeMultiWindowStatus(enable);
+    auto task = [enable]() -> void {
+        RSUifirstManager::Instance().SetFreeMultiWindowStatus(enable);
+    };
+    mainThread_->PostTask(task);
 }
 
 } // namespace Rosen

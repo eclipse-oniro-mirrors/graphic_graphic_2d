@@ -366,11 +366,6 @@ public:
         return isOverDrawEnabledOfCurFrame_ != isOverDrawEnabledOfLastFrame_;
     }
 
-    void SetFreeMultiWindowStatus(bool enable)
-    {
-        isFreeMultiWindowEnabled_ = enable;
-    }
-
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -720,8 +715,6 @@ private:
 
     // graphic config
     bool isBlurSwitchOpen_ = true;
-
-    bool isFreeMultiWindowEnabled_ = false;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD
