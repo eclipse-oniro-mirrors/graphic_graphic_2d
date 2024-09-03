@@ -687,19 +687,19 @@ void RSRenderServiceConnection::UnregisterFrameRateLinker(FrameRateLinkerId id)
     }
     mainThread_->ScheduleTask(
         [weakThis = wptr<RSRenderServiceConnection>(this), id]() {
-        sptr<RSRenderServiceConnection> connection = weakThis.promote();
-        if (!connection) {
-            return;
-        }
-        auto& context = connection->mainThread_->GetContext();
-        auto& linkerMap = context.GetMutableFrameRateLinkerMap();
-        auto linker = linkerMap.GetFrameRateLinker(id);
-        if (linker == nullptr) {
-            RS_LOGE("UnregisterFrameRateLinker there is no frameRateLinker for id %{public}" PRIu64, id);
-            return;
-        }
-        linkerMap.UnregisterFrameRateLinker(id);
-    }).wait();
+            sptr<RSRenderServiceConnection> connection = weakThis.promote();
+            if (!connection) {
+                return;
+            }
+            auto& context = connection->mainThread_->GetContext();
+            auto& linkerMap = context.GetMutableFrameRateLinkerMap();
+            auto linker = linkerMap.GetFrameRateLinker(id);
+            if (linker == nullptr) {
+                RS_LOGE("UnregisterFrameRateLinker there is no frameRateLinker for id %{public}" PRIu64, id);
+                return;
+            }
+            linkerMap.UnregisterFrameRateLinker(id);
+        }).wait();
 }
 
 uint32_t RSRenderServiceConnection::GetScreenCurrentRefreshRate(ScreenId id)
@@ -909,10 +909,11 @@ void RSRenderServiceConnection::TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCap
             // When the isSync flag in captureConfig is true, UI capture processes commands before capture.
             // When the isSync flag in captureConfig is false, UI capture will check null node independently.
             // Therefore, a null node is valid for UI capture.
-            if (!selfCapture) {
+            auto uiCaptureHasPermission = selfCapture || isSystemCalling;
+            if (!uiCaptureHasPermission) {
                 RS_LOGE("RSRenderServiceConnection::TakeSurfaceCapture uicapture failed, nodeId:[%{public}" PRIu64
-                        "], selfCapture: %{public}u",
-                    id, selfCapture);
+                        "], isSystemCalling: %{public}u, selfCapture: %{public}u",
+                    id, isSystemCalling, selfCapture);
                 callback->OnSurfaceCapture(id, nullptr);
                 return;
             }

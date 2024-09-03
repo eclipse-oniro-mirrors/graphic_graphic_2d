@@ -167,7 +167,7 @@ private:
     void SetCanvasBlack(RSProcessor& processor);
     // Prepare for off-screen render
     void ClearTransparentBeforeSaveLayer();
-    void PrepareOffscreenRender(const RSDisplayRenderNodeDrawable& displayDrawable);
+    void PrepareOffscreenRender(const RSDisplayRenderNodeDrawable& displayDrawable, bool useFixedSize = false);
     void FinishOffscreenRender(const Drawing::SamplingOptions& sampling, float hdrBrightnessRatio = 1.0f);
     void PrepareHdrDraw(int32_t offscreenWidth, int32_t offscreenHeight);
     void FinishHdrDraw(Drawing::Brush& paint, float hdrBrightnessRatio);

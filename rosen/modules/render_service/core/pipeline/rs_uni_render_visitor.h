@@ -166,7 +166,7 @@ public:
 
     using RenderParam = std::tuple<std::shared_ptr<RSRenderNode>, RSPaintFilterCanvas::CanvasStatus>;
 private:
-    const std::unordered_set<NodeId>& GetCurrentBlackList() const;
+    const std::unordered_set<NodeId> GetCurrentBlackList() const;
     /* Prepare relevant calculation */
     // considering occlusion info for app surface as well as widget
     bool IsSubTreeOccluded(RSRenderNode& node) const;
@@ -185,7 +185,14 @@ private:
         FILL,
         STROKE
     };
-
+    // check if surface name is in UIFirst dfx target list
+    inline bool CheckIfSurfaceForUIFirstDFX(std::string nodeName)
+    {
+        return std::find_if(dfxUIFirstSurfaceNames_.begin(), dfxUIFirstSurfaceNames_.end(),
+            [&](const std::string& str) {
+                return nodeName.find(str) != std::string::npos;
+            }) != dfxUIFirstSurfaceNames_.end();
+    }
     bool InitDisplayInfo(RSDisplayRenderNode& node);
 
     bool BeforeUpdateSurfaceDirtyCalc(RSSurfaceRenderNode& node);
@@ -233,6 +240,8 @@ private:
     void UpdateHwcNodeProperty(std::shared_ptr<RSSurfaceRenderNode> hwcNode);
     void UpdateHwcNodeByTransform(RSSurfaceRenderNode& node);
     void UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSSurfaceRenderNode>& node);
+    void ProcessAncoNode(std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr,
+        std::vector<std::shared_ptr<RSSurfaceRenderNode>>& ancoNodes, bool& ancoHasGpu);
     void UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(std::vector<RectI>& hwcRects,
         std::shared_ptr<RSSurfaceRenderNode>& hwcNode);
     void UpdateChildHwcNodeEnableByHwcNodeBelow(std::vector<RectI>& hwcRects,
@@ -348,6 +357,7 @@ private:
     bool isOpDropped_ = false;
     bool isDirtyRegionDfxEnabled_ = false; // dirtyRegion DFX visualization
     bool isTargetDirtyRegionDfxEnabled_ = false;
+    bool isTargetUIFirstDfxEnabled_ = false;
     bool isOpaqueRegionDfxEnabled_ = false;
     bool isVisibleRegionDfxEnabled_ = false;
     bool isAllSurfaceVisibleDebugEnabled_ = false;
@@ -364,6 +374,7 @@ private:
     bool isScreenRotationAnimating_ = false;
     bool displayNodeRotationChanged_ = false;
     std::vector<std::string> dfxTargetSurfaceNames_;
+    std::vector<std::string> dfxUIFirstSurfaceNames_;
     PartialRenderType partialRenderType_;
     DirtyRegionDebugType dirtyRegionDebugType_;
     SurfaceRegionDebugType surfaceRegionDebugType_;

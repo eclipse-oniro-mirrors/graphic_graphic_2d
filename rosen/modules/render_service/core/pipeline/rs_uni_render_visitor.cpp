@@ -168,6 +168,7 @@ void RSUniRenderVisitor::PartialRenderOptionInit()
     surfaceRegionDebugType_ = RSSystemProperties::GetSurfaceRegionDfxType();
     isTargetDirtyRegionDfxEnabled_ = RSSystemProperties::GetTargetDirtyRegionDfxEnabled(dfxTargetSurfaceNames_) &&
         (surfaceRegionDebugType_ == SurfaceRegionDebugType::DISABLED);
+    isTargetUIFirstDfxEnabled_ = RSSystemProperties::GetTargetUIFirstDfxEnabled(dfxTargetSurfaceNames_);
     isRegionDebugEnabled_ = (dirtyRegionDebugType_ != DirtyRegionDebugType::DISABLED) ||
         (surfaceRegionDebugType_ != SurfaceRegionDebugType::DISABLED) || (dfxTargetSurfaceNames_.size() > 0);
     isVisibleRegionDfxEnabled_ = (surfaceRegionDebugType_ == SurfaceRegionDebugType::VISIBLE_REGION);
@@ -741,6 +742,12 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
 void RSUniRenderVisitor::PrepareForUIFirstNode(RSSurfaceRenderNode& node)
 {
     MultiThreadCacheType lastFlag = node.GetLastFrameUifirstFlag();
+    auto isSurface = CheckIfSurfaceForUIFirstDFX(node.GetName());
+    if (isTargetUIFirstDfxEnabled_ && !node.isTargetUIFirstDfxEnabled_ && CheckIfSurfaceForUIFirstDFX(node.GetName())) {
+        RS_LOGD("UIFirstDFX Name[%{public}s] ID[%{public}" PRIu64 "] OpenDebug",
+            node.GetName().c_str(), node.GetId());
+    }
+    node.isTargetUIFirstDfxEnabled_ = isTargetDirtyRegionDfxEnabled_ && isSurface;
     RSUifirstManager::Instance().UpdateUifirstNodes(node, ancestorNodeHasAnimation_ || node.GetCurFrameHasAnimation());
     RSUifirstManager::Instance().UpdateUIFirstNodeUseDma(node, globalSurfaceBounds_);
     if (node.GetLastFrameUifirstFlag() == MultiThreadCacheType::LEASH_WINDOW &&
@@ -795,7 +802,7 @@ void RSUniRenderVisitor::CalculateOcclusion(RSSurfaceRenderNode& node)
     // check current surface Participate In Occlusion
     if (node.CheckParticipateInOcclusion() && !ancestorNodeHasAnimation_ && !isAllSurfaceVisibleDebugEnabled_) {
         accumulatedOcclusionRegion_.OrSelf(node.GetOpaqueRegion());
-        const auto& currentBlackList = GetCurrentBlackList();
+        const auto currentBlackList = GetCurrentBlackList();
         if (IsValidInVirtualScreen(node) && currentBlackList.find(node.GetId()) == currentBlackList.end()) {
             occlusionRegionWithoutSkipLayer_.OrSelf(node.GetOpaqueRegion());
         }
@@ -881,7 +888,7 @@ void RSUniRenderVisitor::SurfaceOcclusionCallbackToWMS()
     }
 }
 
-const std::unordered_set<NodeId>& RSUniRenderVisitor::GetCurrentBlackList() const
+const std::unordered_set<NodeId> RSUniRenderVisitor::GetCurrentBlackList() const
 {
     if (!screenManager_ || !curDisplayNode_) {
         return std::unordered_set<NodeId>();
@@ -1554,6 +1561,23 @@ void RSUniRenderVisitor::UpdateHwcNodeEnableByRotateAndAlpha(std::shared_ptr<RSS
     }
 }
 
+void RSUniRenderVisitor::ProcessAncoNode(std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr,
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>>& ancoNodes, bool& ancoHasGpu)
+{
+    if ((hwcNodePtr->GetAncoFlags() & static_cast<uint32_t>(AncoFlags::IS_ANCO_NODE)) == 0) {
+        return;
+    }
+    ancoNodes.emplace_back(hwcNodePtr);
+    auto alpha = hwcNodePtr->GetGlobalAlpha();
+    RS_LOGD("rs debug: name:%{public}s id:%{public}" PRIu64 "src %{public}s dst %{public}s "
+        "alpha:%{public}.2f", hwcNodePtr->GetName().c_str(), hwcNodePtr->GetId(),
+        hwcNodePtr->GetSrcRect().ToString().c_str(), hwcNodePtr->GetDstRect().ToString().c_str(), alpha);
+    if (ROSEN_EQ(alpha, 0.0f)) {
+        return;
+    }
+    ancoHasGpu = (ancoHasGpu || hwcNodePtr->IsHardwareForcedDisabled());
+}
+
 void RSUniRenderVisitor::UpdateHwcNodeEnable()
 {
     bool ancoHasGpu = false;
@@ -1582,10 +1606,7 @@ void RSUniRenderVisitor::UpdateHwcNodeEnable()
             UpdateHwcNodeEnableByRotateAndAlpha(hwcNodePtr);
             UpdateHwcNodeEnableByHwcNodeBelowSelfInApp(hwcRects, hwcNodePtr);
 
-            if (hwcNodePtr->GetAncoFlags() & static_cast<uint32_t>(AncoFlags::IS_ANCO_NODE)) {
-                ancoNodes.emplace_back(hwcNodePtr);
-                ancoHasGpu = (ancoHasGpu || hwcNodePtr->IsHardwareForcedDisabled());
-            }
+            ProcessAncoNode(hwcNodePtr, ancoNodes, ancoHasGpu);
             // HDR is UniRender
             if (hwcNodePtr->IsHardwareForcedDisabled() && RSMainThread::CheckIsHdrSurface(*hwcNodePtr)) {
                 hasUniRenderHdrSurface_ = true;

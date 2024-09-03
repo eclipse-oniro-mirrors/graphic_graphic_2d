@@ -669,6 +669,7 @@ void RSMainThread::Init()
             return;
         }
         RSImageCache::Instance().SetMemoryCheckCallback(MemoryManager::MemoryOverCheck);
+        RSTypefaceCache::Instance().SetMemoryCheckCallback(MemoryManager::MemoryOverCheck);
         grContext->SetMemoryOverCheck(MemoryManager::MemoryOverCheck);
         grContext->SetRemoveMemoryFromSnapshotInfo([](const pid_t pid, const size_t size) {
             MemorySnapshot::Instance().RemoveGpuMemory(pid, size);
@@ -1342,9 +1343,10 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
                 auto preBuffer = surfaceHandler.GetPreBuffer();
                 surfaceNode->UpdateBufferInfo(buffer,
                     surfaceHandler.GetDamageRegion(), surfaceHandler.GetAcquireFence(), preBuffer);
-                if (surfaceHandler.GetBufferSizeChanged()) {
+                if (surfaceHandler.GetBufferSizeChanged() || surfaceHandler.GetBufferTransformTypeChanged()) {
                     surfaceNode->SetContentDirty();
                     doDirectComposition_ = false;
+                    surfaceHandler.SetBufferTransformTypeChanged(false);
                     RS_OPTIONAL_TRACE_NAME_FMT("rs debug: name %s, id %" PRIu64", surfaceNode buffer size changed",
                         surfaceNode->GetName().c_str(), surfaceNode->GetId());
                     RS_LOGD("ConsumeAndUpdateAllNodes name:%{public}s id:%{public}" PRIu64" buffer size changed, "
@@ -1568,7 +1570,7 @@ void RSMainThread::CheckIfHardwareForcedDisabled()
     bool isMultiDisplay = rootNode->GetChildrenCount() > 1;
 
     // check all children of global root node, and only disable hardware composer
-    // in case node's composite type is UNI_RENDER_EXPAND_COMPOSITE
+    // in case node's composite type is UNI_RENDER_EXPAND_COMPOSITE or Wired projection
     const auto& children = rootNode->GetChildren();
     auto itr = std::find_if(children->begin(), children->end(), [](const std::shared_ptr<RSRenderNode>& child) -> bool {
             if (child == nullptr) {
@@ -1578,15 +1580,20 @@ void RSMainThread::CheckIfHardwareForcedDisabled()
                 return false;
             }
             auto displayNodeSp = std::static_pointer_cast<RSDisplayRenderNode>(child);
+            if (displayNodeSp->GetMirrorSource().lock()) {
+                // wired projection case
+                return displayNodeSp->GetCompositeType() == RSDisplayRenderNode::CompositeType::UNI_RENDER_COMPOSITE;
+            }
             return displayNodeSp->GetCompositeType() == RSDisplayRenderNode::CompositeType::UNI_RENDER_EXPAND_COMPOSITE;
     });
 
-    bool isExpandScreenCase = itr != children->end();
+    bool isExpandScreenOrWiredProjectionCase = itr != children->end();
     bool enableHwcForMirrorMode = RSSystemProperties::GetHardwareComposerEnabledForMirrorMode();
     // [PLANNING] GetChildrenCount > 1 indicates multi display, only Mirror Mode need be marked here
     // Mirror Mode reuses display node's buffer, so mark it and disable hardware composer in this case
     isHardwareForcedDisabled_ = isHardwareForcedDisabled_ || doWindowAnimate_ ||
-        (isMultiDisplay && (isExpandScreenCase || !enableHwcForMirrorMode) && !hasProtectedLayer_) || hasColorFilter;
+        (isMultiDisplay && (isExpandScreenOrWiredProjectionCase || !enableHwcForMirrorMode) && !hasProtectedLayer_) ||
+        hasColorFilter;
     RS_OPTIONAL_TRACE_NAME_FMT("hwc debug global: CheckIfHardwareForcedDisabled isHardwareForcedDisabled_:%d "
         "doWindowAnimate_:%d isMultiDisplay:%d hasColorFilter:%d",
         isHardwareForcedDisabled_, doWindowAnimate_.load(), isMultiDisplay, hasColorFilter);
@@ -1928,6 +1935,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     RSUniRenderThread::Instance().PostTask([] { RSUniRenderThread::Instance().ResetClearMemoryTask(); });
     if (doDirectComposition_ && !isDirty_ && !isAccessibilityConfigChanged_
         && !isCachedSurfaceUpdated_) {
+        doDirectComposition_ = isHardwareEnabledBufferUpdated_;
         if (isHardwareEnabledBufferUpdated_) {
             needTraverseNodeTree = !DoDirectComposition(rootNode, !isLastFrameDirectComposition_);
         } else if (forceUpdateUniRenderFlag_) {
@@ -1944,6 +1952,8 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
                 }
             }
             WaitUntilUploadTextureTaskFinishedForGL();
+            renderThreadParams_->selfDrawables_ = std::move(selfDrawables_);
+            renderThreadParams_->hardwareEnabledTypeDrawables_ = std::move(hardwareEnabledDrwawables_);
             return;
         }
     }
