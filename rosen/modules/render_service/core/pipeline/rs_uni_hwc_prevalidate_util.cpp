@@ -68,7 +68,7 @@ bool RSUniHwcPrevalidateUtil::PreValidate(
     ScreenId id, std::vector<RequestLayerInfo> infos, std::map<uint64_t, RequestCompositionType> &strategy)
 {
     if (!preValidateFunc_) {
-        RS_LOGD("RSUniHwcPrevalidateUtil::PreValidate preValidateFunc is null");
+        RS_LOGI_IF(DEBUG_PREVALIDATE, "RSUniHwcPrevalidateUtil::PreValidate preValidateFunc is null");
         return false;
     }
     int32_t ret = preValidateFunc_(id, infos, strategy);
@@ -97,8 +97,13 @@ bool RSUniHwcPrevalidateUtil::CreateSurfaceNodeLayerInfo(uint32_t zorder,
     } else {
         info.perFrameParameters["SourceCropTuning"] = std::vector<int8_t> {0};
     }
-    RS_LOGD("RSUniHwcPrevalidateUtil::CreateSurfaceNodeLayerInfo %{public}s, %{public}" PRIu64 ","
-        " src: %{public}s, dst: %{public}s, z: %{public}" PRIu32 ","
+
+    if (CheckIfDoArsrPre(node)) {
+        info.perFrameParameters["ArsrDoEnhance"] = std::vector<int8_t> {1};
+        node->SetArsrTag(true);
+    }
+    RS_LOGD_IF(DEBUG_PREVALIDATE, "RSUniHwcPrevalidateUtil::CreateSurfaceNodeLayerInfo %{public}s,"
+        " %{public}" PRIu64 ", src: %{public}s, dst: %{public}s, z: %{public}" PRIu32 ","
         " usage: %{public}" PRIu64 ", format: %{public}d, transform: %{public}d, fps: %{public}d",
         node->GetName().c_str(), node->GetId(),
         node->GetSrcRect().ToString().c_str(), node->GetDstRect().ToString().c_str(),
@@ -143,7 +148,7 @@ bool RSUniHwcPrevalidateUtil::CreateDisplayNodeLayerInfo(uint32_t zorder,
     info.format = buffer->GetFormat();
     info.fps = fps;
     LayerRotate(info, surfaceHandler->GetConsumer(), screenInfo);
-    RS_LOGD("RSUniHwcPrevalidateUtil::CreateDisplayNodeLayerInfo %{public}" PRIu64 ","
+    RS_LOGD_IF(DEBUG_PREVALIDATE, "RSUniHwcPrevalidateUtil::CreateDisplayNodeLayerInfo %{public}" PRIu64 ","
         " src: %{public}d,%{public}d,%{public}d,%{public}d"
         " dst: %{public}d,%{public}d,%{public}d,%{public}d, z: %{public}" PRIu32 ","
         " usage: %{public}" PRIu64 ", format: %{public}d, transform: %{public}d, fps: %{public}d",
@@ -169,7 +174,7 @@ bool RSUniHwcPrevalidateUtil::CreateUIFirstLayerInfo(
     info.usage = BUFFER_USAGE_HW_RENDER | BUFFER_USAGE_HW_TEXTURE | BUFFER_USAGE_HW_COMPOSER | BUFFER_USAGE_MEM_DMA;
     info.fps = fps;
     info.transform = static_cast<int>(transform);
-    RS_LOGD("RSUniHwcPrevalidateUtil::CreateUIFirstLayerInfo %{public}s, %{public}" PRIu64 ","
+    RS_LOGD_IF(DEBUG_PREVALIDATE, "RSUniHwcPrevalidateUtil::CreateUIFirstLayerInfo %{public}s, %{public}" PRIu64 ","
         " src: %{public}s, dst: %{public}s, z: %{public}" PRIu32 ","
         " usage: %{public}" PRIu64 ", format: %{public}d, transform: %{public}d, fps: %{public}d",
         node->GetName().c_str(), node->GetId(),
@@ -199,7 +204,7 @@ bool RSUniHwcPrevalidateUtil::CreateRCDLayerInfo(
     info.fps = fps;
     CopyCldInfo(node->GetCldInfo(), info);
     LayerRotate(info, node->GetConsumer(), screenInfo);
-    RS_LOGD("RSUniHwcPrevalidateUtil::CreateRCDLayerInfo %{public}" PRIu64 ","
+    RS_LOGD_IF(DEBUG_PREVALIDATE, "RSUniHwcPrevalidateUtil::CreateRCDLayerInfo %{public}" PRIu64 ","
         " src: %{public}d,%{public}d,%{public}d,%{public}d"
         " dst: %{public}d,%{public}d,%{public}d,%{public}d, z: %{public}" PRIu32 ","
         " usage: %{public}" PRIu64 ", format: %{public}d, transform: %{public}d, fps: %{public}d",
@@ -303,6 +308,21 @@ void RSUniHwcPrevalidateUtil::CopyCldInfo(CldInfo src, RequestLayerInfo& info)
     info.cldInfo->exWidth = src.exWidth;
     info.cldInfo->exHeight = src.exHeight;
     info.cldInfo->baseColor = src.baseColor;
+}
+
+bool RSUniHwcPrevalidateUtil::CheckIfDoArsrPre(const RSSurfaceRenderNode::SharedPtr node)
+{
+    if (node->GetRSSurfaceHandler()->GetBuffer() == nullptr) {
+        return false;
+    }
+    static const std::unordered_set<std::string> videoLayers {
+        "xcomponentIdSurface",
+        "componentIdSurface",
+    };
+    if (IsYUVBufferFormat(node) || (videoLayers.count(node->GetName()) > 0)) {
+        return true;
+    }
+    return false;
 }
 } //Rosen
 } //OHOS

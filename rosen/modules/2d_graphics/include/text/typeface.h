@@ -102,10 +102,33 @@ public:
         return nullptr;
     }
 
+    /**
+     * @brief   Get a 32bit hash for this typeface, unique for the underlying font data.
+     * @return  process independent hash
+     */
+    uint32_t GetHash() const;
+
+    /**
+     * @brief Set a 32bit hash for this typeface, unique for the underlying font data.
+     */
+    void SetHash(uint32_t hash);
+
+    /**
+     * @brief   Get serialized data size of typeface. Firstly set size before GetSize().
+     * @return  serialized data size
+     */
+    uint32_t GetSize();
+
+    /**
+     * @brief Set serialized data size of typeface.
+     */
+    void SetSize(uint32_t size);
+
 private:
     std::shared_ptr<TypefaceImpl> typefaceImpl_;
     static std::function<bool(std::shared_ptr<Typeface>)> registerTypefaceCallBack_;
     static std::function<bool(std::shared_ptr<Typeface>)> unregisterTypefaceCallBack_;
+    uint32_t size_ = 0;
 };
 } // namespace Drawing
 } // namespace Rosen

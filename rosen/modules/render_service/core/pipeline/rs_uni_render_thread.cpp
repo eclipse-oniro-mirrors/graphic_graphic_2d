@@ -318,31 +318,6 @@ void RSUniRenderThread::Render()
     PerfForBlurIfNeeded();
 }
 
-void RSUniRenderThread::ReleaseSkipSyncBuffer(std::vector<std::function<void()>>& tasks)
-{
-#ifndef ROSEN_CROSS_PLATFORM
-    auto& bufferToRelease = RSMainThread::Instance()->GetContext().GetMutableSkipSyncBuffer();
-    if (bufferToRelease.empty()) {
-        return;
-    }
-    for (const auto& item : bufferToRelease) {
-        if (!item.buffer || !item.consumer) {
-            continue;
-        }
-        auto releaseTask = [buffer = item.buffer, consumer = item.consumer,
-            useReleaseFence = item.useFence, acquireFence = acquireFence_]() mutable {
-            auto ret = consumer->ReleaseBuffer(buffer, useReleaseFence ?
-                RSHardwareThread::Instance().releaseFence_ : acquireFence);
-            if (ret != OHOS::SURFACE_ERROR_OK) {
-                RS_LOGD("ReleaseSelfDrawingNodeBuffer failed ret:%{public}d", ret);
-            }
-        };
-        tasks.emplace_back(releaseTask);
-    }
-    bufferToRelease.clear();
-#endif
-}
-
 void RSUniRenderThread::ReleaseSelfDrawingNodeBuffer()
 {
     if (!renderThreadParams_) {
@@ -392,7 +367,6 @@ void RSUniRenderThread::ReleaseSelfDrawingNodeBuffer()
             }
         }
     }
-    ReleaseSkipSyncBuffer(releaseTasks);
     if (releaseTasks.empty()) {
         return;
     }
@@ -612,11 +586,11 @@ bool RSUniRenderThread::IsHighContrastTextModeOn() const
     return uniRenderEngine_->IsHighContrastEnabled();
 }
 
-std::string FormatNumber(size_t number)
+static std::string FormatNumber(size_t number)
 {
-    constexpr uint8_t FORMATE_NUM_STEP = 3;
+    constexpr int FORMATE_NUM_STEP = 3;
     std::string strNumber = std::to_string(number);
-    int n = strNumber.length();
+    int n = static_cast<int>(strNumber.length());
     for (int i = n - FORMATE_NUM_STEP; i > 0; i -= FORMATE_NUM_STEP) {
         strNumber.insert(i, ",");
     }

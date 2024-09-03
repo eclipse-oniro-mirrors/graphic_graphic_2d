@@ -339,6 +339,11 @@ bool RSPixelStretchDrawable::OnUpdate(const RSRenderNode& node)
     return true;
 }
 
+void RSPixelStretchDrawable::SetPixelStretch(const std::optional<Vector4f>& pixelStretch)
+{
+    stagingPixelStretch_ = pixelStretch;
+}
+
 void RSPixelStretchDrawable::OnSync()
 {
     if (!needSync_) {
@@ -429,13 +434,7 @@ void RSBorderDrawable::DrawBorder(const RSProperties& properties, Drawing::Canva
     Drawing::scalar centerX = innerRoundRect.GetRect().GetLeft() + innerRoundRect.GetRect().GetWidth() / 2;
     Drawing::scalar centerY = innerRoundRect.GetRect().GetTop() + innerRoundRect.GetRect().GetHeight() / 2;
     Drawing::Point center = { centerX, centerY };
-    auto rect = rrect.GetRect();
-    Drawing::SaveLayerOps slr(&rect, nullptr);
-    canvas.SaveLayer(slr);
-    border->PaintTopPath(canvas, pen, rrect, center);
-    border->PaintRightPath(canvas, pen, rrect, center);
-    border->PaintBottomPath(canvas, pen, rrect, center);
-    border->PaintLeftPath(canvas, pen, rrect, center);
+    border->DrawBorders(canvas, pen, rrect, center);
 }
 
 RSDrawable::Ptr RSOutlineDrawable::OnGenerate(const RSRenderNode& node)

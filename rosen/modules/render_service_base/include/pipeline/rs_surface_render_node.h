@@ -44,6 +44,7 @@
 #include "surface_buffer.h"
 #include "sync_fence.h"
 #endif
+#include "ipc_security/rs_ipc_interface_code_access_verifier_base.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -117,6 +118,13 @@ public:
         return nodeType_ == RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE && GetName() == "pointer window";
     }
 
+    void SetLayerTop(bool isTop);
+
+    bool IsLayerTop() const
+    {
+        return isLayerTop_;
+    }
+
     // indicate if this node type can enable hardware composer
     bool IsHardwareEnabledType() const
     {
@@ -124,7 +132,7 @@ public:
             return false;
         }
         return (nodeType_ == RSSurfaceNodeType::SELF_DRAWING_NODE && isHardwareEnabledNode_) ||
-            IsHardwareEnabledTopSurface();
+            IsHardwareEnabledTopSurface() || IsLayerTop();
     }
 
     void SetHardwareEnabled(bool isEnabled, SelfDrawingNodeType selfDrawingType = SelfDrawingNodeType::DEFAULT)
@@ -337,14 +345,7 @@ public:
         return nodeType_;
     }
 
-    void SetSurfaceNodeType(RSSurfaceNodeType nodeType)
-    {
-        if (nodeType_ != RSSurfaceNodeType::ABILITY_COMPONENT_NODE &&
-            nodeType_ != RSSurfaceNodeType::UI_EXTENSION_COMMON_NODE &&
-            nodeType_ != RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE) {
-            nodeType_ = nodeType;
-        }
-    }
+    void SetSurfaceNodeType(RSSurfaceNodeType nodeType);
 
     void MarkUIHidden(bool isHidden);
     bool IsUIHidden() const;
@@ -354,11 +355,6 @@ public:
     const std::string& GetName() const
     {
         return name_;
-    }
-
-    const std::string& GetBundleName() const
-    {
-        return bundleName_;
     }
 
     void SetOffSetX(int32_t offset)
@@ -390,6 +386,16 @@ public:
     {
         offsetX_ = offsetX;
         offsetY_ = offsetY;
+    }
+
+    bool GetArsrTag() const
+    {
+        return arsrTag_;
+    }
+
+    void SetArsrTag(bool arsrTag)
+    {
+        arsrTag_ = arsrTag;
     }
 
     void CollectSurface(const std::shared_ptr<RSBaseRenderNode>& node, std::vector<RSBaseRenderNode::SharedPtr>& vec,
@@ -489,8 +495,8 @@ public:
 
     static void SetAncoForceDoDirect(bool direct);
     bool GetAncoForceDoDirect() const;
-    void SetAncoFlags(int32_t flags);
-    int32_t GetAncoFlags() const;
+    void SetAncoFlags(uint32_t flags);
+    uint32_t GetAncoFlags() const;
 
     void SetHDRPresent(bool hasHdrPresent);
     bool GetHDRPresent() const;
@@ -1085,6 +1091,8 @@ public:
     Vector2f GetGravityTranslate(float imgWidth, float imgHeight);
     bool GetHasTransparentSurface() const;
     void UpdatePartialRenderParams();
+    // This function is used for extending visibleRegion by dirty blurfilter node half-obscured
+    void UpdateExtendVisibleRegion(Occlusion::Region& region);
     void UpdateAncestorDisplayNodeInRenderParams();
 
     void SetNeedDrawFocusChange(bool needDrawFocusChange)
@@ -1289,8 +1297,8 @@ private:
     SurfaceId surfaceId_ = 0;
 
     std::string name_;
-    std::string bundleName_;
     RSSurfaceNodeType nodeType_ = RSSurfaceNodeType::DEFAULT;
+    bool isLayerTop_ = false;
     const enum SurfaceWindowType surfaceWindowType_ = SurfaceWindowType::DEFAULT_WINDOW;
     GraphicColorGamut colorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
 #ifndef ROSEN_CROSS_PLATFORM
@@ -1316,6 +1324,7 @@ private:
     different under filter cache surfacenode layer.
     */
     Occlusion::Region visibleRegion_;
+    Occlusion::Region extendVisibleRegion_;
     Occlusion::Region visibleRegionInVirtual_;
     Occlusion::Region visibleRegionForCallBack_;
     bool isLeashWindowVisibleRegionEmpty_ = false;
@@ -1466,6 +1475,7 @@ private:
     bool UIFirstIsPurge_ = false;
     // whether to wait uifirst first frame finished when buffer available callback invoked.
     std::atomic<bool> isWaitUifirstFirstFrame_ = false;
+    bool isTargetUIFirstDfxEnabled_ = false;
 
     TreeStateChangeCallback treeStateChangeCallback_;
     RSBaseRenderNode::WeakPtr ancestorDisplayNode_;
@@ -1483,7 +1493,7 @@ private:
     bool forceUIFirst_ = false;
     bool hasTransparentSurface_ = false;
 
-    std::atomic<int32_t> ancoFlags_ = 0;
+    std::atomic<uint32_t> ancoFlags_ = 0;
     static inline std::atomic<bool> ancoForceDoDirect_ = false;
 
     bool isGpuOverDrawBufferOptimizeNode_ = false;
@@ -1498,6 +1508,8 @@ private:
 
     bool isHardwareForcedByBackgroundAlpha_ = false;
     std::map<std::string, std::pair<bool, std::shared_ptr<Media::PixelMap>>> watermarkHandles_ = {};
+
+    bool arsrTag_ = true;
 
     // UIExtension record, <UIExtension, hostAPP>
     inline static std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};

@@ -280,7 +280,7 @@ bool RSSystemProperties::GetHardwareComposerEnabled()
 bool RSSystemProperties::GetHardwareComposerEnabledForMirrorMode()
 {
     static bool hardwareComposerMirrorEnabled =
-        system::GetParameter("persist.rosen.hardwarecomposer.mirror.enabled", "0") != "0";
+        system::GetParameter("persist.rosen.hardwarecomposer.mirror.enabled", "1") != "0";
     return hardwareComposerMirrorEnabled;
 }
 
@@ -589,6 +589,13 @@ bool RSSystemProperties::GetHpsBlurEnabled()
     return hpsBlurEnabled && !forceHpsBlurDisabled_;
 }
 
+bool RSSystemProperties::GetMESABlurFuzedEnabled()
+{
+    static bool blurPixelStretchEnabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.mesaBlurFuzedEnable", "1")).c_str()) != 0;
+    return blurPixelStretchEnabled;
+}
+
 float RSSystemProperties::GetKawaseRandomColorFactor()
 {
     static float randomFactor =
@@ -692,6 +699,20 @@ bool RSSystemProperties::GetUIFirstDebugEnabled()
     return debugEnable;
 }
 
+bool RSSystemProperties::GetTargetUIFirstDfxEnabled(std::vector<std::string>& SurfaceNames)
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.UIFirstdebug.surfacenames", "0");
+    int changed = 0;
+    const char *targetSurfacesStr = CachedParameterGetChanged(g_Handle, &changed);
+    if (strcmp(targetSurfacesStr, "0") == 0) {
+        SurfaceNames.clear();
+        return false;
+    }
+    SurfaceNames.clear();
+    ParseDfxSurfaceNamesString(targetSurfacesStr, SurfaceNames, ",");
+    return true;
+}
+
 bool RSSystemProperties::GetDebugTraceEnabled()
 {
     static bool openDebugTrace = system::GetIntParameter("persist.sys.graphic.openDebugTrace", 0) != 0;
@@ -717,6 +738,13 @@ bool RSSystemProperties::GetDumpImgEnabled()
     static bool dumpImgEnabled =
         std::atoi((system::GetParameter("persist.sys.graphic.dumpImgEnabled", "0")).c_str()) != 0;
     return dumpImgEnabled;
+}
+
+bool RSSystemProperties::GetTransactionTerminateEnabled()
+{
+    static bool terminateEnabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.transactionTerminateEnabled", "0")).c_str()) != 0;
+    return terminateEnabled;
 }
 
 bool RSSystemProperties::FindNodeInTargetList(std::string node)
@@ -1071,6 +1099,21 @@ bool RSSystemProperties::GetGpuOverDrawBufferOptimizeEnabled()
 bool RSSystemProperties::GetSkipDisplayIfScreenOffEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.graphic.screenoffskipdisplayenabled", "1");
+    int changed = 0;
+    const char *num = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(num, 1) != 0;
+}
+
+bool RSSystemProperties::GetMemoryOverTreminateEnabled()
+{
+    static bool flag =
+        std::atoi((system::GetParameter("persist.sys.graphic.memoryOverTreminateEnabled", "0")).c_str()) != 0;
+    return flag;
+}
+
+bool RSSystemProperties::GetHwcDirtyRegionEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.graphic.hwcdirtyregion.enabled", "1");
     int changed = 0;
     const char *num = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(num, 1) != 0;

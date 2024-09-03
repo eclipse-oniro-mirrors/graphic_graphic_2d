@@ -247,6 +247,24 @@ public:
         return firstLevelNodeId_;
     }
     const std::shared_ptr<RSRenderNode> GetFirstLevelNode() const;
+
+    inline const std::set<NodeId>& GetPreFirstLevelNodeIdSet()
+    {
+        return preFirstLevelNodeIdSet_;
+    }
+
+    inline std::set<NodeId>& GetMutablePreFirstLevelNodeIdSet()
+    {
+        return preFirstLevelNodeIdSet_;
+    }
+
+    void AddPreFirstLevelNodeIdSet(const std::set<NodeId>& preSet)
+    {
+        for (const auto& it : preSet) {
+            preFirstLevelNodeIdSet_.insert(it);
+        }
+    }
+
     // only use for ARKTS_CARD
     inline NodeId GetUifirstRootNodeId() const
     {
@@ -259,7 +277,7 @@ public:
     void ResetChildRelevantFlags();
     // accumulate all valid children's area
     void UpdateChildrenRect(const RectI& subRect);
-    void UpdateCurCornerRadius(Vector4f& curCornerRadius, bool isSubNodeInSurface);
+    void UpdateCurCornerRadius(Vector4f& curCornerRadius);
     void SetDirty(bool forceAddToActiveList = false);
 
     virtual void AddDirtyType(RSModifierType type)
@@ -316,8 +334,13 @@ public:
         return shouldPaint_;
     }
 
+    // dirty rect of current frame after update dirty, last frame before update
     RectI GetOldDirty() const;
+    // dirty rect in display of current frame after update dirty, last frame before update
     RectI GetOldDirtyInSurface() const;
+    // clip rect of last frame before post prepare, current frame after post prepare
+    RectI GetOldClipRect() const;
+
     bool IsDirtyRegionUpdated() const;
     void CleanDirtyRegionUpdated();
 
@@ -808,6 +831,7 @@ private:
     NodeId id_;
     NodeId instanceRootNodeId_ = INVALID_NODEID;
     NodeId firstLevelNodeId_ = INVALID_NODEID;
+    std::set<NodeId> preFirstLevelNodeIdSet_ = {};
     NodeId uifirstRootNodeId_ = INVALID_NODEID;
 
     WeakPtr parent_;

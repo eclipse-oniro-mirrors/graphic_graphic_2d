@@ -44,13 +44,15 @@ struct RSLayerInfo {
     GraphicTransformType transformType = GraphicTransformType::GRAPHIC_ROTATE_NONE;
     GraphicLayerType layerType = GraphicLayerType::GRAPHIC_LAYER_TYPE_GRAPHIC;
     int32_t layerSource;
+    bool arsrTag = true;
     bool operator==(const RSLayerInfo& layerInfo) const
     {
         return (srcRect == layerInfo.srcRect) && (dstRect == layerInfo.dstRect) &&
             (boundRect == layerInfo.boundRect) && (matrix == layerInfo.matrix) && (gravity == layerInfo.gravity) &&
             (zOrder == layerInfo.zOrder) && (blendType == layerInfo.blendType) &&
             (transformType == layerInfo.transformType) && (ROSEN_EQ(alpha, layerInfo.alpha)) &&
-            (layerSource == layerInfo.layerSource) && (layerType == layerInfo.layerType);
+            (layerSource == layerInfo.layerSource) && (layerType == layerInfo.layerType) &&
+            (arsrTag == layerInfo.arsrTag);
     }
 #endif
 };
@@ -138,6 +140,10 @@ public:
     bool GetAnimateState() const
     {
         return animateState_;
+    }
+    bool GetIsRotating() const
+    {
+        return isRotating_;
     }
     bool GetForceClientForDRMOnly() const
     {
@@ -296,6 +302,14 @@ public:
     void SetOccludedByFilterCache(bool val);
     bool GetOccludedByFilterCache() const;
 
+    void SetFilterCacheFullyCovered(bool val);
+    bool GetFilterCacheFullyCovered() const;
+
+    const std::vector<NodeId>& GetVisibleFilterChild() const;
+    bool IsTransparent() const;
+    void CheckValidFilterCacheFullyCoverTarget(
+        bool isFilterCacheValidForOcclusion, const RectI& filterCachedRect, const RectI& targetRect);
+
     void SetLayerInfo(const RSLayerInfo& layerInfo);
     const RSLayerInfo& GetLayerInfo() const override;
     void SetHardwareEnabled(bool enabled);
@@ -323,6 +337,9 @@ public:
 
     void SetSkipDraw(bool skip);
     bool GetSkipDraw() const;
+
+    void SetLayerTop(bool isTop);
+    bool IsLayerTop() const;
 
     bool IsVisibleDirtyRegionEmpty(const Drawing::Region curSurfaceDrawRegion) const;
     
@@ -397,18 +414,6 @@ public:
     {
         return totalMatrix_;
     }
-    void SetGlobalAlpha(float alpha) override
-    {
-        if (globalAlpha_ == alpha) {
-            return;
-        }
-        globalAlpha_ = alpha;
-        needSync_ = true;
-    }
-    float GetGlobalAlpha() override
-    {
-        return globalAlpha_;
-    }
     void SetFingerprint(bool hasFingerprint) override
     {
         if (hasFingerprint_ == hasFingerprint) {
@@ -459,11 +464,13 @@ private:
     Occlusion::Region visibleRegion_;
     Occlusion::Region visibleRegionInVirtual_;
     bool isOccludedByFilterCache_ = false;
+    // if current surfaceNode has filter cache to occlude the back surfaceNode
+    bool isFilterCacheFullyCovered_ = false;
+    std::vector<NodeId> visibleFilterChild_;
     RSLayerInfo layerInfo_;
 #ifndef ROSEN_CROSS_PLATFORM
     sptr<SurfaceBuffer> buffer_ = nullptr;
     sptr<SurfaceBuffer> preBuffer_ = nullptr;
-    sptr<SurfaceBuffer> preBufferFence_ = nullptr;
     sptr<SyncFence> acquireFence_ = SyncFence::INVALID_FENCE;
     Rect damageRect_ = {0, 0, 0, 0};
 #endif
@@ -476,6 +483,7 @@ private:
     bool isSkipLayer_ = false;
     bool isProtectedLayer_ = false;
     bool animateState_ = false;
+    bool isRotating_ = false;
     bool forceClientForDRMOnly_ = false;
     bool isSubSurfaceNode_ = false;
     Gravity uiFirstFrameGravity_ = Gravity::TOP_LEFT;
@@ -488,6 +496,7 @@ private:
     Vector4f overDrawBufferNodeCornerRadius_;
     bool isGpuOverDrawBufferOptimizeNode_ = false;
     bool isSkipDraw_ = false;
+    bool isLayerTop_ = false;
     ScalingMode preScalingMode_ = ScalingMode::SCALING_MODE_SCALE_TO_WINDOW;
     bool needOffscreen_ = false;
     bool layerCreated_ = false;

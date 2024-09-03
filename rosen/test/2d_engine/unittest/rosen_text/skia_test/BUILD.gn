@@ -21,6 +21,7 @@ module_output_path = "graphic_2d/rosen/modules/2d_engine/rosen_text/skia_test"
 ohos_unittest("2d_engine_rosen_text_skia_test") {
   module_out_path = module_output_path
   sources = [
+    "skia_anyspan_test.cpp",
     "skia_txt_test.cpp",
     "texgine_test.cpp",
   ]
@@ -45,6 +46,8 @@ ohos_unittest("2d_engine_rosen_text_skia_test") {
     "$rosen_root/modules/texgine/texgine_drawing:libtexgine_drawing",
     "//third_party/googletest:gtest_main",
   ]
+
+  defines = [ "USE_GRAPHIC_TEXT_GINE" ]
 
   part_name = "graphic_2d"
   subsystem_name = "graphic"

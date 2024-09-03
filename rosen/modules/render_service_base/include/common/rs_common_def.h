@@ -284,7 +284,6 @@ enum class SurfaceWindowType : uint8_t {
 struct RSSurfaceRenderNodeConfig {
     NodeId id = 0;
     std::string name = "SurfaceNode";
-    std::string bundleName = "";
     RSSurfaceNodeType nodeType = RSSurfaceNodeType::DEFAULT;
     void* additionalData = nullptr;
     bool isTextureExportNode = false;
@@ -310,6 +309,7 @@ using RSSurfaceTextureUpdateCallBack = std::function<void(std::vector<float>&)>;
 struct RSDisplayNodeConfig {
     uint64_t screenId = 0;
     bool isMirrored = false;
+    bool isSync = false;
     NodeId mirrorNodeId = 0;
 };
 
@@ -407,7 +407,7 @@ inline typename Container::size_type EraseIf(Container& container, Predicate pre
     return oldSize - container.size();
 }
 
-enum class AncoFlags : int32_t {
+enum class AncoFlags : uint32_t {
     IS_ANCO_NODE = 0x0001
 };
 

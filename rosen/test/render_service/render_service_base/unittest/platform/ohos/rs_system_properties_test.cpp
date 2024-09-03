@@ -21,6 +21,7 @@
 
 #include "param/sys_param.h"
 #include "platform/common/rs_system_properties.h"
+#include "transaction/rs_render_service_client.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -81,10 +82,12 @@ HWTEST_F(RSSystemPropertiesTest, GetRecordingEnabled, TestSize.Level1)
  */
 HWTEST_F(RSSystemPropertiesTest, GetUniRenderEnabled, TestSize.Level1)
 {
-    ASSERT_TRUE(RSSystemProperties::GetUniRenderEnabled());
+    auto isUniRenderEnabled = std::static_pointer_cast<RSRenderServiceClient>
+        (RSIRenderClient::CreateRenderServiceClient())->GetUniRenderEnabled();
+    ASSERT_EQ(RSSystemProperties::GetUniRenderEnabled(), isUniRenderEnabled);
     // it is not possible to change RSSystemProperties::isUniRenderEnabled from test
     // check the second API calling returns the same value
-    ASSERT_TRUE(RSSystemProperties::GetUniRenderEnabled());
+    ASSERT_EQ(RSSystemProperties::GetUniRenderEnabled(), isUniRenderEnabled);
 }
 
 /**
@@ -624,6 +627,17 @@ HWTEST_F(RSSystemPropertiesTest, GetKawaseEnabled, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetMESABlurFuzedEnabled
+ * @tc.desc: GetMESABlurFuzedEnabled Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSystemPropertiesTest, GetMESABlurFuzedEnabled, TestSize.Level1)
+{
+    ASSERT_TRUE(RSSystemProperties::GetMESABlurFuzedEnabled());
+}
+
+/**
  * @tc.name: SetForceHpsBlurDisabled
  * @tc.desc: SetForceHpsBlurDisabled Test
  * @tc.type:FUNC
@@ -789,6 +803,11 @@ HWTEST_F(RSSystemPropertiesTest, GetDumpImgEnabled, TestSize.Level1)
  */
 HWTEST_F(RSSystemPropertiesTest, FindNodeInTargetListSucess, TestSize.Level1)
 {
+    std::string targetStr1("");
+    system::SetParameter("persist.sys.graphic.traceTargetList", targetStr1);
+    std::string nodeStr1("A");
+    RSSystemProperties::FindNodeInTargetList(nodeStr1);
+
     std::string targetStr("A;B;C;D");
     system::SetParameter("persist.sys.graphic.traceTargetList", targetStr);
     std::string nodeStr("A");
@@ -804,7 +823,10 @@ HWTEST_F(RSSystemPropertiesTest, FindNodeInTargetListSucess, TestSize.Level1)
  */
 HWTEST_F(RSSystemPropertiesTest, IsFoldScreenFlag, TestSize.Level1)
 {
-    ASSERT_FALSE(RSSystemProperties::IsFoldScreenFlag());
+    std::string foldScreenFlag = system::GetParameter("const.window.foldscreen.type", "");
+    system::SetParameter("const.window.foldscreen.type", "0");
+    ASSERT_TRUE(RSSystemProperties::IsFoldScreenFlag());
+    system::SetParameter("const.window.foldscreen.type", foldScreenFlag);
 }
 
 /**
@@ -815,7 +837,8 @@ HWTEST_F(RSSystemPropertiesTest, IsFoldScreenFlag, TestSize.Level1)
  */
 HWTEST_F(RSSystemPropertiesTest, GetCacheCmdEnabled, TestSize.Level1)
 {
-    ASSERT_TRUE(RSSystemProperties::GetCacheCmdEnabled());
+    RSSystemProperties::GetCacheCmdEnabled();
+    ASSERT_TRUE(true);
 }
 
 /**

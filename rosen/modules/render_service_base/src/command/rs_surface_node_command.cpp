@@ -39,11 +39,10 @@ void SurfaceNodeCommandHelper::Create(RSContext& context, NodeId id, RSSurfaceNo
 }
 
 void SurfaceNodeCommandHelper::CreateWithConfig(
-    RSContext& context, NodeId nodeId, std::string name, uint8_t type,
-    std::string bundleName, enum SurfaceWindowType windowType)
+    RSContext& context, NodeId nodeId, std::string name, uint8_t type, enum SurfaceWindowType windowType)
 {
     RSSurfaceRenderNodeConfig config = {
-        .id = nodeId, .name = name, .bundleName = bundleName,
+        .id = nodeId, .name = name,
         .nodeType = static_cast<RSSurfaceNodeType>(type), .surfaceWindowType = windowType
     };
     auto node = std::shared_ptr<RSSurfaceRenderNode>(new RSSurfaceRenderNode(config,
@@ -272,7 +271,7 @@ void SurfaceNodeCommandHelper::SetForceUIFirst(RSContext& context, NodeId nodeId
     }
 }
 
-void SurfaceNodeCommandHelper::SetAncoFlags(RSContext& context, NodeId nodeId, int32_t flags)
+void SurfaceNodeCommandHelper::SetAncoFlags(RSContext& context, NodeId nodeId, uint32_t flags)
 {
     if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
         node->SetAncoFlags(flags);
@@ -307,6 +306,22 @@ void SurfaceNodeCommandHelper::SetWatermarkEnabled(RSContext& context, NodeId no
     if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
         node->SetWatermarkEnabled(name, isEnabled);
     }
+}
+
+void SurfaceNodeCommandHelper::SetLayerTop(RSContext& context, NodeId nodeId, std::string nodeIdStr, bool isTop)
+{
+    const auto& nodeMap = context.GetNodeMap();
+    nodeMap.TraverseSurfaceNodes(
+        [&nodeIdStr, &isTop](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
+        if (surfaceNode == nullptr) {
+            return;
+        }
+        if ((surfaceNode->GetName() == nodeIdStr) &&
+            (surfaceNode->GetSurfaceNodeType() == RSSurfaceNodeType::SELF_DRAWING_NODE)) {
+            surfaceNode->SetLayerTop(isTop);
+            return;
+        }
+    });
 }
 } // namespace Rosen
 } // namespace OHOS

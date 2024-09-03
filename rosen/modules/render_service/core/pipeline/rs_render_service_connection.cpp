@@ -26,6 +26,7 @@
 #include "rs_trace.h"
 #include "system/rs_system_parameters.h"
 
+#include "command/rs_display_node_command.h"
 #include "command/rs_surface_node_command.h"
 #include "common/rs_background_thread.h"
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
@@ -292,6 +293,38 @@ bool RSRenderServiceConnection::GetUniRenderEnabled()
     return RSUniRenderJudgement::IsUniRender();
 }
 
+bool RSRenderServiceConnection::CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId)
+{
+    if (!mainThread_) {
+        return false;
+    }
+    std::shared_ptr<RSDisplayRenderNode> node =
+        DisplayNodeCommandHelper::CreateWithConfigInRS(mainThread_->GetContext(), nodeId,
+            displayNodeConfig);
+    if (node == nullptr) {
+        RS_LOGE("RSRenderService::CreateDisplayNode fail");
+        return false;
+    }
+    std::function<void()> registerNode = [node, weakThis = wptr<RSRenderServiceConnection>(this),
+        mirrorNodeId = displayNodeConfig.mirrorNodeId]() -> void {
+        sptr<RSRenderServiceConnection> connection = weakThis.promote();
+        if (!connection) {
+            return;
+        }
+        auto& context = connection->mainThread_->GetContext();
+        context.GetMutableNodeMap().RegisterRenderNode(node);
+        context.GetGlobalRootRenderNode()->AddChild(node);
+        auto mirrorSourceNode = context.GetNodeMap()
+            .GetRenderNode<RSDisplayRenderNode>(mirrorNodeId);
+        if (!mirrorSourceNode) {
+            return;
+        }
+        node->SetMirrorSource(mirrorSourceNode);
+    };
+    mainThread_->PostSyncTask(registerNode);
+    return true;
+}
+
 bool RSRenderServiceConnection::CreateNode(const RSSurfaceRenderNodeConfig& config)
 {
     if (!mainThread_) {
@@ -332,8 +365,8 @@ sptr<Surface> RSRenderServiceConnection::CreateNodeAndSurface(const RSSurfaceRen
     }
     const std::string& surfaceName = surface->GetName();
     RS_LOGI("RsDebug RSRenderService::CreateNodeAndSurface node" \
-        "id:%{public}" PRIu64 " name:%{public}s bundleName:%{public}s surface id:%{public}" PRIu64 " name:%{public}s",
-        node->GetId(), node->GetName().c_str(), node->GetBundleName().c_str(),
+        "id:%{public}" PRIu64 " name:%{public}s surface id:%{public}" PRIu64 " name:%{public}s",
+        node->GetId(), node->GetName().c_str(),
         surface->GetUniqueId(), surfaceName.c_str());
     auto defaultUsage = surface->GetDefaultUsage();
     surface->SetDefaultUsage(defaultUsage | BUFFER_USAGE_MEM_DMA | BUFFER_USAGE_HW_COMPOSER);
@@ -647,6 +680,28 @@ void RSRenderServiceConnection::SyncFrameRateRange(FrameRateLinkerId id,
         }).wait();
 }
 
+void RSRenderServiceConnection::UnregisterFrameRateLinker(FrameRateLinkerId id)
+{
+    if (!mainThread_) {
+        return;
+    }
+    mainThread_->ScheduleTask(
+        [weakThis = wptr<RSRenderServiceConnection>(this), id]() {
+            sptr<RSRenderServiceConnection> connection = weakThis.promote();
+            if (!connection) {
+                return;
+            }
+            auto& context = connection->mainThread_->GetContext();
+            auto& linkerMap = context.GetMutableFrameRateLinkerMap();
+            auto linker = linkerMap.GetFrameRateLinker(id);
+            if (linker == nullptr) {
+                RS_LOGE("UnregisterFrameRateLinker there is no frameRateLinker for id %{public}" PRIu64, id);
+                return;
+            }
+            linkerMap.UnregisterFrameRateLinker(id);
+        }).wait();
+}
+
 uint32_t RSRenderServiceConnection::GetScreenCurrentRefreshRate(ScreenId id)
 {
     uint32_t rate = HgmTaskHandleThread::Instance().ScheduleTask([id] () -> uint32_t {
@@ -807,7 +862,7 @@ void TakeSurfaceCaptureForUiParallel(
         return;
     }
 
-    if (node->IsOnTheTree() && !node->IsDirty()) {
+    if (node->IsOnTheTree() && !node->IsDirty() && !node->IsSubTreeDirty()) {
         RSMainThread::Instance()->PostTask(captureTask);
     } else {
         RSMainThread::Instance()->AddUiCaptureTask(id, captureTask);
@@ -850,6 +905,25 @@ void RSRenderServiceConnection::TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCap
         screenCapturePermission = permissions.screenCapturePermission,
         isSystemCalling = permissions.isSystemCalling,
         selfCapture = permissions.selfCapture]() -> void {
+        if (captureConfig.captureType == SurfaceCaptureType::UICAPTURE) {
+            // When the isSync flag in captureConfig is true, UI capture processes commands before capture.
+            // When the isSync flag in captureConfig is false, UI capture will check null node independently.
+            // Therefore, a null node is valid for UI capture.
+            auto uiCaptureHasPermission = selfCapture || isSystemCalling;
+            if (!uiCaptureHasPermission) {
+                RS_LOGE("RSRenderServiceConnection::TakeSurfaceCapture uicapture failed, nodeId:[%{public}" PRIu64
+                        "], isSystemCalling: %{public}u, selfCapture: %{public}u",
+                    id, isSystemCalling, selfCapture);
+                callback->OnSurfaceCapture(id, nullptr);
+                return;
+            }
+            if (RSUniRenderJudgement::IsUniRender()) {
+                TakeSurfaceCaptureForUiParallel(id, callback, captureConfig);
+            } else {
+                TakeSurfaceCaptureForUIWithUni(id, callback, captureConfig);
+            }
+            return;
+        }
         auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode(id);
         if (node == nullptr) {
             RS_LOGE("RSRenderServiceConnection::TakeSurfaceCapture failed, node is nullptr");
@@ -866,27 +940,17 @@ void RSRenderServiceConnection::TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCap
             callback->OnSurfaceCapture(id, nullptr);
             return;
         }
-        auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
-        if (captureConfig.captureType == SurfaceCaptureType::DEFAULT_CAPTURE) {
-            if (renderType == UniRenderEnabledType::UNI_RENDER_DISABLED) {
-                RS_LOGD("RSRenderService::TakeSurfaceCapture captureTaskInner nodeId:[%{public}" PRIu64 "]",
-                    id);
-                ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSRenderService::TakeSurfaceCapture");
-                RSSurfaceCaptureTask task(id, captureConfig);
-                if (!task.Run(callback)) {
-                    callback->OnSurfaceCapture(id, nullptr);
-                }
-                ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
-            } else {
-                RSSurfaceCaptureTaskParallel::CheckModifiers(id);
-                RSSurfaceCaptureTaskParallel::Capture(id, callback, captureConfig);
+        if (RSUniRenderJudgement::GetUniRenderEnabledType() == UniRenderEnabledType::UNI_RENDER_DISABLED) {
+            RS_LOGD("RSRenderService::TakeSurfaceCapture captureTaskInner nodeId:[%{public}" PRIu64 "]", id);
+            ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSRenderService::TakeSurfaceCapture");
+            RSSurfaceCaptureTask task(id, captureConfig);
+            if (!task.Run(callback)) {
+                callback->OnSurfaceCapture(id, nullptr);
             }
+            ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
         } else {
-            if (RSUniRenderJudgement::IsUniRender()) {
-                TakeSurfaceCaptureForUiParallel(id, callback, captureConfig);
-            } else {
-                TakeSurfaceCaptureForUIWithUni(id, callback, captureConfig);
-            }
+            RSSurfaceCaptureTaskParallel::CheckModifiers(id);
+            RSSurfaceCaptureTaskParallel::Capture(id, callback, captureConfig);
         }
     };
     mainThread_->PostTask(captureTask);

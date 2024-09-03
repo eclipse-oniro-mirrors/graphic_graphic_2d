@@ -14,5 +14,11 @@
 group("fuzztest") {
   testonly = true
 
-  deps = [ "memallocator_fuzzer:fuzztest" ]
+  deps = [
+    "cmdlist_fuzzer:fuzztest",
+    "drawcmd_fuzzer:fuzztest",
+    "maskcmdlist_fuzzer:fuzztest",
+    "memallocator_fuzzer:fuzztest",
+    "opitem_fuzzer:fuzztest",
+  ]
 }

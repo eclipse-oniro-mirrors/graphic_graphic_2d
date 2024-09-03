@@ -37,6 +37,7 @@ ohos_unittest("2d_graphics_ndk_test") {
     "drawing_pen_test.cpp",
     "drawing_pixel_map_test.cpp",
     "drawing_point_test.cpp",
+    "drawing_record_cmd_test.cpp",
     "drawing_rect_test.cpp",
     "drawing_region_test.cpp",
     "drawing_register_font_test.cpp",
@@ -59,6 +60,7 @@ ohos_unittest("2d_graphics_ndk_test") {
       "$graphic_2d_root/rosen/modules/render_service_base/include",
       "//third_party/skia",
     ]
+    defines = [ "USE_GRAPHIC_TEXT_GINE" ]
   } else {
     include_dirs += [ "$graphic_2d_root/rosen/modules/2d_engine" ]
   }

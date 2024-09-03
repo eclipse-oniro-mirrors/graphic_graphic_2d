@@ -96,12 +96,6 @@ using WriteToPngParam = struct {
     const uint8_t *data;
 };
 
-using ControlBufferConsumeParam = struct ControlBufferConsumeParam {
-    std::string surfaceName = "";
-    bool isDisplaySurface = true;
-    uint64_t vsyncTimestamp = 0;
-};
-
 enum class ColorFilterMode {
     INVERT_COLOR_DISABLE_MODE = 0,
     INVERT_COLOR_ENABLE_MODE = 1,
@@ -125,16 +119,19 @@ public:
         GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_SRGB,
         GraphicPixelFormat pixelFormat = GRAPHIC_PIXEL_FMT_RGBA_8888);
 
-    static Drawing::Matrix GetSurfaceTransformMatrix(GraphicTransformType rotationTransform, const RectF& bounds);
+    static Drawing::Matrix GetSurfaceTransformMatrix(GraphicTransformType rotationTransform, const RectF &bounds,
+        const RectF &bufferBounds = {0.0f, 0.0f, 0.0f, 0.0f}, Gravity gravity = Gravity::RESIZE);
     static Drawing::Matrix GetGravityMatrix(Gravity gravity, const sptr<SurfaceBuffer>& buffer, const RectF& bounds);
+        
     static void SetPropertiesForCanvas(RSPaintFilterCanvas& canvas, const BufferDrawParam& params);
     static Drawing::ColorType GetColorTypeFromBufferFormat(int32_t pixelFmt);
     static Drawing::BitmapFormat GenerateDrawingBitmapFormat(const sptr<OHOS::SurfaceBuffer>& buffer);
 
     static GSError DropFrameProcess(RSSurfaceHandler& surfaceHandler);
     static Rect MergeBufferDamages(const std::vector<Rect>& damages);
-    static bool ConsumeAndUpdateBuffer(
-        RSSurfaceHandler& surfaceHandler, const ControlBufferConsumeParam& param = { "", true, 0});
+    static bool ConsumeAndUpdateBuffer(RSSurfaceHandler& surfaceHandler, const std::string& surfaceName = "",
+        const bool& isDisplaySurface = true, const uint64_t& vsyncTimestamp = 0);
+
     static bool ReleaseBuffer(RSSurfaceHandler& surfaceHandler);
 
     static std::unique_ptr<RSTransactionData> ParseTransactionData(MessageParcel& parcel);
@@ -156,7 +153,7 @@ public:
 
     static bool WritePixelMapToPng(Media::PixelMap& pixelMap);
     static void DealWithSurfaceRotationAndGravity(GraphicTransformType transform, Gravity gravity,
-        RectF localBounds, BufferDrawParam& params, RSSurfaceRenderParams* nodeParams = nullptr);
+        RectF& localBounds, BufferDrawParam& params, RSSurfaceRenderParams* nodeParams = nullptr);
     static void FlipMatrix(GraphicTransformType transform, BufferDrawParam& params);
 
     // GraphicTransformType has two attributes: rotation and flip, it take out one of the attributes separately

@@ -1312,7 +1312,6 @@ HWTEST_F(RSSurfaceNodeTest, ResetContextAlpha, TestSize.Level1)
 {
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    ASSERT_EQ(surfaceNode->GetBundleName(), std::string(""));
     surfaceNode->ResetContextAlpha();
     ASSERT_NE(RSTransactionProxy::GetInstance()->implicitRemoteTransactionData_, nullptr);
 }
@@ -1442,7 +1441,7 @@ HWTEST_F(RSSurfaceNodeTest, CreateNode, TestSize.Level1)
 {
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    const RSSurfaceRenderNodeConfig& config = {0, "SurfaceNode", "", RSSurfaceNodeType::DEFAULT, nullptr, false, false};
+    const RSSurfaceRenderNodeConfig& config = {0, "SurfaceNode", RSSurfaceNodeType::DEFAULT, nullptr, false, false};
     bool res = surfaceNode->CreateNode(config);
     ASSERT_EQ(true, res);
 }
@@ -1457,7 +1456,7 @@ HWTEST_F(RSSurfaceNodeTest, CreateNodeAndSurface, TestSize.Level1)
 {
     RSSurfaceNodeConfig c;
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    const RSSurfaceRenderNodeConfig& config = {0, "SurfaceNode", "", RSSurfaceNodeType::DEFAULT, nullptr, false, false};
+    const RSSurfaceRenderNodeConfig& config = {0, "SurfaceNode", RSSurfaceNodeType::DEFAULT, nullptr, false, false};
     SurfaceId surfaceId = 0;
     bool res = surfaceNode->CreateNodeAndSurface(config, surfaceId);
     ASSERT_EQ(true, res);
@@ -1583,4 +1582,35 @@ HWTEST_F(RSSurfaceNodeTest, GetSkipDraw, TestSize.Level1)
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     EXPECT_FALSE(surfaceNode->GetSkipDraw());
 }
+
+/**
+ * @tc.name: SetLayerTop
+ * @tc.desc: Test function SetLayerTop
+ * @tc.type: FUNC
+ * @tc.require: issueIAMKKL
+ */
+HWTEST_F(RSSurfaceNodeTest, SetLayerTop, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    std::string nodeName = "123456";
+    surfaceNode->SetLayerTop(nodeName, true);
+    EXPECT_TRUE(surfaceNode->IsLayerTop());
+    surfaceNode->SetLayerTop(nodeName, false);
+    EXPECT_FALSE(surfaceNode->IsLayerTop());
+}
+
+/**
+ * @tc.name: IsLayerTop
+ * @tc.desc: Test function IsLayerTop
+ * @tc.type: FUNC
+ * @tc.require: issueIAMKKL
+ */
+HWTEST_F(RSSurfaceNodeTest, IsLayerTop, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    EXPECT_FALSE(surfaceNode->IsLayerTop());
+}
+
 } // namespace OHOS::Rosen

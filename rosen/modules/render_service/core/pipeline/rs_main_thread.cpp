@@ -383,7 +383,6 @@ void RSMainThread::Init()
         RS_PROFILER_ON_RENDER_END();
         OnUniRenderDraw();
         UIExtensionNodesTraverseAndCallback();
-        InformHgmNodeInfo();
         if (!isUniRender_) {
             ReleaseAllNodesBuffer();
         }
@@ -596,6 +595,18 @@ void RSMainThread::Init()
     SubscribeAppState();
     PrintCurrentStatus();
     RSLuminanceControl::Get().Init();
+    if (isUniRender_) {
+        auto grContext = GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
+        if (grContext == nullptr) {
+            return;
+        }
+        RSImageCache::Instance().SetMemoryCheckCallback(MemoryManager::MemoryOverCheck);
+        RSTypefaceCache::Instance().SetMemoryCheckCallback(MemoryManager::MemoryOverCheck);
+        grContext->SetMemoryOverCheck(MemoryManager::MemoryOverCheck);
+        grContext->SetRemoveMemoryFromSnapshotInfo([](const pid_t pid, const size_t size) {
+            MemorySnapshot::Instance().RemoveGpuMemory(pid, size);
+        });
+    }
 }
 
 void RSMainThread::RsEventParamDump(std::string& dumpString)
@@ -734,6 +745,8 @@ void RSMainThread::Start()
 
 void RSMainThread::ProcessCommand()
 {
+    RSUnmarshalThread::Instance().ClearTransactionDataStatistics();
+
     // To improve overall responsiveness, we make animations start on LAST frame instead of THIS frame.
     // If last frame is too far away (earlier than 1 vsync from now), we use currentTimestamp_ - REFRESH_PERIOD as
     // 'virtual' last frame timestamp.
@@ -822,30 +835,6 @@ void RSMainThread::CacheCommands()
         cachedTransactionDataMap_[pid].insert(cachedTransactionDataMap_[pid].begin(),
             std::make_move_iterator(skipTransactionDataVec.begin()),
             std::make_move_iterator(skipTransactionDataVec.end()));
-    }
-}
-
-void RSMainThread::CheckIfNodeIsBundle(std::shared_ptr<RSSurfaceRenderNode> node)
-{
-    currentBundleName_ = node->GetBundleName();
-    if (node->GetName() == WALLPAPER_VIEW) {
-        noBundle_ = true;
-    }
-}
-
-void RSMainThread::InformHgmNodeInfo()
-{
-    auto &hgmCore = OHOS::Rosen::HgmCore::Instance();
-    int32_t informResult = EXEC_SUCCESS;
-    if (currentBundleName_ != "") {
-        informResult = hgmCore.RefreshBundleName(currentBundleName_);
-    } else if (noBundle_) {
-        currentBundleName_ = "";
-        informResult = hgmCore.RefreshBundleName(currentBundleName_);
-        noBundle_ = false;
-    }
-    if (informResult != EXEC_SUCCESS) {
-        RS_LOGE("RSMainThread::InformHgmNodeInfo failed to refresh bundle name in hgm");
     }
 }
 
@@ -1066,20 +1055,6 @@ void RSMainThread::ProcessCommandForUniRender()
         doDirectComposition_ = false;
         RS_OPTIONAL_TRACE_NAME_FMT("rs debug: %s transactionDataEffective not empty", __func__);
     }
-    const auto& nodeMap = context_->GetNodeMap();
-    nodeMap.TraverseCanvasDrawingNodes([](const std::shared_ptr<RSCanvasDrawingRenderNode>& canvasDrawingNode) {
-        if (canvasDrawingNode == nullptr) {
-            return;
-        }
-        if (canvasDrawingNode->IsNeedProcess()) {
-            auto drawableNode = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(canvasDrawingNode);
-            if (!drawableNode) {
-                return;
-            }
-            std::static_pointer_cast<DrawableV2::RSCanvasDrawingRenderNodeDrawable>(drawableNode)->
-                PlaybackInCorrespondThread();
-        }
-    });
     RS_TRACE_NAME("RSMainThread::ProcessCommandUni" + transactionFlags);
     transactionFlags_ = transactionFlags;
     for (auto& rsTransactionElem: *transactionDataEffective) {
@@ -1112,10 +1087,10 @@ void RSMainThread::ProcessCommandForDividedRender()
         }
         for (auto& [surfaceNodeId, commandMap] : cachedCommands_) {
             auto node = nodeMap.GetRenderNode<RSSurfaceRenderNode>(surfaceNodeId);
-            auto bufferTimestamp = bufferTimestamps_.find(surfaceNodeId);
+            auto bufferTimestamp = dividedRenderbufferTimestamps_.find(surfaceNodeId);
             std::map<uint64_t, std::vector<std::unique_ptr<RSCommand>>>::iterator effectIter;
 
-            if (!node || !node->IsOnTheTree() || bufferTimestamp == bufferTimestamps_.end()) {
+            if (!node || !node->IsOnTheTree() || bufferTimestamp == dividedRenderbufferTimestamps_.end()) {
                 // If node has been destructed or is not on the tree or has no valid buffer,
                 // for all command cached in commandMap should be executed immediately
                 effectIter = commandMap.end();
@@ -1239,7 +1214,9 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
     RS_OPTIONAL_TRACE_BEGIN("RSMainThread::ConsumeAndUpdateAllNodes");
     bool needRequestNextVsync = false;
     bool hasHdrVideo = false;
-    bufferTimestamps_.clear();
+    if (!isUniRender_) {
+        dividedRenderbufferTimestamps_.clear();
+    }
     const auto& nodeMap = GetContext().GetNodeMap();
     nodeMap.TraverseSurfaceNodes(
         [this, &needRequestNextVsync, &hasHdrVideo](const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
@@ -1275,8 +1252,11 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         }
         surfaceHandler.ResetCurrentFrameBufferConsumed();
         if (RSBaseRenderUtil::ConsumeAndUpdateBuffer(
-            surfaceHandler, {surfaceNode->GetName(), false, timestamp_})) {
-            this->bufferTimestamps_[surfaceNode->GetId()] = static_cast<uint64_t>(surfaceHandler.GetTimestamp());
+            surfaceHandler, surfaceNode->GetName(), false, timestamp_)) {
+            if (!isUniRender_) {
+                this->dividedRenderbufferTimestamps_[surfaceNode->GetId()] =
+                    static_cast<uint64_t>(surfaceHandler.GetTimestamp());
+            }
             if (surfaceHandler.IsCurrentFrameBufferConsumed() && surfaceNode->IsHardwareEnabledType()) {
                 GpuDirtyRegionCollection::GetInstance().UpdateActiveDirtyInfoForDFX(surfaceNode->GetId(),
                     surfaceNode->GetName(), surfaceHandler.GetDamageRegion());
@@ -1295,9 +1275,10 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
                 auto preBuffer = surfaceHandler.GetPreBuffer();
                 surfaceNode->UpdateBufferInfo(buffer,
                     surfaceHandler.GetDamageRegion(), surfaceHandler.GetAcquireFence(), preBuffer);
-                if (surfaceHandler.GetBufferSizeChanged()) {
+                if (surfaceHandler.GetBufferSizeChanged() || surfaceHandler.GetBufferTransformTypeChanged()) {
                     surfaceNode->SetContentDirty();
                     doDirectComposition_ = false;
+                    surfaceHandler.SetBufferTransformTypeChanged(false);
                     RS_OPTIONAL_TRACE_NAME_FMT("rs debug: name %s, id %" PRIu64", surfaceNode buffer size changed",
                         surfaceNode->GetName().c_str(), surfaceNode->GetId());
                     RS_LOGD("ConsumeAndUpdateAllNodes name:%{public}s id:%{public}" PRIu64" buffer size changed, "
@@ -1515,7 +1496,7 @@ void RSMainThread::CheckIfHardwareForcedDisabled()
     bool isMultiDisplay = rootNode->GetChildrenCount() > 1;
 
     // check all children of global root node, and only disable hardware composer
-    // in case node's composite type is UNI_RENDER_EXPAND_COMPOSITE
+    // in case node's composite type is UNI_RENDER_EXPAND_COMPOSITE or Wired projection
     const auto& children = rootNode->GetChildren();
     auto itr = std::find_if(children->begin(), children->end(), [](const std::shared_ptr<RSRenderNode>& child) -> bool {
             if (child == nullptr) {
@@ -1525,15 +1506,20 @@ void RSMainThread::CheckIfHardwareForcedDisabled()
                 return false;
             }
             auto displayNodeSp = std::static_pointer_cast<RSDisplayRenderNode>(child);
+            if (displayNodeSp->GetMirrorSource().lock()) {
+                // wired projection case
+                return displayNodeSp->GetCompositeType() == RSDisplayRenderNode::CompositeType::UNI_RENDER_COMPOSITE;
+            }
             return displayNodeSp->GetCompositeType() == RSDisplayRenderNode::CompositeType::UNI_RENDER_EXPAND_COMPOSITE;
     });
 
-    bool isExpandScreenCase = itr != children->end();
+    bool isExpandScreenOrWiredProjectionCase = itr != children->end();
     bool enableHwcForMirrorMode = RSSystemProperties::GetHardwareComposerEnabledForMirrorMode();
     // [PLANNING] GetChildrenCount > 1 indicates multi display, only Mirror Mode need be marked here
     // Mirror Mode reuses display node's buffer, so mark it and disable hardware composer in this case
     isHardwareForcedDisabled_ = isHardwareForcedDisabled_ || doWindowAnimate_ ||
-        (isMultiDisplay && (isExpandScreenCase || !enableHwcForMirrorMode) && !hasProtectedLayer_) || hasColorFilter;
+        (isMultiDisplay && (isExpandScreenOrWiredProjectionCase || !enableHwcForMirrorMode) && !hasProtectedLayer_) ||
+        hasColorFilter;
     RS_OPTIONAL_TRACE_NAME_FMT("hwc debug global: CheckIfHardwareForcedDisabled isHardwareForcedDisabled_:%d "
         "doWindowAnimate_:%d isMultiDisplay:%d hasColorFilter:%d",
         isHardwareForcedDisabled_, doWindowAnimate_.load(), isMultiDisplay, hasColorFilter);
@@ -1835,7 +1821,7 @@ void RSMainThread::PrepareUiCaptureTasks(std::shared_ptr<RSUniRenderVisitor> uni
         auto node = nodeMap.GetRenderNode(id);
         if (!node) {
             RS_LOGW("RSMainThread::PrepareUiCaptureTasks node is nullptr");
-        } else if (!node->IsOnTheTree() || node->IsDirty()) {
+        } else if (!node->IsOnTheTree() || node->IsDirty() || node->IsSubTreeDirty()) {
             node->PrepareSelfNodeForApplyModifiers();
         }
         uiCaptureTasks_.emplace(id, captureTask);
@@ -1875,6 +1861,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     RSUniRenderThread::Instance().PostTask([] { RSUniRenderThread::Instance().ResetClearMemoryTask(); });
     if (doDirectComposition_ && !isDirty_ && !isAccessibilityConfigChanged_
         && !isCachedSurfaceUpdated_) {
+        doDirectComposition_ = isHardwareEnabledBufferUpdated_;
         if (isHardwareEnabledBufferUpdated_) {
             needTraverseNodeTree = !DoDirectComposition(rootNode, !isLastFrameDirectComposition_);
         } else if (forceUpdateUniRenderFlag_) {
@@ -1891,6 +1878,8 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
                 }
             }
             WaitUntilUploadTextureTaskFinishedForGL();
+            renderThreadParams_->selfDrawables_ = std::move(selfDrawables_);
+            renderThreadParams_->hardwareEnabledTypeDrawables_ = std::move(hardwareEnabledDrwawables_);
             return;
         }
     }
@@ -2199,10 +2188,6 @@ bool RSMainThread::CheckSurfaceNeedProcess(OcclusionRectISet& occlusionSurfaces,
                 }
             }
         }
-    }
-
-    if (needProcess) {
-        CheckIfNodeIsBundle(curSurface);
     }
     return needProcess;
 }
@@ -2529,17 +2514,18 @@ void RSMainThread::CallbackToWMS(VisibleData& curVisVec)
 void RSMainThread::SurfaceOcclusionCallback()
 {
     const auto& nodeMap = context_->GetNodeMap();
+    std::lock_guard<std::mutex> lock(surfaceOcclusionMutex_);
     for (auto &listener : surfaceOcclusionListeners_) {
         if (savedAppWindowNode_.find(listener.first) == savedAppWindowNode_.end()) {
             auto node = nodeMap.GetRenderNode(listener.first);
             if (!node || !node->IsOnTheTree()) {
-                RS_LOGW("RSMainThread::SurfaceOcclusionCallback cannot find surfacenode %{public}"
+                RS_LOGD("RSMainThread::SurfaceOcclusionCallback cannot find surfacenode %{public}"
                     PRIu64 ".", listener.first);
                 continue;
             }
             auto appWindowNodeId = node->GetInstanceRootNodeId();
             if (appWindowNodeId == INVALID_NODEID) {
-                RS_LOGW("RSMainThread::SurfaceOcclusionCallback surfacenode %{public}"
+                RS_LOGD("RSMainThread::SurfaceOcclusionCallback surfacenode %{public}"
                     PRIu64 " cannot find app window node.", listener.first);
                 continue;
             }
@@ -2547,7 +2533,7 @@ void RSMainThread::SurfaceOcclusionCallback()
             auto appWindowNode =
                 RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(nodeMap.GetRenderNode(appWindowNodeId));
             if (!surfaceNode || !appWindowNode) {
-                RS_LOGW("RSMainThread::SurfaceOcclusionCallback ReinterpretCastTo fail.");
+                RS_LOGD("RSMainThread::SurfaceOcclusionCallback ReinterpretCastTo fail.");
                 continue;
             }
             savedAppWindowNode_[listener.first] = std::make_pair(surfaceNode, appWindowNode);
@@ -3763,10 +3749,10 @@ void RSMainThread::ShowWatermark(const std::shared_ptr<Media::PixelMap> &waterma
     auto screenManager_ = CreateOrGetScreenManager();
     if (flag && screenManager_) {
         auto screenInfo = screenManager_->QueryDefaultScreenInfo();
-        constexpr int maxScale = 2;
+        constexpr int32_t maxScale = 2;
         if (screenInfo.id != INVALID_SCREEN_ID && watermarkImg &&
-            (watermarkImg->GetWidth() > maxScale * screenInfo.width ||
-            watermarkImg->GetHeight() > maxScale * screenInfo.height)) {
+            (watermarkImg->GetWidth() > maxScale * static_cast<int32_t>(screenInfo.width) ||
+            watermarkImg->GetHeight() > maxScale * static_cast<int32_t>(screenInfo.height))) {
             RS_LOGE("RSMainThread::ShowWatermark width %{public}" PRId32" or height %{public}" PRId32" has reached"
                 " the maximum limit!", watermarkImg->GetWidth(), watermarkImg->GetHeight());
             return;

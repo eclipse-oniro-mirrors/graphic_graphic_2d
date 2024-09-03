@@ -110,6 +110,8 @@ public:
     void SetBootAnimation(bool isBootAnimation);
     bool GetBootAnimation() const;
     void SetTextureExport(bool isTextureExportNode) override;
+    void SetLayerTop(const std::string& targetName, bool isTop);
+    bool IsLayerTop() const;
 
 #ifndef ROSEN_CROSS_PLATFORM
     sptr<OHOS::Surface> GetSurface() const;
@@ -123,11 +125,6 @@ public:
     inline std::string GetName() const
     {
         return name_;
-    }
-
-    const std::string GetBundleName() const
-    {
-        return bundleName_;
     }
 
     void ResetContextAlpha() const;
@@ -145,7 +142,7 @@ public:
     void SetForeground(bool isForeground);
     // Force enable UIFirst when set TRUE
     void SetForceUIFirst(bool forceUIFirst);
-    void SetAncoFlags(int32_t flags);
+    void SetAncoFlags(uint32_t flags);
     static void SetHDRPresent(bool hdrPresent, NodeId id);
     void SetSkipDraw(bool skip);
     bool GetSkipDraw() const;
@@ -192,6 +189,7 @@ private:
     bool isChildOperationDisallowed_ { false };
     bool isBootAnimation_ = false;
     bool isSkipDraw_ = false;
+    bool isLayerTop_ = false;
 
     uint32_t windowId_ = 0;
 #ifndef ROSEN_CROSS_PLATFORM

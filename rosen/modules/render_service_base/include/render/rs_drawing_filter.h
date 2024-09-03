@@ -46,6 +46,7 @@ public:
     Drawing::Brush GetBrush() const;
     void DrawImageRect(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image> image,
         const Drawing::Rect& src, const Drawing::Rect& dst, bool discardCanvas = false);
+    void CreateColorFilterForMaskColor(Drawing::Canvas& canvas);
     std::vector<std::shared_ptr<RSShaderFilter>> GetShaderFilters() const;
     void InsertShaderFilter(std::shared_ptr<RSShaderFilter> shaderFilter);
     std::shared_ptr<Drawing::ImageFilter> GetImageFilter() const;
@@ -85,6 +86,14 @@ public:
     {
         brightnessForHPS_ = brightnessForHPS;
     }
+    void SetColorFilterForHDR(std::shared_ptr<Drawing::ColorFilter> colorFilterForHDR)
+    {
+        colorFilterForHDR_ = colorFilterForHDR;
+    }
+    void ResetColorFilterForHDR()
+    {
+        colorFilterForHDR_.reset();
+    }
     void PreProcess(std::shared_ptr<Drawing::Image>& image);
     void PostProcess(Drawing::Canvas& canvas);
     void ApplyColorFilter(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image>& image,
@@ -100,6 +109,8 @@ private:
     bool canSkipFrame_ = false;
     float saturationForHPS_ = 1.f;
     float brightnessForHPS_ = 1.f;
+    std::shared_ptr<Drawing::ColorFilter> colorFilterForHDR_ = nullptr;
+    std::shared_ptr<Drawing::ColorFilter> colorFilterForMaskColor_ = nullptr;
     friend class RSMarshallingHelper;
 };
 } // namespace Rosen

@@ -545,16 +545,93 @@ HWTEST_F(RSUniRenderUtilTest, ClearNodeCacheSurface, Function | SmallTest | Leve
 }
 
 /*
- * @tc.name: HandleCaptureNode
- * @tc.desc: Test RSUniRenderUtil::HandleCaptureNode api
+ * @tc.name: HandleCaptureNode001
+ * @tc.desc: Test RSUniRenderUtil::HandleCaptureNode api when sufaceNode is nullptr
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueIAKDJI
  */
-HWTEST_F(RSUniRenderUtilTest, HandleCaptureNode, Function | SmallTest | Level2)
+HWTEST_F(RSUniRenderUtilTest, HandleCaptureNode001, Function | SmallTest | Level2)
 {
     Drawing::Canvas drawingCanvas;
     RSPaintFilterCanvas canvas(&drawingCanvas);
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    RSUniRenderUtil::HandleCaptureNode(*surfaceNode, canvas);
+}
+
+/*
+ * @tc.name: HandleCaptureNode002
+ * @tc.desc: Test RSUniRenderUtil::HandleCaptureNode api when node should not paint
+ * @tc.type: FUNC
+ * @tc.require: issueIAKDJI
+ */
+HWTEST_F(RSUniRenderUtilTest, HandleCaptureNode002, Function | SmallTest | Level2)
+{
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    auto node = RSTestUtil::CreateSurfaceNode();
+    auto drawable = std::make_shared<DrawableV2::RSSurfaceRenderNodeDrawable>(node);
+    auto param = std::make_unique<RSSurfaceRenderParams>(node->id_);
+    param->shouldPaint_ = false;
+    param->contentEmpty_ = false;
+    param->isMainWindowType_ = true;
+    param->isLeashWindow_ = false;
+    param->isAppWindow_ = false;
+    drawable->renderParams_ = std::move(param);
+    surfaceNode->renderDrawable_ = drawable;
+    ASSERT_NE(surfaceNode, nullptr);
+    RSUniRenderUtil::HandleCaptureNode(*surfaceNode, canvas);
+}
+
+/*
+ * @tc.name: HandleCaptureNode003
+ * @tc.desc: Test RSUniRenderUtil::HandleCaptureNode api when node is on the tree
+ * @tc.type: FUNC
+ * @tc.require: issueIAKDJI
+ */
+HWTEST_F(RSUniRenderUtilTest, HandleCaptureNode003, Function | SmallTest | Level2)
+{
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    surfaceNode->isOnTheTree_ = true;
+    auto node = RSTestUtil::CreateSurfaceNode();
+    auto drawable = std::make_shared<DrawableV2::RSSurfaceRenderNodeDrawable>(node);
+    auto param = std::make_unique<RSSurfaceRenderParams>(node->id_);
+    param->shouldPaint_ = true;
+    param->contentEmpty_ = true;
+    param->isMainWindowType_ = true;
+    param->isLeashWindow_ = false;
+    param->isAppWindow_ = false;
+    drawable->renderParams_ = std::move(param);
+    surfaceNode->renderDrawable_ = drawable;
+    ASSERT_NE(surfaceNode, nullptr);
+    RSUniRenderUtil::HandleCaptureNode(*surfaceNode, canvas);
+}
+
+/*
+ * @tc.name: HandleCaptureNode004
+ * @tc.desc: Test RSUniRenderUtil::HandleCaptureNode api when node is not on the tree
+ * @tc.type: FUNC
+ * @tc.require: issueIAKDJI
+ */
+HWTEST_F(RSUniRenderUtilTest, HandleCaptureNode004, Function | SmallTest | Level2)
+{
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    surfaceNode->isOnTheTree_ = false;
+    auto node = RSTestUtil::CreateSurfaceNode();
+    auto drawable = std::make_shared<DrawableV2::RSSurfaceRenderNodeDrawable>(node);
+    auto param = std::make_unique<RSSurfaceRenderParams>(node->id_);
+    param->shouldPaint_ = true;
+    param->contentEmpty_ = true;
+    param->isMainWindowType_ = true;
+    param->isLeashWindow_ = false;
+    param->isAppWindow_ = false;
+    drawable->renderParams_ = std::move(param);
+    surfaceNode->renderDrawable_ = drawable;
     ASSERT_NE(surfaceNode, nullptr);
     RSUniRenderUtil::HandleCaptureNode(*surfaceNode, canvas);
 }
@@ -1439,7 +1516,7 @@ HWTEST_F(RSUniRenderUtilTest, OptimizedFlushAndSubmit001, TestSize.Level2)
  * @tc.name: OptimizedFlushAndSubmit002
  * @tc.desc: OptimizedFlushAndSubmit test when surface and gpuContext is multiple
  * @tc.type: FUNC
- * @tc.require: issueIAKA4Y
+ * @tc.require: issueIALXTP
  */
 HWTEST_F(RSUniRenderUtilTest, OptimizedFlushAndSubmit002, TestSize.Level2)
 {
@@ -1447,11 +1524,12 @@ HWTEST_F(RSUniRenderUtilTest, OptimizedFlushAndSubmit002, TestSize.Level2)
     bool optFenceWait = false;
     std::shared_ptr<Drawing::Surface> surface = nullptr;
     rsUniRenderUtil.OptimizedFlushAndSubmit(surface, nullptr, optFenceWait);
-    Drawing::GPUContext* gpuContext = new Drawing::GPUContext;
-    rsUniRenderUtil.OptimizedFlushAndSubmit(surface, gpuContext, optFenceWait);
+    std::shared_ptr<Drawing::GPUContext> gpuContext = std::make_shared<Drawing::GPUContext>();
+    ASSERT_NE(gpuContext, nullptr);
+    rsUniRenderUtil.OptimizedFlushAndSubmit(surface, gpuContext.get(), optFenceWait);
     surface = std::make_shared<Drawing::Surface>();
     ASSERT_NE(surface, nullptr);
-    rsUniRenderUtil.OptimizedFlushAndSubmit(surface, gpuContext, optFenceWait);
+    rsUniRenderUtil.OptimizedFlushAndSubmit(surface, gpuContext.get(), optFenceWait);
 }
 
 /*
@@ -1746,6 +1824,196 @@ HWTEST_F(RSUniRenderUtilTest, GetMatrixOfBufferToRelRect_003, TestSize.Level2)
 }
 
 /*
+ * @tc.name: CreateBufferDrawParam002
+ * @tc.desc: CreateBufferDrawParam test with RSDisplayRenderNode when buffer is not nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIAKDJI
+ */
+HWTEST_F(RSUniRenderUtilTest, CreateBufferDrawParam002, TestSize.Level2)
+{
+    RSUniRenderUtil rsUniRenderUtil;
+    NodeId id = 1;
+    RSDisplayNodeConfig config;
+    auto rsDisplayRenderNode = std::make_shared<RSDisplayRenderNode>(id++, config);
+    ASSERT_NE(rsDisplayRenderNode, nullptr);
+    auto node = std::make_shared<RSRenderNode>(id++);
+    auto rsDisplayRenderNodeDrawable = std::make_shared<DrawableV2::RSDisplayRenderNodeDrawable>(node);
+    rsDisplayRenderNodeDrawable->surfaceHandler_ = std::make_shared<RSSurfaceHandler>(node->id_);
+    rsDisplayRenderNode->renderDrawable_ = rsDisplayRenderNodeDrawable;
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    auto buffer = surfaceNode->surfaceHandler_->GetBuffer();
+    ASSERT_NE(buffer, nullptr);
+    buffer->SetSurfaceBufferWidth(400);
+    buffer->SetSurfaceBufferHeight(400);
+    rsDisplayRenderNodeDrawable->surfaceHandler_->buffer_.buffer = buffer;
+    auto cpuParam = rsUniRenderUtil.CreateBufferDrawParam(*rsDisplayRenderNode, true);
+    auto nocpuParam = rsUniRenderUtil.CreateBufferDrawParam(*rsDisplayRenderNode, false);
+    ASSERT_NE(cpuParam.useCPU, nocpuParam.useCPU);
+    ASSERT_EQ(cpuParam.buffer, nocpuParam.buffer);
+    ASSERT_EQ(cpuParam.acquireFence, nocpuParam.acquireFence);
+    ASSERT_EQ(cpuParam.srcRect, nocpuParam.srcRect);
+    ASSERT_EQ(cpuParam.dstRect, nocpuParam.dstRect);
+}
+
+/*
+ * @tc.name: CreateBufferDrawParam003
+ * @tc.desc: CreateBufferDrawParam test with RSDisplayRenderNode when drawable is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIAKDJI
+ */
+HWTEST_F(RSUniRenderUtilTest, CreateBufferDrawParam003, TestSize.Level2)
+{
+    RSUniRenderUtil rsUniRenderUtil;
+    NodeId id = 1;
+    RSDisplayNodeConfig config;
+    auto rsDisplayRenderNode = std::make_shared<RSDisplayRenderNode>(id++, config);
+    auto cpuParam = rsUniRenderUtil.CreateBufferDrawParam(*rsDisplayRenderNode, true);
+    auto nocpuParam = rsUniRenderUtil.CreateBufferDrawParam(*rsDisplayRenderNode, false);
+    ASSERT_NE(cpuParam.useCPU, nocpuParam.useCPU);
+    ASSERT_EQ(cpuParam.buffer, nullptr);
+    ASSERT_EQ(nocpuParam.buffer, nullptr);
+}
+
+/*
+ * @tc.name: CreateBufferDrawParam004
+ * @tc.desc: CreateBufferDrawParam test with RSDisplayRenderNode when buffer is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIAKDJI
+ */
+HWTEST_F(RSUniRenderUtilTest, CreateBufferDrawParam004, TestSize.Level2)
+{
+    RSUniRenderUtil rsUniRenderUtil;
+    NodeId id = 1;
+    RSDisplayNodeConfig config;
+    auto rsDisplayRenderNode = std::make_shared<RSDisplayRenderNode>(id++, config);
+    auto node = std::make_shared<RSRenderNode>(id++);
+    auto rsDisplayRenderNodeDrawable = std::make_shared<DrawableV2::RSDisplayRenderNodeDrawable>(node);
+    rsDisplayRenderNodeDrawable->surfaceHandler_ = std::make_shared<RSSurfaceHandler>(node->id_);
+    rsDisplayRenderNode->renderDrawable_ = rsDisplayRenderNodeDrawable;
+    auto cpuParam = rsUniRenderUtil.CreateBufferDrawParam(*rsDisplayRenderNode, true);
+    auto nocpuParam = rsUniRenderUtil.CreateBufferDrawParam(*rsDisplayRenderNode, false);
+    ASSERT_NE(cpuParam.useCPU, nocpuParam.useCPU);
+    ASSERT_EQ(cpuParam.buffer, nullptr);
+    ASSERT_EQ(nocpuParam.buffer, nullptr);
+}
+
+/*
+ * @tc.name: CreateBufferDrawParam005
+ * @tc.desc: CreateBufferDrawParam test with RSSurfaceRenderNodeDrawable when param is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIAKDJI
+ */
+HWTEST_F(RSUniRenderUtilTest, CreateBufferDrawParam005, TestSize.Level2)
+{
+    RSUniRenderUtil rsUniRenderUtil;
+    auto node = RSTestUtil::CreateSurfaceNode();
+    auto drawable = std::make_shared<DrawableV2::RSSurfaceRenderNodeDrawable>(node);
+    auto cpuParam = rsUniRenderUtil.CreateBufferDrawParam(*drawable, true, 1);
+    auto nocpuParam = rsUniRenderUtil.CreateBufferDrawParam(*drawable, false, 1);
+    ASSERT_EQ(cpuParam.buffer, nullptr);
+    ASSERT_EQ(nocpuParam.buffer, nullptr);
+}
+
+/*
+ * @tc.name: CreateBufferDrawParam006
+ * @tc.desc: CreateBufferDrawParam test with RSSurfaceRenderNodeDrawable when buffer is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIAKDJI
+ */
+HWTEST_F(RSUniRenderUtilTest, CreateBufferDrawParam006, TestSize.Level2)
+{
+    RSUniRenderUtil rsUniRenderUtil;
+    auto node = RSTestUtil::CreateSurfaceNode();
+    auto drawable = std::make_shared<DrawableV2::RSSurfaceRenderNodeDrawable>(node);
+    drawable->renderParams_ = std::make_unique<RSSurfaceRenderParams>(node->id_);
+    auto cpuParam = rsUniRenderUtil.CreateBufferDrawParam(*drawable, true, 1);
+    auto nocpuParam = rsUniRenderUtil.CreateBufferDrawParam(*drawable, false, 1);
+    ASSERT_NE(cpuParam.useCPU, nocpuParam.useCPU);
+    ASSERT_EQ(cpuParam.useBilinearInterpolation, nocpuParam.useBilinearInterpolation);
+    ASSERT_EQ(cpuParam.threadIndex, nocpuParam.threadIndex);
+    ASSERT_EQ(cpuParam.buffer, nullptr);
+    ASSERT_EQ(nocpuParam.buffer, nullptr);
+}
+
+/*
+ * @tc.name: CreateBufferDrawParam007
+ * @tc.desc: CreateBufferDrawParam test with RSSurfaceRenderNodeDrawable when consumer is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIAKDJI
+ */
+HWTEST_F(RSUniRenderUtilTest, CreateBufferDrawParam007, TestSize.Level2)
+{
+    RSUniRenderUtil rsUniRenderUtil;
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    auto node = RSTestUtil::CreateSurfaceNode();
+    auto drawable = std::make_shared<DrawableV2::RSSurfaceRenderNodeDrawable>(node);
+    auto param = std::make_unique<RSSurfaceRenderParams>(node->id_);
+    param->buffer_ = surfaceNode->surfaceHandler_->GetBuffer();
+    drawable->renderParams_ = std::move(param);
+    auto cpuParam = rsUniRenderUtil.CreateBufferDrawParam(*drawable, true, 1);
+    auto nocpuParam = rsUniRenderUtil.CreateBufferDrawParam(*drawable, false, 1);
+    ASSERT_NE(cpuParam.useCPU, nocpuParam.useCPU);
+    ASSERT_EQ(cpuParam.useBilinearInterpolation, nocpuParam.useBilinearInterpolation);
+    ASSERT_EQ(cpuParam.threadIndex, nocpuParam.threadIndex);
+    ASSERT_EQ(cpuParam.buffer, nocpuParam.buffer);
+    ASSERT_EQ(cpuParam.acquireFence, nocpuParam.acquireFence);
+    ASSERT_EQ(cpuParam.srcRect, nocpuParam.srcRect);
+}
+
+/*
+ * @tc.name: CreateBufferDrawParam008
+ * @tc.desc: CreateBufferDrawParam test with RSSurfaceRenderNodeDrawable when consumer is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIAKDJI
+ */
+HWTEST_F(RSUniRenderUtilTest, CreateBufferDrawParam008, TestSize.Level2)
+{
+    RSUniRenderUtil rsUniRenderUtil;
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    auto node = RSTestUtil::CreateSurfaceNode();
+    auto drawable = std::make_shared<DrawableV2::RSSurfaceRenderNodeDrawable>(node);
+    auto param = std::make_unique<RSSurfaceRenderParams>(node->id_);
+    param->buffer_ = surfaceNode->surfaceHandler_->GetBuffer();
+    drawable->consumerOnDraw_ = surfaceNode->surfaceHandler_->GetConsumer();
+    param->preScalingMode_ = SCALING_MODE_SCALE_CROP;
+    drawable->renderParams_ = std::move(param);
+    auto cpuParam = rsUniRenderUtil.CreateBufferDrawParam(*drawable, true, 1);
+    auto nocpuParam = rsUniRenderUtil.CreateBufferDrawParam(*drawable, false, 1);
+    ASSERT_NE(cpuParam.useCPU, nocpuParam.useCPU);
+    ASSERT_EQ(cpuParam.useBilinearInterpolation, nocpuParam.useBilinearInterpolation);
+    ASSERT_EQ(cpuParam.threadIndex, nocpuParam.threadIndex);
+    ASSERT_EQ(cpuParam.buffer, nocpuParam.buffer);
+    ASSERT_EQ(cpuParam.acquireFence, nocpuParam.acquireFence);
+    ASSERT_EQ(cpuParam.srcRect, nocpuParam.srcRect);
+}
+
+/*
+ * @tc.name: CreateBufferDrawParam009
+ * @tc.desc: CreateBufferDrawParam test with RSSurfaceRenderNodeDrawable when consumer is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIAKDJI
+ */
+HWTEST_F(RSUniRenderUtilTest, CreateBufferDrawParam009, TestSize.Level2)
+{
+    RSUniRenderUtil rsUniRenderUtil;
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    auto node = RSTestUtil::CreateSurfaceNode();
+    auto drawable = std::make_shared<DrawableV2::RSSurfaceRenderNodeDrawable>(node);
+    auto param = std::make_unique<RSSurfaceRenderParams>(node->id_);
+    param->buffer_ = surfaceNode->surfaceHandler_->GetBuffer();
+    drawable->consumerOnDraw_ = surfaceNode->surfaceHandler_->GetConsumer();
+    param->preScalingMode_ = SCALING_MODE_SCALE_FIT;
+    drawable->renderParams_ = std::move(param);
+    auto cpuParam = rsUniRenderUtil.CreateBufferDrawParam(*drawable, true, 1);
+    auto nocpuParam = rsUniRenderUtil.CreateBufferDrawParam(*drawable, false, 1);
+    ASSERT_NE(cpuParam.useCPU, nocpuParam.useCPU);
+    ASSERT_EQ(cpuParam.useBilinearInterpolation, nocpuParam.useBilinearInterpolation);
+    ASSERT_EQ(cpuParam.threadIndex, nocpuParam.threadIndex);
+    ASSERT_EQ(cpuParam.buffer, nocpuParam.buffer);
+    ASSERT_EQ(cpuParam.acquireFence, nocpuParam.acquireFence);
+    ASSERT_EQ(cpuParam.srcRect, nocpuParam.srcRect);
+}
+/*
  * @tc.name: FlushDmaSurfaceBuffer001
  * @tc.desc: test FlushDmaSurfaceBuffer when pixelMap is nullptr
  * @tc.type: FUNC
@@ -1762,7 +2030,7 @@ HWTEST_F(RSUniRenderUtilTest, FlushDmaSurfaceBuffer001, TestSize.Level2)
  * @tc.name: FlushDmaSurfaceBuffer002
  * @tc.desc: test FlushDmaSurfaceBuffer when pixelMap is not nullptr
  * @tc.type: FUNC
- * @tc.require: issueIAL5XA
+ * @tc.require: issueIALXTP
  */
 HWTEST_F(RSUniRenderUtilTest, FlushDmaSurfaceBuffer002, TestSize.Level2)
 {
@@ -1776,7 +2044,7 @@ HWTEST_F(RSUniRenderUtilTest, FlushDmaSurfaceBuffer002, TestSize.Level2)
     RSUniRenderUtil::FlushDmaSurfaceBuffer(pixelMap.get());
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     DmaMem dmaMem;
-    Drawing::ImageInfo info = Drawing::ImageInfo{ pixelmap->GetWidth(), pixelmap->GetHeight(),
+    Drawing::ImageInfo info = Drawing::ImageInfo{ pixelMap->GetWidth(), pixelMap->GetHeight(),
         Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
     sptr<SurfaceBuffer> surFaceBuffer = dmaMem.DmaMemAlloc(info, pixelMap);
     RSUniRenderUtil::FlushDmaSurfaceBuffer(pixelMap.get());

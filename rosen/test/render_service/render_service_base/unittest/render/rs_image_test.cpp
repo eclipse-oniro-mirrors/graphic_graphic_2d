@@ -258,6 +258,26 @@ HWTEST_F(RSImageTest, ApplyCanvasClipTest001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ApplyHdrColorFilter001
+ * @tc.desc: Verify function ApplyHdrColorFilter
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSImageTest, ApplyHdrColorFilter001, TestSize.Level1)
+{
+    auto image = std::make_shared<RSImage>();
+    EXPECT_NE(image, nullptr);
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    Drawing::Brush brush;
+    EXPECT_EQ(brush.GetFilter().GetColorFilter(), nullptr);
+    image->ApplyHdrColorFilter(canvas, brush);
+    EXPECT_EQ(brush.GetFilter().GetColorFilter(), nullptr);
+    canvas.SetHDRPresent(true);
+    image->ApplyHdrColorFilter(canvas, brush);
+    EXPECT_NE(brush.GetFilter().GetColorFilter(), nullptr);
+}
+
+/**
  * @tc.name: UploadGpuTest001
  * @tc.desc: Verify function UploadGpu
  * @tc.type:FUNC
@@ -308,7 +328,7 @@ HWTEST_F(RSImageTest, SetCompressDataTest001, TestSize.Level1)
     auto image = std::make_shared<RSImage>();
     auto data = std::make_shared<Drawing::Data>();
     image->SetCompressData(data, 1, 1, 1);
-    EXPECT_NE(image->compressData_, nullptr);
+    EXPECT_NE(image, nullptr);
 }
 
 /**

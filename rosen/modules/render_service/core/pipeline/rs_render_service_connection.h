@@ -65,6 +65,7 @@ private:
     bool GetUniRenderEnabled() override;
 
     bool CreateNode(const RSSurfaceRenderNodeConfig& config) override;
+    bool CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId) override;
     sptr<Surface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config) override;
 
     sptr<IVSyncConnection> CreateVSyncConnection(const std::string& name,
@@ -125,6 +126,8 @@ private:
 
     void SyncFrameRateRange(FrameRateLinkerId id, const FrameRateRange& range,
         int32_t animatorExpectedFrameRate) override;
+
+    void UnregisterFrameRateLinker(FrameRateLinkerId id) override;
 
     uint32_t GetScreenCurrentRefreshRate(ScreenId id) override;
 

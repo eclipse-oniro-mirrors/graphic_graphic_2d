@@ -143,6 +143,9 @@ HWTEST_F(RSRoundCornerDisplayTest, RSLoadImgTest, TestSize.Level1)
         return;
     }
     rcdInstance.DecodeBitmap(imgBottomPortrait, bitmapBottomPortrait);
+
+    std::shared_ptr<Drawing::Image> imgNoneImageLoaded = std::make_shared<Drawing::Image>();
+    rcdInstance.DecodeBitmap(imgNoneImageLoaded, bitmapBottomPortrait);
 }
 
 /*
@@ -220,6 +223,21 @@ HWTEST_F(RSRoundCornerDisplayTest, RSChooseResourceTest, TestSize.Level1)
 }
 
 /*
+ * @tc.name: IsNotchNeedUpdate
+ * @tc.desc: Test RSRoundCornerDisplayTest.IsNotchNeedUpdate
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRoundCornerDisplayTest, IsNotchNeedUpdate, TestSize.Level1)
+{
+    auto& rcdInstance = RSSingleton<RoundCornerDisplay>::GetInstance();
+    rcdInstance.Init();
+    rcdInstance.IsNotchNeedUpdate(true);
+    bool ischange = rcdInstance.IsNotchNeedUpdate(false);
+    EXPECT_EQ(true, ischange);
+}
+
+/*
  * @tc.name: RunHardwareTask
  * @tc.desc: Test RSRoundCornerDisplayTest.RunHardwareTask
  * @tc.type: FUNC
@@ -229,11 +247,36 @@ HWTEST_F(RSRoundCornerDisplayTest, RunHardwareTask, TestSize.Level1)
 {
     auto& rcdInstance = RSSingleton<RoundCornerDisplay>::GetInstance();
     rcdInstance.Init();
+    rcdInstance.isRcdRunning = false;
     rcdInstance.RunHardwareTask(
         []() {
-            std::cout << "do RSRoundCornerDisplayTest.RunHardwareTask" << std::endl;
+            std::cout << "do RSRoundCornerDisplayTest.RunHardwareTask1" << std::endl;
         }
     );
+    rcdInstance.isRcdRunning = true;
+    rcdInstance.RunHardwareTask(
+        []() {
+            std::cout << "do RSRoundCornerDisplayTest.RunHardwareTask2" << std::endl;
+        }
+    );
+}
+
+/*
+ * @tc.name: DrawRoundCorner
+ * @tc.desc: Test RSRoundCornerDisplayTest.DrawRoundCorner
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRoundCornerDisplayTest, DrawRoundCorner, TestSize.Level1)
+{
+    auto& rcdInstance = RSSingleton<RoundCornerDisplay>::GetInstance();
+    rcdInstance.Init();
+    rcdInstance.isRcdRunning = false;
+    rcdInstance.DrawTopRoundCorner(nullptr);
+    rcdInstance.DrawBottomRoundCorner(nullptr);
+    rcdInstance.isRcdRunning = true;
+    rcdInstance.DrawTopRoundCorner(nullptr);
+    rcdInstance.DrawBottomRoundCorner(nullptr);
 }
 
 rs_rcd::ROGSetting* GetRogFromLcdModel(rs_rcd::LCDModel* lcdModel, int& width, int& height)
@@ -292,6 +335,10 @@ HWTEST_F(RSRoundCornerDisplayTest, ProcessRcdSurfaceRenderNode1, TestSize.Level1
         std::cout << "RSRoundCornerDisplayTest: current os less rog source" << std::endl;
         return;
     }
+    rcdInstance.rog_ = rog;
+    rcdInstance.GetTopSurfaceSource();
+    rcdInstance.GetBottomSurfaceSource();
+    rcdInstance.rog_ = nullptr;
 
     rs_rcd::RoundCornerHardware hardInfo;
     hardInfo.bottomLayer = &rog->portraitMap[rs_rcd::NODE_PORTRAIT].layerDown;
@@ -799,16 +846,23 @@ HWTEST_F(RSRoundCornerDisplayTest, RcdChooseTopResourceTypeTest, TestSize.Level1
     rcdInstance.RcdChooseTopResourceType();
     EXPECT_TRUE(rcdInstance.showResourceType_ == TOP_PORTRAIT);
 
-    // test ScreenRotation::ROTATION_180, notchStatus is WINDOW_NOTCH_DEFAULT
+    // test ScreenRotation::ROTATION_180, notchStatus is WINDOW_NOTCH_HIDDEN
     curOrientation = ScreenRotation::ROTATION_180;
-    int notchStatus = WINDOW_NOTCH_DEFAULT;
+    int notchStatus = WINDOW_NOTCH_HIDDEN;
+    rcdInstance.UpdateNotchStatus(notchStatus);
+    rcdInstance.UpdateOrientationStatus(curOrientation);
+    rcdInstance.RcdChooseTopResourceType();
+    EXPECT_TRUE(rcdInstance.showResourceType_ == TOP_HIDDEN);
+
+    // test ScreenRotation::ROTATION_180, notchStatus is WINDOW_NOTCH_DEFAULT
+    notchStatus = WINDOW_NOTCH_DEFAULT;
     rcdInstance.UpdateNotchStatus(notchStatus);
     rcdInstance.UpdateOrientationStatus(curOrientation);
     rcdInstance.RcdChooseTopResourceType();
     EXPECT_TRUE(rcdInstance.showResourceType_ == TOP_PORTRAIT);
 
     // test ScreenRotation::ROTATION_270, notchStatus is WINDOW_NOTCH_DEFAULT
-    curOrientation = ScreenRotation::ROTATION_180;
+    curOrientation = ScreenRotation::ROTATION_270;
     rcdInstance.UpdateOrientationStatus(curOrientation);
     rcdInstance.RcdChooseTopResourceType();
     EXPECT_TRUE(rcdInstance.showResourceType_ == TOP_PORTRAIT);
