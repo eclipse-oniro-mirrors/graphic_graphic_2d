@@ -304,10 +304,6 @@ void RSUniRenderUtil::SrcRectScaleFit(BufferDrawParam& params, const sptr<Surfac
     // If transformType is not a multiple of 180, need to change the correspondence between width & height.
     GraphicTransformType transformType =
         RSBaseRenderUtil::GetRotateTransform(RSBaseRenderUtil::GetSurfaceBufferTransformType(surface, buffer));
-    if (transformType == GraphicTransformType::GRAPHIC_ROTATE_270 ||
-        transformType == GraphicTransformType::GRAPHIC_ROTATE_90) {
-        std::swap(boundsWidth, boundsHeight);
-    }
 
     if (srcWidth * boundsHeight > srcHeight * boundsWidth) {
         newWidth = boundsWidth;
@@ -355,10 +351,6 @@ void RSUniRenderUtil::SrcRectScaleDown(BufferDrawParam& params, const sptr<Surfa
     // If transformType is not a multiple of 180, need to change the correspondence between width & height.
     GraphicTransformType transformType =
         RSBaseRenderUtil::GetRotateTransform(RSBaseRenderUtil::GetSurfaceBufferTransformType(surface, buffer));
-    if (transformType == GraphicTransformType::GRAPHIC_ROTATE_270 ||
-        transformType == GraphicTransformType::GRAPHIC_ROTATE_90) {
-        std::swap(boundsWidth, boundsHeight);
-    }
 
     uint32_t newWidthBoundsHeight = newWidth * boundsHeight;
     uint32_t newHeightBoundsWidth = newHeight * boundsWidth;
@@ -581,7 +573,7 @@ BufferDrawParam RSUniRenderUtil::CreateBufferDrawParamForRotationFixed(
 }
 
 void RSUniRenderUtil::DealWithRotationAndGravityForRotationFixed(GraphicTransformType transform, Gravity gravity,
-    RectF localBounds, BufferDrawParam& params)
+    RectF& localBounds, BufferDrawParam& params)
 {
     auto rotationTransform = RSBaseRenderUtil::GetRotateTransform(transform);
     params.matrix.PreConcat(RSBaseRenderUtil::GetSurfaceTransformMatrix(rotationTransform, localBounds));
