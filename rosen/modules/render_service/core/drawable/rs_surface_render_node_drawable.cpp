@@ -638,8 +638,9 @@ void RSSurfaceRenderNodeDrawable::CaptureSurface(RSPaintFilterCanvas& canvas, RS
     bool hwcEnable = surfaceParams.GetHardwareEnabled();
     surfaceParams.SetHardwareEnabled(false);
     RS_LOGD("HDR hasHdrPresent_:%{public}d", canvas.IsCapture());
-    if (!(surfaceParams.HasSecurityLayer() || surfaceParams.HasSkipLayer() || surfaceParams.HasProtectedLayer() ||
-        hasHdrPresent_) && DealWithUIFirstCache(canvas, surfaceParams, *uniParams)) {
+    if (!(surfaceParams.HasSecurityLayer() || surfaceParams.HasSkipLayer() || surfaceParams.HasSnapshotSkipLayer() ||
+        surfaceParams.HasProtectedLayer() || hasHdrPresent_) &&
+        DealWithUIFirstCache(canvas, surfaceParams, *uniParams)) {
         surfaceParams.SetHardwareEnabled(hwcEnable);
         return;
     }

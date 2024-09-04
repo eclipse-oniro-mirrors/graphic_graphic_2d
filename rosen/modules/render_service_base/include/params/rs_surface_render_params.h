@@ -535,6 +535,7 @@ private:
     int32_t releaseInHardwareThreadTaskNum_ = 0;
     bool isSecurityLayer_ = false;
     bool isSkipLayer_ = false;
+    bool isSnapshotSkipLayer_ = false;
     bool isProtectedLayer_ = false;
     bool animateState_ = false;
     bool isRotating_ = false;

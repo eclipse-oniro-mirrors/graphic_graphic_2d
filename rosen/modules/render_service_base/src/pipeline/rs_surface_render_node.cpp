@@ -2769,11 +2769,13 @@ void RSSurfaceRenderNode::UpdateRenderParams()
     surfaceParams->SetAncestorDisplayNode(ancestorDisplayNode_);
     surfaceParams->isSecurityLayer_ = isSecurityLayer_;
     surfaceParams->isSkipLayer_ = isSkipLayer_;
+    surfaceParams->isSnapshotSkipLayer_ = isSnapshotSkipLayer_;
     surfaceParams->isProtectedLayer_ = isProtectedLayer_;
     surfaceParams->animateState_ = animateState_;
     surfaceParams->isRotating_ = isRotating_;
     surfaceParams->forceClientForDRMOnly_ = forceClientForDRMOnly_;
     surfaceParams->skipLayerIds_= skipLayerIds_;
+    surfaceParams->snapshotSkipLayerIds_= snapshotSkipLayerIds_;
     surfaceParams->securityLayerIds_= securityLayerIds_;
     surfaceParams->protectedLayerIds_= protectedLayerIds_;
     surfaceParams->name_= name_;
