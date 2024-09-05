@@ -848,7 +848,7 @@ void RSSurfaceRenderNode::SetSnapshotSkipLayer(bool isSnapshotSkipLayer)
     } else {
         snapshotSkipLayerIds_.erase(GetId());
     }
-    SyncSnapshotSkipInfoToFirstLevelNode();
+    SyncOnTheTreeInfoToFirstLevelNode();
 }
 
 void RSSurfaceRenderNode::SetProtectedLayer(bool isProtectedLayer)
