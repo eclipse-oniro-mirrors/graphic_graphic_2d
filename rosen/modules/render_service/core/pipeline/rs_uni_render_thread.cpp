@@ -836,8 +836,8 @@ void RSUniRenderThread::AsyncFreeVMAMemoryBetweenFrames()
 
 void RSUniRenderThread::MemoryManagementBetweenFrames()
 {
-    if (RSSystemProperties::GetPreAllocateTextureBetweenFramesEnabled()) {
-        PreAllocateTextureBetweenFrames();
+    if (RSSystemProperties::GetAsyncFreeVMAMemoryBetweenFramesEnabled()) {
+        AsyncFreeVMAMemoryBetweenFrames();
     }
 }
 
