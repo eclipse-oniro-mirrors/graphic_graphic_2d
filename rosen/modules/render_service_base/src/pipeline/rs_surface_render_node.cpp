@@ -906,7 +906,7 @@ bool RSSurfaceRenderNode::GetHasSkipLayer() const
 
 bool RSSurfaceRenderNode::GetHasSnapshotSkipLayer() const
 {
-    return snapshotSkipLayerIds_.size() != 0;
+    return !snapshotSkipLayerIds_.empty();
 }
 
 bool RSSurfaceRenderNode::GetHasProtectedLayer() const
