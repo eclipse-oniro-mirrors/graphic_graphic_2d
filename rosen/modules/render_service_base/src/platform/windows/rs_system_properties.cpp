@@ -472,9 +472,19 @@ bool RSSystemProperties::GetDrawMirrorCacheImageEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetPixelmapDfxEnabled()
+{
+    return false;
+}
+
 SubTreePrepareCheckType RSSystemProperties::GetSubTreePrepareCheckType()
 {
     return SubTreePrepareCheckType::ENABLED;
+}
+
+bool RSSystemProperties::GetTargetUIFirstDfxEnabled(std::vector<std::string>& SurfaceNames)
+{
+    return false;
 }
 
 bool RSSystemProperties::GetRenderParallelEnabled()

@@ -330,6 +330,9 @@ void RSUifirstManager::ProcessDoneNodeInner()
 
 void RSUifirstManager::ProcessDoneNode()
 {
+#ifdef RS_ENABLE_PREFETCH
+    __builtin_prefetch(&pendingResetNodes_, 0, 1);
+#endif
     SetHasDoneNodeFlag(false);
     ProcessDoneNodeInner();
 
@@ -396,18 +399,16 @@ void RSUifirstManager::SyncHDRDisplayParam(std::shared_ptr<DrawableV2::RSSurface
     ScreenId id = displayParams->GetScreenId();
     drawable->SetHDRPresent(isHdrOn);
     if (isHdrOn) {
-        // 0 means defalut brightnessRatio
-        drawable->SetBrightnessRatio(RSLuminanceControl::Get().GetHdrBrightnessRatio(id, 0));
         drawable->SetScreenId(id);
         drawable->SetTargetColorGamut(displayParams->GetNewColorSpace());
     }
     RS_LOGD("UIFirstHDR SyncDisplayParam:%{public}d, ratio:%{public}f", drawable->GetHDRPresent(),
-        drawable->GetBrightnessRatio());
+        surfaceParams->GetBrightnessRatio());
 }
 
 bool RSUifirstManager::CheckVisibleDirtyRegionIsEmpty(const std::shared_ptr<RSSurfaceRenderNode>& node)
 {
-    if (RSMainThread::Instance()->GetDeviceType() != DeviceType::PC) {
+    if (GetUiFirstMode() != UiFirstModeType::MULTI_WINDOW_MODE) {
         return false;
     }
     for (auto& child : *node->GetSortedChildren()) {
@@ -452,11 +453,6 @@ void RSUifirstManager::DoPurgePendingPostNodes(std::unordered_map<NodeId,
             continue;
         }
         SyncHDRDisplayParam(drawable);
-        // Skipping drawing is not allowed when there is an HDR display.
-        if (drawable->GetHDRPresent()) {
-            ++it;
-            continue;
-        }
         auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
         auto node = it->second;
         if (!surfaceParams || !node) {
@@ -1186,7 +1182,7 @@ bool RSUifirstManager::IsArkTsCardCache(RSSurfaceRenderNode& node, bool animatio
     if (RSLuminanceControl::Get().IsHdrOn(curDisplayNode->GetScreenId())) {
         return false;
     }
-    bool flag = ((RSMainThread::Instance()->GetDeviceType() == DeviceType::PHONE) &&
+    bool flag = ((RSUifirstManager::Instance().GetUiFirstMode() == UiFirstModeType::SINGLE_WINDOW_MODE) &&
         (node.GetSurfaceNodeType() == RSSurfaceNodeType::ABILITY_COMPONENT_NODE) &&
         RSUifirstManager::Instance().NodeIsInCardWhiteList(node) &&
         (node.ShouldPaint()) && (node.GetName().find(ARKTSCARDNODE_NAME) != std::string::npos));
@@ -1203,7 +1199,7 @@ bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animat
         return true;
     }
     bool isNeedAssignToSubThread = false;
-    if ((RSMainThread::Instance()->GetDeviceType() == DeviceType::PC) ||
+    if ((RSUifirstManager::Instance().GetUiFirstMode() == UiFirstModeType::MULTI_WINDOW_MODE) ||
         (node.GetFirstLevelNodeId() != node.GetId()) ||
         (RSUifirstManager::Instance().NodeIsInCardWhiteList(node)) ||
         (RSUifirstManager::Instance().CheckIfAppWindowHasAnimation(node))) {
@@ -1236,7 +1232,7 @@ bool RSUifirstManager::IsLeashWindowCache(RSSurfaceRenderNode& node, bool animat
 bool RSUifirstManager::IsNonFocusWindowCache(RSSurfaceRenderNode& node, bool animation)
 {
     bool isDisplayRotation = RSUifirstManager::Instance().rotationChanged_;
-    if ((RSMainThread::Instance()->GetDeviceType() != DeviceType::PC) ||
+    if ((RSUifirstManager::Instance().GetUiFirstMode() != UiFirstModeType::MULTI_WINDOW_MODE) ||
         (node.GetFirstLevelNodeId() != node.GetId()) ||
         (RSUifirstManager::Instance().NodeIsInCardWhiteList(node))) {
         return false;
@@ -1262,7 +1258,7 @@ void RSUifirstManager::UpdateUifirstNodes(RSSurfaceRenderNode& node, bool ancest
         ancestorNodeHasAnimation, node.GetUifirstSupportFlag(), isUiFirstOn_);
     if (!isUiFirstOn_ || !node.GetUifirstSupportFlag()) {
         UifirstStateChange(node, MultiThreadCacheType::NONE);
-        if (!node.isUifirstNode_ && RSMainThread::Instance()->GetDeviceType() != DeviceType::PC) {
+        if (!node.isUifirstNode_ && GetUiFirstMode() != UiFirstModeType::MULTI_WINDOW_MODE) {
             node.isUifirstDelay_++;
             if (node.isUifirstDelay_ > EVENT_STOP_TIMEOUT) {
                 node.isUifirstNode_ = true;
@@ -1316,12 +1312,17 @@ void RSUifirstManager::UpdateUIFirstNodeUseDma(RSSurfaceRenderNode& node, const 
 void RSUifirstManager::UifirstStateChange(RSSurfaceRenderNode& node, MultiThreadCacheType currentFrameCacheType)
 {
     auto lastFrameCacheType = node.GetLastFrameUifirstFlag();
-    if ((lastFrameCacheType != MultiThreadCacheType::NONE) && (lastFrameCacheType != currentFrameCacheType)) {
+    if ((lastFrameCacheType != MultiThreadCacheType::NONE) && (lastFrameCacheType != currentFrameCacheType) &&
+        (RSMainThread::Instance()->GetDeviceType() != DeviceType::TABLET)) {
         // not support cache type switch, just disable multithread cache
         currentFrameCacheType = MultiThreadCacheType::NONE;
     }
     if (lastFrameCacheType == MultiThreadCacheType::NONE) { // likely branch: last is disable
         if (currentFrameCacheType != MultiThreadCacheType::NONE) { // switch: disable -> enable
+            if (node.isTargetUIFirstDfxEnabled_) {
+                RS_LOGD("UIFirstSwitch Name[%{public}s] ID[%{public}" PRIu64 "] Status[0 => 1]",
+                    node.GetName().c_str(), node.GetId());
+            }
             auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node.shared_from_this());
             RS_OPTIONAL_TRACE_NAME_FMT("UIFirst_switch disable -> enable %" PRIu64"", node.GetId());
             SetUifirstNodeEnableParam(node, currentFrameCacheType);
@@ -1343,10 +1344,18 @@ void RSUifirstManager::UifirstStateChange(RSSurfaceRenderNode& node, MultiThread
     } else { // last is enable
         auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node.shared_from_this());
         if (currentFrameCacheType != MultiThreadCacheType::NONE) { // keep enable
+            if (node.isTargetUIFirstDfxEnabled_) {
+                RS_LOGD("UIFirstSwitch Name[%{public}s] ID[%{public}" PRIu64 "] Status[1]",
+                    node.GetName().c_str(), node.GetId());
+            }
             RS_OPTIONAL_TRACE_NAME_FMT("UIFirst_keep enable  %" PRIu64"", node.GetId());
             MergeOldDirty(node);
             AddPendingPostNode(node.GetId(), surfaceNode, currentFrameCacheType);
         } else { // switch: enable -> disable
+            if (node.isTargetUIFirstDfxEnabled_) {
+                RS_LOGD("UIFirstSwitch Name[%{public}s] ID[%{public}" PRIu64 "] Status[1 => 0]",
+                    node.GetName().c_str(), node.GetId());
+            }
             RS_OPTIONAL_TRACE_NAME_FMT("UIFirst_switch enable -> disable %" PRIu64"", node.GetId());
             node.SetUifirstStartTime(-1); // -1: default start time
             NotifyUIStartingWindow(node.GetId(), false);
@@ -1482,6 +1491,21 @@ void RSUifirstManager::CheckCurrentFrameHasCardNodeReCreate(const RSSurfaceRende
         node.GetId()) != currentFrameDeletedCardNodes_.end()) {
         isCurrentFrameHasCardNodeReCreate_ = true;
     }
+}
+
+UiFirstModeType RSUifirstManager::GetUiFirstMode()
+{
+    auto deviceType = RSMainThread::Instance()->GetDeviceType();
+    if (deviceType == DeviceType::PHONE) {
+        return UiFirstModeType::SINGLE_WINDOW_MODE;
+    }
+    if (deviceType == DeviceType::PC) {
+        return UiFirstModeType::MULTI_WINDOW_MODE;
+    }
+    if (deviceType == DeviceType::TABLET) {
+        return isFreeMultiWindowEnabled_ ? UiFirstModeType::MULTI_WINDOW_MODE : UiFirstModeType::SINGLE_WINDOW_MODE;
+    }
+    return UiFirstModeType::SINGLE_WINDOW_MODE;
 }
 
 } // namespace Rosen

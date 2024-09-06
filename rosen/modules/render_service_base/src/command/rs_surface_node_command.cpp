@@ -102,6 +102,13 @@ void SurfaceNodeCommandHelper::SetSkipLayer(RSContext& context, NodeId id, bool 
     }
 }
 
+void SurfaceNodeCommandHelper::SetSnapshotSkipLayer(RSContext& context, NodeId id, bool isSnapshotSkipLayer)
+{
+    if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(id)) {
+        node->SetSnapshotSkipLayer(isSnapshotSkipLayer);
+    }
+}
+
 void SurfaceNodeCommandHelper::SetFingerprint(RSContext& context, NodeId id, bool hasFingerprint)
 {
     if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(id)) {
@@ -201,7 +208,8 @@ void SurfaceNodeCommandHelper::AttachToDisplay(RSContext& context, NodeId nodeId
     nodeMap.TraverseDisplayNodes(
         [&surfaceRenderNode, &screenId](const std::shared_ptr<RSDisplayRenderNode>& displayRenderNode) {
             if (displayRenderNode == nullptr || displayRenderNode->GetScreenId() != screenId ||
-                displayRenderNode->GetBootAnimation() != surfaceRenderNode->GetBootAnimation()) {
+                displayRenderNode->GetBootAnimation() != surfaceRenderNode->GetBootAnimation() ||
+                !displayRenderNode->IsOnTheTree()) {
                 return;
             }
             displayRenderNode->AddChild(surfaceRenderNode);

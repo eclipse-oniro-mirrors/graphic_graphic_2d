@@ -126,12 +126,13 @@ int64_t VSyncCallBackListener::CalculateExpectedEndLocked(int64_t now)
     if (now < period_ || now > INT64_MAX - period_) {
         RS_TRACE_NAME_FMT("invalid timestamps, now:%ld, period_:%ld", now, period_);
         VLOGE("invalid timestamps, now:" VPUBI64 ", period_:" VPUBI64, now, period_);
-        period_ = 0;
         return 0;
     }
     expectedEnd = now + period_;
-    // rs vsync offset is 5000000ns
-    expectedEnd = (name_ == "rs") ? (expectedEnd + period_ - 5000000) : expectedEnd;
+    if (name_ == "rs") {
+        // rs vsync offset is 5000000ns
+        expectedEnd = expectedEnd + period_ - 5000000;
+    }
     return expectedEnd;
 }
 
@@ -195,9 +196,9 @@ VsyncError VSyncReceiver::Init()
 void VSyncReceiver::ThreadCreateNotify()
 {
     int32_t pid = getprocpid();
-    int32_t uid = getuid();
+    uint32_t uid = getuid();
     int32_t tid = static_cast<int32_t>(getproctid());
-    VLOGI("vsync thread pid=%{public}d, tid=%{public}d, uid=%{public}d.", pid, tid, uid);
+    VLOGI("vsync thread pid=%{public}d, tid=%{public}d, uid=%{public}u.", pid, tid, uid);
 
     std::unordered_map<std::string, std::string> mapPayload;
     mapPayload["pid"] = std::to_string(pid);

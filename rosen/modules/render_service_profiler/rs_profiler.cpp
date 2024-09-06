@@ -175,20 +175,30 @@ void RSProfiler::SetDirtyRegion(const Occlusion::Region& dirtyRegion)
 
 void RSProfiler::Init(RSRenderService* renderService)
 {
-    if (!IsEnabled()) {
-        return;
-    }
-
     g_renderService = renderService;
     g_mainThread = g_renderService ? g_renderService->mainThread_ : nullptr;
     g_context = g_mainThread ? g_mainThread->context_.get() : nullptr;
 
-    if (!IsBetaRecordEnabled()) {
-        static auto const networkRunLambda = []() {
-            Network::Run();
-        };
-        static std::thread const thread(networkRunLambda);
+    RSSystemProperties::WatchSystemProperty(SYS_KEY_ENABLED, OnFlagChangedCallback, nullptr);
+    RSSystemProperties::WatchSystemProperty(SYS_KEY_BETARECORDING, OnFlagChangedCallback, nullptr);
+
+    if (!IsEnabled()) {
+        return;
     }
+
+    OnWorkModeChanged();
+}
+
+void RSProfiler::StartNetworkThread()
+{
+    if (Network::IsRunning()) {
+        return;
+    }
+    auto networkRunLambda = []() {
+        Network::Run();
+    };
+    std::thread thread(networkRunLambda);
+    thread.detach();
 }
 
 void RSProfiler::OnCreateConnection(pid_t pid)
@@ -337,8 +347,59 @@ std::vector<pid_t> RSProfiler::GetConnectionsPids()
     return pids;
 }
 
+void RSProfiler::OnFlagChangedCallback(const char *key, const char *value, void *context)
+{
+    constexpr int8_t two = 2;
+    if (!strcmp(key, SYS_KEY_ENABLED)) {
+        signalFlagChanged_ = two;
+        AwakeRenderServiceThread();
+    }
+    if (!strcmp(key, SYS_KEY_BETARECORDING)) {
+        signalFlagChanged_ = two;
+        AwakeRenderServiceThread();
+    }
+}
+
+void RSProfiler::OnWorkModeChanged()
+{
+    if (IsEnabled()) {
+        if (IsBetaRecordEnabled()) {
+            Network::Stop();
+            StartBetaRecord();
+        } else {
+            StopBetaRecord();
+            StartNetworkThread();
+        }
+    } else {
+        StopBetaRecord();
+        RecordStop(ArgList());
+        Network::Stop();
+    }
+}
+
+void RSProfiler::ProcessSignalFlag()
+{
+    if (signalFlagChanged_ <= 0) {
+        return;
+    }
+
+    signalFlagChanged_--;
+    if (!signalFlagChanged_) {
+        bool newEnabled = RSSystemProperties::GetProfilerEnabled();
+        bool newBetaRecord = RSSystemProperties::GetBetaRecordingMode() != 0;
+        if (IsEnabled() != newEnabled || IsBetaRecordEnabled() != newBetaRecord) {
+            enabled_ = newEnabled;
+            betaRecordingEnabled_ = newBetaRecord;
+            OnWorkModeChanged();
+        }
+    }
+    AwakeRenderServiceThread();
+}
+
 void RSProfiler::OnProcessCommand()
 {
+    ProcessSignalFlag();
+
     if (!IsEnabled()) {
         return;
     }
@@ -1451,6 +1512,11 @@ void RSProfiler::PlaybackPrepareFirstFrame(const ArgList& args)
         return;
     }
 
+    if (args.String(0) == "VSYNC") {
+        g_playbackFile.CacheVsyncId2Time(0);
+        g_playbackPauseTime = g_playbackFile.ConvertVsyncId2Time(args.Int64(1));
+    }
+
     const auto& fileAnimeStartTimes = g_playbackFile.GetAnimeStartTimes();
     for (const auto& item : fileAnimeStartTimes) {
         if (animeMap.count(item.first)) {
@@ -1471,6 +1537,17 @@ void RSProfiler::PlaybackPrepareFirstFrame(const ArgList& args)
     g_playbackWaitFrames = defaultWaitFrames;
     Respond("awake_frame " + std::to_string(g_playbackWaitFrames));
     AwakeRenderServiceThread();
+}
+
+void RSProfiler::RecordSendBinary(const ArgList& args)
+{
+    bool flag = args.Int8(0);
+    Network::SetBlockBinary(!flag);
+    if (flag) {
+        Respond("Result: data will be sent to client during recording");
+    } else {
+        Respond("Result: data will NOT be sent to client during recording");
+    }
 }
 
 void RSProfiler::PlaybackStart(const ArgList& args)
@@ -1616,7 +1693,14 @@ void RSProfiler::PlaybackPauseAt(const ArgList& args)
         return;
     }
 
-    const double pauseTime = args.Fp64();
+    double pauseTime;
+    if (args.String(0) == "VSYNC") {
+        int64_t vsyncId = args.Int64(1);
+        pauseTime = g_playbackFile.ConvertVsyncId2Time(vsyncId);
+    } else {
+        pauseTime = args.Fp64();
+    }
+
     const double recordPlayTime = Now() - g_playbackStartTime;
     if (recordPlayTime > pauseTime) {
         return;
@@ -1673,6 +1757,7 @@ RSProfiler::Command RSProfiler::GetCommand(const std::string& command)
         { "rsrecord_pause_at", PlaybackPauseAt },
         { "rsrecord_pause_resume", PlaybackResume },
         { "rsrecord_pause_clear", PlaybackPauseClear },
+        { "rsrecord_sendbinary", RecordSendBinary },
         { "rssurface_pid", DumpNodeSurface },
         { "rscon_print", DumpConnections },
         { "save_rdc", SaveRdc },

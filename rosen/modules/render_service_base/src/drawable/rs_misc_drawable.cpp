@@ -136,7 +136,14 @@ Drawing::RecordingCanvas::DrawFunc RSChildrenDrawable::CreateDrawFunc() const
 {
     auto ptr = std::static_pointer_cast<const RSChildrenDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        for (const auto& drawable : ptr->childrenDrawableVec_) {
+        for (size_t i = 0; i < ptr->childrenDrawableVec_.size(); i++) {
+#ifdef RS_ENABLE_PREFETCH
+            size_t prefetchIndex = i + 2;
+            if (prefetchIndex < ptr->childrenDrawableVec_.size()) {
+                __builtin_prefetch(&(ptr->childrenDrawableVec_[prefetchIndex]), 0, 1);
+            }
+#endif
+            const auto& drawable = ptr->childrenDrawableVec_[i];
             drawable->Draw(*canvas);
         }
     };
@@ -207,7 +214,14 @@ Drawing::RecordingCanvas::DrawFunc RSCustomModifierDrawable::CreateDrawFunc() co
 {
     auto ptr = std::static_pointer_cast<const RSCustomModifierDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        for (const auto& drawCmdList : ptr->drawCmdListVec_) {
+        for (size_t i = 0; i < ptr->drawCmdListVec_.size(); i++) {
+#ifdef RS_ENABLE_PREFETCH
+            size_t prefetchIndex = i + 2;
+            if (prefetchIndex < ptr->drawCmdListVec_.size()) {
+                __builtin_prefetch(&(ptr->drawCmdListVec_[prefetchIndex]), 0, 1);
+            }
+#endif
+            const auto& drawCmdList = ptr->drawCmdListVec_[i];
             Drawing::Matrix mat;
             if (ptr->isCanvasNode_ &&
                 RSPropertyDrawableUtils::GetGravityMatrix(ptr->gravity_, *rect, drawCmdList->GetWidth(),
@@ -286,7 +300,6 @@ bool RSBeginBlenderDrawable::OnUpdate(const RSRenderNode& node)
         if (Rosen::RSSystemProperties::GetDebugTraceLevel() >= TRACE_LEVEL_TWO) {
             stagingPropertyDescription_ = properties.GetFgBrightnessDescription();
         }
-        stagingFgBrightnessParams_ = properties.GetFgBrightnessParams().value();
         stagingBlender_ = RSPropertyDrawableUtils::MakeDynamicBrightnessBlender(
             properties.GetFgBrightnessParams().value());
         stagingIsDangerous_ = false;
@@ -313,7 +326,6 @@ void RSBeginBlenderDrawable::OnSync()
         return;
     }
     blender_ = stagingBlender_;
-    fgBrightnessParams_ = stagingFgBrightnessParams_;
     blendApplyType_ = stagingBlendApplyType_;
     propertyDescription_ = stagingPropertyDescription_;
     stagingPropertyDescription_.clear();
@@ -330,12 +342,7 @@ Drawing::RecordingCanvas::DrawFunc RSBeginBlenderDrawable::CreateDrawFunc() cons
         }
         RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO, "RSBeginBlenderDrawable:: %s, bounds: %s",
             ptr->propertyDescription_.c_str(), rect->ToString().c_str());
-        std::shared_ptr<Drawing::Blender> blender = ptr->blender_;
-        if (ptr->fgBrightnessParams_.IsValid() && paintFilterCanvas->GetHDRPresent()) {
-            blender = RSPropertyDrawableUtils::MakeDynamicBrightnessBlender(ptr->fgBrightnessParams_,
-            paintFilterCanvas->GetBrightnessRatio());
-        }
-        RSPropertyDrawableUtils::BeginBlender(*paintFilterCanvas, blender, ptr->blendApplyType_,
+        RSPropertyDrawableUtils::BeginBlender(*paintFilterCanvas, ptr->blender_, ptr->blendApplyType_,
             ptr->isDangerous_);
     };
 }

@@ -30,12 +30,8 @@
 #include "surface_delegate.h"
 #endif
 
-#ifdef NEW_RENDER_CONTEXT
-#include "rs_render_surface.h"
-#else
 #include "platform/drawing/rs_surface.h"
 #include "platform/common/rs_surface_ext.h"
-#endif
 #include "transaction/rs_transaction_proxy.h"
 #include "ui/rs_node.h"
 
@@ -83,6 +79,8 @@ public:
     bool GetSecurityLayer() const;
     void SetSkipLayer(bool isSkipLayer);
     bool GetSkipLayer() const;
+    void SetSnapshotSkipLayer(bool isSnapshotSkipLayer);
+    bool GetSnapshotSkipLayer() const;
     void SetFingerprint(bool hasFingerprint);
     bool GetFingerprint() const;
     void SetAbilityBGAlpha(uint8_t alpha);
@@ -171,11 +169,7 @@ private:
     void CreateTextureExportRenderNodeInRT() override;
     void SetIsTextureExportNode(bool isTextureExportNode);
     std::pair<std::string, std::string> SplitSurfaceNodeName(std::string surfaceNodeName);
-#ifdef NEW_RENDER_CONTEXT
-    std::shared_ptr<RSRenderSurface> surface_;
-#else
     std::shared_ptr<RSSurface> surface_;
-#endif
     std::string name_;
     std::string bundleName_;
     mutable std::mutex mutex_;
@@ -185,6 +179,7 @@ private:
     GraphicColorGamut colorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     bool isSecurityLayer_ = false;
     bool isSkipLayer_ = false;
+    bool isSnapshotSkipLayer_ = false;
     bool hasFingerprint_ = false;
     bool isChildOperationDisallowed_ { false };
     bool isBootAnimation_ = false;

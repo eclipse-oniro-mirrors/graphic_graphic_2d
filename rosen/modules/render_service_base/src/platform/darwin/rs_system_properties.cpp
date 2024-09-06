@@ -432,6 +432,12 @@ bool RSSystemProperties::GetSubSurfaceEnabled()
 {
     return false;
 }
+
+bool RSSystemProperties::GetTargetUIFirstDfxEnabled(std::vector<std::string>& SurfaceNames)
+{
+    return false;
+}
+
 bool RSSystemProperties::GetSecurityPermissionCheckEnabled()
 {
     return false;
@@ -468,6 +474,11 @@ bool RSSystemProperties::GetHwcRegionDfxEnabled()
 }
 
 bool RSSystemProperties::GetDrawMirrorCacheImageEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetPixelmapDfxEnabled()
 {
     return false;
 }

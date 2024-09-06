@@ -826,7 +826,7 @@ void RSRenderServiceConnectionProxy::UnregisterFrameRateLinker(FrameRateLinkerId
         return;
     }
 
-    option.SetFlags(MessageOption::TF_SYNC);
+    option.SetFlags(MessageOption::TF_ASYNC);
     data.WriteUint64(id);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_FRAME_RATE_LINKER);
     int32_t err = Remote()->SendRequest(code, data, reply, option);
@@ -2799,6 +2799,27 @@ bool RSRenderServiceConnectionProxy::SetAncoForceDoDirect(bool direct)
         return result;
     } else {
         return RS_CONNECTION_ERROR;
+    }
+}
+
+void RSRenderServiceConnectionProxy::SetFreeMultiWindowStatus(bool enable)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIRenderServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::SetFreeMultiWindowStatus: write token err.");
+        return;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!data.WriteBool(enable)) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::SetFreeMultiWindowStatus: write bool val err.");
+        return;
+    }
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_FREE_MULTI_WINDOW_STATUS);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSRenderServiceConnectionProxy::SetFreeMultiWindowStatus: Send Request err.");
     }
 }
 

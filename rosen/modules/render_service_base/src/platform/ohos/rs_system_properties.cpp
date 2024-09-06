@@ -299,6 +299,14 @@ bool RSSystemProperties::GetDrawMirrorCacheImageEnabled()
     return ConvertToInt(enable, 0) != 0;
 }
 
+bool RSSystemProperties::GetPixelmapDfxEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.pixelmapdfx.enabled", "0");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 0) != 0;
+}
+
 bool RSSystemProperties::GetAFBCEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.afbc.enabled", "1");
@@ -697,6 +705,20 @@ bool RSSystemProperties::GetUIFirstDebugEnabled()
 {
     static bool debugEnable = system::GetIntParameter("persist.sys.graphic.uifirstDebugEnabled", 0) != 0;
     return debugEnable;
+}
+
+bool RSSystemProperties::GetTargetUIFirstDfxEnabled(std::vector<std::string>& SurfaceNames)
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.UIFirstdebug.surfacenames", "0");
+    int changed = 0;
+    const char *targetSurfacesStr = CachedParameterGetChanged(g_Handle, &changed);
+    if (strcmp(targetSurfacesStr, "0") == 0) {
+        SurfaceNames.clear();
+        return false;
+    }
+    SurfaceNames.clear();
+    ParseDfxSurfaceNamesString(targetSurfacesStr, SurfaceNames, ",");
+    return true;
 }
 
 bool RSSystemProperties::GetDebugTraceEnabled()

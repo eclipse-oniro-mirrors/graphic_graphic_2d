@@ -83,6 +83,9 @@ static const size_t PARCEL_MAX_CAPACITY = 234 * 1024 * 1024;
 static std::unordered_map<AnimationId, std::vector<int64_t>> g_animeStartMap;
 
 bool RSProfiler::testing_ = false;
+bool RSProfiler::enabled_ = RSSystemProperties::GetProfilerEnabled();
+bool RSProfiler::betaRecordingEnabled_ = RSSystemProperties::GetBetaRecordingMode() != 0;
+int8_t RSProfiler::signalFlagChanged_ = 0;
 
 constexpr size_t GetParcelMaxCapacity()
 {
@@ -91,8 +94,12 @@ constexpr size_t GetParcelMaxCapacity()
 
 bool RSProfiler::IsEnabled()
 {
-    static const bool ENABLED = RSSystemProperties::GetProfilerEnabled();
-    return ENABLED || testing_;
+    return enabled_ || testing_;
+}
+
+bool RSProfiler::IsBetaRecordEnabled()
+{
+    return betaRecordingEnabled_;
 }
 
 uint32_t RSProfiler::GetCommandCount()
@@ -773,6 +780,9 @@ void RSProfiler::UnmarshalTree(RSContext& context, std::stringstream& data, uint
     data.read(reinterpret_cast<char*>(&count), sizeof(count));
 
     auto node = map.GetRenderNode(nodeId);
+    if (!node) {
+        return;
+    }
     for (uint32_t i = 0; i < count; i++) {
         NodeId nodeId = 0;
         data.read(reinterpret_cast<char*>(&nodeId), sizeof(nodeId));
@@ -987,11 +997,6 @@ void RSProfiler::MarshalDrawingImage(std::shared_ptr<Drawing::Image>& image,
 void RSProfiler::EnableBetaRecord()
 {
     RSSystemProperties::SetBetaRecordingMode(1);
-}
-
-bool RSProfiler::IsBetaRecordEnabled()
-{
-    return RSSystemProperties::GetBetaRecordingMode() != 0;
 }
 
 bool RSProfiler::IsBetaRecordSavingTriggered()

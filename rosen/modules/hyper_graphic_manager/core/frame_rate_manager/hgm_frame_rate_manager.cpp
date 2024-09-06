@@ -449,6 +449,8 @@ void HgmFrameRateManager::FrameRateReport()
     }
     HGM_LOGD("FrameRateReport: RS(%{public}d) = %{public}d, APP(%{public}d) = %{public}d",
         GetRealPid(), rates[GetRealPid()], UNI_APP_PID, rates[UNI_APP_PID]);
+    RS_TRACE_NAME_FMT("FrameRateReport: RS(%d) = %d, APP(%d) = %d",
+        GetRealPid(), rates[GetRealPid()], UNI_APP_PID, rates[UNI_APP_PID]);
     FRAME_TRACE::FrameRateReport::GetInstance().SendFrameRates(rates);
     FRAME_TRACE::FrameRateReport::GetInstance().SendFrameRatesToRss(rates);
     schedulePreferredFpsChange_ = false;
@@ -500,8 +502,8 @@ bool HgmFrameRateManager::CollectFrameRateChange(FrameRateRange finalRange,
                 linker.second->GetId(), appFrameRate);
             frameRateChanged = true;
         }
-        if (expectedRange.min_ == OLED_NULL_HZ && expectedRange.max_ == OLED_144_HZ &&
-            expectedRange.preferred_ == OLED_NULL_HZ) {
+        if (expectedRange.min_ == OLED_NULL_HZ && expectedRange.preferred_ == OLED_NULL_HZ &&
+            (expectedRange.max_ == OLED_144_HZ || expectedRange.max_ == OLED_NULL_HZ)) {
             continue;
         }
         RS_TRACE_NAME_FMT("HgmFrameRateManager::UniProcessData multiAppFrameRate: pid = %d, linkerId = %ld, "\
@@ -520,6 +522,7 @@ void HgmFrameRateManager::HandleFrameRateChangeForLTPO(uint64_t timestamp, bool 
     // low refresh rate switch to high refresh rate immediately.
     if (lastRefreshRate < OLED_60_HZ && currRefreshRate_ > lastRefreshRate) {
         hgmCore.SetPendingScreenRefreshRate(currRefreshRate_);
+        hgmCore.SetScreenRefreshRateImme(currRefreshRate_);
         if (hgmCore.IsLowRateToHighQuickEnabled() && controller_) {
             targetTime = controller_->CalcVSyncQuickTriggerTime(timestamp, lastRefreshRate);
             if (targetTime > timestamp && targetTime > 0) {
@@ -1239,9 +1242,19 @@ bool HgmFrameRateManager::ProcessRefreshRateVote(
         ProcessVoteLog(curVoteInfo, true);
         return false;
     }
-    if (voter == "VOTER_ANCO" && !ancoScenes_.empty() &&
-        (curVoteInfo.min > OLED_60_HZ || curVoteInfo.max < OLED_90_HZ)) {
-        curVoteInfo.SetRange(OLED_60_HZ, OLED_90_HZ);
+    if (voter == "VOTER_ANCO" && !ancoScenes_.empty()) {
+        // Multiple scene are not considered at this time
+        auto configData = HgmCore::Instance().GetPolicyConfigData();
+        auto screenSetting = multiAppStrategy_.GetScreenSetting();
+        auto ancoSceneIt = screenSetting.ancoSceneList.find(*ancoScenes_.begin());
+        uint32_t min = OLED_60_HZ;
+        uint32_t max = OLED_90_HZ;
+        if (configData != nullptr && ancoSceneIt != screenSetting.ancoSceneList.end() &&
+            configData->strategyConfigs_.find(ancoSceneIt->second.strategy) != configData->strategyConfigs_.end()) {
+            min = static_cast<uint32_t>(configData->strategyConfigs_[ancoSceneIt->second.strategy].min);
+            max = static_cast<uint32_t>(configData->strategyConfigs_[ancoSceneIt->second.strategy].max);
+        }
+        curVoteInfo.SetRange(min, max);
     }
     ProcessVoteLog(curVoteInfo, false);
     auto [mergeVoteRange, mergeVoteInfo] = MergeRangeByPriority(voteRange, {curVoteInfo.min, curVoteInfo.max});
