@@ -34,11 +34,13 @@ RSRcdSurfaceRenderNode::RSRcdSurfaceRenderNode(
     rcdExtInfo_.surfaceType = type;
     MemoryInfo info = {sizeof(*this), ExtractPid(id), id, MEMORY_TYPE::MEM_RENDER_NODE};
     MemoryTrack::Instance().AddNodeRecord(id, info);
+    MemorySnapshot::Instance().AddCpuMemory(ExtractPid(id), sizeof(*this));
 }
 
 RSRcdSurfaceRenderNode::~RSRcdSurfaceRenderNode()
 {
     MemoryTrack::Instance().RemoveNodeRecord(GetId());
+    MemorySnapshot::Instance().RemoveCpuMemory(ExtractPid(GetId()), sizeof(*this));
 }
 
 const RectI& RSRcdSurfaceRenderNode::GetSrcRect() const
