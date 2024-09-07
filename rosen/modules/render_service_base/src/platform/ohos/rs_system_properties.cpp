@@ -1062,6 +1062,13 @@ bool RSSystemProperties::IsForceClient()
     return ConvertToInt(num, 0);
 }
 
+bool RSSystemProperties::GetTransactionTerminateEnabled()
+{
+    static bool terminateEnabled = 
+        std::atoi((system::GetParameter("persist.sys.graphic.transactionTerminateEnabled", "0")).c_str()) != 0;
+    return terminateEnabled;
+}
+
 bool RSSystemProperties::GetTextBlobAsPixelMap()
 {
     static bool pixelMapEnabled =

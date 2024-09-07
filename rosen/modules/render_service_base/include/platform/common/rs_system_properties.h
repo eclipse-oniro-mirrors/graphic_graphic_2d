@@ -264,6 +264,7 @@ public:
     static bool GetTransactionTerminateEnabled();
 
     static int GetVirtualScreenScaleModeDFX();
+    static bool GetTransactionTerminateEnabled();
     static bool GetTextBlobAsPixelMap();
     static inline GpuApiType GetGpuApiType()
     {

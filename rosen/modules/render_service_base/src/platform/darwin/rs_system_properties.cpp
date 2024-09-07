@@ -498,6 +498,11 @@ bool RSSystemProperties::IsForceClient()
     return false;
 }
 
+bool RSSystemProperties::GetTransactionTerminateEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetTextBlobAsPixelMap()
 {
     return false;
